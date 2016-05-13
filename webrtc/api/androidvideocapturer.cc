@@ -88,14 +88,12 @@ class AndroidVideoCapturer::FrameFactory : public cricket::VideoFrameFactory {
       int output_width,
       int output_height) const override {
     if (buffer_->native_handle() != nullptr) {
-      // TODO(perkj) Implement cropping.
-      RTC_CHECK_EQ(cropped_input_width, buffer_->width());
-      RTC_CHECK_EQ(cropped_input_height, buffer_->height());
       rtc::scoped_refptr<webrtc::VideoFrameBuffer> scaled_buffer(
           static_cast<webrtc_jni::AndroidTextureBuffer*>(buffer_.get())
-              ->ScaleAndRotate(output_width, output_height,
-                               apply_rotation_ ? input_frame->rotation :
-                                   webrtc::kVideoRotation_0));
+              ->CropScaleAndRotate(cropped_input_width, cropped_input_height,
+                                   output_width, output_height,
+                                   apply_rotation_ ? input_frame->rotation
+                                                   : webrtc::kVideoRotation_0));
       return new cricket::WebRtcVideoFrame(
           scaled_buffer, input_frame->time_stamp,
           apply_rotation_ ? webrtc::kVideoRotation_0 : input_frame->rotation);

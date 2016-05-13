@@ -38,8 +38,11 @@ class AndroidTextureBuffer : public webrtc::NativeHandleBuffer {
   ~AndroidTextureBuffer();
   rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() override;
 
-  rtc::scoped_refptr<AndroidTextureBuffer> ScaleAndRotate(
-      int dst_widht,
+  // First crop, then scale to dst resolution, and then rotate.
+  rtc::scoped_refptr<AndroidTextureBuffer> CropScaleAndRotate(
+      int cropped_width,
+      int cropped_height,
+      int dst_width,
       int dst_height,
       webrtc::VideoRotation rotation);
 

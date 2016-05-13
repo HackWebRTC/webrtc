@@ -683,9 +683,9 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
       if (frame.video_frame_buffer()->native_handle() != nullptr) {
         rtc::scoped_refptr<webrtc::VideoFrameBuffer> scaled_buffer(
             static_cast<AndroidTextureBuffer*>(
-                frame.video_frame_buffer().get())->ScaleAndRotate(
-                    scaled_resolution.width,
-                    scaled_resolution.height,
+                frame.video_frame_buffer().get())->CropScaleAndRotate(
+                    frame.width(), frame.height(),
+                    scaled_resolution.width, scaled_resolution.height,
                     webrtc::kVideoRotation_0));
         input_frame.set_video_frame_buffer(scaled_buffer);
       } else {
