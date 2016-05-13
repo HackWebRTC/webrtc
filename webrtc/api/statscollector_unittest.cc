@@ -165,6 +165,48 @@ class FakeAudioTrack
   rtc::scoped_refptr<FakeAudioProcessor> processor_;
 };
 
+// This fake audio processor is used to verify that the undesired initial values
+// (-1) will be filtered out.
+class FakeAudioProcessorWithInitValue : public webrtc::AudioProcessorInterface {
+ public:
+  FakeAudioProcessorWithInitValue() {}
+  ~FakeAudioProcessorWithInitValue() {}
+
+ private:
+  void GetStats(AudioProcessorInterface::AudioProcessorStats* stats) override {
+    stats->typing_noise_detected = false;
+    stats->echo_return_loss = -100;
+    stats->echo_return_loss_enhancement = -100;
+    stats->echo_delay_median_ms = -1;
+    stats->aec_quality_min = -1.0f;
+    stats->echo_delay_std_ms = -1;
+  }
+};
+
+class FakeAudioTrackWithInitValue
+    : public webrtc::MediaStreamTrack<webrtc::AudioTrackInterface> {
+ public:
+  explicit FakeAudioTrackWithInitValue(const std::string& id)
+      : webrtc::MediaStreamTrack<webrtc::AudioTrackInterface>(id),
+        processor_(
+            new rtc::RefCountedObject<FakeAudioProcessorWithInitValue>()) {}
+  std::string kind() const override { return "audio"; }
+  webrtc::AudioSourceInterface* GetSource() const override { return NULL; }
+  void AddSink(webrtc::AudioTrackSinkInterface* sink) override {}
+  void RemoveSink(webrtc::AudioTrackSinkInterface* sink) override {}
+  bool GetSignalLevel(int* level) override {
+    *level = 1;
+    return true;
+  }
+  rtc::scoped_refptr<webrtc::AudioProcessorInterface> GetAudioProcessor()
+      override {
+    return processor_;
+  }
+
+ private:
+  rtc::scoped_refptr<FakeAudioProcessorWithInitValue> processor_;
+};
+
 bool GetValue(const StatsReport* report,
               StatsReport::StatsValueName name,
               std::string* value) {
@@ -444,7 +486,8 @@ void InitVoiceSenderInfo(cricket::VoiceSenderInfo* voice_sender_info) {
 }
 
 void UpdateVoiceSenderInfoFromAudioTrack(
-    FakeAudioTrack* audio_track, cricket::VoiceSenderInfo* voice_sender_info) {
+    AudioTrackInterface* audio_track,
+    cricket::VoiceSenderInfo* voice_sender_info) {
   audio_track->GetSignalLevel(&voice_sender_info->audio_level);
   webrtc::AudioProcessorInterface::AudioProcessorStats audio_processor_stats;
   audio_track->GetAudioProcessor()->GetStats(&audio_processor_stats);
@@ -777,6 +820,29 @@ class StatsCollectorTest : public testing::Test {
   rtc::scoped_refptr<FakeAudioTrack> audio_track_;
   std::vector<rtc::scoped_refptr<DataChannel>> data_channels_;
 };
+
+TEST_F(StatsCollectorTest, FilterOutNegativeDataChannelId) {
+  const std::string label = "hacks";
+  // The data channel id is from the Config which is -1 initially.
+  const int id = -1;
+  const std::string state = DataChannelInterface::DataStateString(
+      DataChannelInterface::DataState::kConnecting);
+
+  AddDataChannel(cricket::DCT_SCTP, label, id);
+  StatsCollectorForTest stats(&pc_);
+
+  stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
+
+  StatsReports reports;
+  stats.GetStats(NULL, &reports);
+
+  const StatsReport* report =
+      FindNthReportByType(reports, StatsReport::kStatsReportTypeDataChannel, 1);
+
+  std::string value_in_report;
+  EXPECT_FALSE(GetValue(report, StatsReport::kStatsValueNameDataChannelId,
+                        &value_in_report));
+}
 
 // Verify that ExtractDataInfo populates reports.
 TEST_F(StatsCollectorTest, ExtractDataInfo) {
@@ -1498,6 +1564,113 @@ TEST_F(StatsCollectorTest, UnsupportedDigestIgnored) {
 
   TestCertificateReports(local_cert, std::vector<std::string>(1, local_der),
                          std::move(remote_cert), std::vector<std::string>());
+}
+
+// This test verifies that the audio/video related stats which are -1 initially
+// will be filtered out.
+TEST_F(StatsCollectorTest, FilterOutNegativeInitialValues) {
+  StatsCollectorForTest stats(&pc_);
+
+  EXPECT_CALL(session_, GetLocalCertificate(_, _))
+      .WillRepeatedly(Return(false));
+  EXPECT_CALL(session_, GetRemoteSSLCertificate_ReturnsRawPointer(_))
+      .WillRepeatedly(Return(nullptr));
+
+  MockVoiceMediaChannel* media_channel = new MockVoiceMediaChannel();
+  // The transport_name known by the voice channel.
+  const std::string kVcName("vcname");
+  cricket::VoiceChannel voice_channel(worker_thread_, network_thread_,
+                                        media_engine_, media_channel, nullptr,
+                                        kVcName, false);
+
+  // Create a local stream with a local audio track and adds it to the stats.
+  if (stream_ == NULL)
+    stream_ = webrtc::MediaStream::Create("streamlabel");
+
+  rtc::scoped_refptr<FakeAudioTrackWithInitValue> local_track(
+      new rtc::RefCountedObject<FakeAudioTrackWithInitValue>(kLocalTrackId));
+  stream_->AddTrack(local_track);
+  EXPECT_CALL(session_, GetLocalTrackIdBySsrc(kSsrcOfTrack, _))
+      .WillOnce(DoAll(SetArgPointee<1>(kLocalTrackId), Return(true)));
+  stats.AddStream(stream_);
+  stats.AddLocalAudioTrack(local_track.get(), kSsrcOfTrack);
+
+  // Create a remote stream with a remote audio track and adds it to the stats.
+  rtc::scoped_refptr<webrtc::MediaStream> remote_stream(
+      webrtc::MediaStream::Create("remotestreamlabel"));
+  rtc::scoped_refptr<FakeAudioTrackWithInitValue> remote_track(
+      new rtc::RefCountedObject<FakeAudioTrackWithInitValue>(kRemoteTrackId));
+  EXPECT_CALL(session_, GetRemoteTrackIdBySsrc(kSsrcOfTrack, _))
+      .WillOnce(DoAll(SetArgPointee<1>(kRemoteTrackId), Return(true)));
+  remote_stream->AddTrack(remote_track);
+  stats.AddStream(remote_stream);
+
+  // Instruct the session to return stats containing the transport channel.
+  InitSessionStats(kVcName);
+  EXPECT_CALL(session_, GetTransportStats(_))
+      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_), Return(true)));
+
+  cricket::VoiceSenderInfo voice_sender_info;
+  voice_sender_info.add_ssrc(kSsrcOfTrack);
+  // These values are set to -1 initially in audio_send_stream.
+  // The voice_sender_info will read the values from audio_send_stream.
+  voice_sender_info.rtt_ms = -1;
+  voice_sender_info.packets_lost = -1;
+  voice_sender_info.jitter_ms = -1;
+
+  // Some of the contents in |voice_sender_info| needs to be updated from the
+  // |audio_track_|.
+  UpdateVoiceSenderInfoFromAudioTrack(local_track.get(), &voice_sender_info);
+
+  cricket::VoiceReceiverInfo voice_receiver_info;
+  voice_receiver_info.add_ssrc(kSsrcOfTrack);
+  voice_receiver_info.capture_start_ntp_time_ms = -1;
+  voice_receiver_info.audio_level = -1;
+
+  // Constructs an ssrc stats update.
+  cricket::VoiceMediaInfo stats_read;
+  stats_read.senders.push_back(voice_sender_info);
+  stats_read.receivers.push_back(voice_receiver_info);
+
+  EXPECT_CALL(session_, voice_channel()).WillRepeatedly(Return(&voice_channel));
+  EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
+  EXPECT_CALL(*media_channel, GetStats(_))
+      .WillRepeatedly(DoAll(SetArgPointee<0>(stats_read), Return(true)));
+
+  StatsReports reports;
+  stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
+
+  // Get stats for the local track.
+  stats.GetStats(local_track.get(), &reports);
+  const StatsReport* report =
+      FindNthReportByType(reports, StatsReport::kStatsReportTypeSsrc, 1);
+  EXPECT_TRUE(report);
+  // The -1 will not be added to the stats report.
+  std::string value_in_report;
+  EXPECT_FALSE(
+      GetValue(report, StatsReport::kStatsValueNameRtt, &value_in_report));
+  EXPECT_FALSE(GetValue(report, StatsReport::kStatsValueNamePacketsLost,
+                        &value_in_report));
+  EXPECT_FALSE(GetValue(report, StatsReport::kStatsValueNameJitterReceived,
+                        &value_in_report));
+  EXPECT_FALSE(GetValue(report,
+                        StatsReport::kStatsValueNameEchoCancellationQualityMin,
+                        &value_in_report));
+  EXPECT_FALSE(GetValue(report, StatsReport::kStatsValueNameEchoDelayMedian,
+                        &value_in_report));
+  EXPECT_FALSE(GetValue(report, StatsReport::kStatsValueNameEchoDelayStdDev,
+                        &value_in_report));
+
+  // Get stats for the remote track.
+  reports.clear();
+  stats.GetStats(remote_track.get(), &reports);
+  report = FindNthReportByType(reports, StatsReport::kStatsReportTypeSsrc, 1);
+  EXPECT_TRUE(report);
+  EXPECT_FALSE(GetValue(report,
+                        StatsReport::kStatsValueNameCaptureStartNtpTimeMs,
+                        &value_in_report));
+  EXPECT_FALSE(GetValue(report, StatsReport::kStatsValueNameAudioInputLevel,
+                        &value_in_report));
 }
 
 // This test verifies that a local stats object can get statistics via

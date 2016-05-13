@@ -88,7 +88,9 @@ void ExtractCommonSendProperties(const cricket::MediaSenderInfo& info,
                                  StatsReport* report) {
   report->AddString(StatsReport::kStatsValueNameCodecName, info.codec_name);
   report->AddInt64(StatsReport::kStatsValueNameBytesSent, info.bytes_sent);
-  report->AddInt64(StatsReport::kStatsValueNameRtt, info.rtt_ms);
+  if (info.rtt_ms >= 0) {
+    report->AddInt64(StatsReport::kStatsValueNameRtt, info.rtt_ms);
+  }
 }
 
 void ExtractCommonReceiveProperties(const cricket::MediaReceiverInfo& info,
@@ -105,17 +107,23 @@ void SetAudioProcessingStats(StatsReport* report,
                              int echo_delay_std_ms) {
   report->AddBoolean(StatsReport::kStatsValueNameTypingNoiseState,
                      typing_noise_detected);
-  report->AddFloat(StatsReport::kStatsValueNameEchoCancellationQualityMin,
-                   aec_quality_min);
+  if (aec_quality_min >= 0.0f) {
+    report->AddFloat(StatsReport::kStatsValueNameEchoCancellationQualityMin,
+                     aec_quality_min);
+  }
   const IntForAdd ints[] = {
-    { StatsReport::kStatsValueNameEchoReturnLoss, echo_return_loss },
-    { StatsReport::kStatsValueNameEchoReturnLossEnhancement,
-      echo_return_loss_enhancement },
     { StatsReport::kStatsValueNameEchoDelayMedian, echo_delay_median_ms },
     { StatsReport::kStatsValueNameEchoDelayStdDev, echo_delay_std_ms },
   };
-  for (const auto& i : ints)
-    report->AddInt(i.name, i.value);
+  for (const auto& i : ints) {
+    if (i.value >= 0) {
+      report->AddInt(i.name, i.value);
+    }
+  }
+  // These can take on valid negative values.
+  report->AddInt(StatsReport::kStatsValueNameEchoReturnLoss, echo_return_loss);
+  report->AddInt(StatsReport::kStatsValueNameEchoReturnLossEnhancement,
+                 echo_return_loss_enhancement);
 }
 
 void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
@@ -131,7 +139,6 @@ void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
   };
 
   const IntForAdd ints[] = {
-    { StatsReport::kStatsValueNameAudioOutputLevel, info.audio_level },
     { StatsReport::kStatsValueNameCurrentDelayMs, info.delay_estimate_ms },
     { StatsReport::kStatsValueNameDecodingCNG, info.decoding_cng },
     { StatsReport::kStatsValueNameDecodingCTN, info.decoding_calls_to_neteq },
@@ -153,11 +160,17 @@ void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
 
   for (const auto& i : ints)
     report->AddInt(i.name, i.value);
+  if (info.audio_level >= 0) {
+    report->AddInt(StatsReport::kStatsValueNameAudioOutputLevel,
+                   info.audio_level);
+  }
 
   report->AddInt64(StatsReport::kStatsValueNameBytesReceived,
                    info.bytes_rcvd);
-  report->AddInt64(StatsReport::kStatsValueNameCaptureStartNtpTimeMs,
-                   info.capture_start_ntp_time_ms);
+  if (info.capture_start_ntp_time_ms >= 0) {
+    report->AddInt64(StatsReport::kStatsValueNameCaptureStartNtpTimeMs,
+                     info.capture_start_ntp_time_ms);
+  }
   report->AddString(StatsReport::kStatsValueNameMediaType, "audio");
 }
 
@@ -177,8 +190,11 @@ void ExtractStats(const cricket::VoiceSenderInfo& info, StatsReport* report) {
     { StatsReport::kStatsValueNamePacketsSent, info.packets_sent },
   };
 
-  for (const auto& i : ints)
-    report->AddInt(i.name, i.value);
+  for (const auto& i : ints) {
+    if (i.value >= 0) {
+      report->AddInt(i.name, i.value);
+    }
+  }
   report->AddString(StatsReport::kStatsValueNameMediaType, "audio");
 }
 
@@ -188,8 +204,10 @@ void ExtractStats(const cricket::VideoReceiverInfo& info, StatsReport* report) {
                     info.decoder_implementation_name);
   report->AddInt64(StatsReport::kStatsValueNameBytesReceived,
                    info.bytes_rcvd);
-  report->AddInt64(StatsReport::kStatsValueNameCaptureStartNtpTimeMs,
-                   info.capture_start_ntp_time_ms);
+  if (info.capture_start_ntp_time_ms >= 0) {
+    report->AddInt64(StatsReport::kStatsValueNameCaptureStartNtpTimeMs,
+                     info.capture_start_ntp_time_ms);
+  }
   const IntForAdd ints[] = {
     { StatsReport::kStatsValueNameCurrentDelayMs, info.current_delay_ms },
     { StatsReport::kStatsValueNameDecodeMs, info.decode_ms },
@@ -870,7 +888,10 @@ void StatsCollector::ExtractDataInfo() {
     StatsReport* report = reports_.ReplaceOrAddNew(id);
     report->set_timestamp(stats_gathering_started_);
     report->AddString(StatsReport::kStatsValueNameLabel, dc->label());
-    report->AddInt(StatsReport::kStatsValueNameDataChannelId, dc->id());
+    // Filter out the initial id (-1).
+    if (dc->id() >= 0) {
+      report->AddInt(StatsReport::kStatsValueNameDataChannelId, dc->id());
+    }
     report->AddString(StatsReport::kStatsValueNameProtocol, dc->protocol());
     report->AddString(StatsReport::kStatsValueNameState,
                       DataChannelInterface::DataStateString(dc->state()));
