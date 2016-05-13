@@ -220,17 +220,19 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
     return;
   }
 
-  int adapted_width = captured_frame->width;
-  int adapted_height = captured_frame->height;
+  int cropped_width = captured_frame->width;
+  int cropped_height = captured_frame->height;
+  int out_width = captured_frame->width;
+  int out_height = captured_frame->height;
   if (enable_video_adapter_ && !IsScreencast()) {
-    const VideoFormat adapted_format =
-        video_adapter_.AdaptFrameResolution(adapted_width, adapted_height);
-    if (adapted_format.IsSize0x0()) {
+    video_adapter_.AdaptFrameResolution(
+        captured_frame->width, captured_frame->height,
+        &cropped_width, &cropped_height,
+        &out_width, &out_height);
+    if (out_width == 0 || out_height == 0) {
       // VideoAdapter dropped the frame.
       return;
     }
-    adapted_width = adapted_format.width;
-    adapted_height = adapted_format.height;
   }
 
   if (!frame_factory_) {
@@ -238,17 +240,15 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
     return;
   }
 
-  // TODO(nisse): Reorganize frame factory methods, deleting crop
-  // support there too.
+  // TODO(nisse): Reorganize frame factory methods.
   std::unique_ptr<VideoFrame> adapted_frame(frame_factory_->CreateAliasedFrame(
-      captured_frame, captured_frame->width, captured_frame->height,
-      adapted_width, adapted_height));
+      captured_frame, cropped_width, cropped_height, out_width, out_height));
 
   if (!adapted_frame) {
     // TODO(fbarchard): LOG more information about captured frame attributes.
     LOG(LS_ERROR) << "Couldn't convert to I420! "
                   << "From " << ToString(captured_frame) << " To "
-                  << adapted_width << " x " << adapted_height;
+                  << out_width << " x " << out_height;
     return;
   }
 

@@ -32,12 +32,23 @@ class VideoAdapter {
   // interval.
   void SetExpectedInputFrameInterval(int64_t interval);
 
-  // Return the adapted resolution given the input resolution. The returned
-  // resolution will be 0x0 if the frame should be dropped.
-  VideoFormat AdaptFrameResolution(int in_width, int in_height);
+  // Return the adapted resolution given the input resolution. The input
+  // resolution should first be cropped to the specified resolution, and then
+  // scaled to the final output resolution. The output resolution will be 0x0 if
+  // the frame should be dropped.
+  void AdaptFrameResolution(int in_width,
+                            int in_height,
+                            int* cropped_width,
+                            int* cropped_height,
+                            int* out_width,
+                            int* out_height);
 
   // Requests the output frame size and frame interval from
-  // |AdaptFrameResolution| to not be larger than |format|.
+  // |AdaptFrameResolution| to not be larger than |format|. Also, the input
+  // frame size will be cropped to match the requested aspect ratio. The
+  // requested aspect ratio is orientation agnostic and will be adjusted to
+  // maintain the input orientation, so it doesn't matter if e.g. 1280x720 or
+  // 720x1280 is requested.
   void OnOutputFormatRequest(const VideoFormat& format);
 
   // Requests the output frame size from |AdaptFrameResolution| to not have
@@ -46,28 +57,22 @@ class VideoAdapter {
   void OnResolutionRequest(rtc::Optional<int> max_pixel_count,
                            rtc::Optional<int> max_pixel_count_step_up);
 
-  const VideoFormat& input_format() const;
-
  private:
-  void SetInputFormat(const VideoFormat& format);
-  bool Adapt(int max_num_pixels, int max_pixel_count_step_up);
-
-  VideoFormat input_format_;
-  VideoFormat output_format_;
-  int output_num_pixels_;
   int frames_in_;         // Number of input frames.
   int frames_out_;        // Number of output frames.
   int frames_scaled_;     // Number of frames scaled.
   int adaption_changes_;  // Number of changes in scale factor.
   int previous_width_;    // Previous adapter output width.
   int previous_height_;   // Previous adapter output height.
-  int64_t interval_next_frame_;
+  int input_interval_ GUARDED_BY(critical_section_);
+  int64_t interval_next_frame_ GUARDED_BY(critical_section_);
 
   // Max number of pixels requested via calls to OnOutputFormatRequest,
   // OnResolutionRequest respectively.
   // The adapted output format is the minimum of these.
-  int format_request_max_pixel_count_;
-  int resolution_request_max_pixel_count_;
+  rtc::Optional<VideoFormat> requested_format_ GUARDED_BY(critical_section_);
+  int resolution_request_max_pixel_count_ GUARDED_BY(critical_section_);
+  int resolution_request_max_pixel_count_step_up_ GUARDED_BY(critical_section_);
 
   // The critical section to protect the above variables.
   rtc::CriticalSection critical_section_;
