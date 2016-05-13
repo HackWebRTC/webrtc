@@ -388,21 +388,13 @@ int32_t MediaCodecVideoEncoder::InitEncode(
 
   if (scale_) {
     if (codecType_ == kVideoCodecVP8) {
-      // QP is obtained from VP8-bitstream for HW, so the QP corresponds to the
-      // (internal) range: [0, 127]. And we cannot change QP_max in HW, so it is
-      // always = 127. Note that in SW, QP is that of the user-level range [0,
-      // 63].
-      const int kLowQpThreshold = 29;
-      const int kBadQpThreshold = 90;
-      quality_scaler_.Init(kLowQpThreshold, kBadQpThreshold,
-                           codec_settings->startBitrate, codec_settings->width,
-                           codec_settings->height,
-                           codec_settings->maxFramerate);
+      quality_scaler_.Init(
+          QualityScaler::kLowVp8QpThreshold, QualityScaler::kBadVp8QpThreshold,
+          codec_settings->startBitrate, codec_settings->width,
+          codec_settings->height, codec_settings->maxFramerate);
     } else if (codecType_ == kVideoCodecH264) {
-      // H264 QP is in the range [0, 51].
-      const int kLowQpThreshold = 22;
-      const int kBadQpThreshold = 35;
-      quality_scaler_.Init(kLowQpThreshold, kBadQpThreshold,
+      quality_scaler_.Init(QualityScaler::kLowH264QpThreshold,
+                           QualityScaler::kBadH264QpThreshold,
                            codec_settings->startBitrate, codec_settings->width,
                            codec_settings->height,
                            codec_settings->maxFramerate);

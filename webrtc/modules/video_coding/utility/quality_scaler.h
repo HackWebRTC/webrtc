@@ -37,6 +37,15 @@ class QualityScaler {
   const VideoFrame& GetScaledFrame(const VideoFrame& frame);
   int downscale_shift() const { return downscale_shift_; }
 
+  // QP is obtained from VP8-bitstream for HW, so the QP corresponds to the
+  // bitstream range of [0, 127] and not the user-level range of [0,63].
+  static const int kLowVp8QpThreshold;
+  static const int kBadVp8QpThreshold;
+
+  // H264 QP is in the range [0, 51].
+  static const int kLowH264QpThreshold;
+  static const int kBadH264QpThreshold;
+
  private:
   void AdjustScale(bool up);
   void UpdateTargetResolution(int frame_width, int frame_height);

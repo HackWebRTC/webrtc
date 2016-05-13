@@ -30,6 +30,16 @@ static const int kQvgaBitrateThresholdKbps = 250;
 static const int kQvgaNumPixels = 400 * 300;  // 320x240
 }  // namespace
 
+// QP thresholds are chosen to be high enough to be hit in practice when quality
+// is good, but also low enough to not cause a flip-flop behavior (e.g. going up
+// in resolution shouldn't give so bad quality that we should go back down).
+
+const int QualityScaler::kLowVp8QpThreshold = 29;
+const int QualityScaler::kBadVp8QpThreshold = 95;
+
+const int QualityScaler::kLowH264QpThreshold = 22;
+const int QualityScaler::kBadH264QpThreshold = 35;
+
 QualityScaler::QualityScaler() : low_qp_threshold_(-1) {}
 
 void QualityScaler::Init(int low_qp_threshold,

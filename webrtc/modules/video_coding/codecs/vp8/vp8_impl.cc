@@ -598,15 +598,9 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   }
 
   rps_.Init();
-  // QP thresholds are chosen to be high enough to be hit in practice when
-  // quality is good, but also low enough to not cause a flip-flop behavior
-  // (e.g. going up in resolution shouldn't give so bad quality that we should
-  // go back down).
-  const int kLowQpThreshold = 29;
-  const int kBadQpThreshold = 100;
-  quality_scaler_.Init(kLowQpThreshold, kBadQpThreshold,
-                       codec_.startBitrate, codec_.width, codec_.height,
-                       codec_.maxFramerate);
+  quality_scaler_.Init(QualityScaler::kLowVp8QpThreshold,
+                       QualityScaler::kBadVp8QpThreshold, codec_.startBitrate,
+                       codec_.width, codec_.height, codec_.maxFramerate);
 
   // Only apply scaling to improve for single-layer streams. The scaling metrics
   // use frame drops as a signal and is only applicable when we drop frames.
