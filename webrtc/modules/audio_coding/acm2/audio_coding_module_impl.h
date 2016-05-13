@@ -163,6 +163,9 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
 
   // Get 10 milliseconds of raw audio data to play out, and
   // automatic resample to the requested frequency if > 0.
+  int PlayoutData10Ms(int desired_freq_hz,
+                      AudioFrame* audio_frame,
+                      bool* muted) override;
   int PlayoutData10Ms(int desired_freq_hz, AudioFrame* audio_frame) override;
 
   /////////////////////////////////////////

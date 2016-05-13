@@ -158,8 +158,11 @@ void AcmReceiveTestOldApi::Run() {
     // Pull audio until time to insert packet.
     while (clock_.TimeInMilliseconds() < packet->time_ms()) {
       AudioFrame output_frame;
-      EXPECT_EQ(0, acm_->PlayoutData10Ms(output_freq_hz_, &output_frame));
+      bool muted;
+      EXPECT_EQ(0,
+                acm_->PlayoutData10Ms(output_freq_hz_, &output_frame, &muted));
       ASSERT_EQ(output_freq_hz_, output_frame.sample_rate_hz_);
+      ASSERT_FALSE(muted);
       const size_t samples_per_block =
           static_cast<size_t>(output_freq_hz_ * 10 / 1000);
       EXPECT_EQ(samples_per_block, output_frame.samples_per_channel_);

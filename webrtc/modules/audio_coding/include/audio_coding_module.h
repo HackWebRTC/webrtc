@@ -687,13 +687,24 @@ class AudioCodingModule {
   //                         and other relevant parameters, c.f.
   //                         module_common_types.h for the definition of
   //                         AudioFrame.
+  //   -muted              : if true, the sample data in audio_frame is not
+  //                         populated, and must be interpreted as all zero.
   //
   // Return value:
   //   -1 if the function fails,
   //    0 if the function succeeds.
   //
   virtual int32_t PlayoutData10Ms(int32_t desired_freq_hz,
-                                        AudioFrame* audio_frame) = 0;
+                                  AudioFrame* audio_frame,
+                                  bool* muted) = 0;
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Same as above, but without the muted parameter. This methods should not be
+  // used if enable_fast_accelerate was set to true in NetEq::Config.
+  // TODO(henrik.lundin) Remove this method when downstream dependencies are
+  // ready.
+  virtual int32_t PlayoutData10Ms(int32_t desired_freq_hz,
+                                  AudioFrame* audio_frame) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   //   Codec specific

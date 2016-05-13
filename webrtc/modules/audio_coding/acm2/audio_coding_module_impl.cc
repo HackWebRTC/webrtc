@@ -791,15 +791,24 @@ int AudioCodingModuleImpl::SetMaximumPlayoutDelay(int time_ms) {
 // Get 10 milliseconds of raw audio data to play out.
 // Automatic resample to the requested frequency.
 int AudioCodingModuleImpl::PlayoutData10Ms(int desired_freq_hz,
-                                           AudioFrame* audio_frame) {
+                                           AudioFrame* audio_frame,
+                                           bool* muted) {
   // GetAudio always returns 10 ms, at the requested sample rate.
-  if (receiver_.GetAudio(desired_freq_hz, audio_frame) != 0) {
+  if (receiver_.GetAudio(desired_freq_hz, audio_frame, muted) != 0) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                  "PlayoutData failed, RecOut Failed");
     return -1;
   }
   audio_frame->id_ = id_;
   return 0;
+}
+
+int AudioCodingModuleImpl::PlayoutData10Ms(int desired_freq_hz,
+                                           AudioFrame* audio_frame) {
+  bool muted;
+  int ret = PlayoutData10Ms(desired_freq_hz, audio_frame, &muted);
+  RTC_DCHECK(!muted);
+  return ret;
 }
 
 /////////////////////////////////////////

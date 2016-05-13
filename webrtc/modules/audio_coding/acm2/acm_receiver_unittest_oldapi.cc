@@ -285,7 +285,8 @@ TEST_F(AcmReceiverTestOldApi, MAYBE_SampleRate) {
     const int num_10ms_frames = codec.inst.pacsize / (codec.inst.plfreq / 100);
     InsertOnePacketOfSilence(codec.id);
     for (int k = 0; k < num_10ms_frames; ++k) {
-      EXPECT_EQ(0, receiver_->GetAudio(kOutSampleRateHz, &frame));
+      bool muted;
+      EXPECT_EQ(0, receiver_->GetAudio(kOutSampleRateHz, &frame, &muted));
     }
     EXPECT_EQ(codec.inst.plfreq, receiver_->last_output_sample_rate_hz());
   }
@@ -326,13 +327,15 @@ class AcmReceiverTestFaxModeOldApi : public AcmReceiverTestOldApi {
         rtc::CheckedDivExact(5 * output_sample_rate_hz, 8000);
 
     AudioFrame frame;
-    EXPECT_EQ(0, receiver_->GetAudio(output_sample_rate_hz, &frame));
+    bool muted;
+    EXPECT_EQ(0, receiver_->GetAudio(output_sample_rate_hz, &frame, &muted));
     // Expect timestamp = 0 before first packet is inserted.
     EXPECT_EQ(0u, frame.timestamp_);
     for (int i = 0; i < 5; ++i) {
       InsertOnePacketOfSilence(codec.id);
       for (int k = 0; k < num_10ms_frames; ++k) {
-        EXPECT_EQ(0, receiver_->GetAudio(output_sample_rate_hz, &frame));
+        EXPECT_EQ(0,
+                  receiver_->GetAudio(output_sample_rate_hz, &frame, &muted));
         EXPECT_EQ(expected_output_ts, frame.timestamp_);
         expected_output_ts += 10 * samples_per_ms;
         EXPECT_EQ(10 * samples_per_ms, frame.samples_per_channel_);
@@ -340,6 +343,7 @@ class AcmReceiverTestFaxModeOldApi : public AcmReceiverTestOldApi {
         EXPECT_EQ(output_channels, frame.num_channels_);
         EXPECT_EQ(AudioFrame::kNormalSpeech, frame.speech_type_);
         EXPECT_EQ(expected_vad_activity, frame.vad_activity_);
+        EXPECT_FALSE(muted);
       }
     }
   }
@@ -388,8 +392,10 @@ TEST_F(AcmReceiverTestOldApi, MAYBE_PostdecodingVad) {
   AudioFrame frame;
   for (int n = 0; n < kNumPackets; ++n) {
     InsertOnePacketOfSilence(codec.id);
-    for (int k = 0; k < num_10ms_frames; ++k)
-      ASSERT_EQ(0, receiver_->GetAudio(codec.inst.plfreq, &frame));
+    for (int k = 0; k < num_10ms_frames; ++k) {
+      bool muted;
+      ASSERT_EQ(0, receiver_->GetAudio(codec.inst.plfreq, &frame, &muted));
+    }
   }
   EXPECT_EQ(AudioFrame::kVadPassive, frame.vad_activity_);
 }
@@ -417,8 +423,10 @@ TEST_F(AcmReceiverTestPostDecodeVadPassiveOldApi, MAYBE_PostdecodingVad) {
   AudioFrame frame;
   for (int n = 0; n < kNumPackets; ++n) {
     InsertOnePacketOfSilence(codec.id);
-    for (int k = 0; k < num_10ms_frames; ++k)
-      ASSERT_EQ(0, receiver_->GetAudio(codec.inst.plfreq, &frame));
+    for (int k = 0; k < num_10ms_frames; ++k) {
+      bool muted;
+      ASSERT_EQ(0, receiver_->GetAudio(codec.inst.plfreq, &frame, &muted));
+    }
   }
   EXPECT_EQ(AudioFrame::kVadUnknown, frame.vad_activity_);
 }
