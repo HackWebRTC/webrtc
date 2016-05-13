@@ -43,7 +43,8 @@ void PacketRouter::RemoveRtpModule(RtpRtcp* rtp_module) {
 bool PacketRouter::TimeToSendPacket(uint32_t ssrc,
                                     uint16_t sequence_number,
                                     int64_t capture_timestamp,
-                                    bool retransmission) {
+                                    bool retransmission,
+                                    int probe_cluster_id) {
   RTC_DCHECK(pacer_thread_checker_.CalledOnValidThread());
   rtc::CritScope cs(&modules_crit_);
   for (auto* rtp_module : rtp_modules_) {

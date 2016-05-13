@@ -276,7 +276,8 @@ void PacedVideoSender::QueuePackets(Packets* batch,
 bool PacedVideoSender::TimeToSendPacket(uint32_t ssrc,
                                         uint16_t sequence_number,
                                         int64_t capture_time_ms,
-                                        bool retransmission) {
+                                        bool retransmission,
+                                        int probe_cluster_id) {
   for (Packets::iterator it = pacer_queue_.begin(); it != pacer_queue_.end();
        ++it) {
     MediaPacket* media_packet = static_cast<MediaPacket*>(*it);

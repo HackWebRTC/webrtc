@@ -53,7 +53,7 @@ TEST_F(PacketRouterTest, TimeToSendPacket) {
       .WillOnce(Return(true));
   EXPECT_CALL(rtp_2, TimeToSendPacket(_, _, _, _)).Times(0);
   EXPECT_TRUE(packet_router_->TimeToSendPacket(kSsrc1, sequence_number,
-                                               timestamp, retransmission));
+                                               timestamp, retransmission, -1));
 
   // Send on the second module by letting rtp_2 be sending, but not rtp_1.
   ++sequence_number;
@@ -69,7 +69,7 @@ TEST_F(PacketRouterTest, TimeToSendPacket) {
       .Times(1)
       .WillOnce(Return(true));
   EXPECT_TRUE(packet_router_->TimeToSendPacket(kSsrc2, sequence_number,
-                                               timestamp, retransmission));
+                                               timestamp, retransmission, -1));
 
   // No module is sending, hence no packet should be sent.
   EXPECT_CALL(rtp_1, SendingMedia()).Times(1).WillOnce(Return(false));
@@ -77,7 +77,7 @@ TEST_F(PacketRouterTest, TimeToSendPacket) {
   EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(false));
   EXPECT_CALL(rtp_2, TimeToSendPacket(_, _, _, _)).Times(0);
   EXPECT_TRUE(packet_router_->TimeToSendPacket(kSsrc1, sequence_number,
-                                               timestamp, retransmission));
+                                               timestamp, retransmission, -1));
 
   // Add a packet with incorrect ssrc and test it's dropped in the router.
   EXPECT_CALL(rtp_1, SendingMedia()).Times(1).WillOnce(Return(true));
@@ -87,7 +87,7 @@ TEST_F(PacketRouterTest, TimeToSendPacket) {
   EXPECT_CALL(rtp_1, TimeToSendPacket(_, _, _, _)).Times(0);
   EXPECT_CALL(rtp_2, TimeToSendPacket(_, _, _, _)).Times(0);
   EXPECT_TRUE(packet_router_->TimeToSendPacket(kSsrc1 + kSsrc2, sequence_number,
-                                               timestamp, retransmission));
+                                               timestamp, retransmission, -1));
 
   packet_router_->RemoveRtpModule(&rtp_1);
 
@@ -97,7 +97,7 @@ TEST_F(PacketRouterTest, TimeToSendPacket) {
   EXPECT_CALL(rtp_2, SSRC()).Times(1).WillOnce(Return(kSsrc2));
   EXPECT_CALL(rtp_2, TimeToSendPacket(_, _, _, _)).Times(0);
   EXPECT_TRUE(packet_router_->TimeToSendPacket(kSsrc1, sequence_number,
-                                               timestamp, retransmission));
+                                               timestamp, retransmission, -1));
 
   packet_router_->RemoveRtpModule(&rtp_2);
 }
@@ -167,7 +167,7 @@ TEST_F(PacketRouterTest, SenderOnlyFunctionsRespectSendingMedia) {
 
   // Verify that TimeToSendPacket does not end up in a receiver.
   EXPECT_CALL(rtp, TimeToSendPacket(_, _, _, _)).Times(0);
-  EXPECT_TRUE(packet_router_->TimeToSendPacket(kSsrc, 1, 1, false));
+  EXPECT_TRUE(packet_router_->TimeToSendPacket(kSsrc, 1, 1, false, -1));
   // Verify that TimeToSendPadding does not end up in a receiver.
   EXPECT_CALL(rtp, TimeToSendPadding(_)).Times(0);
   EXPECT_EQ(0u, packet_router_->TimeToSendPadding(200));

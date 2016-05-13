@@ -71,7 +71,7 @@ class BitrateProber {
   std::queue<ProbeCluster> clusters_;
   size_t packet_size_last_send_;
   int64_t time_last_send_ms_;
-  int cluster_id_;
+  int next_cluster_id_;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_PACING_BITRATE_PROBER_H_

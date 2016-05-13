@@ -35,7 +35,7 @@ BitrateProber::BitrateProber()
     : probing_state_(kDisabled),
       packet_size_last_send_(0),
       time_last_send_ms_(-1),
-      cluster_id_(0) {}
+      next_cluster_id_(0) {}
 
 void BitrateProber::SetEnabled(bool enable) {
   if (enable) {
@@ -67,16 +67,16 @@ void BitrateProber::OnIncomingPacket(uint32_t bitrate_bps,
   const int kPacketsPerProbe = 5;
   const float kProbeBitrateMultipliers[kMaxNumProbes] = {3, 6};
   std::stringstream bitrate_log;
-  bitrate_log << "Start probing for bandwidth, bitrates:";
+  bitrate_log << "Start probing for bandwidth, (bitrate:packets): ";
   for (int i = 0; i < kMaxNumProbes; ++i) {
     ProbeCluster cluster;
     // We need one extra to get 5 deltas for the first probe, therefore (i == 0)
     cluster.max_probe_packets = kPacketsPerProbe + (i == 0 ? 1 : 0);
     cluster.probe_bitrate_bps = kProbeBitrateMultipliers[i] * bitrate_bps;
-    cluster.id = cluster_id_++;
+    cluster.id = next_cluster_id_++;
 
-    bitrate_log << " " << cluster.probe_bitrate_bps;
-    bitrate_log << ", num packets: " << cluster.max_probe_packets;
+    bitrate_log << "(" << cluster.probe_bitrate_bps << ":"
+                << cluster.max_probe_packets << ") ";
 
     clusters_.push(cluster);
   }

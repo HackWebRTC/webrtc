@@ -43,7 +43,8 @@ class PacketRouter : public PacedSender::PacketSender,
   bool TimeToSendPacket(uint32_t ssrc,
                         uint16_t sequence_number,
                         int64_t capture_timestamp,
-                        bool retransmission) override;
+                        bool retransmission,
+                        int probe_cluster_id) override;
 
   size_t TimeToSendPadding(size_t bytes) override;
 

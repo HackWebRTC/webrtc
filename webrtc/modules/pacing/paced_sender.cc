@@ -399,8 +399,10 @@ void PacedSender::Process() {
     // element from the priority queue but keep it in storage, so that we can
     // reinsert it if send fails.
     const paced_sender::Packet& packet = packets_->BeginPop();
+    int probe_cluster_id =
+        prober_->IsProbing() ? prober_->CurrentClusterId() : -1;
 
-    if (SendPacket(packet)) {
+    if (SendPacket(packet, probe_cluster_id)) {
       // Send succeeded, remove it from the queue.
       packets_->FinalizePop(packet);
       if (prober_->IsProbing())
@@ -427,7 +429,8 @@ void PacedSender::Process() {
     SendPadding(static_cast<size_t>(padding_needed));
 }
 
-bool PacedSender::SendPacket(const paced_sender::Packet& packet) {
+bool PacedSender::SendPacket(const paced_sender::Packet& packet,
+                             int probe_cluster_id) {
   // TODO(holmer): Because of this bug issue 5307 we have to send audio
   // packets even when the pacer is paused. Here we assume audio packets are
   // always high priority and that they are the only high priority packets.
@@ -436,7 +439,7 @@ bool PacedSender::SendPacket(const paced_sender::Packet& packet) {
   critsect_->Leave();
   const bool success = packet_sender_->TimeToSendPacket(
       packet.ssrc, packet.sequence_number, packet.capture_time_ms,
-      packet.retransmission);
+      packet.retransmission, probe_cluster_id);
   critsect_->Enter();
 
   if (success) {
