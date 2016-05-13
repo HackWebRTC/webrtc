@@ -162,7 +162,6 @@
               'base/transport_unittest.cc',
               'base/transportcontroller_unittest.cc',
               'base/transportdescriptionfactory_unittest.cc',
-              'base/tcpport_unittest.cc',
               'base/turnport_unittest.cc',
               'client/fakeportallocator.h',
               'client/portallocator_unittest.cc',

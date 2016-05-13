@@ -578,9 +578,7 @@ AsyncSocket* VirtualSocketServer::CreateAsyncSocket(int family, int type) {
 }
 
 VirtualSocket* VirtualSocketServer::CreateSocketInternal(int family, int type) {
-  VirtualSocket* socket = new VirtualSocket(this, family, type, true);
-  SignalSocketCreated(socket);
-  return socket;
+  return new VirtualSocket(this, family, type, true);
 }
 
 void VirtualSocketServer::SetMessageQueue(MessageQueue* msg_queue) {
