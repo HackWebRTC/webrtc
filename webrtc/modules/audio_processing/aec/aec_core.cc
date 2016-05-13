@@ -986,6 +986,119 @@ static void EchoSubtraction(int num_partitions,
   memcpy(echo_subtractor_output, e, sizeof(float) * PART_LEN);
 }
 
+static void FormSuppressionGain(AecCore* aec,
+                                float cohde[PART_LEN1],
+                                float cohxd[PART_LEN1],
+                                float hNl[PART_LEN1]) {
+  float hNlDeAvg, hNlXdAvg;
+  float hNlPref[kPrefBandSize];
+  float hNlFb = 0, hNlFbLow = 0;
+  const int prefBandSize = kPrefBandSize / aec->mult;
+  const float prefBandQuant = 0.75f, prefBandQuantLow = 0.5f;
+  const int minPrefBand = 4 / aec->mult;
+  // Power estimate smoothing coefficients.
+  const float* min_overdrive = aec->extended_filter_enabled
+                                   ? kExtendedMinOverDrive
+                                   : kNormalMinOverDrive;
+
+  hNlXdAvg = 0;
+  for (int i = minPrefBand; i < prefBandSize + minPrefBand; ++i) {
+    hNlXdAvg += cohxd[i];
+  }
+  hNlXdAvg /= prefBandSize;
+  hNlXdAvg = 1 - hNlXdAvg;
+
+  hNlDeAvg = 0;
+  for (int i = minPrefBand; i < prefBandSize + minPrefBand; ++i) {
+    hNlDeAvg += cohde[i];
+  }
+  hNlDeAvg /= prefBandSize;
+
+  if (hNlXdAvg < 0.75f && hNlXdAvg < aec->hNlXdAvgMin) {
+    aec->hNlXdAvgMin = hNlXdAvg;
+  }
+
+  if (hNlDeAvg > 0.98f && hNlXdAvg > 0.9f) {
+    aec->stNearState = 1;
+  } else if (hNlDeAvg < 0.95f || hNlXdAvg < 0.8f) {
+    aec->stNearState = 0;
+  }
+
+  if (aec->hNlXdAvgMin == 1) {
+    aec->echoState = 0;
+    aec->overDrive = min_overdrive[aec->nlp_mode];
+
+    if (aec->stNearState == 1) {
+      memcpy(hNl, cohde, sizeof(hNl[0]) * PART_LEN1);
+      hNlFb = hNlDeAvg;
+      hNlFbLow = hNlDeAvg;
+    } else {
+      for (int i = 0; i < PART_LEN1; ++i) {
+        hNl[i] = 1 - cohxd[i];
+      }
+      hNlFb = hNlXdAvg;
+      hNlFbLow = hNlXdAvg;
+    }
+  } else {
+    if (aec->stNearState == 1) {
+      aec->echoState = 0;
+      memcpy(hNl, cohde, sizeof(hNl[0]) * PART_LEN1);
+      hNlFb = hNlDeAvg;
+      hNlFbLow = hNlDeAvg;
+    } else {
+      aec->echoState = 1;
+      for (int i = 0; i < PART_LEN1; ++i) {
+        hNl[i] = WEBRTC_SPL_MIN(cohde[i], 1 - cohxd[i]);
+      }
+
+      // Select an order statistic from the preferred bands.
+      // TODO(peah): Using quicksort now, but a selection algorithm may be
+      // preferred.
+      memcpy(hNlPref, &hNl[minPrefBand], sizeof(float) * prefBandSize);
+      qsort(hNlPref, prefBandSize, sizeof(float), CmpFloat);
+      hNlFb = hNlPref[static_cast<int>(floor(prefBandQuant *
+                                             (prefBandSize - 1)))];
+      hNlFbLow = hNlPref[static_cast<int>(floor(prefBandQuantLow *
+                                                (prefBandSize - 1)))];
+    }
+  }
+
+  // Track the local filter minimum to determine suppression overdrive.
+  if (hNlFbLow < 0.6f && hNlFbLow < aec->hNlFbLocalMin) {
+    aec->hNlFbLocalMin = hNlFbLow;
+    aec->hNlFbMin = hNlFbLow;
+    aec->hNlNewMin = 1;
+    aec->hNlMinCtr = 0;
+  }
+  aec->hNlFbLocalMin =
+      WEBRTC_SPL_MIN(aec->hNlFbLocalMin + 0.0008f / aec->mult, 1);
+  aec->hNlXdAvgMin = WEBRTC_SPL_MIN(aec->hNlXdAvgMin + 0.0006f / aec->mult, 1);
+
+  if (aec->hNlNewMin == 1) {
+    aec->hNlMinCtr++;
+  }
+  if (aec->hNlMinCtr == 2) {
+    aec->hNlNewMin = 0;
+    aec->hNlMinCtr = 0;
+    aec->overDrive =
+        WEBRTC_SPL_MAX(kTargetSupp[aec->nlp_mode] /
+                       static_cast<float>(log(aec->hNlFbMin + 1e-10f) + 1e-10f),
+                       min_overdrive[aec->nlp_mode]);
+  }
+
+  // Smooth the overdrive.
+  if (aec->overDrive < aec->overdrive_scaling) {
+    aec->overdrive_scaling =
+        0.99f * aec->overdrive_scaling + 0.01f * aec->overDrive;
+  } else {
+    aec->overdrive_scaling =
+        0.9f * aec->overdrive_scaling + 0.1f * aec->overDrive;
+  }
+
+  // Apply the overdrive.
+  WebRtcAec_Overdrive(aec->overdrive_scaling, hNlFb, hNl);
+}
+
 static void EchoSuppression(AecCore* aec,
                             float farend[PART_LEN2],
                             float* echo_subtractor_output,
@@ -1002,17 +1115,7 @@ static void EchoSuppression(AecCore* aec,
 
   // Coherence and non-linear filter
   float cohde[PART_LEN1], cohxd[PART_LEN1];
-  float hNlDeAvg, hNlXdAvg;
   float hNl[PART_LEN1];
-  float hNlPref[kPrefBandSize];
-  float hNlFb = 0, hNlFbLow = 0;
-  const float prefBandQuant = 0.75f, prefBandQuantLow = 0.5f;
-  const int prefBandSize = kPrefBandSize / aec->mult;
-  const int minPrefBand = 4 / aec->mult;
-  // Power estimate smoothing coefficients.
-  const float* min_overdrive = aec->extended_filter_enabled
-                                   ? kExtendedMinOverDrive
-                                   : kNormalMinOverDrive;
 
   // Filter energy
   const int delayEstInterval = 10 * aec->mult;
@@ -1067,101 +1170,8 @@ static void EchoSuppression(AecCore* aec,
     memcpy(efw, dfw, sizeof(efw[0][0]) * 2 * PART_LEN1);
   }
 
-  hNlXdAvg = 0;
-  for (i = minPrefBand; i < prefBandSize + minPrefBand; i++) {
-    hNlXdAvg += cohxd[i];
-  }
-  hNlXdAvg /= prefBandSize;
-  hNlXdAvg = 1 - hNlXdAvg;
+  FormSuppressionGain(aec, cohde, cohxd, hNl);
 
-  hNlDeAvg = 0;
-  for (i = minPrefBand; i < prefBandSize + minPrefBand; i++) {
-    hNlDeAvg += cohde[i];
-  }
-  hNlDeAvg /= prefBandSize;
-
-  if (hNlXdAvg < 0.75f && hNlXdAvg < aec->hNlXdAvgMin) {
-    aec->hNlXdAvgMin = hNlXdAvg;
-  }
-
-  if (hNlDeAvg > 0.98f && hNlXdAvg > 0.9f) {
-    aec->stNearState = 1;
-  } else if (hNlDeAvg < 0.95f || hNlXdAvg < 0.8f) {
-    aec->stNearState = 0;
-  }
-
-  if (aec->hNlXdAvgMin == 1) {
-    aec->echoState = 0;
-    aec->overDrive = min_overdrive[aec->nlp_mode];
-
-    if (aec->stNearState == 1) {
-      memcpy(hNl, cohde, sizeof(hNl));
-      hNlFb = hNlDeAvg;
-      hNlFbLow = hNlDeAvg;
-    } else {
-      for (i = 0; i < PART_LEN1; i++) {
-        hNl[i] = 1 - cohxd[i];
-      }
-      hNlFb = hNlXdAvg;
-      hNlFbLow = hNlXdAvg;
-    }
-  } else {
-    if (aec->stNearState == 1) {
-      aec->echoState = 0;
-      memcpy(hNl, cohde, sizeof(hNl));
-      hNlFb = hNlDeAvg;
-      hNlFbLow = hNlDeAvg;
-    } else {
-      aec->echoState = 1;
-      for (i = 0; i < PART_LEN1; i++) {
-        hNl[i] = WEBRTC_SPL_MIN(cohde[i], 1 - cohxd[i]);
-      }
-
-      // Select an order statistic from the preferred bands.
-      // TODO(peah): Using quicksort now, but a selection algorithm may be
-      // preferred.
-      memcpy(hNlPref, &hNl[minPrefBand], sizeof(float) * prefBandSize);
-      qsort(hNlPref, prefBandSize, sizeof(float), CmpFloat);
-      hNlFb = hNlPref[static_cast<int>(floor(prefBandQuant *
-                                             (prefBandSize - 1)))];
-      hNlFbLow = hNlPref[static_cast<int>(floor(prefBandQuantLow *
-                                                (prefBandSize - 1)))];
-    }
-  }
-
-  // Track the local filter minimum to determine suppression overdrive.
-  if (hNlFbLow < 0.6f && hNlFbLow < aec->hNlFbLocalMin) {
-    aec->hNlFbLocalMin = hNlFbLow;
-    aec->hNlFbMin = hNlFbLow;
-    aec->hNlNewMin = 1;
-    aec->hNlMinCtr = 0;
-  }
-  aec->hNlFbLocalMin =
-      WEBRTC_SPL_MIN(aec->hNlFbLocalMin + 0.0008f / aec->mult, 1);
-  aec->hNlXdAvgMin = WEBRTC_SPL_MIN(aec->hNlXdAvgMin + 0.0006f / aec->mult, 1);
-
-  if (aec->hNlNewMin == 1) {
-    aec->hNlMinCtr++;
-  }
-  if (aec->hNlMinCtr == 2) {
-    aec->hNlNewMin = 0;
-    aec->hNlMinCtr = 0;
-    aec->overDrive =
-        WEBRTC_SPL_MAX(kTargetSupp[aec->nlp_mode] /
-                       static_cast<float>(log(aec->hNlFbMin + 1e-10f) + 1e-10f),
-                       min_overdrive[aec->nlp_mode]);
-  }
-
-  // Smooth the overdrive.
-  if (aec->overDrive < aec->overdrive_scaling) {
-    aec->overdrive_scaling =
-        0.99f * aec->overdrive_scaling + 0.01f * aec->overDrive;
-  } else {
-    aec->overdrive_scaling =
-        0.9f * aec->overdrive_scaling + 0.1f * aec->overDrive;
-  }
-
-  WebRtcAec_Overdrive(aec->overdrive_scaling, hNlFb, hNl);
   WebRtcAec_Suppress(hNl, efw);
 
   // Add comfort noise.
