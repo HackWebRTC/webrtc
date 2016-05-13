@@ -53,55 +53,61 @@ class BitrateAllocator {
   // |observer| updates bitrates if already in use.
   // |min_bitrate_bps| = 0 equals no min bitrate.
   // |max_bitrate_bps| = 0 equals no max bitrate.
-  // Returns bitrate allocated for the bitrate observer.
+  // |enforce_min_bitrate| = 'true' will allocate at least |min_bitrate_bps| for
+  //    this observer, even if the BWE is too low, 'false' will allocate 0 to
+  //    the observer if BWE doesn't allow |min_bitrate_bps|.
+  // Returns bitrate allocated for |observer|.
   int AddObserver(BitrateAllocatorObserver* observer,
                   uint32_t min_bitrate_bps,
-                  uint32_t max_bitrate_bps);
+                  uint32_t max_bitrate_bps,
+                  bool enforce_min_bitrate);
 
   void RemoveObserver(BitrateAllocatorObserver* observer);
+
+ private:
+  struct ObserverConfig {
+    ObserverConfig(BitrateAllocatorObserver* observer,
+                   uint32_t min_bitrate_bps,
+                   uint32_t max_bitrate_bps,
+                   bool enforce_min_bitrate)
+        : observer(observer),
+          min_bitrate_bps(min_bitrate_bps),
+          max_bitrate_bps(max_bitrate_bps),
+          enforce_min_bitrate(enforce_min_bitrate) {}
+    BitrateAllocatorObserver* const observer;
+    uint32_t min_bitrate_bps;
+    uint32_t max_bitrate_bps;
+    bool enforce_min_bitrate;
+  };
 
   // This method controls the behavior when the available bitrate is lower than
   // the minimum bitrate, or the sum of minimum bitrates.
   // When true, the bitrate will never be set lower than the minimum bitrate(s).
   // When false, the bitrate observers will be allocated rates up to their
   // respective minimum bitrate, satisfying one observer after the other.
-  void EnforceMinBitrate(bool enforce_min_bitrate);
+  void EnforceMinBitrate(bool enforce_min_bitrate)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
- private:
-  struct BitrateConfiguration {
-    BitrateConfiguration(uint32_t min_bitrate, uint32_t max_bitrate)
-        : min_bitrate(min_bitrate), max_bitrate(max_bitrate) {}
-    uint32_t min_bitrate;
-    uint32_t max_bitrate;
-  };
-  struct ObserverConfiguration {
-    ObserverConfiguration(BitrateAllocatorObserver* observer, uint32_t bitrate)
-        : observer(observer), min_bitrate(bitrate) {}
-    BitrateAllocatorObserver* const observer;
-    uint32_t min_bitrate;
-  };
-  typedef std::pair<BitrateAllocatorObserver*, BitrateConfiguration>
-      BitrateObserverConfiguration;
-  typedef std::list<BitrateObserverConfiguration> BitrateObserverConfList;
-  typedef std::multimap<uint32_t, ObserverConfiguration> ObserverSortingMap;
-  typedef std::map<BitrateAllocatorObserver*, int> ObserverBitrateMap;
-
-  BitrateObserverConfList::iterator FindObserverConfigurationPair(
+  typedef std::list<ObserverConfig> ObserverConfigList;
+  ObserverConfigList::iterator FindObserverConfig(
       const BitrateAllocatorObserver* observer)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-  ObserverBitrateMap AllocateBitrates() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-  ObserverBitrateMap NormalRateAllocation(uint32_t bitrate,
+
+  typedef std::multimap<uint32_t, const ObserverConfig*> ObserverSortingMap;
+  typedef std::map<BitrateAllocatorObserver*, int> ObserverAllocation;
+
+  ObserverAllocation AllocateBitrates() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  ObserverAllocation NormalRateAllocation(uint32_t bitrate,
                                           uint32_t sum_min_bitrates)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
-  ObserverBitrateMap ZeroRateAllocation() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-  ObserverBitrateMap LowRateAllocation(uint32_t bitrate)
+  ObserverAllocation ZeroRateAllocation() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  ObserverAllocation LowRateAllocation(uint32_t bitrate)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   rtc::CriticalSection crit_sect_;
   // Stored in a list to keep track of the insertion order.
-  BitrateObserverConfList bitrate_observers_ GUARDED_BY(crit_sect_);
-  bool bitrate_observers_modified_ GUARDED_BY(crit_sect_);
+  ObserverConfigList bitrate_observer_configs_;
   bool enforce_min_bitrate_ GUARDED_BY(crit_sect_);
   uint32_t last_bitrate_bps_ GUARDED_BY(crit_sect_);
   uint8_t last_fraction_loss_ GUARDED_BY(crit_sect_);

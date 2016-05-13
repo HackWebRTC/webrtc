@@ -562,7 +562,8 @@ void VideoSendStream::EncoderProcess() {
       encoder_settings->video_codec.startBitrate =
           bitrate_allocator_->AddObserver(
               this, encoder_settings->video_codec.minBitrate * 1000,
-              encoder_settings->video_codec.maxBitrate * 1000) /
+              encoder_settings->video_codec.maxBitrate * 1000,
+              !config_.suspend_below_min_bitrate) /
           1000;
 
       payload_router_.SetSendStreams(encoder_settings->streams);
@@ -570,16 +571,16 @@ void VideoSendStream::EncoderProcess() {
                               encoder_settings->min_transmit_bitrate_bps,
                               payload_router_.MaxPayloadLength(), this);
 
+      // vie_encoder_.SetEncoder must be called before this.
+      if (config_.suspend_below_min_bitrate)
+        video_sender_->SuspendBelowMinBitrate();
+
       // Clear stats for disabled layers.
       for (size_t i = encoder_settings->streams.size();
            i < config_.rtp.ssrcs.size(); ++i) {
         stats_proxy_.OnInactiveSsrc(config_.rtp.ssrcs[i]);
       }
 
-      if (config_.suspend_below_min_bitrate) {
-        video_sender_->SuspendBelowMinBitrate();
-        bitrate_allocator_->EnforceMinBitrate(false);
-      }
       // We might've gotten new settings while configuring the encoder settings,
       // restart from the top to see if that's the case before trying to encode
       // a frame (which might correspond to the last frame size).
