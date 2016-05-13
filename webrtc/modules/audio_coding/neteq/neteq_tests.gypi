@@ -14,8 +14,11 @@
           'target_name': 'rtc_event_log_source',
           'type': 'static_library',
           'dependencies': [
-            '<(webrtc_root)/webrtc.gyp:rtc_event_log',
+            '<(webrtc_root)/webrtc.gyp:rtc_event_log_parser',
             '<(webrtc_root)/webrtc.gyp:rtc_event_log_proto',
+          ],
+          'export_dependent_settings': [
+            '<(webrtc_root)/webrtc.gyp:rtc_event_log_parser',
           ],
           'sources': [
             'tools/rtc_event_log_source.h',

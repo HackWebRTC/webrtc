@@ -213,10 +213,12 @@
           ],
           'dependencies': [
             'webrtc.gyp:rtc_event_log',
+            'webrtc.gyp:rtc_event_log_parser',
             'webrtc.gyp:rtc_event_log_proto',
           ],
           'sources': [
             'call/rtc_event_log_unittest.cc',
+            'call/rtc_event_log_unittest_helper.cc'
           ],
         }],
       ],

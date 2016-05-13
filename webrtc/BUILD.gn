@@ -282,6 +282,29 @@ source_set("rtc_event_log") {
   }
 }
 
+if (rtc_enable_protobuf) {
+  source_set("rtc_event_log_parser") {
+    sources = [
+      "call/rtc_event_log_parser.cc",
+      "call/rtc_event_log_parser.h",
+    ]
+
+    configs += [ ":common_config" ]
+    public_configs = [ ":common_inherited_config" ]
+
+    deps = [
+      ":rtc_event_log_proto",
+      ":webrtc_common",
+    ]
+
+    if (is_clang && !is_nacl) {
+      # Suppress warnings from Chrome's Clang plugins.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+}
+
 if (use_libfuzzer || use_drfuzz) {
   # This target is only here for gn to discover fuzzer build targets under
   # webrtc/test/fuzzers/.

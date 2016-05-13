@@ -15,16 +15,11 @@
 
 #include "gflags/gflags.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/call.h"
 #include "webrtc/call/rtc_event_log.h"
+#include "webrtc/call/rtc_event_log_parser.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/test/rtp_file_writer.h"
-
-// Files generated at build-time by the protobuf compiler.
-#ifdef WEBRTC_ANDROID_PLATFORM_BUILD
-#include "external/webrtc/webrtc/call/rtc_event_log.pb.h"
-#else
-#include "webrtc/call/rtc_event_log.pb.h"
-#endif
 
 namespace {
 
@@ -94,8 +89,8 @@ int main(int argc, char* argv[]) {
     RTC_CHECK(ParseSsrc(FLAGS_ssrc, &ssrc_filter))
         << "Flag verification has failed.";
 
-  webrtc::rtclog::EventStream event_stream;
-  if (!webrtc::RtcEventLog::ParseRtcEventLog(input_file, &event_stream)) {
+  webrtc::ParsedRtcEventLog parsed_stream;
+  if (!parsed_stream.ParseFile(input_file)) {
     std::cerr << "Error while parsing input file: " << input_file << std::endl;
     return -1;
   }
@@ -110,94 +105,78 @@ int main(int argc, char* argv[]) {
     return -1;
   }
 
-  std::cout << "Found " << event_stream.stream_size()
+  std::cout << "Found " << parsed_stream.GetNumberOfEvents()
             << " events in the input file." << std::endl;
   int rtp_counter = 0, rtcp_counter = 0;
   bool header_only = false;
-  // TODO(ivoc): This can be refactored once the packet interpretation
-  //             functions are finished.
-  for (int i = 0; i < event_stream.stream_size(); i++) {
-    const webrtc::rtclog::Event& event = event_stream.stream(i);
-    if (!FLAGS_nortp && event.has_type() && event.type() == event.RTP_EVENT) {
-      if (event.has_timestamp_us() && event.has_rtp_packet() &&
-          event.rtp_packet().has_header() &&
-          event.rtp_packet().header().size() >= 12 &&
-          event.rtp_packet().has_packet_length() &&
-          event.rtp_packet().has_type()) {
-        const webrtc::rtclog::RtpPacket& rtp_packet = event.rtp_packet();
-        if (FLAGS_noaudio && rtp_packet.type() == webrtc::rtclog::AUDIO)
-          continue;
-        if (FLAGS_novideo && rtp_packet.type() == webrtc::rtclog::VIDEO)
-          continue;
-        if (FLAGS_nodata && rtp_packet.type() == webrtc::rtclog::DATA)
-          continue;
-        if (!FLAGS_ssrc.empty()) {
-          const uint32_t packet_ssrc =
-              webrtc::ByteReader<uint32_t>::ReadBigEndian(
-                  reinterpret_cast<const uint8_t*>(rtp_packet.header().data() +
-                                                   8));
-          if (packet_ssrc != ssrc_filter)
-            continue;
-        }
+  for (size_t i = 0; i < parsed_stream.GetNumberOfEvents(); i++) {
+    // The parsed_stream will assert if the protobuf event is missing
+    // some required fields and we attempt to access them. We could consider
+    // a softer failure option, but it does not seem useful to generate
+    // RTP dumps based on broken event logs.
+    if (!FLAGS_nortp &&
+        parsed_stream.GetEventType(i) == webrtc::ParsedRtcEventLog::RTP_EVENT) {
+      webrtc::test::RtpPacket packet;
+      webrtc::PacketDirection direction;
+      webrtc::MediaType media_type;
+      parsed_stream.GetRtpHeader(i, &direction, &media_type, packet.data,
+                                 &packet.length, &packet.original_length);
+      if (packet.original_length > packet.length)
+        header_only = true;
+      packet.time_ms = parsed_stream.GetTimestamp(i) / 1000;
 
-        webrtc::test::RtpPacket packet;
-        packet.length = rtp_packet.header().size();
-        if (packet.length > packet.kMaxPacketBufferSize) {
-          std::cout << "Skipping packet with size " << packet.length
-                    << ", the maximum supported size is "
-                    << packet.kMaxPacketBufferSize << std::endl;
+      // TODO(terelius): Maybe add a flag to dump outgoing traffic instead?
+      if (direction == webrtc::kOutgoingPacket)
+        continue;
+      if (FLAGS_noaudio && media_type == webrtc::MediaType::AUDIO)
+        continue;
+      if (FLAGS_novideo && media_type == webrtc::MediaType::VIDEO)
+        continue;
+      if (FLAGS_nodata && media_type == webrtc::MediaType::DATA)
+        continue;
+      if (!FLAGS_ssrc.empty()) {
+        const uint32_t packet_ssrc =
+            webrtc::ByteReader<uint32_t>::ReadBigEndian(
+                reinterpret_cast<const uint8_t*>(packet.data + 8));
+        if (packet_ssrc != ssrc_filter)
           continue;
-        }
-        packet.original_length = rtp_packet.packet_length();
-        if (packet.original_length > packet.length)
-          header_only = true;
-        packet.time_ms = event.timestamp_us() / 1000;
-        memcpy(packet.data, rtp_packet.header().data(), packet.length);
-        rtp_writer->WritePacket(&packet);
-        rtp_counter++;
-      } else {
-        std::cout << "Skipping malformed event." << std::endl;
       }
+
+      rtp_writer->WritePacket(&packet);
+      rtp_counter++;
     }
-    if (!FLAGS_nortcp && event.has_type() && event.type() == event.RTCP_EVENT) {
-      if (event.has_timestamp_us() && event.has_rtcp_packet() &&
-          event.rtcp_packet().has_type() &&
-          event.rtcp_packet().has_packet_data() &&
-          event.rtcp_packet().packet_data().size() > 0) {
-        const webrtc::rtclog::RtcpPacket& rtcp_packet = event.rtcp_packet();
-        if (FLAGS_noaudio && rtcp_packet.type() == webrtc::rtclog::AUDIO)
-          continue;
-        if (FLAGS_novideo && rtcp_packet.type() == webrtc::rtclog::VIDEO)
-          continue;
-        if (FLAGS_nodata && rtcp_packet.type() == webrtc::rtclog::DATA)
-          continue;
-        if (!FLAGS_ssrc.empty()) {
-          const uint32_t packet_ssrc =
-              webrtc::ByteReader<uint32_t>::ReadBigEndian(
-                  reinterpret_cast<const uint8_t*>(
-                      rtcp_packet.packet_data().data() + 4));
-          if (packet_ssrc != ssrc_filter)
-            continue;
-        }
+    if (!FLAGS_nortcp &&
+        parsed_stream.GetEventType(i) ==
+            webrtc::ParsedRtcEventLog::RTCP_EVENT) {
+      webrtc::test::RtpPacket packet;
+      webrtc::PacketDirection direction;
+      webrtc::MediaType media_type;
+      parsed_stream.GetRtcpPacket(i, &direction, &media_type, packet.data,
+                                  &packet.length);
+      // For RTCP packets the original_length should be set to 0 in the
+      // RTPdump format.
+      packet.original_length = 0;
+      packet.time_ms = parsed_stream.GetTimestamp(i) / 1000;
 
-        webrtc::test::RtpPacket packet;
-        packet.length = rtcp_packet.packet_data().size();
-        if (packet.length > packet.kMaxPacketBufferSize) {
-          std::cout << "Skipping packet with size " << packet.length
-                    << ", the maximum supported size is "
-                    << packet.kMaxPacketBufferSize << std::endl;
+      // TODO(terelius): Maybe add a flag to dump outgoing traffic instead?
+      if (direction == webrtc::kOutgoingPacket)
+        continue;
+      if (FLAGS_noaudio && media_type == webrtc::MediaType::AUDIO)
+        continue;
+      if (FLAGS_novideo && media_type == webrtc::MediaType::VIDEO)
+        continue;
+      if (FLAGS_nodata && media_type == webrtc::MediaType::DATA)
+        continue;
+      if (!FLAGS_ssrc.empty()) {
+        const uint32_t packet_ssrc =
+            webrtc::ByteReader<uint32_t>::ReadBigEndian(
+                reinterpret_cast<const uint8_t*>(packet.data + 4));
+        if (packet_ssrc != ssrc_filter)
           continue;
-        }
-        // For RTCP packets the original_length should be set to 0 in the
-        // RTPdump format.
-        packet.original_length = 0;
-        packet.time_ms = event.timestamp_us() / 1000;
-        memcpy(packet.data, rtcp_packet.packet_data().data(), packet.length);
-        rtp_writer->WritePacket(&packet);
-        rtcp_counter++;
-      } else {
-        std::cout << "Skipping malformed event." << std::endl;
       }
+
+      rtp_writer->WritePacket(&packet);
+      rtcp_counter++;
     }
   }
   std::cout << "Wrote " << rtp_counter << (header_only ? " header-only" : "")

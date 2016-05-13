@@ -67,6 +67,24 @@
         },
       ],
     }],
+    ['enable_protobuf==1', {
+      'targets': [
+        {
+          'target_name': 'rtc_event_log_parser',
+          'type': 'static_library',
+          'sources': [
+            'call/rtc_event_log_parser.cc',
+            'call/rtc_event_log_parser.h',
+          ],
+          'dependencies': [
+            'rtc_event_log_proto',
+          ],
+          'export_dependent_settings': [
+            'rtc_event_log_proto',
+          ],
+        },
+      ],
+    }],
     ['include_tests==1 and enable_protobuf==1', {
       'targets': [
         {
@@ -75,7 +93,7 @@
           'sources': ['call/rtc_event_log2rtp_dump.cc',],
           'dependencies': [
             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
-            'rtc_event_log',
+            'rtc_event_log_parser',
             'rtc_event_log_proto',
             'test/test.gyp:rtp_test_utils'
           ],
