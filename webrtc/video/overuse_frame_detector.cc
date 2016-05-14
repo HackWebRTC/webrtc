@@ -24,9 +24,9 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video_frame.h"
 
-#if defined(WEBRTC_MAC)
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
 #include <mach/mach.h>
-#endif
+#endif  // defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
 
 namespace webrtc {
 
@@ -56,7 +56,7 @@ CpuOveruseOptions::CpuOveruseOptions()
       min_frame_samples(120),
       min_process_count(3),
       high_threshold_consecutive_count(2) {
-#if defined(WEBRTC_MAC)
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
   // This is proof-of-concept code for letting the physical core count affect
   // the interval into which we attempt to scale. For now, the code is Mac OS
   // specific, since that's the platform were we saw most problems.
@@ -90,8 +90,8 @@ CpuOveruseOptions::CpuOveruseOptions()
     high_encode_usage_threshold_percent = 20;  // Roughly 1/4 of 100%.
   else if (n_physical_cores == 2)
     high_encode_usage_threshold_percent = 40;  // Roughly 1/4 of 200%.
+#endif  // defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
 
-#endif  // WEBRTC_MAC
   // Note that we make the interval 2x+epsilon wide, since libyuv scaling steps
   // are close to that (when squared). This wide interval makes sure that
   // scaling up or down does not jump all the way across the interval.
