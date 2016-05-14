@@ -63,8 +63,6 @@ class ViEEncoder : public VideoEncoderRateObserver,
 
   vcm::VideoSender* video_sender();
 
-  void SetNetworkTransmissionState(bool is_transmitting);
-
   // Returns the id of the owning channel.
   int Owner() const;
 
@@ -137,7 +135,6 @@ class ViEEncoder : public VideoEncoderRateObserver,
   VideoCodec encoder_config_ GUARDED_BY(data_cs_);
   int min_transmit_bitrate_bps_ GUARDED_BY(data_cs_);
   uint32_t last_observed_bitrate_bps_ GUARDED_BY(data_cs_);
-  bool network_is_transmitting_ GUARDED_BY(data_cs_);
   bool encoder_paused_ GUARDED_BY(data_cs_);
   bool encoder_paused_and_dropped_frame_ GUARDED_BY(data_cs_);
 

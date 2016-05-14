@@ -228,6 +228,10 @@ int32_t VideoSender::SetChannelParameters(uint32_t target_bitrate,
 }
 
 void VideoSender::SetEncoderParameters(EncoderParameters params) {
+  // |target_bitrate == 0 | means that the network is down or the send pacer is
+  // full.
+  // TODO(perkj): Consider setting |target_bitrate| == 0 to the encoders.
+  // Especially if |encoder_has_internal_source_ | == true.
   if (params.target_bitrate == 0)
     return;
 

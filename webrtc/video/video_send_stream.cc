@@ -491,21 +491,6 @@ VideoSendStream::~VideoSendStream() {
   }
 }
 
-void VideoSendStream::SignalNetworkState(NetworkState state) {
-  // When network goes up, enable RTCP status before setting transmission state.
-  // When it goes down, disable RTCP afterwards. This ensures that any packets
-  // sent due to the network state changed will not be dropped.
-  if (state == kNetworkUp) {
-    for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-      rtp_rtcp->SetRTCPStatus(config_.rtp.rtcp_mode);
-  }
-  vie_encoder_.SetNetworkTransmissionState(state == kNetworkUp);
-  if (state == kNetworkDown) {
-    for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-      rtp_rtcp->SetRTCPStatus(RtcpMode::kOff);
-  }
-}
-
 bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
     rtp_rtcp->IncomingRtcpPacket(packet, length);
@@ -778,6 +763,13 @@ std::map<uint32_t, RtpState> VideoSendStream::GetRtpStates() const {
   }
 
   return rtp_states;
+}
+
+void VideoSendStream::SignalNetworkState(NetworkState state) {
+  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
+    rtp_rtcp->SetRTCPStatus(state == kNetworkUp ? config_.rtp.rtcp_mode
+                                                : RtcpMode::kOff);
+  }
 }
 
 int VideoSendStream::GetPaddingNeededBps() const {

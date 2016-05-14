@@ -43,7 +43,6 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       encoder_config_(),
       min_transmit_bitrate_bps_(0),
       last_observed_bitrate_bps_(0),
-      network_is_transmitting_(true),
       encoder_paused_(true),
       encoder_paused_and_dropped_frame_(false),
       module_process_thread_(module_process_thread),
@@ -62,13 +61,6 @@ vcm::VideoSender* ViEEncoder::video_sender() {
 
 ViEEncoder::~ViEEncoder() {
   module_process_thread_->DeRegisterModule(&video_sender_);
-}
-
-void ViEEncoder::SetNetworkTransmissionState(bool is_transmitting) {
-  {
-    rtc::CritScope lock(&data_cs_);
-    network_is_transmitting_ = is_transmitting;
-  }
 }
 
 void ViEEncoder::Pause() {
@@ -199,13 +191,9 @@ int ViEEncoder::GetPaddingNeededBps() const {
 bool ViEEncoder::EncoderPaused() const {
   // Pause video if paused by caller or as long as the network is down or the
   // pacer queue has grown too large in buffered mode.
-  if (encoder_paused_) {
-    return true;
-  }
-  if (video_suspended_ || last_observed_bitrate_bps_ == 0) {
-    return true;
-  }
-  return !network_is_transmitting_;
+  // If the pacer queue has grown to large or the network is down,
+  // last_observed_bitrate_bps_ will be 0.
+  return encoder_paused_ || video_suspended_ || last_observed_bitrate_bps_ == 0;
 }
 
 void ViEEncoder::TraceFrameDropStart() {

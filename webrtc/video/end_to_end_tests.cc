@@ -3341,6 +3341,13 @@ TEST_F(EndToEndTest, NewVideoSendStreamsRespectVideoNetworkDown) {
   class UnusedEncoder : public test::FakeEncoder {
    public:
     UnusedEncoder() : FakeEncoder(Clock::GetRealTimeClock()) {}
+
+    int32_t InitEncode(const VideoCodec* config,
+                       int32_t number_of_cores,
+                       size_t max_payload_size) override {
+      EXPECT_GT(config->startBitrate, 0u);
+      return 0;
+    }
     int32_t Encode(const VideoFrame& input_image,
                    const CodecSpecificInfo* codec_specific_info,
                    const std::vector<FrameType>* frame_types) override {

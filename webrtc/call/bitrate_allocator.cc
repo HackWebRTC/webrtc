@@ -28,6 +28,7 @@ BitrateAllocator::BitrateAllocator()
     : bitrate_observer_configs_(),
       enforce_min_bitrate_(true),
       last_bitrate_bps_(kDefaultBitrateBps),
+      last_non_zero_bitrate_bps_(kDefaultBitrateBps),
       last_fraction_loss_(0),
       last_rtt_(0) {}
 
@@ -36,11 +37,13 @@ uint32_t BitrateAllocator::OnNetworkChanged(uint32_t bitrate,
                                             int64_t rtt) {
   rtc::CritScope lock(&crit_sect_);
   last_bitrate_bps_ = bitrate;
+  last_non_zero_bitrate_bps_ =
+      bitrate > 0 ? bitrate : last_non_zero_bitrate_bps_;
   last_fraction_loss_ = fraction_loss;
   last_rtt_ = rtt;
 
   uint32_t allocated_bitrate_bps = 0;
-  ObserverAllocation allocation = AllocateBitrates();
+  ObserverAllocation allocation = AllocateBitrates(bitrate);
   for (const auto& kv : allocation) {
     kv.first->OnBitrateUpdated(kv.second, last_fraction_loss_, last_rtt_);
     allocated_bitrate_bps += kv.second;
@@ -73,12 +76,23 @@ int BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
         observer, min_bitrate_bps, max_bitrate_bps, enforce_min_bitrate));
   }
 
-  ObserverAllocation allocation = AllocateBitrates();
   int new_observer_bitrate_bps = 0;
-  for (auto& kv : allocation) {
-    kv.first->OnBitrateUpdated(kv.second, last_fraction_loss_, last_rtt_);
-    if (kv.first == observer)
-      new_observer_bitrate_bps = kv.second;
+  if (last_bitrate_bps_ > 0) {  // We have a bitrate to allocate.
+    ObserverAllocation allocation = AllocateBitrates(last_bitrate_bps_);
+    for (auto& kv : allocation) {
+      // Update all observers with the new allocation.
+      kv.first->OnBitrateUpdated(kv.second, last_fraction_loss_, last_rtt_);
+      if (kv.first == observer)
+        new_observer_bitrate_bps = kv.second;
+    }
+  } else {
+    // Currently, an encoder is not allowed to produce frames.
+    // But we still have to return the initial config bitrate + let the
+    // observer know that it can not produce frames.
+    ObserverAllocation allocation =
+        AllocateBitrates(last_non_zero_bitrate_bps_);
+    observer->OnBitrateUpdated(0, last_fraction_loss_, last_rtt_);
+    new_observer_bitrate_bps = allocation[observer];
   }
   return new_observer_bitrate_bps;
 }
@@ -106,20 +120,21 @@ BitrateAllocator::FindObserverConfig(
   return bitrate_observer_configs_.end();
 }
 
-BitrateAllocator::ObserverAllocation BitrateAllocator::AllocateBitrates() {
+BitrateAllocator::ObserverAllocation BitrateAllocator::AllocateBitrates(
+    uint32_t bitrate) {
   if (bitrate_observer_configs_.empty())
     return ObserverAllocation();
 
-  if (last_bitrate_bps_ == 0)
+  if (bitrate == 0)
     return ZeroRateAllocation();
 
   uint32_t sum_min_bitrates = 0;
   for (const auto& observer_config : bitrate_observer_configs_)
     sum_min_bitrates += observer_config.min_bitrate_bps;
-  if (last_bitrate_bps_ <= sum_min_bitrates)
-    return LowRateAllocation(last_bitrate_bps_);
+  if (bitrate <= sum_min_bitrates)
+    return LowRateAllocation(bitrate);
 
-  return NormalRateAllocation(last_bitrate_bps_, sum_min_bitrates);
+  return NormalRateAllocation(bitrate, sum_min_bitrates);
 }
 
 BitrateAllocator::ObserverAllocation BitrateAllocator::NormalRateAllocation(

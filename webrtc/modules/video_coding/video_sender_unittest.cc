@@ -292,6 +292,18 @@ TEST_F(TestVideoSenderWithMockEncoder, TestIntraRequests) {
   AddFrame();
 }
 
+TEST_F(TestVideoSenderWithMockEncoder, TestSetRate) {
+  const uint32_t new_bitrate = settings_.startBitrate + 300;
+  EXPECT_CALL(encoder_, SetRates(new_bitrate, _)).Times(1).WillOnce(Return(0));
+  sender_->SetChannelParameters(new_bitrate * 1000, 0, 200);
+  AddFrame();
+
+  // Expect no call to encoder_.SetRates if the new bitrate is zero.
+  EXPECT_CALL(encoder_, SetRates(new_bitrate, _)).Times(0);
+  sender_->SetChannelParameters(0, 0, 200);
+  AddFrame();
+}
+
 TEST_F(TestVideoSenderWithMockEncoder, TestIntraRequestsInternalCapture) {
   // De-register current external encoder.
   sender_->RegisterExternalEncoder(nullptr, kUnusedPayloadType, false);

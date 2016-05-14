@@ -56,7 +56,11 @@ class BitrateAllocator {
   // |enforce_min_bitrate| = 'true' will allocate at least |min_bitrate_bps| for
   //    this observer, even if the BWE is too low, 'false' will allocate 0 to
   //    the observer if BWE doesn't allow |min_bitrate_bps|.
-  // Returns bitrate allocated for |observer|.
+  // Returns initial bitrate allocated for |observer|.
+  // Note that |observer|->OnBitrateUpdated() will be called within the scope of
+  // this method with the current rtt, fraction_loss and available bitrate and
+  // that the bitrate in OnBitrateUpdated will be zero if the |observer| is
+  // currently not allowed to send data.
   int AddObserver(BitrateAllocatorObserver* observer,
                   uint32_t min_bitrate_bps,
                   uint32_t max_bitrate_bps,
@@ -96,7 +100,8 @@ class BitrateAllocator {
   typedef std::multimap<uint32_t, const ObserverConfig*> ObserverSortingMap;
   typedef std::map<BitrateAllocatorObserver*, int> ObserverAllocation;
 
-  ObserverAllocation AllocateBitrates() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  ObserverAllocation AllocateBitrates(uint32_t bitrate)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   ObserverAllocation NormalRateAllocation(uint32_t bitrate,
                                           uint32_t sum_min_bitrates)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
@@ -110,6 +115,7 @@ class BitrateAllocator {
   ObserverConfigList bitrate_observer_configs_;
   bool enforce_min_bitrate_ GUARDED_BY(crit_sect_);
   uint32_t last_bitrate_bps_ GUARDED_BY(crit_sect_);
+  uint32_t last_non_zero_bitrate_bps_ GUARDED_BY(crit_sect_);
   uint8_t last_fraction_loss_ GUARDED_BY(crit_sect_);
   int64_t last_rtt_ GUARDED_BY(crit_sect_);
 };

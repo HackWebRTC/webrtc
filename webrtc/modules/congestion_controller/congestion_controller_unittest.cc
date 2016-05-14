@@ -113,5 +113,45 @@ TEST_F(CongestionControllerTest, OnSendQueueFullAndEstimateChange) {
   controller_->Process();
 }
 
+TEST_F(CongestionControllerTest, SignalNetworkState) {
+  EXPECT_CALL(observer_, OnNetworkChanged(0, _, _));
+  controller_->SignalNetworkState(kNetworkDown);
+
+  EXPECT_CALL(observer_, OnNetworkChanged(kInitialBitrateBps, _, _));
+  controller_->SignalNetworkState(kNetworkUp);
+
+  EXPECT_CALL(observer_, OnNetworkChanged(0, _, _));
+  controller_->SignalNetworkState(kNetworkDown);
+}
+
+TEST_F(CongestionControllerTest,
+       SignalNetworkStateAndQueueIsFullAndEstimateChange) {
+  // Send queue is full
+  EXPECT_CALL(*pacer_, ExpectedQueueTimeMs())
+      .WillRepeatedly(Return(PacedSender::kMaxQueueLengthMs + 1));
+  EXPECT_CALL(observer_, OnNetworkChanged(0, _, _));
+  controller_->Process();
+
+  // Queue is full and network is down. Expect no bitrate change.
+  controller_->SignalNetworkState(kNetworkDown);
+  controller_->Process();
+
+  // Queue is full but network is up. Expect no bitrate change.
+  controller_->SignalNetworkState(kNetworkUp);
+  controller_->Process();
+
+  // Receive new estimate but let the queue still be full.
+  EXPECT_CALL(*pacer_, SetEstimatedBitrate(kInitialBitrateBps * 2));
+  bandwidth_observer_->OnReceivedEstimatedBitrate(kInitialBitrateBps * 2);
+  clock_.AdvanceTimeMilliseconds(25);
+  controller_->Process();
+
+  // Let the pacer not be full next time the controller checks.
+  EXPECT_CALL(*pacer_, ExpectedQueueTimeMs())
+      .WillOnce(Return(PacedSender::kMaxQueueLengthMs - 1));
+  EXPECT_CALL(observer_, OnNetworkChanged(kInitialBitrateBps * 2, _, _));
+  controller_->Process();
+}
+
 }  // namespace test
 }  // namespace webrtc

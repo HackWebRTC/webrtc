@@ -222,4 +222,32 @@ TEST_F(BitrateAllocatorTest, ThreeBitrateObserversLowRembEnforceMin) {
   allocator_->RemoveObserver(&bitrate_observer_2);
   allocator_->RemoveObserver(&bitrate_observer_3);
 }
+
+TEST_F(BitrateAllocatorTest, AddObserverWhileNetworkDown) {
+  TestBitrateObserver bitrate_observer_1;
+  int start_bitrate =
+      allocator_->AddObserver(&bitrate_observer_1, 50000, 400000, true);
+  EXPECT_EQ(300000, start_bitrate);
+
+  // Set network down, ie, no available bitrate.
+  allocator_->OnNetworkChanged(0, 0, 0);
+
+  EXPECT_EQ(0u, bitrate_observer_1.last_bitrate_);
+
+  TestBitrateObserver bitrate_observer_2;
+  start_bitrate =
+      allocator_->AddObserver(&bitrate_observer_2, 50000, 400000, true);
+
+  // Expect the start_bitrate to be set as if the network was still up but that
+  // the new observer have been notified that the network is down.
+  EXPECT_EQ(300000 / 2, start_bitrate);
+  EXPECT_EQ(0u, bitrate_observer_1.last_bitrate_);
+  EXPECT_EQ(0u, bitrate_observer_2.last_bitrate_);
+
+  // Set network back up.
+  allocator_->OnNetworkChanged(1500000, 0, 50);
+  EXPECT_EQ(750000u, bitrate_observer_1.last_bitrate_);
+  EXPECT_EQ(750000u, bitrate_observer_2.last_bitrate_);
+}
+
 }  // namespace webrtc
