@@ -86,6 +86,7 @@ if (rtc_build_ssl == 0) {
 
 # The subset of rtc_base approved for use outside of libjingle.
 static_library("rtc_base_approved") {
+  defines = []
   deps = []
   configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
@@ -147,6 +148,12 @@ static_library("rtc_base_approved") {
     "swap_queue.h",
     "systeminfo.cc",
     "systeminfo.h",
+    "task_queue.h",
+    "task_queue_gcd.cc",
+    "task_queue_libevent.cc",
+    "task_queue_posix.cc",
+    "task_queue_posix.h",
+    "task_queue_win.cc",
     "template_util.h",
     "thread_annotations.h",
     "thread_checker.h",
@@ -171,6 +178,23 @@ static_library("rtc_base_approved") {
       "logging.h",
       "logging_mac.mm",
     ]
+  }
+
+  if (!is_win && !is_mac && !is_ios && !is_nacl) {
+    deps += [ "//base/third_party/libevent" ]
+    defines += [ "WEBRTC_BUILD_LIBEVENT" ]
+  }
+
+  if (is_mac || is_ios || is_win || is_nacl) {
+    sources -= [ "task_queue_libevent.cc" ]
+  }
+
+  if (is_linux || is_android || is_win || is_nacl) {
+    sources -= [ "task_queue_gcd.cc" ]
+  }
+
+  if (is_nacl) {
+    sources -= [ "task_queue_posix.cc" ]
   }
 }
 
