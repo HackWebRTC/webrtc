@@ -387,28 +387,35 @@ void TCPConnection::OnConnect(rtc::AsyncPacketSocket* socket) {
   // the one we asked for. This is seen in Chrome, where TCP sockets cannot be
   // given a binding address, and the platform is expected to pick the
   // correct local address.
-  const rtc::IPAddress& socket_ip = socket->GetLocalAddress().ipaddr();
-  if (socket_ip == port()->ip() || IPIsAny(port()->ip())) {
-    if (socket_ip == port()->ip()) {
-      LOG_J(LS_VERBOSE, this) << "Connection established to "
-                              << socket->GetRemoteAddress().ToSensitiveString();
-    } else {
-      LOG(LS_WARNING) << "Socket is bound to a different address:"
-                      << socket->GetLocalAddress().ipaddr().ToString()
-                      << ", rather then the local port:"
-                      << port()->ip().ToString()
-                      << ". Still allowing it since it's any address"
-                      << ", possibly caused by multi-routes being disabled.";
-    }
-    set_connected(true);
-    connection_pending_ = false;
+  const rtc::SocketAddress& socket_addr = socket->GetLocalAddress();
+  if (socket_addr.ipaddr() == port()->ip()) {
+    LOG_J(LS_VERBOSE, this) << "Connection established to "
+                            << socket->GetRemoteAddress().ToSensitiveString();
+  } else if (IPIsAny(port()->ip())) {
+    LOG(LS_WARNING) << "Socket is bound to a different address:"
+                    << socket_addr.ipaddr().ToString()
+                    << ", rather then the local port:"
+                    << port()->ip().ToString()
+                    << ". Still allowing it since it's any address"
+                    << ", possibly caused by multi-routes being disabled.";
+  } else if (socket_addr.IsLoopbackIP()) {
+    LOG(LS_WARNING) << "Socket is bound to a different address:"
+                    << socket_addr.ipaddr().ToString()
+                    << ", rather then the local port:"
+                    << port()->ip().ToString()
+                    << ". Still allowing it since it's localhost.";
   } else {
     LOG_J(LS_WARNING, this) << "Dropping connection as TCP socket bound to IP "
-                            << socket_ip.ToSensitiveString()
+                            << socket_addr.ipaddr().ToSensitiveString()
                             << ", different from the local candidate IP "
                             << port()->ip().ToSensitiveString();
     OnClose(socket, 0);
+    return;
   }
+
+  // Connection is established successfully.
+  set_connected(true);
+  connection_pending_ = false;
 }
 
 void TCPConnection::OnClose(rtc::AsyncPacketSocket* socket, int error) {

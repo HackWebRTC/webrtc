@@ -164,6 +164,7 @@
               'base/transport_unittest.cc',
               'base/transportcontroller_unittest.cc',
               'base/transportdescriptionfactory_unittest.cc',
+              'base/tcpport_unittest.cc',
               'base/turnport_unittest.cc',
               'client/basicportallocator_unittest.cc',
               'stunprober/stunprober_unittest.cc',

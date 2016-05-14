@@ -122,6 +122,9 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   bool CloseTcpConnections(const SocketAddress& addr_local,
                            const SocketAddress& addr_remote);
 
+  // For testing purpose only. Fired when a client socket is created.
+  sigslot::signal1<VirtualSocket*> SignalSocketCreated;
+
  protected:
   // Returns a new IP not used before in this network.
   IPAddress GetNextIP(int family);
