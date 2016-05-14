@@ -168,14 +168,10 @@ bool CopyVideoFrameToPixelBuffer(const webrtc::VideoFrame& frame,
   int dst_stride_uv = CVPixelBufferGetBytesPerRowOfPlane(pixel_buffer, 1);
   // Convert I420 to NV12.
   int ret = libyuv::I420ToNV12(
-      frame.video_frame_buffer()->DataY(),
-      frame.video_frame_buffer()->StrideY(),
-      frame.video_frame_buffer()->DataU(),
-      frame.video_frame_buffer()->StrideU(),
-      frame.video_frame_buffer()->DataV(),
-      frame.video_frame_buffer()->StrideV(),
-      dst_y, dst_stride_y, dst_uv, dst_stride_uv,
-      frame.width(), frame.height());
+      frame.buffer(webrtc::kYPlane), frame.stride(webrtc::kYPlane),
+      frame.buffer(webrtc::kUPlane), frame.stride(webrtc::kUPlane),
+      frame.buffer(webrtc::kVPlane), frame.stride(webrtc::kVPlane), dst_y,
+      dst_stride_y, dst_uv, dst_stride_uv, frame.width(), frame.height());
   CVPixelBufferUnlockBaseAddress(pixel_buffer, 0);
   if (ret) {
     LOG(LS_ERROR) << "Error converting I420 VideoFrame to NV12 :" << ret;

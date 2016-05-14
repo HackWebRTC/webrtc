@@ -746,18 +746,15 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
   // Image in vpx_image_t format.
   // Input image is const. VP8's raw image is not defined as const.
   raw_images_[0].planes[VPX_PLANE_Y] =
-      const_cast<uint8_t*>(input_image.video_frame_buffer()->DataY());
+      const_cast<uint8_t*>(input_image.buffer(kYPlane));
   raw_images_[0].planes[VPX_PLANE_U] =
-      const_cast<uint8_t*>(input_image.video_frame_buffer()->DataU());
+      const_cast<uint8_t*>(input_image.buffer(kUPlane));
   raw_images_[0].planes[VPX_PLANE_V] =
-      const_cast<uint8_t*>(input_image.video_frame_buffer()->DataV());
+      const_cast<uint8_t*>(input_image.buffer(kVPlane));
 
-  raw_images_[0].stride[VPX_PLANE_Y] =
-      input_image.video_frame_buffer()->StrideY();
-  raw_images_[0].stride[VPX_PLANE_U] =
-      input_image.video_frame_buffer()->StrideU();
-  raw_images_[0].stride[VPX_PLANE_V] =
-      input_image.video_frame_buffer()->StrideV();
+  raw_images_[0].stride[VPX_PLANE_Y] = input_image.stride(kYPlane);
+  raw_images_[0].stride[VPX_PLANE_U] = input_image.stride(kUPlane);
+  raw_images_[0].stride[VPX_PLANE_V] = input_image.stride(kVPlane);
 
   for (size_t i = 1; i < encoders_.size(); ++i) {
     // Scale the image down a number of times by downsampling factor
@@ -1354,12 +1351,9 @@ int VP8DecoderImpl::ReturnFrame(const vpx_image_t* img,
   libyuv::I420Copy(img->planes[VPX_PLANE_Y], img->stride[VPX_PLANE_Y],
                    img->planes[VPX_PLANE_U], img->stride[VPX_PLANE_U],
                    img->planes[VPX_PLANE_V], img->stride[VPX_PLANE_V],
-                   decoded_image.video_frame_buffer()->MutableDataY(),
-                   decoded_image.video_frame_buffer()->StrideY(),
-                   decoded_image.video_frame_buffer()->MutableDataU(),
-                   decoded_image.video_frame_buffer()->StrideU(),
-                   decoded_image.video_frame_buffer()->MutableDataV(),
-                   decoded_image.video_frame_buffer()->StrideV(),
+                   decoded_image.buffer(kYPlane), decoded_image.stride(kYPlane),
+                   decoded_image.buffer(kUPlane), decoded_image.stride(kUPlane),
+                   decoded_image.buffer(kVPlane), decoded_image.stride(kVPlane),
                    img->d_w, img->d_h);
   decoded_image.set_ntp_time_ms(ntp_time_ms);
   int ret = decode_complete_callback_->Decoded(decoded_image);

@@ -119,13 +119,13 @@ class Vp8TestDecodedImageCallback : public DecodedImageCallback {
   Vp8TestDecodedImageCallback() : decoded_frames_(0) {}
   int32_t Decoded(VideoFrame& decoded_image) override {
     for (int i = 0; i < decoded_image.width(); ++i) {
-      EXPECT_NEAR(kColorY, decoded_image.video_frame_buffer()->DataY()[i], 1);
+      EXPECT_NEAR(kColorY, decoded_image.buffer(kYPlane)[i], 1);
     }
 
     // TODO(mikhal): Verify the difference between U,V and the original.
     for (int i = 0; i < ((decoded_image.width() + 1) / 2); ++i) {
-      EXPECT_NEAR(kColorU, decoded_image.video_frame_buffer()->DataU()[i], 4);
-      EXPECT_NEAR(kColorV, decoded_image.video_frame_buffer()->DataV()[i], 4);
+      EXPECT_NEAR(kColorU, decoded_image.buffer(kUPlane)[i], 4);
+      EXPECT_NEAR(kColorV, decoded_image.buffer(kVPlane)[i], 4);
     }
     decoded_frames_++;
     return 0;
@@ -222,38 +222,24 @@ class TestVp8Simulcast : public ::testing::Test {
   TestVp8Simulcast(VP8Encoder* encoder, VP8Decoder* decoder)
       : encoder_(encoder), decoder_(decoder) {}
 
-  static void SetPlane(uint8_t* data,
-                       uint8_t value,
-                       int width,
-                       int height,
-                       int stride) {
-    for (int i = 0; i < height; i++, data += stride) {
+  // Creates an VideoFrame from |plane_colors|.
+  static void CreateImage(VideoFrame* frame, int plane_colors[kNumOfPlanes]) {
+    for (int plane_num = 0; plane_num < kNumOfPlanes; ++plane_num) {
+      int width =
+          (plane_num != kYPlane ? (frame->width() + 1) / 2 : frame->width());
+      int height =
+          (plane_num != kYPlane ? (frame->height() + 1) / 2 : frame->height());
+      PlaneType plane_type = static_cast<PlaneType>(plane_num);
+      uint8_t* data = frame->buffer(plane_type);
       // Setting allocated area to zero - setting only image size to
       // requested values - will make it easier to distinguish between image
       // size and frame size (accounting for stride).
-      memset(data, value, width);
-      memset(data + width, 0, stride - width);
+      memset(frame->buffer(plane_type), 0, frame->allocated_size(plane_type));
+      for (int i = 0; i < height; i++) {
+        memset(data, plane_colors[plane_num], width);
+        data += frame->stride(plane_type);
+      }
     }
-  }
-
-  // Fills in an VideoFrameBuffer from |plane_colors|.
-  static void CreateImage(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
-                          int plane_colors[kNumOfPlanes]) {
-    int width = buffer->width();
-    int height = buffer->height();
-    int chroma_width = (width + 1) / 2;
-    int chroma_height = (height + 1) / 2;
-
-    SetPlane(buffer->MutableDataY(), plane_colors[0],
-             width, height, buffer->StrideY());
-
-    SetPlane(buffer->MutableDataU(), plane_colors[1],
-             chroma_width, chroma_height,
-             buffer->StrideU());
-
-    SetPlane(buffer->MutableDataV(), plane_colors[2],
-             chroma_width, chroma_height,
-             buffer->StrideV());
   }
 
   static void DefaultSettings(VideoCodec* settings,
@@ -319,11 +305,11 @@ class TestVp8Simulcast : public ::testing::Test {
     int half_width = (kDefaultWidth + 1) / 2;
     input_frame_.CreateEmptyFrame(kDefaultWidth, kDefaultHeight, kDefaultWidth,
                                   half_width, half_width);
-    memset(input_frame_.video_frame_buffer()->MutableDataY(), 0,
+    memset(input_frame_.buffer(kYPlane), 0,
            input_frame_.allocated_size(kYPlane));
-    memset(input_frame_.video_frame_buffer()->MutableDataU(), 0,
+    memset(input_frame_.buffer(kUPlane), 0,
            input_frame_.allocated_size(kUPlane));
-    memset(input_frame_.video_frame_buffer()->MutableDataV(), 0,
+    memset(input_frame_.buffer(kVPlane), 0,
            input_frame_.allocated_size(kVPlane));
   }
 
@@ -569,11 +555,11 @@ class TestVp8Simulcast : public ::testing::Test {
     int half_width = (settings_.width + 1) / 2;
     input_frame_.CreateEmptyFrame(settings_.width, settings_.height,
                                   settings_.width, half_width, half_width);
-    memset(input_frame_.video_frame_buffer()->MutableDataY(), 0,
+    memset(input_frame_.buffer(kYPlane), 0,
            input_frame_.allocated_size(kYPlane));
-    memset(input_frame_.video_frame_buffer()->MutableDataU(), 0,
+    memset(input_frame_.buffer(kUPlane), 0,
            input_frame_.allocated_size(kUPlane));
-    memset(input_frame_.video_frame_buffer()->MutableDataV(), 0,
+    memset(input_frame_.buffer(kVPlane), 0,
            input_frame_.allocated_size(kVPlane));
 
     // The for loop above did not set the bitrate of the highest layer.
@@ -610,11 +596,11 @@ class TestVp8Simulcast : public ::testing::Test {
     half_width = (settings_.width + 1) / 2;
     input_frame_.CreateEmptyFrame(settings_.width, settings_.height,
                                   settings_.width, half_width, half_width);
-    memset(input_frame_.video_frame_buffer()->MutableDataY(), 0,
+    memset(input_frame_.buffer(kYPlane), 0,
            input_frame_.allocated_size(kYPlane));
-    memset(input_frame_.video_frame_buffer()->MutableDataU(), 0,
+    memset(input_frame_.buffer(kUPlane), 0,
            input_frame_.allocated_size(kUPlane));
-    memset(input_frame_.video_frame_buffer()->MutableDataV(), 0,
+    memset(input_frame_.buffer(kVPlane), 0,
            input_frame_.allocated_size(kVPlane));
     EXPECT_EQ(0, encoder_->Encode(input_frame_, NULL, &frame_types));
   }
@@ -705,7 +691,7 @@ class TestVp8Simulcast : public ::testing::Test {
     plane_offset[kYPlane] = kColorY;
     plane_offset[kUPlane] = kColorU;
     plane_offset[kVPlane] = kColorV;
-    CreateImage(input_frame_.video_frame_buffer(), plane_offset);
+    CreateImage(&input_frame_, plane_offset);
 
     EXPECT_EQ(0, encoder_->Encode(input_frame_, NULL, NULL));
     int picture_id = -1;
@@ -721,7 +707,7 @@ class TestVp8Simulcast : public ::testing::Test {
     plane_offset[kYPlane] += 1;
     plane_offset[kUPlane] += 1;
     plane_offset[kVPlane] += 1;
-    CreateImage(input_frame_.video_frame_buffer(), plane_offset);
+    CreateImage(&input_frame_, plane_offset);
     input_frame_.set_timestamp(input_frame_.timestamp() + 3000);
     EXPECT_EQ(0, encoder_->Encode(input_frame_, NULL, NULL));
 
@@ -729,7 +715,7 @@ class TestVp8Simulcast : public ::testing::Test {
     plane_offset[kYPlane] += 1;
     plane_offset[kUPlane] += 1;
     plane_offset[kVPlane] += 1;
-    CreateImage(input_frame_.video_frame_buffer(), plane_offset);
+    CreateImage(&input_frame_, plane_offset);
 
     input_frame_.set_timestamp(input_frame_.timestamp() + 3000);
     EXPECT_EQ(0, encoder_->Encode(input_frame_, NULL, NULL));
@@ -738,7 +724,7 @@ class TestVp8Simulcast : public ::testing::Test {
     plane_offset[kYPlane] += 1;
     plane_offset[kUPlane] += 1;
     plane_offset[kVPlane] += 1;
-    CreateImage(input_frame_.video_frame_buffer(), plane_offset);
+    CreateImage(&input_frame_, plane_offset);
 
     input_frame_.set_timestamp(input_frame_.timestamp() + 3000);
     EXPECT_EQ(0, encoder_->Encode(input_frame_, NULL, NULL));
@@ -753,7 +739,7 @@ class TestVp8Simulcast : public ::testing::Test {
     plane_offset[kYPlane] = kColorY;
     plane_offset[kUPlane] = kColorU;
     plane_offset[kVPlane] = kColorV;
-    CreateImage(input_frame_.video_frame_buffer(), plane_offset);
+    CreateImage(&input_frame_, plane_offset);
 
     input_frame_.set_timestamp(input_frame_.timestamp() + 3000);
     EXPECT_EQ(0, encoder_->Encode(input_frame_, &codec_specific, NULL));
@@ -912,7 +898,7 @@ class TestVp8Simulcast : public ::testing::Test {
     plane_offset[kYPlane] = kColorY;
     plane_offset[kUPlane] = kColorU;
     plane_offset[kVPlane] = kColorV;
-    CreateImage(input_frame_.video_frame_buffer(), plane_offset);
+    CreateImage(&input_frame_, plane_offset);
 
     EXPECT_EQ(0, encoder_->Encode(input_frame_, NULL, NULL));
 
@@ -920,7 +906,7 @@ class TestVp8Simulcast : public ::testing::Test {
     plane_offset[kYPlane] += 1;
     plane_offset[kUPlane] += 1;
     plane_offset[kVPlane] += 1;
-    CreateImage(input_frame_.video_frame_buffer(), plane_offset);
+    CreateImage(&input_frame_, plane_offset);
     input_frame_.set_timestamp(input_frame_.timestamp() + 3000);
     EXPECT_EQ(0, encoder_->Encode(input_frame_, NULL, NULL));
 
