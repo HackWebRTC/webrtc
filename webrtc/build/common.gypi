@@ -102,6 +102,7 @@
     'build_libjpeg%': 1,
     'build_libsrtp%': 1,
     'build_libvpx%': 1,
+    'libvpx_build_vp9%': 1,
     'build_libyuv%': 1,
     'build_openmax_dl%': 1,
     'build_opus%': 1,
@@ -445,6 +446,11 @@
       ['include_internal_audio_device==1', {
         'defines': [
           'WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE',
+        ],
+      }],
+      ['libvpx_build_vp9==0', {
+        'defines': [
+          'RTC_DISABLE_VP9',
         ],
       }],
     ], # conditions

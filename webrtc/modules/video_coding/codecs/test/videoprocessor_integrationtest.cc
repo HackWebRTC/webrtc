@@ -626,6 +626,7 @@ TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossH264) {
 // Fails on iOS. See webrtc:4755.
 #if !defined(WEBRTC_IOS)
 
+#if !defined(RTC_DISABLE_VP9)
 // VP9: Run with no packet loss and fixed bitrate. Quality should be very high.
 // One key frame (first frame only) in sequence. Setting |key_frame_interval|
 // to -1 below means no periodic key frames in test.
@@ -779,6 +780,8 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossSpatialResizeFrameDropVP9) {
 
 // TODO(marpan): Add temporal layer test for VP9, once changes are in
 // vp9 wrapper for this.
+
+#endif  // !defined(RTC_DISABLE_VP9)
 
 // VP8: Run with no packet loss and fixed bitrate. Quality should be very high.
 // One key frame (first frame only) in sequence. Setting |key_frame_interval|

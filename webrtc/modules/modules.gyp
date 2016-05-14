@@ -63,7 +63,6 @@
             '<(webrtc_root)/common.gyp:webrtc_common',
             '<(webrtc_root)/common_video/common_video.gyp:common_video',
             '<(webrtc_root)/modules/video_coding/codecs/vp8/vp8.gyp:webrtc_vp8',
-            '<(webrtc_root)/modules/video_coding/codecs/vp9/vp9.gyp:webrtc_vp9',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
             '<(webrtc_root)/test/metrics.gyp:metrics',
             '<(webrtc_root)/test/test.gyp:test_support',
@@ -363,7 +362,6 @@
             'video_coding/codecs/vp8/simulcast_encoder_adapter_unittest.cc',
             'video_coding/codecs/vp8/simulcast_unittest.cc',
             'video_coding/codecs/vp8/simulcast_unittest.h',
-            'video_coding/codecs/vp9/screenshare_layers_unittest.cc',
             'video_coding/include/mock/mock_vcm_callbacks.h',
             'video_coding/decoding_state_unittest.cc',
             'video_coding/histogram_unittest.cc',
@@ -390,6 +388,11 @@
             'video_processing/test/video_processing_unittest.h',
           ],
           'conditions': [
+            ['libvpx_build_vp9==1', {
+              'sources': [
+                'video_coding/codecs/vp9/screenshare_layers_unittest.cc',
+              ],
+            }],
             ['enable_bwe_test_logging==1', {
               'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1' ],
             }, {

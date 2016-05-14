@@ -150,6 +150,21 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
   std::map<int, int> default_apt_rtx_types_;
 };
 
+TEST_F(WebRtcVideoEngine2Test, AnnouncesVp9AccordingToBuildFlags) {
+  bool claims_vp9_support = false;
+  for (const cricket::VideoCodec& codec : engine_.codecs()) {
+    if (codec.name == "VP9") {
+      claims_vp9_support = true;
+      break;
+    }
+  }
+#if defined(RTC_DISABLE_VP9)
+  EXPECT_FALSE(claims_vp9_support);
+#else
+  EXPECT_TRUE(claims_vp9_support);
+#endif  // defined(RTC_DISABLE_VP9)
+}
+
 TEST_F(WebRtcVideoEngine2Test, DefaultRtxCodecHasAssociatedPayloadTypeSet) {
   std::vector<VideoCodec> engine_codecs = engine_.codecs();
   for (size_t i = 0; i < engine_codecs.size(); ++i) {
@@ -414,6 +429,7 @@ TEST_F(WebRtcVideoEngine2Test, DisablesFullEncoderTimeForNonExternalEncoders) {
   TestExtendedEncoderOveruse(false);
 }
 
+#if !defined(RTC_DISABLE_VP9)
 TEST_F(WebRtcVideoEngine2Test, CanConstructDecoderForVp9EncoderFactory) {
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
   encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP9, "VP9");
@@ -426,6 +442,7 @@ TEST_F(WebRtcVideoEngine2Test, CanConstructDecoderForVp9EncoderFactory) {
   EXPECT_TRUE(
       channel->AddRecvStream(cricket::StreamParams::CreateLegacy(kSsrc)));
 }
+#endif  // !defined(RTC_DISABLE_VP9)
 
 TEST_F(WebRtcVideoEngine2Test, PropagatesInputFrameTimestamp) {
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;

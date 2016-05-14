@@ -56,6 +56,7 @@ class FullStackTest : public VideoQualityTest {
 //   logs          // bool
 // };
 
+#if !defined(RTC_DISABLE_VP9)
 TEST_F(FullStackTest, ForemanCifWithoutPacketLossVp9) {
   ForemanCifWithoutPacketLoss("VP9");
 }
@@ -63,6 +64,7 @@ TEST_F(FullStackTest, ForemanCifWithoutPacketLossVp9) {
 TEST_F(FullStackTest, ForemanCifPlr5Vp9) {
   ForemanCifPlr5("VP9");
 }
+#endif  // !defined(RTC_DISABLE_VP9)
 
 TEST_F(FullStackTest, ParisQcifWithoutPacketLoss) {
   VideoQualityTest::Params paris_qcif = {
@@ -200,6 +202,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_VeryLossyNet) {
   RunTest(screenshare);
 }
 
+#if !defined(RTC_DISABLE_VP9)
 TEST_F(FullStackTest, ScreenshareSlidesVP9_2SL) {
   VideoQualityTest::Params screenshare = {
       {1850, 1110, 5, 50000, 200000, 2000000, "VP9", 1, 0, 400000},
@@ -211,4 +214,5 @@ TEST_F(FullStackTest, ScreenshareSlidesVP9_2SL) {
       {std::vector<VideoStream>(), 0, 2, 1}};
   RunTest(screenshare);
 }
+#endif  // !defined(RTC_DISABLE_VP9)
 }  // namespace webrtc

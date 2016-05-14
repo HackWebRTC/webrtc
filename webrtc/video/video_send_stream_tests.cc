@@ -479,10 +479,12 @@ TEST_F(VideoSendStreamTest, DoesUtilizeRedForVp8WithNackEnabled) {
   RunBaseTest(&test);
 }
 
+#if !defined(RTC_DISABLE_VP9)
 TEST_F(VideoSendStreamTest, DoesUtilizeRedForVp9WithNackEnabled) {
   FecObserver test(false, true, true, "VP9");
   RunBaseTest(&test);
 }
+#endif  // !defined(RTC_DISABLE_VP9)
 
 void VideoSendStreamTest::TestNackRetransmission(
     uint32_t retransmit_ssrc,
@@ -1886,6 +1888,7 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
   RunBaseTest(&test);
 }
 
+#if !defined(RTC_DISABLE_VP9)
 class Vp9HeaderObserver : public test::SendTest {
  public:
   Vp9HeaderObserver()
@@ -2293,5 +2296,6 @@ TEST_F(VideoSendStreamTest, Vp9FlexModeRefCount) {
 
   RunBaseTest(&test);
 }
+#endif  // !defined(RTC_DISABLE_VP9)
 
 }  // namespace webrtc

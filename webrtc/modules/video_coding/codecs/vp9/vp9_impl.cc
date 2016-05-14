@@ -47,6 +47,10 @@ int GetCpuSpeed(int width, int height) {
 #endif
 }
 
+bool VP9Encoder::IsSupported() {
+  return true;
+}
+
 VP9Encoder* VP9Encoder::Create() {
   return new VP9EncoderImpl();
 }
@@ -821,6 +825,10 @@ int VP9EncoderImpl::RegisterEncodeCompleteCallback(
 
 const char* VP9EncoderImpl::ImplementationName() const {
   return "libvpx";
+}
+
+bool VP9Decoder::IsSupported() {
+  return true;
 }
 
 VP9Decoder* VP9Decoder::Create() {

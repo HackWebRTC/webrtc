@@ -333,6 +333,7 @@ TEST_F(EndToEndTest, SendsAndReceivesVP8Rotation90) {
   RunBaseTest(&test);
 }
 
+#if !defined(RTC_DISABLE_VP9)
 TEST_F(EndToEndTest, SendsAndReceivesVP9) {
   CodecObserver test(500, kVideoRotation_0, "VP9",
                      VideoEncoder::Create(VideoEncoder::kVp9),
@@ -346,6 +347,7 @@ TEST_F(EndToEndTest, SendsAndReceivesVP9VideoRotation90) {
                      VP9Decoder::Create());
   RunBaseTest(&test);
 }
+#endif  // !defined(RTC_DISABLE_VP9)
 
 #if defined(WEBRTC_END_TO_END_H264_TESTS)
 
