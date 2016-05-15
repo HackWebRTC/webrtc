@@ -116,15 +116,12 @@
             'logging.h',
             'logging_mac.mm',
           ],
-          'conditions': [
-            ['build_libevent==1', {
-              'dependencies': [
-                '<(DEPTH)/base/third_party/libevent/libevent.gyp:libevent',
-              ],
-            }],
-          ],
         }],
-        ['build_libevent!=1', {
+        ['build_libevent==1', {
+          'dependencies': [
+            '<(DEPTH)/base/third_party/libevent/libevent.gyp:libevent',
+          ],
+        }, {
           'sources!': [ 'task_queue_libevent.cc' ],
           'conditions': [
             ['OS=="linux" or OS=="android"', {
