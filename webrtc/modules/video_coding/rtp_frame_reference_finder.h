@@ -13,12 +13,12 @@
 
 #include <array>
 #include <map>
+#include <memory>
 #include <queue>
 #include <set>
 #include <utility>
 
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/sequence_number_util.h"

@@ -17,7 +17,6 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/platform_thread.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/test/fake_network_pipe.h"
 #include "webrtc/transport.h"
 

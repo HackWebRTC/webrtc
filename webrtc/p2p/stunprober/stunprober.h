@@ -22,7 +22,6 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/ipaddress.h"
 #include "webrtc/base/network.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/thread_checker.h"

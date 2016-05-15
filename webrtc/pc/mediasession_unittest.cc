@@ -2404,9 +2404,9 @@ class MediaProtocolTest : public ::testing::TestWithParam<const char*> {
     f1_.set_secure(SEC_ENABLED);
     f2_.set_secure(SEC_ENABLED);
     tdf1_.set_certificate(rtc::RTCCertificate::Create(
-        rtc::scoped_ptr<rtc::SSLIdentity>(new rtc::FakeSSLIdentity("id1"))));
+        std::unique_ptr<rtc::SSLIdentity>(new rtc::FakeSSLIdentity("id1"))));
     tdf2_.set_certificate(rtc::RTCCertificate::Create(
-        rtc::scoped_ptr<rtc::SSLIdentity>(new rtc::FakeSSLIdentity("id2"))));
+        std::unique_ptr<rtc::SSLIdentity>(new rtc::FakeSSLIdentity("id2"))));
     tdf1_.set_secure(SEC_ENABLED);
     tdf2_.set_secure(SEC_ENABLED);
   }

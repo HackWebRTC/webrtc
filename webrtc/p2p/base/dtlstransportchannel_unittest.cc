@@ -42,7 +42,7 @@ static bool IsRtpLeadByte(uint8_t b) {
 cricket::TransportDescription MakeTransportDescription(
     const rtc::scoped_refptr<rtc::RTCCertificate>& cert,
     cricket::ConnectionRole role) {
-  rtc::scoped_ptr<rtc::SSLFingerprint> fingerprint;
+  std::unique_ptr<rtc::SSLFingerprint> fingerprint;
   if (cert) {
     std::string digest_algorithm;
     cert->ssl_certificate().GetSignatureDigestAlgorithm(&digest_algorithm);

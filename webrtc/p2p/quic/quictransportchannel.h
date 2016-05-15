@@ -19,7 +19,6 @@
 #include "net/quic/quic_packet_writer.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/optional.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/p2p/base/transportchannelimpl.h"
 #include "webrtc/p2p/quic/quicconnectionhelper.h"
 #include "webrtc/p2p/quic/quicsession.h"

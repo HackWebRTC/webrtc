@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/thread.h"
@@ -63,8 +65,8 @@ class TCPPortTest : public testing::Test, public sigslot::has_slots<> {
 
  protected:
   rtc::Thread* main_;
-  rtc::scoped_ptr<rtc::PhysicalSocketServer> pss_;
-  rtc::scoped_ptr<rtc::VirtualSocketServer> ss_;
+  std::unique_ptr<rtc::PhysicalSocketServer> pss_;
+  std::unique_ptr<rtc::VirtualSocketServer> ss_;
   rtc::SocketServerScope ss_scope_;
   rtc::Network network_;
   rtc::BasicPacketSocketFactory socket_factory_;
@@ -73,8 +75,8 @@ class TCPPortTest : public testing::Test, public sigslot::has_slots<> {
 };
 
 TEST_F(TCPPortTest, TestTCPPortWithLocalhostAddress) {
-  rtc::scoped_ptr<TCPPort> lport(CreateTCPPort(kLocalAddr));
-  rtc::scoped_ptr<TCPPort> rport(CreateTCPPort(kRemoteAddr));
+  std::unique_ptr<TCPPort> lport(CreateTCPPort(kLocalAddr));
+  std::unique_ptr<TCPPort> rport(CreateTCPPort(kRemoteAddr));
   lport->PrepareAddress();
   rport->PrepareAddress();
   // Start to listen to new socket creation event.
