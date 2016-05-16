@@ -2696,14 +2696,13 @@ class P2PTransportChannelMostLikelyToWorkFirstTest
 
   cricket::P2PTransportChannel& StartTransportChannel(
       bool prioritize_most_likely_to_work,
-      int writable_connection_ping_interval) {
+      int max_strong_interval) {
     channel_.reset(
         new cricket::P2PTransportChannel("checks", 1, nullptr, allocator()));
     cricket::IceConfig config = channel_->config();
     config.prioritize_most_likely_candidate_pairs =
         prioritize_most_likely_to_work;
-    config.writable_connection_ping_interval =
-        writable_connection_ping_interval;
+    config.max_strong_interval = max_strong_interval;
     channel_->SetIceConfig(config);
     PrepareChannel(channel_.get());
     channel_->Connect();
