@@ -29,6 +29,18 @@
 
 namespace webrtc {
 
+namespace {
+
+// Adds a codec usage sample to the histogram.
+void UpdateCodecTypeHistogram(size_t codec_type) {
+  RTC_HISTOGRAM_ENUMERATION(
+      "WebRTC.Audio.Encoder.CodecType", static_cast<int>(codec_type),
+      static_cast<int>(
+          webrtc::AudioEncoder::CodecType::kMaxLoggedAudioCodecTypes));
+}
+
+}  // namespace
+
 namespace acm2 {
 
 struct EncoderFactory {
@@ -185,7 +197,9 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
       first_10ms_data_(false),
       first_frame_(true),
       packetization_callback_(NULL),
-      vad_callback_(NULL) {
+      vad_callback_(NULL),
+      codec_histogram_bins_log_(),
+      number_of_consecutive_empty_packets_(0) {
   if (InitializeReceiverSafe() < 0) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                  "Cannot initialize receiver");
@@ -230,6 +244,20 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
     return 0;
   }
   previous_pltype = previous_pltype_;  // Read it while we have the critsect.
+
+  // Log codec type to histogram once every 500 packets.
+  if (encoded_info.encoded_bytes == 0) {
+    ++number_of_consecutive_empty_packets_;
+  } else {
+    size_t codec_type = static_cast<size_t>(encoded_info.encoder_type);
+    codec_histogram_bins_log_[codec_type] +=
+        number_of_consecutive_empty_packets_ + 1;
+    number_of_consecutive_empty_packets_ = 0;
+    if (codec_histogram_bins_log_[codec_type] >= 500) {
+      codec_histogram_bins_log_[codec_type] -= 500;
+      UpdateCodecTypeHistogram(codec_type);
+    }
+  }
 
   RTPFragmentationHeader my_fragmentation;
   ConvertEncodedInfoToFragmentationHeader(encoded_info, &my_fragmentation);

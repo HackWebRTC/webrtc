@@ -96,6 +96,7 @@ AudioEncoder::EncodedInfo AudioEncoderPcm::EncodeImpl(
                                               encoded.data());
                           });
   speech_buffer_.clear();
+  info.encoder_type = GetCodecType();
   return info;
 }
 
@@ -116,6 +117,10 @@ size_t AudioEncoderPcmA::BytesPerSample() const {
   return 1;
 }
 
+AudioEncoder::CodecType AudioEncoderPcmA::GetCodecType() const {
+  return AudioEncoder::CodecType::kPcmA;
+}
+
 AudioEncoderPcmU::AudioEncoderPcmU(const CodecInst& codec_inst)
     : AudioEncoderPcmU(CreateConfig<AudioEncoderPcmU>(codec_inst)) {}
 
@@ -127,6 +132,10 @@ size_t AudioEncoderPcmU::EncodeCall(const int16_t* audio,
 
 size_t AudioEncoderPcmU::BytesPerSample() const {
   return 1;
+}
+
+AudioEncoder::CodecType AudioEncoderPcmU::GetCodecType() const {
+  return AudioEncoder::CodecType::kPcmU;
 }
 
 }  // namespace webrtc

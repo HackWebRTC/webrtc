@@ -145,6 +145,7 @@ AudioEncoder::EncodedInfo AudioEncoderIsacT<T>::EncodeImpl(
   info.encoded_bytes = encoded_bytes;
   info.encoded_timestamp = packet_timestamp_;
   info.payload_type = config_.payload_type;
+  info.encoder_type = CodecType::kIsac;
   return info;
 }
 

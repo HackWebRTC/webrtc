@@ -212,6 +212,7 @@ AudioEncoder::EncodedInfo AudioEncoderOpus::EncodeImpl(
   info.payload_type = config_.payload_type;
   info.send_even_if_empty = true;  // Allows Opus to send empty packets.
   info.speech = (info.encoded_bytes > 0);
+  info.encoder_type = CodecType::kOpus;
   return info;
 }
 

@@ -23,6 +23,7 @@
 #include "webrtc/modules/audio_coding/acm2/acm_receiver.h"
 #include "webrtc/modules/audio_coding/acm2/acm_resampler.h"
 #include "webrtc/modules/audio_coding/acm2/codec_manager.h"
+#include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 
 namespace webrtc {
 
@@ -298,6 +299,10 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   AudioPacketizationCallback* packetization_callback_
       GUARDED_BY(callback_crit_sect_);
   ACMVADCallback* vad_callback_ GUARDED_BY(callback_crit_sect_);
+
+  int codec_histogram_bins_log_[static_cast<size_t>(
+      AudioEncoder::CodecType::kMaxLoggedAudioCodecTypes)];
+  int number_of_consecutive_empty_packets_;
 };
 
 }  // namespace acm2

@@ -25,12 +25,32 @@ namespace webrtc {
 // type must have an implementation of this class.
 class AudioEncoder {
  public:
+  // Used for UMA logging of codec usage. The same codecs, with the
+  // same values, must be listed in
+  // src/tools/metrics/histograms/histograms.xml in chromium to log
+  // correct values.
+  enum class CodecType {
+    kOther = 0,  // Codec not specified, and/or not listed in this enum
+    kOpus = 1,
+    kIsac = 2,
+    kPcmA = 3,
+    kPcmU = 4,
+    kG722 = 5,
+    kIlbc = 6,
+
+    // Number of histogram bins in the UMA logging of codec types. The
+    // total number of different codecs that are logged cannot exceed this
+    // number.
+    kMaxLoggedAudioCodecTypes
+  };
+
   struct EncodedInfoLeaf {
     size_t encoded_bytes = 0;
     uint32_t encoded_timestamp = 0;
     int payload_type = 0;
     bool send_even_if_empty = false;
     bool speech = true;
+    CodecType encoder_type = CodecType::kOther;
   };
 
   // This is the main struct for auxiliary encoding information. Each encoded

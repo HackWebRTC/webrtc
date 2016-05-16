@@ -145,6 +145,7 @@ AudioEncoder::EncodedInfo AudioEncoderG722::EncodeImpl(
       });
   info.encoded_timestamp = first_timestamp_in_buffer_;
   info.payload_type = payload_type_;
+  info.encoder_type = CodecType::kG722;
   return info;
 }
 

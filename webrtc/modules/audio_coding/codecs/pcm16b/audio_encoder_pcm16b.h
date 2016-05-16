@@ -39,6 +39,8 @@ class AudioEncoderPcm16B final : public AudioEncoderPcm {
 
   size_t BytesPerSample() const override;
 
+  AudioEncoder::CodecType GetCodecType() const override;
+
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderPcm16B);
 };
