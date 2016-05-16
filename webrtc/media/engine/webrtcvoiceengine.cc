@@ -577,6 +577,7 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(webrtc::AudioDeviceModule* adm,
     options.extended_filter_aec = rtc::Optional<bool>(false);
     options.delay_agnostic_aec = rtc::Optional<bool>(false);
     options.experimental_ns = rtc::Optional<bool>(false);
+    options.intelligibility_enhancer = rtc::Optional<bool>(false);
     bool error = ApplyOptions(options);
     RTC_DCHECK(error);
   }
@@ -746,11 +747,20 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     }
   }
 
+  if (options.intelligibility_enhancer) {
+    intelligibility_enhancer_ = options.intelligibility_enhancer;
+  }
+  if (intelligibility_enhancer_ && *intelligibility_enhancer_) {
+    LOG(LS_INFO) << "Enabling NS when Intelligibility Enhancer is active.";
+    options.noise_suppression = intelligibility_enhancer_;
+  }
+
   if (options.noise_suppression) {
-    const bool built_in_ns = adm()->BuiltInNSIsAvailable();
-    if (built_in_ns) {
-      if (adm()->EnableBuiltInNS(*options.noise_suppression) == 0 &&
-          *options.noise_suppression) {
+    if (adm()->BuiltInNSIsAvailable()) {
+      bool builtin_ns =
+          *options.noise_suppression &&
+          !(intelligibility_enhancer_ && *intelligibility_enhancer_);
+      if (adm()->EnableBuiltInNS(builtin_ns) == 0 && builtin_ns) {
         // Disable internal software NS if built-in NS is enabled,
         // i.e., replace the software NS with the built-in NS.
         options.noise_suppression = rtc::Optional<bool>(false);
@@ -841,6 +851,13 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     LOG(LS_INFO) << "Experimental ns is enabled? " << *experimental_ns_;
     config.Set<webrtc::ExperimentalNs>(
         new webrtc::ExperimentalNs(*experimental_ns_));
+  }
+
+  if (intelligibility_enhancer_) {
+    LOG(LS_INFO) << "Intelligibility Enhancer is enabled? "
+                 << *intelligibility_enhancer_;
+    config.Set<webrtc::Intelligibility>(
+        new webrtc::Intelligibility(*intelligibility_enhancer_));
   }
 
   // We check audioproc for the benefit of tests, since FakeWebRtcVoiceEngine

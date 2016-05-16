@@ -276,16 +276,12 @@ class AudioProcessingImpl : public AudioProcessing {
 
   // APM constants.
   const struct ApmConstants {
-    ApmConstants(int agc_startup_min_volume,
-                 bool use_experimental_agc,
-                 bool intelligibility_enabled)
+    ApmConstants(int agc_startup_min_volume, bool use_experimental_agc)
         :  // Format of processing streams at input/output call sites.
           agc_startup_min_volume(agc_startup_min_volume),
-          use_experimental_agc(use_experimental_agc),
-          intelligibility_enabled(intelligibility_enabled) {}
+          use_experimental_agc(use_experimental_agc) {}
     int agc_startup_min_volume;
     bool use_experimental_agc;
-    bool intelligibility_enabled;
   } constants_;
 
   struct ApmCaptureState {
@@ -325,11 +321,13 @@ class AudioProcessingImpl : public AudioProcessing {
   } capture_ GUARDED_BY(crit_capture_);
 
   struct ApmCaptureNonLockedState {
-    ApmCaptureNonLockedState(bool beamformer_enabled)
+    ApmCaptureNonLockedState(bool beamformer_enabled,
+                             bool intelligibility_enabled)
         : fwd_proc_format(kSampleRate16kHz),
           split_rate(kSampleRate16kHz),
           stream_delay_ms(0),
-          beamformer_enabled(beamformer_enabled) {}
+          beamformer_enabled(beamformer_enabled),
+          intelligibility_enabled(intelligibility_enabled) {}
     // Only the rate and samples fields of fwd_proc_format_ are used because the
     // forward processing number of channels is mutable and is tracked by the
     // capture_audio_.
@@ -337,6 +335,7 @@ class AudioProcessingImpl : public AudioProcessing {
     int split_rate;
     int stream_delay_ms;
     bool beamformer_enabled;
+    bool intelligibility_enabled;
   } capture_nonlocked_;
 
   struct ApmRenderState {

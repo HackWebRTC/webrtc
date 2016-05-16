@@ -160,9 +160,7 @@ struct Beamforming {
   const SphericalPointf target_direction;
 };
 
-// Use to enable intelligibility enhancer in audio processing. Must be provided
-// though the constructor. It will have no impact if used with
-// AudioProcessing::SetExtraOptions().
+// Use to enable intelligibility enhancer in audio processing.
 //
 // Note: If enabled and the reverse stream has more than one output channel,
 // the reverse stream will become an upmixed mono signal.

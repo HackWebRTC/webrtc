@@ -252,6 +252,7 @@ int do_main(int argc, char* argv[]) {
       PRINT_CONFIG(ns_enabled);
       PRINT_CONFIG(ns_level);
       PRINT_CONFIG(transient_suppression_enabled);
+      PRINT_CONFIG(intelligibility_enhancer_enabled);
       if (msg.has_experiments_description()) {
         fprintf(settings_file, "  experiments_description: %s\n",
                 msg.experiments_description().c_str());

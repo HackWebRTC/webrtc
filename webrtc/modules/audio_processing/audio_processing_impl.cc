@@ -163,12 +163,10 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
       private_submodules_(new ApmPrivateSubmodules(beamformer)),
       constants_(config.Get<ExperimentalAgc>().startup_min_volume,
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
-                 false,
+                 false),
 #else
-                 config.Get<ExperimentalAgc>().enabled,
+                 config.Get<ExperimentalAgc>().enabled),
 #endif
-                 config.Get<Intelligibility>().enabled),
-
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
       capture_(false,
 #else
@@ -176,7 +174,8 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config,
 #endif
                config.Get<Beamforming>().array_geometry,
                config.Get<Beamforming>().target_direction),
-      capture_nonlocked_(config.Get<Beamforming>().enabled)
+      capture_nonlocked_(config.Get<Beamforming>().enabled,
+                         config.Get<Intelligibility>().enabled)
 {
   {
     rtc::CritScope cs_render(&crit_render_);
@@ -409,6 +408,13 @@ void AudioProcessingImpl::SetExtraOptions(const Config& config) {
     capture_.transient_suppressor_enabled =
         config.Get<ExperimentalNs>().enabled;
     InitializeTransient();
+  }
+
+  if(capture_nonlocked_.intelligibility_enabled !=
+     config.Get<Intelligibility>().enabled) {
+    capture_nonlocked_.intelligibility_enabled =
+        config.Get<Intelligibility>().enabled;
+    InitializeIntelligibility();
   }
 
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
@@ -704,12 +710,13 @@ int AudioProcessingImpl::ProcessStreamLocked() {
     ca->CopyLowPassToReference();
   }
   public_submodules_->noise_suppression->ProcessCaptureAudio(ca);
-  if (constants_.intelligibility_enabled) {
+  if (capture_nonlocked_.intelligibility_enabled) {
     RTC_DCHECK(public_submodules_->noise_suppression->is_enabled());
-    RTC_DCHECK(public_submodules_->gain_control->is_enabled());
+    int gain_db = public_submodules_->gain_control->is_enabled() ?
+                  public_submodules_->gain_control->compression_gain_db() :
+                  0;
     public_submodules_->intelligibility_enhancer->SetCaptureNoiseEstimate(
-        public_submodules_->noise_suppression->NoiseEstimate(),
-        public_submodules_->gain_control->compression_gain_db());
+        public_submodules_->noise_suppression->NoiseEstimate(), gain_db);
   }
 
   // Ensure that the stream delay was set before the call to the
@@ -902,7 +909,7 @@ int AudioProcessingImpl::ProcessReverseStreamLocked() {
     ra->SplitIntoFrequencyBands();
   }
 
-  if (constants_.intelligibility_enabled) {
+  if (capture_nonlocked_.intelligibility_enabled) {
     public_submodules_->intelligibility_enhancer->ProcessRenderAudio(
         ra->split_channels_f(kBand0To8kHz), capture_nonlocked_.split_rate,
         ra->num_channels());
@@ -1150,7 +1157,7 @@ bool AudioProcessingImpl::fwd_analysis_needed() const {
 }
 
 bool AudioProcessingImpl::is_rev_processed() const {
-  return constants_.intelligibility_enabled;
+  return capture_nonlocked_.intelligibility_enabled;
 }
 
 bool AudioProcessingImpl::rev_synthesis_needed() const {
@@ -1215,7 +1222,7 @@ void AudioProcessingImpl::InitializeBeamformer() {
 }
 
 void AudioProcessingImpl::InitializeIntelligibility() {
-  if (constants_.intelligibility_enabled) {
+  if (capture_nonlocked_.intelligibility_enabled) {
     public_submodules_->intelligibility_enhancer.reset(
         new IntelligibilityEnhancer(capture_nonlocked_.split_rate,
                                     render_.render_audio->num_channels(),
@@ -1442,6 +1449,8 @@ int AudioProcessingImpl::WriteConfigMessage(bool forced) {
 
   config.set_transient_suppression_enabled(
       capture_.transient_suppressor_enabled);
+  config.set_intelligibility_enhancer_enabled(
+      capture_nonlocked_.intelligibility_enabled);
 
   std::string experiments_description =
       public_submodules_->echo_cancellation->GetExperimentsDescription();
