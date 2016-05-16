@@ -99,13 +99,14 @@ template <class Base> class RtpHelper : public Base {
       return false;
     }
     send_streams_.push_back(sp);
-    rtp_parameters_[sp.first_ssrc()] = CreateRtpParametersWithOneEncoding();
+    rtp_send_parameters_[sp.first_ssrc()] =
+        CreateRtpParametersWithOneEncoding();
     return true;
   }
   virtual bool RemoveSendStream(uint32_t ssrc) {
-    auto parameters_iterator = rtp_parameters_.find(ssrc);
-    if (parameters_iterator != rtp_parameters_.end()) {
-      rtp_parameters_.erase(parameters_iterator);
+    auto parameters_iterator = rtp_send_parameters_.find(ssrc);
+    if (parameters_iterator != rtp_send_parameters_.end()) {
+      rtp_send_parameters_.erase(parameters_iterator);
     }
     return RemoveStreamBySsrc(&send_streams_, ssrc);
   }
@@ -115,23 +116,49 @@ template <class Base> class RtpHelper : public Base {
       return false;
     }
     receive_streams_.push_back(sp);
+    rtp_receive_parameters_[sp.first_ssrc()] =
+        CreateRtpParametersWithOneEncoding();
     return true;
   }
   virtual bool RemoveRecvStream(uint32_t ssrc) {
+    auto parameters_iterator = rtp_receive_parameters_.find(ssrc);
+    if (parameters_iterator != rtp_receive_parameters_.end()) {
+      rtp_receive_parameters_.erase(parameters_iterator);
+    }
     return RemoveStreamBySsrc(&receive_streams_, ssrc);
   }
 
-  virtual webrtc::RtpParameters GetRtpParameters(uint32_t ssrc) const {
-    auto parameters_iterator = rtp_parameters_.find(ssrc);
-    if (parameters_iterator != rtp_parameters_.end()) {
+  virtual webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const {
+    auto parameters_iterator = rtp_send_parameters_.find(ssrc);
+    if (parameters_iterator != rtp_send_parameters_.end()) {
       return parameters_iterator->second;
     }
     return webrtc::RtpParameters();
   }
-  virtual bool SetRtpParameters(uint32_t ssrc,
-                                const webrtc::RtpParameters& parameters) {
-    auto parameters_iterator = rtp_parameters_.find(ssrc);
-    if (parameters_iterator != rtp_parameters_.end()) {
+  virtual bool SetRtpSendParameters(uint32_t ssrc,
+                                    const webrtc::RtpParameters& parameters) {
+    auto parameters_iterator = rtp_send_parameters_.find(ssrc);
+    if (parameters_iterator != rtp_send_parameters_.end()) {
+      parameters_iterator->second = parameters;
+      return true;
+    }
+    // Replicate the behavior of the real media channel: return false
+    // when setting parameters for unknown SSRCs.
+    return false;
+  }
+
+  virtual webrtc::RtpParameters GetRtpReceiveParameters(uint32_t ssrc) const {
+    auto parameters_iterator = rtp_receive_parameters_.find(ssrc);
+    if (parameters_iterator != rtp_receive_parameters_.end()) {
+      return parameters_iterator->second;
+    }
+    return webrtc::RtpParameters();
+  }
+  virtual bool SetRtpReceiveParameters(
+      uint32_t ssrc,
+      const webrtc::RtpParameters& parameters) {
+    auto parameters_iterator = rtp_receive_parameters_.find(ssrc);
+    if (parameters_iterator != rtp_receive_parameters_.end()) {
       parameters_iterator->second = parameters;
       return true;
     }
@@ -243,7 +270,8 @@ template <class Base> class RtpHelper : public Base {
   std::vector<StreamParams> send_streams_;
   std::vector<StreamParams> receive_streams_;
   std::set<uint32_t> muted_streams_;
-  std::map<uint32_t, webrtc::RtpParameters> rtp_parameters_;
+  std::map<uint32_t, webrtc::RtpParameters> rtp_send_parameters_;
+  std::map<uint32_t, webrtc::RtpParameters> rtp_receive_parameters_;
   bool fail_set_send_codecs_;
   bool fail_set_recv_codecs_;
   uint32_t send_ssrc_;

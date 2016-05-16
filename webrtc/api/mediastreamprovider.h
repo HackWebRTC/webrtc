@@ -63,9 +63,14 @@ class AudioProviderInterface {
       uint32_t ssrc,
       std::unique_ptr<webrtc::AudioSinkInterface> sink) = 0;
 
-  virtual RtpParameters GetAudioRtpParameters(uint32_t ssrc) const = 0;
-  virtual bool SetAudioRtpParameters(uint32_t ssrc,
-                                     const RtpParameters& parameters) = 0;
+  virtual RtpParameters GetAudioRtpSendParameters(uint32_t ssrc) const = 0;
+  virtual bool SetAudioRtpSendParameters(uint32_t ssrc,
+                                         const RtpParameters& parameters) = 0;
+
+  virtual RtpParameters GetAudioRtpReceiveParameters(uint32_t ssrc) const = 0;
+  virtual bool SetAudioRtpReceiveParameters(
+      uint32_t ssrc,
+      const RtpParameters& parameters) = 0;
 
  protected:
   virtual ~AudioProviderInterface() {}
@@ -88,9 +93,14 @@ class VideoProviderInterface {
                             bool enable,
                             const cricket::VideoOptions* options) = 0;
 
-  virtual RtpParameters GetVideoRtpParameters(uint32_t ssrc) const = 0;
-  virtual bool SetVideoRtpParameters(uint32_t ssrc,
-                                     const RtpParameters& parameters) = 0;
+  virtual RtpParameters GetVideoRtpSendParameters(uint32_t ssrc) const = 0;
+  virtual bool SetVideoRtpSendParameters(uint32_t ssrc,
+                                         const RtpParameters& parameters) = 0;
+
+  virtual RtpParameters GetVideoRtpReceiveParameters(uint32_t ssrc) const = 0;
+  virtual bool SetVideoRtpReceiveParameters(
+      uint32_t ssrc,
+      const RtpParameters& parameters) = 0;
 
  protected:
   virtual ~VideoProviderInterface() {}

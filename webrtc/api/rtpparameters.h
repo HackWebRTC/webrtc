@@ -25,6 +25,9 @@ struct RtpEncodingParameters {
   bool operator==(const RtpEncodingParameters& o) const {
     return active == o.active && max_bitrate_bps == o.max_bitrate_bps;
   }
+  bool operator!=(const RtpEncodingParameters& o) const {
+    return !(*this == o);
+  }
 };
 
 struct RtpCodecParameters {
@@ -38,6 +41,7 @@ struct RtpCodecParameters {
     return payload_type == o.payload_type && mime_type == o.mime_type &&
            clock_rate == o.clock_rate && channels == o.channels;
   }
+  bool operator!=(const RtpCodecParameters& o) const { return !(*this == o); }
 };
 
 struct RtpParameters {
@@ -47,6 +51,7 @@ struct RtpParameters {
   bool operator==(const RtpParameters& o) const {
     return encodings == o.encodings && codecs == o.codecs;
   }
+  bool operator!=(const RtpParameters& o) const { return !(*this == o); }
 };
 
 }  // namespace webrtc

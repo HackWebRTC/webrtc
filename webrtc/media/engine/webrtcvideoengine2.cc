@@ -877,13 +877,13 @@ bool WebRtcVideoChannel2::SetSendParameters(const VideoSendParameters& params) {
   return true;
 }
 
-webrtc::RtpParameters WebRtcVideoChannel2::GetRtpParameters(
+webrtc::RtpParameters WebRtcVideoChannel2::GetRtpSendParameters(
     uint32_t ssrc) const {
   rtc::CritScope stream_lock(&stream_crit_);
   auto it = send_streams_.find(ssrc);
   if (it == send_streams_.end()) {
-    LOG(LS_WARNING) << "Attempting to get RTP parameters for stream with ssrc "
-                    << ssrc << " which doesn't exist.";
+    LOG(LS_WARNING) << "Attempting to get RTP send parameters for stream "
+                    << "with ssrc " << ssrc << " which doesn't exist.";
     return webrtc::RtpParameters();
   }
 
@@ -896,21 +896,67 @@ webrtc::RtpParameters WebRtcVideoChannel2::GetRtpParameters(
   return rtp_params;
 }
 
-bool WebRtcVideoChannel2::SetRtpParameters(
+bool WebRtcVideoChannel2::SetRtpSendParameters(
     uint32_t ssrc,
     const webrtc::RtpParameters& parameters) {
-  TRACE_EVENT0("webrtc", "WebRtcVideoChannel2::SetRtpParameters");
+  TRACE_EVENT0("webrtc", "WebRtcVideoChannel2::SetRtpSendParameters");
   rtc::CritScope stream_lock(&stream_crit_);
   auto it = send_streams_.find(ssrc);
   if (it == send_streams_.end()) {
-    LOG(LS_ERROR) << "Attempting to set RTP parameters for stream with ssrc "
-                  << ssrc << " which doesn't exist.";
+    LOG(LS_ERROR) << "Attempting to set RTP send parameters for stream "
+                  << "with ssrc " << ssrc << " which doesn't exist.";
     return false;
   }
 
   // TODO(deadbeef): Handle setting parameters with a list of codecs in a
   // different order (which should change the send codec).
+  webrtc::RtpParameters current_parameters = GetRtpSendParameters(ssrc);
+  if (current_parameters.codecs != parameters.codecs) {
+    LOG(LS_ERROR) << "Using SetParameters to change the set of codecs "
+                  << "is not currently supported.";
+    return false;
+  }
+
   return it->second->SetRtpParameters(parameters);
+}
+
+webrtc::RtpParameters WebRtcVideoChannel2::GetRtpReceiveParameters(
+    uint32_t ssrc) const {
+  rtc::CritScope stream_lock(&stream_crit_);
+  auto it = receive_streams_.find(ssrc);
+  if (it == receive_streams_.end()) {
+    LOG(LS_WARNING) << "Attempting to get RTP receive parameters for stream "
+                    << "with ssrc " << ssrc << " which doesn't exist.";
+    return webrtc::RtpParameters();
+  }
+
+  // TODO(deadbeef): Return stream-specific parameters.
+  webrtc::RtpParameters rtp_params = CreateRtpParametersWithOneEncoding();
+  for (const VideoCodec& codec : recv_params_.codecs) {
+    rtp_params.codecs.push_back(codec.ToCodecParameters());
+  }
+  return rtp_params;
+}
+
+bool WebRtcVideoChannel2::SetRtpReceiveParameters(
+    uint32_t ssrc,
+    const webrtc::RtpParameters& parameters) {
+  TRACE_EVENT0("webrtc", "WebRtcVideoChannel2::SetRtpReceiveParameters");
+  rtc::CritScope stream_lock(&stream_crit_);
+  auto it = receive_streams_.find(ssrc);
+  if (it == receive_streams_.end()) {
+    LOG(LS_ERROR) << "Attempting to set RTP receive parameters for stream "
+                  << "with ssrc " << ssrc << " which doesn't exist.";
+    return false;
+  }
+
+  webrtc::RtpParameters current_parameters = GetRtpReceiveParameters(ssrc);
+  if (current_parameters != parameters) {
+    LOG(LS_ERROR) << "Changing the RTP receive parameters is currently "
+                  << "unsupported.";
+    return false;
+  }
+  return true;
 }
 
 bool WebRtcVideoChannel2::GetChangedRecvParameters(

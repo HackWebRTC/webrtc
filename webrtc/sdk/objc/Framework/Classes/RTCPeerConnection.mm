@@ -17,6 +17,7 @@
 #import "RTCMediaConstraints+Private.h"
 #import "RTCMediaStream+Private.h"
 #import "RTCPeerConnectionFactory+Private.h"
+#import "RTCRtpReceiver+Private.h"
 #import "RTCRtpSender+Private.h"
 #import "RTCSessionDescription+Private.h"
 #import "RTCStatsReport+Private.h"
@@ -340,6 +341,18 @@ void PeerConnectionDelegateAdapter::OnIceCandidate(
     [senders addObject:sender];
   }
   return senders;
+}
+
+- (NSArray<RTCRtpReceiver *> *)receivers {
+  std::vector<rtc::scoped_refptr<webrtc::RtpReceiverInterface>> nativeReceivers(
+      _peerConnection->GetReceivers());
+  NSMutableArray *receivers = [[NSMutableArray alloc] init];
+  for (const auto &nativeReceiver : nativeReceivers) {
+    RTCRtpReceiver *receiver =
+        [[RTCRtpReceiver alloc] initWithNativeRtpReceiver:nativeReceiver];
+    [receivers addObject:receiver];
+  }
+  return receivers;
 }
 
 #pragma mark - Private

@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "WebRTC/RTCRtpSender.h"
+#import "WebRTC/RTCRtpReceiver.h"
 
-#include "webrtc/api/rtpsenderinterface.h"
+#include "webrtc/api/rtpreceiverinterface.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface RTCRtpSender ()
+@interface RTCRtpReceiver ()
 
 @property(nonatomic, readonly)
-    rtc::scoped_refptr<webrtc::RtpSenderInterface> nativeRtpSender;
+    rtc::scoped_refptr<webrtc::RtpReceiverInterface> nativeRtpReceiver;
 
-/** Initialize an RTCRtpSender with a native RtpSenderInterface. */
-- (instancetype)initWithNativeRtpSender:
-    (rtc::scoped_refptr<webrtc::RtpSenderInterface>)nativeRtpSender
+/** Initialize an RTCRtpReceiver with a native RtpReceiverInterface. */
+- (instancetype)initWithNativeRtpReceiver:
+    (rtc::scoped_refptr<webrtc::RtpReceiverInterface>)nativeRtpReceiver
     NS_DESIGNATED_INITIALIZER;
 
 @end

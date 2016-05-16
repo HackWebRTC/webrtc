@@ -243,9 +243,12 @@ class WebRtcSession : public AudioProviderInterface,
   void SetRawAudioSink(uint32_t ssrc,
                        std::unique_ptr<AudioSinkInterface> sink) override;
 
-  RtpParameters GetAudioRtpParameters(uint32_t ssrc) const override;
-  bool SetAudioRtpParameters(uint32_t ssrc,
-                             const RtpParameters& parameters) override;
+  RtpParameters GetAudioRtpSendParameters(uint32_t ssrc) const override;
+  bool SetAudioRtpSendParameters(uint32_t ssrc,
+                                 const RtpParameters& parameters) override;
+  RtpParameters GetAudioRtpReceiveParameters(uint32_t ssrc) const override;
+  bool SetAudioRtpReceiveParameters(uint32_t ssrc,
+                                    const RtpParameters& parameters) override;
 
   // Implements VideoMediaProviderInterface.
   bool SetSource(
@@ -259,9 +262,12 @@ class WebRtcSession : public AudioProviderInterface,
                     bool enable,
                     const cricket::VideoOptions* options) override;
 
-  RtpParameters GetVideoRtpParameters(uint32_t ssrc) const override;
-  bool SetVideoRtpParameters(uint32_t ssrc,
-                             const RtpParameters& parameters) override;
+  RtpParameters GetVideoRtpSendParameters(uint32_t ssrc) const override;
+  bool SetVideoRtpSendParameters(uint32_t ssrc,
+                                 const RtpParameters& parameters) override;
+  RtpParameters GetVideoRtpReceiveParameters(uint32_t ssrc) const override;
+  bool SetVideoRtpReceiveParameters(uint32_t ssrc,
+                                    const RtpParameters& parameters) override;
 
   // Implements DtmfProviderInterface.
   bool CanInsertDtmf(const std::string& track_id) override;

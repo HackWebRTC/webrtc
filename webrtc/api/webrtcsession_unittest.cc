@@ -3358,19 +3358,19 @@ TEST_F(WebRtcSessionTest, SetAudioMaxSendBitrate) {
   ASSERT_TRUE(channel != NULL);
   uint32_t send_ssrc = channel->send_streams()[0].first_ssrc();
   EXPECT_EQ(-1, channel->max_bps());
-  webrtc::RtpParameters params = session_->GetAudioRtpParameters(send_ssrc);
+  webrtc::RtpParameters params = session_->GetAudioRtpSendParameters(send_ssrc);
   EXPECT_EQ(1, params.encodings.size());
   EXPECT_EQ(-1, params.encodings[0].max_bitrate_bps);
   params.encodings[0].max_bitrate_bps = 1000;
-  EXPECT_TRUE(session_->SetAudioRtpParameters(send_ssrc, params));
+  EXPECT_TRUE(session_->SetAudioRtpSendParameters(send_ssrc, params));
 
   // Read back the parameters and verify they have been changed.
-  params = session_->GetAudioRtpParameters(send_ssrc);
+  params = session_->GetAudioRtpSendParameters(send_ssrc);
   EXPECT_EQ(1, params.encodings.size());
   EXPECT_EQ(1000, params.encodings[0].max_bitrate_bps);
 
   // Verify that the audio channel received the new parameters.
-  params = channel->GetRtpParameters(send_ssrc);
+  params = channel->GetRtpSendParameters(send_ssrc);
   EXPECT_EQ(1, params.encodings.size());
   EXPECT_EQ(1000, params.encodings[0].max_bitrate_bps);
 
@@ -3452,19 +3452,19 @@ TEST_F(WebRtcSessionTest, SetVideoMaxSendBitrate) {
   ASSERT_TRUE(channel != NULL);
   uint32_t send_ssrc = channel->send_streams()[0].first_ssrc();
   EXPECT_EQ(-1, channel->max_bps());
-  webrtc::RtpParameters params = session_->GetVideoRtpParameters(send_ssrc);
+  webrtc::RtpParameters params = session_->GetVideoRtpSendParameters(send_ssrc);
   EXPECT_EQ(1, params.encodings.size());
   EXPECT_EQ(-1, params.encodings[0].max_bitrate_bps);
   params.encodings[0].max_bitrate_bps = 1000;
-  EXPECT_TRUE(session_->SetVideoRtpParameters(send_ssrc, params));
+  EXPECT_TRUE(session_->SetVideoRtpSendParameters(send_ssrc, params));
 
   // Read back the parameters and verify they have been changed.
-  params = session_->GetVideoRtpParameters(send_ssrc);
+  params = session_->GetVideoRtpSendParameters(send_ssrc);
   EXPECT_EQ(1, params.encodings.size());
   EXPECT_EQ(1000, params.encodings[0].max_bitrate_bps);
 
   // Verify that the video channel received the new parameters.
-  params = channel->GetRtpParameters(send_ssrc);
+  params = channel->GetRtpSendParameters(send_ssrc);
   EXPECT_EQ(1, params.encodings.size());
   EXPECT_EQ(1000, params.encodings[0].max_bitrate_bps);
 

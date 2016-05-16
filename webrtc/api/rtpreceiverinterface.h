@@ -33,6 +33,12 @@ class RtpReceiverInterface : public rtc::RefCountInterface {
 
   virtual void Stop() = 0;
 
+  // The WebRTC specification only defines RTCRtpParameters in terms of senders,
+  // but this API also applies them to receivers, similar to ORTC:
+  // http://ortc.org/wp-content/uploads/2016/03/ortc.html#rtcrtpparameters*.
+  virtual RtpParameters GetParameters() const = 0;
+  virtual bool SetParameters(const RtpParameters& parameters) = 0;
+
  protected:
   virtual ~RtpReceiverInterface() {}
 };
@@ -42,6 +48,8 @@ BEGIN_SIGNALING_PROXY_MAP(RtpReceiver)
 PROXY_CONSTMETHOD0(rtc::scoped_refptr<MediaStreamTrackInterface>, track)
 PROXY_CONSTMETHOD0(std::string, id)
 PROXY_METHOD0(void, Stop)
+PROXY_CONSTMETHOD0(RtpParameters, GetParameters);
+PROXY_METHOD1(bool, SetParameters, const RtpParameters&)
 END_SIGNALING_PROXY()
 
 }  // namespace webrtc

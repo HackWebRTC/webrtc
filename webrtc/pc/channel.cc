@@ -1533,24 +1533,49 @@ void VoiceChannel::SetRawAudioSink(
   InvokeOnWorker(Bind(&SetRawAudioSink_w, media_channel(), ssrc, &sink));
 }
 
-webrtc::RtpParameters VoiceChannel::GetRtpParameters(uint32_t ssrc) const {
+webrtc::RtpParameters VoiceChannel::GetRtpSendParameters(uint32_t ssrc) const {
   return worker_thread()->Invoke<webrtc::RtpParameters>(
-      Bind(&VoiceChannel::GetRtpParameters_w, this, ssrc));
+      Bind(&VoiceChannel::GetRtpSendParameters_w, this, ssrc));
 }
 
-webrtc::RtpParameters VoiceChannel::GetRtpParameters_w(uint32_t ssrc) const {
-  return media_channel()->GetRtpParameters(ssrc);
+webrtc::RtpParameters VoiceChannel::GetRtpSendParameters_w(
+    uint32_t ssrc) const {
+  return media_channel()->GetRtpSendParameters(ssrc);
 }
 
-bool VoiceChannel::SetRtpParameters(uint32_t ssrc,
-                                    const webrtc::RtpParameters& parameters) {
+bool VoiceChannel::SetRtpSendParameters(
+    uint32_t ssrc,
+    const webrtc::RtpParameters& parameters) {
   return InvokeOnWorker(
-      Bind(&VoiceChannel::SetRtpParameters_w, this, ssrc, parameters));
+      Bind(&VoiceChannel::SetRtpSendParameters_w, this, ssrc, parameters));
 }
 
-bool VoiceChannel::SetRtpParameters_w(uint32_t ssrc,
-                                      webrtc::RtpParameters parameters) {
-  return media_channel()->SetRtpParameters(ssrc, parameters);
+bool VoiceChannel::SetRtpSendParameters_w(uint32_t ssrc,
+                                          webrtc::RtpParameters parameters) {
+  return media_channel()->SetRtpSendParameters(ssrc, parameters);
+}
+
+webrtc::RtpParameters VoiceChannel::GetRtpReceiveParameters(
+    uint32_t ssrc) const {
+  return worker_thread()->Invoke<webrtc::RtpParameters>(
+      Bind(&VoiceChannel::GetRtpReceiveParameters_w, this, ssrc));
+}
+
+webrtc::RtpParameters VoiceChannel::GetRtpReceiveParameters_w(
+    uint32_t ssrc) const {
+  return media_channel()->GetRtpReceiveParameters(ssrc);
+}
+
+bool VoiceChannel::SetRtpReceiveParameters(
+    uint32_t ssrc,
+    const webrtc::RtpParameters& parameters) {
+  return InvokeOnWorker(
+      Bind(&VoiceChannel::SetRtpReceiveParameters_w, this, ssrc, parameters));
+}
+
+bool VoiceChannel::SetRtpReceiveParameters_w(uint32_t ssrc,
+                                             webrtc::RtpParameters parameters) {
+  return media_channel()->SetRtpReceiveParameters(ssrc, parameters);
 }
 
 bool VoiceChannel::GetStats(VoiceMediaInfo* stats) {
@@ -1843,24 +1868,49 @@ bool VideoChannel::SetVideoSend(uint32_t ssrc,
                              ssrc, mute, options));
 }
 
-webrtc::RtpParameters VideoChannel::GetRtpParameters(uint32_t ssrc) const {
+webrtc::RtpParameters VideoChannel::GetRtpSendParameters(uint32_t ssrc) const {
   return worker_thread()->Invoke<webrtc::RtpParameters>(
-      Bind(&VideoChannel::GetRtpParameters_w, this, ssrc));
+      Bind(&VideoChannel::GetRtpSendParameters_w, this, ssrc));
 }
 
-webrtc::RtpParameters VideoChannel::GetRtpParameters_w(uint32_t ssrc) const {
-  return media_channel()->GetRtpParameters(ssrc);
+webrtc::RtpParameters VideoChannel::GetRtpSendParameters_w(
+    uint32_t ssrc) const {
+  return media_channel()->GetRtpSendParameters(ssrc);
 }
 
-bool VideoChannel::SetRtpParameters(uint32_t ssrc,
-                                    const webrtc::RtpParameters& parameters) {
+bool VideoChannel::SetRtpSendParameters(
+    uint32_t ssrc,
+    const webrtc::RtpParameters& parameters) {
   return InvokeOnWorker(
-      Bind(&VideoChannel::SetRtpParameters_w, this, ssrc, parameters));
+      Bind(&VideoChannel::SetRtpSendParameters_w, this, ssrc, parameters));
 }
 
-bool VideoChannel::SetRtpParameters_w(uint32_t ssrc,
-                                      webrtc::RtpParameters parameters) {
-  return media_channel()->SetRtpParameters(ssrc, parameters);
+bool VideoChannel::SetRtpSendParameters_w(uint32_t ssrc,
+                                          webrtc::RtpParameters parameters) {
+  return media_channel()->SetRtpSendParameters(ssrc, parameters);
+}
+
+webrtc::RtpParameters VideoChannel::GetRtpReceiveParameters(
+    uint32_t ssrc) const {
+  return worker_thread()->Invoke<webrtc::RtpParameters>(
+      Bind(&VideoChannel::GetRtpReceiveParameters_w, this, ssrc));
+}
+
+webrtc::RtpParameters VideoChannel::GetRtpReceiveParameters_w(
+    uint32_t ssrc) const {
+  return media_channel()->GetRtpReceiveParameters(ssrc);
+}
+
+bool VideoChannel::SetRtpReceiveParameters(
+    uint32_t ssrc,
+    const webrtc::RtpParameters& parameters) {
+  return InvokeOnWorker(
+      Bind(&VideoChannel::SetRtpReceiveParameters_w, this, ssrc, parameters));
+}
+
+bool VideoChannel::SetRtpReceiveParameters_w(uint32_t ssrc,
+                                             webrtc::RtpParameters parameters) {
+  return media_channel()->SetRtpReceiveParameters(ssrc, parameters);
 }
 
 void VideoChannel::ChangeState_w() {

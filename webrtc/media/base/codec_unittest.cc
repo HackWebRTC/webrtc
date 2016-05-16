@@ -321,3 +321,19 @@ TEST_F(CodecTest, TestValidateCodecFormat) {
   different_bitrates.params[kCodecParamMaxBitrate] = "100";
   EXPECT_TRUE(different_bitrates.ValidateCodecFormat());
 }
+
+TEST_F(CodecTest, TestToCodecParameters) {
+  const VideoCodec v(96, "V", 320, 200, 30);
+  webrtc::RtpCodecParameters codec_params_1 = v.ToCodecParameters();
+  EXPECT_EQ(96, codec_params_1.payload_type);
+  EXPECT_EQ("V", codec_params_1.mime_type);
+  EXPECT_EQ(cricket::kVideoCodecClockrate, codec_params_1.clock_rate);
+  EXPECT_EQ(1, codec_params_1.channels);
+
+  const AudioCodec a(97, "A", 44100, 20000, 2);
+  webrtc::RtpCodecParameters codec_params_2 = a.ToCodecParameters();
+  EXPECT_EQ(97, codec_params_2.payload_type);
+  EXPECT_EQ("A", codec_params_2.mime_type);
+  EXPECT_EQ(44100, codec_params_2.clock_rate);
+  EXPECT_EQ(2, codec_params_2.channels);
+}

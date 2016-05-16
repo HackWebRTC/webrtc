@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "RTCRtpSender+Private.h"
+#import "RTCRtpReceiver+Private.h"
 
 #import "NSString+StdString.h"
 #import "RTCMediaStreamTrack+Private.h"
@@ -17,44 +17,38 @@
 
 #include "webrtc/api/mediastreaminterface.h"
 
-@implementation RTCRtpSender {
-  rtc::scoped_refptr<webrtc::RtpSenderInterface> _nativeRtpSender;
+@implementation RTCRtpReceiver {
+  rtc::scoped_refptr<webrtc::RtpReceiverInterface> _nativeRtpReceiver;
 }
 
-- (NSString *)senderId {
-  return [NSString stringForStdString:_nativeRtpSender->id()];
+- (NSString *)receiverId {
+  return [NSString stringForStdString:_nativeRtpReceiver->id()];
 }
 
 - (RTCRtpParameters *)parameters {
   return [[RTCRtpParameters alloc]
-      initWithNativeParameters:_nativeRtpSender->GetParameters()];
+      initWithNativeParameters:_nativeRtpReceiver->GetParameters()];
 }
 
 - (void)setParameters:(RTCRtpParameters *)parameters {
-  if (!_nativeRtpSender->SetParameters(parameters.nativeParameters)) {
-    RTCLogError(@"RTCRtpSender(%p): Failed to set parameters: %@", self,
+  if (!_nativeRtpReceiver->SetParameters(parameters.nativeParameters)) {
+    RTCLogError(@"RTCRtpReceiver(%p): Failed to set parameters: %@", self,
         parameters);
   }
 }
 
 - (RTCMediaStreamTrack *)track {
   rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> nativeTrack(
-    _nativeRtpSender->track());
+    _nativeRtpReceiver->track());
   if (nativeTrack) {
     return [[RTCMediaStreamTrack alloc] initWithNativeTrack:nativeTrack];
   }
   return nil;
 }
 
-- (void)setTrack:(RTCMediaStreamTrack *)track {
-  if (!_nativeRtpSender->SetTrack(track.nativeTrack)) {
-    RTCLogError(@"RTCRtpSender(%p): Failed to set track %@", self, track);
-  }
-}
-
 - (NSString *)description {
-  return [NSString stringWithFormat:@"RTCRtpSender {\n  senderId: %@\n}",
-      self.senderId];
+  return [NSString stringWithFormat:@"RTCRtpReceiver {\n  receiverId: %@\n}",
+      self.receiverId];
 }
 
 - (BOOL)isEqual:(id)object {
@@ -67,26 +61,26 @@
   if (![object isMemberOfClass:[self class]]) {
     return NO;
   }
-  RTCRtpSender *sender = (RTCRtpSender *)object;
-  return _nativeRtpSender == sender.nativeRtpSender;
+  RTCRtpReceiver *receiver = (RTCRtpReceiver *)object;
+  return _nativeRtpReceiver == receiver.nativeRtpReceiver;
 }
 
 - (NSUInteger)hash {
-  return (NSUInteger)_nativeRtpSender.get();
+  return (NSUInteger)_nativeRtpReceiver.get();
 }
 
 #pragma mark - Private
 
-- (rtc::scoped_refptr<webrtc::RtpSenderInterface>)nativeRtpSender {
-  return _nativeRtpSender;
+- (rtc::scoped_refptr<webrtc::RtpReceiverInterface>)nativeRtpReceiver {
+  return _nativeRtpReceiver;
 }
 
-- (instancetype)initWithNativeRtpSender:
-    (rtc::scoped_refptr<webrtc::RtpSenderInterface>)nativeRtpSender {
-  NSParameterAssert(nativeRtpSender);
+- (instancetype)initWithNativeRtpReceiver:
+    (rtc::scoped_refptr<webrtc::RtpReceiverInterface>)nativeRtpReceiver {
   if (self = [super init]) {
-    _nativeRtpSender = nativeRtpSender;
-    RTCLogInfo(@"RTCRtpSender(%p): created sender: %@", self, self.description);
+    _nativeRtpReceiver = nativeRtpReceiver;
+    RTCLogInfo(
+        @"RTCRtpReceiver(%p): created receiver: %@", self, self.description);
   }
   return self;
 }

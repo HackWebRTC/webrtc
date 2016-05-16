@@ -147,9 +147,13 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
 
   bool SetSendParameters(const VideoSendParameters& params) override;
   bool SetRecvParameters(const VideoRecvParameters& params) override;
-  webrtc::RtpParameters GetRtpParameters(uint32_t ssrc) const override;
-  bool SetRtpParameters(uint32_t ssrc,
-                        const webrtc::RtpParameters& parameters) override;
+  webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const override;
+  bool SetRtpSendParameters(uint32_t ssrc,
+                            const webrtc::RtpParameters& parameters) override;
+  webrtc::RtpParameters GetRtpReceiveParameters(uint32_t ssrc) const override;
+  bool SetRtpReceiveParameters(
+      uint32_t ssrc,
+      const webrtc::RtpParameters& parameters) override;
   bool GetSendCodec(VideoCodec* send_codec) override;
   bool SetSend(bool send) override;
   bool SetVideoSend(uint32_t ssrc,

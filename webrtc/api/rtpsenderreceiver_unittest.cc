@@ -59,8 +59,12 @@ class MockAudioProvider : public AudioProviderInterface {
                     const cricket::AudioOptions& options,
                     cricket::AudioSource* source));
   MOCK_METHOD2(SetAudioPlayoutVolume, void(uint32_t ssrc, double volume));
-  MOCK_CONST_METHOD1(GetAudioRtpParameters, RtpParameters(uint32_t ssrc));
-  MOCK_METHOD2(SetAudioRtpParameters,
+  MOCK_CONST_METHOD1(GetAudioRtpSendParameters, RtpParameters(uint32_t ssrc));
+  MOCK_METHOD2(SetAudioRtpSendParameters,
+               bool(uint32_t ssrc, const RtpParameters&));
+  MOCK_CONST_METHOD1(GetAudioRtpReceiveParameters,
+                     RtpParameters(uint32_t ssrc));
+  MOCK_METHOD2(SetAudioRtpReceiveParameters,
                bool(uint32_t ssrc, const RtpParameters&));
 
   void SetRawAudioSink(
@@ -88,8 +92,12 @@ class MockVideoProvider : public VideoProviderInterface {
                     bool enable,
                     const cricket::VideoOptions* options));
 
-  MOCK_CONST_METHOD1(GetVideoRtpParameters, RtpParameters(uint32_t ssrc));
-  MOCK_METHOD2(SetVideoRtpParameters,
+  MOCK_CONST_METHOD1(GetVideoRtpSendParameters, RtpParameters(uint32_t ssrc));
+  MOCK_METHOD2(SetVideoRtpSendParameters,
+               bool(uint32_t ssrc, const RtpParameters&));
+  MOCK_CONST_METHOD1(GetVideoRtpReceiveParameters,
+                     RtpParameters(uint32_t ssrc));
+  MOCK_METHOD2(SetVideoRtpReceiveParameters,
                bool(uint32_t ssrc, const RtpParameters&));
 };
 
@@ -504,9 +512,9 @@ TEST_F(RtpSenderReceiverTest, VideoSenderSsrcChanged) {
 TEST_F(RtpSenderReceiverTest, AudioSenderCanSetParameters) {
   CreateAudioRtpSender();
 
-  EXPECT_CALL(audio_provider_, GetAudioRtpParameters(kAudioSsrc))
+  EXPECT_CALL(audio_provider_, GetAudioRtpSendParameters(kAudioSsrc))
       .WillOnce(Return(RtpParameters()));
-  EXPECT_CALL(audio_provider_, SetAudioRtpParameters(kAudioSsrc, _))
+  EXPECT_CALL(audio_provider_, SetAudioRtpSendParameters(kAudioSsrc, _))
       .WillOnce(Return(true));
   RtpParameters params = audio_rtp_sender_->GetParameters();
   EXPECT_TRUE(audio_rtp_sender_->SetParameters(params));
@@ -517,14 +525,40 @@ TEST_F(RtpSenderReceiverTest, AudioSenderCanSetParameters) {
 TEST_F(RtpSenderReceiverTest, VideoSenderCanSetParameters) {
   CreateVideoRtpSender();
 
-  EXPECT_CALL(video_provider_, GetVideoRtpParameters(kVideoSsrc))
+  EXPECT_CALL(video_provider_, GetVideoRtpSendParameters(kVideoSsrc))
       .WillOnce(Return(RtpParameters()));
-  EXPECT_CALL(video_provider_, SetVideoRtpParameters(kVideoSsrc, _))
+  EXPECT_CALL(video_provider_, SetVideoRtpSendParameters(kVideoSsrc, _))
       .WillOnce(Return(true));
   RtpParameters params = video_rtp_sender_->GetParameters();
   EXPECT_TRUE(video_rtp_sender_->SetParameters(params));
 
   DestroyVideoRtpSender();
+}
+
+TEST_F(RtpSenderReceiverTest, AudioReceiverCanSetParameters) {
+  CreateAudioRtpReceiver();
+
+  EXPECT_CALL(audio_provider_, GetAudioRtpReceiveParameters(kAudioSsrc))
+      .WillOnce(Return(RtpParameters()));
+  EXPECT_CALL(audio_provider_, SetAudioRtpReceiveParameters(kAudioSsrc, _))
+      .WillOnce(Return(true));
+  RtpParameters params = audio_rtp_receiver_->GetParameters();
+  EXPECT_TRUE(audio_rtp_receiver_->SetParameters(params));
+
+  DestroyAudioRtpReceiver();
+}
+
+TEST_F(RtpSenderReceiverTest, VideoReceiverCanSetParameters) {
+  CreateVideoRtpReceiver();
+
+  EXPECT_CALL(video_provider_, GetVideoRtpReceiveParameters(kVideoSsrc))
+      .WillOnce(Return(RtpParameters()));
+  EXPECT_CALL(video_provider_, SetVideoRtpReceiveParameters(kVideoSsrc, _))
+      .WillOnce(Return(true));
+  RtpParameters params = video_rtp_receiver_->GetParameters();
+  EXPECT_TRUE(video_rtp_receiver_->SetParameters(params));
+
+  DestroyVideoRtpReceiver();
 }
 
 }  // namespace webrtc

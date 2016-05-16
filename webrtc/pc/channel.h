@@ -404,8 +404,12 @@ class VoiceChannel : public BaseChannel {
   bool SetOutputVolume(uint32_t ssrc, double volume);
   void SetRawAudioSink(uint32_t ssrc,
                        std::unique_ptr<webrtc::AudioSinkInterface> sink);
-  webrtc::RtpParameters GetRtpParameters(uint32_t ssrc) const;
-  bool SetRtpParameters(uint32_t ssrc, const webrtc::RtpParameters& parameters);
+  webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const;
+  bool SetRtpSendParameters(uint32_t ssrc,
+                            const webrtc::RtpParameters& parameters);
+  webrtc::RtpParameters GetRtpReceiveParameters(uint32_t ssrc) const;
+  bool SetRtpReceiveParameters(uint32_t ssrc,
+                               const webrtc::RtpParameters& parameters);
 
   // Get statistics about the current media session.
   bool GetStats(VoiceMediaInfo* stats);
@@ -426,8 +430,11 @@ class VoiceChannel : public BaseChannel {
   int GetInputLevel_w();
   int GetOutputLevel_w();
   void GetActiveStreams_w(AudioInfo::StreamList* actives);
-  webrtc::RtpParameters GetRtpParameters_w(uint32_t ssrc) const;
-  bool SetRtpParameters_w(uint32_t ssrc, webrtc::RtpParameters parameters);
+  webrtc::RtpParameters GetRtpSendParameters_w(uint32_t ssrc) const;
+  bool SetRtpSendParameters_w(uint32_t ssrc, webrtc::RtpParameters parameters);
+  webrtc::RtpParameters GetRtpReceiveParameters_w(uint32_t ssrc) const;
+  bool SetRtpReceiveParameters_w(uint32_t ssrc,
+                                 webrtc::RtpParameters parameters);
 
  private:
   // overrides from BaseChannel
@@ -505,8 +512,12 @@ class VideoChannel : public BaseChannel {
   sigslot::signal2<VideoChannel*, const VideoMediaInfo&> SignalMediaMonitor;
 
   bool SetVideoSend(uint32_t ssrc, bool enable, const VideoOptions* options);
-  webrtc::RtpParameters GetRtpParameters(uint32_t ssrc) const;
-  bool SetRtpParameters(uint32_t ssrc, const webrtc::RtpParameters& parameters);
+  webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const;
+  bool SetRtpSendParameters(uint32_t ssrc,
+                            const webrtc::RtpParameters& parameters);
+  webrtc::RtpParameters GetRtpReceiveParameters(uint32_t ssrc) const;
+  bool SetRtpReceiveParameters(uint32_t ssrc,
+                               const webrtc::RtpParameters& parameters);
 
  private:
   // overrides from BaseChannel
@@ -519,8 +530,11 @@ class VideoChannel : public BaseChannel {
                           ContentAction action,
                           std::string* error_desc) override;
   bool GetStats_w(VideoMediaInfo* stats);
-  webrtc::RtpParameters GetRtpParameters_w(uint32_t ssrc) const;
-  bool SetRtpParameters_w(uint32_t ssrc, webrtc::RtpParameters parameters);
+  webrtc::RtpParameters GetRtpSendParameters_w(uint32_t ssrc) const;
+  bool SetRtpSendParameters_w(uint32_t ssrc, webrtc::RtpParameters parameters);
+  webrtc::RtpParameters GetRtpReceiveParameters_w(uint32_t ssrc) const;
+  bool SetRtpReceiveParameters_w(uint32_t ssrc,
+                                 webrtc::RtpParameters parameters);
 
   void OnMessage(rtc::Message* pmsg) override;
   void GetSrtpCryptoSuites_n(std::vector<int>* crypto_suites) const override;

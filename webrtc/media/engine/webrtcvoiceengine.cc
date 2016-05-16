@@ -1423,13 +1423,13 @@ bool WebRtcVoiceMediaChannel::SetRecvParameters(
   return true;
 }
 
-webrtc::RtpParameters WebRtcVoiceMediaChannel::GetRtpParameters(
+webrtc::RtpParameters WebRtcVoiceMediaChannel::GetRtpSendParameters(
     uint32_t ssrc) const {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   auto it = send_streams_.find(ssrc);
   if (it == send_streams_.end()) {
-    LOG(LS_WARNING) << "Attempting to get RTP parameters for stream with ssrc "
-                    << ssrc << " which doesn't exist.";
+    LOG(LS_WARNING) << "Attempting to get RTP send parameters for stream "
+                    << "with ssrc " << ssrc << " which doesn't exist.";
     return webrtc::RtpParameters();
   }
 
@@ -1442,7 +1442,7 @@ webrtc::RtpParameters WebRtcVoiceMediaChannel::GetRtpParameters(
   return rtp_params;
 }
 
-bool WebRtcVoiceMediaChannel::SetRtpParameters(
+bool WebRtcVoiceMediaChannel::SetRtpSendParameters(
     uint32_t ssrc,
     const webrtc::RtpParameters& parameters) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
@@ -1451,19 +1451,69 @@ bool WebRtcVoiceMediaChannel::SetRtpParameters(
   }
   auto it = send_streams_.find(ssrc);
   if (it == send_streams_.end()) {
-    LOG(LS_WARNING) << "Attempting to set RTP parameters for stream with ssrc "
-                    << ssrc << " which doesn't exist.";
+    LOG(LS_WARNING) << "Attempting to set RTP send parameters for stream "
+                    << "with ssrc " << ssrc << " which doesn't exist.";
     return false;
   }
 
-  if (!SetChannelParameters(it->second->channel(), parameters)) {
-    LOG(LS_WARNING) << "Failed to set RtpParameters.";
+  // TODO(deadbeef): Handle setting parameters with a list of codecs in a
+  // different order (which should change the send codec).
+  webrtc::RtpParameters current_parameters = GetRtpSendParameters(ssrc);
+  if (current_parameters.codecs != parameters.codecs) {
+    LOG(LS_ERROR) << "Using SetParameters to change the set of codecs "
+                  << "is not currently supported.";
+    return false;
+  }
+
+  if (!SetChannelSendParameters(it->second->channel(), parameters)) {
+    LOG(LS_WARNING) << "Failed to set send RtpParameters.";
     return false;
   }
   // Codecs are handled at the WebRtcVoiceMediaChannel level.
   webrtc::RtpParameters reduced_params = parameters;
   reduced_params.codecs.clear();
   it->second->SetRtpParameters(reduced_params);
+  return true;
+}
+
+webrtc::RtpParameters WebRtcVoiceMediaChannel::GetRtpReceiveParameters(
+    uint32_t ssrc) const {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  auto it = recv_streams_.find(ssrc);
+  if (it == recv_streams_.end()) {
+    LOG(LS_WARNING) << "Attempting to get RTP receive parameters for stream "
+                    << "with ssrc " << ssrc << " which doesn't exist.";
+    return webrtc::RtpParameters();
+  }
+
+  // TODO(deadbeef): Return stream-specific parameters.
+  webrtc::RtpParameters rtp_params = CreateRtpParametersWithOneEncoding();
+  for (const AudioCodec& codec : recv_codecs_) {
+    rtp_params.codecs.push_back(codec.ToCodecParameters());
+  }
+  return rtp_params;
+}
+
+bool WebRtcVoiceMediaChannel::SetRtpReceiveParameters(
+    uint32_t ssrc,
+    const webrtc::RtpParameters& parameters) {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  if (!ValidateRtpParameters(parameters)) {
+    return false;
+  }
+  auto it = recv_streams_.find(ssrc);
+  if (it == recv_streams_.end()) {
+    LOG(LS_WARNING) << "Attempting to set RTP receive parameters for stream "
+                    << "with ssrc " << ssrc << " which doesn't exist.";
+    return false;
+  }
+
+  webrtc::RtpParameters current_parameters = GetRtpReceiveParameters(ssrc);
+  if (current_parameters != parameters) {
+    LOG(LS_ERROR) << "Changing the RTP receive parameters is currently "
+                  << "unsupported.";
+    return false;
+  }
   return true;
 }
 
@@ -1769,7 +1819,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
   }
   // TODO(solenberg): SetMaxSendBitrate() yields another call to SetSendCodec().
   // Check if it is possible to fuse with the previous call in this function.
-  SetChannelParameters(channel, rtp_parameters);
+  SetChannelSendParameters(channel, rtp_parameters);
 
   // Set the CN payloadtype and the VAD status.
   if (send_codec_spec_.cng_payload_type != -1) {
@@ -2369,15 +2419,15 @@ bool WebRtcVoiceMediaChannel::SetMaxSendBitrate(int bps) {
   max_send_bitrate_bps_ = bps;
 
   for (const auto& kv : send_streams_) {
-    if (!SetChannelParameters(kv.second->channel(),
-                              kv.second->rtp_parameters())) {
+    if (!SetChannelSendParameters(kv.second->channel(),
+                                  kv.second->rtp_parameters())) {
       return false;
     }
   }
   return true;
 }
 
-bool WebRtcVoiceMediaChannel::SetChannelParameters(
+bool WebRtcVoiceMediaChannel::SetChannelSendParameters(
     int channel,
     const webrtc::RtpParameters& parameters) {
   RTC_CHECK_EQ(1UL, parameters.encodings.size());

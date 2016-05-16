@@ -1126,12 +1126,13 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
     VideoSendParameters limited_send_params = send_parameters_;
     limited_send_params.max_bandwidth_bps = global_max;
     EXPECT_TRUE(channel_->SetSendParameters(limited_send_params));
-    webrtc::RtpParameters parameters = channel_->GetRtpParameters(last_ssrc_);
+    webrtc::RtpParameters parameters =
+        channel_->GetRtpSendParameters(last_ssrc_);
     EXPECT_EQ(1UL, parameters.encodings.size());
     parameters.encodings[0].max_bitrate_bps = stream_max;
-    EXPECT_TRUE(channel_->SetRtpParameters(last_ssrc_, parameters));
+    EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
     // Read back the parameteres and verify they have the correct value
-    parameters = channel_->GetRtpParameters(last_ssrc_);
+    parameters = channel_->GetRtpSendParameters(last_ssrc_);
     EXPECT_EQ(1UL, parameters.encodings.size());
     EXPECT_EQ(stream_max, parameters.encodings[0].max_bitrate_bps);
     // Verify that the new value propagated down to the encoder
@@ -3437,15 +3438,16 @@ TEST_F(WebRtcVideoChannel2Test, CanSentMaxBitrateForExistingStream) {
 
 TEST_F(WebRtcVideoChannel2Test, CannotSetMaxBitrateForNonexistentStream) {
   webrtc::RtpParameters nonexistent_parameters =
-      channel_->GetRtpParameters(last_ssrc_);
+      channel_->GetRtpSendParameters(last_ssrc_);
   EXPECT_EQ(0, nonexistent_parameters.encodings.size());
 
   nonexistent_parameters.encodings.push_back(webrtc::RtpEncodingParameters());
-  EXPECT_FALSE(channel_->SetRtpParameters(last_ssrc_, nonexistent_parameters));
+  EXPECT_FALSE(
+      channel_->SetRtpSendParameters(last_ssrc_, nonexistent_parameters));
 }
 
 TEST_F(WebRtcVideoChannel2Test,
-       CannotSetRtpParametersWithIncorrectNumberOfEncodings) {
+       CannotSetRtpSendParametersWithIncorrectNumberOfEncodings) {
   // This test verifies that setting RtpParameters succeeds only if
   // the structure contains exactly one encoding.
   // TODO(skvlad): Update this test when we start supporting setting parameters
@@ -3453,74 +3455,105 @@ TEST_F(WebRtcVideoChannel2Test,
 
   AddSendStream();
   // Setting RtpParameters with no encoding is expected to fail.
-  webrtc::RtpParameters parameters;
-  EXPECT_FALSE(channel_->SetRtpParameters(last_ssrc_, parameters));
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  parameters.encodings.clear();
+  EXPECT_FALSE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
   // Setting RtpParameters with exactly one encoding should succeed.
   parameters.encodings.push_back(webrtc::RtpEncodingParameters());
-  EXPECT_TRUE(channel_->SetRtpParameters(last_ssrc_, parameters));
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
   // Two or more encodings should result in failure.
   parameters.encodings.push_back(webrtc::RtpEncodingParameters());
-  EXPECT_FALSE(channel_->SetRtpParameters(last_ssrc_, parameters));
+  EXPECT_FALSE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
 }
 
 // Test that a stream will not be sending if its encoding is made
-// inactive through SetRtpParameters.
+// inactive through SetRtpSendParameters.
 // TODO(deadbeef): Update this test when we start supporting setting parameters
 // for each encoding individually.
-TEST_F(WebRtcVideoChannel2Test, SetRtpParametersEncodingsActive) {
+TEST_F(WebRtcVideoChannel2Test, SetRtpSendParametersEncodingsActive) {
   FakeVideoSendStream* stream = AddSendStream();
   EXPECT_TRUE(channel_->SetSend(true));
   EXPECT_TRUE(stream->IsSending());
 
   // Get current parameters and change "active" to false.
-  webrtc::RtpParameters parameters = channel_->GetRtpParameters(last_ssrc_);
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
   ASSERT_EQ(1u, parameters.encodings.size());
   ASSERT_TRUE(parameters.encodings[0].active);
   parameters.encodings[0].active = false;
-  EXPECT_TRUE(channel_->SetRtpParameters(last_ssrc_, parameters));
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
   EXPECT_FALSE(stream->IsSending());
 
   // Now change it back to active and verify we resume sending.
   parameters.encodings[0].active = true;
-  EXPECT_TRUE(channel_->SetRtpParameters(last_ssrc_, parameters));
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
   EXPECT_TRUE(stream->IsSending());
 }
 
-// Test that GetRtpParameters returns the currently configured codecs.
-TEST_F(WebRtcVideoChannel2Test, GetRtpParametersCodecs) {
+// Test that GetRtpSendParameters returns the currently configured codecs.
+TEST_F(WebRtcVideoChannel2Test, GetRtpSendParametersCodecs) {
   AddSendStream();
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(kVp8Codec);
   parameters.codecs.push_back(kVp9Codec);
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
 
-  webrtc::RtpParameters rtp_parameters = channel_->GetRtpParameters(last_ssrc_);
+  webrtc::RtpParameters rtp_parameters =
+      channel_->GetRtpSendParameters(last_ssrc_);
   ASSERT_EQ(2u, rtp_parameters.codecs.size());
-  EXPECT_EQ(kVp8Codec.id, rtp_parameters.codecs[0].payload_type);
-  EXPECT_EQ(kVp8Codec.name, rtp_parameters.codecs[0].mime_type);
-  EXPECT_EQ(kVp8Codec.clockrate, rtp_parameters.codecs[0].clock_rate);
-  EXPECT_EQ(1, rtp_parameters.codecs[0].channels);
-  EXPECT_EQ(kVp9Codec.id, rtp_parameters.codecs[1].payload_type);
-  EXPECT_EQ(kVp9Codec.name, rtp_parameters.codecs[1].mime_type);
-  EXPECT_EQ(kVp9Codec.clockrate, rtp_parameters.codecs[1].clock_rate);
-  EXPECT_EQ(1, rtp_parameters.codecs[1].channels);
+  EXPECT_EQ(kVp8Codec.ToCodecParameters(), rtp_parameters.codecs[0]);
+  EXPECT_EQ(kVp9Codec.ToCodecParameters(), rtp_parameters.codecs[1]);
 }
 
 // Test that if we set/get parameters multiple times, we get the same results.
-TEST_F(WebRtcVideoChannel2Test, SetAndGetRtpParameters) {
+TEST_F(WebRtcVideoChannel2Test, SetAndGetRtpSendParameters) {
   AddSendStream();
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(kVp8Codec);
   parameters.codecs.push_back(kVp9Codec);
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
 
-  webrtc::RtpParameters initial_params = channel_->GetRtpParameters(last_ssrc_);
+  webrtc::RtpParameters initial_params =
+      channel_->GetRtpSendParameters(last_ssrc_);
 
   // We should be able to set the params we just got.
-  EXPECT_TRUE(channel_->SetRtpParameters(last_ssrc_, initial_params));
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, initial_params));
 
-  // ... And this shouldn't change the params returned by GetRtpParameters.
-  EXPECT_EQ(initial_params, channel_->GetRtpParameters(last_ssrc_));
+  // ... And this shouldn't change the params returned by GetRtpSendParameters.
+  EXPECT_EQ(initial_params, channel_->GetRtpSendParameters(last_ssrc_));
+}
+
+// Test that GetRtpReceiveParameters returns the currently configured codecs.
+TEST_F(WebRtcVideoChannel2Test, GetRtpReceiveParametersCodecs) {
+  AddRecvStream();
+  cricket::VideoRecvParameters parameters;
+  parameters.codecs.push_back(kVp8Codec);
+  parameters.codecs.push_back(kVp9Codec);
+  EXPECT_TRUE(channel_->SetRecvParameters(parameters));
+
+  webrtc::RtpParameters rtp_parameters =
+      channel_->GetRtpReceiveParameters(last_ssrc_);
+  ASSERT_EQ(2u, rtp_parameters.codecs.size());
+  EXPECT_EQ(kVp8Codec.ToCodecParameters(), rtp_parameters.codecs[0]);
+  EXPECT_EQ(kVp9Codec.ToCodecParameters(), rtp_parameters.codecs[1]);
+}
+
+// Test that if we set/get parameters multiple times, we get the same results.
+TEST_F(WebRtcVideoChannel2Test, SetAndGetRtpReceiveParameters) {
+  AddRecvStream();
+  cricket::VideoRecvParameters parameters;
+  parameters.codecs.push_back(kVp8Codec);
+  parameters.codecs.push_back(kVp9Codec);
+  EXPECT_TRUE(channel_->SetRecvParameters(parameters));
+
+  webrtc::RtpParameters initial_params =
+      channel_->GetRtpReceiveParameters(last_ssrc_);
+
+  // We should be able to set the params we just got.
+  EXPECT_TRUE(channel_->SetRtpReceiveParameters(last_ssrc_, initial_params));
+
+  // ... And this shouldn't change the params returned by
+  // GetRtpReceiveParameters.
+  EXPECT_EQ(initial_params, channel_->GetRtpReceiveParameters(last_ssrc_));
 }
 
 void WebRtcVideoChannel2Test::TestReceiverLocalSsrcConfiguration(

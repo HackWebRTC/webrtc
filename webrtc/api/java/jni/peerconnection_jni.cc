@@ -2031,10 +2031,19 @@ JOW(jlong, RtpSender_nativeGetTrack)(JNIEnv* jni,
           .release());
 }
 
-static bool JavaEncodingToJsepRtpEncodingParameters(
+static void JavaRtpParametersToJsepRtpParameters(
     JNIEnv* jni,
-    jobject j_encodings,
-    std::vector<webrtc::RtpEncodingParameters>* encodings) {
+    jobject j_parameters,
+    webrtc::RtpParameters* parameters) {
+  RTC_CHECK(parameters != nullptr);
+  jclass parameters_class = jni->FindClass("org/webrtc/RtpParameters");
+  jfieldID encodings_id =
+      GetFieldID(jni, parameters_class, "encodings", "Ljava/util/LinkedList;");
+  jfieldID codecs_id =
+      GetFieldID(jni, parameters_class, "codecs", "Ljava/util/LinkedList;");
+
+  // Convert encodings.
+  jobject j_encodings = GetObjectField(jni, j_parameters, encodings_id);
   const int kBitrateUnlimited = -1;
   jclass j_encoding_parameters_class =
       jni->FindClass("org/webrtc/RtpParameters$Encoding");
@@ -2057,15 +2066,11 @@ static bool JavaEncodingToJsepRtpEncodingParameters(
     } else {
       encoding.max_bitrate_bps = kBitrateUnlimited;
     }
-    encodings->push_back(encoding);
+    parameters->encodings.push_back(encoding);
   }
-  return true;
-}
 
-static bool JavaCodecToJsepRtpCodecParameters(
-    JNIEnv* jni,
-    jobject j_codecs,
-    std::vector<webrtc::RtpCodecParameters>* codecs) {
+  // Convert codecs.
+  jobject j_codecs = GetObjectField(jni, j_parameters, codecs_id);
   jclass codec_class = jni->FindClass("org/webrtc/RtpParameters$Codec");
   jfieldID payload_type_id = GetFieldID(jni, codec_class, "payloadType", "I");
   jfieldID mime_type_id =
@@ -2080,45 +2085,20 @@ static bool JavaCodecToJsepRtpCodecParameters(
         JavaToStdString(jni, GetStringField(jni, j_codec, mime_type_id));
     codec.clock_rate = GetIntField(jni, j_codec, clock_rate_id);
     codec.channels = GetIntField(jni, j_codec, channels_id);
-    codecs->push_back(codec);
+    parameters->codecs.push_back(codec);
   }
-  return true;
 }
 
-JOW(jboolean, RtpSender_nativeSetParameters)
-(JNIEnv* jni, jclass, jlong j_rtp_sender_pointer, jobject j_parameters) {
-  if (IsNull(jni, j_parameters)) {
-    return false;
-  }
-  jclass parameters_class = jni->FindClass("org/webrtc/RtpParameters");
-  jclass encoding_class = jni->FindClass("org/webrtc/RtpParameters$Encoding");
-  jfieldID encodings_id =
-      GetFieldID(jni, parameters_class, "encodings", "Ljava/util/LinkedList;");
-  jfieldID codecs_id =
-      GetFieldID(jni, parameters_class, "codecs", "Ljava/util/LinkedList;");
-
-  jobject j_encodings = GetObjectField(jni, j_parameters, encodings_id);
-  jobject j_codecs = GetObjectField(jni, j_parameters, codecs_id);
-  webrtc::RtpParameters parameters;
-  JavaEncodingToJsepRtpEncodingParameters(jni, j_encodings,
-                                          &parameters.encodings);
-  JavaCodecToJsepRtpCodecParameters(jni, j_codecs, &parameters.codecs);
-  return reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
-      ->SetParameters(parameters);
-}
-
-JOW(jobject, RtpSender_nativeGetParameters)
-(JNIEnv* jni, jclass, jlong j_rtp_sender_pointer) {
-  webrtc::RtpParameters parameters =
-      reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
-          ->GetParameters();
-
+static jobject JsepRtpParametersToJavaRtpParameters(
+    JNIEnv* jni,
+    const webrtc::RtpParameters& parameters) {
   jclass parameters_class = jni->FindClass("org/webrtc/RtpParameters");
   jmethodID parameters_ctor =
       GetMethodID(jni, parameters_class, "<init>", "()V");
   jobject j_parameters = jni->NewObject(parameters_class, parameters_ctor);
   CHECK_EXCEPTION(jni) << "error during NewObject";
 
+  // Add encodings.
   jclass encoding_class = jni->FindClass("org/webrtc/RtpParameters$Encoding");
   jmethodID encoding_ctor = GetMethodID(jni, encoding_class, "<init>", "()V");
   jfieldID encodings_id =
@@ -2153,6 +2133,7 @@ JOW(jobject, RtpSender_nativeGetParameters)
     RTC_CHECK(added);
   }
 
+  // Add codecs.
   jclass codec_class = jni->FindClass("org/webrtc/RtpParameters$Codec");
   jmethodID codec_ctor = GetMethodID(jni, codec_class, "<init>", "()V");
   jfieldID codecs_id =
@@ -2186,6 +2167,25 @@ JOW(jobject, RtpSender_nativeGetParameters)
   return j_parameters;
 }
 
+JOW(jboolean, RtpSender_nativeSetParameters)
+(JNIEnv* jni, jclass, jlong j_rtp_sender_pointer, jobject j_parameters) {
+  if (IsNull(jni, j_parameters)) {
+    return false;
+  }
+  webrtc::RtpParameters parameters;
+  JavaRtpParametersToJsepRtpParameters(jni, j_parameters, &parameters);
+  return reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
+      ->SetParameters(parameters);
+}
+
+JOW(jobject, RtpSender_nativeGetParameters)
+(JNIEnv* jni, jclass, jlong j_rtp_sender_pointer) {
+  webrtc::RtpParameters parameters =
+      reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
+          ->GetParameters();
+  return JsepRtpParametersToJavaRtpParameters(jni, parameters);
+}
+
 JOW(jstring, RtpSender_nativeId)(
     JNIEnv* jni, jclass, jlong j_rtp_sender_pointer) {
   return JavaStringFromStdString(
@@ -2204,6 +2204,25 @@ JOW(jlong, RtpReceiver_nativeGetTrack)(JNIEnv* jni,
       reinterpret_cast<RtpReceiverInterface*>(j_rtp_receiver_pointer)
           ->track()
           .release());
+}
+
+JOW(jboolean, RtpReceiver_nativeSetParameters)
+(JNIEnv* jni, jclass, jlong j_rtp_sender_pointer, jobject j_parameters) {
+  if (IsNull(jni, j_parameters)) {
+    return false;
+  }
+  webrtc::RtpParameters parameters;
+  JavaRtpParametersToJsepRtpParameters(jni, j_parameters, &parameters);
+  return reinterpret_cast<RtpReceiverInterface*>(j_rtp_sender_pointer)
+      ->SetParameters(parameters);
+}
+
+JOW(jobject, RtpReceiver_nativeGetParameters)
+(JNIEnv* jni, jclass, jlong j_rtp_sender_pointer) {
+  webrtc::RtpParameters parameters =
+      reinterpret_cast<RtpReceiverInterface*>(j_rtp_sender_pointer)
+          ->GetParameters();
+  return JsepRtpParametersToJavaRtpParameters(jni, parameters);
 }
 
 JOW(jstring, RtpReceiver_nativeId)(

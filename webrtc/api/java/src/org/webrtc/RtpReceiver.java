@@ -27,6 +27,14 @@ public class RtpReceiver {
     return cachedTrack;
   }
 
+  public boolean setParameters(RtpParameters parameters) {
+    return nativeSetParameters(nativeRtpReceiver, parameters);
+  }
+
+  public RtpParameters getParameters() {
+    return nativeGetParameters(nativeRtpReceiver);
+  }
+
   public String id() {
     return nativeId(nativeRtpReceiver);
   }
@@ -39,6 +47,11 @@ public class RtpReceiver {
   // This should increment the reference count of the track.
   // Will be released in dispose().
   private static native long nativeGetTrack(long nativeRtpReceiver);
+
+  private static native boolean nativeSetParameters(long nativeRtpReceiver,
+                                                    RtpParameters parameters);
+
+  private static native RtpParameters nativeGetParameters(long nativeRtpReceiver);
 
   private static native String nativeId(long nativeRtpReceiver);
 

@@ -14,6 +14,7 @@
 #include "webrtc/api/audiotrack.h"
 #include "webrtc/api/videosourceproxy.h"
 #include "webrtc/api/videotrack.h"
+#include "webrtc/base/trace_event.h"
 
 namespace webrtc {
 
@@ -66,6 +67,15 @@ void AudioRtpReceiver::Stop() {
   provider_ = nullptr;
 }
 
+RtpParameters AudioRtpReceiver::GetParameters() const {
+  return provider_->GetAudioRtpReceiveParameters(ssrc_);
+}
+
+bool AudioRtpReceiver::SetParameters(const RtpParameters& parameters) {
+  TRACE_EVENT0("webrtc", "AudioRtpReceiver::SetParameters");
+  return provider_->SetAudioRtpReceiveParameters(ssrc_, parameters);
+}
+
 void AudioRtpReceiver::Reconfigure() {
   if (!provider_) {
     return;
@@ -111,6 +121,15 @@ void VideoRtpReceiver::Stop() {
   source_->OnSourceDestroyed();
   provider_->SetVideoPlayout(ssrc_, false, nullptr);
   provider_ = nullptr;
+}
+
+RtpParameters VideoRtpReceiver::GetParameters() const {
+  return provider_->GetVideoRtpReceiveParameters(ssrc_);
+}
+
+bool VideoRtpReceiver::SetParameters(const RtpParameters& parameters) {
+  TRACE_EVENT0("webrtc", "VideoRtpReceiver::SetParameters");
+  return provider_->SetVideoRtpReceiveParameters(ssrc_, parameters);
 }
 
 }  // namespace webrtc

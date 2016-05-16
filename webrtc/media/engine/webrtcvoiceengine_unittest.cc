@@ -234,11 +234,11 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
 
   // Sets the per-stream maximum bitrate limit for the specified SSRC.
   bool SetMaxBitrateForStream(int32_t ssrc, int bitrate) {
-    webrtc::RtpParameters parameters = channel_->GetRtpParameters(ssrc);
+    webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(ssrc);
     EXPECT_EQ(1UL, parameters.encodings.size());
 
     parameters.encodings[0].max_bitrate_bps = bitrate;
-    return channel_->SetRtpParameters(ssrc, parameters);
+    return channel_->SetRtpSendParameters(ssrc, parameters);
   }
 
   bool SetGlobalMaxBitrate(const cricket::AudioCodec& codec, int bitrate) {
@@ -273,7 +273,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     // Verify that reading back the parameters gives results
     // consistent with the Set() result.
     webrtc::RtpParameters resulting_parameters =
-        channel_->GetRtpParameters(kSsrc1);
+        channel_->GetRtpSendParameters(kSsrc1);
     EXPECT_EQ(1UL, resulting_parameters.encodings.size());
     EXPECT_EQ(expected_result ? stream_max : -1,
               resulting_parameters.encodings[0].max_bitrate_bps);
@@ -895,15 +895,15 @@ TEST_F(WebRtcVoiceEngineTestFake, SetMaxBitratePerStream) {
 TEST_F(WebRtcVoiceEngineTestFake, CannotSetMaxBitrateForNonexistentStream) {
   EXPECT_TRUE(SetupChannel());
   webrtc::RtpParameters nonexistent_parameters =
-      channel_->GetRtpParameters(kSsrc1);
+      channel_->GetRtpSendParameters(kSsrc1);
   EXPECT_EQ(0, nonexistent_parameters.encodings.size());
 
   nonexistent_parameters.encodings.push_back(webrtc::RtpEncodingParameters());
-  EXPECT_FALSE(channel_->SetRtpParameters(kSsrc1, nonexistent_parameters));
+  EXPECT_FALSE(channel_->SetRtpSendParameters(kSsrc1, nonexistent_parameters));
 }
 
 TEST_F(WebRtcVoiceEngineTestFake,
-       CannotSetRtpParametersWithIncorrectNumberOfEncodings) {
+       CannotSetRtpSendParametersWithIncorrectNumberOfEncodings) {
   // This test verifies that setting RtpParameters succeeds only if
   // the structure contains exactly one encoding.
   // TODO(skvlad): Update this test when we start supporting setting parameters
@@ -912,37 +912,37 @@ TEST_F(WebRtcVoiceEngineTestFake,
   EXPECT_TRUE(SetupSendStream());
   // Setting RtpParameters with no encoding is expected to fail.
   webrtc::RtpParameters parameters;
-  EXPECT_FALSE(channel_->SetRtpParameters(kSsrc1, parameters));
+  EXPECT_FALSE(channel_->SetRtpSendParameters(kSsrc1, parameters));
   // Setting RtpParameters with exactly one encoding should succeed.
   parameters.encodings.push_back(webrtc::RtpEncodingParameters());
-  EXPECT_TRUE(channel_->SetRtpParameters(kSsrc1, parameters));
+  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrc1, parameters));
   // Two or more encodings should result in failure.
   parameters.encodings.push_back(webrtc::RtpEncodingParameters());
-  EXPECT_FALSE(channel_->SetRtpParameters(kSsrc1, parameters));
+  EXPECT_FALSE(channel_->SetRtpSendParameters(kSsrc1, parameters));
 }
 
 // Test that a stream will not be sending if its encoding is made
-// inactive through SetRtpParameters.
+// inactive through SetRtpSendParameters.
 TEST_F(WebRtcVoiceEngineTestFake, SetRtpParametersEncodingsActive) {
   EXPECT_TRUE(SetupSendStream());
   SetSend(channel_, true);
   EXPECT_TRUE(GetSendStream(kSsrc1).IsSending());
   // Get current parameters and change "active" to false.
-  webrtc::RtpParameters parameters = channel_->GetRtpParameters(kSsrc1);
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(kSsrc1);
   ASSERT_EQ(1u, parameters.encodings.size());
   ASSERT_TRUE(parameters.encodings[0].active);
   parameters.encodings[0].active = false;
-  EXPECT_TRUE(channel_->SetRtpParameters(kSsrc1, parameters));
+  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrc1, parameters));
   EXPECT_FALSE(GetSendStream(kSsrc1).IsSending());
 
   // Now change it back to active and verify we resume sending.
   parameters.encodings[0].active = true;
-  EXPECT_TRUE(channel_->SetRtpParameters(kSsrc1, parameters));
+  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrc1, parameters));
   EXPECT_TRUE(GetSendStream(kSsrc1).IsSending());
 }
 
-// Test that SetRtpParameters configures the correct encoding channel for each
-// SSRC.
+// Test that SetRtpSendParameters configures the correct encoding channel for
+// each SSRC.
 TEST_F(WebRtcVoiceEngineTestFake, RtpParametersArePerStream) {
   SetupForMultiSendStream();
   // Create send streams.
@@ -970,42 +970,71 @@ TEST_F(WebRtcVoiceEngineTestFake, RtpParametersArePerStream) {
   EXPECT_EQ(64000, GetCodecBitrate(kSsrcs4[2]));
 }
 
-// Test that GetRtpParameters returns the currently configured codecs.
-TEST_F(WebRtcVoiceEngineTestFake, GetRtpParametersCodecs) {
+// Test that GetRtpSendParameters returns the currently configured codecs.
+TEST_F(WebRtcVoiceEngineTestFake, GetRtpSendParametersCodecs) {
   EXPECT_TRUE(SetupSendStream());
   cricket::AudioSendParameters parameters;
   parameters.codecs.push_back(kIsacCodec);
   parameters.codecs.push_back(kPcmuCodec);
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
 
-  webrtc::RtpParameters rtp_parameters = channel_->GetRtpParameters(kSsrc1);
+  webrtc::RtpParameters rtp_parameters = channel_->GetRtpSendParameters(kSsrc1);
   ASSERT_EQ(2u, rtp_parameters.codecs.size());
-  EXPECT_EQ(kIsacCodec.id, rtp_parameters.codecs[0].payload_type);
-  EXPECT_EQ(kIsacCodec.name, rtp_parameters.codecs[0].mime_type);
-  EXPECT_EQ(kIsacCodec.clockrate, rtp_parameters.codecs[0].clock_rate);
-  EXPECT_EQ(kIsacCodec.channels, rtp_parameters.codecs[0].channels);
-  EXPECT_EQ(kPcmuCodec.id, rtp_parameters.codecs[1].payload_type);
-  EXPECT_EQ(kPcmuCodec.name, rtp_parameters.codecs[1].mime_type);
-  EXPECT_EQ(kPcmuCodec.clockrate, rtp_parameters.codecs[1].clock_rate);
-  EXPECT_EQ(kPcmuCodec.channels, rtp_parameters.codecs[1].channels);
+  EXPECT_EQ(kIsacCodec.ToCodecParameters(), rtp_parameters.codecs[0]);
+  EXPECT_EQ(kPcmuCodec.ToCodecParameters(), rtp_parameters.codecs[1]);
 }
 
 // Test that if we set/get parameters multiple times, we get the same results.
-TEST_F(WebRtcVoiceEngineTestFake, SetAndGetRtpParameters) {
+TEST_F(WebRtcVoiceEngineTestFake, SetAndGetRtpSendParameters) {
   EXPECT_TRUE(SetupSendStream());
   cricket::AudioSendParameters parameters;
   parameters.codecs.push_back(kIsacCodec);
   parameters.codecs.push_back(kPcmuCodec);
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
 
-  webrtc::RtpParameters initial_params = channel_->GetRtpParameters(kSsrc1);
+  webrtc::RtpParameters initial_params = channel_->GetRtpSendParameters(kSsrc1);
 
   // We should be able to set the params we just got.
-  EXPECT_TRUE(channel_->SetRtpParameters(kSsrc1, initial_params));
+  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrc1, initial_params));
 
-  // ... And this shouldn't change the params returned by GetRtpParameters.
-  webrtc::RtpParameters new_params = channel_->GetRtpParameters(kSsrc1);
-  EXPECT_EQ(initial_params, channel_->GetRtpParameters(kSsrc1));
+  // ... And this shouldn't change the params returned by GetRtpSendParameters.
+  webrtc::RtpParameters new_params = channel_->GetRtpSendParameters(kSsrc1);
+  EXPECT_EQ(initial_params, channel_->GetRtpSendParameters(kSsrc1));
+}
+
+// Test that GetRtpReceiveParameters returns the currently configured codecs.
+TEST_F(WebRtcVoiceEngineTestFake, GetRtpReceiveParametersCodecs) {
+  EXPECT_TRUE(SetupRecvStream());
+  cricket::AudioRecvParameters parameters;
+  parameters.codecs.push_back(kIsacCodec);
+  parameters.codecs.push_back(kPcmuCodec);
+  EXPECT_TRUE(channel_->SetRecvParameters(parameters));
+
+  webrtc::RtpParameters rtp_parameters =
+      channel_->GetRtpReceiveParameters(kSsrc1);
+  ASSERT_EQ(2u, rtp_parameters.codecs.size());
+  EXPECT_EQ(kIsacCodec.ToCodecParameters(), rtp_parameters.codecs[0]);
+  EXPECT_EQ(kPcmuCodec.ToCodecParameters(), rtp_parameters.codecs[1]);
+}
+
+// Test that if we set/get parameters multiple times, we get the same results.
+TEST_F(WebRtcVoiceEngineTestFake, SetAndGetRtpReceiveParameters) {
+  EXPECT_TRUE(SetupRecvStream());
+  cricket::AudioRecvParameters parameters;
+  parameters.codecs.push_back(kIsacCodec);
+  parameters.codecs.push_back(kPcmuCodec);
+  EXPECT_TRUE(channel_->SetRecvParameters(parameters));
+
+  webrtc::RtpParameters initial_params =
+      channel_->GetRtpReceiveParameters(kSsrc1);
+
+  // We should be able to set the params we just got.
+  EXPECT_TRUE(channel_->SetRtpReceiveParameters(kSsrc1, initial_params));
+
+  // ... And this shouldn't change the params returned by
+  // GetRtpReceiveParameters.
+  webrtc::RtpParameters new_params = channel_->GetRtpReceiveParameters(kSsrc1);
+  EXPECT_EQ(initial_params, channel_->GetRtpReceiveParameters(kSsrc1));
 }
 
 // Test that we apply codecs properly.

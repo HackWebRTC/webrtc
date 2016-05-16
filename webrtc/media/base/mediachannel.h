@@ -907,9 +907,15 @@ class VoiceMediaChannel : public MediaChannel {
   virtual ~VoiceMediaChannel() {}
   virtual bool SetSendParameters(const AudioSendParameters& params) = 0;
   virtual bool SetRecvParameters(const AudioRecvParameters& params) = 0;
-  virtual webrtc::RtpParameters GetRtpParameters(uint32_t ssrc) const = 0;
-  virtual bool SetRtpParameters(uint32_t ssrc,
-                                const webrtc::RtpParameters& parameters) = 0;
+  virtual webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const = 0;
+  virtual bool SetRtpSendParameters(
+      uint32_t ssrc,
+      const webrtc::RtpParameters& parameters) = 0;
+  virtual webrtc::RtpParameters GetRtpReceiveParameters(
+      uint32_t ssrc) const = 0;
+  virtual bool SetRtpReceiveParameters(
+      uint32_t ssrc,
+      const webrtc::RtpParameters& parameters) = 0;
   // Starts or stops playout of received audio.
   virtual bool SetPlayout(bool playout) = 0;
   // Starts or stops sending (and potentially capture) of local audio.
@@ -986,9 +992,15 @@ class VideoMediaChannel : public MediaChannel {
 
   virtual bool SetSendParameters(const VideoSendParameters& params) = 0;
   virtual bool SetRecvParameters(const VideoRecvParameters& params) = 0;
-  virtual webrtc::RtpParameters GetRtpParameters(uint32_t ssrc) const = 0;
-  virtual bool SetRtpParameters(uint32_t ssrc,
-                                const webrtc::RtpParameters& parameters) = 0;
+  virtual webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const = 0;
+  virtual bool SetRtpSendParameters(
+      uint32_t ssrc,
+      const webrtc::RtpParameters& parameters) = 0;
+  virtual webrtc::RtpParameters GetRtpReceiveParameters(
+      uint32_t ssrc) const = 0;
+  virtual bool SetRtpReceiveParameters(
+      uint32_t ssrc,
+      const webrtc::RtpParameters& parameters) = 0;
   // Gets the currently set codecs/payload types to be used for outgoing media.
   virtual bool GetSendCodec(VideoCodec* send_codec) = 0;
   // Starts or stops transmission (and potentially capture) of local video.

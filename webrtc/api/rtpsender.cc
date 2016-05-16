@@ -208,12 +208,12 @@ void AudioRtpSender::SetAudioSend() {
 }
 
 RtpParameters AudioRtpSender::GetParameters() const {
-  return provider_->GetAudioRtpParameters(ssrc_);
+  return provider_->GetAudioRtpSendParameters(ssrc_);
 }
 
 bool AudioRtpSender::SetParameters(const RtpParameters& parameters) {
   TRACE_EVENT0("webrtc", "AudioRtpSender::SetParameters");
-  return provider_->SetAudioRtpParameters(ssrc_, parameters);
+  return provider_->SetAudioRtpSendParameters(ssrc_, parameters);
 }
 
 VideoRtpSender::VideoRtpSender(VideoTrackInterface* track,
@@ -350,12 +350,12 @@ void VideoRtpSender::SetVideoSend() {
 }
 
 RtpParameters VideoRtpSender::GetParameters() const {
-  return provider_->GetVideoRtpParameters(ssrc_);
+  return provider_->GetVideoRtpSendParameters(ssrc_);
 }
 
 bool VideoRtpSender::SetParameters(const RtpParameters& parameters) {
   TRACE_EVENT0("webrtc", "VideoRtpSender::SetParameters");
-  return provider_->SetVideoRtpParameters(ssrc_, parameters);
+  return provider_->SetVideoRtpSendParameters(ssrc_, parameters);
 }
 
 }  // namespace webrtc

@@ -20,6 +20,7 @@
 @class RTCMediaStream;
 @class RTCMediaStreamTrack;
 @class RTCPeerConnectionFactory;
+@class RTCRtpReceiver;
 @class RTCRtpSender;
 @class RTCSessionDescription;
 @class RTCStatsReport;
@@ -124,6 +125,12 @@ RTC_EXPORT
  *  Use isEqual: instead of == to compare RTCRtpSender instances.
  */
 @property(nonatomic, readonly) NSArray<RTCRtpSender *> *senders;
+
+/** Gets all RTCRtpReceivers associated with this peer connection.
+ *  Note: reading this property returns different instances of RTCRtpReceiver.
+ *  Use isEqual: instead of == to compare RTCRtpReceiver instances.
+ */
+@property(nonatomic, readonly) NSArray<RTCRtpReceiver *> *receivers;
 
 - (instancetype)init NS_UNAVAILABLE;
 

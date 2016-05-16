@@ -149,9 +149,13 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
 
   bool SetSendParameters(const AudioSendParameters& params) override;
   bool SetRecvParameters(const AudioRecvParameters& params) override;
-  webrtc::RtpParameters GetRtpParameters(uint32_t ssrc) const override;
-  bool SetRtpParameters(uint32_t ssrc,
-                        const webrtc::RtpParameters& parameters) override;
+  webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const override;
+  bool SetRtpSendParameters(uint32_t ssrc,
+                            const webrtc::RtpParameters& parameters) override;
+  webrtc::RtpParameters GetRtpReceiveParameters(uint32_t ssrc) const override;
+  bool SetRtpReceiveParameters(
+      uint32_t ssrc,
+      const webrtc::RtpParameters& parameters) override;
 
   bool SetPlayout(bool playout) override;
   bool PausePlayout();
@@ -230,8 +234,8 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
     return default_recv_ssrc_ == static_cast<int64_t>(ssrc);
   }
   bool SetMaxSendBitrate(int bps);
-  bool SetChannelParameters(int channel,
-                            const webrtc::RtpParameters& parameters);
+  bool SetChannelSendParameters(int channel,
+                                const webrtc::RtpParameters& parameters);
   bool SetMaxSendBitrate(int channel, int bps);
   bool HasSendCodec() const {
     return send_codec_spec_.codec_inst.pltype != -1;

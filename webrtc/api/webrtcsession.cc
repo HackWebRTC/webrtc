@@ -1219,21 +1219,39 @@ void WebRtcSession::SetRawAudioSink(uint32_t ssrc,
   voice_channel_->SetRawAudioSink(ssrc, std::move(sink));
 }
 
-RtpParameters WebRtcSession::GetAudioRtpParameters(uint32_t ssrc) const {
+RtpParameters WebRtcSession::GetAudioRtpSendParameters(uint32_t ssrc) const {
   ASSERT(signaling_thread()->IsCurrent());
   if (voice_channel_) {
-    return voice_channel_->GetRtpParameters(ssrc);
+    return voice_channel_->GetRtpSendParameters(ssrc);
   }
   return RtpParameters();
 }
 
-bool WebRtcSession::SetAudioRtpParameters(uint32_t ssrc,
-                                          const RtpParameters& parameters) {
+bool WebRtcSession::SetAudioRtpSendParameters(uint32_t ssrc,
+                                              const RtpParameters& parameters) {
   ASSERT(signaling_thread()->IsCurrent());
   if (!voice_channel_) {
     return false;
   }
-  return voice_channel_->SetRtpParameters(ssrc, parameters);
+  return voice_channel_->SetRtpSendParameters(ssrc, parameters);
+}
+
+RtpParameters WebRtcSession::GetAudioRtpReceiveParameters(uint32_t ssrc) const {
+  ASSERT(signaling_thread()->IsCurrent());
+  if (voice_channel_) {
+    return voice_channel_->GetRtpReceiveParameters(ssrc);
+  }
+  return RtpParameters();
+}
+
+bool WebRtcSession::SetAudioRtpReceiveParameters(
+    uint32_t ssrc,
+    const RtpParameters& parameters) {
+  ASSERT(signaling_thread()->IsCurrent());
+  if (!voice_channel_) {
+    return false;
+  }
+  return voice_channel_->SetRtpReceiveParameters(ssrc, parameters);
 }
 
 bool WebRtcSession::SetSource(
@@ -1284,21 +1302,39 @@ void WebRtcSession::SetVideoSend(uint32_t ssrc,
   }
 }
 
-RtpParameters WebRtcSession::GetVideoRtpParameters(uint32_t ssrc) const {
+RtpParameters WebRtcSession::GetVideoRtpSendParameters(uint32_t ssrc) const {
   ASSERT(signaling_thread()->IsCurrent());
   if (video_channel_) {
-    return video_channel_->GetRtpParameters(ssrc);
+    return video_channel_->GetRtpSendParameters(ssrc);
   }
   return RtpParameters();
 }
 
-bool WebRtcSession::SetVideoRtpParameters(uint32_t ssrc,
-                                          const RtpParameters& parameters) {
+bool WebRtcSession::SetVideoRtpSendParameters(uint32_t ssrc,
+                                              const RtpParameters& parameters) {
   ASSERT(signaling_thread()->IsCurrent());
   if (!video_channel_) {
     return false;
   }
-  return video_channel_->SetRtpParameters(ssrc, parameters);
+  return video_channel_->SetRtpSendParameters(ssrc, parameters);
+}
+
+RtpParameters WebRtcSession::GetVideoRtpReceiveParameters(uint32_t ssrc) const {
+  ASSERT(signaling_thread()->IsCurrent());
+  if (video_channel_) {
+    return video_channel_->GetRtpReceiveParameters(ssrc);
+  }
+  return RtpParameters();
+}
+
+bool WebRtcSession::SetVideoRtpReceiveParameters(
+    uint32_t ssrc,
+    const RtpParameters& parameters) {
+  ASSERT(signaling_thread()->IsCurrent());
+  if (!video_channel_) {
+    return false;
+  }
+  return video_channel_->SetRtpReceiveParameters(ssrc, parameters);
 }
 
 bool WebRtcSession::CanInsertDtmf(const std::string& track_id) {

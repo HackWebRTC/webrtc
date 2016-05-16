@@ -56,6 +56,9 @@ class AudioRtpReceiver : public ObserverInterface,
 
   void Stop() override;
 
+  RtpParameters GetParameters() const override;
+  bool SetParameters(const RtpParameters& parameters) override;
+
  private:
   void Reconfigure();
 
@@ -88,6 +91,9 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInterface> {
   std::string id() const override { return id_; }
 
   void Stop() override;
+
+  RtpParameters GetParameters() const override;
+  bool SetParameters(const RtpParameters& parameters) override;
 
  private:
   std::string id_;
