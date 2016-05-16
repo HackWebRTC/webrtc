@@ -114,10 +114,23 @@ class SSLCertChain {
   RTC_DISALLOW_COPY_AND_ASSIGN(SSLCertChain);
 };
 
-// KT_DEFAULT is currently an alias for KT_RSA.  This is likely to change.
 // KT_LAST is intended for vector declarations and loops over all key types;
 // it does not represent any key type in itself.
-enum KeyType { KT_RSA, KT_ECDSA, KT_LAST, KT_DEFAULT = KT_RSA };
+// KT_DEFAULT is used as the default KeyType for KeyParams.
+enum KeyType {
+  KT_RSA, KT_ECDSA, KT_LAST,
+#if defined(WEBRTC_BUILD_CHROMIUM)
+  // TODO(hbos): Because of an experiment running in Chromium which relies on
+  // RSA being the default (for performance reasons) we have this #if. ECDSA
+  // launches in Chromium by flipping a flag which overrides the default. As
+  // soon as the experiment has ended and there is no risk of RSA being the
+  // default we should make KT_DEFAULT = KT_ECDSA unconditionally.
+  // crbug.com/611698
+  KT_DEFAULT = KT_RSA
+#else
+  KT_DEFAULT = KT_ECDSA
+#endif
+};
 
 static const int kRsaDefaultModSize = 1024;
 static const int kRsaDefaultExponent = 0x10001;  // = 2^16+1 = 65537
