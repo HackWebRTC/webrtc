@@ -1,72 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:weightSum="1"
-        android:layout_margin="8dp"
-        android:layout_centerHorizontal="true">
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_margin="16dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:weightSum="1"
+    android:layout_centerHorizontal="true">
 
-    <LinearLayout
+    <TextView
+        android:id="@+id/room_edittext_description"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal" >
-            <ImageButton
-                android:id="@+id/add_room_button"
-                android:background="@android:drawable/ic_menu_add"
-                android:contentDescription="@string/add_room_description"
-                android:layout_marginEnd="20dp"
-                android:layout_width="48dp"
-                android:layout_height="48dp"/>
-            <ImageButton
-                android:id="@+id/remove_room_button"
-                android:background="@android:drawable/ic_delete"
-                android:contentDescription="@string/remove_room_description"
-                android:layout_marginEnd="20dp"
-                android:layout_width="48dp"
-                android:layout_height="48dp"/>
-            <ImageButton
-                android:id="@+id/connect_button"
-                android:background="@android:drawable/sym_action_call"
-                android:contentDescription="@string/connect_description"
-                android:layout_marginEnd="20dp"
-                android:layout_width="48dp"
-                android:layout_height="48dp"/>
-            <ImageButton
-                android:id="@+id/connect_loopback_button"
-                android:background="@drawable/ic_loopback_call"
-                android:contentDescription="@string/connect_loopback_description"
-                android:layout_width="48dp"
-                android:layout_height="48dp"/>
-    </LinearLayout>
-    <TextView
-            android:id="@+id/room_edittext_description"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="5dp"
-            android:text="@string/room_description"/>
-    <EditText
+        android:text="@string/room_description"/>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_marginBottom="8dp">
+
+        <EditText
             android:id="@+id/room_edittext"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:singleLine="true"
-            android:imeOptions="actionDone"/>
+            android:imeOptions="actionDone"
+            android:inputType="text"/>
+
+        <ImageButton
+            android:id="@+id/connect_button"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/connect_description"
+            android:background="@android:drawable/sym_action_call" />
+    </LinearLayout>
+
     <TextView
-            android:id="@+id/room_listview_description"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:lines="1"
-            android:maxLines="1"
-            android:textAppearance="?android:attr/textAppearanceMedium"
-            android:text="@string/room_names"/>
-    <ListView
+        android:id="@+id/room_listview_description"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="8dp"
+        android:lines="1"
+        android:maxLines="1"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="@string/favorites"
+        android:gravity="center_vertical"/>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ListView
             android:id="@+id/room_listview"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:choiceMode="singleChoice"
-            android:listSelector="@android:color/darker_gray"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:drawSelectorOnTop="false" />
 
+        <TextView
+            android:id="@android:id/empty"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="@string/no_favorites" />
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/add_favorite_button"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_margin="8dp"
+            android:layout_gravity="bottom|end"
+            android:src="@drawable/ic_add_white_24dp"
+            android:contentDescription="@string/add_favorite_description"
+            app:backgroundTint="@android:color/holo_green_dark"
+            app:elevation="8dp"/>
+    </FrameLayout>
 </LinearLayout>

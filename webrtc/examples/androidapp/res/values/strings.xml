@@ -3,12 +3,13 @@
     <string name="app_name" translatable="no">AppRTC</string>
     <string name="settings_name" translatable="no">AppRTC Settings</string>
     <string name="disconnect_call">Disconnect Call</string>
-    <string name="room_names">Room names:</string>
     <string name="room_description">
         Please enter a room name. Room names are shared with everyone, so think
         of something unique and send it to a friend.
     </string>
-    <string name="connect_text">Connect</string>
+    <string name="favorites">Favorites</string>
+    <string name="no_favorites">No favorites</string>
+    <string name="add_favorite_title">Add favorite</string>
     <string name="invalid_url_title">Invalid URL</string>
     <string name="invalid_url_text">The URL or room name you entered resulted in an invalid URL: %1$s
     </string>
@@ -16,14 +17,15 @@
     <string name="connecting_to">Connecting to: %1$s</string>
     <string name="missing_url">FATAL ERROR: Missing URL to connect to.</string>
     <string name="ok">OK</string>
+    <string name="add">Add</string>
+    <string name="cancel">Cancel</string>
     <string name="switch_camera">Switch front/back camera</string>
     <string name="toggle_debug">Toggle debug view</string>
     <string name="toggle_mic">Toggle microphone on/off</string>
     <string name="action_settings">Settings</string>
-    <string name="add_room_description">Add new room to the list</string>
-    <string name="remove_room_description">Remove room from the list</string>
+    <string name="action_loopback">Loopback connection</string>
     <string name="connect_description">Connect to the room</string>
-    <string name="connect_loopback_description">Loopback connection</string>
+    <string name="add_favorite_description">Add favorite</string>
 
     <!-- Settings strings. -->
     <string name="pref_room_key">room_preference</string>

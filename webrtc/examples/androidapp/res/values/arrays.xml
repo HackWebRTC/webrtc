@@ -36,4 +36,8 @@
         <item>ISAC</item>
     </string-array>
 
+    <string-array name="roomListContextMenu">
+        <item>Remove favorite</item>
+    </string-array>
+
 </resources>

@@ -10,16 +10,19 @@
 
 package org.appspot.apprtc;
 
-import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.design.widget.FloatingActionButton;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -42,15 +45,14 @@ import java.util.Random;
 /**
  * Handles the initial setup where the user selects which room to join.
  */
-public class ConnectActivity extends Activity {
+public class ConnectActivity extends AppCompatActivity {
   private static final String TAG = "ConnectActivity";
   private static final int CONNECTION_REQUEST = 1;
+  private static final int REMOVE_FAVORITE_INDEX = 0;
   private static boolean commandLineRun = false;
 
-  private ImageButton addRoomButton;
-  private ImageButton removeRoomButton;
   private ImageButton connectButton;
-  private ImageButton connectLoopbackButton;
+  private FloatingActionButton addFavoriteButton;
   private EditText roomEditText;
   private ListView roomListView;
   private SharedPreferences sharedPref;
@@ -114,7 +116,7 @@ public class ConnectActivity extends Activity {
         public boolean onEditorAction(
             TextView textView, int i, KeyEvent keyEvent) {
           if (i == EditorInfo.IME_ACTION_DONE) {
-            addRoomButton.performClick();
+            addFavoriteButton.performClick();
             return true;
           }
           return false;
@@ -123,32 +125,27 @@ public class ConnectActivity extends Activity {
     roomEditText.requestFocus();
 
     roomListView = (ListView) findViewById(R.id.room_listview);
-    roomListView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
-
-    addRoomButton = (ImageButton) findViewById(R.id.add_room_button);
-    addRoomButton.setOnClickListener(addRoomListener);
-    removeRoomButton = (ImageButton) findViewById(R.id.remove_room_button);
-    removeRoomButton.setOnClickListener(removeRoomListener);
+    roomListView.setEmptyView(findViewById(android.R.id.empty));
+    roomListView.setOnItemClickListener(roomListClickListener);
+    registerForContextMenu(roomListView);
     connectButton = (ImageButton) findViewById(R.id.connect_button);
     connectButton.setOnClickListener(connectListener);
-    connectLoopbackButton =
-        (ImageButton) findViewById(R.id.connect_loopback_button);
-    connectLoopbackButton.setOnClickListener(connectListener);
 
     // If an implicit VIEW intent is launching the app, go directly to that URL.
     final Intent intent = getIntent();
     if ("android.intent.action.VIEW".equals(intent.getAction())
         && !commandLineRun) {
-      commandLineRun = true;
       boolean loopback = intent.getBooleanExtra(
           CallActivity.EXTRA_LOOPBACK, false);
       int runTimeMs = intent.getIntExtra(
           CallActivity.EXTRA_RUNTIME, 0);
       String room = sharedPref.getString(keyprefRoom, "");
-      roomEditText.setText(room);
-      connectToRoom(loopback, runTimeMs);
+      connectToRoom(room, true, loopback, runTimeMs);
       return;
     }
+
+    addFavoriteButton = (FloatingActionButton) findViewById(R.id.add_favorite_button);
+    addFavoriteButton.setOnClickListener(addFavoriteListener);
   }
 
   @Override
@@ -158,11 +155,41 @@ public class ConnectActivity extends Activity {
   }
 
   @Override
+  public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+    if (v.getId() == R.id.room_listview) {
+      AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
+      menu.setHeaderTitle(roomList.get(info.position));
+      String[] menuItems = getResources().getStringArray(R.array.roomListContextMenu);
+      for (int i = 0; i < menuItems.length; i++) {
+        menu.add(Menu.NONE, i, i, menuItems[i]);
+      }
+    } else {
+      super.onCreateContextMenu(menu, v, menuInfo);
+    }
+  }
+
+  @Override
+  public boolean onContextItemSelected(MenuItem item) {
+    if (item.getItemId() == REMOVE_FAVORITE_INDEX) {
+      AdapterView.AdapterContextMenuInfo info =
+          (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+      roomList.remove(info.position);
+      adapter.notifyDataSetChanged();
+      return true;
+    }
+
+    return super.onContextItemSelected(item);
+  }
+
+  @Override
   public boolean onOptionsItemSelected(MenuItem item) {
     // Handle presses on the action bar items.
     if (item.getItemId() == R.id.action_settings) {
       Intent intent = new Intent(this, SettingsActivity.class);
       startActivity(intent);
+      return true;
+    } else if (item.getItemId() == R.id.action_loopback) {
+      connectToRoom(null, false, true, 0);
       return true;
     } else {
       return super.onOptionsItemSelected(item);
@@ -217,28 +244,13 @@ public class ConnectActivity extends Activity {
     }
   }
 
-  private final OnClickListener connectListener = new OnClickListener() {
-    @Override
-    public void onClick(View view) {
-      boolean loopback = false;
-      if (view.getId() == R.id.connect_loopback_button) {
-        loopback = true;
-      }
-      commandLineRun = false;
-      connectToRoom(loopback, 0);
-    }
-  };
+  private void connectToRoom(
+      String roomId, boolean commandLineRun, boolean loopback, int runTimeMs) {
+    this.commandLineRun = commandLineRun;
 
-  private void connectToRoom(boolean loopback, int runTimeMs) {
-    // Get room name (random for loopback).
-    String roomId;
+    // roomId is random for loopback.
     if (loopback) {
       roomId = Integer.toString((new Random()).nextInt(100000000));
-    } else {
-      roomId = getSelectedItem();
-      if (roomId == null) {
-        roomId = roomEditText.getText().toString();
-      }
     }
 
     String roomUrl = sharedPref.getString(
@@ -390,41 +402,46 @@ public class ConnectActivity extends Activity {
     return false;
   }
 
-  private final OnClickListener addRoomListener = new OnClickListener() {
+  private final AdapterView.OnItemClickListener
+      roomListClickListener = new AdapterView.OnItemClickListener() {
     @Override
-    public void onClick(View view) {
-      String newRoom = roomEditText.getText().toString();
-      if (newRoom.length() > 0 && !roomList.contains(newRoom)) {
-        adapter.add(newRoom);
-        adapter.notifyDataSetChanged();
-      }
+    public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+      String roomId = ((TextView) view).getText().toString();
+      connectToRoom(roomId, false, false, 0);
     }
   };
 
-  private final OnClickListener removeRoomListener = new OnClickListener() {
+  private final OnClickListener addFavoriteListener = new OnClickListener() {
     @Override
     public void onClick(View view) {
-      String selectedRoom = getSelectedItem();
-      if (selectedRoom != null) {
-        adapter.remove(selectedRoom);
-        adapter.notifyDataSetChanged();
-      }
+      AlertDialog.Builder builder = new AlertDialog.Builder(ConnectActivity.this);
+
+      final View dialogView = LayoutInflater.from(ConnectActivity.this)
+          .inflate(R.layout.dialog_add_favorite, null);
+      final EditText favoriteEditText = (EditText) dialogView.findViewById(R.id.favorite_edittext);
+      favoriteEditText.append(roomEditText.getText());
+
+      builder.setTitle(R.string.add_favorite_title)
+          .setPositiveButton(R.string.add, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+              String newRoom = favoriteEditText.getText().toString();
+              if (newRoom.length() > 0 && !roomList.contains(newRoom)) {
+                adapter.add(newRoom);
+                adapter.notifyDataSetChanged();
+              }
+            }
+          })
+          .setView(dialogView)
+          .setNegativeButton(R.string.cancel, null);
+      builder.show();
     }
   };
 
-  private String getSelectedItem() {
-    int position = AdapterView.INVALID_POSITION;
-    if (roomListView.getCheckedItemCount() > 0 && adapter.getCount() > 0) {
-      position = roomListView.getCheckedItemPosition();
-      if (position >= adapter.getCount()) {
-        position = AdapterView.INVALID_POSITION;
-      }
+  private final OnClickListener connectListener = new OnClickListener() {
+    @Override
+    public void onClick(View view) {
+      connectToRoom(roomEditText.getText().toString(), false, false, 0);
     }
-    if (position != AdapterView.INVALID_POSITION) {
-      return adapter.getItem(position);
-    } else {
-      return null;
-    }
-  }
-
+  };
 }
