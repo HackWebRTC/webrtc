@@ -308,7 +308,9 @@ public class CallActivity extends Activity
     }
     activityRunning = false;
     rootEglBase.release();
-    cpuMonitor.release();
+    if (cpuMonitor != null) {
+      cpuMonitor.release();
+    }
     super.onDestroy();
   }
 
