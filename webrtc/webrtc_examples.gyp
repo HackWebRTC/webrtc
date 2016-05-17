@@ -464,6 +464,29 @@
             '../build/android/test_runner.gypi',
           ],
         },
+
+        {
+          'target_name': 'AppRTCDemoJUnitTest',
+          'type': 'none',
+          'dependencies': [
+            'AppRTCDemo_apk',
+            '<(DEPTH)/base/base.gyp:base_java',
+            '<(DEPTH)/base/base.gyp:base_java_test_support',
+            '<(DEPTH)/base/base.gyp:base_junit_test_support',
+          ],
+          'variables': {
+            'main_class': 'org.chromium.testing.local.JunitTestMain',
+            'src_paths': [
+              'examples/androidjunit/',
+            ],
+            'test_type': 'junit',
+            'wrapper_script_name': 'helper/<(_target_name)',
+          },
+          'includes': [
+            '../build/host_jar.gypi',
+            '../build/android/test_runner.gypi',
+          ],
+        },
       ],  # targets
     }],  # OS=="android"
   ],
