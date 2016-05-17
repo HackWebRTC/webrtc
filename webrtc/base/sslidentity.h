@@ -119,7 +119,7 @@ class SSLCertChain {
 // KT_DEFAULT is used as the default KeyType for KeyParams.
 enum KeyType {
   KT_RSA, KT_ECDSA, KT_LAST,
-#if defined(WEBRTC_BUILD_CHROMIUM)
+#if defined(WEBRTC_CHROMIUM_BUILD)
   // TODO(hbos): Because of an experiment running in Chromium which relies on
   // RSA being the default (for performance reasons) we have this #if. ECDSA
   // launches in Chromium by flipping a flag which overrides the default. As
