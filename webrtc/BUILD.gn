@@ -122,6 +122,10 @@ config("common_config") {
     }
   }
 
+  if (rtc_enable_libevent) {
+    defines += [ "WEBRTC_BUILD_LIBEVENT" ]
+  }
+
   if (current_cpu == "arm64") {
     defines += [ "WEBRTC_ARCH_ARM64" ]
     defines += [ "WEBRTC_HAS_NEON" ]

@@ -84,11 +84,7 @@
         'systeminfo.cc',
         'systeminfo.h',
         'task_queue.h',
-        'task_queue_libevent.cc',
-        'task_queue_gcd.cc',
-        'task_queue_posix.cc',
         'task_queue_posix.h',
-        'task_queue_win.cc',
         'template_util.h',
         'thread_annotations.h',
         'thread_checker.h',
@@ -121,16 +117,25 @@
           'dependencies': [
             '<(DEPTH)/base/third_party/libevent/libevent.gyp:libevent',
           ],
-        }, {
-          'sources!': [ 'task_queue_libevent.cc' ],
-          'conditions': [
-            ['OS=="linux" or OS=="android"', {
-              'sources!': [ 'task_queue_posix.cc' ],
-            }],
-          ],
         }],
-        ['build_libevent==1 or OS=="linux" or OS=="android" or OS=="win"', {
-          'sources!': [ 'task_queue_gcd.cc' ],
+        ['enable_libevent==1', {
+          'sources': [
+            'task_queue_libevent.cc',
+            'task_queue_posix.cc',
+          ],
+        }, {
+          # If not libevent, fall back to the other task queues.
+          'conditions': [
+            ['OS=="mac" or OS=="ios"', {
+             'sources': [
+               'task_queue_gcd.cc',
+               'task_queue_posix.cc',
+             ],
+            }],
+            ['OS=="win"', {
+              'sources': [ 'task_queue_win.cc' ],
+            }]
+          ],
         }],
         ['OS=="mac" and build_with_chromium==0', {
           'all_dependent_settings': {
