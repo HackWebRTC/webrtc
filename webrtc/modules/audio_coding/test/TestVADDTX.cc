@@ -108,7 +108,9 @@ void TestVadDtx::Run(std::string in_filename, int frequency, int channels,
     audio_frame.timestamp_ = time_stamp;
     time_stamp += frame_size_samples;
     EXPECT_GE(acm_send_->Add10MsData(audio_frame), 0);
-    acm_receive_->PlayoutData10Ms(kOutputFreqHz, &audio_frame);
+    bool muted;
+    acm_receive_->PlayoutData10Ms(kOutputFreqHz, &audio_frame, &muted);
+    ASSERT_FALSE(muted);
     out_file.Write10MsData(audio_frame);
   }
 

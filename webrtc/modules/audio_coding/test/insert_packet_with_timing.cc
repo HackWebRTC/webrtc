@@ -141,8 +141,10 @@ class InsertPacketWithTiming {
     // Is it time to pull audio?
     if (time_to_playout_audio_ms_ == 0) {
       time_to_playout_audio_ms_ = kPlayoutPeriodMs;
+      bool muted;
       receive_acm_->PlayoutData10Ms(static_cast<int>(FLAGS_output_fs_hz),
-                                    &frame_);
+                                    &frame_, &muted);
+      ASSERT_FALSE(muted);
       fwrite(frame_.data_, sizeof(frame_.data_[0]),
              frame_.samples_per_channel_ * frame_.num_channels_, pcm_out_fid_);
       *action |= kAudioPlayedOut;

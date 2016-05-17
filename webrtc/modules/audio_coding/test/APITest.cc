@@ -323,7 +323,8 @@ bool APITest::APIThreadB(void* obj) {
 bool APITest::PullAudioRunA() {
   _pullEventA->Wait(100);
   AudioFrame audioFrame;
-  if (_acmA->PlayoutData10Ms(_outFreqHzA, &audioFrame) < 0) {
+  bool muted;
+  if (_acmA->PlayoutData10Ms(_outFreqHzA, &audioFrame, &muted) < 0) {
     bool thereIsDecoder;
     {
       ReadLockScoped rl(_apiTestRWLock);
@@ -343,7 +344,8 @@ bool APITest::PullAudioRunA() {
 bool APITest::PullAudioRunB() {
   _pullEventB->Wait(100);
   AudioFrame audioFrame;
-  if (_acmB->PlayoutData10Ms(_outFreqHzB, &audioFrame) < 0) {
+  bool muted;
+  if (_acmB->PlayoutData10Ms(_outFreqHzB, &audioFrame, &muted) < 0) {
     bool thereIsDecoder;
     {
       ReadLockScoped rl(_apiTestRWLock);

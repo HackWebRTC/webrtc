@@ -205,7 +205,9 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
 
   virtual void PullAudio() {
     AudioFrame audio_frame;
-    ASSERT_EQ(0, acm_->PlayoutData10Ms(-1, &audio_frame));
+    bool muted;
+    ASSERT_EQ(0, acm_->PlayoutData10Ms(-1, &audio_frame, &muted));
+    ASSERT_FALSE(muted);
   }
 
   virtual void InsertAudio() {
@@ -296,7 +298,9 @@ TEST_F(AudioCodingModuleTestOldApi, MAYBE_NetEqCalls) {
 TEST_F(AudioCodingModuleTestOldApi, VerifyOutputFrame) {
   AudioFrame audio_frame;
   const int kSampleRateHz = 32000;
-  EXPECT_EQ(0, acm_->PlayoutData10Ms(kSampleRateHz, &audio_frame));
+  bool muted;
+  EXPECT_EQ(0, acm_->PlayoutData10Ms(kSampleRateHz, &audio_frame, &muted));
+  ASSERT_FALSE(muted);
   EXPECT_EQ(id_, audio_frame.id_);
   EXPECT_EQ(0u, audio_frame.timestamp_);
   EXPECT_GT(audio_frame.num_channels_, 0u);
@@ -307,7 +311,8 @@ TEST_F(AudioCodingModuleTestOldApi, VerifyOutputFrame) {
 
 TEST_F(AudioCodingModuleTestOldApi, FailOnZeroDesiredFrequency) {
   AudioFrame audio_frame;
-  EXPECT_EQ(-1, acm_->PlayoutData10Ms(0, &audio_frame));
+  bool muted;
+  EXPECT_EQ(-1, acm_->PlayoutData10Ms(0, &audio_frame, &muted));
 }
 
 // Checks that the transport callback is invoked once for each speech packet.
@@ -806,8 +811,13 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
     // Pull audio.
     for (int i = 0; i < rtc::CheckedDivExact(kPacketSizeMs, 10); ++i) {
       AudioFrame audio_frame;
+      bool muted;
       EXPECT_EQ(0, acm_->PlayoutData10Ms(-1 /* default output frequency */,
-                                         &audio_frame));
+                                         &audio_frame, &muted));
+      if (muted) {
+        ADD_FAILURE();
+        return false;
+      }
       fake_clock_->AdvanceTimeMilliseconds(10);
     }
     rtp_utility_->Forward(&rtp_header_);

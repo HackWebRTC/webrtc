@@ -792,7 +792,9 @@ void TestStereo::Run(TestPackStereo* channel, int in_channels, int out_channels,
     }
 
     // Run received side of ACM
-    EXPECT_EQ(0, acm_b_->PlayoutData10Ms(out_freq_hz_b, &audio_frame));
+    bool muted;
+    EXPECT_EQ(0, acm_b_->PlayoutData10Ms(out_freq_hz_b, &audio_frame, &muted));
+    ASSERT_FALSE(muted);
 
     // Write output speech to file
     out_file_.Write10MsData(

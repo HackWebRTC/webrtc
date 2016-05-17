@@ -198,9 +198,12 @@ void ISACTest::Run10ms() {
   EXPECT_GT(_inFileA.Read10MsData(audioFrame), 0);
   EXPECT_GE(_acmA->Add10MsData(audioFrame), 0);
   EXPECT_GE(_acmB->Add10MsData(audioFrame), 0);
-  EXPECT_EQ(0, _acmA->PlayoutData10Ms(32000, &audioFrame));
+  bool muted;
+  EXPECT_EQ(0, _acmA->PlayoutData10Ms(32000, &audioFrame, &muted));
+  ASSERT_FALSE(muted);
   _outFileA.Write10MsData(audioFrame);
-  EXPECT_EQ(0, _acmB->PlayoutData10Ms(32000, &audioFrame));
+  EXPECT_EQ(0, _acmB->PlayoutData10Ms(32000, &audioFrame, &muted));
+  ASSERT_FALSE(muted);
   _outFileB.Write10MsData(audioFrame);
 }
 

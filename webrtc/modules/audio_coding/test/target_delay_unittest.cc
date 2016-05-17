@@ -150,8 +150,10 @@ class TargetDelayTest : public ::testing::Test {
   // Pull audio equivalent to the amount of audio in one RTP packet.
   void Pull() {
     AudioFrame frame;
+    bool muted;
     for (int k = 0; k < kNum10msPerFrame; ++k) {  // Pull one frame.
-      ASSERT_EQ(0, acm_->PlayoutData10Ms(-1, &frame));
+      ASSERT_EQ(0, acm_->PlayoutData10Ms(-1, &frame, &muted));
+      ASSERT_FALSE(muted);
       // Had to use ASSERT_TRUE, ASSERT_EQ generated error.
       ASSERT_TRUE(kSampleRateHz == frame.sample_rate_hz_);
       ASSERT_EQ(1u, frame.num_channels_);

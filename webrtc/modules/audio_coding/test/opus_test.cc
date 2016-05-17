@@ -336,7 +336,10 @@ void OpusTest::Run(TestPackStereo* channel, size_t channels, int bitrate,
     }
 
     // Run received side of ACM.
-    ASSERT_EQ(0, acm_receiver_->PlayoutData10Ms(out_freq_hz_b, &audio_frame));
+    bool muted;
+    ASSERT_EQ(
+        0, acm_receiver_->PlayoutData10Ms(out_freq_hz_b, &audio_frame, &muted));
+    ASSERT_FALSE(muted);
 
     // Write output speech to file.
     out_file_.Write10MsData(

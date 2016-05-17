@@ -483,8 +483,9 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame* audioFrame) {
     event_log_->LogAudioPlayout(ssrc);
   }
   // Get 10ms raw PCM data from the ACM (mixer limits output frequency)
-  if (audio_coding_->PlayoutData10Ms(audioFrame->sample_rate_hz_, audioFrame) ==
-      -1) {
+  bool muted;
+  if (audio_coding_->PlayoutData10Ms(audioFrame->sample_rate_hz_, audioFrame,
+                                     &muted) == -1) {
     WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId, _channelId),
                  "Channel::GetAudioFrame() PlayoutData10Ms() failed!");
     // In all likelihood, the audio in this frame is garbage. We return an
@@ -493,6 +494,7 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame* audioFrame) {
     // irrelevant.
     return -1;
   }
+  RTC_DCHECK(!muted);
 
   if (_RxVadDetection) {
     UpdateRxVadDetection(*audioFrame);
@@ -811,6 +813,7 @@ Channel::Channel(int32_t channelId,
   }
   acm_config.neteq_config.enable_fast_accelerate =
       config.Get<NetEqFastAccelerate>().enabled;
+  acm_config.neteq_config.enable_muted_state = false;
   audio_coding_.reset(AudioCodingModule::Create(acm_config));
 
   _outputAudioLevel.Clear();

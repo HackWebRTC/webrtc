@@ -204,7 +204,10 @@ class DelayTest {
 
       in_file_a_.Read10MsData(audio_frame);
       ASSERT_GE(acm_a_->Add10MsData(audio_frame), 0);
-      ASSERT_EQ(0, acm_b_->PlayoutData10Ms(out_freq_hz_b, &audio_frame));
+      bool muted;
+      ASSERT_EQ(0,
+                acm_b_->PlayoutData10Ms(out_freq_hz_b, &audio_frame, &muted));
+      RTC_DCHECK(!muted);
       out_file_b_.Write10MsData(
           audio_frame.data_,
           audio_frame.samples_per_channel_ * audio_frame.num_channels_);

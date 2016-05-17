@@ -13,9 +13,18 @@
 #include "webrtc/modules/utility/source/coder.h"
 
 namespace webrtc {
+namespace {
+AudioCodingModule::Config GetAcmConfig(uint32_t id) {
+  AudioCodingModule::Config config;
+  // This class does not handle muted output.
+  config.neteq_config.enable_muted_state = false;
+  config.id = id;
+  return config;
+}
+}  // namespace
 
 AudioCoder::AudioCoder(uint32_t instance_id)
-    : acm_(AudioCodingModule::Create(instance_id)),
+    : acm_(AudioCodingModule::Create(GetAcmConfig(instance_id))),
       receive_codec_(),
       encode_timestamp_(0),
       encoded_data_(nullptr),
@@ -54,12 +63,19 @@ int32_t AudioCoder::Decode(AudioFrame& decoded_audio,
       return -1;
     }
   }
-  return acm_->PlayoutData10Ms((uint16_t)samp_freq_hz, &decoded_audio);
+  bool muted;
+  int32_t ret =
+      acm_->PlayoutData10Ms((uint16_t)samp_freq_hz, &decoded_audio, &muted);
+  RTC_DCHECK(!muted);
+  return ret;
 }
 
 int32_t AudioCoder::PlayoutData(AudioFrame& decoded_audio,
                                 uint16_t& samp_freq_hz) {
-  return acm_->PlayoutData10Ms(samp_freq_hz, &decoded_audio);
+  bool muted;
+  int32_t ret = acm_->PlayoutData10Ms(samp_freq_hz, &decoded_audio, &muted);
+  RTC_DCHECK(!muted);
+  return ret;
 }
 
 int32_t AudioCoder::Encode(const AudioFrame& audio,

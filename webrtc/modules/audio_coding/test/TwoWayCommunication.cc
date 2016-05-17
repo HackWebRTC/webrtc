@@ -261,13 +261,18 @@ void TwoWayCommunication::Perform() {
 
     EXPECT_GE(_acmB->Add10MsData(audioFrame), 0);
     EXPECT_GE(_acmRefB->Add10MsData(audioFrame), 0);
-    EXPECT_EQ(0, _acmA->PlayoutData10Ms(outFreqHzA, &audioFrame));
+    bool muted;
+    EXPECT_EQ(0, _acmA->PlayoutData10Ms(outFreqHzA, &audioFrame, &muted));
+    ASSERT_FALSE(muted);
     _outFileA.Write10MsData(audioFrame);
-    EXPECT_EQ(0, _acmRefA->PlayoutData10Ms(outFreqHzA, &audioFrame));
+    EXPECT_EQ(0, _acmRefA->PlayoutData10Ms(outFreqHzA, &audioFrame, &muted));
+    ASSERT_FALSE(muted);
     _outFileRefA.Write10MsData(audioFrame);
-    EXPECT_EQ(0, _acmB->PlayoutData10Ms(outFreqHzB, &audioFrame));
+    EXPECT_EQ(0, _acmB->PlayoutData10Ms(outFreqHzB, &audioFrame, &muted));
+    ASSERT_FALSE(muted);
     _outFileB.Write10MsData(audioFrame);
-    EXPECT_EQ(0, _acmRefB->PlayoutData10Ms(outFreqHzB, &audioFrame));
+    EXPECT_EQ(0, _acmRefB->PlayoutData10Ms(outFreqHzB, &audioFrame, &muted));
+    ASSERT_FALSE(muted);
     _outFileRefB.Write10MsData(audioFrame);
 
     // Update time counters each time a second of data has passed.

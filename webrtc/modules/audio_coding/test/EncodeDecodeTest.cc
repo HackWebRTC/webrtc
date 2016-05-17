@@ -208,8 +208,12 @@ bool Receiver::IncomingPacket() {
 
 bool Receiver::PlayoutData() {
   AudioFrame audioFrame;
-
-  int32_t ok =_acm->PlayoutData10Ms(_frequency, &audioFrame);
+  bool muted;
+  int32_t ok = _acm->PlayoutData10Ms(_frequency, &audioFrame, &muted);
+  if (muted) {
+    ADD_FAILURE();
+    return false;
+  }
   EXPECT_EQ(0, ok);
   if (ok < 0){
     return false;

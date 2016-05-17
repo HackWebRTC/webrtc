@@ -452,7 +452,9 @@ void TestAllCodecs::Run(TestPack* channel) {
     }
 
     // Run received side of ACM.
-    CHECK_ERROR(acm_b_->PlayoutData10Ms(out_freq_hz, &audio_frame));
+    bool muted;
+    CHECK_ERROR(acm_b_->PlayoutData10Ms(out_freq_hz, &audio_frame, &muted));
+    ASSERT_FALSE(muted);
 
     // Write output speech to file.
     outfile_b_.Write10MsData(audio_frame.data_,
