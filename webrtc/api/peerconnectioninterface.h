@@ -65,7 +65,6 @@
 #include "webrtc/api/rtpsenderinterface.h"
 #include "webrtc/api/statstypes.h"
 #include "webrtc/api/umametrics.h"
-#include "webrtc/base/deprecation.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/network.h"
 #include "webrtc/base/rtccertificate.h"
@@ -694,7 +693,6 @@ rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
 
 // Create a new instance of PeerConnectionFactoryInterface.
 // Same thread is used as worker and network thread.
-RTC_DEPRECATED
 inline rtc::scoped_refptr<PeerConnectionFactoryInterface>
 CreatePeerConnectionFactory(
     rtc::Thread* worker_and_network_thread,
