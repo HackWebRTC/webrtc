@@ -23,6 +23,7 @@
 #include "webrtc/modules/video_capture/video_capture_factory.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/sleep.h"
+#include "webrtc/test/frame_utils.h"
 #include "webrtc/video_frame.h"
 
 using webrtc::CriticalSectionWrapper;
@@ -58,32 +59,6 @@ static const int kTimeOut = 5000;
 static const int kTestHeight = 288;
 static const int kTestWidth = 352;
 static const int kTestFramerate = 30;
-
-// Compares the content of two video frames.
-static bool CompareFrames(const webrtc::VideoFrame& frame1,
-                          const webrtc::VideoFrame& frame2) {
-  bool result =
-      (frame1.stride(webrtc::kYPlane) == frame2.stride(webrtc::kYPlane)) &&
-      (frame1.stride(webrtc::kUPlane) == frame2.stride(webrtc::kUPlane)) &&
-      (frame1.stride(webrtc::kVPlane) == frame2.stride(webrtc::kVPlane)) &&
-      (frame1.width() == frame2.width()) &&
-      (frame1.height() == frame2.height());
-
-  if (!result)
-    return false;
-  for (int plane = 0; plane < webrtc::kNumOfPlanes; plane ++) {
-      webrtc::PlaneType plane_type = static_cast<webrtc::PlaneType>(plane);
-      int allocated_size1 = frame1.allocated_size(plane_type);
-      int allocated_size2 = frame2.allocated_size(plane_type);
-      if (allocated_size1 != allocated_size2)
-        return false;
-      const uint8_t* plane_buffer1 = frame1.buffer(plane_type);
-      const uint8_t* plane_buffer2 = frame2.buffer(plane_type);
-      if (memcmp(plane_buffer1, plane_buffer2, allocated_size1))
-        return false;
-    }
-    return true;
-}
 
 class TestVideoCaptureCallback : public VideoCaptureDataCallback {
  public:
@@ -131,7 +106,7 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
 
     incoming_frames_++;
     last_render_time_ms_ = videoFrame.render_time_ms();
-    last_frame_.CopyFrame(videoFrame);
+    last_frame_ = videoFrame.video_frame_buffer();
   }
 
   virtual void OnCaptureDelayChanged(const int32_t id,
@@ -167,7 +142,8 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
 
   bool CompareLastFrame(const webrtc::VideoFrame& frame) {
     CriticalSectionScoped cs(capture_cs_.get());
-    return CompareFrames(last_frame_, frame);
+    return webrtc::test::FrameBufsEqual(last_frame_,
+                                        frame.video_frame_buffer());
   }
 
   void SetExpectedCaptureRotation(webrtc::VideoRotation rotation) {
@@ -182,7 +158,7 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
   int64_t last_render_time_ms_;
   int incoming_frames_;
   int timing_warnings_;
-  webrtc::VideoFrame last_frame_;
+  rtc::scoped_refptr<webrtc::VideoFrameBuffer> last_frame_;
   webrtc::VideoRotation rotate_frame_;
 };
 
@@ -447,10 +423,11 @@ class VideoCaptureExternalTest : public testing::Test {
     test_frame_.CreateEmptyFrame(kTestWidth, kTestHeight, kTestWidth,
                                  ((kTestWidth + 1) / 2), (kTestWidth + 1) / 2);
     SleepMs(1); // Wait 1ms so that two tests can't have the same timestamp.
-    memset(test_frame_.buffer(webrtc::kYPlane), 127, kTestWidth * kTestHeight);
-    memset(test_frame_.buffer(webrtc::kUPlane), 127,
+    memset(test_frame_.video_frame_buffer()->MutableDataY(), 127,
+           kTestWidth * kTestHeight);
+    memset(test_frame_.video_frame_buffer()->MutableDataU(), 127,
            ((kTestWidth + 1) / 2) * ((kTestHeight + 1) / 2));
-    memset(test_frame_.buffer(webrtc::kVPlane), 127,
+    memset(test_frame_.video_frame_buffer()->MutableDataV(), 127,
            ((kTestWidth + 1) / 2) * ((kTestHeight + 1) / 2));
 
     capture_module_->RegisterCaptureDataCallback(capture_callback_);

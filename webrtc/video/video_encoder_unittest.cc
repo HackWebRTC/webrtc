@@ -107,11 +107,11 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
 void VideoEncoderSoftwareFallbackWrapperTest::EncodeFrame() {
   frame_.CreateEmptyFrame(kWidth, kHeight, kWidth, (kWidth + 1) / 2,
                           (kWidth + 1) / 2);
-  memset(frame_.buffer(webrtc::kYPlane), 16,
+  memset(frame_.video_frame_buffer()->MutableDataY(), 16,
          frame_.allocated_size(webrtc::kYPlane));
-  memset(frame_.buffer(webrtc::kUPlane), 128,
+  memset(frame_.video_frame_buffer()->MutableDataU(), 128,
          frame_.allocated_size(webrtc::kUPlane));
-  memset(frame_.buffer(webrtc::kVPlane), 128,
+  memset(frame_.video_frame_buffer()->MutableDataV(), 128,
          frame_.allocated_size(webrtc::kVPlane));
 
   std::vector<FrameType> types(1, kVideoFrameKey);

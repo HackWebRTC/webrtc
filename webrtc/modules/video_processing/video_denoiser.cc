@@ -81,17 +81,19 @@ void VideoDenoiser::DenoiserReset(const VideoFrame& frame,
   height_ = frame.height();
   mb_cols_ = width_ >> 4;
   mb_rows_ = height_ >> 4;
-  stride_y_ = frame.stride(kYPlane);
-  stride_u_ = frame.stride(kUPlane);
-  stride_v_ = frame.stride(kVPlane);
+  stride_y_ = frame.video_frame_buffer()->StrideY();
+  stride_u_ = frame.video_frame_buffer()->StrideU();
+  stride_v_ = frame.video_frame_buffer()->StrideV();
 
   // Allocate an empty buffer for denoised_frame_prev.
   denoised_frame_prev->CreateEmptyFrame(width_, height_, stride_y_, stride_u_,
                                         stride_v_);
   // Allocate and initialize denoised_frame with key frame.
-  denoised_frame->CreateFrame(frame.buffer(kYPlane), frame.buffer(kUPlane),
-                              frame.buffer(kVPlane), width_, height_, stride_y_,
-                              stride_u_, stride_v_, kVideoRotation_0);
+  denoised_frame->CreateFrame(
+      frame.video_frame_buffer()->DataY(),
+      frame.video_frame_buffer()->DataU(),
+      frame.video_frame_buffer()->DataV(),
+      width_, height_, stride_y_, stride_u_, stride_v_, kVideoRotation_0);
   // Set time parameters to the output frame.
   denoised_frame->set_timestamp(frame.timestamp());
   denoised_frame->set_render_time_ms(frame.render_time_ms());
@@ -236,13 +238,14 @@ void VideoDenoiser::DenoiseFrame(const VideoFrame& frame,
   }
 
   // Set buffer pointers.
-  const uint8_t* y_src = frame.buffer(kYPlane);
-  const uint8_t* u_src = frame.buffer(kUPlane);
-  const uint8_t* v_src = frame.buffer(kVPlane);
-  uint8_t* y_dst = denoised_frame->buffer(kYPlane);
-  uint8_t* u_dst = denoised_frame->buffer(kUPlane);
-  uint8_t* v_dst = denoised_frame->buffer(kVPlane);
-  uint8_t* y_dst_prev = denoised_frame_prev->buffer(kYPlane);
+  const uint8_t* y_src = frame.video_frame_buffer()->DataY();
+  const uint8_t* u_src = frame.video_frame_buffer()->DataU();
+  const uint8_t* v_src = frame.video_frame_buffer()->DataV();
+  uint8_t* y_dst = denoised_frame->video_frame_buffer()->MutableDataY();
+  uint8_t* u_dst = denoised_frame->video_frame_buffer()->MutableDataU();
+  uint8_t* v_dst = denoised_frame->video_frame_buffer()->MutableDataV();
+  uint8_t* y_dst_prev =
+      denoised_frame_prev->video_frame_buffer()->MutableDataY();
   memset(x_density_.get(), 0, mb_cols_);
   memset(y_density_.get(), 0, mb_rows_);
   memset(moving_object_.get(), 1, mb_cols_ * mb_rows_);

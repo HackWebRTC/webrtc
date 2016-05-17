@@ -69,8 +69,10 @@ void VideoFrame::CreateEmptyFrame(int width,
   if (video_frame_buffer_ && video_frame_buffer_->IsMutable() &&
       !video_frame_buffer_->native_handle() &&
       width == video_frame_buffer_->width() &&
-      height == video_frame_buffer_->height() && stride_y == stride(kYPlane) &&
-      stride_u == stride(kUPlane) && stride_v == stride(kVPlane)) {
+      height == video_frame_buffer_->height() &&
+      stride_y == video_frame_buffer_->StrideY() &&
+      stride_u == video_frame_buffer_->StrideU() &&
+      stride_v == video_frame_buffer_->StrideV()) {
     return;
   }
 
@@ -93,9 +95,9 @@ void VideoFrame::CreateFrame(const uint8_t* buffer_y,
   const int expected_size_u = half_height * stride_u;
   const int expected_size_v = half_height * stride_v;
   CreateEmptyFrame(width, height, stride_y, stride_u, stride_v);
-  memcpy(buffer(kYPlane), buffer_y, expected_size_y);
-  memcpy(buffer(kUPlane), buffer_u, expected_size_u);
-  memcpy(buffer(kVPlane), buffer_v, expected_size_v);
+  memcpy(video_frame_buffer_->MutableDataY(), buffer_y, expected_size_y);
+  memcpy(video_frame_buffer_->MutableDataU(), buffer_u, expected_size_u);
+  memcpy(video_frame_buffer_->MutableDataV(), buffer_v, expected_size_v);
   rotation_ = rotation;
 }
 
@@ -130,22 +132,26 @@ void VideoFrame::ShallowCopy(const VideoFrame& videoFrame) {
   rotation_ = videoFrame.rotation_;
 }
 
-uint8_t* VideoFrame::buffer(PlaneType type) {
-  return video_frame_buffer_ ? video_frame_buffer_->MutableData(type)
-                             : nullptr;
-}
-
-const uint8_t* VideoFrame::buffer(PlaneType type) const {
-  return video_frame_buffer_ ? video_frame_buffer_->data(type) : nullptr;
-}
-
+// TODO(nisse): Delete. Besides test code, only one use, in
+// webrtcvideoengine2.cc:CreateBlackFrame.
 int VideoFrame::allocated_size(PlaneType type) const {
   const int plane_height = (type == kYPlane) ? height() : (height() + 1) / 2;
-  return plane_height * stride(type);
-}
-
-int VideoFrame::stride(PlaneType type) const {
-  return video_frame_buffer_ ? video_frame_buffer_->stride(type) : 0;
+  int stride;
+  switch (type) {
+    case kYPlane:
+      stride = video_frame_buffer_->StrideY();
+      break;
+    case kUPlane:
+      stride = video_frame_buffer_->StrideU();
+      break;
+    case kVPlane:
+      stride = video_frame_buffer_->StrideV();
+      break;
+    default:
+      RTC_NOTREACHED();
+      return 0;
+  }
+  return plane_height * stride;
 }
 
 int VideoFrame::width() const {
@@ -160,7 +166,8 @@ bool VideoFrame::IsZeroSize() const {
   return !video_frame_buffer_;
 }
 
-rtc::scoped_refptr<VideoFrameBuffer> VideoFrame::video_frame_buffer() const {
+const rtc::scoped_refptr<VideoFrameBuffer>& VideoFrame::video_frame_buffer()
+    const {
   return video_frame_buffer_;
 }
 

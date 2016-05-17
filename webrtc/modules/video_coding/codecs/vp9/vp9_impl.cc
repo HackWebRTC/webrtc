@@ -504,12 +504,15 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
 
   // Image in vpx_image_t format.
   // Input image is const. VPX's raw image is not defined as const.
-  raw_->planes[VPX_PLANE_Y] = const_cast<uint8_t*>(input_image.buffer(kYPlane));
-  raw_->planes[VPX_PLANE_U] = const_cast<uint8_t*>(input_image.buffer(kUPlane));
-  raw_->planes[VPX_PLANE_V] = const_cast<uint8_t*>(input_image.buffer(kVPlane));
-  raw_->stride[VPX_PLANE_Y] = input_image.stride(kYPlane);
-  raw_->stride[VPX_PLANE_U] = input_image.stride(kUPlane);
-  raw_->stride[VPX_PLANE_V] = input_image.stride(kVPlane);
+  raw_->planes[VPX_PLANE_Y] =
+      const_cast<uint8_t*>(input_image.video_frame_buffer()->DataY());
+  raw_->planes[VPX_PLANE_U] =
+      const_cast<uint8_t*>(input_image.video_frame_buffer()->DataU());
+  raw_->planes[VPX_PLANE_V] =
+      const_cast<uint8_t*>(input_image.video_frame_buffer()->DataV());
+  raw_->stride[VPX_PLANE_Y] = input_image.video_frame_buffer()->StrideY();
+  raw_->stride[VPX_PLANE_U] = input_image.video_frame_buffer()->StrideU();
+  raw_->stride[VPX_PLANE_V] = input_image.video_frame_buffer()->StrideV();
 
   vpx_enc_frame_flags_t flags = 0;
   bool send_keyframe = (frame_type == kVideoFrameKey);

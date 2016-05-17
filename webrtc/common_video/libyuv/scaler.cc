@@ -47,6 +47,7 @@ int Scaler::Set(int src_width, int src_height,
   return 0;
 }
 
+// TODO(nisse): Should work with VideoFrameBuffer instead.
 int Scaler::Scale(const VideoFrame& src_frame, VideoFrame* dst_frame) {
   assert(dst_frame);
   if (src_frame.IsZeroSize())
@@ -69,31 +70,35 @@ int Scaler::Scale(const VideoFrame& src_frame, VideoFrame* dst_frame) {
   const int src_offset_x = ((src_width_ - cropped_src_width) / 2) & ~1;
   const int src_offset_y = ((src_height_ - cropped_src_height) / 2) & ~1;
 
-  const uint8_t* y_ptr = src_frame.buffer(kYPlane) +
-                         src_offset_y * src_frame.stride(kYPlane) +
-                         src_offset_x;
-  const uint8_t* u_ptr = src_frame.buffer(kUPlane) +
-                         src_offset_y / 2 * src_frame.stride(kUPlane) +
-                         src_offset_x / 2;
-  const uint8_t* v_ptr = src_frame.buffer(kVPlane) +
-                         src_offset_y / 2 * src_frame.stride(kVPlane) +
-                         src_offset_x / 2;
+  const uint8_t* y_ptr =
+      src_frame.video_frame_buffer()->DataY() +
+      src_offset_y * src_frame.video_frame_buffer()->StrideY() +
+      src_offset_x;
+  const uint8_t* u_ptr =
+      src_frame.video_frame_buffer()->DataU() +
+      src_offset_y / 2 * src_frame.video_frame_buffer()->StrideU() +
+      src_offset_x / 2;
+  const uint8_t* v_ptr =
+      src_frame.video_frame_buffer()->DataV() +
+      src_offset_y / 2 * src_frame.video_frame_buffer()->StrideV() +
+      src_offset_x / 2;
 
-  return libyuv::I420Scale(y_ptr,
-                           src_frame.stride(kYPlane),
-                           u_ptr,
-                           src_frame.stride(kUPlane),
-                           v_ptr,
-                           src_frame.stride(kVPlane),
-                           cropped_src_width, cropped_src_height,
-                           dst_frame->buffer(kYPlane),
-                           dst_frame->stride(kYPlane),
-                           dst_frame->buffer(kUPlane),
-                           dst_frame->stride(kUPlane),
-                           dst_frame->buffer(kVPlane),
-                           dst_frame->stride(kVPlane),
-                           dst_width_, dst_height_,
-                           libyuv::FilterMode(method_));
+  return libyuv::I420Scale(
+      y_ptr,
+      src_frame.video_frame_buffer()->StrideY(),
+      u_ptr,
+      src_frame.video_frame_buffer()->StrideU(),
+      v_ptr,
+      src_frame.video_frame_buffer()->StrideV(),
+      cropped_src_width, cropped_src_height,
+      dst_frame->video_frame_buffer()->MutableDataY(),
+      dst_frame->video_frame_buffer()->StrideY(),
+      dst_frame->video_frame_buffer()->MutableDataU(),
+      dst_frame->video_frame_buffer()->StrideU(),
+      dst_frame->video_frame_buffer()->MutableDataV(),
+      dst_frame->video_frame_buffer()->StrideV(),
+      dst_width_, dst_height_,
+      libyuv::FilterMode(method_));
 }
 
 bool Scaler::SupportedVideoType(VideoType src_video_type,

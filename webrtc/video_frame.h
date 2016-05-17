@@ -65,16 +65,8 @@ class VideoFrame {
   // reference to the video buffer also retained by |videoFrame|.
   void ShallowCopy(const VideoFrame& videoFrame);
 
-  // Get pointer to buffer per plane.
-  uint8_t* buffer(PlaneType type);
-  // Overloading with const.
-  const uint8_t* buffer(PlaneType type) const;
-
   // Get allocated size per plane.
   int allocated_size(PlaneType type) const;
-
-  // Get allocated stride per plane.
-  int stride(PlaneType type) const;
 
   // Get frame width.
   int width() const;
@@ -124,7 +116,10 @@ class VideoFrame {
 
   // Return the underlying buffer. Never nullptr for a properly
   // initialized VideoFrame.
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer() const;
+  // Creating a new reference breaks the HasOneRef and IsMutable
+  // logic. So return a const ref to our reference.
+  const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& video_frame_buffer()
+      const;
 
   // Set the underlying buffer.
   void set_video_frame_buffer(
