@@ -263,39 +263,6 @@ inline bool ContainsHeaderExtension(
   return false;
 }
 
-// Merges two fec configs and logs an error if a conflict arises
-// such that merging in different order would trigger a different output.
-static void MergeFecConfig(const webrtc::FecConfig& other,
-                           webrtc::FecConfig* output) {
-  if (other.ulpfec_payload_type != -1) {
-    if (output->ulpfec_payload_type != -1 &&
-        output->ulpfec_payload_type != other.ulpfec_payload_type) {
-      LOG(LS_WARNING) << "Conflict merging ulpfec_payload_type configs: "
-                      << output->ulpfec_payload_type << " and "
-                      << other.ulpfec_payload_type;
-    }
-    output->ulpfec_payload_type = other.ulpfec_payload_type;
-  }
-  if (other.red_payload_type != -1) {
-    if (output->red_payload_type != -1 &&
-        output->red_payload_type != other.red_payload_type) {
-      LOG(LS_WARNING) << "Conflict merging red_payload_type configs: "
-                      << output->red_payload_type << " and "
-                      << other.red_payload_type;
-    }
-    output->red_payload_type = other.red_payload_type;
-  }
-  if (other.red_rtx_payload_type != -1) {
-    if (output->red_rtx_payload_type != -1 &&
-        output->red_rtx_payload_type != other.red_rtx_payload_type) {
-      LOG(LS_WARNING) << "Conflict merging red_rtx_payload_type configs: "
-                      << output->red_rtx_payload_type << " and "
-                      << other.red_rtx_payload_type;
-    }
-    output->red_rtx_payload_type = other.red_rtx_payload_type;
-  }
-}
-
 // Returns true if the given codec is disallowed from doing simulcast.
 bool IsCodecBlacklistedForSimulcast(const std::string& codec_name) {
   return CodecNamesEq(codec_name, kH264CodecName) ||
@@ -682,7 +649,8 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
       video_config_(config.video),
       external_encoder_factory_(external_encoder_factory),
       external_decoder_factory_(external_decoder_factory),
-      default_send_options_(options) {
+      default_send_options_(options),
+      red_disabled_by_remote_side_(false) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
 
   rtcp_receiver_report_ssrc_ = kDefaultRtcpReceiverReportSsrc;
@@ -870,6 +838,19 @@ bool WebRtcVideoChannel2::SetSendParameters(const VideoSendParameters& params) {
             HasTransportCc(send_codec_->codec),
             params.rtcp.reduced_size ? webrtc::RtcpMode::kReducedSize
                                      : webrtc::RtcpMode::kCompound);
+      }
+    }
+    if (changed_params.codec) {
+      bool red_was_disabled = red_disabled_by_remote_side_;
+      red_disabled_by_remote_side_ =
+          changed_params.codec->fec.red_payload_type == -1;
+      if (red_was_disabled != red_disabled_by_remote_side_) {
+        for (auto& kv : receive_streams_) {
+          // In practice VideoChannel::SetRemoteContent appears to most of the
+          // time also call UpdateRemoteStreams, which recreates the receive
+          // streams. If that's always true this call isn't needed.
+          kv.second->SetFecDisabledRemotely(red_disabled_by_remote_side_);
+        }
       }
     }
   }
@@ -1237,7 +1218,7 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
 
   receive_streams_[ssrc] = new WebRtcVideoReceiveStream(
       call_, sp, config, external_decoder_factory_, default_stream,
-      recv_codecs_);
+      recv_codecs_, red_disabled_by_remote_side_);
 
   return true;
 }
@@ -1270,10 +1251,6 @@ void WebRtcVideoChannel2::ConfigureReceiverRtp(
     } else {
       config->rtp.local_ssrc = kDefaultRtcpReceiverReportSsrc + 1;
     }
-  }
-
-  for (size_t i = 0; i < recv_codecs_.size(); ++i) {
-    MergeFecConfig(recv_codecs_[i].fec, &config->rtp.fec);
   }
 
   for (size_t i = 0; i < recv_codecs_.size(); ++i) {
@@ -2239,13 +2216,15 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
     const webrtc::VideoReceiveStream::Config& config,
     WebRtcVideoDecoderFactory* external_decoder_factory,
     bool default_stream,
-    const std::vector<VideoCodecSettings>& recv_codecs)
+    const std::vector<VideoCodecSettings>& recv_codecs,
+    bool red_disabled_by_remote_side)
     : call_(call),
       ssrcs_(sp.ssrcs),
       ssrc_groups_(sp.ssrc_groups),
       stream_(NULL),
       default_stream_(default_stream),
       config_(config),
+      red_disabled_by_remote_side_(red_disabled_by_remote_side),
       external_decoder_factory_(external_decoder_factory),
       sink_(NULL),
       last_width_(-1),
@@ -2421,7 +2400,13 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RecreateWebRtcStream() {
   if (stream_ != NULL) {
     call_->DestroyVideoReceiveStream(stream_);
   }
-  stream_ = call_->CreateVideoReceiveStream(config_);
+  webrtc::VideoReceiveStream::Config config = config_;
+  if (red_disabled_by_remote_side_) {
+    config.rtp.fec.red_payload_type = -1;
+    config.rtp.fec.ulpfec_payload_type = -1;
+    config.rtp.fec.red_rtx_payload_type = -1;
+  }
+  stream_ = call_->CreateVideoReceiveStream(config);
   stream_->Start();
 }
 
@@ -2527,6 +2512,12 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo() {
   info.nacks_sent = stats.rtcp_packet_type_counts.nack_packets;
 
   return info;
+}
+
+void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetFecDisabledRemotely(
+    bool disable) {
+  red_disabled_by_remote_side_ = disable;
+  RecreateWebRtcStream();
 }
 
 WebRtcVideoChannel2::VideoCodecSettings::VideoCodecSettings()

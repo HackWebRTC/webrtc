@@ -422,7 +422,8 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
         const webrtc::VideoReceiveStream::Config& config,
         WebRtcVideoDecoderFactory* external_decoder_factory,
         bool default_stream,
-        const std::vector<VideoCodecSettings>& recv_codecs);
+        const std::vector<VideoCodecSettings>& recv_codecs,
+        bool red_disabled_by_remote_side);
     ~WebRtcVideoReceiveStream();
 
     const std::vector<uint32_t>& GetSsrcs() const;
@@ -441,6 +442,14 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     void SetSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink);
 
     VideoReceiverInfo GetVideoReceiverInfo();
+
+    // Used to disable RED/FEC when the remote description doesn't contain those
+    // codecs. This is needed to be able to work around an RTX bug which is only
+    // happening if the remote side doesn't send RED, but the local side is
+    // configured to receive RED.
+    // TODO(holmer): Remove this after a couple of Chrome versions, M53-54
+    // time frame.
+    void SetFecDisabledRemotely(bool disable);
 
    private:
     struct AllocatedDecoder {
@@ -472,6 +481,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     webrtc::VideoReceiveStream* stream_;
     const bool default_stream_;
     webrtc::VideoReceiveStream::Config config_;
+    bool red_disabled_by_remote_side_;
 
     WebRtcVideoDecoderFactory* const external_decoder_factory_;
     std::vector<AllocatedDecoder> allocated_decoders_;
@@ -542,6 +552,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   VideoSendParameters send_params_;
   VideoOptions default_send_options_;
   VideoRecvParameters recv_params_;
+  bool red_disabled_by_remote_side_;
 };
 
 }  // namespace cricket
