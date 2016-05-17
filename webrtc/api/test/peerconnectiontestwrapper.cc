@@ -47,16 +47,20 @@ void PeerConnectionTestWrapper::Connect(PeerConnectionTestWrapper* caller,
       caller, &PeerConnectionTestWrapper::ReceiveAnswerSdp);
 }
 
-PeerConnectionTestWrapper::PeerConnectionTestWrapper(const std::string& name,
-                                                     rtc::Thread* worker_thread)
-    : name_(name), worker_thread_(worker_thread) {}
+PeerConnectionTestWrapper::PeerConnectionTestWrapper(
+    const std::string& name,
+    rtc::Thread* network_thread,
+    rtc::Thread* worker_thread)
+    : name_(name),
+      network_thread_(network_thread),
+      worker_thread_(worker_thread) {}
 
 PeerConnectionTestWrapper::~PeerConnectionTestWrapper() {}
 
 bool PeerConnectionTestWrapper::CreatePc(
   const MediaConstraintsInterface* constraints) {
   std::unique_ptr<cricket::PortAllocator> port_allocator(
-      new cricket::FakePortAllocator(worker_thread_, nullptr));
+      new cricket::FakePortAllocator(network_thread_, nullptr));
 
   fake_audio_capture_module_ = FakeAudioCaptureModule::Create();
   if (fake_audio_capture_module_ == NULL) {
@@ -64,8 +68,8 @@ bool PeerConnectionTestWrapper::CreatePc(
   }
 
   peer_connection_factory_ = webrtc::CreatePeerConnectionFactory(
-      worker_thread_, rtc::Thread::Current(), fake_audio_capture_module_, NULL,
-      NULL);
+      network_thread_, worker_thread_, rtc::Thread::Current(),
+      fake_audio_capture_module_, NULL, NULL);
   if (!peer_connection_factory_) {
     return false;
   }

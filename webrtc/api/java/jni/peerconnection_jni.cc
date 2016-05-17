@@ -1038,14 +1038,16 @@ JOW(void, PeerConnectionFactory_shutdownInternalTracer)(JNIEnv* jni, jclass) {
 // single thing for Java to hold and eventually free.
 class OwnedFactoryAndThreads {
  public:
-  OwnedFactoryAndThreads(Thread* worker_thread,
-                         Thread* signaling_thread,
+  OwnedFactoryAndThreads(std::unique_ptr<Thread> network_thread,
+                         std::unique_ptr<Thread> worker_thread,
+                         std::unique_ptr<Thread> signaling_thread,
                          WebRtcVideoEncoderFactory* encoder_factory,
                          WebRtcVideoDecoderFactory* decoder_factory,
                          rtc::NetworkMonitorFactory* network_monitor_factory,
                          PeerConnectionFactoryInterface* factory)
-      : worker_thread_(worker_thread),
-        signaling_thread_(signaling_thread),
+      : network_thread_(std::move(network_thread)),
+        worker_thread_(std::move(worker_thread)),
+        signaling_thread_(std::move(signaling_thread)),
         encoder_factory_(encoder_factory),
         decoder_factory_(decoder_factory),
         network_monitor_factory_(network_monitor_factory),
@@ -1070,6 +1072,7 @@ class OwnedFactoryAndThreads {
  private:
   void JavaCallbackOnFactoryThreads();
 
+  const std::unique_ptr<Thread> network_thread_;
   const std::unique_ptr<Thread> worker_thread_;
   const std::unique_ptr<Thread> signaling_thread_;
   WebRtcVideoEncoderFactory* encoder_factory_;
@@ -1083,11 +1086,15 @@ void OwnedFactoryAndThreads::JavaCallbackOnFactoryThreads() {
   ScopedLocalRefFrame local_ref_frame(jni);
   jclass j_factory_class = FindClass(jni, "org/webrtc/PeerConnectionFactory");
   jmethodID m = nullptr;
-  if (Thread::Current() == worker_thread_.get()) {
+  if (network_thread_->IsCurrent()) {
+    LOG(LS_INFO) << "Network thread JavaCallback";
+    m = GetStaticMethodID(jni, j_factory_class, "onNetworkThreadReady", "()V");
+  }
+  if (worker_thread_->IsCurrent()) {
     LOG(LS_INFO) << "Worker thread JavaCallback";
     m = GetStaticMethodID(jni, j_factory_class, "onWorkerThreadReady", "()V");
   }
-  if (Thread::Current() == signaling_thread_.get()) {
+  if (signaling_thread_->IsCurrent()) {
     LOG(LS_INFO) << "Signaling thread JavaCallback";
     m = GetStaticMethodID(
         jni, j_factory_class, "onSignalingThreadReady", "()V");
@@ -1100,10 +1107,9 @@ void OwnedFactoryAndThreads::JavaCallbackOnFactoryThreads() {
 
 void OwnedFactoryAndThreads::InvokeJavaCallbacksOnFactoryThreads() {
   LOG(LS_INFO) << "InvokeJavaCallbacksOnFactoryThreads.";
-  worker_thread_->Invoke<void>(
-      Bind(&OwnedFactoryAndThreads::JavaCallbackOnFactoryThreads, this));
-  signaling_thread_->Invoke<void>(
-      Bind(&OwnedFactoryAndThreads::JavaCallbackOnFactoryThreads, this));
+  network_thread_->Invoke<void>([this] { JavaCallbackOnFactoryThreads(); });
+  worker_thread_->Invoke<void>([this] { JavaCallbackOnFactoryThreads(); });
+  signaling_thread_->Invoke<void>([this] { JavaCallbackOnFactoryThreads(); });
 }
 
 PeerConnectionFactoryInterface::Options ParseOptionsFromJava(JNIEnv* jni,
@@ -1143,12 +1149,20 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
   // about ramifications of auto-wrapping there.
   rtc::ThreadManager::Instance()->WrapCurrentThread();
   webrtc::Trace::CreateTrace();
-  Thread* worker_thread = new Thread();
-  worker_thread->SetName("worker_thread", NULL);
-  Thread* signaling_thread = new Thread();
+
+  std::unique_ptr<Thread> network_thread =
+      rtc::Thread::CreateWithSocketServer();
+  network_thread->SetName("network_thread", nullptr);
+  RTC_CHECK(network_thread->Start()) << "Failed to start thread";
+
+  std::unique_ptr<Thread> worker_thread = rtc::Thread::Create();
+  worker_thread->SetName("worker_thread", nullptr);
+  RTC_CHECK(worker_thread->Start()) << "Failed to start thread";
+
+  std::unique_ptr<Thread> signaling_thread = rtc::Thread::Create();
   signaling_thread->SetName("signaling_thread", NULL);
-  RTC_CHECK(worker_thread->Start() && signaling_thread->Start())
-      << "Failed to start threads";
+  RTC_CHECK(signaling_thread->Start()) << "Failed to start thread";
+
   WebRtcVideoEncoderFactory* encoder_factory = nullptr;
   WebRtcVideoDecoderFactory* decoder_factory = nullptr;
   rtc::NetworkMonitorFactory* network_monitor_factory = nullptr;
@@ -1171,11 +1185,9 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
   }
 
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
-      webrtc::CreatePeerConnectionFactory(worker_thread,
-                                          signaling_thread,
-                                          NULL,
-                                          encoder_factory,
-                                          decoder_factory));
+      webrtc::CreatePeerConnectionFactory(
+          network_thread.get(), worker_thread.get(), signaling_thread.get(),
+          nullptr, encoder_factory, decoder_factory));
   RTC_CHECK(factory) << "Failed to create the peer connection factory; "
                      << "WebRTC/libjingle init likely failed on this device";
   // TODO(honghaiz): Maybe put the options as the argument of
@@ -1184,8 +1196,8 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
     factory->SetOptions(options);
   }
   OwnedFactoryAndThreads* owned_factory = new OwnedFactoryAndThreads(
-      worker_thread, signaling_thread,
-      encoder_factory, decoder_factory,
+      std::move(network_thread), std::move(worker_thread),
+      std::move(signaling_thread), encoder_factory, decoder_factory,
       network_monitor_factory, factory.release());
   owned_factory->InvokeJavaCallbacksOnFactoryThreads();
   return jlongFromPointer(owned_factory);

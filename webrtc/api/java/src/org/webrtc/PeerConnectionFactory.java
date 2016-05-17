@@ -24,6 +24,7 @@ public class PeerConnectionFactory {
 
   private static final String TAG = "PeerConnectionFactory";
   private final long nativeFactory;
+  private static Thread networkThread;
   private static Thread workerThread;
   private static Thread signalingThread;
   private EglBase localEglbase;
@@ -198,8 +199,9 @@ public class PeerConnectionFactory {
 
   public void dispose() {
     nativeFreeFactory(nativeFactory);
-    signalingThread = null;
+    networkThread = null;
     workerThread = null;
+    signalingThread = null;
     if (localEglbase != null)
       localEglbase.release();
     if (remoteEglbase != null)
@@ -223,8 +225,14 @@ public class PeerConnectionFactory {
   }
 
   public static void printStackTraces() {
+    printStackTrace(networkThread, "Network thread");
     printStackTrace(workerThread, "Worker thread");
     printStackTrace(signalingThread, "Signaling thread");
+  }
+
+  private static void onNetworkThreadReady() {
+    networkThread = Thread.currentThread();
+    Logging.d(TAG, "onNetworkThreadReady");
   }
 
   private static void onWorkerThreadReady() {

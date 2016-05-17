@@ -58,7 +58,6 @@
 
 #include "webrtc/api/datachannelinterface.h"
 #include "webrtc/api/dtlsidentitystore.h"
-#include "webrtc/api/dtlsidentitystore.h"
 #include "webrtc/api/dtmfsenderinterface.h"
 #include "webrtc/api/jsep.h"
 #include "webrtc/api/mediastreaminterface.h"
@@ -66,6 +65,7 @@
 #include "webrtc/api/rtpsenderinterface.h"
 #include "webrtc/api/statstypes.h"
 #include "webrtc/api/umametrics.h"
+#include "webrtc/base/deprecation.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/network.h"
 #include "webrtc/base/rtccertificate.h"
@@ -679,18 +679,33 @@ CreatePeerConnectionFactory();
 
 // Create a new instance of PeerConnectionFactoryInterface.
 //
-// |worker_thread| and |signaling_thread| are the only mandatory
-// parameters.
+// |network_thread|, |worker_thread| and |signaling_thread| are
+// the only mandatory parameters.
 //
 // If non-null, ownership of |default_adm|, |encoder_factory| and
 // |decoder_factory| are transferred to the returned factory.
-rtc::scoped_refptr<PeerConnectionFactoryInterface>
-CreatePeerConnectionFactory(
+rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
+    rtc::Thread* network_thread,
     rtc::Thread* worker_thread,
     rtc::Thread* signaling_thread,
     AudioDeviceModule* default_adm,
     cricket::WebRtcVideoEncoderFactory* encoder_factory,
     cricket::WebRtcVideoDecoderFactory* decoder_factory);
+
+// Create a new instance of PeerConnectionFactoryInterface.
+// Same thread is used as worker and network thread.
+RTC_DEPRECATED
+inline rtc::scoped_refptr<PeerConnectionFactoryInterface>
+CreatePeerConnectionFactory(
+    rtc::Thread* worker_and_network_thread,
+    rtc::Thread* signaling_thread,
+    AudioDeviceModule* default_adm,
+    cricket::WebRtcVideoEncoderFactory* encoder_factory,
+    cricket::WebRtcVideoDecoderFactory* decoder_factory) {
+  return CreatePeerConnectionFactory(
+      worker_and_network_thread, worker_and_network_thread, signaling_thread,
+      default_adm, encoder_factory, decoder_factory);
+}
 
 }  // namespace webrtc
 

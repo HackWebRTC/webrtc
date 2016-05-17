@@ -138,14 +138,15 @@ class WebRtcSession : public AudioProviderInterface,
   };
 
   WebRtcSession(webrtc::MediaControllerInterface* media_controller,
-                rtc::Thread* signaling_thread,
+                rtc::Thread* network_thread,
                 rtc::Thread* worker_thread,
+                rtc::Thread* signaling_thread,
                 cricket::PortAllocator* port_allocator);
   virtual ~WebRtcSession();
 
   // These are const to allow them to be called from const methods.
-  rtc::Thread* signaling_thread() const { return signaling_thread_; }
   rtc::Thread* worker_thread() const { return worker_thread_; }
+  rtc::Thread* signaling_thread() const { return signaling_thread_; }
 
   // The ID of this session.
   const std::string& id() const { return sid_; }
@@ -470,8 +471,8 @@ class WebRtcSession : public AudioProviderInterface,
 
   void OnSentPacket_w(const rtc::SentPacket& sent_packet);
 
-  rtc::Thread* const signaling_thread_;
   rtc::Thread* const worker_thread_;
+  rtc::Thread* const signaling_thread_;
 
   State state_ = STATE_INIT;
   Error error_ = ERROR_NONE;

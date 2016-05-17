@@ -75,6 +75,7 @@ class MockWebRtcSession : public webrtc::WebRtcSession {
       : WebRtcSession(media_controller,
                       rtc::Thread::Current(),
                       rtc::Thread::Current(),
+                      rtc::Thread::Current(),
                       nullptr) {}
   MOCK_METHOD0(voice_channel, cricket::VoiceChannel*());
   MOCK_METHOD0(video_channel, cricket::VideoChannel*());

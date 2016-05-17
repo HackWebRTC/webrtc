@@ -23,23 +23,30 @@
 #include <memory>
 
 @implementation RTCPeerConnectionFactory {
-  std::unique_ptr<rtc::Thread> _signalingThread;
+  std::unique_ptr<rtc::Thread> _networkThread;
   std::unique_ptr<rtc::Thread> _workerThread;
+  std::unique_ptr<rtc::Thread> _signalingThread;
 }
 
 @synthesize nativeFactory = _nativeFactory;
 
 - (instancetype)init {
   if ((self = [super init])) {
-    _signalingThread.reset(new rtc::Thread());
-    BOOL result = _signalingThread->Start();
-    NSAssert(result, @"Failed to start signaling thread.");
-    _workerThread.reset(new rtc::Thread());
+    _networkThread = rtc::Thread::CreateWithSocketServer();
+    BOOL result = _networkThread->Start();
+    NSAssert(result, @"Failed to start network thread.");
+
+    _workerThread = rtc::Thread::Create();
     result = _workerThread->Start();
     NSAssert(result, @"Failed to start worker thread.");
 
+    _signalingThread = rtc::Thread::Create();
+    result = _signalingThread->Start();
+    NSAssert(result, @"Failed to start signaling thread.");
+
     _nativeFactory = webrtc::CreatePeerConnectionFactory(
-        _workerThread.get(), _signalingThread.get(), nullptr, nullptr, nullptr);
+        _networkThread.get(), _workerThread.get(), _signalingThread.get(),
+        nullptr, nullptr, nullptr);
     NSAssert(_nativeFactory, @"Failed to initialize PeerConnectionFactory!");
   }
   return self;

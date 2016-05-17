@@ -545,9 +545,9 @@ class PeerConnectionInterfaceTest : public testing::Test {
 
   virtual void SetUp() {
     pc_factory_ = webrtc::CreatePeerConnectionFactory(
-        rtc::Thread::Current(), rtc::Thread::Current(), NULL, NULL,
-        NULL);
-    ASSERT_TRUE(pc_factory_.get() != NULL);
+        rtc::Thread::Current(), rtc::Thread::Current(), rtc::Thread::Current(),
+        nullptr, nullptr, nullptr);
+    ASSERT_TRUE(pc_factory_);
   }
 
   void CreatePeerConnection() {

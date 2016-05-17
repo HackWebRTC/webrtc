@@ -94,11 +94,13 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
       const cricket::MediaConfig& config) const;
   virtual rtc::Thread* signaling_thread();
   virtual rtc::Thread* worker_thread();
+  virtual rtc::Thread* network_thread();
   const Options& options() const { return options_; }
 
  protected:
   PeerConnectionFactory();
   PeerConnectionFactory(
+      rtc::Thread* network_thread,
       rtc::Thread* worker_thread,
       rtc::Thread* signaling_thread,
       AudioDeviceModule* default_adm,
@@ -111,8 +113,9 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
 
   bool owns_ptrs_;
   bool wraps_current_thread_;
-  rtc::Thread* signaling_thread_;
+  rtc::Thread* network_thread_;
   rtc::Thread* worker_thread_;
+  rtc::Thread* signaling_thread_;
   Options options_;
   // External Audio device used for audio playback.
   rtc::scoped_refptr<AudioDeviceModule> default_adm_;

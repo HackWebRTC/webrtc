@@ -454,17 +454,18 @@ bool CheckForRemoteIceRestart(const SessionDescriptionInterface* old_desc,
 }
 
 WebRtcSession::WebRtcSession(webrtc::MediaControllerInterface* media_controller,
-                             rtc::Thread* signaling_thread,
+                             rtc::Thread* network_thread,
                              rtc::Thread* worker_thread,
+                             rtc::Thread* signaling_thread,
                              cricket::PortAllocator* port_allocator)
-    : signaling_thread_(signaling_thread),
-      worker_thread_(worker_thread),
+    : worker_thread_(worker_thread),
+      signaling_thread_(signaling_thread),
       // RFC 3264: The numeric value of the session id and version in the
       // o line MUST be representable with a "64 bit signed integer".
       // Due to this constraint session id |sid_| is max limited to LLONG_MAX.
       sid_(rtc::ToString(rtc::CreateRandomId64() & LLONG_MAX)),
       transport_controller_(new cricket::TransportController(signaling_thread,
-                                                             worker_thread,
+                                                             network_thread,
                                                              port_allocator)),
       media_controller_(media_controller),
       channel_manager_(media_controller_->channel_manager()),

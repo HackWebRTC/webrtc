@@ -588,8 +588,9 @@ bool PeerConnection::Initialize(
       factory_->CreateMediaController(configuration.media_config));
 
   session_.reset(
-      new WebRtcSession(media_controller_.get(), factory_->signaling_thread(),
-                        factory_->worker_thread(), port_allocator_.get()));
+      new WebRtcSession(media_controller_.get(), factory_->network_thread(),
+                        factory_->worker_thread(), factory_->signaling_thread(),
+                        port_allocator_.get()));
   stats_.reset(new StatsCollector(this));
 
   // Initialize the WebRtcSession. It creates transport channels etc.

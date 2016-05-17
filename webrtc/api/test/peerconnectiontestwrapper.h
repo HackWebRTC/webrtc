@@ -27,8 +27,9 @@ class PeerConnectionTestWrapper
   static void Connect(PeerConnectionTestWrapper* caller,
                       PeerConnectionTestWrapper* callee);
 
-  explicit PeerConnectionTestWrapper(const std::string& name,
-                                     rtc::Thread* worker_thread);
+  PeerConnectionTestWrapper(const std::string& name,
+                            rtc::Thread* network_thread,
+                            rtc::Thread* worker_thread);
   virtual ~PeerConnectionTestWrapper();
 
   bool CreatePc(const webrtc::MediaConstraintsInterface* constraints);
@@ -91,7 +92,8 @@ class PeerConnectionTestWrapper
       bool video, const webrtc::FakeConstraints& video_constraints);
 
   std::string name_;
-  rtc::Thread* worker_thread_;
+  rtc::Thread* const network_thread_;
+  rtc::Thread* const worker_thread_;
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
       peer_connection_factory_;

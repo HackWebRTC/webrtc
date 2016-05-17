@@ -50,11 +50,12 @@ class PeerConnectionEndToEndTest
       DataChannelList;
 
   PeerConnectionEndToEndTest() {
+    RTC_CHECK(network_thread_.Start());
     RTC_CHECK(worker_thread_.Start());
     caller_ = new rtc::RefCountedObject<PeerConnectionTestWrapper>(
-        "caller", &worker_thread_);
+        "caller", &network_thread_, &worker_thread_);
     callee_ = new rtc::RefCountedObject<PeerConnectionTestWrapper>(
-        "callee", &worker_thread_);
+        "callee", &network_thread_, &worker_thread_);
 #ifdef WEBRTC_ANDROID
     webrtc::InitializeAndroidObjects();
 #endif
@@ -155,6 +156,7 @@ class PeerConnectionEndToEndTest
   }
 
  protected:
+  rtc::Thread network_thread_;
   rtc::Thread worker_thread_;
   rtc::scoped_refptr<PeerConnectionTestWrapper> caller_;
   rtc::scoped_refptr<PeerConnectionTestWrapper> callee_;

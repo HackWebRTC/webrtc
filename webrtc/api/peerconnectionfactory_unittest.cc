@@ -87,11 +87,9 @@ class PeerConnectionFactoryTest : public testing::Test {
 #ifdef WEBRTC_ANDROID
     webrtc::InitializeAndroidObjects();
 #endif
-    factory_ = webrtc::CreatePeerConnectionFactory(rtc::Thread::Current(),
-                                                   rtc::Thread::Current(),
-                                                   NULL,
-                                                   NULL,
-                                                   NULL);
+    factory_ = webrtc::CreatePeerConnectionFactory(
+        rtc::Thread::Current(), rtc::Thread::Current(), rtc::Thread::Current(),
+        nullptr, nullptr, nullptr);
 
     ASSERT_TRUE(factory_.get() != NULL);
     port_allocator_.reset(
