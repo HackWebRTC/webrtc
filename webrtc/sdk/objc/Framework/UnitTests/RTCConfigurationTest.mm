@@ -45,7 +45,8 @@
       RTCContinualGatheringPolicyGatherContinually;
 
   std::unique_ptr<webrtc::PeerConnectionInterface::RTCConfiguration>
-      nativeConfig(config.nativeConfiguration);
+      nativeConfig([config createNativeConfiguration]);
+  EXPECT_TRUE(nativeConfig.get());
   EXPECT_EQ(1u, nativeConfig->servers.size());
   webrtc::PeerConnectionInterface::IceServer nativeServer =
       nativeConfig->servers.front();

@@ -75,7 +75,8 @@
 
 #pragma mark - Private
 
-- (webrtc::PeerConnectionInterface::RTCConfiguration*)nativeConfiguration {
+- (webrtc::PeerConnectionInterface::RTCConfiguration *)
+    createNativeConfiguration {
   std::unique_ptr<webrtc::PeerConnectionInterface::RTCConfiguration>
       nativeConfig(new webrtc::PeerConnectionInterface::RTCConfiguration());
 
@@ -105,7 +106,7 @@
         rtc::RTCCertificateGenerator::GenerateCertificate(
             rtc::KeyParams(keyType), rtc::Optional<uint64_t>());
     if (!certificate) {
-      RTCLogWarning(@"Failed to generate certificate.");
+      RTCLogError(@"Failed to generate certificate.");
       return nullptr;
     }
     nativeConfig->certificates.push_back(certificate);

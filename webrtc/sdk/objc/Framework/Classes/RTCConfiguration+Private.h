@@ -16,13 +16,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface RTCConfiguration ()
 
-/**
- * RTCConfiguration struct representation of this RTCConfiguration. This is
- * needed to pass to the underlying C++ APIs.
- */
-@property(nonatomic, readonly)
-    webrtc::PeerConnectionInterface::RTCConfiguration* nativeConfiguration;
-
 + (webrtc::PeerConnectionInterface::IceTransportsType)
     nativeTransportsTypeForTransportPolicy:(RTCIceTransportPolicy)policy;
 
@@ -54,6 +47,13 @@ NS_ASSUME_NONNULL_BEGIN
     (webrtc::PeerConnectionInterface::TcpCandidatePolicy)nativePolicy;
 
 + (NSString *)stringForTcpCandidatePolicy:(RTCTcpCandidatePolicy)policy;
+
+/**
+ * RTCConfiguration struct representation of this RTCConfiguration. This is
+ * needed to pass to the underlying C++ APIs.
+ */
+- (webrtc::PeerConnectionInterface::RTCConfiguration *)
+    createNativeConfiguration;
 
 @end
 

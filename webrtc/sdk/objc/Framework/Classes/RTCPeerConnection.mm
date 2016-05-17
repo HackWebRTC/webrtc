@@ -199,9 +199,10 @@ void PeerConnectionDelegateAdapter::OnIceCandidate(
                        delegate:(id<RTCPeerConnectionDelegate>)delegate {
   NSParameterAssert(factory);
   std::unique_ptr<webrtc::PeerConnectionInterface::RTCConfiguration> config(
-      configuration.nativeConfiguration);
-  if (!config)
-    return nullptr;
+      [configuration createNativeConfiguration]);
+  if (!config) {
+    return nil;
+  }
   if (self = [super init]) {
     _observer.reset(new webrtc::PeerConnectionDelegateAdapter(self));
     std::unique_ptr<webrtc::MediaConstraints> nativeConstraints =
@@ -255,9 +256,10 @@ void PeerConnectionDelegateAdapter::OnIceCandidate(
 
 - (BOOL)setConfiguration:(RTCConfiguration *)configuration {
   std::unique_ptr<webrtc::PeerConnectionInterface::RTCConfiguration> config(
-      configuration.nativeConfiguration);
-  if (!config)
-    return false;
+      [configuration createNativeConfiguration]);
+  if (!config) {
+    return NO;
+  }
   return _peerConnection->SetConfiguration(*config);
 }
 
