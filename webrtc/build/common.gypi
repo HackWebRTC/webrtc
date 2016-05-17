@@ -221,7 +221,7 @@
       ['target_arch=="arm" or target_arch=="arm64" or target_arch=="mipsel"', {
         'prefer_fixed_point%': 1,
       }],
-      ['(target_arch=="arm" and (arm_neon==1 or arm_neon_optional==1)) or target_arch=="arm64"', {
+      ['(target_arch=="arm" and arm_neon==1) or target_arch=="arm64"', {
         'build_with_neon%': 1,
       }],
       ['OS!="ios" and (target_arch!="arm" or arm_version>=7) and target_arch!="mips64el"', {
@@ -351,9 +351,6 @@
             'conditions': [
               ['arm_neon==1', {
                 'defines': ['WEBRTC_HAS_NEON',],
-              }],
-              ['arm_neon==0 and arm_neon_optional==1', {
-                'defines': ['WEBRTC_DETECT_NEON',],
               }],
             ],
           }],

@@ -581,9 +581,5 @@ void aec_rdft_init(void) {
 #endif
 #if defined(WEBRTC_HAS_NEON)
   aec_rdft_init_neon();
-#elif defined(WEBRTC_DETECT_NEON)
-  if ((WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) != 0) {
-    aec_rdft_init_neon();
-  }
 #endif
 }

@@ -59,11 +59,7 @@ class FiltersTest : public testing::Test {
 
 TEST_F(FiltersTest, AutocorrFixTest) {
   FiltersTester(WebRtcIsacfix_AutocorrC);
-#ifdef WEBRTC_DETECT_NEON
-  if ((WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) != 0) {
-    FiltersTester(WebRtcIsacfix_AutocorrNeon);
-  }
-#elif defined(WEBRTC_HAS_NEON)
+#if defined(WEBRTC_HAS_NEON)
   FiltersTester(WebRtcIsacfix_AutocorrNeon);
 #endif
 }

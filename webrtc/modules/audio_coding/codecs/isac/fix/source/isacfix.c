@@ -201,7 +201,7 @@ int16_t WebRtcIsacfix_FreeInternal(ISACFIX_MainStruct *ISAC_main_inst)
  * This function initializes function pointers for ARM Neon platform.
  */
 
-#if defined(WEBRTC_DETECT_NEON) || defined(WEBRTC_HAS_NEON)
+#if defined(WEBRTC_HAS_NEON)
 static void WebRtcIsacfix_InitNeon(void) {
   WebRtcIsacfix_AutocorrFix = WebRtcIsacfix_AutocorrNeon;
   WebRtcIsacfix_FilterMaLoopFix = WebRtcIsacfix_FilterMaLoopNeon;
@@ -253,11 +253,7 @@ static void InitFunctionPointers(void) {
   WebRtcIsacfix_MatrixProduct1 = WebRtcIsacfix_MatrixProduct1C;
   WebRtcIsacfix_MatrixProduct2 = WebRtcIsacfix_MatrixProduct2C;
 
-#ifdef WEBRTC_DETECT_NEON
-  if ((WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) != 0) {
-    WebRtcIsacfix_InitNeon();
-  }
-#elif defined(WEBRTC_HAS_NEON)
+#if defined(WEBRTC_HAS_NEON)
   WebRtcIsacfix_InitNeon();
 #endif
 

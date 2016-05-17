@@ -45,14 +45,6 @@ std::unique_ptr<DenoiserFilter> DenoiserFilter::Create(
     filter.reset(new DenoiserFilterNEON());
     if (cpu_type != nullptr)
       *cpu_type = CPU_NEON;
-#elif defined(WEBRTC_DETECT_NEON)
-    if (WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) {
-      filter.reset(new DenoiserFilterNEON());
-      if (cpu_type != nullptr)
-        *cpu_type = CPU_NEON;
-    } else {
-      filter.reset(new DenoiserFilterC());
-    }
 #else
     filter.reset(new DenoiserFilterC());
 #endif

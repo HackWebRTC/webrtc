@@ -1486,10 +1486,6 @@ AecCore* WebRtcAec_CreateAec(int instance_count) {
 
 #if defined(WEBRTC_HAS_NEON)
   WebRtcAec_InitAec_neon();
-#elif defined(WEBRTC_DETECT_NEON)
-  if ((WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) != 0) {
-    WebRtcAec_InitAec_neon();
-  }
 #endif
 
   aec_rdft_init();

@@ -61,13 +61,6 @@ FIRFilter* FIRFilter::Create(const float* coefficients,
 #elif defined(WEBRTC_HAS_NEON)
   filter =
       new FIRFilterNEON(coefficients, coefficients_length, max_input_length);
-#elif defined(WEBRTC_DETECT_NEON)
-  if (WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) {
-    filter =
-        new FIRFilterNEON(coefficients, coefficients_length, max_input_length);
-  } else {
-    filter = new FIRFilterC(coefficients, coefficients_length);
-  }
 #else
   filter = new FIRFilterC(coefficients, coefficients_length);
 #endif

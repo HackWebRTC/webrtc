@@ -57,8 +57,7 @@
 
 // TODO(zhongwei.yao): WEBRTC_CPU_DETECTION is only used in one place; we should
 // probably just remove it.
-#if (defined(WEBRTC_ARCH_X86_FAMILY) && !defined(__SSE2__)) || \
-    defined(WEBRTC_DETECT_NEON)
+#if (defined(WEBRTC_ARCH_X86_FAMILY) && !defined(__SSE2__))
 #define WEBRTC_CPU_DETECTION
 #endif
 

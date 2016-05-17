@@ -137,8 +137,6 @@ config("common_config") {
       defines += [ "WEBRTC_ARCH_ARM_V7" ]
       if (arm_use_neon) {
         defines += [ "WEBRTC_HAS_NEON" ]
-      } else if (arm_optionally_use_neon) {
-        defines += [ "WEBRTC_DETECT_NEON" ]
       }
     }
   }
