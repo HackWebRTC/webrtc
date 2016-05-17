@@ -24,6 +24,11 @@
           }],
         ],
       }],
+      ['OS=="android"', {
+        # MJPEG capture is not used on Android. Disable to reduce
+        # libjingle_peerconnection_so file size.
+        'libyuv_disable_jpeg%': 1,
+      }],
     ],
   },
   'target_defaults': {

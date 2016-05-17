@@ -114,7 +114,6 @@
     # Disable these to not build components which can be externally provided.
     'build_expat%': 1,
     'build_json%': 1,
-    'build_libjpeg%': 1,
     'build_libsrtp%': 1,
     'build_libvpx%': 1,
     'libvpx_build_vp9%': 1,
@@ -218,9 +217,6 @@
         'include_internal_audio_device%': 1,
         'include_tests%': 1,
         'restrict_webrtc_logging%': 0,
-      }],
-      ['OS=="ios"', {
-        'build_libjpeg%': 0,
       }],
       ['target_arch=="arm" or target_arch=="arm64" or target_arch=="mipsel"', {
         'prefer_fixed_point%': 1,
