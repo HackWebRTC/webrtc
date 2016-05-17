@@ -87,11 +87,16 @@ class FakeWebRtcVideoCaptureModule : public webrtc::VideoCaptureModule {
 
   void SendFrame(int w, int h) {
     if (!running_) return;
-    webrtc::VideoFrame sample;
-    // Setting stride based on width.
-    sample.CreateEmptyFrame(w, h, w, (w + 1) / 2, (w + 1) / 2);
+
+    rtc::scoped_refptr<webrtc::I420Buffer> buffer =
+        new rtc::RefCountedObject<webrtc::I420Buffer>(w, h);
+    // Initialize memory to satisfy DrMemory tests. See
+    // https://bugs.chromium.org/p/libyuv/issues/detail?id=377
+    buffer->InitializeData();
     if (callback_) {
-      callback_->OnIncomingCapturedFrame(id_, sample);
+      callback_->OnIncomingCapturedFrame(
+          id_,
+          webrtc::VideoFrame(buffer, 0, 0, webrtc::kVideoRotation_0));
     }
   }
 
