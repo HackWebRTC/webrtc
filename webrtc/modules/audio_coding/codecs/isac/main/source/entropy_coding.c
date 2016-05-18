@@ -162,9 +162,9 @@ static void FindInvArSpec(const int16_t* ARCoefQ12,
   }
 
   for (k = 0; k < FRAMESAMPLES / 8; k++) {
-    CurveQ16[FRAMESAMPLES_QUARTER - 1 - k] = CurveQ16[k] -
-        (diffQ16[k] << shftVal);
-    CurveQ16[k] += diffQ16[k] << shftVal;
+    int32_t diff_q16_shifted = (int32_t)((uint32_t)(diffQ16[k]) << shftVal);
+    CurveQ16[FRAMESAMPLES_QUARTER - 1 - k] = CurveQ16[k] - diff_q16_shifted;
+    CurveQ16[k] += diff_q16_shifted;
   }
 }
 
