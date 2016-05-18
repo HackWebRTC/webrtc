@@ -394,7 +394,9 @@ class Channel
   bool SendRtcp(const uint8_t* data, size_t len) override;
 
   // From MixerParticipant
-  int32_t GetAudioFrame(int32_t id, AudioFrame* audioFrame) override;
+  MixerParticipant::AudioFrameInfo GetAudioFrameWithMuted(
+      int32_t id,
+      AudioFrame* audioFrame) override;
   int32_t NeededFrequency(int32_t id) const override;
 
   // From FileCallback

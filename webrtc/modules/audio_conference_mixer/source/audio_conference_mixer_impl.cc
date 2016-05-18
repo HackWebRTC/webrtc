@@ -555,13 +555,14 @@ void AudioConferenceMixerImpl::UpdateToMix(
         }
         audioFrame->sample_rate_hz_ = _outputFrequency;
 
-        bool muted = false;
-        if((*participant)->GetAudioFrame(_id, audioFrame) != 0) {
+        auto ret = (*participant)->GetAudioFrameWithMuted(_id, audioFrame);
+        if (ret == MixerParticipant::AudioFrameInfo::kError) {
             WEBRTC_TRACE(kTraceWarning, kTraceAudioMixerServer, _id,
-                         "failed to GetAudioFrame() from participant");
+                         "failed to GetAudioFrameWithMuted() from participant");
             _audioFramePool->PushMemory(audioFrame);
             continue;
         }
+        const bool muted = (ret == MixerParticipant::AudioFrameInfo::kMuted);
         if (_participantList.size() != 1) {
           // TODO(wu): Issue 3390, add support for multiple participants case.
           audioFrame->ntp_time_ms_ = -1;
@@ -720,10 +721,10 @@ void AudioConferenceMixerImpl::GetAdditionalAudio(
     AudioFrameList* additionalFramesList) const {
     WEBRTC_TRACE(kTraceStream, kTraceAudioMixerServer, _id,
                  "GetAdditionalAudio(additionalFramesList)");
-    // The GetAudioFrame() callback may result in the participant being removed
-    // from additionalParticipantList_. If that happens it will invalidate any
-    // iterators. Create a copy of the participants list such that the list of
-    // participants can be traversed safely.
+    // The GetAudioFrameWithMuted() callback may result in the participant being
+    // removed from additionalParticipantList_. If that happens it will
+    // invalidate any iterators. Create a copy of the participants list such
+    // that the list of participants can be traversed safely.
     MixerParticipantList additionalParticipantList;
     additionalParticipantList.insert(additionalParticipantList.begin(),
                                      _additionalParticipantList.begin(),
@@ -741,10 +742,10 @@ void AudioConferenceMixerImpl::GetAdditionalAudio(
             return;
         }
         audioFrame->sample_rate_hz_ = _outputFrequency;
-        bool muted = false;
-        if((*participant)->GetAudioFrame(_id, audioFrame) != 0) {
+        auto ret = (*participant)->GetAudioFrameWithMuted(_id, audioFrame);
+        if (ret == MixerParticipant::AudioFrameInfo::kError) {
             WEBRTC_TRACE(kTraceWarning, kTraceAudioMixerServer, _id,
-                         "failed to GetAudioFrame() from participant");
+                         "failed to GetAudioFrameWithMuted() from participant");
             _audioFramePool->PushMemory(audioFrame);
             continue;
         }
@@ -753,7 +754,8 @@ void AudioConferenceMixerImpl::GetAdditionalAudio(
             _audioFramePool->PushMemory(audioFrame);
             continue;
         }
-        additionalFramesList->push_back(FrameAndMuteInfo(audioFrame, muted));
+        additionalFramesList->push_back(FrameAndMuteInfo(
+            audioFrame, ret == MixerParticipant::AudioFrameInfo::kMuted));
     }
 }
 

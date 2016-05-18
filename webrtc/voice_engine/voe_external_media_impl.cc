@@ -153,7 +153,11 @@ int VoEExternalMediaImpl::GetAudioFrame(int channel, int desired_sample_rate_hz,
   }
   frame->sample_rate_hz_ =
       desired_sample_rate_hz == 0 ? -1 : desired_sample_rate_hz;
-  return channelPtr->GetAudioFrame(channel, frame);
+  auto ret = channelPtr->GetAudioFrameWithMuted(channel, frame);
+  if (ret == MixerParticipant::AudioFrameInfo::kMuted) {
+    frame->Mute();
+  }
+  return ret == MixerParticipant::AudioFrameInfo::kError ? -1 : 0;
 }
 
 int VoEExternalMediaImpl::SetExternalMixing(int channel, bool enable) {

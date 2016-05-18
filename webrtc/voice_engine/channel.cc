@@ -476,7 +476,9 @@ bool Channel::OnRecoveredPacket(const uint8_t* rtp_packet,
   return ReceivePacket(rtp_packet, rtp_packet_length, header, false);
 }
 
-int32_t Channel::GetAudioFrame(int32_t id, AudioFrame* audioFrame) {
+MixerParticipant::AudioFrameInfo Channel::GetAudioFrameWithMuted(
+    int32_t id,
+    AudioFrame* audioFrame) {
   if (event_log_) {
     unsigned int ssrc;
     RTC_CHECK_EQ(GetLocalSSRC(ssrc), 0);
@@ -492,7 +494,7 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame* audioFrame) {
     // error so that the audio mixer module doesn't add it to the mix. As
     // a result, it won't be played out and the actions skipped here are
     // irrelevant.
-    return -1;
+    return MixerParticipant::AudioFrameInfo::kError;
   }
   RTC_DCHECK(!muted);
 
@@ -621,7 +623,8 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame* audioFrame) {
     }
   }
 
-  return 0;
+  return muted ? MixerParticipant::AudioFrameInfo::kMuted
+               : MixerParticipant::AudioFrameInfo::kNormal;
 }
 
 int32_t Channel::NeededFrequency(int32_t id) const {
