@@ -19,12 +19,15 @@
 namespace webrtc {
 namespace {
 
-struct ParticipantFramePair {
+struct ParticipantFrameStruct {
+  ParticipantFrameStruct(MixerParticipant* p, AudioFrame* a, bool m)
+      : participant(p), audioFrame(a), muted(m) {}
   MixerParticipant* participant;
   AudioFrame* audioFrame;
+  bool muted;
 };
 
-typedef std::list<ParticipantFramePair*> ParticipantFramePairList;
+typedef std::list<ParticipantFrameStruct*> ParticipantFrameStructList;
 
 // Mix |frame| into |mixed_frame|, with saturation protection and upmixing.
 // These effects are applied to |frame| itself prior to mixing. Assumes that
@@ -529,8 +532,8 @@ void AudioConferenceMixerImpl::UpdateToMix(
     AudioFrameList activeList;
     // Struct needed by the passive lists to keep track of which AudioFrame
     // belongs to which MixerParticipant.
-    ParticipantFramePairList passiveWasNotMixedList;
-    ParticipantFramePairList passiveWasMixedList;
+    ParticipantFrameStructList passiveWasNotMixedList;
+    ParticipantFrameStructList passiveWasMixedList;
     for (MixerParticipantList::const_iterator participant =
         _participantList.begin(); participant != _participantList.end();
          ++participant) {
@@ -641,16 +644,14 @@ void AudioConferenceMixerImpl::UpdateToMix(
             }
         } else {
             if(wasMixed) {
-                ParticipantFramePair* pair = new ParticipantFramePair;
-                pair->audioFrame  = audioFrame;
-                pair->participant = *participant;
-                passiveWasMixedList.push_back(pair);
+                ParticipantFrameStruct* part_struct =
+                    new ParticipantFrameStruct(*participant, audioFrame, false);
+                passiveWasMixedList.push_back(part_struct);
             } else if(mustAddToPassiveList) {
                 RampIn(*audioFrame);
-                ParticipantFramePair* pair = new ParticipantFramePair;
-                pair->audioFrame  = audioFrame;
-                pair->participant = *participant;
-                passiveWasNotMixedList.push_back(pair);
+                ParticipantFrameStruct* part_struct =
+                    new ParticipantFrameStruct(*participant, audioFrame, false);
+                passiveWasNotMixedList.push_back(part_struct);
             } else {
                 _audioFramePool->PushMemory(audioFrame);
             }
@@ -668,7 +669,7 @@ void AudioConferenceMixerImpl::UpdateToMix(
     // Always mix a constant number of AudioFrames. If there aren't enough
     // active participants mix passive ones. Starting with those that was mixed
     // last iteration.
-    for (ParticipantFramePairList::const_iterator
+    for (ParticipantFrameStructList::const_iterator
         iter = passiveWasMixedList.begin(); iter != passiveWasMixedList.end();
          ++iter) {
         if(mixList->size() < *maxAudioFrameCounter + mixListStartSize) {
@@ -683,7 +684,7 @@ void AudioConferenceMixerImpl::UpdateToMix(
         delete *iter;
     }
     // And finally the ones that have not been mixed for a while.
-    for (ParticipantFramePairList::const_iterator iter =
+    for (ParticipantFrameStructList::const_iterator iter =
              passiveWasNotMixedList.begin();
          iter != passiveWasNotMixedList.end();
          ++iter) {
