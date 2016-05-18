@@ -496,7 +496,13 @@ MixerParticipant::AudioFrameInfo Channel::GetAudioFrameWithMuted(
     // irrelevant.
     return MixerParticipant::AudioFrameInfo::kError;
   }
-  RTC_DCHECK(!muted);
+
+  if (muted) {
+    // TODO(henrik.lundin): We should be able to do better than this. But we
+    // will have to go through all the cases below where the audio samples may
+    // be used, and handle the muted case in some way.
+    audioFrame->Mute();
+  }
 
   if (_RxVadDetection) {
     UpdateRxVadDetection(*audioFrame);
@@ -567,6 +573,7 @@ MixerParticipant::AudioFrameInfo Channel::GetAudioFrameWithMuted(
   // Mix decoded PCM output with file if file mixing is enabled
   if (state.output_file_playing) {
     MixAudioWithFile(*audioFrame, audioFrame->sample_rate_hz_);
+    muted = false;  // We may have added non-zero samples.
   }
 
   // External media
@@ -591,6 +598,7 @@ MixerParticipant::AudioFrameInfo Channel::GetAudioFrameWithMuted(
   }
 
   // Measure audio level (0-9)
+  // TODO(henrik.lundin) Use the |muted| information here too.
   _outputAudioLevel.ComputeLevel(*audioFrame);
 
   if (capture_start_rtp_time_stamp_ < 0 && audioFrame->timestamp_ != 0) {
@@ -816,7 +824,7 @@ Channel::Channel(int32_t channelId,
   }
   acm_config.neteq_config.enable_fast_accelerate =
       config.Get<NetEqFastAccelerate>().enabled;
-  acm_config.neteq_config.enable_muted_state = false;
+  acm_config.neteq_config.enable_muted_state = true;
   audio_coding_.reset(AudioCodingModule::Create(acm_config));
 
   _outputAudioLevel.Clear();
