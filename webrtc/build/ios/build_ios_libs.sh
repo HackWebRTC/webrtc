@@ -210,7 +210,7 @@ if [[ ${BUILD_TYPE} = "framework" ]]; then
   strip -x ${OUTPUT_DIR}/${DYLIB_PATH}
 
   # Modify the version number.
-  INFOPLIST_PATH=${OUTPUT_DIR}/WebRTC.framework/Resources/Info.plist
+  INFOPLIST_PATH=${OUTPUT_DIR}/WebRTC.framework/Info.plist
   MAJOR_MINOR=$(plistbuddy -c "Print :CFBundleShortVersionString" \
                 ${INFOPLIST_PATH})
   VERSION_NUMBER="${MAJOR_MINOR}.${POINT_VERSION}"

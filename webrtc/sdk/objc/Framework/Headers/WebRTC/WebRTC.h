@@ -30,6 +30,7 @@
 #import <WebRTC/RTCRtpCodecParameters.h>
 #import <WebRTC/RTCRtpEncodingParameters.h>
 #import <WebRTC/RTCRtpParameters.h>
+#import <WebRTC/RTCRtpReceiver.h>
 #import <WebRTC/RTCRtpSender.h>
 #import <WebRTC/RTCSSLAdapter.h>
 #import <WebRTC/RTCSessionDescription.h>
