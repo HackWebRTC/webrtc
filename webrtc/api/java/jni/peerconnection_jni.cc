@@ -1545,6 +1545,9 @@ static void JavaRTCConfigurationToJsepRTCConfiguration(
   jobject j_continual_gathering_policy =
       GetObjectField(jni, j_rtc_config, j_continual_gathering_policy_id);
 
+  jfieldID j_ice_candidate_pool_size_id =
+      GetFieldID(jni, j_rtc_config_class, "iceCandidatePoolSize", "I");
+
   rtc_config->type =
       JavaIceTransportsTypeToNativeType(jni, j_ice_transports_type);
   rtc_config->bundle_policy =
@@ -1565,6 +1568,8 @@ static void JavaRTCConfigurationToJsepRTCConfiguration(
   rtc_config->continual_gathering_policy =
       JavaContinualGatheringPolicyToNativeType(
           jni, j_continual_gathering_policy);
+  rtc_config->ice_candidate_pool_size =
+      GetIntField(jni, j_rtc_config, j_ice_candidate_pool_size_id);
 }
 
 JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(

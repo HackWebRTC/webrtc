@@ -139,6 +139,7 @@ public class PeerConnection {
     public int iceBackupCandidatePairPingInterval;
     public KeyType keyType;
     public ContinualGatheringPolicy continualGatheringPolicy;
+    public int iceCandidatePoolSize;
 
     public RTCConfiguration(List<IceServer> iceServers) {
       iceTransportsType = IceTransportsType.ALL;
@@ -152,6 +153,7 @@ public class PeerConnection {
       iceBackupCandidatePairPingInterval = -1;
       keyType = KeyType.ECDSA;
       continualGatheringPolicy = ContinualGatheringPolicy.GATHER_ONCE;
+      iceCandidatePoolSize = 0;
     }
   };
 

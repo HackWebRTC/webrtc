@@ -83,6 +83,9 @@ RTC_EXPORT
 /** Key type used to generate SSL identity. Default is ECDSA. */
 @property(nonatomic, assign) RTCEncryptionKeyType keyType;
 
+/** ICE candidate pool size as defined in JSEP. Default is 0. */
+@property(nonatomic, assign) int iceCandidatePoolSize;
+
 - (instancetype)init NS_DESIGNATED_INITIALIZER;
 
 @end
