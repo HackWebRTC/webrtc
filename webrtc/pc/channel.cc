@@ -229,8 +229,9 @@ void BaseChannel::DestroyTransportChannels_n() {
   network_thread_->Clear(this);
 }
 
-bool BaseChannel::Init_w() {
-  if (!network_thread_->Invoke<bool>(Bind(&BaseChannel::InitNetwork_n, this))) {
+bool BaseChannel::Init_w(const std::string* bundle_transport_name) {
+  if (!network_thread_->Invoke<bool>(
+          Bind(&BaseChannel::InitNetwork_n, this, bundle_transport_name))) {
     return false;
   }
 
@@ -241,9 +242,11 @@ bool BaseChannel::Init_w() {
   return true;
 }
 
-bool BaseChannel::InitNetwork_n() {
+bool BaseChannel::InitNetwork_n(const std::string* bundle_transport_name) {
   RTC_DCHECK(network_thread_->IsCurrent());
-  if (!SetTransport_n(content_name())) {
+  const std::string& transport_name =
+      (bundle_transport_name ? *bundle_transport_name : content_name());
+  if (!SetTransport_n(transport_name)) {
     return false;
   }
 
@@ -1476,8 +1479,8 @@ VoiceChannel::~VoiceChannel() {
   Deinit();
 }
 
-bool VoiceChannel::Init_w() {
-  if (!BaseChannel::Init_w()) {
+bool VoiceChannel::Init_w(const std::string* bundle_transport_name) {
+  if (!BaseChannel::Init_w(bundle_transport_name)) {
     return false;
   }
   return true;
@@ -1831,8 +1834,8 @@ VideoChannel::VideoChannel(rtc::Thread* worker_thread,
                   content_name,
                   rtcp) {}
 
-bool VideoChannel::Init_w() {
-  if (!BaseChannel::Init_w()) {
+bool VideoChannel::Init_w(const std::string* bundle_transport_name) {
+  if (!BaseChannel::Init_w(bundle_transport_name)) {
     return false;
   }
   return true;
@@ -2103,8 +2106,8 @@ DataChannel::~DataChannel() {
   Deinit();
 }
 
-bool DataChannel::Init_w() {
-  if (!BaseChannel::Init_w()) {
+bool DataChannel::Init_w(const std::string* bundle_transport_name) {
+  if (!BaseChannel::Init_w(bundle_transport_name)) {
     return false;
   }
   media_channel()->SignalDataReceived.connect(

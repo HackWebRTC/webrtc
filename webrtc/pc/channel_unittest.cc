@@ -190,7 +190,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     typename T::Channel* channel =
         new typename T::Channel(worker_thread, network_thread, engine, ch,
                                 transport_controller, cricket::CN_AUDIO, rtcp);
-    if (!channel->Init_w()) {
+    if (!channel->Init_w(nullptr)) {
       delete channel;
       channel = NULL;
     }
@@ -2018,7 +2018,7 @@ cricket::VideoChannel* ChannelTest<VideoTraits>::CreateChannel(
   cricket::VideoChannel* channel =
       new cricket::VideoChannel(worker_thread, network_thread, ch,
                                 transport_controller, cricket::CN_VIDEO, rtcp);
-  if (!channel->Init_w()) {
+  if (!channel->Init_w(nullptr)) {
     delete channel;
     channel = NULL;
   }
@@ -3258,7 +3258,7 @@ cricket::DataChannel* ChannelTest<DataTraits>::CreateChannel(
   cricket::DataChannel* channel =
       new cricket::DataChannel(worker_thread, network_thread, ch,
                                transport_controller, cricket::CN_DATA, rtcp);
-  if (!channel->Init_w()) {
+  if (!channel->Init_w(nullptr)) {
     delete channel;
     channel = NULL;
   }

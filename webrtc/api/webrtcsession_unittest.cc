@@ -163,6 +163,7 @@ class MockIceObserver : public webrtc::IceObserver {
   void OnIceConnectionChange(
       PeerConnectionInterface::IceConnectionState new_state) override {
     ice_connection_state_ = new_state;
+    ice_connection_state_history_.push_back(new_state);
   }
   void OnIceGatheringChange(
       PeerConnectionInterface::IceGatheringState new_state) override {
@@ -202,6 +203,8 @@ class MockIceObserver : public webrtc::IceObserver {
   std::vector<cricket::Candidate> mline_1_candidates_;
   PeerConnectionInterface::IceConnectionState ice_connection_state_;
   PeerConnectionInterface::IceGatheringState ice_gathering_state_;
+  std::vector<PeerConnectionInterface::IceConnectionState>
+      ice_connection_state_history_;
   size_t num_candidates_removed_ = 0;
 };
 
@@ -3261,6 +3264,60 @@ TEST_F(WebRtcSessionTest, TestMaxBundleWithSetRemoteDescriptionFirst) {
 
   EXPECT_EQ(session_->voice_rtp_transport_channel(),
             session_->video_rtp_transport_channel());
+}
+
+// Adding a new channel to a BUNDLE which is already connected should directly
+// assign the bundle transport to the channel, without first setting a
+// disconnected non-bundle transport and then replacing it. The application
+// should not receive any changes in the ICE state.
+TEST_F(WebRtcSessionTest, TestAddChannelToConnectedBundle) {
+  LoopbackNetworkConfiguration config;
+  LoopbackNetworkManager loopback_network_manager(this, config);
+  // Both BUNDLE and RTCP-mux need to be enabled for the ICE state to remain
+  // connected. Disabling either of these two means that we need to wait for the
+  // answer to find out if more transports are needed.
+  configuration_.bundle_policy =
+      PeerConnectionInterface::kBundlePolicyMaxBundle;
+  configuration_.rtcp_mux_policy =
+      PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  options_.disable_encryption = true;
+  Init();
+
+  // Negotiate an audio channel with MAX_BUNDLE enabled.
+  SendAudioOnlyStream2();
+  SessionDescriptionInterface* offer = CreateOffer();
+  SetLocalDescriptionWithoutError(offer);
+  EXPECT_EQ_WAIT(PeerConnectionInterface::kIceGatheringComplete,
+                 observer_.ice_gathering_state_, kIceCandidatesTimeout);
+  std::string sdp;
+  offer->ToString(&sdp);
+  SessionDescriptionInterface* answer = webrtc::CreateSessionDescription(
+      JsepSessionDescription::kAnswer, sdp, nullptr);
+  ASSERT_TRUE(answer != NULL);
+  SetRemoteDescriptionWithoutError(answer);
+
+  // Wait for the ICE state to stabilize.
+  EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
+                 observer_.ice_connection_state_, kIceCandidatesTimeout);
+  observer_.ice_connection_state_history_.clear();
+
+  // Now add a video channel which should be using the same bundle transport.
+  SendAudioVideoStream2();
+  offer = CreateOffer();
+  offer->ToString(&sdp);
+  SetLocalDescriptionWithoutError(offer);
+  answer = webrtc::CreateSessionDescription(JsepSessionDescription::kAnswer,
+                                            sdp, nullptr);
+  ASSERT_TRUE(answer != NULL);
+  SetRemoteDescriptionWithoutError(answer);
+
+  // Wait for ICE state to stabilize
+  rtc::Thread::Current()->ProcessMessages(0);
+  EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
+                 observer_.ice_connection_state_, kIceCandidatesTimeout);
+
+  // No ICE state changes are expected to happen.
+  EXPECT_EQ(0, observer_.ice_connection_state_history_.size());
 }
 
 TEST_F(WebRtcSessionTest, TestRequireRtcpMux) {

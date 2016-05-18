@@ -77,7 +77,7 @@ class BaseChannel
               const std::string& content_name,
               bool rtcp);
   virtual ~BaseChannel();
-  bool Init_w();
+  bool Init_w(const std::string* bundle_transport_name);
   // Deinit may be called multiple times and is simply ignored if it's already
   // done.
   void Deinit();
@@ -313,7 +313,7 @@ class BaseChannel
   }
 
  private:
-  bool InitNetwork_n();
+  bool InitNetwork_n(const std::string* bundle_transport_name);
   void DisconnectTransportChannels_n();
   void DestroyTransportChannels_n();
   void SignalSentPacket_n(TransportChannel* channel,
@@ -373,7 +373,7 @@ class VoiceChannel : public BaseChannel {
                const std::string& content_name,
                bool rtcp);
   ~VoiceChannel();
-  bool Init_w();
+  bool Init_w(const std::string* bundle_transport_name);
 
   // Configure sending media on the stream with SSRC |ssrc|
   // If there is only one sending stream SSRC 0 can be used.
@@ -489,7 +489,7 @@ class VideoChannel : public BaseChannel {
                const std::string& content_name,
                bool rtcp);
   ~VideoChannel();
-  bool Init_w();
+  bool Init_w(const std::string* bundle_transport_name);
 
   // downcasts a MediaChannel
   VideoMediaChannel* media_channel() const override {
@@ -564,7 +564,7 @@ class DataChannel : public BaseChannel {
               const std::string& content_name,
               bool rtcp);
   ~DataChannel();
-  bool Init_w();
+  bool Init_w(const std::string* bundle_transport_name);
 
   virtual bool SendData(const SendDataParams& params,
                         const rtc::CopyOnWriteBuffer& payload,

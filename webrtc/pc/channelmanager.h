@@ -91,6 +91,7 @@ class ChannelManager {
       webrtc::MediaControllerInterface* media_controller,
       TransportController* transport_controller,
       const std::string& content_name,
+      const std::string* bundle_transport_name,
       bool rtcp,
       const AudioOptions& options);
   // Destroys a voice channel created with the Create API.
@@ -101,12 +102,14 @@ class ChannelManager {
       webrtc::MediaControllerInterface* media_controller,
       TransportController* transport_controller,
       const std::string& content_name,
+      const std::string* bundle_transport_name,
       bool rtcp,
       const VideoOptions& options);
   // Destroys a video channel created with the Create API.
   void DestroyVideoChannel(VideoChannel* video_channel);
   DataChannel* CreateDataChannel(TransportController* transport_controller,
                                  const std::string& content_name,
+                                 const std::string* bundle_transport_name,
                                  bool rtcp,
                                  DataChannelType data_channel_type);
   // Destroys a data channel created with the Create API.
@@ -158,6 +161,7 @@ class ChannelManager {
       webrtc::MediaControllerInterface* media_controller,
       TransportController* transport_controller,
       const std::string& content_name,
+      const std::string* bundle_transport_name,
       bool rtcp,
       const AudioOptions& options);
   void DestroyVoiceChannel_w(VoiceChannel* voice_channel);
@@ -165,11 +169,13 @@ class ChannelManager {
       webrtc::MediaControllerInterface* media_controller,
       TransportController* transport_controller,
       const std::string& content_name,
+      const std::string* bundle_transport_name,
       bool rtcp,
       const VideoOptions& options);
   void DestroyVideoChannel_w(VideoChannel* video_channel);
   DataChannel* CreateDataChannel_w(TransportController* transport_controller,
                                    const std::string& content_name,
+                                   const std::string* bundle_transport_name,
                                    bool rtcp,
                                    DataChannelType data_channel_type);
   void DestroyDataChannel_w(DataChannel* data_channel);

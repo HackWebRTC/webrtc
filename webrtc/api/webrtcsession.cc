@@ -1739,13 +1739,41 @@ void WebRtcSession::RemoveUnusedChannels(const SessionDescription* desc) {
   }
 }
 
-// TODO(mallinath) - Add a correct error code if the channels are not created
-// due to BUNDLE is enabled but rtcp-mux is disabled.
+// Returns the name of the transport channel when BUNDLE is enabled, or nullptr
+// if the channel is not part of any bundle.
+const std::string* WebRtcSession::GetBundleTransportName(
+    const cricket::ContentInfo* content,
+    const cricket::ContentGroup* bundle) {
+  if (!bundle) {
+    return nullptr;
+  }
+  const std::string* first_content_name = bundle->FirstContentName();
+  if (!first_content_name) {
+    LOG(LS_WARNING) << "Tried to BUNDLE with no contents.";
+    return nullptr;
+  }
+  if (!bundle->HasContentName(content->name)) {
+    LOG(LS_WARNING) << content->name << " is not part of any bundle group";
+    return nullptr;
+  }
+  LOG(LS_INFO) << "Bundling " << content->name << " on " << *first_content_name;
+  return first_content_name;
+}
+
 bool WebRtcSession::CreateChannels(const SessionDescription* desc) {
+  const cricket::ContentGroup* bundle_group = nullptr;
+  if (bundle_policy_ == PeerConnectionInterface::kBundlePolicyMaxBundle) {
+    bundle_group = desc->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
+    if (!bundle_group) {
+      LOG(LS_WARNING) << "max-bundle specified without BUNDLE specified";
+      return false;
+    }
+  }
   // Creating the media channels and transport proxies.
   const cricket::ContentInfo* voice = cricket::GetFirstAudioContent(desc);
   if (voice && !voice->rejected && !voice_channel_) {
-    if (!CreateVoiceChannel(voice)) {
+    if (!CreateVoiceChannel(voice,
+                            GetBundleTransportName(voice, bundle_group))) {
       LOG(LS_ERROR) << "Failed to create voice channel.";
       return false;
     }
@@ -1753,7 +1781,8 @@ bool WebRtcSession::CreateChannels(const SessionDescription* desc) {
 
   const cricket::ContentInfo* video = cricket::GetFirstVideoContent(desc);
   if (video && !video->rejected && !video_channel_) {
-    if (!CreateVideoChannel(video)) {
+    if (!CreateVideoChannel(video,
+                            GetBundleTransportName(video, bundle_group))) {
       LOG(LS_ERROR) << "Failed to create video channel.";
       return false;
     }
@@ -1762,34 +1791,8 @@ bool WebRtcSession::CreateChannels(const SessionDescription* desc) {
   const cricket::ContentInfo* data = cricket::GetFirstDataContent(desc);
   if (data_channel_type_ != cricket::DCT_NONE &&
       data && !data->rejected && !data_channel_) {
-    if (!CreateDataChannel(data)) {
+    if (!CreateDataChannel(data, GetBundleTransportName(data, bundle_group))) {
       LOG(LS_ERROR) << "Failed to create data channel.";
-      return false;
-    }
-  }
-
-  if (rtcp_mux_policy_ == PeerConnectionInterface::kRtcpMuxPolicyRequire) {
-    if (voice_channel()) {
-      voice_channel()->ActivateRtcpMux();
-    }
-    if (video_channel()) {
-      video_channel()->ActivateRtcpMux();
-    }
-    if (data_channel()) {
-      data_channel()->ActivateRtcpMux();
-    }
-  }
-
-  // Enable BUNDLE immediately when kBundlePolicyMaxBundle is in effect.
-  if (bundle_policy_ == PeerConnectionInterface::kBundlePolicyMaxBundle) {
-    const cricket::ContentGroup* bundle_group = desc->GetGroupByName(
-        cricket::GROUP_TYPE_BUNDLE);
-    if (!bundle_group) {
-      LOG(LS_WARNING) << "max-bundle specified without BUNDLE specified";
-      return false;
-    }
-    if (!EnableBundle(*bundle_group)) {
-      LOG(LS_WARNING) << "max-bundle failed to enable bundling.";
       return false;
     }
   }
@@ -1797,12 +1800,19 @@ bool WebRtcSession::CreateChannels(const SessionDescription* desc) {
   return true;
 }
 
-bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content) {
+bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content,
+                                       const std::string* bundle_transport) {
+  bool require_rtcp_mux =
+      rtcp_mux_policy_ == PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  bool create_rtcp_transport_channel = !require_rtcp_mux;
   voice_channel_.reset(channel_manager_->CreateVoiceChannel(
-      media_controller_, transport_controller_.get(), content->name, true,
-      audio_options_));
+      media_controller_, transport_controller_.get(), content->name,
+      bundle_transport, create_rtcp_transport_channel, audio_options_));
   if (!voice_channel_) {
     return false;
+  }
+  if (require_rtcp_mux) {
+    voice_channel_->ActivateRtcpMux();
   }
 
   voice_channel_->SignalDtlsSetupFailure.connect(
@@ -1814,14 +1824,20 @@ bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content) {
   return true;
 }
 
-bool WebRtcSession::CreateVideoChannel(const cricket::ContentInfo* content) {
+bool WebRtcSession::CreateVideoChannel(const cricket::ContentInfo* content,
+                                       const std::string* bundle_transport) {
+  bool require_rtcp_mux =
+      rtcp_mux_policy_ == PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  bool create_rtcp_transport_channel = !require_rtcp_mux;
   video_channel_.reset(channel_manager_->CreateVideoChannel(
-      media_controller_, transport_controller_.get(), content->name, true,
-      video_options_));
+      media_controller_, transport_controller_.get(), content->name,
+      bundle_transport, create_rtcp_transport_channel, video_options_));
   if (!video_channel_) {
     return false;
   }
-
+  if (require_rtcp_mux) {
+    video_channel_->ActivateRtcpMux();
+  }
   video_channel_->SignalDtlsSetupFailure.connect(
       this, &WebRtcSession::OnDtlsSetupFailure);
 
@@ -1831,12 +1847,20 @@ bool WebRtcSession::CreateVideoChannel(const cricket::ContentInfo* content) {
   return true;
 }
 
-bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content) {
+bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content,
+                                      const std::string* bundle_transport) {
   bool sctp = (data_channel_type_ == cricket::DCT_SCTP);
+  bool require_rtcp_mux =
+      rtcp_mux_policy_ == PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  bool create_rtcp_transport_channel = !sctp && !require_rtcp_mux;
   data_channel_.reset(channel_manager_->CreateDataChannel(
-      transport_controller_.get(), content->name, !sctp, data_channel_type_));
+      transport_controller_.get(), content->name, bundle_transport,
+      create_rtcp_transport_channel, data_channel_type_));
   if (!data_channel_) {
     return false;
+  }
+  if (require_rtcp_mux) {
+    data_channel_->ActivateRtcpMux();
   }
 
   if (sctp) {
@@ -1949,6 +1973,9 @@ bool WebRtcSession::ValidateSessionDescription(
   if (!ValidateBundleSettings(sdesc->description())) {
     return BadSdp(source, type, kBundleWithoutRtcpMux, err_desc);
   }
+
+  // TODO(skvlad): When the local rtcp-mux policy is Require, reject any
+  // m-lines that do not rtcp-mux enabled.
 
   // Verify m-lines in Answer when compared against Offer.
   if (action == kAnswer) {

@@ -386,6 +386,12 @@ class WebRtcSession : public AudioProviderInterface,
       const std::string& content_name,
       cricket::TransportDescription* info);
 
+  // Returns the name of the transport channel when BUNDLE is enabled, or
+  // nullptr if the channel is not part of any bundle.
+  const std::string* GetBundleTransportName(
+      const cricket::ContentInfo* content,
+      const cricket::ContentGroup* bundle);
+
   // Cause all the BaseChannels in the bundle group to have the same
   // transport channel.
   bool EnableBundle(const cricket::ContentGroup& bundle);
@@ -412,9 +418,12 @@ class WebRtcSession : public AudioProviderInterface,
   bool CreateChannels(const cricket::SessionDescription* desc);
 
   // Helper methods to create media channels.
-  bool CreateVoiceChannel(const cricket::ContentInfo* content);
-  bool CreateVideoChannel(const cricket::ContentInfo* content);
-  bool CreateDataChannel(const cricket::ContentInfo* content);
+  bool CreateVoiceChannel(const cricket::ContentInfo* content,
+                          const std::string* bundle_transport);
+  bool CreateVideoChannel(const cricket::ContentInfo* content,
+                          const std::string* bundle_transport);
+  bool CreateDataChannel(const cricket::ContentInfo* content,
+                         const std::string* bundle_transport);
 
   // Listens to SCTP CONTROL messages on unused SIDs and process them as OPEN
   // messages.
