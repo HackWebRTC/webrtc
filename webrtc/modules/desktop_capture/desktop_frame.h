@@ -56,11 +56,6 @@ class DesktopFrame {
   int64_t capture_time_ms() const { return capture_time_ms_; }
   void set_capture_time_ms(int64_t time_ms) { capture_time_ms_ = time_ms; }
 
-  // Optional shape for the frame. Frames may be shaped e.g. if
-  // capturing the contents of a shaped window.
-  const DesktopRegion* shape() const { return shape_.get(); }
-  void set_shape(DesktopRegion* shape) { shape_.reset(shape); }
-
   // Copies pixels from a buffer or another frame. |dest_rect| rect must lay
   // within bounds of this frame.
   void CopyPixelsFrom(uint8_t* src_buffer, int src_stride,
@@ -90,7 +85,6 @@ class DesktopFrame {
   DesktopRegion updated_region_;
   DesktopVector dpi_;
   int64_t capture_time_ms_;
-  std::unique_ptr<DesktopRegion> shape_;
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(DesktopFrame);
