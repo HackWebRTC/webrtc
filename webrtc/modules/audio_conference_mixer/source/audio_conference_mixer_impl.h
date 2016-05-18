@@ -25,7 +25,13 @@ namespace webrtc {
 class AudioProcessing;
 class CriticalSectionWrapper;
 
-typedef std::list<AudioFrame*> AudioFrameList;
+struct FrameAndMuteInfo {
+  FrameAndMuteInfo(AudioFrame* f, bool m) : frame(f), muted(m) {}
+  AudioFrame* frame;
+  bool muted;
+};
+
+typedef std::list<FrameAndMuteInfo> AudioFrameList;
 typedef std::list<MixerParticipant*> MixerParticipantList;
 
 // Cheshire cat implementation of MixerParticipant's non virtual functions.
