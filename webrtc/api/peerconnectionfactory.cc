@@ -287,7 +287,7 @@ PeerConnectionFactory::CreatePeerConnection(
     allocator.reset(new cricket::BasicPortAllocator(
         default_network_manager_.get(), default_socket_factory_.get()));
   }
-  worker_thread_->Invoke<void>(
+  network_thread_->Invoke<void>(
       rtc::Bind(&cricket::PortAllocator::SetNetworkIgnoreMask, allocator.get(),
                 options_.network_ignore_mask));
 

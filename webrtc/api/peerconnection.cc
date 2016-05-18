@@ -559,8 +559,8 @@ PeerConnection::~PeerConnection() {
   // because its destruction fires signals (such as VoiceChannelDestroyed)
   // which will trigger some final actions in PeerConnection...
   session_.reset(nullptr);
-  // port_allocator_ lives on the worker thread and should be destroyed there.
-  worker_thread()->Invoke<void>([this] { port_allocator_.reset(nullptr); });
+  // port_allocator_ lives on the network thread and should be destroyed there.
+  network_thread()->Invoke<void>([this] { port_allocator_.reset(nullptr); });
 }
 
 bool PeerConnection::Initialize(
@@ -577,10 +577,10 @@ bool PeerConnection::Initialize(
 
   port_allocator_ = std::move(allocator);
 
-  // The port allocator lives on the worker thread and should be initialized
+  // The port allocator lives on the network thread and should be initialized
   // there.
-  if (!worker_thread()->Invoke<bool>(rtc::Bind(
-          &PeerConnection::InitializePortAllocator_w, this, configuration))) {
+  if (!network_thread()->Invoke<bool>(rtc::Bind(
+          &PeerConnection::InitializePortAllocator_n, this, configuration))) {
     return false;
   }
 
@@ -1164,8 +1164,8 @@ void PeerConnection::SetRemoteDescription(
 bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration) {
   TRACE_EVENT0("webrtc", "PeerConnection::SetConfiguration");
   if (port_allocator_) {
-    if (!worker_thread()->Invoke<bool>(
-            rtc::Bind(&PeerConnection::ReconfigurePortAllocator_w, this,
+    if (!network_thread()->Invoke<bool>(
+            rtc::Bind(&PeerConnection::ReconfigurePortAllocator_n, this,
                       configuration))) {
       return false;
     }
@@ -2088,7 +2088,7 @@ DataChannel* PeerConnection::FindDataChannelBySid(int sid) const {
   return nullptr;
 }
 
-bool PeerConnection::InitializePortAllocator_w(
+bool PeerConnection::InitializePortAllocator_n(
     const RTCConfiguration& configuration) {
   cricket::ServerAddresses stun_servers;
   std::vector<cricket::RelayServerConfig> turn_servers;
@@ -2128,7 +2128,7 @@ bool PeerConnection::InitializePortAllocator_w(
   return true;
 }
 
-bool PeerConnection::ReconfigurePortAllocator_w(
+bool PeerConnection::ReconfigurePortAllocator_n(
     const RTCConfiguration& configuration) {
   cricket::ServerAddresses stun_servers;
   std::vector<cricket::RelayServerConfig> turn_servers;

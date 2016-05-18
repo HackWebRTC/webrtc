@@ -209,7 +209,7 @@ class PeerConnection : public PeerConnectionInterface,
     return factory_->signaling_thread();
   }
 
-  rtc::Thread* worker_thread() const { return factory_->worker_thread(); }
+  rtc::Thread* network_thread() const { return factory_->network_thread(); }
 
   void PostSetSessionDescriptionFailure(SetSessionDescriptionObserver* observer,
                                         const std::string& error);
@@ -353,10 +353,10 @@ class PeerConnection : public PeerConnectionInterface,
   DataChannel* FindDataChannelBySid(int sid) const;
 
   // Called when first configuring the port allocator.
-  bool InitializePortAllocator_w(const RTCConfiguration& configuration);
+  bool InitializePortAllocator_n(const RTCConfiguration& configuration);
   // Called when SetConfiguration is called. Only a subset of the configuration
   // is applied.
-  bool ReconfigurePortAllocator_w(const RTCConfiguration& configuration);
+  bool ReconfigurePortAllocator_n(const RTCConfiguration& configuration);
 
   // Storing the factory as a scoped reference pointer ensures that the memory
   // in the PeerConnectionFactoryImpl remains available as long as the
