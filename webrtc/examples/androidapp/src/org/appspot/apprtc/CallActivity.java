@@ -139,7 +139,6 @@ public class CallActivity extends Activity
   private HudFragment hudFragment;
   private CpuMonitor cpuMonitor;
 
-
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -240,8 +239,15 @@ public class CallActivity extends Activity
     commandLineRun = intent.getBooleanExtra(EXTRA_CMDLINE, false);
     runTimeMs = intent.getIntExtra(EXTRA_RUNTIME, 0);
 
-    // Create connection client and connection parameters.
-    appRtcClient = new WebSocketRTCClient(this, new LooperExecutor());
+    // Create connection client. Use DirectRTCClient if room name is an IP otherwise use the
+    // standard WebSocketRTCClient.
+    if (loopback || !DirectRTCClient.IP_PATTERN.matcher(roomId).matches()) {
+      appRtcClient = new WebSocketRTCClient(this, new LooperExecutor());
+    } else {
+      Log.i(TAG, "Using DirectRTCClient because room name looks like an IP.");
+      appRtcClient = new DirectRTCClient(this);
+    }
+    // Create connection parameters.
     roomConnectionParameters = new RoomConnectionParameters(
         roomUri.toString(), roomId, loopback);
 
