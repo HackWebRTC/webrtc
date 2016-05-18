@@ -18,7 +18,8 @@ secondary_source = "//build/secondary/"
 # matching these patterns (see "gn help label_pattern" for format) will have
 # their includes checked for proper dependencies when you run either
 # "gn check" or "gn gen --check".
-check_targets = [ "//webrtc/*" ]
+# TODO(kjellander): Keep adding paths to this list as work in webrtc:5589 is done.
+check_targets = []
 
 # These are the list of GN files that run exec_script. This whitelist exists
 # to force additional review for new uses of exec_script, which is strongly
