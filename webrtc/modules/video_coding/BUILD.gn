@@ -21,6 +21,8 @@ source_set("video_coding") {
     "fec_tables_xor.h",
     "frame_buffer.cc",
     "frame_buffer.h",
+    "frame_buffer2.cc",
+    "frame_buffer2.h",
     "frame_object.cc",
     "frame_object.h",
     "generic_decoder.cc",
