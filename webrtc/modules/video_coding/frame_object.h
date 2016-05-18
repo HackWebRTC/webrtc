@@ -31,7 +31,6 @@ class FrameObject {
   // have to be constructed from the header data relevant to that codec.
   uint16_t picture_id;
   uint8_t spatial_layer;
-  uint32_t timestamp;
 
   size_t num_references;
   uint16_t references[kMaxFrameReferences];

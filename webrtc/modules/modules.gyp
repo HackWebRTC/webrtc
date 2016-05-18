@@ -362,7 +362,6 @@
             'video_coding/codecs/vp8/simulcast_encoder_adapter_unittest.cc',
             'video_coding/codecs/vp8/simulcast_unittest.cc',
             'video_coding/codecs/vp8/simulcast_unittest.h',
-            'video_coding/frame_buffer2_unittest.cc',
             'video_coding/include/mock/mock_vcm_callbacks.h',
             'video_coding/decoding_state_unittest.cc',
             'video_coding/histogram_unittest.cc',

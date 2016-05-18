@@ -18,7 +18,6 @@ namespace video_coding {
 FrameObject::FrameObject()
     : picture_id(0),
       spatial_layer(0),
-      timestamp(0),
       num_references(0),
       inter_layer_predicted(false) {}
 
