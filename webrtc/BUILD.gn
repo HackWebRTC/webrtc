@@ -173,9 +173,14 @@ config("common_config") {
 
 source_set("webrtc") {
   sources = [
+    "audio_receive_stream.h",
+    "audio_send_stream.h",
+    "audio_state.h",
     "call.h",
-    "config.h",
+    "common.h",
     "transport.h",
+    "video_receive_stream.h",
+    "video_send_stream.h",
   ]
 
   defines = []
@@ -236,6 +241,7 @@ source_set("webrtc_common") {
     "config.h",
     "engine_configurations.h",
     "typedefs.h",
+    "video_frame.h",
   ]
 
   configs += [ ":common_config" ]
@@ -271,6 +277,7 @@ source_set("rtc_event_log") {
 
   deps = [
     ":webrtc_common",
+    "base:rtc_base_approved",
   ]
 
   if (rtc_enable_protobuf) {
@@ -297,6 +304,7 @@ if (rtc_enable_protobuf) {
     deps = [
       ":rtc_event_log_proto",
       ":webrtc_common",
+      "base:rtc_base_approved",
     ]
 
     if (is_clang && !is_nacl) {

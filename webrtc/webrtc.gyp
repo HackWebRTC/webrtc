@@ -78,6 +78,7 @@
           ],
           'dependencies': [
             'rtc_event_log_proto',
+            '<(webrtc_root)/base/base.gyp:rtc_base_approved',
           ],
           'export_dependent_settings': [
             'rtc_event_log_proto',
@@ -143,7 +144,7 @@
         'audio_send_stream.h',
         'audio_state.h',
         'call.h',
-        'config.h',
+        'common.h',
         'transport.h',
         'video_receive_stream.h',
         'video_send_stream.h',
@@ -177,6 +178,9 @@
         'call/rtc_event_log.h',
         'call/rtc_event_log_helper_thread.cc',
         'call/rtc_event_log_helper_thread.h',
+      ],
+      'dependencies': [
+        '<(webrtc_root)/base/base.gyp:rtc_base_approved',
       ],
       'conditions': [
         # If enable_protobuf is defined, we want to compile the protobuf
