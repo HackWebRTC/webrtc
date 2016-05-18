@@ -577,7 +577,7 @@ void AudioConferenceMixerImpl::UpdateToMix(
         }
 
         if(audioFrame->vad_activity_ == AudioFrame::kVadActive) {
-            if(!wasMixed) {
+            if(!wasMixed && !muted) {
                 RampIn(*audioFrame);
             }
 
@@ -585,13 +585,15 @@ void AudioConferenceMixerImpl::UpdateToMix(
                 // There are already more active participants than should be
                 // mixed. Only keep the ones with the highest energy.
                 AudioFrameList::iterator replaceItem;
-                uint32_t lowestEnergy = CalculateEnergy(*audioFrame);
+                uint32_t lowestEnergy =
+                    muted ? 0 : CalculateEnergy(*audioFrame);
 
                 bool found_replace_item = false;
                 for (AudioFrameList::iterator iter = activeList.begin();
                      iter != activeList.end();
                      ++iter) {
-                    const uint32_t energy = CalculateEnergy(*iter->frame);
+                    const uint32_t energy =
+                        muted ? 0 : CalculateEnergy(*iter->frame);
                     if(energy < lowestEnergy) {
                         replaceItem = iter;
                         lowestEnergy = energy;
@@ -599,6 +601,7 @@ void AudioConferenceMixerImpl::UpdateToMix(
                     }
                 }
                 if(found_replace_item) {
+                    RTC_DCHECK(!muted);  // Cannot replace with a muted frame.
                     FrameAndMuteInfo replaceFrame = *replaceItem;
 
                     bool replaceWasMixed = false;
@@ -620,7 +623,9 @@ void AudioConferenceMixerImpl::UpdateToMix(
                            kMaximumAmountOfMixedParticipants);
 
                     if (replaceWasMixed) {
-                      RampOut(*replaceFrame.frame);
+                      if (!replaceFrame.muted) {
+                        RampOut(*replaceFrame.frame);
+                      }
                       rampOutList->push_back(replaceFrame);
                       assert(rampOutList->size() <=
                              kMaximumAmountOfMixedParticipants);
@@ -629,7 +634,9 @@ void AudioConferenceMixerImpl::UpdateToMix(
                     }
                 } else {
                     if(wasMixed) {
-                        RampOut(*audioFrame);
+                        if (!muted) {
+                            RampOut(*audioFrame);
+                        }
                         rampOutList->push_back(FrameAndMuteInfo(audioFrame,
                                                                 muted));
                         assert(rampOutList->size() <=
@@ -650,7 +657,9 @@ void AudioConferenceMixerImpl::UpdateToMix(
                     new ParticipantFrameStruct(*participant, audioFrame, muted);
                 passiveWasMixedList.push_back(part_struct);
             } else if(mustAddToPassiveList) {
-                RampIn(*audioFrame);
+                if (!muted) {
+                    RampIn(*audioFrame);
+                }
                 ParticipantFrameStruct* part_struct =
                     new ParticipantFrameStruct(*participant, audioFrame, muted);
                 passiveWasNotMixedList.push_back(part_struct);
