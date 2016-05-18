@@ -282,8 +282,6 @@ void PacedSender::SetProbingEnabled(bool enabled) {
 }
 
 void PacedSender::SetEstimatedBitrate(uint32_t bitrate_bps) {
-  LOG(LS_INFO) << "SetNetWorkEstimateTargetBitrate, bitrate " << bitrate_bps;
-
   CriticalSectionScoped cs(critsect_.get());
   estimated_bitrate_bps_ = bitrate_bps;
   pacing_bitrate_kbps_ =
