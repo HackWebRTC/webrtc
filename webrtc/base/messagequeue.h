@@ -152,7 +152,10 @@ typedef std::list<Message> MessageList;
 
 class DelayedMessage {
  public:
-  DelayedMessage(int delay, int64_t trigger, uint32_t num, const Message& msg)
+  DelayedMessage(int64_t delay,
+                 int64_t trigger,
+                 uint32_t num,
+                 const Message& msg)
       : cmsDelay_(delay), msTrigger_(trigger), num_(num), msg_(msg) {}
 
   bool operator< (const DelayedMessage& dmsg) const {
@@ -160,7 +163,7 @@ class DelayedMessage {
            || ((dmsg.msTrigger_ == msTrigger_) && (dmsg.num_ < num_));
   }
 
-  int cmsDelay_;  // for debugging
+  int64_t cmsDelay_;  // for debugging
   int64_t msTrigger_;
   uint32_t num_;
   Message msg_;
@@ -254,7 +257,7 @@ class MessageQueue {
     void reheap() { make_heap(c.begin(), c.end(), comp); }
   };
 
-  void DoDelayPost(int cmsDelay,
+  void DoDelayPost(int64_t cmsDelay,
                    int64_t tstamp,
                    MessageHandler* phandler,
                    uint32_t id,

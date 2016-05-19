@@ -502,7 +502,7 @@ bool Thread::ProcessMessages(int cmsLoop) {
       Dispatch(&msg);
 
       if (cmsLoop != kForever) {
-        cmsNext = TimeUntil(msEnd);
+        cmsNext = static_cast<int>(TimeUntil(msEnd));
         if (cmsNext < 0)
           return true;
       }

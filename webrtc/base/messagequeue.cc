@@ -345,7 +345,7 @@ void MessageQueue::PostAt(uint32_t tstamp,
                           uint32_t id,
                           MessageData* pdata) {
   // This should work even if it is used (unexpectedly).
-  int delay = static_cast<uint32_t>(TimeMillis()) - tstamp;
+  int64_t delay = static_cast<uint32_t>(TimeMillis()) - tstamp;
   return DoDelayPost(delay, tstamp, phandler, id, pdata);
 }
 
@@ -356,13 +356,14 @@ void MessageQueue::PostAt(int64_t tstamp,
   return DoDelayPost(TimeUntil(tstamp), tstamp, phandler, id, pdata);
 }
 
-void MessageQueue::DoDelayPost(int cmsDelay,
+void MessageQueue::DoDelayPost(int64_t cmsDelay,
                                int64_t tstamp,
                                MessageHandler* phandler,
                                uint32_t id,
                                MessageData* pdata) {
-  if (fStop_)
+  if (fStop_) {
     return;
+  }
 
   // Keep thread safe
   // Add to the priority queue. Gets sorted soonest first.

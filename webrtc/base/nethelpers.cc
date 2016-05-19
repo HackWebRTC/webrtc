@@ -17,6 +17,13 @@
 #include <ws2tcpip.h>
 #include "webrtc/base/win32.h"
 #endif
+#if defined(WEBRTC_POSIX) && !defined(__native_client__)
+#if defined(WEBRTC_ANDROID)
+#include "webrtc/base/ifaddrs-android.h"
+#else
+#include <ifaddrs.h>
+#endif
+#endif  // defined(WEBRTC_POSIX) && !defined(__native_client__)
 
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/logging.h"
@@ -118,10 +125,7 @@ int inet_pton(int af, const char* src, void *dst) {
 }
 
 bool HasIPv6Enabled() {
-#if !defined(WEBRTC_WIN)
-  // We only need to check this for Windows XP (so far).
-  return true;
-#else
+#if defined(WEBRTC_WIN)
   if (IsWindowsVistaOrLater()) {
     return true;
   }
@@ -157,6 +161,22 @@ bool HasIPv6Enabled() {
     }
   }
   return false;
+#elif defined(WEBRTC_POSIX) && !defined(__native_client__)
+  bool has_ipv6 = false;
+  struct ifaddrs* ifa;
+  if (getifaddrs(&ifa) < 0) {
+    return false;
+  }
+  for (struct ifaddrs* cur = ifa; cur != nullptr; cur = cur->ifa_next) {
+    if (cur->ifa_addr->sa_family == AF_INET6) {
+      has_ipv6 = true;
+      break;
+    }
+  }
+  freeifaddrs(ifa);
+  return has_ipv6;
+#else
+  return true;
 #endif
 }
 }  // namespace rtc

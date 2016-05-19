@@ -34,9 +34,10 @@ TestClient::~TestClient() {
 
 bool TestClient::CheckConnState(AsyncPacketSocket::State state) {
   // Wait for our timeout value until the socket reaches the desired state.
-  uint32_t end = TimeAfter(kTimeoutMs);
-  while (socket_->GetState() != state && TimeUntil(end) > 0)
+  int64_t end = TimeAfter(kTimeoutMs);
+  while (socket_->GetState() != state && TimeUntil(end) > 0) {
     Thread::Current()->ProcessMessages(1);
+  }
   return (socket_->GetState() == state);
 }
 
@@ -63,7 +64,7 @@ TestClient::Packet* TestClient::NextPacket(int timeout_ms) {
   // Pumping another thread's queue could lead to messages being dispatched from
   // the wrong thread to non-thread-safe objects.
 
-  uint32_t end = TimeAfter(timeout_ms);
+  int64_t end = TimeAfter(timeout_ms);
   while (TimeUntil(end) > 0) {
     {
       CritScope cs(&crit_);

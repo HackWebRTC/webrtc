@@ -21,6 +21,12 @@
 
 namespace rtc {
 
+#define MAYBE_SKIP_IPV6                    \
+  if (!HasIPv6Enabled()) {                 \
+    LOG(LS_INFO) << "No IPv6... skipping"; \
+    return;                                \
+  }
+
 class PhysicalSocketTest;
 
 class FakeSocketDispatcher : public SocketDispatcher {
@@ -145,13 +151,7 @@ TEST_F(PhysicalSocketTest, TestConnectIPv4) {
   SocketTest::TestConnectIPv4();
 }
 
-// Crashes on Linux. See webrtc:4923.
-#if defined(WEBRTC_LINUX)
-#define MAYBE_TestConnectIPv6 DISABLED_TestConnectIPv6
-#else
-#define MAYBE_TestConnectIPv6 TestConnectIPv6
-#endif
-TEST_F(PhysicalSocketTest, MAYBE_TestConnectIPv6) {
+TEST_F(PhysicalSocketTest, TestConnectIPv6) {
   SocketTest::TestConnectIPv6();
 }
 
@@ -243,13 +243,8 @@ TEST_F(PhysicalSocketTest, TestConnectAcceptErrorIPv4) {
   ConnectInternalAcceptError(kIPv4Loopback);
 }
 
-// Crashes on Linux. See webrtc:4923.
-#if defined(WEBRTC_LINUX)
-#define MAYBE_TestConnectAcceptErrorIPv6 DISABLED_TestConnectAcceptErrorIPv6
-#else
-#define MAYBE_TestConnectAcceptErrorIPv6 TestConnectAcceptErrorIPv6
-#endif
-TEST_F(PhysicalSocketTest, MAYBE_TestConnectAcceptErrorIPv6) {
+TEST_F(PhysicalSocketTest, TestConnectAcceptErrorIPv6) {
+  MAYBE_SKIP_IPV6;
   ConnectInternalAcceptError(kIPv6Loopback);
 }
 
@@ -268,25 +263,12 @@ TEST_F(PhysicalSocketTest, TestWritableAfterPartialWriteIPv4) {
   WritableAfterPartialWrite(kIPv4Loopback);
 }
 
-// Crashes on Linux. See webrtc:4923.
-#if defined(WEBRTC_LINUX)
-#define MAYBE_TestWritableAfterPartialWriteIPv6 \
-    DISABLED_TestWritableAfterPartialWriteIPv6
-#else
-#define MAYBE_TestWritableAfterPartialWriteIPv6 \
-    TestWritableAfterPartialWriteIPv6
-#endif
-TEST_F(PhysicalSocketTest, MAYBE_TestWritableAfterPartialWriteIPv6) {
+TEST_F(PhysicalSocketTest, TestWritableAfterPartialWriteIPv6) {
+  MAYBE_SKIP_IPV6;
   WritableAfterPartialWrite(kIPv6Loopback);
 }
 
-// Crashes on Linux. See webrtc:4923.
-#if defined(WEBRTC_LINUX)
-#define MAYBE_TestConnectFailIPv6 DISABLED_TestConnectFailIPv6
-#else
-#define MAYBE_TestConnectFailIPv6 TestConnectFailIPv6
-#endif
-TEST_F(PhysicalSocketTest, MAYBE_TestConnectFailIPv6) {
+TEST_F(PhysicalSocketTest, TestConnectFailIPv6) {
   SocketTest::TestConnectFailIPv6();
 }
 
@@ -294,15 +276,7 @@ TEST_F(PhysicalSocketTest, TestConnectWithDnsLookupFailIPv4) {
   SocketTest::TestConnectWithDnsLookupFailIPv4();
 }
 
-// Crashes on Linux. See webrtc:4923.
-#if defined(WEBRTC_LINUX)
-#define MAYBE_TestConnectWithDnsLookupFailIPv6 \
-  DISABLED_TestConnectWithDnsLookupFailIPv6
-#else
-#define MAYBE_TestConnectWithDnsLookupFailIPv6 \
-  TestConnectWithDnsLookupFailIPv6
-#endif
-TEST_F(PhysicalSocketTest, MAYBE_TestConnectWithDnsLookupFailIPv6) {
+TEST_F(PhysicalSocketTest, TestConnectWithDnsLookupFailIPv6) {
   SocketTest::TestConnectWithDnsLookupFailIPv6();
 }
 
@@ -311,14 +285,7 @@ TEST_F(PhysicalSocketTest, TestConnectWithClosedSocketIPv4) {
   SocketTest::TestConnectWithClosedSocketIPv4();
 }
 
-// Crashes on Linux. See webrtc:4923.
-#if defined(WEBRTC_LINUX)
-#define MAYBE_TestConnectWithClosedSocketIPv6 \
-  DISABLED_TestConnectWithClosedSocketIPv6
-#else
-#define MAYBE_TestConnectWithClosedSocketIPv6 TestConnectWithClosedSocketIPv6
-#endif
-TEST_F(PhysicalSocketTest, MAYBE_TestConnectWithClosedSocketIPv6) {
+TEST_F(PhysicalSocketTest, TestConnectWithClosedSocketIPv6) {
   SocketTest::TestConnectWithClosedSocketIPv6();
 }
 
@@ -326,14 +293,7 @@ TEST_F(PhysicalSocketTest, TestConnectWhileNotClosedIPv4) {
   SocketTest::TestConnectWhileNotClosedIPv4();
 }
 
-// Crashes on Linux. See webrtc:4923.
-#if defined(WEBRTC_LINUX)
-#define MAYBE_TestConnectWhileNotClosedIPv6 \
-  DISABLED_TestConnectWhileNotClosedIPv6
-#else
-#define MAYBE_TestConnectWhileNotClosedIPv6 TestConnectWhileNotClosedIPv6
-#endif
-TEST_F(PhysicalSocketTest, MAYBE_TestConnectWhileNotClosedIPv6) {
+TEST_F(PhysicalSocketTest, TestConnectWhileNotClosedIPv6) {
   SocketTest::TestConnectWhileNotClosedIPv6();
 }
 
@@ -341,14 +301,7 @@ TEST_F(PhysicalSocketTest, TestServerCloseDuringConnectIPv4) {
   SocketTest::TestServerCloseDuringConnectIPv4();
 }
 
-// Crashes on Linux. See webrtc:4923.
-#if defined(WEBRTC_LINUX)
-#define MAYBE_TestServerCloseDuringConnectIPv6 \
-  DISABLED_TestServerCloseDuringConnectIPv6
-#else
-#define MAYBE_TestServerCloseDuringConnectIPv6 TestServerCloseDuringConnectIPv6
-#endif
-TEST_F(PhysicalSocketTest, MAYBE_TestServerCloseDuringConnectIPv6) {
+TEST_F(PhysicalSocketTest, TestServerCloseDuringConnectIPv6) {
   SocketTest::TestServerCloseDuringConnectIPv6();
 }
 
@@ -356,14 +309,7 @@ TEST_F(PhysicalSocketTest, TestClientCloseDuringConnectIPv4) {
   SocketTest::TestClientCloseDuringConnectIPv4();
 }
 
-// Crashes on Linux. See webrtc:4923.
-#if defined(WEBRTC_LINUX)
-#define MAYBE_TestClientCloseDuringConnectIPv6 \
-  DISABLED_TestClientCloseDuringConnectIPv6
-#else
-#define MAYBE_TestClientCloseDuringConnectIPv6 TestClientCloseDuringConnectIPv6
-#endif
-TEST_F(PhysicalSocketTest, MAYBE_TestClientCloseDuringConnectIPv6) {
+TEST_F(PhysicalSocketTest, TestClientCloseDuringConnectIPv6) {
   SocketTest::TestClientCloseDuringConnectIPv6();
 }
 
@@ -371,13 +317,7 @@ TEST_F(PhysicalSocketTest, TestServerCloseIPv4) {
   SocketTest::TestServerCloseIPv4();
 }
 
-// Crashes on Linux. See webrtc:4923.
-#if defined(WEBRTC_LINUX)
-#define MAYBE_TestServerCloseIPv6 DISABLED_TestServerCloseIPv6
-#else
-#define MAYBE_TestServerCloseIPv6 TestServerCloseIPv6
-#endif
-TEST_F(PhysicalSocketTest, MAYBE_TestServerCloseIPv6) {
+TEST_F(PhysicalSocketTest, TestServerCloseIPv6) {
   SocketTest::TestServerCloseIPv6();
 }
 
@@ -385,14 +325,7 @@ TEST_F(PhysicalSocketTest, TestCloseInClosedCallbackIPv4) {
   SocketTest::TestCloseInClosedCallbackIPv4();
 }
 
-// Crashes on Linux. See webrtc:4923.
-#if defined(WEBRTC_LINUX)
-#define MAYBE_TestCloseInClosedCallbackIPv6 \
-  DISABLED_TestCloseInClosedCallbackIPv6
-#else
-#define MAYBE_TestCloseInClosedCallbackIPv6 TestCloseInClosedCallbackIPv6
-#endif
-TEST_F(PhysicalSocketTest, MAYBE_TestCloseInClosedCallbackIPv6) {
+TEST_F(PhysicalSocketTest, TestCloseInClosedCallbackIPv6) {
   SocketTest::TestCloseInClosedCallbackIPv6();
 }
 
@@ -400,13 +333,7 @@ TEST_F(PhysicalSocketTest, TestSocketServerWaitIPv4) {
   SocketTest::TestSocketServerWaitIPv4();
 }
 
-// Crashes on Linux. See webrtc:4923.
-#if defined(WEBRTC_LINUX)
-#define MAYBE_TestSocketServerWaitIPv6 DISABLED_TestSocketServerWaitIPv6
-#else
-#define MAYBE_TestSocketServerWaitIPv6 TestSocketServerWaitIPv6
-#endif
-TEST_F(PhysicalSocketTest, MAYBE_TestSocketServerWaitIPv6) {
+TEST_F(PhysicalSocketTest, TestSocketServerWaitIPv6) {
   SocketTest::TestSocketServerWaitIPv6();
 }
 
@@ -414,13 +341,7 @@ TEST_F(PhysicalSocketTest, TestTcpIPv4) {
   SocketTest::TestTcpIPv4();
 }
 
-// Crashes on Linux. See webrtc:4923.
-#if defined(WEBRTC_LINUX)
-#define MAYBE_TestTcpIPv6 DISABLED_TestTcpIPv6
-#else
-#define MAYBE_TestTcpIPv6 TestTcpIPv6
-#endif
-TEST_F(PhysicalSocketTest, MAYBE_TestTcpIPv6) {
+TEST_F(PhysicalSocketTest, TestTcpIPv6) {
   SocketTest::TestTcpIPv6();
 }
 
@@ -428,13 +349,7 @@ TEST_F(PhysicalSocketTest, TestUdpIPv4) {
   SocketTest::TestUdpIPv4();
 }
 
-// Crashes on Linux. See webrtc:4923.
-#if defined(WEBRTC_LINUX)
-#define MAYBE_TestUdpIPv6 DISABLED_TestUdpIPv6
-#else
-#define MAYBE_TestUdpIPv6 TestUdpIPv6
-#endif
-TEST_F(PhysicalSocketTest, MAYBE_TestUdpIPv6) {
+TEST_F(PhysicalSocketTest, TestUdpIPv6) {
   SocketTest::TestUdpIPv6();
 }
 

@@ -24,15 +24,14 @@
 
 namespace rtc {
 
-// Data size to be used in TcpInternal tests.
-static const size_t kTcpInternalDataSize = 1024 * 1024;  // bytes
-
 #define MAYBE_SKIP_IPV6                             \
   if (!HasIPv6Enabled()) {                          \
     LOG(LS_INFO) << "No IPv6... skipping";          \
     return;                                         \
   }
 
+// Data size to be used in TcpInternal tests.
+static const size_t kTcpInternalDataSize = 1024 * 1024;  // bytes
 
 void SocketTest::TestConnectIPv4() {
   ConnectInternal(kIPv4Loopback);
