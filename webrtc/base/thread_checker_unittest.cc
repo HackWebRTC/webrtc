@@ -15,6 +15,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/task_queue.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/thread_checker.h"
 
@@ -193,6 +194,61 @@ TEST(ThreadCheckerTest, DetachFromThreadInRelease) {
 #endif  // ENABLE_THREAD_CHECKER
 
 #endif  // GTEST_HAS_DEATH_TEST || !ENABLE_THREAD_CHECKER
+
+class ThreadAnnotateTest {
+ public:
+  // Next two function should create warnings when compile (e.g. if used with
+  // specific T).
+  // TODO(danilchap): Find a way to test they do not compile when thread
+  // annotation checks enabled.
+  template<typename T>
+  void access_var_no_annotate() {
+    var_thread_ = 42;
+  }
+
+  template<typename T>
+  void access_fun_no_annotate() {
+    function();
+  }
+
+  // Functions below should be able to compile.
+  void access_var_annotate_thread() {
+    RTC_DCHECK_RUN_ON(thread_);
+    var_thread_ = 42;
+  }
+
+  void access_var_annotate_checker() {
+    RTC_DCHECK_RUN_ON(&checker_);
+    var_checker_ = 44;
+  }
+
+  void access_var_annotate_queue() {
+    RTC_DCHECK_RUN_ON(queue_);
+    var_queue_ = 46;
+  }
+
+  void access_fun_annotate() {
+    RTC_DCHECK_RUN_ON(thread_);
+    function();
+  }
+
+  void access_fun_and_var() {
+    RTC_DCHECK_RUN_ON(thread_);
+    fun_acccess_var();
+  }
+
+ private:
+  void function() RUN_ON(thread_) {}
+  void fun_acccess_var() RUN_ON(thread_) { var_thread_ = 13; }
+
+  rtc::Thread* thread_;
+  rtc::ThreadChecker checker_;
+  rtc::TaskQueue* queue_;
+
+  int var_thread_ ACCESS_ON(thread_);
+  int var_checker_ GUARDED_BY(checker_);
+  int var_queue_ ACCESS_ON(queue_);
+};
 
 // Just in case we ever get lumped together with other compilation units.
 #undef ENABLE_THREAD_CHECKER
