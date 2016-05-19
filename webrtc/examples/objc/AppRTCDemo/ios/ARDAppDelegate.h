@@ -12,6 +12,6 @@
 
 // The main application class of the AppRTCDemo iOS app demonstrating
 // interoperability between the Objective C implementation of PeerConnection
-// and the apprtc.appspot.com demo webapp.
+// and the appr.tc demo webapp.
 @interface ARDAppDelegate : NSObject <UIApplicationDelegate>
 @end
