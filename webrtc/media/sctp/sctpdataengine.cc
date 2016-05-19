@@ -20,6 +20,7 @@
 #include "usrsctplib/usrsctp.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/copyonwritebuffer.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/safe_conversions.h"
@@ -27,8 +28,29 @@
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/streamparams.h"
 
+namespace cricket {
+// The biggest SCTP packet.  Starting from a 'safe' wire MTU value of 1280,
+// take off 80 bytes for DTLS/TURN/TCP/IP overhead.
+static const size_t kSctpMtu = 1200;
+
+// The size of the SCTP association send buffer.  256kB, the usrsctp default.
+static const int kSendBufferSize = 262144;
+
+struct SctpInboundPacket {
+  rtc::CopyOnWriteBuffer buffer;
+  ReceiveDataParams params;
+  // The |flags| parameter is used by SCTP to distinguish notification packets
+  // from other types of packets.
+  int flags;
+};
+
 namespace {
-typedef cricket::SctpDataMediaChannel::StreamSet StreamSet;
+// Set the initial value of the static SCTP Data Engines reference count.
+int g_usrsctp_usage_count = 0;
+rtc::GlobalLockPod g_usrsctp_lock_;
+
+typedef SctpDataMediaChannel::StreamSet StreamSet;
+
 // Returns a comma-separated, human-readable list of the stream IDs in 's'
 std::string ListStreams(const StreamSet& s) {
   std::stringstream result;
@@ -85,78 +107,62 @@ std::string ListArray(const uint16_t* array, int num_elems) {
   }
   return result.str();
 }
-}  // namespace
 
-namespace cricket {
 typedef rtc::ScopedMessageData<SctpInboundPacket> InboundPacketMessage;
 typedef rtc::ScopedMessageData<rtc::CopyOnWriteBuffer> OutboundPacketMessage;
 
-// The biggest SCTP packet.  Starting from a 'safe' wire MTU value of 1280,
-// take off 80 bytes for DTLS/TURN/TCP/IP overhead.
-static const size_t kSctpMtu = 1200;
-
-// The size of the SCTP association send buffer.  256kB, the usrsctp default.
-static const int kSendBufferSize = 262144;
 enum {
   MSG_SCTPINBOUNDPACKET = 1,   // MessageData is SctpInboundPacket
   MSG_SCTPOUTBOUNDPACKET = 2,  // MessageData is rtc:Buffer
 };
 
-struct SctpInboundPacket {
-  rtc::CopyOnWriteBuffer buffer;
-  ReceiveDataParams params;
-  // The |flags| parameter is used by SCTP to distinguish notification packets
-  // from other types of packets.
-  int flags;
-};
-
 // Helper for logging SCTP messages.
-static void debug_sctp_printf(const char *format, ...) {
+void DebugSctpPrintf(const char* format, ...) {
+#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
   char s[255];
   va_list ap;
   va_start(ap, format);
   vsnprintf(s, sizeof(s), format, ap);
   LOG(LS_INFO) << "SCTP: " << s;
   va_end(ap);
+#endif
 }
 
 // Get the PPID to use for the terminating fragment of this type.
-static SctpDataMediaChannel::PayloadProtocolIdentifier GetPpid(
-    cricket::DataMessageType type) {
+SctpDataMediaChannel::PayloadProtocolIdentifier GetPpid(DataMessageType type) {
   switch (type) {
   default:
-  case cricket::DMT_NONE:
+  case DMT_NONE:
     return SctpDataMediaChannel::PPID_NONE;
-  case cricket::DMT_CONTROL:
+  case DMT_CONTROL:
     return SctpDataMediaChannel::PPID_CONTROL;
-  case cricket::DMT_BINARY:
+  case DMT_BINARY:
     return SctpDataMediaChannel::PPID_BINARY_LAST;
-  case cricket::DMT_TEXT:
+  case DMT_TEXT:
     return SctpDataMediaChannel::PPID_TEXT_LAST;
   };
 }
 
-static bool GetDataMediaType(
-    SctpDataMediaChannel::PayloadProtocolIdentifier ppid,
-    cricket::DataMessageType *dest) {
+bool GetDataMediaType(SctpDataMediaChannel::PayloadProtocolIdentifier ppid,
+                      DataMessageType* dest) {
   ASSERT(dest != NULL);
   switch (ppid) {
     case SctpDataMediaChannel::PPID_BINARY_PARTIAL:
     case SctpDataMediaChannel::PPID_BINARY_LAST:
-      *dest = cricket::DMT_BINARY;
+      *dest = DMT_BINARY;
       return true;
 
     case SctpDataMediaChannel::PPID_TEXT_PARTIAL:
     case SctpDataMediaChannel::PPID_TEXT_LAST:
-      *dest = cricket::DMT_TEXT;
+      *dest = DMT_TEXT;
       return true;
 
     case SctpDataMediaChannel::PPID_CONTROL:
-      *dest = cricket::DMT_CONTROL;
+      *dest = DMT_CONTROL;
       return true;
 
     case SctpDataMediaChannel::PPID_NONE:
-      *dest = cricket::DMT_NONE;
+      *dest = DMT_NONE;
       return true;
 
     default:
@@ -165,7 +171,7 @@ static bool GetDataMediaType(
 }
 
 // Log the packet in text2pcap format, if log level is at LS_VERBOSE.
-static void VerboseLogPacket(const void *data, size_t length, int direction) {
+void VerboseLogPacket(const void* data, size_t length, int direction) {
   if (LOG_CHECK_LEVEL(LS_VERBOSE) && length > 0) {
     char *dump_buf;
     // Some downstream project uses an older version of usrsctp that expects
@@ -181,8 +187,11 @@ static void VerboseLogPacket(const void *data, size_t length, int direction) {
 
 // This is the callback usrsctp uses when there's data to send on the network
 // that has been wrapped appropriatly for the SCTP protocol.
-static int OnSctpOutboundPacket(void* addr, void* data, size_t length,
-                                uint8_t tos, uint8_t set_df) {
+int OnSctpOutboundPacket(void* addr,
+                         void* data,
+                         size_t length,
+                         uint8_t tos,
+                         uint8_t set_df) {
   SctpDataMediaChannel* channel = static_cast<SctpDataMediaChannel*>(addr);
   LOG(LS_VERBOSE) << "global OnSctpOutboundPacket():"
                   << "addr: " << addr << "; length: " << length
@@ -201,10 +210,13 @@ static int OnSctpOutboundPacket(void* addr, void* data, size_t length,
 // a packet has been interpreted and parsed by usrsctp and found to contain
 // payload data. It is called by a usrsctp thread. It is assumed this function
 // will free the memory used by 'data'.
-static int OnSctpInboundPacket(struct socket* sock, union sctp_sockstore addr,
-                               void* data, size_t length,
-                               struct sctp_rcvinfo rcv, int flags,
-                               void* ulp_info) {
+int OnSctpInboundPacket(struct socket* sock,
+                        union sctp_sockstore addr,
+                        void* data,
+                        size_t length,
+                        struct sctp_rcvinfo rcv,
+                        int flags,
+                        void* ulp_info) {
   SctpDataMediaChannel* channel = static_cast<SctpDataMediaChannel*>(ulp_info);
   // Post data to the channel's receiver thread (copying it).
   // TODO(ldixon): Unclear if copy is needed as this method is responsible for
@@ -212,7 +224,7 @@ static int OnSctpInboundPacket(struct socket* sock, union sctp_sockstore addr,
   const SctpDataMediaChannel::PayloadProtocolIdentifier ppid =
       static_cast<SctpDataMediaChannel::PayloadProtocolIdentifier>(
           rtc::HostToNetwork32(rcv.rcv_ppid));
-  cricket::DataMessageType type = cricket::DMT_NONE;
+  DataMessageType type = DMT_NONE;
   if (!GetDataMediaType(ppid, &type) && !(flags & MSG_NOTIFICATION)) {
     // It's neither a notification nor a recognized data packet.  Drop it.
     LOG(LS_ERROR) << "Received an unknown PPID " << ppid
@@ -233,78 +245,94 @@ static int OnSctpInboundPacket(struct socket* sock, union sctp_sockstore addr,
   return 1;
 }
 
-// Set the initial value of the static SCTP Data Engines reference count.
-int SctpDataEngine::usrsctp_engines_count = 0;
+void InitializeUsrSctp() {
+  LOG(LS_INFO) << __FUNCTION__;
+  // First argument is udp_encapsulation_port, which is not releveant for our
+  // AF_CONN use of sctp.
+  usrsctp_init(0, &OnSctpOutboundPacket, &DebugSctpPrintf);
 
-SctpDataEngine::SctpDataEngine() {
-  if (usrsctp_engines_count == 0) {
-    // First argument is udp_encapsulation_port, which is not releveant for our
-    // AF_CONN use of sctp.
-    usrsctp_init(0, cricket::OnSctpOutboundPacket, debug_sctp_printf);
+  // To turn on/off detailed SCTP debugging. You will also need to have the
+  // SCTP_DEBUG cpp defines flag.
+  // usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
 
-    // To turn on/off detailed SCTP debugging. You will also need to have the
-    // SCTP_DEBUG cpp defines flag.
-    // usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
+  // TODO(ldixon): Consider turning this on/off.
+  usrsctp_sysctl_set_sctp_ecn_enable(0);
 
-    // TODO(ldixon): Consider turning this on/off.
-    usrsctp_sysctl_set_sctp_ecn_enable(0);
+  // This is harmless, but we should find out when the library default
+  // changes.
+  int send_size = usrsctp_sysctl_get_sctp_sendspace();
+  if (send_size != kSendBufferSize) {
+    LOG(LS_ERROR) << "Got different send size than expected: " << send_size;
+  }
 
-    // This is harmless, but we should find out when the library default
-    // changes.
-    int send_size = usrsctp_sysctl_get_sctp_sendspace();
-    if (send_size != kSendBufferSize) {
-      LOG(LS_ERROR) << "Got different send size than expected: " << send_size;
+  // TODO(ldixon): Consider turning this on/off.
+  // This is not needed right now (we don't do dynamic address changes):
+  // If SCTP Auto-ASCONF is enabled, the peer is informed automatically
+  // when a new address is added or removed. This feature is enabled by
+  // default.
+  // usrsctp_sysctl_set_sctp_auto_asconf(0);
+
+  // TODO(ldixon): Consider turning this on/off.
+  // Add a blackhole sysctl. Setting it to 1 results in no ABORTs
+  // being sent in response to INITs, setting it to 2 results
+  // in no ABORTs being sent for received OOTB packets.
+  // This is similar to the TCP sysctl.
+  //
+  // See: http://lakerest.net/pipermail/sctp-coders/2012-January/009438.html
+  // See: http://svnweb.freebsd.org/base?view=revision&revision=229805
+  // usrsctp_sysctl_set_sctp_blackhole(2);
+
+  // Set the number of default outgoing streams.  This is the number we'll
+  // send in the SCTP INIT message.  The 'appropriate default' in the
+  // second paragraph of
+  // http://tools.ietf.org/html/draft-ietf-rtcweb-data-channel-05#section-6.2
+  // is kMaxSctpSid.
+  usrsctp_sysctl_set_sctp_nr_outgoing_streams_default(kMaxSctpSid);
+}
+
+void UninitializeUsrSctp() {
+  LOG(LS_INFO) << __FUNCTION__;
+  // usrsctp_finish() may fail if it's called too soon after the channels are
+  // closed. Wait and try again until it succeeds for up to 3 seconds.
+  for (size_t i = 0; i < 300; ++i) {
+    if (usrsctp_finish() == 0) {
+      return;
     }
 
-    // TODO(ldixon): Consider turning this on/off.
-    // This is not needed right now (we don't do dynamic address changes):
-    // If SCTP Auto-ASCONF is enabled, the peer is informed automatically
-    // when a new address is added or removed. This feature is enabled by
-    // default.
-    // usrsctp_sysctl_set_sctp_auto_asconf(0);
-
-    // TODO(ldixon): Consider turning this on/off.
-    // Add a blackhole sysctl. Setting it to 1 results in no ABORTs
-    // being sent in response to INITs, setting it to 2 results
-    // in no ABORTs being sent for received OOTB packets.
-    // This is similar to the TCP sysctl.
-    //
-    // See: http://lakerest.net/pipermail/sctp-coders/2012-January/009438.html
-    // See: http://svnweb.freebsd.org/base?view=revision&revision=229805
-    // usrsctp_sysctl_set_sctp_blackhole(2);
-
-    // Set the number of default outgoing streams.  This is the number we'll
-    // send in the SCTP INIT message.  The 'appropriate default' in the
-    // second paragraph of
-    // http://tools.ietf.org/html/draft-ietf-rtcweb-data-channel-05#section-6.2
-    // is cricket::kMaxSctpSid.
-    usrsctp_sysctl_set_sctp_nr_outgoing_streams_default(
-        cricket::kMaxSctpSid);
+    rtc::Thread::SleepMs(10);
   }
-  usrsctp_engines_count++;
+  LOG(LS_ERROR) << "Failed to shutdown usrsctp.";
+}
 
-  cricket::DataCodec codec(kGoogleSctpDataCodecId, kGoogleSctpDataCodecName);
+void IncrementUsrSctpUsageCount() {
+  rtc::GlobalLockScope lock(&g_usrsctp_lock_);
+  if (!g_usrsctp_usage_count) {
+    InitializeUsrSctp();
+  }
+  ++g_usrsctp_usage_count;
+}
+
+void DecrementUsrSctpUsageCount() {
+  rtc::GlobalLockScope lock(&g_usrsctp_lock_);
+  --g_usrsctp_usage_count;
+  if (!g_usrsctp_usage_count) {
+    UninitializeUsrSctp();
+  }
+}
+
+DataCodec GetSctpDataCodec() {
+  DataCodec codec(kGoogleSctpDataCodecId, kGoogleSctpDataCodecName);
   codec.SetParam(kCodecParamPort, kSctpDefaultPort);
-  codecs_.push_back(codec);
+  return codec;
 }
 
-SctpDataEngine::~SctpDataEngine() {
-  usrsctp_engines_count--;
-  LOG(LS_VERBOSE) << "usrsctp_engines_count:" << usrsctp_engines_count;
+}  // namespace
 
-  if (usrsctp_engines_count == 0) {
-    // usrsctp_finish() may fail if it's called too soon after the channels are
-    // closed. Wait and try again until it succeeds for up to 3 seconds.
-    for (size_t i = 0; i < 300; ++i) {
-      if (usrsctp_finish() == 0)
-        return;
+SctpDataEngine::SctpDataEngine() : codecs_(1, GetSctpDataCodec()) {}
 
-      rtc::Thread::SleepMs(10);
-    }
-    LOG(LS_ERROR) << "Failed to shutdown usrsctp.";
-  }
-}
+SctpDataEngine::~SctpDataEngine() {}
 
+// Called on the worker thread.
 DataMediaChannel* SctpDataEngine::CreateChannel(
     DataChannelType data_channel_type) {
   if (data_channel_type != DCT_SCTP) {
@@ -314,7 +342,7 @@ DataMediaChannel* SctpDataEngine::CreateChannel(
 }
 
 // static
-SctpDataMediaChannel* SctpDataEngine::GetChannelFromSocket(
+SctpDataMediaChannel* SctpDataMediaChannel::GetChannelFromSocket(
     struct socket* sock) {
   struct sockaddr* addrs = nullptr;
   int naddrs = usrsctp_getladdrs(sock, 0, &addrs);
@@ -336,8 +364,8 @@ SctpDataMediaChannel* SctpDataEngine::GetChannelFromSocket(
 }
 
 // static
-int SctpDataEngine::SendThresholdCallback(struct socket* sock,
-                                          uint32_t sb_free) {
+int SctpDataMediaChannel::SendThresholdCallback(struct socket* sock,
+                                                uint32_t sb_free) {
   // Fired on our I/O thread.  SctpDataMediaChannel::OnPacketReceived() gets
   // a packet containing acknowledgments, which goes into usrsctp_conninput,
   // and then back here.
@@ -389,17 +417,19 @@ bool SctpDataMediaChannel::OpenSctpSocket() {
     return false;
   }
 
+  IncrementUsrSctpUsageCount();
+
   // If kSendBufferSize isn't reflective of reality, we log an error, but we
   // still have to do something reasonable here.  Look up what the buffer's
   // real size is and set our threshold to something reasonable.
   const static int kSendThreshold = usrsctp_sysctl_get_sctp_sendspace() / 2;
 
-  sock_ = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP,
-                         cricket::OnSctpInboundPacket,
-                         &SctpDataEngine::SendThresholdCallback,
-                         kSendThreshold, this);
+  sock_ = usrsctp_socket(
+      AF_CONN, SOCK_STREAM, IPPROTO_SCTP, OnSctpInboundPacket,
+      &SctpDataMediaChannel::SendThresholdCallback, kSendThreshold, this);
   if (!sock_) {
     LOG_ERRNO(LS_ERROR) << debug_name_ << "Failed to create SCTP socket.";
+    DecrementUsrSctpUsageCount();
     return false;
   }
 
@@ -488,6 +518,8 @@ void SctpDataMediaChannel::CloseSctpSocket() {
     usrsctp_close(sock_);
     sock_ = NULL;
     usrsctp_deregister_address(this);
+
+    DecrementUsrSctpUsageCount();
   }
 }
 
@@ -599,7 +631,7 @@ bool SctpDataMediaChannel::SendData(
     return false;
   }
 
-  if (params.type != cricket::DMT_CONTROL &&
+  if (params.type != DMT_CONTROL &&
       open_streams_.find(params.ssrc) == open_streams_.end()) {
     LOG(LS_WARNING) << debug_name_ << "->SendData(...): "
                     << "Not sending data because ssrc is unknown: "
@@ -717,7 +749,7 @@ bool SctpDataMediaChannel::AddStream(const StreamParams& stream) {
   }
 
   const uint32_t ssrc = stream.first_ssrc();
-  if (ssrc >= cricket::kMaxSctpSid) {
+  if (ssrc >= kMaxSctpSid) {
     LOG(LS_WARNING) << debug_name_ << "->Add(Send|Recv)Stream(...): "
                     << "Not adding data stream '" << stream.id
                     << "' with ssrc=" << ssrc
@@ -984,8 +1016,9 @@ void SctpDataMediaChannel::OnPacketFromSctpToNetwork(
 }
 
 bool SctpDataMediaChannel::SendQueuedStreamResets() {
-  if (!sent_reset_streams_.empty() || queued_reset_streams_.empty())
+  if (!sent_reset_streams_.empty() || queued_reset_streams_.empty()) {
     return true;
+  }
 
   LOG(LS_VERBOSE) << "SendQueuedStreamResets[" << debug_name_ << "]: Sending ["
                   << ListStreams(queued_reset_streams_) << "], Open: ["

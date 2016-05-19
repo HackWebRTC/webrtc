@@ -29,13 +29,14 @@
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/sctp/sctpdataengine.h"
 
+namespace cricket {
 enum {
   MSG_PACKET = 1,
 };
 
 // Fake NetworkInterface that sends/receives sctp packets.  The one in
 // webrtc/media/base/fakenetworkinterface.h only works with rtp/rtcp.
-class SctpFakeNetworkInterface : public cricket::MediaChannel::NetworkInterface,
+class SctpFakeNetworkInterface : public MediaChannel::NetworkInterface,
                                  public rtc::MessageHandler {
  public:
   explicit SctpFakeNetworkInterface(rtc::Thread* thread)
@@ -43,7 +44,7 @@ class SctpFakeNetworkInterface : public cricket::MediaChannel::NetworkInterface,
       dest_(NULL) {
   }
 
-  void SetDestination(cricket::DataMediaChannel* dest) { dest_ = dest; }
+  void SetDestination(DataMediaChannel* dest) { dest_ = dest; }
 
  protected:
   // Called to send raw packet down the wire (e.g. SCTP an packet).
@@ -91,7 +92,7 @@ class SctpFakeNetworkInterface : public cricket::MediaChannel::NetworkInterface,
  private:
   // Not owned by this class.
   rtc::Thread* thread_;
-  cricket::DataMediaChannel* dest_;
+  DataMediaChannel* dest_;
 };
 
 // This is essentially a buffer to hold recieved data. It stores only the last
@@ -106,11 +107,12 @@ class SctpFakeDataReceiver : public sigslot::has_slots<> {
   void Clear() {
     received_ = false;
     last_data_ = "";
-    last_params_ = cricket::ReceiveDataParams();
+    last_params_ = ReceiveDataParams();
   }
 
-  virtual void OnDataReceived(const cricket::ReceiveDataParams& params,
-                              const char* data, size_t length) {
+  virtual void OnDataReceived(const ReceiveDataParams& params,
+                              const char* data,
+                              size_t length) {
     received_ = true;
     last_data_ = std::string(data, length);
     last_params_ = params;
@@ -118,12 +120,12 @@ class SctpFakeDataReceiver : public sigslot::has_slots<> {
 
   bool received() const { return received_; }
   std::string last_data() const { return last_data_; }
-  cricket::ReceiveDataParams last_params() const { return last_params_; }
+  ReceiveDataParams last_params() const { return last_params_; }
 
  private:
   bool received_;
   std::string last_data_;
-  cricket::ReceiveDataParams last_params_;
+  ReceiveDataParams last_params_;
 };
 
 class SignalReadyToSendObserver : public sigslot::has_slots<> {
@@ -147,7 +149,7 @@ class SignalReadyToSendObserver : public sigslot::has_slots<> {
 class SignalChannelClosedObserver : public sigslot::has_slots<> {
  public:
   SignalChannelClosedObserver() {}
-  void BindSelf(cricket::SctpDataMediaChannel* channel) {
+  void BindSelf(SctpDataMediaChannel* channel) {
     channel->SignalStreamClosedRemotely.connect(
         this, &SignalChannelClosedObserver::OnStreamClosed);
   }
@@ -168,12 +170,12 @@ class SignalChannelClosedObserver : public sigslot::has_slots<> {
 
 class SignalChannelClosedReopener : public sigslot::has_slots<> {
  public:
-  SignalChannelClosedReopener(cricket::SctpDataMediaChannel* channel,
-                              cricket::SctpDataMediaChannel* peer)
+  SignalChannelClosedReopener(SctpDataMediaChannel* channel,
+                              SctpDataMediaChannel* peer)
       : channel_(channel), peer_(peer) {}
 
   void OnStreamClosed(int stream) {
-    cricket::StreamParams p(cricket::StreamParams::CreateLegacy(stream));
+    StreamParams p(StreamParams::CreateLegacy(stream));
     channel_->AddSendStream(p);
     channel_->AddRecvStream(p);
     peer_->AddSendStream(p);
@@ -186,8 +188,8 @@ class SignalChannelClosedReopener : public sigslot::has_slots<> {
   }
 
  private:
-  cricket::SctpDataMediaChannel* channel_;
-  cricket::SctpDataMediaChannel* peer_;
+  SctpDataMediaChannel* channel_;
+  SctpDataMediaChannel* peer_;
   std::vector<int> streams_;
 };
 
@@ -200,9 +202,7 @@ class SctpDataMediaChannelTest : public testing::Test,
   static void SetUpTestCase() {
   }
 
-  virtual void SetUp() {
-    engine_.reset(new cricket::SctpDataEngine());
-  }
+  virtual void SetUp() { engine_.reset(new SctpDataEngine()); }
 
   void SetupConnectedChannels() {
     net1_.reset(new SctpFakeNetworkInterface(rtc::Thread::Current()));
@@ -212,11 +212,11 @@ class SctpDataMediaChannelTest : public testing::Test,
     chan1_ready_to_send_count_ = 0;
     chan2_ready_to_send_count_ = 0;
     chan1_.reset(CreateChannel(net1_.get(), recv1_.get()));
-    chan1_->set_debug_name("chan1/connector");
+    chan1_->set_debug_name_for_testing("chan1/connector");
     chan1_->SignalReadyToSend.connect(
         this, &SctpDataMediaChannelTest::OnChan1ReadyToSend);
     chan2_.reset(CreateChannel(net2_.get(), recv2_.get()));
-    chan2_->set_debug_name("chan2/listener");
+    chan2_->set_debug_name_for_testing("chan2/listener");
     chan2_->SignalReadyToSend.connect(
         this, &SctpDataMediaChannelTest::OnChan2ReadyToSend);
     // Setup two connected channels ready to send and receive.
@@ -254,7 +254,7 @@ class SctpDataMediaChannelTest : public testing::Test,
 
   bool AddStream(int ssrc) {
     bool ret = true;
-    cricket::StreamParams p(cricket::StreamParams::CreateLegacy(ssrc));
+    StreamParams p(StreamParams::CreateLegacy(ssrc));
     ret = ret && chan1_->AddSendStream(p);
     ret = ret && chan1_->AddRecvStream(p);
     ret = ret && chan2_->AddSendStream(p);
@@ -262,11 +262,10 @@ class SctpDataMediaChannelTest : public testing::Test,
     return ret;
   }
 
-  cricket::SctpDataMediaChannel* CreateChannel(
-      SctpFakeNetworkInterface* net, SctpFakeDataReceiver* recv) {
-    cricket::SctpDataMediaChannel* channel =
-        static_cast<cricket::SctpDataMediaChannel*>(engine_->CreateChannel(
-            cricket::DCT_SCTP));
+  SctpDataMediaChannel* CreateChannel(SctpFakeNetworkInterface* net,
+                                      SctpFakeDataReceiver* recv) {
+    SctpDataMediaChannel* channel =
+        static_cast<SctpDataMediaChannel*>(engine_->CreateChannel(DCT_SCTP));
     channel->SetInterface(net);
     // When data is received, pass it to the SctpFakeDataReceiver.
     channel->SignalDataReceived.connect(
@@ -274,11 +273,11 @@ class SctpDataMediaChannelTest : public testing::Test,
     return channel;
   }
 
-  bool SendData(cricket::SctpDataMediaChannel* chan,
+  bool SendData(SctpDataMediaChannel* chan,
                 uint32_t ssrc,
                 const std::string& msg,
-                cricket::SendDataResult* result) {
-    cricket::SendDataParams params;
+                SendDataResult* result) {
+    SendDataParams params;
     params.ssrc = ssrc;
 
     return chan->SendData(params, rtc::CopyOnWriteBuffer(
@@ -304,21 +303,21 @@ class SctpDataMediaChannelTest : public testing::Test,
     return !thread->IsQuitting();
   }
 
-  cricket::SctpDataMediaChannel* channel1() { return chan1_.get(); }
-  cricket::SctpDataMediaChannel* channel2() { return chan2_.get(); }
+  SctpDataMediaChannel* channel1() { return chan1_.get(); }
+  SctpDataMediaChannel* channel2() { return chan2_.get(); }
   SctpFakeDataReceiver* receiver1() { return recv1_.get(); }
   SctpFakeDataReceiver* receiver2() { return recv2_.get(); }
 
   int channel1_ready_to_send_count() { return chan1_ready_to_send_count_; }
   int channel2_ready_to_send_count() { return chan2_ready_to_send_count_; }
  private:
-  std::unique_ptr<cricket::SctpDataEngine> engine_;
+  std::unique_ptr<SctpDataEngine> engine_;
   std::unique_ptr<SctpFakeNetworkInterface> net1_;
   std::unique_ptr<SctpFakeNetworkInterface> net2_;
   std::unique_ptr<SctpFakeDataReceiver> recv1_;
   std::unique_ptr<SctpFakeDataReceiver> recv2_;
-  std::unique_ptr<cricket::SctpDataMediaChannel> chan1_;
-  std::unique_ptr<cricket::SctpDataMediaChannel> chan2_;
+  std::unique_ptr<SctpDataMediaChannel> chan1_;
+  std::unique_ptr<SctpDataMediaChannel> chan2_;
 
   int chan1_ready_to_send_count_;
   int chan2_ready_to_send_count_;
@@ -345,12 +344,12 @@ TEST_F(SctpDataMediaChannelTest, SignalReadyToSend) {
   channel2()->SignalReadyToSend.connect(&signal_observer_2,
                                         &SignalReadyToSendObserver::OnSignaled);
 
-  cricket::SendDataResult result;
+  SendDataResult result;
   ASSERT_TRUE(SendData(channel1(), 1, "hello?", &result));
-  EXPECT_EQ(cricket::SDR_SUCCESS, result);
+  EXPECT_EQ(SDR_SUCCESS, result);
   EXPECT_TRUE_WAIT(ReceivedData(receiver2(), 1, "hello?"), 1000);
   ASSERT_TRUE(SendData(channel2(), 2, "hi chan1", &result));
-  EXPECT_EQ(cricket::SDR_SUCCESS, result);
+  EXPECT_EQ(SDR_SUCCESS, result);
   EXPECT_TRUE_WAIT(ReceivedData(receiver1(), 2, "hi chan1"), 1000);
 
   EXPECT_TRUE_WAIT(signal_observer_1.IsSignaled(true), 1000);
@@ -360,10 +359,10 @@ TEST_F(SctpDataMediaChannelTest, SignalReadyToSend) {
 TEST_F(SctpDataMediaChannelTest, SendData) {
   SetupConnectedChannels();
 
-  cricket::SendDataResult result;
+  SendDataResult result;
   LOG(LS_VERBOSE) << "chan1 sending: 'hello?' -----------------------------";
   ASSERT_TRUE(SendData(channel1(), 1, "hello?", &result));
-  EXPECT_EQ(cricket::SDR_SUCCESS, result);
+  EXPECT_EQ(SDR_SUCCESS, result);
   EXPECT_TRUE_WAIT(ReceivedData(receiver2(), 1, "hello?"), 1000);
   LOG(LS_VERBOSE) << "recv2.received=" << receiver2()->received()
                   << ", recv2.last_params.ssrc="
@@ -376,7 +375,7 @@ TEST_F(SctpDataMediaChannelTest, SendData) {
 
   LOG(LS_VERBOSE) << "chan2 sending: 'hi chan1' -----------------------------";
   ASSERT_TRUE(SendData(channel2(), 2, "hi chan1", &result));
-  EXPECT_EQ(cricket::SDR_SUCCESS, result);
+  EXPECT_EQ(SDR_SUCCESS, result);
   EXPECT_TRUE_WAIT(ReceivedData(receiver1(), 2, "hi chan1"), 1000);
   LOG(LS_VERBOSE) << "recv1.received=" << receiver1()->received()
                   << ", recv1.last_params.ssrc="
@@ -392,8 +391,8 @@ TEST_F(SctpDataMediaChannelTest, SendData) {
 TEST_F(SctpDataMediaChannelTest, SendDataBlocked) {
   SetupConnectedChannels();
 
-  cricket::SendDataResult result;
-  cricket::SendDataParams params;
+  SendDataResult result;
+  SendDataParams params;
   params.ssrc = 1;
 
   std::vector<char> buffer(1024 * 64, 0);
@@ -401,11 +400,11 @@ TEST_F(SctpDataMediaChannelTest, SendDataBlocked) {
   for (size_t i = 0; i < 100; ++i) {
     channel1()->SendData(
         params, rtc::CopyOnWriteBuffer(&buffer[0], buffer.size()), &result);
-    if (result == cricket::SDR_BLOCK)
+    if (result == SDR_BLOCK)
       break;
   }
 
-  EXPECT_EQ(cricket::SDR_BLOCK, result);
+  EXPECT_EQ(SDR_BLOCK, result);
 }
 
 TEST_F(SctpDataMediaChannelTest, ClosesRemoteStream) {
@@ -414,12 +413,12 @@ TEST_F(SctpDataMediaChannelTest, ClosesRemoteStream) {
   chan_1_sig_receiver.BindSelf(channel1());
   chan_2_sig_receiver.BindSelf(channel2());
 
-  cricket::SendDataResult result;
+  SendDataResult result;
   ASSERT_TRUE(SendData(channel1(), 1, "hello?", &result));
-  EXPECT_EQ(cricket::SDR_SUCCESS, result);
+  EXPECT_EQ(SDR_SUCCESS, result);
   EXPECT_TRUE_WAIT(ReceivedData(receiver2(), 1, "hello?"), 1000);
   ASSERT_TRUE(SendData(channel2(), 2, "hi chan1", &result));
-  EXPECT_EQ(cricket::SDR_SUCCESS, result);
+  EXPECT_EQ(SDR_SUCCESS, result);
   EXPECT_TRUE_WAIT(ReceivedData(receiver1(), 2, "hi chan1"), 1000);
 
   // Close channel 1.  Channel 2 should notify us.
@@ -434,12 +433,12 @@ TEST_F(SctpDataMediaChannelTest, ClosesTwoRemoteStreams) {
   chan_1_sig_receiver.BindSelf(channel1());
   chan_2_sig_receiver.BindSelf(channel2());
 
-  cricket::SendDataResult result;
+  SendDataResult result;
   ASSERT_TRUE(SendData(channel1(), 1, "hello?", &result));
-  EXPECT_EQ(cricket::SDR_SUCCESS, result);
+  EXPECT_EQ(SDR_SUCCESS, result);
   EXPECT_TRUE_WAIT(ReceivedData(receiver2(), 1, "hello?"), 1000);
   ASSERT_TRUE(SendData(channel2(), 2, "hi chan1", &result));
-  EXPECT_EQ(cricket::SDR_SUCCESS, result);
+  EXPECT_EQ(SDR_SUCCESS, result);
   EXPECT_TRUE_WAIT(ReceivedData(receiver1(), 2, "hi chan1"), 1000);
 
   // Close two streams on one side.
@@ -457,12 +456,12 @@ TEST_F(SctpDataMediaChannelTest, ClosesStreamsOnBothSides) {
   chan_1_sig_receiver.BindSelf(channel1());
   chan_2_sig_receiver.BindSelf(channel2());
 
-  cricket::SendDataResult result;
+  SendDataResult result;
   ASSERT_TRUE(SendData(channel1(), 1, "hello?", &result));
-  EXPECT_EQ(cricket::SDR_SUCCESS, result);
+  EXPECT_EQ(SDR_SUCCESS, result);
   EXPECT_TRUE_WAIT(ReceivedData(receiver2(), 1, "hello?"), 1000);
   ASSERT_TRUE(SendData(channel2(), 2, "hi chan1", &result));
-  EXPECT_EQ(cricket::SDR_SUCCESS, result);
+  EXPECT_EQ(SDR_SUCCESS, result);
   EXPECT_TRUE_WAIT(ReceivedData(receiver1(), 2, "hi chan1"), 1000);
 
   // Close one stream on channel1(), while closing three streams on
@@ -484,7 +483,7 @@ TEST_F(SctpDataMediaChannelTest, EngineSignalsRightChannel) {
   EXPECT_TRUE_WAIT(channel1()->socket() != NULL, 1000);
   struct socket *sock = const_cast<struct socket*>(channel1()->socket());
   int prior_count = channel1_ready_to_send_count();
-  cricket::SctpDataEngine::SendThresholdCallback(sock, 0);
+  SctpDataMediaChannel::SendThresholdCallback(sock, 0);
   EXPECT_GT(channel1_ready_to_send_count(), prior_count);
 }
 
@@ -503,12 +502,12 @@ TEST_F(SctpDataMediaChannelTest, RefusesHighNumberedChannels) {
 TEST_F(SctpDataMediaChannelTest, MAYBE_ReusesAStream) {
   // Shut down channel 1, then open it up again for reuse.
   SetupConnectedChannels();
-  cricket::SendDataResult result;
+  SendDataResult result;
   SignalChannelClosedObserver chan_2_sig_receiver;
   chan_2_sig_receiver.BindSelf(channel2());
 
   ASSERT_TRUE(SendData(channel1(), 1, "hello?", &result));
-  EXPECT_EQ(cricket::SDR_SUCCESS, result);
+  EXPECT_EQ(SDR_SUCCESS, result);
   EXPECT_TRUE_WAIT(ReceivedData(receiver2(), 1, "hello?"), 1000);
 
   channel1()->RemoveSendStream(1);
@@ -518,8 +517,10 @@ TEST_F(SctpDataMediaChannelTest, MAYBE_ReusesAStream) {
   // Create a new channel 1.
   AddStream(1);
   ASSERT_TRUE(SendData(channel1(), 1, "hi?", &result));
-  EXPECT_EQ(cricket::SDR_SUCCESS, result);
+  EXPECT_EQ(SDR_SUCCESS, result);
   EXPECT_TRUE_WAIT(ReceivedData(receiver2(), 1, "hi?"), 1000);
   channel1()->RemoveSendStream(1);
   EXPECT_TRUE_WAIT(chan_2_sig_receiver.StreamCloseCount(1) == 2, 1000);
 }
+
+}  // namespace cricket
