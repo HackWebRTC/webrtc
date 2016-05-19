@@ -86,7 +86,7 @@ def main():
       os.environ['GYP_GENERATOR_FLAGS'] = (
           gyp_generator_flags + ' msvs_error_on_missing_sources=1')
 
-  vs2013_runtime_dll_dirs = None, None
+  vs2013_runtime_dll_dirs = None
   if int(os.environ.get('DEPOT_TOOLS_WIN_TOOLCHAIN', '1')):
     vs2013_runtime_dll_dirs = vs_toolchain.SetEnvironmentAndGetRuntimeDllDirs()
 
@@ -116,6 +116,7 @@ def main():
   gyp_rc = gyp.main(args)
 
   if vs2013_runtime_dll_dirs:
+    # pylint: disable=unpacking-non-sequence
     x64_runtime, x86_runtime = vs2013_runtime_dll_dirs
     vs_toolchain.CopyVsRuntimeDlls(
         os.path.join(checkout_root, gyp_chromium.GetOutputDirectory()),
