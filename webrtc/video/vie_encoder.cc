@@ -33,8 +33,10 @@ static const float kStopPaddingThresholdMs = 2000;
 ViEEncoder::ViEEncoder(uint32_t number_of_cores,
                        ProcessThread* module_process_thread,
                        SendStatisticsProxy* stats_proxy,
-                       OveruseFrameDetector* overuse_detector)
+                       OveruseFrameDetector* overuse_detector,
+                       EncodedImageCallback* sink)
     : number_of_cores_(number_of_cores),
+      sink_(sink),
       vp_(VideoProcessing::Create()),
       video_sender_(Clock::GetRealTimeClock(), this, this, this),
       stats_proxy_(stats_proxy),
@@ -84,10 +86,10 @@ int32_t ViEEncoder::DeRegisterExternalEncoder(uint8_t pl_type) {
   video_sender_.RegisterExternalEncoder(nullptr, pl_type, false);
   return 0;
 }
+
 void ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec,
                             int min_transmit_bitrate_bps,
-                            size_t max_data_payload_length,
-                            EncodedImageCallback* sink) {
+                            size_t max_data_payload_length) {
   // Setting target width and height for VPM.
   RTC_CHECK_EQ(VPM_OK,
                vp_->SetTargetResolution(video_codec.width, video_codec.height,
@@ -99,10 +101,6 @@ void ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec,
     rtc::CritScope lock(&data_cs_);
     encoder_config_ = video_codec;
     min_transmit_bitrate_bps_ = min_transmit_bitrate_bps;
-  }
-  {
-    rtc::CritScope lock(&sink_cs_);
-    sink_ = sink;
   }
 
   bool success = video_sender_.RegisterSendCodec(
@@ -294,11 +292,8 @@ int32_t ViEEncoder::Encoded(const EncodedImage& encoded_image,
     stats_proxy_->OnSendEncodedImage(encoded_image, codec_specific_info);
   }
 
-  int success = 0;
-  {
-    rtc::CritScope lock(&sink_cs_);
-    success = sink_->Encoded(encoded_image, codec_specific_info, fragmentation);
-  }
+  int success =
+      sink_->Encoded(encoded_image, codec_specific_info, fragmentation);
 
   overuse_detector_->FrameSent(encoded_image._timeStamp);
   return success;

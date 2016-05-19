@@ -58,7 +58,9 @@ class ViEEncoder : public VideoEncoderRateObserver,
   ViEEncoder(uint32_t number_of_cores,
              ProcessThread* module_process_thread,
              SendStatisticsProxy* stats_proxy,
-             OveruseFrameDetector* overuse_detector);
+             OveruseFrameDetector* overuse_detector,
+             EncodedImageCallback* sink);
+
   ~ViEEncoder();
 
   vcm::VideoSender* video_sender();
@@ -77,8 +79,7 @@ class ViEEncoder : public VideoEncoderRateObserver,
   int32_t DeRegisterExternalEncoder(uint8_t pl_type);
   void SetEncoder(const VideoCodec& video_codec,
                   int min_transmit_bitrate_bps,
-                  size_t max_data_payload_length,
-                  EncodedImageCallback* sink);
+                  size_t max_data_payload_length);
 
   void EncodeVideoFrame(const VideoFrame& video_frame);
   void SendKeyFrame();
@@ -119,6 +120,7 @@ class ViEEncoder : public VideoEncoderRateObserver,
   void TraceFrameDropEnd() EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
 
   const uint32_t number_of_cores_;
+  EncodedImageCallback* const sink_;
 
   const std::unique_ptr<VideoProcessing> vp_;
   vcm::VideoSender video_sender_;
@@ -137,9 +139,6 @@ class ViEEncoder : public VideoEncoderRateObserver,
   uint32_t last_observed_bitrate_bps_ GUARDED_BY(data_cs_);
   bool encoder_paused_ GUARDED_BY(data_cs_);
   bool encoder_paused_and_dropped_frame_ GUARDED_BY(data_cs_);
-
-  rtc::CriticalSection sink_cs_;
-  EncodedImageCallback* sink_ GUARDED_BY(sink_cs_);
 
   ProcessThread* module_process_thread_;
 

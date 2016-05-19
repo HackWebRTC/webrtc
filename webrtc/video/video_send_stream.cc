@@ -379,7 +379,8 @@ VideoSendStream::VideoSendStream(
       vie_encoder_(num_cpu_cores,
                    module_process_thread_,
                    &stats_proxy_,
-                   &overuse_detector_),
+                   &overuse_detector_,
+                   this),
       encoder_feedback_(Clock::GetRealTimeClock(),
                         config.rtp.ssrcs,
                         &vie_encoder_),
@@ -554,7 +555,7 @@ void VideoSendStream::EncoderProcess() {
       payload_router_.SetSendStreams(encoder_settings->streams);
       vie_encoder_.SetEncoder(encoder_settings->video_codec,
                               encoder_settings->min_transmit_bitrate_bps,
-                              payload_router_.MaxPayloadLength(), this);
+                              payload_router_.MaxPayloadLength());
 
       // vie_encoder_.SetEncoder must be called before this.
       if (config_.suspend_below_min_bitrate)

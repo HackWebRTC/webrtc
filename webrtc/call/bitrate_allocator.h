@@ -112,7 +112,7 @@ class BitrateAllocator {
 
   rtc::CriticalSection crit_sect_;
   // Stored in a list to keep track of the insertion order.
-  ObserverConfigList bitrate_observer_configs_;
+  ObserverConfigList bitrate_observer_configs_ GUARDED_BY(crit_sect_);
   bool enforce_min_bitrate_ GUARDED_BY(crit_sect_);
   uint32_t last_bitrate_bps_ GUARDED_BY(crit_sect_);
   uint32_t last_non_zero_bitrate_bps_ GUARDED_BY(crit_sect_);
