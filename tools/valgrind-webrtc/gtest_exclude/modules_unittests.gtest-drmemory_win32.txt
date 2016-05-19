@@ -11,6 +11,7 @@ TestScaler.BoxScaleTest
 TestVideoSenderWithVp8.*
 VideoProcessingModuleTest.Denoising
 VideoSendersTest.*
+TestFrameBuffer2.*
 
 # https://code.google.com/p/webrtc/issues/detail?id=2323
 MouseCursorShapeTest.MatchCursors
