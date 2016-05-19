@@ -64,9 +64,9 @@ public class DirectRTCClient implements AppRTCClient, TCPChannelClient.TCPChanne
   // All alterations of the room state should be done from inside the looper thread.
   private ConnectionState roomState;
 
-  public DirectRTCClient(SignalingEvents events) {
+  public DirectRTCClient(SignalingEvents events, LooperExecutor looperExecutor) {
     this.events = events;
-    executor = new LooperExecutor();
+    executor = looperExecutor;
 
     executor.requestStart();
     roomState = ConnectionState.NEW;
@@ -100,7 +100,6 @@ public class DirectRTCClient implements AppRTCClient, TCPChannelClient.TCPChanne
         disconnectFromRoomInternal();
       }
     });
-    executor.requestStop();
   }
 
   /**
@@ -296,11 +295,13 @@ public class DirectRTCClient implements AppRTCClient, TCPChannelClient.TCPChanne
   @Override
   public void onTCPError(String description) {
     reportError("TCP connection error: " + description);
+    executor.requestStop();
   }
 
   @Override
   public void onTCPClose() {
     events.onChannelClose();
+    executor.requestStop();
   }
 
   // --------------------------------------------------------------------

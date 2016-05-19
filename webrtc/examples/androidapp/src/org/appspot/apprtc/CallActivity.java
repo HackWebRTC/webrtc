@@ -245,7 +245,7 @@ public class CallActivity extends Activity
       appRtcClient = new WebSocketRTCClient(this, new LooperExecutor());
     } else {
       Log.i(TAG, "Using DirectRTCClient because room name looks like an IP.");
-      appRtcClient = new DirectRTCClient(this);
+      appRtcClient = new DirectRTCClient(this, new LooperExecutor());
     }
     // Create connection parameters.
     roomConnectionParameters = new RoomConnectionParameters(
