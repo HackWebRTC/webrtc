@@ -246,11 +246,6 @@ class VideoCapturer : public sigslot::has_slots<>,
 
   void SetCaptureFormat(const VideoFormat* format) {
     capture_format_.reset(format ? new VideoFormat(*format) : NULL);
-    if (capture_format_) {
-      ASSERT(capture_format_->interval > 0 &&
-             "Capture format expected to have positive interval.");
-      video_adapter_.SetExpectedInputFrameInterval(capture_format_->interval);
-    }
   }
 
   void SetSupportedFormats(const std::vector<VideoFormat>& formats);

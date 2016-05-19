@@ -11,6 +11,7 @@
 #include "webrtc/media/base/videoadapter.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <limits>
 
 #include "webrtc/base/checks.h"
@@ -118,22 +119,43 @@ VideoAdapter::VideoAdapter()
       adaption_changes_(0),
       previous_width_(0),
       previous_height_(0),
-      input_interval_(0),
-      interval_next_frame_(0),
       resolution_request_max_pixel_count_(std::numeric_limits<int>::max()),
       resolution_request_max_pixel_count_step_up_(0) {}
 
 VideoAdapter::~VideoAdapter() {}
 
-void VideoAdapter::SetExpectedInputFrameInterval(int64_t interval) {
-  // TODO(perkj): Consider measuring input frame rate instead.
-  // Frame rate typically varies depending on lighting.
+bool VideoAdapter::KeepFrame(int64_t in_timestamp_ns) {
   rtc::CritScope cs(&critical_section_);
-  input_interval_ = interval;
+  if (!requested_format_ || requested_format_->interval == 0)
+    return true;
+
+  if (next_frame_timestamp_ns_) {
+    // Time until next frame should be outputted.
+    const int64_t time_until_next_frame_ns =
+        (*next_frame_timestamp_ns_ - in_timestamp_ns);
+
+    // Continue if timestamp is withing expected range.
+    if (std::abs(time_until_next_frame_ns) < 2 * requested_format_->interval) {
+      // Drop if a frame shouldn't be outputted yet.
+      if (time_until_next_frame_ns > 0)
+        return false;
+      // Time to output new frame.
+      *next_frame_timestamp_ns_ += requested_format_->interval;
+      return true;
+    }
+  }
+
+  // First timestamp received or timestamp is way outside expected range, so
+  // reset. Set first timestamp target to just half the interval to prefer
+  // keeping frames in case of jitter.
+  next_frame_timestamp_ns_ =
+      rtc::Optional<int64_t>(in_timestamp_ns + requested_format_->interval / 2);
+  return true;
 }
 
 void VideoAdapter::AdaptFrameResolution(int in_width,
                                         int in_height,
+                                        int64_t in_timestamp_ns,
                                         int* cropped_width,
                                         int* cropped_height,
                                         int* out_width,
@@ -150,25 +172,7 @@ void VideoAdapter::AdaptFrameResolution(int in_width,
   }
 
   // Drop the input frame if necessary.
-  bool should_drop = false;
-  if (max_pixel_count == 0) {
-    // Drop all frames as the output format is 0x0.
-    should_drop = true;
-  } else if (requested_format_ && requested_format_->interval > 0) {
-    // Drop some frames based on input fps and output fps.
-    // Normally output fps is less than input fps.
-    interval_next_frame_ += input_interval_;
-    if (interval_next_frame_ >= requested_format_->interval) {
-      interval_next_frame_ -= requested_format_->interval;
-      // Reset |interval_next_frame_| if it accumulates too much to avoid
-      // "catching up" behaviour.
-      if (interval_next_frame_ >= requested_format_->interval)
-        interval_next_frame_ = 0;
-    } else {
-      should_drop = true;
-    }
-  }
-  if (should_drop) {
+  if (max_pixel_count == 0 || !KeepFrame(in_timestamp_ns)) {
     // Show VAdapt log every 90 frames dropped. (3 seconds)
     if ((frames_in_ - frames_out_) % 90 == 0) {
       // TODO(fbarchard): Reduce to LS_VERBOSE when adapter info is not needed
@@ -179,7 +183,7 @@ void VideoAdapter::AdaptFrameResolution(int in_width,
                    << " Changes: " << adaption_changes_
                    << " Input: " << in_width
                    << "x" << in_height
-                   << " i" << input_interval_
+                   << " timestamp: " << in_timestamp_ns
                    << " Output: i"
                    << (requested_format_ ? requested_format_->interval : 0);
     }
@@ -238,7 +242,7 @@ void VideoAdapter::AdaptFrameResolution(int in_width,
     LOG(LS_INFO) << "Frame size changed: scaled " << frames_scaled_ << " / out "
                  << frames_out_ << " / in " << frames_in_
                  << " Changes: " << adaption_changes_ << " Input: " << in_width
-                 << "x" << in_height << " i" << input_interval_
+                 << "x" << in_height
                  << " Scale: " << scale.numerator << "/" << scale.denominator
                  << " Output: " << *out_width << "x" << *out_height << " i"
                  << (requested_format_ ? requested_format_->interval : 0);
@@ -251,7 +255,7 @@ void VideoAdapter::AdaptFrameResolution(int in_width,
 void VideoAdapter::OnOutputFormatRequest(const VideoFormat& format) {
   rtc::CritScope cs(&critical_section_);
   requested_format_ = rtc::Optional<VideoFormat>(format);
-  interval_next_frame_ = 0;
+  next_frame_timestamp_ns_ = rtc::Optional<int64_t>();
 }
 
 void VideoAdapter::OnResolutionRequest(

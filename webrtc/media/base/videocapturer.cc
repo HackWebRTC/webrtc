@@ -227,6 +227,7 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
   if (enable_video_adapter_ && !IsScreencast()) {
     video_adapter_.AdaptFrameResolution(
         captured_frame->width, captured_frame->height,
+        captured_frame->time_stamp,
         &cropped_width, &cropped_height,
         &out_width, &out_height);
     if (out_width == 0 || out_height == 0) {
