@@ -311,8 +311,8 @@ TEST(RedPayloadSplitter, CheckRedPayloads) {
   // Use a real DecoderDatabase object here instead of a mock, since it is
   // easier to just register the payload types and let the actual implementation
   // do its job.
-  std::unique_ptr<MockAudioDecoderFactory> factory(new MockAudioDecoderFactory);
-  DecoderDatabase decoder_database(std::move(factory));
+  DecoderDatabase decoder_database(
+      new rtc::RefCountedObject<MockAudioDecoderFactory>);
   decoder_database.RegisterPayload(0, NetEqDecoder::kDecoderCNGnb, "cng-nb");
   decoder_database.RegisterPayload(1, NetEqDecoder::kDecoderPCMu, "pcmu");
   decoder_database.RegisterPayload(2, NetEqDecoder::kDecoderAVT, "avt");

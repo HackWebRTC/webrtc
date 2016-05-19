@@ -16,13 +16,15 @@
 namespace webrtc {
 
 TEST(AudioDecoderFactoryTest, CreateUnknownDecoder) {
-  std::unique_ptr<AudioDecoderFactory> adf = CreateBuiltinAudioDecoderFactory();
+  rtc::scoped_refptr<AudioDecoderFactory> adf =
+      CreateBuiltinAudioDecoderFactory();
   ASSERT_TRUE(adf);
   EXPECT_FALSE(adf->MakeAudioDecoder(SdpAudioFormat("rey", 8000, 1)));
 }
 
 TEST(AudioDecoderFactoryTest, CreatePcmu) {
-  std::unique_ptr<AudioDecoderFactory> adf = CreateBuiltinAudioDecoderFactory();
+  rtc::scoped_refptr<AudioDecoderFactory> adf =
+      CreateBuiltinAudioDecoderFactory();
   ASSERT_TRUE(adf);
   // PCMu supports 8 kHz, and any number of channels.
   EXPECT_FALSE(adf->MakeAudioDecoder(SdpAudioFormat("pcmu", 8000, 0)));
@@ -33,7 +35,8 @@ TEST(AudioDecoderFactoryTest, CreatePcmu) {
 }
 
 TEST(AudioDecoderFactoryTest, CreatePcma) {
-  std::unique_ptr<AudioDecoderFactory> adf = CreateBuiltinAudioDecoderFactory();
+  rtc::scoped_refptr<AudioDecoderFactory> adf =
+      CreateBuiltinAudioDecoderFactory();
   ASSERT_TRUE(adf);
   // PCMa supports 8 kHz, and any number of channels.
   EXPECT_FALSE(adf->MakeAudioDecoder(SdpAudioFormat("pcma", 8000, 0)));
@@ -44,7 +47,8 @@ TEST(AudioDecoderFactoryTest, CreatePcma) {
 }
 
 TEST(AudioDecoderFactoryTest, CreateIlbc) {
-  std::unique_ptr<AudioDecoderFactory> adf = CreateBuiltinAudioDecoderFactory();
+  rtc::scoped_refptr<AudioDecoderFactory> adf =
+      CreateBuiltinAudioDecoderFactory();
   ASSERT_TRUE(adf);
   // iLBC supports 8 kHz, 1 channel.
   EXPECT_FALSE(adf->MakeAudioDecoder(SdpAudioFormat("ilbc", 8000, 0)));
@@ -60,7 +64,8 @@ TEST(AudioDecoderFactoryTest, CreateIlbc) {
 }
 
 TEST(AudioDecoderFactoryTest, CreateIsac) {
-  std::unique_ptr<AudioDecoderFactory> adf = CreateBuiltinAudioDecoderFactory();
+  rtc::scoped_refptr<AudioDecoderFactory> adf =
+      CreateBuiltinAudioDecoderFactory();
   ASSERT_TRUE(adf);
   // iSAC supports 16 kHz, 1 channel. The float implementation additionally
   // supports 32 kHz, 1 channel.
@@ -77,7 +82,8 @@ TEST(AudioDecoderFactoryTest, CreateIsac) {
 }
 
 TEST(AudioDecoderFactoryTest, CreateL16) {
-  std::unique_ptr<AudioDecoderFactory> adf = CreateBuiltinAudioDecoderFactory();
+  rtc::scoped_refptr<AudioDecoderFactory> adf =
+      CreateBuiltinAudioDecoderFactory();
   ASSERT_TRUE(adf);
   // L16 supports any clock rate, any number of channels.
   const int clockrates[] = {8000, 16000, 32000, 48000};
@@ -92,7 +98,8 @@ TEST(AudioDecoderFactoryTest, CreateL16) {
 }
 
 TEST(AudioDecoderFactoryTest, CreateG722) {
-  std::unique_ptr<AudioDecoderFactory> adf = CreateBuiltinAudioDecoderFactory();
+  rtc::scoped_refptr<AudioDecoderFactory> adf =
+      CreateBuiltinAudioDecoderFactory();
   ASSERT_TRUE(adf);
   // g722 supports 8 kHz, 1-2 channels.
   EXPECT_FALSE(adf->MakeAudioDecoder(SdpAudioFormat("g722", 8000, 0)));
@@ -104,7 +111,8 @@ TEST(AudioDecoderFactoryTest, CreateG722) {
 }
 
 TEST(AudioDecoderFactoryTest, CreateOpus) {
-  std::unique_ptr<AudioDecoderFactory> adf = CreateBuiltinAudioDecoderFactory();
+  rtc::scoped_refptr<AudioDecoderFactory> adf =
+      CreateBuiltinAudioDecoderFactory();
   ASSERT_TRUE(adf);
   // Opus supports 48 kHz, 2 channels, and wants a "stereo" parameter whose
   // value is either "0" or "1".

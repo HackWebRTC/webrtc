@@ -69,7 +69,8 @@ class DecoderDatabase {
   // only 7 bits).
   static const uint8_t kRtpPayloadTypeError = 0xFF;
 
-  DecoderDatabase(std::unique_ptr<AudioDecoderFactory> decoder_factory);
+  DecoderDatabase(
+      const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory);
 
   virtual ~DecoderDatabase();
 
@@ -160,7 +161,7 @@ class DecoderDatabase {
   int active_decoder_type_;
   int active_cng_decoder_type_;
   std::unique_ptr<ComfortNoiseDecoder> active_cng_decoder_;
-  const std::unique_ptr<AudioDecoderFactory> decoder_factory_;
+  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(DecoderDatabase);
 };

@@ -14,6 +14,8 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/atomicops.h"
+#include "webrtc/base/refcount.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 #include "webrtc/modules/audio_coding/codecs/audio_format.h"
 
@@ -21,10 +23,8 @@ namespace webrtc {
 
 // A factory that creates AudioDecoders.
 // NOTE: This class is still under development and may change without notice.
-class AudioDecoderFactory {
+class AudioDecoderFactory : public rtc::RefCountInterface {
  public:
-  virtual ~AudioDecoderFactory() = default;
-
   virtual std::vector<SdpAudioFormat> GetSupportedFormats() = 0;
 
   virtual std::unique_ptr<AudioDecoder> MakeAudioDecoder(

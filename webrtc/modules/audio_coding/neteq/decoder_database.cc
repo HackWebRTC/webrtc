@@ -20,10 +20,10 @@
 namespace webrtc {
 
 DecoderDatabase::DecoderDatabase(
-    std::unique_ptr<AudioDecoderFactory> decoder_factory)
+    const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory)
     : active_decoder_type_(-1),
       active_cng_decoder_type_(-1),
-      decoder_factory_(std::move(decoder_factory)) {}
+      decoder_factory_(decoder_factory) {}
 
 DecoderDatabase::~DecoderDatabase() = default;
 

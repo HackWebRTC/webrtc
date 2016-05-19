@@ -145,8 +145,9 @@ class BuiltinAudioDecoderFactory : public AudioDecoderFactory {
 
 }  // namespace
 
-std::unique_ptr<AudioDecoderFactory> CreateBuiltinAudioDecoderFactory() {
-  return std::unique_ptr<AudioDecoderFactory>(new BuiltinAudioDecoderFactory);
+rtc::scoped_refptr<AudioDecoderFactory> CreateBuiltinAudioDecoderFactory() {
+  return rtc::scoped_refptr<AudioDecoderFactory>(
+      new rtc::RefCountedObject<BuiltinAudioDecoderFactory>);
 }
 
 }  // namespace webrtc

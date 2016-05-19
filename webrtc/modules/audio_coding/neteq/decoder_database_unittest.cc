@@ -25,15 +25,13 @@
 namespace webrtc {
 
 TEST(DecoderDatabase, CreateAndDestroy) {
-  std::unique_ptr<MockAudioDecoderFactory> factory(new MockAudioDecoderFactory);
-  DecoderDatabase db(std::move(factory));
+  DecoderDatabase db(new rtc::RefCountedObject<MockAudioDecoderFactory>);
   EXPECT_EQ(0, db.Size());
   EXPECT_TRUE(db.Empty());
 }
 
 TEST(DecoderDatabase, InsertAndRemove) {
-  std::unique_ptr<MockAudioDecoderFactory> factory(new MockAudioDecoderFactory);
-  DecoderDatabase db(std::move(factory));
+  DecoderDatabase db(new rtc::RefCountedObject<MockAudioDecoderFactory>);
   const uint8_t kPayloadType = 0;
   const std::string kCodecName = "Robert\'); DROP TABLE Students;";
   EXPECT_EQ(
@@ -47,8 +45,7 @@ TEST(DecoderDatabase, InsertAndRemove) {
 }
 
 TEST(DecoderDatabase, GetDecoderInfo) {
-  std::unique_ptr<MockAudioDecoderFactory> factory(new MockAudioDecoderFactory);
-  DecoderDatabase db(std::move(factory));
+  DecoderDatabase db(new rtc::RefCountedObject<MockAudioDecoderFactory>);
   const uint8_t kPayloadType = 0;
   const std::string kCodecName = "Robert\'); DROP TABLE Students;";
   EXPECT_EQ(
@@ -66,8 +63,7 @@ TEST(DecoderDatabase, GetDecoderInfo) {
 }
 
 TEST(DecoderDatabase, GetRtpPayloadType) {
-  std::unique_ptr<MockAudioDecoderFactory> factory(new MockAudioDecoderFactory);
-  DecoderDatabase db(std::move(factory));
+  DecoderDatabase db(new rtc::RefCountedObject<MockAudioDecoderFactory>);
   const uint8_t kPayloadType = 0;
   const std::string kCodecName = "Robert\'); DROP TABLE Students;";
   EXPECT_EQ(
@@ -92,8 +88,7 @@ TEST(DecoderDatabase, GetDecoder) {
 }
 
 TEST(DecoderDatabase, TypeTests) {
-  std::unique_ptr<MockAudioDecoderFactory> factory(new MockAudioDecoderFactory);
-  DecoderDatabase db(std::move(factory));
+  DecoderDatabase db(new rtc::RefCountedObject<MockAudioDecoderFactory>);
   const uint8_t kPayloadTypePcmU = 0;
   const uint8_t kPayloadTypeCng = 13;
   const uint8_t kPayloadTypeDtmf = 100;
@@ -128,8 +123,7 @@ TEST(DecoderDatabase, TypeTests) {
 }
 
 TEST(DecoderDatabase, ExternalDecoder) {
-  std::unique_ptr<MockAudioDecoderFactory> factory(new MockAudioDecoderFactory);
-  DecoderDatabase db(std::move(factory));
+  DecoderDatabase db(new rtc::RefCountedObject<MockAudioDecoderFactory>);
   const uint8_t kPayloadType = 0;
   const std::string kCodecName = "Robert\'); DROP TABLE Students;";
   MockAudioDecoder decoder;
@@ -158,8 +152,7 @@ TEST(DecoderDatabase, ExternalDecoder) {
 }
 
 TEST(DecoderDatabase, CheckPayloadTypes) {
-  std::unique_ptr<MockAudioDecoderFactory> factory(new MockAudioDecoderFactory);
-  DecoderDatabase db(std::move(factory));
+  DecoderDatabase db(new rtc::RefCountedObject<MockAudioDecoderFactory>);
   // Load a number of payloads into the database. Payload types are 0, 1, ...,
   // while the decoder type is the same for all payload types (this does not
   // matter for the test).
