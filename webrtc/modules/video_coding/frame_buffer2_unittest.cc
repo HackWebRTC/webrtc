@@ -185,16 +185,15 @@ class TestFrameBuffer2 : public ::testing::Test {
   rtc::CriticalSection crit_;
 };
 
-TEST_F(TestFrameBuffer2, ExtractFromEmptyBuffer) {
-  ExtractFrame();
-  CheckNoFrame(0);
-}
-
+// Following tests are timing dependent. Either the timeouts have to
+// be increased by a large margin, which would slow down all trybots,
+// or we disable them for the very slow ones, like we do here.
+#if !defined(ADDRESS_SANITIZER) && !defined(MEMORY_SANITIZER)
 TEST_F(TestFrameBuffer2, WaitForFrame) {
   uint16_t pid = Rand();
   uint32_t ts = Rand();
 
-  ExtractFrame(20);
+  ExtractFrame(50);
   InsertFrame(pid, 0, ts, false);
   CheckFrame(0, pid, 0);
 }
@@ -203,13 +202,38 @@ TEST_F(TestFrameBuffer2, OneSuperFrame) {
   uint16_t pid = Rand();
   uint32_t ts = Rand();
 
-  ExtractFrame(20);
+  ExtractFrame(50);
   InsertFrame(pid, 1, ts, true);
   InsertFrame(pid, 0, ts, false);
   ExtractFrame();
 
   CheckFrame(0, pid, 0);
   CheckFrame(1, pid, 1);
+}
+
+TEST_F(TestFrameBuffer2, OneLayerStreamReordered) {
+  uint16_t pid = Rand();
+  uint32_t ts = Rand();
+
+  InsertFrame(pid, 0, ts, false);
+  ExtractFrame();
+  CheckFrame(0, pid, 0);
+  for (int i = 1; i < 10; i += 2) {
+    ExtractFrame(50);
+    InsertFrame(pid + i + 1, 0, ts + (i + 1) * kFps10, false, pid + i);
+    clock_.AdvanceTimeMilliseconds(kFps10);
+    InsertFrame(pid + i, 0, ts + i * kFps10, false, pid + i - 1);
+    clock_.AdvanceTimeMilliseconds(kFps10);
+    ExtractFrame();
+    CheckFrame(i, pid + i, 0);
+    CheckFrame(i + 1, pid + i + 1, 0);
+  }
+}
+#endif  // Timing dependent tests.
+
+TEST_F(TestFrameBuffer2, ExtractFromEmptyBuffer) {
+  ExtractFrame();
+  CheckNoFrame(0);
 }
 
 TEST_F(TestFrameBuffer2, OneLayerStream) {
@@ -224,25 +248,6 @@ TEST_F(TestFrameBuffer2, OneLayerStream) {
     ExtractFrame();
     clock_.AdvanceTimeMilliseconds(kFps10);
     CheckFrame(i, pid + i, 0);
-  }
-}
-
-TEST_F(TestFrameBuffer2, OneLayerStreamReordered) {
-  uint16_t pid = Rand();
-  uint32_t ts = Rand();
-
-  InsertFrame(pid, 0, ts, false);
-  ExtractFrame();
-  CheckFrame(0, pid, 0);
-  for (int i = 1; i < 10; i += 2) {
-    ExtractFrame(15);
-    InsertFrame(pid + i + 1, 0, ts + (i + 1) * kFps10, false, pid + i);
-    clock_.AdvanceTimeMilliseconds(kFps10);
-    InsertFrame(pid + i, 0, ts + i * kFps10, false, pid + i - 1);
-    clock_.AdvanceTimeMilliseconds(kFps10);
-    ExtractFrame();
-    CheckFrame(i, pid + i, 0);
-    CheckFrame(i + 1, pid + i + 1, 0);
   }
 }
 
