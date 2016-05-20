@@ -211,7 +211,7 @@ TEST_F(TestFrameBuffer2, OneSuperFrame) {
   CheckFrame(1, pid, 1);
 }
 
-TEST_F(TestFrameBuffer2, OneLayerStreamReordered) {
+TEST_F(TestFrameBuffer2, DISABLED_OneLayerStreamReordered) {
   uint16_t pid = Rand();
   uint32_t ts = Rand();
 
