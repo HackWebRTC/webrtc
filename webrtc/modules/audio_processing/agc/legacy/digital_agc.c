@@ -117,7 +117,8 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, // Q16
     //  limiterLvl  = targetLevelDbfs + limiterOffset/compRatio
     limiterLvlX = analogTarget - limiterOffset;
     limiterIdx =
-        2 + WebRtcSpl_DivW32W16ResW16((int32_t)limiterLvlX << 13, kLog10_2 / 2);
+        2 + WebRtcSpl_DivW32W16ResW16((int32_t)limiterLvlX * (1 << 13),
+                                      kLog10_2 / 2);
     tmp16no1 = WebRtcSpl_DivW32W16ResW16(limiterOffset + (kCompRatio >> 1), kCompRatio);
     limiterLvl = targetLevelDbfs + tmp16no1;
 
@@ -143,7 +144,7 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, // Q16
         inLevel = WebRtcSpl_DivW32W16(tmp32, kCompRatio); // Q14
 
         // Calculate diffGain-inLevel, to map using the genFuncTable
-        inLevel = ((int32_t)diffGain << 14) - inLevel;  // Q14
+        inLevel = (int32_t)diffGain * (1 << 14) - inLevel;  // Q14
 
         // Make calculations on abs(inLevel) and compensate for the sign afterwards.
         absInLevel = (uint32_t)WEBRTC_SPL_ABS_W32(inLevel); // Q14
@@ -185,7 +186,7 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, // Q16
                 logApprox = (tmpU32no1 - tmpU32no2) >> (8 - zerosScale);  //Q14
             }
         }
-        numFIX = (maxGain * constMaxGain) << 6;  // Q14
+        numFIX = (maxGain * constMaxGain) * (1 << 6);  // Q14
         numFIX -= (int32_t)logApprox * diffGain;  // Q14
 
         // Calculate ratio
@@ -198,7 +199,7 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, // Q16
         {
             zeros = WebRtcSpl_NormW32(den) + 8;
         }
-        numFIX <<= zeros;  // Q(14+zeros)
+        numFIX *= 1 << zeros;  // Q(14+zeros)
 
         // Shift den so we end up in Qy1
         tmp32no1 = WEBRTC_SPL_SHIFT_W32(den, zeros - 8); // Q(zeros)
@@ -213,7 +214,7 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, // Q16
         if (limiterEnable && (i < limiterIdx))
         {
             tmp32 = WEBRTC_SPL_MUL_16_U16(i - 1, kLog10_2); // Q14
-            tmp32 -= limiterLvl << 14;  // Q14
+            tmp32 -= limiterLvl * (1 << 14);  // Q14
             y32 = WebRtcSpl_DivW32W16(tmp32 + 10, 20);
         }
         if (y32 > 39000)
@@ -559,8 +560,8 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc* stt,
 
     // Apply gain
     // handle first sub frame separately
-    delta = (gains[1] - gains[0]) << (4 - L2);
-    gain32 = gains[0] << 4;
+    delta = (gains[1] - gains[0]) * (1 << (4 - L2));
+    gain32 = gains[0] * (1 << 4);
     // iterate over samples
     for (n = 0; n < L; n++)
     {
@@ -587,8 +588,8 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc* stt,
     // iterate over subframes
     for (k = 1; k < 10; k++)
     {
-        delta = (gains[k+1] - gains[k]) << (4 - L2);
-        gain32 = gains[k] << 4;
+        delta = (gains[k+1] - gains[k]) * (1 << (4 - L2));
+        gain32 = gains[k] * (1 << 4);
         // iterate over samples
         for (n = 0; n < L; n++)
         {
