@@ -292,6 +292,11 @@ void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
       Network* existing_net = existing->second;
       *changed = existing_net->SetIPs(kv.second.ips, *changed);
       merged_list.push_back(existing_net);
+      if (net->type() != ADAPTER_TYPE_UNKNOWN &&
+          net->type() != existing_net->type()) {
+        existing_net->set_type(net->type());
+        *changed = true;
+      }
       // If the existing network was not active, networks have changed.
       if (!existing_net->active()) {
         *changed = true;
@@ -394,7 +399,7 @@ BasicNetworkManager::~BasicNetworkManager() {
 }
 
 void BasicNetworkManager::OnNetworksChanged() {
-  LOG(LS_VERBOSE) << "Network change was observed at the network manager";
+  LOG(LS_INFO) << "Network change was observed";
   UpdateNetworksOnce();
 }
 
@@ -452,24 +457,18 @@ void BasicNetworkManager::ConvertIfAddrs(struct ifaddrs* interfaces,
           reinterpret_cast<sockaddr_in6*>(cursor->ifa_addr)->sin6_scope_id;
     }
 
+    AdapterType adapter_type = ADAPTER_TYPE_UNKNOWN;
+    if (cursor->ifa_flags & IFF_LOOPBACK) {
+      adapter_type = ADAPTER_TYPE_LOOPBACK;
+    } else {
+      adapter_type = GetAdapterTypeFromName(cursor->ifa_name);
+    }
     int prefix_length = CountIPMaskBits(mask);
     prefix = TruncateIP(ip, prefix_length);
     std::string key = MakeNetworkKey(std::string(cursor->ifa_name),
                                      prefix, prefix_length);
-    auto existing_network = current_networks.find(key);
-    if (existing_network == current_networks.end()) {
-      AdapterType adapter_type = ADAPTER_TYPE_UNKNOWN;
-      if (cursor->ifa_flags & IFF_LOOPBACK) {
-        adapter_type = ADAPTER_TYPE_LOOPBACK;
-      } else if (network_monitor_) {
-        adapter_type = network_monitor_->GetAdapterType(cursor->ifa_name);
-      }
-#if defined(WEBRTC_IOS)
-      // Cell networks are pdp_ipN on iOS.
-      if (strncmp(cursor->ifa_name, "pdp_ip", 6) == 0) {
-        adapter_type = ADAPTER_TYPE_CELLULAR;
-      }
-#endif
+    auto iter = current_networks.find(key);
+    if (iter == current_networks.end()) {
       // TODO(phoglund): Need to recognize other types as well.
       std::unique_ptr<Network> network(
           new Network(cursor->ifa_name, cursor->ifa_name, prefix, prefix_length,
@@ -483,7 +482,11 @@ void BasicNetworkManager::ConvertIfAddrs(struct ifaddrs* interfaces,
         networks->push_back(network.release());
       }
     } else {
-      (*existing_network).second->AddIP(ip);
+      Network* existing_network = iter->second;
+      existing_network->AddIP(ip);
+      if (adapter_type != ADAPTER_TYPE_UNKNOWN) {
+        existing_network->set_type(adapter_type);
+      }
     }
   }
 }
@@ -785,6 +788,34 @@ void BasicNetworkManager::OnMessage(Message* msg) {
     default:
       ASSERT(false);
   }
+}
+
+AdapterType BasicNetworkManager::GetAdapterTypeFromName(
+    const char* network_name) const {
+  // If there is a network_monitor, use it to get the adapter type.
+  // Otherwise, get the adapter type based on a few name matching rules.
+  if (network_monitor_) {
+    AdapterType type = network_monitor_->GetAdapterType(network_name);
+    if (type != ADAPTER_TYPE_UNKNOWN) {
+      return type;
+    }
+  }
+#if defined(WEBRTC_IOS)
+  // Cell networks are pdp_ipN on iOS.
+  if (strncmp(network_name, "pdp_ip", 6) == 0) {
+    return ADAPTER_TYPE_CELLULAR;
+  }
+#elif defined(WEBRTC_ANDROID)
+  if (strncmp(network_name, "rmnet", 5) == 0 ||
+      strncmp(network_name, "v4-rmnet", 8) == 0) {
+    return ADAPTER_TYPE_CELLULAR;
+  }
+  if (strncmp(network_name, "wlan", 4) == 0) {
+    return ADAPTER_TYPE_WIFI;
+  }
+#endif
+
+  return ADAPTER_TYPE_UNKNOWN;
 }
 
 IPAddress BasicNetworkManager::QueryDefaultLocalAddress(int family) const {

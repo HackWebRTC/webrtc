@@ -26,6 +26,7 @@ using rtc::SocketAddress;
 static const SocketAddress kLocalAddr("127.0.0.1", 0);
 static const SocketAddress kStunAddr1("127.0.0.1", 5000);
 static const SocketAddress kStunAddr2("127.0.0.1", 4000);
+static const SocketAddress kStunAddr3("127.0.0.1", 3000);
 static const SocketAddress kBadAddr("0.0.0.1", 5000);
 static const SocketAddress kStunHostnameAddr("localhost", 5000);
 static const SocketAddress kBadHostnameAddr("not-a-real-hostname", 5000);
@@ -306,31 +307,39 @@ TEST_F(StunPortTest, TestTwoCandidatesWithTwoStunServersAcrossNat) {
 }
 
 // Test that the stun_keepalive_lifetime is set correctly based on the network
-// type on a STUN port.
+// type on a STUN port. Also test that it will be updated if the network type
+// changes.
 TEST_F(StunPortTest, TestStunPortGetStunKeepaliveLifetime) {
-  // Lifetime for the default network type is |kInfiniteLifetime|.
+  // Lifetime for the default (unknown) network type is |kInfiniteLifetime|.
   CreateStunPort(kStunAddr1);
   EXPECT_EQ(kInfiniteLifetime, port()->stun_keepalive_lifetime());
-
   // Lifetime for the cellular network is |kHighCostPortKeepaliveLifetimeMs|
   SetNetworkType(rtc::ADAPTER_TYPE_CELLULAR);
-  CreateStunPort(kStunAddr2);
   EXPECT_EQ(kHighCostPortKeepaliveLifetimeMs,
             port()->stun_keepalive_lifetime());
+
+  // Lifetime for the wifi network is |kInfiniteLifetime|.
+  SetNetworkType(rtc::ADAPTER_TYPE_WIFI);
+  CreateStunPort(kStunAddr2);
+  EXPECT_EQ(kInfiniteLifetime, port()->stun_keepalive_lifetime());
 }
 
 // Test that the stun_keepalive_lifetime is set correctly based on the network
-// type on a shared STUN port (UDPPort).
+// type on a shared STUN port (UDPPort). Also test that it will be updated
+// if the network type changes.
 TEST_F(StunPortTest, TestUdpPortGetStunKeepaliveLifetime) {
-  // Lifetime for the default network type is |kInfiniteLifetime|.
+  // Lifetime for the default (unknown) network type is |kInfiniteLifetime|.
   CreateSharedStunPort(kStunAddr1);
   EXPECT_EQ(kInfiniteLifetime, port()->stun_keepalive_lifetime());
-
-  // Lifetime for the cellular network is |kHighCostPortKeepaliveLifetimeMs|
+  // Lifetime for the cellular network is |kHighCostPortKeepaliveLifetimeMs|.
   SetNetworkType(rtc::ADAPTER_TYPE_CELLULAR);
-  CreateSharedStunPort(kStunAddr2);
   EXPECT_EQ(kHighCostPortKeepaliveLifetimeMs,
             port()->stun_keepalive_lifetime());
+
+  // Lifetime for the wifi network type is |kInfiniteLifetime|.
+  SetNetworkType(rtc::ADAPTER_TYPE_WIFI);
+  CreateSharedStunPort(kStunAddr2);
+  EXPECT_EQ(kInfiniteLifetime, port()->stun_keepalive_lifetime());
 }
 
 // Test that STUN binding requests will be stopped shortly if the keep-alive

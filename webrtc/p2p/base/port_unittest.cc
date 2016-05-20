@@ -759,7 +759,6 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
     return &nat_socket_factory1_;
   }
 
- protected:
   rtc::VirtualSocketServer* vss() { return ss_.get(); }
 
  private:
@@ -1762,11 +1761,69 @@ TEST_F(PortTest, TestUseCandidateAttribute) {
   ASSERT_TRUE(use_candidate_attr != NULL);
 }
 
+// Tests that when the network type changes, the network cost of the port will
+// change, the network cost of the local candidates will change. Also tests that
+// the remote network costs are updated with the stun binding requests.
+TEST_F(PortTest, TestNetworkCostChange) {
+  std::unique_ptr<TestPort> lport(
+      CreateTestPort(kLocalAddr1, "lfrag", "lpass"));
+  std::unique_ptr<TestPort> rport(
+      CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
+  lport->SetIceRole(cricket::ICEROLE_CONTROLLING);
+  lport->SetIceTiebreaker(kTiebreaker1);
+  rport->SetIceRole(cricket::ICEROLE_CONTROLLED);
+  rport->SetIceTiebreaker(kTiebreaker2);
+  lport->PrepareAddress();
+  rport->PrepareAddress();
+
+  // Default local port cost is rtc::kNetworkCostUnknown.
+  EXPECT_EQ(rtc::kNetworkCostUnknown, lport->network_cost());
+  ASSERT_TRUE(!lport->Candidates().empty());
+  for (const cricket::Candidate& candidate : lport->Candidates()) {
+    EXPECT_EQ(rtc::kNetworkCostUnknown, candidate.network_cost());
+  }
+
+  // Change the network type to wifi.
+  SetNetworkType(rtc::ADAPTER_TYPE_WIFI);
+  EXPECT_EQ(rtc::kNetworkCostLow, lport->network_cost());
+  for (const cricket::Candidate& candidate : lport->Candidates()) {
+    EXPECT_EQ(rtc::kNetworkCostLow, candidate.network_cost());
+  }
+
+  // Add a connection and then change the network type.
+  Connection* lconn =
+      lport->CreateConnection(rport->Candidates()[0], Port::ORIGIN_MESSAGE);
+  // Change the network type to cellular.
+  SetNetworkType(rtc::ADAPTER_TYPE_CELLULAR);
+  EXPECT_EQ(rtc::kNetworkCostHigh, lport->network_cost());
+  for (const cricket::Candidate& candidate : lport->Candidates()) {
+    EXPECT_EQ(rtc::kNetworkCostHigh, candidate.network_cost());
+  }
+
+  SetNetworkType(rtc::ADAPTER_TYPE_WIFI);
+  Connection* rconn =
+      rport->CreateConnection(lport->Candidates()[0], Port::ORIGIN_MESSAGE);
+  SetNetworkType(rtc::ADAPTER_TYPE_CELLULAR);
+  lconn->Ping(0);
+  // The rconn's remote candidate cost is rtc::kNetworkCostLow, but the ping
+  // contains an attribute of network cost of rtc::kNetworkCostHigh. Once the
+  // message is handled in rconn, The rconn's remote candidate will have cost
+  // rtc::kNetworkCostHigh;
+  EXPECT_EQ(rtc::kNetworkCostLow, rconn->remote_candidate().network_cost());
+  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
+  IceMessage* msg = lport->last_stun_msg();
+  EXPECT_EQ(STUN_BINDING_REQUEST, msg->type());
+  // Pass the binding request to rport.
+  rconn->OnReadPacket(lport->last_stun_buf()->data<char>(),
+                      lport->last_stun_buf()->size(), rtc::PacketTime());
+  // Wait until rport sends the response and then check the remote network cost.
+  ASSERT_TRUE_WAIT(rport->last_stun_msg() != NULL, 1000);
+  EXPECT_EQ(rtc::kNetworkCostHigh, rconn->remote_candidate().network_cost());
+}
+
 TEST_F(PortTest, TestNetworkInfoAttribute) {
   std::unique_ptr<TestPort> lport(
       CreateTestPort(kLocalAddr1, "lfrag", "lpass"));
-  // Set the network type for rport to be cellular so its cost will be 999.
-  SetNetworkType(rtc::ADAPTER_TYPE_CELLULAR);
   std::unique_ptr<TestPort> rport(
       CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
   lport->SetIceRole(cricket::ICEROLE_CONTROLLING);
@@ -1789,10 +1846,12 @@ TEST_F(PortTest, TestNetworkInfoAttribute) {
   ASSERT_TRUE(network_info_attr != NULL);
   uint32_t network_info = network_info_attr->value();
   EXPECT_EQ(lnetwork_id, network_info >> 16);
-  // Default network cost is 0.
-  EXPECT_EQ(0U, network_info & 0xFFFF);
+  // Default network has unknown type and cost kNetworkCostUnknown.
+  EXPECT_EQ(rtc::kNetworkCostUnknown, network_info & 0xFFFF);
 
+  // Set the network type to be cellular so its cost will be kNetworkCostHigh.
   // Send a fake ping from rport to lport.
+  SetNetworkType(rtc::ADAPTER_TYPE_CELLULAR);
   uint16_t rnetwork_id = 8;
   rport->Network()->set_id(rnetwork_id);
   Connection* rconn =
@@ -1804,7 +1863,7 @@ TEST_F(PortTest, TestNetworkInfoAttribute) {
   ASSERT_TRUE(network_info_attr != NULL);
   network_info = network_info_attr->value();
   EXPECT_EQ(rnetwork_id, network_info >> 16);
-  EXPECT_EQ(cricket::kMaxNetworkCost, network_info & 0xFFFF);
+  EXPECT_EQ(rtc::kNetworkCostHigh, network_info & 0xFFFF);
 }
 
 // Test handling STUN messages.

@@ -75,7 +75,7 @@ const int RTT_RATIO = 3;  // 3 : 1
 
 // The delay before we begin checking if this port is useless.
 const int kPortTimeoutDelay = 30 * 1000;  // 30 seconds
-}
+}  // namespace
 
 namespace cricket {
 
@@ -196,11 +196,10 @@ void Port::Construct() {
     password_ = rtc::CreateRandomString(ICE_PWD_LENGTH);
   }
   network_->SignalInactive.connect(this, &Port::OnNetworkInactive);
-  // TODO(honghaiz): Make it configurable from user setting.
-  network_cost_ =
-      (network_->type() == rtc::ADAPTER_TYPE_CELLULAR) ? kMaxNetworkCost : 0;
+  network_->SignalTypeChanged.connect(this, &Port::OnNetworkTypeChanged);
+  network_cost_ = network_->GetCost();
 
-  LOG_J(LS_INFO, this) << "Port created";
+  LOG_J(LS_INFO, this) << "Port created with network cost " << network_cost_;
 }
 
 Port::~Port() {
@@ -645,12 +644,41 @@ void Port::OnNetworkInactive(const rtc::Network* network) {
   SignalNetworkInactive(this);
 }
 
+void Port::OnNetworkTypeChanged(const rtc::Network* network) {
+  ASSERT(network == network_);
+
+  UpdateNetworkCost();
+}
+
 std::string Port::ToString() const {
   std::stringstream ss;
   ss << "Port[" << std::hex << this << std::dec << ":" << content_name_ << ":"
      << component_ << ":" << generation_ << ":" << type_ << ":"
      << network_->ToString() << "]";
   return ss.str();
+}
+
+// TODO(honghaiz): Make the network cost configurable from user setting.
+void Port::UpdateNetworkCost() {
+  uint16_t new_cost = network_->GetCost();
+  if (network_cost_ == new_cost) {
+    return;
+  }
+  LOG(LS_INFO) << "Network cost changed from " << network_cost_
+               << " to " << new_cost
+               << ". Number of candidates created: " << candidates_.size()
+               << ". Number of connections created: " << connections_.size();
+  network_cost_ = new_cost;
+  for (cricket::Candidate& candidate : candidates_) {
+    candidate.set_network_cost(network_cost_);
+  }
+  // Network cost change will affect the connection selection criteria.
+  // Signal the connection state change on each connection to force a
+  // re-sort in P2PTransportChannel.
+  for (auto kv : connections_) {
+    Connection* conn = kv.second;
+    conn->SignalStateChange(conn);
+  }
 }
 
 void Port::EnablePortPackets() {
@@ -1008,6 +1036,21 @@ void Connection::HandleBindingRequest(IceMessage* msg) {
       SignalNominated(this);
     }
   }
+  // Set the remote cost if the network_info attribute is available.
+  // Note: If packets are re-ordered, we may get incorrect network cost
+  // temporarily, but it should get the correct value shortly after that.
+  const StunUInt32Attribute* network_attr =
+      msg->GetUInt32(STUN_ATTR_NETWORK_INFO);
+  if (network_attr) {
+    uint32_t network_info = network_attr->value();
+    uint16_t network_cost = static_cast<uint16_t>(network_info);
+    if (network_cost != remote_candidate_.network_cost()) {
+      remote_candidate_.set_network_cost(network_cost);
+      // Network cost change will affect the connection ranking, so signal
+      // state change to force a re-sort in P2PTransportChannel.
+      SignalStateChange(this);
+    }
+  }
 }
 
 void Connection::OnReadyToSend() {
@@ -1178,7 +1221,7 @@ std::string Connection::ToDebugId() const {
 
 uint32_t Connection::ComputeNetworkCost() const {
   // TODO(honghaiz): Will add rtt as part of the network cost.
-  return local_candidate().network_cost() + remote_candidate_.network_cost();
+  return port()->network_cost() + remote_candidate_.network_cost();
 }
 
 std::string Connection::ToString() const {

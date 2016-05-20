@@ -304,6 +304,8 @@ class Port : public PortInterface, public rtc::MessageHandler,
     MSG_FIRST_AVAILABLE
   };
 
+  virtual void UpdateNetworkCost();
+
   void set_type(const std::string& type) { type_ = type; }
 
   void AddAddress(const rtc::SocketAddress& address,
@@ -361,6 +363,8 @@ class Port : public PortInterface, public rtc::MessageHandler,
   }
 
   void OnNetworkInactive(const rtc::Network* network);
+
+  void OnNetworkTypeChanged(const rtc::Network* network);
 
   rtc::Thread* thread_;
   rtc::PacketSocketFactory* factory_;

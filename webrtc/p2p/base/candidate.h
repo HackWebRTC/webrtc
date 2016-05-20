@@ -27,8 +27,6 @@
 
 namespace cricket {
 
-const uint16_t kMaxNetworkCost = 999;
-
 // Candidate for ICE based connection discovery.
 
 class Candidate {
@@ -148,9 +146,9 @@ class Candidate {
 
   // |network_cost| measures the cost/penalty of using this candidate. A network
   // cost of 0 indicates this candidate can be used freely. A value of
-  // |kMaxNetworkCost| indicates it should be used only as the last resort.
+  // rtc::kNetworkCostMax indicates it should be used only as the last resort.
   void set_network_cost(uint16_t network_cost) {
-    ASSERT(network_cost <= kMaxNetworkCost);
+    ASSERT(network_cost <= rtc::kNetworkCostMax);
     network_cost_ = network_cost;
   }
   uint16_t network_cost() const { return network_cost_; }

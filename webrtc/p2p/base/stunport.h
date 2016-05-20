@@ -26,6 +26,11 @@ class SignalThread;
 
 namespace cricket {
 
+// Lifetime chosen for STUN ports on low-cost networks.
+static const int INFINITE_LIFETIME = -1;
+// Lifetime for STUN ports on high-cost networks: 2 minutes
+static const int HIGH_COST_PORT_KEEPALIVE_LIFETIME = 2 * 60 * 1000;
+
 // Communicates using the address on the outside of a NAT.
 class UDPPort : public Port {
  public:
@@ -145,6 +150,8 @@ class UDPPort : public Port {
                      const rtc::PacketOptions& options,
                      bool payload);
 
+  virtual void UpdateNetworkCost();
+
   void OnLocalAddressReady(rtc::AsyncPacketSocket* socket,
                            const rtc::SocketAddress& address);
   void OnReadPacket(rtc::AsyncPacketSocket* socket,
@@ -219,6 +226,15 @@ class UDPPort : public Port {
 
   bool HasCandidateWithAddress(const rtc::SocketAddress& addr) const;
 
+  // If this is a low-cost network, it will keep on sending STUN binding
+  // requests indefinitely to keep the NAT binding alive. Otherwise, stop
+  // sending STUN binding requests after HIGH_COST_PORT_KEEPALIVE_LIFETIME.
+  int GetStunKeepaliveLifetime() {
+    return (network_cost() >= rtc::kNetworkCostHigh)
+               ? HIGH_COST_PORT_KEEPALIVE_LIFETIME
+               : INFINITE_LIFETIME;
+  }
+
   ServerAddresses server_addresses_;
   ServerAddresses bind_request_succeeded_servers_;
   ServerAddresses bind_request_failed_servers_;
@@ -228,7 +244,7 @@ class UDPPort : public Port {
   std::unique_ptr<AddressResolver> resolver_;
   bool ready_;
   int stun_keepalive_delay_;
-  int stun_keepalive_lifetime_;
+  int stun_keepalive_lifetime_ = INFINITE_LIFETIME;
 
   // This is true by default and false when
   // PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE is specified.

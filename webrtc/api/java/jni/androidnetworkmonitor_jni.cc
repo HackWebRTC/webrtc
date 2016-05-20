@@ -268,13 +268,15 @@ int AndroidNetworkMonitor::BindSocketToNetwork(int socket_fd,
 
 void AndroidNetworkMonitor::OnNetworkConnected(
     const NetworkInformation& network_info) {
-  LOG(LS_INFO) << "Network connected: " << network_info.ToString();
   worker_thread()->Invoke<void>(rtc::Bind(
       &AndroidNetworkMonitor::OnNetworkConnected_w, this, network_info));
+  // Fire SignalNetworksChanged to update the list of networks.
+  OnNetworksChanged();
 }
 
 void AndroidNetworkMonitor::OnNetworkConnected_w(
     const NetworkInformation& network_info) {
+  LOG(LS_INFO) << "Network connected: " << network_info.ToString();
   adapter_type_by_name_[network_info.interface_name] =
       AdapterTypeFromNetworkType(network_info.type);
   network_info_by_handle_[network_info.handle] = network_info;
@@ -304,6 +306,8 @@ void AndroidNetworkMonitor::SetNetworkInfos(
   RTC_CHECK(thread_checker_.CalledOnValidThread());
   network_handle_by_address_.clear();
   network_info_by_handle_.clear();
+  LOG(LS_INFO) << "Android network monitor found " << network_infos.size()
+               << " networks";
   for (NetworkInformation network : network_infos) {
     OnNetworkConnected_w(network);
   }
@@ -312,11 +316,13 @@ void AndroidNetworkMonitor::SetNetworkInfos(
 rtc::AdapterType AndroidNetworkMonitor::GetAdapterType(
     const std::string& if_name) {
   auto iter = adapter_type_by_name_.find(if_name);
-  if (iter == adapter_type_by_name_.end()) {
-    LOG(LS_WARNING) << "Get adapter type for an unknown interface: " << if_name;
-    return rtc::ADAPTER_TYPE_UNKNOWN;
+  rtc::AdapterType type = (iter == adapter_type_by_name_.end())
+                              ? rtc::ADAPTER_TYPE_UNKNOWN
+                              : iter->second;
+  if (type == rtc::ADAPTER_TYPE_UNKNOWN) {
+    LOG(LS_WARNING) << "Get an unknown type for the interface " << if_name;
   }
-  return iter->second;
+  return type;
 }
 
 rtc::NetworkMonitorInterface*

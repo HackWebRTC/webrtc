@@ -1117,7 +1117,7 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
       if (!GetValueFromString(first_line, fields[++i], &network_cost, error)) {
         return false;
       }
-      network_cost = std::min(network_cost, cricket::kMaxNetworkCost);
+      network_cost = std::min(network_cost, rtc::kNetworkCostMax);
     } else {
       // Skip the unknown extension.
       ++i;

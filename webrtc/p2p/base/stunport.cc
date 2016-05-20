@@ -25,22 +25,14 @@ namespace cricket {
 // TODO: Move these to a common place (used in relayport too)
 const int KEEPALIVE_DELAY = 10 * 1000;  // 10 seconds - sort timeouts
 const int RETRY_TIMEOUT = 50 * 1000;    // 50 seconds
-// Lifetime chosen for STUN ports on low-cost networks.
-const int INFINITE_LIFETIME = -1;
-// Lifetime for STUN ports on high-cost networks: 2 minutes
-const int HIGH_COST_PORT_KEEPALIVE_LIFETIME = 2 * 60 * 1000;
 
 // Handles a binding request sent to the STUN server.
 class StunBindingRequest : public StunRequest {
  public:
   StunBindingRequest(UDPPort* port,
                      const rtc::SocketAddress& addr,
-                     int64_t start_time,
-                     int lifetime)
-      : port_(port),
-        server_addr_(addr),
-        start_time_(start_time),
-        lifetime_(lifetime) {}
+                     int64_t start_time)
+      : port_(port), server_addr_(addr), start_time_(start_time) {}
 
   virtual ~StunBindingRequest() {
   }
@@ -67,7 +59,7 @@ class StunBindingRequest : public StunRequest {
     // The keep-alive requests will be stopped after its lifetime has passed.
     if (WithinLifetime(rtc::TimeMillis())) {
       port_->requests_.SendDelayed(
-          new StunBindingRequest(port_, server_addr_, start_time_, lifetime_),
+          new StunBindingRequest(port_, server_addr_, start_time_),
           port_->stun_keepalive_delay());
     }
   }
@@ -89,7 +81,7 @@ class StunBindingRequest : public StunRequest {
     if (WithinLifetime(now) &&
         rtc::TimeDiff(now, start_time_) < RETRY_TIMEOUT) {
       port_->requests_.SendDelayed(
-          new StunBindingRequest(port_, server_addr_, start_time_, lifetime_),
+          new StunBindingRequest(port_, server_addr_, start_time_),
           port_->stun_keepalive_delay());
     }
   }
@@ -105,14 +97,13 @@ class StunBindingRequest : public StunRequest {
   // Returns true if |now| is within the lifetime of the request (a negative
   // lifetime means infinite).
   bool WithinLifetime(int64_t now) const {
-    return lifetime_ < 0 || rtc::TimeDiff(now, start_time_) <= lifetime_;
+    int lifetime = port_->stun_keepalive_lifetime();
+    return lifetime < 0 || rtc::TimeDiff(now, start_time_) <= lifetime;
   }
   UDPPort* port_;
   const rtc::SocketAddress server_addr_;
 
   int64_t start_time_;
-  // The time duration for which this request will be rescheduled.
-  int lifetime_;
 };
 
 UDPPort::AddressResolver::AddressResolver(
@@ -220,12 +211,7 @@ UDPPort::UDPPort(rtc::Thread* thread,
 }
 
 bool UDPPort::Init() {
-  // If this is a zero-cost network, it will keep on sending STUN binding
-  // requests indefinitely to keep the NAT binding alive. Otherwise, stop
-  // sending STUN binding requests after HIGH_COST_PORT_KEEPALIVE_LIFETIME.
-  stun_keepalive_lifetime_ = (network_cost() == 0)
-                                 ? INFINITE_LIFETIME
-                                 : HIGH_COST_PORT_KEEPALIVE_LIFETIME;
+  stun_keepalive_lifetime_ = GetStunKeepaliveLifetime();
   if (!SharedSocket()) {
     ASSERT(socket_ == NULL);
     socket_ = socket_factory()->CreateUdpSocket(
@@ -297,6 +283,11 @@ int UDPPort::SendTo(const void* data, size_t size,
                           << " bytes failed with error " << error_;
   }
   return sent;
+}
+
+void UDPPort::UpdateNetworkCost() {
+  Port::UpdateNetworkCost();
+  stun_keepalive_lifetime_ = GetStunKeepaliveLifetime();
 }
 
 int UDPPort::SetOption(rtc::Socket::Option opt, int value) {
@@ -411,8 +402,8 @@ void UDPPort::SendStunBindingRequest(const rtc::SocketAddress& stun_addr) {
   } else if (socket_->GetState() == rtc::AsyncPacketSocket::STATE_BOUND) {
     // Check if |server_addr_| is compatible with the port's ip.
     if (IsCompatibleAddress(stun_addr)) {
-      requests_.Send(new StunBindingRequest(this, stun_addr, rtc::TimeMillis(),
-                                            stun_keepalive_lifetime_));
+      requests_.Send(
+          new StunBindingRequest(this, stun_addr, rtc::TimeMillis()));
     } else {
       // Since we can't send stun messages to the server, we should mark this
       // port ready.

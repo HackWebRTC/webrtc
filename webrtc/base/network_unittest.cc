@@ -34,6 +34,14 @@ class FakeNetworkMonitor : public NetworkMonitorBase {
   void Stop() override { started_ = false; }
   bool started() { return started_; }
   AdapterType GetAdapterType(const std::string& if_name) override {
+    // Note that the name matching rules are different from the
+    // GetAdapterTypeFromName in NetworkManager.
+    if (if_name.find("wifi") == 0) {
+      return ADAPTER_TYPE_WIFI;
+    }
+    if (if_name.find("cellular") == 0) {
+      return ADAPTER_TYPE_CELLULAR;
+    }
     return ADAPTER_TYPE_UNKNOWN;
   }
 
@@ -102,6 +110,13 @@ class NetworkTest : public testing::Test, public sigslot::has_slots<>  {
     network_manager.networks_map_.clear();
   }
 
+  AdapterType GetAdapterType(BasicNetworkManager& network_manager) {
+    BasicNetworkManager::NetworkList list;
+    network_manager.GetNetworks(&list);
+    ASSERT(list.size() == 1u);
+    return list[0]->type();
+  }
+
 #if defined(WEBRTC_POSIX)
   // Separated from CreateNetworks for tests.
   static void CallConvertIfAddrs(const BasicNetworkManager& network_manager,
@@ -142,6 +157,20 @@ class NetworkTest : public testing::Test, public sigslot::has_slots<>  {
     if_addr->ifa_next = list;
     if_addr->ifa_flags = IFF_RUNNING;
     return if_addr;
+  }
+
+  struct ifaddrs* InstallIpv6Network(char* if_name,
+                                     const std::string& ipv6_address,
+                                     const std::string& ipv6_mask,
+                                     BasicNetworkManager& network_manager) {
+    ifaddrs* addr_list = nullptr;
+    addr_list = AddIpv6Address(addr_list, if_name, ipv6_address, ipv6_mask, 0);
+    NetworkManager::NetworkList result;
+    bool changed;
+    NetworkManager::Stats stats;
+    CallConvertIfAddrs(network_manager, addr_list, true, &result);
+    network_manager.MergeNetworkList(result, &changed, &stats);
+    return addr_list;
   }
 
   void ReleaseIfAddrs(struct ifaddrs* list) {
@@ -780,6 +809,93 @@ TEST_F(NetworkTest, TestConvertIfAddrsNotRunning) {
   BasicNetworkManager manager;
   CallConvertIfAddrs(manager, &list, true, &result);
   EXPECT_TRUE(result.empty());
+}
+
+// Tests that the network type can be updated after the network monitor is
+// started.
+TEST_F(NetworkTest, TestGetAdapterTypeFromNetworkMonitor) {
+  char if_name1[20] = "wifi0";
+  std::string ipv6_address1 = "1000:2000:3000:4000:0:0:0:1";
+  std::string ipv6_address2 = "1000:2000:3000:8000:0:0:0:1";
+  std::string ipv6_mask = "FFFF:FFFF:FFFF:FFFF::";
+  BasicNetworkManager manager;
+  // A network created before the network monitor is started will get
+  // UNKNOWN type.
+  ifaddrs* addr_list =
+      InstallIpv6Network(if_name1, ipv6_address1, ipv6_mask, manager);
+  EXPECT_EQ(ADAPTER_TYPE_UNKNOWN, GetAdapterType(manager));
+  ReleaseIfAddrs(addr_list);
+  // Note: Do not call ClearNetworks here in order to test that the type
+  // of an existing network can be changed after the network monitor starts
+  // and detects the network type correctly.
+
+  // After the network monitor starts, the type will be updated.
+  FakeNetworkMonitorFactory* factory = new FakeNetworkMonitorFactory();
+  NetworkMonitorFactory::SetFactory(factory);
+  // This brings up the hook with the network monitor.
+  manager.StartUpdating();
+  // Add the same ipv6 address as before but it has the right network type
+  // detected by the network monitor now.
+  addr_list = InstallIpv6Network(if_name1, ipv6_address1, ipv6_mask, manager);
+  EXPECT_EQ(ADAPTER_TYPE_WIFI, GetAdapterType(manager));
+  ReleaseIfAddrs(addr_list);
+  ClearNetworks(manager);
+
+  // Add another network with the type inferred from the network monitor.
+  char if_name2[20] = "cellular0";
+  addr_list = InstallIpv6Network(if_name2, ipv6_address2, ipv6_mask, manager);
+  EXPECT_EQ(ADAPTER_TYPE_CELLULAR, GetAdapterType(manager));
+  ReleaseIfAddrs(addr_list);
+  ClearNetworks(manager);
+}
+
+// Test that the network type can be determined based on name matching in
+// a few cases. Note that UNKNOWN type for non-matching strings has been tested
+// in the above test.
+TEST_F(NetworkTest, TestGetAdapterTypeFromNameMatching) {
+  std::string ipv6_address1 = "1000:2000:3000:4000:0:0:0:1";
+  std::string ipv6_address2 = "1000:2000:3000:8000:0:0:0:1";
+  std::string ipv6_mask = "FFFF:FFFF:FFFF:FFFF::";
+  BasicNetworkManager manager;
+
+#if defined(WEBRTC_IOS)
+  char if_name[20] = "pdp_ip0";
+  ifaddrs* addr_list =
+      InstallIpv6Network(if_name, ipv6_address1, ipv6_mask, manager);
+
+  EXPECT_EQ(ADAPTER_TYPE_CELLULAR, GetAdapterType(manager));
+  ClearNetworks(manager);
+  ReleaseIfAddrs(addr_list);
+
+#elif defined(WEBRTC_ANDROID)
+  char if_name[20] = "rmnet0";
+  ifaddrs* addr_list =
+      InstallIpv6Network(if_name, ipv6_address1, ipv6_mask, manager);
+
+  EXPECT_EQ(ADAPTER_TYPE_CELLULAR, GetAdapterType(manager));
+  ClearNetworks(manager);
+  ReleaseIfAddrs(addr_list);
+
+  strcpy(if_name, "wlan1");
+  addr_list = InstallIpv6Network(if_name, ipv6_address2, ipv6_mask, manager);
+  EXPECT_EQ(ADAPTER_TYPE_WIFI, GetAdapterType(manager));
+  ClearNetworks(manager);
+  ReleaseIfAddrs(addr_list);
+
+  strcpy(if_name, "v4-rmnet_data0");
+  addr_list = InstallIpv6Network(if_name, ipv6_address2, ipv6_mask, manager);
+  EXPECT_EQ(ADAPTER_TYPE_CELLULAR, GetAdapterType(manager));
+  ClearNetworks(manager);
+  ReleaseIfAddrs(addr_list);
+#else
+  char if_name[20] = "wlan0";
+  ifaddrs* addr_list =
+      InstallIpv6Network(if_name, ipv6_address1, ipv6_mask, manager);
+
+  EXPECT_EQ(ADAPTER_TYPE_UNKNOWN, GetAdapterType(manager));
+  ClearNetworks(manager);
+  ReleaseIfAddrs(addr_list);
+#endif
 }
 #endif  // defined(WEBRTC_POSIX)
 

@@ -37,6 +37,11 @@ class Network;
 class NetworkMonitorInterface;
 class Thread;
 
+static const uint16_t kNetworkCostMax = 999;
+static const uint16_t kNetworkCostHigh = 900;
+static const uint16_t kNetworkCostUnknown = 50;
+static const uint16_t kNetworkCostLow = 10;
+static const uint16_t kNetworkCostMin = 0;
 
 // By default, ignore loopback interfaces on the host.
 const int kDefaultNetworkIgnoreMask = ADAPTER_TYPE_LOOPBACK;
@@ -249,6 +254,8 @@ class BasicNetworkManager : public NetworkManagerBase,
   // Only updates the networks; does not reschedule the next update.
   void UpdateNetworksOnce();
 
+  AdapterType GetAdapterTypeFromName(const char* network_name) const;
+
   Thread* thread_;
   bool sent_first_update_;
   int start_count_;
@@ -273,6 +280,7 @@ class Network {
   ~Network();
 
   sigslot::signal1<const Network*> SignalInactive;
+  sigslot::signal1<const Network*> SignalTypeChanged;
 
   const DefaultLocalAddressProvider* default_local_address_provider() {
     return default_local_address_provider_;
@@ -344,8 +352,28 @@ class Network {
   void set_ignored(bool ignored) { ignored_ = ignored; }
 
   AdapterType type() const { return type_; }
-  void set_type(AdapterType type) { type_ = type; }
+  void set_type(AdapterType type) {
+    if (type_ == type) {
+      return;
+    }
+    type_ = type;
+    SignalTypeChanged(this);
+  }
 
+  uint16_t GetCost() const {
+    switch (type_) {
+      case rtc::ADAPTER_TYPE_ETHERNET:
+      case rtc::ADAPTER_TYPE_LOOPBACK:
+        return kNetworkCostMin;
+      case rtc::ADAPTER_TYPE_WIFI:
+      case rtc::ADAPTER_TYPE_VPN:
+        return kNetworkCostLow;
+      case rtc::ADAPTER_TYPE_CELLULAR:
+        return kNetworkCostHigh;
+      default:
+        return kNetworkCostUnknown;
+    }
+  }
   // A unique id assigned by the network manager, which may be signaled
   // to the remote side in the candidate.
   uint16_t id() const { return id_; }
