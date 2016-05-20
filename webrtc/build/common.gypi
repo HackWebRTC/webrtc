@@ -95,6 +95,10 @@
     # third party code will still have the reduced warning settings.
     'chromium_code': 1,
 
+    # Targets are by default not NaCl untrusted code. Use this variable exclude
+    # code that uses libraries that aren't available in the NaCl sandbox.
+    'nacl_untrusted_build%': 0,
+
     # Set to 1 to enable code coverage on Linux using the gcov library.
     'coverage%': 0,
 

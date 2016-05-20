@@ -475,7 +475,7 @@
             ],
           },
         }],
-        ['OS=="mac" or OS=="ios"', {
+        ['(OS=="mac" or OS=="ios") and nacl_untrusted_build==0', {
           'sources': [
             'maccocoathreadhelper.h',
             'maccocoathreadhelper.mm',
@@ -555,7 +555,7 @@
             }],
           ],
         }],
-        ['OS=="win"', {
+        ['OS=="win" and nacl_untrusted_build==0', {
           'sources': [
             'win32.cc',
             'win32.h',
