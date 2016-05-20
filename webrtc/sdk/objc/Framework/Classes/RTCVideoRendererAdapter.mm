@@ -32,7 +32,7 @@ class VideoRendererAdapter
     // I420 buffer for rotation before calling the rotation method otherwise
     // it will hit a DCHECK.
     if (nativeVideoFrame.rotation() != webrtc::kVideoRotation_0 &&
-        nativeVideoFrame.GetNativeHandle()) {
+        nativeVideoFrame.video_frame_buffer()->native_handle()) {
       rtc::scoped_refptr<webrtc::VideoFrameBuffer> i420Buffer =
           nativeVideoFrame.video_frame_buffer()->NativeToI420Buffer();
       std::unique_ptr<cricket::VideoFrame> cpuFrame(

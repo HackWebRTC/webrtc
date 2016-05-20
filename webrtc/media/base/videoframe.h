@@ -29,17 +29,6 @@ class VideoFrame {
   virtual int width() const = 0;
   virtual int height() const = 0;
 
-  // Deprecated methods, for backwards compatibility.
-  // TODO(nisse): Delete when usage in Chrome and other applications
-  // have been replaced by width() and height().
-  virtual size_t GetWidth() const final { return width(); }
-  virtual size_t GetHeight() const final { return height(); }
-
-  // Returns the handle of the underlying video frame. This is used when the
-  // frame is backed by a texture. The object should be destroyed when it is no
-  // longer in use, so the underlying resource can be freed.
-  virtual void* GetNativeHandle() const = 0;
-
   // Returns the underlying video frame buffer. This function is ok to call
   // multiple times, but the returned object will refer to the same memory.
   virtual const rtc::scoped_refptr<webrtc::VideoFrameBuffer>&

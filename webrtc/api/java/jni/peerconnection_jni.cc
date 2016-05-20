@@ -742,9 +742,10 @@ class JavaVideoRendererWrapper
 
   void OnFrame(const cricket::VideoFrame& video_frame) override {
     ScopedLocalRefFrame local_ref_frame(jni());
-    jobject j_frame = (video_frame.GetNativeHandle() != nullptr)
-                          ? CricketToJavaTextureFrame(&video_frame)
-                          : CricketToJavaI420Frame(&video_frame);
+    jobject j_frame =
+        (video_frame.video_frame_buffer()->native_handle() != nullptr)
+            ? CricketToJavaTextureFrame(&video_frame)
+            : CricketToJavaI420Frame(&video_frame);
     // |j_callbacks_| is responsible for releasing |j_frame| with
     // VideoRenderer.renderFrameDone().
     jni()->CallVoidMethod(*j_callbacks_, j_render_frame_id_, j_frame);
@@ -792,8 +793,8 @@ class JavaVideoRendererWrapper
 
   // Return a VideoRenderer.I420Frame referring texture object in |frame|.
   jobject CricketToJavaTextureFrame(const cricket::VideoFrame* frame) {
-    NativeHandleImpl* handle =
-        reinterpret_cast<NativeHandleImpl*>(frame->GetNativeHandle());
+    NativeHandleImpl* handle = reinterpret_cast<NativeHandleImpl*>(
+        frame->video_frame_buffer()->native_handle());
     jfloatArray sampling_matrix = jni()->NewFloatArray(16);
     jni()->SetFloatArrayRegion(sampling_matrix, 0, 16, handle->sampling_matrix);
     return jni()->NewObject(

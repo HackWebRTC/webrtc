@@ -83,12 +83,13 @@
 }
 
 - (CVPixelBufferRef)nativeHandle {
-  return static_cast<CVPixelBufferRef>(_videoFrame->GetNativeHandle());
+  return static_cast<CVPixelBufferRef>(
+      _videoFrame->video_frame_buffer()->native_handle());
 }
 
 - (void)convertBufferIfNeeded {
   if (!_i420Buffer) {
-    if (_videoFrame->GetNativeHandle()) {
+    if (_videoFrame->video_frame_buffer()->native_handle()) {
       // Convert to I420.
       _i420Buffer = _videoFrame->video_frame_buffer()->NativeToI420Buffer();
     } else {

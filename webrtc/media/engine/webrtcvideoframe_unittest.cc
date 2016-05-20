@@ -275,7 +275,7 @@ TEST_F(WebRtcVideoFrameTest, TextureInitialValues) {
           dummy_handle, 640, 480);
   // Timestamp is converted from ns to us, so last three digits are lost.
   cricket::WebRtcVideoFrame frame(buffer, 20000, webrtc::kVideoRotation_0);
-  EXPECT_EQ(dummy_handle, frame.GetNativeHandle());
+  EXPECT_EQ(dummy_handle, frame.video_frame_buffer()->native_handle());
   EXPECT_EQ(640, frame.width());
   EXPECT_EQ(480, frame.height());
   EXPECT_EQ(20000, frame.GetTimeStamp());
@@ -294,7 +294,8 @@ TEST_F(WebRtcVideoFrameTest, CopyTextureFrame) {
   // Timestamp is converted from ns to us, so last three digits are lost.
   cricket::WebRtcVideoFrame frame1(buffer, 20000, webrtc::kVideoRotation_0);
   cricket::VideoFrame* frame2 = frame1.Copy();
-  EXPECT_EQ(frame1.GetNativeHandle(), frame2->GetNativeHandle());
+  EXPECT_EQ(frame1.video_frame_buffer()->native_handle(),
+            frame2->video_frame_buffer()->native_handle());
   EXPECT_EQ(frame1.width(), frame2->width());
   EXPECT_EQ(frame1.height(), frame2->height());
   EXPECT_EQ(frame1.GetTimeStamp(), frame2->GetTimeStamp());

@@ -68,7 +68,6 @@ class WebRtcVideoFrame : public VideoFrame {
   int width() const override;
   int height() const override;
 
-  void* GetNativeHandle() const override;
   const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& video_frame_buffer()
       const override;
 
