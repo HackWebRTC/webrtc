@@ -57,7 +57,7 @@ public class AppRTCProximitySensor implements SensorEventListener {
   }
 
   /**
-   * Activate the proximity sensor. Also do initializtion if called for the
+   * Activate the proximity sensor. Also do initialization if called for the
    * first time.
    */
   public boolean start() {
@@ -125,7 +125,7 @@ public class AppRTCProximitySensor implements SensorEventListener {
 
   /**
    * Get default proximity sensor if it exists. Tablet devices (e.g. Nexus 7)
-   * does not support this type of sensor and false will be retured in such
+   * does not support this type of sensor and false will be returned in such
    * cases.
    */
   private boolean initDefaultSensor() {
@@ -146,24 +146,24 @@ public class AppRTCProximitySensor implements SensorEventListener {
       return;
     }
     StringBuilder info = new StringBuilder("Proximity sensor: ");
-    info.append("name=" + proximitySensor.getName());
-    info.append(", vendor: " + proximitySensor.getVendor());
-    info.append(", power: " + proximitySensor.getPower());
-    info.append(", resolution: " + proximitySensor.getResolution());
-    info.append(", max range: " + proximitySensor.getMaximumRange());
+    info.append("name=").append(proximitySensor.getName());
+    info.append(", vendor: ").append(proximitySensor.getVendor());
+    info.append(", power: ").append(proximitySensor.getPower());
+    info.append(", resolution: ").append(proximitySensor.getResolution());
+    info.append(", max range: ").append(proximitySensor.getMaximumRange());
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
       // Added in API level 9.
-      info.append(", min delay: " + proximitySensor.getMinDelay());
+      info.append(", min delay: ").append(proximitySensor.getMinDelay());
     }
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
       // Added in API level 20.
-      info.append(", type: " + proximitySensor.getStringType());
+      info.append(", type: ").append(proximitySensor.getStringType());
     }
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       // Added in API level 21.
-      info.append(", max delay: " + proximitySensor.getMaxDelay());
-      info.append(", reporting mode: " + proximitySensor.getReportingMode());
-      info.append(", isWakeUpSensor: " + proximitySensor.isWakeUpSensor());
+      info.append(", max delay: ").append(proximitySensor.getMaxDelay());
+      info.append(", reporting mode: ").append(proximitySensor.getReportingMode());
+      info.append(", isWakeUpSensor: ").append(proximitySensor.isWakeUpSensor());
     }
     Log.d(TAG, info.toString());
   }

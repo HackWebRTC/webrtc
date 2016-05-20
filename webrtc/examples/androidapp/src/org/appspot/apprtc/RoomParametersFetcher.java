@@ -45,17 +45,17 @@ public class RoomParametersFetcher {
   /**
    * Room parameters fetcher callbacks.
    */
-  public static interface RoomParametersFetcherEvents {
+  public interface RoomParametersFetcherEvents {
     /**
      * Callback fired once the room's signaling parameters
      * SignalingParameters are extracted.
      */
-    public void onSignalingParametersReady(final SignalingParameters params);
+    void onSignalingParametersReady(final SignalingParameters params);
 
     /**
      * Callback for room parameters extraction error.
      */
-    public void onSignalingParametersError(final String description);
+    void onSignalingParametersError(final String description);
   }
 
   public RoomParametersFetcher(String roomUrl, String roomMessage,

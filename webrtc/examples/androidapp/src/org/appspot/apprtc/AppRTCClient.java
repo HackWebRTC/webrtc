@@ -24,7 +24,7 @@ public interface AppRTCClient {
   /**
    * Struct holding the connection parameters of an AppRTC room.
    */
-  public static class RoomConnectionParameters {
+  class RoomConnectionParameters {
     public final String roomUrl;
     public final String roomId;
     public final boolean loopback;
@@ -41,37 +41,37 @@ public interface AppRTCClient {
    * parameters. Once connection is established onConnectedToRoom()
    * callback with room parameters is invoked.
    */
-  public void connectToRoom(RoomConnectionParameters connectionParameters);
+  void connectToRoom(RoomConnectionParameters connectionParameters);
 
   /**
    * Send offer SDP to the other participant.
    */
-  public void sendOfferSdp(final SessionDescription sdp);
+  void sendOfferSdp(final SessionDescription sdp);
 
   /**
    * Send answer SDP to the other participant.
    */
-  public void sendAnswerSdp(final SessionDescription sdp);
+  void sendAnswerSdp(final SessionDescription sdp);
 
   /**
    * Send Ice candidate to the other participant.
    */
-  public void sendLocalIceCandidate(final IceCandidate candidate);
+  void sendLocalIceCandidate(final IceCandidate candidate);
 
   /**
    * Send removed ICE candidates to the other participant.
    */
-  public void sendLocalIceCandidateRemovals(final IceCandidate[] candidates);
+  void sendLocalIceCandidateRemovals(final IceCandidate[] candidates);
 
   /**
    * Disconnect from room.
    */
-  public void disconnectFromRoom();
+  void disconnectFromRoom();
 
   /**
    * Struct holding the signaling parameters of an AppRTC room.
    */
-  public static class SignalingParameters {
+  class SignalingParameters {
     public final List<PeerConnection.IceServer> iceServers;
     public final boolean initiator;
     public final String clientId;
@@ -100,36 +100,36 @@ public interface AppRTCClient {
    *
    * <p>Methods are guaranteed to be invoked on the UI thread of |activity|.
    */
-  public static interface SignalingEvents {
+  interface SignalingEvents {
     /**
      * Callback fired once the room's signaling parameters
      * SignalingParameters are extracted.
      */
-    public void onConnectedToRoom(final SignalingParameters params);
+    void onConnectedToRoom(final SignalingParameters params);
 
     /**
      * Callback fired once remote SDP is received.
      */
-    public void onRemoteDescription(final SessionDescription sdp);
+    void onRemoteDescription(final SessionDescription sdp);
 
     /**
      * Callback fired once remote Ice candidate is received.
      */
-    public void onRemoteIceCandidate(final IceCandidate candidate);
+    void onRemoteIceCandidate(final IceCandidate candidate);
 
     /**
      * Callback fired once remote Ice candidate removals are received.
      */
-    public void onRemoteIceCandidatesRemoved(final IceCandidate[] candidates);
+    void onRemoteIceCandidatesRemoved(final IceCandidate[] candidates);
 
     /**
      * Callback fired once channel is closed.
      */
-    public void onChannelClose();
+    void onChannelClose();
 
     /**
      * Callback fired once channel error happened.
      */
-    public void onChannelError(final String description);
+    void onChannelError(final String description);
   }
 }

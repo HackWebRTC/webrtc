@@ -176,48 +176,48 @@ public class PeerConnectionClient {
   /**
    * Peer connection events.
    */
-  public static interface PeerConnectionEvents {
+  public interface PeerConnectionEvents {
     /**
      * Callback fired once local SDP is created and set.
      */
-    public void onLocalDescription(final SessionDescription sdp);
+    void onLocalDescription(final SessionDescription sdp);
 
     /**
      * Callback fired once local Ice candidate is generated.
      */
-    public void onIceCandidate(final IceCandidate candidate);
+    void onIceCandidate(final IceCandidate candidate);
 
     /**
      * Callback fired once local ICE candidates are removed.
      */
-    public void onIceCandidatesRemoved(final IceCandidate[] candidates);
+    void onIceCandidatesRemoved(final IceCandidate[] candidates);
 
     /**
      * Callback fired once connection is established (IceConnectionState is
      * CONNECTED).
      */
-    public void onIceConnected();
+    void onIceConnected();
 
     /**
      * Callback fired once connection is closed (IceConnectionState is
      * DISCONNECTED).
      */
-    public void onIceDisconnected();
+    void onIceDisconnected();
 
     /**
      * Callback fired once peer connection is closed.
      */
-    public void onPeerConnectionClosed();
+    void onPeerConnectionClosed();
 
     /**
      * Callback fired once peer connection statistics is ready.
      */
-    public void onPeerConnectionStatsReady(final StatsReport[] reports);
+    void onPeerConnectionStatsReady(final StatsReport[] reports);
 
     /**
      * Callback fired once peer connection error happened.
      */
-    public void onPeerConnectionError(final String description);
+    void onPeerConnectionError(final String description);
   }
 
   private PeerConnectionClient() {
@@ -327,11 +327,8 @@ public class PeerConnectionClient {
     Log.d(TAG, "Pereferred video codec: " + preferredVideoCodec);
 
     // Check if ISAC is used by default.
-    preferIsac = false;
-    if (peerConnectionParameters.audioCodec != null
-        && peerConnectionParameters.audioCodec.equals(AUDIO_CODEC_ISAC)) {
-      preferIsac = true;
-    }
+    preferIsac = peerConnectionParameters.audioCodec != null
+        && peerConnectionParameters.audioCodec.equals(AUDIO_CODEC_ISAC);
 
     // Enable/disable OpenSL ES playback.
     if (!peerConnectionParameters.useOpenSLES) {
@@ -503,7 +500,8 @@ public class PeerConnectionClient {
     if (peerConnectionParameters.aecDump) {
       try {
         aecDumpFileDescriptor = ParcelFileDescriptor.open(
-            new File("/sdcard/Download/audio.aecdump"),
+            new File(Environment.getExternalStorageDirectory().getPath()
+                + "Download/audio.aecdump"),
                 ParcelFileDescriptor.MODE_READ_WRITE |
                 ParcelFileDescriptor.MODE_CREATE |
                 ParcelFileDescriptor.MODE_TRUNCATE);
@@ -564,11 +562,7 @@ public class PeerConnectionClient {
         }
       }
     }
-    if (minWidth * minHeight >= 1280 * 720) {
-      return true;
-    } else {
-      return false;
-    }
+    return minWidth * minHeight >= 1280 * 720;
   }
 
   private void getStats() {
@@ -869,7 +863,6 @@ public class PeerConnectionClient {
       Matcher codecMatcher = codecPattern.matcher(lines[i]);
       if (codecMatcher.matches()) {
         codecRtpMap = codecMatcher.group(1);
-        continue;
       }
     }
     if (mLineIndex == -1) {

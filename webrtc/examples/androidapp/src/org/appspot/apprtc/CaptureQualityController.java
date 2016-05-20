@@ -69,7 +69,7 @@ public class CaptureQualityController implements SeekBar.OnSeekBarChangeListener
       width = 0;
       height = 0;
       framerate = 0;
-      captureFormatText.setText("Muted");
+      captureFormatText.setText(R.string.muted);
       return;
     }
 

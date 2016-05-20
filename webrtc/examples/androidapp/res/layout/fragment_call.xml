@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <RelativeLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <TextView
         android:id="@+id/contact_name_call"
@@ -64,7 +63,7 @@
         android:layout_centerHorizontal="true"
         android:layout_above="@+id/capture_format_slider_call"
         android:textSize="16sp"
-        android:text="Slide to change capture format"/>
+        android:text="@string/capture_format_change_text"/>
 
     <SeekBar
         android:id="@+id/capture_format_slider_call"

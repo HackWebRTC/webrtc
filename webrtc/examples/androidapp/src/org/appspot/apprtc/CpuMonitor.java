@@ -53,7 +53,7 @@ import java.util.concurrent.TimeUnit;
  *     CpuMonitor objects.
  *
  * <p>If we can gather enough info to generate a sensible result,
- * sampleCpuUtilization returns true.  It is designed to never through an
+ * sampleCpuUtilization returns true.  It is designed to never throw an
  * exception.
  *
  * <p>sampleCpuUtilization should not be called too often in its present form,

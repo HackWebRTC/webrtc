@@ -34,8 +34,8 @@ public class AsyncHttpURLConnection {
    * Http requests callbacks.
    */
   public interface AsyncHttpEvents {
-    public void onHttpError(String errorMessage);
-    public void onHttpComplete(String response);
+    void onHttpError(String errorMessage);
+    void onHttpComplete(String response);
   }
 
   public AsyncHttpURLConnection(String method, String url, String message,

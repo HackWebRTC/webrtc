@@ -42,11 +42,11 @@ public class CallFragment extends Fragment {
    * Call control interface for container activity.
    */
   public interface OnCallEvents {
-    public void onCallHangUp();
-    public void onCameraSwitch();
-    public void onVideoScalingSwitch(ScalingType scalingType);
-    public void onCaptureFormatChange(int width, int height, int framerate);
-    public boolean onToggleMic();
+    void onCallHangUp();
+    void onCameraSwitch();
+    void onVideoScalingSwitch(ScalingType scalingType);
+    void onCaptureFormatChange(int width, int height, int framerate);
+    boolean onToggleMic();
   }
 
   @Override

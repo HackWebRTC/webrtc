@@ -141,7 +141,6 @@ public class ConnectActivity extends AppCompatActivity {
           CallActivity.EXTRA_RUNTIME, 0);
       String room = sharedPref.getString(keyprefRoom, "");
       connectToRoom(room, true, loopback, runTimeMs);
-      return;
     }
 
     addFavoriteButton = (FloatingActionButton) findViewById(R.id.add_favorite_button);

@@ -65,9 +65,9 @@ public class WebSocketChannelClient {
    * All events are dispatched from a looper executor thread.
    */
   public interface WebSocketChannelEvents {
-    public void onWebSocketMessage(final String message);
-    public void onWebSocketClose();
-    public void onWebSocketError(final String description);
+    void onWebSocketMessage(final String message);
+    void onWebSocketClose();
+    void onWebSocketError(final String description);
   }
 
   public WebSocketChannelClient(LooperExecutor executor, WebSocketChannelEvents events) {
@@ -113,7 +113,7 @@ public class WebSocketChannelClient {
       Log.w(TAG, "WebSocket register() in state " + state);
       return;
     }
-    Log.d(TAG, "Registering WebSocket for room " + roomID + ". CLientID: " + clientID);
+    Log.d(TAG, "Registering WebSocket for room " + roomID + ". ClientID: " + clientID);
     JSONObject json = new JSONObject();
     try {
       json.put("cmd", "register");
@@ -159,7 +159,6 @@ public class WebSocketChannelClient {
         }
         break;
     }
-    return;
   }
 
   // This call can be used to send WebSocket messages before WebSocket
@@ -171,7 +170,7 @@ public class WebSocketChannelClient {
 
   public void disconnect(boolean waitForComplete) {
     checkIfCalledOnValidThread();
-    Log.d(TAG, "Disonnect WebSocket. State: " + state);
+    Log.d(TAG, "Disconnect WebSocket. State: " + state);
     if (state == WebSocketConnectionState.REGISTERED) {
       // Send "bye" to WebSocket server.
       send("{\"type\": \"bye\"}");
@@ -200,7 +199,7 @@ public class WebSocketChannelClient {
         }
       }
     }
-    Log.d(TAG, "Disonnecting WebSocket done.");
+    Log.d(TAG, "Disconnecting WebSocket done.");
   }
 
   private void reportError(final String errorMessage) {

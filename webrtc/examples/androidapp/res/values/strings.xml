@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="no">AppRTC</string>
-    <string name="settings_name" translatable="no">AppRTC Settings</string>
+    <string name="app_name" translatable="false">AppRTC</string>
+    <string name="settings_name" translatable="false">AppRTC Settings</string>
     <string name="disconnect_call">Disconnect Call</string>
     <string name="room_description">
         Please enter a room name. Room names are shared with everyone, so think
@@ -20,6 +20,8 @@
     <string name="add">Add</string>
     <string name="cancel">Cancel</string>
     <string name="switch_camera">Switch front/back camera</string>
+    <string name="capture_format_change_text">Slide to change capture format</string>
+    <string name="muted">Muted</string>
     <string name="toggle_debug">Toggle debug view</string>
     <string name="toggle_mic">Toggle microphone on/off</string>
     <string name="action_settings">Settings</string>

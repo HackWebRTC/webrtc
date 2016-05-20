@@ -240,7 +240,7 @@ public class AppRTCAudioManager {
             + ", n=" + name
             + ", sb=" + isInitialStickyBroadcast());
 
-        boolean hasWiredHeadset = (state == STATE_PLUGGED) ? true : false;
+        boolean hasWiredHeadset = (state == STATE_PLUGGED);
         switch (state) {
           case STATE_UNPLUGGED:
             updateAudioDeviceState(hasWiredHeadset);
