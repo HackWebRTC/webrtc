@@ -19,7 +19,8 @@ import java.util.List;
 import java.util.concurrent.Executor;
 
 /**
- * Looper based executor class.
+ * Looper based executor class. This is needed because WebSocketClient from autobanh requires the
+ * thread to have a looper. The class is used in WebSocketRTCClient/WebSocketChannelClient.
  */
 public class LooperExecutor extends Thread implements Executor {
   private static final String TAG = "LooperExecutor";

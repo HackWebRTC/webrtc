@@ -23,8 +23,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Scanner;
-
-import org.appspot.apprtc.util.LooperExecutor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Simple CPU monitor.  The caller creates a CpuMonitor object which can then
@@ -85,7 +86,7 @@ class CpuMonitor {
   // CPU frequency in percentage from maximum.
   private final MovingAverage frequencyScale;
 
-  private LooperExecutor executor;
+  private ScheduledExecutorService executor;
   private long lastStatLogTimeMs;
   private long[] cpuFreqMax;
   private int cpusPresent;
@@ -159,33 +160,21 @@ class CpuMonitor {
     frequencyScale = new MovingAverage(MOVING_AVERAGE_SAMPLES);
     lastStatLogTimeMs = SystemClock.elapsedRealtime();
 
-    executor = new LooperExecutor();
-    executor.requestStart();
     scheduleCpuUtilizationTask();
-  }
-
-  public void release() {
-    if (executor != null) {
-      Log.d(TAG, "release");
-      executor.cancelScheduledTasks();
-      executor.requestStop();
-      executor = null;
-    }
   }
 
   public void pause() {
     if (executor != null) {
       Log.d(TAG, "pause");
-      executor.cancelScheduledTasks();
+      executor.shutdownNow();
+      executor = null;
     }
   }
 
   public void resume() {
-    if (executor != null) {
-      Log.d(TAG, "resume");
-      resetStat();
-      scheduleCpuUtilizationTask();
-    }
+    Log.d(TAG, "resume");
+    resetStat();
+    scheduleCpuUtilizationTask();
   }
 
   public synchronized void reset() {
@@ -209,13 +198,18 @@ class CpuMonitor {
   }
 
   private void scheduleCpuUtilizationTask() {
-    executor.cancelScheduledTasks();
+    if (executor != null) {
+      executor.shutdownNow();
+      executor = null;
+    }
+
+    executor = Executors.newSingleThreadScheduledExecutor();
     executor.scheduleAtFixedRate(new Runnable() {
       @Override
       public void run() {
         cpuUtilizationTask();
       }
-    }, CPU_STAT_SAMPLE_PERIOD_MS);
+    }, 0, CPU_STAT_SAMPLE_PERIOD_MS, TimeUnit.MILLISECONDS);
   }
 
   private void cpuUtilizationTask() {

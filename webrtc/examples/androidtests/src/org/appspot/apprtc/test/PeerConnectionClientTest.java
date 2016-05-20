@@ -13,13 +13,15 @@ package org.appspot.apprtc.test;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.appspot.apprtc.AppRTCClient.SignalingParameters;
 import org.appspot.apprtc.PeerConnectionClient;
 import org.appspot.apprtc.PeerConnectionClient.PeerConnectionEvents;
 import org.appspot.apprtc.PeerConnectionClient.PeerConnectionParameters;
-import org.appspot.apprtc.util.LooperExecutor;
 import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaCodecVideoEncoder;
@@ -66,7 +68,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
   private EglBase eglBase;
 
   // These are protected by their respective event objects.
-  private LooperExecutor signalingExecutor;
+  private ExecutorService signalingExecutor;
   private boolean isClosed;
   private boolean isIceConnected;
   private SessionDescription localSdp;
@@ -279,8 +281,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
 
   @Override
   public void setUp() {
-    signalingExecutor = new LooperExecutor();
-    signalingExecutor.requestStart();
+    signalingExecutor = Executors.newSingleThreadExecutor();
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
       eglBase = EglBase.create();
     }
@@ -288,7 +289,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
 
   @Override
   public void tearDown() {
-    signalingExecutor.requestStop();
+    signalingExecutor.shutdown();
     if (eglBase != null) {
       eglBase.release();
     }

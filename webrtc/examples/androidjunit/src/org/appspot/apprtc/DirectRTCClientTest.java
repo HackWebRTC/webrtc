@@ -10,9 +10,6 @@
 
 package org.appspot.apprtc;
 
-import android.util.Log;
-
-import org.appspot.apprtc.util.RobolectricLooperExecutor;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -56,8 +53,8 @@ public class DirectRTCClientTest {
     clientEvents = mock(AppRTCClient.SignalingEvents.class);
     serverEvents = mock(AppRTCClient.SignalingEvents.class);
 
-    client = new DirectRTCClient(clientEvents, new RobolectricLooperExecutor());
-    server = new DirectRTCClient(serverEvents, new RobolectricLooperExecutor());
+    client = new DirectRTCClient(clientEvents);
+    server = new DirectRTCClient(serverEvents);
   }
 
   @Test

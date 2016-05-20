@@ -12,7 +12,6 @@ package org.appspot.apprtc;
 
 import android.util.Log;
 
-import org.appspot.apprtc.util.LooperExecutor;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -21,6 +20,8 @@ import org.webrtc.PeerConnection;
 import org.webrtc.SessionDescription;
 
 import java.util.LinkedList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -52,7 +53,7 @@ public class DirectRTCClient implements AppRTCClient, TCPChannelClient.TCPChanne
       + "(:(\\d+))?"
   );
 
-  private final LooperExecutor executor;
+  private final ExecutorService executor;
   private final SignalingEvents events;
   private TCPChannelClient tcpClient;
   private RoomConnectionParameters connectionParameters;
@@ -64,11 +65,10 @@ public class DirectRTCClient implements AppRTCClient, TCPChannelClient.TCPChanne
   // All alterations of the room state should be done from inside the looper thread.
   private ConnectionState roomState;
 
-  public DirectRTCClient(SignalingEvents events, LooperExecutor looperExecutor) {
+  public DirectRTCClient(SignalingEvents events) {
     this.events = events;
-    executor = looperExecutor;
 
-    executor.requestStart();
+    executor = Executors.newSingleThreadExecutor();
     roomState = ConnectionState.NEW;
   }
 
@@ -148,6 +148,7 @@ public class DirectRTCClient implements AppRTCClient, TCPChannelClient.TCPChanne
       tcpClient.disconnect();
       tcpClient = null;
     }
+    executor.shutdown();
   }
 
   @Override
@@ -295,13 +296,11 @@ public class DirectRTCClient implements AppRTCClient, TCPChannelClient.TCPChanne
   @Override
   public void onTCPError(String description) {
     reportError("TCP connection error: " + description);
-    executor.requestStop();
   }
 
   @Override
   public void onTCPClose() {
     events.onChannelClose();
-    executor.requestStop();
   }
 
   // --------------------------------------------------------------------

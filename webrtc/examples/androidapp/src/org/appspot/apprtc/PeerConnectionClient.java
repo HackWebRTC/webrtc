@@ -16,7 +16,6 @@ import android.os.Environment;
 import android.util.Log;
 
 import org.appspot.apprtc.AppRTCClient.SignalingParameters;
-import org.appspot.apprtc.util.LooperExecutor;
 import org.webrtc.AudioTrack;
 import org.webrtc.CameraEnumerationAndroid;
 import org.webrtc.DataChannel;
@@ -46,6 +45,9 @@ import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -88,7 +90,7 @@ public class PeerConnectionClient {
   private static final PeerConnectionClient instance = new PeerConnectionClient();
   private final PCObserver pcObserver = new PCObserver();
   private final SDPObserver sdpObserver = new SDPObserver();
-  private final LooperExecutor executor;
+  private final ScheduledExecutorService executor;
 
   private PeerConnectionFactory factory;
   private PeerConnection peerConnection;
@@ -219,11 +221,10 @@ public class PeerConnectionClient {
   }
 
   private PeerConnectionClient() {
-    executor = new LooperExecutor();
-    // Looper thread is started once in private ctor and is used for all
+    // Executor thread is started once in private ctor and is used for all
     // peer connection API calls to ensure new peer connection factory is
     // created on the same thread as previously destroyed factory.
-    executor.requestStart();
+    executor = Executors.newSingleThreadScheduledExecutor();
   }
 
   public static PeerConnectionClient getInstance() {

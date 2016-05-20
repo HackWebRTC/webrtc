@@ -12,7 +12,7 @@ package org.appspot.apprtc;
 
 import android.util.Log;
 
-import org.appspot.apprtc.util.LooperExecutor;
+import org.webrtc.ThreadUtils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -22,6 +22,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Replacement for WebSocketChannelClient for direct communication between two IP addresses. Handles
@@ -34,7 +35,8 @@ import java.net.UnknownHostException;
 public class TCPChannelClient {
   private static final String TAG = "TCPChannelClient";
 
-  private final LooperExecutor executor;
+  private final ExecutorService executor;
+  private final ThreadUtils.ThreadChecker executorThreadCheck;
   private final TCPChannelEvents eventListener;
   private TCPSocket socket;
 
@@ -58,8 +60,10 @@ public class TCPChannelClient {
    * @param port Port to listen on or connect to.
    */
   public TCPChannelClient(
-      LooperExecutor executor, TCPChannelEvents eventListener, String ip, int port) {
+      ExecutorService executor, TCPChannelEvents eventListener, String ip, int port) {
     this.executor = executor;
+    executorThreadCheck = new ThreadUtils.ThreadChecker();
+    executorThreadCheck.detachThread();
     this.eventListener = eventListener;
 
     InetAddress address;
@@ -83,7 +87,7 @@ public class TCPChannelClient {
    * Disconnects the client if not already disconnected. This will fire the onTCPClose event.
    */
   public void disconnect() {
-    checkIfCalledOnValidThread();
+    executorThreadCheck.checkIsOnValidThread();
 
     socket.disconnect();
   }
@@ -94,7 +98,7 @@ public class TCPChannelClient {
    * @param message Message to be sent.
    */
   public void send(String message) {
-    checkIfCalledOnValidThread();
+    executorThreadCheck.checkIsOnValidThread();
 
     socket.send(message);
   }
@@ -110,17 +114,6 @@ public class TCPChannelClient {
         eventListener.onTCPError(message);
       }
     });
-  }
-
-  /**
-   * Helper method for debugging purposes.
-   * Ensures that TCPChannelClient method is called on a looper thread.
-   */
-  private void checkIfCalledOnValidThread() {
-    if (!executor.checkOnLooperThread()) {
-      throw new IllegalStateException(
-          "TCPChannelClient method is not called on valid thread");
-    }
   }
 
 
