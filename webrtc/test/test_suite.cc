@@ -14,6 +14,7 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/system_wrappers/include/metrics_default.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/trace_to_stderr.h"
 #include "webrtc/test/field_trial.h"
@@ -37,6 +38,7 @@ TestSuite::TestSuite(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
 
   webrtc::test::InitFieldTrialsFromString(FLAGS_force_fieldtrials);
+  webrtc::metrics::Enable();
 }
 
 TestSuite::~TestSuite() {

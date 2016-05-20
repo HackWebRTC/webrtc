@@ -11,6 +11,7 @@
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/system_wrappers/include/metrics_default.h"
 #include "webrtc/test/field_trial.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
@@ -34,5 +35,6 @@ int main(int argc, char* argv[]) {
 
   webrtc::test::SetExecutablePath(argv[0]);
   webrtc::test::InitFieldTrialsFromString(FLAGS_force_fieldtrials);
+  webrtc::metrics::Enable();
   return RUN_ALL_TESTS();
 }

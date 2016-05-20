@@ -12,7 +12,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/system_wrappers/include/metrics.h"
-#include "webrtc/test/histogram.h"
+#include "webrtc/system_wrappers/include/metrics_default.h"
 
 namespace webrtc {
 namespace {
@@ -102,7 +102,7 @@ TEST_F(SendDelayStatsTest, OldPacketsRemoved) {
 }
 
 TEST_F(SendDelayStatsTest, HistogramsAreUpdated) {
-  test::ClearHistograms();
+  metrics::Reset();
   const int64_t kDelayMs1 = 5;
   const int64_t kDelayMs2 = 10;
   uint16_t id = 0;
@@ -115,8 +115,9 @@ TEST_F(SendDelayStatsTest, HistogramsAreUpdated) {
     EXPECT_TRUE(OnSentPacket(id));
   }
   stats_.reset();
-  EXPECT_EQ(2, test::NumHistogramSamples("WebRTC.Video.SendDelayInMs"));
-  EXPECT_EQ(kDelayMs2, test::LastHistogramSample("WebRTC.Video.SendDelayInMs"));
+  EXPECT_EQ(2, metrics::NumSamples("WebRTC.Video.SendDelayInMs"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.SendDelayInMs", kDelayMs1));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.SendDelayInMs", kDelayMs2));
 }
 
 }  // namespace webrtc

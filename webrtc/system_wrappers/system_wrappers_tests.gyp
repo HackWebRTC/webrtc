@@ -14,8 +14,8 @@
       'type': '<(gtest_target_type)',
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
-        '<(webrtc_root)/test/test.gyp:histogram',
         '<(webrtc_root)/test/test.gyp:test_support_main',
       ],
       'sources': [
@@ -31,6 +31,7 @@
         'source/data_log_c_helpers_unittest.c',
         'source/data_log_c_helpers_unittest.h',
         'source/event_timer_posix_unittest.cc',
+        'source/metrics_default_unittest.cc',
         'source/metrics_unittest.cc',
         'source/ntp_time_unittest.cc',
         'source/rtp_to_ntp_unittest.cc',

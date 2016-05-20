@@ -24,8 +24,8 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/system_wrappers/include/metrics.h"
+#include "webrtc/system_wrappers/include/metrics_default.h"
 #include "webrtc/test/field_trial.h"
-#include "webrtc/test/histogram.h"
 
 namespace webrtc {
 
@@ -498,7 +498,7 @@ TEST_P(TestBasicJitterBuffer, SinglePacketFrame) {
 }
 
 TEST_P(TestBasicJitterBuffer, VerifyHistogramStats) {
-  test::ClearHistograms();
+  metrics::Reset();
   // Always start with a complete key frame when not allowing errors.
   jitter_buffer_->SetDecodeErrorMode(kNoErrors);
   packet_->frameType = kVideoFrameKey;
@@ -518,25 +518,21 @@ TEST_P(TestBasicJitterBuffer, VerifyHistogramStats) {
   // Verify that histograms are updated when the jitter buffer is stopped.
   clock_->AdvanceTimeMilliseconds(metrics::kMinRunTimeInSeconds * 1000);
   jitter_buffer_->Stop();
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.DiscardedPacketsInPercent", 0));
+  EXPECT_EQ(1,
+            metrics::NumEvents("WebRTC.Video.DuplicatedPacketsInPercent", 0));
   EXPECT_EQ(
-      0, test::LastHistogramSample("WebRTC.Video.DiscardedPacketsInPercent"));
+      1, metrics::NumSamples("WebRTC.Video.CompleteFramesReceivedPerSecond"));
   EXPECT_EQ(
-      0, test::LastHistogramSample("WebRTC.Video.DuplicatedPacketsInPercent"));
-  EXPECT_NE(-1, test::LastHistogramSample(
-                    "WebRTC.Video.CompleteFramesReceivedPerSecond"));
-  EXPECT_EQ(1000, test::LastHistogramSample(
-                      "WebRTC.Video.KeyFramesReceivedInPermille"));
+      1, metrics::NumEvents("WebRTC.Video.KeyFramesReceivedInPermille", 1000));
 
   // Verify that histograms are not updated if stop is called again.
   jitter_buffer_->Stop();
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.DiscardedPacketsInPercent"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.DuplicatedPacketsInPercent"));
   EXPECT_EQ(
-      1, test::NumHistogramSamples("WebRTC.Video.DiscardedPacketsInPercent"));
-  EXPECT_EQ(
-      1, test::NumHistogramSamples("WebRTC.Video.DuplicatedPacketsInPercent"));
-  EXPECT_EQ(1, test::NumHistogramSamples(
-                   "WebRTC.Video.CompleteFramesReceivedPerSecond"));
-  EXPECT_EQ(
-      1, test::NumHistogramSamples("WebRTC.Video.KeyFramesReceivedInPermille"));
+      1, metrics::NumSamples("WebRTC.Video.CompleteFramesReceivedPerSecond"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.KeyFramesReceivedInPermille"));
 }
 
 TEST_P(TestBasicJitterBuffer, DualPacketFrame) {

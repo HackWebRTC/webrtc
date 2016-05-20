@@ -17,7 +17,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/system_wrappers/include/metrics.h"
-#include "webrtc/test/histogram.h"
+#include "webrtc/system_wrappers/include/metrics_default.h"
 
 namespace webrtc {
 namespace {
@@ -40,6 +40,7 @@ class SendStatisticsProxyTest : public ::testing::Test {
 
  protected:
   virtual void SetUp() {
+    metrics::Reset();
     statistics_proxy_.reset(new SendStatisticsProxy(
         &fake_clock_, GetTestConfig(),
         VideoEncoderConfig::ContentType::kRealtimeVideo));
@@ -285,7 +286,6 @@ TEST_F(SendStatisticsProxyTest, OnEncodedFrameTimeMeasured) {
 }
 
 TEST_F(SendStatisticsProxyTest, SwitchContentTypeUpdatesHistograms) {
-  test::ClearHistograms();
   const int kWidth = 640;
   const int kHeight = 480;
 
@@ -295,15 +295,14 @@ TEST_F(SendStatisticsProxyTest, SwitchContentTypeUpdatesHistograms) {
   // No switch, stats not should be updated.
   statistics_proxy_->SetContentType(
       VideoEncoderConfig::ContentType::kRealtimeVideo);
-  EXPECT_EQ(0, test::NumHistogramSamples("WebRTC.Video.InputWidthInPixels"));
+  EXPECT_EQ(0, metrics::NumSamples("WebRTC.Video.InputWidthInPixels"));
 
   // Switch to screenshare, real-time stats should be updated.
   statistics_proxy_->SetContentType(VideoEncoderConfig::ContentType::kScreen);
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.InputWidthInPixels"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.InputWidthInPixels"));
 }
 
 TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp8) {
-  test::ClearHistograms();
   EncodedImage encoded_image;
   CodecSpecificInfo codec_info;
   codec_info.codecType = kVideoCodecVP8;
@@ -317,12 +316,10 @@ TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp8) {
     statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
   }
   statistics_proxy_.reset();
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.Encoded.Qp.Vp8.S0"));
-  EXPECT_EQ(kQpIdx0,
-            test::LastHistogramSample("WebRTC.Video.Encoded.Qp.Vp8.S0"));
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.Encoded.Qp.Vp8.S1"));
-  EXPECT_EQ(kQpIdx1,
-            test::LastHistogramSample("WebRTC.Video.Encoded.Qp.Vp8.S1"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.Encoded.Qp.Vp8.S0"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.Encoded.Qp.Vp8.S0", kQpIdx0));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.Encoded.Qp.Vp8.S1"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.Encoded.Qp.Vp8.S1", kQpIdx1));
 }
 
 TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp8OneSsrc) {
@@ -331,7 +328,6 @@ TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp8OneSsrc) {
   statistics_proxy_.reset(new SendStatisticsProxy(
       &fake_clock_, config, VideoEncoderConfig::ContentType::kRealtimeVideo));
 
-  test::ClearHistograms();
   EncodedImage encoded_image;
   CodecSpecificInfo codec_info;
   codec_info.codecType = kVideoCodecVP8;
@@ -342,12 +338,11 @@ TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp8OneSsrc) {
     statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
   }
   statistics_proxy_.reset();
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.Encoded.Qp.Vp8"));
-  EXPECT_EQ(kQpIdx0, test::LastHistogramSample("WebRTC.Video.Encoded.Qp.Vp8"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.Encoded.Qp.Vp8"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.Encoded.Qp.Vp8", kQpIdx0));
 }
 
 TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp9) {
-  test::ClearHistograms();
   EncodedImage encoded_image;
   CodecSpecificInfo codec_info;
   codec_info.codecType = kVideoCodecVP9;
@@ -362,12 +357,10 @@ TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp9) {
     statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
   }
   statistics_proxy_.reset();
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.Encoded.Qp.Vp9.S0"));
-  EXPECT_EQ(kQpIdx0,
-            test::LastHistogramSample("WebRTC.Video.Encoded.Qp.Vp9.S0"));
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.Encoded.Qp.Vp9.S1"));
-  EXPECT_EQ(kQpIdx1,
-            test::LastHistogramSample("WebRTC.Video.Encoded.Qp.Vp9.S1"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.Encoded.Qp.Vp9.S0"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.Encoded.Qp.Vp9.S0", kQpIdx0));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.Encoded.Qp.Vp9.S1"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.Encoded.Qp.Vp9.S1", kQpIdx1));
 }
 
 TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp9OneSpatialLayer) {
@@ -376,7 +369,6 @@ TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp9OneSpatialLayer) {
   statistics_proxy_.reset(new SendStatisticsProxy(
       &fake_clock_, config, VideoEncoderConfig::ContentType::kRealtimeVideo));
 
-  test::ClearHistograms();
   EncodedImage encoded_image;
   CodecSpecificInfo codec_info;
   codec_info.codecType = kVideoCodecVP9;
@@ -388,8 +380,8 @@ TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp9OneSpatialLayer) {
     statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
   }
   statistics_proxy_.reset();
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.Encoded.Qp.Vp9"));
-  EXPECT_EQ(kQpIdx0, test::LastHistogramSample("WebRTC.Video.Encoded.Qp.Vp9"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.Encoded.Qp.Vp9"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.Encoded.Qp.Vp9", kQpIdx0));
 }
 
 TEST_F(SendStatisticsProxyTest, NoSubstreams) {
@@ -531,26 +523,24 @@ TEST_F(SendStatisticsProxyTest, ResetsRtcpCountersOnContentChange) {
   // Changing content type causes histograms to be reported.
   statistics_proxy_->SetContentType(VideoEncoderConfig::ContentType::kScreen);
 
-  EXPECT_EQ(1, test::NumHistogramSamples(
-                   "WebRTC.Video.NackPacketsReceivedPerMinute"));
-  EXPECT_EQ(
-      1, test::NumHistogramSamples("WebRTC.Video.FirPacketsReceivedPerMinute"));
-  EXPECT_EQ(
-      1, test::NumHistogramSamples("WebRTC.Video.PliPacketsReceivedPerMinute"));
-  EXPECT_EQ(1, test::NumHistogramSamples(
+  EXPECT_EQ(1,
+            metrics::NumSamples("WebRTC.Video.NackPacketsReceivedPerMinute"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.FirPacketsReceivedPerMinute"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.PliPacketsReceivedPerMinute"));
+  EXPECT_EQ(1, metrics::NumSamples(
                    "WebRTC.Video.UniqueNackRequestsReceivedInPercent"));
 
   const int kRate = 60 * 2;  // Packets per minute with two streams.
 
-  EXPECT_EQ(1 * kRate, test::LastHistogramSample(
-                           "WebRTC.Video.NackPacketsReceivedPerMinute"));
-  EXPECT_EQ(2 * kRate, test::LastHistogramSample(
-                           "WebRTC.Video.FirPacketsReceivedPerMinute"));
-  EXPECT_EQ(3 * kRate, test::LastHistogramSample(
-                           "WebRTC.Video.PliPacketsReceivedPerMinute"));
-  EXPECT_EQ(4 * 100 / 5,
-            test::LastHistogramSample(
-                "WebRTC.Video.UniqueNackRequestsReceivedInPercent"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.NackPacketsReceivedPerMinute",
+                                  1 * kRate));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.FirPacketsReceivedPerMinute",
+                                  2 * kRate));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.PliPacketsReceivedPerMinute",
+                                  3 * kRate));
+  EXPECT_EQ(
+      1, metrics::NumEvents("WebRTC.Video.UniqueNackRequestsReceivedInPercent",
+                            4 * 100 / 5));
 
   // New start time but same counter values.
   proxy->RtcpPacketTypesCounterUpdated(kFirstSsrc, counters);
@@ -569,29 +559,29 @@ TEST_F(SendStatisticsProxyTest, ResetsRtcpCountersOnContentChange) {
 
   SetUp();  // Reset stats proxy also causes histograms to be reported.
 
-  EXPECT_EQ(1, test::NumHistogramSamples(
+  EXPECT_EQ(1, metrics::NumSamples(
                    "WebRTC.Video.Screenshare.NackPacketsReceivedPerMinute"));
-  EXPECT_EQ(1, test::NumHistogramSamples(
+  EXPECT_EQ(1, metrics::NumSamples(
                    "WebRTC.Video.Screenshare.FirPacketsReceivedPerMinute"));
-  EXPECT_EQ(1, test::NumHistogramSamples(
+  EXPECT_EQ(1, metrics::NumSamples(
                    "WebRTC.Video.Screenshare.PliPacketsReceivedPerMinute"));
   EXPECT_EQ(
-      1, test::NumHistogramSamples(
+      1, metrics::NumSamples(
              "WebRTC.Video.Screenshare.UniqueNackRequestsReceivedInPercent"));
 
-  EXPECT_EQ(1 * kRate,
-            test::LastHistogramSample(
-                "WebRTC.Video.Screenshare.NackPacketsReceivedPerMinute"));
-  EXPECT_EQ(2 * kRate,
-            test::LastHistogramSample(
-                "WebRTC.Video.Screenshare.FirPacketsReceivedPerMinute"));
-  EXPECT_EQ(3 * kRate,
-            test::LastHistogramSample(
-                "WebRTC.Video.Screenshare.PliPacketsReceivedPerMinute"));
-  EXPECT_EQ(
-      4 * 100 / 5,
-      test::LastHistogramSample(
-          "WebRTC.Video.Screenshare.UniqueNackRequestsReceivedInPercent"));
+  EXPECT_EQ(1, metrics::NumEvents(
+                   "WebRTC.Video.Screenshare.NackPacketsReceivedPerMinute",
+                   1 * kRate));
+  EXPECT_EQ(1, metrics::NumEvents(
+                   "WebRTC.Video.Screenshare.FirPacketsReceivedPerMinute",
+                   2 * kRate));
+  EXPECT_EQ(1, metrics::NumEvents(
+                   "WebRTC.Video.Screenshare.PliPacketsReceivedPerMinute",
+                   3 * kRate));
+  EXPECT_EQ(1,
+            metrics::NumEvents(
+                "WebRTC.Video.Screenshare.UniqueNackRequestsReceivedInPercent",
+                4 * 100 / 5));
 }
 
 TEST_F(SendStatisticsProxyTest, ResetsRtpCountersOnContentChange) {
@@ -628,39 +618,46 @@ TEST_F(SendStatisticsProxyTest, ResetsRtpCountersOnContentChange) {
   // Changing content type causes histograms to be reported.
   statistics_proxy_->SetContentType(VideoEncoderConfig::ContentType::kScreen);
 
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.BitrateSentInKbps"));
-  EXPECT_EQ(static_cast<int>((counters.transmitted.TotalBytes() * 4 * 8) /
-                             metrics::kMinRunTimeInSeconds / 1000),
-            test::LastHistogramSample("WebRTC.Video.BitrateSentInKbps"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.BitrateSentInKbps"));
+  EXPECT_EQ(1,
+            metrics::NumEvents(
+                "WebRTC.Video.BitrateSentInKbps",
+                static_cast<int>((counters.transmitted.TotalBytes() * 4 * 8) /
+                                 metrics::kMinRunTimeInSeconds / 1000)));
+
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.MediaBitrateSentInKbps"));
+  EXPECT_EQ(1, metrics::NumEvents(
+                   "WebRTC.Video.MediaBitrateSentInKbps",
+                   static_cast<int>((counters.MediaPayloadBytes() * 2 * 8) /
+                                    metrics::kMinRunTimeInSeconds / 1000)));
+
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.PaddingBitrateSentInKbps"));
+  EXPECT_EQ(1,
+            metrics::NumEvents(
+                "WebRTC.Video.PaddingBitrateSentInKbps",
+                static_cast<int>((counters.transmitted.padding_bytes * 4 * 8) /
+                                 metrics::kMinRunTimeInSeconds / 1000)));
 
   EXPECT_EQ(1,
-            test::NumHistogramSamples("WebRTC.Video.MediaBitrateSentInKbps"));
-  EXPECT_EQ(static_cast<int>((counters.MediaPayloadBytes() * 2 * 8) /
-                             metrics::kMinRunTimeInSeconds / 1000),
-            test::LastHistogramSample("WebRTC.Video.MediaBitrateSentInKbps"));
-
+            metrics::NumSamples("WebRTC.Video.RetransmittedBitrateSentInKbps"));
   EXPECT_EQ(1,
-            test::NumHistogramSamples("WebRTC.Video.PaddingBitrateSentInKbps"));
-  EXPECT_EQ(static_cast<int>((counters.transmitted.padding_bytes * 4 * 8) /
-                             metrics::kMinRunTimeInSeconds / 1000),
-            test::LastHistogramSample("WebRTC.Video.PaddingBitrateSentInKbps"));
+            metrics::NumEvents(
+                "WebRTC.Video.RetransmittedBitrateSentInKbps",
+                static_cast<int>((counters.retransmitted.TotalBytes() * 2 * 8) /
+                                 metrics::kMinRunTimeInSeconds / 1000)));
 
-  EXPECT_EQ(1, test::NumHistogramSamples(
-                   "WebRTC.Video.RetransmittedBitrateSentInKbps"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.RtxBitrateSentInKbps"));
   EXPECT_EQ(
-      static_cast<int>((counters.retransmitted.TotalBytes() * 2 * 8) /
-                       metrics::kMinRunTimeInSeconds / 1000),
-      test::LastHistogramSample("WebRTC.Video.RetransmittedBitrateSentInKbps"));
+      1, metrics::NumEvents(
+             "WebRTC.Video.RtxBitrateSentInKbps",
+             static_cast<int>((rtx_counters.transmitted.TotalBytes() * 2 * 8) /
+                              metrics::kMinRunTimeInSeconds / 1000)));
 
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.RtxBitrateSentInKbps"));
-  EXPECT_EQ(static_cast<int>((rtx_counters.transmitted.TotalBytes() * 2 * 8) /
-                             metrics::kMinRunTimeInSeconds / 1000),
-            test::LastHistogramSample("WebRTC.Video.RtxBitrateSentInKbps"));
-
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.FecBitrateSentInKbps"));
-  EXPECT_EQ(static_cast<int>((rtx_counters.fec.TotalBytes() * 2 * 8) /
-                             metrics::kMinRunTimeInSeconds / 1000),
-            test::LastHistogramSample("WebRTC.Video.FecBitrateSentInKbps"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.FecBitrateSentInKbps"));
+  EXPECT_EQ(1, metrics::NumEvents(
+                   "WebRTC.Video.FecBitrateSentInKbps",
+                   static_cast<int>((rtx_counters.fec.TotalBytes() * 2 * 8) /
+                                    metrics::kMinRunTimeInSeconds / 1000)));
 
   // New start time but same counter values.
   proxy->DataCountersUpdated(counters, kFirstSsrc);
@@ -683,47 +680,51 @@ TEST_F(SendStatisticsProxyTest, ResetsRtpCountersOnContentChange) {
 
   SetUp();  // Reset stats proxy also causes histograms to be reported.
 
-  EXPECT_EQ(1, test::NumHistogramSamples(
-                   "WebRTC.Video.Screenshare.BitrateSentInKbps"));
-  EXPECT_EQ(
-      static_cast<int>((counters.transmitted.TotalBytes() * 4 * 8) /
-                       metrics::kMinRunTimeInSeconds / 1000),
-      test::LastHistogramSample("WebRTC.Video.Screenshare.BitrateSentInKbps"));
+  EXPECT_EQ(1,
+            metrics::NumSamples("WebRTC.Video.Screenshare.BitrateSentInKbps"));
+  EXPECT_EQ(1,
+            metrics::NumEvents(
+                "WebRTC.Video.Screenshare.BitrateSentInKbps",
+                static_cast<int>((counters.transmitted.TotalBytes() * 4 * 8) /
+                                 metrics::kMinRunTimeInSeconds / 1000)));
 
-  EXPECT_EQ(1, test::NumHistogramSamples(
+  EXPECT_EQ(1, metrics::NumSamples(
                    "WebRTC.Video.Screenshare.MediaBitrateSentInKbps"));
-  EXPECT_EQ(static_cast<int>((counters.MediaPayloadBytes() * 2 * 8) /
-                             metrics::kMinRunTimeInSeconds / 1000),
-            test::LastHistogramSample(
-                "WebRTC.Video.Screenshare.MediaBitrateSentInKbps"));
+  EXPECT_EQ(1, metrics::NumEvents(
+                   "WebRTC.Video.Screenshare.MediaBitrateSentInKbps",
+                   static_cast<int>((counters.MediaPayloadBytes() * 2 * 8) /
+                                    metrics::kMinRunTimeInSeconds / 1000)));
 
-  EXPECT_EQ(1, test::NumHistogramSamples(
+  EXPECT_EQ(1, metrics::NumSamples(
                    "WebRTC.Video.Screenshare.PaddingBitrateSentInKbps"));
-  EXPECT_EQ(static_cast<int>((counters.transmitted.padding_bytes * 4 * 8) /
-                             metrics::kMinRunTimeInSeconds / 1000),
-            test::LastHistogramSample(
-                "WebRTC.Video.Screenshare.PaddingBitrateSentInKbps"));
+  EXPECT_EQ(1,
+            metrics::NumEvents(
+                "WebRTC.Video.Screenshare.PaddingBitrateSentInKbps",
+                static_cast<int>((counters.transmitted.padding_bytes * 4 * 8) /
+                                 metrics::kMinRunTimeInSeconds / 1000)));
 
-  EXPECT_EQ(1, test::NumHistogramSamples(
+  EXPECT_EQ(1, metrics::NumSamples(
                    "WebRTC.Video.Screenshare.RetransmittedBitrateSentInKbps"));
-  EXPECT_EQ(static_cast<int>((counters.retransmitted.TotalBytes() * 2 * 8) /
-                             metrics::kMinRunTimeInSeconds / 1000),
-            test::LastHistogramSample(
-                "WebRTC.Video.Screenshare.RetransmittedBitrateSentInKbps"));
+  EXPECT_EQ(1,
+            metrics::NumEvents(
+                "WebRTC.Video.Screenshare.RetransmittedBitrateSentInKbps",
+                static_cast<int>((counters.retransmitted.TotalBytes() * 2 * 8) /
+                                 metrics::kMinRunTimeInSeconds / 1000)));
 
-  EXPECT_EQ(1, test::NumHistogramSamples(
-                   "WebRTC.Video.Screenshare.RtxBitrateSentInKbps"));
-  EXPECT_EQ(static_cast<int>((rtx_counters.transmitted.TotalBytes() * 2 * 8) /
-                             metrics::kMinRunTimeInSeconds / 1000),
-            test::LastHistogramSample(
-                "WebRTC.Video.Screenshare.RtxBitrateSentInKbps"));
+  EXPECT_EQ(
+      1, metrics::NumSamples("WebRTC.Video.Screenshare.RtxBitrateSentInKbps"));
+  EXPECT_EQ(
+      1, metrics::NumEvents(
+             "WebRTC.Video.Screenshare.RtxBitrateSentInKbps",
+             static_cast<int>((rtx_counters.transmitted.TotalBytes() * 2 * 8) /
+                              metrics::kMinRunTimeInSeconds / 1000)));
 
-  EXPECT_EQ(1, test::NumHistogramSamples(
-                   "WebRTC.Video.Screenshare.FecBitrateSentInKbps"));
-  EXPECT_EQ(static_cast<int>((rtx_counters.fec.TotalBytes() * 2 * 8) /
-                             metrics::kMinRunTimeInSeconds / 1000),
-            test::LastHistogramSample(
-                "WebRTC.Video.Screenshare.FecBitrateSentInKbps"));
+  EXPECT_EQ(
+      1, metrics::NumSamples("WebRTC.Video.Screenshare.FecBitrateSentInKbps"));
+  EXPECT_EQ(1, metrics::NumEvents(
+                   "WebRTC.Video.Screenshare.FecBitrateSentInKbps",
+                   static_cast<int>((rtx_counters.fec.TotalBytes() * 2 * 8) /
+                                    metrics::kMinRunTimeInSeconds / 1000)));
 }
 
 }  // namespace webrtc

@@ -180,6 +180,7 @@
       'target_name': 'metrics_default',
       'type': 'static_library',
       'sources': [
+        'include/metrics_default.h',
         'source/metrics_default.cc',
       ],
     }, {

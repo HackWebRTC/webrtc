@@ -34,21 +34,6 @@ source_set("field_trial") {
   public_configs = [ "..:common_inherited_config" ]
 }
 
-source_set("histogram") {
-  sources = [
-    "histogram.cc",
-    "histogram.h",
-  ]
-
-  deps = [
-    "..:webrtc_common",
-    "../system_wrappers",
-  ]
-
-  configs += [ "..:common_config" ]
-  public_configs = [ "..:common_inherited_config" ]
-}
-
 source_set("test_support") {
   testonly = true
 
@@ -100,8 +85,8 @@ source_set("test_support_main") {
 
   deps = [
     ":field_trial",
-    ":histogram",
     ":test_support",
+    "../system_wrappers:metrics_default",
     "//testing/gmock",
     "//testing/gtest",
     "//third_party/gflags",

@@ -31,6 +31,7 @@
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/system_wrappers/include/metrics.h"
+#include "webrtc/system_wrappers/include/metrics_default.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/direct_transport.h"
@@ -39,7 +40,6 @@
 #include "webrtc/test/fake_encoder.h"
 #include "webrtc/test/frame_generator.h"
 #include "webrtc/test/frame_generator_capturer.h"
-#include "webrtc/test/histogram.h"
 #include "webrtc/test/null_transport.h"
 #include "webrtc/test/rtcp_packet_parser.h"
 #include "webrtc/test/rtp_rtcp_observer.h"
@@ -1979,17 +1979,14 @@ TEST_F(EndToEndTest, VerifyNackStats) {
     int64_t start_runtime_ms_;
   } test;
 
-  test::ClearHistograms();
+  metrics::Reset();
   RunBaseTest(&test);
 
-  EXPECT_EQ(1, test::NumHistogramSamples(
-      "WebRTC.Video.UniqueNackRequestsSentInPercent"));
-  EXPECT_EQ(1, test::NumHistogramSamples(
-      "WebRTC.Video.UniqueNackRequestsReceivedInPercent"));
-  EXPECT_GT(test::LastHistogramSample(
-      "WebRTC.Video.NackPacketsSentPerMinute"), 0);
-  EXPECT_GT(test::LastHistogramSample(
-      "WebRTC.Video.NackPacketsReceivedPerMinute"), 0);
+  EXPECT_EQ(
+      1, metrics::NumSamples("WebRTC.Video.UniqueNackRequestsSentInPercent"));
+  EXPECT_EQ(1, metrics::NumSamples(
+                   "WebRTC.Video.UniqueNackRequestsReceivedInPercent"));
+  EXPECT_GT(metrics::MinSample("WebRTC.Video.NackPacketsSentPerMinute"), 0);
 }
 
 void EndToEndTest::VerifyHistogramStats(bool use_rtx,
@@ -2077,7 +2074,7 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
     int64_t start_runtime_ms_;
   } test(use_rtx, use_red, screenshare);
 
-  test::ClearHistograms();
+  metrics::Reset();
   RunBaseTest(&test);
 
   // Delete the call for Call stats to be reported.
@@ -2088,110 +2085,99 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
       screenshare ? "WebRTC.Video.Screenshare." : "WebRTC.Video.";
 
   // Verify that stats have been updated once.
-  EXPECT_EQ(
-      1, test::NumHistogramSamples("WebRTC.Call.VideoBitrateReceivedInKbps"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Call.VideoBitrateReceivedInKbps"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Call.RtcpBitrateReceivedInBps"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Call.BitrateReceivedInKbps"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Call.EstimatedSendBitrateInKbps"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Call.PacerBitrateInKbps"));
+
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.NackPacketsSentPerMinute"));
   EXPECT_EQ(1,
-            test::NumHistogramSamples("WebRTC.Call.RtcpBitrateReceivedInBps"));
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Call.BitrateReceivedInKbps"));
-  EXPECT_EQ(
-      1, test::NumHistogramSamples("WebRTC.Call.EstimatedSendBitrateInKbps"));
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Call.PacerBitrateInKbps"));
-
-  EXPECT_EQ(1, test::NumHistogramSamples(
-      "WebRTC.Video.NackPacketsSentPerMinute"));
-  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix +
-                                         "NackPacketsReceivedPerMinute"));
-  EXPECT_EQ(1, test::NumHistogramSamples(
-      "WebRTC.Video.FirPacketsSentPerMinute"));
-  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix +
-                                         "FirPacketsReceivedPerMinute"));
-  EXPECT_EQ(1, test::NumHistogramSamples(
-      "WebRTC.Video.PliPacketsSentPerMinute"));
-  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix +
-                                         "PliPacketsReceivedPerMinute"));
-
-  EXPECT_EQ(
-      1, test::NumHistogramSamples(video_prefix + "KeyFramesSentInPermille"));
-  EXPECT_EQ(1, test::NumHistogramSamples(
-      "WebRTC.Video.KeyFramesReceivedInPermille"));
-
-  EXPECT_EQ(
-      1, test::NumHistogramSamples(video_prefix + "SentPacketsLostInPercent"));
-  EXPECT_EQ(1, test::NumHistogramSamples(
-      "WebRTC.Video.ReceivedPacketsLostInPercent"));
-
-  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix + "InputWidthInPixels"));
-  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix + "InputHeightInPixels"));
-  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix + "SentWidthInPixels"));
-  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix + "SentHeightInPixels"));
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.ReceivedWidthInPixels"));
+            metrics::NumSamples(video_prefix + "NackPacketsReceivedPerMinute"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.FirPacketsSentPerMinute"));
   EXPECT_EQ(1,
-            test::NumHistogramSamples("WebRTC.Video.ReceivedHeightInPixels"));
-
-  EXPECT_EQ(static_cast<int>(video_encoder_config_.streams[0].width),
-            test::LastHistogramSample(video_prefix + "InputWidthInPixels"));
-  EXPECT_EQ(static_cast<int>(video_encoder_config_.streams[0].height),
-            test::LastHistogramSample(video_prefix + "InputHeightInPixels"));
-  EXPECT_EQ(static_cast<int>(video_encoder_config_.streams[0].width),
-            test::LastHistogramSample(video_prefix + "SentWidthInPixels"));
-  EXPECT_EQ(static_cast<int>(video_encoder_config_.streams[0].height),
-            test::LastHistogramSample(video_prefix + "SentHeightInPixels"));
-  EXPECT_EQ(static_cast<int>(video_encoder_config_.streams[0].width),
-            test::LastHistogramSample("WebRTC.Video.ReceivedWidthInPixels"));
-  EXPECT_EQ(static_cast<int>(video_encoder_config_.streams[0].height),
-            test::LastHistogramSample("WebRTC.Video.ReceivedHeightInPixels"));
-
+            metrics::NumSamples(video_prefix + "FirPacketsReceivedPerMinute"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.PliPacketsSentPerMinute"));
   EXPECT_EQ(1,
-            test::NumHistogramSamples(video_prefix + "InputFramesPerSecond"));
-  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix + "SentFramesPerSecond"));
-  EXPECT_EQ(1, test::NumHistogramSamples(
-      "WebRTC.Video.DecodedFramesPerSecond"));
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.RenderFramesPerSecond"));
+            metrics::NumSamples(video_prefix + "PliPacketsReceivedPerMinute"));
 
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.JitterBufferDelayInMs"));
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.TargetDelayInMs"));
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.CurrentDelayInMs"));
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.OnewayDelayInMs"));
+  EXPECT_EQ(1, metrics::NumSamples(video_prefix + "KeyFramesSentInPermille"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.KeyFramesReceivedInPermille"));
+
+  EXPECT_EQ(1, metrics::NumSamples(video_prefix + "SentPacketsLostInPercent"));
+  EXPECT_EQ(1,
+            metrics::NumSamples("WebRTC.Video.ReceivedPacketsLostInPercent"));
+
+  EXPECT_EQ(1, metrics::NumSamples(video_prefix + "InputWidthInPixels"));
+  EXPECT_EQ(1, metrics::NumSamples(video_prefix + "InputHeightInPixels"));
+  EXPECT_EQ(1, metrics::NumSamples(video_prefix + "SentWidthInPixels"));
+  EXPECT_EQ(1, metrics::NumSamples(video_prefix + "SentHeightInPixels"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.ReceivedWidthInPixels"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.ReceivedHeightInPixels"));
+
+  EXPECT_EQ(1, metrics::NumEvents(
+                   video_prefix + "InputWidthInPixels",
+                   static_cast<int>(video_encoder_config_.streams[0].width)));
+  EXPECT_EQ(1, metrics::NumEvents(
+                   video_prefix + "InputHeightInPixels",
+                   static_cast<int>(video_encoder_config_.streams[0].height)));
+  EXPECT_EQ(1, metrics::NumEvents(
+                   video_prefix + "SentWidthInPixels",
+                   static_cast<int>(video_encoder_config_.streams[0].width)));
+  EXPECT_EQ(1, metrics::NumEvents(
+                   video_prefix + "SentHeightInPixels",
+                   static_cast<int>(video_encoder_config_.streams[0].height)));
+  EXPECT_EQ(1, metrics::NumEvents(
+                   "WebRTC.Video.ReceivedWidthInPixels",
+                   static_cast<int>(video_encoder_config_.streams[0].width)));
+  EXPECT_EQ(1, metrics::NumEvents(
+                   "WebRTC.Video.ReceivedHeightInPixels",
+                   static_cast<int>(video_encoder_config_.streams[0].height)));
+
+  EXPECT_EQ(1, metrics::NumSamples(video_prefix + "InputFramesPerSecond"));
+  EXPECT_EQ(1, metrics::NumSamples(video_prefix + "SentFramesPerSecond"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.DecodedFramesPerSecond"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.RenderFramesPerSecond"));
+
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.JitterBufferDelayInMs"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.TargetDelayInMs"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.CurrentDelayInMs"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.OnewayDelayInMs"));
+
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.RenderSqrtPixelsPerSecond"));
+
+  EXPECT_EQ(1, metrics::NumSamples(video_prefix + "EncodeTimeInMs"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.DecodeTimeInMs"));
+
+  EXPECT_EQ(1, metrics::NumSamples(video_prefix + "BitrateSentInKbps"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.BitrateReceivedInKbps"));
+  EXPECT_EQ(1, metrics::NumSamples(video_prefix + "MediaBitrateSentInKbps"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.MediaBitrateReceivedInKbps"));
+  EXPECT_EQ(1, metrics::NumSamples(video_prefix + "PaddingBitrateSentInKbps"));
+  EXPECT_EQ(1,
+            metrics::NumSamples("WebRTC.Video.PaddingBitrateReceivedInKbps"));
   EXPECT_EQ(
-      1, test::NumHistogramSamples("WebRTC.Video.RenderSqrtPixelsPerSecond"));
+      1, metrics::NumSamples(video_prefix + "RetransmittedBitrateSentInKbps"));
+  EXPECT_EQ(1, metrics::NumSamples(
+                   "WebRTC.Video.RetransmittedBitrateReceivedInKbps"));
 
-  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix + "EncodeTimeInMs"));
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.DecodeTimeInMs"));
-
-  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix + "BitrateSentInKbps"));
-  EXPECT_EQ(1, test::NumHistogramSamples(
-      "WebRTC.Video.BitrateReceivedInKbps"));
-  EXPECT_EQ(1,
-            test::NumHistogramSamples(video_prefix + "MediaBitrateSentInKbps"));
-  EXPECT_EQ(1, test::NumHistogramSamples(
-      "WebRTC.Video.MediaBitrateReceivedInKbps"));
-  EXPECT_EQ(
-      1, test::NumHistogramSamples(video_prefix + "PaddingBitrateSentInKbps"));
-  EXPECT_EQ(1, test::NumHistogramSamples(
-      "WebRTC.Video.PaddingBitrateReceivedInKbps"));
-  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix +
-                                         "RetransmittedBitrateSentInKbps"));
-  EXPECT_EQ(1, test::NumHistogramSamples(
-      "WebRTC.Video.RetransmittedBitrateReceivedInKbps"));
-
-  EXPECT_EQ(1, test::NumHistogramSamples(video_prefix + "SendSideDelayInMs"));
-  EXPECT_EQ(1,
-            test::NumHistogramSamples(video_prefix + "SendSideDelayMaxInMs"));
-  EXPECT_EQ(1, test::NumHistogramSamples("WebRTC.Video.SendDelayInMs"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.SendDelayInMs"));
+  EXPECT_EQ(1, metrics::NumSamples(video_prefix + "SendSideDelayInMs"));
+  EXPECT_EQ(1, metrics::NumSamples(video_prefix + "SendSideDelayMaxInMs"));
 
   int num_rtx_samples = use_rtx ? 1 : 0;
-  EXPECT_EQ(num_rtx_samples, test::NumHistogramSamples(
-      "WebRTC.Video.RtxBitrateSentInKbps"));
-  EXPECT_EQ(num_rtx_samples, test::NumHistogramSamples(
-      "WebRTC.Video.RtxBitrateReceivedInKbps"));
+  EXPECT_EQ(num_rtx_samples,
+            metrics::NumSamples("WebRTC.Video.RtxBitrateSentInKbps"));
+  EXPECT_EQ(num_rtx_samples,
+            metrics::NumSamples("WebRTC.Video.RtxBitrateReceivedInKbps"));
 
   int num_red_samples = use_red ? 1 : 0;
-  EXPECT_EQ(num_red_samples, test::NumHistogramSamples(
-      "WebRTC.Video.FecBitrateSentInKbps"));
-  EXPECT_EQ(num_red_samples, test::NumHistogramSamples(
-      "WebRTC.Video.FecBitrateReceivedInKbps"));
-  EXPECT_EQ(num_red_samples, test::NumHistogramSamples(
-      "WebRTC.Video.ReceivedFecPacketsInPercent"));
+  EXPECT_EQ(num_red_samples,
+            metrics::NumSamples("WebRTC.Video.FecBitrateSentInKbps"));
+  EXPECT_EQ(num_red_samples,
+            metrics::NumSamples("WebRTC.Video.FecBitrateReceivedInKbps"));
+  EXPECT_EQ(num_red_samples,
+            metrics::NumSamples("WebRTC.Video.ReceivedFecPacketsInPercent"));
 }
 
 TEST_F(EndToEndTest, VerifyHistogramStatsWithRtx) {

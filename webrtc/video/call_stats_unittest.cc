@@ -15,7 +15,7 @@
 
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/include/metrics.h"
-#include "webrtc/test/histogram.h"
+#include "webrtc/system_wrappers/include/metrics_default.h"
 #include "webrtc/video/call_stats.h"
 
 using ::testing::_;
@@ -204,6 +204,7 @@ TEST_F(CallStatsTest, LastProcessedRtt) {
 }
 
 TEST_F(CallStatsTest, ProducesHistogramMetrics) {
+  metrics::Reset();
   const int64_t kRtt = 123;
   RtcpRttStats* rtcp_rtt_stats = call_stats_->rtcp_rtt_stats();
   rtcp_rtt_stats->OnRttUpdate(kRtt);
@@ -212,10 +213,10 @@ TEST_F(CallStatsTest, ProducesHistogramMetrics) {
   call_stats_->Process();
   call_stats_.reset();
 
-  EXPECT_EQ(1, test::NumHistogramSamples(
+  EXPECT_EQ(1, metrics::NumSamples(
                    "WebRTC.Video.AverageRoundTripTimeInMilliseconds"));
-  EXPECT_EQ(kRtt, test::LastHistogramSample(
-                      "WebRTC.Video.AverageRoundTripTimeInMilliseconds"));
+  EXPECT_EQ(1, metrics::NumEvents(
+                   "WebRTC.Video.AverageRoundTripTimeInMilliseconds", kRtt));
 }
 
 }  // namespace webrtc
