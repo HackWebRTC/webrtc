@@ -72,7 +72,7 @@ public class LooperExecutor extends Thread implements Executor {
     handler.post(new Runnable() {
       @Override
       public void run() {
-        Looper.myLooper().quit();
+        handler.getLooper().quit();
         Log.d(TAG, "Looper thread finished.");
       }
     });
@@ -131,4 +131,10 @@ public class LooperExecutor extends Thread implements Executor {
     }
   }
 
+  /**
+   * Access to the handler for testing purposes.
+   */
+  Handler getHandler() {
+    return handler;
+  }
 }
