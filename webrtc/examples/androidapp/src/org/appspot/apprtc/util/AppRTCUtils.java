@@ -21,24 +21,6 @@ public final class AppRTCUtils {
   private AppRTCUtils() {
   }
 
-  /**
-   * NonThreadSafe is a helper class used to help verify that methods of a
-   * class are called from the same thread.
-   */
-  public static class NonThreadSafe {
-    private final Long threadId;
-
-    public NonThreadSafe() {
-      // Store thread ID of the creating thread.
-      threadId = Thread.currentThread().getId();
-    }
-
-   /** Checks if the method is called on the valid/creating thread. */
-    public boolean calledOnValidThread() {
-       return threadId.equals(Thread.currentThread().getId());
-    }
-  }
-
   /** Helper method which throws an exception  when an assertion has failed. */
   public static void assertIsTrue(boolean condition) {
     if (!condition) {
