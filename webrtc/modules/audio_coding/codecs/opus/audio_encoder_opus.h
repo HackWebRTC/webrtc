@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 
@@ -29,12 +30,19 @@ class AudioEncoderOpus final : public AudioEncoder {
   };
 
   struct Config {
+    Config();
+    Config(const Config&);
+    ~Config();
+    Config& operator=(const Config&);
+
     bool IsOk() const;
+    int GetBitrateBps() const;
+
     int frame_size_ms = 20;
     size_t num_channels = 1;
     int payload_type = 120;
     ApplicationMode application = kVoip;
-    int bitrate_bps = 64000;
+    rtc::Optional<int> bitrate_bps;  // Unset means to use default value.
     bool fec_enabled = false;
     int max_playback_rate_hz = 48000;
     int complexity = kDefaultComplexity;
