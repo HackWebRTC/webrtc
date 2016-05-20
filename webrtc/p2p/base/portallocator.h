@@ -40,7 +40,6 @@ enum {
   // Disable local TCP ports. This doesn't impact how we connect to relay
   // servers.
   PORTALLOCATOR_DISABLE_TCP = 0x08,
-  PORTALLOCATOR_ENABLE_SHAKER = 0x10,
   PORTALLOCATOR_ENABLE_IPV6 = 0x40,
   // TODO(pthatcher): Remove this once it's no longer used in:
   // remoting/client/plugin/pepper_port_allocator.cc

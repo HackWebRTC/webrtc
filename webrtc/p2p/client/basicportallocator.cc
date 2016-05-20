@@ -36,7 +36,6 @@ enum {
   MSG_CONFIG_READY,
   MSG_ALLOCATE,
   MSG_ALLOCATION_PHASE,
-  MSG_SHAKE,
   MSG_SEQUENCEOBJECTS_CREATED,
   MSG_CONFIG_STOP,
 };
@@ -47,14 +46,6 @@ const int PHASE_TCP = 2;
 const int PHASE_SSLTCP = 3;
 
 const int kNumPhases = 4;
-
-const int SHAKE_MIN_DELAY = 45 * 1000;  // 45 seconds
-const int SHAKE_MAX_DELAY = 90 * 1000;  // 90 seconds
-
-int ShakeDelay() {
-  int range = SHAKE_MAX_DELAY - SHAKE_MIN_DELAY + 1;
-  return SHAKE_MIN_DELAY + CreateRandomId() % range;
-}
 
 }  // namespace
 
@@ -186,9 +177,6 @@ void BasicPortAllocatorSession::StartGettingPorts() {
 
   running_ = true;
   network_thread_->Post(this, MSG_CONFIG_START);
-
-  if (flags() & PORTALLOCATOR_ENABLE_SHAKER)
-    network_thread_->PostDelayed(ShakeDelay(), this, MSG_SHAKE);
 }
 
 void BasicPortAllocatorSession::StopGettingPorts() {
@@ -265,20 +253,13 @@ void BasicPortAllocatorSession::OnMessage(rtc::Message *message) {
     ASSERT(rtc::Thread::Current() == network_thread_);
     GetPortConfigurations();
     break;
-
   case MSG_CONFIG_READY:
     ASSERT(rtc::Thread::Current() == network_thread_);
     OnConfigReady(static_cast<PortConfiguration*>(message->pdata));
     break;
-
   case MSG_ALLOCATE:
     ASSERT(rtc::Thread::Current() == network_thread_);
     OnAllocate();
-    break;
-
-  case MSG_SHAKE:
-    ASSERT(rtc::Thread::Current() == network_thread_);
-    OnShake();
     break;
   case MSG_SEQUENCEOBJECTS_CREATED:
     ASSERT(rtc::Thread::Current() == network_thread_);
@@ -711,36 +692,6 @@ void BasicPortAllocatorSession::OnPortDestroyed(
     }
   }
   ASSERT(false);
-}
-
-void BasicPortAllocatorSession::OnShake() {
-  LOG(INFO) << ">>>>> SHAKE <<<<< >>>>> SHAKE <<<<< >>>>> SHAKE <<<<<";
-
-  std::vector<Port*> ports;
-  std::vector<Connection*> connections;
-
-  for (size_t i = 0; i < ports_.size(); ++i) {
-    if (ports_[i].ready())
-      ports.push_back(ports_[i].port());
-  }
-
-  for (size_t i = 0; i < ports.size(); ++i) {
-    Port::AddressMap::const_iterator iter;
-    for (iter = ports[i]->connections().begin();
-         iter != ports[i]->connections().end();
-         ++iter) {
-      connections.push_back(iter->second);
-    }
-  }
-
-  LOG(INFO) << ">>>>> Destroying " << ports.size() << " ports and "
-            << connections.size() << " connections";
-
-  for (size_t i = 0; i < connections.size(); ++i)
-    connections[i]->Destroy();
-
-  if (running_ || (ports.size() > 0) || (connections.size() > 0))
-    network_thread_->PostDelayed(ShakeDelay(), this, MSG_SHAKE);
 }
 
 BasicPortAllocatorSession::PortData* BasicPortAllocatorSession::FindPort(
