@@ -23,17 +23,17 @@ class TmmbItem {
   static const size_t kLength = 8;
 
   TmmbItem() : ssrc_(0), bitrate_bps_(0), packet_overhead_(0) {}
-  TmmbItem(uint32_t ssrc, uint32_t bitrate_bps, uint16_t overhead);
+  TmmbItem(uint32_t ssrc, uint64_t bitrate_bps, uint16_t overhead);
 
-  void Parse(const uint8_t* buffer);
+  bool Parse(const uint8_t* buffer);
   void Create(uint8_t* buffer) const;
 
   void set_ssrc(uint32_t ssrc) { ssrc_ = ssrc; }
-  void set_bitrate_bps(uint32_t bitrate_bps) { bitrate_bps_ = bitrate_bps; }
+  void set_bitrate_bps(uint64_t bitrate_bps) { bitrate_bps_ = bitrate_bps; }
   void set_packet_overhead(uint16_t overhead);
 
   uint32_t ssrc() const { return ssrc_; }
-  uint32_t bitrate_bps() const { return bitrate_bps_; }
+  uint64_t bitrate_bps() const { return bitrate_bps_; }
   uint16_t packet_overhead() const { return packet_overhead_; }
 
  private:
@@ -41,7 +41,7 @@ class TmmbItem {
   uint32_t ssrc_;
   // Maximum total media bit rate that the media receiver is
   // currently prepared to accept for this media stream.
-  uint32_t bitrate_bps_;
+  uint64_t bitrate_bps_;
   // Per-packet overhead that the media receiver has observed
   // for this media stream at its chosen reference protocol layer.
   uint16_t packet_overhead_;

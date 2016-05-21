@@ -63,7 +63,8 @@ bool Tmmbn::Parse(const RtcpCommonHeader& header, const uint8_t* payload) {
   size_t number_of_items = items_size_bytes / TmmbItem::kLength;
   items_.resize(number_of_items);
   for (TmmbItem& item : items_) {
-    item.Parse(next_item);
+    if (!item.Parse(next_item))
+      return false;
     next_item += TmmbItem::kLength;
   }
   return true;

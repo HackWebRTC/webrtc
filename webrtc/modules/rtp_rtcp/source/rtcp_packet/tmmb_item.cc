@@ -11,11 +11,12 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmb_item.h"
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 
 namespace webrtc {
 namespace rtcp {
-TmmbItem::TmmbItem(uint32_t ssrc, uint32_t bitrate_bps, uint16_t overhead)
+TmmbItem::TmmbItem(uint32_t ssrc, uint64_t bitrate_bps, uint16_t overhead)
     : ssrc_(ssrc), bitrate_bps_(bitrate_bps), packet_overhead_(overhead) {
   RTC_DCHECK_LE(overhead, 0x1ffu);
 }
@@ -27,22 +28,30 @@ TmmbItem::TmmbItem(uint32_t ssrc, uint32_t bitrate_bps, uint16_t overhead)
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 // 4 | MxTBR Exp |  MxTBR Mantissa                 |Measured Overhead|
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-void TmmbItem::Parse(const uint8_t* buffer) {
+bool TmmbItem::Parse(const uint8_t* buffer) {
   ssrc_ = ByteReader<uint32_t>::ReadBigEndian(&buffer[0]);
   // Read 4 bytes into 1 block.
   uint32_t compact = ByteReader<uint32_t>::ReadBigEndian(&buffer[4]);
   // Split 1 block into 3 components.
   uint8_t exponent = compact >> 26;              // 6 bits.
-  uint32_t mantissa = (compact >> 9) & 0x1ffff;  // 17 bits.
+  uint64_t mantissa = (compact >> 9) & 0x1ffff;  // 17 bits.
   uint16_t overhead = compact & 0x1ff;           // 9 bits.
   // Combine 3 components into 2 values.
   bitrate_bps_ = (mantissa << exponent);
+
+  bool shift_overflow = (bitrate_bps_ >> exponent) != mantissa;
+  if (shift_overflow) {
+    LOG(LS_ERROR) << "Invalid tmmb bitrate value : " << mantissa
+                  << "*2^" << static_cast<int>(exponent);
+    return false;
+  }
   packet_overhead_ = overhead;
+  return true;
 }
 
 void TmmbItem::Create(uint8_t* buffer) const {
-  const uint32_t kMaxMantissa = 0x1ffff;  // 17 bits.
-  uint32_t mantissa = bitrate_bps_;
+  constexpr uint64_t kMaxMantissa = 0x1ffff;  // 17 bits.
+  uint64_t mantissa = bitrate_bps_;
   uint32_t exponent = 0;
   while (mantissa > kMaxMantissa) {
     mantissa >>= 1;
