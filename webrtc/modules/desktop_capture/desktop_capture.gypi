@@ -74,6 +74,8 @@
         "win/scoped_gdi_object.h",
         "win/scoped_thread_desktop.cc",
         "win/scoped_thread_desktop.h",
+        "win/screen_capturer_win_directx.cc",
+        "win/screen_capturer_win_directx.h",
         "win/screen_capturer_win_gdi.cc",
         "win/screen_capturer_win_gdi.h",
         "win/screen_capturer_win_magnifier.cc",
@@ -128,6 +130,19 @@
           },
         }],
       ],
+      'all_dependent_settings': {
+        'conditions': [
+          ['OS=="win"', {
+            'msvs_settings': {
+              'VCLinkerTool': {
+                'AdditionalDependencies': [
+                  'd3d11.lib',
+                ],
+              },
+            },
+          }],
+        ],
+      },
     },
   ],  # targets
   'conditions': [

@@ -58,7 +58,8 @@ class DesktopFrame {
 
   // Copies pixels from a buffer or another frame. |dest_rect| rect must lay
   // within bounds of this frame.
-  void CopyPixelsFrom(uint8_t* src_buffer, int src_stride,
+  void CopyPixelsFrom(uint8_t* src_buffer,
+                      int src_stride,
                       const DesktopRect& dest_rect);
   void CopyPixelsFrom(const DesktopFrame& src_frame,
                       const DesktopVector& src_pos,
@@ -73,20 +74,20 @@ class DesktopFrame {
                uint8_t* data,
                SharedMemory* shared_memory);
 
-  const DesktopSize size_;
-  const int stride_;
-
   // Ownership of the buffers is defined by the classes that inherit from this
   // class. They must guarantee that the buffer is not deleted before the frame
   // is deleted.
   uint8_t* const data_;
   SharedMemory* const shared_memory_;
 
+ private:
+  const DesktopSize size_;
+  const int stride_;
+
   DesktopRegion updated_region_;
   DesktopVector dpi_;
   int64_t capture_time_ms_;
 
- private:
   RTC_DISALLOW_COPY_AND_ASSIGN(DesktopFrame);
 };
 
@@ -110,14 +111,16 @@ class SharedMemoryDesktopFrame : public DesktopFrame {
       DesktopSize size,
       SharedMemoryFactory* shared_memory_factory);
 
+  static std::unique_ptr<DesktopFrame> Create(
+      DesktopSize size,
+      std::unique_ptr<SharedMemory> shared_memory);
+
   // Takes ownership of |shared_memory|.
-  // TODO(sergeyu): Remove this constructor and keep the second one.
+  // TODO(zijiehe): Hide constructors after fake_desktop_capturer.cc has been
+  // migrated, Create() is preferred.
   SharedMemoryDesktopFrame(DesktopSize size,
                            int stride,
                            SharedMemory* shared_memory);
-  SharedMemoryDesktopFrame(DesktopSize size,
-                           int stride,
-                           std::unique_ptr<SharedMemory> shared_memory);
   ~SharedMemoryDesktopFrame() override;
 
  private:

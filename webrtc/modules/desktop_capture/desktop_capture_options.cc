@@ -12,21 +12,6 @@
 
 namespace webrtc {
 
-DesktopCaptureOptions::DesktopCaptureOptions()
-    : use_update_notifications_(true),
-      disable_effects_(true) {
-#if defined(USE_X11)
-  // XDamage is often broken, so don't use it by default.
-  use_update_notifications_ = false;
-#endif
-
-#if defined(WEBRTC_WIN)
-  allow_use_magnification_api_ = false;
-#endif
-}
-
-DesktopCaptureOptions::~DesktopCaptureOptions() {}
-
 // static
 DesktopCaptureOptions DesktopCaptureOptions::CreateDefault() {
   DesktopCaptureOptions result;

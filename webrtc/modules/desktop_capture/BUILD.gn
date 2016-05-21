@@ -79,6 +79,8 @@ source_set("desktop_capture") {
     "win/scoped_thread_desktop.h",
     "win/screen_capture_utils.cc",
     "win/screen_capture_utils.h",
+    "win/screen_capturer_win_directx.cc",
+    "win/screen_capturer_win_directx.h",
     "win/screen_capturer_win_gdi.cc",
     "win/screen_capturer_win_gdi.h",
     "win/screen_capturer_win_magnifier.cc",
@@ -119,6 +121,10 @@ source_set("desktop_capture") {
       "IOKit.framework",
       "OpenGL.framework",
     ]
+  }
+
+  if (is_win) {
+    libs = [ "d3d11.lib" ]
   }
 
   configs += [ "../..:common_config" ]
