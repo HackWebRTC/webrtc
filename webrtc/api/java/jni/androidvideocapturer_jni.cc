@@ -181,9 +181,13 @@ void AndroidVideoCapturerJni::OnMemoryBufferFrame(void* video_frame,
       buffer->MutableData(webrtc::kUPlane), buffer->stride(webrtc::kUPlane),
       buffer->MutableData(webrtc::kVPlane), buffer->stride(webrtc::kVPlane),
       width, height);
-  AsyncCapturerInvoke("OnIncomingFrame",
-                      &webrtc::AndroidVideoCapturer::OnIncomingFrame,
-                      buffer, rotation, timestamp_ns);
+
+  rtc::CritScope cs(&capturer_lock_);
+  if (!capturer_) {
+    LOG(LS_WARNING) << "OnMemoryBufferFrame() called for closed capturer.";
+    return;
+  }
+  capturer_->OnIncomingFrame(buffer, rotation, timestamp_ns);
 }
 
 void AndroidVideoCapturerJni::OnTextureFrame(int width,
@@ -194,9 +198,12 @@ void AndroidVideoCapturerJni::OnTextureFrame(int width,
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
       surface_texture_helper_->CreateTextureFrame(width, height, handle));
 
-  AsyncCapturerInvoke("OnIncomingFrame",
-                      &webrtc::AndroidVideoCapturer::OnIncomingFrame,
-                      buffer, rotation, timestamp_ns);
+  rtc::CritScope cs(&capturer_lock_);
+  if (!capturer_) {
+    LOG(LS_WARNING) << "OnTextureFrame() called for closed capturer.";
+    return;
+  }
+  capturer_->OnIncomingFrame(buffer, rotation, timestamp_ns);
 }
 
 void AndroidVideoCapturerJni::OnOutputFormatRequest(int width,

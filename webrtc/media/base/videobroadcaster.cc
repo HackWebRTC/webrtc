@@ -40,7 +40,6 @@ void VideoBroadcaster::RemoveSink(
 }
 
 bool VideoBroadcaster::frame_wanted() const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   rtc::CritScope cs(&sinks_and_wants_lock_);
   return !sink_pairs().empty();
 }

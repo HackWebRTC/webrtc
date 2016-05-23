@@ -180,7 +180,10 @@ void AndroidVideoCapturer::OnIncomingFrame(
     const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
     int rotation,
     int64_t time_stamp) {
-  RTC_CHECK(thread_checker_.CalledOnValidThread());
+  // NOTE: The frame_factory hack isn't thread safe. It works because
+  // all calls to this method are from the same Java thread. In
+  // addition, calls are currently syncronized on the caller's
+  // AndroidVideoCapturerJni:capturer_lock_.
   frame_factory_->UpdateCapturedFrame(buffer, rotation, time_stamp);
   SignalFrameCaptured(this, frame_factory_->GetCapturedFrame());
   frame_factory_->ClearCapturedFrame();
