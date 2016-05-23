@@ -35,42 +35,32 @@ static __inline int16_t WebRtcSpl_SatW32ToW16(int32_t value32) {
   return out16;
 }
 
-static __inline int32_t WebRtcSpl_AddSatW32(int32_t l_var1, int32_t l_var2) {
-  int32_t l_sum;
+static __inline int32_t WebRtcSpl_AddSatW32(int32_t a, int32_t b) {
+  // Do the addition in unsigned numbers, since signed overflow is undefined
+  // behavior.
+  const int32_t sum = (int32_t)((uint32_t)a + (uint32_t)b);
 
-  // Perform long addition
-  l_sum = l_var1 + l_var2;
-
-  if (l_var1 < 0) {  // Check for underflow.
-    if ((l_var2 < 0) && (l_sum >= 0)) {
-        l_sum = (int32_t)0x80000000;
-    }
-  } else {  // Check for overflow.
-    if ((l_var2 > 0) && (l_sum < 0)) {
-        l_sum = (int32_t)0x7FFFFFFF;
-    }
+  // a + b can't overflow if a and b have different signs. If they have the
+  // same sign, a + b also has the same sign iff it didn't overflow.
+  if ((a < 0) == (b < 0) && (a < 0) != (sum < 0)) {
+    // The direction of the overflow is obvious from the sign of a + b.
+    return sum < 0 ? INT32_MAX : INT32_MIN;
   }
-
-  return l_sum;
+  return sum;
 }
 
-static __inline int32_t WebRtcSpl_SubSatW32(int32_t l_var1, int32_t l_var2) {
-  int32_t l_diff;
+static __inline int32_t WebRtcSpl_SubSatW32(int32_t a, int32_t b) {
+  // Do the subtraction in unsigned numbers, since signed overflow is undefined
+  // behavior.
+  const int32_t diff = (int32_t)((uint32_t)a - (uint32_t)b);
 
-  // Perform subtraction.
-  l_diff = l_var1 - l_var2;
-
-  if (l_var1 < 0) {  // Check for underflow.
-    if ((l_var2 > 0) && (l_diff > 0)) {
-      l_diff = (int32_t)0x80000000;
-    }
-  } else {  // Check for overflow.
-    if ((l_var2 < 0) && (l_diff < 0)) {
-      l_diff = (int32_t)0x7FFFFFFF;
-    }
+  // a - b can't overflow if a and b have the same sign. If they have different
+  // signs, a - b has the same sign as a iff it didn't overflow.
+  if ((a < 0) != (b < 0) && (a < 0) != (diff < 0)) {
+    // The direction of the overflow is obvious from the sign of a - b.
+    return diff < 0 ? INT32_MAX : INT32_MIN;
   }
-
-  return l_diff;
+  return diff;
 }
 
 static __inline int16_t WebRtcSpl_AddSatW16(int16_t a, int16_t b) {
