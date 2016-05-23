@@ -105,21 +105,12 @@ bool TestClient::CheckTimestamp(int64_t packet_timestamp) {
   if (packet_timestamp == -1) {
     res = false;
   }
-  int64_t time_us = rtc::TimeMicros();
   if (prev_packet_timestamp_ != -1) {
     if (packet_timestamp < prev_packet_timestamp_) {
       res = false;
     }
-    const int64_t kErrorMarginUs = 20000;
-    if (packet_timestamp - prev_packet_timestamp_ <
-            time_us - prev_time_us_ - kErrorMarginUs ||
-        packet_timestamp - prev_packet_timestamp_ >
-            time_us - prev_time_us_ + kErrorMarginUs) {
-      res = false;
-    }
   }
   prev_packet_timestamp_ = packet_timestamp;
-  prev_time_us_ = time_us;
   return res;
 }
 

@@ -96,7 +96,6 @@ class TestClient : public sigslot::has_slots<> {
   std::vector<Packet*>* packets_;
   bool ready_to_send_;
   int64_t prev_packet_timestamp_;
-  int64_t prev_time_us_;
   RTC_DISALLOW_COPY_AND_ASSIGN(TestClient);
 };
 
