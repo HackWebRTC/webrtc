@@ -57,12 +57,12 @@
 #endif
 #endif
 
-#define WEBRTC_SPL_MUL_16_32_RSFT11(a, b) \
-    ((WEBRTC_SPL_MUL_16_16(a, (b) >> 16) << 5) \
-    + (((WEBRTC_SPL_MUL_16_U16(a, (uint16_t)(b)) >> 1) + 0x0200) >> 10))
-#define WEBRTC_SPL_MUL_16_32_RSFT14(a, b) \
-    ((WEBRTC_SPL_MUL_16_16(a, (b) >> 16) << 2) \
-    + (((WEBRTC_SPL_MUL_16_U16(a, (uint16_t)(b)) >> 1) + 0x1000) >> 13))
+#define WEBRTC_SPL_MUL_16_32_RSFT11(a, b)          \
+  (WEBRTC_SPL_MUL_16_16(a, (b) >> 16) * (1 << 5) + \
+   (((WEBRTC_SPL_MUL_16_U16(a, (uint16_t)(b)) >> 1) + 0x0200) >> 10))
+#define WEBRTC_SPL_MUL_16_32_RSFT14(a, b)          \
+  (WEBRTC_SPL_MUL_16_16(a, (b) >> 16) * (1 << 2) + \
+   (((WEBRTC_SPL_MUL_16_U16(a, (uint16_t)(b)) >> 1) + 0x1000) >> 13))
 #define WEBRTC_SPL_MUL_16_32_RSFT15(a, b) \
     ((WEBRTC_SPL_MUL_16_16(a, (b) >> 16) << 1) \
     + (((WEBRTC_SPL_MUL_16_U16(a, (uint16_t)(b)) >> 1) + 0x2000) >> 14))
@@ -82,8 +82,7 @@
 
 // Shifting with negative numbers allowed
 // Positive means left shift
-#define WEBRTC_SPL_SHIFT_W32(x, c) \
-    (((c) >= 0) ? ((x) << (c)) : ((x) >> (-(c))))
+#define WEBRTC_SPL_SHIFT_W32(x, c) ((c) >= 0 ? (x) * (1 << (c)) : (x) >> -(c))
 
 // Shifting with negative numbers not allowed
 // We cannot do casting here due to signed/unsigned problem
