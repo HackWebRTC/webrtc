@@ -330,6 +330,7 @@ static BOOL const kARDAppClientEnableTracing = NO;
       [_messageQueue insertObject:message atIndex:0];
       break;
     case kARDSignalingMessageTypeCandidate:
+    case kARDSignalingMessageTypeCandidateRemoval:
       [_messageQueue addObject:message];
       break;
     case kARDSignalingMessageTypeBye:
@@ -405,6 +406,16 @@ static BOOL const kARDAppClientEnableTracing = NO;
   dispatch_async(dispatch_get_main_queue(), ^{
     ARDICECandidateMessage *message =
         [[ARDICECandidateMessage alloc] initWithCandidate:candidate];
+    [self sendSignalingMessage:message];
+  });
+}
+
+- (void)peerConnection:(RTCPeerConnection *)peerConnection
+    didRemoveIceCandidates:(NSArray<RTCIceCandidate *> *)candidates {
+  dispatch_async(dispatch_get_main_queue(), ^{
+    ARDICECandidateRemovalMessage *message =
+        [[ARDICECandidateRemovalMessage alloc]
+            initWithRemovedCandidates:candidates];
     [self sendSignalingMessage:message];
   });
 }
@@ -571,6 +582,12 @@ static BOOL const kARDAppClientEnableTracing = NO;
       ARDICECandidateMessage *candidateMessage =
           (ARDICECandidateMessage *)message;
       [_peerConnection addIceCandidate:candidateMessage.candidate];
+      break;
+    }
+    case kARDSignalingMessageTypeCandidateRemoval: {
+      ARDICECandidateRemovalMessage *candidateMessage =
+          (ARDICECandidateRemovalMessage *)message;
+      [_peerConnection removeIceCandidates:candidateMessage.candidates];
       break;
     }
     case kARDSignalingMessageTypeBye:

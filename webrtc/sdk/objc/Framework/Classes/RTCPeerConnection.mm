@@ -25,6 +25,7 @@
 
 #include <memory>
 
+#include "webrtc/api/jsepicecandidate.h"
 #include "webrtc/base/checks.h"
 
 NSString * const kRTCPeerConnectionErrorDomain =
@@ -182,6 +183,23 @@ void PeerConnectionDelegateAdapter::OnIceCandidate(
   [peer_connection.delegate peerConnection:peer_connection
                    didGenerateIceCandidate:iceCandidate];
 }
+
+void PeerConnectionDelegateAdapter::OnIceCandidatesRemoved(
+    const std::vector<cricket::Candidate>& candidates) {
+  NSMutableArray* ice_candidates =
+      [NSMutableArray arrayWithCapacity:candidates.size()];
+  for (const auto& candidate : candidates) {
+    std::unique_ptr<JsepIceCandidate> candidate_wrapper(
+        new JsepIceCandidate(candidate.transport_name(), -1, candidate));
+    RTCIceCandidate* ice_candidate = [[RTCIceCandidate alloc]
+        initWithNativeCandidate:candidate_wrapper.get()];
+    [ice_candidates addObject:ice_candidate];
+  }
+  RTCPeerConnection* peer_connection = peer_connection_;
+  [peer_connection.delegate peerConnection:peer_connection
+                    didRemoveIceCandidates:ice_candidates];
+}
+
 }  // namespace webrtc
 
 
@@ -271,6 +289,22 @@ void PeerConnectionDelegateAdapter::OnIceCandidate(
   std::unique_ptr<const webrtc::IceCandidateInterface> iceCandidate(
       candidate.nativeCandidate);
   _peerConnection->AddIceCandidate(iceCandidate.get());
+}
+
+- (void)removeIceCandidates:(NSArray<RTCIceCandidate *> *)iceCandidates {
+  std::vector<cricket::Candidate> candidates;
+  for (RTCIceCandidate *iceCandidate in iceCandidates) {
+    std::unique_ptr<const webrtc::IceCandidateInterface> candidate(
+        iceCandidate.nativeCandidate);
+    if (candidate) {
+      candidates.push_back(candidate->candidate());
+      // Need to fill the transport name from the sdp_mid.
+      candidates.back().set_transport_name(candidate->sdp_mid());
+    }
+  }
+  if (!candidates.empty()) {
+    _peerConnection->RemoveIceCandidates(candidates);
+  }
 }
 
 - (void)addStream:(RTCMediaStream *)stream {

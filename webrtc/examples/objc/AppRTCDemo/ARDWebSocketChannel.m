@@ -233,6 +233,7 @@ static NSString const *kARDWSSMessagePayloadKey = @"msg";
       // Should not receive answer in loopback scenario.
       break;
     case kARDSignalingMessageTypeCandidate:
+    case kARDSignalingMessageTypeCandidateRemoval:
       // Send back to server.
       [self sendMessage:message];
       break;

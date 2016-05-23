@@ -45,6 +45,9 @@ class PeerConnectionDelegateAdapter : public PeerConnectionObserver {
 
   void OnIceCandidate(const IceCandidateInterface *candidate) override;
 
+  void OnIceCandidatesRemoved(
+      const std::vector<cricket::Candidate>& candidates) override;
+
  private:
   __weak RTCPeerConnection *peer_connection_;
 };

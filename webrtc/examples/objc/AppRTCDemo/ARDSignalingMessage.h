@@ -15,6 +15,7 @@
 
 typedef enum {
   kARDSignalingMessageTypeCandidate,
+  kARDSignalingMessageTypeCandidateRemoval,
   kARDSignalingMessageTypeOffer,
   kARDSignalingMessageTypeAnswer,
   kARDSignalingMessageTypeBye,
@@ -34,6 +35,15 @@ typedef enum {
 @property(nonatomic, readonly) RTCIceCandidate *candidate;
 
 - (instancetype)initWithCandidate:(RTCIceCandidate *)candidate;
+
+@end
+
+@interface ARDICECandidateRemovalMessage : ARDSignalingMessage
+
+@property(nonatomic, readonly) NSArray<RTCIceCandidate *> *candidates;
+
+- (instancetype)initWithRemovedCandidates:
+    (NSArray<RTCIceCandidate *> *)candidates;
 
 @end
 

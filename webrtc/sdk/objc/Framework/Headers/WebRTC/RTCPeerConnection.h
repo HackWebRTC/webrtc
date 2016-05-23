@@ -98,6 +98,10 @@ RTC_EXPORT
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
     didGenerateIceCandidate:(RTCIceCandidate *)candidate;
 
+/** Called when a group of local Ice candidates have been removed. */
+- (void)peerConnection:(RTCPeerConnection *)peerConnection
+    didRemoveIceCandidates:(NSArray<RTCIceCandidate *> *)candidates;
+
 /** New data channel has been opened. */
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
     didOpenDataChannel:(RTCDataChannel *)dataChannel;
@@ -147,6 +151,9 @@ RTC_EXPORT
 
 /** Provide a remote candidate to the ICE Agent. */
 - (void)addIceCandidate:(RTCIceCandidate *)candidate;
+
+/** Remove a group of remote candidates from the ICE Agent. */
+- (void)removeIceCandidates:(NSArray<RTCIceCandidate *> *)candidates;
 
 /** Add a new media stream to be sent on this peer connection. */
 - (void)addStream:(RTCMediaStream *)stream;
