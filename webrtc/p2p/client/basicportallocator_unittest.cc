@@ -75,6 +75,12 @@ static const int kDefaultAllocationTimeout = 1000;
 static const char kTurnUsername[] = "test";
 static const char kTurnPassword[] = "test";
 
+// STUN timeout (with all retries) is 9500ms.
+// Add some margin of error for slow bots.
+// TODO(deadbeef): Use simulated clock instead of just increasing timeouts to
+// fix flaky tests.
+static const int kStunTimeoutMs = 15000;
+
 namespace cricket {
 
 // Helper for dumping candidates
@@ -1358,8 +1364,8 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketNoUdpAllowed) {
   EXPECT_PRED5(CheckCandidate, candidates_[0],
                cricket::ICE_CANDIDATE_COMPONENT_RTP, "local", "udp",
                kClientAddr);
-  // STUN timeout is 9sec. We need to wait to get candidate done signal.
-  EXPECT_TRUE_WAIT(candidate_allocation_done_, 10000);
+  // STUN timeout is 9.5sec. We need to wait to get candidate done signal.
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, kStunTimeoutMs);
   EXPECT_EQ(1U, candidates_.size());
 }
 

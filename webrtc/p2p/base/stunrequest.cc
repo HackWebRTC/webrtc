@@ -221,6 +221,8 @@ void StunRequest::OnMessage(rtc::Message* pmsg) {
 
   OnSent();
   manager_->thread_->PostDelayed(resend_delay(), this, MSG_STUN_SEND, NULL);
+  LOG(LS_INFO) << "Sent STUN request " << count_
+               << "; resend delay = " << resend_delay();
 }
 
 void StunRequest::OnSent() {
