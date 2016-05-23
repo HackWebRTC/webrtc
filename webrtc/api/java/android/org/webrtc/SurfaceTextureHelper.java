@@ -309,8 +309,12 @@ class SurfaceTextureHelper {
       Logging.d(TAG, "Setting listener to " + pendingListener);
       listener = pendingListener;
       pendingListener = null;
-      // May alredy have a pending frame - try delivering it.
-      tryDeliverTextureFrame();
+      // May have a pending frame from the previous capture session - drop it.
+      if (hasPendingTexture) {
+        // Calling updateTexImage() is neccessary in order to receive new frames.
+        updateTexImage();
+        hasPendingTexture = false;
+      }
     }
   };
 
@@ -455,6 +459,15 @@ class SurfaceTextureHelper {
     getYuvConverter().convert(buf, width, height, stride, textureId, transformMatrix);
   }
 
+  private void updateTexImage() {
+    // SurfaceTexture.updateTexImage apparently can compete and deadlock with eglSwapBuffers,
+    // as observed on Nexus 5. Therefore, synchronize it with the EGL functions.
+    // See https://bugs.chromium.org/p/webrtc/issues/detail?id=5702 for more info.
+    synchronized (EglBase.lock) {
+      surfaceTexture.updateTexImage();
+    }
+  }
+
   private void tryDeliverTextureFrame() {
     if (handler.getLooper().getThread() != Thread.currentThread()) {
       throw new IllegalStateException("Wrong thread.");
@@ -465,12 +478,7 @@ class SurfaceTextureHelper {
     isTextureInUse = true;
     hasPendingTexture = false;
 
-    // SurfaceTexture.updateTexImage apparently can compete and deadlock with eglSwapBuffers,
-    // as observed on Nexus 5. Therefore, synchronize it with the EGL functions.
-    // See https://bugs.chromium.org/p/webrtc/issues/detail?id=5702 for more info.
-    synchronized (EglBase.lock) {
-      surfaceTexture.updateTexImage();
-    }
+    updateTexImage();
 
     final float[] transformMatrix = new float[16];
     surfaceTexture.getTransformMatrix(transformMatrix);

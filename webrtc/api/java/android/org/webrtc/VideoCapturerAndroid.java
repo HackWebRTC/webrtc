@@ -78,9 +78,6 @@ public class VideoCapturerAndroid implements
   private final Set<byte[]> queuedBuffers = new HashSet<byte[]>();
   private final boolean isCapturingToTexture;
   private SurfaceTextureHelper surfaceHelper;
-  // The camera API can output one old frame after the camera has been switched or the resolution
-  // has been changed. This flag is used for dropping the first frame after camera restart.
-  private boolean dropNextFrame = false;
   private final static int MAX_OPEN_CAMERA_ATTEMPTS = 3;
   private final static int OPEN_CAMERA_DELAY_MS = 500;
   private int openCameraAttempts;
@@ -462,7 +459,6 @@ public class VideoCapturerAndroid implements
     // Temporarily stop preview if it's already running.
     if (this.captureFormat != null) {
       camera.stopPreview();
-      dropNextFrame = true;
       // Calling |setPreviewCallbackWithBuffer| with null should clear the internal camera buffer
       // queue, but sometimes we receive a frame with the old resolution after this call anyway.
       camera.setPreviewCallbackWithBuffer(null);
@@ -564,7 +560,6 @@ public class VideoCapturerAndroid implements
     synchronized (cameraIdLock) {
       id = (id + 1) % android.hardware.Camera.getNumberOfCameras();
     }
-    dropNextFrame = true;
     startCaptureOnCameraThread(requestedWidth, requestedHeight, requestedFramerate, frameObserver,
         applicationContext);
     Logging.d(TAG, "switchCameraOnCameraThread done");
@@ -654,11 +649,6 @@ public class VideoCapturerAndroid implements
       throw new RuntimeException("onTextureFrameAvailable() called after stopCapture().");
     }
     checkIsOnCameraThread();
-    if (dropNextFrame)  {
-      surfaceHelper.returnTextureFrame();
-      dropNextFrame = false;
-      return;
-    }
     if (eventsHandler != null && !firstFrameReported) {
       eventsHandler.onFirstFrameAvailable();
       firstFrameReported = true;
