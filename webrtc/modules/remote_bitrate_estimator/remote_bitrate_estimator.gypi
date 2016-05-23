@@ -48,7 +48,7 @@
         }, {
           'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0' ],
           'sources!': [
-            'remote_bitrate_estimator/test/bwe_test_logging.cc'
+            'test/bwe_test_logging.cc'
           ],
         }],
       ],
@@ -99,7 +99,7 @@
             }, {
               'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0' ],
               'sources!': [
-                'remote_bitrate_estimator/test/bwe_test_logging.cc'
+                'test/bwe_test_logging.cc'
               ],
             }],
           ],

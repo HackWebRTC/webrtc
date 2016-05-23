@@ -6,6 +6,11 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+declare_args() {
+  # Set this to true to enable BWE test logging.
+  enable_bwe_test_logging = false
+}
+
 source_set("remote_bitrate_estimator") {
   sources = [
     "include/bwe_defines.h",
@@ -40,6 +45,10 @@ source_set("rbe_components") {
     "transport_feedback_adapter.cc",
     "transport_feedback_adapter.h",
   ]
+
+  if (enable_bwe_test_logging) {
+    sources += [ "test/bwe_test_logging.cc" ]
+  }
 
   configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
