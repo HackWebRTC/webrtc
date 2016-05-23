@@ -179,7 +179,7 @@ bool XmppSocket::Connect(const rtc::SocketAddress& addr) {
 
 bool XmppSocket::Read(char * data, size_t len, size_t* len_read) {
 #ifndef USE_SSLSTREAM
-  int read = cricket_socket_->Recv(data, len);
+  int read = cricket_socket_->Recv(data, len, nullptr);
   if (read > 0) {
     *len_read = (size_t)read;
     return true;

@@ -102,7 +102,8 @@ void AsyncUDPSocket::OnReadEvent(AsyncSocket* socket) {
   ASSERT(socket_.get() == socket);
 
   SocketAddress remote_addr;
-  int len = socket_->RecvFrom(buf_, size_, &remote_addr);
+  int64_t timestamp;
+  int len = socket_->RecvFrom(buf_, size_, &remote_addr, &timestamp);
   if (len < 0) {
     // An error here typically means we got an ICMP error in response to our
     // send datagram, indicating the remote address was unreachable.
@@ -116,8 +117,9 @@ void AsyncUDPSocket::OnReadEvent(AsyncSocket* socket) {
 
   // TODO: Make sure that we got all of the packet.
   // If we did not, then we should resize our buffer to be large enough.
-  SignalReadPacket(this, buf_, static_cast<size_t>(len), remote_addr,
-                   CreatePacketTime(0));
+  SignalReadPacket(
+      this, buf_, static_cast<size_t>(len), remote_addr,
+      (timestamp > -1 ? PacketTime(timestamp, 0) : CreatePacketTime(0)));
 }
 
 void AsyncUDPSocket::OnWriteEvent(AsyncSocket* socket) {

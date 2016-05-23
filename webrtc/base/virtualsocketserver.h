@@ -274,8 +274,11 @@ class VirtualSocket : public AsyncSocket, public MessageHandler {
   int Close() override;
   int Send(const void* pv, size_t cb) override;
   int SendTo(const void* pv, size_t cb, const SocketAddress& addr) override;
-  int Recv(void* pv, size_t cb) override;
-  int RecvFrom(void* pv, size_t cb, SocketAddress* paddr) override;
+  int Recv(void* pv, size_t cb, int64_t* timestamp) override;
+  int RecvFrom(void* pv,
+               size_t cb,
+               SocketAddress* paddr,
+               int64_t* timestamp) override;
   int Listen(int backlog) override;
   VirtualSocket* Accept(SocketAddress* paddr) override;
 

@@ -155,14 +155,17 @@ class NATSocket : public AsyncSocket, public sigslot::has_slots<> {
     return result;
   }
 
-  int Recv(void* data, size_t size) override {
+  int Recv(void* data, size_t size, int64_t* timestamp) override {
     SocketAddress addr;
-    return RecvFrom(data, size, &addr);
+    return RecvFrom(data, size, &addr, timestamp);
   }
 
-  int RecvFrom(void* data, size_t size, SocketAddress* out_addr) override {
+  int RecvFrom(void* data,
+               size_t size,
+               SocketAddress* out_addr,
+               int64_t* timestamp) override {
     if (server_addr_.IsNil() || type_ == SOCK_STREAM) {
-      return socket_->RecvFrom(data, size, out_addr);
+      return socket_->RecvFrom(data, size, out_addr, timestamp);
     }
     // Make sure we have enough room to read the requested amount plus the
     // largest possible header address.
@@ -170,7 +173,7 @@ class NATSocket : public AsyncSocket, public sigslot::has_slots<> {
     Grow(size + kNATEncodedIPv6AddressSize);
 
     // Read the packet from the socket.
-    int result = socket_->RecvFrom(buf_, size_, &remote_addr);
+    int result = socket_->RecvFrom(buf_, size_, &remote_addr, timestamp);
     if (result >= 0) {
       ASSERT(remote_addr == server_addr_);
 
@@ -278,7 +281,7 @@ class NATSocket : public AsyncSocket, public sigslot::has_slots<> {
   // Handles the byte sent back from the server and fires the appropriate event.
   void HandleConnectReply() {
     char code;
-    socket_->Recv(&code, sizeof(code));
+    socket_->Recv(&code, sizeof(code), nullptr);
     if (code == 0) {
       connected_ = true;
       SignalConnectEvent(this);

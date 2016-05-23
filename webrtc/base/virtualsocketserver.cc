@@ -264,12 +264,18 @@ int VirtualSocket::SendTo(const void* pv,
   }
 }
 
-int VirtualSocket::Recv(void* pv, size_t cb) {
+int VirtualSocket::Recv(void* pv, size_t cb, int64_t* timestamp) {
   SocketAddress addr;
-  return RecvFrom(pv, cb, &addr);
+  return RecvFrom(pv, cb, &addr, timestamp);
 }
 
-int VirtualSocket::RecvFrom(void* pv, size_t cb, SocketAddress* paddr) {
+int VirtualSocket::RecvFrom(void* pv,
+                            size_t cb,
+                            SocketAddress* paddr,
+                            int64_t* timestamp) {
+  if (timestamp) {
+    *timestamp = -1;
+  }
   // If we don't have a packet, then either error or wait for one to arrive.
   if (recv_buffer_.empty()) {
     if (async_) {

@@ -19,7 +19,7 @@
 
 // The below define selects the SSLStreamAdapter implementation for
 // SSL, as opposed to the SSLAdapter socket adapter.
-// #define USE_SSLSTREAM 
+// #define USE_SSLSTREAM
 
 namespace rtc {
   class StreamInterface;

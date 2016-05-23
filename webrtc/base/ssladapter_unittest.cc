@@ -102,7 +102,7 @@ class SSLAdapterTestDummyClient : public sigslot::has_slots<> {
     char buffer[4096] = "";
 
     // Read data received from the server and store it in our internal buffer.
-    int read = socket->Recv(buffer, sizeof(buffer) - 1);
+    int read = socket->Recv(buffer, sizeof(buffer) - 1, nullptr);
     if (read != -1) {
       buffer[read] = '\0';
 

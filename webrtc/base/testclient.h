@@ -24,13 +24,17 @@ class TestClient : public sigslot::has_slots<> {
  public:
   // Records the contents of a packet that was received.
   struct Packet {
-    Packet(const SocketAddress& a, const char* b, size_t s);
+    Packet(const SocketAddress& a,
+           const char* b,
+           size_t s,
+           const PacketTime& packet_time);
     Packet(const Packet& p);
     virtual ~Packet();
 
     SocketAddress addr;
     char*  buf;
     size_t size;
+    PacketTime packet_time;
   };
 
   // Default timeout for NextPacket reads.
@@ -85,11 +89,14 @@ class TestClient : public sigslot::has_slots<> {
                 const SocketAddress& remote_addr,
                 const PacketTime& packet_time);
   void OnReadyToSend(AsyncPacketSocket* socket);
+  bool CheckTimestamp(int64_t packet_timestamp);
 
   CriticalSection crit_;
   AsyncPacketSocket* socket_;
   std::vector<Packet*>* packets_;
   bool ready_to_send_;
+  int64_t prev_packet_timestamp_;
+  int64_t prev_time_us_;
   RTC_DISALLOW_COPY_AND_ASSIGN(TestClient);
 };
 

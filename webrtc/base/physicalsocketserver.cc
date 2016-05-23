@@ -23,6 +23,7 @@
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 #include <sys/time.h>
 #include <sys/select.h>
 #include <unistd.h>
@@ -55,7 +56,27 @@
 #include <netinet/tcp.h>  // for TCP_NODELAY
 #define IP_MTU 14 // Until this is integrated from linux/in.h to netinet/in.h
 typedef void* SockOptArg;
+
 #endif  // WEBRTC_POSIX
+
+#if defined(WEBRTC_POSIX) && !defined(WEBRTC_MAC)
+int64_t GetSocketRecvTimestamp(int socket) {
+  struct timeval tv_ioctl;
+  int ret = ioctl(socket, SIOCGSTAMP, &tv_ioctl);
+  if (ret != 0)
+    return -1;
+  int64_t timestamp =
+      rtc::kNumMicrosecsPerSec * static_cast<int64_t>(tv_ioctl.tv_sec) +
+      static_cast<int64_t>(tv_ioctl.tv_usec);
+  return timestamp;
+}
+
+#else
+
+int64_t GetSocketRecvTimestamp(int socket) {
+  return -1;
+}
+#endif
 
 #if defined(WEBRTC_WIN)
 typedef char* SockOptArg;
@@ -324,7 +345,7 @@ int PhysicalSocket::SendTo(const void* buffer,
   return sent;
 }
 
-int PhysicalSocket::Recv(void* buffer, size_t length) {
+int PhysicalSocket::Recv(void* buffer, size_t length, int64_t* timestamp) {
   int received = ::recv(s_, static_cast<char*>(buffer),
                         static_cast<int>(length), 0);
   if ((received == 0) && (length != 0)) {
@@ -337,6 +358,9 @@ int PhysicalSocket::Recv(void* buffer, size_t length) {
     enabled_events_ |= DE_READ;
     SetError(EWOULDBLOCK);
     return SOCKET_ERROR;
+  }
+  if (timestamp) {
+    *timestamp = GetSocketRecvTimestamp(s_);
   }
   UpdateLastError();
   int error = GetError();
@@ -352,12 +376,16 @@ int PhysicalSocket::Recv(void* buffer, size_t length) {
 
 int PhysicalSocket::RecvFrom(void* buffer,
                              size_t length,
-                             SocketAddress* out_addr) {
+                             SocketAddress* out_addr,
+                             int64_t* timestamp) {
   sockaddr_storage addr_storage;
   socklen_t addr_len = sizeof(addr_storage);
   sockaddr* addr = reinterpret_cast<sockaddr*>(&addr_storage);
   int received = ::recvfrom(s_, static_cast<char*>(buffer),
                             static_cast<int>(length), 0, addr, &addr_len);
+  if (timestamp) {
+    *timestamp = GetSocketRecvTimestamp(s_);
+  }
   UpdateLastError();
   if ((received >= 0) && (out_addr != nullptr))
     SocketAddressFromSockAddrStorage(addr_storage, out_addr);

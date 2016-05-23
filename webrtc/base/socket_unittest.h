@@ -57,6 +57,7 @@ class SocketTest : public testing::Test {
   void TestUdpReadyToSendIPv6();
   void TestGetSetOptionsIPv4();
   void TestGetSetOptionsIPv6();
+  void TestSocketRecvTimestamp();
 
   static const int kTimeout = 5000;  // ms
   const IPAddress kIPv4Loopback;
@@ -84,6 +85,7 @@ class SocketTest : public testing::Test {
   void UdpInternal(const IPAddress& loopback);
   void UdpReadyToSend(const IPAddress& loopback);
   void GetSetOptionsInternal(const IPAddress& loopback);
+  void SocketRecvTimestamp(const IPAddress& loopback);
 
   SocketServer* ss_;
 };

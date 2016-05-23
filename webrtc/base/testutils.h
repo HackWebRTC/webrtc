@@ -359,7 +359,7 @@ private:
   }
   void OnReadEvent(AsyncSocket* socket) {
     char data[64 * 1024];
-    int result = socket_->Recv(data, arraysize(data));
+    int result = socket_->Recv(data, arraysize(data), nullptr);
     if (result > 0) {
       recv_buffer_.insert(recv_buffer_.end(), data, data + result);
     }

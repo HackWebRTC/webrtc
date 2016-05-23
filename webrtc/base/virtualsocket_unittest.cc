@@ -464,7 +464,7 @@ class VirtualSocketServerTest : public testing::Test {
 
     char buffer[10];
     EXPECT_FALSE(sink.Check(b.get(), testing::SSE_READ));
-    EXPECT_EQ(-1, b->Recv(buffer, 10));
+    EXPECT_EQ(-1, b->Recv(buffer, 10, nullptr));
 
     EXPECT_TRUE(sink.Check(a, testing::SSE_CLOSE));
     EXPECT_EQ(a->GetState(), AsyncSocket::CS_CLOSED);
@@ -531,7 +531,7 @@ class VirtualSocketServerTest : public testing::Test {
     EXPECT_TRUE(a->IsBlocking());
 
     // Read a subset of the data
-    result = b->Recv(recv_buffer + recv_pos, 500);
+    result = b->Recv(recv_buffer + recv_pos, 500, nullptr);
     EXPECT_EQ(500, result);
     recv_pos += result;
 
@@ -546,7 +546,7 @@ class VirtualSocketServerTest : public testing::Test {
 
     // Empty the recv buffer
     while (true) {
-      result = b->Recv(recv_buffer + recv_pos, kDataSize - recv_pos);
+      result = b->Recv(recv_buffer + recv_pos, kDataSize - recv_pos, nullptr);
       if (result < 0) {
         EXPECT_EQ(-1, result);
         EXPECT_TRUE(b->IsBlocking());
@@ -560,7 +560,7 @@ class VirtualSocketServerTest : public testing::Test {
 
     // Continue to empty the recv buffer
     while (true) {
-      result = b->Recv(recv_buffer + recv_pos, kDataSize - recv_pos);
+      result = b->Recv(recv_buffer + recv_pos, kDataSize - recv_pos, nullptr);
       if (result < 0) {
         EXPECT_EQ(-1, result);
         EXPECT_TRUE(b->IsBlocking());
@@ -579,7 +579,7 @@ class VirtualSocketServerTest : public testing::Test {
 
     // Receive the last of the data
     while (true) {
-      result = b->Recv(recv_buffer + recv_pos, kDataSize - recv_pos);
+      result = b->Recv(recv_buffer + recv_pos, kDataSize - recv_pos, nullptr);
       if (result < 0) {
         EXPECT_EQ(-1, result);
         EXPECT_TRUE(b->IsBlocking());
@@ -626,7 +626,7 @@ class VirtualSocketServerTest : public testing::Test {
     ss_->ProcessMessagesUntilIdle();
 
     for (char i = 0; i < cNumPackets; ++i) {
-      EXPECT_EQ(1, b->Recv(buffer, sizeof(buffer)));
+      EXPECT_EQ(1, b->Recv(buffer, sizeof(buffer), nullptr));
       EXPECT_EQ(static_cast<char>('0' + i), buffer[0]);
     }
 
@@ -646,7 +646,7 @@ class VirtualSocketServerTest : public testing::Test {
     ss_->ProcessMessagesUntilIdle();
 
     for (char i = 0; i < cNumPackets; ++i) {
-      EXPECT_EQ(1, b->Recv(buffer, sizeof(buffer)));
+      EXPECT_EQ(1, b->Recv(buffer, sizeof(buffer), nullptr));
       EXPECT_EQ(static_cast<char>('A' + i), buffer[0]);
     }
   }

@@ -52,14 +52,17 @@ class FirewallSocket : public AsyncSocketAdapter {
     }
     return AsyncSocketAdapter::SendTo(pv, cb, addr);
   }
-  int Recv(void* pv, size_t cb) override {
+  int Recv(void* pv, size_t cb, int64_t* timestamp) override {
     SocketAddress addr;
-    return RecvFrom(pv, cb, &addr);
+    return RecvFrom(pv, cb, &addr, timestamp);
   }
-  int RecvFrom(void* pv, size_t cb, SocketAddress* paddr) override {
+  int RecvFrom(void* pv,
+               size_t cb,
+               SocketAddress* paddr,
+               int64_t* timestamp) override {
     if (type_ == SOCK_DGRAM) {
       while (true) {
-        int res = AsyncSocketAdapter::RecvFrom(pv, cb, paddr);
+        int res = AsyncSocketAdapter::RecvFrom(pv, cb, paddr, timestamp);
         if (res <= 0)
           return res;
         if (server_->Check(FP_UDP, *paddr, GetLocalAddress()))
@@ -69,7 +72,7 @@ class FirewallSocket : public AsyncSocketAdapter {
                         << GetLocalAddress().ToSensitiveString() << " dropped";
       }
     }
-    return AsyncSocketAdapter::RecvFrom(pv, cb, paddr);
+    return AsyncSocketAdapter::RecvFrom(pv, cb, paddr, timestamp);
   }
 
   int Listen(int backlog) override {

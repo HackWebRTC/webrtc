@@ -129,7 +129,7 @@ void ProxyBinding::Read(AsyncSocket* socket, FifoBuffer* buffer) {
   int read;
   if (buffer->GetBuffered(&size) && size == 0) {
     void* p = buffer->GetWriteBuffer(&size);
-    read = socket->Recv(p, size);
+    read = socket->Recv(p, size, nullptr);
     buffer->ConsumeWriteBuffer(std::max(read, 0));
   }
 }

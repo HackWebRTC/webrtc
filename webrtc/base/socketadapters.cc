@@ -36,7 +36,7 @@
 
 #if defined(WEBRTC_WIN)
 #include "webrtc/base/sec_buffer.h"
-#endif  // WEBRTC_WIN 
+#endif  // WEBRTC_WIN
 
 namespace rtc {
 
@@ -59,7 +59,7 @@ int BufferedReadAdapter::Send(const void *pv, size_t cb) {
   return AsyncSocketAdapter::Send(pv, cb);
 }
 
-int BufferedReadAdapter::Recv(void *pv, size_t cb) {
+int BufferedReadAdapter::Recv(void* pv, size_t cb, int64_t* timestamp) {
   if (buffering_) {
     socket_->SetError(EWOULDBLOCK);
     return -1;
@@ -80,7 +80,7 @@ int BufferedReadAdapter::Recv(void *pv, size_t cb) {
 
   // FIX: If cb == 0, we won't generate another read event
 
-  int res = AsyncSocketAdapter::Recv(pv, cb);
+  int res = AsyncSocketAdapter::Recv(pv, cb, timestamp);
   if (res >= 0) {
     // Read from socket and possibly buffer; return combined length
     return res + static_cast<int>(read);
@@ -113,7 +113,8 @@ void BufferedReadAdapter::OnReadEvent(AsyncSocket * socket) {
     data_len_ = 0;
   }
 
-  int len = socket_->Recv(buffer_ + data_len_, buffer_size_ - data_len_);
+  int len =
+      socket_->Recv(buffer_ + data_len_, buffer_size_ - data_len_, nullptr);
   if (len < 0) {
     // TODO: Do something better like forwarding the error to the user.
     LOG_ERR(INFO) << "Recv";
@@ -874,15 +875,18 @@ int LoggingSocketAdapter::SendTo(const void *pv, size_t cb,
   return res;
 }
 
-int LoggingSocketAdapter::Recv(void *pv, size_t cb) {
-  int res = AsyncSocketAdapter::Recv(pv, cb);
+int LoggingSocketAdapter::Recv(void* pv, size_t cb, int64_t* timestamp) {
+  int res = AsyncSocketAdapter::Recv(pv, cb, timestamp);
   if (res > 0)
     LogMultiline(level_, label_.c_str(), true, pv, res, hex_mode_, &lms_);
   return res;
 }
 
-int LoggingSocketAdapter::RecvFrom(void *pv, size_t cb, SocketAddress *paddr) {
-  int res = AsyncSocketAdapter::RecvFrom(pv, cb, paddr);
+int LoggingSocketAdapter::RecvFrom(void* pv,
+                                   size_t cb,
+                                   SocketAddress* paddr,
+                                   int64_t* timestamp) {
+  int res = AsyncSocketAdapter::RecvFrom(pv, cb, paddr, timestamp);
   if (res > 0)
     LogMultiline(level_, label_.c_str(), true, pv, res, hex_mode_, &lms_);
   return res;

@@ -42,8 +42,11 @@ class MacAsyncSocket : public AsyncSocket, public sigslot::has_slots<> {
   int SendTo(const void* buffer,
              size_t length,
              const SocketAddress& addr) override;
-  int Recv(void* buffer, size_t length) override;
-  int RecvFrom(void* buffer, size_t length, SocketAddress* out_addr) override;
+  int Recv(void* buffer, size_t length, int64_t* timestamp) override;
+  int RecvFrom(void* buffer,
+               size_t length,
+               SocketAddress* out_addr,
+               int64_t* timestamp) override;
   int Listen(int backlog) override;
   MacAsyncSocket* Accept(SocketAddress* out_addr) override;
   int Close() override;

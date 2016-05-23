@@ -247,7 +247,7 @@ void AutoDetectProxy::OnConnectEvent(AsyncSocket * socket) {
 
 void AutoDetectProxy::OnReadEvent(AsyncSocket * socket) {
   char data[257];
-  int len = socket_->Recv(data, 256);
+  int len = socket_->Recv(data, 256, nullptr);
   if (len > 0) {
     data[len] = 0;
     LOG(LS_VERBOSE) << "AutoDetectProxy read " << len << " bytes";

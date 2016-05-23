@@ -296,7 +296,7 @@ bool PeerConnectionClient::ReadIntoBuffer(rtc::AsyncSocket* socket,
                                           size_t* content_length) {
   char buffer[0xffff];
   do {
-    int bytes = socket->Recv(buffer, sizeof(buffer));
+    int bytes = socket->Recv(buffer, sizeof(buffer), nullptr);
     if (bytes <= 0)
       break;
     data->append(buffer, bytes);

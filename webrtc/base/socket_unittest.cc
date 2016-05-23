@@ -184,6 +184,10 @@ void SocketTest::TestGetSetOptionsIPv6() {
   GetSetOptionsInternal(kIPv6Loopback);
 }
 
+void SocketTest::TestSocketRecvTimestamp() {
+  SocketRecvTimestamp(kIPv4Loopback);
+}
+
 // For unbound sockets, GetLocalAddress / GetRemoteAddress return AF_UNSPEC
 // values on Windows, but an empty address of the same family on Linux/MacOS X.
 bool IsUnspecOrEmptyIP(const IPAddress& address) {
@@ -541,7 +545,7 @@ void SocketTest::ServerCloseInternal(const IPAddress& loopback) {
 
   // Ensure the data can be read.
   char buffer[10];
-  EXPECT_EQ(1, client->Recv(buffer, sizeof(buffer)));
+  EXPECT_EQ(1, client->Recv(buffer, sizeof(buffer), nullptr));
   EXPECT_EQ('a', buffer[0]);
 
   // Now we should close, but the remote address will remain.
@@ -673,7 +677,7 @@ void SocketTest::SocketServerWaitInternal(const IPAddress& loopback) {
 
   // But should signal when process_io is true.
   EXPECT_TRUE_WAIT((sink.Check(accepted.get(), testing::SSE_READ)), kTimeout);
-  EXPECT_LT(0, accepted->Recv(buf, 1024));
+  EXPECT_LT(0, accepted->Recv(buf, 1024, nullptr));
 }
 
 void SocketTest::TcpInternal(const IPAddress& loopback, size_t data_size,
@@ -763,7 +767,7 @@ void SocketTest::TcpInternal(const IPAddress& loopback, size_t data_size,
 
       // Receive as much as we can get in a single recv call.
       char recved_data[data_size];
-      int recved_size = receiver->Recv(recved_data, data_size);
+      int recved_size = receiver->Recv(recved_data, data_size, nullptr);
 
       if (!recv_called) {
         // The first Recv() after getting readability should succeed and receive
@@ -850,7 +854,7 @@ void SocketTest::SingleFlowControlCallbackInternal(const IPAddress& loopback) {
 
   // Pull data.
   for (int i = 0; i < sends; ++i) {
-    client->Recv(buf, arraysize(buf));
+    client->Recv(buf, arraysize(buf), nullptr);
   }
 
   // Expect at least one additional writable callback.
@@ -1021,6 +1025,27 @@ void SocketTest::GetSetOptionsInternal(const IPAddress& loopback) {
     // but succeeding on my Ubiquity instance.
 #endif
   }
+}
+
+void SocketTest::SocketRecvTimestamp(const IPAddress& loopback) {
+  std::unique_ptr<Socket> socket(
+      ss_->CreateSocket(loopback.family(), SOCK_DGRAM));
+  EXPECT_EQ(0, socket->Bind(SocketAddress(loopback, 0)));
+  SocketAddress address = socket->GetLocalAddress();
+
+  socket->SendTo("foo", 3, address);
+  int64_t timestamp;
+  char buffer[3];
+  socket->RecvFrom(buffer, 3, nullptr, &timestamp);
+  EXPECT_GT(timestamp, -1);
+  int64_t prev_timestamp = timestamp;
+
+  const int64_t kTimeBetweenPacketsMs = 10;
+  Thread::SleepMs(kTimeBetweenPacketsMs);
+
+  socket->SendTo("bar", 3, address);
+  socket->RecvFrom(buffer, 3, nullptr, &timestamp);
+  EXPECT_NEAR(timestamp, prev_timestamp + kTimeBetweenPacketsMs * 1000, 2000);
 }
 
 }  // namespace rtc

@@ -195,7 +195,7 @@ bool TestConnectivity(const SocketAddress& src, const IPAddress& dst) {
   const size_t kRecvBufSize = 64;
   char recvbuf[kRecvBufSize];
   Thread::Current()->SleepMs(100);
-  int received = server->RecvFrom(recvbuf, kRecvBufSize, &addr);
+  int received = server->RecvFrom(recvbuf, kRecvBufSize, &addr, nullptr);
   return received == sent && ::memcmp(buf, recvbuf, len) == 0;
 }
 

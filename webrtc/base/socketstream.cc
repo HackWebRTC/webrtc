@@ -60,7 +60,7 @@ StreamState SocketStream::GetState() const {
 StreamResult SocketStream::Read(void* buffer, size_t buffer_len,
                                 size_t* read, int* error) {
   ASSERT(socket_ != NULL);
-  int result = socket_->Recv(buffer, buffer_len);
+  int result = socket_->Recv(buffer, buffer_len, nullptr);
   if (result < 0) {
     if (socket_->IsBlocking())
       return SR_BLOCK;
