@@ -150,8 +150,7 @@ Port::Port(rtc::Thread* thread,
       enable_port_packets_(false),
       ice_role_(ICEROLE_UNKNOWN),
       tiebreaker_(0),
-      shared_socket_(true),
-      candidate_filter_(CF_ALL) {
+      shared_socket_(true) {
   Construct();
 }
 
@@ -180,8 +179,7 @@ Port::Port(rtc::Thread* thread,
       enable_port_packets_(false),
       ice_role_(ICEROLE_UNKNOWN),
       tiebreaker_(0),
-      shared_socket_(false),
-      candidate_filter_(CF_ALL) {
+      shared_socket_(false) {
   ASSERT(factory_ != NULL);
   Construct();
 }

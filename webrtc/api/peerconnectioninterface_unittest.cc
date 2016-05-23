@@ -1058,7 +1058,6 @@ TEST_F(PeerConnectionInterfaceTest, CreatePeerConnectionWithPooledCandidates) {
   EXPECT_EQ(1UL, session->stun_servers().size());
   EXPECT_EQ(0U, session->flags() & cricket::PORTALLOCATOR_ENABLE_IPV6);
   EXPECT_LT(0U, session->flags() & cricket::PORTALLOCATOR_DISABLE_TCP);
-  EXPECT_EQ(cricket::CF_RELAY, session->candidate_filter());
 }
 
 TEST_F(PeerConnectionInterfaceTest, AddStreams) {
@@ -1973,14 +1972,13 @@ TEST_F(PeerConnectionInterfaceTest,
   server.uri = kStunAddressOnly;
   config.servers.push_back(server);
   config.type = PeerConnectionInterface::kRelay;
-  CreatePeerConnection(config, nullptr);
+  EXPECT_TRUE(pc_->SetConfiguration(config));
 
   const cricket::FakePortAllocatorSession* session =
       static_cast<const cricket::FakePortAllocatorSession*>(
           port_allocator_->GetPooledSession());
   ASSERT_NE(nullptr, session);
   EXPECT_EQ(1UL, session->stun_servers().size());
-  EXPECT_EQ(cricket::CF_RELAY, session->candidate_filter());
 }
 
 // Test that PeerConnection::Close changes the states to closed and all remote

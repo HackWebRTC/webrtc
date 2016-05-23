@@ -15,6 +15,7 @@
 #include "webrtc/p2p/base/fakeportallocator.h"
 #include "webrtc/p2p/base/portallocator.h"
 
+static const char kSessionId[] = "session id";
 static const char kContentName[] = "test content";
 // Based on ICE_UFRAG_LENGTH
 static const char kIceUfrag[] = "TESTICEUFRAG0000";
@@ -35,6 +36,20 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
     allocator_->SetConfiguration(cricket::ServerAddresses(),
                                  std::vector<cricket::RelayServerConfig>(),
                                  candidate_pool_size);
+  }
+
+  std::unique_ptr<cricket::FakePortAllocatorSession> CreateSession(
+      const std::string& sid,
+      const std::string& content_name,
+      int component,
+      const std::string& ice_ufrag,
+      const std::string& ice_pwd) {
+    return std::unique_ptr<cricket::FakePortAllocatorSession>(
+        static_cast<cricket::FakePortAllocatorSession*>(
+            allocator_
+                ->CreateSession(sid, content_name, component, ice_ufrag,
+                                ice_pwd)
+                .release()));
   }
 
   const cricket::FakePortAllocatorSession* GetPooledSession() const {
@@ -74,6 +89,19 @@ TEST_F(PortAllocatorTest, TestDefaults) {
   EXPECT_EQ(0UL, allocator_->turn_servers().size());
   EXPECT_EQ(0, allocator_->candidate_pool_size());
   EXPECT_EQ(0, GetAllPooledSessionsReturnCount());
+}
+
+// Call CreateSession and verify that the parameters passed in and the
+// candidate filter are applied as expected.
+TEST_F(PortAllocatorTest, CreateSession) {
+  allocator_->set_candidate_filter(cricket::CF_RELAY);
+  auto session = CreateSession(kSessionId, kContentName, 1, kIceUfrag, kIcePwd);
+  ASSERT_NE(nullptr, session);
+  EXPECT_EQ(cricket::CF_RELAY, session->candidate_filter());
+  EXPECT_EQ(kContentName, session->content_name());
+  EXPECT_EQ(1, session->component());
+  EXPECT_EQ(kIceUfrag, session->ice_ufrag());
+  EXPECT_EQ(kIcePwd, session->ice_pwd());
 }
 
 TEST_F(PortAllocatorTest, SetConfigurationUpdatesIceServers) {
@@ -202,4 +230,18 @@ TEST_F(PortAllocatorTest, TakePooledSessionUpdatesIceParameters) {
   EXPECT_EQ(1, session->component());
   EXPECT_EQ(kIceUfrag, session->ice_ufrag());
   EXPECT_EQ(kIcePwd, session->ice_pwd());
+}
+
+// According to JSEP, candidate filtering should be done when the pooled
+// candidates are surfaced to the application. This means when a pooled
+// session is taken. So a pooled session should gather candidates
+// unfiltered until it's returned by TakePooledSession.
+TEST_F(PortAllocatorTest, TakePooledSessionUpdatesCandidateFilter) {
+  allocator_->set_candidate_filter(cricket::CF_RELAY);
+  SetConfigurationWithPoolSize(1);
+  auto peeked_session = GetPooledSession();
+  ASSERT_NE(nullptr, peeked_session);
+  EXPECT_EQ(cricket::CF_ALL, peeked_session->candidate_filter());
+  auto session = TakePooledSession();
+  EXPECT_EQ(cricket::CF_RELAY, session->candidate_filter());
 }

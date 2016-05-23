@@ -141,6 +141,13 @@ class PortAllocatorSession : public sigslot::has_slots<> {
   const std::string& ice_pwd() const { return ice_pwd_; }
   bool pooled() const { return ice_ufrag_.empty(); }
 
+  // Setting this filter should affect not only candidates gathered in the
+  // future, but candidates already gathered and ports already "ready",
+  // which would be returned by ReadyCandidates() and ReadyPorts().
+  //
+  // Default filter should be CF_ALL.
+  virtual void SetCandidateFilter(uint32_t filter) = 0;
+
   // Starts gathering STUN and Relay configurations.
   virtual void StartGettingPorts() = 0;
   virtual void StopGettingPorts() = 0;
@@ -300,7 +307,6 @@ class PortAllocator : public sigslot::has_slots<> {
 
   uint32_t candidate_filter() { return candidate_filter_; }
   void set_candidate_filter(uint32_t filter) {
-    // TODO(mallinath) - Do transition check?
     candidate_filter_ = filter;
   }
 

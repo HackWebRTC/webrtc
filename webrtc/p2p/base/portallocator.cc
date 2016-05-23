@@ -71,8 +71,10 @@ std::unique_ptr<PortAllocatorSession> PortAllocator::CreateSession(
     int component,
     const std::string& ice_ufrag,
     const std::string& ice_pwd) {
-  return std::unique_ptr<PortAllocatorSession>(
+  auto session = std::unique_ptr<PortAllocatorSession>(
       CreateSessionInternal(content_name, component, ice_ufrag, ice_pwd));
+  session->SetCandidateFilter(candidate_filter());
+  return session;
 }
 
 std::unique_ptr<PortAllocatorSession> PortAllocator::TakePooledSession(
@@ -88,6 +90,9 @@ std::unique_ptr<PortAllocatorSession> PortAllocator::TakePooledSession(
   std::unique_ptr<PortAllocatorSession> ret =
       std::move(pooled_sessions_.front());
   ret->SetIceParameters(content_name, component, ice_ufrag, ice_pwd);
+  // According to JSEP, a pooled session should filter candidates only after
+  // it's taken out of the pool.
+  ret->SetCandidateFilter(candidate_filter());
   pooled_sessions_.pop_front();
   return ret;
 }

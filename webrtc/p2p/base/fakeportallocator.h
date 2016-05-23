@@ -103,9 +103,12 @@ class FakePortAllocatorSession : public PortAllocatorSession {
         running_(false),
         port_config_count_(0),
         stun_servers_(allocator->stun_servers()),
-        turn_servers_(allocator->turn_servers()),
-        candidate_filter_(allocator->candidate_filter()) {
+        turn_servers_(allocator->turn_servers()) {
     network_.AddIP(rtc::IPAddress(INADDR_LOOPBACK));
+  }
+
+  void SetCandidateFilter(uint32_t filter) override {
+    candidate_filter_ = filter;
   }
 
   void StartGettingPorts() override {
@@ -181,7 +184,7 @@ class FakePortAllocatorSession : public PortAllocatorSession {
   bool allocation_done_ = false;
   ServerAddresses stun_servers_;
   std::vector<RelayServerConfig> turn_servers_;
-  uint32_t candidate_filter_;
+  uint32_t candidate_filter_ = CF_ALL;
   int transport_info_update_count_ = 0;
 };
 

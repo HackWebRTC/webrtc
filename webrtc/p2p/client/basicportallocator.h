@@ -88,6 +88,7 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   rtc::Thread* network_thread() { return network_thread_; }
   rtc::PacketSocketFactory* socket_factory() { return socket_factory_; }
 
+  void SetCandidateFilter(uint32_t filter) override;
   void StartGettingPorts() override;
   void StopGettingPorts() override;
   void ClearGettingPorts() override;
@@ -113,36 +114,40 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
  private:
   class PortData {
    public:
-    PortData() : port_(NULL), sequence_(NULL), state_(STATE_INIT) {}
+    PortData() {}
     PortData(Port* port, AllocationSequence* seq)
-    : port_(port), sequence_(seq), state_(STATE_INIT) {
-    }
+        : port_(port), sequence_(seq) {}
 
     Port* port() const { return port_; }
     AllocationSequence* sequence() const { return sequence_; }
-    bool ready() const { return state_ == STATE_READY; }
+    bool has_pairable_candidate() const { return has_pairable_candidate_; }
     bool complete() const { return state_ == STATE_COMPLETE; }
     bool error() const { return state_ == STATE_ERROR; }
 
-    void set_ready() { ASSERT(state_ == STATE_INIT); state_ = STATE_READY; }
+    void set_has_pairable_candidate(bool has_pairable_candidate) {
+      if (has_pairable_candidate) {
+        ASSERT(state_ == STATE_INPROGRESS);
+      }
+      has_pairable_candidate_ = has_pairable_candidate;
+    }
     void set_complete() {
       state_ = STATE_COMPLETE;
     }
     void set_error() {
-      ASSERT(state_ == STATE_INIT || state_ == STATE_READY);
+      ASSERT(state_ == STATE_INPROGRESS);
       state_ = STATE_ERROR;
     }
 
    private:
     enum State {
-      STATE_INIT,      // No candidates allocated yet.
-      STATE_READY,     // At least one candidate is ready for process.
-      STATE_COMPLETE,  // All candidates allocated and ready for process.
-      STATE_ERROR      // Error in gathering candidates.
+      STATE_INPROGRESS,  // Still gathering candidates.
+      STATE_COMPLETE,    // All candidates allocated and ready for process.
+      STATE_ERROR        // Error in gathering candidates.
     };
-    Port* port_;
-    AllocationSequence* sequence_;
-    State state_;
+    Port* port_ = nullptr;
+    AllocationSequence* sequence_ = nullptr;
+    State state_ = STATE_INPROGRESS;
+    bool has_pairable_candidate_ = false;
   };
 
   void OnConfigReady(PortConfiguration* config);
@@ -168,6 +173,10 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   void GetNetworks(std::vector<rtc::Network*>* networks);
 
   bool CheckCandidateFilter(const Candidate& c) const;
+  bool CandidatePairable(const Candidate& c, const Port* port) const;
+  // Clear the related address according to the flags and candidate filter
+  // in order to avoid leaking any information.
+  Candidate SanitizeRelatedAddress(const Candidate& c) const;
 
   BasicPortAllocator* allocator_;
   rtc::Thread* network_thread_;
@@ -180,6 +189,7 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   std::vector<PortConfiguration*> configs_;
   std::vector<AllocationSequence*> sequences_;
   std::vector<PortData> ports_;
+  uint32_t candidate_filter_ = CF_ALL;
 
   friend class AllocationSequence;
 };

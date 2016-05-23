@@ -720,11 +720,6 @@ void TurnPort::OnAllocateSuccess(const rtc::SocketAddress& address,
   state_ = STATE_READY;
 
   rtc::SocketAddress related_address = stun_address;
-    if (!(candidate_filter() & CF_REFLEXIVE)) {
-    // If candidate filter only allows relay type of address, empty raddr to
-    // avoid local address leakage.
-    related_address = rtc::EmptySocketAddressWithFamily(stun_address.family());
-  }
 
   // For relayed candidate, Base is the candidate itself.
   AddAddress(address,          // Candidate address.

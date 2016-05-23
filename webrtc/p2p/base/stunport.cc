@@ -448,10 +448,7 @@ void UDPPort::OnStunBindingRequestSucceeded(
 
     rtc::SocketAddress related_address = socket_->GetLocalAddress();
     // If we can't stamp the related address correctly, empty it to avoid leak.
-    if (!MaybeSetDefaultLocalAddress(&related_address) ||
-        !(candidate_filter() & CF_HOST)) {
-      // If candidate filter doesn't have CF_HOST specified, empty raddr to
-      // avoid local address leakage.
+    if (!MaybeSetDefaultLocalAddress(&related_address)) {
       related_address = rtc::EmptySocketAddressWithFamily(
           related_address.family());
     }
