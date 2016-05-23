@@ -170,6 +170,7 @@
         'video/report_block_stats_unittest.cc',
         'video/send_delay_stats_unittest.cc',
         'video/send_statistics_proxy_unittest.cc',
+        'video/stats_counter_unittest.cc',
         'video/stream_synchronization_unittest.cc',
         'video/video_capture_input_unittest.cc',
         'video/video_decoder_unittest.cc',

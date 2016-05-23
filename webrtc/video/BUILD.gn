@@ -30,6 +30,8 @@ source_set("video") {
     "send_delay_stats.h",
     "send_statistics_proxy.cc",
     "send_statistics_proxy.h",
+    "stats_counter.cc",
+    "stats_counter.h",
     "stream_synchronization.cc",
     "stream_synchronization.h",
     "video_capture_input.cc",

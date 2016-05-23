@@ -44,6 +44,8 @@
       'video/send_delay_stats.h',
       'video/send_statistics_proxy.cc',
       'video/send_statistics_proxy.h',
+      'video/stats_counter.cc',
+      'video/stats_counter.h',
       'video/stream_synchronization.cc',
       'video/stream_synchronization.h',
       'video/video_capture_input.cc',
