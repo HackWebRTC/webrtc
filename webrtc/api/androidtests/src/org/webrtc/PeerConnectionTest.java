@@ -10,6 +10,8 @@
 
 package org.webrtc;
 
+import org.webrtc.Metrics;
+import org.webrtc.Metrics.HistogramInfo;
 import org.webrtc.PeerConnection.IceConnectionState;
 import org.webrtc.PeerConnection.IceGatheringState;
 import org.webrtc.PeerConnection.SignalingState;
@@ -530,6 +532,7 @@ public class PeerConnectionTest extends ActivityTestCase {
 
   @MediumTest
   public void testCompleteSession() throws Exception {
+    Metrics.enable();
     // Allow loopback interfaces too since our Android devices often don't
     // have those.
     PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
@@ -741,6 +744,7 @@ public class PeerConnectionTest extends ActivityTestCase {
     answeringExpectations.expectStateChange(DataChannel.State.CLOSED);
     answeringExpectations.dataChannel.close();
     offeringExpectations.dataChannel.close();
+    getMetrics();
 
     // Free the Java-land objects, collect them, and sleep a bit to make sure we
     // don't get late-arrival crashes after the Java-land objects have been
@@ -966,6 +970,18 @@ public class PeerConnectionTest extends ActivityTestCase {
     videoSource.dispose();
     factory.dispose();
     System.gc();
+  }
+
+  private static void getMetrics() {
+    Metrics metrics = Metrics.getAndReset();
+    assertTrue(metrics.map.size() > 0);
+    // Test for example that the configured video codec is recorded when a
+    // VideoSendStream is created.
+    String name = "WebRTC.Video.Encoder.CodecType";
+    assertTrue(metrics.map.containsKey(name));
+    HistogramInfo info = metrics.map.get(name);
+    assertEquals(1, info.samples.size());       // samples: <sample value, # of events>
+    assertTrue(info.samples.containsValue(2));  // <codec type, 2>, same codec configured
   }
 
   private static void shutdownPC(

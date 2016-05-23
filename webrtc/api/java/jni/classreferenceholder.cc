@@ -69,6 +69,8 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/MediaSource$State");
   LoadClass(jni, "org/webrtc/MediaStream");
   LoadClass(jni, "org/webrtc/MediaStreamTrack$State");
+  LoadClass(jni, "org/webrtc/Metrics");
+  LoadClass(jni, "org/webrtc/Metrics$HistogramInfo");
   LoadClass(jni, "org/webrtc/NetworkMonitor");
   LoadClass(jni, "org/webrtc/NetworkMonitorAutoDetect$ConnectionType");
   LoadClass(jni, "org/webrtc/NetworkMonitorAutoDetect$IPAddress");

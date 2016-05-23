@@ -39,6 +39,7 @@
             'java/jni/androidmediadecoder_jni.h',
             'java/jni/androidmediaencoder_jni.cc',
             'java/jni/androidmediaencoder_jni.h',
+            'java/jni/androidmetrics_jni.cc',
             'java/jni/androidnetworkmonitor_jni.cc',
             'java/jni/androidnetworkmonitor_jni.h',
             'java/jni/androidvideocapturer_jni.cc',
