@@ -45,6 +45,7 @@ VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
       ntp_time_ms_(0),
       render_time_ms_(render_time_ms),
       rotation_(rotation) {
+  RTC_DCHECK(buffer);
 }
 
 void VideoFrame::CreateEmptyFrame(int width,
@@ -173,6 +174,7 @@ const rtc::scoped_refptr<VideoFrameBuffer>& VideoFrame::video_frame_buffer()
 
 void VideoFrame::set_video_frame_buffer(
     const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer) {
+  RTC_DCHECK(buffer);
   video_frame_buffer_ = buffer;
 }
 

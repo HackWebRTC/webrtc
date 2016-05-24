@@ -823,10 +823,6 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
       return false;
     }
   }
-  VideoFrame decoded_frame(frame_buffer, 0, 0, webrtc::kVideoRotation_0);
-  decoded_frame.set_timestamp(output_timestamps_ms);
-  decoded_frame.set_ntp_time_ms(output_ntp_timestamps_ms);
-
   if (frames_decoded_ < frames_decoded_logged_) {
     ALOGD << "Decoder frame out # " << frames_decoded_ <<
         ". " << width << " x " << height <<
@@ -862,9 +858,12 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
     current_delay_time_ms_ = 0;
   }
 
-  // |.IsZeroSize())| returns true when a frame has been dropped.
-  if (!decoded_frame.IsZeroSize()) {
-    // Callback - output decoded frame.
+  // If the frame was dropped, frame_buffer is left as nullptr.
+  if (frame_buffer) {
+    VideoFrame decoded_frame(frame_buffer, 0, 0, webrtc::kVideoRotation_0);
+    decoded_frame.set_timestamp(output_timestamps_ms);
+    decoded_frame.set_ntp_time_ms(output_ntp_timestamps_ms);
+
     const int32_t callback_status =
         callback_->Decoded(decoded_frame, decode_time_ms);
     if (callback_status > 0) {
