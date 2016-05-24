@@ -225,10 +225,18 @@ int H264VideoToolboxEncoder::InitEncode(const VideoCodec* codec_settings,
                                         size_t max_payload_size) {
   RTC_DCHECK(codec_settings);
   RTC_DCHECK_EQ(codec_settings->codecType, kVideoCodecH264);
-  // TODO(tkchin): We may need to enforce width/height dimension restrictions
-  // to match what the encoder supports.
-  width_ = codec_settings->width;
-  height_ = codec_settings->height;
+  {
+    rtc::CritScope lock(&quality_scaler_crit_);
+    quality_scaler_.Init(QualityScaler::kLowH264QpThreshold,
+                         QualityScaler::kBadH264QpThreshold,
+                         codec_settings->startBitrate, codec_settings->width,
+                         codec_settings->height, codec_settings->maxFramerate);
+    QualityScaler::Resolution res = quality_scaler_.GetScaledResolution();
+    // TODO(tkchin): We may need to enforce width/height dimension restrictions
+    // to match what the encoder supports.
+    width_ = res.width;
+    height_ = res.height;
+  }
   // We can only set average bitrate on the HW encoder.
   target_bitrate_bps_ = codec_settings->startBitrate;
   bitrate_adjuster_.SetTargetBitrateBps(target_bitrate_bps_);
@@ -239,17 +247,18 @@ int H264VideoToolboxEncoder::InitEncode(const VideoCodec* codec_settings,
   return ResetCompressionSession();
 }
 
+const VideoFrame& H264VideoToolboxEncoder::GetScaledFrameOnEncode(
+    const VideoFrame& frame) {
+  rtc::CritScope lock(&quality_scaler_crit_);
+  quality_scaler_.OnEncodeFrame(frame);
+  return quality_scaler_.GetScaledFrame(frame);
+}
+
 int H264VideoToolboxEncoder::Encode(
-    const VideoFrame& input_image,
+    const VideoFrame& frame,
     const CodecSpecificInfo* codec_specific_info,
     const std::vector<FrameType>* frame_types) {
-  if (input_image.IsZeroSize()) {
-    // It's possible to get zero sizes as a signal to produce keyframes (this
-    // happens for internal sources). But this shouldn't happen in
-    // webrtcvideoengine2.
-    RTC_NOTREACHED();
-    return WEBRTC_VIDEO_CODEC_OK;
-  }
+  RTC_DCHECK(!frame.IsZeroSize());
   if (!callback_ || !compression_session_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
@@ -261,6 +270,16 @@ int H264VideoToolboxEncoder::Encode(
   }
 #endif
   bool is_keyframe_required = false;
+  const VideoFrame& input_image = GetScaledFrameOnEncode(frame);
+
+  if (input_image.width() != width_ || input_image.height() != height_) {
+    width_ = input_image.width();
+    height_ = input_image.height();
+    int ret = ResetCompressionSession();
+    if (ret < 0)
+      return ret;
+  }
+
   // Get a pixel buffer from the pool and copy frame data over.
   CVPixelBufferPoolRef pixel_buffer_pool =
       VTCompressionSessionGetPixelBufferPool(compression_session_);
@@ -345,6 +364,11 @@ int H264VideoToolboxEncoder::RegisterEncodeCompleteCallback(
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
+void H264VideoToolboxEncoder::OnDroppedFrame() {
+  rtc::CritScope lock(&quality_scaler_crit_);
+  quality_scaler_.ReportDroppedFrame();
+}
+
 int H264VideoToolboxEncoder::SetChannelParameters(uint32_t packet_loss,
                                                   int64_t rtt) {
   // Encoder doesn't know anything about packet loss or rtt so just return.
@@ -356,6 +380,9 @@ int H264VideoToolboxEncoder::SetRates(uint32_t new_bitrate_kbit,
   target_bitrate_bps_ = 1000 * new_bitrate_kbit;
   bitrate_adjuster_.SetTargetBitrateBps(target_bitrate_bps_);
   SetBitrateBps(bitrate_adjuster_.GetAdjustedBitrateBps());
+
+  rtc::CritScope lock(&quality_scaler_crit_);
+  quality_scaler_.ReportFramerate(frame_rate);
 
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -491,6 +518,9 @@ void H264VideoToolboxEncoder::OnEncodedFrame(
   }
   if (info_flags & kVTEncodeInfo_FrameDropped) {
     LOG(LS_INFO) << "H264 encode dropped frame.";
+    rtc::CritScope lock(&quality_scaler_crit_);
+    quality_scaler_.ReportDroppedFrame();
+    return;
   }
 
   bool is_keyframe = false;
@@ -525,6 +555,13 @@ void H264VideoToolboxEncoder::OnEncodedFrame(
   frame.capture_time_ms_ = render_time_ms;
   frame._timeStamp = timestamp;
   frame.rotation_ = rotation;
+
+  h264_bitstream_parser_.ParseBitstream(buffer->data(), buffer->size());
+  int qp;
+  if (h264_bitstream_parser_.GetLastSliceQp(&qp)) {
+    rtc::CritScope lock(&quality_scaler_crit_);
+    quality_scaler_.ReportQP(qp);
+  }
 
   int result = callback_->Encoded(frame, &codec_specific_info, header.get());
   if (result != 0) {
