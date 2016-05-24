@@ -204,10 +204,10 @@ int16_t MaxAudioFrame(const AudioFrame& frame) {
 #if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
 void TestStats(const AudioProcessing::Statistic& test,
                const audioproc::Test::Statistic& reference) {
-  EXPECT_NEAR(reference.instant(), test.instant, 2);
-  EXPECT_NEAR(reference.average(), test.average, 2);
-  EXPECT_NEAR(reference.maximum(), test.maximum, 3);
-  EXPECT_NEAR(reference.minimum(), test.minimum, 2);
+  EXPECT_EQ(reference.instant(), test.instant);
+  EXPECT_EQ(reference.average(), test.average);
+  EXPECT_EQ(reference.maximum(), test.maximum);
+  EXPECT_EQ(reference.minimum(), test.minimum);
 }
 
 void WriteStatsMessage(const AudioProcessing::Statistic& output,
@@ -221,7 +221,6 @@ void WriteStatsMessage(const AudioProcessing::Statistic& output,
 
 void OpenFileAndWriteMessage(const std::string filename,
                              const ::google::protobuf::MessageLite& msg) {
-#if defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
   FILE* file = fopen(filename.c_str(), "wb");
   ASSERT_TRUE(file != NULL);
 
@@ -234,10 +233,6 @@ void OpenFileAndWriteMessage(const std::string filename,
   ASSERT_EQ(static_cast<size_t>(size),
       fwrite(array.get(), sizeof(array[0]), size, file));
   fclose(file);
-#else
-  std::cout << "Warning: Writing new reference is only allowed on Linux!"
-      << std::endl;
-#endif
 }
 
 std::string ResourceFilePath(std::string name, int sample_rate_hz) {
@@ -2101,6 +2096,9 @@ TEST_F(ApmTest, Process) {
     int analog_level_average = 0;
     int max_output_average = 0;
     float ns_speech_prob_average = 0.0f;
+#if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
+  int stats_index = 0;
+#endif
 
     while (ReadFrame(far_file_, revframe_) && ReadFrame(near_file_, frame_)) {
       EXPECT_EQ(apm_->kNoError, apm_->ProcessReverseStream(revframe_));
@@ -2148,26 +2146,80 @@ TEST_F(ApmTest, Process) {
       // Reset in case of downmixing.
       frame_->num_channels_ = static_cast<size_t>(test->num_input_channels());
       frame_count++;
+
+#if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
+      const int kStatsAggregationFrameNum = 100;  // 1 second.
+      if (frame_count % kStatsAggregationFrameNum == 0) {
+        // Get echo metrics.
+        EchoCancellation::Metrics echo_metrics;
+        EXPECT_EQ(apm_->kNoError,
+                  apm_->echo_cancellation()->GetMetrics(&echo_metrics));
+
+        // Get delay metrics.
+        int median = 0;
+        int std = 0;
+        float fraction_poor_delays = 0;
+        EXPECT_EQ(apm_->kNoError,
+                  apm_->echo_cancellation()->GetDelayMetrics(
+                      &median, &std, &fraction_poor_delays));
+
+        // Get RMS.
+        int rms_level = apm_->level_estimator()->RMS();
+        EXPECT_LE(0, rms_level);
+        EXPECT_GE(127, rms_level);
+
+        if (!write_ref_data) {
+          const audioproc::Test::EchoMetrics& reference =
+              test->echo_metrics(stats_index);
+          TestStats(echo_metrics.residual_echo_return_loss,
+                    reference.residual_echo_return_loss());
+          TestStats(echo_metrics.echo_return_loss,
+                    reference.echo_return_loss());
+          TestStats(echo_metrics.echo_return_loss_enhancement,
+                    reference.echo_return_loss_enhancement());
+          TestStats(echo_metrics.a_nlp,
+                    reference.a_nlp());
+          EXPECT_EQ(echo_metrics.divergent_filter_fraction,
+                    reference.divergent_filter_fraction());
+
+          const audioproc::Test::DelayMetrics& reference_delay =
+              test->delay_metrics(stats_index);
+          EXPECT_EQ(reference_delay.median(), median);
+          EXPECT_EQ(reference_delay.std(), std);
+          EXPECT_EQ(reference_delay.fraction_poor_delays(),
+                    fraction_poor_delays);
+
+          EXPECT_EQ(test->rms_level(stats_index), rms_level);
+
+          ++stats_index;
+        } else {
+          audioproc::Test::EchoMetrics* message =
+              test->add_echo_metrics();
+          WriteStatsMessage(echo_metrics.residual_echo_return_loss,
+                            message->mutable_residual_echo_return_loss());
+          WriteStatsMessage(echo_metrics.echo_return_loss,
+                            message->mutable_echo_return_loss());
+          WriteStatsMessage(echo_metrics.echo_return_loss_enhancement,
+                            message->mutable_echo_return_loss_enhancement());
+          WriteStatsMessage(echo_metrics.a_nlp,
+                            message->mutable_a_nlp());
+          message->set_divergent_filter_fraction(
+              echo_metrics.divergent_filter_fraction);
+
+          audioproc::Test::DelayMetrics* message_delay =
+              test->add_delay_metrics();
+          message_delay->set_median(median);
+          message_delay->set_std(std);
+          message_delay->set_fraction_poor_delays(fraction_poor_delays);
+
+          test->add_rms_level(rms_level);
+        }
+      }
+#endif  // defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE).
     }
     max_output_average /= frame_count;
     analog_level_average /= frame_count;
     ns_speech_prob_average /= frame_count;
-
-#if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
-    EchoCancellation::Metrics echo_metrics;
-    EXPECT_EQ(apm_->kNoError,
-              apm_->echo_cancellation()->GetMetrics(&echo_metrics));
-    int median = 0;
-    int std = 0;
-    float fraction_poor_delays = 0;
-    EXPECT_EQ(apm_->kNoError,
-              apm_->echo_cancellation()->GetDelayMetrics(
-                  &median, &std, &fraction_poor_delays));
-
-    int rms_level = apm_->level_estimator()->RMS();
-    EXPECT_LE(0, rms_level);
-    EXPECT_GE(127, rms_level);
-#endif
 
     if (!write_ref_data) {
       const int kIntNear = 1;
@@ -2198,27 +2250,8 @@ TEST_F(ApmTest, Process) {
       EXPECT_NEAR(test->max_output_average(),
                   max_output_average - kMaxOutputAverageOffset,
                   kMaxOutputAverageNear);
-
 #if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
-      audioproc::Test::EchoMetrics reference = test->echo_metrics();
-      TestStats(echo_metrics.residual_echo_return_loss,
-                reference.residual_echo_return_loss());
-      TestStats(echo_metrics.echo_return_loss,
-                reference.echo_return_loss());
-      TestStats(echo_metrics.echo_return_loss_enhancement,
-                reference.echo_return_loss_enhancement());
-      TestStats(echo_metrics.a_nlp,
-                reference.a_nlp());
-
       const double kFloatNear = 0.0005;
-      audioproc::Test::DelayMetrics reference_delay = test->delay_metrics();
-      EXPECT_NEAR(reference_delay.median(), median, kIntNear);
-      EXPECT_NEAR(reference_delay.std(), std, kIntNear);
-      EXPECT_NEAR(reference_delay.fraction_poor_delays(), fraction_poor_delays,
-                  kFloatNear);
-
-      EXPECT_NEAR(test->rms_level(), rms_level, kIntNear);
-
       EXPECT_NEAR(test->ns_speech_probability_average(),
                   ns_speech_prob_average,
                   kFloatNear);
@@ -2232,24 +2265,6 @@ TEST_F(ApmTest, Process) {
       test->set_max_output_average(max_output_average);
 
 #if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
-      audioproc::Test::EchoMetrics* message = test->mutable_echo_metrics();
-      WriteStatsMessage(echo_metrics.residual_echo_return_loss,
-                        message->mutable_residual_echo_return_loss());
-      WriteStatsMessage(echo_metrics.echo_return_loss,
-                        message->mutable_echo_return_loss());
-      WriteStatsMessage(echo_metrics.echo_return_loss_enhancement,
-                        message->mutable_echo_return_loss_enhancement());
-      WriteStatsMessage(echo_metrics.a_nlp,
-                        message->mutable_a_nlp());
-
-      audioproc::Test::DelayMetrics* message_delay =
-          test->mutable_delay_metrics();
-      message_delay->set_median(median);
-      message_delay->set_std(std);
-      message_delay->set_fraction_poor_delays(fraction_poor_delays);
-
-      test->set_rms_level(rms_level);
-
       EXPECT_LE(0.0f, ns_speech_prob_average);
       EXPECT_GE(1.0f, ns_speech_prob_average);
       test->set_ns_speech_probability_average(ns_speech_prob_average);
