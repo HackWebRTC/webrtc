@@ -104,6 +104,8 @@ source_set("video_coding_utility") {
   sources = [
     "utility/frame_dropper.cc",
     "utility/frame_dropper.h",
+    "utility/h264_bitstream_parser.cc",
+    "utility/h264_bitstream_parser.h",
     "utility/ivf_file_writer.cc",
     "utility/ivf_file_writer.h",
     "utility/moving_average.h",
