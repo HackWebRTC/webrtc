@@ -64,7 +64,7 @@ static const int kMinPort = 10000;
 static const int kMaxPort = 10099;
 
 // Based on ICE_UFRAG_LENGTH
-static const char kIceUfrag0[] = "TESTICEUFRAG0000";
+static const char kIceUfrag0[] = "UF00";
 // Based on ICE_PWD_LENGTH
 static const char kIcePwd0[] = "TESTICEPWD00000000000000";
 

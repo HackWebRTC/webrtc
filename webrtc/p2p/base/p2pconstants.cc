@@ -21,9 +21,8 @@ const char CN_OTHER[] = "main";
 
 const char GROUP_TYPE_BUNDLE[] = "BUNDLE";
 
-// Minimum ufrag length is 4 characters as per RFC5245. We chose 16 because
-// some internal systems expect username to be 16 bytes.
-const int ICE_UFRAG_LENGTH = 16;
+// Minimum ufrag length is 4 characters as per RFC5245.
+const int ICE_UFRAG_LENGTH = 4;
 // Minimum password length of 22 characters as per RFC5245. We chose 24 because
 // some internal systems expect password to be multiple of 4.
 const int ICE_PWD_LENGTH = 24;

@@ -18,7 +18,7 @@
 static const char kSessionId[] = "session id";
 static const char kContentName[] = "test content";
 // Based on ICE_UFRAG_LENGTH
-static const char kIceUfrag[] = "TESTICEUFRAG0000";
+static const char kIceUfrag[] = "UF00";
 // Based on ICE_PWD_LENGTH
 static const char kIcePwd[] = "TESTICEPWD00000000000000";
 static const char kTurnUsername[] = "test";

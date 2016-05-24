@@ -76,6 +76,8 @@ static const int kTiebreaker2 = 22222;
 
 static const char* data = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
 
+static const int kGturnUserNameLength = 16;
+
 static Candidate GetCandidate(Port* port) {
   assert(port->Candidates().size() >= 1);
   return port->Candidates()[0];
@@ -525,9 +527,10 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   }
   RelayPort* CreateGturnPort(const SocketAddress& addr) {
     // TODO(pthatcher):  Remove GTURN.
-    return RelayPort::Create(main_, &socket_factory_, &network_,
-                             addr.ipaddr(), 0, 0,
-                             username_, password_);
+    // Generate a username with length of 16 for Gturn only.
+    std::string username = rtc::CreateRandomString(kGturnUserNameLength);
+    return RelayPort::Create(main_, &socket_factory_, &network_, addr.ipaddr(),
+                             0, 0, username, password_);
     // TODO: Add an external address for ext_proto, so that the
     // other side can connect to this port using a non-UDP protocol.
   }

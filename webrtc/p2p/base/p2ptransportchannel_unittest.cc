@@ -90,8 +90,8 @@ static const SocketAddress kTurnUdpExtAddr("99.99.99.5", 0);
 static const cricket::RelayCredentials kRelayCredentials("test", "test");
 
 // Based on ICE_UFRAG_LENGTH
-static const char* kIceUfrag[4] = {"TESTICEUFRAG0000", "TESTICEUFRAG0001",
-                                   "TESTICEUFRAG0002", "TESTICEUFRAG0003"};
+static const char* kIceUfrag[4] = {"UF00", "UF01",
+                                   "UF02", "UF03"};
 // Based on ICE_PWD_LENGTH
 static const char* kIcePwd[4] = {"TESTICEPWD00000000000000",
                                  "TESTICEPWD00000000000001",
