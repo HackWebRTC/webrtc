@@ -177,8 +177,8 @@ TransportChannel* TransportController::CreateTransportChannel_n(
       this, &TransportController::OnChannelCandidatesRemoved_n);
   channel->SignalRoleConflict.connect(
       this, &TransportController::OnChannelRoleConflict_n);
-  channel->SignalConnectionRemoved.connect(
-      this, &TransportController::OnChannelConnectionRemoved_n);
+  channel->SignalStateChanged.connect(
+      this, &TransportController::OnChannelStateChanged_n);
   channels_.insert(channels_.end(), RefCountedChannel(channel))->AddRef();
   // Adding a channel could cause aggregate state to change.
   UpdateAggregateStates_n();
@@ -592,12 +592,12 @@ void TransportController::OnChannelRoleConflict_n(
   }
 }
 
-void TransportController::OnChannelConnectionRemoved_n(
+void TransportController::OnChannelStateChanged_n(
     TransportChannelImpl* channel) {
   RTC_DCHECK(network_thread_->IsCurrent());
   LOG(LS_INFO) << channel->transport_name() << " TransportChannel "
                << channel->component()
-               << " connection removed. Check if state is complete.";
+               << " state changed. Check if state is complete.";
   UpdateAggregateStates_n();
 }
 

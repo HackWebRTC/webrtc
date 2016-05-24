@@ -221,7 +221,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
       TransportChannel* channel,
       CandidatePairInterface* selected_candidate_pair,
       int last_sent_packet_id);
-  void OnConnectionRemoved(TransportChannelImpl* channel);
+  void OnChannelStateChanged(TransportChannelImpl* channel);
   void Reconnect();
 
   rtc::Thread* worker_thread_;  // Everything should occur on this thread.

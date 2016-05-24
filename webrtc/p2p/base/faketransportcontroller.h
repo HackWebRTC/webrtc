@@ -170,8 +170,10 @@ class FakeTransportChannel : public TransportChannelImpl,
     connection_count_ = connection_count;
     if (connection_count)
       had_connection_ = true;
+    // In this fake transport channel, |connection_count_| determines the
+    // transport channel state.
     if (connection_count_ < old_connection_count)
-      SignalConnectionRemoved(this);
+      SignalStateChanged(this);
   }
 
   void SetCandidatesGatheringComplete() {

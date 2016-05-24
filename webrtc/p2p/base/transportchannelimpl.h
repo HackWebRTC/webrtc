@@ -100,9 +100,8 @@ class TransportChannelImpl : public TransportChannel {
   // agents.
   sigslot::signal1<TransportChannelImpl*> SignalRoleConflict;
 
-  // Emitted whenever the number of connections available to the transport
-  // channel decreases.
-  sigslot::signal1<TransportChannelImpl*> SignalConnectionRemoved;
+  // Emitted whenever the transport channel state changed.
+  sigslot::signal1<TransportChannelImpl*> SignalStateChanged;
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(TransportChannelImpl);

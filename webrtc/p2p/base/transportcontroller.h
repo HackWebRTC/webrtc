@@ -198,7 +198,7 @@ class TransportController : public sigslot::has_slots<>,
   void OnChannelCandidatesRemoved_n(TransportChannelImpl* channel,
                                     const Candidates& candidates);
   void OnChannelRoleConflict_n(TransportChannelImpl* channel);
-  void OnChannelConnectionRemoved_n(TransportChannelImpl* channel);
+  void OnChannelStateChanged_n(TransportChannelImpl* channel);
 
   void UpdateAggregateStates_n();
 

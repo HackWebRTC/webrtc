@@ -129,8 +129,8 @@ DtlsTransportChannelWrapper::DtlsTransportChannelWrapper(
       &DtlsTransportChannelWrapper::OnRouteChange);
   channel_->SignalSelectedCandidatePairChanged.connect(
       this, &DtlsTransportChannelWrapper::OnSelectedCandidatePairChanged);
-  channel_->SignalConnectionRemoved.connect(this,
-      &DtlsTransportChannelWrapper::OnConnectionRemoved);
+  channel_->SignalStateChanged.connect(
+      this, &DtlsTransportChannelWrapper::OnChannelStateChanged);
   channel_->SignalReceivingState.connect(this,
       &DtlsTransportChannelWrapper::OnReceivingState);
 }
@@ -671,10 +671,10 @@ void DtlsTransportChannelWrapper::OnSelectedCandidatePairChanged(
                                      last_sent_packet_id);
 }
 
-void DtlsTransportChannelWrapper::OnConnectionRemoved(
+void DtlsTransportChannelWrapper::OnChannelStateChanged(
     TransportChannelImpl* channel) {
   ASSERT(channel == channel_);
-  SignalConnectionRemoved(this);
+  SignalStateChanged(this);
 }
 
 void DtlsTransportChannelWrapper::Reconnect() {

@@ -357,7 +357,6 @@ TransportChannelState P2PTransportChannel::ComputeState() const {
     }
   }
 
-  LOG_J(LS_VERBOSE, this) << "Ice is completed for this channel.";
   return TransportChannelState::STATE_COMPLETED;
 }
 
@@ -1209,7 +1208,13 @@ void P2PTransportChannel::SwitchBestConnectionTo(Connection* conn) {
 // change, it should be called after all the connection states have changed. For
 // example, we call this at the end of SortConnections.
 void P2PTransportChannel::UpdateState() {
-  state_ = ComputeState();
+  TransportChannelState state = ComputeState();
+  if (state_ != state) {
+    LOG_J(LS_INFO, this) << "Transport channel state changed from " << state_
+                         << " to " << state;
+    state_ = state;
+    SignalStateChanged(this);
+  }
 
   bool writable = best_connection_ && best_connection_->writable();
   set_writable(writable);
@@ -1472,9 +1477,6 @@ void P2PTransportChannel::OnConnectionDestroyed(Connection* connection) {
   }
 
   UpdateState();
-  // SignalConnectionRemoved should be called after the channel state is
-  // updated because the receiver of the event may access the channel state.
-  SignalConnectionRemoved(this);
 }
 
 // When a port is destroyed remove it from our list of ports to use for

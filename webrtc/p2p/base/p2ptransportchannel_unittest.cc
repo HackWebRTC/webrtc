@@ -2008,6 +2008,8 @@ class P2PTransportChannelPingTest : public testing::Test,
         this, &P2PTransportChannelPingTest::OnSelectedCandidatePairChanged);
     ch->SignalReadyToSend.connect(this,
                                   &P2PTransportChannelPingTest::OnReadyToSend);
+    ch->SignalStateChanged.connect(
+        this, &P2PTransportChannelPingTest::OnChannelStateChanged);
   }
 
   cricket::Candidate CreateHostCandidate(const std::string& ip,
@@ -2077,6 +2079,9 @@ class P2PTransportChannelPingTest : public testing::Test,
   void OnReadyToSend(cricket::TransportChannel* channel) {
     channel_ready_to_send_ = true;
   }
+  void OnChannelStateChanged(cricket::TransportChannelImpl* channel) {
+    channel_state_ = channel->GetState();
+  }
 
   cricket::CandidatePairInterface* last_selected_candidate_pair() {
     return last_selected_candidate_pair_;
@@ -2084,6 +2089,7 @@ class P2PTransportChannelPingTest : public testing::Test,
   int last_sent_packet_id() { return last_sent_packet_id_; }
   bool channel_ready_to_send() { return channel_ready_to_send_; }
   void reset_channel_ready_to_send() { channel_ready_to_send_ = false; }
+  cricket::TransportChannelState channel_state() { return channel_state_; }
 
  private:
   std::unique_ptr<rtc::PhysicalSocketServer> pss_;
@@ -2092,6 +2098,7 @@ class P2PTransportChannelPingTest : public testing::Test,
   cricket::CandidatePairInterface* last_selected_candidate_pair_ = nullptr;
   int last_sent_packet_id_ = -1;
   bool channel_ready_to_send_ = false;
+  cricket::TransportChannelState channel_state_ = cricket::STATE_INIT;
 };
 
 TEST_F(P2PTransportChannelPingTest, TestTriggeredChecks) {
@@ -2143,6 +2150,21 @@ TEST_F(P2PTransportChannelPingTest, TestNoTriggeredChecksWhenWritable) {
   // "triggered check" and conn2 is pinged before conn1 because it has
   // a higher priority.
   EXPECT_EQ(conn2, FindNextPingableConnectionAndPingIt(&ch));
+}
+
+TEST_F(P2PTransportChannelPingTest, TestSignalStateChanged) {
+  cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
+  cricket::P2PTransportChannel ch("state change", 1, &pa);
+  PrepareChannel(&ch);
+  ch.Connect();
+  ch.MaybeStartGathering();
+  ch.AddRemoteCandidate(CreateHostCandidate("1.1.1.1", 1, 1));
+  cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
+  ASSERT_TRUE(conn1 != nullptr);
+  // Pruning the connection reduces the set of active connections and changes
+  // the channel state.
+  conn1->Prune();
+  EXPECT_EQ_WAIT(cricket::STATE_FAILED, channel_state(), kDefaultTimeout);
 }
 
 // Test adding remote candidates with different ufrags. If a remote candidate

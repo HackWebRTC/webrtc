@@ -1059,7 +1059,7 @@ void Connection::OnReadyToSend() {
 
 void Connection::Prune() {
   if (!pruned_ || active()) {
-    LOG_J(LS_VERBOSE, this) << "Connection pruned";
+    LOG_J(LS_INFO, this) << "Connection pruned";
     pruned_ = true;
     requests_.Clear();
     set_write_state(STATE_WRITE_TIMEOUT);
