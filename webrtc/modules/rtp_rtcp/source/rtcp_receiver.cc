@@ -20,6 +20,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 #include "webrtc/modules/rtp_rtcp/source/time_util.h"
+#include "webrtc/modules/rtp_rtcp/source/tmmbr_help.h"
 #include "webrtc/system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
@@ -44,8 +45,7 @@ RTCPReceiver::RTCPReceiver(
     RtcpIntraFrameObserver* rtcp_intra_frame_observer,
     TransportFeedbackObserver* transport_feedback_observer,
     ModuleRtpRtcpImpl* owner)
-    : TMMBRHelp(),
-      _clock(clock),
+    : _clock(clock),
       receiver_only_(receiver_only),
       _lastReceived(0),
       _rtpRtcp(*owner),
@@ -1233,22 +1233,20 @@ void RTCPReceiver::HandleTransportFeedback(
   rtcp_parser->Iterate();
 }
 int32_t RTCPReceiver::UpdateTMMBR() {
+  TMMBRHelp tmmbr_help;
   int32_t numBoundingSet = 0;
   uint32_t bitrate = 0;
   uint32_t accNumCandidates = 0;
 
   int32_t size = TMMBRReceived(0, 0, NULL);
   if (size > 0) {
-    TMMBRSet* candidateSet = VerifyAndAllocateCandidateSet(size);
+    TMMBRSet* candidateSet = tmmbr_help.VerifyAndAllocateCandidateSet(size);
     // Get candidate set from receiver.
     accNumCandidates = TMMBRReceived(size, accNumCandidates, candidateSet);
-  } else {
-    // Candidate set empty.
-    VerifyAndAllocateCandidateSet(0);  // resets candidate set
   }
   // Find bounding set
   TMMBRSet* boundingSet = NULL;
-  numBoundingSet = FindTMMBRBoundingSet(boundingSet);
+  numBoundingSet = tmmbr_help.FindTMMBRBoundingSet(boundingSet);
   if (numBoundingSet == -1) {
     LOG(LS_WARNING) << "Failed to find TMMBR bounding set.";
     return -1;
@@ -1265,7 +1263,7 @@ int32_t RTCPReceiver::UpdateTMMBR() {
     return 0;
   }
   // Get net bitrate from bounding set depending on sent packet rate
-  if (CalcMinBitRate(&bitrate)) {
+  if (tmmbr_help.CalcMinBitRate(&bitrate)) {
     // we have a new bandwidth estimate on this channel
     if (_cbRtcpBandwidthObserver) {
         _cbRtcpBandwidthObserver->OnReceivedEstimatedBitrate(bitrate * 1000);

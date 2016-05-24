@@ -83,8 +83,6 @@ TMMBRHelp::~TMMBRHelp() {
 TMMBRSet*
 TMMBRHelp::VerifyAndAllocateBoundingSet(uint32_t minimumSize)
 {
-    rtc::CritScope lock(&_criticalSection);
-
     if(minimumSize > _boundingSet.capacity())
     {
         // make sure that our buffers are big enough
@@ -107,8 +105,6 @@ TMMBRSet* TMMBRHelp::BoundingSet() {
 TMMBRSet*
 TMMBRHelp::VerifyAndAllocateCandidateSet(uint32_t minimumSize)
 {
-    rtc::CritScope lock(&_criticalSection);
-
     _candidateSet.VerifyAndAllocateSet(minimumSize);
     return &_candidateSet;
 }
@@ -122,8 +118,6 @@ TMMBRHelp::CandidateSet()
 int32_t
 TMMBRHelp::FindTMMBRBoundingSet(TMMBRSet*& boundingSet)
 {
-    rtc::CritScope lock(&_criticalSection);
-
     // Work on local variable, will be modified
     TMMBRSet    candidateSet;
     candidateSet.VerifyAndAllocateSet(_candidateSet.capacity());
@@ -165,8 +159,6 @@ TMMBRHelp::FindTMMBRBoundingSet(TMMBRSet*& boundingSet)
 int32_t
 TMMBRHelp::FindTMMBRBoundingSet(int32_t numCandidates, TMMBRSet& candidateSet)
 {
-    rtc::CritScope lock(&_criticalSection);
-
     uint32_t numBoundingSet = 0;
     VerifyAndAllocateBoundingSet(candidateSet.capacity());
 
@@ -370,8 +362,6 @@ TMMBRHelp::FindTMMBRBoundingSet(int32_t numCandidates, TMMBRSet& candidateSet)
 
 bool TMMBRHelp::IsOwner(const uint32_t ssrc,
                         const uint32_t length) const {
-  rtc::CritScope lock(&_criticalSection);
-
   if (length == 0) {
     // Empty bounding set.
     return false;
@@ -386,8 +376,6 @@ bool TMMBRHelp::IsOwner(const uint32_t ssrc,
 }
 
 bool TMMBRHelp::CalcMinBitRate( uint32_t* minBitrateKbit) const {
-  rtc::CritScope lock(&_criticalSection);
-
   if (_candidateSet.size() == 0) {
     // Empty bounding set.
     return false;

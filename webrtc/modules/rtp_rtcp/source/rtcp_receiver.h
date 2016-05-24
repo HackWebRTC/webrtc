@@ -21,13 +21,12 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_receiver_help.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
-#include "webrtc/modules/rtp_rtcp/source/tmmbr_help.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 class ModuleRtpRtcpImpl;
 
-class RTCPReceiver : public TMMBRHelp
+class RTCPReceiver
 {
 public:
  RTCPReceiver(Clock* clock,

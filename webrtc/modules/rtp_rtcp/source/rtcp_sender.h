@@ -28,8 +28,8 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/report_block.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmb_item.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
-#include "webrtc/modules/rtp_rtcp/source/tmmbr_help.h"
 #include "webrtc/transport.h"
 #include "webrtc/typedefs.h"
 
@@ -240,7 +240,6 @@ class RTCPSender {
   uint32_t remb_bitrate_ GUARDED_BY(critical_section_rtcp_sender_);
   std::vector<uint32_t> remb_ssrcs_ GUARDED_BY(critical_section_rtcp_sender_);
 
-  TMMBRHelp tmmbr_help_ GUARDED_BY(critical_section_rtcp_sender_);
   std::vector<rtcp::TmmbItem> tmmbn_to_send_
       GUARDED_BY(critical_section_rtcp_sender_);
   uint32_t tmmbr_send_ GUARDED_BY(critical_section_rtcp_sender_);

@@ -36,6 +36,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
+#include "webrtc/modules/rtp_rtcp/source/tmmbr_help.h"
 
 namespace webrtc {
 
@@ -169,7 +170,6 @@ RTCPSender::RTCPSender(
 
       remb_bitrate_(0),
 
-      tmmbr_help_(),
       tmmbr_send_(0),
       packet_oh_send_(0),
       max_payload_length_(IP_PACKET_SIZE - 28),  // IPv4 + UDP by default.
@@ -585,10 +585,11 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildTMMBR(
   // * If the sender is an owner of the TMMBN -> send TMMBR
   // * If not an owner but the TMMBR would enter the TMMBN -> send TMMBR
 
+  TMMBRHelp tmmbr_help;
   // get current bounding set from RTCP receiver
   bool tmmbrOwner = false;
   // store in candidateSet, allocates one extra slot
-  TMMBRSet* candidateSet = tmmbr_help_.CandidateSet();
+  TMMBRSet* candidateSet = tmmbr_help.CandidateSet();
 
   // holding critical_section_rtcp_sender_ while calling RTCPreceiver which
   // will accuire criticalSectionRTCPReceiver_ is a potental deadlock but
@@ -613,9 +614,9 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildTMMBR(
 
       // find bounding set
       TMMBRSet* boundingSet = nullptr;
-      int numBoundingSet = tmmbr_help_.FindTMMBRBoundingSet(boundingSet);
+      int numBoundingSet = tmmbr_help.FindTMMBRBoundingSet(boundingSet);
       if (numBoundingSet > 0 || numBoundingSet <= numCandidates)
-        tmmbrOwner = tmmbr_help_.IsOwner(ssrc_, numBoundingSet);
+        tmmbrOwner = tmmbr_help.IsOwner(ssrc_, numBoundingSet);
       if (!tmmbrOwner) {
         // Did not enter bounding set, no meaning to send this request.
         return nullptr;
