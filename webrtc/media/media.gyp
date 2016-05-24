@@ -19,8 +19,6 @@
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
-        '<(webrtc_root)/libjingle/xmllite/xmllite.gyp:rtc_xmllite',
-        '<(webrtc_root)/libjingle/xmpp/xmpp.gyp:rtc_xmpp',
         '<(webrtc_root)/p2p/p2p.gyp:rtc_p2p',
       ],
       'direct_dependent_settings': {
