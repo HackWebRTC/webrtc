@@ -137,18 +137,28 @@ void PacketBuffer::FindFrames(uint16_t seq_num) {
     // If all packets of the frame is continuous, find the first packet of the
     // frame and create an RtpFrameObject.
     if (sequence_buffer_[index].frame_end) {
-      int start_index = index;
+      size_t frame_size = 0;
+      int max_nack_count = -1;
       uint16_t start_seq_num = seq_num;
 
-      while (!sequence_buffer_[start_index].frame_begin) {
+      // Find the start index by searching backward until the packet with
+      // the |frame_begin| flag is set.
+      int start_index = index;
+      while (true) {
+        frame_size += data_buffer_[start_index].sizeBytes;
+        max_nack_count = std::max(
+            max_nack_count, data_buffer_[start_index].timesNacked);
         sequence_buffer_[start_index].frame_created = true;
+
+        if (sequence_buffer_[start_index].frame_begin)
+          break;
+
         start_index = start_index > 0 ? start_index - 1 : size_ - 1;
         start_seq_num--;
       }
-      sequence_buffer_[start_index].frame_created = true;
 
-      std::unique_ptr<RtpFrameObject> frame(
-          new RtpFrameObject(this, start_seq_num, seq_num));
+      std::unique_ptr<RtpFrameObject> frame(new RtpFrameObject(
+          this, start_seq_num, seq_num, frame_size, max_nack_count));
       reference_finder_.ManageFrame(std::move(frame));
     }
 

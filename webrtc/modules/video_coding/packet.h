@@ -39,6 +39,7 @@ class VCMPacket {
   const uint8_t* dataPtr;
   size_t sizeBytes;
   bool markerBit;
+  int timesNacked;
 
   FrameType frameType;
   VideoCodecType codec;

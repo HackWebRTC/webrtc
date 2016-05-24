@@ -265,12 +265,62 @@ TEST_F(TestPacketBuffer, InsertDuplicatePacket) {
   EXPECT_TRUE(packet_buffer_->InsertPacket(packet));
 }
 
+TEST_F(TestPacketBuffer, NackCount) {
+  uint16_t seq_num = Rand();
+
+  VCMPacket packet;
+  packet.codec = kVideoCodecGeneric;
+  packet.seqNum = seq_num;
+  packet.frameType = kVideoFrameKey;
+  packet.isFirstPacket = true;
+  packet.markerBit = false;
+  packet.sizeBytes = 0;
+  packet.dataPtr = nullptr;
+  packet.timesNacked = 0;
+
+  packet_buffer_->InsertPacket(packet);
+
+  packet.seqNum++;
+  packet.isFirstPacket = false;
+  packet.timesNacked = 1;
+  packet_buffer_->InsertPacket(packet);
+
+  packet.seqNum++;
+  packet.timesNacked = 3;
+  packet_buffer_->InsertPacket(packet);
+
+  packet.seqNum++;
+  packet.markerBit = true;
+  packet.timesNacked = 1;
+  packet_buffer_->InsertPacket(packet);
+
+
+  ASSERT_EQ(1UL, frames_from_callback_.size());
+  FrameObject* frame = frames_from_callback_.begin()->second.get();
+  RtpFrameObject* rtp_frame = static_cast<RtpFrameObject*>(frame);
+  EXPECT_EQ(3, rtp_frame->times_nacked());
+}
+
+TEST_F(TestPacketBuffer, FrameSize) {
+  uint16_t seq_num = Rand();
+  uint8_t data[] = {1, 2, 3, 4, 5};
+
+  //            seq_num    , kf, frst, lst, size, data
+  InsertGeneric(seq_num    , kT, kT  , kF , 5   , data);
+  InsertGeneric(seq_num + 1, kT, kF  , kF , 5   , data);
+  InsertGeneric(seq_num + 2, kT, kF  , kF , 5   , data);
+  InsertGeneric(seq_num + 3, kT, kF  , kT , 5   , data);
+
+  ASSERT_EQ(1UL, frames_from_callback_.size());
+  EXPECT_EQ(20UL, frames_from_callback_.begin()->second->size);
+}
+
 TEST_F(TestPacketBuffer, ExpandBuffer) {
   uint16_t seq_num = Rand();
 
   for (int i = 0; i < kStartSize + 1; ++i) {
     //            seq_num    , kf, frst, lst
-    InsertGeneric(seq_num + i, kT    , kT, kT);
+    InsertGeneric(seq_num + i, kT, kT  , kT);
   }
 }
 

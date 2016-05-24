@@ -24,6 +24,7 @@ VCMPacket::VCMPacket()
       dataPtr(NULL),
       sizeBytes(0),
       markerBit(false),
+      timesNacked(-1),
       frameType(kEmptyFrame),
       codec(kVideoCodecUnknown),
       isFirstPacket(false),
@@ -43,6 +44,7 @@ VCMPacket::VCMPacket(const uint8_t* ptr,
       dataPtr(ptr),
       sizeBytes(size),
       markerBit(rtpHeader.header.markerBit),
+      timesNacked(-1),
 
       frameType(rtpHeader.frameType),
       codec(kVideoCodecUnknown),
@@ -67,6 +69,7 @@ VCMPacket::VCMPacket(const uint8_t* ptr,
       dataPtr(ptr),
       sizeBytes(size),
       markerBit(mBit),
+      timesNacked(-1),
 
       frameType(kVideoFrameDelta),
       codec(kVideoCodecUnknown),
@@ -85,6 +88,7 @@ void VCMPacket::Reset() {
   dataPtr = NULL;
   sizeBytes = 0;
   markerBit = false;
+  timesNacked = -1;
   frameType = kEmptyFrame;
   codec = kVideoCodecUnknown;
   isFirstPacket = false;
