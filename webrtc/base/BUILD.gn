@@ -147,8 +147,6 @@ static_library("rtc_base_approved") {
     "swap_queue.h",
     "systeminfo.cc",
     "systeminfo.h",
-    "task_queue.h",
-    "task_queue_posix.h",
     "template_util.h",
     "thread_annotations.h",
     "thread_checker.h",
@@ -174,17 +172,27 @@ static_library("rtc_base_approved") {
       "logging_mac.mm",
     ]
   }
+}
+
+static_library("rtc_task_queue") {
+  public_deps = [ ":rtc_base_approved" ]
+  configs += [ "..:common_config" ]
+
+  sources = [
+    "task_queue.h",
+    "task_queue_posix.h",
+  ]
 
   if (rtc_build_libevent) {
-    deps += [ "//base/third_party/libevent" ]
+    deps = [ "//base/third_party/libevent" ]
   }
+
   if (rtc_enable_libevent) {
     sources += [
       "task_queue_libevent.cc",
       "task_queue_posix.cc",
     ]
   } else {
-    # If not libevent, fall back to the other task queues.
     if (is_mac || is_ios) {
       sources += [
         "task_queue_gcd.cc",

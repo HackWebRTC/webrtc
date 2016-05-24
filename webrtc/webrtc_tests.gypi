@@ -12,6 +12,7 @@
       'type': '<(gtest_target_type)',
       'dependencies': [
         'base/base.gyp:rtc_base',
+        'base/base.gyp:rtc_task_queue',
         'base/base_tests.gyp:rtc_base_tests_utils',
         'base/base_tests.gyp:rtc_base_tests',
         'p2p/p2p.gyp:rtc_p2p',

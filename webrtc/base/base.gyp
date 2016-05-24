@@ -83,8 +83,6 @@
         'swap_queue.h',
         'systeminfo.cc',
         'systeminfo.h',
-        'task_queue.h',
-        'task_queue_posix.h',
         'template_util.h',
         'thread_annotations.h',
         'thread_checker.h',
@@ -113,6 +111,29 @@
             'logging_mac.mm',
           ],
         }],
+        ['OS=="mac" and build_with_chromium==0', {
+          'all_dependent_settings': {
+            'xcode_settings': {
+              'OTHER_LDFLAGS': [
+                # needed for logging_mac.mm
+                '-framework Foundation',
+              ],
+            },
+          },
+        }], # OS=="mac" and build_with_chromium==0
+      ],
+    },
+    {
+      'target_name': 'rtc_task_queue',
+      'type': 'static_library',
+      'dependencies': [
+        'rtc_base_approved',
+      ],
+      'sources': [
+        'task_queue.h',
+        'task_queue_posix.h',
+      ],
+      'conditions': [
         ['build_libevent==1', {
           'dependencies': [
             '<(DEPTH)/base/third_party/libevent/libevent.gyp:libevent',
@@ -137,16 +158,6 @@
             }]
           ],
         }],
-        ['OS=="mac" and build_with_chromium==0', {
-          'all_dependent_settings': {
-            'xcode_settings': {
-              'OTHER_LDFLAGS': [
-                # needed for logging_mac.mm
-                '-framework Foundation',
-              ],
-            },
-          },
-        }], # OS=="mac" and build_with_chromium==0
       ],
     },
     {
