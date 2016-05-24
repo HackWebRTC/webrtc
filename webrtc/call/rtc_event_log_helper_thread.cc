@@ -143,7 +143,12 @@ void RtcEventLogHelperThread::StartLogFile() {
   }
 
   // Write to file.
-  file_->Write(output_string_.data(), output_string_.size());
+  if (!file_->Write(output_string_.data(), output_string_.size())) {
+    LOG(LS_ERROR) << "FileWrapper failed to write WebRtcEventLog file.";
+    // The current FileWrapper implementation closes the file on error.
+    RTC_DCHECK(!file_->Open());
+    return;
+  }
   written_bytes_ += output_string_.size();
 
   // Free the allocated memory since we probably won't need this amount of
@@ -181,12 +186,13 @@ void RtcEventLogHelperThread::LogToFile() {
   }
 
   // Write string to file.
-  file_->Write(output_string_.data(), output_string_.size());
-  written_bytes_ += output_string_.size();
-
-  if (!file_->Open()) {
-    LOG(LS_WARNING) << "WebRTC event log file closed by FileWrapper.";
+  if (!file_->Write(output_string_.data(), output_string_.size())) {
+    LOG(LS_ERROR) << "FileWrapper failed to write WebRtcEventLog file.";
+    // The current FileWrapper implementation closes the file on error.
+    RTC_DCHECK(!file_->Open());
+    return;
   }
+  written_bytes_ += output_string_.size();
 
   // We want to stop logging if we have reached the file size limit. We also
   // want to stop logging if the remaining events are more recent than the
@@ -210,7 +216,11 @@ void RtcEventLogHelperThread::StopLogFile() {
 
   if (written_bytes_ + static_cast<int64_t>(output_string_.size()) <=
       max_size_bytes_) {
-    file_->Write(output_string_.data(), output_string_.size());
+    if (!file_->Write(output_string_.data(), output_string_.size())) {
+      LOG(LS_ERROR) << "FileWrapper failed to write WebRtcEventLog file.";
+      // The current FileWrapper implementation closes the file on error.
+      RTC_DCHECK(!file_->Open());
+    }
     written_bytes_ += output_string_.size();
   }
 
