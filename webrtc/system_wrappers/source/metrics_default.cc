@@ -24,7 +24,7 @@ namespace {
 // Limit for the maximum number of sample values that can be stored.
 // TODO(asapersson): Consider using bucket count (and set up
 // linearly/exponentially spaced buckets) if samples are logged more frequently.
-const int kMaxSampleMapSize = 2000;
+const int kMaxSampleMapSize = 300;
 
 class RtcHistogram {
  public:
