@@ -10,19 +10,17 @@
 
 package org.appspot.apprtc;
 
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.design.widget.FloatingActionButton;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -45,14 +43,14 @@ import java.util.Random;
 /**
  * Handles the initial setup where the user selects which room to join.
  */
-public class ConnectActivity extends AppCompatActivity {
+public class ConnectActivity extends Activity {
   private static final String TAG = "ConnectActivity";
   private static final int CONNECTION_REQUEST = 1;
   private static final int REMOVE_FAVORITE_INDEX = 0;
   private static boolean commandLineRun = false;
 
   private ImageButton connectButton;
-  private FloatingActionButton addFavoriteButton;
+  private ImageButton addFavoriteButton;
   private EditText roomEditText;
   private ListView roomListView;
   private SharedPreferences sharedPref;
@@ -130,6 +128,8 @@ public class ConnectActivity extends AppCompatActivity {
     registerForContextMenu(roomListView);
     connectButton = (ImageButton) findViewById(R.id.connect_button);
     connectButton.setOnClickListener(connectListener);
+    addFavoriteButton = (ImageButton) findViewById(R.id.add_favorite_button);
+    addFavoriteButton.setOnClickListener(addFavoriteListener);
 
     // If an implicit VIEW intent is launching the app, go directly to that URL.
     final Intent intent = getIntent();
@@ -142,9 +142,6 @@ public class ConnectActivity extends AppCompatActivity {
       String room = sharedPref.getString(keyprefRoom, "");
       connectToRoom(room, true, loopback, runTimeMs);
     }
-
-    addFavoriteButton = (FloatingActionButton) findViewById(R.id.add_favorite_button);
-    addFavoriteButton.setOnClickListener(addFavoriteListener);
   }
 
   @Override
@@ -413,27 +410,11 @@ public class ConnectActivity extends AppCompatActivity {
   private final OnClickListener addFavoriteListener = new OnClickListener() {
     @Override
     public void onClick(View view) {
-      AlertDialog.Builder builder = new AlertDialog.Builder(ConnectActivity.this);
-
-      final View dialogView = LayoutInflater.from(ConnectActivity.this)
-          .inflate(R.layout.dialog_add_favorite, null);
-      final EditText favoriteEditText = (EditText) dialogView.findViewById(R.id.favorite_edittext);
-      favoriteEditText.append(roomEditText.getText());
-
-      builder.setTitle(R.string.add_favorite_title)
-          .setPositiveButton(R.string.add, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-              String newRoom = favoriteEditText.getText().toString();
-              if (newRoom.length() > 0 && !roomList.contains(newRoom)) {
-                adapter.add(newRoom);
-                adapter.notifyDataSetChanged();
-              }
-            }
-          })
-          .setView(dialogView)
-          .setNegativeButton(R.string.cancel, null);
-      builder.show();
+      String newRoom = roomEditText.getText().toString();
+      if (newRoom.length() > 0 && !roomList.contains(newRoom)) {
+        adapter.add(newRoom);
+        adapter.notifyDataSetChanged();
+      }
     }
   };
 

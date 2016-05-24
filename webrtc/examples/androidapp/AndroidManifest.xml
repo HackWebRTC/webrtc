@@ -23,7 +23,6 @@
 
         <activity android:name="ConnectActivity"
                   android:label="@string/app_name"
-                  android:theme="@style/Theme.AppCompat"
                   android:windowSoftInputMode="adjustPan">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

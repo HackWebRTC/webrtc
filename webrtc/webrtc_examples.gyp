@@ -408,7 +408,6 @@
           'type': 'none',
           'dependencies': [
             'api/api.gyp:libjingle_peerconnection_java',
-            '<(DEPTH)/third_party/android_tools/android_tools.gyp:android_support_design_javalib'
           ],
           'variables': {
             'apk_name': 'AppRTCDemo',
@@ -419,11 +418,9 @@
             'R_package_relpath': 'org/appspot/apprtc',
             'input_jars_paths': [
               'examples/androidapp/third_party/autobanh/autobanh.jar',
-              '<(DEPTH)/third_party/android_tools/sdk/extras/android/support/v4/android-support-v4.jar',
              ],
             'library_dexed_jars_paths': [
               'examples/androidapp/third_party/autobanh/autobanh.jar',
-              '<(DEPTH)/third_party/android_tools/sdk/extras/android/support/v4/android-support-v4.jar',
              ],
             'native_lib_target': 'libjingle_peerconnection_so',
             'add_to_dependents_classpaths':1,
