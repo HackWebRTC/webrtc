@@ -226,6 +226,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   int current_encoding_time_ms_;  // Overall encoding time in the current second
   int64_t last_input_timestamp_ms_;  // Timestamp of last received yuv frame.
   int64_t last_output_timestamp_ms_;  // Timestamp of last encoded frame.
+  bool output_delivery_loop_running_; // Is the onMessage loop running
 
   struct InputFrameInfo {
     InputFrameInfo(int64_t encode_start_time,
@@ -306,6 +307,7 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(
     inited_(false),
     use_surface_(false),
     picture_id_(0),
+    output_delivery_loop_running_(false),
     egl_context_(egl_context) {
   ScopedLocalRefFrame local_ref_frame(jni);
   // It would be nice to avoid spinning up a new thread per MediaCodec, and
@@ -473,7 +475,13 @@ void MediaCodecVideoEncoder::OnMessage(rtc::Message* msg) {
   // unclear how to signal such a failure to the app, so instead we stay silent
   // about it and let the next app-called API method reveal the borkedness.
   DeliverPendingOutputs(jni);
-  codec_thread_->PostDelayed(kMediaCodecPollMs, this);
+
+  // If there aren't more frames to deliver, we can stop the loop
+  if (!input_frame_infos_.empty()) {
+    codec_thread_->PostDelayed(kMediaCodecPollMs, this);
+  } else {
+    output_delivery_loop_running_ = false;
+  }
 }
 
 bool MediaCodecVideoEncoder::ResetCodecOnCodecThread() {
@@ -587,7 +595,6 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
   }
 
   inited_ = true;
-  codec_thread_->PostDelayed(kMediaCodecPollMs, this);
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -733,6 +740,11 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
 
   current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
 
+  if (!output_delivery_loop_running_) {
+    output_delivery_loop_running_ = true;
+    codec_thread_->PostDelayed(kMediaCodecPollMs, this);
+  }
+
   if (!DeliverPendingOutputs(jni)) {
     ALOGE << "Failed deliver pending outputs.";
     ResetCodecOnCodecThread();
@@ -852,6 +864,7 @@ int32_t MediaCodecVideoEncoder::ReleaseOnCodecThread() {
   rtc::MessageQueueManager::Clear(this);
   inited_ = false;
   use_surface_ = false;
+  output_delivery_loop_running_ = false;
   ALOGD << "EncoderReleaseOnCodecThread done.";
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -939,7 +952,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
     int64_t frame_encoding_time_ms = 0;
     last_output_timestamp_ms_ =
         GetOutputBufferInfoPresentationTimestampUs(jni, j_output_buffer_info) /
-        1000;
+        rtc::kNumMicrosecsPerMillisec;
     if (!input_frame_infos_.empty()) {
       const InputFrameInfo& frame_info = input_frame_infos_.front();
       output_timestamp_ = frame_info.frame_timestamp;
