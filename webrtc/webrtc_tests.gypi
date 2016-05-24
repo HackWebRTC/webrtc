@@ -14,13 +14,9 @@
         'base/base.gyp:rtc_base',
         'base/base_tests.gyp:rtc_base_tests_utils',
         'base/base_tests.gyp:rtc_base_tests',
-        'libjingle/xmllite/xmllite.gyp:rtc_xmllite',
-        'libjingle/xmpp/xmpp.gyp:rtc_xmpp',
         'p2p/p2p.gyp:rtc_p2p',
         'p2p/p2p.gyp:libstunprober',
         'p2p/p2p.gyp:rtc_p2p_unittest',
-        'libjingle/xmllite/xmllite.gyp:rtc_xmllite_unittest',
-        'libjingle/xmpp/xmpp.gyp:rtc_xmpp_unittest',
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/testing/gmock.gyp:gmock',
       ],
@@ -35,6 +31,18 @@
             'sdk/sdk_tests.gyp:rtc_sdk_peerconnection_objc_tests',
           ],
         }],
+      ],
+    },
+    {
+      'target_name': 'xmllite_xmpp_unittests',
+      'type': '<(gtest_target_type)',
+      'dependencies': [
+        'base/base_tests.gyp:rtc_base_tests_utils',  # needed for main()
+        'libjingle/xmllite/xmllite.gyp:rtc_xmllite',
+        'libjingle/xmpp/xmpp.gyp:rtc_xmpp',
+        'libjingle/xmllite/xmllite.gyp:rtc_xmllite_unittest',
+        'libjingle/xmpp/xmpp.gyp:rtc_xmpp_unittest',
+        '<(DEPTH)/testing/gtest.gyp:gtest',
       ],
     },
     {
