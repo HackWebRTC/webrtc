@@ -31,6 +31,50 @@ enum {
   MSG_GENERATE_IDENTITY_RESULT
 };
 
+// A |DtlsIdentityRequestObserver| that informs an
+// |RTCCertificateGeneratorCallback| of the result of an identity request. On
+// success, a certificate is created using the identity before passing it to
+// the callback.
+class RTCCertificateStoreCallbackObserver
+    : public webrtc::DtlsIdentityRequestObserver {
+ public:
+  RTCCertificateStoreCallbackObserver(
+      const rtc::scoped_refptr<rtc::RTCCertificateGeneratorCallback>& callback)
+      : callback_(callback) {}
+
+ private:
+  void OnFailure(int error) override {
+    LOG(LS_WARNING) << "DtlsIdentityRequestObserver failure code: " << error;
+    Callback(nullptr);
+  }
+  void OnSuccess(const std::string& der_cert,
+                 const std::string& der_private_key) override {
+    std::string pem_cert = rtc::SSLIdentity::DerToPem(
+        rtc::kPemTypeCertificate,
+        reinterpret_cast<const unsigned char*>(der_cert.data()),
+        der_cert.length());
+    std::string pem_key = rtc::SSLIdentity::DerToPem(
+        rtc::kPemTypeRsaPrivateKey,
+        reinterpret_cast<const unsigned char*>(der_private_key.data()),
+        der_private_key.length());
+    std::unique_ptr<rtc::SSLIdentity> identity(
+        rtc::SSLIdentity::FromPEMStrings(pem_key, pem_cert));
+    OnSuccess(std::move(identity));
+  }
+  void OnSuccess(std::unique_ptr<rtc::SSLIdentity> identity) override {
+    Callback(rtc::RTCCertificate::Create(std::move(identity)));
+  }
+
+  void Callback(rtc::scoped_refptr<rtc::RTCCertificate> certificate) {
+    if (certificate)
+      callback_->OnSuccess(certificate);
+    else
+      callback_->OnFailure();
+  }
+
+  rtc::scoped_refptr<rtc::RTCCertificateGeneratorCallback> callback_;
+};
+
 }  // namespace
 
 // This class runs on the worker thread to generate the identity. It's necessary
@@ -148,7 +192,7 @@ bool DtlsIdentityStoreImpl::HasFreeIdentityForTesting(
 
 void DtlsIdentityStoreImpl::GenerateIdentity(
     rtc::KeyType key_type,
-    const rtc::scoped_refptr<webrtc::DtlsIdentityRequestObserver>& observer) {
+    const rtc::scoped_refptr<DtlsIdentityRequestObserver>& observer) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
 
   // Enqueue observer to be informed when generation of |key_type| is completed.
@@ -226,6 +270,22 @@ void DtlsIdentityStoreImpl::OnIdentityGenerated(
       GenerateIdentity(key_type, nullptr);
     }
   }
+}
+
+RTCCertificateGeneratorStoreWrapper::RTCCertificateGeneratorStoreWrapper(
+    std::unique_ptr<DtlsIdentityStoreInterface> store)
+    : store_(std::move(store)) {
+  RTC_DCHECK(store_);
+}
+
+void RTCCertificateGeneratorStoreWrapper::GenerateCertificateAsync(
+    const rtc::KeyParams& key_params,
+    const rtc::Optional<uint64_t>& expires_ms,
+    const rtc::scoped_refptr<rtc::RTCCertificateGeneratorCallback>& callback) {
+  store_->RequestIdentity(
+      key_params,
+      expires_ms,
+      new rtc::RefCountedObject<RTCCertificateStoreCallbackObserver>(callback));
 }
 
 }  // namespace webrtc

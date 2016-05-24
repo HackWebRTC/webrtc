@@ -20,6 +20,7 @@
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/base/refcount.h"
+#include "webrtc/base/rtccertificategenerator.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/base/thread.h"
@@ -129,6 +130,27 @@ class DtlsIdentityStoreImpl : public DtlsIdentityStoreInterface,
 
   // One RequestInfo per KeyType. Only touch on the |signaling_thread_|.
   RequestInfo request_info_[rtc::KT_LAST];
+};
+
+// Implements the |RTCCertificateGeneratorInterface| using the old |SSLIdentity|
+// generator API, |DtlsIdentityStoreInterface|. This will be used while
+// transitioning from store to generator, see bugs.webrtc.org/5707,
+// bugs.webrtc.org/5708. Once those bugs have been fixed, this will be removed.
+class RTCCertificateGeneratorStoreWrapper
+    : public rtc::RTCCertificateGeneratorInterface {
+ public:
+  RTCCertificateGeneratorStoreWrapper(
+      std::unique_ptr<DtlsIdentityStoreInterface> store);
+
+  // |RTCCertificateGeneratorInterface| overrides.
+  void GenerateCertificateAsync(
+      const rtc::KeyParams& key_params,
+      const rtc::Optional<uint64_t>& expires_ms,
+      const rtc::scoped_refptr<rtc::RTCCertificateGeneratorCallback>& callback)
+        override;
+
+ private:
+  const std::unique_ptr<DtlsIdentityStoreInterface> store_;
 };
 
 }  // namespace webrtc
