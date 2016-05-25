@@ -39,6 +39,7 @@
 namespace cricket {
 
 extern const int WEAK_PING_INTERVAL;
+static const int MIN_PINGS_AT_WEAK_PING_INTERVAL = 3;
 
 struct IceParameters {
   std::string ufrag;

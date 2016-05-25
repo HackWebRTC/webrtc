@@ -1302,9 +1302,16 @@ void P2PTransportChannel::OnCheckAndPing() {
   // Make sure the states of the connections are up-to-date (since this affects
   // which ones are pingable).
   UpdateConnectionStates();
-  // When the best connection is either not receiving or not writable,
-  // switch to weak ping interval.
-  int ping_interval = weak() ? weak_ping_interval_ : STRONG_PING_INTERVAL;
+  // When the best connection is not receiving or not writable, or any active
+  // connection has not been pinged enough times, use the weak ping interval.
+  bool need_more_pings_at_weak_interval = std::any_of(
+      connections_.begin(), connections_.end(), [](Connection* conn) {
+        return conn->active() &&
+               conn->num_pings_sent() < MIN_PINGS_AT_WEAK_PING_INTERVAL;
+      });
+  int ping_interval = (weak() || need_more_pings_at_weak_interval)
+                          ? weak_ping_interval_
+                          : STRONG_PING_INTERVAL;
   if (rtc::TimeMillis() >= last_ping_sent_ms_ + ping_interval) {
     Connection* conn = FindNextPingableConnection();
     if (conn) {

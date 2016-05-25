@@ -1166,6 +1166,7 @@ void Connection::Ping(int64_t now) {
                           << ", id=" << rtc::hex_encode(req->id());
   requests_.Send(req);
   state_ = STATE_INPROGRESS;
+  num_pings_sent_++;
 }
 
 void Connection::ReceivedPing() {
@@ -1384,7 +1385,8 @@ void Connection::MaybeUpdatePeerReflexiveCandidate(
 
 void Connection::OnMessage(rtc::Message *pmsg) {
   ASSERT(pmsg->message_id == MSG_DELETE);
-  LOG_J(LS_INFO, this) << "Connection deleted";
+  LOG_J(LS_INFO, this) << "Connection deleted with number of pings sent: "
+                       << num_pings_sent_;
   SignalDestroyed(this);
   delete this;
 }

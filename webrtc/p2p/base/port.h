@@ -562,6 +562,8 @@ class Connection : public CandidatePairInterface,
 
   State state() const { return state_; }
 
+  int num_pings_sent() const { return num_pings_sent_; }
+
   IceMode remote_ice_mode() const { return remote_ice_mode_; }
 
   uint32_t ComputeNetworkCost() const;
@@ -648,6 +650,7 @@ class Connection : public CandidatePairInterface,
   // Time duration to switch from receiving to not receiving.
   int receiving_timeout_;
   int64_t time_created_ms_;
+  int num_pings_sent_ = 0;
 
   friend class Port;
   friend class ConnectionRequest;
