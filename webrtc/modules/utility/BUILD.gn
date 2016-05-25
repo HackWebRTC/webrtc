@@ -24,6 +24,7 @@ source_set("utility") {
     "source/file_recorder_impl.cc",
     "source/file_recorder_impl.h",
     "source/helpers_android.cc",
+    "source/helpers_ios.mm",
     "source/jvm_android.cc",
     "source/process_thread_impl.cc",
     "source/process_thread_impl.h",

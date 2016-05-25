@@ -21,8 +21,8 @@
         'include/aligned_malloc.h',
         'include/atomic32.h',
         'include/clock.h',
-        'include/cpu_info.h',
         'include/cpu_features_wrapper.h',
+        'include/cpu_info.h',
         'include/critical_section_wrapper.h',
         'include/data_log.h',
         'include/data_log_c.h',
@@ -31,7 +31,6 @@
         'include/field_trial.h',
         'include/file_wrapper.h',
         'include/fix_interlocked_exchange_pointer_win.h',
-        'include/logcat_trace_context.h',
         'include/logging.h',
         'include/metrics.h',
         'include/ntp_time.h',
@@ -46,17 +45,13 @@
         'include/trace.h',
         'include/utf_util_win.h',
         'source/aligned_malloc.cc',
-        'source/atomic32_mac.cc',
-        'source/atomic32_posix.cc',
         'source/atomic32_win.cc',
         'source/clock.cc',
         'source/condition_variable_event_win.cc',
         'source/condition_variable_event_win.h',
-        'source/cpu_info.cc',
         'source/cpu_features.cc',
-        'source/data_log.cc',
+        'source/cpu_info.cc',
         'source/data_log_c.cc',
-        'source/data_log_no_op.cc',
         'source/event.cc',
         'source/event_timer_posix.cc',
         'source/event_timer_posix.h',
@@ -64,7 +59,6 @@
         'source/event_timer_win.h',
         'source/file_impl.cc',
         'source/file_impl.h',
-        'source/logcat_trace_context.cc',
         'source/logging.cc',
         'source/rtp_to_ntp.cc',
         'source/rw_lock.cc',
@@ -86,9 +80,9 @@
       ],
       'conditions': [
         ['enable_data_logging==1', {
-          'sources!': [ 'source/data_log_no_op.cc', ],
+          'sources': [ 'source/data_log.cc', ],
         }, {
-          'sources!': [ 'source/data_log.cc', ],
+          'sources': [ 'source/data_log_no_op.cc', ],
         },],
         ['OS=="android"', {
           'defines': [
@@ -110,8 +104,7 @@
               '-llog',
             ],
           },
-        }, {  # OS!="android"
-          'sources!': [
+          'sources': [
             'include/logcat_trace_context.h',
             'source/logcat_trace_context.cc',
           ],
@@ -135,13 +128,18 @@
           'link_settings': {
             'libraries': [ '$(SDKROOT)/System/Library/Frameworks/ApplicationServices.framework', ],
           },
-          'sources!': [
-            'source/atomic32_posix.cc',
+        }],
+        ['OS=="linux" or OS=="android"', {
+          'sources': [
+            'source/atomic32_non_darwin_unix.cc',
           ],
         }],
         ['OS=="ios" or OS=="mac"', {
           'defines': [
             'WEBRTC_THREAD_RR',
+          ],
+          'sources': [
+            'source/atomic32_darwin.cc',
           ],
         }],
         ['OS=="win"', {
@@ -150,20 +148,6 @@
           },
         }],
       ], # conditions
-      'target_conditions': [
-        # We need to do this in a target_conditions block to override the
-        # filename_rules filters.
-        ['OS=="ios"', {
-          # Pull in specific Mac files for iOS (which have been filtered out
-          # by file name rules).
-          'sources/': [
-            ['include', '^source/atomic32_mac\\.'],
-          ],
-          'sources!': [
-            'source/atomic32_posix.cc',
-          ],
-        }],
-      ],
       # Disable warnings to enable Win64 build, issue 1323.
       'msvs_disabled_warnings': [
         4267,  # size_t to int truncation.

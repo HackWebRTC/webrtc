@@ -151,6 +151,11 @@ source_set("webrtc_h264") {
     "../../system_wrappers",
   ]
 
+  if (is_ios) {
+    sources += [ "codecs/h264/h264_objc.mm" ]
+    deps += [ ":webrtc_h264_video_toolbox" ]
+  }
+
   if (rtc_use_h264) {
     defines += [ "WEBRTC_USE_H264" ]
     if (rtc_initialize_ffmpeg) {
@@ -170,8 +175,52 @@ source_set("webrtc_h264") {
   }
 }
 
-# TODO(tkchin): Source set for webrtc_h264_video_toolbox. Currently not
-# possible to add, see https://crbug.com/297668.
+if (is_ios) {
+  source_set("webrtc_h264_video_toolbox") {
+    sources = [
+      "codecs/h264/h264_video_toolbox_decoder.cc",
+      "codecs/h264/h264_video_toolbox_decoder.h",
+      "codecs/h264/h264_video_toolbox_encoder.cc",
+      "codecs/h264/h264_video_toolbox_encoder.h",
+      "codecs/h264/h264_video_toolbox_nalu.cc",
+      "codecs/h264/h264_video_toolbox_nalu.h",
+    ]
+
+    configs += [ "//build/config/compiler:enable_arc" ]
+
+    cflags = [ "-Wobjc-missing-property-synthesis" ]
+
+    precompiled_header = "../../sdk/objc/WebRTC-Prefix.pch"
+    precompiled_source = "../../sdk/objc/WebRTC-Prefix.pch"
+
+    deps = [
+      "../../sdk:rtc_sdk_common_objc",
+    ]
+
+    libs = [
+      "CoreFoundation.framework",
+      "CoreMedia.framework",
+      "CoreVideo.framework",
+      "VideoToolbox.framework",
+    ]
+
+    if (is_clang) {
+      # Suppress warnings from Chrome's Clang plugins.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    if (rtc_build_libyuv) {
+      deps += [ "$rtc_libyuv_dir" ]
+      public_deps = [
+        "$rtc_libyuv_dir",
+      ]
+    } else {
+      # Need to add a directory normally exported by libyuv.
+      include_dirs += [ "$rtc_libyuv_dir/include" ]
+    }
+  }
+}
 
 source_set("webrtc_i420") {
   sources = [

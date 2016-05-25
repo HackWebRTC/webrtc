@@ -27,6 +27,7 @@ static_library("system_wrappers") {
     "include/fix_interlocked_exchange_pointer_win.h",
     "include/logging.h",
     "include/metrics.h",
+    "include/ntp_time.h",
     "include/rtp_to_ntp.h",
     "include/rw_lock_wrapper.h",
     "include/sleep.h",
@@ -38,7 +39,6 @@ static_library("system_wrappers") {
     "include/trace.h",
     "include/utf_util_win.h",
     "source/aligned_malloc.cc",
-    "source/atomic32_mac.cc",
     "source/atomic32_win.cc",
     "source/clock.cc",
     "source/condition_variable_event_win.cc",
@@ -112,16 +112,13 @@ static_library("system_wrappers") {
     libs += [ "rt" ]
   }
 
-  if (!is_mac && !is_ios) {
-    sources += [ "source/atomic32_posix.cc" ]
+  if (is_linux || is_android) {
+    sources += [ "source/atomic32_non_darwin_unix.cc" ]
   }
 
   if (is_ios || is_mac) {
     defines += [ "WEBRTC_THREAD_RR" ]
-  }
-
-  if (is_ios) {
-    sources += [ "source/atomic32_mac.cc" ]
+    sources += [ "source/atomic32_darwin.cc" ]
   }
 
   if (is_win) {

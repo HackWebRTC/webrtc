@@ -10,16 +10,22 @@ import("../build/webrtc.gni")
 import("//build_overrides/webrtc.gni")
 
 if (is_ios) {
+  config("rtc_sdk_common_objc_config") {
+    include_dirs = [
+      "objc/Framework/Classes",
+      "objc/Framework/Headers",
+    ]
+  }
+
   source_set("rtc_sdk_common_objc") {
     deps = [
       "../base:rtc_base",
     ]
     cflags = [ "-fobjc-arc" ]
     configs += [ "..:common_config" ]
-    public_configs = [ "..:common_inherited_config" ]
-    include_dirs = [
-      "objc/Framework/Classes",
-      "objc/Framework/Headers",
+    public_configs = [
+      "..:common_inherited_config",
+      ":rtc_sdk_common_objc_config",
     ]
     sources = [
       "objc/Framework/Classes/NSString+StdString.h",
@@ -54,14 +60,8 @@ if (is_ios) {
       ":rtc_sdk_common_objc",
       #"../../talk/libjingle:libjingle_peerconnection",
     ]
-    cflags = [
-      "-fobjc-arc",
-      "-Wobjc-missing-property-synthesis",
-    ]
-    include_dirs = [
-      "objc/Framework/Classes",
-      "objc/Framework/Headers",
-    ]
+    configs += [ "//build/config/compiler:enable_arc" ]
+    cflags = [ "-Wobjc-missing-property-synthesis" ]
     sources = [
       # Add these when there's a BUILD.gn for peer connection APIs
       #"objc/Framework/Classes/RTCAVFoundationVideoSource+Private.h",

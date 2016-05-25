@@ -92,7 +92,8 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   // See audio_device_not_implemented.cc for trivial implementations.
   int32_t PlayoutBuffer(AudioDeviceModule::BufferType& type,
                         uint16_t& sizeMS) const override;
-  int32_t ActiveAudioLayer(AudioDeviceModule::AudioLayer& audioLayer) const;
+  int32_t ActiveAudioLayer(
+      AudioDeviceModule::AudioLayer& audioLayer) const override;
   int32_t ResetAudioDevice() override;
   int32_t PlayoutIsAvailable(bool& available) override;
   int32_t RecordingIsAvailable(bool& available) override;

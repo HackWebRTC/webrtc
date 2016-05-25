@@ -370,10 +370,12 @@ void VoiceProcessingAudioUnit::DisposeAudioUnit() {
       case kStarted:
         Stop();
         // Fall through.
+        FALLTHROUGH();
       case kInitialized:
         Uninitialize();
         break;
       case kUninitialized:
+        FALLTHROUGH();
       case kInitRequired:
         break;
     }
