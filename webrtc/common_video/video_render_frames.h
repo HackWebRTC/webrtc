@@ -15,6 +15,7 @@
 
 #include <list>
 
+#include "webrtc/base/optional.h"
 #include "webrtc/video_frame.h"
 
 namespace webrtc {
@@ -27,8 +28,8 @@ class VideoRenderFrames {
   // Add a frame to the render queue
   int32_t AddFrame(const VideoFrame& new_frame);
 
-  // Get a frame for rendering, or a zero-size frame if it's not time to render.
-  VideoFrame FrameToRender();
+  // Get a frame for rendering, or false if it's not time to render.
+  rtc::Optional<VideoFrame> FrameToRender();
 
   // Releases all frames
   int32_t ReleaseAllFrames();

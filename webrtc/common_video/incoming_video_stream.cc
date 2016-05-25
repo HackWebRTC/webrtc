@@ -175,7 +175,7 @@ bool IncomingVideoStream::IncomingVideoStreamProcess() {
     }
 
     // Get a new frame to render and the time for the frame after this one.
-    VideoFrame frame_to_render;
+    rtc::Optional<VideoFrame> frame_to_render;
     uint32_t wait_time;
     {
       rtc::CritScope cs(&buffer_critsect_);
@@ -189,17 +189,14 @@ bool IncomingVideoStream::IncomingVideoStreamProcess() {
     }
     deliver_buffer_event_->StartTimer(false, wait_time);
 
-    DeliverFrame(frame_to_render);
+    if (frame_to_render)
+      DeliverFrame(*frame_to_render);
   }
   return true;
 }
 
 void IncomingVideoStream::DeliverFrame(const VideoFrame& video_frame) {
   rtc::CritScope cs(&thread_critsect_);
-  if (video_frame.IsZeroSize()) {
-    // No frame.
-    return;
-  }
 
   // Send frame for rendering.
   if (external_callback_) {

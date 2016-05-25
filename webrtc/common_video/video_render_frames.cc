@@ -53,11 +53,11 @@ int32_t VideoRenderFrames::AddFrame(const VideoFrame& new_frame) {
   return static_cast<int32_t>(incoming_frames_.size());
 }
 
-VideoFrame VideoRenderFrames::FrameToRender() {
-  VideoFrame render_frame;
+rtc::Optional<VideoFrame> VideoRenderFrames::FrameToRender() {
+  rtc::Optional<VideoFrame> render_frame;
   // Get the newest frame that can be released for rendering.
   while (!incoming_frames_.empty() && TimeToNextFrameRelease() <= 0) {
-    render_frame = incoming_frames_.front();
+    render_frame = rtc::Optional<VideoFrame>(incoming_frames_.front());
     incoming_frames_.pop_front();
   }
   return render_frame;
