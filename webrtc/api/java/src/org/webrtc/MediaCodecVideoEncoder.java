@@ -52,6 +52,7 @@ public class MediaCodecVideoEncoder {
 
   private static final int MEDIA_CODEC_RELEASE_TIMEOUT_MS = 5000; // Timeout for codec releasing.
   private static final int DEQUEUE_TIMEOUT = 0;  // Non-blocking, no wait.
+  private static final int BITRATE_ADJUSTMENT_FPS = 30;
   // Active running encoder instance. Set in initEncode() (called from native code)
   // and reset to null in release() call.
   private static MediaCodecVideoEncoder runningInstance = null;
@@ -68,18 +69,58 @@ public class MediaCodecVideoEncoder {
   private int height;
   private Surface inputSurface;
   private GlRectDrawer drawer;
+
   private static final String VP8_MIME_TYPE = "video/x-vnd.on2.vp8";
   private static final String VP9_MIME_TYPE = "video/x-vnd.on2.vp9";
   private static final String H264_MIME_TYPE = "video/avc";
+
+  // Class describing supported media codec properties.
+  private static class MediaCodecProperties {
+    public final String codecPrefix;
+    // Minimum Android SDK required for this codec to be used.
+    public final int minSdk;
+    // Flag if encoder implementation does not use frame timestamps to calculate frame bitrate
+    // budget and instead is relying on initial fps configuration assuming that all frames are
+    // coming at fixed initial frame rate. Bitrate adjustment is required for this case.
+    public final boolean bitrateAdjustmentRequired;
+
+    MediaCodecProperties(
+        String codecPrefix, int minSdk, boolean bitrateAdjustmentRequired) {
+      this.codecPrefix = codecPrefix;
+      this.minSdk = minSdk;
+      this.bitrateAdjustmentRequired = bitrateAdjustmentRequired;
+    }
+  }
+
   // List of supported HW VP8 encoders.
-  private static final String[] supportedVp8HwCodecPrefixes =
-    {"OMX.qcom.", "OMX.Intel." };
+  private static final MediaCodecProperties qcomVp8HwProperties = new MediaCodecProperties(
+      "OMX.qcom.", Build.VERSION_CODES.KITKAT, false /* bitrateAdjustmentRequired */);
+  private static final MediaCodecProperties exynosVp8HwProperties = new MediaCodecProperties(
+      "OMX.Exynos.", Build.VERSION_CODES.M, false /* bitrateAdjustmentRequired */);
+  private static final MediaCodecProperties intelVp8HwProperties = new MediaCodecProperties(
+      "OMX.Intel.", Build.VERSION_CODES.LOLLIPOP, false /* bitrateAdjustmentRequired */);
+  private static final MediaCodecProperties[] vp8HwList = new MediaCodecProperties[] {
+    qcomVp8HwProperties, exynosVp8HwProperties, intelVp8HwProperties
+  };
+
   // List of supported HW VP9 encoders.
-  private static final String[] supportedVp9HwCodecPrefixes =
-    {"OMX.qcom.", "OMX.Exynos." };
+  private static final MediaCodecProperties qcomVp9HwProperties = new MediaCodecProperties(
+      "OMX.qcom.", Build.VERSION_CODES.M, false /* bitrateAdjustmentRequired */);
+  private static final MediaCodecProperties exynosVp9HwProperties = new MediaCodecProperties(
+      "OMX.Exynos.", Build.VERSION_CODES.M, false /* bitrateAdjustmentRequired */);
+  private static final MediaCodecProperties[] vp9HwList = new MediaCodecProperties[] {
+    qcomVp9HwProperties, exynosVp9HwProperties
+  };
+
   // List of supported HW H.264 encoders.
-  private static final String[] supportedH264HwCodecPrefixes =
-    {"OMX.qcom." };
+  private static final MediaCodecProperties qcomH264HwProperties = new MediaCodecProperties(
+      "OMX.qcom.", Build.VERSION_CODES.KITKAT, false /* bitrateAdjustmentRequired */);
+  private static final MediaCodecProperties exynosH264HwProperties = new MediaCodecProperties(
+      "OMX.Exynos.", Build.VERSION_CODES.LOLLIPOP, true /* bitrateAdjustmentRequired */);
+  private static final MediaCodecProperties[] h264HwList = new MediaCodecProperties[] {
+    qcomH264HwProperties, exynosH264HwProperties
+  };
+
   // List of devices with poor H.264 encoder quality.
   private static final String[] H264_HW_EXCEPTION_MODELS = new String[] {
     // HW H.264 encoder on below devices has poor bitrate control - actual
@@ -108,6 +149,7 @@ public class MediaCodecVideoEncoder {
   };
   private VideoCodecType type;
   private int colorFormat;  // Used by native code.
+  private boolean bitrateAdjustmentRequired;
 
   // SPS and PPS NALs (Config frame) for H.264.
   private ByteBuffer configData = null;
@@ -144,46 +186,48 @@ public class MediaCodecVideoEncoder {
   // Functions to query if HW encoding is supported.
   public static boolean isVp8HwSupported() {
     return !hwEncoderDisabledTypes.contains(VP8_MIME_TYPE) &&
-        (findHwEncoder(VP8_MIME_TYPE, supportedVp8HwCodecPrefixes, supportedColorList) != null);
+        (findHwEncoder(VP8_MIME_TYPE, vp8HwList, supportedColorList) != null);
   }
 
   public static boolean isVp9HwSupported() {
     return !hwEncoderDisabledTypes.contains(VP9_MIME_TYPE) &&
-        (findHwEncoder(VP9_MIME_TYPE, supportedVp9HwCodecPrefixes, supportedColorList) != null);
+        (findHwEncoder(VP9_MIME_TYPE, vp9HwList, supportedColorList) != null);
   }
 
   public static boolean isH264HwSupported() {
     return !hwEncoderDisabledTypes.contains(H264_MIME_TYPE) &&
-        (findHwEncoder(H264_MIME_TYPE, supportedH264HwCodecPrefixes, supportedColorList) != null);
+        (findHwEncoder(H264_MIME_TYPE, h264HwList, supportedColorList) != null);
   }
 
   public static boolean isVp8HwSupportedUsingTextures() {
-    return !hwEncoderDisabledTypes.contains(VP8_MIME_TYPE) && (findHwEncoder(
-        VP8_MIME_TYPE, supportedVp8HwCodecPrefixes, supportedSurfaceColorList) != null);
+    return !hwEncoderDisabledTypes.contains(VP8_MIME_TYPE) &&
+        (findHwEncoder(VP8_MIME_TYPE, vp8HwList, supportedSurfaceColorList) != null);
   }
 
   public static boolean isVp9HwSupportedUsingTextures() {
-    return !hwEncoderDisabledTypes.contains(VP9_MIME_TYPE) && (findHwEncoder(
-        VP9_MIME_TYPE, supportedVp9HwCodecPrefixes, supportedSurfaceColorList) != null);
+    return !hwEncoderDisabledTypes.contains(VP9_MIME_TYPE) &&
+        (findHwEncoder(VP9_MIME_TYPE, vp9HwList, supportedSurfaceColorList) != null);
   }
 
   public static boolean isH264HwSupportedUsingTextures() {
-    return !hwEncoderDisabledTypes.contains(H264_MIME_TYPE) && (findHwEncoder(
-        H264_MIME_TYPE, supportedH264HwCodecPrefixes, supportedSurfaceColorList) != null);
+    return !hwEncoderDisabledTypes.contains(H264_MIME_TYPE) &&
+        (findHwEncoder(H264_MIME_TYPE, h264HwList, supportedSurfaceColorList) != null);
   }
 
   // Helper struct for findHwEncoder() below.
   private static class EncoderProperties {
-    public EncoderProperties(String codecName, int colorFormat) {
+    public EncoderProperties(String codecName, int colorFormat, boolean bitrateAdjustment) {
       this.codecName = codecName;
       this.colorFormat = colorFormat;
+      this.bitrateAdjustment = bitrateAdjustment;
     }
     public final String codecName; // OpenMax component name for HW codec.
     public final int colorFormat;  // Color format supported by codec.
+    public final boolean bitrateAdjustment; // true if bitrate adjustment workaround is required.
   }
 
   private static EncoderProperties findHwEncoder(
-      String mime, String[] supportedHwCodecPrefixes, int[] colorList) {
+      String mime, MediaCodecProperties[] supportedHwCodecProperties, int[] colorList) {
     // MediaCodec.setParameters is missing for JB and below, so bitrate
     // can not be adjusted dynamically.
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
@@ -218,8 +262,18 @@ public class MediaCodecVideoEncoder {
 
       // Check if this is supported HW encoder.
       boolean supportedCodec = false;
-      for (String hwCodecPrefix : supportedHwCodecPrefixes) {
-        if (name.startsWith(hwCodecPrefix)) {
+      boolean bitrateAdjustmentRequired = false;
+      for (MediaCodecProperties codecProperties : supportedHwCodecProperties) {
+        if (name.startsWith(codecProperties.codecPrefix)) {
+          if (Build.VERSION.SDK_INT < codecProperties.minSdk) {
+            Logging.w(TAG, "Codec " + name + " is disabled due to SDK version " +
+                Build.VERSION.SDK_INT);
+            continue;
+          }
+          if (codecProperties.bitrateAdjustmentRequired) {
+            Logging.w(TAG, "Codec " + name + " does not use frame timestamps.");
+            bitrateAdjustmentRequired = true;
+          }
           supportedCodec = true;
           break;
         }
@@ -228,6 +282,7 @@ public class MediaCodecVideoEncoder {
         continue;
       }
 
+      // Check if HW codec supports known color format.
       CodecCapabilities capabilities = info.getCapabilitiesForType(mime);
       for (int colorFormat : capabilities.colorFormats) {
         Logging.v(TAG, "   Color: 0x" + Integer.toHexString(colorFormat));
@@ -239,7 +294,7 @@ public class MediaCodecVideoEncoder {
             // Found supported HW encoder.
             Logging.d(TAG, "Found target encoder for mime " + mime + " : " + name +
                 ". Color: 0x" + Integer.toHexString(codecColorFormat));
-            return new EncoderProperties(name, codecColorFormat);
+            return new EncoderProperties(name, codecColorFormat, bitrateAdjustmentRequired);
           }
         }
       }
@@ -293,18 +348,18 @@ public class MediaCodecVideoEncoder {
     int keyFrameIntervalSec = 0;
     if (type == VideoCodecType.VIDEO_CODEC_VP8) {
       mime = VP8_MIME_TYPE;
-      properties = findHwEncoder(VP8_MIME_TYPE, supportedVp8HwCodecPrefixes,
-          useSurface ? supportedSurfaceColorList : supportedColorList);
+      properties = findHwEncoder(
+          VP8_MIME_TYPE, vp8HwList, useSurface ? supportedSurfaceColorList : supportedColorList);
       keyFrameIntervalSec = 100;
     } else if (type == VideoCodecType.VIDEO_CODEC_VP9) {
       mime = VP9_MIME_TYPE;
-      properties = findHwEncoder(VP9_MIME_TYPE, supportedVp9HwCodecPrefixes,
-          useSurface ? supportedSurfaceColorList : supportedColorList);
+      properties = findHwEncoder(
+          VP9_MIME_TYPE, vp9HwList, useSurface ? supportedSurfaceColorList : supportedColorList);
       keyFrameIntervalSec = 100;
     } else if (type == VideoCodecType.VIDEO_CODEC_H264) {
       mime = H264_MIME_TYPE;
-      properties = findHwEncoder(H264_MIME_TYPE, supportedH264HwCodecPrefixes,
-          useSurface ? supportedSurfaceColorList : supportedColorList);
+      properties = findHwEncoder(
+          H264_MIME_TYPE, h264HwList, useSurface ? supportedSurfaceColorList : supportedColorList);
       keyFrameIntervalSec = 20;
     }
     if (properties == null) {
@@ -312,7 +367,12 @@ public class MediaCodecVideoEncoder {
     }
     runningInstance = this; // Encoder is now running and can be queried for stack traces.
     colorFormat = properties.colorFormat;
-    Logging.d(TAG, "Color format: " + colorFormat);
+    bitrateAdjustmentRequired = properties.bitrateAdjustment;
+    if (bitrateAdjustmentRequired) {
+      fps = BITRATE_ADJUSTMENT_FPS;
+    }
+    Logging.d(TAG, "Color format: " + colorFormat +
+        ". Bitrate adjustment: " + bitrateAdjustmentRequired);
 
     mediaCodecThread = Thread.currentThread();
     try {
@@ -456,14 +516,19 @@ public class MediaCodecVideoEncoder {
     Logging.d(TAG, "Java releaseEncoder done");
   }
 
-  private boolean setRates(int kbps, int frameRateIgnored) {
-    // frameRate argument is ignored - HW encoder is supposed to use
-    // video frame timestamps for bit allocation.
+  private boolean setRates(int kbps, int frameRate) {
     checkOnMediaCodecThread();
-    Logging.v(TAG, "setRates: " + kbps + " kbps. Fps: " + frameRateIgnored);
+    int codecBitrate = 1000 * kbps;
+    if (bitrateAdjustmentRequired && frameRate > 0) {
+      codecBitrate = BITRATE_ADJUSTMENT_FPS * codecBitrate / frameRate;
+      Logging.v(TAG, "setRates: " + kbps + " -> " + (codecBitrate / 1000)
+          + " kbps. Fps: " + frameRate);
+    } else {
+      Logging.v(TAG, "setRates: " + kbps);
+    }
     try {
       Bundle params = new Bundle();
-      params.putInt(MediaCodec.PARAMETER_KEY_VIDEO_BITRATE, 1000 * kbps);
+      params.putInt(MediaCodec.PARAMETER_KEY_VIDEO_BITRATE, codecBitrate);
       mediaCodec.setParameters(params);
       return true;
     } catch (IllegalStateException e) {
