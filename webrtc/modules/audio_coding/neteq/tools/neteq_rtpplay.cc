@@ -26,6 +26,7 @@
 #include "gflags/gflags.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/safe_conversions.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
@@ -474,7 +475,8 @@ int main(int argc, char* argv[]) {
   // Initialize NetEq instance.
   NetEq::Config config;
   config.sample_rate_hz = sample_rate_hz;
-  NetEq* neteq = NetEq::Create(config);
+  NetEq* neteq =
+      NetEq::Create(config, CreateBuiltinAudioDecoderFactory());
   RegisterPayloadTypes(neteq);
 
 

@@ -22,7 +22,6 @@
 #include "webrtc/base/trace_event.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
-#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/neteq/accelerate.h"
 #include "webrtc/modules/audio_coding/neteq/background_noise.h"
 #include "webrtc/modules/audio_coding/neteq/buffer_level_filter.h"
@@ -55,10 +54,12 @@
 
 namespace webrtc {
 
-NetEqImpl::Dependencies::Dependencies(const NetEq::Config& config)
+NetEqImpl::Dependencies::Dependencies(
+    const NetEq::Config& config,
+    const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory)
     : tick_timer(new TickTimer),
       buffer_level_filter(new BufferLevelFilter),
-      decoder_database(new DecoderDatabase(CreateBuiltinAudioDecoderFactory())),
+      decoder_database(new DecoderDatabase(decoder_factory)),
       delay_peak_detector(new DelayPeakDetector(tick_timer.get())),
       delay_manager(new DelayManager(config.max_packets_in_buffer,
                                      delay_peak_detector.get(),

@@ -16,6 +16,7 @@
 #include <list>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
@@ -63,8 +64,10 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
         last_arrival_time_(0) {
     NetEq::Config config;
     config.sample_rate_hz = sample_rate_hz_;
-    neteq_mono_ = NetEq::Create(config);
-    neteq_ = NetEq::Create(config);
+    rtc::scoped_refptr<AudioDecoderFactory> factory =
+        CreateBuiltinAudioDecoderFactory();
+    neteq_mono_ = NetEq::Create(config, factory);
+    neteq_ = NetEq::Create(config, factory);
     input_ = new int16_t[frame_size_samples_];
     encoded_ = new uint8_t[2 * frame_size_samples_];
     input_multi_channel_ = new int16_t[frame_size_samples_ * num_channels_];

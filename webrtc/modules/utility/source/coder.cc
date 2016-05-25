@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/utility/source/coder.h"
 
@@ -19,6 +20,7 @@ AudioCodingModule::Config GetAcmConfig(uint32_t id) {
   // This class does not handle muted output.
   config.neteq_config.enable_muted_state = false;
   config.id = id;
+  config.decoder_factory = CreateBuiltinAudioDecoderFactory();
   return config;
 }
 }  // namespace

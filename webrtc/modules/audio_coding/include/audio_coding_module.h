@@ -18,6 +18,7 @@
 #include "webrtc/base/deprecation.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/codecs/audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/modules/include/module.h"
@@ -72,6 +73,7 @@ class AudioCodingModule {
     int id;
     NetEq::Config neteq_config;
     Clock* clock;
+    rtc::scoped_refptr<AudioDecoderFactory> decoder_factory;
   };
 
   ///////////////////////////////////////////////////////////////////////////

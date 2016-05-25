@@ -34,8 +34,11 @@ std::string NetEq::Config::ToString() const {
 
 // Creates all classes needed and inject them into a new NetEqImpl object.
 // Return the new object.
-NetEq* NetEq::Create(const NetEq::Config& config) {
-  return new NetEqImpl(config, NetEqImpl::Dependencies(config));
+NetEq* NetEq::Create(
+    const NetEq::Config& config,
+    const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) {
+  return new NetEqImpl(config,
+                       NetEqImpl::Dependencies(config, decoder_factory));
 }
 
 }  // namespace webrtc

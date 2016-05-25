@@ -13,6 +13,7 @@
 #include <memory>
 
 #include "testing/gmock/include/gmock/gmock.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_external_decoder_pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_external_decoder_test.h"
@@ -178,7 +179,8 @@ class NetEqExternalVsInternalDecoderTest : public NetEqExternalDecoderUnitTest,
     NetEq::Config config;
     config.sample_rate_hz =
         CodecSampleRateHz(NetEqDecoder::kDecoderPCM16Bswb32kHz);
-    neteq_internal_.reset(NetEq::Create(config));
+    neteq_internal_.reset(
+        NetEq::Create(config, CreateBuiltinAudioDecoderFactory()));
   }
 
   void SetUp() override {

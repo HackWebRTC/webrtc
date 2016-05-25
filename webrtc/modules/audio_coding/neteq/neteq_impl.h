@@ -72,7 +72,9 @@ class NetEqImpl : public webrtc::NetEq {
     // before sending the struct to the NetEqImpl constructor. However, there
     // are dependencies between some of the classes inside the struct, so
     // swapping out one may make it necessary to re-create another one.
-    explicit Dependencies(const NetEq::Config& config);
+    explicit Dependencies(
+        const NetEq::Config& config,
+        const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory);
     ~Dependencies();
 
     std::unique_ptr<TickTimer> tick_timer;

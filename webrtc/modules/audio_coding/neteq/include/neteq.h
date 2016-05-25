@@ -17,6 +17,7 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/optional.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
 #include "webrtc/typedefs.h"
@@ -26,6 +27,7 @@ namespace webrtc {
 // Forward declarations.
 class AudioFrame;
 struct WebRtcRTPHeader;
+class AudioDecoderFactory;
 
 struct NetEqNetworkStatistics {
   uint16_t current_buffer_size_ms;  // Current jitter buffer size in ms.
@@ -133,7 +135,9 @@ class NetEq {
   // Creates a new NetEq object, with parameters set in |config|. The |config|
   // object will only have to be valid for the duration of the call to this
   // method.
-  static NetEq* Create(const NetEq::Config& config);
+  static NetEq* Create(
+      const NetEq::Config& config,
+      const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory);
 
   virtual ~NetEq() {}
 

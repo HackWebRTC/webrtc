@@ -49,7 +49,7 @@ bool IsCng(int codec_id) {
 AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config)
     : last_audio_decoder_(nullptr),
       last_audio_buffer_(new int16_t[AudioFrame::kMaxDataSizeSamples]),
-      neteq_(NetEq::Create(config.neteq_config)),
+      neteq_(NetEq::Create(config.neteq_config, config.decoder_factory)),
       clock_(config.clock),
       resampled_last_output_frame_(true) {
   assert(clock_);

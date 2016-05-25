@@ -14,6 +14,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/acm2/audio_coding_module_impl.h"
 #include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
@@ -24,6 +25,7 @@ AudioCodingModule* AudioCodingModule::Create(int id) {
   Config config;
   config.id = id;
   config.clock = Clock::GetRealTimeClock();
+  config.decoder_factory = CreateBuiltinAudioDecoderFactory();
   return Create(config);
 }
 
@@ -31,10 +33,18 @@ AudioCodingModule* AudioCodingModule::Create(int id, Clock* clock) {
   Config config;
   config.id = id;
   config.clock = clock;
+  config.decoder_factory = CreateBuiltinAudioDecoderFactory();
   return Create(config);
 }
 
 AudioCodingModule* AudioCodingModule::Create(const Config& config) {
+  if (!config.decoder_factory) {
+    // TODO(ossu): Backwards compatibility. Will be removed after a deprecation
+    // cycle.
+    Config config_copy = config;
+    config_copy.decoder_factory = CreateBuiltinAudioDecoderFactory();
+    return new acm2::AudioCodingModuleImpl(config_copy);
+  }
   return new acm2::AudioCodingModuleImpl(config);
 }
 

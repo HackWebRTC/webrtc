@@ -16,6 +16,7 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/safe_conversions.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/neteq/accelerate.h"
 #include "webrtc/modules/audio_coding/neteq/expand.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_audio_decoder.h"
@@ -59,7 +60,7 @@ class NetEqImplTest : public ::testing::Test {
   NetEqImplTest() { config_.sample_rate_hz = 8000; }
 
   void CreateInstance() {
-    NetEqImpl::Dependencies deps(config_);
+    NetEqImpl::Dependencies deps(config_, CreateBuiltinAudioDecoderFactory());
 
     // Get a local pointer to NetEq's TickTimer object.
     tick_timer_ = deps.tick_timer.get();
@@ -205,7 +206,7 @@ class NetEqImplTest : public ::testing::Test {
 // TODO(hlundin): Move to separate file?
 TEST(NetEq, CreateAndDestroy) {
   NetEq::Config config;
-  NetEq* neteq = NetEq::Create(config);
+  NetEq* neteq = NetEq::Create(config, CreateBuiltinAudioDecoderFactory());
   delete neteq;
 }
 

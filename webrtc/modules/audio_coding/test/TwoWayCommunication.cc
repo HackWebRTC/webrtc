@@ -23,6 +23,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/test/PCMFile.h"
 #include "webrtc/modules/audio_coding/test/utility.h"
 #include "webrtc/system_wrappers/include/trace.h"
@@ -40,6 +41,7 @@ TwoWayCommunication::TwoWayCommunication(int testMode)
   // The clicks will be more obvious in FAX mode. TODO(henrik.lundin) Really?
   config.neteq_config.playout_mode = kPlayoutFax;
   config.id = 2;
+  config.decoder_factory = CreateBuiltinAudioDecoderFactory();
   _acmB.reset(AudioCodingModule::Create(config));
   config.id = 4;
   _acmRefB.reset(AudioCodingModule::Create(config));

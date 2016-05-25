@@ -11,6 +11,7 @@
 #include <math.h>
 #include <stdio.h>
 #include "webrtc/base/checks.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_quality_test.h"
 #include "webrtc/modules/audio_coding/neteq/tools/output_audio_file.h"
 #include "webrtc/modules/audio_coding/neteq/tools/output_wav_file.h"
@@ -245,7 +246,8 @@ NetEqQualityTest::NetEqQualityTest(int block_duration_ms,
 
   NetEq::Config config;
   config.sample_rate_hz = out_sampling_khz_ * 1000;
-  neteq_.reset(NetEq::Create(config));
+  neteq_.reset(
+      NetEq::Create(config, webrtc::CreateBuiltinAudioDecoderFactory()));
   max_payload_bytes_ = in_size_samples_ * channels_ * sizeof(int16_t);
   in_data_.reset(new int16_t[in_size_samples_ * channels_]);
 }

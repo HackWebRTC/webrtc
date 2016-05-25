@@ -21,6 +21,7 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common.h"
 #include "webrtc/config.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/include/module_common_types.h"
@@ -825,6 +826,7 @@ Channel::Channel(int32_t channelId,
   acm_config.neteq_config.enable_fast_accelerate =
       config.Get<NetEqFastAccelerate>().enabled;
   acm_config.neteq_config.enable_muted_state = true;
+  acm_config.decoder_factory = CreateBuiltinAudioDecoderFactory();
   audio_coding_.reset(AudioCodingModule::Create(acm_config));
 
   _outputAudioLevel.Clear();
