@@ -18,6 +18,10 @@ import org.robolectric.annotation.Config;
 import org.webrtc.IceCandidate;
 import org.webrtc.SessionDescription;
 
+import java.util.regex.Matcher;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.isNotNull;
@@ -55,6 +59,50 @@ public class DirectRTCClientTest {
 
     client = new DirectRTCClient(clientEvents);
     server = new DirectRTCClient(serverEvents);
+  }
+
+  @Test
+  public void testValidIpPattern() {
+    // Strings that should match the pattern.
+    final String[] ipAddresses = new String[] {
+        "0.0.0.0",
+        "127.0.0.1",
+        "192.168.0.1",
+        "0.0.0.0:8888",
+        "127.0.0.1:8888",
+        "192.168.0.1:8888",
+        "::",
+        "::1",
+        "2001:0db8:85a3:0000:0000:8a2e:0370:7946",
+        "[::]",
+        "[::1]",
+        "[2001:0db8:85a3:0000:0000:8a2e:0370:7946]",
+        "[::]:8888",
+        "[::1]:8888",
+        "[2001:0db8:85a3:0000:0000:8a2e:0370:7946]:8888"
+    };
+
+    for (String ip : ipAddresses) {
+      assertTrue(ip + " didn't match IP_PATTERN even though it should.",
+          DirectRTCClient.IP_PATTERN.matcher(ip).matches());
+    }
+  }
+
+  @Test
+  public void testInvalidIpPattern() {
+    // Strings that shouldn't match the pattern.
+    final String[] invalidIpAddresses = new String[] {
+        "Hello, World!",
+        "aaaa",
+        "1111",
+        "[hello world]",
+        "hello:world"
+    };
+
+    for (String invalidIp : invalidIpAddresses) {
+      assertFalse(invalidIp + " matched IP_PATTERN even though it shouldn't.",
+          DirectRTCClient.IP_PATTERN.matcher(invalidIp).matches());
+    }
   }
 
   @Test

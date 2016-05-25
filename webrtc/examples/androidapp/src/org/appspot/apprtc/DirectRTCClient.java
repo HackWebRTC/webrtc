@@ -42,10 +42,10 @@ public class DirectRTCClient implements AppRTCClient, TCPChannelClient.TCPChanne
         // IPv6
         + "\\[((([0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4})?::"
               + "(([0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4})?)\\]|"
-        + "\\[(([0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4})\\]|"
+        + "\\[(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4})\\]|"
         // IPv6 without []
         + "((([0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4})?::(([0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4})?)|"
-        + "(([0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4})|"
+        + "(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4})|"
         // Literals
         + "localhost"
       + ")"
