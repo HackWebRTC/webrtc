@@ -293,8 +293,11 @@ int SimulcastEncoderAdapter::Encode(
     // scale it to match what the encoder expects (below).
     if ((dst_width == src_width && dst_height == src_height) ||
         input_image.IsZeroSize()) {
-      streaminfos_[stream_idx].encoder->Encode(input_image, codec_specific_info,
-                                               &stream_frame_types);
+      int ret = streaminfos_[stream_idx].encoder->Encode(
+          input_image, codec_specific_info, &stream_frame_types);
+      if (ret != WEBRTC_VIDEO_CODEC_OK) {
+        return ret;
+      }
     } else {
       VideoFrame dst_frame;
       // Making sure that destination frame is of sufficient size.
@@ -318,8 +321,11 @@ int SimulcastEncoderAdapter::Encode(
                         libyuv::kFilterBilinear);
       dst_frame.set_timestamp(input_image.timestamp());
       dst_frame.set_render_time_ms(input_image.render_time_ms());
-      streaminfos_[stream_idx].encoder->Encode(dst_frame, codec_specific_info,
-                                               &stream_frame_types);
+      int ret = streaminfos_[stream_idx].encoder->Encode(
+          dst_frame, codec_specific_info, &stream_frame_types);
+      if (ret != WEBRTC_VIDEO_CODEC_OK) {
+        return ret;
+      }
     }
   }
 

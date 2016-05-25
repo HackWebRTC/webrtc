@@ -121,7 +121,7 @@ class MockVideoEncoder : public VideoEncoder {
   int32_t Encode(const VideoFrame& inputImage,
                  const CodecSpecificInfo* codecSpecificInfo,
                  const std::vector<FrameType>* frame_types) /* override */ {
-    return 0;
+    return encode_return_value_;
   }
 
   int32_t RegisterEncodeCompleteCallback(
@@ -160,10 +160,15 @@ class MockVideoEncoder : public VideoEncoder {
     supports_native_handle_ = enabled;
   }
 
+  void set_encode_return_value(int value) {
+    encode_return_value_ = value;
+  }
+
   MOCK_CONST_METHOD0(ImplementationName, const char*());
 
  private:
   bool supports_native_handle_ = false;
+  int encode_return_value_ = WEBRTC_VIDEO_CODEC_OK;
   VideoCodec codec_;
   EncodedImageCallback* callback_;
 };
@@ -171,7 +176,8 @@ class MockVideoEncoder : public VideoEncoder {
 class MockVideoEncoderFactory : public VideoEncoderFactory {
  public:
   VideoEncoder* Create() override {
-    MockVideoEncoder* encoder = new MockVideoEncoder();
+    MockVideoEncoder* encoder = new
+        ::testing::NiceMock<MockVideoEncoder>();
     const char* encoder_name = encoder_names_.empty()
                                    ? "codec_implementation_name"
                                    : encoder_names_[encoders_.size()];
@@ -458,6 +464,34 @@ TEST_F(TestSimulcastEncoderAdapterFake,
   for (MockVideoEncoder* encoder : helper_->factory()->encoders())
     encoder->set_supports_native_handle(true);
   EXPECT_FALSE(adapter_->SupportsNativeHandle());
+}
+
+TEST_F(TestSimulcastEncoderAdapterFake, TestFailureReturnCodesFromEncodeCalls) {
+  TestVp8Simulcast::DefaultSettings(
+      &codec_, static_cast<const int*>(kTestTemporalLayerProfile));
+  codec_.numberOfSimulcastStreams = 3;
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
+  adapter_->RegisterEncodeCompleteCallback(this);
+  ASSERT_EQ(3u, helper_->factory()->encoders().size());
+  // Tell the 2nd encoder to request software fallback.
+  helper_->factory()->encoders()[1]->set_encode_return_value(
+      WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE);
+
+  // Send a fake frame and assert the return is software fallback.
+  VideoFrame input_frame;
+  int half_width = (kDefaultWidth + 1) / 2;
+  input_frame.CreateEmptyFrame(kDefaultWidth, kDefaultHeight, kDefaultWidth,
+                                half_width, half_width);
+  memset(input_frame.video_frame_buffer()->MutableDataY(), 0,
+         input_frame.allocated_size(kYPlane));
+  memset(input_frame.video_frame_buffer()->MutableDataU(), 0,
+         input_frame.allocated_size(kUPlane));
+  memset(input_frame.video_frame_buffer()->MutableDataV(), 0,
+         input_frame.allocated_size(kVPlane));
+
+  std::vector<FrameType> frame_types(3, kVideoFrameKey);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE,
+            adapter_->Encode(input_frame, nullptr, &frame_types));
 }
 
 }  // namespace testing
