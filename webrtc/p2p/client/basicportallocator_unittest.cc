@@ -772,7 +772,7 @@ TEST_F(BasicPortAllocatorTest,
 
 // Test that we disable relay over UDP, and only TCP is used when connecting to
 // the relay server.
-TEST_F(BasicPortAllocatorTest, TestDisableUdpTurn) {
+TEST_F(BasicPortAllocatorTest, DISABLED_TestDisableUdpTurn) {
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   AddInterface(kClientAddr);
   ResetWithStunServerAndNat(kStunAddr);
