@@ -794,8 +794,8 @@ class JavaVideoRendererWrapper
   jobject CricketToJavaTextureFrame(const cricket::VideoFrame* frame) {
     NativeHandleImpl* handle = reinterpret_cast<NativeHandleImpl*>(
         frame->video_frame_buffer()->native_handle());
-    jfloatArray sampling_matrix = jni()->NewFloatArray(16);
-    jni()->SetFloatArrayRegion(sampling_matrix, 0, 16, handle->sampling_matrix);
+    jfloatArray sampling_matrix = handle->sampling_matrix.ToJava(jni());
+
     return jni()->NewObject(
         *j_frame_class_, j_texture_frame_ctor_id_,
         frame->width(), frame->height(),

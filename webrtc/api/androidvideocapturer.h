@@ -48,13 +48,6 @@ class AndroidVideoCapturer : public cricket::VideoCapturer {
   // Called from JNI when the capturer has been started.
   void OnCapturerStarted(bool success);
 
-  // Called from JNI when a new frame has been captured.
-  // Argument |buffer| is intentionally by value, for use with rtc::Bind.
-  void OnIncomingFrame(
-      const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
-      int rotation,
-      int64_t time_stamp);
-
   // Called from JNI to request a new video format.
   void OnOutputFormatRequest(int width, int height, int fps);
 
@@ -63,6 +56,11 @@ class AndroidVideoCapturer : public cricket::VideoCapturer {
   // cricket::VideoCapturer implementation.
   bool GetBestCaptureFormat(const cricket::VideoFormat& desired,
                             cricket::VideoFormat* best_format) override;
+
+  // Expose these protected methods as public, to be used by the
+  // AndroidVideoCapturerJni.
+  using VideoCapturer::AdaptFrame;
+  using VideoCapturer::OnFrame;
 
  private:
   // cricket::VideoCapturer implementation.
@@ -79,9 +77,6 @@ class AndroidVideoCapturer : public cricket::VideoCapturer {
   rtc::scoped_refptr<AndroidVideoCapturerDelegate> delegate_;
 
   rtc::ThreadChecker thread_checker_;
-
-  class FrameFactory;
-  FrameFactory* frame_factory_;  // Owned by cricket::VideoCapturer.
 
   cricket::CaptureState current_state_;
 };

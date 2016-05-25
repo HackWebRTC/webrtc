@@ -683,7 +683,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
         rtc::scoped_refptr<webrtc::VideoFrameBuffer> scaled_buffer(
             static_cast<AndroidTextureBuffer*>(
                 frame.video_frame_buffer().get())->CropScaleAndRotate(
-                    frame.width(), frame.height(),
+                    frame.width(), frame.height(), 0, 0,
                     scaled_resolution.width, scaled_resolution.height,
                     webrtc::kVideoRotation_0));
         input_frame.set_video_frame_buffer(scaled_buffer);
@@ -824,9 +824,7 @@ bool MediaCodecVideoEncoder::EncodeTextureOnCodecThread(JNIEnv* jni,
   RTC_CHECK(use_surface_);
   NativeHandleImpl* handle = static_cast<NativeHandleImpl*>(
       frame.video_frame_buffer()->native_handle());
-  jfloatArray sampling_matrix = jni->NewFloatArray(16);
-  jni->SetFloatArrayRegion(sampling_matrix, 0, 16, handle->sampling_matrix);
-
+  jfloatArray sampling_matrix = handle->sampling_matrix.ToJava(jni);
   bool encode_status = jni->CallBooleanMethod(*j_media_codec_video_encoder_,
                                               j_encode_texture_method_,
                                               key_frame,

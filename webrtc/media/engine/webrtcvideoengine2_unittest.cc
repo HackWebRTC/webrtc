@@ -259,12 +259,12 @@ TEST_F(WebRtcVideoEngine2Test, CVOSetHeaderExtensionBeforeCapturer) {
   channel->SetSource(kSsrc, &capturer);
 
   // Verify capturer has turned off applying rotation.
-  EXPECT_FALSE(capturer.GetApplyRotation());
+  EXPECT_FALSE(capturer.apply_rotation());
 
   // Verify removing header extension turns on applying rotation.
   parameters.extensions.clear();
   EXPECT_TRUE(channel->SetSendParameters(parameters));
-  EXPECT_TRUE(capturer.GetApplyRotation());
+  EXPECT_TRUE(capturer.apply_rotation());
 }
 
 TEST_F(WebRtcVideoEngine2Test, CVOSetHeaderExtensionBeforeAddSendStream) {
@@ -290,7 +290,7 @@ TEST_F(WebRtcVideoEngine2Test, CVOSetHeaderExtensionBeforeAddSendStream) {
   channel->SetSource(kSsrc, &capturer);
 
   // Verify capturer has turned off applying rotation.
-  EXPECT_FALSE(capturer.GetApplyRotation());
+  EXPECT_FALSE(capturer.apply_rotation());
 }
 
 TEST_F(WebRtcVideoEngine2Test, CVOSetHeaderExtensionAfterCapturer) {
@@ -311,7 +311,7 @@ TEST_F(WebRtcVideoEngine2Test, CVOSetHeaderExtensionAfterCapturer) {
   channel->SetSource(kSsrc, &capturer);
 
   // Verify capturer has turned on applying rotation.
-  EXPECT_TRUE(capturer.GetApplyRotation());
+  EXPECT_TRUE(capturer.apply_rotation());
 
   // Add CVO extension.
   const int id = 1;
@@ -322,12 +322,12 @@ TEST_F(WebRtcVideoEngine2Test, CVOSetHeaderExtensionAfterCapturer) {
   EXPECT_TRUE(channel->SetSendParameters(parameters));
 
   // Verify capturer has turned off applying rotation.
-  EXPECT_FALSE(capturer.GetApplyRotation());
+  EXPECT_FALSE(capturer.apply_rotation());
 
   // Verify removing header extension turns on applying rotation.
   parameters.extensions.clear();
   EXPECT_TRUE(channel->SetSendParameters(parameters));
-  EXPECT_TRUE(capturer.GetApplyRotation());
+  EXPECT_TRUE(capturer.apply_rotation());
 }
 
 TEST_F(WebRtcVideoEngine2Test, SetSendFailsBeforeSettingCodecs) {

@@ -71,11 +71,10 @@ class VideoAdapterTest : public testing::Test {
       int cropped_height;
       int out_width;
       int out_height;
-      video_adapter_->AdaptFrameResolution(in_width, in_height,
-                                           captured_frame->time_stamp,
-                                           &cropped_width, &cropped_height,
-                                           &out_width, &out_height);
-      if (out_width != 0 && out_height != 0) {
+      if (video_adapter_->AdaptFrameResolution(in_width, in_height,
+                                               captured_frame->time_stamp,
+                                               &cropped_width, &cropped_height,
+                                               &out_width, &out_height)) {
         cropped_width_ = cropped_width;
         cropped_height_ = cropped_height;
         out_width_ = out_width;
@@ -390,9 +389,10 @@ TEST_F(VideoAdapterTest, AdaptFrameResolutionHighLimit) {
   output_format.width *= 10;
   output_format.height *= 10;
   adapter_.OnOutputFormatRequest(output_format);
-  adapter_.AdaptFrameResolution(capture_format_.width, capture_format_.height,
-                                0, &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(
+      capture_format_.width, capture_format_.height, 0,
+      &cropped_width_, &cropped_height_,
+      &out_width_, &out_height_));
   EXPECT_EQ(capture_format_.width, cropped_width_);
   EXPECT_EQ(capture_format_.height, cropped_height_);
   EXPECT_EQ(capture_format_.width, out_width_);
@@ -403,9 +403,10 @@ TEST_F(VideoAdapterTest, AdaptFrameResolutionHighLimit) {
 // cropping or resolution change.
 TEST_F(VideoAdapterTest, AdaptFrameResolutionIdentical) {
   adapter_.OnOutputFormatRequest(capture_format_);
-  adapter_.AdaptFrameResolution(capture_format_.width, capture_format_.height,
-                                0, &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(
+      capture_format_.width, capture_format_.height, 0,
+      &cropped_width_, &cropped_height_,
+      &out_width_, &out_height_));
   EXPECT_EQ(capture_format_.width, cropped_width_);
   EXPECT_EQ(capture_format_.height, cropped_height_);
   EXPECT_EQ(capture_format_.width, out_width_);
@@ -419,9 +420,10 @@ TEST_F(VideoAdapterTest, AdaptFrameResolutionQuarter) {
   request_format.width /= 2;
   request_format.height /= 2;
   adapter_.OnOutputFormatRequest(request_format);
-  adapter_.AdaptFrameResolution(capture_format_.width, capture_format_.height,
-                                0, &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(
+      capture_format_.width, capture_format_.height, 0,
+      &cropped_width_, &cropped_height_,
+      &out_width_, &out_height_));
   EXPECT_EQ(capture_format_.width, cropped_width_);
   EXPECT_EQ(capture_format_.height, cropped_height_);
   EXPECT_EQ(request_format.width, out_width_);
@@ -434,11 +436,10 @@ TEST_F(VideoAdapterTest, AdaptFrameResolutionDrop) {
   output_format.width = 0;
   output_format.height = 0;
   adapter_.OnOutputFormatRequest(output_format);
-  adapter_.AdaptFrameResolution(capture_format_.width, capture_format_.height,
-                                0, &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
-  EXPECT_EQ(0, out_width_);
-  EXPECT_EQ(0, out_height_);
+  EXPECT_FALSE(adapter_.AdaptFrameResolution(
+      capture_format_.width, capture_format_.height, 0,
+      &cropped_width_, &cropped_height_,
+      &out_width_, &out_height_));
 }
 
 // Adapt the frame resolution to be a quarter of the capture resolution at the
@@ -503,9 +504,9 @@ TEST_F(VideoAdapterTest, DropAllFrames) {
 
 TEST_F(VideoAdapterTest, TestOnOutputFormatRequest) {
   VideoFormat format(640, 400, 0, 0);
-  adapter_.AdaptFrameResolution(640, 400, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 400, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(640, cropped_width_);
   EXPECT_EQ(400, cropped_height_);
   EXPECT_EQ(640, out_width_);
@@ -514,9 +515,9 @@ TEST_F(VideoAdapterTest, TestOnOutputFormatRequest) {
   // Format request 640x400.
   format.height = 400;
   adapter_.OnOutputFormatRequest(format);
-  adapter_.AdaptFrameResolution(640, 400, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 400, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(640, cropped_width_);
   EXPECT_EQ(400, cropped_height_);
   EXPECT_EQ(640, out_width_);
@@ -527,9 +528,9 @@ TEST_F(VideoAdapterTest, TestOnOutputFormatRequest) {
   format.width = 1280;
   format.height = 720;
   adapter_.OnOutputFormatRequest(format);
-  adapter_.AdaptFrameResolution(640, 400, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 400, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(640, cropped_width_);
   EXPECT_EQ(360, cropped_height_);
   EXPECT_EQ(640, out_width_);
@@ -539,19 +540,17 @@ TEST_F(VideoAdapterTest, TestOnOutputFormatRequest) {
   format.width = 0;
   format.height = 0;
   adapter_.OnOutputFormatRequest(format);
-  adapter_.AdaptFrameResolution(640, 400, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
-  EXPECT_EQ(0, out_width_);
-  EXPECT_EQ(0, out_height_);
+  EXPECT_FALSE(adapter_.AdaptFrameResolution(640, 400, 0,
+                                             &cropped_width_, &cropped_height_,
+                                             &out_width_, &out_height_));
 
   // Request 320x200. Expect scaling, but no cropping.
   format.width = 320;
   format.height = 200;
   adapter_.OnOutputFormatRequest(format);
-  adapter_.AdaptFrameResolution(640, 400, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 400, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(640, cropped_width_);
   EXPECT_EQ(400, cropped_height_);
   EXPECT_EQ(320, out_width_);
@@ -563,9 +562,9 @@ TEST_F(VideoAdapterTest, TestOnOutputFormatRequest) {
   format.width = 424;
   format.height = 265;
   adapter_.OnOutputFormatRequest(format);
-  adapter_.AdaptFrameResolution(640, 400, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 400, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(640, cropped_width_);
   EXPECT_EQ(400, cropped_height_);
   EXPECT_EQ(320, out_width_);
@@ -575,9 +574,9 @@ TEST_F(VideoAdapterTest, TestOnOutputFormatRequest) {
   format.width = 640 * 3 / 8;
   format.height = 400 * 3 / 8;
   adapter_.OnOutputFormatRequest(format);
-  adapter_.AdaptFrameResolution(640, 400, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 400, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(640, cropped_width_);
   EXPECT_EQ(400, cropped_height_);
   EXPECT_EQ(640 * 3 / 8, out_width_);
@@ -587,9 +586,9 @@ TEST_F(VideoAdapterTest, TestOnOutputFormatRequest) {
   format.width = 320;
   format.height = 200;
   adapter_.OnOutputFormatRequest(format);
-  adapter_.AdaptFrameResolution(640, 400, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 400, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(640, cropped_width_);
   EXPECT_EQ(400, cropped_height_);
   EXPECT_EQ(320, out_width_);
@@ -599,9 +598,9 @@ TEST_F(VideoAdapterTest, TestOnOutputFormatRequest) {
   format.width = 480;
   format.height = 300;
   adapter_.OnOutputFormatRequest(format);
-  adapter_.AdaptFrameResolution(640, 400, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 400, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(640, cropped_width_);
   EXPECT_EQ(400, cropped_height_);
   EXPECT_EQ(480, out_width_);
@@ -611,9 +610,9 @@ TEST_F(VideoAdapterTest, TestOnOutputFormatRequest) {
 TEST_F(VideoAdapterTest, TestViewRequestPlusCameraSwitch) {
   // Start at HD.
   VideoFormat format(1280, 720, 0, 0);
-  adapter_.AdaptFrameResolution(1280, 720, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(1280, cropped_width_);
   EXPECT_EQ(720, cropped_height_);
   EXPECT_EQ(1280, out_width_);
@@ -623,9 +622,9 @@ TEST_F(VideoAdapterTest, TestViewRequestPlusCameraSwitch) {
   format.width = 640;
   format.height = 360;
   adapter_.OnOutputFormatRequest(format);
-  adapter_.AdaptFrameResolution(1280, 720, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(1280, cropped_width_);
   EXPECT_EQ(720, cropped_height_);
   EXPECT_EQ(640, out_width_);
@@ -633,9 +632,9 @@ TEST_F(VideoAdapterTest, TestViewRequestPlusCameraSwitch) {
 
   // Now, the camera reopens at VGA.
   // Both the frame and the output format should be 640x360.
-  adapter_.AdaptFrameResolution(640, 360, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 360, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(640, cropped_width_);
   EXPECT_EQ(360, cropped_height_);
   EXPECT_EQ(640, out_width_);
@@ -644,9 +643,9 @@ TEST_F(VideoAdapterTest, TestViewRequestPlusCameraSwitch) {
   // And another view request comes in for 640x360, which should have no
   // real impact.
   adapter_.OnOutputFormatRequest(format);
-  adapter_.AdaptFrameResolution(640, 360, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 360, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(640, cropped_width_);
   EXPECT_EQ(360, cropped_height_);
   EXPECT_EQ(640, out_width_);
@@ -658,9 +657,9 @@ TEST_F(VideoAdapterTest, TestVGAWidth) {
   VideoFormat format(640, 360, 0, FOURCC_I420);
   adapter_.OnOutputFormatRequest(format);
 
-  adapter_.AdaptFrameResolution(640, 480, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 480, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   // Expect cropping.
   EXPECT_EQ(640, cropped_width_);
   EXPECT_EQ(360, cropped_height_);
@@ -668,17 +667,17 @@ TEST_F(VideoAdapterTest, TestVGAWidth) {
   EXPECT_EQ(360, out_height_);
 
   // But if frames come in at 640x360, we shouldn't adapt them down.
-  adapter_.AdaptFrameResolution(640, 360, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 360, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(640, cropped_width_);
   EXPECT_EQ(360, cropped_height_);
   EXPECT_EQ(640, out_width_);
   EXPECT_EQ(360, out_height_);
 
-  adapter_.AdaptFrameResolution(640, 480, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 480, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(640, cropped_width_);
   EXPECT_EQ(360, cropped_height_);
   EXPECT_EQ(640, out_width_);
@@ -686,9 +685,9 @@ TEST_F(VideoAdapterTest, TestVGAWidth) {
 }
 
 TEST_F(VideoAdapterTest, TestOnResolutionRequestInSmallSteps) {
-  adapter_.AdaptFrameResolution(1280, 720, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(1280, cropped_width_);
   EXPECT_EQ(720, cropped_height_);
   EXPECT_EQ(1280, out_width_);
@@ -697,9 +696,9 @@ TEST_F(VideoAdapterTest, TestOnResolutionRequestInSmallSteps) {
   // Adapt down one step.
   adapter_.OnResolutionRequest(rtc::Optional<int>(1280 * 720 - 1),
                                rtc::Optional<int>());
-  adapter_.AdaptFrameResolution(1280, 720, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(1280, cropped_width_);
   EXPECT_EQ(720, cropped_height_);
   EXPECT_EQ(960, out_width_);
@@ -708,9 +707,9 @@ TEST_F(VideoAdapterTest, TestOnResolutionRequestInSmallSteps) {
   // Adapt down one step more.
   adapter_.OnResolutionRequest(rtc::Optional<int>(960 * 540 - 1),
                                rtc::Optional<int>());
-  adapter_.AdaptFrameResolution(1280, 720, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(1280, cropped_width_);
   EXPECT_EQ(720, cropped_height_);
   EXPECT_EQ(640, out_width_);
@@ -719,9 +718,9 @@ TEST_F(VideoAdapterTest, TestOnResolutionRequestInSmallSteps) {
   // Adapt down one step more.
   adapter_.OnResolutionRequest(rtc::Optional<int>(640 * 360 - 1),
                                rtc::Optional<int>());
-  adapter_.AdaptFrameResolution(1280, 720, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(1280, cropped_width_);
   EXPECT_EQ(720, cropped_height_);
   EXPECT_EQ(480, out_width_);
@@ -730,9 +729,9 @@ TEST_F(VideoAdapterTest, TestOnResolutionRequestInSmallSteps) {
   // Adapt up one step.
   adapter_.OnResolutionRequest(rtc::Optional<int>(),
                                rtc::Optional<int>(480 * 270));
-  adapter_.AdaptFrameResolution(1280, 720, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(1280, cropped_width_);
   EXPECT_EQ(720, cropped_height_);
   EXPECT_EQ(640, out_width_);
@@ -741,9 +740,9 @@ TEST_F(VideoAdapterTest, TestOnResolutionRequestInSmallSteps) {
   // Adapt up one step more.
   adapter_.OnResolutionRequest(rtc::Optional<int>(),
                                rtc::Optional<int>(640 * 360));
-  adapter_.AdaptFrameResolution(1280, 720, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(1280, cropped_width_);
   EXPECT_EQ(720, cropped_height_);
   EXPECT_EQ(960, out_width_);
@@ -752,9 +751,9 @@ TEST_F(VideoAdapterTest, TestOnResolutionRequestInSmallSteps) {
   // Adapt up one step more.
   adapter_.OnResolutionRequest(rtc::Optional<int>(),
                                rtc::Optional<int>(960 * 720));
-  adapter_.AdaptFrameResolution(1280, 720, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(1280, cropped_width_);
   EXPECT_EQ(720, cropped_height_);
   EXPECT_EQ(1280, out_width_);
@@ -762,28 +761,26 @@ TEST_F(VideoAdapterTest, TestOnResolutionRequestInSmallSteps) {
 }
 
 TEST_F(VideoAdapterTest, TestOnResolutionRequestMaxZero) {
-  adapter_.AdaptFrameResolution(1280, 720, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(1280, cropped_width_);
   EXPECT_EQ(720, cropped_height_);
   EXPECT_EQ(1280, out_width_);
   EXPECT_EQ(720, out_height_);
 
   adapter_.OnResolutionRequest(rtc::Optional<int>(0), rtc::Optional<int>());
-  adapter_.AdaptFrameResolution(1280, 720, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
-  EXPECT_EQ(0, out_width_);
-  EXPECT_EQ(0, out_height_);
+  EXPECT_FALSE(adapter_.AdaptFrameResolution(1280, 720, 0,
+                                             &cropped_width_, &cropped_height_,
+                                             &out_width_, &out_height_));
 }
 
 TEST_F(VideoAdapterTest, TestOnResolutionRequestInLargeSteps) {
   adapter_.OnResolutionRequest(rtc::Optional<int>(640 * 360 - 1),
                                rtc::Optional<int>());
-  adapter_.AdaptFrameResolution(1280, 720, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(1280, cropped_width_);
   EXPECT_EQ(720, cropped_height_);
   EXPECT_EQ(480, out_width_);
@@ -791,9 +788,9 @@ TEST_F(VideoAdapterTest, TestOnResolutionRequestInLargeSteps) {
 
   adapter_.OnResolutionRequest(rtc::Optional<int>(),
                                rtc::Optional<int>(960 * 720));
-  adapter_.AdaptFrameResolution(1280, 720, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(1280, cropped_width_);
   EXPECT_EQ(720, cropped_height_);
   EXPECT_EQ(1280, out_width_);
@@ -803,9 +800,9 @@ TEST_F(VideoAdapterTest, TestOnResolutionRequestInLargeSteps) {
 TEST_F(VideoAdapterTest, TestOnOutputFormatRequestCapsMaxResolution) {
   adapter_.OnResolutionRequest(rtc::Optional<int>(640 * 360 - 1),
                                rtc::Optional<int>());
-  adapter_.AdaptFrameResolution(1280, 720, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(1280, cropped_width_);
   EXPECT_EQ(720, cropped_height_);
   EXPECT_EQ(480, out_width_);
@@ -813,9 +810,9 @@ TEST_F(VideoAdapterTest, TestOnOutputFormatRequestCapsMaxResolution) {
 
   VideoFormat new_format(640, 360, 0, FOURCC_I420);
   adapter_.OnOutputFormatRequest(new_format);
-  adapter_.AdaptFrameResolution(1280, 720, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(1280, cropped_width_);
   EXPECT_EQ(720, cropped_height_);
   EXPECT_EQ(480, out_width_);
@@ -823,9 +820,9 @@ TEST_F(VideoAdapterTest, TestOnOutputFormatRequestCapsMaxResolution) {
 
   adapter_.OnResolutionRequest(rtc::Optional<int>(),
                                rtc::Optional<int>(960 * 720));
-  adapter_.AdaptFrameResolution(1280, 720, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(1280, cropped_width_);
   EXPECT_EQ(720, cropped_height_);
   EXPECT_EQ(640, out_width_);
@@ -833,9 +830,9 @@ TEST_F(VideoAdapterTest, TestOnOutputFormatRequestCapsMaxResolution) {
 }
 
 TEST_F(VideoAdapterTest, TestOnResolutionRequestReset) {
-  adapter_.AdaptFrameResolution(1280, 720, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(1280, cropped_width_);
   EXPECT_EQ(720, cropped_height_);
   EXPECT_EQ(1280, out_width_);
@@ -843,18 +840,18 @@ TEST_F(VideoAdapterTest, TestOnResolutionRequestReset) {
 
   adapter_.OnResolutionRequest(rtc::Optional<int>(640 * 360 - 1),
                                rtc::Optional<int>());
-  adapter_.AdaptFrameResolution(1280, 720, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(1280, cropped_width_);
   EXPECT_EQ(720, cropped_height_);
   EXPECT_EQ(480, out_width_);
   EXPECT_EQ(270, out_height_);
 
   adapter_.OnResolutionRequest(rtc::Optional<int>(), rtc::Optional<int>());
-  adapter_.AdaptFrameResolution(1280, 720, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(1280, cropped_width_);
   EXPECT_EQ(720, cropped_height_);
   EXPECT_EQ(1280, out_width_);
@@ -865,9 +862,9 @@ TEST_F(VideoAdapterTest, TestCroppingWithResolutionRequest) {
   // Ask for 640x360 (16:9 aspect).
   adapter_.OnOutputFormatRequest(VideoFormat(640, 360, 0, FOURCC_I420));
   // Send 640x480 (4:3 aspect).
-  adapter_.AdaptFrameResolution(640, 480, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 480, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   // Expect cropping to 16:9 format and no scaling.
   EXPECT_EQ(640, cropped_width_);
   EXPECT_EQ(360, cropped_height_);
@@ -878,9 +875,9 @@ TEST_F(VideoAdapterTest, TestCroppingWithResolutionRequest) {
   adapter_.OnResolutionRequest(rtc::Optional<int>(640 * 360 - 1),
                                rtc::Optional<int>());
   // Expect cropping to 16:9 format and 3/4 scaling.
-  adapter_.AdaptFrameResolution(640, 480, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 480, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(640, cropped_width_);
   EXPECT_EQ(360, cropped_height_);
   EXPECT_EQ(480, out_width_);
@@ -890,9 +887,9 @@ TEST_F(VideoAdapterTest, TestCroppingWithResolutionRequest) {
   adapter_.OnResolutionRequest(rtc::Optional<int>(480 * 270 - 1),
                                rtc::Optional<int>());
   // Expect cropping to 16:9 format and 1/2 scaling.
-  adapter_.AdaptFrameResolution(640, 480, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 480, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(640, cropped_width_);
   EXPECT_EQ(360, cropped_height_);
   EXPECT_EQ(320, out_width_);
@@ -902,9 +899,9 @@ TEST_F(VideoAdapterTest, TestCroppingWithResolutionRequest) {
   adapter_.OnResolutionRequest(rtc::Optional<int>(),
                                rtc::Optional<int>(320 * 180));
   // Expect cropping to 16:9 format and 3/4 scaling.
-  adapter_.AdaptFrameResolution(640, 480, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 480, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(640, cropped_width_);
   EXPECT_EQ(360, cropped_height_);
   EXPECT_EQ(480, out_width_);
@@ -914,9 +911,9 @@ TEST_F(VideoAdapterTest, TestCroppingWithResolutionRequest) {
   adapter_.OnResolutionRequest(rtc::Optional<int>(),
                                rtc::Optional<int>(480 * 270));
   // Expect cropping to 16:9 format and no scaling.
-  adapter_.AdaptFrameResolution(640, 480, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 480, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(640, cropped_width_);
   EXPECT_EQ(360, cropped_height_);
   EXPECT_EQ(640, out_width_);
@@ -926,9 +923,9 @@ TEST_F(VideoAdapterTest, TestCroppingWithResolutionRequest) {
   adapter_.OnResolutionRequest(rtc::Optional<int>(),
                                rtc::Optional<int>(640 * 360));
   // Expect cropping to 16:9 format and no scaling.
-  adapter_.AdaptFrameResolution(640, 480, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 480, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
   EXPECT_EQ(640, cropped_width_);
   EXPECT_EQ(360, cropped_height_);
   EXPECT_EQ(640, out_width_);
@@ -943,9 +940,9 @@ TEST_F(VideoAdapterTest, TestCroppingOddResolution) {
                                rtc::Optional<int>());
 
   // Send 640x480 (4:3 aspect).
-  adapter_.AdaptFrameResolution(640, 480, 0,
-                                &cropped_width_, &cropped_height_,
-                                &out_width_, &out_height_);
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 480, 0,
+                                            &cropped_width_, &cropped_height_,
+                                            &out_width_, &out_height_));
 
   // Instead of getting the exact aspect ratio with cropped resolution 640x360,
   // the resolution should be adjusted to get a perfect scale factor instead.

@@ -153,7 +153,7 @@ bool VideoAdapter::KeepFrame(int64_t in_timestamp_ns) {
   return true;
 }
 
-void VideoAdapter::AdaptFrameResolution(int in_width,
+bool VideoAdapter::AdaptFrameResolution(int in_width,
                                         int in_height,
                                         int64_t in_timestamp_ns,
                                         int* cropped_width,
@@ -189,11 +189,7 @@ void VideoAdapter::AdaptFrameResolution(int in_width,
     }
 
     // Drop frame.
-    *cropped_width = 0;
-    *cropped_height = 0;
-    *out_width = 0;
-    *out_height = 0;
-    return;
+    return false;
   }
 
   // Calculate how the input should be cropped.
@@ -250,6 +246,8 @@ void VideoAdapter::AdaptFrameResolution(int in_width,
 
   previous_width_ = *out_width;
   previous_height_ = *out_height;
+
+  return true;
 }
 
 void VideoAdapter::OnOutputFormatRequest(const VideoFormat& format) {

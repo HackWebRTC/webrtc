@@ -27,11 +27,11 @@ class VideoAdapter {
   VideoAdapter();
   virtual ~VideoAdapter();
 
-  // Return the adapted resolution given the input resolution. The input
-  // resolution should first be cropped to the specified resolution, and then
-  // scaled to the final output resolution. The output resolution will be 0x0 if
-  // the frame should be dropped.
-  void AdaptFrameResolution(int in_width,
+  // Return the adapted resolution and cropping parameters given the
+  // input resolution. The input frame should first be cropped, then
+  // scaled to the final output resolution. Returns true if the frame
+  // should be adapted, and false if it should be dropped.
+  bool AdaptFrameResolution(int in_width,
                             int in_height,
                             int64_t in_timestamp_ns,
                             int* cropped_width,

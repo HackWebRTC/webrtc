@@ -21,9 +21,24 @@
 
 using webrtc::NativeHandleBuffer;
 
-namespace {
+namespace webrtc_jni {
 
-void RotateMatrix(float a[16], webrtc::VideoRotation rotation) {
+Matrix::Matrix(JNIEnv* jni, jfloatArray a) {
+  RTC_CHECK_EQ(16, jni->GetArrayLength(a));
+  jfloat* ptr = jni->GetFloatArrayElements(a, nullptr);
+  for (int i = 0; i < 16; ++i) {
+    elem_[i] = ptr[i];
+  }
+  jni->ReleaseFloatArrayElements(a, ptr, 0);
+}
+
+jfloatArray Matrix::ToJava(JNIEnv* jni) {
+  jfloatArray matrix = jni->NewFloatArray(16);
+  jni->SetFloatArrayRegion(matrix, 0, 16, elem_);
+  return matrix;
+}
+
+void Matrix::Rotate(webrtc::VideoRotation rotation) {
   // Texture coordinates are in the range 0 to 1. The transformation of the last
   // row in each rotation matrix is needed for proper translation, e.g, to
   // mirror x, we don't replace x by -x, but by 1-x.
@@ -32,35 +47,36 @@ void RotateMatrix(float a[16], webrtc::VideoRotation rotation) {
       break;
     case webrtc::kVideoRotation_90: {
       const float ROTATE_90[16] =
-          { a[4], a[5], a[6], a[7],
-            -a[0], -a[1], -a[2], -a[3],
-            a[8], a[9], a[10], a[11],
-            a[0] + a[12], a[1] + a[13], a[2] + a[14], a[3] + a[15]};
-      memcpy(a, ROTATE_90, sizeof(ROTATE_90));
+          { elem_[4], elem_[5], elem_[6], elem_[7],
+            -elem_[0], -elem_[1], -elem_[2], -elem_[3],
+            elem_[8], elem_[9], elem_[10], elem_[11],
+            elem_[0] + elem_[12], elem_[1] + elem_[13],
+            elem_[2] + elem_[14], elem_[3] + elem_[15]};
+      memcpy(elem_, ROTATE_90, sizeof(elem_));
     } break;
     case webrtc::kVideoRotation_180: {
       const float ROTATE_180[16] =
-          { -a[0], -a[1], -a[2], -a[3],
-            -a[4], -a[5], -a[6], -a[7],
-            a[8], a[9], a[10], a[11],
-            a[0] + a[4] + a[12], a[1] +a[5] + a[13], a[2] + a[6] + a[14],
-            a[3] + a[11]+ a[15]};
-        memcpy(a, ROTATE_180, sizeof(ROTATE_180));
-      }
-      break;
+          { -elem_[0], -elem_[1], -elem_[2], -elem_[3],
+            -elem_[4], -elem_[5], -elem_[6], -elem_[7],
+            elem_[8], elem_[9], elem_[10], elem_[11],
+            elem_[0] + elem_[4] + elem_[12], elem_[1] + elem_[5] + elem_[13],
+            elem_[2] + elem_[6] + elem_[14], elem_[3] + elem_[11]+ elem_[15]};
+        memcpy(elem_, ROTATE_180, sizeof(elem_));
+    } break;
     case webrtc::kVideoRotation_270: {
       const float ROTATE_270[16] =
-          { -a[4], -a[5], -a[6], -a[7],
-            a[0], a[1], a[2], a[3],
-            a[8], a[9], a[10], a[11],
-            a[4] + a[12], a[5] + a[13], a[6] + a[14], a[7] + a[15]};
-        memcpy(a, ROTATE_270, sizeof(ROTATE_270));
+          { -elem_[4], -elem_[5], -elem_[6], -elem_[7],
+            elem_[0], elem_[1], elem_[2], elem_[3],
+            elem_[8], elem_[9], elem_[10], elem_[11],
+            elem_[4] + elem_[12], elem_[5] + elem_[13],
+            elem_[6] + elem_[14], elem_[7] + elem_[15]};
+      memcpy(elem_, ROTATE_270, sizeof(elem_));
     } break;
   }
 }
 
 // Calculates result = a * b, in column-major order.
-void MultiplyMatrix(const float a[16], const float b[16], float result[16]) {
+void Matrix::Multiply(const float a[16], const float b[16], float result[16]) {
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
       float sum = 0;
@@ -75,40 +91,30 @@ void MultiplyMatrix(const float a[16], const float b[16], float result[16]) {
 // Center crop by keeping xFraction of the width and yFraction of the height,
 // so e.g. cropping from 640x480 to 640x360 would use
 // xFraction=1, yFraction=360/480.
-void CropMatrix(float a[16], float xFraction, float yFraction) {
-  // Move cropped area to the center of the frame by offsetting half the
-  // removed area.
-  const float xOffset = (1 - xFraction) / 2;
-  const float yOffset = (1 - yFraction) / 2;
-  const float crop_matrix[16] = {
-    xFraction, 0, 0, 0,
-    0, yFraction, 0, 0,
-    0, 0, 1, 0,
-    xOffset, yOffset, 0, 1};
-  float mul_result[16];
-  MultiplyMatrix(crop_matrix, a, mul_result);
-  memcpy(a, mul_result, sizeof(mul_result));
+void Matrix::Crop(float xFraction,
+                  float yFraction,
+                  float xOffset,
+                  float yOffset) {
+  const float crop_matrix[16] =
+      {xFraction, 0, 0, 0,
+       0, yFraction, 0, 0,
+       0, 0, 1, 0,
+       xOffset, yOffset, 0, 1};
+  const Matrix old = *this;
+  Multiply(crop_matrix, old.elem_, this->elem_);
 }
-
-}  // anonymouse namespace
-
-namespace webrtc_jni {
 
 // Aligning pointer to 64 bytes for improved performance, e.g. use SIMD.
 static const int kBufferAlignment = 64;
 
+NativeHandleImpl::NativeHandleImpl(int id, const Matrix& matrix)
+    : oes_texture_id(id), sampling_matrix(matrix) {}
+
 NativeHandleImpl::NativeHandleImpl(JNIEnv* jni,
                                    jint j_oes_texture_id,
                                    jfloatArray j_transform_matrix)
-  : oes_texture_id(j_oes_texture_id) {
-  RTC_CHECK_EQ(16, jni->GetArrayLength(j_transform_matrix));
-  jfloat* transform_matrix_ptr =
-      jni->GetFloatArrayElements(j_transform_matrix, nullptr);
-  for (int i = 0; i < 16; ++i) {
-    sampling_matrix[i] = transform_matrix_ptr[i];
-  }
-  jni->ReleaseFloatArrayElements(j_transform_matrix, transform_matrix_ptr, 0);
-}
+    : oes_texture_id(j_oes_texture_id),
+      sampling_matrix(jni, j_transform_matrix) {}
 
 AndroidTextureBuffer::AndroidTextureBuffer(
     int width,
@@ -162,11 +168,7 @@ AndroidTextureBuffer::NativeToI420Buffer() {
 
   jobject byte_buffer = jni->NewDirectByteBuffer(y_data, size);
 
-  // TODO(nisse): Keep java transform matrix around.
-  jfloatArray sampling_matrix = jni->NewFloatArray(16);
-  jni->SetFloatArrayRegion(sampling_matrix, 0, 16,
-                           native_handle_.sampling_matrix);
-
+  jfloatArray sampling_matrix = native_handle_.sampling_matrix.ToJava(jni);
   jni->CallVoidMethod(surface_texture_helper_,
                       transform_mid,
                       byte_buffer, width(), height(), stride,
@@ -179,6 +181,8 @@ AndroidTextureBuffer::NativeToI420Buffer() {
 rtc::scoped_refptr<AndroidTextureBuffer>
 AndroidTextureBuffer::CropScaleAndRotate(int cropped_width,
                                          int cropped_height,
+                                         int crop_x,
+                                         int crop_y,
                                          int dst_width,
                                          int dst_height,
                                          webrtc::VideoRotation rotation) {
@@ -198,11 +202,13 @@ AndroidTextureBuffer::CropScaleAndRotate(int cropped_width,
           surface_texture_helper_, rtc::KeepRefUntilDone(this)));
 
   if (cropped_width != width() || cropped_height != height()) {
-    CropMatrix(buffer->native_handle_.sampling_matrix,
-               cropped_width / static_cast<float>(width()),
-               cropped_height / static_cast<float>(height()));
+    buffer->native_handle_.sampling_matrix.Crop(
+        cropped_width / static_cast<float>(width()),
+        cropped_height / static_cast<float>(height()),
+        crop_x / static_cast<float>(width()),
+        crop_y / static_cast<float>(height()));
   }
-  RotateMatrix(buffer->native_handle_.sampling_matrix, rotation);
+  buffer->native_handle_.sampling_matrix.Rotate(rotation);
   return buffer;
 }
 

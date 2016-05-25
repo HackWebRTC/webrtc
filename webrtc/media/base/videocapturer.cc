@@ -214,26 +214,54 @@ void VideoCapturer::OnSinkWantsChanged(const rtc::VideoSinkWants& wants) {
   }
 }
 
-void VideoCapturer::OnFrameCaptured(VideoCapturer*,
-                                    const CapturedFrame* captured_frame) {
+bool VideoCapturer::AdaptFrame(int width,
+                               int height,
+                               // TODO(nisse): Switch to us unit.
+                               int64_t capture_time_ns,
+                               int* out_width,
+                               int* out_height,
+                               int* crop_width,
+                               int* crop_height,
+                               int* crop_x,
+                               int* crop_y) {
   if (!broadcaster_.frame_wanted()) {
-    return;
+    return false;
   }
 
-  int cropped_width = captured_frame->width;
-  int cropped_height = captured_frame->height;
-  int out_width = captured_frame->width;
-  int out_height = captured_frame->height;
   if (enable_video_adapter_ && !IsScreencast()) {
-    video_adapter_.AdaptFrameResolution(
-        captured_frame->width, captured_frame->height,
-        captured_frame->time_stamp,
-        &cropped_width, &cropped_height,
-        &out_width, &out_height);
-    if (out_width == 0 || out_height == 0) {
+    if (!video_adapter_.AdaptFrameResolution(
+            width, height, capture_time_ns,
+            crop_width, crop_height, out_width, out_height)) {
       // VideoAdapter dropped the frame.
-      return;
+      return false;
     }
+    *crop_x = (width - *crop_width) / 2;
+    *crop_y = (height - *crop_height) / 2;
+  } else {
+    *out_width = width;
+    *out_height = height;
+    *crop_width = width;
+    *crop_height = height;
+    *crop_x = 0;
+    *crop_y = 0;
+  }
+  return true;
+}
+
+void VideoCapturer::OnFrameCaptured(VideoCapturer*,
+                                    const CapturedFrame* captured_frame) {
+  int out_width;
+  int out_height;
+  int crop_width;
+  int crop_height;
+  int crop_x;
+  int crop_y;
+
+  if (!AdaptFrame(captured_frame->width, captured_frame->height,
+                  captured_frame->time_stamp,
+                  &out_width, &out_height,
+                  &crop_width, &crop_height, &crop_x, &crop_y)) {
+    return;
   }
 
   if (!frame_factory_) {
@@ -241,9 +269,10 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
     return;
   }
 
-  // TODO(nisse): Reorganize frame factory methods.
+  // TODO(nisse): Reorganize frame factory methods. crop_x and crop_y
+  // are ignored for now.
   std::unique_ptr<VideoFrame> adapted_frame(frame_factory_->CreateAliasedFrame(
-      captured_frame, cropped_width, cropped_height, out_width, out_height));
+      captured_frame, crop_width, crop_height, out_width, out_height));
 
   if (!adapted_frame) {
     // TODO(fbarchard): LOG more information about captured frame attributes.
@@ -253,12 +282,14 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
     return;
   }
 
-  OnFrame(this, adapted_frame.get());
-  UpdateInputSize(captured_frame);
+  OnFrame(*adapted_frame, captured_frame->width, captured_frame->height);
 }
 
-void VideoCapturer::OnFrame(VideoCapturer* capturer, const VideoFrame* frame) {
-  broadcaster_.OnFrame(*frame);
+void VideoCapturer::OnFrame(const VideoFrame& frame,
+                            int orig_width,
+                            int orig_height) {
+  broadcaster_.OnFrame(frame);
+  UpdateInputSize(orig_width, orig_height);
 }
 
 void VideoCapturer::SetCaptureState(CaptureState state) {
@@ -399,13 +430,13 @@ bool VideoCapturer::ShouldFilterFormat(const VideoFormat& format) const {
          format.height > max_format_->height;
 }
 
-void VideoCapturer::UpdateInputSize(const CapturedFrame* captured_frame) {
+void VideoCapturer::UpdateInputSize(int width, int height) {
   // Update stats protected from fetches from different thread.
   rtc::CritScope cs(&frame_stats_crit_);
 
   input_size_valid_ = true;
-  input_width_ = captured_frame->width;
-  input_height_ = captured_frame->height;
+  input_width_ = width;
+  input_height_ = height;
 }
 
 }  // namespace cricket

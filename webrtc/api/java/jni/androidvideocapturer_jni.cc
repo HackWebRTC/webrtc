@@ -13,6 +13,7 @@
 #include "webrtc/api/java/jni/native_handle_impl.h"
 #include "webrtc/api/java/jni/surfacetexturehelper_jni.h"
 #include "third_party/libyuv/include/libyuv/convert.h"
+#include "third_party/libyuv/include/libyuv/scale.h"
 #include "webrtc/base/bind.h"
 
 namespace webrtc_jni {
@@ -169,25 +170,79 @@ void AndroidVideoCapturerJni::OnMemoryBufferFrame(void* video_frame,
                                                   int height,
                                                   int rotation,
                                                   int64_t timestamp_ns) {
-  const uint8_t* y_plane = static_cast<uint8_t*>(video_frame);
-  const uint8_t* vu_plane = y_plane + width * height;
-
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer =
-      buffer_pool_.CreateBuffer(width, height);
-  libyuv::NV21ToI420(
-      y_plane, width,
-      vu_plane, width,
-      buffer->MutableData(webrtc::kYPlane), buffer->stride(webrtc::kYPlane),
-      buffer->MutableData(webrtc::kUPlane), buffer->stride(webrtc::kUPlane),
-      buffer->MutableData(webrtc::kVPlane), buffer->stride(webrtc::kVPlane),
-      width, height);
-
+  RTC_DCHECK(rotation == 0 || rotation == 90 || rotation == 180 ||
+             rotation == 270);
   rtc::CritScope cs(&capturer_lock_);
-  if (!capturer_) {
-    LOG(LS_WARNING) << "OnMemoryBufferFrame() called for closed capturer.";
+
+  int adapted_width;
+  int adapted_height;
+  int crop_width;
+  int crop_height;
+  int crop_x;
+  int crop_y;
+
+  if (!capturer_->AdaptFrame(width, height, timestamp_ns,
+                             &adapted_width, &adapted_height,
+                             &crop_width, &crop_height, &crop_x, &crop_y)) {
     return;
   }
-  capturer_->OnIncomingFrame(buffer, rotation, timestamp_ns);
+
+  int rotated_width = crop_width;
+  int rotated_height = crop_height;
+
+  if (capturer_->apply_rotation() && (rotation == 90 || rotation == 270)) {
+    std::swap(adapted_width, adapted_height);
+    std::swap(rotated_width, rotated_height);
+  }
+
+  rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer =
+      pre_scale_pool_.CreateBuffer(rotated_width, rotated_height);
+
+  const uint8_t* y_plane = static_cast<const uint8_t*>(video_frame);
+  const uint8_t* uv_plane = y_plane + width * height;
+
+  // Can only crop at even pixels.
+  crop_x &= ~1;
+  crop_y &= ~1;
+  int uv_width = (width + 1) / 2;
+
+  libyuv::NV12ToI420Rotate(
+      y_plane + width * crop_y + crop_x, width,
+      uv_plane + uv_width * crop_y + crop_x, width,
+      buffer->MutableData(webrtc::kYPlane), buffer->stride(webrtc::kYPlane),
+      // Swap U and V, since we have NV21, not NV12.
+      buffer->MutableData(webrtc::kVPlane), buffer->stride(webrtc::kVPlane),
+      buffer->MutableData(webrtc::kUPlane), buffer->stride(webrtc::kUPlane),
+      crop_width, crop_height, static_cast<libyuv::RotationMode>(
+          capturer_->apply_rotation() ? rotation : 0));
+
+  if (adapted_width != rotated_width || adapted_height != rotated_height) {
+    rtc::scoped_refptr<webrtc::VideoFrameBuffer> scaled =
+      post_scale_pool_.CreateBuffer(adapted_width, adapted_height);
+    // TODO(nisse): This should be done by some Scale method in
+    // I420Buffer, but we can't do that right now, since
+    // I420BufferPool uses a wrapper object.
+    if (libyuv::I420Scale(buffer->DataY(), buffer->StrideY(),
+                          buffer->DataU(), buffer->StrideU(),
+                          buffer->DataV(), buffer->StrideV(),
+                          rotated_width, rotated_height,
+                          scaled->MutableDataY(), scaled->StrideY(),
+                          scaled->MutableDataU(), scaled->StrideU(),
+                          scaled->MutableDataV(), scaled->StrideV(),
+                          adapted_width, adapted_height,
+                          libyuv::kFilterBox) < 0) {
+      LOG(LS_WARNING) << "I420Scale failed";
+      return;
+    }
+    buffer = scaled;
+  }
+  // TODO(nisse): Use microsecond time instead.
+  capturer_->OnFrame(cricket::WebRtcVideoFrame(
+                         buffer, timestamp_ns,
+                         capturer_->apply_rotation()
+                             ? webrtc::kVideoRotation_0
+                             : static_cast<webrtc::VideoRotation>(rotation)),
+                     width, height);
 }
 
 void AndroidVideoCapturerJni::OnTextureFrame(int width,
@@ -195,15 +250,48 @@ void AndroidVideoCapturerJni::OnTextureFrame(int width,
                                              int rotation,
                                              int64_t timestamp_ns,
                                              const NativeHandleImpl& handle) {
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
-      surface_texture_helper_->CreateTextureFrame(width, height, handle));
-
+  RTC_DCHECK(rotation == 0 || rotation == 90 || rotation == 180 ||
+             rotation == 270);
   rtc::CritScope cs(&capturer_lock_);
-  if (!capturer_) {
-    LOG(LS_WARNING) << "OnTextureFrame() called for closed capturer.";
+
+  int adapted_width;
+  int adapted_height;
+  int crop_width;
+  int crop_height;
+  int crop_x;
+  int crop_y;
+
+  if (!capturer_->AdaptFrame(width, height, timestamp_ns,
+                             &adapted_width, &adapted_height,
+                             &crop_width, &crop_height, &crop_x, &crop_y)) {
     return;
   }
-  capturer_->OnIncomingFrame(buffer, rotation, timestamp_ns);
+
+  Matrix matrix = handle.sampling_matrix;
+
+  matrix.Crop(crop_width / static_cast<float>(width),
+              crop_height / static_cast<float>(height),
+              crop_x / static_cast<float>(width),
+              crop_y / static_cast<float>(height));
+
+  if (capturer_->apply_rotation()) {
+    if (rotation == webrtc::kVideoRotation_90 ||
+        rotation == webrtc::kVideoRotation_270) {
+      std::swap(adapted_width, adapted_height);
+    }
+    matrix.Rotate(static_cast<webrtc::VideoRotation>(rotation));
+  }
+
+  // TODO(nisse): Use microsecond time instead.
+  capturer_->OnFrame(
+      cricket::WebRtcVideoFrame(
+          surface_texture_helper_->CreateTextureFrame(
+              adapted_width, adapted_height,
+              NativeHandleImpl(handle.oes_texture_id, matrix)),
+          timestamp_ns, capturer_->apply_rotation()
+                            ? webrtc::kVideoRotation_0
+                            : static_cast<webrtc::VideoRotation>(rotation)),
+      width, height);
 }
 
 void AndroidVideoCapturerJni::OnOutputFormatRequest(int width,

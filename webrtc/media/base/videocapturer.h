@@ -168,7 +168,7 @@ class VideoCapturer : public sigslot::has_slots<>,
     return capture_state_;
   }
 
-  virtual bool GetApplyRotation() { return apply_rotation_; }
+  virtual bool apply_rotation() { return apply_rotation_; }
 
   // Returns true if the capturer is screencasting. This can be used to
   // implement screencast specific behavior.
@@ -222,14 +222,28 @@ class VideoCapturer : public sigslot::has_slots<>,
   // when a sink changes its VideoSinkWants by calling AddOrUpdateSink.
   virtual void OnSinkWantsChanged(const rtc::VideoSinkWants& wants);
 
+  // Reports the appropriate frame size after adaptation. Returns true
+  // if a frame is wanted. Returns false if there are no interested
+  // sinks, or if the VideoAdapter decides to drop the frame.
+  bool AdaptFrame(int width,
+                  int height,
+                  int64_t capture_time_ns,
+                  int* out_width,
+                  int* out_height,
+                  int* crop_width,
+                  int* crop_height,
+                  int* crop_x,
+                  int* crop_y);
+
   // Callback attached to SignalFrameCaptured where SignalVideoFrames is called.
   void OnFrameCaptured(VideoCapturer* video_capturer,
                        const CapturedFrame* captured_frame);
 
-  // Called when a frame has been captured and converted to a VideoFrame.
-  // OnFrame can be called directly by an implementation that does not use
-  // SignalFrameCaptured or OnFrameCaptured.
-  void OnFrame(VideoCapturer* capturer, const VideoFrame* frame);
+  // Called when a frame has been captured and converted to a
+  // VideoFrame. OnFrame can be called directly by an implementation
+  // that does not use SignalFrameCaptured or OnFrameCaptured. The
+  // orig_width and orig_height are used only to produce stats.
+  void OnFrame(const VideoFrame& frame, int orig_width, int orig_height);
 
   VideoAdapter* video_adapter() { return &video_adapter_; }
 
@@ -268,7 +282,7 @@ class VideoCapturer : public sigslot::has_slots<>,
   // Returns true if format doesn't fulfill all applied restrictions.
   bool ShouldFilterFormat(const VideoFormat& format) const;
 
-  void UpdateInputSize(const CapturedFrame* captured_frame);
+  void UpdateInputSize(int width, int height);
 
   rtc::ThreadChecker thread_checker_;
   std::string id_;
