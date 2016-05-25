@@ -74,7 +74,7 @@ class RTCCertificateGeneratorTest
   ~RTCCertificateGeneratorTest() {}
 
  protected:
-  static const int kGenerationTimeoutMs = 1000;
+  static const int kGenerationTimeoutMs = 10000;
 
   scoped_refptr<RTCCertificateGeneratorFixture> fixture_;
 };
