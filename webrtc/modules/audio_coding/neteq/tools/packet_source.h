@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_PACKET_SOURCE_H_
 
 #include <bitset>
+#include <memory>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/neteq/tools/packet.h"
@@ -26,9 +27,9 @@ class PacketSource {
   PacketSource() : use_ssrc_filter_(false), ssrc_(0) {}
   virtual ~PacketSource() {}
 
-  // Returns a pointer to the next packet. Returns NULL if the source is
-  // depleted, or if an error occurred.
-  virtual Packet* NextPacket() = 0;
+  // Returns next packet. Returns nullptr if the source is depleted, or if an
+  // error occurred.
+  virtual std::unique_ptr<Packet> NextPacket() = 0;
 
   virtual void FilterOutPayloadType(uint8_t payload_type) {
     filter_.set(payload_type, true);

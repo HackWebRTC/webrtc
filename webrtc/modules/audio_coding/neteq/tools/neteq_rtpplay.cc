@@ -493,7 +493,7 @@ int main(int argc, char* argv[]) {
     replacement_audio.reset(new int16_t[input_frame_size_timestamps]);
     payload_mem_size_bytes = 2 * input_frame_size_timestamps;
     payload.reset(new uint8_t[payload_mem_size_bytes]);
-    next_packet.reset(file_source->NextPacket());
+    next_packet = file_source->NextPacket();
     assert(next_packet);
     next_packet_available = true;
   }
@@ -566,9 +566,9 @@ int main(int argc, char* argv[]) {
       }
 
       // Get next packet from file.
-      Packet* temp_packet = file_source->NextPacket();
+      std::unique_ptr<Packet> temp_packet = file_source->NextPacket();
       if (temp_packet) {
-        packet.reset(temp_packet);
+        packet = std::move(temp_packet);
         if (replace_payload) {
           // At this point |packet| contains the packet *after* |next_packet|.
           // Swap Packet objects between |packet| and |next_packet|.
@@ -586,6 +586,7 @@ int main(int argc, char* argv[]) {
         next_input_time_ms = std::numeric_limits<int64_t>::max();
         packet_available = false;
       }
+      RTC_DCHECK(!temp_packet);  // Must have transferred to another variable.
     }
 
     // Check if it is time to get output audio.

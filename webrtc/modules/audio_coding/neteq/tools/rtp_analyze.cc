@@ -107,7 +107,7 @@ int main(int argc, char* argv[]) {
   int cycles = -1;
   std::unique_ptr<webrtc::test::Packet> packet;
   while (true) {
-    packet.reset(file_source->NextPacket());
+    packet = file_source->NextPacket();
     if (!packet.get()) {
       // End of file reached.
       break;

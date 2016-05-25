@@ -154,7 +154,7 @@ int AcmReceiveTestOldApi::RegisterExternalReceiveCodec(
 
 void AcmReceiveTestOldApi::Run() {
   for (std::unique_ptr<Packet> packet(packet_source_->NextPacket()); packet;
-       packet.reset(packet_source_->NextPacket())) {
+       packet = packet_source_->NextPacket()) {
     // Pull audio until time to insert packet.
     while (clock_.TimeInMilliseconds() < packet->time_ms()) {
       AudioFrame output_frame;

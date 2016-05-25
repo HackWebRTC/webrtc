@@ -44,10 +44,8 @@ class AcmSendTestOldApi : public AudioPacketizationCallback,
   // Registers an external send codec. Returns true on success, false otherwise.
   bool RegisterExternalCodec(AudioEncoder* external_speech_encoder);
 
-  // Returns the next encoded packet. Returns NULL if the test duration was
-  // exceeded. Ownership of the packet is handed over to the caller.
   // Inherited from PacketSource.
-  Packet* NextPacket() override;
+  std::unique_ptr<Packet> NextPacket() override;
 
   // Inherited from AudioPacketizationCallback.
   int32_t SendData(FrameType frame_type,
@@ -63,9 +61,8 @@ class AcmSendTestOldApi : public AudioPacketizationCallback,
   static const int kBlockSizeMs = 10;
 
   // Creates a Packet object from the last packet produced by ACM (and received
-  // through the SendData method as a callback). Ownership of the new Packet
-  // object is transferred to the caller.
-  Packet* CreatePacket();
+  // through the SendData method as a callback).
+  std::unique_ptr<Packet> CreatePacket();
 
   SimulatedClock clock_;
   std::unique_ptr<AudioCodingModule> acm_;

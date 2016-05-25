@@ -55,7 +55,7 @@ bool RtpFileSource::RegisterRtpHeaderExtension(RTPExtensionType type,
   return parser_->RegisterRtpHeaderExtension(type, id);
 }
 
-Packet* RtpFileSource::NextPacket() {
+std::unique_ptr<Packet> RtpFileSource::NextPacket() {
   while (true) {
     RtpPacket temp_packet;
     if (!rtp_reader_->NextPacket(&temp_packet)) {
@@ -80,7 +80,7 @@ Packet* RtpFileSource::NextPacket() {
       // This payload type should be filtered out. Continue to the next packet.
       continue;
     }
-    return packet.release();
+    return packet;
   }
 }
 

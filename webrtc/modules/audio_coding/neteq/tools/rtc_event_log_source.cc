@@ -39,7 +39,7 @@ bool RtcEventLogSource::RegisterRtpHeaderExtension(RTPExtensionType type,
   return parser_->RegisterRtpHeaderExtension(type, id);
 }
 
-Packet* RtcEventLogSource::NextPacket() {
+std::unique_ptr<Packet> RtcEventLogSource::NextPacket() {
   while (rtp_packet_index_ < parsed_stream_.GetNumberOfEvents()) {
     if (parsed_stream_.GetEventType(rtp_packet_index_) ==
         ParsedRtcEventLog::RTP_EVENT) {
@@ -54,9 +54,9 @@ Packet* RtcEventLogSource::NextPacket() {
         uint8_t* packet_header = new uint8_t[header_length];
         parsed_stream_.GetRtpHeader(rtp_packet_index_, nullptr, nullptr,
                                     packet_header, nullptr, nullptr);
-        Packet* packet = new Packet(packet_header, header_length, packet_length,
-                                    static_cast<double>(timestamp_us) / 1000,
-                                    *parser_.get());
+        std::unique_ptr<Packet> packet(new Packet(
+            packet_header, header_length, packet_length,
+            static_cast<double>(timestamp_us) / 1000, *parser_.get()));
         if (packet->valid_header()) {
           // Check if the packet should not be filtered out.
           if (!filter_.test(packet->header().payloadType) &&
@@ -69,9 +69,6 @@ Packet* RtcEventLogSource::NextPacket() {
                     << " has an invalid header and will be ignored."
                     << std::endl;
         }
-        // The packet has either an invalid header or needs to be filtered out,
-        // so it can be deleted.
-        delete packet;
       }
     }
     rtp_packet_index_++;

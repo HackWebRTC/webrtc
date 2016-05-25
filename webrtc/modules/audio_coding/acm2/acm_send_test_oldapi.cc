@@ -73,13 +73,13 @@ bool AcmSendTestOldApi::RegisterExternalCodec(
   return codec_registered_ = true;
 }
 
-Packet* AcmSendTestOldApi::NextPacket() {
+std::unique_ptr<Packet> AcmSendTestOldApi::NextPacket() {
   assert(codec_registered_);
   if (filter_.test(static_cast<size_t>(payload_type_))) {
     // This payload type should be filtered out. Since the payload type is the
     // same throughout the whole test run, no packet at all will be delivered.
     // We can just as well signal that the test is over by returning NULL.
-    return NULL;
+    return nullptr;
   }
   // Insert audio and process until one packet is produced.
   while (clock_.TimeInMilliseconds() < test_duration_ms_) {
@@ -101,7 +101,7 @@ Packet* AcmSendTestOldApi::NextPacket() {
     }
   }
   // Test ended.
-  return NULL;
+  return nullptr;
 }
 
 // This method receives the callback from ACM when a new packet is produced.
@@ -122,7 +122,7 @@ int32_t AcmSendTestOldApi::SendData(
   return 0;
 }
 
-Packet* AcmSendTestOldApi::CreatePacket() {
+std::unique_ptr<Packet> AcmSendTestOldApi::CreatePacket() {
   const size_t kRtpHeaderSize = 12;
   size_t allocated_bytes = last_payload_vec_.size() + kRtpHeaderSize;
   uint8_t* packet_memory = new uint8_t[allocated_bytes];
@@ -147,10 +147,10 @@ Packet* AcmSendTestOldApi::CreatePacket() {
   memcpy(packet_memory + kRtpHeaderSize,
          &last_payload_vec_[0],
          last_payload_vec_.size());
-  Packet* packet =
-      new Packet(packet_memory, allocated_bytes, clock_.TimeInMilliseconds());
-  assert(packet);
-  assert(packet->valid_header());
+  std::unique_ptr<Packet> packet(
+      new Packet(packet_memory, allocated_bytes, clock_.TimeInMilliseconds()));
+  RTC_DCHECK(packet);
+  RTC_DCHECK(packet->valid_header());
   return packet;
 }
 

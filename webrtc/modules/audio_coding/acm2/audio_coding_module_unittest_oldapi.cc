@@ -1149,17 +1149,13 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
     remove(output_file_name.c_str());
   }
 
-  // Returns a pointer to the next packet. Returns NULL if the source is
-  // depleted (i.e., the test duration is exceeded), or if an error occurred.
   // Inherited from test::PacketSource.
-  test::Packet* NextPacket() override {
-    // Get the next packet from AcmSendTest. Ownership of |packet| is
-    // transferred to this method.
-    test::Packet* packet = send_test_->NextPacket();
+  std::unique_ptr<test::Packet> NextPacket() override {
+    auto packet = send_test_->NextPacket();
     if (!packet)
       return NULL;
 
-    VerifyPacket(packet);
+    VerifyPacket(packet.get());
     // TODO(henrik.lundin) Save the packet to file as well.
 
     // Pass it on to the caller. The caller becomes the owner of |packet|.
@@ -1480,9 +1476,9 @@ class AcmSetBitRateOldApi : public ::testing::Test {
     ASSERT_TRUE(send_test_->acm());
     send_test_->acm()->SetBitRate(target_bitrate_bps);
     int nr_bytes = 0;
-    while (test::Packet* next_packet = send_test_->NextPacket()) {
+    while (std::unique_ptr<test::Packet> next_packet =
+               send_test_->NextPacket()) {
       nr_bytes += next_packet->payload_length_bytes();
-      delete next_packet;
     }
     EXPECT_EQ(expected_total_bits, nr_bytes * 8);
   }
@@ -1577,7 +1573,8 @@ class AcmChangeBitRateOldApi : public AcmSetBitRateOldApi {
         sampling_freq_hz_ * kTestDurationMs / (frame_size_samples_ * 1000);
     int nr_bytes_before = 0, nr_bytes_after = 0;
     int packet_counter = 0;
-    while (test::Packet* next_packet = send_test_->NextPacket()) {
+    while (std::unique_ptr<test::Packet> next_packet =
+               send_test_->NextPacket()) {
       if (packet_counter == nr_packets / 2)
         send_test_->acm()->SetBitRate(target_bitrate_bps);
       if (packet_counter < nr_packets / 2)
@@ -1585,7 +1582,6 @@ class AcmChangeBitRateOldApi : public AcmSetBitRateOldApi {
       else
         nr_bytes_after += next_packet->payload_length_bytes();
       packet_counter++;
-      delete next_packet;
     }
     EXPECT_EQ(expected_before_switch_bits, nr_bytes_before * 8);
     EXPECT_EQ(expected_after_switch_bits, nr_bytes_after * 8);
@@ -1733,7 +1729,7 @@ class AcmSwitchingOutputFrequencyOldApi : public ::testing::Test,
   }
 
   // Inherited from test::PacketSource.
-  test::Packet* NextPacket() override {
+  std::unique_ptr<test::Packet> NextPacket() override {
     // Check if it is time to terminate the test. The packet source is of type
     // ConstantPcmPacketSource, which is infinite, so we must end the test
     // "manually".
