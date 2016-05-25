@@ -709,9 +709,6 @@ void void_main(int argc, char* argv[]) {
         const Stream msg = event_msg.stream();
         primary_count++;
 
-        // ProcessStream could have changed this for the output frame.
-        near_frame.num_channels_ = apm->num_input_channels();
-
         ASSERT_TRUE(msg.has_input_data() ^ (msg.input_channel_size() > 0));
         if (msg.has_input_data()) {
           ASSERT_EQ(sizeof(int16_t) * samples_per_channel *
