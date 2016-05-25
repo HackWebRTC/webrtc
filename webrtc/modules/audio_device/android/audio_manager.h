@@ -88,6 +88,10 @@ class AudioManager {
   // combination with OpenSL ES.
   bool IsLowLatencyPlayoutSupported() const;
 
+  // Returns true if the device supports pro-audio features in combination with
+  // OpenSL ES.
+  bool IsProAudioSupported() const;
+
   // Returns the estimated total delay of this device. Unit is in milliseconds.
   // The vaule is set once at construction and never changes after that.
   // Possible values are webrtc::kLowLatencyModeDelayEstimateInMilliseconds and
@@ -106,6 +110,7 @@ class AudioManager {
                                            jboolean hardware_agc,
                                            jboolean hardware_ns,
                                            jboolean low_latency_output,
+                                           jboolean pro_audio,
                                            jint output_buffer_size,
                                            jint input_buffer_size,
                                            jlong native_audio_manager);
@@ -116,6 +121,7 @@ class AudioManager {
                               jboolean hardware_agc,
                               jboolean hardware_ns,
                               jboolean low_latency_output,
+                              jboolean pro_audio,
                               jint output_buffer_size,
                               jint input_buffer_size);
 
@@ -151,6 +157,9 @@ class AudioManager {
 
   // True if device supports the low-latency OpenSL ES audio path.
   bool low_latency_playout_;
+
+  // True if device supports the low-latency OpenSL ES pro-audio path.
+  bool pro_audio_;
 
   // The delay estimate can take one of two fixed values depending on if the
   // device supports low-latency output or not.

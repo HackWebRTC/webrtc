@@ -77,6 +77,11 @@ TEST_F(AudioManagerTest, IsLowLatencyPlayoutSupported) {
         audio_manager()->IsLowLatencyPlayoutSupported() ? "Yes" : "No");
 }
 
+TEST_F(AudioManagerTest, IsProAudioSupported) {
+  PRINT("%sPro audio support: %s\n", kTag,
+        audio_manager()->IsProAudioSupported() ? "Yes" : "No");
+}
+
 TEST_F(AudioManagerTest, ShowAudioParameterInfo) {
   const bool low_latency_out = audio_manager()->IsLowLatencyPlayoutSupported();
   PRINT("PLAYOUT:\n");
