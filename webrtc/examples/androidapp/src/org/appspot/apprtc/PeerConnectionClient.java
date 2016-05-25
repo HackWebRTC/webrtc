@@ -38,6 +38,7 @@ import org.webrtc.VideoRenderer;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 import org.webrtc.voiceengine.WebRtcAudioManager;
+import org.webrtc.voiceengine.WebRtcAudioUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -148,13 +149,15 @@ public class PeerConnectionClient {
     public final boolean noAudioProcessing;
     public final boolean aecDump;
     public final boolean useOpenSLES;
+    public final boolean disableBuiltInAEC;
 
     public PeerConnectionParameters(
         boolean videoCallEnabled, boolean loopback, boolean tracing,
         int videoWidth, int videoHeight, int videoFps, int videoStartBitrate,
         String videoCodec, boolean videoCodecHwAcceleration, boolean captureToTexture,
         int audioStartBitrate, String audioCodec,
-        boolean noAudioProcessing, boolean aecDump, boolean useOpenSLES) {
+        boolean noAudioProcessing, boolean aecDump, boolean useOpenSLES,
+        boolean disableBuiltInAEC) {
       this.videoCallEnabled = videoCallEnabled;
       this.loopback = loopback;
       this.tracing = tracing;
@@ -170,6 +173,7 @@ public class PeerConnectionClient {
       this.noAudioProcessing = noAudioProcessing;
       this.aecDump = aecDump;
       this.useOpenSLES = useOpenSLES;
+      this.disableBuiltInAEC = disableBuiltInAEC;
     }
   }
 
@@ -337,6 +341,14 @@ public class PeerConnectionClient {
     } else {
       Log.d(TAG, "Allow OpenSL ES audio if device supports it");
       WebRtcAudioManager.setBlacklistDeviceForOpenSLESUsage(false);
+    }
+
+    if (peerConnectionParameters.disableBuiltInAEC) {
+      Log.d(TAG, "Disable built-in AEC even if device supports it");
+      WebRtcAudioUtils.setWebRtcBasedAcousticEchoCanceler(true);
+    } else {
+      Log.d(TAG, "Enable built-in AEC if device supports it");
+      WebRtcAudioUtils.setWebRtcBasedAcousticEchoCanceler(false);
     }
 
     // Create peer connection factory.

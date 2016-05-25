@@ -78,6 +78,8 @@ public class CallActivity extends Activity
       "org.appspot.apprtc.AECDUMP";
   public static final String EXTRA_OPENSLES_ENABLED =
       "org.appspot.apprtc.OPENSLES";
+  public static final String EXTRA_DISABLE_BUILT_IN_AEC =
+      "org.appspot.apprtc.DISABLE_BUILT_IN_AEC";
   public static final String EXTRA_DISPLAY_HUD =
       "org.appspot.apprtc.DISPLAY_HUD";
   public static final String EXTRA_TRACING = "org.appspot.apprtc.TRACING";
@@ -234,7 +236,8 @@ public class CallActivity extends Activity
         intent.getStringExtra(EXTRA_AUDIOCODEC),
         intent.getBooleanExtra(EXTRA_NOAUDIOPROCESSING_ENABLED, false),
         intent.getBooleanExtra(EXTRA_AECDUMP_ENABLED, false),
-        intent.getBooleanExtra(EXTRA_OPENSLES_ENABLED, false));
+        intent.getBooleanExtra(EXTRA_OPENSLES_ENABLED, false),
+        intent.getBooleanExtra(EXTRA_DISABLE_BUILT_IN_AEC, false));
     commandLineRun = intent.getBooleanExtra(EXTRA_CMDLINE, false);
     runTimeMs = intent.getIntExtra(EXTRA_RUNTIME, 0);
 

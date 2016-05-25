@@ -263,9 +263,24 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
   private PeerConnectionParameters createParametersForAudioCall() {
     PeerConnectionParameters peerConnectionParameters =
         new PeerConnectionParameters(
-            false, true, false, // videoCallEnabled, loopback, tracing.
-            0, 0, 0, 0, "", true, false, // video codec parameters.
-            0, "OPUS", false, false, false); // audio codec parameters.
+            false, /* videoCallEnabled */
+            true, /* loopback */
+            false, /* tracing */
+            // Video codec parameters.
+            0, /* videoWidth */
+            0, /* videoHeight */
+            0, /* videoFps */
+            0, /* videoStartBitrate */
+            "", /* videoCodec */
+            true, /* videoCodecHwAcceleration */
+            false, /* captureToToTexture */
+            // Audio codec parameters.
+            0, /* audioStartBitrate */
+            "OPUS", /* audioCodec */
+            false, /* noAudioProcessing */
+            false, /* aecDump */
+            false /* useOpenSLES */,
+            false /* disableBuiltInAEC */);
     return peerConnectionParameters;
   }
 
@@ -273,9 +288,24 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
       String videoCodec, boolean captureToTexture) {
     PeerConnectionParameters peerConnectionParameters =
         new PeerConnectionParameters(
-            true, true, false, // videoCallEnabled, loopback, tracing.
-            0, 0, 0, 0, videoCodec, true, captureToTexture, // video codec parameters.
-            0, "OPUS", false, false, false); // audio codec parameters.
+            true, /* videoCallEnabled */
+            true, /* loopback */
+            false, /* tracing */
+            // Video codec parameters.
+            0, /* videoWidth */
+            0, /* videoHeight */
+            0, /* videoFps */
+            0, /* videoStartBitrate */
+            videoCodec, /* videoCodec */
+            true, /* videoCodecHwAcceleration */
+            captureToTexture, /* captureToToTexture */
+            // Audio codec parameters.
+            0, /* audioStartBitrate */
+            "OPUS", /* audioCodec */
+            false, /* noAudioProcessing */
+            false, /* aecDump */
+            false /* useOpenSLES */,
+            false /* disableBuiltInAEC */);
     return peerConnectionParameters;
   }
 

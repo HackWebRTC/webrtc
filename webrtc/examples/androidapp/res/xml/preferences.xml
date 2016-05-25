@@ -112,6 +112,12 @@
             android:title="@string/pref_opensles_title"
             android:dialogTitle="@string/pref_opensles_dlg"
             android:defaultValue="@string/pref_opensles_default" />
+
+        <CheckBoxPreference
+            android:key="@string/pref_disable_built_in_aec_key"
+            android:title="@string/pref_disable_built_in_aec_title"
+            android:dialogTitle="@string/pref_disable_built_in_aec_dlg"
+            android:defaultValue="@string/pref_disable_built_in_aec_default" />
     </PreferenceCategory>
 
     <PreferenceCategory

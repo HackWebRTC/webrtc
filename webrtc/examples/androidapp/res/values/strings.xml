@@ -117,6 +117,12 @@
     <string name="pref_opensles_dlg">Use OpenSL ES for audio playback.</string>
     <string name="pref_opensles_default">false</string>
 
+    <string name="pref_disable_built_in_aec_key">disable_built_in_aec_preference</string>
+    <string name="pref_disable_built_in_aec_title">Disable built-in AEC.</string>
+    <string name="pref_disable_built_in_aec_dlg">Disable built-in AEC.</string>
+    <string name="pref_disable_built_in_aec_default">false</string>
+    <string name="pref_built_in_aec_not_available">Built-in AEC is not available</string>
+
     <string name="pref_miscsettings_key">misc_settings_key</string>
     <string name="pref_miscsettings_title">Miscellaneous settings.</string>
 

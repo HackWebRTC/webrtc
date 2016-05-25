@@ -42,13 +42,6 @@ class WebRtcAudioEffects {
   private static final UUID AOSP_NOISE_SUPPRESSOR =
       UUID.fromString("c06c8400-8e06-11e0-9cb6-0002a5d5c51b");
 
-  // Static Boolean objects used to avoid expensive queries more than once.
-  // The first result is cached in these members and then reused if needed.
-  // Each member is null until it has been evaluated/set for the first time.
-  private static Boolean canUseAcousticEchoCanceler = null;
-  private static Boolean canUseAutomaticGainControl = null;
-  private static Boolean canUseNoiseSuppressor = null;
-
   // Contains the audio effect objects. Created in enable() and destroyed
   // in release().
   private AcousticEchoCanceler aec = null;
@@ -160,44 +153,38 @@ class WebRtcAudioEffects {
   // Returns true if all conditions for supporting the HW AEC are fulfilled.
   // It will not be possible to enable the HW AEC if this method returns false.
   public static boolean canUseAcousticEchoCanceler() {
-    if (canUseAcousticEchoCanceler == null) {
-      canUseAcousticEchoCanceler = new Boolean(
-          isAcousticEchoCancelerSupported()
-          && !WebRtcAudioUtils.useWebRtcBasedAcousticEchoCanceler()
-          && !isAcousticEchoCancelerBlacklisted()
-          && !isAcousticEchoCancelerExcludedByUUID());
-      Logging.d(TAG, "canUseAcousticEchoCanceler: "
-          + canUseAcousticEchoCanceler);
-    }
+    boolean canUseAcousticEchoCanceler =
+        isAcousticEchoCancelerSupported()
+        && !WebRtcAudioUtils.useWebRtcBasedAcousticEchoCanceler()
+        && !isAcousticEchoCancelerBlacklisted()
+        && !isAcousticEchoCancelerExcludedByUUID();
+    Logging.d(TAG, "canUseAcousticEchoCanceler: "
+        + canUseAcousticEchoCanceler);
     return canUseAcousticEchoCanceler;
   }
 
   // Returns true if all conditions for supporting the HW AGC are fulfilled.
   // It will not be possible to enable the HW AGC if this method returns false.
   public static boolean canUseAutomaticGainControl() {
-    if (canUseAutomaticGainControl == null) {
-      canUseAutomaticGainControl = new Boolean(
-          isAutomaticGainControlSupported()
-          && !WebRtcAudioUtils.useWebRtcBasedAutomaticGainControl()
-          && !isAutomaticGainControlBlacklisted()
-          && !isAutomaticGainControlExcludedByUUID());
-      Logging.d(TAG, "canUseAutomaticGainControl: "
-          + canUseAutomaticGainControl);
-    }
+    boolean canUseAutomaticGainControl =
+        isAutomaticGainControlSupported()
+        && !WebRtcAudioUtils.useWebRtcBasedAutomaticGainControl()
+        && !isAutomaticGainControlBlacklisted()
+        && !isAutomaticGainControlExcludedByUUID();
+    Logging.d(TAG, "canUseAutomaticGainControl: "
+        + canUseAutomaticGainControl);
     return canUseAutomaticGainControl;
   }
 
   // Returns true if all conditions for supporting the HW NS are fulfilled.
   // It will not be possible to enable the HW NS if this method returns false.
   public static boolean canUseNoiseSuppressor() {
-    if (canUseNoiseSuppressor == null) {
-      canUseNoiseSuppressor = new Boolean(
-          isNoiseSuppressorSupported()
-          && !WebRtcAudioUtils.useWebRtcBasedNoiseSuppressor()
-          && !isNoiseSuppressorBlacklisted()
-          && !isNoiseSuppressorExcludedByUUID());
-      Logging.d(TAG, "canUseNoiseSuppressor: " + canUseNoiseSuppressor);
-    }
+    boolean canUseNoiseSuppressor =
+        isNoiseSuppressorSupported()
+        && !WebRtcAudioUtils.useWebRtcBasedNoiseSuppressor()
+        && !isNoiseSuppressorBlacklisted()
+        && !isNoiseSuppressorExcludedByUUID();
+    Logging.d(TAG, "canUseNoiseSuppressor: " + canUseNoiseSuppressor);
     return canUseNoiseSuppressor;
   }
 

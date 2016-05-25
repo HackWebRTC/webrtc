@@ -100,6 +100,22 @@ public final class WebRtcAudioUtils {
     return useWebRtcBasedNoiseSuppressor;
   }
 
+  // Returns true if the device supports an audio effect (AEC, AGC or NS).
+  // Four conditions must be fulfilled if functions are to return true:
+  // 1) the platform must support the built-in (HW) effect,
+  // 2) explicit use (override) of a WebRTC based version must not be set,
+  // 3) the device must not be blacklisted for use of the effect, and
+  // 4) the UUID of the effect must be approved (some UUIDs can be excluded).
+  public static boolean isAcousticEchoCancelerSupported() {
+    return WebRtcAudioEffects.canUseAcousticEchoCanceler();
+  }
+  public static boolean isAutomaticGainControlSupported() {
+    return WebRtcAudioEffects.canUseAutomaticGainControl();
+  }
+  public static boolean isNoiseSuppressorSupported() {
+    return WebRtcAudioEffects.canUseNoiseSuppressor();
+  }
+
   // Call this method if the default handling of querying the native sample
   // rate shall be overridden. Can be useful on some devices where the
   // available Android APIs are known to return invalid results.
