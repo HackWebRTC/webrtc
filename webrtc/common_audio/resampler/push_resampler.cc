@@ -12,6 +12,7 @@
 
 #include <string.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/resampler/include/resampler.h"
 #include "webrtc/common_audio/resampler/push_sinc_resampler.h"
@@ -33,15 +34,22 @@ template <typename T>
 int PushResampler<T>::InitializeIfNeeded(int src_sample_rate_hz,
                                          int dst_sample_rate_hz,
                                          size_t num_channels) {
+  RTC_DCHECK_GT(src_sample_rate_hz, 0);
+  RTC_DCHECK_GT(dst_sample_rate_hz, 0);
+  RTC_DCHECK_GT(num_channels, 0u);
+  RTC_DCHECK_LE(num_channels, 2u);
+
   if (src_sample_rate_hz == src_sample_rate_hz_ &&
       dst_sample_rate_hz == dst_sample_rate_hz_ &&
-      num_channels == num_channels_)
+      num_channels == num_channels_) {
     // No-op if settings haven't changed.
     return 0;
+  }
 
-  if (src_sample_rate_hz <= 0 || dst_sample_rate_hz <= 0 ||
-      num_channels <= 0 || num_channels > 2)
+  if (src_sample_rate_hz <= 0 || dst_sample_rate_hz <= 0 || num_channels <= 0 ||
+      num_channels > 2) {
     return -1;
+  }
 
   src_sample_rate_hz_ = src_sample_rate_hz;
   dst_sample_rate_hz_ = dst_sample_rate_hz;
@@ -70,6 +78,8 @@ int PushResampler<T>::Resample(const T* src, size_t src_length, T* dst,
                                size_t dst_capacity) {
   const size_t src_size_10ms = src_sample_rate_hz_ * num_channels_ / 100;
   const size_t dst_size_10ms = dst_sample_rate_hz_ * num_channels_ / 100;
+  RTC_CHECK_EQ(src_length, src_size_10ms);
+  RTC_CHECK_GE(dst_capacity, dst_size_10ms);
   if (src_length != src_size_10ms || dst_capacity < dst_size_10ms)
     return -1;
 
