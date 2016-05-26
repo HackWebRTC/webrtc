@@ -3243,7 +3243,13 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
   RunBaseTest(&test);
 }
 
-TEST_F(EndToEndTest, CallReportsRttForSender) {
+// See: https://bugs.chromium.org/p/webrtc/issues/detail?id=5938
+#ifdef WEBRTC_MAC
+#define MAYBE_CallReportsRttForSender DISABLED_CallReportsRttForSender
+#else
+#define MAYBE_CallReportsRttForSender CallReportsRttForSender
+#endif
+TEST_F(EndToEndTest, MAYBE_CallReportsRttForSender) {
   static const int kSendDelayMs = 30;
   static const int kReceiveDelayMs = 70;
 
