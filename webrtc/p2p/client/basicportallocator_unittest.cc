@@ -83,8 +83,18 @@ static const int kStunTimeoutMs = 15000;
 namespace cricket {
 
 // Helper for dumping candidates
-std::ostream& operator<<(std::ostream& os, const Candidate& c) {
-  os << c.ToString();
+std::ostream& operator<<(std::ostream& os,
+                         const std::vector<Candidate>& candidates) {
+  os << '[';
+  bool first = true;
+  for (const Candidate& c : candidates) {
+    if (!first) {
+      os << ", ";
+    }
+    os << c.ToString();
+    first = false;
+  };
+  os << ']';
   return os;
 }
 
@@ -229,16 +239,60 @@ class BasicPortAllocatorTest : public testing::Test,
     return session;
   }
 
-  static bool CheckCandidate(const Candidate& c,
-                             int component,
-                             const std::string& type,
-                             const std::string& proto,
-                             const SocketAddress& addr) {
-    return (c.component() == component && c.type() == type &&
-            c.protocol() == proto && c.address().ipaddr() == addr.ipaddr() &&
-            ((addr.port() == 0 && (c.address().port() != 0)) ||
-             (c.address().port() == addr.port())));
+  // Return true if the addresses are the same, or the port is 0 in |pattern|
+  // (acting as a wildcard) and the IPs are the same.
+  // Even with a wildcard port, the port of the address should be nonzero if
+  // the IP is nonzero.
+  static bool AddressMatch(const SocketAddress& address,
+                           const SocketAddress& pattern) {
+    return address.ipaddr() == pattern.ipaddr() &&
+           ((pattern.port() == 0 &&
+             (address.port() != 0 || IPIsAny(address.ipaddr()))) ||
+            (pattern.port() != 0 && address.port() == pattern.port()));
   }
+
+  // Find a candidate and return it.
+  static bool FindCandidate(const std::vector<Candidate>& candidates,
+                            const std::string& type,
+                            const std::string& proto,
+                            const SocketAddress& addr,
+                            Candidate* found) {
+    auto it = std::find_if(candidates.begin(), candidates.end(),
+                           [type, proto, addr](const Candidate& c) {
+                             return c.type() == type && c.protocol() == proto &&
+                                    AddressMatch(c.address(), addr);
+                           });
+    if (it != candidates.end() && found) {
+      *found = *it;
+    }
+    return it != candidates.end();
+  }
+
+  // Convenience method to call FindCandidate with no return.
+  static bool HasCandidate(const std::vector<Candidate>& candidates,
+                           const std::string& type,
+                           const std::string& proto,
+                           const SocketAddress& addr) {
+    return FindCandidate(candidates, type, proto, addr, nullptr);
+  }
+
+  // Version of HasCandidate that also takes a related address.
+  static bool HasCandidateWithRelatedAddr(
+      const std::vector<Candidate>& candidates,
+      const std::string& type,
+      const std::string& proto,
+      const SocketAddress& addr,
+      const SocketAddress& related_addr) {
+    auto it =
+        std::find_if(candidates.begin(), candidates.end(),
+                     [type, proto, addr, related_addr](const Candidate& c) {
+                       return c.type() == type && c.protocol() == proto &&
+                              AddressMatch(c.address(), addr) &&
+                              AddressMatch(c.related_address(), related_addr);
+                     });
+    return it != candidates.end();
+  }
+
   static bool CheckPort(const rtc::SocketAddress& addr,
                         int min_port,
                         int max_port) {
@@ -297,38 +351,29 @@ class BasicPortAllocatorTest : public testing::Test,
 
     uint32_t total_candidates = 0;
     if (!host_candidate_addr.IsNil()) {
-      EXPECT_PRED5(CheckCandidate, candidates_[total_candidates],
-                   ICE_CANDIDATE_COMPONENT_RTP, "local", "udp",
+      EXPECT_PRED4(HasCandidate, candidates_, "local", "udp",
                    rtc::SocketAddress(kPrivateAddr.ipaddr(), 0));
       ++total_candidates;
     }
     if (!stun_candidate_addr.IsNil()) {
-      EXPECT_PRED5(CheckCandidate, candidates_[total_candidates],
-                   ICE_CANDIDATE_COMPONENT_RTP, "stun", "udp",
-                   rtc::SocketAddress(stun_candidate_addr, 0));
-      rtc::IPAddress related_address = host_candidate_addr;
+      rtc::SocketAddress related_address(host_candidate_addr, 0);
       if (host_candidate_addr.IsNil()) {
-        related_address =
-            rtc::GetAnyIP(candidates_[total_candidates].address().family());
+        related_address.SetIP(rtc::GetAnyIP(stun_candidate_addr.family()));
       }
-      EXPECT_EQ(related_address,
-                candidates_[total_candidates].related_address().ipaddr());
+      EXPECT_PRED5(HasCandidateWithRelatedAddr, candidates_, "stun", "udp",
+                   rtc::SocketAddress(stun_candidate_addr, 0), related_address);
       ++total_candidates;
     }
     if (!relay_candidate_udp_transport_addr.IsNil()) {
-      EXPECT_PRED5(CheckCandidate, candidates_[total_candidates],
-                   ICE_CANDIDATE_COMPONENT_RTP, "relay", "udp",
-                   rtc::SocketAddress(relay_candidate_udp_transport_addr, 0));
-      EXPECT_EQ(stun_candidate_addr,
-                candidates_[total_candidates].related_address().ipaddr());
+      EXPECT_PRED5(HasCandidateWithRelatedAddr, candidates_, "relay", "udp",
+                   rtc::SocketAddress(relay_candidate_udp_transport_addr, 0),
+                   rtc::SocketAddress(stun_candidate_addr, 0));
       ++total_candidates;
     }
     if (!relay_candidate_tcp_transport_addr.IsNil()) {
-      EXPECT_PRED5(CheckCandidate, candidates_[total_candidates],
-                   ICE_CANDIDATE_COMPONENT_RTP, "relay", "udp",
-                   rtc::SocketAddress(relay_candidate_tcp_transport_addr, 0));
-      EXPECT_EQ(stun_candidate_addr,
-                candidates_[total_candidates].related_address().ipaddr());
+      EXPECT_PRED5(HasCandidateWithRelatedAddr, candidates_, "relay", "udp",
+                   rtc::SocketAddress(relay_candidate_tcp_transport_addr, 0),
+                   rtc::SocketAddress(stun_candidate_addr, 0));
       ++total_candidates;
     }
 
@@ -349,9 +394,11 @@ class BasicPortAllocatorTest : public testing::Test,
   }
   void OnCandidatesReady(PortAllocatorSession* ses,
                          const std::vector<Candidate>& candidates) {
-    for (size_t i = 0; i < candidates.size(); ++i) {
-      LOG(LS_INFO) << "OnCandidatesReady: " << candidates[i].ToString();
-      candidates_.push_back(candidates[i]);
+    for (const Candidate& candidate : candidates) {
+      LOG(LS_INFO) << "OnCandidatesReady: " << candidate.ToString();
+      // Sanity check that the ICE component is set.
+      EXPECT_EQ(ICE_CANDIDATE_COMPONENT_RTP, candidate.component());
+      candidates_.push_back(candidate);
     }
     // Make sure the new candidates are added to Candidates.
     auto ses_candidates = ses->ReadyCandidates();
@@ -504,20 +551,14 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsWithMinimumStepDelay) {
   session_->StartGettingPorts();
   ASSERT_EQ_WAIT(7U, candidates_.size(), kDefaultAllocationTimeout);
   EXPECT_EQ(4U, ports_.size());
-  EXPECT_PRED5(CheckCandidate, candidates_[0], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "udp", kClientAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[1], ICE_CANDIDATE_COMPONENT_RTP,
-               "stun", "udp", kClientAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[2], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "udp", kRelayUdpIntAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[3], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "udp", kRelayUdpExtAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[4], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "tcp", kRelayTcpIntAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[5], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "tcp", kClientAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[6], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "ssltcp", kRelaySslTcpIntAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", kClientAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "stun", "udp", kClientAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "udp", kRelayUdpIntAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "udp", kRelayUdpExtAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "tcp", kRelayTcpIntAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "tcp", kClientAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "ssltcp",
+               kRelaySslTcpIntAddr);
   EXPECT_TRUE(candidate_allocation_done_);
 }
 
@@ -586,19 +627,15 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsWithOneSecondStepDelay) {
   EXPECT_EQ(2U, ports_.size());
   ASSERT_EQ_WAIT(4U, candidates_.size(), 2000);
   EXPECT_EQ(3U, ports_.size());
-  EXPECT_PRED5(CheckCandidate, candidates_[2], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "udp", kRelayUdpIntAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[3], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "udp", kRelayUdpExtAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "udp", kRelayUdpIntAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "udp", kRelayUdpExtAddr);
   ASSERT_EQ_WAIT(6U, candidates_.size(), 1500);
-  EXPECT_PRED5(CheckCandidate, candidates_[4], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "tcp", kRelayTcpIntAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[5], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "tcp", kClientAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "tcp", kRelayTcpIntAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "tcp", kClientAddr);
   EXPECT_EQ(4U, ports_.size());
   ASSERT_EQ_WAIT(7U, candidates_.size(), 2000);
-  EXPECT_PRED5(CheckCandidate, candidates_[6], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "ssltcp", kRelaySslTcpIntAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "ssltcp",
+               kRelaySslTcpIntAddr);
   EXPECT_EQ(4U, ports_.size());
   EXPECT_TRUE(candidate_allocation_done_);
   // If we Stop gathering now, we shouldn't get a second "done" callback.
@@ -772,7 +809,7 @@ TEST_F(BasicPortAllocatorTest,
 
 // Test that we disable relay over UDP, and only TCP is used when connecting to
 // the relay server.
-TEST_F(BasicPortAllocatorTest, DISABLED_TestDisableUdpTurn) {
+TEST_F(BasicPortAllocatorTest, TestDisableUdpTurn) {
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   AddInterface(kClientAddr);
   ResetWithStunServerAndNat(kStunAddr);
@@ -789,12 +826,12 @@ TEST_F(BasicPortAllocatorTest, DISABLED_TestDisableUdpTurn) {
   // TURN/TCP candidates.
   EXPECT_EQ(2U, ports_.size());
   EXPECT_EQ(2U, candidates_.size());
-  EXPECT_PRED5(CheckCandidate, candidates_[0], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "udp", kTurnUdpExtAddr);
+  Candidate turn_candidate;
+  EXPECT_PRED5(FindCandidate, candidates_, "relay", "udp", kTurnUdpExtAddr,
+               &turn_candidate);
   // The TURN candidate should use TCP to contact the TURN server.
-  EXPECT_EQ(TCP_PROTOCOL_NAME, candidates_[0].relay_protocol());
-  EXPECT_PRED5(CheckCandidate, candidates_[1], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "tcp", kClientAddr);
+  EXPECT_EQ(TCP_PROTOCOL_NAME, turn_candidate.relay_protocol());
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "tcp", kClientAddr);
 }
 
 // Disable for asan, see
@@ -822,16 +859,12 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsNoUdpSockets) {
   session_->StartGettingPorts();
   ASSERT_EQ_WAIT(5U, candidates_.size(), kDefaultAllocationTimeout);
   EXPECT_EQ(2U, ports_.size());
-  EXPECT_PRED5(CheckCandidate, candidates_[0], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "udp", kRelayUdpIntAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[1], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "udp", kRelayUdpExtAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[2], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "tcp", kRelayTcpIntAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[3], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "tcp", kClientAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[4], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "ssltcp", kRelaySslTcpIntAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "udp", kRelayUdpIntAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "udp", kRelayUdpExtAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "tcp", kRelayTcpIntAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "tcp", kClientAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "ssltcp",
+               kRelaySslTcpIntAddr);
   EXPECT_TRUE(candidate_allocation_done_);
 }
 
@@ -848,14 +881,11 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsNoUdpSocketsNoTcpListen) {
   session_->StartGettingPorts();
   ASSERT_EQ_WAIT(5U, candidates_.size(), kDefaultAllocationTimeout);
   EXPECT_EQ(2U, ports_.size());
-  EXPECT_PRED5(CheckCandidate, candidates_[0], 1, "relay", "udp",
-               kRelayUdpIntAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[1], 1, "relay", "udp",
-               kRelayUdpExtAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[2], 1, "relay", "tcp",
-               kRelayTcpIntAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[3], 1, "local", "tcp", kClientAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[4], 1, "relay", "ssltcp",
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "udp", kRelayUdpIntAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "udp", kRelayUdpExtAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "tcp", kRelayTcpIntAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "tcp", kClientAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "ssltcp",
                kRelaySslTcpIntAddr);
   EXPECT_TRUE(candidate_allocation_done_);
 }
@@ -882,22 +912,17 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsNoUdpAllowed) {
   session_->StartGettingPorts();
   EXPECT_EQ_WAIT(2U, candidates_.size(), kDefaultAllocationTimeout);
   EXPECT_EQ(2U, ports_.size());
-  EXPECT_PRED5(CheckCandidate, candidates_[0], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "udp", kClientAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[1], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "tcp", kClientAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", kClientAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "tcp", kClientAddr);
   // RelayPort connection timeout is 3sec. TCP connection with RelayServer
   // will be tried after 3 seconds.
   EXPECT_EQ_WAIT(6U, candidates_.size(), 4000);
   EXPECT_EQ(3U, ports_.size());
-  EXPECT_PRED5(CheckCandidate, candidates_[2], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "udp", kRelayUdpIntAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[3], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "tcp", kRelayTcpIntAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[4], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "ssltcp", kRelaySslTcpIntAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[5], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "udp", kRelayUdpExtAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "udp", kRelayUdpIntAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "tcp", kRelayTcpIntAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "ssltcp",
+               kRelaySslTcpIntAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "udp", kRelayUdpExtAddr);
   // Stun Timeout is 9sec.
   EXPECT_TRUE_WAIT(candidate_allocation_done_, 9000);
 }
@@ -959,17 +984,15 @@ TEST_F(BasicPortAllocatorTest, TestCandidateFilterWithRelayOnly) {
   EXPECT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
   EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
-  EXPECT_PRED5(CheckCandidate, candidates_[0], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "udp", rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "udp",
+               rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
 
   EXPECT_EQ(1U, candidates_.size());
   EXPECT_EQ(1U, ports_.size());  // Only Relay port will be in ready state.
-  for (size_t i = 0; i < candidates_.size(); ++i) {
-    EXPECT_EQ(std::string(RELAY_PORT_TYPE), candidates_[i].type());
-    EXPECT_EQ(
-        candidates_[0].related_address(),
-        rtc::EmptySocketAddressWithFamily(candidates_[0].address().family()));
-  }
+  EXPECT_EQ(std::string(RELAY_PORT_TYPE), candidates_[0].type());
+  EXPECT_EQ(
+      candidates_[0].related_address(),
+      rtc::EmptySocketAddressWithFamily(candidates_[0].address().family()));
 }
 
 TEST_F(BasicPortAllocatorTest, TestCandidateFilterWithHostOnly) {
@@ -981,8 +1004,8 @@ TEST_F(BasicPortAllocatorTest, TestCandidateFilterWithHostOnly) {
   EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
   EXPECT_EQ(2U, candidates_.size());  // Host UDP/TCP candidates only.
   EXPECT_EQ(2U, ports_.size());       // UDP/TCP ports only.
-  for (size_t i = 0; i < candidates_.size(); ++i) {
-    EXPECT_EQ(std::string(LOCAL_PORT_TYPE), candidates_[i].type());
+  for (const Candidate& candidate : candidates_) {
+    EXPECT_EQ(std::string(LOCAL_PORT_TYPE), candidate.type());
   }
 }
 
@@ -1000,12 +1023,10 @@ TEST_F(BasicPortAllocatorTest, TestCandidateFilterWithReflexiveOnly) {
   // port with STUN candidate will be sent outside.
   EXPECT_EQ(1U, candidates_.size());  // Only STUN candidate.
   EXPECT_EQ(1U, ports_.size());       // Only UDP port will be in ready state.
-  for (size_t i = 0; i < candidates_.size(); ++i) {
-    EXPECT_EQ(std::string(STUN_PORT_TYPE), candidates_[i].type());
-    EXPECT_EQ(
-        candidates_[0].related_address(),
-        rtc::EmptySocketAddressWithFamily(candidates_[0].address().family()));
-  }
+  EXPECT_EQ(std::string(STUN_PORT_TYPE), candidates_[0].type());
+  EXPECT_EQ(
+      candidates_[0].related_address(),
+      rtc::EmptySocketAddressWithFamily(candidates_[0].address().family()));
 }
 
 // Host is not behind the NAT.
@@ -1019,8 +1040,8 @@ TEST_F(BasicPortAllocatorTest, TestCandidateFilterWithReflexiveOnlyAndNoNAT) {
   // Host has a public address, both UDP and TCP candidates will be exposed.
   EXPECT_EQ(2U, candidates_.size());  // Local UDP + TCP candidate.
   EXPECT_EQ(2U, ports_.size());  //  UDP and TCP ports will be in ready state.
-  for (size_t i = 0; i < candidates_.size(); ++i) {
-    EXPECT_EQ(std::string(LOCAL_PORT_TYPE), candidates_[i].type());
+  for (const Candidate& candidate : candidates_) {
+    EXPECT_EQ(std::string(LOCAL_PORT_TYPE), candidate.type());
   }
 }
 
@@ -1030,18 +1051,14 @@ TEST_F(BasicPortAllocatorTest, TestEnableSharedUfrag) {
   EXPECT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
   ASSERT_EQ_WAIT(7U, candidates_.size(), kDefaultAllocationTimeout);
-  EXPECT_PRED5(CheckCandidate, candidates_[0], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "udp", kClientAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[1], ICE_CANDIDATE_COMPONENT_RTP,
-               "stun", "udp", kClientAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[5], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "tcp", kClientAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", kClientAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "stun", "udp", kClientAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "tcp", kClientAddr);
   EXPECT_EQ(4U, ports_.size());
-  EXPECT_EQ(kIceUfrag0, candidates_[0].username());
-  EXPECT_EQ(kIceUfrag0, candidates_[1].username());
-  EXPECT_EQ(kIceUfrag0, candidates_[2].username());
-  EXPECT_EQ(kIcePwd0, candidates_[0].password());
-  EXPECT_EQ(kIcePwd0, candidates_[1].password());
+  for (const Candidate& candidate : candidates_) {
+    EXPECT_EQ(kIceUfrag0, candidate.username());
+    EXPECT_EQ(kIcePwd0, candidate.password());
+  }
   EXPECT_TRUE(candidate_allocation_done_);
 }
 
@@ -1057,8 +1074,7 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketWithoutNat) {
   session_->StartGettingPorts();
   ASSERT_EQ_WAIT(6U, candidates_.size(), kDefaultAllocationTimeout);
   EXPECT_EQ(3U, ports_.size());
-  EXPECT_PRED5(CheckCandidate, candidates_[0], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "udp", kClientAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", kClientAddr);
   EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
 }
 
@@ -1075,10 +1091,9 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketWithNat) {
   session_->StartGettingPorts();
   ASSERT_EQ_WAIT(3U, candidates_.size(), kDefaultAllocationTimeout);
   ASSERT_EQ(2U, ports_.size());
-  EXPECT_PRED5(CheckCandidate, candidates_[0], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "udp", kClientAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[1], ICE_CANDIDATE_COMPONENT_RTP,
-               "stun", "udp", rtc::SocketAddress(kNatUdpAddr.ipaddr(), 0));
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", kClientAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "stun", "udp",
+               rtc::SocketAddress(kNatUdpAddr.ipaddr(), 0));
   EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
   EXPECT_EQ(3U, candidates_.size());
 }
@@ -1101,12 +1116,11 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketWithoutNatUsingTurn) {
 
   ASSERT_EQ_WAIT(3U, candidates_.size(), kDefaultAllocationTimeout);
   ASSERT_EQ(3U, ports_.size());
-  EXPECT_PRED5(CheckCandidate, candidates_[0], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "udp", kClientAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[1], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "udp", rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
-  EXPECT_PRED5(CheckCandidate, candidates_[2], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "udp", rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", kClientAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "udp",
+               rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "udp",
+               rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
   EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
   EXPECT_EQ(3U, candidates_.size());
 }
@@ -1154,12 +1168,11 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketWithNatUsingTurn) {
 
   ASSERT_EQ_WAIT(3U, candidates_.size(), kDefaultAllocationTimeout);
   ASSERT_EQ(2U, ports_.size());
-  EXPECT_PRED5(CheckCandidate, candidates_[0], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "udp", kClientAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[1], ICE_CANDIDATE_COMPONENT_RTP,
-               "stun", "udp", rtc::SocketAddress(kNatUdpAddr.ipaddr(), 0));
-  EXPECT_PRED5(CheckCandidate, candidates_[2], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "udp", rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", kClientAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "stun", "udp",
+               rtc::SocketAddress(kNatUdpAddr.ipaddr(), 0));
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "udp",
+               rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
   EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
   EXPECT_EQ(3U, candidates_.size());
   // Local port will be created first and then TURN port.
@@ -1189,13 +1202,13 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketWithNatUsingTurnAsStun) {
   session_->StartGettingPorts();
 
   ASSERT_EQ_WAIT(3U, candidates_.size(), kDefaultAllocationTimeout);
-  EXPECT_PRED5(CheckCandidate, candidates_[0], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "udp", kClientAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[1], ICE_CANDIDATE_COMPONENT_RTP,
-               "stun", "udp", rtc::SocketAddress(kNatUdpAddr.ipaddr(), 0));
-  EXPECT_PRED5(CheckCandidate, candidates_[2], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "udp", rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
-  EXPECT_EQ(candidates_[2].related_address(), candidates_[1].address());
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", kClientAddr);
+  Candidate stun_candidate;
+  EXPECT_PRED5(FindCandidate, candidates_, "stun", "udp",
+               rtc::SocketAddress(kNatUdpAddr.ipaddr(), 0), &stun_candidate);
+  EXPECT_PRED5(HasCandidateWithRelatedAddr, candidates_, "relay", "udp",
+               rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0),
+               stun_candidate.address());
 
   EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
   EXPECT_EQ(3U, candidates_.size());
@@ -1222,10 +1235,9 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketWithNatUsingTurnTcpOnly) {
 
   ASSERT_EQ_WAIT(2U, candidates_.size(), kDefaultAllocationTimeout);
   ASSERT_EQ(2U, ports_.size());
-  EXPECT_PRED5(CheckCandidate, candidates_[0], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "udp", kClientAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[1], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "udp", rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", kClientAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "relay", "udp",
+               rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
   EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
   EXPECT_EQ(2U, candidates_.size());
   EXPECT_EQ(1U, ports_[0]->Candidates().size());
@@ -1250,15 +1262,17 @@ TEST_F(BasicPortAllocatorTest, TestNonSharedSocketWithNatUsingTurnAsStun) {
 
   ASSERT_EQ_WAIT(3U, candidates_.size(), kDefaultAllocationTimeout);
   ASSERT_EQ(3U, ports_.size());
-  EXPECT_PRED5(CheckCandidate, candidates_[0], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "udp", kClientAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[1], ICE_CANDIDATE_COMPONENT_RTP,
-               "stun", "udp", rtc::SocketAddress(kNatUdpAddr.ipaddr(), 0));
-  EXPECT_PRED5(CheckCandidate, candidates_[2], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "udp", rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", kClientAddr);
+  Candidate stun_candidate;
+  EXPECT_PRED5(FindCandidate, candidates_, "stun", "udp",
+               rtc::SocketAddress(kNatUdpAddr.ipaddr(), 0), &stun_candidate);
+  Candidate turn_candidate;
+  EXPECT_PRED5(FindCandidate, candidates_, "relay", "udp",
+               rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0),
+               &turn_candidate);
   // Not using shared socket, so the STUN request's server reflexive address
   // should be different than the TURN request's server reflexive address.
-  EXPECT_NE(candidates_[2].related_address(), candidates_[1].address());
+  EXPECT_NE(turn_candidate.related_address(), stun_candidate.address());
 
   EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
   EXPECT_EQ(3U, candidates_.size());
@@ -1285,13 +1299,13 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketWithNatUsingTurnAndStun) {
   session_->StartGettingPorts();
 
   ASSERT_EQ_WAIT(3U, candidates_.size(), kDefaultAllocationTimeout);
-  EXPECT_PRED5(CheckCandidate, candidates_[0], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "udp", kClientAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[1], ICE_CANDIDATE_COMPONENT_RTP,
-               "stun", "udp", rtc::SocketAddress(kNatUdpAddr.ipaddr(), 0));
-  EXPECT_PRED5(CheckCandidate, candidates_[2], ICE_CANDIDATE_COMPONENT_RTP,
-               "relay", "udp", rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
-  EXPECT_EQ(candidates_[2].related_address(), candidates_[1].address());
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", kClientAddr);
+  Candidate stun_candidate;
+  EXPECT_PRED5(FindCandidate, candidates_, "stun", "udp",
+               rtc::SocketAddress(kNatUdpAddr.ipaddr(), 0), &stun_candidate);
+  EXPECT_PRED5(HasCandidateWithRelatedAddr, candidates_, "relay", "udp",
+               rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0),
+               stun_candidate.address());
 
   // Don't bother waiting for STUN timeout, since we already verified
   // that we got a STUN candidate from the TURN server.
@@ -1310,8 +1324,7 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketNoUdpAllowed) {
   session_->StartGettingPorts();
   ASSERT_EQ_WAIT(1U, ports_.size(), kDefaultAllocationTimeout);
   EXPECT_EQ(1U, candidates_.size());
-  EXPECT_PRED5(CheckCandidate, candidates_[0], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "udp", kClientAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", kClientAddr);
   // STUN timeout is 9.5sec. We need to wait to get candidate done signal.
   EXPECT_TRUE_WAIT(candidate_allocation_done_, kStunTimeoutMs);
   EXPECT_EQ(1U, candidates_.size());
@@ -1335,8 +1348,7 @@ TEST_F(BasicPortAllocatorTest, TestNetworkPermissionBlocked) {
   session_->StartGettingPorts();
   EXPECT_EQ_WAIT(1U, ports_.size(), kDefaultAllocationTimeout);
   EXPECT_EQ(1U, candidates_.size());
-  EXPECT_PRED5(CheckCandidate, candidates_[0], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "udp", kPrivateAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", kPrivateAddr);
   EXPECT_NE(0U, session_->flags() & PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION);
 }
 
@@ -1353,14 +1365,10 @@ TEST_F(BasicPortAllocatorTest, TestEnableIPv6Addresses) {
   ASSERT_EQ_WAIT(4U, ports_.size(), kDefaultAllocationTimeout);
   EXPECT_EQ(4U, candidates_.size());
   EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
-  EXPECT_PRED5(CheckCandidate, candidates_[0], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "udp", kClientIPv6Addr);
-  EXPECT_PRED5(CheckCandidate, candidates_[1], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "udp", kClientAddr);
-  EXPECT_PRED5(CheckCandidate, candidates_[2], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "tcp", kClientIPv6Addr);
-  EXPECT_PRED5(CheckCandidate, candidates_[3], ICE_CANDIDATE_COMPONENT_RTP,
-               "local", "tcp", kClientAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", kClientIPv6Addr);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", kClientAddr);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "tcp", kClientIPv6Addr);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "tcp", kClientAddr);
   EXPECT_EQ(4U, candidates_.size());
 }
 
