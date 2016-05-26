@@ -498,16 +498,11 @@ class P2PTransportChannelTestBase : public testing::Test,
     const std::string& local_type = LocalCandidate(ep2_ch1())->type();
     const std::string& local_proto = LocalCandidate(ep2_ch1())->protocol();
     const std::string& remote_type = RemoteCandidate(ep2_ch1())->type();
-    EXPECT_EQ(expected.local_proto2, local_proto);
-    EXPECT_EQ(expected.remote_proto2, remote_type);
+    const std::string& remote_proto = RemoteCandidate(ep2_ch1())->protocol();
     EXPECT_EQ(expected.local_type2, local_type);
-    if (remote_type != expected.remote_type2) {
-      EXPECT_TRUE(expected.remote_type2 == cricket::LOCAL_PORT_TYPE ||
-                  expected.remote_type2 == cricket::STUN_PORT_TYPE);
-      EXPECT_TRUE(remote_type == cricket::LOCAL_PORT_TYPE ||
-                  remote_type == cricket::STUN_PORT_TYPE ||
-                  remote_type == cricket::PRFLX_PORT_TYPE);
-    }
+    EXPECT_EQ(expected.remote_type2, remote_type);
+    EXPECT_EQ(expected.local_proto2, local_proto);
+    EXPECT_EQ(expected.remote_proto2, remote_proto);
   }
 
   void Test(const Result& expected) {
@@ -539,19 +534,15 @@ class P2PTransportChannelTestBase : public testing::Test,
       int64_t converge_start = rtc::TimeMillis();
       int64_t converge_time;
       int64_t converge_wait = 2000;
-      EXPECT_TRUE_WAIT_MARGIN(CheckCandidate1(expected), converge_wait,
-                              converge_wait);
-      // Also do EXPECT_EQ on each part so that failures are more verbose.
-      ExpectCandidate1(expected);
-
-      // Verifying remote channel best connection information. This is done
-      // only for the RFC 5245 as controlled agent will use USE-CANDIDATE
+      // Verifying local and remote channel best connection information. This is
+      // done only for the RFC 5245 as controlled agent will use USE-CANDIDATE
       // from controlling (ep1) agent. We can easily predict from EP1 result
       // matrix.
-
-      // Checking for best connection candidates information at remote.
-      EXPECT_TRUE_WAIT(CheckCandidate2(expected), kDefaultTimeout);
-      // For verbose
+      EXPECT_TRUE_WAIT_MARGIN(
+          CheckCandidate1(expected) && CheckCandidate2(expected), converge_wait,
+          converge_wait);
+      // Also do EXPECT_EQ on each part so that failures are more verbose.
+      ExpectCandidate1(expected);
       ExpectCandidate2(expected);
 
       converge_time = rtc::TimeMillis() - converge_start;
@@ -863,9 +854,6 @@ const P2PTransportChannelTestBase::Result P2PTransportChannelTestBase::
 class P2PTransportChannelTest : public P2PTransportChannelTestBase {
  protected:
   static const Result* kMatrix[NUM_CONFIGS][NUM_CONFIGS];
-  static const Result* kMatrixSharedUfrag[NUM_CONFIGS][NUM_CONFIGS];
-  static const Result* kMatrixSharedSocketAsGice[NUM_CONFIGS][NUM_CONFIGS];
-  static const Result* kMatrixSharedSocketAsIce[NUM_CONFIGS][NUM_CONFIGS];
   void ConfigureEndpoints(Config config1,
                           Config config2,
                           int allocator_flags1,
@@ -988,104 +976,23 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
 
 // Test matrix. Originator behavior defined by rows, receiever by columns.
 
-// Currently the p2ptransportchannel.cc (specifically the
-// P2PTransportChannel::OnUnknownAddress) operates in 2 modes depend on the
-// remote candidates - ufrag per port or shared ufrag.
-// For example, if the remote candidates have the shared ufrag, for the unknown
-// address reaches the OnUnknownAddress, we will try to find the matched
-// remote candidate based on the address and protocol, if not found, a new
-// remote candidate will be created for this address. But if the remote
-// candidates have different ufrags, we will try to find the matched remote
-// candidate by comparing the ufrag. If not found, an error will be returned.
-// Because currently the shared ufrag feature is under the experiment and will
-// be rolled out gradually. We want to test the different combinations of peers
-// with/without the shared ufrag enabled. And those different combinations have
-// different expectation of the best connection. For example in the OpenToCONE
-// case, an unknown address will be updated to a "host" remote candidate if the
-// remote peer uses different ufrag per port. But in the shared ufrag case,
-// a "stun" (should be peer-reflexive eventually) candidate will be created for
-// that. So the expected best candidate will be LUSU instead of LULU.
-// With all these, we have to keep 2 test matrixes for the tests:
-// kMatrix - for the tests that the remote peer uses different ufrag per port.
-// kMatrixSharedUfrag - for the tests that remote peer uses shared ufrag.
-// The different between the two matrixes are on:
-// OPToCONE, OPTo2CON,
-// COToCONE, COToADDR, COToPORT, COToSYMM, COTo2CON, COToSCON,
-// ADToCONE, ADToADDR, ADTo2CON,
-// POToADDR,
-// SYToADDR,
-// 2CToCONE, 2CToADDR, 2CToPORT, 2CToSYMM, 2CTo2CON, 2CToSCON,
-// SCToADDR,
-
 // TODO: Fix NULLs caused by lack of TCP support in NATSocket.
 // TODO: Fix NULLs caused by no HTTP proxy support.
 // TODO: Rearrange rows/columns from best to worst.
-// TODO(ronghuawu): Keep only one test matrix once the shared ufrag is enabled.
-const P2PTransportChannelTest::Result*
-    P2PTransportChannelTest::kMatrix[NUM_CONFIGS][NUM_CONFIGS] = {
-//      OPEN  CONE  ADDR  PORT  SYMM  2CON  SCON  !UDP  !TCP  HTTP  PRXH  PRXS
-/*OP*/ {LULU, LULU, LULU, LULU, LULU, LULU, LULU, LTLT, LTLT, LSRS, NULL, LTLT},
-/*CO*/ {LULU, LULU, LULU, SULU, SULU, LULU, SULU, NULL, NULL, LSRS, NULL, LTRT},
-/*AD*/ {LULU, LULU, LULU, SUSU, SUSU, LULU, SUSU, NULL, NULL, LSRS, NULL, LTRT},
-/*PO*/ {LULU, LUSU, LUSU, SUSU, LURU, LUSU, LURU, NULL, NULL, LSRS, NULL, LTRT},
-/*SY*/ {LULU, LUSU, LUSU, LURU, LURU, LUSU, LURU, NULL, NULL, LSRS, NULL, LTRT},
-/*2C*/ {LULU, LULU, LULU, SULU, SULU, LULU, SULU, NULL, NULL, LSRS, NULL, LTRT},
-/*SC*/ {LULU, LUSU, LUSU, LURU, LURU, LUSU, LURU, NULL, NULL, LSRS, NULL, LTRT},
-/*!U*/ {LTLT, NULL, NULL, NULL, NULL, NULL, NULL, LTLT, LTLT, LSRS, NULL, LTRT},
-/*!T*/ {LTRT, NULL, NULL, NULL, NULL, NULL, NULL, LTLT, LTRT, LSRS, NULL, LTRT},
-/*HT*/ {LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, NULL, LSRS},
-/*PR*/ {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-/*PR*/ {LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LSRS, NULL, LTRT},
-};
-const P2PTransportChannelTest::Result*
-    P2PTransportChannelTest::kMatrixSharedUfrag[NUM_CONFIGS][NUM_CONFIGS] = {
-//      OPEN  CONE  ADDR  PORT  SYMM  2CON  SCON  !UDP  !TCP  HTTP  PRXH  PRXS
-/*OP*/ {LULU, LUSU, LULU, LULU, LULU, LUSU, LULU, LTLT, LTLT, LSRS, NULL, LTLT},
-/*CO*/ {LULU, LUSU, LUSU, SUSU, SUSU, LUSU, SUSU, NULL, NULL, LSRS, NULL, LTRT},
-/*AD*/ {LULU, LUSU, LUSU, SUSU, SUSU, LUSU, SUSU, NULL, NULL, LSRS, NULL, LTRT},
-/*PO*/ {LULU, LUSU, LUSU, SUSU, LURU, LUSU, LURU, NULL, NULL, LSRS, NULL, LTRT},
-/*SY*/ {LULU, LUSU, LUSU, LURU, LURU, LUSU, LURU, NULL, NULL, LSRS, NULL, LTRT},
-/*2C*/ {LULU, LUSU, LUSU, SUSU, SUSU, LUSU, SUSU, NULL, NULL, LSRS, NULL, LTRT},
-/*SC*/ {LULU, LUSU, LUSU, LURU, LURU, LUSU, LURU, NULL, NULL, LSRS, NULL, LTRT},
-/*!U*/ {LTLT, NULL, NULL, NULL, NULL, NULL, NULL, LTLT, LTLT, LSRS, NULL, LTRT},
-/*!T*/ {LTRT, NULL, NULL, NULL, NULL, NULL, NULL, LTLT, LTRT, LSRS, NULL, LTRT},
-/*HT*/ {LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, NULL, LSRS},
-/*PR*/ {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-/*PR*/ {LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LSRS, NULL, LTRT},
-};
-const P2PTransportChannelTest::Result*
-    P2PTransportChannelTest::kMatrixSharedSocketAsGice
-        [NUM_CONFIGS][NUM_CONFIGS] = {
-//      OPEN  CONE  ADDR  PORT  SYMM  2CON  SCON  !UDP  !TCP  HTTP  PRXH  PRXS
-/*OP*/ {LULU, LUSU, LUSU, LUSU, LUSU, LUSU, LUSU, LTLT, LTLT, LSRS, NULL, LTLT},
-/*CO*/ {LULU, LUSU, LUSU, LUSU, LUSU, LUSU, LUSU, NULL, NULL, LSRS, NULL, LTRT},
-/*AD*/ {LULU, LUSU, LUSU, LUSU, LUSU, LUSU, LUSU, NULL, NULL, LSRS, NULL, LTRT},
-/*PO*/ {LULU, LUSU, LUSU, LUSU, LURU, LUSU, LURU, NULL, NULL, LSRS, NULL, LTRT},
-/*SY*/ {LULU, LUSU, LUSU, LURU, LURU, LUSU, LURU, NULL, NULL, LSRS, NULL, LTRT},
-/*2C*/ {LULU, LUSU, LUSU, LUSU, LUSU, LUSU, LUSU, NULL, NULL, LSRS, NULL, LTRT},
-/*SC*/ {LULU, LUSU, LUSU, LURU, LURU, LUSU, LURU, NULL, NULL, LSRS, NULL, LTRT},
-/*!U*/ {LTLT, NULL, NULL, NULL, NULL, NULL, NULL, LTLT, LTLT, LSRS, NULL, LTRT},
-/*!T*/ {LTRT, NULL, NULL, NULL, NULL, NULL, NULL, LTLT, LTRT, LSRS, NULL, LTRT},
-/*HT*/ {LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, NULL, LSRS},
-/*PR*/ {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-/*PR*/ {LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LSRS, NULL, LTRT},
-};
-const P2PTransportChannelTest::Result*
-    P2PTransportChannelTest::kMatrixSharedSocketAsIce
-        [NUM_CONFIGS][NUM_CONFIGS] = {
-//      OPEN  CONE  ADDR  PORT  SYMM  2CON  SCON  !UDP  !TCP  HTTP  PRXH  PRXS
-/*OP*/ {LULU, LUSU, LUSU, LUSU, LUPU, LUSU, LUPU, PTLT, LTPT, LSRS, NULL, LTPT},
-/*CO*/ {LULU, LUSU, LUSU, LUSU, LUPU, LUSU, LUPU, NULL, NULL, LSRS, NULL, LTRT},
-/*AD*/ {LULU, LUSU, LUSU, LUSU, LUPU, LUSU, LUPU, NULL, NULL, LSRS, NULL, LTRT},
-/*PO*/ {LULU, LUSU, LUSU, LUSU, LURU, LUSU, LURU, NULL, NULL, LSRS, NULL, LTRT},
-/*SY*/ {PULU, PUSU, PUSU, PURU, PURU, PUSU, PURU, NULL, NULL, LSRS, NULL, LTRT},
-/*2C*/ {LULU, LUSU, LUSU, LUSU, LUPU, LUSU, LUPU, NULL, NULL, LSRS, NULL, LTRT},
-/*SC*/ {PULU, PUSU, PUSU, PURU, PURU, PUSU, PURU, NULL, NULL, LSRS, NULL, LTRT},
-/*!U*/ {PTLT, NULL, NULL, NULL, NULL, NULL, NULL, PTLT, LTPT, LSRS, NULL, LTRT},
-/*!T*/ {LTRT, NULL, NULL, NULL, NULL, NULL, NULL, PTLT, LTRT, LSRS, NULL, LTRT},
-/*HT*/ {LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, NULL, LSRS},
-/*PR*/ {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-/*PR*/ {LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LSRS, NULL, LTRT},
+const P2PTransportChannelTest::Result* P2PTransportChannelTest::kMatrix[NUM_CONFIGS][NUM_CONFIGS] = {
+    //      OPEN  CONE  ADDR  PORT  SYMM  2CON  SCON  !UDP  !TCP  HTTP  PRXH  PRXS
+    /*OP*/ {LULU, LUSU, LUSU, LUSU, LUPU, LUSU, LUPU, PTLT, LTPT, LSRS, NULL, LTPT},
+    /*CO*/ {LULU, LUSU, LUSU, LUSU, LUPU, LUSU, LUPU, NULL, NULL, LSRS, NULL, LTRT},
+    /*AD*/ {LULU, LUSU, LUSU, LUSU, LUPU, LUSU, LUPU, NULL, NULL, LSRS, NULL, LTRT},
+    /*PO*/ {LULU, LUSU, LUSU, LUSU, LURU, LUSU, LURU, NULL, NULL, LSRS, NULL, LTRT},
+    /*SY*/ {PULU, PUSU, PUSU, PURU, PURU, PUSU, PURU, NULL, NULL, LSRS, NULL, LTRT},
+    /*2C*/ {LULU, LUSU, LUSU, LUSU, LUPU, LUSU, LUPU, NULL, NULL, LSRS, NULL, LTRT},
+    /*SC*/ {PULU, PUSU, PUSU, PURU, PURU, PUSU, PURU, NULL, NULL, LSRS, NULL, LTRT},
+    /*!U*/ {PTLT, NULL, NULL, NULL, NULL, NULL, NULL, PTLT, LTPT, LSRS, NULL, LTRT},
+    /*!T*/ {LTRT, NULL, NULL, NULL, NULL, NULL, NULL, PTLT, LTRT, LSRS, NULL, LTRT},
+    /*HT*/ {LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, NULL, LSRS},
+    /*PR*/ {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+    /*PR*/ {LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LSRS, NULL, LTRT},
 };
 
 // The actual tests that exercise all the various configurations.
@@ -1094,8 +1001,8 @@ const P2PTransportChannelTest::Result*
   TEST_F(P2PTransportChannelTest, z##Test##x##To##y) {           \
     ConfigureEndpoints(x, y, PORTALLOCATOR_ENABLE_SHARED_SOCKET, \
                        PORTALLOCATOR_ENABLE_SHARED_SOCKET);      \
-    if (kMatrixSharedSocketAsIce[x][y] != NULL)                  \
-      Test(*kMatrixSharedSocketAsIce[x][y]);                     \
+    if (kMatrix[x][y] != NULL)                                   \
+      Test(*kMatrix[x][y]);                                      \
     else                                                         \
       LOG(LS_WARNING) << "Not yet implemented";                  \
   }
