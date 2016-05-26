@@ -31,7 +31,10 @@ void CheckValidInitParams(int src_sample_rate_hz, int dst_sample_rate_hz,
   RTC_DCHECK_LE(num_channels, 2u);
 }
 
-void CheckExpectedBufferSizes(size_t num_channels, int src_sample_rate,
+void CheckExpectedBufferSizes(size_t src_length,
+                              size_t dst_capacity,
+                              size_t num_channels,
+                              int src_sample_rate,
                               int dst_sample_rate) {
   const size_t src_size_10ms = src_sample_rate * num_channels / 100;
   const size_t dst_size_10ms = dst_sample_rate * num_channels / 100;
@@ -94,8 +97,8 @@ int PushResampler<T>::InitializeIfNeeded(int src_sample_rate_hz,
 template <typename T>
 int PushResampler<T>::Resample(const T* src, size_t src_length, T* dst,
                                size_t dst_capacity) {
-  CheckExpectedBufferSizes(num_channels_, src_sample_rate_hz_,
-                           dst_sample_rate_hz_)
+  CheckExpectedBufferSizes(src_length, dst_capacity, num_channels_,
+                           src_sample_rate_hz_, dst_sample_rate_hz_);
 
   if (src_sample_rate_hz_ == dst_sample_rate_hz_) {
     // The old resampler provides this memcpy facility in the case of matching
