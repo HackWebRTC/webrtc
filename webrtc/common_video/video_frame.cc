@@ -66,18 +66,7 @@ void VideoFrame::CreateEmptyFrame(int width,
   render_time_ms_ = 0;
   rotation_ = kVideoRotation_0;
 
-  // Check if it's safe to reuse allocation.
-  if (video_frame_buffer_ && video_frame_buffer_->IsMutable() &&
-      !video_frame_buffer_->native_handle() &&
-      width == video_frame_buffer_->width() &&
-      height == video_frame_buffer_->height() &&
-      stride_y == video_frame_buffer_->StrideY() &&
-      stride_u == video_frame_buffer_->StrideU() &&
-      stride_v == video_frame_buffer_->StrideV()) {
-    return;
-  }
-
-  // Need to allocate new buffer.
+  // Allocate a new buffer.
   video_frame_buffer_ = new rtc::RefCountedObject<I420Buffer>(
       width, height, stride_y, stride_u, stride_v);
 }

@@ -200,18 +200,6 @@ TEST(TestVideoFrame, CopyBuffer) {
   EXPECT_LE(kSizeUv, frame2.allocated_size(kVPlane));
 }
 
-TEST(TestVideoFrame, ReuseAllocation) {
-  VideoFrame frame;
-  frame.CreateEmptyFrame(640, 320, 640, 320, 320);
-  const uint8_t* y = frame.video_frame_buffer()->DataY();
-  const uint8_t* u = frame.video_frame_buffer()->DataU();
-  const uint8_t* v = frame.video_frame_buffer()->DataV();
-  frame.CreateEmptyFrame(640, 320, 640, 320, 320);
-  EXPECT_EQ(y, frame.video_frame_buffer()->DataY());
-  EXPECT_EQ(u, frame.video_frame_buffer()->DataU());
-  EXPECT_EQ(v, frame.video_frame_buffer()->DataV());
-}
-
 TEST(TestVideoFrame, FailToReuseAllocation) {
   VideoFrame frame1;
   frame1.CreateEmptyFrame(640, 320, 640, 320, 320);

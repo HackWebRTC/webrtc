@@ -39,23 +39,13 @@ VideoFrame* VideoFrameFactory::CreateAliasedFrame(
     std::swap(output_width, output_height);
   }
 
-  // Create and stretch the output frame if it has not been created yet, is
-  // still in use by others, or its size is not same as the expected.
-  if (!output_frame_ || !output_frame_->IsExclusive() ||
-      output_frame_->width() != output_width ||
-      output_frame_->height() != output_height) {
-    output_frame_.reset(
-        cropped_input_frame->Stretch(output_width, output_height, true, true));
-    if (!output_frame_) {
-      LOG(LS_WARNING) << "Failed to stretch frame to " << output_width << "x"
-                      << output_height;
-      return NULL;
-    }
-  } else {
-    cropped_input_frame->StretchToFrame(output_frame_.get(), true, true);
-    output_frame_->SetTimeStamp(cropped_input_frame->GetTimeStamp());
-  }
-  return output_frame_->Copy();
+  std::unique_ptr<VideoFrame> output_frame(new WebRtcVideoFrame(
+      pool_.CreateBuffer(output_width, output_height),
+      cropped_input_frame->rotation(),
+      cropped_input_frame->timestamp_us()));
+
+  cropped_input_frame->StretchToFrame(output_frame.get(), true, true);
+  return output_frame.release();
 }
 
 }  // namespace cricket

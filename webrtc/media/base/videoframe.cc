@@ -148,17 +148,6 @@ void VideoFrame::StretchToFrame(VideoFrame* dst,
   dst->set_rotation(rotation());
 }
 
-VideoFrame* VideoFrame::Stretch(size_t dst_width, size_t dst_height,
-                                bool interpolate, bool vert_crop) const {
-  VideoFrame* dest = CreateEmptyFrame(static_cast<int>(dst_width),
-                                      static_cast<int>(dst_height),
-                                      GetTimeStamp());
-  if (dest) {
-    StretchToFrame(dest, interpolate, vert_crop);
-  }
-  return dest;
-}
-
 bool VideoFrame::SetToBlack() {
   return libyuv::I420Rect(video_frame_buffer()->MutableDataY(),
                           video_frame_buffer()->StrideY(),

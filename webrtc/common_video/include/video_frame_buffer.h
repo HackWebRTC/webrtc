@@ -33,18 +33,6 @@ enum PlaneType {
 // not contain any frame metadata such as rotation, timestamp, pixel_width, etc.
 class VideoFrameBuffer : public rtc::RefCountInterface {
  public:
-  // Returns true if the caller is exclusive owner, and allowed to
-  // call MutableData.
-
-  // TODO(nisse): Delete default implementation when subclasses in
-  // Chrome are updated.
-  virtual bool IsMutable() { return false; }
-
-  // Underlying refcount access, used to implement IsMutable.
-  // TODO(nisse): Demote to protected, as soon as Chrome is changed to
-  // use IsMutable.
-  virtual bool HasOneRef() const = 0;
-
   // The resolution of the frame in pixels. For formats where some planes are
   // subsampled, this is the highest-resolution plane.
   virtual int width() const = 0;
@@ -67,7 +55,8 @@ class VideoFrameBuffer : public rtc::RefCountInterface {
   // TODO(nisse): Delete after all users are updated.
   virtual const uint8_t* data(PlaneType type) const;
 
-  // Non-const data access is allowed only if HasOneRef() is true.
+  // TODO(nisse): Move MutableData methods to the I420Buffer subclass.
+  // Non-const data access.
   virtual uint8_t* MutableDataY();
   virtual uint8_t* MutableDataU();
   virtual uint8_t* MutableDataV();
@@ -105,9 +94,7 @@ class I420Buffer : public VideoFrameBuffer {
   const uint8_t* DataY() const override;
   const uint8_t* DataU() const override;
   const uint8_t* DataV() const override;
-  // Non-const data access is only allowed if IsMutable() is true, to protect
-  // against unexpected overwrites.
-  bool IsMutable() override;
+
   uint8_t* MutableDataY() override;
   uint8_t* MutableDataU() override;
   uint8_t* MutableDataV() override;
@@ -152,7 +139,6 @@ class NativeHandleBuffer : public VideoFrameBuffer {
   int StrideV() const override;
 
   void* native_handle() const override;
-  bool IsMutable() override;
 
  protected:
   void* native_handle_;
@@ -173,8 +159,6 @@ class WrappedI420Buffer : public webrtc::VideoFrameBuffer {
                     const rtc::Callback0<void>& no_longer_used);
   int width() const override;
   int height() const override;
-
-  bool IsMutable() override;
 
   const uint8_t* DataY() const override;
   const uint8_t* DataU() const override;

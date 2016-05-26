@@ -13,6 +13,7 @@
 
 #include <memory>
 
+#include "webrtc/common_video/include/i420_buffer_pool.h"
 #include "webrtc/media/base/videoframe.h"
 
 namespace cricket {
@@ -52,9 +53,9 @@ class VideoFrameFactory {
   bool apply_rotation_;
 
  private:
-  // An internal frame buffer to avoid reallocations. It is mutable because it
+  // An internal pool to avoid reallocations. It is mutable because it
   // does not affect behaviour, only performance.
-  mutable std::unique_ptr<VideoFrame> output_frame_;
+  mutable webrtc::I420BufferPool pool_;
 };
 
 }  // namespace cricket

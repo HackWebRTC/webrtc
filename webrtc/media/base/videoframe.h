@@ -56,10 +56,6 @@ class VideoFrame {
   // frame buffer.
   virtual VideoFrame *Copy() const = 0;
 
-  // Since VideoFrame supports shallow copy and the internal frame buffer might
-  // be shared, this function can be used to check exclusive ownership.
-  virtual bool IsExclusive() const = 0;
-
   // Return a copy of frame which has its pending rotation applied. The
   // ownership of the returned frame is held by this frame.
   virtual const VideoFrame* GetCopyWithRotationApplied() const = 0;
@@ -95,13 +91,6 @@ class VideoFrame {
   virtual void StretchToFrame(VideoFrame *target, bool interpolate,
                               bool crop) const;
 
-  // Stretches the frame to the given size, creating a new VideoFrame object to
-  // hold it. The parameter "interpolate" controls whether to interpolate or
-  // just take the nearest-point. The parameter "crop" controls whether to crop
-  // this frame to the aspect ratio of the given dimensions before stretching.
-  virtual VideoFrame *Stretch(size_t w, size_t h, bool interpolate,
-                              bool crop) const;
-
   // Sets the video frame to black.
   virtual bool SetToBlack();
 
@@ -128,6 +117,7 @@ class VideoFrame {
   virtual VideoFrame* CreateEmptyFrame(int w,
                                        int h,
                                        int64_t timestamp_us) const = 0;
+
   virtual void set_rotation(webrtc::VideoRotation rotation) = 0;
 };
 

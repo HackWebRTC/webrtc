@@ -154,20 +154,13 @@ const uint8_t* I420Buffer::DataV() const {
   return data_.get() + stride_y_ * height_ + stride_u_ * ((height_ + 1) / 2);
 }
 
-bool I420Buffer::IsMutable() {
-  return HasOneRef();
-}
-
 uint8_t* I420Buffer::MutableDataY() {
-  RTC_DCHECK(IsMutable());
   return const_cast<uint8_t*>(DataY());
 }
 uint8_t* I420Buffer::MutableDataU() {
-  RTC_DCHECK(IsMutable());
   return const_cast<uint8_t*>(DataU());
 }
 uint8_t* I420Buffer::MutableDataV() {
-  RTC_DCHECK(IsMutable());
   return const_cast<uint8_t*>(DataV());
 }
 
@@ -214,10 +207,6 @@ NativeHandleBuffer::NativeHandleBuffer(void* native_handle,
   RTC_DCHECK(native_handle != nullptr);
   RTC_DCHECK_GT(width, 0);
   RTC_DCHECK_GT(height, 0);
-}
-
-bool NativeHandleBuffer::IsMutable() {
-  return false;
 }
 
 int NativeHandleBuffer::width() const {
@@ -280,11 +269,6 @@ WrappedI420Buffer::WrappedI420Buffer(int width,
 
 WrappedI420Buffer::~WrappedI420Buffer() {
   no_longer_used_cb_();
-}
-
-// Data owned by creator; never mutable.
-bool WrappedI420Buffer::IsMutable() {
-  return false;
 }
 
 int WrappedI420Buffer::width() const {

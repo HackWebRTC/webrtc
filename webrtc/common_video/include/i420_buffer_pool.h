@@ -30,14 +30,18 @@ class I420BufferPool {
 
   // Returns a buffer from the pool, or creates a new buffer if no suitable
   // buffer exists in the pool.
-  rtc::scoped_refptr<VideoFrameBuffer> CreateBuffer(int width, int height);
+  rtc::scoped_refptr<I420Buffer> CreateBuffer(int width, int height);
   // Clears buffers_ and detaches the thread checker so that it can be reused
   // later from another thread.
   void Release();
 
  private:
+  // Explicitly use a RefCountedObject to get access to HasOneRef,
+  // needed by the pool to check exclusive access.
+  using PooledI420Buffer = rtc::RefCountedObject<I420Buffer>;
+
   rtc::ThreadChecker thread_checker_;
-  std::list<rtc::scoped_refptr<I420Buffer>> buffers_;
+  std::list<rtc::scoped_refptr<PooledI420Buffer>> buffers_;
   // If true, newly allocated buffers are zero-initialized. Note that recycled
   // buffers are not zero'd before reuse. This is required of buffers used by
   // FFmpeg according to http://crbug.com/390941, which only requires it for the

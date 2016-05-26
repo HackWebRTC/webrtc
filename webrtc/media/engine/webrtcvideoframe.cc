@@ -79,10 +79,6 @@ int WebRtcVideoFrame::height() const {
   return video_frame_buffer_ ? video_frame_buffer_->height() : 0;
 }
 
-bool WebRtcVideoFrame::IsExclusive() const {
-  return video_frame_buffer_->IsMutable();
-}
-
 const rtc::scoped_refptr<webrtc::VideoFrameBuffer>&
 WebRtcVideoFrame::video_frame_buffer() const {
   return video_frame_buffer_;

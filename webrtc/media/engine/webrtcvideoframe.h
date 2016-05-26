@@ -78,7 +78,7 @@ class WebRtcVideoFrame : public VideoFrame {
   webrtc::VideoRotation rotation() const override { return rotation_; }
 
   VideoFrame* Copy() const override;
-  bool IsExclusive() const override;
+
   size_t ConvertToRgbBuffer(uint32_t to_fourcc,
                             uint8_t* buffer,
                             size_t size,
