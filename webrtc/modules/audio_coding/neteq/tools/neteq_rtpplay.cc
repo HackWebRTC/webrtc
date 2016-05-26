@@ -368,9 +368,7 @@ size_t ReplacePayload(InputAudioFile* replacement_audio_file,
   return payload_len;
 }
 
-}  // namespace
-
-int main(int argc, char* argv[]) {
+int RunTest(int argc, char* argv[]) {
   static const int kOutputBlockSizeMs = 10;
 
   std::string program_name = argv[0];
@@ -632,5 +630,10 @@ int main(int argc, char* argv[]) {
   return 0;
 }
 
+}  // namespace
 }  // namespace test
 }  // namespace webrtc
+
+int main(int argc, char* argv[]) {
+  webrtc::test::RunTest(argc, argv);
+}

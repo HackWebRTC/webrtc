@@ -30,7 +30,8 @@
           'type': 'executable',
           'dependencies': [
             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
-            '<(webrtc_root)/test/test.gyp:test_support_main',
+            '<(webrtc_root)/test/test.gyp:test_support',
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
             'rtc_event_log_source',
             'neteq',
             'neteq_unittest_tools',
