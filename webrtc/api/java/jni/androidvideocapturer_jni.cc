@@ -264,6 +264,7 @@ void AndroidVideoCapturerJni::OnTextureFrame(int width,
   if (!capturer_->AdaptFrame(width, height, timestamp_ns,
                              &adapted_width, &adapted_height,
                              &crop_width, &crop_height, &crop_x, &crop_y)) {
+    surface_texture_helper_->ReturnTextureFrame();
     return;
   }
 

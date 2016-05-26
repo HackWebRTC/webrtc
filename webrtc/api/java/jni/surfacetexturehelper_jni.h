@@ -49,14 +49,14 @@ class SurfaceTextureHelper : public rtc::RefCountInterface {
       int height,
       const NativeHandleImpl& native_handle);
 
+  // May be called on arbitrary thread.
+  void ReturnTextureFrame() const;
+
  protected:
   ~SurfaceTextureHelper();
   SurfaceTextureHelper(JNIEnv* jni, jobject j_surface_texture_helper);
 
  private:
-  //  May be called on arbitrary thread.
-  void ReturnTextureFrame() const;
-
   const ScopedGlobalRef<jobject> j_surface_texture_helper_;
   const jmethodID j_return_texture_method_;
 };
