@@ -24,32 +24,42 @@ std::string FecConfig::ToString() const {
 
 std::string RtpExtension::ToString() const {
   std::stringstream ss;
-  ss << "{name: " << name;
+  ss << "{uri: " << uri;
   ss << ", id: " << id;
   ss << '}';
   return ss.str();
 }
 
-const char* RtpExtension::kTOffset = "urn:ietf:params:rtp-hdrext:toffset";
-const char* RtpExtension::kAbsSendTime =
-    "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
-const char* RtpExtension::kVideoRotation = "urn:3gpp:video-orientation";
-const char* RtpExtension::kAudioLevel =
+const char* RtpExtension::kAudioLevelUri =
     "urn:ietf:params:rtp-hdrext:ssrc-audio-level";
-const char* RtpExtension::kTransportSequenceNumber =
-    "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01";
+const int RtpExtension::kAudioLevelDefaultId = 1;
 
-bool RtpExtension::IsSupportedForAudio(const std::string& name) {
-  return name == webrtc::RtpExtension::kAbsSendTime ||
-         name == webrtc::RtpExtension::kAudioLevel ||
-         name == webrtc::RtpExtension::kTransportSequenceNumber;
+const char* RtpExtension::kTimestampOffsetUri =
+    "urn:ietf:params:rtp-hdrext:toffset";
+const int RtpExtension::kTimestampOffsetDefaultId = 2;
+
+const char* RtpExtension::kAbsSendTimeUri =
+    "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
+const int RtpExtension::kAbsSendTimeDefaultId = 3;
+
+const char* RtpExtension::kVideoRotationUri = "urn:3gpp:video-orientation";
+const int RtpExtension::kVideoRotationDefaultId = 4;
+
+const char* RtpExtension::kTransportSequenceNumberUri =
+    "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01";
+const int RtpExtension::kTransportSequenceNumberDefaultId = 5;
+
+bool RtpExtension::IsSupportedForAudio(const std::string& uri) {
+  return uri == webrtc::RtpExtension::kAbsSendTimeUri ||
+         uri == webrtc::RtpExtension::kAudioLevelUri ||
+         uri == webrtc::RtpExtension::kTransportSequenceNumberUri;
 }
 
-bool RtpExtension::IsSupportedForVideo(const std::string& name) {
-  return name == webrtc::RtpExtension::kTOffset ||
-         name == webrtc::RtpExtension::kAbsSendTime ||
-         name == webrtc::RtpExtension::kVideoRotation ||
-         name == webrtc::RtpExtension::kTransportSequenceNumber;
+bool RtpExtension::IsSupportedForVideo(const std::string& uri) {
+  return uri == webrtc::RtpExtension::kTimestampOffsetUri ||
+         uri == webrtc::RtpExtension::kAbsSendTimeUri ||
+         uri == webrtc::RtpExtension::kVideoRotationUri ||
+         uri == webrtc::RtpExtension::kTransportSequenceNumberUri;
 }
 
 VideoStream::VideoStream()

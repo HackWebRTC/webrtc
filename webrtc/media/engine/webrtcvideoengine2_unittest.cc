@@ -27,6 +27,8 @@
 #include "webrtc/test/field_trial.h"
 #include "webrtc/video_encoder.h"
 
+using webrtc::RtpExtension;
+
 namespace {
 static const int kDefaultQpMax = 56;
 static const int kDefaultFramerate = 30;
@@ -182,9 +184,9 @@ TEST_F(WebRtcVideoEngine2Test, DefaultRtxCodecHasAssociatedPayloadTypeSet) {
 TEST_F(WebRtcVideoEngine2Test, SupportsTimestampOffsetHeaderExtension) {
   RtpCapabilities capabilities = engine_.GetCapabilities();
   ASSERT_FALSE(capabilities.header_extensions.empty());
-  for (const RtpHeaderExtension& extension : capabilities.header_extensions) {
-    if (extension.uri == kRtpTimestampOffsetHeaderExtension) {
-      EXPECT_EQ(kRtpTimestampOffsetHeaderExtensionDefaultId, extension.id);
+  for (const RtpExtension& extension : capabilities.header_extensions) {
+    if (extension.uri == RtpExtension::kTimestampOffsetUri) {
+      EXPECT_EQ(RtpExtension::kTimestampOffsetDefaultId, extension.id);
       return;
     }
   }
@@ -194,9 +196,9 @@ TEST_F(WebRtcVideoEngine2Test, SupportsTimestampOffsetHeaderExtension) {
 TEST_F(WebRtcVideoEngine2Test, SupportsAbsoluteSenderTimeHeaderExtension) {
   RtpCapabilities capabilities = engine_.GetCapabilities();
   ASSERT_FALSE(capabilities.header_extensions.empty());
-  for (const RtpHeaderExtension& extension : capabilities.header_extensions) {
-    if (extension.uri == kRtpAbsoluteSenderTimeHeaderExtension) {
-      EXPECT_EQ(kRtpAbsoluteSenderTimeHeaderExtensionDefaultId, extension.id);
+  for (const RtpExtension& extension : capabilities.header_extensions) {
+    if (extension.uri == RtpExtension::kAbsSendTimeUri) {
+      EXPECT_EQ(RtpExtension::kAbsSendTimeDefaultId, extension.id);
       return;
     }
   }
@@ -213,10 +215,9 @@ TEST_F(WebRtcVideoEngine2WithSendSideBweTest,
        SupportsTransportSequenceNumberHeaderExtension) {
   RtpCapabilities capabilities = engine_.GetCapabilities();
   ASSERT_FALSE(capabilities.header_extensions.empty());
-  for (const RtpHeaderExtension& extension : capabilities.header_extensions) {
-    if (extension.uri == kRtpTransportSequenceNumberHeaderExtension) {
-      EXPECT_EQ(kRtpTransportSequenceNumberHeaderExtensionDefaultId,
-                extension.id);
+  for (const RtpExtension& extension : capabilities.header_extensions) {
+    if (extension.uri == RtpExtension::kTransportSequenceNumberUri) {
+      EXPECT_EQ(RtpExtension::kTransportSequenceNumberDefaultId, extension.id);
       return;
     }
   }
@@ -226,9 +227,9 @@ TEST_F(WebRtcVideoEngine2WithSendSideBweTest,
 TEST_F(WebRtcVideoEngine2Test, SupportsVideoRotationHeaderExtension) {
   RtpCapabilities capabilities = engine_.GetCapabilities();
   ASSERT_FALSE(capabilities.header_extensions.empty());
-  for (const RtpHeaderExtension& extension : capabilities.header_extensions) {
-    if (extension.uri == kRtpVideoRotationHeaderExtension) {
-      EXPECT_EQ(kRtpVideoRotationHeaderExtensionDefaultId, extension.id);
+  for (const RtpExtension& extension : capabilities.header_extensions) {
+    if (extension.uri == RtpExtension::kVideoRotationUri) {
+      EXPECT_EQ(RtpExtension::kVideoRotationDefaultId, extension.id);
       return;
     }
   }
@@ -252,7 +253,7 @@ TEST_F(WebRtcVideoEngine2Test, CVOSetHeaderExtensionBeforeCapturer) {
   // Add CVO extension.
   const int id = 1;
   parameters.extensions.push_back(
-      cricket::RtpHeaderExtension(kRtpVideoRotationHeaderExtension, id));
+      RtpExtension(RtpExtension::kVideoRotationUri, id));
   EXPECT_TRUE(channel->SetSendParameters(parameters));
 
   // Set capturer.
@@ -282,7 +283,7 @@ TEST_F(WebRtcVideoEngine2Test, CVOSetHeaderExtensionBeforeAddSendStream) {
   // Add CVO extension.
   const int id = 1;
   parameters.extensions.push_back(
-      cricket::RtpHeaderExtension(kRtpVideoRotationHeaderExtension, id));
+      RtpExtension(RtpExtension::kVideoRotationUri, id));
   EXPECT_TRUE(channel->SetSendParameters(parameters));
   EXPECT_TRUE(channel->AddSendStream(StreamParams::CreateLegacy(kSsrc)));
 
@@ -316,7 +317,7 @@ TEST_F(WebRtcVideoEngine2Test, CVOSetHeaderExtensionAfterCapturer) {
   // Add CVO extension.
   const int id = 1;
   parameters.extensions.push_back(
-      cricket::RtpHeaderExtension(kRtpVideoRotationHeaderExtension, id));
+      RtpExtension(RtpExtension::kVideoRotationUri, id));
   // Also remove the first codec to trigger a codec change as well.
   parameters.codecs.erase(parameters.codecs.begin());
   EXPECT_TRUE(channel->SetSendParameters(parameters));
@@ -967,13 +968,11 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
               fake_call_->GetConfig().bitrate_config.max_bitrate_bps);
   }
 
-  void TestSetSendRtpHeaderExtensions(const std::string& cricket_ext,
-                                      const std::string& webrtc_ext) {
+  void TestSetSendRtpHeaderExtensions(const std::string& ext_uri) {
     // Enable extension.
     const int id = 1;
     cricket::VideoSendParameters parameters = send_parameters_;
-    parameters.extensions.push_back(
-        cricket::RtpHeaderExtension(cricket_ext, id));
+    parameters.extensions.push_back(RtpExtension(ext_uri, id));
     EXPECT_TRUE(channel_->SetSendParameters(parameters));
     FakeVideoSendStream* send_stream =
         AddSendStream(cricket::StreamParams::CreateLegacy(123));
@@ -981,7 +980,7 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
     // Verify the send extension id.
     ASSERT_EQ(1u, send_stream->GetConfig().rtp.extensions.size());
     EXPECT_EQ(id, send_stream->GetConfig().rtp.extensions[0].id);
-    EXPECT_EQ(webrtc_ext, send_stream->GetConfig().rtp.extensions[0].name);
+    EXPECT_EQ(ext_uri, send_stream->GetConfig().rtp.extensions[0].uri);
     // Verify call with same set of extensions returns true.
     EXPECT_TRUE(channel_->SetSendParameters(parameters));
     // Verify that SetSendRtpHeaderExtensions doesn't implicitly add them for
@@ -1002,16 +1001,14 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
     send_stream = fake_call_->GetVideoSendStreams()[0];
     ASSERT_EQ(1u, send_stream->GetConfig().rtp.extensions.size());
     EXPECT_EQ(id, send_stream->GetConfig().rtp.extensions[0].id);
-    EXPECT_EQ(webrtc_ext, send_stream->GetConfig().rtp.extensions[0].name);
+    EXPECT_EQ(ext_uri, send_stream->GetConfig().rtp.extensions[0].uri);
   }
 
-  void TestSetRecvRtpHeaderExtensions(const std::string& cricket_ext,
-                                      const std::string& webrtc_ext) {
+  void TestSetRecvRtpHeaderExtensions(const std::string& ext_uri) {
     // Enable extension.
     const int id = 1;
     cricket::VideoRecvParameters parameters = recv_parameters_;
-    parameters.extensions.push_back(
-        cricket::RtpHeaderExtension(cricket_ext, id));
+    parameters.extensions.push_back(RtpExtension(ext_uri, id));
     EXPECT_TRUE(channel_->SetRecvParameters(parameters));
 
     FakeVideoReceiveStream* recv_stream =
@@ -1020,7 +1017,7 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
     // Verify the recv extension id.
     ASSERT_EQ(1u, recv_stream->GetConfig().rtp.extensions.size());
     EXPECT_EQ(id, recv_stream->GetConfig().rtp.extensions[0].id);
-    EXPECT_EQ(webrtc_ext, recv_stream->GetConfig().rtp.extensions[0].name);
+    EXPECT_EQ(ext_uri, recv_stream->GetConfig().rtp.extensions[0].uri);
     // Verify call with same set of extensions returns true.
     EXPECT_TRUE(channel_->SetRecvParameters(parameters));
 
@@ -1042,7 +1039,7 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
     recv_stream = fake_call_->GetVideoReceiveStreams()[0];
     ASSERT_EQ(1u, recv_stream->GetConfig().rtp.extensions.size());
     EXPECT_EQ(id, recv_stream->GetConfig().rtp.extensions[0].id);
-    EXPECT_EQ(webrtc_ext, recv_stream->GetConfig().rtp.extensions[0].name);
+    EXPECT_EQ(ext_uri, recv_stream->GetConfig().rtp.extensions[0].uri);
   }
 
   void TestExtensionFilter(const std::vector<std::string>& extensions,
@@ -1053,8 +1050,7 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
     for (const std::string& extension : extensions) {
       if (extension == expected_extension)
         expected_id = id;
-      parameters.extensions.push_back(
-          cricket::RtpHeaderExtension(extension, id++));
+      parameters.extensions.push_back(RtpExtension(extension, id++));
     }
     EXPECT_TRUE(channel_->SetSendParameters(parameters));
     FakeVideoSendStream* send_stream =
@@ -1065,7 +1061,7 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
     ASSERT_EQ(1u, send_stream->GetConfig().rtp.extensions.size());
     EXPECT_EQ(expected_id, send_stream->GetConfig().rtp.extensions[0].id);
     EXPECT_EQ(expected_extension,
-              send_stream->GetConfig().rtp.extensions[0].name);
+              send_stream->GetConfig().rtp.extensions[0].uri);
   }
 
   void TestCpuAdaptation(bool enable_overuse, bool is_screenshare);
@@ -1220,39 +1216,37 @@ TEST_F(WebRtcVideoChannel2Test, NoHeaderExtesionsByDefault) {
 
 // Test support for RTP timestamp offset header extension.
 TEST_F(WebRtcVideoChannel2Test, SendRtpTimestampOffsetHeaderExtensions) {
-  TestSetSendRtpHeaderExtensions(kRtpTimestampOffsetHeaderExtension,
-                                 webrtc::RtpExtension::kTOffset);
+  TestSetSendRtpHeaderExtensions(RtpExtension::kTimestampOffsetUri);
 }
+
 TEST_F(WebRtcVideoChannel2Test, RecvRtpTimestampOffsetHeaderExtensions) {
-  TestSetRecvRtpHeaderExtensions(kRtpTimestampOffsetHeaderExtension,
-                                 webrtc::RtpExtension::kTOffset);
+  TestSetRecvRtpHeaderExtensions(RtpExtension::kTimestampOffsetUri);
 }
 
 // Test support for absolute send time header extension.
 TEST_F(WebRtcVideoChannel2Test, SendAbsoluteSendTimeHeaderExtensions) {
-  TestSetSendRtpHeaderExtensions(kRtpAbsoluteSenderTimeHeaderExtension,
-                                 webrtc::RtpExtension::kAbsSendTime);
+  TestSetSendRtpHeaderExtensions(RtpExtension::kAbsSendTimeUri);
 }
+
 TEST_F(WebRtcVideoChannel2Test, RecvAbsoluteSendTimeHeaderExtensions) {
-  TestSetRecvRtpHeaderExtensions(kRtpAbsoluteSenderTimeHeaderExtension,
-                                 webrtc::RtpExtension::kAbsSendTime);
+  TestSetRecvRtpHeaderExtensions(RtpExtension::kAbsSendTimeUri);
 }
 
 TEST_F(WebRtcVideoChannel2Test, FiltersExtensionsPicksTransportSeqNum) {
   // Enable three redundant extensions.
   std::vector<std::string> extensions;
-  extensions.push_back(kRtpAbsoluteSenderTimeHeaderExtension);
-  extensions.push_back(kRtpTimestampOffsetHeaderExtension);
-  extensions.push_back(kRtpTransportSequenceNumberHeaderExtension);
-  TestExtensionFilter(extensions, kRtpTransportSequenceNumberHeaderExtension);
+  extensions.push_back(RtpExtension::kAbsSendTimeUri);
+  extensions.push_back(RtpExtension::kTimestampOffsetUri);
+  extensions.push_back(RtpExtension::kTransportSequenceNumberUri);
+  TestExtensionFilter(extensions, RtpExtension::kTransportSequenceNumberUri);
 }
 
 TEST_F(WebRtcVideoChannel2Test, FiltersExtensionsPicksAbsSendTime) {
   // Enable two redundant extensions.
   std::vector<std::string> extensions;
-  extensions.push_back(kRtpAbsoluteSenderTimeHeaderExtension);
-  extensions.push_back(kRtpTimestampOffsetHeaderExtension);
-  TestExtensionFilter(extensions, kRtpAbsoluteSenderTimeHeaderExtension);
+  extensions.push_back(RtpExtension::kAbsSendTimeUri);
+  extensions.push_back(RtpExtension::kTimestampOffsetUri);
+  TestExtensionFilter(extensions, RtpExtension::kAbsSendTimeUri);
 }
 
 class WebRtcVideoChannel2WithSendSideBweTest : public WebRtcVideoChannel2Test {
@@ -1264,34 +1258,28 @@ class WebRtcVideoChannel2WithSendSideBweTest : public WebRtcVideoChannel2Test {
 // Test support for transport sequence number header extension.
 TEST_F(WebRtcVideoChannel2WithSendSideBweTest,
        SendTransportSequenceNumberHeaderExtensions) {
-  TestSetSendRtpHeaderExtensions(
-      kRtpTransportSequenceNumberHeaderExtension,
-      webrtc::RtpExtension::kTransportSequenceNumber);
+  TestSetSendRtpHeaderExtensions(RtpExtension::kTransportSequenceNumberUri);
 }
 TEST_F(WebRtcVideoChannel2WithSendSideBweTest,
        RecvTransportSequenceNumberHeaderExtensions) {
-  TestSetRecvRtpHeaderExtensions(
-      kRtpTransportSequenceNumberHeaderExtension,
-      webrtc::RtpExtension::kTransportSequenceNumber);
+  TestSetRecvRtpHeaderExtensions(RtpExtension::kTransportSequenceNumberUri);
 }
 
 // Test support for video rotation header extension.
 TEST_F(WebRtcVideoChannel2Test, SendVideoRotationHeaderExtensions) {
-  TestSetSendRtpHeaderExtensions(kRtpVideoRotationHeaderExtension,
-                                 webrtc::RtpExtension::kVideoRotation);
+  TestSetSendRtpHeaderExtensions(RtpExtension::kVideoRotationUri);
 }
 TEST_F(WebRtcVideoChannel2Test, RecvVideoRotationHeaderExtensions) {
-  TestSetRecvRtpHeaderExtensions(kRtpVideoRotationHeaderExtension,
-                                 webrtc::RtpExtension::kVideoRotation);
+  TestSetRecvRtpHeaderExtensions(RtpExtension::kVideoRotationUri);
 }
 
 TEST_F(WebRtcVideoChannel2Test, IdenticalSendExtensionsDoesntRecreateStream) {
   const int kAbsSendTimeId = 1;
   const int kVideoRotationId = 2;
-  send_parameters_.extensions.push_back(cricket::RtpHeaderExtension(
-      kRtpAbsoluteSenderTimeHeaderExtension, kAbsSendTimeId));
-  send_parameters_.extensions.push_back(cricket::RtpHeaderExtension(
-      kRtpVideoRotationHeaderExtension, kVideoRotationId));
+  send_parameters_.extensions.push_back(
+      RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeId));
+  send_parameters_.extensions.push_back(
+      RtpExtension(RtpExtension::kVideoRotationUri, kVideoRotationId));
 
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
   FakeVideoSendStream* send_stream =
@@ -1319,12 +1307,12 @@ TEST_F(WebRtcVideoChannel2Test, IdenticalRecvExtensionsDoesntRecreateStream) {
   const int kTOffsetId = 1;
   const int kAbsSendTimeId = 2;
   const int kVideoRotationId = 3;
-  recv_parameters_.extensions.push_back(cricket::RtpHeaderExtension(
-      kRtpAbsoluteSenderTimeHeaderExtension, kAbsSendTimeId));
-  recv_parameters_.extensions.push_back(cricket::RtpHeaderExtension(
-      kRtpTimestampOffsetHeaderExtension, kTOffsetId));
-  recv_parameters_.extensions.push_back(cricket::RtpHeaderExtension(
-      kRtpVideoRotationHeaderExtension, kVideoRotationId));
+  recv_parameters_.extensions.push_back(
+      RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeId));
+  recv_parameters_.extensions.push_back(
+      RtpExtension(RtpExtension::kTimestampOffsetUri, kTOffsetId));
+  recv_parameters_.extensions.push_back(
+      RtpExtension(RtpExtension::kVideoRotationUri, kVideoRotationId));
 
   EXPECT_TRUE(channel_->SetRecvParameters(recv_parameters_));
   FakeVideoReceiveStream* recv_stream =
@@ -1354,9 +1342,9 @@ TEST_F(WebRtcVideoChannel2Test,
   const int kTOffsetId = 2;
 
   send_parameters_.extensions.push_back(
-      cricket::RtpHeaderExtension(kUnsupportedExtensionName, kUnsupportedId));
+      RtpExtension(kUnsupportedExtensionName, kUnsupportedId));
   send_parameters_.extensions.push_back(
-      cricket::RtpHeaderExtension(webrtc::RtpExtension::kTOffset, kTOffsetId));
+      RtpExtension(RtpExtension::kTimestampOffsetUri, kTOffsetId));
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
   FakeVideoSendStream* send_stream =
       AddSendStream(cricket::StreamParams::CreateLegacy(123));
@@ -1364,8 +1352,8 @@ TEST_F(WebRtcVideoChannel2Test,
   // Only timestamp offset extension is set to send stream,
   // unsupported rtp extension is ignored.
   ASSERT_EQ(1u, send_stream->GetConfig().rtp.extensions.size());
-  EXPECT_STREQ(webrtc::RtpExtension::kTOffset,
-               send_stream->GetConfig().rtp.extensions[0].name.c_str());
+  EXPECT_STREQ(RtpExtension::kTimestampOffsetUri,
+               send_stream->GetConfig().rtp.extensions[0].uri.c_str());
 }
 
 TEST_F(WebRtcVideoChannel2Test,
@@ -1374,9 +1362,9 @@ TEST_F(WebRtcVideoChannel2Test,
   const int kTOffsetId = 2;
 
   recv_parameters_.extensions.push_back(
-      cricket::RtpHeaderExtension(kUnsupportedExtensionName, kUnsupportedId));
+      RtpExtension(kUnsupportedExtensionName, kUnsupportedId));
   recv_parameters_.extensions.push_back(
-      cricket::RtpHeaderExtension(webrtc::RtpExtension::kTOffset, kTOffsetId));
+      RtpExtension(RtpExtension::kTimestampOffsetUri, kTOffsetId));
   EXPECT_TRUE(channel_->SetRecvParameters(recv_parameters_));
   FakeVideoReceiveStream* recv_stream =
       AddRecvStream(cricket::StreamParams::CreateLegacy(123));
@@ -1384,15 +1372,15 @@ TEST_F(WebRtcVideoChannel2Test,
   // Only timestamp offset extension is set to receive stream,
   // unsupported rtp extension is ignored.
   ASSERT_EQ(1u, recv_stream->GetConfig().rtp.extensions.size());
-  EXPECT_STREQ(webrtc::RtpExtension::kTOffset,
-               recv_stream->GetConfig().rtp.extensions[0].name.c_str());
+  EXPECT_STREQ(RtpExtension::kTimestampOffsetUri,
+               recv_stream->GetConfig().rtp.extensions[0].uri.c_str());
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetSendRtpHeaderExtensionsRejectsIncorrectIds) {
   const int kIncorrectIds[] = {-2, -1, 0, 15, 16};
   for (size_t i = 0; i < arraysize(kIncorrectIds); ++i) {
-    send_parameters_.extensions.push_back(cricket::RtpHeaderExtension(
-        webrtc::RtpExtension::kTOffset, kIncorrectIds[i]));
+    send_parameters_.extensions.push_back(
+        RtpExtension(RtpExtension::kTimestampOffsetUri, kIncorrectIds[i]));
     EXPECT_FALSE(channel_->SetSendParameters(send_parameters_))
         << "Bad extension id '" << kIncorrectIds[i] << "' accepted.";
   }
@@ -1401,8 +1389,8 @@ TEST_F(WebRtcVideoChannel2Test, SetSendRtpHeaderExtensionsRejectsIncorrectIds) {
 TEST_F(WebRtcVideoChannel2Test, SetRecvRtpHeaderExtensionsRejectsIncorrectIds) {
   const int kIncorrectIds[] = {-2, -1, 0, 15, 16};
   for (size_t i = 0; i < arraysize(kIncorrectIds); ++i) {
-    recv_parameters_.extensions.push_back(cricket::RtpHeaderExtension(
-        webrtc::RtpExtension::kTOffset, kIncorrectIds[i]));
+    recv_parameters_.extensions.push_back(
+        RtpExtension(RtpExtension::kTimestampOffsetUri, kIncorrectIds[i]));
     EXPECT_FALSE(channel_->SetRecvParameters(recv_parameters_))
         << "Bad extension id '" << kIncorrectIds[i] << "' accepted.";
   }
@@ -1411,15 +1399,15 @@ TEST_F(WebRtcVideoChannel2Test, SetRecvRtpHeaderExtensionsRejectsIncorrectIds) {
 TEST_F(WebRtcVideoChannel2Test, SetSendRtpHeaderExtensionsRejectsDuplicateIds) {
   const int id = 1;
   send_parameters_.extensions.push_back(
-      cricket::RtpHeaderExtension(webrtc::RtpExtension::kTOffset, id));
+      RtpExtension(RtpExtension::kTimestampOffsetUri, id));
   send_parameters_.extensions.push_back(
-      cricket::RtpHeaderExtension(kRtpAbsoluteSenderTimeHeaderExtension, id));
+      RtpExtension(RtpExtension::kAbsSendTimeUri, id));
   EXPECT_FALSE(channel_->SetSendParameters(send_parameters_));
 
   // Duplicate entries are also not supported.
   send_parameters_.extensions.clear();
   send_parameters_.extensions.push_back(
-      cricket::RtpHeaderExtension(webrtc::RtpExtension::kTOffset, id));
+      RtpExtension(RtpExtension::kTimestampOffsetUri, id));
   send_parameters_.extensions.push_back(send_parameters_.extensions.back());
   EXPECT_FALSE(channel_->SetSendParameters(send_parameters_));
 }
@@ -1427,15 +1415,15 @@ TEST_F(WebRtcVideoChannel2Test, SetSendRtpHeaderExtensionsRejectsDuplicateIds) {
 TEST_F(WebRtcVideoChannel2Test, SetRecvRtpHeaderExtensionsRejectsDuplicateIds) {
   const int id = 1;
   recv_parameters_.extensions.push_back(
-      cricket::RtpHeaderExtension(webrtc::RtpExtension::kTOffset, id));
+      RtpExtension(RtpExtension::kTimestampOffsetUri, id));
   recv_parameters_.extensions.push_back(
-      cricket::RtpHeaderExtension(kRtpAbsoluteSenderTimeHeaderExtension, id));
+      RtpExtension(RtpExtension::kAbsSendTimeUri, id));
   EXPECT_FALSE(channel_->SetRecvParameters(recv_parameters_));
 
   // Duplicate entries are also not supported.
   recv_parameters_.extensions.clear();
   recv_parameters_.extensions.push_back(
-      cricket::RtpHeaderExtension(webrtc::RtpExtension::kTOffset, id));
+      RtpExtension(RtpExtension::kTimestampOffsetUri, id));
   recv_parameters_.extensions.push_back(recv_parameters_.extensions.back());
   EXPECT_FALSE(channel_->SetRecvParameters(recv_parameters_));
 }

@@ -44,7 +44,6 @@ using cricket::kFecSsrcGroupSemantics;
 using cricket::LOCAL_PORT_TYPE;
 using cricket::NS_JINGLE_DRAFT_SCTP;
 using cricket::NS_JINGLE_RTP;
-using cricket::RtpHeaderExtension;
 using cricket::RELAY_PORT_TYPE;
 using cricket::SessionDescription;
 using cricket::StreamParams;
@@ -57,6 +56,7 @@ using webrtc::IceCandidateCollection;
 using webrtc::IceCandidateInterface;
 using webrtc::JsepIceCandidate;
 using webrtc::JsepSessionDescription;
+using webrtc::RtpExtension;
 using webrtc::SdpParseError;
 using webrtc::SessionDescriptionInterface;
 
@@ -1110,8 +1110,8 @@ class WebRtcSdpTest : public testing::Test {
     ASSERT_EQ(cd1->rtp_header_extensions().size(),
               cd2->rtp_header_extensions().size());
     for (size_t i = 0; i< cd1->rtp_header_extensions().size(); ++i) {
-      const RtpHeaderExtension ext1 = cd1->rtp_header_extensions().at(i);
-      const RtpHeaderExtension ext2 = cd2->rtp_header_extensions().at(i);
+      const RtpExtension ext1 = cd1->rtp_header_extensions().at(i);
+      const RtpExtension ext2 = cd2->rtp_header_extensions().at(i);
       EXPECT_EQ(ext1.uri, ext2.uri);
       EXPECT_EQ(ext1.id, ext2.id);
     }
@@ -1333,10 +1333,8 @@ class WebRtcSdpTest : public testing::Test {
         audio_desc_->Copy());
     video_desc_ = static_cast<VideoContentDescription*>(
         video_desc_->Copy());
-    audio_desc_->AddRtpHeaderExtension(
-        RtpHeaderExtension(kExtmapUri, kExtmapId));
-    video_desc_->AddRtpHeaderExtension(
-        RtpHeaderExtension(kExtmapUri, kExtmapId));
+    audio_desc_->AddRtpHeaderExtension(RtpExtension(kExtmapUri, kExtmapId));
+    video_desc_->AddRtpHeaderExtension(RtpExtension(kExtmapUri, kExtmapId));
     desc_.RemoveContentByName(kAudioContentName);
     desc_.RemoveContentByName(kVideoContentName);
     desc_.AddContent(kAudioContentName, NS_JINGLE_RTP, audio_desc_);

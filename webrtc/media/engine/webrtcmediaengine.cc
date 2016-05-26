@@ -73,11 +73,10 @@ void DiscardRedundantExtensions(
     rtc::ArrayView<const char*> extensions_decreasing_prio) {
   RTC_DCHECK(extensions);
   bool found = false;
-  for (const char* name : extensions_decreasing_prio) {
-    auto it = std::find_if(extensions->begin(), extensions->end(),
-        [name](const webrtc::RtpExtension& rhs) {
-          return rhs.name == name;
-        });
+  for (const char* uri : extensions_decreasing_prio) {
+    auto it = std::find_if(
+        extensions->begin(), extensions->end(),
+        [uri](const webrtc::RtpExtension& rhs) { return rhs.uri == uri; });
     if (it != extensions->end()) {
       if (found) {
         extensions->erase(it);
@@ -88,7 +87,8 @@ void DiscardRedundantExtensions(
 }
 }  // namespace
 
-bool ValidateRtpExtensions(const std::vector<RtpHeaderExtension>& extensions) {
+bool ValidateRtpExtensions(
+    const std::vector<webrtc::RtpExtension>& extensions) {
   bool id_used[14] = {false};
   for (const auto& extension : extensions) {
     if (extension.id <= 0 || extension.id >= 15) {
@@ -105,7 +105,7 @@ bool ValidateRtpExtensions(const std::vector<RtpHeaderExtension>& extensions) {
 }
 
 std::vector<webrtc::RtpExtension> FilterRtpExtensions(
-    const std::vector<RtpHeaderExtension>& extensions,
+    const std::vector<webrtc::RtpExtension>& extensions,
     bool (*supported)(const std::string&),
     bool filter_redundant_extensions) {
   RTC_DCHECK(ValidateRtpExtensions(extensions));
@@ -115,7 +115,7 @@ std::vector<webrtc::RtpExtension> FilterRtpExtensions(
   // Ignore any extensions that we don't recognize.
   for (const auto& extension : extensions) {
     if (supported(extension.uri)) {
-      result.push_back({extension.uri, extension.id});
+      result.push_back(extension);
     } else {
       LOG(LS_WARNING) << "Unsupported RTP extension: " << extension.ToString();
     }
@@ -124,24 +124,23 @@ std::vector<webrtc::RtpExtension> FilterRtpExtensions(
   // Sort by name, ascending, so that we don't reset extensions if they were
   // specified in a different order (also allows us to use std::unique below).
   std::sort(result.begin(), result.end(),
-      [](const webrtc::RtpExtension& rhs, const webrtc::RtpExtension& lhs) {
-        return rhs.name < lhs.name;
-      });
+            [](const webrtc::RtpExtension& rhs,
+               const webrtc::RtpExtension& lhs) { return rhs.uri < lhs.uri; });
 
   // Remove unnecessary extensions (used on send side).
   if (filter_redundant_extensions) {
-    auto it = std::unique(result.begin(), result.end(),
+    auto it = std::unique(
+        result.begin(), result.end(),
         [](const webrtc::RtpExtension& rhs, const webrtc::RtpExtension& lhs) {
-          return rhs.name == lhs.name;
+          return rhs.uri == lhs.uri;
         });
     result.erase(it, result.end());
 
     // Keep just the highest priority extension of any in the following list.
     static const char* kBweExtensionPriorities[] = {
-      kRtpTransportSequenceNumberHeaderExtension,
-      kRtpAbsoluteSenderTimeHeaderExtension,
-      kRtpTimestampOffsetHeaderExtension
-    };
+        webrtc::RtpExtension::kTransportSequenceNumberUri,
+        webrtc::RtpExtension::kAbsSendTimeUri,
+        webrtc::RtpExtension::kTimestampOffsetUri};
     DiscardRedundantExtensions(&result, kBweExtensionPriorities);
   }
 

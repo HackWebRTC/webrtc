@@ -374,11 +374,10 @@ class UsedPayloadTypes : public UsedIds<Codec> {
 
 // Helper class used for finding duplicate RTP Header extension ids among
 // audio and video extensions.
-class UsedRtpHeaderExtensionIds : public UsedIds<RtpHeaderExtension> {
+class UsedRtpHeaderExtensionIds : public UsedIds<webrtc::RtpExtension> {
  public:
   UsedRtpHeaderExtensionIds()
-      : UsedIds<RtpHeaderExtension>(kLocalIdMin, kLocalIdMax) {
-  }
+      : UsedIds<webrtc::RtpExtension>(kLocalIdMin, kLocalIdMax) {}
 
  private:
   // Min and Max local identifier for one-byte header extensions, per RFC5285.
@@ -890,10 +889,9 @@ static void FindCodecsToOffer(
   }
 }
 
-
 static bool FindByUri(const RtpHeaderExtensions& extensions,
-                      const RtpHeaderExtension& ext_to_match,
-                      RtpHeaderExtension* found_extension) {
+                      const webrtc::RtpExtension& ext_to_match,
+                      webrtc::RtpExtension* found_extension) {
   for (RtpHeaderExtensions::const_iterator it = extensions.begin();
        it  != extensions.end(); ++it) {
     // We assume that all URIs are given in a canonical format.
@@ -915,7 +913,7 @@ static void FindAndSetRtpHdrExtUsed(RtpHeaderExtensions* offered_extensions,
                                     RtpHeaderExtensions* all_extensions,
                                     UsedRtpHeaderExtensionIds* used_ids) {
   for (auto& extension : *offered_extensions) {
-    RtpHeaderExtension existing;
+    webrtc::RtpExtension existing;
     if (FindByUri(*all_extensions, extension, &existing)) {
       extension.id = existing.id;
     } else {
@@ -934,7 +932,7 @@ static void FindRtpHdrExtsToOffer(
     UsedRtpHeaderExtensionIds* used_ids) {
   for (auto reference_extension : reference_extensions) {
     if (!FindByUri(*offered_extensions, reference_extension, NULL)) {
-      RtpHeaderExtension existing;
+      webrtc::RtpExtension existing;
       if (FindByUri(*all_extensions, reference_extension, &existing)) {
         offered_extensions->push_back(existing);
       } else {
@@ -953,7 +951,7 @@ static void NegotiateRtpHeaderExtensions(
   RtpHeaderExtensions::const_iterator ours;
   for (ours = local_extensions.begin();
        ours != local_extensions.end(); ++ours) {
-    RtpHeaderExtension theirs;
+    webrtc::RtpExtension theirs;
     if (FindByUri(offered_extensions, *ours, &theirs)) {
       // We respond with their RTP header extension id.
       negotiated_extenstions->push_back(theirs);

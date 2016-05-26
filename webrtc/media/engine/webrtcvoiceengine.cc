@@ -951,16 +951,17 @@ const std::vector<AudioCodec>& WebRtcVoiceEngine::codecs() {
 RtpCapabilities WebRtcVoiceEngine::GetCapabilities() const {
   RTC_DCHECK(signal_thread_checker_.CalledOnValidThread());
   RtpCapabilities capabilities;
-  capabilities.header_extensions.push_back(RtpHeaderExtension(
-      kRtpAudioLevelHeaderExtension, kRtpAudioLevelHeaderExtensionDefaultId));
   capabilities.header_extensions.push_back(
-      RtpHeaderExtension(kRtpAbsoluteSenderTimeHeaderExtension,
-                         kRtpAbsoluteSenderTimeHeaderExtensionDefaultId));
+      webrtc::RtpExtension(webrtc::RtpExtension::kAudioLevelUri,
+                           webrtc::RtpExtension::kAudioLevelDefaultId));
+  capabilities.header_extensions.push_back(
+      webrtc::RtpExtension(webrtc::RtpExtension::kAbsSendTimeUri,
+                           webrtc::RtpExtension::kAbsSendTimeDefaultId));
   if (webrtc::field_trial::FindFullName("WebRTC-Audio-SendSideBwe") ==
       "Enabled") {
-    capabilities.header_extensions.push_back(RtpHeaderExtension(
-        kRtpTransportSequenceNumberHeaderExtension,
-        kRtpTransportSequenceNumberHeaderExtensionDefaultId));
+    capabilities.header_extensions.push_back(webrtc::RtpExtension(
+        webrtc::RtpExtension::kTransportSequenceNumberUri,
+        webrtc::RtpExtension::kTransportSequenceNumberDefaultId));
   }
   return capabilities;
 }

@@ -254,9 +254,9 @@ static bool ValidateStreamParams(const StreamParams& sp) {
 
 inline bool ContainsHeaderExtension(
     const std::vector<webrtc::RtpExtension>& extensions,
-    const std::string& name) {
+    const std::string& uri) {
   for (const auto& kv : extensions) {
-    if (kv.name == name) {
+    if (kv.uri == uri) {
       return true;
     }
   }
@@ -551,18 +551,18 @@ const std::vector<VideoCodec>& WebRtcVideoEngine2::codecs() const {
 RtpCapabilities WebRtcVideoEngine2::GetCapabilities() const {
   RtpCapabilities capabilities;
   capabilities.header_extensions.push_back(
-      RtpHeaderExtension(kRtpTimestampOffsetHeaderExtension,
-                         kRtpTimestampOffsetHeaderExtensionDefaultId));
+      webrtc::RtpExtension(webrtc::RtpExtension::kTimestampOffsetUri,
+                           webrtc::RtpExtension::kTimestampOffsetDefaultId));
   capabilities.header_extensions.push_back(
-      RtpHeaderExtension(kRtpAbsoluteSenderTimeHeaderExtension,
-                         kRtpAbsoluteSenderTimeHeaderExtensionDefaultId));
+      webrtc::RtpExtension(webrtc::RtpExtension::kAbsSendTimeUri,
+                           webrtc::RtpExtension::kAbsSendTimeDefaultId));
   capabilities.header_extensions.push_back(
-      RtpHeaderExtension(kRtpVideoRotationHeaderExtension,
-                         kRtpVideoRotationHeaderExtensionDefaultId));
+      webrtc::RtpExtension(webrtc::RtpExtension::kVideoRotationUri,
+                           webrtc::RtpExtension::kVideoRotationDefaultId));
   if (webrtc::field_trial::FindFullName("WebRTC-SendSideBwe") == "Enabled") {
-    capabilities.header_extensions.push_back(RtpHeaderExtension(
-        kRtpTransportSequenceNumberHeaderExtension,
-        kRtpTransportSequenceNumberHeaderExtensionDefaultId));
+    capabilities.header_extensions.push_back(webrtc::RtpExtension(
+        webrtc::RtpExtension::kTransportSequenceNumberUri,
+        webrtc::RtpExtension::kTransportSequenceNumberDefaultId));
   }
   return capabilities;
 }
@@ -1570,7 +1570,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
       enable_cpu_overuse_detection ? this : nullptr;
 
   sink_wants_.rotation_applied = !ContainsHeaderExtension(
-      rtp_extensions, kRtpVideoRotationHeaderExtension);
+      rtp_extensions, webrtc::RtpExtension::kVideoRotationUri);
 
   if (codec_settings) {
     SetCodec(*codec_settings);
@@ -1854,7 +1854,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSendParameters(
   // that might cause a lock order inversion.
   if (params.rtp_header_extensions) {
     sink_wants_.rotation_applied = !ContainsHeaderExtension(
-        *params.rtp_header_extensions, kRtpVideoRotationHeaderExtension);
+        *params.rtp_header_extensions, webrtc::RtpExtension::kVideoRotationUri);
     if (source_) {
       source_->AddOrUpdateSink(this, sink_wants_);
     }

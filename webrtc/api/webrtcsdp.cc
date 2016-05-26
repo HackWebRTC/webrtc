@@ -27,6 +27,8 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagedigest.h"
 #include "webrtc/base/stringutils.h"
+// for RtpExtension
+#include "webrtc/config.h"
 #include "webrtc/media/base/codec.h"
 #include "webrtc/media/base/cryptoparams.h"
 #include "webrtc/media/base/mediaconstants.h"
@@ -64,7 +66,7 @@ using cricket::kCodecParamMaxPlaybackRate;
 using cricket::kCodecParamAssociatedPayloadType;
 using cricket::MediaContentDescription;
 using cricket::MediaType;
-using cricket::RtpHeaderExtension;
+using cricket::RtpHeaderExtensions;
 using cricket::SsrcGroup;
 using cricket::StreamParams;
 using cricket::StreamParamsVec;
@@ -72,8 +74,6 @@ using cricket::TransportDescription;
 using cricket::TransportInfo;
 using cricket::VideoContentDescription;
 using rtc::SocketAddress;
-
-typedef std::vector<RtpHeaderExtension> RtpHeaderExtensions;
 
 namespace cricket {
 class SessionDescription;
@@ -309,7 +309,7 @@ static bool ParseIceOptions(const std::string& line,
                             std::vector<std::string>* transport_options,
                             SdpParseError* error);
 static bool ParseExtmap(const std::string& line,
-                        RtpHeaderExtension* extmap,
+                        RtpExtension* extmap,
                         SdpParseError* error);
 static bool ParseFingerprintAttribute(const std::string& line,
                                       rtc::SSLFingerprint** fingerprint,
@@ -1168,7 +1168,8 @@ bool ParseSctpPort(const std::string& line,
   return true;
 }
 
-bool ParseExtmap(const std::string& line, RtpHeaderExtension* extmap,
+bool ParseExtmap(const std::string& line,
+                 RtpExtension* extmap,
                  SdpParseError* error) {
   // RFC 5285
   // a=extmap:<value>["/"<direction>] <URI> <extensionattributes>
@@ -1192,7 +1193,7 @@ bool ParseExtmap(const std::string& line, RtpHeaderExtension* extmap,
     return false;
   }
 
-  *extmap = RtpHeaderExtension(uri, value);
+  *extmap = RtpExtension(uri, value);
   return true;
 }
 
@@ -2015,7 +2016,7 @@ bool ParseSessionDescription(const std::string& message, size_t* pos,
       desc->set_msid_supported(
           CaseInsensitiveFind(semantics, kMediaStreamSemantic));
     } else if (HasAttribute(line, kAttributeExtmap)) {
-      RtpHeaderExtension extmap;
+      RtpExtension extmap;
       if (!ParseExtmap(line, &extmap, error)) {
         return false;
       }
@@ -2703,7 +2704,7 @@ bool ParseContent(const std::string& message,
       } else if (HasAttribute(line, kAttributeSendRecv)) {
         media_desc->set_direction(cricket::MD_SENDRECV);
       } else if (HasAttribute(line, kAttributeExtmap)) {
-        RtpHeaderExtension extmap;
+        RtpExtension extmap;
         if (!ParseExtmap(line, &extmap, error)) {
           return false;
         }

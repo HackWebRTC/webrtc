@@ -884,11 +884,11 @@ void VideoQualityTest::SetupCommon(Transport* send_transport,
   video_send_config_.rtp.extensions.clear();
   if (params_.common.send_side_bwe) {
     video_send_config_.rtp.extensions.push_back(
-        RtpExtension(RtpExtension::kTransportSequenceNumber,
+        RtpExtension(RtpExtension::kTransportSequenceNumberUri,
                      test::kTransportSequenceNumberExtensionId));
   } else {
     video_send_config_.rtp.extensions.push_back(RtpExtension(
-        RtpExtension::kAbsSendTime, test::kAbsSendTimeExtensionId));
+        RtpExtension::kAbsSendTimeUri, test::kAbsSendTimeExtensionId));
   }
 
   video_encoder_config_.min_transmit_bitrate_bps =

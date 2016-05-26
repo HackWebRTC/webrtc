@@ -79,11 +79,11 @@ AudioSendStream::AudioSendStream(
   channel_proxy_->RegisterExternalTransport(config.send_transport);
 
   for (const auto& extension : config.rtp.extensions) {
-    if (extension.name == RtpExtension::kAbsSendTime) {
+    if (extension.uri == RtpExtension::kAbsSendTimeUri) {
       channel_proxy_->SetSendAbsoluteSenderTimeStatus(true, extension.id);
-    } else if (extension.name == RtpExtension::kAudioLevel) {
+    } else if (extension.uri == RtpExtension::kAudioLevelUri) {
       channel_proxy_->SetSendAudioLevelIndicationStatus(true, extension.id);
-    } else if (extension.name == RtpExtension::kTransportSequenceNumber) {
+    } else if (extension.uri == RtpExtension::kTransportSequenceNumberUri) {
       channel_proxy_->EnableSendTransportSequenceNumber(extension.id);
     } else {
       RTC_NOTREACHED() << "Registering unsupported RTP extension.";

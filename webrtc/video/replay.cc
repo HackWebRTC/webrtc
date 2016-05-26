@@ -222,12 +222,12 @@ void RtpReplay() {
   receive_config.rtp.fec.red_payload_type = flags::RedPayloadType();
   receive_config.rtp.nack.rtp_history_ms = 1000;
   if (flags::TransmissionOffsetId() != -1) {
-    receive_config.rtp.extensions.push_back(
-        RtpExtension(RtpExtension::kTOffset, flags::TransmissionOffsetId()));
+    receive_config.rtp.extensions.push_back(RtpExtension(
+        RtpExtension::kTimestampOffsetUri, flags::TransmissionOffsetId()));
   }
   if (flags::AbsSendTimeId() != -1) {
     receive_config.rtp.extensions.push_back(
-        RtpExtension(RtpExtension::kAbsSendTime, flags::AbsSendTimeId()));
+        RtpExtension(RtpExtension::kAbsSendTimeUri, flags::AbsSendTimeId()));
   }
   receive_config.renderer = &file_passthrough;
 

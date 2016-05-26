@@ -43,6 +43,20 @@ struct SendPacketMessageData : public rtc::MessageData {
   rtc::PacketOptions options;
 };
 
+#if defined(ENABLE_EXTERNAL_AUTH)
+// Returns the named header extension if found among all extensions,
+// nullptr otherwise.
+const webrtc::RtpExtension* FindHeaderExtension(
+    const std::vector<webrtc::RtpExtension>& extensions,
+    const std::string& uri) {
+  for (const auto& extension : extensions) {
+    if (extension.uri == uri)
+      return &extension;
+  }
+  return nullptr;
+}
+#endif
+
 }  // namespace
 
 enum {
@@ -1390,13 +1404,13 @@ bool BaseChannel::UpdateRemoteStreams_w(
 }
 
 void BaseChannel::MaybeCacheRtpAbsSendTimeHeaderExtension_w(
-    const std::vector<RtpHeaderExtension>& extensions) {
+    const std::vector<webrtc::RtpExtension>& extensions) {
 // Absolute Send Time extension id is used only with external auth,
 // so do not bother searching for it and making asyncronious call to set
 // something that is not used.
 #if defined(ENABLE_EXTERNAL_AUTH)
-  const RtpHeaderExtension* send_time_extension =
-      FindHeaderExtension(extensions, kRtpAbsoluteSenderTimeHeaderExtension);
+  const webrtc::RtpExtension* send_time_extension =
+      FindHeaderExtension(extensions, webrtc::RtpExtension::kAbsSendTimeUri);
   int rtp_abs_sendtime_extn_id =
       send_time_extension ? send_time_extension->id : -1;
   invoker_.AsyncInvoke<void>(

@@ -35,7 +35,7 @@ typedef std::vector<AudioCodec> AudioCodecs;
 typedef std::vector<VideoCodec> VideoCodecs;
 typedef std::vector<DataCodec> DataCodecs;
 typedef std::vector<CryptoParams> CryptoParamsVec;
-typedef std::vector<RtpHeaderExtension> RtpHeaderExtensions;
+typedef std::vector<webrtc::RtpExtension> RtpHeaderExtensions;
 
 enum MediaType {
   MEDIA_TYPE_AUDIO,
@@ -205,7 +205,7 @@ class MediaContentDescription : public ContentDescription {
     rtp_header_extensions_ = extensions;
     rtp_header_extensions_set_ = true;
   }
-  void AddRtpHeaderExtension(const RtpHeaderExtension& ext) {
+  void AddRtpHeaderExtension(const webrtc::RtpExtension& ext) {
     rtp_header_extensions_.push_back(ext);
     rtp_header_extensions_set_ = true;
   }
@@ -284,7 +284,7 @@ class MediaContentDescription : public ContentDescription {
   std::string protocol_;
   std::vector<CryptoParams> cryptos_;
   CryptoType crypto_required_ = CT_NONE;
-  std::vector<RtpHeaderExtension> rtp_header_extensions_;
+  std::vector<webrtc::RtpExtension> rtp_header_extensions_;
   bool rtp_header_extensions_set_ = false;
   bool multistream_ = false;
   StreamParamsVec streams_;

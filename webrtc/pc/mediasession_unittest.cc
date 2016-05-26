@@ -67,12 +67,12 @@ using cricket::NS_JINGLE_RTP;
 using cricket::MEDIA_TYPE_AUDIO;
 using cricket::MEDIA_TYPE_VIDEO;
 using cricket::MEDIA_TYPE_DATA;
-using cricket::RtpHeaderExtension;
 using cricket::SEC_DISABLED;
 using cricket::SEC_ENABLED;
 using cricket::SEC_REQUIRED;
 using rtc::CS_AES_CM_128_HMAC_SHA1_32;
 using rtc::CS_AES_CM_128_HMAC_SHA1_80;
+using webrtc::RtpExtension;
 
 static const AudioCodec kAudioCodecs1[] = {
     AudioCodec(103, "ISAC", 16000, -1, 1),
@@ -113,44 +113,44 @@ static const DataCodec kDataCodecs2[] = {DataCodec(126, "binary-data"),
 static const DataCodec kDataCodecsAnswer[] = {DataCodec(98, "binary-data"),
                                               DataCodec(99, "utf8-text")};
 
-static const RtpHeaderExtension kAudioRtpExtension1[] = {
-  RtpHeaderExtension("urn:ietf:params:rtp-hdrext:ssrc-audio-level", 8),
-  RtpHeaderExtension("http://google.com/testing/audio_something", 10),
+static const RtpExtension kAudioRtpExtension1[] = {
+    RtpExtension("urn:ietf:params:rtp-hdrext:ssrc-audio-level", 8),
+    RtpExtension("http://google.com/testing/audio_something", 10),
 };
 
-static const RtpHeaderExtension kAudioRtpExtension2[] = {
-  RtpHeaderExtension("urn:ietf:params:rtp-hdrext:ssrc-audio-level", 2),
-  RtpHeaderExtension("http://google.com/testing/audio_something_else", 8),
-  RtpHeaderExtension("http://google.com/testing/both_audio_and_video", 7),
+static const RtpExtension kAudioRtpExtension2[] = {
+    RtpExtension("urn:ietf:params:rtp-hdrext:ssrc-audio-level", 2),
+    RtpExtension("http://google.com/testing/audio_something_else", 8),
+    RtpExtension("http://google.com/testing/both_audio_and_video", 7),
 };
 
-static const RtpHeaderExtension kAudioRtpExtension3[] = {
-  RtpHeaderExtension("http://google.com/testing/audio_something", 2),
-  RtpHeaderExtension("http://google.com/testing/both_audio_and_video", 3),
+static const RtpExtension kAudioRtpExtension3[] = {
+    RtpExtension("http://google.com/testing/audio_something", 2),
+    RtpExtension("http://google.com/testing/both_audio_and_video", 3),
 };
 
-static const RtpHeaderExtension kAudioRtpExtensionAnswer[] = {
-  RtpHeaderExtension("urn:ietf:params:rtp-hdrext:ssrc-audio-level", 8),
+static const RtpExtension kAudioRtpExtensionAnswer[] = {
+    RtpExtension("urn:ietf:params:rtp-hdrext:ssrc-audio-level", 8),
 };
 
-static const RtpHeaderExtension kVideoRtpExtension1[] = {
-  RtpHeaderExtension("urn:ietf:params:rtp-hdrext:toffset", 14),
-  RtpHeaderExtension("http://google.com/testing/video_something", 13),
+static const RtpExtension kVideoRtpExtension1[] = {
+    RtpExtension("urn:ietf:params:rtp-hdrext:toffset", 14),
+    RtpExtension("http://google.com/testing/video_something", 13),
 };
 
-static const RtpHeaderExtension kVideoRtpExtension2[] = {
-  RtpHeaderExtension("urn:ietf:params:rtp-hdrext:toffset", 2),
-  RtpHeaderExtension("http://google.com/testing/video_something_else", 14),
-  RtpHeaderExtension("http://google.com/testing/both_audio_and_video", 7),
+static const RtpExtension kVideoRtpExtension2[] = {
+    RtpExtension("urn:ietf:params:rtp-hdrext:toffset", 2),
+    RtpExtension("http://google.com/testing/video_something_else", 14),
+    RtpExtension("http://google.com/testing/both_audio_and_video", 7),
 };
 
-static const RtpHeaderExtension kVideoRtpExtension3[] = {
-  RtpHeaderExtension("http://google.com/testing/video_something", 4),
-  RtpHeaderExtension("http://google.com/testing/both_audio_and_video", 5),
+static const RtpExtension kVideoRtpExtension3[] = {
+    RtpExtension("http://google.com/testing/video_something", 4),
+    RtpExtension("http://google.com/testing/both_audio_and_video", 5),
 };
 
-static const RtpHeaderExtension kVideoRtpExtensionAnswer[] = {
-  RtpHeaderExtension("urn:ietf:params:rtp-hdrext:toffset", 14),
+static const RtpExtension kVideoRtpExtensionAnswer[] = {
+    RtpExtension("urn:ietf:params:rtp-hdrext:toffset", 14),
 };
 
 static const uint32_t kSimulcastParamsSsrc[] = {10, 11, 20, 21, 30, 31};
@@ -1904,18 +1904,16 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   // |f2_| offer.
   // Since the default local extension id |f2_| uses has already been used by
   // |f1_| for another extensions, it is changed to 13.
-  const RtpHeaderExtension kUpdatedAudioRtpExtensions[] = {
-    kAudioRtpExtensionAnswer[0],
-    RtpHeaderExtension(kAudioRtpExtension2[1].uri, 13),
-    kAudioRtpExtension2[2],
+  const RtpExtension kUpdatedAudioRtpExtensions[] = {
+      kAudioRtpExtensionAnswer[0], RtpExtension(kAudioRtpExtension2[1].uri, 13),
+      kAudioRtpExtension2[2],
   };
 
   // Since the default local extension id |f2_| uses has already been used by
   // |f1_| for another extensions, is is changed to 12.
-  const RtpHeaderExtension kUpdatedVideoRtpExtensions[] = {
-    kVideoRtpExtensionAnswer[0],
-    RtpHeaderExtension(kVideoRtpExtension2[1].uri, 12),
-    kVideoRtpExtension2[2],
+  const RtpExtension kUpdatedVideoRtpExtensions[] = {
+      kVideoRtpExtensionAnswer[0], RtpExtension(kVideoRtpExtension2[1].uri, 12),
+      kVideoRtpExtension2[2],
   };
 
   const AudioContentDescription* updated_acd =
@@ -1932,8 +1930,7 @@ TEST_F(MediaSessionDescriptionFactoryTest,
 // Verify that if the same RTP extension URI is used for audio and video, the
 // same ID is used. Also verify that the ID isn't changed when creating an
 // updated offer (this was previously a bug).
-TEST_F(MediaSessionDescriptionFactoryTest,
-       RtpHeaderExtensionIdReused) {
+TEST_F(MediaSessionDescriptionFactoryTest, RtpExtensionIdReused) {
   MediaSessionOptions opts;
   opts.recv_audio = true;
   opts.recv_video = true;
@@ -1945,9 +1942,8 @@ TEST_F(MediaSessionDescriptionFactoryTest,
 
   // Since the audio extensions used ID 3 for "both_audio_and_video", so should
   // the video extensions.
-  const RtpHeaderExtension kExpectedVideoRtpExtension[] = {
-    kVideoRtpExtension3[0],
-    kAudioRtpExtension3[1],
+  const RtpExtension kExpectedVideoRtpExtension[] = {
+      kVideoRtpExtension3[0], kAudioRtpExtension3[1],
   };
 
   EXPECT_EQ(MAKE_VECTOR(kAudioRtpExtension3),

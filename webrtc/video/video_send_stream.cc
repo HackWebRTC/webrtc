@@ -425,7 +425,7 @@ VideoSendStream::VideoSendStream(
   video_sender_->RegisterProtectionCallback(this);
 
   for (size_t i = 0; i < config_.rtp.extensions.size(); ++i) {
-    const std::string& extension = config_.rtp.extensions[i].name;
+    const std::string& extension = config_.rtp.extensions[i].uri;
     int id = config_.rtp.extensions[i].id;
     // One-byte-extension local identifiers are in the range 1-14 inclusive.
     RTC_DCHECK_GE(id, 1);

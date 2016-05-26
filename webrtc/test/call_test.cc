@@ -184,12 +184,12 @@ void CallTest::CreateSendConfig(size_t num_video_streams,
     video_send_config_.encoder_settings.payload_type =
         kFakeVideoSendPayloadType;
     video_send_config_.rtp.extensions.push_back(
-        RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeExtensionId));
+        RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeExtensionId));
     video_encoder_config_.streams = test::CreateVideoStreams(num_video_streams);
     for (size_t i = 0; i < num_video_streams; ++i)
       video_send_config_.rtp.ssrcs.push_back(kVideoSendSsrcs[i]);
     video_send_config_.rtp.extensions.push_back(RtpExtension(
-        RtpExtension::kVideoRotation, kVideoRotationRtpExtensionId));
+        RtpExtension::kVideoRotationUri, kVideoRotationRtpExtensionId));
   }
 
   if (num_audio_streams > 0) {

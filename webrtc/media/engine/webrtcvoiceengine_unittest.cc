@@ -26,8 +26,6 @@
 #include "webrtc/media/engine/webrtcvoiceengine.h"
 #include "webrtc/modules/audio_device/include/mock_audio_device.h"
 
-using cricket::kRtpAudioLevelHeaderExtension;
-using cricket::kRtpAbsoluteSenderTimeHeaderExtension;
 using testing::Return;
 using testing::StrictMock;
 
@@ -289,8 +287,8 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_EQ(0u, GetSendStreamConfig(kSsrc1).rtp.extensions.size());
 
     // Ensure unknown extensions won't cause an error.
-    send_parameters_.extensions.push_back(cricket::RtpHeaderExtension(
-        "urn:ietf:params:unknownextention", 1));
+    send_parameters_.extensions.push_back(
+        webrtc::RtpExtension("urn:ietf:params:unknownextention", 1));
     EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
     EXPECT_EQ(0u, GetSendStreamConfig(kSsrc1).rtp.extensions.size());
 
@@ -301,10 +299,10 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
 
     // Ensure extension is set properly.
     const int id = 1;
-    send_parameters_.extensions.push_back(cricket::RtpHeaderExtension(ext, id));
+    send_parameters_.extensions.push_back(webrtc::RtpExtension(ext, id));
     EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
     EXPECT_EQ(1u, GetSendStreamConfig(kSsrc1).rtp.extensions.size());
-    EXPECT_EQ(ext, GetSendStreamConfig(kSsrc1).rtp.extensions[0].name);
+    EXPECT_EQ(ext, GetSendStreamConfig(kSsrc1).rtp.extensions[0].uri);
     EXPECT_EQ(id, GetSendStreamConfig(kSsrc1).rtp.extensions[0].id);
 
     // Ensure extension is set properly on new stream.
@@ -313,7 +311,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_NE(call_.GetAudioSendStream(kSsrc1),
               call_.GetAudioSendStream(kSsrc2));
     EXPECT_EQ(1u, GetSendStreamConfig(kSsrc2).rtp.extensions.size());
-    EXPECT_EQ(ext, GetSendStreamConfig(kSsrc2).rtp.extensions[0].name);
+    EXPECT_EQ(ext, GetSendStreamConfig(kSsrc2).rtp.extensions[0].uri);
     EXPECT_EQ(id, GetSendStreamConfig(kSsrc2).rtp.extensions[0].id);
 
     // Ensure all extensions go back off with an empty list.
@@ -331,8 +329,8 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_EQ(0u, GetRecvStreamConfig(kSsrc1).rtp.extensions.size());
 
     // Ensure unknown extensions won't cause an error.
-    recv_parameters_.extensions.push_back(cricket::RtpHeaderExtension(
-        "urn:ietf:params:unknownextention", 1));
+    recv_parameters_.extensions.push_back(
+        webrtc::RtpExtension("urn:ietf:params:unknownextention", 1));
     EXPECT_TRUE(channel_->SetRecvParameters(recv_parameters_));
     EXPECT_EQ(0u, GetRecvStreamConfig(kSsrc1).rtp.extensions.size());
 
@@ -343,10 +341,10 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
 
     // Ensure extension is set properly.
     const int id = 2;
-    recv_parameters_.extensions.push_back(cricket::RtpHeaderExtension(ext, id));
+    recv_parameters_.extensions.push_back(webrtc::RtpExtension(ext, id));
     EXPECT_TRUE(channel_->SetRecvParameters(recv_parameters_));
     EXPECT_EQ(1u, GetRecvStreamConfig(kSsrc1).rtp.extensions.size());
-    EXPECT_EQ(ext, GetRecvStreamConfig(kSsrc1).rtp.extensions[0].name);
+    EXPECT_EQ(ext, GetRecvStreamConfig(kSsrc1).rtp.extensions[0].uri);
     EXPECT_EQ(id, GetRecvStreamConfig(kSsrc1).rtp.extensions[0].id);
 
     // Ensure extension is set properly on new stream.
@@ -355,7 +353,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_NE(call_.GetAudioReceiveStream(kSsrc1),
               call_.GetAudioReceiveStream(kSsrc2));
     EXPECT_EQ(1u, GetRecvStreamConfig(kSsrc2).rtp.extensions.size());
-    EXPECT_EQ(ext, GetRecvStreamConfig(kSsrc2).rtp.extensions[0].name);
+    EXPECT_EQ(ext, GetRecvStreamConfig(kSsrc2).rtp.extensions[0].uri);
     EXPECT_EQ(id, GetRecvStreamConfig(kSsrc2).rtp.extensions[0].id);
 
     // Ensure all extensions go back off with an empty list.
@@ -2253,10 +2251,9 @@ TEST_F(WebRtcVoiceEngineWithSendSideBweTest,
        SupportsTransportSequenceNumberHeaderExtension) {
   cricket::RtpCapabilities capabilities = engine_->GetCapabilities();
   ASSERT_FALSE(capabilities.header_extensions.empty());
-  for (const cricket::RtpHeaderExtension& extension :
-       capabilities.header_extensions) {
-    if (extension.uri == cricket::kRtpTransportSequenceNumberHeaderExtension) {
-      EXPECT_EQ(cricket::kRtpTransportSequenceNumberHeaderExtensionDefaultId,
+  for (const webrtc::RtpExtension& extension : capabilities.header_extensions) {
+    if (extension.uri == webrtc::RtpExtension::kTransportSequenceNumberUri) {
+      EXPECT_EQ(webrtc::RtpExtension::kTransportSequenceNumberDefaultId,
                 extension.id);
       return;
     }
@@ -2266,18 +2263,18 @@ TEST_F(WebRtcVoiceEngineWithSendSideBweTest,
 
 // Test support for audio level header extension.
 TEST_F(WebRtcVoiceEngineTestFake, SendAudioLevelHeaderExtensions) {
-  TestSetSendRtpHeaderExtensions(kRtpAudioLevelHeaderExtension);
+  TestSetSendRtpHeaderExtensions(webrtc::RtpExtension::kAudioLevelUri);
 }
 TEST_F(WebRtcVoiceEngineTestFake, RecvAudioLevelHeaderExtensions) {
-  TestSetRecvRtpHeaderExtensions(kRtpAudioLevelHeaderExtension);
+  TestSetRecvRtpHeaderExtensions(webrtc::RtpExtension::kAudioLevelUri);
 }
 
 // Test support for absolute send time header extension.
 TEST_F(WebRtcVoiceEngineTestFake, SendAbsoluteSendTimeHeaderExtensions) {
-  TestSetSendRtpHeaderExtensions(kRtpAbsoluteSenderTimeHeaderExtension);
+  TestSetSendRtpHeaderExtensions(webrtc::RtpExtension::kAbsSendTimeUri);
 }
 TEST_F(WebRtcVoiceEngineTestFake, RecvAbsoluteSendTimeHeaderExtensions) {
-  TestSetRecvRtpHeaderExtensions(kRtpAbsoluteSenderTimeHeaderExtension);
+  TestSetRecvRtpHeaderExtensions(webrtc::RtpExtension::kAbsSendTimeUri);
 }
 
 // Test that we can create a channel and start sending on it.
@@ -2315,7 +2312,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SendStateWhenStreamsAreRecreated) {
 
   // Changing RTP header extensions will recreate the AudioSendStream.
   send_parameters_.extensions.push_back(
-      cricket::RtpHeaderExtension(kRtpAudioLevelHeaderExtension, 12));
+      webrtc::RtpExtension(webrtc::RtpExtension::kAudioLevelUri, 12));
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
   EXPECT_TRUE(GetSendStream(kSsrc1).IsSending());
 
@@ -3383,7 +3380,7 @@ TEST_F(WebRtcVoiceEngineTestFake, ConfiguresAudioReceiveStreamRtpExtensions) {
     for (const auto& e_ext : capabilities.header_extensions) {
       for (const auto& s_ext : s_exts) {
         if (e_ext.id == s_ext.id) {
-          EXPECT_EQ(e_ext.uri, s_ext.name);
+          EXPECT_EQ(e_ext.uri, s_ext.uri);
         }
       }
     }

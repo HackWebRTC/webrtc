@@ -91,27 +91,6 @@ const char kGoogleSctpDataCodecName[] = "google-sctp-data";
 
 const char kComfortNoiseCodecName[] = "CN";
 
-const int kRtpAudioLevelHeaderExtensionDefaultId = 1;
-const char kRtpAudioLevelHeaderExtension[] =
-    "urn:ietf:params:rtp-hdrext:ssrc-audio-level";
-
-const int kRtpTimestampOffsetHeaderExtensionDefaultId = 2;
-const char kRtpTimestampOffsetHeaderExtension[] =
-    "urn:ietf:params:rtp-hdrext:toffset";
-
-const int kRtpAbsoluteSenderTimeHeaderExtensionDefaultId = 3;
-const char kRtpAbsoluteSenderTimeHeaderExtension[] =
-    "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
-
-const int kRtpVideoRotationHeaderExtensionDefaultId = 4;
-const char kRtpVideoRotationHeaderExtension[] = "urn:3gpp:video-orientation";
-const char kRtpVideoRotation6BitsHeaderExtensionForTesting[] =
-    "urn:3gpp:video-orientation:6";
-
-const int kRtpTransportSequenceNumberHeaderExtensionDefaultId = 5;
-const char kRtpTransportSequenceNumberHeaderExtension[] =
-    "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01";
-
 const char kVp8CodecName[] = "VP8";
 const char kVp9CodecName[] = "VP9";
 const char kH264CodecName[] = "H264";

@@ -268,7 +268,7 @@ void RtcEventLogImpl::LogVideoReceiveStreamConfig(
   for (const auto& e : config.rtp.extensions) {
     rtclog::RtpHeaderExtension* extension =
         receiver_config->add_header_extensions();
-    extension->set_name(e.name);
+    extension->set_name(e.uri);
     extension->set_id(e.id);
   }
 
@@ -297,7 +297,7 @@ void RtcEventLogImpl::LogVideoSendStreamConfig(
   for (const auto& e : config.rtp.extensions) {
     rtclog::RtpHeaderExtension* extension =
         sender_config->add_header_extensions();
-    extension->set_name(e.name);
+    extension->set_name(e.uri);
     extension->set_id(e.id);
   }
 

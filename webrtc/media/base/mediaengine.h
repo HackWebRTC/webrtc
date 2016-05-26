@@ -42,7 +42,7 @@ namespace cricket {
 class VideoCapturer;
 
 struct RtpCapabilities {
-  std::vector<RtpHeaderExtension> header_extensions;
+  std::vector<webrtc::RtpExtension> header_extensions;
 };
 
 // MediaEngineInterface is an abstraction of a media engine which can be

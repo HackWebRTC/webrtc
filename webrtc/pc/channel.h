@@ -282,7 +282,7 @@ class BaseChannel
   // Helper method to get RTP Absoulute SendTime extension header id if
   // present in remote supported extensions list.
   void MaybeCacheRtpAbsSendTimeHeaderExtension_w(
-      const std::vector<RtpHeaderExtension>& extensions);
+      const std::vector<webrtc::RtpExtension>& extensions);
 
   bool CheckSrtpConfig_n(const std::vector<CryptoParams>& cryptos,
                          bool* dtls,

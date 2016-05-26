@@ -99,11 +99,11 @@ struct ConfigHelper {
     stream_config_.rtp.ssrc = kSsrc;
     stream_config_.rtp.c_name = kCName;
     stream_config_.rtp.extensions.push_back(
-        RtpExtension(RtpExtension::kAudioLevel, kAudioLevelId));
+        RtpExtension(RtpExtension::kAudioLevelUri, kAudioLevelId));
     stream_config_.rtp.extensions.push_back(
-        RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeId));
+        RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeId));
     stream_config_.rtp.extensions.push_back(RtpExtension(
-        RtpExtension::kTransportSequenceNumber, kTransportSequenceNumberId));
+        RtpExtension::kTransportSequenceNumberUri, kTransportSequenceNumberId));
   }
 
   AudioSendStream::Config& config() { return stream_config_; }
@@ -171,13 +171,13 @@ TEST(AudioSendStreamTest, ConfigToString) {
   AudioSendStream::Config config(nullptr);
   config.rtp.ssrc = kSsrc;
   config.rtp.extensions.push_back(
-      RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeId));
+      RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeId));
   config.rtp.c_name = kCName;
   config.voe_channel_id = kChannelId;
   config.cng_payload_type = 42;
   config.red_payload_type = 17;
   EXPECT_EQ(
-      "{rtp: {ssrc: 1234, extensions: [{name: "
+      "{rtp: {ssrc: 1234, extensions: [{uri: "
       "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time, id: 3}], "
       "c_name: foo_name}, voe_channel_id: 1, cng_payload_type: 42, "
       "red_payload_type: 17}",

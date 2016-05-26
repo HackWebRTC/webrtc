@@ -35,7 +35,7 @@ static bool UseSendSideBwe(const VideoReceiveStream::Config& config) {
   if (!config.rtp.transport_cc)
     return false;
   for (const auto& extension : config.rtp.extensions) {
-    if (extension.name == RtpExtension::kTransportSequenceNumber)
+    if (extension.uri == RtpExtension::kTransportSequenceNumberUri)
       return true;
   }
   return false;

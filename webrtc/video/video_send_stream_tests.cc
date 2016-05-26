@@ -147,7 +147,7 @@ TEST_F(VideoSendStreamTest, SupportsAbsoluteSendTime) {
         VideoEncoderConfig* encoder_config) override {
       send_config->rtp.extensions.clear();
       send_config->rtp.extensions.push_back(RtpExtension(
-          RtpExtension::kAbsSendTime, test::kAbsSendTimeExtensionId));
+          RtpExtension::kAbsSendTimeUri, test::kAbsSendTimeExtensionId));
     }
 
     void PerformTest() override {
@@ -189,8 +189,8 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
         VideoEncoderConfig* encoder_config) override {
       send_config->encoder_settings.encoder = &encoder_;
       send_config->rtp.extensions.clear();
-      send_config->rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kTOffset, test::kTOffsetExtensionId));
+      send_config->rtp.extensions.push_back(RtpExtension(
+          RtpExtension::kTimestampOffsetUri, test::kTOffsetExtensionId));
     }
 
     void PerformTest() override {
@@ -233,8 +233,8 @@ TEST_F(VideoSendStreamTest, SupportsTransportWideSequenceNumbers) {
         VideoEncoderConfig* encoder_config) override {
       send_config->encoder_settings.encoder = &encoder_;
       send_config->rtp.extensions.clear();
-      send_config->rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kTransportSequenceNumber, kExtensionId));
+      send_config->rtp.extensions.push_back(RtpExtension(
+          RtpExtension::kTransportSequenceNumberUri, kExtensionId));
     }
 
     void PerformTest() override {
@@ -422,9 +422,9 @@ class FecObserver : public test::EndToEndTest {
             VideoSendStreamTest::kUlpfecPayloadType;
     if (header_extensions_enabled_) {
       send_config->rtp.extensions.push_back(RtpExtension(
-          RtpExtension::kAbsSendTime, test::kAbsSendTimeExtensionId));
+          RtpExtension::kAbsSendTimeUri, test::kAbsSendTimeExtensionId));
       send_config->rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kTransportSequenceNumber,
+          RtpExtension(RtpExtension::kTransportSequenceNumberUri,
                        test::kTransportSequenceNumberExtensionId));
     }
     (*receive_configs)[0].rtp.fec.red_payload_type =

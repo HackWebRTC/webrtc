@@ -153,7 +153,7 @@ void RtcEventLogTestHelper::VerifyReceiveStreamConfig(
     const std::string& name = receiver_config.header_extensions(i).name();
     int id = receiver_config.header_extensions(i).id();
     EXPECT_EQ(config.rtp.extensions[i].id, id);
-    EXPECT_EQ(config.rtp.extensions[i].name, name);
+    EXPECT_EQ(config.rtp.extensions[i].uri, name);
   }
   // Check decoders.
   ASSERT_EQ(static_cast<int>(config.decoders.size()),
@@ -186,8 +186,8 @@ void RtcEventLogTestHelper::VerifyReceiveStreamConfig(
   // Check header extensions.
   EXPECT_EQ(config.rtp.extensions.size(), parsed_config.rtp.extensions.size());
   for (size_t i = 0; i < parsed_config.rtp.extensions.size(); i++) {
-    EXPECT_EQ(config.rtp.extensions[i].name,
-              parsed_config.rtp.extensions[i].name);
+    EXPECT_EQ(config.rtp.extensions[i].uri,
+              parsed_config.rtp.extensions[i].uri);
     EXPECT_EQ(config.rtp.extensions[i].id, parsed_config.rtp.extensions[i].id);
   }
   // Check decoders.
@@ -223,7 +223,7 @@ void RtcEventLogTestHelper::VerifySendStreamConfig(
     const std::string& name = sender_config.header_extensions(i).name();
     int id = sender_config.header_extensions(i).id();
     EXPECT_EQ(config.rtp.extensions[i].id, id);
-    EXPECT_EQ(config.rtp.extensions[i].name, name);
+    EXPECT_EQ(config.rtp.extensions[i].uri, name);
   }
   // Check RTX settings.
   ASSERT_EQ(static_cast<int>(config.rtp.rtx.ssrcs.size()),
@@ -255,8 +255,8 @@ void RtcEventLogTestHelper::VerifySendStreamConfig(
   // Check header extensions.
   EXPECT_EQ(config.rtp.extensions.size(), parsed_config.rtp.extensions.size());
   for (size_t i = 0; i < parsed_config.rtp.extensions.size(); i++) {
-    EXPECT_EQ(config.rtp.extensions[i].name,
-              parsed_config.rtp.extensions[i].name);
+    EXPECT_EQ(config.rtp.extensions[i].uri,
+              parsed_config.rtp.extensions[i].uri);
     EXPECT_EQ(config.rtp.extensions[i].id, parsed_config.rtp.extensions[i].id);
   }
   // Check RTX settings.

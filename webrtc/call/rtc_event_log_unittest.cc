@@ -48,11 +48,10 @@ const RTPExtensionType kExtensionTypes[] = {
     RTPExtensionType::kRtpExtensionAbsoluteSendTime,
     RTPExtensionType::kRtpExtensionVideoRotation,
     RTPExtensionType::kRtpExtensionTransportSequenceNumber};
-const char* kExtensionNames[] = {RtpExtension::kTOffset,
-                                 RtpExtension::kAudioLevel,
-                                 RtpExtension::kAbsSendTime,
-                                 RtpExtension::kVideoRotation,
-                                 RtpExtension::kTransportSequenceNumber};
+const char* kExtensionNames[] = {
+    RtpExtension::kTimestampOffsetUri, RtpExtension::kAudioLevelUri,
+    RtpExtension::kAbsSendTimeUri, RtpExtension::kVideoRotationUri,
+    RtpExtension::kTransportSequenceNumberUri};
 const size_t kNumExtensions = 5;
 
 void PrintActualEvents(const ParsedRtcEventLog& parsed_log) {

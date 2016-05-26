@@ -28,6 +28,8 @@
 #include "webrtc/media/base/streamparams.h"
 #include "webrtc/p2p/base/sessiondescription.h"
 
+using webrtc::RtpExtension;
+
 namespace cricket {
 
 class FakeMediaEngine;
@@ -44,10 +46,10 @@ template <class Base> class RtpHelper : public Base {
         fail_set_recv_codecs_(false),
         send_ssrc_(0),
         ready_to_send_(false) {}
-  const std::vector<RtpHeaderExtension>& recv_extensions() {
+  const std::vector<RtpExtension>& recv_extensions() {
     return recv_extensions_;
   }
-  const std::vector<RtpHeaderExtension>& send_extensions() {
+  const std::vector<RtpExtension>& send_extensions() {
     return send_extensions_;
   }
   bool sending() const { return sending_; }
@@ -231,13 +233,11 @@ template <class Base> class RtpHelper : public Base {
     return true;
   }
   void set_playout(bool playout) { playout_ = playout; }
-  bool SetRecvRtpHeaderExtensions(
-      const std::vector<RtpHeaderExtension>& extensions) {
+  bool SetRecvRtpHeaderExtensions(const std::vector<RtpExtension>& extensions) {
     recv_extensions_ = extensions;
     return true;
   }
-  bool SetSendRtpHeaderExtensions(
-      const std::vector<RtpHeaderExtension>& extensions) {
+  bool SetSendRtpHeaderExtensions(const std::vector<RtpExtension>& extensions) {
     send_extensions_ = extensions;
     return true;
   }
@@ -263,8 +263,8 @@ template <class Base> class RtpHelper : public Base {
  private:
   bool sending_;
   bool playout_;
-  std::vector<RtpHeaderExtension> recv_extensions_;
-  std::vector<RtpHeaderExtension> send_extensions_;
+  std::vector<RtpExtension> recv_extensions_;
+  std::vector<RtpExtension> send_extensions_;
   std::list<std::string> rtp_packets_;
   std::list<std::string> rtcp_packets_;
   std::vector<StreamParams> send_streams_;
@@ -712,8 +712,7 @@ class FakeBaseEngine {
   void set_fail_create_channel(bool fail) { fail_create_channel_ = fail; }
 
   RtpCapabilities GetCapabilities() const { return capabilities_; }
-  void set_rtp_header_extensions(
-      const std::vector<RtpHeaderExtension>& extensions) {
+  void set_rtp_header_extensions(const std::vector<RtpExtension>& extensions) {
     capabilities_.header_extensions = extensions;
   }
 
@@ -854,11 +853,11 @@ class FakeMediaEngine :
   }
 
   void SetAudioRtpHeaderExtensions(
-      const std::vector<RtpHeaderExtension>& extensions) {
+      const std::vector<RtpExtension>& extensions) {
     voice_.set_rtp_header_extensions(extensions);
   }
   void SetVideoRtpHeaderExtensions(
-      const std::vector<RtpHeaderExtension>& extensions) {
+      const std::vector<RtpExtension>& extensions) {
     video_.set_rtp_header_extensions(extensions);
   }
 

@@ -29,15 +29,15 @@
 namespace webrtc {
 
 RTPExtensionType StringToRtpExtensionType(const std::string& extension) {
-  if (extension == RtpExtension::kTOffset)
+  if (extension == RtpExtension::kTimestampOffsetUri)
     return kRtpExtensionTransmissionTimeOffset;
-  if (extension == RtpExtension::kAudioLevel)
+  if (extension == RtpExtension::kAudioLevelUri)
     return kRtpExtensionAudioLevel;
-  if (extension == RtpExtension::kAbsSendTime)
+  if (extension == RtpExtension::kAbsSendTimeUri)
     return kRtpExtensionAbsoluteSendTime;
-  if (extension == RtpExtension::kVideoRotation)
+  if (extension == RtpExtension::kVideoRotationUri)
     return kRtpExtensionVideoRotation;
-  if (extension == RtpExtension::kTransportSequenceNumber)
+  if (extension == RtpExtension::kTransportSequenceNumberUri)
     return kRtpExtensionTransportSequenceNumber;
   RTC_NOTREACHED() << "Looking up unsupported RTP extension.";
   return kRtpExtensionNone;

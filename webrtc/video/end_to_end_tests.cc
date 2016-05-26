@@ -1432,8 +1432,8 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
         VideoEncoderConfig* encoder_config,
         test::FrameGeneratorCapturer** frame_generator) override {
       send_config->rtp.extensions.clear();
-      send_config->rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kTransportSequenceNumber, kExtensionId));
+      send_config->rtp.extensions.push_back(RtpExtension(
+          RtpExtension::kTransportSequenceNumberUri, kExtensionId));
 
       // Force some padding to be sent.
       const int kPaddingBitrateBps = 50000;
@@ -1459,8 +1459,8 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
         VideoReceiveStream::Config* receive_config) override {
       receive_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
       receive_config->rtp.extensions.clear();
-      receive_config->rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kTransportSequenceNumber, kExtensionId));
+      receive_config->rtp.extensions.push_back(RtpExtension(
+          RtpExtension::kTransportSequenceNumberUri, kExtensionId));
     }
 
     test::DirectTransport* CreateSendTransport(Call* sender_call) override {
@@ -1539,7 +1539,7 @@ class TransportFeedbackTester : public test::EndToEndTest {
       VideoEncoderConfig* encoder_config) override {
     send_config->rtp.extensions.clear();
     send_config->rtp.extensions.push_back(
-        RtpExtension(RtpExtension::kTransportSequenceNumber, kExtensionId));
+        RtpExtension(RtpExtension::kTransportSequenceNumberUri, kExtensionId));
     (*receive_configs)[0].rtp.extensions = send_config->rtp.extensions;
     (*receive_configs)[0].rtp.transport_cc = feedback_enabled_;
   }
@@ -1549,7 +1549,7 @@ class TransportFeedbackTester : public test::EndToEndTest {
       std::vector<AudioReceiveStream::Config>* receive_configs) override {
     send_config->rtp.extensions.clear();
     send_config->rtp.extensions.push_back(
-        RtpExtension(RtpExtension::kTransportSequenceNumber, kExtensionId));
+        RtpExtension(RtpExtension::kTransportSequenceNumberUri, kExtensionId));
     (*receive_configs)[0].rtp.extensions.clear();
     (*receive_configs)[0].rtp.extensions = send_config->rtp.extensions;
     (*receive_configs)[0].rtp.transport_cc = feedback_enabled_;
@@ -1787,7 +1787,7 @@ TEST_F(EndToEndTest, RembWithSendSideBwe) {
       ASSERT_EQ(1u, send_config->rtp.ssrcs.size());
       send_config->rtp.extensions.clear();
       send_config->rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kTransportSequenceNumber,
+          RtpExtension(RtpExtension::kTransportSequenceNumberUri,
                        test::kTransportSequenceNumberExtensionId));
       sender_ssrc_ = send_config->rtp.ssrcs[0];
 
@@ -3452,8 +3452,8 @@ TEST_F(EndToEndTest, TransportSeqNumOnAudioAndVideo) {
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       send_config->rtp.extensions.clear();
-      send_config->rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kTransportSequenceNumber, kExtensionId));
+      send_config->rtp.extensions.push_back(RtpExtension(
+          RtpExtension::kTransportSequenceNumberUri, kExtensionId));
       (*receive_configs)[0].rtp.extensions = send_config->rtp.extensions;
     }
 
@@ -3461,8 +3461,8 @@ TEST_F(EndToEndTest, TransportSeqNumOnAudioAndVideo) {
         AudioSendStream::Config* send_config,
         std::vector<AudioReceiveStream::Config>* receive_configs) override {
       send_config->rtp.extensions.clear();
-      send_config->rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kTransportSequenceNumber, kExtensionId));
+      send_config->rtp.extensions.push_back(RtpExtension(
+          RtpExtension::kTransportSequenceNumberUri, kExtensionId));
       (*receive_configs)[0].rtp.extensions.clear();
       (*receive_configs)[0].rtp.extensions = send_config->rtp.extensions;
     }

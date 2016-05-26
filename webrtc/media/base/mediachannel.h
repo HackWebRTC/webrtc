@@ -26,6 +26,7 @@
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/socket.h"
 #include "webrtc/base/window.h"
+#include "webrtc/config.h"
 #include "webrtc/media/base/codec.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/streamparams.h"
@@ -52,8 +53,6 @@ class VideoFrame;
 struct RtpHeader;
 struct VideoFormat;
 
-const int kMinRtpHeaderExtensionId = 1;
-const int kMaxRtpHeaderExtensionId = 255;
 const int kScreencastDefaultFps = 5;
 
 template <class T>
@@ -320,44 +319,6 @@ struct VideoOptions {
     }
   }
 };
-
-struct RtpHeaderExtension {
-  RtpHeaderExtension() : id(0) {}
-  RtpHeaderExtension(const std::string& u, int i) : uri(u), id(i) {}
-
-  bool operator==(const RtpHeaderExtension& ext) const {
-    // id is a reserved word in objective-c. Therefore the id attribute has to
-    // be a fully qualified name in order to compile on IOS.
-    return this->id == ext.id &&
-        uri == ext.uri;
-  }
-
-  std::string ToString() const {
-    std::ostringstream ost;
-    ost << "{";
-    ost << "uri: " << uri;
-    ost << ", id: " << id;
-    ost << "}";
-    return ost.str();
-  }
-
-  std::string uri;
-  int id;
-  // TODO(juberti): SendRecv direction;
-};
-
-// Returns the named header extension if found among all extensions, NULL
-// otherwise.
-inline const RtpHeaderExtension* FindHeaderExtension(
-    const std::vector<RtpHeaderExtension>& extensions,
-    const std::string& name) {
-  for (std::vector<RtpHeaderExtension>::const_iterator it = extensions.begin();
-       it != extensions.end(); ++it) {
-    if (it->uri == name)
-      return &(*it);
-  }
-  return NULL;
-}
 
 class MediaChannel : public sigslot::has_slots<> {
  public:
@@ -842,7 +803,7 @@ struct RtpParameters {
   }
 
   std::vector<Codec> codecs;
-  std::vector<RtpHeaderExtension> extensions;
+  std::vector<webrtc::RtpExtension> extensions;
   // TODO(pthatcher): Add streams.
   RtcpParameters rtcp;
   virtual ~RtpParameters() = default;

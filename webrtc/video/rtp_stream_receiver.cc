@@ -127,7 +127,7 @@ RtpStreamReceiver::RtpStreamReceiver(
   }
 
   for (size_t i = 0; i < config.rtp.extensions.size(); ++i) {
-    EnableReceiveRtpHeaderExtension(config.rtp.extensions[i].name,
+    EnableReceiveRtpHeaderExtension(config.rtp.extensions[i].uri,
                                     config.rtp.extensions[i].id);
   }
 

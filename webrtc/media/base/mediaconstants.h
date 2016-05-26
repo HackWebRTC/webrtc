@@ -117,34 +117,6 @@ extern const char kGoogleSctpDataCodecName[];
 
 extern const char kComfortNoiseCodecName[];
 
-// Header extension for audio levels, as defined in
-// http://tools.ietf.org/html/draft-ietf-avtext-client-to-mixer-audio-level-03
-extern const int kRtpAudioLevelHeaderExtensionDefaultId;
-extern const char kRtpAudioLevelHeaderExtension[];
-
-// Header extension for RTP timestamp offset, see RFC 5450 for details:
-// http://tools.ietf.org/html/rfc5450
-extern const int kRtpTimestampOffsetHeaderExtensionDefaultId;
-extern const char kRtpTimestampOffsetHeaderExtension[];
-
-// Header extension for absolute send time, see url for details:
-// http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
-extern const int kRtpAbsoluteSenderTimeHeaderExtensionDefaultId;
-extern const char kRtpAbsoluteSenderTimeHeaderExtension[];
-
-// Header extension for coordination of video orientation, see url for details:
-// http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/
-// ts_126114v120700p.pdf
-extern const int kRtpVideoRotationHeaderExtensionDefaultId;
-extern const char kRtpVideoRotationHeaderExtension[];
-// We don't support 6 bit CVO. Added here for testing purpose.
-extern const char kRtpVideoRotation6BitsHeaderExtensionForTesting[];
-
-// Header extension for transport sequence number, see url for details:
-// http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions
-extern const int kRtpTransportSequenceNumberHeaderExtensionDefaultId;
-extern const char kRtpTransportSequenceNumberHeaderExtension[];
-
 extern const char kVp8CodecName[];
 extern const char kVp9CodecName[];
 extern const char kH264CodecName[];

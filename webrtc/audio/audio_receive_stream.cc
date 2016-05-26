@@ -38,7 +38,7 @@ bool UseSendSideBwe(const webrtc::AudioReceiveStream::Config& config) {
     return false;
   }
   for (const auto& extension : config.rtp.extensions) {
-    if (extension.name == RtpExtension::kTransportSequenceNumber) {
+    if (extension.uri == RtpExtension::kTransportSequenceNumberUri) {
       return true;
     }
   }
@@ -97,17 +97,17 @@ AudioReceiveStream::AudioReceiveStream(
   channel_proxy_->RegisterExternalTransport(config.rtcp_send_transport);
 
   for (const auto& extension : config.rtp.extensions) {
-    if (extension.name == RtpExtension::kAudioLevel) {
+    if (extension.uri == RtpExtension::kAudioLevelUri) {
       channel_proxy_->SetReceiveAudioLevelIndicationStatus(true, extension.id);
       bool registered = rtp_header_parser_->RegisterRtpHeaderExtension(
           kRtpExtensionAudioLevel, extension.id);
       RTC_DCHECK(registered);
-    } else if (extension.name == RtpExtension::kAbsSendTime) {
+    } else if (extension.uri == RtpExtension::kAbsSendTimeUri) {
       channel_proxy_->SetReceiveAbsoluteSenderTimeStatus(true, extension.id);
       bool registered = rtp_header_parser_->RegisterRtpHeaderExtension(
           kRtpExtensionAbsoluteSendTime, extension.id);
       RTC_DCHECK(registered);
-    } else if (extension.name == RtpExtension::kTransportSequenceNumber) {
+    } else if (extension.uri == RtpExtension::kTransportSequenceNumberUri) {
       channel_proxy_->EnableReceiveTransportSequenceNumber(extension.id);
       bool registered = rtp_header_parser_->RegisterRtpHeaderExtension(
           kRtpExtensionTransportSequenceNumber, extension.id);

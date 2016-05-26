@@ -108,11 +108,11 @@ struct ConfigHelper {
     stream_config_.rtp.local_ssrc = kLocalSsrc;
     stream_config_.rtp.remote_ssrc = kRemoteSsrc;
     stream_config_.rtp.extensions.push_back(
-        RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeId));
+        RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeId));
     stream_config_.rtp.extensions.push_back(
-        RtpExtension(RtpExtension::kAudioLevel, kAudioLevelId));
+        RtpExtension(RtpExtension::kAudioLevelUri, kAudioLevelId));
     stream_config_.rtp.extensions.push_back(RtpExtension(
-        RtpExtension::kTransportSequenceNumber, kTransportSequenceNumberId));
+        RtpExtension::kTransportSequenceNumberUri, kTransportSequenceNumberId));
   }
 
   MockCongestionController* congestion_controller() {
@@ -224,10 +224,10 @@ TEST(AudioReceiveStreamTest, ConfigToString) {
   config.rtp.remote_ssrc = kRemoteSsrc;
   config.rtp.local_ssrc = kLocalSsrc;
   config.rtp.extensions.push_back(
-      RtpExtension(RtpExtension::kAbsSendTime, kAbsSendTimeId));
+      RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeId));
   config.voe_channel_id = kChannelId;
   EXPECT_EQ(
-      "{rtp: {remote_ssrc: 1234, local_ssrc: 5678, extensions: [{name: "
+      "{rtp: {remote_ssrc: 1234, local_ssrc: 5678, extensions: [{uri: "
       "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time, id: 2}], "
       "transport_cc: off}, "
       "rtcp_send_transport: nullptr, "
