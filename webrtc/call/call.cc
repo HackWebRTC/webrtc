@@ -413,7 +413,7 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   VideoSendStream* send_stream = new VideoSendStream(
       num_cpu_cores_, module_process_thread_.get(), call_stats_.get(),
       congestion_controller_.get(), bitrate_allocator_.get(),
-      video_send_delay_stats_.get(), &remb_, config, encoder_config,
+      video_send_delay_stats_.get(), &remb_, event_log_, config, encoder_config,
       suspended_video_send_ssrcs_);
   {
     WriteLockScoped write_lock(*send_crit_);

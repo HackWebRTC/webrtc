@@ -39,6 +39,7 @@ class ProcessThread;
 class RtpRtcp;
 class ViEEncoder;
 class VieRemb;
+class RtcEventLog;
 
 namespace vcm {
 class VideoSender;
@@ -59,6 +60,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
                   BitrateAllocator* bitrate_allocator,
                   SendDelayStats* send_delay_stats,
                   VieRemb* remb,
+                  RtcEventLog* event_log,
                   const VideoSendStream::Config& config,
                   const VideoEncoderConfig& encoder_config,
                   const std::map<uint32_t, RtpState>& suspended_ssrcs);
