@@ -17,6 +17,12 @@
 
 using namespace cricket;
 
+// STUN timeout (with all retries) is 9500ms.
+// Add some margin of error for slow bots.
+// TODO(deadbeef): Use simulated clock instead of just increasing timeouts to
+// fix flaky tests.
+static const int kTimeoutMs = 15000;
+
 class StunRequestTest : public testing::Test,
                         public sigslot::has_slots<> {
  public:
@@ -172,7 +178,7 @@ TEST_F(StunRequestTest, TestTimeout) {
   StunMessage* res = CreateStunMessage(STUN_BINDING_RESPONSE, req);
 
   manager_.Send(new StunRequestThunker(req, this));
-  rtc::Thread::Current()->ProcessMessages(10000);  // > STUN timeout
+  rtc::Thread::Current()->ProcessMessages(kTimeoutMs);
   EXPECT_FALSE(manager_.CheckResponse(res));
 
   EXPECT_TRUE(response_ == NULL);

@@ -152,8 +152,11 @@ class RelayPortTest : public testing::Test,
 
     EXPECT_FALSE(relay_port_->IsReady());
 
-    // Should have timed out in 200 + 200 + 400 + 800 + 1600 ms.
-    EXPECT_TRUE_WAIT(HasFailed(&fake_protocol_address), 3600);
+    // Should have timed out in 200 + 200 + 400 + 800 + 1600 ms = 3200ms.
+    // Add some margin of error for slow bots.
+    // TODO(deadbeef): Use simulated clock instead of just increasing timeouts
+    // to fix flaky tests.
+    EXPECT_TRUE_WAIT(HasFailed(&fake_protocol_address), 5000);
 
     // Wait until relayport is ready.
     EXPECT_TRUE_WAIT(relay_port_->IsReady(), kMaxTimeoutMs);
