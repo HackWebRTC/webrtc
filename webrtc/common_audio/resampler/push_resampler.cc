@@ -25,10 +25,12 @@ namespace {
 // caused the compiler to generate code that threw off the linker.
 void CheckValidInitParams(int src_sample_rate_hz, int dst_sample_rate_hz,
                           size_t num_channels) {
+#if !defined(WEBRTC_WIN)
   RTC_DCHECK_GT(src_sample_rate_hz, 0);
   RTC_DCHECK_GT(dst_sample_rate_hz, 0);
   RTC_DCHECK_GT(num_channels, 0u);
   RTC_DCHECK_LE(num_channels, 2u);
+#endif
 }
 
 void CheckExpectedBufferSizes(size_t src_length,
@@ -36,10 +38,12 @@ void CheckExpectedBufferSizes(size_t src_length,
                               size_t num_channels,
                               int src_sample_rate,
                               int dst_sample_rate) {
+#if !defined(WEBRTC_WIN)
   const size_t src_size_10ms = src_sample_rate * num_channels / 100;
   const size_t dst_size_10ms = dst_sample_rate * num_channels / 100;
   RTC_CHECK_EQ(src_length, src_size_10ms);
   RTC_CHECK_GE(dst_capacity, dst_size_10ms);
+#endif
 }
 }
 

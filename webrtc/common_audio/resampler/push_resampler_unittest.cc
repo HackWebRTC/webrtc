@@ -16,16 +16,16 @@
 
 namespace webrtc {
 
+// The below tests are temporarily disabled on WEBRTC_WIN due to problems
+// with clang debug builds.
+#if !defined(WEBRTC_WIN)
 TEST(PushResamplerTest, VerifiesInputParameters) {
   PushResampler<int16_t> resampler;
   EXPECT_EQ(0, resampler.InitializeIfNeeded(16000, 16000, 1));
   EXPECT_EQ(0, resampler.InitializeIfNeeded(16000, 16000, 2));
 }
 
-// The below tests are temporarily disabled on WEBRTC_WIN due to problems
-// with clang debug builds.
-#if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID) && \
-    !defined(WEBRTC_WIN)
+#if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 TEST(PushResamplerTest, VerifiesBadInputParameters1) {
   PushResampler<int16_t> resampler;
   EXPECT_DEATH(resampler.InitializeIfNeeded(-1, 16000, 1),
@@ -47,6 +47,7 @@ TEST(PushResamplerTest, VerifiesBadInputParameters4) {
   PushResampler<int16_t> resampler;
   EXPECT_DEATH(resampler.InitializeIfNeeded(16000, 16000, 3), "num_channels");
 }
+#endif
 #endif
 
 }  // namespace webrtc
