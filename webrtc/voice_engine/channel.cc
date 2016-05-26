@@ -2995,7 +2995,6 @@ uint32_t Channel::PrepareEncodeAndSend(int mixingFrequency) {
   if (_includeAudioLevelIndication) {
     size_t length =
         _audioFrame.samples_per_channel_ * _audioFrame.num_channels_;
-    RTC_CHECK_LE(length, sizeof(_audioFrame.data_));
     if (is_muted && previous_frame_muted_) {
       rms_level_.ProcessMuted(length);
     } else {

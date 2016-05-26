@@ -309,14 +309,11 @@ TEST_F(AudioCodingModuleTestOldApi, VerifyOutputFrame) {
   EXPECT_EQ(kSampleRateHz, audio_frame.sample_rate_hz_);
 }
 
-#if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 TEST_F(AudioCodingModuleTestOldApi, FailOnZeroDesiredFrequency) {
   AudioFrame audio_frame;
   bool muted;
-  EXPECT_DEATH(acm_->PlayoutData10Ms(0, &audio_frame, &muted),
-               "dst_sample_rate_hz");
+  EXPECT_EQ(-1, acm_->PlayoutData10Ms(0, &audio_frame, &muted));
 }
-#endif
 
 // Checks that the transport callback is invoked once for each speech packet.
 // Also checks that the frame type is kAudioFrameSpeech.
