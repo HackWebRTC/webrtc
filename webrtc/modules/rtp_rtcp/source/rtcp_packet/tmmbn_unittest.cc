@@ -12,14 +12,13 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/rtcp_packet_parser.h"
 
 using testing::ElementsAreArray;
 using testing::IsEmpty;
 using testing::make_tuple;
 using webrtc::rtcp::TmmbItem;
 using webrtc::rtcp::Tmmbn;
-using webrtc::RTCPUtility::RtcpCommonHeader;
-using webrtc::RTCPUtility::RtcpParseCommonHeader;
 
 namespace webrtc {
 namespace {
@@ -32,13 +31,6 @@ const uint8_t kPacket[] = {0x84, 205,  0x00, 0x04,
                            0x00, 0x00, 0x00, 0x00,
                            0x23, 0x45, 0x67, 0x89,
                            0x0a, 0x61, 0x61, 0xfe};
-
-bool ParseTmmbn(const uint8_t* buffer, size_t length, Tmmbn* tmmbn) {
-  RtcpCommonHeader header;
-  EXPECT_TRUE(RtcpParseCommonHeader(buffer, length, &header));
-  EXPECT_EQ(length, header.BlockSize());
-  return tmmbn->Parse(header, buffer + RtcpCommonHeader::kHeaderSizeBytes);
-}
 }  // namespace
 
 TEST(RtcpPacketTmmbnTest, Create) {
@@ -54,7 +46,7 @@ TEST(RtcpPacketTmmbnTest, Create) {
 
 TEST(RtcpPacketTmmbnTest, Parse) {
   Tmmbn tmmbn;
-  EXPECT_TRUE(ParseTmmbn(kPacket, sizeof(kPacket), &tmmbn));
+  EXPECT_TRUE(test::ParseSinglePacket(kPacket, &tmmbn));
 
   const Tmmbn& parsed = tmmbn;
 
@@ -71,7 +63,7 @@ TEST(RtcpPacketTmmbnTest, CreateAndParseWithoutItems) {
 
   rtc::Buffer packet = tmmbn.Build();
   Tmmbn parsed;
-  EXPECT_TRUE(ParseTmmbn(packet.data(), packet.size(), &parsed));
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &parsed));
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
   EXPECT_THAT(parsed.items(), IsEmpty());
@@ -85,7 +77,7 @@ TEST(RtcpPacketTmmbnTest, CreateAndParseWithTwoItems) {
 
   rtc::Buffer packet = tmmbn.Build();
   Tmmbn parsed;
-  EXPECT_TRUE(ParseTmmbn(packet.data(), packet.size(), &parsed));
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &parsed));
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
   EXPECT_EQ(2u, parsed.items().size());
@@ -101,7 +93,7 @@ TEST(RtcpPacketTmmbnTest, ParseFailsOnTooSmallPacket) {
   const uint8_t kSmallPacket[] = {0x84, 205,  0x00, 0x01,
                                   0x12, 0x34, 0x56, 0x78};
   Tmmbn tmmbn;
-  EXPECT_FALSE(ParseTmmbn(kSmallPacket, sizeof(kSmallPacket), &tmmbn));
+  EXPECT_FALSE(test::ParseSinglePacket(kSmallPacket, &tmmbn));
 }
 
 TEST(RtcpPacketTmmbnTest, ParseFailsOnUnAlignedPacket) {
@@ -111,6 +103,6 @@ TEST(RtcpPacketTmmbnTest, ParseFailsOnUnAlignedPacket) {
                                       0x23, 0x45, 0x67, 0x89};
 
   Tmmbn tmmbn;
-  EXPECT_FALSE(ParseTmmbn(kUnalignedPacket, sizeof(kUnalignedPacket), &tmmbn));
+  EXPECT_FALSE(test::ParseSinglePacket(kUnalignedPacket, &tmmbn));
 }
 }  // namespace webrtc

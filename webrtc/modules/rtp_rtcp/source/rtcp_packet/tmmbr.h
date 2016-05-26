@@ -17,22 +17,22 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rtpfb.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmb_item.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 
 namespace webrtc {
 namespace rtcp {
+class CommonHeader;
+
 // Temporary Maximum Media Stream Bit Rate Request (TMMBR).
 // RFC 5104, Section 4.2.1.
 class Tmmbr : public Rtpfb {
  public:
-  static const uint8_t kFeedbackMessageType = 3;
+  static constexpr uint8_t kFeedbackMessageType = 3;
 
   Tmmbr() {}
   ~Tmmbr() override {}
 
   // Parse assumes header is already parsed and validated.
-  bool Parse(const RTCPUtility::RtcpCommonHeader& header,
-             const uint8_t* payload);  // Size of the payload is in the header.
+  bool Parse(const CommonHeader& packet);
 
   void WithTmmbr(const TmmbItem& item);
 

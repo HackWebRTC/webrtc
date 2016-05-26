@@ -12,14 +12,13 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/rtcp_packet_parser.h"
 
 using testing::ElementsAreArray;
 using testing::IsEmpty;
 using testing::make_tuple;
 using webrtc::rtcp::TmmbItem;
 using webrtc::rtcp::Tmmbr;
-using webrtc::RTCPUtility::RtcpCommonHeader;
-using webrtc::RTCPUtility::RtcpParseCommonHeader;
 
 namespace webrtc {
 namespace {
@@ -32,13 +31,6 @@ const uint8_t kPacket[] = {0x83,  205, 0x00, 0x04,
                            0x00, 0x00, 0x00, 0x00,
                            0x23, 0x45, 0x67, 0x89,
                            0x0a, 0x61, 0x61, 0xfe};
-
-bool ParseTmmbr(const uint8_t* buffer, size_t length, Tmmbr* tmmbr) {
-  RtcpCommonHeader header;
-  EXPECT_TRUE(RtcpParseCommonHeader(buffer, length, &header));
-  EXPECT_EQ(length, header.BlockSize());
-  return tmmbr->Parse(header, buffer + RtcpCommonHeader::kHeaderSizeBytes);
-}
 }  // namespace
 
 TEST(RtcpPacketTmmbrTest, Create) {
@@ -54,7 +46,7 @@ TEST(RtcpPacketTmmbrTest, Create) {
 
 TEST(RtcpPacketTmmbrTest, Parse) {
   Tmmbr tmmbr;
-  EXPECT_TRUE(ParseTmmbr(kPacket, sizeof(kPacket), &tmmbr));
+  EXPECT_TRUE(test::ParseSinglePacket(kPacket, &tmmbr));
   const Tmmbr& parsed = tmmbr;
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
@@ -73,7 +65,7 @@ TEST(RtcpPacketTmmbrTest, CreateAndParseWithTwoEntries) {
   rtc::Buffer packet = tmmbr.Build();
 
   Tmmbr parsed;
-  EXPECT_TRUE(ParseTmmbr(packet.data(), packet.size(), &parsed));
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &parsed));
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
   EXPECT_EQ(2u, parsed.requests().size());
@@ -87,7 +79,7 @@ TEST(RtcpPacketTmmbrTest, ParseFailsWithoutItems) {
                                       0x00, 0x00, 0x00, 0x00};
 
   Tmmbr tmmbr;
-  EXPECT_FALSE(ParseTmmbr(kZeroItemsPacket, sizeof(kZeroItemsPacket), &tmmbr));
+  EXPECT_FALSE(test::ParseSinglePacket(kZeroItemsPacket, &tmmbr));
 }
 
 TEST(RtcpPacketTmmbrTest, ParseFailsOnUnAlignedPacket) {
@@ -99,6 +91,6 @@ TEST(RtcpPacketTmmbrTest, ParseFailsOnUnAlignedPacket) {
                                       0x34, 0x56, 0x78, 0x9a};
 
   Tmmbr tmmbr;
-  EXPECT_FALSE(ParseTmmbr(kUnalignedPacket, sizeof(kUnalignedPacket), &tmmbr));
+  EXPECT_FALSE(test::ParseSinglePacket(kUnalignedPacket, &tmmbr));
 }
 }  // namespace webrtc

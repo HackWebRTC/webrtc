@@ -13,11 +13,11 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-
-using webrtc::RTCPUtility::RtcpCommonHeader;
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 
 namespace webrtc {
 namespace rtcp {
+constexpr uint8_t Tmmbr::kFeedbackMessageType;
 // RFC 4585: Feedback format.
 // Common packet format:
 //
@@ -43,24 +43,24 @@ namespace rtcp {
 //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //  | MxTBR Exp |  MxTBR Mantissa                 |Measured Overhead|
 //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-bool Tmmbr::Parse(const RtcpCommonHeader& header, const uint8_t* payload) {
-  RTC_CHECK(header.packet_type == kPacketType);
-  RTC_CHECK(header.count_or_format == kFeedbackMessageType);
+bool Tmmbr::Parse(const CommonHeader& packet) {
+  RTC_DCHECK_EQ(packet.type(), kPacketType);
+  RTC_DCHECK_EQ(packet.fmt(), kFeedbackMessageType);
 
-  if (header.payload_size_bytes < kCommonFeedbackLength + TmmbItem::kLength) {
-    LOG(LS_WARNING) << "Payload length " << header.payload_size_bytes
+  if (packet.payload_size_bytes() < kCommonFeedbackLength + TmmbItem::kLength) {
+    LOG(LS_WARNING) << "Payload length " << packet.payload_size_bytes()
                     << " is too small for a TMMBR.";
     return false;
   }
-  size_t items_size_bytes = header.payload_size_bytes - kCommonFeedbackLength;
+  size_t items_size_bytes = packet.payload_size_bytes() - kCommonFeedbackLength;
   if (items_size_bytes % TmmbItem::kLength != 0) {
-    LOG(LS_WARNING) << "Payload length " << header.payload_size_bytes
+    LOG(LS_WARNING) << "Payload length " << packet.payload_size_bytes()
                     << " is not valid for a TMMBR.";
     return false;
   }
-  ParseCommonFeedback(payload);
+  ParseCommonFeedback(packet.payload());
 
-  const uint8_t* next_item = payload + kCommonFeedbackLength;
+  const uint8_t* next_item = packet.payload() + kCommonFeedbackLength;
   size_t number_of_items = items_size_bytes / TmmbItem::kLength;
   items_.resize(number_of_items);
   for (TmmbItem& item : items_) {
