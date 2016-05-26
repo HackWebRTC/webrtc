@@ -12,11 +12,33 @@
 
 #include <string.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/resampler/include/resampler.h"
 #include "webrtc/common_audio/resampler/push_sinc_resampler.h"
 
 namespace webrtc {
+namespace {
+// These checks were factored out into a non-templatized function
+// due to problems with clang on Windows in debug builds.
+// For some reason having the DCHECKs inline in the template code
+// caused the compiler to generate code that threw off the linker.
+void CheckValidInitParams(int src_sample_rate_hz, int dst_sample_rate_hz,
+                          size_t num_channels) {
+  RTC_DCHECK_GT(src_sample_rate_hz, 0);
+  RTC_DCHECK_GT(dst_sample_rate_hz, 0);
+  RTC_DCHECK_GT(num_channels, 0u);
+  RTC_DCHECK_LE(num_channels, 2u);
+}
+
+void CheckExpectedBufferSizes(size_t num_channels, int src_sample_rate,
+                              int dst_sample_rate) {
+  const size_t src_size_10ms = src_sample_rate * num_channels / 100;
+  const size_t dst_size_10ms = dst_sample_rate * num_channels / 100;
+  RTC_CHECK_EQ(src_length, src_size_10ms);
+  RTC_CHECK_GE(dst_capacity, dst_size_10ms);
+}
+}
 
 template <typename T>
 PushResampler<T>::PushResampler()
@@ -33,15 +55,19 @@ template <typename T>
 int PushResampler<T>::InitializeIfNeeded(int src_sample_rate_hz,
                                          int dst_sample_rate_hz,
                                          size_t num_channels) {
+  CheckValidInitParams(src_sample_rate_hz, dst_sample_rate_hz, num_channels);
+
   if (src_sample_rate_hz == src_sample_rate_hz_ &&
       dst_sample_rate_hz == dst_sample_rate_hz_ &&
-      num_channels == num_channels_)
+      num_channels == num_channels_) {
     // No-op if settings haven't changed.
     return 0;
+  }
 
-  if (src_sample_rate_hz <= 0 || dst_sample_rate_hz <= 0 ||
-      num_channels <= 0 || num_channels > 2)
+  if (src_sample_rate_hz <= 0 || dst_sample_rate_hz <= 0 || num_channels <= 0 ||
+      num_channels > 2) {
     return -1;
+  }
 
   src_sample_rate_hz_ = src_sample_rate_hz;
   dst_sample_rate_hz_ = dst_sample_rate_hz;
@@ -68,10 +94,8 @@ int PushResampler<T>::InitializeIfNeeded(int src_sample_rate_hz,
 template <typename T>
 int PushResampler<T>::Resample(const T* src, size_t src_length, T* dst,
                                size_t dst_capacity) {
-  const size_t src_size_10ms = src_sample_rate_hz_ * num_channels_ / 100;
-  const size_t dst_size_10ms = dst_sample_rate_hz_ * num_channels_ / 100;
-  if (src_length != src_size_10ms || dst_capacity < dst_size_10ms)
-    return -1;
+  CheckExpectedBufferSizes(num_channels_, src_sample_rate_hz_,
+                           dst_sample_rate_hz_)
 
   if (src_sample_rate_hz_ == dst_sample_rate_hz_) {
     // The old resampler provides this memcpy facility in the case of matching

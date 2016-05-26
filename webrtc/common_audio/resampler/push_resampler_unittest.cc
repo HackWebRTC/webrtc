@@ -22,7 +22,10 @@ TEST(PushResamplerTest, VerifiesInputParameters) {
   EXPECT_EQ(0, resampler.InitializeIfNeeded(16000, 16000, 2));
 }
 
-#if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
+// The below tests are temporarily disabled on WEBRTC_WIN due to problems
+// with clang debug builds.
+#if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID) && \
+    !defined(WEBRTC_WIN)
 TEST(PushResamplerTest, VerifiesBadInputParameters1) {
   PushResampler<int16_t> resampler;
   EXPECT_DEATH(resampler.InitializeIfNeeded(-1, 16000, 1),
