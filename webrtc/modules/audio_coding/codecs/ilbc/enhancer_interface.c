@@ -152,7 +152,7 @@ size_t WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
       corr16[i] = (int16_t)WEBRTC_SPL_SHIFT_W32(corrmax[i], corrSh);
       corr16[i] = (int16_t)((corr16[i] * corr16[i]) >> 16);
       en16[i] = (int16_t)WEBRTC_SPL_SHIFT_W32(ener, enerSh);
-      totsh[i] = enerSh - (corrSh << 1);
+      totsh[i] = enerSh - 2 * corrSh;
     }
 
     /* Compare lagmax[0..3] for the (corr^2)/ener criteria */

@@ -165,7 +165,7 @@ void WebRtcIlbcfix_Smooth(
       /* B_W32 is in Q30 ( B = 1 - ENH_A0/2 - A * w10/w00 ) */
       scale1 = 31-bitsw10;
       scale2 = 21-scale1;
-      w10prim = w10 << scale1;
+      w10prim = w10 * (1 << scale1);
       w00prim = WEBRTC_SPL_SHIFT_W32(w00, -scale2);
       scale = bitsw00-scale2-15;
 
