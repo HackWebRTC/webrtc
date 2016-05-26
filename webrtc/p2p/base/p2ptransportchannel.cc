@@ -1212,6 +1212,34 @@ void P2PTransportChannel::UpdateState() {
   if (state_ != state) {
     LOG_J(LS_INFO, this) << "Transport channel state changed from " << state_
                          << " to " << state;
+    // Check that the requested transition is allowed. Note that
+    // P2PTransportChannel does not (yet) implement a direct mapping of the ICE
+    // states from the standard; the difference is covered by
+    // TransportController and PeerConnection.
+    switch (state_) {
+      case STATE_INIT:
+        // TODO(deadbeef): Once we implement end-of-candidates signaling,
+        // we shouldn't go from INIT to COMPLETED.
+        RTC_DCHECK(state == STATE_CONNECTING || state == STATE_COMPLETED);
+        break;
+      case STATE_CONNECTING:
+        RTC_DCHECK(state == STATE_COMPLETED || state == STATE_FAILED);
+        break;
+      case STATE_COMPLETED:
+        // TODO(deadbeef): Once we implement end-of-candidates signaling,
+        // we shouldn't go from COMPLETED to CONNECTING.
+        // Though we *can* go from COMPlETED to FAILED, if consent expires.
+        RTC_DCHECK(state == STATE_CONNECTING || state == STATE_FAILED);
+        break;
+      case STATE_FAILED:
+        // TODO(deadbeef): Once we implement end-of-candidates signaling,
+        // we shouldn't go from FAILED to CONNECTING or COMPLETED.
+        RTC_DCHECK(state == STATE_CONNECTING || state == STATE_COMPLETED);
+        break;
+      default:
+        RTC_DCHECK(false);
+        break;
+    }
     state_ = state;
     SignalStateChanged(this);
   }

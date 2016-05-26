@@ -1466,46 +1466,10 @@ void WebRtcSession::SetIceConnectionState(
     return;
   }
 
-  // ASSERT that the requested transition is allowed.  Note that
-  // WebRtcSession does not implement "kIceConnectionClosed" (that is handled
-  // within PeerConnection).  This switch statement should compile away when
-  // ASSERTs are disabled.
   LOG(LS_INFO) << "Changing IceConnectionState " << ice_connection_state_
                << " => " << state;
-  switch (ice_connection_state_) {
-    case PeerConnectionInterface::kIceConnectionNew:
-      ASSERT(state == PeerConnectionInterface::kIceConnectionChecking);
-      break;
-    case PeerConnectionInterface::kIceConnectionChecking:
-      ASSERT(state == PeerConnectionInterface::kIceConnectionFailed ||
-             state == PeerConnectionInterface::kIceConnectionConnected);
-      break;
-    case PeerConnectionInterface::kIceConnectionConnected:
-      ASSERT(state == PeerConnectionInterface::kIceConnectionDisconnected ||
-             state == PeerConnectionInterface::kIceConnectionChecking ||
-             state == PeerConnectionInterface::kIceConnectionCompleted);
-      break;
-    case PeerConnectionInterface::kIceConnectionCompleted:
-      ASSERT(state == PeerConnectionInterface::kIceConnectionConnected ||
-             state == PeerConnectionInterface::kIceConnectionDisconnected);
-      break;
-    case PeerConnectionInterface::kIceConnectionFailed:
-      ASSERT(state == PeerConnectionInterface::kIceConnectionNew);
-      break;
-    case PeerConnectionInterface::kIceConnectionDisconnected:
-      ASSERT(state == PeerConnectionInterface::kIceConnectionChecking ||
-             state == PeerConnectionInterface::kIceConnectionConnected ||
-             state == PeerConnectionInterface::kIceConnectionCompleted ||
-             state == PeerConnectionInterface::kIceConnectionFailed);
-      break;
-    case PeerConnectionInterface::kIceConnectionClosed:
-      ASSERT(false);
-      break;
-    default:
-      ASSERT(false);
-      break;
-  }
-
+  RTC_DCHECK(ice_connection_state_ !=
+             PeerConnectionInterface::kIceConnectionClosed);
   ice_connection_state_ = state;
   if (ice_observer_) {
     ice_observer_->OnIceConnectionChange(ice_connection_state_);
