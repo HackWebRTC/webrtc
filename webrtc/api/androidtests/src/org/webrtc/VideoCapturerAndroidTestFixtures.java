@@ -223,7 +223,6 @@ public class VideoCapturerAndroidTestFixtures {
   static public void release(VideoCapturerAndroid capturer) {
     assertNotNull(capturer);
     capturer.dispose();
-    assertTrue(capturer.isDisposed());
   }
 
   static public void startCapturerAndRender(VideoCapturerAndroid capturer)
@@ -238,7 +237,6 @@ public class VideoCapturerAndroidTestFixtures {
     track.dispose();
     source.dispose();
     factory.dispose();
-    assertTrue(capturer.isDisposed());
   }
 
   static public void switchCamera(VideoCapturerAndroid capturer) throws InterruptedException {
@@ -278,7 +276,6 @@ public class VideoCapturerAndroidTestFixtures {
     track.dispose();
     source.dispose();
     factory.dispose();
-    assertTrue(capturer.isDisposed());
   }
 
   static public void cameraEventsInvoked(VideoCapturerAndroid capturer, CameraEvents events,
@@ -351,7 +348,6 @@ public class VideoCapturerAndroidTestFixtures {
     track.dispose();
     source.dispose();
     factory.dispose();
-    assertTrue(capturer.isDisposed());
   }
 
   static public void startStopWithDifferentResolutions(VideoCapturerAndroid capturer,
@@ -526,7 +522,6 @@ public class VideoCapturerAndroidTestFixtures {
     track.dispose();
     source.dispose();
     factory.dispose();
-    assertTrue(capturer.isDisposed());
 
     // Return the frame(s), on a different thread out of spite.
     final List<I420Frame> pendingFrames = renderer.waitForPendingFrames();
@@ -604,7 +599,6 @@ public class VideoCapturerAndroidTestFixtures {
     track.dispose();
     source.dispose();
     factory.dispose();
-    assertTrue(capturer.isDisposed());
 
     assertTrue(gotExpectedResolution);
   }

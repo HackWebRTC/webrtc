@@ -47,7 +47,6 @@ public class VideoCapturerAndroid implements
   private final static String TAG = "VideoCapturerAndroid";
   private static final int CAMERA_STOP_TIMEOUT_MS = 7000;
 
-  private boolean isDisposed = false;
   private android.hardware.Camera camera;  // Only non-null while capturing.
   private final Object handlerLock = new Object();
   // |cameraThreadHandler| must be synchronized on |handlerLock| when not on the camera thread,
@@ -257,25 +256,9 @@ public class VideoCapturerAndroid implements
     }
   }
 
-  // Dispose the SurfaceTextureHelper. This needs to be done manually, otherwise the
-  // SurfaceTextureHelper thread and resources will not be garbage collected.
   @Override
   public void dispose() {
-    Logging.d(TAG, "release");
-    if (isDisposed()) {
-      throw new IllegalStateException("Already released");
-    }
-    synchronized (handlerLock) {
-      if (cameraThreadHandler != null) {
-        throw new IllegalStateException("dispose() called while camera is running");
-      }
-    }
-    isDisposed = true;
-  }
-
-  // Used for testing purposes to check if dispose() has been called.
-  public boolean isDisposed() {
-    return isDisposed;
+    Logging.d(TAG, "dispose");
   }
 
   // Note that this actually opens the camera, and Camera callbacks run on the
