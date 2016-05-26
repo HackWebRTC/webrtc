@@ -14,6 +14,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -24,6 +25,7 @@ namespace {
 static const int kHeaderSize = 32;
 static const int kFrameHeaderSize = 12;
 static uint8_t dummy_payload[4] = {0, 1, 2, 3};
+static const int kMaxFileRetries = 5;
 }  // namespace
 
 class IvfFileWriterTest : public ::testing::Test {
@@ -36,7 +38,7 @@ class IvfFileWriterTest : public ::testing::Test {
       std::ostringstream oss;
       oss << test::OutputPath() << "ivf_test_file_" << id++ << ".ivf";
       file_name_ = oss.str();
-    } while (id < start_id + 100 && FileExists());
+    } while (id < start_id + 100 && FileExists(false));
     ASSERT_LT(id, start_id + 100);
   }
 
@@ -121,13 +123,38 @@ class IvfFileWriterTest : public ::testing::Test {
                     use_capture_tims_ms);
     VerifyDummyTestFrames(out_file.get(), kNumFrames);
 
+    out_file->Flush();
     EXPECT_EQ(0, out_file->CloseFile());
-    EXPECT_EQ(0, remove(file_name_.c_str()));
+
+    bool file_removed = false;
+    for (int i = 0; i < kMaxFileRetries; ++i) {
+      file_removed = remove(file_name_.c_str()) == 0;
+      if (file_removed)
+        break;
+
+      // Couldn't remove file for some reason, wait a sec and try again.
+      rtc::Thread::SleepMs(1000);
+    }
+    EXPECT_TRUE(file_removed);
   }
 
-  bool FileExists() {
-    std::unique_ptr<FileWrapper> file_wrapper(FileWrapper::Create());
-    return file_wrapper->OpenFile(file_name_.c_str(), true) == 0;
+  // Check whether file exists or not, and if it does not meet expectation,
+  // wait a bit and check again, up to kMaxFileRetries times. This is an ugly
+  // hack to avoid flakiness on certain operating systems where antivirus
+  // software may unexpectedly lock files and keep them from disappearing or
+  // being reused.
+  bool FileExists(bool expected) {
+    bool file_exists = expected;
+    std::unique_ptr<FileWrapper> file_wrapper;
+    int iterations = 0;
+    do {
+      if (file_wrapper.get() != nullptr)
+        rtc::Thread::SleepMs(1000);
+      file_wrapper.reset(FileWrapper::Create());
+      file_exists = file_wrapper->OpenFile(file_name_.c_str(), true) == 0;
+      file_wrapper->CloseFile();
+    } while (file_exists != expected && ++iterations < kMaxFileRetries);
+    return file_exists;
   }
 
   std::string file_name_;
@@ -137,9 +164,9 @@ class IvfFileWriterTest : public ::testing::Test {
 TEST_F(IvfFileWriterTest, RemovesUnusedFile) {
   file_writer_ = IvfFileWriter::Open(file_name_, kVideoCodecVP8);
   ASSERT_TRUE(file_writer_.get() != nullptr);
-  EXPECT_TRUE(FileExists());
+  EXPECT_TRUE(FileExists(true));
   EXPECT_TRUE(file_writer_->Close());
-  EXPECT_FALSE(FileExists());
+  EXPECT_FALSE(FileExists(false));
   EXPECT_FALSE(file_writer_->Close());  // Can't close twice.
 }
 
