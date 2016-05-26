@@ -169,6 +169,11 @@ config("common_config") {
       "-fno-builtin-sinf",
     ]
   }
+
+  if (use_libfuzzer || use_drfuzz) {
+    # Used in Chromium's overrides to disable logging
+    defines += [ "WEBRTC_UNSAFE_FUZZER_MODE" ]
+  }
 }
 
 source_set("webrtc") {
