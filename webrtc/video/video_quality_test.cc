@@ -215,7 +215,7 @@ class VideoAnalyzer : public PacketReceiver,
         wrap_handler_.Unwrap(video_frame.timestamp() - rtp_timestamp_delta_);
 
     while (wrap_handler_.Unwrap(frames_.front().timestamp()) < send_timestamp) {
-      if (last_rendered_frame_.IsZeroSize()) {
+      if (!last_rendered_frame_) {
         // No previous frame rendered, this one was dropped after sending but
         // before rendering.
         ++dropped_frames_before_rendering_;
@@ -223,7 +223,7 @@ class VideoAnalyzer : public PacketReceiver,
         RTC_CHECK(!frames_.empty());
         continue;
       }
-      AddFrameComparison(frames_.front(), last_rendered_frame_, true,
+      AddFrameComparison(frames_.front(), *last_rendered_frame_, true,
                          render_time_ms);
       frames_.pop_front();
       RTC_DCHECK(!frames_.empty());
@@ -231,7 +231,6 @@ class VideoAnalyzer : public PacketReceiver,
 
     VideoFrame reference_frame = frames_.front();
     frames_.pop_front();
-    assert(!reference_frame.IsZeroSize());
     int64_t reference_timestamp =
         wrap_handler_.Unwrap(reference_frame.timestamp());
     if (send_timestamp == reference_timestamp - 1) {
@@ -243,7 +242,7 @@ class VideoAnalyzer : public PacketReceiver,
 
     AddFrameComparison(reference_frame, video_frame, false, render_time_ms);
 
-    last_rendered_frame_ = video_frame;
+    last_rendered_frame_ = rtc::Optional<VideoFrame>(video_frame);
   }
 
   void Wait() {
@@ -393,7 +392,6 @@ class VideoAnalyzer : public PacketReceiver,
                           bool dropped,
                           int64_t render_time_ms)
       EXCLUSIVE_LOCKS_REQUIRED(crit_) {
-    RTC_DCHECK(!render.IsZeroSize());
     int64_t reference_timestamp = wrap_handler_.Unwrap(reference.timestamp());
     int64_t send_time_ms = send_times_[reference_timestamp];
     send_times_.erase(reference_timestamp);
@@ -664,7 +662,7 @@ class VideoAnalyzer : public PacketReceiver,
 
   rtc::CriticalSection crit_;
   std::deque<VideoFrame> frames_ GUARDED_BY(crit_);
-  VideoFrame last_rendered_frame_ GUARDED_BY(crit_);
+  rtc::Optional<VideoFrame> last_rendered_frame_ GUARDED_BY(crit_);
   rtc::TimestampWrapAroundHandler wrap_handler_ GUARDED_BY(crit_);
   std::map<int64_t, int64_t> send_times_ GUARDED_BY(crit_);
   std::map<int64_t, int64_t> recv_times_ GUARDED_BY(crit_);
