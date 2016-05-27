@@ -104,13 +104,16 @@ public class VideoCapturerAndroid implements
     return VideoCapturerAndroid.create(name, eventsHandler, false /* captureToTexture */);
   }
 
+  // Use ctor directly instead.
+  @Deprecated
   public static VideoCapturerAndroid create(String name,
       CameraEventsHandler eventsHandler, boolean captureToTexture) {
-    final int cameraId = lookupDeviceName(name);
-    if (cameraId == -1) {
+    try {
+      return new VideoCapturerAndroid(name, eventsHandler, captureToTexture);
+    } catch (RuntimeException e) {
+      Logging.e(TAG, "Couldn't create camera.", e);
       return null;
     }
-    return new VideoCapturerAndroid(cameraId, eventsHandler, captureToTexture);
   }
 
   public void printStackTrace() {
@@ -212,9 +215,16 @@ public class VideoCapturerAndroid implements
     return isCapturingToTexture;
   }
 
-  private VideoCapturerAndroid(int cameraId, CameraEventsHandler eventsHandler,
+  public VideoCapturerAndroid(String cameraName, CameraEventsHandler eventsHandler,
       boolean captureToTexture) {
-    this.id = cameraId;
+    if (android.hardware.Camera.getNumberOfCameras() == 0) {
+      throw new RuntimeException("No cameras available");
+    }
+    if (cameraName == null || cameraName == "") {
+      this.id = 0;
+    } else {
+      this.id = getCameraIndex(cameraName);
+    }
     this.eventsHandler = eventsHandler;
     isCapturingToTexture = captureToTexture;
     Logging.d(TAG, "VideoCapturerAndroid isCapturingToTexture : " + isCapturingToTexture);
@@ -226,22 +236,16 @@ public class VideoCapturerAndroid implements
     }
   }
 
-  // Returns the camera index for camera with name |deviceName|, or -1 if no such camera can be
-  // found. If |deviceName| is empty, the first available device is used.
-  private static int lookupDeviceName(String deviceName) {
-    Logging.d(TAG, "lookupDeviceName: " + deviceName);
-    if (deviceName == null || android.hardware.Camera.getNumberOfCameras() == 0) {
-      return -1;
-    }
-    if (deviceName.isEmpty()) {
-      return 0;
-    }
+  // Returns the camera index for camera with name |deviceName|, or throws IllegalArgumentException
+  // if no such camera can be found.
+  private static int getCameraIndex(String deviceName) {
+    Logging.d(TAG, "getCameraIndex: " + deviceName);
     for (int i = 0; i < android.hardware.Camera.getNumberOfCameras(); ++i) {
       if (deviceName.equals(CameraEnumerationAndroid.getDeviceName(i))) {
         return i;
       }
     }
-    return -1;
+    throw new IllegalArgumentException("No such camera: " + deviceName);
   }
 
   private boolean maybePostOnCameraThread(Runnable runnable) {
