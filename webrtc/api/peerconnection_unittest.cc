@@ -1028,11 +1028,10 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
 class P2PTestConductor : public testing::Test {
  public:
   P2PTestConductor()
-      : network_thread_(rtc::Thread::CreateWithSocketServer()),
-        worker_thread_(rtc::Thread::Create()),
-        pss_(new rtc::PhysicalSocketServer),
+      : pss_(new rtc::PhysicalSocketServer),
         ss_(new rtc::VirtualSocketServer(pss_.get())),
-        ss_scope_(ss_.get()) {
+        network_thread_(new rtc::Thread(ss_.get())),
+        worker_thread_(rtc::Thread::Create()) {
     RTC_CHECK(network_thread_->Start());
     RTC_CHECK(worker_thread_->Start());
   }
@@ -1313,13 +1312,14 @@ class P2PTestConductor : public testing::Test {
   }
 
  private:
-  // |worker_thread_| is used by both |initiating_client_| and
-  // |receiving_client_|. Must be destroyed last.
-  std::unique_ptr<rtc::Thread> network_thread_;
-  std::unique_ptr<rtc::Thread> worker_thread_;
+  // |ss_| is used by |network_thread_| so it must be destroyed later.
   std::unique_ptr<rtc::PhysicalSocketServer> pss_;
   std::unique_ptr<rtc::VirtualSocketServer> ss_;
-  rtc::SocketServerScope ss_scope_;
+  // |network_thread_| and |worker_thread_| are used by both
+  // |initiating_client_| and |receiving_client_| so they must be destroyed
+  // later.
+  std::unique_ptr<rtc::Thread> network_thread_;
+  std::unique_ptr<rtc::Thread> worker_thread_;
   std::unique_ptr<PeerConnectionTestClient> initiating_client_;
   std::unique_ptr<PeerConnectionTestClient> receiving_client_;
   bool prefer_constraint_apis_ = true;
