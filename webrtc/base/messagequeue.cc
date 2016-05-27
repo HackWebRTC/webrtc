@@ -15,6 +15,11 @@
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/trace_event.h"
 
+namespace {
+
+enum { MSG_WAKE_MESSAGE_QUEUE = 1 };
+}
+
 namespace rtc {
 
 const int kMaxMsgLatency = 150;  // 150 ms
@@ -101,6 +106,28 @@ void MessageQueueManager::ClearInternal(MessageHandler *handler) {
   std::vector<MessageQueue *>::iterator iter;
   for (iter = message_queues_.begin(); iter != message_queues_.end(); iter++)
     (*iter)->Clear(handler);
+}
+
+void MessageQueueManager::WakeAllMessageQueues() {
+  if (!instance_) {
+    return;
+  }
+  return Instance()->WakeAllMessageQueuesInternal();
+}
+
+void MessageQueueManager::WakeAllMessageQueuesInternal() {
+#if CS_DEBUG_CHECKS  // CurrentThreadIsOwner returns true by default.
+  ASSERT(!crit_.CurrentThreadIsOwner());  // See note above.
+#endif
+  CritScope cs(&crit_);
+  for (MessageQueue* queue : message_queues_) {
+    // Posting an arbitrary message will force the message queue to wake up.
+    queue->Post(this, MSG_WAKE_MESSAGE_QUEUE);
+  }
+}
+
+void MessageQueueManager::OnMessage(Message* pmsg) {
+  RTC_DCHECK(pmsg->message_id == MSG_WAKE_MESSAGE_QUEUE);
 }
 
 //------------------------------------------------------------------

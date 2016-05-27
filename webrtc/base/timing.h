@@ -13,6 +13,7 @@
 
 namespace rtc {
 
+// TODO(deadbeef): Remove this and use ClockInterface instead.
 class Timing {
  public:
   Timing();
