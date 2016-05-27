@@ -584,8 +584,7 @@ TEST_F(EndToEndTest, CanReceiveFec) {
   RunBaseTest(&test);
 }
 
-// Flacky on all platforms. See webrtc:4328.
-TEST_F(EndToEndTest, DISABLED_ReceivedFecPacketsNotNacked) {
+TEST_F(EndToEndTest, ReceivedFecPacketsNotNacked) {
   class FecNackObserver : public test::EndToEndTest {
    public:
     FecNackObserver()
@@ -593,7 +592,9 @@ TEST_F(EndToEndTest, DISABLED_ReceivedFecPacketsNotNacked) {
           state_(kFirstPacket),
           fec_sequence_number_(0),
           has_last_sequence_number_(false),
-          last_sequence_number_(0) {}
+          last_sequence_number_(0),
+          encoder_(VideoEncoder::Create(VideoEncoder::EncoderType::kVp8)),
+          decoder_(VP8Decoder::Create()) {}
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
@@ -636,6 +637,20 @@ TEST_F(EndToEndTest, DISABLED_ReceivedFecPacketsNotNacked) {
           if (!fec_packet)
             return DROP_PACKET;
           fec_sequence_number_ = header.sequenceNumber;
+          state_ = kDropOneMediaPacket;
+          break;
+        case kDropOneMediaPacket:
+          if (fec_packet)
+            return DROP_PACKET;
+          state_ = kPassOneMediaPacket;
+          return DROP_PACKET;
+          break;
+        case kPassOneMediaPacket:
+          if (fec_packet)
+            return DROP_PACKET;
+          // Pass one media packet after dropped packet after last FEC,
+          // otherwise receiver might never see a seq_no after
+          // |fec_sequence_number_|
           state_ = kVerifyFecPacketNotInNackList;
           break;
         case kVerifyFecPacketNotInNackList:
@@ -653,10 +668,11 @@ TEST_F(EndToEndTest, DISABLED_ReceivedFecPacketsNotNacked) {
         test::RtcpPacketParser rtcp_parser;
         rtcp_parser.Parse(packet, length);
         std::vector<uint16_t> nacks = rtcp_parser.nack_item()->last_nack_list();
+        EXPECT_TRUE(std::find(nacks.begin(), nacks.end(),
+                              fec_sequence_number_) == nacks.end())
+            << "Got nack for FEC packet";
         if (!nacks.empty() &&
             IsNewerSequenceNumber(nacks.back(), fec_sequence_number_)) {
-          EXPECT_TRUE(std::find(
-              nacks.begin(), nacks.end(), fec_sequence_number_) == nacks.end());
           observation_complete_.Set();
         }
       }
@@ -690,9 +706,24 @@ TEST_F(EndToEndTest, DISABLED_ReceivedFecPacketsNotNacked) {
       send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
       send_config->rtp.fec.red_payload_type = kRedPayloadType;
       send_config->rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+      // Set codec to VP8, otherwise NACK/FEC hybrid will be disabled.
+      send_config->encoder_settings.encoder = encoder_.get();
+      send_config->encoder_settings.payload_name = "VP8";
+      send_config->encoder_settings.payload_type = kFakeVideoSendPayloadType;
+      encoder_config->streams[0].min_bitrate_bps = 50000;
+      encoder_config->streams[0].max_bitrate_bps =
+          encoder_config->streams[0].target_bitrate_bps = 2000000;
+
       (*receive_configs)[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
       (*receive_configs)[0].rtp.fec.red_payload_type = kRedPayloadType;
       (*receive_configs)[0].rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+
+      (*receive_configs)[0].decoders.resize(1);
+      (*receive_configs)[0].decoders[0].payload_type =
+          send_config->encoder_settings.payload_type;
+      (*receive_configs)[0].decoders[0].payload_name =
+          send_config->encoder_settings.payload_name;
+      (*receive_configs)[0].decoders[0].decoder = decoder_.get();
     }
 
     void PerformTest() override {
@@ -704,6 +735,8 @@ TEST_F(EndToEndTest, DISABLED_ReceivedFecPacketsNotNacked) {
       kFirstPacket,
       kDropEveryOtherPacketUntilFec,
       kDropAllMediaPacketsUntilFec,
+      kDropOneMediaPacket,
+      kPassOneMediaPacket,
       kVerifyFecPacketNotInNackList,
     } state_;
 
@@ -711,6 +744,8 @@ TEST_F(EndToEndTest, DISABLED_ReceivedFecPacketsNotNacked) {
     uint16_t fec_sequence_number_ GUARDED_BY(&crit_);
     bool has_last_sequence_number_;
     uint16_t last_sequence_number_;
+    std::unique_ptr<webrtc::VideoEncoder> encoder_;
+    std::unique_ptr<webrtc::VideoDecoder> decoder_;
   } test;
 
   RunBaseTest(&test);
