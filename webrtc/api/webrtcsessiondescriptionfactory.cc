@@ -12,6 +12,7 @@
 
 #include <utility>
 
+#include "webrtc/api/dtlsidentitystore.h"
 #include "webrtc/api/jsep.h"
 #include "webrtc/api/jsepsessiondescription.h"
 #include "webrtc/api/mediaconstraintsinterface.h"
@@ -67,13 +68,28 @@ struct CreateSessionDescriptionMsg : public rtc::MessageData {
 };
 }  // namespace
 
-void WebRtcCertificateGeneratorCallback::OnFailure() {
-  SignalRequestFailed();
+void WebRtcIdentityRequestObserver::OnFailure(int error) {
+  SignalRequestFailed(error);
 }
 
-void WebRtcCertificateGeneratorCallback::OnSuccess(
-    const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
-  SignalCertificateReady(certificate);
+void WebRtcIdentityRequestObserver::OnSuccess(
+    const std::string& der_cert, const std::string& der_private_key) {
+  std::string pem_cert = rtc::SSLIdentity::DerToPem(
+      rtc::kPemTypeCertificate,
+      reinterpret_cast<const unsigned char*>(der_cert.data()),
+      der_cert.length());
+  std::string pem_key = rtc::SSLIdentity::DerToPem(
+      rtc::kPemTypeRsaPrivateKey,
+      reinterpret_cast<const unsigned char*>(der_private_key.data()),
+      der_private_key.length());
+  std::unique_ptr<rtc::SSLIdentity> identity(
+      rtc::SSLIdentity::FromPEMStrings(pem_key, pem_cert));
+  SignalCertificateReady(rtc::RTCCertificate::Create(std::move(identity)));
+}
+
+void WebRtcIdentityRequestObserver::OnSuccess(
+    std::unique_ptr<rtc::SSLIdentity> identity) {
+  SignalCertificateReady(rtc::RTCCertificate::Create(std::move(identity)));
 }
 
 // static
@@ -111,10 +127,12 @@ void WebRtcSessionDescriptionFactory::CopyCandidatesFromSessionDescription(
 WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
     rtc::Thread* signaling_thread,
     cricket::ChannelManager* channel_manager,
+    std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+    const rtc::scoped_refptr<WebRtcIdentityRequestObserver>&
+        identity_request_observer,
     WebRtcSession* session,
     const std::string& session_id,
-    std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
-    const rtc::scoped_refptr<rtc::RTCCertificate>& certificate)
+    bool dtls_enabled)
     : signaling_thread_(signaling_thread),
       session_desc_factory_(channel_manager, &transport_desc_factory_),
       // RFC 4566 suggested a Network Time Protocol (NTP) format timestamp
@@ -122,81 +140,89 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
       // to just use a random number as session id and start version from
       // |kInitSessionVersion|.
       session_version_(kInitSessionVersion),
-      cert_generator_(std::move(cert_generator)),
+      dtls_identity_store_(std::move(dtls_identity_store)),
+      identity_request_observer_(identity_request_observer),
       session_(session),
       session_id_(session_id),
       certificate_request_state_(CERTIFICATE_NOT_NEEDED) {
-  RTC_DCHECK(signaling_thread_);
   session_desc_factory_.set_add_legacy_streams(false);
-  bool dtls_enabled = cert_generator_ || certificate;
   // SRTP-SDES is disabled if DTLS is on.
   SetSdesPolicy(dtls_enabled ? cricket::SEC_DISABLED : cricket::SEC_REQUIRED);
-  if (!dtls_enabled) {
-    LOG(LS_VERBOSE) << "DTLS-SRTP disabled.";
-    return;
-  }
-
-  if (certificate) {
-    // Use |certificate|.
-    certificate_request_state_ = CERTIFICATE_WAITING;
-
-    LOG(LS_VERBOSE) << "DTLS-SRTP enabled; has certificate parameter.";
-    // We already have a certificate but we wait to do |SetIdentity|; if we do
-    // it in the constructor then the caller has not had a chance to connect to
-    // |SignalCertificateReady|.
-    signaling_thread_->Post(
-        this, MSG_USE_CONSTRUCTOR_CERTIFICATE,
-        new rtc::ScopedRefMessageData<rtc::RTCCertificate>(certificate));
-  } else {
-    // Generate certificate.
-    certificate_request_state_ = CERTIFICATE_WAITING;
-
-    rtc::scoped_refptr<WebRtcCertificateGeneratorCallback> callback(
-        new rtc::RefCountedObject<WebRtcCertificateGeneratorCallback>());
-    callback->SignalRequestFailed.connect(
-        this, &WebRtcSessionDescriptionFactory::OnCertificateRequestFailed);
-    callback->SignalCertificateReady.connect(
-        this, &WebRtcSessionDescriptionFactory::SetCertificate);
-
-    rtc::KeyParams key_params = rtc::KeyParams();
-    LOG(LS_VERBOSE) << "DTLS-SRTP enabled; sending DTLS identity request (key "
-                    << "type: " << key_params.type() << ").";
-
-    // Request certificate. This happens asynchronously, so that the caller gets
-    // a chance to connect to |SignalCertificateReady|.
-    cert_generator_->GenerateCertificateAsync(
-        key_params, rtc::Optional<uint64_t>(), callback);
-  }
 }
 
 WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
     rtc::Thread* signaling_thread,
     cricket::ChannelManager* channel_manager,
     WebRtcSession* session,
-    const std::string& session_id,
-    std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator)
+    const std::string& session_id)
+    : WebRtcSessionDescriptionFactory(signaling_thread,
+                                      channel_manager,
+                                      nullptr,
+                                      nullptr,
+                                      session,
+                                      session_id,
+                                      false) {
+  LOG(LS_VERBOSE) << "DTLS-SRTP disabled.";
+}
+
+WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
+    rtc::Thread* signaling_thread,
+    cricket::ChannelManager* channel_manager,
+    std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+    WebRtcSession* session,
+    const std::string& session_id)
     : WebRtcSessionDescriptionFactory(
           signaling_thread,
           channel_manager,
+          std::move(dtls_identity_store),
+          new rtc::RefCountedObject<WebRtcIdentityRequestObserver>(),
           session,
           session_id,
-          std::move(cert_generator),
-          nullptr) {
+          true) {
+  RTC_DCHECK(dtls_identity_store_);
+
+  certificate_request_state_ = CERTIFICATE_WAITING;
+
+  identity_request_observer_->SignalRequestFailed.connect(
+      this, &WebRtcSessionDescriptionFactory::OnIdentityRequestFailed);
+  identity_request_observer_->SignalCertificateReady.connect(
+      this, &WebRtcSessionDescriptionFactory::SetCertificate);
+
+  rtc::KeyParams key_params = rtc::KeyParams();
+  LOG(LS_VERBOSE) << "DTLS-SRTP enabled; sending DTLS identity request (key "
+                  << "type: " << key_params.type() << ").";
+
+  // Request identity. This happens asynchronously, so the caller will have a
+  // chance to connect to SignalIdentityReady.
+  dtls_identity_store_->RequestIdentity(key_params,
+                                        rtc::Optional<uint64_t>(),
+                                        identity_request_observer_);
 }
 
 WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
     rtc::Thread* signaling_thread,
     cricket::ChannelManager* channel_manager,
+    const rtc::scoped_refptr<rtc::RTCCertificate>& certificate,
     WebRtcSession* session,
-    const std::string& session_id,
-    const rtc::scoped_refptr<rtc::RTCCertificate>& certificate)
+    const std::string& session_id)
     : WebRtcSessionDescriptionFactory(signaling_thread,
                                       channel_manager,
+                                      nullptr,
+                                      nullptr,
                                       session,
                                       session_id,
-                                      nullptr,
-                                      certificate) {
+                                      true) {
   RTC_DCHECK(certificate);
+
+  certificate_request_state_ = CERTIFICATE_WAITING;
+
+  LOG(LS_VERBOSE) << "DTLS-SRTP enabled; has certificate parameter.";
+  // We already have a certificate but we wait to do SetIdentity; if we do
+  // it in the constructor then the caller has not had a chance to connect to
+  // SignalIdentityReady.
+  signaling_thread_->Post(
+      this, MSG_USE_CONSTRUCTOR_CERTIFICATE,
+      new rtc::ScopedRefMessageData<rtc::RTCCertificate>(certificate));
 }
 
 WebRtcSessionDescriptionFactory::~WebRtcSessionDescriptionFactory() {
@@ -462,10 +488,10 @@ void WebRtcSessionDescriptionFactory::PostCreateSessionDescriptionSucceeded(
   signaling_thread_->Post(this, MSG_CREATE_SESSIONDESCRIPTION_SUCCESS, msg);
 }
 
-void WebRtcSessionDescriptionFactory::OnCertificateRequestFailed() {
+void WebRtcSessionDescriptionFactory::OnIdentityRequestFailed(int error) {
   ASSERT(signaling_thread_->IsCurrent());
 
-  LOG(LS_ERROR) << "Asynchronous certificate generation request failed.";
+  LOG(LS_ERROR) << "Async identity request failed: error = " << error;
   certificate_request_state_ = CERTIFICATE_FAILED;
 
   FailPendingRequests(kFailedDueToIdentityFailed);
@@ -474,7 +500,7 @@ void WebRtcSessionDescriptionFactory::OnCertificateRequestFailed() {
 void WebRtcSessionDescriptionFactory::SetCertificate(
     const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
   RTC_DCHECK(certificate);
-  LOG(LS_VERBOSE) << "Setting new certificate.";
+  LOG(LS_VERBOSE) << "Setting new certificate";
 
   certificate_request_state_ = CERTIFICATE_SUCCEEDED;
   SignalCertificateReady(certificate);

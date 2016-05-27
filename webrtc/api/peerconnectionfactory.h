@@ -14,12 +14,12 @@
 #include <memory>
 #include <string>
 
+#include "webrtc/api/dtlsidentitystore.h"
 #include "webrtc/api/mediacontroller.h"
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/thread.h"
-#include "webrtc/base/rtccertificategenerator.h"
 #include "webrtc/pc/channelmanager.h"
 
 namespace rtc {
@@ -29,8 +29,8 @@ class BasicPacketSocketFactory;
 
 namespace webrtc {
 
-typedef rtc::RefCountedObject<rtc::RTCCertificateGenerator>
-    RefCountedRTCCertificateGenerator;
+typedef rtc::RefCountedObject<DtlsIdentityStoreImpl>
+    RefCountedDtlsIdentityStore;
 
 class PeerConnectionFactory : public PeerConnectionFactoryInterface {
  public:
@@ -43,13 +43,13 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
       const PeerConnectionInterface::RTCConfiguration& configuration,
       const MediaConstraintsInterface* constraints,
       std::unique_ptr<cricket::PortAllocator> allocator,
-      std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
+      std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
       PeerConnectionObserver* observer) override;
 
   virtual rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
       const PeerConnectionInterface::RTCConfiguration& configuration,
       std::unique_ptr<cricket::PortAllocator> allocator,
-      std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
+      std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
       PeerConnectionObserver* observer) override;
 
   bool Initialize();
@@ -129,7 +129,7 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   std::unique_ptr<rtc::BasicNetworkManager> default_network_manager_;
   std::unique_ptr<rtc::BasicPacketSocketFactory> default_socket_factory_;
 
-  rtc::scoped_refptr<RefCountedRTCCertificateGenerator> cert_generator_;
+  rtc::scoped_refptr<RefCountedDtlsIdentityStore> dtls_identity_store_;
 };
 
 }  // namespace webrtc

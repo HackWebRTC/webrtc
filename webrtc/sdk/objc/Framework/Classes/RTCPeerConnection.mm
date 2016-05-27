@@ -226,12 +226,11 @@ void PeerConnectionDelegateAdapter::OnIceCandidatesRemoved(
     std::unique_ptr<webrtc::MediaConstraints> nativeConstraints =
         constraints.nativeConstraints;
     _peerConnection =
-        factory.nativeFactory->CreatePeerConnection(
-            *config,
-            nativeConstraints.get(),
-            nullptr,
-            std::unique_ptr<rtc::RTCCertificateGeneratorInterface>(),
-            _observer.get());
+        factory.nativeFactory->CreatePeerConnection(*config,
+                                                    nativeConstraints.get(),
+                                                    nullptr,
+                                                    nullptr,
+                                                    _observer.get());
     _localStreams = [[NSMutableArray alloc] init];
     _delegate = delegate;
   }

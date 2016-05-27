@@ -68,7 +68,6 @@
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/network.h"
 #include "webrtc/base/rtccertificate.h"
-#include "webrtc/base/rtccertificategenerator.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/media/base/mediachannel.h"
@@ -581,48 +580,14 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
       const PeerConnectionInterface::RTCConfiguration& configuration,
       const MediaConstraintsInterface* constraints,
       std::unique_ptr<cricket::PortAllocator> allocator,
-      std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
-      PeerConnectionObserver* observer) = 0;
-  // TODO(hbos): To be removed in favor of the |cert_generator| version as soon
-  // as Chromium stops using this version. See bugs.webrtc.org/5707,
-  // bugs.webrtc.org/5708.
-  rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
-      const PeerConnectionInterface::RTCConfiguration& configuration,
-      const MediaConstraintsInterface* constraints,
-      std::unique_ptr<cricket::PortAllocator> allocator,
       std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
-      PeerConnectionObserver* observer) {
-    return CreatePeerConnection(
-        configuration,
-        constraints,
-        std::move(allocator),
-        std::unique_ptr<rtc::RTCCertificateGeneratorInterface>(
-            dtls_identity_store ? new RTCCertificateGeneratorStoreWrapper(
-                std::move(dtls_identity_store)) : nullptr),
-        observer);
-  }
+      PeerConnectionObserver* observer) = 0;
 
   virtual rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
       const PeerConnectionInterface::RTCConfiguration& configuration,
       std::unique_ptr<cricket::PortAllocator> allocator,
-      std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
-      PeerConnectionObserver* observer) = 0;
-  // TODO(hbos): To be removed in favor of the |cert_generator| version as soon
-  // as Chromium stops using this version. See bugs.webrtc.org/5707,
-  // bugs.webrtc.org/5708.
-  rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
-      const PeerConnectionInterface::RTCConfiguration& configuration,
-      std::unique_ptr<cricket::PortAllocator> allocator,
       std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
-      PeerConnectionObserver* observer) {
-    return CreatePeerConnection(
-        configuration,
-        std::move(allocator),
-        std::unique_ptr<rtc::RTCCertificateGeneratorInterface>(
-            dtls_identity_store ? new RTCCertificateGeneratorStoreWrapper(
-                std::move(dtls_identity_store)) : nullptr),
-        observer);
-  }
+      PeerConnectionObserver* observer) = 0;
 
   virtual rtc::scoped_refptr<MediaStreamInterface>
       CreateLocalMediaStream(const std::string& label) = 0;
