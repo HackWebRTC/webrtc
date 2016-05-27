@@ -14,6 +14,7 @@
 #include "webrtc/api/java/jni/classreferenceholder.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 
 namespace webrtc_jni {
 
@@ -48,6 +49,14 @@ SurfaceTextureHelper::SurfaceTextureHelper(JNIEnv* jni,
 }
 
 SurfaceTextureHelper::~SurfaceTextureHelper() {
+  LOG(LS_INFO) << "SurfaceTextureHelper dtor";
+  JNIEnv* jni = AttachCurrentThreadIfNeeded();
+  jni->CallVoidMethod(
+      *j_surface_texture_helper_,
+      GetMethodID(jni, FindClass(jni, "org/webrtc/SurfaceTextureHelper"),
+                  "dispose", "()V"));
+
+  CHECK_EXCEPTION(jni) << "error during SurfaceTextureHelper.dispose()";
 }
 
 jobject SurfaceTextureHelper::GetJavaSurfaceTextureHelper() const {

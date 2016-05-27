@@ -272,17 +272,6 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     surfaceTextureHelper.dispose();
   }
 
-  // Helper method to call stopListening() on correct thread.
-  private static void stopListeningOnHandlerThread(final SurfaceTextureHelper surfaceTextureHelper)
-      throws InterruptedException {
-    ThreadUtils.invokeUninterruptibly(surfaceTextureHelper.getHandler(), new Runnable() {
-      @Override
-      public void run() {
-        surfaceTextureHelper.stopListening();
-      }
-    });
-  }
-
   /**
    * Call stopListening(), but keep trying to produce more texture frames. No frames should be
    * delivered to the listener.
@@ -308,7 +297,7 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     surfaceTextureHelper.returnTextureFrame();
 
     // Stop listening - we should not receive any textures after this.
-    stopListeningOnHandlerThread(surfaceTextureHelper);
+    surfaceTextureHelper.stopListening();
 
     // Draw one frame.
     GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
@@ -330,7 +319,7 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
         "SurfaceTextureHelper test" /* threadName */, null);
     final MockTextureListener listener = new MockTextureListener();
     surfaceTextureHelper.startListening(listener);
-    stopListeningOnHandlerThread(surfaceTextureHelper);
+    surfaceTextureHelper.stopListening();
     surfaceTextureHelper.dispose();
   }
 
@@ -362,10 +351,13 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     stopListeningBarrier.countDown();
     stopListeningBarrierDone.await();
     // Wait until handler thread is idle to try to catch late startListening() call.
-    ThreadUtils.invokeUninterruptibly(surfaceTextureHelper.getHandler(), new Runnable() {
-      @Override
-      public void run() {}
+    final CountDownLatch barrier = new CountDownLatch(1);
+    surfaceTextureHelper.getHandler().post(new Runnable() {
+      @Override public void run() {
+        barrier.countDown();
+      }
     });
+    ThreadUtils.awaitUninterruptibly(barrier);
     // Previous startListening() call should never have taken place and it should be ok to call it
     // again.
     surfaceTextureHelper.startListening(listener);
@@ -397,7 +389,7 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     surfaceTextureHelper.returnTextureFrame();
 
     // Stop listening - |listener1| should not receive any textures after this.
-    stopListeningOnHandlerThread(surfaceTextureHelper);
+    surfaceTextureHelper.stopListening();
 
     // Connect different listener.
     final MockTextureListener listener2 = new MockTextureListener();

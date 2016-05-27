@@ -139,7 +139,20 @@ public class ThreadUtils {
   /**
    * Post |callable| to |handler| and wait for the result.
    */
-  public static <V> V invokeUninterruptibly(final Handler handler, final Callable<V> callable) {
+  public static <V> V invokeAtFrontUninterruptibly(
+      final Handler handler, final Callable<V> callable) {
+    if (handler.getLooper().getThread() == Thread.currentThread()) {
+      V value;
+      try {
+        value = callable.call();
+      } catch (Exception e) {
+        final RuntimeException runtimeException =
+            new RuntimeException("Callable threw exception: " + e);
+        runtimeException.setStackTrace(e.getStackTrace());
+        throw runtimeException;
+      }
+      return value;
+    }
     class Result {
       public V value;
     }
@@ -163,13 +176,19 @@ public class ThreadUtils {
   }
 
   /**
-   * Post |runner| to |handler| and wait for the result.
+   * Post |runner| to |handler|, at the front, and wait for
+   * completion.
    */
-  public static void invokeUninterruptibly(final Handler handler, final Runnable runner) {
+  public static void invokeAtFrontUninterruptibly(final Handler handler, final Runnable runner) {
+    if (handler.getLooper().getThread() == Thread.currentThread()) {
+      runner.run();
+      return;
+    }
     final CountDownLatch barrier = new CountDownLatch(1);
-    handler.post(new Runnable() {
-      @Override public void run() {
-          runner.run();
+    handler.postAtFrontOfQueue(new Runnable() {
+      @Override
+      public void run() {
+        runner.run();
         barrier.countDown();
       }
     });

@@ -53,13 +53,6 @@ AndroidVideoCapturerJni::~AndroidVideoCapturerJni() {
       *j_video_capturer_,
       GetMethodID(jni(), *j_video_capturer_class_, "dispose", "()V"));
   CHECK_EXCEPTION(jni()) << "error during VideoCapturer.dispose()";
-  if (surface_texture_helper_) {
-    jni()->CallVoidMethod(
-        surface_texture_helper_->GetJavaSurfaceTextureHelper(),
-        GetMethodID(jni(), FindClass(jni(), "org/webrtc/SurfaceTextureHelper"),
-                    "dispose", "()V"));
-  }
-  CHECK_EXCEPTION(jni()) << "error during SurfaceTextureHelper.dispose()";
 }
 
 void AndroidVideoCapturerJni::Start(int width, int height, int framerate,

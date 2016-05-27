@@ -547,10 +547,10 @@ public class MediaCodecVideoDecoder {
     }
 
     public void release() {
-      // SurfaceTextureHelper.dispose() will block until any onTextureFrameAvailable() in
-      // progress is done. Therefore, the call to dispose() must be outside any synchronized
+      // SurfaceTextureHelper.stopListening() will block until any onTextureFrameAvailable() in
+      // progress is done. Therefore, the call must be outside any synchronized
       // statement that is also used in the onTextureFrameAvailable() above to avoid deadlocks.
-      surfaceTextureHelper.dispose();
+      surfaceTextureHelper.stopListening();
       synchronized (newFrameLock) {
         if (renderedBuffer != null) {
           surfaceTextureHelper.returnTextureFrame();

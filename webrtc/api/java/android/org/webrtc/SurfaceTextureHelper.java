@@ -63,7 +63,7 @@ class SurfaceTextureHelper {
     // http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/5.1.1_r1/android/graphics/SurfaceTexture.java#195.
     // Therefore, in order to control the callback thread on API lvl < 21, the SurfaceTextureHelper
     // is constructed on the |handler| thread.
-    return ThreadUtils.invokeUninterruptibly(handler, new Callable<SurfaceTextureHelper>() {
+    return ThreadUtils.invokeAtFrontUninterruptibly(handler, new Callable<SurfaceTextureHelper>() {
       @Override
       public SurfaceTextureHelper call() {
         try {
@@ -373,17 +373,18 @@ class SurfaceTextureHelper {
 
   /**
    * Stop listening. The listener set in startListening() is guaranteded to not receive any more
-   * onTextureFrameAvailable() callbacks after this function returns. This function must be called
-   * on the getHandler() thread.
+   * onTextureFrameAvailable() callbacks after this function returns.
    */
   public void stopListening() {
-    if (handler.getLooper().getThread() != Thread.currentThread()) {
-      throw new IllegalStateException("Wrong thread.");
-    }
     Logging.d(TAG, "stopListening()");
     handler.removeCallbacks(setListenerRunnable);
-    this.listener = null;
-    this.pendingListener = null;
+    ThreadUtils.invokeAtFrontUninterruptibly(handler, new Runnable() {
+      @Override
+      public void run() {
+        listener = null;
+        pendingListener = null;
+      }
+    });
   }
 
   /**
@@ -431,24 +432,15 @@ class SurfaceTextureHelper {
    */
   public void dispose() {
     Logging.d(TAG, "dispose()");
-    if (handler.getLooper().getThread() == Thread.currentThread()) {
-      isQuitting = true;
-      if (!isTextureInUse) {
-        release();
-      }
-      return;
-    }
-    final CountDownLatch barrier = new CountDownLatch(1);
-    handler.postAtFrontOfQueue(new Runnable() {
-      @Override public void run() {
+    ThreadUtils.invokeAtFrontUninterruptibly(handler, new Runnable() {
+      @Override
+      public void run() {
         isQuitting = true;
-        barrier.countDown();
         if (!isTextureInUse) {
           release();
         }
       }
     });
-    ThreadUtils.awaitUninterruptibly(barrier);
   }
 
   public void textureToYUV(ByteBuffer buf,

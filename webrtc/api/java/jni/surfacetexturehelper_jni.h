@@ -30,6 +30,8 @@ namespace webrtc_jni {
 // SurfaceTextureHelper is reference counted to make sure that it is not
 // destroyed while a VideoFrameBuffer is in use.
 // This class is the C++ counterpart of the java class SurfaceTextureHelper.
+// It owns the corresponding java object, and calls the java dispose
+// method when destroyed.
 // Usage:
 // 1. Create an instance of this class.
 // 2. Get the Java SurfaceTextureHelper with GetJavaSurfaceTextureHelper().
