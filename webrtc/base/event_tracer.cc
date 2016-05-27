@@ -160,6 +160,7 @@ class EventLogger final {
     // Finally start, everything should be set up now.
     logging_thread_.Start();
     TRACE_EVENT_INSTANT0("webrtc", "EventLogger::Start");
+    logging_thread_.SetPriority(kLowPriority);
   }
 
   void Stop() {
