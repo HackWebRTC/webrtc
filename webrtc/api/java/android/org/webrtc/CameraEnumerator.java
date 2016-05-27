@@ -81,4 +81,16 @@ public class CameraEnumerator implements CameraEnumerationAndroid.Enumerator {
         + " Time spent: " + (endTimeMs - startTimeMs) + " ms.");
     return formatList;
   }
+
+  // Convert from int[2] to CaptureFormat.FramerateRange.
+  public static List<CaptureFormat.FramerateRange> convertFramerates(
+      List<int[]> arrayRanges) {
+    final List<CaptureFormat.FramerateRange> ranges = new ArrayList<CaptureFormat.FramerateRange>();
+    for (int[] range : arrayRanges) {
+      ranges.add(new CaptureFormat.FramerateRange(
+          range[android.hardware.Camera.Parameters.PREVIEW_FPS_MIN_INDEX],
+          range[android.hardware.Camera.Parameters.PREVIEW_FPS_MAX_INDEX]));
+    }
+    return ranges;
+  }
 }
