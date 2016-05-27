@@ -805,6 +805,13 @@ AdapterType BasicNetworkManager::GetAdapterTypeFromName(
   if (strncmp(network_name, "pdp_ip", 6) == 0) {
     return ADAPTER_TYPE_CELLULAR;
   }
+  if (strncmp(network_name, "en", 2) == 0) {
+    // This may not be most accurate because sometimes Ethernet interface
+    // name also starts with "en" but it is better than showing it as
+    // "unknown" type.
+    // TODO(honghaiz): Write a proper IOS network manager.
+    return ADAPTER_TYPE_WIFI;
+  }
 #elif defined(WEBRTC_ANDROID)
   if (strncmp(network_name, "rmnet", 5) == 0 ||
       strncmp(network_name, "v4-rmnet", 8) == 0) {
