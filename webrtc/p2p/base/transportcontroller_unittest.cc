@@ -255,6 +255,12 @@ TEST_F(TransportControllerTest, TestIceRoleConflict) {
   channel1->SignalRoleConflict(channel1);
   EXPECT_EQ(cricket::ICEROLE_CONTROLLED, channel1->GetIceRole());
   EXPECT_EQ(cricket::ICEROLE_CONTROLLED, channel2->GetIceRole());
+
+  // Should be able to handle a second role conflict. The remote endpoint can
+  // change its role/tie-breaker when it does an ICE restart.
+  channel2->SignalRoleConflict(channel2);
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, channel1->GetIceRole());
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, channel2->GetIceRole());
 }
 
 TEST_F(TransportControllerTest, TestGetSslRole) {

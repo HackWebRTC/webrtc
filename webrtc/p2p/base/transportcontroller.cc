@@ -576,20 +576,17 @@ void TransportController::OnChannelCandidatesRemoved(
 void TransportController::OnChannelRoleConflict_n(
     TransportChannelImpl* channel) {
   RTC_DCHECK(network_thread_->IsCurrent());
-
-  if (ice_role_switch_) {
-    LOG(LS_WARNING)
-        << "Repeat of role conflict signal from TransportChannelImpl.";
-    return;
-  }
-
-  ice_role_switch_ = true;
+  // Note: since the role conflict is handled entirely on the network thread,
+  // we don't need to worry about role conflicts occurring on two ports at once.
+  // The first one encountered should immediately reverse the role.
   IceRole reversed_role = (ice_role_ == ICEROLE_CONTROLLING)
                               ? ICEROLE_CONTROLLED
                               : ICEROLE_CONTROLLING;
-  for (const auto& kv : transports_) {
-    kv.second->SetIceRole(reversed_role);
-  }
+  LOG(LS_INFO) << "Got role conflict; switching to "
+               << (reversed_role == ICEROLE_CONTROLLING ? "controlling"
+                                                        : "controlled")
+               << " role.";
+  SetIceRole_n(reversed_role);
 }
 
 void TransportController::OnChannelStateChanged_n(

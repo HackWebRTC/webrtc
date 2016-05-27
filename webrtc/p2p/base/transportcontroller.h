@@ -220,8 +220,6 @@ class TransportController : public sigslot::has_slots<>,
   // TODO(deadbeef): Move the fields below down to the transports themselves
   IceConfig ice_config_;
   IceRole ice_role_ = ICEROLE_CONTROLLING;
-  // Flag which will be set to true after the first role switch
-  bool ice_role_switch_ = false;
   uint64_t ice_tiebreaker_ = rtc::CreateRandomId64();
   rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
   rtc::AsyncInvoker invoker_;
