@@ -616,8 +616,12 @@ class PeerConnectionInterfaceTest : public testing::Test {
     config.servers.push_back(server);
 
     scoped_refptr<PeerConnectionInterface> pc;
-    pc = pc_factory_->CreatePeerConnection(config, nullptr, nullptr, nullptr,
-                                           &observer_);
+    pc = pc_factory_->CreatePeerConnection(
+        config,
+        nullptr,
+        nullptr,
+        std::unique_ptr<rtc::RTCCertificateGeneratorInterface>(),
+        &observer_);
     EXPECT_EQ(nullptr, pc);
   }
 

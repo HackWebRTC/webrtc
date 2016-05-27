@@ -1603,7 +1603,11 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
   PCOJava* observer = reinterpret_cast<PCOJava*>(observer_p);
   observer->SetConstraints(new ConstraintsWrapper(jni, j_constraints));
   rtc::scoped_refptr<PeerConnectionInterface> pc(f->CreatePeerConnection(
-      rtc_config, observer->constraints(), NULL, NULL, observer));
+      rtc_config,
+      observer->constraints(),
+      nullptr,
+      std::unique_ptr<rtc::RTCCertificateGeneratorInterface>(),
+      observer));
   return (jlong)pc.release();
 }
 

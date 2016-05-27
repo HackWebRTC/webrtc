@@ -129,7 +129,11 @@ bool Conductor::CreatePeerConnection(bool dtls) {
   }
 
   peer_connection_ = peer_connection_factory_->CreatePeerConnection(
-      config, &constraints, NULL, NULL, this);
+      config,
+      &constraints,
+      nullptr,
+      std::unique_ptr<rtc::RTCCertificateGeneratorInterface>(),
+      this);
   return peer_connection_.get() != NULL;
 }
 

@@ -36,25 +36,27 @@ namespace webrtc {
 
 namespace {
 
-// Passes down the calls to |store_|. See usage in CreatePeerConnection.
-class DtlsIdentityStoreWrapper : public DtlsIdentityStoreInterface {
+// Passes down the calls to |cert_generator_|. See usage in
+// |CreatePeerConnection|.
+class RTCCertificateGeneratorWrapper
+    : public rtc::RTCCertificateGeneratorInterface {
  public:
-  DtlsIdentityStoreWrapper(
-      const rtc::scoped_refptr<RefCountedDtlsIdentityStore>& store)
-      : store_(store) {
-    RTC_DCHECK(store_);
+  RTCCertificateGeneratorWrapper(
+      const rtc::scoped_refptr<RefCountedRTCCertificateGenerator>& cert_gen)
+      : cert_generator_(cert_gen) {
+    RTC_DCHECK(cert_generator_);
   }
 
-  void RequestIdentity(
+  void GenerateCertificateAsync(
       const rtc::KeyParams& key_params,
       const rtc::Optional<uint64_t>& expires_ms,
-      const rtc::scoped_refptr<webrtc::DtlsIdentityRequestObserver>&
-          observer) override {
-    store_->RequestIdentity(key_params, expires_ms, observer);
+      const rtc::scoped_refptr<rtc::RTCCertificateGeneratorCallback>& callback)
+          override {
+    cert_generator_->GenerateCertificateAsync(key_params, expires_ms, callback);
   }
 
  private:
-  rtc::scoped_refptr<RefCountedDtlsIdentityStore> store_;
+  rtc::scoped_refptr<RefCountedRTCCertificateGenerator> cert_generator_;
 };
 
 }  // anonymous namespace
@@ -141,9 +143,9 @@ PeerConnectionFactory::~PeerConnectionFactory() {
   channel_manager_.reset(nullptr);
 
   // Make sure |worker_thread_| and |signaling_thread_| outlive
-  // |dtls_identity_store_|, |default_socket_factory_| and
+  // |cert_generator_|, |default_socket_factory_| and
   // |default_network_manager_|.
-  dtls_identity_store_ = nullptr;
+  cert_generator_ = nullptr;
   default_socket_factory_ = nullptr;
   default_network_manager_ = nullptr;
 
@@ -184,8 +186,8 @@ bool PeerConnectionFactory::Initialize() {
     return false;
   }
 
-  dtls_identity_store_ =
-      new RefCountedDtlsIdentityStore(signaling_thread_, network_thread_);
+  cert_generator_ =
+      new RefCountedRTCCertificateGenerator(signaling_thread_, network_thread_);
 
   return true;
 }
@@ -255,7 +257,7 @@ PeerConnectionFactory::CreatePeerConnection(
     const PeerConnectionInterface::RTCConfiguration& configuration_in,
     const MediaConstraintsInterface* constraints,
     std::unique_ptr<cricket::PortAllocator> allocator,
-    std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+    std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
     PeerConnectionObserver* observer) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
 
@@ -264,23 +266,23 @@ PeerConnectionFactory::CreatePeerConnection(
   CopyConstraintsIntoRtcConfiguration(constraints, &configuration);
 
   return CreatePeerConnection(configuration, std::move(allocator),
-                              std::move(dtls_identity_store), observer);
+                              std::move(cert_generator), observer);
 }
 
 rtc::scoped_refptr<PeerConnectionInterface>
 PeerConnectionFactory::CreatePeerConnection(
     const PeerConnectionInterface::RTCConfiguration& configuration,
     std::unique_ptr<cricket::PortAllocator> allocator,
-    std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+    std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
     PeerConnectionObserver* observer) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
 
-  if (!dtls_identity_store.get()) {
-    // Because |pc|->Initialize takes ownership of the store we need a new
+  if (!cert_generator.get()) {
+    // Because |pc|->Initialize takes ownership of the generator we need a new
     // wrapper object that can be deleted without deleting the underlying
-    // |dtls_identity_store_|, protecting it from being deleted multiple times.
-    dtls_identity_store.reset(
-        new DtlsIdentityStoreWrapper(dtls_identity_store_));
+    // |cert_generator_|, protecting it from being deleted multiple times.
+    cert_generator.reset(
+        new RTCCertificateGeneratorWrapper(cert_generator_));
   }
 
   if (!allocator) {
@@ -295,7 +297,7 @@ PeerConnectionFactory::CreatePeerConnection(
       new rtc::RefCountedObject<PeerConnection>(this));
 
   if (!pc->Initialize(configuration, std::move(allocator),
-                      std::move(dtls_identity_store), observer)) {
+                      std::move(cert_generator), observer)) {
     return nullptr;
   }
   return PeerConnectionProxy::Create(signaling_thread(), pc);

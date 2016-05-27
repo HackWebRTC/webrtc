@@ -512,7 +512,7 @@ WebRtcSession::~WebRtcSession() {
 
 bool WebRtcSession::Initialize(
     const PeerConnectionFactoryInterface::Options& options,
-    std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+    std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
     const PeerConnectionInterface::RTCConfiguration& rtc_configuration) {
   bundle_policy_ = rtc_configuration.bundle_policy;
   rtcp_mux_policy_ = rtc_configuration.rtcp_mux_policy;
@@ -533,7 +533,7 @@ bool WebRtcSession::Initialize(
     dtls_enabled_ = false;
   } else {
     // Enable DTLS by default if we have an identity store or a certificate.
-    dtls_enabled_ = (dtls_identity_store || certificate);
+    dtls_enabled_ = (cert_generator || certificate);
     // |rtc_configuration| can override the default |dtls_enabled_| value.
     if (rtc_configuration.enable_dtls_srtp) {
       dtls_enabled_ = *(rtc_configuration.enable_dtls_srtp);
@@ -566,19 +566,18 @@ bool WebRtcSession::Initialize(
   if (!dtls_enabled_) {
     // Construct with DTLS disabled.
     webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(
-        signaling_thread(), channel_manager_, this, id()));
+        signaling_thread(), channel_manager_, this, id(),
+        std::unique_ptr<rtc::RTCCertificateGeneratorInterface>()));
   } else {
     // Construct with DTLS enabled.
     if (!certificate) {
-      // Use the |dtls_identity_store| to generate a certificate.
-      RTC_DCHECK(dtls_identity_store);
       webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(
-          signaling_thread(), channel_manager_, std::move(dtls_identity_store),
-          this, id()));
+          signaling_thread(), channel_manager_, this, id(),
+          std::move(cert_generator)));
     } else {
       // Use the already generated certificate.
       webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(
-          signaling_thread(), channel_manager_, certificate, this, id()));
+          signaling_thread(), channel_manager_, this, id(), certificate));
     }
   }
 

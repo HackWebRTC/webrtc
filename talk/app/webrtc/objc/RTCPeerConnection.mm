@@ -279,7 +279,11 @@ class RTCStatsObserver : public StatsObserver {
     config.servers = iceServers;
     _observer.reset(new webrtc::RTCPeerConnectionObserver(self));
     _peerConnection = factory->CreatePeerConnection(
-        config, constraints, nullptr, nullptr, _observer.get());
+        config,
+        constraints,
+        nullptr,
+        std::unique_ptr<rtc::RTCCertificateGeneratorInterface>(),
+        _observer.get());
     _localStreams = [[NSMutableArray alloc] init];
   }
   return self;
@@ -293,7 +297,12 @@ class RTCStatsObserver : public StatsObserver {
   if (self = [super init]) {
     _observer.reset(new webrtc::RTCPeerConnectionObserver(self));
     _peerConnection =
-        factory->CreatePeerConnection(config, constraints, nullptr, nullptr, _observer.get());
+        factory->CreatePeerConnection(
+            config,
+            constraints,
+            nullptr,
+            std::unique_ptr<rtc::RTCCertificateGeneratorInterface>(),
+            _observer.get());
     _localStreams = [[NSMutableArray alloc] init];
     _delegate = delegate;
   }

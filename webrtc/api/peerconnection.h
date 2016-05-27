@@ -16,7 +16,6 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/api/dtlsidentitystore.h"
 #include "webrtc/api/peerconnectionfactory.h"
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/api/rtpreceiverinterface.h"
@@ -70,7 +69,7 @@ class PeerConnection : public PeerConnectionInterface,
   bool Initialize(
       const PeerConnectionInterface::RTCConfiguration& configuration,
       std::unique_ptr<cricket::PortAllocator> allocator,
-      std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+      std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
       PeerConnectionObserver* observer);
 
   rtc::scoped_refptr<StreamCollectionInterface> local_streams() override;
