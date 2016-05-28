@@ -41,7 +41,6 @@ source_set("utility") {
 
   deps = [
     "../..:webrtc_common",
-    "../../base:rtc_task_queue",
     "../../common_audio",
     "../../system_wrappers",
     "../audio_coding",

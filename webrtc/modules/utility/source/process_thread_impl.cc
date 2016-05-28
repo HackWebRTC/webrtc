@@ -11,7 +11,6 @@
 #include "webrtc/modules/utility/source/process_thread_impl.h"
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/task_queue.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/system_wrappers/include/logging.h"
@@ -120,7 +119,7 @@ void ProcessThreadImpl::WakeUp(Module* module) {
   wake_up_->Set();
 }
 
-void ProcessThreadImpl::PostTask(std::unique_ptr<rtc::QueuedTask> task) {
+void ProcessThreadImpl::PostTask(std::unique_ptr<ProcessTask> task) {
   // Allowed to be called on any thread.
   {
     rtc::CritScope lock(&lock_);
@@ -219,7 +218,7 @@ bool ProcessThreadImpl::Process() {
     }
 
     while (!queue_.empty()) {
-      rtc::QueuedTask* task = queue_.front();
+      ProcessTask* task = queue_.front();
       queue_.pop();
       lock_.Leave();
       task->Run();
