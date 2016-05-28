@@ -33,7 +33,7 @@ class ProcessThreadImpl : public ProcessThread {
   void Stop() override;
 
   void WakeUp(Module* module) override;
-  void PostTask(std::unique_ptr<ProcessTask> task) override;
+  void PostTask(std::unique_ptr<rtc::QueuedTask> task) override;
 
   void RegisterModule(Module* module) override;
   void DeRegisterModule(Module* module) override;
@@ -75,8 +75,7 @@ class ProcessThreadImpl : public ProcessThread {
   std::unique_ptr<rtc::PlatformThread> thread_;
 
   ModuleList modules_;
-  // TODO(tommi): Support delayed tasks.
-  std::queue<ProcessTask*> queue_;
+  std::queue<rtc::QueuedTask*> queue_;
   bool stop_;
   const char* thread_name_;
 };

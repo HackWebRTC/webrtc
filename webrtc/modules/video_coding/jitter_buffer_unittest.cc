@@ -195,7 +195,7 @@ class ProcessThreadMock : public ProcessThread {
   MOCK_METHOD1(WakeUp, void(Module* module));
   MOCK_METHOD1(RegisterModule, void(Module* module));
   MOCK_METHOD1(DeRegisterModule, void(Module* module));
-  void PostTask(std::unique_ptr<ProcessTask> task) {}
+  void PostTask(std::unique_ptr<rtc::QueuedTask> task) /*override*/ {}
 };
 
 class TestBasicJitterBuffer : public ::testing::TestWithParam<std::string>,

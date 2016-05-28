@@ -13,6 +13,7 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/task_queue.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/utility/source/process_thread_impl.h"
@@ -33,10 +34,13 @@ class MockModule : public Module {
   MOCK_METHOD1(ProcessThreadAttached, void(ProcessThread*));
 };
 
-class RaiseEventTask : public ProcessTask {
+class RaiseEventTask : public rtc::QueuedTask {
  public:
   RaiseEventTask(EventWrapper* event) : event_(event) {}
-  void Run() override { event_->Set(); }
+  bool Run() override {
+    event_->Set();
+    return true;
+  }
 
  private:
   EventWrapper* event_;
