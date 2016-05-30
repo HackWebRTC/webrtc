@@ -127,27 +127,21 @@ AndroidVideoCapturerJni::GetSupportedFormats() {
   jclass j_list_class = jni->FindClass("java/util/List");
   jclass j_format_class =
       jni->FindClass("org/webrtc/CameraEnumerationAndroid$CaptureFormat");
-  jclass j_framerate_class = jni->FindClass(
-      "org/webrtc/CameraEnumerationAndroid$CaptureFormat$FramerateRange");
   const int size = jni->CallIntMethod(
       j_list_of_formats, GetMethodID(jni, j_list_class, "size", "()I"));
   jmethodID j_get =
       GetMethodID(jni, j_list_class, "get", "(I)Ljava/lang/Object;");
-  jfieldID j_framerate_field = GetFieldID(
-      jni, j_format_class, "framerate",
-      "org/webrtc/CameraEnumerationAndroid$CaptureFormat$FramerateRange");
   jfieldID j_width_field = GetFieldID(jni, j_format_class, "width", "I");
   jfieldID j_height_field = GetFieldID(jni, j_format_class, "height", "I");
   jfieldID j_max_framerate_field =
-      GetFieldID(jni, j_framerate_class, "max", "I");
+      GetFieldID(jni, j_format_class, "maxFramerate", "I");
 
   std::vector<cricket::VideoFormat> formats;
   formats.reserve(size);
   for (int i = 0; i < size; ++i) {
     jobject j_format = jni->CallObjectMethod(j_list_of_formats, j_get, i);
-    jobject j_framerate = GetObjectField(jni, j_format, j_framerate_field);
     const int frame_interval = cricket::VideoFormat::FpsToInterval(
-        (GetIntField(jni, j_framerate, j_max_framerate_field) + 999) / 1000);
+        (GetIntField(jni, j_format, j_max_framerate_field) + 999) / 1000);
     formats.emplace_back(GetIntField(jni, j_format, j_width_field),
                          GetIntField(jni, j_format, j_height_field),
                          frame_interval, cricket::FOURCC_NV21);
