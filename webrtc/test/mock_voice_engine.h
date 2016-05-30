@@ -106,9 +106,11 @@ class MockVoiceEngine : public VoiceEngineImpl {
   // VoEBase
   MOCK_METHOD1(RegisterVoiceEngineObserver, int(VoiceEngineObserver& observer));
   MOCK_METHOD0(DeRegisterVoiceEngineObserver, int());
-  MOCK_METHOD2(Init,
-               int(AudioDeviceModule* external_adm,
-                   AudioProcessing* audioproc));
+  MOCK_METHOD3(
+      Init,
+      int(AudioDeviceModule* external_adm,
+          AudioProcessing* audioproc,
+          const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory));
   MOCK_METHOD0(audio_processing, AudioProcessing*());
   MOCK_METHOD0(Terminate, int());
   MOCK_METHOD0(CreateChannel, int());

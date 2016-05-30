@@ -229,8 +229,11 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(RegisterVoiceEngineObserver, (
       webrtc::VoiceEngineObserver& observer));
   WEBRTC_STUB(DeRegisterVoiceEngineObserver, ());
-  WEBRTC_FUNC(Init, (webrtc::AudioDeviceModule* adm,
-                     webrtc::AudioProcessing* audioproc)) {
+  WEBRTC_FUNC(Init,
+              (webrtc::AudioDeviceModule* adm,
+               webrtc::AudioProcessing* audioproc,
+               const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
+                   decoder_factory)) {
     inited_ = true;
     return 0;
   }

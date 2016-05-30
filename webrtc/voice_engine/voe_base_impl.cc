@@ -14,6 +14,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/common.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
@@ -211,8 +212,10 @@ int VoEBaseImpl::DeRegisterVoiceEngineObserver() {
   return 0;
 }
 
-int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
-                      AudioProcessing* audioproc) {
+int VoEBaseImpl::Init(
+    AudioDeviceModule* external_adm,
+    AudioProcessing* audioproc,
+    const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) {
   rtc::CritScope cs(shared_->crit_sec());
   WebRtcSpl_Init();
   if (shared_->statistics().Initialized()) {
@@ -375,6 +378,11 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
   }
 #endif
 
+  if (decoder_factory)
+    decoder_factory_ = decoder_factory;
+  else
+    decoder_factory_ = CreateBuiltinAudioDecoderFactory();
+
   return shared_->statistics().SetInitialized();
 }
 
@@ -390,7 +398,8 @@ int VoEBaseImpl::CreateChannel() {
     return -1;
   }
 
-  voe::ChannelOwner channel_owner = shared_->channel_manager().CreateChannel();
+  voe::ChannelOwner channel_owner =
+      shared_->channel_manager().CreateChannel(decoder_factory_);
   return InitializeChannel(&channel_owner);
 }
 
@@ -401,7 +410,7 @@ int VoEBaseImpl::CreateChannel(const Config& config) {
     return -1;
   }
   voe::ChannelOwner channel_owner =
-      shared_->channel_manager().CreateChannel(config);
+      shared_->channel_manager().CreateChannel(config, decoder_factory_);
   return InitializeChannel(&channel_owner);
 }
 

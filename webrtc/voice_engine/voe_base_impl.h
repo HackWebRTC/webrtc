@@ -29,7 +29,9 @@ class VoEBaseImpl : public VoEBase,
   int DeRegisterVoiceEngineObserver() override;
 
   int Init(AudioDeviceModule* external_adm = nullptr,
-           AudioProcessing* audioproc = nullptr) override;
+           AudioProcessing* audioproc = nullptr,
+           const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory =
+               nullptr) override;
   AudioProcessing* audio_processing() override {
     return shared_->audio_processing();
   }
@@ -143,6 +145,7 @@ class VoEBaseImpl : public VoEBase,
   int InitializeChannel(voe::ChannelOwner* channel_owner);
   VoiceEngineObserver* voiceEngineObserverPtr_;
   rtc::CriticalSection callbackCritSect_;
+  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
 
   AudioFrame audioFrame_;
   voe::SharedData* shared_;

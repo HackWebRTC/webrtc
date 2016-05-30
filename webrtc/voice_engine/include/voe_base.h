@@ -34,6 +34,8 @@
 #ifndef WEBRTC_VOICE_ENGINE_VOE_BASE_H
 #define WEBRTC_VOICE_ENGINE_VOE_BASE_H
 
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/modules/audio_coding/codecs/audio_decoder_factory.h"
 #include "webrtc/common_types.h"
 
 namespace webrtc {
@@ -123,11 +125,14 @@ class WEBRTC_DLLEXPORT VoEBase {
   // functionality in a separate (reference counted) module.
   // - The AudioProcessing module handles capture-side processing. VoiceEngine
   // takes ownership of this object.
+  // - An AudioDecoderFactory - used to create audio decoders.
   // If NULL is passed for any of these, VoiceEngine will create its own.
   // Returns -1 in case of an error, 0 otherwise.
   // TODO(ajm): Remove default NULLs.
   virtual int Init(AudioDeviceModule* external_adm = NULL,
-                   AudioProcessing* audioproc = NULL) = 0;
+                   AudioProcessing* audioproc = NULL,
+                   const rtc::scoped_refptr<AudioDecoderFactory>&
+                       decoder_factory = nullptr) = 0;
 
   // Returns NULL before Init() is called.
   virtual AudioProcessing* audio_processing() = 0;

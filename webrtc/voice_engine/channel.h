@@ -175,10 +175,18 @@ class Channel
                                uint32_t instanceId,
                                RtcEventLog* const event_log,
                                const Config& config);
+  static int32_t CreateChannel(
+      Channel*& channel,
+      int32_t channelId,
+      uint32_t instanceId,
+      RtcEventLog* const event_log,
+      const Config& config,
+      const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory);
   Channel(int32_t channelId,
           uint32_t instanceId,
           RtcEventLog* const event_log,
-          const Config& config);
+          const Config& config,
+          const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory);
   int32_t Init();
   int32_t SetEngineInformation(Statistics& engineStatistics,
                                OutputMixer& outputMixer,

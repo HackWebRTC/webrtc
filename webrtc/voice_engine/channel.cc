@@ -673,11 +673,23 @@ int32_t Channel::CreateChannel(Channel*& channel,
                                uint32_t instanceId,
                                RtcEventLog* const event_log,
                                const Config& config) {
+  return CreateChannel(channel, channelId, instanceId, event_log, config,
+                       CreateBuiltinAudioDecoderFactory());
+}
+
+int32_t Channel::CreateChannel(
+    Channel*& channel,
+    int32_t channelId,
+    uint32_t instanceId,
+    RtcEventLog* const event_log,
+    const Config& config,
+    const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) {
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(instanceId, channelId),
                "Channel::CreateChannel(channelId=%d, instanceId=%d)", channelId,
                instanceId);
 
-  channel = new Channel(channelId, instanceId, event_log, config);
+  channel =
+      new Channel(channelId, instanceId, event_log, config, decoder_factory);
   if (channel == NULL) {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(instanceId, channelId),
                  "Channel::CreateChannel() unable to allocate memory for"
@@ -737,7 +749,8 @@ void Channel::RecordFileEnded(int32_t id) {
 Channel::Channel(int32_t channelId,
                  uint32_t instanceId,
                  RtcEventLog* const event_log,
-                 const Config& config)
+                 const Config& config,
+                 const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory)
     : _instanceId(instanceId),
       _channelId(channelId),
       event_log_(event_log),
@@ -826,7 +839,7 @@ Channel::Channel(int32_t channelId,
   acm_config.neteq_config.enable_fast_accelerate =
       config.Get<NetEqFastAccelerate>().enabled;
   acm_config.neteq_config.enable_muted_state = true;
-  acm_config.decoder_factory = CreateBuiltinAudioDecoderFactory();
+  acm_config.decoder_factory = decoder_factory;
   audio_coding_.reset(AudioCodingModule::Create(acm_config));
 
   _outputAudioLevel.Clear();
