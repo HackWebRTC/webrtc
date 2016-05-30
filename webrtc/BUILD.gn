@@ -21,7 +21,17 @@ config("common_inherited_config") {
     defines += [ "WEBRTC_MOZILLA_BUILD" ]
   }
   if (build_with_chromium) {
-    defines = [ "WEBRTC_CHROMIUM_BUILD" ]
+    defines = [
+      # TODO(kjellander): Cleanup unused ones and move defines closer to
+      # the source when webrtc:4256 is completed.
+      "FEATURE_ENABLE_SSL",
+      "FEATURE_ENABLE_VOICEMAIL",
+      "EXPAT_RELATIVE_PATH",
+      "GTEST_RELATIVE_PATH",
+      "NO_MAIN_THREAD_WRAPPING",
+      "NO_SOUND_SYSTEM",
+      "WEBRTC_CHROMIUM_BUILD",
+    ]
     include_dirs = [
       # The overrides must be included first as that is the mechanism for
       # selecting the override headers in Chromium.
@@ -51,7 +61,10 @@ config("common_inherited_config") {
     defines += [ "WEBRTC_MAC" ]
   }
   if (is_win) {
-    defines += [ "WEBRTC_WIN" ]
+    defines += [
+      "WEBRTC_WIN",
+      "_CRT_SECURE_NO_WARNINGS",  # Suppress warnings about _vsnprinf
+    ]
   }
   if (is_android) {
     defines += [
@@ -59,6 +72,20 @@ config("common_inherited_config") {
       "WEBRTC_ANDROID",
     ]
   }
+  if (is_chromeos) {
+    defines += [ "CHROMEOS" ]
+  }
+
+  # TODO(GYP): Support these in GN.
+  # if (is_bsd) {
+  #   defines += [ "BSD" ]
+  # }
+  # if (is_openbsd) {
+  #   defines += [ "OPENBSD" ]
+  # }
+  # if (is_freebsd) {
+  #   defines += [ "FREEBSD" ]
+  # }
 }
 
 if (rtc_have_dbus_glib) {
@@ -70,8 +97,10 @@ if (rtc_have_dbus_glib) {
 config("common_config") {
   cflags = []
   cflags_cc = []
+  defines = []
+
   if (rtc_restrict_logging) {
-    defines = [ "WEBRTC_RESTRICT_LOGGING" ]
+    defines += [ "WEBRTC_RESTRICT_LOGGING" ]
   }
 
   if (rtc_have_dbus_glib) {
@@ -85,7 +114,22 @@ config("common_config") {
   }
 
   if (build_with_chromium) {
-    defines += [ "LOGGING_INSIDE_WEBRTC" ]
+    defines += [
+      # NOTICE: Since common_inherited_config is used in public_configs for our
+      # targets, there's no point including the defines in that config here.
+      # TODO(kjellander): Cleanup unused ones and move defines closer to the
+      # source when webrtc:4256 is completed.
+      "ENABLE_EXTERNAL_AUTH",
+      "HAVE_OPENSSL_SSL_H",
+      "HAVE_SCTP",
+      "HAVE_SRTP",
+      "HAVE_WEBRTC_VIDEO",
+      "HAVE_WEBRTC_VOICE",
+      "LOGGING_INSIDE_WEBRTC",
+      "SRTP_RELATIVE_PATH",
+      "SSL_USE_OPENSSL",
+      "USE_WEBRTC_DEV_BRANCH",
+    ]
   } else {
     if (is_posix) {
       # -Wextra is currently disabled in Chromium"s common.gypi. Enable

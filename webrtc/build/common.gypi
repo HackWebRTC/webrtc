@@ -280,8 +280,22 @@
       ['build_with_chromium==1', {
         'defines': [
           # Changes settings for Chromium build.
-          'WEBRTC_CHROMIUM_BUILD',
+          # TODO(kjellander): Cleanup unused ones and move defines closer to the
+          # source when webrtc:4256 is completed.
+          'ENABLE_EXTERNAL_AUTH',
+          'FEATURE_ENABLE_SSL',
+          'HAVE_OPENSSL_SSL_H',
+          'HAVE_SCTP',
+          'HAVE_SRTP',
+          'HAVE_WEBRTC_VIDEO',
+          'HAVE_WEBRTC_VOICE',
           'LOGGING_INSIDE_WEBRTC',
+          'NO_MAIN_THREAD_WRAPPING',
+          'NO_SOUND_SYSTEM',
+          'SRTP_RELATIVE_PATH',
+          'SSL_USE_OPENSSL',
+          'USE_WEBRTC_DEV_BRANCH',
+          'WEBRTC_CHROMIUM_BUILD',
         ],
         'include_dirs': [
           # Include the top-level directory when building in Chrome, so we can
@@ -460,6 +474,26 @@
            }],
          ],
       }],
+      ['chromeos==1', {
+        'defines': [
+          'CHROMEOS',
+        ],
+      }],
+      ['os_bsd==1', {
+        'defines': [
+          'BSD',
+        ],
+      }],
+      ['OS=="openbsd"', {
+        'defines': [
+          'OPENBSD',
+        ],
+      }],
+      ['OS=="freebsd"', {
+        'defines': [
+          'FREEBSD',
+        ],
+      }],
       ['include_internal_audio_device==1', {
         'defines': [
           'WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE',
@@ -482,6 +516,14 @@
         ['build_with_chromium==1', {
           'defines': [
             # Changes settings for Chromium build.
+            # TODO(kjellander): Cleanup unused ones and move defines closer to
+            # the source when webrtc:4256 is completed.
+            'FEATURE_ENABLE_SSL',
+            'FEATURE_ENABLE_VOICEMAIL',
+            'EXPAT_RELATIVE_PATH',
+            'GTEST_RELATIVE_PATH',
+            'NO_MAIN_THREAD_WRAPPING',
+            'NO_SOUND_SYSTEM',
             'WEBRTC_CHROMIUM_BUILD',
           ],
           'include_dirs': [
@@ -509,6 +551,7 @@
         ['OS=="win"', {
           'defines': [
             'WEBRTC_WIN',
+            '_CRT_SECURE_NO_WARNINGS',  # Suppress warnings about _vsnprinf
           ],
         }],
         ['OS=="linux"', {
@@ -527,6 +570,26 @@
           # of a more specific macro.
           'defines': [
             'WEBRTC_POSIX',
+          ],
+        }],
+        ['chromeos==1', {
+          'defines': [
+            'CHROMEOS',
+          ],
+        }],
+        ['os_bsd==1', {
+          'defines': [
+            'BSD',
+          ],
+        }],
+        ['OS=="openbsd"', {
+          'defines': [
+            'OPENBSD',
+          ],
+        }],
+        ['OS=="freebsd"', {
+          'defines': [
+            'FREEBSD',
           ],
         }],
       ],
