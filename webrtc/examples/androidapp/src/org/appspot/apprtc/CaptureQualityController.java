@@ -77,7 +77,7 @@ public class CaptureQualityController implements SeekBar.OnSeekBarChangeListener
     long maxCaptureBandwidth = java.lang.Long.MIN_VALUE;
     for (CaptureFormat format : formats) {
       maxCaptureBandwidth = Math.max(maxCaptureBandwidth,
-          (long) format.width * format.height * format.maxFramerate);
+          (long) format.width * format.height * format.framerate.max);
     }
 
     // Fraction between 0 and 1.
@@ -107,7 +107,7 @@ public class CaptureQualityController implements SeekBar.OnSeekBarChangeListener
 
   // Return the highest frame rate possible based on bandwidth and format.
   private int calculateFramerate(double bandwidth, CaptureFormat format) {
-    return (int) Math.round(Math.min(format.maxFramerate,
+    return (int) Math.round(Math.min(format.framerate.max,
         (int) Math.round(bandwidth / (format.width * format.height))) / 1000.0);
   }
 }

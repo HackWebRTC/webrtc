@@ -401,19 +401,24 @@ public class VideoCapturerAndroid implements
 
     // Find closest supported format for |width| x |height| @ |framerate|.
     final android.hardware.Camera.Parameters parameters = camera.getParameters();
-    for (int[] fpsRange : parameters.getSupportedPreviewFpsRange()) {
-      Logging.d(TAG, "Available fps range: " +
-          fpsRange[android.hardware.Camera.Parameters.PREVIEW_FPS_MIN_INDEX] + ":" +
-          fpsRange[android.hardware.Camera.Parameters.PREVIEW_FPS_MAX_INDEX]);
+    final List<CaptureFormat.FramerateRange> supportedFramerates =
+        CameraEnumerator.convertFramerates(parameters.getSupportedPreviewFpsRange());
+    Logging.d(TAG, "Available fps ranges: " + supportedFramerates);
+
+    final CaptureFormat.FramerateRange bestFpsRange;
+    if (supportedFramerates.isEmpty()) {
+      Logging.w(TAG, "No supported preview fps range");
+      bestFpsRange = new CaptureFormat.FramerateRange(0, 0);
+    } else {
+      bestFpsRange = CameraEnumerationAndroid.getClosestSupportedFramerateRange(
+            supportedFramerates, framerate);
     }
-    final int[] range = CameraEnumerationAndroid.getFramerateRange(parameters, framerate * 1000);
+
     final android.hardware.Camera.Size previewSize =
         CameraEnumerationAndroid.getClosestSupportedSize(
             parameters.getSupportedPreviewSizes(), width, height);
     final CaptureFormat captureFormat = new CaptureFormat(
-        previewSize.width, previewSize.height,
-        range[android.hardware.Camera.Parameters.PREVIEW_FPS_MIN_INDEX],
-        range[android.hardware.Camera.Parameters.PREVIEW_FPS_MAX_INDEX]);
+        previewSize.width, previewSize.height, bestFpsRange);
 
     // Check if we are already using this capture format, then we don't need to do anything.
     if (captureFormat.isSameFormat(this.captureFormat)) {
@@ -428,8 +433,8 @@ public class VideoCapturerAndroid implements
     }
     // Note: setRecordingHint(true) actually decrease frame rate on N5.
     // parameters.setRecordingHint(true);
-    if (captureFormat.maxFramerate > 0) {
-      parameters.setPreviewFpsRange(captureFormat.minFramerate, captureFormat.maxFramerate);
+    if (captureFormat.framerate.max > 0) {
+      parameters.setPreviewFpsRange(captureFormat.framerate.min, captureFormat.framerate.max);
     }
     parameters.setPreviewSize(captureFormat.width, captureFormat.height);
 
