@@ -13,6 +13,7 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/random.h"
+#include "webrtc/test/rtcp_packet_parser.h"
 
 using testing::ElementsAre;
 using testing::ElementsAreArray;
@@ -23,8 +24,6 @@ using webrtc::rtcp::ExtendedReports;
 using webrtc::rtcp::ReceiveTimeInfo;
 using webrtc::rtcp::Rrtr;
 using webrtc::rtcp::VoipMetric;
-using webrtc::RTCPUtility::RtcpCommonHeader;
-using webrtc::RTCPUtility::RtcpParseCommonHeader;
 
 namespace webrtc {
 // Define comparision operators that shouldn't be needed in production,
@@ -74,22 +73,9 @@ bool operator==(const VoipMetric& metric1, const VoipMetric& metric2) {
 }  // namespace rtcp
 
 namespace {
-  const uint32_t kSenderSsrc = 0x12345678;
-  const uint8_t kEmptyPacket[8] = {0x80, 207,  0x00, 0x01,
-                                   0x12, 0x34, 0x56, 0x78};
-
-  bool Parse(const uint8_t* buffer,
-                    size_t length,
-                    ExtendedReports* packet) {
-    RtcpCommonHeader header;
-    EXPECT_TRUE(RtcpParseCommonHeader(buffer, length, &header));
-    EXPECT_EQ(length, header.BlockSize());
-    return packet->Parse(header, buffer + RtcpCommonHeader::kHeaderSizeBytes);
-  }
-
-  bool Parse(const rtc::Buffer& buffer, ExtendedReports* packet) {
-    return Parse(buffer.data(), buffer.size(), packet);
-  }
+constexpr uint32_t kSenderSsrc = 0x12345678;
+constexpr uint8_t kEmptyPacket[] = {0x80, 207,  0x00, 0x01,
+                                    0x12, 0x34, 0x56, 0x78};
 }  // namespace
 
 class RtcpPacketExtendedReportsTest : public ::testing::Test {
@@ -174,7 +160,7 @@ TEST_F(RtcpPacketExtendedReportsTest, CreateWithoutReportBlocks) {
 
 TEST_F(RtcpPacketExtendedReportsTest, ParseWithoutReportBlocks) {
   ExtendedReports parsed;
-  EXPECT_TRUE(Parse(kEmptyPacket, sizeof(kEmptyPacket), &parsed));
+  EXPECT_TRUE(test::ParseSinglePacket(kEmptyPacket, &parsed));
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
   EXPECT_THAT(parsed.rrtrs(), IsEmpty());
   EXPECT_THAT(parsed.dlrrs(), IsEmpty());
@@ -189,7 +175,7 @@ TEST_F(RtcpPacketExtendedReportsTest, CreateAndParseWithOneRrtrBlock) {
   rtc::Buffer packet = xr.Build();
 
   ExtendedReports mparsed;
-  EXPECT_TRUE(Parse(packet, &mparsed));
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &mparsed));
   const ExtendedReports& parsed = mparsed;
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
@@ -207,7 +193,7 @@ TEST_F(RtcpPacketExtendedReportsTest, CreateAndParseWithTwoRrtrBlocks) {
   rtc::Buffer packet = xr.Build();
 
   ExtendedReports mparsed;
-  EXPECT_TRUE(Parse(packet, &mparsed));
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &mparsed));
   const ExtendedReports& parsed = mparsed;
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
@@ -224,7 +210,7 @@ TEST_F(RtcpPacketExtendedReportsTest, CreateAndParseWithDlrrWithOneSubBlock) {
   rtc::Buffer packet = xr.Build();
 
   ExtendedReports mparsed;
-  EXPECT_TRUE(Parse(packet, &mparsed));
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &mparsed));
   const ExtendedReports& parsed = mparsed;
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
@@ -242,7 +228,7 @@ TEST_F(RtcpPacketExtendedReportsTest, CreateAndParseWithDlrrWithTwoSubBlocks) {
   rtc::Buffer packet = xr.Build();
 
   ExtendedReports mparsed;
-  EXPECT_TRUE(Parse(packet, &mparsed));
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &mparsed));
   const ExtendedReports& parsed = mparsed;
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
@@ -262,7 +248,7 @@ TEST_F(RtcpPacketExtendedReportsTest, CreateAndParseWithTwoDlrrBlocks) {
   rtc::Buffer packet = xr.Build();
 
   ExtendedReports mparsed;
-  EXPECT_TRUE(Parse(packet, &mparsed));
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &mparsed));
   const ExtendedReports& parsed = mparsed;
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
@@ -279,7 +265,7 @@ TEST_F(RtcpPacketExtendedReportsTest, CreateAndParseWithVoipMetric) {
   rtc::Buffer packet = xr.Build();
 
   ExtendedReports mparsed;
-  EXPECT_TRUE(Parse(packet, &mparsed));
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &mparsed));
   const ExtendedReports& parsed = mparsed;
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
@@ -300,7 +286,7 @@ TEST_F(RtcpPacketExtendedReportsTest, CreateAndParseWithMultipleReportBlocks) {
   rtc::Buffer packet = xr.Build();
 
   ExtendedReports mparsed;
-  EXPECT_TRUE(Parse(packet, &mparsed));
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &mparsed));
   const ExtendedReports& parsed = mparsed;
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
@@ -322,7 +308,7 @@ TEST_F(RtcpPacketExtendedReportsTest, DlrrWithoutItemNotIncludedInPacket) {
   rtc::Buffer packet = xr.Build();
 
   ExtendedReports mparsed;
-  EXPECT_TRUE(Parse(packet, &mparsed));
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &mparsed));
   const ExtendedReports& parsed = mparsed;
 
   EXPECT_THAT(parsed.rrtrs(), ElementsAre(rrtr));

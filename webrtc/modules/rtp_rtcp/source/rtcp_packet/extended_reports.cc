@@ -13,11 +13,11 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-
-using webrtc::RTCPUtility::RtcpCommonHeader;
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 
 namespace webrtc {
 namespace rtcp {
+constexpr uint8_t ExtendedReports::kPacketType;
 // From RFC 3611: RTP Control Protocol Extended Reports (RTCP XR).
 //
 // Format for XR packets:
@@ -43,23 +43,23 @@ namespace rtcp {
 ExtendedReports::ExtendedReports() : sender_ssrc_(0) {}
 ExtendedReports::~ExtendedReports() {}
 
-bool ExtendedReports::Parse(const RtcpCommonHeader& header,
-                            const uint8_t* payload) {
-  RTC_CHECK(header.packet_type == kPacketType);
+bool ExtendedReports::Parse(const CommonHeader& packet) {
+  RTC_DCHECK_EQ(packet.type(), kPacketType);
 
-  if (header.payload_size_bytes < kXrBaseLength) {
+  if (packet.payload_size_bytes() < kXrBaseLength) {
     LOG(LS_WARNING) << "Packet is too small to be an ExtendedReports packet.";
     return false;
   }
 
-  sender_ssrc_ = ByteReader<uint32_t>::ReadBigEndian(payload);
+  sender_ssrc_ = ByteReader<uint32_t>::ReadBigEndian(packet.payload());
   rrtr_blocks_.clear();
   dlrr_blocks_.clear();
   voip_metric_blocks_.clear();
 
-  const uint8_t* current_block = payload + kXrBaseLength;
-  const uint8_t* const packet_end = payload + header.payload_size_bytes;
-  const size_t kBlockHeaderSizeBytes = 4;
+  const uint8_t* current_block = packet.payload() + kXrBaseLength;
+  const uint8_t* const packet_end =
+      packet.payload() + packet.payload_size_bytes();
+  constexpr size_t kBlockHeaderSizeBytes = 4;
   while (current_block + kBlockHeaderSizeBytes <= packet_end) {
     uint8_t block_type = ByteReader<uint8_t>::ReadBigEndian(current_block);
     uint16_t block_length =

@@ -18,22 +18,21 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/dlrr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rrtr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/voip_metric.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 
 namespace webrtc {
 namespace rtcp {
+class CommonHeader;
 
 // From RFC 3611: RTP Control Protocol Extended Reports (RTCP XR).
 class ExtendedReports : public RtcpPacket {
  public:
-  static const uint8_t kPacketType = 207;
+  static constexpr uint8_t kPacketType = 207;
 
   ExtendedReports();
   ~ExtendedReports() override;
 
   // Parse assumes header is already parsed and validated.
-  bool Parse(const RTCPUtility::RtcpCommonHeader& header,
-             const uint8_t* payload);  // Size of the payload is in the header.
+  bool Parse(const CommonHeader& packet);
 
   void From(uint32_t ssrc) { sender_ssrc_ = ssrc; }
 
@@ -59,7 +58,7 @@ class ExtendedReports : public RtcpPacket {
   static const size_t kMaxNumberOfRrtrBlocks = 50;
   static const size_t kMaxNumberOfDlrrBlocks = 50;
   static const size_t kMaxNumberOfVoipMetricBlocks = 50;
-  static const size_t kXrBaseLength = 4;
+  static constexpr size_t kXrBaseLength = 4;
 
   size_t BlockLength() const override {
     return kHeaderLength + kXrBaseLength + RrtrLength() + DlrrLength() +
