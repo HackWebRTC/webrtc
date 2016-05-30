@@ -28,7 +28,13 @@ const char* TestFunc() {
 
 namespace rtc {
 
-TEST(ProfilerTest, TestFunction) {
+// Disable this test due to flakiness; see bug 5947.
+#if defined(WEBRTC_LINUX)
+#define MAYBE_TestFunction DISABLED_TestFunction
+#else
+#define MAYBE_TestFunction TestFunction
+#endif
+TEST(ProfilerTest, MAYBE_TestFunction) {
   ASSERT_TRUE(Profiler::Instance()->Clear());
 
   // Profile a long-running function.
