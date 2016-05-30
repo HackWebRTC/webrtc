@@ -48,7 +48,7 @@ extern bool IsH264CodecSupportedObjC();
 
 // If any H.264 codec is supported (iOS HW or OpenH264/FFmpeg).
 bool IsH264CodecSupported() {
-#if defined(WEBRTC_IOS)
+#if defined(WEBRTC_IOS) && defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED)
   if (IsH264CodecSupportedObjC()) {
     return true;
   }
