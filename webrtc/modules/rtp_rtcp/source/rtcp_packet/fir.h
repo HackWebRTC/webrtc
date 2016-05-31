@@ -15,14 +15,14 @@
 
 #include "webrtc/base/basictypes.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/psfb.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 
 namespace webrtc {
 namespace rtcp {
+class CommonHeader;
 // Full intra request (FIR) (RFC 5104).
 class Fir : public Psfb {
  public:
-  static const uint8_t kFeedbackMessageType = 4;
+  static constexpr uint8_t kFeedbackMessageType = 4;
   struct Request {
     Request() : ssrc(0), seq_nr(0) {}
     Request(uint32_t ssrc, uint8_t seq_nr) : ssrc(ssrc), seq_nr(seq_nr) {}
@@ -34,8 +34,7 @@ class Fir : public Psfb {
   ~Fir() override {}
 
   // Parse assumes header is already parsed and validated.
-  bool Parse(const RTCPUtility::RtcpCommonHeader& header,
-             const uint8_t* payload);  // Size of the payload is in the header.
+  bool Parse(const CommonHeader& packet);
 
   void WithRequestTo(uint32_t ssrc, uint8_t seq_num) {
     items_.push_back(Request(ssrc, seq_num));
@@ -49,7 +48,7 @@ class Fir : public Psfb {
               RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
-  static const size_t kFciLength = 8;
+  static constexpr size_t kFciLength = 8;
   size_t BlockLength() const override {
     return kHeaderLength + kCommonFeedbackLength + kFciLength * items_.size();
   }

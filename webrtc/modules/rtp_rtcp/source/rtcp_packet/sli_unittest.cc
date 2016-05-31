@@ -12,42 +12,33 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/rtcp_packet_parser.h"
 
 using testing::ElementsAreArray;
 using testing::make_tuple;
 using webrtc::rtcp::Sli;
-using webrtc::RTCPUtility::RtcpCommonHeader;
-using webrtc::RTCPUtility::RtcpParseCommonHeader;
 
 namespace webrtc {
 namespace {
+constexpr uint32_t kSenderSsrc = 0x12345678;
+constexpr uint32_t kRemoteSsrc = 0x23456789;
 
-const uint32_t kSenderSsrc = 0x12345678;
-const uint32_t kRemoteSsrc = 0x23456789;
-
-const uint8_t kPictureId = 0x3f;
-const uint16_t kFirstMb = 0x1e61;
-const uint16_t kNumberOfMb = 0x1a0a;
-const uint32_t kSliItem = (static_cast<uint32_t>(kFirstMb) << 19) |
-                          (static_cast<uint32_t>(kNumberOfMb) << 6) |
-                           static_cast<uint32_t>(kPictureId);
+constexpr uint8_t kPictureId = 0x3f;
+constexpr uint16_t kFirstMb = 0x1e61;
+constexpr uint16_t kNumberOfMb = 0x1a0a;
+constexpr uint32_t kSliItem = (static_cast<uint32_t>(kFirstMb) << 19) |
+                              (static_cast<uint32_t>(kNumberOfMb) << 6) |
+                               static_cast<uint32_t>(kPictureId);
 
 // Manually created Sli packet matching constants above.
-const uint8_t kPacket[] = {0x82,  206, 0x00, 0x03,
-                           0x12, 0x34, 0x56, 0x78,
-                           0x23, 0x45, 0x67, 0x89,
-                           (kSliItem >> 24) & 0xff,
-                           (kSliItem >> 16) & 0xff,
-                           (kSliItem >> 8) & 0xff,
-                           kSliItem & 0xff};
-const size_t kPacketLength = sizeof(kPacket);
-
-bool ParseSli(const uint8_t* buffer, size_t length, Sli* sli) {
-  RtcpCommonHeader header;
-  EXPECT_TRUE(RtcpParseCommonHeader(buffer, length, &header));
-  EXPECT_EQ(length, header.BlockSize());
-  return sli->Parse(header, buffer + RtcpCommonHeader::kHeaderSizeBytes);
-}
+constexpr uint8_t kPacket[] = {0x82,  206, 0x00, 0x03,
+                               0x12, 0x34, 0x56, 0x78,
+                               0x23, 0x45, 0x67, 0x89,
+                               (kSliItem >> 24) & 0xff,
+                               (kSliItem >> 16) & 0xff,
+                               (kSliItem >> 8) & 0xff,
+                                kSliItem & 0xff};
+}  // namespace
 
 TEST(RtcpPacketSliTest, Create) {
   Sli sli;
@@ -63,7 +54,7 @@ TEST(RtcpPacketSliTest, Create) {
 
 TEST(RtcpPacketSliTest, Parse) {
   Sli mutable_parsed;
-  EXPECT_TRUE(ParseSli(kPacket, kPacketLength, &mutable_parsed));
+  EXPECT_TRUE(test::ParseSinglePacket(kPacket, &mutable_parsed));
   const Sli& parsed = mutable_parsed;  // Read values from constant object.
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
@@ -81,10 +72,10 @@ TEST(RtcpPacketSliTest, ParseFailsOnTooSmallPacket) {
   sli.WithPictureId(kPictureId, kFirstMb, kNumberOfMb);
 
   rtc::Buffer packet = sli.Build();
-  packet.data()[3]--;  // Decrease size by 1 word (4 bytes).
+  packet[3]--;  // Decrease size by 1 word (4 bytes).
+  packet.SetSize(packet.size() - 4);
 
-  EXPECT_FALSE(ParseSli(packet.data(), packet.size() - 4, &sli));
+  EXPECT_FALSE(test::ParseSinglePacket(packet, &sli));
 }
 
-}  // namespace
 }  // namespace webrtc

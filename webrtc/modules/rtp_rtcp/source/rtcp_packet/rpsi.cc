@@ -13,13 +13,14 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 
-using webrtc::RTCPUtility::RtcpCommonHeader;
 using webrtc::RtpUtility::Word32Align;
 
 namespace webrtc {
 namespace rtcp {
+constexpr uint8_t Rpsi::kFeedbackMessageType;
 // RFC 4585: Feedback format.
 // Reference picture selection indication (RPSI) (RFC 4585).
 //
@@ -39,11 +40,11 @@ namespace rtcp {
 //    :   defined per codec          ...                | Padding (0) |
 //    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 namespace {
-const size_t kPaddingSizeOffset = 8;
-const size_t kPayloadTypeOffset = 9;
-const size_t kBitStringOffset = 10;
+constexpr size_t kPaddingSizeOffset = 8;
+constexpr size_t kPayloadTypeOffset = 9;
+constexpr size_t kBitStringOffset = 10;
 
-const size_t kPidBits = 7;
+constexpr size_t kPidBits = 7;
 // Calculates number of bytes required to store given picture id.
 uint8_t RequiredBytes(uint64_t picture_id) {
   uint8_t required_bytes = 0;
@@ -62,34 +63,33 @@ Rpsi::Rpsi()
       picture_id_(0),
       block_length_(CalculateBlockLength(1)) {}
 
-bool Rpsi::Parse(const RTCPUtility::RtcpCommonHeader& header,
-                 const uint8_t* payload) {
-  RTC_CHECK(header.packet_type == kPacketType);
-  RTC_CHECK(header.count_or_format == kFeedbackMessageType);
+bool Rpsi::Parse(const CommonHeader& packet) {
+  RTC_DCHECK_EQ(packet.type(), kPacketType);
+  RTC_DCHECK_EQ(packet.fmt(), kFeedbackMessageType);
 
-  if (header.payload_size_bytes < kCommonFeedbackLength + 4) {
+  if (packet.payload_size_bytes() < kCommonFeedbackLength + 4) {
     LOG(LS_WARNING) << "Packet is too small to be a valid RPSI packet.";
     return false;
   }
 
-  ParseCommonFeedback(payload);
+  ParseCommonFeedback(packet.payload());
 
-  uint8_t padding_bits = payload[kPaddingSizeOffset];
+  uint8_t padding_bits = packet.payload()[kPaddingSizeOffset];
   if (padding_bits % 8 != 0) {
     LOG(LS_WARNING) << "Unknown rpsi packet with fractional number of bytes.";
     return false;
   }
   size_t padding_bytes = padding_bits / 8;
-  if (padding_bytes + kBitStringOffset >= header.payload_size_bytes) {
+  if (padding_bytes + kBitStringOffset >= packet.payload_size_bytes()) {
     LOG(LS_WARNING) << "Too many padding bytes in a RPSI packet.";
     return false;
   }
-  size_t padding_offset = header.payload_size_bytes - padding_bytes;
-  payload_type_ = payload[kPayloadTypeOffset] & 0x7f;
+  size_t padding_offset = packet.payload_size_bytes() - padding_bytes;
+  payload_type_ = packet.payload()[kPayloadTypeOffset] & 0x7f;
   picture_id_ = 0;
   for (size_t pos = kBitStringOffset; pos < padding_offset; ++pos) {
     picture_id_ <<= kPidBits;
-    picture_id_ |= (payload[pos] & 0x7f);
+    picture_id_ |= (packet.payload()[pos] & 0x7f);
   }
   // Required bytes might become less than came in the packet.
   block_length_ = CalculateBlockLength(RequiredBytes(picture_id_));
@@ -123,7 +123,7 @@ bool Rpsi::Create(uint8_t* packet,
         0x80 | static_cast<uint8_t>(picture_id_ >> (i * kPidBits));
   }
   packet[(*index)++] = static_cast<uint8_t>(picture_id_ & 0x7f);
-  const uint8_t kPadding = 0;
+  constexpr uint8_t kPadding = 0;
   for (size_t i = 0; i < padding_bytes; ++i)
     packet[(*index)++] = kPadding;
   RTC_CHECK_EQ(*index, index_end);

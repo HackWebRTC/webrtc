@@ -14,21 +14,21 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/psfb.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 
 namespace webrtc {
 namespace rtcp {
+class CommonHeader;
+
 // Reference picture selection indication (RPSI) (RFC 4585).
 // Assumes native bit string stores PictureId (VP8, VP9).
 class Rpsi : public Psfb {
  public:
-  static const uint8_t kFeedbackMessageType = 3;
+  static constexpr uint8_t kFeedbackMessageType = 3;
   Rpsi();
   ~Rpsi() override {}
 
   // Parse assumes header is already parsed and validated.
-  bool Parse(const RTCPUtility::RtcpCommonHeader& header,
-             const uint8_t* payload);  // Size of the payload is in the header.
+  bool Parse(const CommonHeader& packet);
 
   void WithPayloadType(uint8_t payload);
   void WithPictureId(uint64_t picture_id);

@@ -13,11 +13,11 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-
-using webrtc::RTCPUtility::RtcpCommonHeader;
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 
 namespace webrtc {
 namespace rtcp {
+constexpr uint8_t Fir::kFeedbackMessageType;
 // RFC 4585: Feedback format.
 // Common packet format:
 //
@@ -43,26 +43,26 @@ namespace rtcp {
 //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //  | Seq nr.       |    Reserved = 0                               |
 //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-bool Fir::Parse(const RtcpCommonHeader& header, const uint8_t* payload) {
-  RTC_CHECK(header.packet_type == kPacketType);
-  RTC_CHECK(header.count_or_format == kFeedbackMessageType);
+bool Fir::Parse(const CommonHeader& packet) {
+  RTC_DCHECK_EQ(packet.type(), kPacketType);
+  RTC_DCHECK_EQ(packet.fmt(), kFeedbackMessageType);
 
   // The FCI field MUST contain one or more FIR entries.
-  if (header.payload_size_bytes < kCommonFeedbackLength + kFciLength) {
+  if (packet.payload_size_bytes() < kCommonFeedbackLength + kFciLength) {
     LOG(LS_WARNING) << "Packet is too small to be a valid FIR packet.";
     return false;
   }
 
-  if ((header.payload_size_bytes - kCommonFeedbackLength) % kFciLength != 0) {
+  if ((packet.payload_size_bytes() - kCommonFeedbackLength) % kFciLength != 0) {
     LOG(LS_WARNING) << "Invalid size for a valid FIR packet.";
     return false;
   }
 
-  ParseCommonFeedback(payload);
+  ParseCommonFeedback(packet.payload());
 
   size_t number_of_fci_items =
-      (header.payload_size_bytes - kCommonFeedbackLength) / kFciLength;
-  const uint8_t* next_fci = payload + kCommonFeedbackLength;
+      (packet.payload_size_bytes() - kCommonFeedbackLength) / kFciLength;
+  const uint8_t* next_fci = packet.payload() + kCommonFeedbackLength;
   items_.resize(number_of_fci_items);
   for (Request& request : items_) {
     request.ssrc = ByteReader<uint32_t>::ReadBigEndian(next_fci);
@@ -88,7 +88,7 @@ bool Fir::Create(uint8_t* packet,
   CreateCommonFeedback(packet + *index);
   *index += kCommonFeedbackLength;
 
-  const uint32_t kReserved = 0;
+  constexpr uint32_t kReserved = 0;
   for (const Request& request : items_) {
     ByteWriter<uint32_t>::WriteBigEndian(packet + *index, request.ssrc);
     ByteWriter<uint8_t>::WriteBigEndian(packet + *index + 4, request.seq_nr);

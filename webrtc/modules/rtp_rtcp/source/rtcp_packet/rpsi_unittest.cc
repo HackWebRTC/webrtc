@@ -12,13 +12,11 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/checks.h"
+#include "webrtc/test/rtcp_packet_parser.h"
 
 using testing::ElementsAreArray;
 using testing::make_tuple;
 using webrtc::rtcp::Rpsi;
-using webrtc::RTCPUtility::RtcpCommonHeader;
-using webrtc::RTCPUtility::RtcpParseCommonHeader;
 
 namespace webrtc {
 namespace {
@@ -33,23 +31,11 @@ const uint8_t kPacket[] = {0x83, 206,  0x00, 0x04,
                            0x23, 0x45, 0x67, 0x89,
                              24,  100, 0xc1, 0xc2,
                            0x43,    0,    0,    0};
-
-bool ParseRpsi(const uint8_t* buffer, size_t length, Rpsi* rpsi) {
-  RtcpCommonHeader header;
-  EXPECT_TRUE(RtcpParseCommonHeader(buffer, length, &header));
-  EXPECT_EQ(length, header.BlockSize());
-  return rpsi->Parse(header, buffer + RtcpCommonHeader::kHeaderSizeBytes);
-}
-// Testing function when test only interested if parse is successful.
-bool ParseRpsi(const uint8_t* buffer, size_t length) {
-  Rpsi rpsi;
-  return ParseRpsi(buffer, length, &rpsi);
-}
 }  // namespace
 
 TEST(RtcpPacketRpsiTest, Parse) {
   Rpsi mutable_parsed;
-  EXPECT_TRUE(ParseRpsi(kPacket, sizeof(kPacket), &mutable_parsed));
+  EXPECT_TRUE(test::ParseSinglePacket(kPacket, &mutable_parsed));
   const Rpsi& parsed = mutable_parsed;  // Read values from constant object.
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
@@ -77,9 +63,10 @@ TEST(RtcpPacketRpsiTest, ParseFailsOnTooSmallPacket) {
   rpsi.To(kRemoteSsrc);
 
   rtc::Buffer packet = rpsi.Build();
-  packet.data()[3]--;  // Reduce size field by one word (4 bytes).
+  packet[3]--;  // Reduce size field by one word (4 bytes).
+  packet.SetSize(packet.size() - 4);
 
-  EXPECT_FALSE(ParseRpsi(packet.data(), packet.size() - 4));
+  EXPECT_FALSE(test::ParseSinglePacket(packet, &rpsi));
 }
 
 TEST(RtcpPacketRpsiTest, ParseFailsOnFractionalPaddingBytes) {
@@ -90,11 +77,11 @@ TEST(RtcpPacketRpsiTest, ParseFailsOnFractionalPaddingBytes) {
   rtc::Buffer packet = rpsi.Build();
   uint8_t* padding_bits = packet.data() + 12;
   uint8_t saved_padding_bits = *padding_bits;
-  ASSERT_TRUE(ParseRpsi(packet.data(), packet.size()));
+  ASSERT_TRUE(test::ParseSinglePacket(packet, &rpsi));
 
   for (uint8_t i = 1; i < 8; ++i) {
     *padding_bits = saved_padding_bits + i;
-    EXPECT_FALSE(ParseRpsi(packet.data(), packet.size()));
+    EXPECT_FALSE(test::ParseSinglePacket(packet, &rpsi));
   }
 }
 
@@ -105,10 +92,10 @@ TEST(RtcpPacketRpsiTest, ParseFailsOnTooBigPadding) {
   rpsi.WithPictureId(1);  // Small picture id that occupy just 1 byte.
   rtc::Buffer packet = rpsi.Build();
   uint8_t* padding_bits = packet.data() + 12;
-  ASSERT_TRUE(ParseRpsi(packet.data(), packet.size()));
+  ASSERT_TRUE(test::ParseSinglePacket(packet, &rpsi));
 
   *padding_bits += 8;
-  EXPECT_FALSE(ParseRpsi(packet.data(), packet.size()));
+  EXPECT_FALSE(test::ParseSinglePacket(packet, &rpsi));
 }
 
 // For raw rpsi packet extract how many bytes are used to store picture_id.
@@ -131,7 +118,7 @@ TEST(RtcpPacketRpsiTest, WithOneByteNativeString) {
   EXPECT_EQ(kNumberOfValidBytes, UsedBytes(packet));
 
   Rpsi parsed;
-  EXPECT_TRUE(ParseRpsi(packet.data(), packet.size(), &parsed));
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &parsed));
   EXPECT_EQ(kPictureId, parsed.picture_id());
 }
 
@@ -146,7 +133,7 @@ TEST(RtcpPacketRpsiTest, WithTwoByteNativeString) {
   EXPECT_EQ(kNumberOfValidBytes, UsedBytes(packet));
 
   Rpsi parsed;
-  EXPECT_TRUE(ParseRpsi(packet.data(), packet.size(), &parsed));
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &parsed));
   EXPECT_EQ(kPictureId, parsed.picture_id());
 }
 
@@ -161,7 +148,7 @@ TEST(RtcpPacketRpsiTest, WithThreeByteNativeString) {
   EXPECT_EQ(kNumberOfValidBytes, UsedBytes(packet));
 
   Rpsi parsed;
-  EXPECT_TRUE(ParseRpsi(packet.data(), packet.size(), &parsed));
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &parsed));
   EXPECT_EQ(kPictureId, parsed.picture_id());
 }
 
@@ -176,7 +163,7 @@ TEST(RtcpPacketRpsiTest, WithFourByteNativeString) {
   EXPECT_EQ(kNumberOfValidBytes, UsedBytes(packet));
 
   Rpsi parsed;
-  EXPECT_TRUE(ParseRpsi(packet.data(), packet.size(), &parsed));
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &parsed));
   EXPECT_EQ(kPictureId, parsed.picture_id());
 }
 
@@ -192,7 +179,7 @@ TEST(RtcpPacketRpsiTest, WithMaxPictureId) {
   EXPECT_EQ(kNumberOfValidBytes, UsedBytes(packet));
 
   Rpsi parsed;
-  EXPECT_TRUE(ParseRpsi(packet.data(), packet.size(), &parsed));
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &parsed));
   EXPECT_EQ(kPictureId, parsed.picture_id());
 }
 }  // namespace webrtc
