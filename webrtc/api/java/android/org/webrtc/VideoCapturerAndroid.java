@@ -372,12 +372,7 @@ public class VideoCapturerAndroid implements
     }
     Logging.e(TAG, "startCapture failed", error);
     // Make sure the camera is released.
-    stopCaptureOnCameraThread();
-    synchronized (handlerLock) {
-      // Remove all pending Runnables posted from |this|.
-      cameraThreadHandler.removeCallbacksAndMessages(this /* token */);
-      cameraThreadHandler = null;
-    }
+    stopCaptureOnCameraThread(true /* stopHandler */);
     frameObserver.onCapturerStarted(false);
     if (eventsHandler != null) {
       eventsHandler.onCameraError("Camera can not be started.");
@@ -488,13 +483,7 @@ public class VideoCapturerAndroid implements
     final CountDownLatch barrier = new CountDownLatch(1);
     final boolean didPost = maybePostOnCameraThread(new Runnable() {
       @Override public void run() {
-        stopCaptureOnCameraThread();
-        synchronized (handlerLock) {
-          // Remove all pending Runnables posted from |this|.
-          cameraThreadHandler.removeCallbacksAndMessages(this /* token */);
-          cameraThreadHandler = null;
-          surfaceHelper = null;
-        }
+        stopCaptureOnCameraThread(true /* stopHandler */);
         barrier.countDown();
       }
     });
@@ -512,7 +501,7 @@ public class VideoCapturerAndroid implements
     Logging.d(TAG, "stopCapture done");
   }
 
-  private void stopCaptureOnCameraThread() {
+  private void stopCaptureOnCameraThread(boolean stopHandler) {
     checkIsOnCameraThread();
     Logging.d(TAG, "stopCaptureOnCameraThread");
     // Note that the camera might still not be started here if startCaptureOnCameraThread failed
@@ -521,6 +510,21 @@ public class VideoCapturerAndroid implements
     // Make sure onTextureFrameAvailable() is not called anymore.
     if (surfaceHelper != null) {
       surfaceHelper.stopListening();
+    }
+    if (stopHandler) {
+      synchronized (handlerLock) {
+        // Clear the cameraThreadHandler first, in case stopPreview or
+        // other driver code deadlocks. Deadlock in
+        // android.hardware.Camera._stopPreview(Native Method) has
+        // been observed on Nexus 5 (hammerhead), OS version LMY48I.
+        // The camera might post another one or two preview frames
+        // before stopped, so we have to check for a null
+        // cameraThreadHandler in our handler. Remove all pending
+        // Runnables posted from |this|.
+        cameraThreadHandler.removeCallbacksAndMessages(this /* token */);
+        cameraThreadHandler = null;
+        surfaceHelper = null;
+      }
     }
     if (cameraStatistics != null) {
       cameraStatistics.release();
@@ -548,7 +552,7 @@ public class VideoCapturerAndroid implements
   private void switchCameraOnCameraThread() {
     checkIsOnCameraThread();
     Logging.d(TAG, "switchCameraOnCameraThread");
-    stopCaptureOnCameraThread();
+    stopCaptureOnCameraThread(false /* stopHandler */);
     synchronized (cameraIdLock) {
       id = (id + 1) % android.hardware.Camera.getNumberOfCameras();
     }
@@ -637,9 +641,7 @@ public class VideoCapturerAndroid implements
   @Override
   public void onTextureFrameAvailable(
       int oesTextureId, float[] transformMatrix, long timestampNs) {
-    if (cameraThreadHandler == null) {
-      throw new RuntimeException("onTextureFrameAvailable() called after stopCapture().");
-    }
+
     checkIsOnCameraThread();
     if (eventsHandler != null && !firstFrameReported) {
       eventsHandler.onFirstFrameAvailable();
