@@ -3080,7 +3080,14 @@ TEST_F(EndToEndTest, RestartingSendStreamPreservesRtpState) {
   TestRtpStatePreservation(false);
 }
 
-TEST_F(EndToEndTest, RestartingSendStreamPreservesRtpStatesWithRtx) {
+#if defined(WEBRTC_MAC)
+#define MAYBE_RestartingSendStreamPreservesRtpStatesWithRtx \
+  DISABLED_RestartingSendStreamPreservesRtpStatesWithRtx
+#else
+#define MAYBE_RestartingSendStreamPreservesRtpStatesWithRtx \
+  RestartingSendStreamPreservesRtpStatesWithRtx
+#endif
+TEST_F(EndToEndTest, MAYBE_RestartingSendStreamPreservesRtpStatesWithRtx) {
   TestRtpStatePreservation(true);
 }
 
