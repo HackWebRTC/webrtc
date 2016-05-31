@@ -674,46 +674,6 @@ const bool has_opus = false;
 #endif
 }  // namespace
 
-TEST(AudioDecoder, CodecSampleRateHz) {
-  EXPECT_EQ(8000, CodecSampleRateHz(NetEqDecoder::kDecoderPCMu));
-  EXPECT_EQ(8000, CodecSampleRateHz(NetEqDecoder::kDecoderPCMa));
-  EXPECT_EQ(8000, CodecSampleRateHz(NetEqDecoder::kDecoderPCMu_2ch));
-  EXPECT_EQ(8000, CodecSampleRateHz(NetEqDecoder::kDecoderPCMa_2ch));
-  EXPECT_EQ(has_ilbc ? 8000 : -1,
-            CodecSampleRateHz(NetEqDecoder::kDecoderILBC));
-  EXPECT_EQ(has_isac ? 16000 : -1,
-            CodecSampleRateHz(NetEqDecoder::kDecoderISAC));
-  EXPECT_EQ(has_isac_swb ? 32000 : -1,
-            CodecSampleRateHz(NetEqDecoder::kDecoderISACswb));
-  EXPECT_EQ(8000, CodecSampleRateHz(NetEqDecoder::kDecoderPCM16B));
-  EXPECT_EQ(16000, CodecSampleRateHz(NetEqDecoder::kDecoderPCM16Bwb));
-  EXPECT_EQ(32000, CodecSampleRateHz(NetEqDecoder::kDecoderPCM16Bswb32kHz));
-  EXPECT_EQ(48000, CodecSampleRateHz(NetEqDecoder::kDecoderPCM16Bswb48kHz));
-  EXPECT_EQ(8000, CodecSampleRateHz(NetEqDecoder::kDecoderPCM16B_2ch));
-  EXPECT_EQ(16000, CodecSampleRateHz(NetEqDecoder::kDecoderPCM16Bwb_2ch));
-  EXPECT_EQ(32000, CodecSampleRateHz(NetEqDecoder::kDecoderPCM16Bswb32kHz_2ch));
-  EXPECT_EQ(48000, CodecSampleRateHz(NetEqDecoder::kDecoderPCM16Bswb48kHz_2ch));
-  EXPECT_EQ(8000, CodecSampleRateHz(NetEqDecoder::kDecoderPCM16B_5ch));
-  EXPECT_EQ(has_g722 ? 16000 : -1,
-            CodecSampleRateHz(NetEqDecoder::kDecoderG722));
-  EXPECT_EQ(has_g722 ? 16000 : -1,
-            CodecSampleRateHz(NetEqDecoder::kDecoderG722_2ch));
-  EXPECT_EQ(-1, CodecSampleRateHz(NetEqDecoder::kDecoderRED));
-  EXPECT_EQ(-1, CodecSampleRateHz(NetEqDecoder::kDecoderAVT));
-  EXPECT_EQ(8000, CodecSampleRateHz(NetEqDecoder::kDecoderCNGnb));
-  EXPECT_EQ(16000, CodecSampleRateHz(NetEqDecoder::kDecoderCNGwb));
-  EXPECT_EQ(32000, CodecSampleRateHz(NetEqDecoder::kDecoderCNGswb32kHz));
-  EXPECT_EQ(has_opus ? 48000 : -1,
-            CodecSampleRateHz(NetEqDecoder::kDecoderOpus));
-  EXPECT_EQ(has_opus ? 48000 : -1,
-            CodecSampleRateHz(NetEqDecoder::kDecoderOpus_2ch));
-  EXPECT_EQ(48000, CodecSampleRateHz(NetEqDecoder::kDecoderOpus));
-  EXPECT_EQ(48000, CodecSampleRateHz(NetEqDecoder::kDecoderOpus_2ch));
-  // TODO(tlegrand): Change 32000 to 48000 below once ACM has 48 kHz support.
-  EXPECT_EQ(32000, CodecSampleRateHz(NetEqDecoder::kDecoderCNGswb48kHz));
-  EXPECT_EQ(-1, CodecSampleRateHz(NetEqDecoder::kDecoderArbitrary));
-}
-
 TEST(AudioDecoder, CodecSupported) {
   EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderPCMu));
   EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderPCMa));

@@ -17,6 +17,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/safe_conversions.h"
 #include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
+#include "webrtc/modules/audio_coding/codecs/mock/mock_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/neteq/accelerate.h"
 #include "webrtc/modules/audio_coding/neteq/expand.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_audio_decoder.h"
@@ -244,22 +245,31 @@ TEST_F(NetEqImplTest, InsertPacket) {
   rtp_header.header.timestamp = kFirstTimestamp;
   rtp_header.header.ssrc = kSsrc;
 
-  // Create a mock decoder object.
-  MockAudioDecoder mock_decoder;
-  EXPECT_CALL(mock_decoder, Channels()).WillRepeatedly(Return(1));
-  // BWE update function called with first packet.
-  EXPECT_CALL(mock_decoder, IncomingPacket(_,
-                                           kPayloadLength,
-                                           kFirstSequenceNumber,
-                                           kFirstTimestamp,
-                                           kFirstReceiveTime));
-  // BWE update function called with second packet.
-  EXPECT_CALL(mock_decoder, IncomingPacket(_,
-                                           kPayloadLength,
-                                           kFirstSequenceNumber + 1,
-                                           kFirstTimestamp + 160,
-                                           kFirstReceiveTime + 155));
-  EXPECT_CALL(mock_decoder, Die()).Times(1);  // Called when deleted.
+  rtc::scoped_refptr<MockAudioDecoderFactory> mock_decoder_factory(
+      new rtc::RefCountedObject<MockAudioDecoderFactory>);
+  EXPECT_CALL(*mock_decoder_factory, MakeAudioDecoderMock(_, _))
+      .WillOnce(Invoke([kPayloadLength, kFirstSequenceNumber, kFirstTimestamp,
+                        kFirstReceiveTime](const SdpAudioFormat& format,
+                                           std::unique_ptr<AudioDecoder>* dec) {
+        EXPECT_EQ("pcmu", format.name);
+
+        std::unique_ptr<MockAudioDecoder> mock_decoder(new MockAudioDecoder);
+        EXPECT_CALL(*mock_decoder, Channels()).WillRepeatedly(Return(1));
+        EXPECT_CALL(*mock_decoder, SampleRateHz()).WillRepeatedly(Return(8000));
+        // BWE update function called with first packet.
+        EXPECT_CALL(*mock_decoder,
+                    IncomingPacket(_, kPayloadLength, kFirstSequenceNumber,
+                                   kFirstTimestamp, kFirstReceiveTime));
+        // BWE update function called with second packet.
+        EXPECT_CALL(
+            *mock_decoder,
+            IncomingPacket(_, kPayloadLength, kFirstSequenceNumber + 1,
+                           kFirstTimestamp + 160, kFirstReceiveTime + 155));
+        EXPECT_CALL(*mock_decoder, Die()).Times(1);  // Called when deleted.
+
+        *dec = std::move(mock_decoder);
+      }));
+  DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderPCMu, "");
 
   // Expectations for decoder database.
   EXPECT_CALL(*mock_decoder_database_, IsRed(kPayloadType))
@@ -271,11 +281,12 @@ TEST_F(NetEqImplTest, InsertPacket) {
       .WillRepeatedly(Return(false));  // This is not DTMF.
   EXPECT_CALL(*mock_decoder_database_, GetDecoder(kPayloadType))
       .Times(3)
-      .WillRepeatedly(Return(&mock_decoder));
+      .WillRepeatedly(
+          Invoke([&info, mock_decoder_factory](uint8_t payload_type) {
+            return info.GetDecoder(mock_decoder_factory);
+          }));
   EXPECT_CALL(*mock_decoder_database_, IsComfortNoise(kPayloadType))
       .WillRepeatedly(Return(false));  // This is not CNG.
-  DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderPCMu, "", 8000,
-                                    nullptr);
   EXPECT_CALL(*mock_decoder_database_, GetDecoderInfo(kPayloadType))
       .WillRepeatedly(Return(&info));
 

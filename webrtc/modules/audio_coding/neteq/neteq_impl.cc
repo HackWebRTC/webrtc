@@ -761,9 +761,10 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     const DecoderDatabase::DecoderInfo* decoder_info =
         decoder_database_->GetDecoderInfo(payload_type);
     assert(decoder_info);
-    if (decoder_info->fs_hz != fs_hz_ ||
+    if (decoder_info->SampleRateHz() != fs_hz_ ||
         channels != algorithm_buffer_->Channels()) {
-      SetSampleRateAndChannels(decoder_info->fs_hz, channels);
+      SetSampleRateAndChannels(decoder_info->SampleRateHz(),
+                               channels);
     }
     if (nack_enabled_) {
       RTC_DCHECK(nack_);
@@ -1347,10 +1348,11 @@ int NetEqImpl::Decode(PacketList* packet_list, Operations* operation,
         }
         // If sampling rate or number of channels has changed, we need to make
         // a reset.
-        if (decoder_info->fs_hz != fs_hz_ ||
+        if (decoder_info->SampleRateHz() != fs_hz_ ||
             decoder->Channels() != algorithm_buffer_->Channels()) {
           // TODO(tlegrand): Add unittest to cover this event.
-          SetSampleRateAndChannels(decoder_info->fs_hz, decoder->Channels());
+          SetSampleRateAndChannels(decoder_info->SampleRateHz(),
+                                   decoder->Channels());
         }
         sync_buffer_->set_end_timestamp(timestamp_);
         playout_timestamp_ = timestamp_;

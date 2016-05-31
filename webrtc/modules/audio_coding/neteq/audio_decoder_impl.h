@@ -29,8 +29,5 @@ using NetEqDecoder = acm2::RentACodec::NetEqDecoder;
 // Returns true if |codec_type| is supported.
 bool CodecSupported(NetEqDecoder codec_type);
 
-// Returns the sample rate for |codec_type|.
-int CodecSampleRateHz(NetEqDecoder codec_type);
-
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ_AUDIO_DECODER_IMPL_H_

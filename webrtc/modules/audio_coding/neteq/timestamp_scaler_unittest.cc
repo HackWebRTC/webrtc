@@ -24,8 +24,7 @@ namespace webrtc {
 TEST(TimestampScaler, TestNoScaling) {
   MockDecoderDatabase db;
   // Use PCMu, because it doesn't use scaled timestamps.
-  const DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderPCMu, "", 8000,
-                                          nullptr);
+  const DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderPCMu, "");
   static const uint8_t kRtpPayloadType = 0;
   EXPECT_CALL(db, GetDecoderInfo(kRtpPayloadType))
       .WillRepeatedly(Return(&info));
@@ -45,8 +44,7 @@ TEST(TimestampScaler, TestNoScaling) {
 TEST(TimestampScaler, TestNoScalingLargeStep) {
   MockDecoderDatabase db;
   // Use PCMu, because it doesn't use scaled timestamps.
-  const DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderPCMu, "", 8000,
-                                          nullptr);
+  const DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderPCMu, "");
   static const uint8_t kRtpPayloadType = 0;
   EXPECT_CALL(db, GetDecoderInfo(kRtpPayloadType))
       .WillRepeatedly(Return(&info));
@@ -71,8 +69,7 @@ TEST(TimestampScaler, TestNoScalingLargeStep) {
 TEST(TimestampScaler, TestG722) {
   MockDecoderDatabase db;
   // Use G722, which has a factor 2 scaling.
-  const DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderG722, "", 16000,
-                                          nullptr);
+  const DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderG722, "");
   static const uint8_t kRtpPayloadType = 17;
   EXPECT_CALL(db, GetDecoderInfo(kRtpPayloadType))
       .WillRepeatedly(Return(&info));
@@ -96,8 +93,7 @@ TEST(TimestampScaler, TestG722) {
 TEST(TimestampScaler, TestG722LargeStep) {
   MockDecoderDatabase db;
   // Use G722, which has a factor 2 scaling.
-  const DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderG722, "", 16000,
-                                          nullptr);
+  const DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderG722, "");
   static const uint8_t kRtpPayloadType = 17;
   EXPECT_CALL(db, GetDecoderInfo(kRtpPayloadType))
       .WillRepeatedly(Return(&info));
@@ -125,10 +121,8 @@ TEST(TimestampScaler, TestG722LargeStep) {
 TEST(TimestampScaler, TestG722WithCng) {
   MockDecoderDatabase db;
   // Use G722, which has a factor 2 scaling.
-  const DecoderDatabase::DecoderInfo info_g722(NetEqDecoder::kDecoderG722, "",
-                                               16000, nullptr);
-  const DecoderDatabase::DecoderInfo info_cng(NetEqDecoder::kDecoderCNGwb, "",
-                                              16000, nullptr);
+  const DecoderDatabase::DecoderInfo info_g722(NetEqDecoder::kDecoderG722, "");
+  const DecoderDatabase::DecoderInfo info_cng(NetEqDecoder::kDecoderCNGwb, "");
   static const uint8_t kRtpPayloadTypeG722 = 17;
   static const uint8_t kRtpPayloadTypeCng = 13;
   EXPECT_CALL(db, GetDecoderInfo(kRtpPayloadTypeG722))
@@ -168,8 +162,7 @@ TEST(TimestampScaler, TestG722WithCng) {
 TEST(TimestampScaler, TestG722Packet) {
   MockDecoderDatabase db;
   // Use G722, which has a factor 2 scaling.
-  const DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderG722, "", 16000,
-                                          nullptr);
+  const DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderG722, "");
   static const uint8_t kRtpPayloadType = 17;
   EXPECT_CALL(db, GetDecoderInfo(kRtpPayloadType))
       .WillRepeatedly(Return(&info));
@@ -197,8 +190,7 @@ TEST(TimestampScaler, TestG722Packet) {
 TEST(TimestampScaler, TestG722PacketList) {
   MockDecoderDatabase db;
   // Use G722, which has a factor 2 scaling.
-  const DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderG722, "", 16000,
-                                          nullptr);
+  const DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderG722, "");
   static const uint8_t kRtpPayloadType = 17;
   EXPECT_CALL(db, GetDecoderInfo(kRtpPayloadType))
       .WillRepeatedly(Return(&info));
@@ -227,8 +219,7 @@ TEST(TimestampScaler, TestG722PacketList) {
 TEST(TimestampScaler, TestG722Reset) {
   MockDecoderDatabase db;
   // Use G722, which has a factor 2 scaling.
-  const DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderG722, "", 16000,
-                                          nullptr);
+  const DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderG722, "");
   static const uint8_t kRtpPayloadType = 17;
   EXPECT_CALL(db, GetDecoderInfo(kRtpPayloadType))
       .WillRepeatedly(Return(&info));
@@ -267,8 +258,7 @@ TEST(TimestampScaler, TestG722Reset) {
 // timestamp scaler.
 TEST(TimestampScaler, TestOpusLargeStep) {
   MockDecoderDatabase db;
-  const DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderOpus, "", 48000,
-                                          nullptr);
+  const DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderOpus, "");
   static const uint8_t kRtpPayloadType = 17;
   EXPECT_CALL(db, GetDecoderInfo(kRtpPayloadType))
       .WillRepeatedly(Return(&info));

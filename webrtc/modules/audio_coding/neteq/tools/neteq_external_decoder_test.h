@@ -27,7 +27,9 @@ class NetEqExternalDecoderTest {
   static const int kOutputLengthMs = 10;
 
   // The external decoder |decoder| is suppose to be of type |codec|.
-  NetEqExternalDecoderTest(NetEqDecoder codec, AudioDecoder* decoder);
+  NetEqExternalDecoderTest(NetEqDecoder codec,
+                           int sample_rate_hz,
+                           AudioDecoder* decoder);
 
   virtual ~NetEqExternalDecoderTest() { }
 

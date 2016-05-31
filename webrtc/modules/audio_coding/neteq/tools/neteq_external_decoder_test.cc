@@ -19,10 +19,11 @@ namespace webrtc {
 namespace test {
 
 NetEqExternalDecoderTest::NetEqExternalDecoderTest(NetEqDecoder codec,
+                                                   int sample_rate_hz,
                                                    AudioDecoder* decoder)
     : codec_(codec),
       decoder_(decoder),
-      sample_rate_hz_(CodecSampleRateHz(codec_)),
+      sample_rate_hz_(sample_rate_hz),
       channels_(decoder_->Channels()) {
   NetEq::Config config;
   config.sample_rate_hz = sample_rate_hz_;

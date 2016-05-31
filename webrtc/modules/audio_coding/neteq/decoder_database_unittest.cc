@@ -22,6 +22,9 @@
 #include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/codecs/mock/mock_audio_decoder_factory.h"
 
+using testing::_;
+using testing::Invoke;
+
 namespace webrtc {
 
 TEST(DecoderDatabase, CreateAndDestroy) {
@@ -45,7 +48,16 @@ TEST(DecoderDatabase, InsertAndRemove) {
 }
 
 TEST(DecoderDatabase, GetDecoderInfo) {
-  DecoderDatabase db(new rtc::RefCountedObject<MockAudioDecoderFactory>);
+  rtc::scoped_refptr<MockAudioDecoderFactory> factory(
+      new rtc::RefCountedObject<MockAudioDecoderFactory>);
+  auto* decoder = new MockAudioDecoder;
+  EXPECT_CALL(*factory, MakeAudioDecoderMock(_, _))
+      .WillOnce(Invoke([decoder](const SdpAudioFormat& format,
+                                 std::unique_ptr<AudioDecoder>* dec) {
+        EXPECT_EQ("pcmu", format.name);
+        dec->reset(decoder);
+      }));
+  DecoderDatabase db(factory);
   const uint8_t kPayloadType = 0;
   const std::string kCodecName = "Robert\'); DROP TABLE Students;";
   EXPECT_EQ(
@@ -55,9 +67,8 @@ TEST(DecoderDatabase, GetDecoderInfo) {
   info = db.GetDecoderInfo(kPayloadType);
   ASSERT_TRUE(info != NULL);
   EXPECT_EQ(NetEqDecoder::kDecoderPCMu, info->codec_type);
-  EXPECT_EQ(nullptr, info->external_decoder);
-  EXPECT_EQ(8000, info->fs_hz);
   EXPECT_EQ(kCodecName, info->name);
+  EXPECT_EQ(decoder, db.GetDecoder(kPayloadType));
   info = db.GetDecoderInfo(kPayloadType + 1);  // Other payload type.
   EXPECT_TRUE(info == NULL);  // Should not be found.
 }
@@ -140,8 +151,6 @@ TEST(DecoderDatabase, ExternalDecoder) {
   ASSERT_TRUE(info != NULL);
   EXPECT_EQ(NetEqDecoder::kDecoderPCMu, info->codec_type);
   EXPECT_EQ(kCodecName, info->name);
-  EXPECT_EQ(&decoder, info->external_decoder);
-  EXPECT_EQ(8000, info->fs_hz);
   // Expect not to delete the decoder when removing it from the database, since
   // it was declared externally.
   EXPECT_CALL(decoder, Die()).Times(0);

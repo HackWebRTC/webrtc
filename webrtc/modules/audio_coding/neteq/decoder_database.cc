@@ -28,14 +28,22 @@ DecoderDatabase::DecoderDatabase(
 DecoderDatabase::~DecoderDatabase() = default;
 
 DecoderDatabase::DecoderInfo::DecoderInfo(NetEqDecoder ct,
+                                          const std::string& nm)
+    : codec_type(ct),
+      name(nm),
+      audio_format_(acm2::RentACodec::NetEqDecoderToSdpAudioFormat(ct)),
+      cng_decoder_(CngDecoder::Create(ct)) {}
+
+DecoderDatabase::DecoderInfo::DecoderInfo(NetEqDecoder ct,
                                           const std::string& nm,
-                                          int fs,
+                                          int sample_rate_hz,
                                           AudioDecoder* ext_dec)
     : codec_type(ct),
       name(nm),
-      fs_hz(fs),
-      external_decoder(ext_dec),
-      audio_format_(acm2::RentACodec::NetEqDecoderToSdpAudioFormat(ct)) {}
+      audio_format_(acm2::RentACodec::NetEqDecoderToSdpAudioFormat(ct)),
+      external_decoder({sample_rate_hz, ext_dec}) {
+  RTC_CHECK(ext_dec);
+}
 
 DecoderDatabase::DecoderInfo::DecoderInfo(DecoderInfo&&) = default;
 DecoderDatabase::DecoderInfo::~DecoderInfo() = default;
@@ -44,7 +52,8 @@ AudioDecoder* DecoderDatabase::DecoderInfo::GetDecoder(
     AudioDecoderFactory* factory) {
   if (external_decoder) {
     RTC_DCHECK(!decoder_);
-    return external_decoder;
+    RTC_DCHECK(external_decoder->decoder);
+    return external_decoder->decoder;
   }
   RTC_DCHECK(audio_format_);
   if (!decoder_) {
@@ -52,6 +61,26 @@ AudioDecoder* DecoderDatabase::DecoderInfo::GetDecoder(
   }
   RTC_DCHECK(decoder_) << "Failed to create: " << *audio_format_;
   return decoder_.get();
+}
+
+rtc::Optional<DecoderDatabase::DecoderInfo::CngDecoder>
+DecoderDatabase::DecoderInfo::CngDecoder::Create(NetEqDecoder ct) {
+  const auto cng = [](int sample_rate_hz) {
+    return rtc::Optional<DecoderDatabase::DecoderInfo::CngDecoder>(
+        {sample_rate_hz});
+  };
+  switch (ct) {
+    case NetEqDecoder::kDecoderCNGnb:
+      return cng(8000);
+    case NetEqDecoder::kDecoderCNGwb:
+      return cng(16000);
+    case NetEqDecoder::kDecoderCNGswb32kHz:
+      return cng(32000);
+    case NetEqDecoder::kDecoderCNGswb48kHz:
+      return cng(48000);
+    default:
+      return rtc::Optional<DecoderDatabase::DecoderInfo::CngDecoder>();
+  }
 }
 
 bool DecoderDatabase::Empty() const { return decoders_.empty(); }
@@ -73,8 +102,7 @@ int DecoderDatabase::RegisterPayload(uint8_t rtp_payload_type,
   if (!CodecSupported(codec_type)) {
     return kCodecNotSupported;
   }
-  const int fs_hz = CodecSampleRateHz(codec_type);
-  DecoderInfo info(codec_type, name, fs_hz, nullptr);
+  DecoderInfo info(codec_type, name);
   auto ret =
       decoders_.insert(std::make_pair(rtp_payload_type, std::move(info)));
   if (ret.second == false) {
@@ -247,8 +275,6 @@ int DecoderDatabase::SetActiveCngDecoder(uint8_t rtp_payload_type) {
       assert(false);
       return kDecoderNotFound;
     }
-    // The CNG decoder should never be provided externally.
-    RTC_CHECK(!it->second.external_decoder);
     active_cng_decoder_.reset();
   }
   active_cng_decoder_type_ = rtp_payload_type;

@@ -31,10 +31,11 @@ class NetEqExternalDecoderUnitTest : public test::NetEqExternalDecoderTest {
   static const int kFrameSizeMs = 10;  // Frame size of Pcm16B.
 
   NetEqExternalDecoderUnitTest(NetEqDecoder codec,
+                               int sample_rate_hz,
                                MockExternalPcm16B* decoder)
-      : NetEqExternalDecoderTest(codec, decoder),
+      : NetEqExternalDecoderTest(codec, sample_rate_hz, decoder),
         external_decoder_(decoder),
-        samples_per_ms_(CodecSampleRateHz(codec) / 1000),
+        samples_per_ms_(sample_rate_hz / 1000),
         frame_size_samples_(kFrameSizeMs * samples_per_ms_),
         rtp_generator_(new test::RtpGenerator(samples_per_ms_)),
         input_(new int16_t[frame_size_samples_]),
@@ -173,12 +174,11 @@ class NetEqExternalVsInternalDecoderTest : public NetEqExternalDecoderUnitTest,
 
   NetEqExternalVsInternalDecoderTest()
       : NetEqExternalDecoderUnitTest(NetEqDecoder::kDecoderPCM16Bswb32kHz,
+                                     32000,
                                      new MockExternalPcm16B),
-        sample_rate_hz_(
-            CodecSampleRateHz(NetEqDecoder::kDecoderPCM16Bswb32kHz)) {
+        sample_rate_hz_(32000) {
     NetEq::Config config;
-    config.sample_rate_hz =
-        CodecSampleRateHz(NetEqDecoder::kDecoderPCM16Bswb32kHz);
+    config.sample_rate_hz = sample_rate_hz_;
     neteq_internal_.reset(
         NetEq::Create(config, CreateBuiltinAudioDecoderFactory()));
   }
@@ -247,6 +247,7 @@ class LargeTimestampJumpTest : public NetEqExternalDecoderUnitTest,
 
   LargeTimestampJumpTest()
       : NetEqExternalDecoderUnitTest(NetEqDecoder::kDecoderPCM16B,
+                                     8000,
                                      new MockExternalPcm16B),
         test_state_(kInitialPhase) {
     EXPECT_CALL(*external_decoder(), HasDecodePlc())
