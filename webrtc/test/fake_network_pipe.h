@@ -80,6 +80,8 @@ class FakeNetworkPipe {
     int loss_percent = 0;
     // If packets are allowed to be reordered.
     bool allow_reordering = false;
+    // The average length of a burst of lost packets.
+    int avg_burst_loss_length = -1;
   };
 
   FakeNetworkPipe(Clock* clock, const FakeNetworkPipe::Config& config);
@@ -132,6 +134,16 @@ class FakeNetworkPipe {
   size_t dropped_packets_;
   size_t sent_packets_;
   int64_t total_packet_delay_;
+
+  // Are we currently dropping a burst of packets?
+  bool bursting_;
+
+  // The probability to drop the packet if we are currently dropping a
+  // burst of packet
+  double prob_loss_bursting_;
+
+  // The probability to drop a burst of packets.
+  double prob_start_bursting_;
 
   int64_t next_process_time_;
 

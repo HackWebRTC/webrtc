@@ -379,4 +379,45 @@ TEST_F(FakeNetworkPipeTest, DisallowReorderingThenAllowReordering) {
   }
   EXPECT_TRUE(reordering_has_occured);
 }
+
+TEST_F(FakeNetworkPipeTest, BurstLoss) {
+  const int kLossPercent = 5;
+  const int kAvgBurstLength = 3;
+  const int kNumPackets = 10000;
+  const int kPacketSize = 10;
+
+  FakeNetworkPipe::Config config;
+  config.queue_length_packets = kNumPackets;
+  config.loss_percent = kLossPercent;
+  config.avg_burst_loss_length = kAvgBurstLength;
+  std::unique_ptr<FakeNetworkPipe> pipe(
+      new FakeNetworkPipe(&fake_clock_, config));
+  ReorderTestReceiver* receiver = new ReorderTestReceiver();
+  receiver_.reset(receiver);
+  pipe->SetReceiver(receiver_.get());
+
+  SendPackets(pipe.get(), kNumPackets, kPacketSize);
+  fake_clock_.AdvanceTimeMilliseconds(1000);
+  pipe->Process();
+
+  // Check that the average loss is |kLossPercent| percent.
+  int lost_packets = kNumPackets - receiver->delivered_sequence_numbers_.size();
+  double loss_fraction = lost_packets / static_cast<double>(kNumPackets);
+
+  EXPECT_NEAR(kLossPercent / 100.0, loss_fraction, 0.05);
+
+  // Find the number of bursts that has occurred.
+  size_t received_packets = receiver->delivered_sequence_numbers_.size();
+  int num_bursts = 0;
+  for (size_t i = 0; i < received_packets - 1; ++i) {
+    int diff = receiver->delivered_sequence_numbers_[i + 1] -
+               receiver->delivered_sequence_numbers_[i];
+    if (diff > 1)
+      ++num_bursts;
+  }
+
+  double average_burst_length = static_cast<double>(lost_packets) / num_bursts;
+
+  EXPECT_NEAR(kAvgBurstLength, average_burst_length, 0.3);
+}
 }  // namespace webrtc

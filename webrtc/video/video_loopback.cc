@@ -101,6 +101,11 @@ int LossPercent() {
   return static_cast<int>(FLAGS_loss_percent);
 }
 
+DEFINE_int32(avg_burst_loss_length, 1, "Average burst length of lost packets.");
+int AvgBurstLossLength() {
+  return static_cast<int>(FLAGS_avg_burst_loss_length);
+}
+
 DEFINE_int32(link_capacity,
              0,
              "Capacity (kbps) of the fake link. 0 means infinite.");
@@ -201,6 +206,7 @@ std::string Clip() {
 void Loopback() {
   FakeNetworkPipe::Config pipe_config;
   pipe_config.loss_percent = flags::LossPercent();
+  pipe_config.avg_burst_loss_length = flags::AvgBurstLossLength();
   pipe_config.link_capacity_kbps = flags::LinkCapacityKbps();
   pipe_config.queue_length_packets = flags::QueueSize();
   pipe_config.queue_delay_ms = flags::AvgPropagationDelayMs();
