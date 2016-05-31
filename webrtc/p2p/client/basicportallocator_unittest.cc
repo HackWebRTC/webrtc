@@ -916,15 +916,17 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsNoUdpAllowed) {
   EXPECT_PRED4(HasCandidate, candidates_, "local", "tcp", kClientAddr);
   // RelayPort connection timeout is 3sec. TCP connection with RelayServer
   // will be tried after 3 seconds.
-  EXPECT_EQ_WAIT(6U, candidates_.size(), 4000);
+  // TODO(deadbeef): Use simulated clock here, waiting for exactly 3 seconds.
+  EXPECT_EQ_WAIT(6U, candidates_.size(), kStunTimeoutMs);
   EXPECT_EQ(3U, ports_.size());
   EXPECT_PRED4(HasCandidate, candidates_, "relay", "udp", kRelayUdpIntAddr);
   EXPECT_PRED4(HasCandidate, candidates_, "relay", "tcp", kRelayTcpIntAddr);
   EXPECT_PRED4(HasCandidate, candidates_, "relay", "ssltcp",
                kRelaySslTcpIntAddr);
   EXPECT_PRED4(HasCandidate, candidates_, "relay", "udp", kRelayUdpExtAddr);
-  // Stun Timeout is 9sec.
-  EXPECT_TRUE_WAIT(candidate_allocation_done_, 9000);
+  // Stun Timeout is 9.5sec.
+  // TODO(deadbeef): Use simulated clock here, waiting exactly 6.5 seconds.
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, kStunTimeoutMs);
 }
 
 TEST_F(BasicPortAllocatorTest, TestCandidatePriorityOfMultipleInterfaces) {
