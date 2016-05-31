@@ -17,6 +17,10 @@
 
 namespace webrtc {
 
+// Returns a string representation given an integer SL_RESULT_XXX code.
+// The mapping can be found in <SLES/OpenSLES.h>.
+const char* GetSLErrorString(size_t code);
+
 SLDataFormat_PCM CreatePcmConfiguration(int sample_rate);
 
 // Helper class for using SLObjectItf interfaces.

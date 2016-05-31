@@ -55,12 +55,6 @@ class OpenSLESPlayer {
   // audio manager at construction.
   static const int kNumOfOpenSLESBuffers = 4;
 
-  // There is no need for this class to use JNI.
-  static int32_t SetAndroidAudioDeviceObjects(void* javaVM, void* context) {
-    return 0;
-  }
-  static void ClearAndroidAudioDeviceObjects() {}
-
   explicit OpenSLESPlayer(AudioManager* audio_manager);
   ~OpenSLESPlayer();
 
@@ -103,9 +97,10 @@ class OpenSLESPlayer {
   // via the SLAndroidSimpleBufferQueueItf interface.
   void AllocateDataBuffers();
 
-  // Creates/destroys the main engine object and the SLEngineItf interface.
-  bool CreateEngine();
-  void DestroyEngine();
+  // Obtaines the SL Engine Interface from the existing global Engine object.
+  // The interface exposes creation methods of all the OpenSL ES object types.
+  // This method defines the |engine_| member variable.
+  bool ObtainEngineInterface();
 
   // Creates/destroys the output mix object.
   bool CreateMix();
@@ -126,6 +121,12 @@ class OpenSLESPlayer {
   // non-application thread which is not attached to the Dalvik JVM.
   // Detached during construction of this object.
   rtc::ThreadChecker thread_checker_opensles_;
+
+  // Raw pointer to the audio manager injected at construction. Used to cache
+  // audio parameters and to access the global SL engine object needed by the
+  // ObtainEngineInterface() method. The audio manager outlives any instance of
+  // this class.
+  AudioManager* audio_manager_;
 
   // Contains audio parameters provided to this class at construction by the
   // AudioManager.
@@ -168,10 +169,6 @@ class OpenSLESPlayer {
   // Keeps track of active audio buffer 'n' in the audio_buffers_[n] queue.
   // Example (kNumOfOpenSLESBuffers = 2): counts 0, 1, 0, 1, ...
   int buffer_index_;
-
-  // The engine object which provides the SLEngineItf interface.
-  // Created by the global Open SL ES constructor slCreateEngine().
-  webrtc::ScopedSLObjectItf engine_object_;
 
   // This interface exposes creation methods for all the OpenSL ES object types.
   // It is the OpenSL ES API entry point.

@@ -31,7 +31,8 @@ class AudioDeviceModule : public RefCountedModule {
     kLinuxAlsaAudio = 3,
     kLinuxPulseAudio = 4,
     kAndroidJavaAudio = 5,
-    kAndroidJavaInputAndOpenSLESOutputAudio = 6,
+    kAndroidOpenSLESAudio = 6,
+    kAndroidJavaInputAndOpenSLESOutputAudio = 7,
     kDummyAudio = 8
   };
 

@@ -14,11 +14,13 @@
 #include <memory>
 
 #include <jni.h>
+#include <SLES/OpenSLES.h>
 
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/android/audio_common.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
+#include "webrtc/modules/audio_device/android/opensles_common.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/modules/utility/include/helpers_android.h"
 #include "webrtc/modules/utility/include/jvm_android.h"
@@ -62,6 +64,18 @@ class AudioManager {
   // Sets the currently active audio layer combination. Must be called before
   // Init().
   void SetActiveAudioLayer(AudioDeviceModule::AudioLayer audio_layer);
+
+  // Creates and realizes the main (global) Open SL engine object and returns
+  // a reference to it. The engine object is only created at the first call
+  // since OpenSL ES for Android only supports a single engine per application.
+  // Subsequent calls returns the already created engine. The SL engine object
+  // is destroyed when the AudioManager object is deleted. It means that the
+  // engine object will be the first OpenSL ES object to be created and last
+  // object to be destroyed.
+  // Note that NULL will be returned unless the audio layer is specified as
+  // AudioDeviceModule::kAndroidOpenSLESAudio or
+  // AudioDeviceModule::kAndroidJavaInputAndOpenSLESOutputAudio.
+  SLObjectItf GetOpenSLEngine();
 
   // Initializes the audio manager and stores the current audio mode.
   bool Init();
@@ -143,7 +157,16 @@ class AudioManager {
   // Wraps the Java specific parts of the AudioManager.
   std::unique_ptr<AudioManager::JavaAudioManager> j_audio_manager_;
 
+  // Contains the selected audio layer specified by the AudioLayer enumerator
+  // in the AudioDeviceModule class.
   AudioDeviceModule::AudioLayer audio_layer_;
+
+  // This object is the global entry point of the OpenSL ES API.
+  // After creating the engine object, the application can obtain this object‘s
+  // SLEngineItf interface. This interface contains creation methods for all
+  // the other object types in the API. None of these interface are realized
+  // by this class. It only provides access to the global engine object.
+  webrtc::ScopedSLObjectItf engine_object_;
 
   // Set to true by Init() and false by Close().
   bool initialized_;

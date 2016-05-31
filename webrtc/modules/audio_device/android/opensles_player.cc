@@ -16,6 +16,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/modules/audio_device/android/audio_common.h"
 #include "webrtc/modules/audio_device/android/audio_manager.h"
 #include "webrtc/modules/audio_device/fine_audio_buffer.h"
 
@@ -26,20 +27,21 @@
 #define ALOGW(...) __android_log_print(ANDROID_LOG_WARN, TAG, __VA_ARGS__)
 #define ALOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 
-#define RETURN_ON_ERROR(op, ...)        \
-  do {                                  \
-    SLresult err = (op);                \
-    if (err != SL_RESULT_SUCCESS) {     \
-      ALOGE("%s failed: %d", #op, err); \
-      return __VA_ARGS__;               \
-    }                                   \
+#define RETURN_ON_ERROR(op, ...)                          \
+  do {                                                    \
+    SLresult err = (op);                                  \
+    if (err != SL_RESULT_SUCCESS) {                       \
+      ALOGE("%s failed: %s", #op, GetSLErrorString(err)); \
+      return __VA_ARGS__;                                 \
+    }                                                     \
   } while (0)
 
 namespace webrtc {
 
 OpenSLESPlayer::OpenSLESPlayer(AudioManager* audio_manager)
-    : audio_parameters_(audio_manager->GetPlayoutAudioParameters()),
-      audio_device_buffer_(NULL),
+    : audio_manager_(audio_manager),
+      audio_parameters_(audio_manager->GetPlayoutAudioParameters()),
+      audio_device_buffer_(nullptr),
       initialized_(false),
       playing_(false),
       bytes_per_buffer_(0),
@@ -66,8 +68,7 @@ OpenSLESPlayer::~OpenSLESPlayer() {
   Terminate();
   DestroyAudioPlayer();
   DestroyMix();
-  DestroyEngine();
-  RTC_DCHECK(!engine_object_.Get());
+  engine_ = nullptr;
   RTC_DCHECK(!engine_);
   RTC_DCHECK(!output_mix_.Get());
   RTC_DCHECK(!player_);
@@ -93,7 +94,7 @@ int OpenSLESPlayer::InitPlayout() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(!initialized_);
   RTC_DCHECK(!playing_);
-  CreateEngine();
+  ObtainEngineInterface();
   CreateMix();
   initialized_ = true;
   buffer_index_ = 0;
@@ -263,32 +264,22 @@ void OpenSLESPlayer::AllocateDataBuffers() {
   }
 }
 
-bool OpenSLESPlayer::CreateEngine() {
-  ALOGD("CreateEngine");
+bool OpenSLESPlayer::ObtainEngineInterface() {
+  ALOGD("ObtainEngineInterface");
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  if (engine_object_.Get())
-    return true;
   RTC_DCHECK(!engine_);
-  const SLEngineOption option[] = {
-    {SL_ENGINEOPTION_THREADSAFE, static_cast<SLuint32>(SL_BOOLEAN_TRUE)}};
+  // Get access to (or create if not already existing) the global OpenSL Engine
+  // object.
+  SLObjectItf engine_object = audio_manager_->GetOpenSLEngine();
+  if (engine_object == nullptr) {
+    ALOGE("Failed to access the global OpenSL engine");
+    return false;
+  }
+  // Get the SL Engine Interface which is implicit.
   RETURN_ON_ERROR(
-      slCreateEngine(engine_object_.Receive(), 1, option, 0, NULL, NULL),
+      (*engine_object)->GetInterface(engine_object, SL_IID_ENGINE, &engine_),
       false);
-  RETURN_ON_ERROR(
-      engine_object_->Realize(engine_object_.Get(), SL_BOOLEAN_FALSE), false);
-  RETURN_ON_ERROR(engine_object_->GetInterface(engine_object_.Get(),
-                                               SL_IID_ENGINE, &engine_),
-                  false);
   return true;
-}
-
-void OpenSLESPlayer::DestroyEngine() {
-  ALOGD("DestroyEngine");
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  if (!engine_object_.Get())
-    return;
-  engine_ = nullptr;
-  engine_object_.Reset();
 }
 
 bool OpenSLESPlayer::CreateMix() {
@@ -300,7 +291,7 @@ bool OpenSLESPlayer::CreateMix() {
 
   // Create the ouput mix on the engine object. No interfaces will be used.
   RETURN_ON_ERROR((*engine_)->CreateOutputMix(engine_, output_mix_.Receive(), 0,
-                                              NULL, NULL),
+                                              nullptr, nullptr),
                   false);
   RETURN_ON_ERROR(output_mix_->Realize(output_mix_.Get(), SL_BOOLEAN_FALSE),
                   false);
@@ -318,7 +309,6 @@ void OpenSLESPlayer::DestroyMix() {
 bool OpenSLESPlayer::CreateAudioPlayer() {
   ALOGD("CreateAudioPlayer");
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  RTC_DCHECK(engine_object_.Get());
   RTC_DCHECK(output_mix_.Get());
   if (player_object_.Get())
     return true;
@@ -335,7 +325,7 @@ bool OpenSLESPlayer::CreateAudioPlayer() {
   // sink: OutputMix-based data is sink.
   SLDataLocator_OutputMix locator_output_mix = {SL_DATALOCATOR_OUTPUTMIX,
                                                 output_mix_.Get()};
-  SLDataSink audio_sink = {&locator_output_mix, NULL};
+  SLDataSink audio_sink = {&locator_output_mix, nullptr};
 
   // Define interfaces that we indend to use and realize.
   const SLInterfaceID interface_ids[] = {

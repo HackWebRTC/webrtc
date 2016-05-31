@@ -9,8 +9,10 @@
  */
 
 #include <memory>
+#include <SLES/OpenSLES_Android.h>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/modules/audio_device/android/build_info.h"
 #include "webrtc/modules/audio_device/android/audio_manager.h"
@@ -44,12 +46,61 @@ class AudioManagerTest : public ::testing::Test {
     EXPECT_NE(0, audio_manager()->GetDelayEstimateInMilliseconds());
   }
 
+  // One way to ensure that the engine object is valid is to create an
+  // SL Engine interface since it exposes creation methods of all the OpenSL ES
+  // object types and it is only supported on the engine object. This method
+  // also verifies that the engine interface supports at least one interface.
+  // Note that, the test below is not a full test of the SLEngineItf object
+  // but only a simple sanity test to check that the global engine object is OK.
+  void ValidateSLEngine(SLObjectItf engine_object) {
+    EXPECT_NE(nullptr, engine_object);
+    // Get the SL Engine interface which is exposed by the engine object.
+    SLEngineItf engine;
+    SLresult result =
+        (*engine_object)->GetInterface(engine_object, SL_IID_ENGINE, &engine);
+    EXPECT_EQ(result, SL_RESULT_SUCCESS) << "GetInterface() on engine failed";
+    // Ensure that the SL Engine interface exposes at least one interface.
+    SLuint32 object_id = SL_OBJECTID_ENGINE;
+    SLuint32 num_supported_interfaces = 0;
+    result = (*engine)->QueryNumSupportedInterfaces(engine, object_id,
+                                                    &num_supported_interfaces);
+    EXPECT_EQ(result, SL_RESULT_SUCCESS)
+        << "QueryNumSupportedInterfaces() failed";
+    EXPECT_GE(num_supported_interfaces, 1u);
+  }
+
   std::unique_ptr<AudioManager> audio_manager_;
   AudioParameters playout_parameters_;
   AudioParameters record_parameters_;
 };
 
 TEST_F(AudioManagerTest, ConstructDestruct) {
+}
+
+// It should not be possible to create an OpenSL engine object if Java based
+// audio is requested in both directions.
+TEST_F(AudioManagerTest, GetOpenSLEngineShouldFailForJavaAudioLayer) {
+  audio_manager()->SetActiveAudioLayer(AudioDeviceModule::kAndroidJavaAudio);
+  SLObjectItf engine_object = audio_manager()->GetOpenSLEngine();
+  EXPECT_EQ(nullptr, engine_object);
+}
+
+// It should be possible to create an OpenSL engine object if OpenSL ES based
+// audio is requested in any direction.
+TEST_F(AudioManagerTest, GetOpenSLEngineShouldSucceedForOpenSLESAudioLayer) {
+  // List of supported audio layers that uses OpenSL ES audio.
+  const AudioDeviceModule::AudioLayer opensles_audio[] = {
+      AudioDeviceModule::kAndroidOpenSLESAudio,
+      AudioDeviceModule::kAndroidJavaInputAndOpenSLESOutputAudio};
+  // Verify that the global (singleton) OpenSL Engine can be acquired for all
+  // audio layes that uses OpenSL ES. Note that the engine is only created once.
+  for (const AudioDeviceModule::AudioLayer audio_layer : opensles_audio) {
+    audio_manager()->SetActiveAudioLayer(audio_layer);
+    SLObjectItf engine_object = audio_manager()->GetOpenSLEngine();
+    EXPECT_NE(nullptr, engine_object);
+    // Perform a simple sanity check of the created engine object.
+    ValidateSLEngine(engine_object);
+  }
 }
 
 TEST_F(AudioManagerTest, InitClose) {

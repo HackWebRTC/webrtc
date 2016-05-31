@@ -101,7 +101,7 @@ void AudioManager::SetActiveAudioLayer(
   ALOGD("SetActiveAudioLayer(%d)%s", audio_layer, GetThreadInfo().c_str());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(!initialized_);
-  // Store the currenttly utilized audio layer.
+  // Store the currently utilized audio layer.
   audio_layer_ = audio_layer;
   // The delay estimate can take one of two fixed values depending on if the
   // device supports low-latency output or not. However, it is also possible
@@ -112,6 +112,45 @@ void AudioManager::SetActiveAudioLayer(
       kHighLatencyModeDelayEstimateInMilliseconds :
       kLowLatencyModeDelayEstimateInMilliseconds;
   ALOGD("delay_estimate_in_milliseconds: %d", delay_estimate_in_milliseconds_);
+}
+
+SLObjectItf AudioManager::GetOpenSLEngine() {
+  ALOGD("GetOpenSLEngine%s", GetThreadInfo().c_str());
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  // Only allow usage of OpenSL ES if such an audio layer has been specified.
+  if (audio_layer_ != AudioDeviceModule::kAndroidOpenSLESAudio &&
+      audio_layer_ !=
+          AudioDeviceModule::kAndroidJavaInputAndOpenSLESOutputAudio) {
+    ALOGI("Unable to create OpenSL engine for the current audio layer: %d",
+          audio_layer_);
+    return nullptr;
+  }
+  // OpenSL ES for Android only supports a single engine per application.
+  // If one already has been created, return existing object instead of
+  // creating a new.
+  if (engine_object_.Get() != nullptr) {
+    ALOGI("The OpenSL ES engine object has already been created");
+    return engine_object_.Get();
+  }
+  // Create the engine object in thread safe mode.
+  const SLEngineOption option[] = {
+      {SL_ENGINEOPTION_THREADSAFE, static_cast<SLuint32>(SL_BOOLEAN_TRUE)}};
+  SLresult result =
+      slCreateEngine(engine_object_.Receive(), 1, option, 0, NULL, NULL);
+  if (result != SL_RESULT_SUCCESS) {
+    ALOGE("slCreateEngine() failed: %s", GetSLErrorString(result));
+    engine_object_.Reset();
+    return nullptr;
+  }
+  // Realize the SL Engine in synchronous mode.
+  result = engine_object_->Realize(engine_object_.Get(), SL_BOOLEAN_FALSE);
+  if (result != SL_RESULT_SUCCESS) {
+    ALOGE("Realize() failed: %s", GetSLErrorString(result));
+    engine_object_.Reset();
+    return nullptr;
+  }
+  // Finally return the SLObjectItf interface of the engine object.
+  return engine_object_.Get();
 }
 
 bool AudioManager::Init() {
