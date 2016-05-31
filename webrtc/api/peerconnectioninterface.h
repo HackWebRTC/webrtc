@@ -503,27 +503,40 @@ class PeerConnectionObserver {
   virtual void OnSignalingChange(
       PeerConnectionInterface::SignalingState new_state) = 0;
 
+  // TODO(deadbeef): Once all subclasses override the scoped_refptr versions
+  // of the below three methods, make them pure virtual and remove the raw
+  // pointer version.
+
   // Triggered when media is received on a new stream from remote peer.
-  virtual void OnAddStream(MediaStreamInterface* stream) = 0;
+  virtual void OnAddStream(rtc::scoped_refptr<MediaStreamInterface> stream) {}
+  // Deprecated; please use the version that uses a scoped_refptr.
+  virtual void OnAddStream(MediaStreamInterface* stream) {}
 
   // Triggered when a remote peer close a stream.
-  virtual void OnRemoveStream(MediaStreamInterface* stream) = 0;
+  virtual void OnRemoveStream(rtc::scoped_refptr<MediaStreamInterface> stream) {
+  }
+  // Deprecated; please use the version that uses a scoped_refptr.
+  virtual void OnRemoveStream(MediaStreamInterface* stream) {}
 
-  // Triggered when a remote peer open a data channel.
-  virtual void OnDataChannel(DataChannelInterface* data_channel) = 0;
+  // Triggered when a remote peer opens a data channel.
+  virtual void OnDataChannel(
+      rtc::scoped_refptr<DataChannelInterface> data_channel){};
+  // Deprecated; please use the version that uses a scoped_refptr.
+  virtual void OnDataChannel(DataChannelInterface* data_channel) {}
 
-  // Triggered when renegotiation is needed, for example the ICE has restarted.
+  // Triggered when renegotiation is needed. For example, an ICE restart
+  // has begun.
   virtual void OnRenegotiationNeeded() = 0;
 
-  // Called any time the IceConnectionState changes
+  // Called any time the IceConnectionState changes.
   virtual void OnIceConnectionChange(
       PeerConnectionInterface::IceConnectionState new_state) = 0;
 
-  // Called any time the IceGatheringState changes
+  // Called any time the IceGatheringState changes.
   virtual void OnIceGatheringChange(
       PeerConnectionInterface::IceGatheringState new_state) = 0;
 
-  // New Ice candidate have been found.
+  // A new ICE candidate has been gathered.
   virtual void OnIceCandidate(const IceCandidateInterface* candidate) = 0;
 
   // Ice candidates have been removed.

@@ -89,6 +89,12 @@ class scoped_refptr {
       ptr_->AddRef();
   }
 
+  // Move constructors.
+  scoped_refptr(scoped_refptr<T>&& r) : ptr_(r.release()) {}
+
+  template <typename U>
+  scoped_refptr(scoped_refptr<U>&& r) : ptr_(r.release()) {}
+
   ~scoped_refptr() {
     if (ptr_)
       ptr_->Release();

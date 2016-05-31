@@ -746,9 +746,7 @@ public class PeerConnectionTest extends ActivityTestCase {
     offeringExpectations.dataChannel.close();
     getMetrics();
 
-    // Free the Java-land objects, collect them, and sleep a bit to make sure we
-    // don't get late-arrival crashes after the Java-land objects have been
-    // freed.
+    // Free the Java-land objects and collect them.
     shutdownPC(offeringPC, offeringExpectations);
     offeringPC = null;
     shutdownPC(answeringPC, answeringExpectations);
@@ -959,14 +957,67 @@ public class PeerConnectionTest extends ActivityTestCase {
     MediaStream aRMS = answeringExpectations.gotRemoteStreams.iterator().next();
     assertEquals(aRMS.videoTracks.get(0).state(), MediaStreamTrack.State.ENDED);
 
-    // Free the Java-land objects, collect them, and sleep a bit to make sure we
-    // don't get late-arrival crashes after the Java-land objects have been
-    // freed.
+    // Finally, remove the audio track as well, which should completely remove
+    // the remote stream. This used to trigger an assert.
+    // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=5128
+    AudioTrack offererAudioTrack = oLMS.get().audioTracks.get(0);
+    oLMS.get().removeTrack(offererAudioTrack);
+
+    // Create offer.
+    sdpLatch = new SdpObserverLatch();
+    offeringPC.createOffer(sdpLatch, new MediaConstraints());
+    assertTrue(sdpLatch.await());
+    offerSdp = sdpLatch.getSdp();
+    assertEquals(offerSdp.type, SessionDescription.Type.OFFER);
+    assertFalse(offerSdp.description.isEmpty());
+
+    // Set local description for offerer.
+    sdpLatch = new SdpObserverLatch();
+    offeringExpectations.expectSignalingChange(SignalingState.HAVE_LOCAL_OFFER);
+    offeringPC.setLocalDescription(sdpLatch, offerSdp);
+    assertTrue(sdpLatch.await());
+    assertNull(sdpLatch.getSdp());
+
+    // Set remote description for answerer.
+    sdpLatch = new SdpObserverLatch();
+    answeringExpectations.expectSignalingChange(SignalingState.HAVE_REMOTE_OFFER);
+    answeringExpectations.expectRemoveStream("offeredMediaStream");
+    answeringPC.setRemoteDescription(sdpLatch, offerSdp);
+    assertTrue(sdpLatch.await());
+    assertNull(sdpLatch.getSdp());
+
+    // Create answer.
+    sdpLatch = new SdpObserverLatch();
+    answeringPC.createAnswer(sdpLatch, new MediaConstraints());
+    assertTrue(sdpLatch.await());
+    answerSdp = sdpLatch.getSdp();
+    assertEquals(answerSdp.type, SessionDescription.Type.ANSWER);
+    assertFalse(answerSdp.description.isEmpty());
+
+    // Set local description for answerer.
+    sdpLatch = new SdpObserverLatch();
+    answeringExpectations.expectSignalingChange(SignalingState.STABLE);
+    answeringPC.setLocalDescription(sdpLatch, answerSdp);
+    assertTrue(sdpLatch.await());
+    assertNull(sdpLatch.getSdp());
+
+    // Set remote description for offerer.
+    sdpLatch = new SdpObserverLatch();
+    offeringExpectations.expectSignalingChange(SignalingState.STABLE);
+    offeringPC.setRemoteDescription(sdpLatch, answerSdp);
+    assertTrue(sdpLatch.await());
+    assertNull(sdpLatch.getSdp());
+
+    // Make sure the stream was really removed.
+    assertTrue(answeringExpectations.gotRemoteStreams.isEmpty());
+
+    // Free the Java-land objects and collect them.
     shutdownPC(offeringPC, offeringExpectations);
     offeringPC = null;
     shutdownPC(answeringPC, answeringExpectations);
     answeringPC = null;
     offererVideoTrack.dispose();
+    offererAudioTrack.dispose();
     videoSource.dispose();
     factory.dispose();
     System.gc();

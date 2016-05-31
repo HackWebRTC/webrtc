@@ -66,9 +66,12 @@ class Conductor
 
   void OnSignalingChange(
       webrtc::PeerConnectionInterface::SignalingState new_state) override{};
-  void OnAddStream(webrtc::MediaStreamInterface* stream) override;
-  void OnRemoveStream(webrtc::MediaStreamInterface* stream) override;
-  void OnDataChannel(webrtc::DataChannelInterface* channel) override {}
+  void OnAddStream(
+      rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
+  void OnRemoveStream(
+      rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
+  void OnDataChannel(
+      rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override {}
   void OnRenegotiationNeeded() override {}
   void OnIceConnectionChange(
       webrtc::PeerConnectionInterface::IceConnectionState new_state) override{};

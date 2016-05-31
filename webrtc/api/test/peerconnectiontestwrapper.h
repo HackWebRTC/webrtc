@@ -43,9 +43,12 @@ class PeerConnectionTestWrapper
      webrtc::PeerConnectionInterface::SignalingState new_state) {}
   virtual void OnStateChange(
       webrtc::PeerConnectionObserver::StateType state_changed) {}
-  virtual void OnAddStream(webrtc::MediaStreamInterface* stream);
-  virtual void OnRemoveStream(webrtc::MediaStreamInterface* stream) {}
-  virtual void OnDataChannel(webrtc::DataChannelInterface* data_channel);
+  virtual void OnAddStream(
+      rtc::scoped_refptr<webrtc::MediaStreamInterface> stream);
+  virtual void OnRemoveStream(
+      rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {}
+  virtual void OnDataChannel(
+      rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel);
   virtual void OnRenegotiationNeeded() {}
   virtual void OnIceConnectionChange(
       webrtc::PeerConnectionInterface::IceConnectionState new_state) {}

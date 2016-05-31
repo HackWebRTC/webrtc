@@ -156,19 +156,16 @@ void Conductor::EnsureStreamingUI() {
 //
 
 // Called when a remote stream is added
-void Conductor::OnAddStream(webrtc::MediaStreamInterface* stream) {
+void Conductor::OnAddStream(
+    rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
   LOG(INFO) << __FUNCTION__ << " " << stream->label();
-
-  stream->AddRef();
-  main_wnd_->QueueUIThreadCallback(NEW_STREAM_ADDED,
-                                   stream);
+  main_wnd_->QueueUIThreadCallback(NEW_STREAM_ADDED, stream.release());
 }
 
-void Conductor::OnRemoveStream(webrtc::MediaStreamInterface* stream) {
+void Conductor::OnRemoveStream(
+    rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
   LOG(INFO) << __FUNCTION__ << " " << stream->label();
-  stream->AddRef();
-  main_wnd_->QueueUIThreadCallback(STREAM_REMOVED,
-                                   stream);
+  main_wnd_->QueueUIThreadCallback(STREAM_REMOVED, stream.release());
 }
 
 void Conductor::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {

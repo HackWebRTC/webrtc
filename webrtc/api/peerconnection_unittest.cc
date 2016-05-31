@@ -244,7 +244,8 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
       webrtc::PeerConnectionInterface::SignalingState new_state) override {
     EXPECT_EQ(pc()->signaling_state(), new_state);
   }
-  void OnAddStream(MediaStreamInterface* media_stream) override {
+  void OnAddStream(
+      rtc::scoped_refptr<MediaStreamInterface> media_stream) override {
     media_stream->RegisterObserver(this);
     for (size_t i = 0; i < media_stream->GetVideoTracks().size(); ++i) {
       const std::string id = media_stream->GetVideoTracks()[i]->id();
@@ -254,7 +255,8 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
           media_stream->GetVideoTracks()[i]));
     }
   }
-  void OnRemoveStream(MediaStreamInterface* media_stream) override {}
+  void OnRemoveStream(
+      rtc::scoped_refptr<MediaStreamInterface> media_stream) override {}
   void OnRenegotiationNeeded() override {}
   void OnIceConnectionChange(
       webrtc::PeerConnectionInterface::IceConnectionState new_state) override {
@@ -428,7 +430,8 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
                PeerConnectionInterface::RTCOfferAnswerOptions::kUndefined;
   }
 
-  void OnDataChannel(DataChannelInterface* data_channel) override {
+  void OnDataChannel(
+      rtc::scoped_refptr<DataChannelInterface> data_channel) override {
     LOG(INFO) << id_ << "OnDataChannel";
     data_channel_ = data_channel;
     data_observer_.reset(new MockDataChannelObserver(data_channel));

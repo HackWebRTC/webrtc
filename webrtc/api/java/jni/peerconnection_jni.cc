@@ -256,14 +256,14 @@ class PCOJava : public PeerConnectionObserver {
     CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
   }
 
-  void OnAddStream(MediaStreamInterface* stream) override {
+  void OnAddStream(rtc::scoped_refptr<MediaStreamInterface> stream) override {
     ScopedLocalRefFrame local_ref_frame(jni());
     // Java MediaStream holds one reference. Corresponding Release() is in
     // MediaStream_free, triggered by MediaStream.dispose().
     stream->AddRef();
     jobject j_stream =
         jni()->NewObject(*j_media_stream_class_, j_media_stream_ctor_,
-                         reinterpret_cast<jlong>(stream));
+                         reinterpret_cast<jlong>(stream.get()));
     CHECK_EXCEPTION(jni()) << "error during NewObject";
 
     for (const auto& track : stream->GetAudioTracks()) {
@@ -319,7 +319,8 @@ class PCOJava : public PeerConnectionObserver {
     CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
   }
 
-  void OnRemoveStream(MediaStreamInterface* stream) override {
+  void OnRemoveStream(
+      rtc::scoped_refptr<MediaStreamInterface> stream) override {
     ScopedLocalRefFrame local_ref_frame(jni());
     NativeToJavaStreamsMap::iterator it = remote_streams_.find(stream);
     RTC_CHECK(it != remote_streams_.end()) << "unexpected stream: " << std::hex
@@ -329,13 +330,17 @@ class PCOJava : public PeerConnectionObserver {
                               "(Lorg/webrtc/MediaStream;)V");
     jni()->CallVoidMethod(*j_observer_global_, m, j_stream);
     CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
+    // Release the refptr reference so that DisposeRemoteStream can assert
+    // it removes the final reference.
+    stream = nullptr;
     DisposeRemoteStream(it);
   }
 
-  void OnDataChannel(DataChannelInterface* channel) override {
+  void OnDataChannel(
+      rtc::scoped_refptr<DataChannelInterface> channel) override {
     ScopedLocalRefFrame local_ref_frame(jni());
     jobject j_channel = jni()->NewObject(
-        *j_data_channel_class_, j_data_channel_ctor_, (jlong)channel);
+        *j_data_channel_class_, j_data_channel_ctor_, (jlong)channel.get());
     CHECK_EXCEPTION(jni()) << "error during NewObject";
 
     jmethodID m = GetMethodID(jni(), *j_observer_class_, "onDataChannel",

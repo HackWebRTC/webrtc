@@ -1152,7 +1152,11 @@ void PeerConnection::SetRemoteDescription(
   for (size_t i = 0; i < new_streams->count(); ++i) {
     MediaStreamInterface* new_stream = new_streams->at(i);
     stats_->AddStream(new_stream);
+    // Call both the raw pointer and scoped_refptr versions of the method
+    // for compatibility.
     observer_->OnAddStream(new_stream);
+    observer_->OnAddStream(
+        rtc::scoped_refptr<MediaStreamInterface>(new_stream));
   }
 
   UpdateEndedRemoteMediaStreams();
@@ -1715,9 +1719,12 @@ void PeerConnection::UpdateEndedRemoteMediaStreams() {
     }
   }
 
-  for (const auto& stream : streams_to_remove) {
+  for (auto& stream : streams_to_remove) {
     remote_streams_->RemoveStream(stream);
-    observer_->OnRemoveStream(stream);
+    // Call both the raw pointer and scoped_refptr versions of the method
+    // for compatibility.
+    observer_->OnRemoveStream(stream.get());
+    observer_->OnRemoveStream(std::move(stream));
   }
 }
 
@@ -1888,8 +1895,11 @@ void PeerConnection::CreateRemoteRtpDataChannel(const std::string& label,
     return;
   }
   channel->SetReceiveSsrc(remote_ssrc);
-  observer_->OnDataChannel(
-      DataChannelProxy::Create(signaling_thread(), channel));
+  auto proxy_channel = DataChannelProxy::Create(signaling_thread(), channel);
+  // Call both the raw pointer and scoped_refptr versions of the method
+  // for compatibility.
+  observer_->OnDataChannel(proxy_channel.get());
+  observer_->OnDataChannel(std::move(proxy_channel));
 }
 
 rtc::scoped_refptr<DataChannel> PeerConnection::InternalCreateDataChannel(
@@ -2019,8 +2029,11 @@ void PeerConnection::OnDataChannelOpenMessage(
     return;
   }
 
-  observer_->OnDataChannel(
-      DataChannelProxy::Create(signaling_thread(), channel));
+  auto proxy_channel = DataChannelProxy::Create(signaling_thread(), channel);
+  // Call both the raw pointer and scoped_refptr versions of the method
+  // for compatibility.
+  observer_->OnDataChannel(proxy_channel.get());
+  observer_->OnDataChannel(std::move(proxy_channel));
 }
 
 RtpSenderInterface* PeerConnection::FindSenderById(const std::string& id) {

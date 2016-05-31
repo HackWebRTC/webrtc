@@ -69,9 +69,11 @@ class NullPeerConnectionObserver : public PeerConnectionObserver {
   virtual void OnSignalingMessage(const std::string& msg) {}
   virtual void OnSignalingChange(
       PeerConnectionInterface::SignalingState new_state) {}
-  virtual void OnAddStream(MediaStreamInterface* stream) {}
-  virtual void OnRemoveStream(MediaStreamInterface* stream) {}
-  virtual void OnDataChannel(DataChannelInterface* data_channel) {}
+  virtual void OnAddStream(rtc::scoped_refptr<MediaStreamInterface> stream) {}
+  virtual void OnRemoveStream(rtc::scoped_refptr<MediaStreamInterface> stream) {
+  }
+  virtual void OnDataChannel(
+      rtc::scoped_refptr<DataChannelInterface> data_channel) {}
   virtual void OnRenegotiationNeeded() {}
   virtual void OnIceConnectionChange(
       PeerConnectionInterface::IceConnectionState new_state) {}

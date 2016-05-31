@@ -96,7 +96,8 @@ PeerConnectionTestWrapper::CreateDataChannel(
   return peer_connection_->CreateDataChannel(label, &init);
 }
 
-void PeerConnectionTestWrapper::OnAddStream(MediaStreamInterface* stream) {
+void PeerConnectionTestWrapper::OnAddStream(
+    rtc::scoped_refptr<MediaStreamInterface> stream) {
   LOG(LS_INFO) << "PeerConnectionTestWrapper " << name_
                << ": OnAddStream";
   // TODO(ronghuawu): support multiple streams.
@@ -116,7 +117,7 @@ void PeerConnectionTestWrapper::OnIceCandidate(
 }
 
 void PeerConnectionTestWrapper::OnDataChannel(
-    webrtc::DataChannelInterface* data_channel) {
+    rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) {
   SignalOnDataChannel(data_channel);
 }
 

@@ -473,16 +473,18 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
     return remote_streams_->find(label);
   }
   StreamCollectionInterface* remote_streams() const { return remote_streams_; }
-  void OnAddStream(MediaStreamInterface* stream) override {
+  void OnAddStream(rtc::scoped_refptr<MediaStreamInterface> stream) override {
     last_added_stream_ = stream;
     remote_streams_->AddStream(stream);
   }
-  void OnRemoveStream(MediaStreamInterface* stream) override {
+  void OnRemoveStream(
+      rtc::scoped_refptr<MediaStreamInterface> stream) override {
     last_removed_stream_ = stream;
     remote_streams_->RemoveStream(stream);
   }
   void OnRenegotiationNeeded() override { renegotiation_needed_ = true; }
-  void OnDataChannel(DataChannelInterface* data_channel) override {
+  void OnDataChannel(
+      rtc::scoped_refptr<DataChannelInterface> data_channel) override {
     last_datachannel_ = data_channel;
   }
 
