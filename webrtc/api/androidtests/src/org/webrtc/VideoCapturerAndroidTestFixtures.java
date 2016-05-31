@@ -10,7 +10,6 @@
 package org.webrtc;
 
 import android.content.Context;
-import android.hardware.Camera;
 
 import org.webrtc.VideoCapturerAndroidTestFixtures;
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
@@ -22,6 +21,7 @@ import java.util.concurrent.CountDownLatch;
 
 import static junit.framework.Assert.*;
 
+@SuppressWarnings("deprecation")
 public class VideoCapturerAndroidTestFixtures {
   static class RendererCallbacks implements VideoRenderer.Callbacks {
     private int framesRendered = 0;
@@ -217,7 +217,7 @@ public class VideoCapturerAndroidTestFixtures {
   // Return true if the device under test have at least two cameras.
   @SuppressWarnings("deprecation")
   static public boolean HaveTwoCameras() {
-    return (Camera.getNumberOfCameras() >= 2);
+    return (android.hardware.Camera.getNumberOfCameras() >= 2);
   }
 
   static public void release(VideoCapturerAndroid capturer) {
@@ -227,7 +227,7 @@ public class VideoCapturerAndroidTestFixtures {
 
   static public void startCapturerAndRender(VideoCapturerAndroid capturer)
       throws InterruptedException {
-    PeerConnectionFactory factory = new PeerConnectionFactory();
+    PeerConnectionFactory factory = new PeerConnectionFactory(null /* options */);
     VideoSource source =
         factory.createVideoSource(capturer, new MediaConstraints());
     VideoTrack track = factory.createVideoTrack("dummy", source);
@@ -240,7 +240,7 @@ public class VideoCapturerAndroidTestFixtures {
   }
 
   static public void switchCamera(VideoCapturerAndroid capturer) throws InterruptedException {
-    PeerConnectionFactory factory = new PeerConnectionFactory();
+    PeerConnectionFactory factory = new PeerConnectionFactory(null /* options */);
     VideoSource source =
         factory.createVideoSource(capturer, new MediaConstraints());
     VideoTrack track = factory.createVideoTrack("dummy", source);
@@ -330,7 +330,7 @@ public class VideoCapturerAndroidTestFixtures {
 
   static public void stopRestartVideoSource(VideoCapturerAndroid capturer)
       throws InterruptedException {
-    PeerConnectionFactory factory = new PeerConnectionFactory();
+    PeerConnectionFactory factory = new PeerConnectionFactory(null /* options */);
     VideoSource source =
         factory.createVideoSource(capturer, new MediaConstraints());
     VideoTrack track = factory.createVideoTrack("dummy", source);
@@ -403,7 +403,7 @@ public class VideoCapturerAndroidTestFixtures {
       VideoCapturerAndroid capturer, Context appContext) throws InterruptedException {
     final List<CaptureFormat> formats = capturer.getSupportedFormats();
     final CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
-    Camera camera = Camera.open(capturer.getCurrentCameraId());
+    android.hardware.Camera camera = android.hardware.Camera.open(capturer.getCurrentCameraId());
 
     final SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create(
         "SurfaceTextureHelper test" /* threadName */, null /* sharedContext */);
@@ -428,7 +428,7 @@ public class VideoCapturerAndroidTestFixtures {
       VideoCapturerAndroid capturer, Context appContext) throws InterruptedException {
     final List<CaptureFormat> formats = capturer.getSupportedFormats();
     final CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
-    Camera camera = Camera.open(capturer.getCurrentCameraId());
+    android.hardware.Camera camera = android.hardware.Camera.open(capturer.getCurrentCameraId());
 
     final SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create(
         "SurfaceTextureHelper test" /* threadName */, null /* sharedContext */);
@@ -454,7 +454,7 @@ public class VideoCapturerAndroidTestFixtures {
       VideoCapturerAndroid capturer, Context appContext) throws InterruptedException {
     final List<CaptureFormat> formats = capturer.getSupportedFormats();
     final CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
-    Camera camera = Camera.open(capturer.getCurrentCameraId());
+    android.hardware.Camera camera = android.hardware.Camera.open(capturer.getCurrentCameraId());
 
     final SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create(
         "SurfaceTextureHelper test" /* threadName */, null /* sharedContext */);
@@ -507,7 +507,7 @@ public class VideoCapturerAndroidTestFixtures {
 
   static public void returnBufferLateEndToEnd(VideoCapturerAndroid capturer)
       throws InterruptedException {
-    final PeerConnectionFactory factory = new PeerConnectionFactory();
+    final PeerConnectionFactory factory = new PeerConnectionFactory(null /* options */);
     final VideoSource source = factory.createVideoSource(capturer, new MediaConstraints());
     final VideoTrack track = factory.createVideoTrack("dummy", source);
     final FakeAsyncRenderer renderer = new FakeAsyncRenderer();
@@ -567,7 +567,7 @@ public class VideoCapturerAndroidTestFixtures {
   }
 
   static public void scaleCameraOutput(VideoCapturerAndroid capturer) throws InterruptedException {
-    PeerConnectionFactory factory = new PeerConnectionFactory();
+    PeerConnectionFactory factory = new PeerConnectionFactory(null /* options */);
     VideoSource source =
         factory.createVideoSource(capturer, new MediaConstraints());
     VideoTrack track = factory.createVideoTrack("dummy", source);
