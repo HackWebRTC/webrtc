@@ -63,7 +63,7 @@
           'target_name': 'system_wrappers_unittests_apk_target',
           'type': 'none',
           'dependencies': [
-            '<(apk_tests_path):system_wrappers_unittests_apk',
+            '<(android_tests_path):system_wrappers_unittests_apk',
           ],
         },
       ],
@@ -75,7 +75,7 @@
                 'target_name': 'system_wrappers_unittests_apk_run',
                 'type': 'none',
                 'dependencies': [
-                  '<(apk_tests_path):system_wrappers_unittests_apk',
+                  '<(android_tests_path):system_wrappers_unittests_apk',
                 ],
                 'includes': [
                   '../build/isolate.gypi',

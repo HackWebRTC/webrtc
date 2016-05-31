@@ -251,7 +251,7 @@
               'target_name': 'voice_engine_unittests_apk_target',
               'type': 'none',
               'dependencies': [
-                '<(apk_tests_path):voice_engine_unittests_apk',
+                '<(android_tests_path):voice_engine_unittests_apk',
               ],
             },
           ],
@@ -263,7 +263,7 @@
                     'target_name': 'voice_engine_unittests_apk_run',
                     'type': 'none',
                     'dependencies': [
-                      '<(apk_tests_path):voice_engine_unittests_apk',
+                      '<(android_tests_path):voice_engine_unittests_apk',
                     ],
                     'includes': [
                       '../build/isolate.gypi',

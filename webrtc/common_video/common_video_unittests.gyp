@@ -51,7 +51,7 @@
           'target_name': 'common_video_unittests_apk_target',
           'type': 'none',
           'dependencies': [
-            '<(apk_tests_path):common_video_unittests_apk',
+            '<(android_tests_path):common_video_unittests_apk',
           ],
         },
       ],
@@ -63,7 +63,7 @@
                 'target_name': 'common_video_unittests_apk_run',
                 'type': 'none',
                 'dependencies': [
-                  '<(apk_tests_path):common_video_unittests_apk',
+                  '<(android_tests_path):common_video_unittests_apk',
                 ],
                 'includes': [
                   '../build/isolate.gypi',

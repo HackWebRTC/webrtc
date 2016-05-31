@@ -7,8 +7,8 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 # This file exists in two versions. A no-op version under
-# webrtc/build/apk_tests_noop.gyp and this one. This gyp file builds the apk
-# unit tests (for Android) assuming that WebRTC is built inside a Chromium
+# webrtc/build/android_tests_noop.gyp and this one. This gyp file builds the
+# tests (for Android) assuming that WebRTC is built inside a Chromium
 # workspace. The no-op version is included when building WebRTC without
 # Chromium. This is a workaround for the fact that 'includes' don't expand
 # variables and that the relative location of apk_test.gypi is different for

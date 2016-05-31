@@ -621,28 +621,28 @@
               'target_name': 'audio_codec_speed_tests_apk_target',
               'type': 'none',
               'dependencies': [
-                '<(apk_tests_path):audio_codec_speed_tests_apk',
+                '<(android_tests_path):audio_codec_speed_tests_apk',
               ],
             },
             {
               'target_name': 'audio_decoder_unittests_apk_target',
               'type': 'none',
               'dependencies': [
-                '<(apk_tests_path):audio_decoder_unittests_apk',
+                '<(android_tests_path):audio_decoder_unittests_apk',
               ],
             },
             {
               'target_name': 'modules_tests_apk_target',
               'type': 'none',
               'dependencies': [
-                '<(apk_tests_path):modules_tests_apk',
+                '<(android_tests_path):modules_tests_apk',
               ],
             },
             {
               'target_name': 'modules_unittests_apk_target',
               'type': 'none',
               'dependencies': [
-                '<(apk_tests_path):modules_unittests_apk',
+                '<(android_tests_path):modules_unittests_apk',
               ],
             },
           ],
@@ -654,7 +654,7 @@
                     'target_name': 'audio_codec_speed_tests_apk_run',
                     'type': 'none',
                     'dependencies': [
-                      '<(apk_tests_path):audio_codec_speed_tests_apk',
+                      '<(android_tests_path):audio_codec_speed_tests_apk',
                     ],
                     'includes': [
                       '../build/isolate.gypi',
@@ -667,7 +667,7 @@
                     'target_name': 'audio_decoder_unittests_apk_run',
                     'type': 'none',
                     'dependencies': [
-                      '<(apk_tests_path):audio_decoder_unittests_apk',
+                      '<(android_tests_path):audio_decoder_unittests_apk',
                     ],
                     'includes': [
                       '../build/isolate.gypi',
@@ -680,7 +680,7 @@
                     'target_name': 'modules_tests_apk_run',
                     'type': 'none',
                     'dependencies': [
-                      '<(apk_tests_path):modules_tests_apk',
+                      '<(android_tests_path):modules_tests_apk',
                     ],
                     'includes': [
                       '../build/isolate.gypi',
@@ -693,7 +693,7 @@
                     'target_name': 'modules_unittests_apk_run',
                     'type': 'none',
                     'dependencies': [
-                      '<(apk_tests_path):modules_unittests_apk',
+                      '<(android_tests_path):modules_unittests_apk',
                     ],
                     'includes': [
                       '../build/isolate.gypi',
