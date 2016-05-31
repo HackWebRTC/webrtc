@@ -12,12 +12,11 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/rtcp_packet_parser.h"
 
 using testing::ElementsAreArray;
 using testing::make_tuple;
 using webrtc::rtcp::RapidResyncRequest;
-using webrtc::RTCPUtility::RtcpCommonHeader;
-using webrtc::RTCPUtility::RtcpParseCommonHeader;
 
 namespace webrtc {
 namespace {
@@ -27,15 +26,11 @@ const uint32_t kRemoteSsrc = 0x23456789;
 const uint8_t kPacket[] = {0x85, 205,  0x00, 0x02,
                            0x12, 0x34, 0x56, 0x78,
                            0x23, 0x45, 0x67, 0x89};
-const size_t kPacketLength = sizeof(kPacket);
 }  // namespace
 
 TEST(RtcpPacketRapidResyncRequestTest, Parse) {
-  RtcpCommonHeader header;
-  ASSERT_TRUE(RtcpParseCommonHeader(kPacket, kPacketLength, &header));
   RapidResyncRequest mutable_parsed;
-  EXPECT_TRUE(mutable_parsed.Parse(
-      header, kPacket + RtcpCommonHeader::kHeaderSizeBytes));
+  EXPECT_TRUE(test::ParseSinglePacket(kPacket, &mutable_parsed));
   const RapidResyncRequest& parsed = mutable_parsed;
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
@@ -53,17 +48,19 @@ TEST(RtcpPacketRapidResyncRequestTest, Create) {
               ElementsAreArray(kPacket));
 }
 
-TEST(RtcpPacketRapidResyncRequestTest, ParseFailsOnWrongSizePacket) {
+TEST(RtcpPacketRapidResyncRequestTest, ParseFailsOnTooSmallPacket) {
+  const uint8_t kTooSmallPacket[] = {0x85, 205,  0x00, 0x01,
+                                     0x12, 0x34, 0x56, 0x78};
   RapidResyncRequest parsed;
-  RtcpCommonHeader header;
-  ASSERT_TRUE(RtcpParseCommonHeader(kPacket, kPacketLength, &header));
-  const size_t kCorrectPayloadSize = header.payload_size_bytes;
-  const uint8_t* payload = kPacket + RtcpCommonHeader::kHeaderSizeBytes;
+  EXPECT_FALSE(test::ParseSinglePacket(kTooSmallPacket, &parsed));
+}
 
-  header.payload_size_bytes = kCorrectPayloadSize - 1;
-  EXPECT_FALSE(parsed.Parse(header, payload));
-
-  header.payload_size_bytes = kCorrectPayloadSize + 1;
-  EXPECT_FALSE(parsed.Parse(header, payload));
+TEST(RtcpPacketRapidResyncRequestTest, ParseFailsOnTooLargePacket) {
+  const uint8_t kTooLargePacket[] = {0x85, 205,  0x00, 0x03,
+                                     0x12, 0x34, 0x56, 0x78,
+                                     0x32, 0x21, 0x65, 0x87,
+                                     0x23, 0x45, 0x67, 0x89};
+  RapidResyncRequest parsed;
+  EXPECT_FALSE(test::ParseSinglePacket(kTooLargePacket, &parsed));
 }
 }  // namespace webrtc

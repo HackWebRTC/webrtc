@@ -12,11 +12,11 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-
-using webrtc::RTCPUtility::RtcpCommonHeader;
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 
 namespace webrtc {
 namespace rtcp {
+constexpr uint8_t RapidResyncRequest::kFeedbackMessageType;
 // RFC 4585: Feedback format.
 // Rapid Resynchronisation Request (draft-perkins-avt-rapid-rtp-sync-03).
 //
@@ -29,19 +29,18 @@ namespace rtcp {
 //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //  |                  SSRC of media source                         |
 //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-bool RapidResyncRequest::Parse(const RtcpCommonHeader& header,
-                               const uint8_t* payload) {
-  RTC_CHECK(header.packet_type == kPacketType);
-  RTC_CHECK(header.count_or_format == kFeedbackMessageType);
+bool RapidResyncRequest::Parse(const CommonHeader& packet) {
+  RTC_DCHECK_EQ(packet.type(), kPacketType);
+  RTC_DCHECK_EQ(packet.fmt(), kFeedbackMessageType);
 
-  if (header.payload_size_bytes != kCommonFeedbackLength) {
+  if (packet.payload_size_bytes() != kCommonFeedbackLength) {
     LOG(LS_WARNING) << "Packet payload size should be " << kCommonFeedbackLength
-                    << " instead of " << header.payload_size_bytes
+                    << " instead of " << packet.payload_size_bytes()
                     << " to be a valid Rapid Resynchronisation Request";
     return false;
   }
 
-  ParseCommonFeedback(payload);
+  ParseCommonFeedback(packet.payload());
   return true;
 }
 

@@ -14,21 +14,21 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rtpfb.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 
 namespace webrtc {
 namespace rtcp {
+class CommonHeader;
+
 // draft-perkins-avt-rapid-rtp-sync-03
 class RapidResyncRequest : public Rtpfb {
  public:
-  static const uint8_t kFeedbackMessageType = 5;
+  static constexpr uint8_t kFeedbackMessageType = 5;
 
   RapidResyncRequest() {}
   ~RapidResyncRequest() override {}
 
   // Parse assumes header is already parsed and validated.
-  bool Parse(const RTCPUtility::RtcpCommonHeader& header,
-             const uint8_t* payload);  // Size of the payload is in the header.
+  bool Parse(const CommonHeader& header);
 
  protected:
   bool Create(uint8_t* packet,
