@@ -310,7 +310,7 @@ class AudioDecoderPcm16BTest : public AudioDecoderTest {
     codec_input_rate_hz_ = 16000;
     frame_size_ = 20 * codec_input_rate_hz_ / 1000;
     data_length_ = 10 * frame_size_;
-    decoder_ = new AudioDecoderPcm16B(1);
+    decoder_ = new AudioDecoderPcm16B(codec_input_rate_hz_, 1);
     assert(decoder_);
     AudioEncoderPcm16B::Config config;
     config.sample_rate_hz = codec_input_rate_hz_;
@@ -370,7 +370,7 @@ class AudioDecoderIsacFloatTest : public AudioDecoderTest {
     config.frame_size_ms =
         1000 * static_cast<int>(frame_size_) / codec_input_rate_hz_;
     audio_encoder_.reset(new AudioEncoderIsac(config));
-    decoder_ = new AudioDecoderIsac();
+    decoder_ = new AudioDecoderIsac(codec_input_rate_hz_);
   }
 };
 
@@ -387,7 +387,7 @@ class AudioDecoderIsacSwbTest : public AudioDecoderTest {
     config.frame_size_ms =
         1000 * static_cast<int>(frame_size_) / codec_input_rate_hz_;
     audio_encoder_.reset(new AudioEncoderIsac(config));
-    decoder_ = new AudioDecoderIsac();
+    decoder_ = new AudioDecoderIsac(codec_input_rate_hz_);
   }
 };
 
@@ -404,7 +404,7 @@ class AudioDecoderIsacFixTest : public AudioDecoderTest {
     config.frame_size_ms =
         1000 * static_cast<int>(frame_size_) / codec_input_rate_hz_;
     audio_encoder_.reset(new AudioEncoderIsacFix(config));
-    decoder_ = new AudioDecoderIsacFix();
+    decoder_ = new AudioDecoderIsacFix(codec_input_rate_hz_);
   }
 };
 

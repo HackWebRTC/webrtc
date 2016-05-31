@@ -25,6 +25,7 @@ class AudioDecoderIlbc final : public AudioDecoder {
   bool HasDecodePlc() const override;
   size_t DecodePlc(size_t num_frames, int16_t* decoded) override;
   void Reset() override;
+  int SampleRateHz() const override;
   size_t Channels() const override;
 
  protected:

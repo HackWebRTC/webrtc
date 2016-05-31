@@ -74,7 +74,7 @@ NamedDecoderConstructor decoder_constructors[] = {
     {"isac",
      [](const SdpAudioFormat& format) {
        return format.clockrate_hz == 16000 && format.num_channels == 1
-                  ? Unique(new AudioDecoderIsacFix)
+                  ? Unique(new AudioDecoderIsacFix(format.clockrate_hz))
                   : nullptr;
      }},
 #elif defined(WEBRTC_CODEC_ISAC)
@@ -82,14 +82,15 @@ NamedDecoderConstructor decoder_constructors[] = {
      [](const SdpAudioFormat& format) {
        return (format.clockrate_hz == 16000 || format.clockrate_hz == 32000) &&
                       format.num_channels == 1
-                  ? Unique(new AudioDecoderIsac)
+                  ? Unique(new AudioDecoderIsac(format.clockrate_hz))
                   : nullptr;
      }},
 #endif
     {"l16",
      [](const SdpAudioFormat& format) {
        return format.num_channels >= 1
-                  ? Unique(new AudioDecoderPcm16B(format.num_channels))
+                  ? Unique(new AudioDecoderPcm16B(format.clockrate_hz,
+                                                  format.num_channels))
                   : nullptr;
      }},
 #ifdef WEBRTC_CODEC_G722
@@ -136,7 +137,15 @@ class BuiltinAudioDecoderFactory : public AudioDecoderFactory {
       const SdpAudioFormat& format) override {
     for (const auto& dc : decoder_constructors) {
       if (STR_CASE_CMP(format.name.c_str(), dc.name) == 0) {
-        return std::unique_ptr<AudioDecoder>(dc.constructor(format));
+        std::unique_ptr<AudioDecoder> dec = dc.constructor(format);
+        if (dec) {
+          const int expected_sample_rate_hz =
+              STR_CASE_CMP(format.name.c_str(), "g722") == 0
+                  ? 2 * format.clockrate_hz
+                  : format.clockrate_hz;
+          RTC_CHECK_EQ(expected_sample_rate_hz, dec->SampleRateHz());
+        }
+        return dec;
       }
     }
     return nullptr;

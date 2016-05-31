@@ -24,6 +24,7 @@ class AudioDecoderPcmU final : public AudioDecoder {
   }
   void Reset() override;
   int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
+  int SampleRateHz() const override;
   size_t Channels() const override;
 
  protected:
@@ -45,6 +46,7 @@ class AudioDecoderPcmA final : public AudioDecoder {
   }
   void Reset() override;
   int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
+  int SampleRateHz() const override;
   size_t Channels() const override;
 
  protected:

@@ -49,6 +49,10 @@ void AudioDecoderIlbc::Reset() {
   WebRtcIlbcfix_Decoderinit30Ms(dec_state_);
 }
 
+int AudioDecoderIlbc::SampleRateHz() const {
+  return 8000;
+}
+
 size_t AudioDecoderIlbc::Channels() const {
   return 1;
 }

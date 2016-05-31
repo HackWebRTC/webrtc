@@ -15,12 +15,19 @@
 
 namespace webrtc {
 
-AudioDecoderPcm16B::AudioDecoderPcm16B(size_t num_channels)
-    : num_channels_(num_channels) {
+AudioDecoderPcm16B::AudioDecoderPcm16B(int sample_rate_hz, size_t num_channels)
+    : sample_rate_hz_(sample_rate_hz), num_channels_(num_channels) {
+  RTC_DCHECK(sample_rate_hz == 8000 || sample_rate_hz == 16000 ||
+             sample_rate_hz == 32000 || sample_rate_hz == 48000)
+      << "Unsupported sample rate " << sample_rate_hz;
   RTC_DCHECK_GE(num_channels, 1u);
 }
 
 void AudioDecoderPcm16B::Reset() {}
+
+int AudioDecoderPcm16B::SampleRateHz() const {
+  return sample_rate_hz_;
+}
 
 size_t AudioDecoderPcm16B::Channels() const {
   return num_channels_;
@@ -31,9 +38,7 @@ int AudioDecoderPcm16B::DecodeInternal(const uint8_t* encoded,
                                        int sample_rate_hz,
                                        int16_t* decoded,
                                        SpeechType* speech_type) {
-  RTC_DCHECK(sample_rate_hz == 8000 || sample_rate_hz == 16000 ||
-             sample_rate_hz == 32000 || sample_rate_hz == 48000)
-      << "Unsupported sample rate " << sample_rate_hz;
+  RTC_DCHECK_EQ(sample_rate_hz_, sample_rate_hz);
   size_t ret = WebRtcPcm16b_Decode(encoded, encoded_len, decoded);
   *speech_type = ConvertSpeechType(1);
   return static_cast<int>(ret);

@@ -25,6 +25,7 @@ class AudioDecoderG722 final : public AudioDecoder {
   bool HasDecodePlc() const override;
   void Reset() override;
   int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
+  int SampleRateHz() const override;
   size_t Channels() const override;
 
  protected:
@@ -44,6 +45,8 @@ class AudioDecoderG722Stereo final : public AudioDecoder {
   AudioDecoderG722Stereo();
   ~AudioDecoderG722Stereo() override;
   void Reset() override;
+  int SampleRateHz() const override;
+  size_t Channels() const override;
 
  protected:
   int DecodeInternal(const uint8_t* encoded,
@@ -51,7 +54,6 @@ class AudioDecoderG722Stereo final : public AudioDecoder {
                      int sample_rate_hz,
                      int16_t* decoded,
                      SpeechType* speech_type) override;
-  size_t Channels() const override;
 
  private:
   // Splits the stereo-interleaved payload in |encoded| into separate payloads

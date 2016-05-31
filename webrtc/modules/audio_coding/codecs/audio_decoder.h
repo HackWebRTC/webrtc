@@ -93,6 +93,14 @@ class AudioDecoder {
   // Returns true if the packet has FEC and false otherwise.
   virtual bool PacketHasFec(const uint8_t* encoded, size_t encoded_len) const;
 
+  // Returns the actual sample rate of the decoder's output.
+  // NOTE: For now, this has a default implementation that returns an unusable
+  // value (-1). That default implementation will go away soon, and at the same
+  // time callers will start relying on the return value, so make sure you
+  // override it with something that returns a correct value!
+  // TODO(kwiberg): Remove the default implementation.
+  virtual int SampleRateHz() const;
+
   virtual size_t Channels() const = 0;
 
  protected:

@@ -87,6 +87,10 @@ bool AudioDecoderOpus::PacketHasFec(const uint8_t* encoded,
   return (fec == 1);
 }
 
+int AudioDecoderOpus::SampleRateHz() const {
+  return 48000;
+}
+
 size_t AudioDecoderOpus::Channels() const {
   return channels_;
 }
