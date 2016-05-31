@@ -320,6 +320,24 @@ struct VideoOptions {
   }
 };
 
+// TODO(isheriff): Remove this once client usage is fixed to use RtpExtension.
+struct RtpHeaderExtension {
+  RtpHeaderExtension() : id(0) {}
+  RtpHeaderExtension(const std::string& uri, int id) : uri(uri), id(id) {}
+
+  std::string ToString() const {
+    std::ostringstream ost;
+    ost << "{";
+    ost << "uri: " << uri;
+    ost << ", id: " << id;
+    ost << "}";
+    return ost.str();
+  }
+
+  std::string uri;
+  int id;
+};
+
 class MediaChannel : public sigslot::has_slots<> {
  public:
   class NetworkInterface {
