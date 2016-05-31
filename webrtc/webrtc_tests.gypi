@@ -353,28 +353,6 @@
             '<(apk_tests_path):webrtc_nonparallel_tests_apk',
           ],
         },
-        {
-          'target_name': 'android_junit_tests',
-          'type': 'none',
-          'dependencies': [
-            '<(webrtc_root)/api/api.gyp:libjingle_peerconnection_java',
-            '<(DEPTH)/base/base.gyp:base_java',
-            '<(DEPTH)/base/base.gyp:base_java_test_support',
-            '<(DEPTH)/base/base.gyp:base_junit_test_support',
-          ],
-          'variables': {
-            'main_class': 'org.chromium.testing.local.JunitTestMain',
-            'src_paths': [
-              'androidjunit/',
-            ],
-            'test_type': 'junit',
-            'wrapper_script_name': 'helper/<(_target_name)',
-          },
-          'includes': [
-            '../build/android/test_runner.gypi',
-            '../build/host_jar.gypi',
-          ],
-        },
       ],
       'conditions': [
         ['test_isolation_mode != "noop"',
