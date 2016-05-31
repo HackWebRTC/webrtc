@@ -827,6 +827,7 @@ static int SignalBasedDelayCorrection(AecCore* self) {
   // playout audio volume is low (or even muted) the delay estimation can return
   // a very large delay, which will break the AEC if it is applied.
   if (self->frame_count < kDelayCorrectionStart) {
+    self->data_dumper->DumpRaw("aec_da_reported_delay", 1, &last_delay);
     return 0;
   }
 #endif
@@ -843,6 +844,7 @@ static int SignalBasedDelayCorrection(AecCore* self) {
   // 4. Finally, verify that the proposed |delay_correction| is feasible by
   //    comparing with the size of the far-end buffer.
   last_delay = WebRtc_last_delay(self->delay_estimator);
+  self->data_dumper->DumpRaw("aec_da_reported_delay", 1, &last_delay);
   if ((last_delay >= 0) && (last_delay != self->previous_delay) &&
       (WebRtc_last_delay_quality(self->delay_estimator) >
        self->delay_quality_threshold)) {
@@ -888,6 +890,8 @@ static int SignalBasedDelayCorrection(AecCore* self) {
              ? delay_quality
              : self->delay_quality_threshold);
   }
+  self->data_dumper->DumpRaw("aec_da_delay_correction", 1, &delay_correction);
+
   return delay_correction;
 }
 
@@ -1154,6 +1158,8 @@ static void EchoSuppression(AecCore* aec,
     aec->delayIdx = WebRtcAec_PartitionDelay(aec->num_partitions, aec->wfBuf);
   }
 
+  aec->data_dumper->DumpRaw("aec_nlp_delay", 1, &aec->delayIdx);
+
   // Use delayed far.
   memcpy(xfw, aec->xfwBuf + aec->delayIdx * PART_LEN1,
          sizeof(xfw[0][0]) * 2 * PART_LEN1);
@@ -1172,6 +1178,8 @@ static void EchoSuppression(AecCore* aec,
   }
 
   FormSuppressionGain(aec, cohde, cohxd, hNl);
+
+  aec->data_dumper->DumpRaw("aec_nlp_gain", PART_LEN1, hNl);
 
   WebRtcAec_Suppress(hNl, efw);
 
@@ -1388,6 +1396,10 @@ static void ProcessBlock(AecCore* aec) {
                   aec->error_threshold, &x_fft[0][0], &aec->xfBufBlockPos,
                   aec->xfBuf, nearend_ptr, aec->xPow, aec->wfBuf,
                   echo_subtractor_output);
+  aec->data_dumper->DumpRaw("aec_h_fft", PART_LEN1 * aec->num_partitions,
+                            &aec->wfBuf[0][0]);
+  aec->data_dumper->DumpRaw("aec_h_fft", PART_LEN1 * aec->num_partitions,
+                            &aec->wfBuf[1][0]);
 
   aec->data_dumper->DumpWav("aec_out_linear", PART_LEN, echo_subtractor_output,
                             std::min(aec->sampFreq, 16000), 1);
