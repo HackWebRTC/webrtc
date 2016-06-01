@@ -1444,6 +1444,24 @@ JavaTcpCandidatePolicyToNativeType(
   return PeerConnectionInterface::kTcpCandidatePolicyEnabled;
 }
 
+static PeerConnectionInterface::CandidateNetworkPolicy
+JavaCandidateNetworkPolicyToNativeType(JNIEnv* jni,
+                                       jobject j_candidate_network_policy) {
+  std::string enum_name =
+      GetJavaEnumName(jni, "org/webrtc/PeerConnection$CandidateNetworkPolicy",
+                      j_candidate_network_policy);
+
+  if (enum_name == "ALL")
+    return PeerConnectionInterface::kCandidateNetworkPolicyAll;
+
+  if (enum_name == "LOW_COST")
+    return PeerConnectionInterface::kCandidateNetworkPolicyLowCost;
+
+  RTC_CHECK(false) << "Unexpected CandidateNetworkPolicy enum_name "
+                   << enum_name;
+  return PeerConnectionInterface::kCandidateNetworkPolicyAll;
+}
+
 static rtc::KeyType JavaKeyTypeToNativeType(JNIEnv* jni, jobject j_key_type) {
   std::string enum_name = GetJavaEnumName(
       jni, "org/webrtc/PeerConnection$KeyType", j_key_type);
@@ -1529,6 +1547,12 @@ static void JavaRTCConfigurationToJsepRTCConfiguration(
   jobject j_tcp_candidate_policy = GetObjectField(
       jni, j_rtc_config, j_tcp_candidate_policy_id);
 
+  jfieldID j_candidate_network_policy_id = GetFieldID(
+      jni, j_rtc_config_class, "candidateNetworkPolicy",
+      "Lorg/webrtc/PeerConnection$CandidateNetworkPolicy;");
+  jobject j_candidate_network_policy = GetObjectField(
+      jni, j_rtc_config, j_candidate_network_policy_id);
+
   jfieldID j_ice_servers_id = GetFieldID(
       jni, j_rtc_config_class, "iceServers", "Ljava/util/List;");
   jobject j_ice_servers = GetObjectField(jni, j_rtc_config, j_ice_servers_id);
@@ -1561,6 +1585,8 @@ static void JavaRTCConfigurationToJsepRTCConfiguration(
       JavaRtcpMuxPolicyToNativeType(jni, j_rtcp_mux_policy);
   rtc_config->tcp_candidate_policy =
       JavaTcpCandidatePolicyToNativeType(jni, j_tcp_candidate_policy);
+  rtc_config->candidate_network_policy =
+      JavaCandidateNetworkPolicyToNativeType(jni, j_candidate_network_policy);
   JavaIceServersToJsepIceServers(jni, j_ice_servers, &rtc_config->servers);
   rtc_config->audio_jitter_buffer_max_packets =
       GetIntField(jni, j_rtc_config, j_audio_jitter_buffer_max_packets_id);

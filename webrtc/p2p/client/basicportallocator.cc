@@ -417,6 +417,19 @@ void BasicPortAllocatorSession::GetNetworks(
                                           network->type();
                                  }),
                   networks->end());
+
+  if (flags() & PORTALLOCATOR_DISABLE_COSTLY_NETWORKS) {
+    uint16_t lowest_cost = rtc::kNetworkCostMax;
+    for (rtc::Network* network : *networks) {
+      lowest_cost = std::min<uint16_t>(lowest_cost, network->GetCost());
+    }
+    networks->erase(std::remove_if(networks->begin(), networks->end(),
+                                   [lowest_cost](rtc::Network* network) {
+                                     return network->GetCost() >
+                                            lowest_cost + rtc::kNetworkCostLow;
+                                   }),
+                    networks->end());
+  }
 }
 
 // For each network, see if we have a sequence that covers it already.  If not,

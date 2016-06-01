@@ -217,6 +217,11 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     kTcpCandidatePolicyDisabled
   };
 
+  enum CandidateNetworkPolicy {
+    kCandidateNetworkPolicyAll,
+    kCandidateNetworkPolicyLowCost
+  };
+
   enum ContinualGatheringPolicy {
     GATHER_ONCE,
     GATHER_CONTINUALLY
@@ -276,6 +281,8 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     BundlePolicy bundle_policy = kBundlePolicyBalanced;
     RtcpMuxPolicy rtcp_mux_policy = kRtcpMuxPolicyNegotiate;
     TcpCandidatePolicy tcp_candidate_policy = kTcpCandidatePolicyEnabled;
+    CandidateNetworkPolicy candidate_network_policy =
+        kCandidateNetworkPolicyAll;
     int audio_jitter_buffer_max_packets = kAudioJitterBufferMaxPackets;
     bool audio_jitter_buffer_fast_accelerate = false;
     int ice_connection_receiving_timeout = kUndefined;         // ms

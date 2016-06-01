@@ -2128,6 +2128,12 @@ bool PeerConnection::InitializePortAllocator_n(
     LOG(LS_INFO) << "TCP candidates are disabled.";
   }
 
+  if (configuration.candidate_network_policy ==
+      kCandidateNetworkPolicyLowCost) {
+    portallocator_flags |= cricket::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS;
+    LOG(LS_INFO) << "Do not gather candidates on high-cost networks";
+  }
+
   port_allocator_->set_flags(portallocator_flags);
   // No step delay is used while allocating ports.
   port_allocator_->set_step_delay(cricket::kMinimumStepDelay);

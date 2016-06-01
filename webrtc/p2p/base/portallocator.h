@@ -60,6 +60,16 @@ enum {
   // Disallow use of UDP when connecting to a relay server. Since proxy servers
   // usually don't handle UDP, using UDP will leak the IP address.
   PORTALLOCATOR_DISABLE_UDP_RELAY = 0x1000,
+
+  // When multiple networks exist, do not gather candidates on the ones with
+  // high cost. So if both Wi-Fi and cellular networks exist, gather only on the
+  // Wi-Fi network. If a network type is "unknown", it has a cost lower than
+  // cellular but higher than Wi-Fi/Ethernet. So if an unknown network exists,
+  // cellular networks will not be used to gather candidates and if a Wi-Fi
+  // network is present, "unknown" networks will not be usd to gather
+  // candidates. Doing so ensures that even if a cellular network type was not
+  // detected initially, it would not be used if a Wi-Fi network is present.
+  PORTALLOCATOR_DISABLE_COSTLY_NETWORKS = 0x2000,
 };
 
 const uint32_t kDefaultPortAllocatorFlags = 0;

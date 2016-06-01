@@ -519,6 +519,53 @@ TEST_F(BasicPortAllocatorTest, TestIgnoreNetworksAccordingToIgnoreMask) {
   EXPECT_EQ(0x12345602U, candidates_[0].address().ip());
 }
 
+// Test that high cost networks are filtered if the flag
+// PORTALLOCATOR_DISABLE_COSTLY_NETWORKS is set.
+TEST_F(BasicPortAllocatorTest, TestGatherLowCostNetworkOnly) {
+  SocketAddress addr_wifi(IPAddress(0x12345600U), 0);
+  SocketAddress addr_cellular(IPAddress(0x12345601U), 0);
+  SocketAddress addr_unknown1(IPAddress(0x12345602U), 0);
+  SocketAddress addr_unknown2(IPAddress(0x12345603U), 0);
+  // If both Wi-Fi and cellular interfaces are present, only gather on the Wi-Fi
+  // interface.
+  AddInterface(addr_wifi, "test_wlan0", rtc::ADAPTER_TYPE_WIFI);
+  AddInterface(addr_cellular, "test_cell0", rtc::ADAPTER_TYPE_CELLULAR);
+  allocator().set_flags(cricket::PORTALLOCATOR_DISABLE_STUN |
+                        cricket::PORTALLOCATOR_DISABLE_RELAY |
+                        cricket::PORTALLOCATOR_DISABLE_TCP |
+                        cricket::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+  EXPECT_EQ(1U, candidates_.size());
+  EXPECT_TRUE(addr_wifi.EqualIPs(candidates_[0].address()));
+
+  // If both cellular and unknown interfaces are present, only gather on the
+  // unknown interfaces.
+  candidates_.clear();
+  candidate_allocation_done_ = false;
+  RemoveInterface(addr_wifi);
+  AddInterface(addr_unknown1, "test_unknown0", rtc::ADAPTER_TYPE_UNKNOWN);
+  AddInterface(addr_unknown2, "test_unknown1", rtc::ADAPTER_TYPE_UNKNOWN);
+  session_->StartGettingPorts();
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+  EXPECT_EQ(2U, candidates_.size());
+  EXPECT_TRUE((addr_unknown1.EqualIPs(candidates_[0].address()) &&
+               addr_unknown2.EqualIPs(candidates_[1].address())) ||
+              (addr_unknown1.EqualIPs(candidates_[1].address()) &&
+               addr_unknown2.EqualIPs(candidates_[0].address())));
+
+  // If Wi-Fi, cellular, unknown interfaces are all present, only gather on the
+  // Wi-Fi interface.
+  candidates_.clear();
+  candidate_allocation_done_ = false;
+  AddInterface(addr_wifi, "test_wlan0", rtc::ADAPTER_TYPE_WIFI);
+  session_->StartGettingPorts();
+  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+  EXPECT_EQ(1U, candidates_.size());
+  EXPECT_TRUE(addr_wifi.EqualIPs(candidates_[0].address()));
+}
+
 // Tests that we allocator session not trying to allocate ports for every 250ms.
 TEST_F(BasicPortAllocatorTest, TestNoNetworkInterface) {
   EXPECT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));

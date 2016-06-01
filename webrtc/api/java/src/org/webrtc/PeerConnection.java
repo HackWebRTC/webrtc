@@ -116,6 +116,11 @@ public class PeerConnection {
     ENABLED, DISABLED
   };
 
+  /** Java version of PeerConnectionInterface.CandidateNetworkPolicy */
+  public enum CandidateNetworkPolicy {
+    ALL, LOW_COST
+  };
+
   /** Java version of rtc::KeyType */
   public enum KeyType {
     RSA, ECDSA
@@ -133,6 +138,7 @@ public class PeerConnection {
     public BundlePolicy bundlePolicy;
     public RtcpMuxPolicy rtcpMuxPolicy;
     public TcpCandidatePolicy tcpCandidatePolicy;
+    public CandidateNetworkPolicy candidateNetworkPolicy;
     public int audioJitterBufferMaxPackets;
     public boolean audioJitterBufferFastAccelerate;
     public int iceConnectionReceivingTimeout;
@@ -146,6 +152,7 @@ public class PeerConnection {
       bundlePolicy = BundlePolicy.BALANCED;
       rtcpMuxPolicy = RtcpMuxPolicy.NEGOTIATE;
       tcpCandidatePolicy = TcpCandidatePolicy.ENABLED;
+      candidateNetworkPolicy = candidateNetworkPolicy.ALL;
       this.iceServers = iceServers;
       audioJitterBufferMaxPackets = 50;
       audioJitterBufferFastAccelerate = false;

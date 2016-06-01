@@ -1050,6 +1050,8 @@ TEST_F(PeerConnectionInterfaceTest, CreatePeerConnectionWithPooledCandidates) {
   config.disable_ipv6 = true;
   config.tcp_candidate_policy =
       PeerConnectionInterface::kTcpCandidatePolicyDisabled;
+  config.candidate_network_policy =
+      PeerConnectionInterface::kCandidateNetworkPolicyLowCost;
   config.ice_candidate_pool_size = 1;
   CreatePeerConnection(config, nullptr);
 
@@ -1060,6 +1062,8 @@ TEST_F(PeerConnectionInterfaceTest, CreatePeerConnectionWithPooledCandidates) {
   EXPECT_EQ(1UL, session->stun_servers().size());
   EXPECT_EQ(0U, session->flags() & cricket::PORTALLOCATOR_ENABLE_IPV6);
   EXPECT_LT(0U, session->flags() & cricket::PORTALLOCATOR_DISABLE_TCP);
+  EXPECT_LT(0U,
+            session->flags() & cricket::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS);
 }
 
 TEST_F(PeerConnectionInterfaceTest, AddStreams) {
