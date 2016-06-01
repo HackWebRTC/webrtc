@@ -100,8 +100,9 @@ void FakeNetworkPipe::SendPacket(const uint8_t* data, size_t data_length) {
   int64_t network_start_time = time_now;
 
   // Check if there already are packets on the link and change network start
-  // time if there is.
-  if (!capacity_link_.empty())
+  // time forward if there is.
+  if (!capacity_link_.empty() &&
+      network_start_time < capacity_link_.back()->arrival_time())
     network_start_time = capacity_link_.back()->arrival_time();
 
   int64_t arrival_time = network_start_time + capacity_delay_ms;
