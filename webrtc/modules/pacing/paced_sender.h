@@ -46,7 +46,7 @@ class PacedSender : public Module, public RtpPacketSender {
                                   int probe_cluster_id) = 0;
     // Called when it's a good time to send a padding data.
     // Returns the number of bytes sent.
-    virtual size_t TimeToSendPadding(size_t bytes) = 0;
+    virtual size_t TimeToSendPadding(size_t bytes, int probe_cluster_id) = 0;
 
    protected:
     virtual ~PacketSender() {}
@@ -133,7 +133,8 @@ class PacedSender : public Module, public RtpPacketSender {
 
   bool SendPacket(const paced_sender::Packet& packet, int probe_cluster_id)
       EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-  void SendPadding(size_t padding_needed) EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+  void SendPadding(size_t padding_needed, int probe_cluster_id)
+      EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
   Clock* const clock_;
   PacketSender* const packet_sender_;

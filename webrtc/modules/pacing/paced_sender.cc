@@ -389,6 +389,9 @@ void PacedSender::Process() {
     int64_t delta_time_ms = std::min(kMaxIntervalTimeMs, elapsed_time_ms);
     UpdateBytesPerInterval(delta_time_ms);
   }
+
+  int probe_cluster_id = prober_->IsProbing() ? prober_->CurrentClusterId()
+                                              : PacketInfo::kNotAProbe;
   while (!packets_->Empty()) {
     if (media_budget_->bytes_remaining() == 0 && !prober_->IsProbing())
       return;
@@ -397,8 +400,6 @@ void PacedSender::Process() {
     // element from the priority queue but keep it in storage, so that we can
     // reinsert it if send fails.
     const paced_sender::Packet& packet = packets_->BeginPop();
-    int probe_cluster_id =
-        prober_->IsProbing() ? prober_->CurrentClusterId() : -1;
 
     if (SendPacket(packet, probe_cluster_id)) {
       // Send succeeded, remove it from the queue.
@@ -424,7 +425,7 @@ void PacedSender::Process() {
   }
 
   if (padding_needed > 0)
-    SendPadding(static_cast<size_t>(padding_needed));
+    SendPadding(padding_needed, probe_cluster_id);
 }
 
 bool PacedSender::SendPacket(const paced_sender::Packet& packet,
@@ -454,9 +455,10 @@ bool PacedSender::SendPacket(const paced_sender::Packet& packet,
   return success;
 }
 
-void PacedSender::SendPadding(size_t padding_needed) {
+void PacedSender::SendPadding(size_t padding_needed, int probe_cluster_id) {
   critsect_->Leave();
-  size_t bytes_sent = packet_sender_->TimeToSendPadding(padding_needed);
+  size_t bytes_sent =
+      packet_sender_->TimeToSendPadding(padding_needed, probe_cluster_id);
   critsect_->Enter();
 
   if (bytes_sent > 0) {

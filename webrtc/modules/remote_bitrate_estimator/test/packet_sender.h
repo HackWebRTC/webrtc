@@ -115,7 +115,7 @@ class PacedVideoSender : public VideoSender, public PacedSender::PacketSender {
                         int64_t capture_time_ms,
                         bool retransmission,
                         int probe_cluster_id) override;
-  size_t TimeToSendPadding(size_t bytes) override;
+  size_t TimeToSendPadding(size_t bytes, int probe_cluster_id) override;
 
   // Implements BitrateObserver.
   void OnNetworkChanged(uint32_t target_bitrate_bps,

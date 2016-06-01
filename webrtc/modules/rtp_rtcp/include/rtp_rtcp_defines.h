@@ -245,32 +245,44 @@ class RtcpBandwidthObserver {
 
 struct PacketInfo {
   PacketInfo(int64_t arrival_time_ms, uint16_t sequence_number)
-      : PacketInfo(-1, arrival_time_ms, -1, sequence_number, 0, false) {}
+      : PacketInfo(-1,
+                   arrival_time_ms,
+                   -1,
+                   sequence_number,
+                   0,
+                   false,
+                   kNotAProbe) {}
 
   PacketInfo(int64_t arrival_time_ms,
              int64_t send_time_ms,
              uint16_t sequence_number,
              size_t payload_size,
-             bool was_paced)
+             bool was_paced,
+             int probe_cluster_id)
       : PacketInfo(-1,
                    arrival_time_ms,
                    send_time_ms,
                    sequence_number,
                    payload_size,
-                   was_paced) {}
+                   was_paced,
+                   probe_cluster_id) {}
 
   PacketInfo(int64_t creation_time_ms,
              int64_t arrival_time_ms,
              int64_t send_time_ms,
              uint16_t sequence_number,
              size_t payload_size,
-             bool was_paced)
+             bool was_paced,
+             int probe_cluster_id)
       : creation_time_ms(creation_time_ms),
         arrival_time_ms(arrival_time_ms),
         send_time_ms(send_time_ms),
         sequence_number(sequence_number),
         payload_size(payload_size),
-        was_paced(was_paced) {}
+        was_paced(was_paced),
+        probe_cluster_id(probe_cluster_id) {}
+
+  static constexpr int kNotAProbe = -1;
 
   // Time corresponding to when this object was created.
   int64_t creation_time_ms;
@@ -287,6 +299,8 @@ struct PacketInfo {
   size_t payload_size;
   // True if the packet was paced out by the pacer.
   bool was_paced;
+  // Which probing cluster this packets belongs to.
+  int probe_cluster_id;
 };
 
 class TransportFeedbackObserver {
@@ -298,7 +312,8 @@ class TransportFeedbackObserver {
   // must be set to 0.
   virtual void AddPacket(uint16_t sequence_number,
                          size_t length,
-                         bool was_paced) = 0;
+                         bool was_paced,
+                         int probe_cluster_id) = 0;
 
   virtual void OnTransportFeedback(const rtcp::TransportFeedback& feedback) = 0;
 };

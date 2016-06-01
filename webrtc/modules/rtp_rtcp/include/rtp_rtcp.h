@@ -315,9 +315,10 @@ class RtpRtcp : public Module {
     virtual bool TimeToSendPacket(uint32_t ssrc,
                                   uint16_t sequence_number,
                                   int64_t capture_time_ms,
-                                  bool retransmission) = 0;
+                                  bool retransmission,
+                                  int probe_cluster_id) = 0;
 
-    virtual size_t TimeToSendPadding(size_t bytes) = 0;
+    virtual size_t TimeToSendPadding(size_t bytes, int probe_cluster_id) = 0;
 
     // Called on generation of new statistics after an RTP send.
     virtual void RegisterSendChannelRtpStatisticsCallback(
