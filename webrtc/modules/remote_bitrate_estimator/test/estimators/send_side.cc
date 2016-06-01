@@ -92,9 +92,11 @@ void FullBweSender::OnPacketsSent(const Packets& packets) {
   for (Packet* packet : packets) {
     if (packet->GetPacketType() == Packet::kMedia) {
       MediaPacket* media_packet = static_cast<MediaPacket*>(packet);
-      send_time_history_.AddAndRemoveOld(media_packet->header().sequenceNumber,
-                                         media_packet->payload_size(),
-                                         packet->paced());
+      // TODO(philipel): Add probe_cluster_id to Packet class in order
+      //                 to create tests for probing using cluster ids.
+      send_time_history_.AddAndRemoveOld(
+          media_packet->header().sequenceNumber, media_packet->payload_size(),
+          packet->paced(), PacketInfo::kNotAProbe);
       send_time_history_.OnSentPacket(media_packet->header().sequenceNumber,
                                       media_packet->sender_timestamp_ms());
     }

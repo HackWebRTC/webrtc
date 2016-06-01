@@ -299,7 +299,7 @@ bool PacedVideoSender::TimeToSendPacket(uint32_t ssrc,
   return false;
 }
 
-size_t PacedVideoSender::TimeToSendPadding(size_t bytes) {
+size_t PacedVideoSender::TimeToSendPadding(size_t bytes, int probe_cluster_id) {
   return 0;
 }
 

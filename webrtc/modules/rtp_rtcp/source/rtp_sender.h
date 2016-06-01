@@ -211,9 +211,11 @@ class RTPSender : public RTPSenderInterface {
                            const RTPHeader& rtp_header,
                            VideoRotation rotation) const override;
 
-  bool TimeToSendPacket(uint16_t sequence_number, int64_t capture_time_ms,
-                        bool retransmission);
-  size_t TimeToSendPadding(size_t bytes);
+  bool TimeToSendPacket(uint16_t sequence_number,
+                        int64_t capture_time_ms,
+                        bool retransmission,
+                        int probe_cluster_id);
+  size_t TimeToSendPadding(size_t bytes, int probe_cluster_id);
 
   // NACK.
   int SelectiveRetransmissions() const;
@@ -300,7 +302,8 @@ class RTPSender : public RTPSenderInterface {
   size_t SendPadData(size_t bytes,
                      bool timestamp_provided,
                      uint32_t timestamp,
-                     int64_t capture_time_ms);
+                     int64_t capture_time_ms,
+                     int probe_cluster_id);
 
   // Called on update of RTP statistics.
   void RegisterRtpStatisticsCallback(StreamDataCountersCallback* callback);
@@ -337,11 +340,12 @@ class RTPSender : public RTPSenderInterface {
                             size_t length,
                             int64_t capture_time_ms,
                             bool send_over_rtx,
-                            bool is_retransmit);
+                            bool is_retransmit,
+                            int probe_cluster_id);
 
   // Return the number of bytes sent.  Note that both of these functions may
   // return a larger value that their argument.
-  size_t TrySendRedundantPayloads(size_t bytes);
+  size_t TrySendRedundantPayloads(size_t bytes, int probe_cluster_id);
 
   void BuildPaddingPacket(uint8_t* packet,
                           size_t header_length,

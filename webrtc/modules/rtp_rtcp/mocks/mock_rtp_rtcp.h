@@ -131,11 +131,13 @@ class MockRtpRtcp : public RtpRtcp {
               const size_t payloadSize,
               const RTPFragmentationHeader* fragmentation,
               const RTPVideoHeader* rtpVideoHdr));
-  MOCK_METHOD4(TimeToSendPacket,
-      bool(uint32_t ssrc, uint16_t sequence_number, int64_t capture_time_ms,
-           bool retransmission));
-  MOCK_METHOD1(TimeToSendPadding,
-      size_t(size_t bytes));
+  MOCK_METHOD5(TimeToSendPacket,
+               bool(uint32_t ssrc,
+                    uint16_t sequence_number,
+                    int64_t capture_time_ms,
+                    bool retransmission,
+                    int probe_cluster_id));
+  MOCK_METHOD2(TimeToSendPadding, size_t(size_t bytes, int probe_cluster_id));
   MOCK_METHOD2(RegisterRtcpObservers,
       void(RtcpIntraFrameObserver* intraFrameCallback,
            RtcpBandwidthObserver* bandwidthCallback));

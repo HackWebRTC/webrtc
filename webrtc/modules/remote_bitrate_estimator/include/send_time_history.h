@@ -24,7 +24,10 @@ class SendTimeHistory {
   SendTimeHistory(Clock* clock, int64_t packet_age_limit);
   virtual ~SendTimeHistory();
 
-  void AddAndRemoveOld(uint16_t sequence_number, size_t length, bool was_paced);
+  void AddAndRemoveOld(uint16_t sequence_number,
+                       size_t length,
+                       bool was_paced,
+                       int probe_cluster_id);
   bool OnSentPacket(uint16_t sequence_number, int64_t timestamp);
   // Look up PacketInfo for a sent packet, based on the sequence number, and
   // populate all fields except for receive_time. The packet parameter must
