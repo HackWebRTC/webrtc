@@ -75,9 +75,8 @@ declare_args() {
     rtc_prefer_fixed_point = true
   }
 
-  # TODO(ljubomir): Unset rtc_use_openmax_dl for mips64el once mips64el gets
-  # supported in GN (since openmax_dl is not supported for mips64el).
-  if (!is_ios && (current_cpu != "arm" || arm_version >= 7)) {
+  if (!is_ios && (current_cpu != "arm" || arm_version >= 7) &&
+      current_cpu != "mips64el") {
     rtc_use_openmax_dl = true
   } else {
     rtc_use_openmax_dl = false
