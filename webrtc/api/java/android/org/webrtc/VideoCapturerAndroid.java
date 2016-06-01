@@ -207,7 +207,7 @@ public class VideoCapturerAndroid implements
 
   @Override
   public List<CaptureFormat> getSupportedFormats() {
-    return CameraEnumerationAndroid.getSupportedFormats(getCurrentCameraId());
+    return CameraEnumerator.getSupportedFormats(getCurrentCameraId());
   }
 
   // Returns true if this VideoCapturer is setup to capture video frames to a SurfaceTexture.

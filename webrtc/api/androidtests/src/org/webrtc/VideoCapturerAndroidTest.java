@@ -9,6 +9,7 @@
  */
 package org.webrtc;
 
+import android.content.Context;
 import android.test.ActivityTestCase;
 import android.test.suitebuilder.annotation.MediumTest;
 import android.test.suitebuilder.annotation.SmallTest;
@@ -38,18 +39,17 @@ public class VideoCapturerAndroidTest extends ActivityTestCase {
     if (!Camera2Enumerator.isSupported()) {
       return;
     }
-    final CameraEnumerationAndroid.Enumerator camera1Enumerator = new CameraEnumerator();
-    final CameraEnumerationAndroid.Enumerator camera2Enumerator =
-        new Camera2Enumerator(getInstrumentation().getContext());
+    final Context context = getInstrumentation().getContext();
 
     for (int i = 0; i < CameraEnumerationAndroid.getDeviceCount(); ++i) {
       final Set<Size> resolutions1 = new HashSet<Size>();
-      for (CaptureFormat format : camera1Enumerator.getSupportedFormats(i)) {
+      for (CaptureFormat format : CameraEnumerator.getSupportedFormats(i)) {
         resolutions1.add(new Size(format.width, format.height));
       }
       final Set<Size> resolutions2 = new HashSet<Size>();
-      for (CaptureFormat format : camera2Enumerator.getSupportedFormats(i)) {
-        resolutions2.add(new Size(format.width, format.height));
+      for (CaptureFormat format :
+          Camera2Enumerator.getSupportedFormats(context, Integer.toString(i))) {
+          resolutions2.add(new Size(format.width, format.height));
       }
       for (Size size : resolutions1) {
         if (size.getWidth() >= 320 && size.getHeight() >= 240

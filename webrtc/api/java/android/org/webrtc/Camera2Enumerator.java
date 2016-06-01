@@ -31,26 +31,26 @@ import java.util.List;
 import java.util.Map;
 
 @TargetApi(21)
-public class Camera2Enumerator implements CameraEnumerationAndroid.Enumerator {
+public class Camera2Enumerator {
   private final static String TAG = "Camera2Enumerator";
   private final static double NANO_SECONDS_PER_SECOND = 1.0e9;
 
-  private final CameraManager cameraManager;
   // Each entry contains the supported formats for a given camera index. The formats are enumerated
   // lazily in getSupportedFormats(), and cached for future reference.
-  private final Map<Integer, List<CaptureFormat>> cachedSupportedFormats =
-      new HashMap<Integer, List<CaptureFormat>>();
+  private static final Map<String, List<CaptureFormat>> cachedSupportedFormats =
+      new HashMap<String, List<CaptureFormat>>();
 
   public static boolean isSupported() {
     return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
   }
 
-  public Camera2Enumerator(Context context) {
-    cameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+  public static List<CaptureFormat> getSupportedFormats(Context context, String cameraId) {
+    return getSupportedFormats(
+        (CameraManager) context.getSystemService(Context.CAMERA_SERVICE), cameraId);
   }
 
-  @Override
-  public List<CaptureFormat> getSupportedFormats(int cameraId) {
+  public static List<CaptureFormat> getSupportedFormats(
+      CameraManager cameraManager, String cameraId) {
     synchronized (cachedSupportedFormats) {
       if (cachedSupportedFormats.containsKey(cameraId)) {
         return cachedSupportedFormats.get(cameraId);
@@ -60,7 +60,7 @@ public class Camera2Enumerator implements CameraEnumerationAndroid.Enumerator {
 
       final CameraCharacteristics cameraCharacteristics;
       try {
-        cameraCharacteristics = cameraManager.getCameraCharacteristics(Integer.toString(cameraId));
+        cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraId);
       } catch (Exception ex) {
         Logging.e(TAG, "getCameraCharacteristics(): " + ex);
         return new ArrayList<CaptureFormat>();

@@ -19,27 +19,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 @SuppressWarnings("deprecation")
-public class CameraEnumerator implements CameraEnumerationAndroid.Enumerator {
+public class CameraEnumerator {
   private final static String TAG = "CameraEnumerator";
   // Each entry contains the supported formats for corresponding camera index. The formats for all
   // cameras are enumerated on the first call to getSupportedFormats(), and cached for future
   // reference.
-  private List<List<CaptureFormat>> cachedSupportedFormats;
+  private static List<List<CaptureFormat>> cachedSupportedFormats;
 
-  @Override
-  public List<CaptureFormat> getSupportedFormats(int cameraId) {
-    synchronized (this) {
-      if (cachedSupportedFormats == null) {
-        cachedSupportedFormats = new ArrayList<List<CaptureFormat>>();
-        for (int i = 0; i < CameraEnumerationAndroid.getDeviceCount(); ++i) {
-          cachedSupportedFormats.add(enumerateFormats(i));
-        }
+  public static synchronized List<CaptureFormat> getSupportedFormats(int cameraId) {
+    if (cachedSupportedFormats == null) {
+      cachedSupportedFormats = new ArrayList<List<CaptureFormat>>();
+      for (int i = 0; i < CameraEnumerationAndroid.getDeviceCount(); ++i) {
+        cachedSupportedFormats.add(enumerateFormats(i));
       }
     }
     return cachedSupportedFormats.get(cameraId);
   }
 
-  private List<CaptureFormat> enumerateFormats(int cameraId) {
+  private static List<CaptureFormat> enumerateFormats(int cameraId) {
     Logging.d(TAG, "Get supported formats for camera index " + cameraId + ".");
     final long startTimeMs = SystemClock.elapsedRealtime();
     final android.hardware.Camera.Parameters parameters;

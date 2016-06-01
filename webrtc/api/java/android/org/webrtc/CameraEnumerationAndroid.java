@@ -22,25 +22,6 @@ import java.util.List;
 @SuppressWarnings("deprecation")
 public class CameraEnumerationAndroid {
   private final static String TAG = "CameraEnumerationAndroid";
-  // Synchronized on |CameraEnumerationAndroid.this|.
-  private static Enumerator enumerator = new CameraEnumerator();
-
-  public interface Enumerator {
-    /**
-     * Returns a list of supported CaptureFormats for the camera with index |cameraId|.
-     */
-    List<CaptureFormat> getSupportedFormats(int cameraId);
-  }
-
-  public static synchronized void setEnumerator(Enumerator enumerator) {
-    CameraEnumerationAndroid.enumerator = enumerator;
-  }
-
-  public static synchronized List<CaptureFormat> getSupportedFormats(int cameraId) {
-    final List<CaptureFormat> formats = enumerator.getSupportedFormats(cameraId);
-    Logging.d(TAG, "Supported formats for camera " + cameraId + ": " + formats);
-    return formats;
-  }
 
   public static class CaptureFormat {
     // Class to represent a framerate range. The framerate varies because of lightning conditions.
