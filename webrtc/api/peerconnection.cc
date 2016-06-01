@@ -36,7 +36,6 @@
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/media/sctp/sctpdataengine.h"
-#include "webrtc/p2p/client/basicportallocator.h"
 #include "webrtc/pc/channelmanager.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 
