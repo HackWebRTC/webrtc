@@ -231,8 +231,12 @@ public class VideoCapturerAndroid implements
   }
 
   private void checkIsOnCameraThread() {
-    if (Thread.currentThread() != cameraThreadHandler.getLooper().getThread()) {
-      throw new IllegalStateException("Wrong thread");
+    synchronized (handlerLock) {
+      if (cameraThreadHandler == null) {
+        Logging.e(TAG, "Camera is stopped - can't check thread.");
+      } else if (Thread.currentThread() != cameraThreadHandler.getLooper().getThread()) {
+        throw new IllegalStateException("Wrong thread");
+      }
     }
   }
 
@@ -312,8 +316,14 @@ public class VideoCapturerAndroid implements
   private void startCaptureOnCameraThread(
       final int width, final int height, final int framerate, final CapturerObserver frameObserver,
       final Context applicationContext) {
-    Throwable error = null;
-    checkIsOnCameraThread();
+    synchronized (handlerLock) {
+      if (cameraThreadHandler == null) {
+        Logging.e(TAG, "startCaptureOnCameraThread: Camera is stopped");
+        return;
+      } else {
+        checkIsOnCameraThread();
+      }
+    }
     if (camera != null) {
       Logging.e(TAG, "startCaptureOnCameraThread: Camera has already been started.");
       return;
@@ -348,12 +358,7 @@ public class VideoCapturerAndroid implements
         throw e;
       }
 
-      try {
-        camera.setPreviewTexture(surfaceHelper.getSurfaceTexture());
-      } catch (IOException e) {
-        Logging.e(TAG, "setPreviewTexture failed", error);
-        throw new RuntimeException(e);
-      }
+      camera.setPreviewTexture(surfaceHelper.getSurfaceTexture());
 
       Logging.d(TAG, "Camera orientation: " + info.orientation +
           " .Device orientation: " + getDeviceOrientation());
@@ -366,29 +371,29 @@ public class VideoCapturerAndroid implements
 
       // Start camera observer.
       cameraStatistics = new CameraStatistics(surfaceHelper, eventsHandler);
-      return;
-    } catch (RuntimeException e) {
-      error = e;
-    }
-    Logging.e(TAG, "startCapture failed", error);
-    // Make sure the camera is released.
-    stopCaptureOnCameraThread(true /* stopHandler */);
-    frameObserver.onCapturerStarted(false);
-    if (eventsHandler != null) {
-      eventsHandler.onCameraError("Camera can not be started.");
-    }
-    return;
+    } catch (IOException|RuntimeException e) {
+      Logging.e(TAG, "startCapture failed", e);
+      // Make sure the camera is released.
+      stopCaptureOnCameraThread(true /* stopHandler */);
+      frameObserver.onCapturerStarted(false);
+      if (eventsHandler != null) {
+        eventsHandler.onCameraError("Camera can not be started.");
+      }
+     }
   }
 
   // (Re)start preview with the closest supported format to |width| x |height| @ |framerate|.
   private void startPreviewOnCameraThread(int width, int height, int framerate) {
-    checkIsOnCameraThread();
+    synchronized (handlerLock) {
+      if (cameraThreadHandler == null || camera == null) {
+        Logging.e(TAG, "startPreviewOnCameraThread: Camera is stopped");
+        return;
+      } else {
+        checkIsOnCameraThread();
+      }
+    }
     Logging.d(
         TAG, "startPreviewOnCameraThread requested: " + width + "x" + height + "@" + framerate);
-    if (camera == null) {
-      Logging.e(TAG, "Calling startPreviewOnCameraThread on stopped camera.");
-      return;
-    }
 
     requestedWidth = width;
     requestedHeight = height;
@@ -502,7 +507,13 @@ public class VideoCapturerAndroid implements
   }
 
   private void stopCaptureOnCameraThread(boolean stopHandler) {
-    checkIsOnCameraThread();
+    synchronized (handlerLock) {
+      if (cameraThreadHandler == null) {
+        Logging.e(TAG, "stopCaptureOnCameraThread: Camera is stopped");
+      } else {
+        checkIsOnCameraThread();
+      }
+    }
     Logging.d(TAG, "stopCaptureOnCameraThread");
     // Note that the camera might still not be started here if startCaptureOnCameraThread failed
     // and we posted a retry.
@@ -521,8 +532,10 @@ public class VideoCapturerAndroid implements
         // before stopped, so we have to check for a null
         // cameraThreadHandler in our handler. Remove all pending
         // Runnables posted from |this|.
-        cameraThreadHandler.removeCallbacksAndMessages(this /* token */);
-        cameraThreadHandler = null;
+        if (cameraThreadHandler != null) {
+          cameraThreadHandler.removeCallbacksAndMessages(this /* token */);
+          cameraThreadHandler = null;
+        }
         surfaceHelper = null;
       }
     }
@@ -550,7 +563,14 @@ public class VideoCapturerAndroid implements
   }
 
   private void switchCameraOnCameraThread() {
-    checkIsOnCameraThread();
+    synchronized (handlerLock) {
+      if (cameraThreadHandler == null) {
+        Logging.e(TAG, "switchCameraOnCameraThread: Camera is stopped");
+        return;
+      } else {
+        checkIsOnCameraThread();
+      }
+    }
     Logging.d(TAG, "switchCameraOnCameraThread");
     stopCaptureOnCameraThread(false /* stopHandler */);
     synchronized (cameraIdLock) {
@@ -562,10 +582,13 @@ public class VideoCapturerAndroid implements
   }
 
   private void onOutputFormatRequestOnCameraThread(int width, int height, int framerate) {
-    checkIsOnCameraThread();
-    if (camera == null) {
-      Logging.e(TAG, "Calling onOutputFormatRequest() on stopped camera.");
-      return;
+    synchronized (handlerLock) {
+      if (cameraThreadHandler == null || camera == null) {
+        Logging.e(TAG, "onOutputFormatRequestOnCameraThread: Camera is stopped");
+        return;
+      } else {
+        checkIsOnCameraThread();
+      }
     }
     Logging.d(TAG, "onOutputFormatRequestOnCameraThread: " + width + "x" + height +
         "@" + framerate);
@@ -611,11 +634,14 @@ public class VideoCapturerAndroid implements
   // Called on cameraThread so must not "synchronized".
   @Override
   public void onPreviewFrame(byte[] data, android.hardware.Camera callbackCamera) {
-    if (cameraThreadHandler == null) {
-      // The camera has been stopped.
-      return;
+    synchronized (handlerLock) {
+      if (cameraThreadHandler == null) {
+        Logging.e(TAG, "onPreviewFrame: Camera is stopped");
+        return;
+      } else {
+        checkIsOnCameraThread();
+      }
     }
-    checkIsOnCameraThread();
     if (!queuedBuffers.contains(data)) {
       // |data| is an old invalid buffer.
       return;
@@ -641,8 +667,15 @@ public class VideoCapturerAndroid implements
   @Override
   public void onTextureFrameAvailable(
       int oesTextureId, float[] transformMatrix, long timestampNs) {
-
-    checkIsOnCameraThread();
+    synchronized (handlerLock) {
+      if (cameraThreadHandler == null) {
+        Logging.e(TAG, "onTextureFrameAvailable: Camera is stopped");
+        surfaceHelper.returnTextureFrame();
+        return;
+      } else {
+        checkIsOnCameraThread();
+      }
+    }
     if (eventsHandler != null && !firstFrameReported) {
       eventsHandler.onFirstFrameAvailable();
       firstFrameReported = true;
