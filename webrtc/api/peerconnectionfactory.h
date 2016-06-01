@@ -29,9 +29,6 @@ class BasicPacketSocketFactory;
 
 namespace webrtc {
 
-typedef rtc::RefCountedObject<rtc::RTCCertificateGenerator>
-    RefCountedRTCCertificateGenerator;
-
 class PeerConnectionFactory : public PeerConnectionFactoryInterface {
  public:
   void SetOptions(const Options& options) override {
@@ -128,8 +125,6 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   std::unique_ptr<cricket::WebRtcVideoDecoderFactory> video_decoder_factory_;
   std::unique_ptr<rtc::BasicNetworkManager> default_network_manager_;
   std::unique_ptr<rtc::BasicPacketSocketFactory> default_socket_factory_;
-
-  rtc::scoped_refptr<RefCountedRTCCertificateGenerator> cert_generator_;
 };
 
 }  // namespace webrtc

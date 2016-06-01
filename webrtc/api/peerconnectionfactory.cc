@@ -34,33 +34,6 @@
 
 namespace webrtc {
 
-namespace {
-
-// Passes down the calls to |cert_generator_|. See usage in
-// |CreatePeerConnection|.
-class RTCCertificateGeneratorWrapper
-    : public rtc::RTCCertificateGeneratorInterface {
- public:
-  RTCCertificateGeneratorWrapper(
-      const rtc::scoped_refptr<RefCountedRTCCertificateGenerator>& cert_gen)
-      : cert_generator_(cert_gen) {
-    RTC_DCHECK(cert_generator_);
-  }
-
-  void GenerateCertificateAsync(
-      const rtc::KeyParams& key_params,
-      const rtc::Optional<uint64_t>& expires_ms,
-      const rtc::scoped_refptr<rtc::RTCCertificateGeneratorCallback>& callback)
-          override {
-    cert_generator_->GenerateCertificateAsync(key_params, expires_ms, callback);
-  }
-
- private:
-  rtc::scoped_refptr<RefCountedRTCCertificateGenerator> cert_generator_;
-};
-
-}  // anonymous namespace
-
 rtc::scoped_refptr<PeerConnectionFactoryInterface>
 CreatePeerConnectionFactory() {
   rtc::scoped_refptr<PeerConnectionFactory> pc_factory(
@@ -143,9 +116,7 @@ PeerConnectionFactory::~PeerConnectionFactory() {
   channel_manager_.reset(nullptr);
 
   // Make sure |worker_thread_| and |signaling_thread_| outlive
-  // |cert_generator_|, |default_socket_factory_| and
-  // |default_network_manager_|.
-  cert_generator_ = nullptr;
+  // |default_socket_factory_| and |default_network_manager_|.
   default_socket_factory_ = nullptr;
   default_network_manager_ = nullptr;
 
@@ -185,9 +156,6 @@ bool PeerConnectionFactory::Initialize() {
   if (!channel_manager_->Init()) {
     return false;
   }
-
-  cert_generator_ =
-      new RefCountedRTCCertificateGenerator(signaling_thread_, network_thread_);
 
   return true;
 }
@@ -278,11 +246,9 @@ PeerConnectionFactory::CreatePeerConnection(
   RTC_DCHECK(signaling_thread_->IsCurrent());
 
   if (!cert_generator.get()) {
-    // Because |pc|->Initialize takes ownership of the generator we need a new
-    // wrapper object that can be deleted without deleting the underlying
-    // |cert_generator_|, protecting it from being deleted multiple times.
+    // No certificate generator specified, use the default one.
     cert_generator.reset(
-        new RTCCertificateGeneratorWrapper(cert_generator_));
+        new rtc::RTCCertificateGenerator(signaling_thread_, network_thread_));
   }
 
   if (!allocator) {
