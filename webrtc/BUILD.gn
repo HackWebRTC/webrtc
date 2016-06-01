@@ -113,6 +113,10 @@ config("common_config") {
     all_dependent_configs = [ "dbus-glib" ]
   }
 
+  if (rtc_relative_path) {
+    defines += [ "EXPAT_RELATIVE_PATH" ]
+  }
+
   if (build_with_chromium) {
     defines += [
       # NOTICE: Since common_inherited_config is used in public_configs for our
@@ -233,11 +237,13 @@ source_set("webrtc") {
 
   deps = [
     ":webrtc_common",
+    "api",
     "audio",
     "base:rtc_base",
     "call",
     "common_audio",
     "common_video",
+    "media",
     "modules/audio_coding",
     "modules/audio_conference_mixer",
     "modules/audio_device",
@@ -249,6 +255,8 @@ source_set("webrtc") {
     "modules/utility",
     "modules/video_coding",
     "modules/video_processing",
+    "p2p",
+    "pc",
     "system_wrappers",
     "tools",
     "video",
