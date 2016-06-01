@@ -32,7 +32,8 @@ class MockPacedSenderCallback : public PacedSender::PacketSender {
                     int64_t capture_time_ms,
                     bool retransmission,
                     int probe_cluster_id));
-  MOCK_METHOD2(TimeToSendPadding, size_t(size_t bytes, int probe_cluster_id));
+  MOCK_METHOD1(TimeToSendPadding,
+      size_t(size_t bytes));
 };
 
 class PacedSenderPadding : public PacedSender::PacketSender {
@@ -47,7 +48,7 @@ class PacedSenderPadding : public PacedSender::PacketSender {
     return true;
   }
 
-  size_t TimeToSendPadding(size_t bytes, int probe_cluster_id) override {
+  size_t TimeToSendPadding(size_t bytes) override {
     const size_t kPaddingPacketSize = 224;
     size_t num_packets = (bytes + kPaddingPacketSize - 1) / kPaddingPacketSize;
     padding_sent_ += kPaddingPacketSize * num_packets;
@@ -77,7 +78,7 @@ class PacedSenderProbing : public PacedSender::PacketSender {
     return true;
   }
 
-  size_t TimeToSendPadding(size_t bytes, int probe_cluster_id) override {
+  size_t TimeToSendPadding(size_t bytes) override {
     ExpectAndCountPacket();
     return bytes;
   }
@@ -158,7 +159,7 @@ TEST_F(PacedSenderTest, QueuePacket) {
   EXPECT_EQ(packets_to_send + 1, send_bucket_->QueueSizePackets());
   send_bucket_->Process();
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
+  EXPECT_CALL(callback_, TimeToSendPadding(_)).Times(0);
   clock_.AdvanceTimeMilliseconds(4);
   EXPECT_EQ(1, send_bucket_->TimeUntilNextProcess());
   clock_.AdvanceTimeMilliseconds(1);
@@ -210,7 +211,7 @@ TEST_F(PacedSenderTest, PaceQueuedPackets) {
   send_bucket_->Process();
   EXPECT_EQ(packets_to_send_per_interval * 10,
             send_bucket_->QueueSizePackets());
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
+  EXPECT_CALL(callback_, TimeToSendPadding(_)).Times(0);
   for (int k = 0; k < 10; ++k) {
     EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
     clock_.AdvanceTimeMilliseconds(5);
@@ -263,7 +264,7 @@ TEST_F(PacedSenderTest, PaceQueuedPacketsWithDuplicates) {
                                sequence_number++, clock_.TimeInMilliseconds(),
                                250, false);
   }
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
+  EXPECT_CALL(callback_, TimeToSendPadding(_)).Times(0);
   send_bucket_->Process();
   for (int k = 0; k < 10; ++k) {
     EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
@@ -334,23 +335,22 @@ TEST_F(PacedSenderTest, Padding) {
                         clock_.TimeInMilliseconds(), 250, false);
   }
   // No padding is expected since we have sent too much already.
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
+  EXPECT_CALL(callback_, TimeToSendPadding(_)).Times(0);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
   send_bucket_->Process();
   EXPECT_EQ(0u, send_bucket_->QueueSizePackets());
 
   // 5 milliseconds later should not send padding since we filled the buffers
   // initially.
-  EXPECT_CALL(callback_, TimeToSendPadding(250, _)).Times(0);
+  EXPECT_CALL(callback_, TimeToSendPadding(250)).Times(0);
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
   clock_.AdvanceTimeMilliseconds(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
   send_bucket_->Process();
 
   // 5 milliseconds later we have enough budget to send some padding.
-  EXPECT_CALL(callback_, TimeToSendPadding(250, _))
-      .Times(1)
-      .WillOnce(Return(250));
+  EXPECT_CALL(callback_, TimeToSendPadding(250)).Times(1).
+      WillOnce(Return(250));
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
   clock_.AdvanceTimeMilliseconds(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
@@ -374,9 +374,8 @@ TEST_F(PacedSenderTest, VerifyPaddingUpToBitrate) {
                         capture_time_ms,
                         250,
                         false);
-    EXPECT_CALL(callback_, TimeToSendPadding(250, _))
-        .Times(1)
-        .WillOnce(Return(250));
+    EXPECT_CALL(callback_, TimeToSendPadding(250)).Times(1).
+        WillOnce(Return(250));
     send_bucket_->Process();
     clock_.AdvanceTimeMilliseconds(kTimeStep);
   }
@@ -444,7 +443,7 @@ TEST_F(PacedSenderTest, Priority) {
                              sequence_number++, capture_time_ms, 250, false);
 
   // Expect all high and normal priority to be sent out first.
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
+  EXPECT_CALL(callback_, TimeToSendPadding(_)).Times(0);
   EXPECT_CALL(callback_, TimeToSendPacket(ssrc, _, capture_time_ms, false, _))
       .Times(packets_to_send_per_interval + 1)
       .WillRepeatedly(Return(true));
@@ -546,7 +545,7 @@ TEST_F(PacedSenderTest, Pause) {
             send_bucket_->QueueInMs());
 
   // Expect no packet to come out while paused.
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
+  EXPECT_CALL(callback_, TimeToSendPadding(_)).Times(0);
   EXPECT_CALL(callback_, TimeToSendPacket(_, _, _, _, _)).Times(0);
 
   for (int i = 0; i < 10; ++i) {
@@ -821,7 +820,7 @@ TEST_F(PacedSenderTest, PaddingOveruse) {
                       clock_.TimeInMilliseconds(), kPacketSize, false);
   EXPECT_LT(5u, send_bucket_->ExpectedQueueTimeMs());
   // Don't send padding if queue is non-empty, even if padding budget > 0.
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
+  EXPECT_CALL(callback_, TimeToSendPadding(_)).Times(0);
   send_bucket_->Process();
 }
 
@@ -870,7 +869,7 @@ TEST_F(PacedSenderTest, AverageQueueTime) {
   EXPECT_EQ(0, send_bucket_->AverageQueueTimeMs());
 }
 
-TEST_F(PacedSenderTest, DISABLED_ProbeClusterId) {
+TEST_F(PacedSenderTest, ProbeClusterId) {
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
   const size_t kPacketSize = 1200;
@@ -897,7 +896,8 @@ TEST_F(PacedSenderTest, DISABLED_ProbeClusterId) {
     send_bucket_->Process();
 
   // No more probing packets.
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(1);
+  EXPECT_CALL(callback_, TimeToSendPadding(_))
+      .Times(1);
   send_bucket_->Process();
 }
 

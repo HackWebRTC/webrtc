@@ -123,12 +123,11 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   bool TimeToSendPacket(uint32_t ssrc,
                         uint16_t sequence_number,
                         int64_t capture_time_ms,
-                        bool retransmission,
-                        int probe_cluster_id) override;
+                        bool retransmission) override;
 
   // Returns the number of padding bytes actually sent, which can be more or
   // less than |bytes|.
-  size_t TimeToSendPadding(size_t bytes, int probe_cluster_id) override;
+  size_t TimeToSendPadding(size_t bytes) override;
 
   // RTCP part.
 

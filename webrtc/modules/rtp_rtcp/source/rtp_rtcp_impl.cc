@@ -428,19 +428,17 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
 bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
                                          uint16_t sequence_number,
                                          int64_t capture_time_ms,
-                                         bool retransmission,
-                                         int probe_cluster_id) {
+                                         bool retransmission) {
   if (SendingMedia() && ssrc == rtp_sender_.SSRC()) {
-    return rtp_sender_.TimeToSendPacket(sequence_number, capture_time_ms,
-                                        retransmission, probe_cluster_id);
+    return rtp_sender_.TimeToSendPacket(
+        sequence_number, capture_time_ms, retransmission);
   }
   // No RTP sender is interested in sending this packet.
   return true;
 }
 
-size_t ModuleRtpRtcpImpl::TimeToSendPadding(size_t bytes,
-                                            int probe_cluster_id) {
-  return rtp_sender_.TimeToSendPadding(bytes, probe_cluster_id);
+size_t ModuleRtpRtcpImpl::TimeToSendPadding(size_t bytes) {
+  return rtp_sender_.TimeToSendPadding(bytes);
 }
 
 uint16_t ModuleRtpRtcpImpl::MaxPayloadLength() const {
