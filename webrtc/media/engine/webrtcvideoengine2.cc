@@ -1667,8 +1667,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSource(
         stream_->Input()->IncomingCapturedFrame(
             CreateBlackFrame(last_dimensions_.width, last_dimensions_.height,
                              last_frame_timestamp_ms_, last_rotation_));
-
-
       }
     }
   }

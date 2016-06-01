@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MEDIA_BASE_MEDIACHANNEL_H_
 #define WEBRTC_MEDIA_BASE_MEDIACHANNEL_H_
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
@@ -352,7 +353,7 @@ class MediaChannel : public sigslot::has_slots<> {
     virtual ~NetworkInterface() {}
   };
 
-  MediaChannel(const MediaConfig& config)
+  explicit MediaChannel(const MediaConfig& config)
       : enable_dscp_(config.enable_dscp), network_interface_(NULL) {}
   MediaChannel() : enable_dscp_(false), network_interface_(NULL) {}
   virtual ~MediaChannel() {}
@@ -886,7 +887,8 @@ class VoiceMediaChannel : public MediaChannel {
   };
 
   VoiceMediaChannel() {}
-  VoiceMediaChannel(const MediaConfig& config) : MediaChannel(config) {}
+  explicit VoiceMediaChannel(const MediaConfig& config)
+      : MediaChannel(config) {}
   virtual ~VoiceMediaChannel() {}
   virtual bool SetSendParameters(const AudioSendParameters& params) = 0;
   virtual bool SetRecvParameters(const AudioRecvParameters& params) = 0;
@@ -970,7 +972,8 @@ class VideoMediaChannel : public MediaChannel {
   };
 
   VideoMediaChannel() {}
-  VideoMediaChannel(const MediaConfig& config) : MediaChannel(config) {}
+  explicit VideoMediaChannel(const MediaConfig& config)
+      : MediaChannel(config) {}
   virtual ~VideoMediaChannel() {}
 
   virtual bool SetSendParameters(const VideoSendParameters& params) = 0;
