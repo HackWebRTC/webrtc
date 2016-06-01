@@ -20,6 +20,7 @@
           'dependencies': [
             '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
             '<(webrtc_root)/sdk/sdk.gyp:rtc_sdk_peerconnection_objc',
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
           ],
           'sources': [
             'objc/Framework/UnitTests/RTCConfigurationTest.mm',

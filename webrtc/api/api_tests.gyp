@@ -19,6 +19,7 @@
         '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/media/media.gyp:rtc_unittest_main',
         '<(webrtc_root)/pc/pc.gyp:rtc_pc',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
       ],
       'direct_dependent_settings': {
         'include_dirs': [

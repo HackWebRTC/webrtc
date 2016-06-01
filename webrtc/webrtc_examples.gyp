@@ -80,6 +80,7 @@
           'dependencies': [
             'api/api.gyp:libjingle_peerconnection',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
           ],
           'conditions': [
             ['build_json==1', {
@@ -156,6 +157,7 @@
           'dependencies': [
             '<(webrtc_root)/sdk/sdk.gyp:rtc_sdk_common_objc',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
           ],
           'sources': [
             'examples/objc/AppRTCDemo/common/ARDUtilities.h',

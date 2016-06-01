@@ -29,6 +29,7 @@
           'type': 'static_library',
           'dependencies': [
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
             'libjingle_peerconnection',
           ],
           'sources': [

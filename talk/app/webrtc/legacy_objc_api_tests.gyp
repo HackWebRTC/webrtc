@@ -39,6 +39,7 @@
           'dependencies': [
             '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
             'legacy_objc_api.gyp:libjingle_peerconnection_objc',
           ],
           'sources': [
@@ -71,6 +72,7 @@
           'dependencies': [
             '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
             '<(webrtc_root)/webrtc_examples.gyp:apprtc_signaling',
             '<(DEPTH)/third_party/ocmock/ocmock.gyp:ocmock',
           ],

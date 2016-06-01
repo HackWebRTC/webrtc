@@ -17,7 +17,6 @@
         '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/webrtc.gyp:webrtc',
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
-        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/p2p/p2p.gyp:rtc_p2p',
       ],
@@ -252,6 +251,7 @@
           'dependencies': [
             '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
             '<(webrtc_root)/media/media.gyp:rtc_media',
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
             'rtc_unittest_main',
           ],
           'sources': [
