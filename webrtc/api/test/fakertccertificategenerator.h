@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_TEST_FAKEDTLSIDENTITYSERVICE_H_
-#define WEBRTC_API_TEST_FAKEDTLSIDENTITYSERVICE_H_
+#ifndef WEBRTC_API_TEST_FAKERTCCERTIFICATEGENERATOR_H_
+#define WEBRTC_API_TEST_FAKERTCCERTIFICATEGENERATOR_H_
 
 #include <memory>
 #include <string>
@@ -118,13 +118,14 @@ static const rtc::RTCCertificatePEM kEcdsaPems[] = {
         "-----END CERTIFICATE-----\n")
 };
 
-class FakeDtlsIdentityStore : public webrtc::DtlsIdentityStoreInterface,
-                              public rtc::MessageHandler {
+class FakeRTCCertificateGenerator
+    : public rtc::RTCCertificateGeneratorInterface,
+      public rtc::MessageHandler {
  public:
   typedef rtc::TypedMessageData<rtc::scoped_refptr<
-      webrtc::DtlsIdentityRequestObserver> > MessageData;
+      rtc::RTCCertificateGeneratorCallback> > MessageData;
 
-  FakeDtlsIdentityStore() : should_fail_(false) {}
+  FakeRTCCertificateGenerator() : should_fail_(false) {}
 
   void set_should_fail(bool should_fail) {
     should_fail_ = should_fail;
@@ -133,16 +134,16 @@ class FakeDtlsIdentityStore : public webrtc::DtlsIdentityStoreInterface,
   void use_original_key() { key_index_ = 0; }
   void use_alternate_key() { key_index_ = 1; }
 
-  void RequestIdentity(
+  void GenerateCertificateAsync(
       const rtc::KeyParams& key_params,
       const rtc::Optional<uint64_t>& expires_ms,
-      const rtc::scoped_refptr<webrtc::DtlsIdentityRequestObserver>&
-          observer) override {
+      const rtc::scoped_refptr<rtc::RTCCertificateGeneratorCallback>&
+          callback) override {
     // The certificates are created from constant PEM strings and use its coded
     // expiration time, we do not support modifying it.
     RTC_DCHECK(!expires_ms);
     MessageData* msg = new MessageData(
-        rtc::scoped_refptr<webrtc::DtlsIdentityRequestObserver>(observer));
+        rtc::scoped_refptr<rtc::RTCCertificateGeneratorCallback>(callback));
     uint32_t msg_id;
     // Only supports RSA-1024-0x10001 and ECDSA-P256.
     if (should_fail_) {
@@ -160,22 +161,15 @@ class FakeDtlsIdentityStore : public webrtc::DtlsIdentityStoreInterface,
   }
 
   static rtc::scoped_refptr<rtc::RTCCertificate> GenerateCertificate() {
-    std::unique_ptr<rtc::SSLIdentity> identity;
     switch (rtc::KT_DEFAULT) {
     case rtc::KT_RSA:
-      identity.reset(
-          rtc::SSLIdentity::FromPEMStrings(kRsaPems[0].private_key(),
-                                           kRsaPems[0].certificate()));
-      break;
+      return rtc::RTCCertificate::FromPEM(kRsaPems[0]);
     case rtc::KT_ECDSA:
-      identity.reset(
-          rtc::SSLIdentity::FromPEMStrings(kEcdsaPems[0].private_key(),
-                                           kEcdsaPems[0].certificate()));
-      break;
+      return rtc::RTCCertificate::FromPEM(kEcdsaPems[0]);
     default:
       RTC_NOTREACHED();
+      return nullptr;
     }
-    return rtc::RTCCertificate::Create(std::move(identity));
   }
 
  private:
@@ -206,21 +200,21 @@ class FakeDtlsIdentityStore : public webrtc::DtlsIdentityStoreInterface,
   // rtc::MessageHandler implementation.
   void OnMessage(rtc::Message* msg) override {
     MessageData* message_data = static_cast<MessageData*>(msg->pdata);
-    rtc::scoped_refptr<webrtc::DtlsIdentityRequestObserver> observer =
+    rtc::scoped_refptr<rtc::RTCCertificateGeneratorCallback> callback =
         message_data->data();
+    rtc::scoped_refptr<rtc::RTCCertificate> certificate;
     switch (msg->message_id) {
       case MSG_SUCCESS_RSA:
       case MSG_SUCCESS_ECDSA: {
         rtc::KeyType key_type =
             msg->message_id == MSG_SUCCESS_RSA ? rtc::KT_RSA : rtc::KT_ECDSA;
-        std::unique_ptr<rtc::SSLIdentity> identity(
-            rtc::SSLIdentity::FromPEMStrings(get_key(key_type),
-                                             get_cert(key_type)));
-        observer->OnSuccess(std::move(identity));
+        certificate = rtc::RTCCertificate::FromPEM(get_pem(key_type));
+        RTC_DCHECK(certificate);
+        callback->OnSuccess(certificate);
         break;
       }
       case MSG_FAILURE:
-        observer->OnFailure(0);
+        callback->OnFailure();
         break;
     }
     delete message_data;
@@ -230,4 +224,4 @@ class FakeDtlsIdentityStore : public webrtc::DtlsIdentityStoreInterface,
   int key_index_ = 0;
 };
 
-#endif  // WEBRTC_API_TEST_FAKEDTLSIDENTITYSERVICE_H_
+#endif  // WEBRTC_API_TEST_FAKERTCCERTIFICATEGENERATOR_H_

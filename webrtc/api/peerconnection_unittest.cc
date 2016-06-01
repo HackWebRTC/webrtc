@@ -26,8 +26,8 @@
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/api/test/fakeaudiocapturemodule.h"
 #include "webrtc/api/test/fakeconstraints.h"
-#include "webrtc/api/test/fakedtlsidentitystore.h"
 #include "webrtc/api/test/fakeperiodicvideocapturer.h"
+#include "webrtc/api/test/fakertccertificategenerator.h"
 #include "webrtc/api/test/fakevideotrackrenderer.h"
 #include "webrtc/api/test/mockpeerconnectionobservers.h"
 #include "webrtc/base/gunit.h"
@@ -154,12 +154,12 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
       const std::string& id,
       const MediaConstraintsInterface* constraints,
       const PeerConnectionFactory::Options* options,
-      std::unique_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store,
+      std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
       bool prefer_constraint_apis,
       rtc::Thread* network_thread,
       rtc::Thread* worker_thread) {
     PeerConnectionTestClient* client(new PeerConnectionTestClient(id));
-    if (!client->Init(constraints, options, std::move(dtls_identity_store),
+    if (!client->Init(constraints, options, std::move(cert_generator),
                       prefer_constraint_apis, network_thread, worker_thread)) {
       delete client;
       return nullptr;
@@ -173,12 +173,12 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
       const PeerConnectionFactory::Options* options,
       rtc::Thread* network_thread,
       rtc::Thread* worker_thread) {
-    std::unique_ptr<FakeDtlsIdentityStore> dtls_identity_store(
-        rtc::SSLStreamAdapter::HaveDtlsSrtp() ? new FakeDtlsIdentityStore()
-                                              : nullptr);
+    std::unique_ptr<FakeRTCCertificateGenerator> cert_generator(
+        rtc::SSLStreamAdapter::HaveDtlsSrtp() ?
+            new FakeRTCCertificateGenerator() : nullptr);
 
     return CreateClientWithDtlsIdentityStore(
-        id, constraints, options, std::move(dtls_identity_store), true,
+        id, constraints, options, std::move(cert_generator), true,
         network_thread, worker_thread);
   }
 
@@ -187,12 +187,12 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
       const PeerConnectionFactory::Options* options,
       rtc::Thread* network_thread,
       rtc::Thread* worker_thread) {
-    std::unique_ptr<FakeDtlsIdentityStore> dtls_identity_store(
-        rtc::SSLStreamAdapter::HaveDtlsSrtp() ? new FakeDtlsIdentityStore()
-                                              : nullptr);
+    std::unique_ptr<FakeRTCCertificateGenerator> cert_generator(
+        rtc::SSLStreamAdapter::HaveDtlsSrtp() ?
+            new FakeRTCCertificateGenerator() : nullptr);
 
     return CreateClientWithDtlsIdentityStore(
-        id, nullptr, options, std::move(dtls_identity_store), false,
+        id, nullptr, options, std::move(cert_generator), false,
         network_thread, worker_thread);
   }
 
@@ -810,7 +810,7 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
   bool Init(
       const MediaConstraintsInterface* constraints,
       const PeerConnectionFactory::Options* options,
-      std::unique_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store,
+      std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
       bool prefer_constraint_apis,
       rtc::Thread* network_thread,
       rtc::Thread* worker_thread) {
@@ -842,23 +842,23 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
       peer_connection_factory_->SetOptions(*options);
     }
     peer_connection_ = CreatePeerConnection(
-        std::move(port_allocator), constraints, std::move(dtls_identity_store));
+        std::move(port_allocator), constraints, std::move(cert_generator));
     return peer_connection_.get() != nullptr;
   }
 
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> CreatePeerConnection(
       std::unique_ptr<cricket::PortAllocator> port_allocator,
       const MediaConstraintsInterface* constraints,
-      std::unique_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store) {
+      std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator) {
     // CreatePeerConnection with RTCConfiguration.
     webrtc::PeerConnectionInterface::RTCConfiguration config;
     webrtc::PeerConnectionInterface::IceServer ice_server;
     ice_server.uri = "stun:stun.l.google.com:19302";
     config.servers.push_back(ice_server);
 
-    return peer_connection_factory_->CreatePeerConnectionWithStore(
+    return peer_connection_factory_->CreatePeerConnection(
         config, constraints, std::move(port_allocator),
-        std::move(dtls_identity_store), this);
+        std::move(cert_generator), this);
   }
 
   void HandleIncomingOffer(const std::string& msg) {
@@ -1266,15 +1266,15 @@ class P2PTestConductor : public testing::Test {
     setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
                                    true);
 
-    std::unique_ptr<FakeDtlsIdentityStore> dtls_identity_store(
-        rtc::SSLStreamAdapter::HaveDtlsSrtp() ? new FakeDtlsIdentityStore()
-                                              : nullptr);
-    dtls_identity_store->use_alternate_key();
+    std::unique_ptr<FakeRTCCertificateGenerator> cert_generator(
+        rtc::SSLStreamAdapter::HaveDtlsSrtp() ?
+            new FakeRTCCertificateGenerator() : nullptr);
+    cert_generator->use_alternate_key();
 
     // Make sure the new client is using a different certificate.
     return PeerConnectionTestClient::CreateClientWithDtlsIdentityStore(
         "New Peer: ", &setup_constraints, nullptr,
-        std::move(dtls_identity_store), prefer_constraint_apis_,
+        std::move(cert_generator), prefer_constraint_apis_,
         network_thread_.get(), worker_thread_.get());
   }
 

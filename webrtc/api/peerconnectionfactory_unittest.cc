@@ -17,7 +17,7 @@
 #ifdef WEBRTC_ANDROID
 #include "webrtc/api/test/androidtestinitializer.h"
 #endif
-#include "webrtc/api/test/fakedtlsidentitystore.h"
+#include "webrtc/api/test/fakertccertificategenerator.h"
 #include "webrtc/api/test/fakevideotrackrenderer.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/thread.h"
@@ -142,11 +142,10 @@ TEST(PeerConnectionFactoryTestInternal, CreatePCUsingInternalModules) {
   NullPeerConnectionObserver observer;
   webrtc::PeerConnectionInterface::RTCConfiguration config;
 
-  std::unique_ptr<FakeDtlsIdentityStore> dtls_identity_store(
-      new FakeDtlsIdentityStore());
-  rtc::scoped_refptr<PeerConnectionInterface> pc(
-      factory->CreatePeerConnectionWithStore(
-          config, nullptr, nullptr, std::move(dtls_identity_store), &observer));
+  std::unique_ptr<FakeRTCCertificateGenerator> cert_generator(
+      new FakeRTCCertificateGenerator());
+  rtc::scoped_refptr<PeerConnectionInterface> pc(factory->CreatePeerConnection(
+      config, nullptr, nullptr, std::move(cert_generator), &observer));
 
   EXPECT_TRUE(pc.get() != nullptr);
 }
@@ -164,12 +163,11 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingIceServers) {
   ice_server.uri = kTurnIceServerWithTransport;
   ice_server.password = kTurnPassword;
   config.servers.push_back(ice_server);
-  std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store(
-      new FakeDtlsIdentityStore());
-  rtc::scoped_refptr<PeerConnectionInterface> pc(
-      factory_->CreatePeerConnectionWithStore(
-          config, nullptr, std::move(port_allocator_),
-          std::move(dtls_identity_store), &observer_));
+  std::unique_ptr<FakeRTCCertificateGenerator> cert_generator(
+      new FakeRTCCertificateGenerator());
+  rtc::scoped_refptr<PeerConnectionInterface> pc(factory_->CreatePeerConnection(
+      config, nullptr, std::move(port_allocator_), std::move(cert_generator),
+      &observer_));
   ASSERT_TRUE(pc.get() != NULL);
   cricket::ServerAddresses stun_servers;
   rtc::SocketAddress stun1("stun.l.google.com", 19302);
@@ -195,12 +193,11 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingIceServersUrls) {
   ice_server.urls.push_back(kTurnIceServerWithTransport);
   ice_server.password = kTurnPassword;
   config.servers.push_back(ice_server);
-  std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store(
-      new FakeDtlsIdentityStore());
-  rtc::scoped_refptr<PeerConnectionInterface> pc(
-      factory_->CreatePeerConnectionWithStore(
-        config, nullptr, std::move(port_allocator_),
-        std::move(dtls_identity_store), &observer_));
+  std::unique_ptr<FakeRTCCertificateGenerator> cert_generator(
+      new FakeRTCCertificateGenerator());
+  rtc::scoped_refptr<PeerConnectionInterface> pc(factory_->CreatePeerConnection(
+      config, nullptr, std::move(port_allocator_), std::move(cert_generator),
+      &observer_));
   ASSERT_TRUE(pc.get() != NULL);
   cricket::ServerAddresses stun_servers;
   rtc::SocketAddress stun1("stun.l.google.com", 19302);
@@ -225,12 +222,11 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingNoUsernameInUri) {
   ice_server.username = kTurnUsername;
   ice_server.password = kTurnPassword;
   config.servers.push_back(ice_server);
-  std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store(
-      new FakeDtlsIdentityStore());
-  rtc::scoped_refptr<PeerConnectionInterface> pc(
-      factory_->CreatePeerConnectionWithStore(
-          config, nullptr, std::move(port_allocator_),
-          std::move(dtls_identity_store), &observer_));
+  std::unique_ptr<FakeRTCCertificateGenerator> cert_generator(
+      new FakeRTCCertificateGenerator());
+  rtc::scoped_refptr<PeerConnectionInterface> pc(factory_->CreatePeerConnection(
+      config, nullptr, std::move(port_allocator_), std::move(cert_generator),
+      &observer_));
   ASSERT_TRUE(pc.get() != NULL);
   std::vector<cricket::RelayServerConfig> turn_servers;
   cricket::RelayServerConfig turn("test.com", 1234, kTurnUsername,
@@ -247,12 +243,11 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingTurnUrlWithTransportParam) {
   ice_server.uri = kTurnIceServerWithTransport;
   ice_server.password = kTurnPassword;
   config.servers.push_back(ice_server);
-  std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store(
-      new FakeDtlsIdentityStore());
-  rtc::scoped_refptr<PeerConnectionInterface> pc(
-      factory_->CreatePeerConnectionWithStore(
-          config, nullptr, std::move(port_allocator_),
-          std::move(dtls_identity_store), &observer_));
+  std::unique_ptr<FakeRTCCertificateGenerator> cert_generator(
+      new FakeRTCCertificateGenerator());
+  rtc::scoped_refptr<PeerConnectionInterface> pc(factory_->CreatePeerConnection(
+      config, nullptr, std::move(port_allocator_), std::move(cert_generator),
+      &observer_));
   ASSERT_TRUE(pc.get() != NULL);
   std::vector<cricket::RelayServerConfig> turn_servers;
   cricket::RelayServerConfig turn("hello.com", kDefaultStunPort, "test",
@@ -273,12 +268,11 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingSecureTurnUrl) {
   ice_server.uri = kSecureTurnIceServerWithoutTransportAndPortParam;
   ice_server.password = kTurnPassword;
   config.servers.push_back(ice_server);
-  std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store(
-      new FakeDtlsIdentityStore());
-  rtc::scoped_refptr<PeerConnectionInterface> pc(
-      factory_->CreatePeerConnectionWithStore(
-          config, nullptr, std::move(port_allocator_),
-          std::move(dtls_identity_store), &observer_));
+  std::unique_ptr<FakeRTCCertificateGenerator> cert_generator(
+      new FakeRTCCertificateGenerator());
+  rtc::scoped_refptr<PeerConnectionInterface> pc(factory_->CreatePeerConnection(
+      config, nullptr, std::move(port_allocator_), std::move(cert_generator),
+      &observer_));
   ASSERT_TRUE(pc.get() != NULL);
   std::vector<cricket::RelayServerConfig> turn_servers;
   cricket::RelayServerConfig turn1("hello.com", kDefaultStunTlsPort, "test",
@@ -309,12 +303,11 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingIPLiteralAddress) {
   ice_server.uri = kTurnIceServerWithIPv6Address;
   ice_server.password = kTurnPassword;
   config.servers.push_back(ice_server);
-  std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store(
-      new FakeDtlsIdentityStore());
-  rtc::scoped_refptr<PeerConnectionInterface> pc(
-      factory_->CreatePeerConnectionWithStore(
-          config, nullptr, std::move(port_allocator_),
-          std::move(dtls_identity_store), &observer_));
+  std::unique_ptr<FakeRTCCertificateGenerator> cert_generator(
+      new FakeRTCCertificateGenerator());
+  rtc::scoped_refptr<PeerConnectionInterface> pc(factory_->CreatePeerConnection(
+      config, nullptr, std::move(port_allocator_), std::move(cert_generator),
+      &observer_));
   ASSERT_TRUE(pc.get() != NULL);
   cricket::ServerAddresses stun_servers;
   rtc::SocketAddress stun1("1.2.3.4", 1234);

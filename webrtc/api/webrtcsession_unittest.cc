@@ -19,7 +19,7 @@
 #include "webrtc/api/jsepsessiondescription.h"
 #include "webrtc/api/peerconnection.h"
 #include "webrtc/api/sctputils.h"
-#include "webrtc/api/test/fakedtlsidentitystore.h"
+#include "webrtc/api/test/fakertccertificategenerator.h"
 #include "webrtc/api/videotrack.h"
 #include "webrtc/api/webrtcsession.h"
 #include "webrtc/api/webrtcsessiondescriptionfactory.h"
@@ -376,13 +376,12 @@ class WebRtcSessionTest
     network_manager_.RemoveInterface(addr);
   }
 
-  // If |dtls_identity_store| != null or |rtc_configuration| contains
-  // |certificates| then DTLS will be enabled unless explicitly disabled by
-  // |rtc_configuration| options. When DTLS is enabled a certificate will be
-  // used if provided, otherwise one will be generated using the
-  // |dtls_identity_store|.
+  // If |cert_generator| != null or |rtc_configuration| contains |certificates|
+  // then DTLS will be enabled unless explicitly disabled by |rtc_configuration|
+  // options. When DTLS is enabled a certificate will be used if provided,
+  // otherwise one will be generated using the |cert_generator|.
   void Init(
-      std::unique_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store) {
+      std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator) {
     ASSERT_TRUE(session_.get() == NULL);
     session_.reset(new WebRtcSessionForTest(
         media_controller_.get(), rtc::Thread::Current(), rtc::Thread::Current(),
@@ -397,9 +396,6 @@ class WebRtcSessionTest
     EXPECT_EQ(PeerConnectionInterface::kIceGatheringNew,
         observer_.ice_gathering_state_);
 
-    std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator(
-        dtls_identity_store ? new webrtc::RTCCertificateGeneratorStoreWrapper(
-            std::move(dtls_identity_store)) : nullptr);
     EXPECT_TRUE(session_->Initialize(options_, std::move(cert_generator),
                                      configuration_));
     session_->set_metrics_observer(metrics_observer_);
@@ -431,25 +427,25 @@ class WebRtcSessionTest
   // Successfully init with DTLS; with a certificate generated and supplied or
   // with a store that generates it for us.
   void InitWithDtls(RTCCertificateGenerationMethod cert_gen_method) {
-    std::unique_ptr<FakeDtlsIdentityStore> dtls_identity_store;
+    std::unique_ptr<FakeRTCCertificateGenerator> cert_generator;
     if (cert_gen_method == ALREADY_GENERATED) {
       configuration_.certificates.push_back(
-          FakeDtlsIdentityStore::GenerateCertificate());
+          FakeRTCCertificateGenerator::GenerateCertificate());
     } else if (cert_gen_method == DTLS_IDENTITY_STORE) {
-      dtls_identity_store.reset(new FakeDtlsIdentityStore());
-      dtls_identity_store->set_should_fail(false);
+      cert_generator.reset(new FakeRTCCertificateGenerator());
+      cert_generator->set_should_fail(false);
     } else {
       RTC_CHECK(false);
     }
-    Init(std::move(dtls_identity_store));
+    Init(std::move(cert_generator));
   }
 
   // Init with DTLS with a store that will fail to generate a certificate.
   void InitWithDtlsIdentityGenFail() {
-    std::unique_ptr<FakeDtlsIdentityStore> dtls_identity_store(
-        new FakeDtlsIdentityStore());
-    dtls_identity_store->set_should_fail(true);
-    Init(std::move(dtls_identity_store));
+    std::unique_ptr<FakeRTCCertificateGenerator> cert_generator(
+        new FakeRTCCertificateGenerator());
+    cert_generator->set_should_fail(true);
+    Init(std::move(cert_generator));
   }
 
   void InitWithDtmfCodec() {
@@ -4106,7 +4102,7 @@ TEST_P(WebRtcSessionTest, TestSctpDataChannelOpenMessage) {
 
 TEST_P(WebRtcSessionTest, TestUsesProvidedCertificate) {
   rtc::scoped_refptr<rtc::RTCCertificate> certificate =
-      FakeDtlsIdentityStore::GenerateCertificate();
+      FakeRTCCertificateGenerator::GenerateCertificate();
 
   configuration_.certificates.push_back(certificate);
   Init();

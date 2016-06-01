@@ -26,7 +26,7 @@
 #include "webrtc/api/test/androidtestinitializer.h"
 #endif
 #include "webrtc/api/test/fakeconstraints.h"
-#include "webrtc/api/test/fakedtlsidentitystore.h"
+#include "webrtc/api/test/fakertccertificategenerator.h"
 #include "webrtc/api/test/fakevideotracksource.h"
 #include "webrtc/api/test/mockpeerconnectionobservers.h"
 #include "webrtc/api/test/testsdpstrings.h"
@@ -595,17 +595,17 @@ class PeerConnectionInterfaceTest : public testing::Test {
           webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, false);
     }
 
-    std::unique_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store;
+    std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator;
     bool dtls;
     if (FindConstraint(constraints,
                        webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
                        &dtls,
                        nullptr) && dtls) {
-      dtls_identity_store.reset(new FakeDtlsIdentityStore());
+      cert_generator.reset(new FakeRTCCertificateGenerator());
     }
-    pc_ = pc_factory_->CreatePeerConnectionWithStore(
+    pc_ = pc_factory_->CreatePeerConnection(
         config, constraints, std::move(port_allocator),
-        std::move(dtls_identity_store), &observer_);
+        std::move(cert_generator), &observer_);
     ASSERT_TRUE(pc_.get() != NULL);
     observer_.SetPeerConnectionInterface(pc_.get());
     EXPECT_EQ(PeerConnectionInterface::kStable, observer_.state_);
