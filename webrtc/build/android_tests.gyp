@@ -17,14 +17,12 @@
   'includes': [
     'common.gypi',
   ],
-  'variables': {
-    'shard_timeout': 900,
-  },
   'targets': [
     {
       'target_name': 'audio_codec_speed_tests_apk',
       'type': 'none',
       'variables': {
+        'shard_timeout': 900,
         'test_suite_name': 'audio_codec_speed_tests',
         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)audio_codec_speed_tests<(SHARED_LIB_SUFFIX)',
         'isolate_file': '../modules/audio_codec_speed_tests.isolate',
@@ -40,6 +38,7 @@
       'target_name': 'audio_decoder_unittests_apk',
       'type': 'none',
       'variables': {
+        'shard_timeout': 900,
         'test_suite_name': 'audio_decoder_unittests',
         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)audio_decoder_unittests<(SHARED_LIB_SUFFIX)',
         'isolate_file': '../modules/audio_decoder_unittests.isolate',
@@ -55,6 +54,7 @@
       'target_name': 'common_audio_unittests_apk',
       'type': 'none',
       'variables': {
+        'shard_timeout': 900,
         'test_suite_name': 'common_audio_unittests',
         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)common_audio_unittests<(SHARED_LIB_SUFFIX)',
         'isolate_file': '../common_audio/common_audio_unittests.isolate',
@@ -70,6 +70,7 @@
       'target_name': 'common_video_unittests_apk',
       'type': 'none',
       'variables': {
+        'shard_timeout': 900,
         'test_suite_name': 'common_video_unittests',
         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)common_video_unittests<(SHARED_LIB_SUFFIX)',
         'isolate_file': '../common_video/common_video_unittests.isolate',
@@ -85,6 +86,7 @@
       'target_name': 'modules_tests_apk',
       'type': 'none',
       'variables': {
+        'shard_timeout': 900,
         'test_suite_name': 'modules_tests',
         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)modules_tests<(SHARED_LIB_SUFFIX)',
         'isolate_file': '../modules/modules_tests.isolate',
@@ -100,6 +102,7 @@
       'target_name': 'modules_unittests_apk',
       'type': 'none',
       'variables': {
+        'shard_timeout': 900,
         'test_suite_name': 'modules_unittests',
         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)modules_unittests<(SHARED_LIB_SUFFIX)',
         'isolate_file': '../modules/modules_unittests.isolate',
@@ -116,6 +119,7 @@
       'target_name': 'peerconnection_unittests_apk',
       'type': 'none',
       'variables': {
+        'shard_timeout': 900,
         'test_suite_name': 'peerconnection_unittests',
         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)peerconnection_unittests<(SHARED_LIB_SUFFIX)',
         'isolate_file': '../api/peerconnection_unittests.isolate',
@@ -132,6 +136,7 @@
       'target_name': 'rtc_unittests_apk',
       'type': 'none',
       'variables': {
+        'shard_timeout': 900,
         'test_suite_name': 'rtc_unittests',
         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)rtc_unittests<(SHARED_LIB_SUFFIX)',
         'isolate_file': '../rtc_unittests.isolate',
@@ -147,6 +152,7 @@
       'target_name': 'system_wrappers_unittests_apk',
       'type': 'none',
       'variables': {
+        'shard_timeout': 900,
         'test_suite_name': 'system_wrappers_unittests',
         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)system_wrappers_unittests<(SHARED_LIB_SUFFIX)',
         'isolate_file': '../system_wrappers/system_wrappers_unittests.isolate',
@@ -162,6 +168,7 @@
       'target_name': 'test_support_unittests_apk',
       'type': 'none',
       'variables': {
+        'shard_timeout': 900,
         'test_suite_name': 'test_support_unittests',
         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)test_support_unittests<(SHARED_LIB_SUFFIX)',
         'isolate_file': '../test/test_support_unittests.isolate',
@@ -177,6 +184,7 @@
       'target_name': 'tools_unittests_apk',
       'type': 'none',
       'variables': {
+        'shard_timeout': 900,
         'test_suite_name': 'tools_unittests',
         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)tools_unittests<(SHARED_LIB_SUFFIX)',
         'isolate_file': '../tools/tools_unittests.isolate',
@@ -192,6 +200,7 @@
       'target_name': 'video_engine_tests_apk',
       'type': 'none',
       'variables': {
+        'shard_timeout': 900,
         'test_suite_name': 'video_engine_tests',
         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)video_engine_tests<(SHARED_LIB_SUFFIX)',
         'isolate_file': '../video_engine_tests.isolate',
@@ -207,6 +216,7 @@
       'target_name': 'voice_engine_unittests_apk',
       'type': 'none',
       'variables': {
+        'shard_timeout': 900,
         'test_suite_name': 'voice_engine_unittests',
         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)voice_engine_unittests<(SHARED_LIB_SUFFIX)',
         'isolate_file': '../voice_engine/voice_engine_unittests.isolate',
@@ -238,6 +248,7 @@
       'target_name': 'webrtc_nonparallel_tests_apk',
       'type': 'none',
       'variables': {
+        'shard_timeout': 900,
         'test_suite_name': 'webrtc_nonparallel_tests',
         'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)webrtc_nonparallel_tests<(SHARED_LIB_SUFFIX)',
         'isolate_file': '../webrtc_nonparallel_tests.isolate',
@@ -247,6 +258,28 @@
       ],
       'includes': [
         '../../build/apk_test.gypi',
+      ],
+    },
+    {
+      'target_name': 'android_junit_tests',
+      'type': 'none',
+      'dependencies': [
+        '<(webrtc_root)/api/api.gyp:libjingle_peerconnection_java',
+        '<(DEPTH)/base/base.gyp:base_java',
+        '<(DEPTH)/base/base.gyp:base_java_test_support',
+        '<(DEPTH)/base/base.gyp:base_junit_test_support',
+      ],
+      'variables': {
+        'main_class': 'org.chromium.testing.local.JunitTestMain',
+        'src_paths': [
+          '../androidjunit/',
+        ],
+        'test_type': 'junit',
+        'wrapper_script_name': 'helper/<(_target_name)',
+      },
+      'includes': [
+        '../../build/android/test_runner.gypi',
+        '../../build/host_jar.gypi',
       ],
     },
     {
@@ -263,5 +296,3 @@
     },
   ],
 }
-
-

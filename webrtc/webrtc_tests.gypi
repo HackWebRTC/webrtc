@@ -353,6 +353,13 @@
             '<(android_tests_path):webrtc_nonparallel_tests_apk',
           ],
         },
+        {
+          'target_name': 'android_junit_tests_target',
+          'type': 'none',
+          'dependencies': [
+            '<(android_tests_path):android_junit_tests',
+          ],
+        },
       ],
       'conditions': [
         ['test_isolation_mode != "noop"',

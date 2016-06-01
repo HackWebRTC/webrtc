@@ -69,5 +69,9 @@
       'target_name': 'audio_codec_speed_tests_apk',
       'type': 'none',
     },
+    {
+      'target_name': 'android_junit_tests',
+      'type': 'none',
+    },
   ],
 }
