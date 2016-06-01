@@ -18,6 +18,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/rtccertificate.h"
+#include "webrtc/base/rtccertificategenerator.h"
 #include "webrtc/p2p/base/transportdescriptionfactory.h"
 #include "webrtc/pc/mediasession.h"
 
@@ -32,17 +33,17 @@ class MediaConstraintsInterface;
 class SessionDescriptionInterface;
 class WebRtcSession;
 
-// DTLS identity request callback class.
-class WebRtcIdentityRequestObserver : public DtlsIdentityRequestObserver,
-                                      public sigslot::has_slots<> {
+// DTLS certificate request callback class.
+class WebRtcCertificateGeneratorCallback
+    : public rtc::RTCCertificateGeneratorCallback,
+      public sigslot::has_slots<> {
  public:
-  // DtlsIdentityRequestObserver overrides.
-  void OnFailure(int error) override;
-  void OnSuccess(const std::string& der_cert,
-                 const std::string& der_private_key) override;
-  void OnSuccess(std::unique_ptr<rtc::SSLIdentity> identity) override;
+  // |rtc::RTCCertificateGeneratorCallback| overrides.
+  void OnSuccess(
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) override;
+  void OnFailure() override;
 
-  sigslot::signal1<int> SignalRequestFailed;
+  sigslot::signal0<> SignalRequestFailed;
   sigslot::signal1<const rtc::scoped_refptr<rtc::RTCCertificate>&>
       SignalCertificateReady;
 };
@@ -66,37 +67,29 @@ struct CreateSessionDescriptionRequest {
   cricket::MediaSessionOptions options;
 };
 
-// This class is used to create offer/answer session description with regards to
-// the async DTLS identity generation for WebRtcSession.
-// It queues the create offer/answer request until the DTLS identity
-// request has completed, i.e. when OnIdentityRequestFailed or OnIdentityReady
-// is called.
+// This class is used to create offer/answer session description. Certificates
+// for WebRtcSession/DTLS are either supplied at construction or generated
+// asynchronously. It queues the create offer/answer request until the
+// certificate generation has completed, i.e. when OnCertificateRequestFailed or
+// OnCertificateReady is called.
 class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
                                         public sigslot::has_slots<> {
  public:
-  // Construct with DTLS disabled.
-  WebRtcSessionDescriptionFactory(rtc::Thread* signaling_thread,
-                                  cricket::ChannelManager* channel_manager,
-                                  WebRtcSession* session,
-                                  const std::string& session_id);
-
-  // Construct with DTLS enabled using the specified |dtls_identity_store| to
-  // generate a certificate.
+  // If |certificate_generator| is not null, DTLS is enabled and a default
+  // certificate is generated asynchronously; otherwise DTLS is disabled.
   WebRtcSessionDescriptionFactory(
       rtc::Thread* signaling_thread,
       cricket::ChannelManager* channel_manager,
-      std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
       WebRtcSession* session,
-      const std::string& session_id);
-
-  // Construct with DTLS enabled using the specified (already generated)
-  // |certificate|.
+      const std::string& session_id,
+      std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator);
+  // Construct with DTLS enabled using the specified |certificate|.
   WebRtcSessionDescriptionFactory(
       rtc::Thread* signaling_thread,
       cricket::ChannelManager* channel_manager,
-      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate,
       WebRtcSession* session,
-      const std::string& session_id);
+      const std::string& session_id,
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
   virtual ~WebRtcSessionDescriptionFactory();
 
   static void CopyCandidatesFromSessionDescription(
@@ -130,15 +123,15 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
     CERTIFICATE_FAILED,
   };
 
+  // If |certificate_generator| or |certificate| is not null DTLS is enabled,
+  // otherwise DTLS is disabled.
   WebRtcSessionDescriptionFactory(
       rtc::Thread* signaling_thread,
       cricket::ChannelManager* channel_manager,
-      std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
-      const rtc::scoped_refptr<WebRtcIdentityRequestObserver>&
-          identity_request_observer,
       WebRtcSession* session,
       const std::string& session_id,
-      bool dtls_enabled);
+      std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
 
   // MessageHandler implementation.
   virtual void OnMessage(rtc::Message* msg);
@@ -154,7 +147,7 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
       CreateSessionDescriptionObserver* observer,
       SessionDescriptionInterface* description);
 
-  void OnIdentityRequestFailed(int error);
+  void OnCertificateRequestFailed();
   void SetCertificate(
       const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
 
@@ -164,9 +157,7 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
   cricket::TransportDescriptionFactory transport_desc_factory_;
   cricket::MediaSessionDescriptionFactory session_desc_factory_;
   uint64_t session_version_;
-  const std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store_;
-  const rtc::scoped_refptr<WebRtcIdentityRequestObserver>
-      identity_request_observer_;
+  const std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator_;
   // TODO(jiayl): remove the dependency on session once bug 2264 is fixed.
   WebRtcSession* const session_;
   const std::string session_id_;

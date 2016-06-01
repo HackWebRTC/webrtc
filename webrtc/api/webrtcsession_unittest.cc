@@ -397,7 +397,10 @@ class WebRtcSessionTest
     EXPECT_EQ(PeerConnectionInterface::kIceGatheringNew,
         observer_.ice_gathering_state_);
 
-    EXPECT_TRUE(session_->Initialize(options_, std::move(dtls_identity_store),
+    std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator(
+        dtls_identity_store ? new webrtc::RTCCertificateGeneratorStoreWrapper(
+            std::move(dtls_identity_store)) : nullptr);
+    EXPECT_TRUE(session_->Initialize(options_, std::move(cert_generator),
                                      configuration_));
     session_->set_metrics_observer(metrics_observer_);
   }

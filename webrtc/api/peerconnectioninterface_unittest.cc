@@ -603,7 +603,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
                        nullptr) && dtls) {
       dtls_identity_store.reset(new FakeDtlsIdentityStore());
     }
-    pc_ = pc_factory_->CreatePeerConnection(
+    pc_ = pc_factory_->CreatePeerConnectionWithStore(
         config, constraints, std::move(port_allocator),
         std::move(dtls_identity_store), &observer_);
     ASSERT_TRUE(pc_.get() != NULL);

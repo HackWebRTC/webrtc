@@ -856,7 +856,7 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     ice_server.uri = "stun:stun.l.google.com:19302";
     config.servers.push_back(ice_server);
 
-    return peer_connection_factory_->CreatePeerConnection(
+    return peer_connection_factory_->CreatePeerConnectionWithStore(
         config, constraints, std::move(port_allocator),
         std::move(dtls_identity_store), this);
   }

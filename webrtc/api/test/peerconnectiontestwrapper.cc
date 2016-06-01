@@ -82,7 +82,7 @@ bool PeerConnectionTestWrapper::CreatePc(
   std::unique_ptr<webrtc::DtlsIdentityStoreInterface> dtls_identity_store(
       rtc::SSLStreamAdapter::HaveDtlsSrtp() ? new FakeDtlsIdentityStore()
                                             : nullptr);
-  peer_connection_ = peer_connection_factory_->CreatePeerConnection(
+  peer_connection_ = peer_connection_factory_->CreatePeerConnectionWithStore(
       config, constraints, std::move(port_allocator),
       std::move(dtls_identity_store), this);
 

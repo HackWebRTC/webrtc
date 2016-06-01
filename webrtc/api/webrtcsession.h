@@ -153,7 +153,7 @@ class WebRtcSession : public AudioProviderInterface,
 
   bool Initialize(
       const PeerConnectionFactoryInterface::Options& options,
-      std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+      std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
       const PeerConnectionInterface::RTCConfiguration& rtc_configuration);
   // Deletes the voice, video and data channel and changes the session state
   // to STATE_CLOSED.

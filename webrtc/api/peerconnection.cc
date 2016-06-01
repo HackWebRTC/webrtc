@@ -566,7 +566,7 @@ PeerConnection::~PeerConnection() {
 bool PeerConnection::Initialize(
     const PeerConnectionInterface::RTCConfiguration& configuration,
     std::unique_ptr<cricket::PortAllocator> allocator,
-    std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+    std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
     PeerConnectionObserver* observer) {
   TRACE_EVENT0("webrtc", "PeerConnection::Initialize");
   RTC_DCHECK(observer != nullptr);
@@ -594,7 +594,7 @@ bool PeerConnection::Initialize(
   stats_.reset(new StatsCollector(this));
 
   // Initialize the WebRtcSession. It creates transport channels etc.
-  if (!session_->Initialize(factory_->options(), std::move(dtls_identity_store),
+  if (!session_->Initialize(factory_->options(), std::move(cert_generator),
                             configuration)) {
     return false;
   }
