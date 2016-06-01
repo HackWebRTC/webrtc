@@ -251,6 +251,8 @@ parser.add_option('-d', '--output_dir', type='string',
                   help='output directory for test logs')
 parser.add_option('-r', '--repeat', type='int', default=1,
                   help='repeat tests')
+parser.add_option('--failed', action='store_true', default=False,
+                  help='run only failed and new tests')
 parser.add_option('-w', '--workers', type='int',
                   default=multiprocessing.cpu_count(),
                   help='number of workers to spawn')
@@ -305,7 +307,8 @@ for test_binary in binaries:
     if not line.strip():
       continue
     if line[0] != " ":
-      test_group = line.strip()
+      # Remove comments for typed tests and strip whitespace.
+      test_group = line.split('#')[0].strip()
       continue
     # Remove comments for parameterized tests and strip whitespace.
     line = line.split('#')[0].strip()
@@ -317,6 +320,12 @@ for test_binary in binaries:
       continue
     tests.append((times.get_test_time(test_binary, test),
                   test_binary, test, command))
+
+if options.failed:
+  # The first element of each entry is the runtime of the most recent
+  # run if it was successful, or None if the test is new or the most
+  # recent run failed.
+  tests = [x for x in tests if x[0] is None]
 
 # Sort tests by falling runtime (with None, which is what we get for
 # new and failing tests, being considered larger than any real
