@@ -268,8 +268,6 @@
        'null_transport.cc',
        'null_transport.h',
        'rtp_rtcp_observer.h',
-       'run_loop.cc',
-       'run_loop.h',
        'statistics.cc',
        'statistics.h',
        'vcm_capturer.cc',
@@ -279,9 +277,10 @@
        'win/run_loop_win.cc',
      ],
      'conditions': [
-       ['OS=="win"', {
-         'sources!': [
-           'run_loop.cc',
+       ['OS!="win"', {
+         'sources': [
+            'run_loop.h',
+            'run_loop.cc',
          ],
        }],
      ],
@@ -302,40 +301,29 @@
      'target_name': 'test_renderer',
      'type': 'static_library',
      'sources': [
-       'gl/gl_renderer.cc',
-       'gl/gl_renderer.h',
        'linux/glx_renderer.cc',
        'linux/glx_renderer.h',
        'linux/video_renderer_linux.cc',
        'mac/video_renderer_mac.h',
        'mac/video_renderer_mac.mm',
-       'null_platform_renderer.cc',
        'video_renderer.cc',
        'video_renderer.h',
        'win/d3d_renderer.cc',
        'win/d3d_renderer.h',
      ],
      'conditions': [
-       ['OS=="linux"', {
-         'sources!': [
+       ['OS!="linux" and OS!="mac" and OS!="win"', {
+         'sources': [
            'null_platform_renderer.cc',
          ],
        }],
-       ['OS=="mac"', {
-         'sources!': [
-           'null_platform_renderer.cc',
-         ],
-       }],
-       ['OS!="linux" and OS!="mac"', {
-         'sources!' : [
+       ['OS=="linux" or OS=="mac"', {
+         'sources' : [
            'gl/gl_renderer.cc',
            'gl/gl_renderer.h',
          ],
        }],
        ['OS=="win"', {
-         'sources!': [
-           'null_platform_renderer.cc',
-         ],
          'include_dirs': [
            '<(directx_sdk_path)/Include',
          ],
