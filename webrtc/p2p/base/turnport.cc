@@ -462,8 +462,7 @@ Connection* TurnPort::CreateConnection(const Candidate& address,
   for (size_t index = 0; index < Candidates().size(); ++index) {
     if (Candidates()[index].type() == RELAY_PORT_TYPE) {
       ProxyConnection* conn = new ProxyConnection(this, index, address);
-      conn->SignalDestroyed.connect(this, &TurnPort::OnConnectionDestroyed);
-      AddConnection(conn);
+      AddOrReplaceConnection(conn);
       return conn;
     }
   }
@@ -1013,7 +1012,7 @@ void TurnPort::DestroyEntryIfNotCancelled(TurnEntry* entry, int64_t timestamp) {
   }
 }
 
-void TurnPort::OnConnectionDestroyed(Connection* conn) {
+void TurnPort::HandleConnectionDestroyed(Connection* conn) {
   // Schedule an event to destroy TurnEntry for the connection, which is
   // already destroyed.
   const rtc::SocketAddress& remote_address = conn->remote_candidate().address();

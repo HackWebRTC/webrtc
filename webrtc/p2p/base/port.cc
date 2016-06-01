@@ -270,8 +270,19 @@ void Port::AddAddress(const rtc::SocketAddress& address,
   }
 }
 
-void Port::AddConnection(Connection* conn) {
-  connections_[conn->remote_candidate().address()] = conn;
+void Port::AddOrReplaceConnection(Connection* conn) {
+  auto ret = connections_.insert(
+      std::make_pair(conn->remote_candidate().address(), conn));
+  // If there is a different connection on the same remote address, replace
+  // it with the new one and destroy the old one.
+  if (ret.second == false && ret.first->second != conn) {
+    LOG_J(LS_WARNING, this)
+        << "A new connection was created on an existing remote address. "
+        << "New remote candidate: " << conn->remote_candidate().ToString();
+    ret.first->second->SignalDestroyed.disconnect(this);
+    ret.first->second->Destroy();
+    ret.first->second = conn;
+  }
   conn->SignalDestroyed.connect(this, &Port::OnConnectionDestroyed);
   SignalConnectionCreated(this, conn);
 }
@@ -688,6 +699,7 @@ void Port::OnConnectionDestroyed(Connection* conn) {
       connections_.find(conn->remote_candidate().address());
   ASSERT(iter != connections_.end());
   connections_.erase(iter);
+  HandleConnectionDestroyed(conn);
 
   // On the controlled side, ports time out after all connections fail.
   // Note: If a new connection is added after this message is posted, but it

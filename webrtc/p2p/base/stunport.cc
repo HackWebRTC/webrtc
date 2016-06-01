@@ -268,7 +268,7 @@ Connection* UDPPort::CreateConnection(const Candidate& address,
   }
 
   Connection* conn = new ProxyConnection(this, 0, address);
-  AddConnection(conn);
+  AddOrReplaceConnection(conn);
   return conn;
 }
 

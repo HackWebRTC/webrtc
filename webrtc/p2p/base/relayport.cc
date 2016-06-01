@@ -302,7 +302,7 @@ Connection* RelayPort::CreateConnection(const Candidate& address,
   }
 
   Connection * conn = new ProxyConnection(this, index, address);
-  AddConnection(conn);
+  AddOrReplaceConnection(conn);
   return conn;
 }
 

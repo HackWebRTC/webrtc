@@ -169,7 +169,7 @@ class TestPort : public Port {
   virtual Connection* CreateConnection(const Candidate& remote_candidate,
                                        CandidateOrigin origin) {
     Connection* conn = new ProxyConnection(this, 0, remote_candidate);
-    AddConnection(conn);
+    AddOrReplaceConnection(conn);
     // Set use-candidate attribute flag as this will add USE-CANDIDATE attribute
     // in STUN binding requests.
     conn->set_use_candidate_attr(true);
@@ -2664,4 +2664,32 @@ TEST_F(PortTest, TestSetIceParameters) {
   EXPECT_EQ(1, candidate.component());
   EXPECT_EQ("ufrag2", candidate.username());
   EXPECT_EQ("password2", candidate.password());
+}
+
+TEST_F(PortTest, TestAddConnectionWithSameAddress) {
+  std::unique_ptr<TestPort> port(
+      CreateTestPort(kLocalAddr1, "ufrag1", "password1"));
+  port->PrepareAddress();
+  EXPECT_EQ(1u, port->Candidates().size());
+  rtc::SocketAddress address("1.1.1.1", 5000);
+  cricket::Candidate candidate(1, "udp", address, 0, "", "", "relay", 0, "");
+  cricket::Connection* conn1 =
+      port->CreateConnection(candidate, Port::ORIGIN_MESSAGE);
+  cricket::Connection* conn_in_use = port->GetConnection(address);
+  EXPECT_EQ(conn1, conn_in_use);
+  EXPECT_EQ(0u, conn_in_use->remote_candidate().generation());
+
+  // Creating with a candidate with the same address again will get us a
+  // different connection with the new candidate.
+  candidate.set_generation(2);
+  cricket::Connection* conn2 =
+      port->CreateConnection(candidate, Port::ORIGIN_MESSAGE);
+  EXPECT_NE(conn1, conn2);
+  conn_in_use = port->GetConnection(address);
+  EXPECT_EQ(conn2, conn_in_use);
+  EXPECT_EQ(2u, conn_in_use->remote_candidate().generation());
+
+  // Make sure the new connection was not deleted.
+  rtc::Thread::Current()->ProcessMessages(300);
+  EXPECT_TRUE(port->GetConnection(address) != nullptr);
 }

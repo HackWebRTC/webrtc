@@ -190,6 +190,7 @@ class TurnPort : public Port {
   typedef std::set<rtc::SocketAddress> AttemptedServerSet;
 
   virtual void OnMessage(rtc::Message* pmsg);
+  virtual void HandleConnectionDestroyed(Connection* conn);
 
   bool CreateTurnClientSocket();
 
@@ -243,7 +244,6 @@ class TurnPort : public Port {
   void DestroyEntryIfNotCancelled(TurnEntry* entry, int64_t timestamp);
   void ScheduleEntryDestruction(TurnEntry* entry);
   void CancelEntryDestruction(TurnEntry* entry);
-  void OnConnectionDestroyed(Connection* conn);
 
   // Destroys the connection with remote address |address|. Returns true if
   // a connection is found and destroyed.

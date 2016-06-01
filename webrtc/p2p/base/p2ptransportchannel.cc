@@ -855,40 +855,41 @@ bool P2PTransportChannel::CreateConnection(PortInterface* port,
     return false;
   }
   // Look for an existing connection with this remote address.  If one is not
-  // found, then we can create a new connection for this address.
+  // found or it is found but the existing remote candidate has an older
+  // generation, then we can create a new connection for this address.
   Connection* connection = port->GetConnection(remote_candidate.address());
-  if (connection != NULL) {
-    connection->MaybeUpdatePeerReflexiveCandidate(remote_candidate);
-
-    // It is not legal to try to change any of the parameters of an existing
-    // connection; however, the other side can send a duplicate candidate.
-    if (!remote_candidate.IsEquivalent(connection->remote_candidate())) {
-      LOG(INFO) << "Attempt to change a remote candidate."
-                << " Existing remote candidate: "
-                << connection->remote_candidate().ToString()
-                << "New remote candidate: "
-                << remote_candidate.ToString();
+  if (connection == nullptr ||
+      connection->remote_candidate().generation() <
+          remote_candidate.generation()) {
+    // Don't create a connection if this is a candidate we received in a
+    // message and we are not allowed to make outgoing connections.
+    PortInterface::CandidateOrigin origin = GetOrigin(port, origin_port);
+    if (origin == PortInterface::ORIGIN_MESSAGE && incoming_only_) {
       return false;
     }
-  } else {
-    PortInterface::CandidateOrigin origin = GetOrigin(port, origin_port);
-
-    // Don't create connection if this is a candidate we received in a
-    // message and we are not allowed to make outgoing connections.
-    if (origin == PortInterface::ORIGIN_MESSAGE && incoming_only_)
+    Connection* connection = port->CreateConnection(remote_candidate, origin);
+    if (!connection) {
       return false;
-
-    connection = port->CreateConnection(remote_candidate, origin);
-    if (!connection)
-      return false;
-
+    }
     AddConnection(connection);
-
     LOG_J(LS_INFO, this) << "Created connection with origin=" << origin << ", ("
                          << connections_.size() << " total)";
+    return true;
   }
 
-  return true;
+  // No new connection was created.
+  // Check if this is a peer reflexive candidate.
+  connection->MaybeUpdatePeerReflexiveCandidate(remote_candidate);
+
+  // It is not legal to try to change any of the parameters of an existing
+  // connection; however, the other side can send a duplicate candidate.
+  if (!remote_candidate.IsEquivalent(connection->remote_candidate())) {
+    LOG(INFO) << "Attempt to change a remote candidate."
+              << " Existing remote candidate: "
+              << connection->remote_candidate().ToString()
+              << "New remote candidate: " << remote_candidate.ToString();
+  }
+  return false;
 }
 
 bool P2PTransportChannel::FindConnection(Connection* connection) const {

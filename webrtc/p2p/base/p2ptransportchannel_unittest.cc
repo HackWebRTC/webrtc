@@ -1984,6 +1984,25 @@ class P2PTransportChannelPingTest : public testing::Test,
     last_sent_packet_id_ = last_sent_packet_id;
   }
 
+  void ReceivePingOnConnection(cricket::Connection* conn,
+                               const std::string& remote_ufrag,
+                               int priority) {
+    cricket::IceMessage msg;
+    msg.SetType(cricket::STUN_BINDING_REQUEST);
+    msg.AddAttribute(new cricket::StunByteStringAttribute(
+        cricket::STUN_ATTR_USERNAME,
+        conn->local_candidate().username() + ":" + remote_ufrag));
+    msg.AddAttribute(new cricket::StunUInt32Attribute(
+        cricket::STUN_ATTR_PRIORITY, priority));
+    msg.SetTransactionID(
+        rtc::CreateRandomString(cricket::kStunTransactionIdLength));
+    msg.AddMessageIntegrity(conn->local_candidate().password());
+    msg.AddFingerprint();
+    rtc::ByteBufferWriter buf;
+    msg.Write(&buf);
+    conn->OnReadPacket(buf.Data(), buf.Length(), rtc::CreatePacketTime(0));
+  }
+
   void OnReadyToSend(cricket::TransportChannel* channel) {
     channel_ready_to_send_ = true;
   }
@@ -2451,6 +2470,45 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
   conn2->ReceivedPingResponse();
   conn2->OnReadPacket("XYZ", 3, rtc::CreatePacketTime(0));
   EXPECT_EQ(conn3, ch.best_connection());
+}
+
+// Test that if a new remote candidate has the same address and port with
+// an old one, it will be used to create a new connection.
+TEST_F(P2PTransportChannelPingTest, TestAddRemoteCandidateWithAddressReuse) {
+  cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
+  cricket::P2PTransportChannel ch("candidate reuse", 1, &pa);
+  PrepareChannel(&ch);
+  ch.Connect();
+  ch.MaybeStartGathering();
+  const std::string host_address = "1.1.1.1";
+  const int port_num = 1;
+
+  // kIceUfrag[1] is the current generation ufrag.
+  cricket::Candidate candidate =
+      CreateHostCandidate(host_address, port_num, 1, kIceUfrag[1]);
+  ch.AddRemoteCandidate(candidate);
+  cricket::Connection* conn1 = WaitForConnectionTo(&ch, host_address, port_num);
+  ASSERT_TRUE(conn1 != nullptr);
+  EXPECT_EQ(0u, conn1->remote_candidate().generation());
+
+  // Simply adding the same candidate again won't create a new connection.
+  ch.AddRemoteCandidate(candidate);
+  cricket::Connection* conn2 = GetConnectionTo(&ch, host_address, port_num);
+  EXPECT_EQ(conn1, conn2);
+
+  // Update the ufrag of the candidate and add it again.
+  candidate.set_username(kIceUfrag[2]);
+  ch.AddRemoteCandidate(candidate);
+  conn2 = GetConnectionTo(&ch, host_address, port_num);
+  EXPECT_NE(conn1, conn2);
+  EXPECT_EQ(kIceUfrag[2], conn2->remote_candidate().username());
+  EXPECT_EQ(1u, conn2->remote_candidate().generation());
+
+  // Verify that a ping with the new ufrag can be received on the new
+  // connection.
+  EXPECT_EQ(0, conn2->last_ping_received());
+  ReceivePingOnConnection(conn2, kIceUfrag[2], 1 /* priority */);
+  EXPECT_TRUE(conn2->last_ping_received() > 0);
 }
 
 // When the current best connection is strong, lower-priority connections will

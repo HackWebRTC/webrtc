@@ -316,8 +316,10 @@ class Port : public PortInterface, public rtc::MessageHandler,
                   uint32_t relay_preference,
                   bool final);
 
-  // Adds the given connection to the list.  (Deleting removes them.)
-  void AddConnection(Connection* conn);
+  // Adds the given connection to the map keyed by the remote candidate address.
+  // If an existing connection has the same address, the existing one will be
+  // replaced and destroyed.
+  void AddOrReplaceConnection(Connection* conn);
 
   // Called when a packet is received from an unknown address that is not
   // currently a connection.  If this is an authenticated STUN binding request,
@@ -345,6 +347,9 @@ class Port : public PortInterface, public rtc::MessageHandler,
     // No change from what MediaChannel set.
     return rtc::DSCP_NO_CHANGE;
   }
+
+  // Extra work to be done in subclasses when a connection is destroyed.
+  virtual void HandleConnectionDestroyed(Connection* conn) {}
 
  private:
   void Construct();

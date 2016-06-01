@@ -162,7 +162,7 @@ Connection* TCPPort::CreateConnection(const Candidate& address,
   } else {
     conn = new TCPConnection(this, address);
   }
-  AddConnection(conn);
+  AddOrReplaceConnection(conn);
   return conn;
 }
 
