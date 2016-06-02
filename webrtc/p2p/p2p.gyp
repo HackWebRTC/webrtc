@@ -137,53 +137,5 @@
       ],
     },
   ],  # targets
-  'conditions': [
-    ['include_tests==1', {
-      'targets' : [
-        {
-          'target_name': 'rtc_p2p_unittest',
-          'type': 'none',
-          'direct_dependent_settings': {
-            'sources': [
-              'base/dtlstransportchannel_unittest.cc',
-              'base/fakeportallocator.h',
-              'base/faketransportcontroller.h',
-              'base/p2ptransportchannel_unittest.cc',
-              'base/port_unittest.cc',
-              'base/portallocator_unittest.cc',
-              'base/pseudotcp_unittest.cc',
-              'base/relayport_unittest.cc',
-              'base/relayserver_unittest.cc',
-              'base/stun_unittest.cc',
-              'base/stunport_unittest.cc',
-              'base/stunrequest_unittest.cc',
-              'base/stunserver_unittest.cc',
-              'base/testrelayserver.h',
-              'base/teststunserver.h',
-              'base/testturnserver.h',
-              'base/transport_unittest.cc',
-              'base/transportcontroller_unittest.cc',
-              'base/transportdescriptionfactory_unittest.cc',
-              'base/tcpport_unittest.cc',
-              'base/turnport_unittest.cc',
-              'client/basicportallocator_unittest.cc',
-              'stunprober/stunprober_unittest.cc',
-            ],
-            'conditions': [
-              ['use_quic==1', {
-                'sources': [
-                  'quic/quicconnectionhelper_unittest.cc',
-                  'quic/quicsession_unittest.cc',
-		  'quic/quictransport_unittest.cc',
-                  'quic/quictransportchannel_unittest.cc',
-                  'quic/reliablequicstream_unittest.cc',
-                ],
-              }],
-            ],
-          },
-        },  # target rtc_p2p_unittest
-      ],  # targets
-    }],  # include_tests==1
-  ],  # conditions
 }
 
