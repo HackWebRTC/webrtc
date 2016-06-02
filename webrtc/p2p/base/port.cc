@@ -1404,8 +1404,8 @@ void Connection::MaybeUpdatePeerReflexiveCandidate(
 
 void Connection::OnMessage(rtc::Message *pmsg) {
   ASSERT(pmsg->message_id == MSG_DELETE);
-  LOG_J(LS_INFO, this) << "Connection deleted with number of pings sent: "
-                       << num_pings_sent_;
+  LOG(LS_INFO) << "Connection deleted with number of pings sent: "
+               << num_pings_sent_;
   SignalDestroyed(this);
   delete this;
 }
