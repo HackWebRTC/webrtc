@@ -465,14 +465,15 @@ void H264VideoToolboxEncoder::ConfigureCompressionSession() {
   // internal::SetVTSessionProperty(compression_session_,
   //     kVTCompressionPropertyKey_MaxFrameDelayCount,
   //     1);
-  // TODO(tkchin): See if enforcing keyframe frequency is beneficial in any
-  // way.
-  // internal::SetVTSessionProperty(
-  //     compression_session_,
-  //     kVTCompressionPropertyKey_MaxKeyFrameInterval, 240);
-  // internal::SetVTSessionProperty(
-  //     compression_session_,
-  //     kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration, 240);
+
+  // Set a relatively large value for keyframe emission (7200 frames or
+  // 4 minutes).
+  internal::SetVTSessionProperty(
+      compression_session_,
+      kVTCompressionPropertyKey_MaxKeyFrameInterval, 7200);
+  internal::SetVTSessionProperty(
+      compression_session_,
+      kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration, 240);
 }
 
 void H264VideoToolboxEncoder::DestroyCompressionSession() {
@@ -498,6 +499,38 @@ void H264VideoToolboxEncoder::SetEncoderBitrateBps(uint32_t bitrate_bps) {
     internal::SetVTSessionProperty(compression_session_,
                                    kVTCompressionPropertyKey_AverageBitRate,
                                    bitrate_bps);
+
+    // TODO(tkchin): Add a helper method to set array value.
+    int64_t bytes_per_second_value = bitrate_bps / 8;
+    CFNumberRef bytes_per_second =
+        CFNumberCreate(kCFAllocatorDefault,
+                       kCFNumberSInt64Type,
+                       &bytes_per_second_value);
+    int64_t one_second_value = 1;
+    CFNumberRef one_second =
+        CFNumberCreate(kCFAllocatorDefault,
+                       kCFNumberSInt64Type,
+                       &one_second_value);
+    const void* nums[2] = { bytes_per_second, one_second };
+    CFArrayRef data_rate_limits =
+        CFArrayCreate(nullptr, nums, 2, &kCFTypeArrayCallBacks);
+    OSStatus status =
+        VTSessionSetProperty(compression_session_,
+                             kVTCompressionPropertyKey_DataRateLimits,
+                             data_rate_limits);
+    if (bytes_per_second) {
+      CFRelease(bytes_per_second);
+    }
+    if (one_second) {
+      CFRelease(one_second);
+    }
+    if (data_rate_limits) {
+      CFRelease(data_rate_limits);
+    }
+    if (status != noErr) {
+      LOG(LS_ERROR) << "Failed to set data rate limit";
+    }
+
     encoder_bitrate_bps_ = bitrate_bps;
   }
 }
@@ -531,6 +564,10 @@ void H264VideoToolboxEncoder::OnEncodedFrame(
         static_cast<CFDictionaryRef>(CFArrayGetValueAtIndex(attachments, 0));
     is_keyframe =
         !CFDictionaryContainsKey(attachment, kCMSampleAttachmentKey_NotSync);
+  }
+
+  if (is_keyframe) {
+    LOG(LS_INFO) << "Generated keyframe";
   }
 
   // Convert the sample buffer into a buffer suitable for RTP packetization.
