@@ -11,9 +11,11 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_H264_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_H264_H_
 
+#include <deque>
 #include <queue>
 #include <string>
 
+#include "webrtc/base/buffer.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format.h"
 
@@ -49,42 +51,50 @@ class RtpPacketizerH264 : public RtpPacketizer {
   std::string ToString() override;
 
  private:
-  struct Packet {
-    Packet(size_t offset,
-           size_t size,
-           bool first_fragment,
-           bool last_fragment,
-           bool aggregated,
-           uint8_t header)
-        : offset(offset),
-          size(size),
+  // Input fragments (NAL units), with an optionally owned temporary buffer,
+  // used in case the fragment gets modified.
+  struct Fragment {
+    Fragment(const uint8_t* buffer, size_t length);
+    explicit Fragment(const Fragment& fragment);
+    const uint8_t* buffer = nullptr;
+    size_t length = 0;
+    std::unique_ptr<rtc::Buffer> tmp_buffer;
+  };
+
+  // A packet unit (H264 packet), to be put into an RTP packet:
+  // If a NAL unit is too large for an RTP packet, this packet unit will
+  // represent a FU-A packet of a single fragment of the NAL unit.
+  // If a NAL unit is small enough to fit within a single RTP packet, this
+  // packet unit may represent a single NAL unit or a STAP-A packet, of which
+  // there may be multiple in a single RTP packet (if so, aggregated = true).
+  struct PacketUnit {
+    PacketUnit(const Fragment& source_fragment,
+               bool first_fragment,
+               bool last_fragment,
+               bool aggregated,
+               uint8_t header)
+        : source_fragment(source_fragment),
           first_fragment(first_fragment),
           last_fragment(last_fragment),
           aggregated(aggregated),
           header(header) {}
 
-    size_t offset;
-    size_t size;
+    const Fragment source_fragment;
     bool first_fragment;
     bool last_fragment;
     bool aggregated;
     uint8_t header;
   };
-  typedef std::queue<Packet> PacketQueue;
 
   void GeneratePackets();
-  void PacketizeFuA(size_t fragment_offset, size_t fragment_length);
-  int PacketizeStapA(size_t fragment_index,
-                     size_t fragment_offset,
-                     size_t fragment_length);
+  void PacketizeFuA(size_t fragment_index);
+  size_t PacketizeStapA(size_t fragment_index);
   void NextAggregatePacket(uint8_t* buffer, size_t* bytes_to_send);
   void NextFragmentPacket(uint8_t* buffer, size_t* bytes_to_send);
 
-  const uint8_t* payload_data_;
-  size_t payload_size_;
   const size_t max_payload_len_;
-  RTPFragmentationHeader fragmentation_;
-  PacketQueue packets_;
+  std::deque<Fragment> input_fragments_;
+  std::queue<PacketUnit> packets_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpPacketizerH264);
 };
@@ -92,11 +102,22 @@ class RtpPacketizerH264 : public RtpPacketizer {
 // Depacketizer for H264.
 class RtpDepacketizerH264 : public RtpDepacketizer {
  public:
-  virtual ~RtpDepacketizerH264() {}
+  RtpDepacketizerH264();
+  virtual ~RtpDepacketizerH264();
 
   bool Parse(ParsedPayload* parsed_payload,
              const uint8_t* payload_data,
              size_t payload_data_length) override;
+
+ private:
+  bool ParseFuaNalu(RtpDepacketizer::ParsedPayload* parsed_payload,
+                    const uint8_t* payload_data);
+  bool ProcessStapAOrSingleNalu(RtpDepacketizer::ParsedPayload* parsed_payload,
+                                const uint8_t* payload_data);
+
+  size_t offset_;
+  size_t length_;
+  std::unique_ptr<rtc::Buffer> modified_buffer_;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_H264_H_

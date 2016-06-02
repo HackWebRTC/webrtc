@@ -12,8 +12,9 @@
       'target_name': 'rtp_rtcp',
       'type': 'static_library',
       'dependencies': [
-        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/common_video/common_video.gyp:common_video',
         '<(webrtc_root)/modules/modules.gyp:remote_bitrate_estimator',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
         # Common
@@ -135,8 +136,6 @@
         'source/forward_error_correction.h',
         'source/forward_error_correction_internal.cc',
         'source/forward_error_correction_internal.h',
-        'source/h264_sps_parser.cc',
-        'source/h264_sps_parser.h',
         'source/producer_fec.cc',
         'source/producer_fec.h',
         'source/rtp_packet_history.cc',

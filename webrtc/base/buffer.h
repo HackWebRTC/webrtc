@@ -235,6 +235,13 @@ class BufferT {
 
   void AppendData(const BufferT& buf) { AppendData(buf.data(), buf.size()); }
 
+  template <typename U,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  void AppendData(const U& item) {
+    AppendData(&item, 1);
+  }
+
   // Append at most |max_elements| to the end of the buffer, using the function
   // |setter|, which should have the following signature:
   //   size_t setter(ArrayView<U> view)

@@ -296,7 +296,6 @@
             'rtp_rtcp/source/fec_receiver_unittest.cc',
             'rtp_rtcp/source/fec_test_helper.cc',
             'rtp_rtcp/source/fec_test_helper.h',
-            'rtp_rtcp/source/h264_sps_parser_unittest.cc',
             'rtp_rtcp/source/nack_rtx_unittest.cc',
             'rtp_rtcp/source/packet_loss_stats_unittest.cc',
             'rtp_rtcp/source/producer_fec_unittest.cc',

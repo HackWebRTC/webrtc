@@ -18,6 +18,14 @@ config("common_video_config") {
 source_set("common_video") {
   sources = [
     "bitrate_adjuster.cc",
+    "h264/h264_common.cc",
+    "h264/h264_common.h",
+    "h264/pps_parser.cc",
+    "h264/pps_parser.h",
+    "h264/sps_parser.cc",
+    "h264/sps_parser.h",
+    "h264/sps_vui_rewriter.cc",
+    "h264/sps_vui_rewriter.h",
     "i420_buffer_pool.cc",
     "include/bitrate_adjuster.h",
     "include/frame_callback.h",

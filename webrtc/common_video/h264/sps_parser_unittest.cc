@@ -8,12 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/rtp_rtcp/source/h264_sps_parser.h"
+#include "webrtc/common_video/h264/sps_parser.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/bitbuffer.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/common_video/h264/h264_common.h"
 
 namespace webrtc {
 
@@ -39,7 +41,7 @@ static const size_t kSpsBufferMaxSize = 256;
 // The fake SPS that this generates also always has at least one emulation byte
 // at offset 2, since the first two bytes are always 0, and has a 0x3 as the
 // level_idc, to make sure the parser doesn't eat all 0x3 bytes.
-void GenerateFakeSps(uint16_t width, uint16_t height, uint8_t buffer[]) {
+void GenerateFakeSps(uint16_t width, uint16_t height, rtc::Buffer* out_buffer) {
   uint8_t rbsp[kSpsBufferMaxSize] = {0};
   rtc::BitBufferWriter writer(rbsp, kSpsBufferMaxSize);
   // Profile byte.
@@ -90,6 +92,9 @@ void GenerateFakeSps(uint16_t width, uint16_t height, uint8_t buffer[]) {
   writer.WriteExponentialGolomb(((16 - (height % 16)) % 16) / 2);
   writer.WriteExponentialGolomb(0);
 
+  // vui_parameters_present_flag: u(1)
+  writer.WriteBits(0, 1);
+
   // Get the number of bytes written (including the last partial byte).
   size_t byte_count, bit_offset;
   writer.GetCurrentOffset(&byte_count, &bit_offset);
@@ -97,77 +102,69 @@ void GenerateFakeSps(uint16_t width, uint16_t height, uint8_t buffer[]) {
     byte_count++;
   }
 
-  // Now, we need to write the rbsp into bytes. To do that, we'll need to add
-  // emulation 0x03 bytes if there's ever a sequence of 00 00 01 or 00 00 00 01.
-  // To be simple, just add a 0x03 after every 0x00. Extra emulation doesn't
-  // hurt.
-  for (size_t i = 0; i < byte_count;) {
-    // The -3 is intentional; we never need to write an emulation byte if the 00
-    // is at the end.
-    if (i < byte_count - 3 && rbsp[i] == 0 && rbsp[i + 1] == 0) {
-      *buffer++ = rbsp[i];
-      *buffer++ = rbsp[i + 1];
-      *buffer++ = 0x3u;
-      i += 2;
-    } else {
-      *buffer++ = rbsp[i];
-      ++i;
-    }
-  }
+  H264::WriteRbsp(rbsp, byte_count, out_buffer);
 }
 
-TEST(H264SpsParserTest, TestSampleSPSHdLandscape) {
+class H264SpsParserTest : public ::testing::Test {
+ public:
+  H264SpsParserTest() {}
+  virtual ~H264SpsParserTest() {}
+
+  rtc::Optional<SpsParser::SpsState> sps_;
+};
+
+TEST_F(H264SpsParserTest, TestSampleSPSHdLandscape) {
   // SPS for a 1280x720 camera capture from ffmpeg on osx. Contains
   // emulation bytes but no cropping.
   const uint8_t buffer[] = {0x7A, 0x00, 0x1F, 0xBC, 0xD9, 0x40, 0x50, 0x05,
                             0xBA, 0x10, 0x00, 0x00, 0x03, 0x00, 0xC0, 0x00,
                             0x00, 0x2A, 0xE0, 0xF1, 0x83, 0x19, 0x60};
-  H264SpsParser parser = H264SpsParser(buffer, arraysize(buffer));
-  EXPECT_TRUE(parser.Parse());
-  EXPECT_EQ(1280u, parser.width());
-  EXPECT_EQ(720u, parser.height());
+  EXPECT_TRUE(
+      static_cast<bool>(sps_ = SpsParser::ParseSps(buffer, arraysize(buffer))));
+  EXPECT_EQ(1280u, sps_->width);
+  EXPECT_EQ(720u, sps_->height);
 }
 
-TEST(H264SpsParserTest, TestSampleSPSVgaLandscape) {
+TEST_F(H264SpsParserTest, TestSampleSPSVgaLandscape) {
   // SPS for a 640x360 camera capture from ffmpeg on osx. Contains emulation
   // bytes and cropping (360 isn't divisible by 16).
   const uint8_t buffer[] = {0x7A, 0x00, 0x1E, 0xBC, 0xD9, 0x40, 0xA0, 0x2F,
                             0xF8, 0x98, 0x40, 0x00, 0x00, 0x03, 0x01, 0x80,
                             0x00, 0x00, 0x56, 0x83, 0xC5, 0x8B, 0x65, 0x80};
-  H264SpsParser parser = H264SpsParser(buffer, arraysize(buffer));
-  EXPECT_TRUE(parser.Parse());
-  EXPECT_EQ(640u, parser.width());
-  EXPECT_EQ(360u, parser.height());
+  EXPECT_TRUE(
+      static_cast<bool>(sps_ = SpsParser::ParseSps(buffer, arraysize(buffer))));
+  EXPECT_EQ(640u, sps_->width);
+  EXPECT_EQ(360u, sps_->height);
 }
 
-TEST(H264SpsParserTest, TestSampleSPSWeirdResolution) {
+TEST_F(H264SpsParserTest, TestSampleSPSWeirdResolution) {
   // SPS for a 200x400 camera capture from ffmpeg on osx. Horizontal and
   // veritcal crop (neither dimension is divisible by 16).
   const uint8_t buffer[] = {0x7A, 0x00, 0x0D, 0xBC, 0xD9, 0x43, 0x43, 0x3E,
                             0x5E, 0x10, 0x00, 0x00, 0x03, 0x00, 0x60, 0x00,
                             0x00, 0x15, 0xA0, 0xF1, 0x42, 0x99, 0x60};
-  H264SpsParser parser = H264SpsParser(buffer, arraysize(buffer));
-  EXPECT_TRUE(parser.Parse());
-  EXPECT_EQ(200u, parser.width());
-  EXPECT_EQ(400u, parser.height());
+  EXPECT_TRUE(
+      static_cast<bool>(sps_ = SpsParser::ParseSps(buffer, arraysize(buffer))));
+  EXPECT_EQ(200u, sps_->width);
+  EXPECT_EQ(400u, sps_->height);
 }
 
-TEST(H264SpsParserTest, TestSyntheticSPSQvgaLandscape) {
-  uint8_t buffer[kSpsBufferMaxSize] = {0};
-  GenerateFakeSps(320u, 180u, buffer);
-  H264SpsParser parser = H264SpsParser(buffer, arraysize(buffer));
-  EXPECT_TRUE(parser.Parse());
-  EXPECT_EQ(320u, parser.width());
-  EXPECT_EQ(180u, parser.height());
+TEST_F(H264SpsParserTest, TestSyntheticSPSQvgaLandscape) {
+  rtc::Buffer buffer;
+  GenerateFakeSps(320u, 180u, &buffer);
+  EXPECT_TRUE(static_cast<bool>(
+      sps_ = SpsParser::ParseSps(buffer.data(), buffer.size())));
+  EXPECT_EQ(320u, sps_->width);
+  EXPECT_EQ(180u, sps_->height);
 }
 
-TEST(H264SpsParserTest, TestSyntheticSPSWeirdResolution) {
-  uint8_t buffer[kSpsBufferMaxSize] = {0};
-  GenerateFakeSps(156u, 122u, buffer);
-  H264SpsParser parser = H264SpsParser(buffer, arraysize(buffer));
-  EXPECT_TRUE(parser.Parse());
-  EXPECT_EQ(156u, parser.width());
-  EXPECT_EQ(122u, parser.height());
+TEST_F(H264SpsParserTest, TestSyntheticSPSWeirdResolution) {
+  rtc::Buffer buffer;
+  GenerateFakeSps(156u, 122u, &buffer);
+  EXPECT_TRUE(static_cast<bool>(
+      sps_ = SpsParser::ParseSps(buffer.data(), buffer.size())));
+  EXPECT_EQ(156u, sps_->width);
+  EXPECT_EQ(122u, sps_->height);
 }
 
 }  // namespace webrtc

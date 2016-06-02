@@ -21,6 +21,9 @@
       ],
       'sources': [
         'bitrate_adjuster_unittest.cc',
+        'h264/pps_parser_unittest.cc',
+        'h264/sps_parser_unittest.cc',
+        'h264/sps_vui_rewriter_unittest.cc',
         'i420_buffer_pool_unittest.cc',
         'i420_video_frame_unittest.cc',
         'libyuv/libyuv_unittest.cc',
