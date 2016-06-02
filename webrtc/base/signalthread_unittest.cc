@@ -159,7 +159,12 @@ TEST_F(SignalThreadTest, OwnerThreadGoesAway) {
   EXPECT_EQ(stopped, thread_stopped_); \
   EXPECT_EQ(deleted, thread_deleted_);
 
-TEST_F(SignalThreadTest, ThreadFinishes) {
+#if defined(WEBRTC_LINUX)
+#define MAYBE_ThreadFinishes DISABLED_ThreadFinishes
+#else
+#define MAYBE_ThreadFinishes ThreadFinishes
+#endif
+TEST_F(SignalThreadTest, MAYBE_ThreadFinishes) {
   thread_->Start();
   EXPECT_STATE(1, 0, 0, 0, 0);
   Thread::SleepMs(500);
@@ -168,7 +173,12 @@ TEST_F(SignalThreadTest, ThreadFinishes) {
   EXPECT_STATE(1, 1, 1, 0, 1);
 }
 
-TEST_F(SignalThreadTest, ReleasedThreadFinishes) {
+#if defined(WEBRTC_LINUX)
+#define MAYBE_ReleasedThreadFinishes DISABLED_ReleasedThreadFinishes
+#else
+#define MAYBE_ReleasedThreadFinishes ReleasedThreadFinishes
+#endif
+TEST_F(SignalThreadTest, MAYBE_ReleasedThreadFinishes) {
   thread_->Start();
   EXPECT_STATE(1, 0, 0, 0, 0);
   thread_->Release();
