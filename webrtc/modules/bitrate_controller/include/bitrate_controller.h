@@ -70,6 +70,10 @@ class BitrateController : public Module {
                            int min_bitrate_bps,
                            int max_bitrate_bps) = 0;
 
+  virtual void ResetBitrates(int bitrate_bps,
+                             int min_bitrate_bps,
+                             int max_bitrate_bps) = 0;
+
   virtual void UpdateDelayBasedEstimate(uint32_t bitrate_bps) = 0;
 
   virtual void SetEventLog(RtcEventLog* event_log) = 0;

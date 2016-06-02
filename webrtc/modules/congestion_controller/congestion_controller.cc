@@ -32,6 +32,22 @@ namespace {
 
 static const uint32_t kTimeOffsetSwitchThreshold = 30;
 
+// Makes sure that the bitrate and the min, max values are in valid range.
+static void ClampBitrates(int* bitrate_bps,
+                          int* min_bitrate_bps,
+                          int* max_bitrate_bps) {
+  // TODO(holmer): We should make sure the default bitrates are set to 10 kbps,
+  // and that we don't try to set the min bitrate to 0 from any applications.
+  // The congestion controller should allow a min bitrate of 0.
+  const int kMinBitrateBps = 10000;
+  if (*min_bitrate_bps < kMinBitrateBps)
+    *min_bitrate_bps = kMinBitrateBps;
+  if (*max_bitrate_bps > 0)
+    *max_bitrate_bps = std::max(*min_bitrate_bps, *max_bitrate_bps);
+  if (*bitrate_bps > 0)
+    *bitrate_bps = std::max(*min_bitrate_bps, *bitrate_bps);
+}
+
 class WrappingBitrateEstimator : public RemoteBitrateEstimator {
  public:
   WrappingBitrateEstimator(RemoteBitrateObserver* observer, Clock* clock)
@@ -212,21 +228,10 @@ void CongestionController::Init() {
       min_bitrate_bps_);
 }
 
-
 void CongestionController::SetBweBitrates(int min_bitrate_bps,
                                           int start_bitrate_bps,
                                           int max_bitrate_bps) {
-  // TODO(holmer): We should make sure the default bitrates are set to 10 kbps,
-  // and that we don't try to set the min bitrate to 0 from any applications.
-  // The congestion controller should allow a min bitrate of 0.
-  const int kMinBitrateBps = 10000;
-  if (min_bitrate_bps < kMinBitrateBps)
-    min_bitrate_bps = kMinBitrateBps;
-  if (max_bitrate_bps > 0)
-    max_bitrate_bps = std::max(min_bitrate_bps, max_bitrate_bps);
-  if (start_bitrate_bps > 0)
-    start_bitrate_bps = std::max(min_bitrate_bps, start_bitrate_bps);
-
+  ClampBitrates(&start_bitrate_bps, &min_bitrate_bps, &max_bitrate_bps);
   bitrate_controller_->SetBitrates(start_bitrate_bps,
                                    min_bitrate_bps,
                                    max_bitrate_bps);
@@ -236,6 +241,28 @@ void CongestionController::SetBweBitrates(int min_bitrate_bps,
   min_bitrate_bps_ = min_bitrate_bps;
   transport_feedback_adapter_.GetBitrateEstimator()->SetMinBitrate(
       min_bitrate_bps_);
+  MaybeTriggerOnNetworkChanged();
+}
+
+void CongestionController::ResetBweAndBitrates(int bitrate_bps,
+                                               int min_bitrate_bps,
+                                               int max_bitrate_bps) {
+  ClampBitrates(&bitrate_bps, &min_bitrate_bps, &max_bitrate_bps);
+  // TODO(honghaiz): Recreate this object once the bitrate controller is
+  // no longer exposed outside CongestionController.
+  bitrate_controller_->ResetBitrates(bitrate_bps, min_bitrate_bps,
+                                     max_bitrate_bps);
+  min_bitrate_bps_ = min_bitrate_bps;
+  // TODO(honghaiz): Recreate this object once the remote bitrate estimator is
+  // no longer exposed outside CongestionController.
+  if (remote_bitrate_estimator_)
+    remote_bitrate_estimator_->SetMinBitrate(min_bitrate_bps);
+
+  RemoteBitrateEstimator* rbe =
+      new RemoteBitrateEstimatorAbsSendTime(&transport_feedback_adapter_);
+  transport_feedback_adapter_.SetBitrateEstimator(rbe);
+  rbe->SetMinBitrate(min_bitrate_bps);
+  // TODO(holmer): Trigger a new probe once mid-call probing is implemented.
   MaybeTriggerOnNetworkChanged();
 }
 

@@ -70,6 +70,11 @@ class CongestionController : public CallStatsObserver, public Module {
   virtual void SetBweBitrates(int min_bitrate_bps,
                               int start_bitrate_bps,
                               int max_bitrate_bps);
+  // Resets both the BWE state and the bitrate estimator. Note the first
+  // argument is the bitrate_bps.
+  virtual void ResetBweAndBitrates(int bitrate_bps,
+                                   int min_bitrate_bps,
+                                   int max_bitrate_bps);
   virtual void SignalNetworkState(NetworkState state);
   virtual BitrateController* GetBitrateController() const;
   virtual RemoteBitrateEstimator* GetRemoteBitrateEstimator(
