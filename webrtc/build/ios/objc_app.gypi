@@ -15,6 +15,7 @@
   },
   'dependencies': [
     '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
+    '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
   ],
   'mac_bundle': 1,
   'mac_bundle_resources': [
