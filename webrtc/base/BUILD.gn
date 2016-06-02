@@ -175,7 +175,9 @@ static_library("rtc_base_approved") {
 }
 
 static_library("rtc_task_queue") {
-  public_deps = [ ":rtc_base_approved" ]
+  public_deps = [
+    ":rtc_base_approved",
+  ]
   configs += [ "..:common_config" ]
 
   sources = [
@@ -184,7 +186,9 @@ static_library("rtc_task_queue") {
   ]
 
   if (rtc_build_libevent) {
-    deps = [ "//base/third_party/libevent" ]
+    deps = [
+      "//base/third_party/libevent",
+    ]
   }
 
   if (rtc_enable_libevent) {
@@ -554,6 +558,7 @@ static_library("rtc_base") {
       "macutils.cc",
       "macutils.h",
     ]
+    libs += [ "CoreServices.framework" ]  # For GetGestalt in macutils.cc.
   }
 
   if (is_win) {

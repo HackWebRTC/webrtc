@@ -25,8 +25,6 @@
         'source/condition_variable_unittest.cc',
         'source/critical_section_unittest.cc',
         'source/logging_unittest.cc',
-        'source/data_log_unittest.cc',
-        'source/data_log_unittest_disabled.cc',
         'source/data_log_helpers_unittest.cc',
         'source/data_log_c_helpers_unittest.c',
         'source/data_log_c_helpers_unittest.h',
@@ -40,9 +38,9 @@
       ],
       'conditions': [
         ['enable_data_logging==1', {
-          'sources!': [ 'source/data_log_unittest_disabled.cc', ],
+          'sources': [ 'source/data_log_unittest.cc', ],
         }, {
-          'sources!': [ 'source/data_log_unittest.cc', ],
+          'sources': [ 'source/data_log_unittest_disabled.cc', ],
         }],
         ['OS=="android"', {
           'dependencies': [

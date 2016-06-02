@@ -135,6 +135,9 @@ source_set("audio_device") {
       libs = [
         "AudioToolbox.framework",
         "CoreAudio.framework",
+
+        # Needed for CGEventSourceKeyState in audio_device_mac.cc:
+        "CoreGraphics.framework",
       ]
     }
     if (is_ios) {
