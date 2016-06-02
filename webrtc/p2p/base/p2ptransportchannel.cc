@@ -1018,24 +1018,16 @@ bool P2PTransportChannel::GetStats(ConnectionInfos *infos) {
   // Gather connection infos.
   infos->clear();
 
-  std::vector<Connection *>::const_iterator it;
   for (Connection* connection : connections_) {
-    ConnectionInfo info;
+    ConnectionInfo info = connection->stats();
     info.best_connection = (best_connection_ == connection);
     info.receiving = connection->receiving();
-    info.writable =
-        (connection->write_state() == Connection::STATE_WRITABLE);
+    info.writable = (connection->write_state() == Connection::STATE_WRITABLE);
     info.timeout =
         (connection->write_state() == Connection::STATE_WRITE_TIMEOUT);
     info.new_connection = !connection->reported();
     connection->set_reported(true);
     info.rtt = connection->rtt();
-    info.sent_total_bytes = connection->sent_total_bytes();
-    info.sent_bytes_second = connection->sent_bytes_second();
-    info.sent_discarded_packets = connection->sent_discarded_packets();
-    info.sent_total_packets = connection->sent_total_packets();
-    info.recv_total_bytes = connection->recv_total_bytes();
-    info.recv_bytes_second = connection->recv_bytes_second();
     info.local_candidate = connection->local_candidate();
     info.remote_candidate = connection->remote_candidate();
     info.key = connection;

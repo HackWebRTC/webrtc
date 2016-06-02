@@ -95,8 +95,13 @@ struct ConnectionInfo {
         sent_bytes_second(0),
         sent_discarded_packets(0),
         sent_total_packets(0),
+        sent_ping_requests_total(0),
+        sent_ping_requests_before_first_response(0),
+        sent_ping_responses(0),
         recv_total_bytes(0),
         recv_bytes_second(0),
+        recv_ping_requests(0),
+        recv_ping_responses(0),
         key(NULL) {}
 
   bool best_connection;        // Is this the best connection we have?
@@ -111,9 +116,15 @@ struct ConnectionInfo {
                                   // socket errors.
   size_t sent_total_packets;  // Number of total outgoing packets attempted for
                               // sending.
+  size_t sent_ping_requests_total;  // Number of STUN ping request sent.
+  size_t sent_ping_requests_before_first_response;  // Number of STUN ping
+  // sent before receiving the first response.
+  size_t sent_ping_responses;  // Number of STUN ping response sent.
 
   size_t recv_total_bytes;     // Total bytes received on this connection.
   size_t recv_bytes_second;    // Bps over the last measurement interval.
+  size_t recv_ping_requests;   // Number of STUN ping request received.
+  size_t recv_ping_responses;  // Number of STUN ping response received.
   Candidate local_candidate;   // The local candidate for this connection.
   Candidate remote_candidate;  // The remote candidate for this connection.
   void* key;                   // A static value that identifies this conn.

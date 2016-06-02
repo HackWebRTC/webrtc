@@ -629,12 +629,19 @@ StatsReport* StatsCollector::AddConnectionInfoReport(
                 AddCandidateReport(info.remote_candidate, false)->id());
 
   const Int64ForAdd int64s[] = {
-    { StatsReport::kStatsValueNameBytesReceived, info.recv_total_bytes },
-    { StatsReport::kStatsValueNameBytesSent, info.sent_total_bytes },
-    { StatsReport::kStatsValueNamePacketsSent, info.sent_total_packets },
-    { StatsReport::kStatsValueNameRtt, info.rtt },
-    { StatsReport::kStatsValueNameSendPacketsDiscarded,
-      info.sent_discarded_packets },
+      {StatsReport::kStatsValueNameBytesReceived, info.recv_total_bytes},
+      {StatsReport::kStatsValueNameBytesSent, info.sent_total_bytes},
+      {StatsReport::kStatsValueNamePacketsSent, info.sent_total_packets},
+      {StatsReport::kStatsValueNameRtt, info.rtt},
+      {StatsReport::kStatsValueNameSendPacketsDiscarded,
+       info.sent_discarded_packets},
+      {StatsReport::kStatsValueNameSentPingRequestsTotal,
+       info.sent_ping_requests_total},
+      {StatsReport::kStatsValueNameSentPingRequestsBeforeFirstResponse,
+       info.sent_ping_requests_before_first_response},
+      {StatsReport::kStatsValueNameSentPingResponses, info.sent_ping_responses},
+      {StatsReport::kStatsValueNameRecvPingRequests, info.recv_ping_requests},
+      {StatsReport::kStatsValueNameRecvPingResponses, info.recv_ping_responses},
   };
   for (const auto& i : int64s)
     report->AddInt64(i.name, i.value);

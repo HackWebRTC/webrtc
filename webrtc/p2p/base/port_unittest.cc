@@ -1649,12 +1649,21 @@ TEST_F(PortTest, TestSendStunMessage) {
   // Save a copy of the BINDING-REQUEST for use below.
   std::unique_ptr<IceMessage> request(CopyStunMessage(msg));
 
-  // Respond with a BINDING-RESPONSE.
-  rport->SendBindingResponse(request.get(), lport->Candidates()[0].address());
+  // Receive the BINDING-REQUEST and respond with BINDING-RESPONSE.
+  rconn->OnReadPacket(lport->last_stun_buf()->data<char>(),
+                      lport->last_stun_buf()->size(), rtc::PacketTime());
   msg = rport->last_stun_msg();
   ASSERT_TRUE(msg != NULL);
   EXPECT_EQ(STUN_BINDING_RESPONSE, msg->type());
-
+  // Received a BINDING-RESPONSE.
+  lconn->OnReadPacket(rport->last_stun_buf()->data<char>(),
+                      rport->last_stun_buf()->size(), rtc::PacketTime());
+  // Verify the STUN Stats.
+  EXPECT_EQ(1U, lconn->stats().sent_ping_requests_total);
+  EXPECT_EQ(1U, lconn->stats().sent_ping_requests_before_first_response);
+  EXPECT_EQ(1U, lconn->stats().recv_ping_responses);
+  EXPECT_EQ(1U, rconn->stats().recv_ping_requests);
+  EXPECT_EQ(1U, rconn->stats().sent_ping_responses);
 
   EXPECT_FALSE(msg->IsLegacy());
   const StunAddressAttribute* addr_attr = msg->GetAddress(
@@ -1728,8 +1737,24 @@ TEST_F(PortTest, TestSendStunMessage) {
 
   // Respond with a BINDING-RESPONSE.
   request.reset(CopyStunMessage(msg));
-  lport->SendBindingResponse(request.get(), rport->Candidates()[0].address());
+  lconn->OnReadPacket(rport->last_stun_buf()->data<char>(),
+                      rport->last_stun_buf()->size(), rtc::PacketTime());
   msg = lport->last_stun_msg();
+  // Receive the BINDING-RESPONSE.
+  rconn->OnReadPacket(lport->last_stun_buf()->data<char>(),
+                      lport->last_stun_buf()->size(), rtc::PacketTime());
+
+  // Verify the Stun ping stats.
+  EXPECT_EQ(3U, rconn->stats().sent_ping_requests_total);
+  EXPECT_EQ(3U, rconn->stats().sent_ping_requests_before_first_response);
+  EXPECT_EQ(1U, rconn->stats().recv_ping_responses);
+  EXPECT_EQ(1U, lconn->stats().sent_ping_responses);
+  EXPECT_EQ(1U, lconn->stats().recv_ping_requests);
+  // Ping after receiver the first response
+  rconn->Ping(0);
+  rconn->Ping(0);
+  EXPECT_EQ(5U, rconn->stats().sent_ping_requests_total);
+  EXPECT_EQ(3U, rconn->stats().sent_ping_requests_before_first_response);
 
   // Response should include same ping count.
   retransmit_attr = msg->GetUInt32(STUN_ATTR_RETRANSMIT_COUNT);

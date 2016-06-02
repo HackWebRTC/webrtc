@@ -467,14 +467,8 @@ class Connection : public CandidatePairInterface,
   // Estimate of the round-trip time over this connection.
   int rtt() const { return rtt_; }
 
-  size_t sent_total_bytes();
-  size_t sent_bytes_second();
-  // Used to track how many packets are discarded in the application socket due
-  // to errors.
-  size_t sent_discarded_packets();
-  size_t sent_total_packets();
-  size_t recv_total_bytes();
-  size_t recv_bytes_second();
+  ConnectionInfo stats();
+
   sigslot::signal1<Connection*> SignalStateChange;
 
   // Sent when the connection has decided that it is no longer of value.  It
@@ -643,8 +637,8 @@ class Connection : public CandidatePairInterface,
 
   rtc::RateTracker recv_rate_tracker_;
   rtc::RateTracker send_rate_tracker_;
-  uint32_t sent_packets_discarded_;
-  uint32_t sent_packets_total_;
+
+  ConnectionInfo stats_;
 
  private:
   void MaybeAddPrflxCandidate(ConnectionRequest* request,

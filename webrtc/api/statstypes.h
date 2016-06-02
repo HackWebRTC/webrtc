@@ -116,6 +116,11 @@ class StatsReport {
     kStatsValueNameSsrc,
     kStatsValueNameState,
     kStatsValueNameTransportId,
+    kStatsValueNameSentPingRequestsTotal,
+    kStatsValueNameSentPingRequestsBeforeFirstResponse,
+    kStatsValueNameSentPingResponses,
+    kStatsValueNameRecvPingRequests,
+    kStatsValueNameRecvPingResponses,
 
     // Internal StatsValue names.
     kStatsValueNameAccelerateRate,

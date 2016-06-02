@@ -605,6 +605,8 @@ void Port::SendBindingResponse(StunMessage* request,
         << "Sent STUN ping response"
         << ", to=" << addr.ToSensitiveString()
         << ", id=" << rtc::hex_encode(response.transaction_id());
+
+    conn->stats_.sent_ping_responses++;
   }
 }
 
@@ -842,8 +844,6 @@ Connection::Connection(Port* port,
       last_ping_response_received_(0),
       recv_rate_tracker_(100, 10u),
       send_rate_tracker_(100, 10u),
-      sent_packets_discarded_(0),
-      sent_packets_total_(0),
       reported_(false),
       state_(STATE_WAITING),
       receiving_timeout_(WEAK_CONNECTION_RECEIVE_TIMEOUT),
@@ -1029,6 +1029,8 @@ void Connection::HandleBindingRequest(IceMessage* msg) {
     LOG(LS_INFO) << "Received conflicting role from the peer.";
     return;
   }
+
+  stats_.recv_ping_requests++;
 
   // This is a validated stun request from remote peer.
   port_->SendBindingResponse(msg, remote_addr);
@@ -1310,6 +1312,7 @@ void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
   }
 
   rtt_ = (RTT_RATIO * rtt_ + rtt) / (RTT_RATIO + 1);
+  stats_.recv_ping_responses++;
 
   MaybeAddPrflxCandidate(request, response);
 }
@@ -1358,6 +1361,10 @@ void Connection::OnConnectionRequestSent(ConnectionRequest* request) {
   LOG_JV(sev, this) << "Sent STUN ping"
                     << ", id=" << rtc::hex_encode(request->id())
                     << ", use_candidate=" << use_candidate;
+  stats_.sent_ping_requests_total++;
+  if (stats_.recv_ping_responses == 0) {
+    stats_.sent_ping_requests_before_first_response++;
+  }
 }
 
 void Connection::HandleRoleConflictFromPeer() {
@@ -1408,28 +1415,12 @@ int64_t Connection::last_received() const {
              std::max(last_ping_received_, last_ping_response_received_));
 }
 
-size_t Connection::recv_bytes_second() {
-  return round(recv_rate_tracker_.ComputeRate());
-}
-
-size_t Connection::recv_total_bytes() {
-  return recv_rate_tracker_.TotalSampleCount();
-}
-
-size_t Connection::sent_bytes_second() {
-  return round(send_rate_tracker_.ComputeRate());
-}
-
-size_t Connection::sent_total_bytes() {
-  return send_rate_tracker_.TotalSampleCount();
-}
-
-size_t Connection::sent_discarded_packets() {
-  return sent_packets_discarded_;
-}
-
-size_t Connection::sent_total_packets() {
-  return sent_packets_total_;
+ConnectionInfo Connection::stats() {
+  stats_.recv_bytes_second = round(recv_rate_tracker_.ComputeRate());
+  stats_.recv_total_bytes = recv_rate_tracker_.TotalSampleCount();
+  stats_.sent_bytes_second = round(send_rate_tracker_.ComputeRate());
+  stats_.sent_total_bytes = send_rate_tracker_.TotalSampleCount();
+  return stats_;
 }
 
 void Connection::MaybeAddPrflxCandidate(ConnectionRequest* request,
@@ -1510,13 +1501,13 @@ int ProxyConnection::Send(const void* data, size_t size,
     error_ = EWOULDBLOCK;
     return SOCKET_ERROR;
   }
-  sent_packets_total_++;
+  stats_.sent_total_packets++;
   int sent = port_->SendTo(data, size, remote_candidate_.address(),
                            options, true);
   if (sent <= 0) {
     ASSERT(sent < 0);
     error_ = port_->GetError();
-    sent_packets_discarded_++;
+    stats_.sent_discarded_packets++;
   } else {
     send_rate_tracker_.AddSamples(sent);
   }

@@ -351,10 +351,10 @@ int TCPConnection::Send(const void* data, size_t size,
     error_ = EWOULDBLOCK;
     return SOCKET_ERROR;
   }
-  sent_packets_total_++;
+  stats_.sent_total_packets++;
   int sent = socket_->Send(data, size, options);
   if (sent < 0) {
-    sent_packets_discarded_++;
+    stats_.sent_discarded_packets++;
     error_ = socket_->GetError();
   } else {
     send_rate_tracker_.AddSamples(sent);
