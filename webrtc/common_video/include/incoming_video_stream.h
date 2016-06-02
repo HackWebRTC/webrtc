@@ -31,9 +31,6 @@ class IncomingVideoStream : public rtc::VideoSinkInterface<VideoFrame> {
   // Overrides VideoSinkInterface
   void OnFrame(const VideoFrame& video_frame) override;
 
-  // Set callback to the platform dependent code.
-  void SetRenderCallback(rtc::VideoSinkInterface<VideoFrame>* render_callback);
-
   // Callback for file recording, snapshot, ...
   void SetExternalCallback(rtc::VideoSinkInterface<VideoFrame>* render_object);
 
@@ -73,8 +70,6 @@ class IncomingVideoStream : public rtc::VideoSinkInterface<VideoFrame> {
 
   bool running_ GUARDED_BY(stream_critsect_);
   rtc::VideoSinkInterface<VideoFrame>* external_callback_
-      GUARDED_BY(thread_critsect_);
-  rtc::VideoSinkInterface<VideoFrame>* render_callback_
       GUARDED_BY(thread_critsect_);
   const std::unique_ptr<VideoRenderFrames> render_buffers_
       GUARDED_BY(buffer_critsect_);

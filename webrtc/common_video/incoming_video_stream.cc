@@ -12,22 +12,11 @@
 
 #include <assert.h>
 
-#if defined(_WIN32)
-#include <windows.h>
-#elif defined(WEBRTC_LINUX)
-#include <sys/time.h>
-#include <time.h>
-#else
-#include <sys/time.h>
-#endif
-
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/timeutils.h"
-#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/common_video/video_render_frames.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
-#include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc {
 
@@ -37,7 +26,6 @@ IncomingVideoStream::IncomingVideoStream(bool disable_prerenderer_smoothing)
       deliver_buffer_event_(EventTimerWrapper::Create()),
       running_(false),
       external_callback_(nullptr),
-      render_callback_(nullptr),
       render_buffers_(new VideoRenderFrames()),
       incoming_rate_(0),
       last_rate_calculation_time_ms_(0),
@@ -74,12 +62,6 @@ void IncomingVideoStream::OnFrame(const VideoFrame& video_frame) {
       deliver_buffer_event_->Set();
     }
   }
-}
-
-void IncomingVideoStream::SetRenderCallback(
-    rtc::VideoSinkInterface<VideoFrame>* render_callback) {
-  rtc::CritScope cs(&thread_critsect_);
-  render_callback_ = render_callback;
 }
 
 int32_t IncomingVideoStream::SetExpectedRenderDelay(
@@ -201,8 +183,6 @@ void IncomingVideoStream::DeliverFrame(const VideoFrame& video_frame) {
   // Send frame for rendering.
   if (external_callback_) {
     external_callback_->OnFrame(video_frame);
-  } else if (render_callback_) {
-    render_callback_->OnFrame(video_frame);
   }
 }
 
