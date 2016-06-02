@@ -288,12 +288,11 @@ test("test_support_unittests") {
   configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
 
+  # TODO(jschuh): Bug 1348: fix this warning.
+  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
+
   if (is_win) {
-    cflags = [
-      # TODO(jschuh): Bug 1348: fix this warning.
-      "/wd4267",  # size_t to int truncations
-      "/wd4373",  # virtual override w/different const/volatile signature.
-    ]
+    cflags = [ "/wd4373" ]  # virtual override w/different const/volatile signature.
   }
 
   if (is_clang) {

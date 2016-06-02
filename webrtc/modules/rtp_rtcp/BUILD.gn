@@ -171,11 +171,11 @@ source_set("rtp_rtcp") {
     "../remote_bitrate_estimator",
   ]
 
+  # TODO(jschuh): Bug 1348: fix this warning.
+  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
+
   if (is_win) {
     cflags = [
-      # TODO(jschuh): Bug 1348: fix this warning.
-      "/wd4267",  # size_t to int truncations
-
       # TODO(kjellander): Bug 261: fix this warning.
       "/wd4373",  # virtual function override.
     ]

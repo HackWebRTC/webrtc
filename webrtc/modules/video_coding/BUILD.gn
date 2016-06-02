@@ -75,12 +75,8 @@ source_set("video_coding") {
   configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
 
-  if (is_win) {
-    cflags = [
-      # TODO(jschuh): Bug 1348: fix this warning.
-      "/wd4267",  # size_t to int truncation.
-    ]
-  }
+  # TODO(jschuh): Bug 1348: fix this warning.
+  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
@@ -263,17 +259,13 @@ source_set("webrtc_vp8") {
   configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
 
+  # TODO(jschuh): Bug 1348: fix this warning.
+  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
+
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
     configs -= [ "//build/config/clang:find_bad_constructs" ]
-  }
-
-  if (is_win) {
-    cflags = [
-      # TODO(jschuh): Bug 1348: fix this warning.
-      "/wd4267",  # size_t to int truncation.
-    ]
   }
 
   deps = [
