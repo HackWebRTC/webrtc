@@ -497,8 +497,6 @@ class VideoChannel : public BaseChannel {
   }
 
   bool SetSink(uint32_t ssrc, rtc::VideoSinkInterface<VideoFrame>* sink);
-  // Register a source. The |ssrc| must correspond to a registered
-  // send stream.
   void SetSource(uint32_t ssrc,
                  rtc::VideoSourceInterface<cricket::VideoFrame>* source);
   // Get statistics about the current media session.
@@ -511,7 +509,12 @@ class VideoChannel : public BaseChannel {
   void StopMediaMonitor();
   sigslot::signal2<VideoChannel*, const VideoMediaInfo&> SignalMediaMonitor;
 
-  bool SetVideoSend(uint32_t ssrc, bool enable, const VideoOptions* options);
+  // Register a source and set options.
+  // The |ssrc| must correspond to a registered send stream.
+  bool SetVideoSend(uint32_t ssrc,
+                    bool enable,
+                    const VideoOptions* options,
+                    rtc::VideoSourceInterface<cricket::VideoFrame>* source);
   webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const;
   bool SetRtpSendParameters(uint32_t ssrc,
                             const webrtc::RtpParameters& parameters);

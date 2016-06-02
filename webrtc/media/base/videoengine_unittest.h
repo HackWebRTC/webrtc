@@ -104,7 +104,8 @@ class VideoMediaChannelTest : public testing::Test,
                                 cricket::VideoFormat::FpsToInterval(30),
                                 cricket::FOURCC_I420);
     EXPECT_EQ(cricket::CS_RUNNING, video_capturer_->Start(format));
-    channel_->SetSource(kSsrc, video_capturer_.get());
+    EXPECT_TRUE(
+        channel_->SetVideoSend(kSsrc, true, nullptr, video_capturer_.get()));
   }
 
   virtual cricket::FakeVideoCapturer* CreateFakeVideoCapturer() {
@@ -141,7 +142,8 @@ class VideoMediaChannelTest : public testing::Test,
                                 cricket::FOURCC_I420);
     EXPECT_EQ(cricket::CS_RUNNING, video_capturer_2_->Start(format));
 
-    channel_->SetSource(kSsrc + 2, video_capturer_2_.get());
+    EXPECT_TRUE(channel_->SetVideoSend(kSsrc + 2, true, nullptr,
+                                       video_capturer_2_.get()));
   }
   virtual void TearDown() {
     channel_.reset();
@@ -352,7 +354,8 @@ class VideoMediaChannelTest : public testing::Test,
   // Test that SetSend works.
   void SetSend() {
     EXPECT_FALSE(channel_->sending());
-    channel_->SetSource(kSsrc, video_capturer_.get());
+    EXPECT_TRUE(
+        channel_->SetVideoSend(kSsrc, true, nullptr, video_capturer_.get()));
     EXPECT_TRUE(SetOneCodec(DefaultCodec()));
     EXPECT_FALSE(channel_->sending());
     EXPECT_TRUE(SetSend(true));
@@ -546,7 +549,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ(cricket::CS_RUNNING, capturer->Start(format));
     EXPECT_TRUE(channel_->AddSendStream(
         cricket::StreamParams::CreateLegacy(5678)));
-    channel_->SetSource(5678, capturer.get());
+    EXPECT_TRUE(channel_->SetVideoSend(5678, true, nullptr, capturer.get()));
     EXPECT_TRUE(channel_->AddRecvStream(
         cricket::StreamParams::CreateLegacy(5678)));
     EXPECT_TRUE(channel_->SetSink(5678, &renderer2));
@@ -582,7 +585,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ(kTestWidth, info.senders[1].send_frame_width);
     EXPECT_EQ(kTestHeight, info.senders[1].send_frame_height);
     // The capturer must be unregistered here as it runs out of it's scope next.
-    channel_->SetSource(5678, NULL);
+    channel_->SetVideoSend(5678, true, nullptr, nullptr);
   }
 
   // Test that we can set the bandwidth.
@@ -619,7 +622,8 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(SetDefaultCodec());
     EXPECT_TRUE(channel_->AddSendStream(
         cricket::StreamParams::CreateLegacy(999)));
-    channel_->SetSource(999u, video_capturer_.get());
+    EXPECT_TRUE(
+        channel_->SetVideoSend(999u, true, nullptr, video_capturer_.get()));
     EXPECT_TRUE(SetSend(true));
     EXPECT_TRUE(WaitAndSendFrame(0));
     EXPECT_TRUE_WAIT(NumRtpPackets() > 0, kTimeout);
@@ -685,7 +689,8 @@ class VideoMediaChannelTest : public testing::Test,
 
     EXPECT_TRUE(channel_->AddSendStream(
         cricket::StreamParams::CreateLegacy(789u)));
-    channel_->SetSource(789u, video_capturer_.get());
+    EXPECT_TRUE(
+        channel_->SetVideoSend(789u, true, nullptr, video_capturer_.get()));
     EXPECT_EQ(rtp_packets, NumRtpPackets());
     // Wait 30ms to guarantee the engine does not drop the frame.
     EXPECT_TRUE(WaitAndSendFrame(30));
@@ -754,7 +759,7 @@ class VideoMediaChannelTest : public testing::Test,
     // test which is related to screencast logic.
     cricket::VideoOptions video_options;
     video_options.is_screencast = rtc::Optional<bool>(true);
-    channel_->SetVideoSend(kSsrc, true, &video_options);
+    channel_->SetVideoSend(kSsrc, true, &video_options, nullptr);
 
     cricket::VideoFormat format(480, 360,
                                 cricket::VideoFormat::FpsToInterval(30),
@@ -768,7 +773,7 @@ class VideoMediaChannelTest : public testing::Test,
 
     int captured_frames = 1;
     for (int iterations = 0; iterations < 2; ++iterations) {
-      channel_->SetSource(kSsrc, capturer.get());
+      EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr, capturer.get()));
       rtc::Thread::Current()->ProcessMessages(time_between_send);
       EXPECT_TRUE(capturer->CaptureCustomFrame(format.width, format.height,
                                                cricket::FOURCC_I420));
@@ -783,7 +788,7 @@ class VideoMediaChannelTest : public testing::Test,
       EXPECT_EQ(format.height, renderer_.height());
       captured_frames = renderer_.num_rendered_frames() + 1;
       EXPECT_FALSE(renderer_.black_frame());
-      channel_->SetSource(kSsrc, NULL);
+      EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr, nullptr));
       // Make sure a black frame is generated within the specified timeout.
       // The black frame should be the resolution of the previous frame to
       // prevent expensive encoder reconfigurations.
@@ -805,8 +810,9 @@ class VideoMediaChannelTest : public testing::Test,
     }
   }
 
-  // Tests that if RemoveCapturer is called without a capturer ever being
-  // added, the plugin shouldn't crash (and no black frame should be sent).
+  // Tests that if SetVideoSend is called with a NULL capturer after the
+  // capturer was already removed, the application doesn't crash (and no black
+  // frame is sent).
   void RemoveCapturerWithoutAdd() {
     EXPECT_TRUE(SetOneCodec(DefaultCodec()));
     EXPECT_TRUE(SetSend(true));
@@ -818,12 +824,12 @@ class VideoMediaChannelTest : public testing::Test,
     // tightly.
     rtc::Thread::Current()->ProcessMessages(30);
     // Remove the capturer.
-    channel_->SetSource(kSsrc, NULL);
+    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr, nullptr));
     // Wait for one black frame for removing the capturer.
     EXPECT_FRAME_WAIT(2, 640, 400, kTimeout);
 
-    // No capturer was added, so this SetSource should be a NOP.
-    channel_->SetSource(kSsrc, NULL);
+    // No capturer was added, so this SetVideoSend shouldn't do anything.
+    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr, nullptr));
     rtc::Thread::Current()->ProcessMessages(300);
     // Verify no more frames were sent.
     EXPECT_EQ(2, renderer_.num_rendered_frames());
@@ -865,11 +871,11 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ(cricket::CS_RUNNING, capturer2->Start(capture_format));
     // State for all the streams.
     EXPECT_TRUE(SetOneCodec(DefaultCodec()));
-    // A limitation in the lmi implementation requires that SetSource() is
+    // A limitation in the lmi implementation requires that SetVideoSend() is
     // called after SetOneCodec().
     // TODO(hellner): this seems like an unnecessary constraint, fix it.
-    channel_->SetSource(1, capturer1.get());
-    channel_->SetSource(2, capturer2.get());
+    EXPECT_TRUE(channel_->SetVideoSend(1, true, nullptr, capturer1.get()));
+    EXPECT_TRUE(channel_->SetVideoSend(2, true, nullptr, capturer2.get()));
     EXPECT_TRUE(SetSend(true));
     // Test capturer associated with engine.
     const int kTestWidth = 160;
@@ -884,13 +890,11 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_FRAME_ON_RENDERER_WAIT(
         renderer2, 1, kTestWidth, kTestHeight, kTimeout);
     // Successfully remove the capturer.
-    channel_->SetSource(kSsrc, NULL);
-    // Fail to re-remove the capturer.
-    channel_->SetSource(kSsrc, NULL);
+    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr, nullptr));
     // The capturers must be unregistered here as it runs out of it's scope
     // next.
-    channel_->SetSource(1, NULL);
-    channel_->SetSource(2, NULL);
+    EXPECT_TRUE(channel_->SetVideoSend(1, true, nullptr, nullptr));
+    EXPECT_TRUE(channel_->SetVideoSend(2, true, nullptr, nullptr));
   }
 
   void HighAspectHighHeightCapturer() {
@@ -923,13 +927,13 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ(cricket::CS_RUNNING, capturer->Start(capture_format));
     // Capture frame to not get same frame timestamps as previous capturer.
     capturer->CaptureFrame();
-    channel_->SetSource(kSsrc, capturer.get());
+    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr, capturer.get()));
     EXPECT_TRUE(rtc::Thread::Current()->ProcessMessages(30));
     EXPECT_TRUE(capturer->CaptureCustomFrame(kWidth, kHeight,
                                              cricket::FOURCC_ARGB));
     EXPECT_GT_FRAME_ON_RENDERER_WAIT(
         renderer, 2, kScaledWidth, kScaledHeight, kTimeout);
-    channel_->SetSource(kSsrc, NULL);
+    EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr, nullptr));
   }
 
   // Tests that we can adapt video resolution with 16:10 aspect ratio properly.

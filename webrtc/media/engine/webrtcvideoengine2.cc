@@ -1048,19 +1048,29 @@ bool WebRtcVideoChannel2::SetSend(bool send) {
 }
 
 // TODO(nisse): The enable argument was used for mute logic which has
-// been moved to VideoBroadcaster. So delete this method, and use
-// SetOptions instead.
-bool WebRtcVideoChannel2::SetVideoSend(uint32_t ssrc, bool enable,
-                                       const VideoOptions* options) {
+// been moved to VideoBroadcaster. So remove the argument from this
+// method.
+bool WebRtcVideoChannel2::SetVideoSend(
+    uint32_t ssrc,
+    bool enable,
+    const VideoOptions* options,
+    rtc::VideoSourceInterface<cricket::VideoFrame>* source) {
   TRACE_EVENT0("webrtc", "SetVideoSend");
+  RTC_DCHECK(ssrc != 0);
   LOG(LS_INFO) << "SetVideoSend (ssrc= " << ssrc << ", enable = " << enable
-               << "options: " << (options ? options->ToString() : "nullptr")
-               << ").";
+               << ", options: " << (options ? options->ToString() : "nullptr")
+               << ", source = " << (source ? "(source)" : "nullptr") << ")";
 
-  if (enable && options) {
-    SetOptions(ssrc, *options);
+  rtc::CritScope stream_lock(&stream_crit_);
+  const auto& kv = send_streams_.find(ssrc);
+  if (kv == send_streams_.end()) {
+    // Allow unknown ssrc only if source is null.
+    RTC_CHECK(source == nullptr);
+    LOG(LS_ERROR) << "No sending stream on ssrc " << ssrc;
+    return false;
   }
-  return true;
+
+  return kv->second->SetVideoSend(enable, options, source);
 }
 
 bool WebRtcVideoChannel2::ValidateSendSsrcAvailability(
@@ -1287,7 +1297,8 @@ bool WebRtcVideoChannel2::RemoveRecvStream(uint32_t ssrc) {
 
 bool WebRtcVideoChannel2::SetSink(uint32_t ssrc,
                                   rtc::VideoSinkInterface<VideoFrame>* sink) {
-  LOG(LS_INFO) << "SetSink: ssrc:" << ssrc << " " << (sink ? "(ptr)" : "NULL");
+  LOG(LS_INFO) << "SetSink: ssrc:" << ssrc << " "
+               << (sink ? "(ptr)" : "nullptr");
   if (ssrc == 0) {
     default_unsignalled_ssrc_handler_.SetDefaultSink(this, sink);
     return true;
@@ -1353,23 +1364,6 @@ void WebRtcVideoChannel2::FillBandwidthEstimationStats(
     stream->second->FillBandwidthEstimationInfo(&bwe_info);
   }
   video_media_info->bw_estimations.push_back(bwe_info);
-}
-
-void WebRtcVideoChannel2::SetSource(
-    uint32_t ssrc,
-    rtc::VideoSourceInterface<cricket::VideoFrame>* source) {
-  LOG(LS_INFO) << "SetSource: " << ssrc << " -> "
-               << (source ? "(source)" : "NULL");
-  RTC_DCHECK(ssrc != 0);
-
-  rtc::CritScope stream_lock(&stream_crit_);
-  const auto& kv = send_streams_.find(ssrc);
-  if (kv == send_streams_.end()) {
-    // Allow unknown ssrc only if source is null.
-    RTC_CHECK(source == nullptr);
-  } else {
-    kv->second->SetSource(source);
-  }
 }
 
 void WebRtcVideoChannel2::OnPacketReceived(
@@ -1456,19 +1450,6 @@ void WebRtcVideoChannel2::OnNetworkRouteChanged(
     const std::string& transport_name,
     const rtc::NetworkRoute& network_route) {
   call_->OnNetworkRouteChanged(transport_name, network_route);
-}
-
-// TODO(pbos): Remove SetOptions in favor of SetSendParameters.
-void WebRtcVideoChannel2::SetOptions(uint32_t ssrc,
-                                     const VideoOptions& options) {
-  LOG(LS_INFO) << "SetOptions: ssrc " << ssrc << ": " << options.ToString();
-
-  rtc::CritScope stream_lock(&stream_crit_);
-  const auto& kv = send_streams_.find(ssrc);
-  if (kv == send_streams_.end()) {
-    return;
-  }
-  kv->second->SetOptions(options);
 }
 
 void WebRtcVideoChannel2::SetInterface(NetworkInterface* iface) {
@@ -1639,24 +1620,40 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
   stream_->Input()->IncomingCapturedFrame(video_frame);
 }
 
-void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSource(
+bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoSend(
+    bool enable,
+    const VideoOptions* options,
     rtc::VideoSourceInterface<cricket::VideoFrame>* source) {
-  TRACE_EVENT0("webrtc", "WebRtcVideoSendStream::SetSource");
+  TRACE_EVENT0("webrtc", "WebRtcVideoSendStream::SetVideoSend");
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
 
-  if (!source && !source_)
-    return;
-  DisconnectSource();
+  // Ignore |options| pointer if |enable| is false.
+  bool options_present = enable && options;
+  bool source_changing = source_ != source;
+  if (source_changing) {
+    DisconnectSource();
+  }
 
-  {
+  if (options_present || source_changing) {
     rtc::CritScope cs(&lock_);
 
-    // Reset timestamps to realign new incoming frames to a webrtc timestamp. A
-    // new capturer may have a different timestamp delta than the previous one.
-    first_frame_timestamp_ms_ = rtc::Optional<int64_t>();
+    if (options_present) {
+      VideoOptions old_options = parameters_.options;
+      parameters_.options.SetAll(*options);
+      // Reconfigure encoder settings on the naext frame or stream
+      // recreation if the options changed.
+      if (parameters_.options != old_options) {
+        pending_encoder_reconfiguration_ = true;
+      }
+    }
 
-    if (source == NULL) {
-      if (stream_ != NULL) {
+    if (source_changing) {
+      // Reset timestamps to realign new incoming frames to a webrtc timestamp.
+      // A new source may have a different timestamp delta than the previous
+      // one.
+      first_frame_timestamp_ms_ = rtc::Optional<int64_t>();
+
+      if (source == nullptr && stream_ != nullptr) {
         LOG(LS_VERBOSE) << "Disabling capturer, sending black frame.";
         // Force this black frame not to be dropped due to timestamp order
         // check. As IncomingCapturedFrame will drop the frame if this frame's
@@ -1668,14 +1665,16 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSource(
             CreateBlackFrame(last_dimensions_.width, last_dimensions_.height,
                              last_frame_timestamp_ms_, last_rotation_));
       }
+      source_ = source;
     }
   }
-  source_ = source;
+
   // |source_->AddOrUpdateSink| may not be called while holding |lock_| since
   // that might cause a lock order inversion.
-  if (source_) {
+  if (source_changing && source_) {
     source_->AddOrUpdateSink(this, sink_wants_);
   }
+  return true;
 }
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::DisconnectSource() {
@@ -1688,9 +1687,9 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::DisconnectSource() {
   // that might cause a lock order inversion.
   source_->RemoveSink(this);
   source_ = nullptr;
-  // Reset |cpu_restricted_counter_| if the capturer is changed. It is not
+  // Reset |cpu_restricted_counter_| if the source is changed. It is not
   // possible to know if the video resolution is restricted by CPU usage after
-  // the capturer is changed since the next capturer might be screen capture
+  // the source is changed since the next source might be screen capture
   // with another resolution and frame rate.
   cpu_restricted_counter_ = 0;
 }
@@ -1698,19 +1697,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::DisconnectSource() {
 const std::vector<uint32_t>&
 WebRtcVideoChannel2::WebRtcVideoSendStream::GetSsrcs() const {
   return ssrcs_;
-}
-
-void WebRtcVideoChannel2::WebRtcVideoSendStream::SetOptions(
-    const VideoOptions& options) {
-  rtc::CritScope cs(&lock_);
-
-  VideoOptions old_options = parameters_.options;
-  parameters_.options.SetAll(options);
-  // Reconfigure encoder settings on the next frame or stream
-  // recreation if the options changed.
-  if (parameters_.options != old_options) {
-    pending_encoder_reconfiguration_ = true;
-  }
 }
 
 webrtc::VideoCodecType CodecTypeFromName(const std::string& name) {
@@ -1848,7 +1834,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSendParameters(
     }
   }  // release |lock_|
 
-  // |capturer_->AddOrUpdateSink| may not be called while holding |lock_| since
+  // |source_->AddOrUpdateSink| may not be called while holding |lock_| since
   // that might cause a lock order inversion.
   if (params.rtp_header_extensions) {
     sink_wants_.rotation_applied = !ContainsHeaderExtension(
@@ -2043,14 +2029,14 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnLoadUpdate(Load load) {
         return;
       }
       // The input video frame size will have a resolution with less than or
-      // equal to |max_pixel_count| depending on how the capturer can scale the
+      // equal to |max_pixel_count| depending on how the source can scale the
       // input frame size.
       max_pixel_count = rtc::Optional<int>(
           (last_dimensions_.height * last_dimensions_.width * 3) / 5);
       // Increase |number_of_cpu_adapt_changes_| if
       // sink_wants_.max_pixel_count will be changed since
-      // last time |capturer_->AddOrUpdateSink| was called. That is, this will
-      // result in a new request for the capturer to change resolution.
+      // last time |source_->AddOrUpdateSink| was called. That is, this will
+      // result in a new request for the source to change resolution.
       if (!sink_wants_.max_pixel_count ||
           *sink_wants_.max_pixel_count > *max_pixel_count) {
         ++number_of_cpu_adapt_changes_;
@@ -2060,13 +2046,13 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnLoadUpdate(Load load) {
       RTC_DCHECK(load == kUnderuse);
       // The input video frame size will have a resolution with "one step up"
       // pixels than |max_pixel_count_step_up| where "one step up" depends on
-      // how the capturer can scale the input frame size.
+      // how the source can scale the input frame size.
       max_pixel_count_step_up = rtc::Optional<int>(last_dimensions_.height *
                                                    last_dimensions_.width);
       // Increase |number_of_cpu_adapt_changes_| if
       // sink_wants_.max_pixel_count_step_up will be changed since
-      // last time |capturer_->AddOrUpdateSink| was called. That is, this will
-      // result in a new request for the capturer to change resolution.
+      // last time |source_->AddOrUpdateSink| was called. That is, this will
+      // result in a new request for the source to change resolution.
       if (sink_wants_.max_pixel_count ||
           (sink_wants_.max_pixel_count_step_up &&
            *sink_wants_.max_pixel_count_step_up < *max_pixel_count_step_up)) {

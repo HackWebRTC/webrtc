@@ -547,20 +547,19 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
   }
 
   bool SetSend(bool send) override { return set_sending(send); }
-  bool SetVideoSend(uint32_t ssrc, bool enable,
-                    const VideoOptions* options) override {
+  bool SetVideoSend(
+      uint32_t ssrc,
+      bool enable,
+      const VideoOptions* options,
+      rtc::VideoSourceInterface<cricket::VideoFrame>* source) override {
     if (!RtpHelper<VideoMediaChannel>::MuteStream(ssrc, !enable)) {
       return false;
     }
     if (enable && options) {
       return SetOptions(*options);
     }
-    return true;
-  }
-  void SetSource(
-      uint32_t ssrc,
-      rtc::VideoSourceInterface<cricket::VideoFrame>* source) override {
     sources_[ssrc] = source;
+    return true;
   }
 
   bool HasSource(uint32_t ssrc) const {

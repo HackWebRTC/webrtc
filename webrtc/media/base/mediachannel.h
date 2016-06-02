@@ -991,18 +991,17 @@ class VideoMediaChannel : public MediaChannel {
   virtual bool GetSendCodec(VideoCodec* send_codec) = 0;
   // Starts or stops transmission (and potentially capture) of local video.
   virtual bool SetSend(bool send) = 0;
-  // Configure stream for sending.
-  virtual bool SetVideoSend(uint32_t ssrc,
-                            bool enable,
-                            const VideoOptions* options) = 0;
+  // Configure stream for sending and register a source.
+  // The |ssrc| must correspond to a registered send stream.
+  virtual bool SetVideoSend(
+      uint32_t ssrc,
+      bool enable,
+      const VideoOptions* options,
+      rtc::VideoSourceInterface<cricket::VideoFrame>* source) = 0;
   // Sets the sink object to be used for the specified stream.
   // If SSRC is 0, the renderer is used for the 'default' stream.
   virtual bool SetSink(uint32_t ssrc,
                        rtc::VideoSinkInterface<cricket::VideoFrame>* sink) = 0;
-  // Register a source. The |ssrc| must correspond to a registered send stream.
-  virtual void SetSource(
-      uint32_t ssrc,
-      rtc::VideoSourceInterface<cricket::VideoFrame>* source) = 0;
   // Gets quality stats for the channel.
   virtual bool GetStats(VideoMediaInfo* info) = 0;
 };

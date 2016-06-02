@@ -80,18 +80,21 @@ class AudioProviderInterface {
 // of a video track connected to a certain PeerConnection.
 class VideoProviderInterface {
  public:
-  virtual bool SetSource(
-      uint32_t ssrc,
-      rtc::VideoSourceInterface<cricket::VideoFrame>* source) = 0;
   // Enable/disable the video playout of a remote video track with |ssrc|.
   virtual void SetVideoPlayout(
       uint32_t ssrc,
       bool enable,
       rtc::VideoSinkInterface<cricket::VideoFrame>* sink) = 0;
-  // Enable sending video on the local video track with |ssrc|.
-  virtual void SetVideoSend(uint32_t ssrc,
-                            bool enable,
-                            const cricket::VideoOptions* options) = 0;
+  // Enable/disable sending video on the local video track with |ssrc|.
+  // TODO(deadbeef): Make |options| a reference parameter.
+  // TODO(deadbeef): Eventually, |enable| and |options| will be contained
+  // in |source|. When that happens, remove those parameters and rename
+  // this to SetVideoSource.
+  virtual void SetVideoSend(
+      uint32_t ssrc,
+      bool enable,
+      const cricket::VideoOptions* options,
+      rtc::VideoSourceInterface<cricket::VideoFrame>* source) = 0;
 
   virtual RtpParameters GetVideoRtpSendParameters(uint32_t ssrc) const = 0;
   virtual bool SetVideoRtpSendParameters(uint32_t ssrc,

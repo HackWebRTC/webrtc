@@ -171,6 +171,8 @@ class VideoRtpSender : public ObserverInterface,
   // Helper function to construct options for
   // VideoProviderInterface::SetVideoSend.
   void SetVideoSend();
+  // Helper function to call SetVideoSend with "stop sending" parameters.
+  void ClearVideoSend();
 
   std::string id_;
   std::string stream_id_;

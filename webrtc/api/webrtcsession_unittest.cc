@@ -253,7 +253,6 @@ class WebRtcSessionForTest : public webrtc::WebRtcSession {
 
   using webrtc::WebRtcSession::SetAudioPlayout;
   using webrtc::WebRtcSession::SetAudioSend;
-  using webrtc::WebRtcSession::SetSource;
   using webrtc::WebRtcSession::SetVideoPlayout;
   using webrtc::WebRtcSession::SetVideoSend;
 
@@ -3540,9 +3539,9 @@ TEST_F(WebRtcSessionTest, SetVideoSend) {
   uint32_t send_ssrc = channel->send_streams()[0].first_ssrc();
   EXPECT_FALSE(channel->IsStreamMuted(send_ssrc));
   cricket::VideoOptions* options = NULL;
-  session_->SetVideoSend(send_ssrc, false, options);
+  session_->SetVideoSend(send_ssrc, false, options, nullptr);
   EXPECT_TRUE(channel->IsStreamMuted(send_ssrc));
-  session_->SetVideoSend(send_ssrc, true, options);
+  session_->SetVideoSend(send_ssrc, true, options, nullptr);
   EXPECT_FALSE(channel->IsStreamMuted(send_ssrc));
 }
 

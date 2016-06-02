@@ -156,9 +156,11 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
       const webrtc::RtpParameters& parameters) override;
   bool GetSendCodec(VideoCodec* send_codec) override;
   bool SetSend(bool send) override;
-  bool SetVideoSend(uint32_t ssrc,
-                    bool mute,
-                    const VideoOptions* options) override;
+  bool SetVideoSend(
+      uint32_t ssrc,
+      bool enable,
+      const VideoOptions* options,
+      rtc::VideoSourceInterface<cricket::VideoFrame>* source) override;
   bool AddSendStream(const StreamParams& sp) override;
   bool RemoveSendStream(uint32_t ssrc) override;
   bool AddRecvStream(const StreamParams& sp) override;
@@ -167,9 +169,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   bool SetSink(uint32_t ssrc,
                rtc::VideoSinkInterface<VideoFrame>* sink) override;
   bool GetStats(VideoMediaInfo* info) override;
-  void SetSource(
-      uint32_t ssrc,
-      rtc::VideoSourceInterface<cricket::VideoFrame>* source) override;
 
   void OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
                         const rtc::PacketTime& packet_time) override;
@@ -226,7 +225,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
                                 ChangedRecvParameters* changed_params) const;
 
   void SetMaxSendBandwidth(int bps);
-  void SetOptions(uint32_t ssrc, const VideoOptions& options);
 
   void ConfigureReceiverRtp(webrtc::VideoReceiveStream::Config* config,
                             const StreamParams& sp) const;
@@ -260,14 +258,14 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
         const VideoSendParameters& send_params);
     virtual ~WebRtcVideoSendStream();
 
-    void SetOptions(const VideoOptions& options);
-    // TODO(pbos): Move logic from SetOptions into this method.
     void SetSendParameters(const ChangedSendParameters& send_params);
     bool SetRtpParameters(const webrtc::RtpParameters& parameters);
     webrtc::RtpParameters GetRtpParameters() const;
 
     void OnFrame(const cricket::VideoFrame& frame) override;
-    void SetSource(rtc::VideoSourceInterface<cricket::VideoFrame>* source);
+    bool SetVideoSend(bool mute,
+                      const VideoOptions* options,
+                      rtc::VideoSourceInterface<cricket::VideoFrame>* source);
     void DisconnectSource();
 
     void SetSend(bool send);

@@ -1254,21 +1254,6 @@ bool WebRtcSession::SetAudioRtpReceiveParameters(
   return voice_channel_->SetRtpReceiveParameters(ssrc, parameters);
 }
 
-bool WebRtcSession::SetSource(
-    uint32_t ssrc,
-    rtc::VideoSourceInterface<cricket::VideoFrame>* source) {
-  ASSERT(signaling_thread()->IsCurrent());
-
-  if (!video_channel_) {
-    // |video_channel_| doesnt't exist. Probably because the remote end doesnt't
-    // support video.
-    LOG(LS_WARNING) << "Video not used in this call.";
-    return false;
-  }
-  video_channel_->SetSource(ssrc, source);
-  return true;
-}
-
 void WebRtcSession::SetVideoPlayout(
     uint32_t ssrc,
     bool enable,
@@ -1286,19 +1271,21 @@ void WebRtcSession::SetVideoPlayout(
   }
 }
 
-void WebRtcSession::SetVideoSend(uint32_t ssrc,
-                                 bool enable,
-                                 const cricket::VideoOptions* options) {
+void WebRtcSession::SetVideoSend(
+    uint32_t ssrc,
+    bool enable,
+    const cricket::VideoOptions* options,
+    rtc::VideoSourceInterface<cricket::VideoFrame>* source) {
   ASSERT(signaling_thread()->IsCurrent());
   if (!video_channel_) {
     LOG(LS_WARNING) << "SetVideoSend: No video channel exists.";
     return;
   }
-  if (!video_channel_->SetVideoSend(ssrc, enable, options)) {
-    // Allow that MuteStream fail if |enable| is false but assert otherwise.
-    // This in the normal case when the underlying media channel has already
-    // been deleted.
-    ASSERT(enable == false);
+  if (!video_channel_->SetVideoSend(ssrc, enable, options, source)) {
+    // Allow that MuteStream fail if |enable| is false and |source| is NULL but
+    // assert otherwise. This in the normal case when the underlying media
+    // channel has already been deleted.
+    ASSERT(enable == false && source == nullptr);
   }
 }
 

@@ -1871,18 +1871,13 @@ bool VideoChannel::SetSink(uint32_t ssrc,
   return true;
 }
 
-void VideoChannel::SetSource(
+bool VideoChannel::SetVideoSend(
     uint32_t ssrc,
+    bool mute,
+    const VideoOptions* options,
     rtc::VideoSourceInterface<cricket::VideoFrame>* source) {
-  worker_thread()->Invoke<void>(
-      Bind(&VideoMediaChannel::SetSource, media_channel(), ssrc, source));
-}
-
-bool VideoChannel::SetVideoSend(uint32_t ssrc,
-                                bool mute,
-                                const VideoOptions* options) {
   return InvokeOnWorker(Bind(&VideoMediaChannel::SetVideoSend, media_channel(),
-                             ssrc, mute, options));
+                             ssrc, mute, options, source));
 }
 
 webrtc::RtpParameters VideoChannel::GetRtpSendParameters(uint32_t ssrc) const {

@@ -252,16 +252,15 @@ class WebRtcSession : public AudioProviderInterface,
                                     const RtpParameters& parameters) override;
 
   // Implements VideoMediaProviderInterface.
-  bool SetSource(
-      uint32_t ssrc,
-      rtc::VideoSourceInterface<cricket::VideoFrame>* source) override;
   void SetVideoPlayout(
       uint32_t ssrc,
       bool enable,
       rtc::VideoSinkInterface<cricket::VideoFrame>* sink) override;
-  void SetVideoSend(uint32_t ssrc,
-                    bool enable,
-                    const cricket::VideoOptions* options) override;
+  void SetVideoSend(
+      uint32_t ssrc,
+      bool enable,
+      const cricket::VideoOptions* options,
+      rtc::VideoSourceInterface<cricket::VideoFrame>* source) override;
 
   RtpParameters GetVideoRtpSendParameters(uint32_t ssrc) const override;
   bool SetVideoRtpSendParameters(uint32_t ssrc,
