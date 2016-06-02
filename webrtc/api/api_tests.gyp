@@ -32,7 +32,6 @@
       ],
       'sources': [
         'datachannel_unittest.cc',
-        'dtlsidentitystore_unittest.cc',
         'dtmfsender_unittest.cc',
         'fakemetricsobserver.cc',
         'fakemetricsobserver.h',

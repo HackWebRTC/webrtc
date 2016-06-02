@@ -27,7 +27,9 @@
 
 namespace webrtc {
 
-// Passed to SSLIdentity::Generate.
+// TODO(hbos): Remove this constant (and dtlsidentitystore.cc) after
+// RTCPeerConnectionInterface.mm stops using it.
+// bugs.webrtc.org/5707, bugs.webrtc.org/5708
 extern const char kIdentityName[];
 
 class SSLIdentity;
@@ -62,95 +64,6 @@ class DtlsIdentityStoreInterface {
       const rtc::KeyParams& key_params,
       const rtc::Optional<uint64_t>& expires_ms,
       const rtc::scoped_refptr<DtlsIdentityRequestObserver>& observer) = 0;
-};
-
-// The WebRTC default implementation of DtlsIdentityStoreInterface.
-// Identity generation is performed on the worker thread.
-class DtlsIdentityStoreImpl : public DtlsIdentityStoreInterface,
-                              public rtc::MessageHandler {
- public:
-  // This will start to preemptively generating an RSA identity in the
-  // background if the worker thread is not the same as the signaling thread.
-  DtlsIdentityStoreImpl(rtc::Thread* signaling_thread,
-                        rtc::Thread* worker_thread);
-  ~DtlsIdentityStoreImpl() override;
-
-  // DtlsIdentityStoreInterface override;
-  void RequestIdentity(
-      const rtc::KeyParams& key_params,
-      const rtc::Optional<uint64_t>& expires_ms,
-      const rtc::scoped_refptr<DtlsIdentityRequestObserver>& observer) override;
-
-  // rtc::MessageHandler override;
-  void OnMessage(rtc::Message* msg) override;
-
-  // Returns true if there is a free RSA identity, used for unit tests.
-  bool HasFreeIdentityForTesting(rtc::KeyType key_type) const;
-
- private:
-  void GenerateIdentity(
-      rtc::KeyType key_type,
-      const rtc::scoped_refptr<DtlsIdentityRequestObserver>& observer);
-  void OnIdentityGenerated(rtc::KeyType key_type,
-                           std::unique_ptr<rtc::SSLIdentity> identity);
-
-  class WorkerTask;
-  typedef rtc::ScopedMessageData<DtlsIdentityStoreImpl::WorkerTask>
-      WorkerTaskMessageData;
-
-  // A key type-identity pair.
-  struct IdentityResult {
-    IdentityResult(rtc::KeyType key_type,
-                   std::unique_ptr<rtc::SSLIdentity> identity)
-        : key_type_(key_type), identity_(std::move(identity)) {}
-
-    rtc::KeyType key_type_;
-    std::unique_ptr<rtc::SSLIdentity> identity_;
-  };
-
-  typedef rtc::ScopedMessageData<IdentityResult> IdentityResultMessageData;
-
-  sigslot::signal0<> SignalDestroyed;
-
-  rtc::Thread* const signaling_thread_;
-  // TODO(hbos): RSA generation is slow and would be VERY slow if we switch over
-  // to 2048, DtlsIdentityStore should use a new thread and not the "general
-  // purpose" worker thread.
-  rtc::Thread* const worker_thread_;
-
-  struct RequestInfo {
-    RequestInfo()
-        : request_observers_(), gen_in_progress_counts_(0), free_identity_() {}
-
-    std::queue<rtc::scoped_refptr<DtlsIdentityRequestObserver>>
-        request_observers_;
-    size_t gen_in_progress_counts_;
-    std::unique_ptr<rtc::SSLIdentity> free_identity_;
-  };
-
-  // One RequestInfo per KeyType. Only touch on the |signaling_thread_|.
-  RequestInfo request_info_[rtc::KT_LAST];
-};
-
-// Implements the |RTCCertificateGeneratorInterface| using the old |SSLIdentity|
-// generator API, |DtlsIdentityStoreInterface|. This will be used while
-// transitioning from store to generator, see bugs.webrtc.org/5707,
-// bugs.webrtc.org/5708. Once those bugs have been fixed, this will be removed.
-class RTCCertificateGeneratorStoreWrapper
-    : public rtc::RTCCertificateGeneratorInterface {
- public:
-  RTCCertificateGeneratorStoreWrapper(
-      std::unique_ptr<DtlsIdentityStoreInterface> store);
-
-  // |RTCCertificateGeneratorInterface| overrides.
-  void GenerateCertificateAsync(
-      const rtc::KeyParams& key_params,
-      const rtc::Optional<uint64_t>& expires_ms,
-      const rtc::scoped_refptr<rtc::RTCCertificateGeneratorCallback>& callback)
-        override;
-
- private:
-  const std::unique_ptr<DtlsIdentityStoreInterface> store_;
 };
 
 }  // namespace webrtc
