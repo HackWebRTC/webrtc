@@ -51,22 +51,6 @@ const double kPerfectPSNR = 48.0f;
 // TODO(wu): Consolidate types into one type throughout WebRtc.
 VideoType RawVideoTypeToCommonVideoVideoType(RawVideoType type);
 
-// Align integer values.
-// Input:
-//   - value     : Input value to be aligned.
-//   - alignment : Alignment basis (power of 2).
-// Return value: An aligned form of the input value.
-int AlignInt(int value, int alignment);
-
-// Align stride values for I420 Video frames.
-// Input:
-//   - width    : Image width.
-//   - stride_y : Pointer to the stride of the y plane.
-//   - stride_uv: Pointer to the stride of the u and v planes (setting identical
-//                values for both).
-// Setting 16 byte alignment.
-void Calc16ByteAlignedStride(int width, int* stride_y, int* stride_uv);
-
 // Calculate the required buffer size.
 // Input:
 //   - type         :The type of the designated video frame.
@@ -128,24 +112,6 @@ int ConvertFromI420(const VideoFrame& src_frame,
                     VideoType dst_video_type,
                     int dst_sample_size,
                     uint8_t* dst_frame);
-// ConvertFrom YV12.
-// Interface - same as above.
-int ConvertFromYV12(const VideoFrame& src_frame,
-                    VideoType dst_video_type,
-                    int dst_sample_size,
-                    uint8_t* dst_frame);
-
-// The following list describes designated conversion functions which
-// are not covered by the previous general functions.
-// Input and output descriptions mostly match the above descriptions, and are
-// therefore omitted.
-int ConvertRGB24ToARGB(const uint8_t* src_frame,
-                       uint8_t* dst_frame,
-                       int width, int height,
-                       int dst_stride);
-int ConvertNV12ToRGB565(const uint8_t* src_frame,
-                        uint8_t* dst_frame,
-                        int width, int height);
 
 // Compute PSNR for an I420 frame (all planes).
 // Returns the PSNR in decibel, to a maximum of kInfinitePSNR.

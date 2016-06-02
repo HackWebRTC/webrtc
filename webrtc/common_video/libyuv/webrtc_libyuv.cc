@@ -18,8 +18,6 @@
 
 namespace webrtc {
 
-const int k16ByteAlignment = 16;
-
 VideoType RawVideoTypeToCommonVideoVideoType(RawVideoType type) {
   switch (type) {
     case kVideoI420:
@@ -54,16 +52,6 @@ VideoType RawVideoTypeToCommonVideoVideoType(RawVideoType type) {
       assert(false);
   }
   return kUnknown;
-}
-
-int AlignInt(int value, int alignment) {
-  assert(!((alignment - 1) & alignment));
-  return ((value + alignment - 1) & ~(alignment - 1));
-}
-
-void Calc16ByteAlignedStride(int width, int* stride_y, int* stride_uv) {
-  *stride_y = AlignInt(width, k16ByteAlignment);
-  *stride_uv = AlignInt((width + 1) / 2, k16ByteAlignment);
 }
 
 size_t CalcBufferSize(VideoType type, int width, int height) {
@@ -292,24 +280,6 @@ int ConvertFromI420(const VideoFrame& src_frame,
       src_frame.video_frame_buffer()->StrideU(),
       src_frame.video_frame_buffer()->DataV(),
       src_frame.video_frame_buffer()->StrideV(),
-      dst_frame, dst_sample_size,
-      src_frame.width(), src_frame.height(),
-      ConvertVideoType(dst_video_type));
-}
-
-// TODO(mikhal): Create a designated VideoFrame for non I420.
-int ConvertFromYV12(const VideoFrame& src_frame,
-                    VideoType dst_video_type,
-                    int dst_sample_size,
-                    uint8_t* dst_frame) {
-  // YV12 = Y, V, U
-  return libyuv::ConvertFromI420(
-      src_frame.video_frame_buffer()->DataY(),
-      src_frame.video_frame_buffer()->StrideY(),
-      src_frame.video_frame_buffer()->DataV(),
-      src_frame.video_frame_buffer()->StrideV(),
-      src_frame.video_frame_buffer()->DataU(),
-      src_frame.video_frame_buffer()->StrideU(),
       dst_frame, dst_sample_size,
       src_frame.width(), src_frame.height(),
       ConvertVideoType(dst_video_type));

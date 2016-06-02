@@ -21,6 +21,14 @@
 
 namespace webrtc {
 
+namespace {
+void Calc16ByteAlignedStride(int width, int* stride_y, int* stride_uv) {
+  *stride_y = 16 * ((width + 15) / 16);
+  *stride_uv = 16 * ((width + 31) / 32);
+}
+
+}  // Anonymous namespace
+
 enum { kMaxWaitEncTimeMs = 100 };
 enum { kMaxWaitDecTimeMs = 25 };
 
@@ -132,8 +140,8 @@ class TestVp8Impl : public ::testing::Test {
     const int kFramerate = 30;
     codec_inst_.maxFramerate = kFramerate;
     // Setting aligned stride values.
-    int stride_uv = 0;
-    int stride_y = 0;
+    int stride_uv;
+    int stride_y;
     Calc16ByteAlignedStride(codec_inst_.width, &stride_y, &stride_uv);
     EXPECT_EQ(stride_y, 176);
     EXPECT_EQ(stride_uv, 96);

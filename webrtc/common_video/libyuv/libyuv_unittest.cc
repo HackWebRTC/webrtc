@@ -20,6 +20,14 @@
 
 namespace webrtc {
 
+namespace {
+void Calc16ByteAlignedStride(int width, int* stride_y, int* stride_uv) {
+  *stride_y = 16 * ((width + 15) / 16);
+  *stride_uv = 16 * ((width + 31) / 32);
+}
+
+}  // Anonymous namespace
+
 class TestLibYuv : public ::testing::Test {
  protected:
   TestLibYuv();
@@ -139,29 +147,6 @@ TEST_F(TestLibYuv, ConvertTest) {
   }
   j++;
 
-  printf("\nConvert #%d I420 <-> YV12\n", j);
-  std::unique_ptr<uint8_t[]> outYV120Buffer(new uint8_t[frame_length_]);
-  std::unique_ptr<uint8_t[]> res_i420_buffer(new uint8_t[frame_length_]);
-  VideoFrame yv12_frame;
-  EXPECT_EQ(0, ConvertFromI420(orig_frame_, kYV12, 0, outYV120Buffer.get()));
-  yv12_frame.CreateFrame(outYV120Buffer.get(),
-                         outYV120Buffer.get() + size_y_,
-                         outYV120Buffer.get() + size_y_ + size_uv_,
-                         width_, height_,
-                         width_, (width_ + 1) / 2, (width_ + 1) / 2,
-                         kVideoRotation_0);
-  EXPECT_EQ(0, ConvertFromYV12(yv12_frame, kI420, 0, res_i420_buffer.get()));
-  if (fwrite(res_i420_buffer.get(), 1, frame_length_, output_file) !=
-      frame_length_) {
-    return;
-  }
-
-  ConvertToI420(kI420, res_i420_buffer.get(), 0, 0, width_, height_, 0,
-                kVideoRotation_0, &res_i420_frame);
-  psnr = I420PSNR(&orig_frame_, &res_i420_frame);
-  EXPECT_EQ(48.0, psnr);
-  j++;
-
   printf("\nConvert #%d I420 <-> YUY2\n", j);
   std::unique_ptr<uint8_t[]> out_yuy2_buffer(new uint8_t[width_ * height_ * 2]);
   EXPECT_EQ(0, ConvertFromI420(orig_frame_,  kYUY2, 0, out_yuy2_buffer.get()));
@@ -267,30 +252,6 @@ TEST_F(TestLibYuv, RotateTest) {
                                           (width_ + 1) / 2);
   EXPECT_EQ(0, ConvertToI420(kI420, orig_buffer_.get(), 0, 0, width_, height_,
                              0, kVideoRotation_180, &rotated_res_i420_frame));
-}
-
-TEST_F(TestLibYuv, alignment) {
-  int value = 0x3FF;  // 1023
-  EXPECT_EQ(0x400, AlignInt(value, 128));  // Low 7 bits are zero.
-  EXPECT_EQ(0x400, AlignInt(value, 64));  // Low 6 bits are zero.
-  EXPECT_EQ(0x400, AlignInt(value, 32));  // Low 5 bits are zero.
-}
-
-TEST_F(TestLibYuv, StrideAlignment) {
-  int stride_y = 0;
-  int stride_uv = 0;
-  int width = 52;
-  Calc16ByteAlignedStride(width, &stride_y, &stride_uv);
-  EXPECT_EQ(64, stride_y);
-  EXPECT_EQ(32, stride_uv);
-  width = 128;
-  Calc16ByteAlignedStride(width, &stride_y, &stride_uv);
-  EXPECT_EQ(128, stride_y);
-  EXPECT_EQ(64, stride_uv);
-  width = 127;
-  Calc16ByteAlignedStride(width, &stride_y, &stride_uv);
-  EXPECT_EQ(128, stride_y);
-  EXPECT_EQ(64, stride_uv);
 }
 
 }  // namespace webrtc

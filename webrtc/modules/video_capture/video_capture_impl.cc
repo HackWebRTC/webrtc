@@ -272,8 +272,6 @@ int32_t VideoCaptureImpl::IncomingFrame(
           }
         }
 
-        // TODO(mikhal): Update correct aligned stride values.
-        //Calc16ByteAlignedStride(target_width, &stride_y, &stride_uv);
         // Setting absolute height (in case it was negative).
         // In Windows, the image starts bottom left, instead of top left.
         // Setting a negative source height, inverts the image (within LibYuv).
