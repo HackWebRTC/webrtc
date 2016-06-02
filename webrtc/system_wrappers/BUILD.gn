@@ -193,52 +193,55 @@ if (is_linux) {
   }
 }
 
-test("system_wrappers_unittests") {
-  testonly = true
-  sources = [
-    "source/aligned_array_unittest.cc",
-    "source/aligned_malloc_unittest.cc",
-    "source/clock_unittest.cc",
-    "source/condition_variable_unittest.cc",
-    "source/critical_section_unittest.cc",
-    "source/data_log_c_helpers_unittest.c",
-    "source/data_log_c_helpers_unittest.h",
-    "source/data_log_helpers_unittest.cc",
-    "source/event_timer_posix_unittest.cc",
-    "source/logging_unittest.cc",
-    "source/metrics_default_unittest.cc",
-    "source/metrics_unittest.cc",
-    "source/ntp_time_unittest.cc",
-    "source/rtp_to_ntp_unittest.cc",
-    "source/stl_util_unittest.cc",
-    "source/stringize_macros_unittest.cc",
-  ]
-  if (rtc_enable_data_logging) {
-    sources += [
-      "source/data_log_unittest.cc",
-      "source/data_log_unittest_disabled.cc",
+# There's no point processing WebRTC standalone tests in a Chromium build.
+if (!build_with_chromium) {
+  test("system_wrappers_unittests") {
+    testonly = true
+    sources = [
+      "source/aligned_array_unittest.cc",
+      "source/aligned_malloc_unittest.cc",
+      "source/clock_unittest.cc",
+      "source/condition_variable_unittest.cc",
+      "source/critical_section_unittest.cc",
+      "source/data_log_c_helpers_unittest.c",
+      "source/data_log_c_helpers_unittest.h",
+      "source/data_log_helpers_unittest.cc",
+      "source/event_timer_posix_unittest.cc",
+      "source/logging_unittest.cc",
+      "source/metrics_default_unittest.cc",
+      "source/metrics_unittest.cc",
+      "source/ntp_time_unittest.cc",
+      "source/rtp_to_ntp_unittest.cc",
+      "source/stl_util_unittest.cc",
+      "source/stringize_macros_unittest.cc",
     ]
-  }
+    if (rtc_enable_data_logging) {
+      sources += [
+        "source/data_log_unittest.cc",
+        "source/data_log_unittest_disabled.cc",
+      ]
+    }
 
-  configs += [ "..:common_config" ]
-  public_configs = [ "..:common_inherited_config" ]
+    configs += [ "..:common_config" ]
+    public_configs = [ "..:common_inherited_config" ]
 
-  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
+    configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 
-  if (is_clang) {
-    # Suppress warnings from Chrome's Clang plugins.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
-  }
+    if (is_clang) {
+      # Suppress warnings from Chrome's Clang plugins.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
 
-  deps = [
-    ":metrics_default",
-    ":system_wrappers",
-    "../test:test_support_main",
-    "//testing/gtest",
-  ]
+    deps = [
+      ":metrics_default",
+      ":system_wrappers",
+      "../test:test_support_main",
+      "//testing/gtest",
+    ]
 
-  if (is_android) {
-    deps += [ "//testing/android/native_test:native_test_support" ]
+    if (is_android) {
+      deps += [ "//testing/android/native_test:native_test_support" ]
+    }
   }
 }

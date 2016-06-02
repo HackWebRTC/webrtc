@@ -163,111 +163,115 @@ source_set("agc_test_utils") {
   public_configs = [ "..:common_inherited_config" ]
 }
 
-executable("agc_harness") {
-  testonly = true
-  sources = [
-    "agc/agc_harness.cc",
-  ]
+# Exclude tools depending on gflags since that's not available in Chromium.
+# There's no point processing WebRTC standalone tests in a Chromium build.
+if (!build_with_chromium) {
+  executable("agc_harness") {
+    testonly = true
+    sources = [
+      "agc/agc_harness.cc",
+    ]
 
-  configs += [ "..:common_config" ]
-  public_configs = [ "..:common_inherited_config" ]
+    configs += [ "..:common_config" ]
+    public_configs = [ "..:common_inherited_config" ]
 
-  if (is_clang) {
-    # Suppress warnings from the Chromium Clang plugin.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    deps = [
+      "../system_wrappers:system_wrappers_default",
+      "../test:channel_transport",
+      "../test:test_support",
+      "../voice_engine",
+      "//build/win:default_exe_manifest",
+      "//testing/gtest",
+      "//third_party/gflags",
+    ]
   }
 
-  deps = [
-    "../system_wrappers:system_wrappers_default",
-    "../test:channel_transport",
-    "../test:test_support",
-    "../voice_engine",
-    "//build/win:default_exe_manifest",
-    "//testing/gtest",
-    "//third_party/gflags",
-  ]
-}
+  executable("activity_metric") {
+    testonly = true
+    sources = [
+      "agc/activity_metric.cc",
+    ]
 
-executable("activity_metric") {
-  testonly = true
-  sources = [
-    "agc/activity_metric.cc",
-  ]
+    configs += [ "..:common_config" ]
+    public_configs = [ "..:common_inherited_config" ]
 
-  configs += [ "..:common_config" ]
-  public_configs = [ "..:common_inherited_config" ]
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
 
-  if (is_clang) {
-    # Suppress warnings from the Chromium Clang plugin.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    deps = [
+      "../modules/audio_processing",
+      "../system_wrappers:metrics_default",
+      "//build/win:default_exe_manifest",
+      "//testing/gtest",
+      "//third_party/gflags",
+    ]
   }
 
-  deps = [
-    "../modules/audio_processing",
-    "../system_wrappers:metrics_default",
-    "//build/win:default_exe_manifest",
-    "//testing/gtest",
-    "//third_party/gflags",
-  ]
-}
+  executable("audio_e2e_harness") {
+    testonly = true
+    sources = [
+      "e2e_quality/audio/audio_e2e_harness.cc",
+    ]
 
-executable("audio_e2e_harness") {
-  testonly = true
-  sources = [
-    "e2e_quality/audio/audio_e2e_harness.cc",
-  ]
+    configs += [ "..:common_config" ]
+    public_configs = [ "..:common_inherited_config" ]
 
-  configs += [ "..:common_config" ]
-  public_configs = [ "..:common_inherited_config" ]
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
 
-  if (is_clang) {
-    # Suppress warnings from the Chromium Clang plugin.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    deps = [
+      "../system_wrappers:system_wrappers_default",
+      "../test:channel_transport",
+      "../voice_engine",
+      "//build/win:default_exe_manifest",
+      "//testing/gtest",
+      "//third_party/gflags",
+    ]
   }
 
-  deps = [
-    "../system_wrappers:system_wrappers_default",
-    "../test:channel_transport",
-    "../voice_engine",
-    "//build/win:default_exe_manifest",
-    "//testing/gtest",
-    "//third_party/gflags",
-  ]
-}
+  test("tools_unittests") {
+    testonly = true
 
-test("tools_unittests") {
-  testonly = true
+    sources = [
+      "frame_analyzer/video_quality_analysis_unittest.cc",
+      "frame_editing/frame_editing_unittest.cc",
+      "simple_command_line_parser_unittest.cc",
+    ]
 
-  sources = [
-    "frame_analyzer/video_quality_analysis_unittest.cc",
-    "frame_editing/frame_editing_unittest.cc",
-    "simple_command_line_parser_unittest.cc",
-  ]
+    configs += [ "..:common_config" ]
+    public_configs = [ "..:common_inherited_config" ]
 
-  configs += [ "..:common_config" ]
-  public_configs = [ "..:common_inherited_config" ]
+    # TODO(jschuh): Bug 1348: fix this warning.
+    configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 
-  # TODO(jschuh): Bug 1348: fix this warning.
-  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
 
-  if (is_clang) {
-    # Suppress warnings from the Chromium Clang plugin.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
-  }
+    deps = [
+      ":command_line_parser",
+      ":frame_editing_lib",
+      ":video_quality_analysis",
+      "../test:test_support_main",
+      "//testing/gtest",
+    ]
 
-  deps = [
-    ":command_line_parser",
-    ":frame_editing_lib",
-    ":video_quality_analysis",
-    "../test:test_support_main",
-    "//testing/gtest",
-  ]
-
-  if (is_android) {
-    deps += [ "//testing/android/native_test:native_test_support" ]
+    if (is_android) {
+      deps += [ "//testing/android/native_test:native_test_support" ]
+    }
   }
 }
