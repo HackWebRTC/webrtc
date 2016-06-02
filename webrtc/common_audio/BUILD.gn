@@ -81,6 +81,7 @@ source_set("common_audio") {
     "signal_processing/resample_by_2_internal.h",
     "signal_processing/resample_fractional.c",
     "signal_processing/spl_init.c",
+    "signal_processing/spl_inl.c",
     "signal_processing/spl_sqrt.c",
     "signal_processing/splitting_filter.c",
     "signal_processing/sqrt_of_one_minus_x_squared.c",

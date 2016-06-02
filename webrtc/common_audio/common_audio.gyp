@@ -94,6 +94,7 @@
         'signal_processing/resample_by_2_internal.h',
         'signal_processing/resample_fractional.c',
         'signal_processing/spl_init.c',
+        'signal_processing/spl_inl.c',
         'signal_processing/spl_sqrt.c',
         'signal_processing/spl_sqrt_floor.c',
         'signal_processing/splitting_filter.c',

@@ -142,6 +142,32 @@ TEST_F(SplTest, AddSubSatW32) {
   }
 }
 
+TEST_F(SplTest, CountLeadingZeros32) {
+  EXPECT_EQ(32, WebRtcSpl_CountLeadingZeros32(0));
+  EXPECT_EQ(32, WebRtcSpl_CountLeadingZeros32_NotBuiltin(0));
+  for (int i = 0; i < 32; ++i) {
+    const uint32_t single_one = uint32_t{1} << i;
+    const uint32_t all_ones = 2 * single_one - 1;
+    EXPECT_EQ(31 - i, WebRtcSpl_CountLeadingZeros32(single_one));
+    EXPECT_EQ(31 - i, WebRtcSpl_CountLeadingZeros32_NotBuiltin(single_one));
+    EXPECT_EQ(31 - i, WebRtcSpl_CountLeadingZeros32(all_ones));
+    EXPECT_EQ(31 - i, WebRtcSpl_CountLeadingZeros32_NotBuiltin(all_ones));
+  }
+}
+
+TEST_F(SplTest, CountLeadingZeros64) {
+  EXPECT_EQ(64, WebRtcSpl_CountLeadingZeros64(0));
+  EXPECT_EQ(64, WebRtcSpl_CountLeadingZeros64_NotBuiltin(0));
+  for (int i = 0; i < 64; ++i) {
+    const uint64_t single_one = uint64_t{1} << i;
+    const uint64_t all_ones = 2 * single_one - 1;
+    EXPECT_EQ(63 - i, WebRtcSpl_CountLeadingZeros64(single_one));
+    EXPECT_EQ(63 - i, WebRtcSpl_CountLeadingZeros64_NotBuiltin(single_one));
+    EXPECT_EQ(63 - i, WebRtcSpl_CountLeadingZeros64(all_ones));
+    EXPECT_EQ(63 - i, WebRtcSpl_CountLeadingZeros64_NotBuiltin(all_ones));
+  }
+}
+
 TEST_F(SplTest, MathOperationsTest) {
     int A = 1134567892;
     int32_t num = 117;
