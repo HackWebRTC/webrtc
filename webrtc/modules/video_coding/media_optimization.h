@@ -38,8 +38,9 @@ class MediaOptimization {
   void Reset();
 
   // Informs media optimization of initial encoding state.
-  void SetEncodingData(VideoCodecType send_codec_type,
-                       int32_t max_bit_rate,
+  // TODO(perkj): Deprecate SetEncodingData once its not used for stats in
+  // VieEncoder.
+  void SetEncodingData(int32_t max_bit_rate,
                        uint32_t bit_rate,
                        uint16_t width,
                        uint16_t height,
@@ -53,14 +54,10 @@ class MediaOptimization {
   //          round_trip_time_ms - round trip time in milliseconds.
   //          min_bit_rate - the bit rate of the end-point with lowest rate.
   //          max_bit_rate - the bit rate of the end-point with highest rate.
-  // TODO(andresp): Find if the callbacks can be triggered only after releasing
-  // an internal critical section.
   uint32_t SetTargetRates(uint32_t target_bitrate,
                           uint8_t fraction_lost,
-                          int64_t round_trip_time_ms,
-                          VCMProtectionCallback* protection_callback);
+                          int64_t round_trip_time_ms);
 
-  void SetProtectionMethod(VCMProtectionMethodEnum method);
   void EnableFrameDropper(bool enable);
 
   // Lets the sender suspend video when the rate drops below
@@ -72,6 +69,8 @@ class MediaOptimization {
   bool DropFrame();
 
   // Informs Media Optimization of encoded output.
+  // TODO(perkj): Deprecate SetEncodingData once its not used for stats in
+  // VieEncoder.
   int32_t UpdateWithEncodedData(const EncodedImage& encoded_image);
 
   // InputFrameRate 0 = no frame rate estimate available.
@@ -101,8 +100,7 @@ class MediaOptimization {
   // changes the state of |video_suspended_| accordingly.
   void CheckSuspendConditions() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
-  void SetEncodingDataInternal(VideoCodecType send_codec_type,
-                               int32_t max_bit_rate,
+  void SetEncodingDataInternal(int32_t max_bit_rate,
                                uint32_t frame_rate,
                                uint32_t bit_rate,
                                uint16_t width,
@@ -120,13 +118,10 @@ class MediaOptimization {
 
   Clock* clock_ GUARDED_BY(crit_sect_);
   int32_t max_bit_rate_ GUARDED_BY(crit_sect_);
-  VideoCodecType send_codec_type_ GUARDED_BY(crit_sect_);
   uint16_t codec_width_ GUARDED_BY(crit_sect_);
   uint16_t codec_height_ GUARDED_BY(crit_sect_);
   float user_frame_rate_ GUARDED_BY(crit_sect_);
   std::unique_ptr<FrameDropper> frame_dropper_ GUARDED_BY(crit_sect_);
-  std::unique_ptr<VCMLossProtectionLogic> loss_prot_logic_
-      GUARDED_BY(crit_sect_);
   uint8_t fraction_lost_ GUARDED_BY(crit_sect_);
   uint32_t send_statistics_[4] GUARDED_BY(crit_sect_);
   uint32_t send_statistics_zero_encode_ GUARDED_BY(crit_sect_);
@@ -137,8 +132,6 @@ class MediaOptimization {
   std::list<EncodedFrameSample> encoded_frame_samples_ GUARDED_BY(crit_sect_);
   uint32_t avg_sent_bit_rate_bps_ GUARDED_BY(crit_sect_);
   uint32_t avg_sent_framerate_ GUARDED_BY(crit_sect_);
-  uint32_t key_frame_cnt_ GUARDED_BY(crit_sect_);
-  uint32_t delta_frame_cnt_ GUARDED_BY(crit_sect_);
   int num_layers_ GUARDED_BY(crit_sect_);
   bool suspension_enabled_ GUARDED_BY(crit_sect_);
   bool video_suspended_ GUARDED_BY(crit_sect_);

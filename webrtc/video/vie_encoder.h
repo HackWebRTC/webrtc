@@ -84,13 +84,11 @@ class ViEEncoder : public VideoEncoderRateObserver,
   void EncodeVideoFrame(const VideoFrame& video_frame);
   void SendKeyFrame();
 
-  uint32_t LastObservedBitrateBps() const;
-  // Loss protection. Must be called before SetEncoder() to have max packet size
-  // updated according to protection.
-  // TODO(pbos): Set protection method on construction.
-  void SetProtectionMethod(bool nack, bool fec);
-
   // Implements VideoEncoderRateObserver.
+  // TODO(perkj): Refactor VideoEncoderRateObserver. This is only used for
+  // stats. The stats should be set in VideoSendStream instead.
+  // |bitrate_bps| is the target bitrate and |framerate| is the input frame
+  // rate so it has nothing to do with the actual encoder.
   void OnSetRates(uint32_t bitrate_bps, int framerate) override;
 
   // Implements EncodedImageCallback.

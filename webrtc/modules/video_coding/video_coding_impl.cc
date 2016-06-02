@@ -136,8 +136,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   int32_t SetVideoProtection(VCMVideoProtection videoProtection,
                              bool enable) override {
     // TODO(pbos): Remove enable from receive-side protection modes as well.
-    if (enable)
-      sender_.SetVideoProtection(videoProtection);
     return receiver_.SetVideoProtection(videoProtection, enable);
   }
 

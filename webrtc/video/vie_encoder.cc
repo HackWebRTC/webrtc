@@ -264,18 +264,6 @@ void ViEEncoder::SendKeyFrame() {
   video_sender_.IntraFrameRequest(0);
 }
 
-void ViEEncoder::SetProtectionMethod(bool nack, bool fec) {
-  // Set Video Protection for VCM.
-  VCMVideoProtection protection_mode;
-  if (fec) {
-    protection_mode =
-        nack ? webrtc::kProtectionNackFEC : kProtectionFEC;
-  } else {
-    protection_mode = nack ? kProtectionNack : kProtectionNone;
-  }
-  video_sender_.SetVideoProtection(protection_mode);
-}
-
 void ViEEncoder::OnSetRates(uint32_t bitrate_bps, int framerate) {
   if (stats_proxy_)
     stats_proxy_->OnSetRates(bitrate_bps, framerate);

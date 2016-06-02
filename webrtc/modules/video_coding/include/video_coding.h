@@ -188,14 +188,10 @@ class VideoCodingModule : public Module {
   //                     < 0,    on error.
   virtual int32_t SetReceiveChannelParameters(int64_t rtt) = 0;
 
+  // Deprecated: This method currently does not have any effect.
   // Register a video protection callback which will be called to deliver
   // the requested FEC rate and NACK status (on/off).
-  //
-  // Input:
-  //      - protection  : The callback object to register.
-  //
-  // Return value      : VCM_OK, on success.
-  //                     < 0,    on error.
+  // TODO(perkj): Remove once no projects use it.
   virtual int32_t RegisterProtectionCallback(
       VCMProtectionCallback* protection) = 0;
 

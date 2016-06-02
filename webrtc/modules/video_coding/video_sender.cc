@@ -37,7 +37,6 @@ VideoSender::VideoSender(Clock* clock,
       frame_dropper_enabled_(true),
       _sendStatsTimer(1000, clock_),
       current_codec_(),
-      protection_callback_(nullptr),
       encoder_params_({0, 0, 0, 0}),
       encoder_has_internal_source_(false),
       next_frame_types_(1, kVideoFrameDelta) {
@@ -140,7 +139,7 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
                   << " start bitrate " << sendCodec->startBitrate
                   << " max frame rate " << sendCodec->maxFramerate
                   << " max payload size " << maxPayloadSize;
-  _mediaOpt.SetEncodingData(sendCodec->codecType, sendCodec->maxBitrate * 1000,
+  _mediaOpt.SetEncodingData(sendCodec->maxBitrate * 1000,
                             sendCodec->startBitrate * 1000, sendCodec->width,
                             sendCodec->height, sendCodec->maxFramerate,
                             numLayers, maxPayloadSize);
@@ -200,8 +199,8 @@ int VideoSender::FrameRate(unsigned int* framerate) const {
 int32_t VideoSender::SetChannelParameters(uint32_t target_bitrate,
                                           uint8_t lossRate,
                                           int64_t rtt) {
-  uint32_t target_rate = _mediaOpt.SetTargetRates(target_bitrate, lossRate, rtt,
-                                                  protection_callback_);
+  uint32_t target_rate =
+      _mediaOpt.SetTargetRates(target_bitrate, lossRate, rtt);
 
   uint32_t input_frame_rate = _mediaOpt.InputFrameRate();
 
@@ -243,35 +242,17 @@ void VideoSender::SetEncoderParameters(EncoderParameters params) {
     _encoder->SetEncoderParameters(params);
 }
 
-// Register a video protection callback which will be called to deliver the
-// requested FEC rate and NACK status (on/off).
-// Note: this callback is assumed to only be registered once and before it is
-// used in this class.
+// Deprecated:
+// TODO(perkj): Remove once no projects call this method. It currently do
+// nothing.
 int32_t VideoSender::RegisterProtectionCallback(
     VCMProtectionCallback* protection_callback) {
-  RTC_DCHECK(protection_callback == nullptr || protection_callback_ == nullptr);
-  protection_callback_ = protection_callback;
+  // Deprecated:
+  // TODO(perkj): Remove once no projects call this method. It currently do
+  // nothing.
   return VCM_OK;
 }
 
-// Enable or disable a video protection method.
-void VideoSender::SetVideoProtection(VCMVideoProtection videoProtection) {
-  rtc::CritScope lock(&encoder_crit_);
-  switch (videoProtection) {
-    case kProtectionNone:
-      _mediaOpt.SetProtectionMethod(media_optimization::kNone);
-      break;
-    case kProtectionNack:
-      _mediaOpt.SetProtectionMethod(media_optimization::kNack);
-      break;
-    case kProtectionNackFEC:
-      _mediaOpt.SetProtectionMethod(media_optimization::kNackFec);
-      break;
-    case kProtectionFEC:
-      _mediaOpt.SetProtectionMethod(media_optimization::kFec);
-      break;
-  }
-}
 // Add one raw video frame to the encoder, blocking.
 int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
                                    const CodecSpecificInfo* codecSpecificInfo) {

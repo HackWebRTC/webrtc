@@ -16,39 +16,6 @@
 
 namespace webrtc {
 namespace media_optimization {
-namespace {
-void UpdateProtectionCallback(
-    VCMProtectionMethod* selected_method,
-    uint32_t* video_rate_bps,
-    uint32_t* nack_overhead_rate_bps,
-    uint32_t* fec_overhead_rate_bps,
-    VCMProtectionCallback* video_protection_callback) {
-  FecProtectionParams delta_fec_params;
-  FecProtectionParams key_fec_params;
-  // Get the FEC code rate for Key frames (set to 0 when NA).
-  key_fec_params.fec_rate = selected_method->RequiredProtectionFactorK();
-
-  // Get the FEC code rate for Delta frames (set to 0 when NA).
-  delta_fec_params.fec_rate = selected_method->RequiredProtectionFactorD();
-
-  // The RTP module currently requires the same |max_fec_frames| for both
-  // key and delta frames.
-  delta_fec_params.max_fec_frames = selected_method->MaxFramesFec();
-  key_fec_params.max_fec_frames = selected_method->MaxFramesFec();
-
-  // Set the FEC packet mask type. |kFecMaskBursty| is more effective for
-  // consecutive losses and little/no packet re-ordering. As we currently
-  // do not have feedback data on the degree of correlated losses and packet
-  // re-ordering, we keep default setting to |kFecMaskRandom| for now.
-  delta_fec_params.fec_mask_type = kFecMaskRandom;
-  key_fec_params.fec_mask_type = kFecMaskRandom;
-
-  // TODO(Marco): Pass FEC protection values per layer.
-  video_protection_callback->ProtectionRequest(
-      &delta_fec_params, &key_fec_params, video_rate_bps,
-      nack_overhead_rate_bps, fec_overhead_rate_bps);
-}
-}  // namespace
 
 struct MediaOptimization::EncodedFrameSample {
   EncodedFrameSample(size_t size_bytes,
@@ -67,13 +34,10 @@ MediaOptimization::MediaOptimization(Clock* clock)
     : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       clock_(clock),
       max_bit_rate_(0),
-      send_codec_type_(kVideoCodecUnknown),
       codec_width_(0),
       codec_height_(0),
       user_frame_rate_(0),
       frame_dropper_(new FrameDropper),
-      loss_prot_logic_(
-          new VCMLossProtectionLogic(clock_->TimeInMilliseconds())),
       fraction_lost_(0),
       send_statistics_zero_encode_(0),
       max_payload_size_(1460),
@@ -82,8 +46,6 @@ MediaOptimization::MediaOptimization(Clock* clock)
       encoded_frame_samples_(),
       avg_sent_bit_rate_bps_(0),
       avg_sent_framerate_(0),
-      key_frame_cnt_(0),
-      delta_frame_cnt_(0),
       num_layers_(0),
       suspension_enabled_(false),
       video_suspended_(false),
@@ -94,34 +56,26 @@ MediaOptimization::MediaOptimization(Clock* clock)
 }
 
 MediaOptimization::~MediaOptimization(void) {
-  loss_prot_logic_->Release();
 }
 
 void MediaOptimization::Reset() {
   CriticalSectionScoped lock(crit_sect_.get());
-  SetEncodingDataInternal(kVideoCodecUnknown, 0, 0, 0, 0, 0, 0,
-                          max_payload_size_);
+  SetEncodingDataInternal(0, 0, 0, 0, 0, 0, max_payload_size_);
   memset(incoming_frame_times_, -1, sizeof(incoming_frame_times_));
   incoming_frame_rate_ = 0.0;
   frame_dropper_->Reset();
-  loss_prot_logic_->Reset(clock_->TimeInMilliseconds());
   frame_dropper_->SetRates(0, 0);
-  loss_prot_logic_->UpdateFrameRate(incoming_frame_rate_);
-  loss_prot_logic_->Reset(clock_->TimeInMilliseconds());
   send_statistics_zero_encode_ = 0;
   video_target_bitrate_ = 0;
   codec_width_ = 0;
   codec_height_ = 0;
   user_frame_rate_ = 0;
-  key_frame_cnt_ = 0;
-  delta_frame_cnt_ = 0;
   encoded_frame_samples_.clear();
   avg_sent_bit_rate_bps_ = 0;
   num_layers_ = 1;
 }
 
-void MediaOptimization::SetEncodingData(VideoCodecType send_codec_type,
-                                        int32_t max_bit_rate,
+void MediaOptimization::SetEncodingData(int32_t max_bit_rate,
                                         uint32_t target_bitrate,
                                         uint16_t width,
                                         uint16_t height,
@@ -129,12 +83,11 @@ void MediaOptimization::SetEncodingData(VideoCodecType send_codec_type,
                                         int num_layers,
                                         int32_t mtu) {
   CriticalSectionScoped lock(crit_sect_.get());
-  SetEncodingDataInternal(send_codec_type, max_bit_rate, frame_rate,
-                          target_bitrate, width, height, num_layers, mtu);
+  SetEncodingDataInternal(max_bit_rate, frame_rate, target_bitrate, width,
+                          height, num_layers, mtu);
 }
 
-void MediaOptimization::SetEncodingDataInternal(VideoCodecType send_codec_type,
-                                                int32_t max_bit_rate,
+void MediaOptimization::SetEncodingDataInternal(int32_t max_bit_rate,
                                                 uint32_t frame_rate,
                                                 uint32_t target_bitrate,
                                                 uint16_t width,
@@ -145,13 +98,8 @@ void MediaOptimization::SetEncodingDataInternal(VideoCodecType send_codec_type,
   // has changed.
 
   max_bit_rate_ = max_bit_rate;
-  send_codec_type_ = send_codec_type;
   video_target_bitrate_ = target_bitrate;
   float target_bitrate_kbps = static_cast<float>(target_bitrate) / 1000.0f;
-  loss_prot_logic_->UpdateBitRate(target_bitrate_kbps);
-  loss_prot_logic_->UpdateFrameRate(static_cast<float>(frame_rate));
-  loss_prot_logic_->UpdateFrameSize(width, height);
-  loss_prot_logic_->UpdateNumLayers(num_layers);
   frame_dropper_->Reset();
   frame_dropper_->SetRates(target_bitrate_kbps, static_cast<float>(frame_rate));
   user_frame_rate_ = static_cast<float>(frame_rate);
@@ -161,16 +109,10 @@ void MediaOptimization::SetEncodingDataInternal(VideoCodecType send_codec_type,
   max_payload_size_ = mtu;
 }
 
-uint32_t MediaOptimization::SetTargetRates(
-    uint32_t target_bitrate,
-    uint8_t fraction_lost,
-    int64_t round_trip_time_ms,
-    VCMProtectionCallback* protection_callback) {
+uint32_t MediaOptimization::SetTargetRates(uint32_t target_bitrate,
+                                           uint8_t fraction_lost,
+                                           int64_t round_trip_time_ms) {
   CriticalSectionScoped lock(crit_sect_.get());
-  VCMProtectionMethod* selected_method = loss_prot_logic_->SelectedMethod();
-  float target_bitrate_kbps = static_cast<float>(target_bitrate) / 1000.0f;
-  loss_prot_logic_->UpdateBitRate(target_bitrate_kbps);
-  loss_prot_logic_->UpdateRtt(round_trip_time_ms);
 
   // Get frame rate for encoder: this is the actual/sent frame rate.
   float actual_frame_rate = SentFrameRateInternal();
@@ -180,65 +122,9 @@ uint32_t MediaOptimization::SetTargetRates(
     actual_frame_rate = 1.0;
   }
 
-  // Update frame rate for the loss protection logic class: frame rate should
-  // be the actual/sent rate.
-  loss_prot_logic_->UpdateFrameRate(actual_frame_rate);
-
   fraction_lost_ = fraction_lost;
 
-  // Returns the filtered packet loss, used for the protection setting.
-  // The filtered loss may be the received loss (no filter), or some
-  // filtered value (average or max window filter).
-  // Use max window filter for now.
-  FilterPacketLossMode filter_mode = kMaxFilter;
-  uint8_t packet_loss_enc = loss_prot_logic_->FilteredLoss(
-      clock_->TimeInMilliseconds(), filter_mode, fraction_lost);
-
-  // For now use the filtered loss for computing the robustness settings.
-  loss_prot_logic_->UpdateFilteredLossPr(packet_loss_enc);
-
-  // Rate cost of the protection methods.
-  float protection_overhead_rate = 0.0f;
-
-  // Update protection settings, when applicable.
-  if (loss_prot_logic_->SelectedType() != kNone) {
-    // Update method will compute the robustness settings for the given
-    // protection method and the overhead cost
-    // the protection method is set by the user via SetVideoProtection.
-    loss_prot_logic_->UpdateMethod();
-
-    // Update protection callback with protection settings.
-    uint32_t sent_video_rate_bps = 0;
-    uint32_t sent_nack_rate_bps = 0;
-    uint32_t sent_fec_rate_bps = 0;
-    // Get the bit cost of protection method, based on the amount of
-    // overhead data actually transmitted (including headers) the last
-    // second.
-    if (protection_callback) {
-      UpdateProtectionCallback(selected_method, &sent_video_rate_bps,
-                               &sent_nack_rate_bps, &sent_fec_rate_bps,
-                               protection_callback);
-    }
-    uint32_t sent_total_rate_bps =
-        sent_video_rate_bps + sent_nack_rate_bps + sent_fec_rate_bps;
-    // Estimate the overhead costs of the next second as staying the same
-    // wrt the source bitrate.
-    if (sent_total_rate_bps > 0) {
-      protection_overhead_rate =
-          static_cast<float>(sent_nack_rate_bps + sent_fec_rate_bps) /
-          sent_total_rate_bps;
-    }
-    // Cap the overhead estimate to 50%.
-    if (protection_overhead_rate > 0.5)
-      protection_overhead_rate = 0.5;
-
-    // Get the effective packet loss for encoder ER when applicable. Should be
-    // passed to encoder via fraction_lost.
-    packet_loss_enc = selected_method->RequiredPacketLossER();
-  }
-
-  // Source coding rate: total rate - protection overhead.
-  video_target_bitrate_ = target_bitrate * (1.0 - protection_overhead_rate);
+  video_target_bitrate_ = target_bitrate;
 
   // Cap target video bitrate to codec maximum.
   if (max_bit_rate_ > 0 && video_target_bitrate_ > max_bit_rate_) {
@@ -253,11 +139,6 @@ uint32_t MediaOptimization::SetTargetRates(
   CheckSuspendConditions();
 
   return video_target_bitrate_;
-}
-
-void MediaOptimization::SetProtectionMethod(VCMProtectionMethodEnum method) {
-  CriticalSectionScoped lock(crit_sect_.get());
-  loss_prot_logic_->SetMethod(method);
 }
 
 uint32_t MediaOptimization::InputFrameRate() {
@@ -311,29 +192,7 @@ int32_t MediaOptimization::UpdateWithEncodedData(
   UpdateSentFramerate();
   if (encoded_length > 0) {
     const bool delta_frame = encoded_image._frameType != kVideoFrameKey;
-
     frame_dropper_->Fill(encoded_length, delta_frame);
-    if (max_payload_size_ > 0 && encoded_length > 0) {
-      const float min_packets_per_frame =
-          encoded_length / static_cast<float>(max_payload_size_);
-      if (delta_frame) {
-        loss_prot_logic_->UpdatePacketsPerFrame(min_packets_per_frame,
-                                                clock_->TimeInMilliseconds());
-      } else {
-        loss_prot_logic_->UpdatePacketsPerFrameKey(
-            min_packets_per_frame, clock_->TimeInMilliseconds());
-      }
-    }
-    if (!delta_frame && encoded_length > 0) {
-      loss_prot_logic_->UpdateKeyFrameSize(static_cast<float>(encoded_length));
-    }
-
-    // Updating counters.
-    if (delta_frame) {
-      delta_frame_cnt_++;
-    } else {
-      key_frame_cnt_++;
-    }
   }
 
   return VCM_OK;

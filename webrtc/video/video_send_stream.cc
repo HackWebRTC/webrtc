@@ -387,6 +387,7 @@ VideoSendStream::VideoSendStream(
       encoder_feedback_(Clock::GetRealTimeClock(),
                         config.rtp.ssrcs,
                         &vie_encoder_),
+      protection_bitrate_calculator_(Clock::GetRealTimeClock(), this),
       video_sender_(vie_encoder_.video_sender()),
       bandwidth_observer_(congestion_controller_->GetBitrateController()
                               ->CreateRtcpBandwidthObserver()),
@@ -421,8 +422,6 @@ VideoSendStream::VideoSendStream(
     module_process_thread_->RegisterModule(rtp_rtcp);
     congestion_controller_->packet_router()->AddRtpModule(rtp_rtcp);
   }
-
-  video_sender_->RegisterProtectionCallback(this);
 
   for (size_t i = 0; i < config_.rtp.extensions.size(); ++i) {
     const std::string& extension = config_.rtp.extensions[i].uri;
@@ -571,6 +570,17 @@ void VideoSendStream::EncoderProcess() {
         stats_proxy_.OnInactiveSsrc(config_.rtp.ssrcs[i]);
       }
 
+      size_t number_of_temporal_layers =
+          encoder_settings->streams.back()
+              .temporal_layer_thresholds_bps.size() +
+          1;
+      protection_bitrate_calculator_.SetEncodingData(
+          encoder_settings->video_codec.startBitrate * 1000,
+          encoder_settings->video_codec.width,
+          encoder_settings->video_codec.height,
+          encoder_settings->video_codec.maxFramerate, number_of_temporal_layers,
+          payload_router_.MaxPayloadLength());
+
       // We might've gotten new settings while configuring the encoder settings,
       // restart from the top to see if that's the case before trying to encode
       // a frame (which might correspond to the last frame size).
@@ -627,6 +637,7 @@ int32_t VideoSendStream::Encoded(const EncodedImage& encoded_image,
   // |encoded_frame_proxy_| forwards frames to |config_.post_encode_callback|;
   encoded_frame_proxy_.Encoded(encoded_image, codec_specific_info,
                                fragmentation);
+  protection_bitrate_calculator_.UpdateWithEncodedData(encoded_image);
   int32_t return_value = payload_router_.Encoded(
       encoded_image, codec_specific_info, fragmentation);
 
@@ -706,8 +717,8 @@ void VideoSendStream::ConfigureProtection() {
     }
   }
 
-  vie_encoder_.SetProtectionMethod(enable_protection_nack,
-                                   enable_protection_fec);
+  protection_bitrate_calculator_.SetProtectionMethod(enable_protection_fec,
+                                                     enable_protection_nack);
 }
 
 void VideoSendStream::ConfigureSsrcs() {
@@ -785,7 +796,12 @@ void VideoSendStream::OnBitrateUpdated(uint32_t bitrate_bps,
                                        uint8_t fraction_loss,
                                        int64_t rtt) {
   payload_router_.SetTargetSendBitrate(bitrate_bps);
-  vie_encoder_.OnBitrateUpdated(bitrate_bps, fraction_loss, rtt);
+  // Get the encoder target rate. It is the estimated network rate -
+  // protection overhead.
+  uint32_t encoder_target_rate = protection_bitrate_calculator_.SetTargetRates(
+      bitrate_bps, stats_proxy_.GetSendFrameRate(), fraction_loss, rtt);
+
+  vie_encoder_.OnBitrateUpdated(encoder_target_rate, fraction_loss, rtt);
 }
 
 int VideoSendStream::ProtectionRequest(const FecProtectionParams* delta_params,

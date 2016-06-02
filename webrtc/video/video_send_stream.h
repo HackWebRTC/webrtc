@@ -19,6 +19,7 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/video_coding/protection_bitrate_calculator.h"
 #include "webrtc/video/encoded_frame_callback_adapter.h"
 #include "webrtc/video/encoder_state_feedback.h"
 #include "webrtc/video/payload_router.h"
@@ -91,6 +92,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
                         uint8_t fraction_loss,
                         int64_t rtt) override;
 
+ protected:
   // Implements webrtc::VCMProtectionCallback.
   int ProtectionRequest(const FecProtectionParams* delta_params,
                         const FecProtectionParams* key_params,
@@ -143,6 +145,8 @@ class VideoSendStream : public webrtc::VideoSendStream,
   OveruseFrameDetector overuse_detector_;
   ViEEncoder vie_encoder_;
   EncoderStateFeedback encoder_feedback_;
+  ProtectionBitrateCalculator protection_bitrate_calculator_;
+
   vcm::VideoSender* const video_sender_;
 
   const std::unique_ptr<RtcpBandwidthObserver> bandwidth_observer_;

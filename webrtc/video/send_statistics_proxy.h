@@ -70,6 +70,8 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   void OnEncodedFrameTimeMeasured(int encode_time_ms,
                                   const CpuOveruseMetrics& metrics) override;
 
+  int GetSendFrameRate() const;
+
  protected:
   // From RtcpStatisticsCallback.
   void StatisticsUpdated(const RtcpStatistics& statistics,

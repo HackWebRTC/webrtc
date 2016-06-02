@@ -513,6 +513,11 @@ void SendStatisticsProxy::OnSendEncodedImage(
                static_cast<int>(encoded_image._encodedHeight));
 }
 
+int SendStatisticsProxy::GetSendFrameRate() const {
+  rtc::CritScope lock(&crit_);
+  return stats_.encode_frame_rate;
+}
+
 void SendStatisticsProxy::OnIncomingFrame(int width, int height) {
   rtc::CritScope lock(&crit_);
   uma_container_->input_frame_rate_tracker_.AddSamples(1);
