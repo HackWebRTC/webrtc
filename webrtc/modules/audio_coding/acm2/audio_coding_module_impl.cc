@@ -710,7 +710,7 @@ int AudioCodingModuleImpl::RegisterReceiveCodec(const CodecInst& codec) {
   rtc::CritScope lock(&acm_crit_sect_);
   auto* ef = encoder_factory_.get();
   return RegisterReceiveCodecUnlocked(
-      codec, [ef] { return ef->rent_a_codec.RentIsacDecoder(); });
+      codec, [&] { return ef->rent_a_codec.RentIsacDecoder(codec.plfreq); });
 }
 
 int AudioCodingModuleImpl::RegisterReceiveCodec(

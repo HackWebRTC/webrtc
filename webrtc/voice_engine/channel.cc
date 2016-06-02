@@ -49,8 +49,8 @@ namespace {
 bool RegisterReceiveCodec(std::unique_ptr<AudioCodingModule>* acm,
                           acm2::RentACodec* rac,
                           const CodecInst& ci) {
-  const int result =
-      (*acm)->RegisterReceiveCodec(ci, [&] { return rac->RentIsacDecoder(); });
+  const int result = (*acm)->RegisterReceiveCodec(
+      ci, [&] { return rac->RentIsacDecoder(ci.plfreq); });
   return result == 0;
 }
 

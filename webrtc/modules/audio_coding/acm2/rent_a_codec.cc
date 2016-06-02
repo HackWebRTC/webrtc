@@ -279,11 +279,14 @@ std::unique_ptr<AudioEncoder> CreateCngEncoder(
 }
 
 std::unique_ptr<AudioDecoder> CreateIsacDecoder(
+    int sample_rate_hz,
     const rtc::scoped_refptr<LockedIsacBandwidthInfo>& bwinfo) {
 #if defined(WEBRTC_CODEC_ISACFX)
-  return std::unique_ptr<AudioDecoder>(new AudioDecoderIsacFix(bwinfo));
+  return std::unique_ptr<AudioDecoder>(
+      new AudioDecoderIsacFix(sample_rate_hz, bwinfo));
 #elif defined(WEBRTC_CODEC_ISAC)
-  return std::unique_ptr<AudioDecoder>(new AudioDecoderIsac(bwinfo));
+  return std::unique_ptr<AudioDecoder>(
+      new AudioDecoderIsac(sample_rate_hz, bwinfo));
 #else
   FATAL() << "iSAC is not supported.";
   return std::unique_ptr<AudioDecoder>();
@@ -357,8 +360,8 @@ std::unique_ptr<AudioEncoder> RentACodec::RentEncoderStack(
   return encoder_stack;
 }
 
-std::unique_ptr<AudioDecoder> RentACodec::RentIsacDecoder() {
-  return CreateIsacDecoder(isac_bandwidth_info_);
+std::unique_ptr<AudioDecoder> RentACodec::RentIsacDecoder(int sample_rate_hz) {
+  return CreateIsacDecoder(sample_rate_hz, isac_bandwidth_info_);
 }
 
 }  // namespace acm2

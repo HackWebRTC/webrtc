@@ -26,9 +26,6 @@ namespace webrtc {
 template <typename T>
 class AudioDecoderIsacT final : public AudioDecoder {
  public:
-  AudioDecoderIsacT();
-  explicit AudioDecoderIsacT(
-      const rtc::scoped_refptr<LockedIsacBandwidthInfo>& bwinfo);
   explicit AudioDecoderIsacT(int sample_rate_hz);
   AudioDecoderIsacT(int sample_rate_hz,
                     const rtc::scoped_refptr<LockedIsacBandwidthInfo>& bwinfo);
@@ -52,11 +49,8 @@ class AudioDecoderIsacT final : public AudioDecoder {
                      SpeechType* speech_type) override;
 
  private:
-  AudioDecoderIsacT(rtc::Optional<int> sample_rate_hz,
-                    const rtc::scoped_refptr<LockedIsacBandwidthInfo>& bwinfo);
-
   typename T::instance_type* isac_state_;
-  rtc::Optional<int> sample_rate_hz_;
+  int sample_rate_hz_;
   rtc::scoped_refptr<LockedIsacBandwidthInfo> bwinfo_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderIsacT);

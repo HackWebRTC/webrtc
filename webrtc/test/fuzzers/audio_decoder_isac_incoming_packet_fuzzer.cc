@@ -13,7 +13,7 @@
 
 namespace webrtc {
 void FuzzOneInput(const uint8_t* data, size_t size) {
-  AudioDecoderIsac dec(nullptr);
+  AudioDecoderIsac dec(16000);
   FuzzAudioDecoderIncomingPacket(data, size, &dec);
 }
 }  // namespace webrtc

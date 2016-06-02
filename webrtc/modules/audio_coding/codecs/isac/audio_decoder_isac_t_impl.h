@@ -18,32 +18,16 @@
 namespace webrtc {
 
 template <typename T>
-AudioDecoderIsacT<T>::AudioDecoderIsacT()
-    : AudioDecoderIsacT(rtc::Optional<int>(), nullptr) {}
-
-template <typename T>
-AudioDecoderIsacT<T>::AudioDecoderIsacT(
-    const rtc::scoped_refptr<LockedIsacBandwidthInfo>& bwinfo)
-    : AudioDecoderIsacT(rtc::Optional<int>(), bwinfo) {}
-
-template <typename T>
 AudioDecoderIsacT<T>::AudioDecoderIsacT(int sample_rate_hz)
-    : AudioDecoderIsacT(rtc::Optional<int>(sample_rate_hz), nullptr) {}
+    : AudioDecoderIsacT(sample_rate_hz, nullptr) {}
 
 template <typename T>
 AudioDecoderIsacT<T>::AudioDecoderIsacT(
     int sample_rate_hz,
     const rtc::scoped_refptr<LockedIsacBandwidthInfo>& bwinfo)
-    : AudioDecoderIsacT(rtc::Optional<int>(sample_rate_hz), bwinfo) {}
-
-template <typename T>
-AudioDecoderIsacT<T>::AudioDecoderIsacT(
-    rtc::Optional<int> sample_rate_hz,
-    const rtc::scoped_refptr<LockedIsacBandwidthInfo>& bwinfo)
     : sample_rate_hz_(sample_rate_hz), bwinfo_(bwinfo) {
-  RTC_CHECK(!sample_rate_hz || *sample_rate_hz == 16000 ||
-            *sample_rate_hz == 32000)
-      << "Unsupported sample rate " << *sample_rate_hz;
+  RTC_CHECK(sample_rate_hz == 16000 || sample_rate_hz == 32000)
+      << "Unsupported sample rate " << sample_rate_hz;
   RTC_CHECK_EQ(0, T::Create(&isac_state_));
   T::DecoderInit(isac_state_);
   if (bwinfo_) {
@@ -51,9 +35,7 @@ AudioDecoderIsacT<T>::AudioDecoderIsacT(
     T::GetBandwidthInfo(isac_state_, &bi);
     bwinfo_->Set(bi);
   }
-  if (sample_rate_hz_) {
-    RTC_CHECK_EQ(0, T::SetDecSampRate(isac_state_, *sample_rate_hz_));
-  }
+  RTC_CHECK_EQ(0, T::SetDecSampRate(isac_state_, sample_rate_hz_));
 }
 
 template <typename T>
@@ -67,14 +49,7 @@ int AudioDecoderIsacT<T>::DecodeInternal(const uint8_t* encoded,
                                          int sample_rate_hz,
                                          int16_t* decoded,
                                          SpeechType* speech_type) {
-  if (sample_rate_hz_) {
-    RTC_CHECK_EQ(*sample_rate_hz_, sample_rate_hz);
-  } else {
-    RTC_CHECK(sample_rate_hz == 16000 || sample_rate_hz == 32000)
-        << "Unsupported sample rate " << sample_rate_hz;
-    sample_rate_hz_ = rtc::Optional<int>(sample_rate_hz);
-    RTC_CHECK_EQ(0, T::SetDecSampRate(isac_state_, *sample_rate_hz_));
-  }
+  RTC_CHECK_EQ(sample_rate_hz_, sample_rate_hz);
   int16_t temp_type = 1;  // Default is speech.
   int ret =
       T::DecodeInternal(isac_state_, encoded, encoded_len, decoded, &temp_type);
@@ -121,8 +96,7 @@ int AudioDecoderIsacT<T>::ErrorCode() {
 
 template <typename T>
 int AudioDecoderIsacT<T>::SampleRateHz() const {
-  RTC_CHECK(sample_rate_hz_) << "Sample rate not set yet!";
-  return *sample_rate_hz_;
+  return sample_rate_hz_;
 }
 
 template <typename T>

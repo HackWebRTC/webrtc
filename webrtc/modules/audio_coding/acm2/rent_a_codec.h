@@ -220,7 +220,7 @@ class RentACodec {
   std::unique_ptr<AudioEncoder> RentEncoderStack(StackParameters* param);
 
   // Creates and returns an iSAC decoder.
-  std::unique_ptr<AudioDecoder> RentIsacDecoder();
+  std::unique_ptr<AudioDecoder> RentIsacDecoder(int sample_rate_hz);
 
  private:
   std::unique_ptr<AudioEncoder> speech_encoder_;

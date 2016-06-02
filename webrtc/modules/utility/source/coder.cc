@@ -45,8 +45,9 @@ int32_t AudioCoder::SetEncodeCodec(const CodecInst& codec_inst) {
 }
 
 int32_t AudioCoder::SetDecodeCodec(const CodecInst& codec_inst) {
-  if (acm_->RegisterReceiveCodec(
-          codec_inst, [&] { return rent_a_codec_.RentIsacDecoder(); }) == -1) {
+  if (acm_->RegisterReceiveCodec(codec_inst, [&] {
+        return rent_a_codec_.RentIsacDecoder(codec_inst.plfreq);
+      }) == -1) {
     return -1;
   }
   memcpy(&receive_codec_, &codec_inst, sizeof(CodecInst));
