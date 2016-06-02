@@ -101,7 +101,9 @@ int LossPercent() {
   return static_cast<int>(FLAGS_loss_percent);
 }
 
-DEFINE_int32(avg_burst_loss_length, 1, "Average burst length of lost packets.");
+DEFINE_int32(avg_burst_loss_length,
+             -1,
+             "Average burst length of lost packets.");
 int AvgBurstLossLength() {
   return static_cast<int>(FLAGS_avg_burst_loss_length);
 }
