@@ -10,68 +10,55 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/extended_jitter_report.h"
 
-#include <limits>
-
+#include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
+#include "webrtc/test/rtcp_packet_parser.h"
 
+using testing::ElementsAre;
+using testing::IsEmpty;
 using webrtc::rtcp::ExtendedJitterReport;
-using webrtc::RTCPUtility::RtcpCommonHeader;
-using webrtc::RTCPUtility::RtcpParseCommonHeader;
 
 namespace webrtc {
 namespace {
+constexpr uint32_t kJitter1 = 0x11121314;
+constexpr uint32_t kJitter2 = 0x22242628;
+}  // namespace
 
-class RtcpPacketExtendedJitterReportTest : public ::testing::Test {
- protected:
-  void BuildPacket() { packet = ij.Build(); }
-  void ParsePacket() {
-    RtcpCommonHeader header;
-    EXPECT_TRUE(RtcpParseCommonHeader(packet.data(), packet.size(), &header));
-    EXPECT_EQ(header.BlockSize(), packet.size());
-    EXPECT_TRUE(parsed_.Parse(
-        header, packet.data() + RtcpCommonHeader::kHeaderSizeBytes));
-  }
-
+TEST(RtcpPacketExtendedJitterReportTest, CreateAndParseWithoutItems) {
   ExtendedJitterReport ij;
-  rtc::Buffer packet;
-  const ExtendedJitterReport& parsed() { return parsed_; }
+  rtc::Buffer raw = ij.Build();
 
- private:
-  ExtendedJitterReport parsed_;
-};
+  ExtendedJitterReport parsed;
+  EXPECT_TRUE(test::ParseSinglePacket(raw, &parsed));
 
-TEST_F(RtcpPacketExtendedJitterReportTest, NoItem) {
-  // No initialization because packet is empty.
-  BuildPacket();
-  ParsePacket();
-
-  EXPECT_EQ(0u, parsed().jitters_count());
+  EXPECT_THAT(parsed.jitters(), IsEmpty());
 }
 
-TEST_F(RtcpPacketExtendedJitterReportTest, OneItem) {
-  EXPECT_TRUE(ij.WithJitter(0x11121314));
+TEST(RtcpPacketExtendedJitterReportTest, CreateAndParseWithOneItem) {
+  ExtendedJitterReport ij;
+  EXPECT_TRUE(ij.WithJitter(kJitter1));
+  rtc::Buffer raw = ij.Build();
 
-  BuildPacket();
-  ParsePacket();
+  ExtendedJitterReport parsed;
+  EXPECT_TRUE(test::ParseSinglePacket(raw, &parsed));
 
-  EXPECT_EQ(1u, parsed().jitters_count());
-  EXPECT_EQ(0x11121314U, parsed().jitter(0));
+  EXPECT_THAT(parsed.jitters(), ElementsAre(kJitter1));
 }
 
-TEST_F(RtcpPacketExtendedJitterReportTest, TwoItems) {
-  EXPECT_TRUE(ij.WithJitter(0x11121418));
-  EXPECT_TRUE(ij.WithJitter(0x22242628));
+TEST(RtcpPacketExtendedJitterReportTest, CreateAndParseWithTwoItems) {
+  ExtendedJitterReport ij;
+  EXPECT_TRUE(ij.WithJitter(kJitter1));
+  EXPECT_TRUE(ij.WithJitter(kJitter2));
+  rtc::Buffer raw = ij.Build();
 
-  BuildPacket();
-  ParsePacket();
+  ExtendedJitterReport parsed;
+  EXPECT_TRUE(test::ParseSinglePacket(raw, &parsed));
 
-  EXPECT_EQ(2u, parsed().jitters_count());
-  EXPECT_EQ(0x11121418U, parsed().jitter(0));
-  EXPECT_EQ(0x22242628U, parsed().jitter(1));
+  EXPECT_THAT(parsed.jitters(), ElementsAre(kJitter1, kJitter2));
 }
 
-TEST_F(RtcpPacketExtendedJitterReportTest, TooManyItems) {
+TEST(RtcpPacketExtendedJitterReportTest, CreateWithTooManyItems) {
+  ExtendedJitterReport ij;
   const int kMaxIjItems = (1 << 5) - 1;
   for (int i = 0; i < kMaxIjItems; ++i) {
     EXPECT_TRUE(ij.WithJitter(i));
@@ -79,18 +66,13 @@ TEST_F(RtcpPacketExtendedJitterReportTest, TooManyItems) {
   EXPECT_FALSE(ij.WithJitter(kMaxIjItems));
 }
 
-TEST_F(RtcpPacketExtendedJitterReportTest, ParseFailWithTooManyItems) {
-  ij.WithJitter(0x11121418);
-  BuildPacket();
-  RtcpCommonHeader header;
-  RtcpParseCommonHeader(packet.data(), packet.size(), &header);
-  header.count_or_format++;  // Damage package.
-
+TEST(RtcpPacketExtendedJitterReportTest, ParseFailsWithTooManyItems) {
+  ExtendedJitterReport ij;
+  ij.WithJitter(kJitter1);
+  rtc::Buffer raw = ij.Build();
+  raw[0]++;  // Damage packet: increase jitter count by 1.
   ExtendedJitterReport parsed;
-
-  EXPECT_FALSE(parsed.Parse(
-      header, packet.data() + RtcpCommonHeader::kHeaderSizeBytes));
+  EXPECT_FALSE(test::ParseSinglePacket(raw, &parsed));
 }
 
-}  // namespace
 }  // namespace webrtc
