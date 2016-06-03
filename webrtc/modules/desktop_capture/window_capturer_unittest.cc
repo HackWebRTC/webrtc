@@ -31,10 +31,7 @@ class WindowCapturerTest : public testing::Test,
   void TearDown() override {}
 
   // DesktopCapturer::Callback interface
-  void OnCaptureResult(DesktopCapturer::Result result,
-                       std::unique_ptr<DesktopFrame> frame) override {
-    frame_ = std::move(frame);
-  }
+  void OnCaptureCompleted(DesktopFrame* frame) override { frame_.reset(frame); }
 
  protected:
   std::unique_ptr<WindowCapturer> capturer_;

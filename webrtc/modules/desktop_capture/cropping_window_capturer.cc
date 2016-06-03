@@ -74,31 +74,31 @@ bool CroppingWindowCapturer::BringSelectedWindowToFront() {
   return window_capturer_->BringSelectedWindowToFront();
 }
 
-void CroppingWindowCapturer::OnCaptureResult(
-    DesktopCapturer::Result result,
-    std::unique_ptr<DesktopFrame> screen_frame) {
+void CroppingWindowCapturer::OnCaptureCompleted(DesktopFrame* frame) {
+  std::unique_ptr<DesktopFrame> screen_frame(frame);
+
   if (!ShouldUseScreenCapturer()) {
     LOG(LS_INFO) << "Window no longer on top when ScreenCapturer finishes";
     window_capturer_->Capture(DesktopRegion());
     return;
   }
 
-  if (result != Result::SUCCESS) {
+  if (!frame) {
     LOG(LS_WARNING) << "ScreenCapturer failed to capture a frame";
-    callback_->OnCaptureResult(result, nullptr);
+    callback_->OnCaptureCompleted(NULL);
     return;
   }
 
   DesktopRect window_rect = GetWindowRectInVirtualScreen();
   if (window_rect.is_empty()) {
     LOG(LS_WARNING) << "Window rect is empty";
-    callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
+    callback_->OnCaptureCompleted(NULL);
     return;
   }
 
-  callback_->OnCaptureResult(
-      Result::SUCCESS,
-      CreateCroppedDesktopFrame(std::move(screen_frame), window_rect));
+  std::unique_ptr<DesktopFrame> window_frame(
+      CreateCroppedDesktopFrame(screen_frame.release(), window_rect));
+  callback_->OnCaptureCompleted(window_frame.release());
 }
 
 #if !defined(WEBRTC_WIN)

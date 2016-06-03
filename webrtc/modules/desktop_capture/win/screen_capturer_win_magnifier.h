@@ -106,12 +106,12 @@ class ScreenCapturerWinMagnifier : public ScreenCapturer {
   static Atomic32 tls_index_;
 
   std::unique_ptr<ScreenCapturer> fallback_capturer_;
-  bool fallback_capturer_started_ = false;
-  Callback* callback_ = nullptr;
+  bool fallback_capturer_started_;
+  Callback* callback_;
   std::unique_ptr<SharedMemoryFactory> shared_memory_factory_;
-  ScreenId current_screen_id_ = kFullDesktopScreenId;
+  ScreenId current_screen_id_;
   std::wstring current_device_key_;
-  HWND excluded_window_ = NULL;
+  HWND excluded_window_;
 
   // A thread-safe list of invalid rectangles, and the size of the most
   // recently captured screen.
@@ -124,31 +124,31 @@ class ScreenCapturerWinMagnifier : public ScreenCapturer {
   std::unique_ptr<Differ> differ_;
 
   // Used to suppress duplicate logging of SetThreadExecutionState errors.
-  bool set_thread_execution_state_failed_ = false;
+  bool set_thread_execution_state_failed_;
 
   ScopedThreadDesktop desktop_;
 
   // Used for getting the screen dpi.
-  HDC desktop_dc_ = NULL;
+  HDC desktop_dc_;
 
-  HMODULE mag_lib_handle_ = NULL;
-  MagInitializeFunc mag_initialize_func_ = nullptr;
-  MagUninitializeFunc mag_uninitialize_func_ = nullptr;
-  MagSetWindowSourceFunc set_window_source_func_ = nullptr;
-  MagSetWindowFilterListFunc set_window_filter_list_func_ = nullptr;
-  MagSetImageScalingCallbackFunc set_image_scaling_callback_func_ = nullptr;
+  HMODULE mag_lib_handle_;
+  MagInitializeFunc mag_initialize_func_;
+  MagUninitializeFunc mag_uninitialize_func_;
+  MagSetWindowSourceFunc set_window_source_func_;
+  MagSetWindowFilterListFunc set_window_filter_list_func_;
+  MagSetImageScalingCallbackFunc set_image_scaling_callback_func_;
 
   // The hidden window hosting the magnifier control.
-  HWND host_window_ = NULL;
+  HWND host_window_;
   // The magnifier control that captures the screen.
-  HWND magnifier_window_ = NULL;
+  HWND magnifier_window_;
 
   // True if the magnifier control has been successfully initialized.
-  bool magnifier_initialized_ = false;
+  bool magnifier_initialized_;
 
   // True if the last OnMagImageScalingCallback was called and handled
   // successfully. Reset at the beginning of each CaptureImage call.
-  bool magnifier_capture_succeeded_ = true;
+  bool magnifier_capture_succeeded_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCapturerWinMagnifier);
 };

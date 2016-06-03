@@ -42,8 +42,7 @@ class CroppingWindowCapturer : public WindowCapturer,
 
   // DesktopCapturer::Callback implementation, passed to |screen_capturer_| to
   // intercept the capture result.
-  void OnCaptureResult(DesktopCapturer::Result result,
-                       std::unique_ptr<DesktopFrame> frame) override;
+  void OnCaptureCompleted(DesktopFrame* frame) override;
 
  protected:
   explicit CroppingWindowCapturer(const DesktopCaptureOptions& options);

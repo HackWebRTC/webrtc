@@ -95,11 +95,11 @@ class WindowCapturerWin : public WindowCapturer {
   void Capture(const DesktopRegion& region) override;
 
  private:
-  Callback* callback_ = nullptr;
+  Callback* callback_;
 
-  // HWND and HDC for the currently selected window or nullptr if window is not
+  // HWND and HDC for the currently selected window or NULL if window is not
   // selected.
-  HWND window_ = nullptr;
+  HWND window_;
 
   DesktopSize previous_size_;
 
@@ -112,8 +112,13 @@ class WindowCapturerWin : public WindowCapturer {
   RTC_DISALLOW_COPY_AND_ASSIGN(WindowCapturerWin);
 };
 
-WindowCapturerWin::WindowCapturerWin() {}
-WindowCapturerWin::~WindowCapturerWin() {}
+WindowCapturerWin::WindowCapturerWin()
+    : callback_(NULL),
+      window_(NULL) {
+}
+
+WindowCapturerWin::~WindowCapturerWin() {
+}
 
 bool WindowCapturerWin::GetWindowList(WindowList* windows) {
   WindowList result;
@@ -163,13 +168,13 @@ void WindowCapturerWin::Start(Callback* callback) {
 void WindowCapturerWin::Capture(const DesktopRegion& region) {
   if (!window_) {
     LOG(LS_ERROR) << "Window hasn't been selected: " << GetLastError();
-    callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
+    callback_->OnCaptureCompleted(NULL);
     return;
   }
 
   // Stop capturing if the window has been closed.
   if (!IsWindow(window_)) {
-    callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
+    callback_->OnCaptureCompleted(NULL);
     return;
   }
 
@@ -177,13 +182,12 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
   // behavior on mace. Window can be temporarily invisible during the
   // transition of full screen mode on/off.
   if (IsIconic(window_) || !IsWindowVisible(window_)) {
-    std::unique_ptr<DesktopFrame> frame(
-        new BasicDesktopFrame(DesktopSize(1, 1)));
+    BasicDesktopFrame* frame = new BasicDesktopFrame(DesktopSize(1, 1));
     memset(frame->data(), 0, frame->stride() * frame->size().height());
 
     previous_size_ = frame->size();
     window_size_map_[window_] = previous_size_;
-    callback_->OnCaptureResult(Result::SUCCESS, std::move(frame));
+    callback_->OnCaptureCompleted(frame);
     return;
   }
 
@@ -191,22 +195,22 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
   DesktopRect cropped_rect;
   if (!GetCroppedWindowRect(window_, &cropped_rect, &original_rect)) {
     LOG(LS_WARNING) << "Failed to get window info: " << GetLastError();
-    callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
+    callback_->OnCaptureCompleted(NULL);
     return;
   }
 
   HDC window_dc = GetWindowDC(window_);
   if (!window_dc) {
     LOG(LS_WARNING) << "Failed to get window DC: " << GetLastError();
-    callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
+    callback_->OnCaptureCompleted(NULL);
     return;
   }
 
   std::unique_ptr<DesktopFrameWin> frame(
-      DesktopFrameWin::Create(cropped_rect.size(), nullptr, window_dc));
+      DesktopFrameWin::Create(cropped_rect.size(), NULL, window_dc));
   if (!frame.get()) {
     ReleaseDC(window_, window_dc);
-    callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
+    callback_->OnCaptureCompleted(NULL);
     return;
   }
 
@@ -259,7 +263,7 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
     frame.reset();
   }
 
-  callback_->OnCaptureResult(Result::SUCCESS, std::move(frame));
+  callback_->OnCaptureCompleted(frame.release());
 }
 
 }  // namespace

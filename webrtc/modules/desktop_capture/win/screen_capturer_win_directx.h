@@ -82,7 +82,9 @@ class ScreenCapturerWinDirectx : public ScreenCapturer {
                                              const char* stage);
 
   // Processes one frame received from AcquireNextFrame function, returns a
-  // nullptr if anything wrong.
+  // nullptr if anything wrong, and Capture function will call
+  // callback_->OnCaptureCompleted(nullptr), otherwise
+  // callback_->OnCaptureCompleted(frame) will be called.
   std::unique_ptr<DesktopFrame> ProcessFrame(
       const DXGI_OUTDUPL_FRAME_INFO& frame_info,
       IDXGIResource* resource);

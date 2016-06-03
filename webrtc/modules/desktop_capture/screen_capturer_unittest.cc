@@ -23,6 +23,7 @@
 using ::testing::_;
 using ::testing::AnyNumber;
 using ::testing::Return;
+using ::testing::SaveArg;
 
 const int kTestSharedMemoryId = 123;
 
@@ -68,10 +69,6 @@ class FakeSharedMemoryFactory : public SharedMemoryFactory {
   RTC_DISALLOW_COPY_AND_ASSIGN(FakeSharedMemoryFactory);
 };
 
-ACTION_P(SaveUniquePtrArg, dest) {
-  *dest = std::move(*arg1);
-}
-
 TEST_F(ScreenCapturerTest, GetScreenListAndSelectScreen) {
   webrtc::ScreenCapturer::ScreenList screens;
   EXPECT_TRUE(capturer_->GetScreenList(&screens));
@@ -87,10 +84,9 @@ TEST_F(ScreenCapturerTest, StartCapturer) {
 
 TEST_F(ScreenCapturerTest, Capture) {
   // Assume that Start() treats the screen as invalid initially.
-  std::unique_ptr<DesktopFrame> frame;
-  EXPECT_CALL(callback_,
-              OnCaptureResultPtr(DesktopCapturer::Result::SUCCESS, _))
-      .WillOnce(SaveUniquePtrArg(&frame));
+  DesktopFrame* frame = NULL;
+  EXPECT_CALL(callback_, OnCaptureCompleted(_))
+      .WillOnce(SaveArg<0>(&frame));
 
   capturer_->Start(&callback_);
   capturer_->Capture(DesktopRegion());
@@ -109,15 +105,16 @@ TEST_F(ScreenCapturerTest, Capture) {
   EXPECT_TRUE(it.rect().equals(DesktopRect::MakeSize(frame->size())));
   it.Advance();
   EXPECT_TRUE(it.IsAtEnd());
+
+  delete frame;
 }
 
 #if defined(WEBRTC_WIN)
 
 TEST_F(ScreenCapturerTest, UseSharedBuffers) {
-  std::unique_ptr<DesktopFrame> frame;
-  EXPECT_CALL(callback_,
-              OnCaptureResultPtr(DesktopCapturer::Result::SUCCESS, _))
-      .WillOnce(SaveUniquePtrArg(&frame));
+  DesktopFrame* frame = NULL;
+  EXPECT_CALL(callback_, OnCaptureCompleted(_))
+      .WillOnce(SaveArg<0>(&frame));
 
   capturer_->Start(&callback_);
   capturer_->SetSharedMemoryFactory(
@@ -127,6 +124,8 @@ TEST_F(ScreenCapturerTest, UseSharedBuffers) {
   ASSERT_TRUE(frame);
   ASSERT_TRUE(frame->shared_memory());
   EXPECT_EQ(frame->shared_memory()->id(), kTestSharedMemoryId);
+
+  delete frame;
 }
 
 TEST_F(ScreenCapturerTest, UseMagnifier) {
@@ -134,14 +133,13 @@ TEST_F(ScreenCapturerTest, UseMagnifier) {
   options.set_allow_use_magnification_api(true);
   capturer_.reset(ScreenCapturer::Create(options));
 
-  std::unique_ptr<DesktopFrame> frame;
-  EXPECT_CALL(callback_,
-              OnCaptureResultPtr(DesktopCapturer::Result::SUCCESS, _))
-      .WillOnce(SaveUniquePtrArg(&frame));
+  DesktopFrame* frame = NULL;
+  EXPECT_CALL(callback_, OnCaptureCompleted(_)).WillOnce(SaveArg<0>(&frame));
 
   capturer_->Start(&callback_);
   capturer_->Capture(DesktopRegion());
   ASSERT_TRUE(frame);
+  delete frame;
 }
 
 #endif  // defined(WEBRTC_WIN)

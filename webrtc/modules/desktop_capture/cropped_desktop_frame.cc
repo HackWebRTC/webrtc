@@ -19,8 +19,7 @@ namespace webrtc {
 // A DesktopFrame that is a sub-rect of another DesktopFrame.
 class CroppedDesktopFrame : public DesktopFrame {
  public:
-  CroppedDesktopFrame(std::unique_ptr<DesktopFrame> frame,
-                      const DesktopRect& rect);
+  CroppedDesktopFrame(DesktopFrame* frame, const DesktopRect& rect);
 
  private:
   std::unique_ptr<DesktopFrame> frame_;
@@ -28,23 +27,23 @@ class CroppedDesktopFrame : public DesktopFrame {
   RTC_DISALLOW_COPY_AND_ASSIGN(CroppedDesktopFrame);
 };
 
-std::unique_ptr<DesktopFrame> CreateCroppedDesktopFrame(
-    std::unique_ptr<DesktopFrame> frame,
-    const DesktopRect& rect) {
-  if (!DesktopRect::MakeSize(frame->size()).ContainsRect(rect))
-    return nullptr;
+DesktopFrame*
+CreateCroppedDesktopFrame(DesktopFrame* frame, const DesktopRect& rect) {
+  if (!DesktopRect::MakeSize(frame->size()).ContainsRect(rect)) {
+    delete frame;
+    return NULL;
+  }
 
-  return std::unique_ptr<DesktopFrame>(
-      new CroppedDesktopFrame(std::move(frame), rect));
+  return new CroppedDesktopFrame(frame, rect);
 }
 
-CroppedDesktopFrame::CroppedDesktopFrame(std::unique_ptr<DesktopFrame> frame,
+CroppedDesktopFrame::CroppedDesktopFrame(DesktopFrame* frame,
                                          const DesktopRect& rect)
     : DesktopFrame(rect.size(),
                    frame->stride(),
                    frame->GetFrameDataAtPos(rect.top_left()),
-                   frame->shared_memory()) {
-  frame_ = std::move(frame);
+                   frame->shared_memory()),
+      frame_(frame) {
 }
 
 }  // namespace webrtc

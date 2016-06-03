@@ -36,7 +36,10 @@ namespace {
 template <class PropertyType>
 class XWindowProperty {
  public:
-  XWindowProperty(Display* display, Window window, Atom property) {
+  XWindowProperty(Display* display, Window window, Atom property)
+      : is_valid_(false),
+        size_(0),
+        data_(NULL) {
     const int kBitsPerByte = 8;
     Atom actual_type;
     int actual_format;
@@ -46,7 +49,7 @@ class XWindowProperty {
                                     &actual_format, &size_,
                                     &bytes_after, &data_);
     if (status != Success) {
-      data_ = nullptr;
+      data_ = NULL;
       return;
     }
     if (sizeof(PropertyType) * kBitsPerByte != actual_format) {
@@ -75,9 +78,9 @@ class XWindowProperty {
   }
 
  private:
-  bool is_valid_ = false;
-  unsigned long size_ = 0;  // NOLINT: type required by XGetWindowProperty
-  unsigned char* data_ = nullptr;
+  bool is_valid_;
+  unsigned long size_;  // NOLINT: type required by XGetWindowProperty
+  unsigned char* data_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(XWindowProperty);
 };
@@ -114,23 +117,26 @@ class WindowCapturerLinux : public WindowCapturer,
   // Returns window title for the specified X |window|.
   bool GetWindowTitle(::Window window, std::string* title);
 
-  Callback* callback_ = nullptr;
+  Callback* callback_;
 
   rtc::scoped_refptr<SharedXDisplay> x_display_;
 
   Atom wm_state_atom_;
   Atom window_type_atom_;
   Atom normal_window_type_atom_;
-  bool has_composite_extension_ = false;
+  bool has_composite_extension_;
 
-  ::Window selected_window_ = 0;
+  ::Window selected_window_;
   XServerPixelBuffer x_server_pixel_buffer_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(WindowCapturerLinux);
 };
 
 WindowCapturerLinux::WindowCapturerLinux(const DesktopCaptureOptions& options)
-    : x_display_(options.x_display()) {
+    : callback_(NULL),
+      x_display_(options.x_display()),
+      has_composite_extension_(false),
+      selected_window_(0) {
   // Create Atoms so we don't need to do it every time they are used.
   wm_state_atom_ = XInternAtom(display(), "WM_STATE", True);
   window_type_atom_ = XInternAtom(display(), "_NET_WM_WINDOW_TYPE", True);
@@ -274,7 +280,7 @@ void WindowCapturerLinux::Start(Callback* callback) {
 void WindowCapturerLinux::Capture(const DesktopRegion& region) {
   if (!x_server_pixel_buffer_.IsWindowValid()) {
     LOG(LS_INFO) << "The window is no longer valid.";
-    callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
+    callback_->OnCaptureCompleted(NULL);
     return;
   }
 
@@ -285,21 +291,21 @@ void WindowCapturerLinux::Capture(const DesktopRegion& region) {
     // visible on screen and not covered by any other window. This is not
     // something we want so instead, just bail out.
     LOG(LS_INFO) << "No Xcomposite extension detected.";
-    callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
+    callback_->OnCaptureCompleted(NULL);
     return;
   }
 
-  std::unique_ptr<DesktopFrame> frame(
-      new BasicDesktopFrame(x_server_pixel_buffer_.window_size()));
+  DesktopFrame* frame =
+      new BasicDesktopFrame(x_server_pixel_buffer_.window_size());
 
   x_server_pixel_buffer_.Synchronize();
   x_server_pixel_buffer_.CaptureRect(DesktopRect::MakeSize(frame->size()),
-                                     frame.get());
+                                     frame);
 
   frame->mutable_updated_region()->SetRect(
       DesktopRect::MakeSize(frame->size()));
 
-  callback_->OnCaptureResult(Result::SUCCESS, std::move(frame));
+  callback_->OnCaptureCompleted(frame);
 }
 
 bool WindowCapturerLinux::HandleXEvent(const XEvent& event) {
@@ -393,12 +399,12 @@ bool WindowCapturerLinux::GetWindowTitle(::Window window, std::string* title) {
   int status;
   bool result = false;
   XTextProperty window_name;
-  window_name.value = nullptr;
+  window_name.value = NULL;
   if (window) {
     status = XGetWMName(display(), window, &window_name);
     if (status && window_name.value && window_name.nitems) {
       int cnt;
-      char** list = nullptr;
+      char **list = NULL;
       status = Xutf8TextPropertyToTextList(display(), &window_name, &list,
                                            &cnt);
       if (status >= Success && cnt && *list) {
@@ -423,7 +429,7 @@ bool WindowCapturerLinux::GetWindowTitle(::Window window, std::string* title) {
 // static
 WindowCapturer* WindowCapturer::Create(const DesktopCaptureOptions& options) {
   if (!options.x_display())
-    return nullptr;
+    return NULL;
   return new WindowCapturerLinux(options);
 }
 

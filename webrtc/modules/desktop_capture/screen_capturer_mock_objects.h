@@ -36,13 +36,7 @@ class MockScreenCapturerCallback : public ScreenCapturer::Callback {
   MockScreenCapturerCallback() {}
   virtual ~MockScreenCapturerCallback() {}
 
-  MOCK_METHOD2(OnCaptureResultPtr,
-               void(DesktopCapturer::Result result,
-                    std::unique_ptr<DesktopFrame>* frame));
-  void OnCaptureResult(DesktopCapturer::Result result,
-                       std::unique_ptr<DesktopFrame> frame) override {
-    OnCaptureResultPtr(result, &frame);
-  }
+  MOCK_METHOD1(OnCaptureCompleted, void(DesktopFrame*));
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(MockScreenCapturerCallback);

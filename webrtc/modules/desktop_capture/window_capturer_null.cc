@@ -34,13 +34,17 @@ class WindowCapturerNull : public WindowCapturer {
   void Capture(const DesktopRegion& region) override;
 
  private:
-  Callback* callback_ = nullptr;
+  Callback* callback_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(WindowCapturerNull);
 };
 
-WindowCapturerNull::WindowCapturerNull() {}
-WindowCapturerNull::~WindowCapturerNull() {}
+WindowCapturerNull::WindowCapturerNull()
+    : callback_(NULL) {
+}
+
+WindowCapturerNull::~WindowCapturerNull() {
+}
 
 bool WindowCapturerNull::GetWindowList(WindowList* windows) {
   // Not implemented yet.
@@ -66,7 +70,7 @@ void WindowCapturerNull::Start(Callback* callback) {
 
 void WindowCapturerNull::Capture(const DesktopRegion& region) {
   // Not implemented yet.
-  callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
+  callback_->OnCaptureCompleted(NULL);
 }
 
 }  // namespace

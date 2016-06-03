@@ -42,8 +42,7 @@ class DesktopAndCursorComposer : public DesktopCapturer,
 
  private:
   // DesktopCapturer::Callback interface.
-  void OnCaptureResult(DesktopCapturer::Result result,
-                       std::unique_ptr<DesktopFrame> frame) override;
+  void OnCaptureCompleted(DesktopFrame* frame) override;
 
   // MouseCursorMonitor::Callback interface.
   void OnMouseCursor(MouseCursor* cursor) override;
