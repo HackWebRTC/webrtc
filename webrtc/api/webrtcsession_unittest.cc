@@ -109,6 +109,8 @@ static const int kMediaContentIndex1 = 1;
 static const char kMediaContentName1[] = "video";
 
 static const int kIceCandidatesTimeout = 10000;
+// STUN timeout with all retransmissions is a total of 9500ms.
+static const int kStunTimeout = 9500;
 
 static const char kFakeDtlsFingerprint[] =
     "BB:CD:72:F7:2F:D0:BA:43:F3:68:B1:0C:23:72:B6:4A:"
@@ -1504,13 +1506,9 @@ TEST_F(WebRtcSessionTest, TestMultihomeCandidates) {
   EXPECT_EQ(8u, observer_.mline_1_candidates_.size());
 }
 
-// Crashes on Win only. See webrtc:5411.
-#if defined(WEBRTC_WIN)
-#define MAYBE_TestStunError DISABLED_TestStunError
-#else
-#define MAYBE_TestStunError TestStunError
-#endif
-TEST_F(WebRtcSessionTest, MAYBE_TestStunError) {
+TEST_F(WebRtcSessionTest, TestStunError) {
+  rtc::ScopedFakeClock clock;
+
   AddInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
   AddInterface(rtc::SocketAddress(kClientAddrHost2, kClientAddrPort));
   fss_->AddRule(false,
@@ -1521,9 +1519,12 @@ TEST_F(WebRtcSessionTest, MAYBE_TestStunError) {
   SendAudioVideoStream1();
   InitiateCall();
   // Since kClientAddrHost1 is blocked, not expecting stun candidates for it.
-  EXPECT_TRUE_WAIT(observer_.oncandidatesready_, kIceCandidatesTimeout);
+  EXPECT_TRUE_SIMULATED_WAIT(observer_.oncandidatesready_, kStunTimeout, clock);
   EXPECT_EQ(6u, observer_.mline_0_candidates_.size());
   EXPECT_EQ(6u, observer_.mline_1_candidates_.size());
+  // Reset session before scoped fake clock goes out of scope to avoid TSan
+  // warning.
+  session_.reset(nullptr);
 }
 
 TEST_F(WebRtcSessionTest, SetSdpFailedOnInvalidSdp) {

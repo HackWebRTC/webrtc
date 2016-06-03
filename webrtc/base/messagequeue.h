@@ -37,7 +37,7 @@ class MessageQueue;
 
 // MessageQueueManager does cleanup of of message queues
 
-class MessageQueueManager : public MessageHandler {
+class MessageQueueManager {
  public:
   static void Add(MessageQueue *message_queue);
   static void Remove(MessageQueue *message_queue);
@@ -50,21 +50,20 @@ class MessageQueueManager : public MessageHandler {
   static bool IsInitialized();
 
   // Mainly for testing purposes, for use with a simulated clock.
-  // Posts a no-op event on all message queues so they will wake from the
-  // socket server select() and process messages again.
-  static void WakeAllMessageQueues();
+  // Ensures that all message queues have processed delayed messages
+  // up until the current point in time.
+  static void ProcessAllMessageQueues();
 
  private:
   static MessageQueueManager* Instance();
 
   MessageQueueManager();
-  ~MessageQueueManager() override;
+  ~MessageQueueManager();
 
   void AddInternal(MessageQueue *message_queue);
   void RemoveInternal(MessageQueue *message_queue);
   void ClearInternal(MessageHandler *handler);
-  void WakeAllMessageQueuesInternal();
-  void OnMessage(Message* pmsg) override;
+  void ProcessAllMessageQueuesInternal();
 
   static MessageQueueManager* instance_;
   // This list contains all live MessageQueues.
