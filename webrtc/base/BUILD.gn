@@ -631,3 +631,38 @@ source_set("gtest_prod") {
     "gtest_prod_util.h",
   ]
 }
+
+# There's no point processing WebRTC standalone tests in a Chromium build.
+if (!build_with_chromium) {
+  config("rtc_base_test_utils_exported_config") {
+    defines = [ "GTEST_RELATIVE_PATH" ]
+  }
+
+  source_set("rtc_base_test_utils") {
+    testonly = true
+    sources = [
+      # Also use this as a convenient dumping ground for misc files that are
+      # included by multiple targets below.
+      "fakenetwork.h",
+      "fakesslidentity.h",
+      "faketaskrunner.h",
+      "gunit.h",
+      "testbase64.h",
+      "testechoserver.h",
+      "testutils.h",
+      "unittest_main.cc",
+    ]
+    configs += [ "..:common_config" ]
+    public_configs = [
+      "..:common_inherited_config",
+      ":rtc_base_test_utils_exported_config",
+    ]
+    deps = [
+      ":rtc_base",
+      "../test:field_trial",
+    ]
+    public_deps = [
+      "//testing/gtest",
+    ]
+  }
+}

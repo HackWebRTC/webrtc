@@ -137,10 +137,6 @@
             'base/win32windowpicker_unittest.cc',
             'base/winfirewall_unittest.cc',
           ],
-          'sources!': [
-            # TODO(pbos): Reenable this test.
-            'base/win32windowpicker_unittest.cc',
-          ],
         }],
         ['OS=="win" and clang==1', {
           'msvs_settings': {
