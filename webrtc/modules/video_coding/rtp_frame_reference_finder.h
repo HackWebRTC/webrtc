@@ -48,9 +48,11 @@ class RtpFrameReferenceFinder {
   // all information needed.
   void RetryStashedFrames() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  // Find references for generic frames.
-  void ManageFrameGeneric(std::unique_ptr<RtpFrameObject> frame)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  // Find references for generic frames. If |picture_id| is unspecified
+  // then packet sequence numbers will be used to determine the references
+  // of the frames.
+  void ManageFrameGeneric(std::unique_ptr<RtpFrameObject> frame,
+                          int picture_id) EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Find references for Vp8 frames
   void ManageFrameVp8(std::unique_ptr<RtpFrameObject> frame)

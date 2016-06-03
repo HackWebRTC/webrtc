@@ -46,7 +46,7 @@ void RtpFrameReferenceFinder::ManageFrame(
     case kVideoCodecH264:
     case kVideoCodecI420:
     case kVideoCodecGeneric:
-      ManageFrameGeneric(std::move(frame));
+      ManageFrameGeneric(std::move(frame), kNoPictureId);
       break;
   }
 }
@@ -69,7 +69,21 @@ void RtpFrameReferenceFinder::RetryStashedFrames() {
 }
 
 void RtpFrameReferenceFinder::ManageFrameGeneric(
-    std::unique_ptr<RtpFrameObject> frame) {
+    std::unique_ptr<RtpFrameObject> frame,
+    int picture_id) {
+  // If |picture_id| is specified then we use that to set the frame references,
+  // otherwise we use sequence number.
+  if (picture_id != kNoPictureId) {
+    if (last_unwrap_ == -1)
+      last_unwrap_ = picture_id;
+
+    frame->picture_id = UnwrapPictureId(picture_id % kPicIdLength);
+    frame->num_references = frame->frame_type() == kVideoFrameKey ? 0 : 1;
+    frame->references[0] = frame->picture_id - 1;
+    frame_callback_->OnCompleteFrame(std::move(frame));
+    return;
+  }
+
   if (frame->frame_type() == kVideoFrameKey)
     last_seq_num_gop_[frame->last_seq_num()] = frame->last_seq_num();
 
@@ -125,7 +139,7 @@ void RtpFrameReferenceFinder::ManageFrameVp8(
   if (codec_header.pictureId == kNoPictureId ||
       codec_header.temporalIdx == kNoTemporalIdx ||
       codec_header.tl0PicIdx == kNoTl0PicIdx) {
-    ManageFrameGeneric(std::move(frame));
+    ManageFrameGeneric(std::move(frame), codec_header.pictureId);
     return;
   }
 
@@ -266,8 +280,9 @@ void RtpFrameReferenceFinder::ManageFrameVp9(
 
   const RTPVideoHeaderVP9& codec_header = rtp_codec_header->VP9;
 
-  if (codec_header.picture_id == kNoPictureId) {
-    ManageFrameGeneric(std::move(frame));
+  if (codec_header.picture_id == kNoPictureId ||
+      codec_header.temporal_idx == kNoTemporalIdx) {
+    ManageFrameGeneric(std::move(frame), codec_header.picture_id);
     return;
   }
 
