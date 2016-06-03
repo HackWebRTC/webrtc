@@ -154,6 +154,8 @@ void BitrateProber::PacketSent(int64_t now_ms, size_t packet_size) {
     ++cluster->sent_probe_packets;
     if (cluster->sent_probe_packets == cluster->max_probe_packets)
       clusters_.pop();
+    if (clusters_.empty())
+      probing_state_ = kWait;
   }
 }
 }  // namespace webrtc

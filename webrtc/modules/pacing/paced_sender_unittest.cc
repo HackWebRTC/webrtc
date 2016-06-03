@@ -870,11 +870,12 @@ TEST_F(PacedSenderTest, AverageQueueTime) {
   EXPECT_EQ(0, send_bucket_->AverageQueueTimeMs());
 }
 
-TEST_F(PacedSenderTest, DISABLED_ProbeClusterId) {
+TEST_F(PacedSenderTest, ProbeClusterId) {
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
   const size_t kPacketSize = 1200;
 
+  send_bucket_->SetAllocatedSendBitrate(kTargetBitrateBps, kTargetBitrateBps);
   send_bucket_->SetProbingEnabled(true);
   for (int i = 0; i < 11; ++i) {
     send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
@@ -886,18 +887,24 @@ TEST_F(PacedSenderTest, DISABLED_ProbeClusterId) {
   EXPECT_CALL(callback_, TimeToSendPacket(_, _, _, _, 0))
       .Times(6)
       .WillRepeatedly(Return(true));
-  for (int i = 0; i < 6; ++i)
+  for (int i = 0; i < 6; ++i) {
+    clock_.AdvanceTimeMilliseconds(20);
     send_bucket_->Process();
+  }
 
   // Second probing cluster.
   EXPECT_CALL(callback_, TimeToSendPacket(_, _, _, _, 1))
       .Times(5)
       .WillRepeatedly(Return(true));
-  for (int i = 0; i < 5; ++i)
+  for (int i = 0; i < 5; ++i) {
+    clock_.AdvanceTimeMilliseconds(20);
     send_bucket_->Process();
+  }
 
   // No more probing packets.
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(1);
+  EXPECT_CALL(callback_, TimeToSendPadding(_, PacketInfo::kNotAProbe))
+        .Times(1)
+        .WillRepeatedly(Return(500));
   send_bucket_->Process();
 }
 

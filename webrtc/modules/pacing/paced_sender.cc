@@ -390,10 +390,11 @@ void PacedSender::Process() {
     UpdateBytesPerInterval(delta_time_ms);
   }
 
-  int probe_cluster_id = prober_->IsProbing() ? prober_->CurrentClusterId()
-                                              : PacketInfo::kNotAProbe;
+  bool is_probing = prober_->IsProbing();
+  int probe_cluster_id = is_probing ? prober_->CurrentClusterId()
+                                    : PacketInfo::kNotAProbe;
   while (!packets_->Empty()) {
-    if (media_budget_->bytes_remaining() == 0 && !prober_->IsProbing())
+    if (media_budget_->bytes_remaining() == 0 && !is_probing)
       return;
 
     // Since we need to release the lock in order to send, we first pop the
@@ -404,7 +405,7 @@ void PacedSender::Process() {
     if (SendPacket(packet, probe_cluster_id)) {
       // Send succeeded, remove it from the queue.
       packets_->FinalizePop(packet);
-      if (prober_->IsProbing())
+      if (is_probing)
         return;
     } else {
       // Send failed, put it back into the queue.
@@ -418,7 +419,7 @@ void PacedSender::Process() {
     return;
 
   size_t padding_needed;
-  if (prober_->IsProbing()) {
+  if (is_probing) {
     padding_needed = prober_->RecommendedPacketSize();
   } else {
     padding_needed = padding_budget_->bytes_remaining();
