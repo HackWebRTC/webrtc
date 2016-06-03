@@ -17,6 +17,9 @@
 
 using namespace rtc;
 
+// 10 seconds.
+static const int kTimeout = 10000;
+
 class SignalThreadTest : public testing::Test, public sigslot::has_slots<> {
  public:
   class SlowSignalThread : public SignalThread {
@@ -159,35 +162,26 @@ TEST_F(SignalThreadTest, OwnerThreadGoesAway) {
   EXPECT_EQ(stopped, thread_stopped_); \
   EXPECT_EQ(deleted, thread_deleted_);
 
-#if defined(WEBRTC_LINUX)
-#define MAYBE_ThreadFinishes DISABLED_ThreadFinishes
-#else
-#define MAYBE_ThreadFinishes ThreadFinishes
-#endif
-TEST_F(SignalThreadTest, MAYBE_ThreadFinishes) {
+#define EXPECT_STATE_WAIT(started, done, completed, stopped, deleted, timeout) \
+  EXPECT_EQ_WAIT(started, thread_started_, timeout); \
+  EXPECT_EQ_WAIT(done, thread_done_, timeout); \
+  EXPECT_EQ_WAIT(completed, thread_completed_, timeout); \
+  EXPECT_EQ_WAIT(stopped, thread_stopped_, timeout); \
+  EXPECT_EQ_WAIT(deleted, thread_deleted_, timeout);
+
+TEST_F(SignalThreadTest, ThreadFinishes) {
   thread_->Start();
   EXPECT_STATE(1, 0, 0, 0, 0);
-  Thread::SleepMs(500);
-  EXPECT_STATE(1, 0, 0, 0, 0);
-  Thread::Current()->ProcessMessages(0);
-  EXPECT_STATE(1, 1, 1, 0, 1);
+  EXPECT_STATE_WAIT(1, 1, 1, 0, 1, kTimeout);
 }
 
-#if defined(WEBRTC_LINUX)
-#define MAYBE_ReleasedThreadFinishes DISABLED_ReleasedThreadFinishes
-#else
-#define MAYBE_ReleasedThreadFinishes ReleasedThreadFinishes
-#endif
-TEST_F(SignalThreadTest, MAYBE_ReleasedThreadFinishes) {
+TEST_F(SignalThreadTest, ReleasedThreadFinishes) {
   thread_->Start();
   EXPECT_STATE(1, 0, 0, 0, 0);
   thread_->Release();
   called_release_ = true;
   EXPECT_STATE(1, 0, 0, 0, 0);
-  Thread::SleepMs(500);
-  EXPECT_STATE(1, 0, 0, 0, 0);
-  Thread::Current()->ProcessMessages(0);
-  EXPECT_STATE(1, 1, 1, 0, 1);
+  EXPECT_STATE_WAIT(1, 1, 1, 0, 1, kTimeout);
 }
 
 TEST_F(SignalThreadTest, DestroyedThreadCleansUp) {
@@ -204,8 +198,5 @@ TEST_F(SignalThreadTest, DeferredDestroyedThreadCleansUp) {
   EXPECT_STATE(1, 0, 0, 0, 0);
   thread_->Destroy(false);
   EXPECT_STATE(1, 0, 0, 1, 0);
-  Thread::SleepMs(500);
-  EXPECT_STATE(1, 0, 0, 1, 0);
-  Thread::Current()->ProcessMessages(0);
-  EXPECT_STATE(1, 1, 0, 1, 1);
+  EXPECT_STATE_WAIT(1, 1, 0, 1, 1, kTimeout);
 }
