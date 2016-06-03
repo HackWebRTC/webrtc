@@ -89,6 +89,10 @@ void AndroidVideoCapturerJni::Stop() {
   LOG(LS_INFO) << "AndroidVideoCapturerJni stop";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   {
+    // TODO(nisse): Consider moving this block until *after* the call to
+    // stopCapturer. stopCapturer should ensure that we get no
+    // more frames, and then we shouldn't need the if (!capturer_)
+    // checks in OnMemoryBufferFrame and OnTextureFrame.
     rtc::CritScope cs(&capturer_lock_);
     // Destroying |invoker_| will cancel all pending calls to |capturer_|.
     invoker_ = nullptr;
@@ -172,7 +176,10 @@ void AndroidVideoCapturerJni::OnMemoryBufferFrame(void* video_frame,
   RTC_DCHECK(rotation == 0 || rotation == 90 || rotation == 180 ||
              rotation == 270);
   rtc::CritScope cs(&capturer_lock_);
-
+  if (!capturer_) {
+    LOG(LS_WARNING) << "OnMemoryBufferFrame() called for closed capturer.";
+    return;
+  }
   int adapted_width;
   int adapted_height;
   int crop_width;
@@ -252,7 +259,10 @@ void AndroidVideoCapturerJni::OnTextureFrame(int width,
   RTC_DCHECK(rotation == 0 || rotation == 90 || rotation == 180 ||
              rotation == 270);
   rtc::CritScope cs(&capturer_lock_);
-
+  if (!capturer_) {
+    LOG(LS_WARNING) << "OnTextureFrame() called for closed capturer.";
+    return;
+  }
   int adapted_width;
   int adapted_height;
   int crop_width;
