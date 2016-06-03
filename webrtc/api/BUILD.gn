@@ -117,6 +117,7 @@ source_set("libjingle_peerconnection") {
   }
 
   deps = [
+    "../call",
     "../media",
     "../pc",
   ]

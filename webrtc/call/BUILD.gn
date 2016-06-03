@@ -28,8 +28,10 @@ source_set("call") {
   deps = [
     "..:rtc_event_log",
     "..:webrtc_common",
+    "../audio",
     "../modules/congestion_controller",
     "../modules/rtp_rtcp",
     "../system_wrappers",
+    "../video",
   ]
 }
