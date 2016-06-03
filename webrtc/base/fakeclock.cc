@@ -27,24 +27,14 @@ void FakeClock::SetTimeNanos(uint64_t nanos) {
     time_ = nanos;
   }
   // If message queues are waiting in a socket select() with a timeout provided
-  // by the OS, they should wake up and dispatch all messages that are ready.
-  MessageQueueManager::ProcessAllMessageQueues();
+  // by the OS, they should wake up to check if there are any messages ready to
+  // be dispatched based on the fake time.
+  MessageQueueManager::WakeAllMessageQueues();
 }
 
 void FakeClock::AdvanceTime(TimeDelta delta) {
-  {
-    CritScope cs(&lock_);
-    time_ += delta.ToNanoseconds();
-  }
-  MessageQueueManager::ProcessAllMessageQueues();
-}
-
-ScopedFakeClock::ScopedFakeClock() {
-  prev_clock_ = SetClockForTesting(this);
-}
-
-ScopedFakeClock::~ScopedFakeClock() {
-  SetClockForTesting(prev_clock_);
+  CritScope cs(&lock_);
+  SetTimeNanos(time_ + delta.ToNanoseconds());
 }
 
 }  // namespace rtc

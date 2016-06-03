@@ -32,10 +32,8 @@ namespace rtc {
 
 ClockInterface* g_clock = nullptr;
 
-ClockInterface* SetClockForTesting(ClockInterface* clock) {
-  ClockInterface* prev = g_clock;
+void SetClock(ClockInterface* clock) {
   g_clock = clock;
-  return prev;
 }
 
 uint64_t TimeNanos() {

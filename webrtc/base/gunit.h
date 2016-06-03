@@ -11,7 +11,6 @@
 #ifndef WEBRTC_BASE_GUNIT_H_
 #define WEBRTC_BASE_GUNIT_H_
 
-#include "webrtc/base/fakeclock.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
 #if defined(GTEST_RELATIVE_PATH)
@@ -21,12 +20,10 @@
 #endif
 
 // Wait until "ex" is true, or "timeout" expires.
-#define WAIT(ex, timeout)                               \
-  for (int64_t start = rtc::TimeMillis();               \
-       !(ex) && rtc::TimeMillis() < start + timeout;) { \
-    rtc::Thread::Current()->ProcessMessages(0);         \
-    rtc::Thread::Current()->SleepMs(1);                 \
-  }
+#define WAIT(ex, timeout)                             \
+  for (int64_t start = rtc::TimeMillis();             \
+       !(ex) && rtc::TimeMillis() < start + timeout;) \
+    rtc::Thread::Current()->ProcessMessages(1);
 
 // This returns the result of the test in res, so that we don't re-evaluate
 // the expression in the XXXX_WAIT macros below, since that causes problems
@@ -36,8 +33,7 @@
     int64_t start = rtc::TimeMillis();                    \
     res = (ex);                                           \
     while (!res && rtc::TimeMillis() < start + timeout) { \
-      rtc::Thread::Current()->ProcessMessages(0);         \
-      rtc::Thread::Current()->SleepMs(1);                 \
+      rtc::Thread::Current()->ProcessMessages(1);         \
       res = (ex);                                         \
     }                                                     \
   } while (0)
@@ -87,46 +83,6 @@
     if (!res) { \
       EXPECT_TRUE(ex); \
     } \
-  } while (0)
-
-// Wait until "ex" is true, or "timeout" expires, using fake clock where
-// messages are processed every millisecond.
-#define SIMULATED_WAIT(ex, timeout, clock)                  \
-  for (int64_t start = rtc::TimeMillis();                   \
-       !(ex) && rtc::TimeMillis() < start + timeout;) {     \
-    clock.AdvanceTime(rtc::TimeDelta::FromMilliseconds(1)); \
-  }
-
-// This returns the result of the test in res, so that we don't re-evaluate
-// the expression in the XXXX_WAIT macros below, since that causes problems
-// when the expression is only true the first time you check it.
-#define SIMULATED_WAIT_(ex, timeout, res, clock)              \
-  do {                                                        \
-    int64_t start = rtc::TimeMillis();                        \
-    res = (ex);                                               \
-    while (!res && rtc::TimeMillis() < start + timeout) {     \
-      clock.AdvanceTime(rtc::TimeDelta::FromMilliseconds(1)); \
-      res = (ex);                                             \
-    }                                                         \
-  } while (0)
-
-// The typical EXPECT_XXXX, but done until true or a timeout with a fake clock.
-#define EXPECT_TRUE_SIMULATED_WAIT(ex, timeout, clock) \
-  do {                                                 \
-    bool res;                                          \
-    SIMULATED_WAIT_(ex, timeout, res, clock);          \
-    if (!res) {                                        \
-      EXPECT_TRUE(ex);                                 \
-    }                                                  \
-  } while (0)
-
-#define EXPECT_EQ_SIMULATED_WAIT(v1, v2, timeout, clock) \
-  do {                                                   \
-    bool res;                                            \
-    SIMULATED_WAIT_(v1 == v2, timeout, res, clock);      \
-    if (!res) {                                          \
-      EXPECT_EQ(v1, v2);                                 \
-    }                                                    \
   } while (0)
 
 #endif  // WEBRTC_BASE_GUNIT_H_

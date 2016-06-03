@@ -140,9 +140,6 @@ class OwnerThread : public Thread, public sigslot::has_slots<> {
 // signal thread is still working.  This may happen
 // when shutting down the process.
 TEST_F(SignalThreadTest, OwnerThreadGoesAway) {
-  // We don't use |thread_| for this test, so destroy it.
-  thread_->Destroy(true);
-
   {
     std::unique_ptr<OwnerThread> owner(new OwnerThread(this));
     main_thread_ = owner.get();

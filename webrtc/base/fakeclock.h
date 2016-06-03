@@ -19,8 +19,6 @@ namespace rtc {
 
 // Fake clock for use with unit tests, which does not tick on its own.
 // Starts at time 0.
-//
-// TODO(deadbeef): Unify with webrtc::SimulatedClock.
 class FakeClock : public ClockInterface {
  public:
   ~FakeClock() override {}
@@ -38,17 +36,6 @@ class FakeClock : public ClockInterface {
  private:
   CriticalSection lock_;
   uint64_t time_ GUARDED_BY(lock_) = 0u;
-};
-
-// Helper class that sets itself as the global clock in its constructor and
-// unsets it in its destructor.
-class ScopedFakeClock : public FakeClock {
- public:
-  ScopedFakeClock();
-  ~ScopedFakeClock() override;
-
- private:
-  ClockInterface* prev_clock_;
 };
 
 }  // namespace rtc

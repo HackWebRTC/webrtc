@@ -9,13 +9,16 @@
  */
 #include <algorithm>
 
-#include "webrtc/base/atomicops.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagequeue.h"
-#include "webrtc/base/thread.h"
 #include "webrtc/base/trace_event.h"
+
+namespace {
+
+enum { MSG_WAKE_MESSAGE_QUEUE = 1 };
+}
 
 namespace rtc {
 
@@ -38,7 +41,8 @@ bool MessageQueueManager::IsInitialized() {
   return instance_ != NULL;
 }
 
-MessageQueueManager::MessageQueueManager() {}
+MessageQueueManager::MessageQueueManager() {
+}
 
 MessageQueueManager::~MessageQueueManager() {
 }
@@ -104,36 +108,26 @@ void MessageQueueManager::ClearInternal(MessageHandler *handler) {
     (*iter)->Clear(handler);
 }
 
-void MessageQueueManager::ProcessAllMessageQueues() {
+void MessageQueueManager::WakeAllMessageQueues() {
   if (!instance_) {
     return;
   }
-  return Instance()->ProcessAllMessageQueuesInternal();
+  return Instance()->WakeAllMessageQueuesInternal();
 }
 
-void MessageQueueManager::ProcessAllMessageQueuesInternal() {
+void MessageQueueManager::WakeAllMessageQueuesInternal() {
 #if CS_DEBUG_CHECKS  // CurrentThreadIsOwner returns true by default.
   ASSERT(!crit_.CurrentThreadIsOwner());  // See note above.
 #endif
-  // Post a delayed message at the current time and wait for it to be dispatched
-  // on all queues, which will ensure that all messages that came before it were
-  // also dispatched.
-  volatile int queues_not_done;
-  auto functor = [&queues_not_done] { AtomicOps::Decrement(&queues_not_done); };
-  FunctorMessageHandler<void, decltype(functor)> handler(functor);
-  {
-    CritScope cs(&crit_);
-    queues_not_done = static_cast<int>(message_queues_.size());
-    for (MessageQueue* queue : message_queues_) {
-      queue->PostDelayed(0, &handler);
-    }
+  CritScope cs(&crit_);
+  for (MessageQueue* queue : message_queues_) {
+    // Posting an arbitrary message will force the message queue to wake up.
+    queue->Post(this, MSG_WAKE_MESSAGE_QUEUE);
   }
-  // Note: One of the message queues may have been on this thread, which is why
-  // we can't synchronously wait for queues_not_done to go to 0; we need to
-  // process messages as well.
-  while (AtomicOps::AcquireLoad(&queues_not_done) > 0) {
-    rtc::Thread::Current()->ProcessMessages(0);
-  }
+}
+
+void MessageQueueManager::OnMessage(Message* pmsg) {
+  RTC_DCHECK(pmsg->message_id == MSG_WAKE_MESSAGE_QUEUE);
 }
 
 //------------------------------------------------------------------
