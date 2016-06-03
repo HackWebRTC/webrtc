@@ -284,9 +284,10 @@ public class  WebRtcAudioRecord {
 
   private native void nativeDataIsRecorded(int bytes, long nativeAudioRecord);
 
-  // TODO(glaznev): remove this API once SW mic mute can use AudioTrack.setEnabled().
+  // Sets all recorded samples to zero if |mute| is true, i.e., ensures that
+  // the microphone is muted.
   public static void setMicrophoneMute(boolean mute) {
-    Logging.w(TAG, "setMicrophoneMute API will be deprecated soon.");
+     Logging.w(TAG, "setMicrophoneMute(" + mute + ")");
     microphoneMute = mute;
   }
 }

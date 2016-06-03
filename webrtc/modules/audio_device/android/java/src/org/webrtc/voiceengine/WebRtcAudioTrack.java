@@ -46,6 +46,11 @@ class WebRtcAudioTrack {
   private AudioTrack audioTrack = null;
   private AudioTrackThread audioThread = null;
 
+  // Samples to be played are replaced by zeros if |speakerMute| is set to true.
+  // Can be used to ensure that the speaker is fully muted.
+  private static volatile boolean speakerMute = false;
+  private byte[] emptyBytes;
+
   /**
    * Audio thread which keeps calling AudioTrack.write() to stream audio.
    * Data is periodically acquired from the native WebRTC layer using the
@@ -89,6 +94,10 @@ class WebRtcAudioTrack {
         // Upon return, the buffer position will have been advanced to reflect
         // the amount of data that was successfully written to the AudioTrack.
         assertTrue(sizeInBytes <= byteBuffer.remaining());
+        if (speakerMute) {
+          byteBuffer.clear();
+          byteBuffer.put(emptyBytes);
+        }
         int bytesWritten = 0;
         if (WebRtcAudioUtils.runningOnLollipopOrHigher()) {
           bytesWritten = writeOnLollipop(audioTrack, byteBuffer, sizeInBytes);
@@ -159,6 +168,7 @@ class WebRtcAudioTrack {
     byteBuffer = byteBuffer.allocateDirect(
         bytesPerFrame * (sampleRate / BUFFERS_PER_SECOND));
     Logging.d(TAG, "byteBuffer.capacity: " + byteBuffer.capacity());
+    emptyBytes = new byte[byteBuffer.capacity()];
     // Rather than passing the ByteBuffer with every callback (requiring
     // the potentially expensive GetDirectBufferAddress) we simply have the
     // the native class cache the address to the memory once.
@@ -273,4 +283,11 @@ class WebRtcAudioTrack {
       ByteBuffer byteBuffer, long nativeAudioRecord);
 
   private native void nativeGetPlayoutData(int bytes, long nativeAudioRecord);
+
+  // Sets all samples to be played out to zero if |mute| is true, i.e.,
+  // ensures that the speaker is muted.
+  public static void setSpeakerMute(boolean mute) {
+    Logging.w(TAG, "setSpeakerMute(" + mute + ")");
+    speakerMute = mute;
+  }
 }
