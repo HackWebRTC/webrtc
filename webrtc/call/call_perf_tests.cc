@@ -11,7 +11,6 @@
 #include <algorithm>
 #include <limits>
 #include <memory>
-#include <sstream>
 #include <string>
 
 #include "testing/gtest/include/gtest/gtest.h"
@@ -100,14 +99,7 @@ class VideoRtcpAndSyncObserver : public test::RtpRtcpObserver,
 
     int64_t now_ms = clock_->TimeInMilliseconds();
 
-    std::stringstream ss;
-    ss << stats.sync_offset_ms;
-    webrtc::test::PrintResult("stream_offset",
-                              "",
-                              "synchronization",
-                              ss.str(),
-                              "ms",
-                              false);
+    sync_offset_ms_list_.push_back(stats.sync_offset_ms);
     int64_t time_since_creation = now_ms - creation_time_ms_;
     // During the first couple of seconds audio and video can falsely be
     // estimated as being synchronized. We don't want to trigger on those.
@@ -133,12 +125,19 @@ class VideoRtcpAndSyncObserver : public test::RtpRtcpObserver,
     receive_stream_ = receive_stream;
   }
 
+  void PrintResults() {
+    test::PrintResultList("stream_offset", "", "synchronization",
+                          test::ValuesToString(sync_offset_ms_list_), "ms",
+                          false);
+  }
+
  private:
   Clock* const clock_;
   const int64_t creation_time_ms_;
   int64_t first_time_in_sync_;
   rtc::CriticalSection crit_;
   VideoReceiveStream* receive_stream_ GUARDED_BY(crit_);
+  std::vector<int> sync_offset_ms_list_;
 };
 
 void CallPerfTest::TestAudioVideoSync(FecMode fec,
@@ -300,6 +299,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
 
   VoiceEngine::Delete(voice_engine);
 
+  observer.PrintResults();
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.AVSyncOffsetInMs"));
 }
 
@@ -387,11 +387,8 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
       uint32_t real_capture_timestamp = iter->second;
       int time_offset_ms = real_capture_timestamp - estimated_capture_timestamp;
       time_offset_ms = time_offset_ms / 90;
-      std::stringstream ss;
-      ss << time_offset_ms;
+      time_offset_ms_list_.push_back(time_offset_ms);
 
-      webrtc::test::PrintResult(
-          "capture_ntp_time", "", "real - estimated", ss.str(), "ms", true);
       EXPECT_TRUE(std::abs(time_offset_ms) < threshold_ms_);
     }
 
@@ -434,6 +431,9 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
       EXPECT_TRUE(Wait()) << "Timed out while waiting for "
                              "estimated capture NTP time to be "
                              "within bounds.";
+      test::PrintResultList("capture_ntp_time", "", "real - estimated",
+                            test::ValuesToString(time_offset_ms_list_), "ms",
+                            true);
     }
 
     rtc::CriticalSection crit_;
@@ -448,6 +448,7 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
     uint32_t rtp_start_timestamp_;
     typedef std::map<uint32_t, uint32_t> FrameCaptureTimeList;
     FrameCaptureTimeList capture_time_list_ GUARDED_BY(&crit_);
+    std::vector<int> time_offset_ms_list_;
   } test(net_config, threshold_ms, start_time_ms, run_time_ms);
 
   RunBaseTest(&test);
@@ -543,14 +544,7 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
         int bitrate_kbps =
             stats.substreams.begin()->second.total_bitrate_bps / 1000;
         if (bitrate_kbps > 0) {
-          test::PrintResult(
-              "bitrate_stats_",
-              (pad_to_min_bitrate_ ? "min_transmit_bitrate"
-                                   : "without_min_transmit_bitrate"),
-              "bitrate_kbps",
-              static_cast<size_t>(bitrate_kbps),
-              "kbps",
-              false);
+          bitrate_kbps_list.push_back(bitrate_kbps);
           if (pad_to_min_bitrate_) {
             if (bitrate_kbps > kMinAcceptableTransmitBitrate &&
                 bitrate_kbps < kMaxAcceptableTransmitBitrate) {
@@ -592,11 +586,18 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
 
     void PerformTest() override {
       EXPECT_TRUE(Wait()) << "Timeout while waiting for send-bitrate stats.";
+      test::PrintResultList(
+          "bitrate_stats_",
+          (pad_to_min_bitrate_ ? "min_transmit_bitrate"
+                               : "without_min_transmit_bitrate"),
+          "bitrate_kbps", test::ValuesToString(bitrate_kbps_list), "kbps",
+          false);
     }
 
     VideoSendStream* send_stream_;
     const bool pad_to_min_bitrate_;
     int num_bitrate_observations_in_range_;
+    std::vector<size_t> bitrate_kbps_list;
   } test(pad_to_min_bitrate);
 
   fake_encoder_.SetMaxBitrate(kMaxEncodeBitrateKbps);
