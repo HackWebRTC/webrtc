@@ -308,11 +308,13 @@ class FecObserver : public test::EndToEndTest {
   FecObserver(bool header_extensions_enabled,
               bool use_nack,
               bool expect_red,
+              bool expect_fec,
               const std::string& codec)
       : EndToEndTest(VideoSendStreamTest::kDefaultTimeoutMs),
         payload_name_(codec),
         use_nack_(use_nack),
         expect_red_(expect_red),
+        expect_fec_(expect_fec),
         send_count_(0),
         received_media_(false),
         received_fec_(false),
@@ -375,6 +377,7 @@ class FecObserver : public test::EndToEndTest {
     if (encapsulated_payload_type != -1) {
       if (encapsulated_payload_type ==
           VideoSendStreamTest::kUlpfecPayloadType) {
+        EXPECT_TRUE(expect_fec_);
         received_fec_ = true;
       } else {
         received_media_ = true;
@@ -382,7 +385,7 @@ class FecObserver : public test::EndToEndTest {
     }
 
     if (send_count_ > 100 && received_media_) {
-      if (received_fec_ || !expect_red_)
+      if (received_fec_ || !expect_fec_)
         observation_complete_.Set();
     }
 
@@ -442,6 +445,7 @@ class FecObserver : public test::EndToEndTest {
   const std::string payload_name_;
   const bool use_nack_;
   const bool expect_red_;
+  const bool expect_fec_;
   int send_count_;
   bool received_media_;
   bool received_fec_;
@@ -450,12 +454,12 @@ class FecObserver : public test::EndToEndTest {
 };
 
 TEST_F(VideoSendStreamTest, SupportsFecWithExtensions) {
-  FecObserver test(true, false, true, "VP8");
+  FecObserver test(true, false, true, true, "VP8");
   RunBaseTest(&test);
 }
 
 TEST_F(VideoSendStreamTest, SupportsFecWithoutExtensions) {
-  FecObserver test(false, false, true, "VP8");
+  FecObserver test(false, false, true, true, "VP8");
   RunBaseTest(&test);
 }
 
@@ -463,25 +467,25 @@ TEST_F(VideoSendStreamTest, SupportsFecWithoutExtensions) {
 // since we'll still have to re-request FEC packets, effectively wasting
 // bandwidth since the receiver has to wait for FEC retransmissions to determine
 // that the received state is actually decodable.
-TEST_F(VideoSendStreamTest, DoesNotUtilizeRedForH264WithNackEnabled) {
-  FecObserver test(false, true, false, "H264");
+TEST_F(VideoSendStreamTest, DoesNotUtilizeFecForH264WithNackEnabled) {
+  FecObserver test(false, true, true, false, "H264");
   RunBaseTest(&test);
 }
 
 // Without retransmissions FEC for H264 is fine.
 TEST_F(VideoSendStreamTest, DoesUtilizeRedForH264WithoutNackEnabled) {
-  FecObserver test(false, false, true, "H264");
+  FecObserver test(false, false, true, true, "H264");
   RunBaseTest(&test);
 }
 
 TEST_F(VideoSendStreamTest, DoesUtilizeRedForVp8WithNackEnabled) {
-  FecObserver test(false, true, true, "VP8");
+  FecObserver test(false, true, true, true, "VP8");
   RunBaseTest(&test);
 }
 
 #if !defined(RTC_DISABLE_VP9)
 TEST_F(VideoSendStreamTest, DoesUtilizeRedForVp9WithNackEnabled) {
-  FecObserver test(false, true, true, "VP9");
+  FecObserver test(false, true, true, true, "VP9");
   RunBaseTest(&test);
 }
 #endif  // !defined(RTC_DISABLE_VP9)

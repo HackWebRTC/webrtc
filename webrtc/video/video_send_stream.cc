@@ -670,7 +670,7 @@ int32_t VideoSendStream::Encoded(const EncodedImage& encoded_image,
 void VideoSendStream::ConfigureProtection() {
   // Enable NACK, FEC or both.
   const bool enable_protection_nack = config_.rtp.nack.rtp_history_ms > 0;
-  bool enable_protection_fec = config_.rtp.fec.red_payload_type != -1;
+  bool enable_protection_fec = config_.rtp.fec.ulpfec_payload_type != -1;
   // Payload types without picture ID cannot determine that a stream is complete
   // without retransmitting FEC, so using FEC + NACK for H.264 (for instance) is
   // a waste of bandwidth since FEC packets still have to be transmitted. Note
@@ -687,22 +687,25 @@ void VideoSendStream::ConfigureProtection() {
   // Set to valid uint8_ts to be castable later without signed overflows.
   uint8_t payload_type_red = 0;
   uint8_t payload_type_fec = 0;
+
   // TODO(changbin): Should set RTX for RED mapping in RTP sender in future.
   // Validate payload types. If either RED or FEC payload types are set then
   // both should be. If FEC is enabled then they both have to be set.
-  if (enable_protection_fec || config_.rtp.fec.red_payload_type != -1 ||
-      config_.rtp.fec.ulpfec_payload_type != -1) {
+  if (config_.rtp.fec.red_payload_type != -1) {
     RTC_DCHECK_GE(config_.rtp.fec.red_payload_type, 0);
-    RTC_DCHECK_GE(config_.rtp.fec.ulpfec_payload_type, 0);
     RTC_DCHECK_LE(config_.rtp.fec.red_payload_type, 127);
-    RTC_DCHECK_LE(config_.rtp.fec.ulpfec_payload_type, 127);
+    // TODO(holmer): We should only enable red if ulpfec is also enabled, but
+    // but due to an incompatibility issue with previous versions the receiver
+    // assumes rtx packets are containing red if it has been configured to
+    // receive red. Remove this in a few versions once the incompatibility
+    // issue is resolved (M53 timeframe).
     payload_type_red = static_cast<uint8_t>(config_.rtp.fec.red_payload_type);
+  }
+  if (config_.rtp.fec.ulpfec_payload_type != -1) {
+    RTC_DCHECK_GE(config_.rtp.fec.ulpfec_payload_type, 0);
+    RTC_DCHECK_LE(config_.rtp.fec.ulpfec_payload_type, 127);
     payload_type_fec =
         static_cast<uint8_t>(config_.rtp.fec.ulpfec_payload_type);
-  } else {
-    // Payload types unset.
-    RTC_DCHECK_EQ(config_.rtp.fec.red_payload_type, -1);
-    RTC_DCHECK_EQ(config_.rtp.fec.ulpfec_payload_type, -1);
   }
 
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
