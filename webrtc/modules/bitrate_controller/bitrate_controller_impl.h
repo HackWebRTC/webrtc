@@ -46,10 +46,6 @@ class BitrateControllerImpl : public BitrateController {
                    int min_bitrate_bps,
                    int max_bitrate_bps) override;
 
-  void ResetBitrates(int bitrate_bps,
-                     int min_bitrate_bps,
-                     int max_bitrate_bps) override;
-
   void UpdateDelayBasedEstimate(uint32_t bitrate_bps) override;
 
   void SetReservedBitrate(uint32_t reserved_bitrate_bps) override;

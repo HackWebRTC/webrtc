@@ -626,13 +626,9 @@ void Call::OnNetworkRouteChanged(const std::string& transport_name,
     kv->second = network_route;
     LOG(LS_INFO) << "Network route changed on transport " << transport_name
                  << ": new local network id " << network_route.local_network_id
-                 << " new remote network id " << network_route.remote_network_id
-                 << " Reset bitrate to "
-                 << config_.bitrate_config.start_bitrate_bps << "bps";
-    congestion_controller_->ResetBweAndBitrates(
-        config_.bitrate_config.start_bitrate_bps,
-        config_.bitrate_config.min_bitrate_bps,
-        config_.bitrate_config.max_bitrate_bps);
+                 << " new remote network id "
+                 << network_route.remote_network_id;
+    // TODO(holmer): Update the BWE bitrates.
   }
 }
 
