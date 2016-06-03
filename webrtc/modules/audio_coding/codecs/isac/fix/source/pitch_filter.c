@@ -118,7 +118,7 @@ void WebRtcIsacfix_PitchFilter(int16_t* indatQQ, // Q10 if type is 1 or 4,
       }
       frcQQ = ((indW32 << 7) + 64 - curLagQ7) >> 4;
 
-      if (frcQQ == PITCH_FRACS) {
+      if (frcQQ >= PITCH_FRACS) {
         frcQQ = 0;
       }
       fracoeffQQ = kIntrpCoef[frcQQ];
@@ -191,7 +191,7 @@ void WebRtcIsacfix_PitchFilterGains(const int16_t* indatQ0,
       indW16 = CalcLrIntQ(curLagQ7, 7);
       frcQQ = ((indW16 << 7) + 64 - curLagQ7) >> 4;
 
-      if (frcQQ == PITCH_FRACS) {
+      if (frcQQ >= PITCH_FRACS) {
         frcQQ = 0;
       }
       fracoeffQQ = kIntrpCoef[frcQQ];
