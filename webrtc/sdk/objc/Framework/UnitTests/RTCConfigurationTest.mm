@@ -35,6 +35,7 @@
   config.bundlePolicy = RTCBundlePolicyMaxBundle;
   config.rtcpMuxPolicy = RTCRtcpMuxPolicyNegotiate;
   config.tcpCandidatePolicy = RTCTcpCandidatePolicyDisabled;
+  config.candidateNetworkPolicy = RTCCandidateNetworkPolicyLowCost;
   const int maxPackets = 60;
   const int timeout = 1;
   const int interval = 2;
@@ -60,6 +61,8 @@
             nativeConfig->rtcp_mux_policy);
   EXPECT_EQ(webrtc::PeerConnectionInterface::kTcpCandidatePolicyDisabled,
             nativeConfig->tcp_candidate_policy);
+  EXPECT_EQ(webrtc::PeerConnectionInterface::kCandidateNetworkPolicyLowCost,
+            nativeConfig->candidate_network_policy);
   EXPECT_EQ(maxPackets, nativeConfig->audio_jitter_buffer_max_packets);
   EXPECT_EQ(timeout, nativeConfig->ice_connection_receiving_timeout);
   EXPECT_EQ(interval, nativeConfig->ice_backup_candidate_pair_ping_interval);
