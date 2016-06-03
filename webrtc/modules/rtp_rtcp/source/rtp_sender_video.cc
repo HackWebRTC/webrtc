@@ -169,6 +169,7 @@ void RTPSenderVideo::SendVideoPacketAsRed(uint8_t* data_buffer,
 void RTPSenderVideo::SetGenericFECStatus(const bool enable,
                                          const uint8_t payloadTypeRED,
                                          const uint8_t payloadTypeFEC) {
+  RTC_DCHECK(!enable || payloadTypeRED > 0);
   rtc::CritScope cs(&crit_);
   fec_enabled_ = enable;
   red_payload_type_ = payloadTypeRED;
