@@ -45,6 +45,7 @@ class FullBweSender : public BweSender, public RemoteBitrateObserver {
   SendTimeHistory send_time_history_;
   bool has_received_ack_;
   uint16_t last_acked_seq_num_;
+  int64_t last_log_time_ms_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(FullBweSender);
 };
