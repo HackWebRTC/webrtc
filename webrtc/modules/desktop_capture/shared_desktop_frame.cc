@@ -17,49 +17,25 @@
 
 namespace webrtc {
 
-class SharedDesktopFrame::Core {
- public:
-  Core(DesktopFrame* frame) : frame_(frame) {}
-
-  DesktopFrame* frame() { return frame_.get(); }
-
-  bool HasOneRef() { return ref_count_.Value() == 1; }
-
-  virtual int32_t AddRef() {
-    return ++ref_count_;
-  }
-
-  virtual int32_t Release() {
-    int32_t ref_count;
-    ref_count = --ref_count_;
-    if (ref_count == 0)
-      delete this;
-    return ref_count;
-  }
-
- private:
-  virtual ~Core() {}
-
-  Atomic32 ref_count_;
-  std::unique_ptr<DesktopFrame> frame_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(Core);
-};
-
 SharedDesktopFrame::~SharedDesktopFrame() {}
 
 // static
+std::unique_ptr<SharedDesktopFrame> SharedDesktopFrame::Wrap(
+    std::unique_ptr<DesktopFrame> desktop_frame) {
+  return std::unique_ptr<SharedDesktopFrame>(
+      new SharedDesktopFrame(new Core(desktop_frame.release())));
+}
+
 SharedDesktopFrame* SharedDesktopFrame::Wrap(DesktopFrame* desktop_frame) {
-  rtc::scoped_refptr<Core> core(new Core(desktop_frame));
-  return new SharedDesktopFrame(core);
+  return Wrap(std::unique_ptr<DesktopFrame>(desktop_frame)).release();
 }
 
 DesktopFrame* SharedDesktopFrame::GetUnderlyingFrame() {
-  return core_->frame();
+  return core_->get();
 }
 
-SharedDesktopFrame* SharedDesktopFrame::Share() {
-  SharedDesktopFrame* result = new SharedDesktopFrame(core_);
+std::unique_ptr<SharedDesktopFrame> SharedDesktopFrame::Share() {
+  std::unique_ptr<SharedDesktopFrame> result(new SharedDesktopFrame(core_));
   result->set_dpi(dpi());
   result->set_capture_time_ms(capture_time_ms());
   *result->mutable_updated_region() = updated_region();
@@ -71,11 +47,10 @@ bool SharedDesktopFrame::IsShared() {
 }
 
 SharedDesktopFrame::SharedDesktopFrame(rtc::scoped_refptr<Core> core)
-    : DesktopFrame(core->frame()->size(),
-                   core->frame()->stride(),
-                   core->frame()->data(),
-                   core->frame()->shared_memory()),
-      core_(core) {
-}
+    : DesktopFrame((*core)->size(),
+                   (*core)->stride(),
+                   (*core)->data(),
+                   (*core)->shared_memory()),
+      core_(core) {}
 
 }  // namespace webrtc

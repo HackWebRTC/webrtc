@@ -413,28 +413,27 @@ bool ScreenCapturerWinDirectx::DuplicateOutput() {
   _com_error error = g_container->output1->DuplicateOutput(
       static_cast<IUnknown*>(g_container->device),
       g_container->duplication.GetAddressOf());
-  if (error.Error() == S_OK && g_container->duplication) {
-    memset(&g_container->duplication_desc, 0, sizeof(DXGI_OUTDUPL_DESC));
-    g_container->duplication->GetDesc(&g_container->duplication_desc);
-    if (g_container->duplication_desc.ModeDesc.Format !=
-        DXGI_FORMAT_B8G8R8A8_UNORM) {
-      g_container->duplication.Reset();
-      LOG(LS_ERROR) << "IDXGIDuplicateOutput does not use RGBA (8 bit) "
-                       "format, which is required by downstream components, "
-                       "format is "
-                    << g_container->duplication_desc.ModeDesc.Format;
-      return false;
-    }
-    return true;
-  } else {
-    // Make sure we have correct signal and duplicate the output next time.
+  if (error.Error() != S_OK || !g_container->duplication) {
     g_container->duplication.Reset();
     LOG(LS_WARNING) << "Failed to duplicate output from IDXGIOutput1, error "
                     << error.ErrorMessage() << ", with code "
                     << error.Error();
+    return false;
   }
 
-  return false;
+  memset(&g_container->duplication_desc, 0, sizeof(DXGI_OUTDUPL_DESC));
+  g_container->duplication->GetDesc(&g_container->duplication_desc);
+  if (g_container->duplication_desc.ModeDesc.Format !=
+      DXGI_FORMAT_B8G8R8A8_UNORM) {
+    g_container->duplication.Reset();
+    LOG(LS_ERROR) << "IDXGIDuplicateOutput does not use RGBA (8 bit) "
+                     "format, which is required by downstream components, "
+                     "format is "
+                  << g_container->duplication_desc.ModeDesc.Format;
+    return false;
+  }
+
+  return true;
 }
 
 bool ScreenCapturerWinDirectx::ForceDuplicateOutput() {
@@ -458,8 +457,8 @@ ScreenCapturerWinDirectx::ScreenCapturerWinDirectx(
 
   // Texture instance won't change forever.
   while (!surfaces_.current_frame()) {
-    surfaces_.ReplaceCurrentFrame(
-        new rtc::scoped_refptr<Texture>(new Texture()));
+    surfaces_.ReplaceCurrentFrame(std::unique_ptr<rtc::scoped_refptr<Texture>>(
+        new rtc::scoped_refptr<Texture>(new Texture())));
     surfaces_.MoveToNextFrame();
   }
 }
@@ -593,9 +592,9 @@ std::unique_ptr<DesktopFrame> ScreenCapturerWinDirectx::ProcessFrame(
         return std::unique_ptr<DesktopFrame>();
       }
       frames_.ReplaceCurrentFrame(
-          SharedDesktopFrame::Wrap(new_frame.release()));
+          SharedDesktopFrame::Wrap(std::move(new_frame)));
     }
-    result.reset(frames_.current_frame()->Share());
+    result = frames_.current_frame()->Share();
 
     std::unique_ptr<DesktopFrame> frame(
         new DxgiDesktopFrame(*surfaces_.current_frame()));
@@ -620,9 +619,8 @@ void ScreenCapturerWinDirectx::Capture(const DesktopRegion& region) {
   RTC_DCHECK(callback_);
 
   if (!g_container->duplication && !DuplicateOutput()) {
-    // Receive a capture request when application is shutting down, or between
-    // mode change.
-    callback_->OnCaptureCompleted(nullptr);
+    // Failed to initialize desktop duplication.
+    callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
     return;
   }
 
@@ -656,7 +654,7 @@ void ScreenCapturerWinDirectx::Capture(const DesktopRegion& region) {
     if (ForceDuplicateOutput()) {
       EmitCurrentFrame();
     } else {
-      callback_->OnCaptureCompleted(nullptr);
+      callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
     }
     return;
   }
@@ -677,14 +675,14 @@ void ScreenCapturerWinDirectx::Capture(const DesktopRegion& region) {
     g_container->duplication->ReleaseFrame();
   }
   if (!result) {
-    callback_->OnCaptureCompleted(nullptr);
+    callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
     return;
   }
 
   result->set_capture_time_ms(
       (rtc::TimeNanos() - capture_start_time_nanos) /
       rtc::kNumNanosecsPerMillisec);
-  callback_->OnCaptureCompleted(result.release());
+  callback_->OnCaptureResult(Result::SUCCESS, std::move(result));
 }
 
 bool ScreenCapturerWinDirectx::GetScreenList(ScreenList* screens) {
@@ -699,7 +697,7 @@ bool ScreenCapturerWinDirectx::SelectScreen(ScreenId id) {
 void ScreenCapturerWinDirectx::EmitCurrentFrame() {
   if (!surfaces_.current_frame()->get()->bits()) {
     // At the very begining, we have not captured any frames.
-    callback_->OnCaptureCompleted(nullptr);
+    callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
     return;
   }
 
@@ -708,12 +706,12 @@ void ScreenCapturerWinDirectx::EmitCurrentFrame() {
     // queue. If there is not an existing frame (at the very begining), we can
     // only return a nullptr.
     if (frames_.current_frame()) {
-      std::unique_ptr<SharedDesktopFrame> frame(
-          frames_.current_frame()->Share());
+      std::unique_ptr<SharedDesktopFrame> frame =
+          frames_.current_frame()->Share();
       frame->mutable_updated_region()->Clear();
-      callback_->OnCaptureCompleted(frame.release());
+      callback_->OnCaptureResult(Result::SUCCESS, std::move(frame));
     } else {
-      callback_->OnCaptureCompleted(nullptr);
+      callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
     }
     return;
   }
@@ -722,7 +720,7 @@ void ScreenCapturerWinDirectx::EmitCurrentFrame() {
   // queue.
   std::unique_ptr<DesktopFrame> frame(
       new DxgiDesktopFrame(*surfaces_.current_frame()));
-  callback_->OnCaptureCompleted(frame.release());
+  callback_->OnCaptureResult(Result::SUCCESS, std::move(frame));
 }
 
 }  // namespace webrtc
