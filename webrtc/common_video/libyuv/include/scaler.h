@@ -23,8 +23,10 @@
 namespace webrtc {
 
 // Supported scaling types
+// Note: Must have the same values as libyuv::FilterMode.
 enum ScaleMethod {
   kScalePoint,  // no interpolation
+  kFilterLinear,
   kScaleBilinear,
   kScaleBox
 };
