@@ -51,7 +51,7 @@
     },
 
     'debug_bot': {
-      'mixins': ['debug', 'shared', 'goma'],
+      'mixins': ['debug', 'shared'],
     },
 
     'device': {
@@ -61,13 +61,6 @@
 
     'gn': {'type': 'gn'},
 
-    'goma': {
-      # The MB code will properly escape goma_dir if necessary in the GYP
-      # code path; the GN code path needs no escaping.
-      'gn_args': 'use_goma=true goma_dir="$(goma_dir)"',
-      'gyp_defines': 'use_goma=1 gomadir=$(goma_dir)',
-    },
-
     'gyp': {'type': 'gyp'},
 
     'release': {
@@ -75,7 +68,7 @@
     },
 
     'release_bot': {
-      'mixins': ['release', 'static', 'goma'],
+      'mixins': ['release', 'static'],
     },
 
     'shared': {
