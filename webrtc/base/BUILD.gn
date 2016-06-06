@@ -632,8 +632,7 @@ source_set("gtest_prod") {
   ]
 }
 
-# There's no point processing WebRTC standalone tests in a Chromium build.
-if (!build_with_chromium) {
+if (!rtc_include_tests) {
   config("rtc_base_test_utils_exported_config") {
     defines = [ "GTEST_RELATIVE_PATH" ]
   }

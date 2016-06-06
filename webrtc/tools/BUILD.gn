@@ -170,8 +170,7 @@ source_set("agc_test_utils") {
 }
 
 # Exclude tools depending on gflags since that's not available in Chromium.
-# There's no point processing WebRTC standalone tests in a Chromium build.
-if (!build_with_chromium) {
+if (!rtc_include_tests) {
   executable("agc_harness") {
     testonly = true
     sources = [

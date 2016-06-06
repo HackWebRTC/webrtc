@@ -379,8 +379,7 @@ if (use_libfuzzer || use_drfuzz) {
   }
 }
 
-# There's no point processing WebRTC standalone tests in a Chromium build.
-if (!build_with_chromium) {
+if (!rtc_include_tests) {
   config("rtc_unittests_config") {
     # GN orders flags on a target before flags from configs. The default config
     # adds -Wall, and this flag have to be after -Wall -- so they need to

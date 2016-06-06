@@ -193,8 +193,7 @@ if (is_linux) {
   }
 }
 
-# There's no point processing WebRTC standalone tests in a Chromium build.
-if (!build_with_chromium) {
+if (!rtc_include_tests) {
   test("system_wrappers_unittests") {
     testonly = true
     sources = [
