@@ -333,7 +333,7 @@ bool ContainsSender(
     const std::string& id,
     const std::string& stream_id) {
   for (const auto& sender : senders) {
-    if (sender->id() == id && sender->stream_id() == stream_id) {
+    if (sender->id() == id && sender->stream_ids()[0] == stream_id) {
       return true;
     }
   }
@@ -1166,10 +1166,12 @@ TEST_F(PeerConnectionInterfaceTest, AddTrackRemoveTrack) {
       pc_factory_->CreateVideoSource(new cricket::FakeVideoCapturer())));
   auto audio_sender = pc_->AddTrack(audio_track, stream_list);
   auto video_sender = pc_->AddTrack(video_track, stream_list);
-  EXPECT_EQ(kStreamLabel1, audio_sender->stream_id());
+  EXPECT_EQ(1UL, audio_sender->stream_ids().size());
+  EXPECT_EQ(kStreamLabel1, audio_sender->stream_ids()[0]);
   EXPECT_EQ("audio_track", audio_sender->id());
   EXPECT_EQ(audio_track, audio_sender->track());
-  EXPECT_EQ(kStreamLabel1, video_sender->stream_id());
+  EXPECT_EQ(1UL, video_sender->stream_ids().size());
+  EXPECT_EQ(kStreamLabel1, video_sender->stream_ids()[0]);
   EXPECT_EQ("video_track", video_sender->id());
   EXPECT_EQ(video_track, video_sender->track());
 
@@ -1242,7 +1244,7 @@ TEST_F(PeerConnectionInterfaceTest, AddTrackWithoutStream) {
   EXPECT_EQ(video_track, video_sender->track());
   // If the ID is truly a random GUID, it should be infinitely unlikely they
   // will be the same.
-  EXPECT_NE(video_sender->stream_id(), audio_sender->stream_id());
+  EXPECT_NE(video_sender->stream_ids(), audio_sender->stream_ids());
 }
 
 TEST_F(PeerConnectionInterfaceTest, CreateOfferReceiveAnswer) {

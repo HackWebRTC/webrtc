@@ -18,8 +18,8 @@
 
 #include "webrtc/api/peerconnectionfactory.h"
 #include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/api/rtpreceiverinterface.h"
-#include "webrtc/api/rtpsenderinterface.h"
+#include "webrtc/api/rtpreceiver.h"
+#include "webrtc/api/rtpsender.h"
 #include "webrtc/api/statscollector.h"
 #include "webrtc/api/streamcollection.h"
 #include "webrtc/api/webrtcsession.h"
@@ -334,11 +334,13 @@ class PeerConnection : public PeerConnectionInterface,
   void OnDataChannelOpenMessage(const std::string& label,
                                 const InternalDataChannelInit& config);
 
-  RtpSenderInterface* FindSenderById(const std::string& id);
+  RtpSenderInternal* FindSenderById(const std::string& id);
 
-  std::vector<rtc::scoped_refptr<RtpSenderInterface>>::iterator
+  std::vector<rtc::scoped_refptr<
+      RtpSenderProxyWithInternal<RtpSenderInternal>>>::iterator
   FindSenderForTrack(MediaStreamTrackInterface* track);
-  std::vector<rtc::scoped_refptr<RtpReceiverInterface>>::iterator
+  std::vector<rtc::scoped_refptr<
+      RtpReceiverProxyWithInternal<RtpReceiverInternal>>>::iterator
   FindReceiverForTrack(const std::string& track_id);
 
   TrackInfos* GetRemoteTracks(cricket::MediaType media_type);
@@ -400,8 +402,11 @@ class PeerConnection : public PeerConnectionInterface,
 
   bool remote_peer_supports_msid_ = false;
 
-  std::vector<rtc::scoped_refptr<RtpSenderInterface>> senders_;
-  std::vector<rtc::scoped_refptr<RtpReceiverInterface>> receivers_;
+  std::vector<rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>>
+      senders_;
+  std::vector<
+      rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>>
+      receivers_;
 
   std::unique_ptr<WebRtcSession> session_;
   std::unique_ptr<StatsCollector> stats_;

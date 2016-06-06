@@ -58,15 +58,6 @@ void AudioRtpReceiver::OnSetVolume(double volume) {
     provider_->SetAudioPlayoutVolume(ssrc_, volume);
 }
 
-void AudioRtpReceiver::Stop() {
-  // TODO(deadbeef): Need to do more here to fully stop receiving packets.
-  if (!provider_) {
-    return;
-  }
-  provider_->SetAudioPlayout(ssrc_, false);
-  provider_ = nullptr;
-}
-
 RtpParameters AudioRtpReceiver::GetParameters() const {
   return provider_->GetAudioRtpReceiveParameters(ssrc_);
 }
@@ -74,6 +65,15 @@ RtpParameters AudioRtpReceiver::GetParameters() const {
 bool AudioRtpReceiver::SetParameters(const RtpParameters& parameters) {
   TRACE_EVENT0("webrtc", "AudioRtpReceiver::SetParameters");
   return provider_->SetAudioRtpReceiveParameters(ssrc_, parameters);
+}
+
+void AudioRtpReceiver::Stop() {
+  // TODO(deadbeef): Need to do more here to fully stop receiving packets.
+  if (!provider_) {
+    return;
+  }
+  provider_->SetAudioPlayout(ssrc_, false);
+  provider_ = nullptr;
 }
 
 void AudioRtpReceiver::Reconfigure() {
@@ -112,6 +112,15 @@ VideoRtpReceiver::~VideoRtpReceiver() {
   Stop();
 }
 
+RtpParameters VideoRtpReceiver::GetParameters() const {
+  return provider_->GetVideoRtpReceiveParameters(ssrc_);
+}
+
+bool VideoRtpReceiver::SetParameters(const RtpParameters& parameters) {
+  TRACE_EVENT0("webrtc", "VideoRtpReceiver::SetParameters");
+  return provider_->SetVideoRtpReceiveParameters(ssrc_, parameters);
+}
+
 void VideoRtpReceiver::Stop() {
   // TODO(deadbeef): Need to do more here to fully stop receiving packets.
   if (!provider_) {
@@ -121,15 +130,6 @@ void VideoRtpReceiver::Stop() {
   source_->OnSourceDestroyed();
   provider_->SetVideoPlayout(ssrc_, false, nullptr);
   provider_ = nullptr;
-}
-
-RtpParameters VideoRtpReceiver::GetParameters() const {
-  return provider_->GetVideoRtpReceiveParameters(ssrc_);
-}
-
-bool VideoRtpReceiver::SetParameters(const RtpParameters& parameters) {
-  TRACE_EVENT0("webrtc", "VideoRtpReceiver::SetParameters");
-  return provider_->SetVideoRtpReceiveParameters(ssrc_, parameters);
 }
 
 }  // namespace webrtc

@@ -306,43 +306,62 @@ class MethodCall5 : public rtc::Message,
   T5 a5_;
 };
 
-#define BEGIN_SIGNALING_PROXY_MAP(c)                                     \
-  class c##Proxy : public c##Interface {                                  \
-   protected:                                                             \
-    typedef c##Interface C;                                               \
-    c##Proxy(rtc::Thread* signaling_thread, C* c)                         \
-      : signaling_thread_(signaling_thread), c_(c) {}                     \
-    ~c##Proxy() {                                                         \
-      MethodCall0<c##Proxy, void> call(                                   \
-          this, &c##Proxy::Release_s);                                    \
-      call.Marshal(signaling_thread_);                                    \
-    }                                                                     \
-                                                                          \
-   public:                                                                \
-    static rtc::scoped_refptr<C> Create(rtc::Thread* signaling_thread, C* c) { \
-      return new rtc::RefCountedObject<c##Proxy>(                         \
-          signaling_thread, c);                                           \
-    }
+#define BEGIN_SIGNALING_PROXY_MAP(c)                                           \
+  template <class INTERNAL_CLASS>                                              \
+  class c##ProxyWithInternal;                                                  \
+  typedef c##ProxyWithInternal<c##Interface> c##Proxy;                         \
+  template <class INTERNAL_CLASS>                                              \
+  class c##ProxyWithInternal : public c##Interface {                           \
+   protected:                                                                  \
+    typedef c##Interface C;                                                    \
+    c##ProxyWithInternal(rtc::Thread* signaling_thread, INTERNAL_CLASS* c)     \
+        : signaling_thread_(signaling_thread), c_(c) {}                        \
+    ~c##ProxyWithInternal() {                                                  \
+      MethodCall0<c##ProxyWithInternal, void> call(                            \
+          this, &c##ProxyWithInternal::Release_s);                             \
+      call.Marshal(signaling_thread_);                                         \
+    }                                                                          \
+                                                                               \
+   public:                                                                     \
+    static rtc::scoped_refptr<c##ProxyWithInternal> Create(                    \
+        rtc::Thread* signaling_thread,                                         \
+        INTERNAL_CLASS* c) {                                                   \
+      return new rtc::RefCountedObject<c##ProxyWithInternal>(signaling_thread, \
+                                                             c);               \
+    }                                                                          \
+    const INTERNAL_CLASS* internal() const { return c_.get(); }                \
+    INTERNAL_CLASS* internal() { return c_.get(); }
 
-#define BEGIN_PROXY_MAP(c)                                              \
-  class c##Proxy : public c##Interface {                                \
-   protected:                                                           \
-    typedef c##Interface C;                                             \
-    c##Proxy(rtc::Thread* signaling_thread, rtc::Thread* worker_thread, C* c) \
-      : signaling_thread_(signaling_thread),                            \
-        worker_thread_(worker_thread),                                  \
-        c_(c) {}                                                        \
-    ~c##Proxy() {                                                       \
-      MethodCall0<c##Proxy, void> call(this, &c##Proxy::Release_s);     \
-      call.Marshal(signaling_thread_);                                  \
-    }                                                                   \
-                                                                        \
-   public:                                                              \
-    static rtc::scoped_refptr<C> Create(                                \
-        rtc::Thread* signaling_thread, rtc::Thread* worker_thread, C* c) { \
-      return new rtc::RefCountedObject<c##Proxy>(                       \
-          signaling_thread, worker_thread, c);                          \
-    }
+#define BEGIN_PROXY_MAP(c)                                      \
+  template <class INTERNAL_CLASS>                               \
+  class c##ProxyWithInternal;                                   \
+  typedef c##ProxyWithInternal<c##Interface> c##Proxy;          \
+  template <class INTERNAL_CLASS>                               \
+  class c##ProxyWithInternal : public c##Interface {            \
+   protected:                                                   \
+    typedef c##Interface C;                                     \
+    c##ProxyWithInternal(rtc::Thread* signaling_thread,         \
+                         rtc::Thread* worker_thread,            \
+                         INTERNAL_CLASS* c)                     \
+        : signaling_thread_(signaling_thread),                  \
+          worker_thread_(worker_thread),                        \
+          c_(c) {}                                              \
+    ~c##ProxyWithInternal() {                                   \
+      MethodCall0<c##ProxyWithInternal, void> call(             \
+          this, &c##ProxyWithInternal::Release_s);              \
+      call.Marshal(signaling_thread_);                          \
+    }                                                           \
+                                                                \
+   public:                                                      \
+    static rtc::scoped_refptr<c##ProxyWithInternal> Create(     \
+        rtc::Thread* signaling_thread,                          \
+        rtc::Thread* worker_thread,                             \
+        INTERNAL_CLASS* c) {                                    \
+      return new rtc::RefCountedObject<c##ProxyWithInternal>(   \
+          signaling_thread, worker_thread, c);                  \
+    }                                                           \
+    const INTERNAL_CLASS* internal() const { return c_.get(); } \
+    INTERNAL_CLASS* internal() { return c_.get(); }
 
 #define PROXY_METHOD0(r, method)                  \
   r method() override {                           \
@@ -407,24 +426,22 @@ class MethodCall5 : public rtc::Message,
     return call.Marshal(worker_thread_);                          \
   }
 
-#define END_SIGNALING_PROXY() \
-   private:\
-    void Release_s() {\
-      c_ = NULL;\
-    }\
-    mutable rtc::Thread* signaling_thread_;\
-    rtc::scoped_refptr<C> c_;\
-  };
+#define END_SIGNALING_PROXY()             \
+ private:                                 \
+  void Release_s() { c_ = NULL; }         \
+  mutable rtc::Thread* signaling_thread_; \
+  rtc::scoped_refptr<INTERNAL_CLASS> c_;  \
+  }                                       \
+  ;
 
-#define END_PROXY()                                  \
-   private:                                          \
-    void Release_s() {                               \
-      c_ = NULL;                                     \
-    }                                                \
-    mutable rtc::Thread* signaling_thread_;          \
-    mutable rtc::Thread* worker_thread_;             \
-    rtc::scoped_refptr<C> c_;                        \
-  };                                                 \
+#define END_PROXY()                       \
+ private:                                 \
+  void Release_s() { c_ = NULL; }         \
+  mutable rtc::Thread* signaling_thread_; \
+  mutable rtc::Thread* worker_thread_;    \
+  rtc::scoped_refptr<INTERNAL_CLASS> c_;  \
+  }                                       \
+  ;
 
 }  // namespace webrtc
 

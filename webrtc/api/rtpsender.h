@@ -27,6 +27,22 @@
 
 namespace webrtc {
 
+// Internal interface used by PeerConnection.
+class RtpSenderInternal : public RtpSenderInterface {
+ public:
+  // Used to set the SSRC of the sender, once a local description has been set.
+  // If |ssrc| is 0, this indiates that the sender should disconnect from the
+  // underlying transport (this occurs if the sender isn't seen in a local
+  // description).
+  virtual void SetSsrc(uint32_t ssrc) = 0;
+
+  // TODO(deadbeef): Support one sender having multiple stream ids.
+  virtual void set_stream_id(const std::string& stream_id) = 0;
+  virtual std::string stream_id() const = 0;
+
+  virtual void Stop() = 0;
+};
+
 // LocalAudioSinkAdapter receives data callback as a sink to the local
 // AudioTrack, and passes the data to the sink of AudioSource.
 class LocalAudioSinkAdapter : public AudioTrackSinkInterface,
@@ -52,7 +68,7 @@ class LocalAudioSinkAdapter : public AudioTrackSinkInterface,
 };
 
 class AudioRtpSender : public ObserverInterface,
-                       public rtc::RefCountedObject<RtpSenderInterface> {
+                       public rtc::RefCountedObject<RtpSenderInternal> {
  public:
   // StatsCollector provided so that Add/RemoveLocalAudioTrack can be called
   // at the appropriate times.
@@ -77,10 +93,8 @@ class AudioRtpSender : public ObserverInterface,
   // RtpSenderInterface implementation
   bool SetTrack(MediaStreamTrackInterface* track) override;
   rtc::scoped_refptr<MediaStreamTrackInterface> track() const override {
-    return track_.get();
+    return track_;
   }
-
-  void SetSsrc(uint32_t ssrc) override;
 
   uint32_t ssrc() const override { return ssrc_; }
 
@@ -90,15 +104,23 @@ class AudioRtpSender : public ObserverInterface,
 
   std::string id() const override { return id_; }
 
+  std::vector<std::string> stream_ids() const override {
+    std::vector<std::string> ret = {stream_id_};
+    return ret;
+  }
+
+  RtpParameters GetParameters() const override;
+  bool SetParameters(const RtpParameters& parameters) override;
+
+  // RtpSenderInternal implementation.
+  void SetSsrc(uint32_t ssrc) override;
+
   void set_stream_id(const std::string& stream_id) override {
     stream_id_ = stream_id;
   }
   std::string stream_id() const override { return stream_id_; }
 
   void Stop() override;
-
-  RtpParameters GetParameters() const override;
-  bool SetParameters(const RtpParameters& parameters) override;
 
  private:
   // TODO(nisse): Since SSRC == 0 is technically valid, figure out
@@ -123,7 +145,7 @@ class AudioRtpSender : public ObserverInterface,
 };
 
 class VideoRtpSender : public ObserverInterface,
-                       public rtc::RefCountedObject<RtpSenderInterface> {
+                       public rtc::RefCountedObject<RtpSenderInternal> {
  public:
   VideoRtpSender(VideoTrackInterface* track,
                  const std::string& stream_id,
@@ -143,10 +165,8 @@ class VideoRtpSender : public ObserverInterface,
   // RtpSenderInterface implementation
   bool SetTrack(MediaStreamTrackInterface* track) override;
   rtc::scoped_refptr<MediaStreamTrackInterface> track() const override {
-    return track_.get();
+    return track_;
   }
-
-  void SetSsrc(uint32_t ssrc) override;
 
   uint32_t ssrc() const override { return ssrc_; }
 
@@ -156,15 +176,23 @@ class VideoRtpSender : public ObserverInterface,
 
   std::string id() const override { return id_; }
 
+  std::vector<std::string> stream_ids() const override {
+    std::vector<std::string> ret = {stream_id_};
+    return ret;
+  }
+
+  RtpParameters GetParameters() const override;
+  bool SetParameters(const RtpParameters& parameters) override;
+
+  // RtpSenderInternal implementation.
+  void SetSsrc(uint32_t ssrc) override;
+
   void set_stream_id(const std::string& stream_id) override {
     stream_id_ = stream_id;
   }
   std::string stream_id() const override { return stream_id_; }
 
   void Stop() override;
-
-  RtpParameters GetParameters() const override;
-  bool SetParameters(const RtpParameters& parameters) override;
 
  private:
   bool can_send_track() const { return track_ && ssrc_; }

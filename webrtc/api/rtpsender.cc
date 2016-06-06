@@ -145,6 +145,15 @@ bool AudioRtpSender::SetTrack(MediaStreamTrackInterface* track) {
   return true;
 }
 
+RtpParameters AudioRtpSender::GetParameters() const {
+  return provider_->GetAudioRtpSendParameters(ssrc_);
+}
+
+bool AudioRtpSender::SetParameters(const RtpParameters& parameters) {
+  TRACE_EVENT0("webrtc", "AudioRtpSender::SetParameters");
+  return provider_->SetAudioRtpSendParameters(ssrc_, parameters);
+}
+
 void AudioRtpSender::SetSsrc(uint32_t ssrc) {
   TRACE_EVENT0("webrtc", "AudioRtpSender::SetSsrc");
   if (stopped_ || ssrc == ssrc_) {
@@ -205,15 +214,6 @@ void AudioRtpSender::SetAudioSend() {
   cricket::AudioSource* source = sink_adapter_.get();
   ASSERT(source != nullptr);
   provider_->SetAudioSend(ssrc_, track_->enabled(), options, source);
-}
-
-RtpParameters AudioRtpSender::GetParameters() const {
-  return provider_->GetAudioRtpSendParameters(ssrc_);
-}
-
-bool AudioRtpSender::SetParameters(const RtpParameters& parameters) {
-  TRACE_EVENT0("webrtc", "AudioRtpSender::SetParameters");
-  return provider_->SetAudioRtpSendParameters(ssrc_, parameters);
 }
 
 VideoRtpSender::VideoRtpSender(VideoTrackInterface* track,
@@ -297,6 +297,15 @@ bool VideoRtpSender::SetTrack(MediaStreamTrackInterface* track) {
   return true;
 }
 
+RtpParameters VideoRtpSender::GetParameters() const {
+  return provider_->GetVideoRtpSendParameters(ssrc_);
+}
+
+bool VideoRtpSender::SetParameters(const RtpParameters& parameters) {
+  TRACE_EVENT0("webrtc", "VideoRtpSender::SetParameters");
+  return provider_->SetVideoRtpSendParameters(ssrc_, parameters);
+}
+
 void VideoRtpSender::SetSsrc(uint32_t ssrc) {
   TRACE_EVENT0("webrtc", "VideoRtpSender::SetSsrc");
   if (stopped_ || ssrc == ssrc_) {
@@ -342,15 +351,6 @@ void VideoRtpSender::ClearVideoSend() {
   RTC_DCHECK(ssrc_ != 0);
   RTC_DCHECK(provider_ != nullptr);
   provider_->SetVideoSend(ssrc_, false, nullptr, nullptr);
-}
-
-RtpParameters VideoRtpSender::GetParameters() const {
-  return provider_->GetVideoRtpSendParameters(ssrc_);
-}
-
-bool VideoRtpSender::SetParameters(const RtpParameters& parameters) {
-  TRACE_EVENT0("webrtc", "VideoRtpSender::SetParameters");
-  return provider_->SetVideoRtpSendParameters(ssrc_, parameters);
 }
 
 }  // namespace webrtc

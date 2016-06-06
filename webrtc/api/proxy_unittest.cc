@@ -73,6 +73,7 @@ END_PROXY()
 
 // Preprocessor hack to get a proxy class a name different than FakeProxy.
 #define FakeProxy FakeSignalingProxy
+#define FakeProxyWithInternal FakeSignalingProxyWithInternal
 BEGIN_SIGNALING_PROXY_MAP(Fake)
   PROXY_METHOD0(void, VoidMethod0)
   PROXY_METHOD0(std::string, Method0)

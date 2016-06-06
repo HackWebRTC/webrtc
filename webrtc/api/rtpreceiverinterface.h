@@ -31,8 +31,6 @@ class RtpReceiverInterface : public rtc::RefCountInterface {
   // to uniquely identify a receiver until we implement Unified Plan SDP.
   virtual std::string id() const = 0;
 
-  virtual void Stop() = 0;
-
   // The WebRTC specification only defines RTCRtpParameters in terms of senders,
   // but this API also applies them to receivers, similar to ORTC:
   // http://ortc.org/wp-content/uploads/2016/03/ortc.html#rtcrtpparameters*.
@@ -47,7 +45,6 @@ class RtpReceiverInterface : public rtc::RefCountInterface {
 BEGIN_SIGNALING_PROXY_MAP(RtpReceiver)
 PROXY_CONSTMETHOD0(rtc::scoped_refptr<MediaStreamTrackInterface>, track)
 PROXY_CONSTMETHOD0(std::string, id)
-PROXY_METHOD0(void, Stop)
 PROXY_CONSTMETHOD0(RtpParameters, GetParameters);
 PROXY_METHOD1(bool, SetParameters, const RtpParameters&)
 END_SIGNALING_PROXY()

@@ -26,9 +26,15 @@
 
 namespace webrtc {
 
+// Internal class used by PeerConnection.
+class RtpReceiverInternal : public RtpReceiverInterface {
+ public:
+  virtual void Stop() = 0;
+};
+
 class AudioRtpReceiver : public ObserverInterface,
                          public AudioSourceInterface::AudioObserver,
-                         public rtc::RefCountedObject<RtpReceiverInterface> {
+                         public rtc::RefCountedObject<RtpReceiverInternal> {
  public:
   AudioRtpReceiver(MediaStreamInterface* stream,
                    const std::string& track_id,
@@ -54,10 +60,11 @@ class AudioRtpReceiver : public ObserverInterface,
 
   std::string id() const override { return id_; }
 
-  void Stop() override;
-
   RtpParameters GetParameters() const override;
   bool SetParameters(const RtpParameters& parameters) override;
+
+  // RtpReceiverInternal implementation.
+  void Stop() override;
 
  private:
   void Reconfigure();
@@ -69,7 +76,7 @@ class AudioRtpReceiver : public ObserverInterface,
   bool cached_track_enabled_;
 };
 
-class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInterface> {
+class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
  public:
   VideoRtpReceiver(MediaStreamInterface* stream,
                    const std::string& track_id,
@@ -90,10 +97,11 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInterface> {
 
   std::string id() const override { return id_; }
 
-  void Stop() override;
-
   RtpParameters GetParameters() const override;
   bool SetParameters(const RtpParameters& parameters) override;
+
+  // RtpReceiverInternal implementation.
+  void Stop() override;
 
  private:
   std::string id_;
