@@ -26,10 +26,7 @@ IncomingVideoStream::IncomingVideoStream(bool disable_prerenderer_smoothing)
       deliver_buffer_event_(EventTimerWrapper::Create()),
       running_(false),
       external_callback_(nullptr),
-      render_buffers_(new VideoRenderFrames()),
-      incoming_rate_(0),
-      last_rate_calculation_time_ms_(0),
-      num_frames_since_last_calculation_(0) {}
+      render_buffers_(new VideoRenderFrames()) {}
 
 IncomingVideoStream::~IncomingVideoStream() {
   Stop();
@@ -40,17 +37,6 @@ void IncomingVideoStream::OnFrame(const VideoFrame& video_frame) {
 
   if (!running_) {
     return;
-  }
-
-  // Rate statistics.
-  num_frames_since_last_calculation_++;
-  int64_t now_ms = rtc::TimeMillis();
-  if (now_ms >= last_rate_calculation_time_ms_ + kFrameRatePeriodMs) {
-    incoming_rate_ =
-        static_cast<uint32_t>(1000 * num_frames_since_last_calculation_ /
-                              (now_ms - last_rate_calculation_time_ms_));
-    num_frames_since_last_calculation_ = 0;
-    last_rate_calculation_time_ms_ = now_ms;
   }
 
   // Hand over or insert frame.
@@ -131,17 +117,6 @@ int32_t IncomingVideoStream::Stop() {
   }
   running_ = false;
   return 0;
-}
-
-int32_t IncomingVideoStream::Reset() {
-  rtc::CritScope cs_buffer(&buffer_critsect_);
-  render_buffers_->ReleaseAllFrames();
-  return 0;
-}
-
-uint32_t IncomingVideoStream::IncomingRate() const {
-  rtc::CritScope cs(&stream_critsect_);
-  return incoming_rate_;
 }
 
 bool IncomingVideoStream::IncomingVideoStreamThreadFun(void* obj) {

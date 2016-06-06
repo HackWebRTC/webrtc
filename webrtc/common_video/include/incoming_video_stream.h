@@ -38,12 +38,6 @@ class IncomingVideoStream : public rtc::VideoSinkInterface<VideoFrame> {
   int32_t Start();
   int32_t Stop();
 
-  // Clear all buffers.
-  int32_t Reset();
-
-  // Properties.
-  uint32_t IncomingRate() const;
-
   int32_t SetExpectedRenderDelay(int32_t delay_ms);
 
  protected:
@@ -73,10 +67,6 @@ class IncomingVideoStream : public rtc::VideoSinkInterface<VideoFrame> {
       GUARDED_BY(thread_critsect_);
   const std::unique_ptr<VideoRenderFrames> render_buffers_
       GUARDED_BY(buffer_critsect_);
-
-  uint32_t incoming_rate_ GUARDED_BY(stream_critsect_);
-  int64_t last_rate_calculation_time_ms_ GUARDED_BY(stream_critsect_);
-  uint16_t num_frames_since_last_calculation_ GUARDED_BY(stream_critsect_);
 };
 
 }  // namespace webrtc
