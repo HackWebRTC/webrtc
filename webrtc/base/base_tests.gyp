@@ -15,6 +15,8 @@
         'unittest_main.cc',
         # Also use this as a convenient dumping ground for misc files that are
         # included by multiple targets below.
+        'fakeclock.cc',
+        'fakeclock.h',
         'fakenetwork.h',
         'fakesslidentity.h',
         'faketaskrunner.h',
@@ -22,6 +24,7 @@
         'testbase64.h',
         'testechoserver.h',
         'testutils.h',
+        'timedelta.h',
       ],
       'defines': [
         'GTEST_RELATIVE_PATH',

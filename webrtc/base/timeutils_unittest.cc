@@ -301,7 +301,7 @@ TEST(TimeDelta, NumericOperators) {
 // fake clock when it's set.
 TEST(FakeClock, TimeFunctionsUseFakeClock) {
   FakeClock clock;
-  SetClock(&clock);
+  SetClockForTesting(&clock);
 
   clock.SetTimeNanos(987654321u);
   EXPECT_EQ(987u, Time32());
@@ -310,7 +310,7 @@ TEST(FakeClock, TimeFunctionsUseFakeClock) {
   EXPECT_EQ(987654321u, TimeNanos());
   EXPECT_EQ(1000u, TimeAfter(13));
 
-  SetClock(nullptr);
+  SetClockForTesting(nullptr);
   // After it's unset, we should get a normal time.
   EXPECT_NE(987, TimeMillis());
 }
@@ -348,7 +348,7 @@ TEST(FakeClock, SettingTimeWakesThreads) {
   int64_t real_start_time_ms = TimeMillis();
 
   FakeClock clock;
-  SetClock(&clock);
+  SetClockForTesting(&clock);
 
   Thread worker;
   worker.Start();
@@ -359,24 +359,25 @@ TEST(FakeClock, SettingTimeWakesThreads) {
     message_handler_dispatched.Set();
   };
   FunctorMessageHandler<void, decltype(functor)> handler(functor);
-  worker.PostDelayed(10000, &handler);
+  worker.PostDelayed(60000, &handler);
 
   // Wait for a bit for the worker thread to be started and enter its socket
-  // select().
+  // select(). Otherwise this test would be trivial since the worker thread
+  // would process the event as soon as it was started.
   Thread::Current()->SleepMs(1000);
 
   // Advance the fake clock, expecting the worker thread to wake up
-  // and dispatch the message quickly.
-  clock.AdvanceTime(TimeDelta::FromSeconds(10u));
-  message_handler_dispatched.Wait(Event::kForever);
+  // and dispatch the message instantly.
+  clock.AdvanceTime(TimeDelta::FromSeconds(60u));
+  EXPECT_TRUE(message_handler_dispatched.Wait(0));
   worker.Stop();
 
-  SetClock(nullptr);
+  SetClockForTesting(nullptr);
 
-  // The message should have been dispatched long before the 10 seconds fully
-  // elapsed.
+  // The message should have been dispatched long before the 60 seconds fully
+  // elapsed (just a sanity check).
   int64_t real_end_time_ms = TimeMillis();
-  EXPECT_LT(real_end_time_ms - real_start_time_ms, 2000);
+  EXPECT_LT(real_end_time_ms - real_start_time_ms, 10000);
 }
 
 }  // namespace rtc
