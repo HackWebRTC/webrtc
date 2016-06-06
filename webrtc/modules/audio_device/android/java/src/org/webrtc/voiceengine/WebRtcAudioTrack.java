@@ -97,6 +97,7 @@ public class WebRtcAudioTrack {
         if (speakerMute) {
           byteBuffer.clear();
           byteBuffer.put(emptyBytes);
+          byteBuffer.position(0);
         }
         int bytesWritten = 0;
         if (WebRtcAudioUtils.runningOnLollipopOrHigher()) {
