@@ -170,7 +170,7 @@ source_set("agc_test_utils") {
 }
 
 # Exclude tools depending on gflags since that's not available in Chromium.
-if (!rtc_include_tests) {
+if (rtc_include_tests) {
   executable("agc_harness") {
     testonly = true
     sources = [

@@ -193,7 +193,7 @@ if (is_linux) {
   }
 }
 
-if (!rtc_include_tests) {
+if (rtc_include_tests) {
   test("system_wrappers_unittests") {
     testonly = true
     sources = [

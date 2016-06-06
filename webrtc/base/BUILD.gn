@@ -632,7 +632,7 @@ source_set("gtest_prod") {
   ]
 }
 
-if (!rtc_include_tests) {
+if (rtc_include_tests) {
   config("rtc_base_test_utils_exported_config") {
     defines = [ "GTEST_RELATIVE_PATH" ]
   }

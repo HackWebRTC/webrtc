@@ -379,7 +379,7 @@ if (use_libfuzzer || use_drfuzz) {
   }
 }
 
-if (!rtc_include_tests) {
+if (rtc_include_tests) {
   config("rtc_unittests_config") {
     # GN orders flags on a target before flags from configs. The default config
     # adds -Wall, and this flag have to be after -Wall -- so they need to
