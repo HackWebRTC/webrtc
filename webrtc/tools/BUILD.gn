@@ -12,9 +12,15 @@ import("../build/webrtc.gni")
 source_set("tools") {
   deps = [
     ":command_line_parser",
-    ":frame_analyzer",
-    ":rgba_to_i420_converter",
   ]
+
+  if (!build_with_chromium) {
+    # TODO(kjellander): Enable these when webrtc:5970 is fixed.
+    deps += [
+      ":frame_analyzer",
+      ":rgba_to_i420_converter",
+    ]
+  }
 }
 
 source_set("command_line_parser") {
