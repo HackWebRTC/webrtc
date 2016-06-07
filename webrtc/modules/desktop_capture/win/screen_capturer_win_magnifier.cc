@@ -39,23 +39,7 @@ Atomic32 ScreenCapturerWinMagnifier::tls_index_(TLS_OUT_OF_INDEXES);
 
 ScreenCapturerWinMagnifier::ScreenCapturerWinMagnifier(
     std::unique_ptr<ScreenCapturer> fallback_capturer)
-    : fallback_capturer_(std::move(fallback_capturer)),
-      fallback_capturer_started_(false),
-      callback_(NULL),
-      current_screen_id_(kFullDesktopScreenId),
-      excluded_window_(NULL),
-      set_thread_execution_state_failed_(false),
-      desktop_dc_(NULL),
-      mag_lib_handle_(NULL),
-      mag_initialize_func_(NULL),
-      mag_uninitialize_func_(NULL),
-      set_window_source_func_(NULL),
-      set_window_filter_list_func_(NULL),
-      set_image_scaling_callback_func_(NULL),
-      host_window_(NULL),
-      magnifier_window_(NULL),
-      magnifier_initialized_(false),
-      magnifier_capture_succeeded_(true) {}
+    : fallback_capturer_(std::move(fallback_capturer)) {}
 
 ScreenCapturerWinMagnifier::~ScreenCapturerWinMagnifier() {
   // DestroyWindow must be called before MagUninitialize. magnifier_window_ is
@@ -162,15 +146,14 @@ void ScreenCapturerWinMagnifier::Capture(const DesktopRegion& region) {
   helper_.set_size_most_recent(current_frame->size());
 
   // Emit the current frame.
-  DesktopFrame* frame = queue_.current_frame()->Share();
+  std::unique_ptr<DesktopFrame> frame = queue_.current_frame()->Share();
   frame->set_dpi(DesktopVector(GetDeviceCaps(desktop_dc_, LOGPIXELSX),
                                GetDeviceCaps(desktop_dc_, LOGPIXELSY)));
   frame->mutable_updated_region()->Clear();
   helper_.TakeInvalidRegion(frame->mutable_updated_region());
-  frame->set_capture_time_ms(
-      (rtc::TimeNanos() - capture_start_time_nanos) /
-      rtc::kNumNanosecsPerMillisec);
-  callback_->OnCaptureCompleted(frame);
+  frame->set_capture_time_ms((rtc::TimeNanos() - capture_start_time_nanos) /
+                             rtc::kNumNanosecsPerMillisec);
+  callback_->OnCaptureResult(Result::SUCCESS, std::move(frame));
 }
 
 bool ScreenCapturerWinMagnifier::GetScreenList(ScreenList* screens) {
@@ -204,11 +187,8 @@ bool ScreenCapturerWinMagnifier::CaptureImage(const DesktopRect& rect) {
 
   // Set the magnifier control to cover the captured rect. The content of the
   // magnifier control will be the captured image.
-  BOOL result = SetWindowPos(magnifier_window_,
-                             NULL,
-                             rect.left(), rect.top(),
-                             rect.width(), rect.height(),
-                             0);
+  BOOL result = SetWindowPos(magnifier_window_, NULL, rect.left(), rect.top(),
+                             rect.width(), rect.height(), 0);
   if (!result) {
     LOG_F(LS_WARNING) << "Failed to call SetWindowPos: " << GetLastError()
                       << ". Rect = {" << rect.left() << ", " << rect.top()
@@ -257,7 +237,7 @@ BOOL ScreenCapturerWinMagnifier::OnMagImageScalingCallback(
 bool ScreenCapturerWinMagnifier::InitializeMagnifier() {
   assert(!magnifier_initialized_);
 
-  desktop_dc_ = GetDC(NULL);
+  desktop_dc_ = GetDC(nullptr);
 
   mag_lib_handle_ = LoadLibrary(L"Magnification.dll");
   if (!mag_lib_handle_)
@@ -291,7 +271,7 @@ bool ScreenCapturerWinMagnifier::InitializeMagnifier() {
     return false;
   }
 
-  HMODULE hInstance = NULL;
+  HMODULE hInstance = nullptr;
   result = GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
                                   GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
                               reinterpret_cast<char*>(&DefWindowProc),
@@ -309,22 +289,16 @@ bool ScreenCapturerWinMagnifier::InitializeMagnifier() {
   wcex.cbSize = sizeof(WNDCLASSEX);
   wcex.lpfnWndProc = &DefWindowProc;
   wcex.hInstance = hInstance;
-  wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
+  wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
   wcex.lpszClassName = kMagnifierHostClass;
 
   // Ignore the error which may happen when the class is already registered.
   RegisterClassEx(&wcex);
 
   // Create the host window.
-  host_window_ = CreateWindowEx(WS_EX_LAYERED,
-                                kMagnifierHostClass,
-                                kHostWindowName,
-                                0,
-                                0, 0, 0, 0,
-                                NULL,
-                                NULL,
-                                hInstance,
-                                NULL);
+  host_window_ =
+      CreateWindowEx(WS_EX_LAYERED, kMagnifierHostClass, kHostWindowName, 0, 0,
+                     0, 0, 0, nullptr, nullptr, hInstance, nullptr);
   if (!host_window_) {
     mag_uninitialize_func_();
     LOG_F(LS_WARNING) << "Failed to initialize ScreenCapturerWinMagnifier: "
@@ -333,14 +307,9 @@ bool ScreenCapturerWinMagnifier::InitializeMagnifier() {
   }
 
   // Create the magnifier control.
-  magnifier_window_ = CreateWindow(kMagnifierWindowClass,
-                                   kMagnifierWindowName,
-                                   WS_CHILD | WS_VISIBLE,
-                                   0, 0, 0, 0,
-                                   host_window_,
-                                   NULL,
-                                   hInstance,
-                                   NULL);
+  magnifier_window_ = CreateWindow(kMagnifierWindowClass, kMagnifierWindowName,
+                                   WS_CHILD | WS_VISIBLE, 0, 0, 0, 0,
+                                   host_window_, nullptr, hInstance, nullptr);
   if (!magnifier_window_) {
     mag_uninitialize_func_();
     LOG_F(LS_WARNING) << "Failed to initialize ScreenCapturerWinMagnifier: "
@@ -433,7 +402,7 @@ void ScreenCapturerWinMagnifier::CreateCurrentFrameIfNecessary(
             ? SharedMemoryDesktopFrame::Create(size,
                                                shared_memory_factory_.get())
             : std::unique_ptr<DesktopFrame>(new BasicDesktopFrame(size));
-    queue_.ReplaceCurrentFrame(SharedDesktopFrame::Wrap(frame.release()));
+    queue_.ReplaceCurrentFrame(SharedDesktopFrame::Wrap(std::move(frame)));
   }
 }
 

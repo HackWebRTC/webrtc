@@ -30,7 +30,7 @@ DesktopFrameWin::~DesktopFrameWin() {
 }
 
 // static
-DesktopFrameWin* DesktopFrameWin::Create(
+std::unique_ptr<DesktopFrameWin> DesktopFrameWin::Create(
     DesktopSize size,
     SharedMemoryFactory* shared_memory_factory,
     HDC hdc) {
@@ -60,9 +60,9 @@ DesktopFrameWin* DesktopFrameWin::Create(
     return nullptr;
   }
 
-  return new DesktopFrameWin(size, bytes_per_row,
-                             reinterpret_cast<uint8_t*>(data),
-                             std::move(shared_memory), bitmap);
+  return std::unique_ptr<DesktopFrameWin>(
+      new DesktopFrameWin(size, bytes_per_row, reinterpret_cast<uint8_t*>(data),
+                          std::move(shared_memory), bitmap));
 }
 
 }  // namespace webrtc

@@ -57,7 +57,7 @@ void AlphaBlend(uint8_t* dest, int dest_stride,
 class DesktopFrameWithCursor : public DesktopFrame {
  public:
   // Takes ownership of |frame|.
-  DesktopFrameWithCursor(DesktopFrame* frame,
+  DesktopFrameWithCursor(std::unique_ptr<DesktopFrame> frame,
                          const MouseCursor& cursor,
                          const DesktopVector& position);
   virtual ~DesktopFrameWithCursor();
@@ -71,15 +71,18 @@ class DesktopFrameWithCursor : public DesktopFrame {
   RTC_DISALLOW_COPY_AND_ASSIGN(DesktopFrameWithCursor);
 };
 
-DesktopFrameWithCursor::DesktopFrameWithCursor(DesktopFrame* frame,
-                                               const MouseCursor& cursor,
-                                               const DesktopVector& position)
-    : DesktopFrame(frame->size(), frame->stride(),
-                   frame->data(), frame->shared_memory()),
-      original_frame_(frame) {
+DesktopFrameWithCursor::DesktopFrameWithCursor(
+    std::unique_ptr<DesktopFrame> frame,
+    const MouseCursor& cursor,
+    const DesktopVector& position)
+    : DesktopFrame(frame->size(),
+                   frame->stride(),
+                   frame->data(),
+                   frame->shared_memory()) {
   set_dpi(frame->dpi());
   set_capture_time_ms(frame->capture_time_ms());
   mutable_updated_region()->Swap(frame->mutable_updated_region());
+  original_frame_ = std::move(frame);
 
   DesktopVector image_pos = position.subtract(cursor.hotspot());
   DesktopRect target_rect = DesktopRect::MakeSize(cursor.image()->size());
@@ -152,14 +155,15 @@ void DesktopAndCursorComposer::SetExcludedWindow(WindowId window) {
   desktop_capturer_->SetExcludedWindow(window);
 }
 
-void DesktopAndCursorComposer::OnCaptureCompleted(DesktopFrame* frame) {
-  if (frame && cursor_.get() && cursor_state_ == MouseCursorMonitor::INSIDE) {
-    DesktopFrameWithCursor* frame_with_cursor =
-        new DesktopFrameWithCursor(frame, *cursor_, cursor_position_);
-    frame = frame_with_cursor;
+void DesktopAndCursorComposer::OnCaptureResult(
+    DesktopCapturer::Result result,
+    std::unique_ptr<DesktopFrame> frame) {
+  if (frame && cursor_ && cursor_state_ == MouseCursorMonitor::INSIDE) {
+    frame = std::unique_ptr<DesktopFrameWithCursor>(new DesktopFrameWithCursor(
+        std::move(frame), *cursor_, cursor_position_));
   }
 
-  callback_->OnCaptureCompleted(frame);
+  callback_->OnCaptureResult(result, std::move(frame));
 }
 
 void DesktopAndCursorComposer::OnMouseCursor(MouseCursor* cursor) {

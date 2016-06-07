@@ -32,7 +32,7 @@ namespace {
 // Returns true if the window exists.
 bool IsWindowValid(CGWindowID id) {
   CFArrayRef window_id_array =
-      CFArrayCreate(NULL, reinterpret_cast<const void **>(&id), 1, NULL);
+      CFArrayCreate(nullptr, reinterpret_cast<const void**>(&id), 1, nullptr);
   CFArrayRef window_array =
       CGWindowListCreateDescriptionFromArray(window_id_array);
   bool valid = window_array && CFArrayGetCount(window_array);
@@ -58,10 +58,10 @@ class WindowCapturerMac : public WindowCapturer {
   void Capture(const DesktopRegion& region) override;
 
  private:
-  Callback* callback_;
+  Callback* callback_ = nullptr;
 
   // The window being captured.
-  CGWindowID window_id_;
+  CGWindowID window_id_ = 0;
 
   rtc::scoped_refptr<FullScreenChromeWindowDetector>
       full_screen_chrome_window_detector_;
@@ -69,15 +69,12 @@ class WindowCapturerMac : public WindowCapturer {
   RTC_DISALLOW_COPY_AND_ASSIGN(WindowCapturerMac);
 };
 
-WindowCapturerMac::WindowCapturerMac(rtc::scoped_refptr<
-    FullScreenChromeWindowDetector> full_screen_chrome_window_detector)
-    : callback_(NULL),
-      window_id_(0),
-      full_screen_chrome_window_detector_(full_screen_chrome_window_detector) {
-}
+WindowCapturerMac::WindowCapturerMac(
+    rtc::scoped_refptr<FullScreenChromeWindowDetector>
+        full_screen_chrome_window_detector)
+    : full_screen_chrome_window_detector_(full_screen_chrome_window_detector) {}
 
-WindowCapturerMac::~WindowCapturerMac() {
-}
+WindowCapturerMac::~WindowCapturerMac() {}
 
 bool WindowCapturerMac::GetWindowList(WindowList* windows) {
   // Only get on screen, non-desktop windows.
@@ -142,11 +139,11 @@ bool WindowCapturerMac::BringSelectedWindowToFront() {
   CGWindowID ids[1];
   ids[0] = window_id_;
   CFArrayRef window_id_array =
-      CFArrayCreate(NULL, reinterpret_cast<const void **>(&ids), 1, NULL);
+      CFArrayCreate(nullptr, reinterpret_cast<const void**>(&ids), 1, nullptr);
 
   CFArrayRef window_array =
       CGWindowListCreateDescriptionFromArray(window_id_array);
-  if (window_array == NULL || 0 == CFArrayGetCount(window_array)) {
+  if (!window_array || 0 == CFArrayGetCount(window_array)) {
     // Could not find the window. It might have been closed.
     LOG(LS_INFO) << "Window not found";
     CFRelease(window_id_array);
@@ -181,7 +178,7 @@ void WindowCapturerMac::Start(Callback* callback) {
 
 void WindowCapturerMac::Capture(const DesktopRegion& region) {
   if (!IsWindowValid(window_id_)) {
-    callback_->OnCaptureCompleted(NULL);
+    callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
     return;
   }
 
@@ -199,7 +196,7 @@ void WindowCapturerMac::Capture(const DesktopRegion& region) {
       on_screen_window, kCGWindowImageBoundsIgnoreFraming);
 
   if (!window_image) {
-    callback_->OnCaptureCompleted(NULL);
+    callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
     return;
   }
 
@@ -207,7 +204,7 @@ void WindowCapturerMac::Capture(const DesktopRegion& region) {
   if (bits_per_pixel != 32) {
     LOG(LS_ERROR) << "Unsupported window image depth: " << bits_per_pixel;
     CFRelease(window_image);
-    callback_->OnCaptureCompleted(NULL);
+    callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
     return;
   }
 
@@ -215,8 +212,8 @@ void WindowCapturerMac::Capture(const DesktopRegion& region) {
   int height = CGImageGetHeight(window_image);
   CGDataProviderRef provider = CGImageGetDataProvider(window_image);
   CFDataRef cf_data = CGDataProviderCopyData(provider);
-  DesktopFrame* frame = new BasicDesktopFrame(
-      DesktopSize(width, height));
+  std::unique_ptr<DesktopFrame> frame(
+      new BasicDesktopFrame(DesktopSize(width, height)));
 
   int src_stride = CGImageGetBytesPerRow(window_image);
   const uint8_t* src_data = CFDataGetBytePtr(cf_data);
@@ -231,7 +228,7 @@ void WindowCapturerMac::Capture(const DesktopRegion& region) {
   frame->mutable_updated_region()->SetRect(
       DesktopRect::MakeSize(frame->size()));
 
-  callback_->OnCaptureCompleted(frame);
+  callback_->OnCaptureResult(Result::SUCCESS, std::move(frame));
 
   if (full_screen_chrome_window_detector_)
     full_screen_chrome_window_detector_->UpdateWindowListIfNeeded(window_id_);

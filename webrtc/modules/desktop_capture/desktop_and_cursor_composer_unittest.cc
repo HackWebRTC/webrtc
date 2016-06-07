@@ -78,15 +78,17 @@ class FakeScreenCapturer : public DesktopCapturer {
   void Start(Callback* callback) override { callback_ = callback; }
 
   void Capture(const DesktopRegion& region) override {
-    callback_->OnCaptureCompleted(next_frame_.release());
+    callback_->OnCaptureResult(
+        next_frame_ ? Result::SUCCESS : Result::ERROR_TEMPORARY,
+        std::move(next_frame_));
   }
 
-  void SetNextFrame(DesktopFrame* next_frame) {
-    next_frame_.reset(next_frame);
+  void SetNextFrame(std::unique_ptr<DesktopFrame> next_frame) {
+    next_frame_ = std::move(next_frame);
   }
 
  private:
-  Callback* callback_;
+  Callback* callback_ = nullptr;
 
   std::unique_ptr<DesktopFrame> next_frame_;
 };
@@ -165,11 +167,13 @@ class DesktopAndCursorComposerTest : public testing::Test,
   DesktopAndCursorComposerTest()
       : fake_screen_(new FakeScreenCapturer()),
         fake_cursor_(new FakeMouseMonitor()),
-        blender_(fake_screen_, fake_cursor_) {
-  }
+        blender_(fake_screen_, fake_cursor_) {}
 
   // DesktopCapturer::Callback interface
-  void OnCaptureCompleted(DesktopFrame* frame) override { frame_.reset(frame); }
+  void OnCaptureResult(DesktopCapturer::Result result,
+                       std::unique_ptr<DesktopFrame> frame) override {
+    frame_ = std::move(frame);
+  }
 
  protected:
   // Owned by |blender_|.
@@ -187,7 +191,7 @@ TEST_F(DesktopAndCursorComposerTest, Error) {
 
   fake_cursor_->SetHotspot(DesktopVector());
   fake_cursor_->SetState(MouseCursorMonitor::INSIDE, DesktopVector());
-  fake_screen_->SetNextFrame(NULL);
+  fake_screen_->SetNextFrame(nullptr);
 
   blender_.Capture(DesktopRegion());
 

@@ -56,9 +56,9 @@ class ScreenCapturerWinGdi : public ScreenCapturer {
   // Capture the current cursor shape.
   void CaptureCursor();
 
-  Callback* callback_;
+  Callback* callback_ = nullptr;
   std::unique_ptr<SharedMemoryFactory> shared_memory_factory_;
-  ScreenId current_screen_id_;
+  ScreenId current_screen_id_ = kFullDesktopScreenId;
   std::wstring current_device_key_;
 
   // A thread-safe list of invalid rectangles, and the size of the most
@@ -68,8 +68,8 @@ class ScreenCapturerWinGdi : public ScreenCapturer {
   ScopedThreadDesktop desktop_;
 
   // GDI resources used for screen capture.
-  HDC desktop_dc_;
-  HDC memory_dc_;
+  HDC desktop_dc_ = NULL;
+  HDC memory_dc_ = NULL;
 
   // Queue of the frames buffers.
   ScreenCaptureFrameQueue<SharedDesktopFrame> queue_;
@@ -81,11 +81,11 @@ class ScreenCapturerWinGdi : public ScreenCapturer {
   // Class to calculate the difference between two screen bitmaps.
   std::unique_ptr<Differ> differ_;
 
-  HMODULE dwmapi_library_;
-  DwmEnableCompositionFunc composition_func_;
+  HMODULE dwmapi_library_ = NULL;
+  DwmEnableCompositionFunc composition_func_ = nullptr;
 
   // Used to suppress duplicate logging of SetThreadExecutionState errors.
-  bool set_thread_execution_state_failed_;
+  bool set_thread_execution_state_failed_ = false;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCapturerWinGdi);
 };
