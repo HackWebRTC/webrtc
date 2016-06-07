@@ -403,6 +403,11 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
     // End offset is actually start offset for next unit, excluding length field
     // so remove that from this units length.
     size_t end_offset = nalu_start_offsets[i + 1] - kLengthFieldSize;
+    if (end_offset - start_offset < H264::kNaluTypeSize) {
+      LOG(LS_ERROR) << "STAP-A packet too short";
+      return false;
+    }
+
     nal_type = payload_data[start_offset] & kTypeMask;
     start_offset += H264::kNaluTypeSize;
 

@@ -569,6 +569,30 @@ TEST_F(RtpDepacketizerH264Test, TestStapANaluSpsWithResolution) {
   EXPECT_EQ(720u, payload.type.Video.height);
 }
 
+TEST_F(RtpDepacketizerH264Test, TestEmptyStapARejected) {
+  uint8_t lone_empty_packet[] = {kStapA, 0x00, 0x00};
+
+  uint8_t leading_empty_packet[] = {kStapA, 0x00, 0x00, 0x00, 0x04,
+                                    kIdr,   0xFF, 0x00, 0x11};
+
+  uint8_t middle_empty_packet[] = {kStapA, 0x00, 0x03, kIdr, 0xFF, 0x00, 0x00,
+                                   0x00,   0x00, 0x04, kIdr, 0xFF, 0x00, 0x11};
+
+  uint8_t trailing_empty_packet[] = {kStapA, 0x00, 0x03, kIdr,
+                                     0xFF,   0x00, 0x00, 0x00};
+
+  RtpDepacketizer::ParsedPayload payload;
+
+  EXPECT_FALSE(depacketizer_->Parse(&payload, lone_empty_packet,
+                                    sizeof(lone_empty_packet)));
+  EXPECT_FALSE(depacketizer_->Parse(&payload, leading_empty_packet,
+                                    sizeof(leading_empty_packet)));
+  EXPECT_FALSE(depacketizer_->Parse(&payload, middle_empty_packet,
+                                    sizeof(middle_empty_packet)));
+  EXPECT_FALSE(depacketizer_->Parse(&payload, trailing_empty_packet,
+                                    sizeof(trailing_empty_packet)));
+}
+
 TEST_F(RtpDepacketizerH264Test, DepacketizeWithRewriting) {
   rtc::Buffer in_buffer;
   rtc::Buffer out_buffer;
