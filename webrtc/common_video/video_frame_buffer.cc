@@ -200,14 +200,6 @@ rtc::scoped_refptr<I420Buffer> I420Buffer::Copy(
   return copy;
 }
 
-void I420Buffer::SetToBlack() {
-  RTC_CHECK(libyuv::I420Rect(MutableDataY(), StrideY(),
-                             MutableDataU(), StrideU(),
-                             MutableDataV(), StrideV(),
-                             0, 0, width(), height(),
-                             0, 128, 128) == 0);
-}
-
 NativeHandleBuffer::NativeHandleBuffer(void* native_handle,
                                        int width,
                                        int height)

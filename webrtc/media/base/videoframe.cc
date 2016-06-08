@@ -148,6 +148,18 @@ void VideoFrame::StretchToFrame(VideoFrame* dst,
   dst->set_rotation(rotation());
 }
 
+bool VideoFrame::SetToBlack() {
+  return libyuv::I420Rect(video_frame_buffer()->MutableDataY(),
+                          video_frame_buffer()->StrideY(),
+                          video_frame_buffer()->MutableDataU(),
+                          video_frame_buffer()->StrideU(),
+                          video_frame_buffer()->MutableDataV(),
+                          video_frame_buffer()->StrideV(),
+                          0, 0,
+                          width(), height(),
+                          16, 128, 128) == 0;
+}
+
 static const size_t kMaxSampleSize = 1000000000u;
 // Returns whether a sample is valid.
 bool VideoFrame::Validate(uint32_t fourcc,

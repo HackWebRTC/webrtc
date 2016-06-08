@@ -65,6 +65,12 @@ bool WebRtcVideoFrame::Init(const CapturedFrame* frame, int dw, int dh,
                frame->rotation, apply_rotation);
 }
 
+bool WebRtcVideoFrame::InitToBlack(int w, int h,
+                                   int64_t time_stamp_ns) {
+  InitToEmptyBuffer(w, h, time_stamp_ns);
+  return SetToBlack();
+}
+
 int WebRtcVideoFrame::width() const {
   return video_frame_buffer_ ? video_frame_buffer_->width() : 0;
 }

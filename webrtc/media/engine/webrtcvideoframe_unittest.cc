@@ -20,24 +20,15 @@ namespace {
 
 class WebRtcVideoTestFrame : public cricket::WebRtcVideoFrame {
  public:
-  WebRtcVideoTestFrame() {}
-  WebRtcVideoTestFrame(
-      const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
-      int64_t time_stamp_ns,
-      webrtc::VideoRotation rotation)
-    : WebRtcVideoFrame(buffer, time_stamp_ns, rotation) {}
-
   // The ApplyRotationToFrame test needs this as a public method.
   using cricket::WebRtcVideoFrame::set_rotation;
 
   virtual VideoFrame* CreateEmptyFrame(int w,
                                        int h,
                                        int64_t time_stamp) const override {
-    rtc::scoped_refptr<webrtc::I420Buffer> buffer(
-        new rtc::RefCountedObject<webrtc::I420Buffer>(w, h));
-    buffer->SetToBlack();
-    return new WebRtcVideoTestFrame(
-        buffer, time_stamp, webrtc::kVideoRotation_0);
+    WebRtcVideoTestFrame* frame = new WebRtcVideoTestFrame();
+    frame->InitToBlack(w, h, time_stamp);
+    return frame;
   }
 };
 
@@ -154,6 +145,7 @@ TEST_WEBRTCVIDEOFRAME(ConstructI420CropVertical)
 // TODO(juberti): WebRtcVideoFrame is not currently refcounted.
 // TEST_WEBRTCVIDEOFRAME(ConstructCopy)
 // TEST_WEBRTCVIDEOFRAME(ConstructCopyIsRef)
+TEST_WEBRTCVIDEOFRAME(ConstructBlack)
 // TODO(fbarchard): Implement Jpeg
 // TEST_WEBRTCVIDEOFRAME(ConstructMjpgI420)
 TEST_WEBRTCVIDEOFRAME(ConstructMjpgI422)

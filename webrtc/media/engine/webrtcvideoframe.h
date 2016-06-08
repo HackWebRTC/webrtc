@@ -63,6 +63,8 @@ class WebRtcVideoFrame : public VideoFrame {
   void InitToEmptyBuffer(int w, int h);
   void InitToEmptyBuffer(int w, int h, int64_t time_stamp_ns);
 
+  bool InitToBlack(int w, int h, int64_t time_stamp_ns);
+
   int width() const override;
   int height() const override;
 

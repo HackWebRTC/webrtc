@@ -49,15 +49,14 @@ class VideoBroadcaster : public VideoSourceBase,
 
  protected:
   void UpdateWants() EXCLUSIVE_LOCKS_REQUIRED(sinks_and_wants_lock_);
-  const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& GetBlackFrameBuffer(
-      int width, int height)
+  const cricket::VideoFrame& GetBlackFrame(const cricket::VideoFrame& frame)
       EXCLUSIVE_LOCKS_REQUIRED(sinks_and_wants_lock_);
 
   ThreadChecker thread_checker_;
   rtc::CriticalSection sinks_and_wants_lock_;
 
   VideoSinkWants current_wants_ GUARDED_BY(sinks_and_wants_lock_);
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> black_frame_buffer_;
+  std::unique_ptr<cricket::WebRtcVideoFrame> black_frame_;
 };
 
 }  // namespace rtc
