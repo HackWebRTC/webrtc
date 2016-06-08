@@ -21,6 +21,7 @@
 *.vpwhistu
 *.vtg
 *.xcodeproj
+*.xcworkspace
 *_proto.xml
 *_proto_cpp.xml
 *~
