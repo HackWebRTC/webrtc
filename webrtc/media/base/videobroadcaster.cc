@@ -54,7 +54,9 @@ void VideoBroadcaster::OnFrame(const cricket::VideoFrame& frame) {
   rtc::CritScope cs(&sinks_and_wants_lock_);
   for (auto& sink_pair : sink_pairs()) {
     if (sink_pair.wants.black_frames) {
-      sink_pair.sink->OnFrame(GetBlackFrame(frame));
+      sink_pair.sink->OnFrame(cricket::WebRtcVideoFrame(
+          GetBlackFrameBuffer(frame.width(), frame.height()),
+          frame.rotation(), frame.timestamp_us()));
     } else {
       sink_pair.sink->OnFrame(frame);
     }
@@ -93,20 +95,17 @@ void VideoBroadcaster::UpdateWants() {
   current_wants_ = wants;
 }
 
-const cricket::VideoFrame& VideoBroadcaster::GetBlackFrame(
-    const cricket::VideoFrame& frame) {
-  if (black_frame_ && black_frame_->width() == frame.width() &&
-      black_frame_->height() == frame.height() &&
-      black_frame_->rotation() == frame.rotation()) {
-    black_frame_->set_timestamp_us(frame.timestamp_us());
-    return *black_frame_;
+const rtc::scoped_refptr<webrtc::VideoFrameBuffer>&
+VideoBroadcaster::GetBlackFrameBuffer(int width, int height) {
+  if (!black_frame_buffer_ || black_frame_buffer_->width() != width ||
+      black_frame_buffer_->height() != height) {
+    rtc::scoped_refptr<webrtc::I420Buffer> buffer =
+        new RefCountedObject<webrtc::I420Buffer>(width, height);
+    buffer->SetToBlack();
+    black_frame_buffer_ = buffer;
   }
-  black_frame_.reset(new cricket::WebRtcVideoFrame(
-      new rtc::RefCountedObject<webrtc::I420Buffer>(frame.width(),
-                                                    frame.height()),
-      frame.rotation(), frame.timestamp_us()));
-  black_frame_->SetToBlack();
-  return *black_frame_;
+
+  return black_frame_buffer_;
 }
 
 }  // namespace rtc

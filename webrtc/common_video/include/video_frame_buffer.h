@@ -87,7 +87,17 @@ class I420Buffer : public VideoFrameBuffer {
  public:
   I420Buffer(int width, int height);
   I420Buffer(int width, int height, int stride_y, int stride_u, int stride_v);
+
+  // Sets all three planes to all zeros. Used to work around for
+  // quirks in memory checkers
+  // (https://bugs.chromium.org/p/libyuv/issues/detail?id=377) and
+  // ffmpeg (http://crbug.com/390941).
+  // TODO(nisse): Should be deleted if/when those issues are resolved
+  // in a better way.
   void InitializeData();
+
+  // Sets the frame buffer to all black.
+  void SetToBlack();
 
   int width() const override;
   int height() const override;
