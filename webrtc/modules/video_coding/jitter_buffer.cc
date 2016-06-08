@@ -124,10 +124,10 @@ void FrameList::Reset(UnorderedFrameList* free_frames) {
 }
 
 bool Vp9SsMap::Insert(const VCMPacket& packet) {
-  if (!packet.codecSpecificHeader.codecHeader.VP9.ss_data_available)
+  if (!packet.video_header.codecHeader.VP9.ss_data_available)
     return false;
 
-  ss_map_[packet.timestamp] = packet.codecSpecificHeader.codecHeader.VP9.gof;
+  ss_map_[packet.timestamp] = packet.video_header.codecHeader.VP9.gof;
   return true;
 }
 
@@ -175,7 +175,7 @@ void Vp9SsMap::AdvanceFront(uint32_t timestamp) {
 
 // TODO(asapersson): Update according to updates in RTP payload profile.
 bool Vp9SsMap::UpdatePacket(VCMPacket* packet) {
-  uint8_t gof_idx = packet->codecSpecificHeader.codecHeader.VP9.gof_idx;
+  uint8_t gof_idx = packet->video_header.codecHeader.VP9.gof_idx;
   if (gof_idx == kNoGofIdx)
     return false;  // No update needed.
 
@@ -186,7 +186,7 @@ bool Vp9SsMap::UpdatePacket(VCMPacket* packet) {
   if (gof_idx >= it->second.num_frames_in_gof)
     return false;  // Assume corresponding SS not yet received.
 
-  RTPVideoHeaderVP9* vp9 = &packet->codecSpecificHeader.codecHeader.VP9;
+  RTPVideoHeaderVP9* vp9 = &packet->video_header.codecHeader.VP9;
   vp9->temporal_idx = it->second.temporal_idx[gof_idx];
   vp9->temporal_up_switch = it->second.temporal_up_switch[gof_idx];
 
@@ -497,12 +497,11 @@ bool VCMJitterBuffer::CompleteSequenceWithNextFrame() {
 
 // Returns immediately or a |max_wait_time_ms| ms event hang waiting for a
 // complete frame, |max_wait_time_ms| decided by caller.
-bool VCMJitterBuffer::NextCompleteTimestamp(uint32_t max_wait_time_ms,
-                                            uint32_t* timestamp) {
+VCMEncodedFrame* VCMJitterBuffer::NextCompleteFrame(uint32_t max_wait_time_ms) {
   crit_sect_->Enter();
   if (!running_) {
     crit_sect_->Leave();
-    return false;
+    return nullptr;
   }
   CleanUpOldOrEmptyFrames();
 
@@ -520,7 +519,7 @@ bool VCMJitterBuffer::NextCompleteTimestamp(uint32_t max_wait_time_ms,
         // Are we shutting down the jitter buffer?
         if (!running_) {
           crit_sect_->Leave();
-          return false;
+          return nullptr;
         }
         // Finding oldest frame ready for decoder.
         CleanUpOldOrEmptyFrames();
@@ -538,11 +537,11 @@ bool VCMJitterBuffer::NextCompleteTimestamp(uint32_t max_wait_time_ms,
   if (decodable_frames_.empty() ||
       decodable_frames_.Front()->GetState() != kStateComplete) {
     crit_sect_->Leave();
-    return false;
+    return nullptr;
   }
-  *timestamp = decodable_frames_.Front()->TimeStamp();
+  VCMEncodedFrame* encoded_frame = decodable_frames_.Front();
   crit_sect_->Leave();
-  return true;
+  return encoded_frame;
 }
 
 bool VCMJitterBuffer::NextMaybeIncompleteTimestamp(uint32_t* timestamp) {

@@ -50,7 +50,7 @@ class VCMPacket {
                          // packet.
   int width;
   int height;
-  RTPVideoHeader codecSpecificHeader;
+  RTPVideoHeader video_header;
 
  protected:
   void CopyCodecSpecifics(const RTPVideoHeader& videoHeader);

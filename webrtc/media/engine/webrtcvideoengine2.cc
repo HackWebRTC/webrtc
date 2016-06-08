@@ -564,6 +564,9 @@ RtpCapabilities WebRtcVideoEngine2::GetCapabilities() const {
         webrtc::RtpExtension::kTransportSequenceNumberUri,
         webrtc::RtpExtension::kTransportSequenceNumberDefaultId));
   }
+  capabilities.header_extensions.push_back(
+      webrtc::RtpExtension(webrtc::RtpExtension::kPlayoutDelayUri,
+                           webrtc::RtpExtension::kPlayoutDelayDefaultId));
   return capabilities;
 }
 

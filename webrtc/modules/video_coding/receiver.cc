@@ -144,15 +144,26 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(uint16_t max_wait_time_ms,
                                                bool prefer_late_decoding) {
   const int64_t start_time_ms = clock_->TimeInMilliseconds();
   uint32_t frame_timestamp = 0;
+  int min_playout_delay_ms = -1;
+  int max_playout_delay_ms = -1;
   // Exhaust wait time to get a complete frame for decoding.
-  bool found_frame =
-      jitter_buffer_.NextCompleteTimestamp(max_wait_time_ms, &frame_timestamp);
+  VCMEncodedFrame* found_frame =
+      jitter_buffer_.NextCompleteFrame(max_wait_time_ms);
 
-  if (!found_frame)
-    found_frame = jitter_buffer_.NextMaybeIncompleteTimestamp(&frame_timestamp);
+  if (found_frame) {
+    frame_timestamp = found_frame->TimeStamp();
+    min_playout_delay_ms = found_frame->EncodedImage().playout_delay_.min_ms;
+    max_playout_delay_ms = found_frame->EncodedImage().playout_delay_.max_ms;
+  } else {
+    if (!jitter_buffer_.NextMaybeIncompleteTimestamp(&frame_timestamp))
+      return nullptr;
+  }
 
-  if (!found_frame)
-    return NULL;
+  if (min_playout_delay_ms >= 0)
+    timing_->set_min_playout_delay(min_playout_delay_ms);
+
+  if (max_playout_delay_ms >= 0)
+    timing_->set_max_playout_delay(max_playout_delay_ms);
 
   // We have a frame - Set timing and render timestamp.
   timing_->SetJitterDelay(jitter_buffer_.EstimatedJitterMs());

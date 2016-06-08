@@ -129,7 +129,7 @@ VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(
 
   // Don't copy payload specific data for empty packets (e.g padding packets).
   if (packet.sizeBytes > 0)
-    CopyCodecSpecific(&packet.codecSpecificHeader);
+    CopyCodecSpecific(&packet.video_header);
 
   int retVal =
       _sessionInfo.InsertPacket(packet, _buffer, decode_error_mode, frame_data);
@@ -153,8 +153,12 @@ VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(
   // (HEVC)).
   if (packet.markerBit) {
     RTC_DCHECK(!_rotation_set);
-    _rotation = packet.codecSpecificHeader.rotation;
+    _rotation = packet.video_header.rotation;
     _rotation_set = true;
+  }
+
+  if (packet.isFirstPacket) {
+    playout_delay_ = packet.video_header.playout_delay;
   }
 
   if (_sessionInfo.complete()) {

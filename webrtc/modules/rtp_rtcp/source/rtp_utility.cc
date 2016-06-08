@@ -248,6 +248,10 @@ bool RtpHeaderParser::Parse(RTPHeader* header,
   header->extension.hasVideoRotation = false;
   header->extension.videoRotation = 0;
 
+  // May not be present in packet.
+  header->extension.playout_delay.min_ms = -1;
+  header->extension.playout_delay.max_ms = -1;
+
   if (X) {
     /* RTP header extension, RFC 3550.
      0                   1                   2                   3
@@ -405,6 +409,25 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
           sequence_number += ptr[1];
           header->extension.transportSequenceNumber = sequence_number;
           header->extension.hasTransportSequenceNumber = true;
+          break;
+        }
+        case kRtpExtensionPlayoutDelay: {
+          if (len != 2) {
+            LOG(LS_WARNING) << "Incorrect playout delay len: " << len;
+            return;
+          }
+          //   0                   1                   2                   3
+          //   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+          //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+          //  |  ID   | len=2 |   MIN delay           |   MAX delay           |
+          //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+          int min_playout_delay = (ptr[0] << 4) | ((ptr[1] >> 4) & 0xf);
+          int max_playout_delay = ((ptr[1] & 0xf) << 8) | ptr[2];
+          header->extension.playout_delay.min_ms =
+              min_playout_delay * kPlayoutDelayGranularityMs;
+          header->extension.playout_delay.max_ms =
+              max_playout_delay * kPlayoutDelayGranularityMs;
           break;
         }
         default: {

@@ -299,6 +299,7 @@
             'rtp_rtcp/source/nack_rtx_unittest.cc',
             'rtp_rtcp/source/packet_loss_stats_unittest.cc',
             'rtp_rtcp/source/producer_fec_unittest.cc',
+            'rtp_rtcp/source/playout_delay_oracle_unittest.cc',
             'rtp_rtcp/source/receive_statistics_unittest.cc',
             'rtp_rtcp/source/remote_ntp_time_estimator_unittest.cc',
             'rtp_rtcp/source/rtcp_format_remb_unittest.cc',

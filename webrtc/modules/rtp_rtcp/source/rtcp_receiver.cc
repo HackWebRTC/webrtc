@@ -1356,6 +1356,11 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
             now);
       }
     }
+    if ((rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpSr) ||
+        (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpRr)) {
+      _rtpRtcp.OnReceivedRtcpReportBlocks(rtcpPacketInformation.report_blocks);
+    }
+
     if (_cbTransportFeedbackObserver &&
         (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpTransportFeedback)) {
       uint32_t media_source_ssrc =

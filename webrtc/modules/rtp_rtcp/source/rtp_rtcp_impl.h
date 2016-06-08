@@ -19,6 +19,7 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/gtest_prod_util.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/packet_loss_stats.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
@@ -319,6 +320,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
       const override;
 
   void OnReceivedNACK(const std::list<uint16_t>& nack_sequence_numbers);
+  void OnReceivedRtcpReportBlocks(const ReportBlockList& report_blocks);
 
   void OnRequestSendReport();
 

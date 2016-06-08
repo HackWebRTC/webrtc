@@ -39,6 +39,8 @@ RTPExtensionType StringToRtpExtensionType(const std::string& extension) {
     return kRtpExtensionVideoRotation;
   if (extension == RtpExtension::kTransportSequenceNumberUri)
     return kRtpExtensionTransportSequenceNumber;
+  if (extension == RtpExtension::kPlayoutDelayUri)
+    return kRtpExtensionPlayoutDelay;
   RTC_NOTREACHED() << "Looking up unsupported RTP extension.";
   return kRtpExtensionNone;
 }
@@ -922,6 +924,11 @@ void ModuleRtpRtcpImpl::OnReceivedNACK(
     rtcp_receiver_.RTT(rtcp_receiver_.RemoteSSRC(), NULL, &rtt, NULL, NULL);
   }
   rtp_sender_.OnReceivedNACK(nack_sequence_numbers, rtt);
+}
+
+void ModuleRtpRtcpImpl::OnReceivedRtcpReportBlocks(
+    const ReportBlockList& report_blocks) {
+  rtp_sender_.OnReceivedRtcpReportBlocks(report_blocks);
 }
 
 bool ModuleRtpRtcpImpl::LastReceivedNTP(

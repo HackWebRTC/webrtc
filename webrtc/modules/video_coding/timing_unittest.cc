@@ -104,7 +104,7 @@ TEST(ReceiverTiming, Tests) {
       clock.TimeInMilliseconds());
   EXPECT_EQ(waitTime, jitterDelayMs);
 
-  uint32_t minTotalDelayMs = 200;
+  int minTotalDelayMs = 200;
   timing.set_min_playout_delay(minTotalDelayMs);
   clock.AdvanceTimeMilliseconds(5000);
   timeStamp += 5 * 90000;

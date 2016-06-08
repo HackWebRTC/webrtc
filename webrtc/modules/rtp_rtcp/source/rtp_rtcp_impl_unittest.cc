@@ -195,13 +195,9 @@ class RtpRtcpImplTest : public ::testing::Test {
   void SendFrame(const RtpRtcpModule* module, uint8_t tid) {
     RTPVideoHeaderVP8 vp8_header = {};
     vp8_header.temporalIdx = tid;
-    RTPVideoHeader rtp_video_header = {codec_.width,
-                                       codec_.height,
-                                       kVideoRotation_0,
-                                       true,
-                                       0,
-                                       kRtpVideoVp8,
-                                       {vp8_header}};
+    RTPVideoHeader rtp_video_header = {
+        codec_.width, codec_.height, kVideoRotation_0, {-1, -1}, true, 0,
+        kRtpVideoVp8, {vp8_header}};
 
     const uint8_t payload[100] = {0};
     EXPECT_EQ(0, module->impl_->SendOutgoingData(kVideoFrameKey,

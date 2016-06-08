@@ -71,7 +71,7 @@ RTPVideoTypeHeader* RtpFrameObject::GetCodecHeader() const {
   VCMPacket* packet = packet_buffer_->GetPacket(first_seq_num_);
   if (!packet)
     return nullptr;
-  return &packet->codecSpecificHeader.codecHeader;
+  return &packet->video_header.codecHeader;
 }
 
 }  // namespace video_coding

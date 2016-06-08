@@ -152,6 +152,7 @@ int32_t PayloadRouter::Encoded(const EncodedImage& encoded_image,
   if (codec_specific_info)
     CopyCodecSpecific(codec_specific_info, &rtp_video_header);
   rtp_video_header.rotation = encoded_image.rotation_;
+  rtp_video_header.playout_delay = encoded_image.playout_delay_;
 
   RTC_DCHECK_LT(rtp_video_header.simulcastIdx, rtp_modules_.size());
   // The simulcast index might actually be larger than the number of modules

@@ -236,7 +236,7 @@ class RtpSenderVideoTest : public RtpSenderTest {
     size_t length = static_cast<size_t>(rtp_sender_->BuildRTPheader(
         packet_, kPayload, expect_cvo /* marker_bit */, kTimestamp, 0));
     if (expect_cvo) {
-      ASSERT_EQ(kRtpHeaderSize + rtp_sender_->RtpHeaderExtensionTotalLength(),
+      ASSERT_EQ(kRtpHeaderSize + rtp_sender_->RtpHeaderExtensionLength(),
                 length);
     } else {
       ASSERT_EQ(kRtpHeaderSize, length);
@@ -256,63 +256,63 @@ class RtpSenderVideoTest : public RtpSenderTest {
 
 TEST_F(RtpSenderTestWithoutPacer,
        RegisterRtpTransmissionTimeOffsetHeaderExtension) {
-  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionLength());
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionTransmissionTimeOffset,
                    kTransmissionTimeOffsetExtensionId));
   EXPECT_EQ(kRtpOneByteHeaderLength + kTransmissionTimeOffsetLength,
-            rtp_sender_->RtpHeaderExtensionTotalLength());
+            rtp_sender_->RtpHeaderExtensionLength());
   EXPECT_EQ(0, rtp_sender_->DeregisterRtpHeaderExtension(
                    kRtpExtensionTransmissionTimeOffset));
-  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionLength());
 }
 
 TEST_F(RtpSenderTestWithoutPacer, RegisterRtpAbsoluteSendTimeHeaderExtension) {
-  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionLength());
   EXPECT_EQ(
       0, rtp_sender_->RegisterRtpHeaderExtension(kRtpExtensionAbsoluteSendTime,
                                                  kAbsoluteSendTimeExtensionId));
   EXPECT_EQ(RtpUtility::Word32Align(kRtpOneByteHeaderLength +
                                     kAbsoluteSendTimeLength),
-            rtp_sender_->RtpHeaderExtensionTotalLength());
+            rtp_sender_->RtpHeaderExtensionLength());
   EXPECT_EQ(0, rtp_sender_->DeregisterRtpHeaderExtension(
                    kRtpExtensionAbsoluteSendTime));
-  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionLength());
 }
 
 TEST_F(RtpSenderTestWithoutPacer, RegisterRtpAudioLevelHeaderExtension) {
-  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionLength());
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(kRtpExtensionAudioLevel,
                                                        kAudioLevelExtensionId));
   EXPECT_EQ(
       RtpUtility::Word32Align(kRtpOneByteHeaderLength + kAudioLevelLength),
-      rtp_sender_->RtpHeaderExtensionTotalLength());
+      rtp_sender_->RtpHeaderExtensionLength());
   EXPECT_EQ(0,
             rtp_sender_->DeregisterRtpHeaderExtension(kRtpExtensionAudioLevel));
-  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionLength());
 }
 
 TEST_F(RtpSenderTestWithoutPacer, RegisterRtpHeaderExtensions) {
-  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionLength());
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionTransmissionTimeOffset,
                    kTransmissionTimeOffsetExtensionId));
   EXPECT_EQ(RtpUtility::Word32Align(kRtpOneByteHeaderLength +
                                     kTransmissionTimeOffsetLength),
-            rtp_sender_->RtpHeaderExtensionTotalLength());
+            rtp_sender_->RtpHeaderExtensionLength());
   EXPECT_EQ(
       0, rtp_sender_->RegisterRtpHeaderExtension(kRtpExtensionAbsoluteSendTime,
                                                  kAbsoluteSendTimeExtensionId));
   EXPECT_EQ(RtpUtility::Word32Align(kRtpOneByteHeaderLength +
                                     kTransmissionTimeOffsetLength +
                                     kAbsoluteSendTimeLength),
-            rtp_sender_->RtpHeaderExtensionTotalLength());
+            rtp_sender_->RtpHeaderExtensionLength());
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(kRtpExtensionAudioLevel,
                                                        kAudioLevelExtensionId));
   EXPECT_EQ(RtpUtility::Word32Align(
                 kRtpOneByteHeaderLength + kTransmissionTimeOffsetLength +
                 kAbsoluteSendTimeLength + kAudioLevelLength),
-            rtp_sender_->RtpHeaderExtensionTotalLength());
+            rtp_sender_->RtpHeaderExtensionLength());
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionVideoRotation, kVideoRotationExtensionId));
   EXPECT_TRUE(rtp_sender_->ActivateCVORtpHeaderExtension());
@@ -320,7 +320,7 @@ TEST_F(RtpSenderTestWithoutPacer, RegisterRtpHeaderExtensions) {
                                     kTransmissionTimeOffsetLength +
                                     kAbsoluteSendTimeLength +
                                     kAudioLevelLength + kVideoRotationLength),
-            rtp_sender_->RtpHeaderExtensionTotalLength());
+            rtp_sender_->RtpHeaderExtensionLength());
 
   // Deregister starts.
   EXPECT_EQ(0, rtp_sender_->DeregisterRtpHeaderExtension(
@@ -328,35 +328,35 @@ TEST_F(RtpSenderTestWithoutPacer, RegisterRtpHeaderExtensions) {
   EXPECT_EQ(RtpUtility::Word32Align(kRtpOneByteHeaderLength +
                                     kAbsoluteSendTimeLength +
                                     kAudioLevelLength + kVideoRotationLength),
-            rtp_sender_->RtpHeaderExtensionTotalLength());
+            rtp_sender_->RtpHeaderExtensionLength());
   EXPECT_EQ(0, rtp_sender_->DeregisterRtpHeaderExtension(
                    kRtpExtensionAbsoluteSendTime));
   EXPECT_EQ(RtpUtility::Word32Align(kRtpOneByteHeaderLength +
                                     kAudioLevelLength + kVideoRotationLength),
-            rtp_sender_->RtpHeaderExtensionTotalLength());
+            rtp_sender_->RtpHeaderExtensionLength());
   EXPECT_EQ(0,
             rtp_sender_->DeregisterRtpHeaderExtension(kRtpExtensionAudioLevel));
   EXPECT_EQ(
       RtpUtility::Word32Align(kRtpOneByteHeaderLength + kVideoRotationLength),
-      rtp_sender_->RtpHeaderExtensionTotalLength());
+      rtp_sender_->RtpHeaderExtensionLength());
   EXPECT_EQ(
       0, rtp_sender_->DeregisterRtpHeaderExtension(kRtpExtensionVideoRotation));
-  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionLength());
 }
 
 TEST_F(RtpSenderTestWithoutPacer, RegisterRtpVideoRotationHeaderExtension) {
-  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionLength());
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionVideoRotation, kVideoRotationExtensionId));
-  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionLength());
 
   EXPECT_TRUE(rtp_sender_->ActivateCVORtpHeaderExtension());
   EXPECT_EQ(
       RtpUtility::Word32Align(kRtpOneByteHeaderLength + kVideoRotationLength),
-      rtp_sender_->RtpHeaderExtensionTotalLength());
+      rtp_sender_->RtpHeaderExtensionLength());
   EXPECT_EQ(
       0, rtp_sender_->DeregisterRtpHeaderExtension(kRtpExtensionVideoRotation));
-  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionLength());
 }
 
 TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacket) {
@@ -393,8 +393,7 @@ TEST_F(RtpSenderTestWithoutPacer,
 
   size_t length = static_cast<size_t>(rtp_sender_->BuildRTPheader(
       packet_, kPayload, kMarkerBit, kTimestamp, 0));
-  ASSERT_EQ(kRtpHeaderSize + rtp_sender_->RtpHeaderExtensionTotalLength(),
-            length);
+  ASSERT_EQ(kRtpHeaderSize + rtp_sender_->RtpHeaderExtensionLength(), length);
 
   // Verify
   webrtc::RtpUtility::RtpHeaderParser rtp_parser(packet_, length);
@@ -433,8 +432,7 @@ TEST_F(RtpSenderTestWithoutPacer,
 
   size_t length = static_cast<size_t>(rtp_sender_->BuildRTPheader(
       packet_, kPayload, kMarkerBit, kTimestamp, 0));
-  ASSERT_EQ(kRtpHeaderSize + rtp_sender_->RtpHeaderExtensionTotalLength(),
-            length);
+  ASSERT_EQ(kRtpHeaderSize + rtp_sender_->RtpHeaderExtensionLength(), length);
 
   // Verify
   webrtc::RtpUtility::RtpHeaderParser rtp_parser(packet_, length);
@@ -461,8 +459,7 @@ TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacketWithAbsoluteSendTimeExtension) {
 
   size_t length = static_cast<size_t>(rtp_sender_->BuildRTPheader(
       packet_, kPayload, kMarkerBit, kTimestamp, 0));
-  ASSERT_EQ(kRtpHeaderSize + rtp_sender_->RtpHeaderExtensionTotalLength(),
-            length);
+  ASSERT_EQ(kRtpHeaderSize + rtp_sender_->RtpHeaderExtensionLength(), length);
 
   // Verify
   webrtc::RtpUtility::RtpHeaderParser rtp_parser(packet_, length);
@@ -546,8 +543,7 @@ TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacketWithVideoRotation_MarkerBit) {
 
   size_t length = static_cast<size_t>(
       rtp_sender_->BuildRTPheader(packet_, kPayload, true, kTimestamp, 0));
-  ASSERT_EQ(kRtpHeaderSize + rtp_sender_->RtpHeaderExtensionTotalLength(),
-            length);
+  ASSERT_EQ(kRtpHeaderSize + rtp_sender_->RtpHeaderExtensionLength(), length);
 
   // Verify
   webrtc::RtpUtility::RtpHeaderParser rtp_parser(packet_, length);
@@ -594,8 +590,7 @@ TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacketWithAudioLevelExtension) {
 
   size_t length = static_cast<size_t>(rtp_sender_->BuildRTPheader(
       packet_, kPayload, kMarkerBit, kTimestamp, 0));
-  ASSERT_EQ(kRtpHeaderSize + rtp_sender_->RtpHeaderExtensionTotalLength(),
-            length);
+  ASSERT_EQ(kRtpHeaderSize + rtp_sender_->RtpHeaderExtensionLength(), length);
 
   // Verify
   webrtc::RtpUtility::RtpHeaderParser rtp_parser(packet_, length);
@@ -682,8 +677,7 @@ TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacketWithHeaderExtensions) {
 
   size_t length = static_cast<size_t>(rtp_sender_->BuildRTPheader(
       packet_, kPayload, kMarkerBit, kTimestamp, 0));
-  ASSERT_EQ(kRtpHeaderSize + rtp_sender_->RtpHeaderExtensionTotalLength(),
-            length);
+  ASSERT_EQ(kRtpHeaderSize + rtp_sender_->RtpHeaderExtensionLength(), length);
 
   // Verify
   webrtc::RtpUtility::RtpHeaderParser rtp_parser(packet_, length);
@@ -1595,7 +1589,7 @@ TEST_F(RtpSenderVideoTest, SendVideoWithCVO) {
 
   EXPECT_EQ(
       RtpUtility::Word32Align(kRtpOneByteHeaderLength + kVideoRotationLength),
-      rtp_sender_->RtpHeaderExtensionTotalLength());
+      rtp_sender_->RtpHeaderExtensionLength());
 
   rtp_sender_video_->SendVideo(kRtpVideoGeneric, kVideoFrameKey, kPayload,
                                kTimestamp, 0, packet_, sizeof(packet_), nullptr,

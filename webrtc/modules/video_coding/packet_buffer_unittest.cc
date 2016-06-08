@@ -98,10 +98,10 @@ class TestPacketBuffer : public ::testing::Test,
     packet.markerBit = last;
     packet.sizeBytes = data_size;
     packet.dataPtr = data;
-    packet.codecSpecificHeader.codecHeader.VP8.pictureId = pid % (1 << 15);
-    packet.codecSpecificHeader.codecHeader.VP8.temporalIdx = tid;
-    packet.codecSpecificHeader.codecHeader.VP8.tl0PicIdx = tl0;
-    packet.codecSpecificHeader.codecHeader.VP8.layerSync = sync;
+    packet.video_header.codecHeader.VP8.pictureId = pid % (1 << 15);
+    packet.video_header.codecHeader.VP8.temporalIdx = tid;
+    packet.video_header.codecHeader.VP8.tl0PicIdx = tl0;
+    packet.video_header.codecHeader.VP8.layerSync = sync;
 
     EXPECT_TRUE(packet_buffer_->InsertPacket(packet));
   }
@@ -127,15 +127,15 @@ class TestPacketBuffer : public ::testing::Test,
     packet.markerBit = last;
     packet.sizeBytes = data_size;
     packet.dataPtr = data;
-    packet.codecSpecificHeader.codecHeader.VP9.flexible_mode = false;
-    packet.codecSpecificHeader.codecHeader.VP9.picture_id = pid % (1 << 15);
-    packet.codecSpecificHeader.codecHeader.VP9.temporal_idx = tid;
-    packet.codecSpecificHeader.codecHeader.VP9.spatial_idx = sid;
-    packet.codecSpecificHeader.codecHeader.VP9.tl0_pic_idx = tl0;
-    packet.codecSpecificHeader.codecHeader.VP9.temporal_up_switch = up;
+    packet.video_header.codecHeader.VP9.flexible_mode = false;
+    packet.video_header.codecHeader.VP9.picture_id = pid % (1 << 15);
+    packet.video_header.codecHeader.VP9.temporal_idx = tid;
+    packet.video_header.codecHeader.VP9.spatial_idx = sid;
+    packet.video_header.codecHeader.VP9.tl0_pic_idx = tl0;
+    packet.video_header.codecHeader.VP9.temporal_up_switch = up;
     if (ss != nullptr) {
-      packet.codecSpecificHeader.codecHeader.VP9.ss_data_available = true;
-      packet.codecSpecificHeader.codecHeader.VP9.gof = *ss;
+      packet.video_header.codecHeader.VP9.ss_data_available = true;
+      packet.video_header.codecHeader.VP9.gof = *ss;
     }
 
     EXPECT_TRUE(packet_buffer_->InsertPacket(packet));
@@ -163,15 +163,15 @@ class TestPacketBuffer : public ::testing::Test,
     packet.markerBit = last;
     packet.sizeBytes = data_size;
     packet.dataPtr = data;
-    packet.codecSpecificHeader.codecHeader.VP9.inter_layer_predicted = inter;
-    packet.codecSpecificHeader.codecHeader.VP9.flexible_mode = true;
-    packet.codecSpecificHeader.codecHeader.VP9.picture_id = pid % (1 << 15);
-    packet.codecSpecificHeader.codecHeader.VP9.temporal_idx = tid;
-    packet.codecSpecificHeader.codecHeader.VP9.spatial_idx = sid;
-    packet.codecSpecificHeader.codecHeader.VP9.tl0_pic_idx = tl0;
-    packet.codecSpecificHeader.codecHeader.VP9.num_ref_pics = refs.size();
+    packet.video_header.codecHeader.VP9.inter_layer_predicted = inter;
+    packet.video_header.codecHeader.VP9.flexible_mode = true;
+    packet.video_header.codecHeader.VP9.picture_id = pid % (1 << 15);
+    packet.video_header.codecHeader.VP9.temporal_idx = tid;
+    packet.video_header.codecHeader.VP9.spatial_idx = sid;
+    packet.video_header.codecHeader.VP9.tl0_pic_idx = tl0;
+    packet.video_header.codecHeader.VP9.num_ref_pics = refs.size();
     for (size_t i = 0; i < refs.size(); ++i)
-      packet.codecSpecificHeader.codecHeader.VP9.pid_diff[i] = refs[i];
+      packet.video_header.codecHeader.VP9.pid_diff[i] = refs[i];
 
     EXPECT_TRUE(packet_buffer_->InsertPacket(packet));
   }

@@ -179,6 +179,11 @@ class EncodedImage {
   bool _completeFrame = false;
   AdaptReason adapt_reason_;
   int qp_ = -1;  // Quantizer value.
+
+  // When an application indicates non-zero values here, it is taken as an
+  // indication that all future frames will be constrained with those limits
+  // until the application indicates a change again.
+  PlayoutDelay playout_delay_ = {-1, -1};
 };
 
 }  // namespace webrtc

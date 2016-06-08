@@ -152,9 +152,8 @@ class VCMJitterBuffer {
   bool CompleteSequenceWithNextFrame();
 
   // Wait |max_wait_time_ms| for a complete frame to arrive.
-  // The function returns true once such a frame is found, its corresponding
-  // timestamp is returned. Otherwise, returns false.
-  bool NextCompleteTimestamp(uint32_t max_wait_time_ms, uint32_t* timestamp);
+  // If found, a pointer to the frame is returned. Returns nullptr otherwise.
+  VCMEncodedFrame* NextCompleteFrame(uint32_t max_wait_time_ms);
 
   // Locates a frame for decoding (even an incomplete) without delay.
   // The function returns true once such a frame is found, its corresponding

@@ -442,6 +442,8 @@ void RtpStreamReceiver::NotifyReceiverOfFecPacket(const RTPHeader& header) {
     rtp_header.type.Video.rotation =
         ConvertCVOByteToVideoRotation(header.extension.videoRotation);
   }
+  rtp_header.type.Video.playout_delay = header.extension.playout_delay;
+
   OnReceivedPayloadData(nullptr, 0, &rtp_header);
 }
 

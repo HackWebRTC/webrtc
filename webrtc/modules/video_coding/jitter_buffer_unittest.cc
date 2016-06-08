@@ -42,13 +42,13 @@ class Vp9SsMapTest : public ::testing::Test {
     packet_.markerBit = true;
     packet_.frameType = kVideoFrameKey;
     packet_.codec = kVideoCodecVP9;
-    packet_.codecSpecificHeader.codec = kRtpVideoVp9;
-    packet_.codecSpecificHeader.codecHeader.VP9.flexible_mode = false;
-    packet_.codecSpecificHeader.codecHeader.VP9.gof_idx = 0;
-    packet_.codecSpecificHeader.codecHeader.VP9.temporal_idx = kNoTemporalIdx;
-    packet_.codecSpecificHeader.codecHeader.VP9.temporal_up_switch = false;
-    packet_.codecSpecificHeader.codecHeader.VP9.ss_data_available = true;
-    packet_.codecSpecificHeader.codecHeader.VP9.gof.SetGofInfoVP9(
+    packet_.video_header.codec = kRtpVideoVp9;
+    packet_.video_header.codecHeader.VP9.flexible_mode = false;
+    packet_.video_header.codecHeader.VP9.gof_idx = 0;
+    packet_.video_header.codecHeader.VP9.temporal_idx = kNoTemporalIdx;
+    packet_.video_header.codecHeader.VP9.temporal_up_switch = false;
+    packet_.video_header.codecHeader.VP9.ss_data_available = true;
+    packet_.video_header.codecHeader.VP9.gof.SetGofInfoVP9(
         kTemporalStructureMode3);  // kTemporalStructureMode3: 0-2-1-2..
   }
 
@@ -62,7 +62,7 @@ TEST_F(Vp9SsMapTest, Insert) {
 }
 
 TEST_F(Vp9SsMapTest, Insert_NoSsData) {
-  packet_.codecSpecificHeader.codecHeader.VP9.ss_data_available = false;
+  packet_.video_header.codecHeader.VP9.ss_data_available = false;
   EXPECT_FALSE(map_.Insert(packet_));
 }
 
@@ -139,53 +139,53 @@ TEST_F(Vp9SsMapTest, RemoveOld_WithWrap) {
 }
 
 TEST_F(Vp9SsMapTest, UpdatePacket_NoSsData) {
-  packet_.codecSpecificHeader.codecHeader.VP9.gof_idx = 0;
+  packet_.video_header.codecHeader.VP9.gof_idx = 0;
   EXPECT_FALSE(map_.UpdatePacket(&packet_));
 }
 
 TEST_F(Vp9SsMapTest, UpdatePacket_NoGofIdx) {
   EXPECT_TRUE(map_.Insert(packet_));
-  packet_.codecSpecificHeader.codecHeader.VP9.gof_idx = kNoGofIdx;
+  packet_.video_header.codecHeader.VP9.gof_idx = kNoGofIdx;
   EXPECT_FALSE(map_.UpdatePacket(&packet_));
 }
 
 TEST_F(Vp9SsMapTest, UpdatePacket_InvalidGofIdx) {
   EXPECT_TRUE(map_.Insert(packet_));
-  packet_.codecSpecificHeader.codecHeader.VP9.gof_idx = 4;
+  packet_.video_header.codecHeader.VP9.gof_idx = 4;
   EXPECT_FALSE(map_.UpdatePacket(&packet_));
 }
 
 TEST_F(Vp9SsMapTest, UpdatePacket) {
   EXPECT_TRUE(map_.Insert(packet_));  // kTemporalStructureMode3: 0-2-1-2..
 
-  packet_.codecSpecificHeader.codecHeader.VP9.gof_idx = 0;
+  packet_.video_header.codecHeader.VP9.gof_idx = 0;
   EXPECT_TRUE(map_.UpdatePacket(&packet_));
-  EXPECT_EQ(0, packet_.codecSpecificHeader.codecHeader.VP9.temporal_idx);
-  EXPECT_FALSE(packet_.codecSpecificHeader.codecHeader.VP9.temporal_up_switch);
-  EXPECT_EQ(1U, packet_.codecSpecificHeader.codecHeader.VP9.num_ref_pics);
-  EXPECT_EQ(4, packet_.codecSpecificHeader.codecHeader.VP9.pid_diff[0]);
+  EXPECT_EQ(0, packet_.video_header.codecHeader.VP9.temporal_idx);
+  EXPECT_FALSE(packet_.video_header.codecHeader.VP9.temporal_up_switch);
+  EXPECT_EQ(1U, packet_.video_header.codecHeader.VP9.num_ref_pics);
+  EXPECT_EQ(4, packet_.video_header.codecHeader.VP9.pid_diff[0]);
 
-  packet_.codecSpecificHeader.codecHeader.VP9.gof_idx = 1;
+  packet_.video_header.codecHeader.VP9.gof_idx = 1;
   EXPECT_TRUE(map_.UpdatePacket(&packet_));
-  EXPECT_EQ(2, packet_.codecSpecificHeader.codecHeader.VP9.temporal_idx);
-  EXPECT_TRUE(packet_.codecSpecificHeader.codecHeader.VP9.temporal_up_switch);
-  EXPECT_EQ(1U, packet_.codecSpecificHeader.codecHeader.VP9.num_ref_pics);
-  EXPECT_EQ(1, packet_.codecSpecificHeader.codecHeader.VP9.pid_diff[0]);
+  EXPECT_EQ(2, packet_.video_header.codecHeader.VP9.temporal_idx);
+  EXPECT_TRUE(packet_.video_header.codecHeader.VP9.temporal_up_switch);
+  EXPECT_EQ(1U, packet_.video_header.codecHeader.VP9.num_ref_pics);
+  EXPECT_EQ(1, packet_.video_header.codecHeader.VP9.pid_diff[0]);
 
-  packet_.codecSpecificHeader.codecHeader.VP9.gof_idx = 2;
+  packet_.video_header.codecHeader.VP9.gof_idx = 2;
   EXPECT_TRUE(map_.UpdatePacket(&packet_));
-  EXPECT_EQ(1, packet_.codecSpecificHeader.codecHeader.VP9.temporal_idx);
-  EXPECT_TRUE(packet_.codecSpecificHeader.codecHeader.VP9.temporal_up_switch);
-  EXPECT_EQ(1U, packet_.codecSpecificHeader.codecHeader.VP9.num_ref_pics);
-  EXPECT_EQ(2, packet_.codecSpecificHeader.codecHeader.VP9.pid_diff[0]);
+  EXPECT_EQ(1, packet_.video_header.codecHeader.VP9.temporal_idx);
+  EXPECT_TRUE(packet_.video_header.codecHeader.VP9.temporal_up_switch);
+  EXPECT_EQ(1U, packet_.video_header.codecHeader.VP9.num_ref_pics);
+  EXPECT_EQ(2, packet_.video_header.codecHeader.VP9.pid_diff[0]);
 
-  packet_.codecSpecificHeader.codecHeader.VP9.gof_idx = 3;
+  packet_.video_header.codecHeader.VP9.gof_idx = 3;
   EXPECT_TRUE(map_.UpdatePacket(&packet_));
-  EXPECT_EQ(2, packet_.codecSpecificHeader.codecHeader.VP9.temporal_idx);
-  EXPECT_FALSE(packet_.codecSpecificHeader.codecHeader.VP9.temporal_up_switch);
-  EXPECT_EQ(2U, packet_.codecSpecificHeader.codecHeader.VP9.num_ref_pics);
-  EXPECT_EQ(1, packet_.codecSpecificHeader.codecHeader.VP9.pid_diff[0]);
-  EXPECT_EQ(2, packet_.codecSpecificHeader.codecHeader.VP9.pid_diff[1]);
+  EXPECT_EQ(2, packet_.video_header.codecHeader.VP9.temporal_idx);
+  EXPECT_FALSE(packet_.video_header.codecHeader.VP9.temporal_up_switch);
+  EXPECT_EQ(2U, packet_.video_header.codecHeader.VP9.num_ref_pics);
+  EXPECT_EQ(1, packet_.video_header.codecHeader.VP9.pid_diff[0]);
+  EXPECT_EQ(2, packet_.video_header.codecHeader.VP9.pid_diff[1]);
 }
 
 class ProcessThreadMock : public ProcessThread {
@@ -246,12 +246,10 @@ class TestBasicJitterBuffer : public ::testing::TestWithParam<std::string>,
   }
 
   VCMEncodedFrame* DecodeCompleteFrame() {
-    uint32_t timestamp = 0;
-    bool found_frame = jitter_buffer_->NextCompleteTimestamp(10, &timestamp);
+    VCMEncodedFrame* found_frame = jitter_buffer_->NextCompleteFrame(10);
     if (!found_frame)
-      return NULL;
-    VCMEncodedFrame* frame = jitter_buffer_->ExtractAndSetDecode(timestamp);
-    return frame;
+      return nullptr;
+    return jitter_buffer_->ExtractAndSetDecode(found_frame->TimeStamp());
   }
 
   VCMEncodedFrame* DecodeIncompleteFrame() {
@@ -409,12 +407,12 @@ class TestRunningJitterBuffer : public ::testing::TestWithParam<std::string>,
   }
 
   bool DecodeCompleteFrame() {
-    uint32_t timestamp = 0;
-    bool found_frame = jitter_buffer_->NextCompleteTimestamp(0, &timestamp);
+    VCMEncodedFrame* found_frame = jitter_buffer_->NextCompleteFrame(0);
     if (!found_frame)
       return false;
 
-    VCMEncodedFrame* frame = jitter_buffer_->ExtractAndSetDecode(timestamp);
+    VCMEncodedFrame* frame =
+        jitter_buffer_->ExtractAndSetDecode(found_frame->TimeStamp());
     bool ret = (frame != NULL);
     jitter_buffer_->ReleaseFrame(frame);
     return ret;
@@ -932,23 +930,23 @@ TEST_P(TestBasicJitterBuffer, TestSkipForwardVp9) {
 
   bool re = false;
   packet_->codec = kVideoCodecVP9;
-  packet_->codecSpecificHeader.codec = kRtpVideoVp9;
+  packet_->video_header.codec = kRtpVideoVp9;
   packet_->isFirstPacket = true;
   packet_->markerBit = true;
-  packet_->codecSpecificHeader.codecHeader.VP9.flexible_mode = false;
-  packet_->codecSpecificHeader.codecHeader.VP9.spatial_idx = 0;
-  packet_->codecSpecificHeader.codecHeader.VP9.beginning_of_frame = true;
-  packet_->codecSpecificHeader.codecHeader.VP9.end_of_frame = true;
-  packet_->codecSpecificHeader.codecHeader.VP9.temporal_up_switch = false;
+  packet_->video_header.codecHeader.VP9.flexible_mode = false;
+  packet_->video_header.codecHeader.VP9.spatial_idx = 0;
+  packet_->video_header.codecHeader.VP9.beginning_of_frame = true;
+  packet_->video_header.codecHeader.VP9.end_of_frame = true;
+  packet_->video_header.codecHeader.VP9.temporal_up_switch = false;
 
   packet_->seqNum = 65485;
   packet_->timestamp = 1000;
   packet_->frameType = kVideoFrameKey;
-  packet_->codecSpecificHeader.codecHeader.VP9.picture_id = 5;
-  packet_->codecSpecificHeader.codecHeader.VP9.tl0_pic_idx = 200;
-  packet_->codecSpecificHeader.codecHeader.VP9.temporal_idx = 0;
-  packet_->codecSpecificHeader.codecHeader.VP9.ss_data_available = true;
-  packet_->codecSpecificHeader.codecHeader.VP9.gof.SetGofInfoVP9(
+  packet_->video_header.codecHeader.VP9.picture_id = 5;
+  packet_->video_header.codecHeader.VP9.tl0_pic_idx = 200;
+  packet_->video_header.codecHeader.VP9.temporal_idx = 0;
+  packet_->video_header.codecHeader.VP9.ss_data_available = true;
+  packet_->video_header.codecHeader.VP9.gof.SetGofInfoVP9(
       kTemporalStructureMode3);  // kTemporalStructureMode3: 0-2-1-2..
   EXPECT_EQ(kCompleteSession, jitter_buffer_->InsertPacket(*packet_, &re));
 
@@ -956,10 +954,10 @@ TEST_P(TestBasicJitterBuffer, TestSkipForwardVp9) {
   packet_->seqNum = 65489;
   packet_->timestamp = 13000;
   packet_->frameType = kVideoFrameDelta;
-  packet_->codecSpecificHeader.codecHeader.VP9.picture_id = 9;
-  packet_->codecSpecificHeader.codecHeader.VP9.tl0_pic_idx = 201;
-  packet_->codecSpecificHeader.codecHeader.VP9.temporal_idx = 0;
-  packet_->codecSpecificHeader.codecHeader.VP9.ss_data_available = false;
+  packet_->video_header.codecHeader.VP9.picture_id = 9;
+  packet_->video_header.codecHeader.VP9.tl0_pic_idx = 201;
+  packet_->video_header.codecHeader.VP9.temporal_idx = 0;
+  packet_->video_header.codecHeader.VP9.ss_data_available = false;
   EXPECT_EQ(kCompleteSession, jitter_buffer_->InsertPacket(*packet_, &re));
 
   VCMEncodedFrame* frame_out = DecodeCompleteFrame();
@@ -985,29 +983,29 @@ TEST_P(TestBasicJitterBuffer, ReorderedVp9SsData_3TlLayers) {
 
   bool re = false;
   packet_->codec = kVideoCodecVP9;
-  packet_->codecSpecificHeader.codec = kRtpVideoVp9;
+  packet_->video_header.codec = kRtpVideoVp9;
   packet_->isFirstPacket = true;
   packet_->markerBit = true;
-  packet_->codecSpecificHeader.codecHeader.VP9.flexible_mode = false;
-  packet_->codecSpecificHeader.codecHeader.VP9.spatial_idx = 0;
-  packet_->codecSpecificHeader.codecHeader.VP9.beginning_of_frame = true;
-  packet_->codecSpecificHeader.codecHeader.VP9.end_of_frame = true;
-  packet_->codecSpecificHeader.codecHeader.VP9.tl0_pic_idx = 200;
+  packet_->video_header.codecHeader.VP9.flexible_mode = false;
+  packet_->video_header.codecHeader.VP9.spatial_idx = 0;
+  packet_->video_header.codecHeader.VP9.beginning_of_frame = true;
+  packet_->video_header.codecHeader.VP9.end_of_frame = true;
+  packet_->video_header.codecHeader.VP9.tl0_pic_idx = 200;
 
   packet_->seqNum = 65486;
   packet_->timestamp = 6000;
   packet_->frameType = kVideoFrameDelta;
-  packet_->codecSpecificHeader.codecHeader.VP9.picture_id = 6;
-  packet_->codecSpecificHeader.codecHeader.VP9.temporal_idx = 2;
-  packet_->codecSpecificHeader.codecHeader.VP9.temporal_up_switch = true;
+  packet_->video_header.codecHeader.VP9.picture_id = 6;
+  packet_->video_header.codecHeader.VP9.temporal_idx = 2;
+  packet_->video_header.codecHeader.VP9.temporal_up_switch = true;
   EXPECT_EQ(kCompleteSession, jitter_buffer_->InsertPacket(*packet_, &re));
 
   packet_->seqNum = 65487;
   packet_->timestamp = 9000;
   packet_->frameType = kVideoFrameDelta;
-  packet_->codecSpecificHeader.codecHeader.VP9.picture_id = 7;
-  packet_->codecSpecificHeader.codecHeader.VP9.temporal_idx = 1;
-  packet_->codecSpecificHeader.codecHeader.VP9.temporal_up_switch = true;
+  packet_->video_header.codecHeader.VP9.picture_id = 7;
+  packet_->video_header.codecHeader.VP9.temporal_idx = 1;
+  packet_->video_header.codecHeader.VP9.temporal_up_switch = true;
   EXPECT_EQ(kCompleteSession, jitter_buffer_->InsertPacket(*packet_, &re));
 
   // Insert first frame with SS data.
@@ -1016,11 +1014,11 @@ TEST_P(TestBasicJitterBuffer, ReorderedVp9SsData_3TlLayers) {
   packet_->frameType = kVideoFrameKey;
   packet_->width = 352;
   packet_->height = 288;
-  packet_->codecSpecificHeader.codecHeader.VP9.picture_id = 5;
-  packet_->codecSpecificHeader.codecHeader.VP9.temporal_idx = 0;
-  packet_->codecSpecificHeader.codecHeader.VP9.temporal_up_switch = false;
-  packet_->codecSpecificHeader.codecHeader.VP9.ss_data_available = true;
-  packet_->codecSpecificHeader.codecHeader.VP9.gof.SetGofInfoVP9(
+  packet_->video_header.codecHeader.VP9.picture_id = 5;
+  packet_->video_header.codecHeader.VP9.temporal_idx = 0;
+  packet_->video_header.codecHeader.VP9.temporal_up_switch = false;
+  packet_->video_header.codecHeader.VP9.ss_data_available = true;
+  packet_->video_header.codecHeader.VP9.gof.SetGofInfoVP9(
       kTemporalStructureMode3);  // kTemporalStructureMode3: 0-2-1-2..
   EXPECT_EQ(kCompleteSession, jitter_buffer_->InsertPacket(*packet_, &re));
 
@@ -1061,31 +1059,31 @@ TEST_P(TestBasicJitterBuffer, ReorderedVp9SsData_2Tl2SLayers) {
 
   bool re = false;
   packet_->codec = kVideoCodecVP9;
-  packet_->codecSpecificHeader.codec = kRtpVideoVp9;
-  packet_->codecSpecificHeader.codecHeader.VP9.flexible_mode = false;
-  packet_->codecSpecificHeader.codecHeader.VP9.beginning_of_frame = true;
-  packet_->codecSpecificHeader.codecHeader.VP9.end_of_frame = true;
-  packet_->codecSpecificHeader.codecHeader.VP9.tl0_pic_idx = 200;
+  packet_->video_header.codec = kRtpVideoVp9;
+  packet_->video_header.codecHeader.VP9.flexible_mode = false;
+  packet_->video_header.codecHeader.VP9.beginning_of_frame = true;
+  packet_->video_header.codecHeader.VP9.end_of_frame = true;
+  packet_->video_header.codecHeader.VP9.tl0_pic_idx = 200;
 
   packet_->isFirstPacket = true;
   packet_->markerBit = false;
   packet_->seqNum = 65486;
   packet_->timestamp = 6000;
   packet_->frameType = kVideoFrameDelta;
-  packet_->codecSpecificHeader.codecHeader.VP9.spatial_idx = 0;
-  packet_->codecSpecificHeader.codecHeader.VP9.picture_id = 6;
-  packet_->codecSpecificHeader.codecHeader.VP9.temporal_idx = 1;
-  packet_->codecSpecificHeader.codecHeader.VP9.temporal_up_switch = true;
+  packet_->video_header.codecHeader.VP9.spatial_idx = 0;
+  packet_->video_header.codecHeader.VP9.picture_id = 6;
+  packet_->video_header.codecHeader.VP9.temporal_idx = 1;
+  packet_->video_header.codecHeader.VP9.temporal_up_switch = true;
   EXPECT_EQ(kIncomplete, jitter_buffer_->InsertPacket(*packet_, &re));
 
   packet_->isFirstPacket = false;
   packet_->markerBit = true;
   packet_->seqNum = 65487;
   packet_->frameType = kVideoFrameDelta;
-  packet_->codecSpecificHeader.codecHeader.VP9.spatial_idx = 1;
-  packet_->codecSpecificHeader.codecHeader.VP9.picture_id = 6;
-  packet_->codecSpecificHeader.codecHeader.VP9.temporal_idx = 1;
-  packet_->codecSpecificHeader.codecHeader.VP9.temporal_up_switch = true;
+  packet_->video_header.codecHeader.VP9.spatial_idx = 1;
+  packet_->video_header.codecHeader.VP9.picture_id = 6;
+  packet_->video_header.codecHeader.VP9.temporal_idx = 1;
+  packet_->video_header.codecHeader.VP9.temporal_up_switch = true;
   EXPECT_EQ(kCompleteSession, jitter_buffer_->InsertPacket(*packet_, &re));
 
   packet_->isFirstPacket = false;
@@ -1093,10 +1091,10 @@ TEST_P(TestBasicJitterBuffer, ReorderedVp9SsData_2Tl2SLayers) {
   packet_->seqNum = 65485;
   packet_->timestamp = 3000;
   packet_->frameType = kVideoFrameKey;
-  packet_->codecSpecificHeader.codecHeader.VP9.spatial_idx = 1;
-  packet_->codecSpecificHeader.codecHeader.VP9.picture_id = 5;
-  packet_->codecSpecificHeader.codecHeader.VP9.temporal_idx = 0;
-  packet_->codecSpecificHeader.codecHeader.VP9.temporal_up_switch = false;
+  packet_->video_header.codecHeader.VP9.spatial_idx = 1;
+  packet_->video_header.codecHeader.VP9.picture_id = 5;
+  packet_->video_header.codecHeader.VP9.temporal_idx = 0;
+  packet_->video_header.codecHeader.VP9.temporal_up_switch = false;
   EXPECT_EQ(kIncomplete, jitter_buffer_->InsertPacket(*packet_, &re));
 
   // Insert first frame with SS data.
@@ -1106,12 +1104,12 @@ TEST_P(TestBasicJitterBuffer, ReorderedVp9SsData_2Tl2SLayers) {
   packet_->frameType = kVideoFrameKey;
   packet_->width = 352;
   packet_->height = 288;
-  packet_->codecSpecificHeader.codecHeader.VP9.spatial_idx = 0;
-  packet_->codecSpecificHeader.codecHeader.VP9.picture_id = 5;
-  packet_->codecSpecificHeader.codecHeader.VP9.temporal_idx = 0;
-  packet_->codecSpecificHeader.codecHeader.VP9.temporal_up_switch = false;
-  packet_->codecSpecificHeader.codecHeader.VP9.ss_data_available = true;
-  packet_->codecSpecificHeader.codecHeader.VP9.gof.SetGofInfoVP9(
+  packet_->video_header.codecHeader.VP9.spatial_idx = 0;
+  packet_->video_header.codecHeader.VP9.picture_id = 5;
+  packet_->video_header.codecHeader.VP9.temporal_idx = 0;
+  packet_->video_header.codecHeader.VP9.temporal_up_switch = false;
+  packet_->video_header.codecHeader.VP9.ss_data_available = true;
+  packet_->video_header.codecHeader.VP9.gof.SetGofInfoVP9(
       kTemporalStructureMode2);  // kTemporalStructureMode3: 0-1-0-1..
   EXPECT_EQ(kCompleteSession, jitter_buffer_->InsertPacket(*packet_, &re));
 
@@ -1177,7 +1175,7 @@ TEST_P(TestBasicJitterBuffer, PacketLossWithSelectiveErrorsThresholdCheck) {
   EXPECT_EQ(kIncomplete,
             jitter_buffer_->InsertPacket(*packet_, &retransmitted));
   uint32_t timestamp = 0;
-  EXPECT_FALSE(jitter_buffer_->NextCompleteTimestamp(0, &timestamp));
+  EXPECT_EQ(jitter_buffer_->NextCompleteFrame(0), nullptr);
   EXPECT_FALSE(jitter_buffer_->NextMaybeIncompleteTimestamp(&timestamp));
 
   packet_->isFirstPacket = false;
@@ -1185,7 +1183,7 @@ TEST_P(TestBasicJitterBuffer, PacketLossWithSelectiveErrorsThresholdCheck) {
     packet_->seqNum++;
     EXPECT_EQ(kIncomplete,
               jitter_buffer_->InsertPacket(*packet_, &retransmitted));
-    EXPECT_FALSE(jitter_buffer_->NextCompleteTimestamp(0, &timestamp));
+    EXPECT_EQ(jitter_buffer_->NextCompleteFrame(0), nullptr);
     EXPECT_FALSE(jitter_buffer_->NextMaybeIncompleteTimestamp(&timestamp));
   }
 
@@ -1210,7 +1208,7 @@ TEST_P(TestBasicJitterBuffer, PacketLossWithSelectiveErrorsThresholdCheck) {
 
   EXPECT_EQ(kDecodableSession,
             jitter_buffer_->InsertPacket(*packet_, &retransmitted));
-  EXPECT_FALSE(jitter_buffer_->NextCompleteTimestamp(0, &timestamp));
+  EXPECT_EQ(jitter_buffer_->NextCompleteFrame(0), nullptr);
   EXPECT_FALSE(jitter_buffer_->NextMaybeIncompleteTimestamp(&timestamp));
 
   // Insert second frame
@@ -1219,7 +1217,7 @@ TEST_P(TestBasicJitterBuffer, PacketLossWithSelectiveErrorsThresholdCheck) {
 
   EXPECT_EQ(kDecodableSession,
             jitter_buffer_->InsertPacket(*packet_, &retransmitted));
-  EXPECT_FALSE(jitter_buffer_->NextCompleteTimestamp(0, &timestamp));
+  EXPECT_EQ(jitter_buffer_->NextCompleteFrame(0), nullptr);
   EXPECT_TRUE(jitter_buffer_->NextMaybeIncompleteTimestamp(&timestamp));
 
   packet_->isFirstPacket = false;
@@ -1227,14 +1225,14 @@ TEST_P(TestBasicJitterBuffer, PacketLossWithSelectiveErrorsThresholdCheck) {
     packet_->seqNum++;
     EXPECT_EQ(kDecodableSession,
               jitter_buffer_->InsertPacket(*packet_, &retransmitted));
-    EXPECT_FALSE(jitter_buffer_->NextCompleteTimestamp(0, &timestamp));
+    EXPECT_EQ(jitter_buffer_->NextCompleteFrame(0), nullptr);
     EXPECT_TRUE(jitter_buffer_->NextMaybeIncompleteTimestamp(&timestamp));
   }
 
   packet_->seqNum++;
   EXPECT_EQ(kDecodableSession,
             jitter_buffer_->InsertPacket(*packet_, &retransmitted));
-  EXPECT_FALSE(jitter_buffer_->NextCompleteTimestamp(0, &timestamp));
+  EXPECT_EQ(jitter_buffer_->NextCompleteFrame(0), nullptr);
   EXPECT_TRUE(jitter_buffer_->NextMaybeIncompleteTimestamp(&timestamp));
 
   frame_out = DecodeIncompleteFrame();
@@ -1276,7 +1274,7 @@ TEST_P(TestBasicJitterBuffer, PacketLossWithSelectiveErrorsIncompleteKey) {
   EXPECT_EQ(kIncomplete,
             jitter_buffer_->InsertPacket(*packet_, &retransmitted));
   uint32_t timestamp;
-  EXPECT_FALSE(jitter_buffer_->NextCompleteTimestamp(0, &timestamp));
+  EXPECT_EQ(jitter_buffer_->NextCompleteFrame(0), nullptr);
   EXPECT_FALSE(jitter_buffer_->NextMaybeIncompleteTimestamp(&timestamp));
 
   // Insert second frame - an incomplete key frame.
@@ -1287,7 +1285,7 @@ TEST_P(TestBasicJitterBuffer, PacketLossWithSelectiveErrorsIncompleteKey) {
 
   EXPECT_EQ(kIncomplete,
             jitter_buffer_->InsertPacket(*packet_, &retransmitted));
-  EXPECT_FALSE(jitter_buffer_->NextCompleteTimestamp(0, &timestamp));
+  EXPECT_EQ(jitter_buffer_->NextCompleteFrame(0), nullptr);
   EXPECT_FALSE(jitter_buffer_->NextMaybeIncompleteTimestamp(&timestamp));
 
   // Insert a few more packets. Make sure we're waiting for the key frame to be
@@ -1297,7 +1295,7 @@ TEST_P(TestBasicJitterBuffer, PacketLossWithSelectiveErrorsIncompleteKey) {
     packet_->seqNum++;
     EXPECT_EQ(kIncomplete,
               jitter_buffer_->InsertPacket(*packet_, &retransmitted));
-    EXPECT_FALSE(jitter_buffer_->NextCompleteTimestamp(0, &timestamp));
+    EXPECT_EQ(jitter_buffer_->NextCompleteFrame(0), nullptr);
     EXPECT_FALSE(jitter_buffer_->NextMaybeIncompleteTimestamp(&timestamp));
   }
 
@@ -1340,7 +1338,7 @@ TEST_P(TestBasicJitterBuffer, PacketLossWithSelectiveErrorsMissingFirstPacket) {
   EXPECT_EQ(kIncomplete,
             jitter_buffer_->InsertPacket(*packet_, &retransmitted));
   uint32_t timestamp;
-  EXPECT_FALSE(jitter_buffer_->NextCompleteTimestamp(0, &timestamp));
+  EXPECT_EQ(jitter_buffer_->NextCompleteFrame(0), nullptr);
   EXPECT_FALSE(jitter_buffer_->NextMaybeIncompleteTimestamp(&timestamp));
 
   // Insert second frame with the first packet missing. Make sure we're waiting
@@ -1350,14 +1348,14 @@ TEST_P(TestBasicJitterBuffer, PacketLossWithSelectiveErrorsMissingFirstPacket) {
 
   EXPECT_EQ(kIncomplete,
             jitter_buffer_->InsertPacket(*packet_, &retransmitted));
-  EXPECT_FALSE(jitter_buffer_->NextCompleteTimestamp(0, &timestamp));
+  EXPECT_EQ(jitter_buffer_->NextCompleteFrame(0), nullptr);
   EXPECT_FALSE(jitter_buffer_->NextMaybeIncompleteTimestamp(&timestamp));
 
   for (int i = 0; i < 5; ++i) {
     packet_->seqNum++;
     EXPECT_EQ(kIncomplete,
               jitter_buffer_->InsertPacket(*packet_, &retransmitted));
-    EXPECT_FALSE(jitter_buffer_->NextCompleteTimestamp(0, &timestamp));
+    EXPECT_EQ(jitter_buffer_->NextCompleteFrame(0), nullptr);
     EXPECT_FALSE(jitter_buffer_->NextMaybeIncompleteTimestamp(&timestamp));
   }
 
@@ -1366,7 +1364,7 @@ TEST_P(TestBasicJitterBuffer, PacketLossWithSelectiveErrorsMissingFirstPacket) {
   packet_->seqNum -= 6;
   EXPECT_EQ(kDecodableSession,
             jitter_buffer_->InsertPacket(*packet_, &retransmitted));
-  EXPECT_FALSE(jitter_buffer_->NextCompleteTimestamp(0, &timestamp));
+  EXPECT_EQ(jitter_buffer_->NextCompleteFrame(0), nullptr);
   EXPECT_TRUE(jitter_buffer_->NextMaybeIncompleteTimestamp(&timestamp));
 
   frame_out = DecodeIncompleteFrame();
@@ -1387,9 +1385,10 @@ TEST_P(TestBasicJitterBuffer, DiscontinuousStreamWhenDecodingWithErrors) {
   EXPECT_EQ(kCompleteSession,
             jitter_buffer_->InsertPacket(*packet_, &retransmitted));
   uint32_t next_timestamp;
-  EXPECT_TRUE(jitter_buffer_->NextCompleteTimestamp(0, &next_timestamp));
-  EXPECT_EQ(packet_->timestamp, next_timestamp);
-  VCMEncodedFrame* frame = jitter_buffer_->ExtractAndSetDecode(next_timestamp);
+  VCMEncodedFrame* frame = jitter_buffer_->NextCompleteFrame(0);
+  EXPECT_NE(frame, nullptr);
+  EXPECT_EQ(packet_->timestamp, frame->TimeStamp());
+  frame = jitter_buffer_->ExtractAndSetDecode(frame->TimeStamp());
   EXPECT_TRUE(frame != NULL);
   jitter_buffer_->ReleaseFrame(frame);
 
@@ -1413,7 +1412,7 @@ TEST_P(TestBasicJitterBuffer, DiscontinuousStreamWhenDecodingWithErrors) {
   packet_->timestamp = timestamp_;
   EXPECT_EQ(kDecodableSession,
             jitter_buffer_->InsertPacket(*packet_, &retransmitted));
-  EXPECT_FALSE(jitter_buffer_->NextCompleteTimestamp(0, &next_timestamp));
+  EXPECT_EQ(jitter_buffer_->NextCompleteFrame(0), nullptr);
   EXPECT_TRUE(jitter_buffer_->NextMaybeIncompleteTimestamp(&next_timestamp));
   EXPECT_EQ(packet_->timestamp - 33 * 90, next_timestamp);
 }

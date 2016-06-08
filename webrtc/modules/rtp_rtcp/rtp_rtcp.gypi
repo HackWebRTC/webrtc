@@ -33,6 +33,8 @@
         'source/fec_receiver_impl.h',
         'source/packet_loss_stats.cc',
         'source/packet_loss_stats.h',
+        'source/playout_delay_oracle.cc',
+        'source/playout_delay_oracle.h',
         'source/receive_statistics_impl.cc',
         'source/receive_statistics_impl.h',
         'source/remote_ntp_time_estimator.cc',

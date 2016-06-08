@@ -98,6 +98,9 @@ int32_t RTPReceiverVideo::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
         rtp_header->header.extension.videoRotation);
   }
 
+  rtp_header->type.Video.playout_delay =
+      rtp_header->header.extension.playout_delay;
+
   return data_callback_->OnReceivedPayloadData(parsed_payload.payload,
                                                parsed_payload.payload_length,
                                                rtp_header) == 0

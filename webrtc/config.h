@@ -87,6 +87,9 @@ struct RtpExtension {
   static const char* kTransportSequenceNumberUri;
   static const int kTransportSequenceNumberDefaultId;
 
+  static const char* kPlayoutDelayUri;
+  static const int kPlayoutDelayDefaultId;
+
   std::string uri;
   int id;
 };
