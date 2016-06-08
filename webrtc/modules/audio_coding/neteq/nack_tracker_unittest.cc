@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/neteq/nack.h"
+#include "webrtc/modules/audio_coding/neteq/nack_tracker.h"
 
 #include <stdint.h>
 
@@ -54,8 +54,8 @@ bool IsNackListCorrect(const std::vector<uint16_t>& nack_list,
 
 }  // namespace
 
-TEST(NackTest, EmptyListWhenNoPacketLoss) {
-  std::unique_ptr<Nack> nack(Nack::Create(kNackThreshold));
+TEST(NackTrackerTest, EmptyListWhenNoPacketLoss) {
+  std::unique_ptr<NackTracker> nack(NackTracker::Create(kNackThreshold));
   nack->UpdateSampleRate(kSampleRateHz);
 
   int seq_num = 1;
@@ -72,8 +72,8 @@ TEST(NackTest, EmptyListWhenNoPacketLoss) {
   }
 }
 
-TEST(NackTest, NoNackIfReorderWithinNackThreshold) {
-  std::unique_ptr<Nack> nack(Nack::Create(kNackThreshold));
+TEST(NackTrackerTest, NoNackIfReorderWithinNackThreshold) {
+  std::unique_ptr<NackTracker> nack(NackTracker::Create(kNackThreshold));
   nack->UpdateSampleRate(kSampleRateHz);
 
   int seq_num = 1;
@@ -96,13 +96,13 @@ TEST(NackTest, NoNackIfReorderWithinNackThreshold) {
   }
 }
 
-TEST(NackTest, LatePacketsMovedToNackThenNackListDoesNotChange) {
+TEST(NackTrackerTest, LatePacketsMovedToNackThenNackListDoesNotChange) {
   const uint16_t kSequenceNumberLostPackets[] = {2, 3, 4, 5, 6, 7, 8, 9};
   static const int kNumAllLostPackets = sizeof(kSequenceNumberLostPackets) /
                                         sizeof(kSequenceNumberLostPackets[0]);
 
   for (int k = 0; k < 2; k++) {  // Two iteration with/without wrap around.
-    std::unique_ptr<Nack> nack(Nack::Create(kNackThreshold));
+    std::unique_ptr<NackTracker> nack(NackTracker::Create(kNackThreshold));
     nack->UpdateSampleRate(kSampleRateHz);
 
     uint16_t sequence_num_lost_packets[kNumAllLostPackets];
@@ -145,13 +145,13 @@ TEST(NackTest, LatePacketsMovedToNackThenNackListDoesNotChange) {
   }
 }
 
-TEST(NackTest, ArrivedPacketsAreRemovedFromNackList) {
+TEST(NackTrackerTest, ArrivedPacketsAreRemovedFromNackList) {
   const uint16_t kSequenceNumberLostPackets[] = {2, 3, 4, 5, 6, 7, 8, 9};
   static const int kNumAllLostPackets = sizeof(kSequenceNumberLostPackets) /
                                         sizeof(kSequenceNumberLostPackets[0]);
 
   for (int k = 0; k < 2; ++k) {  // Two iteration with/without wrap around.
-    std::unique_ptr<Nack> nack(Nack::Create(kNackThreshold));
+    std::unique_ptr<NackTracker> nack(NackTracker::Create(kNackThreshold));
     nack->UpdateSampleRate(kSampleRateHz);
 
     uint16_t sequence_num_lost_packets[kNumAllLostPackets];
@@ -206,14 +206,14 @@ TEST(NackTest, ArrivedPacketsAreRemovedFromNackList) {
 
 // Assess if estimation of timestamps and time-to-play is correct. Introduce all
 // combinations that timestamps and sequence numbers might have wrap around.
-TEST(NackTest, EstimateTimestampAndTimeToPlay) {
+TEST(NackTrackerTest, EstimateTimestampAndTimeToPlay) {
   const uint16_t kLostPackets[] = {2, 3,  4,  5,  6,  7,  8,
                                    9, 10, 11, 12, 13, 14, 15};
   static const int kNumAllLostPackets =
       sizeof(kLostPackets) / sizeof(kLostPackets[0]);
 
   for (int k = 0; k < 4; ++k) {
-    std::unique_ptr<Nack> nack(Nack::Create(kNackThreshold));
+    std::unique_ptr<NackTracker> nack(NackTracker::Create(kNackThreshold));
     nack->UpdateSampleRate(kSampleRateHz);
 
     // Sequence number wrap around if |k| is 2 or 3;
@@ -250,14 +250,14 @@ TEST(NackTest, EstimateTimestampAndTimeToPlay) {
         timestamp_lost_packets[kNumAllLostPackets - 1] + kTimestampIncrement;
     nack->UpdateLastReceivedPacket(seq_num, timestamp);
 
-    Nack::NackList nack_list = nack->GetNackList();
+    NackTracker::NackList nack_list = nack->GetNackList();
     EXPECT_EQ(static_cast<size_t>(kNumAllLostPackets), nack_list.size());
 
     // Pretend the first packet is decoded.
     nack->UpdateLastDecodedPacket(first_seq_num, first_timestamp);
     nack_list = nack->GetNackList();
 
-    Nack::NackList::iterator it = nack_list.begin();
+    NackTracker::NackList::iterator it = nack_list.begin();
     while (it != nack_list.end()) {
       seq_num = it->first - seq_num_offset;
       int index = seq_num - kLostPackets[0];
@@ -281,10 +281,11 @@ TEST(NackTest, EstimateTimestampAndTimeToPlay) {
   }
 }
 
-TEST(NackTest, MissingPacketsPriorToLastDecodedRtpShouldNotBeInNackList) {
+TEST(NackTrackerTest,
+     MissingPacketsPriorToLastDecodedRtpShouldNotBeInNackList) {
   for (int m = 0; m < 2; ++m) {
     uint16_t seq_num_offset = (m == 0) ? 0 : 65531;  // Wrap around if |m| is 1.
-    std::unique_ptr<Nack> nack(Nack::Create(kNackThreshold));
+    std::unique_ptr<NackTracker> nack(NackTracker::Create(kNackThreshold));
     nack->UpdateSampleRate(kSampleRateHz);
 
     // Two consecutive packets to have a correct estimate of timestamp increase.
@@ -334,8 +335,8 @@ TEST(NackTest, MissingPacketsPriorToLastDecodedRtpShouldNotBeInNackList) {
   }
 }
 
-TEST(NackTest, Reset) {
-  std::unique_ptr<Nack> nack(Nack::Create(kNackThreshold));
+TEST(NackTrackerTest, Reset) {
+  std::unique_ptr<NackTracker> nack(NackTracker::Create(kNackThreshold));
   nack->UpdateSampleRate(kSampleRateHz);
 
   // Two consecutive packets to have a correct estimate of timestamp increase.
@@ -358,11 +359,11 @@ TEST(NackTest, Reset) {
   EXPECT_TRUE(nack_list.empty());
 }
 
-TEST(NackTest, ListSizeAppliedFromBeginning) {
+TEST(NackTrackerTest, ListSizeAppliedFromBeginning) {
   const size_t kNackListSize = 10;
   for (int m = 0; m < 2; ++m) {
     uint16_t seq_num_offset = (m == 0) ? 0 : 65525;  // Wrap around if |m| is 1.
-    std::unique_ptr<Nack> nack(Nack::Create(kNackThreshold));
+    std::unique_ptr<NackTracker> nack(NackTracker::Create(kNackThreshold));
     nack->UpdateSampleRate(kSampleRateHz);
     nack->SetMaxNackListSize(kNackListSize);
 
@@ -382,11 +383,11 @@ TEST(NackTest, ListSizeAppliedFromBeginning) {
   }
 }
 
-TEST(NackTest, ChangeOfListSizeAppliedAndOldElementsRemoved) {
+TEST(NackTrackerTest, ChangeOfListSizeAppliedAndOldElementsRemoved) {
   const size_t kNackListSize = 10;
   for (int m = 0; m < 2; ++m) {
     uint16_t seq_num_offset = (m == 0) ? 0 : 65525;  // Wrap around if |m| is 1.
-    std::unique_ptr<Nack> nack(Nack::Create(kNackThreshold));
+    std::unique_ptr<NackTracker> nack(NackTracker::Create(kNackThreshold));
     nack->UpdateSampleRate(kSampleRateHz);
 
     uint16_t seq_num = seq_num_offset;
@@ -450,9 +451,9 @@ TEST(NackTest, ChangeOfListSizeAppliedAndOldElementsRemoved) {
   }
 }
 
-TEST(NackTest, RoudTripTimeIsApplied) {
+TEST(NackTrackerTest, RoudTripTimeIsApplied) {
   const int kNackListSize = 200;
-  std::unique_ptr<Nack> nack(Nack::Create(kNackThreshold));
+  std::unique_ptr<NackTracker> nack(NackTracker::Create(kNackThreshold));
   nack->UpdateSampleRate(kSampleRateHz);
   nack->SetMaxNackListSize(kNackListSize);
 

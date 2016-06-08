@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_NACK_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_NACK_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_NACK_TRACKER_H_
+#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_NACK_TRACKER_H_
 
 #include <vector>
 #include <map>
@@ -18,8 +18,8 @@
 #include "webrtc/modules/audio_coding/include/audio_coding_module_typedefs.h"
 
 //
-// The Nack class keeps track of the lost packets, an estimate of time-to-play
-// for each packet is also given.
+// The NackTracker class keeps track of the lost packets, an estimate of
+// time-to-play for each packet is also given.
 //
 // Every time a packet is pushed into NetEq, LastReceivedPacket() has to be
 // called to update the NACK list.
@@ -34,12 +34,12 @@
 // "late." A "late" packet with sequence number K is changed to "missing" any
 // time a packet with sequence number newer than |K + NackList| is arrived.
 //
-// The Nack class has to know about the sample rate of the packets to compute
-// time-to-play. So sample rate should be set as soon as the first packet is
-// received. If there is a change in the receive codec (sender changes codec)
-// then Nack should be reset. This is because NetEQ would flush its buffer and
-// re-transmission is meaning less for old packet. Therefore, in that case,
-// after reset the sampling rate has to be updated.
+// The NackTracker class has to know about the sample rate of the packets to
+// compute time-to-play. So sample rate should be set as soon as the first
+// packet is received. If there is a change in the receive codec (sender changes
+// codec) then NackTracker should be reset. This is because NetEQ would flush
+// its buffer and re-transmission is meaning less for old packet. Therefore, in
+// that case, after reset the sampling rate has to be updated.
 //
 // Thread Safety
 // =============
@@ -48,15 +48,15 @@
 //
 namespace webrtc {
 
-class Nack {
+class NackTracker {
  public:
   // A limit for the size of the NACK list.
   static const size_t kNackListSizeLimit = 500;  // 10 seconds for 20 ms frame
                                                  // packets.
   // Factory method.
-  static Nack* Create(int nack_threshold_packets);
+  static NackTracker* Create(int nack_threshold_packets);
 
-  ~Nack();
+  ~NackTracker();
 
   // Set a maximum for the size of the NACK list. If the last received packet
   // has sequence number of N, then NACK list will not contain any element
@@ -92,7 +92,7 @@ class Nack {
 
  private:
   // This test need to access the private method GetNackList().
-  FRIEND_TEST_ALL_PREFIXES(NackTest, EstimateTimestampAndTimeToPlay);
+  FRIEND_TEST_ALL_PREFIXES(NackTrackerTest, EstimateTimestampAndTimeToPlay);
 
   struct NackElement {
     NackElement(int64_t initial_time_to_play_ms,
@@ -130,7 +130,7 @@ class Nack {
   typedef std::map<uint16_t, NackElement, NackListCompare> NackList;
 
   // Constructor.
-  explicit Nack(int nack_threshold_packets);
+  explicit NackTracker(int nack_threshold_packets);
 
   // This API is used only for testing to assess whether time-to-play is
   // computed correctly.
@@ -205,4 +205,4 @@ class Nack {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ_NACK_H_
+#endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ_NACK_TRACKER_H_

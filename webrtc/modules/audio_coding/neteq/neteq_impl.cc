@@ -35,7 +35,7 @@
 #include "webrtc/modules/audio_coding/neteq/dtmf_tone_generator.h"
 #include "webrtc/modules/audio_coding/neteq/expand.h"
 #include "webrtc/modules/audio_coding/neteq/merge.h"
-#include "webrtc/modules/audio_coding/neteq/nack.h"
+#include "webrtc/modules/audio_coding/neteq/nack_tracker.h"
 #include "webrtc/modules/audio_coding/neteq/normal.h"
 #include "webrtc/modules/audio_coding/neteq/packet_buffer.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"
@@ -476,7 +476,7 @@ void NetEqImpl::EnableNack(size_t max_nack_list_size) {
   rtc::CritScope lock(&crit_sect_);
   if (!nack_enabled_) {
     const int kNackThresholdPackets = 2;
-    nack_.reset(Nack::Create(kNackThresholdPackets));
+    nack_.reset(NackTracker::Create(kNackThresholdPackets));
     nack_enabled_ = true;
     nack_->UpdateSampleRate(fs_hz_);
   }

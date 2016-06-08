@@ -42,7 +42,7 @@ class DtmfBuffer;
 class DtmfToneGenerator;
 class Expand;
 class Merge;
-class Nack;
+class NackTracker;
 class Normal;
 class PacketBuffer;
 class PayloadSplitter;
@@ -405,7 +405,7 @@ class NetEqImpl : public webrtc::NetEq {
   const BackgroundNoiseMode background_noise_mode_ GUARDED_BY(crit_sect_);
   NetEqPlayoutMode playout_mode_ GUARDED_BY(crit_sect_);
   bool enable_fast_accelerate_ GUARDED_BY(crit_sect_);
-  std::unique_ptr<Nack> nack_ GUARDED_BY(crit_sect_);
+  std::unique_ptr<NackTracker> nack_ GUARDED_BY(crit_sect_);
   bool nack_enabled_ GUARDED_BY(crit_sect_);
   const bool enable_muted_state_ GUARDED_BY(crit_sect_);
   AudioFrame::VADActivity last_vad_activity_ GUARDED_BY(crit_sect_) =

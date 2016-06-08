@@ -200,7 +200,7 @@
             'audio_coding/neteq/dtmf_tone_generator_unittest.cc',
             'audio_coding/neteq/expand_unittest.cc',
             'audio_coding/neteq/merge_unittest.cc',
-            'audio_coding/neteq/nack_unittest.cc',
+            'audio_coding/neteq/nack_tracker_unittest.cc',
             'audio_coding/neteq/neteq_external_decoder_unittest.cc',
             'audio_coding/neteq/neteq_impl_unittest.cc',
             'audio_coding/neteq/neteq_network_stats_unittest.cc',
