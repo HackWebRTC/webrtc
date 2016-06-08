@@ -454,11 +454,22 @@ def _CommonChecks(input_api, output_api):
   # we need to have different license checks in talk/ and webrtc/ directories.
   # Instead, hand-picked checks are included below.
 
+  # .m and .mm files are ObjC files. For simplicity we will consider .h files in
+  # ObjC subdirectories ObjC headers.
+  objc_filter_list = (r'.+\.m$', r'.+\.mm$', r'.+objc\/.+\.h$')
   # Skip long-lines check for DEPS, GN and GYP files.
-  long_lines_sources = lambda x: input_api.FilterSourceFile(x,
-      black_list=(r'.+\.gyp$', r'.+\.gypi$', r'.+\.gn$', r'.+\.gni$', 'DEPS'))
+  build_file_filter_list = (r'.+\.gyp$', r'.+\.gypi$', r'.+\.gn$', r'.+\.gni$',
+      'DEPS')
+  eighty_char_sources = lambda x: input_api.FilterSourceFile(x,
+      black_list=build_file_filter_list + objc_filter_list)
+  hundred_char_sources = lambda x: input_api.FilterSourceFile(x,
+      white_list=objc_filter_list)
   results.extend(input_api.canned_checks.CheckLongLines(
-      input_api, output_api, maxlen=80, source_file_filter=long_lines_sources))
+      input_api, output_api, maxlen=80, source_file_filter=eighty_char_sources))
+  results.extend(input_api.canned_checks.CheckLongLines(
+      input_api, output_api, maxlen=100,
+      source_file_filter=hundred_char_sources))
+
   results.extend(input_api.canned_checks.CheckChangeHasNoTabs(
       input_api, output_api))
   results.extend(input_api.canned_checks.CheckChangeHasNoStrayWhitespace(
