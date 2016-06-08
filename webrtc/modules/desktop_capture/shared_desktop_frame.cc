@@ -23,7 +23,7 @@ SharedDesktopFrame::~SharedDesktopFrame() {}
 std::unique_ptr<SharedDesktopFrame> SharedDesktopFrame::Wrap(
     std::unique_ptr<DesktopFrame> desktop_frame) {
   return std::unique_ptr<SharedDesktopFrame>(
-      new SharedDesktopFrame(new Core(desktop_frame.release())));
+      new SharedDesktopFrame(new Core(std::move(desktop_frame))));
 }
 
 SharedDesktopFrame* SharedDesktopFrame::Wrap(DesktopFrame* desktop_frame) {
