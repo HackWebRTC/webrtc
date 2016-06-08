@@ -25,6 +25,8 @@
 #import <WebRTC/RTCMediaConstraints.h>
 #import <WebRTC/RTCMediaStream.h>
 #import <WebRTC/RTCMediaStreamTrack.h>
+#import <WebRTC/RTCMetrics.h>
+#import <WebRTC/RTCMetricsSampleInfo.h>
 #import <WebRTC/RTCPeerConnection.h>
 #import <WebRTC/RTCPeerConnectionFactory.h>
 #import <WebRTC/RTCRtpCodecParameters.h>
