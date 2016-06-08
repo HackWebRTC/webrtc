@@ -79,11 +79,11 @@ class PlayoutDelayOracle {
   // Data in this section is accessed on the sending/encoder thread alone.
   rtc::ThreadChecker thread_checker_;
   // Sequence number unwrapper.
-  SequenceNumberUnwrapper unwrapper_ ACCESS_ON(thread_checker_);
+  SequenceNumberUnwrapper unwrapper_ GUARDED_BY(thread_checker_);
   // Min playout delay value on the next frame if |send_playout_delay_| is set.
-  int min_playout_delay_ms_ ACCESS_ON(thread_checker_);
+  int min_playout_delay_ms_ GUARDED_BY(thread_checker_);
   // Max playout delay value on the next frame if |send_playout_delay_| is set.
-  int max_playout_delay_ms_ ACCESS_ON(thread_checker_);
+  int max_playout_delay_ms_ GUARDED_BY(thread_checker_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(PlayoutDelayOracle);
 };
