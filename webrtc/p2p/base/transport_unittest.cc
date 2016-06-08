@@ -97,8 +97,13 @@ TEST_F(TransportTest, TestIceCredentialsChanged) {
   EXPECT_FALSE(cricket::IceCredentialsChanged("u1", "p1", "u1", "p1"));
 }
 
-// This test verifies that the callee's ICE role changes from controlled to
-// controlling when the callee triggers an ICE restart.
+// This test verifies that the callee's ICE role remains the same when the
+// callee triggers an ICE restart.
+//
+// RFC5245 currently says that the role *should* change on an ICE restart,
+// but this rule was intended for an ICE restart that occurs when an endpoint
+// is changing to ICE lite (which we already handle). See discussion here:
+// https://mailarchive.ietf.org/arch/msg/ice/C0_QRCTNcwtvUF12y28jQicPR10
 TEST_F(TransportTest, TestIceControlledToControllingOnIceRestart) {
   EXPECT_TRUE(SetupChannel());
   transport_->SetIceRole(cricket::ICEROLE_CONTROLLED);
@@ -116,12 +121,17 @@ TEST_F(TransportTest, TestIceControlledToControllingOnIceRestart) {
   ASSERT_TRUE(transport_->SetLocalTransportDescription(new_local_desc,
                                                        cricket::CA_OFFER,
                                                        NULL));
-  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, transport_->ice_role());
-  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, channel_->GetIceRole());
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLED, transport_->ice_role());
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLED, channel_->GetIceRole());
 }
 
-// This test verifies that the caller's ICE role changes from controlling to
-// controlled when the callee triggers an ICE restart.
+// This test verifies that the caller's ICE role remains the same when the
+// callee triggers an ICE restart.
+//
+// RFC5245 currently says that the role *should* change on an ICE restart,
+// but this rule was intended for an ICE restart that occurs when an endpoint
+// is changing to ICE lite (which we already handle). See discussion here:
+// https://mailarchive.ietf.org/arch/msg/ice/C0_QRCTNcwtvUF12y28jQicPR10
 TEST_F(TransportTest, TestIceControllingToControlledOnIceRestart) {
   EXPECT_TRUE(SetupChannel());
   transport_->SetIceRole(cricket::ICEROLE_CONTROLLING);
@@ -139,8 +149,8 @@ TEST_F(TransportTest, TestIceControllingToControlledOnIceRestart) {
   ASSERT_TRUE(transport_->SetLocalTransportDescription(new_local_desc,
                                                        cricket::CA_ANSWER,
                                                        NULL));
-  EXPECT_EQ(cricket::ICEROLE_CONTROLLED, transport_->ice_role());
-  EXPECT_EQ(cricket::ICEROLE_CONTROLLED, channel_->GetIceRole());
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, transport_->ice_role());
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, channel_->GetIceRole());
 }
 
 // This test verifies that the caller's ICE role is still controlling after the

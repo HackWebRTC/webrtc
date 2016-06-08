@@ -58,12 +58,6 @@ bool IceCredentialsChanged(const std::string& old_ufrag,
   return (old_ufrag != new_ufrag) || (old_pwd != new_pwd);
 }
 
-static bool IceCredentialsChanged(const TransportDescription& old_desc,
-                                  const TransportDescription& new_desc) {
-  return IceCredentialsChanged(old_desc.ice_ufrag, old_desc.ice_pwd,
-                               new_desc.ice_ufrag, new_desc.ice_pwd);
-}
-
 Transport::Transport(const std::string& name, PortAllocator* allocator)
     : name_(name), allocator_(allocator) {}
 
@@ -103,16 +97,6 @@ bool Transport::SetLocalTransportDescription(
   if (!VerifyIceParams(description)) {
     return BadTransportDescription("Invalid ice-ufrag or ice-pwd length",
                                    error_desc);
-  }
-
-  if (local_description_ &&
-      IceCredentialsChanged(*local_description_, description)) {
-    IceRole new_ice_role =
-        (action == CA_OFFER) ? ICEROLE_CONTROLLING : ICEROLE_CONTROLLED;
-
-    // It must be called before ApplyLocalTransportDescription, which may
-    // trigger an ICE restart and depends on the new ICE role.
-    SetIceRole(new_ice_role);
   }
 
   local_description_.reset(new TransportDescription(description));
