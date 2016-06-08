@@ -8,6 +8,7 @@
 
 import("//build/config/arm.gni")
 import("../build/webrtc.gni")
+import("//testing/test.gni")
 
 config("common_audio_config") {
   include_dirs = [
@@ -245,6 +246,69 @@ if (rtc_build_with_neon) {
       # Suppress warnings from Chrome's Clang plugins.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
       configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+}
+
+if (rtc_include_tests) {
+  test("common_audio_unittests") {
+    testonly = true
+
+    sources = [
+      "audio_converter_unittest.cc",
+      "audio_ring_buffer_unittest.cc",
+      "audio_util_unittest.cc",
+      "blocker_unittest.cc",
+      "fir_filter_unittest.cc",
+      "lapped_transform_unittest.cc",
+      "real_fourier_unittest.cc",
+      "resampler/push_resampler_unittest.cc",
+      "resampler/push_sinc_resampler_unittest.cc",
+      "resampler/resampler_unittest.cc",
+      "resampler/sinusoidal_linear_chirp_source.cc",
+      "resampler/sinusoidal_linear_chirp_source.h",
+      "ring_buffer_unittest.cc",
+      "signal_processing/real_fft_unittest.cc",
+      "signal_processing/signal_processing_unittest.cc",
+      "sparse_fir_filter_unittest.cc",
+      "vad/vad_core_unittest.cc",
+      "vad/vad_filterbank_unittest.cc",
+      "vad/vad_gmm_unittest.cc",
+      "vad/vad_sp_unittest.cc",
+      "vad/vad_unittest.cc",
+      "vad/vad_unittest.h",
+      "wav_file_unittest.cc",
+      "wav_header_unittest.cc",
+      "window_generator_unittest.cc",
+    ]
+
+    # Does not compile on iOS for arm: webrtc:5544.
+    if (!is_ios || target_cpu != "arm" || target_cpu != "arm64") {
+      sources += [ "resampler/sinc_resampler_unittest.cc" ]
+    }
+
+    configs += [ "..:common_config" ]
+    public_configs = [ "..:common_inherited_config" ]
+
+    if (rtc_use_openmax_dl) {
+      defines = [ "RTC_USE_OPENMAX_DL" ]
+    }
+
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    deps = [
+      ":common_audio",
+      "../test:test_support_main",
+      "//testing/gmock",
+      "//testing/gtest",
+    ]
+
+    if (is_android) {
+      deps += [ "//testing/android/native_test:native_test_support" ]
     }
   }
 }
