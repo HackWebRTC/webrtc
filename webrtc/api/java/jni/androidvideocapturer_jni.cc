@@ -261,6 +261,7 @@ void AndroidVideoCapturerJni::OnTextureFrame(int width,
   rtc::CritScope cs(&capturer_lock_);
   if (!capturer_) {
     LOG(LS_WARNING) << "OnTextureFrame() called for closed capturer.";
+    surface_texture_helper_->ReturnTextureFrame();
     return;
   }
   int adapted_width;
