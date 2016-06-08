@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/audio_processing/agc/histogram.h"
+#include "webrtc/modules/audio_processing/agc/loudness_histogram.h"
 #include "webrtc/modules/audio_processing/agc/utility.h"
 #include "webrtc/modules/include/module_common_types.h"
 
@@ -33,9 +33,8 @@ const double kActivityThreshold = 0.3;
 Agc::Agc()
     : target_level_loudness_(Dbfs2Loudness(kDefaultLevelDbfs)),
       target_level_dbfs_(kDefaultLevelDbfs),
-      histogram_(Histogram::Create(kNumAnalysisFrames)),
-      inactive_histogram_(Histogram::Create()) {
-  }
+      histogram_(LoudnessHistogram::Create(kNumAnalysisFrames)),
+      inactive_histogram_(LoudnessHistogram::Create()) {}
 
 Agc::~Agc() {}
 

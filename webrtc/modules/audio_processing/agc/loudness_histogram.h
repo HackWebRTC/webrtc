@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_HISTOGRAM_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_HISTOGRAM_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_LOUDNESS_HISTOGRAM_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_LOUDNESS_HISTOGRAM_H_
 
 #include <string.h>
 
@@ -21,15 +21,15 @@ namespace webrtc {
 
 // This class implements the histogram of loudness with circular buffers so that
 // the histogram tracks the last T seconds of the loudness.
-class Histogram {
+class LoudnessHistogram {
  public:
-  // Create a non-sliding Histogram.
-  static Histogram* Create();
+  // Create a non-sliding LoudnessHistogram.
+  static LoudnessHistogram* Create();
 
-  // Create a sliding Histogram, i.e. the histogram represents the last
+  // Create a sliding LoudnessHistogram, i.e. the histogram represents the last
   // |window_size| samples.
-  static Histogram* Create(int window_size);
-  ~Histogram();
+  static LoudnessHistogram* Create(int window_size);
+  ~LoudnessHistogram();
 
   // Insert RMS and the corresponding activity probability.
   void Update(double rms, double activity_probability);
@@ -48,8 +48,8 @@ class Histogram {
   int num_updates() const { return num_updates_; }
 
  private:
-  Histogram();
-  explicit Histogram(int window);
+  LoudnessHistogram();
+  explicit LoudnessHistogram(int window);
 
   // Find the histogram bin associated with the given |rms|.
   int GetBinIndex(double rms);
@@ -68,9 +68,9 @@ class Histogram {
   // |bin_count_q10_|.
   int64_t audio_content_q10_;
 
-  // Histogram of input RMS in Q10 with |kHistSize_| bins. In each 'Update(),'
-  // we increment the associated histogram-bin with the given probability. The
-  // increment is implemented in Q10 to avoid rounding errors.
+  // LoudnessHistogram of input RMS in Q10 with |kHistSize_| bins. In each
+  // 'Update(),' we increment the associated histogram-bin with the given
+  // probability. The increment is implemented in Q10 to avoid rounding errors.
   int64_t bin_count_q10_[kHistSize];
 
   // Circular buffer for probabilities
@@ -89,4 +89,4 @@ class Histogram {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AGC_HISTOGRAM_H_
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AGC_LOUDNESS_HISTOGRAM_H_

@@ -236,7 +236,7 @@
             'audio_processing/agc/agc_manager_direct_unittest.cc',
             # TODO(ajm): Fix to match new interface.
             # 'audio_processing/agc/agc_unittest.cc',
-            'audio_processing/agc/histogram_unittest.cc',
+            'audio_processing/agc/loudness_histogram_unittest.cc',
             'audio_processing/agc/mock_agc.h',
             'audio_processing/beamformer/array_util_unittest.cc',
             'audio_processing/beamformer/complex_matrix_unittest.cc',

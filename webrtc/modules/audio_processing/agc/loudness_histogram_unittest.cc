@@ -10,9 +10,10 @@
 
 // Use CreateHistUnittestFile.m to generate the input file.
 
-#include "webrtc/modules/audio_processing/agc/histogram.h"
+#include "webrtc/modules/audio_processing/agc/loudness_histogram.h"
 
 #include <stdio.h>
+#include <algorithm>
 #include <cmath>
 #include <memory>
 
@@ -31,31 +32,31 @@ struct InputOutput {
 
 const double kRelativeErrTol = 1e-10;
 
-class HistogramTest : public ::testing::Test {
+class LoudnessHistogramTest : public ::testing::Test {
  protected:
-  void RunTest(bool enable_circular_buff,
-               const char* filename);
+  void RunTest(bool enable_circular_buff, const char* filename);
 
  private:
   void TestClean();
-  std::unique_ptr<Histogram> hist_;
+  std::unique_ptr<LoudnessHistogram> hist_;
 };
 
-void HistogramTest::TestClean() {
+void LoudnessHistogramTest::TestClean() {
   EXPECT_EQ(hist_->CurrentRms(), 7.59621091765857e-02);
   EXPECT_EQ(hist_->AudioContent(), 0);
   EXPECT_EQ(hist_->num_updates(), 0);
 }
 
-void HistogramTest::RunTest(bool enable_circular_buff, const char* filename) {
+void LoudnessHistogramTest::RunTest(bool enable_circular_buff,
+                                    const char* filename) {
   FILE* in_file = fopen(filename, "rb");
   ASSERT_TRUE(in_file != NULL);
   if (enable_circular_buff) {
     int buffer_size;
     EXPECT_EQ(fread(&buffer_size, sizeof(buffer_size), 1, in_file), 1u);
-    hist_.reset(Histogram::Create(buffer_size));
+    hist_.reset(LoudnessHistogram::Create(buffer_size));
   } else {
-    hist_.reset(Histogram::Create());
+    hist_.reset(LoudnessHistogram::Create());
   }
   TestClean();
 
@@ -78,28 +79,28 @@ void HistogramTest::RunTest(bool enable_circular_buff, const char* filename) {
     EXPECT_EQ(hist_->num_updates(), num_updates);
     double audio_content = hist_->AudioContent();
 
-    double abs_err = std::min(audio_content, io.audio_content) *
-        kRelativeErrTol;
+    double abs_err =
+        std::min(audio_content, io.audio_content) * kRelativeErrTol;
 
     ASSERT_NEAR(audio_content, io.audio_content, abs_err);
     double current_loudness = Linear2Loudness(hist_->CurrentRms());
-    abs_err = std::min(fabs(current_loudness), fabs(io.loudness)) *
-        kRelativeErrTol;
+    abs_err =
+        std::min(fabs(current_loudness), fabs(io.loudness)) * kRelativeErrTol;
     ASSERT_NEAR(current_loudness, io.loudness, abs_err);
   }
   fclose(in_file);
 }
 
-TEST_F(HistogramTest, ActiveCircularBuffer) {
-  RunTest(true,
-          test::ResourcePath("audio_processing/agc/agc_with_circular_buffer",
-                             "dat").c_str());
+TEST_F(LoudnessHistogramTest, ActiveCircularBuffer) {
+  RunTest(true, test::ResourcePath(
+                    "audio_processing/agc/agc_with_circular_buffer", "dat")
+                    .c_str());
 }
 
-TEST_F(HistogramTest, InactiveCircularBuffer) {
-  RunTest(false,
-          test::ResourcePath("audio_processing/agc/agc_no_circular_buffer",
-                             "dat").c_str());
+TEST_F(LoudnessHistogramTest, InactiveCircularBuffer) {
+  RunTest(false, test::ResourcePath(
+                     "audio_processing/agc/agc_no_circular_buffer", "dat")
+                     .c_str());
 }
 
 }  // namespace webrtc

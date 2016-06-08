@@ -19,7 +19,7 @@
 namespace webrtc {
 
 class AudioFrame;
-class Histogram;
+class LoudnessHistogram;
 
 class Agc {
  public:
@@ -49,8 +49,8 @@ class Agc {
  private:
   double target_level_loudness_;
   int target_level_dbfs_;
-  std::unique_ptr<Histogram> histogram_;
-  std::unique_ptr<Histogram> inactive_histogram_;
+  std::unique_ptr<LoudnessHistogram> histogram_;
+  std::unique_ptr<LoudnessHistogram> inactive_histogram_;
   VoiceActivityDetector vad_;
 };
 
