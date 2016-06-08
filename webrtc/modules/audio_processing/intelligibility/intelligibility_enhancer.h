@@ -112,6 +112,8 @@ class IntelligibilityEnhancer : public LappedTransform::Callback {
   float snr_;
   bool is_active_;
 
+  size_t num_chunks_;
+
   std::vector<float> noise_estimation_buffer_;
   SwapQueue<std::vector<float>, RenderQueueItemVerifier<float>>
       noise_estimation_queue_;

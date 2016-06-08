@@ -40,6 +40,7 @@ const float kRho = 0.0004f;  // Default production and interpretation SNR.
 const float kPowerNormalizationFactor = 1.f / (1 << 30);
 const float kMaxActiveSNR = 128.f;  // 21dB
 const float kMinInactiveSNR = 32.f;  // 15dB
+const size_t kGainUpdatePeriod = 10u;
 
 // Returns dot product of vectors |a| and |b| with size |length|.
 float DotProduct(const float* a, const float* b, size_t length) {
@@ -88,6 +89,7 @@ IntelligibilityEnhancer::IntelligibilityEnhancer(int sample_rate_hz,
       is_speech_(false),
       snr_(kMaxActiveSNR),
       is_active_(false),
+      num_chunks_(0u),
       noise_estimation_buffer_(num_noise_bins),
       noise_estimation_queue_(kMaxNumNoiseEstimatesToBuffer,
                               std::vector<float>(num_noise_bins),
@@ -144,7 +146,7 @@ void IntelligibilityEnhancer::ProcessAudioBlock(
     clear_power_estimator_.Step(in_block[0]);
   }
   SnrBasedEffectActivation();
-  if (is_active_) {
+  if (is_active_ && num_chunks_++ % kGainUpdatePeriod == 0) {
     MapToErbBands(clear_power_estimator_.power().data(), render_filter_bank_,
                   filtered_clear_pow_.data());
     MapToErbBands(noise_power_estimator_.power().data(), capture_filter_bank_,
