@@ -103,14 +103,13 @@ class RtcEventLogImpl final : public RtcEventLog {
                              int32_t total_packets) override;
 
  private:
+  void StoreEvent(std::unique_ptr<rtclog::Event>* event);
+
   // Message queue for passing control messages to the logging thread.
   SwapQueue<RtcEventLogHelperThread::ControlMessage> message_queue_;
 
   // Message queue for passing events to the logging thread.
   SwapQueue<std::unique_ptr<rtclog::Event> > event_queue_;
-
-  rtc::Event wake_up_;
-  rtc::Event stopped_;
 
   const Clock* const clock_;
 
@@ -165,13 +164,9 @@ RtcEventLogImpl::RtcEventLogImpl(const Clock* clock)
     // Allocate buffers for roughly one second of history.
     : message_queue_(kControlMessagesPerSecond),
       event_queue_(kEventsPerSecond),
-      wake_up_(false, false),
-      stopped_(false, false),
       clock_(clock),
       helper_thread_(&message_queue_,
                      &event_queue_,
-                     &wake_up_,
-                     &stopped_,
                      clock),
       thread_checker_() {
   thread_checker_.DetachFromThread();
@@ -201,6 +196,7 @@ bool RtcEventLogImpl::StartLogging(const std::string& file_name,
     LOG(LS_ERROR) << "Message queue full. Can't start logging.";
     return false;
   }
+  helper_thread_.SignalNewEvent();
   LOG(LS_INFO) << "Starting WebRTC event log.";
   return true;
 }
@@ -234,6 +230,7 @@ bool RtcEventLogImpl::StartLogging(rtc::PlatformFile platform_file,
     LOG(LS_ERROR) << "Message queue full. Can't start logging.";
     return false;
   }
+  helper_thread_.SignalNewEvent();
   LOG(LS_INFO) << "Starting WebRTC event log.";
   return true;
 }
@@ -255,8 +252,7 @@ void RtcEventLogImpl::StopLogging() {
     message_queue_.Clear();
   }
   LOG(LS_INFO) << "Stopping WebRTC event log.";
-  wake_up_.Set();                       // Request the output thread to wake up.
-  stopped_.Wait(rtc::Event::kForever);  // Wait for the log to stop.
+  helper_thread_.WaitForFileFinished();
 }
 
 void RtcEventLogImpl::LogVideoReceiveStreamConfig(
@@ -292,9 +288,7 @@ void RtcEventLogImpl::LogVideoReceiveStreamConfig(
     decoder->set_name(d.payload_name);
     decoder->set_payload_type(d.payload_type);
   }
-  if (!event_queue_.Insert(&event)) {
-    LOG(LS_ERROR) << "Config queue full. Not logging config event.";
-  }
+  StoreEvent(&event);
 }
 
 void RtcEventLogImpl::LogVideoSendStreamConfig(
@@ -324,9 +318,7 @@ void RtcEventLogImpl::LogVideoSendStreamConfig(
   rtclog::EncoderConfig* encoder = sender_config->mutable_encoder();
   encoder->set_name(config.encoder_settings.payload_name);
   encoder->set_payload_type(config.encoder_settings.payload_type);
-  if (!event_queue_.Insert(&event)) {
-    LOG(LS_ERROR) << "Config queue full. Not logging config event.";
-  }
+  StoreEvent(&event);
 }
 
 void RtcEventLogImpl::LogRtpHeader(PacketDirection direction,
@@ -356,9 +348,7 @@ void RtcEventLogImpl::LogRtpHeader(PacketDirection direction,
   rtp_event->mutable_rtp_packet()->set_type(ConvertMediaType(media_type));
   rtp_event->mutable_rtp_packet()->set_packet_length(packet_length);
   rtp_event->mutable_rtp_packet()->set_header(header, header_length);
-  if (!event_queue_.Insert(&rtp_event)) {
-    LOG(LS_ERROR) << "RTP queue full. Not logging RTP packet.";
-  }
+  StoreEvent(&rtp_event);
 }
 
 void RtcEventLogImpl::LogRtcpPacket(PacketDirection direction,
@@ -416,9 +406,7 @@ void RtcEventLogImpl::LogRtcpPacket(PacketDirection direction,
     block_begin += block_size;
   }
   rtcp_event->mutable_rtcp_packet()->set_packet_data(buffer, buffer_length);
-  if (!event_queue_.Insert(&rtcp_event)) {
-    LOG(LS_ERROR) << "RTCP queue full. Not logging RTCP packet.";
-  }
+  StoreEvent(&rtcp_event);
 }
 
 void RtcEventLogImpl::LogAudioPlayout(uint32_t ssrc) {
@@ -427,9 +415,7 @@ void RtcEventLogImpl::LogAudioPlayout(uint32_t ssrc) {
   event->set_type(rtclog::Event::AUDIO_PLAYOUT_EVENT);
   auto playout_event = event->mutable_audio_playout_event();
   playout_event->set_local_ssrc(ssrc);
-  if (!event_queue_.Insert(&event)) {
-    LOG(LS_ERROR) << "Playout queue full. Not logging ACM playout.";
-  }
+  StoreEvent(&event);
 }
 
 void RtcEventLogImpl::LogBwePacketLossEvent(int32_t bitrate,
@@ -442,9 +428,14 @@ void RtcEventLogImpl::LogBwePacketLossEvent(int32_t bitrate,
   bwe_event->set_bitrate(bitrate);
   bwe_event->set_fraction_loss(fraction_loss);
   bwe_event->set_total_packets(total_packets);
-  if (!event_queue_.Insert(&event)) {
-    LOG(LS_ERROR) << "BWE loss queue full. Not logging BWE update.";
+  StoreEvent(&event);
+}
+
+void RtcEventLogImpl::StoreEvent(std::unique_ptr<rtclog::Event>* event) {
+  if (!event_queue_.Insert(event)) {
+    LOG(LS_ERROR) << "WebRTC event log queue full. Dropping event.";
   }
+  helper_thread_.SignalNewEvent();
 }
 
 bool RtcEventLog::ParseRtcEventLog(const std::string& file_name,

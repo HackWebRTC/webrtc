@@ -67,22 +67,27 @@ class RtcEventLogHelperThread final {
   RtcEventLogHelperThread(
       SwapQueue<ControlMessage>* message_queue,
       SwapQueue<std::unique_ptr<rtclog::Event>>* event_queue,
-      rtc::Event* wake_up,
-      rtc::Event* file_finished,
       const Clock* const clock);
   ~RtcEventLogHelperThread();
+
+  // This function MUST be called once a STOP_FILE message is added to the
+  // signalling queue. The function will make sure that the output thread
+  // wakes up to read the message, and it blocks until the output thread has
+  // finished writing to the file.
+  void WaitForFileFinished();
+
+  // This fuction MUST be called once an event is added to the event queue.
+  void SignalNewEvent();
 
  private:
   static bool ThreadOutputFunction(void* obj);
 
-  void TerminateThread();
   bool AppendEventToString(rtclog::Event* event);
-  void AppendEventToHistory(const rtclog::Event& event);
-  void LogToMemory();
+  bool LogToMemory();
   void StartLogFile();
-  void LogToFile();
+  bool LogToFile();
   void StopLogFile();
-  void WriteLog();
+  void ProcessEvents();
 
   // Message queues for passing events to the logging thread.
   SwapQueue<ControlMessage>* message_queue_;
@@ -108,8 +113,9 @@ class RtcEventLogHelperThread final {
   // Temporary space for serializing profobuf data.
   std::string output_string_;
 
-  rtc::Event* wake_up_;
-  rtc::Event* stopped_;
+  rtc::Event wake_periodically_;
+  rtc::Event wake_from_hibernation_;
+  rtc::Event file_finished_;
 
   const Clock* const clock_;
 
