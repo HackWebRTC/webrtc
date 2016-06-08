@@ -180,9 +180,27 @@
           ],
         }],
         ['OS=="ios" or (OS=="mac" and mac_deployment_target=="10.7")', {
-          'dependencies': [
-            'sdk/sdk_tests.gyp:rtc_sdk_peerconnection_objc_tests',
+          'includes': [
+            'build/objc_common.gypi',
           ],
+          'dependencies': [
+            'sdk/sdk.gyp:rtc_sdk_peerconnection_objc',
+            'system_wrappers/system_wrappers.gyp:metrics_default',
+          ],
+          'sources': [
+            'sdk/objc/Framework/UnitTests/RTCConfigurationTest.mm',
+            'sdk/objc/Framework/UnitTests/RTCDataChannelConfigurationTest.mm',
+            'sdk/objc/Framework/UnitTests/RTCIceCandidateTest.mm',
+            'sdk/objc/Framework/UnitTests/RTCIceServerTest.mm',
+            'sdk/objc/Framework/UnitTests/RTCMediaConstraintsTest.mm',
+            'sdk/objc/Framework/UnitTests/RTCSessionDescriptionTest.mm',
+          ],
+          'xcode_settings': {
+            # |-ObjC| flag needed to make sure category method implementations
+            # are included:
+            # https://developer.apple.com/library/mac/qa/qa1490/_index.html
+            'OTHER_LDFLAGS': ['-ObjC'],
+          },
         }],
       ],
     },

@@ -127,12 +127,6 @@
             'webrtc_tests',
           ],
         }],
-        ['include_tests==1 and'
-         '(OS=="ios" or (OS=="mac" and mac_deployment_target=="10.7"))', {
-           'dependencies': [
-             'sdk/sdk_tests.gyp:*',
-           ],
-        }],
       ],
     },
     {

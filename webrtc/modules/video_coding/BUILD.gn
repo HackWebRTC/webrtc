@@ -184,12 +184,10 @@ if (is_ios) {
       "codecs/h264/h264_video_toolbox_nalu.h",
     ]
 
-    configs += [ "//build/config/compiler:enable_arc" ]
-
-    cflags = [ "-Wobjc-missing-property-synthesis" ]
-
-    precompiled_header = "../../sdk/objc/WebRTC-Prefix.pch"
-    precompiled_source = "../../sdk/objc/WebRTC-Prefix.pch"
+    configs += [
+      "../..:common_objc",
+      "//build/config/compiler:enable_arc",
+    ]
 
     deps = [
       "../../sdk:rtc_sdk_common_objc",

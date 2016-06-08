@@ -225,6 +225,13 @@ config("common_config") {
   }
 }
 
+config("common_objc") {
+  cflags = [ "-Wobjc-missing-property-synthesis" ]
+
+  precompiled_header = "sdk/objc/WebRTC-Prefix.pch"
+  precompiled_source = "sdk/objc/WebRTC-Prefix.pch"
+}
+
 source_set("webrtc") {
   sources = [
     "call.h",
@@ -568,6 +575,29 @@ if (rtc_include_tests) {
 
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_support" ]
+    }
+
+    if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
+      deps += [
+        "sdk:rtc_sdk_peerconnection_objc",
+        "system_wrappers:system_wrappers_default",
+      ]
+      sources += [
+        "sdk/objc/Framework/UnitTests/RTCConfigurationTest.mm",
+        "sdk/objc/Framework/UnitTests/RTCDataChannelConfigurationTest.mm",
+        "sdk/objc/Framework/UnitTests/RTCIceCandidateTest.mm",
+        "sdk/objc/Framework/UnitTests/RTCIceServerTest.mm",
+        "sdk/objc/Framework/UnitTests/RTCMediaConstraintsTest.mm",
+        "sdk/objc/Framework/UnitTests/RTCSessionDescriptionTest.mm",
+      ]
+
+      # TODO(tkchin): Cleanup this warning.
+      cflags = [ "-Wno-objc-property-no-attribute" ]
+
+      # |-ObjC| flag needed to make sure category method implementations
+      # are included:
+      # https://developer.apple.com/library/mac/qa/qa1490/_index.html
+      ldflags = [ "-ObjC" ]
     }
   }
 }
