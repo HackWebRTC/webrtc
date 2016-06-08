@@ -29,11 +29,12 @@ class PeerConnectionDelegateAdapter : public PeerConnectionObserver {
   void OnSignalingChange(
       PeerConnectionInterface::SignalingState new_state) override;
 
-  void OnAddStream(MediaStreamInterface *stream) override;
+  void OnAddStream(rtc::scoped_refptr<MediaStreamInterface> stream) override;
 
-  void OnRemoveStream(MediaStreamInterface *stream) override;
+  void OnRemoveStream(rtc::scoped_refptr<MediaStreamInterface> stream) override;
 
-  void OnDataChannel(DataChannelInterface *data_channel) override;
+  void OnDataChannel(
+      rtc::scoped_refptr<DataChannelInterface> data_channel) override;
 
   void OnRenegotiationNeeded() override;
 

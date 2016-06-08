@@ -126,7 +126,7 @@ void PeerConnectionDelegateAdapter::OnSignalingChange(
 }
 
 void PeerConnectionDelegateAdapter::OnAddStream(
-    MediaStreamInterface *stream) {
+    rtc::scoped_refptr<MediaStreamInterface> stream) {
   RTCMediaStream *mediaStream =
       [[RTCMediaStream alloc] initWithNativeMediaStream:stream];
   RTCPeerConnection *peer_connection = peer_connection_;
@@ -135,7 +135,7 @@ void PeerConnectionDelegateAdapter::OnAddStream(
 }
 
 void PeerConnectionDelegateAdapter::OnRemoveStream(
-    MediaStreamInterface *stream) {
+    rtc::scoped_refptr<MediaStreamInterface> stream) {
   RTCMediaStream *mediaStream =
       [[RTCMediaStream alloc] initWithNativeMediaStream:stream];
   RTCPeerConnection *peer_connection = peer_connection_;
@@ -144,7 +144,7 @@ void PeerConnectionDelegateAdapter::OnRemoveStream(
 }
 
 void PeerConnectionDelegateAdapter::OnDataChannel(
-    DataChannelInterface *data_channel) {
+    rtc::scoped_refptr<DataChannelInterface> data_channel) {
   RTCDataChannel *dataChannel =
       [[RTCDataChannel alloc] initWithNativeDataChannel:data_channel];
   RTCPeerConnection *peer_connection = peer_connection_;
