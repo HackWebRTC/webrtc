@@ -11,3 +11,5 @@ P2PTransportChannelMultihomedTest.TestDrain
 PortAllocatorTest.TestDisableAllPorts
 PortAllocatorTest.TestGetAllPortsNoUdpSockets
 PortAllocatorTest.TestGetAllPortsNoUdpSocketsNoTcpListen
+# Issue 5981
+TurnPortTest.*
