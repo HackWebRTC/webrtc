@@ -426,26 +426,24 @@ public class VideoCapturerAndroidTestFixtures {
 
   static public void startWhileCameraIsAlreadyOpenAndCloseCamera(
       VideoCapturerAndroid capturer, Context appContext) throws InterruptedException {
+    final PeerConnectionFactory factory = new PeerConnectionFactory(null /* options */);
     final List<CaptureFormat> formats = capturer.getSupportedFormats();
     final CameraEnumerationAndroid.CaptureFormat format = formats.get(0);
     android.hardware.Camera camera = android.hardware.Camera.open(capturer.getCurrentCameraId());
 
     final SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create(
         "SurfaceTextureHelper test" /* threadName */, null /* sharedContext */);
-    final FakeCapturerObserver observer = new FakeCapturerObserver();
-    capturer.startCapture(format.width, format.height, format.framerate.max,
-        surfaceTextureHelper, appContext, observer);
+    final VideoSource source = factory.createVideoSource(capturer, new MediaConstraints());
+    final VideoTrack track = factory.createVideoTrack("dummy", source);
+    final RendererCallbacks callbacks = new RendererCallbacks();
+    track.addRenderer(new VideoRenderer(callbacks));
     waitUntilIdle(capturer);
 
     camera.release();
 
     // Make sure camera is started and first frame is received and then stop it.
-    assertTrue(observer.WaitForCapturerToStart());
-    observer.WaitForNextCapturedFrame();
+    callbacks.WaitForNextFrameToRender();
     capturer.stopCapture();
-    if (capturer.isCapturingToTexture()) {
-      surfaceTextureHelper.returnTextureFrame();
-    }
     release(capturer);
     surfaceTextureHelper.dispose();
   }
