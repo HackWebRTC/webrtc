@@ -33,8 +33,11 @@ class FakeVideoRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
   virtual void OnFrame(const VideoFrame& frame) {
     rtc::CritScope cs(&crit_);
     // TODO(zhurunz) Check with VP8 team to see if we can remove this
-    // tolerance on Y values.
-    black_frame_ = CheckFrameColorYuv(6, 48, 128, 128, 128, 128, &frame);
+    // tolerance on Y values. Some unit tests produce Y values close
+    // to 16 rather than close to zero, for supposedly black frames.
+    // Largest value observed is 34, e.g., running
+    // P2PTestConductor.LocalP2PTest16To9 (peerconnection_unittests).
+    black_frame_ = CheckFrameColorYuv(0, 48, 128, 128, 128, 128, &frame);
     // Treat unexpected frame size as error.
     ++num_rendered_frames_;
     width_ = frame.width();

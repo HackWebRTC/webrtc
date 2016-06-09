@@ -91,9 +91,6 @@ class VideoFrame {
   virtual void StretchToFrame(VideoFrame *target, bool interpolate,
                               bool crop) const;
 
-  // Sets the video frame to black.
-  virtual bool SetToBlack();
-
   // Tests if sample is valid.  Returns true if valid.
   static bool Validate(uint32_t fourcc,
                        int w,

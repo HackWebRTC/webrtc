@@ -65,10 +65,18 @@ bool WebRtcVideoFrame::Init(const CapturedFrame* frame, int dw, int dh,
                frame->rotation, apply_rotation);
 }
 
+// TODO(nisse): Deprecated, delete as soon as Chrome is updated.
 bool WebRtcVideoFrame::InitToBlack(int w, int h,
                                    int64_t time_stamp_ns) {
-  InitToEmptyBuffer(w, h, time_stamp_ns);
-  return SetToBlack();
+  rtc::scoped_refptr<webrtc::I420Buffer> buffer(
+      new rtc::RefCountedObject<webrtc::I420Buffer>(w, h));
+  buffer->SetToBlack();
+
+  video_frame_buffer_ = new rtc::RefCountedObject<webrtc::I420Buffer>(w, h);
+  SetTimeStamp(time_stamp_ns);
+  rotation_ = webrtc::kVideoRotation_0;
+
+  return true;
 }
 
 int WebRtcVideoFrame::width() const {
