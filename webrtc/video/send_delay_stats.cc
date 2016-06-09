@@ -22,7 +22,7 @@ const size_t kMaxPacketMapSize = 2000;
 
 // Limit for the maximum number of streams to calculate stats for.
 const size_t kMaxSsrcMapSize = 50;
-const int kMinRequiredSamples = 200;
+const int kMinRequiredPeriodicSamples = 5;
 }  // namespace
 
 SendDelayStats::SendDelayStats(Clock* clock)
@@ -40,10 +40,10 @@ SendDelayStats::~SendDelayStats() {
 void SendDelayStats::UpdateHistograms() {
   rtc::CritScope lock(&crit_);
   for (const auto& it : send_delay_counters_) {
-    int send_delay_ms = it.second.Avg(kMinRequiredSamples);
-    if (send_delay_ms != -1) {
+    AggregatedStats stats = it.second->GetStats();
+    if (stats.num_samples >= kMinRequiredPeriodicSamples) {
       RTC_LOGGED_HISTOGRAM_COUNTS_10000("WebRTC.Video.SendDelayInMs",
-                                        send_delay_ms);
+                                        stats.average);
     }
   }
 }
@@ -54,6 +54,16 @@ void SendDelayStats::AddSsrcs(const VideoSendStream::Config& config) {
     return;
   for (const auto& ssrc : config.rtp.ssrcs)
     ssrcs_.insert(ssrc);
+}
+
+AvgCounter* SendDelayStats::GetSendDelayCounter(uint32_t ssrc) {
+  const auto& it = send_delay_counters_.find(ssrc);
+  if (it != send_delay_counters_.end())
+    return it->second.get();
+
+  AvgCounter* counter = new AvgCounter(clock_, nullptr);
+  send_delay_counters_[ssrc].reset(counter);
+  return counter;
 }
 
 void SendDelayStats::OnSendPacket(uint16_t packet_id,
@@ -88,7 +98,7 @@ bool SendDelayStats::OnSentPacket(int packet_id, int64_t time_ms) {
   // TODO(asapersson): Remove SendSideDelayUpdated(), use capture -> sent.
   // Elapsed time from send (to transport) -> sent (leaving socket).
   int diff_ms = time_ms - it->second.send_time_ms;
-  send_delay_counters_[it->second.ssrc].Add(diff_ms);
+  GetSendDelayCounter(it->second.ssrc)->Add(diff_ms);
   packets_.erase(it);
   return true;
 }
@@ -102,17 +112,6 @@ void SendDelayStats::RemoveOld(int64_t now, PacketMap* packets) {
     packets->erase(it);
     ++num_old_packets_;
   }
-}
-
-void SendDelayStats::SampleCounter::Add(int sample) {
-  sum += sample;
-  ++num_samples;
-}
-
-int SendDelayStats::SampleCounter::Avg(int min_required_samples) const {
-  if (num_samples < min_required_samples || num_samples == 0)
-    return -1;
-  return (sum + (num_samples / 2)) / num_samples;
 }
 
 }  // namespace webrtc

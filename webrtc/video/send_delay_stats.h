@@ -20,6 +20,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/video/stats_counter.h"
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {
@@ -61,20 +62,10 @@ class SendDelayStats : public SendPacketObserver {
   };
   typedef std::map<uint16_t, Packet, SequenceNumberOlderThan> PacketMap;
 
-  class SampleCounter {
-   public:
-    SampleCounter() : sum(0), num_samples(0) {}
-    ~SampleCounter() {}
-    void Add(int sample);
-    int Avg(int min_required_samples) const;
-
-   private:
-    int sum;
-    int num_samples;
-  };
-
   void UpdateHistograms();
   void RemoveOld(int64_t now, PacketMap* packets)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  AvgCounter* GetSendDelayCounter(uint32_t ssrc)
       EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   Clock* const clock_;
@@ -85,8 +76,10 @@ class SendDelayStats : public SendPacketObserver {
   size_t num_skipped_packets_ GUARDED_BY(crit_);
 
   std::set<uint32_t> ssrcs_ GUARDED_BY(crit_);
-  std::map<uint32_t, SampleCounter> send_delay_counters_
-      GUARDED_BY(crit_);  // Mapped by SSRC.
+
+  // Mapped by SSRC.
+  std::map<uint32_t, std::unique_ptr<AvgCounter>> send_delay_counters_
+      GUARDED_BY(crit_);
 };
 
 }  // namespace webrtc

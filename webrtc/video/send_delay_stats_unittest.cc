@@ -22,7 +22,8 @@ const uint32_t kRtxSsrc1 = 18;
 const uint32_t kRtxSsrc2 = 43;
 const uint16_t kPacketId = 2345;
 const int64_t kMaxPacketDelayMs = 11000;
-const int kMinRequiredSamples = 200;
+const int kMinRequiredPeriodicSamples = 5;
+const int kProcessIntervalMs = 2000;
 }  // namespace
 
 class SendDelayStatsTest : public ::testing::Test {
@@ -104,9 +105,12 @@ TEST_F(SendDelayStatsTest, OldPacketsRemoved) {
 TEST_F(SendDelayStatsTest, HistogramsAreUpdated) {
   metrics::Reset();
   const int64_t kDelayMs1 = 5;
-  const int64_t kDelayMs2 = 10;
+  const int64_t kDelayMs2 = 15;
+  const int kNumSamples = kMinRequiredPeriodicSamples * kProcessIntervalMs /
+                          (kDelayMs1 + kDelayMs2) + 1;
+
   uint16_t id = 0;
-  for (int i = 0; i < kMinRequiredSamples; ++i) {
+  for (int i = 0; i < kNumSamples; ++i) {
     OnSendPacket(++id, kSsrc1);
     clock_.AdvanceTimeMilliseconds(kDelayMs1);
     EXPECT_TRUE(OnSentPacket(id));
