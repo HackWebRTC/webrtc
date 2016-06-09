@@ -132,8 +132,8 @@ void ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec,
 int ViEEncoder::GetPaddingNeededBps() const {
   int64_t time_of_last_frame_activity_ms;
   int min_transmit_bitrate_bps;
-  int bitrate_bps;
   VideoCodec send_codec;
+  bool video_is_suspended;
   {
     rtc::CritScope lock(&data_cs_);
     bool send_padding = encoder_config_.numberOfSimulcastStreams > 1 ||
@@ -142,11 +142,9 @@ int ViEEncoder::GetPaddingNeededBps() const {
       return 0;
     time_of_last_frame_activity_ms = time_of_last_frame_activity_ms_;
     min_transmit_bitrate_bps = min_transmit_bitrate_bps_;
-    bitrate_bps = last_observed_bitrate_bps_;
     send_codec = encoder_config_;
+    video_is_suspended = video_suspended_;
   }
-
-  bool video_is_suspended = video_sender_.VideoSuspended();
 
   // Find the max amount of padding we can allow ourselves to send at this
   // point, based on which streams are currently active and what our current
@@ -178,10 +176,6 @@ int ViEEncoder::GetPaddingNeededBps() const {
   // Pad up to min bitrate.
   if (pad_up_to_bitrate_bps < min_transmit_bitrate_bps)
     pad_up_to_bitrate_bps = min_transmit_bitrate_bps;
-
-  // Padding may never exceed bitrate estimate.
-  if (pad_up_to_bitrate_bps > bitrate_bps)
-    pad_up_to_bitrate_bps = bitrate_bps;
 
   return pad_up_to_bitrate_bps;
 }
@@ -320,8 +314,8 @@ void ViEEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
                   << " rtt " << round_trip_time_ms;
   video_sender_.SetChannelParameters(bitrate_bps, fraction_lost,
                                      round_trip_time_ms);
-  bool video_is_suspended = video_sender_.VideoSuspended();
   bool video_suspension_changed;
+  bool video_is_suspended = bitrate_bps == 0;
   {
     rtc::CritScope lock(&data_cs_);
     last_observed_bitrate_bps_ = bitrate_bps;
@@ -329,13 +323,10 @@ void ViEEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
     video_suspended_ = video_is_suspended;
   }
 
-  if (!video_suspension_changed)
-    return;
-  // Video suspend-state changed, inform codec observer.
-  LOG(LS_INFO) << "Video suspend state changed " << video_is_suspended;
-
-  if (stats_proxy_)
+  if (stats_proxy_ && video_suspension_changed) {
+    LOG(LS_INFO) << "Video suspend state changed " << video_is_suspended;
     stats_proxy_->OnSuspendChange(video_is_suspended);
+  }
 }
 
 }  // namespace webrtc

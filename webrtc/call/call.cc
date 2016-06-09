@@ -10,6 +10,7 @@
 
 #include <string.h>
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <vector>
@@ -700,6 +701,10 @@ void Call::OnNetworkChanged(uint32_t target_bitrate_bps, uint8_t fraction_loss,
     pacer_bitrate_sum_kbits_ += pacer_bitrate_bps / 1000;
     ++num_bitrate_updates_;
   }
+
+  // Make sure to not ask for more padding than the current BWE allows for.
+  pad_up_to_bitrate_bps = std::min(static_cast<uint32_t>(pad_up_to_bitrate_bps),
+                                   target_bitrate_bps);
   congestion_controller_->SetAllocatedSendBitrate(allocated_bitrate_bps,
                                                   pad_up_to_bitrate_bps);
 }

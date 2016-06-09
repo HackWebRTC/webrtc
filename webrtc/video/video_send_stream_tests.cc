@@ -905,7 +905,7 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
       send_config->suspend_below_min_bitrate = true;
       int min_bitrate_bps = encoder_config->streams[0].min_bitrate_bps;
       set_low_remb_bps(min_bitrate_bps - 10000);
-      int threshold_window = std::max(min_bitrate_bps / 10, 10000);
+      int threshold_window = std::max(min_bitrate_bps / 10, 20000);
       ASSERT_GT(encoder_config->streams[0].max_bitrate_bps,
                 min_bitrate_bps + threshold_window + 5000);
       set_high_remb_bps(min_bitrate_bps + threshold_window + 5000);

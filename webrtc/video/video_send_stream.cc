@@ -560,10 +560,6 @@ void VideoSendStream::EncoderProcess() {
                               encoder_settings->min_transmit_bitrate_bps,
                               payload_router_.MaxPayloadLength());
 
-      // vie_encoder_.SetEncoder must be called before this.
-      if (config_.suspend_below_min_bitrate)
-        video_sender_->SuspendBelowMinBitrate();
-
       // Clear stats for disabled layers.
       for (size_t i = encoder_settings->streams.size();
            i < config_.rtp.ssrcs.size(); ++i) {

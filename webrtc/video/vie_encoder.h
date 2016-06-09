@@ -106,6 +106,8 @@ class ViEEncoder : public VideoEncoderRateObserver,
   virtual void OnReceivedSLI(uint8_t picture_id);
   virtual void OnReceivedRPSI(uint64_t picture_id);
 
+  // Note that this method might return a value higher than the current BWE and
+  // it's up to the caller to possibly limit the value.
   int GetPaddingNeededBps() const;
 
   void OnBitrateUpdated(uint32_t bitrate_bps,

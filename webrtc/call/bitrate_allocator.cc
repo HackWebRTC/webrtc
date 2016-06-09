@@ -24,30 +24,34 @@ namespace webrtc {
 const int kTransmissionMaxBitrateMultiplier = 2;
 const int kDefaultBitrateBps = 300000;
 
+// Require a bitrate increase of max(10%, 20kbps) to resume paused streams.
+const double kToggleFactor = 0.1;
+const uint32_t kMinToggleBitrateBps = 20000;
+
 BitrateAllocator::BitrateAllocator()
     : bitrate_observer_configs_(),
-      enforce_min_bitrate_(true),
       last_bitrate_bps_(kDefaultBitrateBps),
       last_non_zero_bitrate_bps_(kDefaultBitrateBps),
       last_fraction_loss_(0),
       last_rtt_(0) {}
 
-uint32_t BitrateAllocator::OnNetworkChanged(uint32_t bitrate,
+uint32_t BitrateAllocator::OnNetworkChanged(uint32_t target_bitrate_bps,
                                             uint8_t fraction_loss,
                                             int64_t rtt) {
   rtc::CritScope lock(&crit_sect_);
-  last_bitrate_bps_ = bitrate;
+  last_bitrate_bps_ = target_bitrate_bps;
   last_non_zero_bitrate_bps_ =
-      bitrate > 0 ? bitrate : last_non_zero_bitrate_bps_;
+      target_bitrate_bps > 0 ? target_bitrate_bps : last_non_zero_bitrate_bps_;
   last_fraction_loss_ = fraction_loss;
   last_rtt_ = rtt;
 
   uint32_t allocated_bitrate_bps = 0;
-  ObserverAllocation allocation = AllocateBitrates(bitrate);
+  ObserverAllocation allocation = AllocateBitrates(target_bitrate_bps);
   for (const auto& kv : allocation) {
     kv.first->OnBitrateUpdated(kv.second, last_fraction_loss_, last_rtt_);
     allocated_bitrate_bps += kv.second;
   }
+  last_allocation_ = allocation;
   return allocated_bitrate_bps;
 }
 
@@ -56,45 +60,33 @@ int BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
                                   uint32_t max_bitrate_bps,
                                   bool enforce_min_bitrate) {
   rtc::CritScope lock(&crit_sect_);
-  // TODO(mflodman): Enforce this per observer.
-  EnforceMinBitrate(enforce_min_bitrate);
-
   auto it = FindObserverConfig(observer);
 
-  // Allow the max bitrate to be exceeded for FEC and retransmissions.
-  // TODO(holmer): We have to get rid of this hack as it makes it difficult to
-  // properly allocate bitrate. The allocator should instead distribute any
-  // extra bitrate after all streams have maxed out.
-  max_bitrate_bps *= kTransmissionMaxBitrateMultiplier;
+  // Update settings if the observer already exists, create a new one otherwise.
   if (it != bitrate_observer_configs_.end()) {
-    // Update current configuration.
     it->min_bitrate_bps = min_bitrate_bps;
     it->max_bitrate_bps = max_bitrate_bps;
+    it->enforce_min_bitrate = enforce_min_bitrate;
   } else {
-    // Add new settings.
     bitrate_observer_configs_.push_back(ObserverConfig(
         observer, min_bitrate_bps, max_bitrate_bps, enforce_min_bitrate));
   }
 
-  int new_observer_bitrate_bps = 0;
-  if (last_bitrate_bps_ > 0) {  // We have a bitrate to allocate.
-    ObserverAllocation allocation = AllocateBitrates(last_bitrate_bps_);
-    for (auto& kv : allocation) {
-      // Update all observers with the new allocation.
+  ObserverAllocation allocation;
+  if (last_bitrate_bps_ > 0) {
+    // Calculate a new allocation and update all observers.
+    allocation = AllocateBitrates(last_bitrate_bps_);
+    for (const auto& kv : allocation)
       kv.first->OnBitrateUpdated(kv.second, last_fraction_loss_, last_rtt_);
-      if (kv.first == observer)
-        new_observer_bitrate_bps = kv.second;
-    }
   } else {
     // Currently, an encoder is not allowed to produce frames.
     // But we still have to return the initial config bitrate + let the
     // observer know that it can not produce frames.
-    ObserverAllocation allocation =
-        AllocateBitrates(last_non_zero_bitrate_bps_);
+    allocation = AllocateBitrates(last_non_zero_bitrate_bps_);
     observer->OnBitrateUpdated(0, last_fraction_loss_, last_rtt_);
-    new_observer_bitrate_bps = allocation[observer];
   }
-  return new_observer_bitrate_bps;
+  last_allocation_ = allocation;
+  return allocation[observer];
 }
 
 void BitrateAllocator::RemoveObserver(BitrateAllocatorObserver* observer) {
@@ -103,10 +95,6 @@ void BitrateAllocator::RemoveObserver(BitrateAllocatorObserver* observer) {
   if (it != bitrate_observer_configs_.end()) {
     bitrate_observer_configs_.erase(it);
   }
-}
-
-void BitrateAllocator::EnforceMinBitrate(bool enforce_min_bitrate) {
-  enforce_min_bitrate_ = enforce_min_bitrate;
 }
 
 BitrateAllocator::ObserverConfigList::iterator
@@ -129,56 +117,28 @@ BitrateAllocator::ObserverAllocation BitrateAllocator::AllocateBitrates(
     return ZeroRateAllocation();
 
   uint32_t sum_min_bitrates = 0;
-  for (const auto& observer_config : bitrate_observer_configs_)
+  uint32_t sum_max_bitrates = 0;
+  for (const auto& observer_config : bitrate_observer_configs_) {
     sum_min_bitrates += observer_config.min_bitrate_bps;
-  if (bitrate <= sum_min_bitrates)
+    sum_max_bitrates += observer_config.max_bitrate_bps;
+  }
+
+  // Not enough for all observers to get an allocation, allocate according to:
+  // enforced min bitrate -> allocated bitrate previous round -> restart paused
+  // streams.
+  if (!EnoughBitrateForAllObservers(bitrate, sum_min_bitrates))
     return LowRateAllocation(bitrate);
 
-  return NormalRateAllocation(bitrate, sum_min_bitrates);
-}
+  // All observers will get their min bitrate plus an even share of the rest.
+  if (bitrate <= sum_max_bitrates)
+    return NormalRateAllocation(bitrate, sum_min_bitrates);
 
-BitrateAllocator::ObserverAllocation BitrateAllocator::NormalRateAllocation(
-    uint32_t bitrate,
-    uint32_t sum_min_bitrates) {
-  uint32_t num_remaining_observers =
-      static_cast<uint32_t>(bitrate_observer_configs_.size());
-  RTC_DCHECK_GT(num_remaining_observers, 0u);
-
-  uint32_t bitrate_per_observer =
-      (bitrate - sum_min_bitrates) / num_remaining_observers;
-  // Use map to sort list based on max bitrate.
-  ObserverSortingMap list_max_bitrates;
-  for (const auto& config : bitrate_observer_configs_) {
-    list_max_bitrates.insert(std::pair<uint32_t, const ObserverConfig*>(
-        config.max_bitrate_bps, &config));
-  }
-
-  ObserverAllocation allocation;
-  ObserverSortingMap::iterator max_it = list_max_bitrates.begin();
-  while (max_it != list_max_bitrates.end()) {
-    num_remaining_observers--;
-    uint32_t observer_allowance =
-        max_it->second->min_bitrate_bps + bitrate_per_observer;
-    if (max_it->first < observer_allowance) {
-      // We have more than enough for this observer.
-      // Carry the remainder forward.
-      uint32_t remainder = observer_allowance - max_it->first;
-      if (num_remaining_observers != 0)
-        bitrate_per_observer += remainder / num_remaining_observers;
-      allocation[max_it->second->observer] = max_it->first;
-    } else {
-      allocation[max_it->second->observer] = observer_allowance;
-    }
-    list_max_bitrates.erase(max_it);
-    // Prepare next iteration.
-    max_it = list_max_bitrates.begin();
-  }
-  return allocation;
+  // All observers will get up to kTransmissionMaxBitrateMultiplier x max.
+  return MaxRateAllocation(bitrate, sum_max_bitrates);
 }
 
 BitrateAllocator::ObserverAllocation BitrateAllocator::ZeroRateAllocation() {
   ObserverAllocation allocation;
-  // Zero bitrate to all observers.
   for (const auto& observer_config : bitrate_observer_configs_)
     allocation[observer_config.observer] = 0;
   return allocation;
@@ -187,21 +147,153 @@ BitrateAllocator::ObserverAllocation BitrateAllocator::ZeroRateAllocation() {
 BitrateAllocator::ObserverAllocation BitrateAllocator::LowRateAllocation(
     uint32_t bitrate) {
   ObserverAllocation allocation;
-  if (enforce_min_bitrate_) {
-    // Min bitrate to all observers.
-    for (const auto& observer_config : bitrate_observer_configs_)
-      allocation[observer_config.observer] = observer_config.min_bitrate_bps;
-  } else {
-    // Allocate up to |min_bitrate_bps| to one observer at a time, until
-    // |bitrate| is depleted.
-    uint32_t remainder = bitrate;
+
+  // Start by allocating bitrate to observers enforcing a min bitrate, hence
+  // remaining_bitrate might turn negative.
+  int64_t remaining_bitrate = bitrate;
+  for (const auto& observer_config : bitrate_observer_configs_) {
+    int32_t allocated_bitrate = 0;
+    if (observer_config.enforce_min_bitrate)
+      allocated_bitrate = observer_config.min_bitrate_bps;
+
+    allocation[observer_config.observer] = allocated_bitrate;
+    remaining_bitrate -= allocated_bitrate;
+  }
+
+  // Allocate bitrate to all previously active streams.
+  if (remaining_bitrate > 0) {
     for (const auto& observer_config : bitrate_observer_configs_) {
-      uint32_t allocated_bitrate =
-          std::min(remainder, observer_config.min_bitrate_bps);
-      allocation[observer_config.observer] = allocated_bitrate;
-      remainder -= allocated_bitrate;
+      if (observer_config.enforce_min_bitrate ||
+          LastAllocatedBitrate(observer_config) == 0)
+        continue;
+
+      if (remaining_bitrate >= observer_config.min_bitrate_bps) {
+        allocation[observer_config.observer] = observer_config.min_bitrate_bps;
+        remaining_bitrate -= observer_config.min_bitrate_bps;
+      }
     }
   }
+
+  // Allocate bitrate to previously paused streams.
+  if (remaining_bitrate > 0) {
+    for (const auto& observer_config : bitrate_observer_configs_) {
+      if (LastAllocatedBitrate(observer_config) != 0)
+        continue;
+
+      // Add a hysteresis to avoid toggling.
+      uint32_t required_bitrate = MinBitrateWithHysteresis(observer_config);
+      if (remaining_bitrate >= required_bitrate) {
+        allocation[observer_config.observer] = required_bitrate;
+        remaining_bitrate -= required_bitrate;
+      }
+    }
+  }
+
+  // Split a possible remainder evenly on all streams with an allocation.
+  if (remaining_bitrate > 0)
+    DistributeBitrateEvenly(remaining_bitrate, false, 1, &allocation);
+
+  RTC_DCHECK_EQ(allocation.size(), bitrate_observer_configs_.size());
   return allocation;
+}
+
+BitrateAllocator::ObserverAllocation BitrateAllocator::NormalRateAllocation(
+    uint32_t bitrate,
+    uint32_t sum_min_bitrates) {
+
+  ObserverAllocation allocation;
+  for (const auto& observer_config : bitrate_observer_configs_)
+    allocation[observer_config.observer] = observer_config.min_bitrate_bps;
+
+  bitrate -= sum_min_bitrates;
+  if (bitrate > 0)
+    DistributeBitrateEvenly(bitrate, true, 1, &allocation);
+
+  return allocation;
+}
+
+BitrateAllocator::ObserverAllocation BitrateAllocator::MaxRateAllocation(
+    uint32_t bitrate, uint32_t sum_max_bitrates) {
+  ObserverAllocation allocation;
+
+  for (const auto& observer_config : bitrate_observer_configs_) {
+    allocation[observer_config.observer] = observer_config.max_bitrate_bps;
+    bitrate -= observer_config.max_bitrate_bps;
+  }
+  DistributeBitrateEvenly(bitrate, true, kTransmissionMaxBitrateMultiplier,
+                          &allocation);
+  return allocation;
+}
+
+uint32_t BitrateAllocator::LastAllocatedBitrate(
+    const ObserverConfig& observer_config) {
+
+  const auto& it = last_allocation_.find(observer_config.observer);
+  if (it != last_allocation_.end())
+    return it->second;
+
+  // Return the configured minimum bitrate for newly added observers, to avoid
+  // requiring an extra high bitrate for the observer to get an allocated
+  // bitrate.
+  return observer_config.min_bitrate_bps;
+}
+
+uint32_t BitrateAllocator::MinBitrateWithHysteresis(
+    const ObserverConfig& observer_config) {
+  uint32_t min_bitrate = observer_config.min_bitrate_bps;
+  if (LastAllocatedBitrate(observer_config) == 0) {
+    min_bitrate += std::max(static_cast<uint32_t>(kToggleFactor * min_bitrate),
+                            kMinToggleBitrateBps);
+  }
+  return min_bitrate;
+}
+
+void BitrateAllocator::DistributeBitrateEvenly(uint32_t bitrate,
+                                               bool include_zero_allocations,
+                                               int max_multiplier,
+                                               ObserverAllocation* allocation) {
+  RTC_DCHECK_EQ(allocation->size(), bitrate_observer_configs_.size());
+
+  ObserverSortingMap list_max_bitrates;
+  for (const auto& observer_config : bitrate_observer_configs_) {
+    if (include_zero_allocations ||
+        allocation->at(observer_config.observer) != 0) {
+      list_max_bitrates.insert(std::pair<uint32_t, const ObserverConfig*>(
+          observer_config.max_bitrate_bps, &observer_config));
+    }
+  }
+  auto it = list_max_bitrates.begin();
+  while (it != list_max_bitrates.end()) {
+    RTC_DCHECK_GT(bitrate, 0u);
+    uint32_t extra_allocation =
+        bitrate / static_cast<uint32_t>(list_max_bitrates.size());
+    uint32_t total_allocation =
+        extra_allocation + allocation->at(it->second->observer);
+    bitrate -= extra_allocation;
+    if (total_allocation > max_multiplier * it->first) {
+      // There is more than we can fit for this observer, carry over to the
+      // remaining observers.
+      bitrate += total_allocation - max_multiplier * it->first;
+      total_allocation = max_multiplier * it->first;
+    }
+    // Finally, update the allocation for this observer.
+    allocation->at(it->second->observer) = total_allocation;
+    it = list_max_bitrates.erase(it);
+  }
+}
+
+bool BitrateAllocator::EnoughBitrateForAllObservers(uint32_t bitrate,
+                                                    uint32_t sum_min_bitrates) {
+  if (bitrate < sum_min_bitrates)
+    return false;
+
+  uint32_t extra_bitrate_per_observer = (bitrate - sum_min_bitrates) /
+      static_cast<uint32_t>(bitrate_observer_configs_.size());
+  for (const auto& observer_config : bitrate_observer_configs_) {
+    if (observer_config.min_bitrate_bps + extra_bitrate_per_observer <
+        MinBitrateWithHysteresis(observer_config))
+      return false;
+  }
+  return true;
 }
 }  // namespace webrtc

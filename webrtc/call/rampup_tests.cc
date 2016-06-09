@@ -340,7 +340,6 @@ bool RampUpDownUpTester::PollStats() {
     for (auto it : stats.substreams) {
       transmit_bitrate_bps += it.second.total_bitrate_bps;
     }
-
     EvolveTestState(transmit_bitrate_bps, stats.suspended);
   }
 
@@ -464,10 +463,6 @@ TEST_F(RampUpTest, SingleStreamWithHighStartBitrate) {
   RunBaseTest(&test);
 }
 
-// Disabled on Mac due to flakiness, see
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=5407
-#ifndef WEBRTC_MAC
-
 static const uint32_t kStartBitrateBps = 60000;
 
 // Disabled: https://bugs.chromium.org/p/webrtc/issues/detail?id=5576
@@ -524,8 +519,6 @@ TEST_F(RampUpTest, DISABLED_SendSideAudioVideoUpDownUpRtx) {
                           false);
   RunBaseTest(&test);
 }
-
-#endif
 
 TEST_F(RampUpTest, AbsSendTimeSingleStream) {
   RampUpTester test(1, 0, 0, RtpExtension::kAbsSendTimeUri, false, false);
