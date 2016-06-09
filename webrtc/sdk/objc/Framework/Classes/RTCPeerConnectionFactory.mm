@@ -11,9 +11,7 @@
 #import "RTCPeerConnectionFactory+Private.h"
 
 #import "NSString+StdString.h"
-#if defined(WEBRTC_IOS)
 #import "RTCAVFoundationVideoSource+Private.h"
-#endif
 #import "RTCAudioTrack+Private.h"
 #import "RTCMediaStream+Private.h"
 #import "RTCPeerConnection+Private.h"
@@ -54,12 +52,8 @@
 
 - (RTCAVFoundationVideoSource *)avFoundationVideoSourceWithConstraints:
     (nullable RTCMediaConstraints *)constraints {
-#if defined(WEBRTC_IOS)
   return [[RTCAVFoundationVideoSource alloc] initWithFactory:self
                                                  constraints:constraints];
-#else
-  return nil;
-#endif
 }
 
 - (RTCAudioTrack *)audioTrackWithTrackId:(NSString *)trackId {

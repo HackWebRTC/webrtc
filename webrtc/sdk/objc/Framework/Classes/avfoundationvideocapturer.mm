@@ -12,7 +12,9 @@
 
 #import <AVFoundation/AVFoundation.h>
 #import <Foundation/Foundation.h>
+#if TARGET_OS_IPHONE
 #import <UIKit/UIKit.h>
+#endif
 
 #import "RTCDispatcher+Private.h"
 #import "WebRTC/RTCLogging.h"
@@ -88,6 +90,7 @@ static cricket::VideoFormat const kDefaultFormat =
       return nil;
     }
     NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+#if TARGET_OS_IPHONE
     [center addObserver:self
                selector:@selector(deviceOrientationDidChange:)
                    name:UIDeviceOrientationDidChangeNotification
@@ -100,6 +103,7 @@ static cricket::VideoFormat const kDefaultFormat =
                selector:@selector(handleCaptureSessionInterruptionEnded:)
                    name:AVCaptureSessionInterruptionEndedNotification
                  object:_captureSession];
+#endif
     [center addObserver:self
                selector:@selector(handleCaptureSessionRuntimeError:)
                    name:AVCaptureSessionRuntimeErrorNotification
@@ -188,7 +192,9 @@ static cricket::VideoFormat const kDefaultFormat =
                                block:^{
     _orientationHasChanged = NO;
     [self updateOrientation];
+#if TARGET_OS_IPHONE
     [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+#endif
     AVCaptureSession *captureSession = self.captureSession;
     [captureSession startRunning];
   }];
@@ -207,12 +213,15 @@ static cricket::VideoFormat const kDefaultFormat =
                                block:^{
     [_videoDataOutput setSampleBufferDelegate:nil queue:nullptr];
     [_captureSession stopRunning];
+#if TARGET_OS_IPHONE
     [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
+#endif
   }];
 }
 
 #pragma mark iOS notifications
 
+#if TARGET_OS_IPHONE
 - (void)deviceOrientationDidChange:(NSNotification *)notification {
   [RTCDispatcher dispatchAsyncOnType:RTCDispatcherTypeCaptureSession
                                block:^{
@@ -220,6 +229,7 @@ static cricket::VideoFormat const kDefaultFormat =
     [self updateOrientation];
   }];
 }
+#endif
 
 #pragma mark AVCaptureVideoDataOutputSampleBufferDelegate
 
@@ -273,16 +283,21 @@ static cricket::VideoFormat const kDefaultFormat =
 }
 
 - (void)handleCaptureSessionRuntimeError:(NSNotification *)notification {
-  NSError *error = notification.userInfo[AVCaptureSessionErrorKey];
+  NSError *error =
+      [notification.userInfo objectForKey:AVCaptureSessionErrorKey];
   RTCLogError(@"Capture session runtime error: %@", error.localizedDescription);
 
   [RTCDispatcher dispatchAsyncOnType:RTCDispatcherTypeCaptureSession
                                block:^{
+#if TARGET_OS_IPHONE
     if (error.code == AVErrorMediaServicesWereReset) {
       [self handleNonFatalError];
     } else {
       [self handleFatalError];
     }
+#else
+    [self handleFatalError];
+#endif
   }];
 }
 
@@ -402,8 +417,13 @@ static cricket::VideoFormat const kDefaultFormat =
 
 - (AVCaptureDeviceInput *)frontCameraInput {
   if (!_frontCameraInput) {
+#if TARGET_OS_IPHONE
     AVCaptureDevice *frontCameraDevice =
         [self videoCaptureDeviceForPosition:AVCaptureDevicePositionFront];
+#else
+    AVCaptureDevice *frontCameraDevice =
+        [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+#endif
     if (!frontCameraDevice) {
       RTCLogWarning(@"Failed to find front capture device.");
       return nil;
@@ -452,6 +472,7 @@ static cricket::VideoFormat const kDefaultFormat =
     // TODO(tkchin): set rotation bit on frames.
     return;
   }
+#if TARGET_OS_IPHONE
   AVCaptureVideoOrientation orientation = AVCaptureVideoOrientationPortrait;
   switch ([UIDevice currentDevice].orientation) {
     case UIDeviceOrientationPortrait:
@@ -475,6 +496,7 @@ static cricket::VideoFormat const kDefaultFormat =
       return;
   }
   connection.videoOrientation = orientation;
+#endif
 }
 
 // Update the current session input to match what's stored in _useBackCamera.

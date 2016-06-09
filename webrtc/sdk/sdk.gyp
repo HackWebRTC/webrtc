@@ -94,6 +94,11 @@
             ],
           },
           'link_settings': {
+            'xcode_settings': {
+              'OTHER_LDFLAGS': [
+                '-framework AVFoundation',
+              ],
+            },
             'libraries': [
               '-lstdc++',
             ],
@@ -101,6 +106,8 @@
           'sources': [
             'objc/Framework/Classes/RTCAudioTrack+Private.h',
             'objc/Framework/Classes/RTCAudioTrack.mm',
+            'objc/Framework/Classes/RTCAVFoundationVideoSource+Private.h',
+            'objc/Framework/Classes/RTCAVFoundationVideoSource.mm',
             'objc/Framework/Classes/RTCConfiguration+Private.h',
             'objc/Framework/Classes/RTCConfiguration.mm',
             'objc/Framework/Classes/RTCDataChannel+Private.h',
@@ -148,7 +155,10 @@
             'objc/Framework/Classes/RTCVideoSource.mm',
             'objc/Framework/Classes/RTCVideoTrack+Private.h',
             'objc/Framework/Classes/RTCVideoTrack.mm',
+            'objc/Framework/Classes/avfoundationvideocapturer.h',
+            'objc/Framework/Classes/avfoundationvideocapturer.mm',
             'objc/Framework/Headers/WebRTC/RTCAudioTrack.h',
+            'objc/Framework/Headers/WebRTC/RTCAVFoundationVideoSource.h',
             'objc/Framework/Headers/WebRTC/RTCConfiguration.h',
             'objc/Framework/Headers/WebRTC/RTCDataChannel.h',
             'objc/Framework/Headers/WebRTC/RTCDataChannelConfiguration.h',
@@ -174,12 +184,7 @@
           'conditions': [
             ['OS=="ios"', {
               'sources': [
-                'objc/Framework/Classes/RTCAVFoundationVideoSource+Private.h',
-                'objc/Framework/Classes/RTCAVFoundationVideoSource.mm',
                 'objc/Framework/Classes/RTCEAGLVideoView.m',
-                'objc/Framework/Classes/avfoundationvideocapturer.h',
-                'objc/Framework/Classes/avfoundationvideocapturer.mm',
-                'objc/Framework/Headers/WebRTC/RTCAVFoundationVideoSource.h',
                 'objc/Framework/Headers/WebRTC/RTCEAGLVideoView.h',
               ],
               'link_settings': {
@@ -201,6 +206,7 @@
               'link_settings': {
                 'xcode_settings': {
                   'OTHER_LDFLAGS': [
+                    '-framework CoreMedia',
                     '-framework OpenGL',
                   ],
                 },

@@ -69,6 +69,8 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
 
   source_set("rtc_sdk_peerconnection_objc") {
     sources = [
+      "objc/Framework/Classes/RTCAVFoundationVideoSource+Private.h",
+      "objc/Framework/Classes/RTCAVFoundationVideoSource.mm",
       "objc/Framework/Classes/RTCAudioTrack+Private.h",
       "objc/Framework/Classes/RTCAudioTrack.mm",
       "objc/Framework/Classes/RTCConfiguration+Private.h",
@@ -118,6 +120,9 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
       "objc/Framework/Classes/RTCVideoSource.mm",
       "objc/Framework/Classes/RTCVideoTrack+Private.h",
       "objc/Framework/Classes/RTCVideoTrack.mm",
+      "objc/Framework/Classes/avfoundationvideocapturer.h",
+      "objc/Framework/Classes/avfoundationvideocapturer.mm",
+      "objc/Framework/Headers/WebRTC/RTCAVFoundationVideoSource.h",
       "objc/Framework/Headers/WebRTC/RTCAudioTrack.h",
       "objc/Framework/Headers/WebRTC/RTCConfiguration.h",
       "objc/Framework/Headers/WebRTC/RTCDataChannel.h",
@@ -144,12 +149,7 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
 
     if (is_ios) {
       sources += [
-        "objc/Framework/Classes/RTCAVFoundationVideoSource+Private.h",
-        "objc/Framework/Classes/RTCAVFoundationVideoSource.mm",
         "objc/Framework/Classes/RTCEAGLVideoView.m",
-        "objc/Framework/Classes/avfoundationvideocapturer.h",
-        "objc/Framework/Classes/avfoundationvideocapturer.mm",
-        "objc/Framework/Headers/WebRTC/RTCAVFoundationVideoSource.h",
         "objc/Framework/Headers/WebRTC/RTCEAGLVideoView.h",
       ]
       libs = [
@@ -165,7 +165,10 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
         "objc/Framework/Classes/RTCNSGLVideoView.m",
         "objc/Framework/Headers/WebRTC/RTCNSGLVideoView.h",
       ]
-      libs = [ "OpenGL.framework" ]
+      libs = [
+        "CoreMedia.framework",
+        "OpenGL.framework",
+      ]
     }
 
     configs += [
@@ -181,7 +184,10 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
       configs -= [ "//build/config/clang:find_bad_constructs" ]
     }
 
-    libs += [ "stdc++" ]
+    libs += [
+      "AVFoundation.framework",
+      "stdc++",
+    ]
 
     deps = [
       ":rtc_sdk_common_objc",
