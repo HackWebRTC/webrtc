@@ -132,7 +132,7 @@ const StunUInt16ListAttribute* StunMessage::GetUnknownAttributes() const {
 bool StunMessage::ValidateMessageIntegrity(const char* data, size_t size,
                                            const std::string& password) {
   // Verifying the size of the message.
-  if ((size % 4) != 0) {
+  if ((size % 4) != 0 || size < kStunHeaderSize) {
     return false;
   }
 
