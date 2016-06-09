@@ -211,8 +211,12 @@ class RTCStatsObserver : public StatsObserver {
 }
 
 - (BOOL)setConfiguration:(RTCConfiguration *)configuration {
-  return self.peerConnection->SetConfiguration(
-      configuration.nativeConfiguration);
+  std::unique_ptr<webrtc::PeerConnectionInterface::RTCConfiguration> config(
+      [configuration createNativeConfiguration]);
+  if (!config) {
+    return NO;
+  }
+  return self.peerConnection->SetConfiguration(*config);
 }
 
 - (RTCSessionDescription*)localDescription {

@@ -31,7 +31,9 @@
 
 @interface RTCConfiguration ()
 
-@property(nonatomic, readonly)
-    webrtc::PeerConnectionInterface::RTCConfiguration nativeConfiguration;
++ (rtc::KeyType)nativeEncryptionKeyTypeForKeyType:(RTCEncryptionKeyType)keyType;
+
+- (webrtc::PeerConnectionInterface::RTCConfiguration *)
+    createNativeConfiguration;
 
 @end

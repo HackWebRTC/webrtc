@@ -250,16 +250,6 @@
   }
 }
 
-+ (rtc::KeyType)nativeEncryptionKeyTypeForKeyType:
-    (RTCEncryptionKeyType)keyType {
-  switch (keyType) {
-    case RTCEncryptionKeyTypeRSA:
-      return rtc::KT_RSA;
-    case RTCEncryptionKeyTypeECDSA:
-      return rtc::KT_ECDSA;
-  }
-}
-
 + (RTCTcpCandidatePolicy)tcpCandidatePolicyForNativePolicy:
     (webrtc::PeerConnectionInterface::TcpCandidatePolicy)nativePolicy {
   switch (nativePolicy) {
@@ -327,6 +317,16 @@
       return @"GATHER_ONCE";
     case RTCContinualGatheringPolicyGatherContinually:
       return @"GATHER_CONTINUALLY";
+  }
+}
+
++ (rtc::KeyType)nativeEncryptionKeyTypeForKeyType:
+    (RTCEncryptionKeyType)keyType {
+  switch (keyType) {
+    case RTCEncryptionKeyTypeRSA:
+      return rtc::KT_RSA;
+    case RTCEncryptionKeyTypeECDSA:
+      return rtc::KT_ECDSA;
   }
 }
 

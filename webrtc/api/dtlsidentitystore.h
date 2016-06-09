@@ -27,11 +27,6 @@
 
 namespace webrtc {
 
-// TODO(hbos): Remove this constant (and dtlsidentitystore.cc) after
-// RTCPeerConnectionInterface.mm stops using it.
-// bugs.webrtc.org/5707, bugs.webrtc.org/5708
-extern const char kIdentityName[];
-
 class SSLIdentity;
 class Thread;
 

@@ -33,6 +33,8 @@
 
 #include <memory>
 
+#include "webrtc/base/rtccertificategenerator.h"
+
 @implementation RTCConfiguration
 
 @synthesize iceTransportsType = _iceTransportsType;
@@ -83,30 +85,49 @@
 
 #pragma mark - Private
 
-- (webrtc::PeerConnectionInterface::RTCConfiguration)nativeConfiguration {
-  webrtc::PeerConnectionInterface::RTCConfiguration nativeConfig;
-  nativeConfig.type = [RTCEnumConverter nativeEnumForIceTransportsType:_iceTransportsType];
+- (webrtc::PeerConnectionInterface::RTCConfiguration *)
+    createNativeConfiguration {
+  std::unique_ptr<webrtc::PeerConnectionInterface::RTCConfiguration>
+      nativeConfig(new webrtc::PeerConnectionInterface::RTCConfiguration());
+  nativeConfig->type =
+      [RTCEnumConverter nativeEnumForIceTransportsType:_iceTransportsType];
   for (RTCICEServer *iceServer : _iceServers) {
-    nativeConfig.servers.push_back(iceServer.iceServer);
+    nativeConfig->servers.push_back(iceServer.iceServer);
   }
-  nativeConfig.bundle_policy = [RTCEnumConverter nativeEnumForBundlePolicy:_bundlePolicy];
-  nativeConfig.rtcp_mux_policy = [RTCEnumConverter nativeEnumForRtcpMuxPolicy:_rtcpMuxPolicy];
-  nativeConfig.tcp_candidate_policy =
+  nativeConfig->bundle_policy =
+      [RTCEnumConverter nativeEnumForBundlePolicy:_bundlePolicy];
+  nativeConfig->rtcp_mux_policy =
+      [RTCEnumConverter nativeEnumForRtcpMuxPolicy:_rtcpMuxPolicy];
+  nativeConfig->tcp_candidate_policy =
       [RTCEnumConverter nativeEnumForTcpCandidatePolicy:_tcpCandidatePolicy];
-  nativeConfig.audio_jitter_buffer_max_packets = _audioJitterBufferMaxPackets;
-  nativeConfig.ice_connection_receiving_timeout = _iceConnectionReceivingTimeout;
-  nativeConfig.ice_backup_candidate_pair_ping_interval = _iceBackupCandidatePairPingInterval;
-  if (_keyType == kRTCEncryptionKeyTypeECDSA) {
-    std::unique_ptr<rtc::SSLIdentity> identity(
-        rtc::SSLIdentity::Generate(webrtc::kIdentityName, rtc::KT_ECDSA));
-    if (identity) {
-      nativeConfig.certificates.push_back(
-          rtc::RTCCertificate::Create(std::move(identity)));
-    } else {
-      RTCLogWarning(@"Failed to generate ECDSA identity. RSA will be used.");
+  nativeConfig->audio_jitter_buffer_max_packets = _audioJitterBufferMaxPackets;
+  nativeConfig->ice_connection_receiving_timeout =
+      _iceConnectionReceivingTimeout;
+  nativeConfig->ice_backup_candidate_pair_ping_interval =
+      _iceBackupCandidatePairPingInterval;
+  rtc::KeyType keyType =
+      [[self class] nativeEncryptionKeyTypeForKeyType:_keyType];
+  if (keyType != rtc::KT_DEFAULT) {
+    rtc::scoped_refptr<rtc::RTCCertificate> certificate =
+        rtc::RTCCertificateGenerator::GenerateCertificate(
+            rtc::KeyParams(keyType), rtc::Optional<uint64_t>());
+    if (!certificate) {
+      RTCLogError(@"Failed to generate certificate.");
+      return nullptr;
     }
+    nativeConfig->certificates.push_back(certificate);
   }
-  return nativeConfig;
+  return nativeConfig.release();
+}
+
++ (rtc::KeyType)nativeEncryptionKeyTypeForKeyType:
+    (RTCEncryptionKeyType)keyType {
+  switch (keyType) {
+    case kRTCEncryptionKeyTypeRSA:
+      return rtc::KT_RSA;
+    case kRTCEncryptionKeyTypeECDSA:
+      return rtc::KT_ECDSA;
+  }
 }
 
 @end

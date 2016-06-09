@@ -34,7 +34,6 @@ source_set("libjingle_peerconnection") {
     "datachannel.cc",
     "datachannel.h",
     "datachannelinterface.h",
-    "dtlsidentitystore.cc",
     "dtlsidentitystore.h",
     "dtmfsender.cc",
     "dtmfsender.h",

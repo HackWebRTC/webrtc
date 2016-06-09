@@ -57,7 +57,6 @@
 #include <vector>
 
 #include "webrtc/api/datachannelinterface.h"
-#include "webrtc/api/dtlsidentitystore.h"
 #include "webrtc/api/dtmfsenderinterface.h"
 #include "webrtc/api/jsep.h"
 #include "webrtc/api/mediastreaminterface.h"

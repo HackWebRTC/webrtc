@@ -99,8 +99,13 @@
 - (RTCPeerConnection *)peerConnectionWithConfiguration:(RTCConfiguration *)configuration
                                            constraints:(RTCMediaConstraints *)constraints
                                               delegate:(id<RTCPeerConnectionDelegate>)delegate {
+  std::unique_ptr<webrtc::PeerConnectionInterface::RTCConfiguration> config(
+      [configuration createNativeConfiguration]);
+  if (!config) {
+    return nil;
+  }
   return [[RTCPeerConnection alloc] initWithFactory:self.nativeFactory.get()
-                                             config:configuration.nativeConfiguration
+                                             config:*config
                                         constraints:constraints.constraints
                                            delegate:delegate];
 }
