@@ -173,6 +173,13 @@ class SCOPED_LOCKABLE AnnounceOnThread {
 //   rtc::scoped_ref_ptr<Encoder> encoder_;
 // }
 
+// Document if a variable/field is not shared and should be accessed from
+// same thread/task queue.
+#define ACCESS_ON(x) THREAD_ANNOTATION_ATTRIBUTE__(guarded_by(x))
+
+// Document if a function expected to be called from same thread/task queue.
+#define RUN_ON(x) THREAD_ANNOTATION_ATTRIBUTE__(exclusive_locks_required(x))
+
 #define RTC_DCHECK_RUN_ON(thread_like_object) \
   rtc::internal::AnnounceOnThread thread_announcer(thread_like_object); \
   RTC_DCHECK(rtc::internal::AnnounceOnThread::IsCurrent(thread_like_object))

@@ -32,9 +32,6 @@
 // is primarily used when the client cannot express the name of the lock.
 #define GUARDED_BY(x) THREAD_ANNOTATION_ATTRIBUTE__(guarded_by(x))
 #define GUARDED_VAR THREAD_ANNOTATION_ATTRIBUTE__(guarded)
-// Document if a variable/field is not shared and should be accessed from
-// same thread/task queue.
-#define ACCESS_ON(x) THREAD_ANNOTATION_ATTRIBUTE__(guarded_by(x))
 
 // Document if the memory location pointed to by a pointer should be guarded
 // by a lock when dereferencing the pointer. Similar to GUARDED_VAR,
@@ -61,8 +58,6 @@
 // Document if a function expects certain locks to be held before it is called
 #define EXCLUSIVE_LOCKS_REQUIRED(...) \
   THREAD_ANNOTATION_ATTRIBUTE__(exclusive_locks_required(__VA_ARGS__))
-// Document if a function expected to be called from same thread/task queue.
-#define RUN_ON(x) THREAD_ANNOTATION_ATTRIBUTE__(exclusive_locks_required(x))
 
 #define SHARED_LOCKS_REQUIRED(...) \
   THREAD_ANNOTATION_ATTRIBUTE__(shared_locks_required(__VA_ARGS__))
