@@ -89,7 +89,7 @@ webrtc_fuzzer_test("sdp_parser_fuzzer") {
     "sdp_parser_fuzzer.cc",
   ]
   deps = [
-    "//webrtc/api:libjingle_peerconnection",
+    "../../api:libjingle_peerconnection",
   ]
 }
 
@@ -98,7 +98,7 @@ webrtc_fuzzer_test("stun_parser_fuzzer") {
     "stun_parser_fuzzer.cc",
   ]
   deps = [
-    "//webrtc/p2p:rtc_p2p",
+    "../../p2p:rtc_p2p",
   ]
 }
 
@@ -107,7 +107,7 @@ webrtc_fuzzer_test("stun_validator_fuzzer") {
     "stun_validator_fuzzer.cc",
   ]
   deps = [
-    "//webrtc/p2p:rtc_p2p",
+    "../../p2p:rtc_p2p",
   ]
 }
 
