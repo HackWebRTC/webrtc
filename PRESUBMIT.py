@@ -52,32 +52,38 @@ BLACKLIST_LINT_FILTERS = [
 # 3. Deprecation is announced to discuss-webrtc@googlegroups.com and
 #    webrtc-users@google.com (internal list).
 # 4. (later) The deprecated APIs are removed.
-# Directories marked as DEPRECATED should not be used. They're only present in
-# the list to support legacy downstream code.
 NATIVE_API_DIRS = (
-  'talk/app/webrtc',
   'webrtc',
-  'webrtc/base',  # DEPRECATED.
-  'webrtc/common_audio/include',  # DEPRECATED.
-  'webrtc/modules/audio_coding/include',
-  'webrtc/modules/audio_conference_mixer/include',  # DEPRECATED.
+  'webrtc/api',
+  'webrtc/media',
   'webrtc/modules/audio_device/include',
+  'webrtc/pc',
+)
+# These directories should not be used but are maintained only to avoid breaking
+# some legacy downstream code.
+LEGACY_API_DIRS = (
+  'talk/app/webrtc',
+  'webrtc/base',
+  'webrtc/common_audio/include',
+  'webrtc/modules/audio_coding/include',
+  'webrtc/modules/audio_conference_mixer/include',
   'webrtc/modules/audio_processing/include',
   'webrtc/modules/bitrate_controller/include',
   'webrtc/modules/congestion_controller/include',
   'webrtc/modules/include',
   'webrtc/modules/remote_bitrate_estimator/include',
   'webrtc/modules/rtp_rtcp/include',
-  'webrtc/modules/rtp_rtcp/source',  # DEPRECATED.
+  'webrtc/modules/rtp_rtcp/source',
   'webrtc/modules/utility/include',
   'webrtc/modules/video_coding/codecs/h264/include',
   'webrtc/modules/video_coding/codecs/i420/include',
   'webrtc/modules/video_coding/codecs/vp8/include',
   'webrtc/modules/video_coding/codecs/vp9/include',
   'webrtc/modules/video_coding/include',
-  'webrtc/system_wrappers/include',  # DEPRECATED.
+  'webrtc/system_wrappers/include',
   'webrtc/voice_engine/include',
 )
+API_DIRS = NATIVE_API_DIRS[:] + LEGACY_API_DIRS[:]
 
 
 def _VerifyNativeApiHeadersListIsValid(input_api, output_api):
@@ -85,7 +91,7 @@ def _VerifyNativeApiHeadersListIsValid(input_api, output_api):
   non_existing_paths = []
   native_api_full_paths = [
       input_api.os_path.join(input_api.PresubmitLocalPath(),
-                             *path.split('/')) for path in NATIVE_API_DIRS]
+                             *path.split('/')) for path in API_DIRS]
   for path in native_api_full_paths:
     if not os.path.isdir(path):
       non_existing_paths.append(path)
@@ -120,7 +126,7 @@ def _CheckNativeApiHeaderChanges(input_api, output_api):
   files = []
   for f in input_api.AffectedSourceFiles(input_api.FilterSourceFile):
     if f.LocalPath().endswith('.h'):
-      for path in NATIVE_API_DIRS:
+      for path in API_DIRS:
         if os.path.dirname(f.LocalPath()) == path:
           files.append(f)
 
