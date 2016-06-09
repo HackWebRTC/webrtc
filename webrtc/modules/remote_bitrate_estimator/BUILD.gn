@@ -43,7 +43,7 @@ source_set("remote_bitrate_estimator") {
     defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0" ]
   }
 
-  configs += [ "../../:common_inherited_config" ]
+  configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
 
   if (is_clang) {
@@ -54,6 +54,7 @@ source_set("remote_bitrate_estimator") {
 
   deps = [
     "../..:webrtc_common",
+    "../../base:rtc_base_approved",
     "../../system_wrappers",
   ]
 }
