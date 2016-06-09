@@ -27,6 +27,15 @@
    fun:_vgnU_freeres
    ...
 }
+{
+   Ubuntu_Precise_Itoa_Optimized_Code
+   Memcheck:Uninitialized
+   fun:_itoa_word
+   fun:vfprintf
+   fun:vsnprintf
+   fun:snprintf
+   ...
+}
 
 #-----------------------------------------------------------------------
 # webrtc stuff
@@ -419,4 +428,16 @@
    fun:opus_encode_native
    fun:opus_encode
    fun:WebRtcOpus_Encode
+}
+{
+   bug_5983
+   Memcheck:Uninitialized
+   fun:_ZN6webrtc11DataChannel4InitERKNS_23InternalDataChannelInitE
+   ...
+}
+{
+   bug_5984
+   Memcheck:Uninitialized
+   fun:_ZN6webrtc15GainControlImpl19ProcessCaptureAudioEPNS_11AudioBufferEb
+   ...
 }
