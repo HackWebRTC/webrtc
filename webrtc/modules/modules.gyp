@@ -399,9 +399,6 @@
               'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1' ],
             }, {
               'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0' ],
-              'sources!': [
-                'remote_bitrate_estimator/test/bwe_test_logging.cc'
-              ],
             }],
             # Run screen/window capturer tests only on platforms where they are
             # supported.

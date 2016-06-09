@@ -8,28 +8,15 @@
 
 declare_args() {
   # Set this to true to enable BWE test logging.
-  enable_bwe_test_logging = false
+  rtc_enable_bwe_test_logging = false
 }
 
 source_set("remote_bitrate_estimator") {
   sources = [
-    "include/bwe_defines.h",
-    "include/remote_bitrate_estimator.h",
-  ]
-
-  configs += [ "../../:common_inherited_config" ]
-
-  deps = [
-    ":rbe_components",
-    "../..:webrtc_common",
-    "../../system_wrappers",
-  ]
-}
-
-source_set("rbe_components") {
-  sources = [
     "aimd_rate_control.cc",
     "aimd_rate_control.h",
+    "include/bwe_defines.h",
+    "include/remote_bitrate_estimator.h",
     "include/send_time_history.h",
     "inter_arrival.cc",
     "inter_arrival.h",
@@ -38,27 +25,35 @@ source_set("rbe_components") {
     "overuse_estimator.cc",
     "overuse_estimator.h",
     "remote_bitrate_estimator_abs_send_time.cc",
+    "remote_bitrate_estimator_abs_send_time.h",
     "remote_bitrate_estimator_single_stream.cc",
+    "remote_bitrate_estimator_single_stream.h",
     "remote_estimator_proxy.cc",
     "remote_estimator_proxy.h",
     "send_time_history.cc",
+    "test/bwe_test_logging.h",
     "transport_feedback_adapter.cc",
     "transport_feedback_adapter.h",
   ]
 
-  if (enable_bwe_test_logging) {
+  if (rtc_enable_bwe_test_logging) {
+    defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1" ]
     sources += [ "test/bwe_test_logging.cc" ]
+  } else {
+    defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0" ]
   }
 
-  configs += [ "../..:common_config" ]
+  configs += [ "../../:common_inherited_config" ]
   public_configs = [ "../..:common_inherited_config" ]
-  deps = [
-    "../..:webrtc_common",
-  ]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
+
+  deps = [
+    "../..:webrtc_common",
+    "../../system_wrappers",
+  ]
 }

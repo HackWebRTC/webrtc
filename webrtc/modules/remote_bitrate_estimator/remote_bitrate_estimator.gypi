@@ -10,6 +10,10 @@
   'includes': [
     '../../build/common.gypi',
   ],
+  'variables': {
+    # Set this to true to enable BWE test logging.
+    'enable_bwe_test_logging%': 0,
+  },
   'targets': [
     {
       'target_name': 'remote_bitrate_estimator',
@@ -39,17 +43,16 @@
         'send_time_history.cc',
         'transport_feedback_adapter.cc',
         'transport_feedback_adapter.h',
-        'test/bwe_test_logging.cc',
         'test/bwe_test_logging.h',
       ], # source
       'conditions': [
         ['enable_bwe_test_logging==1', {
           'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1' ],
-        }, {
-          'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0' ],
-          'sources!': [
+          'sources': [
             'test/bwe_test_logging.cc'
           ],
+        }, {
+          'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0' ],
         }],
       ],
     },
@@ -75,7 +78,6 @@
             'test/bwe_test_fileutils.h',
             'test/bwe_test_framework.cc',
             'test/bwe_test_framework.h',
-            'test/bwe_test_logging.cc',
             'test/bwe_test_logging.h',
             'test/metric_recorder.cc',
             'test/metric_recorder.h',
@@ -96,11 +98,11 @@
           'conditions': [
             ['enable_bwe_test_logging==1', {
               'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1' ],
-            }, {
-              'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0' ],
-              'sources!': [
+              'sources': [
                 'test/bwe_test_logging.cc'
               ],
+            }, {
+              'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0' ],
             }],
           ],
         },
