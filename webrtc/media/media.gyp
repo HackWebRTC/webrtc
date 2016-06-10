@@ -67,8 +67,6 @@
         'base/videoframefactory.h',
         'base/videosourcebase.cc',
         'base/videosourcebase.h',
-        'base/yuvframegenerator.cc',
-        'base/yuvframegenerator.h',
         'devices/videorendererfactory.h',
         'engine/nullwebrtcvideoengine.h',
         'engine/simulcast.cc',

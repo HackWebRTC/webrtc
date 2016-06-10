@@ -89,8 +89,6 @@ source_set("rtc_media") {
     "base/videorenderer.h",
     "base/videosourcebase.cc",
     "base/videosourcebase.h",
-    "base/yuvframegenerator.cc",
-    "base/yuvframegenerator.h",
     "devices/videorendererfactory.h",
     "engine/nullwebrtcvideoengine.h",
     "engine/simulcast.cc",
