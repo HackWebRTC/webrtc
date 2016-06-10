@@ -245,15 +245,11 @@ source_set("webrtc") {
 
   deps = [
     ":webrtc_common",
-
-    #"api",  # TODO(kjellander): Enable when bugs.webrtc.org/4256 is fixed.
     "audio",
     "base:rtc_base",
     "call",
     "common_audio",
     "common_video",
-
-    #"media",    # TODO(kjellander): Enable when bugs.webrtc.org/4256 is fixed.
     "modules/audio_coding",
     "modules/audio_conference_mixer",
     "modules/audio_device",
@@ -265,9 +261,6 @@ source_set("webrtc") {
     "modules/utility",
     "modules/video_coding",
     "modules/video_processing",
-
-    #"p2p",  # TODO(kjellander): Enable when bugs.webrtc.org/4256 is fixed.
-    #"pc",  # TODO(kjellander): Enable when bugs.webrtc.org/4256 is fixed.
     "system_wrappers",
     "tools",
     "video",
@@ -276,6 +269,15 @@ source_set("webrtc") {
 
   if (build_with_chromium) {
     deps += [ "modules/video_capture" ]
+  } else {
+    # TODO(kjellander): Enable for Chromium as well when bugs.webrtc.org/4256 is
+    # fixed. Right now it's not possible due to circular dependencies.
+    deps += [
+      "api",
+      "media",
+      "p2p",
+      "pc",
+    ]
   }
 
   if (rtc_enable_protobuf) {
