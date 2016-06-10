@@ -77,8 +77,12 @@ VideoStreamDecoder::~VideoStreamDecoder() {}
 // thread may have held the lock when calling VideoDecoder::Decode, Reset, or
 // Release. Acquiring the same lock in the path of decode callback can deadlock.
 int32_t VideoStreamDecoder::FrameToRender(VideoFrame& video_frame) {  // NOLINT
-  if (pre_render_callback_)
-    pre_render_callback_->FrameCallback(&video_frame);
+  if (pre_render_callback_) {
+    // Post processing is not supported if the frame is backed by a texture.
+    if (!video_frame.video_frame_buffer()->native_handle()) {
+      pre_render_callback_->FrameCallback(&video_frame);
+    }
+  }
 
   incoming_video_stream_->OnFrame(video_frame);
   return 0;

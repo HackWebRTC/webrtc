@@ -168,6 +168,9 @@ class VideoReceiveStream {
     // Called for each decoded frame. E.g. used when adding effects to the
     // decoded
     // stream. 'nullptr' disables the callback.
+    // TODO(tommi): This seems to be only used by a test or two.  Consider
+    // removing it (and use an appropriate alternative in the tests) as well
+    // as the associated code in VideoStreamDecoder.
     I420FrameCallback* pre_render_callback = nullptr;
 
     // Target delay in milliseconds. A positive value indicates this stream is

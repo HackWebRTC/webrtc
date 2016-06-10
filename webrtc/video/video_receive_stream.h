@@ -38,7 +38,6 @@ class VieRemb;
 namespace internal {
 
 class VideoReceiveStream : public webrtc::VideoReceiveStream,
-                           public I420FrameCallback,
                            public rtc::VideoSinkInterface<VideoFrame>,
                            public EncodedImageCallback,
                            public NackSender,
@@ -64,9 +63,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   void Stop() override;
 
   webrtc::VideoReceiveStream::Stats GetStats() const override;
-
-  // Overrides I420FrameCallback.
-  void FrameCallback(VideoFrame* video_frame) override;
 
   // Overrides rtc::VideoSinkInterface<VideoFrame>.
   void OnFrame(const VideoFrame& video_frame) override;
