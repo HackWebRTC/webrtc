@@ -2004,7 +2004,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSend(bool send) {
 void WebRtcVideoChannel2::WebRtcVideoSendStream::OnLoadUpdate(Load load) {
   if (worker_thread_ != rtc::Thread::Current()) {
     invoker_.AsyncInvoke<void>(
-        worker_thread_,
+        RTC_FROM_HERE, worker_thread_,
         rtc::Bind(&WebRtcVideoChannel2::WebRtcVideoSendStream::OnLoadUpdate,
                   this, load));
     return;

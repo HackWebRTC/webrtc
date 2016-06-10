@@ -101,7 +101,8 @@ DBusHandlerResult DBusSigFilter::DBusCallback(DBusConnection *dbus_conn,
 // Posts a message to caller thread.
 DBusHandlerResult DBusSigFilter::Callback(DBusMessage *message) {
   if (caller_thread_) {
-    caller_thread_->Post(this, DSM_SIGNAL, new DBusSigMessageData(message));
+    caller_thread_->Post(RTC_FROM_HERE, this, DSM_SIGNAL,
+                         new DBusSigMessageData(message));
   }
   // Don't "eat" the message here. Let it pop up.
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;

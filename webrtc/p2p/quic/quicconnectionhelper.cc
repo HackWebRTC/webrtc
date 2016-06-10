@@ -59,7 +59,7 @@ void QuicAlarm::SetImpl() {
   if (delay_ms < 0) {
     delay_ms = 0;
   }
-  thread_->PostDelayed(delay_ms, this);
+  thread_->PostDelayed(RTC_FROM_HERE, delay_ms, this);
 }
 
 void QuicAlarm::CancelImpl() {

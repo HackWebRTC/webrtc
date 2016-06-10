@@ -730,9 +730,9 @@ void BasicNetworkManager::StartUpdating() {
     // we should trigger network signal immediately for the new clients
     // to start allocating ports.
     if (sent_first_update_)
-      thread_->Post(this, kSignalNetworksMessage);
+      thread_->Post(RTC_FROM_HERE, this, kSignalNetworksMessage);
   } else {
-    thread_->Post(this, kUpdateNetworksMessage);
+    thread_->Post(RTC_FROM_HERE, this, kUpdateNetworksMessage);
     StartNetworkMonitor();
   }
   ++start_count_;
@@ -870,7 +870,8 @@ void BasicNetworkManager::UpdateNetworksOnce() {
 
 void BasicNetworkManager::UpdateNetworksContinually() {
   UpdateNetworksOnce();
-  thread_->PostDelayed(kNetworksUpdateIntervalMs, this, kUpdateNetworksMessage);
+  thread_->PostDelayed(RTC_FROM_HERE, kNetworksUpdateIntervalMs, this,
+                       kUpdateNetworksMessage);
 }
 
 void BasicNetworkManager::DumpNetworks() {

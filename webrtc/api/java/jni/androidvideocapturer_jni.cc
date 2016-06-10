@@ -107,15 +107,17 @@ void AndroidVideoCapturerJni::Stop() {
 
 template <typename... Args>
 void AndroidVideoCapturerJni::AsyncCapturerInvoke(
-    const char* method_name,
+    const rtc::Location& posted_from,
     void (webrtc::AndroidVideoCapturer::*method)(Args...),
     typename Identity<Args>::type... args) {
   rtc::CritScope cs(&capturer_lock_);
   if (!invoker_) {
-    LOG(LS_WARNING) << method_name << "() called for closed capturer.";
+    LOG(LS_WARNING) << posted_from.function_name()
+                    << "() called for closed capturer.";
     return;
   }
-  invoker_->AsyncInvoke<void>(rtc::Bind(method, capturer_, args...));
+  invoker_->AsyncInvoke<void>(posted_from,
+                              rtc::Bind(method, capturer_, args...));
 }
 
 std::vector<cricket::VideoFormat>
@@ -162,9 +164,8 @@ AndroidVideoCapturerJni::GetSupportedFormats() {
 
 void AndroidVideoCapturerJni::OnCapturerStarted(bool success) {
   LOG(LS_INFO) << "AndroidVideoCapturerJni capture started: " << success;
-  AsyncCapturerInvoke("OnCapturerStarted",
-                      &webrtc::AndroidVideoCapturer::OnCapturerStarted,
-                      success);
+  AsyncCapturerInvoke(
+      RTC_FROM_HERE, &webrtc::AndroidVideoCapturer::OnCapturerStarted, success);
 }
 
 void AndroidVideoCapturerJni::OnMemoryBufferFrame(void* video_frame,
@@ -308,7 +309,7 @@ void AndroidVideoCapturerJni::OnTextureFrame(int width,
 void AndroidVideoCapturerJni::OnOutputFormatRequest(int width,
                                                     int height,
                                                     int fps) {
-  AsyncCapturerInvoke("OnOutputFormatRequest",
+  AsyncCapturerInvoke(RTC_FROM_HERE,
                       &webrtc::AndroidVideoCapturer::OnOutputFormatRequest,
                       width, height, fps);
 }

@@ -42,11 +42,11 @@ void XmppThread::ProcessMessages(int cms) {
 }
 
 void XmppThread::Login(const buzz::XmppClientSettings& xcs) {
-  Post(this, MSG_LOGIN, new LoginData(xcs));
+  Post(RTC_FROM_HERE, this, MSG_LOGIN, new LoginData(xcs));
 }
 
 void XmppThread::Disconnect() {
-  Post(this, MSG_DISCONNECT);
+  Post(RTC_FROM_HERE, this, MSG_DISCONNECT);
 }
 
 void XmppThread::OnStateChange(buzz::XmppEngine::State state) {

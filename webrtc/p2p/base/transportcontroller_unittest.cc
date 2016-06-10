@@ -100,8 +100,11 @@ class TransportControllerTest : public testing::Test,
 
   // Used for thread hopping test.
   void CreateChannelsAndCompleteConnectionOnWorkerThread() {
-    worker_thread_->Invoke<void>(rtc::Bind(
-        &TransportControllerTest::CreateChannelsAndCompleteConnection_w, this));
+    worker_thread_->Invoke<void>(
+        RTC_FROM_HERE,
+        rtc::Bind(
+            &TransportControllerTest::CreateChannelsAndCompleteConnection_w,
+            this));
   }
 
   void CreateChannelsAndCompleteConnection_w() {

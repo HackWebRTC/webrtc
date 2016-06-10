@@ -455,7 +455,7 @@ void P2PTransportChannel::Connect() {
   }
 
   // Start checking and pinging as the ports come in.
-  thread()->Post(this, MSG_CHECK_AND_PING);
+  thread()->Post(RTC_FROM_HERE, this, MSG_CHECK_AND_PING);
 }
 
 void P2PTransportChannel::MaybeStartGathering() {
@@ -1058,7 +1058,7 @@ void P2PTransportChannel::UpdateConnectionStates() {
 // Prepare for best candidate sorting.
 void P2PTransportChannel::RequestSort() {
   if (!sort_dirty_) {
-    worker_thread_->Post(this, MSG_SORT);
+    worker_thread_->Post(RTC_FROM_HERE, this, MSG_SORT);
     sort_dirty_ = true;
   }
 }
@@ -1341,7 +1341,7 @@ void P2PTransportChannel::OnCheckAndPing() {
     }
   }
   int delay = std::min(ping_interval, check_receiving_interval_);
-  thread()->PostDelayed(delay, this, MSG_CHECK_AND_PING);
+  thread()->PostDelayed(RTC_FROM_HERE, delay, this, MSG_CHECK_AND_PING);
 }
 
 // A connection is considered a backup connection if the channel state

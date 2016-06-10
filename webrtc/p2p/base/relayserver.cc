@@ -668,7 +668,8 @@ RelayServerBinding::RelayServerBinding(RelayServer* server,
   NoteUsed();
 
   // Set the first timeout check.
-  server_->thread()->PostDelayed(lifetime_, this, MSG_LIFETIME_TIMER);
+  server_->thread()->PostDelayed(RTC_FROM_HERE, lifetime_, this,
+                                 MSG_LIFETIME_TIMER);
 }
 
 RelayServerBinding::~RelayServerBinding() {
@@ -739,7 +740,8 @@ void RelayServerBinding::OnMessage(rtc::Message *pmsg) {
       LOG(LS_INFO) << "Expiring binding " << username_;
       SignalTimeout(this);
     } else {
-      server_->thread()->PostDelayed(lifetime_, this, MSG_LIFETIME_TIMER);
+      server_->thread()->PostDelayed(RTC_FROM_HERE, lifetime_, this,
+                                     MSG_LIFETIME_TIMER);
     }
 
   } else {

@@ -1119,9 +1119,12 @@ void OwnedFactoryAndThreads::JavaCallbackOnFactoryThreads() {
 
 void OwnedFactoryAndThreads::InvokeJavaCallbacksOnFactoryThreads() {
   LOG(LS_INFO) << "InvokeJavaCallbacksOnFactoryThreads.";
-  network_thread_->Invoke<void>([this] { JavaCallbackOnFactoryThreads(); });
-  worker_thread_->Invoke<void>([this] { JavaCallbackOnFactoryThreads(); });
-  signaling_thread_->Invoke<void>([this] { JavaCallbackOnFactoryThreads(); });
+  network_thread_->Invoke<void>(RTC_FROM_HERE,
+                                [this] { JavaCallbackOnFactoryThreads(); });
+  worker_thread_->Invoke<void>(RTC_FROM_HERE,
+                               [this] { JavaCallbackOnFactoryThreads(); });
+  signaling_thread_->Invoke<void>(RTC_FROM_HERE,
+                                  [this] { JavaCallbackOnFactoryThreads(); });
 }
 
 PeerConnectionFactoryInterface::Options ParseOptionsFromJava(JNIEnv* jni,

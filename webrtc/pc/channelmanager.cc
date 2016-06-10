@@ -81,8 +81,8 @@ ChannelManager::~ChannelManager() {
   }
   // The media engine needs to be deleted on the worker thread for thread safe
   // destruction,
-  worker_thread_->Invoke<void>(Bind(
-      &ChannelManager::DestructorDeletes_w, this));
+  worker_thread_->Invoke<void>(
+      RTC_FROM_HERE, Bind(&ChannelManager::DestructorDeletes_w, this));
 }
 
 bool ChannelManager::SetVideoRtxEnabled(bool enable) {
@@ -150,11 +150,12 @@ bool ChannelManager::Init() {
   if (!network_thread_->IsCurrent()) {
     // Do not allow invoking calls to other threads on the network thread.
     network_thread_->Invoke<bool>(
+        RTC_FROM_HERE,
         rtc::Bind(&rtc::Thread::SetAllowBlockingCalls, network_thread_, false));
   }
 
   initialized_ = worker_thread_->Invoke<bool>(
-      Bind(&ChannelManager::InitMediaEngine_w, this));
+      RTC_FROM_HERE, Bind(&ChannelManager::InitMediaEngine_w, this));
   ASSERT(initialized_);
   if (!initialized_) {
     return false;
@@ -181,7 +182,8 @@ void ChannelManager::Terminate() {
   if (!initialized_) {
     return;
   }
-  worker_thread_->Invoke<void>(Bind(&ChannelManager::Terminate_w, this));
+  worker_thread_->Invoke<void>(RTC_FROM_HERE,
+                               Bind(&ChannelManager::Terminate_w, this));
   initialized_ = false;
 }
 
@@ -209,9 +211,9 @@ VoiceChannel* ChannelManager::CreateVoiceChannel(
     bool rtcp,
     const AudioOptions& options) {
   return worker_thread_->Invoke<VoiceChannel*>(
-      Bind(&ChannelManager::CreateVoiceChannel_w, this, media_controller,
-           transport_controller, content_name, bundle_transport_name, rtcp,
-           options));
+      RTC_FROM_HERE, Bind(&ChannelManager::CreateVoiceChannel_w, this,
+                          media_controller, transport_controller, content_name,
+                          bundle_transport_name, rtcp, options));
 }
 
 VoiceChannel* ChannelManager::CreateVoiceChannel_w(
@@ -244,6 +246,7 @@ void ChannelManager::DestroyVoiceChannel(VoiceChannel* voice_channel) {
   TRACE_EVENT0("webrtc", "ChannelManager::DestroyVoiceChannel");
   if (voice_channel) {
     worker_thread_->Invoke<void>(
+        RTC_FROM_HERE,
         Bind(&ChannelManager::DestroyVoiceChannel_w, this, voice_channel));
   }
 }
@@ -270,9 +273,9 @@ VideoChannel* ChannelManager::CreateVideoChannel(
     bool rtcp,
     const VideoOptions& options) {
   return worker_thread_->Invoke<VideoChannel*>(
-      Bind(&ChannelManager::CreateVideoChannel_w, this, media_controller,
-           transport_controller, content_name, bundle_transport_name, rtcp,
-           options));
+      RTC_FROM_HERE, Bind(&ChannelManager::CreateVideoChannel_w, this,
+                          media_controller, transport_controller, content_name,
+                          bundle_transport_name, rtcp, options));
 }
 
 VideoChannel* ChannelManager::CreateVideoChannel_w(
@@ -306,6 +309,7 @@ void ChannelManager::DestroyVideoChannel(VideoChannel* video_channel) {
   TRACE_EVENT0("webrtc", "ChannelManager::DestroyVideoChannel");
   if (video_channel) {
     worker_thread_->Invoke<void>(
+        RTC_FROM_HERE,
         Bind(&ChannelManager::DestroyVideoChannel_w, this, video_channel));
   }
 }
@@ -332,6 +336,7 @@ DataChannel* ChannelManager::CreateDataChannel(
     bool rtcp,
     DataChannelType channel_type) {
   return worker_thread_->Invoke<DataChannel*>(
+      RTC_FROM_HERE,
       Bind(&ChannelManager::CreateDataChannel_w, this, transport_controller,
            content_name, bundle_transport_name, rtcp, channel_type));
 }
@@ -368,6 +373,7 @@ void ChannelManager::DestroyDataChannel(DataChannel* data_channel) {
   TRACE_EVENT0("webrtc", "ChannelManager::DestroyDataChannel");
   if (data_channel) {
     worker_thread_->Invoke<void>(
+        RTC_FROM_HERE,
         Bind(&ChannelManager::DestroyDataChannel_w, this, data_channel));
   }
 }
@@ -391,6 +397,7 @@ bool ChannelManager::GetOutputVolume(int* level) {
     return false;
   }
   return worker_thread_->Invoke<bool>(
+      RTC_FROM_HERE,
       Bind(&MediaEngineInterface::GetOutputVolume, media_engine_.get(), level));
 }
 
@@ -398,8 +405,8 @@ bool ChannelManager::SetOutputVolume(int level) {
   bool ret = level >= 0 && level <= 255;
   if (initialized_) {
     ret &= worker_thread_->Invoke<bool>(
-        Bind(&MediaEngineInterface::SetOutputVolume,
-             media_engine_.get(), level));
+        RTC_FROM_HERE, Bind(&MediaEngineInterface::SetOutputVolume,
+                            media_engine_.get(), level));
   }
 
   if (ret) {
@@ -412,25 +419,27 @@ bool ChannelManager::SetOutputVolume(int level) {
 
 bool ChannelManager::StartAecDump(rtc::PlatformFile file,
                                   int64_t max_size_bytes) {
-  return worker_thread_->Invoke<bool>(Bind(&MediaEngineInterface::StartAecDump,
-                                           media_engine_.get(), file,
-                                           max_size_bytes));
+  return worker_thread_->Invoke<bool>(
+      RTC_FROM_HERE, Bind(&MediaEngineInterface::StartAecDump,
+                          media_engine_.get(), file, max_size_bytes));
 }
 
 void ChannelManager::StopAecDump() {
   worker_thread_->Invoke<void>(
+      RTC_FROM_HERE,
       Bind(&MediaEngineInterface::StopAecDump, media_engine_.get()));
 }
 
 bool ChannelManager::StartRtcEventLog(rtc::PlatformFile file,
                                       int64_t max_size_bytes) {
   return worker_thread_->Invoke<bool>(
-      Bind(&MediaEngineInterface::StartRtcEventLog, media_engine_.get(), file,
-           max_size_bytes));
+      RTC_FROM_HERE, Bind(&MediaEngineInterface::StartRtcEventLog,
+                          media_engine_.get(), file, max_size_bytes));
 }
 
 void ChannelManager::StopRtcEventLog() {
   worker_thread_->Invoke<void>(
+      RTC_FROM_HERE,
       Bind(&MediaEngineInterface::StopRtcEventLog, media_engine_.get()));
 }
 

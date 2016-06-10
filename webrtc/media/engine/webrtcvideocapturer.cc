@@ -359,7 +359,7 @@ void WebRtcVideoCapturer::OnIncomingCapturedFrame(
     // thread hop.
     // Note that Stop() can cause the async invoke call to be cancelled.
     async_invoker_->AsyncInvoke<void>(
-        start_thread_,
+        RTC_FROM_HERE, start_thread_,
         // Note that Bind captures by value, so there's an intermediate copy
         // of sample.
         rtc::Bind(&WebRtcVideoCapturer::SignalFrameCapturedOnStartThread, this,

@@ -148,7 +148,7 @@ void RemoteAudioSource::OnData(const AudioSinkInterface::Data& audio) {
 void RemoteAudioSource::OnAudioProviderGone() {
   // Called when the data provider is deleted.  It may be the worker thread
   // in libjingle or may be a different worker thread.
-  main_thread_->Post(new MessageHandler(this));
+  main_thread_->Post(RTC_FROM_HERE, new MessageHandler(this));
 }
 
 void RemoteAudioSource::OnMessage(rtc::Message* msg) {

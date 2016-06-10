@@ -33,6 +33,7 @@ BEGIN_SIGNALING_PROXY_MAP(PeerConnectionFactory)
       PeerConnectionObserver* a5) override {
     return signaling_thread_
         ->Invoke<rtc::scoped_refptr<PeerConnectionInterface>>(
+            RTC_FROM_HERE,
             rtc::Bind(&PeerConnectionFactoryProxy::CreatePeerConnection_ot,
                       this, a1, a2, a3.release(), a4.release(), a5));
   }
@@ -43,6 +44,7 @@ BEGIN_SIGNALING_PROXY_MAP(PeerConnectionFactory)
       PeerConnectionObserver* a5) override {
     return signaling_thread_
         ->Invoke<rtc::scoped_refptr<PeerConnectionInterface>>(
+            RTC_FROM_HERE,
             rtc::Bind(&PeerConnectionFactoryProxy::CreatePeerConnection_ot,
                       this, a1, a3.release(), a4.release(), a5));
   }

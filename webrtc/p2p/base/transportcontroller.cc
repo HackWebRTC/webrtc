@@ -51,52 +51,58 @@ TransportController::TransportController(rtc::Thread* signaling_thread,
 
 TransportController::~TransportController() {
   network_thread_->Invoke<void>(
+      RTC_FROM_HERE,
       rtc::Bind(&TransportController::DestroyAllTransports_n, this));
   signaling_thread_->Clear(this);
 }
 
 bool TransportController::SetSslMaxProtocolVersion(
     rtc::SSLProtocolVersion version) {
-  return network_thread_->Invoke<bool>(rtc::Bind(
-      &TransportController::SetSslMaxProtocolVersion_n, this, version));
+  return network_thread_->Invoke<bool>(
+      RTC_FROM_HERE, rtc::Bind(&TransportController::SetSslMaxProtocolVersion_n,
+                               this, version));
 }
 
 void TransportController::SetIceConfig(const IceConfig& config) {
   network_thread_->Invoke<void>(
+      RTC_FROM_HERE,
       rtc::Bind(&TransportController::SetIceConfig_n, this, config));
 }
 
 void TransportController::SetIceRole(IceRole ice_role) {
   network_thread_->Invoke<void>(
+      RTC_FROM_HERE,
       rtc::Bind(&TransportController::SetIceRole_n, this, ice_role));
 }
 
 bool TransportController::GetSslRole(const std::string& transport_name,
                                      rtc::SSLRole* role) {
-  return network_thread_->Invoke<bool>(rtc::Bind(
-      &TransportController::GetSslRole_n, this, transport_name, role));
+  return network_thread_->Invoke<bool>(
+      RTC_FROM_HERE, rtc::Bind(&TransportController::GetSslRole_n, this,
+                               transport_name, role));
 }
 
 bool TransportController::SetLocalCertificate(
     const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
-  return network_thread_->Invoke<bool>(rtc::Bind(
-      &TransportController::SetLocalCertificate_n, this, certificate));
+  return network_thread_->Invoke<bool>(
+      RTC_FROM_HERE, rtc::Bind(&TransportController::SetLocalCertificate_n,
+                               this, certificate));
 }
 
 bool TransportController::GetLocalCertificate(
     const std::string& transport_name,
     rtc::scoped_refptr<rtc::RTCCertificate>* certificate) {
   return network_thread_->Invoke<bool>(
-      rtc::Bind(&TransportController::GetLocalCertificate_n, this,
-                transport_name, certificate));
+      RTC_FROM_HERE, rtc::Bind(&TransportController::GetLocalCertificate_n,
+                               this, transport_name, certificate));
 }
 
 std::unique_ptr<rtc::SSLCertificate>
 TransportController::GetRemoteSSLCertificate(
     const std::string& transport_name) {
   return network_thread_->Invoke<std::unique_ptr<rtc::SSLCertificate>>(
-      rtc::Bind(&TransportController::GetRemoteSSLCertificate_n, this,
-                transport_name));
+      RTC_FROM_HERE, rtc::Bind(&TransportController::GetRemoteSSLCertificate_n,
+                               this, transport_name));
 }
 
 bool TransportController::SetLocalTransportDescription(
@@ -105,6 +111,7 @@ bool TransportController::SetLocalTransportDescription(
     ContentAction action,
     std::string* err) {
   return network_thread_->Invoke<bool>(
+      RTC_FROM_HERE,
       rtc::Bind(&TransportController::SetLocalTransportDescription_n, this,
                 transport_name, tdesc, action, err));
 }
@@ -115,12 +122,14 @@ bool TransportController::SetRemoteTransportDescription(
     ContentAction action,
     std::string* err) {
   return network_thread_->Invoke<bool>(
+      RTC_FROM_HERE,
       rtc::Bind(&TransportController::SetRemoteTransportDescription_n, this,
                 transport_name, tdesc, action, err));
 }
 
 void TransportController::MaybeStartGathering() {
   network_thread_->Invoke<void>(
+      RTC_FROM_HERE,
       rtc::Bind(&TransportController::MaybeStartGathering_n, this));
 }
 
@@ -128,25 +137,28 @@ bool TransportController::AddRemoteCandidates(const std::string& transport_name,
                                               const Candidates& candidates,
                                               std::string* err) {
   return network_thread_->Invoke<bool>(
-      rtc::Bind(&TransportController::AddRemoteCandidates_n, this,
-                transport_name, candidates, err));
+      RTC_FROM_HERE, rtc::Bind(&TransportController::AddRemoteCandidates_n,
+                               this, transport_name, candidates, err));
 }
 
 bool TransportController::RemoveRemoteCandidates(const Candidates& candidates,
                                                  std::string* err) {
-  return network_thread_->Invoke<bool>(rtc::Bind(
-      &TransportController::RemoveRemoteCandidates_n, this, candidates, err));
+  return network_thread_->Invoke<bool>(
+      RTC_FROM_HERE, rtc::Bind(&TransportController::RemoveRemoteCandidates_n,
+                               this, candidates, err));
 }
 
 bool TransportController::ReadyForRemoteCandidates(
     const std::string& transport_name) {
-  return network_thread_->Invoke<bool>(rtc::Bind(
-      &TransportController::ReadyForRemoteCandidates_n, this, transport_name));
+  return network_thread_->Invoke<bool>(
+      RTC_FROM_HERE, rtc::Bind(&TransportController::ReadyForRemoteCandidates_n,
+                               this, transport_name));
 }
 
 bool TransportController::GetStats(const std::string& transport_name,
                                    TransportStats* stats) {
   return network_thread_->Invoke<bool>(
+      RTC_FROM_HERE,
       rtc::Bind(&TransportController::GetStats_n, this, transport_name, stats));
 }
 
@@ -555,14 +567,14 @@ void TransportController::OnChannelCandidateGathered_n(
   candidates.push_back(candidate);
   CandidatesData* data =
       new CandidatesData(channel->transport_name(), candidates);
-  signaling_thread_->Post(this, MSG_CANDIDATESGATHERED, data);
+  signaling_thread_->Post(RTC_FROM_HERE, this, MSG_CANDIDATESGATHERED, data);
 }
 
 void TransportController::OnChannelCandidatesRemoved_n(
     TransportChannelImpl* channel,
     const Candidates& candidates) {
   invoker_.AsyncInvoke<void>(
-      signaling_thread_,
+      RTC_FROM_HERE, signaling_thread_,
       rtc::Bind(&TransportController::OnChannelCandidatesRemoved, this,
                 candidates));
 }
@@ -635,13 +647,13 @@ void TransportController::UpdateAggregateStates_n() {
   if (connection_state_ != new_connection_state) {
     connection_state_ = new_connection_state;
     signaling_thread_->Post(
-        this, MSG_ICECONNECTIONSTATE,
+        RTC_FROM_HERE, this, MSG_ICECONNECTIONSTATE,
         new rtc::TypedMessageData<IceConnectionState>(new_connection_state));
   }
 
   if (receiving_ != any_receiving) {
     receiving_ = any_receiving;
-    signaling_thread_->Post(this, MSG_RECEIVING,
+    signaling_thread_->Post(RTC_FROM_HERE, this, MSG_RECEIVING,
                             new rtc::TypedMessageData<bool>(any_receiving));
   }
 
@@ -653,7 +665,7 @@ void TransportController::UpdateAggregateStates_n() {
   if (gathering_state_ != new_gathering_state) {
     gathering_state_ = new_gathering_state;
     signaling_thread_->Post(
-        this, MSG_ICEGATHERINGSTATE,
+        RTC_FROM_HERE, this, MSG_ICEGATHERINGSTATE,
         new rtc::TypedMessageData<IceGatheringState>(new_gathering_state));
   }
 }

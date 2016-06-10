@@ -42,7 +42,7 @@ class FakePeriodicVideoCapturer : public cricket::FakeVideoCapturer,
   virtual cricket::CaptureState Start(const cricket::VideoFormat& format) {
     cricket::CaptureState state = FakeVideoCapturer::Start(format);
     if (state != cricket::CS_FAILED) {
-      rtc::Thread::Current()->Post(this, MSG_CREATEFRAME);
+      rtc::Thread::Current()->Post(RTC_FROM_HERE, this, MSG_CREATEFRAME);
     }
     return state;
   }
@@ -54,8 +54,9 @@ class FakePeriodicVideoCapturer : public cricket::FakeVideoCapturer,
     if (msg->message_id == MSG_CREATEFRAME) {
       if (IsRunning()) {
         CaptureFrame();
-        rtc::Thread::Current()->PostDelayed(static_cast<int>(
-            GetCaptureFormat()->interval / rtc::kNumNanosecsPerMillisec),
+        rtc::Thread::Current()->PostDelayed(
+            RTC_FROM_HERE, static_cast<int>(GetCaptureFormat()->interval /
+                                            rtc::kNumNanosecsPerMillisec),
             this, MSG_CREATEFRAME);
         }
     }

@@ -35,7 +35,7 @@ class MessageQueueTest: public testing::Test, public MessageQueue {
     Thread worker;
     worker.Start();
     return worker.Invoke<bool>(
-        rtc::Bind(&MessageQueueTest::IsLocked_Worker, this));
+        RTC_FROM_HERE, rtc::Bind(&MessageQueueTest::IsLocked_Worker, this));
   }
 };
 
@@ -55,11 +55,11 @@ static void DelayedPostsWithIdenticalTimesAreProcessedInFifoOrder(
     MessageQueue* q) {
   EXPECT_TRUE(q != NULL);
   int64_t now = TimeMillis();
-  q->PostAt(now, NULL, 3);
-  q->PostAt(now - 2, NULL, 0);
-  q->PostAt(now - 1, NULL, 1);
-  q->PostAt(now, NULL, 4);
-  q->PostAt(now - 1, NULL, 2);
+  q->PostAt(RTC_FROM_HERE, now, NULL, 3);
+  q->PostAt(RTC_FROM_HERE, now - 2, NULL, 0);
+  q->PostAt(RTC_FROM_HERE, now - 1, NULL, 1);
+  q->PostAt(RTC_FROM_HERE, now, NULL, 4);
+  q->PostAt(RTC_FROM_HERE, now - 1, NULL, 2);
 
   Message msg;
   for (size_t i=0; i<5; ++i) {
@@ -109,7 +109,7 @@ TEST_F(MessageQueueTest, DiposeHandlerWithPostedMessagePending) {
   // First, post a dispose.
   Dispose(handler);
   // Now, post a message, which should *not* be returned by Get().
-  Post(handler, 1);
+  Post(RTC_FROM_HERE, handler, 1);
   Message msg;
   EXPECT_FALSE(Get(&msg, 0));
   EXPECT_TRUE(deleted);

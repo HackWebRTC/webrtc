@@ -434,7 +434,7 @@ void TCPConnection::OnClose(rtc::AsyncPacketSocket* socket, int error) {
     // We don't attempt reconnect right here. This is to avoid a case where the
     // shutdown is intentional and reconnect is not necessary. We only reconnect
     // when the connection is used to Send() or Ping().
-    port()->thread()->PostDelayed(reconnection_timeout(), this,
+    port()->thread()->PostDelayed(RTC_FROM_HERE, reconnection_timeout(), this,
                                   MSG_TCPCONNECTION_DELAYED_ONCLOSE);
   } else if (!pretending_to_be_writable_) {
     // OnClose could be called when the underneath socket times out during the

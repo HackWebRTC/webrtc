@@ -35,9 +35,9 @@ class MediaController : public webrtc::MediaControllerInterface,
         media_config_(media_config),
         channel_manager_(channel_manager) {
     RTC_DCHECK(worker_thread);
-    worker_thread_->Invoke<void>(
-        rtc::Bind(&MediaController::Construct_w, this,
-                  channel_manager_->media_engine()));
+    worker_thread_->Invoke<void>(RTC_FROM_HERE,
+                                 rtc::Bind(&MediaController::Construct_w, this,
+                                           channel_manager_->media_engine()));
   }
   ~MediaController() override {
     Close();
@@ -45,7 +45,8 @@ class MediaController : public webrtc::MediaControllerInterface,
 
   // webrtc::MediaControllerInterface implementation.
   void Close() override {
-    worker_thread_->Invoke<void>(rtc::Bind(&MediaController::Close_w, this));
+    worker_thread_->Invoke<void>(RTC_FROM_HERE,
+                                 rtc::Bind(&MediaController::Close_w, this));
   }
   webrtc::Call* call_w() override {
     RTC_DCHECK(worker_thread_->IsCurrent());

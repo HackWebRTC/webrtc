@@ -31,7 +31,7 @@ NetworkMonitorBase::~NetworkMonitorBase() {}
 
 void NetworkMonitorBase::OnNetworksChanged() {
   LOG(LS_VERBOSE) << "Network change is received at the network monitor";
-  worker_thread_->Post(this, UPDATE_NETWORKS_MESSAGE);
+  worker_thread_->Post(RTC_FROM_HERE, this, UPDATE_NETWORKS_MESSAGE);
 }
 
 void NetworkMonitorBase::OnMessage(Message* msg) {

@@ -68,7 +68,7 @@ class AndroidVideoCapturerJni : public webrtc::AndroidVideoCapturerDelegate {
   // are not guaranteed to be delivered.
   template <typename... Args>
   void AsyncCapturerInvoke(
-      const char* method_name,
+      const rtc::Location& posted_from,
       void (webrtc::AndroidVideoCapturer::*method)(Args...),
       typename Identity<Args>::type... args);
 

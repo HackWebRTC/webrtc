@@ -204,7 +204,7 @@ void StartThreads(ScopedPtrCollection<Thread>* threads,
   for (int i = 0; i < kNumThreads; ++i) {
     Thread* thread = new Thread();
     thread->Start();
-    thread->Post(handler);
+    thread->Post(RTC_FROM_HERE, handler);
     threads->PushBack(thread);
   }
 }

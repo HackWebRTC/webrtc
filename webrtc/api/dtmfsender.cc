@@ -137,7 +137,7 @@ bool DtmfSender::InsertDtmf(const std::string& tones, int duration,
   // Clear the previous queue.
   signaling_thread_->Clear(this, MSG_DO_INSERT_DTMF);
   // Kick off a new DTMF task queue.
-  signaling_thread_->Post(this, MSG_DO_INSERT_DTMF);
+  signaling_thread_->Post(RTC_FROM_HERE, this, MSG_DO_INSERT_DTMF);
   return true;
 }
 
@@ -222,7 +222,8 @@ void DtmfSender::DoInsertDtmf() {
   tones_.erase(0, first_tone_pos + 1);
 
   // Continue with the next tone.
-  signaling_thread_->PostDelayed(tone_gap, this, MSG_DO_INSERT_DTMF);
+  signaling_thread_->PostDelayed(RTC_FROM_HERE, tone_gap, this,
+                                 MSG_DO_INSERT_DTMF);
 }
 
 void DtmfSender::OnProviderDestroyed() {

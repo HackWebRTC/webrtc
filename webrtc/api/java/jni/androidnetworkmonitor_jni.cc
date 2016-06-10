@@ -268,8 +268,9 @@ int AndroidNetworkMonitor::BindSocketToNetwork(int socket_fd,
 
 void AndroidNetworkMonitor::OnNetworkConnected(
     const NetworkInformation& network_info) {
-  worker_thread()->Invoke<void>(rtc::Bind(
-      &AndroidNetworkMonitor::OnNetworkConnected_w, this, network_info));
+  worker_thread()->Invoke<void>(
+      RTC_FROM_HERE, rtc::Bind(&AndroidNetworkMonitor::OnNetworkConnected_w,
+                               this, network_info));
   // Fire SignalNetworksChanged to update the list of networks.
   OnNetworksChanged();
 }
@@ -288,6 +289,7 @@ void AndroidNetworkMonitor::OnNetworkConnected_w(
 void AndroidNetworkMonitor::OnNetworkDisconnected(NetworkHandle handle) {
   LOG(LS_INFO) << "Network disconnected for handle " << handle;
   worker_thread()->Invoke<void>(
+      RTC_FROM_HERE,
       rtc::Bind(&AndroidNetworkMonitor::OnNetworkDisconnected_w, this, handle));
 }
 

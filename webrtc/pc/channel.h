@@ -308,8 +308,9 @@ class BaseChannel
 
   // Helper function for invoking bool-returning methods on the worker thread.
   template <class FunctorT>
-  bool InvokeOnWorker(const FunctorT& functor) {
-    return worker_thread_->Invoke<bool>(functor);
+  bool InvokeOnWorker(const rtc::Location& posted_from,
+                      const FunctorT& functor) {
+    return worker_thread_->Invoke<bool>(posted_from, functor);
   }
 
  private:

@@ -156,7 +156,7 @@ int VirtualSocket::Bind(const SocketAddress& addr) {
     was_any_ = addr.IsAnyIP();
     // Post a message here such that test case could have chance to
     // process the local address. (i.e. SetAlternativeLocalAddress).
-    server_->msg_queue_->Post(this, MSG_ID_ADDRESS_BOUND);
+    server_->msg_queue_->Post(RTC_FROM_HERE, this, MSG_ID_ADDRESS_BOUND);
   }
   return result;
 }
@@ -760,11 +760,11 @@ int VirtualSocketServer::Connect(VirtualSocket* socket,
   }
   if (remote != NULL) {
     SocketAddress addr = socket->GetLocalAddress();
-    msg_queue_->PostDelayed(delay, remote, MSG_ID_CONNECT,
+    msg_queue_->PostDelayed(RTC_FROM_HERE, delay, remote, MSG_ID_CONNECT,
                             new MessageAddress(addr));
   } else {
     LOG(LS_INFO) << "No one listening at " << remote_addr;
-    msg_queue_->PostDelayed(delay, socket, MSG_ID_DISCONNECT);
+    msg_queue_->PostDelayed(RTC_FROM_HERE, delay, socket, MSG_ID_DISCONNECT);
   }
   return 0;
 }
@@ -772,7 +772,7 @@ int VirtualSocketServer::Connect(VirtualSocket* socket,
 bool VirtualSocketServer::Disconnect(VirtualSocket* socket) {
   if (socket) {
     // Remove the mapping.
-    msg_queue_->Post(socket, MSG_ID_DISCONNECT);
+    msg_queue_->Post(RTC_FROM_HERE, socket, MSG_ID_DISCONNECT);
     return true;
   }
   return false;
@@ -920,7 +920,7 @@ void VirtualSocketServer::AddPacketToNetwork(VirtualSocket* sender,
     // introduces artificial delay.
     ts = std::max(ts, network_delay_);
   }
-  msg_queue_->PostAt(ts, recipient, MSG_ID_PACKET, p);
+  msg_queue_->PostAt(RTC_FROM_HERE, ts, recipient, MSG_ID_PACKET, p);
   network_delay_ = std::max(ts, network_delay_);
 }
 

@@ -708,7 +708,7 @@ void Port::OnConnectionDestroyed(Connection* conn) {
   // fails and is removed before kPortTimeoutDelay, then this message will
   // still cause the Port to be destroyed.
   if (dead()) {
-    thread_->PostDelayed(timeout_delay_, this, MSG_DEAD);
+    thread_->PostDelayed(RTC_FROM_HERE, timeout_delay_, this, MSG_DEAD);
   }
 }
 
@@ -1082,7 +1082,7 @@ void Connection::Prune() {
 
 void Connection::Destroy() {
   LOG_J(LS_VERBOSE, this) << "Connection destroyed";
-  port_->thread()->Post(this, MSG_DELETE);
+  port_->thread()->Post(RTC_FROM_HERE, this, MSG_DELETE);
 }
 
 void Connection::FailAndDestroy() {

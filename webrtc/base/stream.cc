@@ -94,7 +94,8 @@ StreamResult StreamInterface::ReadLine(std::string* line) {
 }
 
 void StreamInterface::PostEvent(Thread* t, int events, int err) {
-  t->Post(this, MSG_POST_EVENT, new StreamEventData(events, err));
+  t->Post(RTC_FROM_HERE, this, MSG_POST_EVENT,
+          new StreamEventData(events, err));
 }
 
 void StreamInterface::PostEvent(int events, int err) {

@@ -672,7 +672,7 @@ void SocketTest::SocketServerWaitInternal(const IPAddress& loopback) {
   thread->Start();
   Sleeper sleeper;
   TypedMessageData<AsyncSocket*> data(client.get());
-  thread->Send(&sleeper, 0, &data);
+  thread->Send(RTC_FROM_HERE, &sleeper, 0, &data);
   EXPECT_FALSE(sink.Check(accepted.get(), testing::SSE_READ));
 
   // But should signal when process_io is true.

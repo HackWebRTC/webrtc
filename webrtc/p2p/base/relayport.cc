@@ -506,7 +506,7 @@ void RelayEntry::Connect() {
 
   // If we failed to get a socket, move on to the next protocol.
   if (!socket) {
-    port()->thread()->Post(this, kMessageConnectTimeout);
+    port()->thread()->Post(RTC_FROM_HERE, this, kMessageConnectTimeout);
     return;
   }
 
@@ -525,7 +525,7 @@ void RelayEntry::Connect() {
   if ((ra->proto == PROTO_TCP) || (ra->proto == PROTO_SSLTCP)) {
     socket->SignalClose.connect(this, &RelayEntry::OnSocketClose);
     socket->SignalConnect.connect(this, &RelayEntry::OnSocketConnect);
-    port()->thread()->PostDelayed(kSoftConnectTimeoutMs, this,
+    port()->thread()->PostDelayed(RTC_FROM_HERE, kSoftConnectTimeoutMs, this,
                                   kMessageConnectTimeout);
   } else {
     current_connection_->SendAllocateRequest(this, 0);

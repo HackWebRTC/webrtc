@@ -66,7 +66,8 @@ class RTCCertificateGenerationTask : public RefCountInterface,
 
         // Handle callbacks on signaling thread. Pass on the |msg->pdata|
         // (which references |this| with ref counting) to that thread.
-        signaling_thread_->Post(this, MSG_GENERATE_DONE, msg->pdata);
+        signaling_thread_->Post(RTC_FROM_HERE, this, MSG_GENERATE_DONE,
+                                msg->pdata);
         break;
       case MSG_GENERATE_DONE:
         RTC_DCHECK(signaling_thread_->IsCurrent());
@@ -152,7 +153,8 @@ void RTCCertificateGenerator::GenerateCertificateAsync(
           new RefCountedObject<RTCCertificateGenerationTask>(
               signaling_thread_, worker_thread_, key_params, expires_ms,
               callback));
-  worker_thread_->Post(msg_data->data().get(), MSG_GENERATE, msg_data);
+  worker_thread_->Post(RTC_FROM_HERE, msg_data->data().get(), MSG_GENERATE,
+                       msg_data);
 }
 
 }  // namespace rtc

@@ -160,7 +160,7 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
   }
 
   void PostMessage(int id, const rtc::CopyOnWriteBuffer& packet) {
-    thread_->Post(this, id, rtc::WrapMessageData(packet));
+    thread_->Post(RTC_FROM_HERE, this, id, rtc::WrapMessageData(packet));
   }
 
   virtual void OnMessage(rtc::Message* msg) {

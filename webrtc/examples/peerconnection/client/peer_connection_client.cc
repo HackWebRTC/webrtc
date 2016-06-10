@@ -500,7 +500,8 @@ void PeerConnectionClient::OnClose(rtc::AsyncSocket* socket, int err) {
   } else {
     if (socket == control_socket_.get()) {
       LOG(WARNING) << "Connection refused; retrying in 2 seconds";
-      rtc::Thread::Current()->PostDelayed(kReconnectDelay, this, 0);
+      rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, kReconnectDelay, this,
+                                          0);
     } else {
       Close();
       callback_->OnDisconnected();

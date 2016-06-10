@@ -53,7 +53,8 @@ class SctpFakeNetworkInterface : public MediaChannel::NetworkInterface,
     LOG(LS_VERBOSE) << "SctpFakeNetworkInterface::SendPacket";
 
     rtc::CopyOnWriteBuffer* buffer = new rtc::CopyOnWriteBuffer(*packet);
-    thread_->Post(this, MSG_PACKET, rtc::WrapMessageData(buffer));
+    thread_->Post(RTC_FROM_HERE, this, MSG_PACKET,
+                  rtc::WrapMessageData(buffer));
     LOG(LS_VERBOSE) << "SctpFakeNetworkInterface::SendPacket, Posted message.";
     return true;
   }

@@ -26,13 +26,12 @@
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/base/trace_event.h"
 
 #if !__has_feature(objc_arc) && (defined(WEBRTC_MAC))
 #include "webrtc/base/maccocoathreadhelper.h"
 #include "webrtc/base/scoped_autorelease_pool.h"
 #endif
-
-#include "webrtc/base/trace_event.h"
 
 namespace rtc {
 
@@ -343,7 +342,10 @@ void Thread::Stop() {
   Join();
 }
 
-void Thread::Send(MessageHandler* phandler, uint32_t id, MessageData* pdata) {
+void Thread::Send(const Location& posted_from,
+                  MessageHandler* phandler,
+                  uint32_t id,
+                  MessageData* pdata) {
   if (fStop_)
     return;
 
@@ -351,6 +353,7 @@ void Thread::Send(MessageHandler* phandler, uint32_t id, MessageData* pdata) {
   // of "thread", like Win32 SendMessage. If in the right context,
   // call the handler directly.
   Message msg;
+  msg.posted_from = posted_from;
   msg.phandler = phandler;
   msg.message_id = id;
   msg.pdata = pdata;
@@ -444,12 +447,12 @@ bool Thread::PopSendMessageFromThread(const Thread* source, _SendMessage* msg) {
   return false;
 }
 
-void Thread::InvokeBegin() {
-  TRACE_EVENT_BEGIN0("webrtc", "Thread::Invoke");
-}
-
-void Thread::InvokeEnd() {
-  TRACE_EVENT_END0("webrtc", "Thread::Invoke");
+void Thread::InvokeInternal(const Location& posted_from,
+                            MessageHandler* handler) {
+  TRACE_EVENT2("webrtc", "Thread::Invoke", "src_file_and_line",
+               posted_from.file_and_line(), "src_func",
+               posted_from.function_name());
+  Send(posted_from, handler);
 }
 
 void Thread::Clear(MessageHandler* phandler,

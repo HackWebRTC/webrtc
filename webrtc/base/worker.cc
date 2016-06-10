@@ -63,7 +63,7 @@ bool Worker::StopWork() {
 
 void Worker::HaveWork() {
   ASSERT(worker_thread_ != NULL);
-  worker_thread_->Post(this, MSG_HAVEWORK);
+  worker_thread_->Post(RTC_FROM_HERE, this, MSG_HAVEWORK);
 }
 
 void Worker::OnMessage(rtc::Message *msg) {

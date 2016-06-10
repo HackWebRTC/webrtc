@@ -207,9 +207,9 @@ class FakeTransportChannel : public TransportChannelImpl,
 
     PacketMessageData* packet = new PacketMessageData(data, len);
     if (async_) {
-      rtc::Thread::Current()->Post(this, 0, packet);
+      rtc::Thread::Current()->Post(RTC_FROM_HERE, this, 0, packet);
     } else {
-      rtc::Thread::Current()->Send(this, 0, packet);
+      rtc::Thread::Current()->Send(RTC_FROM_HERE, this, 0, packet);
     }
     rtc::SentPacket sent_packet(options.packet_id, rtc::TimeMillis());
     SignalSentPacket(this, sent_packet);
@@ -520,6 +520,7 @@ class FakeTransportController : public TransportController {
 
   void Connect(FakeTransportController* dest) {
     network_thread()->Invoke<void>(
+        RTC_FROM_HERE,
         rtc::Bind(&FakeTransportController::Connect_n, this, dest));
   }
 

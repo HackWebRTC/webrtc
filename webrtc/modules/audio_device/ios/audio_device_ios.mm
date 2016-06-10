@@ -336,22 +336,22 @@ int AudioDeviceIOS::GetRecordAudioParameters(AudioParameters* params) const {
 
 void AudioDeviceIOS::OnInterruptionBegin() {
   RTC_DCHECK(thread_);
-  thread_->Post(this, kMessageTypeInterruptionBegin);
+  thread_->Post(RTC_FROM_HERE, this, kMessageTypeInterruptionBegin);
 }
 
 void AudioDeviceIOS::OnInterruptionEnd() {
   RTC_DCHECK(thread_);
-  thread_->Post(this, kMessageTypeInterruptionEnd);
+  thread_->Post(RTC_FROM_HERE, this, kMessageTypeInterruptionEnd);
 }
 
 void AudioDeviceIOS::OnValidRouteChange() {
   RTC_DCHECK(thread_);
-  thread_->Post(this, kMessageTypeValidRouteChange);
+  thread_->Post(RTC_FROM_HERE, this, kMessageTypeValidRouteChange);
 }
 
 void AudioDeviceIOS::OnCanPlayOrRecordChange(bool can_play_or_record) {
   RTC_DCHECK(thread_);
-  thread_->Post(this, kMessageTypeCanPlayOrRecordChange,
+  thread_->Post(RTC_FROM_HERE, this, kMessageTypeCanPlayOrRecordChange,
                 new rtc::TypedMessageData<bool>(can_play_or_record));
 }
 

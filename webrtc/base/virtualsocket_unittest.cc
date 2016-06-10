@@ -36,7 +36,7 @@ struct Sender : public MessageHandler {
         rate(rt),
         count(0) {
     last_send = rtc::TimeMillis();
-    thread->PostDelayed(NextDelay(), this, 1);
+    thread->PostDelayed(RTC_FROM_HERE, NextDelay(), this, 1);
   }
 
   uint32_t NextDelay() {
@@ -61,7 +61,7 @@ struct Sender : public MessageHandler {
     socket->Send(dummy, size, options);
 
     last_send = cur_time;
-    thread->PostDelayed(NextDelay(), this, 1);
+    thread->PostDelayed(RTC_FROM_HERE, NextDelay(), this, 1);
   }
 
   Thread* thread;
@@ -86,7 +86,7 @@ struct Receiver : public MessageHandler, public sigslot::has_slots<> {
         sum_sq(0),
         samples(0) {
     socket->SignalReadPacket.connect(this, &Receiver::OnReadPacket);
-    thread->PostDelayed(1000, this, 1);
+    thread->PostDelayed(RTC_FROM_HERE, 1000, this, 1);
   }
 
   ~Receiver() {
@@ -121,7 +121,7 @@ struct Receiver : public MessageHandler, public sigslot::has_slots<> {
     if (bandwidth > 0)
       ASSERT_TRUE(sec_count <= 5 * bandwidth / 4);
     sec_count = 0;
-    thread->PostDelayed(1000, this, 1);
+    thread->PostDelayed(RTC_FROM_HERE, 1000, this, 1);
   }
 
   Thread* thread;

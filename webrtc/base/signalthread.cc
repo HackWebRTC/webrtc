@@ -137,7 +137,7 @@ void SignalThread::Run() {
   {
     EnterExit ee(this);
     if (main_) {
-      main_->Post(this, ST_MSG_WORKER_DONE);
+      main_->Post(RTC_FROM_HERE, this, ST_MSG_WORKER_DONE);
     }
   }
 }

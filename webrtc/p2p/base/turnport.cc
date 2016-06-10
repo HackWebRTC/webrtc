@@ -736,14 +736,14 @@ void TurnPort::OnAllocateError() {
   // We will send SignalPortError asynchronously as this can be sent during
   // port initialization. This way it will not be blocking other port
   // creation.
-  thread()->Post(this, MSG_ALLOCATE_ERROR);
+  thread()->Post(RTC_FROM_HERE, this, MSG_ALLOCATE_ERROR);
 }
 
 void TurnPort::OnTurnRefreshError() {
   // Need to Close the port asynchronously because otherwise, the refresh
   // request may be deleted twice: once at the end of the message processing
   // and the other in Close().
-  thread()->Post(this, MSG_REFRESH_ERROR);
+  thread()->Post(RTC_FROM_HERE, this, MSG_REFRESH_ERROR);
 }
 
 void TurnPort::Close() {
@@ -1026,7 +1026,7 @@ void TurnPort::ScheduleEntryDestruction(TurnEntry* entry) {
   int64_t timestamp = rtc::TimeMillis();
   entry->set_destruction_timestamp(timestamp);
   invoker_.AsyncInvokeDelayed<void>(
-      thread(),
+      RTC_FROM_HERE, thread(),
       rtc::Bind(&TurnPort::DestroyEntryIfNotCancelled, this, entry, timestamp),
       TURN_PERMISSION_TIMEOUT);
 }
@@ -1126,7 +1126,8 @@ void TurnAllocateRequest::OnErrorResponse(StunMessage* response) {
     case STUN_ERROR_ALLOCATION_MISMATCH:
       // We must handle this error async because trying to delete the socket in
       // OnErrorResponse will cause a deadlock on the socket.
-      port_->thread()->Post(port_, TurnPort::MSG_ALLOCATE_MISMATCH);
+      port_->thread()->Post(RTC_FROM_HERE, port_,
+                            TurnPort::MSG_ALLOCATE_MISMATCH);
       break;
     default:
       LOG_J(LS_WARNING, port_) << "Received TURN allocate error response"
@@ -1215,7 +1216,8 @@ void TurnAllocateRequest::OnTryAlternate(StunMessage* response, int code) {
   // For TCP, we can't close the original Tcp socket during handling a 300 as
   // we're still inside that socket's event handler. Doing so will cause
   // deadlock.
-  port_->thread()->Post(port_, TurnPort::MSG_TRY_ALTERNATE_SERVER);
+  port_->thread()->Post(RTC_FROM_HERE, port_,
+                        TurnPort::MSG_TRY_ALTERNATE_SERVER);
 }
 
 TurnRefreshRequest::TurnRefreshRequest(TurnPort* port)

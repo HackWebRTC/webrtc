@@ -67,7 +67,8 @@ class ReadTask : public SharedExclusiveTask {
   }
 
   void PostRead(int* value) {
-    worker_thread_->Post(this, kMsgRead, new TypedMessageData<int*>(value));
+    worker_thread_->Post(RTC_FROM_HERE, this, kMsgRead,
+                         new TypedMessageData<int*>(value));
   }
 
  private:
@@ -100,7 +101,8 @@ class WriteTask : public SharedExclusiveTask {
   }
 
   void PostWrite(int value) {
-    worker_thread_->Post(this, kMsgWrite, new TypedMessageData<int>(value));
+    worker_thread_->Post(RTC_FROM_HERE, this, kMsgWrite,
+                         new TypedMessageData<int>(value));
   }
 
  private:

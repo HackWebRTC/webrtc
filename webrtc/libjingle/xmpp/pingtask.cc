@@ -77,8 +77,8 @@ int PingTask::ProcessStart() {
 
     // Wake ourselves up when it's time to send another ping or when the ping
     // times out (so we can fire a signal).
-    message_queue_->PostDelayed(ping_timeout_millis_, this);
-    message_queue_->PostDelayed(ping_period_millis_, this);
+    message_queue_->PostDelayed(RTC_FROM_HERE, ping_timeout_millis_, this);
+    message_queue_->PostDelayed(RTC_FROM_HERE, ping_period_millis_, this);
   }
 
   return STATE_BLOCKED;

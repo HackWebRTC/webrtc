@@ -92,7 +92,7 @@ bool QuicDataChannel::Send(const DataBuffer& buffer) {
     return false;
   }
   return worker_thread_->Invoke<bool>(
-      rtc::Bind(&QuicDataChannel::Send_w, this, buffer));
+      RTC_FROM_HERE, rtc::Bind(&QuicDataChannel::Send_w, this, buffer));
 }
 
 bool QuicDataChannel::Send_w(const DataBuffer& buffer) {
@@ -187,8 +187,9 @@ void QuicDataChannel::SetBufferedAmount_w(uint64_t buffered_amount) {
   RTC_DCHECK(worker_thread_->IsCurrent());
   buffered_amount_ = buffered_amount;
   invoker_.AsyncInvoke<void>(
-      signaling_thread_, rtc::Bind(&QuicDataChannel::OnBufferedAmountChange_s,
-                                   this, buffered_amount));
+      RTC_FROM_HERE, signaling_thread_,
+      rtc::Bind(&QuicDataChannel::OnBufferedAmountChange_s, this,
+                buffered_amount));
 }
 
 void QuicDataChannel::Close() {
@@ -198,7 +199,8 @@ void QuicDataChannel::Close() {
   }
   LOG(LS_INFO) << "Closing QUIC data channel.";
   SetState_s(kClosing);
-  worker_thread_->Invoke<void>(rtc::Bind(&QuicDataChannel::Close_w, this));
+  worker_thread_->Invoke<void>(RTC_FROM_HERE,
+                               rtc::Bind(&QuicDataChannel::Close_w, this));
   SetState_s(kClosed);
 }
 
@@ -236,7 +238,7 @@ bool QuicDataChannel::SetTransportChannel(
   quic_transport_channel_ = channel;
   LOG(LS_INFO) << "Setting QuicTransportChannel for QUIC data channel " << id_;
   DataState data_channel_state = worker_thread_->Invoke<DataState>(
-      rtc::Bind(&QuicDataChannel::SetTransportChannel_w, this));
+      RTC_FROM_HERE, rtc::Bind(&QuicDataChannel::SetTransportChannel_w, this));
   SetState_s(data_channel_state);
   return true;
 }
@@ -269,7 +271,7 @@ void QuicDataChannel::OnIncomingMessage(Message&& message) {
                  << " has finished receiving data for QUIC data channel "
                  << id_;
     DataBuffer final_message(message.buffer, false);
-    invoker_.AsyncInvoke<void>(signaling_thread_,
+    invoker_.AsyncInvoke<void>(RTC_FROM_HERE, signaling_thread_,
                                rtc::Bind(&QuicDataChannel::OnMessage_s, this,
                                          std::move(final_message)));
     message.stream->Close();
@@ -316,7 +318,7 @@ void QuicDataChannel::OnDataReceived(net::QuicStreamId stream_id,
   received_data.AppendData(data, len);
   DataBuffer final_message(std::move(received_data), false);
   invoker_.AsyncInvoke<void>(
-      signaling_thread_,
+      RTC_FROM_HERE, signaling_thread_,
       rtc::Bind(&QuicDataChannel::OnMessage_s, this, std::move(final_message)));
   // Once the stream is closed, OnDataReceived will not fire for the stream.
   stream->Close();
@@ -327,7 +329,8 @@ void QuicDataChannel::OnReadyToSend(cricket::TransportChannel* channel) {
   RTC_DCHECK(channel == quic_transport_channel_);
   LOG(LS_INFO) << "QuicTransportChannel is ready to send";
   invoker_.AsyncInvoke<void>(
-      signaling_thread_, rtc::Bind(&QuicDataChannel::SetState_s, this, kOpen));
+      RTC_FROM_HERE, signaling_thread_,
+      rtc::Bind(&QuicDataChannel::SetState_s, this, kOpen));
 }
 
 void QuicDataChannel::OnWriteBlockedStreamClosed(net::QuicStreamId stream_id,
@@ -346,7 +349,7 @@ void QuicDataChannel::OnIncomingQueuedStreamClosed(net::QuicStreamId stream_id,
 
 void QuicDataChannel::OnConnectionClosed() {
   RTC_DCHECK(worker_thread_->IsCurrent());
-  invoker_.AsyncInvoke<void>(signaling_thread_,
+  invoker_.AsyncInvoke<void>(RTC_FROM_HERE, signaling_thread_,
                              rtc::Bind(&QuicDataChannel::Close, this));
 }
 

@@ -66,7 +66,7 @@ rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
   MethodCall0<PeerConnectionFactory, bool> call(
       pc_factory.get(),
       &PeerConnectionFactory::Initialize);
-  bool result =  call.Marshal(signaling_thread);
+  bool result = call.Marshal(RTC_FROM_HERE, signaling_thread);
 
   if (!result) {
     return nullptr;
@@ -146,8 +146,9 @@ bool PeerConnectionFactory::Initialize() {
   // TODO:  Need to make sure only one VoE is created inside
   // WebRtcMediaEngine.
   cricket::MediaEngineInterface* media_engine =
-      worker_thread_->Invoke<cricket::MediaEngineInterface*>(rtc::Bind(
-      &PeerConnectionFactory::CreateMediaEngine_w, this));
+      worker_thread_->Invoke<cricket::MediaEngineInterface*>(
+          RTC_FROM_HERE,
+          rtc::Bind(&PeerConnectionFactory::CreateMediaEngine_w, this));
 
   channel_manager_.reset(new cricket::ChannelManager(
       media_engine, worker_thread_, network_thread_));
@@ -256,8 +257,8 @@ PeerConnectionFactory::CreatePeerConnection(
         default_network_manager_.get(), default_socket_factory_.get()));
   }
   network_thread_->Invoke<void>(
-      rtc::Bind(&cricket::PortAllocator::SetNetworkIgnoreMask, allocator.get(),
-                options_.network_ignore_mask));
+      RTC_FROM_HERE, rtc::Bind(&cricket::PortAllocator::SetNetworkIgnoreMask,
+                               allocator.get(), options_.network_ignore_mask));
 
   rtc::scoped_refptr<PeerConnection> pc(
       new rtc::RefCountedObject<PeerConnection>(this));

@@ -167,7 +167,7 @@ class LOCKABLE TaskQueue {
   static bool IsCurrent(const char* queue_name);
   bool IsCurrent() const;
 
-  // TODO(tommi): For better debuggability, implement FROM_HERE.
+  // TODO(tommi): For better debuggability, implement RTC_FROM_HERE.
 
   // Ownership of the task is passed to PostTask.
   void PostTask(std::unique_ptr<QueuedTask> task);

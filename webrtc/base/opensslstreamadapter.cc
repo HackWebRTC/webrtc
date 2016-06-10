@@ -828,7 +828,8 @@ int OpenSSLStreamAdapter::ContinueSSL() {
         if (DTLSv1_get_timeout(ssl_, &timeout)) {
           int delay = timeout.tv_sec * 1000 + timeout.tv_usec/1000;
 
-          Thread::Current()->PostDelayed(delay, this, MSG_TIMEOUT, 0);
+          Thread::Current()->PostDelayed(RTC_FROM_HERE, delay, this,
+                                         MSG_TIMEOUT, 0);
         }
       }
       break;

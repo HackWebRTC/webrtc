@@ -39,11 +39,11 @@ void ConnectionMonitor::Start(int milliseconds) {
   rate_ = milliseconds;
   if (rate_ < 250)
     rate_ = 250;
-  worker_thread_->Post(this, MSG_MONITOR_START);
+  worker_thread_->Post(RTC_FROM_HERE, this, MSG_MONITOR_START);
 }
 
 void ConnectionMonitor::Stop() {
-  worker_thread_->Post(this, MSG_MONITOR_STOP);
+  worker_thread_->Post(RTC_FROM_HERE, this, MSG_MONITOR_STOP);
 }
 
 void ConnectionMonitor::OnMessage(rtc::Message *message) {
@@ -89,8 +89,8 @@ void ConnectionMonitor::PollConnectionStats_w() {
   stats_getter_->GetConnectionStats(&connection_infos_);
 
   // Signal the monitoring thread, start another poll timer
-  monitoring_thread_->Post(this, MSG_MONITOR_SIGNAL);
-  worker_thread_->PostDelayed(rate_, this, MSG_MONITOR_POLL);
+  monitoring_thread_->Post(RTC_FROM_HERE, this, MSG_MONITOR_SIGNAL);
+  worker_thread_->PostDelayed(RTC_FROM_HERE, rate_, this, MSG_MONITOR_POLL);
 }
 
 }  // namespace cricket

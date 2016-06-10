@@ -107,12 +107,12 @@ class SynchronousMethodCall
       : e_(), proxy_(proxy) {}
   ~SynchronousMethodCall() {}
 
-  void Invoke(rtc::Thread* t) {
+  void Invoke(const rtc::Location& posted_from, rtc::Thread* t) {
     if (t->IsCurrent()) {
       proxy_->OnMessage(NULL);
     } else {
       e_.reset(new rtc::Event(false, false));
-      t->Post(this, 0);
+      t->Post(posted_from, this, 0);
       e_->Wait(rtc::Event::kForever);
     }
   }
@@ -132,8 +132,8 @@ class MethodCall0 : public rtc::Message,
   typedef R (C::*Method)();
   MethodCall0(C* c, Method m) : c_(c), m_(m) {}
 
-  R Marshal(rtc::Thread* t) {
-    internal::SynchronousMethodCall(this).Invoke(t);
+  R Marshal(const rtc::Location& posted_from, rtc::Thread* t) {
+    internal::SynchronousMethodCall(this).Invoke(posted_from, t);
     return r_.value();
   }
 
@@ -152,8 +152,8 @@ class ConstMethodCall0 : public rtc::Message,
   typedef R (C::*Method)() const;
   ConstMethodCall0(C* c, Method m) : c_(c), m_(m) {}
 
-  R Marshal(rtc::Thread* t) {
-    internal::SynchronousMethodCall(this).Invoke(t);
+  R Marshal(const rtc::Location& posted_from, rtc::Thread* t) {
+    internal::SynchronousMethodCall(this).Invoke(posted_from, t);
     return r_.value();
   }
 
@@ -172,8 +172,8 @@ class MethodCall1 : public rtc::Message,
   typedef R (C::*Method)(T1 a1);
   MethodCall1(C* c, Method m, T1 a1) : c_(c), m_(m), a1_(a1) {}
 
-  R Marshal(rtc::Thread* t) {
-    internal::SynchronousMethodCall(this).Invoke(t);
+  R Marshal(const rtc::Location& posted_from, rtc::Thread* t) {
+    internal::SynchronousMethodCall(this).Invoke(posted_from, t);
     return r_.value();
   }
 
@@ -193,8 +193,8 @@ class ConstMethodCall1 : public rtc::Message,
   typedef R (C::*Method)(T1 a1) const;
   ConstMethodCall1(C* c, Method m, T1 a1) : c_(c), m_(m), a1_(a1) {}
 
-  R Marshal(rtc::Thread* t) {
-    internal::SynchronousMethodCall(this).Invoke(t);
+  R Marshal(const rtc::Location& posted_from, rtc::Thread* t) {
+    internal::SynchronousMethodCall(this).Invoke(posted_from, t);
     return r_.value();
   }
 
@@ -214,8 +214,8 @@ class MethodCall2 : public rtc::Message,
   typedef R (C::*Method)(T1 a1, T2 a2);
   MethodCall2(C* c, Method m, T1 a1, T2 a2) : c_(c), m_(m), a1_(a1), a2_(a2) {}
 
-  R Marshal(rtc::Thread* t) {
-    internal::SynchronousMethodCall(this).Invoke(t);
+  R Marshal(const rtc::Location& posted_from, rtc::Thread* t) {
+    internal::SynchronousMethodCall(this).Invoke(posted_from, t);
     return r_.value();
   }
 
@@ -237,8 +237,8 @@ class MethodCall3 : public rtc::Message,
   MethodCall3(C* c, Method m, T1 a1, T2 a2, T3 a3)
       : c_(c), m_(m), a1_(a1), a2_(a2), a3_(a3) {}
 
-  R Marshal(rtc::Thread* t) {
-    internal::SynchronousMethodCall(this).Invoke(t);
+  R Marshal(const rtc::Location& posted_from, rtc::Thread* t) {
+    internal::SynchronousMethodCall(this).Invoke(posted_from, t);
     return r_.value();
   }
 
@@ -262,8 +262,8 @@ class MethodCall4 : public rtc::Message,
   MethodCall4(C* c, Method m, T1 a1, T2 a2, T3 a3, T4 a4)
       : c_(c), m_(m), a1_(a1), a2_(a2), a3_(a3), a4_(a4) {}
 
-  R Marshal(rtc::Thread* t) {
-    internal::SynchronousMethodCall(this).Invoke(t);
+  R Marshal(const rtc::Location& posted_from, rtc::Thread* t) {
+    internal::SynchronousMethodCall(this).Invoke(posted_from, t);
     return r_.value();
   }
 
@@ -288,8 +288,8 @@ class MethodCall5 : public rtc::Message,
   MethodCall5(C* c, Method m, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
       : c_(c), m_(m), a1_(a1), a2_(a2), a3_(a3), a4_(a4), a5_(a5) {}
 
-  R Marshal(rtc::Thread* t) {
-    internal::SynchronousMethodCall(this).Invoke(t);
+  R Marshal(const rtc::Location& posted_from, rtc::Thread* t) {
+    internal::SynchronousMethodCall(this).Invoke(posted_from, t);
     return r_.value();
   }
 
@@ -319,7 +319,7 @@ class MethodCall5 : public rtc::Message,
     ~c##ProxyWithInternal() {                                                  \
       MethodCall0<c##ProxyWithInternal, void> call(                            \
           this, &c##ProxyWithInternal::Release_s);                             \
-      call.Marshal(signaling_thread_);                                         \
+      call.Marshal(RTC_FROM_HERE, signaling_thread_);                          \
     }                                                                          \
                                                                                \
    public:                                                                     \
@@ -349,7 +349,7 @@ class MethodCall5 : public rtc::Message,
     ~c##ProxyWithInternal() {                                   \
       MethodCall0<c##ProxyWithInternal, void> call(             \
           this, &c##ProxyWithInternal::Release_s);              \
-      call.Marshal(signaling_thread_);                          \
+      call.Marshal(RTC_FROM_HERE, signaling_thread_);           \
     }                                                           \
                                                                 \
    public:                                                      \
@@ -363,67 +363,67 @@ class MethodCall5 : public rtc::Message,
     const INTERNAL_CLASS* internal() const { return c_.get(); } \
     INTERNAL_CLASS* internal() { return c_.get(); }
 
-#define PROXY_METHOD0(r, method)                  \
-  r method() override {                           \
-    MethodCall0<C, r> call(c_.get(), &C::method); \
-    return call.Marshal(signaling_thread_);       \
+#define PROXY_METHOD0(r, method)                           \
+  r method() override {                                    \
+    MethodCall0<C, r> call(c_.get(), &C::method);          \
+    return call.Marshal(RTC_FROM_HERE, signaling_thread_); \
   }
 
-#define PROXY_CONSTMETHOD0(r, method)                  \
-  r method() const override {                          \
-    ConstMethodCall0<C, r> call(c_.get(), &C::method); \
-    return call.Marshal(signaling_thread_);            \
+#define PROXY_CONSTMETHOD0(r, method)                      \
+  r method() const override {                              \
+    ConstMethodCall0<C, r> call(c_.get(), &C::method);     \
+    return call.Marshal(RTC_FROM_HERE, signaling_thread_); \
   }
 
-#define PROXY_METHOD1(r, method, t1)                      \
-  r method(t1 a1) override {                              \
-    MethodCall1<C, r, t1> call(c_.get(), &C::method, a1); \
-    return call.Marshal(signaling_thread_);               \
+#define PROXY_METHOD1(r, method, t1)                       \
+  r method(t1 a1) override {                               \
+    MethodCall1<C, r, t1> call(c_.get(), &C::method, a1);  \
+    return call.Marshal(RTC_FROM_HERE, signaling_thread_); \
   }
 
 #define PROXY_CONSTMETHOD1(r, method, t1)                      \
   r method(t1 a1) const override {                             \
     ConstMethodCall1<C, r, t1> call(c_.get(), &C::method, a1); \
-    return call.Marshal(signaling_thread_);                    \
+    return call.Marshal(RTC_FROM_HERE, signaling_thread_);     \
   }
 
 #define PROXY_METHOD2(r, method, t1, t2)                          \
   r method(t1 a1, t2 a2) override {                               \
     MethodCall2<C, r, t1, t2> call(c_.get(), &C::method, a1, a2); \
-    return call.Marshal(signaling_thread_);                       \
+    return call.Marshal(RTC_FROM_HERE, signaling_thread_);        \
   }
 
 #define PROXY_METHOD3(r, method, t1, t2, t3)                              \
   r method(t1 a1, t2 a2, t3 a3) override {                                \
     MethodCall3<C, r, t1, t2, t3> call(c_.get(), &C::method, a1, a2, a3); \
-    return call.Marshal(signaling_thread_);                               \
+    return call.Marshal(RTC_FROM_HERE, signaling_thread_);                \
   }
 
 #define PROXY_METHOD4(r, method, t1, t2, t3, t4)                             \
   r method(t1 a1, t2 a2, t3 a3, t4 a4) override {                            \
     MethodCall4<C, r, t1, t2, t3, t4> call(c_.get(), &C::method, a1, a2, a3, \
                                            a4);                              \
-    return call.Marshal(signaling_thread_);                                  \
+    return call.Marshal(RTC_FROM_HERE, signaling_thread_);                   \
   }
 
 #define PROXY_METHOD5(r, method, t1, t2, t3, t4, t5)                         \
   r method(t1 a1, t2 a2, t3 a3, t4 a4, t5 a5) override {                     \
     MethodCall5<C, r, t1, t2, t3, t4, t5> call(c_.get(), &C::method, a1, a2, \
                                                a3, a4, a5);                  \
-    return call.Marshal(signaling_thread_);                                  \
+    return call.Marshal(RTC_FROM_HERE, signaling_thread_);                   \
   }
 
 // Define methods which should be invoked on the worker thread.
 #define PROXY_WORKER_METHOD1(r, method, t1)               \
   r method(t1 a1) override {                              \
     MethodCall1<C, r, t1> call(c_.get(), &C::method, a1); \
-    return call.Marshal(worker_thread_);                  \
+    return call.Marshal(RTC_FROM_HERE, worker_thread_);   \
   }
 
 #define PROXY_WORKER_METHOD2(r, method, t1, t2)                   \
   r method(t1 a1, t2 a2) override {                               \
     MethodCall2<C, r, t1, t2> call(c_.get(), &C::method, a1, a2); \
-    return call.Marshal(worker_thread_);                          \
+    return call.Marshal(RTC_FROM_HERE, worker_thread_);           \
   }
 
 #define END_SIGNALING_PROXY()             \

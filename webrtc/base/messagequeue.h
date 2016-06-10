@@ -22,6 +22,7 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/location.h"
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/sharedexclusivelock.h"
@@ -138,13 +139,13 @@ const uint32_t MQID_DISPOSE = static_cast<uint32_t>(-2);
 // No destructor
 
 struct Message {
-  Message() {
-    memset(this, 0, sizeof(*this));
-  }
+  Message()
+      : phandler(nullptr), message_id(0), pdata(nullptr), ts_sensitive(0) {}
   inline bool Match(MessageHandler* handler, uint32_t id) const {
     return (handler == NULL || handler == phandler)
            && (id == MQID_ANY || id == message_id);
   }
+  Location posted_from;
   MessageHandler *phandler;
   uint32_t message_id;
   MessageData *pdata;
@@ -213,20 +214,24 @@ class MessageQueue {
   virtual bool Get(Message *pmsg, int cmsWait = kForever,
                    bool process_io = true);
   virtual bool Peek(Message *pmsg, int cmsWait = 0);
-  virtual void Post(MessageHandler* phandler,
+  virtual void Post(const Location& posted_from,
+                    MessageHandler* phandler,
                     uint32_t id = 0,
                     MessageData* pdata = NULL,
                     bool time_sensitive = false);
-  virtual void PostDelayed(int cmsDelay,
+  virtual void PostDelayed(const Location& posted_from,
+                           int cmsDelay,
                            MessageHandler* phandler,
                            uint32_t id = 0,
                            MessageData* pdata = NULL);
-  virtual void PostAt(int64_t tstamp,
+  virtual void PostAt(const Location& posted_from,
+                      int64_t tstamp,
                       MessageHandler* phandler,
                       uint32_t id = 0,
                       MessageData* pdata = NULL);
   // TODO(honghaiz): Remove this when all the dependencies are removed.
-  virtual void PostAt(uint32_t tstamp,
+  virtual void PostAt(const Location& posted_from,
+                      uint32_t tstamp,
                       MessageHandler* phandler,
                       uint32_t id = 0,
                       MessageData* pdata = NULL);
@@ -248,7 +253,7 @@ class MessageQueue {
   // Internally posts a message which causes the doomed object to be deleted
   template<class T> void Dispose(T* doomed) {
     if (doomed) {
-      Post(NULL, MQID_DISPOSE, new DisposeData<T>(doomed));
+      Post(RTC_FROM_HERE, NULL, MQID_DISPOSE, new DisposeData<T>(doomed));
     }
   }
 
@@ -263,7 +268,8 @@ class MessageQueue {
     void reheap() { make_heap(c.begin(), c.end(), comp); }
   };
 
-  void DoDelayPost(int64_t cmsDelay,
+  void DoDelayPost(const Location& posted_from,
+                   int64_t cmsDelay,
                    int64_t tstamp,
                    MessageHandler* phandler,
                    uint32_t id,

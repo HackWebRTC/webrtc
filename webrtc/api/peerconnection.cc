@@ -563,7 +563,8 @@ PeerConnection::~PeerConnection() {
   // which will trigger some final actions in PeerConnection...
   session_.reset(nullptr);
   // port_allocator_ lives on the network thread and should be destroyed there.
-  network_thread()->Invoke<void>([this] { port_allocator_.reset(nullptr); });
+  network_thread()->Invoke<void>(RTC_FROM_HERE,
+                                 [this] { port_allocator_.reset(nullptr); });
 }
 
 bool PeerConnection::Initialize(
@@ -582,8 +583,9 @@ bool PeerConnection::Initialize(
 
   // The port allocator lives on the network thread and should be initialized
   // there.
-  if (!network_thread()->Invoke<bool>(rtc::Bind(
-          &PeerConnection::InitializePortAllocator_n, this, configuration))) {
+  if (!network_thread()->Invoke<bool>(
+          RTC_FROM_HERE, rtc::Bind(&PeerConnection::InitializePortAllocator_n,
+                                   this, configuration))) {
     return false;
   }
 
@@ -833,7 +835,7 @@ bool PeerConnection::GetStats(StatsObserver* observer,
   }
 
   stats_->UpdateStats(level);
-  signaling_thread()->Post(this, MSG_GETSTATS,
+  signaling_thread()->Post(RTC_FROM_HERE, this, MSG_GETSTATS,
                            new GetStatsMsg(observer, track));
   return true;
 }
@@ -1062,7 +1064,8 @@ void PeerConnection::SetLocalDescription(
   }
 
   SetSessionDescriptionMsg* msg = new SetSessionDescriptionMsg(observer);
-  signaling_thread()->Post(this, MSG_SET_SESSIONDESCRIPTION_SUCCESS, msg);
+  signaling_thread()->Post(RTC_FROM_HERE, this,
+                           MSG_SET_SESSIONDESCRIPTION_SUCCESS, msg);
 
   // MaybeStartGathering needs to be called after posting
   // MSG_SET_SESSIONDESCRIPTION_SUCCESS, so that we don't signal any candidates
@@ -1173,13 +1176,15 @@ void PeerConnection::SetRemoteDescription(
   UpdateEndedRemoteMediaStreams();
 
   SetSessionDescriptionMsg* msg = new SetSessionDescriptionMsg(observer);
-  signaling_thread()->Post(this, MSG_SET_SESSIONDESCRIPTION_SUCCESS, msg);
+  signaling_thread()->Post(RTC_FROM_HERE, this,
+                           MSG_SET_SESSIONDESCRIPTION_SUCCESS, msg);
 }
 
 bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration) {
   TRACE_EVENT0("webrtc", "PeerConnection::SetConfiguration");
   if (port_allocator_) {
     if (!network_thread()->Invoke<bool>(
+            RTC_FROM_HERE,
             rtc::Bind(&PeerConnection::ReconfigurePortAllocator_n, this,
                       configuration))) {
       return false;
@@ -1492,7 +1497,8 @@ void PeerConnection::PostSetSessionDescriptionFailure(
     const std::string& error) {
   SetSessionDescriptionMsg* msg = new SetSessionDescriptionMsg(observer);
   msg->error = error;
-  signaling_thread()->Post(this, MSG_SET_SESSIONDESCRIPTION_FAILED, msg);
+  signaling_thread()->Post(RTC_FROM_HERE, this,
+                           MSG_SET_SESSIONDESCRIPTION_FAILED, msg);
 }
 
 void PeerConnection::PostCreateSessionDescriptionFailure(
@@ -1500,7 +1506,8 @@ void PeerConnection::PostCreateSessionDescriptionFailure(
     const std::string& error) {
   CreateSessionDescriptionMsg* msg = new CreateSessionDescriptionMsg(observer);
   msg->error = error;
-  signaling_thread()->Post(this, MSG_CREATE_SESSIONDESCRIPTION_FAILED, msg);
+  signaling_thread()->Post(RTC_FROM_HERE, this,
+                           MSG_CREATE_SESSIONDESCRIPTION_FAILED, msg);
 }
 
 bool PeerConnection::GetOptionsForOffer(
@@ -1999,7 +2006,8 @@ void PeerConnection::OnSctpDataChannelClosed(DataChannel* channel) {
       // we can't free it directly here; we need to free it asynchronously.
       sctp_data_channels_to_free_.push_back(*it);
       sctp_data_channels_.erase(it);
-      signaling_thread()->Post(this, MSG_FREE_DATACHANNELS, nullptr);
+      signaling_thread()->Post(RTC_FROM_HERE, this, MSG_FREE_DATACHANNELS,
+                               nullptr);
       return;
     }
   }

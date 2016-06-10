@@ -37,11 +37,11 @@ void MediaMonitor::Start(uint32_t milliseconds) {
   rate_ = milliseconds;
   if (rate_ < 100)
     rate_ = 100;
-  worker_thread_->Post(this, MSG_MONITOR_START);
+  worker_thread_->Post(RTC_FROM_HERE, this, MSG_MONITOR_START);
 }
 
 void MediaMonitor::Stop() {
-  worker_thread_->Post(this, MSG_MONITOR_STOP);
+  worker_thread_->Post(RTC_FROM_HERE, this, MSG_MONITOR_STOP);
   rate_ = 0;
 }
 
@@ -84,8 +84,8 @@ void MediaMonitor::PollMediaChannel() {
   GetStats();
 
   // Signal the monitoring thread, start another poll timer
-  monitor_thread_->Post(this, MSG_MONITOR_SIGNAL);
-  worker_thread_->PostDelayed(rate_, this, MSG_MONITOR_POLL);
+  monitor_thread_->Post(RTC_FROM_HERE, this, MSG_MONITOR_SIGNAL);
+  worker_thread_->PostDelayed(RTC_FROM_HERE, rate_, this, MSG_MONITOR_POLL);
 }
 
 }  // namespace cricket

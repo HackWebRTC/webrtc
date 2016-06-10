@@ -35,11 +35,11 @@ void AudioMonitor::Start(int milliseconds) {
   rate_ = milliseconds;
   if (rate_ < 100)
     rate_ = 100;
-  voice_channel_->worker_thread()->Post(this, MSG_MONITOR_START);
+  voice_channel_->worker_thread()->Post(RTC_FROM_HERE, this, MSG_MONITOR_START);
 }
 
 void AudioMonitor::Stop() {
-  voice_channel_->worker_thread()->Post(this, MSG_MONITOR_STOP);
+  voice_channel_->worker_thread()->Post(RTC_FROM_HERE, this, MSG_MONITOR_STOP);
 }
 
 void AudioMonitor::OnMessage(rtc::Message *message) {
@@ -89,8 +89,9 @@ void AudioMonitor::PollVoiceChannel() {
   voice_channel_->GetActiveStreams_w(&audio_info_.active_streams);
 
   // Signal the monitoring thread, start another poll timer
-  monitoring_thread_->Post(this, MSG_MONITOR_SIGNAL);
-  voice_channel_->worker_thread()->PostDelayed(rate_, this, MSG_MONITOR_POLL);
+  monitoring_thread_->Post(RTC_FROM_HERE, this, MSG_MONITOR_SIGNAL);
+  voice_channel_->worker_thread()->PostDelayed(RTC_FROM_HERE, rate_, this,
+                                               MSG_MONITOR_POLL);
 }
 
 VoiceChannel *AudioMonitor::voice_channel() {

@@ -187,7 +187,7 @@ bool DataChannel::Init(const InternalDataChannelInit& config) {
     // Chrome glue and WebKit) are not wired up properly until after this
     // function returns.
     if (provider_->ReadyToSendData()) {
-      rtc::Thread::Current()->Post(this, MSG_CHANNELREADY, NULL);
+      rtc::Thread::Current()->Post(RTC_FROM_HERE, this, MSG_CHANNELREADY, NULL);
     }
   }
 

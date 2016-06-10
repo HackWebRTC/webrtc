@@ -145,7 +145,7 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
     // it in the constructor then the caller has not had a chance to connect to
     // |SignalCertificateReady|.
     signaling_thread_->Post(
-        this, MSG_USE_CONSTRUCTOR_CERTIFICATE,
+        RTC_FROM_HERE, this, MSG_USE_CONSTRUCTOR_CERTIFICATE,
         new rtc::ScopedRefMessageData<rtc::RTCCertificate>(certificate));
   } else {
     // Generate certificate.
@@ -450,7 +450,8 @@ void WebRtcSessionDescriptionFactory::PostCreateSessionDescriptionFailed(
     CreateSessionDescriptionObserver* observer, const std::string& error) {
   CreateSessionDescriptionMsg* msg = new CreateSessionDescriptionMsg(observer);
   msg->error = error;
-  signaling_thread_->Post(this, MSG_CREATE_SESSIONDESCRIPTION_FAILED, msg);
+  signaling_thread_->Post(RTC_FROM_HERE, this,
+                          MSG_CREATE_SESSIONDESCRIPTION_FAILED, msg);
   LOG(LS_ERROR) << "Create SDP failed: " << error;
 }
 
@@ -459,7 +460,8 @@ void WebRtcSessionDescriptionFactory::PostCreateSessionDescriptionSucceeded(
     SessionDescriptionInterface* description) {
   CreateSessionDescriptionMsg* msg = new CreateSessionDescriptionMsg(observer);
   msg->description.reset(description);
-  signaling_thread_->Post(this, MSG_CREATE_SESSIONDESCRIPTION_SUCCESS, msg);
+  signaling_thread_->Post(RTC_FROM_HERE, this,
+                          MSG_CREATE_SESSIONDESCRIPTION_SUCCESS, msg);
 }
 
 void WebRtcSessionDescriptionFactory::OnCertificateRequestFailed() {

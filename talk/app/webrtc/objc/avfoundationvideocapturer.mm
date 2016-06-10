@@ -487,7 +487,7 @@ void AVFoundationVideoCapturer::CaptureSampleBuffer(
   // after it has successfully been signaled.
   CVBufferRetain(image_buffer);
   AVFoundationFrame frame(image_buffer, rtc::TimeNanos());
-  _startThread->Post(this, kMessageTypeFrame,
+  _startThread->Post(RTC_FROM_HERE, this, kMessageTypeFrame,
                      new rtc::TypedMessageData<AVFoundationFrame>(frame));
 }
 

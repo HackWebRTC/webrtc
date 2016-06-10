@@ -307,6 +307,7 @@ int32_t MediaCodecVideoDecoder::InitDecode(const VideoCodec* inst,
 
   // Call Java init.
   return codec_thread_->Invoke<int32_t>(
+      RTC_FROM_HERE,
       Bind(&MediaCodecVideoDecoder::InitDecodeOnCodecThread, this));
 }
 
@@ -399,7 +400,7 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
     }
   }
 
-  codec_thread_->PostDelayed(kMediaCodecPollMs, this);
+  codec_thread_->PostDelayed(RTC_FROM_HERE, kMediaCodecPollMs, this);
 
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -430,7 +431,7 @@ int32_t MediaCodecVideoDecoder::ResetDecodeOnCodecThread() {
   }
   inited_ = true;
 
-  codec_thread_->PostDelayed(kMediaCodecPollMs, this);
+  codec_thread_->PostDelayed(RTC_FROM_HERE, kMediaCodecPollMs, this);
 
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -438,7 +439,7 @@ int32_t MediaCodecVideoDecoder::ResetDecodeOnCodecThread() {
 int32_t MediaCodecVideoDecoder::Release() {
   ALOGD << "DecoderRelease request";
   return codec_thread_->Invoke<int32_t>(
-        Bind(&MediaCodecVideoDecoder::ReleaseOnCodecThread, this));
+      RTC_FROM_HERE, Bind(&MediaCodecVideoDecoder::ReleaseOnCodecThread, this));
 }
 
 int32_t MediaCodecVideoDecoder::ReleaseOnCodecThread() {
@@ -539,8 +540,9 @@ int32_t MediaCodecVideoDecoder::Decode(
     if (use_surface_ &&
         (codecType_ == kVideoCodecVP8 || codecType_ == kVideoCodecH264)) {
       // Soft codec reset - only for surface decoding.
-      ret = codec_thread_->Invoke<int32_t>(Bind(
-          &MediaCodecVideoDecoder::ResetDecodeOnCodecThread, this));
+      ret = codec_thread_->Invoke<int32_t>(
+          RTC_FROM_HERE,
+          Bind(&MediaCodecVideoDecoder::ResetDecodeOnCodecThread, this));
     } else {
       // Hard codec reset.
       ret = InitDecode(&codec_, 1);
@@ -568,8 +570,9 @@ int32_t MediaCodecVideoDecoder::Decode(
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
-  return codec_thread_->Invoke<int32_t>(Bind(
-      &MediaCodecVideoDecoder::DecodeOnCodecThread, this, inputImage));
+  return codec_thread_->Invoke<int32_t>(
+      RTC_FROM_HERE,
+      Bind(&MediaCodecVideoDecoder::DecodeOnCodecThread, this, inputImage));
 }
 
 int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
@@ -896,7 +899,7 @@ void MediaCodecVideoDecoder::OnMessage(rtc::Message* msg) {
     ProcessHWErrorOnCodecThread();
     return;
   }
-  codec_thread_->PostDelayed(kMediaCodecPollMs, this);
+  codec_thread_->PostDelayed(RTC_FROM_HERE, kMediaCodecPollMs, this);
 }
 
 MediaCodecVideoDecoderFactory::MediaCodecVideoDecoderFactory()

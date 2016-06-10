@@ -14,12 +14,14 @@
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagequeue.h"
+#include "webrtc/base/stringencode.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/trace_event.h"
 
 namespace rtc {
 
 const int kMaxMsgLatency = 150;  // 150 ms
+const int kSlowDispatchLoggingThreshold = 50;  // 50 ms
 
 //------------------------------------------------------------------
 // MessageQueueManager
@@ -125,7 +127,7 @@ void MessageQueueManager::ProcessAllMessageQueuesInternal() {
     CritScope cs(&crit_);
     queues_not_done = static_cast<int>(message_queues_.size());
     for (MessageQueue* queue : message_queues_) {
-      queue->PostDelayed(0, &handler);
+      queue->PostDelayed(RTC_FROM_HERE, 0, &handler);
     }
   }
   // Note: One of the message queues may have been on this thread, which is why
@@ -341,7 +343,8 @@ bool MessageQueue::Get(Message *pmsg, int cmsWait, bool process_io) {
 void MessageQueue::ReceiveSends() {
 }
 
-void MessageQueue::Post(MessageHandler* phandler,
+void MessageQueue::Post(const Location& posted_from,
+                        MessageHandler* phandler,
                         uint32_t id,
                         MessageData* pdata,
                         bool time_sensitive) {
@@ -355,6 +358,7 @@ void MessageQueue::Post(MessageHandler* phandler,
   {
     CritScope cs(&crit_);
     Message msg;
+    msg.posted_from = posted_from;
     msg.phandler = phandler;
     msg.message_id = id;
     msg.pdata = pdata;
@@ -366,30 +370,36 @@ void MessageQueue::Post(MessageHandler* phandler,
   WakeUpSocketServer();
 }
 
-void MessageQueue::PostDelayed(int cmsDelay,
+void MessageQueue::PostDelayed(const Location& posted_from,
+                               int cmsDelay,
                                MessageHandler* phandler,
                                uint32_t id,
                                MessageData* pdata) {
-  return DoDelayPost(cmsDelay, TimeAfter(cmsDelay), phandler, id, pdata);
+  return DoDelayPost(posted_from, cmsDelay, TimeAfter(cmsDelay), phandler, id,
+                     pdata);
 }
 
-void MessageQueue::PostAt(uint32_t tstamp,
+void MessageQueue::PostAt(const Location& posted_from,
+                          uint32_t tstamp,
                           MessageHandler* phandler,
                           uint32_t id,
                           MessageData* pdata) {
   // This should work even if it is used (unexpectedly).
   int64_t delay = static_cast<uint32_t>(TimeMillis()) - tstamp;
-  return DoDelayPost(delay, tstamp, phandler, id, pdata);
+  return DoDelayPost(posted_from, delay, tstamp, phandler, id, pdata);
 }
 
-void MessageQueue::PostAt(int64_t tstamp,
+void MessageQueue::PostAt(const Location& posted_from,
+                          int64_t tstamp,
                           MessageHandler* phandler,
                           uint32_t id,
                           MessageData* pdata) {
-  return DoDelayPost(TimeUntil(tstamp), tstamp, phandler, id, pdata);
+  return DoDelayPost(posted_from, TimeUntil(tstamp), tstamp, phandler, id,
+                     pdata);
 }
 
-void MessageQueue::DoDelayPost(int64_t cmsDelay,
+void MessageQueue::DoDelayPost(const Location& posted_from,
+                               int64_t cmsDelay,
                                int64_t tstamp,
                                MessageHandler* phandler,
                                uint32_t id,
@@ -405,6 +415,7 @@ void MessageQueue::DoDelayPost(int64_t cmsDelay,
   {
     CritScope cs(&crit_);
     Message msg;
+    msg.posted_from = posted_from;
     msg.phandler = phandler;
     msg.message_id = id;
     msg.pdata = pdata;
@@ -485,8 +496,17 @@ void MessageQueue::Clear(MessageHandler* phandler,
 }
 
 void MessageQueue::Dispatch(Message *pmsg) {
-  TRACE_EVENT0("webrtc", "MessageQueue::Dispatch");
+  TRACE_EVENT2("webrtc", "MessageQueue::Dispatch", "src_file_and_line",
+               pmsg->posted_from.file_and_line(), "src_func",
+               pmsg->posted_from.function_name());
+  int64_t start_time = TimeMillis();
   pmsg->phandler->OnMessage(pmsg);
+  int64_t end_time = TimeMillis();
+  int64_t diff = TimeDiff(end_time, start_time);
+  if (diff >= kSlowDispatchLoggingThreshold) {
+    LOG(LS_INFO) << "Message took " << diff << "ms to dispatch. Posted from: "
+                 << pmsg->posted_from.ToString();
+  }
 }
 
 }  // namespace rtc

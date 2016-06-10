@@ -268,11 +268,13 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   cricket::FakeTransport* GetTransport1() {
     std::string name = channel1_->content_name();
     return network_thread_->Invoke<cricket::FakeTransport*>(
+        RTC_FROM_HERE,
         [this, name] { return transport_controller1_->GetTransport_n(name); });
   }
   cricket::FakeTransport* GetTransport2() {
     std::string name = channel2_->content_name();
     return network_thread_->Invoke<cricket::FakeTransport*>(
+        RTC_FROM_HERE,
         [this, name] { return transport_controller2_->GetTransport_n(name); });
   }
 
@@ -400,7 +402,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
         : thread_(rtc::Thread::Create()),
           task_(new rtc::FunctorMessageHandler<void, FunctorT>(functor)) {
       thread_->Start();
-      thread_->Post(task_.get());
+      thread_->Post(RTC_FROM_HERE, task_.get());
     }
 
     ~ScopedCallThread() { thread_->Stop(); }
@@ -911,7 +913,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     ASSERT_TRUE(media_channel1);
 
     media_channel1->set_num_network_route_changes(0);
-    network_thread_->Invoke<void>([transport_channel1] {
+    network_thread_->Invoke<void>(RTC_FROM_HERE, [transport_channel1] {
       // The transport channel becomes disconnected.
       transport_channel1->SignalSelectedCandidatePairChanged(transport_channel1,
                                                              nullptr, -1);
@@ -921,8 +923,9 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_FALSE(media_channel1->last_network_route().connected);
     media_channel1->set_num_network_route_changes(0);
 
-    network_thread_->Invoke<void>([this, transport_channel1, media_channel1,
-                                   kLocalNetId, kRemoteNetId, kLastPacketId] {
+    network_thread_->Invoke<void>(RTC_FROM_HERE, [this, transport_channel1,
+                                                  media_channel1, kLocalNetId,
+                                                  kRemoteNetId, kLastPacketId] {
       // The transport channel becomes connected.
       rtc::SocketAddress local_address("192.168.1.1", 1000 /* port number */);
       rtc::SocketAddress remote_address("192.168.1.2", 2000 /* port number */);
@@ -1455,7 +1458,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     // Lose writability, which should fail.
     network_thread_->Invoke<void>(
-        [this] { GetTransport1()->SetWritable(false); });
+        RTC_FROM_HERE, [this] { GetTransport1()->SetWritable(false); });
     SendRtp1();
     SendRtp2();
     WaitForThreads();
@@ -1464,7 +1467,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     // Regain writability
     network_thread_->Invoke<void>(
-        [this] { GetTransport1()->SetWritable(true); });
+        RTC_FROM_HERE, [this] { GetTransport1()->SetWritable(true); });
     EXPECT_TRUE(media_channel1_->sending());
     SendRtp1();
     SendRtp2();
@@ -1476,7 +1479,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     // Lose writability completely
     network_thread_->Invoke<void>(
-        [this] { GetTransport1()->SetDestination(NULL); });
+        RTC_FROM_HERE, [this] { GetTransport1()->SetDestination(NULL); });
     EXPECT_TRUE(media_channel1_->sending());
 
     // Should fail also.
@@ -1487,8 +1490,9 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(CheckNoRtp2());
 
     // Gain writability back
-    network_thread_->Invoke<void>(
-        [this] { GetTransport1()->SetDestination(GetTransport2()); });
+    network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
+      GetTransport1()->SetDestination(GetTransport2());
+    });
     EXPECT_TRUE(media_channel1_->sending());
     SendRtp1();
     SendRtp2();
@@ -1788,7 +1792,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     error_handler.error_ = cricket::SrtpFilter::ERROR_NONE;
     error_handler.mode_ = cricket::SrtpFilter::UNPROTECT;
 
-    network_thread_->Invoke<void>([this] {
+    network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
       cricket::TransportChannel* transport_channel =
           channel2_->transport_channel();
       transport_channel->SignalReadPacket(
@@ -1805,11 +1809,13 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     TransportChannel* rtcp = channel1_->rtcp_transport_channel();
     EXPECT_FALSE(media_channel1_->ready_to_send());
 
-    network_thread_->Invoke<void>([rtp] { rtp->SignalReadyToSend(rtp); });
+    network_thread_->Invoke<void>(RTC_FROM_HERE,
+                                  [rtp] { rtp->SignalReadyToSend(rtp); });
     WaitForThreads();
     EXPECT_FALSE(media_channel1_->ready_to_send());
 
-    network_thread_->Invoke<void>([rtcp] { rtcp->SignalReadyToSend(rtcp); });
+    network_thread_->Invoke<void>(RTC_FROM_HERE,
+                                  [rtcp] { rtcp->SignalReadyToSend(rtcp); });
     WaitForThreads();
     // MediaChannel::OnReadyToSend only be called when both rtp and rtcp
     // channel are ready to send.
@@ -1817,23 +1823,23 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     // rtp channel becomes not ready to send will be propagated to mediachannel
     network_thread_->Invoke<void>(
-        [this] { channel1_->SetReadyToSend(false, false); });
+        RTC_FROM_HERE, [this] { channel1_->SetReadyToSend(false, false); });
     WaitForThreads();
     EXPECT_FALSE(media_channel1_->ready_to_send());
 
     network_thread_->Invoke<void>(
-        [this] { channel1_->SetReadyToSend(false, true); });
+        RTC_FROM_HERE, [this] { channel1_->SetReadyToSend(false, true); });
     WaitForThreads();
     EXPECT_TRUE(media_channel1_->ready_to_send());
 
     // rtcp channel becomes not ready to send will be propagated to mediachannel
     network_thread_->Invoke<void>(
-        [this] { channel1_->SetReadyToSend(true, false); });
+        RTC_FROM_HERE, [this] { channel1_->SetReadyToSend(true, false); });
     WaitForThreads();
     EXPECT_FALSE(media_channel1_->ready_to_send());
 
     network_thread_->Invoke<void>(
-        [this] { channel1_->SetReadyToSend(true, true); });
+        RTC_FROM_HERE, [this] { channel1_->SetReadyToSend(true, true); });
     WaitForThreads();
     EXPECT_TRUE(media_channel1_->ready_to_send());
   }
@@ -1851,12 +1857,13 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_FALSE(media_channel1_->ready_to_send());
     // In the case of rtcp mux, the SignalReadyToSend() from rtp channel
     // should trigger the MediaChannel's OnReadyToSend.
-    network_thread_->Invoke<void>([rtp] { rtp->SignalReadyToSend(rtp); });
+    network_thread_->Invoke<void>(RTC_FROM_HERE,
+                                  [rtp] { rtp->SignalReadyToSend(rtp); });
     WaitForThreads();
     EXPECT_TRUE(media_channel1_->ready_to_send());
 
     network_thread_->Invoke<void>(
-        [this] { channel1_->SetReadyToSend(false, false); });
+        RTC_FROM_HERE, [this] { channel1_->SetReadyToSend(false, false); });
     WaitForThreads();
     EXPECT_FALSE(media_channel1_->ready_to_send());
   }
@@ -1919,13 +1926,14 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   void WaitForThreads(rtc::ArrayView<rtc::Thread*> threads) {
     // |threads| and current thread post packets to network thread.
     for (rtc::Thread* thread : threads) {
-      thread->Invoke<void>([thread] { ProcessThreadQueue(thread); });
+      thread->Invoke<void>(RTC_FROM_HERE,
+                           [thread] { ProcessThreadQueue(thread); });
     }
     ProcessThreadQueue(rtc::Thread::Current());
     // Network thread move them around and post back to worker = current thread.
     if (!network_thread_->IsCurrent()) {
       network_thread_->Invoke<void>(
-          [this] { ProcessThreadQueue(network_thread_); });
+          RTC_FROM_HERE, [this] { ProcessThreadQueue(network_thread_); });
     }
     // Worker thread = current Thread process received messages.
     ProcessThreadQueue(rtc::Thread::Current());

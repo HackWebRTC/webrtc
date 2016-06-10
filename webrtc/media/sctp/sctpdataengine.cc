@@ -202,7 +202,8 @@ int OnSctpOutboundPacket(void* addr,
   // Note: We have to copy the data; the caller will delete it.
   auto* msg = new OutboundPacketMessage(
       new rtc::CopyOnWriteBuffer(reinterpret_cast<uint8_t*>(data), length));
-  channel->worker_thread()->Post(channel, MSG_SCTPOUTBOUNDPACKET, msg);
+  channel->worker_thread()->Post(RTC_FROM_HERE, channel, MSG_SCTPOUTBOUNDPACKET,
+                                 msg);
   return 0;
 }
 
@@ -239,7 +240,8 @@ int OnSctpInboundPacket(struct socket* sock,
     packet->flags = flags;
     // The ownership of |packet| transfers to |msg|.
     InboundPacketMessage* msg = new InboundPacketMessage(packet);
-    channel->worker_thread()->Post(channel, MSG_SCTPINBOUNDPACKET, msg);
+    channel->worker_thread()->Post(RTC_FROM_HERE, channel,
+                                   MSG_SCTPINBOUNDPACKET, msg);
   }
   free(data);
   return 1;

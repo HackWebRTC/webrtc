@@ -655,7 +655,8 @@ class P2PTransportChannelTestBase : public testing::Test,
     if (GetEndpoint(ch)->save_candidates_) {
       GetEndpoint(ch)->saved_candidates_.push_back(new CandidatesData(ch, c));
     } else {
-      main_->Post(this, MSG_ADD_CANDIDATES, new CandidatesData(ch, c));
+      main_->Post(RTC_FROM_HERE, this, MSG_ADD_CANDIDATES,
+                  new CandidatesData(ch, c));
     }
   }
 
@@ -667,7 +668,7 @@ class P2PTransportChannelTestBase : public testing::Test,
                            const std::vector<cricket::Candidate>& candidates) {
     // Candidate removals are not paused.
     CandidatesData* candidates_data = new CandidatesData(ch, candidates);
-    main_->Post(this, MSG_REMOVE_CANDIDATES, candidates_data);
+    main_->Post(RTC_FROM_HERE, this, MSG_REMOVE_CANDIDATES, candidates_data);
   }
 
   // Tcp candidate verification has to be done when they are generated.
@@ -691,7 +692,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     Endpoint* ed = GetEndpoint(endpoint);
     std::vector<CandidatesData*>::iterator it = ed->saved_candidates_.begin();
     for (; it != ed->saved_candidates_.end(); ++it) {
-      main_->Post(this, MSG_ADD_CANDIDATES, *it);
+      main_->Post(RTC_FROM_HERE, this, MSG_ADD_CANDIDATES, *it);
     }
     ed->saved_candidates_.clear();
     ed->save_candidates_ = false;

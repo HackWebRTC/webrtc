@@ -323,7 +323,7 @@ void StunProber::OnServerResolved(rtc::AsyncResolverInterface* resolver) {
   // Deletion of AsyncResolverInterface can't be done in OnResolveResult which
   // handles SignalDone.
   invoker_.AsyncInvoke<void>(
-      thread_,
+      RTC_FROM_HERE, thread_,
       rtc::Bind(&rtc::AsyncResolverInterface::Destroy, resolver, false));
   servers_.pop_back();
 
@@ -418,8 +418,8 @@ void StunProber::MaybeScheduleStunRequests() {
 
   if (Done()) {
     invoker_.AsyncInvokeDelayed<void>(
-        thread_, rtc::Bind(&StunProber::ReportOnFinished, this, SUCCESS),
-        timeout_ms_);
+        RTC_FROM_HERE, thread_,
+        rtc::Bind(&StunProber::ReportOnFinished, this, SUCCESS), timeout_ms_);
     return;
   }
   if (should_send_next_request(now)) {
@@ -430,7 +430,8 @@ void StunProber::MaybeScheduleStunRequests() {
     next_request_time_ms_ = now + interval_ms_;
   }
   invoker_.AsyncInvokeDelayed<void>(
-      thread_, rtc::Bind(&StunProber::MaybeScheduleStunRequests, this),
+      RTC_FROM_HERE, thread_,
+      rtc::Bind(&StunProber::MaybeScheduleStunRequests, this),
       get_wake_up_interval_ms());
 }
 

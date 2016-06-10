@@ -413,35 +413,33 @@ int32_t MediaCodecVideoEncoder::InitEncode(
   }
 
   return codec_thread_->Invoke<int32_t>(
-      Bind(&MediaCodecVideoEncoder::InitEncodeOnCodecThread,
-           this,
-           init_width,
-           init_height,
-           codec_settings->startBitrate,
-           codec_settings->maxFramerate,
-           false /* use_surface */));
+      RTC_FROM_HERE,
+      Bind(&MediaCodecVideoEncoder::InitEncodeOnCodecThread, this, init_width,
+           init_height, codec_settings->startBitrate,
+           codec_settings->maxFramerate, false /* use_surface */));
 }
 
 int32_t MediaCodecVideoEncoder::Encode(
     const webrtc::VideoFrame& frame,
     const webrtc::CodecSpecificInfo* /* codec_specific_info */,
     const std::vector<webrtc::FrameType>* frame_types) {
-  return codec_thread_->Invoke<int32_t>(Bind(
-      &MediaCodecVideoEncoder::EncodeOnCodecThread, this, frame, frame_types));
+  return codec_thread_->Invoke<int32_t>(
+      RTC_FROM_HERE, Bind(&MediaCodecVideoEncoder::EncodeOnCodecThread, this,
+                          frame, frame_types));
 }
 
 int32_t MediaCodecVideoEncoder::RegisterEncodeCompleteCallback(
     webrtc::EncodedImageCallback* callback) {
   return codec_thread_->Invoke<int32_t>(
+      RTC_FROM_HERE,
       Bind(&MediaCodecVideoEncoder::RegisterEncodeCompleteCallbackOnCodecThread,
-           this,
-           callback));
+           this, callback));
 }
 
 int32_t MediaCodecVideoEncoder::Release() {
   ALOGD << "EncoderRelease request";
   return codec_thread_->Invoke<int32_t>(
-      Bind(&MediaCodecVideoEncoder::ReleaseOnCodecThread, this));
+      RTC_FROM_HERE, Bind(&MediaCodecVideoEncoder::ReleaseOnCodecThread, this));
 }
 
 int32_t MediaCodecVideoEncoder::SetChannelParameters(uint32_t /* packet_loss */,
@@ -452,10 +450,8 @@ int32_t MediaCodecVideoEncoder::SetChannelParameters(uint32_t /* packet_loss */,
 int32_t MediaCodecVideoEncoder::SetRates(uint32_t new_bit_rate,
                                          uint32_t frame_rate) {
   return codec_thread_->Invoke<int32_t>(
-      Bind(&MediaCodecVideoEncoder::SetRatesOnCodecThread,
-           this,
-           new_bit_rate,
-           frame_rate));
+      RTC_FROM_HERE, Bind(&MediaCodecVideoEncoder::SetRatesOnCodecThread, this,
+                          new_bit_rate, frame_rate));
 }
 
 void MediaCodecVideoEncoder::OnMessage(rtc::Message* msg) {
@@ -478,7 +474,7 @@ void MediaCodecVideoEncoder::OnMessage(rtc::Message* msg) {
 
   // If there aren't more frames to deliver, we can stop the loop
   if (!input_frame_infos_.empty()) {
-    codec_thread_->PostDelayed(kMediaCodecPollMs, this);
+    codec_thread_->PostDelayed(RTC_FROM_HERE, kMediaCodecPollMs, this);
   } else {
     output_delivery_loop_running_ = false;
   }
@@ -742,7 +738,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
 
   if (!output_delivery_loop_running_) {
     output_delivery_loop_running_ = true;
-    codec_thread_->PostDelayed(kMediaCodecPollMs, this);
+    codec_thread_->PostDelayed(RTC_FROM_HERE, kMediaCodecPollMs, this);
   }
 
   if (!DeliverPendingOutputs(jni)) {
@@ -1178,6 +1174,7 @@ void MediaCodecVideoEncoder::OnDroppedFrame() {
   // directly.
   RTC_DCHECK(!codec_thread_checker_.CalledOnValidThread());
   codec_thread_->Invoke<void>(
+      RTC_FROM_HERE,
       Bind(&MediaCodecVideoEncoder::OnDroppedFrameOnCodecThread, this));
 }
 

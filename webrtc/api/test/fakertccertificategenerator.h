@@ -157,7 +157,7 @@ class FakeRTCCertificateGenerator
                  key_params.ec_curve() == rtc::EC_NIST_P256);
       msg_id = MSG_SUCCESS_ECDSA;
     }
-    rtc::Thread::Current()->Post(this, msg_id, msg);
+    rtc::Thread::Current()->Post(RTC_FROM_HERE, this, msg_id, msg);
   }
 
   static rtc::scoped_refptr<rtc::RTCCertificate> GenerateCertificate() {

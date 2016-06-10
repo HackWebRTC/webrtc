@@ -49,9 +49,9 @@ void StunRequestManager::SendDelayed(StunRequest* request, int delay) {
   request->Construct();
   requests_[request->id()] = request;
   if (delay > 0) {
-    thread_->PostDelayed(delay, request, MSG_STUN_SEND, NULL);
+    thread_->PostDelayed(RTC_FROM_HERE, delay, request, MSG_STUN_SEND, NULL);
   } else {
-    thread_->Send(request, MSG_STUN_SEND, NULL);
+    thread_->Send(RTC_FROM_HERE, request, MSG_STUN_SEND, NULL);
   }
 }
 
@@ -60,7 +60,7 @@ void StunRequestManager::Flush(int msg_type) {
     StunRequest* request = kv.second;
     if (msg_type == kAllRequests || msg_type == request->type()) {
       thread_->Clear(request, MSG_STUN_SEND);
-      thread_->Send(request, MSG_STUN_SEND, NULL);
+      thread_->Send(RTC_FROM_HERE, request, MSG_STUN_SEND, NULL);
     }
   }
 }
@@ -220,7 +220,8 @@ void StunRequest::OnMessage(rtc::Message* pmsg) {
   manager_->SignalSendPacket(buf.Data(), buf.Length(), this);
 
   OnSent();
-  manager_->thread_->PostDelayed(resend_delay(), this, MSG_STUN_SEND, NULL);
+  manager_->thread_->PostDelayed(RTC_FROM_HERE, resend_delay(), this,
+                                 MSG_STUN_SEND, NULL);
 }
 
 void StunRequest::OnSent() {

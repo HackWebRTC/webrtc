@@ -68,7 +68,7 @@ class FakeNetworkManager : public NetworkManagerBase,
     ++start_count_;
     if (start_count_ == 1) {
       sent_first_update_ = false;
-      thread_->Post(this);
+      thread_->Post(RTC_FROM_HERE, this);
     } else {
       if (sent_first_update_) {
         SignalNetworksChanged();

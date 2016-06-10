@@ -199,13 +199,13 @@ void BasicPortAllocatorSession::StartGettingPorts() {
   }
 
   running_ = true;
-  network_thread_->Post(this, MSG_CONFIG_START);
+  network_thread_->Post(RTC_FROM_HERE, this, MSG_CONFIG_START);
 }
 
 void BasicPortAllocatorSession::StopGettingPorts() {
   ASSERT(rtc::Thread::Current() == network_thread_);
   running_ = false;
-  network_thread_->Post(this, MSG_CONFIG_STOP);
+  network_thread_->Post(RTC_FROM_HERE, this, MSG_CONFIG_STOP);
   ClearGettingPorts();
 }
 
@@ -336,7 +336,7 @@ void BasicPortAllocatorSession::GetPortConfigurations() {
 }
 
 void BasicPortAllocatorSession::ConfigReady(PortConfiguration* config) {
-  network_thread_->Post(this, MSG_CONFIG_READY, config);
+  network_thread_->Post(RTC_FROM_HERE, this, MSG_CONFIG_READY, config);
 }
 
 // Adds a configuration to the list.
@@ -381,7 +381,7 @@ void BasicPortAllocatorSession::OnConfigStop() {
 
 void BasicPortAllocatorSession::AllocatePorts() {
   ASSERT(rtc::Thread::Current() == network_thread_);
-  network_thread_->Post(this, MSG_ALLOCATE);
+  network_thread_->Post(RTC_FROM_HERE, this, MSG_ALLOCATE);
 }
 
 void BasicPortAllocatorSession::OnAllocate() {
@@ -491,7 +491,7 @@ void BasicPortAllocatorSession::DoAllocate() {
     }
   }
   if (done_signal_needed) {
-    network_thread_->Post(this, MSG_SEQUENCEOBJECTS_CREATED);
+    network_thread_->Post(RTC_FROM_HERE, this, MSG_SEQUENCEOBJECTS_CREATED);
   }
 }
 
@@ -840,7 +840,7 @@ void AllocationSequence::DisableEquivalentPhases(rtc::Network* network,
 
 void AllocationSequence::Start() {
   state_ = kRunning;
-  session_->network_thread()->Post(this, MSG_ALLOCATION_PHASE);
+  session_->network_thread()->Post(RTC_FROM_HERE, this, MSG_ALLOCATION_PHASE);
 }
 
 void AllocationSequence::Stop() {
@@ -890,9 +890,9 @@ void AllocationSequence::OnMessage(rtc::Message* msg) {
 
   if (state() == kRunning) {
     ++phase_;
-    session_->network_thread()->PostDelayed(
-        session_->allocator()->step_delay(),
-        this, MSG_ALLOCATION_PHASE);
+    session_->network_thread()->PostDelayed(RTC_FROM_HERE,
+                                            session_->allocator()->step_delay(),
+                                            this, MSG_ALLOCATION_PHASE);
   } else {
     // If all phases in AllocationSequence are completed, no allocation
     // steps needed further. Canceling  pending signal.

@@ -54,6 +54,8 @@
         'event_tracer.h',
         'exp_filter.cc',
         'exp_filter.h',
+        'location.h',
+        'location.cc',
         'md5.cc',
         'md5.h',
         'md5digest.cc',
