@@ -474,18 +474,18 @@ void WebRtcAgc_SaturationCtrl(LegacyAgc* stt,
 
 void WebRtcAgc_ZeroCtrl(LegacyAgc* stt, int32_t* inMicLevel, int32_t* env) {
   int16_t i;
-  int64_t tmp = 0;
+  int32_t tmp32 = 0;
   int32_t midVal;
 
   /* Is the input signal zero? */
   for (i = 0; i < 10; i++) {
-    tmp += env[i];
+    tmp32 += env[i];
   }
 
   /* Each block is allowed to have a few non-zero
    * samples.
    */
-  if (tmp < 500) {
+  if (tmp32 < 500) {
     stt->msZero += 10;
   } else {
     stt->msZero = 0;

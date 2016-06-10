@@ -189,7 +189,7 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t* gainTable,       // Q16
     // Calculate ratio
     // Shift |numFIX| as much as possible.
     // Ensure we avoid wrap-around in |den| as well.
-    if (numFIX > (den >> 8) || -numFIX > (den >> 8))  // |den| is Q8.
+    if (numFIX > (den >> 8))  // |den| is Q8.
     {
       zeros = WebRtcSpl_NormW32(numFIX);
     } else {
@@ -198,11 +198,13 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t* gainTable,       // Q16
     numFIX *= 1 << zeros;  // Q(14+zeros)
 
     // Shift den so we end up in Qy1
-    tmp32no1 = WEBRTC_SPL_SHIFT_W32(den, zeros - 9);  // Q(zeros - 1)
-    y32 = numFIX / tmp32no1;  // in Q15
-    // This is to do rounding in Q14.
-    y32 = y32 >= 0 ? (y32 + 1) >> 1 : -((-y32 + 1) >> 1);
-
+    tmp32no1 = WEBRTC_SPL_SHIFT_W32(den, zeros - 8);  // Q(zeros)
+    if (numFIX < 0) {
+      numFIX -= tmp32no1 / 2;
+    } else {
+      numFIX += tmp32no1 / 2;
+    }
+    y32 = numFIX / tmp32no1;  // in Q14
     if (limiterEnable && (i < limiterIdx)) {
       tmp32 = WEBRTC_SPL_MUL_16_U16(i - 1, kLog10_2);  // Q14
       tmp32 -= limiterLvl * (1 << 14);                 // Q14
