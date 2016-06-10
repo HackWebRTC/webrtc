@@ -1140,7 +1140,7 @@ void VideoQualityTest::RunWithVideoRenderer(const Params& params) {
   video_send_stream_ =
       call->CreateVideoSendStream(video_send_config_, video_encoder_config_);
   VideoReceiveStream* receive_stream =
-      call->CreateVideoReceiveStream(video_receive_configs_[stream_id]);
+      call->CreateVideoReceiveStream(video_receive_configs_[stream_id].Copy());
   CreateCapturer(video_send_stream_->Input());
 
   receive_stream->Start();

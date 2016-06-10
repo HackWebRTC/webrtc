@@ -2628,7 +2628,7 @@ TEST_F(WebRtcVideoChannel2Test, SetRecvCodecsAcceptDefaultCodecs) {
   EXPECT_TRUE(channel_->SetRecvParameters(parameters));
 
   FakeVideoReceiveStream* stream = AddRecvStream();
-  webrtc::VideoReceiveStream::Config config = stream->GetConfig();
+  const webrtc::VideoReceiveStream::Config& config = stream->GetConfig();
   EXPECT_EQ(engine_.codecs()[0].name, config.decoders[0].payload_name);
   EXPECT_EQ(engine_.codecs()[0].id, config.decoders[0].payload_type);
 }
@@ -2666,25 +2666,21 @@ TEST_F(WebRtcVideoChannel2Test, SetRecvCodecsWithoutFecDisablesFec) {
   ASSERT_TRUE(channel_->SetSendParameters(send_parameters));
 
   FakeVideoReceiveStream* stream = AddRecvStream();
-  webrtc::VideoReceiveStream::Config config = stream->GetConfig();
 
-  EXPECT_EQ(kUlpfecCodec.id, config.rtp.fec.ulpfec_payload_type);
+  EXPECT_EQ(kUlpfecCodec.id, stream->GetConfig().rtp.fec.ulpfec_payload_type);
 
   cricket::VideoRecvParameters recv_parameters;
   recv_parameters.codecs.push_back(kVp8Codec);
   ASSERT_TRUE(channel_->SetRecvParameters(recv_parameters));
   stream = fake_call_->GetVideoReceiveStreams()[0];
   ASSERT_TRUE(stream != NULL);
-  config = stream->GetConfig();
-  EXPECT_EQ(-1, config.rtp.fec.ulpfec_payload_type)
+  EXPECT_EQ(-1, stream->GetConfig().rtp.fec.ulpfec_payload_type)
       << "SetSendCodec without FEC should disable current FEC.";
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetSendParamsWithoutFecDisablesReceivingFec) {
   FakeVideoReceiveStream* stream = AddRecvStream();
-  webrtc::VideoReceiveStream::Config config = stream->GetConfig();
-
-  EXPECT_EQ(kUlpfecCodec.id, config.rtp.fec.ulpfec_payload_type);
+  EXPECT_EQ(kUlpfecCodec.id, stream->GetConfig().rtp.fec.ulpfec_payload_type);
 
   cricket::VideoRecvParameters recv_parameters;
   recv_parameters.codecs.push_back(kVp8Codec);
@@ -2693,16 +2689,14 @@ TEST_F(WebRtcVideoChannel2Test, SetSendParamsWithoutFecDisablesReceivingFec) {
   ASSERT_TRUE(channel_->SetRecvParameters(recv_parameters));
   stream = fake_call_->GetVideoReceiveStreams()[0];
   ASSERT_TRUE(stream != NULL);
-  config = stream->GetConfig();
-  EXPECT_EQ(kUlpfecCodec.id, config.rtp.fec.ulpfec_payload_type)
+  EXPECT_EQ(kUlpfecCodec.id, stream->GetConfig().rtp.fec.ulpfec_payload_type)
       << "FEC should be enabled on the recieve stream.";
 
   cricket::VideoSendParameters send_parameters;
   send_parameters.codecs.push_back(kVp8Codec);
   ASSERT_TRUE(channel_->SetSendParameters(send_parameters));
   stream = fake_call_->GetVideoReceiveStreams()[0];
-  config = stream->GetConfig();
-  EXPECT_EQ(-1, config.rtp.fec.ulpfec_payload_type)
+  EXPECT_EQ(-1, stream->GetConfig().rtp.fec.ulpfec_payload_type)
       << "FEC should have been disabled when we know the other side won't do "
          "FEC.";
 
@@ -2710,8 +2704,7 @@ TEST_F(WebRtcVideoChannel2Test, SetSendParamsWithoutFecDisablesReceivingFec) {
   send_parameters.codecs.push_back(kUlpfecCodec);
   ASSERT_TRUE(channel_->SetSendParameters(send_parameters));
   stream = fake_call_->GetVideoReceiveStreams()[0];
-  config = stream->GetConfig();
-  EXPECT_EQ(kUlpfecCodec.id, config.rtp.fec.ulpfec_payload_type)
+  EXPECT_EQ(kUlpfecCodec.id, stream->GetConfig().rtp.fec.ulpfec_payload_type)
       << "FEC should be enabled on the recieve stream.";
 }
 

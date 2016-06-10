@@ -77,11 +77,11 @@ RtpStreamReceiver::RtpStreamReceiver(
     PacedSender* paced_sender,
     PacketRouter* packet_router,
     VieRemb* remb,
-    const VideoReceiveStream::Config& config,
+    const VideoReceiveStream::Config* config,
     ReceiveStatisticsProxy* receive_stats_proxy,
     ProcessThread* process_thread)
     : clock_(Clock::GetRealTimeClock()),
-      config_(config),
+      config_(*config),
       video_receiver_(video_receiver),
       remote_bitrate_estimator_(remote_bitrate_estimator),
       packet_router_(packet_router),
@@ -110,7 +110,7 @@ RtpStreamReceiver::RtpStreamReceiver(
   rtp_receive_statistics_->RegisterRtpStatisticsCallback(receive_stats_proxy);
   rtp_receive_statistics_->RegisterRtcpStatisticsCallback(receive_stats_proxy);
 
-  RTC_DCHECK(config.rtp.rtcp_mode != RtcpMode::kOff)
+  RTC_DCHECK(config_.rtp.rtcp_mode != RtcpMode::kOff)
       << "A stream should not be configured with RTCP disabled. This value is "
          "reserved for internal usage.";
   RTC_DCHECK(config_.rtp.remote_ssrc != 0);
@@ -118,22 +118,23 @@ RtpStreamReceiver::RtpStreamReceiver(
   RTC_DCHECK(config_.rtp.local_ssrc != 0);
   RTC_DCHECK(config_.rtp.remote_ssrc != config_.rtp.local_ssrc);
 
-  rtp_rtcp_->SetRTCPStatus(config.rtp.rtcp_mode);
-  rtp_rtcp_->SetSSRC(config.rtp.local_ssrc);
+  rtp_rtcp_->SetRTCPStatus(config_.rtp.rtcp_mode);
+  rtp_rtcp_->SetSSRC(config_.rtp.local_ssrc);
   rtp_rtcp_->SetKeyFrameRequestMethod(kKeyFrameReqPliRtcp);
-  if (config.rtp.remb) {
+  if (config_.rtp.remb) {
     rtp_rtcp_->SetREMBStatus(true);
     remb_->AddReceiveChannel(rtp_rtcp_.get());
   }
 
-  for (size_t i = 0; i < config.rtp.extensions.size(); ++i) {
-    EnableReceiveRtpHeaderExtension(config.rtp.extensions[i].uri,
-                                    config.rtp.extensions[i].id);
+  for (size_t i = 0; i < config_.rtp.extensions.size(); ++i) {
+    EnableReceiveRtpHeaderExtension(config_.rtp.extensions[i].uri,
+                                    config_.rtp.extensions[i].id);
   }
 
   static const int kMaxPacketAgeToNack = 450;
-  const int max_reordering_threshold = (config.rtp.nack.rtp_history_ms > 0)
-      ? kMaxPacketAgeToNack : kDefaultMaxReorderingThreshold;
+  const int max_reordering_threshold = (config_.rtp.nack.rtp_history_ms > 0)
+                                           ? kMaxPacketAgeToNack
+                                           : kDefaultMaxReorderingThreshold;
   rtp_receive_statistics_->SetMaxReorderingThreshold(max_reordering_threshold);
 
   // TODO(pbos): Support multiple RTX, per video payload.
@@ -178,7 +179,7 @@ RtpStreamReceiver::RtpStreamReceiver(
                                    config_.rtp.fec.ulpfec_payload_type);
   }
 
-  if (config.rtp.rtcp_xr.receiver_reference_time_report)
+  if (config_.rtp.rtcp_xr.receiver_reference_time_report)
     rtp_rtcp_->SetRtcpXrRrtrStatus(true);
 
   // Stats callback for CNAME changes.

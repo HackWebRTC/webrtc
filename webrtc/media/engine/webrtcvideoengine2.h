@@ -417,7 +417,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     WebRtcVideoReceiveStream(
         webrtc::Call* call,
         const StreamParams& sp,
-        const webrtc::VideoReceiveStream::Config& config,
+        webrtc::VideoReceiveStream::Config config,
         WebRtcVideoDecoderFactory* external_decoder_factory,
         bool default_stream,
         const std::vector<VideoCodecSettings>& recv_codecs,

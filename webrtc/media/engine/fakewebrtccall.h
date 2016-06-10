@@ -140,10 +140,9 @@ class FakeVideoSendStream final : public webrtc::VideoSendStream,
 
 class FakeVideoReceiveStream final : public webrtc::VideoReceiveStream {
  public:
-  explicit FakeVideoReceiveStream(
-      const webrtc::VideoReceiveStream::Config& config);
+  explicit FakeVideoReceiveStream(webrtc::VideoReceiveStream::Config config);
 
-  webrtc::VideoReceiveStream::Config GetConfig();
+  const webrtc::VideoReceiveStream::Config& GetConfig();
 
   bool IsReceiving() const;
 
@@ -199,7 +198,7 @@ class FakeCall final : public webrtc::Call, public webrtc::PacketReceiver {
   void DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) override;
 
   webrtc::VideoReceiveStream* CreateVideoReceiveStream(
-      const webrtc::VideoReceiveStream::Config& config) override;
+      webrtc::VideoReceiveStream::Config config) override;
   void DestroyVideoReceiveStream(
       webrtc::VideoReceiveStream* receive_stream) override;
   webrtc::PacketReceiver* Receiver() override;

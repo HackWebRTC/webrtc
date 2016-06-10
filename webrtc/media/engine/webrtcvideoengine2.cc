@@ -1230,7 +1230,7 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
       video_config_.disable_prerenderer_smoothing;
 
   receive_streams_[ssrc] = new WebRtcVideoReceiveStream(
-      call_, sp, config, external_decoder_factory_, default_stream,
+      call_, sp, std::move(config), external_decoder_factory_, default_stream,
       recv_codecs_, red_disabled_by_remote_side_);
 
   return true;
@@ -2200,7 +2200,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::RecreateWebRtcStream() {
 WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
     webrtc::Call* call,
     const StreamParams& sp,
-    const webrtc::VideoReceiveStream::Config& config,
+    webrtc::VideoReceiveStream::Config config,
     WebRtcVideoDecoderFactory* external_decoder_factory,
     bool default_stream,
     const std::vector<VideoCodecSettings>& recv_codecs,
@@ -2210,7 +2210,7 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
       ssrc_groups_(sp.ssrc_groups),
       stream_(NULL),
       default_stream_(default_stream),
-      config_(config),
+      config_(std::move(config)),
       red_disabled_by_remote_side_(red_disabled_by_remote_side),
       external_decoder_factory_(external_decoder_factory),
       sink_(NULL),
@@ -2387,13 +2387,13 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RecreateWebRtcStream() {
   if (stream_ != NULL) {
     call_->DestroyVideoReceiveStream(stream_);
   }
-  webrtc::VideoReceiveStream::Config config = config_;
+  webrtc::VideoReceiveStream::Config config = config_.Copy();
   if (red_disabled_by_remote_side_) {
     config.rtp.fec.red_payload_type = -1;
     config.rtp.fec.ulpfec_payload_type = -1;
     config.rtp.fec.red_rtx_payload_type = -1;
   }
-  stream_ = call_->CreateVideoReceiveStream(config);
+  stream_ = call_->CreateVideoReceiveStream(std::move(config));
   stream_->Start();
 }
 

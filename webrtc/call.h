@@ -114,7 +114,7 @@ class Call {
   virtual void DestroyVideoSendStream(VideoSendStream* send_stream) = 0;
 
   virtual VideoReceiveStream* CreateVideoReceiveStream(
-      const VideoReceiveStream::Config& config) = 0;
+      VideoReceiveStream::Config configuration) = 0;
   virtual void DestroyVideoReceiveStream(
       VideoReceiveStream* receive_stream) = 0;
 

@@ -1214,7 +1214,7 @@ class MultiStreamTest {
       UpdateReceiveConfig(i, &receive_config);
 
       receive_streams[i] =
-          receiver_call->CreateVideoReceiveStream(receive_config);
+          receiver_call->CreateVideoReceiveStream(std::move(receive_config));
       receive_streams[i]->Start();
 
       frame_generators[i] = test::FrameGeneratorCapturer::Create(

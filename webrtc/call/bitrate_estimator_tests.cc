@@ -205,7 +205,7 @@ class BitrateEstimatorTest : public test::CallTest {
             test_->video_send_config_.rtp.ssrcs[0];
         test_->receive_config_.rtp.local_ssrc++;
         video_receive_stream_ = test_->receiver_call_->CreateVideoReceiveStream(
-            test_->receive_config_);
+            test_->receive_config_.Copy());
         video_receive_stream_->Start();
       }
       is_sending_receiving_ = true;

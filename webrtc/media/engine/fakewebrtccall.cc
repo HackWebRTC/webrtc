@@ -208,11 +208,10 @@ void FakeVideoSendStream::Stop() {
 }
 
 FakeVideoReceiveStream::FakeVideoReceiveStream(
-    const webrtc::VideoReceiveStream::Config& config)
-    : config_(config), receiving_(false) {
-}
+    webrtc::VideoReceiveStream::Config config)
+    : config_(std::move(config)), receiving_(false) {}
 
-webrtc::VideoReceiveStream::Config FakeVideoReceiveStream::GetConfig() {
+const webrtc::VideoReceiveStream::Config& FakeVideoReceiveStream::GetConfig() {
   return config_;
 }
 
@@ -374,8 +373,9 @@ void FakeCall::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
 }
 
 webrtc::VideoReceiveStream* FakeCall::CreateVideoReceiveStream(
-    const webrtc::VideoReceiveStream::Config& config) {
-  video_receive_streams_.push_back(new FakeVideoReceiveStream(config));
+    webrtc::VideoReceiveStream::Config config) {
+  video_receive_streams_.push_back(
+      new FakeVideoReceiveStream(std::move(config)));
   ++num_created_receive_streams_;
   return video_receive_streams_.back();
 }

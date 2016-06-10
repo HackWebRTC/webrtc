@@ -217,7 +217,7 @@ void CallTest::CreateMatchingReceiveConfigs(Transport* rtcp_send_transport) {
       video_config.decoders.clear();
       video_config.decoders.push_back(decoder);
       video_config.rtp.remote_ssrc = video_send_config_.rtp.ssrcs[i];
-      video_receive_configs_.push_back(video_config);
+      video_receive_configs_.push_back(video_config.Copy());
     }
   }
 
@@ -266,8 +266,8 @@ void CallTest::CreateVideoStreams() {
   video_send_stream_ = sender_call_->CreateVideoSendStream(
       video_send_config_, video_encoder_config_);
   for (size_t i = 0; i < video_receive_configs_.size(); ++i) {
-    video_receive_streams_.push_back(
-        receiver_call_->CreateVideoReceiveStream(video_receive_configs_[i]));
+    video_receive_streams_.push_back(receiver_call_->CreateVideoReceiveStream(
+        video_receive_configs_[i].Copy()));
   }
 }
 

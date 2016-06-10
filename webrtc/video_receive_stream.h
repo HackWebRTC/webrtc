@@ -76,9 +76,22 @@ class VideoReceiveStream {
   };
 
   struct Config {
+   private:
+    // Access to the copy constructor is private to force use of the Copy()
+    // method for those exceptional cases where we do use it.
+    Config(const Config&) = default;
+
+   public:
     Config() = delete;
+    Config(Config&&) = default;
     explicit Config(Transport* rtcp_send_transport)
         : rtcp_send_transport(rtcp_send_transport) {}
+
+    Config& operator=(Config&&) = default;
+    Config& operator=(const Config&) = delete;
+
+    // Mostly used by tests.  Avoid creating copies if you can.
+    Config Copy() const { return Config(*this); }
 
     std::string ToString() const;
 

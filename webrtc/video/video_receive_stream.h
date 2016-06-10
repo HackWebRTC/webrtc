@@ -45,7 +45,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
  public:
   VideoReceiveStream(int num_cpu_cores,
                      CongestionController* congestion_controller,
-                     const VideoReceiveStream::Config& config,
+                     VideoReceiveStream::Config config,
                      webrtc::VoiceEngine* voice_engine,
                      ProcessThread* process_thread,
                      CallStats* call_stats,

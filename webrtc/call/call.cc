@@ -77,7 +77,7 @@ class Call : public webrtc::Call,
   void DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) override;
 
   webrtc::VideoReceiveStream* CreateVideoReceiveStream(
-      const webrtc::VideoReceiveStream::Config& config) override;
+      webrtc::VideoReceiveStream::Config configuration) override;
   void DestroyVideoReceiveStream(
       webrtc::VideoReceiveStream* receive_stream) override;
 
@@ -467,12 +467,14 @@ void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
 }
 
 webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
-    const webrtc::VideoReceiveStream::Config& config) {
+    webrtc::VideoReceiveStream::Config configuration) {
   TRACE_EVENT0("webrtc", "Call::CreateVideoReceiveStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   VideoReceiveStream* receive_stream = new VideoReceiveStream(
-      num_cpu_cores_, congestion_controller_.get(), config, voice_engine(),
-      module_process_thread_.get(), call_stats_.get(), &remb_);
+      num_cpu_cores_, congestion_controller_.get(), std::move(configuration),
+      voice_engine(), module_process_thread_.get(), call_stats_.get(), &remb_);
+
+  const webrtc::VideoReceiveStream::Config& config = receive_stream->config();
   {
     WriteLockScoped write_lock(*receive_crit_);
     RTC_DCHECK(video_receive_ssrcs_.find(config.rtp.remote_ssrc) ==

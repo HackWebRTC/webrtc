@@ -37,7 +37,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
                                public RtcpPacketTypeCounterObserver,
                                public StreamDataCountersCallback {
  public:
-  ReceiveStatisticsProxy(const VideoReceiveStream::Config& config,
+  ReceiveStatisticsProxy(const VideoReceiveStream::Config* config,
                          Clock* clock);
   virtual ~ReceiveStatisticsProxy();
 
@@ -96,7 +96,14 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   void UpdateHistograms() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   Clock* const clock_;
-  const VideoReceiveStream::Config config_;
+  // Ownership of this object lies with the owner of the ReceiveStatisticsProxy
+  // instance.  Lifetime is guaranteed to outlive |this|.
+  // TODO(tommi): In practice the config_ reference is only used for accessing
+  // config_.rtp.fec.ulpfec_payload_type.  Instead of holding a pointer back,
+  // we could just store the value of ulpfec_payload_type and change the
+  // ReceiveStatisticsProxy() ctor to accept a const& of Config (since we'll
+  // then no longer store a pointer to the object).
+  const VideoReceiveStream::Config& config_;
 
   rtc::CriticalSection crit_;
   VideoReceiveStream::Stats stats_ GUARDED_BY(crit_);

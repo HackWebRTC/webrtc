@@ -251,7 +251,7 @@ void RtpReplay() {
   receive_config.decoders.push_back(decoder);
 
   VideoReceiveStream* receive_stream =
-      call->CreateVideoReceiveStream(receive_config);
+      call->CreateVideoReceiveStream(std::move(receive_config));
 
   std::unique_ptr<test::RtpFileReader> rtp_reader(test::RtpFileReader::Create(
       test::RtpFileReader::kRtpDump, flags::InputFile()));
