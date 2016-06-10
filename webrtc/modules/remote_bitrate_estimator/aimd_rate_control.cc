@@ -37,7 +37,7 @@ AimdRateControl::AimdRateControl()
       rate_control_state_(kRcHold),
       rate_control_region_(kRcMaxUnknown),
       time_last_bitrate_change_(-1),
-      current_input_(kBwNormal, 0, 1.0),
+      current_input_(kBwNormal, rtc::Optional<uint32_t>(), 1.0),
       updated_(false),
       time_first_incoming_estimate_(-1),
       bitrate_is_initialized_(false),
@@ -87,8 +87,9 @@ uint32_t AimdRateControl::LatestEstimate() const {
 }
 
 uint32_t AimdRateControl::UpdateBandwidthEstimate(int64_t now_ms) {
-  current_bitrate_bps_ = ChangeBitrate(current_bitrate_bps_,
-                                       current_input_.incoming_bitrate, now_ms);
+  current_bitrate_bps_ = ChangeBitrate(
+      current_bitrate_bps_,
+      current_input_.incoming_bitrate.value_or(current_bitrate_bps_), now_ms);
   if (now_ms - time_of_last_log_ > kLogIntervalMs) {
     time_of_last_log_ = now_ms;
   }
@@ -100,7 +101,7 @@ void AimdRateControl::SetRtt(int64_t rtt) {
 }
 
 void AimdRateControl::Update(const RateControlInput* input, int64_t now_ms) {
-  assert(input);
+  RTC_CHECK(input);
 
   // Set the initial bit rate value to what we're receiving the first half
   // second.
@@ -108,12 +109,11 @@ void AimdRateControl::Update(const RateControlInput* input, int64_t now_ms) {
     const int64_t kInitializationTimeMs = 5000;
     RTC_DCHECK_LE(kBitrateWindowMs, kInitializationTimeMs);
     if (time_first_incoming_estimate_ < 0) {
-      if (input->incoming_bitrate > 0) {
+      if (input->incoming_bitrate)
         time_first_incoming_estimate_ = now_ms;
-      }
     } else if (now_ms - time_first_incoming_estimate_ > kInitializationTimeMs &&
-               input->incoming_bitrate > 0) {
-      current_bitrate_bps_ = input->incoming_bitrate;
+               input->incoming_bitrate) {
+      current_bitrate_bps_ = *input->incoming_bitrate;
       bitrate_is_initialized_ = true;
     }
   }

@@ -56,6 +56,7 @@ class RemoteBitrateEstimatorSingleStream : public RemoteBitrateEstimator {
   Clock* clock_;
   SsrcOveruseEstimatorMap overuse_detectors_ GUARDED_BY(crit_sect_.get());
   RateStatistics incoming_bitrate_ GUARDED_BY(crit_sect_.get());
+  uint32_t last_valid_incoming_bitrate_ GUARDED_BY(crit_sect_.get());
   std::unique_ptr<AimdRateControl> remote_rate_ GUARDED_BY(crit_sect_.get());
   RemoteBitrateObserver* observer_ GUARDED_BY(crit_sect_.get());
   std::unique_ptr<CriticalSectionWrapper> crit_sect_;

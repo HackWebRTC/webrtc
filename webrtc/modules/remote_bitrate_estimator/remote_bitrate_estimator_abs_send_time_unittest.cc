@@ -35,7 +35,7 @@ TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, RateIncreaseReordering) {
 }
 
 TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, RateIncreaseRtpTimestamps) {
-  RateIncreaseRtpTimestampsTestHelper(1229);
+  RateIncreaseRtpTimestampsTestHelper(1237);
 }
 
 TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, CapacityDropOneStream) {

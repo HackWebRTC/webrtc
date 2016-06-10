@@ -16,23 +16,26 @@
 
 namespace webrtc {
 
-RateStatistics::RateStatistics(uint32_t window_size_ms, float scale)
-    : num_buckets_(window_size_ms + 1),  // N ms in (N+1) buckets.
-      buckets_(new size_t[num_buckets_]()),
+RateStatistics::RateStatistics(int64_t window_size_ms, float scale)
+    : buckets_(new Bucket[window_size_ms]()),
       accumulated_count_(0),
-      oldest_time_(0),
+      num_samples_(0),
+      oldest_time_(-window_size_ms),
       oldest_index_(0),
-      scale_(scale) {}
+      scale_(scale),
+      max_window_size_ms_(window_size_ms),
+      current_window_size_ms_(max_window_size_ms_) {}
 
 RateStatistics::~RateStatistics() {}
 
 void RateStatistics::Reset() {
   accumulated_count_ = 0;
-  oldest_time_ = 0;
+  num_samples_ = 0;
+  oldest_time_ = -max_window_size_ms_;
   oldest_index_ = 0;
-  for (int i = 0; i < num_buckets_; i++) {
-    buckets_[i] = 0;
-  }
+  current_window_size_ms_ = max_window_size_ms_;
+  for (int64_t i = 0; i < max_window_size_ms_; i++)
+    buckets_[i] = Bucket();
 }
 
 void RateStatistics::Update(size_t count, int64_t now_ms) {
@@ -43,46 +46,74 @@ void RateStatistics::Update(size_t count, int64_t now_ms) {
 
   EraseOld(now_ms);
 
-  int now_offset = static_cast<int>(now_ms - oldest_time_);
-  RTC_DCHECK_LT(now_offset, num_buckets_);
-  int index = oldest_index_ + now_offset;
-  if (index >= num_buckets_) {
-    index -= num_buckets_;
-  }
-  buckets_[index] += count;
+  // First ever sample, reset window to start now.
+  if (!IsInitialized())
+    oldest_time_ = now_ms;
+
+  uint32_t now_offset = static_cast<uint32_t>(now_ms - oldest_time_);
+  RTC_DCHECK_LT(now_offset, max_window_size_ms_);
+  uint32_t index = oldest_index_ + now_offset;
+  if (index >= max_window_size_ms_)
+    index -= max_window_size_ms_;
+  buckets_[index].sum += count;
+  ++buckets_[index].samples;
   accumulated_count_ += count;
+  ++num_samples_;
 }
 
-uint32_t RateStatistics::Rate(int64_t now_ms) {
+rtc::Optional<uint32_t> RateStatistics::Rate(int64_t now_ms) {
   EraseOld(now_ms);
-  float scale =  scale_ / (now_ms - oldest_time_ + 1);
-  return static_cast<uint32_t>(accumulated_count_ * scale + 0.5f);
+
+  // If window is a single bucket or there is only one sample in a data set that
+  // has not grown to the full window size, treat this as rate unavailable.
+  int64_t active_window_size = now_ms - oldest_time_ + 1;
+  if (num_samples_ == 0 || active_window_size <= 1 ||
+      (num_samples_ <= 1 && active_window_size < current_window_size_ms_)) {
+    return rtc::Optional<uint32_t>();
+  }
+
+  float scale = scale_ / active_window_size;
+  return rtc::Optional<uint32_t>(
+      static_cast<uint32_t>(accumulated_count_ * scale + 0.5f));
 }
 
 void RateStatistics::EraseOld(int64_t now_ms) {
-  int64_t new_oldest_time = now_ms - num_buckets_ + 1;
-  if (new_oldest_time <= oldest_time_) {
-    if (accumulated_count_ == 0)
-      oldest_time_ = now_ms;
+  if (!IsInitialized())
     return;
-  }
-  while (oldest_time_ < new_oldest_time) {
-    size_t count_in_oldest_bucket = buckets_[oldest_index_];
-    RTC_DCHECK_GE(accumulated_count_, count_in_oldest_bucket);
-    accumulated_count_ -= count_in_oldest_bucket;
-    buckets_[oldest_index_] = 0;
-    if (++oldest_index_ >= num_buckets_) {
+
+  // New oldest time that is included in data set.
+  int64_t new_oldest_time = now_ms - current_window_size_ms_ + 1;
+
+  // New oldest time is older than the current one, no need to cull data.
+  if (new_oldest_time <= oldest_time_)
+    return;
+
+  // Loop over buckets and remove too old data points.
+  while (num_samples_ > 0 && oldest_time_ < new_oldest_time) {
+    const Bucket& oldest_bucket = buckets_[oldest_index_];
+    RTC_DCHECK_GE(accumulated_count_, oldest_bucket.sum);
+    RTC_DCHECK_GE(num_samples_, oldest_bucket.samples);
+    accumulated_count_ -= oldest_bucket.sum;
+    num_samples_ -= oldest_bucket.samples;
+    buckets_[oldest_index_] = Bucket();
+    if (++oldest_index_ >= max_window_size_ms_)
       oldest_index_ = 0;
-    }
     ++oldest_time_;
-    if (accumulated_count_ == 0) {
-      // This guarantees we go through all the buckets at most once, even if
-      // |new_oldest_time| is far greater than |oldest_time_|.
-      new_oldest_time = now_ms;
-      break;
-    }
   }
   oldest_time_ = new_oldest_time;
+}
+
+bool RateStatistics::SetWindowSize(int64_t window_size_ms, int64_t now_ms) {
+  if (window_size_ms <= 0 || window_size_ms > max_window_size_ms_)
+    return false;
+
+  current_window_size_ms_ = window_size_ms;
+  EraseOld(now_ms);
+  return true;
+}
+
+bool RateStatistics::IsInitialized() {
+  return oldest_time_ != -max_window_size_ms_;
 }
 
 }  // namespace webrtc

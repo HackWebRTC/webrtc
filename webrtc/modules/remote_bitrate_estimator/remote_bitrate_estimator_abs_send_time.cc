@@ -85,6 +85,7 @@ bool RemoteBitrateEstimatorAbsSendTime::IsWithinClusterBounds(
         estimator_(),
         detector_(OverUseDetectorOptions()),
         incoming_bitrate_(kBitrateWindowMs, 8000),
+        incoming_bitrate_initialized_(false),
         total_probes_received_(0),
         first_packet_time_ms_(-1),
         last_update_ms_(-1),
@@ -243,6 +244,18 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
   int64_t now_ms = arrival_time_ms;
   // TODO(holmer): SSRCs are only needed for REMB, should be broken out from
   // here.
+
+  // Check if incoming bitrate estimate is valid, and if it needs to be reset.
+  rtc::Optional<uint32_t> incoming_bitrate = incoming_bitrate_.Rate(now_ms);
+  if (incoming_bitrate) {
+    incoming_bitrate_initialized_ = true;
+  } else if (incoming_bitrate_initialized_) {
+    // Incoming bitrate had a previous valid value, but now not enough data
+    // point are left within the current window. Reset incoming bitrate
+    // estimator so that the window size will only contain new data points.
+    incoming_bitrate_.Reset();
+    incoming_bitrate_initialized_ = false;
+  }
   incoming_bitrate_.Update(payload_size, now_ms);
 
   if (first_packet_time_ms_ == -1)
@@ -303,10 +316,12 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
       if (last_update_ms_ == -1 ||
           now_ms - last_update_ms_ > remote_rate_.GetFeedbackInterval()) {
         update_estimate = true;
-      } else if (detector_.State() == kBwOverusing &&
-                 remote_rate_.TimeToReduceFurther(
-                     now_ms, incoming_bitrate_.Rate(now_ms))) {
-        update_estimate = true;
+      } else if (detector_.State() == kBwOverusing) {
+        rtc::Optional<uint32_t> incoming_rate = incoming_bitrate_.Rate(now_ms);
+        if (incoming_rate &&
+            remote_rate_.TimeToReduceFurther(now_ms, *incoming_rate)) {
+          update_estimate = true;
+        }
       }
     }
 

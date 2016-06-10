@@ -67,7 +67,6 @@ class AimdRateControl {
   uint32_t min_configured_bitrate_bps_;
   uint32_t max_configured_bitrate_bps_;
   uint32_t current_bitrate_bps_;
-  uint32_t max_hold_rate_bps_;
   float avg_max_bitrate_kbps_;
   float var_max_bitrate_kbps_;
   RateControlState rate_control_state_;

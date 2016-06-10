@@ -48,7 +48,8 @@ class BitrateAdjusterTest : public ::testing::Test {
     // target bitrate within clamp.
     uint32_t target_bitrate_bps = adjuster_.GetTargetBitrateBps();
     uint32_t adjusted_bitrate_bps = adjuster_.GetAdjustedBitrateBps();
-    uint32_t estimated_bitrate_bps = adjuster_.GetEstimatedBitrateBps();
+    uint32_t estimated_bitrate_bps =
+        adjuster_.GetEstimatedBitrateBps().value_or(target_bitrate_bps);
     uint32_t adjusted_lower_bound_bps =
         GetTargetBitrateBpsPct(kMinAdjustedBitratePct);
     uint32_t adjusted_upper_bound_bps =

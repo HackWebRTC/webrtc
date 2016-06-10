@@ -124,6 +124,7 @@ class RemoteBitrateEstimatorAbsSendTime : public RemoteBitrateEstimator {
   std::unique_ptr<OveruseEstimator> estimator_;
   OveruseDetector detector_;
   RateStatistics incoming_bitrate_;
+  bool incoming_bitrate_initialized_;
   std::vector<int> recent_propagation_delta_ms_;
   std::vector<int64_t> recent_update_time_ms_;
   std::list<Probe> probes_;

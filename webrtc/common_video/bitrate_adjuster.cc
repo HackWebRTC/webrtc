@@ -70,7 +70,7 @@ uint32_t BitrateAdjuster::GetAdjustedBitrateBps() const {
   return adjusted_bitrate_bps_;
 }
 
-uint32_t BitrateAdjuster::GetEstimatedBitrateBps() {
+rtc::Optional<uint32_t> BitrateAdjuster::GetEstimatedBitrateBps() {
   rtc::CritScope cs(&crit_);
   return bitrate_tracker_.Rate(clock_->TimeInMilliseconds());
 }
@@ -121,8 +121,9 @@ void BitrateAdjuster::UpdateBitrate(uint32_t current_time_ms) {
       frames_since_last_update_ < kBitrateUpdateFrameInterval) {
     return;
   }
-  float estimated_bitrate_bps = bitrate_tracker_.Rate(current_time_ms);
   float target_bitrate_bps = target_bitrate_bps_;
+  float estimated_bitrate_bps =
+      bitrate_tracker_.Rate(current_time_ms).value_or(target_bitrate_bps);
   float error = target_bitrate_bps - estimated_bitrate_bps;
 
   // Adjust if we've overshot by any amount or if we've undershot too much.

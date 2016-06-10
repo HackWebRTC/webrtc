@@ -18,6 +18,9 @@ namespace webrtc {
 const size_t kMtu = 1200;
 const uint32_t kAcceptedBitrateErrorBps = 50000;
 
+// Number of packets needed before we have a valid estimate.
+const int kNumInitialPackets = 2;
+
 namespace testing {
 
 void TestBitrateObserver::OnReceiveBitrateChanged(
@@ -317,16 +320,16 @@ void RemoteBitrateEstimatorTest::InitialBehaviorTestHelper(
   EXPECT_FALSE(bitrate_observer_->updated());
   bitrate_observer_->Reset();
   clock_.AdvanceTimeMilliseconds(1000);
-  // Inserting a packet. Still no valid estimate. We need to wait 5 seconds.
-  IncomingPacket(kDefaultSsrc, kMtu, clock_.TimeInMilliseconds(), timestamp,
-                 absolute_send_time, true);
-  bitrate_estimator_->Process();
-  EXPECT_FALSE(bitrate_estimator_->LatestEstimate(&ssrcs, &bitrate_bps));
-  EXPECT_EQ(0u, ssrcs.size());
-  EXPECT_FALSE(bitrate_observer_->updated());
-  bitrate_observer_->Reset();
   // Inserting packets for 5 seconds to get a valid estimate.
-  for (int i = 0; i < 5 * kFramerate + 1; ++i) {
+  for (int i = 0; i < 5 * kFramerate + 1 + kNumInitialPackets; ++i) {
+    if (i == kNumInitialPackets) {
+      bitrate_estimator_->Process();
+      EXPECT_FALSE(bitrate_estimator_->LatestEstimate(&ssrcs, &bitrate_bps));
+      EXPECT_EQ(0u, ssrcs.size());
+      EXPECT_FALSE(bitrate_observer_->updated());
+      bitrate_observer_->Reset();
+    }
+
     IncomingPacket(kDefaultSsrc, kMtu, clock_.TimeInMilliseconds(), timestamp,
                    absolute_send_time, true);
     clock_.AdvanceTimeMilliseconds(1000 / kFramerate);
@@ -355,12 +358,16 @@ void RemoteBitrateEstimatorTest::RateIncreaseReorderingTestHelper(
   const uint32_t kFrameIntervalAbsSendTime = AbsSendTime(1, kFramerate);
   uint32_t timestamp = 0;
   uint32_t absolute_send_time = 0;
-  IncomingPacket(kDefaultSsrc, 1000, clock_.TimeInMilliseconds(), timestamp,
-                 absolute_send_time, true);
-  bitrate_estimator_->Process();
-  EXPECT_FALSE(bitrate_observer_->updated());  // No valid estimate.
-  // Inserting packets for one second to get a valid estimate.
-  for (int i = 0; i < 5 * kFramerate + 1; ++i) {
+  // Inserting packets for five seconds to get a valid estimate.
+  for (int i = 0; i < 5 * kFramerate + 1 + kNumInitialPackets; ++i) {
+    // TODO(sprang): Remove this hack once the single stream estimator is gone,
+    // as it doesn't do anything in Process().
+    if (i == kNumInitialPackets) {
+      // Process after we have enough frames to get a valid input rate estimate.
+      bitrate_estimator_->Process();
+      EXPECT_FALSE(bitrate_observer_->updated());  // No valid estimate.
+    }
+
     IncomingPacket(kDefaultSsrc, kMtu, clock_.TimeInMilliseconds(), timestamp,
                    absolute_send_time, true);
     clock_.AdvanceTimeMilliseconds(kFrameIntervalMs);

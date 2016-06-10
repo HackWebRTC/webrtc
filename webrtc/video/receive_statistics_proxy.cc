@@ -247,7 +247,7 @@ void ReceiveStatisticsProxy::OnDecodedFrame() {
 
   rtc::CritScope lock(&crit_);
   decode_fps_estimator_.Update(1, now);
-  stats_.decode_frame_rate = decode_fps_estimator_.Rate(now);
+  stats_.decode_frame_rate = decode_fps_estimator_.Rate(now).value_or(0);
 }
 
 void ReceiveStatisticsProxy::OnRenderedFrame(int width, int height) {
@@ -257,7 +257,7 @@ void ReceiveStatisticsProxy::OnRenderedFrame(int width, int height) {
 
   rtc::CritScope lock(&crit_);
   renders_fps_estimator_.Update(1, now);
-  stats_.render_frame_rate = renders_fps_estimator_.Rate(now);
+  stats_.render_frame_rate = renders_fps_estimator_.Rate(now).value_or(0);
   render_width_counter_.Add(width);
   render_height_counter_.Add(height);
   render_fps_tracker_.AddSamples(1);
