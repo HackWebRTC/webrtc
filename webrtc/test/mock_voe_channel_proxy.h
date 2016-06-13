@@ -50,6 +50,8 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
                                        size_t length,
                                        const PacketTime& packet_time));
   MOCK_METHOD2(ReceivedRTCPPacket, bool(const uint8_t* packet, size_t length));
+  MOCK_CONST_METHOD0(GetAudioDecoderFactory,
+                     const rtc::scoped_refptr<AudioDecoderFactory>&());
 };
 }  // namespace test
 }  // namespace webrtc

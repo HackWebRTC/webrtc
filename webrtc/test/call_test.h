@@ -102,6 +102,7 @@ class CallTest : public ::testing::Test {
   std::vector<std::unique_ptr<VideoDecoder>> allocated_decoders_;
   size_t num_video_streams_;
   size_t num_audio_streams_;
+  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
 
  private:
   // TODO(holmer): Remove once VoiceEngine is fully refactored to the new API.

@@ -19,5 +19,8 @@ specific_include_rules = {
   ],
   "peerconnection_jni\.cc": [
     "+webrtc/voice_engine",
+  ],
+  "peerconnectionfactory.\cc": [
+    "+webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h",
   ]
 }

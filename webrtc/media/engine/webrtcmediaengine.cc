@@ -29,15 +29,19 @@ class WebRtcMediaEngine2
 #endif
  public:
   WebRtcMediaEngine2(webrtc::AudioDeviceModule* adm,
-                     WebRtcVideoEncoderFactory* encoder_factory,
-                     WebRtcVideoDecoderFactory* decoder_factory)
+                     const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
+                         audio_decoder_factory,
+                     WebRtcVideoEncoderFactory* video_encoder_factory,
+                     WebRtcVideoDecoderFactory* video_decoder_factory)
 #ifdef HAVE_WEBRTC_VIDEO
-      : CompositeMediaEngine<WebRtcVoiceEngine, WebRtcVideoEngine2>(adm) {
+      : CompositeMediaEngine<WebRtcVoiceEngine, WebRtcVideoEngine2>(
+            adm, audio_decoder_factory){
 #else
-      : CompositeMediaEngine<WebRtcVoiceEngine, NullWebRtcVideoEngine>(adm) {
+      : CompositeMediaEngine<WebRtcVoiceEngine, NullWebRtcVideoEngine>(
+            adm, audio_decoder_factory) {
 #endif
-    video_.SetExternalDecoderFactory(decoder_factory);
-    video_.SetExternalEncoderFactory(encoder_factory);
+    video_.SetExternalDecoderFactory(video_decoder_factory);
+    video_.SetExternalEncoderFactory(video_encoder_factory);
   }
 };
 
@@ -45,10 +49,12 @@ class WebRtcMediaEngine2
 
 cricket::MediaEngineInterface* CreateWebRtcMediaEngine(
     webrtc::AudioDeviceModule* adm,
-    cricket::WebRtcVideoEncoderFactory* encoder_factory,
-    cricket::WebRtcVideoDecoderFactory* decoder_factory) {
-  return new cricket::WebRtcMediaEngine2(adm, encoder_factory,
-                                         decoder_factory);
+    const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
+        audio_decoder_factory,
+    cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
+    cricket::WebRtcVideoDecoderFactory* video_decoder_factory) {
+  return new cricket::WebRtcMediaEngine2(
+      adm, audio_decoder_factory, video_encoder_factory, video_decoder_factory);
 }
 
 void DestroyWebRtcMediaEngine(cricket::MediaEngineInterface* media_engine) {
@@ -61,9 +67,12 @@ namespace cricket {
 // ChannelManager.
 MediaEngineInterface* WebRtcMediaEngineFactory::Create(
     webrtc::AudioDeviceModule* adm,
-    WebRtcVideoEncoderFactory* encoder_factory,
-    WebRtcVideoDecoderFactory* decoder_factory) {
-  return CreateWebRtcMediaEngine(adm, encoder_factory, decoder_factory);
+    const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
+        audio_decoder_factory,
+    WebRtcVideoEncoderFactory* video_encoder_factory,
+    WebRtcVideoDecoderFactory* video_decoder_factory) {
+  return CreateWebRtcMediaEngine(adm, audio_decoder_factory,
+                                 video_encoder_factory, video_decoder_factory);
 }
 
 namespace {

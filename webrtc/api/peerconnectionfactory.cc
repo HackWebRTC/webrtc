@@ -28,6 +28,7 @@
 #include "webrtc/media/engine/webrtcmediaengine.h"
 #include "webrtc/media/engine/webrtcvideodecoderfactory.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/client/basicportallocator.h"
@@ -58,8 +59,13 @@ rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
     cricket::WebRtcVideoDecoderFactory* decoder_factory) {
   rtc::scoped_refptr<PeerConnectionFactory> pc_factory(
       new rtc::RefCountedObject<PeerConnectionFactory>(
-          network_thread, worker_thread, signaling_thread, default_adm,
-          encoder_factory, decoder_factory));
+          network_thread,
+          worker_thread,
+          signaling_thread,
+          default_adm,
+          CreateBuiltinAudioDecoderFactory(),
+          encoder_factory,
+          decoder_factory));
 
   // Call Initialize synchronously but make sure its executed on
   // |signaling_thread|.
@@ -93,6 +99,8 @@ PeerConnectionFactory::PeerConnectionFactory(
     rtc::Thread* worker_thread,
     rtc::Thread* signaling_thread,
     AudioDeviceModule* default_adm,
+    const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
+        audio_decoder_factory,
     cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
     cricket::WebRtcVideoDecoderFactory* video_decoder_factory)
     : owns_ptrs_(false),
@@ -101,6 +109,7 @@ PeerConnectionFactory::PeerConnectionFactory(
       worker_thread_(worker_thread),
       signaling_thread_(signaling_thread),
       default_adm_(default_adm),
+      audio_decoder_factory_(audio_decoder_factory),
       video_encoder_factory_(video_encoder_factory),
       video_decoder_factory_(video_decoder_factory) {
   RTC_DCHECK(network_thread);
@@ -319,7 +328,9 @@ rtc::Thread* PeerConnectionFactory::network_thread() {
 cricket::MediaEngineInterface* PeerConnectionFactory::CreateMediaEngine_w() {
   ASSERT(worker_thread_ == rtc::Thread::Current());
   return cricket::WebRtcMediaEngineFactory::Create(
-      default_adm_.get(), video_encoder_factory_.get(),
+      default_adm_.get(),
+      audio_decoder_factory_,
+      video_encoder_factory_.get(),
       video_decoder_factory_.get());
 }
 

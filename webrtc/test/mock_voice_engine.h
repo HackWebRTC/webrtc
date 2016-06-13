@@ -28,17 +28,26 @@ class MockVoiceEngine : public VoiceEngineImpl {
   // methods don't use any override declarations, and we want to avoid
   // warnings from -Winconsistent-missing-override. See
   // http://crbug.com/428099.
-  MockVoiceEngine() : VoiceEngineImpl(new Config(), true) {
+  MockVoiceEngine(
+      rtc::scoped_refptr<AudioDecoderFactory> decoder_factory = nullptr)
+      : VoiceEngineImpl(new Config(), true),
+        decoder_factory_(decoder_factory) {
     // Increase ref count so this object isn't automatically deleted whenever
     // interfaces are Release():d.
     ++_ref_count;
     // We add this default behavior to make the mock easier to use in tests. It
     // will create a NiceMock of a voe::ChannelProxy.
+    // TODO(ossu): As long as AudioReceiveStream is implmented as a wrapper
+    // around Channel, we need to make sure ChannelProxy returns the same
+    // decoder factory as the one passed in when creating an AudioReceiveStream.
     ON_CALL(*this, ChannelProxyFactory(testing::_))
-        .WillByDefault(
-            testing::Invoke([](int channel_id) {
-              return new testing::NiceMock<MockVoEChannelProxy>();
-            }));
+        .WillByDefault(testing::Invoke([this](int channel_id) {
+          auto* proxy =
+              new testing::NiceMock<webrtc::test::MockVoEChannelProxy>();
+          EXPECT_CALL(*proxy, GetAudioDecoderFactory())
+              .WillRepeatedly(testing::ReturnRef(decoder_factory_));
+          return proxy;
+        }));
   }
   ~MockVoiceEngine() /* override */ {
     // Decrease ref count before base class d-tor is called; otherwise it will
@@ -323,6 +332,15 @@ class MockVoiceEngine : public VoiceEngineImpl {
   MOCK_METHOD2(GetChannelOutputVolumeScaling, int(int channel, float& scaling));
   MOCK_METHOD3(SetOutputVolumePan, int(int channel, float left, float right));
   MOCK_METHOD3(GetOutputVolumePan, int(int channel, float& left, float& right));
+
+ private:
+  // TODO(ossu): I'm not particularly happy about keeping the decoder factory
+  // here, but due to how gmock is implemented, I cannot just keep it in the
+  // functor implementing the default version of ChannelProxyFactory, above.
+  // GMock creates an unfortunate copy of the functor, which would cause us to
+  // return a dangling reference. Fortunately, this should go away once
+  // voe::Channel does.
+  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
 };
 }  // namespace test
 }  // namespace webrtc

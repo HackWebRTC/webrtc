@@ -15,6 +15,7 @@
 
 #include "webrtc/audio/audio_receive_stream.h"
 #include "webrtc/audio/conversion.h"
+#include "webrtc/modules/audio_coding/codecs/mock/mock_audio_decoder_factory.h"
 #include "webrtc/modules/bitrate_controller/include/mock/mock_bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/include/mock/mock_congestion_controller.h"
 #include "webrtc/modules/pacing/packet_router.h"
@@ -30,6 +31,7 @@ namespace {
 
 using testing::_;
 using testing::Return;
+using testing::ReturnRef;
 
 AudioDecodingCallStats MakeAudioDecodeStatsForTest() {
   AudioDecodingCallStats audio_decode_stats;
@@ -64,6 +66,7 @@ const AudioDecodingCallStats kAudioDecodeStats = MakeAudioDecodeStatsForTest();
 struct ConfigHelper {
   ConfigHelper()
       : simulated_clock_(123456),
+        decoder_factory_(new rtc::RefCountedObject<MockAudioDecoderFactory>),
         congestion_controller_(&simulated_clock_,
                                &bitrate_observer_,
                                &remote_bitrate_observer_) {
@@ -102,6 +105,8 @@ struct ConfigHelper {
               .Times(1);
           EXPECT_CALL(*channel_proxy_, DeRegisterExternalTransport())
               .Times(1);
+          EXPECT_CALL(*channel_proxy_, GetAudioDecoderFactory())
+              .WillOnce(ReturnRef(decoder_factory_));
           return channel_proxy_;
         }));
     stream_config_.voe_channel_id = kChannelId;
@@ -113,6 +118,7 @@ struct ConfigHelper {
         RtpExtension(RtpExtension::kAudioLevelUri, kAudioLevelId));
     stream_config_.rtp.extensions.push_back(RtpExtension(
         RtpExtension::kTransportSequenceNumberUri, kTransportSequenceNumberId));
+    stream_config_.decoder_factory = decoder_factory_;
   }
 
   MockCongestionController* congestion_controller() {
@@ -159,6 +165,7 @@ struct ConfigHelper {
   PacketRouter packet_router_;
   testing::NiceMock<MockCongestionObserver> bitrate_observer_;
   testing::NiceMock<MockRemoteBitrateObserver> remote_bitrate_observer_;
+  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
   MockCongestionController congestion_controller_;
   MockRemoteBitrateEstimator remote_bitrate_estimator_;
   testing::StrictMock<MockVoiceEngine> voice_engine_;

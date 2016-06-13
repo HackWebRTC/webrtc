@@ -15,12 +15,15 @@
 
 #include "webrtc/audio_state.h"
 #include "webrtc/call.h"
+#include "webrtc/modules/audio_coding/codecs/mock/mock_audio_decoder_factory.h"
 #include "webrtc/test/mock_voice_engine.h"
 
 namespace {
 
 struct CallHelper {
-  CallHelper() {
+  explicit CallHelper(
+      rtc::scoped_refptr<webrtc::AudioDecoderFactory> decoder_factory = nullptr)
+      : voice_engine_(decoder_factory) {
     webrtc::AudioState::Config audio_state_config;
     audio_state_config.voice_engine = &voice_engine_;
     webrtc::Call::Config config;
@@ -53,10 +56,13 @@ TEST(CallTest, CreateDestroy_AudioSendStream) {
 }
 
 TEST(CallTest, CreateDestroy_AudioReceiveStream) {
-  CallHelper call;
+  rtc::scoped_refptr<webrtc::AudioDecoderFactory> decoder_factory(
+      new rtc::RefCountedObject<webrtc::MockAudioDecoderFactory>);
+  CallHelper call(decoder_factory);
   AudioReceiveStream::Config config;
   config.rtp.remote_ssrc = 42;
   config.voe_channel_id = 123;
+  config.decoder_factory = decoder_factory;
   AudioReceiveStream* stream = call->CreateAudioReceiveStream(config);
   EXPECT_NE(stream, nullptr);
   call->DestroyAudioReceiveStream(stream);
@@ -86,9 +92,12 @@ TEST(CallTest, CreateDestroy_AudioSendStreams) {
 }
 
 TEST(CallTest, CreateDestroy_AudioReceiveStreams) {
-  CallHelper call;
+  rtc::scoped_refptr<webrtc::AudioDecoderFactory> decoder_factory(
+      new rtc::RefCountedObject<webrtc::MockAudioDecoderFactory>);
+  CallHelper call(decoder_factory);
   AudioReceiveStream::Config config;
   config.voe_channel_id = 123;
+  config.decoder_factory = decoder_factory;
   std::list<AudioReceiveStream*> streams;
   for (int i = 0; i < 2; ++i) {
     for (uint32_t ssrc = 0; ssrc < 1234567; ssrc += 34567) {

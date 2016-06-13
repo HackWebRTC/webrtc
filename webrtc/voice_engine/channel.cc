@@ -827,7 +827,8 @@ Channel::Channel(int32_t channelId,
       pacing_enabled_(config.Get<VoicePacing>().enabled),
       feedback_observer_proxy_(new TransportFeedbackProxy()),
       seq_num_allocator_proxy_(new TransportSequenceNumberProxy()),
-      rtp_packet_sender_proxy_(new RtpPacketSenderProxy()) {
+      rtp_packet_sender_proxy_(new RtpPacketSenderProxy()),
+      decoder_factory_(decoder_factory) {
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::Channel() - ctor");
   AudioCodingModule::Config acm_config;
@@ -1081,6 +1082,11 @@ int32_t Channel::UpdateLocalTimeStamp() {
 void Channel::SetSink(std::unique_ptr<AudioSinkInterface> sink) {
   rtc::CritScope cs(&_callbackCritSect);
   audio_sink_ = std::move(sink);
+}
+
+const rtc::scoped_refptr<AudioDecoderFactory>&
+Channel::GetAudioDecoderFactory() const {
+  return decoder_factory_;
 }
 
 int32_t Channel::StartPlayout() {

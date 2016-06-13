@@ -18,19 +18,23 @@ namespace cricket {
 class WebRtcMediaEngineNullVideo
     : public CompositeMediaEngine<WebRtcVoiceEngine, NullWebRtcVideoEngine> {
  public:
-  WebRtcMediaEngineNullVideo(webrtc::AudioDeviceModule* adm,
-                             WebRtcVideoEncoderFactory* encoder_factory,
-                             WebRtcVideoDecoderFactory* decoder_factory)
-      : CompositeMediaEngine<WebRtcVoiceEngine, NullWebRtcVideoEngine>(adm) {
-    video_.SetExternalDecoderFactory(decoder_factory);
-    video_.SetExternalEncoderFactory(encoder_factory);
+  WebRtcMediaEngineNullVideo(
+      webrtc::AudioDeviceModule* adm,
+      const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
+          audio_decoder_factory,
+      WebRtcVideoEncoderFactory* video_encoder_factory,
+      WebRtcVideoDecoderFactory* video_decoder_factory)
+      : CompositeMediaEngine<WebRtcVoiceEngine, NullWebRtcVideoEngine>(
+            adm, audio_decoder_factory) {
+    video_.SetExternalDecoderFactory(video_decoder_factory);
+    video_.SetExternalEncoderFactory(video_encoder_factory);
   }
 };
 
 // Simple test to check if NullWebRtcVideoEngine implements the methods
 // required by CompositeMediaEngine.
 TEST(NullWebRtcVideoEngineTest, CheckInterface) {
-  WebRtcMediaEngineNullVideo engine(nullptr, nullptr, nullptr);
+  WebRtcMediaEngineNullVideo engine(nullptr, nullptr, nullptr, nullptr);
   EXPECT_TRUE(engine.Init());
 }
 

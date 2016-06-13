@@ -46,9 +46,14 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   // Exposed for the WVoE/MC unit test.
   static bool ToCodecInst(const AudioCodec& in, webrtc::CodecInst* out);
 
-  explicit WebRtcVoiceEngine(webrtc::AudioDeviceModule* adm);
+  WebRtcVoiceEngine(
+      webrtc::AudioDeviceModule* adm,
+      const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory);
   // Dependency injection for testing.
-  WebRtcVoiceEngine(webrtc::AudioDeviceModule* adm, VoEWrapper* voe_wrapper);
+  WebRtcVoiceEngine(
+      webrtc::AudioDeviceModule* adm,
+      const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
+      VoEWrapper* voe_wrapper);
   ~WebRtcVoiceEngine() override;
 
   rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const;
@@ -112,6 +117,7 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
 
   // The audio device manager.
   rtc::scoped_refptr<webrtc::AudioDeviceModule> adm_;
+  rtc::scoped_refptr<webrtc::AudioDecoderFactory> decoder_factory_;
   // The primary instance of WebRtc VoiceEngine.
   std::unique_ptr<VoEWrapper> voe_wrapper_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;

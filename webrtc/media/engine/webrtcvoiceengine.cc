@@ -520,14 +520,18 @@ bool WebRtcVoiceEngine::ToCodecInst(const AudioCodec& in,
   return WebRtcVoiceCodecs::ToCodecInst(in, out);
 }
 
-WebRtcVoiceEngine::WebRtcVoiceEngine(webrtc::AudioDeviceModule* adm)
-    : WebRtcVoiceEngine(adm, new VoEWrapper()) {
+WebRtcVoiceEngine::WebRtcVoiceEngine(
+    webrtc::AudioDeviceModule* adm,
+    const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory)
+    : WebRtcVoiceEngine(adm, decoder_factory, new VoEWrapper()) {
   audio_state_ = webrtc::AudioState::Create(MakeAudioStateConfig(voe()));
 }
 
-WebRtcVoiceEngine::WebRtcVoiceEngine(webrtc::AudioDeviceModule* adm,
-                                     VoEWrapper* voe_wrapper)
-    : adm_(adm), voe_wrapper_(voe_wrapper) {
+WebRtcVoiceEngine::WebRtcVoiceEngine(
+    webrtc::AudioDeviceModule* adm,
+    const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
+    VoEWrapper* voe_wrapper)
+    : adm_(adm), decoder_factory_(decoder_factory), voe_wrapper_(voe_wrapper) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "WebRtcVoiceEngine::WebRtcVoiceEngine";
   RTC_DCHECK(voe_wrapper);
@@ -547,7 +551,8 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(webrtc::AudioDeviceModule* adm,
   webrtc::Trace::SetTraceCallback(this);
   webrtc::Trace::set_level_filter(kElevatedTraceFilter);
   LOG(LS_INFO) << webrtc::VoiceEngine::GetVersionString();
-  RTC_CHECK_EQ(0, voe_wrapper_->base()->Init(adm_.get()));
+  RTC_CHECK_EQ(0, voe_wrapper_->base()->Init(adm_.get(), nullptr,
+                                             decoder_factory_));
   webrtc::Trace::set_level_filter(kDefaultTraceFilter);
 
   // No ADM supplied? Get the default one from VoE.
@@ -1275,14 +1280,16 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
 
 class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
  public:
-  WebRtcAudioReceiveStream(int ch,
-                           uint32_t remote_ssrc,
-                           uint32_t local_ssrc,
-                           bool use_transport_cc,
-                           const std::string& sync_group,
-                           const std::vector<webrtc::RtpExtension>& extensions,
-                           webrtc::Call* call,
-                           webrtc::Transport* rtcp_send_transport)
+  WebRtcAudioReceiveStream(
+      int ch,
+      uint32_t remote_ssrc,
+      uint32_t local_ssrc,
+      bool use_transport_cc,
+      const std::string& sync_group,
+      const std::vector<webrtc::RtpExtension>& extensions,
+      webrtc::Call* call,
+      webrtc::Transport* rtcp_send_transport,
+      const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory)
       : call_(call), config_() {
     RTC_DCHECK_GE(ch, 0);
     RTC_DCHECK(call);
@@ -1291,6 +1298,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     config_.rtcp_send_transport = rtcp_send_transport;
     config_.voe_channel_id = ch;
     config_.sync_group = sync_group;
+    config_.decoder_factory = decoder_factory;
     RecreateAudioReceiveStream(use_transport_cc, extensions);
   }
 
@@ -2168,7 +2176,8 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
       ssrc, new WebRtcAudioReceiveStream(channel, ssrc, receiver_reports_ssrc_,
                                          recv_transport_cc_enabled_,
                                          sp.sync_label, recv_rtp_extensions_,
-                                         call_, this)));
+                                         call_, this,
+                                         engine()->decoder_factory_)));
 
   SetNack(channel, send_codec_spec_.nack_enabled);
   SetPlayout(channel, playout_);

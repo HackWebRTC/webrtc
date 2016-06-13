@@ -10,6 +10,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/common.h"
 #include "webrtc/config.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -32,6 +33,7 @@ CallTest::CallTest()
       fake_encoder_(clock_),
       num_video_streams_(1),
       num_audio_streams_(0),
+      decoder_factory_(CreateBuiltinAudioDecoderFactory()),
       fake_send_audio_device_(nullptr),
       fake_recv_audio_device_(nullptr) {}
 
@@ -229,6 +231,7 @@ void CallTest::CreateMatchingReceiveConfigs(Transport* rtcp_send_transport) {
     audio_config.rtcp_send_transport = rtcp_send_transport;
     audio_config.voe_channel_id = voe_recv_.channel_id;
     audio_config.rtp.remote_ssrc = audio_send_config_.rtp.ssrc;
+    audio_config.decoder_factory = decoder_factory_;
     audio_receive_configs_.push_back(audio_config);
   }
 }
@@ -307,7 +310,8 @@ void CallTest::CreateVoiceEngines() {
   voe_send_.voice_engine = VoiceEngine::Create();
   voe_send_.base = VoEBase::GetInterface(voe_send_.voice_engine);
   voe_send_.codec = VoECodec::GetInterface(voe_send_.voice_engine);
-  EXPECT_EQ(0, voe_send_.base->Init(fake_send_audio_device_.get(), nullptr));
+  EXPECT_EQ(0, voe_send_.base->Init(fake_send_audio_device_.get(), nullptr,
+                                    decoder_factory_));
   Config voe_config;
   voe_config.Set<VoicePacing>(new VoicePacing(true));
   voe_send_.channel_id = voe_send_.base->CreateChannel(voe_config);
@@ -316,7 +320,8 @@ void CallTest::CreateVoiceEngines() {
   voe_recv_.voice_engine = VoiceEngine::Create();
   voe_recv_.base = VoEBase::GetInterface(voe_recv_.voice_engine);
   voe_recv_.codec = VoECodec::GetInterface(voe_recv_.voice_engine);
-  EXPECT_EQ(0, voe_recv_.base->Init(fake_recv_audio_device_.get(), nullptr));
+  EXPECT_EQ(0, voe_recv_.base->Init(fake_recv_audio_device_.get(), nullptr,
+                                    decoder_factory_));
   voe_recv_.channel_id = voe_recv_.base->CreateChannel();
   EXPECT_GE(voe_recv_.channel_id, 0);
 }

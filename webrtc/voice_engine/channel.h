@@ -199,6 +199,12 @@ class Channel
 
   void SetSink(std::unique_ptr<AudioSinkInterface> sink);
 
+  // TODO(ossu): Don't use! It's only here to confirm that the decoder factory
+  // passed into AudioReceiveStream is the same as the one set when creating the
+  // ADM. Once Channel creation is moved into Audio{Send,Receive}Stream this can
+  // go.
+  const rtc::scoped_refptr<AudioDecoderFactory>& GetAudioDecoderFactory() const;
+
   // API methods
 
   // VoEBase
@@ -584,6 +590,9 @@ class Channel
   std::unique_ptr<TransportFeedbackProxy> feedback_observer_proxy_;
   std::unique_ptr<TransportSequenceNumberProxy> seq_num_allocator_proxy_;
   std::unique_ptr<RtpPacketSenderProxy> rtp_packet_sender_proxy_;
+
+  // TODO(ossu): Remove once GetAudioDecoderFactory() is no longer needed.
+  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
 };
 
 }  // namespace voe

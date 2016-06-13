@@ -94,6 +94,15 @@ AudioReceiveStream::AudioReceiveStream(
   channel_proxy_ = voe_impl->GetChannelProxy(config_.voe_channel_id);
   channel_proxy_->SetLocalSSRC(config.rtp.local_ssrc);
 
+  // TODO(ossu): This is where we'd like to set the decoder factory to
+  // use. However, since it needs to be included when constructing Channel, we
+  // cannot do that until we're able to move Channel ownership into the
+  // Audio{Send,Receive}Streams.  The best we can do is check that we're not
+  // trying to use two different factories using the different interfaces.
+  RTC_CHECK(config.decoder_factory);
+  RTC_CHECK_EQ(config.decoder_factory,
+               channel_proxy_->GetAudioDecoderFactory());
+
   channel_proxy_->RegisterExternalTransport(config.rtcp_send_transport);
 
   for (const auto& extension : config.rtp.extensions) {

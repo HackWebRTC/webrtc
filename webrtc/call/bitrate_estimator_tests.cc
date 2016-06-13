@@ -102,7 +102,8 @@ static const int kASTExtensionId = 5;
 
 class BitrateEstimatorTest : public test::CallTest {
  public:
-  BitrateEstimatorTest() : receive_config_(nullptr) {}
+  BitrateEstimatorTest() : mock_voice_engine_(decoder_factory_),
+                           receive_config_(nullptr) {}
 
   virtual ~BitrateEstimatorTest() { EXPECT_TRUE(streams_.empty()); }
 
@@ -190,6 +191,7 @@ class BitrateEstimatorTest : public test::CallTest {
         receive_config.voe_channel_id = 0;
         receive_config.rtp.extensions.push_back(
             RtpExtension(RtpExtension::kAbsSendTimeUri, kASTExtensionId));
+        receive_config.decoder_factory = test_->decoder_factory_;
         audio_receive_stream_ =
             test_->receiver_call_->CreateAudioReceiveStream(receive_config);
       } else {

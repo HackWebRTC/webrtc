@@ -24,6 +24,8 @@
 #include "webrtc/media/engine/fakewebrtccall.h"
 #include "webrtc/media/engine/fakewebrtcvoiceengine.h"
 #include "webrtc/media/engine/webrtcvoiceengine.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
+#include "webrtc/modules/audio_coding/codecs/mock/mock_audio_decoder_factory.h"
 #include "webrtc/modules/audio_device/include/mock_audio_device.h"
 
 using testing::Return;
@@ -73,7 +75,7 @@ TEST(WebRtcVoiceEngineTestStubLibrary, StartupShutdown) {
   cricket::FakeWebRtcVoiceEngine voe;
   EXPECT_FALSE(voe.IsInited());
   {
-    cricket::WebRtcVoiceEngine engine(&adm, new FakeVoEWrapper(&voe));
+    cricket::WebRtcVoiceEngine engine(&adm, nullptr, new FakeVoEWrapper(&voe));
     EXPECT_TRUE(voe.IsInited());
   }
   EXPECT_FALSE(voe.IsInited());
@@ -99,7 +101,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_CALL(adm_, BuiltInAECIsAvailable()).WillOnce(Return(false));
     EXPECT_CALL(adm_, BuiltInAGCIsAvailable()).WillOnce(Return(false));
     EXPECT_CALL(adm_, BuiltInNSIsAvailable()).WillOnce(Return(false));
-    engine_.reset(new cricket::WebRtcVoiceEngine(&adm_,
+    engine_.reset(new cricket::WebRtcVoiceEngine(&adm_, nullptr,
                                                  new FakeVoEWrapper(&voe_)));
     send_parameters_.codecs.push_back(kPcmuCodec);
     recv_parameters_.codecs.push_back(kPcmuCodec);
@@ -3535,7 +3537,20 @@ TEST_F(WebRtcVoiceEngineTestFake, OnReadyToSendSignalsNetworkState) {
 
 // Tests that the library initializes and shuts down properly.
 TEST(WebRtcVoiceEngineTest, StartupShutdown) {
-  cricket::WebRtcVoiceEngine engine(nullptr);
+  using testing::_;
+  using testing::AnyNumber;
+
+  // If the VoiceEngine wants to gather available codecs early, that's fine but
+  // we never want it to create a decoder at this stage.
+  rtc::scoped_refptr<webrtc::MockAudioDecoderFactory> factory =
+      new rtc::RefCountedObject<webrtc::MockAudioDecoderFactory>;
+  ON_CALL(*factory.get(), GetSupportedFormats())
+      .WillByDefault(Return(std::vector<webrtc::SdpAudioFormat>()));
+  EXPECT_CALL(*factory.get(), GetSupportedFormats())
+      .Times(AnyNumber());
+  EXPECT_CALL(*factory.get(), MakeAudioDecoderMock(_, _)).Times(0);
+
+  cricket::WebRtcVoiceEngine engine(nullptr, factory);
   std::unique_ptr<webrtc::Call> call(
       webrtc::Call::Create(webrtc::Call::Config()));
   cricket::VoiceMediaChannel* channel = engine.CreateChannel(
@@ -3550,7 +3565,7 @@ TEST(WebRtcVoiceEngineTest, StartupShutdownWithExternalADM) {
   EXPECT_CALL(adm, AddRef()).Times(3).WillRepeatedly(Return(0));
   EXPECT_CALL(adm, Release()).Times(3).WillRepeatedly(Return(0));
   {
-    cricket::WebRtcVoiceEngine engine(&adm);
+    cricket::WebRtcVoiceEngine engine(&adm, nullptr);
     std::unique_ptr<webrtc::Call> call(
         webrtc::Call::Create(webrtc::Call::Config()));
     cricket::VoiceMediaChannel* channel = engine.CreateChannel(
@@ -3562,6 +3577,9 @@ TEST(WebRtcVoiceEngineTest, StartupShutdownWithExternalADM) {
 
 // Tests that the library is configured with the codecs we want.
 TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
+  // TODO(ossu): These tests should move into a future "builtin audio codecs"
+  // module.
+
   // Check codecs by name.
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
       cricket::AudioCodec(96, "OPUS", 48000, 0, 2), nullptr));
@@ -3615,7 +3633,8 @@ TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
       cricket::AudioCodec(0, "", 0, 5000, 1), nullptr));
 
   // Verify the payload id of common audio codecs, including CN, ISAC, and G722.
-  cricket::WebRtcVoiceEngine engine(nullptr);
+  cricket::WebRtcVoiceEngine engine(nullptr,
+                                    webrtc::CreateBuiltinAudioDecoderFactory());
   for (std::vector<cricket::AudioCodec>::const_iterator it =
       engine.codecs().begin(); it != engine.codecs().end(); ++it) {
     if (it->name == "CN" && it->clockrate == 16000) {
@@ -3644,7 +3663,7 @@ TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
 
 // Tests that VoE supports at least 32 channels
 TEST(WebRtcVoiceEngineTest, Has32Channels) {
-  cricket::WebRtcVoiceEngine engine(nullptr);
+  cricket::WebRtcVoiceEngine engine(nullptr, nullptr);
   std::unique_ptr<webrtc::Call> call(
       webrtc::Call::Create(webrtc::Call::Config()));
 
@@ -3668,7 +3687,15 @@ TEST(WebRtcVoiceEngineTest, Has32Channels) {
 
 // Test that we set our preferred codecs properly.
 TEST(WebRtcVoiceEngineTest, SetRecvCodecs) {
-  cricket::WebRtcVoiceEngine engine(nullptr);
+  // TODO(ossu): I'm not sure of the intent of this test. It's either:
+  // - Check that our builtin codecs are usable by Channel.
+  // - The codecs provided by the engine is usable by Channel.
+  // It does not check that the codecs in the RecvParameters are actually
+  // what we sent in - though it's probably reasonable to expect so, if
+  // SetRecvParameters returns true.
+  // I think it will become clear once audio decoder injection is completed.
+  cricket::WebRtcVoiceEngine engine(
+      nullptr, webrtc::CreateBuiltinAudioDecoderFactory());
   std::unique_ptr<webrtc::Call> call(
       webrtc::Call::Create(webrtc::Call::Config()));
   cricket::WebRtcVoiceMediaChannel channel(&engine, cricket::MediaConfig(),

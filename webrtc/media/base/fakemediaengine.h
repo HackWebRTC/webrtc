@@ -736,7 +736,10 @@ class FakeBaseEngine {
 
 class FakeVoiceEngine : public FakeBaseEngine {
  public:
-  explicit FakeVoiceEngine(webrtc::AudioDeviceModule* adm)
+  FakeVoiceEngine(
+      webrtc::AudioDeviceModule* adm,
+      const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
+          audio_decoder_factory)
       : output_volume_(-1) {
     // Add a fake audio codec. Note that the name must not be "" as there are
     // sanity checks against that.
@@ -850,8 +853,9 @@ class FakeVideoEngine : public FakeBaseEngine {
 class FakeMediaEngine :
     public CompositeMediaEngine<FakeVoiceEngine, FakeVideoEngine> {
  public:
-  FakeMediaEngine() :
-      CompositeMediaEngine<FakeVoiceEngine, FakeVideoEngine>(nullptr) {}
+  FakeMediaEngine()
+      : CompositeMediaEngine<FakeVoiceEngine, FakeVideoEngine>(nullptr,
+                                                               nullptr) {}
   virtual ~FakeMediaEngine() {}
 
   void SetAudioCodecs(const std::vector<AudioCodec>& codecs) {

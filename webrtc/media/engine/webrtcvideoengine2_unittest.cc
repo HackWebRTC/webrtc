@@ -99,12 +99,8 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
  public:
   WebRtcVideoEngine2Test() : WebRtcVideoEngine2Test("") {}
   explicit WebRtcVideoEngine2Test(const char* field_trials)
-      : WebRtcVideoEngine2Test(nullptr, field_trials) {}
-  WebRtcVideoEngine2Test(WebRtcVoiceEngine* voice_engine,
-                         const char* field_trials)
       : override_field_trials_(field_trials),
         call_(webrtc::Call::Create(webrtc::Call::Config())),
-        voice_engine_(nullptr),
         engine_() {
     std::vector<VideoCodec> engine_codecs = engine_.codecs();
     RTC_DCHECK(!engine_codecs.empty());
@@ -144,7 +140,6 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
   // Used in WebRtcVideoEngine2VoiceTest, but defined here so it's properly
   // initialized when the constructor is called.
   std::unique_ptr<webrtc::Call> call_;
-  WebRtcVoiceEngine voice_engine_;
   WebRtcVideoEngine2 engine_;
   VideoCodec default_codec_;
   VideoCodec default_red_codec_;

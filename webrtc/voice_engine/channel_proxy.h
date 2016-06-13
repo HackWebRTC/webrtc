@@ -80,6 +80,9 @@ class ChannelProxy {
                                  const PacketTime& packet_time);
   virtual bool ReceivedRTCPPacket(const uint8_t* packet, size_t length);
 
+  virtual const rtc::scoped_refptr<AudioDecoderFactory>&
+  GetAudioDecoderFactory() const;
+
  private:
   Channel* channel() const;
 

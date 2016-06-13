@@ -31,8 +31,10 @@ class WebRtcMediaEngineFactory {
  public:
   static MediaEngineInterface* Create(
       webrtc::AudioDeviceModule* adm,
-      WebRtcVideoEncoderFactory* encoder_factory,
-      WebRtcVideoDecoderFactory* decoder_factory);
+      const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
+          audio_decoder_factory,
+      WebRtcVideoEncoderFactory* video_encoder_factory,
+      WebRtcVideoDecoderFactory* video_decoder_factory);
 };
 
 // Verify that extension IDs are within 1-byte extension range and are not

@@ -40,6 +40,9 @@ specific_include_rules = {
   "audio_send_stream\.h": [
     "+webrtc/modules/audio_coding",
   ],
+  "audio_receive_stream\.h": [
+    "+webrtc/modules/audio_coding/codecs/audio_decoder_factory.h",
+  ],
   "video_frame\.h": [
     "+webrtc/common_video",
   ],

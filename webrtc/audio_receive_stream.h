@@ -16,14 +16,14 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/modules/audio_coding/codecs/audio_decoder_factory.h"
 #include "webrtc/common_types.h"
 #include "webrtc/config.h"
 #include "webrtc/transport.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-
-class AudioDecoder;
 class AudioSinkInterface;
 
 // WORK IN PROGRESS
@@ -101,6 +101,8 @@ class AudioReceiveStream {
     // Call::CreateReceiveStream().
     // TODO(solenberg): Use unique_ptr<> once our std lib fully supports C++11.
     std::map<uint8_t, AudioDecoder*> decoder_map;
+
+    rtc::scoped_refptr<AudioDecoderFactory> decoder_factory;
   };
 
   // Starts stream activity.

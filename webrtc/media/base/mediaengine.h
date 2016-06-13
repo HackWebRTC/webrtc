@@ -27,6 +27,7 @@
 #include "webrtc/media/base/mediacommon.h"
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/media/base/videocommon.h"
+#include "webrtc/modules/audio_coding/codecs/audio_decoder_factory.h"
 
 #if defined(GOOGLE_CHROME_BUILD) || defined(CHROMIUM_BUILD)
 #define DISABLE_MEDIA_ENGINE_FACTORY
@@ -127,7 +128,11 @@ class MediaEngineFactory {
 template<class VOICE, class VIDEO>
 class CompositeMediaEngine : public MediaEngineInterface {
  public:
-  explicit CompositeMediaEngine(webrtc::AudioDeviceModule* adm) : voice_(adm) {}
+  CompositeMediaEngine(
+      webrtc::AudioDeviceModule* adm,
+      const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
+          audio_decoder_factory)
+      : voice_(adm, audio_decoder_factory) {}
   virtual ~CompositeMediaEngine() {}
   virtual bool Init() {
     video_.Init();

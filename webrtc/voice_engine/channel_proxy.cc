@@ -181,6 +181,11 @@ bool ChannelProxy::ReceivedRTCPPacket(const uint8_t* packet, size_t length) {
   return channel()->ReceivedRTCPPacket(packet, length) == 0;
 }
 
+const rtc::scoped_refptr<AudioDecoderFactory>&
+ChannelProxy::GetAudioDecoderFactory() const {
+  return channel()->GetAudioDecoderFactory();
+}
+
 Channel* ChannelProxy::channel() const {
   RTC_DCHECK(channel_owner_.channel());
   return channel_owner_.channel();
