@@ -26,9 +26,9 @@ const uint8_t kTransportOverhead = 28;
 // Maximum number of media packets used in the FEC (RFC 5109).
 const uint8_t kMaxNumberMediaPackets = ForwardErrorCorrection::kMaxMediaPackets;
 
-typedef std::list<ForwardErrorCorrection::Packet*> PacketList;
-typedef std::list<ForwardErrorCorrection::ReceivedPacket*> ReceivedPacketList;
-typedef std::list<ForwardErrorCorrection::RecoveredPacket*> RecoveredPacketList;
+using PacketList = ForwardErrorCorrection::PacketList;
+using ReceivedPacketList = ForwardErrorCorrection::ReceivedPacketList;
+using RecoveredPacketList = ForwardErrorCorrection::RecoveredPacketList;
 
 template <typename T> void ClearList(std::list<T*>* my_list) {
   T* packet = NULL;
