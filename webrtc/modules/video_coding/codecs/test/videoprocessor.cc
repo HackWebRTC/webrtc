@@ -66,8 +66,7 @@ VideoProcessorImpl::VideoProcessorImpl(webrtc::VideoEncoder* encoder,
       num_dropped_frames_(0),
       num_spatial_resizes_(0),
       last_encoder_frame_width_(0),
-      last_encoder_frame_height_(0),
-      scaler_() {
+      last_encoder_frame_height_(0) {
   assert(encoder);
   assert(decoder);
   assert(frame_reader);
@@ -335,23 +334,16 @@ void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
   // upsample back to original size: needed for PSNR and SSIM computations.
   if (image.width() != config_.codec_settings->width ||
       image.height() != config_.codec_settings->height) {
-    VideoFrame up_image;
-    int ret_val = scaler_.Set(
-        image.width(), image.height(), config_.codec_settings->width,
-        config_.codec_settings->height, kI420, kI420, kScaleBilinear);
-    assert(ret_val >= 0);
-    if (ret_val < 0) {
-      fprintf(stderr, "Failed to set scalar for frame: %d, return code: %d\n",
-              frame_number, ret_val);
-    }
-    ret_val = scaler_.Scale(image, &up_image);
-    assert(ret_val >= 0);
-    if (ret_val < 0) {
-      fprintf(stderr, "Failed to scale frame: %d, return code: %d\n",
-              frame_number, ret_val);
-    }
+    rtc::scoped_refptr<I420Buffer> up_image(
+        new rtc::RefCountedObject<I420Buffer>(config_.codec_settings->width,
+                                              config_.codec_settings->height));
+
+    // Should be the same aspect ratio, no cropping needed.
+    up_image->ScaleFrom(image.video_frame_buffer());
+
     // TODO(mikhal): Extracting the buffer for now - need to update test.
-    size_t length = CalcBufferSize(kI420, up_image.width(), up_image.height());
+    size_t length =
+        CalcBufferSize(kI420, up_image->width(), up_image->height());
     std::unique_ptr<uint8_t[]> image_buffer(new uint8_t[length]);
     int extracted_length = ExtractBuffer(up_image, length, image_buffer.get());
     assert(extracted_length > 0);

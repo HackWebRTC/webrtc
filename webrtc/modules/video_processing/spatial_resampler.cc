@@ -13,10 +13,7 @@
 namespace webrtc {
 
 VPMSimpleSpatialResampler::VPMSimpleSpatialResampler()
-    : resampling_mode_(kFastRescaling),
-      target_width_(0),
-      target_height_(0),
-      scaler_() {}
+    : resampling_mode_(kFastRescaling), target_width_(0), target_height_(0) {}
 
 VPMSimpleSpatialResampler::~VPMSimpleSpatialResampler() {}
 
@@ -56,26 +53,17 @@ int32_t VPMSimpleSpatialResampler::ResampleFrame(const VideoFrame& inFrame,
     return VPM_OK;
   }
 
-  // Setting scaler
-  // TODO(mikhal/marpan): Should we allow for setting the filter mode in
-  // _scale.Set() with |resampling_mode_|?
-  int ret_val = 0;
-  ret_val = scaler_.Set(inFrame.width(), inFrame.height(), target_width_,
-                        target_height_, kI420, kI420, kScaleBox);
-  if (ret_val < 0)
-    return ret_val;
+  rtc::scoped_refptr<I420Buffer> scaled_buffer(
+      buffer_pool_.CreateBuffer(target_width_, target_height_));
 
-  ret_val = scaler_.Scale(inFrame, outFrame);
+  scaled_buffer->CropAndScaleFrom(inFrame.video_frame_buffer());
 
+  outFrame->set_video_frame_buffer(scaled_buffer);
   // Setting time parameters to the output frame.
-  // Timestamp will be reset in Scale call above, so we should set it after.
   outFrame->set_timestamp(inFrame.timestamp());
   outFrame->set_render_time_ms(inFrame.render_time_ms());
 
-  if (ret_val == 0)
-    return VPM_OK;
-  else
-    return VPM_SCALE_ERROR;
+  return VPM_OK;
 }
 
 int32_t VPMSimpleSpatialResampler::TargetHeight() {

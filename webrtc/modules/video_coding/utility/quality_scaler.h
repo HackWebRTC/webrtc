@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_UTILITY_QUALITY_SCALER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_UTILITY_QUALITY_SCALER_H_
 
-#include "webrtc/common_video/libyuv/include/scaler.h"
+#include "webrtc/common_video/include/i420_buffer_pool.h"
 #include "webrtc/modules/video_coding/utility/moving_average.h"
 
 namespace webrtc {
@@ -32,9 +32,10 @@ class QualityScaler {
   void ReportFramerate(int framerate);
   void ReportQP(int qp);
   void ReportDroppedFrame();
-  void OnEncodeFrame(const VideoFrame& frame);
+  void OnEncodeFrame(int width, int height);
   Resolution GetScaledResolution() const;
-  const VideoFrame& GetScaledFrame(const VideoFrame& frame);
+  rtc::scoped_refptr<VideoFrameBuffer> GetScaledBuffer(
+      const rtc::scoped_refptr<VideoFrameBuffer>& frame);
   int downscale_shift() const { return downscale_shift_; }
 
   // QP is obtained from VP8-bitstream for HW, so the QP corresponds to the
@@ -52,8 +53,7 @@ class QualityScaler {
   void ClearSamples();
   void UpdateSampleCounts();
 
-  Scaler scaler_;
-  VideoFrame scaled_frame_;
+  I420BufferPool pool_;
 
   size_t num_samples_downscale_;
   size_t num_samples_upscale_;

@@ -119,6 +119,21 @@ class I420Buffer : public VideoFrameBuffer {
   static rtc::scoped_refptr<I420Buffer> Copy(
       const rtc::scoped_refptr<VideoFrameBuffer>& buffer);
 
+  // Scale the cropped area of |src| to the size of |this| buffer, and
+  // write the result into |this|.
+  void CropAndScaleFrom(const rtc::scoped_refptr<VideoFrameBuffer>& src,
+                        int offset_x,
+                        int offset_y,
+                        int crop_width,
+                        int crop_height);
+
+  // The common case of a center crop, when needed to adjust the
+  // aspect ratio without distorting the image.
+  void CropAndScaleFrom(const rtc::scoped_refptr<VideoFrameBuffer>& src);
+
+  // Scale all of |src| to the size of |this| buffer, with no cropping.
+  void ScaleFrom(const rtc::scoped_refptr<VideoFrameBuffer>& src);
+
  protected:
   ~I420Buffer() override;
 
@@ -195,13 +210,6 @@ class WrappedI420Buffer : public webrtc::VideoFrameBuffer {
   const int v_stride_;
   rtc::Callback0<void> no_longer_used_cb_;
 };
-
-// Helper function to crop |buffer| without making a deep copy. May only be used
-// for non-native frames.
-rtc::scoped_refptr<VideoFrameBuffer> ShallowCenterCrop(
-    const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
-    int cropped_width,
-    int cropped_height);
 
 }  // namespace webrtc
 

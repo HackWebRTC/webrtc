@@ -16,7 +16,6 @@ namespace webrtc {
 namespace {
 static const int kNumSeconds = 10;
 static const int kWidth = 1920;
-static const int kHalfWidth = kWidth / 2;
 static const int kHeight = 1080;
 static const int kFramerate = 30;
 static const int kLowQp = 15;
@@ -43,14 +42,14 @@ class QualityScalerTest : public ::testing::Test {
   };
 
   QualityScalerTest() {
-    input_frame_.CreateEmptyFrame(kWidth, kHeight, kWidth, kHalfWidth,
-                                  kHalfWidth);
+    input_frame_ = rtc::scoped_refptr<VideoFrameBuffer>(
+        new rtc::RefCountedObject<I420Buffer>(kWidth, kHeight));
     qs_.Init(kLowQpThreshold, kHighQp, 0, 0, 0, kFramerate);
-    qs_.OnEncodeFrame(input_frame_);
+    qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
   }
 
   bool TriggerScale(ScaleDirection scale_direction) {
-    qs_.OnEncodeFrame(input_frame_);
+    qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
     int initial_width = qs_.GetScaledResolution().width;
     for (int i = 0; i < kFramerate * kNumSeconds; ++i) {
       switch (scale_direction) {
@@ -67,7 +66,7 @@ class QualityScalerTest : public ::testing::Test {
           qs_.ReportQP(kHighQp + 1);
           break;
       }
-      qs_.OnEncodeFrame(input_frame_);
+      qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
       if (qs_.GetScaledResolution().width != initial_width)
         return true;
     }
@@ -76,16 +75,17 @@ class QualityScalerTest : public ::testing::Test {
   }
 
   void ExpectOriginalFrame() {
-    EXPECT_EQ(&input_frame_, &qs_.GetScaledFrame(input_frame_))
+    EXPECT_EQ(input_frame_, qs_.GetScaledBuffer(input_frame_))
         << "Using scaled frame instead of original input.";
   }
 
   void ExpectScaleUsingReportedResolution() {
-    qs_.OnEncodeFrame(input_frame_);
+    qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
     QualityScaler::Resolution res = qs_.GetScaledResolution();
-    const VideoFrame& scaled_frame = qs_.GetScaledFrame(input_frame_);
-    EXPECT_EQ(res.width, scaled_frame.width());
-    EXPECT_EQ(res.height, scaled_frame.height());
+    rtc::scoped_refptr<VideoFrameBuffer> scaled_frame =
+        qs_.GetScaledBuffer(input_frame_);
+    EXPECT_EQ(res.width, scaled_frame->width());
+    EXPECT_EQ(res.height, scaled_frame->height());
   }
 
   void ContinuouslyDownscalesByHalfDimensionsAndBackUp();
@@ -98,7 +98,7 @@ class QualityScalerTest : public ::testing::Test {
                        int end_height);
 
   QualityScaler qs_;
-  VideoFrame input_frame_;
+  rtc::scoped_refptr<VideoFrameBuffer> input_frame_;
 };
 
 TEST_F(QualityScalerTest, UsesOriginalFrameInitially) {
@@ -106,34 +106,34 @@ TEST_F(QualityScalerTest, UsesOriginalFrameInitially) {
 }
 
 TEST_F(QualityScalerTest, ReportsOriginalResolutionInitially) {
-  qs_.OnEncodeFrame(input_frame_);
+  qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
   QualityScaler::Resolution res = qs_.GetScaledResolution();
-  EXPECT_EQ(input_frame_.width(), res.width);
-  EXPECT_EQ(input_frame_.height(), res.height);
+  EXPECT_EQ(input_frame_->width(), res.width);
+  EXPECT_EQ(input_frame_->height(), res.height);
 }
 
 TEST_F(QualityScalerTest, DownscalesAfterContinuousFramedrop) {
   EXPECT_TRUE(TriggerScale(kScaleDown)) << "No downscale within " << kNumSeconds
                                         << " seconds.";
   QualityScaler::Resolution res = qs_.GetScaledResolution();
-  EXPECT_LT(res.width, input_frame_.width());
-  EXPECT_LT(res.height, input_frame_.height());
+  EXPECT_LT(res.width, input_frame_->width());
+  EXPECT_LT(res.height, input_frame_->height());
 }
 
 TEST_F(QualityScalerTest, KeepsScaleAtHighQp) {
   EXPECT_FALSE(TriggerScale(kKeepScaleAtHighQp))
       << "Downscale at high threshold which should keep scale.";
   QualityScaler::Resolution res = qs_.GetScaledResolution();
-  EXPECT_EQ(res.width, input_frame_.width());
-  EXPECT_EQ(res.height, input_frame_.height());
+  EXPECT_EQ(res.width, input_frame_->width());
+  EXPECT_EQ(res.height, input_frame_->height());
 }
 
 TEST_F(QualityScalerTest, DownscalesAboveHighQp) {
   EXPECT_TRUE(TriggerScale(kScaleDownAboveHighQp))
       << "No downscale within " << kNumSeconds << " seconds.";
   QualityScaler::Resolution res = qs_.GetScaledResolution();
-  EXPECT_LT(res.width, input_frame_.width());
-  EXPECT_LT(res.height, input_frame_.height());
+  EXPECT_LT(res.width, input_frame_->width());
+  EXPECT_LT(res.height, input_frame_->height());
 }
 
 TEST_F(QualityScalerTest, DownscalesAfterTwoThirdsFramedrop) {
@@ -141,8 +141,8 @@ TEST_F(QualityScalerTest, DownscalesAfterTwoThirdsFramedrop) {
     qs_.ReportQP(kNormalQp);
     qs_.ReportDroppedFrame();
     qs_.ReportDroppedFrame();
-    qs_.OnEncodeFrame(input_frame_);
-    if (qs_.GetScaledResolution().width < input_frame_.width())
+    qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
+    if (qs_.GetScaledResolution().width < input_frame_->width())
       return;
   }
 
@@ -152,8 +152,8 @@ TEST_F(QualityScalerTest, DownscalesAfterTwoThirdsFramedrop) {
 TEST_F(QualityScalerTest, DoesNotDownscaleOnNormalQp) {
   for (int i = 0; i < kFramerate * kNumSeconds; ++i) {
     qs_.ReportQP(kNormalQp);
-    qs_.OnEncodeFrame(input_frame_);
-    ASSERT_EQ(input_frame_.width(), qs_.GetScaledResolution().width)
+    qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
+    ASSERT_EQ(input_frame_->width(), qs_.GetScaledResolution().width)
         << "Unexpected scale on half framedrop.";
   }
 }
@@ -161,33 +161,33 @@ TEST_F(QualityScalerTest, DoesNotDownscaleOnNormalQp) {
 TEST_F(QualityScalerTest, DoesNotDownscaleAfterHalfFramedrop) {
   for (int i = 0; i < kFramerate * kNumSeconds / 2; ++i) {
     qs_.ReportQP(kNormalQp);
-    qs_.OnEncodeFrame(input_frame_);
-    ASSERT_EQ(input_frame_.width(), qs_.GetScaledResolution().width)
+    qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
+    ASSERT_EQ(input_frame_->width(), qs_.GetScaledResolution().width)
         << "Unexpected scale on half framedrop.";
 
     qs_.ReportDroppedFrame();
-    qs_.OnEncodeFrame(input_frame_);
-    ASSERT_EQ(input_frame_.width(), qs_.GetScaledResolution().width)
+    qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
+    ASSERT_EQ(input_frame_->width(), qs_.GetScaledResolution().width)
         << "Unexpected scale on half framedrop.";
   }
 }
 
 void QualityScalerTest::ContinuouslyDownscalesByHalfDimensionsAndBackUp() {
-  const int initial_min_dimension = input_frame_.width() < input_frame_.height()
-                                        ? input_frame_.width()
-                                        : input_frame_.height();
+  const int initial_min_dimension =
+      input_frame_->width() < input_frame_->height() ? input_frame_->width()
+                                                     : input_frame_->height();
   int min_dimension = initial_min_dimension;
   int current_shift = 0;
   // Drop all frames to force-trigger downscaling.
   while (min_dimension >= 2 * kMinDownscaleDimension) {
     EXPECT_TRUE(TriggerScale(kScaleDown)) << "No downscale within "
                                           << kNumSeconds << " seconds.";
-    qs_.OnEncodeFrame(input_frame_);
+    qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
     QualityScaler::Resolution res = qs_.GetScaledResolution();
     min_dimension = res.width < res.height ? res.width : res.height;
     ++current_shift;
-    ASSERT_EQ(input_frame_.width() >> current_shift, res.width);
-    ASSERT_EQ(input_frame_.height() >> current_shift, res.height);
+    ASSERT_EQ(input_frame_->width() >> current_shift, res.width);
+    ASSERT_EQ(input_frame_->height() >> current_shift, res.height);
     ExpectScaleUsingReportedResolution();
   }
 
@@ -195,12 +195,12 @@ void QualityScalerTest::ContinuouslyDownscalesByHalfDimensionsAndBackUp() {
   while (min_dimension < initial_min_dimension) {
     EXPECT_TRUE(TriggerScale(kScaleUp)) << "No upscale within " << kNumSeconds
                                         << " seconds.";
-    qs_.OnEncodeFrame(input_frame_);
+    qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
     QualityScaler::Resolution res = qs_.GetScaledResolution();
     min_dimension = res.width < res.height ? res.width : res.height;
     --current_shift;
-    ASSERT_EQ(input_frame_.width() >> current_shift, res.width);
-    ASSERT_EQ(input_frame_.height() >> current_shift, res.height);
+    ASSERT_EQ(input_frame_->width() >> current_shift, res.width);
+    ASSERT_EQ(input_frame_->height() >> current_shift, res.height);
     ExpectScaleUsingReportedResolution();
   }
 
@@ -218,21 +218,20 @@ TEST_F(QualityScalerTest, ContinuouslyDownscalesByHalfDimensionsAndBackUp) {
 TEST_F(QualityScalerTest,
        ContinuouslyDownscalesOddResolutionsByHalfDimensionsAndBackUp) {
   const int kOddWidth = 517;
-  const int kHalfOddWidth = (kOddWidth + 1) / 2;
   const int kOddHeight = 1239;
-  input_frame_.CreateEmptyFrame(kOddWidth, kOddHeight, kOddWidth, kHalfOddWidth,
-                                kHalfOddWidth);
+  input_frame_ = rtc::scoped_refptr<VideoFrameBuffer>(
+      new rtc::RefCountedObject<I420Buffer>(kOddWidth, kOddHeight));
   ContinuouslyDownscalesByHalfDimensionsAndBackUp();
 }
 
 void QualityScalerTest::DoesNotDownscaleFrameDimensions(int width, int height) {
-  input_frame_.CreateEmptyFrame(width, height, width, (width + 1) / 2,
-                                (width + 1) / 2);
+  input_frame_ = rtc::scoped_refptr<VideoFrameBuffer>(
+      new rtc::RefCountedObject<I420Buffer>(width, height));
 
   for (int i = 0; i < kFramerate * kNumSeconds; ++i) {
     qs_.ReportDroppedFrame();
-    qs_.OnEncodeFrame(input_frame_);
-    ASSERT_EQ(input_frame_.width(), qs_.GetScaledResolution().width)
+    qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
+    ASSERT_EQ(input_frame_->width(), qs_.GetScaledResolution().width)
         << "Unexpected scale of minimal-size frame.";
   }
 }
@@ -263,11 +262,11 @@ TEST_F(QualityScalerTest, DownscaleToVgaOnLowInitialBitrate) {
   static const int kWidth720p = 1280;
   static const int kHeight720p = 720;
   static const int kInitialBitrateKbps = 300;
-  input_frame_.CreateEmptyFrame(kWidth720p, kHeight720p, kWidth720p,
-                                kWidth720p / 2, kWidth720p / 2);
+  input_frame_ = rtc::scoped_refptr<VideoFrameBuffer>(
+      new rtc::RefCountedObject<I420Buffer>(kWidth720p, kHeight720p));
   qs_.Init(kLowQpThreshold, kDisabledBadQpThreshold, kInitialBitrateKbps,
            kWidth720p, kHeight720p, kFramerate);
-  qs_.OnEncodeFrame(input_frame_);
+  qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
   int init_width = qs_.GetScaledResolution().width;
   int init_height = qs_.GetScaledResolution().height;
   EXPECT_EQ(640, init_width);
@@ -278,11 +277,11 @@ TEST_F(QualityScalerTest, DownscaleToQvgaOnLowerInitialBitrate) {
   static const int kWidth720p = 1280;
   static const int kHeight720p = 720;
   static const int kInitialBitrateKbps = 200;
-  input_frame_.CreateEmptyFrame(kWidth720p, kHeight720p, kWidth720p,
-                                kWidth720p / 2, kWidth720p / 2);
+  input_frame_ = rtc::scoped_refptr<VideoFrameBuffer>(
+      new rtc::RefCountedObject<I420Buffer>(kWidth720p, kHeight720p));
   qs_.Init(kLowQpThreshold, kDisabledBadQpThreshold, kInitialBitrateKbps,
            kWidth720p, kHeight720p, kFramerate);
-  qs_.OnEncodeFrame(input_frame_);
+  qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
   int init_width = qs_.GetScaledResolution().width;
   int init_height = qs_.GetScaledResolution().height;
   EXPECT_EQ(320, init_width);
@@ -291,13 +290,13 @@ TEST_F(QualityScalerTest, DownscaleToQvgaOnLowerInitialBitrate) {
 
 TEST_F(QualityScalerTest, DownscaleAfterMeasuredSecondsThenSlowerBackUp) {
   qs_.Init(kLowQpThreshold, kHighQp, 0, kWidth, kHeight, kFramerate);
-  qs_.OnEncodeFrame(input_frame_);
+  qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
   QualityScaler::Resolution initial_res = qs_.GetScaledResolution();
 
   // Should not downscale if less than kMeasureSecondsDownscale seconds passed.
   for (int i = 0; i < kFramerate * kMeasureSecondsDownscale - 1; ++i) {
     qs_.ReportQP(kHighQp + 1);
-    qs_.OnEncodeFrame(input_frame_);
+    qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
   }
   EXPECT_EQ(initial_res.width, qs_.GetScaledResolution().width);
   EXPECT_EQ(initial_res.height, qs_.GetScaledResolution().height);
@@ -305,7 +304,7 @@ TEST_F(QualityScalerTest, DownscaleAfterMeasuredSecondsThenSlowerBackUp) {
   // Should downscale if more than kMeasureSecondsDownscale seconds passed (add
   // last frame).
   qs_.ReportQP(kHighQp + 1);
-  qs_.OnEncodeFrame(input_frame_);
+  qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
   EXPECT_GT(initial_res.width, qs_.GetScaledResolution().width);
   EXPECT_GT(initial_res.height, qs_.GetScaledResolution().height);
 
@@ -313,7 +312,7 @@ TEST_F(QualityScalerTest, DownscaleAfterMeasuredSecondsThenSlowerBackUp) {
   // we saw issues initially (have already gone down).
   for (int i = 0; i < kFramerate * kMeasureSecondsUpscale - 1; ++i) {
     qs_.ReportQP(kLowQp);
-    qs_.OnEncodeFrame(input_frame_);
+    qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
   }
   EXPECT_GT(initial_res.width, qs_.GetScaledResolution().width);
   EXPECT_GT(initial_res.height, qs_.GetScaledResolution().height);
@@ -321,7 +320,7 @@ TEST_F(QualityScalerTest, DownscaleAfterMeasuredSecondsThenSlowerBackUp) {
   // Should upscale (back to initial) if kMeasureSecondsUpscale seconds passed
   // (add last frame).
   qs_.ReportQP(kLowQp);
-  qs_.OnEncodeFrame(input_frame_);
+  qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
   EXPECT_EQ(initial_res.width, qs_.GetScaledResolution().width);
   EXPECT_EQ(initial_res.height, qs_.GetScaledResolution().height);
 }
@@ -329,13 +328,13 @@ TEST_F(QualityScalerTest, DownscaleAfterMeasuredSecondsThenSlowerBackUp) {
 TEST_F(QualityScalerTest, UpscaleQuicklyInitiallyAfterMeasuredSeconds) {
   qs_.Init(kLowQpThreshold, kHighQp, kLowInitialBitrateKbps, kWidth, kHeight,
            kFramerate);
-  qs_.OnEncodeFrame(input_frame_);
+  qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
   QualityScaler::Resolution initial_res = qs_.GetScaledResolution();
 
   // Should not upscale if less than kMeasureSecondsFastUpscale seconds passed.
   for (int i = 0; i < kFramerate * kMeasureSecondsFastUpscale - 1; ++i) {
     qs_.ReportQP(kLowQp);
-    qs_.OnEncodeFrame(input_frame_);
+    qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
   }
   EXPECT_EQ(initial_res.width, qs_.GetScaledResolution().width);
   EXPECT_EQ(initial_res.height, qs_.GetScaledResolution().height);
@@ -343,7 +342,7 @@ TEST_F(QualityScalerTest, UpscaleQuicklyInitiallyAfterMeasuredSeconds) {
   // Should upscale if kMeasureSecondsFastUpscale seconds passed (add last
   // frame).
   qs_.ReportQP(kLowQp);
-  qs_.OnEncodeFrame(input_frame_);
+  qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
   EXPECT_LT(initial_res.width, qs_.GetScaledResolution().width);
   EXPECT_LT(initial_res.height, qs_.GetScaledResolution().height);
 }
@@ -354,8 +353,8 @@ void QualityScalerTest::DownscaleEndsAt(int input_width,
                                         int end_height) {
   // Create a frame with 2x expected end width/height to verify that we can
   // scale down to expected end width/height.
-  input_frame_.CreateEmptyFrame(input_width, input_height, input_width,
-                                (input_width + 1) / 2, (input_width + 1) / 2);
+  input_frame_ = rtc::scoped_refptr<VideoFrameBuffer>(
+      new rtc::RefCountedObject<I420Buffer>(input_width, input_height));
 
   int last_width = input_width;
   int last_height = input_height;

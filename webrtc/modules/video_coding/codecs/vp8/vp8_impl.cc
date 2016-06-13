@@ -729,40 +729,40 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
   if (encoded_complete_callback_ == NULL)
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
 
-  if (quality_scaler_enabled_)
-    quality_scaler_.OnEncodeFrame(frame);
-  const VideoFrame& input_image =
-      quality_scaler_enabled_ ? quality_scaler_.GetScaledFrame(frame) : frame;
+  rtc::scoped_refptr<VideoFrameBuffer> input_image = frame.video_frame_buffer();
 
-  if (quality_scaler_enabled_ && (input_image.width() != codec_.width ||
-                                  input_image.height() != codec_.height)) {
-    int ret = UpdateCodecFrameSize(input_image);
-    if (ret < 0)
-      return ret;
+  if (quality_scaler_enabled_) {
+    quality_scaler_.OnEncodeFrame(frame.width(), frame.height());
+    input_image = quality_scaler_.GetScaledBuffer(input_image);
+
+    if (input_image->width() != codec_.width ||
+        input_image->height() != codec_.height) {
+      int ret =
+          UpdateCodecFrameSize(input_image->width(), input_image->height());
+      if (ret < 0)
+        return ret;
+    }
   }
 
   // Since we are extracting raw pointers from |input_image| to
   // |raw_images_[0]|, the resolution of these frames must match. Note that
   // |input_image| might be scaled from |frame|. In that case, the resolution of
   // |raw_images_[0]| should have been updated in UpdateCodecFrameSize.
-  RTC_DCHECK_EQ(input_image.width(), static_cast<int>(raw_images_[0].d_w));
-  RTC_DCHECK_EQ(input_image.height(), static_cast<int>(raw_images_[0].d_h));
+  RTC_DCHECK_EQ(input_image->width(), static_cast<int>(raw_images_[0].d_w));
+  RTC_DCHECK_EQ(input_image->height(), static_cast<int>(raw_images_[0].d_h));
 
   // Image in vpx_image_t format.
   // Input image is const. VP8's raw image is not defined as const.
   raw_images_[0].planes[VPX_PLANE_Y] =
-      const_cast<uint8_t*>(input_image.video_frame_buffer()->DataY());
+      const_cast<uint8_t*>(input_image->DataY());
   raw_images_[0].planes[VPX_PLANE_U] =
-      const_cast<uint8_t*>(input_image.video_frame_buffer()->DataU());
+      const_cast<uint8_t*>(input_image->DataU());
   raw_images_[0].planes[VPX_PLANE_V] =
-      const_cast<uint8_t*>(input_image.video_frame_buffer()->DataV());
+      const_cast<uint8_t*>(input_image->DataV());
 
-  raw_images_[0].stride[VPX_PLANE_Y] =
-      input_image.video_frame_buffer()->StrideY();
-  raw_images_[0].stride[VPX_PLANE_U] =
-      input_image.video_frame_buffer()->StrideU();
-  raw_images_[0].stride[VPX_PLANE_V] =
-      input_image.video_frame_buffer()->StrideV();
+  raw_images_[0].stride[VPX_PLANE_Y] = input_image->StrideY();
+  raw_images_[0].stride[VPX_PLANE_U] = input_image->StrideU();
+  raw_images_[0].stride[VPX_PLANE_V] = input_image->StrideV();
 
   for (size_t i = 1; i < encoders_.size(); ++i) {
     // Scale the image down a number of times by downsampling factor
@@ -781,7 +781,7 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
   }
   vpx_enc_frame_flags_t flags[kMaxSimulcastStreams];
   for (size_t i = 0; i < encoders_.size(); ++i) {
-    int ret = temporal_layers_[i]->EncodeFlags(input_image.timestamp());
+    int ret = temporal_layers_[i]->EncodeFlags(frame.timestamp());
     if (ret < 0) {
       // Drop this frame.
       return WEBRTC_VIDEO_CODEC_OK;
@@ -833,11 +833,11 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
         rps_.ReceivedRPSI(codec_specific_info->codecSpecific.VP8.pictureIdRPSI);
       }
       if (codec_specific_info->codecSpecific.VP8.hasReceivedSLI) {
-        sendRefresh = rps_.ReceivedSLI(input_image.timestamp());
+        sendRefresh = rps_.ReceivedSLI(frame.timestamp());
       }
       for (size_t i = 0; i < encoders_.size(); ++i) {
         flags[i] = rps_.EncodeFlags(picture_id_[i], sendRefresh,
-                                    input_image.timestamp());
+                                    frame.timestamp());
       }
     } else {
       if (codec_specific_info->codecSpecific.VP8.hasReceivedRPSI) {
@@ -905,17 +905,18 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
   if (error)
     return WEBRTC_VIDEO_CODEC_ERROR;
   timestamp_ += duration;
-  return GetEncodedPartitions(input_image, only_predict_from_key_frame);
+  // Examines frame timestamps only.
+  return GetEncodedPartitions(frame, only_predict_from_key_frame);
 }
 
 // TODO(pbos): Make sure this works for properly for >1 encoders.
-int VP8EncoderImpl::UpdateCodecFrameSize(const VideoFrame& input_image) {
-  codec_.width = input_image.width();
-  codec_.height = input_image.height();
+int VP8EncoderImpl::UpdateCodecFrameSize(int width, int height) {
+  codec_.width = width;
+  codec_.height = height;
   if (codec_.numberOfSimulcastStreams <= 1) {
     // For now scaling is only used for single-layer streams.
-    codec_.simulcastStream[0].width = input_image.width();
-    codec_.simulcastStream[0].height = input_image.height();
+    codec_.simulcastStream[0].width = width;
+    codec_.simulcastStream[0].height = height;
   }
   // Update the cpu_speed setting for resolution change.
   vpx_codec_control(&(encoders_[0]), VP8E_SET_CPUUSED,

@@ -39,13 +39,12 @@ VideoFrame* VideoFrameFactory::CreateAliasedFrame(
     std::swap(output_width, output_height);
   }
 
-  std::unique_ptr<VideoFrame> output_frame(new WebRtcVideoFrame(
-      pool_.CreateBuffer(output_width, output_height),
-      cropped_input_frame->rotation(),
-      cropped_input_frame->timestamp_us()));
+  rtc::scoped_refptr<webrtc::I420Buffer> scaled_buffer(
+      pool_.CreateBuffer(output_width, output_height));
+  scaled_buffer->CropAndScaleFrom(cropped_input_frame->video_frame_buffer());
 
-  cropped_input_frame->StretchToFrame(output_frame.get(), true, true);
-  return output_frame.release();
+  return new WebRtcVideoFrame(scaled_buffer, cropped_input_frame->rotation(),
+                              cropped_input_frame->timestamp_us());
 }
 
 }  // namespace cricket

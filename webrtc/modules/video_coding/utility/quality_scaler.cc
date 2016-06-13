@@ -7,6 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+
 #include "webrtc/modules/video_coding/utility/quality_scaler.h"
 
 namespace webrtc {
@@ -94,11 +95,11 @@ void QualityScaler::ReportDroppedFrame() {
   framedrop_percent_.AddSample(100);
 }
 
-void QualityScaler::OnEncodeFrame(const VideoFrame& frame) {
+void QualityScaler::OnEncodeFrame(int width, int height) {
   // Should be set through InitEncode -> Should be set by now.
-  assert(low_qp_threshold_ >= 0);
-  assert(num_samples_upscale_ > 0);
-  assert(num_samples_downscale_ > 0);
+  RTC_DCHECK_GE(low_qp_threshold_, 0);
+  RTC_DCHECK_GT(num_samples_upscale_, 0u);
+  RTC_DCHECK_GT(num_samples_downscale_, 0u);
 
   // Update scale factor.
   int avg_drop = 0;
@@ -113,38 +114,31 @@ void QualityScaler::OnEncodeFrame(const VideoFrame& frame) {
              avg_qp <= low_qp_threshold_) {
     AdjustScale(true);
   }
-  UpdateTargetResolution(frame.width(), frame.height());
+  UpdateTargetResolution(width, height);
 }
 
 QualityScaler::Resolution QualityScaler::GetScaledResolution() const {
   return res_;
 }
 
-const VideoFrame& QualityScaler::GetScaledFrame(const VideoFrame& frame) {
+rtc::scoped_refptr<VideoFrameBuffer> QualityScaler::GetScaledBuffer(
+    const rtc::scoped_refptr<VideoFrameBuffer>& frame) {
   Resolution res = GetScaledResolution();
-  if (res.width == frame.width())
+  int src_width = frame->width();
+  int src_height = frame->height();
+
+  if (res.width == src_width && res.height == src_height)
     return frame;
+  rtc::scoped_refptr<I420Buffer> scaled_buffer =
+      pool_.CreateBuffer(res.width, res.height);
 
-  scaler_.Set(frame.width(), frame.height(), res.width, res.height, kI420,
-              kI420, kScaleBox);
-  if (scaler_.Scale(frame, &scaled_frame_) != 0)
-    return frame;
+  scaled_buffer->ScaleFrom(frame);
 
-  // TODO(perkj): Refactor the scaler to not own |scaled_frame|. VideoFrame are
-  // just thin wrappers so instead the scaler should return a
-  // rtc::scoped_refptr<VideoFrameBuffer> and a new VideoFrame be created with
-  // the meta data from |frame|. That way we would not have to set all these
-  // meta data.
-  scaled_frame_.set_ntp_time_ms(frame.ntp_time_ms());
-  scaled_frame_.set_timestamp(frame.timestamp());
-  scaled_frame_.set_render_time_ms(frame.render_time_ms());
-  scaled_frame_.set_rotation(frame.rotation());
-
-  return scaled_frame_;
+  return scaled_buffer;
 }
 
 void QualityScaler::UpdateTargetResolution(int frame_width, int frame_height) {
-  assert(downscale_shift_ >= 0);
+  RTC_DCHECK_GE(downscale_shift_, 0);
   int shifts_performed = 0;
   for (int shift = downscale_shift_;
        shift > 0 && (frame_width / 2 >= kMinDownscaleDimension) &&

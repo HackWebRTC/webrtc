@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_UTILITY_MOVING_AVERAGE_H_
 #define WEBRTC_MODULES_VIDEO_CODING_UTILITY_MOVING_AVERAGE_H_
 
+#include <stddef.h>
+
 #include <list>
 
 #include "webrtc/typedefs.h"

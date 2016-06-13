@@ -670,7 +670,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   VideoFrame input_frame = frame;
   if (scale_) {
     // Check framerate before spatial resolution change.
-    quality_scaler_.OnEncodeFrame(frame);
+    quality_scaler_.OnEncodeFrame(frame.width(), frame.height());
     const webrtc::QualityScaler::Resolution scaled_resolution =
         quality_scaler_.GetScaledResolution();
     if (scaled_resolution.width != frame.width() ||
@@ -684,7 +684,8 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
                     webrtc::kVideoRotation_0));
         input_frame.set_video_frame_buffer(scaled_buffer);
       } else {
-        input_frame = quality_scaler_.GetScaledFrame(frame);
+        input_frame.set_video_frame_buffer(
+            quality_scaler_.GetScaledBuffer(frame.video_frame_buffer()));
       }
     }
   }

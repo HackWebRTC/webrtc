@@ -69,13 +69,17 @@ size_t CalcBufferSize(VideoType type, int width, int height);
 // Return value: 0 if OK, < 0 otherwise.
 int PrintVideoFrame(const VideoFrame& frame, FILE* file);
 
-// Extract buffer from VideoFrame (consecutive planes, no stride)
+// Extract buffer from VideoFrame or VideoFrameBuffer (consecutive
+// planes, no stride)
 // Input:
 //   - frame       : Reference to video frame.
 //   - size        : pointer to the size of the allocated buffer. If size is
 //                   insufficient, an error will be returned.
 //   - buffer      : Pointer to buffer
 // Return value: length of buffer if OK, < 0 otherwise.
+int ExtractBuffer(const rtc::scoped_refptr<VideoFrameBuffer>& input_frame,
+                  size_t size,
+                  uint8_t* buffer);
 int ExtractBuffer(const VideoFrame& input_frame, size_t size, uint8_t* buffer);
 // Convert To I420
 // Input:

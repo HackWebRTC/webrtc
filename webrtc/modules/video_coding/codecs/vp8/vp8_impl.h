@@ -75,7 +75,7 @@ class VP8EncoderImpl : public VP8Encoder {
   int InitAndSetControlSettings();
 
   // Update frame size for codec.
-  int UpdateCodecFrameSize(const VideoFrame& input_image);
+  int UpdateCodecFrameSize(int width, int height);
 
   void PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
                              const vpx_codec_cx_pkt& pkt,

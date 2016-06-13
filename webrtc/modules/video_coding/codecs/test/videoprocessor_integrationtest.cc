@@ -525,8 +525,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
     EXPECT_GT(psnr_result.min, quality_metrics.minimum_min_psnr);
     EXPECT_GT(ssim_result.average, quality_metrics.minimum_avg_ssim);
     EXPECT_GT(ssim_result.min, quality_metrics.minimum_min_ssim);
-    if (!remove(config_.output_filename.c_str())) {
-      fprintf(stderr, "Failed to remove temporary file!");
+    if (remove(config_.output_filename.c_str()) < 0) {
+      fprintf(stderr, "Failed to remove temporary file!\n");
     }
   }
 };

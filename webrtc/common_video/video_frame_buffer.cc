@@ -8,11 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <algorithm>
+
 #include "webrtc/common_video/include/video_frame_buffer.h"
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/keep_ref_until_done.h"
 #include "libyuv/convert.h"
+#include "libyuv/scale.h"
 
 // Aligning pointer to 64 bytes for improved performance, e.g. use SIMD.
 static const int kBufferAlignment = 64;
@@ -208,6 +211,60 @@ void I420Buffer::SetToBlack() {
                              0, 128, 128) == 0);
 }
 
+void I420Buffer::CropAndScaleFrom(
+    const rtc::scoped_refptr<VideoFrameBuffer>& src,
+    int offset_x,
+    int offset_y,
+    int crop_width,
+    int crop_height) {
+  RTC_CHECK_LE(crop_width, src->width());
+  RTC_CHECK_LE(crop_height, src->height());
+  RTC_CHECK_LE(crop_width + offset_x, src->width());
+  RTC_CHECK_LE(crop_height + offset_y, src->height());
+  RTC_CHECK_GE(offset_x, 0);
+  RTC_CHECK_GE(offset_y, 0);
+
+  // Make sure offset is even so that u/v plane becomes aligned.
+  const int uv_offset_x = offset_x / 2;
+  const int uv_offset_y = offset_y / 2;
+  offset_x = uv_offset_x * 2;
+  offset_y = uv_offset_y * 2;
+
+  const uint8_t* y_plane =
+      src->DataY() + src->StrideY() * offset_y + offset_x;
+  const uint8_t* u_plane =
+      src->DataU() + src->StrideU() * uv_offset_y + uv_offset_x;
+  const uint8_t* v_plane =
+      src->DataV() + src->StrideV() * uv_offset_y + uv_offset_x;
+  int res = libyuv::I420Scale(y_plane, src->StrideY(),
+                              u_plane, src->StrideU(),
+                              v_plane, src->StrideV(),
+                              crop_width, crop_height,
+                              MutableDataY(), StrideY(),
+                              MutableDataU(), StrideU(),
+                              MutableDataV(), StrideV(),
+                              width(), height(), libyuv::kFilterBox);
+
+  RTC_DCHECK_EQ(res, 0);
+}
+
+void I420Buffer::CropAndScaleFrom(
+    const rtc::scoped_refptr<VideoFrameBuffer>& src) {
+  const int crop_width =
+      std::min(src->width(), width() * src->height() / height());
+  const int crop_height =
+      std::min(src->height(), height() * src->width() / width());
+
+  CropAndScaleFrom(
+      src,
+      (src->width() - crop_width) / 2, (src->height() - crop_height) / 2,
+      crop_width, crop_height);
+}
+
+void I420Buffer::ScaleFrom(const rtc::scoped_refptr<VideoFrameBuffer>& src) {
+  CropAndScaleFrom(src, 0, 0, src->width(), src->height());
+}
+
 NativeHandleBuffer::NativeHandleBuffer(void* native_handle,
                                        int width,
                                        int height)
@@ -314,37 +371,6 @@ void* WrappedI420Buffer::native_handle() const {
 rtc::scoped_refptr<VideoFrameBuffer> WrappedI420Buffer::NativeToI420Buffer() {
   RTC_NOTREACHED();
   return nullptr;
-}
-
-rtc::scoped_refptr<VideoFrameBuffer> ShallowCenterCrop(
-    const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
-    int cropped_width,
-    int cropped_height) {
-  RTC_CHECK(buffer->native_handle() == nullptr);
-  RTC_CHECK_LE(cropped_width, buffer->width());
-  RTC_CHECK_LE(cropped_height, buffer->height());
-  if (buffer->width() == cropped_width && buffer->height() == cropped_height)
-    return buffer;
-
-  // Center crop to |cropped_width| x |cropped_height|.
-  // Make sure offset is even so that u/v plane becomes aligned.
-  const int uv_offset_x = (buffer->width() - cropped_width) / 4;
-  const int uv_offset_y = (buffer->height() - cropped_height) / 4;
-  const int offset_x = uv_offset_x * 2;
-  const int offset_y = uv_offset_y * 2;
-
-  const uint8_t* y_plane = buffer->DataY() +
-                           buffer->StrideY() * offset_y + offset_x;
-  const uint8_t* u_plane = buffer->DataU() +
-                           buffer->StrideU() * uv_offset_y + uv_offset_x;
-  const uint8_t* v_plane = buffer->DataV() +
-                           buffer->StrideV() * uv_offset_y + uv_offset_x;
-  return new rtc::RefCountedObject<WrappedI420Buffer>(
-      cropped_width, cropped_height,
-      y_plane, buffer->StrideY(),
-      u_plane, buffer->StrideU(),
-      v_plane, buffer->StrideV(),
-      rtc::KeepRefUntilDone(buffer));
 }
 
 }  // namespace webrtc

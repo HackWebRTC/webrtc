@@ -1811,33 +1811,6 @@ class VideoFrameTest : public testing::Test {
     EXPECT_EQ(const_source->video_frame_buffer(), target->video_frame_buffer());
   }
 
-  void StretchToFrame() {
-    // Create the source frame as a black frame.
-    rtc::scoped_refptr<webrtc::I420Buffer> buffer(
-        new rtc::RefCountedObject<webrtc::I420Buffer>(kWidth * 2, kHeight * 2));
-
-    buffer->SetToBlack();
-    T source(buffer, 0, webrtc::kVideoRotation_0);
-
-    EXPECT_TRUE(IsSize(source, kWidth * 2, kHeight * 2));
-
-    // Create the target frame by loading from a file.
-    T target1;
-    ASSERT_TRUE(LoadFrameNoRepeat(&target1));
-    EXPECT_FALSE(IsBlack(target1));
-
-    // Stretch and check if the stretched target is black.
-    source.StretchToFrame(&target1, true, false);
-    EXPECT_TRUE(IsBlack(target1));
-
-    // Crop and stretch and check if the stretched target is black.
-    T target2;
-    ASSERT_TRUE(LoadFrameNoRepeat(&target2));
-    source.StretchToFrame(&target2, true, true);
-    EXPECT_TRUE(IsBlack(target2));
-    EXPECT_EQ(source.GetTimeStamp(), target2.GetTimeStamp());
-  }
-
   int repeat_;
 };
 

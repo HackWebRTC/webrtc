@@ -13,7 +13,6 @@
 #include "webrtc/api/java/jni/native_handle_impl.h"
 #include "webrtc/api/java/jni/surfacetexturehelper_jni.h"
 #include "third_party/libyuv/include/libyuv/convert.h"
-#include "third_party/libyuv/include/libyuv/scale.h"
 #include "webrtc/base/bind.h"
 
 namespace webrtc_jni {
@@ -223,25 +222,11 @@ void AndroidVideoCapturerJni::OnMemoryBufferFrame(void* video_frame,
       crop_width, crop_height, static_cast<libyuv::RotationMode>(
           capturer_->apply_rotation() ? rotation : 0));
 
-  if (adapted_width != rotated_width || adapted_height != rotated_height) {
-    rtc::scoped_refptr<webrtc::VideoFrameBuffer> scaled =
-      post_scale_pool_.CreateBuffer(adapted_width, adapted_height);
-    // TODO(nisse): This should be done by some Scale method in
-    // I420Buffer, but we can't do that right now, since
-    // I420BufferPool uses a wrapper object.
-    if (libyuv::I420Scale(buffer->DataY(), buffer->StrideY(),
-                          buffer->DataU(), buffer->StrideU(),
-                          buffer->DataV(), buffer->StrideV(),
-                          rotated_width, rotated_height,
-                          scaled->MutableDataY(), scaled->StrideY(),
-                          scaled->MutableDataU(), scaled->StrideU(),
-                          scaled->MutableDataV(), scaled->StrideV(),
-                          adapted_width, adapted_height,
-                          libyuv::kFilterBox) < 0) {
-      LOG(LS_WARNING) << "I420Scale failed";
-      return;
-    }
-    buffer = scaled;
+  if (adapted_width != buffer->width() || adapted_height != buffer->height()) {
+    rtc::scoped_refptr<webrtc::I420Buffer> scaled_buffer(
+        post_scale_pool_.CreateBuffer(adapted_width, adapted_height));
+    scaled_buffer->ScaleFrom(buffer);
+    buffer = scaled_buffer;
   }
   // TODO(nisse): Use microsecond time instead.
   capturer_->OnFrame(cricket::WebRtcVideoFrame(

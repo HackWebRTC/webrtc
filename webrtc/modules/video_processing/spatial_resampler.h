@@ -16,8 +16,8 @@
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_processing/include/video_processing_defines.h"
 
-#include "webrtc/common_video/libyuv/include/scaler.h"
-#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/common_video/include/i420_buffer_pool.h"
+#include "webrtc/video_frame.h"
 
 namespace webrtc {
 
@@ -52,7 +52,7 @@ class VPMSimpleSpatialResampler : public VPMSpatialResampler {
   VideoFrameResampling resampling_mode_;
   int32_t target_width_;
   int32_t target_height_;
-  Scaler scaler_;
+  I420BufferPool buffer_pool_;
 };
 
 }  // namespace webrtc

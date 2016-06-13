@@ -23,12 +23,6 @@ namespace webrtc {
 // to optimized bitstream readers. See avcodec_decode_video2.
 const size_t EncodedImage::kBufferPaddingBytesH264 = 8;
 
-int ExpectedSize(int plane_stride, int image_height, PlaneType type) {
-  if (type == kYPlane)
-    return plane_stride * image_height;
-  return plane_stride * ((image_height + 1) / 2);
-}
-
 VideoFrame::VideoFrame()
     : video_frame_buffer_(nullptr),
       timestamp_(0),

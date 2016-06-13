@@ -70,7 +70,8 @@ class H264VideoToolboxEncoder : public H264Encoder {
   int ResetCompressionSession();
   void ConfigureCompressionSession();
   void DestroyCompressionSession();
-  const VideoFrame& GetScaledFrameOnEncode(const VideoFrame& frame);
+  rtc::scoped_refptr<VideoFrameBuffer> GetScaledBufferOnEncode(
+      const rtc::scoped_refptr<VideoFrameBuffer>& frame);
   void SetBitrateBps(uint32_t bitrate_bps);
   void SetEncoderBitrateBps(uint32_t bitrate_bps);
 

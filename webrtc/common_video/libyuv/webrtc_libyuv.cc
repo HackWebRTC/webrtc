@@ -130,27 +130,28 @@ int PrintVideoFrame(const VideoFrame& frame, FILE* file) {
   return 0;
 }
 
-int ExtractBuffer(const VideoFrame& input_frame, size_t size, uint8_t* buffer) {
+int ExtractBuffer(const rtc::scoped_refptr<VideoFrameBuffer>& input_frame,
+                  size_t size,
+                  uint8_t* buffer) {
   assert(buffer);
-  if (input_frame.IsZeroSize())
+  if (!input_frame)
     return -1;
-  size_t length =
-      CalcBufferSize(kI420, input_frame.width(), input_frame.height());
+  int width = input_frame->width();
+  int height = input_frame->height();
+  size_t length = CalcBufferSize(kI420, width, height);
   if (size < length) {
      return -1;
   }
 
-  int width = input_frame.video_frame_buffer()->width();
-  int height = input_frame.video_frame_buffer()->height();
   int chroma_width = (width + 1) / 2;
   int chroma_height = (height + 1) / 2;
 
-  libyuv::I420Copy(input_frame.video_frame_buffer()->DataY(),
-                   input_frame.video_frame_buffer()->StrideY(),
-                   input_frame.video_frame_buffer()->DataU(),
-                   input_frame.video_frame_buffer()->StrideU(),
-                   input_frame.video_frame_buffer()->DataV(),
-                   input_frame.video_frame_buffer()->StrideV(),
+  libyuv::I420Copy(input_frame->DataY(),
+                   input_frame->StrideY(),
+                   input_frame->DataU(),
+                   input_frame->StrideU(),
+                   input_frame->DataV(),
+                   input_frame->StrideV(),
                    buffer, width,
                    buffer + width*height, chroma_width,
                    buffer + width*height + chroma_width*chroma_height,
@@ -160,6 +161,9 @@ int ExtractBuffer(const VideoFrame& input_frame, size_t size, uint8_t* buffer) {
   return static_cast<int>(length);
 }
 
+int ExtractBuffer(const VideoFrame& input_frame, size_t size, uint8_t* buffer) {
+  return ExtractBuffer(input_frame.video_frame_buffer(), size, buffer);
+}
 
 int ConvertNV12ToRGB565(const uint8_t* src_frame,
                         uint8_t* dst_frame,

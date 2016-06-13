@@ -14,7 +14,6 @@
 #include <string>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/common_video/libyuv/include/scaler.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/test/packet_manipulator.h"
@@ -219,7 +218,6 @@ class VideoProcessorImpl : public VideoProcessor {
   int num_spatial_resizes_;
   int last_encoder_frame_width_;
   int last_encoder_frame_height_;
-  Scaler scaler_;
 
   // Statistics
   double bit_rate_factor_;  // multiply frame length with this to get bit rate

@@ -22,32 +22,6 @@
 
 namespace cricket {
 
-// Round to 2 pixels because Chroma channels are half size.
-#define ROUNDTO2(v) (v & ~1)
-
-bool VideoFrame::CopyToPlanes(uint8_t* dst_y,
-                              uint8_t* dst_u,
-                              uint8_t* dst_v,
-                              int32_t dst_pitch_y,
-                              int32_t dst_pitch_u,
-                              int32_t dst_pitch_v) const {
-  const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer =
-      video_frame_buffer();
-  if (!buffer) {
-    LOG(LS_ERROR) << "NULL video buffer.";
-    return false;
-  }
-  int32_t src_width = width();
-  int32_t src_height = height();
-  return libyuv::I420Copy(buffer->DataY(), buffer->StrideY(),
-                          buffer->DataU(), buffer->StrideU(),
-                          buffer->DataV(), buffer->StrideV(),
-                          dst_y, dst_pitch_y,
-                          dst_u, dst_pitch_u,
-                          dst_v, dst_pitch_v,
-                          src_width, src_height) == 0;
-}
-
 size_t VideoFrame::ConvertToRgbBuffer(uint32_t to_fourcc,
                                       uint8_t* buffer,
                                       size_t size,
@@ -67,85 +41,6 @@ size_t VideoFrame::ConvertToRgbBuffer(uint32_t to_fourcc,
     return 0;  // 0 indicates error
   }
   return needed;
-}
-
-// TODO(fbarchard): Handle odd width/height with rounding.
-// TODO(nisse): If method is kept, switch to using int instead of
-// size_t and int32_t.
-void VideoFrame::StretchToPlanes(uint8_t* dst_y,
-                                 uint8_t* dst_u,
-                                 uint8_t* dst_v,
-                                 int32_t dst_pitch_y,
-                                 int32_t dst_pitch_u,
-                                 int32_t dst_pitch_v,
-                                 size_t dst_width,
-                                 size_t dst_height,
-                                 bool interpolate,
-                                 bool vert_crop) const {
-  if (!video_frame_buffer()) {
-    LOG(LS_ERROR) << "NULL frame buffer.";
-    return;
-  }
-
-  size_t src_width = width();
-  size_t src_height = height();
-  if (dst_width == src_width && dst_height == src_height) {
-    CopyToPlanes(dst_y, dst_u, dst_v, dst_pitch_y, dst_pitch_u, dst_pitch_v);
-    return;
-  }
-  const uint8_t* src_y = video_frame_buffer()->DataY();
-  const uint8_t* src_u = video_frame_buffer()->DataU();
-  const uint8_t* src_v = video_frame_buffer()->DataV();
-
-  if (vert_crop) {
-    // Adjust the input width:height ratio to be the same as the output ratio.
-    if (src_width * dst_height > src_height * dst_width) {
-      // Reduce the input width, but keep size/position aligned for YuvScaler
-      src_width = ROUNDTO2(src_height * dst_width / dst_height);
-      int32_t iwidth_offset = ROUNDTO2((width() - src_width) / 2);
-      src_y += iwidth_offset;
-      src_u += iwidth_offset / 2;
-      src_v += iwidth_offset / 2;
-    } else if (src_width * dst_height < src_height * dst_width) {
-      // Reduce the input height.
-      src_height = src_width * dst_height / dst_width;
-      int32_t iheight_offset =
-          static_cast<int32_t>((height() - src_height) >> 2);
-      iheight_offset <<= 1;  // Ensure that iheight_offset is even.
-      src_y += iheight_offset * video_frame_buffer()->StrideY();
-      src_u += iheight_offset / 2 * video_frame_buffer()->StrideU();
-      src_v += iheight_offset / 2 * video_frame_buffer()->StrideV();
-    }
-  }
-
-  // Scale to the output I420 frame.
-  libyuv::Scale(src_y, src_u, src_v, video_frame_buffer()->StrideY(),
-                video_frame_buffer()->StrideU(),
-                video_frame_buffer()->StrideV(),
-                static_cast<int>(src_width), static_cast<int>(src_height),
-                dst_y, dst_u, dst_v, dst_pitch_y, dst_pitch_u, dst_pitch_v,
-                static_cast<int>(dst_width), static_cast<int>(dst_height),
-                interpolate);
-}
-
-void VideoFrame::StretchToFrame(VideoFrame* dst,
-                                bool interpolate, bool vert_crop) const {
-  if (!dst) {
-    LOG(LS_ERROR) << "NULL dst pointer.";
-    return;
-  }
-
-  StretchToPlanes(dst->video_frame_buffer()->MutableDataY(),
-                  dst->video_frame_buffer()->MutableDataU(),
-                  dst->video_frame_buffer()->MutableDataV(),
-                  dst->video_frame_buffer()->StrideY(),
-                  dst->video_frame_buffer()->StrideU(),
-                  dst->video_frame_buffer()->StrideV(),
-                  dst->width(), dst->height(),
-                  interpolate, vert_crop);
-  dst->SetTimeStamp(GetTimeStamp());
-  // Stretched frame should have the same rotation as the source.
-  dst->set_rotation(rotation());
 }
 
 static const size_t kMaxSampleSize = 1000000000u;

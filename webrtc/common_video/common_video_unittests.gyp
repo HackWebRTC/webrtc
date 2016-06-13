@@ -27,7 +27,6 @@
         'i420_buffer_pool_unittest.cc',
         'i420_video_frame_unittest.cc',
         'libyuv/libyuv_unittest.cc',
-        'libyuv/scaler_unittest.cc',
       ],
       # Disable warnings to enable Win64 build, issue 1323.
       'msvs_disabled_warnings': [

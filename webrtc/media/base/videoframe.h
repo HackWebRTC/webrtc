@@ -69,28 +69,6 @@ class VideoFrame {
                                     size_t size,
                                     int stride_rgb) const;
 
-  // Writes the frame into the given planes, stretched to the given width and
-  // height. The parameter "interpolate" controls whether to interpolate or just
-  // take the nearest-point. The parameter "crop" controls whether to crop this
-  // frame to the aspect ratio of the given dimensions before stretching.
-  virtual void StretchToPlanes(uint8_t* y,
-                               uint8_t* u,
-                               uint8_t* v,
-                               int32_t pitchY,
-                               int32_t pitchU,
-                               int32_t pitchV,
-                               size_t width,
-                               size_t height,
-                               bool interpolate,
-                               bool crop) const;
-
-  // Writes the frame into the target VideoFrame, stretched to the size of that
-  // frame. The parameter "interpolate" controls whether to interpolate or just
-  // take the nearest-point. The parameter "crop" controls whether to crop this
-  // frame to the aspect ratio of the target frame before stretching.
-  virtual void StretchToFrame(VideoFrame *target, bool interpolate,
-                              bool crop) const;
-
   // Tests if sample is valid.  Returns true if valid.
   static bool Validate(uint32_t fourcc,
                        int w,
@@ -99,17 +77,6 @@ class VideoFrame {
                        size_t sample_size);
 
  protected:
-  // Writes the frame into the given planes, stretched to the given width and
-  // height. The parameter "interpolate" controls whether to interpolate or just
-  // take the nearest-point. The parameter "crop" controls whether to crop this
-  // frame to the aspect ratio of the given dimensions before stretching.
-  virtual bool CopyToPlanes(uint8_t* dst_y,
-                            uint8_t* dst_u,
-                            uint8_t* dst_v,
-                            int32_t dst_pitch_y,
-                            int32_t dst_pitch_u,
-                            int32_t dst_pitch_v) const;
-
   // Creates an empty frame.
   virtual VideoFrame* CreateEmptyFrame(int w,
                                        int h,

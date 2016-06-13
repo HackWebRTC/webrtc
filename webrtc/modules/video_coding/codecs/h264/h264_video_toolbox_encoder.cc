@@ -145,15 +145,16 @@ struct FrameEncodeParams {
 // We receive I420Frames as input, but we need to feed CVPixelBuffers into the
 // encoder. This performs the copy and format conversion.
 // TODO(tkchin): See if encoder will accept i420 frames and compare performance.
-bool CopyVideoFrameToPixelBuffer(const webrtc::VideoFrame& frame,
-                                 CVPixelBufferRef pixel_buffer) {
+bool CopyVideoFrameToPixelBuffer(
+    const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& frame,
+    CVPixelBufferRef pixel_buffer) {
   RTC_DCHECK(pixel_buffer);
   RTC_DCHECK(CVPixelBufferGetPixelFormatType(pixel_buffer) ==
              kCVPixelFormatType_420YpCbCr8BiPlanarFullRange);
   RTC_DCHECK(CVPixelBufferGetHeightOfPlane(pixel_buffer, 0) ==
-             static_cast<size_t>(frame.height()));
+             static_cast<size_t>(frame->height()));
   RTC_DCHECK(CVPixelBufferGetWidthOfPlane(pixel_buffer, 0) ==
-             static_cast<size_t>(frame.width()));
+             static_cast<size_t>(frame->width()));
 
   CVReturn cvRet = CVPixelBufferLockBaseAddress(pixel_buffer, 0);
   if (cvRet != kCVReturnSuccess) {
@@ -168,14 +169,11 @@ bool CopyVideoFrameToPixelBuffer(const webrtc::VideoFrame& frame,
   int dst_stride_uv = CVPixelBufferGetBytesPerRowOfPlane(pixel_buffer, 1);
   // Convert I420 to NV12.
   int ret = libyuv::I420ToNV12(
-      frame.video_frame_buffer()->DataY(),
-      frame.video_frame_buffer()->StrideY(),
-      frame.video_frame_buffer()->DataU(),
-      frame.video_frame_buffer()->StrideU(),
-      frame.video_frame_buffer()->DataV(),
-      frame.video_frame_buffer()->StrideV(),
+      frame->DataY(), frame->StrideY(),
+      frame->DataU(), frame->StrideU(),
+      frame->DataV(), frame->StrideV(),
       dst_y, dst_stride_y, dst_uv, dst_stride_uv,
-      frame.width(), frame.height());
+      frame->width(), frame->height());
   CVPixelBufferUnlockBaseAddress(pixel_buffer, 0);
   if (ret) {
     LOG(LS_ERROR) << "Error converting I420 VideoFrame to NV12 :" << ret;
@@ -247,11 +245,12 @@ int H264VideoToolboxEncoder::InitEncode(const VideoCodec* codec_settings,
   return ResetCompressionSession();
 }
 
-const VideoFrame& H264VideoToolboxEncoder::GetScaledFrameOnEncode(
-    const VideoFrame& frame) {
+rtc::scoped_refptr<VideoFrameBuffer>
+H264VideoToolboxEncoder::GetScaledBufferOnEncode(
+    const rtc::scoped_refptr<VideoFrameBuffer>& frame) {
   rtc::CritScope lock(&quality_scaler_crit_);
-  quality_scaler_.OnEncodeFrame(frame);
-  return quality_scaler_.GetScaledFrame(frame);
+  quality_scaler_.OnEncodeFrame(frame->width(), frame->height());
+  return quality_scaler_.GetScaledBuffer(frame);
 }
 
 int H264VideoToolboxEncoder::Encode(
@@ -270,11 +269,12 @@ int H264VideoToolboxEncoder::Encode(
   }
 #endif
   bool is_keyframe_required = false;
-  const VideoFrame& input_image = GetScaledFrameOnEncode(frame);
+  rtc::scoped_refptr<VideoFrameBuffer> input_image(
+      GetScaledBufferOnEncode(frame.video_frame_buffer()));
 
-  if (input_image.width() != width_ || input_image.height() != height_) {
-    width_ = input_image.width();
-    height_ = input_image.height();
+  if (input_image->width() != width_ || input_image->height() != height_) {
+    width_ = input_image->width();
+    height_ = input_image->height();
     int ret = ResetCompressionSession();
     if (ret < 0)
       return ret;
@@ -327,7 +327,7 @@ int H264VideoToolboxEncoder::Encode(
   }
 
   CMTime presentation_time_stamp =
-      CMTimeMake(input_image.render_time_ms(), 1000);
+      CMTimeMake(frame.render_time_ms(), 1000);
   CFDictionaryRef frame_properties = nullptr;
   if (is_keyframe_required) {
     CFTypeRef keys[] = {kVTEncodeFrameOptionKey_ForceKeyFrame};
@@ -336,8 +336,8 @@ int H264VideoToolboxEncoder::Encode(
   }
   std::unique_ptr<internal::FrameEncodeParams> encode_params;
   encode_params.reset(new internal::FrameEncodeParams(
-      this, codec_specific_info, width_, height_, input_image.render_time_ms(),
-      input_image.timestamp(), input_image.rotation()));
+      this, codec_specific_info, width_, height_, frame.render_time_ms(),
+      frame.timestamp(), frame.rotation()));
 
   // Update the bitrate if needed.
   SetBitrateBps(bitrate_adjuster_.GetAdjustedBitrateBps());
