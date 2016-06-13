@@ -7,6 +7,7 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 import("../build/webrtc.gni")
+import("//testing/test.gni")
 
 group("pc") {
   deps = [
@@ -69,8 +70,65 @@ source_set("rtc_pc") {
   ]
 
   if (is_clang) {
-    # Suppress warnings from Chrome's Clang plugins.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+}
+
+if (rtc_include_tests) {
+  config("rtc_pc_unittests_config") {
+    # GN orders flags on a target before flags from configs. The default config
+    # adds -Wall, and this flag have to be after -Wall -- so they need to
+    # come from a config and can't be on the target directly.
+    if (!is_win && !is_clang) {
+      cflags = [ "-Wno-maybe-uninitialized" ]  # Only exists for GCC.
+    }
+  }
+
+  test("rtc_pc_unittests") {
+    testonly = true
+
+    sources = [
+      "bundlefilter_unittest.cc",
+      "channel_unittest.cc",
+      "channelmanager_unittest.cc",
+      "currentspeakermonitor_unittest.cc",
+      "mediasession_unittest.cc",
+      "rtcpmuxfilter_unittest.cc",
+      "srtpfilter_unittest.cc",
+    ]
+
+    include_dirs = [ "//third_party/libsrtp/srtp" ]
+
+    configs += [
+      "..:common_config",
+      ":rtc_pc_unittests_config",
+    ]
+    public_configs = [ "..:common_inherited_config" ]
+
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    if (is_win) {
+      libs = [ "strmiids.lib" ]
+    }
+
+    deps = [
+      ":rtc_pc",
+      "../api:libjingle_peerconnection",
+      "../base:rtc_base_tests_utils",
+      "../media:rtc_unittest_main",
+      "../system_wrappers:metrics_default",
+    ]
+
+    if (rtc_build_libsrtp) {
+      deps += [ "//third_party/libsrtp" ]
+    }
+
+    if (is_android) {
+      deps += [ "//testing/android/native_test:native_test_support" ]
+    }
   }
 }
