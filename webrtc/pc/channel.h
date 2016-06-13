@@ -498,8 +498,6 @@ class VideoChannel : public BaseChannel {
   }
 
   bool SetSink(uint32_t ssrc, rtc::VideoSinkInterface<VideoFrame>* sink);
-  void SetSource(uint32_t ssrc,
-                 rtc::VideoSourceInterface<cricket::VideoFrame>* source);
   // Get statistics about the current media session.
   bool GetStats(VideoMediaInfo* stats);
 
