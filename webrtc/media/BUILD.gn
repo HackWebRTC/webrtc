@@ -8,6 +8,7 @@
 
 import("//build/config/linux/pkg_config.gni")
 import("../build/webrtc.gni")
+import("//testing/test.gni")
 
 group("media") {
   deps = [
@@ -123,10 +124,11 @@ source_set("rtc_media") {
   public_configs = [ "..:common_inherited_config" ]
 
   if (is_clang) {
-    # Suppress warnings from Chrome's Clang plugins.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:extra_warnings" ]
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    configs -= [
+      "//build/config/clang:extra_warnings",
+      "//build/config/clang:find_bad_constructs",
+    ]
   }
 
   if (is_win) {
@@ -159,7 +161,6 @@ source_set("rtc_media") {
   if (build_with_chromium) {
     deps += [ "../modules/video_capture:video_capture" ]
   } else {
-    configs += [ ":rtc_media_defines_config" ]
     public_configs += [ ":rtc_media_defines_config" ]
     deps += [ "../modules/video_capture:video_capture_internal_impl" ]
   }
@@ -195,10 +196,166 @@ source_set("rtc_media") {
   deps += [
     "..:webrtc_common",
     "../base:rtc_base_approved",
+    "../call",
     "../libjingle/xmllite",
     "../libjingle/xmpp",
+    "../modules/video_coding",
     "../p2p",
     "../system_wrappers",
+    "../video",
     "../voice_engine",
   ]
+}
+
+if (rtc_include_tests) {
+  config("rtc_unittest_main_config") {
+    # GN orders flags on a target before flags from configs. The default config
+    # adds -Wall, and this flag have to be after -Wall -- so they need to
+    # come from a config and can"t be on the target directly.
+    if (is_clang && is_ios) {
+      cflags = [ "-Wno-unused-variable" ]
+    }
+  }
+
+  source_set("rtc_unittest_main") {
+    testonly = true
+
+    deps = []
+    sources = [
+      "base/fakemediaengine.h",
+      "base/fakenetworkinterface.h",
+      "base/fakertp.h",
+      "base/fakevideocapturer.h",
+      "base/fakevideorenderer.h",
+      "base/testutils.cc",
+      "base/testutils.h",
+      "engine/fakewebrtccall.cc",
+      "engine/fakewebrtccall.h",
+      "engine/fakewebrtccommon.h",
+      "engine/fakewebrtcdeviceinfo.h",
+      "engine/fakewebrtcvcmfactory.h",
+      "engine/fakewebrtcvideocapturemodule.h",
+      "engine/fakewebrtcvideoengine.h",
+      "engine/fakewebrtcvoiceengine.h",
+    ]
+
+    configs += [
+      "..:common_config",
+      ":rtc_unittest_main_config",
+    ]
+    public_configs = [ "..:common_inherited_config" ]
+
+    if (rtc_build_libyuv) {
+      deps += [ "$rtc_libyuv_dir" ]
+      public_deps = [
+        "$rtc_libyuv_dir",
+      ]
+    } else {
+      # Need to add a directory normally exported by libyuv.
+      include_dirs += [ "$rtc_libyuv_dir/include" ]
+    }
+
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    deps += [
+      "../base:rtc_base_tests_utils",
+      "//testing/gtest",
+    ]
+    public_deps += [ "//testing/gmock" ]
+  }
+
+  config("rtc_media_unittests_config") {
+    # GN orders flags on a target before flags from configs. The default config
+    # adds -Wall, and this flag have to be after -Wall -- so they need to
+    # come from a config and can"t be on the target directly.
+    # TODO(kjellander): Make the code compile without disabling these flags.
+    # See https://bugs.webrtc.org/3307.
+    if (is_clang && is_win) {
+      cflags += [ "-Wno-unused-function" ]
+    }
+    if (!is_win) {
+      cflags = [ "-Wno-sign-compare" ]
+      cflags_cc = [ "-Wno-overloaded-virtual" ]
+    }
+  }
+
+  test("rtc_media_unittests") {
+    testonly = true
+
+    deps = []
+    sources = [
+      "base/codec_unittest.cc",
+      "base/rtpdataengine_unittest.cc",
+      "base/rtpdump_unittest.cc",
+      "base/rtputils_unittest.cc",
+      "base/streamparams_unittest.cc",
+      "base/turnutils_unittest.cc",
+      "base/videoadapter_unittest.cc",
+      "base/videobroadcaster_unittest.cc",
+      "base/videocapturer_unittest.cc",
+      "base/videocommon_unittest.cc",
+      "base/videoengine_unittest.h",
+      "base/videoframe_unittest.h",
+      "engine/nullwebrtcvideoengine_unittest.cc",
+      "engine/simulcast_unittest.cc",
+      "engine/webrtcmediaengine_unittest.cc",
+      "engine/webrtcvideocapturer_unittest.cc",
+      "engine/webrtcvideoengine2_unittest.cc",
+      "engine/webrtcvideoframe_unittest.cc",
+      "engine/webrtcvideoframefactory_unittest.cc",
+      "engine/webrtcvoiceengine_unittest.cc",
+      "sctp/sctpdataengine_unittest.cc",
+    ]
+
+    configs += [
+      "..:common_config",
+      ":rtc_media_unittests_config",
+    ]
+    public_configs = [ "..:common_inherited_config" ]
+
+    if (is_win) {
+      cflags = [
+        "/wd4245",  # conversion from int to size_t, signed/unsigned mismatch.
+        "/wd4373",  # virtual function override.
+        "/wd4389",  # signed/unsigned mismatch.
+      ]
+    }
+
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      configs -= [
+        "//build/config/clang:extra_warnings",
+        "//build/config/clang:find_bad_constructs",
+      ]
+    }
+
+    if (is_android) {
+      deps += [ "//testing/android/native_test:native_test_support" ]
+
+      # This needs to be kept in sync with the rtc_media_unittests.isolate file.
+      # TODO(kjellander); Move this to android_assets targets instead.
+      data = [
+        "//resources/media/captured-320x240-2s-48.frames",
+        "//resources/media/faces.1280x720_P420.yuv",
+        "//resources/media/faces_I420.jpg",
+        "//resources/media/faces_I422.jpg",
+        "//resources/media/faces_I444.jpg",
+        "//resources/media/faces_I411.jpg",
+        "//resources/media/faces_I400.jpg",
+      ]
+    }
+
+    deps += [
+      # TODO(kjellander): Move as part of work in bugs.webrtc.org/4243.
+      ":rtc_media",
+      ":rtc_unittest_main",
+      "../audio",
+      "../base:rtc_base_tests_utils",
+      "../system_wrappers:metrics_default",
+    ]
+  }
 }

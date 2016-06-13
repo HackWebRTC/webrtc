@@ -68,7 +68,6 @@ source_set("audio_device") {
   defines = []
   cflags = []
   if (rtc_include_internal_audio_device) {
-    defines += [ "WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE" ]
     sources += [
       "audio_device_impl.cc",
       "audio_device_impl.h",

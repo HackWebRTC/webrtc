@@ -104,6 +104,10 @@ config("common_config") {
     defines += [ "WEBRTC_RESTRICT_LOGGING" ]
   }
 
+  if (rtc_include_internal_audio_device) {
+    defines += [ "WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE" ]
+  }
+
   if (rtc_have_dbus_glib) {
     defines += [ "HAVE_DBUS_GLIB" ]
 
@@ -424,8 +428,6 @@ if (rtc_include_tests) {
       "base/event_tracer_unittest.cc",
       "base/event_unittest.cc",
       "base/exp_filter_unittest.cc",
-      "base/fakeclock.cc",
-      "base/fakeclock.h",
       "base/filerotatingstream_unittest.cc",
       "base/fileutils_unittest.cc",
       "base/helpers_unittest.cc",
@@ -476,7 +478,6 @@ if (rtc_include_tests) {
       "base/testclient_unittest.cc",
       "base/thread_checker_unittest.cc",
       "base/thread_unittest.cc",
-      "base/timedelta.h",
       "base/timeutils_unittest.cc",
       "base/urlencode_unittest.cc",
       "base/versionparsing_unittest.cc",
@@ -567,7 +568,7 @@ if (rtc_include_tests) {
 
     deps = [
       "base:rtc_base",
-      "base:rtc_base_test_utils",
+      "base:rtc_base_tests_utils",
       "base:rtc_task_queue",
       "p2p:libstunprober",
       "p2p:rtc_p2p",

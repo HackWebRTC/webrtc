@@ -641,15 +641,17 @@ source_set("gtest_prod") {
 }
 
 if (rtc_include_tests) {
-  config("rtc_base_test_utils_exported_config") {
+  config("rtc_base_tests_utils_exported_config") {
     defines = [ "GTEST_RELATIVE_PATH" ]
   }
 
-  source_set("rtc_base_test_utils") {
+  source_set("rtc_base_tests_utils") {
     testonly = true
     sources = [
       # Also use this as a convenient dumping ground for misc files that are
       # included by multiple targets below.
+      "fakeclock.cc",
+      "fakeclock.h",
       "fakenetwork.h",
       "fakesslidentity.h",
       "faketaskrunner.h",
@@ -657,12 +659,13 @@ if (rtc_include_tests) {
       "testbase64.h",
       "testechoserver.h",
       "testutils.h",
+      "timedelta.h",
       "unittest_main.cc",
     ]
     configs += [ "..:common_config" ]
     public_configs = [
       "..:common_inherited_config",
-      ":rtc_base_test_utils_exported_config",
+      ":rtc_base_tests_utils_exported_config",
     ]
     deps = [
       ":rtc_base",

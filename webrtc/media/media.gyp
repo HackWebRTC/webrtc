@@ -323,9 +323,6 @@
               },
             }],
             ['OS=="ios"', {
-              'sources!': [
-                'sctp/sctpdataengine_unittest.cc',
-              ],
               'mac_bundle_resources': [
                 '<(DEPTH)/resources/media/captured-320x240-2s-48.frames',
                 '<(DEPTH)/resources/media/faces.1280x720_P420.yuv',
