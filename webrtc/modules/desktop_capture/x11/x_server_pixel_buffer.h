@@ -70,13 +70,14 @@ class XServerPixelBuffer {
                 const DesktopRect& rect,
                 DesktopFrame* frame);
 
-  Display* display_;
-  Window window_;
+  Display* display_ = nullptr;
+  Window window_ = 0;
   DesktopSize window_size_;
-  XImage* x_image_;
-  XShmSegmentInfo* shm_segment_info_;
-  Pixmap shm_pixmap_;
-  GC shm_gc_;
+  XImage* x_image_ = nullptr;
+  XShmSegmentInfo* shm_segment_info_ = nullptr;
+  Pixmap shm_pixmap_ = 0;
+  GC shm_gc_ = nullptr;
+  bool xshm_get_image_succeeded_ = false;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(XServerPixelBuffer);
 };
