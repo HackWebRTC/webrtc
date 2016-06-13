@@ -21,11 +21,6 @@
         '<(webrtc_root)/pc/pc.gyp:rtc_pc',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
       ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          '<(DEPTH)/testing/gmock/include',
-        ],
-      },
       'defines': [
         # Feature selection.
         'HAVE_SCTP',
