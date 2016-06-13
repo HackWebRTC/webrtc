@@ -61,7 +61,7 @@ config("rtc_base_all_dependent_config") {
       "SystemConfiguration.framework",
     ]
     if (current_cpu == "x86") {
-      libs = [ "Carbon.framework" ]
+      libs += [ "Carbon.framework" ]
     }
   }
 }
