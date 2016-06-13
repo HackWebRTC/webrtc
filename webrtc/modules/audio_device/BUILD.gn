@@ -140,7 +140,9 @@ source_set("audio_device") {
       ]
     }
     if (is_ios) {
-      deps += [ "../../sdk:rtc_sdk_common_objc" ]
+      public_deps = [
+        "../../sdk:rtc_sdk_common_objc",
+      ]
       sources += [
         "ios/audio_device_ios.h",
         "ios/audio_device_ios.mm",
@@ -157,7 +159,7 @@ source_set("audio_device") {
         "ios/voice_processing_audio_unit.h",
         "ios/voice_processing_audio_unit.mm",
       ]
-      cflags += [ "-fobjc-arc" ]  # CLANG_ENABLE_OBJC_ARC = YES.
+      configs += [ "//build/config/compiler:enable_arc" ]
 
       libs = [
         "AudioToolbox.framework",

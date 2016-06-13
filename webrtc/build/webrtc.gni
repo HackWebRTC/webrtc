@@ -42,6 +42,7 @@ declare_args() {
   rtc_build_libjpeg = true
   rtc_build_libsrtp = true
   rtc_build_libvpx = true
+  rtc_libvpx_build_vp9 = true
   rtc_build_libyuv = true
   rtc_build_openmax_dl = true
   rtc_build_opus = true
@@ -71,10 +72,6 @@ declare_args() {
   } else {
     rtc_enable_libevent = true
     rtc_build_libevent = true
-  }
-
-  if (is_ios) {
-    rtc_enable_protobuf = false
   }
 
   if (current_cpu == "arm" || current_cpu == "arm64") {

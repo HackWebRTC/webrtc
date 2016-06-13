@@ -308,3 +308,33 @@ source_set("webrtc_vp9") {
     deps += [ rtc_libvpx_dir ]
   }
 }
+
+if (rtc_include_tests) {
+  source_set("video_codecs_test_framework") {
+    testonly = true
+    sources = [
+      "codecs/test/mock/mock_packet_manipulator.h",
+      "codecs/test/packet_manipulator.cc",
+      "codecs/test/packet_manipulator.h",
+      "codecs/test/predictive_packet_manipulator.cc",
+      "codecs/test/predictive_packet_manipulator.h",
+      "codecs/test/stats.cc",
+      "codecs/test/stats.h",
+      "codecs/test/videoprocessor.cc",
+      "codecs/test/videoprocessor.h",
+    ]
+
+    configs += [ "../..:common_config" ]
+    public_configs = [ "../..:common_inherited_config" ]
+
+    if (is_clang) {
+      # Suppress warnings from Chrome's Clang plugins.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    deps = [
+      "../../test:test_support",
+    ]
+  }
+}

@@ -211,8 +211,7 @@ source_set("audio_processing") {
   configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 
   if (is_clang) {
-    # Suppress warnings from Chrome's Clang plugins.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
 
@@ -292,6 +291,49 @@ if (rtc_build_with_neon) {
       defines = [ "WEBRTC_AEC_DEBUG_DUMP=1" ]
     } else {
       defines = [ "WEBRTC_AEC_DEBUG_DUMP=0" ]
+    }
+  }
+}
+
+if (rtc_include_tests) {
+  source_set("audioproc_test_utils") {
+    testonly = true
+    sources = [
+      "test/test_utils.cc",
+      "test/test_utils.h",
+    ]
+
+    configs += [ "../..:common_config" ]
+    public_configs = [ "../..:common_inherited_config" ]
+
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    deps = [
+      "../../base:rtc_base_approved",
+      "../../common_audio",
+    ]
+  }
+
+  if (rtc_enable_protobuf) {
+    proto_library("audioproc_unittest_proto") {
+      sources = [
+        "test/unittest.proto",
+      ]
+      proto_out_dir = "webrtc/modules/audio_processing"
+    }
+
+    source_set("audioproc_protobuf_utils") {
+      sources = [
+        "test/protobuf_utils.cc",
+        "test/protobuf_utils.h",
+      ]
+
+      deps = [
+        ":audioproc_unittest_proto",
+      ]
     }
   }
 }

@@ -64,6 +64,8 @@
           'target_name': 'bwe_simulator',
           'type': 'static_library',
           'dependencies': [
+            '<(webrtc_root)/modules/modules.gyp:paced_sender',
+            '<(webrtc_root)/test/test.gyp:test_support',
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(DEPTH)/testing/gmock.gyp:gmock',
           ],

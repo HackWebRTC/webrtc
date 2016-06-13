@@ -151,6 +151,7 @@
             '<(DEPTH)/testing/gmock.gyp:gmock',
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+            '<(webrtc_root)/base/base.gyp:rtc_base',
             '<(webrtc_root)/common.gyp:webrtc_common',
             '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
             '<(webrtc_root)/common_video/common_video.gyp:common_video',
@@ -392,7 +393,7 @@
           'conditions': [
             ['libvpx_build_vp9==1', {
               'sources': [
-                'video_coding/codecs/vp9/screenshare_layers_unittest.cc',
+                'video_coding/codecs/vp9/vp9_screenshare_layers_unittest.cc',
               ],
             }],
             ['enable_bwe_test_logging==1', {
@@ -445,8 +446,8 @@
                 'audio_processing/audio_processing_impl_locking_unittest.cc',
                 'audio_processing/audio_processing_impl_unittest.cc',
                 'audio_processing/audio_processing_unittest.cc',
+                'audio_processing/echo_cancellation_bit_exact_unittest.cc',
                 'audio_processing/echo_control_mobile_unittest.cc',
-                'audio_processing/echo_cancellation_unittest.cc',
                 'audio_processing/gain_control_unittest.cc',
                 'audio_processing/high_pass_filter_unittest.cc',
                 'audio_processing/level_estimator_unittest.cc',

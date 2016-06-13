@@ -6,6 +6,9 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+import("../../build/webrtc.gni")
+import("//testing/test.gni")
+
 declare_args() {
   # Set this to true to enable BWE test logging.
   rtc_enable_bwe_test_logging = false
@@ -47,8 +50,7 @@ source_set("remote_bitrate_estimator") {
   public_configs = [ "../..:common_inherited_config" ]
 
   if (is_clang) {
-    # Suppress warnings from Chrome's Clang plugins.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
 
@@ -57,4 +59,67 @@ source_set("remote_bitrate_estimator") {
     "../../base:rtc_base_approved",
     "../../system_wrappers",
   ]
+}
+
+if (rtc_include_tests) {
+  source_set("bwe_simulator") {
+    testonly = true
+    sources = [
+      "test/bwe.cc",
+      "test/bwe.h",
+      "test/bwe_test.cc",
+      "test/bwe_test.h",
+      "test/bwe_test_baselinefile.cc",
+      "test/bwe_test_baselinefile.h",
+      "test/bwe_test_fileutils.cc",
+      "test/bwe_test_fileutils.h",
+      "test/bwe_test_framework.cc",
+      "test/bwe_test_framework.h",
+      "test/bwe_test_logging.h",
+      "test/estimators/nada.cc",
+      "test/estimators/nada.h",
+      "test/estimators/remb.cc",
+      "test/estimators/remb.h",
+      "test/estimators/send_side.cc",
+      "test/estimators/send_side.h",
+      "test/estimators/tcp.cc",
+      "test/estimators/tcp.h",
+      "test/metric_recorder.cc",
+      "test/metric_recorder.h",
+      "test/packet.h",
+      "test/packet_receiver.cc",
+      "test/packet_receiver.h",
+      "test/packet_sender.cc",
+      "test/packet_sender.h",
+    ]
+
+    if (rtc_enable_bwe_test_logging) {
+      defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1" ]
+      sources += [ "test/bwe_test_logging.cc" ]
+    } else {
+      defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0" ]
+    }
+
+    configs += [ "../..:common_config" ]
+    public_configs = [ "../..:common_inherited_config" ]
+
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    if (is_win) {
+      cflags = [
+        # TODO(kjellander): Bug 261: fix this warning.
+        "/wd4373",  # virtual function override.
+      ]
+    }
+
+    deps = [
+      "../../test:test_support",
+      "../pacing",
+      "//testing/gmock",
+      "//testing/gtest",
+    ]
+  }
 }
