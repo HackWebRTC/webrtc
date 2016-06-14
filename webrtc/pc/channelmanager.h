@@ -121,8 +121,6 @@ class ChannelManager {
     return (!voice_channels_.empty() || !video_channels_.empty());
   }
 
-  bool GetOutputVolume(int* level);
-  bool SetOutputVolume(int level);
   // RTX will be enabled/disabled in engines that support it. The supporting
   // engines will start offering an RTX codec. Must be called before Init().
   bool SetVideoRtxEnabled(bool enable);
@@ -192,7 +190,6 @@ class ChannelManager {
   VideoChannels video_channels_;
   DataChannels data_channels_;
 
-  int audio_output_volume_;
   bool enable_rtx_;
 
   bool capturing_;

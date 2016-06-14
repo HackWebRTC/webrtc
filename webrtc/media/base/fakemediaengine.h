@@ -739,8 +739,7 @@ class FakeVoiceEngine : public FakeBaseEngine {
   FakeVoiceEngine(
       webrtc::AudioDeviceModule* adm,
       const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
-          audio_decoder_factory)
-      : output_volume_(-1) {
+          audio_decoder_factory) {
     // Add a fake audio codec. Note that the name must not be "" as there are
     // sanity checks against that.
     codecs_.push_back(AudioCodec(101, "fake_audio_codec", 0, 0, 1));
@@ -773,15 +772,6 @@ class FakeVoiceEngine : public FakeBaseEngine {
   const std::vector<AudioCodec>& recv_codecs() { return codecs_; }
   void SetCodecs(const std::vector<AudioCodec>& codecs) { codecs_ = codecs; }
 
-  bool GetOutputVolume(int* level) {
-    *level = output_volume_;
-    return true;
-  }
-  bool SetOutputVolume(int level) {
-    output_volume_ = level;
-    return true;
-  }
-
   int GetInputLevel() { return 0; }
 
   bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes) {
@@ -799,7 +789,6 @@ class FakeVoiceEngine : public FakeBaseEngine {
  private:
   std::vector<FakeVoiceMediaChannel*> channels_;
   std::vector<AudioCodec> codecs_;
-  int output_volume_;
 
   friend class FakeMediaEngine;
 };
@@ -893,7 +882,6 @@ class FakeMediaEngine :
     return video_.GetChannel(index);
   }
 
-  int output_volume() const { return voice_.output_volume_; }
   bool capture() const { return video_.capture_; }
   bool options_changed() const {
     return video_.options_changed_;

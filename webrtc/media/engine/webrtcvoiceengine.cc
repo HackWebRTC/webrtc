@@ -866,27 +866,6 @@ void WebRtcVoiceEngine::SetDefaultDevices() {
 #endif  // !WEBRTC_IOS
 }
 
-bool WebRtcVoiceEngine::GetOutputVolume(int* level) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  unsigned int ulevel;
-  if (voe_wrapper_->volume()->GetSpeakerVolume(ulevel) == -1) {
-    LOG_RTCERR1(GetSpeakerVolume, level);
-    return false;
-  }
-  *level = ulevel;
-  return true;
-}
-
-bool WebRtcVoiceEngine::SetOutputVolume(int level) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  RTC_DCHECK(level >= 0 && level <= 255);
-  if (voe_wrapper_->volume()->SetSpeakerVolume(level) == -1) {
-    LOG_RTCERR1(SetSpeakerVolume, level);
-    return false;
-  }
-  return true;
-}
-
 int WebRtcVoiceEngine::GetInputLevel() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   unsigned int ulevel;

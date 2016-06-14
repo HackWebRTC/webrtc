@@ -72,12 +72,6 @@ class MediaEngineInterface {
       const MediaConfig& config,
       const VideoOptions& options) = 0;
 
-  // Device configuration
-  // Gets the current speaker volume, as a value between 0 and 255.
-  virtual bool GetOutputVolume(int* level) = 0;
-  // Sets the current speaker volume, as a value between 0 and 255.
-  virtual bool SetOutputVolume(int level) = 0;
-
   // Gets the current microphone level, as a value between 0 and 10.
   virtual int GetInputLevel() = 0;
 
@@ -152,13 +146,6 @@ class CompositeMediaEngine : public MediaEngineInterface {
                                                 const MediaConfig& config,
                                                 const VideoOptions& options) {
     return video_.CreateChannel(call, config, options);
-  }
-
-  virtual bool GetOutputVolume(int* level) {
-    return voice_.GetOutputVolume(level);
-  }
-  virtual bool SetOutputVolume(int level) {
-    return voice_.SetOutputVolume(level);
   }
 
   virtual int GetInputLevel() {

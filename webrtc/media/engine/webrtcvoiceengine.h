@@ -61,8 +61,6 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
                                    const MediaConfig& config,
                                    const AudioOptions& options);
 
-  bool GetOutputVolume(int* level);
-  bool SetOutputVolume(int level);
   int GetInputLevel();
 
   const std::vector<AudioCodec>& send_codecs() const;

@@ -32,8 +32,6 @@ namespace cricket {
 
 using rtc::Bind;
 
-static const int kNotSetOutputVolume = -1;
-
 static DataEngineInterface* ConstructDataEngine() {
 #ifdef HAVE_SCTP
   return new HybridDataEngine(new RtpDataEngine(), new SctpDataEngine());
@@ -64,7 +62,6 @@ void ChannelManager::Construct(MediaEngineInterface* me,
   main_thread_ = rtc::Thread::Current();
   worker_thread_ = worker_thread;
   network_thread_ = network_thread;
-  audio_output_volume_ = kNotSetOutputVolume;
   capturing_ = false;
   enable_rtx_ = false;
 }
@@ -156,18 +153,6 @@ bool ChannelManager::Init() {
   initialized_ = worker_thread_->Invoke<bool>(
       RTC_FROM_HERE, Bind(&ChannelManager::InitMediaEngine_w, this));
   ASSERT(initialized_);
-  if (!initialized_) {
-    return false;
-  }
-
-  // If audio_output_volume_ has been set via SetOutputVolume(), set the
-  // audio output volume of the engine.
-  if (kNotSetOutputVolume != audio_output_volume_ &&
-      !SetOutputVolume(audio_output_volume_)) {
-    LOG(LS_WARNING) << "Failed to SetOutputVolume to "
-                    << audio_output_volume_;
-  }
-
   return initialized_;
 }
 
@@ -390,31 +375,6 @@ void ChannelManager::DestroyDataChannel_w(DataChannel* data_channel) {
   data_channels_.erase(it);
   delete data_channel;
 }
-
-bool ChannelManager::GetOutputVolume(int* level) {
-  if (!initialized_) {
-    return false;
-  }
-  return worker_thread_->Invoke<bool>(
-      RTC_FROM_HERE,
-      Bind(&MediaEngineInterface::GetOutputVolume, media_engine_.get(), level));
-}
-
-bool ChannelManager::SetOutputVolume(int level) {
-  bool ret = level >= 0 && level <= 255;
-  if (initialized_) {
-    ret &= worker_thread_->Invoke<bool>(
-        RTC_FROM_HERE, Bind(&MediaEngineInterface::SetOutputVolume,
-                            media_engine_.get(), level));
-  }
-
-  if (ret) {
-    audio_output_volume_ = level;
-  }
-
-  return ret;
-}
-
 
 bool ChannelManager::StartAecDump(rtc::PlatformFile file,
                                   int64_t max_size_bytes) {

@@ -169,41 +169,6 @@ TEST_F(ChannelManagerTest, NoTransportChannelTest) {
   cm_->Terminate();
 }
 
-TEST_F(ChannelManagerTest, GetSetOutputVolumeBeforeInit) {
-  int level;
-  // Before init, SetOutputVolume() remembers the volume but does not change the
-  // volume of the engine. GetOutputVolume() should fail.
-  EXPECT_EQ(-1, fme_->output_volume());
-  EXPECT_FALSE(cm_->GetOutputVolume(&level));
-  EXPECT_FALSE(cm_->SetOutputVolume(-1));  // Invalid volume.
-  EXPECT_TRUE(cm_->SetOutputVolume(99));
-  EXPECT_EQ(-1, fme_->output_volume());
-
-  // Init() will apply the remembered volume.
-  EXPECT_TRUE(cm_->Init());
-  EXPECT_TRUE(cm_->GetOutputVolume(&level));
-  EXPECT_EQ(99, level);
-  EXPECT_EQ(level, fme_->output_volume());
-
-  EXPECT_TRUE(cm_->SetOutputVolume(60));
-  EXPECT_TRUE(cm_->GetOutputVolume(&level));
-  EXPECT_EQ(60, level);
-  EXPECT_EQ(level, fme_->output_volume());
-}
-
-TEST_F(ChannelManagerTest, GetSetOutputVolume) {
-  int level;
-  EXPECT_TRUE(cm_->Init());
-  EXPECT_TRUE(cm_->GetOutputVolume(&level));
-  EXPECT_EQ(level, fme_->output_volume());
-
-  EXPECT_FALSE(cm_->SetOutputVolume(-1));  // Invalid volume.
-  EXPECT_TRUE(cm_->SetOutputVolume(60));
-  EXPECT_EQ(60, fme_->output_volume());
-  EXPECT_TRUE(cm_->GetOutputVolume(&level));
-  EXPECT_EQ(60, level);
-}
-
 TEST_F(ChannelManagerTest, SetVideoRtxEnabled) {
   std::vector<VideoCodec> codecs;
   const VideoCodec rtx_codec(96, "rtx", 0, 0, 0);
