@@ -50,7 +50,6 @@ void GetSupportedCryptoSuiteNames(void (*func)(std::vector<int>*),
 
 namespace cricket {
 
-
 // RTP Profile names
 // http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xml
 // RFC4585
@@ -68,6 +67,32 @@ const char kMediaProtocolSctp[] = "SCTP";
 const char kMediaProtocolDtlsSctp[] = "DTLS/SCTP";
 const char kMediaProtocolUdpDtlsSctp[] = "UDP/DTLS/SCTP";
 const char kMediaProtocolTcpDtlsSctp[] = "TCP/DTLS/SCTP";
+
+RtpTransceiverDirection RtpTransceiverDirection::FromMediaContentDirection(
+    MediaContentDirection md) {
+  const bool send = (md == MD_SENDRECV || md == MD_SENDONLY);
+  const bool recv = (md == MD_SENDRECV || md == MD_RECVONLY);
+  return RtpTransceiverDirection(send, recv);
+}
+
+MediaContentDirection RtpTransceiverDirection::ToMediaContentDirection() const {
+  if (send && recv) {
+    return MD_SENDRECV;
+  } else if (send) {
+    return MD_SENDONLY;
+  } else if (recv) {
+    return MD_RECVONLY;
+  }
+
+  return MD_INACTIVE;
+}
+
+RtpTransceiverDirection
+NegotiateRtpTransceiverDirection(RtpTransceiverDirection offer,
+                                 RtpTransceiverDirection wants) {
+  return RtpTransceiverDirection(offer.recv && wants.send,
+                                 offer.send && wants.recv);
+}
 
 static bool IsMediaContentOfType(const ContentInfo* content,
                                  MediaType media_type) {
@@ -766,6 +791,7 @@ static void NegotiateCodecs(const std::vector<C>& local_codecs,
                             offered_apt_value);
       }
       negotiated.id = theirs.id;
+      negotiated.name = theirs.name;
       negotiated_codecs->push_back(negotiated);
     }
   }
@@ -1028,30 +1054,22 @@ static bool CreateMediaContentAnswer(
 
   // Make sure the answer media content direction is per default set as
   // described in RFC3264 section 6.1.
-  switch (offer->direction()) {
-    case MD_INACTIVE:
-      answer->set_direction(MD_INACTIVE);
-      break;
-    case MD_SENDONLY:
-      answer->set_direction(MD_RECVONLY);
-      break;
-    case MD_RECVONLY:
-      answer->set_direction(IsRtpProtocol(answer->protocol()) &&
-                                    answer->streams().empty()
-                                ? MD_INACTIVE
-                                : MD_SENDONLY);
-      break;
-    case MD_SENDRECV:
-      answer->set_direction(IsRtpProtocol(answer->protocol()) &&
-                                    answer->streams().empty()
-                                ? MD_RECVONLY
-                                : MD_SENDRECV);
-      break;
-    default:
-      RTC_DCHECK(false && "MediaContentDescription has unexpected direction.");
-      break;
-  }
+  const bool is_data = !IsRtpProtocol(answer->protocol());
+  const bool has_send_streams = !answer->streams().empty();
+  const bool wants_send = has_send_streams || is_data;
+  const bool recv_audio =
+      answer->type() == cricket::MEDIA_TYPE_AUDIO && options.recv_audio;
+  const bool recv_video =
+      answer->type() == cricket::MEDIA_TYPE_VIDEO && options.recv_video;
+  const bool recv_data =
+      answer->type() == cricket::MEDIA_TYPE_DATA;
+  const bool wants_receive = recv_audio || recv_video || recv_data;
 
+  auto offer_rtd =
+      RtpTransceiverDirection::FromMediaContentDirection(offer->direction());
+  auto wants_rtd = RtpTransceiverDirection(wants_send, wants_receive);
+  answer->set_direction(NegotiateRtpTransceiverDirection(offer_rtd, wants_rtd)
+                        .ToMediaContentDirection());
   return true;
 }
 
@@ -1171,6 +1189,29 @@ std::string MediaTypeToString(MediaType type) {
   return type_str;
 }
 
+std::string MediaContentDirectionToString(MediaContentDirection direction) {
+  std::string dir_str;
+  switch (direction) {
+    case MD_INACTIVE:
+      dir_str = "inactive";
+      break;
+    case MD_SENDONLY:
+      dir_str = "sendonly";
+      break;
+    case MD_RECVONLY:
+      dir_str = "recvonly";
+      break;
+    case MD_SENDRECV:
+      dir_str = "sendrecv";
+      break;
+    default:
+      ASSERT(false);
+      break;
+  }
+
+  return dir_str;
+}
+
 void MediaSessionOptions::AddSendStream(MediaType type,
                                     const std::string& id,
                                     const std::string& sync_label) {
@@ -1232,11 +1273,38 @@ MediaSessionDescriptionFactory::MediaSessionDescriptionFactory(
     : secure_(SEC_DISABLED),
       add_legacy_(true),
       transport_desc_factory_(transport_desc_factory) {
-  channel_manager->GetSupportedAudioCodecs(&audio_codecs_);
+  channel_manager->GetSupportedAudioCodecs(&audio_sendrecv_codecs_);
   channel_manager->GetSupportedAudioRtpHeaderExtensions(&audio_rtp_extensions_);
   channel_manager->GetSupportedVideoCodecs(&video_codecs_);
   channel_manager->GetSupportedVideoRtpHeaderExtensions(&video_rtp_extensions_);
   channel_manager->GetSupportedDataCodecs(&data_codecs_);
+  audio_send_codecs_ = audio_sendrecv_codecs_;
+  audio_recv_codecs_ = audio_sendrecv_codecs_;
+}
+
+const AudioCodecs& MediaSessionDescriptionFactory::audio_codecs() const {
+  return audio_sendrecv_codecs_;
+}
+
+const AudioCodecs& MediaSessionDescriptionFactory::audio_send_codecs() const {
+  return audio_send_codecs_;
+}
+
+const AudioCodecs& MediaSessionDescriptionFactory::audio_recv_codecs() const {
+  return audio_recv_codecs_;
+}
+
+void MediaSessionDescriptionFactory::set_audio_codecs(
+    const AudioCodecs& send_codecs, const AudioCodecs& recv_codecs) {
+  audio_send_codecs_ = send_codecs;
+  audio_recv_codecs_ = recv_codecs;
+  audio_sendrecv_codecs_.clear();
+  // Use NegotiateCodecs to merge our codec lists, since the operation is
+  // essentially the same. Put send_codecs as the offered_codecs, which is the
+  // order we'd like to follow. The reasoning is that encoding is usually more
+  // expensive than decoding, and prioritizing a codec in the send list probably
+  // means it's a codec we can handle efficiently.
+  NegotiateCodecs(recv_codecs, send_codecs, &audio_sendrecv_codecs_);
 }
 
 SessionDescription* MediaSessionDescriptionFactory::CreateOffer(
@@ -1247,11 +1315,17 @@ SessionDescription* MediaSessionDescriptionFactory::CreateOffer(
   StreamParamsVec current_streams;
   GetCurrentStreamParams(current_description, &current_streams);
 
+  const bool wants_send =
+      options.HasSendMediaStream(MEDIA_TYPE_AUDIO) || add_legacy_;
+  const AudioCodecs& supported_audio_codecs =
+      GetAudioCodecsForOffer({wants_send, options.recv_audio});
+
   AudioCodecs audio_codecs;
   VideoCodecs video_codecs;
   DataCodecs data_codecs;
-  GetCodecsToOffer(current_description, &audio_codecs, &video_codecs,
-                   &data_codecs);
+  GetCodecsToOffer(current_description, supported_audio_codecs,
+                   video_codecs_, data_codecs_,
+                   &audio_codecs, &video_codecs, &data_codecs);
 
   if (!options.vad_enabled) {
     // If application doesn't want CN codecs in offer.
@@ -1410,8 +1484,43 @@ SessionDescription* MediaSessionDescriptionFactory::CreateAnswer(
   return answer.release();
 }
 
+const AudioCodecs& MediaSessionDescriptionFactory::GetAudioCodecsForOffer(
+    const RtpTransceiverDirection& direction) const {
+  // If stream is inactive - generate list as if sendrecv.
+  if (direction.send == direction.recv) {
+    return audio_sendrecv_codecs_;
+  } else if (direction.send) {
+    return audio_send_codecs_;
+  } else {
+    return audio_recv_codecs_;
+  }
+}
+
+const AudioCodecs& MediaSessionDescriptionFactory::GetAudioCodecsForAnswer(
+    const RtpTransceiverDirection& offer,
+    const RtpTransceiverDirection& answer) const {
+  // For inactive and sendrecv answers, generate lists as if we were to accept
+  // the offer's direction. See RFC 3264 Section 6.1.
+  if (answer.send == answer.recv) {
+    if (offer.send == offer.recv) {
+      return audio_sendrecv_codecs_;
+    } else if (offer.send) {
+      return audio_recv_codecs_;
+    } else {
+      return audio_send_codecs_;
+    }
+  } else if (answer.send) {
+    return audio_send_codecs_;
+  } else {
+    return audio_recv_codecs_;
+  }
+}
+
 void MediaSessionDescriptionFactory::GetCodecsToOffer(
     const SessionDescription* current_description,
+    const AudioCodecs& supported_audio_codecs,
+    const VideoCodecs& supported_video_codecs,
+    const DataCodecs& supported_data_codecs,
     AudioCodecs* audio_codecs,
     VideoCodecs* video_codecs,
     DataCodecs* data_codecs) const {
@@ -1447,9 +1556,12 @@ void MediaSessionDescriptionFactory::GetCodecsToOffer(
   }
 
   // Add our codecs that are not in |current_description|.
-  FindCodecsToOffer<AudioCodec>(audio_codecs_, audio_codecs, &used_pltypes);
-  FindCodecsToOffer<VideoCodec>(video_codecs_, video_codecs, &used_pltypes);
-  FindCodecsToOffer<DataCodec>(data_codecs_, data_codecs, &used_pltypes);
+  FindCodecsToOffer<AudioCodec>(supported_audio_codecs, audio_codecs,
+                                &used_pltypes);
+  FindCodecsToOffer<VideoCodec>(supported_video_codecs, video_codecs,
+                                &used_pltypes);
+  FindCodecsToOffer<DataCodec>(supported_data_codecs, data_codecs,
+                               &used_pltypes);
 }
 
 void MediaSessionDescriptionFactory::GetRtpHdrExtsToOffer(
@@ -1575,19 +1687,9 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
   bool secure_transport = (transport_desc_factory_->secure() != SEC_DISABLED);
   SetMediaProtocol(secure_transport, audio.get());
 
-  if (!audio->streams().empty()) {
-    if (options.recv_audio) {
-      audio->set_direction(MD_SENDRECV);
-    } else {
-      audio->set_direction(MD_SENDONLY);
-    }
-  } else {
-    if (options.recv_audio) {
-      audio->set_direction(MD_RECVONLY);
-    } else {
-      audio->set_direction(MD_INACTIVE);
-    }
-  }
+  auto offer_rtd =
+      RtpTransceiverDirection(!audio->streams().empty(), options.recv_audio);
+  audio->set_direction(offer_rtd.ToMediaContentDirection());
 
   desc->AddContent(content_name, NS_JINGLE_RTP, audio.release());
   if (!AddTransportOffer(content_name,
@@ -1731,6 +1833,8 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
     StreamParamsVec* current_streams,
     SessionDescription* answer) const {
   const ContentInfo* audio_content = GetFirstAudioContent(offer);
+  const AudioContentDescription* offer_audio =
+      static_cast<const AudioContentDescription*>(audio_content->description);
 
   std::unique_ptr<TransportDescription> audio_transport(CreateTransportAnswer(
       audio_content->name, offer,
@@ -1739,7 +1843,15 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
     return false;
   }
 
-  AudioCodecs audio_codecs = audio_codecs_;
+  // Pick codecs based on the requested communications direction in the offer.
+  const bool wants_send =
+      options.HasSendMediaStream(MEDIA_TYPE_AUDIO) || add_legacy_;
+  auto wants_rtd = RtpTransceiverDirection(wants_send, options.recv_audio);
+  auto offer_rtd =
+      RtpTransceiverDirection::FromMediaContentDirection(
+          offer_audio->direction());
+  auto answer_rtd = NegotiateRtpTransceiverDirection(offer_rtd, wants_rtd);
+  AudioCodecs audio_codecs = GetAudioCodecsForAnswer(offer_rtd, answer_rtd);
   if (!options.vad_enabled) {
     StripCNCodecs(&audio_codecs);
   }
@@ -1752,8 +1864,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
   cricket::SecurePolicy sdes_policy =
       audio_transport->secure() ? cricket::SEC_DISABLED : secure();
   if (!CreateMediaContentAnswer(
-          static_cast<const AudioContentDescription*>(
-              audio_content->description),
+          offer_audio,
           options,
           audio_codecs,
           sdes_policy,

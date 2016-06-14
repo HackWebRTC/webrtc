@@ -39,6 +39,7 @@ typedef std::vector<cricket::Candidate> Candidates;
 
 using cricket::MediaContentDescription;
 using cricket::MediaSessionDescriptionFactory;
+using cricket::MediaContentDirection;
 using cricket::MediaSessionOptions;
 using cricket::MediaType;
 using cricket::SessionDescription;
@@ -211,10 +212,12 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
   MediaSessionDescriptionFactoryTest()
       : f1_(&tdf1_),
         f2_(&tdf2_) {
-    f1_.set_audio_codecs(MAKE_VECTOR(kAudioCodecs1));
+    f1_.set_audio_codecs(MAKE_VECTOR(kAudioCodecs1),
+                         MAKE_VECTOR(kAudioCodecs1));
     f1_.set_video_codecs(MAKE_VECTOR(kVideoCodecs1));
     f1_.set_data_codecs(MAKE_VECTOR(kDataCodecs1));
-    f2_.set_audio_codecs(MAKE_VECTOR(kAudioCodecs2));
+    f2_.set_audio_codecs(MAKE_VECTOR(kAudioCodecs2),
+                         MAKE_VECTOR(kAudioCodecs2));
     f2_.set_video_codecs(MAKE_VECTOR(kVideoCodecs2));
     f2_.set_data_codecs(MAKE_VECTOR(kDataCodecs2));
     tdf1_.set_certificate(rtc::RTCCertificate::Create(
@@ -861,6 +864,9 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateAnswerContentOrder) {
   EXPECT_TRUE(IsMediaContentOfType(&answer->contents()[1], MEDIA_TYPE_AUDIO));
   EXPECT_TRUE(IsMediaContentOfType(&answer->contents()[2], MEDIA_TYPE_VIDEO));
 }
+
+// TODO(deadbeef): Extend these tests to ensure the correct direction with other
+// answerer settings.
 
 // This test that the media direction is set to send/receive in an answer if
 // the offer is send receive.
@@ -2391,10 +2397,12 @@ TEST_F(MediaSessionDescriptionFactoryTest,
 class MediaProtocolTest : public ::testing::TestWithParam<const char*> {
  public:
   MediaProtocolTest() : f1_(&tdf1_), f2_(&tdf2_) {
-    f1_.set_audio_codecs(MAKE_VECTOR(kAudioCodecs1));
+    f1_.set_audio_codecs(MAKE_VECTOR(kAudioCodecs1),
+                         MAKE_VECTOR(kAudioCodecs1));
     f1_.set_video_codecs(MAKE_VECTOR(kVideoCodecs1));
     f1_.set_data_codecs(MAKE_VECTOR(kDataCodecs1));
-    f2_.set_audio_codecs(MAKE_VECTOR(kAudioCodecs2));
+    f2_.set_audio_codecs(MAKE_VECTOR(kAudioCodecs2),
+                         MAKE_VECTOR(kAudioCodecs2));
     f2_.set_video_codecs(MAKE_VECTOR(kVideoCodecs2));
     f2_.set_data_codecs(MAKE_VECTOR(kDataCodecs2));
     f1_.set_secure(SEC_ENABLED);
@@ -2446,3 +2454,304 @@ INSTANTIATE_TEST_CASE_P(MediaProtocolPatternTest,
 INSTANTIATE_TEST_CASE_P(MediaProtocolDtlsPatternTest,
                         MediaProtocolTest,
                         ::testing::ValuesIn(kMediaProtocolsDtls));
+
+TEST_F(MediaSessionDescriptionFactoryTest, TestSetAudioCodecs) {
+  TransportDescriptionFactory tdf;
+  MediaSessionDescriptionFactory sf(&tdf);
+  std::vector<AudioCodec> send_codecs = MAKE_VECTOR(kAudioCodecs1);
+  std::vector<AudioCodec> recv_codecs = MAKE_VECTOR(kAudioCodecs2);
+
+  // The merged list of codecs should contain any send codecs that are also
+  // nominally in the recieve codecs list. Payload types should be picked from
+  // the send codecs and a number-of-channels of 0 and 1 should be equivalent
+  // (set to 1). This equals what happens when the send codecs are used in an
+  // offer and the receive codecs are used in the following answer.
+  const std::vector<AudioCodec> sendrecv_codecs =
+      MAKE_VECTOR(kAudioCodecsAnswer);
+  const std::vector<AudioCodec> no_codecs;
+
+  RTC_CHECK_EQ(send_codecs[1].name, "iLBC")
+      << "Please don't change shared test data!";
+  RTC_CHECK_EQ(recv_codecs[2].name, "iLBC")
+      << "Please don't change shared test data!";
+  // Alter iLBC send codec to have zero channels, to test that that is handled
+  // properly.
+  send_codecs[1].channels = 0;
+
+  // Alther iLBC receive codec to be lowercase, to test that case conversions
+  // are handled properly.
+  recv_codecs[2].name = "ilbc";
+
+  // Test proper merge
+  sf.set_audio_codecs(send_codecs, recv_codecs);
+  EXPECT_TRUE(sf.audio_send_codecs() == send_codecs);
+  EXPECT_TRUE(sf.audio_recv_codecs() == recv_codecs);
+  EXPECT_TRUE(sf.audio_codecs() == sendrecv_codecs);
+
+  // Test empty send codecs list
+  sf.set_audio_codecs(no_codecs, recv_codecs);
+  EXPECT_TRUE(sf.audio_send_codecs() == no_codecs);
+  EXPECT_TRUE(sf.audio_recv_codecs() == recv_codecs);
+  EXPECT_TRUE(sf.audio_codecs() == no_codecs);
+
+  // Test empty recv codecs list
+  sf.set_audio_codecs(send_codecs, no_codecs);
+  EXPECT_TRUE(sf.audio_send_codecs() == send_codecs);
+  EXPECT_TRUE(sf.audio_recv_codecs() == no_codecs);
+  EXPECT_TRUE(sf.audio_codecs() == no_codecs);
+
+  // Test all empty codec lists
+  sf.set_audio_codecs(no_codecs, no_codecs);
+  EXPECT_TRUE(sf.audio_send_codecs() == no_codecs);
+  EXPECT_TRUE(sf.audio_recv_codecs() == no_codecs);
+  EXPECT_TRUE(sf.audio_codecs() == no_codecs);
+}
+
+namespace {
+void TestAudioCodecsOffer(MediaContentDirection direction,
+                          bool add_legacy_stream) {
+  TransportDescriptionFactory tdf;
+  MediaSessionDescriptionFactory sf(&tdf);
+  const std::vector<AudioCodec> send_codecs = MAKE_VECTOR(kAudioCodecs1);
+  const std::vector<AudioCodec> recv_codecs = MAKE_VECTOR(kAudioCodecs2);
+  const std::vector<AudioCodec> sendrecv_codecs =
+      MAKE_VECTOR(kAudioCodecsAnswer);
+  sf.set_audio_codecs(send_codecs, recv_codecs);
+  sf.set_add_legacy_streams(add_legacy_stream);
+
+  MediaSessionOptions opts;
+  opts.recv_audio = (direction == cricket::MD_RECVONLY ||
+                     direction == cricket::MD_SENDRECV);
+  opts.recv_video = false;
+  if (direction == cricket::MD_SENDONLY || direction == cricket::MD_SENDRECV)
+    opts.AddSendStream(MEDIA_TYPE_AUDIO, kAudioTrack1, kMediaStream1);
+
+  std::unique_ptr<SessionDescription> offer(sf.CreateOffer(opts, NULL));
+  ASSERT_TRUE(offer.get() != NULL);
+  const ContentInfo* ac = offer->GetContentByName("audio");
+
+  // If the factory didn't add any audio content to the offer, we cannot check
+  // that the codecs put in are right. This happens when we neither want to send
+  // nor receive audio. The checks are still in place if at some point we'd
+  // instead create an inactive stream.
+  if (ac) {
+    AudioContentDescription* acd =
+        static_cast<AudioContentDescription*>(ac->description);
+    // sendrecv and inactive should both present lists as if the channel was to
+    // be used for sending and receiving. Inactive essentially means it might
+    // eventually be used anything, but we don't know more at this moment.
+    if (acd->direction() == cricket::MD_SENDONLY) {
+      EXPECT_TRUE(acd->codecs() == send_codecs);
+    } else if (acd->direction() == cricket::MD_RECVONLY) {
+      EXPECT_TRUE(acd->codecs() == recv_codecs);
+    } else {
+      EXPECT_TRUE(acd->codecs() == sendrecv_codecs);
+    }
+  }
+}
+
+static const AudioCodec kOfferAnswerCodecs[] = {
+  AudioCodec(0, "codec0", 16000,    -1, 1),
+  AudioCodec(1, "codec1",  8000, 13300, 1),
+  AudioCodec(2, "codec2",  8000, 64000, 1),
+  AudioCodec(3, "codec3",  8000, 64000, 1),
+  AudioCodec(4, "codec4",  8000,     0, 2),
+  AudioCodec(5, "codec5", 32000,     0, 1),
+  AudioCodec(6, "codec6", 48000,     0, 1)
+};
+
+
+/* The codecs groups below are chosen as per the matrix below. The objective is
+ * to have different sets of codecs in the inputs, to get unique sets of codecs
+ * after negotiation, depending on offer and answer communication directions.
+ * One-way directions in the offer should either result in the opposite
+ * direction in the answer, or an inactive answer. Regardless, the choice of
+ * codecs should be as if the answer contained the opposite direction.
+ * Inactive offers should be treated as sendrecv/sendrecv.
+ *
+ *         |     Offer   |      Answer  |         Result
+ *    codec|send recv sr | send recv sr | s/r  r/s sr/s sr/r sr/sr
+ *     0   | x    -    - |  -    x    - |  x    -    -    -    -
+ *     1   | x    x    x |  -    x    - |  x    -    -    x    -
+ *     2   | -    x    - |  x    -    - |  -    x    -    -    -
+ *     3   | x    x    x |  x    -    - |  -    x    x    -    -
+ *     4   | -    x    - |  x    x    x |  -    x    -    -    -
+ *     5   | x    -    - |  x    x    x |  x    -    -    -    -
+ *     6   | x    x    x |  x    x    x |  x    x    x    x    x
+ */
+// Codecs used by offerer in the AudioCodecsAnswerTest
+static const int kOfferSendCodecs[]               = { 0, 1, 3, 5, 6 };
+static const int kOfferRecvCodecs[]               = { 1, 2, 3, 4, 6 };
+// Codecs used in the answerer in the AudioCodecsAnswerTest.  The order is
+// jumbled to catch the answer not following the order in the offer.
+static const int kAnswerSendCodecs[]              = { 6, 5, 2, 3, 4 };
+static const int kAnswerRecvCodecs[]              = { 6, 5, 4, 1, 0 };
+// The resulting sets of codecs in the answer in the AudioCodecsAnswerTest
+static const int kResultSend_RecvCodecs[]         = { 0, 1, 5, 6 };
+static const int kResultRecv_SendCodecs[]         = { 2, 3, 4, 6 };
+static const int kResultSendrecv_SendCodecs[]     = { 3, 6 };
+static const int kResultSendrecv_RecvCodecs[]     = { 1, 6 };
+static const int kResultSendrecv_SendrecvCodecs[] = { 6 };
+
+template <typename T, int IDXS>
+std::vector<T> VectorFromIndices(const T* array, const int (&indices)[IDXS]) {
+  std::vector<T> out;
+  out.reserve(IDXS);
+  for (int idx : indices)
+    out.push_back(array[idx]);
+
+  return out;
+}
+
+void TestAudioCodecsAnswer(MediaContentDirection offer_direction,
+                           MediaContentDirection answer_direction,
+                           bool add_legacy_stream) {
+  TransportDescriptionFactory offer_tdf;
+  TransportDescriptionFactory answer_tdf;
+  MediaSessionDescriptionFactory offer_factory(&offer_tdf);
+  MediaSessionDescriptionFactory answer_factory(&answer_tdf);
+  offer_factory.set_audio_codecs(
+      VectorFromIndices(kOfferAnswerCodecs, kOfferSendCodecs),
+      VectorFromIndices(kOfferAnswerCodecs, kOfferRecvCodecs));
+  answer_factory.set_audio_codecs(
+      VectorFromIndices(kOfferAnswerCodecs, kAnswerSendCodecs),
+      VectorFromIndices(kOfferAnswerCodecs, kAnswerRecvCodecs));
+
+  // Never add a legacy stream to offer - we want to control the offer
+  // parameters exactly.
+  offer_factory.set_add_legacy_streams(false);
+  answer_factory.set_add_legacy_streams(add_legacy_stream);
+  MediaSessionOptions offer_opts;
+  offer_opts.recv_audio = (offer_direction == cricket::MD_RECVONLY ||
+                           offer_direction == cricket::MD_SENDRECV);
+  offer_opts.recv_video = false;
+  if (offer_direction == cricket::MD_SENDONLY ||
+      offer_direction == cricket::MD_SENDRECV) {
+    offer_opts.AddSendStream(MEDIA_TYPE_AUDIO, kAudioTrack1, kMediaStream1);
+  }
+
+  std::unique_ptr<SessionDescription> offer(
+      offer_factory.CreateOffer(offer_opts, NULL));
+  ASSERT_TRUE(offer.get() != NULL);
+
+  MediaSessionOptions answer_opts;
+  answer_opts.recv_audio = (answer_direction == cricket::MD_RECVONLY ||
+                            answer_direction == cricket::MD_SENDRECV);
+  answer_opts.recv_video = false;
+  if (answer_direction == cricket::MD_SENDONLY ||
+      answer_direction == cricket::MD_SENDRECV) {
+    answer_opts.AddSendStream(MEDIA_TYPE_AUDIO, kAudioTrack1, kMediaStream1);
+  }
+  std::unique_ptr<SessionDescription> answer(
+      answer_factory.CreateAnswer(offer.get(), answer_opts, NULL));
+  const ContentInfo* ac = answer->GetContentByName("audio");
+
+  // If the factory didn't add any audio content to the answer, we cannot check
+  // that the codecs put in are right. This happens when we neither want to send
+  // nor receive audio. The checks are still in place if at some point we'd
+  // instead create an inactive stream.
+  if (ac) {
+    const AudioContentDescription* acd =
+        static_cast<const AudioContentDescription*>(ac->description);
+    EXPECT_EQ(MEDIA_TYPE_AUDIO, acd->type());
+
+
+    std::vector<AudioCodec> target_codecs;
+    // For offers with sendrecv or inactive, we should never reply with more
+    // codecs than offered, with these codec sets.
+    switch (offer_direction) {
+      case cricket::MD_INACTIVE:
+        target_codecs = VectorFromIndices(kOfferAnswerCodecs,
+                                          kResultSendrecv_SendrecvCodecs);
+        break;
+      case cricket::MD_SENDONLY:
+        target_codecs = VectorFromIndices(kOfferAnswerCodecs,
+                                          kResultSend_RecvCodecs);
+        break;
+      case cricket::MD_RECVONLY:
+        target_codecs = VectorFromIndices(kOfferAnswerCodecs,
+                                          kResultRecv_SendCodecs);
+        break;
+      case cricket::MD_SENDRECV:
+        if (acd->direction() == cricket::MD_SENDONLY) {
+          target_codecs = VectorFromIndices(kOfferAnswerCodecs,
+                                            kResultSendrecv_SendCodecs);
+        } else if (acd->direction() == cricket::MD_RECVONLY) {
+          target_codecs = VectorFromIndices(kOfferAnswerCodecs,
+                                            kResultSendrecv_RecvCodecs);
+        } else {
+          target_codecs = VectorFromIndices(kOfferAnswerCodecs,
+                                            kResultSendrecv_SendrecvCodecs);
+        }
+        break;
+    }
+
+    auto format_codecs = [] (const std::vector<AudioCodec>& codecs) {
+      std::stringstream os;
+      bool first = true;
+      os << "{";
+      for (const auto& c : codecs) {
+        os << (first ? " " : ", ") << c.id;
+        first = false;
+      }
+      os << " }";
+      return os.str();
+    };
+
+    EXPECT_TRUE(acd->codecs() == target_codecs)
+        << "Expected: " << format_codecs(target_codecs)
+        << ", got: " << format_codecs(acd->codecs())
+        << "; Offered: " << MediaContentDirectionToString(offer_direction)
+        << ", answerer wants: "
+        << MediaContentDirectionToString(answer_direction)
+        << "; got: " << MediaContentDirectionToString(acd->direction());
+  } else {
+    EXPECT_EQ(offer_direction, cricket::MD_INACTIVE)
+        << "Only inactive offers are allowed to not generate any audio content";
+  }
+}
+}
+
+class AudioCodecsOfferTest
+    : public ::testing::TestWithParam<std::tr1::tuple<MediaContentDirection,
+                                                      bool>> {
+};
+
+TEST_P(AudioCodecsOfferTest, TestCodecsInOffer) {
+  TestAudioCodecsOffer(std::tr1::get<0>(GetParam()),
+                       std::tr1::get<1>(GetParam()));
+}
+
+INSTANTIATE_TEST_CASE_P(MediaSessionDescriptionFactoryTest,
+                        AudioCodecsOfferTest,
+                        ::testing::Combine(
+                             ::testing::Values(cricket::MD_SENDONLY,
+                                               cricket::MD_RECVONLY,
+                                               cricket::MD_SENDRECV,
+                                               cricket::MD_INACTIVE),
+                             ::testing::Bool()));
+
+class AudioCodecsAnswerTest
+    : public ::testing::TestWithParam<std::tr1::tuple<MediaContentDirection,
+                                                      MediaContentDirection,
+                                                      bool>> {
+};
+
+TEST_P(AudioCodecsAnswerTest, TestCodecsInAnswer) {
+  TestAudioCodecsAnswer(std::tr1::get<0>(GetParam()),
+                        std::tr1::get<1>(GetParam()),
+                        std::tr1::get<2>(GetParam()));
+}
+
+INSTANTIATE_TEST_CASE_P(MediaSessionDescriptionFactoryTest,
+                        AudioCodecsAnswerTest,
+                        ::testing::Combine(
+                             ::testing::Values(cricket::MD_SENDONLY,
+                                               cricket::MD_RECVONLY,
+                                               cricket::MD_SENDRECV,
+                                               cricket::MD_INACTIVE),
+                             ::testing::Values(cricket::MD_SENDONLY,
+                                               cricket::MD_RECVONLY,
+                                               cricket::MD_SENDRECV,
+                                               cricket::MD_INACTIVE),
+                             ::testing::Bool()));

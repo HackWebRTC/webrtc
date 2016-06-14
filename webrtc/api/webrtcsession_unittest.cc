@@ -456,7 +456,7 @@ class WebRtcSessionTest
     std::vector<cricket::AudioCodec> codecs;
     codecs.push_back(kTelephoneEventCodec);
     media_engine_->SetAudioCodecs(codecs);
-    desc_factory_->set_audio_codecs(codecs);
+    desc_factory_->set_audio_codecs(codecs, codecs);
     Init();
   }
 
@@ -1340,7 +1340,7 @@ class WebRtcSessionTest
     codecs.push_back(kCNCodec1);
     codecs.push_back(kCNCodec2);
     media_engine_->SetAudioCodecs(codecs);
-    desc_factory_->set_audio_codecs(codecs);
+    desc_factory_->set_audio_codecs(codecs, codecs);
   }
 
   bool VerifyNoCNCodecs(const cricket::ContentInfo* content) {
