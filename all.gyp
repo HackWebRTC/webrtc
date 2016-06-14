@@ -11,17 +11,51 @@
     'include_examples%': 1,
     'include_tests%': 1,
   },
+  'includes': [
+    'webrtc/build/common.gypi',
+  ],
   'targets': [
     {
       'target_name': 'All',
       'type': 'none',
       'dependencies': [
+        'webrtc/api/api.gyp:*',
+        'webrtc/base/base.gyp:*',
+        'webrtc/common.gyp:*',
+        'webrtc/common_audio/common_audio.gyp:*',
+        'webrtc/common_video/common_video.gyp:*',
+        'webrtc/media/media.gyp:*',
+        'webrtc/modules/modules.gyp:*',
+        'webrtc/p2p/p2p.gyp:*',
+        'webrtc/pc/pc.gyp:*',
+        'webrtc/system_wrappers/system_wrappers.gyp:*',
+        'webrtc/tools/tools.gyp:*',
+        'webrtc/voice_engine/voice_engine.gyp:*',
         'webrtc/webrtc.gyp:*',
+        '<(webrtc_vp8_dir)/vp8.gyp:*',
+        '<(webrtc_vp9_dir)/vp9.gyp:*',
       ],
       'conditions': [
+        ['include_tests==1', {
+          'includes': [
+            'webrtc/webrtc_tests.gypi',
+          ],
+          'dependencies': [
+            'webrtc/api/api_tests.gyp:*',
+            'webrtc/common_video/common_video_unittests.gyp:*',
+            'webrtc/system_wrappers/system_wrappers_tests.gyp:*',
+            'webrtc/test/metrics.gyp:*',
+            'webrtc/test/test.gyp:*',
+          ],
+        }],
         ['include_examples==1', {
           'dependencies': [
             'webrtc/webrtc_examples.gyp:*',
+          ],
+        }],
+        ['(OS=="ios" or (OS=="mac" and mac_deployment_target=="10.7"))', {
+          'dependencies': [
+            'webrtc/sdk/sdk.gyp:*',
           ],
         }],
         ['OS=="ios" or (OS=="mac" and target_arch!="ia32")', {
