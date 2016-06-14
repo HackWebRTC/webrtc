@@ -20,7 +20,6 @@
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/video_coding_impl.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/video/encoded_frame_callback_adapter.h"
 #include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video/rtp_stream_receiver.h"
 #include "webrtc/video/video_stream_decoder.h"
@@ -87,7 +86,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   void Decode();
 
   TransportAdapter transport_adapter_;
-  EncodedFrameCallbackAdapter encoded_frame_proxy_;
   const VideoReceiveStream::Config config_;
   ProcessThread* const process_thread_;
   Clock* const clock_;

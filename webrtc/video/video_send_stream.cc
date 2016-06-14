@@ -362,7 +362,6 @@ VideoSendStream::VideoSendStream(
     : stats_proxy_(Clock::GetRealTimeClock(),
                    config,
                    encoder_config.content_type),
-      encoded_frame_proxy_(config.post_encode_callback),
       config_(config),
       suspended_ssrcs_(suspended_ssrcs),
       module_process_thread_(module_process_thread),
@@ -630,9 +629,12 @@ void VideoSendStream::NormalUsage() {
 int32_t VideoSendStream::Encoded(const EncodedImage& encoded_image,
                                  const CodecSpecificInfo* codec_specific_info,
                                  const RTPFragmentationHeader* fragmentation) {
-  // |encoded_frame_proxy_| forwards frames to |config_.post_encode_callback|;
-  encoded_frame_proxy_.Encoded(encoded_image, codec_specific_info,
-                               fragmentation);
+  if (config_.post_encode_callback) {
+    config_.post_encode_callback->EncodedFrameCallback(
+        EncodedFrame(encoded_image._buffer, encoded_image._length,
+                     encoded_image._frameType));
+  }
+
   protection_bitrate_calculator_.UpdateWithEncodedData(encoded_image);
   int32_t return_value = payload_router_.Encoded(
       encoded_image, codec_specific_info, fragmentation);

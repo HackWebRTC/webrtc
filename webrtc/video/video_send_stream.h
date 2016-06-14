@@ -20,7 +20,6 @@
 #include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/protection_bitrate_calculator.h"
-#include "webrtc/video/encoded_frame_callback_adapter.h"
 #include "webrtc/video/encoder_state_feedback.h"
 #include "webrtc/video/payload_router.h"
 #include "webrtc/video/send_delay_stats.h"
@@ -121,7 +120,6 @@ class VideoSendStream : public webrtc::VideoSendStream,
   void ConfigureSsrcs();
 
   SendStatisticsProxy stats_proxy_;
-  EncodedFrameCallbackAdapter encoded_frame_proxy_;
   const VideoSendStream::Config config_;
   std::map<uint32_t, RtpState> suspended_ssrcs_;
 

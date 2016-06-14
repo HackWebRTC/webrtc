@@ -179,7 +179,6 @@ VideoReceiveStream::VideoReceiveStream(
     CallStats* call_stats,
     VieRemb* remb)
     : transport_adapter_(config.rtcp_send_transport),
-      encoded_frame_proxy_(config.pre_decode_callback),
       config_(std::move(config)),
       process_thread_(process_thread),
       clock_(Clock::GetRealTimeClock()),
@@ -340,9 +339,9 @@ int32_t VideoReceiveStream::Encoded(
     const RTPFragmentationHeader* fragmentation) {
   stats_proxy_.OnPreDecode(encoded_image, codec_specific_info);
   if (config_.pre_decode_callback) {
-    // TODO(asapersson): Remove EncodedFrameCallbackAdapter.
-    encoded_frame_proxy_.Encoded(
-        encoded_image, codec_specific_info, fragmentation);
+    config_.pre_decode_callback->EncodedFrameCallback(
+        EncodedFrame(encoded_image._buffer, encoded_image._length,
+                     encoded_image._frameType));
   }
   if (kEnableFrameRecording) {
     if (!ivf_writer_.get()) {
