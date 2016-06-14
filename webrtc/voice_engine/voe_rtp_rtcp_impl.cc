@@ -365,47 +365,17 @@ int VoERTP_RTCPImpl::SetREDStatus(int channel,
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "SetREDStatus(channel=%d, enable=%d, redPayloadtype=%d)",
                channel, enable, redPayloadtype);
-#ifdef WEBRTC_CODEC_RED
-  if (!_shared->statistics().Initialized()) {
-    _shared->SetLastError(VE_NOT_INITED, kTraceError);
-    return -1;
-  }
-  voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-  voe::Channel* channelPtr = ch.channel();
-  if (channelPtr == NULL) {
-    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                          "SetREDStatus() failed to locate channel");
-    return -1;
-  }
-  return channelPtr->SetREDStatus(enable, redPayloadtype);
-#else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
                         "SetREDStatus() RED is not supported");
   return -1;
-#endif
 }
 
 int VoERTP_RTCPImpl::GetREDStatus(int channel,
                                   bool& enabled,
                                   int& redPayloadtype) {
-#ifdef WEBRTC_CODEC_RED
-  if (!_shared->statistics().Initialized()) {
-    _shared->SetLastError(VE_NOT_INITED, kTraceError);
-    return -1;
-  }
-  voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-  voe::Channel* channelPtr = ch.channel();
-  if (channelPtr == NULL) {
-    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                          "GetREDStatus() failed to locate channel");
-    return -1;
-  }
-  return channelPtr->GetREDStatus(enabled, redPayloadtype);
-#else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
                         "GetREDStatus() RED is not supported");
   return -1;
-#endif
 }
 
 int VoERTP_RTCPImpl::SetNACKStatus(int channel, bool enable, int maxNoPackets) {

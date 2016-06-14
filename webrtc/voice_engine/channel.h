@@ -367,8 +367,6 @@ class Channel
                        unsigned int& discardedPackets);
   int GetRemoteRTCPReportBlocks(std::vector<ReportBlock>* report_blocks);
   int GetRTPStatistics(CallStatistics& stats);
-  int SetREDStatus(bool enable, int redPayloadtype);
-  int GetREDStatus(bool& enabled, int& redPayloadtype);
   int SetCodecFECStatus(bool enable);
   bool GetCodecFECStatus();
   void SetNACKStatus(bool enable, int maxNumberOfPackets);
@@ -473,7 +471,6 @@ class Channel
   void UpdatePacketDelay(uint32_t timestamp, uint16_t sequenceNumber);
   void RegisterReceiveCodecsToRTPModule();
 
-  int SetRedPayloadType(int red_payload_type);
   int SetSendRtpHeaderExtension(bool enable,
                                 RTPExtensionType type,
                                 unsigned char id);

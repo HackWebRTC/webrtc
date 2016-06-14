@@ -1029,18 +1029,6 @@ int32_t Channel::Init() {
                      codec.pltype, codec.plfreq);
       }
     }
-#ifdef WEBRTC_CODEC_RED
-    // Register RED to the receiving side of the ACM.
-    // We will not receive an OnInitializeDecoder() callback for RED.
-    if (!STR_CASE_CMP(codec.plname, "RED")) {
-      if (!RegisterReceiveCodec(&audio_coding_, &rent_a_codec_, codec)) {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
-                     "Channel::Init() failed to register RED (%d/%d) "
-                     "correctly",
-                     codec.pltype, codec.plfreq);
-      }
-    }
-#endif
   }
 
   if (rx_audioproc_->noise_suppression()->set_level(kDefaultNsMode) != 0) {
@@ -2880,53 +2868,6 @@ int Channel::GetRTPStatistics(CallStatistics& stats) {
   return 0;
 }
 
-int Channel::SetREDStatus(bool enable, int redPayloadtype) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::SetREDStatus()");
-
-  if (enable) {
-    if (redPayloadtype < 0 || redPayloadtype > 127) {
-      _engineStatisticsPtr->SetLastError(
-          VE_PLTYPE_ERROR, kTraceError,
-          "SetREDStatus() invalid RED payload type");
-      return -1;
-    }
-
-    if (SetRedPayloadType(redPayloadtype) < 0) {
-      _engineStatisticsPtr->SetLastError(
-          VE_CODEC_ERROR, kTraceError,
-          "SetSecondarySendCodec() Failed to register RED ACM");
-      return -1;
-    }
-  }
-
-  if (!codec_manager_.SetCopyRed(enable) ||
-      !codec_manager_.MakeEncoder(&rent_a_codec_, audio_coding_.get())) {
-    _engineStatisticsPtr->SetLastError(
-        VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
-        "SetREDStatus() failed to set RED state in the ACM");
-    return -1;
-  }
-  return 0;
-}
-
-int Channel::GetREDStatus(bool& enabled, int& redPayloadtype) {
-  enabled = codec_manager_.GetStackParams()->use_red;
-  if (enabled) {
-    int8_t payloadType = 0;
-    if (_rtpRtcpModule->SendREDPayloadType(&payloadType) != 0) {
-      _engineStatisticsPtr->SetLastError(
-          VE_RTP_RTCP_MODULE_ERROR, kTraceError,
-          "GetREDStatus() failed to retrieve RED PT from RTP/RTCP "
-          "module");
-      return -1;
-    }
-    redPayloadtype = payloadType;
-    return 0;
-  }
-  return 0;
-}
-
 int Channel::SetCodecFECStatus(bool enable) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::SetCodecFECStatus()");
@@ -3465,46 +3406,6 @@ void Channel::RegisterReceiveCodecsToRTPModule() {
                    codec.rate);
     }
   }
-}
-
-// Assuming this method is called with valid payload type.
-int Channel::SetRedPayloadType(int red_payload_type) {
-  CodecInst codec;
-  bool found_red = false;
-
-  // Get default RED settings from the ACM database
-  const int num_codecs = AudioCodingModule::NumberOfCodecs();
-  for (int idx = 0; idx < num_codecs; idx++) {
-    audio_coding_->Codec(idx, &codec);
-    if (!STR_CASE_CMP(codec.plname, "RED")) {
-      found_red = true;
-      break;
-    }
-  }
-
-  if (!found_red) {
-    _engineStatisticsPtr->SetLastError(
-        VE_CODEC_ERROR, kTraceError,
-        "SetRedPayloadType() RED is not supported");
-    return -1;
-  }
-
-  codec.pltype = red_payload_type;
-  if (!codec_manager_.RegisterEncoder(codec) ||
-      !codec_manager_.MakeEncoder(&rent_a_codec_, audio_coding_.get())) {
-    _engineStatisticsPtr->SetLastError(
-        VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
-        "SetRedPayloadType() RED registration in ACM module failed");
-    return -1;
-  }
-
-  if (_rtpRtcpModule->SetSendREDPayloadType(red_payload_type) != 0) {
-    _engineStatisticsPtr->SetLastError(
-        VE_RTP_RTCP_MODULE_ERROR, kTraceError,
-        "SetRedPayloadType() RED registration in RTP/RTCP module failed");
-    return -1;
-  }
-  return 0;
 }
 
 int Channel::SetSendRtpHeaderExtension(bool enable,
