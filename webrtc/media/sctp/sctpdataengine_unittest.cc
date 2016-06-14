@@ -494,13 +494,8 @@ TEST_F(SctpDataMediaChannelTest, RefusesHighNumberedChannels) {
   EXPECT_FALSE(AddStream(1023));
 }
 
-// Flaky on Linux and Windows. See webrtc:4453.
-#if defined(WEBRTC_WIN) || defined(WEBRTC_LINUX)
-#define MAYBE_ReusesAStream DISABLED_ReusesAStream
-#else
-#define MAYBE_ReusesAStream ReusesAStream
-#endif
-TEST_F(SctpDataMediaChannelTest, MAYBE_ReusesAStream) {
+// Flaky, see webrtc:4453.
+TEST_F(SctpDataMediaChannelTest, DISABLED_ReusesAStream) {
   // Shut down channel 1, then open it up again for reuse.
   SetupConnectedChannels();
   SendDataResult result;
