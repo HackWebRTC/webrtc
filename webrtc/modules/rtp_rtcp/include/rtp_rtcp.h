@@ -416,8 +416,7 @@ class RtpRtcp : public Module {
     /*
     *    Good state of RTP receiver inform sender
     */
-    virtual int32_t SendRTCPReferencePictureSelection(
-        const uint64_t pictureID) = 0;
+    virtual int32_t SendRTCPReferencePictureSelection(uint64_t pictureID) = 0;
 
     /*
     *    Send a RTCP Slice Loss Indication (SLI)

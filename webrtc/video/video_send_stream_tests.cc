@@ -2118,7 +2118,7 @@ class Vp9HeaderObserver : public test::SendTest {
     EXPECT_TRUE(vp9.spatial_layer_resolution_present);  // Y:1
     size_t expected_width = encoder_config_.streams[0].width;
     size_t expected_height = encoder_config_.streams[0].height;
-    for (int i = vp9.num_spatial_layers - 1; i >= 0; --i) {
+    for (int i = static_cast<int>(vp9.num_spatial_layers) - 1; i >= 0; --i) {
       EXPECT_EQ(expected_width, vp9.width[i]);    // WIDTH
       EXPECT_EQ(expected_height, vp9.height[i]);  // HEIGHT
       expected_width /= 2;

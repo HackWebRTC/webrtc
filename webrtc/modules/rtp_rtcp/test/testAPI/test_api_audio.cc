@@ -28,7 +28,7 @@ class VerifyingAudioReceiver : public NullRtpData {
  public:
   int32_t OnReceivedPayloadData(
       const uint8_t* payloadData,
-      const size_t payloadSize,
+      size_t payloadSize,
       const webrtc::WebRtcRTPHeader* rtpHeader) override {
     if (rtpHeader->header.payloadType == 98 ||
         rtpHeader->header.payloadType == 99) {

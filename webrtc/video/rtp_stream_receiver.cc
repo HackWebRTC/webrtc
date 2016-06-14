@@ -226,7 +226,7 @@ RtpReceiver* RtpStreamReceiver::GetRtpReceiver() const {
 
 int32_t RtpStreamReceiver::OnReceivedPayloadData(
     const uint8_t* payload_data,
-    const size_t payload_size,
+    size_t payload_size,
     const WebRtcRTPHeader* rtp_header) {
   RTC_DCHECK(video_receiver_);
   WebRtcRTPHeader rtp_header_with_ntp = *rtp_header;

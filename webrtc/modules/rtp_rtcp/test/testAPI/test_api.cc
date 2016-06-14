@@ -69,7 +69,7 @@ bool LoopBackTransport::SendRtcp(const uint8_t* data, size_t len) {
 
 int32_t TestRtpReceiver::OnReceivedPayloadData(
     const uint8_t* payload_data,
-    const size_t payload_size,
+    size_t payload_size,
     const webrtc::WebRtcRTPHeader* rtp_header) {
   EXPECT_LE(payload_size, sizeof(payload_data_));
   memcpy(payload_data_, payload_data, payload_size);

@@ -7,6 +7,7 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 import("../build/webrtc.gni")
+import("//testing/test.gni")
 
 source_set("video") {
   sources = [
@@ -78,4 +79,38 @@ source_set("video") {
     "../system_wrappers",
     "../voice_engine",
   ]
+}
+
+if (rtc_include_tests) {
+  # TODO(pbos): Rename test suite.
+  source_set("video_tests") {
+    testonly = true
+    sources = [
+      "call_stats_unittest.cc",
+      "encoder_state_feedback_unittest.cc",
+      "end_to_end_tests.cc",
+      "overuse_frame_detector_unittest.cc",
+      "payload_router_unittest.cc",
+      "report_block_stats_unittest.cc",
+      "send_delay_stats_unittest.cc",
+      "send_statistics_proxy_unittest.cc",
+      "stats_counter_unittest.cc",
+      "stream_synchronization_unittest.cc",
+      "video_capture_input_unittest.cc",
+      "video_decoder_unittest.cc",
+      "video_encoder_unittest.cc",
+      "video_send_stream_tests.cc",
+      "vie_remb_unittest.cc",
+    ]
+    deps = [
+      ":video",
+      "//testing/gmock",
+      "//testing/gtest",
+    ]
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
 }

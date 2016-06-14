@@ -47,7 +47,7 @@ class VcmPayloadSinkFactory::VcmPayloadSink : public PayloadSinkInterface,
 
   // PayloadSinkInterface
   int32_t OnReceivedPayloadData(const uint8_t* payload_data,
-                                const size_t payload_size,
+                                size_t payload_size,
                                 const WebRtcRTPHeader* rtp_header) override {
     return vcm_->IncomingPacket(payload_data, payload_size, *rtp_header);
   }

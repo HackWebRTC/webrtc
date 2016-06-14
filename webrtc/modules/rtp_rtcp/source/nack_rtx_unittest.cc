@@ -41,7 +41,7 @@ class VerifyingRtxReceiver : public NullRtpData {
 
   int32_t OnReceivedPayloadData(
       const uint8_t* data,
-      const size_t size,
+      size_t size,
       const webrtc::WebRtcRTPHeader* rtp_header) override {
     if (!sequence_numbers_.empty())
       EXPECT_EQ(kTestSsrc, rtp_header->header.ssrc);

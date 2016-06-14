@@ -187,7 +187,7 @@ void BuildOneByteExtension(std::vector<uint8_t>::iterator it,
   const size_t kExtensionDataLength = kOneByteExtensionLength - 1;
   uint32_t shifted_value = extension_value
                            << (8 * (kExtensionDataLength - value_length));
-  *it = (id << 4) + (value_length - 1);
+  *it = (id << 4) + (static_cast<uint8_t>(value_length) - 1);
   ++it;
   ByteWriter<uint32_t, kExtensionDataLength>::WriteBigEndian(&(*it),
                                                              shifted_value);

@@ -189,7 +189,7 @@ class RtpData {
   virtual ~RtpData() {}
 
   virtual int32_t OnReceivedPayloadData(const uint8_t* payloadData,
-                                        const size_t payloadSize,
+                                        size_t payloadSize,
                                         const WebRtcRTPHeader* rtpHeader) = 0;
 
   virtual bool OnRecoveredPacket(const uint8_t* packet,
@@ -351,7 +351,7 @@ class NullRtpData : public RtpData {
   virtual ~NullRtpData() {}
 
   int32_t OnReceivedPayloadData(const uint8_t* payloadData,
-                                const size_t payloadSize,
+                                size_t payloadSize,
                                 const WebRtcRTPHeader* rtpHeader) override {
     return 0;
   }

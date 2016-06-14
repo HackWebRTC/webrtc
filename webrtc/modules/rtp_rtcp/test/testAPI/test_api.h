@@ -55,7 +55,7 @@ class TestRtpReceiver : public NullRtpData {
  public:
   int32_t OnReceivedPayloadData(
       const uint8_t* payload_data,
-      const size_t payload_size,
+      size_t payload_size,
       const webrtc::WebRtcRTPHeader* rtp_header) override;
 
   const uint8_t* payload_data() const { return payload_data_; }

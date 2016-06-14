@@ -28,7 +28,7 @@ class MockRtpData : public RtpData {
  public:
   MOCK_METHOD3(OnReceivedPayloadData,
                int32_t(const uint8_t* payloadData,
-                       const size_t payloadSize,
+                       size_t payloadSize,
                        const WebRtcRTPHeader* rtpHeader));
 
   MOCK_METHOD2(OnRecoveredPacket,
@@ -168,8 +168,7 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(SendRTCP, int32_t(RTCPPacketType packetType));
   MOCK_METHOD1(SendCompoundRTCP,
                int32_t(const std::set<RTCPPacketType>& packetTypes));
-  MOCK_METHOD1(SendRTCPReferencePictureSelection,
-      int32_t(const uint64_t pictureID));
+  MOCK_METHOD1(SendRTCPReferencePictureSelection, int32_t(uint64_t pictureID));
   MOCK_METHOD1(SendRTCPSliceLossIndication,
       int32_t(const uint8_t pictureID));
   MOCK_CONST_METHOD2(DataCountersRTP,

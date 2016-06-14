@@ -85,7 +85,7 @@ class RtpStreamReceiver : public RtpData, public RtpFeedback,
 
   // Implements RtpData.
   int32_t OnReceivedPayloadData(const uint8_t* payload_data,
-                                const size_t payload_size,
+                                size_t payload_size,
                                 const WebRtcRTPHeader* rtp_header) override;
   bool OnRecoveredPacket(const uint8_t* packet, size_t packet_length) override;
 

@@ -187,6 +187,8 @@ source_set("test_support") {
     "testsupport/frame_writer.cc",
     "testsupport/frame_writer.h",
     "testsupport/iosfileutils.mm",
+    "testsupport/metrics/video_metrics.cc",
+    "testsupport/metrics/video_metrics.h",
     "testsupport/mock/mock_frame_reader.h",
     "testsupport/mock/mock_frame_writer.h",
     "testsupport/packet_reader.cc",
@@ -199,10 +201,17 @@ source_set("test_support") {
 
   deps = [
     "../base:gtest_prod",
+    "../common_video",
     "../system_wrappers",
     "//testing/gmock",
     "//testing/gtest",
   ]
+
+  if (is_clang) {
+    # Suppress warnings from the Chromium Clang plugin.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
 
   if (is_ios) {
     configs += [ "//build/config/compiler:enable_arc" ]
@@ -272,6 +281,7 @@ test("test_support_unittests") {
     "channel_transport/udp_socket_manager_unittest.cc",
     "channel_transport/udp_socket_wrapper_unittest.cc",
     "channel_transport/udp_transport_unittest.cc",
+    "common_unittest.cc",
     "fake_network_pipe_unittest.cc",
     "frame_generator_unittest.cc",
     "rtp_file_reader_unittest.cc",
@@ -280,6 +290,7 @@ test("test_support_unittests") {
     "testsupport/fileutils_unittest.cc",
     "testsupport/frame_reader_unittest.cc",
     "testsupport/frame_writer_unittest.cc",
+    "testsupport/metrics/video_metrics_unittest.cc",
     "testsupport/packet_reader_unittest.cc",
     "testsupport/perf_test_unittest.cc",
     "testsupport/unittest_utils.h",
