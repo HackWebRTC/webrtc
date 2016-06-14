@@ -62,7 +62,13 @@ TaskQueue::TaskQueue(const char* queue_name)
 TaskQueue::~TaskQueue() {
   RTC_DCHECK(!IsCurrent());
   while (!PostThreadMessage(thread_.GetThreadRef(), WM_QUIT, 0, 0)) {
-    RTC_CHECK_EQ(static_cast<DWORD>(ERROR_NOT_ENOUGH_QUOTA), ::GetLastError());
+    DWORD last_error = ::GetLastError();
+    if (last_error == ERROR_SUCCESS) {
+      // TODO(tommi): Figure out what's going on on the Win10 build bot when
+      // we get this error.
+      break;
+    }
+    RTC_CHECK_EQ(static_cast<DWORD>(ERROR_NOT_ENOUGH_QUOTA), last_error);
     Sleep(1);
   }
   thread_.Stop();
