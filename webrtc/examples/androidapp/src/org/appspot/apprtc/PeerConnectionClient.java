@@ -286,8 +286,13 @@ public class PeerConnectionClient {
     executor.execute(new Runnable() {
       @Override
       public void run() {
-        createMediaConstraintsInternal();
-        createPeerConnectionInternal(renderEGLContext);
+        try {
+          createMediaConstraintsInternal();
+          createPeerConnectionInternal(renderEGLContext);
+        } catch (Exception e) {
+          reportError("Failed to create peer connection: " + e.getMessage());
+          throw e;
+        }
       }
     });
   }
