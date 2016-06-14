@@ -26,6 +26,7 @@
         'h264/sps_vui_rewriter_unittest.cc',
         'i420_buffer_pool_unittest.cc',
         'i420_video_frame_unittest.cc',
+        'incoming_video_stream_unittest.cc',
         'libyuv/libyuv_unittest.cc',
       ],
       # Disable warnings to enable Win64 build, issue 1323.
