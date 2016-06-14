@@ -85,6 +85,7 @@ struct ConfigHelper {
           EXPECT_FALSE(channel_proxy_);
           channel_proxy_ = new testing::StrictMock<MockVoEChannelProxy>();
           EXPECT_CALL(*channel_proxy_, SetLocalSSRC(kLocalSsrc)).Times(1);
+          EXPECT_CALL(*channel_proxy_, SetNACKStatus(true, 15)).Times(1);
           EXPECT_CALL(*channel_proxy_,
               SetReceiveAbsoluteSenderTimeStatus(true, kAbsSendTimeId))
                   .Times(1);
@@ -112,6 +113,7 @@ struct ConfigHelper {
     stream_config_.voe_channel_id = kChannelId;
     stream_config_.rtp.local_ssrc = kLocalSsrc;
     stream_config_.rtp.remote_ssrc = kRemoteSsrc;
+    stream_config_.rtp.nack.rtp_history_ms = 300;
     stream_config_.rtp.extensions.push_back(
         RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeId));
     stream_config_.rtp.extensions.push_back(
@@ -234,9 +236,9 @@ TEST(AudioReceiveStreamTest, ConfigToString) {
       RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeId));
   config.voe_channel_id = kChannelId;
   EXPECT_EQ(
-      "{rtp: {remote_ssrc: 1234, local_ssrc: 5678, extensions: [{uri: "
-      "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time, id: 2}], "
-      "transport_cc: off}, "
+      "{rtp: {remote_ssrc: 1234, local_ssrc: 5678, transport_cc: off, "
+      "nack: {rtp_history_ms: 0}, extensions: [{uri: "
+      "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time, id: 2}]}, "
       "rtcp_send_transport: nullptr, "
       "voe_channel_id: 2}",
       config.ToString());

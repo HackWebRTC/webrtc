@@ -134,10 +134,8 @@ class FakeWebRtcVoiceEngine
     bool codec_fec = false;
     int max_encoding_bandwidth = 0;
     bool opus_dtx = false;
-    bool nack = false;
     int cn8_type = 13;
     int cn16_type = 105;
-    int nack_max_packets = 0;
     uint32_t send_ssrc = 0;
     int associate_send_channel = -1;
     std::vector<webrtc::CodecInst> recv_codecs;
@@ -175,12 +173,6 @@ class FakeWebRtcVoiceEngine
   }
   int GetMaxEncodingBandwidth(int channel) {
     return channels_[channel]->max_encoding_bandwidth;
-  }
-  bool GetNACK(int channel) {
-    return channels_[channel]->nack;
-  }
-  int GetNACKMaxPackets(int channel) {
-    return channels_[channel]->nack_max_packets;
   }
   int GetSendCNPayloadType(int channel, bool wideband) {
     return (wideband) ?
@@ -477,12 +469,7 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(GetRTCPStatistics, (int channel, webrtc::CallStatistics& stats));
   WEBRTC_STUB(SetREDStatus, (int channel, bool enable, int redPayloadtype));
   WEBRTC_STUB(GetREDStatus, (int channel, bool& enable, int& redPayloadtype));
-  WEBRTC_FUNC(SetNACKStatus, (int channel, bool enable, int maxNoPackets)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->nack = enable;
-    channels_[channel]->nack_max_packets = maxNoPackets;
-    return 0;
-  }
+  WEBRTC_STUB(SetNACKStatus, (int channel, bool enable, int maxNoPackets));
 
   // webrtc::VoEVolumeControl
   WEBRTC_STUB(SetSpeakerVolume, (unsigned int));

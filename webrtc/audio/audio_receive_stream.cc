@@ -50,6 +50,8 @@ std::string AudioReceiveStream::Config::Rtp::ToString() const {
   std::stringstream ss;
   ss << "{remote_ssrc: " << remote_ssrc;
   ss << ", local_ssrc: " << local_ssrc;
+  ss << ", transport_cc: " << (transport_cc ? "on" : "off");
+  ss << ", nack: " << nack.ToString();
   ss << ", extensions: [";
   for (size_t i = 0; i < extensions.size(); ++i) {
     ss << extensions[i].ToString();
@@ -58,7 +60,6 @@ std::string AudioReceiveStream::Config::Rtp::ToString() const {
     }
   }
   ss << ']';
-  ss << ", transport_cc: " << (transport_cc ? "on" : "off");
   ss << '}';
   return ss.str();
 }
@@ -93,6 +94,10 @@ AudioReceiveStream::AudioReceiveStream(
   VoiceEngineImpl* voe_impl = static_cast<VoiceEngineImpl*>(voice_engine());
   channel_proxy_ = voe_impl->GetChannelProxy(config_.voe_channel_id);
   channel_proxy_->SetLocalSSRC(config.rtp.local_ssrc);
+  // TODO(solenberg): Config NACK history window (which is a packet count),
+  // using the actual packet size for the configured codec.
+  channel_proxy_->SetNACKStatus(config_.rtp.nack.rtp_history_ms != 0,
+                                config_.rtp.nack.rtp_history_ms / 20);
 
   // TODO(ossu): This is where we'd like to set the decoder factory to
   // use. However, since it needs to be included when constructing Channel, we

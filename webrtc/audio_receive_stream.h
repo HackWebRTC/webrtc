@@ -79,6 +79,9 @@ class AudioReceiveStream {
       // for details.
       bool transport_cc = false;
 
+      // See NackConfig for description.
+      NackConfig nack;
+
       // RTP header extensions used for the received stream.
       std::vector<RtpExtension> extensions;
     } rtp;

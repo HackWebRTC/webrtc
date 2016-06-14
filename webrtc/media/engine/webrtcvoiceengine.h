@@ -244,7 +244,6 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool SetRecvCodecs(const std::vector<AudioCodec>& codecs);
   bool SetSendCodecs(const std::vector<AudioCodec>& codecs);
   bool SetSendCodecs(int channel, const webrtc::RtpParameters& rtp_parameters);
-  void SetNack(int channel, bool nack_enabled);
   bool SetSendCodec(int channel, const webrtc::CodecInst& send_codec);
   bool SetLocalSource(uint32_t ssrc, AudioSource* source);
   bool MuteStream(uint32_t ssrc, bool mute);
@@ -279,6 +278,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   rtc::Optional<int> dtmf_payload_type_;
   bool desired_playout_ = false;
   bool recv_transport_cc_enabled_ = false;
+  bool recv_nack_enabled_ = false;
   bool playout_ = false;
   bool send_ = false;
   webrtc::Call* const call_ = nullptr;

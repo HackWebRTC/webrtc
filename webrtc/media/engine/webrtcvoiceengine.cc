@@ -61,9 +61,6 @@ const int kDefaultAudioDeviceId = -1;
 const int kDefaultAudioDeviceId = 0;
 #endif
 
-// Parameter used for NACK.
-// This value is equivalent to 5 seconds of audio data at 20 ms per packet.
-const int kNackMaxPackets = 250;
 constexpr int kNackRtpHistoryMs = 5000;
 
 // Codec parameters for Opus.
@@ -1267,6 +1264,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
       uint32_t remote_ssrc,
       uint32_t local_ssrc,
       bool use_transport_cc,
+      bool use_nack,
       const std::string& sync_group,
       const std::vector<webrtc::RtpExtension>& extensions,
       webrtc::Call* call,
@@ -1281,7 +1279,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     config_.voe_channel_id = ch;
     config_.sync_group = sync_group;
     config_.decoder_factory = decoder_factory;
-    RecreateAudioReceiveStream(use_transport_cc, extensions);
+    RecreateAudioReceiveStream(use_transport_cc, use_nack, extensions);
   }
 
   ~WebRtcAudioReceiveStream() {
@@ -1292,11 +1290,16 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
   void RecreateAudioReceiveStream(
       const std::vector<webrtc::RtpExtension>& extensions) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-    RecreateAudioReceiveStream(config_.rtp.transport_cc, extensions);
+    RecreateAudioReceiveStream(config_.rtp.transport_cc,
+                               config_.rtp.nack.rtp_history_ms != 0,
+                               extensions);
   }
-  void RecreateAudioReceiveStream(bool use_transport_cc) {
+
+  void RecreateAudioReceiveStream(bool use_transport_cc, bool use_nack) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-    RecreateAudioReceiveStream(use_transport_cc, config_.rtp.extensions);
+    RecreateAudioReceiveStream(use_transport_cc,
+                               use_nack,
+                               config_.rtp.extensions);
   }
 
   webrtc::AudioReceiveStream::Stats GetStats() const {
@@ -1318,14 +1321,16 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
  private:
   void RecreateAudioReceiveStream(
       bool use_transport_cc,
+      bool use_nack,
       const std::vector<webrtc::RtpExtension>& extensions) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     if (stream_) {
       call_->DestroyAudioReceiveStream(stream_);
       stream_ = nullptr;
     }
-    config_.rtp.extensions = extensions;
     config_.rtp.transport_cc = use_transport_cc;
+    config_.rtp.nack.rtp_history_ms = use_nack ? kNackRtpHistoryMs : 0;
+    config_.rtp.extensions = extensions;
     RTC_DCHECK(!stream_);
     stream_ = call_->CreateAudioReceiveStream(config_);
     RTC_CHECK(stream_);
@@ -1730,19 +1735,17 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
     }
   }
 
-  // Set nack status on receive channels.
-  for (const auto& kv : recv_streams_) {
-    SetNack(kv.second->channel(), send_codec_spec_.nack_enabled);
-  }
-
-  // Check if the transport cc feedback has changed on the preferred send codec,
-  // and in that case reconfigure all receive streams.
-  if (recv_transport_cc_enabled_ != send_codec_spec_.transport_cc_enabled) {
+  // Check if the transport cc feedback or NACK status has changed on the
+  // preferred send codec, and in that case reconfigure all receive streams.
+  if (recv_transport_cc_enabled_ != send_codec_spec_.transport_cc_enabled ||
+      recv_nack_enabled_ != send_codec_spec_.nack_enabled) {
     LOG(LS_INFO) << "Recreate all the receive streams because the send "
                     "codec has changed.";
     recv_transport_cc_enabled_ = send_codec_spec_.transport_cc_enabled;
+    recv_nack_enabled_ = send_codec_spec_.nack_enabled;
     for (auto& kv : recv_streams_) {
-      kv.second->RecreateAudioReceiveStream(recv_transport_cc_enabled_);
+      kv.second->RecreateAudioReceiveStream(recv_transport_cc_enabled_,
+                                            recv_nack_enabled_);
     }
   }
 
@@ -1854,16 +1857,6 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
     }
   }
   return true;
-}
-
-void WebRtcVoiceMediaChannel::SetNack(int channel, bool nack_enabled) {
-  if (nack_enabled) {
-    LOG(LS_INFO) << "Enabling NACK for channel " << channel;
-    engine()->voe()->rtp()->SetNACKStatus(channel, true, kNackMaxPackets);
-  } else {
-    LOG(LS_INFO) << "Disabling NACK for channel " << channel;
-    engine()->voe()->rtp()->SetNACKStatus(channel, false, 0);
-  }
 }
 
 bool WebRtcVoiceMediaChannel::SetSendCodec(
@@ -2137,11 +2130,10 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
   recv_streams_.insert(std::make_pair(
       ssrc, new WebRtcAudioReceiveStream(channel, ssrc, receiver_reports_ssrc_,
                                          recv_transport_cc_enabled_,
+                                         recv_nack_enabled_,
                                          sp.sync_label, recv_rtp_extensions_,
                                          call_, this,
                                          engine()->decoder_factory_)));
-
-  SetNack(channel, send_codec_spec_.nack_enabled);
   SetPlayout(channel, playout_);
 
   return true;
