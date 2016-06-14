@@ -10,14 +10,13 @@
 
 package org.webrtc;
 
+import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
+
 import android.content.Context;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.view.Surface;
 import android.view.WindowManager;
-
-import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
-import org.webrtc.Logging;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -199,7 +198,7 @@ public class VideoCapturerAndroid implements
 
   // Helper function to retrieve the current camera id synchronously. Note that the camera id might
   // change at any point by switchCamera() calls.
-  int getCurrentCameraId() {
+  private int getCurrentCameraId() {
     synchronized (cameraIdLock) {
       return id;
     }
@@ -223,7 +222,7 @@ public class VideoCapturerAndroid implements
     if (cameraName == null || cameraName == "") {
       this.id = 0;
     } else {
-      this.id = getCameraIndex(cameraName);
+      this.id = CameraEnumerationAndroid.getCameraIndex(cameraName);
     }
     this.eventsHandler = eventsHandler;
     isCapturingToTexture = captureToTexture;
@@ -238,18 +237,6 @@ public class VideoCapturerAndroid implements
         throw new IllegalStateException("Wrong thread");
       }
     }
-  }
-
-  // Returns the camera index for camera with name |deviceName|, or throws IllegalArgumentException
-  // if no such camera can be found.
-  private static int getCameraIndex(String deviceName) {
-    Logging.d(TAG, "getCameraIndex: " + deviceName);
-    for (int i = 0; i < android.hardware.Camera.getNumberOfCameras(); ++i) {
-      if (deviceName.equals(CameraEnumerationAndroid.getDeviceName(i))) {
-        return i;
-      }
-    }
-    throw new IllegalArgumentException("No such camera: " + deviceName);
   }
 
   private boolean maybePostOnCameraThread(Runnable runnable) {

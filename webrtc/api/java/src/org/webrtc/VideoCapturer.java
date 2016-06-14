@@ -15,7 +15,6 @@ import android.content.Context;
 import java.util.List;
 
 // Base interface for all VideoCapturers to implement.
-// TODO(magjed): Simplify and improve this interface.
 public interface VideoCapturer {
   // Interface used for providing callbacks to an observer.
   public interface CapturerObserver {
@@ -83,7 +82,6 @@ public interface VideoCapturer {
         int width, int height, int framerate);
   }
 
-
   /**
    * Returns a list with all the formats this VideoCapturer supports.
    */
@@ -103,6 +101,10 @@ public interface VideoCapturer {
    * Stop capturing. This function should block until capture is actually stopped.
    */
   void stopCapture() throws InterruptedException;
+
+  void onOutputFormatRequest(int width, int height, int framerate);
+
+  void changeCaptureFormat(int width, int height, int framerate);
 
   /**
    * Perform any final cleanup here. No more capturing will be done after this call.

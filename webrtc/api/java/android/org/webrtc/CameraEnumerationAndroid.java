@@ -11,9 +11,10 @@
 package org.webrtc;
 
 import static java.lang.Math.abs;
-import android.graphics.ImageFormat;
 
 import org.webrtc.Logging;
+
+import android.graphics.ImageFormat;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -135,6 +136,18 @@ public class CameraEnumerationAndroid {
         (info.facing == android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT) ? "front" : "back";
     return "Camera " + index + ", Facing " + facing
         + ", Orientation " + info.orientation;
+  }
+
+  // Returns the camera index for camera with name |deviceName|, or throws IllegalArgumentException
+  // if no such camera can be found.
+  public static int getCameraIndex(String deviceName) {
+    Logging.d(TAG, "getCameraIndex: " + deviceName);
+    for (int i = 0; i < android.hardware.Camera.getNumberOfCameras(); ++i) {
+      if (deviceName.equals(CameraEnumerationAndroid.getDeviceName(i))) {
+        return i;
+      }
+    }
+    throw new IllegalArgumentException("No such camera: " + deviceName);
   }
 
   // Returns the name of the front facing camera. Returns null if the
