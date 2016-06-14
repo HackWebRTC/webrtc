@@ -72,6 +72,9 @@ class AudioProviderInterface {
       uint32_t ssrc,
       const RtpParameters& parameters) = 0;
 
+  // Called when the first audio packet is received.
+  sigslot::signal0<> SignalFirstAudioPacketReceived;
+
  protected:
   virtual ~AudioProviderInterface() {}
 };
@@ -104,6 +107,9 @@ class VideoProviderInterface {
   virtual bool SetVideoRtpReceiveParameters(
       uint32_t ssrc,
       const RtpParameters& parameters) = 0;
+
+  // Called when the first video packet is received.
+  sigslot::signal0<> SignalFirstVideoPacketReceived;
 
  protected:
   virtual ~VideoProviderInterface() {}

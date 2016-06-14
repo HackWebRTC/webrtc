@@ -35,6 +35,8 @@ AudioRtpReceiver::AudioRtpReceiver(MediaStreamInterface* stream,
   track_->GetSource()->RegisterAudioObserver(this);
   Reconfigure();
   stream->AddTrack(track_);
+  provider_->SignalFirstAudioPacketReceived.connect(
+      this, &AudioRtpReceiver::OnFirstAudioPacketReceived);
 }
 
 AudioRtpReceiver::~AudioRtpReceiver() {
@@ -83,6 +85,22 @@ void AudioRtpReceiver::Reconfigure() {
   provider_->SetAudioPlayout(ssrc_, track_->enabled());
 }
 
+void AudioRtpReceiver::SetObserver(RtpReceiverObserverInterface* observer) {
+  observer_ = observer;
+  // If received the first packet before setting the observer, call the
+  // observer.
+  if (received_first_packet_) {
+    observer_->OnFirstPacketReceived(media_type());
+  }
+}
+
+void AudioRtpReceiver::OnFirstAudioPacketReceived() {
+  if (observer_) {
+    observer_->OnFirstPacketReceived(media_type());
+  }
+  received_first_packet_ = true;
+}
+
 VideoRtpReceiver::VideoRtpReceiver(MediaStreamInterface* stream,
                                    const std::string& track_id,
                                    rtc::Thread* worker_thread,
@@ -104,6 +122,8 @@ VideoRtpReceiver::VideoRtpReceiver(MediaStreamInterface* stream,
   source_->SetState(MediaSourceInterface::kLive);
   provider_->SetVideoPlayout(ssrc_, true, &broadcaster_);
   stream->AddTrack(track_);
+  provider_->SignalFirstVideoPacketReceived.connect(
+      this, &VideoRtpReceiver::OnFirstVideoPacketReceived);
 }
 
 VideoRtpReceiver::~VideoRtpReceiver() {
@@ -130,6 +150,22 @@ void VideoRtpReceiver::Stop() {
   source_->OnSourceDestroyed();
   provider_->SetVideoPlayout(ssrc_, false, nullptr);
   provider_ = nullptr;
+}
+
+void VideoRtpReceiver::SetObserver(RtpReceiverObserverInterface* observer) {
+  observer_ = observer;
+  // If received the first packet before setting the observer, call the
+  // observer.
+  if (received_first_packet_) {
+    observer_->OnFirstPacketReceived(media_type());
+  }
+}
+
+void VideoRtpReceiver::OnFirstVideoPacketReceived() {
+  if (observer_) {
+    observer_->OnFirstPacketReceived(media_type());
+  }
+  received_first_packet_ = true;
 }
 
 }  // namespace webrtc

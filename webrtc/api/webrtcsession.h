@@ -310,6 +310,8 @@ class WebRtcSession : public AudioProviderInterface,
   void OnCertificateReady(
       const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
   void OnDtlsSetupFailure(cricket::BaseChannel*, bool rtcp);
+  // Called when the channel received the first packet.
+  void OnChannelFirstPacketReceived(cricket::BaseChannel*);
 
   // For unit test.
   bool waiting_for_certificate_for_testing() const;
@@ -526,6 +528,9 @@ class WebRtcSession : public AudioProviderInterface,
 
   // Declares the RTCP mux policy for the WebRTCSession.
   PeerConnectionInterface::RtcpMuxPolicy rtcp_mux_policy_;
+
+  bool received_first_video_packet_ = false;
+  bool received_first_audio_packet_ = false;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(WebRtcSession);
 };

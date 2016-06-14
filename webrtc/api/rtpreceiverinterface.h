@@ -20,8 +20,17 @@
 #include "webrtc/api/proxy.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/pc/mediasession.h"
 
 namespace webrtc {
+
+class RtpReceiverObserverInterface {
+ public:
+  virtual void OnFirstPacketReceived(cricket::MediaType media_type) = 0;
+
+ protected:
+  virtual ~RtpReceiverObserverInterface() {}
+};
 
 class RtpReceiverInterface : public rtc::RefCountInterface {
  public:
@@ -37,6 +46,10 @@ class RtpReceiverInterface : public rtc::RefCountInterface {
   virtual RtpParameters GetParameters() const = 0;
   virtual bool SetParameters(const RtpParameters& parameters) = 0;
 
+  virtual void SetObserver(RtpReceiverObserverInterface* observer) = 0;
+
+  virtual cricket::MediaType media_type() = 0;
+
  protected:
   virtual ~RtpReceiverInterface() {}
 };
@@ -47,6 +60,8 @@ PROXY_CONSTMETHOD0(rtc::scoped_refptr<MediaStreamTrackInterface>, track)
 PROXY_CONSTMETHOD0(std::string, id)
 PROXY_CONSTMETHOD0(RtpParameters, GetParameters);
 PROXY_METHOD1(bool, SetParameters, const RtpParameters&)
+PROXY_METHOD1(void, SetObserver, RtpReceiverObserverInterface*);
+PROXY_METHOD0(cricket::MediaType, media_type);
 END_SIGNALING_PROXY()
 
 }  // namespace webrtc

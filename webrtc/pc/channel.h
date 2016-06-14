@@ -168,6 +168,8 @@ class BaseChannel
 
   SrtpFilter* srtp_filter() { return &srtp_filter_; }
 
+  virtual cricket::MediaType media_type() = 0;
+
  protected:
   virtual MediaChannel* media_channel() const { return media_channel_; }
   // Sets the |transport_channel_| (and |rtcp_transport_channel_|, if |rtcp_| is
@@ -436,6 +438,7 @@ class VoiceChannel : public BaseChannel {
   webrtc::RtpParameters GetRtpReceiveParameters_w(uint32_t ssrc) const;
   bool SetRtpReceiveParameters_w(uint32_t ssrc,
                                  webrtc::RtpParameters parameters);
+  cricket::MediaType media_type() override { return cricket::MEDIA_TYPE_AUDIO; }
 
  private:
   // overrides from BaseChannel
@@ -520,6 +523,7 @@ class VideoChannel : public BaseChannel {
   webrtc::RtpParameters GetRtpReceiveParameters(uint32_t ssrc) const;
   bool SetRtpReceiveParameters(uint32_t ssrc,
                                const webrtc::RtpParameters& parameters);
+  cricket::MediaType media_type() override { return cricket::MEDIA_TYPE_VIDEO; }
 
  private:
   // overrides from BaseChannel
@@ -591,6 +595,7 @@ class DataChannel : public BaseChannel {
   sigslot::signal1<bool> SignalReadyToSendData;
   // Signal for notifying that the remote side has closed the DataChannel.
   sigslot::signal1<uint32_t> SignalStreamClosedRemotely;
+  cricket::MediaType media_type() override { return cricket::MEDIA_TYPE_DATA; }
 
  protected:
   // downcasts a MediaChannel.

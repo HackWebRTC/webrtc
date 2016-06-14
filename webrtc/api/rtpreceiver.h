@@ -22,6 +22,7 @@
 #include "webrtc/api/remoteaudiosource.h"
 #include "webrtc/api/videotracksource.h"
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/sigslot.h"
 #include "webrtc/media/base/videobroadcaster.h"
 
 namespace webrtc {
@@ -34,7 +35,8 @@ class RtpReceiverInternal : public RtpReceiverInterface {
 
 class AudioRtpReceiver : public ObserverInterface,
                          public AudioSourceInterface::AudioObserver,
-                         public rtc::RefCountedObject<RtpReceiverInternal> {
+                         public rtc::RefCountedObject<RtpReceiverInternal>,
+                         public sigslot::has_slots<> {
  public:
   AudioRtpReceiver(MediaStreamInterface* stream,
                    const std::string& track_id,
@@ -66,17 +68,25 @@ class AudioRtpReceiver : public ObserverInterface,
   // RtpReceiverInternal implementation.
   void Stop() override;
 
+  void SetObserver(RtpReceiverObserverInterface* observer) override;
+
+  cricket::MediaType media_type() override { return cricket::MEDIA_TYPE_AUDIO; }
+
  private:
   void Reconfigure();
+  void OnFirstAudioPacketReceived();
 
   const std::string id_;
   const uint32_t ssrc_;
   AudioProviderInterface* provider_;  // Set to null in Stop().
   const rtc::scoped_refptr<AudioTrackInterface> track_;
   bool cached_track_enabled_;
+  RtpReceiverObserverInterface* observer_ = nullptr;
+  bool received_first_packet_ = false;
 };
 
-class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
+class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal>,
+                         public sigslot::has_slots<> {
  public:
   VideoRtpReceiver(MediaStreamInterface* stream,
                    const std::string& track_id,
@@ -103,7 +113,13 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
   // RtpReceiverInternal implementation.
   void Stop() override;
 
+  void SetObserver(RtpReceiverObserverInterface* observer) override;
+
+  cricket::MediaType media_type() override { return cricket::MEDIA_TYPE_VIDEO; }
+
  private:
+  void OnFirstVideoPacketReceived();
+
   std::string id_;
   uint32_t ssrc_;
   VideoProviderInterface* provider_;
@@ -115,6 +131,8 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
   // the VideoRtpReceiver is stopped.
   rtc::scoped_refptr<VideoTrackSource> source_;
   rtc::scoped_refptr<VideoTrackInterface> track_;
+  RtpReceiverObserverInterface* observer_ = nullptr;
+  bool received_first_packet_ = false;
 };
 
 }  // namespace webrtc

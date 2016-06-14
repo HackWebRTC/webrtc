@@ -146,6 +146,25 @@ class SignalingMessageReceiver {
   virtual ~SignalingMessageReceiver() {}
 };
 
+class MockRtpReceiverObserver : public webrtc::RtpReceiverObserverInterface {
+ public:
+  MockRtpReceiverObserver(cricket::MediaType media_type)
+      : expected_media_type_(media_type) {}
+
+  void OnFirstPacketReceived(cricket::MediaType media_type) override {
+    ASSERT_EQ(expected_media_type_, media_type);
+    first_packet_received_ = true;
+  }
+
+  bool first_packet_received() { return first_packet_received_; }
+
+  virtual ~MockRtpReceiverObserver() {}
+
+ private:
+  bool first_packet_received_ = false;
+  cricket::MediaType expected_media_type_;
+};
+
 class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
                                  public SignalingMessageReceiver,
                                  public ObserverInterface {
@@ -780,6 +799,21 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     return pc()->ice_gathering_state();
   }
 
+  std::vector<std::unique_ptr<MockRtpReceiverObserver>> const&
+  rtp_receiver_observers() {
+    return rtp_receiver_observers_;
+  }
+
+  void SetRtpReceiverObservers() {
+    rtp_receiver_observers_.clear();
+    for (auto receiver : pc()->GetReceivers()) {
+      std::unique_ptr<MockRtpReceiverObserver> observer(
+          new MockRtpReceiverObserver(receiver->media_type()));
+      receiver->SetObserver(observer.get());
+      rtp_receiver_observers_.push_back(std::move(observer));
+    }
+  }
+
  private:
   class DummyDtmfObserver : public DtmfSenderObserverInterface {
    public:
@@ -870,6 +904,8 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     std::unique_ptr<SessionDescriptionInterface> desc(
         webrtc::CreateSessionDescription("offer", msg, nullptr));
     EXPECT_TRUE(DoSetRemoteDescription(desc.release()));
+    // Set the RtpReceiverObserver after receivers are created.
+    SetRtpReceiverObservers();
     std::unique_ptr<SessionDescriptionInterface> answer;
     EXPECT_TRUE(DoCreateAnswer(&answer));
     std::string sdp;
@@ -886,6 +922,8 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     std::unique_ptr<SessionDescriptionInterface> desc(
         webrtc::CreateSessionDescription("answer", msg, nullptr));
     EXPECT_TRUE(DoSetRemoteDescription(desc.release()));
+    // Set the RtpReceiverObserver after receivers are created.
+    SetRtpReceiverObservers();
   }
 
   bool DoCreateOfferAnswer(std::unique_ptr<SessionDescriptionInterface>* desc,
@@ -1026,6 +1064,8 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
 
   rtc::scoped_refptr<DataChannelInterface> data_channel_;
   std::unique_ptr<MockDataChannelObserver> data_observer_;
+
+  std::vector<std::unique_ptr<MockRtpReceiverObserver>> rtp_receiver_observers_;
 };
 
 class P2PTestConductor : public testing::Test {
@@ -1314,6 +1354,16 @@ class P2PTestConductor : public testing::Test {
     return old;
   }
 
+  bool AllObserversReceived(
+      const std::vector<std::unique_ptr<MockRtpReceiverObserver>>& observers) {
+    for (auto& observer : observers) {
+      if (!observer->first_packet_received()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
  private:
   // |ss_| is used by |network_thread_| so it must be destroyed later.
   std::unique_ptr<rtc::PhysicalSocketServer> pss_;
@@ -1331,6 +1381,33 @@ class P2PTestConductor : public testing::Test {
 // Disable for TSan v2, see
 // https://code.google.com/p/webrtc/issues/detail?id=1205 for details.
 #if !defined(THREAD_SANITIZER)
+
+TEST_F(P2PTestConductor, TestRtpReceiverObserverCallbackFunction) {
+  ASSERT_TRUE(CreateTestClients());
+  LocalP2PTest();
+  EXPECT_TRUE_WAIT(
+      AllObserversReceived(initializing_client()->rtp_receiver_observers()),
+      kMaxWaitForFramesMs);
+  EXPECT_TRUE_WAIT(
+      AllObserversReceived(receiving_client()->rtp_receiver_observers()),
+      kMaxWaitForFramesMs);
+}
+
+// The observers are expected to fire the signal even if they are set after the
+// first packet is received.
+TEST_F(P2PTestConductor, TestSetRtpReceiverObserverAfterFirstPacketIsReceived) {
+  ASSERT_TRUE(CreateTestClients());
+  LocalP2PTest();
+  // Reset the RtpReceiverObservers.
+  initializing_client()->SetRtpReceiverObservers();
+  receiving_client()->SetRtpReceiverObservers();
+  EXPECT_TRUE_WAIT(
+      AllObserversReceived(initializing_client()->rtp_receiver_observers()),
+      kMaxWaitForFramesMs);
+  EXPECT_TRUE_WAIT(
+      AllObserversReceived(receiving_client()->rtp_receiver_observers()),
+      kMaxWaitForFramesMs);
+}
 
 // This test sets up a Jsep call between two parties and test Dtmf.
 // TODO(holmer): Disabled due to sometimes crashing on buildbots.
