@@ -22,16 +22,14 @@ PlayoutDelayOracle::PlayoutDelayOracle()
       send_playout_delay_(false),
       ssrc_(0),
       min_playout_delay_ms_(-1),
-      max_playout_delay_ms_(-1) {
-  thread_checker_.DetachFromThread();
-}
+      max_playout_delay_ms_(-1) {}
+
 PlayoutDelayOracle::~PlayoutDelayOracle() {}
 
 void PlayoutDelayOracle::UpdateRequest(uint32_t ssrc,
                                        PlayoutDelay playout_delay,
                                        uint16_t seq_num) {
   rtc::CritScope lock(&crit_sect_);
-  RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_DCHECK_LE(playout_delay.min_ms, kPlayoutDelayMaxMs);
   RTC_DCHECK_LE(playout_delay.max_ms, kPlayoutDelayMaxMs);
   RTC_DCHECK_LE(playout_delay.min_ms, playout_delay.max_ms);

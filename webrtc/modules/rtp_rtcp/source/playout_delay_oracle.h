@@ -13,7 +13,6 @@
 
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/thread_checker.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -45,13 +44,13 @@ class PlayoutDelayOracle {
 
   // Returns current minimum playout delay in milliseconds.
   int min_playout_delay_ms() const {
-    RTC_DCHECK_RUN_ON(&thread_checker_);
+    rtc::CritScope lock(&crit_sect_);
     return min_playout_delay_ms_;
   }
 
   // Returns current maximum playout delay in milliseconds.
   int max_playout_delay_ms() const {
-    RTC_DCHECK_RUN_ON(&thread_checker_);
+    rtc::CritScope lock(&crit_sect_);
     return max_playout_delay_ms_;
   }
 
@@ -64,10 +63,9 @@ class PlayoutDelayOracle {
   void OnReceivedRtcpReportBlocks(const ReportBlockList& report_blocks);
 
  private:
-  // The playout delay information is updated from the encoder thread or
-  // a thread controlled by application in case of external encoder.
+  // The playout delay information is updated from the encoder thread(s).
   // The sequence number feedback is updated from the worker thread.
-  // Guards access to data across the two threads.
+  // Guards access to data across multiple threads.
   rtc::CriticalSection crit_sect_;
   // The current highest sequence number on which playout delay has been sent.
   int64_t high_sequence_number_ GUARDED_BY(crit_sect_);
@@ -75,15 +73,12 @@ class PlayoutDelayOracle {
   bool send_playout_delay_ GUARDED_BY(crit_sect_);
   // Sender ssrc.
   uint32_t ssrc_ GUARDED_BY(crit_sect_);
-
-  // Data in this section is accessed on the sending/encoder thread alone.
-  rtc::ThreadChecker thread_checker_;
   // Sequence number unwrapper.
-  SequenceNumberUnwrapper unwrapper_ GUARDED_BY(thread_checker_);
+  SequenceNumberUnwrapper unwrapper_ GUARDED_BY(crit_sect_);
   // Min playout delay value on the next frame if |send_playout_delay_| is set.
-  int min_playout_delay_ms_ GUARDED_BY(thread_checker_);
+  int min_playout_delay_ms_ GUARDED_BY(crit_sect_);
   // Max playout delay value on the next frame if |send_playout_delay_| is set.
-  int max_playout_delay_ms_ GUARDED_BY(thread_checker_);
+  int max_playout_delay_ms_ GUARDED_BY(crit_sect_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(PlayoutDelayOracle);
 };
