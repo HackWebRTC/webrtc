@@ -62,7 +62,7 @@ TaskQueue::TaskQueue(const char* queue_name)
 TaskQueue::~TaskQueue() {
   RTC_DCHECK(!IsCurrent());
   while (!PostThreadMessage(thread_.GetThreadRef(), WM_QUIT, 0, 0)) {
-    RTC_CHECK(ERROR_NOT_ENOUGH_QUOTA == ::GetLastError());
+    RTC_CHECK_EQ(static_cast<DWORD>(ERROR_NOT_ENOUGH_QUOTA), ::GetLastError());
     Sleep(1);
   }
   thread_.Stop();
