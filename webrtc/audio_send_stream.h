@@ -85,7 +85,6 @@ class AudioSendStream {
     // TODO(solenberg): Implement, once we configure codecs through the new API.
     // std::unique_ptr<AudioEncoder> encoder;
     int cng_payload_type = -1;  // pt, or -1 to disable Comfort Noise Generator.
-    int red_payload_type = -1;  // pt, or -1 to disable REDundant coding.
   };
 
   // Starts stream activity.

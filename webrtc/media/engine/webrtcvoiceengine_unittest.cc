@@ -38,7 +38,6 @@ const cricket::AudioCodec kIsacCodec(103, "ISAC", 16000, 32000, 1);
 const cricket::AudioCodec kOpusCodec(111, "opus", 48000, 64000, 2);
 const cricket::AudioCodec kG722CodecVoE(9, "G722", 16000, 64000, 1);
 const cricket::AudioCodec kG722CodecSdp(9, "G722", 8000, 64000, 1);
-const cricket::AudioCodec kRedCodec(117, "red", 8000, 0, 1);
 const cricket::AudioCodec kCn8000Codec(13, "CN", 8000, 0, 1);
 const cricket::AudioCodec kCn16000Codec(105, "CN", 16000, 0, 1);
 const cricket::AudioCodec kTelephoneEventCodec(106,
@@ -1045,7 +1044,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecs) {
   cricket::AudioSendParameters parameters;
   parameters.codecs.push_back(kIsacCodec);
   parameters.codecs.push_back(kPcmuCodec);
-  parameters.codecs.push_back(kRedCodec);
+  parameters.codecs.push_back(kCn8000Codec);
   parameters.codecs[0].id = 96;
   parameters.codecs[0].bitrate = 48000;
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
@@ -1057,7 +1056,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecs) {
   EXPECT_EQ(48000, gcodec.rate);
   EXPECT_STREQ("ISAC", gcodec.plname);
   EXPECT_FALSE(voe_.GetVAD(channel_num));
-  EXPECT_FALSE(voe_.GetRED(channel_num));
   EXPECT_EQ(13, voe_.GetSendCNPayloadType(channel_num, false));
   EXPECT_EQ(105, voe_.GetSendCNPayloadType(channel_num, true));
   EXPECT_FALSE(channel_->CanInsertDtmf());
@@ -1070,7 +1068,7 @@ TEST_F(WebRtcVoiceEngineTestFake, DontResetSetSendCodec) {
   cricket::AudioSendParameters parameters;
   parameters.codecs.push_back(kIsacCodec);
   parameters.codecs.push_back(kPcmuCodec);
-  parameters.codecs.push_back(kRedCodec);
+  parameters.codecs.push_back(kCn8000Codec);
   parameters.codecs[0].id = 96;
   parameters.codecs[0].bitrate = 48000;
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
@@ -1979,7 +1977,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNandDTMFAsCaller) {
   parameters.codecs.push_back(kCn16000Codec);
   parameters.codecs.push_back(kCn8000Codec);
   parameters.codecs.push_back(kTelephoneEventCodec);
-  parameters.codecs.push_back(kRedCodec);
   parameters.codecs[0].id = 96;
   parameters.codecs[2].id = 97;  // wideband CN
   parameters.codecs[4].id = 98;  // DTMF
@@ -1989,7 +1986,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNandDTMFAsCaller) {
   EXPECT_EQ(96, gcodec.pltype);
   EXPECT_STREQ("ISAC", gcodec.plname);
   EXPECT_TRUE(voe_.GetVAD(channel_num));
-  EXPECT_FALSE(voe_.GetRED(channel_num));
   EXPECT_EQ(13, voe_.GetSendCNPayloadType(channel_num, false));
   EXPECT_EQ(97, voe_.GetSendCNPayloadType(channel_num, true));
   EXPECT_TRUE(channel_->CanInsertDtmf());
@@ -2005,7 +2001,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNandDTMFAsCallee) {
   parameters.codecs.push_back(kCn16000Codec);
   parameters.codecs.push_back(kCn8000Codec);
   parameters.codecs.push_back(kTelephoneEventCodec);
-  parameters.codecs.push_back(kRedCodec);
   parameters.codecs[0].id = 96;
   parameters.codecs[2].id = 97;  // wideband CN
   parameters.codecs[4].id = 98;  // DTMF
@@ -2019,7 +2014,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNandDTMFAsCallee) {
   EXPECT_EQ(96, gcodec.pltype);
   EXPECT_STREQ("ISAC", gcodec.plname);
   EXPECT_TRUE(voe_.GetVAD(channel_num));
-  EXPECT_FALSE(voe_.GetRED(channel_num));
   EXPECT_EQ(13, voe_.GetSendCNPayloadType(channel_num, false));
   EXPECT_EQ(97, voe_.GetSendCNPayloadType(channel_num, true));
   EXPECT_TRUE(channel_->CanInsertDtmf());
@@ -2072,7 +2066,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCaseInsensitive) {
   parameters.codecs.push_back(kCn16000Codec);
   parameters.codecs.push_back(kCn8000Codec);
   parameters.codecs.push_back(kTelephoneEventCodec);
-  parameters.codecs.push_back(kRedCodec);
   parameters.codecs[0].name = "iSaC";
   parameters.codecs[0].id = 96;
   parameters.codecs[2].id = 97;  // wideband CN
@@ -2083,166 +2076,9 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCaseInsensitive) {
   EXPECT_EQ(96, gcodec.pltype);
   EXPECT_STREQ("ISAC", gcodec.plname);
   EXPECT_TRUE(voe_.GetVAD(channel_num));
-  EXPECT_FALSE(voe_.GetRED(channel_num));
   EXPECT_EQ(13, voe_.GetSendCNPayloadType(channel_num, false));
   EXPECT_EQ(97, voe_.GetSendCNPayloadType(channel_num, true));
   EXPECT_TRUE(channel_->CanInsertDtmf());
-}
-
-// Test that we set up RED correctly as caller.
-TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsREDAsCaller) {
-  EXPECT_TRUE(SetupSendStream());
-  int channel_num = voe_.GetLastChannel();
-  cricket::AudioSendParameters parameters;
-  parameters.codecs.push_back(kRedCodec);
-  parameters.codecs.push_back(kIsacCodec);
-  parameters.codecs.push_back(kPcmuCodec);
-  parameters.codecs[0].id = 127;
-  parameters.codecs[0].params[""] = "96/96";
-  parameters.codecs[1].id = 96;
-  EXPECT_TRUE(channel_->SetSendParameters(parameters));
-  webrtc::CodecInst gcodec;
-  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
-  EXPECT_EQ(96, gcodec.pltype);
-  EXPECT_STREQ("ISAC", gcodec.plname);
-  EXPECT_TRUE(voe_.GetRED(channel_num));
-  EXPECT_EQ(127, voe_.GetSendREDPayloadType(channel_num));
-}
-
-// Test that we set up RED correctly as callee.
-TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsREDAsCallee) {
-  EXPECT_TRUE(SetupChannel());
-  cricket::AudioSendParameters parameters;
-  parameters.codecs.push_back(kRedCodec);
-  parameters.codecs.push_back(kIsacCodec);
-  parameters.codecs.push_back(kPcmuCodec);
-  parameters.codecs[0].id = 127;
-  parameters.codecs[0].params[""] = "96/96";
-  parameters.codecs[1].id = 96;
-  EXPECT_TRUE(channel_->SetSendParameters(parameters));
-  EXPECT_TRUE(channel_->AddSendStream(
-      cricket::StreamParams::CreateLegacy(kSsrc1)));
-  int channel_num = voe_.GetLastChannel();
-  webrtc::CodecInst gcodec;
-  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
-  EXPECT_EQ(96, gcodec.pltype);
-  EXPECT_STREQ("ISAC", gcodec.plname);
-  EXPECT_TRUE(voe_.GetRED(channel_num));
-  EXPECT_EQ(127, voe_.GetSendREDPayloadType(channel_num));
-}
-
-// Test that we set up RED correctly if params are omitted.
-TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsREDNoParams) {
-  EXPECT_TRUE(SetupSendStream());
-  int channel_num = voe_.GetLastChannel();
-  cricket::AudioSendParameters parameters;
-  parameters.codecs.push_back(kRedCodec);
-  parameters.codecs.push_back(kIsacCodec);
-  parameters.codecs.push_back(kPcmuCodec);
-  parameters.codecs[0].id = 127;
-  parameters.codecs[1].id = 96;
-  EXPECT_TRUE(channel_->SetSendParameters(parameters));
-  webrtc::CodecInst gcodec;
-  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
-  EXPECT_EQ(96, gcodec.pltype);
-  EXPECT_STREQ("ISAC", gcodec.plname);
-  EXPECT_TRUE(voe_.GetRED(channel_num));
-  EXPECT_EQ(127, voe_.GetSendREDPayloadType(channel_num));
-}
-
-// Test that we ignore RED if the parameters aren't named the way we expect.
-TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsBadRED1) {
-  EXPECT_TRUE(SetupSendStream());
-  int channel_num = voe_.GetLastChannel();
-  cricket::AudioSendParameters parameters;
-  parameters.codecs.push_back(kRedCodec);
-  parameters.codecs.push_back(kIsacCodec);
-  parameters.codecs.push_back(kPcmuCodec);
-  parameters.codecs[0].id = 127;
-  parameters.codecs[0].params["ABC"] = "96/96";
-  parameters.codecs[1].id = 96;
-  EXPECT_TRUE(channel_->SetSendParameters(parameters));
-  webrtc::CodecInst gcodec;
-  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
-  EXPECT_EQ(96, gcodec.pltype);
-  EXPECT_STREQ("ISAC", gcodec.plname);
-  EXPECT_FALSE(voe_.GetRED(channel_num));
-}
-
-// Test that we ignore RED if it uses different primary/secondary encoding.
-TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsBadRED2) {
-  EXPECT_TRUE(SetupSendStream());
-  int channel_num = voe_.GetLastChannel();
-  cricket::AudioSendParameters parameters;
-  parameters.codecs.push_back(kRedCodec);
-  parameters.codecs.push_back(kIsacCodec);
-  parameters.codecs.push_back(kPcmuCodec);
-  parameters.codecs[0].id = 127;
-  parameters.codecs[0].params[""] = "96/0";
-  parameters.codecs[1].id = 96;
-  EXPECT_TRUE(channel_->SetSendParameters(parameters));
-  webrtc::CodecInst gcodec;
-  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
-  EXPECT_EQ(96, gcodec.pltype);
-  EXPECT_STREQ("ISAC", gcodec.plname);
-  EXPECT_FALSE(voe_.GetRED(channel_num));
-}
-
-// Test that we ignore RED if it uses more than 2 encodings.
-TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsBadRED3) {
-  EXPECT_TRUE(SetupSendStream());
-  int channel_num = voe_.GetLastChannel();
-  cricket::AudioSendParameters parameters;
-  parameters.codecs.push_back(kRedCodec);
-  parameters.codecs.push_back(kIsacCodec);
-  parameters.codecs.push_back(kPcmuCodec);
-  parameters.codecs[0].id = 127;
-  parameters.codecs[0].params[""] = "96/96/96";
-  parameters.codecs[1].id = 96;
-  EXPECT_TRUE(channel_->SetSendParameters(parameters));
-  webrtc::CodecInst gcodec;
-  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
-  EXPECT_EQ(96, gcodec.pltype);
-  EXPECT_STREQ("ISAC", gcodec.plname);
-  EXPECT_FALSE(voe_.GetRED(channel_num));
-}
-
-// Test that we ignore RED if it has bogus codec ids.
-TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsBadRED4) {
-  EXPECT_TRUE(SetupSendStream());
-  int channel_num = voe_.GetLastChannel();
-  cricket::AudioSendParameters parameters;
-  parameters.codecs.push_back(kRedCodec);
-  parameters.codecs.push_back(kIsacCodec);
-  parameters.codecs.push_back(kPcmuCodec);
-  parameters.codecs[0].id = 127;
-  parameters.codecs[0].params[""] = "ABC/ABC";
-  parameters.codecs[1].id = 96;
-  EXPECT_TRUE(channel_->SetSendParameters(parameters));
-  webrtc::CodecInst gcodec;
-  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
-  EXPECT_EQ(96, gcodec.pltype);
-  EXPECT_STREQ("ISAC", gcodec.plname);
-  EXPECT_FALSE(voe_.GetRED(channel_num));
-}
-
-// Test that we ignore RED if it refers to a codec that is not present.
-TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsBadRED5) {
-  EXPECT_TRUE(SetupSendStream());
-  int channel_num = voe_.GetLastChannel();
-  cricket::AudioSendParameters parameters;
-  parameters.codecs.push_back(kRedCodec);
-  parameters.codecs.push_back(kIsacCodec);
-  parameters.codecs.push_back(kPcmuCodec);
-  parameters.codecs[0].id = 127;
-  parameters.codecs[0].params[""] = "97/97";
-  parameters.codecs[1].id = 96;
-  EXPECT_TRUE(channel_->SetSendParameters(parameters));
-  webrtc::CodecInst gcodec;
-  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
-  EXPECT_EQ(96, gcodec.pltype);
-  EXPECT_STREQ("ISAC", gcodec.plname);
-  EXPECT_FALSE(voe_.GetRED(channel_num));
 }
 
 class WebRtcVoiceEngineWithSendSideBweTest : public WebRtcVoiceEngineTestFake {
@@ -3603,8 +3439,6 @@ TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
       cricket::AudioCodec(96, "G722", 8000, 0, 1), nullptr));
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
-      cricket::AudioCodec(96, "red", 8000, 0, 1), nullptr));
-  EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
       cricket::AudioCodec(96, "CN", 32000, 0, 1), nullptr));
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
       cricket::AudioCodec(96, "CN", 16000, 0, 1), nullptr));
@@ -3653,8 +3487,6 @@ TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
       EXPECT_EQ(9, it->id);
     } else if (it->name == "telephone-event") {
       EXPECT_EQ(126, it->id);
-    } else if (it->name == "red") {
-      EXPECT_EQ(127, it->id);
     } else if (it->name == "opus") {
       EXPECT_EQ(111, it->id);
       ASSERT_TRUE(it->params.find("minptime") != it->params.end());

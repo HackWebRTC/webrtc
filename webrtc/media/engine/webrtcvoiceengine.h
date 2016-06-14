@@ -295,7 +295,6 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
     bool enable_codec_fec = false;
     bool enable_opus_dtx = false;
     int opus_max_playback_rate = 0;
-    int red_payload_type = -1;
     int cng_payload_type = -1;
     int cng_plfreq = -1;
     webrtc::CodecInst codec_inst;

@@ -175,12 +175,10 @@ TEST(AudioSendStreamTest, ConfigToString) {
   config.rtp.c_name = kCName;
   config.voe_channel_id = kChannelId;
   config.cng_payload_type = 42;
-  config.red_payload_type = 17;
   EXPECT_EQ(
       "{rtp: {ssrc: 1234, extensions: [{uri: "
       "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time, id: 3}], "
-      "c_name: foo_name}, voe_channel_id: 1, cng_payload_type: 42, "
-      "red_payload_type: 17}",
+      "c_name: foo_name}, voe_channel_id: 1, cng_payload_type: 42}",
       config.ToString());
 }
 

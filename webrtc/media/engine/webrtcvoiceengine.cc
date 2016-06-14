@@ -384,13 +384,10 @@ class WebRtcVoiceCodecs final {
 
   static const AudioCodec* GetPreferredCodec(
       const std::vector<AudioCodec>& codecs,
-      webrtc::CodecInst* out,
-      int* red_payload_type) {
+      webrtc::CodecInst* out) {
     RTC_DCHECK(out);
-    RTC_DCHECK(red_payload_type);
     // Select the preferred send codec (the first non-telephone-event/CN codec).
     for (const AudioCodec& codec : codecs) {
-      *red_payload_type = -1;
       if (IsCodec(codec, kDtmfCodecName) || IsCodec(codec, kCnCodecName)) {
         // Skip telephone-event/CN codec, which will be handled later.
         continue;
@@ -398,27 +395,15 @@ class WebRtcVoiceCodecs final {
 
       // We'll use the first codec in the list to actually send audio data.
       // Be sure to use the payload type requested by the remote side.
-      // "red", for RED audio, is a special case where the actual codec to be
-      // used is specified in params.
-      const AudioCodec* found_codec = &codec;
-      if (IsCodec(*found_codec, kRedCodecName)) {
-        // Parse out the RED parameters. If we fail, just ignore RED;
-        // we don't support all possible params/usage scenarios.
-        *red_payload_type = codec.id;
-        found_codec = GetRedSendCodec(*found_codec, codecs);
-        if (!found_codec) {
-          continue;
-        }
-      }
       // Ignore codecs we don't know about. The negotiation step should prevent
       // this, but double-check to be sure.
       webrtc::CodecInst voe_codec = {0};
-      if (!ToCodecInst(*found_codec, &voe_codec)) {
-        LOG(LS_WARNING) << "Unknown codec " << ToString(*found_codec);
+      if (!ToCodecInst(codec, &voe_codec)) {
+        LOG(LS_WARNING) << "Unknown codec " << ToString(codec);
         continue;
       }
       *out = voe_codec;
-      return found_codec;
+      return &codec;
     }
     return nullptr;
   }
@@ -435,7 +420,7 @@ class WebRtcVoiceCodecs final {
     int max_bitrate_bps;
   };
   // Note: keep the supported packet sizes in ascending order.
-  static const CodecPref kCodecPrefs[12];
+  static const CodecPref kCodecPrefs[11];
 
   static int SelectPacketSize(const CodecPref& codec_pref, int ptime_ms) {
     int selected_packet_size_ms = codec_pref.packet_sizes_ms[0];
@@ -458,47 +443,9 @@ class WebRtcVoiceCodecs final {
       voe_codec->plfreq = new_plfreq;
     }
   }
-
-  static const AudioCodec* GetRedSendCodec(
-      const AudioCodec& red_codec,
-      const std::vector<AudioCodec>& all_codecs) {
-    // Get the RED encodings from the parameter with no name. This may
-    // change based on what is discussed on the Jingle list.
-    // The encoding parameter is of the form "a/b"; we only support where
-    // a == b. Verify this and parse out the value into red_pt.
-    // If the parameter value is absent (as it will be until we wire up the
-    // signaling of this message), use the second codec specified (i.e. the
-    // one after "red") as the encoding parameter.
-    int red_pt = -1;
-    std::string red_params;
-    CodecParameterMap::const_iterator it = red_codec.params.find("");
-    if (it != red_codec.params.end()) {
-      red_params = it->second;
-      std::vector<std::string> red_pts;
-      if (rtc::split(red_params, '/', &red_pts) != 2 ||
-          red_pts[0] != red_pts[1] || !rtc::FromString(red_pts[0], &red_pt)) {
-        LOG(LS_WARNING) << "RED params " << red_params << " not supported.";
-        return nullptr;
-      }
-    } else if (red_codec.params.empty()) {
-      LOG(LS_WARNING) << "RED params not present, using defaults";
-      if (all_codecs.size() > 1) {
-        red_pt = all_codecs[1].id;
-      }
-    }
-
-    // Try to find red_pt in |codecs|.
-    for (const AudioCodec& codec : all_codecs) {
-      if (codec.id == red_pt) {
-        return &codec;
-      }
-    }
-    LOG(LS_WARNING) << "RED params " << red_params << " are invalid.";
-    return nullptr;
-  }
 };
 
-const WebRtcVoiceCodecs::CodecPref WebRtcVoiceCodecs::kCodecPrefs[12] = {
+const WebRtcVoiceCodecs::CodecPref WebRtcVoiceCodecs::kCodecPrefs[11] = {
     {kOpusCodecName, 48000, 2, 111, true, {10, 20, 40, 60}, kOpusMaxBitrate},
     {kIsacCodecName, 16000, 1, 103, true, {30, 60}, kIsacMaxBitrate},
     {kIsacCodecName, 32000, 1, 104, true, {30}, kIsacMaxBitrate},
@@ -510,8 +457,7 @@ const WebRtcVoiceCodecs::CodecPref WebRtcVoiceCodecs::kCodecPrefs[12] = {
     {kCnCodecName, 32000, 1, 106, false, {}},
     {kCnCodecName, 16000, 1, 105, false, {}},
     {kCnCodecName, 8000, 1, 13, false, {}},
-    {kRedCodecName, 8000, 1, 127, false, {}},
-    {kDtmfCodecName, 8000, 1, 126, false, {}},
+    {kDtmfCodecName, 8000, 1, 126, false, {}}
 };
 } // namespace {
 
@@ -1670,46 +1616,41 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
   }
 
   // Scan through the list to figure out the codec to use for sending, along
-  // with the proper configuration for VAD, CNG, RED, NACK and Opus-specific
+  // with the proper configuration for VAD, CNG, NACK and Opus-specific
   // parameters.
+  // TODO(solenberg): Refactor this logic once we create AudioEncoders here.
   {
     SendCodecSpec send_codec_spec;
     send_codec_spec.nack_enabled = send_codec_spec_.nack_enabled;
 
     // Find send codec (the first non-telephone-event/CN codec).
     const AudioCodec* codec = WebRtcVoiceCodecs::GetPreferredCodec(
-        codecs, &send_codec_spec.codec_inst, &send_codec_spec.red_payload_type);
+        codecs, &send_codec_spec.codec_inst);
     if (!codec) {
       LOG(LS_WARNING) << "Received empty list of codecs.";
       return false;
     }
 
     send_codec_spec.transport_cc_enabled = HasTransportCc(*codec);
+    send_codec_spec.nack_enabled = HasNack(*codec);
 
-    // This condition is apparently here because Opus does not support RED and
-    // FEC simultaneously. However, DTX and max playback rate shouldn't have
-    // such limitations.
-    // TODO(solenberg): Refactor this logic once we create AudioEncoders here.
-    if (send_codec_spec.red_payload_type == -1) {
-      send_codec_spec.nack_enabled = HasNack(*codec);
-      // For Opus as the send codec, we are to determine inband FEC, maximum
-      // playback rate, and opus internal dtx.
-      if (IsCodec(*codec, kOpusCodecName)) {
-        GetOpusConfig(*codec, &send_codec_spec.codec_inst,
-                      &send_codec_spec.enable_codec_fec,
-                      &send_codec_spec.opus_max_playback_rate,
-                      &send_codec_spec.enable_opus_dtx);
-      }
+    // For Opus as the send codec, we are to determine inband FEC, maximum
+    // playback rate, and opus internal dtx.
+    if (IsCodec(*codec, kOpusCodecName)) {
+      GetOpusConfig(*codec, &send_codec_spec.codec_inst,
+                    &send_codec_spec.enable_codec_fec,
+                    &send_codec_spec.opus_max_playback_rate,
+                    &send_codec_spec.enable_opus_dtx);
+    }
 
-      // Set packet size if the AudioCodec param kCodecParamPTime is set.
-      int ptime_ms = 0;
-      if (codec->GetParam(kCodecParamPTime, &ptime_ms)) {
-        if (!WebRtcVoiceCodecs::SetPTimeAsPacketSize(
-            &send_codec_spec.codec_inst, ptime_ms)) {
-          LOG(LS_WARNING) << "Failed to set packet size for codec "
-                          << send_codec_spec.codec_inst.plname;
-          return false;
-        }
+    // Set packet size if the AudioCodec param kCodecParamPTime is set.
+    int ptime_ms = 0;
+    if (codec->GetParam(kCodecParamPTime, &ptime_ms)) {
+      if (!WebRtcVoiceCodecs::SetPTimeAsPacketSize(
+          &send_codec_spec.codec_inst, ptime_ms)) {
+        LOG(LS_WARNING) << "Failed to set packet size for codec "
+                        << send_codec_spec.codec_inst.plname;
+        return false;
       }
     }
 
@@ -1781,23 +1722,10 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
 bool WebRtcVoiceMediaChannel::SetSendCodecs(
     int channel,
     const webrtc::RtpParameters& rtp_parameters) {
-  // Disable VAD, FEC, and RED unless we know the other side wants them.
+  // Disable VAD, NACK and FEC unless we know the other side wants them.
   engine()->voe()->codec()->SetVADStatus(channel, false);
   engine()->voe()->rtp()->SetNACKStatus(channel, false, 0);
-  engine()->voe()->rtp()->SetREDStatus(channel, false);
   engine()->voe()->codec()->SetFECStatus(channel, false);
-
-  if (send_codec_spec_.red_payload_type != -1) {
-    // Enable redundant encoding of the specified codec. Treat any
-    // failure as a fatal internal error.
-    LOG(LS_INFO) << "Enabling RED on channel " << channel;
-    if (engine()->voe()->rtp()->SetREDStatus(channel, true,
-        send_codec_spec_.red_payload_type) == -1) {
-      LOG_RTCERR3(SetREDStatus, channel, true,
-                  send_codec_spec_.red_payload_type);
-      return false;
-    }
-  }
 
   SetNack(channel, send_codec_spec_.nack_enabled);
 

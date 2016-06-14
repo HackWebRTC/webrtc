@@ -50,7 +50,6 @@ std::string AudioSendStream::Config::ToString() const {
   ss << ", voe_channel_id: " << voe_channel_id;
   // TODO(solenberg): Encoder config.
   ss << ", cng_payload_type: " << cng_payload_type;
-  ss << ", red_payload_type: " << red_payload_type;
   ss << '}';
   return ss.str();
 }

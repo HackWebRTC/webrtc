@@ -134,11 +134,9 @@ class FakeWebRtcVoiceEngine
     bool codec_fec = false;
     int max_encoding_bandwidth = 0;
     bool opus_dtx = false;
-    bool red = false;
     bool nack = false;
     int cn8_type = 13;
     int cn16_type = 105;
-    int red_type = 117;
     int nack_max_packets = 0;
     uint32_t send_ssrc = 0;
     int associate_send_channel = -1;
@@ -172,9 +170,6 @@ class FakeWebRtcVoiceEngine
   bool GetOpusDtx(int channel) {
     return channels_[channel]->opus_dtx;
   }
-  bool GetRED(int channel) {
-    return channels_[channel]->red;
-  }
   bool GetCodecFEC(int channel) {
     return channels_[channel]->codec_fec;
   }
@@ -191,9 +186,6 @@ class FakeWebRtcVoiceEngine
     return (wideband) ?
         channels_[channel]->cn16_type :
         channels_[channel]->cn8_type;
-  }
-  int GetSendREDPayloadType(int channel) {
-    return channels_[channel]->red_type;
   }
   void set_playout_fail_channel(int channel) {
     playout_fail_channel_ = channel;
@@ -304,7 +296,7 @@ class FakeWebRtcVoiceEngine
     if (_stricmp(codec.plname, "telephone-event") == 0 ||
         _stricmp(codec.plname, "audio/telephone-event") == 0 ||
         _stricmp(codec.plname, "CN") == 0 ||
-        _stricmp(codec.plname, "red") == 0 ) {
+        _stricmp(codec.plname, "red") == 0) {
       return -1;
     }
     channels_[channel]->send_codec = codec;
@@ -483,18 +475,8 @@ class FakeWebRtcVoiceEngine
                                  unsigned int& maxJitterMs,
                                  unsigned int& discardedPackets));
   WEBRTC_STUB(GetRTCPStatistics, (int channel, webrtc::CallStatistics& stats));
-  WEBRTC_FUNC(SetREDStatus, (int channel, bool enable, int redPayloadtype)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->red = enable;
-    channels_[channel]->red_type = redPayloadtype;
-    return 0;
-  }
-  WEBRTC_FUNC(GetREDStatus, (int channel, bool& enable, int& redPayloadtype)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    enable = channels_[channel]->red;
-    redPayloadtype = channels_[channel]->red_type;
-    return 0;
-  }
+  WEBRTC_STUB(SetREDStatus, (int channel, bool enable, int redPayloadtype));
+  WEBRTC_STUB(GetREDStatus, (int channel, bool& enable, int& redPayloadtype));
   WEBRTC_FUNC(SetNACKStatus, (int channel, bool enable, int maxNoPackets)) {
     WEBRTC_CHECK_CHANNEL(channel);
     channels_[channel]->nack = enable;
