@@ -633,6 +633,20 @@ int VP8EncoderImpl::SetCpuSpeed(int width, int height) {
 }
 
 int VP8EncoderImpl::NumberOfThreads(int width, int height, int cpus) {
+#if defined(ANDROID)
+  if (width * height >= 320 * 180) {
+    if (cpus >= 4) {
+      // 3 threads for CPUs with 4 and more cores since most of times only 4
+      // cores will be active.
+      return 3;
+    } else if (cpus == 3 || cpus == 2) {
+      return 2;
+    } else {
+      return 1;
+    }
+  }
+  return 1;
+#else
   if (width * height >= 1920 * 1080 && cpus > 8) {
     return 8;  // 8 threads for 1080p on high perf machines.
   } else if (width * height > 1280 * 960 && cpus >= 6) {
@@ -645,6 +659,7 @@ int VP8EncoderImpl::NumberOfThreads(int width, int height, int cpus) {
     // 1 thread for VGA or less.
     return 1;
   }
+#endif
 }
 
 int VP8EncoderImpl::InitAndSetControlSettings() {
