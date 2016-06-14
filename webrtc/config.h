@@ -25,6 +25,7 @@ namespace webrtc {
 // Settings for NACK, see RFC 4585 for details.
 struct NackConfig {
   NackConfig() : rtp_history_ms(0) {}
+  std::string ToString() const;
   // Send side: the time RTP packets are stored for retransmissions.
   // Receive side: the time the receiver is prepared to wait for
   // retransmissions.

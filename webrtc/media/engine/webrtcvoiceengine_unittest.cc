@@ -50,6 +50,8 @@ const uint32_t kSsrc2 = 2;
 const uint32_t kSsrc3 = 3;
 const uint32_t kSsrcs4[] = { 1, 2, 3, 4 };
 
+constexpr int kRtpHistoryMs = 5000;
+
 class FakeVoEWrapper : public cricket::VoEWrapper {
  public:
   explicit FakeVoEWrapper(cricket::FakeWebRtcVoiceEngine* engine)
@@ -1358,15 +1360,14 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecOpusMaxAverageBitrate) {
 // Test that we can enable NACK with opus as caller.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecEnableNackAsCaller) {
   EXPECT_TRUE(SetupSendStream());
-  int channel_num = voe_.GetLastChannel();
   cricket::AudioSendParameters parameters;
   parameters.codecs.push_back(kOpusCodec);
   parameters.codecs[0].AddFeedbackParam(
       cricket::FeedbackParam(cricket::kRtcpFbParamNack,
                              cricket::kParamValueEmpty));
-  EXPECT_FALSE(voe_.GetNACK(channel_num));
+  EXPECT_EQ(0, GetSendStreamConfig(kSsrc1).rtp.nack.rtp_history_ms);
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
-  EXPECT_TRUE(voe_.GetNACK(channel_num));
+  EXPECT_EQ(kRtpHistoryMs, GetSendStreamConfig(kSsrc1).rtp.nack.rtp_history_ms);
 }
 
 // Test that we can enable NACK with opus as callee.
@@ -1385,13 +1386,12 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecEnableNackAsCallee) {
 
   EXPECT_TRUE(channel_->AddSendStream(
       cricket::StreamParams::CreateLegacy(kSsrc1)));
-  EXPECT_TRUE(voe_.GetNACK(voe_.GetLastChannel()));
+  EXPECT_EQ(kRtpHistoryMs, GetSendStreamConfig(kSsrc1).rtp.nack.rtp_history_ms);
 }
 
 // Test that we can enable NACK on receive streams.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecEnableNackRecvStreams) {
   EXPECT_TRUE(SetupSendStream());
-  int channel_num1 = voe_.GetLastChannel();
   EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(2)));
   int channel_num2 = voe_.GetLastChannel();
   cricket::AudioSendParameters parameters;
@@ -1399,35 +1399,33 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecEnableNackRecvStreams) {
   parameters.codecs[0].AddFeedbackParam(
       cricket::FeedbackParam(cricket::kRtcpFbParamNack,
                              cricket::kParamValueEmpty));
-  EXPECT_FALSE(voe_.GetNACK(channel_num1));
+  EXPECT_EQ(0, GetSendStreamConfig(kSsrc1).rtp.nack.rtp_history_ms);
   EXPECT_FALSE(voe_.GetNACK(channel_num2));
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
-  EXPECT_TRUE(voe_.GetNACK(channel_num1));
+  EXPECT_EQ(kRtpHistoryMs, GetSendStreamConfig(kSsrc1).rtp.nack.rtp_history_ms);
   EXPECT_TRUE(voe_.GetNACK(channel_num2));
 }
 
 // Test that we can disable NACK.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecDisableNack) {
   EXPECT_TRUE(SetupSendStream());
-  int channel_num = voe_.GetLastChannel();
   cricket::AudioSendParameters parameters;
   parameters.codecs.push_back(kOpusCodec);
   parameters.codecs[0].AddFeedbackParam(
       cricket::FeedbackParam(cricket::kRtcpFbParamNack,
                              cricket::kParamValueEmpty));
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
-  EXPECT_TRUE(voe_.GetNACK(channel_num));
+  EXPECT_EQ(kRtpHistoryMs, GetSendStreamConfig(kSsrc1).rtp.nack.rtp_history_ms);
 
   parameters.codecs.clear();
   parameters.codecs.push_back(kOpusCodec);
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
-  EXPECT_FALSE(voe_.GetNACK(channel_num));
+  EXPECT_EQ(0, GetSendStreamConfig(kSsrc1).rtp.nack.rtp_history_ms);
 }
 
 // Test that we can disable NACK on receive streams.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecDisableNackRecvStreams) {
   EXPECT_TRUE(SetupSendStream());
-  int channel_num1 = voe_.GetLastChannel();
   EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(2)));
   int channel_num2 = voe_.GetLastChannel();
   cricket::AudioSendParameters parameters;
@@ -1436,20 +1434,19 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecDisableNackRecvStreams) {
       cricket::FeedbackParam(cricket::kRtcpFbParamNack,
                              cricket::kParamValueEmpty));
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
-  EXPECT_TRUE(voe_.GetNACK(channel_num1));
+  EXPECT_EQ(kRtpHistoryMs, GetSendStreamConfig(kSsrc1).rtp.nack.rtp_history_ms);
   EXPECT_TRUE(voe_.GetNACK(channel_num2));
 
   parameters.codecs.clear();
   parameters.codecs.push_back(kOpusCodec);
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
-  EXPECT_FALSE(voe_.GetNACK(channel_num1));
+  EXPECT_EQ(0, GetSendStreamConfig(kSsrc1).rtp.nack.rtp_history_ms);
   EXPECT_FALSE(voe_.GetNACK(channel_num2));
 }
 
 // Test that NACK is enabled on a new receive stream.
 TEST_F(WebRtcVoiceEngineTestFake, AddRecvStreamEnableNack) {
   EXPECT_TRUE(SetupSendStream());
-  int channel_num = voe_.GetLastChannel();
   cricket::AudioSendParameters parameters;
   parameters.codecs.push_back(kIsacCodec);
   parameters.codecs.push_back(kCn16000Codec);
@@ -1457,10 +1454,10 @@ TEST_F(WebRtcVoiceEngineTestFake, AddRecvStreamEnableNack) {
       cricket::FeedbackParam(cricket::kRtcpFbParamNack,
                              cricket::kParamValueEmpty));
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
-  EXPECT_TRUE(voe_.GetNACK(channel_num));
+  EXPECT_EQ(kRtpHistoryMs, GetSendStreamConfig(kSsrc1).rtp.nack.rtp_history_ms);
 
   EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(2)));
-  channel_num = voe_.GetLastChannel();
+  int channel_num = voe_.GetLastChannel();
   EXPECT_TRUE(voe_.GetNACK(channel_num));
   EXPECT_TRUE(channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(3)));
   channel_num = voe_.GetLastChannel();
@@ -2276,15 +2273,16 @@ TEST_F(WebRtcVoiceEngineTestFake, GetStatsWithMultipleSendStreams) {
     EXPECT_TRUE(channel_->AddSendStream(
         cricket::StreamParams::CreateLegacy(ssrc)));
   }
-  SetAudioSendStreamStats();
 
   // Create a receive stream to check that none of the send streams end up in
   // the receive stream stats.
   EXPECT_TRUE(channel_->AddRecvStream(
       cricket::StreamParams::CreateLegacy(kSsrc2)));
+
   // We need send codec to be set to get all stats.
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
   EXPECT_TRUE(channel_->SetRecvParameters(recv_parameters_));
+  SetAudioSendStreamStats();
 
   // Check stats for the added streams.
   {
@@ -2442,13 +2440,13 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendSsrc) {
 TEST_F(WebRtcVoiceEngineTestFake, GetStats) {
   // Setup. We need send codec to be set to get all stats.
   EXPECT_TRUE(SetupSendStream());
-  SetAudioSendStreamStats();
   // SetupSendStream adds a send stream with kSsrc1, so the receive
   // stream has to use a different SSRC.
   EXPECT_TRUE(channel_->AddRecvStream(
       cricket::StreamParams::CreateLegacy(kSsrc2)));
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
   EXPECT_TRUE(channel_->SetRecvParameters(recv_parameters_));
+  SetAudioSendStreamStats();
 
   // Check stats for the added streams.
   {

@@ -13,6 +13,13 @@
 #include <string>
 
 namespace webrtc {
+std::string NackConfig::ToString() const {
+  std::stringstream ss;
+  ss << "{rtp_history_ms: " << rtp_history_ms;
+  ss << '}';
+  return ss.str();
+}
+
 std::string FecConfig::ToString() const {
   std::stringstream ss;
   ss << "{ulpfec_payload_type: " << ulpfec_payload_type;

@@ -48,6 +48,7 @@ class ChannelProxy {
   virtual void SetRTCPStatus(bool enable);
   virtual void SetLocalSSRC(uint32_t ssrc);
   virtual void SetRTCP_CNAME(const std::string& c_name);
+  virtual void SetNACKStatus(bool enable, int max_packets);
   virtual void SetSendAbsoluteSenderTimeStatus(bool enable, int id);
   virtual void SetSendAudioLevelIndicationStatus(bool enable, int id);
   virtual void SetReceiveAbsoluteSenderTimeStatus(bool enable, int id);

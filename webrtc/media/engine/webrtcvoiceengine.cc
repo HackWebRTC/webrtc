@@ -64,6 +64,7 @@ const int kDefaultAudioDeviceId = 0;
 // Parameter used for NACK.
 // This value is equivalent to 5 seconds of audio data at 20 ms per packet.
 const int kNackMaxPackets = 250;
+constexpr int kNackRtpHistoryMs = 5000;
 
 // Codec parameters for Opus.
 // draft-spittka-payload-rtp-opus-03
@@ -460,6 +461,41 @@ const WebRtcVoiceCodecs::CodecPref WebRtcVoiceCodecs::kCodecPrefs[11] = {
     {kDtmfCodecName, 8000, 1, 126, false, {}}
 };
 } // namespace {
+
+bool SendCodecSpec::operator==(const SendCodecSpec& rhs) const {
+  if (nack_enabled != rhs.nack_enabled) {
+    return false;
+  }
+  if (transport_cc_enabled != rhs.transport_cc_enabled) {
+    return false;
+  }
+  if (enable_codec_fec != rhs.enable_codec_fec) {
+    return false;
+  }
+  if (enable_opus_dtx != rhs.enable_opus_dtx) {
+    return false;
+  }
+  if (opus_max_playback_rate != rhs.opus_max_playback_rate) {
+    return false;
+  }
+  if (red_payload_type != rhs.red_payload_type) {
+    return false;
+  }
+  if (cng_payload_type != rhs.cng_payload_type) {
+    return false;
+  }
+  if (cng_plfreq != rhs.cng_plfreq) {
+    return false;
+  }
+  if (codec_inst != rhs.codec_inst) {
+    return false;
+  }
+  return true;
+}
+
+bool SendCodecSpec::operator!=(const SendCodecSpec& rhs) const {
+  return !(*this == rhs);
+}
 
 bool WebRtcVoiceEngine::ToCodecInst(const AudioCodec& in,
                                     webrtc::CodecInst* out) {
@@ -1048,6 +1084,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
                         webrtc::AudioTransport* voe_audio_transport,
                         uint32_t ssrc,
                         const std::string& c_name,
+                        const SendCodecSpec& send_codec_spec,
                         const std::vector<webrtc::RtpExtension>& extensions,
                         webrtc::Call* call,
                         webrtc::Transport* send_transport)
@@ -1063,13 +1100,28 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     config_.rtp.ssrc = ssrc;
     config_.rtp.c_name = c_name;
     config_.voe_channel_id = ch;
-    RecreateAudioSendStream(extensions);
+    config_.rtp.extensions = extensions;
+    RecreateAudioSendStream(send_codec_spec);
   }
 
   ~WebRtcAudioSendStream() override {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     ClearSource();
     call_->DestroyAudioSendStream(stream_);
+  }
+
+  void RecreateAudioSendStream(const SendCodecSpec& send_codec_spec) {
+    RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+    if (stream_) {
+      call_->DestroyAudioSendStream(stream_);
+      stream_ = nullptr;
+    }
+    config_.rtp.nack.rtp_history_ms =
+        send_codec_spec.nack_enabled ? kNackRtpHistoryMs : 0;
+    RTC_DCHECK(!stream_);
+    stream_ = call_->CreateAudioSendStream(config_);
+    RTC_CHECK(stream_);
+    UpdateSendState();
   }
 
   void RecreateAudioSendStream(
@@ -1598,8 +1650,8 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
   // with the proper configuration for VAD, CNG, NACK and Opus-specific
   // parameters.
   // TODO(solenberg): Refactor this logic once we create AudioEncoders here.
+  SendCodecSpec send_codec_spec;
   {
-    SendCodecSpec send_codec_spec;
     send_codec_spec.nack_enabled = send_codec_spec_.nack_enabled;
 
     // Find send codec (the first non-telephone-event/CN codec).
@@ -1665,15 +1717,16 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
         break;
       }
     }
-
-    // Latch in the new state.
-    send_codec_spec_ = std::move(send_codec_spec);
   }
 
-  // Cache the codecs in order to configure the channel created later.
-  for (const auto& ch : send_streams_) {
-    if (!SetSendCodecs(ch.second->channel(), ch.second->rtp_parameters())) {
-      return false;
+  // Apply new settings to all streams.
+  if (send_codec_spec_ != send_codec_spec) {
+    send_codec_spec_ = std::move(send_codec_spec);
+    for (const auto& kv : send_streams_) {
+      kv.second->RecreateAudioSendStream(send_codec_spec_);
+      if (!SetSendCodecs(kv.second->channel(), kv.second->rtp_parameters())) {
+        return false;
+      }
     }
   }
 
@@ -1701,12 +1754,9 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
 bool WebRtcVoiceMediaChannel::SetSendCodecs(
     int channel,
     const webrtc::RtpParameters& rtp_parameters) {
-  // Disable VAD, NACK and FEC unless we know the other side wants them.
+  // Disable VAD and FEC unless we know the other side wants them.
   engine()->voe()->codec()->SetVADStatus(channel, false);
-  engine()->voe()->rtp()->SetNACKStatus(channel, false, 0);
   engine()->voe()->codec()->SetFECStatus(channel, false);
-
-  SetNack(channel, send_codec_spec_.nack_enabled);
 
   // Set the codec immediately, since SetVADStatus() depends on whether
   // the current codec is mono or stereo.
@@ -1956,8 +2006,8 @@ bool WebRtcVoiceMediaChannel::AddSendStream(const StreamParams& sp) {
       engine()->voe()->base()->audio_transport();
 
   WebRtcAudioSendStream* stream = new WebRtcAudioSendStream(
-      channel, audio_transport, ssrc, sp.cname, send_rtp_extensions_, call_,
-      this);
+      channel, audio_transport, ssrc, sp.cname, send_codec_spec_,
+      send_rtp_extensions_, call_, this);
   send_streams_.insert(std::make_pair(ssrc, stream));
 
   // Set the current codecs to be used for the new channel. We need to do this

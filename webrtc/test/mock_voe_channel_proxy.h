@@ -23,6 +23,7 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_METHOD1(SetRTCPStatus, void(bool enable));
   MOCK_METHOD1(SetLocalSSRC, void(uint32_t ssrc));
   MOCK_METHOD1(SetRTCP_CNAME, void(const std::string& c_name));
+  MOCK_METHOD2(SetNACKStatus, void(bool enable, int max_packets));
   MOCK_METHOD2(SetSendAbsoluteSenderTimeStatus, void(bool enable, int id));
   MOCK_METHOD2(SetSendAudioLevelIndicationStatus, void(bool enable, int id));
   MOCK_METHOD2(SetReceiveAbsoluteSenderTimeStatus, void(bool enable, int id));

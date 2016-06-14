@@ -74,6 +74,7 @@ struct ConfigHelper {
           EXPECT_CALL(*channel_proxy_, SetRTCPStatus(true)).Times(1);
           EXPECT_CALL(*channel_proxy_, SetLocalSSRC(kSsrc)).Times(1);
           EXPECT_CALL(*channel_proxy_, SetRTCP_CNAME(StrEq(kCName))).Times(1);
+          EXPECT_CALL(*channel_proxy_, SetNACKStatus(true, 10)).Times(1);
           EXPECT_CALL(*channel_proxy_,
               SetSendAbsoluteSenderTimeStatus(true, kAbsSendTimeId)).Times(1);
           EXPECT_CALL(*channel_proxy_,
@@ -97,6 +98,7 @@ struct ConfigHelper {
         }));
     stream_config_.voe_channel_id = kChannelId;
     stream_config_.rtp.ssrc = kSsrc;
+    stream_config_.rtp.nack.rtp_history_ms = 200;
     stream_config_.rtp.c_name = kCName;
     stream_config_.rtp.extensions.push_back(
         RtpExtension(RtpExtension::kAudioLevelUri, kAudioLevelId));
@@ -178,7 +180,8 @@ TEST(AudioSendStreamTest, ConfigToString) {
   EXPECT_EQ(
       "{rtp: {ssrc: 1234, extensions: [{uri: "
       "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time, id: 3}], "
-      "c_name: foo_name}, voe_channel_id: 1, cng_payload_type: 42}",
+      "nack: {rtp_history_ms: 0}, c_name: foo_name}, voe_channel_id: 1, "
+      "cng_payload_type: 42}",
       config.ToString());
 }
 

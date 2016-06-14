@@ -39,6 +39,7 @@ std::string AudioSendStream::Config::Rtp::ToString() const {
     }
   }
   ss << ']';
+  ss << ", nack: " << nack.ToString();
   ss << ", c_name: " << c_name;
   ss << '}';
   return ss.str();
@@ -74,6 +75,10 @@ AudioSendStream::AudioSendStream(
   channel_proxy_->SetRTCPStatus(true);
   channel_proxy_->SetLocalSSRC(config.rtp.ssrc);
   channel_proxy_->SetRTCP_CNAME(config.rtp.c_name);
+  // TODO(solenberg): Config NACK history window (which is a packet count),
+  // using the actual packet size for the configured codec.
+  channel_proxy_->SetNACKStatus(config_.rtp.nack.rtp_history_ms != 0,
+                                config_.rtp.nack.rtp_history_ms / 20);
 
   channel_proxy_->RegisterExternalTransport(config.send_transport);
 

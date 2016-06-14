@@ -56,7 +56,7 @@ class AudioSendStream {
 
     std::string ToString() const;
 
-    // Receive-stream specific RTP settings.
+    // Send-stream specific RTP settings.
     struct Rtp {
       std::string ToString() const;
 
@@ -65,6 +65,9 @@ class AudioSendStream {
 
       // RTP header extensions used for the sent stream.
       std::vector<RtpExtension> extensions;
+
+      // See NackConfig for description.
+      NackConfig nack;
 
       // RTCP CNAME, see RFC 3550.
       std::string c_name;

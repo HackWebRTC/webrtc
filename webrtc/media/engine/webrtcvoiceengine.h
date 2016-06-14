@@ -38,6 +38,26 @@ class AudioSource;
 class VoEWrapper;
 class WebRtcVoiceMediaChannel;
 
+struct SendCodecSpec {
+  SendCodecSpec() {
+    webrtc::CodecInst empty_inst = {0};
+    codec_inst = empty_inst;
+    codec_inst.pltype = -1;
+  }
+  bool operator==(const SendCodecSpec& rhs) const;
+  bool operator!=(const SendCodecSpec& rhs) const;
+
+  bool nack_enabled = false;
+  bool transport_cc_enabled = false;
+  bool enable_codec_fec = false;
+  bool enable_opus_dtx = false;
+  int opus_max_playback_rate = 0;
+  int red_payload_type = -1;
+  int cng_payload_type = -1;
+  int cng_plfreq = -1;
+  webrtc::CodecInst codec_inst;
+};
+
 // WebRtcVoiceEngine is a class to be used with CompositeMediaEngine.
 // It uses the WebRtc VoiceEngine library for audio handling.
 class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
@@ -282,21 +302,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   std::map<uint32_t, WebRtcAudioReceiveStream*> recv_streams_;
   std::vector<webrtc::RtpExtension> recv_rtp_extensions_;
 
-  struct SendCodecSpec {
-    SendCodecSpec() {
-      webrtc::CodecInst empty_inst = {0};
-      codec_inst = empty_inst;
-      codec_inst.pltype = -1;
-    }
-    bool nack_enabled = false;
-    bool transport_cc_enabled = false;
-    bool enable_codec_fec = false;
-    bool enable_opus_dtx = false;
-    int opus_max_playback_rate = 0;
-    int cng_payload_type = -1;
-    int cng_plfreq = -1;
-    webrtc::CodecInst codec_inst;
-  } send_codec_spec_;
+  SendCodecSpec send_codec_spec_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcVoiceMediaChannel);
 };

@@ -45,6 +45,11 @@ void ChannelProxy::SetRTCP_CNAME(const std::string& c_name) {
   RTC_DCHECK_EQ(0, error);
 }
 
+void ChannelProxy::SetNACKStatus(bool enable, int max_packets) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  channel()->SetNACKStatus(enable, max_packets);
+}
+
 void ChannelProxy::SetSendAbsoluteSenderTimeStatus(bool enable, int id) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   int error = channel()->SetSendAbsoluteSenderTimeStatus(enable, id);
