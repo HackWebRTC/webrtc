@@ -226,7 +226,6 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   int current_encoding_time_ms_;  // Overall encoding time in the current second
   int64_t last_input_timestamp_ms_;  // Timestamp of last received yuv frame.
   int64_t last_output_timestamp_ms_;  // Timestamp of last encoded frame.
-  bool output_delivery_loop_running_; // Is the onMessage loop running
 
   struct InputFrameInfo {
     InputFrameInfo(int64_t encode_start_time,
@@ -307,7 +306,6 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(
     inited_(false),
     use_surface_(false),
     picture_id_(0),
-    output_delivery_loop_running_(false),
     egl_context_(egl_context) {
   ScopedLocalRefFrame local_ref_frame(jni);
   // It would be nice to avoid spinning up a new thread per MediaCodec, and
@@ -472,12 +470,16 @@ void MediaCodecVideoEncoder::OnMessage(rtc::Message* msg) {
   // about it and let the next app-called API method reveal the borkedness.
   DeliverPendingOutputs(jni);
 
-  // If there aren't more frames to deliver, we can stop the loop
-  if (!input_frame_infos_.empty()) {
-    codec_thread_->PostDelayed(RTC_FROM_HERE, kMediaCodecPollMs, this);
+  // If there aren't more frames to deliver, we can start polling at lower rate.
+  if (input_frame_infos_.empty()) {
+    codec_thread_->PostDelayed(RTC_FROM_HERE, kMediaCodecPollNoFramesMs, this);
   } else {
-    output_delivery_loop_running_ = false;
+    codec_thread_->PostDelayed(RTC_FROM_HERE, kMediaCodecPollMs, this);
   }
+
+  // Call log statistics here so it's called even if no frames are being
+  // delivered.
+  LogStatistics(false);
 }
 
 bool MediaCodecVideoEncoder::ResetCodecOnCodecThread() {
@@ -737,10 +739,8 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
 
   current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
 
-  if (!output_delivery_loop_running_) {
-    output_delivery_loop_running_ = true;
-    codec_thread_->PostDelayed(RTC_FROM_HERE, kMediaCodecPollMs, this);
-  }
+  codec_thread_->Clear(this);
+  codec_thread_->PostDelayed(RTC_FROM_HERE, kMediaCodecPollMs, this);
 
   if (!DeliverPendingOutputs(jni)) {
     ALOGE << "Failed deliver pending outputs.";
@@ -859,7 +859,6 @@ int32_t MediaCodecVideoEncoder::ReleaseOnCodecThread() {
   rtc::MessageQueueManager::Clear(this);
   inited_ = false;
   use_surface_ = false;
-  output_delivery_loop_running_ = false;
   ALOGD << "EncoderReleaseOnCodecThread done.";
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -923,6 +922,7 @@ jlong MediaCodecVideoEncoder::GetOutputBufferInfoPresentationTimestampUs(
 
 bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
   RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
+
   while (true) {
     jobject j_output_buffer_info = jni->CallObjectMethod(
         *j_media_codec_video_encoder_, j_dequeue_output_buffer_method_);
@@ -1118,8 +1118,11 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
 
 void MediaCodecVideoEncoder::LogStatistics(bool force_log) {
   int statistic_time_ms = rtc::TimeMillis() - stat_start_time_ms_;
-  if ((statistic_time_ms >= kMediaCodecStatisticsIntervalMs || force_log) &&
-      current_frames_ > 0 && statistic_time_ms > 0) {
+  if ((statistic_time_ms >= kMediaCodecStatisticsIntervalMs || force_log)
+      && statistic_time_ms > 0) {
+    // Prevent division by zero.
+    int current_frames_divider = current_frames_ != 0 ? current_frames_ : 1;
+
     int current_bitrate = current_bytes_ * 8 / statistic_time_ms;
     int current_fps =
         (current_frames_ * 1000 + statistic_time_ms / 2) / statistic_time_ms;
@@ -1127,8 +1130,8 @@ void MediaCodecVideoEncoder::LogStatistics(bool force_log) {
         ". Bitrate: " << current_bitrate <<
         ", target: " << last_set_bitrate_kbps_ << " kbps" <<
         ", fps: " << current_fps <<
-        ", encTime: " << (current_encoding_time_ms_ / current_frames_) <<
-        ". QP: " << (current_acc_qp_ / current_frames_) <<
+        ", encTime: " << (current_encoding_time_ms_ / current_frames_divider) <<
+        ". QP: " << (current_acc_qp_ / current_frames_divider) <<
         " for last " << statistic_time_ms << " ms.";
     stat_start_time_ms_ = rtc::TimeMillis();
     current_frames_ = 0;

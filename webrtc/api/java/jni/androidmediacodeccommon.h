@@ -43,6 +43,8 @@ enum COLOR_FORMATTYPE {
 
 // Arbitrary interval to poll the codec for new outputs.
 enum { kMediaCodecPollMs = 10 };
+// Arbitrary interval to poll at when there should be no more frames.
+enum { kMediaCodecPollNoFramesMs = 100 };
 // Media codec maximum output buffer ready timeout.
 enum { kMediaCodecTimeoutMs = 1000 };
 // Interval to print codec statistics (bitrate, fps, encoding/decoding time).
