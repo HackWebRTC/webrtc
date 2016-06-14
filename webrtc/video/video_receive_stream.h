@@ -96,10 +96,10 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   CallStats* const call_stats_;
 
   vcm::VideoReceiver video_receiver_;
-  std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> incoming_video_stream_;
+  IncomingVideoStream incoming_video_stream_;
   ReceiveStatisticsProxy stats_proxy_;
   RtpStreamReceiver rtp_stream_receiver_;
-  std::unique_ptr<VideoStreamDecoder> video_stream_decoder_;
+  VideoStreamDecoder video_stream_decoder_;
   ViESyncModule vie_sync_;
 
   std::unique_ptr<IvfFileWriter> ivf_writer_;
