@@ -767,8 +767,11 @@ class FakeVoiceEngine : public FakeBaseEngine {
     channels_.erase(std::find(channels_.begin(), channels_.end(), channel));
   }
 
-  const std::vector<AudioCodec>& codecs() { return codecs_; }
-  void SetCodecs(const std::vector<AudioCodec> codecs) { codecs_ = codecs; }
+  // TODO(ossu): For proper testing, These should either individually settable
+  //             or the voice engine should reference mockable factories.
+  const std::vector<AudioCodec>& send_codecs() { return codecs_; }
+  const std::vector<AudioCodec>& recv_codecs() { return codecs_; }
+  void SetCodecs(const std::vector<AudioCodec>& codecs) { codecs_ = codecs; }
 
   bool GetOutputVolume(int* level) {
     *level = output_volume_;

@@ -474,7 +474,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateAudioOffer) {
   const AudioContentDescription* acd =
       static_cast<const AudioContentDescription*>(ac->description);
   EXPECT_EQ(MEDIA_TYPE_AUDIO, acd->type());
-  EXPECT_EQ(f1_.audio_codecs(), acd->codecs());
+  EXPECT_EQ(f1_.audio_sendrecv_codecs(), acd->codecs());
   EXPECT_NE(0U, acd->first_ssrc());             // a random nonzero ssrc
   EXPECT_EQ(kAutoBandwidth, acd->bandwidth());  // default bandwidth (auto)
   EXPECT_TRUE(acd->rtcp_mux());                 // rtcp-mux defaults on
@@ -500,7 +500,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateVideoOffer) {
   const VideoContentDescription* vcd =
       static_cast<const VideoContentDescription*>(vc->description);
   EXPECT_EQ(MEDIA_TYPE_AUDIO, acd->type());
-  EXPECT_EQ(f1_.audio_codecs(), acd->codecs());
+  EXPECT_EQ(f1_.audio_sendrecv_codecs(), acd->codecs());
   EXPECT_NE(0U, acd->first_ssrc());             // a random nonzero ssrc
   EXPECT_EQ(kAutoBandwidth, acd->bandwidth());  // default bandwidth (auto)
   EXPECT_TRUE(acd->rtcp_mux());                 // rtcp-mux defaults on
@@ -520,7 +520,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateVideoOffer) {
 // duplicate RTP payload types.
 TEST_F(MediaSessionDescriptionFactoryTest, TestBundleOfferWithSameCodecPlType) {
   const VideoCodec& offered_video_codec = f2_.video_codecs()[0];
-  const AudioCodec& offered_audio_codec = f2_.audio_codecs()[0];
+  const AudioCodec& offered_audio_codec = f2_.audio_sendrecv_codecs()[0];
   const DataCodec& offered_data_codec = f2_.data_codecs()[0];
   ASSERT_EQ(offered_video_codec.id, offered_audio_codec.id);
   ASSERT_EQ(offered_video_codec.id, offered_data_codec.id);
@@ -607,7 +607,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateRtpDataOffer) {
   const DataContentDescription* dcd =
       static_cast<const DataContentDescription*>(dc->description);
   EXPECT_EQ(MEDIA_TYPE_AUDIO, acd->type());
-  EXPECT_EQ(f1_.audio_codecs(), acd->codecs());
+  EXPECT_EQ(f1_.audio_sendrecv_codecs(), acd->codecs());
   EXPECT_NE(0U, acd->first_ssrc());             // a random nonzero ssrc
   EXPECT_EQ(kAutoBandwidth, acd->bandwidth());  // default bandwidth (auto)
   EXPECT_TRUE(acd->rtcp_mux());                 // rtcp-mux defaults on
@@ -1222,7 +1222,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateMultiStreamVideoOffer) {
   const DataContentDescription* dcd =
       static_cast<const DataContentDescription*>(dc->description);
   EXPECT_EQ(MEDIA_TYPE_AUDIO, acd->type());
-  EXPECT_EQ(f1_.audio_codecs(), acd->codecs());
+  EXPECT_EQ(f1_.audio_sendrecv_codecs(), acd->codecs());
 
   const StreamParamsVec& audio_streams = acd->streams();
   ASSERT_EQ(2U, audio_streams.size());
@@ -2486,25 +2486,25 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestSetAudioCodecs) {
   sf.set_audio_codecs(send_codecs, recv_codecs);
   EXPECT_TRUE(sf.audio_send_codecs() == send_codecs);
   EXPECT_TRUE(sf.audio_recv_codecs() == recv_codecs);
-  EXPECT_TRUE(sf.audio_codecs() == sendrecv_codecs);
+  EXPECT_TRUE(sf.audio_sendrecv_codecs() == sendrecv_codecs);
 
   // Test empty send codecs list
   sf.set_audio_codecs(no_codecs, recv_codecs);
   EXPECT_TRUE(sf.audio_send_codecs() == no_codecs);
   EXPECT_TRUE(sf.audio_recv_codecs() == recv_codecs);
-  EXPECT_TRUE(sf.audio_codecs() == no_codecs);
+  EXPECT_TRUE(sf.audio_sendrecv_codecs() == no_codecs);
 
   // Test empty recv codecs list
   sf.set_audio_codecs(send_codecs, no_codecs);
   EXPECT_TRUE(sf.audio_send_codecs() == send_codecs);
   EXPECT_TRUE(sf.audio_recv_codecs() == no_codecs);
-  EXPECT_TRUE(sf.audio_codecs() == no_codecs);
+  EXPECT_TRUE(sf.audio_sendrecv_codecs() == no_codecs);
 
   // Test all empty codec lists
   sf.set_audio_codecs(no_codecs, no_codecs);
   EXPECT_TRUE(sf.audio_send_codecs() == no_codecs);
   EXPECT_TRUE(sf.audio_recv_codecs() == no_codecs);
-  EXPECT_TRUE(sf.audio_codecs() == no_codecs);
+  EXPECT_TRUE(sf.audio_sendrecv_codecs() == no_codecs);
 }
 
 namespace {

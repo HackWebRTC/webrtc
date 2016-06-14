@@ -948,7 +948,12 @@ int WebRtcVoiceEngine::GetInputLevel() {
       static_cast<int>(ulevel) : -1;
 }
 
-const std::vector<AudioCodec>& WebRtcVoiceEngine::codecs() {
+const std::vector<AudioCodec>& WebRtcVoiceEngine::send_codecs() const {
+  RTC_DCHECK(signal_thread_checker_.CalledOnValidThread());
+  return codecs_;
+}
+
+const std::vector<AudioCodec>& WebRtcVoiceEngine::recv_codecs() const {
   RTC_DCHECK(signal_thread_checker_.CalledOnValidThread());
   return codecs_;
 }

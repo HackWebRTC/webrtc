@@ -428,7 +428,7 @@ class MediaSessionDescriptionFactory {
   MediaSessionDescriptionFactory(ChannelManager* cmanager,
                                  const TransportDescriptionFactory* factory);
 
-  const AudioCodecs& audio_codecs() const;
+  const AudioCodecs& audio_sendrecv_codecs() const;
   const AudioCodecs& audio_send_codecs() const;
   const AudioCodecs& audio_recv_codecs() const;
   void set_audio_codecs(const AudioCodecs& send_codecs,

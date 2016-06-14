@@ -81,7 +81,8 @@ class MediaEngineInterface {
   // Gets the current microphone level, as a value between 0 and 10.
   virtual int GetInputLevel() = 0;
 
-  virtual const std::vector<AudioCodec>& audio_codecs() = 0;
+  virtual const std::vector<AudioCodec>& audio_send_codecs() = 0;
+  virtual const std::vector<AudioCodec>& audio_recv_codecs() = 0;
   virtual RtpCapabilities GetAudioCapabilities() = 0;
   virtual const std::vector<VideoCodec>& video_codecs() = 0;
   virtual RtpCapabilities GetVideoCapabilities() = 0;
@@ -163,8 +164,11 @@ class CompositeMediaEngine : public MediaEngineInterface {
   virtual int GetInputLevel() {
     return voice_.GetInputLevel();
   }
-  virtual const std::vector<AudioCodec>& audio_codecs() {
-    return voice_.codecs();
+  virtual const std::vector<AudioCodec>& audio_send_codecs() {
+    return voice_.send_codecs();
+  }
+  virtual const std::vector<AudioCodec>& audio_recv_codecs() {
+    return voice_.recv_codecs();
   }
   virtual RtpCapabilities GetAudioCapabilities() {
     return voice_.GetCapabilities();

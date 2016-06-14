@@ -65,7 +65,8 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   bool SetOutputVolume(int level);
   int GetInputLevel();
 
-  const std::vector<AudioCodec>& codecs();
+  const std::vector<AudioCodec>& send_codecs() const;
+  const std::vector<AudioCodec>& recv_codecs() const;
   RtpCapabilities GetCapabilities() const;
 
   // For tracking WebRtc channels. Needed because we have to pause them

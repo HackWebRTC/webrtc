@@ -1336,7 +1336,8 @@ class WebRtcSessionTest
     const cricket::AudioCodec kCNCodec2(103, "CN", 16000, 0, 1);
 
     // Add kCNCodec for dtmf test.
-    std::vector<cricket::AudioCodec> codecs = media_engine_->audio_codecs();;
+    std::vector<cricket::AudioCodec> codecs =
+        media_engine_->audio_send_codecs();
     codecs.push_back(kCNCodec1);
     codecs.push_back(kCNCodec2);
     media_engine_->SetAudioCodecs(codecs);

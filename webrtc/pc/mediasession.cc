@@ -1273,16 +1273,19 @@ MediaSessionDescriptionFactory::MediaSessionDescriptionFactory(
     : secure_(SEC_DISABLED),
       add_legacy_(true),
       transport_desc_factory_(transport_desc_factory) {
-  channel_manager->GetSupportedAudioCodecs(&audio_sendrecv_codecs_);
+  channel_manager->GetSupportedAudioSendCodecs(&audio_send_codecs_);
+  channel_manager->GetSupportedAudioReceiveCodecs(&audio_recv_codecs_);
+  channel_manager->GetSupportedAudioSendCodecs(&audio_send_codecs_);
   channel_manager->GetSupportedAudioRtpHeaderExtensions(&audio_rtp_extensions_);
   channel_manager->GetSupportedVideoCodecs(&video_codecs_);
   channel_manager->GetSupportedVideoRtpHeaderExtensions(&video_rtp_extensions_);
   channel_manager->GetSupportedDataCodecs(&data_codecs_);
-  audio_send_codecs_ = audio_sendrecv_codecs_;
-  audio_recv_codecs_ = audio_sendrecv_codecs_;
+  NegotiateCodecs(audio_recv_codecs_, audio_send_codecs_,
+                  &audio_sendrecv_codecs_);
 }
 
-const AudioCodecs& MediaSessionDescriptionFactory::audio_codecs() const {
+const AudioCodecs& MediaSessionDescriptionFactory::audio_sendrecv_codecs()
+    const {
   return audio_sendrecv_codecs_;
 }
 

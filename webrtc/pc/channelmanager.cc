@@ -100,15 +100,14 @@ bool ChannelManager::SetVideoRtxEnabled(bool enable) {
   }
 }
 
-void ChannelManager::GetSupportedAudioCodecs(
+void ChannelManager::GetSupportedAudioSendCodecs(
     std::vector<AudioCodec>* codecs) const {
-  codecs->clear();
+  *codecs = media_engine_->audio_send_codecs();
+}
 
-  for (std::vector<AudioCodec>::const_iterator it =
-           media_engine_->audio_codecs().begin();
-      it != media_engine_->audio_codecs().end(); ++it) {
-    codecs->push_back(*it);
-  }
+void ChannelManager::GetSupportedAudioReceiveCodecs(
+    std::vector<AudioCodec>* codecs) const {
+  *codecs = media_engine_->audio_recv_codecs();
 }
 
 void ChannelManager::GetSupportedAudioRtpHeaderExtensions(

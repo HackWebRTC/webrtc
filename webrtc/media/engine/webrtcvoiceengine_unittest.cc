@@ -525,8 +525,10 @@ TEST_F(WebRtcVoiceEngineTestFake, CreateRecvStream) {
 
 // Tests that the list of supported codecs is created properly and ordered
 // correctly (such that opus appears first).
+// TODO(ossu): This test should move into a separate builtin audio codecs
+// module.
 TEST_F(WebRtcVoiceEngineTestFake, CodecOrder) {
-  const std::vector<cricket::AudioCodec>& codecs = engine_->codecs();
+  const std::vector<cricket::AudioCodec>& codecs = engine_->send_codecs();
   ASSERT_FALSE(codecs.empty());
   EXPECT_STRCASEEQ("opus", codecs[0].name.c_str());
   EXPECT_EQ(48000, codecs[0].clockrate);
@@ -535,7 +537,7 @@ TEST_F(WebRtcVoiceEngineTestFake, CodecOrder) {
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, OpusSupportsTransportCc) {
-  const std::vector<cricket::AudioCodec>& codecs = engine_->codecs();
+  const std::vector<cricket::AudioCodec>& codecs = engine_->send_codecs();
   bool opus_found = false;
   for (cricket::AudioCodec codec : codecs) {
     if (codec.name == "opus") {
@@ -831,7 +833,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetMaxSendBandwidthMultiRateAsCallee) {
   EXPECT_TRUE(SetupChannel());
   const int kDesiredBitrate = 128000;
   cricket::AudioSendParameters parameters;
-  parameters.codecs = engine_->codecs();
+  parameters.codecs = engine_->send_codecs();
   parameters.max_bandwidth_bps = kDesiredBitrate;
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
 
@@ -1579,7 +1581,7 @@ TEST_F(WebRtcVoiceEngineTestFake, TransportCcCanBeEnabledAndDisabled) {
   EXPECT_FALSE(
       call_.GetAudioReceiveStream(kSsrc1)->GetConfig().rtp.transport_cc);
 
-  send_parameters.codecs = engine_->codecs();
+  send_parameters.codecs = engine_->send_codecs();
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters));
   ASSERT_TRUE(call_.GetAudioReceiveStream(kSsrc1) != nullptr);
   EXPECT_TRUE(
@@ -3576,6 +3578,8 @@ TEST(WebRtcVoiceEngineTest, StartupShutdownWithExternalADM) {
 }
 
 // Tests that the library is configured with the codecs we want.
+// TODO(ossu): This test should move into the builtin audio codecs module
+// eventually.
 TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
   // TODO(ossu): These tests should move into a future "builtin audio codecs"
   // module.
@@ -3636,7 +3640,7 @@ TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
   cricket::WebRtcVoiceEngine engine(nullptr,
                                     webrtc::CreateBuiltinAudioDecoderFactory());
   for (std::vector<cricket::AudioCodec>::const_iterator it =
-      engine.codecs().begin(); it != engine.codecs().end(); ++it) {
+      engine.send_codecs().begin(); it != engine.send_codecs().end(); ++it) {
     if (it->name == "CN" && it->clockrate == 16000) {
       EXPECT_EQ(105, it->id);
     } else if (it->name == "CN" && it->clockrate == 32000) {
@@ -3701,6 +3705,6 @@ TEST(WebRtcVoiceEngineTest, SetRecvCodecs) {
   cricket::WebRtcVoiceMediaChannel channel(&engine, cricket::MediaConfig(),
                                            cricket::AudioOptions(), call.get());
   cricket::AudioRecvParameters parameters;
-  parameters.codecs = engine.codecs();
+  parameters.codecs = engine.recv_codecs();
   EXPECT_TRUE(channel.SetRecvParameters(parameters));
 }
