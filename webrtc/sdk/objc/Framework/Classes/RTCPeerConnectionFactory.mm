@@ -10,6 +10,8 @@
 
 #import "RTCPeerConnectionFactory+Private.h"
 
+#include <memory>
+
 #import "NSString+StdString.h"
 #import "RTCAVFoundationVideoSource+Private.h"
 #import "RTCAudioTrack+Private.h"
@@ -17,13 +19,15 @@
 #import "RTCPeerConnection+Private.h"
 #import "RTCVideoSource+Private.h"
 #import "RTCVideoTrack+Private.h"
+#import "WebRTC/RTCLogging.h"
 
-#include <memory>
+#include "webrtc/base/checks.h"
 
 @implementation RTCPeerConnectionFactory {
   std::unique_ptr<rtc::Thread> _networkThread;
   std::unique_ptr<rtc::Thread> _workerThread;
   std::unique_ptr<rtc::Thread> _signalingThread;
+  BOOL _hasStartedRtcEventLog;
 }
 
 @synthesize nativeFactory = _nativeFactory;
@@ -48,6 +52,29 @@
     NSAssert(_nativeFactory, @"Failed to initialize PeerConnectionFactory!");
   }
   return self;
+}
+
+- (BOOL)startRtcEventLogWithFilePath:(NSString *)filePath
+                      maxSizeInBytes:(int64_t)maxSizeInBytes {
+  RTC_DCHECK(filePath.length);
+  RTC_DCHECK_GT(maxSizeInBytes, 0);
+  RTC_DCHECK(!_hasStartedRtcEventLog);
+  if (_hasStartedRtcEventLog) {
+    RTCLogError(@"Event logging already started.");
+    return NO;
+  }
+  int fd = open(filePath.UTF8String, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  if (fd < 0) {
+    RTCLogError(@"Error opening file: %@. Error: %d", filePath, errno);
+    return NO;
+  }
+  _hasStartedRtcEventLog = _nativeFactory->StartRtcEventLog(fd, maxSizeInBytes);
+  return _hasStartedRtcEventLog;
+}
+
+- (void)stopRtcEventLog {
+  _nativeFactory->StopRtcEventLog();
+  _hasStartedRtcEventLog = NO;
 }
 
 - (RTCAVFoundationVideoSource *)avFoundationVideoSourceWithConstraints:

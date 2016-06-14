@@ -12,7 +12,6 @@
 
 #if defined(WEBRTC_IOS)
 #import "WebRTC/RTCAVFoundationVideoSource.h"
-#import "WebRTC/RTCTracing.h"
 #endif
 #import "WebRTC/RTCAudioTrack.h"
 #import "WebRTC/RTCConfiguration.h"
@@ -23,6 +22,7 @@
 #import "WebRTC/RTCMediaStream.h"
 #import "WebRTC/RTCPeerConnectionFactory.h"
 #import "WebRTC/RTCRtpSender.h"
+#import "WebRTC/RTCTracing.h"
 
 #import "ARDAppEngineClient.h"
 #import "ARDCEODTURNClient.h"
@@ -55,8 +55,10 @@ static NSString * const kARDVideoTrackId = @"ARDAMSv0";
 
 // TODO(tkchin): Remove guard once rtc_sdk_common_objc compiles on Mac.
 #if defined(WEBRTC_IOS)
-// TODO(tkchin): Add this as a UI option.
+// TODO(tkchin): Add these as UI options.
 static BOOL const kARDAppClientEnableTracing = NO;
+static BOOL const kARDAppClientEnableRtcEventLog = YES;
+static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
 #endif
 
 // We need a proxy to NSTimer because it causes a strong retain cycle. When
@@ -227,11 +229,7 @@ static BOOL const kARDAppClientEnableTracing = NO;
 
 #if defined(WEBRTC_IOS)
   if (kARDAppClientEnableTracing) {
-    NSArray *paths = NSSearchPathForDirectoriesInDomains(
-        NSDocumentDirectory, NSUserDomainMask, YES);
-    NSString *documentsDirPath = paths.firstObject;
-    NSString *filePath =
-        [documentsDirPath stringByAppendingPathComponent:@"webrtc-trace.txt"];
+    NSString *filePath = [self documentsFilePathForFileName:@"webrtc-trace.txt"];
     RTCStartInternalCapture(filePath);
   }
 #endif
@@ -314,6 +312,7 @@ static BOOL const kARDAppClientEnableTracing = NO;
   self.state = kARDAppClientStateDisconnected;
 #if defined(WEBRTC_IOS)
   RTCStopInternalCapture();
+  [_factory stopRtcEventLog];
 #endif
 }
 
@@ -498,6 +497,20 @@ static BOOL const kARDAppClientEnableTracing = NO;
 
 #pragma mark - Private
 
+#if defined(WEBRTC_IOS)
+
+- (NSString *)documentsFilePathForFileName:(NSString *)fileName {
+  NSParameterAssert(fileName.length);
+  NSArray *paths = NSSearchPathForDirectoriesInDomains(
+      NSDocumentDirectory, NSUserDomainMask, YES);
+  NSString *documentsDirPath = paths.firstObject;
+  NSString *filePath =
+      [documentsDirPath stringByAppendingPathComponent:fileName];
+  return filePath;
+}
+
+#endif
+
 - (BOOL)hasJoinedRoomServerRoom {
   return _clientId.length;
 }
@@ -512,6 +525,17 @@ static BOOL const kARDAppClientEnableTracing = NO;
     return;
   }
   self.state = kARDAppClientStateConnected;
+
+#if defined(WEBRTC_IOS)
+  // Start event log.
+  if (kARDAppClientEnableRtcEventLog) {
+    NSString *filePath = [self documentsFilePathForFileName:@"webrtc-rtceventlog"];
+    if (![_factory startRtcEventLogWithFilePath:filePath
+                                 maxSizeInBytes:kARDAppClientRtcEventLogMaxSizeInBytes]) {
+      RTCLogError(@"Failed to start event logging.");
+    }
+  }
+#endif
 
   // Create peer connection.
   RTCMediaConstraints *constraints = [self defaultPeerConnectionConstraints];
