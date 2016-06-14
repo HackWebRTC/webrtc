@@ -518,6 +518,7 @@ public class PeerConnectionClient {
       try {
         aecDumpFileDescriptor = ParcelFileDescriptor.open(
             new File(Environment.getExternalStorageDirectory().getPath()
+                + File.separator
                 + "Download/audio.aecdump"),
                 ParcelFileDescriptor.MODE_READ_WRITE |
                 ParcelFileDescriptor.MODE_CREATE |
