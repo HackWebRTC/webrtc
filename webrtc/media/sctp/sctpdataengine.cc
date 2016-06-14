@@ -198,7 +198,7 @@ int OnSctpOutboundPacket(void* addr,
                   << "; tos: " << std::hex << static_cast<int>(tos)
                   << "; set_df: " << std::hex << static_cast<int>(set_df);
 
-  VerboseLogPacket(addr, length, SCTP_DUMP_OUTBOUND);
+  VerboseLogPacket(data, length, SCTP_DUMP_OUTBOUND);
   // Note: We have to copy the data; the caller will delete it.
   auto* msg = new OutboundPacketMessage(
       new rtc::CopyOnWriteBuffer(reinterpret_cast<uint8_t*>(data), length));
