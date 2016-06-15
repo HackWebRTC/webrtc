@@ -28,16 +28,17 @@ const int kDefaultBitrateBps = 300000;
 const double kToggleFactor = 0.1;
 const uint32_t kMinToggleBitrateBps = 20000;
 
-BitrateAllocator::BitrateAllocator()
-    : bitrate_observer_configs_(),
+BitrateAllocator::BitrateAllocator(LimitObserver* limit_observer)
+    : limit_observer_(limit_observer),
+      bitrate_observer_configs_(),
       last_bitrate_bps_(kDefaultBitrateBps),
       last_non_zero_bitrate_bps_(kDefaultBitrateBps),
       last_fraction_loss_(0),
       last_rtt_(0) {}
 
-uint32_t BitrateAllocator::OnNetworkChanged(uint32_t target_bitrate_bps,
-                                            uint8_t fraction_loss,
-                                            int64_t rtt) {
+void BitrateAllocator::OnNetworkChanged(uint32_t target_bitrate_bps,
+                                        uint8_t fraction_loss,
+                                        int64_t rtt) {
   rtc::CritScope lock(&crit_sect_);
   last_bitrate_bps_ = target_bitrate_bps;
   last_non_zero_bitrate_bps_ =
@@ -45,19 +46,17 @@ uint32_t BitrateAllocator::OnNetworkChanged(uint32_t target_bitrate_bps,
   last_fraction_loss_ = fraction_loss;
   last_rtt_ = rtt;
 
-  uint32_t allocated_bitrate_bps = 0;
   ObserverAllocation allocation = AllocateBitrates(target_bitrate_bps);
   for (const auto& kv : allocation) {
     kv.first->OnBitrateUpdated(kv.second, last_fraction_loss_, last_rtt_);
-    allocated_bitrate_bps += kv.second;
   }
   last_allocation_ = allocation;
-  return allocated_bitrate_bps;
 }
 
 int BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
                                   uint32_t min_bitrate_bps,
                                   uint32_t max_bitrate_bps,
+                                  uint32_t pad_up_bitrate_bps,
                                   bool enforce_min_bitrate) {
   rtc::CritScope lock(&crit_sect_);
   auto it = FindObserverConfig(observer);
@@ -66,10 +65,12 @@ int BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
   if (it != bitrate_observer_configs_.end()) {
     it->min_bitrate_bps = min_bitrate_bps;
     it->max_bitrate_bps = max_bitrate_bps;
+    it->pad_up_bitrate_bps = pad_up_bitrate_bps;
     it->enforce_min_bitrate = enforce_min_bitrate;
   } else {
-    bitrate_observer_configs_.push_back(ObserverConfig(
-        observer, min_bitrate_bps, max_bitrate_bps, enforce_min_bitrate));
+    bitrate_observer_configs_.push_back(
+        ObserverConfig(observer, min_bitrate_bps, max_bitrate_bps,
+                       pad_up_bitrate_bps, enforce_min_bitrate));
   }
 
   ObserverAllocation allocation;
@@ -85,16 +86,39 @@ int BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
     allocation = AllocateBitrates(last_non_zero_bitrate_bps_);
     observer->OnBitrateUpdated(0, last_fraction_loss_, last_rtt_);
   }
+  UpdateAllocationLimits();
+
   last_allocation_ = allocation;
   return allocation[observer];
 }
 
-void BitrateAllocator::RemoveObserver(BitrateAllocatorObserver* observer) {
-  rtc::CritScope lock(&crit_sect_);
-  auto it = FindObserverConfig(observer);
-  if (it != bitrate_observer_configs_.end()) {
-    bitrate_observer_configs_.erase(it);
+void BitrateAllocator::UpdateAllocationLimits() {
+  uint32_t total_requested_padding_bitrate = 0;
+  uint32_t total_requested_min_bitrate = 0;
+
+  {
+    rtc::CritScope lock(&crit_sect_);
+    for (const auto& config : bitrate_observer_configs_) {
+      if (config.enforce_min_bitrate) {
+        total_requested_min_bitrate += config.min_bitrate_bps;
+      }
+      total_requested_padding_bitrate += config.pad_up_bitrate_bps;
+    }
   }
+
+  limit_observer_->OnAllocationLimitsChanged(total_requested_min_bitrate,
+                                             total_requested_padding_bitrate);
+}
+
+void BitrateAllocator::RemoveObserver(BitrateAllocatorObserver* observer) {
+  {
+    rtc::CritScope lock(&crit_sect_);
+    auto it = FindObserverConfig(observer);
+    if (it != bitrate_observer_configs_.end()) {
+      bitrate_observer_configs_.erase(it);
+    }
+  }
+  UpdateAllocationLimits();
 }
 
 BitrateAllocator::ObserverConfigList::iterator

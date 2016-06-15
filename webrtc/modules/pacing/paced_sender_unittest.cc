@@ -322,7 +322,7 @@ TEST_F(PacedSenderTest, Padding) {
   uint16_t sequence_number = 1234;
 
   send_bucket_->SetEstimatedBitrate(kTargetBitrateBps);
-  send_bucket_->SetAllocatedSendBitrate(kTargetBitrateBps, kTargetBitrateBps);
+  send_bucket_->SetSendBitrateLimits(kTargetBitrateBps, kTargetBitrateBps);
 
   // Due to the multiplicative factor we can send 5 packets during a send
   // interval. (network capacity * multiplier / (8 bits per byte *
@@ -357,6 +357,29 @@ TEST_F(PacedSenderTest, Padding) {
   send_bucket_->Process();
 }
 
+TEST_F(PacedSenderTest, NoPaddingBeforeNormalPacket) {
+  send_bucket_->SetEstimatedBitrate(kTargetBitrateBps);
+  send_bucket_->SetSendBitrateLimits(kTargetBitrateBps, kTargetBitrateBps);
+
+  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
+  send_bucket_->Process();
+  clock_.AdvanceTimeMilliseconds(send_bucket_->TimeUntilNextProcess());
+
+  send_bucket_->Process();
+  clock_.AdvanceTimeMilliseconds(send_bucket_->TimeUntilNextProcess());
+
+  uint32_t ssrc = 12345;
+  uint16_t sequence_number = 1234;
+  int64_t capture_time_ms = 56789;
+
+  SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
+                      capture_time_ms, 250, false);
+  EXPECT_CALL(callback_, TimeToSendPadding(250, _))
+      .Times(1)
+      .WillOnce(Return(250));
+  send_bucket_->Process();
+}
+
 TEST_F(PacedSenderTest, VerifyPaddingUpToBitrate) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;
@@ -364,7 +387,7 @@ TEST_F(PacedSenderTest, VerifyPaddingUpToBitrate) {
   const int kTimeStep = 5;
   const int64_t kBitrateWindow = 100;
   send_bucket_->SetEstimatedBitrate(kTargetBitrateBps);
-  send_bucket_->SetAllocatedSendBitrate(kTargetBitrateBps, kTargetBitrateBps);
+  send_bucket_->SetSendBitrateLimits(kTargetBitrateBps, kTargetBitrateBps);
 
   int64_t start_time = clock_.TimeInMilliseconds();
   while (clock_.TimeInMilliseconds() - start_time < kBitrateWindow) {
@@ -392,7 +415,10 @@ TEST_F(PacedSenderTest, VerifyAverageBitrateVaryingMediaPayload) {
   send_bucket_.reset(new PacedSender(&clock_, &callback));
   send_bucket_->SetProbingEnabled(false);
   send_bucket_->SetEstimatedBitrate(kTargetBitrateBps);
-  send_bucket_->SetAllocatedSendBitrate(kTargetBitrateBps, kTargetBitrateBps);
+
+  send_bucket_->SetSendBitrateLimits(
+      0 /*allocated_bitrate_bps*/,
+      kTargetBitrateBps * 2 /* max_padding_bitrate_bps */);
 
   int64_t start_time = clock_.TimeInMilliseconds();
   size_t media_bytes = 0;
@@ -806,7 +832,7 @@ TEST_F(PacedSenderTest, PaddingOveruse) {
 
   send_bucket_->Process();
   send_bucket_->SetEstimatedBitrate(60000);
-  send_bucket_->SetAllocatedSendBitrate(60000, 0);
+  send_bucket_->SetSendBitrateLimits(60000, 0);
 
   SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
                       clock_.TimeInMilliseconds(), kPacketSize, false);
@@ -815,7 +841,7 @@ TEST_F(PacedSenderTest, PaddingOveruse) {
   // Add 30kbit padding. When increasing budget, media budget will increase from
   // negative (overuse) while padding budget will increase from 0.
   clock_.AdvanceTimeMilliseconds(5);
-  send_bucket_->SetAllocatedSendBitrate(60000, 30000);
+  send_bucket_->SetSendBitrateLimits(60000, 30000);
 
   SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
                       clock_.TimeInMilliseconds(), kPacketSize, false);
@@ -875,7 +901,7 @@ TEST_F(PacedSenderTest, ProbeClusterId) {
   uint16_t sequence_number = 1234;
   const size_t kPacketSize = 1200;
 
-  send_bucket_->SetAllocatedSendBitrate(kTargetBitrateBps, kTargetBitrateBps);
+  send_bucket_->SetSendBitrateLimits(kTargetBitrateBps, kTargetBitrateBps);
   send_bucket_->SetProbingEnabled(true);
   for (int i = 0; i < 11; ++i) {
     send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,

@@ -257,9 +257,10 @@ CongestionController::GetTransportFeedbackObserver() {
   return &transport_feedback_adapter_;
 }
 
-void CongestionController::SetAllocatedSendBitrate(int allocated_bitrate_bps,
-                                                   int padding_bitrate_bps) {
-  pacer_->SetAllocatedSendBitrate(allocated_bitrate_bps, padding_bitrate_bps);
+void CongestionController::SetAllocatedSendBitrateLimits(
+    int min_send_bitrate_bps,
+    int max_padding_bitrate_bps) {
+  pacer_->SetSendBitrateLimits(min_send_bitrate_bps, max_padding_bitrate_bps);
 }
 
 int64_t CongestionController::GetPacerQueuingDelayMs() const {

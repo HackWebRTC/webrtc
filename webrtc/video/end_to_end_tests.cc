@@ -2952,6 +2952,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
       static const int32_t kMaxTimestampGap = kDefaultTimeoutMs * 90;
       auto timestamp_it = last_observed_timestamp_.find(ssrc);
       if (timestamp_it == last_observed_timestamp_.end()) {
+        EXPECT_FALSE(only_padding);
         last_observed_timestamp_[ssrc] = timestamp;
       } else {
         // Verify timestamps are reasonably close.

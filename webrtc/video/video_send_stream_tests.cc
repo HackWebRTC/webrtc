@@ -955,6 +955,8 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
   RunBaseTest(&test);
 }
 
+// This test that padding stops being send after a while if the Camera stops
+// producing video frames and that padding resumes if the camera restarts.
 TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
   class NoPaddingWhenVideoIsMuted : public test::SendTest {
    public:
@@ -969,38 +971,35 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
       rtc::CritScope lock(&crit_);
       last_packet_time_ms_ = clock_->TimeInMilliseconds();
-      capturer_->Stop();
+
+      RTPHeader header;
+      parser_->Parse(packet, length, &header);
+      const bool only_padding =
+          header.headerLength + header.paddingLength == length;
+
+      if (test_state_ == kBeforeStopCapture) {
+        capturer_->Stop();
+        test_state_ = kWaitingForPadding;
+      } else if (test_state_ == kWaitingForPadding && only_padding) {
+        test_state_ = kWaitingForNoPackets;
+      } else if (test_state_ == kWaitingForPaddingAfterCameraRestart &&
+                 only_padding) {
+        observation_complete_.Set();
+      }
       return SEND_PACKET;
     }
 
     Action OnSendRtcp(const uint8_t* packet, size_t length) override {
       rtc::CritScope lock(&crit_);
-      const int kVideoMutedThresholdMs = 10000;
-      if (last_packet_time_ms_ > 0 &&
-          clock_->TimeInMilliseconds() - last_packet_time_ms_ >
-              kVideoMutedThresholdMs)
-        observation_complete_.Set();
-      // Receive statistics reporting having lost 50% of the packets.
-      FakeReceiveStatistics receive_stats(kVideoSendSsrcs[0], 1, 1, 0);
-      RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(), &receive_stats,
-                             nullptr, nullptr, transport_adapter_.get());
-
-      rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
-      rtcp_sender.SetRemoteSSRC(kVideoSendSsrcs[0]);
-
-      RTCPSender::FeedbackState feedback_state;
-
-      EXPECT_EQ(0, rtcp_sender.SendRTCP(feedback_state, kRtcpRr));
+      const int kNoPacketsThresholdMs = 2000;
+      if (test_state_ == kWaitingForNoPackets &&
+          (last_packet_time_ms_ > 0 &&
+           clock_->TimeInMilliseconds() - last_packet_time_ms_ >
+               kNoPacketsThresholdMs)) {
+        capturer_->Start();
+        test_state_ = kWaitingForPaddingAfterCameraRestart;
+      }
       return SEND_PACKET;
-    }
-
-    test::PacketTransport* CreateReceiveTransport() override {
-      test::PacketTransport* transport = new test::PacketTransport(
-          nullptr, this, test::PacketTransport::kReceiver,
-          FakeNetworkPipe::Config());
-      transport_adapter_.reset(new internal::TransportAdapter(transport));
-      transport_adapter_->Enable();
-      return transport;
     }
 
     size_t GetNumVideoStreams() const override { return 3; }
@@ -1016,6 +1015,14 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
           << "Timed out while waiting for RTP packets to stop being sent.";
     }
 
+    enum TestState {
+      kBeforeStopCapture,
+      kWaitingForPadding,
+      kWaitingForNoPackets,
+      kWaitingForPaddingAfterCameraRestart
+    };
+
+    TestState test_state_ = kBeforeStopCapture;
     Clock* const clock_;
     std::unique_ptr<internal::TransportAdapter> transport_adapter_;
     rtc::CriticalSection crit_;

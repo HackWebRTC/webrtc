@@ -245,8 +245,7 @@ class IntervalBudget {
 const int64_t PacedSender::kMaxQueueLengthMs = 2000;
 const float PacedSender::kDefaultPaceMultiplier = 2.5f;
 
-PacedSender::PacedSender(Clock* clock,
-                         PacketSender* packet_sender)
+PacedSender::PacedSender(Clock* clock, PacketSender* packet_sender)
     : clock_(clock),
       packet_sender_(packet_sender),
       critsect_(CriticalSectionWrapper::CreateCriticalSection()),
@@ -257,6 +256,7 @@ PacedSender::PacedSender(Clock* clock,
       prober_(new BitrateProber()),
       estimated_bitrate_bps_(0),
       min_send_bitrate_kbps_(0u),
+      max_padding_bitrate_kbps_(0u),
       pacing_bitrate_kbps_(0),
       time_last_update_us_(clock->TimeInMicroseconds()),
       packets_(new paced_sender::PacketQueue(clock)),
@@ -284,19 +284,23 @@ void PacedSender::SetProbingEnabled(bool enabled) {
 void PacedSender::SetEstimatedBitrate(uint32_t bitrate_bps) {
   CriticalSectionScoped cs(critsect_.get());
   estimated_bitrate_bps_ = bitrate_bps;
+  padding_budget_->set_target_rate_kbps(
+      std::min(estimated_bitrate_bps_ / 1000, max_padding_bitrate_kbps_));
   pacing_bitrate_kbps_ =
       std::max(min_send_bitrate_kbps_, estimated_bitrate_bps_ / 1000) *
       kDefaultPaceMultiplier;
 }
 
-void PacedSender::SetAllocatedSendBitrate(int allocated_bitrate,
-                                          int padding_bitrate) {
+void PacedSender::SetSendBitrateLimits(int min_send_bitrate_bps,
+                                       int padding_bitrate) {
   CriticalSectionScoped cs(critsect_.get());
-  min_send_bitrate_kbps_ = allocated_bitrate / 1000;
+  min_send_bitrate_kbps_ = min_send_bitrate_bps / 1000;
   pacing_bitrate_kbps_ =
       std::max(min_send_bitrate_kbps_, estimated_bitrate_bps_ / 1000) *
       kDefaultPaceMultiplier;
-  padding_budget_->set_target_rate_kbps(padding_bitrate / 1000);
+  max_padding_bitrate_kbps_ = padding_bitrate / 1000;
+  padding_budget_->set_target_rate_kbps(
+      std::min(estimated_bitrate_bps_ / 1000, max_padding_bitrate_kbps_));
 }
 
 void PacedSender::InsertPacket(RtpPacketSender::Priority priority,
@@ -418,15 +422,15 @@ void PacedSender::Process() {
   if (paused_ || !packets_->Empty())
     return;
 
-  size_t padding_needed;
-  if (is_probing) {
-    padding_needed = prober_->RecommendedPacketSize();
-  } else {
-    padding_needed = padding_budget_->bytes_remaining();
-  }
+  // We can not send padding unless a normal packet has first been sent. If we
+  // do, timestamps get messed up.
+  if (packet_counter_ > 0) {
+    size_t padding_needed = is_probing ? prober_->RecommendedPacketSize()
+                                       : padding_budget_->bytes_remaining();
 
-  if (padding_needed > 0)
-    SendPadding(padding_needed, probe_cluster_id);
+    if (padding_needed > 0)
+      SendPadding(padding_needed, probe_cluster_id);
+  }
 }
 
 bool PacedSender::SendPacket(const paced_sender::Packet& packet,

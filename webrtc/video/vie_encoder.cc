@@ -28,8 +28,6 @@
 
 namespace webrtc {
 
-static const float kStopPaddingThresholdMs = 2000;
-
 ViEEncoder::ViEEncoder(uint32_t number_of_cores,
                        ProcessThread* module_process_thread,
                        SendStatisticsProxy* stats_proxy,
@@ -43,7 +41,6 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       overuse_detector_(overuse_detector),
       time_of_last_frame_activity_ms_(0),
       encoder_config_(),
-      min_transmit_bitrate_bps_(0),
       last_observed_bitrate_bps_(0),
       encoder_paused_(true),
       encoder_paused_and_dropped_frame_(false),
@@ -88,7 +85,6 @@ int32_t ViEEncoder::DeRegisterExternalEncoder(uint8_t pl_type) {
 }
 
 void ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec,
-                            int min_transmit_bitrate_bps,
                             size_t max_data_payload_length) {
   // Setting target width and height for VPM.
   RTC_CHECK_EQ(VPM_OK,
@@ -100,7 +96,6 @@ void ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec,
   {
     rtc::CritScope lock(&data_cs_);
     encoder_config_ = video_codec;
-    min_transmit_bitrate_bps_ = min_transmit_bitrate_bps;
   }
 
   bool success = video_sender_.RegisterSendCodec(
@@ -127,57 +122,6 @@ void ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec,
     }
     stats_proxy_->SetContentType(content_type);
   }
-}
-
-int ViEEncoder::GetPaddingNeededBps() const {
-  int64_t time_of_last_frame_activity_ms;
-  int min_transmit_bitrate_bps;
-  VideoCodec send_codec;
-  bool video_is_suspended;
-  {
-    rtc::CritScope lock(&data_cs_);
-    bool send_padding = encoder_config_.numberOfSimulcastStreams > 1 ||
-                        video_suspended_ || min_transmit_bitrate_bps_ > 0;
-    if (!send_padding)
-      return 0;
-    time_of_last_frame_activity_ms = time_of_last_frame_activity_ms_;
-    min_transmit_bitrate_bps = min_transmit_bitrate_bps_;
-    send_codec = encoder_config_;
-    video_is_suspended = video_suspended_;
-  }
-
-  // Find the max amount of padding we can allow ourselves to send at this
-  // point, based on which streams are currently active and what our current
-  // available bandwidth is.
-  int pad_up_to_bitrate_bps = 0;
-  if (send_codec.numberOfSimulcastStreams == 0) {
-    pad_up_to_bitrate_bps = send_codec.minBitrate * 1000;
-  } else {
-    SimulcastStream* stream_configs = send_codec.simulcastStream;
-    pad_up_to_bitrate_bps =
-        stream_configs[send_codec.numberOfSimulcastStreams - 1].minBitrate *
-        1000;
-    for (int i = 0; i < send_codec.numberOfSimulcastStreams - 1; ++i) {
-      pad_up_to_bitrate_bps += stream_configs[i].targetBitrate * 1000;
-    }
-  }
-
-  // Disable padding if only sending one stream and video isn't suspended and
-  // min-transmit bitrate isn't used (applied later).
-  if (!video_is_suspended && send_codec.numberOfSimulcastStreams <= 1)
-    pad_up_to_bitrate_bps = 0;
-
-  // The amount of padding should decay to zero if no frames are being
-  // captured/encoded unless a min-transmit bitrate is used.
-  int64_t now_ms = rtc::TimeMillis();
-  if (now_ms - time_of_last_frame_activity_ms > kStopPaddingThresholdMs)
-    pad_up_to_bitrate_bps = 0;
-
-  // Pad up to min bitrate.
-  if (pad_up_to_bitrate_bps < min_transmit_bitrate_bps)
-    pad_up_to_bitrate_bps = min_transmit_bitrate_bps;
-
-  return pad_up_to_bitrate_bps;
 }
 
 bool ViEEncoder::EncoderPaused() const {
@@ -256,6 +200,11 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame) {
 
 void ViEEncoder::SendKeyFrame() {
   video_sender_.IntraFrameRequest(0);
+}
+
+int64_t ViEEncoder::time_of_last_frame_activity_ms() {
+  rtc::CritScope lock(&data_cs_);
+  return time_of_last_frame_activity_ms_;
 }
 
 void ViEEncoder::OnSetRates(uint32_t bitrate_bps, int framerate) {

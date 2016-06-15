@@ -51,7 +51,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
                         public webrtc::CpuOveruseObserver,
                         public webrtc::BitrateAllocatorObserver,
                         public webrtc::VCMProtectionCallback,
-                        protected webrtc::EncodedImageCallback {
+                        public EncodedImageCallback {
  public:
   VideoSendStream(int num_cpu_cores,
                   ProcessThread* module_process_thread,
@@ -102,8 +102,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
  private:
   struct EncoderSettings {
     VideoCodec video_codec;
-    int min_transmit_bitrate_bps;
-    std::vector<VideoStream> streams;
+    VideoEncoderConfig config;
   };
 
   // Implements EncodedImageCallback. The implementation routes encoded frames
@@ -137,8 +136,11 @@ class VideoSendStream : public webrtc::VideoSendStream,
   rtc::Event encoder_wakeup_event_;
   volatile int stop_encoder_thread_;
   rtc::CriticalSection encoder_settings_crit_;
-  rtc::Optional<EncoderSettings> pending_encoder_settings_
+  std::unique_ptr<EncoderSettings> pending_encoder_settings_
       GUARDED_BY(encoder_settings_crit_);
+  // Only used on the encoder thread.
+  bool send_stream_registered_as_observer_;
+  std::unique_ptr<EncoderSettings> current_encoder_settings_;
 
   OveruseFrameDetector overuse_detector_;
   ViEEncoder vie_encoder_;

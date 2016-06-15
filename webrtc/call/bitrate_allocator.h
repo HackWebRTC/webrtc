@@ -31,6 +31,8 @@ class BitrateAllocatorObserver {
   virtual void OnBitrateUpdated(uint32_t bitrate_bps,
                                 uint8_t fraction_loss,
                                 int64_t rtt) = 0;
+
+ protected:
   virtual ~BitrateAllocatorObserver() {}
 };
 
@@ -39,14 +41,24 @@ class BitrateAllocatorObserver {
 // and push the result to the encoders via BitrateAllocatorObserver(s).
 class BitrateAllocator {
  public:
-  BitrateAllocator();
+  // Used to get notified when send stream limits such as the minimum send
+  // bitrate and max padding bitrate is changed.
+  class LimitObserver {
+   public:
+    virtual void OnAllocationLimitsChanged(
+        uint32_t min_send_bitrate_bps,
+        uint32_t max_padding_bitrate_bps) = 0;
+
+   protected:
+    virtual ~LimitObserver() {}
+  };
+
+  explicit BitrateAllocator(LimitObserver* limit_observer);
 
   // Allocate target_bitrate across the registered BitrateAllocatorObservers.
-  // Returns actual bitrate allocated, which might be higher than target_bitrate
-  // if for instance EnforceMinBitrate() is enabled.
-  uint32_t OnNetworkChanged(uint32_t target_bitrate_bps,
-                            uint8_t fraction_loss,
-                            int64_t rtt);
+  void OnNetworkChanged(uint32_t target_bitrate_bps,
+                        uint8_t fraction_loss,
+                        int64_t rtt);
 
   // Set the start and max send bitrate used by the bandwidth management.
   //
@@ -64,6 +76,7 @@ class BitrateAllocator {
   int AddObserver(BitrateAllocatorObserver* observer,
                   uint32_t min_bitrate_bps,
                   uint32_t max_bitrate_bps,
+                  uint32_t pad_up_bitrate_bps,
                   bool enforce_min_bitrate);
 
   // Removes a previously added observer, but will not trigger a new bitrate
@@ -76,16 +89,23 @@ class BitrateAllocator {
     ObserverConfig(BitrateAllocatorObserver* observer,
                    uint32_t min_bitrate_bps,
                    uint32_t max_bitrate_bps,
+                   uint32_t pad_up_bitrate_bps,
                    bool enforce_min_bitrate)
         : observer(observer),
           min_bitrate_bps(min_bitrate_bps),
           max_bitrate_bps(max_bitrate_bps),
+          pad_up_bitrate_bps(pad_up_bitrate_bps),
           enforce_min_bitrate(enforce_min_bitrate) {}
     BitrateAllocatorObserver* const observer;
     uint32_t min_bitrate_bps;
     uint32_t max_bitrate_bps;
+    uint32_t pad_up_bitrate_bps;
     bool enforce_min_bitrate;
   };
+
+  // Calculates the minimum requested send bitrate and max padding bitrate and
+  // calls LimitObserver::OnAllocationLimitsChanged.
+  void UpdateAllocationLimits();
 
   typedef std::list<ObserverConfig> ObserverConfigList;
   ObserverConfigList::iterator FindObserverConfig(
@@ -126,6 +146,7 @@ class BitrateAllocator {
   bool EnoughBitrateForAllObservers(uint32_t bitrate, uint32_t sum_min_bitrates)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
+  LimitObserver* const limit_observer_;
 
   rtc::CriticalSection crit_sect_;
   // Stored in a list to keep track of the insertion order.
