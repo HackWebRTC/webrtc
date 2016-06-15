@@ -847,7 +847,7 @@ WEBRTC_BASE_TEST(AddRemoveSendStreams);
 
 WEBRTC_BASE_TEST(SimulateConference);
 
-WEBRTC_BASE_TEST(AddRemoveCapturer);
+WEBRTC_DISABLED_BASE_TEST(AddRemoveCapturer);
 
 WEBRTC_BASE_TEST(RemoveCapturerWithoutAdd);
 
