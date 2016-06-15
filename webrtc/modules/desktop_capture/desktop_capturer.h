@@ -37,6 +37,8 @@ class DesktopCapturer {
     // Capture has failed and will keep failing if the caller tries calling
     // Capture() again.
     ERROR_PERMANENT,
+
+    MAX_VALUE = ERROR_PERMANENT
   };
 
   // Interface that must be implemented by the DesktopCapturer consumers.
