@@ -395,12 +395,10 @@ class WebRtcVoiceCodecs final {
       // Be sure to use the payload type requested by the remote side.
       // Ignore codecs we don't know about. The negotiation step should prevent
       // this, but double-check to be sure.
-      webrtc::CodecInst voe_codec = {0};
-      if (!ToCodecInst(codec, &voe_codec)) {
+      if (!ToCodecInst(codec, out)) {
         LOG(LS_WARNING) << "Unknown codec " << ToString(codec);
         continue;
       }
-      *out = voe_codec;
       return &codec;
     }
     return nullptr;
