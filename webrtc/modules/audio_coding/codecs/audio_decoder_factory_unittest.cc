@@ -55,12 +55,6 @@ TEST(AudioDecoderFactoryTest, CreateIlbc) {
   EXPECT_TRUE(adf->MakeAudioDecoder(SdpAudioFormat("ilbc", 8000, 1)));
   EXPECT_FALSE(adf->MakeAudioDecoder(SdpAudioFormat("ilbc", 8000, 2)));
   EXPECT_FALSE(adf->MakeAudioDecoder(SdpAudioFormat("ilbc", 16000, 1)));
-
-  // iLBC actually uses a 16 kHz sample rate instead of the nominal 8 kHz.
-  // TODO(kwiberg): Uncomment this once AudioDecoder has a SampleRateHz method.
-  // std::unique_ptr<AudioDecoder> dec =
-  //    adf->MakeAudioDecoder(SdpAudioFormat("ilbc", 8000, 1));
-  // EXPECT_EQ(16000, dec->SampleRateHz());
 }
 
 TEST(AudioDecoderFactoryTest, CreateIsac) {
@@ -108,6 +102,11 @@ TEST(AudioDecoderFactoryTest, CreateG722) {
   EXPECT_FALSE(adf->MakeAudioDecoder(SdpAudioFormat("g722", 8000, 3)));
   EXPECT_FALSE(adf->MakeAudioDecoder(SdpAudioFormat("g722", 16000, 1)));
   EXPECT_FALSE(adf->MakeAudioDecoder(SdpAudioFormat("g722", 32000, 1)));
+
+  // g722 actually uses a 16 kHz sample rate instead of the nominal 8 kHz.
+  std::unique_ptr<AudioDecoder> dec =
+      adf->MakeAudioDecoder(SdpAudioFormat("g722", 8000, 1));
+  EXPECT_EQ(16000, dec->SampleRateHz());
 }
 
 TEST(AudioDecoderFactoryTest, CreateOpus) {
