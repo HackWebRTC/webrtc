@@ -257,7 +257,7 @@ def _CheckNoRtcBaseDeps(input_api, gyp_files, output_api):
 
 def _CheckNoSourcesAboveGyp(input_api, gyp_files, output_api):
   # Disallow referencing source files with paths above the GYP file location.
-  source_pattern = input_api.re.compile(r'sources.*?\[(.*?)\]',
+  source_pattern = input_api.re.compile(r'\'sources\'.*?\[(.*?)\]',
                                         re.MULTILINE | re.DOTALL)
   file_pattern = input_api.re.compile(r"'((\.\./.*?)|(<\(webrtc_root\).*?))'")
   violating_gyp_files = set()
@@ -271,8 +271,8 @@ def _CheckNoSourcesAboveGyp(input_api, gyp_files, output_api):
     for source_block_match in source_pattern.finditer(contents):
       # Find all source list entries starting with ../ in the source block
       # (exclude overrides entries).
-      for file_list_match in file_pattern.finditer(source_block_match.group(0)):
-        source_file = file_list_match.group(0)
+      for file_list_match in file_pattern.finditer(source_block_match.group(1)):
+        source_file = file_list_match.group(1)
         if 'overrides/' not in source_file:
           violating_source_entries.append(source_file)
           violating_gyp_files.add(gyp_file)
