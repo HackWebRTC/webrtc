@@ -6,6 +6,3 @@ PeerConnectionEndToEndTest.*
 PeerConnectionInterfaceTest.*
 # Issue 3453
 WebRtcSessionTest.TestReceiveSdesOfferCreateSdesAnswer
-# Flakily fails or crashes on Dr Memory Light.
-# Issue 5978
-WebRtcSessionTest.TestPacketOptionsAndOnPacketSent

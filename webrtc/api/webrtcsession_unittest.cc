@@ -1326,7 +1326,8 @@ class WebRtcSessionTest
         ->SendRtp(test_packet, sizeof(test_packet), options);
 
     const int kPacketTimeout = 2000;
-    EXPECT_EQ_WAIT(fake_call_.last_sent_packet().packet_id, 10, kPacketTimeout);
+    EXPECT_EQ_WAIT(10, fake_call_.last_sent_nonnegative_packet_id(),
+                   kPacketTimeout);
     EXPECT_GT(fake_call_.last_sent_packet().send_time_ms, -1);
   }
 

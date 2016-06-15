@@ -465,5 +465,9 @@ void FakeCall::SignalChannelNetworkState(webrtc::MediaType media,
 
 void FakeCall::OnSentPacket(const rtc::SentPacket& sent_packet) {
   last_sent_packet_ = sent_packet;
+  if (sent_packet.packet_id >= 0) {
+    last_sent_nonnegative_packet_id_ = sent_packet.packet_id;
+  }
 }
+
 }  // namespace cricket

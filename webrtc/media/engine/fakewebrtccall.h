@@ -177,6 +177,13 @@ class FakeCall final : public webrtc::Call, public webrtc::PacketReceiver {
   const FakeAudioReceiveStream* GetAudioReceiveStream(uint32_t ssrc);
 
   rtc::SentPacket last_sent_packet() const { return last_sent_packet_; }
+
+  // This is useful if we care about the last media packet (with id populated)
+  // but not the last ICE packet (with -1 ID).
+  int last_sent_nonnegative_packet_id() const {
+    return last_sent_nonnegative_packet_id_;
+  }
+
   webrtc::NetworkState GetNetworkState(webrtc::MediaType media) const;
   int GetNumCreatedSendStreams() const;
   int GetNumCreatedReceiveStreams() const;
@@ -222,6 +229,7 @@ class FakeCall final : public webrtc::Call, public webrtc::PacketReceiver {
   webrtc::NetworkState audio_network_state_;
   webrtc::NetworkState video_network_state_;
   rtc::SentPacket last_sent_packet_;
+  int last_sent_nonnegative_packet_id_ = -1;
   webrtc::Call::Stats stats_;
   std::vector<FakeVideoSendStream*> video_send_streams_;
   std::vector<FakeAudioSendStream*> audio_send_streams_;
