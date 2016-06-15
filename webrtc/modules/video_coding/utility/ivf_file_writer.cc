@@ -38,7 +38,7 @@ std::unique_ptr<IvfFileWriter> IvfFileWriter::Open(const std::string& file_name,
                                                    VideoCodecType codec_type) {
   std::unique_ptr<IvfFileWriter> file_writer;
   std::unique_ptr<FileWrapper> file(FileWrapper::Create());
-  if (file->OpenFile(file_name.c_str(), false) != 0)
+  if (!file->OpenFile(file_name.c_str(), false))
     return file_writer;
 
   file_writer.reset(new IvfFileWriter(
@@ -139,7 +139,7 @@ bool IvfFileWriter::InitFromFirstFrame(const EncodedImage& encoded_image) {
 }
 
 bool IvfFileWriter::WriteFrame(const EncodedImage& encoded_image) {
-  RTC_DCHECK(file_->Open());
+  RTC_DCHECK(file_->is_open());
 
   if (num_frames_ == 0 && !InitFromFirstFrame(encoded_image))
     return false;
@@ -178,7 +178,7 @@ bool IvfFileWriter::WriteFrame(const EncodedImage& encoded_image) {
 }
 
 bool IvfFileWriter::Close() {
-  if (!file_->Open())
+  if (!file_->is_open())
     return false;
 
   if (num_frames_ == 0) {
@@ -190,7 +190,9 @@ bool IvfFileWriter::Close() {
     return true;
   }
 
-  return WriteHeader() && (file_->CloseFile() == 0);
+  bool ret = WriteHeader();
+  file_->CloseFile();
+  return ret;
 }
 
 }  // namespace webrtc

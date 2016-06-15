@@ -188,7 +188,7 @@ bool RtcEventLogImpl::StartLogging(const std::string& file_name,
   message.start_time = clock_->TimeInMicroseconds();
   message.stop_time = std::numeric_limits<int64_t>::max();
   message.file.reset(FileWrapper::Create());
-  if (message.file->OpenFile(file_name.c_str(), false) != 0) {
+  if (!message.file->OpenFile(file_name.c_str(), false)) {
     LOG(LS_ERROR) << "Can't open file. WebRTC event log not started.";
     return false;
   }
@@ -222,7 +222,7 @@ bool RtcEventLogImpl::StartLogging(rtc::PlatformFile platform_file,
     }
     return false;
   }
-  if (message.file->OpenFromFileHandle(file_handle, true, false) != 0) {
+  if (!message.file->OpenFromFileHandle(file_handle)) {
     LOG(LS_ERROR) << "Can't open file. WebRTC event log not started.";
     return false;
   }
@@ -443,7 +443,7 @@ bool RtcEventLog::ParseRtcEventLog(const std::string& file_name,
   char tmp_buffer[1024];
   int bytes_read = 0;
   std::unique_ptr<FileWrapper> dump_file(FileWrapper::Create());
-  if (dump_file->OpenFile(file_name.c_str(), true) != 0) {
+  if (!dump_file->OpenFile(file_name.c_str(), true)) {
     return false;
   }
   std::string dump_buffer;

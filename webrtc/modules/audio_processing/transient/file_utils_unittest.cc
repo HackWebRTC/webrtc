@@ -163,12 +163,9 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadInt16BufferFromFile) {
 
   std::unique_ptr<FileWrapper> file(FileWrapper::Create());
 
-  file->OpenFile(test_filename.c_str(),
-                 true,    // Read only.
-                 true,    // Loop.
-                 false);  // No text.
-  ASSERT_TRUE(file->Open()) << "File could not be opened:\n"
-      << kTestFileName.c_str();
+  file->OpenFile(test_filename.c_str(), true);  // Read only.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kTestFileName.c_str();
 
   const size_t kBufferLength = 12;
   std::unique_ptr<int16_t[]> buffer(new int16_t[kBufferLength]);
@@ -207,12 +204,9 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadInt16FromFileToFloatBuffer) {
 
   std::unique_ptr<FileWrapper> file(FileWrapper::Create());
 
-  file->OpenFile(test_filename.c_str(),
-                 true,    // Read only.
-                 true,    // Loop.
-                 false);  // No text.
-  ASSERT_TRUE(file->Open()) << "File could not be opened:\n"
-      << kTestFileName.c_str();
+  file->OpenFile(test_filename.c_str(), true);  // Read only.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kTestFileName.c_str();
 
   const size_t kBufferLength = 12;
   std::unique_ptr<float[]> buffer(new float[kBufferLength]);
@@ -254,12 +248,9 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadInt16FromFileToDoubleBuffer) {
 
   std::unique_ptr<FileWrapper> file(FileWrapper::Create());
 
-  file->OpenFile(test_filename.c_str(),
-                 true,    // Read only.
-                 true,    // Loop.
-                 false);  // No text.
-  ASSERT_TRUE(file->Open()) << "File could not be opened:\n"
-      << kTestFileName.c_str();
+  file->OpenFile(test_filename.c_str(), true);  // Read only.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kTestFileName.c_str();
 
   const size_t kBufferLength = 12;
   std::unique_ptr<double[]> buffer(new double[kBufferLength]);
@@ -299,12 +290,9 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadFloatBufferFromFile) {
 
   std::unique_ptr<FileWrapper> file(FileWrapper::Create());
 
-  file->OpenFile(test_filename.c_str(),
-                 true,    // Read only.
-                 true,    // Loop.
-                 false);  // No text.
-  ASSERT_TRUE(file->Open()) << "File could not be opened:\n"
-      << kTestFileNamef.c_str();
+  file->OpenFile(test_filename.c_str(), true);  // Read only.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kTestFileNamef.c_str();
 
   const size_t kBufferLength = 3;
   std::unique_ptr<float[]> buffer(new float[kBufferLength]);
@@ -341,12 +329,9 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadDoubleBufferFromFile) {
 
   std::unique_ptr<FileWrapper> file(FileWrapper::Create());
 
-  file->OpenFile(test_filename.c_str(),
-                 true,    // Read only.
-                 true,    // Loop.
-                 false);  // No text.
-  ASSERT_TRUE(file->Open()) << "File could not be opened:\n"
-      << kTestFileName.c_str();
+  file->OpenFile(test_filename.c_str(), true);  // Read only.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kTestFileName.c_str();
 
   const size_t kBufferLength = 3;
   std::unique_ptr<double[]> buffer(new double[kBufferLength]);
@@ -384,12 +369,9 @@ TEST_F(TransientFileUtilsTest, MAYBE_WriteInt16BufferToFile) {
   std::string kOutFileName = CreateTempFilename(test::OutputPath(),
                                                 "utils_test");
 
-  file->OpenFile(kOutFileName.c_str(),
-                 false,   // Write mode.
-                 false,   // No loop.
-                 false);  // No text.
-  ASSERT_TRUE(file->Open()) << "File could not be opened:\n"
-      << kOutFileName.c_str();
+  file->OpenFile(kOutFileName.c_str(), false);  // Write mode.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kOutFileName.c_str();
 
   const size_t kBufferLength = 3;
   std::unique_ptr<int16_t[]> written_buffer(new int16_t[kBufferLength]);
@@ -405,12 +387,9 @@ TEST_F(TransientFileUtilsTest, MAYBE_WriteInt16BufferToFile) {
 
   file->CloseFile();
 
-  file->OpenFile(kOutFileName.c_str(),
-                 true,    // Read only.
-                 false,   // No loop.
-                 false);  // No text.
-  ASSERT_TRUE(file->Open()) << "File could not be opened:\n"
-      << kOutFileName.c_str();
+  file->OpenFile(kOutFileName.c_str(), true);  // Read only.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kOutFileName.c_str();
 
   EXPECT_EQ(kBufferLength, ReadInt16BufferFromFile(file.get(),
                                                    kBufferLength,
@@ -431,12 +410,9 @@ TEST_F(TransientFileUtilsTest, MAYBE_WriteFloatBufferToFile) {
   std::string kOutFileName = CreateTempFilename(test::OutputPath(),
                                                 "utils_test");
 
-  file->OpenFile(kOutFileName.c_str(),
-                 false,   // Write mode.
-                 false,   // No loop.
-                 false);  // No text.
-  ASSERT_TRUE(file->Open()) << "File could not be opened:\n"
-      << kOutFileName.c_str();
+  file->OpenFile(kOutFileName.c_str(), false);  // Write mode.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kOutFileName.c_str();
 
   const size_t kBufferLength = 3;
   std::unique_ptr<float[]> written_buffer(new float[kBufferLength]);
@@ -452,12 +428,9 @@ TEST_F(TransientFileUtilsTest, MAYBE_WriteFloatBufferToFile) {
 
   file->CloseFile();
 
-  file->OpenFile(kOutFileName.c_str(),
-                 true,    // Read only.
-                 false,   // No loop.
-                 false);  // No text.
-  ASSERT_TRUE(file->Open()) << "File could not be opened:\n"
-      << kOutFileName.c_str();
+  file->OpenFile(kOutFileName.c_str(), true);  // Read only.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kOutFileName.c_str();
 
   EXPECT_EQ(kBufferLength, ReadFloatBufferFromFile(file.get(),
                                                    kBufferLength,
@@ -478,12 +451,9 @@ TEST_F(TransientFileUtilsTest, MAYBE_WriteDoubleBufferToFile) {
   std::string kOutFileName = CreateTempFilename(test::OutputPath(),
                                                 "utils_test");
 
-  file->OpenFile(kOutFileName.c_str(),
-                 false,   // Write mode.
-                 false,   // No loop.
-                 false);  // No text.
-  ASSERT_TRUE(file->Open()) << "File could not be opened:\n"
-      << kOutFileName.c_str();
+  file->OpenFile(kOutFileName.c_str(), false);  // Write mode.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kOutFileName.c_str();
 
   const size_t kBufferLength = 3;
   std::unique_ptr<double[]> written_buffer(new double[kBufferLength]);
@@ -499,12 +469,9 @@ TEST_F(TransientFileUtilsTest, MAYBE_WriteDoubleBufferToFile) {
 
   file->CloseFile();
 
-  file->OpenFile(kOutFileName.c_str(),
-                 true,    // Read only.
-                 false,   // No loop.
-                 false);  // No text.
-  ASSERT_TRUE(file->Open()) << "File could not be opened:\n"
-      << kOutFileName.c_str();
+  file->OpenFile(kOutFileName.c_str(), true);  // Read only.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kOutFileName.c_str();
 
   EXPECT_EQ(kBufferLength, ReadDoubleBufferFromFile(file.get(),
                                                     kBufferLength,
@@ -541,12 +508,9 @@ TEST_F(TransientFileUtilsTest, MAYBE_ExpectedErrorReturnValues) {
   EXPECT_EQ(0u, WriteInt16BufferToFile(file.get(), 1, int16_buffer.get()));
   EXPECT_EQ(0u, WriteDoubleBufferToFile(file.get(), 1, double_buffer.get()));
 
-  file->OpenFile(test_filename.c_str(),
-                 true,    // Read only.
-                 true,    // Loop.
-                 false);  // No text.
-  ASSERT_TRUE(file->Open()) << "File could not be opened:\n"
-      << kTestFileName.c_str();
+  file->OpenFile(test_filename.c_str(), true);  // Read only.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kTestFileName.c_str();
 
   EXPECT_EQ(0u, ReadInt16BufferFromFile(NULL, 1, int16_buffer.get()));
   EXPECT_EQ(0u, ReadInt16BufferFromFile(file.get(), 1, NULL));

@@ -69,6 +69,7 @@ class IvfFileWriterTest : public ::testing::Test {
                        int height,
                        uint32_t num_frames,
                        bool use_capture_tims_ms) {
+    ASSERT_TRUE(file->is_open());
     uint8_t data[kHeaderSize];
     ASSERT_EQ(kHeaderSize, file->Read(data, kHeaderSize));
 
@@ -118,13 +119,12 @@ class IvfFileWriterTest : public ::testing::Test {
     EXPECT_TRUE(file_writer_->Close());
 
     std::unique_ptr<FileWrapper> out_file(FileWrapper::Create());
-    ASSERT_EQ(0, out_file->OpenFile(file_name_.c_str(), true));
+    ASSERT_TRUE(out_file->OpenFile(file_name_.c_str(), true));
     VerifyIvfHeader(out_file.get(), fourcc, kWidth, kHeight, kNumFrames,
                     use_capture_tims_ms);
     VerifyDummyTestFrames(out_file.get(), kNumFrames);
 
-    out_file->Flush();
-    EXPECT_EQ(0, out_file->CloseFile());
+    out_file->CloseFile();
 
     bool file_removed = false;
     for (int i = 0; i < kMaxFileRetries; ++i) {
@@ -151,7 +151,7 @@ class IvfFileWriterTest : public ::testing::Test {
       if (file_wrapper.get() != nullptr)
         rtc::Thread::SleepMs(1000);
       file_wrapper.reset(FileWrapper::Create());
-      file_exists = file_wrapper->OpenFile(file_name_.c_str(), true) == 0;
+      file_exists = file_wrapper->OpenFile(file_name_.c_str(), true);
       file_wrapper->CloseFile();
     } while (file_exists != expected && ++iterations < kMaxFileRetries);
     return file_exists;

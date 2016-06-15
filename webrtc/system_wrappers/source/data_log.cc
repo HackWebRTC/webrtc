@@ -205,16 +205,10 @@ int LogTable::InsertCell(const std::string& column_name,
 int LogTable::CreateLogFile(const std::string& file_name) {
   if (file_name.length() == 0)
     return -1;
-  if (file_->Open())
+  if (file_->is_open())
     return -1;
-  file_->OpenFile(file_name.c_str(),
-                  false,  // Open with read/write permissions
-                  false,  // Don't wraparound and write at the beginning when
-                          // the file is full
-                  true);  // Open as a text file
-  if (file_ == NULL)
-    return -1;
-  return 0;
+  // Open with read/write permissions
+  return file_->OpenFile(file_name.c_str(), false) ? 0 : -1;
 }
 
 void LogTable::Flush() {

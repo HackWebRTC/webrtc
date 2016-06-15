@@ -313,7 +313,7 @@ int32_t AudioDeviceBuffer::StartInputFileRecording(
     _recFile.Flush();
     _recFile.CloseFile();
 
-    return (_recFile.OpenFile(fileName, false, false, false));
+    return _recFile.OpenFile(fileName, false) ? 0 : -1;
 }
 
 // ----------------------------------------------------------------------------
@@ -346,7 +346,7 @@ int32_t AudioDeviceBuffer::StartOutputFileRecording(
     _playFile.Flush();
     _playFile.CloseFile();
 
-    return (_playFile.OpenFile(fileName, false, false, false));
+    return _playFile.OpenFile(fileName, false) ? 0 : -1;
 }
 
 // ----------------------------------------------------------------------------
@@ -424,10 +424,9 @@ int32_t AudioDeviceBuffer::SetRecordedBuffer(const void* audioBuffer,
         }
     }
 
-    if (_recFile.Open())
-    {
-        // write to binary file in mono or stereo (interleaved)
-        _recFile.Write(&_recBuffer[0], _recSize);
+    if (_recFile.is_open()) {
+      // write to binary file in mono or stereo (interleaved)
+      _recFile.Write(&_recBuffer[0], _recSize);
     }
 
     return 0;
@@ -572,10 +571,9 @@ int32_t AudioDeviceBuffer::GetPlayoutData(void* audioBuffer)
 
     memcpy(audioBuffer, &_playBuffer[0], _playSize);
 
-    if (_playFile.Open())
-    {
-        // write to binary file in mono or stereo (interleaved)
-        _playFile.Write(&_playBuffer[0], _playSize);
+    if (_playFile.is_open()) {
+      // write to binary file in mono or stereo (interleaved)
+      _playFile.Write(&_playBuffer[0], _playSize);
     }
 
     return static_cast<int32_t>(_playSamples);

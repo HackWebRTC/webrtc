@@ -53,11 +53,9 @@ TEST(TransientDetectorTest, CorrectnessBasedOnFiles) {
 
     detect_file->OpenFile(
         test::ResourcePath(detect_file_name.str(), "dat").c_str(),
-        true,    // Read only.
-        false,   // No loop.
-        false);  // No text.
+        true);  // Read only.
 
-    bool file_opened = detect_file->Open();
+    bool file_opened = detect_file->is_open();
     ASSERT_TRUE(file_opened) << "File could not be opened.\n"
           << detect_file_name.str().c_str();
 
@@ -70,9 +68,7 @@ TEST(TransientDetectorTest, CorrectnessBasedOnFiles) {
 
     audio_file->OpenFile(
         test::ResourcePath(audio_file_name.str(), "pcm").c_str(),
-        true,    // Read only.
-        false,   // No loop.
-        false);  // No text.
+        true);  // Read only.
 
     // Create detector.
     TransientDetector detector(sample_rate_hz);

@@ -80,7 +80,7 @@ int ConvertDoubleToByteArray(double value, uint8_t out_bytes[8]) {
 size_t ReadInt16BufferFromFile(FileWrapper* file,
                                size_t length,
                                int16_t* buffer) {
-  if (!file || !file->Open() || !buffer || length <= 0) {
+  if (!file || !file->is_open() || !buffer || length <= 0) {
     return 0;
   }
 
@@ -106,7 +106,7 @@ size_t ReadInt16BufferFromFile(FileWrapper* file,
 size_t ReadInt16FromFileToFloatBuffer(FileWrapper* file,
                                       size_t length,
                                       float* buffer) {
-  if (!file || !file->Open() || !buffer || length <= 0) {
+  if (!file || !file->is_open() || !buffer || length <= 0) {
     return 0;
   }
 
@@ -124,7 +124,7 @@ size_t ReadInt16FromFileToFloatBuffer(FileWrapper* file,
 size_t ReadInt16FromFileToDoubleBuffer(FileWrapper* file,
                                        size_t length,
                                        double* buffer) {
-  if (!file || !file->Open() || !buffer || length <= 0) {
+  if (!file || !file->is_open() || !buffer || length <= 0) {
     return 0;
   }
 
@@ -142,7 +142,7 @@ size_t ReadInt16FromFileToDoubleBuffer(FileWrapper* file,
 size_t ReadFloatBufferFromFile(FileWrapper* file,
                                size_t length,
                                float* buffer) {
-  if (!file || !file->Open() || !buffer || length <= 0) {
+  if (!file || !file->is_open() || !buffer || length <= 0) {
     return 0;
   }
 
@@ -165,7 +165,7 @@ size_t ReadFloatBufferFromFile(FileWrapper* file,
 size_t ReadDoubleBufferFromFile(FileWrapper* file,
                                 size_t length,
                                 double* buffer) {
-  if (!file || !file->Open() || !buffer || length <= 0) {
+  if (!file || !file->is_open() || !buffer || length <= 0) {
     return 0;
   }
 
@@ -188,7 +188,7 @@ size_t ReadDoubleBufferFromFile(FileWrapper* file,
 size_t WriteInt16BufferToFile(FileWrapper* file,
                               size_t length,
                               const int16_t* buffer) {
-  if (!file || !file->Open() || !buffer || length <= 0) {
+  if (!file || !file->is_open() || !buffer || length <= 0) {
     return 0;
   }
 
@@ -212,7 +212,7 @@ size_t WriteInt16BufferToFile(FileWrapper* file,
 size_t WriteFloatBufferToFile(FileWrapper* file,
                               size_t length,
                               const float* buffer) {
-  if (!file || !file->Open() || !buffer || length <= 0) {
+  if (!file || !file->is_open() || !buffer || length <= 0) {
     return 0;
   }
 
@@ -235,7 +235,7 @@ size_t WriteFloatBufferToFile(FileWrapper* file,
 size_t WriteDoubleBufferToFile(FileWrapper* file,
                                size_t length,
                                const double* buffer) {
-  if (!file || !file->Open() || !buffer || length <= 0) {
+  if (!file || !file->is_open() || !buffer || length <= 0) {
     return 0;
   }
 

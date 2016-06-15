@@ -54,28 +54,24 @@ namespace webrtc {
 
 class Config;
 
-class InStream
-{
-public:
- // Reads |length| bytes from file to |buf|. Returns the number of bytes read
- // or -1 on error.
-    virtual int Read(void *buf, size_t len) = 0;
-    virtual int Rewind();
-    virtual ~InStream() {}
-protected:
-    InStream() {}
+class RewindableStream {
+ public:
+  virtual ~RewindableStream() {}
+  virtual int Rewind() = 0;
 };
 
-class OutStream
-{
-public:
- // Writes |length| bytes from |buf| to file. The actual writing may happen
- // some time later. Call Flush() to force a write.
-    virtual bool Write(const void *buf, size_t len) = 0;
-    virtual int Rewind();
-    virtual ~OutStream() {}
-protected:
-    OutStream() {}
+class InStream : public RewindableStream {
+ public:
+  // Reads |len| bytes from file to |buf|. Returns the number of bytes read
+  // or -1 on error.
+  virtual int Read(void* buf, size_t len) = 0;
+};
+
+class OutStream : public RewindableStream {
+ public:
+  // Writes |len| bytes from |buf| to file. The actual writing may happen
+  // some time later. Call Flush() to force a write.
+  virtual bool Write(const void* buf, size_t len) = 0;
 };
 
 enum TraceModule

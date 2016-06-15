@@ -1456,12 +1456,11 @@ int32_t ModuleFileUtility::FileDurationMs(const char* fileName,
                      "failed to create InStream object!");
         return -1;
     }
-    if(inStreamObj->OpenFile(fileName, true) == -1)
-    {
-        delete inStreamObj;
-        WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                     "failed to open file %s!", fileName);
-        return -1;
+    if (!inStreamObj->OpenFile(fileName, true)) {
+      delete inStreamObj;
+      WEBRTC_TRACE(kTraceError, kTraceFile, _id, "failed to open file %s!",
+                   fileName);
+      return -1;
     }
 
     switch (fileFormat)

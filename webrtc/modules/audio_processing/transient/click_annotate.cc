@@ -40,15 +40,15 @@ int main(int argc, char* argv[]) {
   }
 
   std::unique_ptr<FileWrapper> pcm_file(FileWrapper::Create());
-  pcm_file->OpenFile(argv[1], true, false, false);
-  if (!pcm_file->Open()) {
+  pcm_file->OpenFile(argv[1], true);
+  if (!pcm_file->is_open()) {
     printf("\nThe %s could not be opened.\n\n", argv[1]);
     return -1;
   }
 
   std::unique_ptr<FileWrapper> dat_file(FileWrapper::Create());
-  dat_file->OpenFile(argv[2], false, false, false);
-  if (!dat_file->Open()) {
+  dat_file->OpenFile(argv[2], false);
+  if (!dat_file->is_open()) {
     printf("\nThe %s could not be opened.\n\n", argv[2]);
     return -1;
   }

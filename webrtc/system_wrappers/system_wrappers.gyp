@@ -58,7 +58,6 @@
         'source/event_timer_win.cc',
         'source/event_timer_win.h',
         'source/file_impl.cc',
-        'source/file_impl.h',
         'source/logging.cc',
         'source/rtp_to_ntp.cc',
         'source/rw_lock.cc',

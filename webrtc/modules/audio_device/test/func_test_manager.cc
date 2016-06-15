@@ -169,15 +169,10 @@ int32_t AudioTransportImpl::SetFilePlayout(bool enable, const char* fileName)
 {
     _playFromFile = enable;
     if (enable)
-    {
-        return (_playFile.OpenFile(fileName, true, true, false));
-    } else
-    {
-        _playFile.Flush();
-        return (_playFile.CloseFile());
-    }
+      return _playFile.OpenFile(fileName, true) ? 0 : -1;
+    _playFile.CloseFile();
+    return 0;
 }
-;
 
 void AudioTransportImpl::SetFullDuplex(bool enable)
 {
@@ -462,36 +457,31 @@ int32_t AudioTransportImpl::NeedMorePlayData(
         }
     }  // if (_fullDuplex)
 
-    if (_playFromFile && _playFile.Open())
-    {
-        int16_t fileBuf[480];
+    if (_playFromFile && _playFile.is_open()) {
+      int16_t fileBuf[480];
 
-        // read mono-file
-        int32_t len = _playFile.Read((int8_t*) fileBuf, 2 * nSamples);
-        if (len != 2 * (int32_t) nSamples)
-        {
-            _playFile.Rewind();
-            _playFile.Read((int8_t*) fileBuf, 2 * nSamples);
-        }
+      // read mono-file
+      int32_t len = _playFile.Read((int8_t*)fileBuf, 2 * nSamples);
+      if (len != 2 * (int32_t)nSamples) {
+        _playFile.Rewind();
+        _playFile.Read((int8_t*)fileBuf, 2 * nSamples);
+      }
 
-        // convert to stero if required
-        if (nChannels == 1)
-        {
-            memcpy(audioSamples, fileBuf, 2 * nSamples);
-        } else
-        {
-            // mono sample from file is duplicated and sent to left and right
-            // channels
-            int16_t* audio16 = (int16_t*) audioSamples;
-            for (size_t i = 0; i < nSamples; i++)
-            {
-                (*audio16) = fileBuf[i]; // left
-                audio16++;
-                (*audio16) = fileBuf[i]; // right
-                audio16++;
-            }
+      // convert to stero if required
+      if (nChannels == 1) {
+        memcpy(audioSamples, fileBuf, 2 * nSamples);
+      } else {
+        // mono sample from file is duplicated and sent to left and right
+        // channels
+        int16_t* audio16 = (int16_t*)audioSamples;
+        for (size_t i = 0; i < nSamples; i++) {
+          (*audio16) = fileBuf[i];  // left
+          audio16++;
+          (*audio16) = fileBuf[i];  // right
+          audio16++;
         }
-    }  // if (_playFromFile && _playFile.Open())
+      }
+    }  // if (_playFromFile && _playFile.is_open())
 
     _playCount++;
 

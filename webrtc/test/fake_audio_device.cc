@@ -39,8 +39,7 @@ FakeAudioDevice::FakeAudioDevice(Clock* clock,
   memset(captured_audio_, 0, sizeof(captured_audio_));
   memset(playout_buffer_, 0, sizeof(playout_buffer_));
   // Open audio input file as read-only and looping.
-  EXPECT_EQ(0, input_stream_->OpenFile(filename.c_str(), true, true))
-      << filename;
+  EXPECT_TRUE(input_stream_->OpenFile(filename.c_str(), true)) << filename;
 }
 
 FakeAudioDevice::~FakeAudioDevice() {

@@ -95,12 +95,9 @@ TEST(WPDTreeTest, CorrectnessBasedOnMatlabFiles) {
     std::ostringstream matlab_stream;
     matlab_stream << "audio_processing/transient/wpd" << i;
     std::string matlab_string = test::ResourcePath(matlab_stream.str(), "dat");
-    matlab_files_data[i]->OpenFile(matlab_string.c_str(),
-                                   true,    // Read only.
-                                   false,   // No loop.
-                                   false);  // No text.
+    matlab_files_data[i]->OpenFile(matlab_string.c_str(), true);  // Read only.
 
-    bool file_opened = matlab_files_data[i]->Open();
+    bool file_opened = matlab_files_data[i]->is_open();
     ASSERT_TRUE(file_opened) << "File could not be opened.\n" << matlab_string;
 
     // Out files.
@@ -110,12 +107,9 @@ TEST(WPDTreeTest, CorrectnessBasedOnMatlabFiles) {
     out_stream << test::OutputPath() << "wpd_" << i << ".out";
     std::string out_string = out_stream.str();
 
-    out_files_data[i]->OpenFile(out_string.c_str(),
-                                false,    // Write mode.
-                                false,    // No loop.
-                                false);   // No text.
+    out_files_data[i]->OpenFile(out_string.c_str(), false);  // Write mode.
 
-    file_opened = out_files_data[i]->Open();
+    file_opened = out_files_data[i]->is_open();
     ASSERT_TRUE(file_opened) << "File could not be opened.\n" << out_string;
   }
 
@@ -125,12 +119,9 @@ TEST(WPDTreeTest, CorrectnessBasedOnMatlabFiles) {
 
   std::unique_ptr<FileWrapper> test_file(FileWrapper::Create());
 
-  test_file->OpenFile(test_file_name.c_str(),
-                      true,    // Read only.
-                      false,   // No loop.
-                      false);  // No text.
+  test_file->OpenFile(test_file_name.c_str(), true);  // Read only.
 
-  bool file_opened = test_file->Open();
+  bool file_opened = test_file->is_open();
   ASSERT_TRUE(file_opened) << "File could not be opened.\n" << test_file_name;
 
   float test_buffer[kTestBufferSize];
