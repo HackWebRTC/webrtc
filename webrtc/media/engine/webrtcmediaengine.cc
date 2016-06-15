@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/media/engine/webrtcmediaengine.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 
 #include <algorithm>
 
@@ -62,6 +63,18 @@ void DestroyWebRtcMediaEngine(cricket::MediaEngineInterface* media_engine) {
 }
 
 namespace cricket {
+
+// TODO(ossu): Backwards-compatible interface. Will be deprecated once the
+// audio decoder factory is fully plumbed and used throughout WebRTC.
+// See: crbug.com/webrtc/6000
+MediaEngineInterface* WebRtcMediaEngineFactory::Create(
+    webrtc::AudioDeviceModule* adm,
+    WebRtcVideoEncoderFactory* video_encoder_factory,
+    WebRtcVideoDecoderFactory* video_decoder_factory) {
+  return CreateWebRtcMediaEngine(adm,
+                                 webrtc::CreateBuiltinAudioDecoderFactory(),
+                                 video_encoder_factory, video_decoder_factory);
+}
 
 // Used by PeerConnectionFactory to create a media engine passed into
 // ChannelManager.

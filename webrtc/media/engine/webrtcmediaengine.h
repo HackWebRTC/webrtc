@@ -29,6 +29,14 @@ namespace cricket {
 
 class WebRtcMediaEngineFactory {
  public:
+  // TODO(ossu): Backwards-compatible interface. Will be deprecated once the
+  // audio decoder factory is fully plumbed and used throughout WebRTC.
+  // See: crbug.com/webrtc/6000
+  static MediaEngineInterface* Create(
+      webrtc::AudioDeviceModule* adm,
+      WebRtcVideoEncoderFactory* video_encoder_factory,
+      WebRtcVideoDecoderFactory* video_decoder_factory);
+
   static MediaEngineInterface* Create(
       webrtc::AudioDeviceModule* adm,
       const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&

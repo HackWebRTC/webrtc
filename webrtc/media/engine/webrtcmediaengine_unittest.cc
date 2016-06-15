@@ -10,6 +10,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/media/engine/webrtcmediaengine.h"
 
 using webrtc::RtpExtension;
@@ -179,4 +180,17 @@ TEST(WebRtcMediaEngineTest, FilterRtpExtensions_RemoveRedundantBwe_3) {
   EXPECT_EQ(1, filtered.size());
   EXPECT_EQ(RtpExtension::kTimestampOffsetUri, filtered[0].uri);
 }
+
+TEST(WebRtcMediaEngineFactoryTest, CreateOldApi) {
+  std::unique_ptr<MediaEngineInterface> engine(
+      WebRtcMediaEngineFactory::Create(nullptr, nullptr, nullptr));
+  EXPECT_TRUE(engine);
+}
+
+TEST(WebRtcMediaEngineFactoryTest, CreateWithBuiltinDecoders) {
+  std::unique_ptr<MediaEngineInterface> engine(WebRtcMediaEngineFactory::Create(
+      nullptr, webrtc::CreateBuiltinAudioDecoderFactory(), nullptr, nullptr));
+  EXPECT_TRUE(engine);
+}
+
 }  // namespace cricket
