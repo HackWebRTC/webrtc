@@ -21,8 +21,6 @@
 
 namespace webrtc {
 
-// TODO(kwiberg): Remove the possibility of not specifying the sample rate at
-// object creation time.
 template <typename T>
 class AudioDecoderIsacT final : public AudioDecoder {
  public:
