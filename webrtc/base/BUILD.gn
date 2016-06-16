@@ -670,6 +670,7 @@ if (rtc_include_tests) {
     deps = [
       ":rtc_base",
       "../test:field_trial",
+      "../test:test_support",
     ]
     public_deps = [
       "//testing/gtest",

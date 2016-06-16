@@ -21,7 +21,6 @@
 #include "webrtc/base/stream.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/testutils.h"
-#include "webrtc/media/base/executablehelpers.h"
 #include "webrtc/media/base/rtpdump.h"
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/media/base/videoframe.h"
@@ -240,70 +239,6 @@ void VideoCapturerListener::OnFrameCaptured(VideoCapturer* capturer,
   } else if (frame_width_ != frame->width || frame_height_ != frame->height) {
     resolution_changed_ = true;
   }
-}
-
-// Returns the absolute path to a file in the resources/ directory.
-std::string GetTestFilePath(const std::string& filename) {
-  // Locate test data directory.
-#ifdef ENABLE_WEBRTC
-  rtc::Pathname path = rtc::GetExecutablePath();
-  EXPECT_FALSE(path.empty());
-  path.AppendPathname("../../resources/");
-#else
-  rtc::Pathname path = testing::GetTalkDirectory();
-  EXPECT_FALSE(path.empty());  // must be run from inside "talk"
-#endif
-  path.AppendFolder("media/");
-  path.SetFilename(filename);
-  return path.pathname();
-}
-
-// Loads the image with the specified prefix and size into |out|.
-bool LoadPlanarYuvTestImage(const std::string& prefix,
-                            int width,
-                            int height,
-                            uint8_t* out) {
-  std::stringstream ss;
-  ss << prefix << "." << width << "x" << height << "_P420.yuv";
-
-  std::unique_ptr<rtc::FileStream> stream(
-      rtc::Filesystem::OpenFile(rtc::Pathname(
-          GetTestFilePath(ss.str())), "rb"));
-  if (!stream) {
-    return false;
-  }
-
-  rtc::StreamResult res =
-      stream->ReadAll(out, I420_SIZE(width, height), NULL, NULL);
-  return (res == rtc::SR_SUCCESS);
-}
-
-// Dumps the YUV image out to a file, for visual inspection.
-// PYUV tool can be used to view dump files.
-void DumpPlanarYuvTestImage(const std::string& prefix,
-                            const uint8_t* img,
-                            int w,
-                            int h) {
-  rtc::FileStream fs;
-  char filename[256];
-  rtc::sprintfn(filename, sizeof(filename), "%s.%dx%d_P420.yuv",
-                      prefix.c_str(), w, h);
-  fs.Open(filename, "wb", NULL);
-  fs.Write(img, I420_SIZE(w, h), NULL, NULL);
-}
-
-// Dumps the ARGB image out to a file, for visual inspection.
-// ffplay tool can be used to view dump files.
-void DumpPlanarArgbTestImage(const std::string& prefix,
-                             const uint8_t* img,
-                             int w,
-                             int h) {
-  rtc::FileStream fs;
-  char filename[256];
-  rtc::sprintfn(filename, sizeof(filename), "%s.%dx%d_ARGB.raw",
-                      prefix.c_str(), w, h);
-  fs.Open(filename, "wb", NULL);
-  fs.Write(img, ARGB_SIZE(w, h), NULL, NULL);
 }
 
 cricket::StreamParams CreateSimStreamParams(

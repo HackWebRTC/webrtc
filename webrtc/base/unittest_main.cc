@@ -20,6 +20,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/test/field_trial.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 DEFINE_bool(help, false, "prints this message");
 DEFINE_string(log, "", "logging options to use");
@@ -68,6 +69,7 @@ int main(int argc, char** argv) {
     return 0;
   }
 
+  webrtc::test::SetExecutablePath(argv[0]);
   webrtc::test::InitFieldTrialsFromString(FLAG_force_fieldtrials);
 
 #if defined(WEBRTC_WIN)

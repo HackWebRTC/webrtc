@@ -167,42 +167,6 @@ class VideoMediaErrorCatcher : public sigslot::has_slots<> {
   VideoMediaChannel::Error error_;
 };
 
-// Returns the absolute path to a file in the testdata/ directory.
-std::string GetTestFilePath(const std::string& filename);
-
-// PSNR formula: psnr = 10 * log10 (Peak Signal^2 / mse)
-// sse is set to a small number for identical frames or sse == 0
-static inline double ComputePSNR(double sse, double count) {
-  return libyuv::SumSquareErrorToPsnr(static_cast<uint64_t>(sse),
-                                      static_cast<uint64_t>(count));
-}
-
-static inline double ComputeSumSquareError(const uint8_t* org,
-                                           const uint8_t* rec,
-                                           int size) {
-  return static_cast<double>(libyuv::ComputeSumSquareError(org, rec, size));
-}
-
-// Loads the image with the specified prefix and size into |out|.
-bool LoadPlanarYuvTestImage(const std::string& prefix,
-                            int width,
-                            int height,
-                            uint8_t* out);
-
-// Dumps the YUV image out to a file, for visual inspection.
-// PYUV tool can be used to view dump files.
-void DumpPlanarYuvTestImage(const std::string& prefix,
-                            const uint8_t* img,
-                            int w,
-                            int h);
-
-// Dumps the ARGB image out to a file, for visual inspection.
-// ffplay tool can be used to view dump files.
-void DumpPlanarArgbTestImage(const std::string& prefix,
-                             const uint8_t* img,
-                             int w,
-                             int h);
-
 // Checks whether |codecs| contains |codec|; checks using Codec::Matches().
 template <class C>
 bool ContainsMatchingCodec(const std::vector<C>& codecs, const C& codec) {

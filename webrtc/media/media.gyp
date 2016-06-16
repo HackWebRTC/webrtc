@@ -250,6 +250,7 @@
             '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
             '<(webrtc_root)/media/media.gyp:rtc_media',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
+            '<(webrtc_root)/test/test.gyp:test_support',
             'rtc_unittest_main',
           ],
           'sources': [

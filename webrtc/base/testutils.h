@@ -420,49 +420,6 @@ class SocketTestServer : public sigslot::has_slots<> {
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// Generic Utilities
-///////////////////////////////////////////////////////////////////////////////
-
-inline bool ReadFile(const char* filename, std::string* contents) {
-  FILE* fp = fopen(filename, "rb");
-  if (!fp)
-    return false;
-  char buffer[1024*64];
-  size_t read;
-  contents->clear();
-  while ((read = fread(buffer, 1, sizeof(buffer), fp))) {
-    contents->append(buffer, read);
-  }
-  bool success = (0 != feof(fp));
-  fclose(fp);
-  return success;
-}
-
-// Look in parent dir for parallel directory.
-inline rtc::Pathname GetSiblingDirectory(
-    const std::string& parallel_dir) {
-  rtc::Pathname path = rtc::Filesystem::GetCurrentDirectory();
-  while (!path.empty()) {
-    rtc::Pathname potential_parallel_dir = path;
-    potential_parallel_dir.AppendFolder(parallel_dir);
-    if (rtc::Filesystem::IsFolder(potential_parallel_dir)) {
-      return potential_parallel_dir;
-    }
-
-    path.SetFolder(path.parent_folder());
-  }
-  return path;
-}
-
-inline rtc::Pathname GetGoogle3Directory() {
-  return GetSiblingDirectory("google3");
-}
-
-inline rtc::Pathname GetTalkDirectory() {
-  return GetSiblingDirectory("talk");
-}
-
-///////////////////////////////////////////////////////////////////////////////
 // Unittest predicates which are similar to STREQ, but for raw memory
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -504,25 +461,6 @@ inline AssertionResult CmpHelperMemEq(const char* expected_expression,
   return AssertionFailure(msg);
 }
 
-inline AssertionResult CmpHelperFileEq(const char* expected_expression,
-                                       const char* expected_length_expression,
-                                       const char* actual_filename,
-                                       const void* expected,
-                                       size_t expected_length,
-                                       const char* filename)
-{
-  std::string contents;
-  if (!ReadFile(filename, &contents)) {
-    Message msg;
-    msg << "File '" << filename << "' could not be read.";
-    return AssertionFailure(msg);
-  }
-  return CmpHelperMemEq(expected_expression, expected_length_expression,
-                        actual_filename, "",
-                        expected, expected_length,
-                        contents.c_str(), contents.size());
-}
-
 #define EXPECT_MEMEQ(expected, expected_length, actual, actual_length) \
   EXPECT_PRED_FORMAT4(::testing::CmpHelperMemEq, expected, expected_length, \
                       actual, actual_length)
@@ -530,14 +468,6 @@ inline AssertionResult CmpHelperFileEq(const char* expected_expression,
 #define ASSERT_MEMEQ(expected, expected_length, actual, actual_length) \
   ASSERT_PRED_FORMAT4(::testing::CmpHelperMemEq, expected, expected_length, \
                       actual, actual_length)
-
-#define EXPECT_FILEEQ(expected, expected_length, filename) \
-  EXPECT_PRED_FORMAT3(::testing::CmpHelperFileEq, expected, expected_length, \
-                      filename)
-
-#define ASSERT_FILEEQ(expected, expected_length, filename) \
-  ASSERT_PRED_FORMAT3(::testing::CmpHelperFileEq, expected, expected_length, \
-                      filename)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helpers for initializing constant memory with integers in a particular byte

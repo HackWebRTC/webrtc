@@ -313,9 +313,8 @@ TEST_F(WebRtcVideoFrameTest, CopyTextureFrame) {
 TEST_F(WebRtcVideoFrameTest, ApplyRotationToFrame) {
   WebRtcVideoTestFrame applied0;
   EXPECT_TRUE(IsNull(applied0));
-  std::unique_ptr<rtc::MemoryStream> ms(CreateYuvSample(kWidth, kHeight, 12));
-  EXPECT_TRUE(
-      LoadFrame(ms.get(), cricket::FOURCC_I420, kWidth, kHeight, &applied0));
+  EXPECT_TRUE(LoadFrame(CreateYuvSample(kWidth, kHeight, 12).get(),
+                        cricket::FOURCC_I420, kWidth, kHeight, &applied0));
 
   // Claim that this frame needs to be rotated for 90 degree.
   applied0.set_rotation(webrtc::kVideoRotation_90);

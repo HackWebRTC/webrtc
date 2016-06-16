@@ -27,6 +27,7 @@
 #include "webrtc/media/base/testutils.h"
 #include "webrtc/media/base/videocommon.h"
 #include "webrtc/media/base/videoframe.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 #if defined(_MSC_VER)
 #define ALIGN16(var) __declspec(align(16)) var
@@ -34,12 +35,14 @@
 #define ALIGN16(var) var __attribute__((aligned(16)))
 #endif
 
-#define kImageFilename "faces.1280x720_P420.yuv"
-#define kJpeg420Filename "faces_I420.jpg"
-#define kJpeg422Filename "faces_I422.jpg"
-#define kJpeg444Filename "faces_I444.jpg"
-#define kJpeg411Filename "faces_I411.jpg"
-#define kJpeg400Filename "faces_I400.jpg"
+#define kImageFilename "media/faces.1280x720_P420"
+#define kYuvExtension "yuv"
+#define kJpeg420Filename "media/faces_I420"
+#define kJpeg422Filename "media/faces_I422"
+#define kJpeg444Filename "media/faces_I444"
+#define kJpeg411Filename "media/faces_I411"
+#define kJpeg400Filename "media/faces_I400"
+#define kJpegExtension "jpg"
 
 // Generic test class for testing various video frame implementations.
 template <class T>
@@ -60,8 +63,9 @@ class VideoFrameTest : public testing::Test {
   bool LoadFrameNoRepeat(T* frame) {
     int save_repeat = repeat_;  // This LoadFrame disables repeat.
     repeat_ = 1;
-    bool success = LoadFrame(kImageFilename, cricket::FOURCC_I420,
-                            kWidth, kHeight, frame);
+    bool success = LoadFrame(LoadSample(kImageFilename, kYuvExtension).get(),
+                             cricket::FOURCC_I420,
+                             kWidth, kHeight, frame);
     repeat_ = save_repeat;
     return success;
   }
@@ -141,8 +145,9 @@ class VideoFrameTest : public testing::Test {
     return ret;
   }
 
-  rtc::MemoryStream* LoadSample(const std::string& filename) {
-    rtc::Pathname path(cricket::GetTestFilePath(filename));
+  std::unique_ptr<rtc::MemoryStream> LoadSample(const std::string& filename,
+                                                const std::string& extension) {
+    rtc::Pathname path(webrtc::test::ResourcePath(filename, extension));
     std::unique_ptr<rtc::FileStream> fs(
         rtc::Filesystem::OpenFile(path, "rb"));
     if (!fs.get()) {
@@ -161,7 +166,7 @@ class VideoFrameTest : public testing::Test {
       return NULL;
     }
 
-    return ms.release();
+    return ms;
   }
 
   bool DumpSample(const std::string& filename, const void* buffer, int size) {
@@ -181,9 +186,9 @@ class VideoFrameTest : public testing::Test {
   // The pattern is { { green, orange }, { blue, purple } }
   // There is also a gradient within each square to ensure that the luma
   // values are handled properly.
-  rtc::MemoryStream* CreateYuv422Sample(uint32_t fourcc,
-                                        uint32_t width,
-                                        uint32_t height) {
+  std::unique_ptr<rtc::MemoryStream> CreateYuv422Sample(uint32_t fourcc,
+                                                        uint32_t width,
+                                                        uint32_t height) {
     int y1_pos, y2_pos, u_pos, v_pos;
     if (!GetYuv422Packing(fourcc, &y1_pos, &y2_pos, &u_pos, &v_pos)) {
       return NULL;
@@ -206,13 +211,13 @@ class VideoFrameTest : public testing::Test {
         ms->Write(quad, sizeof(quad), NULL, NULL);
       }
     }
-    return ms.release();
+    return ms;
   }
 
   // Create a test image for YUV 420 formats with 12 bits per pixel.
-  rtc::MemoryStream* CreateYuvSample(uint32_t width,
-                                     uint32_t height,
-                                     uint32_t bpp) {
+  std::unique_ptr<rtc::MemoryStream> CreateYuvSample(uint32_t width,
+                                                     uint32_t height,
+                                                     uint32_t bpp) {
     std::unique_ptr<rtc::MemoryStream> ms(
         new rtc::MemoryStream);
     if (!ms->ReserveSize(width * height * bpp / 8)) {
@@ -223,12 +228,12 @@ class VideoFrameTest : public testing::Test {
       uint8_t value = ((i / 63) & 1) ? 192 : 64;
       ms->Write(&value, sizeof(value), NULL, NULL);
     }
-    return ms.release();
+    return ms;
   }
 
-  rtc::MemoryStream* CreateRgbSample(uint32_t fourcc,
-                                     uint32_t width,
-                                     uint32_t height) {
+  std::unique_ptr<rtc::MemoryStream> CreateRgbSample(uint32_t fourcc,
+                                                     uint32_t width,
+                                                     uint32_t height) {
     int r_pos, g_pos, b_pos, bytes;
     if (!GetRgbPacking(fourcc, &r_pos, &g_pos, &b_pos, &bytes)) {
       return NULL;
@@ -249,7 +254,7 @@ class VideoFrameTest : public testing::Test {
         ms->Write(rgb, bytes, NULL, NULL);
       }
     }
-    return ms.release();
+    return ms;
   }
 
   // Simple conversion routines to verify the optimized VideoFrame routines.
@@ -1070,7 +1075,8 @@ class VideoFrameTest : public testing::Test {
   void ConstructI420CropHorizontal() {
     T frame1, frame2;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
-    ASSERT_TRUE(LoadFrame(kImageFilename, cricket::FOURCC_I420, kWidth, kHeight,
+    ASSERT_TRUE(LoadFrame(kImageFilename, kYuvExtension,
+                          cricket::FOURCC_I420, kWidth, kHeight,
                           kWidth * 3 / 4, kHeight, webrtc::kVideoRotation_0,
                           &frame2));
     EXPECT_TRUE(IsEqualWithCrop(frame2, frame1, kWidth / 8, 0, 0));
@@ -1109,7 +1115,8 @@ class VideoFrameTest : public testing::Test {
   void ConstructI420CropVertical() {
     T frame1, frame2;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
-    ASSERT_TRUE(LoadFrame(kImageFilename, cricket::FOURCC_I420, kWidth, kHeight,
+    ASSERT_TRUE(LoadFrame(LoadSample(kImageFilename, kYuvExtension).get(),
+                          cricket::FOURCC_I420, kWidth, kHeight,
                           kWidth, kHeight * 3 / 4, webrtc::kVideoRotation_0,
                           &frame2));
     EXPECT_TRUE(IsEqualWithCrop(frame2, frame1, 0, kHeight / 8, 0));
@@ -1118,11 +1125,14 @@ class VideoFrameTest : public testing::Test {
   // Test constructing an image from I420 synonymous formats.
   void ConstructI420Aliases() {
     T frame1, frame2, frame3;
-    ASSERT_TRUE(LoadFrame(kImageFilename, cricket::FOURCC_I420, kWidth, kHeight,
+    ASSERT_TRUE(LoadFrame(LoadSample(kImageFilename, kYuvExtension),
+                          cricket::FOURCC_I420, kWidth, kHeight,
                           &frame1));
-    ASSERT_TRUE(LoadFrame(kImageFilename, cricket::FOURCC_IYUV, kWidth, kHeight,
+    ASSERT_TRUE(LoadFrame(kImageFilename, kYuvExtension,
+                          cricket::FOURCC_IYUV, kWidth, kHeight,
                           &frame2));
-    ASSERT_TRUE(LoadFrame(kImageFilename, cricket::FOURCC_YU12, kWidth, kHeight,
+    ASSERT_TRUE(LoadFrame(kImageFilename, kYuvExtension,
+                          cricket::FOURCC_YU12, kWidth, kHeight,
                           &frame3));
     EXPECT_TRUE(IsEqual(frame1, frame2, 0));
     EXPECT_TRUE(IsEqual(frame1, frame3, 0));
@@ -1132,7 +1142,7 @@ class VideoFrameTest : public testing::Test {
   void ConstructMjpgI420() {
     T frame1, frame2;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
-    ASSERT_TRUE(LoadFrame(kJpeg420Filename,
+    ASSERT_TRUE(LoadFrame(kJpeg420Filename, kJpegExtension,
                           cricket::FOURCC_MJPG, kWidth, kHeight, &frame2));
     EXPECT_TRUE(IsEqual(frame1, frame2, 32));
   }
@@ -1141,7 +1151,7 @@ class VideoFrameTest : public testing::Test {
   void ConstructMjpgI422() {
     T frame1, frame2;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
-    ASSERT_TRUE(LoadFrame(kJpeg422Filename,
+    ASSERT_TRUE(LoadFrame(LoadSample(kJpeg422Filename, kJpegExtension).get(),
                           cricket::FOURCC_MJPG, kWidth, kHeight, &frame2));
     EXPECT_TRUE(IsEqual(frame1, frame2, 32));
   }
@@ -1150,7 +1160,7 @@ class VideoFrameTest : public testing::Test {
   void ConstructMjpgI444() {
     T frame1, frame2;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
-    ASSERT_TRUE(LoadFrame(kJpeg444Filename,
+    ASSERT_TRUE(LoadFrame(LoadSample(kJpeg444Filename, kJpegExtension),
                           cricket::FOURCC_MJPG, kWidth, kHeight, &frame2));
     EXPECT_TRUE(IsEqual(frame1, frame2, 32));
   }
@@ -1159,7 +1169,7 @@ class VideoFrameTest : public testing::Test {
   void ConstructMjpgI411() {
     T frame1, frame2;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
-    ASSERT_TRUE(LoadFrame(kJpeg411Filename,
+    ASSERT_TRUE(LoadFrame(kJpeg411Filename, kJpegExtension,
                           cricket::FOURCC_MJPG, kWidth, kHeight, &frame2));
     EXPECT_TRUE(IsEqual(frame1, frame2, 32));
   }
@@ -1169,7 +1179,7 @@ class VideoFrameTest : public testing::Test {
   void ConstructMjpgI400() {
     T frame1, frame2;
     ASSERT_TRUE(LoadFrameNoRepeat(&frame1));
-    ASSERT_TRUE(LoadFrame(kJpeg400Filename,
+    ASSERT_TRUE(LoadFrame(kJpeg400Filename, kJpegExtension,
                           cricket::FOURCC_MJPG, kWidth, kHeight, &frame2));
     EXPECT_TRUE(IsPlaneEqual("y", frame1.video_frame_buffer()->DataY(),
                              frame1.video_frame_buffer()->StrideY(),
@@ -1181,12 +1191,13 @@ class VideoFrameTest : public testing::Test {
 
   // Test constructing an image from an I420 MJPG buffer.
   void ValidateFrame(const char* name,
+                     const char* extension,
                      uint32_t fourcc,
                      int data_adjust,
                      int size_adjust,
                      bool expected_result) {
     T frame;
-    std::unique_ptr<rtc::MemoryStream> ms(LoadSample(name));
+    std::unique_ptr<rtc::MemoryStream> ms(LoadSample(name, extension));
     ASSERT_TRUE(ms.get() != NULL);
     const uint8_t* sample =
         reinterpret_cast<const uint8_t*>(ms.get()->GetBuffer());
@@ -1216,50 +1227,59 @@ class VideoFrameTest : public testing::Test {
 
   // Test validate for I420 MJPG buffer.
   void ValidateMjpgI420() {
-    ValidateFrame(kJpeg420Filename, cricket::FOURCC_MJPG, 0, 0, true);
+    ValidateFrame(kJpeg420Filename, kJpegExtension,
+                  cricket::FOURCC_MJPG, 0, 0, true);
   }
 
   // Test validate for I422 MJPG buffer.
   void ValidateMjpgI422() {
-    ValidateFrame(kJpeg422Filename, cricket::FOURCC_MJPG, 0, 0, true);
+    ValidateFrame(kJpeg422Filename, kJpegExtension,
+                  cricket::FOURCC_MJPG, 0, 0, true);
   }
 
   // Test validate for I444 MJPG buffer.
   void ValidateMjpgI444() {
-    ValidateFrame(kJpeg444Filename, cricket::FOURCC_MJPG, 0, 0, true);
+    ValidateFrame(kJpeg444Filename, kJpegExtension,
+                  cricket::FOURCC_MJPG, 0, 0, true);
   }
 
   // Test validate for I411 MJPG buffer.
   void ValidateMjpgI411() {
-    ValidateFrame(kJpeg411Filename, cricket::FOURCC_MJPG, 0, 0, true);
+    ValidateFrame(kJpeg411Filename, kJpegExtension,
+                  cricket::FOURCC_MJPG, 0, 0, true);
   }
 
   // Test validate for I400 MJPG buffer.
   void ValidateMjpgI400() {
-    ValidateFrame(kJpeg400Filename, cricket::FOURCC_MJPG, 0, 0, true);
+    ValidateFrame(kJpeg400Filename, kJpegExtension,
+                  cricket::FOURCC_MJPG, 0, 0, true);
   }
 
   // Test validate for I420 buffer.
   void ValidateI420() {
-    ValidateFrame(kImageFilename, cricket::FOURCC_I420, 0, 0, true);
+    ValidateFrame(kImageFilename, kYuvExtension,
+                  cricket::FOURCC_I420, 0, 0, true);
   }
 
   // Test validate for I420 buffer where size is too small
   void ValidateI420SmallSize() {
-    ValidateFrame(kImageFilename, cricket::FOURCC_I420, 0, -16384, false);
+    ValidateFrame(kImageFilename, kYuvExtension,
+                  cricket::FOURCC_I420, 0, -16384, false);
   }
 
   // Test validate for I420 buffer where size is too large (16 MB)
   // Will produce warning but pass.
   void ValidateI420LargeSize() {
-    ValidateFrame(kImageFilename, cricket::FOURCC_I420, 16000000, 16000000,
+    ValidateFrame(kImageFilename, kYuvExtension,
+                  cricket::FOURCC_I420, 16000000, 16000000,
                   true);
   }
 
   // Test validate for I420 buffer where size is 1 GB (not reasonable).
   void ValidateI420HugeSize() {
 #ifndef WIN32  // TODO(fbarchard): Reenable when fixing bug 9603762.
-    ValidateFrame(kImageFilename, cricket::FOURCC_I420, 1000000000u,
+    ValidateFrame(kImageFilename, kYuvExtension,
+                  cricket::FOURCC_I420, 1000000000u,
                   1000000000u, false);
 #endif
   }
@@ -1282,7 +1302,8 @@ class VideoFrameTest : public testing::Test {
   // crashes the exception handler will return and unittest passes with OK.
   void ValidateMjpgI420InvalidSize() {
     __try {
-      ValidateFrame(kJpeg420Filename, cricket::FOURCC_MJPG, -16384, 0, false);
+      ValidateFrame(kJpeg420Filename,  kJpegExtension,
+                    cricket::FOURCC_MJPG, -16384, 0, false);
       FAIL() << "Validate was expected to cause EXCEPTION_ACCESS_VIOLATION.";
     } __except(ExceptionFilter(GetExceptionCode(), GetExceptionInformation())) {
       return;  // Successfully crashed in ValidateFrame.
@@ -1292,7 +1313,8 @@ class VideoFrameTest : public testing::Test {
   // Test validate fails for truncated I420 buffer.
   void ValidateI420InvalidSize() {
     __try {
-      ValidateFrame(kImageFilename, cricket::FOURCC_I420, -16384, 0, false);
+      ValidateFrame(kImageFilename, kYuvExtension,
+                    cricket::FOURCC_I420, -16384, 0, false);
       FAIL() << "Validate was expected to cause EXCEPTION_ACCESS_VIOLATION.";
     } __except(ExceptionFilter(GetExceptionCode(), GetExceptionInformation())) {
       return;  // Successfully crashed in ValidateFrame.
