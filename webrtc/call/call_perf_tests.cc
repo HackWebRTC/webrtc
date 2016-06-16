@@ -98,8 +98,6 @@ class VideoRtcpAndSyncObserver : public test::RtpRtcpObserver,
       return;
 
     int64_t now_ms = clock_->TimeInMilliseconds();
-
-    sync_offset_ms_list_.push_back(stats.sync_offset_ms);
     int64_t time_since_creation = now_ms - creation_time_ms_;
     // During the first couple of seconds audio and video can falsely be
     // estimated as being synchronized. We don't want to trigger on those.
@@ -118,6 +116,8 @@ class VideoRtcpAndSyncObserver : public test::RtpRtcpObserver,
       if (time_since_creation > kMinRunTimeMs)
         observation_complete_.Set();
     }
+    if (first_time_in_sync_ != -1)
+      sync_offset_ms_list_.push_back(stats.sync_offset_ms);
   }
 
   void set_receive_stream(VideoReceiveStream* receive_stream) {
@@ -533,7 +533,16 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
     explicit BitrateObserver(bool using_min_transmit_bitrate)
         : EndToEndTest(kLongTimeoutMs),
           send_stream_(nullptr),
+          converged_(false),
           pad_to_min_bitrate_(using_min_transmit_bitrate),
+          min_acceptable_bitrate_(using_min_transmit_bitrate
+                                      ? kMinAcceptableTransmitBitrate
+                                      : (kMaxEncodeBitrateKbps -
+                                         kAcceptableBitrateErrorMargin / 2)),
+          max_acceptable_bitrate_(using_min_transmit_bitrate
+                                      ? kMaxAcceptableTransmitBitrate
+                                      : (kMaxEncodeBitrateKbps +
+                                         kAcceptableBitrateErrorMargin / 2)),
           num_bitrate_observations_in_range_(0) {}
 
    private:
@@ -544,26 +553,16 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
         RTC_DCHECK_EQ(1u, stats.substreams.size());
         int bitrate_kbps =
             stats.substreams.begin()->second.total_bitrate_bps / 1000;
-        if (bitrate_kbps > 0) {
-          bitrate_kbps_list.push_back(bitrate_kbps);
-          if (pad_to_min_bitrate_) {
-            if (bitrate_kbps > kMinAcceptableTransmitBitrate &&
-                bitrate_kbps < kMaxAcceptableTransmitBitrate) {
-              ++num_bitrate_observations_in_range_;
-            }
-          } else {
-            // Expect bitrate stats to roughly match the max encode bitrate.
-            if (bitrate_kbps > (kMaxEncodeBitrateKbps -
-                                kAcceptableBitrateErrorMargin / 2) &&
-                bitrate_kbps < (kMaxEncodeBitrateKbps +
-                                kAcceptableBitrateErrorMargin / 2)) {
-              ++num_bitrate_observations_in_range_;
-            }
-          }
+        if (bitrate_kbps > min_acceptable_bitrate_ &&
+            bitrate_kbps < max_acceptable_bitrate_) {
+          converged_ = true;
+          ++num_bitrate_observations_in_range_;
           if (num_bitrate_observations_in_range_ ==
               kNumBitrateObservationsInRange)
             observation_complete_.Set();
         }
+        if (converged_)
+          bitrate_kbps_list_.push_back(bitrate_kbps);
       }
       return SEND_PACKET;
     }
@@ -591,14 +590,17 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
           "bitrate_stats_",
           (pad_to_min_bitrate_ ? "min_transmit_bitrate"
                                : "without_min_transmit_bitrate"),
-          "bitrate_kbps", test::ValuesToString(bitrate_kbps_list), "kbps",
+          "bitrate_kbps", test::ValuesToString(bitrate_kbps_list_), "kbps",
           false);
     }
 
     VideoSendStream* send_stream_;
+    bool converged_;
     const bool pad_to_min_bitrate_;
+    const int min_acceptable_bitrate_;
+    const int max_acceptable_bitrate_;
     int num_bitrate_observations_in_range_;
-    std::vector<size_t> bitrate_kbps_list;
+    std::vector<size_t> bitrate_kbps_list_;
   } test(pad_to_min_bitrate);
 
   fake_encoder_.SetMaxBitrate(kMaxEncodeBitrateKbps);
