@@ -128,8 +128,7 @@ class NetEqImpl : public webrtc::NetEq {
   int RegisterExternalDecoder(AudioDecoder* decoder,
                               NetEqDecoder codec,
                               const std::string& codec_name,
-                              uint8_t rtp_payload_type,
-                              int sample_rate_hz) override;
+                              uint8_t rtp_payload_type) override;
 
   // Removes |rtp_payload_type| from the codec database. Returns 0 on success,
   // -1 on failure.

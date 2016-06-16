@@ -141,7 +141,7 @@ TEST(DecoderDatabase, ExternalDecoder) {
   // Load into database.
   EXPECT_EQ(DecoderDatabase::kOK,
             db.InsertExternal(kPayloadType, NetEqDecoder::kDecoderPCMu,
-                              kCodecName, 8000, &decoder));
+                              kCodecName, &decoder));
   EXPECT_EQ(1, db.Size());
   // Get decoder and make sure we get the external one.
   EXPECT_EQ(&decoder, db.GetDecoder(kPayloadType));

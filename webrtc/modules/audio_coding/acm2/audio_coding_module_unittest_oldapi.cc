@@ -1019,6 +1019,9 @@ TEST_F(AcmReceiverBitExactnessOldApi, 48kHzOutputExternalDecoder) {
   EXPECT_CALL(mock_decoder, IncomingPacket(_, _, _, _, _))
       .Times(AtLeast(1))
       .WillRepeatedly(Invoke(&decoder, &AudioDecoderPcmU::IncomingPacket));
+  EXPECT_CALL(mock_decoder, SampleRateHz())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Invoke(&decoder, &AudioDecoderPcmU::SampleRateHz));
   EXPECT_CALL(mock_decoder, Channels())
       .Times(AtLeast(1))
       .WillRepeatedly(Invoke(&decoder, &AudioDecoderPcmU::Channels));

@@ -32,16 +32,16 @@ DecoderDatabase::DecoderInfo::DecoderInfo(NetEqDecoder ct,
     : codec_type(ct),
       name(nm),
       audio_format_(acm2::RentACodec::NetEqDecoderToSdpAudioFormat(ct)),
+      external_decoder_(nullptr),
       cng_decoder_(CngDecoder::Create(ct)) {}
 
 DecoderDatabase::DecoderInfo::DecoderInfo(NetEqDecoder ct,
                                           const std::string& nm,
-                                          int sample_rate_hz,
                                           AudioDecoder* ext_dec)
     : codec_type(ct),
       name(nm),
       audio_format_(acm2::RentACodec::NetEqDecoderToSdpAudioFormat(ct)),
-      external_decoder({sample_rate_hz, ext_dec}) {
+      external_decoder_(ext_dec) {
   RTC_CHECK(ext_dec);
 }
 
@@ -50,10 +50,10 @@ DecoderDatabase::DecoderInfo::~DecoderInfo() = default;
 
 AudioDecoder* DecoderDatabase::DecoderInfo::GetDecoder(
     AudioDecoderFactory* factory) {
-  if (external_decoder) {
+  if (external_decoder_) {
     RTC_DCHECK(!decoder_);
-    RTC_DCHECK(external_decoder->decoder);
-    return external_decoder->decoder;
+    RTC_DCHECK(!cng_decoder_);
+    return external_decoder_;
   }
   RTC_DCHECK(audio_format_);
   if (!decoder_) {
@@ -115,7 +115,6 @@ int DecoderDatabase::RegisterPayload(uint8_t rtp_payload_type,
 int DecoderDatabase::InsertExternal(uint8_t rtp_payload_type,
                                     NetEqDecoder codec_type,
                                     const std::string& codec_name,
-                                    int fs_hz,
                                     AudioDecoder* decoder) {
   if (rtp_payload_type > 0x7F) {
     return kInvalidRtpPayloadType;
@@ -123,14 +122,11 @@ int DecoderDatabase::InsertExternal(uint8_t rtp_payload_type,
   if (!CodecSupported(codec_type)) {
     return kCodecNotSupported;
   }
-  if (fs_hz != 8000 && fs_hz != 16000 && fs_hz != 32000 && fs_hz != 48000) {
-    return kInvalidSampleRate;
-  }
   if (!decoder) {
     return kInvalidPointer;
   }
   std::pair<DecoderMap::iterator, bool> ret;
-  DecoderInfo info(codec_type, codec_name, fs_hz, decoder);
+  DecoderInfo info(codec_type, codec_name, decoder);
   ret = decoders_.insert(std::make_pair(rtp_payload_type, std::move(info)));
   if (ret.second == false) {
     // Database already contains a decoder with type |rtp_payload_type|.

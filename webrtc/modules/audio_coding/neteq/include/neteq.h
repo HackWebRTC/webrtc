@@ -183,16 +183,14 @@ class NetEq {
 
   // Provides an externally created decoder object |decoder| to insert in the
   // decoder database. The decoder implements a decoder of type |codec| and
-  // associates it with |rtp_payload_type| and |codec_name|. The decoder will
-  // produce samples at the rate |sample_rate_hz|. Returns kOK on success, kFail
-  // on failure.
-  // The name is only used to provide information back to the caller about the
-  // decoders. Hence, the name is arbitrary, and may be empty.
+  // associates it with |rtp_payload_type| and |codec_name|. Returns kOK on
+  // success, kFail on failure. The name is only used to provide information
+  // back to the caller about the decoders. Hence, the name is arbitrary, and
+  // may be empty.
   virtual int RegisterExternalDecoder(AudioDecoder* decoder,
                                       NetEqDecoder codec,
                                       const std::string& codec_name,
-                                      uint8_t rtp_payload_type,
-                                      int sample_rate_hz) = 0;
+                                      uint8_t rtp_payload_type) = 0;
 
   // Removes |rtp_payload_type| from the codec database. Returns 0 on success,
   // -1 on failure.

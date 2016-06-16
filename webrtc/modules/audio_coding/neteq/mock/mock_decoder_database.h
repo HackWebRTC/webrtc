@@ -33,10 +33,11 @@ class MockDecoderDatabase : public DecoderDatabase {
   MOCK_METHOD3(RegisterPayload,
       int(uint8_t rtp_payload_type, NetEqDecoder codec_type,
           const std::string& name));
-  MOCK_METHOD5(InsertExternal,
-      int(uint8_t rtp_payload_type, NetEqDecoder codec_type,
-          const std::string& codec_name, int fs_hz,
-          AudioDecoder* decoder));
+  MOCK_METHOD4(InsertExternal,
+               int(uint8_t rtp_payload_type,
+                   NetEqDecoder codec_type,
+                   const std::string& codec_name,
+                   AudioDecoder* decoder));
   MOCK_METHOD1(Remove,
       int(uint8_t rtp_payload_type));
   MOCK_CONST_METHOD1(GetDecoderInfo,

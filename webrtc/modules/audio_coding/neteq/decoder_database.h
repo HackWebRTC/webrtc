@@ -44,7 +44,6 @@ class DecoderDatabase {
     DecoderInfo(NetEqDecoder ct, const std::string& nm);
     DecoderInfo(NetEqDecoder ct,
                 const std::string& nm,
-                int sample_rate_hz,
                 AudioDecoder* ext_dec);
     DecoderInfo(DecoderInfo&&);
     ~DecoderInfo();
@@ -57,10 +56,10 @@ class DecoderDatabase {
     void DropDecoder() { decoder_.reset(); }
 
     int SampleRateHz() const {
-      RTC_DCHECK_EQ(1, !!decoder_ + !!external_decoder + !!cng_decoder_);
+      RTC_DCHECK_EQ(1, !!decoder_ + !!external_decoder_ + !!cng_decoder_);
       return decoder_ ? decoder_->SampleRateHz()
-                      : external_decoder ? external_decoder->sample_rate_hz
-                                         : cng_decoder_->sample_rate_hz;
+                      : external_decoder_ ? external_decoder_->SampleRateHz()
+                                          : cng_decoder_->sample_rate_hz;
     }
 
     const NetEqDecoder codec_type;
@@ -71,13 +70,7 @@ class DecoderDatabase {
     std::unique_ptr<AudioDecoder> decoder_;
 
     // Set iff this is an external decoder.
-    struct ExternalDecoder {
-      // TODO(kwiberg): Remove sample_rate_hz once we can trust all decoders to
-      // implement SampleRateHz().
-      int sample_rate_hz;
-      AudioDecoder* decoder;
-    };
-    const rtc::Optional<ExternalDecoder> external_decoder;
+    AudioDecoder* const external_decoder_;
 
     // Set iff this is a comfort noise decoder.
     struct CngDecoder {
@@ -120,7 +113,6 @@ class DecoderDatabase {
   virtual int InsertExternal(uint8_t rtp_payload_type,
                              NetEqDecoder codec_type,
                              const std::string& codec_name,
-                             int fs_hz,
                              AudioDecoder* decoder);
 
   // Removes the entry for |rtp_payload_type| from the database.

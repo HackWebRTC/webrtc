@@ -446,7 +446,7 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
 
   EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
                             &decoder_, NetEqDecoder::kDecoderPCM16B,
-                            "dummy name", kPayloadType, kSampleRateHz));
+                            "dummy name", kPayloadType));
 
   // Insert one packet.
   EXPECT_EQ(NetEq::kOK,
@@ -509,6 +509,8 @@ TEST_F(NetEqImplTest, ReorderedPacket) {
   // Create a mock decoder object.
   MockAudioDecoder mock_decoder;
   EXPECT_CALL(mock_decoder, Reset()).WillRepeatedly(Return());
+  EXPECT_CALL(mock_decoder, SampleRateHz())
+      .WillRepeatedly(Return(kSampleRateHz));
   EXPECT_CALL(mock_decoder, Channels()).WillRepeatedly(Return(1));
   EXPECT_CALL(mock_decoder, IncomingPacket(_, kPayloadLengthBytes, _, _, _))
       .WillRepeatedly(Return(0));
@@ -525,7 +527,7 @@ TEST_F(NetEqImplTest, ReorderedPacket) {
                       Return(kPayloadLengthSamples)));
   EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
                             &mock_decoder, NetEqDecoder::kDecoderPCM16B,
-                            "dummy name", kPayloadType, kSampleRateHz));
+                            "dummy name", kPayloadType));
 
   // Insert one packet.
   EXPECT_EQ(NetEq::kOK,
@@ -658,6 +660,8 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
   // Create a mock decoder object.
   MockAudioDecoder mock_decoder;
   EXPECT_CALL(mock_decoder, Reset()).WillRepeatedly(Return());
+  EXPECT_CALL(mock_decoder, SampleRateHz())
+      .WillRepeatedly(Return(kSampleRateKhz * 1000));
   EXPECT_CALL(mock_decoder, Channels()).WillRepeatedly(Return(1));
   EXPECT_CALL(mock_decoder, IncomingPacket(_, kPayloadLengthBytes, _, _, _))
       .WillRepeatedly(Return(0));
@@ -700,7 +704,7 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
 
   EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
                             &mock_decoder, NetEqDecoder::kDecoderOpus,
-                            "dummy name", kPayloadType, kSampleRateKhz * 1000));
+                            "dummy name", kPayloadType));
 
   // Insert one packet (decoder will return speech).
   EXPECT_EQ(NetEq::kOK,
@@ -844,7 +848,7 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
 
   EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
                             &decoder_, NetEqDecoder::kDecoderPCM16B,
-                            "dummy name", kPayloadType, kSampleRateHz));
+                            "dummy name", kPayloadType));
 
   // Insert one packet.
   payload[0] = kFirstPayloadValue;  // This will make Decode() fail.
@@ -938,6 +942,8 @@ TEST_F(NetEqImplTest, DecodedPayloadTooShort) {
   // Create a mock decoder object.
   MockAudioDecoder mock_decoder;
   EXPECT_CALL(mock_decoder, Reset()).WillRepeatedly(Return());
+  EXPECT_CALL(mock_decoder, SampleRateHz())
+      .WillRepeatedly(Return(kSampleRateHz));
   EXPECT_CALL(mock_decoder, Channels()).WillRepeatedly(Return(1));
   EXPECT_CALL(mock_decoder, IncomingPacket(_, kPayloadLengthBytes, _, _, _))
       .WillRepeatedly(Return(0));
@@ -956,7 +962,7 @@ TEST_F(NetEqImplTest, DecodedPayloadTooShort) {
                 Return(kPayloadLengthSamples - 5)));
   EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
                             &mock_decoder, NetEqDecoder::kDecoderPCM16B,
-                            "dummy name", kPayloadType, kSampleRateHz));
+                            "dummy name", kPayloadType));
 
   // Insert one packet.
   EXPECT_EQ(NetEq::kOK,
@@ -1003,6 +1009,8 @@ TEST_F(NetEqImplTest, DecodingError) {
   // Create a mock decoder object.
   MockAudioDecoder mock_decoder;
   EXPECT_CALL(mock_decoder, Reset()).WillRepeatedly(Return());
+  EXPECT_CALL(mock_decoder, SampleRateHz())
+      .WillRepeatedly(Return(kSampleRateHz));
   EXPECT_CALL(mock_decoder, Channels()).WillRepeatedly(Return(1));
   EXPECT_CALL(mock_decoder, IncomingPacket(_, kPayloadLengthBytes, _, _, _))
       .WillRepeatedly(Return(0));
@@ -1047,7 +1055,7 @@ TEST_F(NetEqImplTest, DecodingError) {
 
   EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
                             &mock_decoder, NetEqDecoder::kDecoderPCM16B,
-                            "dummy name", kPayloadType, kSampleRateHz));
+                            "dummy name", kPayloadType));
 
   // Insert packets.
   for (int i = 0; i < 6; ++i) {
@@ -1117,6 +1125,8 @@ TEST_F(NetEqImplTest, DecodingErrorDuringInternalCng) {
   // Create a mock decoder object.
   MockAudioDecoder mock_decoder;
   EXPECT_CALL(mock_decoder, Reset()).WillRepeatedly(Return());
+  EXPECT_CALL(mock_decoder, SampleRateHz())
+      .WillRepeatedly(Return(kSampleRateHz));
   EXPECT_CALL(mock_decoder, Channels()).WillRepeatedly(Return(1));
   EXPECT_CALL(mock_decoder, IncomingPacket(_, kPayloadLengthBytes, _, _, _))
       .WillRepeatedly(Return(0));
@@ -1157,7 +1167,7 @@ TEST_F(NetEqImplTest, DecodingErrorDuringInternalCng) {
 
   EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
                             &mock_decoder, NetEqDecoder::kDecoderPCM16B,
-                            "dummy name", kPayloadType, kSampleRateHz));
+                            "dummy name", kPayloadType));
 
   // Insert 2 packets. This will make netEq into codec internal CNG mode.
   for (int i = 0; i < 2; ++i) {
@@ -1293,7 +1303,7 @@ class NetEqImplTest120ms : public NetEqImplTest {
     ASSERT_EQ(2u, decoder_->Channels());
     EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
                               decoder_.get(), NetEqDecoder::kDecoderOpus_2ch,
-                              "120ms codec", kPayloadType, kSamplingFreq_));
+                              "120ms codec", kPayloadType));
   }
 
   std::unique_ptr<Decoder120ms> decoder_;
