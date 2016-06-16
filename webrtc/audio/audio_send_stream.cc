@@ -127,6 +127,11 @@ bool AudioSendStream::SendTelephoneEvent(int payload_type, int event,
          channel_proxy_->SendTelephoneEventOutband(event, duration_ms);
 }
 
+void AudioSendStream::SetMuted(bool muted) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  channel_proxy_->SetInputMute(muted);
+}
+
 webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   webrtc::AudioSendStream::Stats stats;

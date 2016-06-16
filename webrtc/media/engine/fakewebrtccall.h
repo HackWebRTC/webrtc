@@ -46,6 +46,7 @@ class FakeAudioSendStream final : public webrtc::AudioSendStream {
   void SetStats(const webrtc::AudioSendStream::Stats& stats);
   TelephoneEvent GetLatestTelephoneEvent() const;
   bool IsSending() const { return sending_; }
+  bool muted() const { return muted_; }
 
  private:
   // webrtc::AudioSendStream implementation.
@@ -54,12 +55,14 @@ class FakeAudioSendStream final : public webrtc::AudioSendStream {
 
   bool SendTelephoneEvent(int payload_type, int event,
                           int duration_ms) override;
+  void SetMuted(bool muted) override;
   webrtc::AudioSendStream::Stats GetStats() const override;
 
   TelephoneEvent latest_telephone_event_;
   webrtc::AudioSendStream::Config config_;
   webrtc::AudioSendStream::Stats stats_;
   bool sending_ = false;
+  bool muted_ = false;
 };
 
 class FakeAudioReceiveStream final : public webrtc::AudioReceiveStream {

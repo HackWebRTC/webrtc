@@ -1145,6 +1145,18 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     UpdateSendState();
   }
 
+  void SetMuted(bool muted) {
+    RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(stream_);
+    stream_->SetMuted(muted);
+    muted_ = muted;
+  }
+
+  bool muted() const {
+    RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+    return muted_;
+  }
+
   webrtc::AudioSendStream::Stats GetStats() const {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     RTC_DCHECK(stream_);
@@ -1250,6 +1262,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
   // goes away.
   AudioSource* source_ = nullptr;
   bool send_ = false;
+  bool muted_ = false;
   webrtc::RtpParameters rtp_parameters_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcAudioSendStream);
@@ -2361,29 +2374,21 @@ void WebRtcVoiceMediaChannel::OnNetworkRouteChanged(
 
 bool WebRtcVoiceMediaChannel::MuteStream(uint32_t ssrc, bool muted) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  int channel = GetSendChannelId(ssrc);
-  if (channel == -1) {
+  const auto it = send_streams_.find(ssrc);
+  if (it == send_streams_.end()) {
     LOG(LS_WARNING) << "The specified ssrc " << ssrc << " is not in use.";
     return false;
   }
-  if (engine()->voe()->volume()->SetInputMute(channel, muted) == -1) {
-    LOG_RTCERR2(SetInputMute, channel, muted);
-    return false;
-  }
+  it->second->SetMuted(muted);
+
+  // TODO(solenberg):
   // We set the AGC to mute state only when all the channels are muted.
   // This implementation is not ideal, instead we should signal the AGC when
   // the mic channel is muted/unmuted. We can't do it today because there
   // is no good way to know which stream is mapping to the mic channel.
   bool all_muted = muted;
-  for (const auto& ch : send_streams_) {
-    if (!all_muted) {
-      break;
-    }
-    if (engine()->voe()->volume()->GetInputMute(ch.second->channel(),
-                                                all_muted)) {
-      LOG_RTCERR1(GetInputMute, ch.second->channel());
-      return false;
-    }
+  for (const auto& kv : send_streams_) {
+    all_muted = all_muted && kv.second->muted();
   }
 
   webrtc::AudioProcessing* ap = engine()->voe()->base()->audio_processing();

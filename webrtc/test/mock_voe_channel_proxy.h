@@ -45,6 +45,8 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_CONST_METHOD0(GetDelayEstimate, uint32_t());
   MOCK_METHOD1(SetSendTelephoneEventPayloadType, bool(int payload_type));
   MOCK_METHOD2(SendTelephoneEventOutband, bool(int event, int duration_ms));
+  MOCK_METHOD1(SetInputMute, void(bool muted));
+
   MOCK_METHOD1(RegisterExternalTransport, void(Transport* transport));
   MOCK_METHOD0(DeRegisterExternalTransport, void());
   MOCK_METHOD3(ReceivedRTPPacket, bool(const uint8_t* packet,

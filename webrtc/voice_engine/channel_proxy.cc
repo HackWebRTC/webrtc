@@ -163,6 +163,12 @@ void ChannelProxy::SetSink(std::unique_ptr<AudioSinkInterface> sink) {
   channel()->SetSink(std::move(sink));
 }
 
+void ChannelProxy::SetInputMute(bool muted) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  int error = channel()->SetInputMute(muted);
+  RTC_DCHECK_EQ(0, error);
+}
+
 void ChannelProxy::RegisterExternalTransport(Transport* transport) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   int error = channel()->RegisterExternalTransport(transport);

@@ -110,6 +110,7 @@ struct ConfigHelper {
 
   AudioSendStream::Config& config() { return stream_config_; }
   rtc::scoped_refptr<AudioState> audio_state() { return audio_state_; }
+  MockVoEChannelProxy* channel_proxy() { return channel_proxy_; }
   CongestionController* congestion_controller() {
     return &congestion_controller_;
   }
@@ -198,6 +199,14 @@ TEST(AudioSendStreamTest, SendTelephoneEvent) {
   helper.SetupMockForSendTelephoneEvent();
   EXPECT_TRUE(send_stream.SendTelephoneEvent(kTelephoneEventPayloadType,
       kTelephoneEventCode, kTelephoneEventDuration));
+}
+
+TEST(AudioSendStreamTest, SetMuted) {
+  ConfigHelper helper;
+  internal::AudioSendStream send_stream(helper.config(), helper.audio_state(),
+                                        helper.congestion_controller());
+  EXPECT_CALL(*helper.channel_proxy(), SetInputMute(true));
+  send_stream.SetMuted(true);
 }
 
 TEST(AudioSendStreamTest, GetStats) {

@@ -23,7 +23,6 @@
 #include "webrtc/voice_engine/include/voe_codec.h"
 #include "webrtc/voice_engine/include/voe_errors.h"
 #include "webrtc/voice_engine/include/voe_hardware.h"
-#include "webrtc/voice_engine/include/voe_network.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 #include "webrtc/voice_engine/include/voe_volume_control.h"
 

@@ -2135,6 +2135,17 @@ TEST_F(WebRtcVoiceEngineTestFake, SendStateWithAndWithoutSource) {
   EXPECT_FALSE(GetSendStream(kSsrc1).IsSending());
 }
 
+// Test that a channel is muted/unmuted.
+TEST_F(WebRtcVoiceEngineTestFake, SendStateMuteUnmute) {
+  EXPECT_TRUE(SetupSendStream());
+  EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
+  EXPECT_FALSE(GetSendStream(kSsrc1).muted());
+  EXPECT_TRUE(channel_->SetAudioSend(kSsrc1, true, nullptr, nullptr));
+  EXPECT_FALSE(GetSendStream(kSsrc1).muted());
+  EXPECT_TRUE(channel_->SetAudioSend(kSsrc1, false, nullptr, nullptr));
+  EXPECT_TRUE(GetSendStream(kSsrc1).muted());
+}
+
 // Test that SetSendParameters() does not alter a stream's send state.
 TEST_F(WebRtcVoiceEngineTestFake, SendStateWhenStreamsAreRecreated) {
   EXPECT_TRUE(SetupSendStream());

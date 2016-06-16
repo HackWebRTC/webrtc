@@ -47,6 +47,10 @@ bool FakeAudioSendStream::SendTelephoneEvent(int payload_type, int event,
   return true;
 }
 
+void FakeAudioSendStream::SetMuted(bool muted) {
+  muted_ = muted;
+}
+
 webrtc::AudioSendStream::Stats FakeAudioSendStream::GetStats() const {
   return stats_;
 }

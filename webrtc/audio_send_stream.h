@@ -100,6 +100,9 @@ class AudioSendStream {
   // TODO(solenberg): Make payload_type a config property instead.
   virtual bool SendTelephoneEvent(int payload_type, int event,
                                   int duration_ms) = 0;
+
+  virtual void SetMuted(bool muted) = 0;
+
   virtual Stats GetStats() const = 0;
 
  protected:
