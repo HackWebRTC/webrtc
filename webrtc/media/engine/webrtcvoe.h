@@ -23,7 +23,6 @@
 #include "webrtc/voice_engine/include/voe_codec.h"
 #include "webrtc/voice_engine/include/voe_errors.h"
 #include "webrtc/voice_engine/include/voe_hardware.h"
-#include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 #include "webrtc/voice_engine/include/voe_volume_control.h"
 
 namespace cricket {
@@ -75,21 +74,19 @@ class VoEWrapper {
  public:
   VoEWrapper()
       : engine_(webrtc::VoiceEngine::Create()), processing_(engine_),
-        base_(engine_), codec_(engine_), hw_(engine_), rtp_(engine_),
+        base_(engine_), codec_(engine_), hw_(engine_),
         volume_(engine_) {
   }
   VoEWrapper(webrtc::VoEAudioProcessing* processing,
              webrtc::VoEBase* base,
              webrtc::VoECodec* codec,
              webrtc::VoEHardware* hw,
-             webrtc::VoERTP_RTCP* rtp,
              webrtc::VoEVolumeControl* volume)
       : engine_(NULL),
         processing_(processing),
         base_(base),
         codec_(codec),
         hw_(hw),
-        rtp_(rtp),
         volume_(volume) {
   }
   ~VoEWrapper() {}
@@ -98,7 +95,6 @@ class VoEWrapper {
   webrtc::VoEBase* base() const { return base_.get(); }
   webrtc::VoECodec* codec() const { return codec_.get(); }
   webrtc::VoEHardware* hw() const { return hw_.get(); }
-  webrtc::VoERTP_RTCP* rtp() const { return rtp_.get(); }
   webrtc::VoEVolumeControl* volume() const { return volume_.get(); }
   int error() { return base_->LastError(); }
 
@@ -108,7 +104,6 @@ class VoEWrapper {
   scoped_voe_ptr<webrtc::VoEBase> base_;
   scoped_voe_ptr<webrtc::VoECodec> codec_;
   scoped_voe_ptr<webrtc::VoEHardware> hw_;
-  scoped_voe_ptr<webrtc::VoERTP_RTCP> rtp_;
   scoped_voe_ptr<webrtc::VoEVolumeControl> volume_;
 };
 }  // namespace cricket

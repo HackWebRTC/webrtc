@@ -1285,12 +1285,14 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     RTC_DCHECK_GE(ch, 0);
     RTC_DCHECK(call);
     config_.rtp.remote_ssrc = remote_ssrc;
-    config_.rtp.local_ssrc = local_ssrc;
     config_.rtcp_send_transport = rtcp_send_transport;
     config_.voe_channel_id = ch;
     config_.sync_group = sync_group;
     config_.decoder_factory = decoder_factory;
-    RecreateAudioReceiveStream(use_transport_cc, use_nack, extensions);
+    RecreateAudioReceiveStream(local_ssrc,
+                               use_transport_cc,
+                               use_nack,
+                               extensions);
   }
 
   ~WebRtcAudioReceiveStream() {
@@ -1298,19 +1300,29 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     call_->DestroyAudioReceiveStream(stream_);
   }
 
-  void RecreateAudioReceiveStream(
-      const std::vector<webrtc::RtpExtension>& extensions) {
+  void RecreateAudioReceiveStream(uint32_t local_ssrc) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-    RecreateAudioReceiveStream(config_.rtp.transport_cc,
+    RecreateAudioReceiveStream(local_ssrc,
+                               config_.rtp.transport_cc,
                                config_.rtp.nack.rtp_history_ms != 0,
-                               extensions);
+                               config_.rtp.extensions);
   }
 
   void RecreateAudioReceiveStream(bool use_transport_cc, bool use_nack) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-    RecreateAudioReceiveStream(use_transport_cc,
+    RecreateAudioReceiveStream(config_.rtp.local_ssrc,
+                               use_transport_cc,
                                use_nack,
                                config_.rtp.extensions);
+  }
+
+  void RecreateAudioReceiveStream(
+      const std::vector<webrtc::RtpExtension>& extensions) {
+    RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+    RecreateAudioReceiveStream(config_.rtp.local_ssrc,
+                               config_.rtp.transport_cc,
+                               config_.rtp.nack.rtp_history_ms != 0,
+                               extensions);
   }
 
   webrtc::AudioReceiveStream::Stats GetStats() const {
@@ -1331,6 +1343,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
 
  private:
   void RecreateAudioReceiveStream(
+      uint32_t local_ssrc,
       bool use_transport_cc,
       bool use_nack,
       const std::vector<webrtc::RtpExtension>& extensions) {
@@ -1339,6 +1352,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
       call_->DestroyAudioReceiveStream(stream_);
       stream_ = nullptr;
     }
+    config_.rtp.local_ssrc = local_ssrc;
     config_.rtp.transport_cc = use_transport_cc;
     config_.rtp.nack.rtp_history_ms = use_nack ? kNackRtpHistoryMs : 0;
     config_.rtp.extensions = extensions;
@@ -2022,17 +2036,16 @@ bool WebRtcVoiceMediaChannel::AddSendStream(const StreamParams& sp) {
     return false;
   }
 
-  // At this point the channel's local SSRC has been updated. If the channel is
-  // the first send channel make sure that all the receive channels are updated
-  // with the same SSRC in order to send receiver reports.
+  // At this point the stream's local SSRC has been updated. If it is the first
+  // send stream, make sure that all the receive streams are updated with the
+  // same SSRC in order to send receiver reports.
   if (send_streams_.size() == 1) {
     receiver_reports_ssrc_ = ssrc;
-    for (const auto& stream : recv_streams_) {
-      int recv_channel = stream.second->channel();
-      if (engine()->voe()->rtp()->SetLocalSSRC(recv_channel, ssrc) != 0) {
-        LOG_RTCERR2(SetLocalSSRC, recv_channel, ssrc);
-        return false;
-      }
+    for (const auto& kv : recv_streams_) {
+      // TODO(solenberg): Allow applications to set the RTCP SSRC of receive
+      // streams instead, so we can avoid recreating the streams here.
+      kv.second->RecreateAudioReceiveStream(ssrc);
+      int recv_channel = kv.second->channel();
       engine()->voe()->base()->AssociateSendChannel(recv_channel, channel);
       LOG(LS_INFO) << "VoiceEngine channel #" << recv_channel
                    << " is associated with channel #" << channel << ".";

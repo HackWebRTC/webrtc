@@ -59,7 +59,6 @@ class FakeVoEWrapper : public cricket::VoEWrapper {
                             engine,  // base
                             engine,  // codec
                             engine,  // hw
-                            engine,  // rtp
                             engine) {  // volume
   }
 };
@@ -2508,13 +2507,11 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendSsrcWithMultipleStreams) {
 // receive channel is created before the send channel.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendSsrcAfterCreatingReceiveChannel) {
   EXPECT_TRUE(SetupChannel());
-  EXPECT_TRUE(AddRecvStream(1));
-  int receive_channel_num = voe_.GetLastChannel();
+  EXPECT_TRUE(AddRecvStream(kSsrc2));
   EXPECT_TRUE(channel_->AddSendStream(
-      cricket::StreamParams::CreateLegacy(1234)));
-
-  EXPECT_TRUE(call_.GetAudioSendStream(1234));
-  EXPECT_EQ(1234U, voe_.GetLocalSSRC(receive_channel_num));
+      cricket::StreamParams::CreateLegacy(kSsrc1)));
+  EXPECT_TRUE(call_.GetAudioSendStream(kSsrc1));
+  EXPECT_EQ(kSsrc1, GetRecvStreamConfig(kSsrc2).rtp.local_ssrc);
 }
 
 // Test that we can properly receive packets.
