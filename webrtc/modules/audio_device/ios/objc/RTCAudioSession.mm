@@ -636,6 +636,31 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
     return NO;
   }
 
+  // It can happen (e.g. in combination with BT devices) that the attempt to set
+  // the preferred sample rate for WebRTC (48kHz) fails. If so, make a new
+  // configuration attempt using the sample rate that worked using the active
+  // audio session. A typical case is that only 8 or 16kHz can be set, e.g. in
+  // combination with BT headsets. Using this "trick" seems to avoid a state
+  // where Core Audio asks for a different number of audio frames than what the
+  // session's I/O buffer duration corresponds to.
+  // TODO(henrika): this fix resolves bugs.webrtc.org/6004 but it has only been
+  // tested on a limited set of iOS devices and BT devices.
+  double sessionSampleRate = self.sampleRate;
+  double preferredSampleRate = webRTCConfig.sampleRate;
+  if (sessionSampleRate != preferredSampleRate) {
+    RTCLogWarning(
+        @"Current sample rate (%.2f) is not the preferred rate (%.2f)",
+        sessionSampleRate, preferredSampleRate);
+    if (![self setPreferredSampleRate:sessionSampleRate
+                                error:&error]) {
+      RTCLogError(@"Failed to set preferred sample rate: %@",
+                  error.localizedDescription);
+      if (outError) {
+        *outError = error;
+      }
+    }
+  }
+
   return YES;
 }
 

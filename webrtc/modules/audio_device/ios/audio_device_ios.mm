@@ -431,6 +431,20 @@ OSStatus AudioDeviceIOS::OnGetPlayoutData(AudioUnitRenderActionFlags* flags,
     memset(destination, 0, size_in_bytes);
     return noErr;
   }
+  // Produce silence and log a warning message for the case when Core Audio is
+  // asking for an invalid number of audio frames. I don't expect this to happen
+  // but it is done as a safety measure to avoid bad audio if such as case would
+  // ever be triggered e.g. in combination with BT devices.
+  const size_t frames_per_buffer = playout_parameters_.frames_per_buffer();
+  if (num_frames != frames_per_buffer) {
+    RTCLogWarning(@"Expected %u frames but got %u",
+                  static_cast<unsigned int>(frames_per_buffer),
+                  static_cast<unsigned int>(num_frames));
+    *flags |= kAudioUnitRenderAction_OutputIsSilence;
+    memset(destination, 0, size_in_bytes);
+    return noErr;
+  }
+
   // Read decoded 16-bit PCM samples from WebRTC (using a size that matches
   // the native I/O audio unit) to a preallocated intermediate buffer and
   // copy the result to the audio buffer in the |io_data| destination.
