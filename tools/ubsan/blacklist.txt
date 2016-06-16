@@ -23,6 +23,12 @@ src:*/usr/*
 fun:*FilterBanksTest*CalculateResidualEnergyTester*
 
 #############################################################################
+# The audio processing AGC submodule exhibits a few problems (overflows).
+# https://bugs.chromium.org/p/webrtc/issues/detail?id=5530
+src:*/webrtc/modules/audio_processing/agc/legacy/analog_agc.c
+src:*/webrtc/modules/audio_processing/agc/legacy/digital_agc.c
+
+#############################################################################
 # Ignore errors in common_audio.
 # https://bugs.chromium.org/p/webrtc/issues/detail?id=5486
 src:*/webrtc/common_audio/signal_processing/signal_processing_unittest.cc
