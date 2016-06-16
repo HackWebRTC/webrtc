@@ -21,25 +21,25 @@
 #endif
 
 // Wait until "ex" is true, or "timeout" expires.
-#define WAIT(ex, timeout)                               \
-  for (int64_t start = rtc::TimeMillis();               \
-       !(ex) && rtc::TimeMillis() < start + timeout;) { \
-    rtc::Thread::Current()->ProcessMessages(0);         \
-    rtc::Thread::Current()->SleepMs(1);                 \
+#define WAIT(ex, timeout)                                     \
+  for (int64_t start = rtc::SystemTimeMillis();               \
+       !(ex) && rtc::SystemTimeMillis() < start + timeout;) { \
+    rtc::Thread::Current()->ProcessMessages(0);               \
+    rtc::Thread::Current()->SleepMs(1);                       \
   }
 
 // This returns the result of the test in res, so that we don't re-evaluate
 // the expression in the XXXX_WAIT macros below, since that causes problems
 // when the expression is only true the first time you check it.
-#define WAIT_(ex, timeout, res)                           \
-  do {                                                    \
-    int64_t start = rtc::TimeMillis();                    \
-    res = (ex);                                           \
-    while (!res && rtc::TimeMillis() < start + timeout) { \
-      rtc::Thread::Current()->ProcessMessages(0);         \
-      rtc::Thread::Current()->SleepMs(1);                 \
-      res = (ex);                                         \
-    }                                                     \
+#define WAIT_(ex, timeout, res)                                 \
+  do {                                                          \
+    int64_t start = rtc::SystemTimeMillis();                    \
+    res = (ex);                                                 \
+    while (!res && rtc::SystemTimeMillis() < start + timeout) { \
+      rtc::Thread::Current()->ProcessMessages(0);               \
+      rtc::Thread::Current()->SleepMs(1);                       \
+      res = (ex);                                               \
+    }                                                           \
   } while (0)
 
 // The typical EXPECT_XXXX and ASSERT_XXXXs, but done until true or a timeout.

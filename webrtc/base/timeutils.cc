@@ -38,10 +38,7 @@ ClockInterface* SetClockForTesting(ClockInterface* clock) {
   return prev;
 }
 
-uint64_t TimeNanos() {
-  if (g_clock) {
-    return g_clock->TimeNanos();
-  }
+uint64_t SystemTimeNanos() {
   int64_t ticks;
 #if defined(WEBRTC_MAC)
   static mach_timebase_info_data_t timebase;
@@ -84,6 +81,17 @@ uint64_t TimeNanos() {
 #error Unsupported platform.
 #endif
   return ticks;
+}
+
+int64_t SystemTimeMillis() {
+  return static_cast<int64_t>(SystemTimeNanos() / kNumNanosecsPerMillisec);
+}
+
+uint64_t TimeNanos() {
+  if (g_clock) {
+    return g_clock->TimeNanos();
+  }
+  return SystemTimeNanos();
 }
 
 uint32_t Time32() {

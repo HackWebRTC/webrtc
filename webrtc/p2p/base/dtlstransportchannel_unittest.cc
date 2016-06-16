@@ -22,10 +22,10 @@
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/stringutils.h"
 
-#define MAYBE_SKIP_TEST(feature)                    \
-  if (!(rtc::SSLStreamAdapter::feature())) {  \
-    LOG(LS_INFO) << "Feature disabled... skipping"; \
-    return;                                         \
+#define MAYBE_SKIP_TEST(feature)                              \
+  if (!(rtc::SSLStreamAdapter::feature())) {                  \
+    LOG(LS_INFO) << #feature " feature disabled... skipping"; \
+    return;                                                   \
   }
 
 static const char kIceUfrag1[] = "TESTICEUFRAG0001";
@@ -413,7 +413,8 @@ class DtlsTestClient : public sigslot::has_slots<> {
   rtc::SentPacket sent_packet_;
 };
 
-
+// Note that this test always uses a FakeClock, due to the |fake_clock_| member
+// variable.
 class DtlsTransportChannelTest : public testing::Test {
  public:
   DtlsTransportChannelTest()
@@ -561,6 +562,7 @@ class DtlsTransportChannelTest : public testing::Test {
   }
 
  protected:
+  rtc::ScopedFakeClock fake_clock_;
   DtlsTestClient client1_;
   DtlsTestClient client2_;
   int channel_ct_;
@@ -973,4 +975,46 @@ TEST_F(DtlsTransportChannelTest,
       client1_.all_channels_writable() && client2_.all_channels_writable(),
       kTimeout);
   EXPECT_EQ(1, client1_.received_dtls_client_hellos());
+}
+
+// Test that packets are retransmitted according to the expected schedule.
+// Each time a timeout occurs, the retransmission timer should be doubled up to
+// 60 seconds. The timer defaults to 1 second, but for WebRTC we should be
+// initializing it to 50ms.
+TEST_F(DtlsTransportChannelTest, TestRetransmissionSchedule) {
+  MAYBE_SKIP_TEST(HaveDtls);
+  // We can only change the retransmission schedule with a recently-added
+  // BoringSSL API. Skip the test if not built with BoringSSL.
+  MAYBE_SKIP_TEST(IsBoringSsl);
+
+  PrepareDtls(true, true, rtc::KT_DEFAULT);
+  // Exchange transport descriptions.
+  Negotiate(cricket::CONNECTIONROLE_ACTPASS, cricket::CONNECTIONROLE_ACTIVE);
+
+  // Make client2_ writable, but not client1_.
+  // This means client1_ will send DTLS client hellos but get no response.
+  EXPECT_TRUE(client2_.Connect(&client1_, true));
+  EXPECT_TRUE_WAIT(client2_.all_raw_channels_writable(), kTimeout);
+
+  // Wait for the first client hello to be sent.
+  EXPECT_EQ_WAIT(1, client1_.received_dtls_client_hellos(), kTimeout);
+  EXPECT_FALSE(client1_.all_raw_channels_writable());
+
+  static int timeout_schedule_ms[] = {50,   100,  200,   400,   800,   1600,
+                                      3200, 6400, 12800, 25600, 51200, 60000};
+
+  int expected_hellos = 1;
+  for (size_t i = 0;
+       i < (sizeof(timeout_schedule_ms) / sizeof(timeout_schedule_ms[0]));
+       ++i) {
+    // For each expected retransmission time, advance the fake clock a
+    // millisecond before the expected time and verify that no unexpected
+    // retransmissions were sent. Then advance it the final millisecond and
+    // verify that the expected retransmission was sent.
+    fake_clock_.AdvanceTime(
+        rtc::TimeDelta::FromMilliseconds(timeout_schedule_ms[i] - 1));
+    EXPECT_EQ(expected_hellos, client1_.received_dtls_client_hellos());
+    fake_clock_.AdvanceTime(rtc::TimeDelta::FromMilliseconds(1));
+    EXPECT_EQ(++expected_hellos, client1_.received_dtls_client_hellos());
+  }
 }

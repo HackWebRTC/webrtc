@@ -34,6 +34,7 @@
 #include "webrtc/base/openssldigest.h"
 #include "webrtc/base/opensslidentity.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/base/thread.h"
 
 namespace rtc {
@@ -58,7 +59,13 @@ static SrtpCipherMapEntry SrtpCipherMap[] = {
     {nullptr, 0}};
 #endif
 
-#ifndef OPENSSL_IS_BORINGSSL
+#ifdef OPENSSL_IS_BORINGSSL
+static void TimeCallback(const SSL* ssl, struct timeval* out_clock) {
+  uint64_t time = TimeNanos();
+  out_clock->tv_sec = time / kNumNanosecsPerSec;
+  out_clock->tv_usec = time / kNumNanosecsPerMicrosec;
+}
+#else  // #ifdef OPENSSL_IS_BORINGSSL
 
 // Cipher name table. Maps internal OpenSSL cipher ids to the RFC name.
 struct SslCipherMapEntry {
@@ -771,13 +778,19 @@ int OpenSSLStreamAdapter::BeginSSL() {
   SSL_set_app_data(ssl_, this);
 
   SSL_set_bio(ssl_, bio, bio);  // the SSL object owns the bio now.
-#ifndef OPENSSL_IS_BORINGSSL
   if (ssl_mode_ == SSL_MODE_DTLS) {
+#ifdef OPENSSL_IS_BORINGSSL
+    // Change the initial retransmission timer from 1 second to 50ms.
+    // This will likely result in some spurious retransmissions, but
+    // it's useful for ensuring a timely handshake when there's packet
+    // loss.
+    DTLSv1_set_initial_timeout_duration(ssl_, 50);
+#else
     // Enable read-ahead for DTLS so whole packets are read from internal BIO
     // before parsing. This is done internally by BoringSSL for DTLS.
     SSL_set_read_ahead(ssl_, 1);
-  }
 #endif
+  }
 
   SSL_set_mode(ssl_, SSL_MODE_ENABLE_PARTIAL_WRITE |
                SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
@@ -985,6 +998,11 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
           DTLS1_2_VERSION : TLS1_2_VERSION);
       break;
   }
+  // Set a time callback for BoringSSL because:
+  // 1. Our time function is more accurate (doesn't just use gettimeofday).
+  // 2. This allows us to inject a fake clock for testing.
+  // SSL_CTX_set_current_time_cb(ctx, &TimeCallback);
+  ctx->current_time_cb = &TimeCallback;
 #endif
 
   if (identity_ && !identity_->ConfigureIdentity(ctx)) {
@@ -1121,6 +1139,14 @@ bool OpenSSLStreamAdapter::HaveDtlsSrtp() {
 
 bool OpenSSLStreamAdapter::HaveExporter() {
 #ifdef HAVE_DTLS_SRTP
+  return true;
+#else
+  return false;
+#endif
+}
+
+bool OpenSSLStreamAdapter::IsBoringSsl() {
+#ifdef OPENSSL_IS_BORINGSSL
   return true;
 #else
   return false;

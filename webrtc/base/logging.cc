@@ -124,7 +124,9 @@ LogMessage::LogMessage(const char* file,
                        const char* module)
     : severity_(sev), tag_(kLibjingle) {
   if (timestamp_) {
-    int64_t time = TimeSince(LogStartTime());
+    // Use SystemTimeMillis so that even if tests use fake clocks, the timestamp
+    // in log messages represents the real system time.
+    int64_t time = TimeDiff(SystemTimeMillis(), LogStartTime());
     // Also ensure WallClockStartTime is initialized, so that it matches
     // LogStartTime.
     WallClockStartTime();
@@ -210,7 +212,7 @@ LogMessage::~LogMessage() {
 }
 
 int64_t LogMessage::LogStartTime() {
-  static const int64_t g_start = TimeMillis();
+  static const int64_t g_start = SystemTimeMillis();
   return g_start;
 }
 

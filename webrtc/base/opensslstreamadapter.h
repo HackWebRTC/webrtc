@@ -111,6 +111,7 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   static bool HaveDtls();
   static bool HaveDtlsSrtp();
   static bool HaveExporter();
+  static bool IsBoringSsl();
 
   static bool IsAcceptableCipher(int cipher, KeyType key_type);
   static bool IsAcceptableCipher(const std::string& cipher, KeyType key_type);

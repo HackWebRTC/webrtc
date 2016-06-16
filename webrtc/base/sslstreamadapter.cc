@@ -82,6 +82,9 @@ bool SSLStreamAdapter::HaveDtlsSrtp() {
 bool SSLStreamAdapter::HaveExporter() {
   return OpenSSLStreamAdapter::HaveExporter();
 }
+bool SSLStreamAdapter::IsBoringSsl() {
+  return OpenSSLStreamAdapter::IsBoringSsl();
+}
 bool SSLStreamAdapter::IsAcceptableCipher(int cipher, KeyType key_type) {
   return OpenSSLStreamAdapter::IsAcceptableCipher(cipher, key_type);
 }

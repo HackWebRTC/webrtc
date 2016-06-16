@@ -195,6 +195,7 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   static bool HaveDtls();
   static bool HaveDtlsSrtp();
   static bool HaveExporter();
+  static bool IsBoringSsl();
 
   // Returns true iff the supplied cipher is deemed to be strong.
   // TODO(torbjorng): Consider removing the KeyType argument.
