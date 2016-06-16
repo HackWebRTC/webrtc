@@ -59,7 +59,7 @@ NaluType ParseNaluType(uint8_t data) {
 }
 
 std::unique_ptr<rtc::Buffer> ParseRbsp(const uint8_t* data, size_t length) {
-  std::unique_ptr<rtc::Buffer> rbsp_buffer(new rtc::Buffer());
+  std::unique_ptr<rtc::Buffer> rbsp_buffer(new rtc::Buffer(0, length));
   const char* sps_bytes = reinterpret_cast<const char*>(data);
   for (size_t i = 0; i < length;) {
     // Be careful about over/underflow here. byte_length_ - 3 can underflow, and
@@ -84,6 +84,7 @@ void WriteRbsp(const uint8_t* bytes, size_t length, rtc::Buffer* destination) {
   static const uint8_t kZerosInStartSequence = 2;
   static const uint8_t kEmulationByte = 0x03u;
   size_t num_consecutive_zeros = 0;
+  destination->EnsureCapacity(destination->size() + length);
 
   for (size_t i = 0; i < length; ++i) {
     uint8_t byte = bytes[i];

@@ -11,6 +11,7 @@
 #ifndef WEBRTC_BASE_BUFFER_H_
 #define WEBRTC_BASE_BUFFER_H_
 
+#include <algorithm>
 #include <cstring>
 #include <memory>
 #include <type_traits>
