@@ -129,6 +129,12 @@ class VideoFrame {
   // called on a non-native-handle frame.
   VideoFrame ConvertNativeToI420Frame() const;
 
+  // Return true if the frame is stored in a texture.
+  bool is_texture() {
+    return video_frame_buffer() &&
+           video_frame_buffer()->native_handle() != nullptr;
+  }
+
  private:
   // An opaque reference counted handle that stores the pixel data.
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;

@@ -748,7 +748,7 @@ bool WebRtcVideoChannel2::GetChangedSendParameters(
   // Handle RTP header extensions.
   std::vector<webrtc::RtpExtension> filtered_extensions = FilterRtpExtensions(
       params.extensions, webrtc::RtpExtension::IsSupportedForVideo, true);
-  if (send_rtp_extensions_ != filtered_extensions) {
+  if (!send_rtp_extensions_ || (*send_rtp_extensions_ != filtered_extensions)) {
     changed_params->rtp_header_extensions =
         rtc::Optional<std::vector<webrtc::RtpExtension>>(filtered_extensions);
   }
@@ -796,7 +796,7 @@ bool WebRtcVideoChannel2::SetSendParameters(const VideoSendParameters& params) {
   }
 
   if (changed_params.rtp_header_extensions) {
-    send_rtp_extensions_ = *changed_params.rtp_header_extensions;
+    send_rtp_extensions_ = changed_params.rtp_header_extensions;
   }
 
   if (changed_params.codec || changed_params.max_bandwidth_bps) {
@@ -1520,7 +1520,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
     bool enable_cpu_overuse_detection,
     int max_bitrate_bps,
     const rtc::Optional<VideoCodecSettings>& codec_settings,
-    const std::vector<webrtc::RtpExtension>& rtp_extensions,
+    const rtc::Optional<std::vector<webrtc::RtpExtension>>& rtp_extensions,
     // TODO(deadbeef): Don't duplicate information between send_params,
     // rtp_extensions, options, etc.
     const VideoSendParameters& send_params)
@@ -1546,15 +1546,23 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
   sp.GetFidSsrcs(parameters_.config.rtp.ssrcs,
                  &parameters_.config.rtp.rtx.ssrcs);
   parameters_.config.rtp.c_name = sp.cname;
-  parameters_.config.rtp.extensions = rtp_extensions;
+  if (rtp_extensions) {
+    parameters_.config.rtp.extensions = *rtp_extensions;
+  }
   parameters_.config.rtp.rtcp_mode = send_params.rtcp.reduced_size
                                          ? webrtc::RtcpMode::kReducedSize
                                          : webrtc::RtcpMode::kCompound;
   parameters_.config.overuse_callback =
       enable_cpu_overuse_detection ? this : nullptr;
 
-  sink_wants_.rotation_applied = !ContainsHeaderExtension(
-      rtp_extensions, webrtc::RtpExtension::kVideoRotationUri);
+  // Only request rotation at the source when we positively know that the remote
+  // side doesn't support the rotation extension. This allows us to prepare the
+  // encoder in the expectation that rotation is supported - which is the common
+  // case.
+  sink_wants_.rotation_applied =
+      rtp_extensions &&
+      !ContainsHeaderExtension(*rtp_extensions,
+                               webrtc::RtpExtension::kVideoRotationUri);
 
   if (codec_settings) {
     SetCodec(*codec_settings);
@@ -1593,6 +1601,23 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
   webrtc::VideoFrame video_frame(frame.video_frame_buffer(), 0, 0,
                                  frame.rotation());
   rtc::CritScope cs(&lock_);
+
+  if (video_frame.width() != last_frame_info_.width ||
+      video_frame.height() != last_frame_info_.height ||
+      video_frame.rotation() != last_frame_info_.rotation ||
+      video_frame.is_texture() != last_frame_info_.is_texture) {
+    last_frame_info_.width = video_frame.width();
+    last_frame_info_.height = video_frame.height();
+    last_frame_info_.rotation = video_frame.rotation();
+    last_frame_info_.is_texture = video_frame.is_texture();
+    pending_encoder_reconfiguration_ = true;
+
+    LOG(LS_INFO) << "Video frame parameters changed: dimensions="
+                 << last_frame_info_.width << "x" << last_frame_info_.height
+                 << ", rotation=" << last_frame_info_.rotation
+                 << ", texture=" << last_frame_info_.is_texture;
+  }
+
   if (stream_ == NULL) {
     // Frame input before send codecs are configured, dropping frame.
     return;
@@ -1609,9 +1634,11 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
   last_frame_timestamp_ms_ = *first_frame_timestamp_ms_ + frame_delta_ms;
 
   video_frame.set_render_time_ms(last_frame_timestamp_ms_);
-  // Reconfigure codec if necessary.
-  SetDimensions(video_frame.width(), video_frame.height());
-  last_rotation_ = video_frame.rotation();
+
+  if (pending_encoder_reconfiguration_) {
+    ReconfigureEncoder();
+    pending_encoder_reconfiguration_ = false;
+  }
 
   // Not sending, abort after reconfiguration. Reconfiguration should still
   // occur to permit sending this input as quickly as possible once we start
@@ -1664,9 +1691,9 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoSend(
         // necessary to give this black frame a larger timestamp than the
         // previous one.
         last_frame_timestamp_ms_ += 1;
-        stream_->Input()->IncomingCapturedFrame(
-            CreateBlackFrame(last_dimensions_.width, last_dimensions_.height,
-                             last_frame_timestamp_ms_, last_rotation_));
+        stream_->Input()->IncomingCapturedFrame(CreateBlackFrame(
+            last_frame_info_.width, last_frame_info_.height,
+            last_frame_timestamp_ms_, last_frame_info_.rotation));
       }
       source_ = source;
     }
@@ -1758,8 +1785,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::DestroyVideoEncoder(
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodec(
     const VideoCodecSettings& codec_settings) {
-  parameters_.encoder_config =
-      CreateVideoEncoderConfig(last_dimensions_, codec_settings.codec);
+  parameters_.encoder_config = CreateVideoEncoderConfig(codec_settings.codec);
   RTC_DCHECK(!parameters_.encoder_config.streams.empty());
 
   AllocatedEncoder new_encoder = CreateVideoEncoder(codec_settings.codec);
@@ -1898,7 +1924,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::UpdateSendState() {
 
 webrtc::VideoEncoderConfig
 WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
-    const Dimensions& dimensions,
     const VideoCodec& codec) const {
   webrtc::VideoEncoderConfig encoder_config;
   bool is_screencast = parameters_.options.is_screencast.value_or(false);
@@ -1914,8 +1939,8 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
   }
 
   // Restrict dimensions according to codec max.
-  int width = dimensions.width;
-  int height = dimensions.height;
+  int width = last_frame_info_.width;
+  int height = last_frame_info_.height;
   if (!is_screencast) {
     if (codec.width < width)
       width = codec.width;
@@ -1940,6 +1965,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
                   parameters_.max_bitrate_bps);
   encoder_config.streams = CreateVideoStreams(
       clamped_codec, parameters_.options, stream_max_bitrate, stream_count);
+  encoder_config.expect_encode_from_texture = last_frame_info_.is_texture;
 
   // Conference mode screencast uses 2 temporal layers split at 100kbit.
   if (parameters_.conference_mode && is_screencast &&
@@ -1964,25 +1990,14 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
   return encoder_config;
 }
 
-void WebRtcVideoChannel2::WebRtcVideoSendStream::SetDimensions(
-    int width,
-    int height) {
-  if (last_dimensions_.width == width && last_dimensions_.height == height &&
-      !pending_encoder_reconfiguration_) {
-    // Configured using the same parameters, do not reconfigure.
-    return;
-  }
-
-  last_dimensions_.width = width;
-  last_dimensions_.height = height;
-
+void WebRtcVideoChannel2::WebRtcVideoSendStream::ReconfigureEncoder() {
   RTC_DCHECK(!parameters_.encoder_config.streams.empty());
 
   RTC_CHECK(parameters_.codec_settings);
   VideoCodecSettings codec_settings = *parameters_.codec_settings;
 
   webrtc::VideoEncoderConfig encoder_config =
-      CreateVideoEncoderConfig(last_dimensions_, codec_settings.codec);
+      CreateVideoEncoderConfig(codec_settings.codec);
 
   encoder_config.encoder_specific_settings = ConfigureVideoEncoderSettings(
       codec_settings.codec);
@@ -1990,7 +2005,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetDimensions(
   stream_->ReconfigureVideoEncoder(encoder_config);
 
   encoder_config.encoder_specific_settings = NULL;
-  pending_encoder_reconfiguration_ = false;
 
   parameters_.encoder_config = encoder_config;
 }
@@ -2035,7 +2049,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnLoadUpdate(Load load) {
       // equal to |max_pixel_count| depending on how the source can scale the
       // input frame size.
       max_pixel_count = rtc::Optional<int>(
-          (last_dimensions_.height * last_dimensions_.width * 3) / 5);
+          (last_frame_info_.height * last_frame_info_.width * 3) / 5);
       // Increase |number_of_cpu_adapt_changes_| if
       // sink_wants_.max_pixel_count will be changed since
       // last time |source_->AddOrUpdateSink| was called. That is, this will
@@ -2050,8 +2064,8 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnLoadUpdate(Load load) {
       // The input video frame size will have a resolution with "one step up"
       // pixels than |max_pixel_count_step_up| where "one step up" depends on
       // how the source can scale the input frame size.
-      max_pixel_count_step_up = rtc::Optional<int>(last_dimensions_.height *
-                                                   last_dimensions_.width);
+      max_pixel_count_step_up =
+          rtc::Optional<int>(last_frame_info_.height * last_frame_info_.width);
       // Increase |number_of_cpu_adapt_changes_| if
       // sink_wants_.max_pixel_count_step_up will be changed since
       // last time |source_->AddOrUpdateSink| was called. That is, this will

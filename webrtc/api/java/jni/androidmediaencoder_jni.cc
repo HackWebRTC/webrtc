@@ -414,7 +414,8 @@ int32_t MediaCodecVideoEncoder::InitEncode(
       RTC_FROM_HERE,
       Bind(&MediaCodecVideoEncoder::InitEncodeOnCodecThread, this, init_width,
            init_height, codec_settings->startBitrate,
-           codec_settings->maxFramerate, false /* use_surface */));
+           codec_settings->maxFramerate,
+           codec_settings->expect_encode_from_texture));
 }
 
 int32_t MediaCodecVideoEncoder::Encode(

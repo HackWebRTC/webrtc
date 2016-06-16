@@ -143,6 +143,7 @@ struct VideoEncoderConfig {
   // maintaining a higher bitrate estimate. Padding will however not be sent
   // unless the estimated bandwidth indicates that the link can handle it.
   int min_transmit_bitrate_bps;
+  bool expect_encode_from_texture;
 };
 
 // Controls the capacity of the packet buffer in NetEq. The capacity is the

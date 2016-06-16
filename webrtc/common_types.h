@@ -701,6 +701,7 @@ struct VideoCodec {
   SpatialLayer spatialLayers[kMaxSpatialLayers];
 
   VideoCodecMode      mode;
+  bool                expect_encode_from_texture;
 
   bool operator==(const VideoCodec& other) const = delete;
   bool operator!=(const VideoCodec& other) const = delete;

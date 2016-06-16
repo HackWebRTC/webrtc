@@ -254,7 +254,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
         bool enable_cpu_overuse_detection,
         int max_bitrate_bps,
         const rtc::Optional<VideoCodecSettings>& codec_settings,
-        const std::vector<webrtc::RtpExtension>& rtp_extensions,
+        const rtc::Optional<std::vector<webrtc::RtpExtension>>& rtp_extensions,
         const VideoSendParameters& send_params);
     virtual ~WebRtcVideoSendStream();
 
@@ -309,7 +309,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
       bool external;
     };
 
-    struct Dimensions {
+    struct VideoFrameInfo {
       // Initial encoder configuration (QCIF, 176x144) frame (to ensure that
       // hardware encoders can be initialized). This gives us low memory usage
       // but also makes it so configuration errors are discovered at the time we
@@ -317,9 +317,15 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
       // the first frame to know that you gave a bad codec parameter could make
       // debugging hard).
       // TODO(pbos): Consider setting up encoders lazily.
-      Dimensions() : width(176), height(144) {}
+      VideoFrameInfo()
+          : width(176),
+            height(144),
+            rotation(webrtc::kVideoRotation_0),
+            is_texture(false) {}
       int width;
       int height;
+      webrtc::VideoRotation rotation;
+      bool is_texture;
     };
 
     union VideoEncoderSettings {
@@ -350,10 +356,8 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
     void RecreateWebRtcStream() EXCLUSIVE_LOCKS_REQUIRED(lock_);
     webrtc::VideoEncoderConfig CreateVideoEncoderConfig(
-        const Dimensions& dimensions,
         const VideoCodec& codec) const EXCLUSIVE_LOCKS_REQUIRED(lock_);
-    void SetDimensions(int width, int height)
-        EXCLUSIVE_LOCKS_REQUIRED(lock_);
+    void ReconfigureEncoder() EXCLUSIVE_LOCKS_REQUIRED(lock_);
     bool ValidateRtpParameters(const webrtc::RtpParameters& parameters);
 
     // Calls Start or Stop according to whether or not |sending_| is true,
@@ -392,9 +396,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     bool pending_encoder_reconfiguration_ GUARDED_BY(lock_);
     VideoEncoderSettings encoder_settings_ GUARDED_BY(lock_);
     AllocatedEncoder allocated_encoder_ GUARDED_BY(lock_);
-    Dimensions last_dimensions_ GUARDED_BY(lock_);
-    webrtc::VideoRotation last_rotation_ GUARDED_BY(lock_) =
-        webrtc::kVideoRotation_0;
+    VideoFrameInfo last_frame_info_ GUARDED_BY(lock_);
 
     bool sending_ GUARDED_BY(lock_);
 
@@ -538,7 +540,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   std::set<uint32_t> receive_ssrcs_ GUARDED_BY(stream_crit_);
 
   rtc::Optional<VideoCodecSettings> send_codec_;
-  std::vector<webrtc::RtpExtension> send_rtp_extensions_;
+  rtc::Optional<std::vector<webrtc::RtpExtension>> send_rtp_extensions_;
 
   WebRtcVideoEncoderFactory* const external_encoder_factory_;
   WebRtcVideoDecoderFactory* const external_decoder_factory_;

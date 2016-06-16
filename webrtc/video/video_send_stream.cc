@@ -342,6 +342,7 @@ VideoCodec VideoEncoderConfigToVideoCodec(const VideoEncoderConfig& config,
 
   RTC_DCHECK_GT(streams[0].max_framerate, 0);
   video_codec.maxFramerate = streams[0].max_framerate;
+  video_codec.expect_encode_from_texture = config.expect_encode_from_texture;
 
   return video_codec;
 }

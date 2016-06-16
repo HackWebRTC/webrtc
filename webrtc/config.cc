@@ -114,8 +114,8 @@ std::string VideoStream::ToString() const {
 VideoEncoderConfig::VideoEncoderConfig()
     : content_type(ContentType::kRealtimeVideo),
       encoder_specific_settings(NULL),
-      min_transmit_bitrate_bps(0) {
-}
+      min_transmit_bitrate_bps(0),
+      expect_encode_from_texture(false) {}
 
 VideoEncoderConfig::~VideoEncoderConfig() = default;
 
