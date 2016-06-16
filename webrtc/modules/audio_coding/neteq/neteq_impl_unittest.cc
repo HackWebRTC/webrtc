@@ -434,6 +434,8 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
 
     void Reset() override { next_value_ = 1; }
 
+    int SampleRateHz() const override { return kSampleRateHz; }
+
     size_t Channels() const override { return 1; }
 
     uint16_t next_value() const { return next_value_; }
@@ -808,6 +810,7 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
     MOCK_CONST_METHOD2(PacketDuration, int(const uint8_t*, size_t));
     MOCK_METHOD5(DecodeInternal, int(const uint8_t*, size_t, int, int16_t*,
                                      SpeechType*));
+    int SampleRateHz() const /* override */ { return kSampleRateHz; }
     size_t Channels() const /* override */ { return kChannels; }
   } decoder_;
 
@@ -1213,8 +1216,9 @@ TEST_F(NetEqImplTest, TickTimerIncrement) {
 
 class Decoder120ms : public AudioDecoder {
  public:
-  Decoder120ms(SpeechType speech_type)
-      : next_value_(1),
+  Decoder120ms(int sample_rate_hz, SpeechType speech_type)
+      : sample_rate_hz_(sample_rate_hz),
+        next_value_(1),
         speech_type_(speech_type) {}
 
   int DecodeInternal(const uint8_t* encoded,
@@ -1222,6 +1226,7 @@ class Decoder120ms : public AudioDecoder {
                      int sample_rate_hz,
                      int16_t* decoded,
                      SpeechType* speech_type) override {
+    EXPECT_EQ(sample_rate_hz_, sample_rate_hz);
     size_t decoded_len =
         rtc::CheckedDivExact(sample_rate_hz, 1000) * 120 * Channels();
     for (size_t i = 0; i < decoded_len; ++i) {
@@ -1232,9 +1237,11 @@ class Decoder120ms : public AudioDecoder {
   }
 
   void Reset() override { next_value_ = 1; }
+  int SampleRateHz() const override { return sample_rate_hz_; }
   size_t Channels() const override { return 2; }
 
  private:
+  int sample_rate_hz_;
   int16_t next_value_;
   SpeechType speech_type_;
 };
@@ -1282,7 +1289,7 @@ class NetEqImplTest120ms : public NetEqImplTest {
   }
 
   void Register120msCodec(AudioDecoder::SpeechType speech_type) {
-    decoder_.reset(new Decoder120ms(speech_type));
+    decoder_.reset(new Decoder120ms(kSamplingFreq_, speech_type));
     ASSERT_EQ(2u, decoder_->Channels());
     EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
                               decoder_.get(), NetEqDecoder::kDecoderOpus_2ch,

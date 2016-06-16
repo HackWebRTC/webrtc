@@ -82,10 +82,6 @@ bool AudioDecoder::PacketHasFec(const uint8_t* encoded,
   return false;
 }
 
-int AudioDecoder::SampleRateHz() const {
-  return -1;
-}
-
 AudioDecoder::SpeechType AudioDecoder::ConvertSpeechType(int16_t type) {
   switch (type) {
     case 0:  // TODO(hlundin): Both iSAC and Opus return 0 for speech.

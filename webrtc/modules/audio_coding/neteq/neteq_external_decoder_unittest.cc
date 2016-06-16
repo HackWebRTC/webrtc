@@ -175,7 +175,7 @@ class NetEqExternalVsInternalDecoderTest : public NetEqExternalDecoderUnitTest,
   NetEqExternalVsInternalDecoderTest()
       : NetEqExternalDecoderUnitTest(NetEqDecoder::kDecoderPCM16Bswb32kHz,
                                      32000,
-                                     new MockExternalPcm16B),
+                                     new MockExternalPcm16B(32000)),
         sample_rate_hz_(32000) {
     NetEq::Config config;
     config.sample_rate_hz = sample_rate_hz_;
@@ -248,7 +248,7 @@ class LargeTimestampJumpTest : public NetEqExternalDecoderUnitTest,
   LargeTimestampJumpTest()
       : NetEqExternalDecoderUnitTest(NetEqDecoder::kDecoderPCM16B,
                                      8000,
-                                     new MockExternalPcm16B),
+                                     new MockExternalPcm16B(8000)),
         test_state_(kInitialPhase) {
     EXPECT_CALL(*external_decoder(), HasDecodePlc())
         .WillRepeatedly(Return(false));

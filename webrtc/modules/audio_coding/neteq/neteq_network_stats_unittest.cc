@@ -30,9 +30,10 @@ class MockAudioDecoder final : public AudioDecoder {
   // http://crbug.com/428099.
   static const int kPacketDuration = 960;  // 48 kHz * 20 ms
 
-  explicit MockAudioDecoder(size_t num_channels)
-      : num_channels_(num_channels), fec_enabled_(false) {
-  }
+  MockAudioDecoder(int sample_rate_hz, size_t num_channels)
+      : sample_rate_hz_(sample_rate_hz),
+        num_channels_(num_channels),
+        fec_enabled_(false) {}
   ~MockAudioDecoder() /* override */ { Die(); }
   MOCK_METHOD0(Die, void());
 
@@ -52,6 +53,8 @@ class MockAudioDecoder final : public AudioDecoder {
       const uint8_t* encoded, size_t encoded_len) const /* override */ {
     return fec_enabled_;
   }
+
+  int SampleRateHz() const /* override */ { return sample_rate_hz_; }
 
   size_t Channels() const /* override */ { return num_channels_; }
 
@@ -81,6 +84,7 @@ class MockAudioDecoder final : public AudioDecoder {
   }
 
  private:
+  const int sample_rate_hz_;
   const size_t num_channels_;
   bool fec_enabled_;
 };
@@ -278,21 +282,21 @@ NetEqNetworkStatsTest(NetEqDecoder codec,
 };
 
 TEST(NetEqNetworkStatsTest, DecodeFec) {
-  MockAudioDecoder decoder(1);
+  MockAudioDecoder decoder(48000, 1);
   NetEqNetworkStatsTest test(NetEqDecoder::kDecoderOpus, 48000, &decoder);
   test.DecodeFecTest();
   EXPECT_CALL(decoder, Die()).Times(1);
 }
 
 TEST(NetEqNetworkStatsTest, StereoDecodeFec) {
-  MockAudioDecoder decoder(2);
+  MockAudioDecoder decoder(48000, 2);
   NetEqNetworkStatsTest test(NetEqDecoder::kDecoderOpus, 48000, &decoder);
   test.DecodeFecTest();
   EXPECT_CALL(decoder, Die()).Times(1);
 }
 
 TEST(NetEqNetworkStatsTest, NoiseExpansionTest) {
-  MockAudioDecoder decoder(1);
+  MockAudioDecoder decoder(48000, 1);
   NetEqNetworkStatsTest test(NetEqDecoder::kDecoderOpus, 48000, &decoder);
   test.NoiseExpansionTest();
   EXPECT_CALL(decoder, Die()).Times(1);

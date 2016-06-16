@@ -95,12 +95,7 @@ class AudioDecoder {
 
   // Returns the actual sample rate of the decoder's output. This value may not
   // change during the lifetime of the decoder.
-  // NOTE: For now, this has a default implementation that returns an unusable
-  // value (-1). That default implementation will go away soon, and at the same
-  // time callers will start relying on the return value, so make sure you
-  // override it with something that returns a correct value!
-  // TODO(kwiberg): Remove the default implementation.
-  virtual int SampleRateHz() const;
+  virtual int SampleRateHz() const = 0;
 
   // The number of channels in the decoder's output. This value may not change
   // during the lifetime of the decoder.
