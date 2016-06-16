@@ -178,6 +178,7 @@ public class VideoCapturerAndroid implements
   // It does not matter if width and height are flipped. I.E, |width| = 640, |height| = 480 produce
   // the same result as |width| = 480, |height| = 640.
   // TODO(magjed/perkj): Document what this function does. Change name?
+  @Override
   public void onOutputFormatRequest(final int width, final int height, final int framerate) {
     maybePostOnCameraThread(new Runnable() {
       @Override public void run() {
@@ -188,6 +189,7 @@ public class VideoCapturerAndroid implements
 
   // Reconfigure the camera to capture in a new format. This should only be called while the camera
   // is running.
+  @Override
   public void changeCaptureFormat(final int width, final int height, final int framerate) {
     maybePostOnCameraThread(new Runnable() {
       @Override public void run() {
@@ -219,7 +221,7 @@ public class VideoCapturerAndroid implements
     if (android.hardware.Camera.getNumberOfCameras() == 0) {
       throw new RuntimeException("No cameras available");
     }
-    if (cameraName == null || cameraName == "") {
+    if (cameraName == null || cameraName.equals("")) {
       this.id = 0;
     } else {
       this.id = CameraEnumerationAndroid.getCameraIndex(cameraName);
