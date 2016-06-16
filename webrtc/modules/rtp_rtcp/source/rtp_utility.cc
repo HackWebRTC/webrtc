@@ -323,6 +323,13 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
       return;
     }
 
+    if (ptrRTPDataExtensionEnd - ptr < (len + 1)) {
+      LOG(LS_WARNING) << "Incorrect one-byte extension len: " << (len + 1)
+                      << ", bytes left in buffer: "
+                      << (ptrRTPDataExtensionEnd - ptr);
+      return;
+    }
+
     RTPExtensionType type;
     if (ptrExtensionMap->GetType(id, &type) != 0) {
       // If we encounter an unknown extension, just skip over it.
