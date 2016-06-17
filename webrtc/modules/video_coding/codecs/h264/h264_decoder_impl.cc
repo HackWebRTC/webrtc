@@ -123,11 +123,16 @@ int H264DecoderImpl::AVGetBuffer2(
 
   // The video frame is stored in |video_frame|. |av_frame| is FFmpeg's version
   // of a video frame and will be set up to reference |video_frame|'s buffers.
-  VideoFrame* video_frame = new VideoFrame();
+
+  // TODO(nisse): The VideoFrame's timestamp and rotation info is not used.
+  // Refactor to do not use a VideoFrame object at all.
+
   // FFmpeg expects the initial allocation to be zero-initialized according to
   // http://crbug.com/390941. Our pool is set up to zero-initialize new buffers.
-  video_frame->set_video_frame_buffer(
-      decoder->pool_.CreateBuffer(width, height));
+  VideoFrame* video_frame = new VideoFrame(
+      decoder->pool_.CreateBuffer(width, height),
+      0 /* timestamp */, 0 /* render_time_ms */, kVideoRotation_0);
+
   // DCHECK that we have a continuous buffer as is required.
   RTC_DCHECK_EQ(video_frame->video_frame_buffer()->DataU(),
                 video_frame->video_frame_buffer()->DataY() +
@@ -355,22 +360,30 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
                video_frame->video_frame_buffer()->DataV());
   video_frame->set_timestamp(input_image._timeStamp);
 
+  int32_t ret;
+
   // The decoded image may be larger than what is supposed to be visible, see
   // |AVGetBuffer2|'s use of |avcodec_align_dimensions|. This crops the image
   // without copying the underlying buffer.
   rtc::scoped_refptr<VideoFrameBuffer> buf = video_frame->video_frame_buffer();
   if (av_frame_->width != buf->width() || av_frame_->height != buf->height()) {
-    video_frame->set_video_frame_buffer(
+    rtc::scoped_refptr<VideoFrameBuffer> cropped_buf(
         new rtc::RefCountedObject<WrappedI420Buffer>(
             av_frame_->width, av_frame_->height,
             buf->DataY(), buf->StrideY(),
             buf->DataU(), buf->StrideU(),
             buf->DataV(), buf->StrideV(),
             rtc::KeepRefUntilDone(buf)));
+    VideoFrame cropped_frame(
+        cropped_buf, video_frame->timestamp(), video_frame->render_time_ms(),
+        video_frame->rotation());
+    // TODO(nisse): Timestamp and rotation are all zero here. Change decoder
+    // interface to pass a VideoFrameBuffer instead of a VideoFrame?
+    ret = decoded_image_callback_->Decoded(cropped_frame);
+  } else {
+    // Return decoded frame.
+    ret = decoded_image_callback_->Decoded(*video_frame);
   }
-
-  // Return decoded frame.
-  int32_t ret = decoded_image_callback_->Decoded(*video_frame);
   // Stop referencing it, possibly freeing |video_frame|.
   av_frame_unref(av_frame_.get());
   video_frame = nullptr;

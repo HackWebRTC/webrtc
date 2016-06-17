@@ -121,14 +121,6 @@ class VideoFrame {
   const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& video_frame_buffer()
       const;
 
-  // Set the underlying buffer.
-  void set_video_frame_buffer(
-      const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer);
-
-  // Convert native-handle frame to memory-backed I420 frame. Should not be
-  // called on a non-native-handle frame.
-  VideoFrame ConvertNativeToI420Frame() const;
-
   // Return true if the frame is stored in a texture.
   bool is_texture() {
     return video_frame_buffer() &&
