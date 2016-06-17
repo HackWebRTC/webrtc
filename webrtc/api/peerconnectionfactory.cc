@@ -85,7 +85,8 @@ PeerConnectionFactory::PeerConnectionFactory()
       wraps_current_thread_(false),
       network_thread_(rtc::Thread::CreateWithSocketServer().release()),
       worker_thread_(rtc::Thread::Create().release()),
-      signaling_thread_(rtc::Thread::Current()) {
+      signaling_thread_(rtc::Thread::Current()),
+      audio_decoder_factory_(CreateBuiltinAudioDecoderFactory()) {
   if (!signaling_thread_) {
     signaling_thread_ = rtc::ThreadManager::Instance()->WrapCurrentThread();
     wraps_current_thread_ = true;
