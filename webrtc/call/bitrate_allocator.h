@@ -68,20 +68,23 @@ class BitrateAllocator {
   // |enforce_min_bitrate| = 'true' will allocate at least |min_bitrate_bps| for
   //    this observer, even if the BWE is too low, 'false' will allocate 0 to
   //    the observer if BWE doesn't allow |min_bitrate_bps|.
-  // Returns initial bitrate allocated for |observer|.
   // Note that |observer|->OnBitrateUpdated() will be called within the scope of
   // this method with the current rtt, fraction_loss and available bitrate and
   // that the bitrate in OnBitrateUpdated will be zero if the |observer| is
   // currently not allowed to send data.
-  int AddObserver(BitrateAllocatorObserver* observer,
-                  uint32_t min_bitrate_bps,
-                  uint32_t max_bitrate_bps,
-                  uint32_t pad_up_bitrate_bps,
-                  bool enforce_min_bitrate);
+  void AddObserver(BitrateAllocatorObserver* observer,
+                   uint32_t min_bitrate_bps,
+                   uint32_t max_bitrate_bps,
+                   uint32_t pad_up_bitrate_bps,
+                   bool enforce_min_bitrate);
 
   // Removes a previously added observer, but will not trigger a new bitrate
   // allocation.
   void RemoveObserver(BitrateAllocatorObserver* observer);
+
+  // Returns initial bitrate allocated for |observer|. If |observer| is not in
+  // the list of added observers, a best guess is returned.
+  int GetStartBitrate(BitrateAllocatorObserver* observer);
 
  private:
   // Note: All bitrates for member variables and methods are in bps.

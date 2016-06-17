@@ -59,7 +59,6 @@ class ProtectionBitrateCalculator {
                           int actual_framerate,
                           uint8_t fraction_lost,
                           int64_t round_trip_time_ms);
-
   // Informs of encoded output.
   void UpdateWithEncodedData(const EncodedImage& encoded_image);
 

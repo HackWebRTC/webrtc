@@ -219,19 +219,23 @@ int32_t VideoSender::SetChannelParameters(uint32_t target_bitrate,
   if (encoder_has_internal_source) {
     rtc::CritScope cs(&encoder_crit_);
     if (_encoder) {
-      SetEncoderParameters(encoder_params);
+      SetEncoderParameters(encoder_params, encoder_has_internal_source);
     }
   }
 
   return VCM_OK;
 }
 
-void VideoSender::SetEncoderParameters(EncoderParameters params) {
+void VideoSender::SetEncoderParameters(EncoderParameters params,
+                                       bool has_internal_source) {
   // |target_bitrate == 0 | means that the network is down or the send pacer is
-  // full.
-  // TODO(perkj): Consider setting |target_bitrate| == 0 to the encoders.
-  // Especially if |encoder_has_internal_source_ | == true.
-  if (params.target_bitrate == 0)
+  // full. We currently only report this if the encoder has an internal source.
+  // If the encoder does not have an internal source, higher levels are expected
+  // to not call AddVideoFrame. We do this since its unclear how current
+  // encoder implementations behave when given a zero target bitrate.
+  // TODO(perkj): Make sure all known encoder implementations handle zero
+  // target bitrate and remove this check.
+  if (!has_internal_source && params.target_bitrate == 0)
     return;
 
   if (params.input_frame_rate == 0) {
@@ -258,15 +262,17 @@ int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
                                    const CodecSpecificInfo* codecSpecificInfo) {
   EncoderParameters encoder_params;
   std::vector<FrameType> next_frame_types;
+  bool encoder_has_internal_source = false;
   {
     rtc::CritScope lock(&params_crit_);
     encoder_params = encoder_params_;
     next_frame_types = next_frame_types_;
+    encoder_has_internal_source = encoder_has_internal_source_;
   }
   rtc::CritScope lock(&encoder_crit_);
   if (_encoder == nullptr)
     return VCM_UNINITIALIZED;
-  SetEncoderParameters(encoder_params);
+  SetEncoderParameters(encoder_params, encoder_has_internal_source);
   if (_mediaOpt.DropFrame()) {
     LOG(LS_VERBOSE) << "Drop Frame "
                     << "target bitrate " << encoder_params.target_bitrate

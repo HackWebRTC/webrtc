@@ -1193,6 +1193,79 @@ TEST_F(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
   DestroyStreams();
 }
 
+// This test that if the encoder use an internal source, VideoEncoder::SetRates
+// will be called with zero bitrate during initialization and that
+// VideoSendStream::Stop also triggers VideoEncoder::SetRates Start to be called
+// with zero bitrate.
+TEST_F(VideoSendStreamTest, VideoSendStreamStopSetEncoderRateToZero) {
+  class StartStopBitrateObserver : public test::FakeEncoder {
+   public:
+    StartStopBitrateObserver()
+        : FakeEncoder(Clock::GetRealTimeClock()),
+          encoder_init_(false, false),
+          bitrate_changed_(false, false),
+          bitrate_kbps_(0) {}
+    int32_t InitEncode(const VideoCodec* config,
+                       int32_t number_of_cores,
+                       size_t max_payload_size) override {
+      rtc::CritScope lock(&crit_);
+      bitrate_kbps_ = config->startBitrate;
+      encoder_init_.Set();
+      return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
+    }
+
+    int32_t SetRates(uint32_t new_target_bitrate, uint32_t framerate) override {
+      rtc::CritScope lock(&crit_);
+      bitrate_kbps_ = new_target_bitrate;
+      bitrate_changed_.Set();
+      return FakeEncoder::SetRates(new_target_bitrate, framerate);
+    }
+
+    int GetBitrateKbps() const {
+      rtc::CritScope lock(&crit_);
+      return bitrate_kbps_;
+    }
+
+    bool WaitForEncoderInit() {
+      return encoder_init_.Wait(VideoSendStreamTest::kDefaultTimeoutMs);
+    }
+    bool WaitBitrateChanged() {
+      return bitrate_changed_.Wait(VideoSendStreamTest::kDefaultTimeoutMs);
+    }
+
+   private:
+    rtc::CriticalSection crit_;
+    rtc::Event encoder_init_;
+    rtc::Event bitrate_changed_;
+    int bitrate_kbps_ GUARDED_BY(crit_);
+  };
+
+  CreateSenderCall(Call::Config());
+
+  test::NullTransport transport;
+  CreateSendConfig(1, 0, &transport);
+
+  StartStopBitrateObserver encoder;
+  video_send_config_.encoder_settings.encoder = &encoder;
+  video_send_config_.encoder_settings.internal_source = true;
+
+  CreateVideoStreams();
+
+  EXPECT_TRUE(encoder.WaitForEncoderInit());
+  EXPECT_GT(encoder.GetBitrateKbps(), 0);
+  video_send_stream_->Start();
+  EXPECT_TRUE(encoder.WaitBitrateChanged());
+  EXPECT_GT(encoder.GetBitrateKbps(), 0);
+  video_send_stream_->Stop();
+  EXPECT_TRUE(encoder.WaitBitrateChanged());
+  EXPECT_EQ(0, encoder.GetBitrateKbps());
+  video_send_stream_->Start();
+  EXPECT_TRUE(encoder.WaitBitrateChanged());
+  EXPECT_GT(encoder.GetBitrateKbps(), 0);
+
+  DestroyStreams();
+}
+
 TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
   class FrameObserver : public rtc::VideoSinkInterface<VideoFrame> {
    public:

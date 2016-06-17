@@ -47,8 +47,7 @@ class VideoEncoder;
 // 3. Call RegisterExternalEncoder if available.
 // 4. Call SetEncoder with the codec settings and the object that shall receive
 //    the encoded bit stream.
-// 5. Call Start.
-// 6. For each available raw video frame call EncodeVideoFrame.
+// 5. For each available raw video frame call EncodeVideoFrame.
 class ViEEncoder : public VideoEncoderRateObserver,
                    public EncodedImageCallback,
                    public VCMSendStatisticsCallback {
@@ -66,10 +65,6 @@ class ViEEncoder : public VideoEncoderRateObserver,
 
   // Returns the id of the owning channel.
   int Owner() const;
-
-  void Start();
-  // Drops incoming packets before they get to the encoder.
-  void Pause();
 
   // Codec settings.
   int32_t RegisterExternalEncoder(VideoEncoder* encoder,
@@ -134,7 +129,6 @@ class ViEEncoder : public VideoEncoderRateObserver,
   int64_t time_of_last_frame_activity_ms_ GUARDED_BY(data_cs_);
   VideoCodec encoder_config_ GUARDED_BY(data_cs_);
   uint32_t last_observed_bitrate_bps_ GUARDED_BY(data_cs_);
-  bool encoder_paused_ GUARDED_BY(data_cs_);
   bool encoder_paused_and_dropped_frame_ GUARDED_BY(data_cs_);
 
   ProcessThread* module_process_thread_;

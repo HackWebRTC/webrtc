@@ -44,12 +44,6 @@ int32_t VCMGenericEncoder::InitEncode(const VideoCodec* settings,
                                       int32_t number_of_cores,
                                       size_t max_payload_size) {
   TRACE_EVENT0("webrtc", "VCMGenericEncoder::InitEncode");
-  {
-    rtc::CritScope lock(&params_lock_);
-    encoder_params_.target_bitrate = settings->startBitrate * 1000;
-    encoder_params_.input_frame_rate = settings->maxFramerate;
-  }
-
   is_screenshare_ = settings->mode == VideoCodecMode::kScreensharing;
   if (encoder_->InitEncode(settings, number_of_cores, max_payload_size) != 0) {
     LOG(LS_ERROR) << "Failed to initialize the encoder associated with "

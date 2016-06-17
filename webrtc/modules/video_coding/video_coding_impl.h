@@ -96,7 +96,7 @@ class VideoSender : public Module {
   void Process() override;
 
  private:
-  void SetEncoderParameters(EncoderParameters params)
+  void SetEncoderParameters(EncoderParameters params, bool has_internal_source)
       EXCLUSIVE_LOCKS_REQUIRED(encoder_crit_);
 
   Clock* const clock_;

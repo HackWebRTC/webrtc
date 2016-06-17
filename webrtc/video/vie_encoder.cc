@@ -10,9 +10,8 @@
 
 #include "webrtc/video/vie_encoder.h"
 
-#include <assert.h>
-
 #include <algorithm>
+#include <limits>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -39,10 +38,9 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       video_sender_(Clock::GetRealTimeClock(), this, this, this),
       stats_proxy_(stats_proxy),
       overuse_detector_(overuse_detector),
-      time_of_last_frame_activity_ms_(0),
+      time_of_last_frame_activity_ms_(std::numeric_limits<int64_t>::max()),
       encoder_config_(),
       last_observed_bitrate_bps_(0),
-      encoder_paused_(true),
       encoder_paused_and_dropped_frame_(false),
       module_process_thread_(module_process_thread),
       has_received_sli_(false),
@@ -60,16 +58,6 @@ vcm::VideoSender* ViEEncoder::video_sender() {
 
 ViEEncoder::~ViEEncoder() {
   module_process_thread_->DeRegisterModule(&video_sender_);
-}
-
-void ViEEncoder::Pause() {
-  rtc::CritScope lock(&data_cs_);
-  encoder_paused_ = true;
-}
-
-void ViEEncoder::Start() {
-  rtc::CritScope lock(&data_cs_);
-  encoder_paused_ = false;
 }
 
 int32_t ViEEncoder::RegisterExternalEncoder(webrtc::VideoEncoder* encoder,
@@ -90,9 +78,6 @@ void ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec,
   RTC_CHECK_EQ(VPM_OK,
                vp_->SetTargetResolution(video_codec.width, video_codec.height,
                                         video_codec.maxFramerate));
-
-  // Cache codec before calling AddBitrateObserver (which calls OnBitrateUpdated
-  // that makes use of the number of simulcast streams configured).
   {
     rtc::CritScope lock(&data_cs_);
     encoder_config_ = video_codec;
@@ -101,6 +86,7 @@ void ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec,
   bool success = video_sender_.RegisterSendCodec(
                      &video_codec, number_of_cores_,
                      static_cast<uint32_t>(max_data_payload_length)) == VCM_OK;
+
   if (!success) {
     LOG(LS_ERROR) << "Failed to configure encoder.";
     RTC_DCHECK(success);
@@ -127,9 +113,9 @@ void ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec,
 bool ViEEncoder::EncoderPaused() const {
   // Pause video if paused by caller or as long as the network is down or the
   // pacer queue has grown too large in buffered mode.
-  // If the pacer queue has grown to large or the network is down,
+  // If the pacer queue has grown too large or the network is down,
   // last_observed_bitrate_bps_ will be 0.
-  return encoder_paused_ || video_suspended_ || last_observed_bitrate_bps_ == 0;
+  return video_suspended_ || last_observed_bitrate_bps_ == 0;
 }
 
 void ViEEncoder::TraceFrameDropStart() {
@@ -270,6 +256,16 @@ void ViEEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
     last_observed_bitrate_bps_ = bitrate_bps;
     video_suspension_changed = video_suspended_ != video_is_suspended;
     video_suspended_ = video_is_suspended;
+    // Set |time_of_last_frame_activity_ms_| to now if this is the first time
+    // the encoder is supposed to produce encoded frames.
+    // TODO(perkj): Remove this hack. It is here to avoid a race that the
+    // encoder report that it has timed out before it has processed the first
+    // frame.
+    if (last_observed_bitrate_bps_ != 0 &&
+        time_of_last_frame_activity_ms_ ==
+            std::numeric_limits<int64_t>::max()) {
+      time_of_last_frame_activity_ms_ = rtc::TimeMillis();
+    }
   }
 
   if (stats_proxy_ && video_suspension_changed) {

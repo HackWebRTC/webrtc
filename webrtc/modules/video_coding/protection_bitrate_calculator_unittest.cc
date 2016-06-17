@@ -86,4 +86,15 @@ TEST_F(ProtectionBitrateCalculatorTest, ProtectsUsingNackBitrate) {
   EXPECT_EQ(kMaxBitrateBps / 2, target_bitrate);
 }
 
+TEST_F(ProtectionBitrateCalculatorTest, NoProtection) {
+  static const uint32_t kMaxBitrateBps = 130000;
+
+  media_opt_.SetProtectionMethod(false /*enable_fec*/, false /* enable_nack */);
+  media_opt_.SetEncodingData(kCodecBitrateBps, 640, 480, 30, 1, 1000);
+
+  uint32_t target_bitrate =
+      media_opt_.SetTargetRates(kMaxBitrateBps, 30, 128, 100);
+  EXPECT_EQ(kMaxBitrateBps, target_bitrate);
+}
+
 }  // namespace webrtc

@@ -53,11 +53,11 @@ void BitrateAllocator::OnNetworkChanged(uint32_t target_bitrate_bps,
   last_allocation_ = allocation;
 }
 
-int BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
-                                  uint32_t min_bitrate_bps,
-                                  uint32_t max_bitrate_bps,
-                                  uint32_t pad_up_bitrate_bps,
-                                  bool enforce_min_bitrate) {
+void BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
+                                   uint32_t min_bitrate_bps,
+                                   uint32_t max_bitrate_bps,
+                                   uint32_t pad_up_bitrate_bps,
+                                   bool enforce_min_bitrate) {
   rtc::CritScope lock(&crit_sect_);
   auto it = FindObserverConfig(observer);
 
@@ -89,7 +89,6 @@ int BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
   UpdateAllocationLimits();
 
   last_allocation_ = allocation;
-  return allocation[observer];
 }
 
 void BitrateAllocator::UpdateAllocationLimits() {
@@ -119,6 +118,18 @@ void BitrateAllocator::RemoveObserver(BitrateAllocatorObserver* observer) {
     }
   }
   UpdateAllocationLimits();
+}
+
+int BitrateAllocator::GetStartBitrate(BitrateAllocatorObserver* observer) {
+  rtc::CritScope lock(&crit_sect_);
+  const auto& it = last_allocation_.find(observer);
+  if (it != last_allocation_.end())
+    return it->second;
+
+  // This is a new observer that has not yet been started. Assume that if it is
+  // added, all observers would split the available bitrate evenly.
+  return last_non_zero_bitrate_bps_ /
+         static_cast<int>((bitrate_observer_configs_.size() + 1));
 }
 
 BitrateAllocator::ObserverConfigList::iterator

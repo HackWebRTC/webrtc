@@ -2447,6 +2447,7 @@ TEST_F(EndToEndTest, ReportsSetEncoderRates) {
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       send_config->encoder_settings.encoder = this;
+      RTC_DCHECK_EQ(1u, encoder_config->streams.size());
     }
 
     int32_t SetRates(uint32_t new_target_bitrate, uint32_t framerate) override {

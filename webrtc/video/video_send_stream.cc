@@ -396,7 +396,7 @@ VideoSendStream::VideoSendStream(
       encoder_thread_(EncoderThreadFunction, this, "EncoderThread"),
       encoder_wakeup_event_(false, false),
       stop_encoder_thread_(0),
-      send_stream_registered_as_observer_(false),
+      state_(State::kStopped),
       overuse_detector_(
           Clock::GetRealTimeClock(),
           GetCpuOveruseOptions(config.encoder_settings.full_overuse_time),
@@ -439,7 +439,6 @@ VideoSendStream::VideoSendStream(
   RTC_DCHECK(call_stats_);
   RTC_DCHECK(congestion_controller_);
   RTC_DCHECK(remb_);
-
 
   // RTP/RTCP initialization.
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
@@ -489,6 +488,7 @@ VideoSendStream::VideoSendStream(
 
   module_process_thread_->RegisterModule(&overuse_detector_);
 
+  encoder_thread_checker_.DetachFromThread();
   encoder_thread_.Start();
   encoder_thread_.SetPriority(rtc::kHighPriority);
 }
@@ -530,17 +530,23 @@ void VideoSendStream::Start() {
     return;
   TRACE_EVENT_INSTANT0("webrtc", "VideoSendStream::Start");
   payload_router_.set_active(true);
-  // Was not already started, trigger a keyframe.
-  vie_encoder_.SendKeyFrame();
-  vie_encoder_.Start();
+  {
+    rtc::CritScope lock(&encoder_settings_crit_);
+    pending_state_change_ = rtc::Optional<State>(State::kStarted);
+  }
+  encoder_wakeup_event_.Set();
 }
 
 void VideoSendStream::Stop() {
   if (!payload_router_.active())
     return;
   TRACE_EVENT_INSTANT0("webrtc", "VideoSendStream::Stop");
-  vie_encoder_.Pause();
   payload_router_.set_active(false);
+  {
+    rtc::CritScope lock(&encoder_settings_crit_);
+    pending_state_change_ = rtc::Optional<State>(State::kStopped);
+  }
+  encoder_wakeup_event_.Set();
 }
 
 VideoCaptureInput* VideoSendStream::Input() {
@@ -558,7 +564,7 @@ void VideoSendStream::EncoderProcess() {
                       config_.encoder_settings.encoder,
                       config_.encoder_settings.payload_type,
                       config_.encoder_settings.internal_source));
-
+  RTC_DCHECK_RUN_ON(&encoder_thread_checker_);
   while (true) {
     // Wake up every kEncodeCheckForActivityPeriodMs to check if the encoder is
     // active. If not, deregister as BitrateAllocatorObserver.
@@ -567,25 +573,21 @@ void VideoSendStream::EncoderProcess() {
     if (rtc::AtomicOps::AcquireLoad(&stop_encoder_thread_))
       break;
     bool change_settings = false;
+    rtc::Optional<State> pending_state_change;
     {
       rtc::CritScope lock(&encoder_settings_crit_);
       if (pending_encoder_settings_) {
         std::swap(current_encoder_settings_, pending_encoder_settings_);
         pending_encoder_settings_.reset();
         change_settings = true;
+      } else if (pending_state_change_) {
+        swap(pending_state_change, pending_state_change_);
       }
     }
     if (change_settings) {
-      current_encoder_settings_->video_codec.startBitrate =
-          bitrate_allocator_->AddObserver(
-              this, current_encoder_settings_->video_codec.minBitrate * 1000,
-              current_encoder_settings_->video_codec.maxBitrate * 1000,
-              CalulcateMaxPadBitrateBps(current_encoder_settings_->config,
-                                        config_.suspend_below_min_bitrate),
-              !config_.suspend_below_min_bitrate) /
-          1000;
-      send_stream_registered_as_observer_ = true;
-
+      current_encoder_settings_->video_codec.startBitrate = std::max(
+          bitrate_allocator_->GetStartBitrate(this) / 1000,
+          static_cast<int>(current_encoder_settings_->video_codec.minBitrate));
       payload_router_.SetSendStreams(current_encoder_settings_->config.streams);
       vie_encoder_.SetEncoder(current_encoder_settings_->video_codec,
                               payload_router_.MaxPayloadLength());
@@ -614,27 +616,39 @@ void VideoSendStream::EncoderProcess() {
       continue;
     }
 
-    VideoFrame frame;
-    if (input_.GetVideoFrame(&frame)) {
-      // TODO(perkj): |pre_encode_callback| is only used by tests. Tests should
-      // register as a sink to the VideoSource instead.
-      if (config_.pre_encode_callback) {
-        config_.pre_encode_callback->OnFrame(frame);
+    if (pending_state_change) {
+      if (*pending_state_change == State::kStarted &&
+          state_ == State::kStopped) {
+        bitrate_allocator_->AddObserver(
+            this, current_encoder_settings_->video_codec.minBitrate * 1000,
+            current_encoder_settings_->video_codec.maxBitrate * 1000,
+            CalulcateMaxPadBitrateBps(current_encoder_settings_->config,
+                                      config_.suspend_below_min_bitrate),
+            !config_.suspend_below_min_bitrate);
+        vie_encoder_.SendKeyFrame();
+        state_ = State::kStarted;
+        LOG_F(LS_INFO) << "Encoder started.";
+      } else if (*pending_state_change == State::kStopped) {
+        bitrate_allocator_->RemoveObserver(this);
+        vie_encoder_.OnBitrateUpdated(0, 0, 0);
+        state_ = State::kStopped;
+        LOG_F(LS_INFO) << "Encoder stopped.";
       }
-      vie_encoder_.EncodeVideoFrame(frame);
+      encoder_wakeup_event_.Set();
+      continue;
     }
 
     // Check if the encoder has produced anything the last kEncoderTimeOutMs.
     // If not, deregister as BitrateAllocatorObserver.
-    if (send_stream_registered_as_observer_ &&
+    if (state_ == State::kStarted &&
         vie_encoder_.time_of_last_frame_activity_ms() <
             rtc::TimeMillis() - kEncoderTimeOutMs) {
       // The encoder has timed out.
       LOG_F(LS_INFO) << "Encoder timed out.";
       bitrate_allocator_->RemoveObserver(this);
-      send_stream_registered_as_observer_ = false;
+      state_ = State::kEncoderTimedOut;
     }
-    if (!send_stream_registered_as_observer_ &&
+    if (state_ == State::kEncoderTimedOut &&
         vie_encoder_.time_of_last_frame_activity_ms() >
             rtc::TimeMillis() - kEncoderTimeOutMs) {
       LOG_F(LS_INFO) << "Encoder is active.";
@@ -644,7 +658,17 @@ void VideoSendStream::EncoderProcess() {
           CalulcateMaxPadBitrateBps(current_encoder_settings_->config,
                                     config_.suspend_below_min_bitrate),
           !config_.suspend_below_min_bitrate);
-      send_stream_registered_as_observer_ = true;
+      state_ = State::kStarted;
+    }
+
+    VideoFrame frame;
+    if (input_.GetVideoFrame(&frame)) {
+      // TODO(perkj): |pre_encode_callback| is only used by tests. Tests should
+      // register as a sink to the VideoSource instead.
+      if (config_.pre_encode_callback) {
+        config_.pre_encode_callback->OnFrame(frame);
+      }
+      vie_encoder_.EncodeVideoFrame(frame);
     }
   }
   vie_encoder_.DeRegisterExternalEncoder(config_.encoder_settings.payload_type);
@@ -850,7 +874,6 @@ void VideoSendStream::OnBitrateUpdated(uint32_t bitrate_bps,
   // protection overhead.
   uint32_t encoder_target_rate = protection_bitrate_calculator_.SetTargetRates(
       bitrate_bps, stats_proxy_.GetSendFrameRate(), fraction_loss, rtt);
-
   vie_encoder_.OnBitrateUpdated(encoder_target_rate, fraction_loss, rtt);
 }
 

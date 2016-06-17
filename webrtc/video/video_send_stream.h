@@ -138,9 +138,20 @@ class VideoSendStream : public webrtc::VideoSendStream,
   rtc::CriticalSection encoder_settings_crit_;
   std::unique_ptr<EncoderSettings> pending_encoder_settings_
       GUARDED_BY(encoder_settings_crit_);
+
+  enum class State {
+    kStopped,  // VideoSendStream::Start has not yet been called.
+    kStarted,  // VideoSendStream::Start has been called.
+    // VideoSendStream::Start has been called but the encoder have timed out.
+    kEncoderTimedOut,
+  };
+  rtc::Optional<State> pending_state_change_ GUARDED_BY(encoder_settings_crit_);
+
   // Only used on the encoder thread.
-  bool send_stream_registered_as_observer_;
-  std::unique_ptr<EncoderSettings> current_encoder_settings_;
+  rtc::ThreadChecker encoder_thread_checker_;
+  State state_ ACCESS_ON(&encoder_thread_checker_);
+  std::unique_ptr<EncoderSettings> current_encoder_settings_
+      ACCESS_ON(&encoder_thread_checker_);
 
   OveruseFrameDetector overuse_detector_;
   ViEEncoder vie_encoder_;
