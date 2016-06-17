@@ -20,6 +20,7 @@
 #include "webrtc/base/socket.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
+#include "webrtc/modules/congestion_controller/delay_based_bwe.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/send_time_history.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
@@ -207,7 +208,7 @@ CongestionController::~CongestionController() {}
 
 void CongestionController::Init() {
   transport_feedback_adapter_.SetBitrateEstimator(
-      new RemoteBitrateEstimatorAbsSendTime(&transport_feedback_adapter_));
+      new DelayBasedBwe(&transport_feedback_adapter_));
   transport_feedback_adapter_.GetBitrateEstimator()->SetMinBitrate(
       min_bitrate_bps_);
 }

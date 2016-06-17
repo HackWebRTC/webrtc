@@ -11,6 +11,8 @@ import("../../build/webrtc.gni")
 source_set("congestion_controller") {
   sources = [
     "congestion_controller.cc",
+    "delay_based_bwe.cc",
+    "delay_based_bwe.h",
     "include/congestion_controller.h",
   ]
 
