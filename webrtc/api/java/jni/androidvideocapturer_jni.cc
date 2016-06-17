@@ -215,10 +215,10 @@ void AndroidVideoCapturerJni::OnMemoryBufferFrame(void* video_frame,
   libyuv::NV12ToI420Rotate(
       y_plane + width * crop_y + crop_x, width,
       uv_plane + uv_width * crop_y + crop_x, width,
-      buffer->MutableDataY(), buffer->StrideY(),
+      buffer->MutableData(webrtc::kYPlane), buffer->stride(webrtc::kYPlane),
       // Swap U and V, since we have NV21, not NV12.
-      buffer->MutableDataV(), buffer->StrideV(),
-      buffer->MutableDataU(), buffer->StrideU(),
+      buffer->MutableData(webrtc::kVPlane), buffer->stride(webrtc::kVPlane),
+      buffer->MutableData(webrtc::kUPlane), buffer->stride(webrtc::kUPlane),
       crop_width, crop_height, static_cast<libyuv::RotationMode>(
           capturer_->apply_rotation() ? rotation : 0));
 

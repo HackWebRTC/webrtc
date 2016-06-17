@@ -155,6 +155,20 @@ const rtc::scoped_refptr<VideoFrameBuffer>& VideoFrame::video_frame_buffer()
   return video_frame_buffer_;
 }
 
+void VideoFrame::set_video_frame_buffer(
+    const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer) {
+  RTC_DCHECK(buffer);
+  video_frame_buffer_ = buffer;
+}
+
+VideoFrame VideoFrame::ConvertNativeToI420Frame() const {
+  RTC_DCHECK(video_frame_buffer_->native_handle());
+  VideoFrame frame;
+  frame.ShallowCopy(*this);
+  frame.set_video_frame_buffer(video_frame_buffer_->NativeToI420Buffer());
+  return frame;
+}
+
 size_t EncodedImage::GetBufferPaddingBytes(VideoCodecType codec_type) {
   switch (codec_type) {
     case kVideoCodecVP8:

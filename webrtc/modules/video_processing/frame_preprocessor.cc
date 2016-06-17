@@ -96,22 +96,19 @@ const VideoFrame* VPMFramePreprocessor::PreprocessFrame(
 
   const VideoFrame* current_frame = &frame;
   if (denoiser_) {
-    rtc::scoped_refptr<I420Buffer>* denoised_buffer = &denoised_buffer_[0];
-    rtc::scoped_refptr<I420Buffer>* denoised_buffer_prev = &denoised_buffer_[1];
+    rtc::scoped_refptr<I420Buffer>* denoised_frame = &denoised_buffer_[0];
+    rtc::scoped_refptr<I420Buffer>* denoised_frame_prev = &denoised_buffer_[1];
     // Swap the buffer to save one memcpy in DenoiseFrame.
     if (denoised_frame_toggle_) {
-      denoised_buffer = &denoised_buffer_[1];
-      denoised_buffer_prev = &denoised_buffer_[0];
+      denoised_frame = &denoised_buffer_[1];
+      denoised_frame_prev = &denoised_buffer_[0];
     }
     // Invert the flag.
     denoised_frame_toggle_ ^= 1;
-    denoiser_->DenoiseFrame(current_frame->video_frame_buffer(),
-                            denoised_buffer,
-                            denoised_buffer_prev, true);
-    denoised_frame_ = VideoFrame(*denoised_buffer,
-                                 current_frame->timestamp(),
-                                 current_frame->render_time_ms(),
-                                 current_frame->rotation());
+    denoiser_->DenoiseFrame(current_frame->video_frame_buffer(), denoised_frame,
+                            denoised_frame_prev, true);
+    denoised_frame_.ShallowCopy(*current_frame);
+    denoised_frame_.set_video_frame_buffer(*denoised_frame);
     current_frame = &denoised_frame_;
   }
 

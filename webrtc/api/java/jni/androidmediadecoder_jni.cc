@@ -794,12 +794,12 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
       libyuv::I420Copy(y_ptr, stride,
                        u_ptr, uv_stride,
                        v_ptr, uv_stride,
-                       frame_buffer->MutableDataY(),
-                       frame_buffer->StrideY(),
-                       frame_buffer->MutableDataU(),
-                       frame_buffer->StrideU(),
-                       frame_buffer->MutableDataV(),
-                       frame_buffer->StrideV(),
+                       frame_buffer->MutableData(webrtc::kYPlane),
+                       frame_buffer->stride(webrtc::kYPlane),
+                       frame_buffer->MutableData(webrtc::kUPlane),
+                       frame_buffer->stride(webrtc::kUPlane),
+                       frame_buffer->MutableData(webrtc::kVPlane),
+                       frame_buffer->stride(webrtc::kVPlane),
                        width, height);
     } else {
       // All other supported formats are nv12.
@@ -808,12 +808,12 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
       libyuv::NV12ToI420(
           y_ptr, stride,
           uv_ptr, stride,
-          frame_buffer->MutableDataY(),
-          frame_buffer->StrideY(),
-          frame_buffer->MutableDataU(),
-          frame_buffer->StrideU(),
-          frame_buffer->MutableDataV(),
-          frame_buffer->StrideV(),
+          frame_buffer->MutableData(webrtc::kYPlane),
+          frame_buffer->stride(webrtc::kYPlane),
+          frame_buffer->MutableData(webrtc::kUPlane),
+          frame_buffer->stride(webrtc::kUPlane),
+          frame_buffer->MutableData(webrtc::kVPlane),
+          frame_buffer->stride(webrtc::kVPlane),
           width, height);
     }
     // Return output byte buffer back to codec.

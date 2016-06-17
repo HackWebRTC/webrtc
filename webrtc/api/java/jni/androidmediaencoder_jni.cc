@@ -670,8 +670,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   }
   consecutive_full_queue_frame_drops_ = 0;
 
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> input_buffer(
-      frame.video_frame_buffer());
+  VideoFrame input_frame = frame;
   if (scale_) {
     // Check framerate before spatial resolution change.
     quality_scaler_.OnEncodeFrame(frame.width(), frame.height());
@@ -679,21 +678,20 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
         quality_scaler_.GetScaledResolution();
     if (scaled_resolution.width != frame.width() ||
         scaled_resolution.height != frame.height()) {
-      if (input_buffer->native_handle() != nullptr) {
-        input_buffer = static_cast<AndroidTextureBuffer*>(input_buffer.get())
-                           ->CropScaleAndRotate(frame.width(), frame.height(),
-                                                0, 0,
-                                                scaled_resolution.width,
-                                                scaled_resolution.height,
-                                                webrtc::kVideoRotation_0);
+      if (frame.video_frame_buffer()->native_handle() != nullptr) {
+        rtc::scoped_refptr<webrtc::VideoFrameBuffer> scaled_buffer(
+            static_cast<AndroidTextureBuffer*>(
+                frame.video_frame_buffer().get())->CropScaleAndRotate(
+                    frame.width(), frame.height(), 0, 0,
+                    scaled_resolution.width, scaled_resolution.height,
+                    webrtc::kVideoRotation_0));
+        input_frame.set_video_frame_buffer(scaled_buffer);
       } else {
-        input_buffer = quality_scaler_.GetScaledBuffer(input_buffer);
+        input_frame.set_video_frame_buffer(
+            quality_scaler_.GetScaledBuffer(frame.video_frame_buffer()));
       }
     }
   }
-
-  VideoFrame input_frame(input_buffer, frame.timestamp(),
-                         frame.render_time_ms(), frame.rotation());
 
   if (!MaybeReconfigureEncoderOnCodecThread(input_frame)) {
     ALOGE << "Failed to reconfigure encoder.";

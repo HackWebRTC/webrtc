@@ -58,10 +58,10 @@ int32_t VPMSimpleSpatialResampler::ResampleFrame(const VideoFrame& inFrame,
 
   scaled_buffer->CropAndScaleFrom(inFrame.video_frame_buffer());
 
-  *outFrame = VideoFrame(scaled_buffer,
-                         inFrame.timestamp(),
-                         inFrame.render_time_ms(),
-                         inFrame.rotation());
+  outFrame->set_video_frame_buffer(scaled_buffer);
+  // Setting time parameters to the output frame.
+  outFrame->set_timestamp(inFrame.timestamp());
+  outFrame->set_render_time_ms(inFrame.render_time_ms());
 
   return VPM_OK;
 }
