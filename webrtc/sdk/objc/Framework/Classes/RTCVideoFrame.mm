@@ -40,42 +40,42 @@
   if (!self.i420Buffer) {
     return nullptr;
   }
-  return self.i420Buffer->data(webrtc::kYPlane);
+  return self.i420Buffer->DataY();
 }
 
 - (const uint8_t *)uPlane {
   if (!self.i420Buffer) {
     return nullptr;
   }
-  return self.i420Buffer->data(webrtc::kUPlane);
+  return self.i420Buffer->DataU();
 }
 
 - (const uint8_t *)vPlane {
   if (!self.i420Buffer) {
     return nullptr;
   }
-  return self.i420Buffer->data(webrtc::kVPlane);
+  return self.i420Buffer->DataV();
 }
 
 - (int32_t)yPitch {
   if (!self.i420Buffer) {
     return 0;
   }
-  return self.i420Buffer->stride(webrtc::kYPlane);
+  return self.i420Buffer->StrideY();
 }
 
 - (int32_t)uPitch {
   if (!self.i420Buffer) {
     return 0;
   }
-  return self.i420Buffer->stride(webrtc::kUPlane);
+  return self.i420Buffer->StrideU();
 }
 
 - (int32_t)vPitch {
   if (!self.i420Buffer) {
     return 0;
   }
-  return self.i420Buffer->stride(webrtc::kVPlane);
+  return self.i420Buffer->StrideV();
 }
 
 - (int64_t)timeStamp {

@@ -960,9 +960,9 @@ int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img, uint32_t timestamp) {
           // release |img_buffer|.
           rtc::KeepRefUntilDone(img_buffer)));
 
-  VideoFrame decoded_image;
-  decoded_image.set_video_frame_buffer(img_wrapped_buffer);
-  decoded_image.set_timestamp(timestamp);
+  VideoFrame decoded_image(img_wrapped_buffer, timestamp,
+                           0 /* render_time_ms */, webrtc::kVideoRotation_0);
+
   int ret = decode_complete_callback_->Decoded(decoded_image);
   if (ret != 0)
     return ret;

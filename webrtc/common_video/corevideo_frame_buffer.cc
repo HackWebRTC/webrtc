@@ -46,9 +46,9 @@ CoreVideoFrameBuffer::NativeToI420Buffer() {
   int src_uv_stride = CVPixelBufferGetBytesPerRowOfPlane(pixel_buffer_, 1);
   int ret = libyuv::NV12ToI420(
       src_y, src_y_stride, src_uv, src_uv_stride,
-      buffer->MutableData(webrtc::kYPlane), buffer->stride(webrtc::kYPlane),
-      buffer->MutableData(webrtc::kUPlane), buffer->stride(webrtc::kUPlane),
-      buffer->MutableData(webrtc::kVPlane), buffer->stride(webrtc::kVPlane),
+      buffer->MutableDataY(), buffer->StrideY(),
+      buffer->MutableDataU(), buffer->StrideU(),
+      buffer->MutableDataV(), buffer->StrideV(),
       width, height);
   CVPixelBufferUnlockBaseAddress(pixel_buffer_, kCVPixelBufferLock_ReadOnly);
   if (ret) {
