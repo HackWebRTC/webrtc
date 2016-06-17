@@ -3130,24 +3130,20 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOutputVolume) {
   cricket::StreamParams stream;
   stream.ssrcs.push_back(kSsrc2);
   EXPECT_TRUE(channel_->AddRecvStream(stream));
-  int channel_id = voe_.GetLastChannel();
+  EXPECT_DOUBLE_EQ(1, GetRecvStream(kSsrc2).gain());
   EXPECT_TRUE(channel_->SetOutputVolume(kSsrc2, 3));
-  float scale = 0;
-  EXPECT_EQ(0, voe_.GetChannelOutputVolumeScaling(channel_id, scale));
-  EXPECT_DOUBLE_EQ(3, scale);
+  EXPECT_DOUBLE_EQ(3, GetRecvStream(kSsrc2).gain());
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, SetOutputVolumeDefaultRecvStream) {
   EXPECT_TRUE(SetupChannel());
   EXPECT_TRUE(channel_->SetOutputVolume(0, 2));
   DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
-  int channel_id = voe_.GetLastChannel();
-  float scale = 0;
-  EXPECT_EQ(0, voe_.GetChannelOutputVolumeScaling(channel_id, scale));
-  EXPECT_DOUBLE_EQ(2, scale);
+  EXPECT_DOUBLE_EQ(2, GetRecvStream(1).gain());
   EXPECT_TRUE(channel_->SetOutputVolume(0, 3));
-  EXPECT_EQ(0, voe_.GetChannelOutputVolumeScaling(channel_id, scale));
-  EXPECT_DOUBLE_EQ(3, scale);
+  EXPECT_DOUBLE_EQ(3, GetRecvStream(1).gain());
+  EXPECT_TRUE(channel_->SetOutputVolume(1, 4));
+  EXPECT_DOUBLE_EQ(4, GetRecvStream(1).gain());
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, SetsSyncGroupFromSyncLabel) {

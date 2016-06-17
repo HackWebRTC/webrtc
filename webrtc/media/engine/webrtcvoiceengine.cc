@@ -1341,6 +1341,11 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     stream_->SetSink(std::move(sink));
   }
 
+  void SetOutputVolume(double volume) {
+    RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+    stream_->SetGain(volume);
+  }
+
  private:
   void RecreateAudioReceiveStream(
       uint32_t local_ssrc,
@@ -2270,19 +2275,14 @@ bool WebRtcVoiceMediaChannel::SetOutputVolume(uint32_t ssrc, double volume) {
     }
     ssrc = static_cast<uint32_t>(default_recv_ssrc_);
   }
-  int ch_id = GetReceiveChannelId(ssrc);
-  if (ch_id < 0) {
-    LOG(LS_WARNING) << "Cannot find channel for ssrc:" << ssrc;
+  const auto it = recv_streams_.find(ssrc);
+  if (it == recv_streams_.end()) {
+    LOG(LS_WARNING) << "SetOutputVolume: no recv stream" << ssrc;
     return false;
   }
-
-  if (-1 == engine()->voe()->volume()->SetChannelOutputVolumeScaling(ch_id,
-                                                                     volume)) {
-    LOG_RTCERR2(SetChannelOutputVolumeScaling, ch_id, volume);
-    return false;
-  }
-  LOG(LS_INFO) << "SetOutputVolume to " << volume
-               << " for channel " << ch_id << " and ssrc " << ssrc;
+  it->second->SetOutputVolume(volume);
+  LOG(LS_INFO) << "SetOutputVolume() to " << volume
+               << " for recv stream with ssrc " << ssrc;
   return true;
 }
 

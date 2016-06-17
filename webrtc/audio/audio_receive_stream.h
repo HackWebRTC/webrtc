@@ -41,6 +41,7 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream {
   void Stop() override;
   webrtc::AudioReceiveStream::Stats GetStats() const override;
   void SetSink(std::unique_ptr<AudioSinkInterface> sink) override;
+  void SetGain(float gain) override;
 
   void SignalNetworkState(NetworkState state);
   bool DeliverRtcp(const uint8_t* packet, size_t length);

@@ -193,8 +193,15 @@ bool ChannelProxy::ReceivedRTCPPacket(const uint8_t* packet, size_t length) {
 }
 
 const rtc::scoped_refptr<AudioDecoderFactory>&
-ChannelProxy::GetAudioDecoderFactory() const {
+    ChannelProxy::GetAudioDecoderFactory() const {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return channel()->GetAudioDecoderFactory();
+}
+
+void ChannelProxy::SetChannelOutputVolumeScaling(float scaling) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  int error = channel()->SetChannelOutputVolumeScaling(scaling);
+  RTC_DCHECK_EQ(0, error);
 }
 
 Channel* ChannelProxy::channel() const {

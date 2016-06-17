@@ -30,6 +30,7 @@ namespace test {
 namespace {
 
 using testing::_;
+using testing::FloatEq;
 using testing::Return;
 using testing::ReturnRef;
 
@@ -92,12 +93,12 @@ struct ConfigHelper {
           EXPECT_CALL(*channel_proxy_,
               SetReceiveAudioLevelIndicationStatus(true, kAudioLevelId))
                   .Times(1);
-          EXPECT_CALL(*channel_proxy_, EnableReceiveTransportSequenceNumber(
-                                           kTransportSequenceNumberId))
-              .Times(1);
           EXPECT_CALL(*channel_proxy_,
-                      RegisterReceiverCongestionControlObjects(&packet_router_))
-              .Times(1);
+              EnableReceiveTransportSequenceNumber(kTransportSequenceNumberId))
+                  .Times(1);
+          EXPECT_CALL(*channel_proxy_,
+              RegisterReceiverCongestionControlObjects(&packet_router_))
+                  .Times(1);
           EXPECT_CALL(congestion_controller_, packet_router())
               .WillOnce(Return(&packet_router_));
           EXPECT_CALL(*channel_proxy_, ResetCongestionControlObjects())
@@ -303,7 +304,6 @@ TEST(AudioReceiveStreamTest, ReceiveRtcpPacket) {
   EXPECT_TRUE(recv_stream.DeliverRtcp(&rtcp_packet[0], rtcp_packet.size()));
 }
 
-
 TEST(AudioReceiveStreamTest, GetStats) {
   ConfigHelper helper;
   internal::AudioReceiveStream recv_stream(
@@ -344,6 +344,15 @@ TEST(AudioReceiveStreamTest, GetStats) {
   EXPECT_EQ(kAudioDecodeStats.decoded_plc_cng, stats.decoding_plc_cng);
   EXPECT_EQ(kCallStats.capture_start_ntp_time_ms_,
             stats.capture_start_ntp_time_ms);
+}
+
+TEST(AudioReceiveStreamTest, SetGain) {
+  ConfigHelper helper;
+  internal::AudioReceiveStream recv_stream(
+      helper.congestion_controller(), helper.config(), helper.audio_state());
+  EXPECT_CALL(*helper.channel_proxy(),
+      SetChannelOutputVolumeScaling(FloatEq(0.765f)));
+  recv_stream.SetGain(0.765f);
 }
 }  // namespace test
 }  // namespace webrtc

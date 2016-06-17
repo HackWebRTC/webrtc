@@ -46,7 +46,8 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_METHOD1(SetSendTelephoneEventPayloadType, bool(int payload_type));
   MOCK_METHOD2(SendTelephoneEventOutband, bool(int event, int duration_ms));
   MOCK_METHOD1(SetInputMute, void(bool muted));
-
+  // TODO(solenberg): Talk the compiler into accepting this mock method:
+  // MOCK_METHOD1(SetSink, void(std::unique_ptr<AudioSinkInterface> sink));
   MOCK_METHOD1(RegisterExternalTransport, void(Transport* transport));
   MOCK_METHOD0(DeRegisterExternalTransport, void());
   MOCK_METHOD3(ReceivedRTPPacket, bool(const uint8_t* packet,
@@ -55,6 +56,7 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_METHOD2(ReceivedRTCPPacket, bool(const uint8_t* packet, size_t length));
   MOCK_CONST_METHOD0(GetAudioDecoderFactory,
                      const rtc::scoped_refptr<AudioDecoderFactory>&());
+  MOCK_METHOD1(SetChannelOutputVolumeScaling, void(float scaling));
 };
 }  // namespace test
 }  // namespace webrtc

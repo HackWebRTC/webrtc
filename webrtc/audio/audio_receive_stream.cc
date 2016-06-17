@@ -210,6 +210,11 @@ void AudioReceiveStream::SetSink(std::unique_ptr<AudioSinkInterface> sink) {
   channel_proxy_->SetSink(std::move(sink));
 }
 
+void AudioReceiveStream::SetGain(float gain) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  channel_proxy_->SetChannelOutputVolumeScaling(gain);
+}
+
 const webrtc::AudioReceiveStream::Config& AudioReceiveStream::config() const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return config_;

@@ -129,7 +129,6 @@ class FakeWebRtcVoiceEngine
       memset(&send_codec, 0, sizeof(send_codec));
     }
     bool playout = false;
-    float volume_scale = 1.0f;
     bool vad = false;
     bool codec_fec = false;
     int max_encoding_bandwidth = 0;
@@ -441,16 +440,8 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(GetSpeechOutputLevel, (int, unsigned int&));
   WEBRTC_STUB(GetSpeechInputLevelFullRange, (unsigned int&));
   WEBRTC_STUB(GetSpeechOutputLevelFullRange, (int, unsigned int&));
-  WEBRTC_FUNC(SetChannelOutputVolumeScaling, (int channel, float scale)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->volume_scale= scale;
-    return 0;
-  }
-  WEBRTC_FUNC(GetChannelOutputVolumeScaling, (int channel, float& scale)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    scale = channels_[channel]->volume_scale;
-    return 0;
-  }
+  WEBRTC_STUB(SetChannelOutputVolumeScaling, (int channel, float scale));
+  WEBRTC_STUB(GetChannelOutputVolumeScaling, (int channel, float& scale));
   WEBRTC_STUB(SetOutputVolumePan, (int channel, float left, float right));
   WEBRTC_STUB(GetOutputVolumePan, (int channel, float& left, float& right));
 

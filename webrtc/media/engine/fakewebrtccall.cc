@@ -57,7 +57,7 @@ webrtc::AudioSendStream::Stats FakeAudioSendStream::GetStats() const {
 
 FakeAudioReceiveStream::FakeAudioReceiveStream(
     const webrtc::AudioReceiveStream::Config& config)
-    : config_(config), received_packets_(0) {
+    : config_(config) {
   RTC_DCHECK(config.voe_channel_id != -1);
 }
 
@@ -91,6 +91,10 @@ webrtc::AudioReceiveStream::Stats FakeAudioReceiveStream::GetStats() const {
 void FakeAudioReceiveStream::SetSink(
     std::unique_ptr<webrtc::AudioSinkInterface> sink) {
   sink_ = std::move(sink);
+}
+
+void FakeAudioReceiveStream::SetGain(float gain) {
+  gain_ = gain;
 }
 
 FakeVideoSendStream::FakeVideoSendStream(

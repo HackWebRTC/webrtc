@@ -83,7 +83,9 @@ class ChannelProxy {
   virtual bool ReceivedRTCPPacket(const uint8_t* packet, size_t length);
 
   virtual const rtc::scoped_refptr<AudioDecoderFactory>&
-  GetAudioDecoderFactory() const;
+      GetAudioDecoderFactory() const;
+
+  virtual void SetChannelOutputVolumeScaling(float scaling);
 
  private:
   Channel* channel() const;

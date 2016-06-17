@@ -75,6 +75,7 @@ class FakeAudioReceiveStream final : public webrtc::AudioReceiveStream {
   int received_packets() const { return received_packets_; }
   bool VerifyLastPacket(const uint8_t* data, size_t length) const;
   const webrtc::AudioSinkInterface* sink() const { return sink_.get(); }
+  float gain() const { return gain_; }
   bool DeliverRtp(const uint8_t* packet,
                   size_t length,
                   const webrtc::PacketTime& packet_time);
@@ -86,11 +87,13 @@ class FakeAudioReceiveStream final : public webrtc::AudioReceiveStream {
 
   webrtc::AudioReceiveStream::Stats GetStats() const override;
   void SetSink(std::unique_ptr<webrtc::AudioSinkInterface> sink) override;
+  void SetGain(float gain) override;
 
   webrtc::AudioReceiveStream::Config config_;
   webrtc::AudioReceiveStream::Stats stats_;
-  int received_packets_;
+  int received_packets_ = 0;
   std::unique_ptr<webrtc::AudioSinkInterface> sink_;
+  float gain_ = 1.0f;
   rtc::Buffer last_packet_;
 };
 
