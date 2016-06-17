@@ -57,7 +57,7 @@ const char* kPathDelimiter = "/";
 #endif
 
 #ifdef WEBRTC_ANDROID
-const char* kRootDirName = "/sdcard/";
+const char* kRootDirName = "/sdcard/chromium_tests_root/";
 #else
 // The file we're looking for to identify the project root dir.
 const char* kProjectRootFileName = "DEPS";
