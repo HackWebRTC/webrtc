@@ -22,7 +22,7 @@ public class Camera1CapturerUsingByteBufferTest extends InstrumentationTestCase 
   static final String TAG = "Camera1CapturerUsingByteBufferTest";
 
   private class TestObjectFactory
-      implements CameraVideoCapturerTestFixtures.TestObjectFactory {
+      extends CameraVideoCapturerTestFixtures.TestObjectFactory {
     @Override
     public CameraVideoCapturer createCapturer(
         String name,
@@ -31,25 +31,13 @@ public class Camera1CapturerUsingByteBufferTest extends InstrumentationTestCase 
     }
 
     @Override
-    public String getNameOfFrontFacingDevice() {
-      return CameraEnumerationAndroid.getNameOfFrontFacingDevice();
-    }
-
-    @Override
-    public String getNameOfBackFacingDevice() {
-      return CameraEnumerationAndroid.getNameOfBackFacingDevice();
-    }
-
-    // Return true if the device under test have at least two cameras.
-    @SuppressWarnings("deprecation")
-    @Override
-    public boolean haveTwoCameras() {
-      return (android.hardware.Camera.getNumberOfCameras() >= 2);
-    }
-
-    @Override
     public boolean isCapturingToTexture() {
       return false;
+    }
+
+    @Override
+    public CameraEnumerator getCameraEnumerator() {
+      return new Camera1Enumerator();
     }
 
     @Override
@@ -60,7 +48,7 @@ public class Camera1CapturerUsingByteBufferTest extends InstrumentationTestCase 
     @SuppressWarnings("deprecation")
     @Override
     public Object rawOpenCamera(String cameraName) {
-      return android.hardware.Camera.open(CameraEnumerationAndroid.getCameraIndex(cameraName));
+      return android.hardware.Camera.open(Camera1Enumerator.getCameraIndex(cameraName));
     }
 
     @SuppressWarnings("deprecation")

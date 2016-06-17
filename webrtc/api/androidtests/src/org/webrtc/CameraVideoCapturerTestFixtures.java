@@ -240,19 +240,55 @@ class CameraVideoCapturerTestFixtures {
     public FakeAsyncRenderer fakeAsyncRenderer;
   }
 
-  public interface TestObjectFactory {
-    CameraVideoCapturer createCapturer(
-      String name, CameraVideoCapturer.CameraEventsHandler eventsHandler);
-    String getNameOfFrontFacingDevice();
-    String getNameOfBackFacingDevice();
-    boolean haveTwoCameras();
-    boolean isCapturingToTexture();
-    Context getAppContext();
+  public abstract static class TestObjectFactory {
+    final CameraEnumerator cameraEnumerator;
+
+    TestObjectFactory() {
+      cameraEnumerator = getCameraEnumerator();
+    }
+
+    public CameraVideoCapturer createCapturer(
+        String name,
+        CameraVideoCapturer.CameraEventsHandler eventsHandler) {
+      return cameraEnumerator.createCapturer(name, eventsHandler);
+    }
+
+    public String getNameOfFrontFacingDevice() {
+      for (String deviceName : cameraEnumerator.getDeviceNames()) {
+        if (cameraEnumerator.isFrontFacing(deviceName)) {
+          return deviceName;
+        }
+      }
+
+      return null;
+    }
+
+    public String getNameOfBackFacingDevice() {
+      for (String deviceName : cameraEnumerator.getDeviceNames()) {
+        if (cameraEnumerator.isBackFacing(deviceName)) {
+          return deviceName;
+        }
+      }
+
+      return null;
+    }
+
+    public boolean haveTwoCameras() {
+      return cameraEnumerator.getDeviceNames().length >= 2;
+    }
+
+    public boolean isCapturingToTexture() {
+      // In the future, we plan to only support capturing to texture, so default to true
+      return true;
+    }
+
+    abstract public CameraEnumerator getCameraEnumerator();
+    abstract public Context getAppContext();
 
     // CameraVideoCapturer API is too slow for some of our tests where we need to open a competing
     // camera. These methods are used instead.
-    Object rawOpenCamera(String cameraName);
-    void rawCloseCamera(Object camera);
+    abstract public Object rawOpenCamera(String cameraName);
+    abstract public void rawCloseCamera(Object camera);
   }
 
   private PeerConnectionFactory peerConnectionFactory;

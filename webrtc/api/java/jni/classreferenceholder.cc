@@ -48,7 +48,7 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "java/nio/ByteBuffer");
   LoadClass(jni, "java/util/ArrayList");
   LoadClass(jni, "org/webrtc/AudioTrack");
-  LoadClass(jni, "org/webrtc/CameraEnumerator");
+  LoadClass(jni, "org/webrtc/Camera1Enumerator");
   LoadClass(jni, "org/webrtc/Camera2Enumerator");
   LoadClass(jni, "org/webrtc/CameraEnumerationAndroid");
   LoadClass(jni, "org/webrtc/DataChannel");

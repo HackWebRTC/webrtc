@@ -114,57 +114,48 @@ public class CameraEnumerationAndroid {
     }
   }
 
-  // Returns device names that can be used to create a new VideoCapturerAndroid.
+  /**
+   * @deprecated
+   * Please use Camera1Enumerator.getDeviceNames() instead.
+   */
+  @Deprecated
   public static String[] getDeviceNames() {
-    String[] names = new String[android.hardware.Camera.getNumberOfCameras()];
-    for (int i = 0; i < android.hardware.Camera.getNumberOfCameras(); ++i) {
-      names[i] = getDeviceName(i);
-    }
-    return names;
+    return new Camera1Enumerator().getDeviceNames();
   }
 
-  // Returns number of cameras on device.
+
+  /**
+   * @deprecated
+   * Please use Camera1Enumerator.getDeviceNames().length instead.
+   */
+  @Deprecated
   public static int getDeviceCount() {
-    return android.hardware.Camera.getNumberOfCameras();
+    return new Camera1Enumerator().getDeviceNames().length;
   }
 
-  // Returns the name of the camera with camera index. Returns null if the
-  // camera can not be used.
+  /**
+   * @deprecated
+   * Please use Camera1Enumerator.getDeviceNames().get(index) instead.
+   */
+  @Deprecated
   public static String getDeviceName(int index) {
-    android.hardware.Camera.CameraInfo info = new android.hardware.Camera.CameraInfo();
-    try {
-      android.hardware.Camera.getCameraInfo(index, info);
-    } catch (Exception e) {
-      Logging.e(TAG, "getCameraInfo failed on index " + index,e);
-      return null;
-    }
-
-    String facing =
-        (info.facing == android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT) ? "front" : "back";
-    return "Camera " + index + ", Facing " + facing
-        + ", Orientation " + info.orientation;
+    return new Camera1Enumerator().getDeviceName(index);
   }
 
-  // Returns the camera index for camera with name |deviceName|, or throws IllegalArgumentException
-  // if no such camera can be found.
-  public static int getCameraIndex(String deviceName) {
-    Logging.d(TAG, "getCameraIndex: " + deviceName);
-    for (int i = 0; i < android.hardware.Camera.getNumberOfCameras(); ++i) {
-      if (deviceName.equals(CameraEnumerationAndroid.getDeviceName(i))) {
-        return i;
-      }
-    }
-    throw new IllegalArgumentException("No such camera: " + deviceName);
-  }
-
-  // Returns the name of the front facing camera. Returns null if the
-  // camera can not be used or does not exist.
+  /**
+   * @deprecated
+   * Please use Camera1Enumerator.isFrontFacing(String deviceName) instead.
+   */
+  @Deprecated
   public static String getNameOfFrontFacingDevice() {
     return getNameOfDevice(android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT);
   }
 
-  // Returns the name of the back facing camera. Returns null if the
-  // camera can not be used or does not exist.
+  /**
+   * @deprecated
+   * Please use Camera1Enumerator.isBackFacing(String deviceName) instead.
+   */
+  @Deprecated
   public static String getNameOfBackFacingDevice() {
     return getNameOfDevice(android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK);
   }

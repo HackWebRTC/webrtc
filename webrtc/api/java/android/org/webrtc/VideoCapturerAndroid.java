@@ -208,7 +208,7 @@ public class VideoCapturerAndroid implements
 
   @Override
   public List<CaptureFormat> getSupportedFormats() {
-    return CameraEnumerator.getSupportedFormats(getCurrentCameraId());
+    return Camera1Enumerator.getSupportedFormats(getCurrentCameraId());
   }
 
   // Returns true if this VideoCapturer is setup to capture video frames to a SurfaceTexture.
@@ -224,7 +224,7 @@ public class VideoCapturerAndroid implements
     if (cameraName == null || cameraName.equals("")) {
       this.id = 0;
     } else {
-      this.id = CameraEnumerationAndroid.getCameraIndex(cameraName);
+      this.id = Camera1Enumerator.getCameraIndex(cameraName);
     }
     this.eventsHandler = eventsHandler;
     isCapturingToTexture = captureToTexture;
@@ -391,14 +391,14 @@ public class VideoCapturerAndroid implements
     // Find closest supported format for |width| x |height| @ |framerate|.
     final android.hardware.Camera.Parameters parameters = camera.getParameters();
     final List<CaptureFormat.FramerateRange> supportedFramerates =
-        CameraEnumerator.convertFramerates(parameters.getSupportedPreviewFpsRange());
+        Camera1Enumerator.convertFramerates(parameters.getSupportedPreviewFpsRange());
     Logging.d(TAG, "Available fps ranges: " + supportedFramerates);
 
     final CaptureFormat.FramerateRange fpsRange =
         CameraEnumerationAndroid.getClosestSupportedFramerateRange(supportedFramerates, framerate);
 
     final Size previewSize = CameraEnumerationAndroid.getClosestSupportedSize(
-        CameraEnumerator.convertSizes(parameters.getSupportedPreviewSizes()), width, height);
+        Camera1Enumerator.convertSizes(parameters.getSupportedPreviewSizes()), width, height);
 
     final CaptureFormat captureFormat =
         new CaptureFormat(previewSize.width, previewSize.height, fpsRange);
@@ -427,7 +427,7 @@ public class VideoCapturerAndroid implements
     // Picture size is for taking pictures and not for preview/video, but we need to set it anyway
     // as a workaround for an aspect ratio problem on Nexus 7.
     final Size pictureSize = CameraEnumerationAndroid.getClosestSupportedSize(
-        CameraEnumerator.convertSizes(parameters.getSupportedPictureSizes()), width, height);
+        Camera1Enumerator.convertSizes(parameters.getSupportedPictureSizes()), width, height);
     parameters.setPictureSize(pictureSize.width, pictureSize.height);
 
     // Temporarily stop preview if it's already running.
