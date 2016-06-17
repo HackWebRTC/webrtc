@@ -303,13 +303,19 @@ int do_main(int argc, char* argv[]) {
       if (!FLAGS_raw) {
         // The WAV files need to be reset every time, because they cant change
         // their sample rate or number of channels.
-        reverse_wav_file.reset(new WavWriter(FLAGS_reverse_file + ".wav",
+        std::stringstream reverse_name;
+        reverse_name << FLAGS_reverse_file << frame_count << ".wav";
+        reverse_wav_file.reset(new WavWriter(reverse_name.str(),
                                              reverse_sample_rate,
                                              num_reverse_channels));
-        input_wav_file.reset(new WavWriter(FLAGS_input_file + ".wav",
+        std::stringstream input_name;
+        input_name << FLAGS_input_file << frame_count << ".wav";
+        input_wav_file.reset(new WavWriter(input_name.str(),
                                            input_sample_rate,
                                            num_input_channels));
-        output_wav_file.reset(new WavWriter(FLAGS_output_file + ".wav",
+        std::stringstream output_name;
+        output_name << FLAGS_output_file << frame_count << ".wav";
+        output_wav_file.reset(new WavWriter(output_name.str(),
                                             output_sample_rate,
                                             num_output_channels));
       }
