@@ -573,7 +573,7 @@ IPseudoTcpNotify::WriteResult PseudoTcp::packet(uint32_t seq,
 }
 
 bool PseudoTcp::parse(const uint8_t* buffer, uint32_t size) {
-  if (size < 12)
+  if (size < HEADER_SIZE)
     return false;
 
   Segment seg;
