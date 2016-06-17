@@ -416,10 +416,13 @@ bool Packet::FindExtension(ExtensionType type,
   RTC_DCHECK(offset);
   for (size_t i = 0; i < num_extensions_; ++i) {
     if (extension_entries_[i].type == type) {
-      RTC_CHECK_EQ(length, extension_entries_[i].length)
-          << "Length mismatch for extension '" << type << "'"
-          << "should be " << length << ", received "
-          << extension_entries_[i].length;
+      if (length != extension_entries_[i].length) {
+        LOG(LS_WARNING) << "Length mismatch for extension '" << type
+                        << "': expected " << static_cast<int>(length)
+                        << ", received "
+                        << static_cast<int>(extension_entries_[i].length);
+        return false;
+      }
       *offset = extension_entries_[i].offset;
       return true;
     }

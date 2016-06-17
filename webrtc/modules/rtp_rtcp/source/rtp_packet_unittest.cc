@@ -31,6 +31,7 @@ constexpr int32_t kTimeOffset = 0x56ce;
 constexpr bool kVoiceActive = true;
 constexpr uint8_t kAudioLevel = 0x5a;
 constexpr size_t kMaxPaddingSize = 224u;
+// clang-format off
 constexpr uint8_t kMinimumPacket[] = {
     0x80, kPayloadType, 0x00, kSeqNum,
     0x65, 0x43, 0x12, 0x78,
@@ -64,6 +65,17 @@ constexpr uint8_t kPacket[] = {
     'p', 'a', 'y', 'l', 'o', 'a', 'd',
     'p', 'a', 'd', 'd', 'i', 'n', 'g', kPacketPaddingSize};
 
+constexpr uint8_t kPacketWithInvalidExtension[] = {
+    0x90, kPayloadType, 0x00, kSeqNum,
+    0x65, 0x43, 0x12, 0x78,  // kTimestamp.
+    0x12, 0x34, 0x56, 0x78,  // kSSrc.
+    0xbe, 0xde, 0x00, 0x02,  // Extension block of size 2 x 32bit words.
+    (kTransmissionOffsetExtensionId << 4) | 6,  // (6+1)-byte extension, but
+           'e',  'x',  't',                     // Transmission Offset
+     'd',  'a',  't',  'a',                     // expected to be 3-bytes.
+     'p',  'a',  'y',  'l',  'o',  'a',  'd'
+};
+// clang-format on
 }  // namespace
 
 TEST(RtpPacketTest, CreateMinimum) {
@@ -191,6 +203,24 @@ TEST(RtpPacketTest, ParseWithExtension) {
   EXPECT_EQ(kTimeOffset, time_offset);
   EXPECT_EQ(0u, packet.payload_size());
   EXPECT_EQ(0u, packet.padding_size());
+}
+
+TEST(RtpPacketTest, ParseWithInvalidSizedExtension) {
+  RtpPacketToSend::ExtensionManager extensions;
+  extensions.Register(kRtpExtensionTransmissionTimeOffset,
+                      kTransmissionOffsetExtensionId);
+
+  RtpPacketReceived packet(&extensions);
+  EXPECT_TRUE(packet.Parse(kPacketWithInvalidExtension,
+                           sizeof(kPacketWithInvalidExtension)));
+
+  // Extension should be ignored.
+  int32_t time_offset;
+  EXPECT_FALSE(packet.GetExtension<TransmissionOffset>(&time_offset));
+
+  // But shouldn't prevent reading payload.
+  EXPECT_THAT(make_tuple(packet.payload(), packet.payload_size()),
+              ElementsAreArray(kPayload));
 }
 
 TEST(RtpPacketTest, ParseWith2Extensions) {
