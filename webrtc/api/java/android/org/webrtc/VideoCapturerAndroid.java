@@ -394,23 +394,17 @@ public class VideoCapturerAndroid implements
         CameraEnumerator.convertFramerates(parameters.getSupportedPreviewFpsRange());
     Logging.d(TAG, "Available fps ranges: " + supportedFramerates);
 
-    final CaptureFormat.FramerateRange bestFpsRange;
-    if (supportedFramerates.isEmpty()) {
-      Logging.w(TAG, "No supported preview fps range");
-      bestFpsRange = new CaptureFormat.FramerateRange(0, 0);
-    } else {
-      bestFpsRange = CameraEnumerationAndroid.getClosestSupportedFramerateRange(
-            supportedFramerates, framerate);
-    }
+    final CaptureFormat.FramerateRange fpsRange =
+        CameraEnumerationAndroid.getClosestSupportedFramerateRange(supportedFramerates, framerate);
 
-    final android.hardware.Camera.Size previewSize =
-        CameraEnumerationAndroid.getClosestSupportedSize(
-            parameters.getSupportedPreviewSizes(), width, height);
-    final CaptureFormat captureFormat = new CaptureFormat(
-        previewSize.width, previewSize.height, bestFpsRange);
+    final Size previewSize = CameraEnumerationAndroid.getClosestSupportedSize(
+        CameraEnumerator.convertSizes(parameters.getSupportedPreviewSizes()), width, height);
+
+    final CaptureFormat captureFormat =
+        new CaptureFormat(previewSize.width, previewSize.height, fpsRange);
 
     // Check if we are already using this capture format, then we don't need to do anything.
-    if (captureFormat.isSameFormat(this.captureFormat)) {
+    if (captureFormat.equals(this.captureFormat)) {
       return;
     }
 
@@ -425,16 +419,15 @@ public class VideoCapturerAndroid implements
     if (captureFormat.framerate.max > 0) {
       parameters.setPreviewFpsRange(captureFormat.framerate.min, captureFormat.framerate.max);
     }
-    parameters.setPreviewSize(captureFormat.width, captureFormat.height);
+    parameters.setPreviewSize(previewSize.width, previewSize.height);
 
     if (!isCapturingToTexture) {
       parameters.setPreviewFormat(captureFormat.imageFormat);
     }
     // Picture size is for taking pictures and not for preview/video, but we need to set it anyway
     // as a workaround for an aspect ratio problem on Nexus 7.
-    final android.hardware.Camera.Size pictureSize =
-        CameraEnumerationAndroid.getClosestSupportedSize(
-            parameters.getSupportedPictureSizes(), width, height);
+    final Size pictureSize = CameraEnumerationAndroid.getClosestSupportedSize(
+        CameraEnumerator.convertSizes(parameters.getSupportedPictureSizes()), width, height);
     parameters.setPictureSize(pictureSize.width, pictureSize.height);
 
     // Temporarily stop preview if it's already running.

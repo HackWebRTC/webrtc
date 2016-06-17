@@ -12,8 +12,6 @@ package org.webrtc;
 
 import static java.lang.Math.abs;
 
-import org.webrtc.Logging;
-
 import android.graphics.ImageFormat;
 
 import java.util.Collections;
@@ -60,6 +58,7 @@ public class CameraEnumerationAndroid {
     public final int width;
     public final int height;
     public final FramerateRange framerate;
+
     // TODO(hbos): If VideoCapturer.startCapture is updated to support other image formats then this
     // needs to be updated and VideoCapturer.getSupportedFormats need to return CaptureFormats of
     // all imageFormats.
@@ -99,11 +98,19 @@ public class CameraEnumerationAndroid {
       return width + "x" + height + "@" + framerate;
     }
 
-    public boolean isSameFormat(final CaptureFormat that) {
-      if (that == null) {
+    @Override
+    public boolean equals(Object other) {
+      if (!(other instanceof CaptureFormat)) {
         return false;
       }
-      return width == that.width && height == that.height && framerate.equals(that.framerate);
+      final CaptureFormat otherFormat = (CaptureFormat) other;
+      return width == otherFormat.width && height == otherFormat.height
+          && framerate.equals(otherFormat.framerate);
+    }
+
+    @Override
+    public int hashCode() {
+      return 1 + (width * 65497 + height) * 251 + framerate.hashCode();
     }
   }
 
@@ -210,12 +217,13 @@ public class CameraEnumerationAndroid {
      });
   }
 
-  public static android.hardware.Camera.Size getClosestSupportedSize(
-      List<android.hardware.Camera.Size> supportedSizes, final int requestedWidth,
+  public static Size getClosestSupportedSize(
+      List<Size> supportedSizes, final int requestedWidth,
       final int requestedHeight) {
     return Collections.min(supportedSizes,
-        new ClosestComparator<android.hardware.Camera.Size>() {
-          @Override int diff(android.hardware.Camera.Size size) {
+        new ClosestComparator<Size>() {
+          @Override
+          int diff(Size size) {
             return abs(requestedWidth - size.width) + abs(requestedHeight - size.height);
           }
      });

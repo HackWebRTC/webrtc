@@ -79,6 +79,16 @@ public class CameraEnumerator {
     return formatList;
   }
 
+  // Convert from android.hardware.Camera.Size to Size.
+  public static List<Size> convertSizes(
+      List<android.hardware.Camera.Size> cameraSizes) {
+    final List<Size> sizes = new ArrayList<Size>();
+    for (android.hardware.Camera.Size size : cameraSizes) {
+      sizes.add(new Size(size.width, size.height));
+    }
+    return sizes;
+  }
+
   // Convert from int[2] to CaptureFormat.FramerateRange.
   public static List<CaptureFormat.FramerateRange> convertFramerates(
       List<int[]> arrayRanges) {
