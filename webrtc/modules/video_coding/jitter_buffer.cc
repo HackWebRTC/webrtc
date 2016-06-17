@@ -475,26 +475,6 @@ void VCMJitterBuffer::IncomingRateStatistics(unsigned int* framerate,
   }
 }
 
-// Answers the question:
-// Will the packet sequence be complete if the next frame is grabbed for
-// decoding right now? That is, have we lost a frame between the last decoded
-// frame and the next, or is the next
-// frame missing one or more packets?
-bool VCMJitterBuffer::CompleteSequenceWithNextFrame() {
-  CriticalSectionScoped cs(crit_sect_);
-  // Finding oldest frame ready for decoder, check sequence number and size
-  CleanUpOldOrEmptyFrames();
-  if (!decodable_frames_.empty()) {
-    if (decodable_frames_.Front()->GetState() == kStateComplete) {
-      return true;
-    }
-  } else if (incomplete_frames_.size() <= 1) {
-    // Frame not ready to be decoded.
-    return true;
-  }
-  return false;
-}
-
 // Returns immediately or a |max_wait_time_ms| ms event hang waiting for a
 // complete frame, |max_wait_time_ms| decided by caller.
 VCMEncodedFrame* VCMJitterBuffer::NextCompleteFrame(uint32_t max_wait_time_ms) {
@@ -1189,11 +1169,6 @@ void VCMJitterBuffer::DropPacketsFromNackList(
   missing_sequence_numbers_.erase(
       missing_sequence_numbers_.begin(),
       missing_sequence_numbers_.upper_bound(last_decoded_sequence_number));
-}
-
-int64_t VCMJitterBuffer::LastDecodedTimestamp() const {
-  CriticalSectionScoped cs(crit_sect_);
-  return last_decoded_state_.time_stamp();
 }
 
 void VCMJitterBuffer::RegisterStatsCallback(
