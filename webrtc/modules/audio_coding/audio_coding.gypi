@@ -174,8 +174,6 @@
         'acm2/acm_resampler.cc',
         'acm2/acm_resampler.h',
         'acm2/audio_coding_module.cc',
-        'acm2/audio_coding_module_impl.cc',
-        'acm2/audio_coding_module_impl.h',
         'acm2/call_statistics.cc',
         'acm2/call_statistics.h',
         'acm2/codec_manager.cc',
