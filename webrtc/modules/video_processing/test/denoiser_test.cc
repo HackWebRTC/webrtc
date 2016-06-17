@@ -132,10 +132,10 @@ TEST_F(VideoProcessingTest, Denoiser) {
   VideoDenoiser denoiser_c(false);
   // Create SSE or NEON denoiser.
   VideoDenoiser denoiser_sse_neon(true);
-  VideoFrame denoised_frame_c;
-  VideoFrame denoised_frame_prev_c;
-  VideoFrame denoised_frame_sse_neon;
-  VideoFrame denoised_frame_prev_sse_neon;
+  rtc::scoped_refptr<I420Buffer> denoised_frame_c;
+  rtc::scoped_refptr<I420Buffer> denoised_frame_prev_c;
+  rtc::scoped_refptr<I420Buffer> denoised_frame_sse_neon;
+  rtc::scoped_refptr<I420Buffer> denoised_frame_prev_sse_neon;
 
   std::unique_ptr<uint8_t[]> video_buffer(new uint8_t[frame_length_]);
   while (fread(video_buffer.get(), 1, frame_length_, source_file_) ==
@@ -144,10 +144,12 @@ TEST_F(VideoProcessingTest, Denoiser) {
     EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,
                                0, kVideoRotation_0, &video_frame_));
 
-    VideoFrame* p_denoised_c = &denoised_frame_c;
-    VideoFrame* p_denoised_prev_c = &denoised_frame_prev_c;
-    VideoFrame* p_denoised_sse_neon = &denoised_frame_sse_neon;
-    VideoFrame* p_denoised_prev_sse_neon = &denoised_frame_prev_sse_neon;
+    rtc::scoped_refptr<I420Buffer>* p_denoised_c = &denoised_frame_c;
+    rtc::scoped_refptr<I420Buffer>* p_denoised_prev_c = &denoised_frame_prev_c;
+    rtc::scoped_refptr<I420Buffer>* p_denoised_sse_neon =
+        &denoised_frame_sse_neon;
+    rtc::scoped_refptr<I420Buffer>* p_denoised_prev_sse_neon =
+        &denoised_frame_prev_sse_neon;
     // Swap the buffer to save one memcpy in DenoiseFrame.
     if (denoised_frame_toggle) {
       p_denoised_c = &denoised_frame_prev_c;
@@ -155,14 +157,16 @@ TEST_F(VideoProcessingTest, Denoiser) {
       p_denoised_sse_neon = &denoised_frame_prev_sse_neon;
       p_denoised_prev_sse_neon = &denoised_frame_sse_neon;
     }
-    denoiser_c.DenoiseFrame(video_frame_, p_denoised_c, p_denoised_prev_c,
+    denoiser_c.DenoiseFrame(video_frame_.video_frame_buffer(),
+                            p_denoised_c, p_denoised_prev_c,
                             false);
-    denoiser_sse_neon.DenoiseFrame(video_frame_, p_denoised_sse_neon,
+    denoiser_sse_neon.DenoiseFrame(video_frame_.video_frame_buffer(),
+                                   p_denoised_sse_neon,
                                    p_denoised_prev_sse_neon, false);
     // Invert the flag.
     denoised_frame_toggle ^= 1;
     // Denoising results should be the same for C and SSE/NEON denoiser.
-    ASSERT_TRUE(test::FramesEqual(*p_denoised_c, *p_denoised_sse_neon));
+    ASSERT_TRUE(test::FrameBufsEqual(*p_denoised_c, *p_denoised_sse_neon));
   }
   ASSERT_NE(0, feof(source_file_)) << "Error reading source file";
 }

@@ -73,29 +73,23 @@ VideoDenoiser::VideoDenoiser(bool runtime_cpu_detection)
       filter_(DenoiserFilter::Create(runtime_cpu_detection, &cpu_type_)),
       ne_(new NoiseEstimation()) {}
 
-void VideoDenoiser::DenoiserReset(const VideoFrame& frame,
-                                  VideoFrame* denoised_frame,
-                                  VideoFrame* denoised_frame_prev) {
-  width_ = frame.width();
-  height_ = frame.height();
+void VideoDenoiser::DenoiserReset(
+    const rtc::scoped_refptr<VideoFrameBuffer>& frame,
+    rtc::scoped_refptr<I420Buffer>* denoised_frame,
+    rtc::scoped_refptr<I420Buffer>* denoised_frame_prev) {
+  width_ = frame->width();
+  height_ = frame->height();
   mb_cols_ = width_ >> 4;
   mb_rows_ = height_ >> 4;
-  stride_y_ = frame.video_frame_buffer()->StrideY();
-  stride_u_ = frame.video_frame_buffer()->StrideU();
-  stride_v_ = frame.video_frame_buffer()->StrideV();
+  stride_y_ = frame->StrideY();
+  stride_u_ = frame->StrideU();
+  stride_v_ = frame->StrideV();
 
   // Allocate an empty buffer for denoised_frame_prev.
-  denoised_frame_prev->CreateEmptyFrame(width_, height_, stride_y_, stride_u_,
-                                        stride_v_);
+  *denoised_frame_prev = new rtc::RefCountedObject<I420Buffer>(
+      width_, height_, stride_y_, stride_u_, stride_v_);
   // Allocate and initialize denoised_frame with key frame.
-  denoised_frame->CreateFrame(
-      frame.video_frame_buffer()->DataY(),
-      frame.video_frame_buffer()->DataU(),
-      frame.video_frame_buffer()->DataV(),
-      width_, height_, stride_y_, stride_u_, stride_v_, kVideoRotation_0);
-  // Set time parameters to the output frame.
-  denoised_frame->set_timestamp(frame.timestamp());
-  denoised_frame->set_render_time_ms(frame.render_time_ms());
+  *denoised_frame = I420Buffer::CopyKeepStride(frame);
 
   // Init noise estimator and allocate buffers.
   ne_->Init(width_, height_, cpu_type_);
@@ -225,26 +219,26 @@ void VideoDenoiser::CopyLumaOnMargin(const uint8_t* y_src, uint8_t* y_dst) {
   }
 }
 
-void VideoDenoiser::DenoiseFrame(const VideoFrame& frame,
-                                 VideoFrame* denoised_frame,
-                                 VideoFrame* denoised_frame_prev,
-                                 bool noise_estimation_enabled) {
+void VideoDenoiser::DenoiseFrame(
+    const rtc::scoped_refptr<VideoFrameBuffer>& frame,
+    rtc::scoped_refptr<I420Buffer>* denoised_frame,
+    rtc::scoped_refptr<I420Buffer>* denoised_frame_prev,
+    bool noise_estimation_enabled) {
   // If previous width and height are different from current frame's, need to
   // reallocate the buffers and no denoising for the current frame.
-  if (width_ != frame.width() || height_ != frame.height()) {
+  if (width_ != frame->width() || height_ != frame->height()) {
     DenoiserReset(frame, denoised_frame, denoised_frame_prev);
     return;
   }
 
   // Set buffer pointers.
-  const uint8_t* y_src = frame.video_frame_buffer()->DataY();
-  const uint8_t* u_src = frame.video_frame_buffer()->DataU();
-  const uint8_t* v_src = frame.video_frame_buffer()->DataV();
-  uint8_t* y_dst = denoised_frame->video_frame_buffer()->MutableDataY();
-  uint8_t* u_dst = denoised_frame->video_frame_buffer()->MutableDataU();
-  uint8_t* v_dst = denoised_frame->video_frame_buffer()->MutableDataV();
-  uint8_t* y_dst_prev =
-      denoised_frame_prev->video_frame_buffer()->MutableDataY();
+  const uint8_t* y_src = frame->DataY();
+  const uint8_t* u_src = frame->DataU();
+  const uint8_t* v_src = frame->DataV();
+  uint8_t* y_dst = (*denoised_frame)->MutableDataY();
+  uint8_t* u_dst = (*denoised_frame)->MutableDataU();
+  uint8_t* v_dst = (*denoised_frame)->MutableDataV();
+  uint8_t* y_dst_prev = (*denoised_frame_prev)->MutableDataY();
   memset(x_density_.get(), 0, mb_cols_);
   memset(y_density_.get(), 0, mb_rows_);
   memset(moving_object_.get(), 1, mb_cols_ * mb_rows_);
@@ -337,10 +331,6 @@ void VideoDenoiser::DenoiseFrame(const VideoFrame& frame,
   // Copy u/v planes.
   memcpy(u_dst, u_src, (height_ >> 1) * stride_u_);
   memcpy(v_dst, v_src, (height_ >> 1) * stride_v_);
-
-  // Set time parameters to the output frame.
-  denoised_frame->set_timestamp(frame.timestamp());
-  denoised_frame->set_render_time_ms(frame.render_time_ms());
 
 #if DISPLAY || DISPLAYNEON
   // Show rectangular region

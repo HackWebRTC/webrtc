@@ -187,20 +187,20 @@ rtc::scoped_refptr<VideoFrameBuffer> I420Buffer::NativeToI420Buffer() {
 }
 
 rtc::scoped_refptr<I420Buffer> I420Buffer::Copy(
-    const rtc::scoped_refptr<VideoFrameBuffer>& buffer) {
-  int width = buffer->width();
-  int height = buffer->height();
-  rtc::scoped_refptr<I420Buffer> copy =
+    const rtc::scoped_refptr<VideoFrameBuffer>& source) {
+  int width = source->width();
+  int height = source->height();
+  rtc::scoped_refptr<I420Buffer> target =
       new rtc::RefCountedObject<I420Buffer>(width, height);
-  RTC_CHECK(libyuv::I420Copy(buffer->DataY(), buffer->StrideY(),
-                             buffer->DataU(), buffer->StrideU(),
-                             buffer->DataV(), buffer->StrideV(),
-                             copy->MutableDataY(), copy->StrideY(),
-                             copy->MutableDataU(), copy->StrideU(),
-                             copy->MutableDataV(), copy->StrideV(),
+  RTC_CHECK(libyuv::I420Copy(source->DataY(), source->StrideY(),
+                             source->DataU(), source->StrideU(),
+                             source->DataV(), source->StrideV(),
+                             target->MutableDataY(), target->StrideY(),
+                             target->MutableDataU(), target->StrideU(),
+                             target->MutableDataV(), target->StrideV(),
                              width, height) == 0);
 
-  return copy;
+  return target;
 }
 
 void I420Buffer::SetToBlack() {
@@ -263,6 +263,27 @@ void I420Buffer::CropAndScaleFrom(
 
 void I420Buffer::ScaleFrom(const rtc::scoped_refptr<VideoFrameBuffer>& src) {
   CropAndScaleFrom(src, 0, 0, src->width(), src->height());
+}
+
+rtc::scoped_refptr<I420Buffer> I420Buffer::CopyKeepStride(
+    const rtc::scoped_refptr<VideoFrameBuffer>& source) {
+  int width = source->width();
+  int height = source->height();
+  int stride_y = source->StrideY();
+  int stride_u = source->StrideU();
+  int stride_v = source->StrideV();
+  rtc::scoped_refptr<I420Buffer> target =
+      new rtc::RefCountedObject<I420Buffer>(
+          width, height, stride_y, stride_u, stride_v);
+  RTC_CHECK(libyuv::I420Copy(source->DataY(), stride_y,
+                             source->DataU(), stride_u,
+                             source->DataV(), stride_v,
+                             target->MutableDataY(), stride_y,
+                             target->MutableDataU(), stride_u,
+                             target->MutableDataV(), stride_v,
+                             width, height) == 0);
+
+  return target;
 }
 
 NativeHandleBuffer::NativeHandleBuffer(void* native_handle,

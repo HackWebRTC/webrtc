@@ -23,15 +23,21 @@ class VideoDenoiser {
  public:
   explicit VideoDenoiser(bool runtime_cpu_detection);
 
-  void DenoiseFrame(const VideoFrame& frame,
-                    VideoFrame* denoised_frame,
-                    VideoFrame* denoised_frame_prev,
+  // TODO(nisse): Let the denoised_frame and denoised_frame_prev be
+  // member variables referencing two I420Buffer, and return a refptr
+  // to the current one. When we also move the double-buffering logic
+  // from the caller.
+  void DenoiseFrame(const rtc::scoped_refptr<VideoFrameBuffer>& frame,
+                    // Buffers are allocated/replaced when dimensions
+                    // change.
+                    rtc::scoped_refptr<I420Buffer>* denoised_frame,
+                    rtc::scoped_refptr<I420Buffer>* denoised_frame_prev,
                     bool noise_estimation_enabled);
 
  private:
-  void DenoiserReset(const VideoFrame& frame,
-                     VideoFrame* denoised_frame,
-                     VideoFrame* denoised_frame_prev);
+  void DenoiserReset(const rtc::scoped_refptr<VideoFrameBuffer>& frame,
+                     rtc::scoped_refptr<I420Buffer>* denoised_frame,
+                     rtc::scoped_refptr<I420Buffer>* denoised_frame_prev);
 
   // Check the mb position, return 1: close to the frame center (between 1/8
   // and 7/8 of width/height), 3: close to the border (out of 1/16 and 15/16

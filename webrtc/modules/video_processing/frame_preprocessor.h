@@ -61,7 +61,8 @@ class VPMFramePreprocessor {
   // we can compute new content metrics every |kSkipFrameCA| frames.
   enum { kSkipFrameCA = 2 };
 
-  VideoFrame denoised_frame_[2];
+  rtc::scoped_refptr<I420Buffer> denoised_buffer_[2];
+  VideoFrame denoised_frame_;
   VideoFrame resampled_frame_;
   VPMSpatialResampler* spatial_resampler_;
   VPMVideoDecimator* vd_;

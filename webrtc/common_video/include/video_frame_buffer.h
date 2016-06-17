@@ -134,6 +134,10 @@ class I420Buffer : public VideoFrameBuffer {
   // Scale all of |src| to the size of |this| buffer, with no cropping.
   void ScaleFrom(const rtc::scoped_refptr<VideoFrameBuffer>& src);
 
+  // Create a new buffer with identical strides, and copy the pixel data.
+  static rtc::scoped_refptr<I420Buffer> CopyKeepStride(
+      const rtc::scoped_refptr<VideoFrameBuffer>& buffer);
+
  protected:
   ~I420Buffer() override;
 

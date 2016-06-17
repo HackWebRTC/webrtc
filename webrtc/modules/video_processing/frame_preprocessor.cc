@@ -96,18 +96,20 @@ const VideoFrame* VPMFramePreprocessor::PreprocessFrame(
 
   const VideoFrame* current_frame = &frame;
   if (denoiser_) {
-    VideoFrame* denoised_frame = &denoised_frame_[0];
-    VideoFrame* denoised_frame_prev = &denoised_frame_[1];
+    rtc::scoped_refptr<I420Buffer>* denoised_frame = &denoised_buffer_[0];
+    rtc::scoped_refptr<I420Buffer>* denoised_frame_prev = &denoised_buffer_[1];
     // Swap the buffer to save one memcpy in DenoiseFrame.
     if (denoised_frame_toggle_) {
-      denoised_frame = &denoised_frame_[1];
-      denoised_frame_prev = &denoised_frame_[0];
+      denoised_frame = &denoised_buffer_[1];
+      denoised_frame_prev = &denoised_buffer_[0];
     }
     // Invert the flag.
     denoised_frame_toggle_ ^= 1;
-    denoiser_->DenoiseFrame(*current_frame, denoised_frame, denoised_frame_prev,
-                            true);
-    current_frame = denoised_frame;
+    denoiser_->DenoiseFrame(current_frame->video_frame_buffer(), denoised_frame,
+                            denoised_frame_prev, true);
+    denoised_frame_.ShallowCopy(*current_frame);
+    denoised_frame_.set_video_frame_buffer(*denoised_frame);
+    current_frame = &denoised_frame_;
   }
 
   if (spatial_resampler_->ApplyResample(current_frame->width(),
