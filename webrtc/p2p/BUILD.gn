@@ -26,6 +26,7 @@ source_set("rtc_p2p") {
     "base/basicpacketsocketfactory.h",
     "base/candidate.h",
     "base/common.h",
+    "base/dtlstransport.h",
     "base/dtlstransportchannel.cc",
     "base/dtlstransportchannel.h",
     "base/p2pconstants.cc",
@@ -44,8 +45,8 @@ source_set("rtc_p2p") {
     "base/pseudotcp.h",
     "base/relayport.cc",
     "base/relayport.h",
-    "base/relayserver.cc",
-    "base/relayserver.h",
+    "base/session.cc",
+    "base/session.h",
     "base/sessiondescription.cc",
     "base/sessiondescription.h",
     "base/sessionid.h",
@@ -55,8 +56,6 @@ source_set("rtc_p2p") {
     "base/stunport.h",
     "base/stunrequest.cc",
     "base/stunrequest.h",
-    "base/stunserver.cc",
-    "base/stunserver.h",
     "base/tcpport.cc",
     "base/tcpport.h",
     "base/transport.cc",
@@ -73,8 +72,6 @@ source_set("rtc_p2p") {
     "base/transportinfo.h",
     "base/turnport.cc",
     "base/turnport.h",
-    "base/turnserver.cc",
-    "base/turnserver.h",
     "base/udpport.h",
     "client/basicportallocator.cc",
     "client/basicportallocator.h",
@@ -104,7 +101,19 @@ source_set("rtc_p2p") {
     ":rtc_p2p_inherited_config",
   ]
 
-  if (!build_with_chromium) {
+  if (build_with_chromium) {
+    if (is_nacl) {
+      deps += [ "//native_client_sdk/src/libraries/nacl_io" ]
+    }
+  } else {
+    sources += [
+      "base/relayserver.cc",
+      "base/relayserver.h",
+      "base/stunserver.cc",
+      "base/stunserver.h",
+      "base/turnserver.cc",
+      "base/turnserver.h",
+    ]
     defines += [
       "FEATURE_ENABLE_VOICEMAIL",
       "FEATURE_ENABLE_PSTN",
