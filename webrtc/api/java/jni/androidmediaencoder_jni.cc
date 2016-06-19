@@ -145,7 +145,8 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   bool MaybeReconfigureEncoderOnCodecThread(const webrtc::VideoFrame& frame);
   int32_t EncodeOnCodecThread(
       const webrtc::VideoFrame& input_image,
-      const std::vector<webrtc::FrameType>* frame_types);
+      const std::vector<webrtc::FrameType>* frame_types,
+      const int64_t frame_input_time_ms);
   bool EncodeByteBufferOnCodecThread(JNIEnv* jni,
       bool key_frame, const webrtc::VideoFrame& frame, int input_buffer_index);
   bool EncodeTextureOnCodecThread(JNIEnv* jni,
@@ -424,7 +425,7 @@ int32_t MediaCodecVideoEncoder::Encode(
     const std::vector<webrtc::FrameType>* frame_types) {
   return codec_thread_->Invoke<int32_t>(
       RTC_FROM_HERE, Bind(&MediaCodecVideoEncoder::EncodeOnCodecThread, this,
-                          frame, frame_types));
+                          frame, frame_types, rtc::TimeMillis()));
 }
 
 int32_t MediaCodecVideoEncoder::RegisterEncodeCompleteCallback(
@@ -599,7 +600,8 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
 
 int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     const webrtc::VideoFrame& frame,
-    const std::vector<webrtc::FrameType>* frame_types) {
+    const std::vector<webrtc::FrameType>* frame_types,
+    const int64_t frame_input_time_ms) {
   RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
@@ -700,7 +702,6 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
-  const int64_t time_before_calling_encode = rtc::TimeMillis();
   const bool key_frame =
       frame_types->front() != webrtc::kVideoFrameDelta || send_key_frame;
   bool encode_status = true;
@@ -711,12 +712,18 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     if (j_input_buffer_index == -1) {
       // Video codec falls behind - no input buffer available.
       ALOGW << "Encoder drop frame - no input buffers available";
-      current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
-      frames_dropped_media_encoder_++;
-      OnDroppedFrameOnCodecThread();
+      if (frames_received_ > 1) {
+        current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
+        frames_dropped_media_encoder_++;
+        OnDroppedFrameOnCodecThread();
+      } else {
+        // Input buffers are not ready after codec initialization, HW is still
+        // allocating thme - this is expected and should not result in drop
+        // frame report.
+        frames_received_ = 0;
+      }
       return WEBRTC_VIDEO_CODEC_OK;  // TODO(fischman): see webrtc bug 2887.
-    }
-    if (j_input_buffer_index == -2) {
+    } else if (j_input_buffer_index == -2) {
       ResetCodecOnCodecThread();
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
@@ -734,7 +741,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
 
   // Save input image timestamps for later output.
   input_frame_infos_.emplace_back(
-      time_before_calling_encode, input_frame.timestamp(),
+      frame_input_time_ms, input_frame.timestamp(),
       input_frame.render_time_ms(), input_frame.rotation());
 
   last_input_timestamp_ms_ =
@@ -947,6 +954,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
     bool key_frame = GetOutputBufferInfoIsKeyFrame(jni, j_output_buffer_info);
 
     // Get frame timestamps from a queue - for non config frames only.
+    int64_t encoding_start_time_ms = 0;
     int64_t frame_encoding_time_ms = 0;
     last_output_timestamp_ms_ =
         GetOutputBufferInfoPresentationTimestampUs(jni, j_output_buffer_info) /
@@ -956,8 +964,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
       output_timestamp_ = frame_info.frame_timestamp;
       output_render_time_ms_ = frame_info.frame_render_time_ms;
       output_rotation_ = frame_info.rotation;
-      frame_encoding_time_ms =
-          rtc::TimeMillis() - frame_info.encode_start_time;
+      encoding_start_time_ms = frame_info.encode_start_time;
       input_frame_infos_.pop_front();
     }
 
@@ -966,17 +973,6 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
     uint8_t* payload = reinterpret_cast<uint8_t*>(
         jni->GetDirectBufferAddress(j_output_buffer));
     CHECK_EXCEPTION(jni);
-
-    if (frames_encoded_ < kMaxEncodedLogFrames) {
-      int current_latency =
-          (int)(last_input_timestamp_ms_ - last_output_timestamp_ms_);
-      ALOGD << "Encoder frame out # " << frames_encoded_ <<
-          ". Key: " << key_frame <<
-          ". Size: " << payload_size <<
-          ". TS: " << (int)last_output_timestamp_ms_ <<
-          ". Latency: " << current_latency <<
-          ". EncTime: " << frame_encoding_time_ms;
-    }
 
     // Callback - return encoded frame.
     int32_t callback_status = 0;
@@ -1101,6 +1097,21 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
     if (!success) {
       ResetCodecOnCodecThread();
       return false;
+    }
+
+    // Print per frame statistics.
+    if (encoding_start_time_ms > 0) {
+      frame_encoding_time_ms = rtc::TimeMillis() - encoding_start_time_ms;
+    }
+    if (frames_encoded_ < kMaxEncodedLogFrames) {
+      int current_latency =
+          (int)(last_input_timestamp_ms_ - last_output_timestamp_ms_);
+      ALOGD << "Encoder frame out # " << frames_encoded_ <<
+          ". Key: " << key_frame <<
+          ". Size: " << payload_size <<
+          ". TS: " << (int)last_output_timestamp_ms_ <<
+          ". Latency: " << current_latency <<
+          ". EncTime: " << frame_encoding_time_ms;
     }
 
     // Calculate and print encoding statistics - every 3 seconds.
