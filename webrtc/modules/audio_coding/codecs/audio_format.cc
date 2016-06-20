@@ -12,7 +12,6 @@
 
 namespace webrtc {
 
-SdpAudioFormat::SdpAudioFormat() = default;
 SdpAudioFormat::SdpAudioFormat(const SdpAudioFormat&) = default;
 SdpAudioFormat::SdpAudioFormat(SdpAudioFormat&&) = default;
 

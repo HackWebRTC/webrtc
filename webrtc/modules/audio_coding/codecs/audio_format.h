@@ -23,9 +23,6 @@ namespace webrtc {
 struct SdpAudioFormat {
   using Parameters = std::map<std::string, std::string>;
 
-  // TODO(kwiberg): Get rid of the default constructor when rtc::Optional no
-  // longer requires it.
-  SdpAudioFormat();
   SdpAudioFormat(const SdpAudioFormat&);
   SdpAudioFormat(SdpAudioFormat&&);
   SdpAudioFormat(const char* name, int clockrate_hz, int num_channels);
