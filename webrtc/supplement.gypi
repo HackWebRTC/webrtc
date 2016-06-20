@@ -29,10 +29,6 @@
         # libjingle_peerconnection_so file size.
         'libyuv_disable_jpeg%': 1,
       }],
-      ['OS=="android" and target_arch=="mipsel"', {
-        # Linking fails with the gold linker: bugs.webrtc.org/5977.
-        'linux_use_bundled_gold%': 0,
-      }],
     ],
   },
   'target_defaults': {
