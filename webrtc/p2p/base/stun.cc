@@ -145,7 +145,7 @@ bool StunMessage::ValidateMessageIntegrity(const char* data, size_t size,
   // Finding Message Integrity attribute in stun message.
   size_t current_pos = kStunHeaderSize;
   bool has_message_integrity_attr = false;
-  while (current_pos < size) {
+  while (current_pos + 4 <= size) {
     uint16_t attr_type, attr_length;
     // Getting attribute type and length.
     attr_type = rtc::GetBE16(&data[current_pos]);
@@ -154,7 +154,8 @@ bool StunMessage::ValidateMessageIntegrity(const char* data, size_t size,
     // If M-I, sanity check it, and break out.
     if (attr_type == STUN_ATTR_MESSAGE_INTEGRITY) {
       if (attr_length != kStunMessageIntegritySize ||
-          current_pos + attr_length > size) {
+          current_pos + sizeof(attr_type) + sizeof(attr_length) + attr_length >
+              size) {
         return false;
       }
       has_message_integrity_attr = true;

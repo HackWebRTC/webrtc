@@ -243,6 +243,19 @@ static const unsigned char kStunMessageWithSmallLength[] = {
   0x21, 0x12, 0xA4, 0x53,
 };
 
+static const unsigned char kStunMessageWithBadHmacAtEnd[] = {
+  0x00, 0x01, 0x00, 0x14,  // message length exactly 20
+  0x21, 0x12, 0xA4, 0x42,  // magic cookie
+  '0', '1', '2', '3',      // transaction ID
+  '4', '5', '6', '7',
+  '8', '9', 'a', 'b',
+  0x00, 0x08, 0x00, 0x14,  // type=STUN_ATTR_MESSAGE_INTEGRITY, length=20
+  '0', '0', '0', '0',      // We lied, there are only 16 bytes of HMAC.
+  '0', '0', '0', '0',
+  '0', '0', '0', '0',
+  '0', '0', '0', '0',
+};
+
 // RTCP packet, for testing we correctly ignore non stun packet types.
 // V=2, P=false, RC=0, Type=200, Len=6, Sender-SSRC=85, etc
 static const unsigned char kRtcpPacket[] = {
@@ -1192,6 +1205,26 @@ TEST_F(StunTest, ValidateMessageIntegrity) {
   EXPECT_FALSE(StunMessage::ValidateMessageIntegrity(
       reinterpret_cast<const char*>(kStunMessageWithSmallLength),
       sizeof(kStunMessageWithSmallLength),
+      kRfc5769SampleMsgPassword));
+
+  // Again, but with the lengths matching what is claimed in the headers.
+  EXPECT_FALSE(StunMessage::ValidateMessageIntegrity(
+      reinterpret_cast<const char*>(kStunMessageWithZeroLength),
+      kStunHeaderSize + rtc::GetBE16(&kStunMessageWithZeroLength[2]),
+      kRfc5769SampleMsgPassword));
+  EXPECT_FALSE(StunMessage::ValidateMessageIntegrity(
+      reinterpret_cast<const char*>(kStunMessageWithExcessLength),
+      kStunHeaderSize + rtc::GetBE16(&kStunMessageWithExcessLength[2]),
+      kRfc5769SampleMsgPassword));
+  EXPECT_FALSE(StunMessage::ValidateMessageIntegrity(
+      reinterpret_cast<const char*>(kStunMessageWithSmallLength),
+      kStunHeaderSize + rtc::GetBE16(&kStunMessageWithSmallLength[2]),
+      kRfc5769SampleMsgPassword));
+
+  // Check that a too-short HMAC doesn't cause buffer overflow.
+  EXPECT_FALSE(StunMessage::ValidateMessageIntegrity(
+      reinterpret_cast<const char*>(kStunMessageWithBadHmacAtEnd),
+      sizeof(kStunMessageWithBadHmacAtEnd),
       kRfc5769SampleMsgPassword));
 
   // Test that munging a single bit anywhere in the message causes the
