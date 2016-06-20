@@ -7,7 +7,8 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 import("//build/config/features.gni")
-import("webrtc_fuzzer.gni")
+import("//testing/test.gni")
+import("//testing/libfuzzer/fuzzer_test.gni")
 
 static_library("webrtc_fuzzer_main") {
   public_configs = [ "../..:common_inherited_config" ]
@@ -19,6 +20,18 @@ static_library("webrtc_fuzzer_main") {
     "../../system_wrappers:metrics_default",
     "//testing/libfuzzer:libfuzzer_main",
   ]
+}
+
+template("webrtc_fuzzer_test") {
+  fuzzer_test(target_name) {
+    forward_variables_from(invoker, "*")
+    deps += [ ":webrtc_fuzzer_main" ]
+    if (is_clang) {
+      # Suppress warnings from Chrome's Clang plugins.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details
+      suppressed_configs = [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
 }
 
 webrtc_fuzzer_test("h264_depacketizer_fuzzer") {
