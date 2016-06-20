@@ -19,11 +19,8 @@ config("libjingle_peerconnection_warnings_config") {
   # GN orders flags on a target before flags from configs. The default config
   # adds these flags so to cancel them out they need to come from a config and
   # cannot be on the target directly.
-  if (!is_win) {
-    cflags = [ "-Wno-sign-compare" ]
-    if (!is_clang) {
-      cflags += [ "-Wno-maybe-uninitialized" ]  # Only exists for GCC.
-    }
+  if (!is_win && !is_clang) {
+    cflags = [ "-Wno-maybe-uninitialized" ]  # Only exists for GCC.
   }
 }
 
@@ -108,10 +105,6 @@ source_set("libjingle_peerconnection") {
   if (is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     configs -= [ "//build/config/clang:find_bad_constructs" ]
-  }
-
-  if (is_win) {
-    cflags += [ "/wd4389" ]  # signed/unsigned mismatch.
   }
 
   deps = [

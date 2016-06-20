@@ -2190,7 +2190,8 @@ void MaybeCreateStaticPayloadAudioCodecs(
     int payload_type = *it;
     if (!media_desc->HasCodec(payload_type) &&
         payload_type >= 0 &&
-        payload_type < arraysize(kStaticPayloadAudioCodecs)) {
+        static_cast<uint32_t>(payload_type) <
+            arraysize(kStaticPayloadAudioCodecs)) {
       std::string encoding_name = kStaticPayloadAudioCodecs[payload_type].name;
       int clock_rate = kStaticPayloadAudioCodecs[payload_type].clockrate;
       size_t channels = kStaticPayloadAudioCodecs[payload_type].channels;

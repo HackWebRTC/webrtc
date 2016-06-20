@@ -384,7 +384,8 @@ void DataChannel::OnDataReceived(cricket::DataChannel* channel,
 }
 
 void DataChannel::OnStreamClosedRemotely(uint32_t sid) {
-  if (data_channel_type_ == cricket::DCT_SCTP && sid == config_.id) {
+  if (data_channel_type_ == cricket::DCT_SCTP &&
+      sid == static_cast<uint32_t>(config_.id)) {
     Close();
   }
 }

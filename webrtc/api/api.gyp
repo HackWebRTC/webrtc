@@ -169,11 +169,6 @@
         'webrtcsessiondescriptionfactory.cc',
         'webrtcsessiondescriptionfactory.h',
       ],
-      # TODO(kjellander): Make the code compile without disabling these flags.
-      # See https://bugs.chromium.org/p/webrtc/issues/detail?id=3307
-      'cflags': [
-        '-Wno-sign-compare',
-      ],
       'conditions': [
         ['clang==1', {
           'cflags!': [
@@ -186,23 +181,6 @@
           'cflags': [
             '-Wno-maybe-uninitialized',  # Only exists for GCC.
           ],
-        }],
-        ['OS=="win"', {
-          # Disable warning for signed/unsigned mismatch.
-          'msvs_settings': {
-            'VCCLCompilerTool': {
-              'AdditionalOptions!': ['/we4389'],
-            },
-          },
-        }],
-        ['OS=="win" and clang==1', {
-          'msvs_settings': {
-            'VCCLCompilerTool': {
-              'AdditionalOptions': [
-                '-Wno-sign-compare',
-              ],
-            },
-          },
         }],
         ['use_quic==1', {
           'dependencies': [
