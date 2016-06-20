@@ -86,7 +86,8 @@ void AudioProcessingSimulator::ProcessStream(bool fixed_interface) {
 void AudioProcessingSimulator::ProcessReverseStream(bool fixed_interface) {
   if (fixed_interface) {
     const auto st = ScopedTimer(mutable_proc_time());
-    RTC_CHECK_EQ(AudioProcessing::kNoError, ap_->ProcessStream(&rev_frame_));
+    RTC_CHECK_EQ(AudioProcessing::kNoError,
+                 ap_->ProcessReverseStream(&rev_frame_));
     CopyFromAudioFrame(rev_frame_, reverse_out_buf_.get());
 
   } else {
