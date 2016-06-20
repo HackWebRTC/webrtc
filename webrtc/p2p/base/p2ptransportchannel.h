@@ -297,7 +297,14 @@ class P2PTransportChannel : public TransportChannelImpl,
   bool incoming_only_;
   int error_;
   std::vector<std::unique_ptr<PortAllocatorSession>> allocator_sessions_;
-  std::vector<PortInterface *> ports_;
+  // |ports_| contains ports that are used to form new connections when
+  // new remote candidates are added.
+  std::vector<PortInterface*> ports_;
+  // |removed_ports_| contains ports that have been removed from |ports_| and
+  // are not being used to form new connections, but that aren't yet destroyed.
+  // They may have existing connections, and they still fire signals such as
+  // SignalUnknownAddress.
+  std::vector<PortInterface*> removed_ports_;
 
   // |connections_| is a sorted list with the first one always be the
   // |best_connection_| when it's not nullptr. The combination of
