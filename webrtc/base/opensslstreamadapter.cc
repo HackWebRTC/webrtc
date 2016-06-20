@@ -1001,8 +1001,7 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
   // Set a time callback for BoringSSL because:
   // 1. Our time function is more accurate (doesn't just use gettimeofday).
   // 2. This allows us to inject a fake clock for testing.
-  // SSL_CTX_set_current_time_cb(ctx, &TimeCallback);
-  ctx->current_time_cb = &TimeCallback;
+  SSL_CTX_set_current_time_cb(ctx, &TimeCallback);
 #endif
 
   if (identity_ && !identity_->ConfigureIdentity(ctx)) {
