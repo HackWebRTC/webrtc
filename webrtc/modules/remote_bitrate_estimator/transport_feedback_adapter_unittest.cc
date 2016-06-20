@@ -92,7 +92,6 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
       EXPECT_EQ(truth[i].send_time_ms, input[i].send_time_ms);
       EXPECT_EQ(truth[i].sequence_number, input[i].sequence_number);
       EXPECT_EQ(truth[i].payload_size, input[i].payload_size);
-      EXPECT_EQ(truth[i].was_paced, input[i].was_paced);
       EXPECT_EQ(truth[i].probe_cluster_id, input[i].probe_cluster_id);
     }
   }
@@ -100,7 +99,7 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
   // Utility method, to reset arrival_time_ms before adding send time.
   void OnSentPacket(PacketInfo info) {
     info.arrival_time_ms = 0;
-    adapter_->AddPacket(info.sequence_number, info.payload_size, info.was_paced,
+    adapter_->AddPacket(info.sequence_number, info.payload_size,
                         info.probe_cluster_id);
     adapter_->OnSentPacket(info.sequence_number, info.send_time_ms);
   }
@@ -115,11 +114,11 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
 
 TEST_F(TransportFeedbackAdapterTest, AdaptsFeedbackAndPopulatesSendTimes) {
   std::vector<PacketInfo> packets;
-  packets.push_back(PacketInfo(100, 200, 0, 1500, true, 0));
-  packets.push_back(PacketInfo(110, 210, 1, 1500, true, 0));
-  packets.push_back(PacketInfo(120, 220, 2, 1500, true, 0));
-  packets.push_back(PacketInfo(130, 230, 3, 1500, true, 1));
-  packets.push_back(PacketInfo(140, 240, 4, 1500, true, 1));
+  packets.push_back(PacketInfo(100, 200, 0, 1500, 0));
+  packets.push_back(PacketInfo(110, 210, 1, 1500, 0));
+  packets.push_back(PacketInfo(120, 220, 2, 1500, 0));
+  packets.push_back(PacketInfo(130, 230, 3, 1500, 1));
+  packets.push_back(PacketInfo(140, 240, 4, 1500, 1));
 
   for (const PacketInfo& packet : packets)
     OnSentPacket(packet);
@@ -146,11 +145,11 @@ TEST_F(TransportFeedbackAdapterTest, AdaptsFeedbackAndPopulatesSendTimes) {
 
 TEST_F(TransportFeedbackAdapterTest, HandlesDroppedPackets) {
   std::vector<PacketInfo> packets;
-  packets.push_back(PacketInfo(100, 200, 0, 1500, true, 1));
-  packets.push_back(PacketInfo(110, 210, 1, 1500, true, 2));
-  packets.push_back(PacketInfo(120, 220, 2, 1500, true, 3));
-  packets.push_back(PacketInfo(130, 230, 3, 1500, true, 4));
-  packets.push_back(PacketInfo(140, 240, 4, 1500, true, 5));
+  packets.push_back(PacketInfo(100, 200, 0, 1500, 1));
+  packets.push_back(PacketInfo(110, 210, 1, 1500, 2));
+  packets.push_back(PacketInfo(120, 220, 2, 1500, 3));
+  packets.push_back(PacketInfo(130, 230, 3, 1500, 4));
+  packets.push_back(PacketInfo(140, 240, 4, 1500, 5));
 
   const uint16_t kSendSideDropBefore = 1;
   const uint16_t kReceiveSideDropAfter = 3;
@@ -191,12 +190,12 @@ TEST_F(TransportFeedbackAdapterTest, SendTimeWrapsBothWays) {
                                static_cast<int64_t>(1 << 8) *
                                static_cast<int64_t>((1 << 23) - 1) / 1000;
   std::vector<PacketInfo> packets;
-  packets.push_back(PacketInfo(kHighArrivalTimeMs - 64, 200, 0, 1500, true,
+  packets.push_back(PacketInfo(kHighArrivalTimeMs - 64, 200, 0, 1500,
                                PacketInfo::kNotAProbe));
-  packets.push_back(PacketInfo(kHighArrivalTimeMs + 64, 210, 1, 1500, true,
+  packets.push_back(PacketInfo(kHighArrivalTimeMs + 64, 210, 1, 1500,
                                PacketInfo::kNotAProbe));
-  packets.push_back(PacketInfo(kHighArrivalTimeMs, 220, 2, 1500, true,
-                               PacketInfo::kNotAProbe));
+  packets.push_back(
+      PacketInfo(kHighArrivalTimeMs, 220, 2, 1500, PacketInfo::kNotAProbe));
 
   for (const PacketInfo& packet : packets)
     OnSentPacket(packet);
@@ -229,9 +228,9 @@ TEST_F(TransportFeedbackAdapterTest, SendTimeWrapsBothWays) {
 
 TEST_F(TransportFeedbackAdapterTest, HandlesReordering) {
   std::vector<PacketInfo> packets;
-  packets.push_back(PacketInfo(120, 200, 0, 1500, true, 0));
-  packets.push_back(PacketInfo(110, 210, 1, 1500, true, 0));
-  packets.push_back(PacketInfo(100, 220, 2, 1500, true, 0));
+  packets.push_back(PacketInfo(120, 200, 0, 1500, 0));
+  packets.push_back(PacketInfo(110, 210, 1, 1500, 0));
+  packets.push_back(PacketInfo(100, 220, 2, 1500, 0));
   std::vector<PacketInfo> expected_packets;
   expected_packets.push_back(packets[2]);
   expected_packets.push_back(packets[1]);

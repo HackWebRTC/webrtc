@@ -37,7 +37,7 @@ class RemoteEstimatorProxyTest : public ::testing::Test {
     header.extension.hasTransportSequenceNumber = true;
     header.extension.transportSequenceNumber = seq;
     header.ssrc = kMediaSsrc;
-    proxy_.IncomingPacket(time_ms, kDefaultPacketSize, header, true);
+    proxy_.IncomingPacket(time_ms, kDefaultPacketSize, header);
   }
 
   void Process() {

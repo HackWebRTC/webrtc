@@ -173,8 +173,7 @@ class RemoteBitrateEstimatorTest : public ::testing::Test {
                       size_t payload_size,
                       int64_t arrival_time,
                       uint32_t rtp_timestamp,
-                      uint32_t absolute_send_time,
-                      bool was_paced);
+                      uint32_t absolute_send_time);
 
   // Generates a frame of packets belonging to a stream at a given bitrate and
   // with a given ssrc. The stream is pushed through a very simple simulated

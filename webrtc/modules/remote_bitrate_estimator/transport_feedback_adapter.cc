@@ -59,11 +59,9 @@ void TransportFeedbackAdapter::SetBitrateEstimator(
 
 void TransportFeedbackAdapter::AddPacket(uint16_t sequence_number,
                                          size_t length,
-                                         bool was_paced,
                                          int probe_cluster_id) {
   rtc::CritScope cs(&lock_);
-  send_time_history_.AddAndRemoveOld(sequence_number, length, was_paced,
-                                     probe_cluster_id);
+  send_time_history_.AddAndRemoveOld(sequence_number, length, probe_cluster_id);
 }
 
 void TransportFeedbackAdapter::OnSentPacket(uint16_t sequence_number,

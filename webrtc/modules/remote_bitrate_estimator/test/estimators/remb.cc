@@ -95,7 +95,7 @@ void RembReceiver::ReceivePacket(int64_t arrival_time_ms,
     step_ms = std::max<int64_t>(estimator_->TimeUntilNextProcess(), 0);
   }
   estimator_->IncomingPacket(arrival_time_ms, media_packet.payload_size(),
-                             media_packet.header(), true);
+                             media_packet.header());
   clock_.AdvanceTimeMilliseconds(arrival_time_ms - clock_.TimeInMilliseconds());
   ASSERT_TRUE(arrival_time_ms == clock_.TimeInMilliseconds());
 
