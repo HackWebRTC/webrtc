@@ -68,7 +68,7 @@ TEST(BufferTest, TestSetData) {
   Buffer buf(kTestData + 4, 7);
   buf.SetData(kTestData, 9);
   EXPECT_EQ(buf.size(), 9u);
-  EXPECT_EQ(buf.capacity(), 9u);
+  EXPECT_EQ(buf.capacity(), 7u * 3 / 2);
   EXPECT_EQ(0, memcmp(buf.data(), kTestData, 9));
 }
 
@@ -95,7 +95,7 @@ TEST(BufferTest, TestSetSizeLarger) {
   EXPECT_EQ(buf.capacity(), 15u);
   buf.SetSize(20);
   EXPECT_EQ(buf.size(), 20u);
-  EXPECT_EQ(buf.capacity(), 20u);  // Has grown.
+  EXPECT_EQ(buf.capacity(), 15u * 3 / 2);  // Has grown.
   EXPECT_EQ(0, memcmp(buf.data(), kTestData, 15));
 }
 

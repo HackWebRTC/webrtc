@@ -219,7 +219,7 @@ class BufferT {
   void AppendData(const U* data, size_t size) {
     RTC_DCHECK(IsConsistent());
     const size_t new_size = size_ + size;
-    EnsureCapacity(new_size);
+    EnsureCapacityWithHeadroom(new_size, true);
     static_assert(sizeof(T) == sizeof(U), "");
     std::memcpy(data_.get() + size_, data, size * sizeof(U));
     size_ = new_size;
@@ -272,7 +272,7 @@ class BufferT {
   // the existing contents will be kept and the new space will be
   // uninitialized.
   void SetSize(size_t size) {
-    EnsureCapacity(size);
+    EnsureCapacityWithHeadroom(size, true);
     size_ = size;
   }
 
@@ -280,14 +280,9 @@ class BufferT {
   // further reallocation. (Of course, this operation might need to reallocate
   // the buffer.)
   void EnsureCapacity(size_t capacity) {
-    RTC_DCHECK(IsConsistent());
-    if (capacity <= capacity_)
-      return;
-    std::unique_ptr<T[]> new_data(new T[capacity]);
-    std::memcpy(new_data.get(), data_.get(), size_ * sizeof(T));
-    data_ = std::move(new_data);
-    capacity_ = capacity;
-    RTC_DCHECK(IsConsistent());
+    // Don't allocate extra headroom, since the user is asking for a specific
+    // capacity.
+    EnsureCapacityWithHeadroom(capacity, false);
   }
 
   // Resets the buffer to zero size without altering capacity. Works even if the
@@ -306,6 +301,27 @@ class BufferT {
   }
 
  private:
+  void EnsureCapacityWithHeadroom(size_t capacity, bool extra_headroom) {
+    RTC_DCHECK(IsConsistent());
+    if (capacity <= capacity_)
+      return;
+
+    // If the caller asks for extra headroom, ensure that the new capacity is
+    // >= 1.5 times the old capacity. Any constant > 1 is sufficient to prevent
+    // quadratic behavior; as to why we pick 1.5 in particular, see
+    // https://github.com/facebook/folly/blob/master/folly/docs/FBVector.md and
+    // http://www.gahcep.com/cpp-internals-stl-vector-part-1/.
+    const size_t new_capacity =
+        extra_headroom ? std::max(capacity, capacity_ + capacity_ / 2)
+                       : capacity;
+
+    std::unique_ptr<T[]> new_data(new T[new_capacity]);
+    std::memcpy(new_data.get(), data_.get(), size_ * sizeof(T));
+    data_ = std::move(new_data);
+    capacity_ = new_capacity;
+    RTC_DCHECK(IsConsistent());
+  }
+
   // Precondition for all methods except Clear and the destructor.
   // Postcondition for all methods except move construction and move
   // assignment, which leave the moved-from object in a possibly inconsistent
