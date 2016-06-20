@@ -397,6 +397,7 @@ def _RunPythonTests(input_api, output_api):
 
   test_directories = [
     join('tools', 'autoroller', 'unittests'),
+    join('webrtc', 'tools', 'py_event_log_analyzer'),
   ]
 
   tests = []

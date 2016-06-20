@@ -177,6 +177,26 @@
             }],
           ],
         }, # tools_unittests
+        {
+          'target_name': 'rtp_analyzer',
+          'type': 'none',
+          'variables': {
+            'copy_output_dir%': '<(PRODUCT_DIR)',
+          },
+          'copies': [
+            {
+              'destination': '<(copy_output_dir)/',
+              'files': [
+                'py_event_log_analyzer/misc.py',
+                'py_event_log_analyzer/pb_parse.py',
+                'py_event_log_analyzer/rtp_analyzer.py',
+                'py_event_log_analyzer/rtp_analyzer.sh',
+              ]
+            },
+          ],
+          'dependencies': [ '<(webrtc_root)/webrtc.gyp:rtc_event_log_proto' ],
+          'process_outputs_as_sources': 1,
+        }, # rtp_analyzer
       ], # targets
       'conditions': [
         ['OS=="android"', {
