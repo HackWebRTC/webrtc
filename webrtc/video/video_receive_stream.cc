@@ -144,6 +144,7 @@ VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
 }  // namespace
 
 namespace internal {
+
 VideoReceiveStream::VideoReceiveStream(
     int num_cpu_cores,
     CongestionController* congestion_controller,
@@ -160,7 +161,6 @@ VideoReceiveStream::VideoReceiveStream(
       congestion_controller_(congestion_controller),
       call_stats_(call_stats),
       video_receiver_(clock_, nullptr, this, this, this),
-      incoming_video_stream_(config_.disable_prerenderer_smoothing),
       stats_proxy_(&config_, clock_),
       rtp_stream_receiver_(&video_receiver_,
                            congestion_controller_->GetRemoteBitrateEstimator(
@@ -173,23 +173,12 @@ VideoReceiveStream::VideoReceiveStream(
                            &config_,
                            &stats_proxy_,
                            process_thread_),
-      video_stream_decoder_(&video_receiver_,
-                            &rtp_stream_receiver_,
-                            &rtp_stream_receiver_,
-                            rtp_stream_receiver_.IsRetransmissionsEnabled(),
-                            rtp_stream_receiver_.IsFecEnabled(),
-                            &stats_proxy_,
-                            &incoming_video_stream_,
-                            config.pre_render_callback),
       vie_sync_(&video_receiver_) {
   LOG(LS_INFO) << "VideoReceiveStream: " << config_.ToString();
 
   RTC_DCHECK(process_thread_);
   RTC_DCHECK(congestion_controller_);
   RTC_DCHECK(call_stats_);
-
-  // Register the channel to receive stats updates.
-  call_stats_->RegisterStatsObserver(&video_stream_decoder_);
 
   RTC_DCHECK(!config_.decoders.empty());
   std::set<int> decoder_payload_types;
@@ -210,8 +199,6 @@ VideoReceiveStream::VideoReceiveStream(
   }
 
   video_receiver_.SetRenderDelay(config.render_delay_ms);
-  incoming_video_stream_.SetExpectedRenderDelay(config.render_delay_ms);
-  incoming_video_stream_.SetExternalCallback(this);
 
   process_thread_->RegisterModule(&video_receiver_);
   process_thread_->RegisterModule(&vie_sync_);
@@ -230,8 +217,6 @@ VideoReceiveStream::~VideoReceiveStream() {
   // running.
   for (const Decoder& decoder : config_.decoders)
     video_receiver_.RegisterExternalDecoder(nullptr, decoder.payload_type);
-
-  call_stats_->DeregisterStatsObserver(&video_stream_decoder_);
 
   congestion_controller_->GetRemoteBitrateEstimator(UseSendSideBwe(config_))
       ->RemoveStream(rtp_stream_receiver_.GetRemoteSsrc());
@@ -256,7 +241,24 @@ void VideoReceiveStream::Start() {
   if (decode_thread_.IsRunning())
     return;
   transport_adapter_.Enable();
-  incoming_video_stream_.Start();
+  rtc::VideoSinkInterface<VideoFrame>* renderer = nullptr;
+  if (config_.renderer) {
+    if (config_.disable_prerenderer_smoothing) {
+      renderer = this;
+    } else {
+      incoming_video_stream_.reset(
+          new IncomingVideoStream(config_.render_delay_ms, this));
+      renderer = incoming_video_stream_.get();
+    }
+  }
+
+  video_stream_decoder_.reset(new VideoStreamDecoder(
+      &video_receiver_, &rtp_stream_receiver_, &rtp_stream_receiver_,
+      rtp_stream_receiver_.IsRetransmissionsEnabled(),
+      rtp_stream_receiver_.IsFecEnabled(), &stats_proxy_, renderer,
+      config_.pre_render_callback));
+  // Register the channel to receive stats updates.
+  call_stats_->RegisterStatsObserver(video_stream_decoder_.get());
   // Start the decode thread
   decode_thread_.Start();
   decode_thread_.SetPriority(rtc::kHighestPriority);
@@ -264,10 +266,12 @@ void VideoReceiveStream::Start() {
 }
 
 void VideoReceiveStream::Stop() {
-  incoming_video_stream_.Stop();
   rtp_stream_receiver_.StopReceive();
   video_receiver_.TriggerDecoderShutdown();
   decode_thread_.Stop();
+  call_stats_->DeregisterStatsObserver(video_stream_decoder_.get());
+  video_stream_decoder_.reset();
+  incoming_video_stream_.reset();
   transport_adapter_.Disable();
 }
 
@@ -289,16 +293,26 @@ VideoReceiveStream::Stats VideoReceiveStream::GetStats() const {
   return stats_proxy_.GetStats();
 }
 
+// TODO(tommi): This method grabs a lock 6 times.
 void VideoReceiveStream::OnFrame(const VideoFrame& video_frame) {
+  // TODO(tommi): OnDecodedFrame grabs a lock, incidentally the same lock
+  // that OnSyncOffsetUpdated() and OnRenderedFrame() below grab.
   stats_proxy_.OnDecodedFrame();
 
   int64_t sync_offset_ms;
-  if (vie_sync_.GetStreamSyncOffsetInMs(video_frame, &sync_offset_ms))
+  // TODO(tommi): GetStreamSyncOffsetInMs grabs three locks.  One inside the
+  // function itself, another in GetChannel() and a third in
+  // GetPlayoutTimestamp.  Seems excessive.  Anyhow, I'm assuming the function
+  // succeeds most of the time, which leads to grabbing a fourth lock.
+  if (vie_sync_.GetStreamSyncOffsetInMs(video_frame, &sync_offset_ms)) {
+    // TODO(tommi): OnSyncOffsetUpdated grabs a lock.
     stats_proxy_.OnSyncOffsetUpdated(sync_offset_ms);
+  }
 
-  if (config_.renderer)
-    config_.renderer->OnFrame(video_frame);
+  // config_.renderer must never be null if we're getting this callback.
+  config_.renderer->OnFrame(video_frame);
 
+  // TODO(tommi): OnRenderFrame grabs a lock too.
   stats_proxy_.OnRenderedFrame(video_frame.width(), video_frame.height());
 }
 
