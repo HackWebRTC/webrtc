@@ -35,11 +35,9 @@
           ['build_with_chromium==1', {
             'webrtc_root%': '<(DEPTH)/third_party/webrtc',
             'android_tests_path%': '<(DEPTH)/third_party/webrtc/build/android_tests_noop.gyp',
-            'modules_java_gyp_path%': '<(DEPTH)/third_party/webrtc/modules/modules_java_chromium.gyp',
           }, {
             'webrtc_root%': '<(DEPTH)/webrtc',
             'android_tests_path%': '<(DEPTH)/webrtc/build/android_tests.gyp',
-            'modules_java_gyp_path%': '<(DEPTH)/webrtc/modules/modules_java.gyp',
           }],
 
           # Controls whether we use libevent on posix platforms.
@@ -60,7 +58,6 @@
       'enable_libevent%': '<(enable_libevent)',
       'webrtc_root%': '<(webrtc_root)',
       'android_tests_path%': '<(android_tests_path)',
-      'modules_java_gyp_path%': '<(modules_java_gyp_path)',
       'webrtc_vp8_dir%': '<(webrtc_root)/modules/video_coding/codecs/vp8',
       'webrtc_vp9_dir%': '<(webrtc_root)/modules/video_coding/codecs/vp9',
       'include_ilbc%': '<(include_ilbc)',
@@ -74,7 +71,6 @@
     'webrtc_root%': '<(webrtc_root)',
     'android_tests_path%': '<(android_tests_path)',
     'test_runner_path': '<(DEPTH)/webrtc/build/android/test_runner.py',
-    'modules_java_gyp_path%': '<(modules_java_gyp_path)',
     'webrtc_vp8_dir%': '<(webrtc_vp8_dir)',
     'webrtc_vp9_dir%': '<(webrtc_vp9_dir)',
     'include_ilbc%': '<(include_ilbc)',
