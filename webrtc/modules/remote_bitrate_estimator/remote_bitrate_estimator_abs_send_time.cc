@@ -211,14 +211,14 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketFeedbackVector(
   for (const auto& packet_info : packet_feedback_vector) {
     IncomingPacketInfo(packet_info.arrival_time_ms,
                        ConvertMsTo24Bits(packet_info.send_time_ms),
-                       packet_info.payload_size, 0, packet_info.was_paced);
+                       packet_info.payload_size, 0);
   }
 }
 
-void RemoteBitrateEstimatorAbsSendTime::IncomingPacket(int64_t arrival_time_ms,
-                                                       size_t payload_size,
-                                                       const RTPHeader& header,
-                                                       bool was_paced) {
+void RemoteBitrateEstimatorAbsSendTime::IncomingPacket(
+    int64_t arrival_time_ms,
+    size_t payload_size,
+    const RTPHeader& header) {
   RTC_DCHECK(network_thread_.CalledOnValidThread());
   if (!header.extension.hasAbsoluteSendTime) {
     LOG(LS_WARNING) << "RemoteBitrateEstimatorAbsSendTimeImpl: Incoming packet "
@@ -226,15 +226,14 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacket(int64_t arrival_time_ms,
     return;
   }
   IncomingPacketInfo(arrival_time_ms, header.extension.absoluteSendTime,
-                     payload_size, header.ssrc, was_paced);
+                     payload_size, header.ssrc);
 }
 
 void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
     int64_t arrival_time_ms,
     uint32_t send_time_24bits,
     size_t payload_size,
-    uint32_t ssrc,
-    bool was_paced) {
+    uint32_t ssrc) {
   assert(send_time_24bits < (1ul << 24));
   // Shift up send time to use the full 32 bits that inter_arrival works with,
   // so wrapping works properly.
@@ -264,10 +263,6 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
   uint32_t ts_delta = 0;
   int64_t t_delta = 0;
   int size_delta = 0;
-  // For now only try to detect probes while we don't have a valid estimate, and
-  // make sure the packet was paced. We currently assume that only packets
-  // larger than 200 bytes are paced by the sender.
-  was_paced = was_paced && payload_size > PacedSender::kMinProbePacketSize;
   bool update_estimate = false;
   uint32_t target_bitrate_bps = 0;
   std::vector<uint32_t> ssrcs;
@@ -279,7 +274,10 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
     RTC_DCHECK(estimator_.get());
     ssrcs_[ssrc] = now_ms;
 
-    if (was_paced &&
+    // For now only try to detect probes while we don't have a valid estimate.
+    // We currently assume that only packets larger than 200 bytes are paced by
+    // the sender.
+    if (payload_size > PacedSender::kMinProbePacketSize &&
         (!remote_rate_.ValidEstimate() ||
          now_ms - first_packet_time_ms_ < kInitialProbingIntervalMs)) {
       // TODO(holmer): Use a map instead to get correct order?

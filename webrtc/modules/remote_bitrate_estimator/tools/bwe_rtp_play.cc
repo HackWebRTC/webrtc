@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
           packet_length = packet.original_length;
         }
         rbe->IncomingPacket(clock.TimeInMilliseconds(),
-                            packet_length - header.headerLength, header, true);
+                            packet_length - header.headerLength, header);
         ++packet_counter;
       }
       if (!rtp_reader->NextPacket(&packet)) {

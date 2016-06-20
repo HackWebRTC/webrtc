@@ -26,7 +26,6 @@ class SendTimeHistory {
 
   void AddAndRemoveOld(uint16_t sequence_number,
                        size_t length,
-                       bool was_paced,
                        int probe_cluster_id);
   bool OnSentPacket(uint16_t sequence_number, int64_t timestamp);
   // Look up PacketInfo for a sent packet, based on the sequence number, and

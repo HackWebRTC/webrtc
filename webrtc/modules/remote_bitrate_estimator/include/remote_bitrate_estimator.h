@@ -58,8 +58,7 @@ class RemoteBitrateEstimator : public CallStatsObserver, public Module {
   // Note that |arrival_time_ms| can be of an arbitrary time base.
   virtual void IncomingPacket(int64_t arrival_time_ms,
                               size_t payload_size,
-                              const RTPHeader& header,
-                              bool was_paced) = 0;
+                              const RTPHeader& header) = 0;
 
   // Removes all data for |ssrc|.
   virtual void RemoveStream(uint32_t ssrc) = 0;

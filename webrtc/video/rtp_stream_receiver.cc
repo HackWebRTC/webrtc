@@ -310,7 +310,7 @@ bool RtpStreamReceiver::DeliverRtp(const uint8_t* rtp_packet,
   }
 
   remote_bitrate_estimator_->IncomingPacket(arrival_time_ms, payload_length,
-                                            header, true);
+                                            header);
   header.payload_type_frequency = kVideoPayloadTypeFrequency;
 
   bool in_order = IsPacketInOrder(header);

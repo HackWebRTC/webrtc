@@ -76,8 +76,7 @@ class RemoteBitrateEstimatorAbsSendTime : public RemoteBitrateEstimator {
 
   void IncomingPacket(int64_t arrival_time_ms,
                       size_t payload_size,
-                      const RTPHeader& header,
-                      bool was_paced) override;
+                      const RTPHeader& header) override;
   // This class relies on Process() being called periodically (at least once
   // every other second) for streams to be timed out properly. Therefore it
   // shouldn't be detached from the ProcessThread except if it's about to be
@@ -102,8 +101,7 @@ class RemoteBitrateEstimatorAbsSendTime : public RemoteBitrateEstimator {
   void IncomingPacketInfo(int64_t arrival_time_ms,
                           uint32_t send_time_24bits,
                           size_t payload_size,
-                          uint32_t ssrc,
-                          bool was_paced);
+                          uint32_t ssrc);
 
   void ComputeClusters(std::list<Cluster>* clusters) const;
 

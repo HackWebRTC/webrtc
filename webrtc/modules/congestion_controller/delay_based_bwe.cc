@@ -198,15 +198,14 @@ void DelayBasedBwe::IncomingPacketFeedbackVector(
   for (const auto& packet_info : packet_feedback_vector) {
     IncomingPacketInfo(packet_info.arrival_time_ms,
                        ConvertMsTo24Bits(packet_info.send_time_ms),
-                       packet_info.payload_size, 0, packet_info.was_paced,
+                       packet_info.payload_size, 0,
                        packet_info.probe_cluster_id);
   }
 }
 
 void DelayBasedBwe::IncomingPacket(int64_t arrival_time_ms,
                                    size_t payload_size,
-                                   const RTPHeader& header,
-                                   bool was_paced) {
+                                   const RTPHeader& header) {
   RTC_DCHECK(network_thread_.CalledOnValidThread());
   if (!header.extension.hasAbsoluteSendTime) {
     // NOTE! The BitrateEstimatorTest relies on this EXACT log line.
@@ -215,14 +214,12 @@ void DelayBasedBwe::IncomingPacket(int64_t arrival_time_ms,
     return;
   }
   IncomingPacketInfo(arrival_time_ms, header.extension.absoluteSendTime,
-                     payload_size, header.ssrc, was_paced,
-                     PacketInfo::kNotAProbe);
+                     payload_size, header.ssrc, PacketInfo::kNotAProbe);
 }
 
 void DelayBasedBwe::IncomingPacket(int64_t arrival_time_ms,
                                    size_t payload_size,
                                    const RTPHeader& header,
-                                   bool was_paced,
                                    int probe_cluster_id) {
   RTC_DCHECK(network_thread_.CalledOnValidThread());
   if (!header.extension.hasAbsoluteSendTime) {
@@ -232,14 +229,13 @@ void DelayBasedBwe::IncomingPacket(int64_t arrival_time_ms,
     return;
   }
   IncomingPacketInfo(arrival_time_ms, header.extension.absoluteSendTime,
-                     payload_size, header.ssrc, was_paced, probe_cluster_id);
+                     payload_size, header.ssrc, probe_cluster_id);
 }
 
 void DelayBasedBwe::IncomingPacketInfo(int64_t arrival_time_ms,
                                        uint32_t send_time_24bits,
                                        size_t payload_size,
                                        uint32_t ssrc,
-                                       bool was_paced,
                                        int probe_cluster_id) {
   assert(send_time_24bits < (1ul << 24));
   // Shift up send time to use the full 32 bits that inter_arrival works with,

@@ -33,7 +33,6 @@ class TestDelayBasedBwe : public ::testing::Test, public RemoteBitrateObserver {
                       int64_t arrival_time,
                       uint32_t rtp_timestamp,
                       uint32_t absolute_send_time,
-                      bool was_paced,
                       int probe_cluster_id) {
     RTPHeader header;
     memset(&header, 0, sizeof(header));
@@ -42,7 +41,7 @@ class TestDelayBasedBwe : public ::testing::Test, public RemoteBitrateObserver {
     header.extension.hasAbsoluteSendTime = true;
     header.extension.absoluteSendTime = absolute_send_time;
     bwe_.IncomingPacket(arrival_time + kArrivalTimeClockOffsetMs, payload_size,
-                        header, was_paced, probe_cluster_id);
+                        header, probe_cluster_id);
   }
 
   void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
@@ -74,8 +73,7 @@ TEST_F(TestDelayBasedBwe, ProbeDetection) {
   for (int i = 0; i < kNumProbes; ++i) {
     clock_.AdvanceTimeMilliseconds(10);
     now_ms = clock_.TimeInMilliseconds();
-    IncomingPacket(0, 1000, now_ms, 90 * now_ms, AbsSendTime(now_ms, 1000),
-                   true, 0);
+    IncomingPacket(0, 1000, now_ms, 90 * now_ms, AbsSendTime(now_ms, 1000), 0);
   }
   EXPECT_TRUE(bitrate_updated());
 
@@ -83,8 +81,7 @@ TEST_F(TestDelayBasedBwe, ProbeDetection) {
   for (int i = 0; i < kNumProbes; ++i) {
     clock_.AdvanceTimeMilliseconds(5);
     now_ms = clock_.TimeInMilliseconds();
-    IncomingPacket(0, 1000, now_ms, 90 * now_ms, AbsSendTime(now_ms, 1000),
-                   true, 1);
+    IncomingPacket(0, 1000, now_ms, 90 * now_ms, AbsSendTime(now_ms, 1000), 1);
   }
 
   EXPECT_TRUE(bitrate_updated());
@@ -98,12 +95,11 @@ TEST_F(TestDelayBasedBwe, ProbeDetectionNonPacedPackets) {
   for (int i = 0; i < kNumProbes; ++i) {
     clock_.AdvanceTimeMilliseconds(5);
     now_ms = clock_.TimeInMilliseconds();
-    IncomingPacket(0, 1000, now_ms, 90 * now_ms, AbsSendTime(now_ms, 1000),
-                   true, 0);
+    IncomingPacket(0, 1000, now_ms, 90 * now_ms, AbsSendTime(now_ms, 1000), 0);
     // Non-paced packet, arriving 5 ms after.
     clock_.AdvanceTimeMilliseconds(5);
     IncomingPacket(0, PacedSender::kMinProbePacketSize + 1, now_ms, 90 * now_ms,
-                   AbsSendTime(now_ms, 1000), false, PacketInfo::kNotAProbe);
+                   AbsSendTime(now_ms, 1000), PacketInfo::kNotAProbe);
   }
 
   EXPECT_TRUE(bitrate_updated());
@@ -121,7 +117,7 @@ TEST_F(TestDelayBasedBwe, ProbeDetectionTooHighBitrate) {
     now_ms = clock_.TimeInMilliseconds();
     send_time_ms += 10;
     IncomingPacket(0, 1000, now_ms, 90 * send_time_ms,
-                   AbsSendTime(send_time_ms, 1000), true, 0);
+                   AbsSendTime(send_time_ms, 1000), 0);
   }
 
   // Second burst sent at 8 * 1000 / 5 = 1600 kbps, arriving at 8 * 1000 / 8 =
@@ -131,7 +127,7 @@ TEST_F(TestDelayBasedBwe, ProbeDetectionTooHighBitrate) {
     now_ms = clock_.TimeInMilliseconds();
     send_time_ms += 5;
     IncomingPacket(0, 1000, now_ms, send_time_ms,
-                   AbsSendTime(send_time_ms, 1000), true, 1);
+                   AbsSendTime(send_time_ms, 1000), 1);
   }
 
   EXPECT_TRUE(bitrate_updated());
@@ -148,7 +144,7 @@ TEST_F(TestDelayBasedBwe, ProbeDetectionSlightlyFasterArrival) {
     send_time_ms += 10;
     now_ms = clock_.TimeInMilliseconds();
     IncomingPacket(0, 1000, now_ms, 90 * send_time_ms,
-                   AbsSendTime(send_time_ms, 1000), true, 23);
+                   AbsSendTime(send_time_ms, 1000), 23);
   }
 
   EXPECT_TRUE(bitrate_updated());
@@ -165,7 +161,7 @@ TEST_F(TestDelayBasedBwe, ProbeDetectionFasterArrival) {
     send_time_ms += 10;
     now_ms = clock_.TimeInMilliseconds();
     IncomingPacket(0, 1000, now_ms, 90 * send_time_ms,
-                   AbsSendTime(send_time_ms, 1000), true, 0);
+                   AbsSendTime(send_time_ms, 1000), 0);
   }
 
   EXPECT_FALSE(bitrate_updated());
@@ -181,7 +177,7 @@ TEST_F(TestDelayBasedBwe, ProbeDetectionSlowerArrival) {
     send_time_ms += 5;
     now_ms = clock_.TimeInMilliseconds();
     IncomingPacket(0, 1000, now_ms, 90 * send_time_ms,
-                   AbsSendTime(send_time_ms, 1000), true, 1);
+                   AbsSendTime(send_time_ms, 1000), 1);
   }
 
   EXPECT_TRUE(bitrate_updated());
@@ -198,7 +194,7 @@ TEST_F(TestDelayBasedBwe, ProbeDetectionSlowerArrivalHighBitrate) {
     send_time_ms += 1;
     now_ms = clock_.TimeInMilliseconds();
     IncomingPacket(0, 1000, now_ms, 90 * send_time_ms,
-                   AbsSendTime(send_time_ms, 1000), true, 1);
+                   AbsSendTime(send_time_ms, 1000), 1);
   }
 
   EXPECT_TRUE(bitrate_updated());
@@ -213,7 +209,7 @@ TEST_F(TestDelayBasedBwe, ProbingIgnoresSmallPackets) {
     clock_.AdvanceTimeMilliseconds(10);
     now_ms = clock_.TimeInMilliseconds();
     IncomingPacket(0, PacedSender::kMinProbePacketSize, now_ms, 90 * now_ms,
-                   AbsSendTime(now_ms, 1000), true, 1);
+                   AbsSendTime(now_ms, 1000), 1);
   }
 
   EXPECT_FALSE(bitrate_updated());
@@ -223,8 +219,7 @@ TEST_F(TestDelayBasedBwe, ProbingIgnoresSmallPackets) {
   for (int i = 0; i < kNumProbes; ++i) {
     clock_.AdvanceTimeMilliseconds(10);
     now_ms = clock_.TimeInMilliseconds();
-    IncomingPacket(0, 1000, now_ms, 90 * now_ms, AbsSendTime(now_ms, 1000),
-                   true, 1);
+    IncomingPacket(0, 1000, now_ms, 90 * now_ms, AbsSendTime(now_ms, 1000), 1);
   }
 
   // Wait long enough so that we can call Process again.

@@ -254,7 +254,7 @@ bool AudioReceiveStream::DeliverRtp(const uint8_t* packet,
       arrival_time_ms = (packet_time.timestamp + 500) / 1000;
     size_t payload_size = length - header.headerLength;
     remote_bitrate_estimator_->IncomingPacket(arrival_time_ms, payload_size,
-                                              header, false);
+                                              header);
   }
 
   return channel_proxy_->ReceivedRTPPacket(packet, length, packet_time);
