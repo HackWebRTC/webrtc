@@ -279,7 +279,7 @@ TEST(AudioReceiveStreamTest, ReceiveRtpPacket) {
   EXPECT_CALL(*helper.remote_bitrate_estimator(),
               IncomingPacket(packet_time.timestamp / 1000,
                              rtp_packet.size() - kExpectedHeaderLength,
-                             VerifyHeaderExtension(expected_extension)))
+                             VerifyHeaderExtension(expected_extension), false))
       .Times(1);
   EXPECT_CALL(*helper.channel_proxy(),
               ReceivedRTPPacket(&rtp_packet[0],

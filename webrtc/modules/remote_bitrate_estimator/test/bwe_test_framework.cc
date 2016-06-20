@@ -99,14 +99,18 @@ Packet::Packet()
       creation_time_us_(-1),
       send_time_us_(-1),
       sender_timestamp_us_(-1),
-      payload_size_(0) {}
+      payload_size_(0),
+      paced_(false) {
+}
 
 Packet::Packet(int flow_id, int64_t send_time_us, size_t payload_size)
     : flow_id_(flow_id),
       creation_time_us_(send_time_us),
       send_time_us_(send_time_us),
       sender_timestamp_us_(send_time_us),
-      payload_size_(payload_size) {}
+      payload_size_(payload_size),
+      paced_(false) {
+}
 
 Packet::~Packet() {
 }

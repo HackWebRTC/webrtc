@@ -40,11 +40,13 @@ class DelayBasedBwe : public RemoteBitrateEstimator {
 
   void IncomingPacket(int64_t arrival_time_ms,
                       size_t payload_size,
-                      const RTPHeader& header) override;
+                      const RTPHeader& header,
+                      bool was_paced) override;
 
   void IncomingPacket(int64_t arrival_time_ms,
                       size_t payload_size,
                       const RTPHeader& header,
+                      bool was_paced,
                       int probe_cluster_id);
 
   // This class relies on Process() being called periodically (at least once
@@ -110,6 +112,7 @@ class DelayBasedBwe : public RemoteBitrateEstimator {
                           uint32_t send_time_24bits,
                           size_t payload_size,
                           uint32_t ssrc,
+                          bool was_paced,
                           int probe_cluster_id);
 
   void ComputeClusters(std::list<Cluster>* clusters) const;

@@ -719,7 +719,7 @@ size_t RTPSender::SendPadData(size_t bytes,
                                         length, rtp_header)) {
         if (transport_feedback_observer_)
           transport_feedback_observer_->AddPacket(options.packet_id, length,
-                                                  probe_cluster_id);
+                                                  true, probe_cluster_id);
       }
     }
 
@@ -980,7 +980,7 @@ bool RTPSender::PrepareAndSendPacket(uint8_t* buffer,
     if (UpdateTransportSequenceNumber(options.packet_id, buffer_to_send_ptr,
                                       length, rtp_header)) {
       if (transport_feedback_observer_)
-        transport_feedback_observer_->AddPacket(options.packet_id, length,
+        transport_feedback_observer_->AddPacket(options.packet_id, length, true,
                                                 probe_cluster_id);
     }
   }
@@ -1111,7 +1111,7 @@ int32_t RTPSender::SendToNetwork(uint8_t* buffer,
     if (UpdateTransportSequenceNumber(options.packet_id, buffer, length,
                                       rtp_header)) {
       if (transport_feedback_observer_)
-        transport_feedback_observer_->AddPacket(options.packet_id, length,
+        transport_feedback_observer_->AddPacket(options.packet_id, length, true,
                                                 PacketInfo::kNotAProbe);
     }
   }

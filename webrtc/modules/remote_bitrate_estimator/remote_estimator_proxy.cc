@@ -43,7 +43,8 @@ void RemoteEstimatorProxy::IncomingPacketFeedbackVector(
 
 void RemoteEstimatorProxy::IncomingPacket(int64_t arrival_time_ms,
                                           size_t payload_size,
-                                          const RTPHeader& header) {
+                                          const RTPHeader& header,
+                                          bool was_paced) {
   if (!header.extension.hasTransportSequenceNumber) {
     LOG(LS_WARNING) << "RemoteEstimatorProxy: Incoming packet "
                        "is missing the transport sequence number extension!";

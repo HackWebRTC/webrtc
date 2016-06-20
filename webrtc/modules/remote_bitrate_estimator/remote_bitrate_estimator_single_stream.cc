@@ -67,10 +67,10 @@ RemoteBitrateEstimatorSingleStream::~RemoteBitrateEstimatorSingleStream() {
   }
 }
 
-void RemoteBitrateEstimatorSingleStream::IncomingPacket(
-    int64_t arrival_time_ms,
-    size_t payload_size,
-    const RTPHeader& header) {
+void RemoteBitrateEstimatorSingleStream::IncomingPacket(int64_t arrival_time_ms,
+                                                        size_t payload_size,
+                                                        const RTPHeader& header,
+                                                        bool was_paced) {
   uint32_t ssrc = header.ssrc;
   uint32_t rtp_timestamp = header.timestamp +
       header.extension.transmissionTimeOffset;
