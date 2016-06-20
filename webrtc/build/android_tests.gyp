@@ -126,7 +126,7 @@
       },
       'dependencies': [
         '<(webrtc_root)/api/api_tests.gyp:peerconnection_unittests',
-        '<(webrtc_root)/api/api.gyp:libjingle_peerconnection_java',
+        '<(webrtc_root)/api/api_java.gyp:libjingle_peerconnection_java',
       ],
       'includes': [
         '../../build/apk_test.gypi',
@@ -264,7 +264,7 @@
       'target_name': 'android_junit_tests',
       'type': 'none',
       'dependencies': [
-        '<(webrtc_root)/api/api.gyp:libjingle_peerconnection_java',
+        '<(webrtc_root)/api/api_java.gyp:libjingle_peerconnection_java',
         '<(DEPTH)/base/base.gyp:base_java',
         '<(DEPTH)/base/base.gyp:base_java_test_support',
         '<(DEPTH)/base/base.gyp:base_junit_test_support',

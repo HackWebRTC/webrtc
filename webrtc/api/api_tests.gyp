@@ -129,7 +129,7 @@
           'target_name': 'libjingle_peerconnection_android_unittest',
           'type': 'none',
           'dependencies': [
-            '<(webrtc_root)/api/api.gyp:libjingle_peerconnection_java',
+            '<(webrtc_root)/api/api_java.gyp:libjingle_peerconnection_java',
           ],
           'variables': {
             'apk_name': 'libjingle_peerconnection_android_unittest',

@@ -36,6 +36,11 @@
         '<(webrtc_vp9_dir)/vp9.gyp:*',
       ],
       'conditions': [
+        ['OS=="android" and build_with_chromium==0', {
+          'dependencies': [
+            'webrtc/api/api_java.gyp:*',
+          ],
+        }],
         ['include_tests==1', {
           'includes': [
             'webrtc/webrtc_tests.gypi',

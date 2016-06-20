@@ -89,35 +89,6 @@
             'use_native_jni_exports': 1,
           },
         },
-        {
-          # |libjingle_peerconnection_java| builds a jar file with name
-          # libjingle_peerconnection_java.jar using Chrome's build system.
-          # It includes all Java files needed to setup a PeeerConnection call
-          # from Android.
-          'target_name': 'libjingle_peerconnection_java',
-          'type': 'none',
-          'dependencies': [
-            'libjingle_peerconnection_so',
-          ],
-          'variables': {
-            # Designate as Chromium code and point to our lint settings to
-            # enable linting of the WebRTC code (this is the only way to make
-            # lint_action invoke the Android linter).
-            'android_manifest_path': '<(webrtc_root)/build/android/AndroidManifest.xml',
-            'suppressions_file': '<(webrtc_root)/build/android/suppressions.xml',
-            'chromium_code': 1,
-            'java_in_dir': 'java',
-            'webrtc_base_dir': '<(webrtc_root)/base',
-            'webrtc_modules_dir': '<(webrtc_root)/modules',
-            'additional_src_dirs' : [
-              'java/android',
-              '<(webrtc_base_dir)/java/src',
-              '<(webrtc_modules_dir)/audio_device/android/java/src',
-
-            ],
-          },
-          'includes': ['../../build/java.gypi'],
-        }, # libjingle_peerconnection_java
       ]
     }],
   ],  # conditions

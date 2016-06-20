@@ -409,7 +409,7 @@
           'target_name': 'AppRTCDemo',
           'type': 'none',
           'dependencies': [
-            'api/api.gyp:libjingle_peerconnection_java',
+            'api/api_java.gyp:libjingle_peerconnection_java',
           ],
           'variables': {
             'apk_name': 'AppRTCDemo',
