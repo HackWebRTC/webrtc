@@ -86,7 +86,7 @@ void VideoDenoiser::DenoiserReset(
   stride_v_ = frame->StrideV();
 
   // Allocate an empty buffer for denoised_frame_prev.
-  *denoised_frame_prev = new rtc::RefCountedObject<I420Buffer>(
+  *denoised_frame_prev = I420Buffer::Create(
       width_, height_, stride_y_, stride_u_, stride_v_);
   // Allocate and initialize denoised_frame with key frame.
   *denoised_frame = I420Buffer::CopyKeepStride(frame);

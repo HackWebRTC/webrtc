@@ -88,6 +88,13 @@ class I420Buffer : public VideoFrameBuffer {
   I420Buffer(int width, int height);
   I420Buffer(int width, int height, int stride_y, int stride_u, int stride_v);
 
+  static rtc::scoped_refptr<I420Buffer> Create(int width, int height);
+  static rtc::scoped_refptr<I420Buffer> Create(int width,
+                                               int height,
+                                               int stride_y,
+                                               int stride_u,
+                                               int stride_v);
+
   // Sets all three planes to all zeros. Used to work around for
   // quirks in memory checkers
   // (https://bugs.chromium.org/p/libyuv/issues/detail?id=377) and

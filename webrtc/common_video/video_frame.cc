@@ -61,7 +61,7 @@ void VideoFrame::CreateEmptyFrame(int width,
   rotation_ = kVideoRotation_0;
 
   // Allocate a new buffer.
-  video_frame_buffer_ = new rtc::RefCountedObject<I420Buffer>(
+  video_frame_buffer_ = I420Buffer::Create(
       width, height, stride_y, stride_u, stride_v);
 }
 

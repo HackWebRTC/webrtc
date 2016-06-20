@@ -42,8 +42,7 @@ class QualityScalerTest : public ::testing::Test {
   };
 
   QualityScalerTest() {
-    input_frame_ = rtc::scoped_refptr<VideoFrameBuffer>(
-        new rtc::RefCountedObject<I420Buffer>(kWidth, kHeight));
+    input_frame_ = I420Buffer::Create(kWidth, kHeight);
     qs_.Init(kLowQpThreshold, kHighQp, 0, 0, 0, kFramerate);
     qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
   }
@@ -219,14 +218,12 @@ TEST_F(QualityScalerTest,
        ContinuouslyDownscalesOddResolutionsByHalfDimensionsAndBackUp) {
   const int kOddWidth = 517;
   const int kOddHeight = 1239;
-  input_frame_ = rtc::scoped_refptr<VideoFrameBuffer>(
-      new rtc::RefCountedObject<I420Buffer>(kOddWidth, kOddHeight));
+  input_frame_ = I420Buffer::Create(kOddWidth, kOddHeight);
   ContinuouslyDownscalesByHalfDimensionsAndBackUp();
 }
 
 void QualityScalerTest::DoesNotDownscaleFrameDimensions(int width, int height) {
-  input_frame_ = rtc::scoped_refptr<VideoFrameBuffer>(
-      new rtc::RefCountedObject<I420Buffer>(width, height));
+  input_frame_ = I420Buffer::Create(width, height);
 
   for (int i = 0; i < kFramerate * kNumSeconds; ++i) {
     qs_.ReportDroppedFrame();
@@ -262,8 +259,7 @@ TEST_F(QualityScalerTest, DownscaleToVgaOnLowInitialBitrate) {
   static const int kWidth720p = 1280;
   static const int kHeight720p = 720;
   static const int kInitialBitrateKbps = 300;
-  input_frame_ = rtc::scoped_refptr<VideoFrameBuffer>(
-      new rtc::RefCountedObject<I420Buffer>(kWidth720p, kHeight720p));
+  input_frame_ = I420Buffer::Create(kWidth720p, kHeight720p);
   qs_.Init(kLowQpThreshold, kDisabledBadQpThreshold, kInitialBitrateKbps,
            kWidth720p, kHeight720p, kFramerate);
   qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
@@ -277,8 +273,7 @@ TEST_F(QualityScalerTest, DownscaleToQvgaOnLowerInitialBitrate) {
   static const int kWidth720p = 1280;
   static const int kHeight720p = 720;
   static const int kInitialBitrateKbps = 200;
-  input_frame_ = rtc::scoped_refptr<VideoFrameBuffer>(
-      new rtc::RefCountedObject<I420Buffer>(kWidth720p, kHeight720p));
+  input_frame_ = I420Buffer::Create(kWidth720p, kHeight720p);
   qs_.Init(kLowQpThreshold, kDisabledBadQpThreshold, kInitialBitrateKbps,
            kWidth720p, kHeight720p, kFramerate);
   qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
@@ -353,8 +348,7 @@ void QualityScalerTest::DownscaleEndsAt(int input_width,
                                         int end_height) {
   // Create a frame with 2x expected end width/height to verify that we can
   // scale down to expected end width/height.
-  input_frame_ = rtc::scoped_refptr<VideoFrameBuffer>(
-      new rtc::RefCountedObject<I420Buffer>(input_width, input_height));
+  input_frame_ = I420Buffer::Create(input_width, input_height);
 
   int last_width = input_width;
   int last_height = input_height;

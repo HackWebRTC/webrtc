@@ -1577,24 +1577,6 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::~WebRtcVideoSendStream() {
   DestroyVideoEncoder(&allocated_encoder_);
 }
 
-static webrtc::VideoFrame CreateBlackFrame(int width,
-                                           int height,
-                                           int64_t render_time_ms_,
-                                           webrtc::VideoRotation rotation) {
-  webrtc::VideoFrame frame;
-  frame.CreateEmptyFrame(width, height, width, (width + 1) / 2,
-                         (width + 1) / 2);
-  memset(frame.video_frame_buffer()->MutableDataY(), 16,
-         frame.allocated_size(webrtc::kYPlane));
-  memset(frame.video_frame_buffer()->MutableDataU(), 128,
-         frame.allocated_size(webrtc::kUPlane));
-  memset(frame.video_frame_buffer()->MutableDataV(), 128,
-         frame.allocated_size(webrtc::kVPlane));
-  frame.set_rotation(rotation);
-  frame.set_render_time_ms(render_time_ms_);
-  return frame;
-}
-
 void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
     const VideoFrame& frame) {
   TRACE_EVENT0("webrtc", "WebRtcVideoSendStream::OnFrame");
@@ -1691,8 +1673,13 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoSend(
         // necessary to give this black frame a larger timestamp than the
         // previous one.
         last_frame_timestamp_ms_ += 1;
-        stream_->Input()->IncomingCapturedFrame(CreateBlackFrame(
-            last_frame_info_.width, last_frame_info_.height,
+        rtc::scoped_refptr<webrtc::I420Buffer> black_buffer(
+            webrtc::I420Buffer::Create(last_frame_info_.width,
+                                       last_frame_info_.height));
+        black_buffer->SetToBlack();
+
+        stream_->Input()->IncomingCapturedFrame(webrtc::VideoFrame(
+            black_buffer,  0 /* timestamp (90 kHz) */,
             last_frame_timestamp_ms_, last_frame_info_.rotation));
       }
       source_ = source;

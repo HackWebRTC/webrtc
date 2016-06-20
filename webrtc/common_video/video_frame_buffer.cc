@@ -134,6 +134,19 @@ I420Buffer::I420Buffer(int width,
 I420Buffer::~I420Buffer() {
 }
 
+rtc::scoped_refptr<I420Buffer> I420Buffer::Create(int width, int height) {
+  return new rtc::RefCountedObject<I420Buffer>(width, height);
+}
+
+rtc::scoped_refptr<I420Buffer> I420Buffer::Create(int width,
+                                                  int height,
+                                                  int stride_y,
+                                                  int stride_u,
+                                                  int stride_v) {
+  return new rtc::RefCountedObject<I420Buffer>(
+      width, height, stride_y, stride_u, stride_v);
+}
+
 void I420Buffer::InitializeData() {
   memset(data_.get(), 0,
          I420DataSize(height_, stride_y_, stride_u_, stride_v_));
@@ -190,8 +203,7 @@ rtc::scoped_refptr<I420Buffer> I420Buffer::Copy(
     const rtc::scoped_refptr<VideoFrameBuffer>& source) {
   int width = source->width();
   int height = source->height();
-  rtc::scoped_refptr<I420Buffer> target =
-      new rtc::RefCountedObject<I420Buffer>(width, height);
+  rtc::scoped_refptr<I420Buffer> target = I420Buffer::Create(width, height);
   RTC_CHECK(libyuv::I420Copy(source->DataY(), source->StrideY(),
                              source->DataU(), source->StrideU(),
                              source->DataV(), source->StrideV(),
@@ -273,8 +285,7 @@ rtc::scoped_refptr<I420Buffer> I420Buffer::CopyKeepStride(
   int stride_u = source->StrideU();
   int stride_v = source->StrideV();
   rtc::scoped_refptr<I420Buffer> target =
-      new rtc::RefCountedObject<I420Buffer>(
-          width, height, stride_y, stride_u, stride_v);
+      I420Buffer::Create(width, height, stride_y, stride_u, stride_v);
   RTC_CHECK(libyuv::I420Copy(source->DataY(), stride_y,
                              source->DataU(), stride_u,
                              source->DataV(), stride_v,
