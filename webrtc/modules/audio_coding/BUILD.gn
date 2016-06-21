@@ -945,6 +945,58 @@ if (rtc_include_tests) {
       ]
       proto_out_dir = "webrtc/audio_coding/neteq"
     }
+
+    source_set("rtc_event_log_source") {
+      testonly = true
+      sources = [
+        "neteq/tools/rtc_event_log_source.cc",
+        "neteq/tools/rtc_event_log_source.h",
+      ]
+
+      if (is_clang) {
+        # Suppress warnings from the Chromium Clang plugins
+        # (bugs.webrtc.org/163).
+        configs -= [ "//build/config/clang:find_bad_constructs" ]
+      }
+
+      deps = [
+        "../../:rtc_event_log_parser",
+      ]
+      public_deps = [
+        "../../:rtc_event_log_proto",
+      ]
+    }
+
+    test("neteq_rtpplay") {
+      testonly = true
+      defines = []
+      deps = []
+      sources = [
+        "neteq/tools/neteq_rtpplay.cc",
+      ]
+
+      if (is_clang) {
+        # Suppress warnings from the Chromium Clang plugins
+        # (bugs.webrtc.org/163).
+        configs -= [ "//build/config/clang:find_bad_constructs" ]
+      }
+
+      if (is_win) {
+        cflags = [
+          # TODO(kjellander): bugs.webrtc.org/261: Fix this warning.
+          "/wd4373",  # virtual function override.
+        ]
+      }
+
+      deps += [
+        ":neteq",
+        ":neteq_unittest_tools",
+        ":rtc_event_log_source",
+        "../../system_wrappers:system_wrappers_default",
+        "../../test:test_support",
+        "//third_party/gflags",
+      ]
+    }
   }
 
   source_set("neteq_test_support") {
