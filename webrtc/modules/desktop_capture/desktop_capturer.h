@@ -47,15 +47,7 @@ class DesktopCapturer {
     // Called after a frame has been captured. |frame| is not nullptr if and
     // only if |result| is SUCCESS.
     virtual void OnCaptureResult(Result result,
-                                 std::unique_ptr<DesktopFrame> frame) {
-      OnCaptureCompleted(frame.release());
-    }
-
-    // Deprecated version of the method above that uses raw pointer instead of
-    // std::unique_ptr<>.
-    // TODO(sergeyu): Remove this method and make OnCaptureResult() pure
-    // virtual. crbug.com/webrtc/5950
-    virtual void OnCaptureCompleted(DesktopFrame* frame) { delete frame; };
+                                 std::unique_ptr<DesktopFrame> frame) = 0;
 
    protected:
     virtual ~Callback() {}
