@@ -23,7 +23,7 @@ namespace intelligibility {
 namespace {
 
 const float kMinFactor = 0.01f;
-const float kMaxFactor = 1000.f;
+const float kMaxFactor = 100.f;
 
 // Return |current| changed towards |target|, with the relative change being at
 // most |limit|.

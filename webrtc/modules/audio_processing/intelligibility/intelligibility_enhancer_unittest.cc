@@ -409,7 +409,7 @@ TEST_F(IntelligibilityEnhancerTest, TestSolveForGains) {
 TEST_F(IntelligibilityEnhancerTest, TestNoiseGainHasExpectedResult) {
   const int kGainDB = 6;
   const float kGainFactor = std::pow(10.f, kGainDB / 20.f);
-  const float kTolerance = 0.003f;
+  const float kTolerance = 0.007f;
   std::vector<float> noise(kNumNoiseBins);
   std::vector<float> noise_psd(kNumNoiseBins);
   std::generate(noise.begin(), noise.end(), float_rand);

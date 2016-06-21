@@ -31,11 +31,11 @@ const float kClipFreqKhz = 0.2f;
 const float kKbdAlpha = 1.5f;
 const float kLambdaBot = -1.f;      // Extreme values in bisection
 const float kLambdaTop = -1e-5f;      // search for lamda.
-const float kVoiceProbabilityThreshold = 0.02f;
+const float kVoiceProbabilityThreshold = 0.5f;
 // Number of chunks after voice activity which is still considered speech.
-const size_t kSpeechOffsetDelay = 80;
-const float kDecayRate = 0.994f;              // Power estimation decay rate.
-const float kMaxRelativeGainChange = 0.006f;
+const size_t kSpeechOffsetDelay = 10;
+const float kDecayRate = 0.995f;              // Power estimation decay rate.
+const float kMaxRelativeGainChange = 0.005f;
 const float kRho = 0.0004f;  // Default production and interpretation SNR.
 const float kPowerNormalizationFactor = 1.f / (1 << 30);
 const float kMaxActiveSNR = 128.f;  // 21dB
