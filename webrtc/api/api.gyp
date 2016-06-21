@@ -22,7 +22,9 @@
         }],
       ],
     }],
-    ['OS=="android"', {
+    # Excluded from the Chromium build since they cannot be built due to
+    # incompability with Chromium's logging implementation.
+    ['OS=="android" and build_with_chromium==0', {
       'targets': [
         {
           'target_name': 'libjingle_peerconnection_jni',

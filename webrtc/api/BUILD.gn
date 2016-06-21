@@ -127,7 +127,9 @@ source_set("libjingle_peerconnection") {
   }
 }
 
-if (is_android) {
+# Exclude the targets below from the Chromium build since they cannot be built
+# due to incompability with Chromium's logging implementation.
+if (is_android && !build_with_chromium) {
   config("libjingle_peerconnection_jni_warnings_config") {
     # The warnings below are enabled by default. Since GN orders compiler flags
     # for a target before flags from configs, the only way to disable such
