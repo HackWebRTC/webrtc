@@ -829,6 +829,9 @@ bool AudioDeviceIOS::InitPlayOrRecord() {
 void AudioDeviceIOS::ShutdownPlayOrRecord() {
   LOGI() << "ShutdownPlayOrRecord";
 
+  // Stop the audio unit to prevent any additional audio callbacks.
+  audio_unit_->Stop();
+
   // Close and delete the voice-processing I/O unit.
   audio_unit_.reset();
 
