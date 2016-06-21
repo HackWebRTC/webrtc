@@ -702,19 +702,23 @@ void AudioDeviceIOS::UpdateAudioUnit(bool can_play_or_record) {
 
   switch (audio_unit_->GetState()) {
     case VoiceProcessingAudioUnit::kInitRequired:
+      RTCLog(@"VPAU state: InitRequired");
       RTC_NOTREACHED();
       break;
     case VoiceProcessingAudioUnit::kUninitialized:
+      RTCLog(@"VPAU state: Uninitialized");
       should_initialize_audio_unit = can_play_or_record;
       should_start_audio_unit = should_initialize_audio_unit &&
           (playing_ || recording_);
       break;
     case VoiceProcessingAudioUnit::kInitialized:
+      RTCLog(@"VPAU state: Initialized");
       should_start_audio_unit =
           can_play_or_record && (playing_ || recording_);
       should_uninitialize_audio_unit = !can_play_or_record;
       break;
     case VoiceProcessingAudioUnit::kStarted:
+      RTCLog(@"VPAU state: Started");
       RTC_DCHECK(playing_ || recording_);
       should_stop_audio_unit = !can_play_or_record;
       should_uninitialize_audio_unit = should_stop_audio_unit;
@@ -733,6 +737,9 @@ void AudioDeviceIOS::UpdateAudioUnit(bool can_play_or_record) {
 
   if (should_start_audio_unit) {
     RTCLog(@"Starting audio unit for UpdateAudioUnit");
+    // Log session settings before trying to start audio streaming.
+    RTCAudioSession* session = [RTCAudioSession sharedInstance];
+    RTCLog(@"%@", session);
     if (!audio_unit_->Start()) {
       RTCLogError(@"Failed to start audio unit.");
       return;
