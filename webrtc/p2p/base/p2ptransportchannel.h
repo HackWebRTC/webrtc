@@ -39,6 +39,8 @@
 namespace cricket {
 
 extern const int WEAK_PING_INTERVAL;
+extern const int STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL;
+extern const int STABLE_WRITABLE_CONNECTION_PING_INTERVAL;
 static const int MIN_PINGS_AT_WEAK_PING_INTERVAL = 3;
 
 struct IceParameters {
@@ -227,6 +229,8 @@ class P2PTransportChannel : public TransportChannelImpl,
   void RememberRemoteCandidate(const Candidate& remote_candidate,
                                PortInterface* origin_port);
   bool IsPingable(Connection* conn, int64_t now);
+  bool IsBestConnectionPingable(int64_t now);
+  int CalculateActiveWritablePingInterval(Connection* conn, int64_t now);
   void PingConnection(Connection* conn);
   void AddAllocatorSession(std::unique_ptr<PortAllocatorSession> session);
   void AddConnection(Connection* connection);

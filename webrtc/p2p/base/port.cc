@@ -1188,7 +1188,7 @@ void Connection::ReceivedPing() {
   last_ping_received_ = rtc::TimeMillis();
 }
 
-void Connection::ReceivedPingResponse() {
+void Connection::ReceivedPingResponse(int rtt) {
   // We've already validated that this is a STUN binding response with
   // the correct local and remote username for this connection.
   // So if we're not already, become writable. We may be bringing a pruned
@@ -1199,6 +1199,8 @@ void Connection::ReceivedPingResponse() {
   set_state(STATE_SUCCEEDED);
   pings_since_last_response_.clear();
   last_ping_response_received_ = rtc::TimeMillis();
+  rtt_samples_++;
+  rtt_ = (RTT_RATIO * rtt_ + rtt) / (RTT_RATIO + 1);
 }
 
 bool Connection::dead(int64_t now) const {
@@ -1224,6 +1226,14 @@ bool Connection::dead(int64_t now) const {
   // from being pruned too quickly during a network change event when two
   // networks would be up simultaneously but only for a brief period.
   return now > (time_created_ms_ + MIN_CONNECTION_LIFETIME);
+}
+
+bool Connection::stable(int64_t now) {
+  // A connection is stable if it's RTT has converged and it isn't missing any
+  // responses.  We should send pings at a higher rate until the RTT converges
+  // and whenever a ping response is missing (so that we can detect
+  // unwritability faster)
+  return rtt_converged() && !missing_responses(now);
 }
 
 std::string Connection::ToDebugId() const {
@@ -1296,7 +1306,7 @@ void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
 
   int rtt = request->Elapsed();
 
-  ReceivedPingResponse();
+  ReceivedPingResponse(rtt);
 
   if (LOG_CHECK_LEVEL_V(sev)) {
     bool use_candidate = (
@@ -1311,7 +1321,6 @@ void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
                       << ", pings_since_last_response=" << pings;
   }
 
-  rtt_ = (RTT_RATIO * rtt_ + rtt) / (RTT_RATIO + 1);
   stats_.recv_ping_responses++;
 
   MaybeAddPrflxCandidate(request, response);
@@ -1488,6 +1497,19 @@ void Connection::MaybeAddPrflxCandidate(ConnectionRequest* request,
   // SignalStateChange to force a re-sort in P2PTransportChannel as this
   // Connection's local candidate has changed.
   SignalStateChange(this);
+}
+
+bool Connection::rtt_converged() {
+  return rtt_samples_ > (RTT_RATIO + 1);
+}
+
+bool Connection::missing_responses(int64_t now) {
+  if (pings_since_last_response_.empty()) {
+    return false;
+  }
+
+  int64_t waiting = now - pings_since_last_response_[0].sent_time;
+  return waiting > 2 * rtt();
 }
 
 ProxyConnection::ProxyConnection(Port* port,

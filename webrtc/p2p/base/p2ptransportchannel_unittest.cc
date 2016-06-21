@@ -44,6 +44,7 @@ static const int kDefaultTimeout = 1000;
 static const int kOnlyLocalPorts = cricket::PORTALLOCATOR_DISABLE_STUN |
                                    cricket::PORTALLOCATOR_DISABLE_RELAY |
                                    cricket::PORTALLOCATOR_DISABLE_TCP;
+static const int LOW_RTT = 20;
 // Addresses on the public internet.
 static const SocketAddress kPublicAddrs[2] =
     { SocketAddress("11.11.11.11", 0), SocketAddress("22.22.22.22", 0) };
@@ -2077,11 +2078,101 @@ TEST_F(P2PTransportChannelPingTest, TestAllConnectionsPingedSufficiently) {
 
   // Low-priority connection becomes writable so that the other connection
   // is not pruned.
-  conn1->ReceivedPingResponse();
+  conn1->ReceivedPingResponse(LOW_RTT);
   EXPECT_TRUE_WAIT(
       conn1->num_pings_sent() >= MIN_PINGS_AT_WEAK_PING_INTERVAL &&
           conn2->num_pings_sent() >= MIN_PINGS_AT_WEAK_PING_INTERVAL,
       kDefaultTimeout);
+}
+
+// Verify that the connections are pinged at the right time.
+TEST_F(P2PTransportChannelPingTest, TestStunPingIntervals) {
+  rtc::ScopedFakeClock clock;
+  int RTT_RATIO = 4;
+  int SCHEDULING_RANGE = 200;
+  int RTT_RANGE = 10;
+
+  cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
+  cricket::P2PTransportChannel ch("TestChannel", 1, &pa);
+  PrepareChannel(&ch);
+  ch.Connect();
+  ch.MaybeStartGathering();
+  ch.AddRemoteCandidate(CreateHostCandidate("1.1.1.1", 1, 1));
+  cricket::Connection* conn = WaitForConnectionTo(&ch, "1.1.1.1", 1);
+
+  ASSERT_TRUE(conn != nullptr);
+  SIMULATED_WAIT(conn->num_pings_sent() == 1, kDefaultTimeout, clock);
+
+  // Initializing.
+
+  int64_t start = clock.TimeNanos();
+  SIMULATED_WAIT(conn->num_pings_sent() >= MIN_PINGS_AT_WEAK_PING_INTERVAL,
+                 kDefaultTimeout, clock);
+  int64_t ping_interval_ms = (clock.TimeNanos() - start) /
+                             rtc::kNumNanosecsPerMillisec /
+                             (MIN_PINGS_AT_WEAK_PING_INTERVAL - 1);
+  EXPECT_EQ(ping_interval_ms, cricket::WEAK_PING_INTERVAL);
+
+  // Stabilizing.
+
+  conn->ReceivedPingResponse(LOW_RTT);
+  int ping_sent_before = conn->num_pings_sent();
+  start = clock.TimeNanos();
+  // The connection becomes strong but not stable because we haven't been able
+  // to converge the RTT.
+  SIMULATED_WAIT(conn->num_pings_sent() == ping_sent_before + 1, 3000, clock);
+  ping_interval_ms = (clock.TimeNanos() - start) / rtc::kNumNanosecsPerMillisec;
+  EXPECT_GE(ping_interval_ms,
+            cricket::STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL);
+  EXPECT_LE(ping_interval_ms,
+            cricket::STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL +
+                SCHEDULING_RANGE);
+
+  // Stabilized.
+
+  // The connection becomes stable after receiving more than RTT_RATIO rtt
+  // samples.
+  for (int i = 0; i < RTT_RATIO; i++) {
+    conn->ReceivedPingResponse(LOW_RTT);
+  }
+  ping_sent_before = conn->num_pings_sent();
+  start = clock.TimeNanos();
+  SIMULATED_WAIT(conn->num_pings_sent() == ping_sent_before + 1, 3000, clock);
+  ping_interval_ms = (clock.TimeNanos() - start) / rtc::kNumNanosecsPerMillisec;
+  EXPECT_GE(ping_interval_ms,
+            cricket::STABLE_WRITABLE_CONNECTION_PING_INTERVAL);
+  EXPECT_LE(
+      ping_interval_ms,
+      cricket::STABLE_WRITABLE_CONNECTION_PING_INTERVAL + SCHEDULING_RANGE);
+
+  // Destabilized.
+
+  conn->ReceivedPingResponse(LOW_RTT);
+  // Create a in-flight ping.
+  conn->Ping(clock.TimeNanos() / rtc::kNumNanosecsPerMillisec);
+  start = clock.TimeNanos();
+  // In-flight ping timeout and the connection will be unstable.
+  SIMULATED_WAIT(
+      !conn->stable(clock.TimeNanos() / rtc::kNumNanosecsPerMillisec), 3000,
+      clock);
+  int64_t duration_ms =
+      (clock.TimeNanos() - start) / rtc::kNumNanosecsPerMillisec;
+  EXPECT_GE(duration_ms, 2 * conn->rtt() - RTT_RANGE);
+  EXPECT_LE(duration_ms, 2 * conn->rtt() + RTT_RANGE);
+  // The connection become unstable due to not receiving ping responses.
+  ping_sent_before = conn->num_pings_sent();
+  SIMULATED_WAIT(conn->num_pings_sent() == ping_sent_before + 1, 3000, clock);
+  // The interval is expected to be
+  // STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL.
+  start = clock.TimeNanos();
+  ping_sent_before = conn->num_pings_sent();
+  SIMULATED_WAIT(conn->num_pings_sent() == ping_sent_before + 1, 3000, clock);
+  ping_interval_ms = (clock.TimeNanos() - start) / rtc::kNumNanosecsPerMillisec;
+  EXPECT_GE(ping_interval_ms,
+            cricket::STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL);
+  EXPECT_LE(ping_interval_ms,
+            cricket::STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL +
+                SCHEDULING_RANGE);
 }
 
 TEST_F(P2PTransportChannelPingTest, TestNoTriggeredChecksWhenWritable) {
@@ -2100,7 +2191,7 @@ TEST_F(P2PTransportChannelPingTest, TestNoTriggeredChecksWhenWritable) {
 
   EXPECT_EQ(conn2, FindNextPingableConnectionAndPingIt(&ch));
   EXPECT_EQ(conn1, FindNextPingableConnectionAndPingIt(&ch));
-  conn1->ReceivedPingResponse();
+  conn1->ReceivedPingResponse(LOW_RTT);
   ASSERT_TRUE(conn1->writable());
   conn1->ReceivedPing();
 
@@ -2200,7 +2291,7 @@ TEST_F(P2PTransportChannelPingTest, ConnectionResurrection) {
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   conn2->ReceivedPing();
-  conn2->ReceivedPingResponse();
+  conn2->ReceivedPingResponse(LOW_RTT);
 
   // Wait for conn1 to be pruned.
   EXPECT_TRUE_WAIT(conn1->pruned(), 3000);
@@ -2303,7 +2394,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   ASSERT_TRUE(conn3 != nullptr);
   // Because it has a lower priority, the best connection is still conn2.
   EXPECT_EQ(conn2, ch.best_connection());
-  conn3->ReceivedPingResponse();  // Become writable.
+  conn3->ReceivedPingResponse(LOW_RTT);  // Become writable.
   // But if it is nominated via use_candidate, it is chosen as the best
   // connection.
   conn3->set_nominated(true);
@@ -2329,7 +2420,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   EXPECT_EQ(conn3, ch.best_connection());
   reset_channel_ready_to_send();
   // The best connection switches after conn4 becomes writable.
-  conn4->ReceivedPingResponse();
+  conn4->ReceivedPingResponse(LOW_RTT);
   EXPECT_EQ(conn4, ch.best_connection());
   EXPECT_EQ(conn4, last_selected_candidate_pair());
   EXPECT_EQ(last_packet_id, last_sent_packet_id());
@@ -2364,7 +2455,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_TRUE(port->sent_binding_response());
   EXPECT_EQ(conn1, ch.best_connection());
-  conn1->ReceivedPingResponse();
+  conn1->ReceivedPingResponse(LOW_RTT);
   EXPECT_EQ(conn1, ch.best_connection());
   port->set_sent_binding_response(false);
 
@@ -2376,7 +2467,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
   EXPECT_EQ(conn1, ch.best_connection());
   // When it is nominated via use_candidate and writable, it is chosen as the
   // best connection.
-  conn2->ReceivedPingResponse();  // Become writable.
+  conn2->ReceivedPingResponse(LOW_RTT);  // Become writable.
   conn2->set_nominated(true);
   conn2->SignalNominated(conn2);
   EXPECT_EQ(conn2, ch.best_connection());
@@ -2389,7 +2480,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
   cricket::Connection* conn3 = WaitForConnectionTo(&ch, "3.3.3.3", 3);
   ASSERT_TRUE(conn3 != nullptr);
   EXPECT_TRUE(port->sent_binding_response());
-  conn3->ReceivedPingResponse();  // Become writable.
+  conn3->ReceivedPingResponse(LOW_RTT);  // Become writable.
   EXPECT_EQ(conn2, ch.best_connection());
   port->set_sent_binding_response(false);
 
@@ -2404,7 +2495,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
   EXPECT_TRUE(port->sent_binding_response());
   // conn4 is not the best connection yet because it is not writable.
   EXPECT_EQ(conn2, ch.best_connection());
-  conn4->ReceivedPingResponse();  // Become writable.
+  conn4->ReceivedPingResponse(LOW_RTT);  // Become writable.
   EXPECT_EQ(conn4, ch.best_connection());
 
   // Test that the request from an unknown address contains a ufrag from an old
@@ -2447,7 +2538,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
   conn2->OnReadPacket("ABC", 3, rtc::CreatePacketTime(0));
   EXPECT_EQ(conn1, ch.best_connection());
 
-  conn2->ReceivedPingResponse();  // Become writable.
+  conn2->ReceivedPingResponse(LOW_RTT);  // Become writable.
   // Switch because it is writable.
   conn2->OnReadPacket("DEF", 3, rtc::CreatePacketTime(0));
   EXPECT_EQ(conn2, ch.best_connection());
@@ -2469,13 +2560,13 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
   cricket::Connection* conn3 = WaitForConnectionTo(&ch, "3.3.3.3", 3);
   ASSERT_TRUE(conn3 != nullptr);
   EXPECT_EQ(conn2, ch.best_connection());  // Not writable yet.
-  conn3->ReceivedPingResponse();           // Become writable.
+  conn3->ReceivedPingResponse(LOW_RTT);    // Become writable.
   EXPECT_EQ(conn3, ch.best_connection());
 
   // Now another data packet will not switch the best connection because the
   // best connection was nominated by the controlling side.
   conn2->ReceivedPing();
-  conn2->ReceivedPingResponse();
+  conn2->ReceivedPingResponse(LOW_RTT);
   conn2->OnReadPacket("XYZ", 3, rtc::CreatePacketTime(0));
   EXPECT_EQ(conn3, ch.best_connection());
 }
@@ -2532,14 +2623,14 @@ TEST_F(P2PTransportChannelPingTest, TestDontPruneWhenWeak) {
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(conn1, ch.best_connection());
-  conn1->ReceivedPingResponse();  // Becomes writable and receiving
+  conn1->ReceivedPingResponse(LOW_RTT);  // Becomes writable and receiving
 
   // When a higher-priority, nominated candidate comes in, the connections with
   // lower-priority are pruned.
   ch.AddRemoteCandidate(CreateHostCandidate("2.2.2.2", 2, 10));
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
-  conn2->ReceivedPingResponse();  // Becomes writable and receiving
+  conn2->ReceivedPingResponse(LOW_RTT);  // Becomes writable and receiving
   conn2->set_nominated(true);
   conn2->SignalNominated(conn2);
   EXPECT_TRUE_WAIT(conn1->pruned(), 3000);
@@ -2575,7 +2666,7 @@ TEST_F(P2PTransportChannelPingTest, TestGetState) {
   // Now there are two connections, so the transport channel is connecting.
   EXPECT_EQ(cricket::TransportChannelState::STATE_CONNECTING, ch.GetState());
   // |conn1| becomes writable and receiving; it then should prune |conn2|.
-  conn1->ReceivedPingResponse();
+  conn1->ReceivedPingResponse(LOW_RTT);
   EXPECT_TRUE_WAIT(conn2->pruned(), 1000);
   EXPECT_EQ(cricket::TransportChannelState::STATE_COMPLETED, ch.GetState());
   conn1->Prune();  // All connections are pruned.
@@ -2597,7 +2688,7 @@ TEST_F(P2PTransportChannelPingTest, TestConnectionPrunedAgain) {
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(conn1, ch.best_connection());
-  conn1->ReceivedPingResponse();  // Becomes writable and receiving
+  conn1->ReceivedPingResponse(LOW_RTT);  // Becomes writable and receiving
 
   // Add a low-priority connection |conn2|, which will be pruned, but it will
   // not be deleted right away. Once the current best connection becomes not
@@ -2616,12 +2707,12 @@ TEST_F(P2PTransportChannelPingTest, TestConnectionPrunedAgain) {
   conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   EXPECT_EQ_WAIT(cricket::Connection::STATE_INPROGRESS, conn2->state(), 1000);
-  conn2->ReceivedPingResponse();
+  conn2->ReceivedPingResponse(LOW_RTT);
   EXPECT_EQ_WAIT(conn2, ch.best_connection(), 1000);
   EXPECT_EQ(cricket::TransportChannelState::STATE_CONNECTING, ch.GetState());
 
   // When |conn1| comes back again, |conn2| will be pruned again.
-  conn1->ReceivedPingResponse();
+  conn1->ReceivedPingResponse(LOW_RTT);
   EXPECT_EQ_WAIT(conn1, ch.best_connection(), 1000);
   EXPECT_TRUE_WAIT(!conn2->active(), 1000);
   EXPECT_EQ(cricket::TransportChannelState::STATE_COMPLETED, ch.GetState());
@@ -2672,7 +2763,7 @@ TEST_F(P2PTransportChannelPingTest, TestStopPortAllocatorSessions) {
   ch.AddRemoteCandidate(CreateHostCandidate("1.1.1.1", 1, 100));
   cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
-  conn1->ReceivedPingResponse();  // Becomes writable and receiving
+  conn1->ReceivedPingResponse(LOW_RTT);  // Becomes writable and receiving
   EXPECT_TRUE(!ch.allocator_session()->IsGettingPorts());
 
   // Start a new session. Even though conn1, which belongs to an older
@@ -2681,7 +2772,7 @@ TEST_F(P2PTransportChannelPingTest, TestStopPortAllocatorSessions) {
   ch.SetIceCredentials(kIceUfrag[1], kIcePwd[1]);
   ch.MaybeStartGathering();
   conn1->Prune();
-  conn1->ReceivedPingResponse();
+  conn1->ReceivedPingResponse(LOW_RTT);
   EXPECT_TRUE(ch.allocator_session()->IsGettingPorts());
 
   // But if a new connection created from the new session becomes writable,
@@ -2689,7 +2780,7 @@ TEST_F(P2PTransportChannelPingTest, TestStopPortAllocatorSessions) {
   ch.AddRemoteCandidate(CreateHostCandidate("2.2.2.2", 2, 100));
   cricket::Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
-  conn2->ReceivedPingResponse();  // Becomes writable and receiving
+  conn2->ReceivedPingResponse(LOW_RTT);  // Becomes writable and receiving
   EXPECT_TRUE(!ch.allocator_session()->IsGettingPorts());
 }
 
@@ -2715,13 +2806,14 @@ class P2PTransportChannelMostLikelyToWorkFirstTest
 
   cricket::P2PTransportChannel& StartTransportChannel(
       bool prioritize_most_likely_to_work,
-      int max_strong_interval) {
+      int stable_writable_connection_ping_interval) {
     channel_.reset(
         new cricket::P2PTransportChannel("checks", 1, nullptr, allocator()));
     cricket::IceConfig config = channel_->config();
     config.prioritize_most_likely_candidate_pairs =
         prioritize_most_likely_to_work;
-    config.max_strong_interval = max_strong_interval;
+    config.stable_writable_connection_ping_interval =
+        stable_writable_connection_ping_interval;
     channel_->SetIceConfig(config);
     PrepareChannel(channel_.get());
     channel_->Connect();
@@ -2797,7 +2889,7 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
   cricket::Connection* conn3 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   EXPECT_EQ(conn3->local_candidate().type(), cricket::LOCAL_PORT_TYPE);
   EXPECT_EQ(conn3->remote_candidate().type(), cricket::RELAY_PORT_TYPE);
-  conn3->ReceivedPingResponse();
+  conn3->ReceivedPingResponse(LOW_RTT);
   ASSERT_TRUE(conn3->writable());
   conn3->ReceivedPing();
 
@@ -2814,7 +2906,7 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
   // pingable connection.
   EXPECT_TRUE_WAIT(conn3 == ch.best_connection(), 5000);
   WAIT(false, max_strong_interval + 100);
-  conn3->ReceivedPingResponse();
+  conn3->ReceivedPingResponse(LOW_RTT);
   ASSERT_TRUE(conn3->writable());
   EXPECT_EQ(conn3, FindNextPingableConnectionAndPingIt(&ch));
 

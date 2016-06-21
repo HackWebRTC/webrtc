@@ -530,7 +530,7 @@ class Connection : public CandidatePairInterface,
   // Called when this connection should try checking writability again.
   int64_t last_ping_sent() const { return last_ping_sent_; }
   void Ping(int64_t now);
-  void ReceivedPingResponse();
+  void ReceivedPingResponse(int rtt);
   int64_t last_ping_response_received() const {
     return last_ping_response_received_;
   }
@@ -585,6 +585,8 @@ class Connection : public CandidatePairInterface,
   // response in milliseconds
   int64_t last_received() const;
 
+  bool stable(int64_t now);
+
  protected:
   enum { MSG_DELETE = 0, MSG_FIRST_AVAILABLE };
 
@@ -601,6 +603,12 @@ class Connection : public CandidatePairInterface,
                                         StunMessage* response);
   void OnConnectionRequestTimeout(ConnectionRequest* req);
   void OnConnectionRequestSent(ConnectionRequest* req);
+
+  bool rtt_converged();
+
+  // If the response is not received within 2 * RTT, the response is assumed to
+  // be missing.
+  bool missing_responses(int64_t now);
 
   // Changes the state and signals if necessary.
   void set_write_state(WriteState value);
@@ -628,6 +636,7 @@ class Connection : public CandidatePairInterface,
   IceMode remote_ice_mode_;
   StunRequestManager requests_;
   int rtt_;
+  int rtt_samples_ = 0;
   int64_t last_ping_sent_;      // last time we sent a ping to the other side
   int64_t last_ping_received_;  // last time we received a ping from the other
                                 // side

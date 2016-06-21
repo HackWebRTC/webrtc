@@ -217,10 +217,11 @@ static const int STRONG_PING_INTERVAL = 1000 * PING_PACKET_SIZE / 1000;
 // writable or not receiving.
 const int WEAK_PING_INTERVAL = 1000 * PING_PACKET_SIZE / 10000;
 
-// If the current best connection is both writable and receiving, then we will
-// also try hard to make sure it is pinged at this rate (a little less than
-// 2 * STRONG_PING_INTERVAL).
-static const int MAX_CURRENT_STRONG_INTERVAL = 900;  // ms
+// Writable connections are pinged at a faster rate while stabilizing.
+const int STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL = 900;  // ms
+
+// Writable connections are pinged at a slower rate once stabilized.
+const int STABLE_WRITABLE_CONNECTION_PING_INTERVAL = 2500;  // ms
 
 static const int MIN_CHECK_RECEIVING_INTERVAL = 50;  // ms
 
@@ -250,7 +251,7 @@ P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
               0 /* backup_connection_ping_interval */,
               false /* gather_continually */,
               false /* prioritize_most_likely_candidate_pairs */,
-              MAX_CURRENT_STRONG_INTERVAL /* max_strong_interval */) {
+              STABLE_WRITABLE_CONNECTION_PING_INTERVAL) {
   uint32_t weak_ping_interval = ::strtoul(
       webrtc::field_trial::FindFullName("WebRTC-StunInterPacketDelay").c_str(),
       nullptr, 10);
@@ -432,11 +433,13 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
   LOG(LS_INFO) << "Set ping most likely connection to "
                << config_.prioritize_most_likely_candidate_pairs;
 
-  if (config.max_strong_interval >= 0 &&
-      config_.max_strong_interval != config.max_strong_interval) {
-    config_.max_strong_interval = config.max_strong_interval;
-    LOG(LS_INFO) << "Set max strong interval to "
-                 << config_.max_strong_interval;
+  if (config.stable_writable_connection_ping_interval >= 0 &&
+      config_.stable_writable_connection_ping_interval !=
+          config.stable_writable_connection_ping_interval) {
+    config_.stable_writable_connection_ping_interval =
+        config.stable_writable_connection_ping_interval;
+    LOG(LS_INFO) << "Set stable_writable_connection_ping_interval to "
+                 << config_.stable_writable_connection_ping_interval;
   }
 }
 
@@ -1381,12 +1384,50 @@ bool P2PTransportChannel::IsPingable(Connection* conn, int64_t now) {
     return (now >= conn->last_ping_response_received() +
                        config_.backup_connection_ping_interval);
   }
-  return conn->active();
+  // Don't ping inactive non-backup connections.
+  if (!conn->active()) {
+    return false;
+  }
+
+  // Do ping unwritable, active connections.
+  if (!conn->writable()) {
+    return true;
+  }
+
+  // Ping writable, active connections if it's been long enough since the last
+  // ping.
+  int ping_interval = CalculateActiveWritablePingInterval(conn, now);
+  return (now >= conn->last_ping_sent() + ping_interval);
+}
+
+bool P2PTransportChannel::IsBestConnectionPingable(int64_t now) {
+  if (!best_connection_ || !best_connection_->connected() ||
+      !best_connection_->writable()) {
+    return false;
+  }
+
+  int interval = CalculateActiveWritablePingInterval(best_connection_, now);
+  return best_connection_->last_ping_sent() + interval <= now;
+}
+
+int P2PTransportChannel::CalculateActiveWritablePingInterval(Connection* conn,
+                                                             int64_t now) {
+  // Ping each connection at a higher rate at least
+  // MIN_PINGS_AT_WEAK_PING_INTERVAL times.
+  if (conn->num_pings_sent() < MIN_PINGS_AT_WEAK_PING_INTERVAL) {
+    return weak_ping_interval_;
+  }
+
+  int stable_interval = config_.stable_writable_connection_ping_interval;
+  int stablizing_interval =
+      std::min(stable_interval, STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL);
+
+  return conn->stable(now) ? stable_interval : stablizing_interval;
 }
 
 // Returns the next pingable connection to ping.  This will be the oldest
 // pingable connection unless we have a connected, writable connection that is
-// past the maximum acceptable ping interval. When reconnecting a TCP
+// past the writable ping interval. When reconnecting a TCP
 // connection, the best connection is disconnected, although still WRITABLE
 // while reconnecting. The newly created connection should be selected as the
 // ping target to become writable instead. See the big comment in
@@ -1394,10 +1435,7 @@ bool P2PTransportChannel::IsPingable(Connection* conn, int64_t now) {
 Connection* P2PTransportChannel::FindNextPingableConnection() {
   int64_t now = rtc::TimeMillis();
   Connection* conn_to_ping = nullptr;
-  if (best_connection_ && best_connection_->connected() &&
-      best_connection_->writable() &&
-      (best_connection_->last_ping_sent() + config_.max_strong_interval <=
-       now)) {
+  if (IsBestConnectionPingable(now)) {
     conn_to_ping = best_connection_;
   } else {
     conn_to_ping = FindConnectionToPing(now);
