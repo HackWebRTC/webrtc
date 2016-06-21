@@ -280,6 +280,7 @@ void P2PTransportChannel::AddAllocatorSession(
   // We now only want to apply new candidates that we receive to the ports
   // created by this new session because these are replacing those of the
   // previous sessions.
+  removed_ports_.insert(removed_ports_.end(), ports_.begin(), ports_.end());
   ports_.clear();
 
   allocator_sessions_.push_back(std::move(session));
@@ -306,16 +307,20 @@ void P2PTransportChannel::SetIceRole(IceRole ice_role) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
   if (ice_role_ != ice_role) {
     ice_role_ = ice_role;
-    for (std::vector<PortInterface *>::iterator it = ports_.begin();
-         it != ports_.end(); ++it) {
-      (*it)->SetIceRole(ice_role);
+    for (PortInterface* port : ports_) {
+      port->SetIceRole(ice_role);
+    }
+    // Update role on removed ports as well, because they may still have
+    // connections alive that should be using the correct role.
+    for (PortInterface* port : removed_ports_) {
+      port->SetIceRole(ice_role);
     }
   }
 }
 
 void P2PTransportChannel::SetIceTiebreaker(uint64_t tiebreaker) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
-  if (!ports_.empty()) {
+  if (!ports_.empty() || !removed_ports_.empty()) {
     LOG(LS_ERROR)
         << "Attempt to change tiebreaker after Port has been allocated.";
     return;
@@ -973,13 +978,13 @@ int P2PTransportChannel::SetOption(rtc::Socket::Option opt, int value) {
     it->second = value;
   }
 
-  for (size_t i = 0; i < ports_.size(); ++i) {
-    int val = ports_[i]->SetOption(opt, value);
+  for (PortInterface* port : ports_) {
+    int val = port->SetOption(opt, value);
     if (val < 0) {
       // Because this also occurs deferred, probably no point in reporting an
       // error
-      LOG(WARNING) << "SetOption(" << opt << ", " << value << ") failed: "
-                   << ports_[i]->GetError();
+      LOG(WARNING) << "SetOption(" << opt << ", " << value
+                   << ") failed: " << port->GetError();
     }
   }
   return 0;
@@ -1553,11 +1558,11 @@ void P2PTransportChannel::OnConnectionDestroyed(Connection* connection) {
 void P2PTransportChannel::OnPortDestroyed(PortInterface* port) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
 
-  // Remove this port from the list (if we didn't drop it already).
-  std::vector<PortInterface*>::iterator iter =
-      std::find(ports_.begin(), ports_.end(), port);
-  if (iter != ports_.end())
-    ports_.erase(iter);
+  // Remove this port from the lists (if we didn't drop it already).
+  ports_.erase(std::remove(ports_.begin(), ports_.end(), port), ports_.end());
+  removed_ports_.erase(
+      std::remove(removed_ports_.begin(), removed_ports_.end(), port),
+      removed_ports_.end());
 
   LOG(INFO) << "Removed port from p2p socket: "
             << static_cast<int>(ports_.size()) << " remaining";
@@ -1574,6 +1579,7 @@ void P2PTransportChannel::OnPortNetworkInactive(PortInterface* port) {
   if (it == ports_.end()) {
     return;
   }
+  removed_ports_.push_back(*it);
   ports_.erase(it);
   LOG(INFO) << "Removed port due to inactive networks: " << ports_.size()
             << " remaining";

@@ -132,6 +132,8 @@ class FakePortAllocatorSession : public PortAllocatorSession {
       port_.reset(TestUDPPort::Create(worker_thread_, factory_, &network,
                                       network.GetBestIP(), 0, 0, username(),
                                       password(), std::string(), false));
+      port_->SignalDestroyed.connect(
+          this, &FakePortAllocatorSession::OnPortDestroyed);
       AddPort(port_.get());
     }
     ++port_config_count_;
@@ -187,6 +189,10 @@ class FakePortAllocatorSession : public PortAllocatorSession {
 
     allocation_done_ = true;
     SignalCandidatesAllocationDone(this);
+  }
+  void OnPortDestroyed(cricket::PortInterface* port) {
+    // Don't want to double-delete port if it deletes itself.
+    port_.release();
   }
 
   rtc::Thread* worker_thread_;
