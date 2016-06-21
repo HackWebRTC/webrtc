@@ -12,8 +12,6 @@
 
 #include <memory>
 
-#include "webrtc/media/engine/webrtcvideoframe.h"
-
 @implementation RTCVideoFrame {
   std::unique_ptr<cricket::VideoFrame> _videoFrame;
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> _i420Buffer;
@@ -107,10 +105,7 @@
   if (self = [super init]) {
     // Keep a shallow copy of the video frame. The underlying frame buffer is
     // not copied.
-    _videoFrame.reset(new cricket::WebRtcVideoFrame(
-        nativeFrame->video_frame_buffer(),
-        nativeFrame->rotation(),
-        nativeFrame->timestamp_us()));
+    _videoFrame.reset(nativeFrame->Copy());
   }
   return self;
 }

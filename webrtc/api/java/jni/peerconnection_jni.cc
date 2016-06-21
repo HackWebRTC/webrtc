@@ -768,8 +768,7 @@ class JavaVideoRendererWrapper
   // ownership of the frame, and the frame should be released with
   // VideoRenderer.releaseNativeFrame().
   static jlong javaShallowCopy(const cricket::VideoFrame* frame) {
-    return jlongFromPointer(new cricket::WebRtcVideoFrame(
-        frame->video_frame_buffer(), frame->rotation(), frame->timestamp_us()));
+    return jlongFromPointer(frame->Copy());
   }
 
   // Return a VideoRenderer.I420Frame referring to the data in |frame|.

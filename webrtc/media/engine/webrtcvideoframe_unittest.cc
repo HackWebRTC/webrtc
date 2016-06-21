@@ -245,6 +245,9 @@ TEST_WEBRTCVIDEOFRAME(ConvertFromUYVYBufferInverted)
 // TEST_WEBRTCVIDEOFRAME(ConvertToI422Buffer)
 // TEST_WEBRTCVIDEOFRAME(ConstructARGBBlackWhitePixel)
 
+TEST_WEBRTCVIDEOFRAME(Copy)
+TEST_WEBRTCVIDEOFRAME(CopyIsRef)
+
 // These functions test implementation-specific details.
 // Tests the Init function with different cropped size.
 TEST_F(WebRtcVideoFrameTest, InitEvenSize) {
@@ -287,6 +290,24 @@ TEST_F(WebRtcVideoFrameTest, TextureInitialValues) {
   frame.set_timestamp_us(40);
   EXPECT_EQ(40000, frame.GetTimeStamp());
   EXPECT_EQ(40, frame.timestamp_us());
+}
+
+TEST_F(WebRtcVideoFrameTest, CopyTextureFrame) {
+  webrtc::test::FakeNativeHandle* dummy_handle =
+      new webrtc::test::FakeNativeHandle();
+  webrtc::NativeHandleBuffer* buffer =
+      new rtc::RefCountedObject<webrtc::test::FakeNativeHandleBuffer>(
+          dummy_handle, 640, 480);
+  // Timestamp is converted from ns to us, so last three digits are lost.
+  cricket::WebRtcVideoFrame frame1(buffer, 20000, webrtc::kVideoRotation_0);
+  cricket::VideoFrame* frame2 = frame1.Copy();
+  EXPECT_EQ(frame1.video_frame_buffer()->native_handle(),
+            frame2->video_frame_buffer()->native_handle());
+  EXPECT_EQ(frame1.width(), frame2->width());
+  EXPECT_EQ(frame1.height(), frame2->height());
+  EXPECT_EQ(frame1.GetTimeStamp(), frame2->GetTimeStamp());
+  EXPECT_EQ(frame1.timestamp_us(), frame2->timestamp_us());
+  delete frame2;
 }
 
 TEST_F(WebRtcVideoFrameTest, ApplyRotationToFrame) {
