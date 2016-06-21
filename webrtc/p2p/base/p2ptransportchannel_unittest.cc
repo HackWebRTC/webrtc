@@ -2693,58 +2693,6 @@ TEST_F(P2PTransportChannelPingTest, TestStopPortAllocatorSessions) {
   EXPECT_TRUE(!ch.allocator_session()->IsGettingPorts());
 }
 
-// Test that the ICE role is updated even on ports with inactive networks when
-// doing continual gathering. These ports may still have connections that need
-// a correct role, in case the network becomes active before the connection is
-// destroyed.
-TEST_F(P2PTransportChannelPingTest,
-       TestIceRoleUpdatedOnPortAfterSignalNetworkInactive) {
-  cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
-  cricket::P2PTransportChannel ch(
-      "test channel", cricket::ICE_CANDIDATE_COMPONENT_DEFAULT, &pa);
-  // Starts with ICEROLE_CONTROLLING.
-  PrepareChannel(&ch);
-  cricket::IceConfig config = CreateIceConfig(1000, true);
-  ch.SetIceConfig(config);
-  ch.Connect();
-  ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateHostCandidate("1.1.1.1", 1, 1));
-
-  cricket::Connection* conn = WaitForConnectionTo(&ch, "1.1.1.1", 1);
-  ASSERT_TRUE(conn != nullptr);
-
-  // Make the fake port signal that its network is inactive, then change the
-  // ICE role and expect it to be updated.
-  conn->port()->SignalNetworkInactive(conn->port());
-  ch.SetIceRole(cricket::ICEROLE_CONTROLLED);
-  EXPECT_EQ(cricket::ICEROLE_CONTROLLED, conn->port()->GetIceRole());
-}
-
-// Test that the ICE role is updated even on ports with inactive networks.
-// These ports may still have connections that need a correct role, for the
-// pings sent by those connections until they're replaced by newer-generation
-// connections.
-TEST_F(P2PTransportChannelPingTest, TestIceRoleUpdatedOnPortAfterIceRestart) {
-  cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
-  cricket::P2PTransportChannel ch(
-      "test channel", cricket::ICE_CANDIDATE_COMPONENT_DEFAULT, &pa);
-  // Starts with ICEROLE_CONTROLLING.
-  PrepareChannel(&ch);
-  ch.Connect();
-  ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateHostCandidate("1.1.1.1", 1, 1));
-
-  cricket::Connection* conn = WaitForConnectionTo(&ch, "1.1.1.1", 1);
-  ASSERT_TRUE(conn != nullptr);
-
-  // Do an ICE restart, change the role, and expect the old port to have its
-  // role updated.
-  ch.SetIceCredentials(kIceUfrag[1], kIcePwd[1]);
-  ch.MaybeStartGathering();
-  ch.SetIceRole(cricket::ICEROLE_CONTROLLED);
-  EXPECT_EQ(cricket::ICEROLE_CONTROLLED, conn->port()->GetIceRole());
-}
-
 class P2PTransportChannelMostLikelyToWorkFirstTest
     : public P2PTransportChannelPingTest {
  public:
