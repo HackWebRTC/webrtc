@@ -1304,7 +1304,14 @@ TEST_F(P2PTransportChannelTest, TestIceRoleConflict) {
 
 // Tests that the ice configs (protocol, tiebreaker and role) can be passed
 // down to ports.
-TEST_F(P2PTransportChannelTest, TestIceConfigWillPassDownToPort) {
+// Disable on Windows because it is flaky.
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=6019
+#if defined(WEBRTC_WIN)
+#define MAYBE_TestIceConfigWillPassDownToPort DISABLED_TestIceConfigWillPassDownToPort
+#else
+#define MAYBE_TestIceConfigWillPassDownToPort TestIceConfigWillPassDownToPort
+#endif
+TEST_F(P2PTransportChannelTest, MAYBE_TestIceConfigWillPassDownToPort) {
   AddAddress(0, kPublicAddrs[0]);
   AddAddress(1, kPublicAddrs[1]);
 
