@@ -23,7 +23,8 @@ namespace webrtc {
 // Class definitions
 class VideoRenderFrames {
  public:
-  VideoRenderFrames();
+  explicit VideoRenderFrames(uint32_t render_delay_ms);
+  VideoRenderFrames(const VideoRenderFrames&) = delete;
 
   // Add a frame to the render queue
   int32_t AddFrame(const VideoFrame& new_frame);
@@ -31,14 +32,8 @@ class VideoRenderFrames {
   // Get a frame for rendering, or false if it's not time to render.
   rtc::Optional<VideoFrame> FrameToRender();
 
-  // Releases all frames
-  int32_t ReleaseAllFrames();
-
   // Returns the number of ms to next frame to render
   uint32_t TimeToNextFrameRelease();
-
-  // Sets estimates delay in renderer
-  int32_t SetRenderDelay(const uint32_t render_delay);
 
  private:
   // 10 seconds for 30 fps.
@@ -52,7 +47,7 @@ class VideoRenderFrames {
   std::list<VideoFrame> incoming_frames_;
 
   // Estimated delay from a frame is released until it's rendered.
-  uint32_t render_delay_ms_;
+  const uint32_t render_delay_ms_;
 };
 
 }  // namespace webrtc

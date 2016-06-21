@@ -19,6 +19,7 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/typedefs.h"
@@ -31,7 +32,6 @@ class ChannelStatsObserver;
 class Config;
 class EncodedImageCallback;
 class I420FrameCallback;
-class IncomingVideoStream;
 class ReceiveStatisticsProxy;
 class VideoRenderCallback;
 class VoEVideoSync;
@@ -58,7 +58,7 @@ class VideoStreamDecoder : public VCMReceiveCallback,
                      bool enable_nack,
                      bool enable_fec,
                      ReceiveStatisticsProxy* receive_statistics_proxy,
-                     IncomingVideoStream* incoming_video_stream,
+                     rtc::VideoSinkInterface<VideoFrame>* incoming_video_stream,
                      I420FrameCallback* pre_render_callback);
   ~VideoStreamDecoder();
 
@@ -89,18 +89,16 @@ class VideoStreamDecoder : public VCMReceiveCallback,
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
 
  private:
-  // Assumed to be protected.
-  void StartDecodeThread();
-  void StopDecodeThread();
-
   // Used for all registered callbacks except rendering.
   rtc::CriticalSection crit_;
 
   vcm::VideoReceiver* const video_receiver_;
 
   ReceiveStatisticsProxy* const receive_stats_callback_;
-  IncomingVideoStream* const incoming_video_stream_;
+  rtc::VideoSinkInterface<VideoFrame>* const incoming_video_stream_;
 
+  // TODO(tommi): This callback is basically the same thing as the one above.
+  // We shouldn't need to support both.
   I420FrameCallback* const pre_render_callback_;
 
   int64_t last_rtt_ms_ GUARDED_BY(crit_);

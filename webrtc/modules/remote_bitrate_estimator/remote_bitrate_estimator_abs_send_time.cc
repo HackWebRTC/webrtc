@@ -136,8 +136,6 @@ RemoteBitrateEstimatorAbsSendTime::FindBestProbe(
        ++it) {
     if (it->send_mean_ms == 0 || it->recv_mean_ms == 0)
       continue;
-    int send_bitrate_bps = it->mean_size * 8 * 1000 / it->send_mean_ms;
-    int recv_bitrate_bps = it->mean_size * 8 * 1000 / it->recv_mean_ms;
     if (it->num_above_min_delta > it->count / 2 &&
         (it->recv_mean_ms - it->send_mean_ms <= 2.0f &&
          it->send_mean_ms - it->recv_mean_ms <= 5.0f)) {
@@ -148,6 +146,8 @@ RemoteBitrateEstimatorAbsSendTime::FindBestProbe(
         best_it = it;
       }
     } else {
+      int send_bitrate_bps = it->mean_size * 8 * 1000 / it->send_mean_ms;
+      int recv_bitrate_bps = it->mean_size * 8 * 1000 / it->recv_mean_ms;
       LOG(LS_INFO) << "Probe failed, sent at " << send_bitrate_bps
                    << " bps, received at " << recv_bitrate_bps
                    << " bps. Mean send delta: " << it->send_mean_ms

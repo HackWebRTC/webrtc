@@ -17,7 +17,6 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/common_video/include/frame_callback.h"
-#include "webrtc/common_video/include/incoming_video_stream.h"
 #include "webrtc/modules/video_coding/video_coding_impl.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/system_wrappers/include/metrics.h"
@@ -32,9 +31,9 @@ VideoStreamDecoder::VideoStreamDecoder(
     VCMFrameTypeCallback* vcm_frame_type_callback,
     VCMPacketRequestCallback* vcm_packet_request_callback,
     bool enable_nack,
-    bool enable_fec,  // TODO(philipel): Actually use this.
+    bool enable_fec,
     ReceiveStatisticsProxy* receive_statistics_proxy,
-    IncomingVideoStream* incoming_video_stream,
+    rtc::VideoSinkInterface<VideoFrame>* incoming_video_stream,
     I420FrameCallback* pre_render_callback)
     : video_receiver_(video_receiver),
       receive_stats_callback_(receive_statistics_proxy),
@@ -51,16 +50,10 @@ VideoStreamDecoder::VideoStreamDecoder(
   video_receiver_->RegisterFrameTypeCallback(vcm_frame_type_callback);
   video_receiver_->RegisterReceiveStatisticsCallback(this);
   video_receiver_->RegisterDecoderTimingCallback(this);
-  static const int kDefaultRenderDelayMs = 10;
-  video_receiver_->SetRenderDelay(kDefaultRenderDelayMs);
 
-  VCMVideoProtection video_protection = kProtectionNone;
-  if (enable_nack) {
-    if (enable_fec)
-      video_protection = kProtectionNackFEC;
-    else
-      video_protection = kProtectionNack;
-  }
+  VCMVideoProtection video_protection =
+      enable_nack ? (enable_fec ? kProtectionNackFEC : kProtectionNack)
+                  : kProtectionNone;
 
   VCMDecodeErrorMode decode_error_mode = enable_nack ? kNoErrors : kWithErrors;
   video_receiver_->SetVideoProtection(video_protection, true);
@@ -70,7 +63,14 @@ VideoStreamDecoder::VideoStreamDecoder(
   video_receiver_->RegisterPacketRequestCallback(packet_request_callback);
 }
 
-VideoStreamDecoder::~VideoStreamDecoder() {}
+VideoStreamDecoder::~VideoStreamDecoder() {
+  // Unset all the callback pointers that we set in the ctor.
+  video_receiver_->RegisterPacketRequestCallback(nullptr);
+  video_receiver_->RegisterDecoderTimingCallback(nullptr);
+  video_receiver_->RegisterReceiveStatisticsCallback(nullptr);
+  video_receiver_->RegisterFrameTypeCallback(nullptr);
+  video_receiver_->RegisterReceiveCallback(nullptr);
+}
 
 // Do not acquire the lock of |video_receiver_| in this function. Decode
 // callback won't necessarily be called from the decoding thread. The decoding
@@ -84,7 +84,9 @@ int32_t VideoStreamDecoder::FrameToRender(VideoFrame& video_frame) {  // NOLINT
     }
   }
 
-  incoming_video_stream_->OnFrame(video_frame);
+  if (incoming_video_stream_)
+    incoming_video_stream_->OnFrame(video_frame);
+
   return 0;
 }
 

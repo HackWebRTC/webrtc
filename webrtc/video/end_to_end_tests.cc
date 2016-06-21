@@ -2027,7 +2027,8 @@ TEST_F(EndToEndTest, VerifyNackStats) {
 void EndToEndTest::VerifyHistogramStats(bool use_rtx,
                                         bool use_red,
                                         bool screenshare) {
-  class StatsObserver : public test::EndToEndTest {
+  class StatsObserver : public test::EndToEndTest,
+                        public rtc::VideoSinkInterface<VideoFrame> {
    public:
     StatsObserver(bool use_rtx, bool use_red, bool screenshare)
         : EndToEndTest(kLongTimeoutMs),
@@ -2043,6 +2044,8 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
           start_runtime_ms_(-1) {}
 
    private:
+    void OnFrame(const VideoFrame& video_frame) override {}
+
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
       if (MinMetricRunTimePassed())
         observation_complete_.Set();
@@ -2067,6 +2070,7 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
       // NACK
       send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
       (*receive_configs)[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+      (*receive_configs)[0].renderer = this;
       // FEC
       if (use_red_) {
         send_config->rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
@@ -2491,6 +2495,15 @@ TEST_F(EndToEndTest, ReportsSetEncoderRates) {
 TEST_F(EndToEndTest, GetStats) {
   static const int kStartBitrateBps = 3000000;
   static const int kExpectedRenderDelayMs = 20;
+
+  class ReceiveStreamRenderer : public rtc::VideoSinkInterface<VideoFrame> {
+   public:
+    ReceiveStreamRenderer() {}
+
+   private:
+    void OnFrame(const VideoFrame& video_frame) override {}
+  };
+
   class StatsObserver : public test::EndToEndTest,
                         public rtc::VideoSinkInterface<VideoFrame> {
    public:
@@ -2691,6 +2704,7 @@ TEST_F(EndToEndTest, GetStats) {
         expected_receive_ssrcs_.push_back(
             (*receive_configs)[i].rtp.remote_ssrc);
         (*receive_configs)[i].render_delay_ms = kExpectedRenderDelayMs;
+        (*receive_configs)[i].renderer = &receive_stream_renderer_;
       }
       // Use a delayed encoder to make sure we see CpuOveruseMetrics stats that
       // are non-zero.
@@ -2760,6 +2774,7 @@ TEST_F(EndToEndTest, GetStats) {
     std::string expected_cname_;
 
     rtc::Event check_stats_event_;
+    ReceiveStreamRenderer receive_stream_renderer_;
   } test;
 
   RunBaseTest(&test);
