@@ -51,6 +51,11 @@ class VideoFrame {
   // Indicates the rotation angle in degrees.
   virtual webrtc::VideoRotation rotation() const = 0;
 
+  // Make a shallow copy of the frame. The frame buffer itself is not copied.
+  // Both the current and new VideoFrame will share a single reference-counted
+  // frame buffer.
+  virtual VideoFrame *Copy() const = 0;
+
   // Return a copy of frame which has its pending rotation applied. The
   // ownership of the returned frame is held by this frame.
   virtual const VideoFrame* GetCopyWithRotationApplied() const = 0;

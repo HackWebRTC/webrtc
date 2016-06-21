@@ -78,6 +78,10 @@ WebRtcVideoFrame::video_frame_buffer() const {
   return video_frame_buffer_;
 }
 
+VideoFrame* WebRtcVideoFrame::Copy() const {
+  return new WebRtcVideoFrame(video_frame_buffer_, rotation_, timestamp_us_);
+}
+
 size_t WebRtcVideoFrame::ConvertToRgbBuffer(uint32_t to_fourcc,
                                             uint8_t* buffer,
                                             size_t size,
