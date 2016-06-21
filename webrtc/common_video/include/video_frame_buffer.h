@@ -38,37 +38,22 @@ class VideoFrameBuffer : public rtc::RefCountInterface {
   virtual int width() const = 0;
   virtual int height() const = 0;
 
-  // TODO(nisse): For the transition, we use default implementations
-  // of the stride and data methods where the new methods calls the
-  // old method, and the old method calls the new methods. Subclasses
-  // must override either the new methods or the old method, to break
-  // infinite recursion. And similarly for the strides. When
-  // applications, in particular Chrome, are updated, delete the old
-  // method and delete the default implementation of the new methods.
-
   // Returns pointer to the pixel data for a given plane. The memory is owned by
   // the VideoFrameBuffer object and must not be freed by the caller.
-  virtual const uint8_t* DataY() const;
-  virtual const uint8_t* DataU() const;
-  virtual const uint8_t* DataV() const;
-  // Deprecated method.
-  // TODO(nisse): Delete after all users are updated.
-  virtual const uint8_t* data(PlaneType type) const;
+  virtual const uint8_t* DataY() const = 0;
+  virtual const uint8_t* DataU() const = 0;
+  virtual const uint8_t* DataV() const = 0;
 
   // TODO(nisse): Move MutableData methods to the I420Buffer subclass.
   // Non-const data access.
   virtual uint8_t* MutableDataY();
   virtual uint8_t* MutableDataU();
   virtual uint8_t* MutableDataV();
-  // Deprecated method. TODO(nisse): Delete after all users are updated.
-  virtual uint8_t* MutableData(PlaneType type);
 
   // Returns the number of bytes between successive rows for a given plane.
-  virtual int StrideY() const;
-  virtual int StrideU() const;
-  virtual int StrideV() const;
-  // Deprecated method. TODO(nisse): Delete after all users are updated.
-  virtual int stride(PlaneType type) const;
+  virtual int StrideY() const = 0;
+  virtual int StrideU() const = 0;
+  virtual int StrideV() const = 0;
 
   // Return the handle of the underlying video frame. This is used when the
   // frame is backed by a texture.

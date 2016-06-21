@@ -30,54 +30,6 @@ int I420DataSize(int height, int stride_y, int stride_u, int stride_v) {
 
 }  // namespace
 
-const uint8_t* VideoFrameBuffer::data(PlaneType type) const {
-  switch (type) {
-    case kYPlane:
-      return DataY();
-    case kUPlane:
-      return DataU();
-    case kVPlane:
-      return DataV();
-    default:
-      RTC_NOTREACHED();
-      return nullptr;
-  }
-}
-
-const uint8_t* VideoFrameBuffer::DataY() const {
-  return data(kYPlane);
-}
-const uint8_t* VideoFrameBuffer::DataU() const {
-  return data(kUPlane);
-}
-const uint8_t* VideoFrameBuffer::DataV() const {
-  return data(kVPlane);
-}
-
-int VideoFrameBuffer::stride(PlaneType type) const {
-  switch (type) {
-    case kYPlane:
-      return StrideY();
-    case kUPlane:
-      return StrideU();
-    case kVPlane:
-      return StrideV();
-    default:
-      RTC_NOTREACHED();
-      return 0;
-  }
-}
-
-int VideoFrameBuffer::StrideY() const {
-  return stride(kYPlane);
-}
-int VideoFrameBuffer::StrideU() const {
-  return stride(kUPlane);
-}
-int VideoFrameBuffer::StrideV() const {
-  return stride(kVPlane);
-}
-
 uint8_t* VideoFrameBuffer::MutableDataY() {
   RTC_NOTREACHED();
   return nullptr;
@@ -89,20 +41,6 @@ uint8_t* VideoFrameBuffer::MutableDataU() {
 uint8_t* VideoFrameBuffer::MutableDataV() {
   RTC_NOTREACHED();
   return nullptr;
-}
-
-uint8_t* VideoFrameBuffer::MutableData(PlaneType type) {
-  switch (type) {
-    case kYPlane:
-      return MutableDataY();
-    case kUPlane:
-      return MutableDataU();
-    case kVPlane:
-      return MutableDataV();
-    default:
-      RTC_NOTREACHED();
-      return nullptr;
-  }
 }
 
 VideoFrameBuffer::~VideoFrameBuffer() {}
