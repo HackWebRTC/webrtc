@@ -783,6 +783,12 @@ void P2PTransportChannel::AddRemoteCandidate(const Candidate& candidate) {
     }
   }
 
+  // If this candidate matches what was thought to be a peer reflexive
+  // candidate, we need to update the candidate priority/etc.
+  for (Connection* conn : connections_) {
+    conn->MaybeUpdatePeerReflexiveCandidate(new_remote_candidate);
+  }
+
   // Create connections to this remote candidate.
   CreateConnections(new_remote_candidate, NULL);
 
@@ -881,9 +887,6 @@ bool P2PTransportChannel::CreateConnection(PortInterface* port,
   }
 
   // No new connection was created.
-  // Check if this is a peer reflexive candidate.
-  connection->MaybeUpdatePeerReflexiveCandidate(remote_candidate);
-
   // It is not legal to try to change any of the parameters of an existing
   // connection; however, the other side can send a duplicate candidate.
   if (!remote_candidate.IsEquivalent(connection->remote_candidate())) {

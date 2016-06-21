@@ -150,7 +150,6 @@ class P2PTransportChannelTestBase : public testing::Test,
                        ss_.get(), kSocksProxyAddrs[0]),
         socks_server2_(ss_.get(), kSocksProxyAddrs[1],
                        ss_.get(), kSocksProxyAddrs[1]),
-        clear_remote_candidates_ufrag_pwd_(false),
         force_relay_(false) {
     ep1_.role_ = cricket::ICEROLE_CONTROLLING;
     ep2_.role_ = cricket::ICEROLE_CONTROLLED;
@@ -327,9 +326,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     channel->SignalRoleConflict.connect(
         this, &P2PTransportChannelTestBase::OnRoleConflict);
     channel->SetIceCredentials(local_ice_ufrag, local_ice_pwd);
-    if (clear_remote_candidates_ufrag_pwd_) {
-      // This only needs to be set if we're clearing them from the
-      // candidates.  Some unit tests rely on this not being set.
+    if (remote_ice_credential_source_ == FROM_SETICECREDENTIALS) {
       channel->SetRemoteIceCredentials(remote_ice_ufrag, remote_ice_pwd);
     }
     channel->SetIceRole(GetEndpoint(endpoint)->ice_role());
@@ -706,7 +703,7 @@ class P2PTransportChannelTestBase : public testing::Test,
             static_cast<CandidatesData*>(msg->pdata));
         cricket::P2PTransportChannel* rch = GetRemoteChannel(data->channel);
         for (auto& c : data->candidates) {
-          if (clear_remote_candidates_ufrag_pwd_) {
+          if (remote_ice_credential_source_ != FROM_CANDIDATE) {
             c.set_username("");
             c.set_password("");
           }
@@ -787,8 +784,13 @@ class P2PTransportChannelTestBase : public testing::Test,
     return GetChannelData(ch)->ch_packets_;
   }
 
-  void set_clear_remote_candidates_ufrag_pwd(bool clear) {
-    clear_remote_candidates_ufrag_pwd_ = clear;
+  enum RemoteIceCredentialSource { FROM_CANDIDATE, FROM_SETICECREDENTIALS };
+
+  // How does the test pass ICE credentials to the P2PTransportChannel?
+  // On the candidate itself, or through SetIceCredentials?
+  // Goes through the candidate itself by default.
+  void set_remote_ice_credential_source(RemoteIceCredentialSource source) {
+    remote_ice_credential_source_ = source;
   }
 
   void set_force_relay(bool relay) {
@@ -809,7 +811,7 @@ class P2PTransportChannelTestBase : public testing::Test,
   rtc::SocksProxyServer socks_server2_;
   Endpoint ep1_;
   Endpoint ep2_;
-  bool clear_remote_candidates_ufrag_pwd_;
+  RemoteIceCredentialSource remote_ice_credential_source_ = FROM_CANDIDATE;
   bool force_relay_;
 };
 
@@ -888,7 +890,7 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
     SetAllocatorFlags(1, allocator_flags2);
     SetAllocationStepDelay(1, delay);
 
-    set_clear_remote_candidates_ufrag_pwd(true);
+    set_remote_ice_credential_source(FROM_SETICECREDENTIALS);
   }
   void ConfigureEndpoint(int endpoint, Config config) {
     switch (config) {
@@ -1106,7 +1108,7 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignaling) {
   ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
                      kDefaultPortAllocatorFlags);
   // Emulate no remote credentials coming in.
-  set_clear_remote_candidates_ufrag_pwd(false);
+  set_remote_ice_credential_source(FROM_CANDIDATE);
   CreateChannels(1);
   // Only have remote credentials come in for ep2, not ep1.
   ep2_ch1()->SetRemoteIceCredentials(kIceUfrag[0], kIcePwd[0]);
@@ -1158,7 +1160,7 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignalingWithNAT) {
   ConfigureEndpoints(OPEN, NAT_SYMMETRIC, kDefaultPortAllocatorFlags,
                      kDefaultPortAllocatorFlags);
   // Emulate no remote credentials coming in.
-  set_clear_remote_candidates_ufrag_pwd(false);
+  set_remote_ice_credential_source(FROM_CANDIDATE);
   CreateChannels(1);
   // Only have remote credentials come in for ep2, not ep1.
   ep2_ch1()->SetRemoteIceCredentials(kIceUfrag[0], kIcePwd[0]);
@@ -1201,9 +1203,67 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignalingWithNAT) {
   DestroyChannels();
 }
 
+// Test that we properly create a connection on a STUN ping from unknown address
+// when the signaling is slow, even if the new candidate is created due to the
+// remote peer doing an ICE restart, pairing this candidate across generations.
+//
+// Previously this wasn't working due to a bug where the peer reflexive
+// candidate was only updated for the newest generation candidate pairs, and
+// not older-generation candidate pairs created by pairing candidates across
+// generations. This resulted in the old-generation prflx candidate being
+// prioritized above new-generation candidate pairs.
+TEST_F(P2PTransportChannelTest,
+       PeerReflexiveCandidateBeforeSignalingWithIceRestart) {
+  ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
+                     kDefaultPortAllocatorFlags);
+  // Only gather relay candidates, so that when the prflx candidate arrives
+  // it's prioritized above the current candidate pair.
+  GetEndpoint(0)->allocator_->set_candidate_filter(cricket::CF_RELAY);
+  GetEndpoint(1)->allocator_->set_candidate_filter(cricket::CF_RELAY);
+  // Setting this allows us to control when SetRemoteIceCredentials is called.
+  set_remote_ice_credential_source(FROM_CANDIDATE);
+  CreateChannels(1);
+  // Wait for the initial connection to be made.
+  ep1_ch1()->SetRemoteIceCredentials(kIceUfrag[1], kIcePwd[1]);
+  ep2_ch1()->SetRemoteIceCredentials(kIceUfrag[0], kIcePwd[0]);
+  EXPECT_TRUE_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                       ep2_ch1()->receiving() && ep2_ch1()->writable(),
+                   kDefaultTimeout);
+
+  // Simulate an ICE restart on ep2, but don't signal the candidate or new
+  // ICE credentials until after a prflx connection has been made.
+  PauseCandidates(1);
+  ep2_ch1()->SetIceCredentials(kIceUfrag[3], kIcePwd[3]);
+  ep1_ch1()->SetRemoteIceCredentials(kIceUfrag[3], kIcePwd[3]);
+  ep2_ch1()->MaybeStartGathering();
+
+  // The caller should have the best connection connected to the peer reflexive
+  // candidate.
+  EXPECT_EQ_WAIT("prflx",
+                 ep1_ch1()->best_connection()->remote_candidate().type(),
+                 kDefaultTimeout);
+  const cricket::Connection* prflx_best_connection =
+      ep1_ch1()->best_connection();
+
+  // Now simulate the ICE restart on ep1.
+  ep1_ch1()->SetIceCredentials(kIceUfrag[2], kIcePwd[2]);
+  ep2_ch1()->SetRemoteIceCredentials(kIceUfrag[2], kIcePwd[2]);
+  ep1_ch1()->MaybeStartGathering();
+
+  // Finally send the candidates from ep2's ICE restart and verify that ep1 uses
+  // their information to update the peer reflexive candidate.
+  ResumeCandidates(1);
+
+  EXPECT_EQ_WAIT("relay",
+                 ep1_ch1()->best_connection()->remote_candidate().type(),
+                 kDefaultTimeout);
+  EXPECT_EQ(prflx_best_connection, ep1_ch1()->best_connection());
+  DestroyChannels();
+}
+
 // Test that if remote candidates don't have ufrag and pwd, we still work.
 TEST_F(P2PTransportChannelTest, RemoteCandidatesWithoutUfragPwd) {
-  set_clear_remote_candidates_ufrag_pwd(true);
+  set_remote_ice_credential_source(FROM_SETICECREDENTIALS);
   ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
                      kDefaultPortAllocatorFlags);
   CreateChannels(1);
