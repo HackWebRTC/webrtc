@@ -10,6 +10,9 @@
 
 #include "webrtc/common_video/include/incoming_video_stream.h"
 
+#include <assert.h>
+
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common_video/video_render_frames.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
@@ -17,46 +20,103 @@
 
 namespace webrtc {
 
-IncomingVideoStream::IncomingVideoStream(
-    int32_t delay_ms,
-    rtc::VideoSinkInterface<VideoFrame>* callback)
-    : incoming_render_thread_(&IncomingVideoStreamThreadFun,
-                              this,
-                              "IncomingVideoStreamThread"),
+IncomingVideoStream::IncomingVideoStream(bool disable_prerenderer_smoothing)
+    : disable_prerenderer_smoothing_(disable_prerenderer_smoothing),
+      incoming_render_thread_(),
       deliver_buffer_event_(EventTimerWrapper::Create()),
-      external_callback_(callback),
-      render_buffers_(new VideoRenderFrames(delay_ms)) {
-  RTC_DCHECK(external_callback_);
-
-  render_thread_checker_.DetachFromThread();
-  decoder_thread_checker_.DetachFromThread();
-
-  incoming_render_thread_.Start();
-  incoming_render_thread_.SetPriority(rtc::kRealtimePriority);
-  deliver_buffer_event_->StartTimer(false, kEventStartupTimeMs);
-}
+      running_(false),
+      external_callback_(nullptr),
+      render_buffers_(new VideoRenderFrames()) {}
 
 IncomingVideoStream::~IncomingVideoStream() {
-  RTC_DCHECK(main_thread_checker_.CalledOnValidThread());
-
-  {
-    rtc::CritScope cs(&buffer_critsect_);
-    render_buffers_.reset();
-  }
-
-  deliver_buffer_event_->Set();
-  incoming_render_thread_.Stop();
-  deliver_buffer_event_->StopTimer();
+  Stop();
 }
 
 void IncomingVideoStream::OnFrame(const VideoFrame& video_frame) {
-  RTC_DCHECK_RUN_ON(&decoder_thread_checker_);
+  rtc::CritScope csS(&stream_critsect_);
+
+  if (!running_) {
+    return;
+  }
 
   // Hand over or insert frame.
-  rtc::CritScope csB(&buffer_critsect_);
-  if (render_buffers_->AddFrame(video_frame) == 1) {
-    deliver_buffer_event_->Set();
+  if (disable_prerenderer_smoothing_) {
+    DeliverFrame(video_frame);
+  } else {
+    rtc::CritScope csB(&buffer_critsect_);
+    if (render_buffers_->AddFrame(video_frame) == 1) {
+      deliver_buffer_event_->Set();
+    }
   }
+}
+
+int32_t IncomingVideoStream::SetExpectedRenderDelay(
+    int32_t delay_ms) {
+  rtc::CritScope csS(&stream_critsect_);
+  if (running_) {
+    return -1;
+  }
+  rtc::CritScope cs(&buffer_critsect_);
+  return render_buffers_->SetRenderDelay(delay_ms);
+}
+
+void IncomingVideoStream::SetExternalCallback(
+    rtc::VideoSinkInterface<VideoFrame>* external_callback) {
+  rtc::CritScope cs(&thread_critsect_);
+  external_callback_ = external_callback;
+}
+
+int32_t IncomingVideoStream::Start() {
+  rtc::CritScope csS(&stream_critsect_);
+  if (running_) {
+    return 0;
+  }
+
+  if (!disable_prerenderer_smoothing_) {
+    rtc::CritScope csT(&thread_critsect_);
+    assert(incoming_render_thread_ == NULL);
+
+    incoming_render_thread_.reset(new rtc::PlatformThread(
+        IncomingVideoStreamThreadFun, this, "IncomingVideoStreamThread"));
+    if (!incoming_render_thread_) {
+      return -1;
+    }
+
+    incoming_render_thread_->Start();
+    incoming_render_thread_->SetPriority(rtc::kRealtimePriority);
+    deliver_buffer_event_->StartTimer(false, kEventStartupTimeMs);
+  }
+
+  running_ = true;
+  return 0;
+}
+
+int32_t IncomingVideoStream::Stop() {
+  rtc::CritScope cs_stream(&stream_critsect_);
+
+  if (!running_) {
+    return 0;
+  }
+
+  rtc::PlatformThread* thread = NULL;
+  {
+    rtc::CritScope cs_thread(&thread_critsect_);
+    if (incoming_render_thread_) {
+      // Setting the incoming render thread to NULL marks that we're performing
+      // a shutdown and will make IncomingVideoStreamProcess abort after wakeup.
+      thread = incoming_render_thread_.release();
+      deliver_buffer_event_->StopTimer();
+      // Set the event to allow the thread to wake up and shut down without
+      // waiting for a timeout.
+      deliver_buffer_event_->Set();
+    }
+  }
+  if (thread) {
+    thread->Stop();
+    delete thread;
+  }
+  running_ = false;
+  return 0;
 }
 
 bool IncomingVideoStream::IncomingVideoStreamThreadFun(void* obj) {
@@ -64,18 +124,18 @@ bool IncomingVideoStream::IncomingVideoStreamThreadFun(void* obj) {
 }
 
 bool IncomingVideoStream::IncomingVideoStreamProcess() {
-  RTC_DCHECK_RUN_ON(&render_thread_checker_);
-
   if (kEventError != deliver_buffer_event_->Wait(kEventMaxWaitTimeMs)) {
+    rtc::CritScope cs(&thread_critsect_);
+    if (incoming_render_thread_ == NULL) {
+      // Terminating
+      return false;
+    }
+
     // Get a new frame to render and the time for the frame after this one.
     rtc::Optional<VideoFrame> frame_to_render;
     uint32_t wait_time;
     {
       rtc::CritScope cs(&buffer_critsect_);
-      if (!render_buffers_.get()) {
-        // Terminating
-        return false;
-      }
       frame_to_render = render_buffers_->FrameToRender();
       wait_time = render_buffers_->TimeToNextFrameRelease();
     }
@@ -84,14 +144,21 @@ bool IncomingVideoStream::IncomingVideoStreamProcess() {
     if (wait_time > kEventMaxWaitTimeMs) {
       wait_time = kEventMaxWaitTimeMs;
     }
-
     deliver_buffer_event_->StartTimer(false, wait_time);
 
-    if (frame_to_render) {
-      external_callback_->OnFrame(*frame_to_render);
-    }
+    if (frame_to_render)
+      DeliverFrame(*frame_to_render);
   }
   return true;
+}
+
+void IncomingVideoStream::DeliverFrame(const VideoFrame& video_frame) {
+  rtc::CritScope cs(&thread_critsect_);
+
+  // Send frame for rendering.
+  if (external_callback_) {
+    external_callback_->OnFrame(video_frame);
+  }
 }
 
 }  // namespace webrtc
