@@ -1808,31 +1808,6 @@ class VideoFrameTest : public testing::Test {
     EXPECT_TRUE(IsEqual(frame1, frame2, 1));
   }
 
-  ///////////////////
-  // General tests //
-  ///////////////////
-
-  void Copy() {
-    std::unique_ptr<T> source(new T);
-    std::unique_ptr<cricket::VideoFrame> target;
-    ASSERT_TRUE(LoadFrameNoRepeat(source.get()));
-    target.reset(source->Copy());
-    EXPECT_TRUE(IsEqual(*source, *target, 0));
-    source.reset();
-    ASSERT_TRUE(target->video_frame_buffer() != NULL);
-    EXPECT_TRUE(target->video_frame_buffer()->DataY() != NULL);
-  }
-
-  void CopyIsRef() {
-    std::unique_ptr<T> source(new T);
-    std::unique_ptr<const cricket::VideoFrame> target;
-    ASSERT_TRUE(LoadFrameNoRepeat(source.get()));
-    target.reset(source->Copy());
-    EXPECT_TRUE(IsEqual(*source, *target, 0));
-    const T* const_source = source.get();
-    EXPECT_EQ(const_source->video_frame_buffer(), target->video_frame_buffer());
-  }
-
   int repeat_;
 };
 
