@@ -77,27 +77,29 @@ bool DelayPeakDetector::Update(int inter_arrival_time, int target_level) {
     if (!peak_period_stopwatch_) {
       // This is the first peak. Reset the period counter.
       peak_period_stopwatch_ = tick_timer_->GetNewStopwatch();
-    } else if (peak_period_stopwatch_->ElapsedMs() <= kMaxPeakPeriodMs) {
-      // This is not the first peak, and the period is valid.
-      // Store peak data in the vector.
-      Peak peak_data;
-      peak_data.period_ms = peak_period_stopwatch_->ElapsedMs();
-      peak_data.peak_height_packets = inter_arrival_time;
-      peak_history_.push_back(peak_data);
-      while (peak_history_.size() > kMaxNumPeaks) {
-        // Delete the oldest data point.
-        peak_history_.pop_front();
+    } else if (peak_period_stopwatch_->ElapsedMs() > 0) {
+      if (peak_period_stopwatch_->ElapsedMs() <= kMaxPeakPeriodMs) {
+        // This is not the first peak, and the period is valid.
+        // Store peak data in the vector.
+        Peak peak_data;
+        peak_data.period_ms = peak_period_stopwatch_->ElapsedMs();
+        peak_data.peak_height_packets = inter_arrival_time;
+        peak_history_.push_back(peak_data);
+        while (peak_history_.size() > kMaxNumPeaks) {
+          // Delete the oldest data point.
+          peak_history_.pop_front();
+        }
+        peak_period_stopwatch_ = tick_timer_->GetNewStopwatch();
+      } else if (peak_period_stopwatch_->ElapsedMs() <= 2 * kMaxPeakPeriodMs) {
+        // Invalid peak due to too long period. Reset period counter and start
+        // looking for next peak.
+        peak_period_stopwatch_ = tick_timer_->GetNewStopwatch();
+      } else {
+        // More than 2 times the maximum period has elapsed since the last peak
+        // was registered. It seams that the network conditions have changed.
+        // Reset the peak statistics.
+        Reset();
       }
-      peak_period_stopwatch_ = tick_timer_->GetNewStopwatch();
-    } else if (peak_period_stopwatch_->ElapsedMs() <= 2 * kMaxPeakPeriodMs) {
-      // Invalid peak due to too long period. Reset period counter and start
-      // looking for next peak.
-      peak_period_stopwatch_ = tick_timer_->GetNewStopwatch();
-    } else {
-      // More than 2 times the maximum period has elapsed since the last peak
-      // was registered. It seams that the network conditions have changed.
-      // Reset the peak statistics.
-      Reset();
     }
   }
   return CheckPeakConditions();

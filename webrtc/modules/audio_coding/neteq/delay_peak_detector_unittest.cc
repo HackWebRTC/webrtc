@@ -122,4 +122,22 @@ TEST(DelayPeakDetector, DoNotTriggerPeakMode) {
     time += 10;  // Increase time 10 ms.
   }
 }
+
+// In situations with reordered packets, the DelayPeakDetector may be updated
+// back-to-back (i.e., without the tick_timer moving) but still with non-zero
+// inter-arrival time. This test is to make sure that this does not cause
+// problems.
+TEST(DelayPeakDetector, ZeroDistancePeaks) {
+  TickTimer tick_timer;
+  DelayPeakDetector detector(&tick_timer);
+  const int kPacketSizeMs = 30;
+  detector.SetPacketAudioLength(kPacketSizeMs);
+
+  const int kTargetBufferLevel = 2;  // Define peaks to be iat > 4.
+  const int kInterArrivalTime = 3 * kTargetBufferLevel;  // Will trigger a peak.
+  EXPECT_FALSE(detector.Update(kInterArrivalTime, kTargetBufferLevel));
+  EXPECT_FALSE(detector.Update(kInterArrivalTime, kTargetBufferLevel));
+  EXPECT_FALSE(detector.Update(kInterArrivalTime, kTargetBufferLevel));
+}
+
 }  // namespace webrtc
