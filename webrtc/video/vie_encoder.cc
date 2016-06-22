@@ -269,7 +269,8 @@ void ViEEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
   }
 
   if (stats_proxy_ && video_suspension_changed) {
-    LOG(LS_INFO) << "Video suspend state changed " << video_is_suspended;
+    LOG(LS_INFO) << "Video suspend state changed to: "
+                 << (video_is_suspended ? "suspended" : "not suspended");
     stats_proxy_->OnSuspendChange(video_is_suspended);
   }
 }
