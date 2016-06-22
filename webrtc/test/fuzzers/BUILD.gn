@@ -86,6 +86,7 @@ webrtc_fuzzer_test("rtcp_receiver_fuzzer") {
   deps = [
     "../../modules/rtp_rtcp/",
   ]
+  seed_corpus = "corpora/rtcp-corpus"
 }
 
 webrtc_fuzzer_test("rtp_packet_fuzzer") {
@@ -95,6 +96,7 @@ webrtc_fuzzer_test("rtp_packet_fuzzer") {
   deps = [
     "../../modules/rtp_rtcp/",
   ]
+  seed_corpus = "corpora/rtp-corpus"
 }
 
 source_set("audio_decoder_fuzzer") {
