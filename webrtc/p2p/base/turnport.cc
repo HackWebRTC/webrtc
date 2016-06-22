@@ -449,7 +449,7 @@ Connection* TurnPort::CreateConnection(const Candidate& address,
     return NULL;
   }
 
-  if (state_ == STATE_DISCONNECTED) {
+  if (state_ == STATE_DISCONNECTED || state_ == STATE_RECEIVEONLY) {
     return NULL;
   }
 
@@ -469,10 +469,10 @@ Connection* TurnPort::CreateConnection(const Candidate& address,
   return NULL;
 }
 
-bool TurnPort::DestroyConnection(const rtc::SocketAddress& address) {
+bool TurnPort::FailAndPruneConnection(const rtc::SocketAddress& address) {
   Connection* conn = GetConnection(address);
   if (conn != nullptr) {
-    conn->Destroy();
+    conn->FailAndPrune();
     return true;
   }
   return false;
@@ -561,7 +561,7 @@ bool TurnPort::HandleIncomingPacket(rtc::AsyncPacketSocket* socket,
 
   if (state_ == STATE_DISCONNECTED) {
     LOG_J(LS_WARNING, this)
-        << "Received TURN message while the Turn port is disconnected";
+        << "Received TURN message while the TURN port is disconnected";
     return false;
   }
 
@@ -739,11 +739,20 @@ void TurnPort::OnAllocateError() {
   thread()->Post(RTC_FROM_HERE, this, MSG_ALLOCATE_ERROR);
 }
 
-void TurnPort::OnTurnRefreshError() {
-  // Need to Close the port asynchronously because otherwise, the refresh
+void TurnPort::OnRefreshError() {
+  // Need to clear the requests asynchronously because otherwise, the refresh
   // request may be deleted twice: once at the end of the message processing
-  // and the other in Close().
+  // and the other in HandleRefreshError().
   thread()->Post(RTC_FROM_HERE, this, MSG_REFRESH_ERROR);
+}
+
+void TurnPort::HandleRefreshError() {
+  request_manager_.Clear();
+  state_ = STATE_RECEIVEONLY;
+  // Fail and prune all connections; stop sending data.
+  for (auto kv : connections()) {
+    kv.second->FailAndPrune();
+  }
 }
 
 void TurnPort::Close() {
@@ -768,7 +777,7 @@ void TurnPort::OnMessage(rtc::Message* message) {
       OnAllocateMismatch();
       break;
     case MSG_REFRESH_ERROR:
-      Close();
+      HandleRefreshError();
       break;
     case MSG_TRY_ALTERNATE_SERVER:
       if (server_address().proto == PROTO_UDP) {
@@ -1277,14 +1286,14 @@ void TurnRefreshRequest::OnErrorResponse(StunMessage* response) {
                              << ", id=" << rtc::hex_encode(id())
                              << ", code=" << error_code->code()
                              << ", rtt=" << Elapsed();
-    port_->OnTurnRefreshError();
+    port_->OnRefreshError();
     port_->SignalTurnRefreshResult(port_, error_code->code());
   }
 }
 
 void TurnRefreshRequest::OnTimeout() {
   LOG_J(LS_WARNING, port_) << "TURN refresh timeout " << rtc::hex_encode(id());
-  port_->OnTurnRefreshError();
+  port_->OnRefreshError();
 }
 
 TurnCreatePermissionRequest::TurnCreatePermissionRequest(
@@ -1491,20 +1500,18 @@ void TurnEntry::OnCreatePermissionError(StunMessage* response, int code) {
       SendCreatePermissionRequest(0);
     }
   } else {
-    port_->DestroyConnection(ext_addr_);
+    bool found = port_->FailAndPruneConnection(ext_addr_);
+    if (found) {
+      LOG(LS_ERROR) << "Received TURN CreatePermission error response, "
+                    << "code=" << code << "; pruned connection.";
+    }
     // Send signal with error code.
     port_->SignalCreatePermissionResult(port_, ext_addr_, code);
-    Connection* c = port_->GetConnection(ext_addr_);
-    if (c) {
-      LOG_J(LS_ERROR, c) << "Received TURN CreatePermission error response, "
-                         << "code=" << code << "; killing connection.";
-      c->FailAndDestroy();
-    }
   }
 }
 
 void TurnEntry::OnCreatePermissionTimeout() {
-  port_->DestroyConnection(ext_addr_);
+  port_->FailAndPruneConnection(ext_addr_);
 }
 
 void TurnEntry::OnChannelBindSuccess() {
@@ -1516,8 +1523,8 @@ void TurnEntry::OnChannelBindSuccess() {
 
 void TurnEntry::OnChannelBindError(StunMessage* response, int code) {
   // If the channel bind fails due to errors other than STATE_NONCE,
-  // we just destroy the connection and rely on ICE restart to re-establish
-  // the connection.
+  // we will fail and prune the connection and rely on ICE restart to
+  // re-establish a new connection if needed.
   if (code == STUN_ERROR_STALE_NONCE) {
     if (port_->UpdateNonce(response)) {
       // Send channel bind request with fresh nonce.
@@ -1525,11 +1532,11 @@ void TurnEntry::OnChannelBindError(StunMessage* response, int code) {
     }
   } else {
     state_ = STATE_UNBOUND;
-    port_->DestroyConnection(ext_addr_);
+    port_->FailAndPruneConnection(ext_addr_);
   }
 }
 void TurnEntry::OnChannelBindTimeout() {
   state_ = STATE_UNBOUND;
-  port_->DestroyConnection(ext_addr_);
+  port_->FailAndPruneConnection(ext_addr_);
 }
 }  // namespace cricket
