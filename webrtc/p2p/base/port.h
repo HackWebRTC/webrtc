@@ -523,10 +523,6 @@ class Connection : public CandidatePairInterface,
   // Makes the connection go away, in a failed state.
   void FailAndDestroy();
 
-  // Prunes the connection and sets its state to STATE_FAILED,
-  // It will not be used or send pings although it can still receive packets.
-  void FailAndPrune();
-
   // Checks that the state of this connection is up-to-date.  The argument is
   // the current time, which is compared against various timeouts.
   void UpdateState(int64_t now);

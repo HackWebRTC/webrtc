@@ -2278,24 +2278,6 @@ TEST_F(P2PTransportChannelPingTest, TestNoTriggeredChecksWhenWritable) {
   EXPECT_EQ(conn2, FindNextPingableConnectionAndPingIt(&ch));
 }
 
-TEST_F(P2PTransportChannelPingTest, TestFailedConnectionNotPingable) {
-  cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
-  cricket::P2PTransportChannel ch("Do not ping failed connections", 1, &pa);
-  PrepareChannel(&ch);
-  ch.Connect();
-  ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateHostCandidate("1.1.1.1", 1, 1));
-
-  cricket::Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
-  ASSERT_TRUE(conn1 != nullptr);
-
-  EXPECT_EQ(conn1, ch.FindNextPingableConnection());
-  conn1->Prune();  // A pruned connection may still be pingable.
-  EXPECT_EQ(conn1, ch.FindNextPingableConnection());
-  conn1->FailAndPrune();
-  EXPECT_TRUE(nullptr == ch.FindNextPingableConnection());
-}
-
 TEST_F(P2PTransportChannelPingTest, TestSignalStateChanged) {
   cricket::FakePortAllocator pa(rtc::Thread::Current(), nullptr);
   cricket::P2PTransportChannel ch("state change", 1, &pa);

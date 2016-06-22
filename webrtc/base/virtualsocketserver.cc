@@ -511,7 +511,7 @@ VirtualSocketServer::VirtualSocketServer(SocketServer* ss)
       server_owned_(false),
       msg_queue_(NULL),
       stop_on_idle_(false),
-      network_delay_(0),
+      network_delay_(TimeMillis()),
       next_ipv4_(kInitialNextIPv4),
       next_ipv6_(kInitialNextIPv6),
       next_port_(kFirstEphemeralPort),

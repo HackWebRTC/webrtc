@@ -1090,11 +1090,6 @@ void Connection::FailAndDestroy() {
   Destroy();
 }
 
-void Connection::FailAndPrune() {
-  set_state(Connection::STATE_FAILED);
-  Prune();
-}
-
 void Connection::PrintPingsSinceLastResponse(std::string* s, size_t max) {
   std::ostringstream oss;
   oss << std::boolalpha;

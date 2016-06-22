@@ -1349,11 +1349,6 @@ bool P2PTransportChannel::IsPingable(Connection* conn, int64_t now) {
     return false;
   }
 
-  // A failed connection will not be pinged.
-  if (conn->state() == Connection::STATE_FAILED) {
-    return false;
-  }
-
   // An never connected connection cannot be written to at all, so pinging is
   // out of the question. However, if it has become WRITABLE, it is in the
   // reconnecting state so ping is needed.
