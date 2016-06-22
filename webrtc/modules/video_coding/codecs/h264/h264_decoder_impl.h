@@ -52,6 +52,8 @@ class H264DecoderImpl : public H264Decoder {
                  const CodecSpecificInfo* codec_specific_info = nullptr,
                  int64_t render_time_ms = -1) override;
 
+  const char* ImplementationName() const override;
+
  private:
   // Called by FFmpeg when it needs a frame buffer to store decoded frames in.
   // The |VideoFrame| returned by FFmpeg at |Decode| originate from here. Their

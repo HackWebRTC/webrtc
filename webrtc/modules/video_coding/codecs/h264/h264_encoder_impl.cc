@@ -382,6 +382,10 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
+const char* H264EncoderImpl::ImplementationName() const {
+  return "OpenH264";
+}
+
 bool H264EncoderImpl::IsInitialized() const {
   return openh264_encoder_ != nullptr;
 }

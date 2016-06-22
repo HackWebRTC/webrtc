@@ -52,6 +52,8 @@ class H264EncoderImpl : public H264Encoder {
                  const CodecSpecificInfo* codec_specific_info,
                  const std::vector<FrameType>* frame_types) override;
 
+  const char* ImplementationName() const override;
+
   // Unsupported / Do nothing.
   int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
   int32_t SetPeriodicKeyFrames(bool enable) override;
