@@ -52,14 +52,6 @@
         'channel_manager.h',
         'channel_proxy.cc',
         'channel_proxy.h',
-        'coder.cc',
-        'coder.h',
-        'file_player.h',
-        'file_player_impl.cc',
-        'file_player_impl.h',
-        'file_recorder.h',
-        'file_recorder_impl.cc',
-        'file_recorder_impl.h',
         'level_indicator.cc',
         'level_indicator.h',
         'monitor_module.cc',
@@ -117,7 +109,6 @@
             'voice_engine',
             '<(DEPTH)/testing/gmock.gyp:gmock',
             '<(DEPTH)/testing/gtest.gyp:gtest',
-            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
             # The rest are to satisfy the unittests' include chain.
             # This would be unnecessary if we used qualified includes.
             '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
@@ -133,7 +124,6 @@
           ],
           'sources': [
             'channel_unittest.cc',
-            'file_player_unittests.cc',
             'network_predictor_unittest.cc',
             'transmit_mixer_unittest.cc',
             'utility_unittest.cc',

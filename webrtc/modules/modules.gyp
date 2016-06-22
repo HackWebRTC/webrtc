@@ -351,6 +351,7 @@
             'rtp_rtcp/test/testAPI/test_api_rtcp.cc',
             'rtp_rtcp/test/testAPI/test_api_video.cc',
             'utility/source/audio_frame_operations_unittest.cc',
+            'utility/source/file_player_unittests.cc',
             'utility/source/process_thread_impl_unittest.cc',
             'video_coding/codecs/test/packet_manipulator_unittest.cc',
             'video_coding/codecs/test/stats_unittest.cc',
