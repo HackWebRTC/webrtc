@@ -195,7 +195,6 @@ class TurnPortTest : public testing::Test,
                        const rtc::PacketTime& packet_time) {
     udp_packets_.push_back(rtc::Buffer(data, size));
   }
-  void OnConnectionDestroyed(Connection* conn) { connection_destroyed_ = true; }
   void OnSocketReadPacket(rtc::AsyncPacketSocket* socket,
                           const char* data, size_t size,
                           const rtc::SocketAddress& remote_addr,
@@ -282,9 +281,6 @@ class TurnPortTest : public testing::Test,
     turn_port_->SignalTurnRefreshResult.connect(
         this, &TurnPortTest::OnTurnRefreshResult);
   }
-  void ConnectConnectionDestroyedSignal(Connection* conn) {
-    conn->SignalDestroyed.connect(this, &TurnPortTest::OnConnectionDestroyed);
-  }
 
   void CreateUdpPort() { CreateUdpPort(kLocalAddr2); }
 
@@ -309,10 +305,23 @@ class TurnPortTest : public testing::Test,
     ASSERT_TRUE_WAIT(udp_ready_, kTimeout);
   }
 
-  bool CheckConnectionDestroyed() {
-    turn_port_->FlushRequests(cricket::kAllRequests);
-    rtc::Thread::Current()->ProcessMessages(50);
-    return connection_destroyed_;
+  bool CheckConnectionFailedAndPruned(Connection* conn) {
+    return conn && !conn->active() && conn->state() == Connection::STATE_FAILED;
+  }
+
+  // Checks that |turn_port_| has a nonempty set of connections and they are all
+  // failed and pruned.
+  bool CheckAllConnectionsFailedAndPruned() {
+    auto& connections = turn_port_->connections();
+    if (connections.empty()) {
+      return false;
+    }
+    for (auto kv : connections) {
+      if (!CheckConnectionFailedAndPruned(kv.second)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   void TestTurnAlternateServer(cricket::ProtocolType protocol_type) {
@@ -524,7 +533,6 @@ class TurnPortTest : public testing::Test,
   bool udp_ready_;
   bool test_finish_;
   bool turn_refresh_success_ = false;
-  bool connection_destroyed_ = false;
   std::vector<rtc::Buffer> turn_packets_;
   std::vector<rtc::Buffer> udp_packets_;
   rtc::PacketOptions options;
@@ -733,6 +741,7 @@ TEST_F(TurnPortTest, TestTurnTcpAllocateMismatch) {
 }
 
 TEST_F(TurnPortTest, TestRefreshRequestGetsErrorResponse) {
+  rtc::ScopedFakeClock clock;
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
   PrepareTurnAndUdpPorts();
   turn_port_->CreateConnection(udp_port_->Candidates()[0],
@@ -745,13 +754,14 @@ TEST_F(TurnPortTest, TestRefreshRequestGetsErrorResponse) {
   // When this succeeds, it will schedule a new RefreshRequest with the bad
   // credential.
   turn_port_->FlushRequests(cricket::TURN_REFRESH_REQUEST);
-  EXPECT_TRUE_WAIT(turn_refresh_success_, kTimeout);
+  EXPECT_TRUE_SIMULATED_WAIT(turn_refresh_success_, kTimeout, clock);
   // Flush it again, it will receive a bad response.
   turn_port_->FlushRequests(cricket::TURN_REFRESH_REQUEST);
-  EXPECT_TRUE_WAIT(!turn_refresh_success_, kTimeout);
-  EXPECT_TRUE_WAIT(!turn_port_->connected(), kTimeout);
-  EXPECT_TRUE_WAIT(turn_port_->connections().empty(), kTimeout);
-  EXPECT_FALSE(turn_port_->HasRequests());
+  EXPECT_TRUE_SIMULATED_WAIT(!turn_refresh_success_, kTimeout, clock);
+  EXPECT_TRUE_SIMULATED_WAIT(!turn_port_->connected(), kTimeout, clock);
+  EXPECT_TRUE_SIMULATED_WAIT(CheckAllConnectionsFailedAndPruned(), kTimeout,
+                             clock);
+  EXPECT_TRUE_SIMULATED_WAIT(!turn_port_->HasRequests(), kTimeout, clock);
 }
 
 // Test that TurnPort will not handle any incoming packets once it has been
@@ -794,6 +804,20 @@ TEST_F(TurnPortTest, TestCreateConnectionWhenSocketClosed) {
   conn1 = turn_port_->CreateConnection(udp_port_->Candidates()[0],
                                        Port::ORIGIN_MESSAGE);
   ASSERT_TRUE(conn1 == NULL);
+}
+
+// Tests that when a TCP socket is closed, the respective TURN connection will
+// be destroyed.
+TEST_F(TurnPortTest, TestSocketCloseWillDestroyConnection) {
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
+  PrepareTurnAndUdpPorts();
+  Connection* conn = turn_port_->CreateConnection(udp_port_->Candidates()[0],
+                                                  Port::ORIGIN_MESSAGE);
+  EXPECT_NE(nullptr, conn);
+  EXPECT_TRUE(!turn_port_->connections().empty());
+  turn_port_->socket()->SignalClose(turn_port_->socket(), 1);
+  EXPECT_TRUE_WAIT(turn_port_->connections().empty(), kTimeout);
 }
 
 // Test try-alternate-server feature.
@@ -899,9 +923,8 @@ TEST_F(TurnPortTest, TestRefreshCreatePermissionRequest) {
 
   Connection* conn = turn_port_->CreateConnection(udp_port_->Candidates()[0],
                                                   Port::ORIGIN_MESSAGE);
-  ConnectConnectionDestroyedSignal(conn);
   ASSERT_TRUE(conn != NULL);
-  ASSERT_TRUE_WAIT(turn_create_permission_success_, kTimeout);
+  EXPECT_TRUE_WAIT(turn_create_permission_success_, kTimeout);
   turn_create_permission_success_ = false;
   // A create-permission-request should be pending.
   // After the next create-permission-response is received, it will schedule
@@ -909,14 +932,15 @@ TEST_F(TurnPortTest, TestRefreshCreatePermissionRequest) {
   cricket::RelayCredentials bad_credentials("bad_user", "bad_pwd");
   turn_port_->set_credentials(bad_credentials);
   turn_port_->FlushRequests(cricket::kAllRequests);
-  ASSERT_TRUE_WAIT(turn_create_permission_success_, kTimeout);
+  EXPECT_TRUE_WAIT(turn_create_permission_success_, kTimeout);
   // Flush the requests again; the create-permission-request will fail.
   turn_port_->FlushRequests(cricket::kAllRequests);
   EXPECT_TRUE_WAIT(!turn_create_permission_success_, kTimeout);
-  EXPECT_TRUE_WAIT(connection_destroyed_, kTimeout);
+  EXPECT_TRUE_WAIT(CheckConnectionFailedAndPruned(conn), kTimeout);
 }
 
 TEST_F(TurnPortTest, TestChannelBindGetErrorResponse) {
+  rtc::ScopedFakeClock clock;
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
   PrepareTurnAndUdpPorts();
   Connection* conn1 = turn_port_->CreateConnection(udp_port_->Candidates()[0],
@@ -924,18 +948,25 @@ TEST_F(TurnPortTest, TestChannelBindGetErrorResponse) {
   ASSERT_TRUE(conn1 != nullptr);
   Connection* conn2 = udp_port_->CreateConnection(turn_port_->Candidates()[0],
                                                   Port::ORIGIN_MESSAGE);
-  ASSERT_TRUE(conn2 != nullptr);
-  ConnectConnectionDestroyedSignal(conn1);
-  conn1->Ping(0);
-  ASSERT_TRUE_WAIT(conn1->writable(), kTimeout);
 
-  std::string data = "ABC";
-  conn1->Send(data.data(), data.length(), options);
+  ASSERT_TRUE(conn2 != nullptr);
+  conn1->Ping(0);
+  EXPECT_TRUE_SIMULATED_WAIT(conn1->writable(), kTimeout, clock);
   bool success =
       turn_port_->SetEntryChannelId(udp_port_->Candidates()[0].address(), -1);
   ASSERT_TRUE(success);
-  // Next time when the binding request is sent, it will get an ErrorResponse.
-  EXPECT_TRUE_WAIT(CheckConnectionDestroyed(), kTimeout);
+
+  std::string data = "ABC";
+  conn1->Send(data.data(), data.length(), options);
+
+  EXPECT_TRUE_SIMULATED_WAIT(CheckConnectionFailedAndPruned(conn1), kTimeout,
+                             clock);
+  // Verify that no packet can be sent after a bind request error.
+  conn2->SignalReadPacket.connect(static_cast<TurnPortTest*>(this),
+                                  &TurnPortTest::OnUdpReadPacket);
+  conn1->Send(data.data(), data.length(), options);
+  SIMULATED_WAIT(!udp_packets_.empty(), kTimeout, clock);
+  EXPECT_TRUE(udp_packets_.empty());
 }
 
 // Do a TURN allocation, establish a UDP connection, and send some data.
@@ -995,26 +1026,32 @@ TEST_F(TurnPortTest, TestOriginHeader) {
 }
 
 // Test that a CreatePermission failure will result in the connection being
-// destroyed.
-TEST_F(TurnPortTest, TestConnectionDestroyedOnCreatePermissionFailure) {
+// pruned and failed.
+TEST_F(TurnPortTest, TestConnectionFaildAndPrunedOnCreatePermissionFailure) {
+  rtc::ScopedFakeClock clock;
+  SIMULATED_WAIT(false, 101, clock);
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, cricket::PROTO_TCP);
   turn_server_.server()->set_reject_private_addresses(true);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
   turn_port_->PrepareAddress();
-  ASSERT_TRUE_WAIT(turn_ready_, kTimeout);
+  EXPECT_TRUE_SIMULATED_WAIT(turn_ready_, kTimeout, clock);
 
   CreateUdpPort(SocketAddress("10.0.0.10", 0));
   udp_port_->PrepareAddress();
-  ASSERT_TRUE_WAIT(udp_ready_, kTimeout);
+  EXPECT_TRUE_SIMULATED_WAIT(udp_ready_, kTimeout, clock);
   // Create a connection.
   TestConnectionWrapper conn(turn_port_->CreateConnection(
       udp_port_->Candidates()[0], Port::ORIGIN_MESSAGE));
-  ASSERT_TRUE(conn.connection() != nullptr);
+  EXPECT_TRUE(conn.connection() != nullptr);
 
-  // Asynchronously, CreatePermission request should be sent and fail, closing
-  // the connection.
-  EXPECT_TRUE_WAIT(conn.connection() == nullptr, kTimeout);
-  EXPECT_FALSE(turn_create_permission_success_);
+  // Asynchronously, CreatePermission request should be sent and fail, which
+  // will make the connection pruned and failed.
+  EXPECT_TRUE_SIMULATED_WAIT(CheckConnectionFailedAndPruned(conn.connection()),
+                             kTimeout, clock);
+  EXPECT_TRUE_SIMULATED_WAIT(!turn_create_permission_success_, kTimeout, clock);
+  // Check that the connection is not deleted asynchronously.
+  SIMULATED_WAIT(conn.connection() == nullptr, kTimeout, clock);
+  EXPECT_TRUE(conn.connection() != nullptr);
 }
 
 // Test that a TURN allocation is released when the port is closed.
