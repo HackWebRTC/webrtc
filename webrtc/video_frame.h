@@ -19,9 +19,16 @@
 
 namespace webrtc {
 
+// TODO(nisse): This class duplicates cricket::VideoFrame. There's
+// ongoing work to merge the classes. See
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=5682.
 class VideoFrame {
  public:
+  // TODO(nisse): Deprecated. Using the default constructor violates the
+  // reasonable assumption that video_frame_buffer() returns a valid buffer.
   VideoFrame();
+
+  // Preferred constructor.
   VideoFrame(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
              uint32_t timestamp,
              int64_t render_time_ms,
@@ -31,6 +38,12 @@ class VideoFrame {
   // on set dimensions - height and plane stride.
   // If required size is bigger than the allocated one, new buffers of adequate
   // size will be allocated.
+
+  // TODO(nisse): Deprecated. Should be deleted in the cricket::VideoFrame and
+  // webrtc::VideoFrame merge. If you need to write into the frame, create a
+  // VideoFrameBuffer of the desired size, e.g, using I420Buffer::Create and
+  // write to that. And if you need to wrap it into a VideoFrame, pass it to the
+  // constructor.
   void CreateEmptyFrame(int width,
                         int height,
                         int stride_y,
@@ -39,6 +52,10 @@ class VideoFrame {
 
   // CreateFrame: Sets the frame's members and buffers. If required size is
   // bigger than allocated one, new buffers of adequate size will be allocated.
+
+  // TODO(nisse): Deprecated. Should be deleted in the cricket::VideoFrame and
+  // webrtc::VideoFrame merge. Instead, create a VideoFrameBuffer and pass to
+  // the constructor. E.g, use I420Buffer::Copy(WrappedI420Buffer(...)).
   void CreateFrame(const uint8_t* buffer_y,
                    const uint8_t* buffer_u,
                    const uint8_t* buffer_v,
@@ -52,6 +69,8 @@ class VideoFrame {
   // CreateFrame: Sets the frame's members and buffers. If required size is
   // bigger than allocated one, new buffers of adequate size will be allocated.
   // |buffer| must be a packed I420 buffer.
+
+  // TODO(nisse): Deprecated, see above method for advice.
   void CreateFrame(const uint8_t* buffer,
                   int width,
                   int height,
@@ -59,13 +78,23 @@ class VideoFrame {
 
   // Deep copy frame: If required size is bigger than allocated one, new
   // buffers of adequate size will be allocated.
+  // TODO(nisse): Should be deleted in the cricket::VideoFrame and
+  // webrtc::VideoFrame merge. Instead, use I420Buffer::Copy to make a copy of
+  // the pixel data, and use the constructor to wrap it into a VideoFrame.
   void CopyFrame(const VideoFrame& videoFrame);
 
   // Creates a shallow copy of |videoFrame|, i.e, the this object will retain a
   // reference to the video buffer also retained by |videoFrame|.
+  // TODO(nisse): Deprecated. Should be deleted in the cricket::VideoFrame and
+  // webrtc::VideoFrame merge. Instead, pass video_frame_buffer() and timestamps
+  // to the constructor.
   void ShallowCopy(const VideoFrame& videoFrame);
 
   // Get allocated size per plane.
+
+  // TODO(nisse): Deprecated. Should be deleted in the cricket::VideoFrame and
+  // webrtc::VideoFrame merge. When used with memset, consider using
+  // libyuv::I420Rect instead.
   int allocated_size(PlaneType type) const;
 
   // Get frame width.
@@ -74,18 +103,22 @@ class VideoFrame {
   // Get frame height.
   int height() const;
 
+  // TODO(nisse): After the cricket::VideoFrame and webrtc::VideoFrame
+  // merge, we'll have methods timestamp_us and set_timestamp_us, all
+  // other frame timestamps will likely be deprecated.
+
   // Set frame timestamp (90kHz).
   void set_timestamp(uint32_t timestamp) { timestamp_ = timestamp; }
 
   // Get frame timestamp (90kHz).
   uint32_t timestamp() const { return timestamp_; }
 
-  // Set capture ntp time in miliseconds.
+  // Set capture ntp time in milliseconds.
   void set_ntp_time_ms(int64_t ntp_time_ms) {
     ntp_time_ms_ = ntp_time_ms;
   }
 
-  // Get capture ntp time in miliseconds.
+  // Get capture ntp time in milliseconds.
   int64_t ntp_time_ms() const { return ntp_time_ms_; }
 
   // Naming convention for Coordination of Video Orientation. Please see
@@ -103,15 +136,21 @@ class VideoFrame {
     rotation_ = rotation;
   }
 
-  // Set render time in miliseconds.
+  // Set render time in milliseconds.
   void set_render_time_ms(int64_t render_time_ms) {
     render_time_ms_ = render_time_ms;
   }
 
-  // Get render time in miliseconds.
+  // Get render time in milliseconds.
   int64_t render_time_ms() const { return render_time_ms_; }
 
-  // Return true if underlying plane buffers are of zero size, false if not.
+  // Return true if and only if video_frame_buffer() is null. Which is possible
+  // only if the object was default-constructed.
+  // TODO(nisse): Deprecated. Should be deleted in the cricket::VideoFrame and
+  // webrtc::VideoFrame merge. The intention is that video_frame_buffer() never
+  // should return nullptr. To handle potentially uninitialized or non-existent
+  // frames, consider using rtc::Optional. Otherwise, IsZeroSize() can be
+  // replaced by video_frame_buffer() == nullptr.
   bool IsZeroSize() const;
 
   // Return the underlying buffer. Never nullptr for a properly

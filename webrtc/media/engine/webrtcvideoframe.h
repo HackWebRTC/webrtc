@@ -24,16 +24,24 @@ namespace cricket {
 
 struct CapturedFrame;
 
+// TODO(nisse): This class will be deleted when the cricket::VideoFrame and
+// webrtc::VideoFrame classes are merged. See
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=5682. Try to use only the
+// preferred constructor, and the non-deprecated methods of the VideoFrame base
+// class.
 class WebRtcVideoFrame : public VideoFrame {
  public:
+  // TODO(nisse): Deprecated. Using the default constructor violates the
+  // reasonable assumption that video_frame_buffer() returns a valid buffer.
   WebRtcVideoFrame();
 
-  // Preferred construction, with microsecond timestamp.
+  // Preferred constructor.
   WebRtcVideoFrame(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
                    webrtc::VideoRotation rotation,
                    int64_t timestamp_us);
 
-  // TODO(nisse): Deprecate/delete.
+  // TODO(nisse): Deprecated, delete as soon as all callers have switched to the
+  // above constructor with microsecond timestamp.
   WebRtcVideoFrame(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
                    int64_t time_stamp_ns,
                    webrtc::VideoRotation rotation);
@@ -54,10 +62,13 @@ class WebRtcVideoFrame : public VideoFrame {
             int64_t time_stamp_ns,
             webrtc::VideoRotation rotation);
 
-  // The timestamp of the captured frame is expected to use the same
-  // timescale and epoch as rtc::Time.
-  // TODO(nisse): Consider adding a warning message, or even an RTC_DCHECK, if
-  // the time is too far off.
+  // TODO(nisse): We're moving to have all timestamps use the same
+  // time scale as rtc::TimeMicros. However, this method is used by
+  // WebRtcVideoFrameFactory::CreateAliasedFrame this code path
+  // currently does not conform to the new timestamp conventions and
+  // may use the camera's own clock instead. It's unclear if this
+  // should be fixed, or if instead all of the VideoFrameFactory
+  // abstraction should be eliminated.
   bool Init(const CapturedFrame* frame, int dw, int dh, bool apply_rotation);
 
   void InitToEmptyBuffer(int w, int h);
