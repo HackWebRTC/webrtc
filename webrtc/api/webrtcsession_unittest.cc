@@ -2247,7 +2247,7 @@ TEST_F(WebRtcSessionTest,
   candidates = local_desc->candidates(kMediaContentIndex0);
   size_t num_local_candidates = candidates->count();
   // Enable Continual Gathering
-  session_->SetIceConfig(cricket::IceConfig(-1, -1, true, false, -1, true));
+  session_->SetIceConfig(cricket::IceConfig(-1, -1, true, false, -1));
   // Bring down the network interface to trigger candidate removals.
   RemoveInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
   // Verify that all local candidates are removed.

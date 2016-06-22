@@ -152,8 +152,6 @@ struct TransportStats {
 };
 
 // Information about ICE configuration.
-// TODO(deadbeef): Use rtc::Optional to represent unset values, instead of
-// -1.
 struct IceConfig {
   // The ICE connection receiving timeout value in milliseconds.
   int receiving_timeout = -1;
@@ -170,26 +168,19 @@ struct IceConfig {
   // Writable connections are pinged at a slower rate once stablized.
   int stable_writable_connection_ping_interval = -1;
 
-  // If set to true, this means the ICE transport should presume TURN-to-TURN
-  // candidate pairs will succeed, even before a binding response is received.
-  bool presume_writable_when_fully_relayed = false;
-
   IceConfig() {}
   IceConfig(int receiving_timeout_ms,
             int backup_connection_ping_interval,
             bool gather_continually,
             bool prioritize_most_likely_candidate_pairs,
-            int stable_writable_connection_ping_interval_ms,
-            bool presume_writable_when_fully_relayed)
+            int stable_writable_connection_ping_interval_ms)
       : receiving_timeout(receiving_timeout_ms),
         backup_connection_ping_interval(backup_connection_ping_interval),
         gather_continually(gather_continually),
         prioritize_most_likely_candidate_pairs(
             prioritize_most_likely_candidate_pairs),
         stable_writable_connection_ping_interval(
-            stable_writable_connection_ping_interval_ms),
-        presume_writable_when_fully_relayed(
-            presume_writable_when_fully_relayed) {}
+            stable_writable_connection_ping_interval_ms) {}
 };
 
 bool BadTransportDescription(const std::string& desc, std::string* err_desc);

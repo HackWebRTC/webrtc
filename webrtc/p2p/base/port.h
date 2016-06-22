@@ -178,7 +178,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
   }
 
   // Identifies the generation that this port was created in.
-  uint32_t generation() const { return generation_; }
+  uint32_t generation() { return generation_; }
   void set_generation(uint32_t generation) { generation_ = generation; }
 
   const std::string username_fragment() const;
