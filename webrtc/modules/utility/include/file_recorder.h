@@ -16,7 +16,6 @@
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/media_file/media_file_defines.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_frame.h"
 
 namespace webrtc {
 
@@ -46,11 +45,9 @@ public:
         uint32_t notification) = 0;
 
     // Stop recording.
-    // Note: this API is for both audio and video.
     virtual int32_t StopRecording() = 0;
 
     // Return true if recording.
-    // Note: this API is for both audio and video.
     virtual bool IsRecording() const = 0;
 
     virtual int32_t codec_info(CodecInst& codecInst) const = 0;
@@ -58,21 +55,6 @@ public:
     // Write frame to file. Frame should contain 10ms of un-ecoded audio data.
     virtual int32_t RecordAudioToFile(
         const AudioFrame& frame) = 0;
-
-    // Open/create the file specified by fileName for writing audio/video data
-    // (relative path is allowed). audioCodecInst specifies the encoding of the
-    // audio data. videoCodecInst specifies the encoding of the video data.
-    // Only video data will be recorded if videoOnly is true. amrFormat
-    // specifies the amr/amrwb storage format.
-    // Note: the file format is AVI.
-    virtual int32_t StartRecordingVideoFile(
-        const char* fileName,
-        const CodecInst& audioCodecInst,
-        const VideoCodec& videoCodecInst,
-        bool videoOnly = false) = 0;
-
-    // Record the video frame in videoFrame to AVI file.
-    virtual int32_t RecordVideoToFile(const VideoFrame& videoFrame) = 0;
 
 protected:
     virtual ~FileRecorder() {}

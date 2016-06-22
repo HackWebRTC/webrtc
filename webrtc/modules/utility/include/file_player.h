@@ -15,7 +15,6 @@
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_frame.h"
 
 namespace webrtc {
 class FileCallback;
@@ -78,30 +77,6 @@ public:
 
     // Note: scaleFactor is in the range [0.0 - 2.0]
     virtual int32_t SetAudioScaling(float scaleFactor) = 0;
-
-    // Return the time in ms until next video frame should be pulled (by
-    // calling GetVideoFromFile(..)).
-    // Note: this API reads one video frame from file. This means that it should
-    //       be called exactly once per GetVideoFromFile(..) API call.
-    virtual int32_t TimeUntilNextVideoFrame() { return -1;}
-
-    virtual int32_t StartPlayingVideoFile(
-        const char* /*fileName*/,
-        bool /*loop*/,
-        bool /*videoOnly*/) { return -1;}
-
-    virtual int32_t video_codec_info(VideoCodec& /*videoCodec*/) const
-    {return -1;}
-
-    virtual int32_t GetVideoFromFile(VideoFrame& /*videoFrame*/) { return -1; }
-
-    // Same as GetVideoFromFile(). videoFrame will have the resolution specified
-    // by the width outWidth and height outHeight in pixels.
-    virtual int32_t GetVideoFromFile(VideoFrame& /*videoFrame*/,
-                                     const uint32_t /*outWidth*/,
-                                     const uint32_t /*outHeight*/) {
-      return -1;
-    }
 
 protected:
     virtual ~FilePlayer() {}

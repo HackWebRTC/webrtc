@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// This file contains a class that can write audio and/or video to file in
+// This file contains a class that can write audio to file in
 // multiple file formats. The unencoded input data is written to file in the
 // encoded format specified.
 
@@ -58,17 +58,6 @@ public:
     bool IsRecording() const override;
     int32_t codec_info(CodecInst& codecInst) const override;
     int32_t RecordAudioToFile(const AudioFrame& frame) override;
-    int32_t StartRecordingVideoFile(
-        const char* fileName,
-        const CodecInst& audioCodecInst,
-        const VideoCodec& videoCodecInst,
-        bool videoOnly = false) override
-    {
-        return -1;
-    }
-    int32_t RecordVideoToFile(const VideoFrame& videoFrame) override {
-        return -1;
-    }
 
 protected:
     int32_t WriteEncodedAudioData(const int8_t* audioBuffer,
