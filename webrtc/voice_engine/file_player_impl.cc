@@ -8,7 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/utility/source/file_player_impl.h"
+#include "webrtc/voice_engine/file_player_impl.h"
+
 #include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
