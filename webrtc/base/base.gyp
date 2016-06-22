@@ -90,6 +90,8 @@
         'thread_checker.h',
         'thread_checker_impl.cc',
         'thread_checker_impl.h',
+        'timestampaligner.cc',
+        'timestampaligner.h',
         'timeutils.cc',
         'timeutils.h',
         'trace_event.h',

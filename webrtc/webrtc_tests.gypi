@@ -88,6 +88,7 @@
         'base/testclient_unittest.cc',
         'base/thread_checker_unittest.cc',
         'base/thread_unittest.cc',
+        'base/timestampaligner_unittest.cc',
         'base/timeutils_unittest.cc',
         'base/urlencode_unittest.cc',
         'base/versionparsing_unittest.cc',

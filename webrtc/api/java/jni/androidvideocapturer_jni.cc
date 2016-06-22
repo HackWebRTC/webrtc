@@ -186,10 +186,14 @@ void AndroidVideoCapturerJni::OnMemoryBufferFrame(void* video_frame,
   int crop_height;
   int crop_x;
   int crop_y;
+  int64_t translated_camera_time_us;
 
-  if (!capturer_->AdaptFrame(width, height, timestamp_ns,
+  if (!capturer_->AdaptFrame(width, height,
+                             timestamp_ns / rtc::kNumNanosecsPerMicrosec,
+                             rtc::TimeMicros(),
                              &adapted_width, &adapted_height,
-                             &crop_width, &crop_height, &crop_x, &crop_y)) {
+                             &crop_width, &crop_height, &crop_x, &crop_y,
+                             &translated_camera_time_us)) {
     return;
   }
 
@@ -228,12 +232,12 @@ void AndroidVideoCapturerJni::OnMemoryBufferFrame(void* video_frame,
     scaled_buffer->ScaleFrom(buffer);
     buffer = scaled_buffer;
   }
-  // TODO(nisse): Use microsecond time instead.
   capturer_->OnFrame(cricket::WebRtcVideoFrame(
-                         buffer, timestamp_ns,
+                         buffer,
                          capturer_->apply_rotation()
                              ? webrtc::kVideoRotation_0
-                             : static_cast<webrtc::VideoRotation>(rotation)),
+                             : static_cast<webrtc::VideoRotation>(rotation),
+                         translated_camera_time_us),
                      width, height);
 }
 
@@ -256,10 +260,14 @@ void AndroidVideoCapturerJni::OnTextureFrame(int width,
   int crop_height;
   int crop_x;
   int crop_y;
+  int64_t translated_camera_time_us;
 
-  if (!capturer_->AdaptFrame(width, height, timestamp_ns,
+  if (!capturer_->AdaptFrame(width, height,
+                             timestamp_ns / rtc::kNumNanosecsPerMicrosec,
+                             rtc::TimeMicros(),
                              &adapted_width, &adapted_height,
-                             &crop_width, &crop_height, &crop_x, &crop_y)) {
+                             &crop_width, &crop_height, &crop_x, &crop_y,
+                             &translated_camera_time_us)) {
     surface_texture_helper_->ReturnTextureFrame();
     return;
   }
@@ -279,15 +287,15 @@ void AndroidVideoCapturerJni::OnTextureFrame(int width,
     matrix.Rotate(static_cast<webrtc::VideoRotation>(rotation));
   }
 
-  // TODO(nisse): Use microsecond time instead.
   capturer_->OnFrame(
       cricket::WebRtcVideoFrame(
           surface_texture_helper_->CreateTextureFrame(
               adapted_width, adapted_height,
               NativeHandleImpl(handle.oes_texture_id, matrix)),
-          timestamp_ns, capturer_->apply_rotation()
-                            ? webrtc::kVideoRotation_0
-                            : static_cast<webrtc::VideoRotation>(rotation)),
+          capturer_->apply_rotation()
+              ? webrtc::kVideoRotation_0
+              : static_cast<webrtc::VideoRotation>(rotation),
+          translated_camera_time_us),
       width, height);
 }
 

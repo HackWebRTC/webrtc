@@ -216,21 +216,27 @@ void VideoCapturer::OnSinkWantsChanged(const rtc::VideoSinkWants& wants) {
 
 bool VideoCapturer::AdaptFrame(int width,
                                int height,
-                               // TODO(nisse): Switch to us unit.
-                               int64_t capture_time_ns,
+                               int64_t camera_time_us,
+                               int64_t system_time_us,
                                int* out_width,
                                int* out_height,
                                int* crop_width,
                                int* crop_height,
                                int* crop_x,
-                               int* crop_y) {
+                               int* crop_y,
+                               int64_t* translated_camera_time_us) {
+  int64_t offset_us =
+      translated_camera_time_us
+          ? timestamp_aligner_.UpdateOffset(camera_time_us, system_time_us)
+          : 0;
+
   if (!broadcaster_.frame_wanted()) {
     return false;
   }
 
   if (enable_video_adapter_ && !IsScreencast()) {
     if (!video_adapter_.AdaptFrameResolution(
-            width, height, capture_time_ns,
+            width, height, camera_time_us * rtc::kNumNanosecsPerMicrosec,
             crop_width, crop_height, out_width, out_height)) {
       // VideoAdapter dropped the frame.
       return false;
@@ -245,6 +251,11 @@ bool VideoCapturer::AdaptFrame(int width,
     *crop_x = 0;
     *crop_y = 0;
   }
+
+  if (translated_camera_time_us) {
+    *translated_camera_time_us = timestamp_aligner_.ClipTimestamp(
+        camera_time_us + offset_us, system_time_us);
+  }
   return true;
 }
 
@@ -257,10 +268,17 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
   int crop_x;
   int crop_y;
 
+  // TODO(nisse): We don't do timestamp translation on this input
+  // path. It seems straight-forward to enable translation, but that
+  // breaks the WebRtcVideoEngine2Test.PropagatesInputFrameTimestamp
+  // test. Probably not worth the effort to fix, instead, try to
+  // delete or refactor all code using VideoFrameFactory and
+  // SignalCapturedFrame.
   if (!AdaptFrame(captured_frame->width, captured_frame->height,
-                  captured_frame->time_stamp,
+                  captured_frame->time_stamp / rtc::kNumNanosecsPerMicrosec,
+                  0,
                   &out_width, &out_height,
-                  &crop_width, &crop_height, &crop_x, &crop_y)) {
+                  &crop_width, &crop_height, &crop_x, &crop_y, nullptr)) {
     return;
   }
 

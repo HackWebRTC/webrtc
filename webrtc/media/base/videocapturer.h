@@ -24,6 +24,7 @@
 #include "webrtc/media/base/videosourceinterface.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/thread_checker.h"
+#include "webrtc/base/timestampaligner.h"
 #include "webrtc/media/base/videoadapter.h"
 #include "webrtc/media/base/videobroadcaster.h"
 #include "webrtc/media/base/videocommon.h"
@@ -225,15 +226,30 @@ class VideoCapturer : public sigslot::has_slots<>,
   // Reports the appropriate frame size after adaptation. Returns true
   // if a frame is wanted. Returns false if there are no interested
   // sinks, or if the VideoAdapter decides to drop the frame.
+
+  // This function also implements timestamp translation/filtering.
+  // |camera_time_ns| is the camera's timestamp for the captured
+  // frame; it is expected to have good accuracy, but it may use an
+  // arbitrary epoch and a small possibly free-running with a frequency
+  // slightly different from the system clock. |system_time_us| is the
+  // monotonic system time (in the same scale as rtc::TimeMicros) when
+  // the frame was captured; the application is expected to read the
+  // system time as soon as possible after frame capture, but it may
+  // suffer scheduling jitter or poor system clock resolution. The
+  // output |translated_camera_time_us| is a combined timestamp,
+  // taking advantage of the supposedly higher accuracy in the camera
+  // timestamp, but using the same epoch and frequency as system time.
   bool AdaptFrame(int width,
                   int height,
-                  int64_t capture_time_ns,
+                  int64_t camera_time_us,
+                  int64_t system_time_us,
                   int* out_width,
                   int* out_height,
                   int* crop_width,
                   int* crop_height,
                   int* crop_x,
-                  int* crop_y);
+                  int* crop_y,
+                  int64_t* translated_camera_time_us);
 
   // Callback attached to SignalFrameCaptured where SignalVideoFrames is called.
   void OnFrameCaptured(VideoCapturer* video_capturer,
@@ -310,6 +326,8 @@ class VideoCapturer : public sigslot::has_slots<>,
   // Whether capturer should apply rotation to the frame before signaling it.
   bool apply_rotation_;
 
+  // State for the timestamp translation.
+  rtc::TimestampAligner timestamp_aligner_;
   RTC_DISALLOW_COPY_AND_ASSIGN(VideoCapturer);
 };
 
