@@ -104,6 +104,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   // only update the parameter if it is considered set in |config|. For example,
   // a negative value of receiving_timeout will be considered "not set" and we
   // will not use it to update the respective parameter in |config_|.
+  // TODO(deadbeef): Use rtc::Optional instead of negative values.
   void SetIceConfig(const IceConfig& config) override;
   const IceConfig& config() const;
 
@@ -209,6 +210,20 @@ class P2PTransportChannel : public TransportChannelImpl,
   bool weak() const;
   void UpdateConnectionStates();
   void RequestSort();
+
+  // The methods below return a positive value if a is preferable to b,
+  // a negative value if b is preferable, and 0 if they're equally preferable.
+  int CompareConnectionStates(const cricket::Connection* a,
+                              const cricket::Connection* b) const;
+  int CompareConnectionCandidates(const cricket::Connection* a,
+                                  const cricket::Connection* b) const;
+  // Compares first on states, then on candidates, then on RTT.
+  int CompareConnections(const cricket::Connection* a,
+                         const cricket::Connection* b) const;
+  bool PresumedWritable(const cricket::Connection* conn) const;
+
+  bool ShouldSwitchSelectedConnection(const cricket::Connection* selected,
+                                      const cricket::Connection* conn) const;
   void SortConnections();
   void SwitchBestConnectionTo(Connection* conn);
   void UpdateState();

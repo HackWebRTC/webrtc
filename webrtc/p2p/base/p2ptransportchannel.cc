@@ -32,7 +32,7 @@ enum { MSG_SORT = 1, MSG_CHECK_AND_PING };
 // The minimum improvement in RTT that justifies a switch.
 static const double kMinImprovement = 10;
 
-bool IsRelayRelay(cricket::Connection* conn) {
+bool IsRelayRelay(const cricket::Connection* conn) {
   return conn->local_candidate().type() == cricket::RELAY_PORT_TYPE &&
          conn->remote_candidate().type() == cricket::RELAY_PORT_TYPE;
 }
@@ -49,155 +49,6 @@ cricket::PortInterface::CandidateOrigin GetOrigin(cricket::PortInterface* port,
     return cricket::PortInterface::ORIGIN_THIS_PORT;
   else
     return cricket::PortInterface::ORIGIN_OTHER_PORT;
-}
-
-// Compares two connections based only on the candidate and network information.
-// Returns positive if |a| is better than |b|.
-int CompareConnectionCandidates(cricket::Connection* a,
-                                cricket::Connection* b) {
-  uint32_t a_cost = a->ComputeNetworkCost();
-  uint32_t b_cost = b->ComputeNetworkCost();
-  // Smaller cost is better.
-  if (a_cost < b_cost) {
-    return 1;
-  }
-  if (a_cost > b_cost) {
-    return -1;
-  }
-
-  // Compare connection priority. Lower values get sorted last.
-  if (a->priority() > b->priority())
-    return 1;
-  if (a->priority() < b->priority())
-    return -1;
-
-  // If we're still tied at this point, prefer a younger generation.
-  return (a->remote_candidate().generation() + a->port()->generation()) -
-         (b->remote_candidate().generation() + b->port()->generation());
-}
-
-// Compare two connections based on their writing, receiving, and connected
-// states.
-int CompareConnectionStates(cricket::Connection* a, cricket::Connection* b) {
-  // Sort based on write-state.  Better states have lower values.
-  if (a->write_state() < b->write_state())
-    return 1;
-  if (a->write_state() > b->write_state())
-    return -1;
-
-  // We prefer a receiving connection to a non-receiving, higher-priority
-  // connection when sorting connections and choosing which connection to
-  // switch to.
-  if (a->receiving() && !b->receiving())
-    return 1;
-  if (!a->receiving() && b->receiving())
-    return -1;
-
-  // WARNING: Some complexity here about TCP reconnecting.
-  // When a TCP connection fails because of a TCP socket disconnecting, the
-  // active side of the connection will attempt to reconnect for 5 seconds while
-  // pretending to be writable (the connection is not set to the unwritable
-  // state).  On the passive side, the connection also remains writable even
-  // though it is disconnected, and a new connection is created when the active
-  // side connects.  At that point, there are two TCP connections on the passive
-  // side: 1. the old, disconnected one that is pretending to be writable, and
-  // 2.  the new, connected one that is maybe not yet writable.  For purposes of
-  // pruning, pinging, and selecting the best connection, we want to treat the
-  // new connection as "better" than the old one.  We could add a method called
-  // something like Connection::ImReallyBadEvenThoughImWritable, but that is
-  // equivalent to the existing Connection::connected(), which we already have.
-  // So, in code throughout this file, we'll check whether the connection is
-  // connected() or not, and if it is not, treat it as "worse" than a connected
-  // one, even though it's writable.  In the code below, we're doing so to make
-  // sure we treat a new writable connection as better than an old disconnected
-  // connection.
-
-  // In the case where we reconnect TCP connections, the original best
-  // connection is disconnected without changing to WRITE_TIMEOUT. In this case,
-  // the new connection, when it becomes writable, should have higher priority.
-  if (a->write_state() == cricket::Connection::STATE_WRITABLE &&
-      b->write_state() == cricket::Connection::STATE_WRITABLE) {
-    if (a->connected() && !b->connected()) {
-      return 1;
-    }
-    if (!a->connected() && b->connected()) {
-      return -1;
-    }
-  }
-  return 0;
-}
-
-int CompareConnections(cricket::Connection* a, cricket::Connection* b) {
-  int state_cmp = CompareConnectionStates(a, b);
-  if (state_cmp != 0) {
-    return state_cmp;
-  }
-  // Compare the candidate information.
-  return CompareConnectionCandidates(a, b);
-}
-
-// Wraps the comparison connection into a less than operator that puts higher
-// priority writable connections first.
-class ConnectionCompare {
- public:
-  bool operator()(const cricket::Connection *ca,
-                  const cricket::Connection *cb) {
-    cricket::Connection* a = const_cast<cricket::Connection*>(ca);
-    cricket::Connection* b = const_cast<cricket::Connection*>(cb);
-
-    // Compare first on writability and static preferences.
-    int cmp = CompareConnections(a, b);
-    if (cmp > 0)
-      return true;
-    if (cmp < 0)
-      return false;
-
-    // Otherwise, sort based on latency estimate.
-    return a->rtt() < b->rtt();
-
-    // Should we bother checking for the last connection that last received
-    // data? It would help rendezvous on the connection that is also receiving
-    // packets.
-    //
-    // TODO: Yes we should definitely do this.  The TCP protocol gains
-    // efficiency by being used bidirectionally, as opposed to two separate
-    // unidirectional streams.  This test should probably occur before
-    // comparison of local prefs (assuming combined prefs are the same).  We
-    // need to be careful though, not to bounce back and forth with both sides
-    // trying to rendevous with the other.
-  }
-};
-
-// Determines whether we should switch between two connections, based first on
-// connection states, static preferences, and then (if those are equal) on
-// latency estimates.
-bool ShouldSwitch(cricket::Connection* a_conn,
-                  cricket::Connection* b_conn,
-                  cricket::IceRole ice_role) {
-  if (a_conn == b_conn)
-    return false;
-
-  if (!a_conn || !b_conn)  // don't think the latter should happen
-    return true;
-
-  // We prefer to switch to a writable and receiving connection over a
-  // non-writable or non-receiving connection, even if the latter has
-  // been nominated by the controlling side.
-  int state_cmp = CompareConnectionStates(a_conn, b_conn);
-  if (state_cmp != 0) {
-    return state_cmp < 0;
-  }
-  if (ice_role == cricket::ICEROLE_CONTROLLED && a_conn->nominated()) {
-    LOG(LS_VERBOSE) << "Controlled side did not switch due to nominated status";
-    return false;
-  }
-
-  int prefs_cmp = CompareConnectionCandidates(a_conn, b_conn);
-  if (prefs_cmp != 0) {
-    return prefs_cmp < 0;
-  }
-
-  return b_conn->rtt() <= a_conn->rtt() + kMinImprovement;
 }
 
 }  // unnamed namespace
@@ -251,7 +102,8 @@ P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
               0 /* backup_connection_ping_interval */,
               false /* gather_continually */,
               false /* prioritize_most_likely_candidate_pairs */,
-              STABLE_WRITABLE_CONNECTION_PING_INTERVAL) {
+              STABLE_WRITABLE_CONNECTION_PING_INTERVAL,
+              true /* presume_writable_when_fully_relayed */) {
   uint32_t weak_ping_interval = ::strtoul(
       webrtc::field_trial::FindFullName("WebRTC-StunInterPacketDelay").c_str(),
       nullptr, 10);
@@ -445,6 +297,19 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
         config.stable_writable_connection_ping_interval;
     LOG(LS_INFO) << "Set stable_writable_connection_ping_interval to "
                  << config_.stable_writable_connection_ping_interval;
+  }
+
+  if (config.presume_writable_when_fully_relayed !=
+      config_.presume_writable_when_fully_relayed) {
+    if (!connections_.empty()) {
+      LOG(LS_ERROR) << "Trying to change 'presume writable' "
+                    << "while connections already exist!";
+    } else {
+      config_.presume_writable_when_fully_relayed =
+          config.presume_writable_when_fully_relayed;
+      LOG(LS_INFO) << "Set presume writable when fully relayed to "
+                   << config_.presume_writable_when_fully_relayed;
+    }
   }
 }
 
@@ -1049,6 +914,176 @@ void P2PTransportChannel::RequestSort() {
   }
 }
 
+// Compare two connections based on their writing, receiving, and connected
+// states.
+int P2PTransportChannel::CompareConnectionStates(const Connection* a,
+                                                 const Connection* b) const {
+  static constexpr int a_is_better = 1;
+  static constexpr int b_is_better = -1;
+
+  // First, prefer a connection that's writable or presumed writable over
+  // one that's not writable.
+  bool a_writable = a->writable() || PresumedWritable(a);
+  bool b_writable = b->writable() || PresumedWritable(b);
+  if (a_writable && !b_writable) {
+    return a_is_better;
+  }
+  if (!a_writable && b_writable) {
+    return b_is_better;
+  }
+
+  // Sort based on write-state. Better states have lower values.
+  if (a->write_state() < b->write_state()) {
+    return a_is_better;
+  }
+  if (b->write_state() < a->write_state()) {
+    return b_is_better;
+  }
+
+  // We prefer a receiving connection to a non-receiving, higher-priority
+  // connection when sorting connections and choosing which connection to
+  // switch to.
+  if (a->receiving() && !b->receiving()) {
+    return a_is_better;
+  }
+  if (!a->receiving() && b->receiving()) {
+    return b_is_better;
+  }
+
+  // WARNING: Some complexity here about TCP reconnecting.
+  // When a TCP connection fails because of a TCP socket disconnecting, the
+  // active side of the connection will attempt to reconnect for 5 seconds while
+  // pretending to be writable (the connection is not set to the unwritable
+  // state).  On the passive side, the connection also remains writable even
+  // though it is disconnected, and a new connection is created when the active
+  // side connects.  At that point, there are two TCP connections on the passive
+  // side: 1. the old, disconnected one that is pretending to be writable, and
+  // 2.  the new, connected one that is maybe not yet writable.  For purposes of
+  // pruning, pinging, and selecting the best connection, we want to treat the
+  // new connection as "better" than the old one.  We could add a method called
+  // something like Connection::ImReallyBadEvenThoughImWritable, but that is
+  // equivalent to the existing Connection::connected(), which we already have.
+  // So, in code throughout this file, we'll check whether the connection is
+  // connected() or not, and if it is not, treat it as "worse" than a connected
+  // one, even though it's writable.  In the code below, we're doing so to make
+  // sure we treat a new writable connection as better than an old disconnected
+  // connection.
+
+  // In the case where we reconnect TCP connections, the original best
+  // connection is disconnected without changing to WRITE_TIMEOUT. In this case,
+  // the new connection, when it becomes writable, should have higher priority.
+  if (a->write_state() == Connection::STATE_WRITABLE &&
+      b->write_state() == Connection::STATE_WRITABLE) {
+    if (a->connected() && !b->connected()) {
+      return a_is_better;
+    }
+    if (!a->connected() && b->connected()) {
+      return b_is_better;
+    }
+  }
+  return 0;
+}
+
+// Compares two connections based only on the candidate and network information.
+// Returns positive if |a| is better than |b|.
+int P2PTransportChannel::CompareConnectionCandidates(
+    const Connection* a,
+    const Connection* b) const {
+  // Prefer lower network cost.
+  uint32_t a_cost = a->ComputeNetworkCost();
+  uint32_t b_cost = b->ComputeNetworkCost();
+  // Smaller cost is better.
+  if (a_cost < b_cost) {
+    return 1;
+  }
+  if (a_cost > b_cost) {
+    return -1;
+  }
+
+  // Compare connection priority. Lower values get sorted last.
+  if (a->priority() > b->priority()) {
+    return 1;
+  }
+  if (a->priority() < b->priority()) {
+    return -1;
+  }
+
+  // If we're still tied at this point, prefer a younger generation.
+  // (Younger generation means a larger generation number).
+  return (a->remote_candidate().generation() + a->port()->generation()) -
+         (b->remote_candidate().generation() + b->port()->generation());
+}
+
+int P2PTransportChannel::CompareConnections(const Connection* a,
+                                            const Connection* b) const {
+  // Compare first on writability and static preferences.
+  int state_cmp = CompareConnectionStates(a, b);
+  if (state_cmp != 0) {
+    return state_cmp;
+  }
+  // Then compare the candidate information.
+  int candidates_cmp = CompareConnectionCandidates(a, b);
+  if (candidates_cmp != 0) {
+    return candidates_cmp;
+  }
+  // Otherwise, compare based on latency estimate.
+  return b->rtt() - a->rtt();
+
+  // Should we bother checking for the last connection that last received
+  // data? It would help rendezvous on the connection that is also receiving
+  // packets.
+  //
+  // TODO(deadbeef): Yes we should definitely do this.  The TCP protocol gains
+  // efficiency by being used bidirectionally, as opposed to two separate
+  // unidirectional streams.  This test should probably occur before
+  // comparison of local prefs (assuming combined prefs are the same).  We
+  // need to be careful though, not to bounce back and forth with both sides
+  // trying to rendevous with the other.
+}
+
+bool P2PTransportChannel::PresumedWritable(
+    const cricket::Connection* conn) const {
+  return (conn->write_state() == Connection::STATE_WRITE_INIT &&
+          config_.presume_writable_when_fully_relayed &&
+          conn->local_candidate().type() == RELAY_PORT_TYPE &&
+          (conn->remote_candidate().type() == RELAY_PORT_TYPE ||
+           conn->remote_candidate().type() == PRFLX_PORT_TYPE));
+}
+
+// Determines whether we should switch between two connections, based first on
+// connection states, static preferences, and then (if those are equal) on
+// latency estimates.
+bool P2PTransportChannel::ShouldSwitchSelectedConnection(
+    const Connection* selected,
+    const Connection* conn) const {
+  if (selected == conn) {
+    return false;
+  }
+
+  if (!selected || !conn) {  // don't think the latter should happen
+    return true;
+  }
+
+  // We prefer to switch to a writable and receiving connection over a
+  // non-writable or non-receiving connection, even if the latter has
+  // been nominated by the controlling side.
+  int state_cmp = CompareConnectionStates(selected, conn);
+  if (state_cmp != 0) {
+    return state_cmp < 0;
+  }
+  if (ice_role_ == ICEROLE_CONTROLLED && selected->nominated()) {
+    LOG(LS_VERBOSE) << "Controlled side did not switch due to nominated status";
+    return false;
+  }
+
+  int prefs_cmp = CompareConnectionCandidates(selected, conn);
+  if (prefs_cmp != 0) {
+    return prefs_cmp < 0;
+  }
+
+  return selected->rtt() - conn->rtt() >= kMinImprovement;
+}
+
 // Sort the available connections to find the best one.  We also monitor
 // the number of available connections and the current state.
 void P2PTransportChannel::SortConnections() {
@@ -1065,8 +1100,10 @@ void P2PTransportChannel::SortConnections() {
   // that amongst equal preference, writable connections, this will choose the
   // one whose estimated latency is lowest.  So it is the only one that we
   // need to consider switching to.
-  ConnectionCompare cmp;
-  std::stable_sort(connections_.begin(), connections_.end(), cmp);
+  std::stable_sort(connections_.begin(), connections_.end(),
+                   [this](const Connection* a, const Connection* b) {
+                     return CompareConnections(a, b) > 0;
+                   });
   LOG(LS_VERBOSE) << "Sorting " << connections_.size()
                   << " available connections:";
   for (size_t i = 0; i < connections_.size(); ++i) {
@@ -1079,7 +1116,7 @@ void P2PTransportChannel::SortConnections() {
   // If necessary, switch to the new choice.
   // Note that |top_connection| doesn't have to be writable to become the best
   // connection although it will have higher priority if it is writable.
-  if (ShouldSwitch(best_connection_, top_connection, ice_role_)) {
+  if (ShouldSwitchSelectedConnection(best_connection_, top_connection)) {
     LOG(LS_INFO) << "Switching best connection: " << top_connection->ToString();
     SwitchBestConnectionTo(top_connection);
   }
@@ -1168,7 +1205,7 @@ void P2PTransportChannel::SwitchBestConnectionTo(Connection* conn) {
     // channel so that it knows whether the media channel is allowed to
     // send; then it will only signal ready-to-send if the media channel
     // has been disallowed to send.
-    if (best_connection_->writable()) {
+    if (best_connection_->writable() || PresumedWritable(best_connection_)) {
       SignalReadyToSend(this);
     }
   } else {
@@ -1223,8 +1260,11 @@ void P2PTransportChannel::UpdateState() {
     SignalStateChanged(this);
   }
 
-  bool writable = best_connection_ && best_connection_->writable();
-  set_writable(writable);
+  // If our best connection is "presumed writable" (TURN-TURN with no
+  // CreatePermission required), act like we're already writable to the upper
+  // layers, so they can start media quicker.
+  set_writable(best_connection_ && (best_connection_->writable() ||
+                                    PresumedWritable(best_connection_)));
 
   bool receiving = false;
   for (const Connection* connection : connections_) {
