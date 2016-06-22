@@ -822,6 +822,26 @@ class WebRtcVideoChannel2BaseTest
   cricket::VideoCodec DefaultCodec() override { return kVp8Codec; }
 };
 
+// Verifies that id given in stream params is passed to the decoder factory.
+TEST_F(WebRtcVideoEngine2Test, StreamParamsIdPassedToDecoderFactory) {
+  cricket::FakeWebRtcVideoDecoderFactory decoder_factory;
+  decoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8);
+  cricket::VideoRecvParameters parameters;
+  parameters.codecs.push_back(kVp8Codec);
+
+  std::unique_ptr<VideoMediaChannel> channel(
+      SetUpForExternalDecoderFactory(&decoder_factory, parameters.codecs));
+
+  StreamParams sp = cricket::StreamParams::CreateLegacy(kSsrc);
+  sp.id = "FakeStreamParamsId";
+  EXPECT_TRUE(channel->AddRecvStream(sp));
+  EXPECT_EQ(1u, decoder_factory.decoders().size());
+
+  std::vector<cricket::VideoDecoderParams> params = decoder_factory.params();
+  ASSERT_EQ(1u, params.size());
+  EXPECT_EQ(sp.id, params[0].receive_stream_id);
+}
+
 #define WEBRTC_BASE_TEST(test) \
   TEST_F(WebRtcVideoChannel2BaseTest, test) { Base::test(); }
 
@@ -3545,6 +3565,18 @@ TEST_F(WebRtcVideoChannel2Test, GetRtpReceiveParametersCodecs) {
   ASSERT_EQ(2u, rtp_parameters.codecs.size());
   EXPECT_EQ(kVp8Codec.ToCodecParameters(), rtp_parameters.codecs[0]);
   EXPECT_EQ(kVp9Codec.ToCodecParameters(), rtp_parameters.codecs[1]);
+}
+
+// Test that RtpParameters for receive stream has one encoding and it has
+// the correct SSRC.
+TEST_F(WebRtcVideoChannel2Test, RtpEncodingParametersSsrcIsSet) {
+  AddRecvStream();
+
+  webrtc::RtpParameters rtp_parameters =
+      channel_->GetRtpReceiveParameters(last_ssrc_);
+  ASSERT_EQ(1u, rtp_parameters.encodings.size());
+  EXPECT_EQ(rtc::Optional<uint32_t>(last_ssrc_),
+            rtp_parameters.encodings[0].ssrc);
 }
 
 // Test that if we set/get parameters multiple times, we get the same results.

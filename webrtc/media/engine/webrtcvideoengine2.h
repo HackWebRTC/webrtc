@@ -427,6 +427,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     ~WebRtcVideoReceiveStream();
 
     const std::vector<uint32_t>& GetSsrcs() const;
+    rtc::Optional<uint32_t> GetFirstPrimarySsrc() const;
 
     void SetLocalSsrc(uint32_t local_ssrc);
     // TODO(deadbeef): Move these feedback parameters into the recv parameters.
@@ -475,8 +476,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     std::string GetCodecNameFromPayloadType(int payload_type);
 
     webrtc::Call* const call_;
-    const std::vector<uint32_t> ssrcs_;
-    const std::vector<SsrcGroup> ssrc_groups_;
+    StreamParams stream_params_;
 
     webrtc::VideoReceiveStream* stream_;
     const bool default_stream_;

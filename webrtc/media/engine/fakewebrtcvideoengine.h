@@ -91,6 +91,13 @@ class FakeWebRtcVideoDecoderFactory : public WebRtcVideoDecoderFactory {
     return decoder;
   }
 
+  virtual webrtc::VideoDecoder* CreateVideoDecoderWithParams(
+      webrtc::VideoCodecType type,
+      VideoDecoderParams params) {
+    params_.push_back(params);
+    return CreateVideoDecoder(type);
+  }
+
   virtual void DestroyVideoDecoder(webrtc::VideoDecoder* decoder) {
     decoders_.erase(
         std::remove(decoders_.begin(), decoders_.end(), decoder),
@@ -110,10 +117,13 @@ class FakeWebRtcVideoDecoderFactory : public WebRtcVideoDecoderFactory {
     return decoders_;
   }
 
+  const std::vector<VideoDecoderParams>& params() { return params_; }
+
  private:
   std::set<webrtc::VideoCodecType> supported_codec_types_;
   std::vector<FakeWebRtcVideoDecoder*> decoders_;
   int num_created_decoders_;
+  std::vector<VideoDecoderParams> params_;
 };
 
 // Fake class for mocking out webrtc::VideoEnoder

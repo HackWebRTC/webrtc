@@ -14,16 +14,20 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/optional.h"
+
 namespace webrtc {
 
 // These structures are defined as part of the RtpSender interface.
 // See http://w3c.github.io/webrtc-pc/#rtcrtpsender-interface for details.
 struct RtpEncodingParameters {
+  rtc::Optional<uint32_t> ssrc;
   bool active = true;
   int max_bitrate_bps = -1;
 
   bool operator==(const RtpEncodingParameters& o) const {
-    return active == o.active && max_bitrate_bps == o.max_bitrate_bps;
+    return ssrc == o.ssrc && active == o.active &&
+           max_bitrate_bps == o.max_bitrate_bps;
   }
   bool operator!=(const RtpEncodingParameters& o) const {
     return !(*this == o);

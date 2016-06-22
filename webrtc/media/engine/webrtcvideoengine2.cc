@@ -919,6 +919,7 @@ webrtc::RtpParameters WebRtcVideoChannel2::GetRtpReceiveParameters(
   for (const VideoCodec& codec : recv_params_.codecs) {
     rtp_params.codecs.push_back(codec.ToCodecParameters());
   }
+  rtp_params.encodings[0].ssrc = it->second->GetFirstPrimarySsrc();
   return rtp_params;
 }
 
@@ -2207,8 +2208,7 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
     const std::vector<VideoCodecSettings>& recv_codecs,
     bool red_disabled_by_remote_side)
     : call_(call),
-      ssrcs_(sp.ssrcs),
-      ssrc_groups_(sp.ssrc_groups),
+      stream_params_(sp),
       stream_(NULL),
       default_stream_(default_stream),
       config_(std::move(config)),
@@ -2248,7 +2248,20 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::~WebRtcVideoReceiveStream() {
 
 const std::vector<uint32_t>&
 WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetSsrcs() const {
-  return ssrcs_;
+  return stream_params_.ssrcs;
+}
+
+rtc::Optional<uint32_t>
+WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetFirstPrimarySsrc() const {
+  std::vector<uint32_t> primary_ssrcs;
+  stream_params_.GetPrimarySsrcs(&primary_ssrcs);
+
+  if (primary_ssrcs.empty()) {
+    LOG(LS_WARNING) << "Empty primary ssrcs vector, returning empty optional";
+    return rtc::Optional<uint32_t>();
+  } else {
+    return rtc::Optional<uint32_t>(primary_ssrcs[0]);
+  }
 }
 
 WebRtcVideoChannel2::WebRtcVideoReceiveStream::AllocatedDecoder
@@ -2268,7 +2281,8 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::CreateOrReuseVideoDecoder(
 
   if (external_decoder_factory_ != NULL) {
     webrtc::VideoDecoder* decoder =
-        external_decoder_factory_->CreateVideoDecoder(type);
+        external_decoder_factory_->CreateVideoDecoderWithParams(
+            type, {stream_params_.id});
     if (decoder != NULL) {
       return AllocatedDecoder(decoder, type, true);
     }
@@ -2462,7 +2476,7 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetCodecNameFromPayloadType(
 VideoReceiverInfo
 WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo() {
   VideoReceiverInfo info;
-  info.ssrc_groups = ssrc_groups_;
+  info.ssrc_groups = stream_params_.ssrc_groups;
   info.add_ssrc(config_.rtp.remote_ssrc);
   webrtc::VideoReceiveStream::Stats stats = stream_->GetStats();
   info.decoder_implementation_name = stats.decoder_implementation_name;
