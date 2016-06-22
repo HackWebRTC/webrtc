@@ -1485,6 +1485,7 @@ void Connection::MaybeAddPrflxCandidate(ConnectionRequest* request,
   new_local_candidate.set_network_name(local_candidate().network_name());
   new_local_candidate.set_network_type(local_candidate().network_type());
   new_local_candidate.set_related_address(local_candidate().address());
+  new_local_candidate.set_generation(local_candidate().generation());
   new_local_candidate.set_foundation(ComputeFoundation(
       PRFLX_PORT_TYPE, local_candidate().protocol(),
       local_candidate().relay_protocol(), local_candidate().address()));

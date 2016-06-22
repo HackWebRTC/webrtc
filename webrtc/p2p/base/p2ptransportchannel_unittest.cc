@@ -1071,6 +1071,16 @@ TEST_F(P2PTransportChannelTest, HandleUfragPwdChange) {
   DestroyChannels();
 }
 
+// Same as above test, but with a symmetric NAT.
+// We should end up with relay<->prflx candidate pairs, with generation "1".
+TEST_F(P2PTransportChannelTest, HandleUfragPwdChangeSymmetricNat) {
+  ConfigureEndpoints(NAT_SYMMETRIC, NAT_SYMMETRIC, kDefaultPortAllocatorFlags,
+                     kDefaultPortAllocatorFlags);
+  CreateChannels(1);
+  TestHandleIceUfragPasswordChanged();
+  DestroyChannels();
+}
+
 // Test the operation of GetStats.
 TEST_F(P2PTransportChannelTest, GetStats) {
   ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
@@ -1332,6 +1342,11 @@ TEST_F(P2PTransportChannelTest, TestTcpConnectionsFromActiveToPassive) {
 
   SetAllowTcpListen(0, true);   // actpass.
   SetAllowTcpListen(1, false);  // active.
+
+  // We want SetRemoteIceCredentials to be called as it normally would.
+  // Otherwise we won't know what credentials to use for the expected
+  // prflx TCP candidates.
+  set_remote_ice_credential_source(FROM_SETICECREDENTIALS);
 
   // Pause candidate so we could verify the candidate properties.
   PauseCandidates(0);
@@ -1627,6 +1642,7 @@ class P2PTransportChannelSameNatTest : public P2PTransportChannelTestBase {
             static_cast<rtc::NATType>(nat_type - NAT_FULL_CONE));
     ConfigureEndpoint(outer_nat, 0, config1);
     ConfigureEndpoint(outer_nat, 1, config2);
+    set_remote_ice_credential_source(FROM_SETICECREDENTIALS);
   }
   void ConfigureEndpoint(rtc::NATSocketServer::Translator* nat,
                          int endpoint, Config config) {

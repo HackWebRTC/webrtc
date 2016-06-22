@@ -577,56 +577,31 @@ void P2PTransportChannel::OnUnknownAddress(
   // is currently available for. See if we already have a candidate with the
   // address. If it isn't we need to create new candidate for it.
 
-  // Determine if the remote candidates use shared ufrag.
-  bool ufrag_per_port = false;
-  std::vector<RemoteCandidate>::iterator it;
-  if (remote_candidates_.size() > 0) {
-    it = remote_candidates_.begin();
-    std::string username = it->username();
-    for (; it != remote_candidates_.end(); ++it) {
-      if (it->username() != username) {
-        ufrag_per_port = true;
-        break;
-      }
-    }
-  }
-
-  const Candidate* candidate = NULL;
-  std::string remote_password;
-  for (it = remote_candidates_.begin(); it != remote_candidates_.end(); ++it) {
-    if (it->username() == remote_username) {
-      remote_password = it->password();
-      if (ufrag_per_port ||
-          (it->address() == address &&
-           it->protocol() == ProtoToString(proto))) {
-        candidate = &(*it);
-        break;
-      }
-      // We don't want to break here because we may find a match of the address
-      // later.
+  const Candidate* candidate = nullptr;
+  for (const Candidate& c : remote_candidates_) {
+    if (c.username() == remote_username && c.address() == address &&
+        c.protocol() == ProtoToString(proto)) {
+      candidate = &c;
+      break;
     }
   }
 
   uint32_t remote_generation = 0;
+  std::string remote_password;
   // The STUN binding request may arrive after setRemoteDescription and before
   // adding remote candidate, so we need to set the password to the shared
-  // password if the user name matches.
-  if (remote_password.empty()) {
-    const IceParameters* ice_param =
-        FindRemoteIceFromUfrag(remote_username, &remote_generation);
-    // Note: if not found, the remote_generation will still be 0.
-    if (ice_param != nullptr) {
-      remote_password = ice_param->pwd;
-    }
+  // password and set the generation if the user name matches.
+  const IceParameters* ice_param =
+      FindRemoteIceFromUfrag(remote_username, &remote_generation);
+  // Note: if not found, the remote_generation will still be 0.
+  if (ice_param != nullptr) {
+    remote_password = ice_param->pwd;
   }
 
   Candidate remote_candidate;
   bool remote_candidate_is_new = (candidate == nullptr);
   if (!remote_candidate_is_new) {
     remote_candidate = *candidate;
-    if (ufrag_per_port) {
-      remote_candidate.set_address(address);
-    }
   } else {
     // Create a new candidate with this address.
     // The priority of the candidate is set to the PRIORITY attribute
