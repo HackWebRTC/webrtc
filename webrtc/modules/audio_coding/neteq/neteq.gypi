@@ -157,8 +157,6 @@
             '<@(neteq_defines)',
           ],
           'sources': [
-            'audio_decoder_impl.cc',
-            'audio_decoder_impl.h',
             'audio_decoder_unittest.cc',
           ],
           'conditions': [
@@ -176,10 +174,44 @@
         }, # audio_decoder_unittests
 
         {
+          'target_name': 'rtc_event_log_source',
+          'type': 'static_library',
+          'dependencies': [
+            '<(webrtc_root)/webrtc.gyp:rtc_event_log_parser',
+            '<(webrtc_root)/webrtc.gyp:rtc_event_log_proto',
+          ],
+          'export_dependent_settings': [
+            '<(webrtc_root)/webrtc.gyp:rtc_event_log_parser',
+          ],
+          'sources': [
+            'tools/rtc_event_log_source.h',
+            'tools/rtc_event_log_source.cc',
+          ],
+        },
+
+        {
+          'target_name': 'neteq_unittest_proto',
+          'type': 'static_library',
+          'sources': [
+            'neteq_unittest.proto',
+          ],
+          'variables': {
+            'proto_in_dir': '.',
+            # Workaround to protect against gyp's pathname relativization when
+            # this file is included by modules.gyp.
+            'proto_out_protected': 'webrtc/audio_coding/neteq',
+            'proto_out_dir': '<(proto_out_protected)',
+          },
+          'includes': ['../../../build/protoc.gypi',],
+        },
+
+        {
           'target_name': 'neteq_unittest_tools',
           'type': 'static_library',
           'dependencies': [
+            'neteq',
             'rtp_rtcp',
+            'rtc_event_log_source',
             '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
             '<(webrtc_root)/test/test.gyp:rtp_test_utils',
           ],
@@ -198,8 +230,17 @@
             'tools/audio_sink.h',
             'tools/constant_pcm_packet_source.cc',
             'tools/constant_pcm_packet_source.h',
+            'tools/fake_decode_from_file.cc',
+            'tools/fake_decode_from_file.h',
             'tools/input_audio_file.cc',
             'tools/input_audio_file.h',
+            'tools/neteq_input.h',
+            'tools/neteq_packet_source_input.cc',
+            'tools/neteq_packet_source_input.h',
+            'tools/neteq_replacement_input.cc',
+            'tools/neteq_replacement_input.h',
+            'tools/neteq_test.cc',
+            'tools/neteq_test.h',
             'tools/output_audio_file.h',
             'tools/output_wav_file.h',
             'tools/packet.cc',

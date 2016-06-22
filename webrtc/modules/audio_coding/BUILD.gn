@@ -991,7 +991,6 @@ if (rtc_include_tests) {
       deps += [
         ":neteq",
         ":neteq_unittest_tools",
-        ":rtc_event_log_source",
         "../../system_wrappers:system_wrappers_default",
         "../../test:test_support",
         "//third_party/gflags",
@@ -1040,8 +1039,17 @@ if (rtc_include_tests) {
       "neteq/tools/audio_sink.h",
       "neteq/tools/constant_pcm_packet_source.cc",
       "neteq/tools/constant_pcm_packet_source.h",
+      "neteq/tools/fake_decode_from_file.cc",
+      "neteq/tools/fake_decode_from_file.h",
       "neteq/tools/input_audio_file.cc",
       "neteq/tools/input_audio_file.h",
+      "neteq/tools/neteq_input.h",
+      "neteq/tools/neteq_packet_source_input.cc",
+      "neteq/tools/neteq_packet_source_input.h",
+      "neteq/tools/neteq_replacement_input.cc",
+      "neteq/tools/neteq_replacement_input.h",
+      "neteq/tools/neteq_test.cc",
+      "neteq/tools/neteq_test.h",
       "neteq/tools/output_audio_file.h",
       "neteq/tools/output_wav_file.h",
       "neteq/tools/packet.cc",
@@ -1071,5 +1079,9 @@ if (rtc_include_tests) {
       "../../test:rtp_test_utils",
       "../rtp_rtcp",
     ]
+
+    if (rtc_enable_protobuf) {
+      deps += [ ":rtc_event_log_source" ]
+    }
   }
 }

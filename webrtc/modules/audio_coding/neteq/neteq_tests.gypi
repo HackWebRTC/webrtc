@@ -11,31 +11,14 @@
     ['enable_protobuf==1', {
       'targets': [
         {
-          'target_name': 'rtc_event_log_source',
-          'type': 'static_library',
-          'dependencies': [
-            '<(webrtc_root)/webrtc.gyp:rtc_event_log_parser',
-            '<(webrtc_root)/webrtc.gyp:rtc_event_log_proto',
-          ],
-          'export_dependent_settings': [
-            '<(webrtc_root)/webrtc.gyp:rtc_event_log_parser',
-          ],
-          'sources': [
-            'tools/rtc_event_log_source.h',
-            'tools/rtc_event_log_source.cc',
-          ],
-        },
-        {
           'target_name': 'neteq_rtpplay',
           'type': 'executable',
           'dependencies': [
             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
             '<(webrtc_root)/test/test.gyp:test_support',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
-            'rtc_event_log_source',
             'neteq',
             'neteq_unittest_tools',
-            'pcm16b',
           ],
           'sources': [
             'tools/neteq_rtpplay.cc',
@@ -43,21 +26,6 @@
           'defines': [
           ],
         }, # neteq_rtpplay
-        {
-          'target_name': 'neteq_unittest_proto',
-          'type': 'static_library',
-          'sources': [
-            'neteq_unittest.proto',
-          ],
-          'variables': {
-            'proto_in_dir': '.',
-            # Workaround to protect against gyp's pathname relativization when
-            # this file is included by modules.gyp.
-            'proto_out_protected': 'webrtc/audio_coding/neteq',
-            'proto_out_dir': '<(proto_out_protected)',
-          },
-          'includes': ['../../../build/protoc.gypi',],
-        },
       ],
     }],
   ],
