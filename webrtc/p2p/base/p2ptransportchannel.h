@@ -118,6 +118,10 @@ class P2PTransportChannel : public TransportChannelImpl,
   int GetError() override { return error_; }
   bool GetStats(std::vector<ConnectionInfo>* stats) override;
 
+  // TODO(honghaiz): Remove this method once the reference of it in
+  // Chromoting is removed.
+  const Connection* best_connection() const { return selected_connection_; }
+
   const Connection* selected_connection() const { return selected_connection_; }
   void set_incoming_only(bool value) { incoming_only_ = value; }
 
