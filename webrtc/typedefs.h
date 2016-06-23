@@ -37,12 +37,12 @@
 #define WEBRTC_ARCH_32_BITS
 #define WEBRTC_ARCH_LITTLE_ENDIAN
 #elif defined(__MIPSEL__)
-#if defined(__LP64__)
-#define WEBRTC_ARCH_MIPS64_FAMILY
-#else
 #define WEBRTC_ARCH_MIPS_FAMILY
-#endif
+#if defined(__LP64__)
+#define WEBRTC_ARCH_64_BITS
+#else
 #define WEBRTC_ARCH_32_BITS
+#endif
 #define WEBRTC_ARCH_LITTLE_ENDIAN
 #elif defined(__pnacl__)
 #define WEBRTC_ARCH_32_BITS
