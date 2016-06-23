@@ -835,7 +835,7 @@ class VideoFrameTest : public testing::Test {
                             data_size, 0, webrtc::kVideoRotation_0));          \
     int width_rotate = frame1.width();                                         \
     int height_rotate = frame1.height();                                       \
-    frame3.InitToEmptyBuffer(width_rotate, height_rotate, 0);                  \
+    frame3.InitToEmptyBuffer(width_rotate, height_rotate);                     \
     libyuv::I420Mirror(frame2.video_frame_buffer()->DataY(),                   \
                        frame2.video_frame_buffer()->StrideY(),                 \
                        frame2.video_frame_buffer()->DataU(),                   \
@@ -847,8 +847,8 @@ class VideoFrameTest : public testing::Test {
                        frame3.video_frame_buffer()->MutableDataU(),            \
                        frame3.video_frame_buffer()->StrideU(),                 \
                        frame3.video_frame_buffer()->MutableDataV(),            \
-                       frame3.video_frame_buffer()->StrideV(),                 \
-                       kWidth, kHeight);                                       \
+                       frame3.video_frame_buffer()->StrideV(), kWidth,         \
+                       kHeight);                                               \
     EXPECT_TRUE(IsEqual(frame1, frame3, 0));                                   \
   }
 
@@ -873,7 +873,7 @@ class VideoFrameTest : public testing::Test {
                             data_size, 0, webrtc::kVideoRotation_0));          \
     int width_rotate = frame1.width();                                         \
     int height_rotate = frame1.height();                                       \
-    frame3.InitToEmptyBuffer(width_rotate, height_rotate, 0);                  \
+    frame3.InitToEmptyBuffer(width_rotate, height_rotate);                     \
     libyuv::I420Rotate(frame2.video_frame_buffer()->DataY(),                   \
                        frame2.video_frame_buffer()->StrideY(),                 \
                        frame2.video_frame_buffer()->DataU(),                   \
@@ -885,8 +885,8 @@ class VideoFrameTest : public testing::Test {
                        frame3.video_frame_buffer()->MutableDataU(),            \
                        frame3.video_frame_buffer()->StrideU(),                 \
                        frame3.video_frame_buffer()->MutableDataV(),            \
-                       frame3.video_frame_buffer()->StrideV(),                 \
-                       kWidth, kHeight, libyuv::kRotate##ROTATE);              \
+                       frame3.video_frame_buffer()->StrideV(), kWidth,         \
+                       kHeight, libyuv::kRotate##ROTATE);                      \
     EXPECT_TRUE(IsEqual(frame1, frame3, 0));                                   \
   }
 
@@ -1480,7 +1480,7 @@ class VideoFrameTest : public testing::Test {
                                                     out,
                                                     out_size, stride));
     }
-    frame2.InitToEmptyBuffer(kWidth, kHeight, 0);
+    frame2.InitToEmptyBuffer(kWidth, kHeight);
     for (int i = 0; i < repeat_from; ++i) {
       EXPECT_EQ(0, RGBToI420(out, stride,
                              frame2.video_frame_buffer()->MutableDataY(),
