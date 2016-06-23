@@ -546,6 +546,8 @@ class Connection : public CandidatePairInterface,
   // Handles the binding request; sends a response if this is a valid request.
   void HandleBindingRequest(IceMessage* msg);
 
+  int64_t last_data_received() const { return last_data_received_; }
+
   // Debugging description of this connection
   std::string ToDebugId() const;
   std::string ToString() const;
