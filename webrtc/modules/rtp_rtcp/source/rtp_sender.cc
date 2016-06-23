@@ -286,6 +286,7 @@ int32_t RTPSender::RegisterRtpHeaderExtension(RTPExtensionType type,
     case kRtpExtensionTransportSequenceNumber:
       return rtp_header_extension_map_.Register(type, id);
     case kRtpExtensionNone:
+    case kRtpExtensionNumberOfExtensions:
       LOG(LS_ERROR) << "Invalid RTP extension type for registration";
       return -1;
   }

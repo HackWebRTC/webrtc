@@ -99,6 +99,15 @@ webrtc_fuzzer_test("rtp_packet_fuzzer") {
   seed_corpus = "corpora/rtp-corpus"
 }
 
+webrtc_fuzzer_test("rtp_header_fuzzer") {
+  sources = [
+    "rtp_header_fuzzer.cc",
+  ]
+  deps = [
+    "../../modules/rtp_rtcp/",
+  ]
+}
+
 source_set("audio_decoder_fuzzer") {
   public_configs = [ "../..:common_inherited_config" ]
   sources = [
