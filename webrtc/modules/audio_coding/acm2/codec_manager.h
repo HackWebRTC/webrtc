@@ -59,31 +59,13 @@ class CodecManager final {
   // Uses the provided Rent-A-Codec to create a new encoder stack, if we have a
   // complete specification; if so, it is then passed to set_encoder. On error,
   // returns false.
-  bool MakeEncoder(RentACodec* rac, AudioCodingModule* acm) {
-    RTC_DCHECK(rac);
-    RTC_DCHECK(acm);
-    if (!codec_stack_params_.speech_encoder && send_codec_inst_) {
-      // We have no speech encoder, but we have a specification for making one.
-      auto enc = rac->RentEncoder(*send_codec_inst_);
-      if (!enc)
-        return false;
-      codec_stack_params_.speech_encoder = std::move(enc);
-    }
-    auto stack = rac->RentEncoderStack(&codec_stack_params_);
-    if (stack) {
-      // Give new encoder stack to the ACM.
-      acm->SetEncoder(std::move(stack));
-    } else {
-      // The specification was good but incomplete, so we have no encoder stack
-      // to give to the ACM.
-    }
-    return true;
-  }
+  bool MakeEncoder(RentACodec* rac, AudioCodingModule* acm);
 
  private:
   rtc::ThreadChecker thread_checker_;
   rtc::Optional<CodecInst> send_codec_inst_;
   RentACodec::StackParameters codec_stack_params_;
+  bool recreate_encoder_ = true;  // Need to recreate encoder?
 
   RTC_DISALLOW_COPY_AND_ASSIGN(CodecManager);
 };

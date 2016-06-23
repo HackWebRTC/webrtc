@@ -187,6 +187,11 @@ void AudioEncoderCng::SetTargetBitrate(int bits_per_second) {
   speech_encoder_->SetTargetBitrate(bits_per_second);
 }
 
+rtc::ArrayView<std::unique_ptr<AudioEncoder>>
+AudioEncoderCng::ReclaimContainedEncoders() {
+  return rtc::ArrayView<std::unique_ptr<AudioEncoder>>(&speech_encoder_, 1);
+}
+
 AudioEncoder::EncodedInfo AudioEncoderCng::EncodePassive(
     size_t frames_to_encode,
     rtc::Buffer* encoded) {

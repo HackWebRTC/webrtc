@@ -149,6 +149,15 @@ class AudioEncoder {
   // implementation does the latter).
   virtual void SetTargetBitrate(int target_bps);
 
+  // Causes this encoder to let go of any other encoders it contains, and
+  // returns a pointer to an array where they are stored (which is required to
+  // live as long as this encoder). Unless the returned array is empty, you may
+  // not call any methods on this encoder afterwards, except for the
+  // destructor. The default implementation just returns an empty array.
+  // NOTE: This method is subject to change. Do not call or override it.
+  virtual rtc::ArrayView<std::unique_ptr<AudioEncoder>>
+  ReclaimContainedEncoders();
+
  protected:
   // Subclasses implement this to perform the actual encoding. Called by
   // Encode().

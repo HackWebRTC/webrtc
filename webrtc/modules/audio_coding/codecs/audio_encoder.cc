@@ -60,4 +60,7 @@ void AudioEncoder::SetProjectedPacketLossRate(double fraction) {}
 
 void AudioEncoder::SetTargetBitrate(int target_bps) {}
 
+rtc::ArrayView<std::unique_ptr<AudioEncoder>>
+AudioEncoder::ReclaimContainedEncoders() { return nullptr; }
+
 }  // namespace webrtc

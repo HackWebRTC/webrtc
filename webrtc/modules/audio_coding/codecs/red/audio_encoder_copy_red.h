@@ -51,6 +51,8 @@ class AudioEncoderCopyRed final : public AudioEncoder {
   void SetMaxPlaybackRate(int frequency_hz) override;
   void SetProjectedPacketLossRate(double fraction) override;
   void SetTargetBitrate(int target_bps) override;
+  rtc::ArrayView<std::unique_ptr<AudioEncoder>> ReclaimContainedEncoders()
+      override;
 
  protected:
   EncodedInfo EncodeImpl(uint32_t rtp_timestamp,

@@ -123,4 +123,9 @@ void AudioEncoderCopyRed::SetTargetBitrate(int bits_per_second) {
   speech_encoder_->SetTargetBitrate(bits_per_second);
 }
 
+rtc::ArrayView<std::unique_ptr<AudioEncoder>>
+AudioEncoderCopyRed::ReclaimContainedEncoders() {
+  return rtc::ArrayView<std::unique_ptr<AudioEncoder>>(&speech_encoder_, 1);
+}
+
 }  // namespace webrtc

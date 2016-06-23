@@ -63,6 +63,8 @@ class AudioEncoderCng final : public AudioEncoder {
   void SetMaxPlaybackRate(int frequency_hz) override;
   void SetProjectedPacketLossRate(double fraction) override;
   void SetTargetBitrate(int target_bps) override;
+  rtc::ArrayView<std::unique_ptr<AudioEncoder>> ReclaimContainedEncoders()
+      override;
 
  private:
   EncodedInfo EncodePassive(size_t frames_to_encode,

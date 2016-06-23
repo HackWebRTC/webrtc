@@ -56,6 +56,7 @@ namespace rtc {
 //   Contains17(arr);                             // C array
 //   Contains17(arr);                             // std::vector
 //   Contains17(rtc::ArrayView<int>(arr, size));  // pointer + size
+//   Contains17(nullptr);                         // nullptr -> empty ArrayView
 //   ...
 //
 // One important point is that ArrayView<T> and ArrayView<const T> are
@@ -73,6 +74,7 @@ class ArrayView final {
  public:
   // Construct an empty ArrayView.
   ArrayView() : ArrayView(static_cast<T*>(nullptr), 0) {}
+  ArrayView(std::nullptr_t) : ArrayView() {}
 
   // Construct an ArrayView for a (pointer,size) pair.
   template <typename U>
