@@ -291,7 +291,7 @@ void TurnPort::PrepareAddress() {
     if (!IsCompatibleAddress(server_address_.address)) {
       LOG(LS_ERROR) << "IP address family does not match: "
                     << "server: " << server_address_.address.family()
-                    << "local: " << ip().family();
+                    << " local: " << ip().family();
       OnAllocateError();
       return;
     }
@@ -438,14 +438,10 @@ void TurnPort::OnAllocateMismatch() {
   ++allocate_mismatch_retries_;
 }
 
-Connection* TurnPort::CreateConnection(const Candidate& address,
+Connection* TurnPort::CreateConnection(const Candidate& remote_candidate,
                                        CandidateOrigin origin) {
   // TURN-UDP can only connect to UDP candidates.
-  if (!SupportsProtocol(address.protocol())) {
-    return NULL;
-  }
-
-  if (!IsCompatibleAddress(address.address())) {
+  if (!SupportsProtocol(remote_candidate.protocol())) {
     return NULL;
   }
 
@@ -453,15 +449,19 @@ Connection* TurnPort::CreateConnection(const Candidate& address,
     return NULL;
   }
 
-  // Create an entry, if needed, so we can get our permissions set up correctly.
-  CreateOrRefreshEntry(address.address());
-
   // A TURN port will have two candiates, STUN and TURN. STUN may not
   // present in all cases. If present stun candidate will be added first
   // and TURN candidate later.
   for (size_t index = 0; index < Candidates().size(); ++index) {
-    if (Candidates()[index].type() == RELAY_PORT_TYPE) {
-      ProxyConnection* conn = new ProxyConnection(this, index, address);
+    const Candidate& local_candidate = Candidates()[index];
+    if (local_candidate.type() == RELAY_PORT_TYPE &&
+        local_candidate.address().family() ==
+            remote_candidate.address().family()) {
+      // Create an entry, if needed, so we can get our permissions set up
+      // correctly.
+      CreateOrRefreshEntry(remote_candidate.address());
+      ProxyConnection* conn =
+          new ProxyConnection(this, index, remote_candidate);
       AddOrReplaceConnection(conn);
       return conn;
     }

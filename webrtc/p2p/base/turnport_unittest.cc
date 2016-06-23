@@ -44,6 +44,8 @@ static const SocketAddress kLocalAddr1("11.11.11.11", 0);
 static const SocketAddress kLocalAddr2("22.22.22.22", 0);
 static const SocketAddress kLocalIPv6Addr(
     "2401:fa00:4:1000:be30:5bff:fee5:c3", 0);
+static const SocketAddress kLocalIPv6Addr2(
+    "2401:fa00:4:2000:be30:5bff:fee5:d4", 0);
 static const SocketAddress kTurnUdpIntAddr("99.99.99.3",
                                            cricket::TURN_SERVER_PORT);
 static const SocketAddress kTurnTcpIntAddr("99.99.99.4",
@@ -58,9 +60,8 @@ static const SocketAddress kTurnIPv6IntAddr(
     cricket::TURN_SERVER_PORT);
 static const SocketAddress kTurnUdpIPv6IntAddr(
     "2400:4030:1:2c00:be30:abcd:efab:cdef", cricket::TURN_SERVER_PORT);
-static const SocketAddress kTurnUdpIPv6ExtAddr(
-  "2620:0:1000:1b03:2e41:38ff:fea6:f2a4", 0);
 
+static const char kCandidateFoundation[] = "foundation";
 static const char kIceUfrag1[] = "TESTICEUFRAG0001";
 static const char kIceUfrag2[] = "TESTICEUFRAG0002";
 static const char kIcePwd1[] = "TESTICEPWD00000000000001";
@@ -596,7 +597,7 @@ TEST_F(TurnPortTest, DISABLED_TestTurnTcpOnAddressResolveFailure) {
 
 // In case of UDP on address resolve failure, TurnPort will not create socket
 // and return allocate failure.
-TEST_F(TurnPortTest, DISABLED_TestTurnUdpOnAdressResolveFailure) {
+TEST_F(TurnPortTest, DISABLED_TestTurnUdpOnAddressResolveFailure) {
   CreateTurnPort(kTurnUsername, kTurnPassword, cricket::ProtocolAddress(
       rtc::SocketAddress("www.webrtc-blah-blah.com", 3478),
       cricket::PROTO_UDP));
@@ -1012,6 +1013,35 @@ TEST_F(TurnPortTest, TestTurnLocalIPv6AddressServerIPv6ExtenalIPv4) {
   EXPECT_EQ(kTurnUdpExtAddr.ipaddr(),
             turn_port_->Candidates()[0].address().ipaddr());
   EXPECT_NE(0, turn_port_->Candidates()[0].address().port());
+}
+
+// Tests that the local and remote candidate address families should match when
+// a connection is created. Specifically, if a TURN port has an IPv6 address,
+// its local candidate will still be an IPv4 address and it can only create
+// connections with IPv4 remote candidates.
+TEST_F(TurnPortTest, TestCandidateAddressFamilyMatch) {
+  turn_server_.AddInternalSocket(kTurnUdpIPv6IntAddr, cricket::PROTO_UDP);
+
+  CreateTurnPort(kLocalIPv6Addr, kTurnUsername, kTurnPassword,
+                 kTurnUdpIPv6ProtoAddr);
+  turn_port_->PrepareAddress();
+  EXPECT_TRUE_WAIT(turn_ready_, kTimeout);
+  ASSERT_EQ(1U, turn_port_->Candidates().size());
+
+  // Create an IPv4 candidate. It will match the TURN candidate.
+  cricket::Candidate remote_candidate(cricket::ICE_CANDIDATE_COMPONENT_RTP,
+                                      "udp", kLocalAddr2, 0, "", "", "local", 0,
+                                      kCandidateFoundation);
+  remote_candidate.set_address(kLocalAddr2);
+  Connection* conn =
+      turn_port_->CreateConnection(remote_candidate, Port::ORIGIN_MESSAGE);
+  EXPECT_NE(nullptr, conn);
+
+  // Set the candidate address family to IPv6. It won't match the TURN
+  // candidate.
+  remote_candidate.set_address(kLocalIPv6Addr2);
+  conn = turn_port_->CreateConnection(remote_candidate, Port::ORIGIN_MESSAGE);
+  EXPECT_EQ(nullptr, conn);
 }
 
 TEST_F(TurnPortTest, TestOriginHeader) {
