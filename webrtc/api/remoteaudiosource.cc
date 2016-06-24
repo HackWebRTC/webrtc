@@ -15,7 +15,6 @@
 #include <memory>
 #include <utility>
 
-#include "webrtc/api/mediastreamprovider.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/logging.h"
@@ -42,7 +41,7 @@ class RemoteAudioSource::MessageHandler : public rtc::MessageHandler {
 class RemoteAudioSource::Sink : public AudioSinkInterface {
  public:
   explicit Sink(RemoteAudioSource* source) : source_(source) {}
-  ~Sink() override { source_->OnAudioProviderGone(); }
+  ~Sink() override { source_->OnAudioChannelGone(); }
 
  private:
   void OnData(const AudioSinkInterface::Data& audio) override {
@@ -56,10 +55,10 @@ class RemoteAudioSource::Sink : public AudioSinkInterface {
 
 rtc::scoped_refptr<RemoteAudioSource> RemoteAudioSource::Create(
     uint32_t ssrc,
-    AudioProviderInterface* provider) {
+    cricket::VoiceChannel* channel) {
   rtc::scoped_refptr<RemoteAudioSource> ret(
       new rtc::RefCountedObject<RemoteAudioSource>());
-  ret->Initialize(ssrc, provider);
+  ret->Initialize(ssrc, channel);
   return ret;
 }
 
@@ -76,12 +75,12 @@ RemoteAudioSource::~RemoteAudioSource() {
 }
 
 void RemoteAudioSource::Initialize(uint32_t ssrc,
-                                   AudioProviderInterface* provider) {
+                                   cricket::VoiceChannel* channel) {
   RTC_DCHECK(main_thread_->IsCurrent());
-  // To make sure we always get notified when the provider goes out of scope,
+  // To make sure we always get notified when the channel goes out of scope,
   // we register for callbacks here and not on demand in AddSink.
-  if (provider) {  // May be null in tests.
-    provider->SetRawAudioSink(
+  if (channel) {  // May be null in tests.
+    channel->SetRawAudioSink(
         ssrc, std::unique_ptr<AudioSinkInterface>(new Sink(this)));
   }
 }
@@ -145,8 +144,8 @@ void RemoteAudioSource::OnData(const AudioSinkInterface::Data& audio) {
   }
 }
 
-void RemoteAudioSource::OnAudioProviderGone() {
-  // Called when the data provider is deleted.  It may be the worker thread
+void RemoteAudioSource::OnAudioChannelGone() {
+  // Called when the audio channel is deleted.  It may be the worker thread
   // in libjingle or may be a different worker thread.
   main_thread_->Post(RTC_FROM_HERE, new MessageHandler(this));
 }

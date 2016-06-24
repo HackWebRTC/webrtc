@@ -339,6 +339,11 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     }
     return true;
   }
+
+  bool HasSource(uint32_t ssrc) const {
+    return local_sinks_.find(ssrc) != local_sinks_.end();
+  }
+
   virtual bool AddRecvStream(const StreamParams& sp) {
     if (!RtpHelper<VoiceMediaChannel>::AddRecvStream(sp))
       return false;
@@ -545,6 +550,9 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
     }
     return true;
   }
+  bool HasSink(uint32_t ssrc) const {
+    return sinks_.find(ssrc) != sinks_.end() && sinks_.at(ssrc) != nullptr;
+  }
 
   bool SetSend(bool send) override { return set_sending(send); }
   bool SetVideoSend(
@@ -556,14 +564,17 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
       return false;
     }
     if (enable && options) {
-      return SetOptions(*options);
+      if (!SetOptions(*options)) {
+        return false;
+      }
     }
     sources_[ssrc] = source;
     return true;
   }
 
   bool HasSource(uint32_t ssrc) const {
-    return sources_.find(ssrc) != sources_.end();
+    return sources_.find(ssrc) != sources_.end() &&
+           sources_.at(ssrc) != nullptr;
   }
   bool AddRecvStream(const StreamParams& sp) override {
     if (!RtpHelper<VideoMediaChannel>::AddRecvStream(sp))

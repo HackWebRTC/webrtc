@@ -128,7 +128,6 @@
         'mediastreaminterface.h',
         'mediastreamobserver.cc',
         'mediastreamobserver.h',
-        'mediastreamprovider.h',
         'mediastreamproxy.h',
         'mediastreamtrack.h',
         'mediastreamtrackproxy.h',
