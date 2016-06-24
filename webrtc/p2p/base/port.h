@@ -461,11 +461,6 @@ class Connection : public CandidatePairInterface,
   bool active() const {
     return write_state_ != STATE_WRITE_TIMEOUT;
   }
-  virtual bool ReadyToSendMedia() const {
-    return write_state_ == STATE_WRITABLE ||
-           write_state_ == STATE_WRITE_UNRELIABLE;
-  }
-
   // A connection is dead if it can be safely deleted.
   bool dead(int64_t now) const;
 

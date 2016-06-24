@@ -937,7 +937,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     });
     WaitForThreads();
     EXPECT_EQ(1, media_channel1->num_network_route_changes());
-    rtc::NetworkRoute expected_network_route(true, kLocalNetId, kRemoteNetId,
+    rtc::NetworkRoute expected_network_route(kLocalNetId, kRemoteNetId,
                                              kLastPacketId);
     EXPECT_EQ(expected_network_route, media_channel1->last_network_route());
     EXPECT_EQ(kLastPacketId,
