@@ -2139,6 +2139,8 @@ bool PeerConnection::InitializePortAllocator_n(
     return false;
   }
 
+  port_allocator_->Initialize();
+
   // To handle both internal and externally created port allocator, we will
   // enable BUNDLE here.
   int portallocator_flags = port_allocator_->flags();
