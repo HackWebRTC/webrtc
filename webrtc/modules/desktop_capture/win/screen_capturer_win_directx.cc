@@ -619,8 +619,10 @@ void ScreenCapturerWinDirectx::Capture(const DesktopRegion& region) {
   RTC_DCHECK(callback_);
 
   if (!g_container->duplication && !DuplicateOutput()) {
-    // Failed to initialize desktop duplication.
-    callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
+    // Failed to initialize desktop duplication. This usually happens when
+    // Windows is switching display mode. Retrying later usually resolves the
+    // issue.
+    callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
     return;
   }
 
