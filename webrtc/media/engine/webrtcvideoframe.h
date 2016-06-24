@@ -72,7 +72,6 @@ class WebRtcVideoFrame : public VideoFrame {
   bool Init(const CapturedFrame* frame, int dw, int dh, bool apply_rotation);
 
   void InitToEmptyBuffer(int w, int h);
-  void InitToEmptyBuffer(int w, int h, int64_t time_stamp_ns);
 
   int width() const override;
   int height() const override;
@@ -96,9 +95,6 @@ class WebRtcVideoFrame : public VideoFrame {
   const VideoFrame* GetCopyWithRotationApplied() const override;
 
  protected:
-  void set_rotation(webrtc::VideoRotation rotation) override {
-    rotation_ = rotation;
-  }
   // Creates a frame from a raw sample with FourCC |format| and size |w| x |h|.
   // |h| can be negative indicating a vertically flipped image.
   // |dw| is destination width; can be less than |w| if cropping is desired.
@@ -116,8 +112,8 @@ class WebRtcVideoFrame : public VideoFrame {
              bool apply_rotation);
 
  private:
-  VideoFrame* CreateEmptyFrame(int w, int h,
-                               int64_t time_stamp_ns) const override;
+  // Tests mutate |rotation_|, so the base test class is a friend.
+  friend class WebRtcVideoFrameTest;
 
   // An opaque reference counted handle that stores the pixel data.
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;

@@ -97,14 +97,6 @@ class VideoFrame {
                        int h,
                        const uint8_t* sample,
                        size_t sample_size);
-
- protected:
-  // Creates an empty frame.
-  virtual VideoFrame* CreateEmptyFrame(int w,
-                                       int h,
-                                       int64_t timestamp_us) const = 0;
-
-  virtual void set_rotation(webrtc::VideoRotation rotation) = 0;
 };
 
 }  // namespace cricket

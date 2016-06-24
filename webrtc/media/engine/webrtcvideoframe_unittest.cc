@@ -16,37 +16,11 @@
 #include "webrtc/media/engine/webrtcvideoframe.h"
 #include "webrtc/test/fake_texture_frame.h"
 
-namespace {
+namespace cricket {
 
-class WebRtcVideoTestFrame : public cricket::WebRtcVideoFrame {
+class WebRtcVideoFrameTest : public VideoFrameTest<WebRtcVideoFrame> {
  public:
-  WebRtcVideoTestFrame() {}
-  WebRtcVideoTestFrame(
-      const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
-      int64_t time_stamp_ns,
-      webrtc::VideoRotation rotation)
-    : WebRtcVideoFrame(buffer, time_stamp_ns, rotation) {}
-
-  // The ApplyRotationToFrame test needs this as a public method.
-  using cricket::WebRtcVideoFrame::set_rotation;
-
-  virtual VideoFrame* CreateEmptyFrame(int w,
-                                       int h,
-                                       int64_t time_stamp) const override {
-    rtc::scoped_refptr<webrtc::I420Buffer> buffer(
-        new rtc::RefCountedObject<webrtc::I420Buffer>(w, h));
-    buffer->SetToBlack();
-    return new WebRtcVideoTestFrame(
-        buffer, time_stamp, webrtc::kVideoRotation_0);
-  }
-};
-
-}  // namespace
-
-class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
- public:
-  WebRtcVideoFrameTest() {
-  }
+  WebRtcVideoFrameTest() {}
 
   void TestInit(int cropped_width, int cropped_height,
                 webrtc::VideoRotation frame_rotation,
@@ -55,8 +29,8 @@ class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
     const int frame_height = 1080;
 
     // Build the CapturedFrame.
-    cricket::CapturedFrame captured_frame;
-    captured_frame.fourcc = cricket::FOURCC_I420;
+    CapturedFrame captured_frame;
+    captured_frame.fourcc = FOURCC_I420;
     captured_frame.time_stamp = rtc::TimeNanos();
     captured_frame.rotation = frame_rotation;
     captured_frame.width = frame_width;
@@ -70,7 +44,7 @@ class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
     captured_frame.data = captured_frame_buffer.get();
 
     // Create the new frame from the CapturedFrame.
-    cricket::WebRtcVideoFrame frame;
+    WebRtcVideoFrame frame;
     EXPECT_TRUE(
         frame.Init(&captured_frame, cropped_width, cropped_height,
                    apply_rotation));
@@ -93,11 +67,15 @@ class WebRtcVideoFrameTest : public VideoFrameTest<cricket::WebRtcVideoFrame> {
       EXPECT_EQ(cropped_height, frame.height());
     }
   }
+
+  void SetFrameRotation(WebRtcVideoFrame* frame,
+                        webrtc::VideoRotation rotation) {
+    frame->rotation_ = rotation;
+  }
 };
 
-#define TEST_WEBRTCVIDEOFRAME(X) TEST_F(WebRtcVideoFrameTest, X) { \
-  VideoFrameTest<cricket::WebRtcVideoFrame>::X(); \
-}
+#define TEST_WEBRTCVIDEOFRAME(X) \
+  TEST_F(WebRtcVideoFrameTest, X) { VideoFrameTest<WebRtcVideoFrame>::X(); }
 
 TEST_WEBRTCVIDEOFRAME(ConstructI420)
 TEST_WEBRTCVIDEOFRAME(ConstructI422)
@@ -281,7 +259,7 @@ TEST_F(WebRtcVideoFrameTest, TextureInitialValues) {
       new rtc::RefCountedObject<webrtc::test::FakeNativeHandleBuffer>(
           dummy_handle, 640, 480);
   // Timestamp is converted from ns to us, so last three digits are lost.
-  cricket::WebRtcVideoFrame frame(buffer, 20000, webrtc::kVideoRotation_0);
+  WebRtcVideoFrame frame(buffer, 20000, webrtc::kVideoRotation_0);
   EXPECT_EQ(dummy_handle, frame.video_frame_buffer()->native_handle());
   EXPECT_EQ(640, frame.width());
   EXPECT_EQ(480, frame.height());
@@ -299,8 +277,8 @@ TEST_F(WebRtcVideoFrameTest, CopyTextureFrame) {
       new rtc::RefCountedObject<webrtc::test::FakeNativeHandleBuffer>(
           dummy_handle, 640, 480);
   // Timestamp is converted from ns to us, so last three digits are lost.
-  cricket::WebRtcVideoFrame frame1(buffer, 20000, webrtc::kVideoRotation_0);
-  cricket::VideoFrame* frame2 = frame1.Copy();
+  WebRtcVideoFrame frame1(buffer, 20000, webrtc::kVideoRotation_0);
+  VideoFrame* frame2 = frame1.Copy();
   EXPECT_EQ(frame1.video_frame_buffer()->native_handle(),
             frame2->video_frame_buffer()->native_handle());
   EXPECT_EQ(frame1.width(), frame2->width());
@@ -311,17 +289,17 @@ TEST_F(WebRtcVideoFrameTest, CopyTextureFrame) {
 }
 
 TEST_F(WebRtcVideoFrameTest, ApplyRotationToFrame) {
-  WebRtcVideoTestFrame applied0;
+  WebRtcVideoFrame applied0;
   EXPECT_TRUE(IsNull(applied0));
-  EXPECT_TRUE(LoadFrame(CreateYuvSample(kWidth, kHeight, 12).get(),
-                        cricket::FOURCC_I420, kWidth, kHeight, &applied0));
+  EXPECT_TRUE(LoadFrame(CreateYuvSample(kWidth, kHeight, 12).get(), FOURCC_I420,
+                        kWidth, kHeight, &applied0));
 
   // Claim that this frame needs to be rotated for 90 degree.
-  applied0.set_rotation(webrtc::kVideoRotation_90);
+  SetFrameRotation(&applied0, webrtc::kVideoRotation_90);
 
   // Apply rotation on frame 1. Output should be different from frame 1.
-  WebRtcVideoTestFrame* applied90 = const_cast<WebRtcVideoTestFrame*>(
-      static_cast<const WebRtcVideoTestFrame*>(
+  WebRtcVideoFrame* applied90 =
+      const_cast<WebRtcVideoFrame*>(static_cast<const WebRtcVideoFrame*>(
           applied0.GetCopyWithRotationApplied()));
   EXPECT_TRUE(applied90);
   EXPECT_EQ(applied90->rotation(), webrtc::kVideoRotation_0);
@@ -329,10 +307,11 @@ TEST_F(WebRtcVideoFrameTest, ApplyRotationToFrame) {
 
   // Claim the frame 2 needs to be rotated for another 270 degree. The output
   // from frame 2 rotation should be the same as frame 1.
-  applied90->set_rotation(webrtc::kVideoRotation_270);
-  const cricket::VideoFrame* applied360 =
-      applied90->GetCopyWithRotationApplied();
+  SetFrameRotation(applied90, webrtc::kVideoRotation_270);
+  const VideoFrame* applied360 = applied90->GetCopyWithRotationApplied();
   EXPECT_TRUE(applied360);
   EXPECT_EQ(applied360->rotation(), webrtc::kVideoRotation_0);
   EXPECT_TRUE(IsEqual(applied0, *applied360, 0));
 }
+
+}  // namespace cricket

@@ -149,23 +149,8 @@ bool WebRtcVideoFrame::Reset(uint32_t format,
   return true;
 }
 
-VideoFrame* WebRtcVideoFrame::CreateEmptyFrame(int w,
-                                               int h,
-                                               int64_t timestamp_us) const {
-  WebRtcVideoFrame* frame = new WebRtcVideoFrame();
-  frame->InitToEmptyBuffer(w, h, rtc::kNumNanosecsPerMicrosec * timestamp_us);
-  return frame;
-}
-
 void WebRtcVideoFrame::InitToEmptyBuffer(int w, int h) {
   video_frame_buffer_ = new rtc::RefCountedObject<webrtc::I420Buffer>(w, h);
-  rotation_ = webrtc::kVideoRotation_0;
-}
-
-void WebRtcVideoFrame::InitToEmptyBuffer(int w, int h,
-                                         int64_t time_stamp_ns) {
-  video_frame_buffer_ = new rtc::RefCountedObject<webrtc::I420Buffer>(w, h);
-  SetTimeStamp(time_stamp_ns);
   rotation_ = webrtc::kVideoRotation_0;
 }
 
@@ -185,19 +170,19 @@ const VideoFrame* WebRtcVideoFrame::GetCopyWithRotationApplied() const {
     return rotated_frame_.get();
   }
 
-  int orig_width = width();
-  int orig_height = height();
+  int current_width = width();
+  int current_height = height();
 
-  int rotated_width = orig_width;
-  int rotated_height = orig_height;
+  int rotated_width = current_width;
+  int rotated_height = current_height;
   if (rotation() == webrtc::kVideoRotation_90 ||
       rotation() == webrtc::kVideoRotation_270) {
-    rotated_width = orig_height;
-    rotated_height = orig_width;
+    std::swap(rotated_width, rotated_height);
   }
 
-  rotated_frame_.reset(
-      CreateEmptyFrame(rotated_width, rotated_height, timestamp_us_));
+  rtc::scoped_refptr<webrtc::I420Buffer> buffer =
+      new rtc::RefCountedObject<webrtc::I420Buffer>(rotated_width,
+                                                    rotated_height);
 
   // TODO(guoweis): Add a function in webrtc_libyuv.cc to convert from
   // VideoRotation to libyuv::RotationMode.
@@ -205,18 +190,16 @@ const VideoFrame* WebRtcVideoFrame::GetCopyWithRotationApplied() const {
       video_frame_buffer_->DataY(), video_frame_buffer_->StrideY(),
       video_frame_buffer_->DataU(), video_frame_buffer_->StrideU(),
       video_frame_buffer_->DataV(), video_frame_buffer_->StrideV(),
-      rotated_frame_->video_frame_buffer()->MutableDataY(),
-      rotated_frame_->video_frame_buffer()->StrideY(),
-      rotated_frame_->video_frame_buffer()->MutableDataU(),
-      rotated_frame_->video_frame_buffer()->StrideU(),
-      rotated_frame_->video_frame_buffer()->MutableDataV(),
-      rotated_frame_->video_frame_buffer()->StrideV(),
-      orig_width, orig_height,
+      buffer->MutableDataY(), buffer->StrideY(), buffer->MutableDataU(),
+      buffer->StrideU(), buffer->MutableDataV(), buffer->StrideV(),
+      current_width, current_height,
       static_cast<libyuv::RotationMode>(rotation()));
   if (ret == 0) {
-    return rotated_frame_.get();
+    rotated_frame_.reset(
+        new WebRtcVideoFrame(buffer, webrtc::kVideoRotation_0, timestamp_us_));
   }
-  return nullptr;
+
+  return rotated_frame_.get();
 }
 
 }  // namespace cricket
