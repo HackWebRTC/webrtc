@@ -71,6 +71,10 @@ class TestTurnServer : public TurnAuthInterface {
     server_.set_redirect_hook(redirect_hook);
   }
 
+  void set_enable_permission_checks(bool enable) {
+    server_.set_enable_permission_checks(enable);
+  }
+
   void AddInternalSocket(const rtc::SocketAddress& int_addr,
                          ProtocolType proto) {
     rtc::Thread* thread = rtc::Thread::Current();

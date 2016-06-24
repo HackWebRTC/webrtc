@@ -801,7 +801,8 @@ void TurnServerAllocation::OnExternalPacket(
     buf.WriteUInt16(static_cast<uint16_t>(size));
     buf.WriteBytes(data, size);
     server_->Send(&conn_, buf);
-  } else if (HasPermission(addr.ipaddr())) {
+  } else if (!server_->enable_permission_checks_ ||
+             HasPermission(addr.ipaddr())) {
     // No channel, but a permission exists. Send as a data indication.
     TurnMessage msg;
     msg.SetType(TURN_DATA_INDICATION);

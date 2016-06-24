@@ -292,7 +292,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     uint64_t tiebreaker_;
     bool role_conflict_;
     bool save_candidates_;
-    std::vector<CandidatesData*> saved_candidates_;
+    std::vector<std::unique_ptr<CandidatesData>> saved_candidates_;
     bool ready_to_send_ = false;
   };
 
@@ -368,6 +368,8 @@ class P2PTransportChannelTestBase : public testing::Test,
   P2PTransportChannel* ep1_ch2() { return ep1_.cd2_.ch_.get(); }
   P2PTransportChannel* ep2_ch1() { return ep2_.cd1_.ch_.get(); }
   P2PTransportChannel* ep2_ch2() { return ep2_.cd2_.ch_.get(); }
+
+  TestTurnServer* test_turn_server() { return &turn_server_; }
 
   // Common results.
   static const Result kLocalUdpToLocalUdp;
@@ -675,7 +677,8 @@ class P2PTransportChannelTestBase : public testing::Test,
       return;
 
     if (GetEndpoint(ch)->save_candidates_) {
-      GetEndpoint(ch)->saved_candidates_.push_back(new CandidatesData(ch, c));
+      GetEndpoint(ch)->saved_candidates_.push_back(
+          std::unique_ptr<CandidatesData>(new CandidatesData(ch, c)));
     } else {
       main_->Post(RTC_FROM_HERE, this, MSG_ADD_CANDIDATES,
                   new CandidatesData(ch, c));
@@ -712,9 +715,8 @@ class P2PTransportChannelTestBase : public testing::Test,
 
   void ResumeCandidates(int endpoint) {
     Endpoint* ed = GetEndpoint(endpoint);
-    std::vector<CandidatesData*>::iterator it = ed->saved_candidates_.begin();
-    for (; it != ed->saved_candidates_.end(); ++it) {
-      main_->Post(RTC_FROM_HERE, this, MSG_ADD_CANDIDATES, *it);
+    for (auto& candidate : ed->saved_candidates_) {
+      main_->Post(RTC_FROM_HERE, this, MSG_ADD_CANDIDATES, candidate.release());
     }
     ed->saved_candidates_.clear();
     ed->save_candidates_ = false;
@@ -1665,7 +1667,7 @@ TEST_F(P2PTransportChannelTest, TestUsingPooledSessionAfterDoneGathering) {
 }
 
 // Test that when the "presume_writable_when_fully_relayed" flag is set to
-// false and there's a TURN-TURN candidate pair, it's presume to be writable
+// true and there's a TURN-TURN candidate pair, it's presumed to be writable
 // as soon as it's created.
 TEST_F(P2PTransportChannelTest, TurnToTurnPresumedWritable) {
   ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
@@ -1696,6 +1698,50 @@ TEST_F(P2PTransportChannelTest, TurnToTurnPresumedWritable) {
   // it has a TURN-TURN pair.
   EXPECT_TRUE(ep1_ch1()->writable());
   EXPECT_TRUE(GetEndpoint(0)->ready_to_send_);
+}
+
+// Test that a TURN/peer reflexive candidate pair is also presumed writable.
+TEST_F(P2PTransportChannelTest, TurnToPrflxPresumedWritable) {
+  rtc::ScopedFakeClock fake_clock;
+
+  ConfigureEndpoints(NAT_SYMMETRIC, NAT_SYMMETRIC, kDefaultPortAllocatorFlags,
+                     kDefaultPortAllocatorFlags);
+  // We want the remote TURN candidate to show up as prflx. To do this we need
+  // to configure the server to accept packets from an address we haven't
+  // explicitly installed permission for.
+  test_turn_server()->set_enable_permission_checks(false);
+  IceConfig config;
+  config.presume_writable_when_fully_relayed = true;
+  GetEndpoint(0)->cd1_.ch_.reset(
+      CreateChannel(0, ICE_CANDIDATE_COMPONENT_DEFAULT, kIceUfrag[0],
+                    kIcePwd[0], kIceUfrag[1], kIcePwd[1]));
+  GetEndpoint(1)->cd1_.ch_.reset(
+      CreateChannel(1, ICE_CANDIDATE_COMPONENT_DEFAULT, kIceUfrag[1],
+                    kIcePwd[1], kIceUfrag[0], kIcePwd[0]));
+  ep1_ch1()->SetIceConfig(config);
+  ep2_ch1()->SetIceConfig(config);
+  // Don't signal candidates from channel 2, so that channel 1 sees the TURN
+  // candidate as peer reflexive.
+  PauseCandidates(1);
+  ep1_ch1()->MaybeStartGathering();
+  ep2_ch1()->MaybeStartGathering();
+
+  // Wait for the TURN<->prflx connection.
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable(),
+                             1000, fake_clock);
+  ASSERT_NE(nullptr, ep1_ch1()->selected_connection());
+  EXPECT_EQ(RELAY_PORT_TYPE, LocalCandidate(ep1_ch1())->type());
+  EXPECT_EQ(PRFLX_PORT_TYPE, RemoteCandidate(ep1_ch1())->type());
+  // Make sure that at this point the connection is only presumed writable,
+  // not fully writable.
+  EXPECT_FALSE(ep1_ch1()->selected_connection()->writable());
+
+  // Now wait for it to actually become writable.
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->selected_connection()->writable(), 1000,
+                             fake_clock);
+
+  // Explitly destroy channels, before fake clock is destroyed.
+  DestroyChannels();
 }
 
 // Test that a presumed-writable TURN<->TURN connection is preferred above an

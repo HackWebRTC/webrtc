@@ -460,19 +460,17 @@ class TurnPortTest : public testing::Test,
     EXPECT_TRUE_WAIT(turn_unknown_address_, kTimeout);
 
     // Flush all requests in the invoker to destroy the TurnEntry.
-    // Now the turn port cannot receive the ping.
+    // However, the TURN port should still signal the unknown address.
     turn_unknown_address_ = false;
     turn_port_->invoker()->Flush(rtc::Thread::Current());
     conn1->Ping(0);
-    rtc::Thread::Current()->ProcessMessages(500);
-    EXPECT_FALSE(turn_unknown_address_);
+    EXPECT_TRUE_WAIT(turn_unknown_address_, kTimeout);
 
     // If the connection is created again, it will start to receive pings.
     conn2 = turn_port_->CreateConnection(udp_port_->Candidates()[0],
                                          Port::ORIGIN_MESSAGE);
     conn1->Ping(0);
     EXPECT_TRUE_WAIT(conn2->receiving(), kTimeout);
-    EXPECT_FALSE(turn_unknown_address_);
   }
 
   void TestTurnSendData() {

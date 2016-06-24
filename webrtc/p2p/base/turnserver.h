@@ -190,6 +190,10 @@ class TurnServer : public sigslot::has_slots<> {
     reject_private_addresses_ = filter;
   }
 
+  void set_enable_permission_checks(bool enable) {
+    enable_permission_checks_ = enable;
+  }
+
   // Starts listening for packets from internal clients.
   void AddInternalSocket(rtc::AsyncPacketSocket* socket,
                          ProtocolType proto);
@@ -268,6 +272,8 @@ class TurnServer : public sigslot::has_slots<> {
   // sees the same nonce in next transaction.
   bool enable_otu_nonce_;
   bool reject_private_addresses_ = false;
+  // Check for permission when receiving an external packet.
+  bool enable_permission_checks_ = true;
 
   InternalSocketMap server_sockets_;
   ServerSocketMap server_listen_sockets_;

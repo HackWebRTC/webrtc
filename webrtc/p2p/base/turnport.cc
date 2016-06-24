@@ -831,13 +831,13 @@ void TurnPort::HandleDataIndication(const char* data, size_t size,
     return;
   }
 
-  // Verify that the data came from somewhere we think we have a permission for.
+  // Log a warning if the data didn't come from an address that we think we have
+  // a permission for.
   rtc::SocketAddress ext_addr(addr_attr->GetAddress());
   if (!HasPermission(ext_addr.ipaddr())) {
-    LOG_J(LS_WARNING, this) << "Received TURN data indication with invalid "
-                            << "peer address, addr="
-                            << ext_addr.ToSensitiveString();
-    return;
+    LOG_J(LS_WARNING, this)
+        << "Received TURN data indication with unknown "
+        << "peer address, addr=" << ext_addr.ToSensitiveString();
   }
 
   DispatchPacket(data_attr->bytes(), data_attr->length(), ext_addr,
