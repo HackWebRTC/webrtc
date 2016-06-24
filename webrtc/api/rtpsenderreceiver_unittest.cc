@@ -15,6 +15,8 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/api/audiotrack.h"
+#include "webrtc/api/fakemediacontroller.h"
+#include "webrtc/api/localaudiosource.h"
 #include "webrtc/api/mediastream.h"
 #include "webrtc/api/remoteaudiosource.h"
 #include "webrtc/api/rtpreceiver.h"
@@ -25,6 +27,10 @@
 #include "webrtc/api/videotrack.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/media/base/mediachannel.h"
+#include "webrtc/media/base/fakemediaengine.h"
+#include "webrtc/media/engine/fakewebrtccall.h"
+#include "webrtc/p2p/base/faketransportcontroller.h"
+#include "webrtc/pc/channelmanager.h"
 
 using ::testing::_;
 using ::testing::Exactly;
@@ -41,69 +47,56 @@ static const uint32_t kAudioSsrc2 = 101;
 
 namespace webrtc {
 
-// Helper class to test RtpSender/RtpReceiver.
-class MockAudioProvider : public AudioProviderInterface {
- public:
-  // TODO(nisse): Valid overrides commented out, because the gmock
-  // methods don't use any override declarations, and we want to avoid
-  // warnings from -Winconsistent-missing-override. See
-  // http://crbug.com/428099.
-  ~MockAudioProvider() /* override */ {}
-
-  MOCK_METHOD2(SetAudioPlayout,
-               void(uint32_t ssrc,
-                    bool enable));
-  MOCK_METHOD4(SetAudioSend,
-               void(uint32_t ssrc,
-                    bool enable,
-                    const cricket::AudioOptions& options,
-                    cricket::AudioSource* source));
-  MOCK_METHOD2(SetAudioPlayoutVolume, void(uint32_t ssrc, double volume));
-  MOCK_CONST_METHOD1(GetAudioRtpSendParameters, RtpParameters(uint32_t ssrc));
-  MOCK_METHOD2(SetAudioRtpSendParameters,
-               bool(uint32_t ssrc, const RtpParameters&));
-  MOCK_CONST_METHOD1(GetAudioRtpReceiveParameters,
-                     RtpParameters(uint32_t ssrc));
-  MOCK_METHOD2(SetAudioRtpReceiveParameters,
-               bool(uint32_t ssrc, const RtpParameters&));
-
-  void SetRawAudioSink(
-      uint32_t, std::unique_ptr<AudioSinkInterface> sink) /* override */ {
-    sink_ = std::move(sink);
-  }
-
- private:
-  std::unique_ptr<AudioSinkInterface> sink_;
-};
-
-// Helper class to test RtpSender/RtpReceiver.
-class MockVideoProvider : public VideoProviderInterface {
- public:
-  virtual ~MockVideoProvider() {}
-  MOCK_METHOD3(SetVideoPlayout,
-               void(uint32_t ssrc,
-                    bool enable,
-                    rtc::VideoSinkInterface<cricket::VideoFrame>* sink));
-  MOCK_METHOD4(SetVideoSend,
-               void(uint32_t ssrc,
-                    bool enable,
-                    const cricket::VideoOptions* options,
-                    rtc::VideoSourceInterface<cricket::VideoFrame>* source));
-
-  MOCK_CONST_METHOD1(GetVideoRtpSendParameters, RtpParameters(uint32_t ssrc));
-  MOCK_METHOD2(SetVideoRtpSendParameters,
-               bool(uint32_t ssrc, const RtpParameters&));
-  MOCK_CONST_METHOD1(GetVideoRtpReceiveParameters,
-                     RtpParameters(uint32_t ssrc));
-  MOCK_METHOD2(SetVideoRtpReceiveParameters,
-               bool(uint32_t ssrc, const RtpParameters&));
-};
-
 class RtpSenderReceiverTest : public testing::Test {
  public:
-  virtual void SetUp() {
-    stream_ = MediaStream::Create(kStreamLabel1);
+  RtpSenderReceiverTest()
+      :  // Create fake media engine/etc. so we can create channels to use to
+        // test RtpSenders/RtpReceivers.
+        media_engine_(new cricket::FakeMediaEngine()),
+        channel_manager_(media_engine_,
+                         rtc::Thread::Current(),
+                         rtc::Thread::Current()),
+        fake_call_(webrtc::Call::Config()),
+        fake_media_controller_(&channel_manager_, &fake_call_),
+        stream_(MediaStream::Create(kStreamLabel1)) {
+    // Create channels to be used by the RtpSenders and RtpReceivers.
+    channel_manager_.Init();
+    voice_channel_ = channel_manager_.CreateVoiceChannel(
+        &fake_media_controller_, &fake_transport_controller_, cricket::CN_AUDIO,
+        nullptr, false, cricket::AudioOptions());
+    video_channel_ = channel_manager_.CreateVideoChannel(
+        &fake_media_controller_, &fake_transport_controller_, cricket::CN_VIDEO,
+        nullptr, false, cricket::VideoOptions());
+    voice_media_channel_ = media_engine_->GetVoiceChannel(0);
+    video_media_channel_ = media_engine_->GetVideoChannel(0);
+    RTC_CHECK(voice_channel_);
+    RTC_CHECK(video_channel_);
+    RTC_CHECK(voice_media_channel_);
+    RTC_CHECK(video_media_channel_);
+
+    // Create streams for predefined SSRCs. Streams need to exist in order
+    // for the senders and receievers to apply parameters to them.
+    // Normally these would be created by SetLocalDescription and
+    // SetRemoteDescription.
+    voice_media_channel_->AddSendStream(
+        cricket::StreamParams::CreateLegacy(kAudioSsrc));
+    voice_media_channel_->AddRecvStream(
+        cricket::StreamParams::CreateLegacy(kAudioSsrc));
+    voice_media_channel_->AddSendStream(
+        cricket::StreamParams::CreateLegacy(kAudioSsrc2));
+    voice_media_channel_->AddRecvStream(
+        cricket::StreamParams::CreateLegacy(kAudioSsrc2));
+    video_media_channel_->AddSendStream(
+        cricket::StreamParams::CreateLegacy(kVideoSsrc));
+    video_media_channel_->AddRecvStream(
+        cricket::StreamParams::CreateLegacy(kVideoSsrc));
+    video_media_channel_->AddSendStream(
+        cricket::StreamParams::CreateLegacy(kVideoSsrc2));
+    video_media_channel_->AddRecvStream(
+        cricket::StreamParams::CreateLegacy(kVideoSsrc2));
   }
+
+  void TearDown() override { channel_manager_.Terminate(); }
 
   void AddVideoTrack() {
     rtc::scoped_refptr<VideoTrackSourceInterface> source(
@@ -112,68 +105,128 @@ class RtpSenderReceiverTest : public testing::Test {
     EXPECT_TRUE(stream_->AddTrack(video_track_));
   }
 
-  void CreateAudioRtpSender() {
-    audio_track_ = AudioTrack::Create(kAudioTrackId, NULL);
+  void CreateAudioRtpSender() { CreateAudioRtpSender(nullptr); }
+
+  void CreateAudioRtpSender(rtc::scoped_refptr<LocalAudioSource> source) {
+    audio_track_ = AudioTrack::Create(kAudioTrackId, source);
     EXPECT_TRUE(stream_->AddTrack(audio_track_));
-    EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, true, _, _));
     audio_rtp_sender_ =
         new AudioRtpSender(stream_->GetAudioTracks()[0], stream_->label(),
-                           &audio_provider_, nullptr);
+                           voice_channel_, nullptr);
     audio_rtp_sender_->SetSsrc(kAudioSsrc);
+    VerifyVoiceChannelInput();
   }
 
   void CreateVideoRtpSender() {
     AddVideoTrack();
-    EXPECT_CALL(video_provider_,
-                SetVideoSend(kVideoSsrc, true, _, video_track_.get()));
     video_rtp_sender_ = new VideoRtpSender(stream_->GetVideoTracks()[0],
-                                           stream_->label(), &video_provider_);
+                                           stream_->label(), video_channel_);
     video_rtp_sender_->SetSsrc(kVideoSsrc);
+    VerifyVideoChannelInput();
   }
 
   void DestroyAudioRtpSender() {
-    EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, false, _, _))
-        .Times(1);
     audio_rtp_sender_ = nullptr;
+    VerifyVoiceChannelNoInput();
   }
 
   void DestroyVideoRtpSender() {
-    EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, false, _, nullptr))
-        .Times(1);
     video_rtp_sender_ = nullptr;
+    VerifyVideoChannelNoInput();
   }
 
   void CreateAudioRtpReceiver() {
     audio_track_ = AudioTrack::Create(
         kAudioTrackId, RemoteAudioSource::Create(kAudioSsrc, NULL));
     EXPECT_TRUE(stream_->AddTrack(audio_track_));
-    EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, true));
     audio_rtp_receiver_ = new AudioRtpReceiver(stream_, kAudioTrackId,
-                                               kAudioSsrc, &audio_provider_);
+                                               kAudioSsrc, voice_channel_);
     audio_track_ = audio_rtp_receiver_->audio_track();
+    VerifyVoiceChannelOutput();
   }
 
   void CreateVideoRtpReceiver() {
-    EXPECT_CALL(video_provider_, SetVideoPlayout(kVideoSsrc, true, _));
     video_rtp_receiver_ =
         new VideoRtpReceiver(stream_, kVideoTrackId, rtc::Thread::Current(),
-                             kVideoSsrc, &video_provider_);
+                             kVideoSsrc, video_channel_);
     video_track_ = video_rtp_receiver_->video_track();
+    VerifyVideoChannelOutput();
   }
 
   void DestroyAudioRtpReceiver() {
-    EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, false));
     audio_rtp_receiver_ = nullptr;
+    VerifyVoiceChannelNoOutput();
   }
 
   void DestroyVideoRtpReceiver() {
-    EXPECT_CALL(video_provider_, SetVideoPlayout(kVideoSsrc, false, NULL));
     video_rtp_receiver_ = nullptr;
+    VerifyVideoChannelNoOutput();
+  }
+
+  void VerifyVoiceChannelInput() { VerifyVoiceChannelInput(kAudioSsrc); }
+
+  void VerifyVoiceChannelInput(uint32_t ssrc) {
+    // Verify that the media channel has an audio source, and the stream isn't
+    // muted.
+    EXPECT_TRUE(voice_media_channel_->HasSource(ssrc));
+    EXPECT_FALSE(voice_media_channel_->IsStreamMuted(ssrc));
+  }
+
+  void VerifyVideoChannelInput() { VerifyVideoChannelInput(kVideoSsrc); }
+
+  void VerifyVideoChannelInput(uint32_t ssrc) {
+    // Verify that the media channel has a video source,
+    EXPECT_TRUE(video_media_channel_->HasSource(ssrc));
+  }
+
+  void VerifyVoiceChannelNoInput() { VerifyVoiceChannelNoInput(kAudioSsrc); }
+
+  void VerifyVoiceChannelNoInput(uint32_t ssrc) {
+    // Verify that the media channel's source is reset.
+    EXPECT_FALSE(voice_media_channel_->HasSource(ssrc));
+  }
+
+  void VerifyVideoChannelNoInput() { VerifyVideoChannelNoInput(kVideoSsrc); }
+
+  void VerifyVideoChannelNoInput(uint32_t ssrc) {
+    // Verify that the media channel's source is reset.
+    EXPECT_FALSE(video_media_channel_->HasSource(ssrc));
+  }
+
+  void VerifyVoiceChannelOutput() {
+    // Verify that the volume is initialized to 1.
+    double volume;
+    EXPECT_TRUE(voice_media_channel_->GetOutputVolume(kAudioSsrc, &volume));
+    EXPECT_EQ(1, volume);
+  }
+
+  void VerifyVideoChannelOutput() {
+    // Verify that the media channel has a sink.
+    EXPECT_TRUE(video_media_channel_->HasSink(kVideoSsrc));
+  }
+
+  void VerifyVoiceChannelNoOutput() {
+    // Verify that the volume is reset to 0.
+    double volume;
+    EXPECT_TRUE(voice_media_channel_->GetOutputVolume(kAudioSsrc, &volume));
+    EXPECT_EQ(0, volume);
+  }
+
+  void VerifyVideoChannelNoOutput() {
+    // Verify that the media channel's sink is reset.
+    EXPECT_FALSE(video_media_channel_->HasSink(kVideoSsrc));
   }
 
  protected:
-  MockAudioProvider audio_provider_;
-  MockVideoProvider video_provider_;
+  cricket::FakeMediaEngine* media_engine_;
+  cricket::FakeTransportController fake_transport_controller_;
+  cricket::ChannelManager channel_manager_;
+  cricket::FakeCall fake_call_;
+  cricket::FakeMediaController fake_media_controller_;
+  cricket::VoiceChannel* voice_channel_;
+  cricket::VideoChannel* video_channel_;
+  cricket::FakeVoiceMediaChannel* voice_media_channel_;
+  cricket::FakeVideoMediaChannel* video_media_channel_;
   rtc::scoped_refptr<AudioRtpSender> audio_rtp_sender_;
   rtc::scoped_refptr<VideoRtpSender> video_rtp_sender_;
   rtc::scoped_refptr<AudioRtpReceiver> audio_rtp_receiver_;
@@ -183,72 +236,96 @@ class RtpSenderReceiverTest : public testing::Test {
   rtc::scoped_refptr<AudioTrackInterface> audio_track_;
 };
 
-// Test that |audio_provider_| is notified when an audio track is associated
+// Test that |voice_channel_| is updated when an audio track is associated
 // and disassociated with an AudioRtpSender.
 TEST_F(RtpSenderReceiverTest, AddAndDestroyAudioRtpSender) {
   CreateAudioRtpSender();
   DestroyAudioRtpSender();
 }
 
-// Test that |video_provider_| is notified when a video track is associated and
+// Test that |video_channel_| is updated when a video track is associated and
 // disassociated with a VideoRtpSender.
 TEST_F(RtpSenderReceiverTest, AddAndDestroyVideoRtpSender) {
   CreateVideoRtpSender();
   DestroyVideoRtpSender();
 }
 
-// Test that |audio_provider_| is notified when a remote audio and track is
+// Test that |voice_channel_| is updated when a remote audio track is
 // associated and disassociated with an AudioRtpReceiver.
 TEST_F(RtpSenderReceiverTest, AddAndDestroyAudioRtpReceiver) {
   CreateAudioRtpReceiver();
   DestroyAudioRtpReceiver();
 }
 
-// Test that |video_provider_| is notified when a remote
-// video track is associated and disassociated with a VideoRtpReceiver.
+// Test that |video_channel_| is updated when a remote video track is
+// associated and disassociated with a VideoRtpReceiver.
 TEST_F(RtpSenderReceiverTest, AddAndDestroyVideoRtpReceiver) {
   CreateVideoRtpReceiver();
   DestroyVideoRtpReceiver();
 }
 
-TEST_F(RtpSenderReceiverTest, LocalAudioTrackDisable) {
-  CreateAudioRtpSender();
+// Test that the AudioRtpSender applies options from the local audio source.
+TEST_F(RtpSenderReceiverTest, LocalAudioSourceOptionsApplied) {
+  cricket::AudioOptions options;
+  options.echo_cancellation = rtc::Optional<bool>(true);
+  auto source = LocalAudioSource::Create(
+      PeerConnectionFactoryInterface::Options(), &options);
+  CreateAudioRtpSender(source.get());
 
-  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, false, _, _));
-  audio_track_->set_enabled(false);
-
-  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, true, _, _));
-  audio_track_->set_enabled(true);
+  EXPECT_EQ(rtc::Optional<bool>(true),
+            voice_media_channel_->options().echo_cancellation);
 
   DestroyAudioRtpSender();
 }
 
+// Test that the stream is muted when the track is disabled, and unmuted when
+// the track is enabled.
+TEST_F(RtpSenderReceiverTest, LocalAudioTrackDisable) {
+  CreateAudioRtpSender();
+
+  audio_track_->set_enabled(false);
+  EXPECT_TRUE(voice_media_channel_->IsStreamMuted(kAudioSsrc));
+
+  audio_track_->set_enabled(true);
+  EXPECT_FALSE(voice_media_channel_->IsStreamMuted(kAudioSsrc));
+
+  DestroyAudioRtpSender();
+}
+
+// Test that the volume is set to 0 when the track is disabled, and back to
+// 1 when the track is enabled.
 TEST_F(RtpSenderReceiverTest, RemoteAudioTrackDisable) {
   CreateAudioRtpReceiver();
 
-  EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, false));
-  audio_track_->set_enabled(false);
+  double volume;
+  EXPECT_TRUE(voice_media_channel_->GetOutputVolume(kAudioSsrc, &volume));
+  EXPECT_EQ(1, volume);
 
-  EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, true));
+  audio_track_->set_enabled(false);
+  EXPECT_TRUE(voice_media_channel_->GetOutputVolume(kAudioSsrc, &volume));
+  EXPECT_EQ(0, volume);
+
   audio_track_->set_enabled(true);
+  EXPECT_TRUE(voice_media_channel_->GetOutputVolume(kAudioSsrc, &volume));
+  EXPECT_EQ(1, volume);
 
   DestroyAudioRtpReceiver();
 }
 
+// Currently no action is taken when a remote video track is disabled or
+// enabled, so there's nothing to test here, other than what is normally
+// verified in DestroyVideoRtpSender.
 TEST_F(RtpSenderReceiverTest, LocalVideoTrackDisable) {
   CreateVideoRtpSender();
 
-  EXPECT_CALL(video_provider_,
-              SetVideoSend(kVideoSsrc, false, _, video_track_.get()));
   video_track_->set_enabled(false);
-
-  EXPECT_CALL(video_provider_,
-              SetVideoSend(kVideoSsrc, true, _, video_track_.get()));
   video_track_->set_enabled(true);
 
   DestroyVideoRtpSender();
 }
 
+// Test that the state of the video track created by the VideoRtpReceiver is
+// updated when the receiver is destroyed.
 TEST_F(RtpSenderReceiverTest, RemoteVideoTrackState) {
   CreateVideoRtpReceiver();
 
@@ -263,257 +340,223 @@ TEST_F(RtpSenderReceiverTest, RemoteVideoTrackState) {
             video_track_->GetSource()->state());
 }
 
+// Currently no action is taken when a remote video track is disabled or
+// enabled, so there's nothing to test here, other than what is normally
+// verified in DestroyVideoRtpReceiver.
 TEST_F(RtpSenderReceiverTest, RemoteVideoTrackDisable) {
   CreateVideoRtpReceiver();
 
   video_track_->set_enabled(false);
-
   video_track_->set_enabled(true);
 
   DestroyVideoRtpReceiver();
 }
 
+// Test that the AudioRtpReceiver applies volume changes from the track source
+// to the media channel.
 TEST_F(RtpSenderReceiverTest, RemoteAudioTrackSetVolume) {
   CreateAudioRtpReceiver();
 
-  double volume = 0.5;
-  EXPECT_CALL(audio_provider_, SetAudioPlayoutVolume(kAudioSsrc, volume));
-  audio_track_->GetSource()->SetVolume(volume);
+  double volume;
+  audio_track_->GetSource()->SetVolume(0.5);
+  EXPECT_TRUE(voice_media_channel_->GetOutputVolume(kAudioSsrc, &volume));
+  EXPECT_EQ(0.5, volume);
 
   // Disable the audio track, this should prevent setting the volume.
-  EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, false));
   audio_track_->set_enabled(false);
-  audio_track_->GetSource()->SetVolume(1.0);
+  audio_track_->GetSource()->SetVolume(0.8);
+  EXPECT_TRUE(voice_media_channel_->GetOutputVolume(kAudioSsrc, &volume));
+  EXPECT_EQ(0, volume);
 
-  EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, true));
+  // When the track is enabled, the previously set volume should take effect.
   audio_track_->set_enabled(true);
+  EXPECT_TRUE(voice_media_channel_->GetOutputVolume(kAudioSsrc, &volume));
+  EXPECT_EQ(0.8, volume);
 
-  double new_volume = 0.8;
-  EXPECT_CALL(audio_provider_, SetAudioPlayoutVolume(kAudioSsrc, new_volume));
-  audio_track_->GetSource()->SetVolume(new_volume);
+  // Try changing volume one more time.
+  audio_track_->GetSource()->SetVolume(0.9);
+  EXPECT_TRUE(voice_media_channel_->GetOutputVolume(kAudioSsrc, &volume));
+  EXPECT_EQ(0.9, volume);
 
   DestroyAudioRtpReceiver();
 }
 
-// Test that provider methods aren't called without both a track and an SSRC.
+// Test that the media channel isn't enabled for sending if the audio sender
+// doesn't have both a track and SSRC.
 TEST_F(RtpSenderReceiverTest, AudioSenderWithoutTrackAndSsrc) {
-  rtc::scoped_refptr<AudioRtpSender> sender =
-      new AudioRtpSender(&audio_provider_, nullptr);
+  audio_rtp_sender_ = new AudioRtpSender(voice_channel_, nullptr);
   rtc::scoped_refptr<AudioTrackInterface> track =
       AudioTrack::Create(kAudioTrackId, nullptr);
-  EXPECT_TRUE(sender->SetTrack(track));
-  EXPECT_TRUE(sender->SetTrack(nullptr));
-  sender->SetSsrc(kAudioSsrc);
-  sender->SetSsrc(0);
-  // Just let it get destroyed and make sure it doesn't call any methods on the
-  // provider interface.
+
+  // Track but no SSRC.
+  EXPECT_TRUE(audio_rtp_sender_->SetTrack(track));
+  VerifyVoiceChannelNoInput();
+
+  // SSRC but no track.
+  EXPECT_TRUE(audio_rtp_sender_->SetTrack(nullptr));
+  audio_rtp_sender_->SetSsrc(kAudioSsrc);
+  VerifyVoiceChannelNoInput();
 }
 
-// Test that provider methods aren't called without both a track and an SSRC.
+// Test that the media channel isn't enabled for sending if the video sender
+// doesn't have both a track and SSRC.
 TEST_F(RtpSenderReceiverTest, VideoSenderWithoutTrackAndSsrc) {
-  rtc::scoped_refptr<VideoRtpSender> sender =
-      new VideoRtpSender(&video_provider_);
-  EXPECT_TRUE(sender->SetTrack(video_track_));
-  EXPECT_TRUE(sender->SetTrack(nullptr));
-  sender->SetSsrc(kVideoSsrc);
-  sender->SetSsrc(0);
-  // Just let it get destroyed and make sure it doesn't call any methods on the
-  // provider interface.
+  video_rtp_sender_ = new VideoRtpSender(video_channel_);
+
+  // Track but no SSRC.
+  EXPECT_TRUE(video_rtp_sender_->SetTrack(video_track_));
+  VerifyVideoChannelNoInput();
+
+  // SSRC but no track.
+  EXPECT_TRUE(video_rtp_sender_->SetTrack(nullptr));
+  video_rtp_sender_->SetSsrc(kVideoSsrc);
+  VerifyVideoChannelNoInput();
 }
 
-// Test that an audio sender calls the expected methods on the provider once
-// it has a track and SSRC, when the SSRC is set first.
+// Test that the media channel is enabled for sending when the audio sender
+// has a track and SSRC, when the SSRC is set first.
 TEST_F(RtpSenderReceiverTest, AudioSenderEarlyWarmupSsrcThenTrack) {
-  rtc::scoped_refptr<AudioRtpSender> sender =
-      new AudioRtpSender(&audio_provider_, nullptr);
+  audio_rtp_sender_ = new AudioRtpSender(voice_channel_, nullptr);
   rtc::scoped_refptr<AudioTrackInterface> track =
       AudioTrack::Create(kAudioTrackId, nullptr);
-  sender->SetSsrc(kAudioSsrc);
-  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, true, _, _));
-  sender->SetTrack(track);
+  audio_rtp_sender_->SetSsrc(kAudioSsrc);
+  audio_rtp_sender_->SetTrack(track);
+  VerifyVoiceChannelInput();
 
-  // Calls expected from destructor.
-  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, false, _, _)).Times(1);
+  DestroyAudioRtpSender();
 }
 
-// Test that an audio sender calls the expected methods on the provider once
-// it has a track and SSRC, when the SSRC is set last.
+// Test that the media channel is enabled for sending when the audio sender
+// has a track and SSRC, when the SSRC is set last.
 TEST_F(RtpSenderReceiverTest, AudioSenderEarlyWarmupTrackThenSsrc) {
-  rtc::scoped_refptr<AudioRtpSender> sender =
-      new AudioRtpSender(&audio_provider_, nullptr);
+  audio_rtp_sender_ = new AudioRtpSender(voice_channel_, nullptr);
   rtc::scoped_refptr<AudioTrackInterface> track =
       AudioTrack::Create(kAudioTrackId, nullptr);
-  sender->SetTrack(track);
-  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, true, _, _));
-  sender->SetSsrc(kAudioSsrc);
+  audio_rtp_sender_->SetTrack(track);
+  audio_rtp_sender_->SetSsrc(kAudioSsrc);
+  VerifyVoiceChannelInput();
 
-  // Calls expected from destructor.
-  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, false, _, _)).Times(1);
+  DestroyAudioRtpSender();
 }
 
-// Test that a video sender calls the expected methods on the provider once
-// it has a track and SSRC, when the SSRC is set first.
+// Test that the media channel is enabled for sending when the video sender
+// has a track and SSRC, when the SSRC is set first.
 TEST_F(RtpSenderReceiverTest, VideoSenderEarlyWarmupSsrcThenTrack) {
   AddVideoTrack();
-  rtc::scoped_refptr<VideoRtpSender> sender =
-      new VideoRtpSender(&video_provider_);
-  sender->SetSsrc(kVideoSsrc);
-  EXPECT_CALL(video_provider_,
-              SetVideoSend(kVideoSsrc, true, _, video_track_.get()));
-  sender->SetTrack(video_track_);
+  video_rtp_sender_ = new VideoRtpSender(video_channel_);
+  video_rtp_sender_->SetSsrc(kVideoSsrc);
+  video_rtp_sender_->SetTrack(video_track_);
+  VerifyVideoChannelInput();
 
-  // Calls expected from destructor.
-  EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, false, _, nullptr))
-      .Times(1);
+  DestroyVideoRtpSender();
 }
 
-// Test that a video sender calls the expected methods on the provider once
-// it has a track and SSRC, when the SSRC is set last.
+// Test that the media channel is enabled for sending when the video sender
+// has a track and SSRC, when the SSRC is set last.
 TEST_F(RtpSenderReceiverTest, VideoSenderEarlyWarmupTrackThenSsrc) {
   AddVideoTrack();
-  rtc::scoped_refptr<VideoRtpSender> sender =
-      new VideoRtpSender(&video_provider_);
-  sender->SetTrack(video_track_);
-  EXPECT_CALL(video_provider_,
-              SetVideoSend(kVideoSsrc, true, _, video_track_.get()));
-  sender->SetSsrc(kVideoSsrc);
+  video_rtp_sender_ = new VideoRtpSender(video_channel_);
+  video_rtp_sender_->SetTrack(video_track_);
+  video_rtp_sender_->SetSsrc(kVideoSsrc);
+  VerifyVideoChannelInput();
 
-  // Calls expected from destructor.
-  EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, false, _, nullptr))
-      .Times(1);
+  DestroyVideoRtpSender();
 }
 
-// Test that the sender is disconnected from the provider when its SSRC is
-// set to 0.
+// Test that the media channel stops sending when the audio sender's SSRC is set
+// to 0.
 TEST_F(RtpSenderReceiverTest, AudioSenderSsrcSetToZero) {
-  rtc::scoped_refptr<AudioTrackInterface> track =
-      AudioTrack::Create(kAudioTrackId, nullptr);
-  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, true, _, _));
-  rtc::scoped_refptr<AudioRtpSender> sender =
-      new AudioRtpSender(track, kStreamLabel1, &audio_provider_, nullptr);
-  sender->SetSsrc(kAudioSsrc);
+  CreateAudioRtpSender();
 
-  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, false, _, _)).Times(1);
-  sender->SetSsrc(0);
-
-  // Make sure it's SetSsrc that called methods on the provider, and not the
-  // destructor.
-  EXPECT_CALL(audio_provider_, SetAudioSend(_, _, _, _)).Times(0);
+  audio_rtp_sender_->SetSsrc(0);
+  VerifyVoiceChannelNoInput();
 }
 
-// Test that the sender is disconnected from the provider when its SSRC is
-// set to 0.
+// Test that the media channel stops sending when the video sender's SSRC is set
+// to 0.
 TEST_F(RtpSenderReceiverTest, VideoSenderSsrcSetToZero) {
-  AddVideoTrack();
-  EXPECT_CALL(video_provider_,
-              SetVideoSend(kVideoSsrc, true, _, video_track_.get()));
-  rtc::scoped_refptr<VideoRtpSender> sender =
-      new VideoRtpSender(video_track_, kStreamLabel1, &video_provider_);
-  sender->SetSsrc(kVideoSsrc);
+  CreateAudioRtpSender();
 
-  EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, false, _, nullptr))
-      .Times(1);
-  sender->SetSsrc(0);
-
-  // Make sure it's SetSsrc that called methods on the provider, and not the
-  // destructor.
-  EXPECT_CALL(video_provider_, SetVideoSend(_, _, _, _)).Times(0);
+  audio_rtp_sender_->SetSsrc(0);
+  VerifyVideoChannelNoInput();
 }
 
+// Test that the media channel stops sending when the audio sender's track is
+// set to null.
 TEST_F(RtpSenderReceiverTest, AudioSenderTrackSetToNull) {
-  rtc::scoped_refptr<AudioTrackInterface> track =
-      AudioTrack::Create(kAudioTrackId, nullptr);
-  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, true, _, _));
-  rtc::scoped_refptr<AudioRtpSender> sender =
-      new AudioRtpSender(track, kStreamLabel1, &audio_provider_, nullptr);
-  sender->SetSsrc(kAudioSsrc);
+  CreateAudioRtpSender();
 
-  // Expect that SetAudioSend will be called before the reference to the track
-  // is released.
-  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, false, _, nullptr))
-      .Times(1)
-      .WillOnce(InvokeWithoutArgs([&track] {
-        EXPECT_LT(2, track->AddRef());
-        track->Release();
-      }));
-  EXPECT_TRUE(sender->SetTrack(nullptr));
-
-  // Make sure it's SetTrack that called methods on the provider, and not the
-  // destructor.
-  EXPECT_CALL(audio_provider_, SetAudioSend(_, _, _, _)).Times(0);
+  EXPECT_TRUE(audio_rtp_sender_->SetTrack(nullptr));
+  VerifyVoiceChannelNoInput();
 }
 
+// Test that the media channel stops sending when the video sender's track is
+// set to null.
 TEST_F(RtpSenderReceiverTest, VideoSenderTrackSetToNull) {
-  rtc::scoped_refptr<VideoTrackSourceInterface> source(
-      FakeVideoTrackSource::Create());
-  rtc::scoped_refptr<VideoTrackInterface> track =
-      VideoTrack::Create(kVideoTrackId, source);
-  EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, true, _, track.get()));
-  rtc::scoped_refptr<VideoRtpSender> sender =
-      new VideoRtpSender(track, kStreamLabel1, &video_provider_);
-  sender->SetSsrc(kVideoSsrc);
+  CreateVideoRtpSender();
 
-  // Expect that SetVideoSend will be called before the reference to the track
-  // is released.
-  EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, false, _, nullptr))
-      .Times(1)
-      .WillOnce(InvokeWithoutArgs([&track] {
-        EXPECT_LT(2, track->AddRef());
-        track->Release();
-      }));
-  EXPECT_TRUE(sender->SetTrack(nullptr));
-
-  // Make sure it's SetTrack that called methods on the provider, and not the
-  // destructor.
-  EXPECT_CALL(video_provider_, SetVideoSend(_, _, _, _)).Times(0);
+  video_rtp_sender_->SetSsrc(0);
+  VerifyVideoChannelNoInput();
 }
 
+// Test that when the audio sender's SSRC is changed, the media channel stops
+// sending with the old SSRC and starts sending with the new one.
 TEST_F(RtpSenderReceiverTest, AudioSenderSsrcChanged) {
-  AddVideoTrack();
-  rtc::scoped_refptr<AudioTrackInterface> track =
-      AudioTrack::Create(kAudioTrackId, nullptr);
-  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, true, _, _));
-  rtc::scoped_refptr<AudioRtpSender> sender =
-      new AudioRtpSender(track, kStreamLabel1, &audio_provider_, nullptr);
-  sender->SetSsrc(kAudioSsrc);
+  CreateAudioRtpSender();
 
-  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, false, _, _)).Times(1);
-  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc2, true, _, _)).Times(1);
-  sender->SetSsrc(kAudioSsrc2);
+  audio_rtp_sender_->SetSsrc(kAudioSsrc2);
+  VerifyVoiceChannelNoInput(kAudioSsrc);
+  VerifyVoiceChannelInput(kAudioSsrc2);
 
-  // Calls expected from destructor.
-  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc2, false, _, _)).Times(1);
+  audio_rtp_sender_ = nullptr;
+  VerifyVoiceChannelNoInput(kAudioSsrc2);
 }
 
+// Test that when the audio sender's SSRC is changed, the media channel stops
+// sending with the old SSRC and starts sending with the new one.
 TEST_F(RtpSenderReceiverTest, VideoSenderSsrcChanged) {
-  AddVideoTrack();
-  EXPECT_CALL(video_provider_,
-              SetVideoSend(kVideoSsrc, true, _, video_track_.get()));
-  rtc::scoped_refptr<VideoRtpSender> sender =
-      new VideoRtpSender(video_track_, kStreamLabel1, &video_provider_);
-  sender->SetSsrc(kVideoSsrc);
+  CreateVideoRtpSender();
 
-  EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, false, _, nullptr))
-      .Times(1);
-  EXPECT_CALL(video_provider_,
-              SetVideoSend(kVideoSsrc2, true, _, video_track_.get()))
-      .Times(1);
-  sender->SetSsrc(kVideoSsrc2);
+  video_rtp_sender_->SetSsrc(kVideoSsrc2);
+  VerifyVideoChannelNoInput(kVideoSsrc);
+  VerifyVideoChannelInput(kVideoSsrc2);
 
-  // Calls expected from destructor.
-  EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc2, false, _, nullptr))
-      .Times(1);
+  video_rtp_sender_ = nullptr;
+  VerifyVideoChannelNoInput(kVideoSsrc2);
 }
 
 TEST_F(RtpSenderReceiverTest, AudioSenderCanSetParameters) {
   CreateAudioRtpSender();
 
-  EXPECT_CALL(audio_provider_, GetAudioRtpSendParameters(kAudioSsrc))
-      .WillOnce(Return(RtpParameters()));
-  EXPECT_CALL(audio_provider_, SetAudioRtpSendParameters(kAudioSsrc, _))
-      .WillOnce(Return(true));
   RtpParameters params = audio_rtp_sender_->GetParameters();
+  EXPECT_EQ(1u, params.encodings.size());
   EXPECT_TRUE(audio_rtp_sender_->SetParameters(params));
+
+  DestroyAudioRtpSender();
+}
+
+TEST_F(RtpSenderReceiverTest, SetAudioMaxSendBitrate) {
+  CreateAudioRtpSender();
+
+  EXPECT_EQ(-1, voice_media_channel_->max_bps());
+  webrtc::RtpParameters params = audio_rtp_sender_->GetParameters();
+  EXPECT_EQ(1, params.encodings.size());
+  EXPECT_EQ(-1, params.encodings[0].max_bitrate_bps);
+  params.encodings[0].max_bitrate_bps = 1000;
+  EXPECT_TRUE(audio_rtp_sender_->SetParameters(params));
+
+  // Read back the parameters and verify they have been changed.
+  params = audio_rtp_sender_->GetParameters();
+  EXPECT_EQ(1, params.encodings.size());
+  EXPECT_EQ(1000, params.encodings[0].max_bitrate_bps);
+
+  // Verify that the audio channel received the new parameters.
+  params = voice_media_channel_->GetRtpSendParameters(kAudioSsrc);
+  EXPECT_EQ(1, params.encodings.size());
+  EXPECT_EQ(1000, params.encodings[0].max_bitrate_bps);
+
+  // Verify that the global bitrate limit has not been changed.
+  EXPECT_EQ(-1, voice_media_channel_->max_bps());
 
   DestroyAudioRtpSender();
 }
@@ -521,12 +564,35 @@ TEST_F(RtpSenderReceiverTest, AudioSenderCanSetParameters) {
 TEST_F(RtpSenderReceiverTest, VideoSenderCanSetParameters) {
   CreateVideoRtpSender();
 
-  EXPECT_CALL(video_provider_, GetVideoRtpSendParameters(kVideoSsrc))
-      .WillOnce(Return(RtpParameters()));
-  EXPECT_CALL(video_provider_, SetVideoRtpSendParameters(kVideoSsrc, _))
-      .WillOnce(Return(true));
   RtpParameters params = video_rtp_sender_->GetParameters();
+  EXPECT_EQ(1u, params.encodings.size());
   EXPECT_TRUE(video_rtp_sender_->SetParameters(params));
+
+  DestroyVideoRtpSender();
+}
+
+TEST_F(RtpSenderReceiverTest, SetVideoMaxSendBitrate) {
+  CreateVideoRtpSender();
+
+  EXPECT_EQ(-1, video_media_channel_->max_bps());
+  webrtc::RtpParameters params = video_rtp_sender_->GetParameters();
+  EXPECT_EQ(1, params.encodings.size());
+  EXPECT_EQ(-1, params.encodings[0].max_bitrate_bps);
+  params.encodings[0].max_bitrate_bps = 1000;
+  EXPECT_TRUE(video_rtp_sender_->SetParameters(params));
+
+  // Read back the parameters and verify they have been changed.
+  params = video_rtp_sender_->GetParameters();
+  EXPECT_EQ(1, params.encodings.size());
+  EXPECT_EQ(1000, params.encodings[0].max_bitrate_bps);
+
+  // Verify that the video channel received the new parameters.
+  params = video_media_channel_->GetRtpSendParameters(kVideoSsrc);
+  EXPECT_EQ(1, params.encodings.size());
+  EXPECT_EQ(1000, params.encodings[0].max_bitrate_bps);
+
+  // Verify that the global bitrate limit has not been changed.
+  EXPECT_EQ(-1, video_media_channel_->max_bps());
 
   DestroyVideoRtpSender();
 }
@@ -534,11 +600,8 @@ TEST_F(RtpSenderReceiverTest, VideoSenderCanSetParameters) {
 TEST_F(RtpSenderReceiverTest, AudioReceiverCanSetParameters) {
   CreateAudioRtpReceiver();
 
-  EXPECT_CALL(audio_provider_, GetAudioRtpReceiveParameters(kAudioSsrc))
-      .WillOnce(Return(RtpParameters()));
-  EXPECT_CALL(audio_provider_, SetAudioRtpReceiveParameters(kAudioSsrc, _))
-      .WillOnce(Return(true));
   RtpParameters params = audio_rtp_receiver_->GetParameters();
+  EXPECT_EQ(1u, params.encodings.size());
   EXPECT_TRUE(audio_rtp_receiver_->SetParameters(params));
 
   DestroyAudioRtpReceiver();
@@ -547,11 +610,8 @@ TEST_F(RtpSenderReceiverTest, AudioReceiverCanSetParameters) {
 TEST_F(RtpSenderReceiverTest, VideoReceiverCanSetParameters) {
   CreateVideoRtpReceiver();
 
-  EXPECT_CALL(video_provider_, GetVideoRtpReceiveParameters(kVideoSsrc))
-      .WillOnce(Return(RtpParameters()));
-  EXPECT_CALL(video_provider_, SetVideoRtpReceiveParameters(kVideoSsrc, _))
-      .WillOnce(Return(true));
   RtpParameters params = video_rtp_receiver_->GetParameters();
+  EXPECT_EQ(1u, params.encodings.size());
   EXPECT_TRUE(video_rtp_receiver_->SetParameters(params));
 
   DestroyVideoRtpReceiver();
