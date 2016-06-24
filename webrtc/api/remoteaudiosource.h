@@ -14,10 +14,10 @@
 #include <list>
 #include <string>
 
+#include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/notifier.h"
 #include "webrtc/audio_sink.h"
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/pc/channel.h"
 
 namespace rtc {
 struct Message;
@@ -26,13 +26,15 @@ class Thread;
 
 namespace webrtc {
 
+class AudioProviderInterface;
+
 // This class implements the audio source used by the remote audio track.
 class RemoteAudioSource : public Notifier<AudioSourceInterface> {
  public:
   // Creates an instance of RemoteAudioSource.
   static rtc::scoped_refptr<RemoteAudioSource> Create(
       uint32_t ssrc,
-      cricket::VoiceChannel* channel);
+      AudioProviderInterface* provider);
 
   // MediaSourceInterface implementation.
   MediaSourceInterface::SourceState state() const override;
@@ -47,7 +49,7 @@ class RemoteAudioSource : public Notifier<AudioSourceInterface> {
 
   // Post construction initialize where we can do things like save a reference
   // to ourselves (need to be fully constructed).
-  void Initialize(uint32_t ssrc, cricket::VoiceChannel* channel);
+  void Initialize(uint32_t ssrc, AudioProviderInterface* provider);
 
  private:
   typedef std::list<AudioObserver*> AudioObserverList;
@@ -59,7 +61,7 @@ class RemoteAudioSource : public Notifier<AudioSourceInterface> {
 
   class Sink;
   void OnData(const AudioSinkInterface::Data& audio);
-  void OnAudioChannelGone();
+  void OnAudioProviderGone();
 
   class MessageHandler;
   void OnMessage(rtc::Message* msg);

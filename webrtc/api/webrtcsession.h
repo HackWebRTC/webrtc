@@ -19,6 +19,7 @@
 #include "webrtc/api/datachannel.h"
 #include "webrtc/api/dtmfsender.h"
 #include "webrtc/api/mediacontroller.h"
+#include "webrtc/api/mediastreamprovider.h"
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/api/statstypes.h"
 #include "webrtc/base/constructormagic.h"
@@ -114,11 +115,11 @@ struct SessionStats {
 // participates in the network-level negotiation.  The individual streams of
 // packets are represented by TransportChannels.  The application-level protocol
 // is represented by SessionDecription objects.
-class WebRtcSession :
-
-    public DtmfProviderInterface,
-    public DataChannelProviderInterface,
-    public sigslot::has_slots<> {
+class WebRtcSession : public AudioProviderInterface,
+                      public VideoProviderInterface,
+                      public DtmfProviderInterface,
+                      public DataChannelProviderInterface,
+                      public sigslot::has_slots<> {
  public:
   enum State {
     STATE_INIT = 0,
@@ -233,6 +234,41 @@ class WebRtcSession :
   virtual bool GetLocalTrackIdBySsrc(uint32_t ssrc, std::string* track_id);
   virtual bool GetRemoteTrackIdBySsrc(uint32_t ssrc, std::string* track_id);
 
+  // AudioMediaProviderInterface implementation.
+  void SetAudioPlayout(uint32_t ssrc, bool enable) override;
+  void SetAudioSend(uint32_t ssrc,
+                    bool enable,
+                    const cricket::AudioOptions& options,
+                    cricket::AudioSource* source) override;
+  void SetAudioPlayoutVolume(uint32_t ssrc, double volume) override;
+  void SetRawAudioSink(uint32_t ssrc,
+                       std::unique_ptr<AudioSinkInterface> sink) override;
+
+  RtpParameters GetAudioRtpSendParameters(uint32_t ssrc) const override;
+  bool SetAudioRtpSendParameters(uint32_t ssrc,
+                                 const RtpParameters& parameters) override;
+  RtpParameters GetAudioRtpReceiveParameters(uint32_t ssrc) const override;
+  bool SetAudioRtpReceiveParameters(uint32_t ssrc,
+                                    const RtpParameters& parameters) override;
+
+  // Implements VideoMediaProviderInterface.
+  void SetVideoPlayout(
+      uint32_t ssrc,
+      bool enable,
+      rtc::VideoSinkInterface<cricket::VideoFrame>* sink) override;
+  void SetVideoSend(
+      uint32_t ssrc,
+      bool enable,
+      const cricket::VideoOptions* options,
+      rtc::VideoSourceInterface<cricket::VideoFrame>* source) override;
+
+  RtpParameters GetVideoRtpSendParameters(uint32_t ssrc) const override;
+  bool SetVideoRtpSendParameters(uint32_t ssrc,
+                                 const RtpParameters& parameters) override;
+  RtpParameters GetVideoRtpReceiveParameters(uint32_t ssrc) const override;
+  bool SetVideoRtpReceiveParameters(uint32_t ssrc,
+                                    const RtpParameters& parameters) override;
+
   // Implements DtmfProviderInterface.
   bool CanInsertDtmf(const std::string& track_id) override;
   bool InsertDtmf(const std::string& track_id,
@@ -274,6 +310,8 @@ class WebRtcSession :
   void OnCertificateReady(
       const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
   void OnDtlsSetupFailure(cricket::BaseChannel*, bool rtcp);
+  // Called when the channel received the first packet.
+  void OnChannelFirstPacketReceived(cricket::BaseChannel*);
 
   // For unit test.
   bool waiting_for_certificate_for_testing() const;

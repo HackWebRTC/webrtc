@@ -18,13 +18,12 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/api/mediastreaminterface.h"
+#include "webrtc/api/mediastreamprovider.h"
 #include "webrtc/api/rtpsenderinterface.h"
 #include "webrtc/api/statscollector.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/media/base/audiosource.h"
-#include "webrtc/pc/channel.h"
 
 namespace webrtc {
 
@@ -73,21 +72,18 @@ class AudioRtpSender : public ObserverInterface,
  public:
   // StatsCollector provided so that Add/RemoveLocalAudioTrack can be called
   // at the appropriate times.
-  // |channel| can be null if one does not exist yet.
   AudioRtpSender(AudioTrackInterface* track,
                  const std::string& stream_id,
-                 cricket::VoiceChannel* channel,
+                 AudioProviderInterface* provider,
                  StatsCollector* stats);
 
   // Randomly generates stream_id.
-  // |channel| can be null if one does not exist yet.
   AudioRtpSender(AudioTrackInterface* track,
-                 cricket::VoiceChannel* channel,
+                 AudioProviderInterface* provider,
                  StatsCollector* stats);
 
   // Randomly generates id and stream_id.
-  // |channel| can be null if one does not exist yet.
-  AudioRtpSender(cricket::VoiceChannel* channel, StatsCollector* stats);
+  AudioRtpSender(AudioProviderInterface* provider, StatsCollector* stats);
 
   virtual ~AudioRtpSender();
 
@@ -126,10 +122,6 @@ class AudioRtpSender : public ObserverInterface,
 
   void Stop() override;
 
-  // Does not take ownership.
-  // Should call SetChannel(nullptr) before |channel| is destroyed.
-  void SetChannel(cricket::VoiceChannel* channel) { channel_ = channel; }
-
  private:
   // TODO(nisse): Since SSRC == 0 is technically valid, figure out
   // some other way to test if we have a valid SSRC.
@@ -137,12 +129,10 @@ class AudioRtpSender : public ObserverInterface,
   // Helper function to construct options for
   // AudioProviderInterface::SetAudioSend.
   void SetAudioSend();
-  // Helper function to call SetAudioSend with "stop sending" parameters.
-  void ClearAudioSend();
 
   std::string id_;
   std::string stream_id_;
-  cricket::VoiceChannel* channel_ = nullptr;
+  AudioProviderInterface* provider_;
   StatsCollector* stats_;
   rtc::scoped_refptr<AudioTrackInterface> track_;
   uint32_t ssrc_ = 0;
@@ -157,18 +147,15 @@ class AudioRtpSender : public ObserverInterface,
 class VideoRtpSender : public ObserverInterface,
                        public rtc::RefCountedObject<RtpSenderInternal> {
  public:
-  // |channel| can be null if one does not exist yet.
   VideoRtpSender(VideoTrackInterface* track,
                  const std::string& stream_id,
-                 cricket::VideoChannel* channel);
+                 VideoProviderInterface* provider);
 
   // Randomly generates stream_id.
-  // |channel| can be null if one does not exist yet.
-  VideoRtpSender(VideoTrackInterface* track, cricket::VideoChannel* channel);
+  VideoRtpSender(VideoTrackInterface* track, VideoProviderInterface* provider);
 
   // Randomly generates id and stream_id.
-  // |channel| can be null if one does not exist yet.
-  explicit VideoRtpSender(cricket::VideoChannel* channel);
+  explicit VideoRtpSender(VideoProviderInterface* provider);
 
   virtual ~VideoRtpSender();
 
@@ -207,10 +194,6 @@ class VideoRtpSender : public ObserverInterface,
 
   void Stop() override;
 
-  // Does not take ownership.
-  // Should call SetChannel(nullptr) before |channel| is destroyed.
-  void SetChannel(cricket::VideoChannel* channel) { channel_ = channel; }
-
  private:
   bool can_send_track() const { return track_ && ssrc_; }
   // Helper function to construct options for
@@ -221,7 +204,7 @@ class VideoRtpSender : public ObserverInterface,
 
   std::string id_;
   std::string stream_id_;
-  cricket::VideoChannel* channel_ = nullptr;
+  VideoProviderInterface* provider_;
   rtc::scoped_refptr<VideoTrackInterface> track_;
   uint32_t ssrc_ = 0;
   bool cached_track_enabled_ = false;
