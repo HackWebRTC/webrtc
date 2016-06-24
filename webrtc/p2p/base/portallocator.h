@@ -221,12 +221,8 @@ class PortAllocatorSession : public sigslot::has_slots<> {
   friend class PortAllocator;
 };
 
-// Every method of PortAllocator (including the destructor) must be called on
-// the same thread, except for the constructor which may be called on any
-// thread.
-//
-// This allows constructing a PortAllocator subclass on one thread and
-// passing it into an object that uses it on a different thread.
+// Note that this class should only be used on one thread.
+// This includes calling the destructor.
 class PortAllocator : public sigslot::has_slots<> {
  public:
   PortAllocator() :
@@ -236,12 +232,9 @@ class PortAllocator : public sigslot::has_slots<> {
       step_delay_(kDefaultStepDelay),
       allow_tcp_listen_(true),
       candidate_filter_(CF_ALL) {
+    // This will allow us to have old behavior on non webrtc clients.
   }
   virtual ~PortAllocator() {}
-
-  // This should be called on the PortAllocator's thread before the
-  // PortAllocator is used. Subclasses may override this if necessary.
-  virtual void Initialize() {}
 
   // Set STUN and TURN servers to be used in future sessions, and set
   // candidate pool size, as described in JSEP.

@@ -63,13 +63,6 @@ class DefaultLocalAddressProvider {
 
 // Generic network manager interface. It provides list of local
 // networks.
-//
-// Every method of NetworkManager (including the destructor) must be called on
-// the same thread, except for the constructor which may be called on any
-// thread.
-//
-// This allows constructing a NetworkManager subclass on one thread and
-// passing it into an object that uses it on a different thread.
 class NetworkManager : public DefaultLocalAddressProvider {
  public:
   typedef std::vector<Network*> NetworkList;
@@ -91,10 +84,6 @@ class NetworkManager : public DefaultLocalAddressProvider {
 
   // Indicates a failure when getting list of network interfaces.
   sigslot::signal0<> SignalError;
-
-  // This should be called on the NetworkManager's thread before the
-  // NetworkManager is used. Subclasses may override this if necessary.
-  virtual void Initialize() {}
 
   // Start/Stop monitoring of network interfaces
   // list. SignalNetworksChanged or SignalError is emitted immediately
