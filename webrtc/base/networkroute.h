@@ -30,10 +30,11 @@ struct NetworkRoute {
         last_sent_packet_id(-1) {}
 
   // The route is connected if the local and remote network ids are provided.
-  NetworkRoute(uint16_t local_net_id,
+  NetworkRoute(bool connected,
+               uint16_t local_net_id,
                uint16_t remote_net_id,
                int last_packet_id)
-      : connected(true),
+      : connected(connected),
         local_network_id(local_net_id),
         remote_network_id(remote_net_id),
         last_sent_packet_id(last_packet_id) {}

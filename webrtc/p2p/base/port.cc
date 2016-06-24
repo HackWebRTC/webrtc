@@ -1525,7 +1525,7 @@ ProxyConnection::ProxyConnection(Port* port,
 
 int ProxyConnection::Send(const void* data, size_t size,
                           const rtc::PacketOptions& options) {
-  if (write_state_ == STATE_WRITE_INIT || write_state_ == STATE_WRITE_TIMEOUT) {
+  if (!ReadyToSendMedia()) {
     error_ = EWOULDBLOCK;
     return SOCKET_ERROR;
   }

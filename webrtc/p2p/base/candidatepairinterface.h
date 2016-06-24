@@ -21,6 +21,8 @@ class CandidatePairInterface {
 
   virtual const Candidate& local_candidate() const = 0;
   virtual const Candidate& remote_candidate() const = 0;
+
+  virtual bool ReadyToSendMedia() const = 0;
 };
 
 }  // namespace cricket

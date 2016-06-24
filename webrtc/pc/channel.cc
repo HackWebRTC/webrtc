@@ -608,6 +608,7 @@ void BaseChannel::OnSelectedCandidatePairChanged(
   rtc::NetworkRoute network_route;
   if (selected_candidate_pair) {
     network_route = rtc::NetworkRoute(
+        selected_candidate_pair->ReadyToSendMedia(),
         selected_candidate_pair->local_candidate().network_id(),
         selected_candidate_pair->remote_candidate().network_id(),
         last_sent_packet_id);

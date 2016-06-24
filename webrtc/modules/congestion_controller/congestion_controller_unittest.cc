@@ -124,6 +124,20 @@ TEST_F(CongestionControllerTest, SignalNetworkState) {
   controller_->SignalNetworkState(kNetworkDown);
 }
 
+TEST_F(CongestionControllerTest, ResetBweAndBitrates) {
+  int new_bitrate = 200000;
+  EXPECT_CALL(observer_, OnNetworkChanged(new_bitrate, _, _));
+  EXPECT_CALL(*pacer_, SetEstimatedBitrate(new_bitrate));
+  controller_->ResetBweAndBitrates(new_bitrate, -1, -1);
+
+  // If the bitrate is reset to -1, the new starting bitrate will be
+  // the minimum default bitrate 10000bps.
+  int min_default_bitrate = 10000;
+  EXPECT_CALL(observer_, OnNetworkChanged(min_default_bitrate, _, _));
+  EXPECT_CALL(*pacer_, SetEstimatedBitrate(min_default_bitrate));
+  controller_->ResetBweAndBitrates(-1, -1, -1);
+}
+
 TEST_F(CongestionControllerTest,
        SignalNetworkStateAndQueueIsFullAndEstimateChange) {
   // Send queue is full
