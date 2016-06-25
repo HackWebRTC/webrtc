@@ -45,38 +45,40 @@ void LocalAudioSinkAdapter::SetSink(cricket::AudioSource::Sink* sink) {
 
 AudioRtpSender::AudioRtpSender(AudioTrackInterface* track,
                                const std::string& stream_id,
-                               cricket::VoiceChannel* channel,
+                               AudioProviderInterface* provider,
                                StatsCollector* stats)
     : id_(track->id()),
       stream_id_(stream_id),
-      channel_(channel),
+      provider_(provider),
       stats_(stats),
       track_(track),
       cached_track_enabled_(track->enabled()),
       sink_adapter_(new LocalAudioSinkAdapter()) {
+  RTC_DCHECK(provider != nullptr);
   track_->RegisterObserver(this);
   track_->AddSink(sink_adapter_.get());
 }
 
 AudioRtpSender::AudioRtpSender(AudioTrackInterface* track,
-                               cricket::VoiceChannel* channel,
+                               AudioProviderInterface* provider,
                                StatsCollector* stats)
     : id_(track->id()),
       stream_id_(rtc::CreateRandomUuid()),
-      channel_(channel),
+      provider_(provider),
       stats_(stats),
       track_(track),
       cached_track_enabled_(track->enabled()),
       sink_adapter_(new LocalAudioSinkAdapter()) {
+  RTC_DCHECK(provider != nullptr);
   track_->RegisterObserver(this);
   track_->AddSink(sink_adapter_.get());
 }
 
-AudioRtpSender::AudioRtpSender(cricket::VoiceChannel* channel,
+AudioRtpSender::AudioRtpSender(AudioProviderInterface* provider,
                                StatsCollector* stats)
     : id_(rtc::CreateRandomUuid()),
       stream_id_(rtc::CreateRandomUuid()),
-      channel_(channel),
+      provider_(provider),
       stats_(stats),
       sink_adapter_(new LocalAudioSinkAdapter()) {}
 
@@ -130,31 +132,26 @@ bool AudioRtpSender::SetTrack(MediaStreamTrackInterface* track) {
     track_->AddSink(sink_adapter_.get());
   }
 
-  // Update audio channel.
+  // Update audio provider.
   if (can_send_track()) {
     SetAudioSend();
     if (stats_) {
       stats_->AddLocalAudioTrack(track_.get(), ssrc_);
     }
   } else if (prev_can_send_track) {
-    ClearAudioSend();
+    cricket::AudioOptions options;
+    provider_->SetAudioSend(ssrc_, false, options, nullptr);
   }
   return true;
 }
 
 RtpParameters AudioRtpSender::GetParameters() const {
-  if (!channel_ || stopped_) {
-    return RtpParameters();
-  }
-  return channel_->GetRtpSendParameters(ssrc_);
+  return provider_->GetAudioRtpSendParameters(ssrc_);
 }
 
 bool AudioRtpSender::SetParameters(const RtpParameters& parameters) {
   TRACE_EVENT0("webrtc", "AudioRtpSender::SetParameters");
-  if (!channel_ || stopped_) {
-    return false;
-  }
-  return channel_->SetRtpSendParameters(ssrc_, parameters);
+  return provider_->SetAudioRtpSendParameters(ssrc_, parameters);
 }
 
 void AudioRtpSender::SetSsrc(uint32_t ssrc) {
@@ -164,7 +161,8 @@ void AudioRtpSender::SetSsrc(uint32_t ssrc) {
   }
   // If we are already sending with a particular SSRC, stop sending.
   if (can_send_track()) {
-    ClearAudioSend();
+    cricket::AudioOptions options;
+    provider_->SetAudioSend(ssrc_, false, options, nullptr);
     if (stats_) {
       stats_->RemoveLocalAudioTrack(track_.get(), ssrc_);
     }
@@ -189,7 +187,8 @@ void AudioRtpSender::Stop() {
     track_->UnregisterObserver(this);
   }
   if (can_send_track()) {
-    ClearAudioSend();
+    cricket::AudioOptions options;
+    provider_->SetAudioSend(ssrc_, false, options, nullptr);
     if (stats_) {
       stats_->RemoveLocalAudioTrack(track_.get(), ssrc_);
     }
@@ -199,10 +198,6 @@ void AudioRtpSender::Stop() {
 
 void AudioRtpSender::SetAudioSend() {
   RTC_DCHECK(!stopped_ && can_send_track());
-  if (!channel_) {
-    LOG(LS_ERROR) << "SetAudioSend: No audio channel exists.";
-    return;
-  }
   cricket::AudioOptions options;
 #if !defined(WEBRTC_CHROMIUM_BUILD)
   // TODO(tommi): Remove this hack when we move CreateAudioSource out of
@@ -217,50 +212,37 @@ void AudioRtpSender::SetAudioSend() {
 #endif
 
   cricket::AudioSource* source = sink_adapter_.get();
-  RTC_DCHECK(source != nullptr);
-  if (!channel_->SetAudioSend(ssrc_, track_->enabled(), &options, source)) {
-    LOG(LS_ERROR) << "SetAudioSend: ssrc is incorrect: " << ssrc_;
-  }
-}
-
-void AudioRtpSender::ClearAudioSend() {
-  RTC_DCHECK(ssrc_ != 0);
-  RTC_DCHECK(!stopped_);
-  if (!channel_) {
-    LOG(LS_WARNING) << "ClearAudioSend: No audio channel exists.";
-    return;
-  }
-  cricket::AudioOptions options;
-  if (!channel_->SetAudioSend(ssrc_, false, &options, nullptr)) {
-    LOG(LS_WARNING) << "ClearAudioSend: ssrc is incorrect: " << ssrc_;
-  }
+  ASSERT(source != nullptr);
+  provider_->SetAudioSend(ssrc_, track_->enabled(), options, source);
 }
 
 VideoRtpSender::VideoRtpSender(VideoTrackInterface* track,
                                const std::string& stream_id,
-                               cricket::VideoChannel* channel)
+                               VideoProviderInterface* provider)
     : id_(track->id()),
       stream_id_(stream_id),
-      channel_(channel),
+      provider_(provider),
       track_(track),
       cached_track_enabled_(track->enabled()) {
+  RTC_DCHECK(provider != nullptr);
   track_->RegisterObserver(this);
 }
 
 VideoRtpSender::VideoRtpSender(VideoTrackInterface* track,
-                               cricket::VideoChannel* channel)
+                               VideoProviderInterface* provider)
     : id_(track->id()),
       stream_id_(rtc::CreateRandomUuid()),
-      channel_(channel),
+      provider_(provider),
       track_(track),
       cached_track_enabled_(track->enabled()) {
+  RTC_DCHECK(provider != nullptr);
   track_->RegisterObserver(this);
 }
 
-VideoRtpSender::VideoRtpSender(cricket::VideoChannel* channel)
+VideoRtpSender::VideoRtpSender(VideoProviderInterface* provider)
     : id_(rtc::CreateRandomUuid()),
       stream_id_(rtc::CreateRandomUuid()),
-      channel_(channel) {}
+      provider_(provider) {}
 
 VideoRtpSender::~VideoRtpSender() {
   Stop();
@@ -306,7 +288,7 @@ bool VideoRtpSender::SetTrack(MediaStreamTrackInterface* track) {
     track_->RegisterObserver(this);
   }
 
-  // Update video channel.
+  // Update video provider.
   if (can_send_track()) {
     SetVideoSend();
   } else if (prev_can_send_track) {
@@ -316,18 +298,12 @@ bool VideoRtpSender::SetTrack(MediaStreamTrackInterface* track) {
 }
 
 RtpParameters VideoRtpSender::GetParameters() const {
-  if (!channel_ || stopped_) {
-    return RtpParameters();
-  }
-  return channel_->GetRtpSendParameters(ssrc_);
+  return provider_->GetVideoRtpSendParameters(ssrc_);
 }
 
 bool VideoRtpSender::SetParameters(const RtpParameters& parameters) {
   TRACE_EVENT0("webrtc", "VideoRtpSender::SetParameters");
-  if (!channel_ || stopped_) {
-    return false;
-  }
-  return channel_->SetRtpSendParameters(ssrc_, parameters);
+  return provider_->SetVideoRtpSendParameters(ssrc_, parameters);
 }
 
 void VideoRtpSender::SetSsrc(uint32_t ssrc) {
@@ -362,31 +338,19 @@ void VideoRtpSender::Stop() {
 
 void VideoRtpSender::SetVideoSend() {
   RTC_DCHECK(!stopped_ && can_send_track());
-  if (!channel_) {
-    LOG(LS_ERROR) << "SetVideoSend: No video channel exists.";
-    return;
-  }
   cricket::VideoOptions options;
   VideoTrackSourceInterface* source = track_->GetSource();
   if (source) {
     options.is_screencast = rtc::Optional<bool>(source->is_screencast());
     options.video_noise_reduction = source->needs_denoising();
   }
-  RTC_DCHECK(
-      channel_->SetVideoSend(ssrc_, track_->enabled(), &options, track_));
+  provider_->SetVideoSend(ssrc_, track_->enabled(), &options, track_);
 }
 
 void VideoRtpSender::ClearVideoSend() {
   RTC_DCHECK(ssrc_ != 0);
-  RTC_DCHECK(!stopped_);
-  if (!channel_) {
-    LOG(LS_WARNING) << "SetVideoSend: No video channel exists.";
-    return;
-  }
-  // Allow SetVideoSend to fail since |enable| is false and |source| is null.
-  // This the normal case when the underlying media channel has already been
-  // deleted.
-  channel_->SetVideoSend(ssrc_, false, nullptr, nullptr);
+  RTC_DCHECK(provider_ != nullptr);
+  provider_->SetVideoSend(ssrc_, false, nullptr, nullptr);
 }
 
 }  // namespace webrtc

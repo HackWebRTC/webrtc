@@ -174,6 +174,7 @@ class PeerConnection : public PeerConnectionInterface,
   void CreateVideoReceiver(MediaStreamInterface* stream,
                            const std::string& track_id,
                            uint32_t ssrc);
+  void StopReceivers(cricket::MediaType media_type);
   void DestroyReceiver(const std::string& track_id);
   void DestroyAudioSender(MediaStreamInterface* stream,
                           AudioTrackInterface* audio_track,
@@ -324,9 +325,7 @@ class PeerConnection : public PeerConnectionInterface,
   void OnSctpDataChannelClosed(DataChannel* channel);
 
   // Notifications from WebRtcSession relating to BaseChannels.
-  void OnVoiceChannelCreated();
   void OnVoiceChannelDestroyed();
-  void OnVideoChannelCreated();
   void OnVideoChannelDestroyed();
   void OnDataChannelCreated();
   void OnDataChannelDestroyed();

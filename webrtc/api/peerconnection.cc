@@ -396,34 +396,6 @@ uint32_t ConvertIceTransportTypeToCandidateFilter(
   return cricket::CF_NONE;
 }
 
-// Helper method to set a voice/video channel on all applicable senders
-// and receivers when one is created/destroyed by WebRtcSession.
-//
-// Used by On(Voice|Video)Channel(Created|Destroyed)
-template <class SENDER,
-          class RECEIVER,
-          class CHANNEL,
-          class SENDERS,
-          class RECEIVERS>
-void SetChannelOnSendersAndReceivers(CHANNEL* channel,
-                                     SENDERS& senders,
-                                     RECEIVERS& receivers,
-                                     cricket::MediaType media_type) {
-  for (auto& sender : senders) {
-    if (sender->media_type() == media_type) {
-      static_cast<SENDER*>(sender->internal())->SetChannel(channel);
-    }
-  }
-  for (auto& receiver : receivers) {
-    if (receiver->media_type() == media_type) {
-      if (!channel) {
-        receiver->internal()->Stop();
-      }
-      static_cast<RECEIVER*>(receiver->internal())->SetChannel(channel);
-    }
-  }
-}
-
 }  // namespace
 
 namespace webrtc {
@@ -636,12 +608,8 @@ bool PeerConnection::Initialize(
   // All the callbacks will be posted to the application from PeerConnection.
   session_->RegisterIceObserver(this);
   session_->SignalState.connect(this, &PeerConnection::OnSessionStateChange);
-  session_->SignalVoiceChannelCreated.connect(
-      this, &PeerConnection::OnVoiceChannelCreated);
   session_->SignalVoiceChannelDestroyed.connect(
       this, &PeerConnection::OnVoiceChannelDestroyed);
-  session_->SignalVideoChannelCreated.connect(
-      this, &PeerConnection::OnVideoChannelCreated);
   session_->SignalVideoChannelDestroyed.connect(
       this, &PeerConnection::OnVideoChannelDestroyed);
   session_->SignalDataChannelCreated.connect(
@@ -745,7 +713,7 @@ rtc::scoped_refptr<RtpSenderInterface> PeerConnection::AddTrack(
     new_sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
         signaling_thread(),
         new AudioRtpSender(static_cast<AudioTrackInterface*>(track),
-                           session_->voice_channel(), stats_.get()));
+                           session_.get(), stats_.get()));
     if (!streams.empty()) {
       new_sender->internal()->set_stream_id(streams[0]->label());
     }
@@ -758,7 +726,7 @@ rtc::scoped_refptr<RtpSenderInterface> PeerConnection::AddTrack(
     new_sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
         signaling_thread(),
         new VideoRtpSender(static_cast<VideoTrackInterface*>(track),
-                           session_->video_channel()));
+                           session_.get()));
     if (!streams.empty()) {
       new_sender->internal()->set_stream_id(streams[0]->label());
     }
@@ -823,11 +791,10 @@ rtc::scoped_refptr<RtpSenderInterface> PeerConnection::CreateSender(
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> new_sender;
   if (kind == MediaStreamTrackInterface::kAudioKind) {
     new_sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
-        signaling_thread(),
-        new AudioRtpSender(session_->voice_channel(), stats_.get()));
+        signaling_thread(), new AudioRtpSender(session_.get(), stats_.get()));
   } else if (kind == MediaStreamTrackInterface::kVideoKind) {
     new_sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
-        signaling_thread(), new VideoRtpSender(session_->video_channel()));
+        signaling_thread(), new VideoRtpSender(session_.get()));
   } else {
     LOG(LS_ERROR) << "CreateSender called with invalid kind: " << kind;
     return new_sender;
@@ -1355,8 +1322,8 @@ void PeerConnection::CreateAudioReceiver(MediaStreamInterface* stream,
                                          uint32_t ssrc) {
   receivers_.push_back(
       RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
-          signaling_thread(), new AudioRtpReceiver(stream, track_id, ssrc,
-                                                   session_->voice_channel())));
+          signaling_thread(),
+          new AudioRtpReceiver(stream, track_id, ssrc, session_.get())));
 }
 
 void PeerConnection::CreateVideoReceiver(MediaStreamInterface* stream,
@@ -1366,7 +1333,7 @@ void PeerConnection::CreateVideoReceiver(MediaStreamInterface* stream,
       RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
           signaling_thread(),
           new VideoRtpReceiver(stream, track_id, factory_->worker_thread(),
-                               ssrc, session_->video_channel())));
+                               ssrc, session_.get())));
 }
 
 // TODO(deadbeef): Keep RtpReceivers around even if track goes away in remote
@@ -1379,6 +1346,19 @@ void PeerConnection::DestroyReceiver(const std::string& track_id) {
   } else {
     (*it)->internal()->Stop();
     receivers_.erase(it);
+  }
+}
+
+void PeerConnection::StopReceivers(cricket::MediaType media_type) {
+  TrackInfos* current_tracks = GetRemoteTracks(media_type);
+  for (const auto& track_info : *current_tracks) {
+    auto it = FindReceiverForTrack(track_info.track_id);
+    if (it == receivers_.end()) {
+      LOG(LS_WARNING) << "RtpReceiver for track with id " << track_info.track_id
+                      << " doesn't exist.";
+    } else {
+      (*it)->internal()->Stop();
+    }
   }
 }
 
@@ -1447,9 +1427,8 @@ void PeerConnection::OnAudioTrackAdded(AudioTrackInterface* track,
   // Normal case; we've never seen this track before.
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> new_sender =
       RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
-          signaling_thread(),
-          new AudioRtpSender(track, stream->label(), session_->voice_channel(),
-                             stats_.get()));
+          signaling_thread(), new AudioRtpSender(track, stream->label(),
+                                                 session_.get(), stats_.get()));
   senders_.push_back(new_sender);
   // If the sender has already been configured in SDP, we call SetSsrc,
   // which will connect the sender to the underlying transport. This can
@@ -1491,8 +1470,8 @@ void PeerConnection::OnVideoTrackAdded(VideoTrackInterface* track,
   // Normal case; we've never seen this track before.
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> new_sender =
       RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
-          signaling_thread(), new VideoRtpSender(track, stream->label(),
-                                                 session_->video_channel()));
+          signaling_thread(),
+          new VideoRtpSender(track, stream->label(), session_.get()));
   senders_.push_back(new_sender);
   const TrackInfo* track_info =
       FindTrackInfo(local_video_tracks_, stream->label(), track->id());
@@ -2034,28 +2013,12 @@ void PeerConnection::OnSctpDataChannelClosed(DataChannel* channel) {
   }
 }
 
-void PeerConnection::OnVoiceChannelCreated() {
-  SetChannelOnSendersAndReceivers<AudioRtpSender, AudioRtpReceiver>(
-      session_->voice_channel(), senders_, receivers_,
-      cricket::MEDIA_TYPE_AUDIO);
-}
-
 void PeerConnection::OnVoiceChannelDestroyed() {
-  SetChannelOnSendersAndReceivers<AudioRtpSender, AudioRtpReceiver,
-                                  cricket::VoiceChannel>(
-      nullptr, senders_, receivers_, cricket::MEDIA_TYPE_AUDIO);
-}
-
-void PeerConnection::OnVideoChannelCreated() {
-  SetChannelOnSendersAndReceivers<VideoRtpSender, VideoRtpReceiver>(
-      session_->video_channel(), senders_, receivers_,
-      cricket::MEDIA_TYPE_VIDEO);
+  StopReceivers(cricket::MEDIA_TYPE_AUDIO);
 }
 
 void PeerConnection::OnVideoChannelDestroyed() {
-  SetChannelOnSendersAndReceivers<VideoRtpSender, VideoRtpReceiver,
-                                  cricket::VideoChannel>(
-      nullptr, senders_, receivers_, cricket::MEDIA_TYPE_VIDEO);
+  StopReceivers(cricket::MEDIA_TYPE_VIDEO);
 }
 
 void PeerConnection::OnDataChannelCreated() {
