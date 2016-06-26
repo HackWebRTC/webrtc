@@ -196,11 +196,10 @@
 
 - (void)parseSendSsrcStatsReport:(RTCStatsReport *)statsReport {
   NSDictionary *values = statsReport.values;
-  NSString *trackId = values[@"googTrackId"];
-  if (trackId.length && [trackId hasPrefix:@"ARDAMSv0"]) {
+  if ([values objectForKey:@"googFrameRateSent"]) {
     // Video track.
     [self parseVideoSendStatsReport:statsReport];
-  } else {
+  } else if ([values objectForKey:@"audioInputLevel"]) {
     // Audio track.
     [self parseAudioSendStatsReport:statsReport];
   }
@@ -248,9 +247,11 @@
 
 - (void)parseRecvSsrcStatsReport:(RTCStatsReport *)statsReport {
   NSDictionary *values = statsReport.values;
-  if (values[@"googFrameWidthReceived"]) {
+  if ([values objectForKey:@"googFrameWidthReceived"]) {
+    // Video track.
     [self parseVideoRecvStatsReport:statsReport];
-  } else {
+  } else if ([values objectForKey:@"audioOutputLevel"]) {
+    // Audio track.
     [self parseAudioRecvStatsReport:statsReport];
   }
 }
