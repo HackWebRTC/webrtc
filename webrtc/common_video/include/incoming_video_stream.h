@@ -42,7 +42,6 @@ class IncomingVideoStream : public rtc::VideoSinkInterface<VideoFrame> {
 
   rtc::ThreadChecker main_thread_checker_;
   rtc::ThreadChecker render_thread_checker_;
-  rtc::ThreadChecker decoder_thread_checker_;
 
   rtc::CriticalSection buffer_critsect_;
   rtc::PlatformThread incoming_render_thread_;

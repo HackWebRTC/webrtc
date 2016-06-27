@@ -29,7 +29,6 @@ IncomingVideoStream::IncomingVideoStream(
   RTC_DCHECK(external_callback_);
 
   render_thread_checker_.DetachFromThread();
-  decoder_thread_checker_.DetachFromThread();
 
   incoming_render_thread_.Start();
   incoming_render_thread_.SetPriority(rtc::kRealtimePriority);
@@ -50,7 +49,8 @@ IncomingVideoStream::~IncomingVideoStream() {
 }
 
 void IncomingVideoStream::OnFrame(const VideoFrame& video_frame) {
-  RTC_DCHECK_RUN_ON(&decoder_thread_checker_);
+  // Most of the time we'll be on a decoder thread here, but when using
+  // VideoToolbox on iOS, we'll get called on a thread from a thread pool.
 
   // Hand over or insert frame.
   rtc::CritScope csB(&buffer_critsect_);
