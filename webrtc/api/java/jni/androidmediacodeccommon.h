@@ -54,7 +54,7 @@ enum { kMaxPendingFramesVp8 = 1 };
 // Maximum amount of pending frames for VP9 decoder.
 enum { kMaxPendingFramesVp9 = 1 };
 // Maximum amount of pending frames for H.264 decoder.
-enum { kMaxPendingFramesH264 = 8 };
+enum { kMaxPendingFramesH264 = 3 };
 // Maximum amount of decoded frames for which per-frame logging is enabled.
 enum { kMaxDecodedLogFrames = 10 };
 // Maximum amount of encoded frames for which per-frame logging is enabled.

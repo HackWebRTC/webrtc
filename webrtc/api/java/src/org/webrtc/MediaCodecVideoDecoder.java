@@ -619,8 +619,9 @@ public class MediaCodecVideoDecoder {
           TimeStamps timeStamps = decodeStartTimeMs.remove();
           long decodeTimeMs = SystemClock.elapsedRealtime() - timeStamps.decodeStartTimeMs;
           if (decodeTimeMs > MAX_DECODE_TIME_MS) {
-            Logging.e(TAG, "Very high decode time: " + decodeTimeMs + "ms."
-                + " Might be caused by resuming H264 decoding after a pause.");
+            Logging.e(TAG, "Very high decode time: " + decodeTimeMs + "ms"
+                + ". Q size: " + decodeStartTimeMs.size()
+                + ". Might be caused by resuming H264 decoding after a pause.");
             decodeTimeMs = MAX_DECODE_TIME_MS;
           }
           return new DecodedOutputBuffer(result,
