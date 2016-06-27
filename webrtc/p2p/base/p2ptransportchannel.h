@@ -231,8 +231,6 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   bool PresumedWritable(const cricket::Connection* conn) const;
 
-  bool ShouldSwitchSelectedConnection(const cricket::Connection* selected,
-                                      const cricket::Connection* conn) const;
   void SortConnections();
   void SwitchSelectedConnection(Connection* conn);
   void UpdateState();

@@ -1092,40 +1092,6 @@ bool P2PTransportChannel::PresumedWritable(const Connection* conn) const {
            conn->remote_candidate().type() == PRFLX_PORT_TYPE));
 }
 
-// Determines whether we should switch between two connections, based first on
-// connection states, static preferences, and then (if those are equal) on
-// latency estimates.
-bool P2PTransportChannel::ShouldSwitchSelectedConnection(
-    const Connection* selected,
-    const Connection* conn) const {
-  if (selected == conn) {
-    return false;
-  }
-
-  if (!selected || !conn) {  // don't think the latter should happen
-    return true;
-  }
-
-  // We prefer to switch to a writable and receiving connection over a
-  // non-writable or non-receiving connection, even if the latter has
-  // been nominated by the controlling side.
-  int state_cmp = CompareConnectionStates(selected, conn);
-  if (state_cmp != 0) {
-    return state_cmp < 0;
-  }
-  if (ice_role_ == ICEROLE_CONTROLLED && selected->nominated()) {
-    LOG(LS_VERBOSE) << "Controlled side did not switch due to nominated status";
-    return false;
-  }
-
-  int prefs_cmp = CompareConnectionCandidates(selected, conn);
-  if (prefs_cmp != 0) {
-    return prefs_cmp < 0;
-  }
-
-  return selected->rtt() - conn->rtt() >= kMinImprovement;
-}
-
 // Sort the available connections to find the best one.  We also monitor
 // the number of available connections and the current state.
 void P2PTransportChannel::SortConnections() {
