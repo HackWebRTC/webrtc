@@ -129,8 +129,8 @@ class MixingTest : public AfterInitializationFixture {
       std::ostringstream trace_stream;
       trace_stream << samples_read << " samples read";
       SCOPED_TRACE(trace_stream.str());
-      EXPECT_LE(output_value, max_output_value);
-      EXPECT_GE(output_value, min_output_value);
+      ASSERT_LE(output_value, max_output_value);
+      ASSERT_GE(output_value, min_output_value);
     }
     // Ensure we've at least recorded half as much file as the duration of the
     // test. We have to use a relaxed tolerance here due to filesystem flakiness
