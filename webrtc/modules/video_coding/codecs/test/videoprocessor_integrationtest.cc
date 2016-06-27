@@ -707,8 +707,17 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
 // for the rate control metrics can be lower. One key frame (first frame only).
 // Note: quality after update should be higher but we currently compute quality
 // metrics averaged over whole sequence run.
+
+#if defined(OS_ANDROID)
+// Flaky on Android: https://bugs.chromium.org/p/webrtc/issues/detail?id=6057.
+#define MAYBE_ProcessNoLossChangeFrameRateFrameDropVP9 \
+  DISABLED_ProcessNoLossChangeFrameRateFrameDropVP9
+#else
+#define MAYBE_ProcessNoLossChangeFrameRateFrameDropVP9 \
+  ProcessNoLossChangeFrameRateFrameDropVP9
+#endif
 TEST_F(VideoProcessorIntegrationTest,
-       ProcessNoLossChangeFrameRateFrameDropVP9) {
+       MAYBE_ProcessNoLossChangeFrameRateFrameDropVP9) {
   config_.networking_config.packet_loss_probability = 0;
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
