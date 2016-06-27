@@ -1169,161 +1169,6 @@ std::string WebRtcSession::BadStateErrMsg(State state) {
   return desc.str();
 }
 
-void WebRtcSession::SetAudioPlayout(uint32_t ssrc, bool enable) {
-  ASSERT(signaling_thread()->IsCurrent());
-  if (!voice_channel_) {
-    LOG(LS_ERROR) << "SetAudioPlayout: No audio channel exists.";
-    return;
-  }
-  if (!voice_channel_->SetOutputVolume(ssrc, enable ? 1 : 0)) {
-    // Allow that SetOutputVolume fail if |enable| is false but assert
-    // otherwise. This in the normal case when the underlying media channel has
-    // already been deleted.
-    ASSERT(enable == false);
-  }
-}
-
-void WebRtcSession::SetAudioSend(uint32_t ssrc,
-                                 bool enable,
-                                 const cricket::AudioOptions& options,
-                                 cricket::AudioSource* source) {
-  ASSERT(signaling_thread()->IsCurrent());
-  if (!voice_channel_) {
-    LOG(LS_ERROR) << "SetAudioSend: No audio channel exists.";
-    return;
-  }
-  if (!voice_channel_->SetAudioSend(ssrc, enable, &options, source)) {
-    LOG(LS_ERROR) << "SetAudioSend: ssrc is incorrect: " << ssrc;
-  }
-}
-
-void WebRtcSession::SetAudioPlayoutVolume(uint32_t ssrc, double volume) {
-  ASSERT(signaling_thread()->IsCurrent());
-  ASSERT(volume >= 0 && volume <= 10);
-  if (!voice_channel_) {
-    LOG(LS_ERROR) << "SetAudioPlayoutVolume: No audio channel exists.";
-    return;
-  }
-
-  if (!voice_channel_->SetOutputVolume(ssrc, volume)) {
-    ASSERT(false);
-  }
-}
-
-void WebRtcSession::SetRawAudioSink(uint32_t ssrc,
-                                    std::unique_ptr<AudioSinkInterface> sink) {
-  ASSERT(signaling_thread()->IsCurrent());
-  if (!voice_channel_)
-    return;
-
-  voice_channel_->SetRawAudioSink(ssrc, std::move(sink));
-}
-
-RtpParameters WebRtcSession::GetAudioRtpSendParameters(uint32_t ssrc) const {
-  ASSERT(signaling_thread()->IsCurrent());
-  if (voice_channel_) {
-    return voice_channel_->GetRtpSendParameters(ssrc);
-  }
-  return RtpParameters();
-}
-
-bool WebRtcSession::SetAudioRtpSendParameters(uint32_t ssrc,
-                                              const RtpParameters& parameters) {
-  ASSERT(signaling_thread()->IsCurrent());
-  if (!voice_channel_) {
-    return false;
-  }
-  return voice_channel_->SetRtpSendParameters(ssrc, parameters);
-}
-
-RtpParameters WebRtcSession::GetAudioRtpReceiveParameters(uint32_t ssrc) const {
-  ASSERT(signaling_thread()->IsCurrent());
-  if (voice_channel_) {
-    return voice_channel_->GetRtpReceiveParameters(ssrc);
-  }
-  return RtpParameters();
-}
-
-bool WebRtcSession::SetAudioRtpReceiveParameters(
-    uint32_t ssrc,
-    const RtpParameters& parameters) {
-  ASSERT(signaling_thread()->IsCurrent());
-  if (!voice_channel_) {
-    return false;
-  }
-  return voice_channel_->SetRtpReceiveParameters(ssrc, parameters);
-}
-
-void WebRtcSession::SetVideoPlayout(
-    uint32_t ssrc,
-    bool enable,
-    rtc::VideoSinkInterface<cricket::VideoFrame>* sink) {
-  ASSERT(signaling_thread()->IsCurrent());
-  if (!video_channel_) {
-    LOG(LS_WARNING) << "SetVideoPlayout: No video channel exists.";
-    return;
-  }
-  if (!video_channel_->SetSink(ssrc, enable ? sink : NULL)) {
-    // Allow that SetSink fail if |sink| is NULL but assert otherwise.
-    // This in the normal case when the underlying media channel has already
-    // been deleted.
-    ASSERT(sink == NULL);
-  }
-}
-
-void WebRtcSession::SetVideoSend(
-    uint32_t ssrc,
-    bool enable,
-    const cricket::VideoOptions* options,
-    rtc::VideoSourceInterface<cricket::VideoFrame>* source) {
-  ASSERT(signaling_thread()->IsCurrent());
-  if (!video_channel_) {
-    LOG(LS_WARNING) << "SetVideoSend: No video channel exists.";
-    return;
-  }
-  if (!video_channel_->SetVideoSend(ssrc, enable, options, source)) {
-    // Allow that MuteStream fail if |enable| is false and |source| is NULL but
-    // assert otherwise. This in the normal case when the underlying media
-    // channel has already been deleted.
-    ASSERT(enable == false && source == nullptr);
-  }
-}
-
-RtpParameters WebRtcSession::GetVideoRtpSendParameters(uint32_t ssrc) const {
-  ASSERT(signaling_thread()->IsCurrent());
-  if (video_channel_) {
-    return video_channel_->GetRtpSendParameters(ssrc);
-  }
-  return RtpParameters();
-}
-
-bool WebRtcSession::SetVideoRtpSendParameters(uint32_t ssrc,
-                                              const RtpParameters& parameters) {
-  ASSERT(signaling_thread()->IsCurrent());
-  if (!video_channel_) {
-    return false;
-  }
-  return video_channel_->SetRtpSendParameters(ssrc, parameters);
-}
-
-RtpParameters WebRtcSession::GetVideoRtpReceiveParameters(uint32_t ssrc) const {
-  ASSERT(signaling_thread()->IsCurrent());
-  if (video_channel_) {
-    return video_channel_->GetRtpReceiveParameters(ssrc);
-  }
-  return RtpParameters();
-}
-
-bool WebRtcSession::SetVideoRtpReceiveParameters(
-    uint32_t ssrc,
-    const RtpParameters& parameters) {
-  ASSERT(signaling_thread()->IsCurrent());
-  if (!video_channel_) {
-    return false;
-  }
-  return video_channel_->SetRtpReceiveParameters(ssrc, parameters);
-}
-
 bool WebRtcSession::CanInsertDtmf(const std::string& track_id) {
   ASSERT(signaling_thread()->IsCurrent());
   if (!voice_channel_) {
@@ -1767,8 +1612,6 @@ bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content,
 
   voice_channel_->SignalDtlsSetupFailure.connect(
       this, &WebRtcSession::OnDtlsSetupFailure);
-  voice_channel_->SignalFirstPacketReceived.connect(
-      this, &WebRtcSession::OnChannelFirstPacketReceived);
 
   SignalVoiceChannelCreated();
   voice_channel_->SignalSentPacket.connect(this,
@@ -1792,8 +1635,6 @@ bool WebRtcSession::CreateVideoChannel(const cricket::ContentInfo* content,
   }
   video_channel_->SignalDtlsSetupFailure.connect(
       this, &WebRtcSession::OnDtlsSetupFailure);
-  video_channel_->SignalFirstPacketReceived.connect(
-      this, &WebRtcSession::OnChannelFirstPacketReceived);
 
   SignalVideoChannelCreated();
   video_channel_->SignalSentPacket.connect(this,
@@ -1833,21 +1674,6 @@ bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content,
 void WebRtcSession::OnDtlsSetupFailure(cricket::BaseChannel*, bool rtcp) {
   SetError(ERROR_TRANSPORT,
            rtcp ? kDtlsSetupFailureRtcp : kDtlsSetupFailureRtp);
-}
-
-void WebRtcSession::OnChannelFirstPacketReceived(
-    cricket::BaseChannel* channel) {
-  ASSERT(signaling_thread()->IsCurrent());
-
-  if (!received_first_audio_packet_ &&
-      channel->media_type() == cricket::MEDIA_TYPE_AUDIO) {
-    received_first_audio_packet_ = true;
-    SignalFirstAudioPacketReceived();
-  } else if (!received_first_video_packet_ &&
-             channel->media_type() == cricket::MEDIA_TYPE_VIDEO) {
-    received_first_video_packet_ = true;
-    SignalFirstVideoPacketReceived();
-  }
 }
 
 void WebRtcSession::OnDataChannelMessageReceived(

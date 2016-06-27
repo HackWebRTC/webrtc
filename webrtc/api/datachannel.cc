@@ -13,7 +13,6 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/api/mediastreamprovider.h"
 #include "webrtc/api/sctputils.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/refcount.h"
