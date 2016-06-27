@@ -25,6 +25,15 @@ public class Camera1Enumerator implements CameraEnumerator {
   // reference.
   private static List<List<CaptureFormat>> cachedSupportedFormats;
 
+  private final boolean captureToTexture;
+
+  Camera1Enumerator() {
+    this(true /* captureToTexture */);
+  }
+
+  Camera1Enumerator(boolean captureToTexture) {
+    this.captureToTexture = captureToTexture;
+  }
 
   public boolean isFrontFacing(String deviceName) {
     android.hardware.Camera.CameraInfo info = getCameraInfo(getCameraIndex(deviceName));
@@ -38,7 +47,7 @@ public class Camera1Enumerator implements CameraEnumerator {
 
   public CameraVideoCapturer createCapturer(String deviceName,
       CameraVideoCapturer.CameraEventsHandler eventsHandler) {
-    return new VideoCapturerAndroid(deviceName, eventsHandler, true);
+    return new VideoCapturerAndroid(deviceName, eventsHandler, captureToTexture);
   }
 
   private static android.hardware.Camera.CameraInfo getCameraInfo(int index) {
