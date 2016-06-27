@@ -3097,14 +3097,9 @@ TEST_F(EndToEndTest, RestartingSendStreamPreservesRtpState) {
   TestRtpStatePreservation(false);
 }
 
-#if defined(WEBRTC_MAC)
-#define MAYBE_RestartingSendStreamPreservesRtpStatesWithRtx \
-  DISABLED_RestartingSendStreamPreservesRtpStatesWithRtx
-#else
-#define MAYBE_RestartingSendStreamPreservesRtpStatesWithRtx \
-  RestartingSendStreamPreservesRtpStatesWithRtx
-#endif
-TEST_F(EndToEndTest, MAYBE_RestartingSendStreamPreservesRtpStatesWithRtx) {
+// This test is flaky. See:
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=4332
+TEST_F(EndToEndTest, DISABLED_RestartingSendStreamPreservesRtpStatesWithRtx) {
   TestRtpStatePreservation(true);
 }
 
