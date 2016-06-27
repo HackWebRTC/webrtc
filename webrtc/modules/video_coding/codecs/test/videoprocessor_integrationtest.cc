@@ -708,7 +708,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
 // Note: quality after update should be higher but we currently compute quality
 // metrics averaged over whole sequence run.
 
-#if defined(OS_ANDROID)
+#if defined(WEBRTC_ANDROID)
 // Flaky on Android: https://bugs.chromium.org/p/webrtc/issues/detail?id=6057.
 #define MAYBE_ProcessNoLossChangeFrameRateFrameDropVP9 \
   DISABLED_ProcessNoLossChangeFrameRateFrameDropVP9
