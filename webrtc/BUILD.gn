@@ -612,4 +612,54 @@ if (rtc_include_tests) {
       configs -= [ "//build/config/clang:find_bad_constructs" ]
     }
   }
+
+  test("webrtc_nonparallel_tests") {
+    testonly = true
+    configs += [
+      ":common_config",
+      ":rtc_unittests_config",
+    ]
+    public_configs = [ ":common_inherited_config" ]
+    sources = [
+      "base/nullsocketserver_unittest.cc",
+      "base/physicalsocketserver_unittest.cc",
+      "base/socket_unittest.cc",
+      "base/socket_unittest.h",
+      "base/socketaddress_unittest.cc",
+      "base/virtualsocket_unittest.cc",
+    ]
+    deps = [
+      "base:rtc_base",
+      "base:rtc_base_tests_utils",
+      "//testing/gtest",
+    ]
+    if (is_win) {
+      sources += [ "base/win32socketserver_unittest.cc" ]
+
+      # TODO(ronghuawu): Fix TestUdpReadyToSendIPv6 on windows bot then reenable
+      # these tests.
+      # TODO(pbos): Move test disabling to ifdefs within the test files instead
+      # of here.
+      sources -= [
+        "base/physicalsocketserver_unittest.cc",
+        "base/socket_unittest.cc",
+        "base/win32socketserver_unittest.cc",
+      ]
+    }
+    if (is_android) {
+      deps += [ "//testing/android/native_test:native_test_support" ]
+    }
+
+    if (is_mac) {
+      sources += [ "base/macsocketserver_unittest.cc" ]
+    }
+    if (is_ios || (is_mac && target_cpu != "x86")) {
+      defines = [ "CARBON_DEPRECATED=YES" ]
+    }
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
 }
