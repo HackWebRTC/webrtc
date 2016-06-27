@@ -509,10 +509,11 @@ void TurnServer::OnAllocationDestroyed(TurnServerAllocation* allocation) {
   // Removing the internal socket if the connection is not udp.
   rtc::AsyncPacketSocket* socket = allocation->conn()->socket();
   InternalSocketMap::iterator iter = server_sockets_.find(socket);
-  ASSERT(iter != server_sockets_.end());
   // Skip if the socket serving this allocation is UDP, as this will be shared
   // by all allocations.
-  if (iter->second != cricket::PROTO_UDP) {
+  // Note: We may not find a socket if it's a TCP socket that was closed, and
+  // the allocation is only now timing out.
+  if (iter != server_sockets_.end() && iter->second != cricket::PROTO_UDP) {
     DestroyInternalSocket(socket);
   }
 

@@ -771,8 +771,11 @@ int VirtualSocketServer::Connect(VirtualSocket* socket,
 
 bool VirtualSocketServer::Disconnect(VirtualSocket* socket) {
   if (socket) {
+    // If we simulate packets being delayed, we should simulate the
+    // equivalent of a FIN being delayed as well.
+    uint32_t delay = GetRandomTransitDelay();
     // Remove the mapping.
-    msg_queue_->Post(RTC_FROM_HERE, socket, MSG_ID_DISCONNECT);
+    msg_queue_->PostDelayed(RTC_FROM_HERE, delay, socket, MSG_ID_DISCONNECT);
     return true;
   }
   return false;
