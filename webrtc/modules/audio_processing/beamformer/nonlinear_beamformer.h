@@ -21,32 +21,10 @@
 
 #include "webrtc/common_audio/lapped_transform.h"
 #include "webrtc/common_audio/channel_buffer.h"
-#include "webrtc/modules/audio_processing/beamformer/array_util.h"
+#include "webrtc/modules/audio_processing/beamformer/beamformer.h"
 #include "webrtc/modules/audio_processing/beamformer/complex_matrix.h"
 
 namespace webrtc {
-
-class PostFilterTransform : public LappedTransform::Callback {
- public:
-  PostFilterTransform(size_t num_channels,
-                      size_t chunk_length,
-                      float* window,
-                      size_t fft_size);
-
-  void ProcessChunk(float* const* data, float* final_mask);
-
- protected:
-  void ProcessAudioBlock(const complex<float>* const* input,
-                         size_t num_input_channels,
-                         size_t num_freq_bins,
-                         size_t num_output_channels,
-                         complex<float>* const* output) override;
-
- private:
-  LappedTransform transform_;
-  const size_t num_freq_bins_;
-  float* final_mask_;
-};
 
 // Enhances sound sources coming directly in front of a uniform linear array
 // and suppresses sound sources coming from all other directions. Operates on
@@ -54,39 +32,37 @@ class PostFilterTransform : public LappedTransform::Callback {
 //
 // The implemented nonlinear postfilter algorithm taken from "A Robust Nonlinear
 // Beamforming Postprocessor" by Bastiaan Kleijn.
-class NonlinearBeamformer : public LappedTransform::Callback {
+class NonlinearBeamformer
+  : public Beamformer<float>,
+    public LappedTransform::Callback {
  public:
   static const float kHalfBeamWidthRadians;
 
   explicit NonlinearBeamformer(
       const std::vector<Point>& array_geometry,
-      size_t num_postfilter_channels,
       SphericalPointf target_direction =
           SphericalPointf(static_cast<float>(M_PI) / 2.f, 0.f, 1.f));
 
   // Sample rate corresponds to the lower band.
   // Needs to be called before the NonlinearBeamformer can be used.
-  virtual void Initialize(int chunk_size_ms, int sample_rate_hz);
+  void Initialize(int chunk_size_ms, int sample_rate_hz) override;
 
-  // Analyzes one time-domain chunk of audio. The audio is expected to be split
+  // Process one time-domain chunk of audio. The audio is expected to be split
   // into frequency bands inside the ChannelBuffer. The number of frames and
-  // channels must correspond to the constructor parameters.
-  virtual void AnalyzeChunk(const ChannelBuffer<float>& data);
+  // channels must correspond to the constructor parameters. The same
+  // ChannelBuffer can be passed in as |input| and |output|.
+  void ProcessChunk(const ChannelBuffer<float>& input,
+                    ChannelBuffer<float>* output) override;
 
-  // Applies the postfilter mask to one chunk of audio. The audio is expected to
-  // be split into frequency bands inside the ChannelBuffer. The number of
-  // frames and channels must correspond to the constructor parameters.
-  virtual void PostFilter(ChannelBuffer<float>* data);
+  void AimAt(const SphericalPointf& target_direction) override;
 
-  virtual void AimAt(const SphericalPointf& target_direction);
-
-  virtual bool IsInBeam(const SphericalPointf& spherical_point);
+  bool IsInBeam(const SphericalPointf& spherical_point) override;
 
   // After processing each block |is_target_present_| is set to true if the
   // target signal es present and to false otherwise. This methods can be called
   // to know if the data is target signal or interference and process it
   // accordingly.
-  virtual bool is_target_present() { return is_target_present_; }
+  bool is_target_present() override { return is_target_present_; }
 
  protected:
   // Process one frequency-domain block of audio. This is where the fun
@@ -140,8 +116,8 @@ class NonlinearBeamformer : public LappedTransform::Callback {
   // Compute the means needed for the above frequency correction.
   float MaskRangeMean(size_t start_bin, size_t end_bin);
 
-  // Applies post-filter mask to |input| and store in |output|.
-  void ApplyPostFilter(const complex_f* input, complex_f* output);
+  // Applies both sets of masks to |input| and store in |output|.
+  void ApplyMasks(const complex_f* const* input, complex_f* const* output);
 
   void EstimateTargetPresence();
 
@@ -150,13 +126,11 @@ class NonlinearBeamformer : public LappedTransform::Callback {
 
   // Deals with the fft transform and blocking.
   size_t chunk_length_;
-  std::unique_ptr<LappedTransform> process_transform_;
-  std::unique_ptr<PostFilterTransform> postfilter_transform_;
+  std::unique_ptr<LappedTransform> lapped_transform_;
   float window_[kFftSize];
 
   // Parameters exposed to the user.
   const size_t num_input_channels_;
-  const size_t num_postfilter_channels_;
   int sample_rate_hz_;
 
   const std::vector<Point> array_geometry_;
@@ -187,6 +161,7 @@ class NonlinearBeamformer : public LappedTransform::Callback {
 
   // Array of length |kNumFreqBins|, Matrix of size |1| x |num_channels_|.
   ComplexMatrixF delay_sum_masks_[kNumFreqBins];
+  ComplexMatrixF normalized_delay_sum_masks_[kNumFreqBins];
 
   // Arrays of length |kNumFreqBins|, Matrix of size |num_input_channels_| x
   // |num_input_channels_|.
@@ -211,7 +186,6 @@ class NonlinearBeamformer : public LappedTransform::Callback {
 
   // For processing the high-frequency input signal.
   float high_pass_postfilter_mask_;
-  float old_high_pass_mask_;
 
   // True when the target signal is present.
   bool is_target_present_;

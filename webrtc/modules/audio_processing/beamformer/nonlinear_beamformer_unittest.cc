@@ -57,14 +57,14 @@ const size_t kNumFramesToProcess = 1000;
 
 void ProcessOneFrame(int sample_rate_hz,
                      AudioBuffer* capture_audio_buffer,
-                     NonlinearBeamformer* beamformer) {
+                     Beamformer<float>* beamformer) {
   if (sample_rate_hz > AudioProcessing::kSampleRate16kHz) {
     capture_audio_buffer->SplitIntoFrequencyBands();
   }
 
-  beamformer->AnalyzeChunk(*capture_audio_buffer->split_data_f());
+  beamformer->ProcessChunk(*capture_audio_buffer->split_data_f(),
+                           capture_audio_buffer->split_data_f());
   capture_audio_buffer->set_num_channels(1);
-  beamformer->PostFilter(capture_audio_buffer->split_data_f());
 
   if (sample_rate_hz > AudioProcessing::kSampleRate16kHz) {
     capture_audio_buffer->MergeFrequencyBands();
@@ -81,7 +81,7 @@ void RunBitExactnessTest(int sample_rate_hz,
                          const std::vector<Point>& array_geometry,
                          const SphericalPointf& target_direction,
                          rtc::ArrayView<const float> output_reference) {
-  NonlinearBeamformer beamformer(array_geometry, 1u, target_direction);
+  NonlinearBeamformer beamformer(array_geometry, target_direction);
   beamformer.Initialize(AudioProcessing::kChunkSizeMs,
                         BeamformerSampleRate(sample_rate_hz));
 
@@ -159,7 +159,7 @@ TEST(NonlinearBeamformerTest, AimingModifiesBeam) {
   std::vector<Point> array_geometry;
   array_geometry.push_back(Point(-0.025f, 0.f, 0.f));
   array_geometry.push_back(Point(0.025f, 0.f, 0.f));
-  NonlinearBeamformer bf(array_geometry, 1u);
+  NonlinearBeamformer bf(array_geometry);
   bf.Initialize(kChunkSizeMs, kSampleRateHz);
   // The default constructor parameter sets the target angle to PI / 2.
   Verify(&bf, static_cast<float>(M_PI) / 2.f);
@@ -176,7 +176,7 @@ TEST(NonlinearBeamformerTest, InterfAnglesTakeAmbiguityIntoAccount) {
     array_geometry.push_back(Point(-0.1f, 0.f, 0.f));
     array_geometry.push_back(Point(0.f, 0.f, 0.f));
     array_geometry.push_back(Point(0.2f, 0.f, 0.f));
-    NonlinearBeamformer bf(array_geometry, 1u);
+    NonlinearBeamformer bf(array_geometry);
     bf.Initialize(kChunkSizeMs, kSampleRateHz);
     EXPECT_EQ(2u, bf.interf_angles_radians_.size());
     EXPECT_FLOAT_EQ(M_PI / 2.f - bf.away_radians_,
@@ -197,7 +197,7 @@ TEST(NonlinearBeamformerTest, InterfAnglesTakeAmbiguityIntoAccount) {
     array_geometry.push_back(Point(0.2f, 0.f, 0.f));
     array_geometry.push_back(Point(0.1f, 0.f, 0.2f));
     array_geometry.push_back(Point(0.f, 0.f, -0.1f));
-    NonlinearBeamformer bf(array_geometry, 1u);
+    NonlinearBeamformer bf(array_geometry);
     bf.Initialize(kChunkSizeMs, kSampleRateHz);
     EXPECT_EQ(2u, bf.interf_angles_radians_.size());
     EXPECT_FLOAT_EQ(M_PI / 2.f - bf.away_radians_,
@@ -216,7 +216,7 @@ TEST(NonlinearBeamformerTest, InterfAnglesTakeAmbiguityIntoAccount) {
     array_geometry.push_back(Point(0.f, 0.f, 0.f));
     array_geometry.push_back(Point(0.2f, 0.f, 0.f));
     array_geometry.push_back(Point(0.f, 0.1f, -0.2f));
-    NonlinearBeamformer bf(array_geometry, 1u);
+    NonlinearBeamformer bf(array_geometry);
     bf.Initialize(kChunkSizeMs, kSampleRateHz);
     EXPECT_EQ(2u, bf.interf_angles_radians_.size());
     EXPECT_FLOAT_EQ(M_PI / 2.f - bf.away_radians_,
@@ -235,7 +235,7 @@ TEST(NonlinearBeamformerTest, InterfAnglesTakeAmbiguityIntoAccount) {
     array_geometry.push_back(Point(0.1f, 0.f, 0.f));
     array_geometry.push_back(Point(0.f, 0.2f, 0.f));
     array_geometry.push_back(Point(0.f, 0.f, 0.3f));
-    NonlinearBeamformer bf(array_geometry, 1u);
+    NonlinearBeamformer bf(array_geometry);
     bf.Initialize(kChunkSizeMs, kSampleRateHz);
     EXPECT_EQ(2u, bf.interf_angles_radians_.size());
     EXPECT_FLOAT_EQ(M_PI / 2.f - bf.away_radians_,
@@ -262,8 +262,8 @@ TEST(BeamformerBitExactnessTest,
 
 TEST(BeamformerBitExactnessTest,
      Stereo16kHz_ArrayGeometry1_TargetDirection1) {
-  const float kOutputReference[] = {-0.000077f, -0.000147f, -0.000138f,
-                                    -0.000077f, -0.000147f, -0.000138f};
+  const float kOutputReference[] = {0.000064f, 0.000211f, 0.000075f,
+                                    0.000064f, 0.000211f, 0.000075f};
 
   RunBitExactnessTest(AudioProcessing::kSampleRate16kHz, CreateArrayGeometry(1),
                       TargetDirection1, kOutputReference);
@@ -271,8 +271,8 @@ TEST(BeamformerBitExactnessTest,
 
 TEST(BeamformerBitExactnessTest,
      Stereo32kHz_ArrayGeometry1_TargetDirection1) {
-  const float kOutputReference[] = {-0.000061f, -0.000061f, -0.000061f,
-                                    -0.000061f, -0.000061f, -0.000061f};
+  const float kOutputReference[] = {0.000183f, 0.000183f, 0.000183f,
+                                    0.000183f, 0.000183f, 0.000183f};
 
   RunBitExactnessTest(AudioProcessing::kSampleRate32kHz, CreateArrayGeometry(1),
                       TargetDirection1, kOutputReference);
@@ -280,8 +280,8 @@ TEST(BeamformerBitExactnessTest,
 
 TEST(BeamformerBitExactnessTest,
      Stereo48kHz_ArrayGeometry1_TargetDirection1) {
-  const float kOutputReference[] = {0.000450f, 0.000436f, 0.000433f,
-                                    0.000450f, 0.000436f, 0.000433f};
+  const float kOutputReference[] = {0.000155f, 0.000152f, 0.000159f,
+                                    0.000155f, 0.000152f, 0.000159f};
 
   RunBitExactnessTest(AudioProcessing::kSampleRate48kHz, CreateArrayGeometry(1),
                       TargetDirection1, kOutputReference);
@@ -300,8 +300,8 @@ TEST(BeamformerBitExactnessTest,
 
 TEST(BeamformerBitExactnessTest,
      Stereo16kHz_ArrayGeometry1_TargetDirection2) {
-  const float kOutputReference[] = {0.000221f, -0.000249f, 0.000140f,
-                                    0.000221f, -0.000249f, 0.000140f};
+  const float kOutputReference[] = {0.001144f, -0.001026f, 0.001074f,
+                                    0.001144f, -0.001026f, 0.001074f};
 
   RunBitExactnessTest(AudioProcessing::kSampleRate16kHz, CreateArrayGeometry(1),
                       TargetDirection2, kOutputReference);
@@ -309,8 +309,8 @@ TEST(BeamformerBitExactnessTest,
 
 TEST(BeamformerBitExactnessTest,
      Stereo32kHz_ArrayGeometry1_TargetDirection2) {
-  const float kOutputReference[] = {0.000763f, -0.000336f, 0.000549f,
-                                    0.000763f, -0.000336f, 0.000549f};
+  const float kOutputReference[] = {0.000732f, -0.000397f, 0.000610f,
+                                    0.000732f, -0.000397f, 0.000610f};
 
   RunBitExactnessTest(AudioProcessing::kSampleRate32kHz, CreateArrayGeometry(1),
                       TargetDirection2, kOutputReference);
@@ -318,8 +318,8 @@ TEST(BeamformerBitExactnessTest,
 
 TEST(BeamformerBitExactnessTest,
      Stereo48kHz_ArrayGeometry1_TargetDirection2) {
-  const float kOutputReference[] = {-0.000004f, -0.000494f, 0.000255f,
-                                    -0.000004f, -0.000494f, 0.000255f};
+  const float kOutputReference[] = {0.000106f, -0.000464f, 0.000188f,
+                                    0.000106f, -0.000464f, 0.000188f};
 
   RunBitExactnessTest(AudioProcessing::kSampleRate48kHz, CreateArrayGeometry(1),
                       TargetDirection2, kOutputReference);
@@ -327,8 +327,8 @@ TEST(BeamformerBitExactnessTest,
 
 TEST(BeamformerBitExactnessTest,
      Stereo8kHz_ArrayGeometry2_TargetDirection2) {
-  const float kOutputReference[] = {-0.000914f, 0.002170f, -0.002382f,
-                                    -0.000914f, 0.002170f, -0.002382f};
+  const float kOutputReference[] = {-0.000649f, 0.000576f, -0.000148f,
+                                    -0.000649f, 0.000576f, -0.000148f};
 
   RunBitExactnessTest(AudioProcessing::kSampleRate8kHz, CreateArrayGeometry(2),
                       TargetDirection2, kOutputReference);
@@ -336,8 +336,8 @@ TEST(BeamformerBitExactnessTest,
 
 TEST(BeamformerBitExactnessTest,
      Stereo16kHz_ArrayGeometry2_TargetDirection2) {
-  const float kOutputReference[] = {0.000179f, -0.000179f, 0.000081f,
-                                    0.000179f, -0.000179f, 0.000081f};
+  const float kOutputReference[] = {0.000808f, -0.000695f, 0.000739f,
+                                    0.000808f, -0.000695f, 0.000739f};
 
   RunBitExactnessTest(AudioProcessing::kSampleRate16kHz, CreateArrayGeometry(2),
                       TargetDirection2, kOutputReference);
@@ -345,8 +345,8 @@ TEST(BeamformerBitExactnessTest,
 
 TEST(BeamformerBitExactnessTest,
      Stereo32kHz_ArrayGeometry2_TargetDirection2) {
-  const float kOutputReference[] = {0.000549f, -0.000214f, 0.000366f,
-                                    0.000549f, -0.000214f, 0.000366f};
+  const float kOutputReference[] = {0.000580f, -0.000183f, 0.000458f,
+                                    0.000580f, -0.000183f, 0.000458f};
 
   RunBitExactnessTest(AudioProcessing::kSampleRate32kHz, CreateArrayGeometry(2),
                       TargetDirection2, kOutputReference);
@@ -354,8 +354,8 @@ TEST(BeamformerBitExactnessTest,
 
 TEST(BeamformerBitExactnessTest,
      Stereo48kHz_ArrayGeometry2_TargetDirection2) {
-  const float kOutputReference[] = {0.000019f, -0.000310f, 0.000182f,
-                                    0.000019f, -0.000310f, 0.000182f};
+  const float kOutputReference[] = {0.000075f, -0.000288f, 0.000156f,
+                                    0.000075f, -0.000288f, 0.000156f};
 
   RunBitExactnessTest(AudioProcessing::kSampleRate48kHz, CreateArrayGeometry(2),
                       TargetDirection2, kOutputReference);

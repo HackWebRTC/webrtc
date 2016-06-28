@@ -66,6 +66,7 @@
         'audio_processing_impl.h',
         'beamformer/array_util.cc',
         'beamformer/array_util.h',
+        'beamformer/beamformer.h',
         'beamformer/complex_matrix.h',
         'beamformer/covariance_matrix_generator.cc',
         'beamformer/covariance_matrix_generator.h',
