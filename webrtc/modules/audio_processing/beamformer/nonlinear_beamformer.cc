@@ -122,18 +122,6 @@ size_t Round(float x) {
   return static_cast<size_t>(std::floor(x + 0.5f));
 }
 
-// Calculates the sum of absolute values of a complex matrix.
-float SumAbs(const ComplexMatrix<float>& mat) {
-  float sum_abs = 0.f;
-  const complex<float>* const* mat_els = mat.elements();
-  for (size_t i = 0; i < mat.num_rows(); ++i) {
-    for (size_t j = 0; j < mat.num_columns(); ++j) {
-      sum_abs += std::abs(mat_els[i][j]);
-    }
-  }
-  return sum_abs;
-}
-
 // Calculates the sum of squares of a complex matrix.
 float SumSquares(const ComplexMatrix<float>& mat) {
   float sum_squares = 0.f;
@@ -183,10 +171,46 @@ const float NonlinearBeamformer::kHalfBeamWidthRadians = DegreesToRadians(20.f);
 // static
 const size_t NonlinearBeamformer::kNumFreqBins;
 
+PostFilterTransform::PostFilterTransform(size_t num_channels,
+                                         size_t chunk_length,
+                                         float* window,
+                                         size_t fft_size)
+    : transform_(num_channels,
+                 num_channels,
+                 chunk_length,
+                 window,
+                 fft_size,
+                 fft_size / 2,
+                 this),
+      num_freq_bins_(fft_size / 2 + 1) {}
+
+void PostFilterTransform::ProcessChunk(float* const* data, float* final_mask) {
+  final_mask_ = final_mask;
+  transform_.ProcessChunk(data, data);
+}
+
+void PostFilterTransform::ProcessAudioBlock(const complex<float>* const* input,
+                                            size_t num_input_channels,
+                                            size_t num_freq_bins,
+                                            size_t num_output_channels,
+                                            complex<float>* const* output) {
+  RTC_DCHECK_EQ(num_freq_bins_, num_freq_bins);
+  RTC_DCHECK_EQ(num_input_channels, num_output_channels);
+
+  for (size_t ch = 0; ch < num_input_channels; ++ch) {
+    for (size_t f_ix = 0; f_ix < num_freq_bins_; ++f_ix) {
+      output[ch][f_ix] =
+          kCompensationGain * final_mask_[f_ix] * input[ch][f_ix];
+    }
+  }
+}
+
 NonlinearBeamformer::NonlinearBeamformer(
     const std::vector<Point>& array_geometry,
+    size_t num_postfilter_channels,
     SphericalPointf target_direction)
     : num_input_channels_(array_geometry.size()),
+      num_postfilter_channels_(num_postfilter_channels),
       array_geometry_(GetCenteredArray(array_geometry)),
       array_normal_(GetArrayNormalIfExists(array_geometry)),
       min_mic_spacing_(GetMinimumSpacing(array_geometry)),
@@ -208,18 +232,21 @@ void NonlinearBeamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
   hold_target_blocks_ = kHoldTargetSeconds * 2 * sample_rate_hz / kFftSize;
   interference_blocks_count_ = hold_target_blocks_;
 
-  lapped_transform_.reset(new LappedTransform(num_input_channels_,
-                                              1,
-                                              chunk_length_,
-                                              window_,
-                                              kFftSize,
-                                              kFftSize / 2,
-                                              this));
+  process_transform_.reset(new LappedTransform(num_input_channels_,
+                                               0u,
+                                               chunk_length_,
+                                               window_,
+                                               kFftSize,
+                                               kFftSize / 2,
+                                               this));
+  postfilter_transform_.reset(new PostFilterTransform(
+      num_postfilter_channels_, chunk_length_, window_, kFftSize));
+  const float wave_number_step =
+      (2.f * M_PI * sample_rate_hz_) / (kFftSize * kSpeedOfSoundMeterSeconds);
   for (size_t i = 0; i < kNumFreqBins; ++i) {
     time_smooth_mask_[i] = 1.f;
     final_mask_[i] = 1.f;
-    float freq_hz = (static_cast<float>(i) / kFftSize) * sample_rate_hz_;
-    wave_numbers_[i] = 2 * M_PI * freq_hz / kSpeedOfSoundMeterSeconds;
+    wave_numbers_[i] = i * wave_number_step;
   }
 
   InitLowFrequencyCorrectionRanges();
@@ -306,9 +333,6 @@ void NonlinearBeamformer::InitDelaySumMasks() {
     complex_f norm_factor = sqrt(
         ConjugateDotProduct(delay_sum_masks_[f_ix], delay_sum_masks_[f_ix]));
     delay_sum_masks_[f_ix].Scale(1.f / norm_factor);
-    normalized_delay_sum_masks_[f_ix].CopyFrom(delay_sum_masks_[f_ix]);
-    normalized_delay_sum_masks_[f_ix].Scale(1.f / SumAbs(
-        normalized_delay_sum_masks_[f_ix]));
   }
 }
 
@@ -366,26 +390,33 @@ void NonlinearBeamformer::NormalizeCovMats() {
   }
 }
 
-void NonlinearBeamformer::ProcessChunk(const ChannelBuffer<float>& input,
-                                       ChannelBuffer<float>* output) {
-  RTC_DCHECK_EQ(input.num_channels(), num_input_channels_);
-  RTC_DCHECK_EQ(input.num_frames_per_band(), chunk_length_);
+void NonlinearBeamformer::AnalyzeChunk(const ChannelBuffer<float>& data) {
+  RTC_DCHECK_EQ(data.num_channels(), num_input_channels_);
+  RTC_DCHECK_EQ(data.num_frames_per_band(), chunk_length_);
 
-  float old_high_pass_mask = high_pass_postfilter_mask_;
-  lapped_transform_->ProcessChunk(input.channels(0), output->channels(0));
-  // Ramp up/down for smoothing. 1 mask per 10ms results in audible
-  // discontinuities.
+  old_high_pass_mask_ = high_pass_postfilter_mask_;
+  process_transform_->ProcessChunk(data.channels(0), nullptr);
+}
+
+void NonlinearBeamformer::PostFilter(ChannelBuffer<float>* data) {
+  RTC_DCHECK_EQ(data->num_frames_per_band(), chunk_length_);
+  // TODO(aluebs): Change to RTC_CHECK_EQ once the ChannelBuffer is updated.
+  RTC_DCHECK_GE(data->num_channels(), num_postfilter_channels_);
+
+  postfilter_transform_->ProcessChunk(data->channels(0), final_mask_);
+
+  // Ramp up/down for smoothing is needed in order to avoid discontinuities in
+  // the transitions between 10 ms frames.
   const float ramp_increment =
-      (high_pass_postfilter_mask_ - old_high_pass_mask) /
-      input.num_frames_per_band();
-  // Apply the smoothed high-pass mask to the first channel of each band.
-  // This can be done because the effect of the linear beamformer is negligible
-  // compared to the post-filter.
-  for (size_t i = 1; i < input.num_bands(); ++i) {
-    float smoothed_mask = old_high_pass_mask;
-    for (size_t j = 0; j < input.num_frames_per_band(); ++j) {
+      (high_pass_postfilter_mask_ - old_high_pass_mask_) /
+      data->num_frames_per_band();
+  for (size_t i = 1; i < data->num_bands(); ++i) {
+    float smoothed_mask = old_high_pass_mask_;
+    for (size_t j = 0; j < data->num_frames_per_band(); ++j) {
       smoothed_mask += ramp_increment;
-      output->channels(i)[0][j] = input.channels(i)[0][j] * smoothed_mask;
+      for (size_t k = 0; k < num_postfilter_channels_; ++k) {
+        data->channels(i)[k][j] *= smoothed_mask;
+      }
     }
   }
 }
@@ -414,7 +445,7 @@ void NonlinearBeamformer::ProcessAudioBlock(const complex_f* const* input,
                                             complex_f* const* output) {
   RTC_CHECK_EQ(kNumFreqBins, num_freq_bins);
   RTC_CHECK_EQ(num_input_channels_, num_input_channels);
-  RTC_CHECK_EQ(1u, num_output_channels);
+  RTC_CHECK_EQ(0u, num_output_channels);
 
   // Calculating the post-filter masks. Note that we need two for each
   // frequency bin to account for the positive and negative interferer
@@ -456,7 +487,6 @@ void NonlinearBeamformer::ProcessAudioBlock(const complex_f* const* input,
   ApplyLowFrequencyCorrection();
   ApplyHighFrequencyCorrection();
   ApplyMaskFrequencySmoothing();
-  ApplyMasks(input, output);
 }
 
 float NonlinearBeamformer::CalculatePostfilterMask(
@@ -482,22 +512,6 @@ float NonlinearBeamformer::CalculatePostfilterMask(
   }
 
   return numerator / denominator;
-}
-
-void NonlinearBeamformer::ApplyMasks(const complex_f* const* input,
-                                     complex_f* const* output) {
-  complex_f* output_channel = output[0];
-  for (size_t f_ix = 0; f_ix < kNumFreqBins; ++f_ix) {
-    output_channel[f_ix] = complex_f(0.f, 0.f);
-
-    const complex_f* delay_sum_mask_els =
-        normalized_delay_sum_masks_[f_ix].elements()[0];
-    for (size_t c_ix = 0; c_ix < num_input_channels_; ++c_ix) {
-      output_channel[f_ix] += input[c_ix][f_ix] * delay_sum_mask_els[c_ix];
-    }
-
-    output_channel[f_ix] *= kCompensationGain * final_mask_[f_ix];
-  }
 }
 
 // Smooth new_mask_ into time_smooth_mask_.
