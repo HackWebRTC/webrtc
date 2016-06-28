@@ -35,16 +35,29 @@ public class Camera1Enumerator implements CameraEnumerator {
     this.captureToTexture = captureToTexture;
   }
 
+  // Returns device names that can be used to create a new VideoCapturerAndroid.
+  @Override
+  public String[] getDeviceNames() {
+    String[] names = new String[android.hardware.Camera.getNumberOfCameras()];
+    for (int i = 0; i < android.hardware.Camera.getNumberOfCameras(); ++i) {
+      names[i] = getDeviceName(i);
+    }
+    return names;
+  }
+
+  @Override
   public boolean isFrontFacing(String deviceName) {
     android.hardware.Camera.CameraInfo info = getCameraInfo(getCameraIndex(deviceName));
     return info.facing == android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT;
   }
 
+  @Override
   public boolean isBackFacing(String deviceName) {
     android.hardware.Camera.CameraInfo info = getCameraInfo(getCameraIndex(deviceName));
     return info.facing == android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK;
   }
 
+  @Override
   public CameraVideoCapturer createCapturer(String deviceName,
       CameraVideoCapturer.CameraEventsHandler eventsHandler) {
     return new VideoCapturerAndroid(deviceName, eventsHandler, captureToTexture);
@@ -132,15 +145,6 @@ public class Camera1Enumerator implements CameraEnumerator {
           range[android.hardware.Camera.Parameters.PREVIEW_FPS_MAX_INDEX]));
     }
     return ranges;
-  }
-
-  // Returns device names that can be used to create a new VideoCapturerAndroid.
-  public String[] getDeviceNames() {
-    String[] names = new String[android.hardware.Camera.getNumberOfCameras()];
-    for (int i = 0; i < android.hardware.Camera.getNumberOfCameras(); ++i) {
-      names[i] = getDeviceName(i);
-    }
-    return names;
   }
 
   // Returns the camera index for camera with name |deviceName|, or throws IllegalArgumentException
