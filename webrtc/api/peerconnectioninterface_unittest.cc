@@ -1066,6 +1066,28 @@ TEST_F(PeerConnectionInterfaceTest, CreatePeerConnectionWithPooledCandidates) {
             session->flags() & cricket::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS);
 }
 
+// Test that the PeerConnection initializes the port allocator passed into it,
+// and on the correct thread.
+TEST_F(PeerConnectionInterfaceTest,
+       CreatePeerConnectionInitializesPortAllocator) {
+  rtc::Thread network_thread;
+  network_thread.Start();
+  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory(
+      webrtc::CreatePeerConnectionFactory(
+          &network_thread, rtc::Thread::Current(), rtc::Thread::Current(),
+          nullptr, nullptr, nullptr));
+  std::unique_ptr<cricket::FakePortAllocator> port_allocator(
+      new cricket::FakePortAllocator(&network_thread, nullptr));
+  cricket::FakePortAllocator* raw_port_allocator = port_allocator.get();
+  PeerConnectionInterface::RTCConfiguration config;
+  rtc::scoped_refptr<PeerConnectionInterface> pc(
+      pc_factory->CreatePeerConnection(
+          config, nullptr, std::move(port_allocator), nullptr, &observer_));
+  // FakePortAllocator RTC_CHECKs that it's initialized on the right thread,
+  // so all we have to do here is check that it's initialized.
+  EXPECT_TRUE(raw_port_allocator->initialized());
+}
+
 TEST_F(PeerConnectionInterfaceTest, AddStreams) {
   CreatePeerConnection();
   AddVideoStream(kStreamLabel1);
