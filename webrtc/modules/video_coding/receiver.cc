@@ -138,12 +138,12 @@ void VCMReceiver::TriggerDecoderShutdown() {
 }
 
 VCMEncodedFrame* VCMReceiver::FrameForDecoding(uint16_t max_wait_time_ms,
-                                               int64_t* next_render_time_ms,
                                                bool prefer_late_decoding) {
   const int64_t start_time_ms = clock_->TimeInMilliseconds();
   uint32_t frame_timestamp = 0;
   int min_playout_delay_ms = -1;
   int max_playout_delay_ms = -1;
+  int64_t render_time_ms = 0;
   // Exhaust wait time to get a complete frame for decoding.
   VCMEncodedFrame* found_frame =
       jitter_buffer_.NextCompleteFrame(max_wait_time_ms);
@@ -167,14 +167,14 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(uint16_t max_wait_time_ms,
   timing_->SetJitterDelay(jitter_buffer_.EstimatedJitterMs());
   const int64_t now_ms = clock_->TimeInMilliseconds();
   timing_->UpdateCurrentDelay(frame_timestamp);
-  *next_render_time_ms = timing_->RenderTimeMs(frame_timestamp, now_ms);
+  render_time_ms = timing_->RenderTimeMs(frame_timestamp, now_ms);
   // Check render timing.
   bool timing_error = false;
   // Assume that render timing errors are due to changes in the video stream.
-  if (*next_render_time_ms < 0) {
+  if (render_time_ms < 0) {
     timing_error = true;
-  } else if (std::abs(*next_render_time_ms - now_ms) > max_video_delay_ms_) {
-    int frame_delay = static_cast<int>(std::abs(*next_render_time_ms - now_ms));
+  } else if (std::abs(render_time_ms - now_ms) > max_video_delay_ms_) {
+    int frame_delay = static_cast<int>(std::abs(render_time_ms - now_ms));
     LOG(LS_WARNING) << "A frame about to be decoded is out of the configured "
                     << "delay bounds (" << frame_delay << " > "
                     << max_video_delay_ms_
@@ -201,8 +201,8 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(uint16_t max_wait_time_ms,
         static_cast<int32_t>(clock_->TimeInMilliseconds() - start_time_ms);
     uint16_t new_max_wait_time =
         static_cast<uint16_t>(VCM_MAX(available_wait_time, 0));
-    uint32_t wait_time_ms = timing_->MaxWaitingTime(
-        *next_render_time_ms, clock_->TimeInMilliseconds());
+    uint32_t wait_time_ms =
+        timing_->MaxWaitingTime(render_time_ms, clock_->TimeInMilliseconds());
     if (new_max_wait_time < wait_time_ms) {
       // We're not allowed to wait until the frame is supposed to be rendered,
       // waiting as long as we're allowed to avoid busy looping, and then return
@@ -219,9 +219,9 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(uint16_t max_wait_time_ms,
   if (frame == NULL) {
     return NULL;
   }
-  frame->SetRenderTime(*next_render_time_ms);
+  frame->SetRenderTime(render_time_ms);
   TRACE_EVENT_ASYNC_STEP1("webrtc", "Video", frame->TimeStamp(), "SetRenderTS",
-                          "render_time", *next_render_time_ms);
+                          "render_time", frame->RenderTimeMs());
   if (!frame->Complete()) {
     // Update stats for incomplete frames.
     bool retransmitted = false;

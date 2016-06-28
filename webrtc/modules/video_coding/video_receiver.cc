@@ -244,15 +244,14 @@ void VideoReceiver::TriggerDecoderShutdown() {
 // Decode next frame, blocking.
 // Should be called as often as possible to get the most out of the decoder.
 int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
-  int64_t nextRenderTimeMs;
   bool prefer_late_decoding = false;
   {
     rtc::CritScope cs(&receive_crit_);
     prefer_late_decoding = _codecDataBase.PrefersLateDecoding();
   }
 
-  VCMEncodedFrame* frame = _receiver.FrameForDecoding(
-      maxWaitTimeMs, &nextRenderTimeMs, prefer_late_decoding);
+  VCMEncodedFrame* frame =
+      _receiver.FrameForDecoding(maxWaitTimeMs, prefer_late_decoding);
 
   if (!frame)
     return VCM_FRAME_NOT_READY;
