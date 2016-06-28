@@ -1019,12 +1019,12 @@ TEST_F(TurnPortTest, TestChannelBindGetErrorResponse) {
 
   EXPECT_TRUE_SIMULATED_WAIT(CheckConnectionFailedAndPruned(conn1),
                              kSimulatedRtt, fake_clock_);
-  // Verify that no packet can be sent after a bind request error.
+  // Verify that packets are allowed to be sent after a bind request error.
+  // They'll just use a send indication instead.
   conn2->SignalReadPacket.connect(static_cast<TurnPortTest*>(this),
                                   &TurnPortTest::OnUdpReadPacket);
   conn1->Send(data.data(), data.length(), options);
-  SIMULATED_WAIT(!udp_packets_.empty(), kSimulatedRtt, fake_clock_);
-  EXPECT_TRUE(udp_packets_.empty());
+  EXPECT_TRUE_SIMULATED_WAIT(!udp_packets_.empty(), kSimulatedRtt, fake_clock_);
 }
 
 // Do a TURN allocation, establish a UDP connection, and send some data.

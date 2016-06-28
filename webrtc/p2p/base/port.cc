@@ -1525,10 +1525,6 @@ ProxyConnection::ProxyConnection(Port* port,
 
 int ProxyConnection::Send(const void* data, size_t size,
                           const rtc::PacketOptions& options) {
-  if (!ReadyToSendMedia()) {
-    error_ = EWOULDBLOCK;
-    return SOCKET_ERROR;
-  }
   stats_.sent_total_packets++;
   int sent = port_->SendTo(data, size, remote_candidate_.address(),
                            options, true);

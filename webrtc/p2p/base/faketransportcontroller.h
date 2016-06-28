@@ -476,8 +476,6 @@ class FakeCandidatePair : public CandidatePairInterface {
     return remote_candidate_;
   }
 
-  bool ReadyToSendMedia() const override { return true; }
-
  private:
   Candidate local_candidate_;
   Candidate remote_candidate_;

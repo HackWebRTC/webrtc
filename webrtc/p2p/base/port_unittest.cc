@@ -2424,11 +2424,11 @@ TEST_F(PortTest, TestWritableState) {
   ch1.Ping();
   WAIT(!ch2.remote_address().IsNil(), kTimeout);
 
-  // Data should be unsendable until the connection is accepted.
+  // Data should be sendable before the connection is accepted.
   char data[] = "abcd";
   int data_size = arraysize(data);
   rtc::PacketOptions options;
-  EXPECT_EQ(SOCKET_ERROR, ch1.conn()->Send(data, data_size, options));
+  EXPECT_EQ(data_size, ch1.conn()->Send(data, data_size, options));
 
   // Accept the connection to return the binding response, transition to
   // writable, and allow data to be sent.
@@ -2464,8 +2464,9 @@ TEST_F(PortTest, TestWritableState) {
                           500u);
   EXPECT_EQ(Connection::STATE_WRITE_TIMEOUT, ch1.conn()->write_state());
 
-  // Now that the connection has completely timed out, data send should fail.
-  EXPECT_EQ(SOCKET_ERROR, ch1.conn()->Send(data, data_size, options));
+  // Even if the connection has timed out, the Connection shouldn't block
+  // the sending of data.
+  EXPECT_EQ(data_size, ch1.conn()->Send(data, data_size, options));
 
   ch1.Stop();
   ch2.Stop();

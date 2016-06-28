@@ -246,7 +246,8 @@ class QuicTransportChannel : public TransportChannelImpl,
   void OnSelectedCandidatePairChanged(
       TransportChannel* channel,
       CandidatePairInterface* selected_candidate_pair,
-      int last_sent_packet_id);
+      int last_sent_packet_id,
+      bool ready_to_send);
   void OnChannelStateChanged(TransportChannelImpl* channel);
 
   // Callbacks for |quic_|.

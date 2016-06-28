@@ -222,7 +222,8 @@ class BaseChannel
   void OnSelectedCandidatePairChanged(
       TransportChannel* channel,
       CandidatePairInterface* selected_candidate_pair,
-      int last_sent_packet_id);
+      int last_sent_packet_id,
+      bool ready_to_send);
 
   bool PacketIsRtcp(const TransportChannel* channel, const char* data,
                     size_t len);

@@ -601,15 +601,15 @@ void BaseChannel::OnDtlsState(TransportChannel* channel,
 void BaseChannel::OnSelectedCandidatePairChanged(
     TransportChannel* channel,
     CandidatePairInterface* selected_candidate_pair,
-    int last_sent_packet_id) {
+    int last_sent_packet_id,
+    bool ready_to_send) {
   ASSERT(channel == transport_channel_ || channel == rtcp_transport_channel_);
   RTC_DCHECK(network_thread_->IsCurrent());
   std::string transport_name = channel->transport_name();
   rtc::NetworkRoute network_route;
   if (selected_candidate_pair) {
     network_route = rtc::NetworkRoute(
-        selected_candidate_pair->ReadyToSendMedia(),
-        selected_candidate_pair->local_candidate().network_id(),
+        ready_to_send, selected_candidate_pair->local_candidate().network_id(),
         selected_candidate_pair->remote_candidate().network_id(),
         last_sent_packet_id);
   }

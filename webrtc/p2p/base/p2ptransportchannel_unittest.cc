@@ -1698,6 +1698,10 @@ TEST_F(P2PTransportChannelTest, TurnToTurnPresumedWritable) {
   // it has a TURN-TURN pair.
   EXPECT_TRUE(ep1_ch1()->writable());
   EXPECT_TRUE(GetEndpoint(0)->ready_to_send_);
+  // Also make sure we can immediately send packets.
+  const char* data = "test";
+  int len = static_cast<int>(strlen(data));
+  EXPECT_EQ(len, SendData(ep1_ch1(), data, len));
 }
 
 // Test that a TURN/peer reflexive candidate pair is also presumed writable.
@@ -2233,7 +2237,8 @@ class P2PTransportChannelPingTest : public testing::Test,
   void OnSelectedCandidatePairChanged(
       TransportChannel* transport_channel,
       CandidatePairInterface* selected_candidate_pair,
-      int last_sent_packet_id) {
+      int last_sent_packet_id,
+      bool ready_to_send) {
     last_selected_candidate_pair_ = selected_candidate_pair;
     last_sent_packet_id_ = last_sent_packet_id;
     ++selected_candidate_pair_switches_;
@@ -2639,7 +2644,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   int last_packet_id = 0;
   const char* data = "ABCDEFGH";
   int len = static_cast<int>(strlen(data));
-  SendData(ch, data, len, ++last_packet_id);
+  EXPECT_EQ(-1, SendData(ch, data, len, ++last_packet_id));
   // When a higher priority candidate comes in, the new connection is chosen
   // as the selected connection.
   ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 10));
@@ -2647,13 +2652,13 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   ASSERT_TRUE(conn2 != nullptr);
   EXPECT_EQ(conn2, ch.selected_connection());
   EXPECT_EQ(conn2, last_selected_candidate_pair());
-  EXPECT_EQ(last_packet_id, last_sent_packet_id());
+  EXPECT_EQ(-1, last_sent_packet_id());
   EXPECT_FALSE(channel_ready_to_send());
 
   // If a stun request with use-candidate attribute arrives, the receiving
   // connection will be set as the selected connection, even though
   // its priority is lower.
-  SendData(ch, data, len, ++last_packet_id);
+  EXPECT_EQ(-1, SendData(ch, data, len, ++last_packet_id));
   ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "3.3.3.3", 3, 1));
   Connection* conn3 = WaitForConnectionTo(&ch, "3.3.3.3", 3);
   ASSERT_TRUE(conn3 != nullptr);
@@ -2666,13 +2671,13 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   conn3->SignalNominated(conn3);
   EXPECT_EQ(conn3, ch.selected_connection());
   EXPECT_EQ(conn3, last_selected_candidate_pair());
-  EXPECT_EQ(last_packet_id, last_sent_packet_id());
+  EXPECT_EQ(-1, last_sent_packet_id());
   EXPECT_TRUE(channel_ready_to_send());
 
   // Even if another higher priority candidate arrives, it will not be set as
   // the selected connection because the selected connection is nominated by
   // the controlling side.
-  SendData(ch, data, len, ++last_packet_id);
+  EXPECT_EQ(len, SendData(ch, data, len, ++last_packet_id));
   ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "4.4.4.4", 4, 100));
   Connection* conn4 = WaitForConnectionTo(&ch, "4.4.4.4", 4);
   ASSERT_TRUE(conn4 != nullptr);

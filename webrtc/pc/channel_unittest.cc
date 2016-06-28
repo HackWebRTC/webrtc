@@ -915,8 +915,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     media_channel1->set_num_network_route_changes(0);
     network_thread_->Invoke<void>(RTC_FROM_HERE, [transport_channel1] {
       // The transport channel becomes disconnected.
-      transport_channel1->SignalSelectedCandidatePairChanged(transport_channel1,
-                                                             nullptr, -1);
+      transport_channel1->SignalSelectedCandidatePairChanged(
+          transport_channel1, nullptr, -1, false);
     });
     WaitForThreads();
     EXPECT_EQ(1, media_channel1->num_network_route_changes());
@@ -933,7 +933,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
           transport_controller1_->CreateFakeCandidatePair(
               local_address, kLocalNetId, remote_address, kRemoteNetId));
       transport_channel1->SignalSelectedCandidatePairChanged(
-          transport_channel1, candidate_pair.get(), kLastPacketId);
+          transport_channel1, candidate_pair.get(), kLastPacketId, true);
     });
     WaitForThreads();
     EXPECT_EQ(1, media_channel1->num_network_route_changes());

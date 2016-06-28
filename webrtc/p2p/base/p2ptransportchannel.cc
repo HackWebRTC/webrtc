@@ -888,7 +888,9 @@ int P2PTransportChannel::SendPacket(const char *data, size_t len,
     error_ = EINVAL;
     return -1;
   }
-  if (selected_connection_ == NULL) {
+  // If we don't think the connection is working yet, return EWOULDBLOCK
+  // instead of sending a packet that will probably be dropped.
+  if (!ReadyToSend()) {
     error_ = EWOULDBLOCK;
     return -1;
   }
@@ -1228,7 +1230,7 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn) {
     LOG_J(LS_INFO, this) << "No selected connection";
   }
   SignalSelectedCandidatePairChanged(this, selected_connection_,
-                                     last_sent_packet_id_);
+                                     last_sent_packet_id_, ReadyToSend());
 }
 
 // Warning: UpdateState should eventually be called whenever a connection
@@ -1320,6 +1322,17 @@ void P2PTransportChannel::HandleAllTimedOut() {
 
 bool P2PTransportChannel::weak() const {
   return !selected_connection_ || selected_connection_->weak();
+}
+
+bool P2PTransportChannel::ReadyToSend() const {
+  // Note that we allow sending on an unreliable connection, because it's
+  // possible that it became unreliable simply due to bad chance.
+  // So this shouldn't prevent attempting to send media.
+  return selected_connection_ != nullptr &&
+         (selected_connection_->writable() ||
+          PresumedWritable(selected_connection_) ||
+          selected_connection_->write_state() ==
+              Connection::STATE_WRITE_UNRELIABLE);
 }
 
 // If we have a selected connection, return it, otherwise return top one in the

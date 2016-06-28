@@ -212,6 +212,8 @@ class P2PTransportChannel : public TransportChannelImpl,
   // A transport channel is weak if the current best connection is either
   // not receiving or not writable, or if there is no best connection at all.
   bool weak() const;
+  // Returns true if it's possible to send packets on this channel.
+  bool ReadyToSend() const;
   void UpdateConnectionStates();
   void RequestSort();
 

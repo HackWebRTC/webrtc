@@ -395,10 +395,10 @@ void QuicTransportChannel::OnRouteChange(TransportChannel* channel,
 void QuicTransportChannel::OnSelectedCandidatePairChanged(
     TransportChannel* channel,
     CandidatePairInterface* selected_candidate_pair,
-    int last_sent_packet_id) {
+    int last_sent_packet_id bool ready_to_send) {
   ASSERT(channel == channel_.get());
   SignalSelectedCandidatePairChanged(this, selected_candidate_pair,
-                                     last_sent_packet_id);
+                                     last_sent_packet_id, ready_to_send);
 }
 
 void QuicTransportChannel::OnChannelStateChanged(
