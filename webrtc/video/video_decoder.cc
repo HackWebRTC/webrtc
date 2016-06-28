@@ -20,7 +20,15 @@ namespace webrtc {
 VideoDecoder* VideoDecoder::Create(VideoDecoder::DecoderType codec_type) {
   switch (codec_type) {
     case kH264:
-      RTC_DCHECK(H264Decoder::IsSupported());
+      if (!H264Decoder::IsSupported()) {
+        // This could happen in a software-fallback for a codec type only
+        // supported externally (e.g. H.264 on iOS or Android) or in current
+        // usage in WebRtcVideoEngine2 if the external decoder fails to be
+        // created.
+        LOG(LS_ERROR) << "Unable to create an H.264 decoder fallback. "
+                      << "Decoding of this stream will be broken.";
+        return new NullVideoDecoder();
+      }
       return H264Decoder::Create();
     case kVp8:
       return VP8Decoder::Create();
