@@ -410,8 +410,7 @@ int32_t VideoReceiver::IncomingPacket(const uint8_t* incomingPayload,
     payloadLength = 0;
   }
   const VCMPacket packet(incomingPayload, payloadLength, rtpInfo);
-  int32_t ret = _receiver.InsertPacket(packet, rtpInfo.type.Video.width,
-                                       rtpInfo.type.Video.height);
+  int32_t ret = _receiver.InsertPacket(packet);
 
   // TODO(holmer): Investigate if this somehow should use the key frame
   // request scheduling to throttle the requests.

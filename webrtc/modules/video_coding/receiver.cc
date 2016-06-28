@@ -110,9 +110,7 @@ void VCMReceiver::Process() {
   jitter_buffer_.Process();
 }
 
-int32_t VCMReceiver::InsertPacket(const VCMPacket& packet,
-                                  uint16_t frame_width,
-                                  uint16_t frame_height) {
+int32_t VCMReceiver::InsertPacket(const VCMPacket& packet) {
   // Insert the packet into the jitter buffer. The packet can either be empty or
   // contain media at this point.
   bool retransmitted = false;

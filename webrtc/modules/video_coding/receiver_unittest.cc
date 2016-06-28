@@ -29,9 +29,6 @@ namespace webrtc {
 
 class TestVCMReceiver : public ::testing::Test {
  protected:
-  enum { kWidth = 640 };
-  enum { kHeight = 480 };
-
   TestVCMReceiver()
       : clock_(new SimulatedClock(0)),
         timing_(clock_.get()),
@@ -48,7 +45,7 @@ class TestVCMReceiver : public ::testing::Test {
     EXPECT_TRUE(packet_available);
     if (!packet_available)
       return kGeneralError;  // Return here to avoid crashes below.
-    return receiver_.InsertPacket(packet, kWidth, kHeight);
+    return receiver_.InsertPacket(packet);
   }
 
   int32_t InsertPacketAndPop(int index) {
@@ -57,7 +54,7 @@ class TestVCMReceiver : public ::testing::Test {
     EXPECT_TRUE(packet_available);
     if (!packet_available)
       return kGeneralError;  // Return here to avoid crashes below.
-    return receiver_.InsertPacket(packet, kWidth, kHeight);
+    return receiver_.InsertPacket(packet);
   }
 
   int32_t InsertFrame(FrameType frame_type, bool complete) {
@@ -338,7 +335,7 @@ class SimulatedClockWithFrames : public SimulatedClock {
     EXPECT_TRUE(packet_available);
     if (!packet_available)
       return;  // Return here to avoid crashes below.
-    receiver_->InsertPacket(packet, 640, 480);
+    receiver_->InsertPacket(packet);
   }
 
   std::queue<TimestampPair> timestamps_;
