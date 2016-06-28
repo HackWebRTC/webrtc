@@ -27,11 +27,11 @@ public class Camera1Enumerator implements CameraEnumerator {
 
   private final boolean captureToTexture;
 
-  Camera1Enumerator() {
+  public Camera1Enumerator() {
     this(true /* captureToTexture */);
   }
 
-  Camera1Enumerator(boolean captureToTexture) {
+  public Camera1Enumerator(boolean captureToTexture) {
     this.captureToTexture = captureToTexture;
   }
 
