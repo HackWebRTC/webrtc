@@ -584,6 +584,11 @@ class TurnPortTest : public testing::Test,
   rtc::PacketOptions options;
 };
 
+TEST_F(TurnPortTest, TestTurnPortType) {
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
+  EXPECT_EQ(cricket::RELAY_PORT_TYPE, turn_port_->Type());
+}
+
 // Do a normal TURN allocation.
 TEST_F(TurnPortTest, TestTurnAllocate) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);

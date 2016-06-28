@@ -168,6 +168,7 @@ UDPPort::UDPPort(rtc::Thread* thread,
                  const std::string& origin,
                  bool emit_local_for_anyaddress)
     : Port(thread,
+           LOCAL_PORT_TYPE,
            factory,
            network,
            socket->GetLocalAddress().ipaddr(),

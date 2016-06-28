@@ -130,6 +130,7 @@ static std::string ComputeFoundation(const std::string& type,
 }
 
 Port::Port(rtc::Thread* thread,
+           const std::string& type,
            rtc::PacketSocketFactory* factory,
            rtc::Network* network,
            const rtc::IPAddress& ip,
@@ -137,6 +138,7 @@ Port::Port(rtc::Thread* thread,
            const std::string& password)
     : thread_(thread),
       factory_(factory),
+      type_(type),
       send_retransmit_count_attribute_(false),
       network_(network),
       ip_(ip),

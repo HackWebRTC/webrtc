@@ -190,6 +190,7 @@ TurnPort::TurnPort(rtc::Thread* thread,
                    int server_priority,
                    const std::string& origin)
     : Port(thread,
+           RELAY_PORT_TYPE,
            factory,
            network,
            socket->GetLocalAddress().ipaddr(),
