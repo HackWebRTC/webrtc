@@ -30,9 +30,9 @@ IncomingVideoStream::IncomingVideoStream(
 
   render_thread_checker_.DetachFromThread();
 
+  deliver_buffer_event_->StartTimer(false, kEventStartupTimeMs);
   incoming_render_thread_.Start();
   incoming_render_thread_.SetPriority(rtc::kRealtimePriority);
-  deliver_buffer_event_->StartTimer(false, kEventStartupTimeMs);
 }
 
 IncomingVideoStream::~IncomingVideoStream() {
