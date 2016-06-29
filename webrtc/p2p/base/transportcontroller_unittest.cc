@@ -587,7 +587,6 @@ TEST_F(TransportControllerTest, TestSignalReceiving) {
 TEST_F(TransportControllerTest, TestSignalGatheringStateGathering) {
   FakeTransportChannel* channel = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel);
-  channel->Connect();
   channel->MaybeStartGathering();
   // Should be in the gathering state as soon as any transport starts gathering.
   EXPECT_EQ_WAIT(cricket::kIceGatheringGathering, gathering_state_, kTimeout);
@@ -602,7 +601,6 @@ TEST_F(TransportControllerTest, TestSignalGatheringStateComplete) {
   FakeTransportChannel* channel3 = CreateChannel("data", 1);
   ASSERT_NE(nullptr, channel3);
 
-  channel3->Connect();
   channel3->MaybeStartGathering();
   EXPECT_EQ_WAIT(cricket::kIceGatheringGathering, gathering_state_, kTimeout);
   EXPECT_EQ(1, gathering_state_signal_count_);
@@ -615,9 +613,7 @@ TEST_F(TransportControllerTest, TestSignalGatheringStateComplete) {
   EXPECT_EQ(2, gathering_state_signal_count_);
 
   // Make remaining channels start and then finish gathering.
-  channel1->Connect();
   channel1->MaybeStartGathering();
-  channel2->Connect();
   channel2->MaybeStartGathering();
   EXPECT_EQ_WAIT(cricket::kIceGatheringGathering, gathering_state_, kTimeout);
   EXPECT_EQ(3, gathering_state_signal_count_);

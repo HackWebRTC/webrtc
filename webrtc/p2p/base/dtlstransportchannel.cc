@@ -138,12 +138,6 @@ DtlsTransportChannelWrapper::DtlsTransportChannelWrapper(
 DtlsTransportChannelWrapper::~DtlsTransportChannelWrapper() {
 }
 
-void DtlsTransportChannelWrapper::Connect() {
-  // We should only get a single call to Connect.
-  ASSERT(dtls_state() == DTLS_TRANSPORT_NEW);
-  channel_->Connect();
-}
-
 bool DtlsTransportChannelWrapper::SetLocalCertificate(
     const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
   if (dtls_active_) {

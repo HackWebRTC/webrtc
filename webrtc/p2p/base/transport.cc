@@ -114,7 +114,6 @@ bool Transport::SetLocalTransportDescription(
   }
   if (ret) {
     local_description_set_ = true;
-    ConnectChannels();
   }
 
   return ret;
@@ -181,9 +180,6 @@ TransportChannelImpl* Transport::CreateChannel(int component) {
   if (local_description_ && remote_description_)
     ApplyNegotiatedTransportDescription(channel, nullptr);
 
-  if (connect_requested_) {
-    channel->Connect();
-  }
   return channel;
 }
 
@@ -206,21 +202,8 @@ void Transport::DestroyChannel(int component) {
   DestroyTransportChannel(channel);
 }
 
-void Transport::ConnectChannels() {
-  if (connect_requested_ || channels_.empty())
-    return;
-
-  connect_requested_ = true;
-
-  RTC_DCHECK(local_description_);
-
-  CallChannels(&TransportChannelImpl::Connect);
-}
-
 void Transport::MaybeStartGathering() {
-  if (connect_requested_) {
-    CallChannels(&TransportChannelImpl::MaybeStartGathering);
-  }
+  CallChannels(&TransportChannelImpl::MaybeStartGathering);
 }
 
 void Transport::DestroyAllChannels() {

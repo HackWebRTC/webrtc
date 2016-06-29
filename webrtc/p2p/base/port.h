@@ -593,7 +593,7 @@ class Connection : public CandidatePairInterface,
   // response in milliseconds
   int64_t last_received() const;
 
-  bool stable(int64_t now);
+  bool stable(int64_t now) const;
 
  protected:
   enum { MSG_DELETE = 0, MSG_FIRST_AVAILABLE };
@@ -612,11 +612,11 @@ class Connection : public CandidatePairInterface,
   void OnConnectionRequestTimeout(ConnectionRequest* req);
   void OnConnectionRequestSent(ConnectionRequest* req);
 
-  bool rtt_converged();
+  bool rtt_converged() const;
 
   // If the response is not received within 2 * RTT, the response is assumed to
   // be missing.
-  bool missing_responses(int64_t now);
+  bool missing_responses(int64_t now) const;
 
   // Changes the state and signals if necessary.
   void set_write_state(WriteState value);

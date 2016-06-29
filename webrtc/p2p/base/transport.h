@@ -214,9 +214,6 @@ class Transport : public sigslot::has_slots<> {
     return local_description_set_ && remote_description_set_;
   }
 
-  // Returns whether the client has requested the channels to connect.
-  bool connect_requested() const { return connect_requested_; }
-
   void SetIceRole(IceRole role);
   IceRole ice_role() const { return ice_role_; }
 
@@ -259,9 +256,6 @@ class Transport : public sigslot::has_slots<> {
   bool SetRemoteTransportDescription(const TransportDescription& description,
                                      ContentAction action,
                                      std::string* error_desc);
-
-  // Tells all current and future channels to start connecting.
-  void ConnectChannels();
 
   // Tells channels to start gathering candidates if necessary.
   // Should be called after ConnectChannels() has been called at least once,
@@ -364,7 +358,6 @@ class Transport : public sigslot::has_slots<> {
   const std::string name_;
   PortAllocator* const allocator_;
   bool channels_destroyed_ = false;
-  bool connect_requested_ = false;
   IceRole ice_role_ = ICEROLE_UNKNOWN;
   uint64_t tiebreaker_ = 0;
   IceMode remote_ice_mode_ = ICEMODE_FULL;

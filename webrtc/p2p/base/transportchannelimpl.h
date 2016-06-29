@@ -46,7 +46,7 @@ class TransportChannelImpl : public TransportChannel {
   virtual void SetIceProtocolType(IceProtocolType type) {}
   // SetIceCredentials only need to be implemented by the ICE
   // transport channels. Non-ICE transport channels can just ignore.
-  // The ufrag and pwd should be set before the Connect() is called.
+  // The ufrag and pwd must be set before candidate gathering can start.
   virtual void SetIceCredentials(const std::string& ice_ufrag,
                                  const std::string& ice_pwd)  = 0;
   // SetRemoteIceCredentials only need to be implemented by the ICE
@@ -58,9 +58,6 @@ class TransportChannelImpl : public TransportChannel {
   virtual void SetRemoteIceMode(IceMode mode) = 0;
 
   virtual void SetIceConfig(const IceConfig& config) = 0;
-
-  // Begins the process of attempting to make a connection to the other client.
-  virtual void Connect() = 0;
 
   // Start gathering candidates if not already started, or if an ICE restart
   // occurred.

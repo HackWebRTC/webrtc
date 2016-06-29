@@ -111,12 +111,6 @@ class FakeTransportChannel : public TransportChannelImpl,
     return true;
   }
 
-  void Connect() override {
-    if (state_ == STATE_INIT) {
-      state_ = STATE_CONNECTING;
-    }
-  }
-
   void MaybeStartGathering() override {
     if (gathering_state_ == kIceGatheringNew) {
       gathering_state_ = kIceGatheringGathering;
@@ -145,7 +139,7 @@ class FakeTransportChannel : public TransportChannelImpl,
   // If |asymmetric| is true this method only affects this FakeTransportChannel.
   // If false, it affects |dest| as well.
   void SetDestination(FakeTransportChannel* dest, bool asymmetric = false) {
-    if (state_ == STATE_CONNECTING && dest) {
+    if (state_ == STATE_INIT && dest) {
       // This simulates the delivery of candidates.
       dest_ = dest;
       if (local_cert_ && dest_->local_cert_) {
@@ -160,7 +154,7 @@ class FakeTransportChannel : public TransportChannelImpl,
     } else if (state_ == STATE_CONNECTED && !dest) {
       // Simulates loss of connectivity, by asymmetrically forgetting dest_.
       dest_ = nullptr;
-      state_ = STATE_CONNECTING;
+      state_ = STATE_INIT;
       set_writable(false);
     }
   }
@@ -314,7 +308,7 @@ class FakeTransportChannel : public TransportChannelImpl,
     }
   }
 
-  enum State { STATE_INIT, STATE_CONNECTING, STATE_CONNECTED };
+  enum State { STATE_INIT, STATE_CONNECTED };
   FakeTransportChannel* dest_ = nullptr;
   State state_ = STATE_INIT;
   bool async_ = false;
@@ -578,7 +572,6 @@ class FakeTransportController : public TransportController {
         transport->SetLocalTransportDescription(faketransport_desc,
                                                 cricket::CA_OFFER, nullptr);
       }
-      transport->ConnectChannels();
       transport->MaybeStartGathering();
     }
   }

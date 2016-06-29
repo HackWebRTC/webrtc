@@ -926,6 +926,7 @@ void Connection::set_connected(bool value) {
   if (value != old_value) {
     LOG_J(LS_VERBOSE, this) << "set_connected from: " << old_value << " to "
                             << value;
+    SignalStateChange(this);
   }
 }
 
@@ -1235,7 +1236,7 @@ bool Connection::dead(int64_t now) const {
   return now > (time_created_ms_ + MIN_CONNECTION_LIFETIME);
 }
 
-bool Connection::stable(int64_t now) {
+bool Connection::stable(int64_t now) const {
   // A connection is stable if it's RTT has converged and it isn't missing any
   // responses.  We should send pings at a higher rate until the RTT converges
   // and whenever a ping response is missing (so that we can detect
@@ -1507,11 +1508,11 @@ void Connection::MaybeAddPrflxCandidate(ConnectionRequest* request,
   SignalStateChange(this);
 }
 
-bool Connection::rtt_converged() {
+bool Connection::rtt_converged() const {
   return rtt_samples_ > (RTT_RATIO + 1);
 }
 
-bool Connection::missing_responses(int64_t now) {
+bool Connection::missing_responses(int64_t now) const {
   if (pings_since_last_response_.empty()) {
     return false;
   }

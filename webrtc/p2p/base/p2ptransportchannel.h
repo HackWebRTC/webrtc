@@ -93,7 +93,6 @@ class P2PTransportChannel : public TransportChannelImpl,
   void SetRemoteIceCredentials(const std::string& ice_ufrag,
                                const std::string& ice_pwd) override;
   void SetRemoteIceMode(IceMode mode) override;
-  void Connect() override;
   void MaybeStartGathering() override;
   IceGatheringState gathering_state() const override {
     return gathering_state_;
@@ -215,7 +214,10 @@ class P2PTransportChannel : public TransportChannelImpl,
   // Returns true if it's possible to send packets on this channel.
   bool ReadyToSend() const;
   void UpdateConnectionStates();
-  void RequestSort();
+  void RequestSortAndStateUpdate();
+  // Start pinging if we haven't already started, and we now have a connection
+  // that's pingable.
+  void MaybeStartPinging();
 
   // The methods below return a positive value if a is preferable to b,
   // a negative value if b is preferable, and 0 if they're equally preferable.
@@ -233,7 +235,9 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   bool PresumedWritable(const cricket::Connection* conn) const;
 
-  void SortConnections();
+  bool ShouldSwitchSelectedConnection(const cricket::Connection* selected,
+                                      const cricket::Connection* conn) const;
+  void SortConnectionsAndUpdateState();
   void SwitchSelectedConnection(Connection* conn);
   void UpdateState();
   void HandleAllTimedOut();
@@ -252,9 +256,10 @@ class P2PTransportChannel : public TransportChannelImpl,
   bool IsDuplicateRemoteCandidate(const Candidate& candidate);
   void RememberRemoteCandidate(const Candidate& remote_candidate,
                                PortInterface* origin_port);
-  bool IsPingable(Connection* conn, int64_t now);
+  bool IsPingable(const Connection* conn, int64_t now) const;
   bool IsSelectedConnectionPingable(int64_t now);
-  int CalculateActiveWritablePingInterval(Connection* conn, int64_t now);
+  int CalculateActiveWritablePingInterval(const Connection* conn,
+                                          int64_t now) const;
   void PingConnection(Connection* conn);
   void AddAllocatorSession(std::unique_ptr<PortAllocatorSession> session);
   void AddConnection(Connection* connection);
@@ -283,14 +288,13 @@ class P2PTransportChannel : public TransportChannelImpl,
   void OnNominated(Connection* conn);
 
   void OnMessage(rtc::Message* pmsg) override;
-  void OnSort();
   void OnCheckAndPing();
 
   // Returns true if the new_connection should be selected for transmission.
   bool ShouldSwitchSelectedConnection(Connection* new_connection) const;
 
   void PruneConnections();
-  bool IsBackupConnection(Connection* conn) const;
+  bool IsBackupConnection(const Connection* conn) const;
 
   Connection* FindConnectionToPing(int64_t now);
   Connection* FindOldestConnectionNeedingTriggeredCheck(int64_t now);
@@ -366,6 +370,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   TransportChannelState state_ = TransportChannelState::STATE_INIT;
   IceConfig config_;
   int last_sent_packet_id_ = -1;  // -1 indicates no packet was sent before.
+  bool started_pinging_ = false;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(P2PTransportChannel);
 };

@@ -239,7 +239,6 @@ TEST_F(TransportTest, TestGetStats) {
       cricket::CONNECTIONROLE_NONE, nullptr);
   transport_->SetLocalTransportDescription(faketransport_desc,
                                            cricket::CA_OFFER, nullptr);
-  transport_->ConnectChannels();
   EXPECT_TRUE(transport_->GetStats(&stats));
   ASSERT_EQ(1U, stats.channel_stats.size());
   EXPECT_EQ(1, stats.channel_stats[0].component);

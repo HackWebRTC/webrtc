@@ -176,8 +176,6 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
     channel_->SetRemoteIceMode(mode);
   }
 
-  void Connect() override;
-
   void MaybeStartGathering() override { channel_->MaybeStartGathering(); }
 
   IceGatheringState gathering_state() const override {
