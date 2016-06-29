@@ -494,11 +494,15 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // operation fails the file will be closed. The logging will stop
   // automatically after 10 minutes have passed, or when the StopRtcEventLog
   // function is called.
+  // TODO(ivoc): Make this pure virtual when Chrome is updated.
   virtual bool StartRtcEventLog(rtc::PlatformFile file,
-                                int64_t max_size_bytes) = 0;
+                                int64_t max_size_bytes) {
+    return false;
+  }
 
   // Stops logging the RtcEventLog.
-  virtual void StopRtcEventLog() = 0;
+  // TODO(ivoc): Make this pure virtual when Chrome is updated.
+  virtual void StopRtcEventLog() {}
 
   // Terminates all media and closes the transport.
   virtual void Close() = 0;
