@@ -215,14 +215,7 @@ TEST_F(PeerConnectionEndToEndTest, CreateDataChannelBeforeNegotiate) {
 
 // Verifies that a DataChannel created after the negotiation can transition to
 // "OPEN" and transfer data.
-#if defined(MEMORY_SANITIZER)
-// Fails under MemorySanitizer:
-// See https://code.google.com/p/webrtc/issues/detail?id=3980.
-#define MAYBE_CreateDataChannelAfterNegotiate DISABLED_CreateDataChannelAfterNegotiate
-#else
-#define MAYBE_CreateDataChannelAfterNegotiate CreateDataChannelAfterNegotiate
-#endif
-TEST_F(PeerConnectionEndToEndTest, MAYBE_CreateDataChannelAfterNegotiate) {
+TEST_F(PeerConnectionEndToEndTest, CreateDataChannelAfterNegotiate) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
 
   CreatePcs();
@@ -235,7 +228,10 @@ TEST_F(PeerConnectionEndToEndTest, MAYBE_CreateDataChannelAfterNegotiate) {
   Negotiate();
   WaitForConnection();
 
-  // Creates new DataChannels after the negotiation and verifies their states.
+  // Wait for the data channel created pre-negotiation to be opened.
+  WaitForDataChannelsToOpen(dummy, callee_signaled_data_channels_, 0);
+
+  // Create new DataChannels after the negotiation and verify their states.
   rtc::scoped_refptr<DataChannelInterface> caller_dc(
       caller_->CreateDataChannel("hello", init));
   rtc::scoped_refptr<DataChannelInterface> callee_dc(
