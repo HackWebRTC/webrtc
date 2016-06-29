@@ -75,7 +75,7 @@ void AutoDetectProxy::OnMessage(Message *msg) {
     // If we can't resolve the proxy, skip straight to failure.
     Complete(PROXY_UNKNOWN);
   } else if (MSG_TIMEOUT == msg->message_id) {
-    OnCloseEvent(socket_, ETIMEDOUT);
+    OnTimeout();
   } else {
     // This must be the ST_MSG_WORKER_DONE message that deletes the
     // AutoDetectProxy object. We have observed crashes within this stack that
@@ -275,6 +275,19 @@ void AutoDetectProxy::OnReadEvent(AsyncSocket * socket) {
       return;
   }
 
+  ++next_;
+  Next();
+}
+
+void AutoDetectProxy::OnTimeout() {
+  LOG(LS_VERBOSE) << "Timed out waiting for AsyncResolver.";
+  // If a resolver timed out we shouldn't try to use it again since it may be
+  // in the middle of resolving the last address.
+  if (resolver_) {
+    resolver_->SignalDone.disconnect(this);
+    resolver_->Destroy(false);
+    resolver_ = nullptr;
+  }
   ++next_;
   Next();
 }
