@@ -88,15 +88,6 @@ class MediaEngineInterface {
 
   // Stops recording AEC dump.
   virtual void StopAecDump() = 0;
-
-  // Starts RtcEventLog using existing file. A maximum file size in bytes can be
-  // specified. Logging is stopped just before the size limit is exceeded.
-  // If max_size_bytes is set to a value <= 0, no limit will be used.
-  virtual bool StartRtcEventLog(rtc::PlatformFile file,
-                                int64_t max_size_bytes) = 0;
-
-  // Stops recording an RtcEventLog.
-  virtual void StopRtcEventLog() = 0;
 };
 
 
@@ -174,13 +165,6 @@ class CompositeMediaEngine : public MediaEngineInterface {
   virtual void StopAecDump() {
     voice_.StopAecDump();
   }
-
-  virtual bool StartRtcEventLog(rtc::PlatformFile file,
-                                int64_t max_size_bytes) {
-    return voice_.StartRtcEventLog(file, max_size_bytes);
-  }
-
-  virtual void StopRtcEventLog() { voice_.StopRtcEventLog(); }
 
  protected:
   VOICE voice_;

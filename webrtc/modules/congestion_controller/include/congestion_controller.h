@@ -29,11 +29,11 @@ struct SentPacket;
 namespace webrtc {
 
 class BitrateController;
-class BitrateObserver;
 class Clock;
 class ProcessThread;
 class RemoteBitrateEstimator;
 class RemoteBitrateObserver;
+class RtcEventLog;
 class TransportFeedbackObserver;
 
 class CongestionController : public CallStatsObserver, public Module {
@@ -52,17 +52,14 @@ class CongestionController : public CallStatsObserver, public Module {
    protected:
     virtual ~Observer() {}
   };
-  // Deprecated
-  // TODO(perkj): Remove once no other clients use this ctor.
-  CongestionController(Clock* clock,
-                       BitrateObserver* bitrate_observer,
-                       RemoteBitrateObserver* remote_bitrate_observer);
-  CongestionController(Clock* clock,
-                       Observer* observer,
-                       RemoteBitrateObserver* remote_bitrate_observer);
   CongestionController(Clock* clock,
                        Observer* observer,
                        RemoteBitrateObserver* remote_bitrate_observer,
+                       RtcEventLog* event_log);
+  CongestionController(Clock* clock,
+                       Observer* observer,
+                       RemoteBitrateObserver* remote_bitrate_observer,
+                       RtcEventLog* event_log,
                        std::unique_ptr<PacketRouter> packet_router,
                        std::unique_ptr<PacedSender> pacer);
   virtual ~CongestionController();

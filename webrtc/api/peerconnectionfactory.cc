@@ -220,17 +220,6 @@ void PeerConnectionFactory::StopAecDump() {
   channel_manager_->StopAecDump();
 }
 
-bool PeerConnectionFactory::StartRtcEventLog(rtc::PlatformFile file,
-                                             int64_t max_size_bytes) {
-  RTC_DCHECK(signaling_thread_->IsCurrent());
-  return channel_manager_->StartRtcEventLog(file, max_size_bytes);
-}
-
-void PeerConnectionFactory::StopRtcEventLog() {
-  RTC_DCHECK(signaling_thread_->IsCurrent());
-  channel_manager_->StopRtcEventLog();
-}
-
 rtc::scoped_refptr<PeerConnectionInterface>
 PeerConnectionFactory::CreatePeerConnection(
     const PeerConnectionInterface::RTCConfiguration& configuration_in,

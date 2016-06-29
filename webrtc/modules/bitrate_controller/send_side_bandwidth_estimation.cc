@@ -44,7 +44,7 @@ const size_t kNumUmaRampupMetrics =
 
 }  // namespace
 
-SendSideBandwidthEstimation::SendSideBandwidthEstimation()
+SendSideBandwidthEstimation::SendSideBandwidthEstimation(RtcEventLog* event_log)
     : lost_packets_since_last_loss_update_Q8_(0),
       expected_packets_since_last_loss_update_(0),
       bitrate_(0),
@@ -63,7 +63,9 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation()
       bitrate_at_2_seconds_kbps_(0),
       uma_update_state_(kNoUpdate),
       rampup_uma_stats_updated_(kNumUmaRampupMetrics, false),
-      event_log_(nullptr) {}
+      event_log_(event_log) {
+  RTC_DCHECK(event_log);
+}
 
 SendSideBandwidthEstimation::~SendSideBandwidthEstimation() {}
 
@@ -227,11 +229,9 @@ void SendSideBandwidthEstimation::UpdateEstimate(int64_t now_ms) {
       // rates).
       bitrate_ += 1000;
 
-      if (event_log_) {
-        event_log_->LogBwePacketLossEvent(
-            bitrate_, last_fraction_loss_,
-            expected_packets_since_last_loss_update_);
-      }
+      event_log_->LogBwePacketLossEvent(
+          bitrate_, last_fraction_loss_,
+          expected_packets_since_last_loss_update_);
     } else if (last_fraction_loss_ <= 26) {
       // Loss between 2% - 10%: Do nothing.
     } else {
@@ -250,11 +250,9 @@ void SendSideBandwidthEstimation::UpdateEstimate(int64_t now_ms) {
             512.0);
         has_decreased_since_last_fraction_loss_ = true;
       }
-      if (event_log_) {
-        event_log_->LogBwePacketLossEvent(
-            bitrate_, last_fraction_loss_,
-            expected_packets_since_last_loss_update_);
-      }
+      event_log_->LogBwePacketLossEvent(
+          bitrate_, last_fraction_loss_,
+          expected_packets_since_last_loss_update_);
     }
   }
   bitrate_ = CapBitrateToThresholds(now_ms, bitrate_);
@@ -308,9 +306,4 @@ uint32_t SendSideBandwidthEstimation::CapBitrateToThresholds(
   }
   return bitrate;
 }
-
-void SendSideBandwidthEstimation::SetEventLog(RtcEventLog* event_log) {
-  event_log_ = event_log;
-}
-
 }  // namespace webrtc

@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/call/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/send_time_history.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
 
@@ -46,6 +47,7 @@ class FullBweSender : public BweSender, public RemoteBitrateObserver {
   bool has_received_ack_;
   uint16_t last_acked_seq_num_;
   int64_t last_log_time_ms_;
+  MockRtcEventLog event_log_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(FullBweSender);
 };

@@ -12,12 +12,14 @@
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/call/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/bitrate_controller/send_side_bandwidth_estimation.h"
 
 namespace webrtc {
 
 void TestProbing(bool use_delay_based) {
-  SendSideBandwidthEstimation bwe;
+  MockRtcEventLog event_log;
+  SendSideBandwidthEstimation bwe(&event_log);
   bwe.SetMinMaxBitrate(100000, 1500000);
   bwe.SetSendBitrate(200000);
 
@@ -62,7 +64,11 @@ TEST(SendSideBweTest, InitialDelayBasedBweWithProbing) {
 }
 
 TEST(SendSideBweTest, DoesntReapplyBitrateDecreaseWithoutFollowingRemb) {
-  SendSideBandwidthEstimation bwe;
+  MockRtcEventLog event_log;
+  EXPECT_CALL(event_log,
+              LogBwePacketLossEvent(testing::Gt(0), testing::Gt(0), 0))
+      .Times(3);
+  SendSideBandwidthEstimation bwe(&event_log);
   static const int kMinBitrateBps = 100000;
   static const int kInitialBitrateBps = 1000000;
   bwe.SetMinMaxBitrate(kMinBitrateBps, 1500000);

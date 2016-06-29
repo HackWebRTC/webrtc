@@ -157,7 +157,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
       int(int channel, bool& enabled, VadModes& mode, bool& disabledDTX));
   MOCK_METHOD2(SetOpusMaxPlaybackRate, int(int channel, int frequency_hz));
   MOCK_METHOD2(SetOpusDtx, int(int channel, bool enable_dtx));
-  MOCK_METHOD0(GetEventLog, RtcEventLog*());
 
   // VoEExternalMedia
   MOCK_METHOD3(RegisterExternalMediaProcessing,

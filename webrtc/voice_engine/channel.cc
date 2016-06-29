@@ -19,6 +19,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/call/rtc_event_log.h"
 #include "webrtc/common.h"
 #include "webrtc/config.h"
 #include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
@@ -57,6 +58,87 @@ bool RegisterReceiveCodec(std::unique_ptr<AudioCodingModule>* acm,
 }  // namespace
 
 const int kTelephoneEventAttenuationdB = 10;
+
+class RtcEventLogProxy final : public webrtc::RtcEventLog {
+ public:
+  RtcEventLogProxy() : event_log_(nullptr) {}
+
+  bool StartLogging(const std::string& file_name,
+                    int64_t max_size_bytes) override {
+    RTC_NOTREACHED();
+    return false;
+  }
+
+  bool StartLogging(rtc::PlatformFile log_file,
+                    int64_t max_size_bytes) override {
+    RTC_NOTREACHED();
+    return false;
+  }
+
+  void StopLogging() override { RTC_NOTREACHED(); }
+
+  void LogVideoReceiveStreamConfig(
+      const webrtc::VideoReceiveStream::Config& config) override {
+    rtc::CritScope lock(&crit_);
+    if (event_log_) {
+      event_log_->LogVideoReceiveStreamConfig(config);
+    }
+  }
+
+  void LogVideoSendStreamConfig(
+      const webrtc::VideoSendStream::Config& config) override {
+    rtc::CritScope lock(&crit_);
+    if (event_log_) {
+      event_log_->LogVideoSendStreamConfig(config);
+    }
+  }
+
+  void LogRtpHeader(webrtc::PacketDirection direction,
+                    webrtc::MediaType media_type,
+                    const uint8_t* header,
+                    size_t packet_length) override {
+    rtc::CritScope lock(&crit_);
+    if (event_log_) {
+      event_log_->LogRtpHeader(direction, media_type, header, packet_length);
+    }
+  }
+
+  void LogRtcpPacket(webrtc::PacketDirection direction,
+                     webrtc::MediaType media_type,
+                     const uint8_t* packet,
+                     size_t length) override {
+    rtc::CritScope lock(&crit_);
+    if (event_log_) {
+      event_log_->LogRtcpPacket(direction, media_type, packet, length);
+    }
+  }
+
+  void LogAudioPlayout(uint32_t ssrc) override {
+    rtc::CritScope lock(&crit_);
+    if (event_log_) {
+      event_log_->LogAudioPlayout(ssrc);
+    }
+  }
+
+  void LogBwePacketLossEvent(int32_t bitrate,
+                             uint8_t fraction_loss,
+                             int32_t total_packets) override {
+    rtc::CritScope lock(&crit_);
+    if (event_log_) {
+      event_log_->LogBwePacketLossEvent(bitrate, fraction_loss, total_packets);
+    }
+  }
+
+  void SetEventLog(RtcEventLog* event_log) {
+    rtc::CritScope lock(&crit_);
+    event_log_ = event_log;
+  }
+
+ private:
+  rtc::CriticalSection crit_;
+  RtcEventLog* event_log_ GUARDED_BY(crit_);
+  RTC_DISALLOW_COPY_AND_ASSIGN(RtcEventLogProxy);
+};
 
 class TransportFeedbackProxy : public TransportFeedbackObserver {
  public:
@@ -480,11 +562,9 @@ bool Channel::OnRecoveredPacket(const uint8_t* rtp_packet,
 MixerParticipant::AudioFrameInfo Channel::GetAudioFrameWithMuted(
     int32_t id,
     AudioFrame* audioFrame) {
-  if (event_log_) {
-    unsigned int ssrc;
-    RTC_CHECK_EQ(GetLocalSSRC(ssrc), 0);
-    event_log_->LogAudioPlayout(ssrc);
-  }
+  unsigned int ssrc;
+  RTC_CHECK_EQ(GetLocalSSRC(ssrc), 0);
+  event_log_proxy_->LogAudioPlayout(ssrc);
   // Get 10ms raw PCM data from the ACM (mixer limits output frequency)
   bool muted;
   if (audio_coding_->PlayoutData10Ms(audioFrame->sample_rate_hz_, audioFrame,
@@ -671,9 +751,8 @@ int32_t Channel::NeededFrequency(int32_t id) const {
 int32_t Channel::CreateChannel(Channel*& channel,
                                int32_t channelId,
                                uint32_t instanceId,
-                               RtcEventLog* const event_log,
                                const Config& config) {
-  return CreateChannel(channel, channelId, instanceId, event_log, config,
+  return CreateChannel(channel, channelId, instanceId, config,
                        CreateBuiltinAudioDecoderFactory());
 }
 
@@ -681,15 +760,13 @@ int32_t Channel::CreateChannel(
     Channel*& channel,
     int32_t channelId,
     uint32_t instanceId,
-    RtcEventLog* const event_log,
     const Config& config,
     const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) {
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(instanceId, channelId),
                "Channel::CreateChannel(channelId=%d, instanceId=%d)", channelId,
                instanceId);
 
-  channel =
-      new Channel(channelId, instanceId, event_log, config, decoder_factory);
+  channel = new Channel(channelId, instanceId, config, decoder_factory);
   if (channel == NULL) {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(instanceId, channelId),
                  "Channel::CreateChannel() unable to allocate memory for"
@@ -748,12 +825,11 @@ void Channel::RecordFileEnded(int32_t id) {
 
 Channel::Channel(int32_t channelId,
                  uint32_t instanceId,
-                 RtcEventLog* const event_log,
                  const Config& config,
                  const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory)
     : _instanceId(instanceId),
       _channelId(channelId),
-      event_log_(event_log),
+      event_log_proxy_(new RtcEventLogProxy()),
       rtp_header_parser_(RtpHeaderParser::Create()),
       rtp_payload_registry_(
           new RTPPayloadRegistry(RTPPayloadStrategy::CreateStrategy(true))),
@@ -856,7 +932,7 @@ Channel::Channel(int32_t channelId,
         seq_num_allocator_proxy_.get();
     configuration.transport_feedback_callback = feedback_observer_proxy_.get();
   }
-  configuration.event_log = event_log;
+  configuration.event_log = &(*event_log_proxy_);
 
   _rtpRtcpModule.reset(RtpRtcp::CreateRtpRtcp(configuration));
   _rtpRtcpModule->SetSendingMediaStatus(false);
@@ -3006,6 +3082,10 @@ void Channel::DisassociateSendChannel(int channel_id) {
     ChannelOwner ref(NULL);
     associate_send_channel_ = ref;
   }
+}
+
+void Channel::SetRtcEventLog(RtcEventLog* event_log) {
+  event_log_proxy_->SetEventLog(event_log);
 }
 
 int Channel::RegisterExternalMediaProcessing(ProcessingTypes type,

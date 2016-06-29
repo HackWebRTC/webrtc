@@ -389,17 +389,4 @@ void ChannelManager::StopAecDump() {
       Bind(&MediaEngineInterface::StopAecDump, media_engine_.get()));
 }
 
-bool ChannelManager::StartRtcEventLog(rtc::PlatformFile file,
-                                      int64_t max_size_bytes) {
-  return worker_thread_->Invoke<bool>(
-      RTC_FROM_HERE, Bind(&MediaEngineInterface::StartRtcEventLog,
-                          media_engine_.get(), file, max_size_bytes));
-}
-
-void ChannelManager::StopRtcEventLog() {
-  worker_thread_->Invoke<void>(
-      RTC_FROM_HERE,
-      Bind(&MediaEngineInterface::StopRtcEventLog, media_engine_.get()));
-}
-
 }  // namespace cricket

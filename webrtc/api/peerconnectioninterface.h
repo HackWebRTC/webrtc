@@ -489,6 +489,17 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   virtual IceConnectionState ice_connection_state() = 0;
   virtual IceGatheringState ice_gathering_state() = 0;
 
+  // Starts RtcEventLog using existing file. Takes ownership of |file| and
+  // passes it on to Call, which will take the ownership. If the
+  // operation fails the file will be closed. The logging will stop
+  // automatically after 10 minutes have passed, or when the StopRtcEventLog
+  // function is called.
+  virtual bool StartRtcEventLog(rtc::PlatformFile file,
+                                int64_t max_size_bytes) = 0;
+
+  // Stops logging the RtcEventLog.
+  virtual void StopRtcEventLog() = 0;
+
   // Terminates all media and closes the transport.
   virtual void Close() = 0;
 
@@ -655,25 +666,19 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   // Stops logging the AEC dump.
   virtual void StopAecDump() = 0;
 
-  // Starts RtcEventLog using existing file. Takes ownership of |file| and
-  // passes it on to VoiceEngine, which will take the ownership. If the
-  // operation fails the file will be closed. The logging will stop
-  // automatically after 10 minutes have passed, or when the StopRtcEventLog
-  // function is called. A maximum filesize in bytes can be set, the logging
-  // will be stopped before exceeding this limit. If max_size_bytes is set to a
-  // value <= 0, no limit will be used.
-  // This function as well as the StopRtcEventLog don't really belong on this
-  // interface, this is a temporary solution until we move the logging object
-  // from inside voice engine to webrtc::Call, which will happen when the VoE
-  // restructuring effort is further along.
-  // TODO(ivoc): Move this into being:
-  //             PeerConnection => MediaController => webrtc::Call.
+  // This function is deprecated and will be removed when Chrome is updated to
+  // use the equivalent function on PeerConnectionInterface.
+  // TODO(ivoc) Remove after Chrome is updated.
   virtual bool StartRtcEventLog(rtc::PlatformFile file,
                                 int64_t max_size_bytes) = 0;
-  // Deprecated, use the version above.
+  // This function is deprecated and will be removed when Chrome is updated to
+  // use the equivalent function on PeerConnectionInterface.
+  // TODO(ivoc) Remove after Chrome is updated.
   virtual bool StartRtcEventLog(rtc::PlatformFile file) = 0;
 
-  // Stops logging the RtcEventLog.
+  // This function is deprecated and will be removed when Chrome is updated to
+  // use the equivalent function on PeerConnectionInterface.
+  // TODO(ivoc) Remove after Chrome is updated.
   virtual void StopRtcEventLog() = 0;
 
  protected:

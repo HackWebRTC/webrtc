@@ -31,10 +31,12 @@
 #include "webrtc/api/videocapturertracksource.h"
 #include "webrtc/api/videotrack.h"
 #include "webrtc/base/arraysize.h"
+#include "webrtc/base/bind.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/trace_event.h"
+#include "webrtc/call.h"
 #include "webrtc/media/sctp/sctpdataengine.h"
 #include "webrtc/pc/channelmanager.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
@@ -1263,6 +1265,18 @@ void PeerConnection::RegisterUMAObserver(UMAObserver* observer) {
   }
 }
 
+bool PeerConnection::StartRtcEventLog(rtc::PlatformFile file,
+                                      int64_t max_size_bytes) {
+  return factory_->worker_thread()->Invoke<bool>(
+      RTC_FROM_HERE, rtc::Bind(&PeerConnection::StartRtcEventLog_w, this, file,
+                               max_size_bytes));
+}
+
+void PeerConnection::StopRtcEventLog() {
+  factory_->worker_thread()->Invoke<void>(
+      RTC_FROM_HERE, rtc::Bind(&PeerConnection::StopRtcEventLog_w, this));
+}
+
 const SessionDescriptionInterface* PeerConnection::local_description() const {
   return session_->local_description();
 }
@@ -2232,4 +2246,12 @@ bool PeerConnection::ReconfigurePortAllocator_n(
   return true;
 }
 
+bool PeerConnection::StartRtcEventLog_w(rtc::PlatformFile file,
+                                        int64_t max_size_bytes) {
+  return media_controller_->call_w()->StartEventLog(file, max_size_bytes);
+}
+
+void PeerConnection::StopRtcEventLog_w() {
+  media_controller_->call_w()->StopEventLog();
+}
 }  // namespace webrtc

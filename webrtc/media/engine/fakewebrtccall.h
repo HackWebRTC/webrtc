@@ -231,6 +231,10 @@ class FakeCall final : public webrtc::Call, public webrtc::PacketReceiver {
                                  webrtc::NetworkState state) override;
   void OnSentPacket(const rtc::SentPacket& sent_packet) override;
 
+  bool StartEventLog(rtc::PlatformFile log_file,
+                     int64_t max_size_bytes) override;
+  void StopEventLog() override;
+
   webrtc::Call::Config config_;
   webrtc::NetworkState audio_network_state_;
   webrtc::NetworkState video_network_state_;

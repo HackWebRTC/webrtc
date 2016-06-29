@@ -40,6 +40,9 @@ class RtcEventLog {
   // Factory method to create an RtcEventLog object.
   static std::unique_ptr<RtcEventLog> Create(const Clock* clock);
 
+  // Create an RtcEventLog object that does nothing.
+  static std::unique_ptr<RtcEventLog> CreateNull();
+
   // Starts logging a maximum of max_size_bytes bytes to the specified file.
   // If the file already exists it will be overwritten.
   // If max_size_bytes <= 0, logging will be active until StopLogging is called.

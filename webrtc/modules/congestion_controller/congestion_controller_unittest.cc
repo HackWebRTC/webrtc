@@ -10,6 +10,7 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/call/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/pacing/mock/mock_paced_sender.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/congestion_controller/include/mock/mock_congestion_controller.h"
@@ -34,9 +35,9 @@ class CongestionControllerTest : public ::testing::Test {
     pacer_ = new NiceMock<MockPacedSender>();
     std::unique_ptr<PacedSender> pacer(pacer_);  // Passes ownership.
     std::unique_ptr<PacketRouter> packet_router(new PacketRouter());
-    controller_.reset(
-        new CongestionController(&clock_, &observer_, &remote_bitrate_observer_,
-                                 std::move(packet_router), std::move(pacer)));
+    controller_.reset(new CongestionController(
+        &clock_, &observer_, &remote_bitrate_observer_, &event_log_,
+        std::move(packet_router), std::move(pacer)));
     bandwidth_observer_.reset(
         controller_->GetBitrateController()->CreateRtcpBandwidthObserver());
 
@@ -51,6 +52,7 @@ class CongestionControllerTest : public ::testing::Test {
   StrictMock<MockCongestionObserver> observer_;
   NiceMock<MockPacedSender>* pacer_;
   NiceMock<MockRemoteBitrateObserver> remote_bitrate_observer_;
+  MockRtcEventLog event_log_;
   std::unique_ptr<RtcpBandwidthObserver> bandwidth_observer_;
   std::unique_ptr<CongestionController> controller_;
   const uint32_t kInitialBitrateBps = 60000;

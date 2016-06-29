@@ -253,6 +253,23 @@ public class PeerConnection {
     return nativeGetStats(observer, (track == null) ? 0 : track.nativeTrack);
   }
 
+  // Starts recording an RTC event log. Ownership of the file is transfered to
+  // the native code. If an RTC event log is already being recorded, it will be
+  // stopped and a new one will start using the provided file. Logging will
+  // continue until the stopRtcEventLog function is called. The max_size_bytes
+  // argument is ignored, it is added for future use.
+  public boolean startRtcEventLog(
+      int file_descriptor, long max_size_bytes) {
+    return nativeStartRtcEventLog(
+        nativePeerConnection, file_descriptor, max_size_bytes);
+  }
+
+  // Stops recording an RTC event log. If no RTC event log is currently being
+  // recorded, this call will have no effect.
+  public void stopRtcEventLog() {
+    nativeStopRtcEventLog(nativePeerConnection);
+  }
+
   // TODO(fischman): add support for DTMF-related methods once that API
   // stabilizes.
   public native SignalingState signalingState();
@@ -303,4 +320,10 @@ public class PeerConnection {
   private native List<RtpSender> nativeGetSenders();
 
   private native List<RtpReceiver> nativeGetReceivers();
+
+  private static native boolean nativeStartRtcEventLog(
+      long nativePeerConnection, int file_descriptor, long max_size_bytes);
+
+  private static native void nativeStopRtcEventLog(long nativePeerConnection);
+
 }

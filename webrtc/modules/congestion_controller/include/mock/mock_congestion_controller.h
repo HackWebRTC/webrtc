@@ -31,8 +31,12 @@ class MockCongestionController : public CongestionController {
  public:
   MockCongestionController(Clock* clock,
                            Observer* observer,
-                           RemoteBitrateObserver* remote_bitrate_observer)
-      : CongestionController(clock, observer, remote_bitrate_observer) {}
+                           RemoteBitrateObserver* remote_bitrate_observer,
+                           RtcEventLog* event_log)
+      : CongestionController(clock,
+                             observer,
+                             remote_bitrate_observer,
+                             event_log) {}
   MOCK_METHOD3(SetBweBitrates,
                void(int min_bitrate_bps,
                     int start_bitrate_bps,

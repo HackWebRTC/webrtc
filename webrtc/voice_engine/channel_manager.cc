@@ -47,10 +47,7 @@ ChannelOwner::ChannelRef::ChannelRef(class Channel* channel)
     : channel(channel), ref_count(1) {}
 
 ChannelManager::ChannelManager(uint32_t instance_id, const Config& config)
-    : instance_id_(instance_id),
-      last_channel_id_(-1),
-      config_(config),
-      event_log_(RtcEventLog::Create(Clock::GetRealTimeClock())) {}
+    : instance_id_(instance_id), last_channel_id_(-1), config_(config) {}
 
 ChannelOwner ChannelManager::CreateChannel() {
   return CreateChannel(CreateBuiltinAudioDecoderFactory());
@@ -75,8 +72,8 @@ ChannelOwner ChannelManager::CreateChannelInternal(
     const Config& config,
     const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) {
   Channel* channel;
-  Channel::CreateChannel(channel, ++last_channel_id_, instance_id_,
-                         event_log_.get(), config, decoder_factory);
+  Channel::CreateChannel(channel, ++last_channel_id_, instance_id_, config,
+                         decoder_factory);
   ChannelOwner channel_owner(channel);
 
   rtc::CritScope crit(&lock_);
@@ -141,10 +138,6 @@ void ChannelManager::DestroyAllChannels() {
 size_t ChannelManager::NumOfChannels() const {
   rtc::CritScope crit(&lock_);
   return channels_.size();
-}
-
-RtcEventLog* ChannelManager::GetEventLog() const {
-  return event_log_.get();
 }
 
 ChannelManager::Iterator::Iterator(ChannelManager* channel_manager)
