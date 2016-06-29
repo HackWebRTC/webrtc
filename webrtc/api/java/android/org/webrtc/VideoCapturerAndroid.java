@@ -577,11 +577,6 @@ public class VideoCapturerAndroid implements
     frameObserver.onOutputFormatRequest(width, height, framerate);
   }
 
-  // Exposed for testing purposes only.
-  Handler getCameraThreadHandler() {
-    return cameraThreadHandler;
-  }
-
   private int getDeviceOrientation() {
     int orientation = 0;
 
