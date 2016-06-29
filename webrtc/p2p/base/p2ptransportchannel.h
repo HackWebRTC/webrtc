@@ -93,6 +93,9 @@ class P2PTransportChannel : public TransportChannelImpl,
   void SetRemoteIceCredentials(const std::string& ice_ufrag,
                                const std::string& ice_pwd) override;
   void SetRemoteIceMode(IceMode mode) override;
+  // TODO(deadbeef): Deprecated. Remove when Chromium's
+  // IceTransportChannel does not depend on this.
+  void Connect() {}
   void MaybeStartGathering() override;
   IceGatheringState gathering_state() const override {
     return gathering_state_;
