@@ -342,17 +342,37 @@ static const int kDefaultRtcpReceiverReportSsrc = 1;
 // Down grade resolution at most 2 times for CPU reasons.
 static const int kMaxCpuDowngrades = 2;
 
+// Adds |codec| to |list|, and also adds an RTX codec if |codec|'s name is
+// recognized.
+// TODO(deadbeef): Should we add RTX codecs for external codecs whose names we
+// don't recognize?
+void AddCodecAndMaybeRtxCodec(const VideoCodec& codec,
+                              std::vector<VideoCodec>* codecs) {
+  codecs->push_back(codec);
+  int rtx_payload_type = 0;
+  if (CodecNamesEq(codec.name, kVp8CodecName)) {
+    rtx_payload_type = kDefaultRtxVp8PlType;
+  } else if (CodecNamesEq(codec.name, kVp9CodecName)) {
+    rtx_payload_type = kDefaultRtxVp9PlType;
+  } else if (CodecNamesEq(codec.name, kH264CodecName)) {
+    rtx_payload_type = kDefaultRtxH264PlType;
+  } else if (CodecNamesEq(codec.name, kRedCodecName)) {
+    rtx_payload_type = kDefaultRtxRedPlType;
+  } else {
+    return;
+  }
+  codecs->push_back(VideoCodec::CreateRtxCodec(rtx_payload_type, codec.id));
+}
+
 std::vector<VideoCodec> DefaultVideoCodecList() {
   std::vector<VideoCodec> codecs;
-  codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(kDefaultVp8PlType,
-                                                           kVp8CodecName));
-  codecs.push_back(
-      VideoCodec::CreateRtxCodec(kDefaultRtxVp8PlType, kDefaultVp8PlType));
+  AddCodecAndMaybeRtxCodec(
+      MakeVideoCodecWithDefaultFeedbackParams(kDefaultVp8PlType, kVp8CodecName),
+      &codecs);
   if (CodecIsInternallySupported(kVp9CodecName)) {
-    codecs.push_back(MakeVideoCodecWithDefaultFeedbackParams(kDefaultVp9PlType,
-                                                             kVp9CodecName));
-    codecs.push_back(
-        VideoCodec::CreateRtxCodec(kDefaultRtxVp9PlType, kDefaultVp9PlType));
+    AddCodecAndMaybeRtxCodec(MakeVideoCodecWithDefaultFeedbackParams(
+                                 kDefaultVp9PlType, kVp9CodecName),
+                             &codecs);
   }
   if (CodecIsInternallySupported(kH264CodecName)) {
     VideoCodec codec = MakeVideoCodecWithDefaultFeedbackParams(
@@ -366,13 +386,10 @@ std::vector<VideoCodec> DefaultVideoCodecList() {
                    kH264ProfileLevelConstrainedBaseline);
     codec.SetParam(kH264FmtpLevelAsymmetryAllowed, "1");
     codec.SetParam(kH264FmtpPacketizationMode, "1");
-    codecs.push_back(codec);
-    codecs.push_back(
-        VideoCodec::CreateRtxCodec(kDefaultRtxH264PlType, kDefaultH264PlType));
+    AddCodecAndMaybeRtxCodec(codec, &codecs);
   }
-  codecs.push_back(VideoCodec(kDefaultRedPlType, kRedCodecName));
-  codecs.push_back(
-      VideoCodec::CreateRtxCodec(kDefaultRtxRedPlType, kDefaultRedPlType));
+  AddCodecAndMaybeRtxCodec(VideoCodec(kDefaultRedPlType, kRedCodecName),
+                           &codecs);
   codecs.push_back(VideoCodec(kDefaultUlpfecType, kUlpfecCodecName));
   return codecs;
 }
@@ -622,6 +639,12 @@ std::vector<VideoCodec> WebRtcVideoEngine2::GetSupportedCodecs() const {
 
     // External video encoders are given payloads 120-127. This also means that
     // we only support up to 8 external payload types.
+    // TODO(deadbeef): mediasession.cc already has code to dynamically
+    // determine a payload type. We should be able to just leave the payload
+    // type empty and let mediasession determine it. However, currently RTX
+    // codecs are associated to codecs by payload type, meaning we DO need
+    // to allocate unique payload types here. So to make this change we would
+    // need to make RTX codecs associated by name instead.
     const int kExternalVideoPayloadTypeBase = 120;
     size_t payload_type = kExternalVideoPayloadTypeBase + i;
     RTC_DCHECK(payload_type < 128);
@@ -630,7 +653,7 @@ std::vector<VideoCodec> WebRtcVideoEngine2::GetSupportedCodecs() const {
                      codecs[i].max_fps);
 
     AddDefaultFeedbackParams(&codec);
-    supported_codecs.push_back(codec);
+    AddCodecAndMaybeRtxCodec(codec, &supported_codecs);
   }
   LOG(LS_INFO) << "Supported codecs (incl. external codecs): "
                << CodecVectorToString(supported_codecs);

@@ -388,6 +388,34 @@ TEST_F(WebRtcVideoEngine2Test, UseExternalFactoryForVp8WhenSupported) {
   EXPECT_EQ(0u, encoder_factory.encoders().size());
 }
 
+// Test that when an external encoder factory supports a codec we don't
+// internally support, we still add an RTX codec for it.
+// TODO(deadbeef): Currently this test is only effective if WebRTC is
+// built with no internal H264 support. This test should be updated
+// if/when we start adding RTX codecs for unrecognized codec names.
+TEST_F(WebRtcVideoEngine2Test, RtxCodecAddedForExternalCodec) {
+  cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
+  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecH264, "H264");
+  engine_.SetExternalEncoderFactory(&encoder_factory);
+  engine_.Init();
+
+  auto codecs = engine_.codecs();
+  // First figure out what payload type the test codec got assigned.
+  auto test_codec_it =
+      std::find_if(codecs.begin(), codecs.end(),
+                   [](const VideoCodec& c) { return c.name == "H264"; });
+  ASSERT_NE(codecs.end(), test_codec_it);
+  // Now search for an RTX codec for it.
+  EXPECT_TRUE(std::any_of(codecs.begin(), codecs.end(),
+                          [&test_codec_it](const VideoCodec& c) {
+                            int associated_payload_type;
+                            return c.name == "rtx" &&
+                                   c.GetParam(kCodecParamAssociatedPayloadType,
+                                              &associated_payload_type) &&
+                                   associated_payload_type == test_codec_it->id;
+                          }));
+}
+
 void WebRtcVideoEngine2Test::TestExtendedEncoderOveruse(
     bool use_external_encoder) {
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
