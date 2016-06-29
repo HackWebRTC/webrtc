@@ -12,6 +12,11 @@ import("../build/webrtc.gni")
 
 import("//build_overrides/webrtc.gni")
 
+if (is_android) {
+  import("//build/config/android/config.gni")
+  import("//build/config/android/rules.gni")
+}
+
 config("rtc_base_approved_all_dependent_config") {
   if (is_mac && !build_with_chromium) {
     libs = [ "Foundation.framework" ]  # needed for logging_mac.mm
@@ -676,6 +681,20 @@ if (rtc_include_tests) {
     ]
     public_deps = [
       "//testing/gtest",
+    ]
+  }
+}
+
+if (is_android) {
+  android_library("base_java") {
+    java_files = [
+      "java/src/org/webrtc/Logging.java",
+      "java/src/org/webrtc/Size.java",
+      "java/src/org/webrtc/ThreadUtils.java",
+    ]
+
+    deps = [
+      "//base:base_java",
     ]
   }
 }

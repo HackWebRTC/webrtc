@@ -1,4 +1,4 @@
-# Copyright (c) 2014 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2016 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -6,10 +6,8 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-# This file is copied and modified from Chromium (src/BUILD.gn).
-group("root") {
-  deps = [
-    "//webrtc",
-    "//webrtc/examples",
-  ]
+import("//build/config/android/rules.gni")
+
+android_java_prebuilt("autobanh_java") {
+  jar_path = "lib/autobanh.jar"
 }

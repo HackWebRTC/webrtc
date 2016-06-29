@@ -419,10 +419,10 @@
             'R_package': 'org.appspot.apprtc',
             'R_package_relpath': 'org/appspot/apprtc',
             'input_jars_paths': [
-              'examples/androidapp/third_party/autobanh/autobanh.jar',
+              'examples/androidapp/third_party/autobanh/lib/autobanh.jar',
              ],
             'library_dexed_jars_paths': [
-              'examples/androidapp/third_party/autobanh/autobanh.jar',
+              'examples/androidapp/third_party/autobanh/lib/autobanh.jar',
              ],
             'native_lib_target': 'libjingle_peerconnection_so',
             'add_to_dependents_classpaths':1,

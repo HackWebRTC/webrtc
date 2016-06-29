@@ -8,6 +8,10 @@
 
 import("../build/webrtc.gni")
 import("//testing/test.gni")
+if (is_android) {
+  import("//build/config/android/config.gni")
+  import("//build/config/android/rules.gni")
+}
 
 group("api") {
   deps = [
@@ -205,6 +209,79 @@ if (is_android && !build_with_chromium) {
       # Need to add a directory normally exported by libyuv.
       include_dirs += [ "$rtc_libyuv_dir/include" ]
     }
+  }
+
+  shared_library("libjingle_peerconnection_so") {
+    sources = [
+      "java/jni/jni_onload.cc",
+    ]
+
+    configs -= [ "//build/config/android:hide_native_jni_exports" ]
+
+    deps = [
+      ":libjingle_peerconnection",
+      ":libjingle_peerconnection_jni",
+    ]
+  }
+
+  android_library("libjingle_peerconnection_java") {
+    java_files = [
+      "../modules/audio_device/android/java/src/org/webrtc/voiceengine/BuildInfo.java",
+      "../modules/audio_device/android/java/src/org/webrtc/voiceengine/WebRtcAudioEffects.java",
+      "../modules/audio_device/android/java/src/org/webrtc/voiceengine/WebRtcAudioManager.java",
+      "../modules/audio_device/android/java/src/org/webrtc/voiceengine/WebRtcAudioRecord.java",
+      "../modules/audio_device/android/java/src/org/webrtc/voiceengine/WebRtcAudioTrack.java",
+      "../modules/audio_device/android/java/src/org/webrtc/voiceengine/WebRtcAudioUtils.java",
+      "java/android/org/webrtc/Camera1Enumerator.java",
+      "java/android/org/webrtc/Camera2Capturer.java",
+      "java/android/org/webrtc/Camera2Enumerator.java",
+      "java/android/org/webrtc/CameraEnumerationAndroid.java",
+      "java/android/org/webrtc/CameraEnumerator.java",
+      "java/android/org/webrtc/CameraVideoCapturer.java",
+      "java/android/org/webrtc/EglBase.java",
+      "java/android/org/webrtc/EglBase10.java",
+      "java/android/org/webrtc/EglBase14.java",
+      "java/android/org/webrtc/GlRectDrawer.java",
+      "java/android/org/webrtc/GlShader.java",
+      "java/android/org/webrtc/GlTextureFrameBuffer.java",
+      "java/android/org/webrtc/GlUtil.java",
+      "java/android/org/webrtc/NetworkMonitor.java",
+      "java/android/org/webrtc/NetworkMonitorAutoDetect.java",
+      "java/android/org/webrtc/RendererCommon.java",
+      "java/android/org/webrtc/SurfaceTextureHelper.java",
+      "java/android/org/webrtc/SurfaceViewRenderer.java",
+      "java/android/org/webrtc/VideoCapturerAndroid.java",
+      "java/android/org/webrtc/VideoRendererGui.java",
+      "java/src/org/webrtc/AudioSource.java",
+      "java/src/org/webrtc/AudioTrack.java",
+      "java/src/org/webrtc/CallSessionFileRotatingLogSink.java",
+      "java/src/org/webrtc/DataChannel.java",
+      "java/src/org/webrtc/IceCandidate.java",
+      "java/src/org/webrtc/MediaCodecVideoDecoder.java",
+      "java/src/org/webrtc/MediaCodecVideoEncoder.java",
+      "java/src/org/webrtc/MediaConstraints.java",
+      "java/src/org/webrtc/MediaSource.java",
+      "java/src/org/webrtc/MediaStream.java",
+      "java/src/org/webrtc/MediaStreamTrack.java",
+      "java/src/org/webrtc/Metrics.java",
+      "java/src/org/webrtc/PeerConnection.java",
+      "java/src/org/webrtc/PeerConnectionFactory.java",
+      "java/src/org/webrtc/RtpParameters.java",
+      "java/src/org/webrtc/RtpReceiver.java",
+      "java/src/org/webrtc/RtpSender.java",
+      "java/src/org/webrtc/SdpObserver.java",
+      "java/src/org/webrtc/SessionDescription.java",
+      "java/src/org/webrtc/StatsObserver.java",
+      "java/src/org/webrtc/StatsReport.java",
+      "java/src/org/webrtc/VideoCapturer.java",
+      "java/src/org/webrtc/VideoRenderer.java",
+      "java/src/org/webrtc/VideoSource.java",
+      "java/src/org/webrtc/VideoTrack.java",
+    ]
+
+    deps = [
+      "//webrtc/base:base_java",
+    ]
   }
 }
 

@@ -1,0 +1,103 @@
+# Copyright (c) 2016 The WebRTC project authors. All Rights Reserved.
+#
+# Use of this source code is governed by a BSD-style license
+# that can be found in the LICENSE file in the root of the source
+# tree. An additional intellectual property rights grant can be found
+# in the file PATENTS.  All contributing project authors may
+# be found in the AUTHORS file in the root of the source tree.
+
+if (is_android) {
+  import("//build/config/android/config.gni")
+  import("//build/config/android/rules.gni")
+}
+
+group("examples") {
+  deps = []
+
+  if (is_android && !build_with_chromium) {
+    deps += [ ":AppRTCDemo" ]
+  }
+}
+
+if (is_android && !build_with_chromium) {
+  android_apk("AppRTCDemo") {
+    apk_name = "AppRTCDemo"
+    android_manifest = "androidapp/AndroidManifest.xml"
+
+    deps = [
+      ":AppRTCDemo_lib",
+      ":AppRTCDemo_resources",
+      "//base:base_java",
+      "//webrtc/base:base_java",
+    ]
+
+    shared_libraries = [ "//webrtc/api:libjingle_peerconnection_so" ]
+  }
+
+  android_library("AppRTCDemo_lib") {
+    java_files = [
+      "androidapp/src/org/appspot/apprtc/AppRTCAudioManager.java",
+      "androidapp/src/org/appspot/apprtc/AppRTCClient.java",
+      "androidapp/src/org/appspot/apprtc/AppRTCProximitySensor.java",
+      "androidapp/src/org/appspot/apprtc/CallActivity.java",
+      "androidapp/src/org/appspot/apprtc/CallFragment.java",
+      "androidapp/src/org/appspot/apprtc/CaptureQualityController.java",
+      "androidapp/src/org/appspot/apprtc/ConnectActivity.java",
+      "androidapp/src/org/appspot/apprtc/CpuMonitor.java",
+      "androidapp/src/org/appspot/apprtc/DirectRTCClient.java",
+      "androidapp/src/org/appspot/apprtc/HudFragment.java",
+      "androidapp/src/org/appspot/apprtc/PeerConnectionClient.java",
+      "androidapp/src/org/appspot/apprtc/PercentFrameLayout.java",
+      "androidapp/src/org/appspot/apprtc/RoomParametersFetcher.java",
+      "androidapp/src/org/appspot/apprtc/SettingsActivity.java",
+      "androidapp/src/org/appspot/apprtc/SettingsFragment.java",
+      "androidapp/src/org/appspot/apprtc/TCPChannelClient.java",
+      "androidapp/src/org/appspot/apprtc/UnhandledExceptionHandler.java",
+      "androidapp/src/org/appspot/apprtc/WebSocketChannelClient.java",
+      "androidapp/src/org/appspot/apprtc/WebSocketRTCClient.java",
+      "androidapp/src/org/appspot/apprtc/util/AppRTCUtils.java",
+      "androidapp/src/org/appspot/apprtc/util/AsyncHttpURLConnection.java",
+      "androidapp/src/org/appspot/apprtc/util/LooperExecutor.java",
+    ]
+
+    deps = [
+      ":AppRTCDemo_resources",
+      "//webrtc/api:libjingle_peerconnection_java",
+      "//webrtc/base:base_java",
+      "//webrtc/examples/androidapp/third_party/autobanh:autobanh_java",
+    ]
+  }
+
+  android_resources("AppRTCDemo_resources") {
+    resource_dirs = [ "androidapp/res" ]
+    custom_package = "org.appspot.apprtc"
+  }
+
+  instrumentation_test_apk("AppRTCDemoTest") {
+    apk_name = "AppRTCDemoTest"
+    android_manifest = "androidtests/AndroidManifest.xml"
+
+    java_files = [ "androidtests/src/org/appspot/apprtc/test/PeerConnectionClientTest.java" ]
+
+    apk_under_test = ":AppRTCDemo"
+
+    deps = [
+      ":AppRTCDemo_lib",
+      "//webrtc/api:libjingle_peerconnection_java",
+    ]
+  }
+
+  junit_binary("AppRTCDemoJUnitTest") {
+    java_files = [
+      "androidjunit/src/org/appspot/apprtc/DirectRTCClientTest.java",
+      "androidjunit/src/org/appspot/apprtc/TCPChannelClientTest.java",
+      "androidjunit/src/org/appspot/apprtc/util/LooperExecutorTest.java",
+    ]
+
+    deps = [
+      ":AppRTCDemo_lib",
+      "//webrtc/api:libjingle_peerconnection_java",
+      "//webrtc/api:libjingle_peerconnection_jni",
+    ]
+  }
+}
