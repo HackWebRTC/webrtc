@@ -490,8 +490,8 @@ public class PeerConnectionClient {
     // NOTE: this _must_ happen while |factory| is alive!
     Logging.enableTracing(
         "logcat:",
-        EnumSet.of(Logging.TraceLevel.TRACE_DEFAULT),
-        Logging.Severity.LS_INFO);
+        EnumSet.of(Logging.TraceLevel.TRACE_DEFAULT));
+    Logging.enableLogToDebugOutput(Logging.Severity.LS_INFO);
 
     mediaStream = factory.createLocalMediaStream("ARDAMS");
     if (videoCallEnabled) {

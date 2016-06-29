@@ -884,8 +884,7 @@ JOW(void, DataChannel_dispose)(JNIEnv* jni, jobject j_dc) {
 }
 
 JOW(void, Logging_nativeEnableTracing)(
-    JNIEnv* jni, jclass, jstring j_path, jint nativeLevels,
-    jint nativeSeverity) {
+    JNIEnv* jni, jclass, jstring j_path, jint nativeLevels) {
   std::string path = JavaToStdString(jni, j_path);
   if (nativeLevels != webrtc::kTraceNone) {
     webrtc::Trace::set_level_filter(nativeLevels);
@@ -898,7 +897,11 @@ JOW(void, Logging_nativeEnableTracing)(
       static LogcatTraceContext* g_trace_callback = new LogcatTraceContext();
     }
   }
-  if (nativeSeverity >= rtc::LS_SENSITIVE && nativeSeverity <= rtc::LS_ERROR) {
+}
+
+JOW(void, Logging_nativeEnableLogToDebugOutput)
+    (JNIEnv *jni, jclass, jint nativeSeverity) {
+  if (nativeSeverity >= rtc::LS_SENSITIVE && nativeSeverity <= rtc::LS_NONE) {
     rtc::LogMessage::LogToDebug(
         static_cast<rtc::LoggingSeverity>(nativeSeverity));
   }
