@@ -100,8 +100,8 @@ static const char* kIcePwd[4] = {"TESTICEPWD00000000000000",
                                  "TESTICEPWD00000000000002",
                                  "TESTICEPWD00000000000003"};
 
-static const uint64_t kTiebreaker1 = 11111;
-static const uint64_t kTiebreaker2 = 22222;
+static const uint64_t kLowTiebreaker = 11111;
+static const uint64_t kHighTiebreaker = 22222;
 
 enum { MSG_ADD_CANDIDATES, MSG_REMOVE_CANDIDATES };
 
@@ -643,10 +643,11 @@ class P2PTransportChannelTestBase : public testing::Test,
   }
 
   void TestSignalRoleConflict() {
-    SetIceTiebreaker(0, kTiebreaker1);  // Default EP1 is in controlling state.
+    SetIceTiebreaker(0,
+                     kLowTiebreaker);  // Default EP1 is in controlling state.
 
     SetIceRole(1, ICEROLE_CONTROLLING);
-    SetIceTiebreaker(1, kTiebreaker2);
+    SetIceTiebreaker(1, kHighTiebreaker);
 
     // Creating channels with both channels role set to CONTROLLING.
     CreateChannels(1);
@@ -1417,22 +1418,16 @@ TEST_F(P2PTransportChannelTest, TestIceRoleConflict) {
 
 // Tests that the ice configs (protocol, tiebreaker and role) can be passed
 // down to ports.
-// Disable on Windows because it is flaky.
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=6019
-#if defined(WEBRTC_WIN)
-#define MAYBE_TestIceConfigWillPassDownToPort \
-  DISABLED_TestIceConfigWillPassDownToPort
-#else
-#define MAYBE_TestIceConfigWillPassDownToPort TestIceConfigWillPassDownToPort
-#endif
-TEST_F(P2PTransportChannelTest, MAYBE_TestIceConfigWillPassDownToPort) {
+TEST_F(P2PTransportChannelTest, TestIceConfigWillPassDownToPort) {
   AddAddress(0, kPublicAddrs[0]);
   AddAddress(1, kPublicAddrs[1]);
 
+  // Give the first connection the higher tiebreaker so its role won't
+  // change unless we tell it to.
   SetIceRole(0, ICEROLE_CONTROLLING);
-  SetIceTiebreaker(0, kTiebreaker1);
+  SetIceTiebreaker(0, kHighTiebreaker);
   SetIceRole(1, ICEROLE_CONTROLLING);
-  SetIceTiebreaker(1, kTiebreaker2);
+  SetIceTiebreaker(1, kLowTiebreaker);
 
   CreateChannels(1);
 
@@ -1441,18 +1436,18 @@ TEST_F(P2PTransportChannelTest, MAYBE_TestIceConfigWillPassDownToPort) {
   const std::vector<PortInterface*> ports_before = ep1_ch1()->ports();
   for (size_t i = 0; i < ports_before.size(); ++i) {
     EXPECT_EQ(ICEROLE_CONTROLLING, ports_before[i]->GetIceRole());
-    EXPECT_EQ(kTiebreaker1, ports_before[i]->IceTiebreaker());
+    EXPECT_EQ(kHighTiebreaker, ports_before[i]->IceTiebreaker());
   }
 
   ep1_ch1()->SetIceRole(ICEROLE_CONTROLLED);
-  ep1_ch1()->SetIceTiebreaker(kTiebreaker2);
+  ep1_ch1()->SetIceTiebreaker(kLowTiebreaker);
 
   const std::vector<PortInterface*> ports_after = ep1_ch1()->ports();
   for (size_t i = 0; i < ports_after.size(); ++i) {
     EXPECT_EQ(ICEROLE_CONTROLLED, ports_before[i]->GetIceRole());
     // SetIceTiebreaker after Connect() has been called will fail. So expect the
     // original value.
-    EXPECT_EQ(kTiebreaker1, ports_before[i]->IceTiebreaker());
+    EXPECT_EQ(kHighTiebreaker, ports_before[i]->IceTiebreaker());
   }
 
   EXPECT_TRUE_WAIT(ep1_ch1()->receiving() &&
