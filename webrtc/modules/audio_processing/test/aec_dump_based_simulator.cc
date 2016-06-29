@@ -441,6 +441,10 @@ void AecDumpBasedSimulator::HandleMessage(
       config.Set<EchoCanceller3>(new EchoCanceller3(*settings_.use_aec3));
     }
 
+    if (settings_.use_lc) {
+      config.Set<LevelControl>(new LevelControl(true));
+    }
+
     ap_->SetExtraOptions(config);
   }
 }

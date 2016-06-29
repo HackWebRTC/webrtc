@@ -443,6 +443,30 @@ TEST_F(DebugDumpTest, VerifyAec3ExperimentalString) {
   }
 }
 
+TEST_F(DebugDumpTest, VerifyLevelControllerExperimentalString) {
+  Config config;
+  config.Set<LevelControl>(new LevelControl(true));
+  DebugDumpGenerator generator(config);
+  generator.StartRecording();
+  generator.Process(100);
+  generator.StopRecording();
+
+  DebugDumpReplayer debug_dump_replayer_;
+
+  ASSERT_TRUE(debug_dump_replayer_.SetDumpFile(generator.dump_file_name()));
+
+  while (const rtc::Optional<audioproc::Event> event =
+             debug_dump_replayer_.GetNextEvent()) {
+    debug_dump_replayer_.RunNextEvent();
+    if (event->type() == audioproc::Event::CONFIG) {
+      const audioproc::Config* msg = &event->config();
+      ASSERT_TRUE(msg->has_experiments_description());
+      EXPECT_PRED_FORMAT2(testing::IsSubstring, "LevelController",
+                          msg->experiments_description().c_str());
+    }
+  }
+}
+
 TEST_F(DebugDumpTest, VerifyEmptyExperimentalString) {
   Config config;
   DebugDumpGenerator generator(config);

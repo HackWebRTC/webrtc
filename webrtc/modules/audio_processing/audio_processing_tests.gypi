@@ -16,6 +16,8 @@
         '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
       ],
       'sources': [
+        'test/audio_buffer_tools.cc',
+        'test/audio_buffer_tools.h',
         'test/test_utils.cc',
         'test/test_utils.h',
       ],

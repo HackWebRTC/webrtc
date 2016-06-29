@@ -434,6 +434,7 @@
         'call/rampup_tests.h',
         'modules/audio_coding/neteq/test/neteq_performance_unittest.cc',
         'modules/audio_processing/audio_processing_performance_unittest.cc',
+        'modules/audio_processing/level_controller/level_controller_complexity_unittest.cc',
         'modules/remote_bitrate_estimator/remote_bitrate_estimators_test.cc',
         'video/full_stack.cc',
       ],

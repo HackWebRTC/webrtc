@@ -108,6 +108,7 @@ void usage() {
   printf("\n  -expns   Experimental noise suppression\n");
   printf("\n Level metrics (enabled by default)\n");
   printf("  --no_level_metrics\n");
+  printf("  --level_control\n");
   printf("\n");
   printf("Modifiers:\n");
   printf("  --noasm            Disable SSE optimization.\n");
@@ -259,6 +260,9 @@ void void_main(int argc, char* argv[]) {
                 apm->echo_cancellation()->set_suppression_level(
                     static_cast<webrtc::EchoCancellation::SuppressionLevel>(
                         suppression_level)));
+
+    } else if (strcmp(argv[i], "--level_control") == 0) {
+      config.Set<LevelControl>(new LevelControl(true));
 
     } else if (strcmp(argv[i], "--extended_filter") == 0) {
       config.Set<ExtendedFilter>(new ExtendedFilter(true));

@@ -223,6 +223,9 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
   if (settings_.use_aec3) {
     config.Set<EchoCanceller3>(new EchoCanceller3(*settings_.use_aec3));
   }
+  if (settings_.use_lc) {
+    config.Set<LevelControl>(new LevelControl(true));
+  }
   if (settings_.use_refined_adaptive_filter) {
     config.Set<RefinedAdaptiveFilter>(
         new RefinedAdaptiveFilter(*settings_.use_refined_adaptive_filter));

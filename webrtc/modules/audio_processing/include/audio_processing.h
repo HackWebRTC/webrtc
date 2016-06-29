@@ -92,6 +92,14 @@ struct RefinedAdaptiveFilter {
   bool enabled;
 };
 
+// Enables the adaptive level controller.
+struct LevelControl {
+  LevelControl() : enabled(false) {}
+  explicit LevelControl(bool enabled) : enabled(enabled) {}
+  static const ConfigOptionID identifier = ConfigOptionID::kLevelControl;
+  bool enabled;
+};
+
 // Enables delay-agnostic echo cancellation. This feature relies on internally
 // estimated delays between the process and reverse streams, thus not relying
 // on reported system delays. This configuration only applies to
