@@ -1216,7 +1216,10 @@ class VideoFrameTest : public testing::Test {
       EXPECT_FALSE(expected_result);  // NULL is okay if failure was expected.
       return;
     }
-    data_ptr += kPadToHeapSized + (-(static_cast<int>(data_size)) & 4095);
+    // TODO(pbos): Remove kPad once http://llvm.org/PR28348 is fixed and the fix
+    // is rolled in.
+    volatile const int kPad = 4095;
+    data_ptr += kPadToHeapSized + (-(static_cast<int>(data_size)) & kPad);
     memcpy(data_ptr, sample, std::min(data_size, sample_size));
     for (int i = 0; i < repeat_; ++i) {
       EXPECT_EQ(expected_result, frame.Validate(fourcc, kWidth, kHeight,
