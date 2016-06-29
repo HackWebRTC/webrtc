@@ -22,6 +22,7 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/sigslotrepeater.h"
 #include "webrtc/base/sslstreamadapter.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/media/base/cryptoparams.h"
 #include "webrtc/p2p/base/sessiondescription.h"
 
@@ -225,8 +226,7 @@ class SrtpSession {
   void HandleEvent(const srtp_event_data_t* ev);
   static void HandleEventThunk(srtp_event_data_t* ev);
 
-  static std::list<SrtpSession*>* sessions();
-
+  rtc::ThreadChecker thread_checker_;
   srtp_ctx_t* session_;
   int rtp_auth_tag_len_;
   int rtcp_auth_tag_len_;
