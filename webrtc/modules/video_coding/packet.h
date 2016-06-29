@@ -23,11 +23,6 @@ class VCMPacket {
   VCMPacket(const uint8_t* ptr,
             const size_t size,
             const WebRtcRTPHeader& rtpHeader);
-  VCMPacket(const uint8_t* ptr,
-            size_t size,
-            uint16_t seqNum,
-            uint32_t timestamp,
-            bool markerBit);
 
   void Reset();
 

@@ -68,28 +68,6 @@ VCMPacket::VCMPacket(const uint8_t* ptr,
   }
 }
 
-VCMPacket::VCMPacket(const uint8_t* ptr,
-                     size_t size,
-                     uint16_t seq,
-                     uint32_t ts,
-                     bool mBit)
-    : payloadType(0),
-      timestamp(ts),
-      ntp_time_ms_(0),
-      seqNum(seq),
-      dataPtr(ptr),
-      sizeBytes(size),
-      markerBit(mBit),
-      timesNacked(-1),
-      frameType(kVideoFrameDelta),
-      codec(kVideoCodecUnknown),
-      isFirstPacket(false),
-      completeNALU(kNaluComplete),
-      insertStartCode(false),
-      width(0),
-      height(0),
-      video_header() {}
-
 void VCMPacket::Reset() {
   payloadType = 0;
   timestamp = 0;

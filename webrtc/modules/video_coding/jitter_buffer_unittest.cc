@@ -35,10 +35,14 @@ const uint32_t kProcessIntervalSec = 60;
 
 class Vp9SsMapTest : public ::testing::Test {
  protected:
-  Vp9SsMapTest() : packet_(data_, 1400, 1234, 1, true) {}
+  Vp9SsMapTest() : packet_() {}
 
   virtual void SetUp() {
     packet_.isFirstPacket = true;
+    packet_.dataPtr = data_;
+    packet_.sizeBytes = 1400;
+    packet_.seqNum = 1234;
+    packet_.timestamp = 1;
     packet_.markerBit = true;
     packet_.frameType = kVideoFrameKey;
     packet_.codec = kVideoCodecVP9;
@@ -242,7 +246,13 @@ class TestBasicJitterBuffer : public ::testing::TestWithParam<std::string>,
         i += 3;
       }
     }
-    packet_.reset(new VCMPacket(data_, size_, seq_num_, timestamp_, true));
+    WebRtcRTPHeader rtpHeader;
+    memset(&rtpHeader, 0, sizeof(rtpHeader));
+    rtpHeader.header.sequenceNumber = seq_num_;
+    rtpHeader.header.timestamp = timestamp_;
+    rtpHeader.header.markerBit = true;
+    rtpHeader.frameType = kVideoFrameDelta;
+    packet_.reset(new VCMPacket(data_, size_, rtpHeader));
   }
 
   VCMEncodedFrame* DecodeCompleteFrame() {
@@ -810,7 +820,12 @@ TEST_P(TestBasicJitterBuffer, TestReorderingWithPadding) {
 
   // Add in the padding. These are empty packets (data length is 0) with no
   // marker bit and matching the timestamp of Frame B.
-  VCMPacket empty_packet(data_, 0, seq_num_ + 2, timestamp_ + (33 * 90), false);
+  WebRtcRTPHeader rtpHeader;
+  memset(&rtpHeader, 0, sizeof(rtpHeader));
+  rtpHeader.header.sequenceNumber = seq_num_ + 2;
+  rtpHeader.header.timestamp = timestamp_ + (33 * 90);
+  rtpHeader.header.markerBit = false;
+  VCMPacket empty_packet(data_, 0, rtpHeader);
   EXPECT_EQ(kOldPacket,
             jitter_buffer_->InsertPacket(empty_packet, &retransmitted));
   empty_packet.seqNum += 1;
@@ -2088,7 +2103,9 @@ TEST_P(TestBasicJitterBuffer, H264IncompleteNalu) {
   // Test to insert empty packet.
   seq_num_++;
   timestamp_ += 33 * 90;
-  VCMPacket emptypacket(data_, 0, seq_num_, timestamp_, true);
+  WebRtcRTPHeader rtpHeader;
+  memset(&rtpHeader, 0, sizeof(rtpHeader));
+  VCMPacket emptypacket(data_, 0, rtpHeader);
   emptypacket.seqNum = seq_num_;
   emptypacket.timestamp = timestamp_;
   emptypacket.frameType = kVideoFrameKey;
