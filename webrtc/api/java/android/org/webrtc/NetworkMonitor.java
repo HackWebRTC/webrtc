@@ -231,8 +231,7 @@ public class NetworkMonitor {
    */
   public static boolean isOnline() {
     ConnectionType connectionType = getInstance().getCurrentConnectionType();
-    return connectionType != ConnectionType.CONNECTION_UNKNOWN
-        && connectionType != ConnectionType.CONNECTION_NONE;
+    return connectionType != ConnectionType.CONNECTION_NONE;
   }
 
   private native void nativeNotifyConnectionTypeChanged(long nativePtr);

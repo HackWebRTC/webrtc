@@ -55,6 +55,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     CONNECTION_4G,
     CONNECTION_3G,
     CONNECTION_2G,
+    CONNECTION_UNKNOWN_CELLULAR,
     CONNECTION_BLUETOOTH,
     CONNECTION_NONE
   }
@@ -292,15 +293,22 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
         return null;
       }
 
-      ConnectionType connectionType = getConnectionType(getNetworkState(network));
-      if (connectionType == ConnectionType.CONNECTION_UNKNOWN
-          || connectionType == ConnectionType.CONNECTION_NONE) {
+      NetworkState networkState = getNetworkState(network);
+      ConnectionType connectionType = getConnectionType(networkState);
+      if (connectionType == ConnectionType.CONNECTION_NONE) {
         // This may not be an error. The OS may signal a network event with connection type
-        // NONE when the network disconnects. But in some devices, the OS may incorrectly
-        // report an UNKNOWN connection type. In either case, it won't benefit to send down
-        // a network event with this connection type.
-        Logging.d(TAG, "Network " + network.toString() + " has connection type " + connectionType);
+        // NONE when the network disconnects.
+        Logging.d(TAG, "Network " + network.toString() + " is disconnected");
         return null;
+      }
+
+      // Some android device may return a CONNECTION_UNKNOWN_CELLULAR or CONNECTION_UNKNOWN type,
+      // which appears to be usable. Just log them here.
+      if (connectionType == ConnectionType.CONNECTION_UNKNOWN
+          || connectionType == ConnectionType.CONNECTION_UNKNOWN_CELLULAR) {
+        Logging.d(TAG, "Network " + network.toString() + " connection type is " + connectionType
+                  + " because it has type " + networkState.getNetworkType()
+                  + " and subtype " + networkState.getNetworkSubType());
       }
 
       NetworkInformation networkInformation = new NetworkInformation(
@@ -569,7 +577,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
           case TelephonyManager.NETWORK_TYPE_LTE:
             return ConnectionType.CONNECTION_4G;
           default:
-            return ConnectionType.CONNECTION_UNKNOWN;
+            return ConnectionType.CONNECTION_UNKNOWN_CELLULAR;
         }
       default:
         return ConnectionType.CONNECTION_UNKNOWN;

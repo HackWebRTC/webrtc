@@ -44,6 +44,9 @@ static NetworkType GetNetworkTypeFromJava(JNIEnv* jni, jobject j_network_type) {
   if (enum_name == "CONNECTION_2G") {
     return NetworkType::NETWORK_2G;
   }
+  if (enum_name == "CONNECTION_UNKNOWN_CELLULAR") {
+    return NetworkType::NETWORK_UNKNOWN_CELLULAR;
+  }
   if (enum_name == "CONNECTION_BLUETOOTH") {
     return NetworkType::NETWORK_BLUETOOTH;
   }
@@ -57,7 +60,6 @@ static NetworkType GetNetworkTypeFromJava(JNIEnv* jni, jobject j_network_type) {
 static rtc::AdapterType AdapterTypeFromNetworkType(NetworkType network_type) {
   switch (network_type) {
     case NETWORK_UNKNOWN:
-      RTC_DCHECK(false) << "Unknown network type";
       return rtc::ADAPTER_TYPE_UNKNOWN;
     case NETWORK_ETHERNET:
       return rtc::ADAPTER_TYPE_ETHERNET;
@@ -66,6 +68,7 @@ static rtc::AdapterType AdapterTypeFromNetworkType(NetworkType network_type) {
     case NETWORK_4G:
     case NETWORK_3G:
     case NETWORK_2G:
+    case NETWORK_UNKNOWN_CELLULAR:
       return rtc::ADAPTER_TYPE_CELLULAR;
     case NETWORK_BLUETOOTH:
       // There is no corresponding mapping for bluetooth networks.
