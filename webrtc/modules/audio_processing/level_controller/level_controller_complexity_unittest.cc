@@ -304,7 +304,11 @@ TEST(LevelControllerPerformanceTest, StandaloneProcessing) {
   }
 }
 
+#if !defined(WEBRTC_ANDROID)
 TEST(LevelControllerPerformanceTest, ProcessingViaApm) {
+#else
+TEST(LevelControllerPerformanceTest, DISABLED_ProcessingViaApm) {
+#endif
   int sample_rates_to_test[] = {AudioProcessing::kSampleRate8kHz,
                                 AudioProcessing::kSampleRate16kHz,
                                 AudioProcessing::kSampleRate32kHz,
@@ -321,7 +325,11 @@ TEST(LevelControllerPerformanceTest, ProcessingViaApm) {
   }
 }
 
+#if !defined(WEBRTC_ANDROID)
 TEST(LevelControllerPerformanceTest, InteractionWithDefaultApm) {
+#else
+TEST(LevelControllerPerformanceTest, DISABLED_InteractionWithDefaultApm) {
+#endif
   int sample_rates_to_test[] = {AudioProcessing::kSampleRate8kHz,
                                 AudioProcessing::kSampleRate16kHz,
                                 AudioProcessing::kSampleRate32kHz,
