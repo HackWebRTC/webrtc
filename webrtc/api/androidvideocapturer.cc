@@ -22,8 +22,7 @@ namespace webrtc {
 AndroidVideoCapturer::AndroidVideoCapturer(
     const rtc::scoped_refptr<AndroidVideoCapturerDelegate>& delegate)
     : running_(false),
-      delegate_(delegate),
-      current_state_(cricket::CS_STOPPED) {
+      delegate_(delegate) {
   thread_checker_.DetachFromThread();
   SetSupportedFormats(delegate_->GetSupportedFormats());
 }
@@ -43,8 +42,7 @@ cricket::CaptureState AndroidVideoCapturer::Start(
   running_ = true;
   delegate_->Start(capture_format.width, capture_format.height, fps, this);
   SetCaptureFormat(&capture_format);
-  current_state_ = cricket::CS_STARTING;
-  return current_state_;
+  return cricket::CS_STARTING;
 }
 
 void AndroidVideoCapturer::Stop() {
@@ -55,8 +53,7 @@ void AndroidVideoCapturer::Stop() {
   SetCaptureFormat(NULL);
 
   delegate_->Stop();
-  current_state_ = cricket::CS_STOPPED;
-  SetCaptureState(current_state_);
+  SetCaptureState(cricket::CS_STOPPED);
 }
 
 bool AndroidVideoCapturer::IsRunning() {
@@ -72,11 +69,8 @@ bool AndroidVideoCapturer::GetPreferredFourccs(std::vector<uint32_t>* fourccs) {
 
 void AndroidVideoCapturer::OnCapturerStarted(bool success) {
   RTC_CHECK(thread_checker_.CalledOnValidThread());
-  cricket::CaptureState new_state =
+  const cricket::CaptureState new_state =
       success ? cricket::CS_RUNNING : cricket::CS_FAILED;
-  if (new_state == current_state_)
-    return;
-  current_state_ = new_state;
   SetCaptureState(new_state);
 }
 

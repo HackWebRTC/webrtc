@@ -77,8 +77,6 @@ class AndroidVideoCapturer : public cricket::VideoCapturer {
   rtc::scoped_refptr<AndroidVideoCapturerDelegate> delegate_;
 
   rtc::ThreadChecker thread_checker_;
-
-  cricket::CaptureState current_state_;
 };
 
 }  // namespace webrtc
