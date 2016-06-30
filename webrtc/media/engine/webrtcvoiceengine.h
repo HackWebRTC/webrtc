@@ -138,14 +138,16 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   bool is_dumping_aec_ = false;
 
   webrtc::AgcConfig default_agc_config_;
-  // Cache received extended_filter_aec, delay_agnostic_aec, experimental_ns and
-  // intelligibility_enhancer values, and apply them in case they are missing
-  // in the audio options. We need to do this because SetExtraOptions() will
-  // revert to defaults for options which are not provided.
+  // Cache received extended_filter_aec, delay_agnostic_aec, experimental_ns
+  // level controller, and intelligibility_enhancer values, and apply them
+  // in case they are missing in the audio options. We need to do this because
+  // SetExtraOptions() will revert to defaults for options which are not
+  // provided.
   rtc::Optional<bool> extended_filter_aec_;
   rtc::Optional<bool> delay_agnostic_aec_;
   rtc::Optional<bool> experimental_ns_;
   rtc::Optional<bool> intelligibility_enhancer_;
+  rtc::Optional<bool> level_control_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcVoiceEngine);
 };

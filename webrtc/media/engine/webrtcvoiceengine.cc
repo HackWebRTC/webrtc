@@ -559,6 +559,7 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(
     options.delay_agnostic_aec = rtc::Optional<bool>(false);
     options.experimental_ns = rtc::Optional<bool>(false);
     options.intelligibility_enhancer = rtc::Optional<bool>(false);
+    options.level_control = rtc::Optional<bool>(false);
     bool error = ApplyOptions(options);
     RTC_DCHECK(error);
   }
@@ -682,9 +683,29 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     }
   }
 
+  // Use optional to avoid uneccessary calls to BuiltInAGCIsAvailable while
+  // complying with the unittest requirements of only 1 call per test.
+  rtc::Optional<bool> built_in_agc_avaliable;
+  if (options.level_control) {
+    if (!built_in_agc_avaliable) {
+      built_in_agc_avaliable =
+          rtc::Optional<bool>(adm()->BuiltInAGCIsAvailable());
+    }
+    RTC_DCHECK(built_in_agc_avaliable);
+    if (*built_in_agc_avaliable) {
+      // Disable internal software level control if built-in AGC is enabled,
+      // i.e., replace the software AGC with the built-in AGC.
+      options.level_control = rtc::Optional<bool>(false);
+    }
+  }
+
   if (options.auto_gain_control) {
-    const bool built_in_agc = adm()->BuiltInAGCIsAvailable();
-    if (built_in_agc) {
+    if (!built_in_agc_avaliable) {
+      built_in_agc_avaliable =
+          rtc::Optional<bool>(adm()->BuiltInAGCIsAvailable());
+    }
+    RTC_DCHECK(built_in_agc_avaliable);
+    if (*built_in_agc_avaliable) {
       if (adm()->EnableBuiltInAGC(*options.auto_gain_control) == 0 &&
           *options.auto_gain_control) {
         // Disable internal software AGC if built-in AGC is enabled,
@@ -839,6 +860,16 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
                  << *intelligibility_enhancer_;
     config.Set<webrtc::Intelligibility>(
         new webrtc::Intelligibility(*intelligibility_enhancer_));
+  }
+
+  if (options.level_control) {
+    level_control_ = options.level_control;
+  }
+
+  LOG(LS_INFO) << "Level control: "
+               << (!!level_control_ ? *level_control_ : -1);
+  if (level_control_) {
+    config.Set<webrtc::LevelControl>(new webrtc::LevelControl(*level_control_));
   }
 
   // We check audioproc for the benefit of tests, since FakeWebRtcVoiceEngine

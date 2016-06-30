@@ -158,6 +158,7 @@ struct AudioOptions {
     SetFrom(&delay_agnostic_aec, change.delay_agnostic_aec);
     SetFrom(&experimental_ns, change.experimental_ns);
     SetFrom(&intelligibility_enhancer, change.intelligibility_enhancer);
+    SetFrom(&level_control, change.level_control);
     SetFrom(&tx_agc_target_dbov, change.tx_agc_target_dbov);
     SetFrom(&tx_agc_digital_compression_gain,
             change.tx_agc_digital_compression_gain);
@@ -169,27 +170,30 @@ struct AudioOptions {
 
   bool operator==(const AudioOptions& o) const {
     return echo_cancellation == o.echo_cancellation &&
-        auto_gain_control == o.auto_gain_control &&
-        noise_suppression == o.noise_suppression &&
-        highpass_filter == o.highpass_filter &&
-        stereo_swapping == o.stereo_swapping &&
-        audio_jitter_buffer_max_packets == o.audio_jitter_buffer_max_packets &&
-        audio_jitter_buffer_fast_accelerate ==
-            o.audio_jitter_buffer_fast_accelerate &&
-        typing_detection == o.typing_detection &&
-        aecm_generate_comfort_noise == o.aecm_generate_comfort_noise &&
-        experimental_agc == o.experimental_agc &&
-        extended_filter_aec == o.extended_filter_aec &&
-        delay_agnostic_aec == o.delay_agnostic_aec &&
-        experimental_ns == o.experimental_ns &&
-        intelligibility_enhancer == o.intelligibility_enhancer &&
-        adjust_agc_delta == o.adjust_agc_delta &&
-        tx_agc_target_dbov == o.tx_agc_target_dbov &&
-        tx_agc_digital_compression_gain == o.tx_agc_digital_compression_gain &&
-        tx_agc_limiter == o.tx_agc_limiter &&
-        recording_sample_rate == o.recording_sample_rate &&
-        playout_sample_rate == o.playout_sample_rate &&
-        combined_audio_video_bwe == o.combined_audio_video_bwe;
+           auto_gain_control == o.auto_gain_control &&
+           noise_suppression == o.noise_suppression &&
+           highpass_filter == o.highpass_filter &&
+           stereo_swapping == o.stereo_swapping &&
+           audio_jitter_buffer_max_packets ==
+               o.audio_jitter_buffer_max_packets &&
+           audio_jitter_buffer_fast_accelerate ==
+               o.audio_jitter_buffer_fast_accelerate &&
+           typing_detection == o.typing_detection &&
+           aecm_generate_comfort_noise == o.aecm_generate_comfort_noise &&
+           experimental_agc == o.experimental_agc &&
+           extended_filter_aec == o.extended_filter_aec &&
+           delay_agnostic_aec == o.delay_agnostic_aec &&
+           experimental_ns == o.experimental_ns &&
+           intelligibility_enhancer == o.intelligibility_enhancer &&
+           level_control == o.level_control &&
+           adjust_agc_delta == o.adjust_agc_delta &&
+           tx_agc_target_dbov == o.tx_agc_target_dbov &&
+           tx_agc_digital_compression_gain ==
+               o.tx_agc_digital_compression_gain &&
+           tx_agc_limiter == o.tx_agc_limiter &&
+           recording_sample_rate == o.recording_sample_rate &&
+           playout_sample_rate == o.playout_sample_rate &&
+           combined_audio_video_bwe == o.combined_audio_video_bwe;
   }
   bool operator!=(const AudioOptions& o) const { return !(*this == o); }
 
@@ -213,6 +217,7 @@ struct AudioOptions {
     ost << ToStringIfSet("delay_agnostic_aec", delay_agnostic_aec);
     ost << ToStringIfSet("experimental_ns", experimental_ns);
     ost << ToStringIfSet("intelligibility_enhancer", intelligibility_enhancer);
+    ost << ToStringIfSet("level_control", level_control);
     ost << ToStringIfSet("tx_agc_target_dbov", tx_agc_target_dbov);
     ost << ToStringIfSet("tx_agc_digital_compression_gain",
         tx_agc_digital_compression_gain);
@@ -248,6 +253,7 @@ struct AudioOptions {
   rtc::Optional<bool> delay_agnostic_aec;
   rtc::Optional<bool> experimental_ns;
   rtc::Optional<bool> intelligibility_enhancer;
+  rtc::Optional<bool> level_control;
   // Note that tx_agc_* only applies to non-experimental AGC.
   rtc::Optional<uint16_t> tx_agc_target_dbov;
   rtc::Optional<uint16_t> tx_agc_digital_compression_gain;

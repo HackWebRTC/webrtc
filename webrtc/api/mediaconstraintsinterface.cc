@@ -48,6 +48,7 @@ const char MediaConstraintsInterface::kExperimentalNoiseSuppression[] =
     "googNoiseSuppression2";
 const char MediaConstraintsInterface::kIntelligibilityEnhancer[] =
     "intelligibilityEnhancer";
+const char MediaConstraintsInterface::kLevelControl[] = "levelControl";
 const char MediaConstraintsInterface::kHighpassFilter[] =
     "googHighpassFilter";
 const char MediaConstraintsInterface::kTypingNoiseDetection[] =
