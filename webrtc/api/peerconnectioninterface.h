@@ -300,7 +300,6 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     rtc::Optional<bool> combined_audio_video_bwe;
     rtc::Optional<bool> enable_dtls_srtp;
     int ice_candidate_pool_size = 0;
-    bool prune_turn_ports = false;
   };
 
   struct RTCOfferAnswerOptions {

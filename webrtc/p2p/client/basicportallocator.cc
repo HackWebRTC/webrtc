@@ -47,36 +47,6 @@ const int PHASE_SSLTCP = 3;
 
 const int kNumPhases = 4;
 
-// Gets address family priority:  IPv6 > IPv4 > Unspecified.
-int GetAddressFamilyPriority(int ip_family) {
-  switch (ip_family) {
-    case AF_INET6:
-      return 2;
-    case AF_INET:
-      return 1;
-    default:
-      RTC_DCHECK(false);
-      return 0;
-  }
-}
-
-// Returns positive if a is better, negative if b is better, and 0 otherwise.
-int ComparePort(const cricket::Port* a, const cricket::Port* b) {
-  static constexpr int a_is_better = 1;
-  static constexpr int b_is_better = -1;
-  // Protocol type is defined as UDP = 0, TCP = 1, SSLTCP = 2.
-  if (a->GetProtocol() < b->GetProtocol()) {
-    return a_is_better;
-  }
-  if (a->GetProtocol() > b->GetProtocol()) {
-    return b_is_better;
-  }
-
-  int a_family = GetAddressFamilyPriority(a->Network()->GetBestIP().family());
-  int b_family = GetAddressFamilyPriority(b->Network()->GetBestIP().family());
-  return a_family - b_family;
-}
-
 }  // namespace
 
 namespace cricket {
@@ -104,7 +74,7 @@ BasicPortAllocator::BasicPortAllocator(rtc::NetworkManager* network_manager,
                                        const ServerAddresses& stun_servers)
     : network_manager_(network_manager), socket_factory_(socket_factory) {
   ASSERT(socket_factory_ != NULL);
-  SetConfiguration(stun_servers, std::vector<RelayServerConfig>(), 0, false);
+  SetConfiguration(stun_servers, std::vector<RelayServerConfig>(), 0);
   Construct();
 }
 
@@ -131,7 +101,7 @@ BasicPortAllocator::BasicPortAllocator(
     turn_servers.push_back(config);
   }
 
-  SetConfiguration(stun_servers, turn_servers, 0, false);
+  SetConfiguration(stun_servers, turn_servers, 0);
   Construct();
 }
 
@@ -152,30 +122,24 @@ PortAllocatorSession* BasicPortAllocator::CreateSessionInternal(
 void BasicPortAllocator::AddTurnServer(const RelayServerConfig& turn_server) {
   std::vector<RelayServerConfig> new_turn_servers = turn_servers();
   new_turn_servers.push_back(turn_server);
-  SetConfiguration(stun_servers(), new_turn_servers, candidate_pool_size(),
-                   prune_turn_ports());
+  SetConfiguration(stun_servers(), new_turn_servers, candidate_pool_size());
 }
 
 // BasicPortAllocatorSession
 BasicPortAllocatorSession::BasicPortAllocatorSession(
-    BasicPortAllocator* allocator,
+    BasicPortAllocator *allocator,
     const std::string& content_name,
     int component,
     const std::string& ice_ufrag,
     const std::string& ice_pwd)
-    : PortAllocatorSession(content_name,
-                           component,
-                           ice_ufrag,
-                           ice_pwd,
-                           allocator->flags()),
-      allocator_(allocator),
-      network_thread_(NULL),
+    : PortAllocatorSession(content_name, component,
+                           ice_ufrag, ice_pwd, allocator->flags()),
+      allocator_(allocator), network_thread_(NULL),
       socket_factory_(allocator->socket_factory()),
       allocation_started_(false),
       network_manager_started_(false),
       running_(false),
-      allocation_sequences_created_(false),
-      prune_turn_ports_(allocator->prune_turn_ports()) {
+      allocation_sequences_created_(false) {
   allocator_->network_manager()->SignalNetworksChanged.connect(
       this, &BasicPortAllocatorSession::OnNetworksChanged);
   allocator_->network_manager()->StartUpdating();
@@ -253,9 +217,9 @@ void BasicPortAllocatorSession::ClearGettingPorts() {
 
 std::vector<PortInterface*> BasicPortAllocatorSession::ReadyPorts() const {
   std::vector<PortInterface*> ret;
-  for (const PortData& data : ports_) {
-    if (data.ready()) {
-      ret.push_back(data.port());
+  for (const PortData& port : ports_) {
+    if (port.has_pairable_candidate() && !port.error()) {
+      ret.push_back(port.port());
     }
   }
   return ret;
@@ -264,10 +228,6 @@ std::vector<PortInterface*> BasicPortAllocatorSession::ReadyPorts() const {
 std::vector<Candidate> BasicPortAllocatorSession::ReadyCandidates() const {
   std::vector<Candidate> candidates;
   for (const PortData& data : ports_) {
-    if (!data.ready()) {
-      continue;
-    }
-
     for (const Candidate& candidate : data.port()->Candidates()) {
       if (!CheckCandidateFilter(candidate)) {
         continue;
@@ -318,11 +278,16 @@ bool BasicPortAllocatorSession::CandidatesAllocationDone() const {
     return false;
   }
 
-  // If all allocated ports are no longer gathering, session must have got all
+  // If all allocated ports are in complete state, session must have got all
   // expected candidates. Session will trigger candidates allocation complete
   // signal.
-  return std::none_of(ports_.begin(), ports_.end(),
-                      [](const PortData& port) { return port.inprogress(); });
+  if (!std::all_of(ports_.begin(), ports_.end(), [](const PortData& port) {
+        return (port.complete() || port.error());
+      })) {
+    return false;
+  }
+
+  return true;
 }
 
 void BasicPortAllocatorSession::OnMessage(rtc::Message *message) {
@@ -392,7 +357,7 @@ void BasicPortAllocatorSession::OnConfigStop() {
   bool send_signal = false;
   for (std::vector<PortData>::iterator it = ports_.begin();
        it != ports_.end(); ++it) {
-    if (it->inprogress()) {
+    if (!it->complete() && !it->error()) {
       // Updating port state to error, which didn't finish allocating candidates
       // yet.
       it->set_error();
@@ -478,8 +443,11 @@ void BasicPortAllocatorSession::DoAllocate() {
     LOG(LS_WARNING) << "Machine has no networks; no ports will be allocated";
     done_signal_needed = true;
   } else {
-    PortConfiguration* config = configs_.empty() ? nullptr : configs_.back();
     for (uint32_t i = 0; i < networks.size(); ++i) {
+      PortConfiguration* config = NULL;
+      if (configs_.size() > 0)
+        config = configs_.back();
+
       uint32_t sequence_flags = flags();
       if ((sequence_flags & DISABLE_ALL_PHASES) == DISABLE_ALL_PHASES) {
         // If all the ports are disabled we should just fire the allocation
@@ -600,31 +568,9 @@ void BasicPortAllocatorSession::OnCandidateReady(
   PortData* data = FindPort(port);
   ASSERT(data != NULL);
   // Discarding any candidate signal if port allocation status is
-  // already done with gathering.
-  if (!data->inprogress()) {
+  // already in completed state.
+  if (data->complete() || data->error()) {
     return;
-  }
-
-  // Mark that the port has a pairable candidate, either because we have a
-  // usable candidate from the port, or simply because the port is bound to the
-  // any address and therefore has no host candidate. This will trigger the port
-  // to start creating candidate pairs (connections) and issue connectivity
-  // checks. If port has already been marked as having a pairable candidate,
-  // do nothing here.
-  // Note: We should check whether any candidates may become ready after this
-  // because there we will check whether the candidate is generated by the ready
-  // ports, which may include this port.
-  bool pruned_port = false;
-  if (CandidatePairable(c, port) && !data->has_pairable_candidate()) {
-    data->set_has_pairable_candidate(true);
-
-    if (prune_turn_ports_ && port->Type() == RELAY_PORT_TYPE) {
-      pruned_port = PruneTurnPorts(port);
-    }
-    // If the current port is not pruned yet, SignalPortReady.
-    if (!data->pruned()) {
-      SignalPortReady(this, port);
-    }
   }
 
   ProtocolType pvalue;
@@ -632,53 +578,27 @@ void BasicPortAllocatorSession::OnCandidateReady(
       StringToProto(c.protocol().c_str(), &pvalue) &&
       data->sequence()->ProtocolEnabled(pvalue);
 
-  if (data->ready() && CheckCandidateFilter(c) && candidate_protocol_enabled) {
+  if (CheckCandidateFilter(c) && candidate_protocol_enabled) {
     std::vector<Candidate> candidates;
     candidates.push_back(SanitizeRelatedAddress(c));
     SignalCandidatesReady(this, candidates);
   }
 
-  // If we have pruned any port, maybe need to signal port allocation done.
-  if (pruned_port) {
-    MaybeSignalCandidatesAllocationDone();
+  // Port has already been marked as having a pairable candidate.
+  // Nothing to do here.
+  if (data->has_pairable_candidate()) {
+    return;
   }
-}
 
-Port* BasicPortAllocatorSession::GetBestTurnPortForNetwork(
-    const std::string& network_name) const {
-  Port* best_turn_port = nullptr;
-  for (const PortData& data : ports_) {
-    if (data.port()->Network()->name() == network_name &&
-        data.port()->Type() == RELAY_PORT_TYPE && data.ready() &&
-        (!best_turn_port || ComparePort(data.port(), best_turn_port) > 0)) {
-      best_turn_port = data.port();
-    }
+  // Mark that the port has a pairable candidate, either because we have a
+  // usable candidate from the port, or simply because the port is bound to the
+  // any address and therefore has no host candidate. This will trigger the port
+  // to start creating candidate pairs (connections) and issue connectivity
+  // checks.
+  if (CandidatePairable(c, port)) {
+    data->set_has_pairable_candidate(true);
+    SignalPortReady(this, port);
   }
-  return best_turn_port;
-}
-
-bool BasicPortAllocatorSession::PruneTurnPorts(Port* newly_pairable_turn_port) {
-  bool pruned_port = false;
-  // Note: We determine the same network based only on their network names. So
-  // if an IPv4 address and an IPv6 address have the same network name, they
-  // are considered the same network here.
-  const std::string& network_name = newly_pairable_turn_port->Network()->name();
-  Port* best_turn_port = GetBestTurnPortForNetwork(network_name);
-  // |port| is already in the list of ports, so the best port cannot be nullptr.
-  RTC_CHECK(best_turn_port != nullptr);
-
-  for (PortData& data : ports_) {
-    if (data.port()->Network()->name() == network_name &&
-        data.port()->Type() == RELAY_PORT_TYPE && !data.pruned() &&
-        ComparePort(data.port(), best_turn_port) < 0) {
-      data.set_pruned();
-      pruned_port = true;
-      if (data.port() != newly_pairable_turn_port) {
-        SignalPortPruned(this, data.port());
-      }
-    }
-  }
-  return pruned_port;
 }
 
 void BasicPortAllocatorSession::OnPortComplete(Port* port) {
@@ -687,7 +607,7 @@ void BasicPortAllocatorSession::OnPortComplete(Port* port) {
   ASSERT(data != NULL);
 
   // Ignore any late signals.
-  if (!data->inprogress()) {
+  if (data->complete() || data->error()) {
     return;
   }
 
@@ -702,7 +622,7 @@ void BasicPortAllocatorSession::OnPortError(Port* port) {
   PortData* data = FindPort(port);
   ASSERT(data != NULL);
   // We might have already given up on this port and stopped it.
-  if (!data->inprogress()) {
+  if (data->complete() || data->error()) {
     return;
   }
 
@@ -1108,11 +1028,13 @@ void AllocationSequence::CreateRelayPorts() {
     return;
   }
 
-  for (RelayServerConfig& relay : config_->relays) {
-    if (relay.type == RELAY_GTURN) {
-      CreateGturnPort(relay);
-    } else if (relay.type == RELAY_TURN) {
-      CreateTurnPort(relay);
+  PortConfiguration::RelayList::const_iterator relay;
+  for (relay = config_->relays.begin();
+       relay != config_->relays.end(); ++relay) {
+    if (relay->type == RELAY_GTURN) {
+      CreateGturnPort(*relay);
+    } else if (relay->type == RELAY_TURN) {
+      CreateTurnPort(*relay);
     } else {
       ASSERT(false);
     }

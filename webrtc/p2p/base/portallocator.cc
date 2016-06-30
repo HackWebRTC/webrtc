@@ -32,13 +32,11 @@ PortAllocatorSession::PortAllocatorSession(const std::string& content_name,
 void PortAllocator::SetConfiguration(
     const ServerAddresses& stun_servers,
     const std::vector<RelayServerConfig>& turn_servers,
-    int candidate_pool_size,
-    bool prune_turn_ports) {
+    int candidate_pool_size) {
   bool ice_servers_changed =
       (stun_servers != stun_servers_ || turn_servers != turn_servers_);
   stun_servers_ = stun_servers;
   turn_servers_ = turn_servers;
-  prune_turn_ports_ = prune_turn_ports;
 
   // If ICE servers changed, throw away any existing pooled sessions and create
   // new ones.

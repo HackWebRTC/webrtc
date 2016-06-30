@@ -152,8 +152,6 @@ class TestPort : public Port {
     return true;
   }
 
-  virtual ProtocolType GetProtocol() const { return PROTO_UDP; }
-
   // Exposed for testing candidate building.
   void AddCandidateAddress(const rtc::SocketAddress& addr) {
     AddAddress(addr, addr, rtc::SocketAddress(), "udp", "", "", Type(),
