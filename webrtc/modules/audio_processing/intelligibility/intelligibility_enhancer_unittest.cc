@@ -407,18 +407,17 @@ TEST_F(IntelligibilityEnhancerTest, TestSolveForGains) {
 }
 
 TEST_F(IntelligibilityEnhancerTest, TestNoiseGainHasExpectedResult) {
-  const int kGainDB = 6;
-  const float kGainFactor = std::pow(10.f, kGainDB / 20.f);
+  const float kGain = 2.f;
   const float kTolerance = 0.007f;
   std::vector<float> noise(kNumNoiseBins);
   std::vector<float> noise_psd(kNumNoiseBins);
   std::generate(noise.begin(), noise.end(), float_rand);
   for (size_t i = 0; i < kNumNoiseBins; ++i) {
-    noise_psd[i] = kGainFactor * kGainFactor * noise[i] * noise[i];
+    noise_psd[i] = kGain * kGain * noise[i] * noise[i];
   }
   float* clear_cursor = clear_data_.data();
   for (size_t i = 0; i < kNumFramesToProcess; ++i) {
-    enh_->SetCaptureNoiseEstimate(noise, kGainDB);
+    enh_->SetCaptureNoiseEstimate(noise, kGain);
     enh_->ProcessRenderAudio(&clear_cursor, kSampleRate, kNumChannels);
   }
   const std::vector<float>& estimated_psd =

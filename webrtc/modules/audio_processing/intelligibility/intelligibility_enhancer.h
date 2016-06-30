@@ -36,7 +36,7 @@ class IntelligibilityEnhancer : public LappedTransform::Callback {
                           size_t num_noise_bins);
 
   // Sets the capture noise magnitude spectrum estimate.
-  void SetCaptureNoiseEstimate(std::vector<float> noise, int gain_db);
+  void SetCaptureNoiseEstimate(std::vector<float> noise, float gain);
 
   // Reads chunk of speech in time domain and updates with modified signal.
   void ProcessRenderAudio(float* const* audio,

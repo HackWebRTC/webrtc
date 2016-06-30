@@ -728,8 +728,12 @@ int AudioProcessingImpl::ProcessStreamLocked() {
     int gain_db = public_submodules_->gain_control->is_enabled() ?
                   public_submodules_->gain_control->compression_gain_db() :
                   0;
+    float gain = std::pow(10.f, gain_db / 20.f);
+    gain *= capture_nonlocked_.level_controller_enabled ?
+            private_submodules_->level_controller->GetLastGain() :
+            1.f;
     public_submodules_->intelligibility_enhancer->SetCaptureNoiseEstimate(
-        public_submodules_->noise_suppression->NoiseEstimate(), gain_db);
+        public_submodules_->noise_suppression->NoiseEstimate(), gain);
   }
 
   // Ensure that the stream delay was set before the call to the

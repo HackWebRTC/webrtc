@@ -111,9 +111,8 @@ IntelligibilityEnhancer::IntelligibilityEnhancer(int sample_rate_hz,
 }
 
 void IntelligibilityEnhancer::SetCaptureNoiseEstimate(
-    std::vector<float> noise, int gain_db) {
+    std::vector<float> noise, float gain) {
   RTC_DCHECK_EQ(noise.size(), num_noise_bins_);
-  const float gain = std::pow(10.f, gain_db / 20.f);
   for (auto& bin : noise) {
     bin *= gain;
   }
