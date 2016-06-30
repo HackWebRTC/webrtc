@@ -47,42 +47,50 @@ FrameBuffer::FrameBuffer(Clock* clock,
       frame_inserted_event_(false, false),
       jitter_estimator_(jitter_estimator),
       timing_(timing),
-      newest_picture_id_(-1) {}
+      newest_picture_id_(-1),
+      stopped_(false) {}
 
 std::unique_ptr<FrameObject> FrameBuffer::NextFrame(int64_t max_wait_time_ms) {
   int64_t latest_return_time = clock_->TimeInMilliseconds() + max_wait_time_ms;
+  int64_t now = clock_->TimeInMilliseconds();
+  int64_t wait_ms = max_wait_time_ms;
   while (true) {
-    int64_t now = clock_->TimeInMilliseconds();
-    int64_t wait_ms = max_wait_time_ms;
+    std::map<FrameKey, std::unique_ptr<FrameObject>, FrameComp>::iterator
+        next_frame;
+    {
+      rtc::CritScope lock(&crit_);
+      frame_inserted_event_.Reset();
+      if (stopped_)
+        return std::unique_ptr<FrameObject>();
 
-    crit_.Enter();
-    frame_inserted_event_.Reset();
-    auto next_frame = frames_.end();
-    for (auto frame_it = frames_.begin(); frame_it != frames_.end();
-         ++frame_it) {
-      const FrameObject& frame = *frame_it->second;
-      if (IsContinuous(frame)) {
-        next_frame = frame_it;
-        int64_t render_time = timing_->RenderTimeMs(frame.timestamp, now);
-        wait_ms = timing_->MaxWaitingTime(render_time, now);
+      now = clock_->TimeInMilliseconds();
+      wait_ms = max_wait_time_ms;
+      next_frame = frames_.end();
+      for (auto frame_it = frames_.begin(); frame_it != frames_.end();
+           ++frame_it) {
+        const FrameObject& frame = *frame_it->second;
+        if (IsContinuous(frame)) {
+          next_frame = frame_it;
+          int64_t render_time = timing_->RenderTimeMs(frame.timestamp, now);
+          wait_ms = timing_->MaxWaitingTime(render_time, now);
 
-        // This will cause the frame buffer to prefer high framerate rather
-        // than high resolution in the case of the decoder not decoding fast
-        // enough and the stream has multiple spatial and temporal layers.
-        if (wait_ms == 0)
-          continue;
+          // This will cause the frame buffer to prefer high framerate rather
+          // than high resolution in the case of the decoder not decoding fast
+          // enough and the stream has multiple spatial and temporal layers.
+          if (wait_ms == 0)
+            continue;
 
-        break;
+          break;
+        }
       }
     }
-    crit_.Leave();
 
     // If the timout occures, return. Otherwise a new frame has been inserted
     // and the best frame to decode next will be selected again.
     wait_ms = std::min<int64_t>(wait_ms, latest_return_time - now);
     wait_ms = std::max<int64_t>(wait_ms, 0);
     if (!frame_inserted_event_.Wait(wait_ms)) {
-      crit_.Enter();
+      rtc::CritScope lock(&crit_);
       if (next_frame != frames_.end()) {
         // TODO(philipel): update jitter estimator with correct values.
         jitter_estimator_->UpdateEstimate(100, 100);
@@ -90,14 +98,23 @@ std::unique_ptr<FrameObject> FrameBuffer::NextFrame(int64_t max_wait_time_ms) {
         decoded_frames_.insert(next_frame->first);
         std::unique_ptr<FrameObject> frame = std::move(next_frame->second);
         frames_.erase(frames_.begin(), ++next_frame);
-        crit_.Leave();
         return frame;
       } else {
-        crit_.Leave();
         return std::unique_ptr<FrameObject>();
       }
     }
   }
+}
+
+void FrameBuffer::Start() {
+  rtc::CritScope lock(&crit_);
+  stopped_ = false;
+}
+
+void FrameBuffer::Stop() {
+  rtc::CritScope lock(&crit_);
+  stopped_ = true;
+  frame_inserted_event_.Set();
 }
 
 void FrameBuffer::InsertFrame(std::unique_ptr<FrameObject> frame) {

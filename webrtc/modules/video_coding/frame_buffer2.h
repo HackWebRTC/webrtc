@@ -46,6 +46,14 @@ class FrameBuffer {
   // unique ptr if there is no available frame for decoding.
   std::unique_ptr<FrameObject> NextFrame(int64_t max_wait_time_ms);
 
+  // Start the frame buffer, has no effect if the frame buffer is started.
+  // The frame buffer is started upon construction.
+  void Start();
+
+  // Stop the frame buffer, causing any sleeping thread in NextFrame to
+  // return immediately.
+  void Stop();
+
  private:
   // FrameKey is a pair of (picture id, spatial layer).
   using FrameKey = std::pair<uint16_t, uint8_t>;
@@ -73,6 +81,7 @@ class FrameBuffer {
   VCMJitterEstimator* const jitter_estimator_;
   const VCMTiming* const timing_;
   int newest_picture_id_ GUARDED_BY(crit_);
+  bool stopped_ GUARDED_BY(crit_);
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(FrameBuffer);
 };
