@@ -10,12 +10,14 @@
 
 package org.appspot.apprtc;
 
+import org.appspot.apprtc.AppRTCClient.SignalingParameters;
+
 import android.content.Context;
-import android.os.ParcelFileDescriptor;
 import android.os.Environment;
+import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
-import org.appspot.apprtc.AppRTCClient.SignalingParameters;
+import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
 import org.webrtc.CameraEnumerationAndroid;
 import org.webrtc.DataChannel;
@@ -96,6 +98,7 @@ public class PeerConnectionClient {
   private PeerConnectionFactory factory;
   private PeerConnection peerConnection;
   PeerConnectionFactory.Options options = null;
+  private AudioSource audioSource;
   private VideoSource videoSource;
   private boolean videoCallEnabled;
   private boolean preferIsac;
@@ -542,6 +545,11 @@ public class PeerConnectionClient {
       peerConnection.dispose();
       peerConnection = null;
     }
+    Log.d(TAG, "Closing audio source.");
+    if (audioSource != null) {
+      audioSource.dispose();
+      audioSource = null;
+    }
     Log.d(TAG, "Closing video source.");
     if (videoSource != null) {
       videoSource.dispose();
@@ -777,9 +785,8 @@ public class PeerConnectionClient {
   }
 
   private AudioTrack createAudioTrack() {
-    localAudioTrack = factory.createAudioTrack(
-        AUDIO_TRACK_ID,
-        factory.createAudioSource(audioConstraints));
+    audioSource = factory.createAudioSource(audioConstraints);
+    localAudioTrack = factory.createAudioTrack(AUDIO_TRACK_ID, audioSource);
     localAudioTrack.setEnabled(enableAudio);
     return localAudioTrack;
   }
