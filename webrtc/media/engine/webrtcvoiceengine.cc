@@ -28,6 +28,7 @@
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/trace_event.h"
+#include "webrtc/call/rtc_event_log.h"
 #include "webrtc/common.h"
 #include "webrtc/media/base/audiosource.h"
 #include "webrtc/media/base/mediaconstants.h"
@@ -1068,6 +1069,27 @@ void WebRtcVoiceEngine::StopAecDump() {
     }
     is_dumping_aec_ = false;
   }
+}
+
+bool WebRtcVoiceEngine::StartRtcEventLog(rtc::PlatformFile file,
+                                         int64_t max_size_bytes) {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  webrtc::RtcEventLog* event_log = voe_wrapper_->codec()->GetEventLog();
+  if (event_log) {
+    return event_log->StartLogging(file, max_size_bytes);
+  }
+  LOG_RTCERR0(StartRtcEventLog);
+  return false;
+}
+
+void WebRtcVoiceEngine::StopRtcEventLog() {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  webrtc::RtcEventLog* event_log = voe_wrapper_->codec()->GetEventLog();
+  if (event_log) {
+    event_log->StopLogging();
+    return;
+  }
+  LOG_RTCERR0(StopRtcEventLog);
 }
 
 int WebRtcVoiceEngine::CreateVoEChannel() {

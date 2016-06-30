@@ -17,7 +17,6 @@
 #include "webrtc/audio/audio_state.h"
 #include "webrtc/audio/conversion.h"
 #include "webrtc/modules/congestion_controller/include/mock/mock_congestion_controller.h"
-#include "webrtc/call/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_estimator.h"
@@ -56,8 +55,7 @@ struct ConfigHelper {
         stream_config_(nullptr),
         congestion_controller_(&simulated_clock_,
                                &bitrate_observer_,
-                               &remote_bitrate_observer_,
-                               &event_log_) {
+                               &remote_bitrate_observer_) {
     using testing::Invoke;
     using testing::StrEq;
 
@@ -169,7 +167,6 @@ struct ConfigHelper {
   testing::NiceMock<MockCongestionObserver> bitrate_observer_;
   testing::NiceMock<MockRemoteBitrateObserver> remote_bitrate_observer_;
   CongestionController congestion_controller_;
-  MockRtcEventLog event_log_;
 };
 }  // namespace
 

@@ -22,9 +22,7 @@ const int kFeedbackIntervalMs = 50;
 
 FullBweSender::FullBweSender(int kbps, BitrateObserver* observer, Clock* clock)
     : bitrate_controller_(
-          BitrateController::CreateBitrateController(clock,
-                                                     observer,
-                                                     &event_log_)),
+          BitrateController::CreateBitrateController(clock, observer)),
       rbe_(new RemoteBitrateEstimatorAbsSendTime(this)),
       feedback_observer_(bitrate_controller_->CreateRtcpBandwidthObserver()),
       clock_(clock),

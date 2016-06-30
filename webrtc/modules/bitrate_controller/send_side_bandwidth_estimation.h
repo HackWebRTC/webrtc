@@ -26,8 +26,7 @@ class RtcEventLog;
 
 class SendSideBandwidthEstimation {
  public:
-  SendSideBandwidthEstimation() = delete;
-  explicit SendSideBandwidthEstimation(RtcEventLog* event_log);
+  SendSideBandwidthEstimation();
   virtual ~SendSideBandwidthEstimation();
 
   void CurrentEstimate(int* bitrate, uint8_t* loss, int64_t* rtt) const;
@@ -53,6 +52,8 @@ class SendSideBandwidthEstimation {
   void SetSendBitrate(int bitrate);
   void SetMinMaxBitrate(int min_bitrate, int max_bitrate);
   int GetMinBitrate() const;
+
+  void SetEventLog(RtcEventLog* event_log);
 
  private:
   enum UmaState { kNoUpdate, kFirstDone, kDone };

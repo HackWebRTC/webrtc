@@ -38,7 +38,9 @@
 
 namespace webrtc {
 
-// No-op implementation is used if flag is not set, or in tests.
+#ifndef ENABLE_RTC_EVENT_LOG
+
+// No-op implementation if flag is not set.
 class RtcEventLogNullImpl final : public RtcEventLog {
  public:
   bool StartLogging(const std::string& file_name,
@@ -72,7 +74,7 @@ class RtcEventLogNullImpl final : public RtcEventLog {
                              int32_t total_packets) override {}
 };
 
-#ifdef ENABLE_RTC_EVENT_LOG
+#else  // ENABLE_RTC_EVENT_LOG is defined
 
 class RtcEventLogImpl final : public RtcEventLog {
  public:
@@ -461,10 +463,6 @@ std::unique_ptr<RtcEventLog> RtcEventLog::Create(const Clock* clock) {
 #else
   return std::unique_ptr<RtcEventLog>(new RtcEventLogNullImpl());
 #endif  // ENABLE_RTC_EVENT_LOG
-}
-
-std::unique_ptr<RtcEventLog> RtcEventLog::CreateNull() {
-  return std::unique_ptr<RtcEventLog>(new RtcEventLogNullImpl());
 }
 
 }  // namespace webrtc

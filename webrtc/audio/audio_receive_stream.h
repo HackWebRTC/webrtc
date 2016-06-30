@@ -22,7 +22,6 @@
 namespace webrtc {
 class CongestionController;
 class RemoteBitrateEstimator;
-class RtcEventLog;
 
 namespace voe {
 class ChannelProxy;
@@ -34,8 +33,7 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream {
  public:
   AudioReceiveStream(CongestionController* congestion_controller,
                      const webrtc::AudioReceiveStream::Config& config,
-                     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
-                     webrtc::RtcEventLog* event_log);
+                     const rtc::scoped_refptr<webrtc::AudioState>& audio_state);
   ~AudioReceiveStream() override;
 
   // webrtc::AudioReceiveStream implementation.

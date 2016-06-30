@@ -153,17 +153,37 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
 
 CongestionController::CongestionController(
     Clock* clock,
+    BitrateObserver* bitrate_observer,
+    RemoteBitrateObserver* remote_bitrate_observer)
+    : clock_(clock),
+      observer_(nullptr),
+      packet_router_(new PacketRouter()),
+      pacer_(new PacedSender(clock_, packet_router_.get())),
+      remote_bitrate_estimator_(
+          new WrappingBitrateEstimator(remote_bitrate_observer, clock_)),
+      bitrate_controller_(
+          BitrateController::CreateBitrateController(clock_, bitrate_observer)),
+      remote_estimator_proxy_(clock_, packet_router_.get()),
+      transport_feedback_adapter_(bitrate_controller_.get(), clock_),
+      min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps),
+      last_reported_bitrate_bps_(0),
+      last_reported_fraction_loss_(0),
+      last_reported_rtt_(0),
+      network_state_(kNetworkUp) {
+  Init();
+}
+
+CongestionController::CongestionController(
+    Clock* clock,
     Observer* observer,
-    RemoteBitrateObserver* remote_bitrate_observer,
-    RtcEventLog* event_log)
+    RemoteBitrateObserver* remote_bitrate_observer)
     : clock_(clock),
       observer_(observer),
       packet_router_(new PacketRouter()),
       pacer_(new PacedSender(clock_, packet_router_.get())),
       remote_bitrate_estimator_(
           new WrappingBitrateEstimator(remote_bitrate_observer, clock_)),
-      bitrate_controller_(
-          BitrateController::CreateBitrateController(clock_, event_log)),
+      bitrate_controller_(BitrateController::CreateBitrateController(clock_)),
       remote_estimator_proxy_(clock_, packet_router_.get()),
       transport_feedback_adapter_(bitrate_controller_.get(), clock_),
       min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps),
@@ -178,7 +198,6 @@ CongestionController::CongestionController(
     Clock* clock,
     Observer* observer,
     RemoteBitrateObserver* remote_bitrate_observer,
-    RtcEventLog* event_log,
     std::unique_ptr<PacketRouter> packet_router,
     std::unique_ptr<PacedSender> pacer)
     : clock_(clock),
@@ -189,8 +208,7 @@ CongestionController::CongestionController(
           new WrappingBitrateEstimator(remote_bitrate_observer, clock_)),
       // Constructed last as this object calls the provided callback on
       // construction.
-      bitrate_controller_(
-          BitrateController::CreateBitrateController(clock_, event_log)),
+      bitrate_controller_(BitrateController::CreateBitrateController(clock_)),
       remote_estimator_proxy_(clock_, packet_router_.get()),
       transport_feedback_adapter_(bitrate_controller_.get(), clock_),
       min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps),
