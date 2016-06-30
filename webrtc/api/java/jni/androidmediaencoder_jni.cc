@@ -382,7 +382,14 @@ int32_t MediaCodecVideoEncoder::InitEncode(
   codec_mode_ = codec_settings->mode;
   int init_width = codec_settings->width;
   int init_height = codec_settings->height;
-  scale_ = codecType_ != kVideoCodecVP9;
+  // Scaling is disabled for VP9, but optionally enabled for VP8.
+  // TODO(pbos): Extract automaticResizeOn out of VP8 settings.
+  scale_ = false;
+  if (codecType_ == kVideoCodecVP8) {
+    scale_ = codec_settings->codecSpecific.VP8.automaticResizeOn;
+  } else if (codecType_ != kVideoCodecVP9) {
+    scale_ = true;
+  }
 
   ALOGD << "InitEncode request: " << init_width << " x " << init_height;
   ALOGD << "Encoder automatic resize " << (scale_ ? "enabled" : "disabled");
