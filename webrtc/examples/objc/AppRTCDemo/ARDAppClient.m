@@ -308,11 +308,13 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
   _isInitiator = NO;
   _hasReceivedSdp = NO;
   _messageQueue = [NSMutableArray array];
+#if defined(WEBRTC_IOS)
+  [_peerConnection stopRtcEventLog];
+#endif
   _peerConnection = nil;
   self.state = kARDAppClientStateDisconnected;
 #if defined(WEBRTC_IOS)
   RTCStopInternalCapture();
-  [_factory stopRtcEventLog];
 #endif
 }
 
@@ -526,17 +528,6 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
   }
   self.state = kARDAppClientStateConnected;
 
-#if defined(WEBRTC_IOS)
-  // Start event log.
-  if (kARDAppClientEnableRtcEventLog) {
-    NSString *filePath = [self documentsFilePathForFileName:@"webrtc-rtceventlog"];
-    if (![_factory startRtcEventLogWithFilePath:filePath
-                                 maxSizeInBytes:kARDAppClientRtcEventLogMaxSizeInBytes]) {
-      RTCLogError(@"Failed to start event logging.");
-    }
-  }
-#endif
-
   // Create peer connection.
   RTCMediaConstraints *constraints = [self defaultPeerConnectionConstraints];
   RTCConfiguration *config = [[RTCConfiguration alloc] init];
@@ -562,6 +553,16 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
     // Check if we've received an offer.
     [self drainMessageQueueIfReady];
   }
+#if defined(WEBRTC_IOS)
+  // Start event log.
+  if (kARDAppClientEnableRtcEventLog) {
+    NSString *filePath = [self documentsFilePathForFileName:@"webrtc-rtceventlog"];
+    if (![_peerConnection startRtcEventLogWithFilePath:filePath
+                                 maxSizeInBytes:kARDAppClientRtcEventLogMaxSizeInBytes]) {
+      RTCLogError(@"Failed to start event logging.");
+    }
+  }
+#endif
 }
 
 // Processes the messages that we've received from the room server and the
