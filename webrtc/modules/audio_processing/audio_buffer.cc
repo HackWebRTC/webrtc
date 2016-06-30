@@ -184,6 +184,10 @@ void AudioBuffer::InitForNewData() {
   reference_copied_ = false;
   activity_ = AudioFrame::kVadUnknown;
   num_channels_ = num_proc_channels_;
+  data_->set_num_channels(num_proc_channels_);
+  if (split_data_.get()) {
+    split_data_->set_num_channels(num_proc_channels_);
+  }
 }
 
 const int16_t* const* AudioBuffer::channels_const() const {
@@ -345,6 +349,10 @@ size_t AudioBuffer::num_channels() const {
 
 void AudioBuffer::set_num_channels(size_t num_channels) {
   num_channels_ = num_channels;
+  data_->set_num_channels(num_channels);
+  if (split_data_.get()) {
+    split_data_->set_num_channels(num_channels);
+  }
 }
 
 size_t AudioBuffer::num_frames() const {

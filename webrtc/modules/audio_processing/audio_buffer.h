@@ -123,6 +123,8 @@ class AudioBuffer {
   void MergeFrequencyBands();
 
  private:
+  FRIEND_TEST_ALL_PREFIXES(AudioBufferTest,
+                           SetNumChannelsSetsChannelBuffersNumChannels);
   // Called from DeinterleaveFrom() and CopyFrom().
   void InitForNewData();
 

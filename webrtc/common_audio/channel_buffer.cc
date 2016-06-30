@@ -47,6 +47,7 @@ const ChannelBuffer<float>* IFChannelBuffer::fbuf_const() const {
 void IFChannelBuffer::RefreshF() const {
   if (!fvalid_) {
     RTC_DCHECK(ivalid_);
+    fbuf_.set_num_channels(ibuf_.num_channels());
     const int16_t* const* int_channels = ibuf_.channels();
     float* const* float_channels = fbuf_.channels();
     for (size_t i = 0; i < ibuf_.num_channels(); ++i) {
@@ -62,8 +63,9 @@ void IFChannelBuffer::RefreshI() const {
   if (!ivalid_) {
     RTC_DCHECK(fvalid_);
     int16_t* const* int_channels = ibuf_.channels();
+    ibuf_.set_num_channels(fbuf_.num_channels());
     const float* const* float_channels = fbuf_.channels();
-    for (size_t i = 0; i < ibuf_.num_channels(); ++i) {
+    for (size_t i = 0; i < fbuf_.num_channels(); ++i) {
       FloatS16ToS16(float_channels[i],
                     ibuf_.num_frames(),
                     int_channels[i]);

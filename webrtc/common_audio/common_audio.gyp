@@ -244,6 +244,7 @@
             'audio_ring_buffer_unittest.cc',
             'audio_util_unittest.cc',
             'blocker_unittest.cc',
+            'channel_buffer_unittest.cc',
             'fir_filter_unittest.cc',
             'lapped_transform_unittest.cc',
             'real_fourier_unittest.cc',
