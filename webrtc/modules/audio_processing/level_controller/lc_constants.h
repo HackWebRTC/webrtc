@@ -13,9 +13,9 @@
 
 namespace webrtc {
 
-const float kMaxLcGain = 45;
-const float kMaxLcNoisePower = 200.f * 200.f;
-const float kTargetLcPeakLevel = 0.8f * 32767.f;
+const float kMaxLcGain = 10;
+const float kMaxLcNoisePower = 100.f * 100.f;
+const float kTargetLcPeakLevel = 0.5f * 32767.f;
 
 }  // namespace webrtc
 

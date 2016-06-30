@@ -46,7 +46,7 @@ float GainSelector::GetNewGain(float peak_level,
   RTC_DCHECK_LT(0.f, peak_level);
 
   if (signal_type == SignalClassifier::SignalType::kHighlyNonStationary) {
-    highly_nonstationary_signal_hold_counter_ = 10000;
+    highly_nonstationary_signal_hold_counter_ = 100;
   } else {
     highly_nonstationary_signal_hold_counter_ =
         std::max(0, highly_nonstationary_signal_hold_counter_ - 1);

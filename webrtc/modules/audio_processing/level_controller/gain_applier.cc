@@ -70,10 +70,10 @@ float ApplyDecreasingGain(float new_gain,
                           float old_gain,
                           float step_size,
                           rtc::ArrayView<float> x) {
-  RTC_DCHECK_LT(0.f, step_size);
+  RTC_DCHECK_GT(0.f, step_size);
   float gain = old_gain;
   for (auto& v : x) {
-    gain = std::max(new_gain, gain - step_size);
+    gain = std::max(new_gain, gain + step_size);
     v *= gain;
   }
   return gain;
@@ -89,14 +89,17 @@ float ApplyConstantGain(float gain, rtc::ArrayView<float> x) {
 
 float ApplyGain(float new_gain,
                 float old_gain,
-                float step_size,
+                float increase_step_size,
+                float decrease_step_size,
                 rtc::ArrayView<float> x) {
+  RTC_DCHECK_LT(0.f, increase_step_size);
+  RTC_DCHECK_GT(0.f, decrease_step_size);
   if (new_gain == old_gain) {
     return ApplyConstantGain(new_gain, x);
   } else if (new_gain > old_gain) {
-    return ApplyIncreasingGain(new_gain, old_gain, step_size, x);
+    return ApplyIncreasingGain(new_gain, old_gain, increase_step_size, x);
   } else {
-    return ApplyDecreasingGain(new_gain, old_gain, step_size, x);
+    return ApplyDecreasingGain(new_gain, old_gain, decrease_step_size, x);
   }
 }
 
@@ -110,26 +113,40 @@ void GainApplier::Initialize(int sample_rate_hz) {
              sample_rate_hz == AudioProcessing::kSampleRate16kHz ||
              sample_rate_hz == AudioProcessing::kSampleRate32kHz ||
              sample_rate_hz == AudioProcessing::kSampleRate48kHz);
-  const float kStepSize48kHz = 0.001f;
+  const float kGainIncreaseStepSize48kHz = 0.0001f;
+  const float kGainDecreaseStepSize48kHz = -0.01f;
+  const float kGainSaturatedDecreaseStepSize48kHz = -0.05f;
+
+  last_frame_was_saturated_ = false;
   old_gain_ = 1.f;
-  gain_change_step_size_ =
-      kStepSize48kHz *
+  gain_increase_step_size_ =
+      kGainIncreaseStepSize48kHz *
+      (static_cast<float>(AudioProcessing::kSampleRate48kHz) / sample_rate_hz);
+  gain_normal_decrease_step_size_ =
+      kGainDecreaseStepSize48kHz *
+      (static_cast<float>(AudioProcessing::kSampleRate48kHz) / sample_rate_hz);
+  gain_saturated_decrease_step_size_ =
+      kGainSaturatedDecreaseStepSize48kHz *
       (static_cast<float>(AudioProcessing::kSampleRate48kHz) / sample_rate_hz);
 }
 
 int GainApplier::Process(float new_gain, AudioBuffer* audio) {
-  RTC_CHECK_NE(0.f, gain_change_step_size_);
+  RTC_CHECK_NE(0.f, gain_increase_step_size_);
+  RTC_CHECK_NE(0.f, gain_normal_decrease_step_size_);
+  RTC_CHECK_NE(0.f, gain_saturated_decrease_step_size_);
   int num_saturations = 0;
   if (new_gain != 1.f) {
     float last_applied_gain = 1.f;
+    float gain_decrease_step_size = last_frame_was_saturated_
+                                        ? gain_saturated_decrease_step_size_
+                                        : gain_normal_decrease_step_size_;
     for (size_t k = 0; k < audio->num_channels(); ++k) {
-      // TODO(peah): Consider using a faster update rate downwards than upwards.
       last_applied_gain = ApplyGain(
-          new_gain, old_gain_, gain_change_step_size_,
+          new_gain, old_gain_, gain_increase_step_size_,
+          gain_decrease_step_size,
           rtc::ArrayView<float>(audio->channels_f()[k], audio->num_frames()));
     }
-    // TODO(peah): Consider the need for faster gain reduction in case of
-    // excessive saturation.
+
     num_saturations = CountSaturations(*audio);
     LimitToAllowedRange(audio);
     old_gain_ = last_applied_gain;

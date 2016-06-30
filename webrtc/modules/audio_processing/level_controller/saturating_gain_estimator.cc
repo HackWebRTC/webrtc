@@ -25,7 +25,7 @@ SaturatingGainEstimator::SaturatingGainEstimator() {
 SaturatingGainEstimator::~SaturatingGainEstimator() {}
 
 void SaturatingGainEstimator::Initialize() {
-  saturating_gain_ = 1000.f;
+  saturating_gain_ = kMaxLcGain;
   saturating_gain_hold_counter_ = 0;
 }
 

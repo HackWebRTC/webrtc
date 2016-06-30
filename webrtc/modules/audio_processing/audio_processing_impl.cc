@@ -420,10 +420,6 @@ void AudioProcessingImpl::SetExtraOptions(const Config& config) {
     LOG(LS_INFO) << "Level controller activated: "
                  << config.Get<LevelControl>().enabled;
 
-    // TODO(peah): Remove the explicit deactivation once
-    // the upcoming changes for the level controller tuning
-    // are landed.
-    capture_nonlocked_.level_controller_enabled = false;
     InitializeLevelController();
   }
 

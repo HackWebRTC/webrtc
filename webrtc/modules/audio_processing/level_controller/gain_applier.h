@@ -30,8 +30,10 @@ class GainApplier {
  private:
   ApmDataDumper* const data_dumper_;
   float old_gain_ = 1.f;
-  float gain_change_step_size_ = 0.f;
-
+  float gain_increase_step_size_ = 0.f;
+  float gain_normal_decrease_step_size_ = 0.f;
+  float gain_saturated_decrease_step_size_ = 0.f;
+  bool last_frame_was_saturated_;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(GainApplier);
 };
 

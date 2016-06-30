@@ -27,6 +27,7 @@ class PeakLevelEstimator {
  private:
   float peak_level_;
   int hold_counter_;
+  bool initialization_phase_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(PeakLevelEstimator);
 };

@@ -68,24 +68,24 @@ void RunBitexactnessTest(int sample_rate_hz,
 
 }  // namespace
 
-TEST(LevelControlBitExactnessTest, Mono8kHz) {
+TEST(LevelControlBitExactnessTest, DISABLED_Mono8kHz) {
   const float kOutputReference[] = {-0.023242f, -0.020266f, -0.015097f};
   RunBitexactnessTest(AudioProcessing::kSampleRate8kHz, 1, kOutputReference);
 }
 
-TEST(LevelControlBitExactnessTest, Mono16kHz) {
+TEST(LevelControlBitExactnessTest, DISABLED_Mono16kHz) {
   const float kOutputReference[] = {-0.019461f, -0.018761f, -0.018481f};
   RunBitexactnessTest(AudioProcessing::kSampleRate16kHz, 1, kOutputReference);
 }
 
-TEST(LevelControlBitExactnessTest, Mono32kHz) {
+TEST(LevelControlBitExactnessTest, DISABLED_Mono32kHz) {
   const float kOutputReference[] = {-0.016872f, -0.019118f, -0.018722f};
   RunBitexactnessTest(AudioProcessing::kSampleRate32kHz, 1, kOutputReference);
 }
 
 // TODO(peah): Investigate why this particular testcase differ between Android
 // and the rest of the platforms.
-TEST(LevelControlBitExactnessTest, Mono48kHz) {
+TEST(LevelControlBitExactnessTest, DISABLED_Mono48kHz) {
 #if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
       defined(WEBRTC_ANDROID))
   const float kOutputReference[] = {-0.016771f, -0.017831f, -0.020482f};
@@ -95,25 +95,25 @@ TEST(LevelControlBitExactnessTest, Mono48kHz) {
   RunBitexactnessTest(AudioProcessing::kSampleRate48kHz, 1, kOutputReference);
 }
 
-TEST(LevelControlBitExactnessTest, Stereo8kHz) {
+TEST(LevelControlBitExactnessTest, DISABLED_Stereo8kHz) {
   const float kOutputReference[] = {-0.019304f, -0.011600f, -0.016690f,
                                     -0.071335f, -0.031849f, -0.065694f};
   RunBitexactnessTest(AudioProcessing::kSampleRate8kHz, 2, kOutputReference);
 }
 
-TEST(LevelControlBitExactnessTest, Stereo16kHz) {
+TEST(LevelControlBitExactnessTest, DISABLED_Stereo16kHz) {
   const float kOutputReference[] = {-0.016302f, -0.007559f, -0.015668f,
                                     -0.068346f, -0.031476f, -0.066065f};
   RunBitexactnessTest(AudioProcessing::kSampleRate16kHz, 2, kOutputReference);
 }
 
-TEST(LevelControlBitExactnessTest, Stereo32kHz) {
+TEST(LevelControlBitExactnessTest, DISABLED_Stereo32kHz) {
   const float kOutputReference[] = {-0.013944f, -0.008337f, -0.015972f,
                                     -0.063563f, -0.031233f, -0.066784f};
   RunBitexactnessTest(AudioProcessing::kSampleRate32kHz, 2, kOutputReference);
 }
 
-TEST(LevelControlBitExactnessTest, Stereo48kHz) {
+TEST(LevelControlBitExactnessTest, DISABLED_Stereo48kHz) {
   const float kOutputReference[] = {-0.013652f, -0.008125f, -0.014593f,
                                     -0.062963f, -0.030270f, -0.064727f};
   RunBitexactnessTest(AudioProcessing::kSampleRate48kHz, 2, kOutputReference);
