@@ -59,7 +59,7 @@ template <typename T>
 class Optional final {
  public:
   // Construct an empty Optional.
-  Optional() : has_value_(false) {}
+  Optional() : has_value_(false), empty_('\0') {}
 
   // Construct an Optional that contains a value.
   explicit Optional(const T& value) : has_value_(true) {
@@ -189,6 +189,10 @@ class Optional final {
  private:
   bool has_value_;  // True iff value_ contains a live value.
   union {
+    // empty_ exists only to make it possible to initialize the union, even when
+    // it doesn't contain any data. If the union goes uninitialized, it may
+    // trigger compiler warnings.
+    char empty_;
     // By placing value_ in a union, we get to manage its construction and
     // destruction manually: the Optional constructors won't automatically
     // construct it, and the Optional destructor won't automatically destroy
