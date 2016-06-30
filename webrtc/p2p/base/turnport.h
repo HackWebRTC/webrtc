@@ -85,6 +85,8 @@ class TurnPort : public Port {
   }
   const RelayCredentials& credentials() const { return credentials_; }
 
+  virtual ProtocolType GetProtocol() const { return server_address_.proto; }
+
   virtual void PrepareAddress();
   virtual Connection* CreateConnection(
       const Candidate& c, PortInterface::CandidateOrigin origin);

@@ -125,6 +125,7 @@ void P2PTransportChannel::AddAllocatorSession(
 
   session->set_generation(static_cast<uint32_t>(allocator_sessions_.size()));
   session->SignalPortReady.connect(this, &P2PTransportChannel::OnPortReady);
+  session->SignalPortPruned.connect(this, &P2PTransportChannel::OnPortPruned);
   session->SignalCandidatesReady.connect(
       this, &P2PTransportChannel::OnCandidatesReady);
   session->SignalCandidatesAllocationDone.connect(
@@ -1616,7 +1617,7 @@ void P2PTransportChannel::OnPortDestroyed(PortInterface* port) {
       std::remove(removed_ports_.begin(), removed_ports_.end(), port),
       removed_ports_.end());
 
-  LOG(INFO) << "Removed port from p2p socket: "
+  LOG(INFO) << "Removed port because it is destroyed: "
             << static_cast<int>(ports_.size()) << " remaining";
 }
 
@@ -1626,20 +1627,35 @@ void P2PTransportChannel::OnPortNetworkInactive(PortInterface* port) {
   if (!config_.gather_continually) {
     return;
   }
-  auto it = std::find(ports_.begin(), ports_.end(), port);
-  // Don't need to do anything if the port has been deleted from the port list.
-  if (it == ports_.end()) {
+  if (!RemovePort(port)) {
     return;
   }
-  removed_ports_.push_back(*it);
-  ports_.erase(it);
-  LOG(INFO) << "Removed port due to inactive networks: " << ports_.size()
-            << " remaining";
+  LOG(INFO) << "Removed port because its network is inactive : "
+            << port->ToString() << " " << ports_.size() << " remaining";
   std::vector<Candidate> candidates = port->Candidates();
   for (Candidate& candidate : candidates) {
     candidate.set_transport_name(transport_name());
   }
   SignalCandidatesRemoved(this, candidates);
+}
+
+void P2PTransportChannel::OnPortPruned(PortAllocatorSession* session,
+                                       PortInterface* port) {
+  if (RemovePort(port)) {
+    LOG(INFO) << "Removed port because it is pruned: " << port->ToString()
+              << " " << ports_.size() << " remaining";
+  }
+}
+
+bool P2PTransportChannel::RemovePort(PortInterface* port) {
+  auto it = std::find(ports_.begin(), ports_.end(), port);
+  // Don't need to do anything if the port has been deleted from the port list.
+  if (it == ports_.end()) {
+    return false;
+  }
+  ports_.erase(it);
+  removed_ports_.push_back(port);
+  return true;
 }
 
 // We data is available, let listeners know

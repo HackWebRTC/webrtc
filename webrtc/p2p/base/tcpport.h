@@ -61,6 +61,8 @@ class TCPPort : public Port {
     return protocol == TCP_PROTOCOL_NAME || protocol == SSLTCP_PROTOCOL_NAME;
   }
 
+  ProtocolType GetProtocol() const override { return PROTO_TCP; }
+
  protected:
   TCPPort(rtc::Thread* thread,
           rtc::PacketSocketFactory* factory,

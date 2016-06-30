@@ -76,6 +76,8 @@ class PortInterface {
   virtual int GetOption(rtc::Socket::Option opt, int* value) = 0;
   virtual int GetError() = 0;
 
+  virtual ProtocolType GetProtocol() const = 0;
+
   virtual const std::vector<Candidate>& Candidates() const = 0;
 
   // Sends the given packet to the given address, provided that the address is
