@@ -89,6 +89,9 @@
             'audio_device_impl.cc',
             'audio_device_impl.h',
           ],
+          'dependencies': [
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
+          ],
           'conditions': [
             ['OS=="android"', {
               'sources': [

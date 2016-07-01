@@ -27,6 +27,7 @@ config("audio_device_config") {
 source_set("audio_device") {
   deps = [
     "../..:webrtc_common",
+    "../../base:rtc_base",
     "../../base:rtc_base_approved",
     "../../common_audio",
     "../../system_wrappers",

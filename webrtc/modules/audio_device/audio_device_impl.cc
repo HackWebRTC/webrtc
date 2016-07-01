@@ -8,12 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
+#include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
+#include "webrtc/system_wrappers/include/metrics.h"
 
 #include <assert.h>
 #include <string.h>
@@ -266,7 +269,7 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects() {
 
     // create *Linux PulseAudio* implementation
     AudioDeviceLinuxPulse* pulseDevice = new AudioDeviceLinuxPulse(Id());
-    if (pulseDevice->Init() != -1) {
+    if (pulseDevice->Init() == AudioDeviceGeneric::InitStatus::OK) {
       ptrAudioDevice = pulseDevice;
       LOG(INFO) << "Linux PulseAudio APIs will be utilized";
     } else {
@@ -481,11 +484,14 @@ int32_t AudioDeviceModuleImpl::Init() {
   LOG(INFO) << __FUNCTION__;
   if (_initialized)
     return 0;
+  RTC_CHECK(_ptrAudioDevice);
 
-  if (!_ptrAudioDevice)
-    return -1;
-
-  if (_ptrAudioDevice->Init() == -1) {
+  AudioDeviceGeneric::InitStatus status = _ptrAudioDevice->Init();
+  RTC_HISTOGRAM_ENUMERATION(
+      "WebRTC.Audio.InitializationResult", static_cast<int>(status),
+      static_cast<int>(AudioDeviceGeneric::InitStatus::NUM_STATUSES));
+  if (status != AudioDeviceGeneric::InitStatus::OK) {
+    LOG(LS_ERROR) << "Audio device initialization failed.";
     return -1;
   }
 
@@ -1434,7 +1440,11 @@ int32_t AudioDeviceModuleImpl::InitPlayout() {
   LOG(INFO) << __FUNCTION__;
   CHECK_INITIALIZED();
   _audioDeviceBuffer.InitPlayout();
-  return (_ptrAudioDevice->InitPlayout());
+  int32_t result = _ptrAudioDevice->InitPlayout();
+  LOG(INFO) << "output: " << result;
+  RTC_HISTOGRAM_BOOLEAN("WebRTC.Audio.InitPlayoutSuccess",
+                        static_cast<int>(result == 0));
+  return result;
 }
 
 // ----------------------------------------------------------------------------
@@ -1445,7 +1455,11 @@ int32_t AudioDeviceModuleImpl::InitRecording() {
   LOG(INFO) << __FUNCTION__;
   CHECK_INITIALIZED();
   _audioDeviceBuffer.InitRecording();
-  return (_ptrAudioDevice->InitRecording());
+  int32_t result = _ptrAudioDevice->InitRecording();
+  LOG(INFO) << "output: " << result;
+  RTC_HISTOGRAM_BOOLEAN("WebRTC.Audio.InitRecordingSuccess",
+                        static_cast<int>(result == 0));
+  return result;
 }
 
 // ----------------------------------------------------------------------------
@@ -1475,7 +1489,11 @@ bool AudioDeviceModuleImpl::RecordingIsInitialized() const {
 int32_t AudioDeviceModuleImpl::StartPlayout() {
   LOG(INFO) << __FUNCTION__;
   CHECK_INITIALIZED();
-  return (_ptrAudioDevice->StartPlayout());
+  int32_t result = _ptrAudioDevice->StartPlayout();
+  LOG(INFO) << "output: " << result;
+  RTC_HISTOGRAM_BOOLEAN("WebRTC.Audio.StartPlayoutSuccess",
+                        static_cast<int>(result == 0));
+  return result;
 }
 
 // ----------------------------------------------------------------------------
@@ -1485,7 +1503,11 @@ int32_t AudioDeviceModuleImpl::StartPlayout() {
 int32_t AudioDeviceModuleImpl::StopPlayout() {
   LOG(INFO) << __FUNCTION__;
   CHECK_INITIALIZED();
-  return (_ptrAudioDevice->StopPlayout());
+  int32_t result = _ptrAudioDevice->StopPlayout();
+  LOG(INFO) << "output: " << result;
+  RTC_HISTOGRAM_BOOLEAN("WebRTC.Audio.StopPlayoutSuccess",
+                        static_cast<int>(result == 0));
+  return result;
 }
 
 // ----------------------------------------------------------------------------
@@ -1505,7 +1527,11 @@ bool AudioDeviceModuleImpl::Playing() const {
 int32_t AudioDeviceModuleImpl::StartRecording() {
   LOG(INFO) << __FUNCTION__;
   CHECK_INITIALIZED();
-  return (_ptrAudioDevice->StartRecording());
+  int32_t result = _ptrAudioDevice->StartRecording();
+  LOG(INFO) << "output: " << result;
+  RTC_HISTOGRAM_BOOLEAN("WebRTC.Audio.StartRecordingSuccess",
+                        static_cast<int>(result == 0));
+  return result;
 }
 // ----------------------------------------------------------------------------
 //  StopRecording
@@ -1514,7 +1540,11 @@ int32_t AudioDeviceModuleImpl::StartRecording() {
 int32_t AudioDeviceModuleImpl::StopRecording() {
   LOG(INFO) << __FUNCTION__;
   CHECK_INITIALIZED();
-  return (_ptrAudioDevice->StopRecording());
+  int32_t result = _ptrAudioDevice->StopRecording();
+  LOG(INFO) << "output: " << result;
+  RTC_HISTOGRAM_BOOLEAN("WebRTC.Audio.StopRecordingSuccess",
+                        static_cast<int>(result == 0));
+  return result;
 }
 
 // ----------------------------------------------------------------------------

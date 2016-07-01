@@ -50,7 +50,7 @@ public:
     virtual int32_t ActiveAudioLayer(AudioDeviceModule::AudioLayer& audioLayer) const;
 
     // Main initializaton and termination
-    virtual int32_t Init();
+    virtual InitStatus Init();
     virtual int32_t Terminate();
     virtual bool Initialized() const;
 

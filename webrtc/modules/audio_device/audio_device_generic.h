@@ -18,12 +18,22 @@ namespace webrtc {
 
 class AudioDeviceGeneric {
  public:
+  // For use with UMA logging. Must be kept in sync with histograms.xml in
+  // Chrome, located at
+  // https://cs.chromium.org/chromium/src/tools/metrics/histograms/histograms.xml
+  enum class InitStatus {
+    OK = 0,
+    PLAYOUT_ERROR = 1,
+    RECORDING_ERROR = 2,
+    OTHER_ERROR = 3,
+    NUM_STATUSES = 4
+  };
   // Retrieve the currently utilized audio layer
   virtual int32_t ActiveAudioLayer(
       AudioDeviceModule::AudioLayer& audioLayer) const = 0;
 
   // Main initializaton and termination
-  virtual int32_t Init() = 0;
+  virtual InitStatus Init() = 0;
   virtual int32_t Terminate() = 0;
   virtual bool Initialized() const = 0;
 

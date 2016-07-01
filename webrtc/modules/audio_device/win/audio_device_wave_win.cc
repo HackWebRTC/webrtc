@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/base/logging.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/win/audio_device_wave_win.h"
@@ -196,79 +197,69 @@ int32_t AudioDeviceWindowsWave::ActiveAudioLayer(AudioDeviceModule::AudioLayer& 
 //  Init
 // ----------------------------------------------------------------------------
 
-int32_t AudioDeviceWindowsWave::Init()
-{
+AudioDeviceGeneric::InitStatus AudioDeviceWindowsWave::Init() {
+  CriticalSectionScoped lock(&_critSect);
 
-    CriticalSectionScoped lock(&_critSect);
+  if (_initialized) {
+    return InitStatus::OK;
+  }
 
-    if (_initialized)
-    {
-        return 0;
-    }
+  const uint32_t nowTime(rtc::TimeMillis());
 
-    const uint32_t nowTime(rtc::TimeMillis());
+  _recordedBytes = 0;
+  _prevRecByteCheckTime = nowTime;
+  _prevRecTime = nowTime;
+  _prevPlayTime = nowTime;
+  _prevTimerCheckTime = nowTime;
 
-    _recordedBytes = 0;
-    _prevRecByteCheckTime = nowTime;
-    _prevRecTime = nowTime;
-    _prevPlayTime = nowTime;
-    _prevTimerCheckTime = nowTime;
+  _playWarning = 0;
+  _playError = 0;
+  _recWarning = 0;
+  _recError = 0;
 
-    _playWarning = 0;
-    _playError = 0;
-    _recWarning = 0;
-    _recError = 0;
+  _mixerManager.EnumerateAll();
 
-    _mixerManager.EnumerateAll();
+  if (_ptrThread) {
+    // thread is already created and active
+    return InitStatus::OK;
+  }
 
-    if (_ptrThread)
-    {
-        // thread is already created and active
-        return 0;
-    }
+  const char* threadName = "webrtc_audio_module_thread";
+  _ptrThread.reset(new rtc::PlatformThread(ThreadFunc, this, threadName));
+  _ptrThread->Start();
+  _ptrThread->SetPriority(rtc::kRealtimePriority);
 
-    const char* threadName = "webrtc_audio_module_thread";
-    _ptrThread.reset(new rtc::PlatformThread(ThreadFunc, this, threadName));
-    _ptrThread->Start();
-    _ptrThread->SetPriority(rtc::kRealtimePriority);
+  const bool periodic(true);
+  if (!_timeEvent.StartTimer(periodic, TIMER_PERIOD_MS)) {
+    LOG(LS_ERROR) << "failed to start the timer event";
+    _ptrThread->Stop();
+    _ptrThread.reset();
+    return InitStatus::OTHER_ERROR;
+  }
+  WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+               "periodic timer (dT=%d) is now active", TIMER_PERIOD_MS);
 
-    const bool periodic(true);
-    if (!_timeEvent.StartTimer(periodic, TIMER_PERIOD_MS))
-    {
-        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
-                     "failed to start the timer event");
-        _ptrThread->Stop();
-        _ptrThread.reset();
-        return -1;
-    }
-    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                 "periodic timer (dT=%d) is now active", TIMER_PERIOD_MS);
+  _hGetCaptureVolumeThread =
+      CreateThread(NULL, 0, GetCaptureVolumeThread, this, 0, NULL);
+  if (_hGetCaptureVolumeThread == NULL) {
+    LOG(LS_ERROR) << "  failed to create the volume getter thread";
+    return InitStatus::OTHER_ERROR;
+  }
 
-    _hGetCaptureVolumeThread =
-        CreateThread(NULL, 0, GetCaptureVolumeThread, this, 0, NULL);
-    if (_hGetCaptureVolumeThread == NULL)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-            "  failed to create the volume getter thread");
-        return -1;
-    }
+  SetThreadPriority(_hGetCaptureVolumeThread, THREAD_PRIORITY_NORMAL);
 
-    SetThreadPriority(_hGetCaptureVolumeThread, THREAD_PRIORITY_NORMAL);
+  _hSetCaptureVolumeThread =
+      CreateThread(NULL, 0, SetCaptureVolumeThread, this, 0, NULL);
+  if (_hSetCaptureVolumeThread == NULL) {
+    LOG(LS_ERROR) << "  failed to create the volume setter thread";
+    return InitStatus::OTHER_ERROR;
+  }
 
-    _hSetCaptureVolumeThread =
-        CreateThread(NULL, 0, SetCaptureVolumeThread, this, 0, NULL);
-    if (_hSetCaptureVolumeThread == NULL)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-            "  failed to create the volume setter thread");
-        return -1;
-    }
+  SetThreadPriority(_hSetCaptureVolumeThread, THREAD_PRIORITY_NORMAL);
 
-    SetThreadPriority(_hSetCaptureVolumeThread, THREAD_PRIORITY_NORMAL);
+  _initialized = true;
 
-    _initialized = true;
-
-    return 0;
+  return InitStatus::OK;
 }
 
 // ----------------------------------------------------------------------------

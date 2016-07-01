@@ -35,6 +35,7 @@
 #include <strsafe.h>
 #include <uuids.h>
 
+#include "webrtc/base/logging.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/system_wrappers/include/trace.h"
@@ -333,7 +334,9 @@ bool AudioDeviceWindowsCore::CoreAudioIsSupported()
         int temp_ok(0);
         bool available(false);
 
-        ok |= p->Init();
+        if (p->Init() != InitStatus::OK) {
+          ok |= -1;
+        }
 
         int16_t numDevsRec = p->RecordingDevices();
         for (uint16_t i = 0; i < numDevsRec; i++)
@@ -675,31 +678,27 @@ int32_t AudioDeviceWindowsCore::ActiveAudioLayer(AudioDeviceModule::AudioLayer& 
 //  Init
 // ----------------------------------------------------------------------------
 
-int32_t AudioDeviceWindowsCore::Init()
-{
+AudioDeviceGeneric::InitStatus AudioDeviceWindowsCore::Init() {
+  CriticalSectionScoped lock(&_critSect);
 
-    CriticalSectionScoped lock(&_critSect);
+  if (_initialized) {
+    return InitStatus::OK;
+  }
 
-    if (_initialized)
-    {
-        return 0;
-    }
+  _playWarning = 0;
+  _playError = 0;
+  _recWarning = 0;
+  _recError = 0;
 
-    _playWarning = 0;
-    _playError = 0;
-    _recWarning = 0;
-    _recError = 0;
+  // Enumerate all audio rendering and capturing endpoint devices.
+  // Note that, some of these will not be able to select by the user.
+  // The complete collection is for internal use only.
+  _EnumerateEndpointDevicesAll(eRender);
+  _EnumerateEndpointDevicesAll(eCapture);
 
-    // Enumerate all audio rendering and capturing endpoint devices.
-    // Note that, some of these will not be able to select by the user.
-    // The complete collection is for internal use only.
-    //
-    _EnumerateEndpointDevicesAll(eRender);
-    _EnumerateEndpointDevicesAll(eCapture);
+  _initialized = true;
 
-    _initialized = true;
-
-    return 0;
+  return InitStatus::OK;
 }
 
 // ----------------------------------------------------------------------------

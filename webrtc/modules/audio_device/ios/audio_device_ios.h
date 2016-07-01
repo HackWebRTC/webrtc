@@ -49,7 +49,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
 
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
 
-  int32_t Init() override;
+  InitStatus Init() override;
   int32_t Terminate() override;
   bool Initialized() const override { return initialized_; }
 

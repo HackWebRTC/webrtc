@@ -55,7 +55,9 @@ int32_t FileAudioDevice::ActiveAudioLayer(
   return -1;
 }
 
-int32_t FileAudioDevice::Init() { return 0; }
+AudioDeviceGeneric::InitStatus FileAudioDevice::Init() {
+  return InitStatus::OK;
+}
 
 int32_t FileAudioDevice::Terminate() { return 0; }
 

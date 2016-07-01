@@ -125,6 +125,14 @@
 #define RTC_LOGGED_HISTOGRAM_PERCENTAGE(name, sample) \
   RTC_LOGGED_HISTOGRAM_ENUMERATION(name, sample, 101)
 
+// Histogram for booleans.
+#define RTC_HISTOGRAM_BOOLEAN(name, sample) \
+  RTC_HISTOGRAM_ENUMERATION(name, sample, 2)
+
+// RTC_HISTOGRAM_BOOLEAN with logging.
+#define RTC_LOGGED_HISTOGRAM_BOOLEAN(name, sample) \
+  RTC_LOGGED_HISTOGRAM_ENUMERATION(name, sample, 2)
+
 // Histogram for enumerators (evenly spaced buckets).
 // |boundary| should be above the max enumerator sample.
 #define RTC_HISTOGRAM_ENUMERATION(name, sample, boundary) \

@@ -53,23 +53,24 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
     return 0;
   }
 
-  int32_t Init() override {
+  InitStatus Init() override {
     LOG(INFO) << __FUNCTION__;
     RTC_DCHECK(thread_checker_.CalledOnValidThread());
     RTC_DCHECK(!initialized_);
-    if (!audio_manager_->Init())
-      return -1;
+    if (!audio_manager_->Init()) {
+      return InitStatus::OTHER_ERROR;
+    }
     if (output_.Init() != 0) {
       audio_manager_->Close();
-      return -1;
+      return InitStatus::PLAYOUT_ERROR;
     }
     if (input_.Init() != 0) {
       output_.Terminate();
       audio_manager_->Close();
-      return -1;
+      return InitStatus::RECORDING_ERROR;
     }
     initialized_ = true;
-    return 0;
+    return InitStatus::OK;
   }
 
   int32_t Terminate() override {

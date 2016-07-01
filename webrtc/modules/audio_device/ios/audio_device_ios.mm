@@ -121,11 +121,11 @@ void AudioDeviceIOS::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   audio_device_buffer_ = audioBuffer;
 }
 
-int32_t AudioDeviceIOS::Init() {
+AudioDeviceGeneric::InitStatus AudioDeviceIOS::Init() {
   LOGI() << "Init";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (initialized_) {
-    return 0;
+    return InitStatus::OK;
   }
 #if !defined(NDEBUG)
   LogDeviceInfo();
@@ -146,7 +146,7 @@ int32_t AudioDeviceIOS::Init() {
   // to guarantee mono on the "input side" of the audio unit.
   UpdateAudioDeviceBuffer();
   initialized_ = true;
-  return 0;
+  return InitStatus::OK;
 }
 
 int32_t AudioDeviceIOS::Terminate() {
