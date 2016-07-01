@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/android/jni/androidvideocapturer_jni.h"
-#include "webrtc/api/android/jni/classreferenceholder.h"
-#include "webrtc/api/android/jni/native_handle_impl.h"
-#include "webrtc/api/android/jni/surfacetexturehelper_jni.h"
+#include "webrtc/api/java/jni/androidvideocapturer_jni.h"
+#include "webrtc/api/java/jni/classreferenceholder.h"
+#include "webrtc/api/java/jni/native_handle_impl.h"
+#include "webrtc/api/java/jni/surfacetexturehelper_jni.h"
 #include "third_party/libyuv/include/libyuv/convert.h"
 #include "webrtc/base/bind.h"
 

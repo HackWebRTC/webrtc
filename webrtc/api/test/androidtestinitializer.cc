@@ -19,8 +19,8 @@
 #include "base/android/context_utils.h"
 #include "base/android/jni_android.h"
 
-#include "webrtc/api/android/jni/classreferenceholder.h"
-#include "webrtc/api/android/jni/jni_helpers.h"
+#include "webrtc/api/java/jni/classreferenceholder.h"
+#include "webrtc/api/java/jni/jni_helpers.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/voice_engine/include/voe_base.h"

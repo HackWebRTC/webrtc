@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/android/jni/native_handle_impl.h"
+#include "webrtc/api/java/jni/native_handle_impl.h"
 
 #include <memory>
 
-#include "webrtc/api/android/jni/jni_helpers.h"
+#include "webrtc/api/java/jni/jni_helpers.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/keep_ref_until_done.h"

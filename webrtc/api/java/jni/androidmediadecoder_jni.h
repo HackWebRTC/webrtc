@@ -11,7 +11,7 @@
 #ifndef WEBRTC_API_JAVA_JNI_ANDROIDMEDIADECODER_JNI_H_
 #define WEBRTC_API_JAVA_JNI_ANDROIDMEDIADECODER_JNI_H_
 
-#include "webrtc/api/android/jni/jni_helpers.h"
+#include "webrtc/api/java/jni/jni_helpers.h"
 #include "webrtc/media/engine/webrtcvideodecoderfactory.h"
 
 namespace webrtc_jni {

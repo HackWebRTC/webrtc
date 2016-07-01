@@ -13,8 +13,8 @@
 
 #include <jni.h>
 
-#include "webrtc/api/android/jni/jni_helpers.h"
-#include "webrtc/api/android/jni/native_handle_impl.h"
+#include "webrtc/api/java/jni/jni_helpers.h"
+#include "webrtc/api/java/jni/native_handle_impl.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/common_video/include/video_frame_buffer.h"
