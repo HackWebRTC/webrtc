@@ -158,7 +158,6 @@ class VP8DecoderImpl : public VP8Decoder {
   bool feedback_mode_;
   vpx_codec_ctx_t* decoder_;
   VideoCodec codec_;
-  EncodedImage last_keyframe_;
   int image_format_;
   vpx_ref_frame_t* ref_frame_;
   int propagation_cnt_;

@@ -1099,7 +1099,6 @@ VP8DecoderImpl::VP8DecoderImpl()
       inited_(false),
       feedback_mode_(false),
       decoder_(NULL),
-      last_keyframe_(),
       image_format_(VPX_IMG_FMT_NONE),
       ref_frame_(NULL),
       propagation_cnt_(-1),
@@ -1259,29 +1258,6 @@ int VP8DecoderImpl::Decode(const EncodedImage& input_image,
   }
 #endif
 
-  // Store encoded frame if key frame. (Used in Copy method.)
-  if (input_image._frameType == kVideoFrameKey && input_image._buffer != NULL) {
-    const uint32_t bytes_to_copy = input_image._length;
-    if (last_keyframe_._size < bytes_to_copy) {
-      delete[] last_keyframe_._buffer;
-      last_keyframe_._buffer = NULL;
-      last_keyframe_._size = 0;
-    }
-    uint8_t* temp_buffer = last_keyframe_._buffer;  // Save buffer ptr.
-    uint32_t temp_size = last_keyframe_._size;      // Save size.
-    last_keyframe_ = input_image;                   // Shallow copy.
-    last_keyframe_._buffer = temp_buffer;           // Restore buffer ptr.
-    last_keyframe_._size = temp_size;               // Restore buffer size.
-    if (!last_keyframe_._buffer) {
-      // Allocate memory.
-      last_keyframe_._size = bytes_to_copy;
-      last_keyframe_._buffer = new uint8_t[last_keyframe_._size];
-    }
-    // Copy encoded frame.
-    memcpy(last_keyframe_._buffer, input_image._buffer, bytes_to_copy);
-    last_keyframe_._length = bytes_to_copy;
-  }
-
   img = vpx_codec_get_frame(decoder_, &iter);
   ret = ReturnFrame(img, input_image._timeStamp, input_image.ntp_time_ms_);
   if (ret != 0) {
@@ -1399,10 +1375,6 @@ int VP8DecoderImpl::RegisterDecodeCompleteCallback(
 }
 
 int VP8DecoderImpl::Release() {
-  if (last_keyframe_._buffer != NULL) {
-    delete[] last_keyframe_._buffer;
-    last_keyframe_._buffer = NULL;
-  }
   if (decoder_ != NULL) {
     if (vpx_codec_destroy(decoder_)) {
       return WEBRTC_VIDEO_CODEC_MEMORY;
