@@ -33,6 +33,7 @@
     _iceBackupCandidatePairPingInterval;
 @synthesize keyType = _keyType;
 @synthesize iceCandidatePoolSize = _iceCandidatePoolSize;
+@synthesize pruneTurnPorts = _pruneTurnPorts;
 @synthesize presumeWritableWhenFullyRelayed = _presumeWritableWhenFullyRelayed;
 
 - (instancetype)init {
@@ -60,6 +61,7 @@
         config.ice_backup_candidate_pair_ping_interval;
     _keyType = RTCEncryptionKeyTypeECDSA;
     _iceCandidatePoolSize = config.ice_candidate_pool_size;
+    _pruneTurnPorts = config.prune_turn_ports;
     _presumeWritableWhenFullyRelayed =
         config.presume_writable_when_fully_relayed;
   }
@@ -68,7 +70,7 @@
 
 - (NSString *)description {
   return [NSString stringWithFormat:
-      @"RTCConfiguration: {\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%d\n%d\n%d\n%d\n%d\n}\n",
+      @"RTCConfiguration: {\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%d\n%d\n%d\n%d\n%d\n%d\n}\n",
       _iceServers,
       [[self class] stringForTransportPolicy:_iceTransportPolicy],
       [[self class] stringForBundlePolicy:_bundlePolicy],
@@ -81,6 +83,7 @@
       _iceConnectionReceivingTimeout,
       _iceBackupCandidatePairPingInterval,
       _iceCandidatePoolSize,
+      _pruneTurnPorts,
       _presumeWritableWhenFullyRelayed];
 }
 
@@ -125,6 +128,7 @@
     nativeConfig->certificates.push_back(certificate);
   }
   nativeConfig->ice_candidate_pool_size = _iceCandidatePoolSize;
+  nativeConfig->prune_turn_ports = _pruneTurnPorts;
   nativeConfig->presume_writable_when_fully_relayed =
       _presumeWritableWhenFullyRelayed;
 
