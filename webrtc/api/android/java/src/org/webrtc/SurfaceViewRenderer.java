@@ -295,7 +295,6 @@ public class SurfaceViewRenderer extends SurfaceView
           VideoRenderer.renderFrameDone(pendingFrame);
         }
         pendingFrame = frame;
-        updateFrameDimensionsAndReportEvents(frame);
         renderThreadHandler.post(renderFrameRunnable);
       }
     }
@@ -321,23 +320,26 @@ public class SurfaceViewRenderer extends SurfaceView
   // View layout interface.
   @Override
   protected void onMeasure(int widthSpec, int heightSpec) {
+    final boolean isNewSize;
     synchronized (layoutLock) {
       if (frameWidth == 0 || frameHeight == 0) {
         super.onMeasure(widthSpec, heightSpec);
         return;
       }
       desiredLayoutSize = getDesiredLayoutSize(widthSpec, heightSpec);
-      if (desiredLayoutSize.x != getMeasuredWidth() || desiredLayoutSize.y != getMeasuredHeight()) {
-        // Clear the surface asap before the layout change to avoid stretched video and other
-        // render artifacs. Don't wait for it to finish because the IO thread should never be
-        // blocked, so it's a best-effort attempt.
-        synchronized (handlerLock) {
-          if (renderThreadHandler != null) {
-            renderThreadHandler.postAtFrontOfQueue(makeBlackRunnable);
-          }
+      isNewSize = (desiredLayoutSize.x != getMeasuredWidth()
+          || desiredLayoutSize.y != getMeasuredHeight());
+      setMeasuredDimension(desiredLayoutSize.x, desiredLayoutSize.y);
+    }
+    if (isNewSize) {
+      // Clear the surface asap before the layout change to avoid stretched video and other
+      // render artifacs. Don't wait for it to finish because the IO thread should never be
+      // blocked, so it's a best-effort attempt.
+      synchronized (handlerLock) {
+        if (renderThreadHandler != null) {
+          renderThreadHandler.postAtFrontOfQueue(makeBlackRunnable);
         }
       }
-      setMeasuredDimension(desiredLayoutSize.x, desiredLayoutSize.y);
     }
   }
 
@@ -446,6 +448,7 @@ public class SurfaceViewRenderer extends SurfaceView
       frame = pendingFrame;
       pendingFrame = null;
     }
+    updateFrameDimensionsAndReportEvents(frame);
     if (eglBase == null || !eglBase.hasSurface()) {
       Logging.d(TAG, getResourceName() + "No surface to draw on");
       VideoRenderer.renderFrameDone(frame);
