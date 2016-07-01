@@ -195,7 +195,6 @@ void Port::Construct() {
     ice_username_fragment_ = rtc::CreateRandomString(ICE_UFRAG_LENGTH);
     password_ = rtc::CreateRandomString(ICE_PWD_LENGTH);
   }
-  network_->SignalInactive.connect(this, &Port::OnNetworkInactive);
   network_->SignalTypeChanged.connect(this, &Port::OnNetworkTypeChanged);
   network_cost_ = network_->GetCost();
 
@@ -650,11 +649,6 @@ void Port::OnMessage(rtc::Message *pmsg) {
   if (dead()) {
     Destroy();
   }
-}
-
-void Port::OnNetworkInactive(const rtc::Network* network) {
-  ASSERT(network == network_);
-  SignalNetworkInactive(this);
 }
 
 void Port::OnNetworkTypeChanged(const rtc::Network* network) {

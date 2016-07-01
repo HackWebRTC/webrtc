@@ -88,6 +88,14 @@ enum {
   CF_ALL = 0x7,
 };
 
+enum class SessionState {
+  GATHERING,  // Actively allocating ports and gathering candidates.
+  CLEARED,    // Current allocation process has been stopped but may start
+              // new ones.
+  STOPPED     // This session has completely stopped, no new allocation
+              // process will be started.
+};
+
 // TODO(deadbeef): Rename to TurnCredentials (and username to ufrag).
 struct RelayCredentials {
   RelayCredentials() {}
@@ -159,12 +167,27 @@ class PortAllocatorSession : public sigslot::has_slots<> {
   virtual void SetCandidateFilter(uint32_t filter) = 0;
 
   // Starts gathering STUN and Relay configurations.
-  virtual void StartGettingPorts() = 0;
-  virtual void StopGettingPorts() = 0;
-  // Only stop the existing gathering process but may start new ones if needed.
-  virtual void ClearGettingPorts() = 0;
-  // Whether the process of getting ports has been stopped.
-  virtual bool IsGettingPorts() = 0;
+  virtual void StartGettingPorts() { state_ = SessionState::GATHERING; }
+  // Completely stops the gathering process and will not start new ones.
+  virtual void StopGettingPorts() { state_ = SessionState::STOPPED; }
+  // Only stops the existing gathering process but may start new ones if needed.
+  virtual void ClearGettingPorts() { state_ = SessionState::CLEARED; }
+  // Whether the session is actively getting ports.
+  bool IsGettingPorts() { return state_ == SessionState::GATHERING; }
+  // Whether it is in the state where the existing gathering process is stopped,
+  // but new ones may be started (basically after calling ClearGettingPorts).
+  bool IsCleared() { return state_ == SessionState::CLEARED; }
+  // Whether the session has completely stopped.
+  bool IsStopped() { return state_ == SessionState::STOPPED; }
+  // Re-gathers candidates on networks that do not have any connections. More
+  // precisely, a network interface may have more than one IP addresses (e.g.,
+  // IPv4 and IPv6 addresses). Each address subnet will be used to create a
+  // network. Only if all networks of an interface have no connection, the
+  // implementation should start re-gathering on all networks of that interface.
+  virtual void RegatherOnFailedNetworks() {}
+  // Re-gathers candidates on all networks.
+  // TODO(honghaiz): Implement this in BasicPortAllocator.
+  virtual void RegatherOnAllNetworks() {}
 
   // Another way of getting the information provided by the signals below.
   //
@@ -175,8 +198,17 @@ class PortAllocatorSession : public sigslot::has_slots<> {
   virtual bool CandidatesAllocationDone() const = 0;
 
   sigslot::signal2<PortAllocatorSession*, PortInterface*> SignalPortReady;
+  // Ports should be signaled to be removed when the networks of the ports
+  // failed (either because the interface is down, or because there is no
+  // connection on the interface).
+  sigslot::signal2<PortAllocatorSession*, const std::vector<PortInterface*>&>
+      SignalPortsRemoved;
   sigslot::signal2<PortAllocatorSession*,
                    const std::vector<Candidate>&> SignalCandidatesReady;
+  // Candidates should be signaled to be removed when the port that generated
+  // the candidates is removed.
+  sigslot::signal2<PortAllocatorSession*, const std::vector<Candidate>&>
+      SignalCandidatesRemoved;
   sigslot::signal1<PortAllocatorSession*> SignalCandidatesAllocationDone;
   // A TURN port is pruned if a higher-priority TURN port becomes ready
   // (pairable). When it is pruned, it will not be used for creating
@@ -220,6 +252,7 @@ class PortAllocatorSession : public sigslot::has_slots<> {
   int component_;
   std::string ice_ufrag_;
   std::string ice_pwd_;
+  SessionState state_ = SessionState::CLEARED;
 
   // SetIceParameters is an implementation detail which only PortAllocator
   // should be able to call.

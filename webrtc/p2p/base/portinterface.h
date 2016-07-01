@@ -106,9 +106,6 @@ class PortInterface {
   // any usefulness.
   sigslot::signal1<PortInterface*> SignalDestroyed;
 
-  // Signaled when the network used by this port becomes inactive.
-  sigslot::signal1<PortInterface*> SignalNetworkInactive;
-
   // Signaled when Port discovers ice role conflict with the peer.
   sigslot::signal1<PortInterface*> SignalRoleConflict;
 

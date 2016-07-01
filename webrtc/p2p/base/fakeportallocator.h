@@ -111,7 +111,6 @@ class FakePortAllocatorSession : public PortAllocatorSession {
                       rtc::IPAddress(in6addr_loopback),
                       64),
         port_(),
-        running_(false),
         port_config_count_(0),
         stun_servers_(allocator->stun_servers()),
         turn_servers_(allocator->turn_servers()) {
@@ -124,6 +123,7 @@ class FakePortAllocatorSession : public PortAllocatorSession {
   }
 
   void StartGettingPorts() override {
+    PortAllocatorSession::StartGettingPorts();
     if (!port_) {
       rtc::Network& network =
           (rtc::HasIPv6Enabled() && (flags() & PORTALLOCATOR_ENABLE_IPV6))
@@ -137,12 +137,8 @@ class FakePortAllocatorSession : public PortAllocatorSession {
       AddPort(port_.get());
     }
     ++port_config_count_;
-    running_ = true;
   }
 
-  void StopGettingPorts() override { running_ = false; }
-  bool IsGettingPorts() override { return running_; }
-  void ClearGettingPorts() override {}
   std::vector<PortInterface*> ReadyPorts() const override {
     return ready_ports_;
   }
@@ -200,7 +196,6 @@ class FakePortAllocatorSession : public PortAllocatorSession {
   rtc::Network ipv4_network_;
   rtc::Network ipv6_network_;
   std::unique_ptr<cricket::Port> port_;
-  bool running_;
   int port_config_count_;
   std::vector<Candidate> candidates_;
   std::vector<PortInterface*> ready_ports_;

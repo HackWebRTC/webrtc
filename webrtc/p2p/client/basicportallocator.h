@@ -47,7 +47,7 @@ class BasicPortAllocator : public PortAllocator {
 
   int network_ignore_mask() const { return network_ignore_mask_; }
 
-  rtc::NetworkManager* network_manager() { return network_manager_; }
+  rtc::NetworkManager* network_manager() const { return network_manager_; }
 
   // If socket_factory() is set to NULL each PortAllocatorSession
   // creates its own socket factory.
@@ -92,11 +92,11 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   void StartGettingPorts() override;
   void StopGettingPorts() override;
   void ClearGettingPorts() override;
-  bool IsGettingPorts() override { return running_; }
   // These will all be cricket::Ports.
   std::vector<PortInterface*> ReadyPorts() const override;
   std::vector<Candidate> ReadyCandidates() const override;
   bool CandidatesAllocationDone() const override;
+  void RegatherOnFailedNetworks() override;
 
  protected:
   void UpdateIceParametersInternal() override;
@@ -156,8 +156,8 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
     };
     Port* port_ = nullptr;
     AllocationSequence* sequence_ = nullptr;
-    State state_ = STATE_INPROGRESS;
     bool has_pairable_candidate_ = false;
+    State state_ = STATE_INPROGRESS;
   };
 
   void OnConfigReady(PortConfiguration* config);
@@ -180,7 +180,8 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   void MaybeSignalCandidatesAllocationDone();
   void OnPortAllocationComplete(AllocationSequence* seq);
   PortData* FindPort(Port* port);
-  void GetNetworks(std::vector<rtc::Network*>* networks);
+  std::vector<rtc::Network*> GetNetworks();
+  std::vector<rtc::Network*> GetFailedNetworks();
 
   bool CheckCandidateFilter(const Candidate& c) const;
   bool CandidatePairable(const Candidate& c, const Port* port) const;
@@ -188,6 +189,12 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   // in order to avoid leaking any information.
   Candidate SanitizeRelatedAddress(const Candidate& c) const;
 
+  // Removes the ports and candidates on given networks.
+  void RemovePortsAndCandidates(const std::vector<rtc::Network*>& networks);
+  // Gets filtered and sanitized candidates generated from a port and
+  // append to |candidates|.
+  void GetCandidatesFromPort(const PortData& data,
+                             std::vector<Candidate>* candidates) const;
   Port* GetBestTurnPortForNetwork(const std::string& network_name) const;
   // Returns true if at least one TURN port is pruned.
   bool PruneTurnPorts(Port* newly_pairable_turn_port);
@@ -198,7 +205,6 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   rtc::PacketSocketFactory* socket_factory_;
   bool allocation_started_;
   bool network_manager_started_;
-  bool running_;  // set when StartGetAllPorts is called
   bool allocation_sequences_created_;
   std::vector<PortConfiguration*> configs_;
   std::vector<AllocationSequence*> sequences_;
@@ -271,11 +277,13 @@ class AllocationSequence : public rtc::MessageHandler,
   ~AllocationSequence();
   bool Init();
   void Clear();
-  void OnNetworkRemoved();
+  void OnNetworkFailed();
 
   State state() const { return state_; }
-  const rtc::Network* network() const { return network_; }
-  bool network_removed() const { return network_removed_; }
+  rtc::Network* network() const { return network_; }
+
+  bool network_failed() const { return network_failed_; }
+  void set_network_failed() { network_failed_ = true; }
 
   // Disables the phases for a new sequence that this one already covers for an
   // equivalent network setup.
@@ -325,7 +333,7 @@ class AllocationSequence : public rtc::MessageHandler,
   void OnPortDestroyed(PortInterface* port);
 
   BasicPortAllocatorSession* session_;
-  bool network_removed_ = false;
+  bool network_failed_ = false;
   rtc::Network* network_;
   rtc::IPAddress ip_;
   PortConfiguration* config_;

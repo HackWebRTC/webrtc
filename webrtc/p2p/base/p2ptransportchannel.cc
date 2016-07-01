@@ -27,10 +27,14 @@
 namespace {
 
 // messages for queuing up work for ourselves
-enum { MSG_SORT_AND_UPDATE_STATE = 1, MSG_CHECK_AND_PING };
+enum {
+  MSG_SORT_AND_UPDATE_STATE = 1,
+  MSG_CHECK_AND_PING,
+  MSG_REGATHER_ON_FAILED_NETWORKS
+};
 
 // The minimum improvement in RTT that justifies a switch.
-static const double kMinImprovement = 10;
+const int kMinImprovement = 10;
 
 bool IsRelayRelay(const cricket::Connection* conn) {
   return conn->local_candidate().type() == cricket::RELAY_PORT_TYPE &&
@@ -76,6 +80,9 @@ const int STABLE_WRITABLE_CONNECTION_PING_INTERVAL = 2500;  // ms
 
 static const int MIN_CHECK_RECEIVING_INTERVAL = 50;  // ms
 
+// We periodically check if any existing networks do not have any connection
+// and regather on those networks.
+static const int DEFAULT_REGATHER_ON_FAILED_NETWORKS_INTERVAL = 5 * 60 * 1000;
 static constexpr int a_is_better = 1;
 static constexpr int b_is_better = -1;
 
@@ -101,10 +108,11 @@ P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
       check_receiving_interval_(MIN_CHECK_RECEIVING_INTERVAL * 5),
       config_(MIN_CHECK_RECEIVING_INTERVAL * 50 /* receiving_timeout */,
               0 /* backup_connection_ping_interval */,
-              false /* gather_continually */,
+              GATHER_ONCE /* continual_gathering_policy */,
               false /* prioritize_most_likely_candidate_pairs */,
               STABLE_WRITABLE_CONNECTION_PING_INTERVAL,
-              true /* presume_writable_when_fully_relayed */) {
+              true /* presume_writable_when_fully_relayed */,
+              DEFAULT_REGATHER_ON_FAILED_NETWORKS_INTERVAL) {
   uint32_t weak_ping_interval = ::strtoul(
       webrtc::field_trial::FindFullName("WebRTC-StunInterPacketDelay").c_str(),
       nullptr, 10);
@@ -125,9 +133,13 @@ void P2PTransportChannel::AddAllocatorSession(
 
   session->set_generation(static_cast<uint32_t>(allocator_sessions_.size()));
   session->SignalPortReady.connect(this, &P2PTransportChannel::OnPortReady);
+  session->SignalPortsRemoved.connect(this,
+                                      &P2PTransportChannel::OnPortsRemoved);
   session->SignalPortPruned.connect(this, &P2PTransportChannel::OnPortPruned);
   session->SignalCandidatesReady.connect(
       this, &P2PTransportChannel::OnCandidatesReady);
+  session->SignalCandidatesRemoved.connect(
+      this, &P2PTransportChannel::OnCandidatesRemoved);
   session->SignalCandidatesAllocationDone.connect(
       this, &P2PTransportChannel::OnCandidatesAllocationDone);
 
@@ -296,8 +308,11 @@ void P2PTransportChannel::SetRemoteIceMode(IceMode mode) {
 }
 
 void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
-  config_.gather_continually = config.gather_continually;
-  LOG(LS_INFO) << "Set gather_continually to " << config_.gather_continually;
+  if (config_.continual_gathering_policy != config.continual_gathering_policy) {
+    LOG(LS_INFO) << "Set continual_gathering_policy to "
+                 << config_.continual_gathering_policy;
+    config_.continual_gathering_policy = config.continual_gathering_policy;
+  }
 
   if (config.backup_connection_ping_interval >= 0 &&
       config_.backup_connection_ping_interval !=
@@ -346,6 +361,13 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
       LOG(LS_INFO) << "Set presume writable when fully relayed to "
                    << config_.presume_writable_when_fully_relayed;
     }
+  }
+
+  if (config.regather_on_failed_networks_interval) {
+    config_.regather_on_failed_networks_interval =
+        config.regather_on_failed_networks_interval;
+    LOG(LS_INFO) << "Set regather_on_failed_networks_interval to "
+                 << *config_.regather_on_failed_networks_interval;
   }
 }
 
@@ -418,8 +440,7 @@ void P2PTransportChannel::OnPortReady(PortAllocatorSession *session,
   port->SignalUnknownAddress.connect(
       this, &P2PTransportChannel::OnUnknownAddress);
   port->SignalDestroyed.connect(this, &P2PTransportChannel::OnPortDestroyed);
-  port->SignalNetworkInactive.connect(
-      this, &P2PTransportChannel::OnPortNetworkInactive);
+
   port->SignalRoleConflict.connect(
       this, &P2PTransportChannel::OnRoleConflict);
   port->SignalSentPacket.connect(this, &P2PTransportChannel::OnSentPacket);
@@ -957,6 +978,9 @@ void P2PTransportChannel::MaybeStartPinging() {
     LOG_J(LS_INFO, this) << "Have a pingable connection for the first time; "
                          << "starting to ping.";
     thread()->Post(RTC_FROM_HERE, this, MSG_CHECK_AND_PING);
+    thread()->PostDelayed(RTC_FROM_HERE,
+                          *config_.regather_on_failed_networks_interval, this,
+                          MSG_REGATHER_ON_FAILED_NETWORKS);
     started_pinging_ = true;
   }
 }
@@ -1313,16 +1337,16 @@ void P2PTransportChannel::MaybeStopPortAllocatorSessions() {
   }
 
   for (const auto& session : allocator_sessions_) {
-    if (!session->IsGettingPorts()) {
+    if (session->IsStopped()) {
       continue;
     }
-    // If gathering continually, keep the last session running so that it
-    // will gather candidates if the networks change.
-    if (config_.gather_continually && session == allocator_sessions_.back()) {
+    // If gathering continually, keep the last session running so that
+    // it can gather candidates if the networks change.
+    if (config_.gather_continually() && session == allocator_sessions_.back()) {
       session->ClearGettingPorts();
-      break;
+    } else {
+      session->StopGettingPorts();
     }
-    session->StopGettingPorts();
   }
 }
 
@@ -1376,6 +1400,9 @@ void P2PTransportChannel::OnMessage(rtc::Message *pmsg) {
       break;
     case MSG_CHECK_AND_PING:
       OnCheckAndPing();
+      break;
+    case MSG_REGATHER_ON_FAILED_NETWORKS:
+      OnRegatherOnFailedNetworks();
       break;
     default:
       ASSERT(false);
@@ -1606,37 +1633,62 @@ void P2PTransportChannel::OnConnectionDestroyed(Connection* connection) {
   }
 }
 
-// When a port is destroyed remove it from our list of ports to use for
+// When a port is destroyed, remove it from our list of ports to use for
 // connection attempts.
 void P2PTransportChannel::OnPortDestroyed(PortInterface* port) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
 
-  // Remove this port from the lists (if we didn't drop it already).
   ports_.erase(std::remove(ports_.begin(), ports_.end(), port), ports_.end());
   removed_ports_.erase(
       std::remove(removed_ports_.begin(), removed_ports_.end(), port),
       removed_ports_.end());
-
-  LOG(INFO) << "Removed port because it is destroyed: "
-            << static_cast<int>(ports_.size()) << " remaining";
+  LOG(INFO) << "Removed port because it is destroyed: " << ports_.size()
+            << " remaining";
 }
 
-void P2PTransportChannel::OnPortNetworkInactive(PortInterface* port) {
-  // If it does not gather continually, the port will be removed from the list
-  // when ICE restarts.
-  if (!config_.gather_continually) {
+void P2PTransportChannel::OnPortsRemoved(
+    PortAllocatorSession* session,
+    const std::vector<PortInterface*>& ports) {
+  ASSERT(worker_thread_ == rtc::Thread::Current());
+  LOG(LS_INFO) << "Remove " << ports.size() << " ports";
+  for (PortInterface* port : ports) {
+    if (RemovePort(port)) {
+      LOG(INFO) << "Removed port: " << port->ToString() << " " << ports_.size()
+                << " remaining";
+    }
+  }
+}
+
+void P2PTransportChannel::OnCandidatesRemoved(
+    PortAllocatorSession* session,
+    const std::vector<Candidate>& candidates) {
+  ASSERT(worker_thread_ == rtc::Thread::Current());
+  // Do not signal candidate removals if continual gathering is not enabled, or
+  // if this is not the last session because an ICE restart would have signaled
+  // the remote side to remove all candidates in previous sessions.
+  if (!config_.gather_continually() || session != allocator_session()) {
     return;
   }
-  if (!RemovePort(port)) {
-    return;
-  }
-  LOG(INFO) << "Removed port because its network is inactive : "
-            << port->ToString() << " " << ports_.size() << " remaining";
-  std::vector<Candidate> candidates = port->Candidates();
-  for (Candidate& candidate : candidates) {
+
+  std::vector<Candidate> candidates_to_remove;
+  for (Candidate candidate : candidates) {
     candidate.set_transport_name(transport_name());
+    candidates_to_remove.push_back(candidate);
   }
-  SignalCandidatesRemoved(this, candidates);
+  SignalCandidatesRemoved(this, candidates_to_remove);
+}
+
+void P2PTransportChannel::OnRegatherOnFailedNetworks() {
+  // Only re-gather when the current session is in the CLEARED state (i.e., not
+  // running or stopped). It is only possible to enter this state when we gather
+  // continually, so there is an implicit check on continual gathering here.
+  if (!allocator_sessions_.empty() && allocator_session()->IsCleared()) {
+    allocator_session()->RegatherOnFailedNetworks();
+  }
+
+  thread()->PostDelayed(RTC_FROM_HERE,
+                        *config_.regather_on_failed_networks_interval, this,
+                        MSG_REGATHER_ON_FAILED_NETWORKS);
 }
 
 void P2PTransportChannel::OnPortPruned(PortAllocatorSession* session,

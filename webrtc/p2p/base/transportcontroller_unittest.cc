@@ -137,11 +137,12 @@ class TransportControllerTest : public testing::Test,
     channel2->SetConnectionCount(1);
   }
 
-  cricket::IceConfig CreateIceConfig(int receiving_timeout,
-                                     bool gather_continually) {
+  cricket::IceConfig CreateIceConfig(
+      int receiving_timeout,
+      cricket::ContinualGatheringPolicy continual_gathering_policy) {
     cricket::IceConfig config;
     config.receiving_timeout = receiving_timeout;
-    config.gather_continually = gather_continually;
+    config.continual_gathering_policy = continual_gathering_policy;
     return config;
   }
 
@@ -204,10 +205,13 @@ TEST_F(TransportControllerTest, TestSetIceConfig) {
   FakeTransportChannel* channel1 = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel1);
 
-  transport_controller_->SetIceConfig(CreateIceConfig(1000, true));
+  transport_controller_->SetIceConfig(
+      CreateIceConfig(1000, cricket::GATHER_CONTINUALLY));
   EXPECT_EQ(1000, channel1->receiving_timeout());
   EXPECT_TRUE(channel1->gather_continually());
 
+  transport_controller_->SetIceConfig(
+      CreateIceConfig(1000, cricket::GATHER_CONTINUALLY_AND_RECOVER));
   // Test that value stored in controller is applied to new channels.
   FakeTransportChannel* channel2 = CreateChannel("video", 1);
   ASSERT_NE(nullptr, channel2);

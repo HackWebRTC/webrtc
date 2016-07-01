@@ -1128,14 +1128,27 @@ bool WebRtcSession::RemoveRemoteIceCandidates(
 
 cricket::IceConfig WebRtcSession::ParseIceConfig(
     const PeerConnectionInterface::RTCConfiguration& config) const {
+  cricket::ContinualGatheringPolicy gathering_policy;
+  // TODO(honghaiz): Add the third continual gathering policy in
+  // PeerConnectionInterface and map it to GATHER_CONTINUALLY_AND_RECOVER.
+  switch (config.continual_gathering_policy) {
+    case PeerConnectionInterface::GATHER_ONCE:
+      gathering_policy = cricket::GATHER_ONCE;
+      break;
+    case PeerConnectionInterface::GATHER_CONTINUALLY:
+      gathering_policy = cricket::GATHER_CONTINUALLY;
+      break;
+    default:
+      RTC_DCHECK(false);
+      gathering_policy = cricket::GATHER_ONCE;
+  }
   cricket::IceConfig ice_config;
   ice_config.receiving_timeout = config.ice_connection_receiving_timeout;
   ice_config.prioritize_most_likely_candidate_pairs =
       config.prioritize_most_likely_ice_candidate_pairs;
   ice_config.backup_connection_ping_interval =
       config.ice_backup_candidate_pair_ping_interval;
-  ice_config.gather_continually = (config.continual_gathering_policy ==
-                                   PeerConnectionInterface::GATHER_CONTINUALLY);
+  ice_config.continual_gathering_policy = gathering_policy;
   ice_config.presume_writable_when_fully_relayed =
       config.presume_writable_when_fully_relayed;
   return ice_config;

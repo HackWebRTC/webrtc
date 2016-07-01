@@ -105,12 +105,13 @@ static const uint64_t kHighTiebreaker = 22222;
 
 enum { MSG_ADD_CANDIDATES, MSG_REMOVE_CANDIDATES };
 
-cricket::IceConfig CreateIceConfig(int receiving_timeout,
-                                   bool gather_continually,
-                                   int backup_ping_interval = -1) {
+cricket::IceConfig CreateIceConfig(
+    int receiving_timeout,
+    cricket::ContinualGatheringPolicy continual_gathering_policy,
+    int backup_ping_interval = -1) {
   cricket::IceConfig config;
   config.receiving_timeout = receiving_timeout;
-  config.gather_continually = gather_continually;
+  config.continual_gathering_policy = continual_gathering_policy;
   config.backup_connection_ping_interval = backup_ping_interval;
   return config;
 }
@@ -412,6 +413,7 @@ class P2PTransportChannelTestBase : public testing::Test,
   }
   void RemoveAddress(int endpoint, const SocketAddress& addr) {
     GetEndpoint(endpoint)->network_manager_.RemoveInterface(addr);
+    fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, addr);
   }
   void SetProxy(int endpoint, rtc::ProxyType type) {
     rtc::ProxyInfo info;
@@ -1543,7 +1545,7 @@ TEST_F(P2PTransportChannelTest, TestContinualGathering) {
   SetAllocationStepDelay(0, kDefaultStepDelay);
   SetAllocationStepDelay(1, kDefaultStepDelay);
   CreateChannels(1);
-  IceConfig config = CreateIceConfig(1000, true);
+  IceConfig config = CreateIceConfig(1000, GATHER_CONTINUALLY);
   ep1_ch1()->SetIceConfig(config);
   // By default, ep2 does not gather continually.
 
@@ -1820,6 +1822,37 @@ TEST_F(P2PTransportChannelSameNatTest, TestConesBehindSameCone) {
 // In the future we will try different RTTs and configs for the different
 // interfaces, so that we can simulate a user with Ethernet and VPN networks.
 class P2PTransportChannelMultihomedTest : public P2PTransportChannelTestBase {
+ public:
+  const cricket::Connection* GetConnectionWithRemoteAddress(
+      cricket::P2PTransportChannel* channel,
+      const SocketAddress& address) {
+    for (cricket::Connection* conn : channel->connections()) {
+      if (conn->remote_candidate().address().EqualIPs(address)) {
+        return conn;
+      }
+    }
+    return nullptr;
+  }
+
+  const cricket::Connection* GetConnectionWithLocalAddress(
+      cricket::P2PTransportChannel* channel,
+      const SocketAddress& address) {
+    for (cricket::Connection* conn : channel->connections()) {
+      if (conn->local_candidate().address().EqualIPs(address)) {
+        return conn;
+      }
+    }
+    return nullptr;
+  }
+
+  void DestroyAllButBestConnection(cricket::P2PTransportChannel* channel) {
+    const cricket::Connection* best_connection = channel->best_connection();
+    for (cricket::Connection* conn : channel->connections()) {
+      if (conn != best_connection) {
+        conn->Destroy();
+      }
+    }
+  }
 };
 
 // Test that we can establish connectivity when both peers are multihomed.
@@ -1856,7 +1889,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControlledSide) {
               RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
 
   // Make the receiving timeout shorter for testing.
-  IceConfig config = CreateIceConfig(1000, false);
+  IceConfig config = CreateIceConfig(1000, GATHER_ONCE);
   ep1_ch1()->SetIceConfig(config);
   ep2_ch1()->SetIceConfig(config);
 
@@ -1909,7 +1942,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
               RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
 
   // Make the receiving timeout shorter for testing.
-  IceConfig config = CreateIceConfig(1000, false);
+  IceConfig config = CreateIceConfig(1000, GATHER_ONCE);
   ep1_ch1()->SetIceConfig(config);
   ep2_ch1()->SetIceConfig(config);
 
@@ -1968,6 +2001,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestPreferWifiToWifiConnection) {
                        LocalCandidate(ep2_ch1())->address().EqualIPs(wifi[1]) &&
                        RemoteCandidate(ep2_ch1())->address().EqualIPs(wifi[0]),
                    1000);
+  DestroyChannels();
 }
 
 // Tests that a Wifi-Cellular connection has higher precedence than
@@ -1998,6 +2032,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestPreferWifiOverCellularNetwork) {
   EXPECT_TRUE_WAIT(ep2_ch1()->selected_connection() &&
                        LocalCandidate(ep2_ch1())->address().EqualIPs(wifi[1]),
                    1000);
+  DestroyChannels();
 }
 
 // Test that the backup connection is pinged at a rate no faster than
@@ -2019,7 +2054,8 @@ TEST_F(P2PTransportChannelMultihomedTest, TestPingBackupConnectionRate) {
                               ep2_ch1()->receiving() && ep2_ch1()->writable(),
                           1000, 1000);
   int backup_ping_interval = 2000;
-  ep2_ch1()->SetIceConfig(CreateIceConfig(2000, false, backup_ping_interval));
+  ep2_ch1()->SetIceConfig(
+      CreateIceConfig(2000, GATHER_ONCE, backup_ping_interval));
   // After the state becomes COMPLETED, the backup connection will be pinged
   // once every |backup_ping_interval| milliseconds.
   ASSERT_TRUE_WAIT(ep2_ch1()->GetState() == STATE_COMPLETED, 1000);
@@ -2034,6 +2070,8 @@ TEST_F(P2PTransportChannelMultihomedTest, TestPingBackupConnectionRate) {
       backup_conn->last_ping_response_received() - last_ping_response_ms;
   LOG(LS_INFO) << "Time elapsed: " << time_elapsed;
   EXPECT_GE(time_elapsed, backup_ping_interval);
+
+  DestroyChannels();
 }
 
 TEST_F(P2PTransportChannelMultihomedTest, TestGetState) {
@@ -2050,23 +2088,25 @@ TEST_F(P2PTransportChannelMultihomedTest, TestGetState) {
                  1000);
 }
 
-// Tests that when a network interface becomes inactive, if and only if
-// Continual Gathering is enabled, the ports associated with that network
+// Tests that when a network interface becomes inactive, if Continual Gathering
+// policy is GATHER_CONTINUALLY, the ports associated with that network
 // will be removed from the port list of the channel, and the respective
 // remote candidates on the other participant will be removed eventually.
 TEST_F(P2PTransportChannelMultihomedTest, TestNetworkBecomesInactive) {
+  rtc::ScopedFakeClock clock;
   AddAddress(0, kPublicAddrs[0]);
   AddAddress(1, kPublicAddrs[1]);
   // Create channels and let them go writable, as usual.
   CreateChannels(1);
-  ep1_ch1()->SetIceConfig(CreateIceConfig(2000, true));
-  ep2_ch1()->SetIceConfig(CreateIceConfig(2000, false));
+  ep1_ch1()->SetIceConfig(CreateIceConfig(2000, GATHER_CONTINUALLY));
+  ep2_ch1()->SetIceConfig(CreateIceConfig(2000, GATHER_ONCE));
 
   SetAllocatorFlags(0, kOnlyLocalPorts);
   SetAllocatorFlags(1, kOnlyLocalPorts);
-  EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
-                              ep2_ch1()->receiving() && ep2_ch1()->writable(),
-                          1000, 1000);
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                                 ep2_ch1()->receiving() &&
+                                 ep2_ch1()->writable(),
+                             kDefaultTimeout, clock);
   // More than one port has been created.
   EXPECT_LE(1U, ep1_ch1()->ports().size());
   // Endpoint 1 enabled continual gathering; the port will be removed
@@ -2074,29 +2114,76 @@ TEST_F(P2PTransportChannelMultihomedTest, TestNetworkBecomesInactive) {
   RemoveAddress(0, kPublicAddrs[0]);
   EXPECT_TRUE(ep1_ch1()->ports().empty());
   // The remote candidates will be removed eventually.
-  EXPECT_TRUE_WAIT(ep2_ch1()->remote_candidates().empty(), 1000);
+  EXPECT_TRUE_SIMULATED_WAIT(ep2_ch1()->remote_candidates().empty(), 1000,
+                             clock);
 
   size_t num_ports = ep2_ch1()->ports().size();
   EXPECT_LE(1U, num_ports);
   size_t num_remote_candidates = ep1_ch1()->remote_candidates().size();
-  // Endpoint 2 did not enable continual gathering; the port will not be removed
-  // when the interface is removed and neither the remote candidates on the
-  // other participant.
+  // Endpoint 2 did not enable continual gathering; the local port will still be
+  // removed when the interface is removed but the remote candidates on the
+  // other participant will not be removed.
   RemoveAddress(1, kPublicAddrs[1]);
-  rtc::Thread::Current()->ProcessMessages(500);
-  EXPECT_EQ(num_ports, ep2_ch1()->ports().size());
+
+  EXPECT_EQ_SIMULATED_WAIT(0U, ep2_ch1()->ports().size(), kDefaultTimeout,
+                           clock);
+  SIMULATED_WAIT(0U == ep1_ch1()->remote_candidates().size(), 500, clock);
   EXPECT_EQ(num_remote_candidates, ep1_ch1()->remote_candidates().size());
+
+  DestroyChannels();
 }
 
-/*
+// Tests that continual gathering will create new connections when a new
+// interface is added.
+TEST_F(P2PTransportChannelMultihomedTest,
+       TestContinualGatheringOnNewInterface) {
+  auto& wifi = kAlternateAddrs;
+  auto& cellular = kPublicAddrs;
+  AddAddress(0, wifi[0], "test_wifi0", rtc::ADAPTER_TYPE_WIFI);
+  AddAddress(1, cellular[1], "test_cell1", rtc::ADAPTER_TYPE_CELLULAR);
+  CreateChannels(1);
+  // Set continual gathering policy.
+  ep1_ch1()->SetIceConfig(CreateIceConfig(1000, GATHER_CONTINUALLY));
+  ep2_ch1()->SetIceConfig(CreateIceConfig(1000, GATHER_CONTINUALLY));
+  SetAllocatorFlags(0, kOnlyLocalPorts);
+  SetAllocatorFlags(1, kOnlyLocalPorts);
+  EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                              ep2_ch1()->receiving() && ep2_ch1()->writable(),
+                          kDefaultTimeout, kDefaultTimeout);
 
-TODO(pthatcher): Once have a way to handle network interfaces changes
-without signalling an ICE restart, put a test like this back.  In the
-mean time, this test only worked for GICE.  With ICE, it's currently
-not possible without an ICE restart.
+  // Add a new wifi interface on end point 2. We should expect a new connection
+  // to be created and the new one will be the best connection.
+  AddAddress(1, wifi[1], "test_wifi1", rtc::ADAPTER_TYPE_WIFI);
+  const cricket::Connection* conn;
+  EXPECT_TRUE_WAIT((conn = ep1_ch1()->best_connection()) != nullptr &&
+                       conn->remote_candidate().address().EqualIPs(wifi[1]),
+                   kDefaultTimeout);
+  EXPECT_TRUE_WAIT((conn = ep2_ch1()->best_connection()) != nullptr &&
+                       conn->local_candidate().address().EqualIPs(wifi[1]),
+                   kDefaultTimeout);
 
-// Test that we can switch links in a coordinated fashion.
-TEST_F(P2PTransportChannelMultihomedTest, TestDrain) {
+  // Add a new cellular interface on end point 1, we should expect a new
+  // backup connection created using this new interface.
+  AddAddress(0, cellular[0], "test_cellular0", rtc::ADAPTER_TYPE_CELLULAR);
+  EXPECT_TRUE_WAIT(ep1_ch1()->GetState() == cricket::STATE_COMPLETED &&
+                       (conn = GetConnectionWithLocalAddress(
+                            ep1_ch1(), cellular[0])) != nullptr &&
+                       conn != ep1_ch1()->best_connection() && conn->writable(),
+                   kDefaultTimeout);
+  EXPECT_TRUE_WAIT(
+      ep2_ch1()->GetState() == cricket::STATE_COMPLETED &&
+          (conn = GetConnectionWithRemoteAddress(ep2_ch1(), cellular[0])) !=
+              nullptr &&
+          conn != ep2_ch1()->best_connection() && conn->receiving(),
+      kDefaultTimeout);
+
+  DestroyChannels();
+}
+
+// Tests that we can switch links via continual gathering.
+TEST_F(P2PTransportChannelMultihomedTest,
+       TestSwitchLinksViaContinualGathering) {
+  rtc::ScopedFakeClock clock;
   AddAddress(0, kPublicAddrs[0]);
   AddAddress(1, kPublicAddrs[1]);
   // Use only local ports for simplicity.
@@ -2105,35 +2192,133 @@ TEST_F(P2PTransportChannelMultihomedTest, TestDrain) {
 
   // Create channels and let them go writable, as usual.
   CreateChannels(1);
-  EXPECT_TRUE_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
-                   ep2_ch1()->receiving() && ep2_ch1()->writable(),
-                   1000);
+  // Set continual gathering policy.
+  ep1_ch1()->SetIceConfig(CreateIceConfig(1000, GATHER_CONTINUALLY));
+  ep2_ch1()->SetIceConfig(CreateIceConfig(1000, GATHER_CONTINUALLY));
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                                 ep2_ch1()->receiving() &&
+                                 ep2_ch1()->writable(),
+                             3000, clock);
   EXPECT_TRUE(
       ep1_ch1()->selected_connection() && ep2_ch1()->selected_connection() &&
       LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]) &&
       RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
 
-
-  // Remove the public interface, add the alternate interface, and allocate
-  // a new generation of candidates for the new interface (via
-  // MaybeStartGathering()).
+  // Add the new address first and then remove the other one.
   LOG(LS_INFO) << "Draining...";
   AddAddress(1, kAlternateAddrs[1]);
   RemoveAddress(1, kPublicAddrs[1]);
-  ep2_ch1()->MaybeStartGathering();
-
-  // We should switch over to use the alternate address after
-  // an exchange of pings.
-  EXPECT_TRUE_WAIT(
+  // We should switch to use the alternate address after an exchange of pings.
+  EXPECT_TRUE_SIMULATED_WAIT(
       ep1_ch1()->selected_connection() && ep2_ch1()->selected_connection() &&
-      LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]) &&
-      RemoteCandidate(ep1_ch1())->address().EqualIPs(kAlternateAddrs[1]),
-      3000);
+          LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]) &&
+          RemoteCandidate(ep1_ch1())->address().EqualIPs(kAlternateAddrs[1]),
+      3000, clock);
+
+  // Remove one address first and then add another address.
+  LOG(LS_INFO) << "Draining again...";
+  RemoveAddress(1, kAlternateAddrs[1]);
+  AddAddress(1, kAlternateAddrs[0]);
+  EXPECT_TRUE_SIMULATED_WAIT(
+      ep1_ch1()->best_connection() && ep2_ch1()->best_connection() &&
+          LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]) &&
+          RemoteCandidate(ep1_ch1())->address().EqualIPs(kAlternateAddrs[0]),
+      3000, clock);
 
   DestroyChannels();
 }
 
+/*
+TODO(honghaiz) Once continual gathering fully supports
+GATHER_CONTINUALLY_AND_RECOVER, put this test back.
+
+// Tests that if the backup connections are lost and then the interface with the
+// selected connection is gone, continual gathering will restore the
+// connectivity.
+TEST_F(P2PTransportChannelMultihomedTest,
+       TestBackupConnectionLostThenInterfaceGone) {
+  rtc::ScopedFakeClock clock;
+  auto& wifi = kAlternateAddrs;
+  auto& cellular = kPublicAddrs;
+  AddAddress(0, wifi[0], "test_wifi0", rtc::ADAPTER_TYPE_WIFI);
+  AddAddress(0, cellular[0], "test_cell0", rtc::ADAPTER_TYPE_CELLULAR);
+  AddAddress(1, wifi[1], "test_wifi1", rtc::ADAPTER_TYPE_WIFI);
+  AddAddress(1, cellular[1], "test_cell1", rtc::ADAPTER_TYPE_CELLULAR);
+  // Use only local ports for simplicity.
+  SetAllocatorFlags(0, kOnlyLocalPorts);
+  SetAllocatorFlags(1, kOnlyLocalPorts);
+
+  // Create channels and let them go writable, as usual.
+  CreateChannels(1);
+  // Set continual gathering policy.
+  IceConfig config = CreateIceConfig(1000, GATHER_CONTINUALLY_AND_RECOVER);
+  ep1_ch1()->SetIceConfig(config);
+  ep2_ch1()->SetIceConfig(config);
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                              ep2_ch1()->receiving() && ep2_ch1()->writable(),
+                          3000, clock);
+  EXPECT_TRUE(ep1_ch1()->best_connection() && ep2_ch1()->best_connection() &&
+              LocalCandidate(ep1_ch1())->address().EqualIPs(wifi[0]) &&
+              RemoteCandidate(ep1_ch1())->address().EqualIPs(wifi[1]));
+
+  // First destroy all backup connection.
+  DestroyAllButBestConnection(ep1_ch1());
+
+  SIMULATED_WAIT(false, 10, clock);
+  // Then the interface of the best connection goes away.
+  RemoveAddress(0, wifi[0]);
+  EXPECT_TRUE_SIMULATED_WAIT(
+      ep1_ch1()->best_connection() && ep2_ch1()->best_connection() &&
+          LocalCandidate(ep1_ch1())->address().EqualIPs(cellular[0]) &&
+          RemoteCandidate(ep1_ch1())->address().EqualIPs(wifi[1]),
+      3000, clock);
+
+  DestroyChannels();
+}
 */
+
+// Tests that the backup connection will be restored after it is destroyed.
+TEST_F(P2PTransportChannelMultihomedTest, TestRestoreBackupConnection) {
+  rtc::ScopedFakeClock clock;
+  auto& wifi = kAlternateAddrs;
+  auto& cellular = kPublicAddrs;
+  AddAddress(0, wifi[0], "test_wifi0", rtc::ADAPTER_TYPE_WIFI);
+  AddAddress(0, cellular[0], "test_cell0", rtc::ADAPTER_TYPE_CELLULAR);
+  AddAddress(1, wifi[1], "test_wifi1", rtc::ADAPTER_TYPE_WIFI);
+  AddAddress(1, cellular[1], "test_cell1", rtc::ADAPTER_TYPE_CELLULAR);
+  // Use only local ports for simplicity.
+  SetAllocatorFlags(0, kOnlyLocalPorts);
+  SetAllocatorFlags(1, kOnlyLocalPorts);
+
+  // Create channels and let them go writable, as usual.
+  CreateChannels(1);
+  IceConfig config = CreateIceConfig(1000, GATHER_CONTINUALLY);
+  config.regather_on_failed_networks_interval = rtc::Optional<int>(2000);
+  ep1_ch1()->SetIceConfig(config);
+  ep2_ch1()->SetIceConfig(config);
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                                 ep2_ch1()->receiving() &&
+                                 ep2_ch1()->writable(),
+                             3000, clock);
+  EXPECT_TRUE(ep1_ch1()->best_connection() && ep2_ch1()->best_connection() &&
+              LocalCandidate(ep1_ch1())->address().EqualIPs(wifi[0]) &&
+              RemoteCandidate(ep1_ch1())->address().EqualIPs(wifi[1]));
+
+  // Destroy all backup connections.
+  DestroyAllButBestConnection(ep1_ch1());
+  // Ensure the backup connection is removed first.
+  EXPECT_TRUE_SIMULATED_WAIT(
+      GetConnectionWithLocalAddress(ep1_ch1(), cellular[0]) == nullptr,
+      kDefaultTimeout, clock);
+  const cricket::Connection* conn;
+  EXPECT_TRUE_SIMULATED_WAIT(
+      (conn = GetConnectionWithLocalAddress(ep1_ch1(), cellular[0])) !=
+              nullptr &&
+          conn != ep1_ch1()->best_connection() && conn->writable(),
+      5000, clock);
+
+  DestroyChannels();
+}
 
 // A collection of tests which tests a single P2PTransportChannel by sending
 // pings.
@@ -2624,7 +2809,7 @@ TEST_F(P2PTransportChannelPingTest, TestReceivingStateChange) {
   // small.
   EXPECT_LE(1000, ch.receiving_timeout());
   EXPECT_LE(200, ch.check_receiving_interval());
-  ch.SetIceConfig(CreateIceConfig(500, false));
+  ch.SetIceConfig(CreateIceConfig(500, GATHER_ONCE));
   EXPECT_EQ(500, ch.receiving_timeout());
   EXPECT_EQ(50, ch.check_receiving_interval());
   ch.MaybeStartGathering();
@@ -3038,7 +3223,7 @@ TEST_F(P2PTransportChannelPingTest, TestDontPruneWhenWeak) {
   conn2->SignalNominated(conn2);
   EXPECT_TRUE_WAIT(conn1->pruned(), 3000);
 
-  ch.SetIceConfig(CreateIceConfig(500, false));
+  ch.SetIceConfig(CreateIceConfig(500, GATHER_ONCE));
   // Wait until conn2 becomes not receiving.
   EXPECT_TRUE_WAIT(!conn2->receiving(), 3000);
 
@@ -3104,7 +3289,7 @@ TEST_F(P2PTransportChannelPingTest, TestConnectionPrunedAgain) {
   FakePortAllocator pa(rtc::Thread::Current(), nullptr);
   P2PTransportChannel ch("test channel", 1, &pa);
   PrepareChannel(&ch);
-  ch.SetIceConfig(CreateIceConfig(1000, false));
+  ch.SetIceConfig(CreateIceConfig(1000, GATHER_ONCE));
   ch.MaybeStartGathering();
   ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 100));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
@@ -3178,7 +3363,7 @@ TEST_F(P2PTransportChannelPingTest, TestStopPortAllocatorSessions) {
   FakePortAllocator pa(rtc::Thread::Current(), nullptr);
   P2PTransportChannel ch("test channel", 1, &pa);
   PrepareChannel(&ch);
-  ch.SetIceConfig(CreateIceConfig(2000, false));
+  ch.SetIceConfig(CreateIceConfig(2000, GATHER_ONCE));
   ch.MaybeStartGathering();
   ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 100));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
@@ -3204,17 +3389,15 @@ TEST_F(P2PTransportChannelPingTest, TestStopPortAllocatorSessions) {
   EXPECT_TRUE(!ch.allocator_session()->IsGettingPorts());
 }
 
-// Test that the ICE role is updated even on ports with inactive networks when
-// doing continual gathering. These ports may still have connections that need
-// a correct role, in case the network becomes active before the connection is
-// destroyed.
-TEST_F(P2PTransportChannelPingTest,
-       TestIceRoleUpdatedOnPortAfterSignalNetworkInactive) {
+// Test that the ICE role is updated even on ports that has been removed.
+// These ports may still have connections that need a correct role, in case that
+// the connections on it may still receive stun pings.
+TEST_F(P2PTransportChannelPingTest, TestIceRoleUpdatedOnRemovedPort) {
   FakePortAllocator pa(rtc::Thread::Current(), nullptr);
   P2PTransportChannel ch("test channel", ICE_CANDIDATE_COMPONENT_DEFAULT, &pa);
   // Starts with ICEROLE_CONTROLLING.
   PrepareChannel(&ch);
-  IceConfig config = CreateIceConfig(1000, true);
+  IceConfig config = CreateIceConfig(1000, GATHER_CONTINUALLY);
   ch.SetIceConfig(config);
   ch.MaybeStartGathering();
   ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));
@@ -3222,9 +3405,10 @@ TEST_F(P2PTransportChannelPingTest,
   Connection* conn = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn != nullptr);
 
-  // Make the fake port signal that its network is inactive, then change the
-  // ICE role and expect it to be updated.
-  conn->port()->SignalNetworkInactive(conn->port());
+  // Make a fake signal to remove the ports in the p2ptransportchannel. then
+  // change the ICE role and expect it to be updated.
+  std::vector<PortInterface*> ports(1, conn->port());
+  ch.allocator_session()->SignalPortsRemoved(ch.allocator_session(), ports);
   ch.SetIceRole(ICEROLE_CONTROLLED);
   EXPECT_EQ(ICEROLE_CONTROLLED, conn->port()->GetIceRole());
 }

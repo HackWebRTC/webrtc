@@ -140,7 +140,7 @@ class NetworkManagerBase : public NetworkManager {
   NetworkManagerBase();
   ~NetworkManagerBase() override;
 
-  void GetNetworks(std::vector<Network*>* networks) const override;
+  void GetNetworks(NetworkList* networks) const override;
   void GetAnyAddressNetworks(NetworkList* networks) override;
   bool ipv6_enabled() const { return ipv6_enabled_; }
   void set_ipv6_enabled(bool enabled) { ipv6_enabled_ = enabled; }
@@ -290,7 +290,6 @@ class Network {
           AdapterType type);
   ~Network();
 
-  sigslot::signal1<const Network*> SignalInactive;
   sigslot::signal1<const Network*> SignalTypeChanged;
 
   const DefaultLocalAddressProvider* default_local_address_provider() {
@@ -398,12 +397,8 @@ class Network {
   // it inactive, so that we can detect network changes properly.
   bool active() const { return active_; }
   void set_active(bool active) {
-    if (active_ == active) {
-      return;
-    }
-    active_ = active;
-    if (!active) {
-      SignalInactive(this);
+    if (active_ != active) {
+      active_ = active;
     }
   }
 

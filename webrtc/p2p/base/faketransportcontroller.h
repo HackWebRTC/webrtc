@@ -179,13 +179,10 @@ class FakeTransportChannel : public TransportChannelImpl,
 
   void SetReceiving(bool receiving) { set_receiving(receiving); }
 
-  void SetIceConfig(const IceConfig& config) override {
-    receiving_timeout_ = config.receiving_timeout;
-    gather_continually_ = config.gather_continually;
-  }
+  void SetIceConfig(const IceConfig& config) override { ice_config_ = config; }
 
-  int receiving_timeout() const { return receiving_timeout_; }
-  bool gather_continually() const { return gather_continually_; }
+  int receiving_timeout() const { return ice_config_.receiving_timeout; }
+  bool gather_continually() const { return ice_config_.gather_continually(); }
 
   int SendPacket(const char* data,
                  size_t len,
@@ -318,8 +315,7 @@ class FakeTransportChannel : public TransportChannelImpl,
   bool do_dtls_ = false;
   std::vector<int> srtp_ciphers_;
   int chosen_crypto_suite_ = rtc::SRTP_INVALID_CRYPTO_SUITE;
-  int receiving_timeout_ = -1;
-  bool gather_continually_ = false;
+  IceConfig ice_config_;
   IceRole role_ = ICEROLE_UNKNOWN;
   uint64_t tiebreaker_ = 0;
   std::string ice_ufrag_;

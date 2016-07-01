@@ -67,16 +67,6 @@ class NetworkTest : public testing::Test, public sigslot::has_slots<>  {
     callback_called_ = true;
   }
 
-  void listenToNetworkInactive(BasicNetworkManager& network_manager) {
-    BasicNetworkManager::NetworkList networks;
-    network_manager.GetNetworks(&networks);
-    for (Network* network : networks) {
-      network->SignalInactive.connect(this, &NetworkTest::OnNetworkInactive);
-    }
-  }
-
-  void OnNetworkInactive(const Network* network) { num_networks_inactive_++; }
-
   NetworkManager::Stats MergeNetworkList(
       BasicNetworkManager& network_manager,
       const NetworkManager::NetworkList& list,
@@ -187,8 +177,6 @@ class NetworkTest : public testing::Test, public sigslot::has_slots<>  {
 
  protected:
   bool callback_called_;
-  // Number of networks that become inactive.
-  int num_networks_inactive_ = 0;
 };
 
 class TestBasicNetworkManager : public BasicNetworkManager {
@@ -322,7 +310,6 @@ TEST_F(NetworkTest, TestBasicMergeNetworkList) {
   EXPECT_TRUE(changed);
   EXPECT_EQ(stats.ipv6_network_count, 0);
   EXPECT_EQ(stats.ipv4_network_count, 1);
-  listenToNetworkInactive(manager);
   list.clear();
 
   manager.GetNetworks(&list);
@@ -339,9 +326,7 @@ TEST_F(NetworkTest, TestBasicMergeNetworkList) {
   EXPECT_TRUE(changed);
   EXPECT_EQ(stats.ipv6_network_count, 0);
   EXPECT_EQ(stats.ipv4_network_count, 1);
-  EXPECT_EQ(1, num_networks_inactive_);
   list.clear();
-  num_networks_inactive_ = 0;
 
   manager.GetNetworks(&list);
   EXPECT_EQ(1U, list.size());
@@ -359,7 +344,6 @@ TEST_F(NetworkTest, TestBasicMergeNetworkList) {
   EXPECT_TRUE(changed);
   EXPECT_EQ(stats.ipv6_network_count, 0);
   EXPECT_EQ(stats.ipv4_network_count, 2);
-  EXPECT_EQ(0, num_networks_inactive_);
   list.clear();
 
   // Verify that we get previous instances of Network objects.
@@ -379,7 +363,6 @@ TEST_F(NetworkTest, TestBasicMergeNetworkList) {
   EXPECT_FALSE(changed);
   EXPECT_EQ(stats.ipv6_network_count, 0);
   EXPECT_EQ(stats.ipv4_network_count, 2);
-  EXPECT_EQ(0, num_networks_inactive_);
   list.clear();
 
   // Verify that we get previous instances of Network objects.

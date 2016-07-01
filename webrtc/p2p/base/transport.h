@@ -31,6 +31,7 @@
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/sessiondescription.h"
@@ -79,6 +80,16 @@ enum IceGatheringState {
   kIceGatheringNew = 0,
   kIceGatheringGathering,
   kIceGatheringComplete,
+};
+
+enum ContinualGatheringPolicy {
+  // All port allocator sessions will stop after a writable connection is found.
+  GATHER_ONCE = 0,
+  // The most recent port allocator session will keep on running.
+  GATHER_CONTINUALLY,
+  // The most recent port allocator session will keep on running, and it will
+  // try to recover connectivity if the channel becomes disconnected.
+  GATHER_CONTINUALLY_AND_RECOVER,
 };
 
 // Stats that we can return about the connections for a transport channel.
@@ -160,8 +171,13 @@ struct IceConfig {
   // Time interval in milliseconds to ping a backup connection when the ICE
   // channel is strongly connected.
   int backup_connection_ping_interval = -1;
-  // If true, the most recent port allocator session will keep on running.
-  bool gather_continually = false;
+
+  ContinualGatheringPolicy continual_gathering_policy = GATHER_ONCE;
+
+  bool gather_continually() const {
+    return continual_gathering_policy == GATHER_CONTINUALLY ||
+           continual_gathering_policy == GATHER_CONTINUALLY_AND_RECOVER;
+  }
 
   // Whether we should prioritize Relay/Relay candidate when nothing
   // is writable yet.
@@ -174,22 +190,29 @@ struct IceConfig {
   // candidate pairs will succeed, even before a binding response is received.
   bool presume_writable_when_fully_relayed = false;
 
+  // Interval to check on all networks and to perform ICE regathering on any
+  // active network having no connection on it.
+  rtc::Optional<int> regather_on_failed_networks_interval;
+
   IceConfig() {}
   IceConfig(int receiving_timeout_ms,
             int backup_connection_ping_interval,
-            bool gather_continually,
+            ContinualGatheringPolicy gathering_policy,
             bool prioritize_most_likely_candidate_pairs,
             int stable_writable_connection_ping_interval_ms,
-            bool presume_writable_when_fully_relayed)
+            bool presume_writable_when_fully_relayed,
+            int regather_on_failed_networks_interval_ms)
       : receiving_timeout(receiving_timeout_ms),
         backup_connection_ping_interval(backup_connection_ping_interval),
-        gather_continually(gather_continually),
+        continual_gathering_policy(gathering_policy),
         prioritize_most_likely_candidate_pairs(
             prioritize_most_likely_candidate_pairs),
         stable_writable_connection_ping_interval(
             stable_writable_connection_ping_interval_ms),
         presume_writable_when_fully_relayed(
-            presume_writable_when_fully_relayed) {}
+            presume_writable_when_fully_relayed),
+        regather_on_failed_networks_interval(
+            regather_on_failed_networks_interval_ms) {}
 };
 
 bool BadTransportDescription(const std::string& desc, std::string* err_desc);

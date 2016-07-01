@@ -268,11 +268,15 @@ class P2PTransportChannel : public TransportChannelImpl,
   void AddConnection(Connection* connection);
 
   void OnPortReady(PortAllocatorSession *session, PortInterface* port);
+  // TODO(honghaiz): Merge the two methods OnPortsRemoved and OnPortPruned but
+  // still log the reason of removing.
+  void OnPortsRemoved(PortAllocatorSession* session,
+                      const std::vector<PortInterface*>& ports);
   void OnPortPruned(PortAllocatorSession* session, PortInterface* port);
-  // Returns true if the port is found and removed from |ports_|.
-  bool RemovePort(PortInterface* port);
   void OnCandidatesReady(PortAllocatorSession *session,
                          const std::vector<Candidate>& candidates);
+  void OnCandidatesRemoved(PortAllocatorSession* session,
+                           const std::vector<Candidate>& candidates);
   void OnCandidatesAllocationDone(PortAllocatorSession* session);
   void OnUnknownAddress(PortInterface* port,
                         const rtc::SocketAddress& addr,
@@ -280,8 +284,13 @@ class P2PTransportChannel : public TransportChannelImpl,
                         IceMessage* stun_msg,
                         const std::string& remote_username,
                         bool port_muxed);
+
+  // When a port is destroyed, remove it from both lists |ports_|
+  // and |removed_ports_|.
   void OnPortDestroyed(PortInterface* port);
-  void OnPortNetworkInactive(PortInterface* port);
+  // When removing a port, move it from |ports_| to |removed_ports_|.
+  // Returns true if the port is found and removed from |ports_|.
+  bool RemovePort(PortInterface* port);
   void OnRoleConflict(PortInterface* port);
 
   void OnConnectionStateChange(Connection* connection);
@@ -295,6 +304,7 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   void OnMessage(rtc::Message* pmsg) override;
   void OnCheckAndPing();
+  void OnRegatherOnFailedNetworks();
 
   // Returns true if the new_connection should be selected for transmission.
   bool ShouldSwitchSelectedConnection(Connection* new_connection) const;
