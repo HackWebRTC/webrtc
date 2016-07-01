@@ -364,23 +364,5 @@ int32_t VideoSender::EnableFrameDropper(bool enable) {
   _mediaOpt.EnableFrameDropper(enable);
   return VCM_OK;
 }
-
-void VideoSender::SuspendBelowMinBitrate() {
-  RTC_DCHECK(main_thread_.CalledOnValidThread());
-  int threshold_bps;
-  if (current_codec_.numberOfSimulcastStreams == 0) {
-    threshold_bps = current_codec_.minBitrate * 1000;
-  } else {
-    threshold_bps = current_codec_.simulcastStream[0].minBitrate * 1000;
-  }
-  // Set the hysteresis window to be at 10% of the threshold, but at least
-  // 10 kbps.
-  int window_bps = std::max(threshold_bps / 10, 10000);
-  _mediaOpt.SuspendBelowMinBitrate(threshold_bps, window_bps);
-}
-
-bool VideoSender::VideoSuspended() const {
-  return _mediaOpt.IsVideoSuspended();
-}
 }  // namespace vcm
 }  // namespace webrtc

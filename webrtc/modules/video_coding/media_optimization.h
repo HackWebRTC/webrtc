@@ -59,13 +59,6 @@ class MediaOptimization {
                           int64_t round_trip_time_ms);
 
   void EnableFrameDropper(bool enable);
-
-  // Lets the sender suspend video when the rate drops below
-  // |threshold_bps|, and turns back on when the rate goes back up above
-  // |threshold_bps| + |window_bps|.
-  void SuspendBelowMinBitrate(int threshold_bps, int window_bps);
-  bool IsVideoSuspended() const;
-
   bool DropFrame();
 
   // Informs Media Optimization of encoded output.
@@ -133,10 +126,6 @@ class MediaOptimization {
   uint32_t avg_sent_bit_rate_bps_ GUARDED_BY(crit_sect_);
   uint32_t avg_sent_framerate_ GUARDED_BY(crit_sect_);
   int num_layers_ GUARDED_BY(crit_sect_);
-  bool suspension_enabled_ GUARDED_BY(crit_sect_);
-  bool video_suspended_ GUARDED_BY(crit_sect_);
-  int suspension_threshold_bps_ GUARDED_BY(crit_sect_);
-  int suspension_window_bps_ GUARDED_BY(crit_sect_);
 };
 }  // namespace media_optimization
 }  // namespace webrtc

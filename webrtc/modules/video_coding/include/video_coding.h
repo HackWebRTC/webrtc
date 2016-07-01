@@ -472,15 +472,6 @@ class VideoCodingModule : public Module {
   // delayed by at least desired_delay_ms.
   virtual int SetMinReceiverDelay(int desired_delay_ms) = 0;
 
-  // Lets the sender suspend video when the rate drops below
-  // |threshold_bps|, and turns back on when the rate goes back up above
-  // |threshold_bps| + |window_bps|.
-  virtual void SuspendBelowMinBitrate() = 0;
-
-  // Returns true if SuspendBelowMinBitrate is engaged and the video has been
-  // suspended due to bandwidth limitations; otherwise false.
-  virtual bool VideoSuspended() const = 0;
-
   virtual void RegisterPostEncodeImageCallback(
       EncodedImageCallback* post_encode_callback) = 0;
   // Releases pending decode calls, permitting faster thread shutdown.

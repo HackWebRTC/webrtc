@@ -152,12 +152,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return sender_.EnableFrameDropper(enable);
   }
 
-  void SuspendBelowMinBitrate() override {
-    return sender_.SuspendBelowMinBitrate();
-  }
-
-  bool VideoSuspended() const override { return sender_.VideoSuspended(); }
-
   int32_t RegisterReceiveCodec(const VideoCodec* receiveCodec,
                                int32_t numberOfCores,
                                bool requireKeyFrame) override {

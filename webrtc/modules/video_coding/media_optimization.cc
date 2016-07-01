@@ -46,11 +46,7 @@ MediaOptimization::MediaOptimization(Clock* clock)
       encoded_frame_samples_(),
       avg_sent_bit_rate_bps_(0),
       avg_sent_framerate_(0),
-      num_layers_(0),
-      suspension_enabled_(false),
-      video_suspended_(false),
-      suspension_threshold_bps_(0),
-      suspension_window_bps_(0) {
+      num_layers_(0) {
   memset(send_statistics_, 0, sizeof(send_statistics_));
   memset(incoming_frame_times_, -1, sizeof(incoming_frame_times_));
 }
@@ -136,8 +132,6 @@ uint32_t MediaOptimization::SetTargetRates(uint32_t target_bitrate,
       static_cast<float>(video_target_bitrate_) / 1000.0f;
   frame_dropper_->SetRates(target_video_bitrate_kbps, incoming_frame_rate_);
 
-  CheckSuspendConditions();
-
   return video_target_bitrate_;
 }
 
@@ -203,29 +197,11 @@ void MediaOptimization::EnableFrameDropper(bool enable) {
   frame_dropper_->Enable(enable);
 }
 
-void MediaOptimization::SuspendBelowMinBitrate(int threshold_bps,
-                                               int window_bps) {
-  CriticalSectionScoped lock(crit_sect_.get());
-  assert(threshold_bps > 0 && window_bps >= 0);
-  suspension_threshold_bps_ = threshold_bps;
-  suspension_window_bps_ = window_bps;
-  suspension_enabled_ = true;
-  video_suspended_ = false;
-}
-
-bool MediaOptimization::IsVideoSuspended() const {
-  CriticalSectionScoped lock(crit_sect_.get());
-  return video_suspended_;
-}
-
 bool MediaOptimization::DropFrame() {
   CriticalSectionScoped lock(crit_sect_.get());
   UpdateIncomingFrameRate();
   // Leak appropriate number of bytes.
   frame_dropper_->Leak((uint32_t)(InputFrameRateInternal() + 0.5f));
-  if (video_suspended_) {
-    return true;  // Drop all frames when muted.
-  }
   return frame_dropper_->DropFrame();
 }
 
@@ -311,26 +287,5 @@ void MediaOptimization::ProcessIncomingFrameRate(int64_t now) {
     }
   }
 }
-
-void MediaOptimization::CheckSuspendConditions() {
-  // Check conditions for SuspendBelowMinBitrate. |video_target_bitrate_| is in
-  // bps.
-  if (suspension_enabled_) {
-    if (!video_suspended_) {
-      // Check if we just went below the threshold.
-      if (video_target_bitrate_ < suspension_threshold_bps_) {
-        video_suspended_ = true;
-      }
-    } else {
-      // Video is already suspended. Check if we just went over the threshold
-      // with a margin.
-      if (video_target_bitrate_ >
-          suspension_threshold_bps_ + suspension_window_bps_) {
-        video_suspended_ = false;
-      }
-    }
-  }
-}
-
 }  // namespace media_optimization
 }  // namespace webrtc

@@ -89,9 +89,6 @@ class VideoSender : public Module {
   int32_t IntraFrameRequest(size_t stream_index);
   int32_t EnableFrameDropper(bool enable);
 
-  void SuspendBelowMinBitrate();
-  bool VideoSuspended() const;
-
   int64_t TimeUntilNextProcess() override;
   void Process() override;
 
