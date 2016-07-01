@@ -289,10 +289,16 @@ int SimulcastEncoderAdapter::Encode(
     // If scaling isn't required, because the input resolution
     // matches the destination or the input image is empty (e.g.
     // a keyframe request for encoders with internal camera
-    // sources), pass the image on directly. Otherwise, we'll
-    // scale it to match what the encoder expects (below).
+    // sources) or the source image has a native handle, pass the image on
+    // directly. Otherwise, we'll scale it to match what the encoder expects
+    // (below).
+    // For texture frames, the underlying encoder is expected to be able to
+    // correctly sample/scale the source texture.
+    // TODO(perkj): ensure that works going forward, and figure out how this
+    // affects webrtc:5683.
     if ((dst_width == src_width && dst_height == src_height) ||
-        input_image.IsZeroSize()) {
+        input_image.IsZeroSize() ||
+        input_image.video_frame_buffer()->native_handle()) {
       int ret = streaminfos_[stream_idx].encoder->Encode(
           input_image, codec_specific_info, &stream_frame_types);
       if (ret != WEBRTC_VIDEO_CODEC_OK) {
@@ -510,10 +516,11 @@ void SimulcastEncoderAdapter::OnDroppedFrame() {
 bool SimulcastEncoderAdapter::SupportsNativeHandle() const {
   // We should not be calling this method before streaminfos_ are configured.
   RTC_DCHECK(!streaminfos_.empty());
-  // TODO(pbos): Support textures when using more than one encoder.
-  if (streaminfos_.size() != 1)
-    return false;
-  return streaminfos_[0].encoder->SupportsNativeHandle();
+  for (const auto& streaminfo : streaminfos_) {
+    if (!streaminfo.encoder->SupportsNativeHandle())
+      return false;
+  }
+  return true;
 }
 
 const char* SimulcastEncoderAdapter::ImplementationName() const {

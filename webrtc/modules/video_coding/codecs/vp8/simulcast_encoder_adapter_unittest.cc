@@ -118,11 +118,11 @@ class MockVideoEncoder : public VideoEncoder {
     return 0;
   }
 
-  int32_t Encode(const VideoFrame& inputImage,
-                 const CodecSpecificInfo* codecSpecificInfo,
-                 const std::vector<FrameType>* frame_types) /* override */ {
-    return encode_return_value_;
-  }
+  MOCK_METHOD3(
+      Encode,
+      int32_t(const VideoFrame& inputImage,
+              const CodecSpecificInfo* codecSpecificInfo,
+              const std::vector<FrameType>* frame_types) /* override */);
 
   int32_t RegisterEncodeCompleteCallback(
       EncodedImageCallback* callback) /* override */ {
@@ -160,15 +160,10 @@ class MockVideoEncoder : public VideoEncoder {
     supports_native_handle_ = enabled;
   }
 
-  void set_encode_return_value(int value) {
-    encode_return_value_ = value;
-  }
-
   MOCK_CONST_METHOD0(ImplementationName, const char*());
 
  private:
   bool supports_native_handle_ = false;
-  int encode_return_value_ = WEBRTC_VIDEO_CODEC_OK;
   VideoCodec codec_;
   EncodedImageCallback* callback_;
 };
@@ -452,9 +447,7 @@ TEST_F(TestSimulcastEncoderAdapterFake, SupportsImplementationName) {
 }
 
 TEST_F(TestSimulcastEncoderAdapterFake,
-       SupportsNativeHandleDisabledForMultipleStreams) {
-  // TODO(pbos): Implement actual test (verify that it works) when implemented
-  // for multiple streams.
+       SupportsNativeHandleForMultipleStreams) {
   TestVp8Simulcast::DefaultSettings(
       &codec_, static_cast<const int*>(kTestTemporalLayerProfile));
   codec_.numberOfSimulcastStreams = 3;
@@ -463,7 +456,47 @@ TEST_F(TestSimulcastEncoderAdapterFake,
   ASSERT_EQ(3u, helper_->factory()->encoders().size());
   for (MockVideoEncoder* encoder : helper_->factory()->encoders())
     encoder->set_supports_native_handle(true);
+  // If one encoder doesn't support it, then overall support is disabled.
+  helper_->factory()->encoders()[0]->set_supports_native_handle(false);
   EXPECT_FALSE(adapter_->SupportsNativeHandle());
+  // Once all do, then the adapter claims support.
+  helper_->factory()->encoders()[0]->set_supports_native_handle(true);
+  EXPECT_TRUE(adapter_->SupportsNativeHandle());
+}
+
+class FakeNativeHandleBuffer : public NativeHandleBuffer {
+ public:
+  FakeNativeHandleBuffer(void* native_handle, int width, int height)
+      : NativeHandleBuffer(native_handle, width, height) {}
+  rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() override {
+    RTC_NOTREACHED();
+    return nullptr;
+  }
+};
+
+TEST_F(TestSimulcastEncoderAdapterFake,
+       NativeHandleForwardingForMultipleStreams) {
+  TestVp8Simulcast::DefaultSettings(
+      &codec_, static_cast<const int*>(kTestTemporalLayerProfile));
+  codec_.numberOfSimulcastStreams = 3;
+  // High start bitrate, so all streams are enabled.
+  codec_.startBitrate = 3000;
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
+  adapter_->RegisterEncodeCompleteCallback(this);
+  ASSERT_EQ(3u, helper_->factory()->encoders().size());
+  for (MockVideoEncoder* encoder : helper_->factory()->encoders())
+    encoder->set_supports_native_handle(true);
+  EXPECT_TRUE(adapter_->SupportsNativeHandle());
+
+  rtc::scoped_refptr<VideoFrameBuffer> buffer(
+      new rtc::RefCountedObject<FakeNativeHandleBuffer>(this, 1280, 720));
+  VideoFrame input_frame(buffer, 100, 1000, kVideoRotation_180);
+  // Expect calls with the given video frame verbatim, since it's a texture
+  // frame and can't otherwise be modified/resized.
+  for (MockVideoEncoder* encoder : helper_->factory()->encoders())
+    EXPECT_CALL(*encoder, Encode(::testing::Ref(input_frame), _, _)).Times(1);
+  std::vector<FrameType> frame_types(3, kVideoFrameKey);
+  EXPECT_EQ(0, adapter_->Encode(input_frame, NULL, &frame_types));
 }
 
 TEST_F(TestSimulcastEncoderAdapterFake, TestFailureReturnCodesFromEncodeCalls) {
@@ -474,8 +507,8 @@ TEST_F(TestSimulcastEncoderAdapterFake, TestFailureReturnCodesFromEncodeCalls) {
   adapter_->RegisterEncodeCompleteCallback(this);
   ASSERT_EQ(3u, helper_->factory()->encoders().size());
   // Tell the 2nd encoder to request software fallback.
-  helper_->factory()->encoders()[1]->set_encode_return_value(
-      WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE);
+  EXPECT_CALL(*helper_->factory()->encoders()[1], Encode(_, _, _))
+      .WillOnce(Return(WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE));
 
   // Send a fake frame and assert the return is software fallback.
   VideoFrame input_frame;
