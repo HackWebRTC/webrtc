@@ -226,7 +226,7 @@ void Loopback() {
   VideoQualityTest::Params params{
       {flags::Width(), flags::Height(), flags::Fps(),
        flags::MinBitrateKbps() * 1000, flags::TargetBitrateKbps() * 1000,
-       flags::MaxBitrateKbps() * 1000, flags::Codec(),
+       flags::MaxBitrateKbps() * 1000, false, flags::Codec(),
        flags::NumTemporalLayers(), flags::SelectedTL(),
        flags::MinTransmitBitrateKbps() * 1000, call_bitrate_config,
        flags::FLAGS_send_side_bwe},

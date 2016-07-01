@@ -56,6 +56,10 @@ int MaxBitrateKbps() {
   return static_cast<int>(FLAGS_max_bitrate);
 }
 
+DEFINE_bool(suspend_below_min_bitrate,
+            false,
+            "Suspends video below the configured min bitrate.");
+
 DEFINE_int32(num_temporal_layers,
              1,
              "Number of temporal layers. Set to 1-4 to override.");
@@ -223,7 +227,9 @@ void Loopback() {
   VideoQualityTest::Params params{
       {flags::Width(), flags::Height(), flags::Fps(),
        flags::MinBitrateKbps() * 1000, flags::TargetBitrateKbps() * 1000,
-       flags::MaxBitrateKbps() * 1000, flags::Codec(),
+       flags::MaxBitrateKbps() * 1000,
+       flags::FLAGS_suspend_below_min_bitrate,
+       flags::Codec(),
        flags::NumTemporalLayers(), flags::SelectedTL(),
        0,  // No min transmit bitrate.
        call_bitrate_config,

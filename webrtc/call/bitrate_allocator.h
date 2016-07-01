@@ -13,14 +13,16 @@
 
 #include <stdint.h>
 
-#include <list>
 #include <map>
 #include <utility>
+#include <vector>
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/thread_annotations.h"
 
 namespace webrtc {
+
+class Clock;
 
 // Used by all send streams with adaptive bitrate, to get the currently
 // allocated bitrate for the send stream. The current network properties are
@@ -28,10 +30,11 @@ namespace webrtc {
 // protection.
 class BitrateAllocatorObserver {
  public:
-  virtual void OnBitrateUpdated(uint32_t bitrate_bps,
-                                uint8_t fraction_loss,
-                                int64_t rtt) = 0;
-
+  // Returns the amount of protection used by the BitrateAllocatorObserver
+  // implementation, as bitrate in bps.
+  virtual uint32_t OnBitrateUpdated(uint32_t bitrate_bps,
+                                    uint8_t fraction_loss,
+                                    int64_t rtt) = 0;
  protected:
   virtual ~BitrateAllocatorObserver() {}
 };
@@ -54,6 +57,7 @@ class BitrateAllocator {
   };
 
   explicit BitrateAllocator(LimitObserver* limit_observer);
+  ~BitrateAllocator();
 
   // Allocate target_bitrate across the registered BitrateAllocatorObservers.
   void OnNetworkChanged(uint32_t target_bitrate_bps,
@@ -98,20 +102,25 @@ class BitrateAllocator {
           min_bitrate_bps(min_bitrate_bps),
           max_bitrate_bps(max_bitrate_bps),
           pad_up_bitrate_bps(pad_up_bitrate_bps),
-          enforce_min_bitrate(enforce_min_bitrate) {}
-    BitrateAllocatorObserver* const observer;
+          enforce_min_bitrate(enforce_min_bitrate),
+          allocated_bitrate_bps(-1),
+          media_ratio(1.0) {}
+
+    BitrateAllocatorObserver* observer;
     uint32_t min_bitrate_bps;
     uint32_t max_bitrate_bps;
     uint32_t pad_up_bitrate_bps;
     bool enforce_min_bitrate;
+    int64_t allocated_bitrate_bps;
+    double media_ratio;  // Part of the total bitrate used for media [0.0, 1.0].
   };
 
   // Calculates the minimum requested send bitrate and max padding bitrate and
   // calls LimitObserver::OnAllocationLimitsChanged.
   void UpdateAllocationLimits();
 
-  typedef std::list<ObserverConfig> ObserverConfigList;
-  ObserverConfigList::iterator FindObserverConfig(
+  typedef std::vector<ObserverConfig> ObserverConfigs;
+  ObserverConfigs::iterator FindObserverConfig(
       const BitrateAllocatorObserver* observer)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
@@ -153,12 +162,15 @@ class BitrateAllocator {
 
   rtc::CriticalSection crit_sect_;
   // Stored in a list to keep track of the insertion order.
-  ObserverConfigList bitrate_observer_configs_ GUARDED_BY(crit_sect_);
+  ObserverConfigs bitrate_observer_configs_ GUARDED_BY(crit_sect_);
   uint32_t last_bitrate_bps_ GUARDED_BY(crit_sect_);
   uint32_t last_non_zero_bitrate_bps_ GUARDED_BY(crit_sect_);
   uint8_t last_fraction_loss_ GUARDED_BY(crit_sect_);
   int64_t last_rtt_ GUARDED_BY(crit_sect_);
-  ObserverAllocation last_allocation_ GUARDED_BY(crit_sect_);
+  // Number of mute events based on too low BWE, not network up/down.
+  int num_pause_events_ GUARDED_BY(crit_sect_);
+  Clock* const clock_;
+  int64_t last_bwe_log_time_;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_CALL_BITRATE_ALLOCATOR_H_

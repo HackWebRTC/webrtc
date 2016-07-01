@@ -34,6 +34,7 @@ class VideoQualityTest : public test::CallTest {
       int min_bitrate_bps;
       int target_bitrate_bps;
       int max_bitrate_bps;
+      bool suspend_below_min_bitrate;
       std::string codec;
       int num_temporal_layers;
       int selected_tl;

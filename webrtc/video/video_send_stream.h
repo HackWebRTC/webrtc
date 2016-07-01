@@ -87,9 +87,9 @@ class VideoSendStream : public webrtc::VideoSendStream,
   int GetPaddingNeededBps() const;
 
   // Implements BitrateAllocatorObserver.
-  void OnBitrateUpdated(uint32_t bitrate_bps,
-                        uint8_t fraction_loss,
-                        int64_t rtt) override;
+  uint32_t OnBitrateUpdated(uint32_t bitrate_bps,
+                            uint8_t fraction_loss,
+                            int64_t rtt) override;
 
  protected:
   // Implements webrtc::VCMProtectionCallback.

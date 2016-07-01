@@ -866,15 +866,18 @@ void VideoSendStream::SignalNetworkState(NetworkState state) {
   }
 }
 
-void VideoSendStream::OnBitrateUpdated(uint32_t bitrate_bps,
-                                       uint8_t fraction_loss,
-                                       int64_t rtt) {
+uint32_t VideoSendStream::OnBitrateUpdated(uint32_t bitrate_bps,
+                                           uint8_t fraction_loss,
+                                           int64_t rtt) {
   payload_router_.SetTargetSendBitrate(bitrate_bps);
   // Get the encoder target rate. It is the estimated network rate -
   // protection overhead.
-  uint32_t encoder_target_rate = protection_bitrate_calculator_.SetTargetRates(
-      bitrate_bps, stats_proxy_.GetSendFrameRate(), fraction_loss, rtt);
-  vie_encoder_.OnBitrateUpdated(encoder_target_rate, fraction_loss, rtt);
+  uint32_t encoder_target_rate_bps =
+      protection_bitrate_calculator_.SetTargetRates(
+          bitrate_bps, stats_proxy_.GetSendFrameRate(), fraction_loss, rtt);
+  vie_encoder_.OnBitrateUpdated(encoder_target_rate_bps, fraction_loss, rtt);
+
+  return bitrate_bps - encoder_target_rate_bps;
 }
 
 int VideoSendStream::ProtectionRequest(const FecProtectionParams* delta_params,

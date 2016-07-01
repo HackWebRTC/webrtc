@@ -31,18 +31,27 @@ class MockLimitObserver : public BitrateAllocator::LimitObserver {
 class TestBitrateObserver : public BitrateAllocatorObserver {
  public:
   TestBitrateObserver()
-      : last_bitrate_bps_(0), last_fraction_loss_(0), last_rtt_ms_(0) {}
+      : last_bitrate_bps_(0),
+        last_fraction_loss_(0),
+        last_rtt_ms_(0),
+        protection_ratio_(0.0) {}
 
-  void OnBitrateUpdated(uint32_t bitrate_bps,
-                        uint8_t fraction_loss,
-                        int64_t rtt) override {
+  void SetBitrateProtectionRatio(double protection_ratio) {
+    protection_ratio_ = protection_ratio;
+  }
+
+  uint32_t OnBitrateUpdated(uint32_t bitrate_bps,
+                            uint8_t fraction_loss,
+                            int64_t rtt) override {
     last_bitrate_bps_ = bitrate_bps;
     last_fraction_loss_ = fraction_loss;
     last_rtt_ms_ = rtt;
+    return bitrate_bps * protection_ratio_;
   }
   uint32_t last_bitrate_bps_;
   uint8_t last_fraction_loss_;
   int64_t last_rtt_ms_;
+  double protection_ratio_;
 };
 
 class BitrateAllocatorTest : public ::testing::Test {
@@ -95,44 +104,44 @@ TEST_F(BitrateAllocatorTest, TwoBitrateObserversOneRtcpObserver) {
   TestBitrateObserver bitrate_observer_1;
   TestBitrateObserver bitrate_observer_2;
   EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(100000, 0));
-      allocator_->AddObserver(&bitrate_observer_1, 100000, 300000, 0, true);
-      EXPECT_EQ(300000, allocator_->GetStartBitrate(&bitrate_observer_1));
-      EXPECT_CALL(limit_observer_,
-                  OnAllocationLimitsChanged(100000 + 200000, 0));
-      allocator_->AddObserver(&bitrate_observer_2, 200000, 300000, 0, true);
-      EXPECT_EQ(200000, allocator_->GetStartBitrate(&bitrate_observer_2));
+  allocator_->AddObserver(&bitrate_observer_1, 100000, 300000, 0, true);
+  EXPECT_EQ(300000, allocator_->GetStartBitrate(&bitrate_observer_1));
+  EXPECT_CALL(limit_observer_,
+              OnAllocationLimitsChanged(100000 + 200000, 0));
+  allocator_->AddObserver(&bitrate_observer_2, 200000, 300000, 0, true);
+  EXPECT_EQ(200000, allocator_->GetStartBitrate(&bitrate_observer_2));
 
-      // Test too low start bitrate, hence lower than sum of min. Min bitrates
-      // will
-      // be allocated to all observers.
-      allocator_->OnNetworkChanged(200000, 0, 50);
-      EXPECT_EQ(100000u, bitrate_observer_1.last_bitrate_bps_);
-      EXPECT_EQ(0, bitrate_observer_1.last_fraction_loss_);
-      EXPECT_EQ(50, bitrate_observer_1.last_rtt_ms_);
-      EXPECT_EQ(200000u, bitrate_observer_2.last_bitrate_bps_);
-      EXPECT_EQ(0, bitrate_observer_2.last_fraction_loss_);
-      EXPECT_EQ(50, bitrate_observer_2.last_rtt_ms_);
+  // Test too low start bitrate, hence lower than sum of min. Min bitrates
+  // will
+  // be allocated to all observers.
+  allocator_->OnNetworkChanged(200000, 0, 50);
+  EXPECT_EQ(100000u, bitrate_observer_1.last_bitrate_bps_);
+  EXPECT_EQ(0, bitrate_observer_1.last_fraction_loss_);
+  EXPECT_EQ(50, bitrate_observer_1.last_rtt_ms_);
+  EXPECT_EQ(200000u, bitrate_observer_2.last_bitrate_bps_);
+  EXPECT_EQ(0, bitrate_observer_2.last_fraction_loss_);
+  EXPECT_EQ(50, bitrate_observer_2.last_rtt_ms_);
 
-      // Test a bitrate which should be distributed equally.
-      allocator_->OnNetworkChanged(500000, 0, 50);
-      const uint32_t kBitrateToShare = 500000 - 200000 - 100000;
-      EXPECT_EQ(100000u + kBitrateToShare / 2,
-                bitrate_observer_1.last_bitrate_bps_);
-      EXPECT_EQ(200000u + kBitrateToShare / 2,
-                bitrate_observer_2.last_bitrate_bps_);
+  // Test a bitrate which should be distributed equally.
+  allocator_->OnNetworkChanged(500000, 0, 50);
+  const uint32_t kBitrateToShare = 500000 - 200000 - 100000;
+  EXPECT_EQ(100000u + kBitrateToShare / 2,
+            bitrate_observer_1.last_bitrate_bps_);
+  EXPECT_EQ(200000u + kBitrateToShare / 2,
+            bitrate_observer_2.last_bitrate_bps_);
 
-      // Limited by 2x max bitrates since we leave room for FEC and
-      // retransmissions.
-      allocator_->OnNetworkChanged(1500000, 0, 50);
-      EXPECT_EQ(600000u, bitrate_observer_1.last_bitrate_bps_);
-      EXPECT_EQ(600000u, bitrate_observer_2.last_bitrate_bps_);
+  // Limited by 2x max bitrates since we leave room for FEC and
+  // retransmissions.
+  allocator_->OnNetworkChanged(1500000, 0, 50);
+  EXPECT_EQ(600000u, bitrate_observer_1.last_bitrate_bps_);
+  EXPECT_EQ(600000u, bitrate_observer_2.last_bitrate_bps_);
 
-      // Verify that if the bandwidth estimate is set to zero, the allocated
-      // rate is
-      // zero.
-      allocator_->OnNetworkChanged(0, 0, 50);
-      EXPECT_EQ(0u, bitrate_observer_1.last_bitrate_bps_);
-      EXPECT_EQ(0u, bitrate_observer_2.last_bitrate_bps_);
+  // Verify that if the bandwidth estimate is set to zero, the allocated
+  // rate is
+  // zero.
+  allocator_->OnNetworkChanged(0, 0, 50);
+  EXPECT_EQ(0u, bitrate_observer_1.last_bitrate_bps_);
+  EXPECT_EQ(0u, bitrate_observer_2.last_bitrate_bps_);
 }
 
 TEST_F(BitrateAllocatorTest, RemoveObserverTriggersLimitObserver) {
@@ -167,19 +176,19 @@ TEST_F(BitrateAllocatorTestNoEnforceMin, OneBitrateObserver) {
   // Expect OnAllocationLimitsChanged with |min_send_bitrate_bps| = 0 since
   // AddObserver is called with |enforce_min_bitrate| = false.
   EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 0));
-      allocator_->AddObserver(&bitrate_observer_1, 100000, 400000, 0, false);
-      EXPECT_EQ(300000, allocator_->GetStartBitrate(&bitrate_observer_1));
+  allocator_->AddObserver(&bitrate_observer_1, 100000, 400000, 0, false);
+  EXPECT_EQ(300000, allocator_->GetStartBitrate(&bitrate_observer_1));
 
-      // High BWE.
-      allocator_->OnNetworkChanged(150000, 0, 0);
-      EXPECT_EQ(150000u, bitrate_observer_1.last_bitrate_bps_);
+  // High BWE.
+  allocator_->OnNetworkChanged(150000, 0, 0);
+  EXPECT_EQ(150000u, bitrate_observer_1.last_bitrate_bps_);
 
-      // Low BWE.
-      allocator_->OnNetworkChanged(10000, 0, 0);
-      EXPECT_EQ(0u, bitrate_observer_1.last_bitrate_bps_);
+  // Low BWE.
+  allocator_->OnNetworkChanged(10000, 0, 0);
+  EXPECT_EQ(0u, bitrate_observer_1.last_bitrate_bps_);
 
-      EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 0));
-      allocator_->RemoveObserver(&bitrate_observer_1);
+  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 0));
+  allocator_->RemoveObserver(&bitrate_observer_1);
 }
 
 TEST_F(BitrateAllocatorTestNoEnforceMin, ThreeBitrateObservers) {
@@ -243,6 +252,100 @@ TEST_F(BitrateAllocatorTestNoEnforceMin, ThreeBitrateObservers) {
   allocator_->RemoveObserver(&bitrate_observer_3);
 }
 
+TEST_F(BitrateAllocatorTestNoEnforceMin, OneBitrateObserverWithPacketLoss) {
+  TestBitrateObserver bitrate_observer;
+  // Expect OnAllocationLimitsChanged with |min_send_bitrate_bps| = 0 since
+  // AddObserver is called with |enforce_min_bitrate| = false.
+  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 0));
+  allocator_->AddObserver(
+      &bitrate_observer, 100000, 400000, 0, false);
+  EXPECT_EQ(300000, allocator_->GetStartBitrate(&bitrate_observer));
+
+  // High BWE.
+  allocator_->OnNetworkChanged(150000, 0, 0);
+  EXPECT_EQ(150000u, bitrate_observer.last_bitrate_bps_);
+
+  // Add loss and use a part of the bitrate for protection.
+  double protection_ratio = 0.4;
+  uint8_t fraction_loss = protection_ratio * 256;
+  bitrate_observer.SetBitrateProtectionRatio(protection_ratio);
+  allocator_->OnNetworkChanged(200000, 0, fraction_loss);
+  EXPECT_EQ(200000u, bitrate_observer.last_bitrate_bps_);
+
+  // Above the min threshold, but not enough given the protection used.
+  allocator_->OnNetworkChanged(139000, 0, fraction_loss);
+  EXPECT_EQ(0u, bitrate_observer.last_bitrate_bps_);
+
+  // Verify the hysteresis is added for the protection.
+  allocator_->OnNetworkChanged(150000, 0, fraction_loss);
+  EXPECT_EQ(0u, bitrate_observer.last_bitrate_bps_);
+
+  // Just enough to enable video again.
+  allocator_->OnNetworkChanged(168000, 0, fraction_loss);
+  EXPECT_EQ(168000u, bitrate_observer.last_bitrate_bps_);
+
+  // Remove all protection and make sure video is not paused as earlier.
+  bitrate_observer.SetBitrateProtectionRatio(0.0);
+  allocator_->OnNetworkChanged(140000, 0, 0);
+  EXPECT_EQ(140000u, bitrate_observer.last_bitrate_bps_);
+
+  allocator_->OnNetworkChanged(139000, 0, 0);
+  EXPECT_EQ(139000u, bitrate_observer.last_bitrate_bps_);
+
+  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 0));
+  allocator_->RemoveObserver(&bitrate_observer);
+}
+
+TEST_F(BitrateAllocatorTestNoEnforceMin, TwoBitrateObserverWithPacketLoss) {
+  TestBitrateObserver bitrate_observer_1;
+  TestBitrateObserver bitrate_observer_2;
+
+  allocator_->AddObserver(&bitrate_observer_1, 100000, 400000, 0, false);
+  EXPECT_EQ(300000, allocator_->GetStartBitrate(&bitrate_observer_1));
+  allocator_->AddObserver(&bitrate_observer_2, 200000, 400000, 0, false);
+  EXPECT_EQ(200000, allocator_->GetStartBitrate(&bitrate_observer_2));
+  EXPECT_EQ(100000u, bitrate_observer_1.last_bitrate_bps_);
+
+  // Enough bitrate for both.
+  bitrate_observer_2.SetBitrateProtectionRatio(0.5);
+  allocator_->OnNetworkChanged(300000, 0, 0);
+  EXPECT_EQ(100000u, bitrate_observer_1.last_bitrate_bps_);
+  EXPECT_EQ(200000u, bitrate_observer_2.last_bitrate_bps_);
+
+  // Above min for observer 2, but too little given the protection used.
+  allocator_->OnNetworkChanged(330000, 0, 0);
+  EXPECT_EQ(330000u, bitrate_observer_1.last_bitrate_bps_);
+  EXPECT_EQ(0u, bitrate_observer_2.last_bitrate_bps_);
+
+  allocator_->OnNetworkChanged(100000, 0, 0);
+  EXPECT_EQ(100000u, bitrate_observer_1.last_bitrate_bps_);
+  EXPECT_EQ(0u, bitrate_observer_2.last_bitrate_bps_);
+
+  allocator_->OnNetworkChanged(99999, 0, 0);
+  EXPECT_EQ(0u, bitrate_observer_1.last_bitrate_bps_);
+  EXPECT_EQ(0u, bitrate_observer_2.last_bitrate_bps_);
+
+  allocator_->OnNetworkChanged(119000, 0, 0);
+  EXPECT_EQ(0u, bitrate_observer_1.last_bitrate_bps_);
+  EXPECT_EQ(0u, bitrate_observer_2.last_bitrate_bps_);
+
+  allocator_->OnNetworkChanged(120000, 0, 0);
+  EXPECT_EQ(120000u, bitrate_observer_1.last_bitrate_bps_);
+  EXPECT_EQ(0u, bitrate_observer_2.last_bitrate_bps_);
+
+  // Verify the protection is accounted for before resuming observer 2.
+  allocator_->OnNetworkChanged(429000, 0, 0);
+  EXPECT_EQ(400000u, bitrate_observer_1.last_bitrate_bps_);
+  EXPECT_EQ(0u, bitrate_observer_2.last_bitrate_bps_);
+
+  allocator_->OnNetworkChanged(430000, 0, 0);
+  EXPECT_EQ(100000u, bitrate_observer_1.last_bitrate_bps_);
+  EXPECT_EQ(330000u, bitrate_observer_2.last_bitrate_bps_);
+
+  allocator_->RemoveObserver(&bitrate_observer_1);
+  allocator_->RemoveObserver(&bitrate_observer_2);
+}
+
 TEST_F(BitrateAllocatorTest, ThreeBitrateObserversLowBweEnforceMin) {
   TestBitrateObserver bitrate_observer_1;
   TestBitrateObserver bitrate_observer_2;
@@ -255,21 +358,21 @@ TEST_F(BitrateAllocatorTest, ThreeBitrateObserversLowBweEnforceMin) {
   EXPECT_EQ(200000, allocator_->GetStartBitrate(&bitrate_observer_2));
   EXPECT_EQ(100000u, bitrate_observer_1.last_bitrate_bps_);
 
-      allocator_->AddObserver(&bitrate_observer_3, 300000, 400000, 0, true);
-      EXPECT_EQ(300000, allocator_->GetStartBitrate(&bitrate_observer_3));
-      EXPECT_EQ(100000, static_cast<int>(bitrate_observer_1.last_bitrate_bps_));
-      EXPECT_EQ(200000, static_cast<int>(bitrate_observer_2.last_bitrate_bps_));
+  allocator_->AddObserver(&bitrate_observer_3, 300000, 400000, 0, true);
+  EXPECT_EQ(300000, allocator_->GetStartBitrate(&bitrate_observer_3));
+  EXPECT_EQ(100000, static_cast<int>(bitrate_observer_1.last_bitrate_bps_));
+  EXPECT_EQ(200000, static_cast<int>(bitrate_observer_2.last_bitrate_bps_));
 
-      // Low BWE. Verify that all observers still get their respective min
-      // bitrate.
-      allocator_->OnNetworkChanged(1000, 0, 0);
-      EXPECT_EQ(100000u, bitrate_observer_1.last_bitrate_bps_);  // Min cap.
-      EXPECT_EQ(200000u, bitrate_observer_2.last_bitrate_bps_);  // Min cap.
-      EXPECT_EQ(300000u, bitrate_observer_3.last_bitrate_bps_);  // Min cap.
+  // Low BWE. Verify that all observers still get their respective min
+  // bitrate.
+  allocator_->OnNetworkChanged(1000, 0, 0);
+  EXPECT_EQ(100000u, bitrate_observer_1.last_bitrate_bps_);  // Min cap.
+  EXPECT_EQ(200000u, bitrate_observer_2.last_bitrate_bps_);  // Min cap.
+  EXPECT_EQ(300000u, bitrate_observer_3.last_bitrate_bps_);  // Min cap.
 
-      allocator_->RemoveObserver(&bitrate_observer_1);
-      allocator_->RemoveObserver(&bitrate_observer_2);
-      allocator_->RemoveObserver(&bitrate_observer_3);
+  allocator_->RemoveObserver(&bitrate_observer_1);
+  allocator_->RemoveObserver(&bitrate_observer_2);
+  allocator_->RemoveObserver(&bitrate_observer_3);
 }
 
 TEST_F(BitrateAllocatorTest, AddObserverWhileNetworkDown) {
@@ -303,96 +406,96 @@ TEST_F(BitrateAllocatorTest, AddObserverWhileNetworkDown) {
 
 TEST_F(BitrateAllocatorTest, MixedEnforecedConfigs) {
   TestBitrateObserver enforced_observer;
-      allocator_->AddObserver(&enforced_observer, 6000, 30000, 0, true);
-      EXPECT_EQ(60000, allocator_->GetStartBitrate(&enforced_observer));
+  allocator_->AddObserver(&enforced_observer, 6000, 30000, 0, true);
+  EXPECT_EQ(60000, allocator_->GetStartBitrate(&enforced_observer));
 
-      TestBitrateObserver not_enforced_observer;
-      allocator_->AddObserver(&not_enforced_observer, 30000, 2500000, 0, false);
-      EXPECT_EQ(270000, allocator_->GetStartBitrate(&not_enforced_observer));
-      EXPECT_EQ(30000u, enforced_observer.last_bitrate_bps_);
+  TestBitrateObserver not_enforced_observer;
+  allocator_->AddObserver(&not_enforced_observer, 30000, 2500000, 0, false);
+  EXPECT_EQ(270000, allocator_->GetStartBitrate(&not_enforced_observer));
+  EXPECT_EQ(30000u, enforced_observer.last_bitrate_bps_);
 
-      allocator_->OnNetworkChanged(36000, 0, 50);
-      EXPECT_EQ(6000u, enforced_observer.last_bitrate_bps_);
-      EXPECT_EQ(30000u, not_enforced_observer.last_bitrate_bps_);
+  allocator_->OnNetworkChanged(36000, 0, 50);
+  EXPECT_EQ(6000u, enforced_observer.last_bitrate_bps_);
+  EXPECT_EQ(30000u, not_enforced_observer.last_bitrate_bps_);
 
-      allocator_->OnNetworkChanged(35000, 0, 50);
-      EXPECT_EQ(30000u, enforced_observer.last_bitrate_bps_);
-      EXPECT_EQ(0u, not_enforced_observer.last_bitrate_bps_);
+  allocator_->OnNetworkChanged(35000, 0, 50);
+  EXPECT_EQ(30000u, enforced_observer.last_bitrate_bps_);
+  EXPECT_EQ(0u, not_enforced_observer.last_bitrate_bps_);
 
-      allocator_->OnNetworkChanged(5000, 0, 50);
-      EXPECT_EQ(6000u, enforced_observer.last_bitrate_bps_);
-      EXPECT_EQ(0u, not_enforced_observer.last_bitrate_bps_);
+  allocator_->OnNetworkChanged(5000, 0, 50);
+  EXPECT_EQ(6000u, enforced_observer.last_bitrate_bps_);
+  EXPECT_EQ(0u, not_enforced_observer.last_bitrate_bps_);
 
-      allocator_->OnNetworkChanged(36000, 0, 50);
-      EXPECT_EQ(30000u, enforced_observer.last_bitrate_bps_);
-      EXPECT_EQ(0u, not_enforced_observer.last_bitrate_bps_);
+  allocator_->OnNetworkChanged(36000, 0, 50);
+  EXPECT_EQ(30000u, enforced_observer.last_bitrate_bps_);
+  EXPECT_EQ(0u, not_enforced_observer.last_bitrate_bps_);
 
-      allocator_->OnNetworkChanged(55000, 0, 50);
-      EXPECT_EQ(30000u, enforced_observer.last_bitrate_bps_);
-      EXPECT_EQ(0u, not_enforced_observer.last_bitrate_bps_);
+  allocator_->OnNetworkChanged(55000, 0, 50);
+  EXPECT_EQ(30000u, enforced_observer.last_bitrate_bps_);
+  EXPECT_EQ(0u, not_enforced_observer.last_bitrate_bps_);
 
-      allocator_->OnNetworkChanged(56000, 0, 50);
-      EXPECT_EQ(6000u, enforced_observer.last_bitrate_bps_);
-      EXPECT_EQ(50000u, not_enforced_observer.last_bitrate_bps_);
+  allocator_->OnNetworkChanged(56000, 0, 50);
+  EXPECT_EQ(6000u, enforced_observer.last_bitrate_bps_);
+  EXPECT_EQ(50000u, not_enforced_observer.last_bitrate_bps_);
 
-      allocator_->OnNetworkChanged(56000, 0, 50);
-      EXPECT_EQ(16000u, enforced_observer.last_bitrate_bps_);
-      EXPECT_EQ(40000u, not_enforced_observer.last_bitrate_bps_);
+  allocator_->OnNetworkChanged(56000, 0, 50);
+  EXPECT_EQ(16000u, enforced_observer.last_bitrate_bps_);
+  EXPECT_EQ(40000u, not_enforced_observer.last_bitrate_bps_);
 
-      allocator_->RemoveObserver(&enforced_observer);
-      allocator_->RemoveObserver(&not_enforced_observer);
+  allocator_->RemoveObserver(&enforced_observer);
+  allocator_->RemoveObserver(&not_enforced_observer);
 }
 
 TEST_F(BitrateAllocatorTest, AvoidToggleAbsolute) {
   TestBitrateObserver observer;
-      allocator_->AddObserver(&observer, 30000, 300000, 0, false);
-      EXPECT_EQ(300000, allocator_->GetStartBitrate(&observer));
+  allocator_->AddObserver(&observer, 30000, 300000, 0, false);
+  EXPECT_EQ(300000, allocator_->GetStartBitrate(&observer));
 
-      allocator_->OnNetworkChanged(30000, 0, 50);
-      EXPECT_EQ(30000u, observer.last_bitrate_bps_);
+  allocator_->OnNetworkChanged(30000, 0, 50);
+  EXPECT_EQ(30000u, observer.last_bitrate_bps_);
 
-      allocator_->OnNetworkChanged(20000, 0, 50);
-      EXPECT_EQ(0u, observer.last_bitrate_bps_);
+  allocator_->OnNetworkChanged(20000, 0, 50);
+  EXPECT_EQ(0u, observer.last_bitrate_bps_);
 
-      allocator_->OnNetworkChanged(30000, 0, 50);
-      EXPECT_EQ(0u, observer.last_bitrate_bps_);
+  allocator_->OnNetworkChanged(30000, 0, 50);
+  EXPECT_EQ(0u, observer.last_bitrate_bps_);
 
-      allocator_->OnNetworkChanged(49000, 0, 50);
-      EXPECT_EQ(0u, observer.last_bitrate_bps_);
+  allocator_->OnNetworkChanged(49000, 0, 50);
+  EXPECT_EQ(0u, observer.last_bitrate_bps_);
 
-      allocator_->OnNetworkChanged(50000, 0, 50);
-      EXPECT_EQ(50000u, observer.last_bitrate_bps_);
+  allocator_->OnNetworkChanged(50000, 0, 50);
+  EXPECT_EQ(50000u, observer.last_bitrate_bps_);
 
-      allocator_->OnNetworkChanged(30000, 0, 50);
-      EXPECT_EQ(30000u, observer.last_bitrate_bps_);
+  allocator_->OnNetworkChanged(30000, 0, 50);
+  EXPECT_EQ(30000u, observer.last_bitrate_bps_);
 
-      allocator_->RemoveObserver(&observer);
+  allocator_->RemoveObserver(&observer);
 }
 
 TEST_F(BitrateAllocatorTest, AvoidTogglePercent) {
   TestBitrateObserver observer;
-      allocator_->AddObserver(&observer, 300000, 600000, 0, false);
-      EXPECT_EQ(300000, allocator_->GetStartBitrate(&observer));
+  allocator_->AddObserver(&observer, 300000, 600000, 0, false);
+  EXPECT_EQ(300000, allocator_->GetStartBitrate(&observer));
 
-      allocator_->OnNetworkChanged(300000, 0, 50);
-      EXPECT_EQ(300000u, observer.last_bitrate_bps_);
+  allocator_->OnNetworkChanged(300000, 0, 50);
+  EXPECT_EQ(300000u, observer.last_bitrate_bps_);
 
-      allocator_->OnNetworkChanged(200000, 0, 50);
-      EXPECT_EQ(0u, observer.last_bitrate_bps_);
+  allocator_->OnNetworkChanged(200000, 0, 50);
+  EXPECT_EQ(0u, observer.last_bitrate_bps_);
 
-      allocator_->OnNetworkChanged(300000, 0, 50);
-      EXPECT_EQ(0u, observer.last_bitrate_bps_);
+  allocator_->OnNetworkChanged(300000, 0, 50);
+  EXPECT_EQ(0u, observer.last_bitrate_bps_);
 
-      allocator_->OnNetworkChanged(329000, 0, 50);
-      EXPECT_EQ(0u, observer.last_bitrate_bps_);
+  allocator_->OnNetworkChanged(329000, 0, 50);
+  EXPECT_EQ(0u, observer.last_bitrate_bps_);
 
-      allocator_->OnNetworkChanged(330000, 0, 50);
-      EXPECT_EQ(330000u, observer.last_bitrate_bps_);
+  allocator_->OnNetworkChanged(330000, 0, 50);
+  EXPECT_EQ(330000u, observer.last_bitrate_bps_);
 
-      allocator_->OnNetworkChanged(300000, 0, 50);
-      EXPECT_EQ(300000u, observer.last_bitrate_bps_);
+  allocator_->OnNetworkChanged(300000, 0, 50);
+  EXPECT_EQ(300000u, observer.last_bitrate_bps_);
 
-      allocator_->RemoveObserver(&observer);
+  allocator_->RemoveObserver(&observer);
 }
 
 }  // namespace webrtc

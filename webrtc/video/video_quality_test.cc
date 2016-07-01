@@ -1125,6 +1125,9 @@ void VideoQualityTest::RunWithVideoRenderer(const Params& params) {
   video_send_config_.local_renderer = local_preview.get();
   video_receive_configs_[stream_id].renderer = loopback_video.get();
 
+  video_send_config_.suspend_below_min_bitrate =
+      params_.common.suspend_below_min_bitrate;
+
   if (params.common.fec) {
     video_send_config_.rtp.fec.red_payload_type = kRedPayloadType;
     video_send_config_.rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
