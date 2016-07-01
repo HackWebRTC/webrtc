@@ -34,14 +34,12 @@
             'android_manifest_path': '<(webrtc_root)/build/android/AndroidManifest.xml',
             'suppressions_file': '<(webrtc_root)/build/android/suppressions.xml',
             'chromium_code': 1,
-            'java_in_dir': 'java',
+            'java_in_dir': 'android/java',
             'webrtc_base_dir': '<(webrtc_root)/base',
             'webrtc_modules_dir': '<(webrtc_root)/modules',
             'additional_src_dirs' : [
-              'java/android',
-              '<(webrtc_base_dir)/java/src',
+              '<(webrtc_base_dir)/java',
               '<(webrtc_modules_dir)/audio_device/android/java/src',
-
             ],
           },
           'includes': ['../../build/java.gypi'],

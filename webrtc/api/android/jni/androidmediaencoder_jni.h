@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "webrtc/api/java/jni/jni_helpers.h"
+#include "webrtc/api/android/jni/jni_helpers.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
 
 namespace webrtc_jni {

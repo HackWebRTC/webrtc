@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/java/jni/androidnetworkmonitor_jni.h"
+#include "webrtc/api/android/jni/androidnetworkmonitor_jni.h"
 
 #include <dlfcn.h>
 
-#include "webrtc/api/java/jni/classreferenceholder.h"
-#include "webrtc/api/java/jni/jni_helpers.h"
+#include "webrtc/api/android/jni/classreferenceholder.h"
+#include "webrtc/api/android/jni/jni_helpers.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/ipaddress.h"
