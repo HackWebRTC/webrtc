@@ -2212,7 +2212,8 @@ bool PeerConnection::InitializePortAllocator_n(
   // Call this last since it may create pooled allocator sessions using the
   // properties set above.
   port_allocator_->SetConfiguration(stun_servers, turn_servers,
-                                    configuration.ice_candidate_pool_size);
+                                    configuration.ice_candidate_pool_size,
+                                    configuration.prune_turn_ports);
   return true;
 }
 
@@ -2228,7 +2229,8 @@ bool PeerConnection::ReconfigurePortAllocator_n(
   // Call this last since it may create pooled allocator sessions using the
   // candidate filter set above.
   port_allocator_->SetConfiguration(stun_servers, turn_servers,
-                                    configuration.ice_candidate_pool_size);
+                                    configuration.ice_candidate_pool_size,
+                                    configuration.prune_turn_ports);
   return true;
 }
 

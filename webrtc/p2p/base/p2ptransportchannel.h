@@ -268,6 +268,9 @@ class P2PTransportChannel : public TransportChannelImpl,
   void AddConnection(Connection* connection);
 
   void OnPortReady(PortAllocatorSession *session, PortInterface* port);
+  void OnPortPruned(PortAllocatorSession* session, PortInterface* port);
+  // Returns true if the port is found and removed from |ports_|.
+  bool RemovePort(PortInterface* port);
   void OnCandidatesReady(PortAllocatorSession *session,
                          const std::vector<Candidate>& candidates);
   void OnCandidatesAllocationDone(PortAllocatorSession* session);

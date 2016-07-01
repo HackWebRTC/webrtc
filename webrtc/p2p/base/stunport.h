@@ -80,8 +80,7 @@ class UDPPort : public Port {
   const ServerAddresses& server_addresses() const {
     return server_addresses_;
   }
-  void
-  set_server_addresses(const ServerAddresses& addresses) {
+  void set_server_addresses(const ServerAddresses& addresses) {
     server_addresses_ = addresses;
   }
 
@@ -104,6 +103,8 @@ class UDPPort : public Port {
   virtual bool SupportsProtocol(const std::string& protocol) const {
     return protocol == UDP_PROTOCOL_NAME;
   }
+
+  virtual ProtocolType GetProtocol() const { return PROTO_UDP; }
 
   void set_stun_keepalive_delay(int delay) {
     stun_keepalive_delay_ = delay;

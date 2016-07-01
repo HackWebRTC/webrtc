@@ -178,6 +178,11 @@ class PortAllocatorSession : public sigslot::has_slots<> {
   sigslot::signal2<PortAllocatorSession*,
                    const std::vector<Candidate>&> SignalCandidatesReady;
   sigslot::signal1<PortAllocatorSession*> SignalCandidatesAllocationDone;
+  // A TURN port is pruned if a higher-priority TURN port becomes ready
+  // (pairable). When it is pruned, it will not be used for creating
+  // connections and its candidates will not be sent to the remote side
+  // if they have not been sent.
+  sigslot::signal2<PortAllocatorSession*, PortInterface*> SignalPortPruned;
 
   virtual uint32_t generation() { return generation_; }
   virtual void set_generation(uint32_t generation) { generation_ = generation; }
@@ -253,7 +258,8 @@ class PortAllocator : public sigslot::has_slots<> {
   // pooled sessions will be either created or destroyed as necessary.
   void SetConfiguration(const ServerAddresses& stun_servers,
                         const std::vector<RelayServerConfig>& turn_servers,
-                        int candidate_pool_size);
+                        int candidate_pool_size,
+                        bool prune_turn_ports);
 
   const ServerAddresses& stun_servers() const { return stun_servers_; }
 
@@ -327,6 +333,8 @@ class PortAllocator : public sigslot::has_slots<> {
     candidate_filter_ = filter;
   }
 
+  bool prune_turn_ports() const { return prune_turn_ports_; }
+
   // Gets/Sets the Origin value used for WebRTC STUN requests.
   const std::string& origin() const { return origin_; }
   void set_origin(const std::string& origin) { origin_ = origin; }
@@ -357,6 +365,7 @@ class PortAllocator : public sigslot::has_slots<> {
   // both owned by this class and taken by TakePooledSession.
   int allocated_pooled_session_count_ = 0;
   std::deque<std::unique_ptr<PortAllocatorSession>> pooled_sessions_;
+  bool prune_turn_ports_ = false;
 };
 
 }  // namespace cricket
