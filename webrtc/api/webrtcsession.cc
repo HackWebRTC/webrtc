@@ -1136,6 +1136,8 @@ cricket::IceConfig WebRtcSession::ParseIceConfig(
       config.ice_backup_candidate_pair_ping_interval;
   ice_config.gather_continually = (config.continual_gathering_policy ==
                                    PeerConnectionInterface::GATHER_CONTINUALLY);
+  ice_config.presume_writable_when_fully_relayed =
+      config.presume_writable_when_fully_relayed;
   return ice_config;
 }
 

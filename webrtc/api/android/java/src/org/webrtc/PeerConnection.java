@@ -146,6 +146,7 @@ public class PeerConnection {
     public KeyType keyType;
     public ContinualGatheringPolicy continualGatheringPolicy;
     public int iceCandidatePoolSize;
+    public boolean presumeWritableWhenFullyRelayed;
 
     public RTCConfiguration(List<IceServer> iceServers) {
       iceTransportsType = IceTransportsType.ALL;
@@ -161,6 +162,7 @@ public class PeerConnection {
       keyType = KeyType.ECDSA;
       continualGatheringPolicy = ContinualGatheringPolicy.GATHER_ONCE;
       iceCandidatePoolSize = 0;
+      presumeWritableWhenFullyRelayed = false;
     }
   };
 

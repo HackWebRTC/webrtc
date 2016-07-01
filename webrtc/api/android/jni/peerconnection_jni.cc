@@ -1589,6 +1589,8 @@ static void JavaRTCConfigurationToJsepRTCConfiguration(
 
   jfieldID j_ice_candidate_pool_size_id =
       GetFieldID(jni, j_rtc_config_class, "iceCandidatePoolSize", "I");
+  jfieldID j_presume_writable_when_fully_relayed_id = GetFieldID(
+      jni, j_rtc_config_class, "presumeWritableWhenFullyRelayed", "Z");
 
   rtc_config->type =
       JavaIceTransportsTypeToNativeType(jni, j_ice_transports_type);
@@ -1614,6 +1616,8 @@ static void JavaRTCConfigurationToJsepRTCConfiguration(
           jni, j_continual_gathering_policy);
   rtc_config->ice_candidate_pool_size =
       GetIntField(jni, j_rtc_config, j_ice_candidate_pool_size_id);
+  rtc_config->presume_writable_when_fully_relayed = GetBooleanField(
+      jni, j_rtc_config, j_presume_writable_when_fully_relayed_id);
 }
 
 JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(

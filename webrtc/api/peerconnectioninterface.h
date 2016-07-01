@@ -301,6 +301,9 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     rtc::Optional<bool> enable_dtls_srtp;
     int ice_candidate_pool_size = 0;
     bool prune_turn_ports = false;
+    // If set to true, this means the ICE transport should presume TURN-to-TURN
+    // candidate pairs will succeed, even before a binding response is received.
+    bool presume_writable_when_fully_relayed = false;
   };
 
   struct RTCOfferAnswerOptions {
