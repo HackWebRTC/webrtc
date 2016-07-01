@@ -9,9 +9,9 @@
  */
 
 
-#include "webrtc/api/java/jni/surfacetexturehelper_jni.h"
+#include "webrtc/api/android/jni/surfacetexturehelper_jni.h"
 
-#include "webrtc/api/java/jni/classreferenceholder.h"
+#include "webrtc/api/android/jni/classreferenceholder.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"

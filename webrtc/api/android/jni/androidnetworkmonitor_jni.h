@@ -15,7 +15,7 @@
 
 #include <map>
 
-#include "webrtc/api/java/jni/jni_helpers.h"
+#include "webrtc/api/android/jni/jni_helpers.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/thread_checker.h"
 

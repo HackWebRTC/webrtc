@@ -12,7 +12,7 @@
 
 #include <memory>
 
-#include "webrtc/api/java/jni/native_handle_impl.h"
+#include "webrtc/api/android/jni/native_handle_impl.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/media/engine/webrtcvideoframe.h"
