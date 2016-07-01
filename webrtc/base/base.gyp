@@ -68,6 +68,8 @@
         'platform_thread.cc',
         'platform_thread.h',
         'platform_thread_types.h',
+        'race_checker.cc',
+        'race_checker.h',
         'random.cc',
         'random.h',
         'rate_statistics.cc',

@@ -15,6 +15,7 @@
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/platform_thread.h"
+#include "webrtc/base/race_checker.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/common_video/video_render_frames.h"
@@ -42,6 +43,7 @@ class IncomingVideoStream : public rtc::VideoSinkInterface<VideoFrame> {
 
   rtc::ThreadChecker main_thread_checker_;
   rtc::ThreadChecker render_thread_checker_;
+  rtc::RaceChecker decoder_race_checker_;
 
   rtc::CriticalSection buffer_critsect_;
   rtc::PlatformThread incoming_render_thread_;

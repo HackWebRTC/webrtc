@@ -36,6 +36,7 @@ VCMGenericEncoder::VCMGenericEncoder(
 VCMGenericEncoder::~VCMGenericEncoder() {}
 
 int32_t VCMGenericEncoder::Release() {
+  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
   TRACE_EVENT0("webrtc", "VCMGenericEncoder::Release");
   return encoder_->Release();
 }
@@ -43,6 +44,7 @@ int32_t VCMGenericEncoder::Release() {
 int32_t VCMGenericEncoder::InitEncode(const VideoCodec* settings,
                                       int32_t number_of_cores,
                                       size_t max_payload_size) {
+  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
   TRACE_EVENT0("webrtc", "VCMGenericEncoder::InitEncode");
   is_screenshare_ = settings->mode == VideoCodecMode::kScreensharing;
   if (encoder_->InitEncode(settings, number_of_cores, max_payload_size) != 0) {
@@ -58,6 +60,7 @@ int32_t VCMGenericEncoder::InitEncode(const VideoCodec* settings,
 int32_t VCMGenericEncoder::Encode(const VideoFrame& frame,
                                   const CodecSpecificInfo* codec_specific,
                                   const std::vector<FrameType>& frame_types) {
+  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
   TRACE_EVENT1("webrtc", "VCMGenericEncoder::Encode", "timestamp",
                frame.timestamp());
 
@@ -76,10 +79,12 @@ int32_t VCMGenericEncoder::Encode(const VideoFrame& frame,
 }
 
 const char* VCMGenericEncoder::ImplementationName() const {
+  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
   return encoder_->ImplementationName();
 }
 
 void VCMGenericEncoder::SetEncoderParameters(const EncoderParameters& params) {
+  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
   bool channel_parameters_have_changed;
   bool rates_have_changed;
   {
@@ -110,11 +115,13 @@ EncoderParameters VCMGenericEncoder::GetEncoderParameters() const {
 }
 
 int32_t VCMGenericEncoder::SetPeriodicKeyFrames(bool enable) {
+  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
   return encoder_->SetPeriodicKeyFrames(enable);
 }
 
 int32_t VCMGenericEncoder::RequestFrame(
     const std::vector<FrameType>& frame_types) {
+  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
   VideoFrame image;
   return encoder_->Encode(image, NULL, &frame_types);
 }
@@ -124,10 +131,12 @@ bool VCMGenericEncoder::InternalSource() const {
 }
 
 void VCMGenericEncoder::OnDroppedFrame() {
+  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
   encoder_->OnDroppedFrame();
 }
 
 bool VCMGenericEncoder::SupportsNativeHandle() const {
+  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
   return encoder_->SupportsNativeHandle();
 }
 

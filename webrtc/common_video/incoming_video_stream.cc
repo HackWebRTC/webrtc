@@ -49,9 +49,7 @@ IncomingVideoStream::~IncomingVideoStream() {
 }
 
 void IncomingVideoStream::OnFrame(const VideoFrame& video_frame) {
-  // Most of the time we'll be on a decoder thread here, but when using
-  // VideoToolbox on iOS, we'll get called on a thread from a thread pool.
-
+  RTC_CHECK_RUNS_SERIALIZED(&decoder_race_checker_);
   // Hand over or insert frame.
   rtc::CritScope csB(&buffer_critsect_);
   if (render_buffers_->AddFrame(video_frame) == 1) {
