@@ -246,6 +246,9 @@ void BasicPortAllocatorSession::StartGettingPorts() {
   }
 
   network_thread_->Post(RTC_FROM_HERE, this, MSG_CONFIG_START);
+
+  LOG(LS_INFO) << "Pruning turn ports "
+               << (prune_turn_ports_ ? "enabled" : "disabled");
 }
 
 void BasicPortAllocatorSession::StopGettingPorts() {

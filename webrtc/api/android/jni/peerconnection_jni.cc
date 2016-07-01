@@ -1592,6 +1592,9 @@ static void JavaRTCConfigurationToJsepRTCConfiguration(
   jfieldID j_presume_writable_when_fully_relayed_id = GetFieldID(
       jni, j_rtc_config_class, "presumeWritableWhenFullyRelayed", "Z");
 
+  jfieldID j_prune_turn_ports_id =
+      GetFieldID(jni, j_rtc_config_class, "pruneTurnPorts", "Z");
+
   rtc_config->type =
       JavaIceTransportsTypeToNativeType(jni, j_ice_transports_type);
   rtc_config->bundle_policy =
@@ -1616,6 +1619,8 @@ static void JavaRTCConfigurationToJsepRTCConfiguration(
           jni, j_continual_gathering_policy);
   rtc_config->ice_candidate_pool_size =
       GetIntField(jni, j_rtc_config, j_ice_candidate_pool_size_id);
+  rtc_config->prune_turn_ports =
+      GetBooleanField(jni, j_rtc_config, j_prune_turn_ports_id);
   rtc_config->presume_writable_when_fully_relayed = GetBooleanField(
       jni, j_rtc_config, j_presume_writable_when_fully_relayed_id);
 }
