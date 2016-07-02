@@ -17,6 +17,7 @@
 #include <numeric>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/window_generator.h"
 
@@ -90,6 +91,7 @@ IntelligibilityEnhancer::IntelligibilityEnhancer(int sample_rate_hz,
       snr_(kMaxActiveSNR),
       is_active_(false),
       num_chunks_(0u),
+      num_active_chunks_(0u),
       noise_estimation_buffer_(num_noise_bins),
       noise_estimation_queue_(kMaxNumNoiseEstimatesToBuffer,
                               std::vector<float>(num_noise_bins),
@@ -108,6 +110,14 @@ IntelligibilityEnhancer::IntelligibilityEnhancer(int sample_rate_hz,
   render_mangler_.reset(new LappedTransform(
       num_render_channels_, num_render_channels_, chunk_length_,
       kbd_window.data(), window_size, window_size / 2, this));
+}
+
+IntelligibilityEnhancer::~IntelligibilityEnhancer() {
+  // Don't rely on this log, since the destructor isn't called when the app/tab
+  // is killed.
+  LOG(LS_INFO) << "Intelligibility Enhancer was active for "
+               << static_cast<float>(num_active_chunks_) / num_chunks_
+               << "% of the call.";
 }
 
 void IntelligibilityEnhancer::SetCaptureNoiseEstimate(
@@ -145,25 +155,29 @@ void IntelligibilityEnhancer::ProcessAudioBlock(
     clear_power_estimator_.Step(in_block[0]);
   }
   SnrBasedEffectActivation();
-  if (is_active_ && num_chunks_++ % kGainUpdatePeriod == 0) {
-    MapToErbBands(clear_power_estimator_.power().data(), render_filter_bank_,
-                  filtered_clear_pow_.data());
-    MapToErbBands(noise_power_estimator_.power().data(), capture_filter_bank_,
-                  filtered_noise_pow_.data());
-    SolveForGainsGivenLambda(kLambdaTop, start_freq_, gains_eq_.data());
-    const float power_target = std::accumulate(
-        filtered_clear_pow_.data(),
-        filtered_clear_pow_.data() + bank_size_,
-        0.f);
-    const float power_top =
-        DotProduct(gains_eq_.data(), filtered_clear_pow_.data(), bank_size_);
-    SolveForGainsGivenLambda(kLambdaBot, start_freq_, gains_eq_.data());
-    const float power_bot =
-        DotProduct(gains_eq_.data(), filtered_clear_pow_.data(), bank_size_);
-    if (power_target >= power_bot && power_target <= power_top) {
-      SolveForLambda(power_target);
-      UpdateErbGains();
-    }  // Else experiencing power underflow, so do nothing.
+  ++num_chunks_;
+  if (is_active_) {
+    ++num_active_chunks_;
+    if (num_chunks_ % kGainUpdatePeriod == 0) {
+      MapToErbBands(clear_power_estimator_.power().data(), render_filter_bank_,
+                    filtered_clear_pow_.data());
+      MapToErbBands(noise_power_estimator_.power().data(), capture_filter_bank_,
+                    filtered_noise_pow_.data());
+      SolveForGainsGivenLambda(kLambdaTop, start_freq_, gains_eq_.data());
+      const float power_target = std::accumulate(
+          filtered_clear_pow_.data(),
+          filtered_clear_pow_.data() + bank_size_,
+          0.f);
+      const float power_top =
+          DotProduct(gains_eq_.data(), filtered_clear_pow_.data(), bank_size_);
+      SolveForGainsGivenLambda(kLambdaBot, start_freq_, gains_eq_.data());
+      const float power_bot =
+          DotProduct(gains_eq_.data(), filtered_clear_pow_.data(), bank_size_);
+      if (power_target >= power_bot && power_target <= power_top) {
+        SolveForLambda(power_target);
+        UpdateErbGains();
+      }  // Else experiencing power underflow, so do nothing.
+    }
   }
   for (size_t i = 0; i < in_channels; ++i) {
     gain_applier_.Apply(in_block[i], out_block[i]);
@@ -181,6 +195,8 @@ void IntelligibilityEnhancer::SnrBasedEffectActivation() {
       (noise_power + std::numeric_limits<float>::epsilon());
   if (is_active_) {
     if (snr_ > kMaxActiveSNR) {
+      LOG(LS_INFO) << "Intelligibility Enhancer was deactivated at chunk "
+                   << num_chunks_;
       is_active_ = false;
       // Set the target gains to unity.
       float* gains = gain_applier_.target();
@@ -189,7 +205,11 @@ void IntelligibilityEnhancer::SnrBasedEffectActivation() {
       }
     }
   } else {
-    is_active_ = snr_ < kMinInactiveSNR;
+    if (snr_ < kMinInactiveSNR) {
+      LOG(LS_INFO) << "Intelligibility Enhancer was activated at chunk "
+                   << num_chunks_;
+      is_active_ = true;
+    }
   }
 }
 

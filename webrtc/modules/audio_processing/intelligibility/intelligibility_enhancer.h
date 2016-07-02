@@ -35,6 +35,8 @@ class IntelligibilityEnhancer : public LappedTransform::Callback {
                           size_t num_render_channels,
                           size_t num_noise_bins);
 
+  ~IntelligibilityEnhancer();
+
   // Sets the capture noise magnitude spectrum estimate.
   void SetCaptureNoiseEstimate(std::vector<float> noise, float gain);
 
@@ -112,7 +114,8 @@ class IntelligibilityEnhancer : public LappedTransform::Callback {
   float snr_;
   bool is_active_;
 
-  size_t num_chunks_;
+  unsigned long int num_chunks_;
+  unsigned long int num_active_chunks_;
 
   std::vector<float> noise_estimation_buffer_;
   SwapQueue<std::vector<float>, RenderQueueItemVerifier<float>>
