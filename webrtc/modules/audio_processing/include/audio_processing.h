@@ -31,8 +31,7 @@ struct AecCore;
 
 class AudioFrame;
 
-template<typename T>
-class Beamformer;
+class NonlinearBeamformer;
 
 class StreamConfig;
 class ProcessingConfig;
@@ -275,7 +274,7 @@ class AudioProcessing {
   static AudioProcessing* Create(const Config& config);
   // Only for testing.
   static AudioProcessing* Create(const Config& config,
-                                 Beamformer<float>* beamformer);
+                                 NonlinearBeamformer* beamformer);
   virtual ~AudioProcessing() {}
 
   // Initializes internal states, while retaining all user settings. This

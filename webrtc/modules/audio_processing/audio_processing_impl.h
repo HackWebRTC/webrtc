@@ -36,8 +36,7 @@ namespace webrtc {
 class AgcManagerDirect;
 class AudioConverter;
 
-template<typename T>
-class Beamformer;
+class NonlinearBeamformer;
 
 class AudioProcessingImpl : public AudioProcessing {
  public:
@@ -45,7 +44,7 @@ class AudioProcessingImpl : public AudioProcessing {
   // Acquires both the render and capture locks.
   explicit AudioProcessingImpl(const Config& config);
   // AudioProcessingImpl takes ownership of beamformer.
-  AudioProcessingImpl(const Config& config, Beamformer<float>* beamformer);
+  AudioProcessingImpl(const Config& config, NonlinearBeamformer* beamformer);
   virtual ~AudioProcessingImpl();
   int Initialize() override;
   int Initialize(int input_sample_rate_hz,

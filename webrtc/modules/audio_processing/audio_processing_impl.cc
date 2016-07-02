@@ -128,10 +128,10 @@ struct AudioProcessingImpl::ApmPublicSubmodules {
 };
 
 struct AudioProcessingImpl::ApmPrivateSubmodules {
-  explicit ApmPrivateSubmodules(Beamformer<float>* beamformer)
+  explicit ApmPrivateSubmodules(NonlinearBeamformer* beamformer)
       : beamformer(beamformer) {}
   // Accessed internally from capture or during initialization
-  std::unique_ptr<Beamformer<float>> beamformer;
+  std::unique_ptr<NonlinearBeamformer> beamformer;
   std::unique_ptr<AgcManagerDirect> agc_manager;
   std::unique_ptr<LevelController> level_controller;
 };
@@ -146,7 +146,7 @@ AudioProcessing* AudioProcessing::Create(const Config& config) {
 }
 
 AudioProcessing* AudioProcessing::Create(const Config& config,
-                                         Beamformer<float>* beamformer) {
+                                         NonlinearBeamformer* beamformer) {
   AudioProcessingImpl* apm = new AudioProcessingImpl(config, beamformer);
   if (apm->Initialize() != kNoError) {
     delete apm;
@@ -160,7 +160,7 @@ AudioProcessingImpl::AudioProcessingImpl(const Config& config)
     : AudioProcessingImpl(config, nullptr) {}
 
 AudioProcessingImpl::AudioProcessingImpl(const Config& config,
-                                         Beamformer<float>* beamformer)
+                                         NonlinearBeamformer* beamformer)
     : public_submodules_(new ApmPublicSubmodules()),
       private_submodules_(new ApmPrivateSubmodules(beamformer)),
       constants_(config.Get<ExperimentalAgc>().startup_min_volume,
@@ -699,8 +699,8 @@ int AudioProcessingImpl::ProcessStreamLocked() {
   }
 
   if (capture_nonlocked_.beamformer_enabled) {
-    private_submodules_->beamformer->ProcessChunk(*ca->split_data_f(),
-                                                  ca->split_data_f());
+    private_submodules_->beamformer->AnalyzeChunk(*ca->split_data_f());
+    // Discards all channels by the leftmost one.
     ca->set_num_channels(1);
   }
 
@@ -745,6 +745,10 @@ int AudioProcessingImpl::ProcessStreamLocked() {
 
   RETURN_ON_ERR(public_submodules_->echo_control_mobile->ProcessCaptureAudio(
       ca, stream_delay_ms()));
+
+  if (capture_nonlocked_.beamformer_enabled) {
+    private_submodules_->beamformer->PostFilter(ca->split_data_f());
+  }
 
   public_submodules_->voice_detection->ProcessCaptureAudio(ca);
 
@@ -1223,7 +1227,7 @@ void AudioProcessingImpl::InitializeBeamformer() {
   if (capture_nonlocked_.beamformer_enabled) {
     if (!private_submodules_->beamformer) {
       private_submodules_->beamformer.reset(new NonlinearBeamformer(
-          capture_.array_geometry, capture_.target_direction));
+          capture_.array_geometry, 1u, capture_.target_direction));
     }
     private_submodules_->beamformer->Initialize(kChunkSizeMs,
                                                 capture_nonlocked_.split_rate);

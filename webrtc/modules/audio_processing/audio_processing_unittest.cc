@@ -1284,7 +1284,7 @@ TEST_F(ApmTest, AgcOnlyAdaptsWhenTargetSignalIsPresent) {
   geometry.push_back(webrtc::Point(0.05f, 0.f, 0.f));
   config.Set<Beamforming>(new Beamforming(true, geometry));
   testing::NiceMock<MockNonlinearBeamformer>* beamformer =
-      new testing::NiceMock<MockNonlinearBeamformer>(geometry);
+      new testing::NiceMock<MockNonlinearBeamformer>(geometry, 1u);
   std::unique_ptr<AudioProcessing> apm(
       AudioProcessing::Create(config, beamformer));
   EXPECT_EQ(kNoErr, apm->gain_control()->Enable(true));
