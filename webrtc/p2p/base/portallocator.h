@@ -88,14 +88,6 @@ enum {
   CF_ALL = 0x7,
 };
 
-enum class SessionState {
-  GATHERING,  // Actively allocating ports and gathering candidates.
-  CLEARED,    // Current allocation process has been stopped but may start
-              // new ones.
-  STOPPED     // This session has completely stopped, no new allocation
-              // process will be started.
-};
-
 // TODO(deadbeef): Rename to TurnCredentials (and username to ufrag).
 struct RelayCredentials {
   RelayCredentials() {}
@@ -167,18 +159,19 @@ class PortAllocatorSession : public sigslot::has_slots<> {
   virtual void SetCandidateFilter(uint32_t filter) = 0;
 
   // Starts gathering STUN and Relay configurations.
-  virtual void StartGettingPorts() { state_ = SessionState::GATHERING; }
+  virtual void StartGettingPorts() = 0;
   // Completely stops the gathering process and will not start new ones.
-  virtual void StopGettingPorts() { state_ = SessionState::STOPPED; }
-  // Only stops the existing gathering process but may start new ones if needed.
-  virtual void ClearGettingPorts() { state_ = SessionState::CLEARED; }
+  virtual void StopGettingPorts() = 0;
   // Whether the session is actively getting ports.
-  bool IsGettingPorts() { return state_ == SessionState::GATHERING; }
+  virtual bool IsGettingPorts() = 0;
+  // ClearGettingPorts and IsCleared are used by continual gathering.
+  // Only stops the existing gathering process but may start new ones if needed.
+  virtual void ClearGettingPorts() = 0;
   // Whether it is in the state where the existing gathering process is stopped,
   // but new ones may be started (basically after calling ClearGettingPorts).
-  bool IsCleared() { return state_ == SessionState::CLEARED; }
+  virtual bool IsCleared() const { return false; }
   // Whether the session has completely stopped.
-  bool IsStopped() { return state_ == SessionState::STOPPED; }
+  virtual bool IsStopped() const { return false; }
   // Re-gathers candidates on networks that do not have any connections. More
   // precisely, a network interface may have more than one IP addresses (e.g.,
   // IPv4 and IPv6 addresses). Each address subnet will be used to create a
@@ -252,7 +245,6 @@ class PortAllocatorSession : public sigslot::has_slots<> {
   int component_;
   std::string ice_ufrag_;
   std::string ice_pwd_;
-  SessionState state_ = SessionState::CLEARED;
 
   // SetIceParameters is an implementation detail which only PortAllocator
   // should be able to call.

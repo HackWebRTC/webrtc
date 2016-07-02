@@ -238,7 +238,7 @@ void BasicPortAllocatorSession::SetCandidateFilter(uint32_t filter) {
 
 void BasicPortAllocatorSession::StartGettingPorts() {
   network_thread_ = rtc::Thread::Current();
-  PortAllocatorSession::StartGettingPorts();
+  state_ = SessionState::GATHERING;
   if (!socket_factory_) {
     owned_socket_factory_.reset(
         new rtc::BasicPacketSocketFactory(network_thread_));
@@ -257,7 +257,7 @@ void BasicPortAllocatorSession::StopGettingPorts() {
   ClearGettingPorts();
   // Note: this must be called after ClearGettingPorts because both may set the
   // session state and we should set the state to STOPPED.
-  PortAllocatorSession::StopGettingPorts();
+  state_ = SessionState::STOPPED;
 }
 
 void BasicPortAllocatorSession::ClearGettingPorts() {
@@ -266,7 +266,7 @@ void BasicPortAllocatorSession::ClearGettingPorts() {
   for (uint32_t i = 0; i < sequences_.size(); ++i) {
     sequences_[i]->Stop();
   }
-  PortAllocatorSession::ClearGettingPorts();
+  state_ = SessionState::CLEARED;
 }
 
 std::vector<rtc::Network*> BasicPortAllocatorSession::GetFailedNetworks() {

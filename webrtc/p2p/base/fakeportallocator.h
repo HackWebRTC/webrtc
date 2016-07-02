@@ -123,7 +123,6 @@ class FakePortAllocatorSession : public PortAllocatorSession {
   }
 
   void StartGettingPorts() override {
-    PortAllocatorSession::StartGettingPorts();
     if (!port_) {
       rtc::Network& network =
           (rtc::HasIPv6Enabled() && (flags() & PORTALLOCATOR_ENABLE_IPV6))
@@ -137,7 +136,12 @@ class FakePortAllocatorSession : public PortAllocatorSession {
       AddPort(port_.get());
     }
     ++port_config_count_;
+    running_ = true;
   }
+
+  void StopGettingPorts() override { running_ = false; }
+  bool IsGettingPorts() override { return running_; }
+  void ClearGettingPorts() override {}
 
   std::vector<PortInterface*> ReadyPorts() const override {
     return ready_ports_;
@@ -204,6 +208,7 @@ class FakePortAllocatorSession : public PortAllocatorSession {
   std::vector<RelayServerConfig> turn_servers_;
   uint32_t candidate_filter_ = CF_ALL;
   int transport_info_update_count_ = 0;
+  bool running_ = false;
 };
 
 class FakePortAllocator : public cricket::PortAllocator {

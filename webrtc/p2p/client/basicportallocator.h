@@ -74,6 +74,14 @@ class BasicPortAllocator : public PortAllocator {
 struct PortConfiguration;
 class AllocationSequence;
 
+enum class SessionState {
+  GATHERING,  // Actively allocating ports and gathering candidates.
+  CLEARED,    // Current allocation process has been stopped but may start
+              // new ones.
+  STOPPED     // This session has completely stopped, no new allocation
+              // process will be started.
+};
+
 class BasicPortAllocatorSession : public PortAllocatorSession,
                                   public rtc::MessageHandler {
  public:
@@ -92,6 +100,9 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   void StartGettingPorts() override;
   void StopGettingPorts() override;
   void ClearGettingPorts() override;
+  bool IsGettingPorts() override { return state_ == SessionState::GATHERING; }
+  bool IsCleared() const override { return state_ == SessionState::CLEARED; }
+  bool IsStopped() const override { return state_ == SessionState::STOPPED; }
   // These will all be cricket::Ports.
   std::vector<PortInterface*> ReadyPorts() const override;
   std::vector<Candidate> ReadyCandidates() const override;
@@ -212,6 +223,7 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   uint32_t candidate_filter_ = CF_ALL;
   // Whether to prune low-priority ports, taken from the port allocator.
   bool prune_turn_ports_;
+  SessionState state_ = SessionState::CLEARED;
 
   friend class AllocationSequence;
 };
