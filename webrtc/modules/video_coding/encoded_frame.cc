@@ -22,7 +22,6 @@ VCMEncodedFrame::VCMEncodedFrame()
       _missingFrame(false),
       _codec(kVideoCodecUnknown),
       _fragmentation(),
-      _rotation(kVideoRotation_0),
       _rotation_set(false) {
   _codecSpecificInfo.codecType = kVideoCodecUnknown;
 }
@@ -34,7 +33,6 @@ VCMEncodedFrame::VCMEncodedFrame(const webrtc::EncodedImage& rhs)
       _missingFrame(false),
       _codec(kVideoCodecUnknown),
       _fragmentation(),
-      _rotation(kVideoRotation_0),
       _rotation_set(false) {
   _codecSpecificInfo.codecType = kVideoCodecUnknown;
   _buffer = NULL;
@@ -55,7 +53,6 @@ VCMEncodedFrame::VCMEncodedFrame(const VCMEncodedFrame& rhs)
       _codecSpecificInfo(rhs._codecSpecificInfo),
       _codec(rhs._codec),
       _fragmentation(),
-      _rotation(rhs._rotation),
       _rotation_set(rhs._rotation_set) {
   _buffer = NULL;
   _size = 0;
@@ -93,7 +90,7 @@ void VCMEncodedFrame::Reset() {
   _length = 0;
   _codecSpecificInfo.codecType = kVideoCodecUnknown;
   _codec = kVideoCodecUnknown;
-  _rotation = kVideoRotation_0;
+  rotation_ = kVideoRotation_0;
   _rotation_set = false;
 }
 

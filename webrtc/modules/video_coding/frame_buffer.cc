@@ -153,7 +153,7 @@ VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(
   // (HEVC)).
   if (packet.markerBit) {
     RTC_DCHECK(!_rotation_set);
-    _rotation = packet.video_header.rotation;
+    rotation_ = packet.video_header.rotation;
     _rotation_set = true;
   }
 

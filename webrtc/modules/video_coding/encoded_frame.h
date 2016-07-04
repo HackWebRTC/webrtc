@@ -75,7 +75,7 @@ class VCMEncodedFrame : protected EncodedImage {
   /**
   *   Get frame rotation
   */
-  VideoRotation rotation() const { return _rotation; }
+  VideoRotation rotation() const { return rotation_; }
   /**
   *   True if this frame is complete, false otherwise
   */
@@ -119,7 +119,6 @@ class VCMEncodedFrame : protected EncodedImage {
   CodecSpecificInfo _codecSpecificInfo;
   webrtc::VideoCodecType _codec;
   RTPFragmentationHeader _fragmentation;
-  VideoRotation _rotation;
 
   // Video rotation is only set along with the last packet for each frame
   // (same as marker bit). This |_rotation_set| is only for debugging purpose
