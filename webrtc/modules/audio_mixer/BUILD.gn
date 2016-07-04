@@ -1,0 +1,72 @@
+# Copyright (c) 2014 The WebRTC project authors. All Rights Reserved.
+#
+# Use of this source code is governed by a BSD-style license
+# that can be found in the LICENSE file in the root of the source
+# tree. An additional intellectual property rights grant can be found
+# in the file PATENTS.  All contributing project authors may
+# be found in the AUTHORS file in the root of the source tree.
+
+config("audio_conference_mixer_config") {
+  visibility = [ ":*" ]  # Only targets in this file can depend on this.
+  include_dirs = [
+    "include",
+    "../../modules/include",
+  ]
+}
+
+source_set("audio_mixer") {
+  sources = [
+    "audio_mixer.cc",
+    "audio_mixer.h",
+  ]
+  deps = [
+    ":audio_conference_mixer",
+    "../../voice_engine:voice_engine",
+  ]
+
+  if (is_win) {
+    defines = [ "WEBRTC_DRIFT_COMPENSATION_SUPPORTED" ]
+
+    cflags = [
+      # TODO(kjellander): Bug 261: fix this warning.
+      "/wd4373",  # virtual function override.
+    ]
+  }
+
+  configs += [ "../..:common_config" ]
+  public_configs = [ "../..:common_inherited_config" ]
+
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+}
+
+source_set("audio_conference_mixer") {
+  sources = [
+    "include/audio_mixer_defines.h",
+    "include/new_audio_conference_mixer.h",
+    "source/new_audio_conference_mixer_impl.cc",
+    "source/new_audio_conference_mixer_impl.h",
+  ]
+
+  configs += [ "../..:common_config" ]
+
+  public_configs = [
+    "../..:common_inherited_config",
+    ":audio_conference_mixer_config",
+  ]
+
+  if (is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
+  deps = [
+    "../../modules/audio_processing",
+    "../../modules/utility",
+    "../../system_wrappers",
+  ]
+}
