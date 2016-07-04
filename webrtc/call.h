@@ -18,6 +18,7 @@
 #include "webrtc/audio_send_stream.h"
 #include "webrtc/audio_state.h"
 #include "webrtc/base/networkroute.h"
+#include "webrtc/base/platform_file.h"
 #include "webrtc/base/socket.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
@@ -146,6 +147,10 @@ class Call {
       const rtc::NetworkRoute& network_route) = 0;
 
   virtual void OnSentPacket(const rtc::SentPacket& sent_packet) = 0;
+
+  virtual bool StartEventLog(rtc::PlatformFile log_file,
+                             int64_t max_size_bytes) = 0;
+  virtual void StopEventLog() = 0;
 
   virtual ~Call() {}
 };

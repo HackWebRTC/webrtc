@@ -176,30 +176,6 @@ TEST_F(CodecTest, OpusDtxCannotBeSetForNonOpus) {
   }
 }
 
-#ifdef ENABLE_RTC_EVENT_LOG
-TEST_F(CodecTest, RtcEventLogIntegrationTest) {
-  webrtc::RtcEventLog* event_log = voe_codec_->GetEventLog();
-  ASSERT_TRUE(event_log);
-
-  // Find the name of the current test, in order to use it as a temporary
-  // filename.
-  auto test_info = ::testing::UnitTest::GetInstance()->current_test_info();
-  const std::string temp_filename = webrtc::test::OutputPath() +
-                                    test_info->test_case_name() +
-                                    test_info->name();
-  // Create a log file.
-  event_log->StartLogging(temp_filename, 1000);
-  event_log->StopLogging();
-
-  // Check if the file has been created.
-  FILE* event_file = fopen(temp_filename.c_str(), "r");
-  ASSERT_TRUE(event_file);
-  fclose(event_file);
-  // Remove the temporary file.
-  remove(temp_filename.c_str());
-}
-#endif  // ENABLE_RTC_EVENT_LOG
-
 // TODO(xians, phoglund): Re-enable when issue 372 is resolved.
 TEST_F(CodecTest, DISABLED_ManualVerifySendCodecsForAllPacketSizes) {
   for (int i = 0; i < voe_codec_->NumOfCodecs(); ++i) {

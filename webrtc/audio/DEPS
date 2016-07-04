@@ -9,3 +9,12 @@ include_rules = [
   "+webrtc/modules/rtp_rtcp",
   "+webrtc/system_wrappers",
 ]
+
+specific_include_rules = {
+  "audio_receive_stream_unittest\.cc": [
+    "+webrtc/call/mock",
+  ],
+  "audio_send_stream_unittest\.cc": [
+    "+webrtc/call/mock",
+  ],
+}

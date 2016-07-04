@@ -66,6 +66,7 @@ struct SenderInfo;
 namespace voe {
 
 class OutputMixer;
+class RtcEventLogProxy;
 class RtpPacketSenderProxy;
 class Statistics;
 class StatisticsProxy;
@@ -173,18 +174,15 @@ class Channel
   static int32_t CreateChannel(Channel*& channel,
                                int32_t channelId,
                                uint32_t instanceId,
-                               RtcEventLog* const event_log,
                                const Config& config);
   static int32_t CreateChannel(
       Channel*& channel,
       int32_t channelId,
       uint32_t instanceId,
-      RtcEventLog* const event_log,
       const Config& config,
       const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory);
   Channel(int32_t channelId,
           uint32_t instanceId,
-          RtcEventLog* const event_log,
           const Config& config,
           const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory);
   int32_t Init();
@@ -451,6 +449,9 @@ class Channel
   // Disassociate a send channel if it was associated.
   void DisassociateSendChannel(int channel_id);
 
+  // Set a RtcEventLog logging object.
+  void SetRtcEventLog(RtcEventLog* event_log);
+
  protected:
   void OnIncomingFractionLoss(int fraction_lost);
 
@@ -486,7 +487,7 @@ class Channel
 
   ChannelState channel_state_;
 
-  RtcEventLog* const event_log_;
+  std::unique_ptr<voe::RtcEventLogProxy> event_log_proxy_;
 
   std::unique_ptr<RtpHeaderParser> rtp_header_parser_;
   std::unique_ptr<RTPPayloadRegistry> rtp_payload_registry_;

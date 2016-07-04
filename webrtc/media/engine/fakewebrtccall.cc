@@ -478,4 +478,11 @@ void FakeCall::OnSentPacket(const rtc::SentPacket& sent_packet) {
   }
 }
 
+bool FakeCall::StartEventLog(rtc::PlatformFile log_file,
+                             int64_t max_size_bytes) {
+  return false;
+}
+
+void FakeCall::StopEventLog() {}
+
 }  // namespace cricket

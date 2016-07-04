@@ -138,12 +138,6 @@ class ChannelManager {
   // Stops recording AEC dump.
   void StopAecDump();
 
-  // Starts RtcEventLog using existing file.
-  bool StartRtcEventLog(rtc::PlatformFile file, int64_t max_size_bytes);
-
-  // Stops logging RtcEventLog.
-  void StopRtcEventLog();
-
  private:
   typedef std::vector<VoiceChannel*> VoiceChannels;
   typedef std::vector<VideoChannel*> VideoChannels;

@@ -376,10 +376,6 @@ int VoECodecImpl::SetOpusDtx(int channel, bool enable_dtx) {
   return channelPtr->SetOpusDtx(enable_dtx);
 }
 
-RtcEventLog* VoECodecImpl::GetEventLog() {
-  return _shared->channel_manager().GetEventLog();
-}
-
 #endif  // WEBRTC_VOICE_ENGINE_CODEC_API
 
 }  // namespace webrtc

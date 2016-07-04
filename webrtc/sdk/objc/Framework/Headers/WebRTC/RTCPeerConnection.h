@@ -183,6 +183,11 @@ RTC_EXPORT
            completionHandler:
     (nullable void (^)(NSError * _Nullable error))completionHandler;
 
+/** Start or stop recording an Rtc EventLog. */
+- (BOOL)startRtcEventLogWithFilePath:(NSString *)filePath
+                      maxSizeInBytes:(int64_t)maxSizeInBytes;
+- (void)stopRtcEventLog;
+
 @end
 
 @interface RTCPeerConnection (Media)

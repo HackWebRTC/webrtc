@@ -80,12 +80,15 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
 
   bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes) override;
   void StopAecDump() override;
-  bool StartRtcEventLog(rtc::PlatformFile file) override {
-    return StartRtcEventLog(file, -1);
-  }
+  // TODO(ivoc) Remove after Chrome is updated.
+  bool StartRtcEventLog(rtc::PlatformFile file) override { return false; }
+  // TODO(ivoc) Remove after Chrome is updated.
   bool StartRtcEventLog(rtc::PlatformFile file,
-                        int64_t max_size_bytes) override;
-  void StopRtcEventLog() override;
+                        int64_t max_size_bytes) override {
+    return false;
+  }
+  // TODO(ivoc) Remove after Chrome is updated.
+  void StopRtcEventLog() override {}
 
   virtual webrtc::MediaControllerInterface* CreateMediaController(
       const cricket::MediaConfig& config) const;

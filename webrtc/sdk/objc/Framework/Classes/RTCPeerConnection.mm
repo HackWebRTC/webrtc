@@ -207,6 +207,7 @@ void PeerConnectionDelegateAdapter::OnIceCandidatesRemoved(
   NSMutableArray *_localStreams;
   std::unique_ptr<webrtc::PeerConnectionDelegateAdapter> _observer;
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> _peerConnection;
+  BOOL _hasStartedRtcEventLog;
 }
 
 @synthesize delegate = _delegate;
@@ -354,6 +355,31 @@ void PeerConnectionDelegateAdapter::OnIceCandidatesRemoved(
       new rtc::RefCountedObject<webrtc::SetSessionDescriptionObserverAdapter>(
           completionHandler));
   _peerConnection->SetRemoteDescription(observer, sdp.nativeDescription);
+}
+
+- (BOOL)startRtcEventLogWithFilePath:(NSString *)filePath
+                      maxSizeInBytes:(int64_t)maxSizeInBytes {
+  RTC_DCHECK(filePath.length);
+  RTC_DCHECK_GT(maxSizeInBytes, 0);
+  RTC_DCHECK(!_hasStartedRtcEventLog);
+  if (_hasStartedRtcEventLog) {
+    RTCLogError(@"Event logging already started.");
+    return NO;
+  }
+  int fd = open(filePath.UTF8String, O_WRONLY | O_CREAT | O_TRUNC,
+                S_IRUSR | S_IWUSR);
+  if (fd < 0) {
+    RTCLogError(@"Error opening file: %@. Error: %d", filePath, errno);
+    return NO;
+  }
+  _hasStartedRtcEventLog =
+      _peerConnection->StartRtcEventLog(fd, maxSizeInBytes);
+  return _hasStartedRtcEventLog;
+}
+
+- (void)stopRtcEventLog {
+  _peerConnection->StopRtcEventLog();
+  _hasStartedRtcEventLog = NO;
 }
 
 - (RTCRtpSender *)senderWithKind:(NSString *)kind

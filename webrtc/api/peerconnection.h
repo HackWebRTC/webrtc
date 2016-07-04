@@ -136,6 +136,10 @@ class PeerConnection : public PeerConnectionInterface,
 
   void RegisterUMAObserver(UMAObserver* observer) override;
 
+  bool StartRtcEventLog(rtc::PlatformFile file,
+                        int64_t max_size_bytes) override;
+  void StopRtcEventLog() override;
+
   void Close() override;
 
   // Virtual for unit tests.
@@ -359,6 +363,13 @@ class PeerConnection : public PeerConnectionInterface,
   // Called when SetConfiguration is called. Only a subset of the configuration
   // is applied.
   bool ReconfigurePortAllocator_n(const RTCConfiguration& configuration);
+
+  // Starts recording an Rtc EventLog using the supplied platform file.
+  // This function should only be called from the worker thread.
+  bool StartRtcEventLog_w(rtc::PlatformFile file, int64_t max_size_bytes);
+  // Starts recording an Rtc EventLog using the supplied platform file.
+  // This function should only be called from the worker thread.
+  void StopRtcEventLog_w();
 
   // Storing the factory as a scoped reference pointer ensures that the memory
   // in the PeerConnectionFactoryImpl remains available as long as the

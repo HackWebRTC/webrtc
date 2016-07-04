@@ -17,7 +17,6 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/call/rtc_event_log.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
 #include "webrtc/typedefs.h"
 
@@ -119,9 +118,6 @@ class ChannelManager {
 
   size_t NumOfChannels() const;
 
-  // Returns a pointer to the event log object stored within the ChannelManager.
-  RtcEventLog* GetEventLog() const;
-
  private:
   // Create a channel given a configuration, |config|.
   ChannelOwner CreateChannelInternal(
@@ -136,7 +132,6 @@ class ChannelManager {
   std::vector<ChannelOwner> channels_;
 
   const Config& config_;
-  std::unique_ptr<RtcEventLog> event_log_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ChannelManager);
 };

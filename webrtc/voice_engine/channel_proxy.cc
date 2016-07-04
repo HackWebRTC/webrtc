@@ -204,6 +204,11 @@ void ChannelProxy::SetChannelOutputVolumeScaling(float scaling) {
   RTC_DCHECK_EQ(0, error);
 }
 
+void ChannelProxy::SetRtcEventLog(RtcEventLog* event_log) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  channel()->SetRtcEventLog(event_log);
+}
+
 Channel* ChannelProxy::channel() const {
   RTC_DCHECK(channel_owner_.channel());
   return channel_owner_.channel();

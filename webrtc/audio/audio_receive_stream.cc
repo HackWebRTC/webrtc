@@ -81,7 +81,8 @@ namespace internal {
 AudioReceiveStream::AudioReceiveStream(
     CongestionController* congestion_controller,
     const webrtc::AudioReceiveStream::Config& config,
-    const rtc::scoped_refptr<webrtc::AudioState>& audio_state)
+    const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
+    webrtc::RtcEventLog* event_log)
     : config_(config),
       audio_state_(audio_state),
       rtp_header_parser_(RtpHeaderParser::Create()) {
@@ -93,6 +94,7 @@ AudioReceiveStream::AudioReceiveStream(
 
   VoiceEngineImpl* voe_impl = static_cast<VoiceEngineImpl*>(voice_engine());
   channel_proxy_ = voe_impl->GetChannelProxy(config_.voe_channel_id);
+  channel_proxy_->SetRtcEventLog(event_log);
   channel_proxy_->SetLocalSSRC(config.rtp.local_ssrc);
   // TODO(solenberg): Config NACK history window (which is a packet count),
   // using the actual packet size for the configured codec.
@@ -144,6 +146,7 @@ AudioReceiveStream::~AudioReceiveStream() {
   LOG(LS_INFO) << "~AudioReceiveStream: " << config_.ToString();
   channel_proxy_->DeRegisterExternalTransport();
   channel_proxy_->ResetCongestionControlObjects();
+  channel_proxy_->SetRtcEventLog(nullptr);
   if (remote_bitrate_estimator_) {
     remote_bitrate_estimator_->RemoveStream(config_.rtp.remote_ssrc);
   }
