@@ -560,12 +560,7 @@ int32_t AudioDeviceModuleImpl::SpeakerVolumeIsAvailable(bool* available) {
   }
 
   *available = isAvailable;
-
-  if (isAvailable) {
-    LOG(INFO) << __FUNCTION__ << " output: available";
-  } else {
-    LOG(INFO) << __FUNCTION__ << " output: not available";
-  }
+  LOG(INFO) << "output: " << isAvailable;
   return (0);
 }
 
@@ -594,8 +589,7 @@ int32_t AudioDeviceModuleImpl::SpeakerVolume(uint32_t* volume) const {
   }
 
   *volume = level;
-
-  LOG(INFO) << __FUNCTION__ << " output: " << *volume;
+  LOG(INFO) << "output: " << *volume;
   return (0);
 }
 
@@ -628,9 +622,7 @@ int32_t AudioDeviceModuleImpl::WaveOutVolume(uint16_t* volumeLeft,
 
   *volumeLeft = volLeft;
   *volumeRight = volRight;
-
-  LOG(INFO) << __FUNCTION__ << " output: volumeLeft = " << *volumeLeft
-            << ", volumeRight = " << *volumeRight;
+  LOG(INFO) << "output: " << *volumeLeft << ", " << *volumeRight;
 
   return (0);
 }
@@ -644,12 +636,7 @@ bool AudioDeviceModuleImpl::SpeakerIsInitialized() const {
   CHECK_INITIALIZED_BOOL();
 
   bool isInitialized = _ptrAudioDevice->SpeakerIsInitialized();
-
-  if (isInitialized) {
-    LOG(INFO) << __FUNCTION__ << " output: initialized";
-  } else {
-    LOG(INFO) << __FUNCTION__ << " output: not initialized";
-  }
+  LOG(INFO) << "output: " << isInitialized;
   return (isInitialized);
 }
 
@@ -662,12 +649,7 @@ bool AudioDeviceModuleImpl::MicrophoneIsInitialized() const {
   CHECK_INITIALIZED_BOOL();
 
   bool isInitialized = _ptrAudioDevice->MicrophoneIsInitialized();
-
-  if (isInitialized) {
-    LOG(INFO) << __FUNCTION__ << " output: initialized";
-  } else {
-    LOG(INFO) << __FUNCTION__ << " output: not initialized";
-  }
+  LOG(INFO) << "output: " << isInitialized;
   return (isInitialized);
 }
 
@@ -686,8 +668,7 @@ int32_t AudioDeviceModuleImpl::MaxSpeakerVolume(uint32_t* maxVolume) const {
   }
 
   *maxVolume = maxVol;
-
-  LOG(INFO) << __FUNCTION__ << " output: maxVolume = " << *maxVolume;
+  LOG(INFO) << "output: " << *maxVolume;
   return (0);
 }
 
@@ -706,8 +687,7 @@ int32_t AudioDeviceModuleImpl::MinSpeakerVolume(uint32_t* minVolume) const {
   }
 
   *minVolume = minVol;
-
-  LOG(INFO) << __FUNCTION__ << " output: " << *minVolume;
+  LOG(INFO) << "output: " << *minVolume;
   return (0);
 }
 
@@ -727,8 +707,7 @@ int32_t AudioDeviceModuleImpl::SpeakerVolumeStepSize(uint16_t* stepSize) const {
   }
 
   *stepSize = delta;
-
-  LOG(INFO) << __FUNCTION__ << " output: " << *stepSize;
+  LOG(INFO) << "output: " << *stepSize;
   return (0);
 }
 
@@ -747,12 +726,7 @@ int32_t AudioDeviceModuleImpl::SpeakerMuteIsAvailable(bool* available) {
   }
 
   *available = isAvailable;
-
-  if (isAvailable) {
-    LOG(INFO) << __FUNCTION__ << " output: available";
-  } else {
-    LOG(INFO) << __FUNCTION__ << " output: not available";
-  }
+  LOG(INFO) << "output: " << isAvailable;
   return (0);
 }
 
@@ -781,12 +755,7 @@ int32_t AudioDeviceModuleImpl::SpeakerMute(bool* enabled) const {
   }
 
   *enabled = muted;
-
-  if (muted) {
-    LOG(INFO) << __FUNCTION__ << " output: muted";
-  } else {
-    LOG(INFO) << __FUNCTION__ << " output: not muted";
-  }
+  LOG(INFO) << "output: " << muted;
   return (0);
 }
 
@@ -805,12 +774,7 @@ int32_t AudioDeviceModuleImpl::MicrophoneMuteIsAvailable(bool* available) {
   }
 
   *available = isAvailable;
-
-  if (isAvailable) {
-    LOG(INFO) << __FUNCTION__ << " output: available";
-  } else {
-    LOG(INFO) << __FUNCTION__ << " output: not available";
-  }
+  LOG(INFO) << "output: " << isAvailable;
   return (0);
 }
 
@@ -839,12 +803,7 @@ int32_t AudioDeviceModuleImpl::MicrophoneMute(bool* enabled) const {
   }
 
   *enabled = muted;
-
-  if (muted) {
-    LOG(INFO) << __FUNCTION__ << " output: muted";
-  } else {
-    LOG(INFO) << __FUNCTION__ << " output: not muted";
-  }
+  LOG(INFO) << "output: " << muted;
   return (0);
 }
 
@@ -863,12 +822,7 @@ int32_t AudioDeviceModuleImpl::MicrophoneBoostIsAvailable(bool* available) {
   }
 
   *available = isAvailable;
-
-  if (isAvailable) {
-    LOG(INFO) << __FUNCTION__ << " output: available";
-  } else {
-    LOG(INFO) << __FUNCTION__ << " output: not available";
-  }
+  LOG(INFO) << "output: " << isAvailable;
   return (0);
 }
 
@@ -897,12 +851,7 @@ int32_t AudioDeviceModuleImpl::MicrophoneBoost(bool* enabled) const {
   }
 
   *enabled = onOff;
-
-  if (onOff) {
-    LOG(INFO) << __FUNCTION__ << " output: enabled";
-  } else {
-    LOG(INFO) << __FUNCTION__ << " output: not enabled";
-  }
+  LOG(INFO) << "output: " << onOff;
   return (0);
 }
 
@@ -921,12 +870,7 @@ int32_t AudioDeviceModuleImpl::MicrophoneVolumeIsAvailable(bool* available) {
   }
 
   *available = isAvailable;
-
-  if (isAvailable) {
-    LOG(INFO) << __FUNCTION__ << " output: available";
-  } else {
-    LOG(INFO) << __FUNCTION__ << " output: not available";
-  }
+  LOG(INFO) << "output: " << isAvailable;
   return (0);
 }
 
@@ -955,8 +899,7 @@ int32_t AudioDeviceModuleImpl::MicrophoneVolume(uint32_t* volume) const {
   }
 
   *volume = level;
-
-  LOG(INFO) << __FUNCTION__ << " output: volume = " << *volume;
+  LOG(INFO) << "output: " << *volume;
   return (0);
 }
 
@@ -976,12 +919,7 @@ int32_t AudioDeviceModuleImpl::StereoRecordingIsAvailable(
   }
 
   *available = isAvailable;
-
-  if (isAvailable) {
-    LOG(INFO) << __FUNCTION__ << " output: available";
-  } else {
-    LOG(INFO) << __FUNCTION__ << " output: not available";
-  }
+  LOG(INFO) << "output: " << isAvailable;
   return (0);
 }
 
@@ -999,11 +937,7 @@ int32_t AudioDeviceModuleImpl::SetStereoRecording(bool enable) {
   }
 
   if (_ptrAudioDevice->SetStereoRecording(enable) == -1) {
-    if (enable) {
-      LOG(WARNING) << "failed to enable stereo recording";
-    } else {
-      LOG(WARNING) << "failed to disable stereo recording";
-    }
+    LOG(WARNING) << "failed to change stereo recording";
     return -1;
   }
 
@@ -1031,12 +965,7 @@ int32_t AudioDeviceModuleImpl::StereoRecording(bool* enabled) const {
   }
 
   *enabled = stereo;
-
-  if (stereo) {
-    LOG(INFO) << __FUNCTION__ << " output: enabled";
-  } else {
-    LOG(INFO) << __FUNCTION__ << " output: not enabled";
-  }
+  LOG(INFO) << "output: " << stereo;
   return (0);
 }
 
@@ -1079,15 +1008,13 @@ int32_t AudioDeviceModuleImpl::RecordingChannel(ChannelType* channel) const {
   }
 
   *channel = chType;
-
   if (*channel == kChannelBoth) {
-    LOG(INFO) << __FUNCTION__ << " output: both";
+    LOG(INFO) << "output: both";
   } else if (*channel == kChannelLeft) {
-    LOG(INFO) << __FUNCTION__ << " output: left";
+    LOG(INFO) << "output: left";
   } else {
-    LOG(INFO) << __FUNCTION__ << " output: right";
+    LOG(INFO) << "output: right";
   }
-
   return (0);
 }
 
@@ -1106,12 +1033,7 @@ int32_t AudioDeviceModuleImpl::StereoPlayoutIsAvailable(bool* available) const {
   }
 
   *available = isAvailable;
-
-  if (isAvailable) {
-    LOG(INFO) << __FUNCTION__ << " output: available";
-  } else {
-    LOG(INFO) << __FUNCTION__ << " output: not available";
-  }
+  LOG(INFO) << "output: " << isAvailable;
   return (0);
 }
 
@@ -1158,12 +1080,7 @@ int32_t AudioDeviceModuleImpl::StereoPlayout(bool* enabled) const {
   }
 
   *enabled = stereo;
-
-  if (stereo) {
-    LOG(INFO) << __FUNCTION__ << " output: enabled";
-  } else {
-    LOG(INFO) << __FUNCTION__ << " output: not enabled";
-  }
+  LOG(INFO) << "output: " << stereo;
   return (0);
 }
 
@@ -1202,12 +1119,7 @@ int32_t AudioDeviceModuleImpl::PlayoutIsAvailable(bool* available) {
   }
 
   *available = isAvailable;
-
-  if (isAvailable) {
-    LOG(INFO) << __FUNCTION__ << " output: available";
-  } else {
-    LOG(INFO) << __FUNCTION__ << " output: not available";
-  }
+  LOG(INFO) << "output: " << isAvailable;
   return (0);
 }
 
@@ -1226,12 +1138,7 @@ int32_t AudioDeviceModuleImpl::RecordingIsAvailable(bool* available) {
   }
 
   *available = isAvailable;
-
-  if (isAvailable) {
-    LOG(INFO) << __FUNCTION__ << " output: available";
-  } else {
-    LOG(INFO) << __FUNCTION__ << " output: not available";
-  }
+  LOG(INFO) << "output: " << isAvailable;
   return (0);
 }
 
@@ -1250,8 +1157,7 @@ int32_t AudioDeviceModuleImpl::MaxMicrophoneVolume(uint32_t* maxVolume) const {
   }
 
   *maxVolume = maxVol;
-
-  LOG(INFO) << __FUNCTION__ << " output: = " << *maxVolume;
+  LOG(INFO) << "output: " << *maxVolume;
   return (0);
 }
 
@@ -1270,8 +1176,7 @@ int32_t AudioDeviceModuleImpl::MinMicrophoneVolume(uint32_t* minVolume) const {
   }
 
   *minVolume = minVol;
-
-  LOG(INFO) << __FUNCTION__ << " output: = " << *minVolume;
+  LOG(INFO) << "output: " << *minVolume;
   return (0);
 }
 
@@ -1291,8 +1196,7 @@ int32_t AudioDeviceModuleImpl::MicrophoneVolumeStepSize(
   }
 
   *stepSize = delta;
-
-  LOG(INFO) << __FUNCTION__ << " output: " << *stepSize;
+  LOG(INFO) << "output: " << *stepSize;
   return (0);
 }
 
@@ -1305,8 +1209,7 @@ int16_t AudioDeviceModuleImpl::PlayoutDevices() {
   CHECK_INITIALIZED();
 
   uint16_t nPlayoutDevices = _ptrAudioDevice->PlayoutDevices();
-
-  LOG(INFO) << __FUNCTION__ << " output: " << nPlayoutDevices;
+  LOG(INFO) << "output: " << nPlayoutDevices;
   return ((int16_t)(nPlayoutDevices));
 }
 
@@ -1325,9 +1228,6 @@ int32_t AudioDeviceModuleImpl::SetPlayoutDevice(uint16_t index) {
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceModuleImpl::SetPlayoutDevice(WindowsDeviceType device) {
-  if (device == kDefaultDevice) {
-  } else {
-  }
   LOG(INFO) << __FUNCTION__;
   CHECK_INITIALIZED();
 
@@ -1355,10 +1255,10 @@ int32_t AudioDeviceModuleImpl::PlayoutDeviceName(
   }
 
   if (name != NULL) {
-    LOG(INFO) << __FUNCTION__ << " output: name = " << name;
+    LOG(INFO) << "output: name = " << name;
   }
   if (guid != NULL) {
-    LOG(INFO) << __FUNCTION__ << " output: guid = " << guid;
+    LOG(INFO) << "output: guid = " << guid;
   }
 
   return (0);
@@ -1385,10 +1285,10 @@ int32_t AudioDeviceModuleImpl::RecordingDeviceName(
   }
 
   if (name != NULL) {
-    LOG(INFO) << __FUNCTION__ << " output: name = " << name;
+    LOG(INFO) << "output: name = " << name;
   }
   if (guid != NULL) {
-    LOG(INFO) << __FUNCTION__ << " output: guid = " << guid;
+    LOG(INFO) << "output: guid = " << guid;
   }
 
   return (0);
@@ -1404,7 +1304,7 @@ int16_t AudioDeviceModuleImpl::RecordingDevices() {
 
   uint16_t nRecordingDevices = _ptrAudioDevice->RecordingDevices();
 
-  LOG(INFO) << __FUNCTION__ << " output: " << nRecordingDevices;
+  LOG(INFO) << "output: " << nRecordingDevices;
   return ((int16_t)nRecordingDevices);
 }
 
@@ -1423,9 +1323,6 @@ int32_t AudioDeviceModuleImpl::SetRecordingDevice(uint16_t index) {
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceModuleImpl::SetRecordingDevice(WindowsDeviceType device) {
-  if (device == kDefaultDevice) {
-  } else {
-  }
   LOG(INFO) << __FUNCTION__;
   CHECK_INITIALIZED();
 
@@ -1644,17 +1541,11 @@ int32_t AudioDeviceModuleImpl::StopRawOutputFileRecording() {
 int32_t AudioDeviceModuleImpl::SetPlayoutBuffer(const BufferType type,
                                                 uint16_t sizeMS) {
   if (type == kFixedBufferSize) {
-    LOG(INFO) << __FUNCTION__ << "("
-              << "fixed buffer, " << sizeMS << "ms"
-              << ")";
+    LOG(INFO) << __FUNCTION__ << "(fixed buffer, " << sizeMS << "ms)";
   } else if (type == kAdaptiveBufferSize) {
-    LOG(INFO) << __FUNCTION__ << "("
-              << "adaptive buffer, " << sizeMS << "ms"
-              << ")";
+    LOG(INFO) << __FUNCTION__ << "(adaptive buffer, " << sizeMS << "ms)";
   } else {
-    LOG(INFO) << __FUNCTION__ << "("
-              << "?, " << sizeMS << "ms"
-              << ")";
+    LOG(INFO) << __FUNCTION__ << "(?, " << sizeMS << "ms)";
   }
   CHECK_INITIALIZED();
 
@@ -1702,8 +1593,7 @@ int32_t AudioDeviceModuleImpl::PlayoutBuffer(BufferType* type,
   *type = bufType;
   *sizeMS = size;
 
-  LOG(INFO) << __FUNCTION__ << " output: type = " << *type
-            << ", sizeMS = " << *sizeMS;
+  LOG(INFO) << "output: type = " << *type << ", sizeMS = " << *sizeMS;
   return (0);
 }
 
@@ -1723,8 +1613,7 @@ int32_t AudioDeviceModuleImpl::PlayoutDelay(uint16_t* delayMS) const {
   }
 
   *delayMS = delay;
-
-  LOG(LS_VERBOSE) << __FUNCTION__ << " output: delayMS = " << *delayMS;
+  LOG(LS_VERBOSE) << "output: " << *delayMS;
   return (0);
 }
 
@@ -1744,8 +1633,7 @@ int32_t AudioDeviceModuleImpl::RecordingDelay(uint16_t* delayMS) const {
   }
 
   *delayMS = delay;
-
-  LOG(INFO) << __FUNCTION__ << " output: delayMS = " << *delayMS;
+  LOG(INFO) << "output: " << *delayMS;
   return (0);
 }
 
@@ -1765,8 +1653,7 @@ int32_t AudioDeviceModuleImpl::CPULoad(uint16_t* load) const {
   }
 
   *load = cpuLoad;
-
-  LOG(INFO) << __FUNCTION__ << " output: load = " << *load;
+  LOG(INFO) << "output: " << *load;
   return (0);
 }
 
@@ -1803,8 +1690,7 @@ int32_t AudioDeviceModuleImpl::RecordingSampleRate(
   }
 
   *samplesPerSec = sampleRate;
-
-  LOG(INFO) << __FUNCTION__ << " output: samplesPerSec = " << *samplesPerSec;
+  LOG(INFO) << "output: " << *samplesPerSec;
   return (0);
 }
 
@@ -1841,8 +1727,7 @@ int32_t AudioDeviceModuleImpl::PlayoutSampleRate(
   }
 
   *samplesPerSec = sampleRate;
-
-  LOG(INFO) << __FUNCTION__ << " output: samplesPerSec = " << *samplesPerSec;
+  LOG(INFO) << "output: " << *samplesPerSec;
   return (0);
 }
 
@@ -1887,7 +1772,7 @@ int32_t AudioDeviceModuleImpl::GetLoudspeakerStatus(bool* enabled) const {
   if (_ptrAudioDevice->GetLoudspeakerStatus(*enabled) != 0) {
     ok = -1;
   }
-  LOG(INFO) << __FUNCTION__ << " output: " << ok;
+  LOG(INFO) << "output: " << ok;
   return ok;
 }
 
@@ -1895,11 +1780,7 @@ bool AudioDeviceModuleImpl::BuiltInAECIsEnabled() const {
   LOG(INFO) << __FUNCTION__;
   CHECK_INITIALIZED_BOOL();
   bool isEnabled = _ptrAudioDevice->BuiltInAECIsEnabled();
-  if (isEnabled) {
-    LOG(INFO) << __FUNCTION__ << " output: enabled";
-  } else {
-    LOG(INFO) << __FUNCTION__ << " output: not enabled";
-  }
+  LOG(INFO) << "output: " << isEnabled;
   return isEnabled;
 }
 
@@ -1907,11 +1788,7 @@ bool AudioDeviceModuleImpl::BuiltInAECIsAvailable() const {
   LOG(INFO) << __FUNCTION__;
   CHECK_INITIALIZED_BOOL();
   bool isAvailable = _ptrAudioDevice->BuiltInAECIsAvailable();
-  if (isAvailable) {
-    LOG(INFO) << __FUNCTION__ << " output: available";
-  } else {
-    LOG(INFO) << __FUNCTION__ << " output: not available";
-  }
+  LOG(INFO) << "output: " << isAvailable;
   return isAvailable;
 }
 
@@ -1919,7 +1796,7 @@ int32_t AudioDeviceModuleImpl::EnableBuiltInAEC(bool enable) {
   LOG(INFO) << __FUNCTION__ << "(" << enable << ")";
   CHECK_INITIALIZED();
   int32_t ok = _ptrAudioDevice->EnableBuiltInAEC(enable);
-  LOG(INFO) << __FUNCTION__ << " output: " << ok;
+  LOG(INFO) << "output: " << ok;
   return ok;
 }
 
@@ -1927,11 +1804,7 @@ bool AudioDeviceModuleImpl::BuiltInAGCIsAvailable() const {
   LOG(INFO) << __FUNCTION__;
   CHECK_INITIALIZED_BOOL();
   bool isAvailable = _ptrAudioDevice->BuiltInAGCIsAvailable();
-  if (isAvailable) {
-    LOG(INFO) << __FUNCTION__ << " output: available";
-  } else {
-    LOG(INFO) << __FUNCTION__ << " output: not available";
-  }
+  LOG(INFO) << "output: " << isAvailable;
   return isAvailable;
 }
 
@@ -1939,7 +1812,7 @@ int32_t AudioDeviceModuleImpl::EnableBuiltInAGC(bool enable) {
   LOG(INFO) << __FUNCTION__ << "(" << enable << ")";
   CHECK_INITIALIZED();
   int32_t ok = _ptrAudioDevice->EnableBuiltInAGC(enable);
-  LOG(INFO) << __FUNCTION__ << " output: " << ok;
+  LOG(INFO) << "output: " << ok;
   return ok;
 }
 
@@ -1947,11 +1820,7 @@ bool AudioDeviceModuleImpl::BuiltInNSIsAvailable() const {
   LOG(INFO) << __FUNCTION__;
   CHECK_INITIALIZED_BOOL();
   bool isAvailable = _ptrAudioDevice->BuiltInNSIsAvailable();
-  if (isAvailable) {
-    LOG(INFO) << __FUNCTION__ << " output: available";
-  } else {
-    LOG(INFO) << __FUNCTION__ << " output: not available";
-  }
+  LOG(INFO) << "output: " << isAvailable;
   return isAvailable;
 }
 
@@ -1959,7 +1828,7 @@ int32_t AudioDeviceModuleImpl::EnableBuiltInNS(bool enable) {
   LOG(INFO) << __FUNCTION__ << "(" << enable << ")";
   CHECK_INITIALIZED();
   int32_t ok = _ptrAudioDevice->EnableBuiltInNS(enable);
-  LOG(INFO) << __FUNCTION__ << " output: " << ok;
+  LOG(INFO) << "output: " << ok;
   return ok;
 }
 
@@ -1967,7 +1836,7 @@ int AudioDeviceModuleImpl::GetPlayoutAudioParameters(
     AudioParameters* params) const {
   LOG(INFO) << __FUNCTION__;
   int r = _ptrAudioDevice->GetPlayoutAudioParameters(params);
-  LOG(INFO) << __FUNCTION__ << " output: " << r;
+  LOG(INFO) << "output: " << r;
   return r;
 }
 
@@ -1975,7 +1844,7 @@ int AudioDeviceModuleImpl::GetRecordAudioParameters(
     AudioParameters* params) const {
   LOG(INFO) << __FUNCTION__;
   int r = _ptrAudioDevice->GetRecordAudioParameters(params);
-  LOG(INFO) << __FUNCTION__ << " output: " << r;
+  LOG(INFO) << "output: " << r;
   return r;
 }
 

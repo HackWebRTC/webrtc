@@ -497,11 +497,7 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   int32_t EnableBuiltInAEC(bool enable) override {
-    if (enable) {
-      LOG(INFO) << __FUNCTION__ << ": enabling built in AEC";
-    } else {
-      LOG(INFO) << __FUNCTION__ << ": disabling built in AEC";
-    }
+    LOG(INFO) << __FUNCTION__ << "(" << enable << ")";
     RTC_CHECK(BuiltInAECIsAvailable()) << "HW AEC is not available";
     return input_.EnableBuiltInAEC(enable);
   }
@@ -514,11 +510,7 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   int32_t EnableBuiltInAGC(bool enable) override {
-    if (enable) {
-      LOG(INFO) << __FUNCTION__ << ": enabling built in AGC";
-    } else {
-      LOG(INFO) << __FUNCTION__ << ": disabling built in AGC";
-    }
+    LOG(INFO) << __FUNCTION__ << "(" << enable << ")";
     RTC_CHECK(BuiltInAGCIsAvailable()) << "HW AGC is not available";
     return input_.EnableBuiltInAGC(enable);
   }
@@ -531,11 +523,7 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   int32_t EnableBuiltInNS(bool enable) override {
-    if (enable) {
-      LOG(INFO) << __FUNCTION__ << ": enabling built in NS";
-    } else {
-      LOG(INFO) << __FUNCTION__ << ": disabling built in NS";
-    }
+    LOG(INFO) << __FUNCTION__ << "(" << enable << ")";
     RTC_CHECK(BuiltInNSIsAvailable()) << "HW NS is not available";
     return input_.EnableBuiltInNS(enable);
   }
