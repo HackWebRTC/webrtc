@@ -13,11 +13,12 @@
 
 #include "webrtc/common_types.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/video_coding/encoded_frame.h"
 
 namespace webrtc {
 namespace video_coding {
 
-class FrameObject {
+class FrameObject : public webrtc::VCMEncodedFrame {
  public:
   static const uint8_t kMaxFrameReferences = 5;
 
@@ -54,14 +55,14 @@ class RtpFrameObject : public FrameObject {
   uint16_t first_seq_num() const;
   uint16_t last_seq_num() const;
   int times_nacked() const;
-  FrameType frame_type() const;
+  enum FrameType frame_type() const;
   VideoCodecType codec_type() const;
   bool GetBitstream(uint8_t* destination) const override;
   RTPVideoTypeHeader* GetCodecHeader() const;
 
  private:
   PacketBuffer* packet_buffer_;
-  FrameType frame_type_;
+  enum FrameType frame_type_;
   VideoCodecType codec_type_;
   uint16_t first_seq_num_;
   uint16_t last_seq_num_;

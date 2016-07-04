@@ -34,8 +34,25 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
   size = frame_size;
   VCMPacket* packet = packet_buffer_->GetPacket(first_seq_num);
   if (packet) {
+    // TODO(philipel): Remove when encoded image is replaced by FrameObject.
+    // VCMEncodedFrame members
+    CopyCodecSpecific(&packet->video_header);
+    _completeFrame = true;
+    _payloadType = packet->payloadType;
+    _timeStamp = packet->timestamp;
+    ntp_time_ms_ = packet->ntp_time_ms_;
+    _buffer = new uint8_t[frame_size]();
+    _size = frame_size;
+    _length = frame_size;
+    _frameType = packet->frameType;
+    GetBitstream(_buffer);
+
+    // RtpFrameObject members
     frame_type_ = packet->frameType;
     codec_type_ = packet->codec;
+
+    // FrameObject members
+    timestamp = packet->timestamp;
   }
 }
 
