@@ -66,6 +66,12 @@ bool PacketBuffer::InsertPacket(const VCMPacket& packet) {
   if (AheadOf(seq_num, last_seq_num_))
     last_seq_num_ = seq_num;
 
+  // If this is a padding or FEC packet, don't insert it.
+  if (packet.sizeBytes == 0) {
+    reference_finder_.PaddingReceived(packet.seqNum);
+    return true;
+  }
+
   sequence_buffer_[index].frame_begin = packet.isFirstPacket;
   sequence_buffer_[index].frame_end = packet.markerBit;
   sequence_buffer_[index].seq_num = packet.seqNum;

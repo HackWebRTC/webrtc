@@ -51,6 +51,42 @@ void RtpFrameReferenceFinder::ManageFrame(
   }
 }
 
+void RtpFrameReferenceFinder::PaddingReceived(uint16_t seq_num) {
+  rtc::CritScope lock(&crit_);
+  auto clean_padding_to =
+      stashed_padding_.lower_bound(seq_num - kMaxPaddingAge);
+  stashed_padding_.erase(stashed_padding_.begin(), clean_padding_to);
+  stashed_padding_.insert(seq_num);
+  UpdateLastPictureIdWithPadding(seq_num);
+  RetryStashedFrames();
+}
+
+void RtpFrameReferenceFinder::UpdateLastPictureIdWithPadding(uint16_t seq_num) {
+  auto gop_seq_num_it = last_seq_num_gop_.upper_bound(seq_num);
+
+  // If this padding packet "belongs" to a group of pictures that we don't track
+  // anymore, do nothing.
+  if (gop_seq_num_it == last_seq_num_gop_.begin())
+    return;
+  --gop_seq_num_it;
+
+  // Calculate the next contiuous sequence number and search for it in
+  // the padding packets we have stashed.
+  uint16_t next_seq_num_with_padding = gop_seq_num_it->second.second + 1;
+  auto padding_seq_num_it =
+      stashed_padding_.lower_bound(next_seq_num_with_padding);
+
+  // While there still are padding packets and those padding packets are
+  // continuous, then advance the "last-picture-id-with-padding" and remove
+  // the stashed padding packet.
+  while (padding_seq_num_it != stashed_padding_.end() &&
+         *padding_seq_num_it == next_seq_num_with_padding) {
+    gop_seq_num_it->second.second = next_seq_num_with_padding;
+    ++next_seq_num_with_padding;
+    padding_seq_num_it = stashed_padding_.erase(padding_seq_num_it);
+  }
+}
+
 void RtpFrameReferenceFinder::RetryStashedFrames() {
   size_t num_stashed_frames = stashed_frames_.size();
 
@@ -84,8 +120,11 @@ void RtpFrameReferenceFinder::ManageFrameGeneric(
     return;
   }
 
-  if (frame->frame_type() == kVideoFrameKey)
-    last_seq_num_gop_[frame->last_seq_num()] = frame->last_seq_num();
+  if (frame->frame_type() == kVideoFrameKey) {
+    last_seq_num_gop_.insert(std::make_pair(
+        frame->last_seq_num(),
+        std::make_pair(frame->last_seq_num(), frame->last_seq_num())));
+  }
 
   // We have received a frame but not yet a keyframe, stash this frame.
   if (last_seq_num_gop_.empty()) {
@@ -102,13 +141,21 @@ void RtpFrameReferenceFinder::ManageFrameGeneric(
   // Find the last sequence number of the last frame for the keyframe
   // that this frame indirectly references.
   auto seq_num_it = last_seq_num_gop_.upper_bound(frame->last_seq_num());
+  if (seq_num_it == last_seq_num_gop_.begin()) {
+    LOG(LS_WARNING) << "Generic frame with packet range ["
+                    << frame->first_seq_num() << ", " << frame->last_seq_num()
+                    << "] has no Gop, dropping frame.";
+    return;
+  }
   seq_num_it--;
 
   // Make sure the packet sequence numbers are continuous, otherwise stash
   // this frame.
+  uint16_t last_picture_id_gop = seq_num_it->second.first;
+  uint16_t last_picture_id_with_padding_gop = seq_num_it->second.second;
   if (frame->frame_type() == kVideoFrameDelta) {
-    if (seq_num_it->second !=
-        static_cast<uint16_t>(frame->first_seq_num() - 1)) {
+    uint16_t prev_seq_num = frame->first_seq_num() - 1;
+    if (prev_seq_num != last_picture_id_with_padding_gop) {
       stashed_frames_.emplace(std::move(frame));
       return;
     }
@@ -120,10 +167,14 @@ void RtpFrameReferenceFinder::ManageFrameGeneric(
   // picture id according to some incrementing counter.
   frame->picture_id = frame->last_seq_num();
   frame->num_references = frame->frame_type() == kVideoFrameDelta;
-  frame->references[0] = seq_num_it->second;
-  seq_num_it->second = frame->picture_id;
+  frame->references[0] = last_picture_id_gop;
+  if (AheadOf(frame->picture_id, last_picture_id_gop)) {
+    seq_num_it->second.first = frame->picture_id;
+    seq_num_it->second.second = frame->picture_id;
+  }
 
   last_picture_id_ = frame->picture_id;
+  UpdateLastPictureIdWithPadding(frame->picture_id);
   frame_callback_->OnCompleteFrame(std::move(frame));
   RetryStashedFrames();
 }

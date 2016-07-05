@@ -33,6 +33,7 @@ class RtpFrameReferenceFinder {
  public:
   explicit RtpFrameReferenceFinder(OnCompleteFrameCallback* frame_callback);
   void ManageFrame(std::unique_ptr<RtpFrameObject> frame);
+  void PaddingReceived(uint16_t seq_num);
 
  private:
   static const uint16_t kPicIdLength = 1 << 7;
@@ -41,8 +42,14 @@ class RtpFrameReferenceFinder {
   static const int kMaxStashedFrames = 10;
   static const int kMaxNotYetReceivedFrames = 20;
   static const int kMaxGofSaved = 15;
+  static const int kMaxPaddingAge = 100;
 
   rtc::CriticalSection crit_;
+
+  // Find the relevant group of pictures and update its "last-picture-id-with
+  // padding" sequence number.
+  void UpdateLastPictureIdWithPadding(uint16_t seq_num)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Retry finding references for all frames that previously didn't have
   // all information needed.
@@ -93,14 +100,24 @@ class RtpFrameReferenceFinder {
   // All picture ids are unwrapped to 16 bits.
   uint16_t UnwrapPictureId(uint16_t picture_id) EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  // Holds the last sequence number of the last frame that has been created
-  // given the last sequence number of a given keyframe.
-  std::map<uint16_t, uint16_t, DescendingSeqNumComp<uint16_t>> last_seq_num_gop_
-      GUARDED_BY(crit_);
+
+  // For every group of pictures, hold two sequence numbers. The first being
+  // the sequence number of the last packet of the last completed frame, and
+  // the second being the sequence number of the last packet of the last
+  // completed frame advanced by any potential continuous packets of padding.
+  std::map<uint16_t,
+           std::pair<uint16_t, uint16_t>,
+           DescendingSeqNumComp<uint16_t>>
+      last_seq_num_gop_ GUARDED_BY(crit_);
 
   // Save the last picture id in order to detect when there is a gap in frames
   // that have not yet been fully received.
   int last_picture_id_ GUARDED_BY(crit_);
+
+  // Padding packets that have been received but that are not yet continuous
+  // with any group of pictures.
+  std::set<uint16_t, DescendingSeqNumComp<uint16_t>> stashed_padding_
+      GUARDED_BY(crit_);
 
   // The last unwrapped picture id. Used to unwrap the picture id from a length
   // of |kPicIdLength| to 16 bits.
