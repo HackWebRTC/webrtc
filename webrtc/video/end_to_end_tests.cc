@@ -2473,7 +2473,14 @@ TEST_F(EndToEndTest, ReportsSetEncoderRates) {
     void PerformTest() override {
       ASSERT_TRUE(Wait())
           << "Timed out while waiting for encoder SetRates() call.";
-      // Wait for GetStats to report a corresponding bitrate.
+      WaitForEncoderTargetBitrateMatchStats();
+      send_stream_->Stop();
+      WaitForStatsReportZeroTargetBitrate();
+      send_stream_->Start();
+      WaitForEncoderTargetBitrateMatchStats();
+    }
+
+    void WaitForEncoderTargetBitrateMatchStats() {
       for (int i = 0; i < kDefaultTimeoutMs; ++i) {
         VideoSendStream::Stats stats = send_stream_->GetStats();
         {
@@ -2487,6 +2494,16 @@ TEST_F(EndToEndTest, ReportsSetEncoderRates) {
       }
       FAIL()
           << "Timed out waiting for stats reporting the currently set bitrate.";
+    }
+
+    void WaitForStatsReportZeroTargetBitrate() {
+      for (int i = 0; i < kDefaultTimeoutMs; ++i) {
+        if (send_stream_->GetStats().target_media_bitrate_bps == 0) {
+          return;
+        }
+        SleepMs(1);
+      }
+      FAIL() << "Timed out waiting for stats reporting zero bitrate.";
     }
 
    private:

@@ -48,8 +48,7 @@ class VideoEncoder;
 // 4. Call SetEncoder with the codec settings and the object that shall receive
 //    the encoded bit stream.
 // 5. For each available raw video frame call EncodeVideoFrame.
-class ViEEncoder : public VideoEncoderRateObserver,
-                   public EncodedImageCallback,
+class ViEEncoder : public EncodedImageCallback,
                    public VCMSendStatisticsCallback {
  public:
   friend class ViEBitrateObserver;
@@ -81,12 +80,6 @@ class ViEEncoder : public VideoEncoderRateObserver,
   // an encoded frame.
   int64_t time_of_last_frame_activity_ms();
 
-  // Implements VideoEncoderRateObserver.
-  // TODO(perkj): Refactor VideoEncoderRateObserver. This is only used for
-  // stats. The stats should be set in VideoSendStream instead.
-  // |bitrate_bps| is the target bitrate and |framerate| is the input frame
-  // rate so it has nothing to do with the actual encoder.
-  void OnSetRates(uint32_t bitrate_bps, int framerate) override;
 
   // Implements EncodedImageCallback.
   int32_t Encoded(const EncodedImage& encoded_image,

@@ -138,6 +138,7 @@ class VideoSendStream : public webrtc::VideoSendStream,
   rtc::CriticalSection encoder_settings_crit_;
   std::unique_ptr<EncoderSettings> pending_encoder_settings_
       GUARDED_BY(encoder_settings_crit_);
+  uint32_t encoder_max_bitrate_bps_ GUARDED_BY(encoder_settings_crit_);
 
   enum class State {
     kStopped,  // VideoSendStream::Start has not yet been called.

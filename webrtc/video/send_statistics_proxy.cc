@@ -418,7 +418,7 @@ void SendStatisticsProxy::OnInactiveSsrc(uint32_t ssrc) {
   stats->width = 0;
 }
 
-void SendStatisticsProxy::OnSetRates(uint32_t bitrate_bps, int framerate) {
+void SendStatisticsProxy::OnSetEncoderTargetRate(uint32_t bitrate_bps) {
   rtc::CritScope lock(&crit_);
   stats_.target_media_bitrate_bps = bitrate_bps;
 }

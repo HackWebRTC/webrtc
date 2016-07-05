@@ -72,20 +72,14 @@ class VideoCodingModule : public Module {
 
   enum ReceiverRobustness { kNone, kHardNack, kSoftNack, kReferenceSelection };
 
-  static VideoCodingModule* Create(
-      Clock* clock,
-      VideoEncoderRateObserver* encoder_rate_observer,
-      VCMQMSettingsCallback* qm_settings_callback);
+  static VideoCodingModule* Create(Clock* clock, EventFactory* event_factory);
 
   static VideoCodingModule* Create(
       Clock* clock,
-      VideoEncoderRateObserver* encoder_rate_observer,
       VCMQMSettingsCallback* qm_settings_callback,
       NackSender* nack_sender,
       KeyFrameRequestSender* keyframe_request_sender,
       EncodedImageCallback* pre_decode_image_callback);
-
-  static VideoCodingModule* Create(Clock* clock, EventFactory* event_factory);
 
   static VideoCodingModule* Create(
       Clock* clock,

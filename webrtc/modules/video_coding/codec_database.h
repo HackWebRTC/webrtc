@@ -44,8 +44,7 @@ struct VCMExtDecoderMapItem {
 
 class VCMCodecDataBase {
  public:
-  VCMCodecDataBase(VideoEncoderRateObserver* encoder_rate_observer,
-                   VCMEncodedFrameCallback* encoded_frame_callback);
+  explicit VCMCodecDataBase(VCMEncodedFrameCallback* encoded_frame_callback);
   ~VCMCodecDataBase();
 
   // Sender Side
@@ -154,7 +153,6 @@ class VCMCodecDataBase {
   uint8_t encoder_payload_type_;
   VideoEncoder* external_encoder_;
   bool internal_source_;
-  VideoEncoderRateObserver* const encoder_rate_observer_;
   VCMEncodedFrameCallback* const encoded_frame_callback_;
   std::unique_ptr<VCMGenericEncoder> ptr_encoder_;
   VCMGenericDecoder* ptr_decoder_;

@@ -23,11 +23,9 @@
 namespace webrtc {
 VCMGenericEncoder::VCMGenericEncoder(
     VideoEncoder* encoder,
-    VideoEncoderRateObserver* rate_observer,
     VCMEncodedFrameCallback* encoded_frame_callback,
     bool internal_source)
     : encoder_(encoder),
-      rate_observer_(rate_observer),
       vcm_encoded_frame_callback_(encoded_frame_callback),
       internal_source_(internal_source),
       encoder_params_({0, 0, 0, 0}),
@@ -102,10 +100,6 @@ void VCMGenericEncoder::SetEncoderParameters(const EncoderParameters& params) {
   if (rates_have_changed) {
     uint32_t target_bitrate_kbps = (params.target_bitrate + 500) / 1000;
     encoder_->SetRates(target_bitrate_kbps, params.input_frame_rate);
-    if (rate_observer_) {
-      rate_observer_->OnSetRates(params.target_bitrate,
-                                 params.input_frame_rate);
-    }
   }
 }
 

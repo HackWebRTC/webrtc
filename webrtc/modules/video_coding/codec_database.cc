@@ -90,7 +90,6 @@ VCMExtDecoderMapItem::VCMExtDecoderMapItem(
       external_decoder_instance(external_decoder_instance) {}
 
 VCMCodecDataBase::VCMCodecDataBase(
-    VideoEncoderRateObserver* encoder_rate_observer,
     VCMEncodedFrameCallback* encoded_frame_callback)
     : number_of_cores_(0),
       max_payload_size_(kDefaultPayloadSize),
@@ -101,7 +100,6 @@ VCMCodecDataBase::VCMCodecDataBase(
       encoder_payload_type_(0),
       external_encoder_(nullptr),
       internal_source_(false),
-      encoder_rate_observer_(encoder_rate_observer),
       encoded_frame_callback_(encoded_frame_callback),
       ptr_decoder_(nullptr),
       dec_map_(),
@@ -245,9 +243,8 @@ bool VCMCodecDataBase::SetSendCodec(const VideoCodec* send_codec,
   DeleteEncoder();
   RTC_DCHECK_EQ(encoder_payload_type_, send_codec_.plType)
       << "Encoder not registered for payload type " << send_codec_.plType;
-  ptr_encoder_.reset(
-      new VCMGenericEncoder(external_encoder_, encoder_rate_observer_,
-                            encoded_frame_callback_, internal_source_));
+  ptr_encoder_.reset(new VCMGenericEncoder(
+      external_encoder_, encoded_frame_callback_, internal_source_));
   encoded_frame_callback_->SetInternalSource(internal_source_);
   if (ptr_encoder_->InitEncode(&send_codec_, number_of_cores_,
                                max_payload_size_) < 0) {

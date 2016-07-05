@@ -35,7 +35,7 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
     : number_of_cores_(number_of_cores),
       sink_(sink),
       vp_(VideoProcessing::Create()),
-      video_sender_(Clock::GetRealTimeClock(), this, this, this),
+      video_sender_(Clock::GetRealTimeClock(), this, this),
       stats_proxy_(stats_proxy),
       overuse_detector_(overuse_detector),
       time_of_last_frame_activity_ms_(std::numeric_limits<int64_t>::max()),
@@ -191,11 +191,6 @@ void ViEEncoder::SendKeyFrame() {
 int64_t ViEEncoder::time_of_last_frame_activity_ms() {
   rtc::CritScope lock(&data_cs_);
   return time_of_last_frame_activity_ms_;
-}
-
-void ViEEncoder::OnSetRates(uint32_t bitrate_bps, int framerate) {
-  if (stats_proxy_)
-    stats_proxy_->OnSetRates(bitrate_bps, framerate);
 }
 
 int32_t ViEEncoder::Encoded(const EncodedImage& encoded_image,

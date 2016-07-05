@@ -58,7 +58,6 @@ class VideoSender : public Module {
 
   VideoSender(Clock* clock,
               EncodedImageCallback* post_encode_callback,
-              VideoEncoderRateObserver* encoder_rate_observer,
               VCMSendStatisticsCallback* send_stats_callback);
 
   ~VideoSender();

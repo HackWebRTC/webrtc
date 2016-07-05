@@ -36,7 +36,6 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
                             public StreamDataCountersCallback,
                             public BitrateStatisticsObserver,
                             public FrameCountObserver,
-                            public VideoEncoderRateObserver,
                             public SendSideDelayObserver {
  public:
   static const int kStatsTimeoutMs;
@@ -63,8 +62,8 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   // how stats are collected.
   void SetContentType(VideoEncoderConfig::ContentType content_type);
 
-  // Implements VideoEncoderRateObserver.
-  void OnSetRates(uint32_t bitrate_bps, int framerate) override;
+  // Used to update the encoder target rate.
+  void OnSetEncoderTargetRate(uint32_t bitrate_bps);
 
   // Implements CpuOveruseMetricsObserver.
   void OnEncodedFrameTimeMeasured(int encode_time_ms,

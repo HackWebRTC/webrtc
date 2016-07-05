@@ -26,14 +26,13 @@ namespace vcm {
 
 VideoSender::VideoSender(Clock* clock,
                          EncodedImageCallback* post_encode_callback,
-                         VideoEncoderRateObserver* encoder_rate_observer,
                          VCMSendStatisticsCallback* send_stats_callback)
     : clock_(clock),
       _encoder(nullptr),
       _mediaOpt(clock_),
       _encodedFrameCallback(post_encode_callback, &_mediaOpt),
       send_stats_callback_(send_stats_callback),
-      _codecDataBase(encoder_rate_observer, &_encodedFrameCallback),
+      _codecDataBase(&_encodedFrameCallback),
       frame_dropper_enabled_(true),
       _sendStatsTimer(1000, clock_),
       current_codec_(),
