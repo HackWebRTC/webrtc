@@ -25,7 +25,7 @@ if (is_android && !build_with_chromium) {
     android_manifest = "androidapp/AndroidManifest.xml"
 
     deps = [
-      ":AppRTCDemo_lib",
+      ":AppRTCDemo_javalib",
       ":AppRTCDemo_resources",
       "//base:base_java",
       "//webrtc/base:base_java",
@@ -34,7 +34,7 @@ if (is_android && !build_with_chromium) {
     shared_libraries = [ "//webrtc/api:libjingle_peerconnection_so" ]
   }
 
-  android_library("AppRTCDemo_lib") {
+  android_library("AppRTCDemo_javalib") {
     java_files = [
       "androidapp/src/org/appspot/apprtc/AppRTCAudioManager.java",
       "androidapp/src/org/appspot/apprtc/AppRTCClient.java",
@@ -82,7 +82,7 @@ if (is_android && !build_with_chromium) {
     apk_under_test = ":AppRTCDemo"
 
     deps = [
-      ":AppRTCDemo_lib",
+      ":AppRTCDemo_javalib",
       "//webrtc/api:libjingle_peerconnection_java",
     ]
   }
@@ -95,7 +95,7 @@ if (is_android && !build_with_chromium) {
     ]
 
     deps = [
-      ":AppRTCDemo_lib",
+      ":AppRTCDemo_javalib",
       "//webrtc/api:libjingle_peerconnection_java",
       "//webrtc/api:libjingle_peerconnection_jni",
     ]
