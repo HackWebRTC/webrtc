@@ -359,15 +359,18 @@ TEST(RtcpPacketTest, TransportFeedback_Limits) {
   // Sequence number wrap above 0x8000.
   std::unique_ptr<TransportFeedback> packet(new TransportFeedback());
   packet->WithBase(0, 0);
+  EXPECT_TRUE(packet->WithReceivedPacket(0x0, 0));
   EXPECT_TRUE(packet->WithReceivedPacket(0x8000, 1000));
 
   packet.reset(new TransportFeedback());
   packet->WithBase(0, 0);
+  EXPECT_TRUE(packet->WithReceivedPacket(0x0, 0));
   EXPECT_FALSE(packet->WithReceivedPacket(0x8000 + 1, 1000));
 
   // Packet status count max 0xFFFF.
   packet.reset(new TransportFeedback());
   packet->WithBase(0, 0);
+  EXPECT_TRUE(packet->WithReceivedPacket(0x0, 0));
   EXPECT_TRUE(packet->WithReceivedPacket(0x8000, 1000));
   EXPECT_TRUE(packet->WithReceivedPacket(0xFFFF, 2000));
   EXPECT_FALSE(packet->WithReceivedPacket(0, 3000));

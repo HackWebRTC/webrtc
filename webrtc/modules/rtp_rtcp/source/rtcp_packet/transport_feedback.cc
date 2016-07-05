@@ -317,7 +317,11 @@ void TransportFeedback::WithBase(uint16_t base_sequence,
   RTC_DCHECK_EQ(-1, base_seq_);
   RTC_DCHECK_NE(-1, ref_timestamp_us);
   base_seq_ = base_sequence;
-  last_seq_ = base_sequence;
+  // last_seq_ is the sequence number of the last packed added _before_ a call
+  // to WithReceivedPacket(). Since the first sequence to be added is
+  // base_sequence, we need this to be one lower in order for potential missing
+  // packets to be populated properly.
+  last_seq_ = base_sequence - 1;
   base_time_ = ref_timestamp_us / kBaseScaleFactor;
   last_timestamp_ = base_time_ * kBaseScaleFactor;
 }

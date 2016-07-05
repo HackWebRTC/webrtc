@@ -19,6 +19,7 @@
 using ::testing::_;
 using ::testing::InSequence;
 using ::testing::Invoke;
+using ::testing::Return;
 
 namespace webrtc {
 
@@ -101,6 +102,40 @@ TEST_F(RemoteEstimatorProxyTest, DuplicatedPackets) {
         std::vector<int64_t> delta_vec = packet->GetReceiveDeltasUs();
         EXPECT_EQ(1u, delta_vec.size());
         EXPECT_EQ(kBaseTimeMs, (packet->GetBaseTimeUs() + delta_vec[0]) / 1000);
+        return true;
+      }));
+
+  Process();
+}
+
+TEST_F(RemoteEstimatorProxyTest, FeedbackWithMissingStart) {
+  // First feedback.
+  IncomingPacket(kBaseSeq, kBaseTimeMs);
+  IncomingPacket(kBaseSeq + 1, kBaseTimeMs + 1000);
+  EXPECT_CALL(router_, SendFeedback(_)).Times(1).WillOnce(Return(true));
+  Process();
+
+  // Second feedback starts with a missing packet (DROP kBaseSeq + 2).
+  IncomingPacket(kBaseSeq + 3, kBaseTimeMs + 3000);
+
+  EXPECT_CALL(router_, SendFeedback(_))
+      .Times(1)
+      .WillOnce(Invoke([this](rtcp::TransportFeedback* packet) {
+        packet->Build();
+        EXPECT_EQ(kBaseSeq + 2, packet->GetBaseSequence());
+        EXPECT_EQ(kMediaSsrc, packet->GetMediaSourceSsrc());
+
+        std::vector<rtcp::TransportFeedback::StatusSymbol> status_vec =
+            packet->GetStatusVector();
+        EXPECT_EQ(2u, status_vec.size());
+        EXPECT_EQ(rtcp::TransportFeedback::StatusSymbol::kNotReceived,
+                  status_vec[0]);
+        EXPECT_EQ(rtcp::TransportFeedback::StatusSymbol::kReceivedSmallDelta,
+                  status_vec[1]);
+        std::vector<int64_t> delta_vec = packet->GetReceiveDeltasUs();
+        EXPECT_EQ(1u, delta_vec.size());
+        EXPECT_EQ(kBaseTimeMs + 3000,
+                  (packet->GetBaseTimeUs() + delta_vec[0]) / 1000);
         return true;
       }));
 

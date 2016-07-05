@@ -91,8 +91,8 @@ void RemoteEstimatorProxy::OnPacketArrival(uint16_t sequence_number,
                                            int64_t arrival_time) {
   int64_t seq = unwrapper_.Unwrap(sequence_number);
 
-  if (window_start_seq_ == -1) {
-    window_start_seq_ = seq;
+  if (packet_arrival_times_.lower_bound(window_start_seq_) ==
+      packet_arrival_times_.end()) {
     // Start new feedback packet, cull old packets.
     for (auto it = packet_arrival_times_.begin();
          it != packet_arrival_times_.end() && it->first < seq &&
@@ -101,6 +101,10 @@ void RemoteEstimatorProxy::OnPacketArrival(uint16_t sequence_number,
       ++it;
       packet_arrival_times_.erase(delete_it);
     }
+  }
+
+  if (window_start_seq_ == -1) {
+    window_start_seq_ = sequence_number;
   } else if (seq < window_start_seq_) {
     window_start_seq_ = seq;
   }
@@ -114,20 +118,24 @@ void RemoteEstimatorProxy::OnPacketArrival(uint16_t sequence_number,
 
 bool RemoteEstimatorProxy::BuildFeedbackPacket(
     rtcp::TransportFeedback* feedback_packet) {
-  rtc::CritScope cs(&lock_);
-  if (window_start_seq_ == -1)
-    return false;
-
   // window_start_seq_ is the first sequence number to include in the current
   // feedback packet. Some older may still be in the map, in case a reordering
   // happens and we need to retransmit them.
-  auto it = packet_arrival_times_.find(window_start_seq_);
-  RTC_DCHECK(it != packet_arrival_times_.end());
+  rtc::CritScope cs(&lock_);
+  auto it = packet_arrival_times_.lower_bound(window_start_seq_);
+  if (it == packet_arrival_times_.end()) {
+    // Feedback for all packets already sent.
+    return false;
+  }
 
   // TODO(sprang): Measure receive times in microseconds and remove the
   // conversions below.
+  const int64_t first_sequence = it->first;
   feedback_packet->WithMediaSourceSsrc(media_ssrc_);
-  feedback_packet->WithBase(static_cast<uint16_t>(it->first & 0xFFFF),
+  // Base sequence is the expected next (window_start_seq_). This is known, but
+  // we might not have actually received it, so the base time shall be the time
+  // of the first received packet in the feedback.
+  feedback_packet->WithBase(static_cast<uint16_t>(window_start_seq_ & 0xFFFF),
                             it->second * 1000);
   feedback_packet->WithFeedbackSequenceNumber(feedback_sequence_++);
   for (; it != packet_arrival_times_.end(); ++it) {
@@ -135,19 +143,18 @@ bool RemoteEstimatorProxy::BuildFeedbackPacket(
             static_cast<uint16_t>(it->first & 0xFFFF), it->second * 1000)) {
       // If we can't even add the first seq to the feedback packet, we won't be
       // able to build it at all.
-      RTC_CHECK_NE(window_start_seq_, it->first);
+      RTC_CHECK_NE(first_sequence, it->first);
 
       // Could not add timestamp, feedback packet might be full. Return and
       // try again with a fresh packet.
-      window_start_seq_ = it->first;
       break;
     }
+
     // Note: Don't erase items from packet_arrival_times_ after sending, in case
     // they need to be re-sent after a reordering. Removal will be handled
     // by OnPacketArrival once packets are too old.
+    window_start_seq_ = it->first + 1;
   }
-  if (it == packet_arrival_times_.end())
-    window_start_seq_ = -1;
 
   return true;
 }
