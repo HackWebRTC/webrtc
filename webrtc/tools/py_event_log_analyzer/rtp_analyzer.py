@@ -12,6 +12,7 @@ from __future__ import division
 from __future__ import print_function
 
 import collections
+import optparse
 import sys
 
 import matplotlib.pyplot as plt
@@ -44,6 +45,15 @@ class RTPStatistics(object):
     self.ssrc_size_table = misc.ssrc_normalized_size_table(self.data_points)
     self.bandwidth_kbps = None
     self.smooth_bw_kbps = None
+
+  def print_header_statistics(self):
+    print("{:>6}{:>11}{:>11}{:>6}{:>6}{:>3}{:>11}".format(
+        "SeqNo", "TimeStamp", "SendTime", "Size", "PT", "M", "SSRC"))
+    for point in self.data_points:
+      print("{:>6}{:>11}{:>11}{:>6}{:>6}{:>3}{:>11}".format(
+          point.sequence_number, point.timestamp,
+          int(point.arrival_timestamp_ms), point.size, point.payload_type,
+          point.marker_bit, "0x{:x}".format(point.ssrc)))
 
   def print_ssrc_info(self, ssrc_id, ssrc):
     """Prints packet and size statistics for a given SSRC.
@@ -116,9 +126,12 @@ class RTPStatistics(object):
   def print_sequence_number_statistics(self):
     seq_no_set = set(point.sequence_number for point in
                      self.data_points)
-    print("Missing sequence numbers: {} out of {}".format(
-        max(seq_no_set) - min(seq_no_set) + 1 - len(seq_no_set),
-        len(seq_no_set)
+    missing_sequence_numbers = max(seq_no_set) - min(seq_no_set) + (
+        1 - len(seq_no_set))
+    print("Missing sequence numbers: {} out of {}  ({:.2f}%)".format(
+        missing_sequence_numbers,
+        len(seq_no_set),
+        100 * missing_sequence_numbers / len(seq_no_set)
     ))
     print("Duplicated packets: {}".format(len(self.data_points) -
                                           len(seq_no_set)))
@@ -126,7 +139,7 @@ class RTPStatistics(object):
         misc.count_reordered([point.sequence_number for point in
                               self.data_points])))
 
-  def estimate_frequency(self):
+  def estimate_frequency(self, always_query_sample_rate):
     """Estimates frequency and updates data.
 
     Guesses the most probable frequency by looking at changes in
@@ -146,10 +159,11 @@ class RTPStatistics(object):
       if abs((freq_est - f) / f) < 0.05:
         freq = f
 
-    print("Estimated frequency: {}kHz".format(freq_est))
-    if freq is None:
-      freq = int(misc.get_input(
-          "Frequency could not be guessed. Input frequency (in kHz)> "))
+    print("Estimated frequency: {:.3f}kHz".format(freq_est))
+    if freq is None or always_query_sample_rate:
+      if not always_query_sample_rate:
+        print ("Frequency could not be guessed.", end=" ")
+      freq = int(misc.get_input("Input frequency (in kHz)> "))
     else:
       print("Guessed frequency: {}kHz".format(freq))
 
@@ -238,19 +252,37 @@ class RTPStatistics(object):
 
 
 def main():
-  if len(sys.argv) < 2:
-    print("Usage: python rtp_analyzer.py <filename of rtc event log>")
+  usage = "Usage: %prog [options] <filename of rtc event log>"
+  parser = optparse.OptionParser(usage=usage)
+  parser.add_option("--dump_header_to_stdout",
+                    default=False, action="store_true",
+                    help="print header info to stdout; similar to rtp_analyze")
+  parser.add_option("--query_sample_rate",
+                    default=False, action="store_true",
+                    help="always query user for real sample rate")
+
+  (options, args) = parser.parse_args()
+
+  if len(args) < 1:
+    parser.print_help()
     sys.exit(0)
 
-  data_points = pb_parse.parse_protobuf(sys.argv[1])
+  data_points = pb_parse.parse_protobuf(args[0])
   rtp_stats = RTPStatistics(data_points)
+
+  if options.dump_header_to_stdout:
+    print("Printing header info to stdout.", file=sys.stderr)
+    rtp_stats.print_header_statistics()
+    sys.exit(0)
+
   chosen_ssrc = rtp_stats.choose_ssrc()
   print("Chosen SSRC: 0X{:X}".format(chosen_ssrc))
 
   rtp_stats.filter_ssrc(chosen_ssrc)
+
   print("Statistics:")
   rtp_stats.print_sequence_number_statistics()
-  rtp_stats.estimate_frequency()
+  rtp_stats.estimate_frequency(options.query_sample_rate)
   rtp_stats.print_duration_statistics()
   rtp_stats.remove_reordered()
   rtp_stats.compute_bandwidth()

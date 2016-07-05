@@ -12,11 +12,17 @@ is enough.
 
 After building, run the tool as follows:
 
-    ./out/my_build/rtp_analyzer.sh <rtc event log>
+    ./out/my_build/rtp_analyzer.sh [options] <rtc event log>
 
 where <rtc event log> is a recorded RTC event log, which is stored in
 protobuf format. Such logs are generated in multiple ways, e.g. by
 Chrome through the chrome://webrtc-internals page.
+
+Options:
+  -h, --help            show this help message and exit
+  --dump_header_to_stdout
+                        print header info to stdout; similar to rtp_analyze
+  --query_sample_rate   always query user for real sample rate
 
 The script has been tested to work in python versions 3.4.1 and 2.7.6,
 but should work in all python versions.

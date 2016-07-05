@@ -28,6 +28,7 @@ class DataPoint(object):
     (first2header_bytes, self.sequence_number, self.timestamp,
      self.ssrc) = header
     self.payload_type = first2header_bytes & 0b01111111
+    self.marker_bit = (first2header_bytes & 0b10000000) >> 7
 
 
 def parse_protobuf(file_path):
