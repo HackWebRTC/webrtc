@@ -83,7 +83,7 @@ static bool GetGestalt(OSType ostype, int* value) {
   return false;
 }
 
-bool GetOSVersion(int* major, int* minor, int* bugfix) {
+static bool GetOSVersion(int* major, int* minor, int* bugfix) {
   ASSERT(major && minor && bugfix);
   if (!GetGestalt(gestaltSystemVersion, major)) {
     return false;

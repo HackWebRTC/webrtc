@@ -43,7 +43,6 @@ enum MacOSVersionName {
   kMacOSNewer,         // 10.10+
 };
 
-bool GetOSVersion(int* major, int* minor, int* bugfix);
 MacOSVersionName GetOSVersionName();
 bool GetQuickTimeVersion(std::string* version);
 
