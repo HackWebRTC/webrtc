@@ -28,7 +28,7 @@ class AudioDeviceBuffer {
   AudioDeviceBuffer();
   virtual ~AudioDeviceBuffer();
 
-  void SetId(uint32_t id);
+  void SetId(uint32_t id) {};
   int32_t RegisterAudioCallback(AudioTransport* audioCallback);
 
   int32_t InitPlayout();
@@ -63,7 +63,6 @@ class AudioDeviceBuffer {
   int32_t SetTypingStatus(bool typingStatus);
 
  private:
-  int32_t _id;
   CriticalSectionWrapper& _critSect;
   CriticalSectionWrapper& _critSectCb;
 
