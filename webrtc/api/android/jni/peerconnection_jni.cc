@@ -1319,24 +1319,6 @@ JOW(void, PeerConnectionFactory_nativeStopAecDump)(
   factory->StopAecDump();
 }
 
-JOW(jboolean, PeerConnectionFactory_nativeStartRtcEventLog)
-(JNIEnv* jni,
- jclass,
- jlong native_factory,
- jint file,
- jint filesize_limit_bytes) {
-  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
-      factoryFromJava(native_factory));
-  return factory->StartRtcEventLog(file, filesize_limit_bytes);
-}
-
-JOW(void, PeerConnectionFactory_nativeStopRtcEventLog)(
-    JNIEnv* jni, jclass, jlong native_factory) {
-  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
-      factoryFromJava(native_factory));
-  factory->StopRtcEventLog();
-}
-
 JOW(void, PeerConnectionFactory_nativeSetOptions)(
     JNIEnv* jni, jclass, jlong native_factory, jobject options) {
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
@@ -1912,6 +1894,16 @@ JOW(bool, PeerConnection_nativeGetStats)(
       observer,
       reinterpret_cast<MediaStreamTrackInterface*>(native_track),
       PeerConnectionInterface::kStatsOutputLevelStandard);
+}
+
+JOW(bool, PeerConnection_nativeStartRtcEventLog)(
+    JNIEnv* jni, jobject j_pc, int file_descriptor, int max_size_bytes) {
+  return ExtractNativePC(jni, j_pc)->StartRtcEventLog(file_descriptor,
+                                                      max_size_bytes);
+}
+
+JOW(void, PeerConnection_nativeStopRtcEventLog)(JNIEnv* jni, jobject j_pc) {
+  ExtractNativePC(jni, j_pc)->StopRtcEventLog();
 }
 
 JOW(jobject, PeerConnection_signalingState)(JNIEnv* jni, jobject j_pc) {
