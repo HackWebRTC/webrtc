@@ -10,18 +10,17 @@
 
 package org.appspot.apprtc.test;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
 import org.appspot.apprtc.AppRTCClient.SignalingParameters;
 import org.appspot.apprtc.PeerConnectionClient;
 import org.appspot.apprtc.PeerConnectionClient.PeerConnectionEvents;
 import org.appspot.apprtc.PeerConnectionClient.PeerConnectionParameters;
+
+import android.os.Build;
+import android.test.InstrumentationTestCase;
+import android.test.suitebuilder.annotation.SmallTest;
+import android.util.Log;
+
+import org.webrtc.Camera2Enumerator;
 import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaCodecVideoEncoder;
@@ -31,10 +30,13 @@ import org.webrtc.SessionDescription;
 import org.webrtc.StatsReport;
 import org.webrtc.VideoRenderer;
 
-import android.os.Build;
-import android.test.InstrumentationTestCase;
-import android.test.suitebuilder.annotation.SmallTest;
-import android.util.Log;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class PeerConnectionClientTest extends InstrumentationTestCase
     implements PeerConnectionEvents {
@@ -254,7 +256,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
     options.disableNetworkMonitor = true;
     client.setPeerConnectionFactoryOptions(options);
     client.createPeerConnectionFactory(
-        getInstrumentation().getContext(), peerConnectionParameters, this);
+        getInstrumentation().getTargetContext(), peerConnectionParameters, this);
     client.createPeerConnection(eglContext, localRenderer, remoteRenderer, signalingParameters);
     client.createOffer();
     return client;
@@ -267,6 +269,7 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
             true, /* loopback */
             false, /* tracing */
             // Video codec parameters.
+            true, /* useCamera2 */
             0, /* videoWidth */
             0, /* videoHeight */
             0, /* videoFps */
@@ -286,12 +289,15 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
 
   private PeerConnectionParameters createParametersForVideoCall(
       String videoCodec, boolean captureToTexture) {
+    final boolean useCamera2 = captureToTexture && Camera2Enumerator.isSupported();
+
     PeerConnectionParameters peerConnectionParameters =
         new PeerConnectionParameters(
             true, /* videoCallEnabled */
             true, /* loopback */
             false, /* tracing */
             // Video codec parameters.
+            useCamera2, /* useCamera2 */
             0, /* videoWidth */
             0, /* videoHeight */
             0, /* videoFps */

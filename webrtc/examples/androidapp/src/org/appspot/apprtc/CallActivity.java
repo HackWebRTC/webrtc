@@ -10,6 +10,11 @@
 
 package org.appspot.apprtc;
 
+import org.appspot.apprtc.AppRTCClient.RoomConnectionParameters;
+import org.appspot.apprtc.AppRTCClient.SignalingParameters;
+import org.appspot.apprtc.PeerConnectionClient.PeerConnectionParameters;
+import org.appspot.apprtc.util.LooperExecutor;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.FragmentTransaction;
@@ -25,10 +30,7 @@ import android.view.Window;
 import android.view.WindowManager.LayoutParams;
 import android.widget.Toast;
 
-import org.appspot.apprtc.AppRTCClient.RoomConnectionParameters;
-import org.appspot.apprtc.AppRTCClient.SignalingParameters;
-import org.appspot.apprtc.PeerConnectionClient.PeerConnectionParameters;
-import org.appspot.apprtc.util.LooperExecutor;
+import org.webrtc.Camera2Enumerator;
 import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
 import org.webrtc.PeerConnectionFactory;
@@ -52,6 +54,8 @@ public class CallActivity extends Activity
       "org.appspot.apprtc.LOOPBACK";
   public static final String EXTRA_VIDEO_CALL =
       "org.appspot.apprtc.VIDEO_CALL";
+  public static final String EXTRA_CAMERA2 =
+      "org.appspot.apprtc.CAMERA2";
   public static final String EXTRA_VIDEO_WIDTH =
       "org.appspot.apprtc.VIDEO_WIDTH";
   public static final String EXTRA_VIDEO_HEIGHT =
@@ -219,12 +223,18 @@ public class CallActivity extends Activity
       finish();
       return;
     }
+
     boolean loopback = intent.getBooleanExtra(EXTRA_LOOPBACK, false);
     boolean tracing = intent.getBooleanExtra(EXTRA_TRACING, false);
+
+    boolean useCamera2 = Camera2Enumerator.isSupported()
+        && intent.getBooleanExtra(EXTRA_CAMERA2, true);
+
     peerConnectionParameters = new PeerConnectionParameters(
         intent.getBooleanExtra(EXTRA_VIDEO_CALL, true),
         loopback,
         tracing,
+        useCamera2,
         intent.getIntExtra(EXTRA_VIDEO_WIDTH, 0),
         intent.getIntExtra(EXTRA_VIDEO_HEIGHT, 0),
         intent.getIntExtra(EXTRA_VIDEO_FPS, 0),

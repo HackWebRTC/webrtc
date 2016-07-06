@@ -9,16 +9,14 @@
     </string>
     <string name="favorites">Favorites</string>
     <string name="no_favorites">No favorites</string>
-    <string name="add_favorite_title">Add favorite</string>
     <string name="invalid_url_title">Invalid URL</string>
     <string name="invalid_url_text">The URL or room name you entered resulted in an invalid URL: %1$s
     </string>
     <string name="channel_error_title">Connection error</string>
     <string name="connecting_to">Connecting to: %1$s</string>
     <string name="missing_url">FATAL ERROR: Missing URL to connect to.</string>
+    <string name="camera2_texture_only_error">Camera2 only supports capturing to texture. Either disable Camera2 or enable capturing to texture in the options.</string>
     <string name="ok">OK</string>
-    <string name="add">Add</string>
-    <string name="cancel">Cancel</string>
     <string name="switch_camera">Switch front/back camera</string>
     <string name="capture_format_change_text">Slide to change capture format</string>
     <string name="muted">Muted</string>
@@ -40,6 +38,11 @@
     <string name="pref_videocall_title">Video call.</string>
     <string name="pref_videocall_dlg">Enable video in a call.</string>
     <string name="pref_videocall_default">true</string>
+
+    <string name="pref_camera2_key">camera2_preference</string>
+    <string name="pref_camera2_title">Use Camera2.</string>
+    <string name="pref_camera2_default">true</string>
+    <string name="pref_camera2_not_supported">Only supported on Android Lollipop and forward.</string>
 
     <string name="pref_resolution_key">resolution_preference</string>
     <string name="pref_resolution_title">Video resolution.</string>
@@ -79,7 +82,7 @@
     <string name="pref_capturetotexture_key">capturetotexture_preference</string>
     <string name="pref_capturetotexture_title">Video capture to surface texture.</string>
     <string name="pref_capturetotexture_dlg">Capture video to textures (if available).</string>
-    <string name="pref_capturetotexture_default">false</string>
+    <string name="pref_capturetotexture_default">true</string>
 
     <string name="pref_value_enabled">Enabled</string>
     <string name="pref_value_disabled">Disabled</string>
@@ -140,5 +143,4 @@
     <string name="pref_tracing_title">Debug performance tracing.</string>
     <string name="pref_tracing_dlg">Debug performance tracing.</string>
     <string name="pref_tracing_default" translatable="false">false</string>
-
 </resources>

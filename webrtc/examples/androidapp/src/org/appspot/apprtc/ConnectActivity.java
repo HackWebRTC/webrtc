@@ -55,6 +55,7 @@ public class ConnectActivity extends Activity {
   private ListView roomListView;
   private SharedPreferences sharedPref;
   private String keyprefVideoCallEnabled;
+  private String keyprefCamera2;
   private String keyprefResolution;
   private String keyprefFps;
   private String keyprefCaptureQualitySlider;
@@ -86,6 +87,7 @@ public class ConnectActivity extends Activity {
     PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
     sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
     keyprefVideoCallEnabled = getString(R.string.pref_videocall_key);
+    keyprefCamera2 = getString(R.string.pref_camera2_key);
     keyprefResolution = getString(R.string.pref_resolution_key);
     keyprefFps = getString(R.string.pref_fps_key);
     keyprefCaptureQualitySlider = getString(R.string.pref_capturequalityslider_key);
@@ -259,6 +261,10 @@ public class ConnectActivity extends Activity {
     boolean videoCallEnabled = sharedPref.getBoolean(keyprefVideoCallEnabled,
         Boolean.valueOf(getString(R.string.pref_videocall_default)));
 
+    // Use Camera2 option.
+    boolean useCamera2 = sharedPref.getBoolean(keyprefCamera2,
+        Boolean.valueOf(getString(R.string.pref_camera2_default)));
+
     // Get default codecs.
     String videoCodec = sharedPref.getString(keyprefVideoCodec,
         getString(R.string.pref_videocodec_default));
@@ -364,6 +370,7 @@ public class ConnectActivity extends Activity {
       intent.putExtra(CallActivity.EXTRA_ROOMID, roomId);
       intent.putExtra(CallActivity.EXTRA_LOOPBACK, loopback);
       intent.putExtra(CallActivity.EXTRA_VIDEO_CALL, videoCallEnabled);
+      intent.putExtra(CallActivity.EXTRA_CAMERA2, useCamera2);
       intent.putExtra(CallActivity.EXTRA_VIDEO_WIDTH, videoWidth);
       intent.putExtra(CallActivity.EXTRA_VIDEO_HEIGHT, videoHeight);
       intent.putExtra(CallActivity.EXTRA_VIDEO_FPS, cameraFps);
