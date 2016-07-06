@@ -7,8 +7,9 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 import("//build/config/features.gni")
-import("//testing/test.gni")
+import("//build_overrides/webrtc.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
+import("//testing/test.gni")
 
 static_library("webrtc_fuzzer_main") {
   public_configs = [ "../..:common_inherited_config" ]
@@ -174,4 +175,18 @@ webrtc_fuzzer_test("audio_decoder_opus_redundant_fuzzer") {
     ":audio_decoder_fuzzer",
     "../../modules/audio_coding:webrtc_opus",
   ]
+}
+
+# TODO(katrielc) Enable in Chromium when CL 2022833002 lands.
+# Although the dependency on media compiles in standalone, it is
+# flagged by gn check, so breaks when rolled into Chromium.
+if (!build_with_chromium) {
+  webrtc_fuzzer_test("turn_unwrap_fuzzer") {
+    sources = [
+      "turn_unwrap_fuzzer.cc",
+    ]
+    deps = [
+      "../../media:media",
+    ]
+  }
 }
