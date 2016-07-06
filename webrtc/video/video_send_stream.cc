@@ -589,6 +589,16 @@ void VideoSendStream::EncoderProcess() {
       current_encoder_settings_->video_codec.startBitrate = std::max(
           bitrate_allocator_->GetStartBitrate(this) / 1000,
           static_cast<int>(current_encoder_settings_->video_codec.minBitrate));
+
+      if (state_ == State::kStarted) {
+        bitrate_allocator_->AddObserver(
+            this, current_encoder_settings_->video_codec.minBitrate * 1000,
+            current_encoder_settings_->video_codec.maxBitrate * 1000,
+            CalulcateMaxPadBitrateBps(current_encoder_settings_->config,
+                                      config_.suspend_below_min_bitrate),
+            !config_.suspend_below_min_bitrate);
+      }
+
       payload_router_.SetSendStreams(current_encoder_settings_->config.streams);
       vie_encoder_.SetEncoder(current_encoder_settings_->video_codec,
                               payload_router_.MaxPayloadLength());

@@ -92,8 +92,9 @@ class Call {
   };
 
   struct Stats {
-    int send_bandwidth_bps = 0;
-    int recv_bandwidth_bps = 0;
+    int send_bandwidth_bps = 0;       // Estimated available send bandwidth.
+    int max_padding_bitrate_bps = 0;  // Cumulative configured max padding.
+    int recv_bandwidth_bps = 0;       // Estimated available receive bandwidth.
     int64_t pacer_delay_ms = 0;
     int64_t rtt_ms = -1;
   };

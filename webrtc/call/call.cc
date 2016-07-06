@@ -189,6 +189,7 @@ class Call : public webrtc::Call,
   int64_t pacer_bitrate_sum_kbits_ GUARDED_BY(&bitrate_crit_);
   uint32_t min_allocated_send_bitrate_bps_ GUARDED_BY(&bitrate_crit_);
   int64_t num_bitrate_updates_ GUARDED_BY(&bitrate_crit_);
+  uint32_t configured_max_padding_bitrate_bps_ GUARDED_BY(&bitrate_crit_);
 
   std::map<std::string, rtc::NetworkRoute> network_routes_;
 
@@ -229,6 +230,8 @@ Call::Call(const Call::Config& config)
       pacer_bitrate_sum_kbits_(0),
       min_allocated_send_bitrate_bps_(0),
       num_bitrate_updates_(0),
+      configured_max_padding_bitrate_bps_(0),
+
       remb_(clock_),
       congestion_controller_(
           new CongestionController(clock_, this, &remb_, event_log_.get())),
@@ -552,6 +555,10 @@ Call::Stats Call::GetStats() const {
   stats.recv_bandwidth_bps = recv_bandwidth;
   stats.pacer_delay_ms = congestion_controller_->GetPacerQueuingDelayMs();
   stats.rtt_ms = call_stats_->rtcp_rtt_stats()->LastProcessedRtt();
+  {
+    rtc::CritScope cs(&bitrate_crit_);
+    stats.max_padding_bitrate_bps = configured_max_padding_bitrate_bps_;
+  }
   return stats;
 }
 
@@ -714,6 +721,7 @@ void Call::OnAllocationLimitsChanged(uint32_t min_send_bitrate_bps,
       min_send_bitrate_bps, max_padding_bitrate_bps);
   rtc::CritScope lock(&bitrate_crit_);
   min_allocated_send_bitrate_bps_ = min_send_bitrate_bps;
+  configured_max_padding_bitrate_bps_ = max_padding_bitrate_bps;
 }
 
 void Call::ConfigureSync(const std::string& sync_group) {

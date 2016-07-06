@@ -1121,6 +1121,97 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
   RunBaseTest(&test);
 }
 
+class MaxPaddingSetTest : public test::SendTest {
+ public:
+  static const uint32_t kMinTransmitBitrateBps = 400000;
+  static const uint32_t kActualEncodeBitrateBps = 40000;
+  static const uint32_t kMinPacketsToSend = 50;
+
+  explicit MaxPaddingSetTest(bool test_switch_content_type)
+      : SendTest(test::CallTest::kDefaultTimeoutMs),
+        call_(nullptr),
+        send_stream_(nullptr),
+        packets_sent_(0),
+        running_without_padding_(test_switch_content_type) {}
+
+  void OnVideoStreamsCreated(
+      VideoSendStream* send_stream,
+      const std::vector<VideoReceiveStream*>& receive_streams) override {
+    send_stream_ = send_stream;
+  }
+
+  void ModifyVideoConfigs(
+      VideoSendStream::Config* send_config,
+      std::vector<VideoReceiveStream::Config>* receive_configs,
+      VideoEncoderConfig* encoder_config) override {
+    RTC_DCHECK_EQ(1u, encoder_config->streams.size());
+    if (running_without_padding_) {
+      encoder_config->min_transmit_bitrate_bps = 0;
+      encoder_config->content_type =
+          VideoEncoderConfig::ContentType::kRealtimeVideo;
+    } else {
+      encoder_config->min_transmit_bitrate_bps = kMinTransmitBitrateBps;
+      encoder_config->content_type = VideoEncoderConfig::ContentType::kScreen;
+    }
+    encoder_config_ = *encoder_config;
+  }
+
+  void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
+    call_ = sender_call;
+  }
+
+  Action OnSendRtp(const uint8_t* packet, size_t length) override {
+    rtc::CritScope lock(&crit_);
+
+    if (running_without_padding_)
+      EXPECT_EQ(0, call_->GetStats().max_padding_bitrate_bps);
+
+    // Wait until at least kMinPacketsToSend frames have been encoded, so that
+    // we have reliable data.
+    if (++packets_sent_ < kMinPacketsToSend)
+      return SEND_PACKET;
+
+    if (running_without_padding_) {
+      // We've sent kMinPacketsToSend packets with default configuration, switch
+      // to enabling screen content and setting min transmit bitrate.
+      packets_sent_ = 0;
+      encoder_config_.min_transmit_bitrate_bps = kMinTransmitBitrateBps;
+      encoder_config_.content_type = VideoEncoderConfig::ContentType::kScreen;
+      send_stream_->ReconfigureVideoEncoder(encoder_config_);
+      running_without_padding_ = false;
+      return SEND_PACKET;
+    }
+
+    // Make sure the pacer has been configured with a min transmit bitrate.
+    if (call_->GetStats().max_padding_bitrate_bps > 0)
+      observation_complete_.Set();
+
+    return SEND_PACKET;
+  }
+
+  void PerformTest() override {
+    ASSERT_TRUE(Wait()) << "Timed out waiting for a valid padding bitrate.";
+  }
+
+ private:
+  rtc::CriticalSection crit_;
+  Call* call_;
+  VideoSendStream* send_stream_;
+  VideoEncoderConfig encoder_config_;
+  uint32_t packets_sent_ GUARDED_BY(crit_);
+  bool running_without_padding_;
+};
+
+TEST_F(VideoSendStreamTest, RespectsMinTransmitBitrate) {
+  MaxPaddingSetTest test(false);
+  RunBaseTest(&test);
+}
+
+TEST_F(VideoSendStreamTest, RespectsMinTransmitBitrateAfterContentSwitch) {
+  MaxPaddingSetTest test(true);
+  RunBaseTest(&test);
+}
+
 TEST_F(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
   class StartBitrateObserver : public test::FakeEncoder {
    public:
