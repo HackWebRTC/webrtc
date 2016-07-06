@@ -129,18 +129,6 @@ MacOSVersionName GetOSVersionName() {
   return kMacOSNewer;
 }
 
-bool GetQuickTimeVersion(std::string* out) {
-  int ver;
-  if (!GetGestalt(gestaltQuickTimeVersion, &ver)) {
-    return false;
-  }
-
-  std::stringstream ss;
-  ss << std::hex << ver;
-  *out = ss.str();
-  return true;
-}
-
 bool RunAppleScript(const std::string& script) {
   // TODO(thaloun): Add a .mm file that contains something like this:
   // NSString source from script

@@ -44,7 +44,6 @@ enum MacOSVersionName {
 };
 
 MacOSVersionName GetOSVersionName();
-bool GetQuickTimeVersion(std::string* version);
 
 // Runs the given apple script. Only supports scripts that does not
 // require user interaction.

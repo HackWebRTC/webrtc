@@ -17,12 +17,6 @@ TEST(MacUtilsTest, GetOsVersionName) {
   EXPECT_NE(rtc::kMacOSUnknown, ver);
 }
 
-TEST(MacUtilsTest, GetQuickTimeVersion) {
-  std::string version;
-  EXPECT_TRUE(rtc::GetQuickTimeVersion(&version));
-  LOG(LS_INFO) << "GetQuickTimeVersion " << version;
-}
-
 TEST(MacUtilsTest, RunAppleScriptCompileError) {
   std::string script("set value to to 5");
   EXPECT_FALSE(rtc::RunAppleScript(script));
