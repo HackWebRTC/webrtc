@@ -46,7 +46,7 @@ class RembBweSender : public BweSender {
 
  private:
   Clock* clock_;
-  MockRtcEventLog event_log_;
+  ::testing::NiceMock<MockRtcEventLog> event_log_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RembBweSender);
 };

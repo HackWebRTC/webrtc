@@ -92,7 +92,7 @@ class BitrateControllerTest : public ::testing::Test {
   TestBitrateObserver bitrate_observer_;
   BitrateController* controller_;
   RtcpBandwidthObserver* bandwidth_observer_;
-  webrtc::MockRtcEventLog event_log_;
+  testing::NiceMock<webrtc::MockRtcEventLog> event_log_;
 };
 
 TEST_F(BitrateControllerTest, DefaultMinMaxBitrate) {
@@ -109,7 +109,6 @@ TEST_F(BitrateControllerTest, DefaultMinMaxBitrate) {
 
 TEST_F(BitrateControllerTest, OneBitrateObserverOneRtcpObserver) {
   // First REMB applies immediately.
-  EXPECT_CALL(event_log_, LogBwePacketLossEvent(testing::Gt(0), 0, 0)).Times(8);
   int64_t time_ms = 1001;
   webrtc::ReportBlockList report_blocks;
   report_blocks.push_back(CreateReportBlock(1, 2, 0, 1));
@@ -186,7 +185,6 @@ TEST_F(BitrateControllerTest, OneBitrateObserverOneRtcpObserver) {
 
 TEST_F(BitrateControllerTest, OneBitrateObserverTwoRtcpObservers) {
   // REMBs during the first 2 seconds apply immediately.
-  EXPECT_CALL(event_log_, LogBwePacketLossEvent(testing::Gt(0), 0, 0)).Times(9);
   int64_t time_ms = 1;
   webrtc::ReportBlockList report_blocks;
   report_blocks.push_back(CreateReportBlock(1, 2, 0, 1));
@@ -282,13 +280,6 @@ TEST_F(BitrateControllerTest, OneBitrateObserverTwoRtcpObservers) {
 }
 
 TEST_F(BitrateControllerTest, OneBitrateObserverMultipleReportBlocks) {
-  testing::Expectation first_calls =
-      EXPECT_CALL(event_log_, LogBwePacketLossEvent(testing::Gt(0), 0, 0))
-          .Times(7);
-  EXPECT_CALL(event_log_,
-              LogBwePacketLossEvent(testing::Gt(0), testing::Gt(0), 0))
-      .Times(2)
-      .After(first_calls);
   uint32_t sequence_number[2] = {0, 0xFF00};
   const int kStartBitrate = 200000;
   const int kMinBitrate = 100000;

@@ -52,7 +52,7 @@ class CongestionControllerTest : public ::testing::Test {
   StrictMock<MockCongestionObserver> observer_;
   NiceMock<MockPacedSender>* pacer_;
   NiceMock<MockRemoteBitrateObserver> remote_bitrate_observer_;
-  MockRtcEventLog event_log_;
+  NiceMock<MockRtcEventLog> event_log_;
   std::unique_ptr<RtcpBandwidthObserver> bandwidth_observer_;
   std::unique_ptr<CongestionController> controller_;
   const uint32_t kInitialBitrateBps = 60000;
