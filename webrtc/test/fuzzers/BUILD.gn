@@ -189,4 +189,36 @@ if (!build_with_chromium) {
       "../../media:media",
     ]
   }
+
+  webrtc_fuzzer_test("sdp_parser_fuzzer") {
+    sources = [
+      "sdp_parser_fuzzer.cc",
+    ]
+    deps = [
+      "../../api:libjingle_peerconnection",
+    ]
+    seed_corpus = "corpora/sdp-corpus"
+  }
+
+  webrtc_fuzzer_test("stun_parser_fuzzer") {
+    sources = [
+      "stun_parser_fuzzer.cc",
+    ]
+    deps = [
+      "../../p2p:rtc_p2p",
+    ]
+    seed_corpus = "corpora/stun-corpus"
+    dict = "corpora/stun.tokens"
+  }
+
+  webrtc_fuzzer_test("stun_validator_fuzzer") {
+    sources = [
+      "stun_validator_fuzzer.cc",
+    ]
+    deps = [
+      "../../p2p:rtc_p2p",
+    ]
+    seed_corpus = "corpora/stun-corpus"
+    dict = "corpora/stun.tokens"
+  }
 }
