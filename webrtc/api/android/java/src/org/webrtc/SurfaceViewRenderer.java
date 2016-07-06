@@ -171,9 +171,10 @@ public class SurfaceViewRenderer extends SurfaceView
     // |renderThreadHandler| is only created after |eglBase| is created in init(), so the
     // following code will only execute if eglBase != null.
     runOnRenderThread(new Runnable() {
-      @Override public void run() {
+      @Override
+      public void run() {
         synchronized (layoutLock) {
-          if (isSurfaceCreated && !eglBase.hasSurface()) {
+          if (eglBase != null && isSurfaceCreated && !eglBase.hasSurface()) {
             eglBase.createSurface(getHolder().getSurface());
             eglBase.makeCurrent();
             // Necessary for YUV frames with odd width.
@@ -372,8 +373,12 @@ public class SurfaceViewRenderer extends SurfaceView
       surfaceSize.y = 0;
     }
     runOnRenderThread(new Runnable() {
-      @Override public void run() {
-        eglBase.releaseSurface();
+      @Override
+      public void run() {
+        if (eglBase != null) {
+          eglBase.detachCurrent();
+          eglBase.releaseSurface();
+        }
       }
     });
   }
