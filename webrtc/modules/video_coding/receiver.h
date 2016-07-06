@@ -91,9 +91,6 @@ class VCMReceiver {
 
   void TriggerDecoderShutdown();
 
-  int64_t TimeUntilNextProcess();
-  void Process();
-
  private:
   CriticalSectionWrapper* crit_sect_;
   Clock* const clock_;

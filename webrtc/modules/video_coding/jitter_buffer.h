@@ -202,9 +202,6 @@ class VCMJitterBuffer {
 
   void RegisterStatsCallback(VCMReceiveStatisticsCallback* callback);
 
-  int64_t TimeUntilNextProcess();
-  void Process();
-
  private:
   class SequenceNumberLessThan {
    public:
@@ -375,8 +372,6 @@ class VCMJitterBuffer {
   // average_packets_per_frame converges fast if we have fewer than this many
   // frames.
   int frame_counter_;
-
-  std::unique_ptr<NackModule> nack_module_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(VCMJitterBuffer);
 };

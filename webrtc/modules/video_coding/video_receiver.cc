@@ -94,10 +94,6 @@ void VideoReceiver::Process() {
       RequestKeyFrame();
   }
 
-  if (_receiver.TimeUntilNextProcess() == 0) {
-    _receiver.Process();
-  }
-
   // Packet retransmission requests
   // TODO(holmer): Add API for changing Process interval and make sure it's
   // disabled when NACK is off.
@@ -138,8 +134,6 @@ int64_t VideoReceiver::TimeUntilNextProcess() {
   }
   timeUntilNextProcess =
       VCM_MIN(timeUntilNextProcess, _keyRequestTimer.TimeUntilProcess());
-  timeUntilNextProcess =
-      VCM_MIN(timeUntilNextProcess, _receiver.TimeUntilNextProcess());
 
   return timeUntilNextProcess;
 }

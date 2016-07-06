@@ -102,14 +102,6 @@ void VCMReceiver::UpdateRtt(int64_t rtt) {
   jitter_buffer_.UpdateRtt(rtt);
 }
 
-int64_t VCMReceiver::TimeUntilNextProcess() {
-  return jitter_buffer_.TimeUntilNextProcess();
-}
-
-void VCMReceiver::Process() {
-  jitter_buffer_.Process();
-}
-
 int32_t VCMReceiver::InsertPacket(const VCMPacket& packet) {
   // Insert the packet into the jitter buffer. The packet can either be empty or
   // contain media at this point.
