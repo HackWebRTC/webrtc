@@ -72,6 +72,7 @@ class TestVadDtx : public ACMTest {
   std::unique_ptr<AudioCodingModule> acm_receive_;
   std::unique_ptr<Channel> channel_;
   std::unique_ptr<ActivityMonitor> monitor_;
+  uint32_t time_stamp_ = 0x12345678;
 };
 
 // TestWebRtcVadDtx is to verify that the WebRTC VAD/DTX perform as they should.
