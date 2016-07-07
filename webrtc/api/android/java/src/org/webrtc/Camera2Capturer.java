@@ -35,7 +35,7 @@ import android.view.WindowManager;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @TargetApi(21)
 public class Camera2Capturer implements
@@ -58,17 +58,20 @@ public class Camera2Capturer implements
   private final CameraManager cameraManager;
   private final CameraEventsHandler eventsHandler;
 
+  // Set once in initialization(), before any other calls, so therefore thread safe.
+  // ---------------------------------------------------------------------------------------------
+  private SurfaceTextureHelper surfaceTextureHelper;
+  private Context applicationContext;
+  private CapturerObserver capturerObserver;
+  // Use postOnCameraThread() instead of posting directly to the handler - this way all callbacks
+  // with a specifed token can be removed at once.
+  private Handler cameraThreadHandler;
 
   // Shared state - guarded by cameraStateLock. Will only be edited from camera thread (when it is
   // running).
   // ---------------------------------------------------------------------------------------------
   private final Object cameraStateLock = new Object();
-  private CameraState cameraState = CameraState.IDLE;
-  // |cameraThreadHandler| must be synchronized on |cameraStateLock| when not on the camera thread,
-  // or when modifying the reference. Use postOnCameraThread() instead of posting directly to
-  // the handler - this way all callbacks with a specifed token can be removed at once.
-  // |cameraThreadHandler| must be null if and only if CameraState is IDLE.
-  private Handler cameraThreadHandler;
+  private volatile CameraState cameraState = CameraState.IDLE;
   // Remember the requested format in case we want to switch cameras.
   private int requestedWidth;
   private int requestedHeight;
@@ -79,22 +82,18 @@ public class Camera2Capturer implements
   private boolean isFrontCamera;
   private int cameraOrientation;
 
-  // Semaphore for allowing only one switch at a time.
-  private final Semaphore pendingCameraSwitchSemaphore = new Semaphore(1);
-  // Guarded by pendingCameraSwitchSemaphore
+  // Atomic boolean for allowing only one switch at a time.
+  private final AtomicBoolean isPendingCameraSwitch = new AtomicBoolean();
+  // Guarded by isPendingCameraSwitch.
   private CameraSwitchHandler switchEventsHandler;
 
   // Internal state - must only be modified from camera thread
   // ---------------------------------------------------------
   private CaptureFormat captureFormat;
-  private Context applicationContext;
-  private CapturerObserver capturerObserver;
   private CameraStatistics cameraStatistics;
-  private SurfaceTextureHelper surfaceTextureHelper;
   private CameraCaptureSession captureSession;
   private Surface surface;
   private CameraDevice cameraDevice;
-  private CameraStateCallback cameraStateCallback;
 
   // Factor to convert between Android framerates and CaptureFormat.FramerateRange. It will be
   // either 1 or 1000.
@@ -111,28 +110,16 @@ public class Camera2Capturer implements
     setCameraName(cameraName);
   }
 
-  /**
-   * Helper method for checking method is executed on camera thread. Also allows calls from other
-   * threads if camera is closed.
-   */
-  private void checkIsOnCameraThread() {
-    if (cameraState == CameraState.IDLE) {
-      return;
-    }
-
-    checkIsStrictlyOnCameraThread();
+  private boolean isOnCameraThread() {
+    return Thread.currentThread() == cameraThreadHandler.getLooper().getThread();
   }
 
   /**
-   * Like checkIsOnCameraThread but doesn't allow the camera to be stopped.
+   * Helper method for checking method is executed on camera thread.
    */
-  private void checkIsStrictlyOnCameraThread() {
-    if (cameraThreadHandler == null) {
-      throw new IllegalStateException("Camera is closed.");
-    }
-
-    if (Thread.currentThread() != cameraThreadHandler.getLooper().getThread()) {
-      throw new IllegalStateException("Wrong thread");
+  private void checkIsOnCameraThread() {
+    if (!isOnCameraThread()) {
+      throw new IllegalStateException("Not on camera thread");
     }
   }
 
@@ -247,14 +234,14 @@ public class Camera2Capturer implements
    * thread and camera must not be stopped.
    */
   private void reportError(String errorDescription) {
-    checkIsStrictlyOnCameraThread();
+    checkIsOnCameraThread();
     Logging.e(TAG, "Error in camera at state " + cameraState + ": " + errorDescription);
 
     if (switchEventsHandler != null) {
       switchEventsHandler.onCameraSwitchError(errorDescription);
       switchEventsHandler = null;
-      pendingCameraSwitchSemaphore.release();
     }
+    isPendingCameraSwitch.set(false);
 
     switch (cameraState) {
       case STARTING:
@@ -276,22 +263,19 @@ public class Camera2Capturer implements
   }
 
   private void closeAndRelease() {
-    checkIsStrictlyOnCameraThread();
+    checkIsOnCameraThread();
 
     Logging.d(TAG, "Close and release.");
     setCameraState(CameraState.STOPPING);
 
     // Remove all pending Runnables posted from |this|.
     cameraThreadHandler.removeCallbacksAndMessages(this /* token */);
-    applicationContext = null;
-    capturerObserver = null;
     if (cameraStatistics != null) {
       cameraStatistics.release();
       cameraStatistics = null;
     }
     if (surfaceTextureHelper != null) {
       surfaceTextureHelper.stopListening();
-      surfaceTextureHelper = null;
     }
     if (captureSession != null) {
       captureSession.close();
@@ -320,7 +304,6 @@ public class Camera2Capturer implements
       Logging.w(TAG, "closeAndRelease called while cameraDevice is null");
       setCameraState(CameraState.IDLE);
     }
-    this.cameraStateCallback = null;
   }
 
   /**
@@ -328,16 +311,9 @@ public class Camera2Capturer implements
    */
   private void setCameraState(CameraState newState) {
     // State must only be modified on the camera thread. It can be edited from other threads
-    // if cameraState is IDLE since there is no camera thread.
-    checkIsOnCameraThread();
-
-    if (newState != CameraState.IDLE) {
-      if (cameraThreadHandler == null) {
-        throw new IllegalStateException(
-            "cameraThreadHandler must be null if and only if CameraState is IDLE.");
-      }
-    } else {
-      cameraThreadHandler = null;
+    // if cameraState is IDLE since the camera thread is idle and not modifying the state.
+    if (cameraState != CameraState.IDLE) {
+      checkIsOnCameraThread();
     }
 
     switch (newState) {
@@ -376,37 +352,49 @@ public class Camera2Capturer implements
    */
   private void openCamera() {
     try {
-      checkIsStrictlyOnCameraThread();
+      checkIsOnCameraThread();
 
       if (cameraState != CameraState.STARTING) {
         throw new IllegalStateException("Camera should be in state STARTING in openCamera.");
       }
 
-      if (cameraThreadHandler == null) {
-        throw new RuntimeException("Someone set cameraThreadHandler to null while the camera "
-            + "state was STARTING. This should never happen");
-      }
-
       // Camera is in state STARTING so cameraName will not be edited.
-      cameraManager.openCamera(cameraName, cameraStateCallback, cameraThreadHandler);
+      cameraManager.openCamera(cameraName, new CameraStateCallback(), cameraThreadHandler);
     } catch (CameraAccessException e) {
       reportError("Failed to open camera: " + e);
     }
   }
 
-  private void startCaptureOnCameraThread(
-      final int requestedWidth, final int requestedHeight, final int requestedFramerate,
-      final SurfaceTextureHelper surfaceTextureHelper, final Context applicationContext,
-      final CapturerObserver capturerObserver) {
-    checkIsStrictlyOnCameraThread();
+  private boolean isInitialized() {
+    return applicationContext != null && capturerObserver != null;
+  }
 
-    firstFrameReported = false;
-    consecutiveCameraOpenFailures = 0;
-
+  @Override
+  public void initialize(SurfaceTextureHelper surfaceTextureHelper, Context applicationContext,
+      CapturerObserver capturerObserver) {
+    Logging.d(TAG, "initialize");
+    if (applicationContext == null) {
+      throw new IllegalArgumentException("applicationContext not set.");
+    }
+    if (capturerObserver == null) {
+      throw new IllegalArgumentException("capturerObserver not set.");
+    }
+    if (isInitialized()) {
+      throw new IllegalStateException("Already initialized");
+    }
     this.applicationContext = applicationContext;
     this.capturerObserver = capturerObserver;
     this.surfaceTextureHelper = surfaceTextureHelper;
-    this.cameraStateCallback = new CameraStateCallback();
+    this.cameraThreadHandler =
+        surfaceTextureHelper == null ? null : surfaceTextureHelper.getHandler();
+  }
+
+  private void startCaptureOnCameraThread(
+      final int requestedWidth, final int requestedHeight, final int requestedFramerate) {
+    checkIsOnCameraThread();
+
+    firstFrameReported = false;
+    consecutiveCameraOpenFailures = 0;
 
     synchronized (cameraStateLock) {
       // Remember the requested format in case we want to switch cameras.
@@ -466,36 +454,32 @@ public class Camera2Capturer implements
    */
   @Override
   public void startCapture(
-      final int requestedWidth, final int requestedHeight, final int requestedFramerate,
-      final SurfaceTextureHelper surfaceTextureHelper, final Context applicationContext,
-      final CapturerObserver capturerObserver) {
+      final int requestedWidth, final int requestedHeight, final int requestedFramerate) {
     Logging.d(TAG, "startCapture requested: " + requestedWidth + "x" + requestedHeight
         + "@" + requestedFramerate);
+    if (!isInitialized()) {
+      throw new IllegalStateException("startCapture called in uninitialized state");
+    }
     if (surfaceTextureHelper == null) {
-      throw new IllegalArgumentException("surfaceTextureHelper not set.");
+      capturerObserver.onCapturerStarted(false /* success */);
+      if (eventsHandler != null) {
+        eventsHandler.onCameraError("No SurfaceTexture created.");
+      }
+      return;
     }
-    if (applicationContext == null) {
-      throw new IllegalArgumentException("applicationContext not set.");
-    }
-    if (capturerObserver == null) {
-      throw new IllegalArgumentException("capturerObserver not set.");
-    }
-
     synchronized (cameraStateLock) {
       waitForCameraToStopIfStopping();
       if (cameraState != CameraState.IDLE) {
         Logging.e(TAG, "Unexpected camera state for startCapture: " + cameraState);
         return;
       }
-      this.cameraThreadHandler = surfaceTextureHelper.getHandler();
       setCameraState(CameraState.STARTING);
     }
 
     postOnCameraThread(new Runnable() {
       @Override
       public void run() {
-        startCaptureOnCameraThread(requestedWidth, requestedHeight, requestedFramerate,
-            surfaceTextureHelper, applicationContext, capturerObserver);
+        startCaptureOnCameraThread(requestedWidth, requestedHeight, requestedFramerate);
       }
     });
   }
@@ -521,14 +505,14 @@ public class Camera2Capturer implements
 
     @Override
     public void onDisconnected(CameraDevice camera) {
-      checkIsStrictlyOnCameraThread();
+      checkIsOnCameraThread();
       cameraDevice = camera;
       reportError("Camera disconnected.");
     }
 
     @Override
     public void onError(CameraDevice camera, int errorCode) {
-      checkIsStrictlyOnCameraThread();
+      checkIsOnCameraThread();
       cameraDevice = camera;
 
       if (cameraState == CameraState.STARTING && (
@@ -555,7 +539,7 @@ public class Camera2Capturer implements
 
     @Override
     public void onOpened(CameraDevice camera) {
-      checkIsStrictlyOnCameraThread();
+      checkIsOnCameraThread();
 
       Logging.d(TAG, "Camera opened.");
       if (cameraState != CameraState.STARTING) {
@@ -576,7 +560,7 @@ public class Camera2Capturer implements
 
     @Override
     public void onClosed(CameraDevice camera) {
-      checkIsStrictlyOnCameraThread();
+      checkIsOnCameraThread();
 
       Logging.d(TAG, "Camera device closed.");
 
@@ -597,14 +581,14 @@ public class Camera2Capturer implements
   final class CaptureSessionCallback extends CameraCaptureSession.StateCallback {
     @Override
     public void onConfigureFailed(CameraCaptureSession session) {
-      checkIsStrictlyOnCameraThread();
+      checkIsOnCameraThread();
       captureSession = session;
       reportError("Failed to configure capture session.");
     }
 
     @Override
     public void onConfigured(CameraCaptureSession session) {
-      checkIsStrictlyOnCameraThread();
+      checkIsOnCameraThread();
       Logging.d(TAG, "Camera capture session configured.");
       captureSession = session;
       try {
@@ -642,8 +626,8 @@ public class Camera2Capturer implements
       if (switchEventsHandler != null) {
         switchEventsHandler.onCameraSwitchDone(isFrontCamera);
         switchEventsHandler = null;
-        pendingCameraSwitchSemaphore.release();
       }
+      isPendingCameraSwitch.set(false);
     }
   }
 
@@ -692,8 +676,9 @@ public class Camera2Capturer implements
       return;
     }
     // Do not handle multiple camera switch request to avoid blocking camera thread by handling too
-    // many switch request from a queue. We have to be careful to always release this.
-    if (!pendingCameraSwitchSemaphore.tryAcquire()) {
+    // many switch request from a queue. We have to be careful to always release
+    // |isPendingCameraSwitch| by setting it to false when done.
+    if (isPendingCameraSwitch.getAndSet(true)) {
       Logging.w(TAG, "Ignoring camera switch request.");
       if (switchEventsHandler != null) {
         switchEventsHandler.onCameraSwitchError("Pending camera switch already in progress.");
@@ -702,9 +687,6 @@ public class Camera2Capturer implements
     }
 
     final String newCameraId;
-    final SurfaceTextureHelper surfaceTextureHelper;
-    final Context applicationContext;
-    final CapturerObserver capturerObserver;
     final int requestedWidth;
     final int requestedHeight;
     final int requestedFramerate;
@@ -717,7 +699,7 @@ public class Camera2Capturer implements
         if (switchEventsHandler != null) {
           switchEventsHandler.onCameraSwitchError("Camera is stopped.");
         }
-        pendingCameraSwitchSemaphore.release();
+        isPendingCameraSwitch.set(false);
         return;
       }
 
@@ -731,11 +713,6 @@ public class Camera2Capturer implements
       final int newCameraIndex = (currentCameraIndex + 1) % cameraIds.length;
       newCameraId = cameraIds[newCameraIndex];
 
-      // Remember parameters. These are not null since camera is in RUNNING state. They aren't
-      // edited either while camera is in RUNNING state.
-      surfaceTextureHelper = this.surfaceTextureHelper;
-      applicationContext = this.applicationContext;
-      capturerObserver = this.capturerObserver;
       requestedWidth = this.requestedWidth;
       requestedHeight = this.requestedHeight;
       requestedFramerate = this.requestedFramerate;
@@ -745,8 +722,7 @@ public class Camera2Capturer implements
     // Make the switch.
     stopCapture();
     setCameraName(newCameraId);
-    startCapture(requestedWidth, requestedHeight, requestedFramerate, surfaceTextureHelper,
-        applicationContext, capturerObserver);
+    startCapture(requestedWidth, requestedHeight, requestedFramerate);
 
     // Note: switchEventsHandler will be called from onConfigured / reportError.
   }
@@ -761,10 +737,6 @@ public class Camera2Capturer implements
     postOnCameraThread(new Runnable() {
       @Override
       public void run() {
-        if (capturerObserver == null) {
-          Logging.e(TAG, "Calling onOutputFormatRequest() on stopped camera.");
-          return;
-        }
         Logging.d(TAG,
             "onOutputFormatRequestOnCameraThread: " + width + "x" + height + "@" + framerate);
         capturerObserver.onOutputFormatRequest(width, height, framerate);
@@ -776,10 +748,6 @@ public class Camera2Capturer implements
   // is running.
   @Override
   public void changeCaptureFormat(final int width, final int height, final int framerate) {
-    final SurfaceTextureHelper surfaceTextureHelper;
-    final Context applicationContext;
-    final CapturerObserver capturerObserver;
-
     synchronized (cameraStateLock) {
       waitForCameraToStartIfStarting();
 
@@ -791,17 +759,12 @@ public class Camera2Capturer implements
       requestedWidth = width;
       requestedHeight = height;
       requestedFramerate = framerate;
-
-      surfaceTextureHelper = this.surfaceTextureHelper;
-      applicationContext = this.applicationContext;
-      capturerObserver = this.capturerObserver;
     }
 
     // Make the switch.
     stopCapture();
     // TODO(magjed/sakal): Just recreate session.
-    startCapture(width, height, framerate,
-        surfaceTextureHelper, applicationContext, capturerObserver);
+    startCapture(width, height, framerate);
   }
 
   @Override
@@ -896,7 +859,7 @@ public class Camera2Capturer implements
   @Override
   public void onTextureFrameAvailable(
       int oesTextureId, float[] transformMatrix, long timestampNs) {
-    checkIsStrictlyOnCameraThread();
+    checkIsOnCameraThread();
 
     if (eventsHandler != null && !firstFrameReported) {
       eventsHandler.onFirstFrameAvailable();

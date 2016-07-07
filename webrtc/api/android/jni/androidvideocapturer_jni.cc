@@ -43,6 +43,21 @@ AndroidVideoCapturerJni::AndroidVideoCapturerJni(JNIEnv* jni,
           jni, "Camera SurfaceTextureHelper", j_egl_context)),
       capturer_(nullptr) {
   LOG(LS_INFO) << "AndroidVideoCapturerJni ctor";
+  jobject j_frame_observer =
+      jni->NewObject(*j_observer_class_,
+                     GetMethodID(jni, *j_observer_class_, "<init>", "(J)V"),
+                     jlongFromPointer(this));
+  CHECK_EXCEPTION(jni) << "error during NewObject";
+  jni->CallVoidMethod(
+      *j_video_capturer_,
+      GetMethodID(jni, *j_video_capturer_class_, "initialize",
+                  "(Lorg/webrtc/SurfaceTextureHelper;Landroid/content/"
+                  "Context;Lorg/webrtc/VideoCapturer$CapturerObserver;)V"),
+      surface_texture_helper_
+          ? surface_texture_helper_->GetJavaSurfaceTextureHelper()
+          : nullptr,
+      application_context_, j_frame_observer);
+  CHECK_EXCEPTION(jni) << "error during VideoCapturer.initialize()";
   thread_checker_.DetachFromThread();
 }
 
@@ -65,22 +80,9 @@ void AndroidVideoCapturerJni::Start(int width, int height, int framerate,
     capturer_ = capturer;
     invoker_.reset(new rtc::GuardedAsyncInvoker());
   }
-  jobject j_frame_observer =
-      jni()->NewObject(*j_observer_class_,
-                       GetMethodID(jni(), *j_observer_class_, "<init>", "(J)V"),
-                       jlongFromPointer(this));
-  CHECK_EXCEPTION(jni()) << "error during NewObject";
-
-  jmethodID m = GetMethodID(
-      jni(), *j_video_capturer_class_, "startCapture",
-      "(IIILorg/webrtc/SurfaceTextureHelper;Landroid/content/Context;"
-      "Lorg/webrtc/VideoCapturer$CapturerObserver;)V");
-  jni()->CallVoidMethod(
-      *j_video_capturer_, m, width, height, framerate,
-      surface_texture_helper_
-          ? surface_texture_helper_->GetJavaSurfaceTextureHelper()
-          : nullptr,
-      application_context_, j_frame_observer);
+  jmethodID m =
+      GetMethodID(jni(), *j_video_capturer_class_, "startCapture", "(III)V");
+  jni()->CallVoidMethod(*j_video_capturer_, m, width, height, framerate);
   CHECK_EXCEPTION(jni()) << "error during VideoCapturer.startCapture";
 }
 

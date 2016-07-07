@@ -88,14 +88,21 @@ public interface VideoCapturer {
   List<CameraEnumerationAndroid.CaptureFormat> getSupportedFormats();
 
   /**
-   * Start capturing frames in a format that is as close as possible to |width| x |height| and
-   * |framerate|. If the VideoCapturer wants to deliver texture frames, it should do this by
-   * rendering on the SurfaceTexture in |surfaceTextureHelper|, register itself as a listener,
-   * and forward the texture frames to CapturerObserver.onTextureFrameCaptured().
+   * This function is used to initialize the camera thread, the android application context, and the
+   * capture observer. It will be called only once and before any startCapture() request. The
+   * camera thread is guaranteed to be valid until dispose() is called. If the VideoCapturer wants
+   * to deliver texture frames, it should do this by rendering on the SurfaceTexture in
+   * |surfaceTextureHelper|, register itself as a listener, and forward the texture frames to
+   * CapturerObserver.onTextureFrameCaptured().
    */
-  void startCapture(
-      int width, int height, int framerate, SurfaceTextureHelper surfaceTextureHelper,
-      Context applicationContext, CapturerObserver frameObserver);
+  void initialize(SurfaceTextureHelper surfaceTextureHelper, Context applicationContext,
+      CapturerObserver capturerObserver);
+
+  /**
+   * Start capturing frames in a format that is as close as possible to |width| x |height| and
+   * |framerate|.
+   */
+  void startCapture(int width, int height, int framerate);
 
   /**
    * Stop capturing. This function should block until capture is actually stopped.
