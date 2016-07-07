@@ -3225,7 +3225,7 @@ int Channel::GetPlayoutTimestamp(unsigned int& timestamp) {
   }
   if (playout_timestamp_rtp == 0) {
     _engineStatisticsPtr->SetLastError(
-        VE_CANNOT_RETRIEVE_VALUE, kTraceError,
+        VE_CANNOT_RETRIEVE_VALUE, kTraceStateInfo,
         "GetPlayoutTimestamp() failed to retrieve timestamp");
     return -1;
   }
