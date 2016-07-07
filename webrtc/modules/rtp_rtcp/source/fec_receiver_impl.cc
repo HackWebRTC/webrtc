@@ -10,10 +10,9 @@
 
 #include "webrtc/modules/rtp_rtcp/source/fec_receiver_impl.h"
 
-#include <assert.h>
-
 #include <memory>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_video.h"
@@ -89,8 +88,8 @@ int32_t FecReceiverImpl::AddReceivedRedPacket(
   // we remove the RED header
 
   std::unique_ptr<ForwardErrorCorrection::ReceivedPacket> received_packet(
-      new ForwardErrorCorrection::ReceivedPacket);
-  received_packet->pkt = new ForwardErrorCorrection::Packet;
+      new ForwardErrorCorrection::ReceivedPacket());
+  received_packet->pkt = new ForwardErrorCorrection::Packet();
 
   // get payload type from RED header
   uint8_t payload_type =
@@ -159,8 +158,8 @@ int32_t FecReceiverImpl::AddReceivedRedPacket(
 
     received_packet->pkt->length = blockLength;
 
-    second_received_packet.reset(new ForwardErrorCorrection::ReceivedPacket);
-    second_received_packet->pkt = new ForwardErrorCorrection::Packet;
+    second_received_packet.reset(new ForwardErrorCorrection::ReceivedPacket());
+    second_received_packet->pkt = new ForwardErrorCorrection::Packet();
 
     second_received_packet->is_fec = true;
     second_received_packet->seq_num = header.sequenceNumber;
@@ -231,19 +230,19 @@ int32_t FecReceiverImpl::ProcessReceivedFec() {
       }
       crit_sect_.Enter();
     }
-    if (fec_->DecodeFEC(&received_packet_list_, &recovered_packet_list_) != 0) {
+    if (fec_->DecodeFec(&received_packet_list_, &recovered_packet_list_) != 0) {
       crit_sect_.Leave();
       return -1;
     }
-    assert(received_packet_list_.empty());
+    RTC_DCHECK(received_packet_list_.empty());
   }
   // Send any recovered media packets to VCM.
-  ForwardErrorCorrection::RecoveredPacketList::iterator it =
-      recovered_packet_list_.begin();
-  for (; it != recovered_packet_list_.end(); ++it) {
-    if ((*it)->returned)  // Already sent to the VCM and the jitter buffer.
+  for(auto* recovered_packet : recovered_packet_list_) {
+    if (recovered_packet->returned) {
+      // Already sent to the VCM and the jitter buffer.
       continue;
-    ForwardErrorCorrection::Packet* packet = (*it)->pkt;
+    }
+    ForwardErrorCorrection::Packet* packet = recovered_packet->pkt;
     ++packet_counter_.num_recovered_packets;
     crit_sect_.Leave();
     if (!recovered_packet_callback_->OnRecoveredPacket(packet->data,
@@ -251,7 +250,7 @@ int32_t FecReceiverImpl::ProcessReceivedFec() {
       return -1;
     }
     crit_sect_.Enter();
-    (*it)->returned = true;
+    recovered_packet->returned = true;
   }
   crit_sect_.Leave();
   return 0;

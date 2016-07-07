@@ -44,7 +44,7 @@ class ProducerFecTest : public ::testing::Test {
   virtual void SetUp() {
     fec_ = new ForwardErrorCorrection();
     producer_ = new ProducerFec(fec_);
-    generator_ = new FrameGenerator;
+    generator_ = new FrameGenerator();
   }
 
   virtual void TearDown() {

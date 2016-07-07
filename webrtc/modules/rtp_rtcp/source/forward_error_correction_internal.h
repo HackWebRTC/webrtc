@@ -11,15 +11,15 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_FORWARD_ERROR_CORRECTION_INTERNAL_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_FORWARD_ERROR_CORRECTION_INTERNAL_H_
 
-#include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
 // Packet mask size in bytes (L bit is set).
-static const int kMaskSizeLBitSet = 6;
+constexpr size_t kMaskSizeLBitSet = 6;
 // Packet mask size in bytes (L bit is cleared).
-static const int kMaskSizeLBitClear = 2;
+constexpr size_t kMaskSizeLBitClear = 2;
 
 namespace internal {
 

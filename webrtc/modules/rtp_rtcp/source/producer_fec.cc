@@ -18,11 +18,11 @@ namespace webrtc {
 
 enum { kREDForFECHeaderLength = 1 };
 // This controls the maximum amount of excess overhead (actual - target)
-// allowed in order to trigger GenerateFEC(), before |params_.max_fec_frames|
+// allowed in order to trigger GenerateFec(), before |params_.max_fec_frames|
 // is reached. Overhead here is defined as relative to number of media packets.
 enum { kMaxExcessOverhead = 50 };  // Q8.
 // This is the minimum number of media packets required (above some protection
-// level) in order to trigger GenerateFEC(), before |params_.max_fec_frames| is
+// level) in order to trigger GenerateFec(), before |params_.max_fec_frames| is
 // reached.
 enum { kMinimumMediaPackets = 4 };
 // Threshold on the received FEC protection level, above which we enforce at
@@ -139,7 +139,8 @@ int ProducerFec::AddRtpPacketAndGenerateFec(const uint8_t* data_buffer,
   const bool marker_bit = (data_buffer[1] & kRtpMarkerBitMask) ? true : false;
   if (media_packets_fec_.size() < ForwardErrorCorrection::kMaxMediaPackets) {
     // Generic FEC can only protect up to kMaxMediaPackets packets.
-    ForwardErrorCorrection::Packet* packet = new ForwardErrorCorrection::Packet;
+    ForwardErrorCorrection::Packet* packet =
+        new ForwardErrorCorrection::Packet();
     packet->length = payload_length + rtp_header_length;
     memcpy(packet->data, data_buffer, packet->length);
     media_packets_fec_.push_back(packet);
@@ -159,7 +160,7 @@ int ProducerFec::AddRtpPacketAndGenerateFec(const uint8_t* data_buffer,
            static_cast<int>(ForwardErrorCorrection::kMaxMediaPackets));
     // TODO(pbos): Consider whether unequal protection should be enabled or not,
     // it is currently always disabled.
-    int ret = fec_->GenerateFEC(media_packets_fec_, params_.fec_rate,
+    int ret = fec_->GenerateFec(media_packets_fec_, params_.fec_rate,
                                 num_first_partition_, false,
                                 params_.fec_mask_type, &fec_packets_);
     if (fec_packets_.empty()) {
