@@ -397,6 +397,7 @@ VideoSendStream::VideoSendStream(
       encoder_wakeup_event_(false, false),
       stop_encoder_thread_(0),
       encoder_max_bitrate_bps_(0),
+      encoder_target_rate_bps_(0),
       state_(State::kStopped),
       overuse_detector_(
           Clock::GetRealTimeClock(),
@@ -527,6 +528,7 @@ bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
 }
 
 void VideoSendStream::Start() {
+  LOG(LS_INFO) << "VideoSendStream::Start";
   if (payload_router_.active())
     return;
   TRACE_EVENT_INSTANT0("webrtc", "VideoSendStream::Start");
@@ -539,6 +541,7 @@ void VideoSendStream::Start() {
 }
 
 void VideoSendStream::Stop() {
+  LOG(LS_INFO) << "VideoSendStream::Stop";
   if (!payload_router_.active())
     return;
   TRACE_EVENT_INSTANT0("webrtc", "VideoSendStream::Stop");
@@ -895,6 +898,13 @@ uint32_t VideoSendStream::OnBitrateUpdated(uint32_t bitrate_bps,
     rtc::CritScope lock(&encoder_settings_crit_);
     encoder_target_rate_bps =
         std::min(encoder_max_bitrate_bps_, encoder_target_rate_bps);
+    if ((encoder_target_rate_bps_ == 0 && encoder_target_rate_bps > 0) ||
+        (encoder_target_rate_bps_ > 0 && encoder_target_rate_bps == 0)) {
+      LOG(LS_INFO)
+          << "OnBitrateUpdated: Encoder state changed, target bitrate "
+          << encoder_target_rate_bps << " bps.";
+    }
+    encoder_target_rate_bps_ = encoder_target_rate_bps;
   }
   vie_encoder_.OnBitrateUpdated(encoder_target_rate_bps, fraction_loss, rtt);
   stats_proxy_.OnSetEncoderTargetRate(encoder_target_rate_bps);

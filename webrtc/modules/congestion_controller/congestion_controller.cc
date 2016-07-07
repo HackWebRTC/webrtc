@@ -277,6 +277,8 @@ int64_t CongestionController::GetPacerQueuingDelayMs() const {
 }
 
 void CongestionController::SignalNetworkState(NetworkState state) {
+  LOG(LS_INFO) << "SignalNetworkState "
+               << (state == kNetworkUp ? "Up" : "Down");
   if (state == kNetworkUp) {
     pacer_->Resume();
   } else {
@@ -340,6 +342,10 @@ bool CongestionController::HasNetworkParametersToReportChanged(
       last_reported_bitrate_bps_ != bitrate_bps ||
       (bitrate_bps > 0 && (last_reported_fraction_loss_ != fraction_loss ||
                            last_reported_rtt_ != rtt));
+  if (changed && (last_reported_bitrate_bps_ == 0 || bitrate_bps == 0)) {
+    LOG(LS_INFO) << "Bitrate estimate state changed, BWE: " << bitrate_bps
+                 << " bps.";
+  }
   last_reported_bitrate_bps_ = bitrate_bps;
   last_reported_fraction_loss_ = fraction_loss;
   last_reported_rtt_ = rtt;
