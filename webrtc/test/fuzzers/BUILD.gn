@@ -221,4 +221,13 @@ if (!build_with_chromium) {
     seed_corpus = "corpora/stun-corpus"
     dict = "corpora/stun.tokens"
   }
+
+  webrtc_fuzzer_test("pseudotcp_parser_fuzzer") {
+    sources = [
+      "pseudotcp_parser_fuzzer.cc",
+    ]
+    deps = [
+      "../../p2p:rtc_p2p",
+    ]
+  }
 }
