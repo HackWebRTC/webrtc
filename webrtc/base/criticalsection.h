@@ -63,8 +63,6 @@ class LOCKABLE CriticalSection {
 
   // Use only for RTC_DCHECKing.
   bool CurrentThreadIsOwner() const;
-  // Use only for RTC_DCHECKing.
-  bool IsLocked() const;
 
  private:
 #if defined(WEBRTC_WIN)

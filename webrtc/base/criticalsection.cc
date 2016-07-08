@@ -180,18 +180,6 @@ bool CriticalSection::CurrentThreadIsOwner() const {
 #endif
 }
 
-bool CriticalSection::IsLocked() const {
-#if defined(WEBRTC_WIN)
-  return crit_.LockCount != -1;
-#else
-#if CS_DEBUG_CHECKS
-  return thread_ != 0;
-#else
-  return true;
-#endif
-#endif
-}
-
 CritScope::CritScope(const CriticalSection* cs) : cs_(cs) { cs_->Enter(); }
 CritScope::~CritScope() { cs_->Leave(); }
 

@@ -306,23 +306,6 @@ TEST(CriticalSectionTest, Basic) {
   EXPECT_EQ(0, runner.shared_value());
 }
 
-#if !defined(NDEBUG) || defined(DCHECK_ALWAYS_ON)
-TEST(CriticalSectionTest, IsLocked) {
-  // Simple single-threaded test of IsLocked.
-  CriticalSection cs;
-  EXPECT_FALSE(cs.IsLocked());
-  cs.Enter();
-  EXPECT_TRUE(cs.IsLocked());
-  cs.Leave();
-  EXPECT_FALSE(cs.IsLocked());
-  if (!cs.TryEnter())
-    FAIL();
-  EXPECT_TRUE(cs.IsLocked());
-  cs.Leave();
-  EXPECT_FALSE(cs.IsLocked());
-}
-#endif
-
 class PerfTestData {
  public:
   PerfTestData(int expected_count, Event* event)
