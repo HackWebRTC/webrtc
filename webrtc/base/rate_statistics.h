@@ -20,22 +20,37 @@ namespace webrtc {
 
 class RateStatistics {
  public:
+  static constexpr float kBpsScale = 8000.0f;
+
   // max_window_size_ms = Maximum window size in ms for the rate estimation.
   //                      Initial window size is set to this, but may be changed
   //                      to something lower by calling SetWindowSize().
-  // scale = coefficient to convert counts/ms to desired units,
-  //         ex: if counts represents bytes, use 8*1000 to go to bits/s
+  // scale = coefficient to convert counts/ms to desired unit
+  //         ex: kBpsScale (8000) for bits/s if count represents bytes.
   RateStatistics(int64_t max_window_size_ms, float scale);
   ~RateStatistics();
 
+  // Reset instance to original state.
   void Reset();
+
+  // Update rate with a new data point, moving averaging window as needed.
   void Update(size_t count, int64_t now_ms);
-  rtc::Optional<uint32_t> Rate(int64_t now_ms);
+
+  // Note that despite this being a const method, it still updates the internal
+  // state (moves averaging window), but it doesn't make any alterations that
+  // are observable from the other methods, as long as supplied timestamps are
+  // from a monotonic clock. Ie, it doesn't matter if this call moves the
+  // window, since any subsequent call to Update or Rate would still have moved
+  // the window as much or more.
+  rtc::Optional<uint32_t> Rate(int64_t now_ms) const;
+
+  // Update the size of the averaging window. The maximum allowed value for
+  // window_size_ms is max_window_size_ms as supplied in the constructor.
   bool SetWindowSize(int64_t window_size_ms, int64_t now_ms);
 
  private:
   void EraseOld(int64_t now_ms);
-  bool IsInitialized();
+  bool IsInitialized() const;
 
   // Counters are kept in buckets (circular buffer), with one bucket
   // per millisecond.

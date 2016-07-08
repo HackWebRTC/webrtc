@@ -74,6 +74,8 @@
         'random.h',
         'rate_statistics.cc',
         'rate_statistics.h',
+        'rate_limiter.cc',
+        'rate_limiter.h',
         'ratetracker.cc',
         'ratetracker.h',
         'refcount.h',

@@ -63,6 +63,7 @@
         'base/proxy_unittest.cc',
         'base/proxydetect_unittest.cc',
         'base/random_unittest.cc',
+        'base/rate_limiter_unittest.cc',
         'base/rate_statistics_unittest.cc',
         'base/ratelimiter_unittest.cc',
         'base/ratetracker_unittest.cc',

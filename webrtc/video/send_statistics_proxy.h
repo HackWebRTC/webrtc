@@ -85,8 +85,8 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
                            uint32_t ssrc) override;
 
   // From BitrateStatisticsObserver.
-  void Notify(const BitrateStatistics& total_stats,
-              const BitrateStatistics& retransmit_stats,
+  void Notify(uint32_t total_bitrate_bps,
+              uint32_t retransmit_bitrate_bps,
               uint32_t ssrc) override;
 
   // From FrameCountObserver.

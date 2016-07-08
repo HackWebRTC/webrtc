@@ -252,11 +252,10 @@ class RtcpPacketTypeCounterObserver {
 
 // Rate statistics for a stream.
 struct BitrateStatistics {
-  BitrateStatistics() : bitrate_bps(0), packet_rate(0), timestamp_ms(0) {}
+  BitrateStatistics() : bitrate_bps(0), packet_rate(0) {}
 
   uint32_t bitrate_bps;   // Bitrate in bits per second.
   uint32_t packet_rate;   // Packet rate in packets per second.
-  uint64_t timestamp_ms;  // Ntp timestamp in ms at time of rate estimation.
 };
 
 // Callback, used to notify an observer whenever new rates have been estimated.
@@ -264,8 +263,8 @@ class BitrateStatisticsObserver {
  public:
   virtual ~BitrateStatisticsObserver() {}
 
-  virtual void Notify(const BitrateStatistics& total_stats,
-                      const BitrateStatistics& retransmit_stats,
+  virtual void Notify(uint32_t total_bitrate_bps,
+                      uint32_t retransmit_bitrate_bps,
                       uint32_t ssrc) = 0;
 };
 

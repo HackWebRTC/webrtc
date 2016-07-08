@@ -186,25 +186,4 @@ TEST(PayloadRouterTest, MaxPayloadLength) {
       .WillOnce(Return(kTestMinPayloadLength));
   EXPECT_EQ(kTestMinPayloadLength, payload_router.MaxPayloadLength());
 }
-
-TEST(PayloadRouterTest, SetTargetSendBitrates) {
-  NiceMock<MockRtpRtcp> rtp_1;
-  NiceMock<MockRtpRtcp> rtp_2;
-  std::vector<RtpRtcp*> modules;
-  modules.push_back(&rtp_1);
-  modules.push_back(&rtp_2);
-  PayloadRouter payload_router(modules, 42);
-  std::vector<VideoStream> streams(2);
-  streams[0].max_bitrate_bps = 10000;
-  streams[1].max_bitrate_bps = 100000;
-  payload_router.SetSendStreams(streams);
-
-  const uint32_t bitrate_1 = 10000;
-  const uint32_t bitrate_2 = 76543;
-  EXPECT_CALL(rtp_1, SetTargetSendBitrate(bitrate_1))
-      .Times(1);
-  EXPECT_CALL(rtp_2, SetTargetSendBitrate(bitrate_2))
-      .Times(1);
-  payload_router.SetTargetSendBitrate(bitrate_1 + bitrate_2);
-}
 }  // namespace webrtc
