@@ -19,8 +19,6 @@ source_set("rtp_rtcp") {
     "include/rtp_rtcp.h",
     "include/rtp_rtcp_defines.h",
     "mocks/mock_rtp_rtcp.h",
-    "source/bitrate.cc",
-    "source/bitrate.h",
     "source/byte_io.h",
     "source/dtmf_queue.cc",
     "source/dtmf_queue.h",

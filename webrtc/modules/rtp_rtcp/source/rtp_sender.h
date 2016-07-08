@@ -20,10 +20,10 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/random.h"
+#include "webrtc/base/rate_statistics.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/modules/rtp_rtcp/source/bitrate.h"
 #include "webrtc/modules/rtp_rtcp/source/playout_delay_oracle.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_history.h"
@@ -34,6 +34,7 @@
 
 namespace webrtc {
 
+class RateLimiter;
 class RTPSenderAudio;
 class RTPSenderVideo;
 class RtcEventLog;
@@ -93,7 +94,8 @@ class RTPSender : public RTPSenderInterface {
             FrameCountObserver* frame_count_observer,
             SendSideDelayObserver* send_side_delay_observer,
             RtcEventLog* event_log,
-            SendPacketObserver* send_packet_observer);
+            SendPacketObserver* send_packet_observer,
+            RateLimiter* nack_rate_limiter);
 
   virtual ~RTPSender();
 
@@ -106,8 +108,6 @@ class RTPSender : public RTPSenderInterface {
   uint32_t NackOverheadRate() const;
 
   void SetTargetBitrate(uint32_t bitrate);
-  uint32_t GetTargetBitrate();
-
   // Includes size of RTP and FEC headers.
   size_t MaxDataPayloadLength() const override;
 
@@ -227,8 +227,6 @@ class RTPSender : public RTPSenderInterface {
 
   int32_t ReSendPacket(uint16_t packet_id, int64_t min_resend_time = 0);
 
-  bool ProcessNACKBitRate(uint32_t now);
-
   // Feedback to decide when to stop sending playout delay.
   void OnReceivedRtcpReportBlocks(const ReportBlockList& report_blocks);
 
@@ -340,8 +338,6 @@ class RTPSender : public RTPSenderInterface {
                          uint16_t sequence_number,
                          const std::vector<uint32_t>& csrcs) const;
 
-  void UpdateNACKBitRate(uint32_t bytes, int64_t now);
-
   bool PrepareAndSendPacket(uint8_t* buffer,
                             size_t length,
                             int64_t capture_time_ms,
@@ -406,44 +402,9 @@ class RTPSender : public RTPSenderInterface {
                       bool is_retransmit);
   bool IsFecPacket(const uint8_t* buffer, const RTPHeader& header) const;
 
-  class BitrateAggregator {
-   public:
-    explicit BitrateAggregator(BitrateStatisticsObserver* bitrate_callback);
-
-    void OnStatsUpdated() const;
-
-    Bitrate::Observer* total_bitrate_observer();
-    Bitrate::Observer* retransmit_bitrate_observer();
-    void set_ssrc(uint32_t ssrc);
-
-   private:
-    // We assume that these observers are called on the same thread, which is
-    // true for RtpSender as they are called on the Process thread.
-    class BitrateObserver : public Bitrate::Observer {
-     public:
-      explicit BitrateObserver(const BitrateAggregator& aggregator);
-
-      // Implements Bitrate::Observer.
-      void BitrateUpdated(const BitrateStatistics& stats) override;
-      const BitrateStatistics& statistics() const;
-
-     private:
-      BitrateStatistics statistics_;
-      const BitrateAggregator& aggregator_;
-    };
-
-    BitrateStatisticsObserver* const callback_;
-    BitrateObserver total_bitrate_observer_;
-    BitrateObserver retransmit_bitrate_observer_;
-    uint32_t ssrc_;
-  };
-
   Clock* const clock_;
   const int64_t clock_delta_ms_;
   Random random_ GUARDED_BY(send_critsect_);
-
-  BitrateAggregator bitrates_;
-  Bitrate total_bitrate_sent_;
 
   const bool audio_configured_;
   const std::unique_ptr<RTPSenderAudio> audio_;
@@ -470,11 +431,6 @@ class RTPSender : public RTPSenderInterface {
   bool video_rotation_active_;
   uint16_t transport_sequence_number_;
 
-  // NACK
-  uint32_t nack_byte_count_times_[NACK_BYTECOUNT_SIZE];
-  size_t nack_byte_count_[NACK_BYTECOUNT_SIZE];
-  Bitrate nack_bitrate_;
-
   // Tracks the current request for playout delay limits from application
   // and decides whether the current RTP frame should include the playout
   // delay extension on header.
@@ -490,10 +446,13 @@ class RTPSender : public RTPSenderInterface {
   StreamDataCounters rtp_stats_ GUARDED_BY(statistics_crit_);
   StreamDataCounters rtx_rtp_stats_ GUARDED_BY(statistics_crit_);
   StreamDataCountersCallback* rtp_stats_callback_ GUARDED_BY(statistics_crit_);
+  RateStatistics total_bitrate_sent_ GUARDED_BY(statistics_crit_);
+  RateStatistics nack_bitrate_sent_ GUARDED_BY(statistics_crit_);
   FrameCountObserver* const frame_count_observer_;
   SendSideDelayObserver* const send_side_delay_observer_;
   RtcEventLog* const event_log_;
   SendPacketObserver* const send_packet_observer_;
+  BitrateStatisticsObserver* const bitrate_callback_;
 
   // RTP variables
   bool start_timestamp_forced_ GUARDED_BY(send_critsect_);
@@ -516,12 +475,7 @@ class RTPSender : public RTPSenderInterface {
   // Mapping rtx_payload_type_map_[associated] = rtx.
   std::map<int8_t, int8_t> rtx_payload_type_map_ GUARDED_BY(send_critsect_);
 
-  // Note: Don't access this variable directly, always go through
-  // SetTargetBitrateKbps or GetTargetBitrateKbps. Also remember
-  // that by the time the function returns there is no guarantee
-  // that the target bitrate is still valid.
-  rtc::CriticalSection target_bitrate_critsect_;
-  uint32_t target_bitrate_ GUARDED_BY(target_bitrate_critsect_);
+  RateLimiter* const retransmission_rate_limiter_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RTPSender);
 };

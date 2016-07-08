@@ -17,7 +17,7 @@
 #include <map>
 
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/modules/rtp_rtcp/source/bitrate.h"
+#include "webrtc/base/rate_statistics.h"
 #include "webrtc/system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
@@ -44,7 +44,6 @@ class StreamStatisticianImpl : public StreamStatistician {
                       bool retransmitted);
   void FecPacketReceived(const RTPHeader& header, size_t packet_length);
   void SetMaxReorderingThreshold(int max_reordering_threshold);
-  void ProcessBitrate();
   virtual void LastReceiveTimeNtp(uint32_t* secs, uint32_t* frac) const;
 
  private:
@@ -57,9 +56,9 @@ class StreamStatisticianImpl : public StreamStatistician {
   void NotifyRtpCallback() LOCKS_EXCLUDED(stream_lock_);
   void NotifyRtcpCallback() LOCKS_EXCLUDED(stream_lock_);
 
-  Clock* clock_;
+  Clock* const clock_;
   rtc::CriticalSection stream_lock_;
-  Bitrate incoming_bitrate_;
+  RateStatistics incoming_bitrate_;
   uint32_t ssrc_;
   int max_reordering_threshold_;  // In number of packets or sequence numbers.
 
@@ -108,10 +107,6 @@ class ReceiveStatisticsImpl : public ReceiveStatistics,
   StreamStatistician* GetStatistician(uint32_t ssrc) const override;
   void SetMaxReorderingThreshold(int max_reordering_threshold) override;
 
-  // Implement Module.
-  void Process() override;
-  int64_t TimeUntilNextProcess() override;
-
   void RegisterRtcpStatisticsCallback(
       RtcpStatisticsCallback* callback) override;
 
@@ -127,9 +122,8 @@ class ReceiveStatisticsImpl : public ReceiveStatistics,
 
   typedef std::map<uint32_t, StreamStatisticianImpl*> StatisticianImplMap;
 
-  Clock* clock_;
+  Clock* const clock_;
   rtc::CriticalSection receive_statistics_lock_;
-  int64_t last_rate_update_ms_;
   StatisticianImplMap statisticians_;
 
   RtcpStatisticsCallback* rtcp_stats_callback_;

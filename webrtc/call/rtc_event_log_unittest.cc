@@ -122,7 +122,8 @@ size_t GenerateRtpPacket(uint32_t extensions_bitvector,
                        nullptr,   // FrameCountObserver*
                        nullptr,   // SendSideDelayObserver*
                        nullptr,   // RtcEventLog*
-                       nullptr);  // SendPacketObserver*
+                       nullptr,   // SendPacketObserver*
+                       nullptr);  // NackRateLimiter*
 
   std::vector<uint32_t> csrcs;
   for (unsigned i = 0; i < csrcs_count; i++) {
