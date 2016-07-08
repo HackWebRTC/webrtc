@@ -52,7 +52,6 @@ std::vector<RtpRtcp*> CreateRtpRtcpModules(
     SendStatisticsProxy* stats_proxy,
     SendDelayStats* send_delay_stats,
     RtcEventLog* event_log,
-    RateLimiter* retransmission_rate_limiter,
     size_t num_modules) {
   RTC_DCHECK_GT(num_modules, 0u);
   RtpRtcp::Configuration configuration;
@@ -74,7 +73,6 @@ std::vector<RtpRtcp*> CreateRtpRtcpModules(
   configuration.send_side_delay_observer = stats_proxy;
   configuration.send_packet_observer = send_delay_stats;
   configuration.event_log = event_log;
-  configuration.retransmission_rate_limiter = retransmission_rate_limiter;
 
   std::vector<RtpRtcp*> modules;
   for (size_t i = 0; i < num_modules; ++i) {
@@ -430,7 +428,6 @@ VideoSendStream::VideoSendStream(
           &stats_proxy_,
           send_delay_stats,
           event_log,
-          congestion_controller_->GetRetransmissionRateLimiter(),
           config_.rtp.ssrcs.size())),
       payload_router_(rtp_rtcp_modules_, config.encoder_settings.payload_type),
       input_(&encoder_wakeup_event_,
@@ -888,6 +885,7 @@ void VideoSendStream::SignalNetworkState(NetworkState state) {
 uint32_t VideoSendStream::OnBitrateUpdated(uint32_t bitrate_bps,
                                            uint8_t fraction_loss,
                                            int64_t rtt) {
+  payload_router_.SetTargetSendBitrate(bitrate_bps);
   // Get the encoder target rate. It is the estimated network rate -
   // protection overhead.
   uint32_t encoder_target_rate_bps =

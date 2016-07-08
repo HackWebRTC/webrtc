@@ -285,6 +285,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // Send a request for a keyframe.
   int32_t RequestKeyFrame() override;
 
+  void SetTargetSendBitrate(uint32_t bitrate_bps) override;
+
   void SetGenericFECStatus(bool enable,
                            uint8_t payload_type_red,
                            uint8_t payload_type_fec) override;

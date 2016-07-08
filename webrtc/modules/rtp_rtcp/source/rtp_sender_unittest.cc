@@ -15,7 +15,6 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/buffer.h"
-#include "webrtc/base/rate_limiter.h"
 #include "webrtc/call/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
@@ -134,11 +133,11 @@ class RtpSenderTest : public ::testing::Test {
       : fake_clock_(kStartTime),
         mock_rtc_event_log_(),
         mock_paced_sender_(),
-        retransmission_rate_limiter_(&fake_clock_, 1000),
         rtp_sender_(),
         payload_(kPayload),
         transport_(),
-        kMarkerBit(true) {}
+        kMarkerBit(true) {
+  }
 
   void SetUp() override { SetUpRtpSender(true); }
 
@@ -146,8 +145,7 @@ class RtpSenderTest : public ::testing::Test {
     rtp_sender_.reset(new RTPSender(
         false, &fake_clock_, &transport_, pacer ? &mock_paced_sender_ : nullptr,
         &seq_num_allocator_, nullptr, nullptr, nullptr, nullptr,
-        &mock_rtc_event_log_, &send_packet_observer_,
-        &retransmission_rate_limiter_));
+        &mock_rtc_event_log_, &send_packet_observer_));
     rtp_sender_->SetSequenceNumber(kSeqNum);
   }
 
@@ -156,7 +154,6 @@ class RtpSenderTest : public ::testing::Test {
   MockRtpPacketSender mock_paced_sender_;
   MockTransportSequenceNumberAllocator seq_num_allocator_;
   MockSendPacketObserver send_packet_observer_;
-  RateLimiter retransmission_rate_limiter_;
   std::unique_ptr<RTPSender> rtp_sender_;
   int payload_;
   LoopbackTransportTest transport_;
@@ -746,6 +743,7 @@ TEST_F(RtpSenderTest, TrafficSmoothingWithExtensions) {
   EXPECT_EQ(
       0, rtp_sender_->RegisterRtpHeaderExtension(kRtpExtensionAbsoluteSendTime,
                                                  kAbsoluteSendTimeExtensionId));
+  rtp_sender_->SetTargetBitrate(300000);
   int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   int rtp_length_int = rtp_sender_->BuildRTPheader(
       packet_, kPayload, kMarkerBit, kTimestamp, capture_time_ms);
@@ -799,6 +797,7 @@ TEST_F(RtpSenderTest, TrafficSmoothingRetransmits) {
   EXPECT_EQ(
       0, rtp_sender_->RegisterRtpHeaderExtension(kRtpExtensionAbsoluteSendTime,
                                                  kAbsoluteSendTimeExtensionId));
+  rtp_sender_->SetTargetBitrate(300000);
   int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   int rtp_length_int = rtp_sender_->BuildRTPheader(
       packet_, kPayload, kMarkerBit, kTimestamp, capture_time_ms);
@@ -880,6 +879,7 @@ TEST_F(RtpSenderTest, SendPadding) {
                                          kAbsoluteSendTimeExtensionId);
   webrtc::RTPHeader rtp_header;
 
+  rtp_sender_->SetTargetBitrate(300000);
   int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   int rtp_length_int = rtp_sender_->BuildRTPheader(
       packet_, kPayload, kMarkerBit, timestamp, capture_time_ms);
@@ -1011,7 +1011,7 @@ TEST_F(RtpSenderTest, OnSendPacketNotUpdatedWithoutSeqNumAllocator) {
   rtp_sender_.reset(new RTPSender(
       false, &fake_clock_, &transport_, &mock_paced_sender_,
       nullptr /* TransportSequenceNumberAllocator */, nullptr, nullptr, nullptr,
-      nullptr, nullptr, &send_packet_observer_, nullptr));
+      nullptr, nullptr, &send_packet_observer_));
   rtp_sender_->SetSequenceNumber(kSeqNum);
   rtp_sender_->SetStorePacketsStatus(true, 10);
 
@@ -1029,7 +1029,7 @@ TEST_F(RtpSenderTest, SendRedundantPayloads) {
   MockTransport transport;
   rtp_sender_.reset(new RTPSender(
       false, &fake_clock_, &transport, &mock_paced_sender_, nullptr, nullptr,
-      nullptr, nullptr, nullptr, &mock_rtc_event_log_, nullptr, nullptr));
+      nullptr, nullptr, nullptr, &mock_rtc_event_log_, nullptr));
 
   rtp_sender_->SetSequenceNumber(kSeqNum);
   rtp_sender_->SetRtxPayloadType(kRtxPayload, kPayload);
@@ -1054,6 +1054,7 @@ TEST_F(RtpSenderTest, SendRedundantPayloads) {
                                          kTransmissionTimeOffsetExtensionId);
   rtp_parser->RegisterRtpHeaderExtension(kRtpExtensionAbsoluteSendTime,
                                          kAbsoluteSendTimeExtensionId);
+  rtp_sender_->SetTargetBitrate(300000);
   const size_t kNumPayloadSizes = 10;
   const size_t kPayloadSizes[kNumPayloadSizes] = {500, 550, 600, 650, 700,
                                                   750, 800, 850, 900, 950};
@@ -1175,7 +1176,7 @@ TEST_F(RtpSenderTest, FrameCountCallbacks) {
 
   rtp_sender_.reset(new RTPSender(
       false, &fake_clock_, &transport_, &mock_paced_sender_, nullptr, nullptr,
-      nullptr, &callback, nullptr, nullptr, nullptr, nullptr));
+      nullptr, &callback, nullptr, nullptr, nullptr));
 
   char payload_name[RTP_PAYLOAD_NAME_SIZE] = "GENERIC";
   const uint8_t payload_type = 127;
@@ -1212,39 +1213,30 @@ TEST_F(RtpSenderTest, FrameCountCallbacks) {
 TEST_F(RtpSenderTest, BitrateCallbacks) {
   class TestCallback : public BitrateStatisticsObserver {
    public:
-    TestCallback()
-        : BitrateStatisticsObserver(),
-          num_calls_(0),
-          ssrc_(0),
-          total_bitrate_(0),
-          retransmit_bitrate_(0) {}
+    TestCallback() : BitrateStatisticsObserver(), num_calls_(0), ssrc_(0) {}
     virtual ~TestCallback() {}
 
-    void Notify(uint32_t total_bitrate,
-                uint32_t retransmit_bitrate,
+    void Notify(const BitrateStatistics& total_stats,
+                const BitrateStatistics& retransmit_stats,
                 uint32_t ssrc) override {
       ++num_calls_;
       ssrc_ = ssrc;
-      total_bitrate_ = total_bitrate;
-      retransmit_bitrate_ = retransmit_bitrate;
+      total_stats_ = total_stats;
+      retransmit_stats_ = retransmit_stats;
     }
 
     uint32_t num_calls_;
     uint32_t ssrc_;
-    uint32_t total_bitrate_;
-    uint32_t retransmit_bitrate_;
+    BitrateStatistics total_stats_;
+    BitrateStatistics retransmit_stats_;
   } callback;
   rtp_sender_.reset(new RTPSender(false, &fake_clock_, &transport_, nullptr,
                                   nullptr, nullptr, &callback, nullptr, nullptr,
-                                  nullptr, nullptr, nullptr));
+                                  nullptr, nullptr));
 
-  // Simulate kNumPackets sent with kPacketInterval ms intervals, with the
-  // number of packets selected so that we fill (but don't overflow) the one
-  // second averaging window.
-  const uint32_t kWindowSizeMs = 1000;
+  // Simulate kNumPackets sent with kPacketInterval ms intervals.
+  const uint32_t kNumPackets = 15;
   const uint32_t kPacketInterval = 20;
-  const uint32_t kNumPackets =
-      (kWindowSizeMs - kPacketInterval) / kPacketInterval;
   // Overhead = 12 bytes RTP header + 1 byte generic header.
   const uint32_t kPacketOverhead = 13;
 
@@ -1258,6 +1250,7 @@ TEST_F(RtpSenderTest, BitrateCallbacks) {
 
   // Initial process call so we get a new time window.
   rtp_sender_->ProcessBitrate();
+  uint64_t start_time = fake_clock_.CurrentNtpInMilliseconds();
 
   // Send a few frames.
   for (uint32_t i = 0; i < kNumPackets; ++i) {
@@ -1269,18 +1262,17 @@ TEST_F(RtpSenderTest, BitrateCallbacks) {
 
   rtp_sender_->ProcessBitrate();
 
+  const uint32_t expected_packet_rate = 1000 / kPacketInterval;
+
   // We get one call for every stats updated, thus two calls since both the
   // stream stats and the retransmit stats are updated once.
   EXPECT_EQ(2u, callback.num_calls_);
   EXPECT_EQ(ssrc, callback.ssrc_);
-  const uint32_t kTotalPacketSize = kPacketOverhead + sizeof(payload);
-  // Bitrate measured over delta between last and first timestamp, plus one.
-  const uint32_t kExpectedWindowMs = kNumPackets * kPacketInterval + 1;
-  const uint32_t kExpectedBitsAccumulated = kTotalPacketSize * kNumPackets * 8;
-  const uint32_t kExpectedRateBps =
-      (kExpectedBitsAccumulated * 1000 + (kExpectedWindowMs / 2)) /
-      kExpectedWindowMs;
-  EXPECT_EQ(kExpectedRateBps, callback.total_bitrate_);
+  EXPECT_EQ(start_time + (kNumPackets * kPacketInterval),
+            callback.total_stats_.timestamp_ms);
+  EXPECT_EQ(expected_packet_rate, callback.total_stats_.packet_rate);
+  EXPECT_EQ((kPacketOverhead + sizeof(payload)) * 8 * expected_packet_rate,
+            callback.total_stats_.bitrate_bps);
 
   rtp_sender_.reset();
 }
@@ -1293,7 +1285,7 @@ class RtpSenderAudioTest : public RtpSenderTest {
     payload_ = kAudioPayload;
     rtp_sender_.reset(new RTPSender(true, &fake_clock_, &transport_, nullptr,
                                     nullptr, nullptr, nullptr, nullptr, nullptr,
-                                    nullptr, nullptr, nullptr));
+                                    nullptr, nullptr));
     rtp_sender_->SetSequenceNumber(kSeqNum);
   }
 };
@@ -1561,9 +1553,9 @@ TEST_F(RtpSenderTestWithoutPacer, RespectsNackBitrateLimit) {
   const int32_t kPacketSize = 1400;
   const int32_t kNumPackets = 30;
 
-  retransmission_rate_limiter_.SetMaxRate(kPacketSize * kNumPackets * 8);
-
   rtp_sender_->SetStorePacketsStatus(true, kNumPackets);
+  // Set bitrate (in kbps) to fit kNumPackets á kPacketSize bytes in one second.
+  rtp_sender_->SetTargetBitrate(kNumPackets * kPacketSize * 8);
   const uint16_t kStartSequenceNumber = rtp_sender_->SequenceNumber();
   std::list<uint16_t> sequence_numbers;
   for (int32_t i = 0; i < kNumPackets; ++i) {
@@ -1580,9 +1572,6 @@ TEST_F(RtpSenderTestWithoutPacer, RespectsNackBitrateLimit) {
   // protection overhead is 50% (see MediaOptimization::SetTargetRates).
   rtp_sender_->OnReceivedNACK(sequence_numbers, 0);
   EXPECT_EQ(kNumPackets * 2, transport_.packets_sent_);
-
-  // Must be at least 5ms in between retransmission attempts.
-  fake_clock_.AdvanceTimeMilliseconds(5);
 
   // Resending should not work, bandwidth exceeded.
   rtp_sender_->OnReceivedNACK(sequence_numbers, 0);
