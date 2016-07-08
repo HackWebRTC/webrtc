@@ -7,6 +7,7 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 import("../build/webrtc.gni")
+import("//testing/test.gni")
 
 source_set("voice_engine") {
   sources = [
@@ -76,7 +77,7 @@ source_set("voice_engine") {
 
     cflags = [
       # TODO(kjellander): Bug 261: fix this warning.
-      "/wd4373",  # virtual function override.
+      "/wd4373",  # Virtual function override.
     ]
   }
 
@@ -105,4 +106,150 @@ source_set("voice_engine") {
     "../modules/utility",
     "../system_wrappers",
   ]
+}
+
+if (rtc_include_tests) {
+  test("voice_engine_unittests") {
+    deps = [
+      ":voice_engine",
+      "//testing/gmock",
+      "//testing/gtest",
+      "//webrtc/common_audio",
+      "//webrtc/modules/audio_coding",
+      "//webrtc/modules/audio_conference_mixer",
+      "//webrtc/modules/audio_device",
+      "//webrtc/modules/audio_processing",
+      "//webrtc/modules/media_file",
+      "//webrtc/modules/rtp_rtcp",
+      "//webrtc/modules/utility",
+      "//webrtc/system_wrappers",
+      "//webrtc/test:test_support_main",
+    ]
+
+    if (is_android) {
+      deps += [ "//testing/android/native_test:native_test_native_code" ]
+    }
+
+    sources = [
+      "channel_unittest.cc",
+      "network_predictor_unittest.cc",
+      "transmit_mixer_unittest.cc",
+      "utility_unittest.cc",
+      "voe_audio_processing_unittest.cc",
+      "voe_base_unittest.cc",
+      "voe_codec_unittest.cc",
+      "voe_network_unittest.cc",
+      "voice_engine_fixture.cc",
+      "voice_engine_fixture.h",
+    ]
+
+    if (is_win) {
+      defines = [ "WEBRTC_DRIFT_COMPENSATION_SUPPORTED" ]
+
+      cflags = [
+        # TODO(kjellander): Bug 261: fix this warning.
+        "/wd4373",  # Virtual function override.
+      ]
+    }
+
+    if (is_clang) {
+      # Suppress warnings from Chrome's Clang plugins.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
+  if (!is_ios) {
+    executable("voe_auto_test") {
+      testonly = true
+
+      deps = [
+        ":voice_engine",
+        "//testing/gmock",
+        "//testing/gtest",
+        "//third_party/gflags",
+        "//webrtc/:rtc_event_log",
+        "//webrtc/modules/video_capture",
+        "//webrtc/system_wrappers",
+        "//webrtc/system_wrappers/:system_wrappers_default",
+        "//webrtc/test/:channel_transport",
+        "//webrtc/test/:test_common",
+        "//webrtc/test/:test_support",
+      ]
+
+      sources = [
+        "test/auto_test/automated_mode.cc",
+        "test/auto_test/extended/agc_config_test.cc",
+        "test/auto_test/extended/ec_metrics_test.cc",
+        "test/auto_test/fakes/conference_transport.cc",
+        "test/auto_test/fakes/conference_transport.h",
+        "test/auto_test/fakes/loudest_filter.cc",
+        "test/auto_test/fakes/loudest_filter.h",
+        "test/auto_test/fixtures/after_initialization_fixture.cc",
+        "test/auto_test/fixtures/after_initialization_fixture.h",
+        "test/auto_test/fixtures/after_streaming_fixture.cc",
+        "test/auto_test/fixtures/after_streaming_fixture.h",
+        "test/auto_test/fixtures/before_initialization_fixture.cc",
+        "test/auto_test/fixtures/before_initialization_fixture.h",
+        "test/auto_test/fixtures/before_streaming_fixture.cc",
+        "test/auto_test/fixtures/before_streaming_fixture.h",
+        "test/auto_test/resource_manager.cc",
+        "test/auto_test/standard/audio_processing_test.cc",
+        "test/auto_test/standard/codec_before_streaming_test.cc",
+        "test/auto_test/standard/codec_test.cc",
+        "test/auto_test/standard/dtmf_test.cc",
+        "test/auto_test/standard/external_media_test.cc",
+        "test/auto_test/standard/file_before_streaming_test.cc",
+        "test/auto_test/standard/file_test.cc",
+        "test/auto_test/standard/hardware_before_initializing_test.cc",
+        "test/auto_test/standard/hardware_test.cc",
+        "test/auto_test/standard/mixing_test.cc",
+        "test/auto_test/standard/neteq_stats_test.cc",
+        "test/auto_test/standard/rtp_rtcp_before_streaming_test.cc",
+        "test/auto_test/standard/rtp_rtcp_extensions.cc",
+        "test/auto_test/standard/rtp_rtcp_test.cc",
+        "test/auto_test/standard/video_sync_test.cc",
+        "test/auto_test/standard/voe_base_misc_test.cc",
+        "test/auto_test/standard/volume_test.cc",
+        "test/auto_test/voe_conference_test.cc",
+        "test/auto_test/voe_cpu_test.cc",
+        "test/auto_test/voe_cpu_test.h",
+        "test/auto_test/voe_output_test.cc",
+        "test/auto_test/voe_standard_test.cc",
+        "test/auto_test/voe_standard_test.h",
+        "test/auto_test/voe_stress_test.cc",
+        "test/auto_test/voe_stress_test.h",
+        "test/auto_test/voe_test_defines.h",
+        "test/auto_test/voe_test_interface.h",
+      ]
+
+      if (!is_android) {
+        # Some tests are not supported on android yet, exclude these tests.
+        sources +=
+            [ "test/auto_test/standard/hardware_before_streaming_test.cc" ]
+      }
+
+      defines = []
+
+      if (rtc_enable_protobuf) {
+        defines = [ "ENABLE_RTC_EVENT_LOG" ]
+      }
+
+      if (is_win) {
+        defines += [ "WEBRTC_DRIFT_COMPENSATION_SUPPORTED" ]
+
+        cflags = [
+          "/wd4267",  # size_t to int truncation.
+          "/wd4373",  # Virtual function override.
+                      # TODO(kjellander): Bug 261: fix this warning.
+        ]
+      }
+
+      if (is_clang) {
+        # Suppress warnings from Chrome's Clang plugins.
+        # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+        configs -= [ "//build/config/clang:find_bad_constructs" ]
+      }
+    }
+  }
 }
