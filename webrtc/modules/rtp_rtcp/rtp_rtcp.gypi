@@ -26,6 +26,8 @@
         'include/rtp_receiver.h',
         'include/rtp_rtcp.h',
         'include/rtp_rtcp_defines.h',
+        'source/bitrate.cc',
+        'source/bitrate.h',
         'source/byte_io.h',
         'source/fec_receiver_impl.cc',
         'source/fec_receiver_impl.h',

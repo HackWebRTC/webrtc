@@ -15,7 +15,6 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
-#include "webrtc/base/rate_limiter.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -38,7 +37,6 @@ const int64_t kOneWayNetworkDelayMs = 100;
 const uint8_t kBaseLayerTid = 0;
 const uint8_t kHigherLayerTid = 1;
 const uint16_t kSequenceNumber = 100;
-const int64_t kMaxRttMs = 1000;
 
 class RtcpRttStatsTestImpl : public RtcpRttStats {
  public:
@@ -101,9 +99,7 @@ class SendTransport : public Transport,
 class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
  public:
   explicit RtpRtcpModule(SimulatedClock* clock)
-      : receive_statistics_(ReceiveStatistics::Create(clock)),
-        remote_ssrc_(0),
-        retransmission_rate_limiter_(clock, kMaxRttMs) {
+      : receive_statistics_(ReceiveStatistics::Create(clock)) {
     RtpRtcp::Configuration config;
     config.audio = false;
     config.clock = clock;
@@ -111,7 +107,6 @@ class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
     config.receive_statistics = receive_statistics_.get();
     config.rtcp_packet_type_counter_observer = this;
     config.rtt_stats = &rtt_stats_;
-    config.retransmission_rate_limiter = &retransmission_rate_limiter_;
 
     impl_.reset(new ModuleRtpRtcpImpl(config));
     impl_->SetRTCPStatus(RtcpMode::kCompound);
@@ -126,7 +121,6 @@ class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
   RtcpRttStatsTestImpl rtt_stats_;
   std::unique_ptr<ModuleRtpRtcpImpl> impl_;
   uint32_t remote_ssrc_;
-  RateLimiter retransmission_rate_limiter_;
 
   void SetRemoteSsrc(uint32_t ssrc) {
     remote_ssrc_ = ssrc;

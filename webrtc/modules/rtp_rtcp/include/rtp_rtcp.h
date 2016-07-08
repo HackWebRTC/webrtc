@@ -23,12 +23,11 @@
 
 namespace webrtc {
 // Forward declarations.
-class RateLimiter;
 class ReceiveStatistics;
 class RemoteBitrateEstimator;
-class RtcEventLog;
 class RtpReceiver;
 class Transport;
+class RtcEventLog;
 
 RTPExtensionType StringToRtpExtensionType(const std::string& extension);
 
@@ -80,7 +79,6 @@ class RtpRtcp : public Module {
     SendSideDelayObserver* send_side_delay_observer;
     RtcEventLog* event_log;
     SendPacketObserver* send_packet_observer;
-    RateLimiter* retransmission_rate_limiter;
     RTC_DISALLOW_COPY_AND_ASSIGN(Configuration);
   };
 
@@ -616,6 +614,11 @@ class RtpRtcp : public Module {
     *   Video
     *
     ***************************************************************************/
+
+    /*
+    *   Set the target send bitrate
+    */
+    virtual void SetTargetSendBitrate(uint32_t bitrate_bps) = 0;
 
     /*
     *   Turn on/off generic FEC

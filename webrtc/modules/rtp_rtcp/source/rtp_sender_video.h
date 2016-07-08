@@ -15,10 +15,10 @@
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/onetimeevent.h"
-#include "webrtc/base/rate_statistics.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/source/bitrate.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
 #include "webrtc/modules/rtp_rtcp/source/producer_fec.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
@@ -68,6 +68,8 @@ class RTPSenderVideo {
   void SetFecParameters(const FecProtectionParams* delta_params,
                         const FecProtectionParams* key_params);
 
+  void ProcessBitrate();
+
   uint32_t VideoBitrateSent() const;
   uint32_t FecOverheadRate() const;
 
@@ -93,10 +95,9 @@ class RTPSenderVideo {
                             bool protect);
 
   RTPSenderInterface& _rtpSender;
-  Clock* const clock_;
 
   // Should never be held when calling out of this class.
-  rtc::CriticalSection crit_;
+  const rtc::CriticalSection crit_;
 
   RtpVideoCodecTypes _videoType;
   int32_t _retransmissionSettings GUARDED_BY(crit_);
@@ -110,12 +111,11 @@ class RTPSenderVideo {
   FecProtectionParams key_fec_params_ GUARDED_BY(crit_);
   ProducerFec producer_fec_ GUARDED_BY(crit_);
 
-  rtc::CriticalSection stats_crit_;
   // Bitrate used for FEC payload, RED headers, RTP headers for FEC packets
   // and any padding overhead.
-  RateStatistics fec_bitrate_ GUARDED_BY(stats_crit_);
-  // Bitrate used for video payload and RTP headers.
-  RateStatistics video_bitrate_ GUARDED_BY(stats_crit_);
+  Bitrate _fecOverheadRate;
+  // Bitrate used for video payload and RTP headers
+  Bitrate _videoBitrate;
   OneTimeEvent first_frame_sent_;
 };
 }  // namespace webrtc

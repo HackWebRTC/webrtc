@@ -15,7 +15,6 @@
 #include <set>
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/rate_limiter.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
@@ -35,7 +34,6 @@ const int kTestNumberOfRtxPackets = 149;
 const int kNumFrames = 30;
 const int kPayloadType = 123;
 const int kRtxPayloadType = 98;
-const int64_t kMaxRttMs = 1000;
 
 class VerifyingRtxReceiver : public NullRtpData {
  public:
@@ -170,12 +168,11 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
  protected:
   RtpRtcpRtxNackTest()
       : rtp_payload_registry_(RTPPayloadStrategy::CreateStrategy(false)),
-        rtp_rtcp_module_(nullptr),
+        rtp_rtcp_module_(NULL),
         transport_(kTestSsrc + 1),
         receiver_(),
         payload_data_length(sizeof(payload_data)),
-        fake_clock(123456),
-        retranmission_rate_limiter_(&fake_clock, kMaxRttMs) {}
+        fake_clock(123456) {}
   ~RtpRtcpRtxNackTest() {}
 
   void SetUp() override {
@@ -185,7 +182,6 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
     receive_statistics_.reset(ReceiveStatistics::Create(&fake_clock));
     configuration.receive_statistics = receive_statistics_.get();
     configuration.outgoing_transport = &transport_;
-    configuration.retransmission_rate_limiter = &retranmission_rate_limiter_;
     rtp_rtcp_module_ = RtpRtcp::CreateRtpRtcp(configuration);
 
     rtp_feedback_.reset(new TestRtpFeedback(rtp_rtcp_module_));
@@ -292,7 +288,6 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
   uint8_t payload_data[65000];
   size_t payload_data_length;
   SimulatedClock fake_clock;
-  RateLimiter retranmission_rate_limiter_;
 };
 
 TEST_F(RtpRtcpRtxNackTest, LongNackList) {

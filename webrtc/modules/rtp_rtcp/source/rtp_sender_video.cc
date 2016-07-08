@@ -31,7 +31,6 @@ enum { REDForFECHeaderLength = 1 };
 
 RTPSenderVideo::RTPSenderVideo(Clock* clock, RTPSenderInterface* rtpSender)
     : _rtpSender(*rtpSender),
-      clock_(clock),
       _videoType(kRtpVideoGeneric),
       _retransmissionSettings(kRetransmitBaseLayer),
       // Generic FEC
@@ -42,8 +41,8 @@ RTPSenderVideo::RTPSenderVideo(Clock* clock, RTPSenderInterface* rtpSender)
       delta_fec_params_(),
       key_fec_params_(),
       producer_fec_(&fec_),
-      fec_bitrate_(1000, RateStatistics::kBpsScale),
-      video_bitrate_(1000, RateStatistics::kBpsScale) {
+      _fecOverheadRate(clock, NULL),
+      _videoBitrate(clock, NULL) {
   memset(&delta_fec_params_, 0, sizeof(delta_fec_params_));
   memset(&key_fec_params_, 0, sizeof(key_fec_params_));
   delta_fec_params_.max_fec_frames = key_fec_params_.max_fec_frames = 1;
@@ -96,9 +95,7 @@ void RTPSenderVideo::SendVideoPacket(uint8_t* data_buffer,
   if (_rtpSender.SendToNetwork(data_buffer, payload_length, rtp_header_length,
                                capture_time_ms, storage,
                                RtpPacketSender::kLowPriority) == 0) {
-    rtc::CritScope cs(&stats_crit_);
-    video_bitrate_.Update(payload_length + rtp_header_length,
-                          clock_->TimeInMilliseconds());
+    _videoBitrate.Update(payload_length + rtp_header_length);
     TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
                          "Video::PacketNormal", "timestamp", capture_timestamp,
                          "seqnum", seq_num);
@@ -144,8 +141,7 @@ void RTPSenderVideo::SendVideoPacketAsRed(uint8_t* data_buffer,
           red_packet->data(), red_packet->length() - rtp_header_length,
           rtp_header_length, capture_time_ms, media_packet_storage,
           RtpPacketSender::kLowPriority) == 0) {
-    rtc::CritScope cs(&stats_crit_);
-    video_bitrate_.Update(red_packet->length(), clock_->TimeInMilliseconds());
+    _videoBitrate.Update(red_packet->length());
     TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
                          "Video::PacketRed", "timestamp", capture_timestamp,
                          "seqnum", media_seq_num);
@@ -157,8 +153,7 @@ void RTPSenderVideo::SendVideoPacketAsRed(uint8_t* data_buffer,
             fec_packet->data(), fec_packet->length() - rtp_header_length,
             rtp_header_length, capture_time_ms, fec_storage,
             RtpPacketSender::kLowPriority) == 0) {
-      rtc::CritScope cs(&stats_crit_);
-      fec_bitrate_.Update(fec_packet->length(), clock_->TimeInMilliseconds());
+      _fecOverheadRate.Update(fec_packet->length());
       TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
                            "Video::PacketFec", "timestamp", capture_timestamp,
                            "seqnum", next_fec_sequence_number);
@@ -342,14 +337,17 @@ int32_t RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
   return 0;
 }
 
+void RTPSenderVideo::ProcessBitrate() {
+  _videoBitrate.Process();
+  _fecOverheadRate.Process();
+}
+
 uint32_t RTPSenderVideo::VideoBitrateSent() const {
-  rtc::CritScope cs(&stats_crit_);
-  return video_bitrate_.Rate(clock_->TimeInMilliseconds()).value_or(0);
+  return _videoBitrate.BitrateLast();
 }
 
 uint32_t RTPSenderVideo::FecOverheadRate() const {
-  rtc::CritScope cs(&stats_crit_);
-  return fec_bitrate_.Rate(clock_->TimeInMilliseconds()).value_or(0);
+  return _fecOverheadRate.BitrateLast();
 }
 
 int RTPSenderVideo::SelectiveRetransmissions() const {

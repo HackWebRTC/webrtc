@@ -167,6 +167,25 @@ int32_t PayloadRouter::Encoded(const EncodedImage& encoded_image,
       encoded_image._length, fragmentation, &rtp_video_header);
 }
 
+void PayloadRouter::SetTargetSendBitrate(uint32_t bitrate_bps) {
+  rtc::CritScope lock(&crit_);
+  RTC_DCHECK_LE(streams_.size(), rtp_modules_.size());
+
+  // TODO(sprang): Rebase https://codereview.webrtc.org/1913073002/ on top of
+  // this.
+  int bitrate_remainder = bitrate_bps;
+  for (size_t i = 0; i < streams_.size() && bitrate_remainder > 0; ++i) {
+    int stream_bitrate = 0;
+    if (streams_[i].max_bitrate_bps > bitrate_remainder) {
+      stream_bitrate = bitrate_remainder;
+    } else {
+      stream_bitrate = streams_[i].max_bitrate_bps;
+    }
+    bitrate_remainder -= stream_bitrate;
+    rtp_modules_[i]->SetTargetSendBitrate(stream_bitrate);
+  }
+}
+
 size_t PayloadRouter::MaxPayloadLength() const {
   size_t min_payload_length = DefaultMaxPayloadLength();
   rtc::CritScope lock(&crit_);
