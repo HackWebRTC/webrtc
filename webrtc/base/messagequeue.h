@@ -68,8 +68,11 @@ class MessageQueueManager {
 
   static MessageQueueManager* instance_;
   // This list contains all live MessageQueues.
-  std::vector<MessageQueue *> message_queues_;
+  std::vector<MessageQueue*> message_queues_ GUARDED_BY(crit_);
+
+  // Acquire this with DebugNonReentrantCritScope.
   CriticalSection crit_;
+  bool locked_ GUARDED_BY(crit_);
 };
 
 // Derive from this for specialized data

@@ -61,10 +61,10 @@ class LOCKABLE CriticalSection {
   bool TryEnter() const EXCLUSIVE_TRYLOCK_FUNCTION(true);
   void Leave() const UNLOCK_FUNCTION();
 
+ private:
   // Use only for RTC_DCHECKing.
   bool CurrentThreadIsOwner() const;
 
- private:
 #if defined(WEBRTC_WIN)
   mutable CRITICAL_SECTION crit_;
 #elif defined(WEBRTC_POSIX)

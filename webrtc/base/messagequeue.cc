@@ -19,9 +19,33 @@
 #include "webrtc/base/trace_event.h"
 
 namespace rtc {
+namespace {
 
 const int kMaxMsgLatency = 150;  // 150 ms
 const int kSlowDispatchLoggingThreshold = 50;  // 50 ms
+
+class SCOPED_LOCKABLE DebugNonReentrantCritScope {
+ public:
+  DebugNonReentrantCritScope(const CriticalSection* cs, bool* locked)
+      EXCLUSIVE_LOCK_FUNCTION(cs)
+      : cs_(cs), locked_(locked) {
+    cs_->Enter();
+    ASSERT(!*locked_);
+    *locked_ = true;
+  }
+
+  ~DebugNonReentrantCritScope() UNLOCK_FUNCTION() {
+    *locked_ = false;
+    cs_->Leave();
+  }
+
+ private:
+  const CriticalSection* const cs_;
+  bool* locked_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(DebugNonReentrantCritScope);
+};
+}  // namespace
 
 //------------------------------------------------------------------
 // MessageQueueManager
@@ -40,7 +64,7 @@ bool MessageQueueManager::IsInitialized() {
   return instance_ != NULL;
 }
 
-MessageQueueManager::MessageQueueManager() {}
+MessageQueueManager::MessageQueueManager() : locked_(false) {}
 
 MessageQueueManager::~MessageQueueManager() {
 }
@@ -49,13 +73,7 @@ void MessageQueueManager::Add(MessageQueue *message_queue) {
   return Instance()->AddInternal(message_queue);
 }
 void MessageQueueManager::AddInternal(MessageQueue *message_queue) {
-  // MessageQueueManager methods should be non-reentrant, so we
-  // ASSERT that is the case.  If any of these ASSERT, please
-  // contact bpm or jbeda.
-#if CS_DEBUG_CHECKS  // CurrentThreadIsOwner returns true by default.
-  ASSERT(!crit_.CurrentThreadIsOwner());
-#endif
-  CritScope cs(&crit_);
+  DebugNonReentrantCritScope cs(&crit_, &locked_);
   message_queues_.push_back(message_queue);
 }
 
@@ -66,16 +84,13 @@ void MessageQueueManager::Remove(MessageQueue *message_queue) {
   return Instance()->RemoveInternal(message_queue);
 }
 void MessageQueueManager::RemoveInternal(MessageQueue *message_queue) {
-#if CS_DEBUG_CHECKS  // CurrentThreadIsOwner returns true by default.
-  ASSERT(!crit_.CurrentThreadIsOwner());  // See note above.
-#endif
   // If this is the last MessageQueue, destroy the manager as well so that
   // we don't leak this object at program shutdown. As mentioned above, this is
   // not thread-safe, but this should only happen at program termination (when
   // the ThreadManager is destroyed, and threads are no longer active).
   bool destroy = false;
   {
-    CritScope cs(&crit_);
+    DebugNonReentrantCritScope cs(&crit_, &locked_);
     std::vector<MessageQueue *>::iterator iter;
     iter = std::find(message_queues_.begin(), message_queues_.end(),
                      message_queue);
@@ -97,10 +112,7 @@ void MessageQueueManager::Clear(MessageHandler *handler) {
   return Instance()->ClearInternal(handler);
 }
 void MessageQueueManager::ClearInternal(MessageHandler *handler) {
-#if CS_DEBUG_CHECKS  // CurrentThreadIsOwner returns true by default.
-  ASSERT(!crit_.CurrentThreadIsOwner());  // See note above.
-#endif
-  CritScope cs(&crit_);
+  DebugNonReentrantCritScope cs(&crit_, &locked_);
   std::vector<MessageQueue *>::iterator iter;
   for (iter = message_queues_.begin(); iter != message_queues_.end(); iter++)
     (*iter)->Clear(handler);
@@ -114,9 +126,6 @@ void MessageQueueManager::ProcessAllMessageQueues() {
 }
 
 void MessageQueueManager::ProcessAllMessageQueuesInternal() {
-#if CS_DEBUG_CHECKS  // CurrentThreadIsOwner returns true by default.
-  ASSERT(!crit_.CurrentThreadIsOwner());  // See note above.
-#endif
   // Post a delayed message at the current time and wait for it to be dispatched
   // on all queues, which will ensure that all messages that came before it were
   // also dispatched.
@@ -124,7 +133,7 @@ void MessageQueueManager::ProcessAllMessageQueuesInternal() {
   auto functor = [&queues_not_done] { AtomicOps::Decrement(&queues_not_done); };
   FunctorMessageHandler<void, decltype(functor)> handler(functor);
   {
-    CritScope cs(&crit_);
+    DebugNonReentrantCritScope cs(&crit_, &locked_);
     queues_not_done = static_cast<int>(message_queues_.size());
     for (MessageQueue* queue : message_queues_) {
       queue->PostDelayed(RTC_FROM_HERE, 0, &handler);
