@@ -227,6 +227,7 @@
           'sources': [
             'objc/Framework/Classes/RTCFieldTrials.mm',
             'objc/Framework/Classes/RTCLogging.mm',
+            'objc/Framework/Classes/RTCMetrics.mm',
             'objc/Framework/Classes/RTCSSLAdapter.mm',
             'objc/Framework/Classes/RTCTracing.mm',
             'objc/Framework/Headers/WebRTC/RTCFieldTrials.h',
@@ -254,6 +255,8 @@
             'objc/Framework/Headers/WebRTC/RTCMediaConstraints.h',
             'objc/Framework/Headers/WebRTC/RTCMediaStream.h',
             'objc/Framework/Headers/WebRTC/RTCMediaStreamTrack.h',
+            'objc/Framework/Headers/WebRTC/RTCMetrics.h',
+            'objc/Framework/Headers/WebRTC/RTCMetricsSampleInfo.h',
             'objc/Framework/Headers/WebRTC/RTCNSGLVideoView.h',
             'objc/Framework/Headers/WebRTC/RTCPeerConnection.h',
             'objc/Framework/Headers/WebRTC/RTCPeerConnectionFactory.h',
