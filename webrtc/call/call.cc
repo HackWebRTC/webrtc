@@ -579,7 +579,12 @@ void Call::SetBitrateConfig(
     // Nothing new to set, early abort to avoid encoder reconfigurations.
     return;
   }
-  config_.bitrate_config = bitrate_config;
+  config_.bitrate_config.min_bitrate_bps = bitrate_config.min_bitrate_bps;
+  // Start bitrate of -1 means we should keep the old bitrate, which there is
+  // no point in remembering for the future.
+  if (bitrate_config.start_bitrate_bps > 0)
+    config_.bitrate_config.start_bitrate_bps = bitrate_config.start_bitrate_bps;
+  config_.bitrate_config.max_bitrate_bps = bitrate_config.max_bitrate_bps;
   congestion_controller_->SetBweBitrates(bitrate_config.min_bitrate_bps,
                                          bitrate_config.start_bitrate_bps,
                                          bitrate_config.max_bitrate_bps);

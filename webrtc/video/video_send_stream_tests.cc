@@ -1121,6 +1121,54 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
   RunBaseTest(&test);
 }
 
+TEST_F(VideoSendStreamTest, ChangingNetworkRoute) {
+  class ChangingNetworkRouteTest : public test::EndToEndTest {
+   public:
+    const int kStartBitrateBps = 300000;
+    const int kNewMaxBitrateBps = 1234567;
+
+    ChangingNetworkRouteTest()
+        : EndToEndTest(test::CallTest::kDefaultTimeoutMs),
+          call_(nullptr) {}
+
+    void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
+      call_ = sender_call;
+    }
+
+    Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      if (call_->GetStats().send_bandwidth_bps > kStartBitrateBps) {
+        observation_complete_.Set();
+      }
+
+      return SEND_PACKET;
+    }
+
+    void PerformTest() override {
+      rtc::NetworkRoute new_route(true, 10, 20, -1);
+      call_->OnNetworkRouteChanged("transport", new_route);
+      Call::Config::BitrateConfig bitrate_config;
+      bitrate_config.start_bitrate_bps = kStartBitrateBps;
+      call_->SetBitrateConfig(bitrate_config);
+      EXPECT_TRUE(Wait())
+          << "Timed out while waiting for start bitrate to be exceeded.";
+
+      bitrate_config.start_bitrate_bps = -1;
+      bitrate_config.max_bitrate_bps = kNewMaxBitrateBps;
+      call_->SetBitrateConfig(bitrate_config);
+      // TODO(holmer): We should set the last sent packet id here and verify
+      // that we correctly ignore any packet loss reported prior to that id.
+      ++new_route.local_network_id;
+      call_->OnNetworkRouteChanged("transport", new_route);
+      EXPECT_EQ(kStartBitrateBps, call_->GetStats().send_bandwidth_bps);
+    }
+
+   private:
+    Call* call_;
+  } test;
+
+  RunBaseTest(&test);
+}
+
 class MaxPaddingSetTest : public test::SendTest {
  public:
   static const uint32_t kMinTransmitBitrateBps = 400000;
