@@ -462,13 +462,13 @@ TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
 
   const std::string output_checksum = PlatformChecksum(
       "472ebe1126f41fdb6b5c63c87f625a52e7604e49",
-      "d2a6b6ff54b340cf9f961c7f07768d86b3761073",
+      "36f6fc87c05de077e998173b46b83524de5e8fc2",
       "472ebe1126f41fdb6b5c63c87f625a52e7604e49",
       "f9749813dbc3fb59dae761de518fec65b8407c5b");
 
   const std::string network_stats_checksum = PlatformChecksum(
       "2cf380a05ee07080bd72471e8ec7777a39644ec9",
-      "01be67dc4c3b8e74743a45cbd8684c0535dec9ad",
+      "f50795e25ec2bab2d418c694ab088012776fd450",
       "2cf380a05ee07080bd72471e8ec7777a39644ec9",
       "2cf380a05ee07080bd72471e8ec7777a39644ec9");
 

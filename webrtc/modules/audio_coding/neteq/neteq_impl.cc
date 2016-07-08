@@ -47,11 +47,6 @@
 #include "webrtc/modules/audio_coding/neteq/timestamp_scaler.h"
 #include "webrtc/modules/include/module_common_types.h"
 
-// Modify the code to obtain backwards bit-exactness. Once bit-exactness is no
-// longer required, this #define should be removed (and the code that it
-// enables).
-#define LEGACY_BITEXACT
-
 namespace webrtc {
 
 NetEqImpl::Dependencies::Dependencies(
@@ -1145,15 +1140,8 @@ int NetEqImpl::GetDecision(Operations* operation,
         return -1;
       }
       timestamp_ = header->timestamp;
-      if (*operation == kRfc3389CngNoPacket
-#ifndef LEGACY_BITEXACT
-          // Without this check, it can happen that a non-CNG packet is sent to
-          // the CNG decoder as if it was a SID frame. This is clearly a bug,
-          // but is kept for now to maintain bit-exactness with the test
-          // vectors.
-          && decoder_database_->IsComfortNoise(header->payloadType)
-#endif
-      ) {
+      if (*operation == kRfc3389CngNoPacket &&
+          decoder_database_->IsComfortNoise(header->payloadType)) {
         // Change decision to CNG packet, since we do have a CNG packet, but it
         // was considered too early to use. Now, use it anyway.
         *operation = kRfc3389Cng;
@@ -1371,16 +1359,6 @@ int NetEqImpl::Decode(PacketList* packet_list, Operations* operation,
 
     reset_decoder_ = false;
   }
-
-#ifdef LEGACY_BITEXACT
-  // Due to a bug in old SignalMCU, it could happen that CNG operation was
-  // decided, but a speech packet was provided. The speech packet will be used
-  // to update the comfort noise decoder, as if it was a SID frame, which is
-  // clearly wrong.
-  if (*operation == kRfc3389Cng) {
-    return 0;
-  }
-#endif
 
   *decoded_length = 0;
   // Update codec-internal PLC state.
@@ -1776,29 +1754,8 @@ int NetEqImpl::DoRfc3389Cng(PacketList* packet_list, bool play_dtmf) {
     Packet* packet = packet_list->front();
     packet_list->pop_front();
     if (!decoder_database_->IsComfortNoise(packet->header.payloadType)) {
-#ifdef LEGACY_BITEXACT
-      // This can happen due to a bug in GetDecision. Change the payload type
-      // to a CNG type, and move on. Note that this means that we are in fact
-      // sending a non-CNG payload to the comfort noise decoder for decoding.
-      // Clearly wrong, but will maintain bit-exactness with legacy.
-      if (fs_hz_ == 8000) {
-        packet->header.payloadType =
-            decoder_database_->GetRtpPayloadType(NetEqDecoder::kDecoderCNGnb);
-      } else if (fs_hz_ == 16000) {
-        packet->header.payloadType =
-            decoder_database_->GetRtpPayloadType(NetEqDecoder::kDecoderCNGwb);
-      } else if (fs_hz_ == 32000) {
-        packet->header.payloadType = decoder_database_->GetRtpPayloadType(
-            NetEqDecoder::kDecoderCNGswb32kHz);
-      } else if (fs_hz_ == 48000) {
-        packet->header.payloadType = decoder_database_->GetRtpPayloadType(
-            NetEqDecoder::kDecoderCNGswb48kHz);
-      }
-      assert(decoder_database_->IsComfortNoise(packet->header.payloadType));
-#else
       LOG(LS_ERROR) << "Trying to decode non-CNG payload as CNG.";
       return kOtherError;
-#endif
     }
     // UpdateParameters() deletes |packet|.
     if (comfort_noise_->UpdateParameters(packet) ==
