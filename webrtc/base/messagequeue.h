@@ -288,6 +288,7 @@ class MessageQueue {
 
   void WakeUpSocketServer();
 
+  bool fStop_;
   bool fPeekKeep_;
   Message msgPeek_;
   MessageList msgq_ GUARDED_BY(crit_);
@@ -298,8 +299,6 @@ class MessageQueue {
   bool fDestroyed_;
 
  private:
-  volatile int stop_;
-
   // The SocketServer might not be owned by MessageQueue.
   SocketServer* ss_ GUARDED_BY(ss_lock_);
   // Used if SocketServer ownership lies with |this|.
