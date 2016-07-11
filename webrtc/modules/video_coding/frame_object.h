@@ -23,9 +23,19 @@ class FrameObject : public webrtc::VCMEncodedFrame {
   static const uint8_t kMaxFrameReferences = 5;
 
   FrameObject();
+  virtual ~FrameObject() {}
 
   virtual bool GetBitstream(uint8_t* destination) const = 0;
-  virtual ~FrameObject() {}
+
+  // The capture timestamp of this frame.
+  virtual uint32_t Timestamp() const = 0;
+
+  // When this frame was received.
+  virtual int64_t ReceivedTime() const = 0;
+
+  // When this frame should be rendered.
+  virtual int64_t RenderTime() const = 0;
+
 
   // The tuple (|picture_id|, |spatial_layer|) uniquely identifies a frame
   // object. For codec types that don't necessarily have picture ids they
@@ -49,7 +59,8 @@ class RtpFrameObject : public FrameObject {
                  uint16_t first_seq_num,
                  uint16_t last_seq_num,
                  size_t frame_size,
-                 int times_nacked);
+                 int times_nacked,
+                 int64_t received_time);
 
   ~RtpFrameObject();
   uint16_t first_seq_num() const;
@@ -58,6 +69,9 @@ class RtpFrameObject : public FrameObject {
   enum FrameType frame_type() const;
   VideoCodecType codec_type() const;
   bool GetBitstream(uint8_t* destination) const override;
+  uint32_t Timestamp() const override;
+  int64_t ReceivedTime() const override;
+  int64_t RenderTime() const override;
   RTPVideoTypeHeader* GetCodecHeader() const;
 
  private:
@@ -66,6 +80,8 @@ class RtpFrameObject : public FrameObject {
   VideoCodecType codec_type_;
   uint16_t first_seq_num_;
   uint16_t last_seq_num_;
+  uint32_t timestamp_;
+  int64_t received_time_;
 
   // Equal to times nacked of the packet with the highet times nacked
   // belonging to this frame.

@@ -14,11 +14,11 @@
 #include <set>
 #include <utility>
 
-#include "webrtc/modules/video_coding/frame_object.h"
-#include "webrtc/modules/video_coding/packet_buffer.h"
-
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/random.h"
+#include "webrtc/modules/video_coding/frame_object.h"
+#include "webrtc/modules/video_coding/packet_buffer.h"
+#include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
 namespace video_coding {
@@ -28,7 +28,11 @@ class TestPacketBuffer : public ::testing::Test,
  protected:
   TestPacketBuffer()
       : rand_(0x8739211),
-        packet_buffer_(new PacketBuffer(kStartSize, kMaxSize, this)),
+        clock_(new SimulatedClock(0)),
+        packet_buffer_(new PacketBuffer(clock_.get(),
+                       kStartSize,
+                       kMaxSize,
+                       this)),
         frames_from_callback_(FrameComp()),
         dummy_data_(new uint8_t[kDummyDataSize]()) {}
 
@@ -248,6 +252,7 @@ class TestPacketBuffer : public ::testing::Test,
   const int kDummyDataSize = 4;
 
   Random rand_;
+  std::unique_ptr<Clock> clock_;
   std::unique_ptr<PacketBuffer> packet_buffer_;
   struct FrameComp {
     bool operator()(const std::pair<uint16_t, uint8_t> f1,
@@ -929,7 +934,7 @@ TEST_F(TestPacketBuffer, Vp8LayerSync) {
 }
 
 TEST_F(TestPacketBuffer, Vp8InsertLargeFrames) {
-  packet_buffer_.reset(new PacketBuffer(1 << 3, 1 << 12, this));
+  packet_buffer_.reset(new PacketBuffer(clock_.get(), 1 << 3, 1 << 12, this));
   uint16_t pid = Rand();
   uint16_t seq_num = Rand();
 

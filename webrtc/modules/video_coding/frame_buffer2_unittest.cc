@@ -72,9 +72,15 @@ class VCMJitterEstimatorMock : public VCMJitterEstimator {
                     bool incompleteFrame));
 };
 
-class FrameObjectMock : public FrameObject {
+class FrameObjectFake : public FrameObject {
  public:
-  MOCK_CONST_METHOD1(GetBitstream, bool(uint8_t* destination));
+  bool GetBitstream(uint8_t* destination) const override { return true; }
+
+  uint32_t Timestamp() const override { return timestamp; }
+
+  int64_t ReceivedTime() const override { return 0; }
+
+  int64_t RenderTime() const override { return _renderTimeMs; }
 };
 
 class TestFrameBuffer2 : public ::testing::Test {
@@ -113,7 +119,7 @@ class TestFrameBuffer2 : public ::testing::Test {
                   "To many references specified for FrameObject.");
     std::array<uint16_t, sizeof...(refs)> references = {{refs...}};
 
-    std::unique_ptr<FrameObjectMock> frame(new FrameObjectMock());
+    std::unique_ptr<FrameObjectFake> frame(new FrameObjectFake());
     frame->picture_id = picture_id;
     frame->spatial_layer = spatial_layer;
     frame->timestamp = ts_ms * 90;

@@ -21,6 +21,9 @@
 #include "webrtc/modules/video_coding/sequence_number_util.h"
 
 namespace webrtc {
+
+class Clock;
+
 namespace video_coding {
 
 class FrameObject;
@@ -35,7 +38,8 @@ class OnCompleteFrameCallback {
 class PacketBuffer {
  public:
   // Both |start_buffer_size| and |max_buffer_size| must be a power of 2.
-  PacketBuffer(size_t start_buffer_size,
+  PacketBuffer(Clock* clock,
+               size_t start_buffer_size,
                size_t max_buffer_size,
                OnCompleteFrameCallback* frame_callback);
 
@@ -67,6 +71,8 @@ class PacketBuffer {
     // If this packet has been used to create a frame already.
     bool frame_created = false;
   };
+
+  Clock* const clock_;
 
   // Tries to expand the buffer.
   bool ExpandBufferSize() EXCLUSIVE_LOCKS_REQUIRED(crit_);
