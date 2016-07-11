@@ -43,10 +43,8 @@ class ProtectionBitrateCalculator {
   void SetProtectionMethod(bool enable_fec, bool enable_nack);
 
   // Informs media optimization of initial encoding state.
-  void SetEncodingData(uint32_t estimated_bitrate_bps,
-                       uint16_t width,
-                       uint16_t height,
-                       uint32_t frame_rate,
+  void SetEncodingData(size_t width,
+                       size_t height,
                        size_t num_temporal_layers,
                        size_t max_payload_size);
 

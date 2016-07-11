@@ -53,7 +53,7 @@ TEST_F(ProtectionBitrateCalculatorTest, ProtectsUsingFecBitrate) {
   static const uint32_t kMaxBitrateBps = 130000;
 
   media_opt_.SetProtectionMethod(true /*enable_fec*/, false /* enable_nack */);
-  media_opt_.SetEncodingData(kCodecBitrateBps, 640, 480, 30, 1, 1000);
+  media_opt_.SetEncodingData(640, 480, 1, 1000);
 
   // Using 10% of codec bitrate for FEC.
   protection_callback_.fec_rate_bps_ = kCodecBitrateBps / 10;
@@ -73,7 +73,7 @@ TEST_F(ProtectionBitrateCalculatorTest, ProtectsUsingNackBitrate) {
   static const uint32_t kMaxBitrateBps = 130000;
 
   media_opt_.SetProtectionMethod(false /*enable_fec*/, true /* enable_nack */);
-  media_opt_.SetEncodingData(kCodecBitrateBps, 640, 480, 30, 1, 1000);
+  media_opt_.SetEncodingData(640, 480, 1, 1000);
 
   uint32_t target_bitrate = media_opt_.SetTargetRates(kMaxBitrateBps, 30, 0, 0);
 
@@ -90,7 +90,7 @@ TEST_F(ProtectionBitrateCalculatorTest, NoProtection) {
   static const uint32_t kMaxBitrateBps = 130000;
 
   media_opt_.SetProtectionMethod(false /*enable_fec*/, false /* enable_nack */);
-  media_opt_.SetEncodingData(kCodecBitrateBps, 640, 480, 30, 1, 1000);
+  media_opt_.SetEncodingData(640, 480, 1, 1000);
 
   uint32_t target_bitrate =
       media_opt_.SetTargetRates(kMaxBitrateBps, 30, 128, 100);

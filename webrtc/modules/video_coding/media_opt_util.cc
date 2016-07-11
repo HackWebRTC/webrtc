@@ -599,7 +599,7 @@ void VCMLossProtectionLogic::UpdateKeyFrameSize(float keyFrameSize) {
   _keyFrameSize = keyFrameSize;
 }
 
-void VCMLossProtectionLogic::UpdateFrameSize(uint16_t width, uint16_t height) {
+void VCMLossProtectionLogic::UpdateFrameSize(size_t width, size_t height) {
   _codecWidth = width;
   _codecHeight = height;
 }

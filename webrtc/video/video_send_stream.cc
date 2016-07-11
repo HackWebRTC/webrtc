@@ -617,10 +617,8 @@ void VideoSendStream::EncoderProcess() {
               .temporal_layer_thresholds_bps.size() +
           1;
       protection_bitrate_calculator_.SetEncodingData(
-          current_encoder_settings_->video_codec.startBitrate * 1000,
           current_encoder_settings_->video_codec.width,
           current_encoder_settings_->video_codec.height,
-          current_encoder_settings_->video_codec.maxFramerate,
           number_of_temporal_layers, payload_router_.MaxPayloadLength());
 
       // We might've gotten new settings while configuring the encoder settings,

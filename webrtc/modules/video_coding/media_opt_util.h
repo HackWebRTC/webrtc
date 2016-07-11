@@ -282,7 +282,7 @@ class VCMLossProtectionLogic {
   // Input:
   //          - width        : The codec frame width.
   //          - height       : The codec frame height.
-  void UpdateFrameSize(uint16_t width, uint16_t height);
+  void UpdateFrameSize(size_t width, size_t height);
 
   // Update the number of active layers
   //
@@ -350,8 +350,8 @@ class VCMLossProtectionLogic {
   uint8_t _shortMaxLossPr255;
   rtc::ExpFilter _packetsPerFrame;
   rtc::ExpFilter _packetsPerFrameKey;
-  uint16_t _codecWidth;
-  uint16_t _codecHeight;
+  size_t _codecWidth;
+  size_t _codecHeight;
   int _numLayers;
 };
 

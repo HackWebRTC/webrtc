@@ -39,18 +39,11 @@ ProtectionBitrateCalculator::~ProtectionBitrateCalculator(void) {
   loss_prot_logic_->Release();
 }
 
-void ProtectionBitrateCalculator::SetEncodingData(uint32_t target_bitrate,
-                                                  uint16_t width,
-                                                  uint16_t height,
-                                                  uint32_t frame_rate,
+void ProtectionBitrateCalculator::SetEncodingData(size_t width,
+                                                  size_t height,
                                                   size_t num_temporal_layers,
                                                   size_t max_payload_size) {
   CritScope lock(&crit_sect_);
-  // Everything codec specific should be reset here since this means the codec
-  // has changed.
-  float target_bitrate_kbps = static_cast<float>(target_bitrate) / 1000.0f;
-  loss_prot_logic_->UpdateBitRate(target_bitrate_kbps);
-  loss_prot_logic_->UpdateFrameRate(static_cast<float>(frame_rate));
   loss_prot_logic_->UpdateFrameSize(width, height);
   loss_prot_logic_->UpdateNumLayers(num_temporal_layers);
   max_payload_size_ = max_payload_size;
