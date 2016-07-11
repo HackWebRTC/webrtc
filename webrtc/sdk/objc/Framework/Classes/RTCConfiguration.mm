@@ -33,8 +33,9 @@
     _iceBackupCandidatePairPingInterval;
 @synthesize keyType = _keyType;
 @synthesize iceCandidatePoolSize = _iceCandidatePoolSize;
-@synthesize pruneTurnPorts = _pruneTurnPorts;
-@synthesize presumeWritableWhenFullyRelayed = _presumeWritableWhenFullyRelayed;
+@synthesize shouldPruneTurnPorts = _shouldPruneTurnPorts;
+@synthesize shouldPresumeWritableWhenFullyRelayed =
+    _shouldPresumeWritableWhenFullyRelayed;
 
 - (instancetype)init {
   if (self = [super init]) {
@@ -61,8 +62,8 @@
         config.ice_backup_candidate_pair_ping_interval;
     _keyType = RTCEncryptionKeyTypeECDSA;
     _iceCandidatePoolSize = config.ice_candidate_pool_size;
-    _pruneTurnPorts = config.prune_turn_ports;
-    _presumeWritableWhenFullyRelayed =
+    _shouldPruneTurnPorts = config.prune_turn_ports;
+    _shouldPresumeWritableWhenFullyRelayed =
         config.presume_writable_when_fully_relayed;
   }
   return self;
@@ -83,8 +84,8 @@
       _iceConnectionReceivingTimeout,
       _iceBackupCandidatePairPingInterval,
       _iceCandidatePoolSize,
-      _pruneTurnPorts,
-      _presumeWritableWhenFullyRelayed];
+      _shouldPruneTurnPorts,
+      _shouldPresumeWritableWhenFullyRelayed];
 }
 
 #pragma mark - Private
@@ -128,9 +129,9 @@
     nativeConfig->certificates.push_back(certificate);
   }
   nativeConfig->ice_candidate_pool_size = _iceCandidatePoolSize;
-  nativeConfig->prune_turn_ports = _pruneTurnPorts;
+  nativeConfig->prune_turn_ports = _shouldPruneTurnPorts ? true : false;
   nativeConfig->presume_writable_when_fully_relayed =
-      _presumeWritableWhenFullyRelayed;
+      _shouldPresumeWritableWhenFullyRelayed ? true : false;
 
   return nativeConfig.release();
 }

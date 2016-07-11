@@ -93,13 +93,15 @@ RTC_EXPORT
 /** ICE candidate pool size as defined in JSEP. Default is 0. */
 @property(nonatomic, assign) int iceCandidatePoolSize;
 
-/** Prune turn ports on the same network to the same turn server. Default is false. */
-@property(nonatomic, assign) bool pruneTurnPorts;
+/** Prune turn ports on the same network to the same turn server.
+ *  Default is NO.
+ */
+@property(nonatomic, assign) BOOL shouldPruneTurnPorts;
 
-/** If set to true, this means the ICE transport should presume TURN-to-TURN
+/** If set to YES, this means the ICE transport should presume TURN-to-TURN
  *  candidate pairs will succeed, even before a binding response is received.
  */
-@property(nonatomic, assign) bool presumeWritableWhenFullyRelayed;
+@property(nonatomic, assign) BOOL shouldPresumeWritableWhenFullyRelayed;
 
 - (instancetype)init NS_DESIGNATED_INITIALIZER;
 

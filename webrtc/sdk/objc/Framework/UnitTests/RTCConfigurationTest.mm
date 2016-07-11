@@ -44,7 +44,7 @@
   config.iceBackupCandidatePairPingInterval = interval;
   config.continualGatheringPolicy =
       RTCContinualGatheringPolicyGatherContinually;
-  config.pruneTurnPorts = true;
+  config.shouldPruneTurnPorts = YES;
 
   std::unique_ptr<webrtc::PeerConnectionInterface::RTCConfiguration>
       nativeConfig([config createNativeConfiguration]);
