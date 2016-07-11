@@ -131,7 +131,7 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
   // Instantiate RBE for Time Offset or Absolute Send Time extensions.
   void PickEstimator() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_.get()) {
     if (using_absolute_send_time_) {
-      rbe_.reset(new RemoteBitrateEstimatorAbsSendTime(observer_));
+      rbe_.reset(new RemoteBitrateEstimatorAbsSendTime(observer_, clock_));
     } else {
       rbe_.reset(new RemoteBitrateEstimatorSingleStream(observer_, clock_));
     }
@@ -205,7 +205,7 @@ CongestionController::~CongestionController() {}
 
 void CongestionController::Init() {
   transport_feedback_adapter_.SetBitrateEstimator(
-      new DelayBasedBwe(&transport_feedback_adapter_));
+      new DelayBasedBwe(&transport_feedback_adapter_, clock_));
   transport_feedback_adapter_.GetBitrateEstimator()->SetMinBitrate(
       min_bitrate_bps_);
 }
@@ -240,8 +240,8 @@ void CongestionController::ResetBweAndBitrates(int bitrate_bps,
   if (remote_bitrate_estimator_)
     remote_bitrate_estimator_->SetMinBitrate(min_bitrate_bps);
 
-  RemoteBitrateEstimator* rbe =
-      new RemoteBitrateEstimatorAbsSendTime(&transport_feedback_adapter_);
+  RemoteBitrateEstimator* rbe = new RemoteBitrateEstimatorAbsSendTime(
+      &transport_feedback_adapter_, clock_);
   transport_feedback_adapter_.SetBitrateEstimator(rbe);
   rbe->SetMinBitrate(min_bitrate_bps);
   // TODO(holmer): Trigger a new probe once mid-call probing is implemented.

@@ -13,6 +13,8 @@
 #include <limits>
 #include <utility>
 
+#include "webrtc/base/checks.h"
+
 namespace webrtc {
 
 const size_t kMtu = 1200;
@@ -77,7 +79,7 @@ int64_t RtpStream::GenerateFrame(int64_t time_now_us, PacketList* packets) {
 }
 
 // The send-side time when the next frame can be generated.
-double RtpStream::next_rtp_time() const {
+int64_t RtpStream::next_rtp_time() const {
   return next_rtp_time_;
 }
 
@@ -116,7 +118,7 @@ bool RtpStream::Compare(const std::pair<uint32_t, RtpStream*>& left,
   return left.second->next_rtp_time_ < right.second->next_rtp_time_;
 }
 
-StreamGenerator::StreamGenerator(int capacity, double time_now)
+StreamGenerator::StreamGenerator(int capacity, int64_t time_now)
     : capacity_(capacity),
       prev_arrival_time_us_(time_now) {}
 
@@ -187,16 +189,17 @@ int64_t StreamGenerator::GenerateFrame(RtpStream::PacketList* packets,
     ++i;
   }
   it = std::min_element(streams_.begin(), streams_.end(), RtpStream::Compare);
-  return (*it).second->next_rtp_time();
+  return std::max((*it).second->next_rtp_time(), time_now_us);
 }
 }  // namespace testing
 
 RemoteBitrateEstimatorTest::RemoteBitrateEstimatorTest()
-    : clock_(0),
+    : clock_(100000000),
       bitrate_observer_(new testing::TestBitrateObserver),
       stream_generator_(new testing::StreamGenerator(
           1e6,  // Capacity.
-          clock_.TimeInMicroseconds())) {}
+          clock_.TimeInMicroseconds())),
+      arrival_time_offset_ms_(0) {}
 
 RemoteBitrateEstimatorTest::~RemoteBitrateEstimatorTest() {}
 
@@ -231,7 +234,8 @@ void RemoteBitrateEstimatorTest::IncomingPacket(uint32_t ssrc,
   header.timestamp = rtp_timestamp;
   header.extension.hasAbsoluteSendTime = true;
   header.extension.absoluteSendTime = absolute_send_time;
-  bitrate_estimator_->IncomingPacket(arrival_time + kArrivalTimeClockOffsetMs,
+  RTC_CHECK_GE(arrival_time + arrival_time_offset_ms_, 0);
+  bitrate_estimator_->IncomingPacket(arrival_time + arrival_time_offset_ms_,
                                      payload_size, header);
 }
 
@@ -243,6 +247,7 @@ void RemoteBitrateEstimatorTest::IncomingPacket(uint32_t ssrc,
 // target bitrate after the call to this function.
 bool RemoteBitrateEstimatorTest::GenerateAndProcessFrame(uint32_t ssrc,
                                                          uint32_t bitrate_bps) {
+  RTC_DCHECK_GT(bitrate_bps, 0u);
   stream_generator_->SetBitrateBps(bitrate_bps);
   testing::RtpStream::PacketList packets;
   int64_t next_time_us = stream_generator_->GenerateFrame(
@@ -429,7 +434,8 @@ void RemoteBitrateEstimatorTest::RateIncreaseRtpTimestampsTestHelper(
 void RemoteBitrateEstimatorTest::CapacityDropTestHelper(
     int number_of_streams,
     bool wrap_time_stamp,
-    uint32_t expected_bitrate_drop_delta) {
+    uint32_t expected_bitrate_drop_delta,
+    int64_t receiver_clock_offset_change_ms) {
   const int kFramerate = 30;
   const int kStartBitrate = 900e3;
   const int kMinExpectedBitrate = 800e3;
@@ -477,6 +483,9 @@ void RemoteBitrateEstimatorTest::CapacityDropTestHelper(
   EXPECT_NEAR(kInitialCapacityBps, bitrate_bps, 130000u);
   bitrate_observer_->Reset();
 
+  // Add an offset to make sure the BWE can handle it.
+  arrival_time_offset_ms_ += receiver_clock_offset_change_ms;
+
   // Reduce the capacity and verify the decrease time.
   stream_generator_->set_capacity_bps(kReducedCapacityBps);
   int64_t overuse_start_time = clock_.TimeInMilliseconds();
@@ -487,7 +496,8 @@ void RemoteBitrateEstimatorTest::CapacityDropTestHelper(
         bitrate_observer_->latest_bitrate() <= kReducedCapacityBps) {
       bitrate_drop_time = clock_.TimeInMilliseconds();
     }
-    bitrate_bps = bitrate_observer_->latest_bitrate();
+    if (bitrate_observer_->updated())
+      bitrate_bps = bitrate_observer_->latest_bitrate();
   }
 
   EXPECT_NEAR(expected_bitrate_drop_delta,

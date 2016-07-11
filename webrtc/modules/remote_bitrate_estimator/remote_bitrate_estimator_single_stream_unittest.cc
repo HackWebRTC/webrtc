@@ -39,31 +39,31 @@ TEST_F(RemoteBitrateEstimatorSingleTest, RateIncreaseRtpTimestamps) {
 }
 
 TEST_F(RemoteBitrateEstimatorSingleTest, CapacityDropOneStream) {
-  CapacityDropTestHelper(1, false, 633);
+  CapacityDropTestHelper(1, false, 633, 0);
 }
 
 TEST_F(RemoteBitrateEstimatorSingleTest, CapacityDropOneStreamWrap) {
-  CapacityDropTestHelper(1, true, 633);
+  CapacityDropTestHelper(1, true, 633, 0);
 }
 
 TEST_F(RemoteBitrateEstimatorSingleTest, CapacityDropTwoStreamsWrap) {
-  CapacityDropTestHelper(2, true, 767);
+  CapacityDropTestHelper(2, true, 767, 0);
 }
 
 TEST_F(RemoteBitrateEstimatorSingleTest, CapacityDropThreeStreamsWrap) {
-  CapacityDropTestHelper(3, true, 567);
+  CapacityDropTestHelper(3, true, 567, 0);
 }
 
 TEST_F(RemoteBitrateEstimatorSingleTest, CapacityDropThirteenStreamsWrap) {
-  CapacityDropTestHelper(13, true, 567);
+  CapacityDropTestHelper(13, true, 567, 0);
 }
 
 TEST_F(RemoteBitrateEstimatorSingleTest, CapacityDropNineteenStreamsWrap) {
-  CapacityDropTestHelper(19, true, 700);
+  CapacityDropTestHelper(19, true, 700, 0);
 }
 
 TEST_F(RemoteBitrateEstimatorSingleTest, CapacityDropThirtyStreamsWrap) {
-  CapacityDropTestHelper(30, true, 733);
+  CapacityDropTestHelper(30, true, 733, 0);
 }
 
 TEST_F(RemoteBitrateEstimatorSingleTest, TestTimestampGrouping) {

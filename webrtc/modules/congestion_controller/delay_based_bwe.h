@@ -32,7 +32,7 @@ namespace webrtc {
 
 class DelayBasedBwe : public RemoteBitrateEstimator {
  public:
-  explicit DelayBasedBwe(RemoteBitrateObserver* observer);
+  DelayBasedBwe(RemoteBitrateObserver* observer, Clock* clock);
   virtual ~DelayBasedBwe() {}
 
   void IncomingPacketFeedbackVector(
@@ -40,12 +40,9 @@ class DelayBasedBwe : public RemoteBitrateEstimator {
 
   void IncomingPacket(int64_t arrival_time_ms,
                       size_t payload_size,
-                      const RTPHeader& header) override;
-
-  void IncomingPacket(int64_t arrival_time_ms,
-                      size_t payload_size,
-                      const RTPHeader& header,
-                      int probe_cluster_id);
+                      const RTPHeader& header) override {
+    RTC_NOTREACHED();
+  }
 
   // This class relies on Process() being called periodically (at least once
   // every other second) for streams to be timed out properly. Therefore it
@@ -126,13 +123,12 @@ class DelayBasedBwe : public RemoteBitrateEstimator {
   void TimeoutStreams(int64_t now_ms) EXCLUSIVE_LOCKS_REQUIRED(&crit_);
 
   rtc::ThreadChecker network_thread_;
+  Clock* const clock_;
   RemoteBitrateObserver* const observer_;
   std::unique_ptr<InterArrival> inter_arrival_;
   std::unique_ptr<OveruseEstimator> estimator_;
   OveruseDetector detector_;
   RateStatistics incoming_bitrate_;
-  std::vector<int> recent_propagation_delta_ms_;
-  std::vector<int64_t> recent_update_time_ms_;
   std::list<Probe> probes_;
   size_t total_probes_received_;
   int64_t first_packet_time_ms_;

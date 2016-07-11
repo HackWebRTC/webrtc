@@ -25,7 +25,7 @@ FullBweSender::FullBweSender(int kbps, BitrateObserver* observer, Clock* clock)
           BitrateController::CreateBitrateController(clock,
                                                      observer,
                                                      &event_log_)),
-      rbe_(new RemoteBitrateEstimatorAbsSendTime(this)),
+      rbe_(new RemoteBitrateEstimatorAbsSendTime(this, clock)),
       feedback_observer_(bitrate_controller_->CreateRtcpBandwidthObserver()),
       clock_(clock),
       send_time_history_(clock_, 10000),

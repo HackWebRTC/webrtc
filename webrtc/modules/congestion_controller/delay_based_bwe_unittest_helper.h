@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2016 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_REMOTE_BITRATE_ESTIMATOR_UNITTEST_HELPER_H_
-#define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_REMOTE_BITRATE_ESTIMATOR_UNITTEST_HELPER_H_
+#ifndef WEBRTC_MODULES_CONGESTION_CONTROLLER_DELAY_BASED_BWE_UNITTEST_HELPER_H_
+#define WEBRTC_MODULES_CONGESTION_CONTROLLER_DELAY_BASED_BWE_UNITTEST_HELPER_H_
 
 #include <list>
 #include <map>
@@ -23,7 +23,7 @@
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
-namespace testing {
+namespace test {
 
 class TestBitrateObserver : public RemoteBitrateObserver {
  public:
@@ -46,75 +46,37 @@ class TestBitrateObserver : public RemoteBitrateObserver {
 
 class RtpStream {
  public:
-  struct RtpPacket {
-    int64_t send_time;
-    int64_t arrival_time;
-    uint32_t rtp_timestamp;
-    size_t size;
-    uint32_t ssrc;
-  };
-
-  struct RtcpPacket {
-    uint32_t ntp_secs;
-    uint32_t ntp_frac;
-    uint32_t timestamp;
-    uint32_t ssrc;
-  };
-
-  typedef std::list<RtpPacket*> PacketList;
-
   enum { kSendSideOffsetUs = 1000000 };
 
-  RtpStream(int fps,
-            int bitrate_bps,
-            uint32_t ssrc,
-            uint32_t frequency,
-            uint32_t timestamp_offset,
-            int64_t rtcp_receive_time);
-  void set_rtp_timestamp_offset(uint32_t offset);
+  RtpStream(int fps, int bitrate_bps);
 
   // Generates a new frame for this stream. If called too soon after the
   // previous frame, no frame will be generated. The frame is split into
   // packets.
-  int64_t GenerateFrame(int64_t time_now_us, PacketList* packets);
+  int64_t GenerateFrame(int64_t time_now_us, std::vector<PacketInfo>* packets);
 
   // The send-side time when the next frame can be generated.
   int64_t next_rtp_time() const;
-
-  // Generates an RTCP packet.
-  RtcpPacket* Rtcp(int64_t time_now_us);
 
   void set_bitrate_bps(int bitrate_bps);
 
   int bitrate_bps() const;
 
-  uint32_t ssrc() const;
-
-  static bool Compare(const std::pair<uint32_t, RtpStream*>& left,
-                      const std::pair<uint32_t, RtpStream*>& right);
+  static bool Compare(const std::unique_ptr<RtpStream>& lhs,
+                      const std::unique_ptr<RtpStream>& rhs);
 
  private:
-  enum { kRtcpIntervalUs = 1000000 };
-
   int fps_;
   int bitrate_bps_;
-  uint32_t ssrc_;
-  uint32_t frequency_;
   int64_t next_rtp_time_;
-  int64_t next_rtcp_time_;
-  uint32_t rtp_timestamp_offset_;
-  const double kNtpFracPerMs;
+  uint16_t sequence_number_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpStream);
 };
 
 class StreamGenerator {
  public:
-  typedef std::list<RtpStream::RtcpPacket*> RtcpList;
-
   StreamGenerator(int capacity, int64_t time_now);
-
-  ~StreamGenerator();
 
   // Add a new stream.
   void AddStream(RtpStream* stream);
@@ -131,49 +93,38 @@ class StreamGenerator {
 
   // TODO(holmer): Break out the channel simulation part from this class to make
   // it possible to simulate different types of channels.
-  int64_t GenerateFrame(RtpStream::PacketList* packets, int64_t time_now_us);
+  int64_t GenerateFrame(std::vector<PacketInfo>* packets, int64_t time_now_us);
 
  private:
-  typedef std::map<uint32_t, RtpStream*> StreamMap;
-
   // Capacity of the simulated channel in bits per second.
   int capacity_;
   // The time when the last packet arrived.
   int64_t prev_arrival_time_us_;
   // All streams being transmitted on this simulated channel.
-  StreamMap streams_;
+  std::vector<std::unique_ptr<RtpStream>> streams_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(StreamGenerator);
 };
-}  // namespace testing
+}  // namespace test
 
-class RemoteBitrateEstimatorTest : public ::testing::Test {
+class DelayBasedBweTest : public ::testing::Test {
  public:
-  RemoteBitrateEstimatorTest();
-  virtual ~RemoteBitrateEstimatorTest();
+  DelayBasedBweTest();
+  virtual ~DelayBasedBweTest();
 
  protected:
-  virtual void SetUp() = 0;
-
   void AddDefaultStream();
 
-  // Helper to convert some time format to resolution used in absolute send time
-  // header extension, rounded upwards. |t| is the time to convert, in some
-  // resolution. |denom| is the value to divide |t| by to get whole seconds,
-  // e.g. |denom| = 1000 if |t| is in milliseconds.
-  static uint32_t AbsSendTime(int64_t t, int64_t denom);
-
-  // Helper to add two absolute send time values and keep it less than 1<<24.
-  static uint32_t AddAbsSendTime(uint32_t t1, uint32_t t2);
-
-  // Helper to create a WebRtcRTPHeader containing the relevant data for the
-  // estimator (all other fields are cleared) and call IncomingPacket on the
-  // estimator.
-  void IncomingPacket(uint32_t ssrc,
-                      size_t payload_size,
-                      int64_t arrival_time,
-                      uint32_t rtp_timestamp,
-                      uint32_t absolute_send_time);
+  // Helpers to insert a single packet into the delay-based BWE.
+  void IncomingFeedback(int64_t arrival_time_ms,
+                        int64_t send_time_ms,
+                        uint16_t sequence_number,
+                        size_t payload_size);
+  void IncomingFeedback(int64_t arrival_time_ms,
+                        int64_t send_time_ms,
+                        uint16_t sequence_number,
+                        size_t payload_size,
+                        int probe_cluster_id);
 
   // Generates a frame of packets belonging to a stream at a given bitrate and
   // with a given ssrc. The stream is pushed through a very simple simulated
@@ -209,13 +160,13 @@ class RemoteBitrateEstimatorTest : public ::testing::Test {
   static const uint32_t kDefaultSsrc;
 
   SimulatedClock clock_;  // Time at the receiver.
-  std::unique_ptr<testing::TestBitrateObserver> bitrate_observer_;
+  std::unique_ptr<test::TestBitrateObserver> bitrate_observer_;
   std::unique_ptr<RemoteBitrateEstimator> bitrate_estimator_;
-  std::unique_ptr<testing::StreamGenerator> stream_generator_;
+  std::unique_ptr<test::StreamGenerator> stream_generator_;
   int64_t arrival_time_offset_ms_;
 
-  RTC_DISALLOW_COPY_AND_ASSIGN(RemoteBitrateEstimatorTest);
+  RTC_DISALLOW_COPY_AND_ASSIGN(DelayBasedBweTest);
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_REMOTE_BITRATE_ESTIMATOR_UNITTEST_HELPER_H_
+#endif  // WEBRTC_MODULES_CONGESTION_CONTROLLER_DELAY_BASED_BWE_UNITTEST_HELPER_H_

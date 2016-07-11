@@ -20,7 +20,7 @@ class RemoteBitrateEstimatorAbsSendTimeTest :
   RemoteBitrateEstimatorAbsSendTimeTest() {}
   virtual void SetUp() {
     bitrate_estimator_.reset(new RemoteBitrateEstimatorAbsSendTime(
-        bitrate_observer_.get()));
+        bitrate_observer_.get(), &clock_));
   }
  protected:
   RTC_DISALLOW_COPY_AND_ASSIGN(RemoteBitrateEstimatorAbsSendTimeTest);
@@ -39,31 +39,39 @@ TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, RateIncreaseRtpTimestamps) {
 }
 
 TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, CapacityDropOneStream) {
-  CapacityDropTestHelper(1, false, 667);
+  CapacityDropTestHelper(1, false, 633, 0);
+}
+
+TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, CapacityDropPosOffsetChange) {
+  CapacityDropTestHelper(1, false, 267, 30000);
+}
+
+TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, CapacityDropNegOffsetChange) {
+  CapacityDropTestHelper(1, false, 267, -30000);
 }
 
 TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, CapacityDropOneStreamWrap) {
-  CapacityDropTestHelper(1, true, 667);
+  CapacityDropTestHelper(1, true, 633, 0);
 }
 
 TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, CapacityDropTwoStreamsWrap) {
-  CapacityDropTestHelper(2, true, 633);
+  CapacityDropTestHelper(2, true, 633, 0);
 }
 
 TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, CapacityDropThreeStreamsWrap) {
-  CapacityDropTestHelper(3, true, 633);
+  CapacityDropTestHelper(3, true, 633, 0);
 }
 
 TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, CapacityDropThirteenStreamsWrap) {
-  CapacityDropTestHelper(13, true, 667);
+  CapacityDropTestHelper(13, true, 667, 0);
 }
 
 TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, CapacityDropNineteenStreamsWrap) {
-  CapacityDropTestHelper(19, true, 667);
+  CapacityDropTestHelper(19, true, 667, 0);
 }
 
 TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, CapacityDropThirtyStreamsWrap) {
-  CapacityDropTestHelper(30, true, 667);
+  CapacityDropTestHelper(30, true, 667, 0);
 }
 
 TEST_F(RemoteBitrateEstimatorAbsSendTimeTest, TestTimestampGrouping) {

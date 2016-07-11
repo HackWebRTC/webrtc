@@ -68,8 +68,9 @@ void DelayBasedBwe::AddCluster(std::list<Cluster>* clusters, Cluster* cluster) {
   clusters->push_back(*cluster);
 }
 
-DelayBasedBwe::DelayBasedBwe(RemoteBitrateObserver* observer)
-    : observer_(observer),
+DelayBasedBwe::DelayBasedBwe(RemoteBitrateObserver* observer, Clock* clock)
+    : clock_(clock),
+      observer_(observer),
       inter_arrival_(),
       estimator_(),
       detector_(OverUseDetectorOptions()),
@@ -203,35 +204,6 @@ void DelayBasedBwe::IncomingPacketFeedbackVector(
   }
 }
 
-void DelayBasedBwe::IncomingPacket(int64_t arrival_time_ms,
-                                   size_t payload_size,
-                                   const RTPHeader& header) {
-  RTC_DCHECK(network_thread_.CalledOnValidThread());
-  if (!header.extension.hasAbsoluteSendTime) {
-    // NOTE! The BitrateEstimatorTest relies on this EXACT log line.
-    LOG(LS_WARNING) << "RemoteBitrateEstimatorAbsSendTime: Incoming packet "
-                       "is missing absolute send time extension!";
-    return;
-  }
-  IncomingPacketInfo(arrival_time_ms, header.extension.absoluteSendTime,
-                     payload_size, header.ssrc, PacketInfo::kNotAProbe);
-}
-
-void DelayBasedBwe::IncomingPacket(int64_t arrival_time_ms,
-                                   size_t payload_size,
-                                   const RTPHeader& header,
-                                   int probe_cluster_id) {
-  RTC_DCHECK(network_thread_.CalledOnValidThread());
-  if (!header.extension.hasAbsoluteSendTime) {
-    // NOTE! The BitrateEstimatorTest relies on this EXACT log line.
-    LOG(LS_WARNING) << "RemoteBitrateEstimatorAbsSendTime: Incoming packet "
-                       "is missing absolute send time extension!";
-    return;
-  }
-  IncomingPacketInfo(arrival_time_ms, header.extension.absoluteSendTime,
-                     payload_size, header.ssrc, probe_cluster_id);
-}
-
 void DelayBasedBwe::IncomingPacketInfo(int64_t arrival_time_ms,
                                        uint32_t send_time_24bits,
                                        size_t payload_size,
@@ -243,13 +215,13 @@ void DelayBasedBwe::IncomingPacketInfo(int64_t arrival_time_ms,
   uint32_t timestamp = send_time_24bits << kAbsSendTimeInterArrivalUpshift;
   int64_t send_time_ms = static_cast<int64_t>(timestamp) * kTimestampToMs;
 
-  int64_t now_ms = arrival_time_ms;
+  int64_t now_ms = clock_->TimeInMilliseconds();
   // TODO(holmer): SSRCs are only needed for REMB, should be broken out from
   // here.
-  incoming_bitrate_.Update(payload_size, now_ms);
+  incoming_bitrate_.Update(payload_size, arrival_time_ms);
 
   if (first_packet_time_ms_ == -1)
-    first_packet_time_ms_ = arrival_time_ms;
+    first_packet_time_ms_ = now_ms;
 
   uint32_t ts_delta = 0;
   int64_t t_delta = 0;
@@ -294,8 +266,9 @@ void DelayBasedBwe::IncomingPacketInfo(int64_t arrival_time_ms,
       if (ProcessClusters(now_ms) == ProbeResult::kBitrateUpdated)
         update_estimate = true;
     }
-    if (inter_arrival_->ComputeDeltas(timestamp, arrival_time_ms, payload_size,
-                                      &ts_delta, &t_delta, &size_delta)) {
+    if (inter_arrival_->ComputeDeltas(timestamp, arrival_time_ms, now_ms,
+                                      payload_size, &ts_delta, &t_delta,
+                                      &size_delta)) {
       double ts_delta_ms = (1000.0 * ts_delta) / (1 << kInterArrivalShift);
       estimator_->Update(t_delta, ts_delta_ms, size_delta, detector_.State());
       detector_.Detect(estimator_->offset(), ts_delta_ms,
@@ -309,7 +282,8 @@ void DelayBasedBwe::IncomingPacketInfo(int64_t arrival_time_ms,
           now_ms - last_update_ms_ > remote_rate_.GetFeedbackInterval()) {
         update_estimate = true;
       } else if (detector_.State() == kBwOverusing) {
-        rtc::Optional<uint32_t> incoming_rate = incoming_bitrate_.Rate(now_ms);
+        rtc::Optional<uint32_t> incoming_rate =
+            incoming_bitrate_.Rate(arrival_time_ms);
         if (incoming_rate &&
             remote_rate_.TimeToReduceFurther(now_ms, *incoming_rate)) {
           update_estimate = true;
@@ -322,7 +296,7 @@ void DelayBasedBwe::IncomingPacketInfo(int64_t arrival_time_ms,
       // We also have to update the estimate immediately if we are overusing
       // and the target bitrate is too high compared to what we are receiving.
       const RateControlInput input(detector_.State(),
-                                   incoming_bitrate_.Rate(now_ms),
+                                   incoming_bitrate_.Rate(arrival_time_ms),
                                    estimator_->var_noise());
       remote_rate_.Update(&input, now_ms);
       target_bitrate_bps = remote_rate_.UpdateBandwidthEstimate(now_ms);

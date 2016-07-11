@@ -95,12 +95,9 @@ class OveruseDetectorTest : public ::testing::Test {
     uint32_t timestamp_delta;
     int64_t time_delta;
     int size_delta;
-    if (inter_arrival_->ComputeDeltas(rtp_timestamp,
-                                      receive_time_ms,
-                                      packet_size,
-                                      &timestamp_delta,
-                                      &time_delta,
-                                      &size_delta)) {
+    if (inter_arrival_->ComputeDeltas(
+            rtp_timestamp, receive_time_ms, receive_time_ms, packet_size,
+            &timestamp_delta, &time_delta, &size_delta)) {
       double timestamp_delta_ms = timestamp_delta / 90.0;
       overuse_estimator_->Update(time_delta, timestamp_delta_ms, size_delta,
                                  overuse_detector_->State());

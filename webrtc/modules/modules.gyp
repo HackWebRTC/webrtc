@@ -274,6 +274,8 @@
             'bitrate_controller/send_side_bandwidth_estimation_unittest.cc',
             'congestion_controller/congestion_controller_unittest.cc',
             'congestion_controller/delay_based_bwe_unittest.cc',
+            'congestion_controller/delay_based_bwe_unittest_helper.cc',
+            'congestion_controller/delay_based_bwe_unittest_helper.h',
             'media_file/media_file_unittest.cc',
             'module_common_types_unittest.cc',
             'pacing/bitrate_prober_unittest.cc',

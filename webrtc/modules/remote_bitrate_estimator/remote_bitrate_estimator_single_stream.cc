@@ -109,9 +109,9 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(
   uint32_t timestamp_delta = 0;
   int64_t time_delta = 0;
   int size_delta = 0;
-  if (estimator->inter_arrival.ComputeDeltas(rtp_timestamp, arrival_time_ms,
-                                             payload_size, &timestamp_delta,
-                                             &time_delta, &size_delta)) {
+  if (estimator->inter_arrival.ComputeDeltas(
+          rtp_timestamp, arrival_time_ms, now_ms, payload_size,
+          &timestamp_delta, &time_delta, &size_delta)) {
     double timestamp_delta_ms = timestamp_delta * kTimestampToMs;
     estimator->estimator.Update(time_delta, timestamp_delta_ms, size_delta,
                                 estimator->detector.State());

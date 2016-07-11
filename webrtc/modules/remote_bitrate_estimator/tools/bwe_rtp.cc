@@ -117,9 +117,9 @@ bool ParseArgsAndSetupEstimator(int argc,
     switch (extension) {
       case webrtc::kRtpExtensionAbsoluteSendTime: {
         *estimator =
-            new webrtc::RemoteBitrateEstimatorAbsSendTime(observer);
-          *estimator_used = "AbsoluteSendTimeRemoteBitrateEstimator";
-          break;
+            new webrtc::RemoteBitrateEstimatorAbsSendTime(observer, clock);
+        *estimator_used = "AbsoluteSendTimeRemoteBitrateEstimator";
+        break;
         }
       case webrtc::kRtpExtensionTransmissionTimeOffset: {
         *estimator =
