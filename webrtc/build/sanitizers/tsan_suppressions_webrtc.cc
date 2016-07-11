@@ -24,7 +24,6 @@ char kTSanDefaultSuppressions[] =
 // WebRTC specific suppressions.
 
 // Split up suppressions covered previously by thread.cc and messagequeue.cc.
-"race:rtc::MessageQueue::Quit\n"
 "race:vp8cx_remove_encoder_threads\n"
 "race:third_party/libvpx/source/libvpx/vp9/common/vp9_scan.h\n"
 
