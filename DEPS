@@ -6,7 +6,7 @@
 vars = {
   'extra_gyp_flag': '-Dextra_gyp_flag=0',
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': 'c14d86fd4a083e33c69b8e25723caabb51d29179',
+  'chromium_revision': '38cb11390a316057b1990c5257a9379d6807da84',
 }
 
 # NOTE: Use http rather than https; the latter can cause problems for users
