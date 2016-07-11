@@ -61,7 +61,6 @@ using webrtc::CreateSessionDescription;
 using webrtc::CreateSessionDescriptionObserver;
 using webrtc::CreateSessionDescriptionRequest;
 using webrtc::DataChannel;
-using webrtc::DtlsIdentityStoreInterface;
 using webrtc::FakeMetricsObserver;
 using webrtc::IceCandidateCollection;
 using webrtc::InternalDataChannelInit;

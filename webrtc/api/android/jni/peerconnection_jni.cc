@@ -44,7 +44,6 @@
 #include <utility>
 
 #include "webrtc/api/androidvideocapturer.h"
-#include "webrtc/api/dtlsidentitystore.h"
 #include "webrtc/api/android/jni/androidmediadecoder_jni.h"
 #include "webrtc/api/android/jni/androidmediaencoder_jni.h"
 #include "webrtc/api/android/jni/androidnetworkmonitor_jni.h"

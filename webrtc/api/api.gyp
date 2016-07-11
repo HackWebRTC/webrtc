@@ -108,7 +108,6 @@
         'datachannel.cc',
         'datachannel.h',
         'datachannelinterface.h',
-        'dtlsidentitystore.h',
         'dtmfsender.cc',
         'dtmfsender.h',
         'dtmfsenderinterface.h',

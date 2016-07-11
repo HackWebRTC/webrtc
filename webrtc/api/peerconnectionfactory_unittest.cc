@@ -27,7 +27,6 @@
 #include "webrtc/p2p/base/fakeportallocator.h"
 
 using webrtc::DataChannelInterface;
-using webrtc::DtlsIdentityStoreInterface;
 using webrtc::FakeVideoTrackRenderer;
 using webrtc::MediaStreamInterface;
 using webrtc::PeerConnectionFactoryInterface;
