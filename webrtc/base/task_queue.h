@@ -13,6 +13,7 @@
 
 #include <list>
 #include <memory>
+#include <unordered_map>
 
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_BUILD_LIBEVENT)
 #include <dispatch/dispatch.h>
@@ -253,7 +254,10 @@ class LOCKABLE TaskQueue {
   dispatch_queue_t queue_;
   QueueContext* const context_;
 #elif defined(WEBRTC_WIN)
+  typedef std::unordered_map<UINT_PTR, std::unique_ptr<QueuedTask>>
+      DelayedTasks;
   static bool ThreadMain(void* context);
+  static bool ProcessQueuedMessages(DelayedTasks* delayed_tasks);
 
   class WorkerThread : public PlatformThread {
    public:

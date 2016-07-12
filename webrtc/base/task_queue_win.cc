@@ -11,7 +11,6 @@
 #include "webrtc/base/task_queue.h"
 
 #include <string.h>
-#include <unordered_map>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -132,12 +131,26 @@ void TaskQueue::PostTaskAndReply(std::unique_ptr<QueuedTask> task,
 
 // static
 bool TaskQueue::ThreadMain(void* context) {
-  std::unordered_map<UINT_PTR, std::unique_ptr<QueuedTask>> delayed_tasks;
+  DelayedTasks delayed_tasks;
+  while (true) {
+    DWORD result = ::MsgWaitForMultipleObjectsEx(0, nullptr, INFINITE,
+                                                 QS_ALLEVENTS, MWMO_ALERTABLE);
+    RTC_CHECK_NE(WAIT_FAILED, result);
+    if (result == WAIT_OBJECT_0) {
+      if (!ProcessQueuedMessages(&delayed_tasks))
+        break;
+    } else {
+      RTC_DCHECK_EQ(WAIT_IO_COMPLETION, result);
+    }
+  }
+  return false;
+}
 
-  BOOL ret;
-  MSG msg;
-
-  while ((ret = GetMessage(&msg, nullptr, 0, 0)) != 0 && ret != -1) {
+// static
+bool TaskQueue::ProcessQueuedMessages(DelayedTasks* delayed_tasks) {
+  MSG msg = {};
+  while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE) &&
+         msg.message != WM_QUIT) {
     if (!msg.hwnd) {
       switch (msg.message) {
         case WM_RUN_TASK: {
@@ -157,16 +170,16 @@ bool TaskQueue::ThreadMain(void* context) {
               post_time > milliseconds ? 0 : milliseconds - post_time;
 #endif
           UINT_PTR timer_id = SetTimer(nullptr, 0, milliseconds, nullptr);
-          delayed_tasks.insert(std::make_pair(timer_id, task));
+          delayed_tasks->insert(std::make_pair(timer_id, task));
           break;
         }
         case WM_TIMER: {
           KillTimer(nullptr, msg.wParam);
-          auto found = delayed_tasks.find(msg.wParam);
-          RTC_DCHECK(found != delayed_tasks.end());
+          auto found = delayed_tasks->find(msg.wParam);
+          RTC_DCHECK(found != delayed_tasks->end());
           if (!found->second->Run())
             found->second.release();
-          delayed_tasks.erase(found);
+          delayed_tasks->erase(found);
           break;
         }
         default:
@@ -178,7 +191,7 @@ bool TaskQueue::ThreadMain(void* context) {
       DispatchMessage(&msg);
     }
   }
-
-  return false;
+  return msg.message != WM_QUIT;
 }
+
 }  // namespace rtc
