@@ -421,18 +421,6 @@ void NonlinearBeamformer::PostFilter(ChannelBuffer<float>* data) {
   }
 }
 
-void NonlinearBeamformer::ProcessChunk(const ChannelBuffer<float>& input,
-                                       ChannelBuffer<float>* output) {
-  RTC_DCHECK_GT(output->num_channels(), 0u);
-  RTC_DCHECK_EQ(output->num_frames_per_band(), input.num_frames_per_band());
-  AnalyzeChunk(input);
-  for (size_t i = 0u; i < input.num_bands(); ++i) {
-    std::memcpy(output->channels(i)[0], input.channels(i)[0],
-        sizeof(input.channels(0)[0][0]) * input.num_frames_per_band());
-  }
-  PostFilter(output);
-}
-
 void NonlinearBeamformer::AimAt(const SphericalPointf& target_direction) {
   target_angle_radians_ = target_direction.azimuth();
   InitHighFrequencyCorrectionRanges();

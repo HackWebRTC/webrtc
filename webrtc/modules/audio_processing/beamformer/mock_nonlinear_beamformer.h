@@ -28,9 +28,6 @@ class MockNonlinearBeamformer : public NonlinearBeamformer {
       : NonlinearBeamformer(array_geometry, 1u) {}
 
   MOCK_METHOD2(Initialize, void(int chunk_size_ms, int sample_rate_hz));
-  // TODO(aluebs): Remove once the dependencies have moved to new API.
-  MOCK_METHOD2(ProcessChunk, void(const ChannelBuffer<float>& data,
-                                  ChannelBuffer<float>* output));
   MOCK_METHOD1(AnalyzeChunk, void(const ChannelBuffer<float>& data));
   MOCK_METHOD1(PostFilter, void(ChannelBuffer<float>* data));
   MOCK_METHOD1(IsInBeam, bool(const SphericalPointf& spherical_point));

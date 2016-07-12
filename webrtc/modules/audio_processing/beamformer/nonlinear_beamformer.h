@@ -78,10 +78,6 @@ class NonlinearBeamformer : public LappedTransform::Callback {
   // frames and channels must correspond to the constructor parameters.
   virtual void PostFilter(ChannelBuffer<float>* data);
 
-  // TODO(aluebs): Remove once the dependencies have moved to new API.
-  virtual void ProcessChunk(const ChannelBuffer<float>& input,
-                            ChannelBuffer<float>* output);
-
   virtual void AimAt(const SphericalPointf& target_direction);
 
   virtual bool IsInBeam(const SphericalPointf& spherical_point);
