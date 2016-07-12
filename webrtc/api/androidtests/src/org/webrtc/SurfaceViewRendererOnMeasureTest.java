@@ -112,10 +112,37 @@ public final class SurfaceViewRendererOnMeasureTest extends ActivityTestCase {
    * Test how SurfaceViewRenderer.onMeasure() behaves with a 1280x720 frame.
    */
   @MediumTest
-  public void testFrame1280x720() {
+  public void testFrame1280x720() throws InterruptedException {
     final SurfaceViewRenderer surfaceViewRenderer =
         new SurfaceViewRenderer(getInstrumentation().getContext());
-    surfaceViewRenderer.init((EglBase.Context) null, null);
+    /**
+     * Mock renderer events with blocking wait functionality for frame size changes.
+     */
+    class MockRendererEvents implements RendererCommon.RendererEvents {
+      private int frameWidth;
+      private int frameHeight;
+      private int rotation;
+
+      public synchronized void waitForFrameSize(int frameWidth, int frameHeight, int rotation)
+          throws InterruptedException {
+        while (this.frameWidth != frameWidth || this.frameHeight != frameHeight
+            || this.rotation != rotation) {
+          wait();
+        }
+      }
+
+      public void onFirstFrameRendered() {}
+
+      public synchronized void onFrameResolutionChanged(
+          int frameWidth, int frameHeight, int rotation) {
+        this.frameWidth = frameWidth;
+        this.frameHeight = frameHeight;
+        this.rotation = rotation;
+        notifyAll();
+      }
+    }
+    final MockRendererEvents rendererEvents = new MockRendererEvents();
+    surfaceViewRenderer.init((EglBase.Context) null, rendererEvents);
 
     // Test different rotation degress, but same rotated size.
     for (int rotationDegree : new int[] {0, 90, 180, 270}) {
@@ -130,6 +157,7 @@ public final class SurfaceViewRendererOnMeasureTest extends ActivityTestCase {
       final String frameDimensions =
           unrotatedWidth + "x" + unrotatedHeight + " with rotation " + rotationDegree;
       surfaceViewRenderer.renderFrame(frame);
+      rendererEvents.waitForFrameSize(unrotatedWidth, unrotatedHeight, rotationDegree);
 
       // Test forcing to zero size.
       for (RendererCommon.ScalingType scalingType : scalingTypes) {
