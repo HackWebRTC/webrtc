@@ -71,6 +71,7 @@
         'base/rtccertificate_unittest.cc',
         'base/rtccertificategenerator_unittest.cc',
         'base/scopedptrcollection_unittest.cc',
+        'base/sequenced_task_checker_unittest.cc',
         'base/sha1digest_unittest.cc',
         'base/sharedexclusivelock_unittest.cc',
         'base/signalthread_unittest.cc',

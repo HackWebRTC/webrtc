@@ -192,6 +192,9 @@ static_library("rtc_task_queue") {
   configs += [ "..:common_config" ]
 
   sources = [
+    "sequenced_task_checker.h",
+    "sequenced_task_checker_impl.cc",
+    "sequenced_task_checker_impl.h",
     "task_queue.h",
     "task_queue_posix.h",
   ]

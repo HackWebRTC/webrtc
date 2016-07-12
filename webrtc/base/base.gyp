@@ -136,6 +136,9 @@
         'rtc_base_approved',
       ],
       'sources': [
+        'sequenced_task_checker.h',
+        'sequenced_task_checker_impl.cc',
+        'sequenced_task_checker_impl.h',
         'task_queue.h',
         'task_queue_posix.h',
       ],
