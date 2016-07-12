@@ -12,6 +12,7 @@
 
 #include <string.h>
 
+#include "libyuv/convert_from.h"
 #include "libyuv/compare.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/scale.h"
