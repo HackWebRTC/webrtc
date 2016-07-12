@@ -99,29 +99,6 @@
     }, # force_mic_volume_max
   ],
   'conditions': [
-    ['enable_protobuf==1', {
-      'targets': [
-        {
-          # This target should only be built if enable_protobuf is set
-          'target_name': 'event_log_visualizer',
-          'type': 'executable',
-          'dependencies': [
-            '<(webrtc_root)/webrtc.gyp:rtc_event_log_parser',
-            '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
-            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
-            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
-          ],
-          'sources': [
-            'event_log_visualizer/analyzer.cc',
-            'event_log_visualizer/analyzer.h',
-            'event_log_visualizer/generate_timeseries.cc',
-            'event_log_visualizer/plot_base.h',
-            'event_log_visualizer/plot_python.cc',
-            'event_log_visualizer/plot_python.h',
-          ],
-        },
-      ],
-    }],
     ['include_tests==1', {
       'targets' : [
         {

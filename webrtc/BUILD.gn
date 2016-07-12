@@ -358,7 +358,7 @@ if (rtc_enable_protobuf) {
     configs += [ ":common_config" ]
     public_configs = [ ":common_inherited_config" ]
 
-    public_deps = [
+    deps = [
       ":rtc_event_log_proto",
       ":webrtc_common",
     ]
