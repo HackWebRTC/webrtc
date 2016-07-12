@@ -99,7 +99,7 @@ class TestTurnServer : public TurnAuthInterface {
     for (TurnServer::AllocationMap::const_iterator it = map.begin();
         it != map.end(); ++it) {
       if (src == it->first.src()) {
-        return it->second;
+        return it->second.get();
       }
     }
     return NULL;

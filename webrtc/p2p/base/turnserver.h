@@ -161,7 +161,8 @@ class TurnRedirectInterface {
 // Not yet wired up: TCP support.
 class TurnServer : public sigslot::has_slots<> {
  public:
-  typedef std::map<TurnServerConnection, TurnServerAllocation*> AllocationMap;
+  typedef std::map<TurnServerConnection, std::unique_ptr<TurnServerAllocation>>
+      AllocationMap;
 
   explicit TurnServer(rtc::Thread* thread);
   ~TurnServer();
