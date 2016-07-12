@@ -351,7 +351,7 @@ void PrintAnalysisResults(FILE* output, const std::string& label,
                           ResultsContainer* results) {
   std::vector<AnalysisResult>::iterator iter;
 
-  fprintf(output, "RESULT Unique_frames_count: %s= %u\n", label.c_str(),
+  fprintf(output, "RESULT Unique_frames_count: %s= %u score\n", label.c_str(),
           static_cast<unsigned int>(results->frames.size()));
 
   if (results->frames.size() > 0u) {
