@@ -250,7 +250,16 @@ H264VideoToolboxEncoder::GetScaledBufferOnEncode(
     const rtc::scoped_refptr<VideoFrameBuffer>& frame) {
   rtc::CritScope lock(&quality_scaler_crit_);
   quality_scaler_.OnEncodeFrame(frame->width(), frame->height());
-  return quality_scaler_.GetScaledBuffer(frame);
+  if (!frame->native_handle())
+    return quality_scaler_.GetScaledBuffer(frame);
+
+  // Handle native (CVImageRef) scaling.
+  const QualityScaler::Resolution res = quality_scaler_.GetScaledResolution();
+  if (res.width == frame->width() && res.height == frame->height())
+    return frame;
+  // TODO(magjed): Implement efficient CVImageRef -> CVImageRef scaling instead
+  // of doing it via I420.
+  return quality_scaler_.GetScaledBuffer(frame->NativeToI420Buffer());
 }
 
 int H264VideoToolboxEncoder::Encode(
@@ -280,40 +289,45 @@ int H264VideoToolboxEncoder::Encode(
       return ret;
   }
 
-  // Get a pixel buffer from the pool and copy frame data over.
-  CVPixelBufferPoolRef pixel_buffer_pool =
-      VTCompressionSessionGetPixelBufferPool(compression_session_);
-#if defined(WEBRTC_IOS)
-  if (!pixel_buffer_pool) {
-    // Kind of a hack. On backgrounding, the compression session seems to get
-    // invalidated, which causes this pool call to fail when the application
-    // is foregrounded and frames are being sent for encoding again.
-    // Resetting the session when this happens fixes the issue.
-    // In addition we request a keyframe so video can recover quickly.
-    ResetCompressionSession();
-    pixel_buffer_pool =
+  CVPixelBufferRef pixel_buffer =
+      static_cast<CVPixelBufferRef>(input_image->native_handle());
+  if (pixel_buffer) {
+    CVBufferRetain(pixel_buffer);
+  } else {
+    // Get a pixel buffer from the pool and copy frame data over.
+    CVPixelBufferPoolRef pixel_buffer_pool =
         VTCompressionSessionGetPixelBufferPool(compression_session_);
-    is_keyframe_required = true;
-  }
+#if defined(WEBRTC_IOS)
+    if (!pixel_buffer_pool) {
+      // Kind of a hack. On backgrounding, the compression session seems to get
+      // invalidated, which causes this pool call to fail when the application
+      // is foregrounded and frames are being sent for encoding again.
+      // Resetting the session when this happens fixes the issue.
+      // In addition we request a keyframe so video can recover quickly.
+      ResetCompressionSession();
+      pixel_buffer_pool =
+          VTCompressionSessionGetPixelBufferPool(compression_session_);
+      is_keyframe_required = true;
+    }
 #endif
-  if (!pixel_buffer_pool) {
-    LOG(LS_ERROR) << "Failed to get pixel buffer pool.";
-    return WEBRTC_VIDEO_CODEC_ERROR;
-  }
-  CVPixelBufferRef pixel_buffer = nullptr;
-  CVReturn ret = CVPixelBufferPoolCreatePixelBuffer(nullptr, pixel_buffer_pool,
-                                                    &pixel_buffer);
-  if (ret != kCVReturnSuccess) {
-    LOG(LS_ERROR) << "Failed to create pixel buffer: " << ret;
-    // We probably want to drop frames here, since failure probably means
-    // that the pool is empty.
-    return WEBRTC_VIDEO_CODEC_ERROR;
-  }
-  RTC_DCHECK(pixel_buffer);
-  if (!internal::CopyVideoFrameToPixelBuffer(input_image, pixel_buffer)) {
-    LOG(LS_ERROR) << "Failed to copy frame data.";
-    CVBufferRelease(pixel_buffer);
-    return WEBRTC_VIDEO_CODEC_ERROR;
+    if (!pixel_buffer_pool) {
+      LOG(LS_ERROR) << "Failed to get pixel buffer pool.";
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
+    CVReturn ret = CVPixelBufferPoolCreatePixelBuffer(
+        nullptr, pixel_buffer_pool, &pixel_buffer);
+    if (ret != kCVReturnSuccess) {
+      LOG(LS_ERROR) << "Failed to create pixel buffer: " << ret;
+      // We probably want to drop frames here, since failure probably means
+      // that the pool is empty.
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
+    RTC_DCHECK(pixel_buffer);
+    if (!internal::CopyVideoFrameToPixelBuffer(input_image, pixel_buffer)) {
+      LOG(LS_ERROR) << "Failed to copy frame data.";
+      CVBufferRelease(pixel_buffer);
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
   }
 
   // Check if we need a keyframe.
@@ -486,6 +500,10 @@ void H264VideoToolboxEncoder::DestroyCompressionSession() {
 
 const char* H264VideoToolboxEncoder::ImplementationName() const {
   return "VideoToolbox";
+}
+
+bool H264VideoToolboxEncoder::SupportsNativeHandle() const {
+  return true;
 }
 
 void H264VideoToolboxEncoder::SetBitrateBps(uint32_t bitrate_bps) {

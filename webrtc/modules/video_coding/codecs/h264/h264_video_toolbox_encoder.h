@@ -56,6 +56,8 @@ class H264VideoToolboxEncoder : public H264Encoder {
 
   const char* ImplementationName() const override;
 
+  bool SupportsNativeHandle() const override;
+
   void OnEncodedFrame(OSStatus status,
                       VTEncodeInfoFlags info_flags,
                       CMSampleBufferRef sample_buffer,
