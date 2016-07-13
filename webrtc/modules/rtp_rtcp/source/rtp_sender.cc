@@ -16,6 +16,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/rate_limiter.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/call.h"
@@ -33,6 +34,7 @@ namespace webrtc {
 static const size_t kMaxPaddingLength = 224;
 static const int kSendSideDelayWindowMs = 1000;
 static const uint32_t kAbsSendTimeFraction = 18;
+static const int kBitrateStatisticsWindowMs = 1000;
 
 namespace {
 
@@ -63,47 +65,6 @@ uint32_t ConvertMsTo24Bits(int64_t time_ms) {
 }
 }  // namespace
 
-RTPSender::BitrateAggregator::BitrateAggregator(
-    BitrateStatisticsObserver* bitrate_callback)
-    : callback_(bitrate_callback),
-      total_bitrate_observer_(*this),
-      retransmit_bitrate_observer_(*this),
-      ssrc_(0) {}
-
-void RTPSender::BitrateAggregator::OnStatsUpdated() const {
-  if (callback_) {
-    callback_->Notify(total_bitrate_observer_.statistics(),
-                      retransmit_bitrate_observer_.statistics(), ssrc_);
-  }
-}
-
-Bitrate::Observer* RTPSender::BitrateAggregator::total_bitrate_observer() {
-  return &total_bitrate_observer_;
-}
-Bitrate::Observer* RTPSender::BitrateAggregator::retransmit_bitrate_observer() {
-  return &retransmit_bitrate_observer_;
-}
-
-void RTPSender::BitrateAggregator::set_ssrc(uint32_t ssrc) {
-  ssrc_ = ssrc;
-}
-
-RTPSender::BitrateAggregator::BitrateObserver::BitrateObserver(
-    const BitrateAggregator& aggregator)
-    : aggregator_(aggregator) {}
-
-// Implements Bitrate::Observer.
-void RTPSender::BitrateAggregator::BitrateObserver::BitrateUpdated(
-    const BitrateStatistics& stats) {
-  statistics_ = stats;
-  aggregator_.OnStatsUpdated();
-}
-
-const BitrateStatistics&
-RTPSender::BitrateAggregator::BitrateObserver::statistics() const {
-  return statistics_;
-}
-
 RTPSender::RTPSender(
     bool audio,
     Clock* clock,
@@ -115,13 +76,12 @@ RTPSender::RTPSender(
     FrameCountObserver* frame_count_observer,
     SendSideDelayObserver* send_side_delay_observer,
     RtcEventLog* event_log,
-    SendPacketObserver* send_packet_observer)
+    SendPacketObserver* send_packet_observer,
+    RateLimiter* retransmission_rate_limiter)
     : clock_(clock),
       // TODO(holmer): Remove this conversion?
       clock_delta_ms_(clock_->TimeInMilliseconds() - rtc::TimeMillis()),
       random_(clock_->TimeInMicroseconds()),
-      bitrates_(bitrate_callback),
-      total_bitrate_sent_(clock, bitrates_.total_bitrate_observer()),
       audio_configured_(audio),
       audio_(audio ? new RTPSenderAudio(clock, this) : nullptr),
       video_(audio ? nullptr : new RTPSenderVideo(clock, this)),
@@ -140,18 +100,18 @@ RTPSender::RTPSender(
       rotation_(kVideoRotation_0),
       video_rotation_active_(false),
       transport_sequence_number_(0),
-      // NACK.
-      nack_byte_count_times_(),
-      nack_byte_count_(),
-      nack_bitrate_(clock, bitrates_.retransmit_bitrate_observer()),
       playout_delay_active_(false),
       packet_history_(clock),
       // Statistics
-      rtp_stats_callback_(NULL),
+      rtp_stats_callback_(nullptr),
+      total_bitrate_sent_(kBitrateStatisticsWindowMs,
+                          RateStatistics::kBpsScale),
+      nack_bitrate_sent_(kBitrateStatisticsWindowMs, RateStatistics::kBpsScale),
       frame_count_observer_(frame_count_observer),
       send_side_delay_observer_(send_side_delay_observer),
       event_log_(event_log),
       send_packet_observer_(send_packet_observer),
+      bitrate_callback_(bitrate_callback),
       // RTP variables
       start_timestamp_forced_(false),
       start_timestamp_(0),
@@ -166,9 +126,7 @@ RTPSender::RTPSender(
       last_packet_marker_bit_(false),
       csrcs_(),
       rtx_(kRtxOff),
-      target_bitrate_(0) {
-  memset(nack_byte_count_times_, 0, sizeof(nack_byte_count_times_));
-  memset(nack_byte_count_, 0, sizeof(nack_byte_count_));
+      retransmission_rate_limiter_(retransmission_rate_limiter) {
   // We need to seed the random generator for BuildPaddingPacket() below.
   // TODO(holmer,tommi): Note that TimeInMilliseconds might return 0 on Mac
   // early on in the process.
@@ -178,7 +136,6 @@ RTPSender::RTPSender(
   ssrc_rtx_ = ssrc_db_->CreateSSRC();
   RTC_DCHECK(ssrc_rtx_ != 0);
 
-  bitrates_.set_ssrc(ssrc_);
   // Random start, 16 bits. Can't be 0.
   sequence_number_rtx_ = random_.Rand(1, kMaxInitRtpSeqNumber);
   sequence_number_ = random_.Rand(1, kMaxInitRtpSeqNumber);
@@ -208,18 +165,11 @@ RTPSender::~RTPSender() {
   }
 }
 
-void RTPSender::SetTargetBitrate(uint32_t bitrate) {
-  rtc::CritScope cs(&target_bitrate_critsect_);
-  target_bitrate_ = bitrate;
-}
-
-uint32_t RTPSender::GetTargetBitrate() {
-  rtc::CritScope cs(&target_bitrate_critsect_);
-  return target_bitrate_;
-}
-
 uint16_t RTPSender::ActualSendBitrateKbit() const {
-  return (uint16_t)(total_bitrate_sent_.BitrateNow() / 1000);
+  rtc::CritScope cs(&statistics_crit_);
+  return static_cast<uint16_t>(
+      total_bitrate_sent_.Rate(clock_->TimeInMilliseconds()).value_or(0) /
+      1000);
 }
 
 uint32_t RTPSender::VideoBitrateSent() const {
@@ -237,7 +187,8 @@ uint32_t RTPSender::FecOverheadRate() const {
 }
 
 uint32_t RTPSender::NackOverheadRate() const {
-  return nack_bitrate_.BitrateLast();
+  rtc::CritScope cs(&statistics_crit_);
+  return nack_bitrate_sent_.Rate(clock_->TimeInMilliseconds()).value_or(0);
 }
 
 int32_t RTPSender::SetTransmissionTimeOffset(int32_t transmission_time_offset) {
@@ -754,6 +705,12 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, int64_t min_resend_time) {
     return 0;
   }
 
+  // Check if we're overusing retransmission bitrate.
+  // TODO(sprang): Add histograms for nack success or failure reasons.
+  RTC_DCHECK(retransmission_rate_limiter_);
+  if (!retransmission_rate_limiter_->TryUseRate(length))
+    return -1;
+
   if (paced_sender_) {
     RtpUtility::RtpHeaderParser rtp_parser(data_buffer, length);
     RTPHeader header;
@@ -824,95 +781,20 @@ void RTPSender::OnReceivedNACK(const std::list<uint16_t>& nack_sequence_numbers,
   TRACE_EVENT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
                "RTPSender::OnReceivedNACK", "num_seqnum",
                nack_sequence_numbers.size(), "avg_rtt", avg_rtt);
-  const int64_t now = clock_->TimeInMilliseconds();
-  uint32_t bytes_re_sent = 0;
-  uint32_t target_bitrate = GetTargetBitrate();
-
-  // Enough bandwidth to send NACK?
-  if (!ProcessNACKBitRate(now)) {
-    LOG(LS_INFO) << "NACK bitrate reached. Skip sending NACK response. Target "
-                 << target_bitrate;
-    return;
-  }
-
-  for (std::list<uint16_t>::const_iterator it = nack_sequence_numbers.begin();
-      it != nack_sequence_numbers.end(); ++it) {
-    const int32_t bytes_sent = ReSendPacket(*it, 5 + avg_rtt);
-    if (bytes_sent > 0) {
-      bytes_re_sent += bytes_sent;
-    } else if (bytes_sent == 0) {
-      // The packet has previously been resent.
-      // Try resending next packet in the list.
-      continue;
-    } else {
+  for (uint16_t seq_no : nack_sequence_numbers) {
+    const int32_t bytes_sent = ReSendPacket(seq_no, 5 + avg_rtt);
+    if (bytes_sent < 0) {
       // Failed to send one Sequence number. Give up the rest in this nack.
-      LOG(LS_WARNING) << "Failed resending RTP packet " << *it
+      LOG(LS_WARNING) << "Failed resending RTP packet " << seq_no
                       << ", Discard rest of packets";
       break;
     }
-    // Delay bandwidth estimate (RTT * BW).
-    if (target_bitrate != 0 && avg_rtt) {
-      // kbits/s * ms = bits => bits/8 = bytes
-      size_t target_bytes =
-          (static_cast<size_t>(target_bitrate / 1000) * avg_rtt) >> 3;
-      if (bytes_re_sent > target_bytes) {
-        break;  // Ignore the rest of the packets in the list.
-      }
-    }
-  }
-  if (bytes_re_sent > 0) {
-    UpdateNACKBitRate(bytes_re_sent, now);
   }
 }
 
 void RTPSender::OnReceivedRtcpReportBlocks(
     const ReportBlockList& report_blocks) {
   playout_delay_oracle_.OnReceivedRtcpReportBlocks(report_blocks);
-}
-
-bool RTPSender::ProcessNACKBitRate(uint32_t now) {
-  uint32_t num = 0;
-  size_t byte_count = 0;
-  const uint32_t kAvgIntervalMs = 1000;
-  uint32_t target_bitrate = GetTargetBitrate();
-
-  rtc::CritScope lock(&send_critsect_);
-
-  if (target_bitrate == 0) {
-    return true;
-  }
-  for (num = 0; num < NACK_BYTECOUNT_SIZE; ++num) {
-    if ((now - nack_byte_count_times_[num]) > kAvgIntervalMs) {
-      // Don't use data older than 1sec.
-      break;
-    } else {
-      byte_count += nack_byte_count_[num];
-    }
-  }
-  uint32_t time_interval = kAvgIntervalMs;
-  if (num == NACK_BYTECOUNT_SIZE) {
-    // More than NACK_BYTECOUNT_SIZE nack messages has been received
-    // during the last msg_interval.
-    if (nack_byte_count_times_[num - 1] <= now) {
-      time_interval = now - nack_byte_count_times_[num - 1];
-    }
-  }
-  return (byte_count * 8) < (target_bitrate / 1000 * time_interval);
-}
-
-void RTPSender::UpdateNACKBitRate(uint32_t bytes, int64_t now) {
-  rtc::CritScope lock(&send_critsect_);
-  if (bytes == 0)
-    return;
-  nack_bitrate_.Update(bytes);
-  // Save bitrate statistics.
-  // Shift all but first time.
-  for (int i = NACK_BYTECOUNT_SIZE - 2; i >= 0; i--) {
-    nack_byte_count_[i + 1] = nack_byte_count_[i];
-    nack_byte_count_times_[i + 1] = nack_byte_count_times_[i];
-  }
-  nack_byte_count_[0] = bytes;
-  nack_byte_count_times_[0] = now;
 }
 
 // Called from pacer when we can send the packet.
@@ -1009,6 +891,7 @@ void RTPSender::UpdateRtpStats(const uint8_t* buffer,
   StreamDataCounters* counters;
   // Get ssrc before taking statistics_crit_ to avoid possible deadlock.
   uint32_t ssrc = is_rtx ? RtxSsrc() : SSRC();
+  int64_t now_ms = clock_->TimeInMilliseconds();
 
   rtc::CritScope lock(&statistics_crit_);
   if (is_rtx) {
@@ -1017,22 +900,23 @@ void RTPSender::UpdateRtpStats(const uint8_t* buffer,
     counters = &rtp_stats_;
   }
 
-  total_bitrate_sent_.Update(packet_length);
+  total_bitrate_sent_.Update(packet_length, now_ms);
 
-  if (counters->first_packet_time_ms == -1) {
+  if (counters->first_packet_time_ms == -1)
     counters->first_packet_time_ms = clock_->TimeInMilliseconds();
-  }
-  if (IsFecPacket(buffer, header)) {
+
+  if (IsFecPacket(buffer, header))
     counters->fec.AddPacket(packet_length, header);
-  }
+
   if (is_retransmit) {
     counters->retransmitted.AddPacket(packet_length, header);
+    nack_bitrate_sent_.Update(packet_length, now_ms);
   }
+
   counters->transmitted.AddPacket(packet_length, header);
 
-  if (rtp_stats_callback_) {
+  if (rtp_stats_callback_)
     rtp_stats_callback_->DataCountersUpdated(*counters, ssrc);
-  }
 }
 
 bool RTPSender::IsFecPacket(const uint8_t* buffer,
@@ -1180,13 +1064,18 @@ void RTPSender::UpdateOnSendPacket(int packet_id,
 }
 
 void RTPSender::ProcessBitrate() {
-  rtc::CritScope lock(&send_critsect_);
-  total_bitrate_sent_.Process();
-  nack_bitrate_.Process();
-  if (audio_configured_) {
+  if (!bitrate_callback_)
     return;
+  int64_t now_ms = clock_->TimeInMilliseconds();
+  uint32_t ssrc;
+  {
+    rtc::CritScope lock(&send_critsect_);
+    ssrc = ssrc_;
   }
-  video_->ProcessBitrate();
+
+  rtc::CritScope lock(&statistics_crit_);
+  bitrate_callback_->Notify(total_bitrate_sent_.Rate(now_ms).value_or(0),
+                            nack_bitrate_sent_.Rate(now_ms).value_or(0), ssrc);
 }
 
 size_t RTPSender::RtpHeaderLength() const {
@@ -1746,7 +1635,6 @@ void RTPSender::SetSendingStatus(bool enabled) {
       ssrc_db_->ReturnSSRC(ssrc_);
       ssrc_ = ssrc_db_->CreateSSRC();
       RTC_DCHECK(ssrc_ != 0);
-      bitrates_.set_ssrc(ssrc_);
     }
     // Don't initialize seq number if SSRC passed externally.
     if (!sequence_number_forced_ && !ssrc_forced_) {
@@ -1797,7 +1685,6 @@ uint32_t RTPSender::GenerateNewSSRC() {
   }
   ssrc_ = ssrc_db_->CreateSSRC();
   RTC_DCHECK(ssrc_ != 0);
-  bitrates_.set_ssrc(ssrc_);
   return ssrc_;
 }
 
@@ -1812,7 +1699,6 @@ void RTPSender::SetSSRC(uint32_t ssrc) {
   ssrc_db_->ReturnSSRC(ssrc_);
   ssrc_db_->RegisterSSRC(ssrc);
   ssrc_ = ssrc;
-  bitrates_.set_ssrc(ssrc_);
   if (!sequence_number_forced_) {
     sequence_number_ = random_.Rand(1, kMaxInitRtpSeqNumber);
   }
@@ -1961,7 +1847,8 @@ StreamDataCountersCallback* RTPSender::GetRtpStatisticsCallback() const {
 }
 
 uint32_t RTPSender::BitrateSent() const {
-  return total_bitrate_sent_.BitrateLast();
+  rtc::CritScope cs(&statistics_crit_);
+  return total_bitrate_sent_.Rate(clock_->TimeInMilliseconds()).value_or(0);
 }
 
 void RTPSender::SetRtpState(const RtpState& rtp_state) {

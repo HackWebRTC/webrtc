@@ -26,6 +26,7 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
@@ -1527,7 +1528,8 @@ class TransportFeedbackTester : public test::EndToEndTest {
       : EndToEndTest(::webrtc::EndToEndTest::kDefaultTimeoutMs),
         feedback_enabled_(feedback_enabled),
         num_video_streams_(num_video_streams),
-        num_audio_streams_(num_audio_streams) {
+        num_audio_streams_(num_audio_streams),
+        receiver_call_(nullptr) {
     // Only one stream of each supported for now.
     EXPECT_LE(num_video_streams, 1u);
     EXPECT_LE(num_audio_streams, 1u);
@@ -2539,6 +2541,16 @@ TEST_F(EndToEndTest, GetStats) {
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      // Drop every 25th packet => 4% loss.
+      static const int kPacketLossFrac = 25;
+      RTPHeader header;
+      RtpUtility::RtpHeaderParser parser(packet, length);
+      if (parser.Parse(&header) &&
+          expected_send_ssrcs_.find(header.ssrc) !=
+              expected_send_ssrcs_.end() &&
+          header.sequenceNumber % kPacketLossFrac == 0) {
+        return DROP_PACKET;
+      }
       check_stats_event_.Set();
       return SEND_PACKET;
     }
@@ -2639,8 +2651,8 @@ TEST_F(EndToEndTest, GetStats) {
       for (std::map<uint32_t, VideoSendStream::StreamStats>::const_iterator it =
                stats.substreams.begin();
            it != stats.substreams.end(); ++it) {
-        EXPECT_TRUE(expected_send_ssrcs_.find(it->first) !=
-                    expected_send_ssrcs_.end());
+        if (expected_send_ssrcs_.find(it->first) == expected_send_ssrcs_.end())
+          continue;  // Probably RTX.
 
         send_stats_filled_[CompoundKey("CapturedFrameRate", it->first)] |=
             stats.input_frame_rate != 0;
@@ -2658,9 +2670,13 @@ TEST_F(EndToEndTest, GetStats) {
             stream_stats.rtp_stats.retransmitted.packets != 0 ||
             stream_stats.rtp_stats.transmitted.packets != 0;
 
-        send_stats_filled_[CompoundKey("BitrateStatisticsObserver",
+        send_stats_filled_[CompoundKey("BitrateStatisticsObserver.Total",
                                        it->first)] |=
             stream_stats.total_bitrate_bps != 0;
+
+        send_stats_filled_[CompoundKey("BitrateStatisticsObserver.Retransmit",
+                                       it->first)] |=
+            stream_stats.retransmit_bitrate_bps != 0;
 
         send_stats_filled_[CompoundKey("FrameCountObserver", it->first)] |=
             stream_stats.frame_counts.delta_frames != 0 ||
@@ -2692,10 +2708,8 @@ TEST_F(EndToEndTest, GetStats) {
     }
 
     bool AllStatsFilled(const std::map<std::string, bool>& stats_map) {
-      for (std::map<std::string, bool>::const_iterator it = stats_map.begin();
-           it != stats_map.end();
-           ++it) {
-        if (!it->second)
+      for (const auto& stat : stats_map) {
+        if (!stat.second)
           return false;
       }
       return true;
@@ -2718,8 +2732,17 @@ TEST_F(EndToEndTest, GetStats) {
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
+      // Set low rates to avoid waiting for rampup.
+      for (size_t i = 0; i < encoder_config->streams.size(); ++i) {
+        encoder_config->streams[i].min_bitrate_bps = 10000;
+        encoder_config->streams[i].target_bitrate_bps = 15000;
+        encoder_config->streams[i].max_bitrate_bps = 20000;
+      }
       send_config->pre_encode_callback = this;  // Used to inject delay.
       expected_cname_ = send_config->rtp.c_name = "SomeCName";
+
+      send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+      send_config->rtp.rtx.payload_type = kSendRtxPayloadType;
 
       const std::vector<uint32_t>& ssrcs = send_config->rtp.ssrcs;
       for (size_t i = 0; i < ssrcs.size(); ++i) {
@@ -2728,7 +2751,17 @@ TEST_F(EndToEndTest, GetStats) {
             (*receive_configs)[i].rtp.remote_ssrc);
         (*receive_configs)[i].render_delay_ms = kExpectedRenderDelayMs;
         (*receive_configs)[i].renderer = &receive_stream_renderer_;
+        (*receive_configs)[i].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+
+        (*receive_configs)[i].rtp.rtx[kFakeVideoSendPayloadType].ssrc =
+            kSendRtxSsrcs[i];
+        (*receive_configs)[i].rtp.rtx[kFakeVideoSendPayloadType].payload_type =
+            kSendRtxPayloadType;
       }
+
+      for (size_t i = 0; i < kNumSsrcs; ++i)
+        send_config->rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[i]);
+
       // Use a delayed encoder to make sure we see CpuOveruseMetrics stats that
       // are non-zero.
       send_config->encoder_settings.encoder = &encoder_;

@@ -58,6 +58,7 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
   configuration.send_packet_observer = nullptr;
   configuration.bandwidth_callback = nullptr;
   configuration.transport_feedback_callback = nullptr;
+  configuration.retransmission_rate_limiter = nullptr;
 
   std::unique_ptr<RtpRtcp> rtp_rtcp(RtpRtcp::CreateRtpRtcp(configuration));
   rtp_rtcp->SetSendingStatus(false);
@@ -185,12 +186,10 @@ RtpStreamReceiver::RtpStreamReceiver(
   // Stats callback for CNAME changes.
   rtp_rtcp_->RegisterRtcpStatisticsCallback(receive_stats_proxy);
 
-  process_thread_->RegisterModule(rtp_receive_statistics_.get());
   process_thread_->RegisterModule(rtp_rtcp_.get());
 }
 
 RtpStreamReceiver::~RtpStreamReceiver() {
-  process_thread_->DeRegisterModule(rtp_receive_statistics_.get());
   process_thread_->DeRegisterModule(rtp_rtcp_.get());
 
   packet_router_->RemoveRtpModule(rtp_rtcp_.get());

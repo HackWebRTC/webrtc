@@ -63,7 +63,8 @@ RtpRtcp::Configuration::Configuration()
       send_frame_count_observer(nullptr),
       send_side_delay_observer(nullptr),
       event_log(nullptr),
-      send_packet_observer(nullptr) {}
+      send_packet_observer(nullptr),
+      retransmission_rate_limiter(nullptr) {}
 
 RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
   if (configuration.clock) {
@@ -89,7 +90,8 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                   configuration.send_frame_count_observer,
                   configuration.send_side_delay_observer,
                   configuration.event_log,
-                  configuration.send_packet_observer),
+                  configuration.send_packet_observer,
+                  configuration.retransmission_rate_limiter),
       rtcp_sender_(configuration.audio,
                    configuration.clock,
                    configuration.receive_statistics,
@@ -818,10 +820,6 @@ int32_t ModuleRtpRtcpImpl::SetSendREDPayloadType(
 // Get payload type for Redundant Audio Data RFC 2198.
 int32_t ModuleRtpRtcpImpl::SendREDPayloadType(int8_t* payload_type) const {
   return rtp_sender_.RED(payload_type);
-}
-
-void ModuleRtpRtcpImpl::SetTargetSendBitrate(uint32_t bitrate_bps) {
-  rtp_sender_.SetTargetBitrate(bitrate_bps);
 }
 
 int32_t ModuleRtpRtcpImpl::SetKeyFrameRequestMethod(

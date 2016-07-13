@@ -50,9 +50,6 @@ class PayloadRouter : public EncodedImageCallback {
                   const CodecSpecificInfo* codec_specific_info,
                   const RTPFragmentationHeader* fragmentation) override;
 
-  // Configures current target bitrate.
-  void SetTargetSendBitrate(uint32_t bitrate_bps);
-
   // Returns the maximum allowed data payload length, given the configured MTU
   // and RTP headers.
   size_t MaxPayloadLength() const;

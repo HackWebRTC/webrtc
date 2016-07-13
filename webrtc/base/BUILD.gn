@@ -141,6 +141,8 @@ static_library("rtc_base_approved") {
     "race_checker.h",
     "random.cc",
     "random.h",
+    "rate_limiter.cc",
+    "rate_limiter.h",
     "rate_statistics.cc",
     "rate_statistics.h",
     "ratetracker.cc",

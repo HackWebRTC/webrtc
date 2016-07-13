@@ -31,6 +31,7 @@ namespace webrtc {
 class BitrateController;
 class Clock;
 class ProcessThread;
+class RateLimiter;
 class RemoteBitrateEstimator;
 class RemoteBitrateObserver;
 class RtcEventLog;
@@ -80,6 +81,7 @@ class CongestionController : public CallStatsObserver, public Module {
   virtual PacedSender* pacer() { return pacer_.get(); }
   virtual PacketRouter* packet_router() { return packet_router_.get(); }
   virtual TransportFeedbackObserver* GetTransportFeedbackObserver();
+  RateLimiter* GetRetransmissionRateLimiter();
 
   // SetAllocatedSendBitrateLimits sets bitrates limits imposed by send codec
   // settings.
@@ -118,6 +120,7 @@ class CongestionController : public CallStatsObserver, public Module {
   const std::unique_ptr<PacedSender> pacer_;
   const std::unique_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
   const std::unique_ptr<BitrateController> bitrate_controller_;
+  const std::unique_ptr<RateLimiter> retransmission_rate_limiter_;
   RemoteEstimatorProxy remote_estimator_proxy_;
   TransportFeedbackAdapter transport_feedback_adapter_;
   int min_bitrate_bps_;
