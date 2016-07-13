@@ -267,6 +267,9 @@ void VideoReceiveStream::Start() {
 
 void VideoReceiveStream::Stop() {
   rtp_stream_receiver_.StopReceive();
+  // TriggerDecoderShutdown will release any waiting decoder thread and make it
+  // stop immediately, instead of waiting for a timeout. Needs to be called
+  // before joining the decoder thread thread.
   video_receiver_.TriggerDecoderShutdown();
   decode_thread_.Stop();
   call_stats_->DeregisterStatsObserver(video_stream_decoder_.get());

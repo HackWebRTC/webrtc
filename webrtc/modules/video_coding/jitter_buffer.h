@@ -261,8 +261,6 @@ class VCMJitterBuffer {
   // Drops all packets in the NACK list up until |last_decoded_sequence_number|.
   void DropPacketsFromNackList(uint16_t last_decoded_sequence_number);
 
-  void ReleaseFrameIfNotDecoding(VCMFrameBuffer* frame);
-
   // Gets an empty frame, creating a new frame if necessary (i.e. increases
   // jitter buffer size).
   VCMFrameBuffer* GetEmptyFrame() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
@@ -310,6 +308,10 @@ class VCMJitterBuffer {
 
   void UpdateHistograms() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
+  // Reset frame buffer and return it to free_frames_.
+  void RecycleFrameBuffer(VCMFrameBuffer* frame)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+
   Clock* clock_;
   // If we are running (have started) or not.
   bool running_;
@@ -334,8 +336,6 @@ class VCMJitterBuffer {
   int64_t time_last_incoming_frame_count_;
   unsigned int incoming_bit_count_;
   unsigned int incoming_bit_rate_;
-  // Number of frames in a row that have been too old.
-  int num_consecutive_old_frames_;
   // Number of packets in a row that have been too old.
   int num_consecutive_old_packets_;
   // Number of packets received.

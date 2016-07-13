@@ -229,7 +229,7 @@ VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
       incomplete_frames_(),
       last_decoded_state_(),
       first_packet_since_reset_(true),
-      stats_callback_(NULL),
+      stats_callback_(nullptr),
       incoming_frame_rate_(0),
       incoming_frame_count_(0),
       time_last_incoming_frame_count_(0),
@@ -247,6 +247,7 @@ VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
       low_rtt_nack_threshold_ms_(-1),
       high_rtt_nack_threshold_ms_(-1),
       missing_sequence_numbers_(SequenceNumberLessThan()),
+      latest_received_sequence_number_(0),
       max_nack_list_size_(0),
       max_packet_age_to_nack_(0),
       max_incomplete_time_ms_(0),
@@ -325,30 +326,17 @@ void VCMJitterBuffer::Start() {
   first_packet_since_reset_ = true;
   rtt_ms_ = kDefaultRtt;
   last_decoded_state_.Reset();
+
+  decodable_frames_.Reset(&free_frames_);
+  incomplete_frames_.Reset(&free_frames_);
 }
 
 void VCMJitterBuffer::Stop() {
-  crit_sect_->Enter();
+  CriticalSectionScoped cs(crit_sect_);
   UpdateHistograms();
   running_ = false;
   last_decoded_state_.Reset();
 
-  // Make sure all frames are free and reset.
-  for (FrameList::iterator it = decodable_frames_.begin();
-       it != decodable_frames_.end(); ++it) {
-    free_frames_.push_back(it->second);
-  }
-  for (FrameList::iterator it = incomplete_frames_.begin();
-       it != incomplete_frames_.end(); ++it) {
-    free_frames_.push_back(it->second);
-  }
-  for (UnorderedFrameList::iterator it = free_frames_.begin();
-       it != free_frames_.end(); ++it) {
-    (*it)->Reset();
-  }
-  decodable_frames_.clear();
-  incomplete_frames_.clear();
-  crit_sect_->Leave();
   // Make sure we wake up any threads waiting on these events.
   frame_event_->Set();
 }
@@ -594,11 +582,10 @@ VCMEncodedFrame* VCMJitterBuffer::ExtractAndSetDecode(uint32_t timestamp) {
 // Release frame when done with decoding. Should never be used to release
 // frames from within the jitter buffer.
 void VCMJitterBuffer::ReleaseFrame(VCMEncodedFrame* frame) {
+  RTC_CHECK(frame != nullptr);
   CriticalSectionScoped cs(crit_sect_);
   VCMFrameBuffer* frame_buffer = static_cast<VCMFrameBuffer*>(frame);
-  if (frame_buffer) {
-    free_frames_.push_back(frame_buffer);
-  }
+  RecycleFrameBuffer(frame_buffer);
 }
 
 // Gets frame to use for this timestamp. If no match, get empty frame.
@@ -624,9 +611,9 @@ VCMFrameBufferEnum VCMJitterBuffer::GetFrame(const VCMPacket& packet,
     LOG(LS_WARNING) << "Unable to get empty frame; Recycling.";
     bool found_key_frame = RecycleFramesUntilKeyFrame();
     *frame = GetEmptyFrame();
-    assert(*frame);
+    RTC_CHECK(*frame);
     if (!found_key_frame) {
-      free_frames_.push_back(*frame);
+      RecycleFrameBuffer(*frame);
       return kFlushIndicator;
     }
   }
@@ -753,7 +740,7 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
     case kGeneralError:
     case kTimeStampError:
     case kSizeError: {
-      free_frames_.push_back(frame);
+      RecycleFrameBuffer(frame);
       break;
     }
     case kCompleteSession: {
@@ -787,7 +774,7 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
     case kIncomplete: {
       if (frame->GetState() == kStateEmpty &&
           last_decoded_state_.UpdateEmptyFrame(frame)) {
-        free_frames_.push_back(frame);
+        RecycleFrameBuffer(frame);
         return kNoError;
       } else {
         incomplete_frames_.InsertFrame(frame);
@@ -807,13 +794,13 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
       if (frame_list != NULL) {
         frame_list->InsertFrame(frame);
       } else {
-        free_frames_.push_back(frame);
+        RecycleFrameBuffer(frame);
       }
       ++num_duplicated_packets_;
       break;
     }
     case kFlushIndicator:
-      free_frames_.push_back(frame);
+      RecycleFrameBuffer(frame);
       return kFlushIndicator;
     default:
       assert(false);
@@ -1313,6 +1300,11 @@ bool VCMJitterBuffer::WaitForRetransmissions() {
     return false;
   }
   return true;
+}
+
+void VCMJitterBuffer::RecycleFrameBuffer(VCMFrameBuffer* frame) {
+  frame->Reset();
+  free_frames_.push_back(frame);
 }
 
 }  // namespace webrtc
