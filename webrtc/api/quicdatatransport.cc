@@ -17,10 +17,14 @@
 namespace webrtc {
 
 QuicDataTransport::QuicDataTransport(rtc::Thread* signaling_thread,
-                                     rtc::Thread* worker_thread)
-    : signaling_thread_(signaling_thread), worker_thread_(worker_thread) {
+                                     rtc::Thread* worker_thread,
+                                     rtc::Thread* network_thread)
+    : signaling_thread_(signaling_thread),
+      worker_thread_(worker_thread),
+      network_thread_(network_thread) {
   RTC_DCHECK(signaling_thread_);
   RTC_DCHECK(worker_thread_);
+  RTC_DCHECK(network_thread_);
 }
 
 QuicDataTransport::~QuicDataTransport() {}
@@ -68,8 +72,8 @@ rtc::scoped_refptr<DataChannelInterface> QuicDataTransport::CreateDataChannel(
     LOG(LS_ERROR) << "QUIC data channel already exists with id " << config->id;
     return nullptr;
   }
-  rtc::scoped_refptr<QuicDataChannel> data_channel(
-      new QuicDataChannel(signaling_thread_, worker_thread_, label, *config));
+  rtc::scoped_refptr<QuicDataChannel> data_channel(new QuicDataChannel(
+      signaling_thread_, worker_thread_, network_thread_, label, *config));
   if (quic_transport_channel_) {
     if (!data_channel->SetTransportChannel(quic_transport_channel_)) {
       LOG(LS_ERROR)

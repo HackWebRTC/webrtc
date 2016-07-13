@@ -36,7 +36,9 @@ namespace webrtc {
 // exists, it sends the QUIC stream to the QuicDataChannel.
 class QuicDataTransport : public sigslot::has_slots<> {
  public:
-  QuicDataTransport(rtc::Thread* signaling_thread, rtc::Thread* worker_thread);
+  QuicDataTransport(rtc::Thread* signaling_thread,
+                    rtc::Thread* worker_thread,
+                    rtc::Thread* network_thread);
   ~QuicDataTransport() override;
 
   // Sets the QUIC transport channel for the QuicDataChannels and the
@@ -80,9 +82,10 @@ class QuicDataTransport : public sigslot::has_slots<> {
       quic_stream_by_id_;
   // QuicTransportChannel for sending/receiving data.
   cricket::QuicTransportChannel* quic_transport_channel_ = nullptr;
-  // Signaling and worker threads for the QUIC data channel.
+  // Threads for the QUIC data channel.
   rtc::Thread* const signaling_thread_;
   rtc::Thread* const worker_thread_;
+  rtc::Thread* const network_thread_;
 };
 
 }  // namespace webrtc

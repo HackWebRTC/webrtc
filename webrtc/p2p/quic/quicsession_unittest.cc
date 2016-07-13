@@ -295,8 +295,6 @@ void QuicSessionTest::CreateClientAndServerSessions() {
   channel2->SetAsync(true);
 
   // Configure peers to send packets to each other.
-  channel1->Connect();
-  channel2->Connect();
   channel1->SetDestination(channel2.get());
 
   client_peer_ = CreateSession(std::move(channel1), Perspective::IS_CLIENT);

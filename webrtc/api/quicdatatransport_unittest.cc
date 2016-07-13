@@ -64,7 +64,9 @@ class FakeObserver : public DataChannelObserver {
 class QuicDataTransportPeer {
  public:
   QuicDataTransportPeer()
-      : quic_data_transport_(rtc::Thread::Current(), rtc::Thread::Current()),
+      : quic_data_transport_(rtc::Thread::Current(),
+                             rtc::Thread::Current(),
+                             rtc::Thread::Current()),
         ice_transport_channel_(new FakeTransportChannel("data", 0)),
         quic_transport_channel_(ice_transport_channel_) {
     ice_transport_channel_->SetAsync(true);
@@ -80,8 +82,6 @@ class QuicDataTransportPeer {
 
   // Connects |ice_transport_channel_| to that of the other peer.
   void Connect(QuicDataTransportPeer* other_peer) {
-    ice_transport_channel_->Connect();
-    other_peer->ice_transport_channel_->Connect();
     ice_transport_channel_->SetDestination(other_peer->ice_transport_channel_);
   }
 

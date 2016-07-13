@@ -61,10 +61,12 @@ bool ParseQuicDataMessageHeader(const char* data,
 
 QuicDataChannel::QuicDataChannel(rtc::Thread* signaling_thread,
                                  rtc::Thread* worker_thread,
+                                 rtc::Thread* network_thread,
                                  const std::string& label,
                                  const DataChannelInit& config)
     : signaling_thread_(signaling_thread),
       worker_thread_(worker_thread),
+      network_thread_(network_thread),
       id_(config.id),
       state_(kConnecting),
       buffered_amount_(0),
@@ -91,12 +93,12 @@ bool QuicDataChannel::Send(const DataBuffer& buffer) {
                   << " is not open so cannot send.";
     return false;
   }
-  return worker_thread_->Invoke<bool>(
-      RTC_FROM_HERE, rtc::Bind(&QuicDataChannel::Send_w, this, buffer));
+  return network_thread_->Invoke<bool>(
+      RTC_FROM_HERE, rtc::Bind(&QuicDataChannel::Send_n, this, buffer));
 }
 
-bool QuicDataChannel::Send_w(const DataBuffer& buffer) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+bool QuicDataChannel::Send_n(const DataBuffer& buffer) {
+  RTC_DCHECK(network_thread_->IsCurrent());
 
   // Encode and send the header containing the data channel ID and message ID.
   rtc::CopyOnWriteBuffer header;
@@ -256,7 +258,7 @@ DataChannelInterface::DataState QuicDataChannel::SetTransportChannel_w() {
 }
 
 void QuicDataChannel::OnIncomingMessage(Message&& message) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
   RTC_DCHECK(message.stream);
   if (!observer_) {
     LOG(LS_WARNING) << "QUIC data channel " << id_
@@ -295,7 +297,7 @@ void QuicDataChannel::OnIncomingMessage(Message&& message) {
 void QuicDataChannel::OnDataReceived(net::QuicStreamId stream_id,
                                      const char* data,
                                      size_t len) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
   RTC_DCHECK(data);
   const auto& kv = incoming_quic_messages_.find(stream_id);
   if (kv == incoming_quic_messages_.end()) {
@@ -325,7 +327,7 @@ void QuicDataChannel::OnDataReceived(net::QuicStreamId stream_id,
 }
 
 void QuicDataChannel::OnReadyToSend(cricket::TransportChannel* channel) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
   RTC_DCHECK(channel == quic_transport_channel_);
   LOG(LS_INFO) << "QuicTransportChannel is ready to send";
   invoker_.AsyncInvoke<void>(
@@ -342,7 +344,7 @@ void QuicDataChannel::OnWriteBlockedStreamClosed(net::QuicStreamId stream_id,
 
 void QuicDataChannel::OnIncomingQueuedStreamClosed(net::QuicStreamId stream_id,
                                                    int error) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
   LOG(LS_VERBOSE) << "Incoming queued stream " << stream_id << " is closed.";
   incoming_quic_messages_.erase(stream_id);
 }
