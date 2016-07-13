@@ -123,6 +123,8 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   int CreateVoEChannel();
   webrtc::AudioDeviceModule* adm();
 
+  AudioCodecs CollectRecvCodecs() const;
+
   rtc::ThreadChecker signal_thread_checker_;
   rtc::ThreadChecker worker_thread_checker_;
 
@@ -132,7 +134,8 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   // The primary instance of WebRtc VoiceEngine.
   std::unique_ptr<VoEWrapper> voe_wrapper_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
-  std::vector<AudioCodec> codecs_;
+  std::vector<AudioCodec> send_codecs_;
+  std::vector<AudioCodec> recv_codecs_;
   std::vector<WebRtcVoiceMediaChannel*> channels_;
   webrtc::Config voe_config_;
   bool is_dumping_aec_ = false;

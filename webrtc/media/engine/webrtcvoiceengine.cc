@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -32,6 +33,7 @@
 #include "webrtc/media/base/audiosource.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/streamparams.h"
+#include "webrtc/media/engine/payload_type_mapper.h"
 #include "webrtc/media/engine/webrtcmediaengine.h"
 #include "webrtc/media/engine/webrtcvoe.h"
 #include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
@@ -248,7 +250,7 @@ class WebRtcVoiceCodecs final {
  public:
   // TODO(solenberg): Do this filtering once off-line, add a simple AudioCodec
   // list and add a test which verifies VoE supports the listed codecs.
-  static std::vector<AudioCodec> SupportedCodecs() {
+  static std::vector<AudioCodec> SupportedSendCodecs() {
     std::vector<AudioCodec> result;
     // Iterate first over our preferred codecs list, so that the results are
     // added in order of preference.
@@ -511,13 +513,20 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "WebRtcVoiceEngine::WebRtcVoiceEngine";
   RTC_DCHECK(voe_wrapper);
+  RTC_DCHECK(decoder_factory);
 
   signal_thread_checker_.DetachFromThread();
 
   // Load our audio codec list.
-  LOG(LS_INFO) << "Supported codecs in order of preference:";
-  codecs_ = WebRtcVoiceCodecs::SupportedCodecs();
-  for (const AudioCodec& codec : codecs_) {
+  LOG(LS_INFO) << "Supported send codecs in order of preference:";
+  send_codecs_ = WebRtcVoiceCodecs::SupportedSendCodecs();
+  for (const AudioCodec& codec : send_codecs_) {
+    LOG(LS_INFO) << ToString(codec);
+  }
+
+  LOG(LS_INFO) << "Supported recv codecs in order of preference:";
+  recv_codecs_ = CollectRecvCodecs();
+  for (const AudioCodec& codec : recv_codecs_) {
     LOG(LS_INFO) << ToString(codec);
   }
 
@@ -936,12 +945,12 @@ int WebRtcVoiceEngine::GetInputLevel() {
 
 const std::vector<AudioCodec>& WebRtcVoiceEngine::send_codecs() const {
   RTC_DCHECK(signal_thread_checker_.CalledOnValidThread());
-  return codecs_;
+  return send_codecs_;
 }
 
 const std::vector<AudioCodec>& WebRtcVoiceEngine::recv_codecs() const {
   RTC_DCHECK(signal_thread_checker_.CalledOnValidThread());
-  return codecs_;
+  return recv_codecs_;
 }
 
 RtpCapabilities WebRtcVoiceEngine::GetCapabilities() const {
@@ -1079,6 +1088,61 @@ webrtc::AudioDeviceModule* WebRtcVoiceEngine::adm() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   RTC_DCHECK(adm_);
   return adm_;
+}
+
+AudioCodecs WebRtcVoiceEngine::CollectRecvCodecs() const {
+  PayloadTypeMapper mapper;
+  AudioCodecs out;
+  const std::vector<webrtc::SdpAudioFormat>& formats =
+      decoder_factory_->GetSupportedFormats();
+
+  // Only generate CN payload types for these clockrates
+  std::map<int, bool, std::greater<int>> generate_cn = {{ 8000,  false },
+                                                        { 16000, false },
+                                                        { 32000, false }};
+
+  auto map_format = [&mapper, &out] (const webrtc::SdpAudioFormat& format) {
+    rtc::Optional<AudioCodec> opt_codec = mapper.ToAudioCodec(format);
+    if (!opt_codec) {
+      LOG(LS_ERROR) << "Unable to assign payload type to format: " << format;
+      return false;
+    }
+
+    auto& codec = *opt_codec;
+    if (IsCodec(codec, kOpusCodecName)) {
+      // TODO(ossu): Set this specifically for Opus for now, until we have a
+      // better way of dealing with rtcp-fb parameters.
+      codec.AddFeedbackParam(
+          FeedbackParam(kRtcpFbParamTransportCc, kParamValueEmpty));
+    }
+    out.push_back(codec);
+    return true;
+  };
+
+  for (const auto& format : formats) {
+    if (map_format(format)) {
+      // TODO(ossu): We should get more than just a format from the factory, so
+      // we can determine if a format should be used with CN or not. For now,
+      // generate a CN entry for each supported clock rate also used by a format
+      // supported by the factory.
+      auto cn = generate_cn.find(format.clockrate_hz);
+      if (cn != generate_cn.end() /* && format.allow_comfort_noise */) {
+        cn->second = true;
+      }
+    }
+  }
+
+  // Add CN codecs after "proper" audio codecs
+  for (const auto& cn : generate_cn) {
+    if (cn.second) {
+      map_format({kCnCodecName, cn.first, 1});
+    }
+  }
+
+  // Add telephone-event codec last
+  map_format({kDtmfCodecName, 8000, 1});
+
+  return out;
 }
 
 class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
