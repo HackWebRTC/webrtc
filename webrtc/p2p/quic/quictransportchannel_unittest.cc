@@ -112,8 +112,6 @@ class QuicTestPeer : public sigslot::has_slots<> {
 
   // Connects |ice_channel_| to that of the other peer.
   void Connect(QuicTestPeer* other_peer) {
-    ice_channel_->Connect();
-    other_peer->ice_channel_->Connect();
     ice_channel_->SetDestination(other_peer->ice_channel_);
   }
 
@@ -419,8 +417,6 @@ TEST_F(QuicTransportChannelTest, TransferInvalidSrtp) {
 // Test that QuicTransportChannel::WritePacket blocks when the ICE
 // channel is not writable, and otherwise succeeds.
 TEST_F(QuicTransportChannelTest, QuicWritePacket) {
-  peer1_.ice_channel()->Connect();
-  peer2_.ice_channel()->Connect();
   peer1_.ice_channel()->SetDestination(peer2_.ice_channel());
   std::string packet = "FAKEQUICPACKET";
 

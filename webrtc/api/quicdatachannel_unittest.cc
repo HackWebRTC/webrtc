@@ -120,8 +120,9 @@ class FakeQuicDataTransport : public sigslot::has_slots<> {
     DataChannelInit config;
     config.id = id;
     config.protocol = protocol;
-    rtc::scoped_refptr<QuicDataChannel> data_channel(new QuicDataChannel(
-        rtc::Thread::Current(), rtc::Thread::Current(), label, config));
+    rtc::scoped_refptr<QuicDataChannel> data_channel(
+        new QuicDataChannel(rtc::Thread::Current(), rtc::Thread::Current(),
+                            rtc::Thread::Current(), label, config));
     data_channel_by_id_[id] = data_channel;
     return data_channel;
   }
@@ -201,8 +202,6 @@ class QuicDataChannelPeer {
 
   // Connects |ice_transport_channel_| to that of the other peer.
   void Connect(QuicDataChannelPeer* other_peer) {
-    ice_transport_channel_->Connect();
-    other_peer->ice_transport_channel_->Connect();
     ice_transport_channel_->SetDestination(other_peer->ice_transport_channel_);
   }
 
