@@ -166,6 +166,9 @@ class QuicTransportChannel : public TransportChannelImpl,
   void SetIceConfig(const IceConfig& config) override {
     channel_->SetIceConfig(config);
   }
+  void Connect() override {
+    channel_->Connect();
+  }
 
   // QuicPacketWriter overrides.
   // Called from net::QuicConnection when |quic_| has packets to write.

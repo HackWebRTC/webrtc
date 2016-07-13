@@ -49,7 +49,6 @@ using rtc::SR_BLOCK;
 
 // Arbitrary number for a stream's write blocked priority.
 static const SpdyPriority kDefaultPriority = 3;
-static const net::QuicStreamId kStreamId = 5;
 
 // QuicSession that does not create streams and writes data from
 // ReliableQuicStream to a string.
@@ -79,7 +78,7 @@ class MockQuicSession : public QuicSession {
 
   net::ReliableQuicStream* CreateIncomingDynamicStream(
       QuicStreamId id) override {
-    return new ReliableQuicStream(kStreamId, this);
+    return nullptr;
   }
 
   net::ReliableQuicStream* CreateOutgoingDynamicStream(
@@ -143,6 +142,7 @@ class ReliableQuicStreamTest : public ::testing::Test,
   ReliableQuicStreamTest() {}
 
   void CreateReliableQuicStream() {
+    const net::QuicStreamId kStreamId = 5;
 
     // Arbitrary values for QuicConnection.
     QuicConnectionHelper* quic_helper =
@@ -232,7 +232,7 @@ TEST_F(ReliableQuicStreamTest, BufferData) {
 // Read an entire string.
 TEST_F(ReliableQuicStreamTest, ReadDataWhole) {
   CreateReliableQuicStream();
-  net::QuicStreamFrame frame(kStreamId, false, 0, "Hello, World!");
+  net::QuicStreamFrame frame(-1, false, 0, "Hello, World!");
   stream_->OnStreamFrame(frame);
 
   EXPECT_EQ("Hello, World!", read_buffer_);
@@ -241,7 +241,7 @@ TEST_F(ReliableQuicStreamTest, ReadDataWhole) {
 // Read part of a string.
 TEST_F(ReliableQuicStreamTest, ReadDataPartial) {
   CreateReliableQuicStream();
-  net::QuicStreamFrame frame(kStreamId, false, 0, "Hello, World!");
+  net::QuicStreamFrame frame(-1, false, 0, "Hello, World!");
   frame.frame_length = 5;
   stream_->OnStreamFrame(frame);
 

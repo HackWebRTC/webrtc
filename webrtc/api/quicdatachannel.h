@@ -88,7 +88,6 @@ class QuicDataChannel : public rtc::RefCountedObject<DataChannelInterface>,
 
   QuicDataChannel(rtc::Thread* signaling_thread,
                   rtc::Thread* worker_thread,
-                  rtc::Thread* network_thread,
                   const std::string& label,
                   const DataChannelInit& config);
   ~QuicDataChannel() override;
@@ -156,13 +155,11 @@ class QuicDataChannel : public rtc::RefCountedObject<DataChannelInterface>,
   void OnReadyToSend(cricket::TransportChannel* channel);
   void OnConnectionClosed();
 
-  // Network thread methods.
+  // Worker thread methods.
   // Sends the data buffer to the remote peer using an outgoing QUIC stream.
   // Returns true if the data buffer can be successfully sent, or if it is
   // queued to be sent later.
-  bool Send_n(const DataBuffer& buffer);
-
-  // Worker thread methods.
+  bool Send_w(const DataBuffer& buffer);
   // Connects the |quic_transport_channel_| signals to this QuicDataChannel,
   // then returns the new QuicDataChannel state.
   DataState SetTransportChannel_w();
@@ -188,10 +185,8 @@ class QuicDataChannel : public rtc::RefCountedObject<DataChannelInterface>,
   cricket::QuicTransportChannel* quic_transport_channel_ = nullptr;
   // Signaling thread for DataChannelInterface methods.
   rtc::Thread* const signaling_thread_;
-  // Worker thread for |quic_transport_channel_| callbacks.
+  // Worker thread for sending data and |quic_transport_channel_| callbacks.
   rtc::Thread* const worker_thread_;
-  // Network thread for sending data and |quic_transport_channel_| callbacks.
-  rtc::Thread* const network_thread_;
   rtc::AsyncInvoker invoker_;
   // Map of QUIC stream ID => ReliableQuicStream* for write blocked QUIC
   // streams.
