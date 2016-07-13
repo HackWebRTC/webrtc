@@ -238,15 +238,17 @@ bool DtlsTransportChannelWrapper::SetRemoteFingerprint(
   remote_fingerprint_value_ = std::move(remote_fingerprint_value);
   remote_fingerprint_algorithm_ = digest_alg;
 
-  bool reconnect = (dtls_ != nullptr);
+  if (dtls_) {
+    // If the fingerprint is changing, we'll tear down the DTLS association and
+    // create a new one, resetting our state.
+    dtls_.reset(nullptr);
+    set_dtls_state(DTLS_TRANSPORT_NEW);
+    set_writable(false);
+  }
 
   if (!SetupDtls()) {
     set_dtls_state(DTLS_TRANSPORT_FAILED);
     return false;
-  }
-
-  if (reconnect) {
-    Reconnect();
   }
 
   return true;
@@ -297,6 +299,10 @@ bool DtlsTransportChannelWrapper::SetupDtls() {
   }
 
   LOG_J(LS_INFO, this) << "DTLS setup complete.";
+
+  // If the underlying channel is already writable at this point, we may be
+  // able to start DTLS right away.
+  MaybeStartDtls();
   return true;
 }
 
@@ -419,15 +425,7 @@ void DtlsTransportChannelWrapper::OnWritableState(TransportChannel* channel) {
 
   switch (dtls_state()) {
     case DTLS_TRANSPORT_NEW:
-      // This should never fail:
-      // Because we are operating in a nonblocking mode and all
-      // incoming packets come in via OnReadPacket(), which rejects
-      // packets in this state, the incoming queue must be empty. We
-      // ignore write errors, thus any errors must be because of
-      // configuration and therefore are our fault.
-      // Note that in non-debug configurations, failure in
-      // MaybeStartDtls() changes the state to DTLS_TRANSPORT_FAILED.
-      VERIFY(MaybeStartDtls());
+      MaybeStartDtls();
       break;
     case DTLS_TRANSPORT_CONNECTED:
       // Note: SignalWritableState fired by set_writable.
@@ -571,12 +569,19 @@ void DtlsTransportChannelWrapper::OnDtlsEvent(rtc::StreamInterface* dtls,
   }
 }
 
-bool DtlsTransportChannelWrapper::MaybeStartDtls() {
+void DtlsTransportChannelWrapper::MaybeStartDtls() {
   if (dtls_ && channel_->writable()) {
     if (dtls_->StartSSLWithPeer()) {
+      // This should never fail:
+      // Because we are operating in a nonblocking mode and all
+      // incoming packets come in via OnReadPacket(), which rejects
+      // packets in this state, the incoming queue must be empty. We
+      // ignore write errors, thus any errors must be because of
+      // configuration and therefore are our fault.
+      RTC_DCHECK(false) << "StartSSLWithPeer failed.";
       LOG_J(LS_ERROR, this) << "Couldn't start DTLS handshake";
       set_dtls_state(DTLS_TRANSPORT_FAILED);
-      return false;
+      return;
     }
     LOG_J(LS_INFO, this)
       << "DtlsTransportChannelWrapper: Started DTLS handshake";
@@ -597,7 +602,6 @@ bool DtlsTransportChannelWrapper::MaybeStartDtls() {
       cached_client_hello_.Clear();
     }
   }
-  return true;
 }
 
 // Called from OnReadPacket when a DTLS packet is received.
@@ -670,14 +674,6 @@ void DtlsTransportChannelWrapper::OnChannelStateChanged(
     TransportChannelImpl* channel) {
   ASSERT(channel == channel_);
   SignalStateChanged(this);
-}
-
-void DtlsTransportChannelWrapper::Reconnect() {
-  set_dtls_state(DTLS_TRANSPORT_NEW);
-  set_writable(false);
-  if (channel_->writable()) {
-    OnWritableState(channel_);
-  }
 }
 
 }  // namespace cricket
