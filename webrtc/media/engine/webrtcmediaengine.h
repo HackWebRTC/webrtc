@@ -18,7 +18,6 @@
 #include "webrtc/media/base/mediaengine.h"
 
 namespace webrtc {
-class AudioDecoderFactory;
 class AudioDeviceModule;
 }
 namespace cricket {
