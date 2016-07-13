@@ -41,6 +41,26 @@ bool SetNonBlocking(int fd) {
   RTC_CHECK(flags != -1);
   return (flags & O_NONBLOCK) || fcntl(fd, F_SETFL, flags | O_NONBLOCK) != -1;
 }
+
+// TODO(tommi): This is a hack to support two versions of libevent that we're
+// compatible with.  The method we really want to call is event_assign(),
+// since event_set() has been marked as deprecated (and doesn't accept
+// passing event_base__ as a parameter).  However, the version of libevent
+// that we have in Chromium, doesn't have event_assign(), so we need to call
+// event_set() there.
+void EventAssign(struct event* ev,
+                 struct event_base* base,
+                 int fd,
+                 short events,
+                 void (*callback)(int, short, void*),
+                 void* arg) {
+#if defined(_EVENT2_EVENT_H_)
+  RTC_CHECK_EQ(0, event_assign(ev, base, fd, events, callback, arg));
+#else
+  event_set(ev, fd, events, callback, arg);
+  RTC_CHECK_EQ(0, event_base_set(base, ev));
+#endif
+}
 }  // namespace
 
 struct TaskQueue::QueueContext {
@@ -124,20 +144,8 @@ TaskQueue::TaskQueue(const char* queue_name)
   SetNonBlocking(fds[1]);
   wakeup_pipe_out_ = fds[0];
   wakeup_pipe_in_ = fds[1];
-  // TODO(tommi): This is a hack to support two versions of libevent that we're
-  // compatible with.  The method we really want to call is event_assign(),
-  // since event_set() has been marked as deprecated (and doesn't accept
-  // passing event_base__ as a parameter).  However, the version of libevent
-  // that we have in Chromium, doesn't have event_assign(), so we need to call
-  // event_set() there.
-#if defined(_EVENT2_EVENT_H_)
-  event_assign(wakeup_event_.get(), event_base_, wakeup_pipe_out_,
-               EV_READ | EV_PERSIST, OnWakeup, this);
-#else
-  event_set(wakeup_event_.get(), wakeup_pipe_out_, EV_READ | EV_PERSIST,
-            OnWakeup, this);
-#endif
-  event_base_set(event_base_, wakeup_event_.get());
+  EventAssign(wakeup_event_.get(), event_base_, wakeup_pipe_out_,
+              EV_READ | EV_PERSIST, OnWakeup, this);
   event_add(wakeup_event_.get(), 0);
   thread_.Start();
 }
@@ -222,8 +230,7 @@ void TaskQueue::PostDelayedTask(std::unique_ptr<QueuedTask> task,
                                 uint32_t milliseconds) {
   if (IsCurrent()) {
     TimerEvent* timer = new TimerEvent(std::move(task));
-    evtimer_set(&timer->ev, &TaskQueue::RunTimer, timer);
-    event_base_set(event_base_, &timer->ev);
+    EventAssign(&timer->ev, event_base_, -1, 0, &TaskQueue::RunTimer, timer);
     QueueContext* ctx =
         static_cast<QueueContext*>(pthread_getspecific(GetQueuePtrTls()));
     ctx->pending_timers_.push_back(timer);
