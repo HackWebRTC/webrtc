@@ -25,6 +25,7 @@
 #include "webrtc/media/base/codec.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/mediacommon.h"
+#include "webrtc/media/base/videocapturer.h"
 #include "webrtc/media/base/videocommon.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder_factory.h"
 
@@ -38,6 +39,8 @@ class Call;
 }
 
 namespace cricket {
+
+class VideoCapturer;
 
 struct RtpCapabilities {
   std::vector<webrtc::RtpExtension> header_extensions;
