@@ -124,8 +124,19 @@ TaskQueue::TaskQueue(const char* queue_name)
   SetNonBlocking(fds[1]);
   wakeup_pipe_out_ = fds[0];
   wakeup_pipe_in_ = fds[1];
+  // TODO(tommi): This is a hack to support two versions of libevent that we're
+  // compatible with.  The method we really want to call is event_assign(),
+  // since event_set() has been marked as deprecated (and doesn't accept
+  // passing event_base__ as a parameter).  However, the version of libevent
+  // that we have in Chromium, doesn't have event_assign(), so we need to call
+  // event_set() there.
+#if defined(_EVENT2_EVENT_H_)
+  event_assign(wakeup_event_.get(), event_base_, wakeup_pipe_out_,
+               EV_READ | EV_PERSIST, OnWakeup, this);
+#else
   event_set(wakeup_event_.get(), wakeup_pipe_out_, EV_READ | EV_PERSIST,
             OnWakeup, this);
+#endif
   event_base_set(event_base_, wakeup_event_.get());
   event_add(wakeup_event_.get(), 0);
   thread_.Start();
