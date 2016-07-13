@@ -265,8 +265,6 @@ Call::Call(const Call::Config& config)
 Call::~Call() {
   RTC_DCHECK(!remb_.InUse());
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
-  UpdateSendHistograms();
-  UpdateReceiveHistograms();
   RTC_CHECK(audio_send_ssrcs_.empty());
   RTC_CHECK(video_send_ssrcs_.empty());
   RTC_CHECK(video_send_streams_.empty());
@@ -282,6 +280,12 @@ Call::~Call() {
   module_process_thread_->DeRegisterModule(call_stats_.get());
   module_process_thread_->Stop();
   call_stats_->DeregisterStatsObserver(congestion_controller_.get());
+
+  // Only update histograms after process threads have been shut down, so that
+  // they won't try to concurrently update stats.
+  UpdateSendHistograms();
+  UpdateReceiveHistograms();
+
   Trace::ReturnTrace();
 }
 
