@@ -69,6 +69,8 @@
         'base/videosourcebase.h',
         'devices/videorendererfactory.h',
         'engine/nullwebrtcvideoengine.h',
+        'engine/payload_type_mapper.cc',
+        'engine/payload_type_mapper.h',
         'engine/simulcast.cc',
         'engine/simulcast.h',
         'engine/webrtccommon.h',
