@@ -25,16 +25,9 @@
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/media/base/mediachannel.h"
+#include "webrtc/media/base/videoframe.h"
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/media/base/videosourceinterface.h"
-
-namespace cricket {
-
-class AudioRenderer;
-class VideoRenderer;
-class VideoFrame;
-
-}  // namespace cricket
 
 namespace webrtc {
 
