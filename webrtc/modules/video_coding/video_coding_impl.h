@@ -19,7 +19,7 @@
 
 #include "webrtc/base/onetimeevent.h"
 #include "webrtc/base/thread_annotations.h"
-#include "webrtc/base/thread_checker.h"
+#include "webrtc/base/sequenced_task_checker.h"
 #include "webrtc/common_video/include/frame_callback.h"
 #include "webrtc/modules/video_coding/codec_database.h"
 #include "webrtc/modules/video_coding/frame_buffer.h"
@@ -108,8 +108,7 @@ class VideoSender : public Module {
 
   // Must be accessed on the construction thread of VideoSender.
   VideoCodec current_codec_;
-  rtc::ThreadChecker main_thread_;
-
+  rtc::SequencedTaskChecker sequenced_checker_;
 
   rtc::CriticalSection params_crit_;
   EncoderParameters encoder_params_ GUARDED_BY(params_crit_);
