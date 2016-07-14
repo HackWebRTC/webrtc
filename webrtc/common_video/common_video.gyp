@@ -18,7 +18,6 @@
         'libyuv/include',
       ],
       'dependencies': [
-        '<(webrtc_root)/base/base.gyp:rtc_task_queue',
         '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],

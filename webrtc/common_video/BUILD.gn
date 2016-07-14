@@ -58,7 +58,6 @@ source_set("common_video") {
 
   deps = [
     "..:webrtc_common",
-    "../base:rtc_task_queue",
     "../system_wrappers",
   ]
 
