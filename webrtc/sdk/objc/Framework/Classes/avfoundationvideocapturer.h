@@ -13,6 +13,7 @@
 
 #import <AVFoundation/AVFoundation.h>
 
+#include "webrtc/common_video/include/i420_buffer_pool.h"
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/video_frame.h"
 
@@ -61,10 +62,11 @@ class AVFoundationVideoCapturer : public cricket::VideoCapturer,
   void OnMessage(rtc::Message *msg) override;
 
  private:
-  void OnFrameMessage(CVImageBufferRef image_buffer, int64_t capture_time);
+  void OnFrameMessage(CVImageBufferRef image_buffer, int64_t capture_time_ns);
 
   RTCAVFoundationVideoCapturerInternal *_capturer;
   rtc::Thread *_startThread;  // Set in Start(), unset in Stop().
+  webrtc::I420BufferPool _buffer_pool;
 };  // AVFoundationVideoCapturer
 
 }  // namespace webrtc

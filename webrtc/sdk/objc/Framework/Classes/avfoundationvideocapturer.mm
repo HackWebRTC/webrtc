@@ -22,6 +22,7 @@
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/common_video/include/corevideo_frame_buffer.h"
 
 // TODO(tkchin): support other formats.
 static NSString *const kDefaultPreset = AVCaptureSessionPreset640x480;
@@ -642,57 +643,46 @@ void AVFoundationVideoCapturer::OnMessage(rtc::Message *msg) {
 }
 
 void AVFoundationVideoCapturer::OnFrameMessage(CVImageBufferRef image_buffer,
-                                               int64_t capture_time) {
+                                               int64_t capture_time_ns) {
   RTC_DCHECK(_startThread->IsCurrent());
 
-  // Base address must be unlocked to access frame data.
-  CVOptionFlags lock_flags = kCVPixelBufferLock_ReadOnly;
-  CVReturn ret = CVPixelBufferLockBaseAddress(image_buffer, lock_flags);
-  if (ret != kCVReturnSuccess) {
+  rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer =
+      new rtc::RefCountedObject<webrtc::CoreVideoFrameBuffer>(image_buffer);
+
+  const int captured_width = buffer->width();
+  const int captured_height = buffer->height();
+
+  int adapted_width;
+  int adapted_height;
+  int crop_width;
+  int crop_height;
+  int crop_x;
+  int crop_y;
+  int64_t translated_camera_time_us;
+
+  if (!AdaptFrame(captured_width, captured_height,
+                  capture_time_ns / rtc::kNumNanosecsPerMicrosec,
+                  rtc::TimeMicros(), &adapted_width, &adapted_height,
+                  &crop_width, &crop_height, &crop_x, &crop_y,
+                  &translated_camera_time_us)) {
+    CVBufferRelease(image_buffer);
     return;
   }
 
-  static size_t const kYPlaneIndex = 0;
-  static size_t const kUVPlaneIndex = 1;
-  uint8_t* y_plane_address =
-      static_cast<uint8_t*>(CVPixelBufferGetBaseAddressOfPlane(image_buffer,
-                                                               kYPlaneIndex));
-  size_t y_plane_height =
-      CVPixelBufferGetHeightOfPlane(image_buffer, kYPlaneIndex);
-  size_t y_plane_width =
-      CVPixelBufferGetWidthOfPlane(image_buffer, kYPlaneIndex);
-  size_t y_plane_bytes_per_row =
-      CVPixelBufferGetBytesPerRowOfPlane(image_buffer, kYPlaneIndex);
-  size_t uv_plane_height =
-      CVPixelBufferGetHeightOfPlane(image_buffer, kUVPlaneIndex);
-  size_t uv_plane_bytes_per_row =
-      CVPixelBufferGetBytesPerRowOfPlane(image_buffer, kUVPlaneIndex);
-  size_t frame_size = y_plane_bytes_per_row * y_plane_height +
-      uv_plane_bytes_per_row * uv_plane_height;
+  if (adapted_width != captured_width || crop_width != captured_width ||
+      adapted_height != captured_height || crop_height != captured_height) {
+    // TODO(magjed): Avoid converting to I420.
+    rtc::scoped_refptr<webrtc::I420Buffer> scaled_buffer(
+        _buffer_pool.CreateBuffer(adapted_width, adapted_height));
+    scaled_buffer->CropAndScaleFrom(buffer->NativeToI420Buffer(), crop_x,
+                                    crop_y, crop_width, crop_height);
+    buffer = scaled_buffer;
+  }
 
-  // Sanity check assumption that planar bytes are contiguous.
-  uint8_t* uv_plane_address =
-      static_cast<uint8_t*>(CVPixelBufferGetBaseAddressOfPlane(image_buffer,
-                                                               kUVPlaneIndex));
-  RTC_DCHECK(uv_plane_address ==
-             y_plane_address + y_plane_height * y_plane_bytes_per_row);
+  OnFrame(cricket::WebRtcVideoFrame(buffer, webrtc::kVideoRotation_0,
+                                    translated_camera_time_us),
+          captured_width, captured_height);
 
-  // Stuff data into a cricket::CapturedFrame.
-  cricket::CapturedFrame frame;
-  frame.width = y_plane_width;
-  frame.height = y_plane_height;
-  frame.pixel_width = 1;
-  frame.pixel_height = 1;
-  frame.fourcc = static_cast<uint32_t>(cricket::FOURCC_NV12);
-  frame.time_stamp = capture_time;
-  frame.data = y_plane_address;
-  frame.data_size = frame_size;
-
-  // This will call a superclass method that will perform the frame conversion
-  // to I420.
-  SignalFrameCaptured(this, &frame);
-
-  CVPixelBufferUnlockBaseAddress(image_buffer, lock_flags);
   CVBufferRelease(image_buffer);
 }
 

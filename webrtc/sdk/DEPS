@@ -1,6 +1,7 @@
 include_rules = [
   "+WebRTC",
   "+webrtc/api",
+  "+webrtc/common_video/include",
   "+webrtc/media",
   "+webrtc/system_wrappers",
 ]
