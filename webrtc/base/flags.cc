@@ -257,8 +257,10 @@ int FlagList::SetFlagsFromCommandLine(int* argc, const char** argv,
 
 void FlagList::Register(Flag* flag) {
   assert(flag != NULL && strlen(flag->name()) > 0);
-  RTC_CHECK(!Lookup(flag->name())) << "flag " << flag->name()
-                                   << " declared twice";
+  // NOTE: Don't call Lookup() within Register because it accesses the name_
+  // of other flags in list_, and if the flags are coming from two different
+  // compilation units, the initialization order between them is undefined, and
+  // this will trigger an asan initialization-order-fiasco error.
   flag->next_ = list_;
   list_ = flag;
 }
