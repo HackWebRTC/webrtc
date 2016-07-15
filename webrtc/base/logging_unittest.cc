@@ -128,7 +128,14 @@ TEST(LogTest, WallClockStartTime) {
 }
 
 // Test the time required to write 1000 80-character logs to an unbuffered file.
-TEST(LogTest, Perf) {
+#if defined (WEBRTC_ANDROID)
+// Fails on Android: https://bugs.chromium.org/p/webrtc/issues/detail?id=4364.
+#define MAYBE_Perf DISABLED_Perf
+#else
+#define MAYBE_Perf Perf
+#endif
+
+TEST(LogTest, MAYBE_Perf) {
   Pathname path;
   EXPECT_TRUE(Filesystem::GetTemporaryFolder(path, true, NULL));
   path.SetPathname(Filesystem::TempFilename(path, "ut"));
