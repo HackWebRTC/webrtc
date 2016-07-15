@@ -62,7 +62,6 @@ declare_args() {
   # https://gcc.gnu.org/wiki/LinkTimeOptimization
   rtc_use_lto = false
 
-  rtc_include_tests = false
   rtc_restrict_logging = true
 
   # Enable libevent task queues on platforms that support it.
