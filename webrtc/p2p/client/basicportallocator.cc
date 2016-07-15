@@ -677,9 +677,12 @@ void BasicPortAllocatorSession::OnCandidateReady(
   ASSERT(rtc::Thread::Current() == network_thread_);
   PortData* data = FindPort(port);
   ASSERT(data != NULL);
+  LOG_J(LS_INFO, port) << "Gathered candidate: " << c.ToSensitiveString();
   // Discarding any candidate signal if port allocation status is
   // already done with gathering.
   if (!data->inprogress()) {
+    LOG(LS_WARNING)
+        << "Discarding candidate because port is already done gathering.";
     return;
   }
 
@@ -701,6 +704,7 @@ void BasicPortAllocatorSession::OnCandidateReady(
     }
     // If the current port is not pruned yet, SignalPortReady.
     if (!data->pruned()) {
+      LOG_J(LS_INFO, port) << "Port ready.";
       SignalPortReady(this, port);
     }
   }
@@ -714,6 +718,11 @@ void BasicPortAllocatorSession::OnCandidateReady(
     std::vector<Candidate> candidates;
     candidates.push_back(SanitizeRelatedAddress(c));
     SignalCandidatesReady(this, candidates);
+  } else if (!candidate_protocol_enabled) {
+    LOG(LS_INFO)
+        << "Not yet signaling candidate because protocol is not yet enabled.";
+  } else {
+    LOG(LS_INFO) << "Discarding candidate because it doesn't match filter.";
   }
 
   // If we have pruned any port, maybe need to signal port allocation done.
@@ -761,6 +770,7 @@ bool BasicPortAllocatorSession::PruneTurnPorts(Port* newly_pairable_turn_port) {
 
 void BasicPortAllocatorSession::OnPortComplete(Port* port) {
   ASSERT(rtc::Thread::Current() == network_thread_);
+  LOG_J(LS_INFO, port) << "Port completed gathering candidates.";
   PortData* data = FindPort(port);
   ASSERT(data != NULL);
 
@@ -777,6 +787,7 @@ void BasicPortAllocatorSession::OnPortComplete(Port* port) {
 
 void BasicPortAllocatorSession::OnPortError(Port* port) {
   ASSERT(rtc::Thread::Current() == network_thread_);
+  LOG_J(LS_INFO, port) << "Port encountered error while gathering candidates.";
   PortData* data = FindPort(port);
   ASSERT(data != NULL);
   // We might have already given up on this port and stopped it.
@@ -809,6 +820,8 @@ void BasicPortAllocatorSession::OnProtocolEnabled(AllocationSequence* seq,
           StringToProto(potentials[i].protocol().c_str(), &pvalue) &&
           pvalue == proto;
       if (candidate_protocol_enabled) {
+        LOG(LS_INFO) << "Signaling candidate because protocol was enabled: "
+                     << potentials[i].ToSensitiveString();
         candidates.push_back(potentials[i]);
       }
     }
