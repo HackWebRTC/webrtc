@@ -100,6 +100,7 @@ if (rtc_include_tests) {
       "video_send_stream_tests.cc",
       "vie_remb_unittest.cc",
     ]
+    configs += [ "..:common_config" ]
     deps = [
       ":video",
       "//testing/gmock",

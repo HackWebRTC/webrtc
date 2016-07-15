@@ -43,7 +43,7 @@ VideoSender::VideoSender(Clock* clock,
   // Allow VideoSender to be created on one thread but used on another, post
   // construction. This is currently how this class is being used by at least
   // one external project (diffractor).
-  main_thread_.DetachFromThread();
+  sequenced_checker_.Detach();
 }
 
 VideoSender::~VideoSender() {}
@@ -82,7 +82,7 @@ int64_t VideoSender::TimeUntilNextProcess() {
 int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
                                        uint32_t numberOfCores,
                                        uint32_t maxPayloadSize) {
-  RTC_DCHECK(main_thread_.CalledOnValidThread());
+  RTC_DCHECK(sequenced_checker_.CalledSequentially());
   rtc::CritScope lock(&encoder_crit_);
   if (sendCodec == nullptr) {
     return VCM_PARAMETER_ERROR;
@@ -150,7 +150,7 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
 void VideoSender::RegisterExternalEncoder(VideoEncoder* externalEncoder,
                                           uint8_t payloadType,
                                           bool internalSource /*= false*/) {
-  RTC_DCHECK(main_thread_.CalledOnValidThread());
+  RTC_DCHECK(sequenced_checker_.CalledSequentially());
 
   rtc::CritScope lock(&encoder_crit_);
 
@@ -172,7 +172,7 @@ void VideoSender::RegisterExternalEncoder(VideoEncoder* externalEncoder,
 
 // Get encode bitrate
 int VideoSender::Bitrate(unsigned int* bitrate) const {
-  RTC_DCHECK(main_thread_.CalledOnValidThread());
+  RTC_DCHECK(sequenced_checker_.CalledSequentially());
   // Since we're running on the thread that's the only thread known to modify
   // the value of _encoder, we don't need to grab the lock here.
 
@@ -184,7 +184,7 @@ int VideoSender::Bitrate(unsigned int* bitrate) const {
 
 // Get encode frame rate
 int VideoSender::FrameRate(unsigned int* framerate) const {
-  RTC_DCHECK(main_thread_.CalledOnValidThread());
+  RTC_DCHECK(sequenced_checker_.CalledSequentially());
   // Since we're running on the thread that's the only thread known to modify
   // the value of _encoder, we don't need to grab the lock here.
 

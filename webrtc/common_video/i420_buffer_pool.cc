@@ -16,17 +16,17 @@ namespace webrtc {
 
 I420BufferPool::I420BufferPool(bool zero_initialize)
     : zero_initialize_(zero_initialize) {
-  thread_checker_.DetachFromThread();
+  sequenced_checker_.Detach();
 }
 
 void I420BufferPool::Release() {
-  thread_checker_.DetachFromThread();
+  sequenced_checker_.Detach();
   buffers_.clear();
 }
 
 rtc::scoped_refptr<I420Buffer> I420BufferPool::CreateBuffer(int width,
                                                             int height) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(sequenced_checker_.CalledSequentially());
   // Release buffers with wrong resolution.
   for (auto it = buffers_.begin(); it != buffers_.end();) {
     if ((*it)->width() != width || (*it)->height() != height)
