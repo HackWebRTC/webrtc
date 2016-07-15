@@ -175,7 +175,7 @@ int32_t FileAudioDevice::InitRecording() {
 }
 
 bool FileAudioDevice::RecordingIsInitialized() const {
-  return true;
+  return _recordingFramesIn10MS != 0;
 }
 
 int32_t FileAudioDevice::StartPlayout() {
