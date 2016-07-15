@@ -1118,6 +1118,83 @@ TEST_F(TestPacketBuffer, Vp9GofTemporalLayersReordered_0) {
   CheckReferencesVp9(pid + 19, 0, pid + 18);
 }
 
+TEST_F(TestPacketBuffer, Vp9GofSkipFramesTemporalLayers_01) {
+  uint16_t pid = Rand();
+  uint16_t sn = Rand();
+  GofInfoVP9 ss;
+  ss.SetGofInfoVP9(kTemporalStructureMode2);  // 0101 pattern
+
+  //           sn     , kf, frst, lst, up, pid     , sid, tid, tl0, ss
+  InsertVp9Gof(sn     , kT, kT  , kT , kF, pid     , 0  , 0  , 0  , &ss);
+  InsertVp9Gof(sn + 1 , kF, kT  , kT , kF, pid + 1 , 0  , 1  , 0);
+  // Skip GOF with tl0 1
+  InsertVp9Gof(sn + 4 , kT, kT  , kT , kF, pid + 4 , 0  , 0  , 2  , &ss);
+  InsertVp9Gof(sn + 5 , kF, kT  , kT , kF, pid + 5 , 0  , 1  , 2);
+  // Skip GOF with tl0 3
+  // Skip GOF with tl0 4
+  InsertVp9Gof(sn + 10, kF, kT  , kT , kF, pid + 10, 0  , 0  , 5  , &ss);
+  InsertVp9Gof(sn + 11, kF, kT  , kT , kF, pid + 11, 0  , 1  , 5);
+
+  ASSERT_EQ(6UL, frames_from_callback_.size());
+  CheckReferencesVp9(pid, 0);
+  CheckReferencesVp9(pid + 1 , 0, pid);
+  CheckReferencesVp9(pid + 4 , 0);
+  CheckReferencesVp9(pid + 5 , 0, pid + 4);
+  CheckReferencesVp9(pid + 10, 0, pid + 8);
+  CheckReferencesVp9(pid + 11, 0, pid + 10);
+}
+
+TEST_F(TestPacketBuffer, Vp9GofSkipFramesTemporalLayers_0212) {
+  uint16_t pid = Rand();
+  uint16_t sn = Rand();
+  GofInfoVP9 ss;
+  ss.SetGofInfoVP9(kTemporalStructureMode3);  // 02120212 pattern
+
+  //           sn     , kf, frst, lst, up, pid     , sid, tid, tl0, ss
+  InsertVp9Gof(sn     , kT, kT  , kT , kF, pid     , 0  , 0  , 0  , &ss);
+  InsertVp9Gof(sn + 1 , kF, kT  , kT , kF, pid + 1 , 0  , 2  , 0);
+  InsertVp9Gof(sn + 2 , kF, kT  , kT , kF, pid + 2 , 0  , 1  , 0);
+  InsertVp9Gof(sn + 3 , kF, kT  , kT , kF, pid + 3 , 0  , 2  , 0);
+
+  ASSERT_EQ(4UL, frames_from_callback_.size());
+  CheckReferencesVp9(pid, 0);
+  CheckReferencesVp9(pid + 1 , 0, pid);
+  CheckReferencesVp9(pid + 2 , 0, pid);
+  CheckReferencesVp9(pid + 3 , 0, pid + 1, pid + 2);
+
+  // Skip frames with tl0 = 1
+
+  //           sn     , kf, frst, lst, up, pid     , sid, tid, tl0, ss
+  InsertVp9Gof(sn + 8 , kT, kT  , kT , kF, pid + 8 , 0  , 0  , 2  , &ss);
+  InsertVp9Gof(sn + 9 , kF, kT  , kT , kF, pid + 9 , 0  , 2  , 2);
+  InsertVp9Gof(sn + 10, kF, kT  , kT , kF, pid + 10, 0  , 1  , 2);
+  InsertVp9Gof(sn + 11, kF, kT  , kT , kF, pid + 11, 0  , 2  , 2);
+
+  ASSERT_EQ(8UL, frames_from_callback_.size());
+  CheckReferencesVp9(pid + 8, 0);
+  CheckReferencesVp9(pid + 9 , 0, pid + 8);
+  CheckReferencesVp9(pid + 10, 0, pid + 8);
+  CheckReferencesVp9(pid + 11, 0, pid + 9, pid + 10);
+
+  // Now insert frames with tl0 = 1
+  //           sn     , kf, frst, lst, up, pid     , sid, tid, tl0, ss
+  InsertVp9Gof(sn + 4 , kT, kT  , kT , kF, pid + 4 , 0  , 0  , 1  , &ss);
+  InsertVp9Gof(sn + 7 , kF, kT  , kT , kF, pid + 7 , 0  , 2  , 1);
+
+  ASSERT_EQ(9UL, frames_from_callback_.size());
+  CheckReferencesVp9(pid + 4, 0);
+
+  // Rest of frames belonging to tl0 = 1
+  //           sn     , kf, frst, lst, up, pid     , sid, tid, tl0, ss
+  InsertVp9Gof(sn + 5 , kF, kT  , kT , kF, pid + 5 , 0  , 2  , 1);
+  InsertVp9Gof(sn + 6 , kF, kT  , kT , kT, pid + 6 , 0  , 1  , 1);  // up-switch
+
+  ASSERT_EQ(12UL, frames_from_callback_.size());
+  CheckReferencesVp9(pid + 5 , 0, pid + 4);
+  CheckReferencesVp9(pid + 6 , 0, pid + 4);
+  CheckReferencesVp9(pid + 7 , 0, pid + 6);
+}
+
 TEST_F(TestPacketBuffer, Vp9GofTemporalLayers_01) {
   uint16_t pid = Rand();
   uint16_t sn = Rand();

@@ -368,9 +368,9 @@ void RtpFrameReferenceFinder::ManageFrameVp9(
       scalability_structures_[current_ss_idx_] = codec_header.gof;
       scalability_structures_[current_ss_idx_].pid_start = frame->picture_id;
 
-      auto pid_and_gof = std::make_pair(
-          frame->picture_id, &scalability_structures_[current_ss_idx_]);
-      gof_info_.insert(std::make_pair(codec_header.tl0_pic_idx, pid_and_gof));
+      GofInfo info(&scalability_structures_[current_ss_idx_],
+                   frame->picture_id);
+      gof_info_.insert(std::make_pair(codec_header.tl0_pic_idx, info));
     }
   }
 
@@ -385,8 +385,8 @@ void RtpFrameReferenceFinder::ManageFrameVp9(
       LOG(LS_WARNING) << "Received keyframe without scalability structure";
 
     frame->num_references = 0;
-    GofInfoVP9* gof = gof_info_.find(codec_header.tl0_pic_idx)->second.second;
-    FrameReceivedVp9(frame->picture_id, *gof);
+    GofInfo info = gof_info_.find(codec_header.tl0_pic_idx)->second;
+    FrameReceivedVp9(frame->picture_id, &info);
     CompletedFrameVp9(std::move(frame));
     return;
   }
@@ -402,14 +402,12 @@ void RtpFrameReferenceFinder::ManageFrameVp9(
     return;
   }
 
-  GofInfoVP9* gof = gof_info_it->second.second;
-  uint16_t picture_id_tl0 = gof_info_it->second.first;
-
-  FrameReceivedVp9(frame->picture_id, *gof);
+  GofInfo* info = &gof_info_it->second;
+  FrameReceivedVp9(frame->picture_id, info);
 
   // Make sure we don't miss any frame that could potentially have the
   // up switch flag set.
-  if (MissingRequiredFrameVp9(frame->picture_id, *gof)) {
+  if (MissingRequiredFrameVp9(frame->picture_id, *info)) {
     stashed_frames_.emplace(std::move(frame));
     return;
   }
@@ -424,27 +422,24 @@ void RtpFrameReferenceFinder::ManageFrameVp9(
   // then gof info has already been inserted earlier, so we only want to
   // insert if we haven't done so already.
   if (codec_header.temporal_idx == 0 && !codec_header.ss_data_available) {
-    auto pid_and_gof = std::make_pair(frame->picture_id, gof);
-    gof_info_.insert(std::make_pair(codec_header.tl0_pic_idx, pid_and_gof));
+    GofInfo new_info(info->gof, frame->picture_id);
+    gof_info_.insert(std::make_pair(codec_header.tl0_pic_idx, new_info));
   }
 
   // Clean out old info about up switch frames.
-  uint16_t old_picture_id = Subtract<kPicIdLength>(last_picture_id_, 50);
+  uint16_t old_picture_id = Subtract<kPicIdLength>(frame->picture_id, 50);
   auto up_switch_erase_to = up_switch_.lower_bound(old_picture_id);
   up_switch_.erase(up_switch_.begin(), up_switch_erase_to);
 
-  RTC_DCHECK(
-      (AheadOrAt<uint16_t, kPicIdLength>(frame->picture_id, picture_id_tl0)));
-
-  size_t diff =
-      ForwardDiff<uint16_t, kPicIdLength>(gof->pid_start, frame->picture_id);
-  size_t gof_idx = diff % gof->num_frames_in_gof;
+  size_t diff = ForwardDiff<uint16_t, kPicIdLength>(info->gof->pid_start,
+                                                    frame->picture_id);
+  size_t gof_idx = diff % info->gof->num_frames_in_gof;
 
   // Populate references according to the scalability structure.
-  frame->num_references = gof->num_ref_pics[gof_idx];
+  frame->num_references = info->gof->num_ref_pics[gof_idx];
   for (size_t i = 0; i < frame->num_references; ++i) {
-    frame->references[i] =
-        Subtract<kPicIdLength>(frame->picture_id, gof->pid_diff[gof_idx][i]);
+    frame->references[i] = Subtract<kPicIdLength>(
+        frame->picture_id, info->gof->pid_diff[gof_idx][i]);
 
     // If this is a reference to a frame earlier than the last up switch point,
     // then ignore this reference.
@@ -458,18 +453,19 @@ void RtpFrameReferenceFinder::ManageFrameVp9(
 }
 
 bool RtpFrameReferenceFinder::MissingRequiredFrameVp9(uint16_t picture_id,
-                                                      const GofInfoVP9& gof) {
-  size_t diff = ForwardDiff<uint16_t, kPicIdLength>(gof.pid_start, picture_id);
-  size_t gof_idx = diff % gof.num_frames_in_gof;
-  size_t temporal_idx = gof.temporal_idx[gof_idx];
+                                                      const GofInfo& info) {
+  size_t diff =
+      ForwardDiff<uint16_t, kPicIdLength>(info.gof->pid_start, picture_id);
+  size_t gof_idx = diff % info.gof->num_frames_in_gof;
+  size_t temporal_idx = info.gof->temporal_idx[gof_idx];
 
   // For every reference this frame has, check if there is a frame missing in
   // the interval (|ref_pid|, |picture_id|) in any of the lower temporal
   // layers. If so, we are missing a required frame.
-  uint8_t num_references = gof.num_ref_pics[gof_idx];
+  uint8_t num_references = info.gof->num_ref_pics[gof_idx];
   for (size_t i = 0; i < num_references; ++i) {
     uint16_t ref_pid =
-        Subtract<kPicIdLength>(picture_id, gof.pid_diff[gof_idx][i]);
+        Subtract<kPicIdLength>(picture_id, info.gof->pid_diff[gof_idx][i]);
     for (size_t l = 0; l < temporal_idx; ++l) {
       auto missing_frame_it = missing_frames_for_layer_[l].lower_bound(ref_pid);
       if (missing_frame_it != missing_frames_for_layer_[l].end() &&
@@ -482,30 +478,31 @@ bool RtpFrameReferenceFinder::MissingRequiredFrameVp9(uint16_t picture_id,
 }
 
 void RtpFrameReferenceFinder::FrameReceivedVp9(uint16_t picture_id,
-                                               const GofInfoVP9& gof) {
-  RTC_DCHECK_NE(-1, last_picture_id_);
+                                               GofInfo* info) {
+  int last_picture_id = info->last_picture_id;
 
   // If there is a gap, find which temporal layer the missing frames
   // belong to and add the frame as missing for that temporal layer.
   // Otherwise, remove this frame from the set of missing frames.
-  if (AheadOf<uint16_t, kPicIdLength>(picture_id, last_picture_id_)) {
-    size_t diff =
-        ForwardDiff<uint16_t, kPicIdLength>(gof.pid_start, last_picture_id_);
-    size_t gof_idx = diff % gof.num_frames_in_gof;
+  if (AheadOf<uint16_t, kPicIdLength>(picture_id, last_picture_id)) {
+    size_t diff = ForwardDiff<uint16_t, kPicIdLength>(info->gof->pid_start,
+                                                      last_picture_id);
+    size_t gof_idx = diff % info->gof->num_frames_in_gof;
 
-    last_picture_id_ = Add<kPicIdLength>(last_picture_id_, 1);
-    while (last_picture_id_ != picture_id) {
+    last_picture_id = Add<kPicIdLength>(last_picture_id, 1);
+    while (last_picture_id != picture_id) {
       ++gof_idx;
-      RTC_DCHECK_NE(0ul, gof_idx % gof.num_frames_in_gof);
-      size_t temporal_idx = gof.temporal_idx[gof_idx];
-      missing_frames_for_layer_[temporal_idx].insert(last_picture_id_);
-      last_picture_id_ = Add<kPicIdLength>(last_picture_id_, 1);
+      RTC_DCHECK_NE(0ul, gof_idx % info->gof->num_frames_in_gof);
+      size_t temporal_idx = info->gof->temporal_idx[gof_idx];
+      missing_frames_for_layer_[temporal_idx].insert(last_picture_id);
+      last_picture_id = Add<kPicIdLength>(last_picture_id, 1);
     }
+    info->last_picture_id = last_picture_id;
   } else {
     size_t diff =
-        ForwardDiff<uint16_t, kPicIdLength>(gof.pid_start, picture_id);
-    size_t gof_idx = diff % gof.num_frames_in_gof;
-    size_t temporal_idx = gof.temporal_idx[gof_idx];
+        ForwardDiff<uint16_t, kPicIdLength>(info->gof->pid_start, picture_id);
+    size_t gof_idx = diff % info->gof->num_frames_in_gof;
+    size_t temporal_idx = info->gof->temporal_idx[gof_idx];
     missing_frames_for_layer_[temporal_idx].erase(picture_id);
   }
 }
