@@ -898,12 +898,15 @@ void Connection::set_write_state(WriteState value) {
   }
 }
 
-void Connection::set_receiving(bool value) {
-  if (value != receiving_) {
-    LOG_J(LS_VERBOSE, this) << "set_receiving to " << value;
-    receiving_ = value;
-    SignalStateChange(this);
+void Connection::UpdateReceiving(int64_t now) {
+  bool receiving = now <= last_received() + receiving_timeout_;
+  if (receiving_ == receiving) {
+    return;
   }
+  LOG_J(LS_VERBOSE, this) << "set_receiving to " << receiving;
+  receiving_ = receiving;
+  receiving_unchanged_since_ = now;
+  SignalStateChange(this);
 }
 
 void Connection::set_state(State state) {
@@ -948,8 +951,8 @@ void Connection::OnReadPacket(
   if (!port_->GetStunMessage(data, size, addr, &msg, &remote_ufrag)) {
     // The packet did not parse as a valid STUN message
     // This is a data packet, pass it along.
-    set_receiving(true);
     last_data_received_ = rtc::TimeMillis();
+    UpdateReceiving(last_data_received_);
     recv_rate_tracker_.AddSamples(size);
     SignalReadPacket(this, data, size, packet_time);
 
@@ -1165,10 +1168,8 @@ void Connection::UpdateState(int64_t now) {
     set_write_state(STATE_WRITE_TIMEOUT);
   }
 
-  // Check the receiving state.
-  int64_t last_recv_time = last_received();
-  bool receiving = now <= last_recv_time + receiving_timeout_;
-  set_receiving(receiving);
+  // Update the receiving state.
+  UpdateReceiving(now);
   if (dead(now)) {
     Destroy();
   }
@@ -1186,8 +1187,8 @@ void Connection::Ping(int64_t now) {
 }
 
 void Connection::ReceivedPing() {
-  set_receiving(true);
   last_ping_received_ = rtc::TimeMillis();
+  UpdateReceiving(last_ping_received_);
 }
 
 void Connection::ReceivedPingResponse(int rtt) {
@@ -1196,11 +1197,11 @@ void Connection::ReceivedPingResponse(int rtt) {
   // So if we're not already, become writable. We may be bringing a pruned
   // connection back to life, but if we don't really want it, we can always
   // prune it again.
-  set_receiving(true);
+  last_ping_response_received_ = rtc::TimeMillis();
+  UpdateReceiving(last_ping_response_received_);
   set_write_state(STATE_WRITABLE);
   set_state(STATE_SUCCEEDED);
   pings_since_last_response_.clear();
-  last_ping_response_received_ = rtc::TimeMillis();
   rtt_samples_++;
   rtt_ = (RTT_RATIO * rtt_ + rtt) / (RTT_RATIO + 1);
 }

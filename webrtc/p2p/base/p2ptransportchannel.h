@@ -208,7 +208,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   }
 
  private:
-  rtc::Thread* thread() { return worker_thread_; }
+  rtc::Thread* thread() const { return worker_thread_; }
   bool IsGettingPorts() { return allocator_session()->IsGettingPorts(); }
 
   // A transport channel is weak if the current best connection is either
@@ -222,10 +222,18 @@ class P2PTransportChannel : public TransportChannelImpl,
   // that's pingable.
   void MaybeStartPinging();
 
-  // The methods below return a positive value if a is preferable to b,
-  // a negative value if b is preferable, and 0 if they're equally preferable.
-  int CompareConnectionStates(const cricket::Connection* a,
-                              const cricket::Connection* b) const;
+  // The methods below return a positive value if |a| is preferable to |b|,
+  // a negative value if |b| is preferable, and 0 if they're equally preferable.
+  // If |receiving_unchanged_threshold| is set, then when |b| is receiving and
+  // |a| is not, returns a negative value only if |b| has been in receiving
+  // state and |a| has been in not receiving state since
+  // |receiving_unchanged_threshold| and sets
+  // |missed_receiving_unchanged_threshold| to true otherwise.
+  int CompareConnectionStates(
+      const cricket::Connection* a,
+      const cricket::Connection* b,
+      rtc::Optional<int64_t> receiving_unchanged_threshold,
+      bool* missed_receiving_unchanged_threshold) const;
   int CompareConnectionCandidates(const cricket::Connection* a,
                                   const cricket::Connection* b) const;
   // Compares two connections based on the connection states
@@ -234,12 +242,12 @@ class P2PTransportChannel : public TransportChannelImpl,
   // and ShouldSwitchSelectedConnection().
   // Returns a positive value if |a| is better than |b|.
   int CompareConnections(const cricket::Connection* a,
-                         const cricket::Connection* b) const;
+                         const cricket::Connection* b,
+                         rtc::Optional<int64_t> receiving_unchanged_threshold,
+                         bool* missed_receiving_unchanged_threshold) const;
 
   bool PresumedWritable(const cricket::Connection* conn) const;
 
-  bool ShouldSwitchSelectedConnection(const cricket::Connection* selected,
-                                      const cricket::Connection* conn) const;
   void SortConnectionsAndUpdateState();
   void SwitchSelectedConnection(Connection* conn);
   void UpdateState();
@@ -306,8 +314,16 @@ class P2PTransportChannel : public TransportChannelImpl,
   void OnCheckAndPing();
   void OnRegatherOnFailedNetworks();
 
-  // Returns true if the new_connection should be selected for transmission.
-  bool ShouldSwitchSelectedConnection(Connection* new_connection) const;
+  // Returns true if we should switch to the new connection.
+  // sets |missed_receiving_unchanged_threshold| to true if either
+  // the selected connection or the new connection missed its
+  // receiving-unchanged-threshold.
+  bool ShouldSwitchSelectedConnection(
+      Connection* new_connection,
+      bool* missed_receiving_unchanged_threshold) const;
+  // Returns true if the new_connection is selected for transmission.
+  bool MaybeSwitchSelectedConnection(Connection* new_connection,
+                                     const std::string& reason);
 
   void PruneConnections();
   bool IsBackupConnection(const Connection* conn) const;

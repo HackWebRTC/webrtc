@@ -194,6 +194,11 @@ struct IceConfig {
   // active network having no connection on it.
   rtc::Optional<int> regather_on_failed_networks_interval;
 
+  // The time period in which we will not switch the selected connection
+  // when a new connection becomes receiving but the selected connection is not
+  // in case that the selected connection may become receiving soon.
+  rtc::Optional<int> receiving_switching_delay;
+
   IceConfig() {}
   IceConfig(int receiving_timeout_ms,
             int backup_connection_ping_interval,
@@ -201,7 +206,8 @@ struct IceConfig {
             bool prioritize_most_likely_candidate_pairs,
             int stable_writable_connection_ping_interval_ms,
             bool presume_writable_when_fully_relayed,
-            int regather_on_failed_networks_interval_ms)
+            int regather_on_failed_networks_interval_ms,
+            int receiving_switching_delay_ms)
       : receiving_timeout(receiving_timeout_ms),
         backup_connection_ping_interval(backup_connection_ping_interval),
         continual_gathering_policy(gathering_policy),
@@ -212,7 +218,8 @@ struct IceConfig {
         presume_writable_when_fully_relayed(
             presume_writable_when_fully_relayed),
         regather_on_failed_networks_interval(
-            regather_on_failed_networks_interval_ms) {}
+            regather_on_failed_networks_interval_ms),
+        receiving_switching_delay(receiving_switching_delay_ms) {}
 };
 
 bool BadTransportDescription(const std::string& desc, std::string* err_desc);

@@ -350,6 +350,8 @@ class P2PTransportChannelTestBase : public testing::Test,
         this, &P2PTransportChannelTestBase::OnReadPacket);
     channel->SignalRoleConflict.connect(
         this, &P2PTransportChannelTestBase::OnRoleConflict);
+    channel->SignalSelectedCandidatePairChanged.connect(
+        this, &P2PTransportChannelTestBase::OnSelectedCandidatePairChanged);
     channel->SetIceCredentials(local_ice_ufrag, local_ice_pwd);
     if (remote_ice_credential_source_ == FROM_SETICECREDENTIALS) {
       channel->SetRemoteIceCredentials(remote_ice_ufrag, remote_ice_pwd);
@@ -688,6 +690,19 @@ class P2PTransportChannelTestBase : public testing::Test,
                   new CandidatesData(ch, c));
     }
   }
+  void OnSelectedCandidatePairChanged(
+      TransportChannel* transport_channel,
+      CandidatePairInterface* selected_candidate_pair,
+      int last_sent_packet_id,
+      bool ready_to_send) {
+    ++selected_candidate_pair_switches_;
+  }
+
+  int reset_selected_candidate_pair_switches() {
+    int switches = selected_candidate_pair_switches_;
+    selected_candidate_pair_switches_ = 0;
+    return switches;
+  }
 
   void PauseCandidates(int endpoint) {
     GetEndpoint(endpoint)->save_candidates_ = true;
@@ -850,6 +865,7 @@ class P2PTransportChannelTestBase : public testing::Test,
   Endpoint ep2_;
   RemoteIceCredentialSource remote_ice_credential_source_ = FROM_CANDIDATE;
   bool force_relay_;
+  int selected_candidate_pair_switches_ = 0;
 };
 
 // The tests have only a few outcomes, which we predefine.
@@ -1867,6 +1883,7 @@ TEST_F(P2PTransportChannelMultihomedTest, DISABLED_TestBasic) {
 // Test that we can quickly switch links if an interface goes down.
 // The controlled side has two interfaces and one will die.
 TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControlledSide) {
+  rtc::ScopedFakeClock clock;
   AddAddress(0, kPublicAddrs[0]);
   // Adding alternate address will make sure |kPublicAddrs| has the higher
   // priority than others. This is due to FakeNetwork::AddInterface method.
@@ -1880,9 +1897,10 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControlledSide) {
   // Create channels and let them go writable, as usual.
   CreateChannels(1);
 
-  EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
-                              ep2_ch1()->receiving() && ep2_ch1()->writable(),
-                          1000, 1000);
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                                 ep2_ch1()->receiving() &&
+                                 ep2_ch1()->writable(),
+                             3000, clock);
   EXPECT_TRUE(ep1_ch1()->selected_connection() &&
               ep2_ch1()->selected_connection() &&
               LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]) &&
@@ -1896,19 +1914,19 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControlledSide) {
   // Blackhole any traffic to or from the public addrs.
   LOG(LS_INFO) << "Failing over...";
   fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, kPublicAddrs[1]);
-  // The selected connections will switch, so keep references to them.
+  // The selected connections may switch, so keep references to them.
   const Connection* selected_connection1 = ep1_ch1()->selected_connection();
   const Connection* selected_connection2 = ep2_ch1()->selected_connection();
   // We should detect loss of receiving within 1 second or so.
-  EXPECT_TRUE_WAIT(
+  EXPECT_TRUE_SIMULATED_WAIT(
       !selected_connection1->receiving() && !selected_connection2->receiving(),
-      3000);
+      3000, clock);
 
-  // We should switch over to use the alternate addr immediately on both sides
+  // We should switch over to use the alternate addr on both sides
   // when we are not receiving.
-  EXPECT_TRUE_WAIT(ep1_ch1()->selected_connection()->receiving() &&
-                       ep2_ch1()->selected_connection()->receiving(),
-                   1000);
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->selected_connection()->receiving() &&
+                                 ep2_ch1()->selected_connection()->receiving(),
+                             3000, clock);
   EXPECT_TRUE(LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]));
   EXPECT_TRUE(
       RemoteCandidate(ep1_ch1())->address().EqualIPs(kAlternateAddrs[1]));
@@ -1921,6 +1939,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControlledSide) {
 // Test that we can quickly switch links if an interface goes down.
 // The controlling side has two interfaces and one will die.
 TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
+  rtc::ScopedFakeClock clock;
   // Adding alternate address will make sure |kPublicAddrs| has the higher
   // priority than others. This is due to FakeNetwork::AddInterface method.
   AddAddress(0, kAlternateAddrs[0]);
@@ -1933,9 +1952,10 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
 
   // Create channels and let them go writable, as usual.
   CreateChannels(1);
-  EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
-                              ep2_ch1()->receiving() && ep2_ch1()->writable(),
-                          1000, 1000);
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                                 ep2_ch1()->receiving() &&
+                                 ep2_ch1()->writable(),
+                             3000, clock);
   EXPECT_TRUE(ep1_ch1()->selected_connection() &&
               ep2_ch1()->selected_connection() &&
               LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]) &&
@@ -1953,21 +1973,141 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
   const Connection* selected_connection1 = ep1_ch1()->selected_connection();
   const Connection* selected_connection2 = ep2_ch1()->selected_connection();
   // We should detect loss of receiving within 1 second or so.
-  EXPECT_TRUE_WAIT(
+  EXPECT_TRUE_SIMULATED_WAIT(
       !selected_connection1->receiving() && !selected_connection2->receiving(),
-      3000);
+      3000, clock);
 
-  // We should switch over to use the alternate addr immediately on both sides
+  // We should switch over to use the alternate addr on both sides
   // when we are not receiving.
-  EXPECT_TRUE_WAIT(ep1_ch1()->selected_connection()->receiving() &&
-                       ep2_ch1()->selected_connection()->receiving(),
-                   1000);
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->selected_connection()->receiving() &&
+                                 ep2_ch1()->selected_connection()->receiving(),
+                             3000, clock);
   EXPECT_TRUE(
     LocalCandidate(ep1_ch1())->address().EqualIPs(kAlternateAddrs[0]));
   EXPECT_TRUE(RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
   EXPECT_TRUE(
       RemoteCandidate(ep2_ch1())->address().EqualIPs(kAlternateAddrs[0]));
 
+  DestroyChannels();
+}
+
+// Test that if an interface fails temporarily and then recovers quickly,
+// the selected connection will not switch.
+// The case that it will switch over to the backup connection if the selected
+// connection does not recover after enough time is covered in
+// TestFailoverControlledSide and TestFailoverControllingSide.
+TEST_F(P2PTransportChannelMultihomedTest,
+       TestConnectionSwitchDampeningControlledSide) {
+  rtc::ScopedFakeClock clock;
+  AddAddress(0, kPublicAddrs[0]);
+  // Adding alternate address will make sure |kPublicAddrs| has the higher
+  // priority than others. This is due to FakeNetwork::AddInterface method.
+  AddAddress(1, kAlternateAddrs[1]);
+  AddAddress(1, kPublicAddrs[1]);
+
+  // Use only local ports for simplicity.
+  SetAllocatorFlags(0, kOnlyLocalPorts);
+  SetAllocatorFlags(1, kOnlyLocalPorts);
+
+  // Create channels and let them go writable, as usual.
+  CreateChannels(1);
+
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                                 ep2_ch1()->receiving() &&
+                                 ep2_ch1()->writable(),
+                             3000, clock);
+  EXPECT_TRUE(ep1_ch1()->selected_connection() &&
+              ep2_ch1()->selected_connection() &&
+              LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]) &&
+              RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
+
+  // Make the receiving timeout shorter for testing.
+  IceConfig config = CreateIceConfig(1000, GATHER_ONCE);
+  ep1_ch1()->SetIceConfig(config);
+  ep2_ch1()->SetIceConfig(config);
+  reset_selected_candidate_pair_switches();
+
+  // Blackhole any traffic to or from the public addrs.
+  LOG(LS_INFO) << "Failing over...";
+  fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, kPublicAddrs[1]);
+
+  // The selected connections may switch, so keep references to them.
+  const Connection* selected_connection1 = ep1_ch1()->selected_connection();
+  const Connection* selected_connection2 = ep2_ch1()->selected_connection();
+  // We should detect loss of receiving within 1 second or so.
+  EXPECT_TRUE_SIMULATED_WAIT(
+      !selected_connection1->receiving() && !selected_connection2->receiving(),
+      3000, clock);
+  // After a short while, the link recovers itself.
+  SIMULATED_WAIT(false, 10, clock);
+  fw()->ClearRules();
+
+  // We should remain on the public address on both sides and no connection
+  // switches should have happened.
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->selected_connection()->receiving() &&
+                                 ep2_ch1()->selected_connection()->receiving(),
+                             3000, clock);
+  EXPECT_TRUE(RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
+  EXPECT_TRUE(LocalCandidate(ep2_ch1())->address().EqualIPs(kPublicAddrs[1]));
+  EXPECT_EQ(0, reset_selected_candidate_pair_switches());
+
+  DestroyChannels();
+}
+
+// Test that if an interface fails temporarily and then recovers quickly,
+// the selected connection will not switch.
+TEST_F(P2PTransportChannelMultihomedTest,
+       TestConnectionSwitchDampeningControllingSide) {
+  rtc::ScopedFakeClock clock;
+  // Adding alternate address will make sure |kPublicAddrs| has the higher
+  // priority than others. This is due to FakeNetwork::AddInterface method.
+  AddAddress(0, kAlternateAddrs[0]);
+  AddAddress(0, kPublicAddrs[0]);
+  AddAddress(1, kPublicAddrs[1]);
+
+  // Use only local ports for simplicity.
+  SetAllocatorFlags(0, kOnlyLocalPorts);
+  SetAllocatorFlags(1, kOnlyLocalPorts);
+
+  // Create channels and let them go writable, as usual.
+  CreateChannels(1);
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                                 ep2_ch1()->receiving() &&
+                                 ep2_ch1()->writable(),
+                             3000, clock);
+  EXPECT_TRUE(ep1_ch1()->selected_connection() &&
+              ep2_ch1()->selected_connection() &&
+              LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]) &&
+              RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
+
+  // Make the receiving timeout shorter for testing.
+  IceConfig config = CreateIceConfig(1000, GATHER_ONCE);
+  ep1_ch1()->SetIceConfig(config);
+  ep2_ch1()->SetIceConfig(config);
+  reset_selected_candidate_pair_switches();
+
+  // Blackhole any traffic to or from the public addrs.
+  LOG(LS_INFO) << "Failing over...";
+  fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, kPublicAddrs[0]);
+  // The selected connections may switch, so keep references to them.
+  const Connection* selected_connection1 = ep1_ch1()->selected_connection();
+  const Connection* selected_connection2 = ep2_ch1()->selected_connection();
+  // We should detect loss of receiving within 1 second or so.
+  EXPECT_TRUE_SIMULATED_WAIT(
+      !selected_connection1->receiving() && !selected_connection2->receiving(),
+      3000, clock);
+  // The link recovers after a short while.
+  SIMULATED_WAIT(false, 10, clock);
+  fw()->ClearRules();
+
+  // We should not switch to the alternate addr on both sides because of the
+  // dampening.
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->selected_connection()->receiving() &&
+                                 ep2_ch1()->selected_connection()->receiving(),
+                             3000, clock);
+  EXPECT_TRUE(LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]));
+  EXPECT_TRUE(RemoteCandidate(ep2_ch1())->address().EqualIPs(kPublicAddrs[0]));
+  EXPECT_EQ(0, reset_selected_candidate_pair_switches());
   DestroyChannels();
 }
 
@@ -2448,7 +2588,7 @@ class P2PTransportChannelPingTest : public testing::Test,
   bool channel_ready_to_send() { return channel_ready_to_send_; }
   void reset_channel_ready_to_send() { channel_ready_to_send_ = false; }
   TransportChannelState channel_state() { return channel_state_; }
-  int get_and_reset_selected_candidate_pair_switches() {
+  int reset_selected_candidate_pair_switches() {
     int switches = selected_candidate_pair_switches_;
     selected_candidate_pair_switches_ = 0;
     return switches;
@@ -3055,7 +3195,7 @@ TEST_F(P2PTransportChannelPingTest,
   ASSERT_TRUE(conn2 != nullptr);
 
   // Initially, connections are selected based on priority.
-  EXPECT_EQ(1, get_and_reset_selected_candidate_pair_switches());
+  EXPECT_EQ(1, reset_selected_candidate_pair_switches());
   EXPECT_EQ(conn1, last_selected_candidate_pair());
 
   // conn2 receives data; it becomes selected.
@@ -3063,17 +3203,17 @@ TEST_F(P2PTransportChannelPingTest,
   // conn2 is larger.
   SIMULATED_WAIT(false, 1, clock);
   conn2->OnReadPacket("XYZ", 3, rtc::CreatePacketTime(0));
-  EXPECT_EQ(1, get_and_reset_selected_candidate_pair_switches());
+  EXPECT_EQ(1, reset_selected_candidate_pair_switches());
   EXPECT_EQ(conn2, last_selected_candidate_pair());
 
   // conn1 also receives data; it becomes selected due to priority again.
   conn1->OnReadPacket("XYZ", 3, rtc::CreatePacketTime(0));
-  EXPECT_EQ(1, get_and_reset_selected_candidate_pair_switches());
+  EXPECT_EQ(1, reset_selected_candidate_pair_switches());
   EXPECT_EQ(conn1, last_selected_candidate_pair());
 
   // Make sure sorting won't reselect candidate pair.
   SIMULATED_WAIT(false, 10, clock);
-  EXPECT_EQ(0, get_and_reset_selected_candidate_pair_switches());
+  EXPECT_EQ(0, reset_selected_candidate_pair_switches());
 }
 
 TEST_F(P2PTransportChannelPingTest,
@@ -3097,28 +3237,28 @@ TEST_F(P2PTransportChannelPingTest,
   // Advance the clock to have a non-zero last-data-receiving time.
   SIMULATED_WAIT(false, 1, clock);
   conn1->OnReadPacket("XYZ", 3, rtc::CreatePacketTime(0));
-  EXPECT_EQ(1, get_and_reset_selected_candidate_pair_switches());
+  EXPECT_EQ(1, reset_selected_candidate_pair_switches());
   EXPECT_EQ(conn1, last_selected_candidate_pair());
 
   // conn2 is nominated; it becomes the selected connection.
   NominateConnection(conn2);
-  EXPECT_EQ(1, get_and_reset_selected_candidate_pair_switches());
+  EXPECT_EQ(1, reset_selected_candidate_pair_switches());
   EXPECT_EQ(conn2, last_selected_candidate_pair());
 
   NominateConnection(conn1);
-  EXPECT_EQ(1, get_and_reset_selected_candidate_pair_switches());
+  EXPECT_EQ(1, reset_selected_candidate_pair_switches());
   EXPECT_EQ(conn1, last_selected_candidate_pair());
 
   // conn2 received data more recently; it is selected now because it
   // received data more recently.
   SIMULATED_WAIT(false, 1, clock);
   conn2->OnReadPacket("XYZ", 3, rtc::CreatePacketTime(0));
-  EXPECT_EQ(1, get_and_reset_selected_candidate_pair_switches());
+  EXPECT_EQ(1, reset_selected_candidate_pair_switches());
   EXPECT_EQ(conn2, last_selected_candidate_pair());
 
   // Make sure sorting won't reselect candidate pair.
   SIMULATED_WAIT(false, 10, clock);
-  EXPECT_EQ(0, get_and_reset_selected_candidate_pair_switches());
+  EXPECT_EQ(0, reset_selected_candidate_pair_switches());
 }
 
 TEST_F(P2PTransportChannelPingTest,
@@ -3139,26 +3279,26 @@ TEST_F(P2PTransportChannelPingTest,
   ASSERT_TRUE(conn2 != nullptr);
 
   NominateConnection(conn1);
-  EXPECT_EQ(1, get_and_reset_selected_candidate_pair_switches());
+  EXPECT_EQ(1, reset_selected_candidate_pair_switches());
 
   // conn2 becomes writable; it is selected even though it is not nominated.
   conn2->ReceivedPingResponse(LOW_RTT);
 
-  EXPECT_EQ_SIMULATED_WAIT(1, get_and_reset_selected_candidate_pair_switches(),
+  EXPECT_EQ_SIMULATED_WAIT(1, reset_selected_candidate_pair_switches(),
                            kDefaultTimeout, clock);
   EXPECT_EQ_SIMULATED_WAIT(conn2, last_selected_candidate_pair(),
                            kDefaultTimeout, clock);
 
   // If conn1 is also writable, it will become selected.
   conn1->ReceivedPingResponse(LOW_RTT);
-  EXPECT_EQ_SIMULATED_WAIT(1, get_and_reset_selected_candidate_pair_switches(),
+  EXPECT_EQ_SIMULATED_WAIT(1, reset_selected_candidate_pair_switches(),
                            kDefaultTimeout, clock);
   EXPECT_EQ_SIMULATED_WAIT(conn1, last_selected_candidate_pair(),
                            kDefaultTimeout, clock);
 
   // Make sure sorting won't reselect candidate pair.
   SIMULATED_WAIT(false, 10, clock);
-  EXPECT_EQ(0, get_and_reset_selected_candidate_pair_switches());
+  EXPECT_EQ(0, reset_selected_candidate_pair_switches());
 }
 
 // Test that if a new remote candidate has the same address and port with
@@ -3289,7 +3429,9 @@ TEST_F(P2PTransportChannelPingTest, TestConnectionPrunedAgain) {
   FakePortAllocator pa(rtc::Thread::Current(), nullptr);
   P2PTransportChannel ch("test channel", 1, &pa);
   PrepareChannel(&ch);
-  ch.SetIceConfig(CreateIceConfig(1000, GATHER_ONCE));
+  IceConfig config = CreateIceConfig(1000, GATHER_ONCE);
+  config.receiving_switching_delay = rtc::Optional<int>(800);
+  ch.SetIceConfig(config);
   ch.MaybeStartGathering();
   ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 100));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
