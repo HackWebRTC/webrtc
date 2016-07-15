@@ -187,6 +187,10 @@ static_library("rtc_base_approved") {
   }
 }
 
+config("enable_libevent_config") {
+  defines = [ "WEBRTC_BUILD_LIBEVENT" ]
+}
+
 static_library("rtc_task_queue") {
   public_deps = [
     ":rtc_base_approved",
@@ -212,6 +216,7 @@ static_library("rtc_task_queue") {
       "task_queue_libevent.cc",
       "task_queue_posix.cc",
     ]
+    all_dependent_configs = [ ":enable_libevent_config" ]
   } else {
     if (is_mac || is_ios) {
       sources += [

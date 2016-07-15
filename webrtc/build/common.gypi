@@ -344,11 +344,6 @@
           }],
         ],
       }],
-      ['enable_libevent==1', {
-        'defines': [
-          'WEBRTC_BUILD_LIBEVENT',
-        ],
-      }],
       ['target_arch=="arm64"', {
         'defines': [
           'WEBRTC_ARCH_ARM64',

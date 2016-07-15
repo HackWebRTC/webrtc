@@ -155,6 +155,10 @@
             'task_queue_libevent.cc',
             'task_queue_posix.cc',
           ],
+          'defines': [ 'WEBRTC_BUILD_LIBEVENT' ],
+          'all_dependent_settings': {
+            'defines': [ 'WEBRTC_BUILD_LIBEVENT' ]
+          },
         }, {
           # If not libevent, fall back to the other task queues.
           'conditions': [
