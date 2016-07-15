@@ -12,6 +12,7 @@
 
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/sequenced_task_checker.h"
+#include "webrtc/base/task_queue.h"
 
 namespace rtc {
 

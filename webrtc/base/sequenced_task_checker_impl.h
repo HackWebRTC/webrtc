@@ -11,11 +11,11 @@
 #ifndef WEBRTC_BASE_SEQUENCED_TASK_CHECKER_IMPL_H_
 #define WEBRTC_BASE_SEQUENCED_TASK_CHECKER_IMPL_H_
 
-#include "webrtc/base/task_queue.h"
 #include "webrtc/base/thread_checker.h"
 
 namespace rtc {
 
+class TaskQueue;
 // Real implementation of SequencedTaskChecker, for use in debug mode, or
 // for temporary use in release mode.
 //
