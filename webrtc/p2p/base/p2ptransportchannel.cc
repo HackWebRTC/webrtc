@@ -339,9 +339,9 @@ void P2PTransportChannel::SetRemoteIceMode(IceMode mode) {
 
 void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
   if (config_.continual_gathering_policy != config.continual_gathering_policy) {
+    config_.continual_gathering_policy = config.continual_gathering_policy;
     LOG(LS_INFO) << "Set continual_gathering_policy to "
                  << config_.continual_gathering_policy;
-    config_.continual_gathering_policy = config.continual_gathering_policy;
   }
 
   if (config.backup_connection_ping_interval >= 0 &&
