@@ -18,7 +18,6 @@
 #include <ApplicationServices/ApplicationServices.h>
 #include <Cocoa/Cocoa.h>
 #include <dlfcn.h>
-#include <IOKit/pwr_mgt/IOPMLib.h>
 #include <OpenGL/CGLMacro.h>
 #include <OpenGL/OpenGL.h>
 
@@ -262,12 +261,6 @@ class ScreenCapturerMac : public ScreenCapturer {
   // Monitoring display reconfiguration.
   rtc::scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor_;
 
-  // Power management assertion to prevent the screen from sleeping.
-  IOPMAssertionID power_assertion_id_display_ = kIOPMNullAssertionID;
-
-  // Power management assertion to indicate that the user is active.
-  IOPMAssertionID power_assertion_id_user_ = kIOPMNullAssertionID;
-
   // Dynamically link to deprecated APIs for Mac OS X 10.6 support.
   void* app_services_library_ = nullptr;
   CGDisplayBaseAddressFunc cg_display_base_address_ = nullptr;
@@ -309,15 +302,6 @@ ScreenCapturerMac::ScreenCapturerMac(
     : desktop_config_monitor_(desktop_config_monitor) {}
 
 ScreenCapturerMac::~ScreenCapturerMac() {
-  if (power_assertion_id_display_ != kIOPMNullAssertionID) {
-    IOPMAssertionRelease(power_assertion_id_display_);
-    power_assertion_id_display_ = kIOPMNullAssertionID;
-  }
-  if (power_assertion_id_user_ != kIOPMNullAssertionID) {
-    IOPMAssertionRelease(power_assertion_id_user_);
-    power_assertion_id_user_ = kIOPMNullAssertionID;
-  }
-
   ReleaseBuffers();
   UnregisterRefreshAndMoveHandlers();
   dlclose(app_services_library_);
@@ -352,21 +336,6 @@ void ScreenCapturerMac::Start(Callback* callback) {
   assert(callback);
 
   callback_ = callback;
-
-  // Create power management assertions to wake the display and prevent it from
-  // going to sleep on user idle.
-  // TODO(jamiewalch): Use IOPMAssertionDeclareUserActivity on 10.7.3 and above
-  //                   instead of the following two assertions.
-  IOPMAssertionCreateWithName(kIOPMAssertionTypeNoDisplaySleep,
-                              kIOPMAssertionLevelOn,
-                              CFSTR("Chrome Remote Desktop connection active"),
-                              &power_assertion_id_display_);
-  // This assertion ensures that the display is woken up if it  already asleep
-  // (as used by Apple Remote Desktop).
-  IOPMAssertionCreateWithName(CFSTR("UserIsActive"),
-                              kIOPMAssertionLevelOn,
-                              CFSTR("Chrome Remote Desktop connection active"),
-                              &power_assertion_id_user_);
 }
 
 void ScreenCapturerMac::Capture(const DesktopRegion& region_to_capture) {

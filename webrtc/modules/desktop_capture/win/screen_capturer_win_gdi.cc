@@ -78,15 +78,6 @@ void ScreenCapturerWinGdi::Capture(const DesktopRegion& region) {
   queue_.MoveToNextFrame();
   RTC_DCHECK(!queue_.current_frame() || !queue_.current_frame()->IsShared());
 
-  // Request that the system not power-down the system, or the display hardware.
-  if (!SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED)) {
-    if (!set_thread_execution_state_failed_) {
-      set_thread_execution_state_failed_ = true;
-      LOG_F(LS_WARNING) << "Failed to make system & display power assertion: "
-                        << GetLastError();
-    }
-  }
-
   // Make sure the GDI capture resources are up-to-date.
   PrepareCaptureResources();
 

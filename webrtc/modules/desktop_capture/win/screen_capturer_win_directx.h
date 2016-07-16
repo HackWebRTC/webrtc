@@ -95,8 +95,6 @@ class ScreenCapturerWinDirectx : public ScreenCapturer {
   std::unique_ptr<SharedMemoryFactory> shared_memory_factory_;
   Callback* callback_ = nullptr;
 
-  bool set_thread_execution_state_failed_ = false;
-
   RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCapturerWinDirectx);
 };
 

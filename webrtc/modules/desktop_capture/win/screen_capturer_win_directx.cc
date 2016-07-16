@@ -452,7 +452,7 @@ bool ScreenCapturerWinDirectx::ForceDuplicateOutput() {
 
 ScreenCapturerWinDirectx::ScreenCapturerWinDirectx(
     const DesktopCaptureOptions& options)
-    : callback_(nullptr), set_thread_execution_state_failed_(false) {
+    : callback_(nullptr) {
   RTC_DCHECK(g_container && g_container->initialize_result);
 
   // Texture instance won't change forever.
@@ -628,14 +628,6 @@ void ScreenCapturerWinDirectx::Capture(const DesktopRegion& region) {
 
   RTC_DCHECK(g_container->duplication);
   int64_t capture_start_time_nanos = rtc::TimeNanos();
-
-  if (!SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED)) {
-    if (!set_thread_execution_state_failed_) {
-      set_thread_execution_state_failed_ = true;
-      LOG(LS_WARNING) << "Failed to make system & display power assertion: "
-                      << GetLastError();
-    }
-  }
 
   DXGI_OUTDUPL_FRAME_INFO frame_info;
   memset(&frame_info, 0, sizeof(DXGI_OUTDUPL_FRAME_INFO));

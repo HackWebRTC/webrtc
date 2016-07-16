@@ -84,9 +84,6 @@ class ScreenCapturerWinGdi : public ScreenCapturer {
   HMODULE dwmapi_library_ = NULL;
   DwmEnableCompositionFunc composition_func_ = nullptr;
 
-  // Used to suppress duplicate logging of SetThreadExecutionState errors.
-  bool set_thread_execution_state_failed_ = false;
-
   RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCapturerWinGdi);
 };
 
