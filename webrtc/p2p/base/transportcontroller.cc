@@ -446,6 +446,21 @@ bool TransportController::SetLocalTransportDescription_n(
     return true;
   }
 
+  // Older versions of Chrome expect the ICE role to be re-determined when an
+  // ICE restart occurs, and also don't perform conflict resolution correctly,
+  // so for now we can't safely stop doing this.
+  // See: https://bugs.chromium.org/p/chromium/issues/detail?id=628676
+  // TODO(deadbeef): Remove this when these old versions of Chrome reach a low
+  // enough population.
+  if (transport->local_description() &&
+      IceCredentialsChanged(transport->local_description()->ice_ufrag,
+                            transport->local_description()->ice_pwd,
+                            tdesc.ice_ufrag, tdesc.ice_pwd)) {
+    IceRole new_ice_role =
+        (action == CA_OFFER) ? ICEROLE_CONTROLLING : ICEROLE_CONTROLLED;
+    SetIceRole(new_ice_role);
+  }
+
   return transport->SetLocalTransportDescription(tdesc, action, err);
 }
 

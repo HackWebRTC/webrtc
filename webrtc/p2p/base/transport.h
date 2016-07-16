@@ -314,23 +314,25 @@ class Transport : public sigslot::has_slots<> {
     return false;
   }
 
- protected:
-  // These are called by Create/DestroyChannel above in order to create or
-  // destroy the appropriate type of channel.
-  virtual TransportChannelImpl* CreateTransportChannel(int component) = 0;
-  virtual void DestroyTransportChannel(TransportChannelImpl* channel) = 0;
-
   // The current local transport description, for use by derived classes
-  // when performing transport description negotiation.
+  // when performing transport description negotiation, and possibly used
+  // by the transport controller.
   const TransportDescription* local_description() const {
     return local_description_.get();
   }
 
   // The current remote transport description, for use by derived classes
-  // when performing transport description negotiation.
+  // when performing transport description negotiation, and possibly used
+  // by the transport controller.
   const TransportDescription* remote_description() const {
     return remote_description_.get();
   }
+
+ protected:
+  // These are called by Create/DestroyChannel above in order to create or
+  // destroy the appropriate type of channel.
+  virtual TransportChannelImpl* CreateTransportChannel(int component) = 0;
+  virtual void DestroyTransportChannel(TransportChannelImpl* channel) = 0;
 
   // Pushes down the transport parameters from the local description, such
   // as the ICE ufrag and pwd.
