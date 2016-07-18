@@ -54,7 +54,7 @@ class RemoteEstimatorProxy : public RemoteBitrateEstimator {
  private:
   void OnPacketArrival(uint16_t sequence_number, int64_t arrival_time)
       EXCLUSIVE_LOCKS_REQUIRED(&lock_);
-  bool BuildFeedbackPacket(rtcp::TransportFeedback* feedback_packetket);
+  bool BuildFeedbackPacket(rtcp::TransportFeedback* feedback_packet);
 
   Clock* const clock_;
   PacketRouter* const packet_router_;

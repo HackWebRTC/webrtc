@@ -48,7 +48,7 @@ class RemoteEstimatorProxyTest : public ::testing::Test {
   }
 
   SimulatedClock clock_;
-  MockPacketRouter router_;
+  testing::StrictMock<MockPacketRouter> router_;
   RemoteEstimatorProxy proxy_;
 
   const size_t kDefaultPacketSize = 100;
@@ -221,6 +221,28 @@ TEST_F(RemoteEstimatorProxyTest, SendsFragmentedFeedback) {
         return true;
       }))
       .RetiresOnSaturation();
+
+  Process();
+}
+
+TEST_F(RemoteEstimatorProxyTest, GracefullyHandlesReorderingAndWrap) {
+  const int64_t kDeltaMs = 1000;
+  const uint16_t kLargeSeq = 62762;
+  IncomingPacket(kBaseSeq, kBaseTimeMs);
+  IncomingPacket(kLargeSeq, kBaseTimeMs + kDeltaMs);
+
+  EXPECT_CALL(router_, SendFeedback(_))
+      .Times(1)
+      .WillOnce(Invoke([this](rtcp::TransportFeedback* packet) {
+        packet->Build();
+        EXPECT_EQ(kBaseSeq, packet->GetBaseSequence());
+        EXPECT_EQ(kMediaSsrc, packet->GetMediaSourceSsrc());
+
+        std::vector<int64_t> delta_vec = packet->GetReceiveDeltasUs();
+        EXPECT_EQ(1u, delta_vec.size());
+        EXPECT_EQ(kBaseTimeMs, (packet->GetBaseTimeUs() + delta_vec[0]) / 1000);
+        return true;
+      }));
 
   Process();
 }

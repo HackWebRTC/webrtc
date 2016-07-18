@@ -89,7 +89,18 @@ void RemoteEstimatorProxy::Process() {
 
 void RemoteEstimatorProxy::OnPacketArrival(uint16_t sequence_number,
                                            int64_t arrival_time) {
+  // TODO(holmer): We should handle a backwards wrap here if the first
+  // sequence number was small and the new sequence number is large. The
+  // SequenceNumberUnwrapper doesn't do this, so we should replace this with
+  // calls to IsNewerSequenceNumber instead.
   int64_t seq = unwrapper_.Unwrap(sequence_number);
+  if (seq > window_start_seq_ + 0xFFFF / 2) {
+    LOG(LS_WARNING) << "Skipping this sequence number (" << sequence_number
+                    << ") since it likely is reordered, but the unwrapper"
+                       "failed to handle it. Feedback window starts at "
+                    << window_start_seq_ << ".";
+    return;
+  }
 
   if (packet_arrival_times_.lower_bound(window_start_seq_) ==
       packet_arrival_times_.end()) {
