@@ -274,7 +274,7 @@ def GenerateCommitMessage(current_cr_rev, new_cr_rev, current_commit_pos,
                                                   c.current_rev[0:10],
                                                   c.new_rev[0:10]))
       if 'libvpx' in c.path:
-        tbr_authors += 'marpan@webrtc.org, stefan@webrtc.org, '
+        tbr_authors += 'marpan@webrtc.org, '
 
     change_url = CHROMIUM_FILE_TEMPLATE % (rev_interval, 'DEPS')
     commit_msg.append('DEPS diff: %s\n' % change_url)
