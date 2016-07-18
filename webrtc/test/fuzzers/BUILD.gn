@@ -109,6 +109,15 @@ webrtc_fuzzer_test("rtp_header_fuzzer") {
   ]
 }
 
+webrtc_fuzzer_test("congestion_controller_feedback_fuzzer") {
+  sources = [
+    "congestion_controller_feedback_fuzzer.cc",
+  ]
+  deps = [
+    "../../modules/congestion_controller/",
+  ]
+}
+
 source_set("audio_decoder_fuzzer") {
   public_configs = [ "../..:common_inherited_config" ]
   sources = [
