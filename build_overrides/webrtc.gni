@@ -23,5 +23,7 @@ rtc_include_pulse_audio = true
 # standalone WebRTC.
 rtc_include_internal_audio_device = true
 
-# There's no point processing WebRTC standalone tests in a Chromium build.
-rtc_include_tests = true
+declare_args() {
+  # Include tests in standalone checkout.
+  rtc_include_tests = true
+}
