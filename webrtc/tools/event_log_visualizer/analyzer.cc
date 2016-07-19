@@ -76,43 +76,6 @@ int64_t WrappingDifference(uint32_t later, uint32_t earlier, int64_t modulus) {
   return difference;
 }
 
-class StreamId {
- public:
-  StreamId(uint32_t ssrc,
-           webrtc::PacketDirection direction,
-           webrtc::MediaType media_type)
-      : ssrc_(ssrc), direction_(direction), media_type_(media_type) {}
-
-  bool operator<(const StreamId& other) const {
-    if (ssrc_ < other.ssrc_) {
-      return true;
-    }
-    if (ssrc_ == other.ssrc_) {
-      if (media_type_ < other.media_type_) {
-        return true;
-      }
-      if (media_type_ == other.media_type_) {
-        if (direction_ < other.direction_) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  bool operator==(const StreamId& other) const {
-    return ssrc_ == other.ssrc_ && direction_ == other.direction_ &&
-           media_type_ == other.media_type_;
-  }
-
-  uint32_t GetSsrc() const { return ssrc_; }
-
- private:
-  uint32_t ssrc_;
-  webrtc::PacketDirection direction_;
-  webrtc::MediaType media_type_;
-};
-
 const double kXMargin = 1.02;
 const double kYMargin = 1.1;
 const double kDefaultXMin = -1;
@@ -123,24 +86,138 @@ const double kDefaultYMin = -1;
 namespace webrtc {
 namespace plotting {
 
+
+bool EventLogAnalyzer::StreamId::operator<(const StreamId& other) const {
+  if (ssrc_ < other.ssrc_) {
+    return true;
+  }
+  if (ssrc_ == other.ssrc_) {
+    if (media_type_ < other.media_type_) {
+      return true;
+    }
+    if (media_type_ == other.media_type_) {
+      if (direction_ < other.direction_) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool EventLogAnalyzer::StreamId::operator==(const StreamId& other) const {
+  return ssrc_ == other.ssrc_ && direction_ == other.direction_ &&
+         media_type_ == other.media_type_;
+}
+
+
 EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
     : parsed_log_(log), window_duration_(250000), step_(10000) {
   uint64_t first_timestamp = std::numeric_limits<uint64_t>::max();
   uint64_t last_timestamp = std::numeric_limits<uint64_t>::min();
+
+  // Maps a stream identifier consisting of ssrc, direction and MediaType
+  // to the header extensions used by that stream,
+  std::map<StreamId, RtpHeaderExtensionMap> extension_maps;
+
+  PacketDirection direction;
+  MediaType media_type;
+  uint8_t header[IP_PACKET_SIZE];
+  size_t header_length;
+  size_t total_length;
+
   for (size_t i = 0; i < parsed_log_.GetNumberOfEvents(); i++) {
     ParsedRtcEventLog::EventType event_type = parsed_log_.GetEventType(i);
-    if (event_type == ParsedRtcEventLog::EventType::VIDEO_RECEIVER_CONFIG_EVENT)
-      continue;
-    if (event_type == ParsedRtcEventLog::EventType::VIDEO_SENDER_CONFIG_EVENT)
-      continue;
-    if (event_type == ParsedRtcEventLog::EventType::AUDIO_RECEIVER_CONFIG_EVENT)
-      continue;
-    if (event_type == ParsedRtcEventLog::EventType::AUDIO_SENDER_CONFIG_EVENT)
-      continue;
-    uint64_t timestamp = parsed_log_.GetTimestamp(i);
-    first_timestamp = std::min(first_timestamp, timestamp);
-    last_timestamp = std::max(last_timestamp, timestamp);
+    if (event_type != ParsedRtcEventLog::VIDEO_RECEIVER_CONFIG_EVENT &&
+        event_type != ParsedRtcEventLog::VIDEO_SENDER_CONFIG_EVENT &&
+        event_type != ParsedRtcEventLog::AUDIO_RECEIVER_CONFIG_EVENT &&
+        event_type != ParsedRtcEventLog::AUDIO_SENDER_CONFIG_EVENT) {
+      uint64_t timestamp = parsed_log_.GetTimestamp(i);
+      first_timestamp = std::min(first_timestamp, timestamp);
+      last_timestamp = std::max(last_timestamp, timestamp);
+    }
+
+    switch (parsed_log_.GetEventType(i)) {
+      case ParsedRtcEventLog::VIDEO_RECEIVER_CONFIG_EVENT: {
+        VideoReceiveStream::Config config(nullptr);
+        parsed_log_.GetVideoReceiveConfig(i, &config);
+        StreamId stream(config.rtp.remote_ssrc, kIncomingPacket,
+                        MediaType::VIDEO);
+        extension_maps[stream].Erase();
+        for (size_t j = 0; j < config.rtp.extensions.size(); ++j) {
+          const std::string& extension = config.rtp.extensions[j].uri;
+          int id = config.rtp.extensions[j].id;
+          extension_maps[stream].Register(StringToRtpExtensionType(extension),
+                                          id);
+        }
+        break;
+      }
+      case ParsedRtcEventLog::VIDEO_SENDER_CONFIG_EVENT: {
+        VideoSendStream::Config config(nullptr);
+        parsed_log_.GetVideoSendConfig(i, &config);
+        for (auto ssrc : config.rtp.ssrcs) {
+          StreamId stream(ssrc, kOutgoingPacket, MediaType::VIDEO);
+          extension_maps[stream].Erase();
+          for (size_t j = 0; j < config.rtp.extensions.size(); ++j) {
+            const std::string& extension = config.rtp.extensions[j].uri;
+            int id = config.rtp.extensions[j].id;
+            extension_maps[stream].Register(StringToRtpExtensionType(extension),
+                                            id);
+          }
+        }
+        break;
+      }
+      case ParsedRtcEventLog::AUDIO_RECEIVER_CONFIG_EVENT: {
+        AudioReceiveStream::Config config;
+        // TODO(terelius): Parse the audio configs once we have them.
+        break;
+      }
+      case ParsedRtcEventLog::AUDIO_SENDER_CONFIG_EVENT: {
+        AudioSendStream::Config config(nullptr);
+        // TODO(terelius): Parse the audio configs once we have them.
+        break;
+      }
+      case ParsedRtcEventLog::RTP_EVENT: {
+        parsed_log_.GetRtpHeader(i, &direction, &media_type, header,
+                                 &header_length, &total_length);
+        // Parse header to get SSRC.
+        RtpUtility::RtpHeaderParser rtp_parser(header, header_length);
+        RTPHeader parsed_header;
+        rtp_parser.Parse(&parsed_header);
+        StreamId stream(parsed_header.ssrc, direction, media_type);
+        // Look up the extension_map and parse it again to get the extensions.
+        if (extension_maps.count(stream) == 1) {
+          RtpHeaderExtensionMap* extension_map = &extension_maps[stream];
+          rtp_parser.Parse(&parsed_header, extension_map);
+        }
+        uint64_t timestamp = parsed_log_.GetTimestamp(i);
+        rtp_packets_[stream].push_back(
+            LoggedRtpPacket(timestamp, parsed_header));
+        break;
+      }
+      case ParsedRtcEventLog::RTCP_EVENT: {
+        break;
+      }
+      case ParsedRtcEventLog::LOG_START: {
+        break;
+      }
+      case ParsedRtcEventLog::LOG_END: {
+        break;
+      }
+      case ParsedRtcEventLog::BWE_PACKET_LOSS_EVENT: {
+        break;
+      }
+      case ParsedRtcEventLog::BWE_PACKET_DELAY_EVENT: {
+        break;
+      }
+      case ParsedRtcEventLog::AUDIO_PLAYOUT_EVENT: {
+        break;
+      }
+      case ParsedRtcEventLog::UNKNOWN_EVENT: {
+        break;
+      }
+    }
   }
+
   if (last_timestamp < first_timestamp) {
     // No useful events in the log.
     first_timestamp = last_timestamp = 0;
@@ -307,111 +384,50 @@ void EventLogAnalyzer::CreateSequenceNumberGraph(Plot* plot) {
 }
 
 void EventLogAnalyzer::CreateDelayChangeGraph(Plot* plot) {
-  // Maps a stream identifier consisting of ssrc, direction and MediaType
-  // to the header extensions used by that stream,
-  std::map<StreamId, RtpHeaderExtensionMap> extension_maps;
-
-  struct SendReceiveTime {
-    SendReceiveTime() = default;
-    SendReceiveTime(uint32_t send_time, uint64_t recv_time)
-        : absolute_send_time(send_time), receive_timestamp(recv_time) {}
-    uint32_t absolute_send_time;  // 24-bit value in units of 2^-18 seconds.
-    uint64_t receive_timestamp;   // In microseconds.
-  };
-  std::map<StreamId, SendReceiveTime> last_packet;
-  std::map<StreamId, TimeSeries> time_series;
-
-  PacketDirection direction;
-  MediaType media_type;
-  uint8_t header[IP_PACKET_SIZE];
-  size_t header_length, total_length;
-
   double max_y = 10;
   double min_y = 0;
 
-  for (size_t i = 0; i < parsed_log_.GetNumberOfEvents(); i++) {
-    ParsedRtcEventLog::EventType event_type = parsed_log_.GetEventType(i);
-    if (event_type == ParsedRtcEventLog::VIDEO_RECEIVER_CONFIG_EVENT) {
-      VideoReceiveStream::Config config(nullptr);
-      parsed_log_.GetVideoReceiveConfig(i, &config);
-      StreamId stream(config.rtp.remote_ssrc, kIncomingPacket,
-                      MediaType::VIDEO);
-      extension_maps[stream].Erase();
-      for (size_t j = 0; j < config.rtp.extensions.size(); ++j) {
-        const std::string& extension = config.rtp.extensions[j].uri;
-        int id = config.rtp.extensions[j].id;
-        extension_maps[stream].Register(StringToRtpExtensionType(extension),
-                                        id);
-      }
-    } else if (event_type == ParsedRtcEventLog::VIDEO_SENDER_CONFIG_EVENT) {
-      VideoSendStream::Config config(nullptr);
-      parsed_log_.GetVideoSendConfig(i, &config);
-      for (auto ssrc : config.rtp.ssrcs) {
-        StreamId stream(ssrc, kIncomingPacket, MediaType::VIDEO);
-        extension_maps[stream].Erase();
-        for (size_t j = 0; j < config.rtp.extensions.size(); ++j) {
-          const std::string& extension = config.rtp.extensions[j].uri;
-          int id = config.rtp.extensions[j].id;
-          extension_maps[stream].Register(StringToRtpExtensionType(extension),
-                                          id);
-        }
-      }
-    } else if (event_type == ParsedRtcEventLog::AUDIO_RECEIVER_CONFIG_EVENT) {
-      AudioReceiveStream::Config config;
-      // TODO(terelius): Parse the audio configs once we have them
-    } else if (event_type == ParsedRtcEventLog::AUDIO_SENDER_CONFIG_EVENT) {
-      AudioSendStream::Config config(nullptr);
-      // TODO(terelius): Parse the audio configs once we have them
-    } else if (event_type == ParsedRtcEventLog::RTP_EVENT) {
-      parsed_log_.GetRtpHeader(i, &direction, &media_type, header,
-                               &header_length, &total_length);
-      if (direction == kIncomingPacket) {
-        // Parse header to get SSRC.
-        RtpUtility::RtpHeaderParser rtp_parser(header, header_length);
-        RTPHeader parsed_header;
-        rtp_parser.Parse(&parsed_header);
-        // Filter on SSRC.
-        if (MatchingSsrc(parsed_header.ssrc, desired_ssrc_)) {
-          StreamId stream(parsed_header.ssrc, direction, media_type);
-          // Look up the extension_map and parse it again to get the extensions.
-          if (extension_maps.count(stream) == 1) {
-            RtpHeaderExtensionMap* extension_map = &extension_maps[stream];
-            rtp_parser.Parse(&parsed_header, extension_map);
-            if (parsed_header.extension.hasAbsoluteSendTime) {
-              uint64_t timestamp = parsed_log_.GetTimestamp(i);
-              int64_t send_time_diff = WrappingDifference(
-                  parsed_header.extension.absoluteSendTime,
-                  last_packet[stream].absolute_send_time, 1ul << 24);
-              int64_t recv_time_diff =
-                  timestamp - last_packet[stream].receive_timestamp;
+  for (auto& kv : rtp_packets_) {
+    StreamId stream_id = kv.first;
+    // Filter on direction and SSRC.
+    if (stream_id.GetDirection() != kIncomingPacket ||
+        !MatchingSsrc(stream_id.GetSsrc(), desired_ssrc_)) {
+      continue;
+    }
 
-              float x = static_cast<float>(timestamp - begin_time_) / 1000000;
-              double y = static_cast<double>(
-                             recv_time_diff -
-                             AbsSendTimeToMicroseconds(send_time_diff)) /
-                         1000;
-              if (time_series[stream].points.size() == 0) {
-                // There were no previusly logged playout for this SSRC.
-                // Generate a point, but place it on the x-axis.
-                y = 0;
-              }
-              max_y = std::max(max_y, y);
-              min_y = std::min(min_y, y);
-              time_series[stream].points.push_back(TimeSeriesPoint(x, y));
-              last_packet[stream] = SendReceiveTime(
-                  parsed_header.extension.absoluteSendTime, timestamp);
-            }
-          }
+    TimeSeries time_series;
+    time_series.label = SsrcToString(stream_id.GetSsrc());
+    time_series.style = BAR_GRAPH;
+    const std::vector<LoggedRtpPacket>& packet_stream = kv.second;
+    int64_t last_abs_send_time = 0;
+    int64_t last_timestamp = 0;
+    for (const LoggedRtpPacket& packet : packet_stream) {
+      if (packet.header.extension.hasAbsoluteSendTime) {
+        int64_t send_time_diff =
+            WrappingDifference(packet.header.extension.absoluteSendTime,
+                               last_abs_send_time, 1ul << 24);
+        int64_t recv_time_diff = packet.timestamp - last_timestamp;
+
+        last_abs_send_time = packet.header.extension.absoluteSendTime;
+        last_timestamp = packet.timestamp;
+
+        float x = static_cast<float>(packet.timestamp - begin_time_) / 1000000;
+        double y =
+            static_cast<double>(recv_time_diff -
+                                AbsSendTimeToMicroseconds(send_time_diff)) /
+            1000;
+        if (time_series.points.size() == 0) {
+          // There were no previously logged packets for this SSRC.
+          // Generate a point, but place it on the x-axis.
+          y = 0;
         }
+        max_y = std::max(max_y, y);
+        min_y = std::min(min_y, y);
+        time_series.points.emplace_back(x, y);
       }
     }
-  }
-
-  // Set labels and put in graph.
-  for (auto& kv : time_series) {
-    kv.second.label = SsrcToString(kv.first.GetSsrc());
-    kv.second.style = BAR_GRAPH;
-    plot->series.push_back(std::move(kv.second));
+    // Add the data set to the plot.
+    plot->series.push_back(std::move(time_series));
   }
 
   plot->xaxis_min = kDefaultXMin;
@@ -424,117 +440,50 @@ void EventLogAnalyzer::CreateDelayChangeGraph(Plot* plot) {
 }
 
 void EventLogAnalyzer::CreateAccumulatedDelayChangeGraph(Plot* plot) {
-  // TODO(terelius): Refactor
-
-  // Maps a stream identifier consisting of ssrc, direction and MediaType
-  // to the header extensions used by that stream.
-  std::map<StreamId, RtpHeaderExtensionMap> extension_maps;
-
-  struct SendReceiveTime {
-    SendReceiveTime() = default;
-    SendReceiveTime(uint32_t send_time, uint64_t recv_time, double accumulated)
-        : absolute_send_time(send_time),
-          receive_timestamp(recv_time),
-          accumulated_delay(accumulated) {}
-    uint32_t absolute_send_time;  // 24-bit value in units of 2^-18 seconds.
-    uint64_t receive_timestamp;   // In microseconds.
-    double accumulated_delay;     // In milliseconds.
-  };
-  std::map<StreamId, SendReceiveTime> last_packet;
-  std::map<StreamId, TimeSeries> time_series;
-
-  PacketDirection direction;
-  MediaType media_type;
-  uint8_t header[IP_PACKET_SIZE];
-  size_t header_length, total_length;
-
   double max_y = 10;
   double min_y = 0;
 
-  for (size_t i = 0; i < parsed_log_.GetNumberOfEvents(); i++) {
-    ParsedRtcEventLog::EventType event_type = parsed_log_.GetEventType(i);
-    if (event_type == ParsedRtcEventLog::VIDEO_RECEIVER_CONFIG_EVENT) {
-      VideoReceiveStream::Config config(nullptr);
-      parsed_log_.GetVideoReceiveConfig(i, &config);
-      StreamId stream(config.rtp.remote_ssrc, kIncomingPacket,
-                      MediaType::VIDEO);
-      extension_maps[stream].Erase();
-      for (size_t j = 0; j < config.rtp.extensions.size(); ++j) {
-        const std::string& extension = config.rtp.extensions[j].uri;
-        int id = config.rtp.extensions[j].id;
-        extension_maps[stream].Register(StringToRtpExtensionType(extension),
-                                        id);
-      }
-    } else if (event_type == ParsedRtcEventLog::VIDEO_SENDER_CONFIG_EVENT) {
-      VideoSendStream::Config config(nullptr);
-      parsed_log_.GetVideoSendConfig(i, &config);
-      for (auto ssrc : config.rtp.ssrcs) {
-        StreamId stream(ssrc, kIncomingPacket, MediaType::VIDEO);
-        extension_maps[stream].Erase();
-        for (size_t j = 0; j < config.rtp.extensions.size(); ++j) {
-          const std::string& extension = config.rtp.extensions[j].uri;
-          int id = config.rtp.extensions[j].id;
-          extension_maps[stream].Register(StringToRtpExtensionType(extension),
-                                          id);
-        }
-      }
-    } else if (event_type == ParsedRtcEventLog::AUDIO_RECEIVER_CONFIG_EVENT) {
-      AudioReceiveStream::Config config;
-      // TODO(terelius): Parse the audio configs once we have them
-    } else if (event_type == ParsedRtcEventLog::AUDIO_SENDER_CONFIG_EVENT) {
-      AudioSendStream::Config config(nullptr);
-      // TODO(terelius): Parse the audio configs once we have them
-    } else if (event_type == ParsedRtcEventLog::RTP_EVENT) {
-      parsed_log_.GetRtpHeader(i, &direction, &media_type, header,
-                               &header_length, &total_length);
-      if (direction == kIncomingPacket) {
-        // Parse header to get SSRC.
-        RtpUtility::RtpHeaderParser rtp_parser(header, header_length);
-        RTPHeader parsed_header;
-        rtp_parser.Parse(&parsed_header);
-        // Filter on SSRC.
-        if (MatchingSsrc(parsed_header.ssrc, desired_ssrc_)) {
-          StreamId stream(parsed_header.ssrc, direction, media_type);
-          // Look up the extension_map and parse it again to get the extensions.
-          if (extension_maps.count(stream) == 1) {
-            RtpHeaderExtensionMap* extension_map = &extension_maps[stream];
-            rtp_parser.Parse(&parsed_header, extension_map);
-            if (parsed_header.extension.hasAbsoluteSendTime) {
-              uint64_t timestamp = parsed_log_.GetTimestamp(i);
-              int64_t send_time_diff = WrappingDifference(
-                  parsed_header.extension.absoluteSendTime,
-                  last_packet[stream].absolute_send_time, 1ul << 24);
-              int64_t recv_time_diff =
-                  timestamp - last_packet[stream].receive_timestamp;
+  for (auto& kv : rtp_packets_) {
+    StreamId stream_id = kv.first;
+    // Filter on direction and SSRC.
+    if (stream_id.GetDirection() != kIncomingPacket ||
+        !MatchingSsrc(stream_id.GetSsrc(), desired_ssrc_)) {
+      continue;
+    }
+    TimeSeries time_series;
+    time_series.label = SsrcToString(stream_id.GetSsrc());
+    time_series.style = LINE_GRAPH;
+    const std::vector<LoggedRtpPacket>& packet_stream = kv.second;
+    int64_t last_abs_send_time = 0;
+    int64_t last_timestamp = 0;
+    double accumulated_delay_ms = 0;
+    for (const LoggedRtpPacket& packet : packet_stream) {
+      if (packet.header.extension.hasAbsoluteSendTime) {
+        int64_t send_time_diff =
+            WrappingDifference(packet.header.extension.absoluteSendTime,
+                               last_abs_send_time, 1ul << 24);
+        int64_t recv_time_diff = packet.timestamp - last_timestamp;
 
-              float x = static_cast<float>(timestamp - begin_time_) / 1000000;
-              double y = last_packet[stream].accumulated_delay +
-                         static_cast<double>(
-                             recv_time_diff -
-                             AbsSendTimeToMicroseconds(send_time_diff)) /
-                             1000;
-              if (time_series[stream].points.size() == 0) {
-                // There were no previusly logged playout for this SSRC.
-                // Generate a point, but place it on the x-axis.
-                y = 0;
-              }
-              max_y = std::max(max_y, y);
-              min_y = std::min(min_y, y);
-              time_series[stream].points.push_back(TimeSeriesPoint(x, y));
-              last_packet[stream] = SendReceiveTime(
-                  parsed_header.extension.absoluteSendTime, timestamp, y);
-            }
-          }
+        last_abs_send_time = packet.header.extension.absoluteSendTime;
+        last_timestamp = packet.timestamp;
+
+        float x = static_cast<float>(packet.timestamp - begin_time_) / 1000000;
+        accumulated_delay_ms +=
+            static_cast<double>(recv_time_diff -
+                                AbsSendTimeToMicroseconds(send_time_diff)) /
+            1000;
+        if (time_series.points.size() == 0) {
+          // There were no previously logged packets for this SSRC.
+          // Generate a point, but place it on the x-axis.
+          accumulated_delay_ms = 0;
         }
+        max_y = std::max(max_y, accumulated_delay_ms);
+        min_y = std::min(min_y, accumulated_delay_ms);
+        time_series.points.emplace_back(x, accumulated_delay_ms);
       }
     }
-  }
-
-  // Set labels and put in graph.
-  for (auto& kv : time_series) {
-    kv.second.label = SsrcToString(kv.first.GetSsrc());
-    kv.second.style = LINE_GRAPH;
-    plot->series.push_back(std::move(kv.second));
+    // Add the data set to the plot.
+    plot->series.push_back(std::move(time_series));
   }
 
   plot->xaxis_min = kDefaultXMin;
@@ -630,7 +579,7 @@ void EventLogAnalyzer::CreateStreamBitrateGraph(
     uint64_t timestamp;
     size_t size;
   };
-  std::map<uint32_t, std::vector<TimestampSize> > packets;
+  std::map<uint32_t, std::vector<TimestampSize>> packets;
 
   PacketDirection direction;
   MediaType media_type;

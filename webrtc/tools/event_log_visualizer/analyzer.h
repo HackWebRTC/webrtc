@@ -12,6 +12,7 @@
 #define WEBRTC_TOOLS_EVENT_LOG_VISUALIZER_ANALYZER_H_
 
 #include <vector>
+#include <map>
 
 #include "webrtc/call/rtc_event_log_parser.h"
 #include "webrtc/tools/event_log_visualizer/plot_base.h"
@@ -41,11 +42,41 @@ class EventLogAnalyzer {
   void CreateStreamBitrateGraph(PacketDirection desired_direction, Plot* plot);
 
  private:
+  class StreamId {
+   public:
+    StreamId(uint32_t ssrc,
+             webrtc::PacketDirection direction,
+             webrtc::MediaType media_type)
+        : ssrc_(ssrc), direction_(direction), media_type_(media_type) {}
+    bool operator<(const StreamId& other) const;
+    bool operator==(const StreamId& other) const;
+    uint32_t GetSsrc() const { return ssrc_; }
+    webrtc::PacketDirection GetDirection() const { return direction_; }
+    webrtc::MediaType GetMediaType() const { return media_type_; }
+
+   private:
+    uint32_t ssrc_;
+    webrtc::PacketDirection direction_;
+    webrtc::MediaType media_type_;
+  };
+
+  struct LoggedRtpPacket {
+    LoggedRtpPacket(uint64_t timestamp, RTPHeader header)
+        : timestamp(timestamp), header(header) {}
+    uint64_t timestamp;
+    RTPHeader header;
+  };
+
   const ParsedRtcEventLog& parsed_log_;
 
   // A list of SSRCs we are interested in analysing.
   // If left empty, all SSRCs will be considered relevant.
   std::vector<uint32_t> desired_ssrc_;
+
+  // Maps a stream identifier consisting of ssrc, direction and MediaType
+  // to the parsed RTP headers in that stream. Header extensions are parsed
+  // if the stream has been configured.
+  std::map<StreamId, std::vector<LoggedRtpPacket>> rtp_packets_;
 
   // Window and step size used for calculating moving averages, e.g. bitrate.
   // The generated data points will be |step_| microseconds apart.
