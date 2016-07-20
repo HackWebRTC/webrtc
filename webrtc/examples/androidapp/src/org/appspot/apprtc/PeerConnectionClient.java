@@ -107,14 +107,16 @@ public class PeerConnectionClient {
   private boolean videoCallEnabled;
   private boolean preferIsac;
   private String preferredVideoCodec;
-  private boolean videoSourceStopped;
+  private boolean videoCapturerStopped;
   private boolean isError;
   private Timer statsTimer;
   private VideoRenderer.Callbacks localRender;
   private VideoRenderer.Callbacks remoteRender;
   private SignalingParameters signalingParameters;
   private MediaConstraints pcConstraints;
-  private MediaConstraints videoConstraints;
+  private int videoWidth;
+  private int videoHeight;
+  private int videoFps;
   private MediaConstraints audioConstraints;
   private ParcelFileDescriptor aecDumpFileDescriptor;
   private MediaConstraints sdpMediaConstraints;
@@ -260,7 +262,7 @@ public class PeerConnectionClient {
     factory = null;
     peerConnection = null;
     preferIsac = false;
-    videoSourceStopped = false;
+    videoCapturerStopped = false;
     isError = false;
     queuedRemoteCandidates = null;
     localSdp = null; // either offer or answer SDP
@@ -399,42 +401,24 @@ public class PeerConnectionClient {
     }
     // Create video constraints if video call is enabled.
     if (videoCallEnabled) {
-      videoConstraints = new MediaConstraints();
-      int videoWidth = peerConnectionParameters.videoWidth;
-      int videoHeight = peerConnectionParameters.videoHeight;
+      videoWidth = peerConnectionParameters.videoWidth;
+      videoHeight = peerConnectionParameters.videoHeight;
+      videoFps = peerConnectionParameters.videoFps;
 
-      // If VP8 HW video encoder is supported and video resolution is not
-      // specified force it to HD.
-      if ((videoWidth == 0 || videoHeight == 0)
-          && peerConnectionParameters.videoCodecHwAcceleration
-          && MediaCodecVideoEncoder.isVp8HwSupported()) {
+      // If video resolution is not specified, default to HD.
+      if (videoWidth == 0 || videoHeight == 0) {
         videoWidth = HD_VIDEO_WIDTH;
         videoHeight = HD_VIDEO_HEIGHT;
       }
 
-      // Add video resolution constraints.
-      if (videoWidth > 0 && videoHeight > 0) {
-        videoWidth = Math.min(videoWidth, MAX_VIDEO_WIDTH);
-        videoHeight = Math.min(videoHeight, MAX_VIDEO_HEIGHT);
-        videoConstraints.mandatory.add(new KeyValuePair(
-            MIN_VIDEO_WIDTH_CONSTRAINT, Integer.toString(videoWidth)));
-        videoConstraints.mandatory.add(new KeyValuePair(
-            MAX_VIDEO_WIDTH_CONSTRAINT, Integer.toString(videoWidth)));
-        videoConstraints.mandatory.add(new KeyValuePair(
-            MIN_VIDEO_HEIGHT_CONSTRAINT, Integer.toString(videoHeight)));
-        videoConstraints.mandatory.add(new KeyValuePair(
-            MAX_VIDEO_HEIGHT_CONSTRAINT, Integer.toString(videoHeight)));
+      // If fps is not specified, default to 30.
+      if (videoFps == 0) {
+        videoFps = 30;
       }
 
-      // Add fps constraints.
-      int videoFps = peerConnectionParameters.videoFps;
-      if (videoFps > 0) {
-        videoFps = Math.min(videoFps, MAX_VIDEO_FPS);
-        videoConstraints.mandatory.add(new KeyValuePair(
-            MIN_VIDEO_FPS_CONSTRAINT, Integer.toString(videoFps)));
-        videoConstraints.mandatory.add(new KeyValuePair(
-            MAX_VIDEO_FPS_CONSTRAINT, Integer.toString(videoFps)));
-      }
+      videoWidth = Math.min(videoWidth, MAX_VIDEO_WIDTH);
+      videoHeight = Math.min(videoHeight, MAX_VIDEO_HEIGHT);
+      videoFps = Math.min(videoFps, MAX_VIDEO_FPS);
     }
 
     // Create audio constraints.
@@ -502,9 +486,6 @@ public class PeerConnectionClient {
     Log.d(TAG, "Create peer connection.");
 
     Log.d(TAG, "PCConstraints: " + pcConstraints.toString());
-    if (videoConstraints != null) {
-      Log.d(TAG, "VideoConstraints: " + videoConstraints.toString());
-    }
     queuedRemoteCandidates = new LinkedList<IceCandidate>();
 
     if (videoCallEnabled) {
@@ -592,6 +573,16 @@ public class PeerConnectionClient {
       audioSource.dispose();
       audioSource = null;
     }
+    Log.d(TAG, "Stopping capture.");
+    if (videoCapturer != null) {
+      try {
+        videoCapturer.stopCapture();
+      } catch(InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+      videoCapturer.dispose();
+      videoCapturer = null;
+    }
     Log.d(TAG, "Closing video source.");
     if (videoSource != null) {
       videoSource.dispose();
@@ -613,24 +604,8 @@ public class PeerConnectionClient {
     if (!videoCallEnabled) {
       return false;
     }
-    int minWidth = 0;
-    int minHeight = 0;
-    for (KeyValuePair keyValuePair : videoConstraints.mandatory) {
-      if (keyValuePair.getKey().equals("minWidth")) {
-        try {
-          minWidth = Integer.parseInt(keyValuePair.getValue());
-        } catch (NumberFormatException e) {
-          Log.e(TAG, "Can not parse video width from video constraints");
-        }
-      } else if (keyValuePair.getKey().equals("minHeight")) {
-        try {
-          minHeight = Integer.parseInt(keyValuePair.getValue());
-        } catch (NumberFormatException e) {
-          Log.e(TAG, "Can not parse video height from video constraints");
-        }
-      }
-    }
-    return minWidth * minHeight >= 1280 * 720;
+
+    return videoWidth * videoHeight >= 1280 * 720;
   }
 
   private void getStats() {
@@ -791,10 +766,12 @@ public class PeerConnectionClient {
     executor.execute(new Runnable() {
       @Override
       public void run() {
-        if (videoSource != null && !videoSourceStopped) {
+        if (videoCapturer != null && !videoCapturerStopped) {
           Log.d(TAG, "Stop video source.");
-          videoSource.stop();
-          videoSourceStopped = true;
+          try {
+            videoCapturer.stopCapture();
+          } catch (InterruptedException e) {}
+          videoCapturerStopped = true;
         }
       }
     });
@@ -804,10 +781,10 @@ public class PeerConnectionClient {
     executor.execute(new Runnable() {
       @Override
       public void run() {
-        if (videoSource != null && videoSourceStopped) {
+        if (videoCapturer != null && videoCapturerStopped) {
           Log.d(TAG, "Restart video source.");
-          videoSource.restart();
-          videoSourceStopped = false;
+          videoCapturer.startCapture(videoWidth, videoHeight, videoFps);
+          videoCapturerStopped = false;
         }
       }
     });
@@ -834,7 +811,8 @@ public class PeerConnectionClient {
   }
 
   private VideoTrack createVideoTrack(VideoCapturer capturer) {
-    videoSource = factory.createVideoSource(capturer, videoConstraints);
+    videoSource = factory.createVideoSource(capturer);
+    capturer.startCapture(videoWidth, videoHeight, videoFps);
 
     localVideoTrack = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
     localVideoTrack.setEnabled(renderVideo);

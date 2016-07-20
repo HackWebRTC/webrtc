@@ -23,9 +23,9 @@ import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 // Android specific implementation of VideoCapturer.
 // An instance of this class can be created by an application using
@@ -484,6 +484,7 @@ public class VideoCapturerAndroid implements
         eventsHandler.onCameraError("Camera stop timeout");
       }
     }
+    frameObserver.onCapturerStopped();
     Logging.d(TAG, "stopCapture done");
   }
 

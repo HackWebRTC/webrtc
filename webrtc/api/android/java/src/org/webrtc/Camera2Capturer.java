@@ -575,6 +575,7 @@ public class Camera2Capturer implements
       if (eventsHandler != null) {
         eventsHandler.onCameraClosed();
       }
+      capturerObserver.onCapturerStopped();
     }
   }
 

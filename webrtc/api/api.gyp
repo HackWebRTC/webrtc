@@ -45,6 +45,7 @@
             'android/jni/androidnetworkmonitor_jni.h',
             'android/jni/androidvideocapturer_jni.cc',
             'android/jni/androidvideocapturer_jni.h',
+            'android/jni/androidvideotracksource_jni.cc',
             'android/jni/classreferenceholder.cc',
             'android/jni/classreferenceholder.h',
             'android/jni/jni_helpers.cc',
@@ -56,6 +57,8 @@
             'android/jni/surfacetexturehelper_jni.h',
             'androidvideocapturer.cc',
             'androidvideocapturer.h',
+            'androidvideotracksource.cc',
+            'androidvideotracksource.h',
           ],
           'include_dirs': [
             '<(libyuv_dir)/include',

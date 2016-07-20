@@ -36,11 +36,6 @@ public class VideoSource extends MediaSource {
     restart(nativeSource);
   }
 
-  @Override
-  public void dispose() {
-    super.dispose();
-  }
-
   private static native void stop(long nativeSource);
   private static native void restart(long nativeSource);
 }

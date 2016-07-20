@@ -105,6 +105,11 @@ class CameraVideoCapturerTestFixtures {
     }
 
     @Override
+    public void onCapturerStopped() {
+      Logging.d(TAG, "onCapturerStopped");
+    }
+
+    @Override
     public void onByteBufferFrameCaptured(byte[] frame, int width, int height, int rotation,
         long timeStamp) {
       synchronized (frameLock) {

@@ -44,6 +44,7 @@
 #include <utility>
 
 #include "webrtc/api/androidvideocapturer.h"
+#include "webrtc/api/androidvideotracksource.h"
 #include "webrtc/api/android/jni/androidmediadecoder_jni.h"
 #include "webrtc/api/android/jni/androidmediaencoder_jni.h"
 #include "webrtc/api/android/jni/androidnetworkmonitor_jni.h"
@@ -55,6 +56,7 @@
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/api/rtpreceiverinterface.h"
 #include "webrtc/api/rtpsenderinterface.h"
+#include "webrtc/api/videosourceproxy.h"
 #include "webrtc/api/webrtcsdp.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
@@ -116,6 +118,7 @@ static char *field_trials_init_string = NULL;
 // Set in PeerConnectionFactory_initializeAndroidGlobals().
 static bool factory_static_initialized = false;
 static bool video_hw_acceleration_enabled = true;
+static jobject j_application_context = nullptr;
 
 // Return the (singleton) Java Enum object corresponding to |index|;
 // |state_class_fragment| is something like "MediaSource$State".
@@ -931,7 +934,7 @@ JOW(void, PeerConnection_freeObserver)(JNIEnv*, jclass, jlong j_p) {
 }
 
 JOW(void, MediaSource_free)(JNIEnv*, jclass, jlong j_p) {
-  CHECK_RELEASE(reinterpret_cast<MediaSourceInterface*>(j_p));
+  reinterpret_cast<rtc::RefCountInterface*>(j_p)->Release();
 }
 
 JOW(void, VideoRenderer_freeWrappedVideoRenderer)(JNIEnv*, jclass, jlong j_p) {
@@ -985,14 +988,20 @@ JOW(jlong, PeerConnectionFactory_nativeCreateObserver)(
   return (jlong)new PCOJava(jni, j_observer);
 }
 
-JOW(jboolean, PeerConnectionFactory_initializeAndroidGlobals)(
-    JNIEnv* jni, jclass, jobject context,
-    jboolean initialize_audio, jboolean initialize_video,
-    jboolean video_hw_acceleration) {
+JOW(jboolean, PeerConnectionFactory_initializeAndroidGlobals)
+(JNIEnv* jni,
+ jclass,
+ jobject context,
+ jboolean initialize_audio,
+ jboolean initialize_video,
+ jboolean video_hw_acceleration) {
   bool failure = false;
   video_hw_acceleration_enabled = video_hw_acceleration;
   AndroidNetworkMonitor::SetAndroidContext(jni, context);
   if (!factory_static_initialized) {
+    RTC_DCHECK(j_application_context == nullptr);
+    j_application_context = NewGlobalRef(jni, context);
+
     if (initialize_video) {
       failure |= AndroidVideoCapturerJni::SetAndroidObjects(jni, context);
     }
@@ -1075,6 +1084,8 @@ class OwnedFactoryAndThreads {
   }
 
   PeerConnectionFactoryInterface* factory() { return factory_; }
+  Thread* signaling_thread() { return signaling_thread_.get(); }
+  Thread* worker_thread() { return worker_thread_.get(); }
   WebRtcVideoEncoderFactory* encoder_factory() { return encoder_factory_; }
   WebRtcVideoDecoderFactory* decoder_factory() { return decoder_factory_; }
   rtc::NetworkMonitorFactory* network_monitor_factory() {
@@ -1268,6 +1279,49 @@ JOW(jlong, PeerConnectionFactory_nativeCreateVideoSource)(
   rtc::scoped_refptr<VideoTrackSourceInterface> source(
       factory->CreateVideoSource(capturer.release(), constraints.get()));
   return (jlong)source.release();
+}
+
+JOW(jlong, PeerConnectionFactory_nativeCreateVideoSource2)
+(JNIEnv* jni, jclass, jlong native_factory, jobject j_egl_context) {
+  OwnedFactoryAndThreads* factory =
+      reinterpret_cast<OwnedFactoryAndThreads*>(native_factory);
+
+  rtc::scoped_refptr<webrtc::AndroidVideoTrackSource> source(
+      new rtc::RefCountedObject<webrtc::AndroidVideoTrackSource>(
+          factory->signaling_thread(), jni, j_egl_context));
+  rtc::scoped_refptr<webrtc::VideoTrackSourceProxy> proxy_source =
+      webrtc::VideoTrackSourceProxy::Create(factory->signaling_thread(),
+                                            factory->worker_thread(), source);
+
+  return (jlong)proxy_source.release();
+}
+
+JOW(void, PeerConnectionFactory_nativeInitializeVideoCapturer)
+(JNIEnv* jni,
+ jclass,
+ jlong native_factory,
+ jobject j_video_capturer,
+ jlong native_source,
+ jobject j_frame_observer) {
+  LOG(LS_INFO) << "PeerConnectionFactory_nativeInitializeVideoCapturer";
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
+      factoryFromJava(native_factory));
+  auto proxy_source =
+      reinterpret_cast<webrtc::VideoTrackSourceProxy*>(native_source);
+  auto source = reinterpret_cast<webrtc::AndroidVideoTrackSource*>(
+      proxy_source->internal());
+  rtc::scoped_refptr<SurfaceTextureHelper> surface_texture_helper =
+      source->surface_texture_helper();
+  jni->CallVoidMethod(
+      j_video_capturer,
+      GetMethodID(jni, FindClass(jni, "org/webrtc/VideoCapturer"), "initialize",
+                  "(Lorg/webrtc/SurfaceTextureHelper;Landroid/content/"
+                  "Context;Lorg/webrtc/VideoCapturer$CapturerObserver;)V"),
+      surface_texture_helper
+          ? surface_texture_helper->GetJavaSurfaceTextureHelper()
+          : nullptr,
+      j_application_context, j_frame_observer);
+  CHECK_EXCEPTION(jni) << "error during VideoCapturer.initialize()";
 }
 
 JOW(jlong, PeerConnectionFactory_nativeCreateVideoTrack)(
