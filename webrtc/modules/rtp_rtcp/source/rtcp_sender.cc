@@ -12,6 +12,8 @@
 
 #include <string.h>  // memcpy
 
+#include <utility>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/logging.h"
@@ -435,6 +437,8 @@ bool RTCPSender::TimeToSendRTCPReport(bool sendKeyframeBeforeRTP) const {
 }
 
 std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildSR(const RtcpContext& ctx) {
+  // Timestamp shouldn't be estimated before first media frame.
+  RTC_DCHECK_GE(last_frame_capture_time_ms_, 0);
   // The timestamp of this RTCP packet should be estimated as the timestamp of
   // the frame being captured at this moment. We are calculating that
   // timestamp as the last frame's timestamp + the time since the last frame
@@ -766,6 +770,28 @@ int32_t RTCPSender::SendCompoundRTCP(
       LOG(LS_WARNING) << "Can't send rtcp if it is disabled.";
       return -1;
     }
+    // Add all flags as volatile. Non volatile entries will not be overwritten.
+    // All new volatile flags added will be consumed by the end of this call.
+    SetFlags(packet_types, true);
+
+    // Prevent sending streams to send SR before any media has been sent.
+    const bool can_calculate_rtp_timestamp = (last_frame_capture_time_ms_ >= 0);
+    if (!can_calculate_rtp_timestamp) {
+      bool consumed_sr_flag = ConsumeFlag(kRtcpSr);
+      bool consumed_report_flag = sending_ && ConsumeFlag(kRtcpReport);
+      bool sender_report = consumed_report_flag || consumed_sr_flag;
+      if (sender_report && AllVolatileFlagsConsumed()) {
+        // This call was for Sender Report and nothing else.
+        return 0;
+      }
+      if (sending_ && method_ == RtcpMode::kCompound) {
+        // Not allowed to send any RTCP packet without sender report.
+        return -1;
+      }
+    }
+
+    if (packet_type_counter_.first_packet_time_ms == -1)
+      packet_type_counter_.first_packet_time_ms = clock_->TimeInMilliseconds();
 
     // We need to send our NTP even if we haven't received any reports.
     uint32_t ntp_sec;
@@ -774,7 +800,7 @@ int32_t RTCPSender::SendCompoundRTCP(
     RtcpContext context(feedback_state, nack_size, nack_list, repeat, pictureID,
                         ntp_sec, ntp_frac);
 
-    PrepareReport(packet_types, feedback_state);
+    PrepareReport(feedback_state);
 
     std::unique_ptr<rtcp::RtcpPacket> packet_bye;
 
@@ -818,15 +844,7 @@ int32_t RTCPSender::SendCompoundRTCP(
   return bytes_sent == 0 ? -1 : 0;
 }
 
-void RTCPSender::PrepareReport(const std::set<RTCPPacketType>& packetTypes,
-                               const FeedbackState& feedback_state) {
-  // Add all flags as volatile. Non volatile entries will not be overwritten
-  // and all new volatile flags added will be consumed by the end of this call.
-  SetFlags(packetTypes, true);
-
-  if (packet_type_counter_.first_packet_time_ms == -1)
-    packet_type_counter_.first_packet_time_ms = clock_->TimeInMilliseconds();
-
+void RTCPSender::PrepareReport(const FeedbackState& feedback_state) {
   bool generate_report;
   if (IsFlagPresent(kRtcpSr) || IsFlagPresent(kRtcpRr)) {
     // Report type already explicitly set, don't automatically populate.

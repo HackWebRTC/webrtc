@@ -156,8 +156,7 @@ class RTCPSender {
   class RtcpContext;
 
   // Determine which RTCP messages should be sent and setup flags.
-  void PrepareReport(const std::set<RTCPPacketType>& packetTypes,
-                     const FeedbackState& feedback_state)
+  void PrepareReport(const FeedbackState& feedback_state)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
 
   bool AddReportBlock(const FeedbackState& feedback_state,

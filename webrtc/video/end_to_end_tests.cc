@@ -25,6 +25,7 @@
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rapid_resync_request.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
@@ -111,7 +112,7 @@ class EndToEndTest : public test::CallTest {
   void RespectsRtcpMode(RtcpMode rtcp_mode);
   void TestXrReceiverReferenceTimeReport(bool enable_rrtr);
   void TestSendsSetSsrcs(size_t num_ssrcs, bool send_single_ssrc_first);
-  void TestRtpStatePreservation(bool use_rtx);
+  void TestRtpStatePreservation(bool use_rtx, bool provoke_rtcpsr_before_rtp);
   void VerifyHistogramStats(bool use_rtx, bool use_red, bool screenshare);
   void VerifyNewVideoSendStreamsRespectNetworkState(
       MediaType network_to_bring_down,
@@ -2965,7 +2966,8 @@ TEST_F(EndToEndTest, DISABLED_RedundantPayloadsTransmittedOnAllSsrcs) {
   RunBaseTest(&test);
 }
 
-void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
+void EndToEndTest::TestRtpStatePreservation(bool use_rtx,
+                                            bool provoke_rtcpsr_before_rtp) {
   class RtpSequenceObserver : public test::RtpRtcpObserver {
    public:
     explicit RtpSequenceObserver(bool use_rtx)
@@ -2985,6 +2987,28 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
     }
 
    private:
+    void ValidateTimestampGap(uint32_t ssrc,
+                              uint32_t timestamp,
+                              bool only_padding)
+        EXCLUSIVE_LOCKS_REQUIRED(crit_) {
+      static const int32_t kMaxTimestampGap = kDefaultTimeoutMs * 90;
+      auto timestamp_it = last_observed_timestamp_.find(ssrc);
+      if (timestamp_it == last_observed_timestamp_.end()) {
+        EXPECT_FALSE(only_padding);
+        last_observed_timestamp_[ssrc] = timestamp;
+      } else {
+        // Verify timestamps are reasonably close.
+        uint32_t latest_observed = timestamp_it->second;
+        // Wraparound handling is unnecessary here as long as an int variable
+        // is used to store the result.
+        int32_t timestamp_gap = timestamp - latest_observed;
+        EXPECT_LE(std::abs(timestamp_gap), kMaxTimestampGap)
+            << "Gap in timestamps (" << latest_observed << " -> " << timestamp
+            << ") too large for SSRC: " << ssrc << ".";
+        timestamp_it->second = timestamp;
+      }
+    }
+
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
@@ -3021,24 +3045,9 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
         }
       }
 
-      static const int32_t kMaxTimestampGap = kDefaultTimeoutMs * 90;
-      auto timestamp_it = last_observed_timestamp_.find(ssrc);
-      if (timestamp_it == last_observed_timestamp_.end()) {
-        EXPECT_FALSE(only_padding);
-        last_observed_timestamp_[ssrc] = timestamp;
-      } else {
-        // Verify timestamps are reasonably close.
-        uint32_t latest_observed = timestamp_it->second;
-        // Wraparound handling is unnecessary here as long as an int variable
-        // is used to store the result.
-        int32_t timestamp_gap = timestamp - latest_observed;
-        EXPECT_LE(std::abs(timestamp_gap), kMaxTimestampGap)
-            << "Gap in timestamps (" << latest_observed << " -> "
-            << timestamp << ") too large for SSRC: " << ssrc << ".";
-        timestamp_it->second = timestamp;
-      }
-
       rtc::CritScope lock(&crit_);
+      ValidateTimestampGap(ssrc, timestamp, only_padding);
+
       // Wait for media packets on all ssrcs.
       if (!ssrc_observed_[ssrc] && !only_padding) {
         ssrc_observed_[ssrc] = true;
@@ -3046,6 +3055,19 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
           observation_complete_.Set();
       }
 
+      return SEND_PACKET;
+    }
+
+    Action OnSendRtcp(const uint8_t* packet, size_t length) override {
+      test::RtcpPacketParser rtcp_parser;
+      rtcp_parser.Parse(packet, length);
+      if (rtcp_parser.sender_report()->num_packets() > 0) {
+        uint32_t ssrc = rtcp_parser.sender_report()->Ssrc();
+        uint32_t rtcp_timestamp = rtcp_parser.sender_report()->RtpTimestamp();
+
+        rtc::CritScope lock(&crit_);
+        ValidateTimestampGap(ssrc, rtcp_timestamp, false);
+      }
       return SEND_PACKET;
     }
 
@@ -3118,6 +3140,15 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
     video_send_stream_ =
         sender_call_->CreateVideoSendStream(video_send_config_, one_stream);
     video_send_stream_->Start();
+    if (provoke_rtcpsr_before_rtp) {
+      // Rapid Resync Request forces sending RTCP Sender Report back.
+      // Using this request speeds up this test because then there is no need
+      // to wait for a second for periodic Sender Report.
+      rtcp::RapidResyncRequest force_send_sr_back_request;
+      rtc::Buffer packet = force_send_sr_back_request.Build();
+      static_cast<webrtc::test::DirectTransport&>(receive_transport)
+          .SendRtcp(packet.data(), packet.size());
+    }
     CreateFrameGeneratorCapturer();
     frame_generator_capturer_->Start();
 
@@ -3150,13 +3181,18 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx) {
 }
 
 TEST_F(EndToEndTest, RestartingSendStreamPreservesRtpState) {
-  TestRtpStatePreservation(false);
+  TestRtpStatePreservation(false, false);
 }
 
-// This test is flaky. See:
+// These tests are flaky. See:
 // https://bugs.chromium.org/p/webrtc/issues/detail?id=4332
 TEST_F(EndToEndTest, DISABLED_RestartingSendStreamPreservesRtpStatesWithRtx) {
-  TestRtpStatePreservation(true);
+  TestRtpStatePreservation(true, false);
+}
+
+TEST_F(EndToEndTest,
+       DISABLED_RestartingSendStreamKeepsRtpAndRtcpTimestampsSynced) {
+  TestRtpStatePreservation(true, true);
 }
 
 TEST_F(EndToEndTest, RespectsNetworkState) {

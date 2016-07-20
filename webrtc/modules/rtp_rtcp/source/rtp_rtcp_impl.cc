@@ -207,13 +207,8 @@ void ModuleRtpRtcpImpl::Process() {
     }
   }
 
-  // For sending streams, make sure to not send a SR before media has been sent.
-  if (rtcp_sender_.TimeToSendRTCPReport()) {
-    RTCPSender::FeedbackState state = GetFeedbackState();
-    // Prevent sending streams to send SR before any media has been sent.
-    if (!rtcp_sender_.Sending() || state.packets_sent > 0)
-      rtcp_sender_.SendRTCP(state, kRtcpReport);
-  }
+  if (rtcp_sender_.TimeToSendRTCPReport())
+    rtcp_sender_.SendRTCP(GetFeedbackState(), kRtcpReport);
 
   if (UpdateRTCPReceiveInformationTimers()) {
     // A receiver has timed out

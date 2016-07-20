@@ -221,6 +221,8 @@ class TestTransport : public Transport,
 namespace {
 static const uint32_t kSenderSsrc = 0x11111111;
 static const uint32_t kRemoteSsrc = 0x22222222;
+static const uint32_t kStartRtpTimestamp = 0x34567;
+static const uint32_t kRtpTimestamp = 0x45678;
 }
 
 class RtcpSenderTest : public ::testing::Test {
@@ -238,6 +240,8 @@ class RtcpSenderTest : public ::testing::Test {
                                       nullptr, nullptr, &test_transport_));
     rtcp_sender_->SetSSRC(kSenderSsrc);
     rtcp_sender_->SetRemoteSSRC(kRemoteSsrc);
+    rtcp_sender_->SetStartTimestamp(kStartRtpTimestamp);
+    rtcp_sender_->SetLastRtpTime(kRtpTimestamp, clock_.TimeInMilliseconds());
   }
 
   void InsertIncomingPacket(uint32_t remote_ssrc, uint16_t seq_num) {
@@ -285,6 +289,7 @@ TEST_F(RtcpSenderTest, SendSr) {
   const uint32_t kOctetCount = 0x23456;
   rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
   RTCPSender::FeedbackState feedback_state = rtp_rtcp_impl_->GetFeedbackState();
+  rtcp_sender_->SetSendingStatus(feedback_state, true);
   feedback_state.packets_sent = kPacketCount;
   feedback_state.media_bytes_sent = kOctetCount;
   uint32_t ntp_secs;
@@ -297,7 +302,41 @@ TEST_F(RtcpSenderTest, SendSr) {
   EXPECT_EQ(ntp_frac, parser()->sender_report()->NtpFrac());
   EXPECT_EQ(kPacketCount, parser()->sender_report()->PacketCount());
   EXPECT_EQ(kOctetCount, parser()->sender_report()->OctetCount());
+  EXPECT_EQ(kStartRtpTimestamp + kRtpTimestamp,
+            parser()->sender_report()->RtpTimestamp());
   EXPECT_EQ(0, parser()->report_block()->num_packets());
+}
+
+TEST_F(RtcpSenderTest, DoNotSendSrBeforeRtp) {
+  rtcp_sender_.reset(new RTCPSender(false, &clock_, receive_statistics_.get(),
+                                    nullptr, nullptr, &test_transport_));
+  rtcp_sender_->SetSSRC(kSenderSsrc);
+  rtcp_sender_->SetRemoteSSRC(kRemoteSsrc);
+  rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
+  rtcp_sender_->SetSendingStatus(feedback_state(), true);
+
+  // Sender Report shouldn't be send as an SR nor as a Report.
+  rtcp_sender_->SendRTCP(feedback_state(), kRtcpSr);
+  EXPECT_EQ(0, parser()->sender_report()->num_packets());
+  rtcp_sender_->SendRTCP(feedback_state(), kRtcpReport);
+  EXPECT_EQ(0, parser()->sender_report()->num_packets());
+  // Other packets (e.g. Pli) are allowed, even if useless.
+  EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpPli));
+  EXPECT_EQ(1, parser()->pli()->num_packets());
+}
+
+TEST_F(RtcpSenderTest, DoNotSendCompundBeforeRtp) {
+  rtcp_sender_.reset(new RTCPSender(false, &clock_, receive_statistics_.get(),
+                                    nullptr, nullptr, &test_transport_));
+  rtcp_sender_->SetSSRC(kSenderSsrc);
+  rtcp_sender_->SetRemoteSSRC(kRemoteSsrc);
+  rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);
+  rtcp_sender_->SetSendingStatus(feedback_state(), true);
+
+  // In compound mode no packets are allowed (e.g. Pli) because compound mode
+  // should start with Sender Report.
+  EXPECT_EQ(-1, rtcp_sender_->SendRTCP(feedback_state(), kRtcpPli));
+  EXPECT_EQ(0, parser()->pli()->num_packets());
 }
 
 TEST_F(RtcpSenderTest, SendRr) {
@@ -688,6 +727,7 @@ TEST_F(RtcpSenderTest, TmmbrIncludedInCompoundPacketIfEnabled) {
 
 TEST_F(RtcpSenderTest, SendTmmbn) {
   rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);
+  rtcp_sender_->SetSendingStatus(feedback_state(), true);
   std::vector<rtcp::TmmbItem> bounding_set;
   const uint32_t kBitrateKbps = 32768;
   const uint32_t kPacketOh = 40;
@@ -714,6 +754,7 @@ TEST_F(RtcpSenderTest, SendTmmbn) {
 // situation where this caused confusion.
 TEST_F(RtcpSenderTest, SendsTmmbnIfSetAndEmpty) {
   rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);
+  rtcp_sender_->SetSendingStatus(feedback_state(), true);
   std::vector<rtcp::TmmbItem> bounding_set;
   rtcp_sender_->SetTMMBN(&bounding_set);
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpSr));
@@ -768,6 +809,8 @@ TEST_F(RtcpSenderTest, ByeMustBeLast) {
                                     nullptr, nullptr, &mock_transport));
   rtcp_sender_->SetSSRC(kSenderSsrc);
   rtcp_sender_->SetRemoteSSRC(kRemoteSsrc);
+  rtcp_sender_->SetStartTimestamp(kStartRtpTimestamp);
+  rtcp_sender_->SetLastRtpTime(kRtpTimestamp, clock_.TimeInMilliseconds());
 
   // Set up XR VoIP metric to be included with BYE
   rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);

@@ -297,7 +297,9 @@ TEST_F(RtpRtcpImplTest, Rtt) {
   header.headerLength = 12;
   receiver_.receive_statistics_->IncomingPacket(header, 100, false);
 
-  // Sender module should send a SR.
+  // Send Frame before sending an SR.
+  SendFrame(&sender_, kBaseLayerTid);
+  // Sender module should send an SR.
   EXPECT_EQ(0, sender_.impl_->SendRTCP(kRtcpReport));
 
   // Receiver module should send a RR with a response to the last received SR.
@@ -343,6 +345,8 @@ TEST_F(RtpRtcpImplTest, RttForReceiverOnly) {
 
   // Sender module should send a response to the last received RTRR (DLRR).
   clock_.AdvanceTimeMilliseconds(1000);
+  // Send Frame before sending a SR.
+  SendFrame(&sender_, kBaseLayerTid);
   EXPECT_EQ(0, sender_.impl_->SendRTCP(kRtcpReport));
 
   // Verify RTT.
@@ -462,6 +466,8 @@ TEST_F(RtpRtcpImplTest, SendsInitialNackList) {
   const uint16_t kNackLength = 1;
   uint16_t nack_list[kNackLength] = {123};
   EXPECT_EQ(0U, sender_.RtcpSent().nack_packets);
+  // Send Frame before sending a compound RTCP that starts with SR.
+  SendFrame(&sender_, kBaseLayerTid);
   EXPECT_EQ(0, sender_.impl_->SendNACK(nack_list, kNackLength));
   EXPECT_EQ(1U, sender_.RtcpSent().nack_packets);
   EXPECT_THAT(sender_.LastNackListSent(), ElementsAre(123));
@@ -472,6 +478,8 @@ TEST_F(RtpRtcpImplTest, SendsExtendedNackList) {
   const uint16_t kNackLength = 1;
   uint16_t nack_list[kNackLength] = {123};
   EXPECT_EQ(0U, sender_.RtcpSent().nack_packets);
+  // Send Frame before sending a compound RTCP that starts with SR.
+  SendFrame(&sender_, kBaseLayerTid);
   EXPECT_EQ(0, sender_.impl_->SendNACK(nack_list, kNackLength));
   EXPECT_EQ(1U, sender_.RtcpSent().nack_packets);
   EXPECT_THAT(sender_.LastNackListSent(), ElementsAre(123));
@@ -495,6 +503,8 @@ TEST_F(RtpRtcpImplTest, ReSendsNackListAfterRttMs) {
   const uint16_t kNackLength = 2;
   uint16_t nack_list[kNackLength] = {123, 125};
   EXPECT_EQ(0U, sender_.RtcpSent().nack_packets);
+  // Send Frame before sending a compound RTCP that starts with SR.
+  SendFrame(&sender_, kBaseLayerTid);
   EXPECT_EQ(0, sender_.impl_->SendNACK(nack_list, kNackLength));
   EXPECT_EQ(1U, sender_.RtcpSent().nack_packets);
   EXPECT_THAT(sender_.LastNackListSent(), ElementsAre(123, 125));
