@@ -76,8 +76,8 @@ struct Comparator {
       return first->priority > second->priority;
 
     // Retransmissions go first.
-    if (second->retransmission && !first->retransmission)
-      return true;
+    if (second->retransmission != first->retransmission)
+      return second->retransmission;
 
     // Older frames have higher prio.
     if (first->capture_time_ms != second->capture_time_ms)

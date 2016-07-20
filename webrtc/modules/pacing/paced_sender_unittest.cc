@@ -128,7 +128,7 @@ class PacedSenderTest : public ::testing::Test {
     send_bucket_->InsertPacket(priority, ssrc, sequence_number, capture_time_ms,
                                size, retransmission);
     EXPECT_CALL(callback_, TimeToSendPacket(ssrc, sequence_number,
-                                            capture_time_ms, false, _))
+                                            capture_time_ms, retransmission, _))
         .Times(1)
         .WillRepeatedly(Return(true));
   }
@@ -491,6 +491,60 @@ TEST_F(PacedSenderTest, Priority) {
   clock_.AdvanceTimeMilliseconds(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
   send_bucket_->Process();
+}
+
+TEST_F(PacedSenderTest, RetransmissionPriority) {
+  uint32_t ssrc = 12345;
+  uint16_t sequence_number = 1234;
+  int64_t capture_time_ms = 45678;
+  int64_t capture_time_ms_retransmission = 56789;
+
+  // Due to the multiplicative factor we can send 5 packets during a send
+  // interval. (network capacity * multiplier / (8 bits per byte *
+  // (packet size * #send intervals per second)
+  const size_t packets_to_send_per_interval =
+      kTargetBitrateBps * PacedSender::kDefaultPaceMultiplier / (8 * 250 * 200);
+  send_bucket_->Process();
+  EXPECT_EQ(0u, send_bucket_->QueueSizePackets());
+
+  // Alternate retransmissions and normal packets.
+  for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
+    send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
+                               sequence_number++,
+                               capture_time_ms_retransmission, 250, true);
+    send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
+                               sequence_number++, capture_time_ms, 250, false);
+  }
+  EXPECT_EQ(2 * packets_to_send_per_interval, send_bucket_->QueueSizePackets());
+
+  // Expect all retransmissions to be sent out first despite having a later
+  // capture time.
+  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
+  EXPECT_CALL(callback_, TimeToSendPacket(_, _, _, false, _)).Times(0);
+  EXPECT_CALL(callback_, TimeToSendPacket(
+                             ssrc, _, capture_time_ms_retransmission, true, _))
+      .Times(packets_to_send_per_interval)
+      .WillRepeatedly(Return(true));
+
+  EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
+  clock_.AdvanceTimeMilliseconds(5);
+  EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
+  send_bucket_->Process();
+  EXPECT_EQ(packets_to_send_per_interval, send_bucket_->QueueSizePackets());
+
+  // Expect the remaining (non-retransmission) packets to be sent.
+  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
+  EXPECT_CALL(callback_, TimeToSendPacket(_, _, _, true, _)).Times(0);
+  EXPECT_CALL(callback_, TimeToSendPacket(ssrc, _, capture_time_ms, false, _))
+      .Times(packets_to_send_per_interval)
+      .WillRepeatedly(Return(true));
+
+  EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
+  clock_.AdvanceTimeMilliseconds(5);
+  EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
+  send_bucket_->Process();
+
+  EXPECT_EQ(0u, send_bucket_->QueueSizePackets());
 }
 
 TEST_F(PacedSenderTest, HighPrioDoesntAffectBudget) {
