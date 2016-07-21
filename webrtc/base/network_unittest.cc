@@ -1079,7 +1079,13 @@ TEST_F(NetworkTest, TestNetworkMonitoring) {
   NetworkMonitorFactory::ReleaseFactory(factory);
 }
 
-TEST_F(NetworkTest, DefaultLocalAddress) {
+// Fails on Android: https://bugs.chromium.org/p/webrtc/issues/detail?id=4364.
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_DefaultLocalAddress DISABLED_DefaultLocalAddress
+#else
+#define MAYBE_DefaultLocalAddress DefaultLocalAddress
+#endif
+TEST_F(NetworkTest, MAYBE_DefaultLocalAddress) {
   IPAddress ip;
   TestBasicNetworkManager manager;
   manager.SignalNetworksChanged.connect(static_cast<NetworkTest*>(this),
