@@ -150,8 +150,12 @@ void MessageQueueManager::ProcessAllMessageQueuesInternal() {
 //------------------------------------------------------------------
 // MessageQueue
 MessageQueue::MessageQueue(SocketServer* ss, bool init_queue)
-    : fStop_(false), fPeekKeep_(false),
-      dmsgq_next_num_(0), fInitialized_(false), fDestroyed_(false), ss_(ss) {
+    : fPeekKeep_(false),
+      dmsgq_next_num_(0),
+      fInitialized_(false),
+      fDestroyed_(false),
+      stop_(0),
+      ss_(ss) {
   RTC_DCHECK(ss);
   // Currently, MessageQueue holds a socket server, and is the base class for
   // Thread.  It seems like it makes more sense for Thread to hold the socket
@@ -223,16 +227,16 @@ void MessageQueue::WakeUpSocketServer() {
 }
 
 void MessageQueue::Quit() {
-  fStop_ = true;
+  AtomicOps::ReleaseStore(&stop_, 1);
   WakeUpSocketServer();
 }
 
 bool MessageQueue::IsQuitting() {
-  return fStop_;
+  return AtomicOps::AcquireLoad(&stop_) != 0;
 }
 
 void MessageQueue::Restart() {
-  fStop_ = false;
+  AtomicOps::ReleaseStore(&stop_, 0);
 }
 
 bool MessageQueue::Peek(Message *pmsg, int cmsWait) {
@@ -316,7 +320,7 @@ bool MessageQueue::Get(Message *pmsg, int cmsWait, bool process_io) {
       return true;
     }
 
-    if (fStop_)
+    if (IsQuitting())
       break;
 
     // Which is shorter, the delay wait or the asked wait?
@@ -357,7 +361,7 @@ void MessageQueue::Post(const Location& posted_from,
                         uint32_t id,
                         MessageData* pdata,
                         bool time_sensitive) {
-  if (fStop_)
+  if (IsQuitting())
     return;
 
   // Keep thread safe
@@ -413,7 +417,7 @@ void MessageQueue::DoDelayPost(const Location& posted_from,
                                MessageHandler* phandler,
                                uint32_t id,
                                MessageData* pdata) {
-  if (fStop_) {
+  if (IsQuitting()) {
     return;
   }
 

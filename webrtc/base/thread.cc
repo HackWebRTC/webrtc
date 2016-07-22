@@ -218,7 +218,7 @@ bool Thread::Start(Runnable* runnable) {
   ASSERT(!running());
   if (running()) return false;
 
-  Restart();  // reset fStop_ if the thread is being restarted
+  Restart();  // reset IsQuitting() if the thread is being restarted
 
   // Make sure that ThreadManager is created on the main thread before
   // we start a new thread.
@@ -346,7 +346,7 @@ void Thread::Send(const Location& posted_from,
                   MessageHandler* phandler,
                   uint32_t id,
                   MessageData* pdata) {
-  if (fStop_)
+  if (IsQuitting())
     return;
 
   // Sent messages are sent to the MessageHandler directly, in the context
