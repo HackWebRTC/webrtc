@@ -270,19 +270,6 @@
 }
 
 {
-   ignore_leak_when_alsa_hits_error
-   Memcheck:Leak
-   ...
-   fun:snd_device_name_hint
-   fun:_ZNK6webrtc20AudioDeviceLinuxALSA14GetDevicesInfoEibiPci
-   fun:_ZN6webrtc20AudioDeviceLinuxALSA16SetPlayoutDeviceEt
-   fun:_ZN6webrtc21AudioDeviceModuleImpl16SetPlayoutDeviceEt
-   fun:_ZN6webrtc11VoEBaseImpl4InitEPNS_17AudioDeviceModuleE
-   fun:_ZN11ViEAutoTest19ViEFileStandardTestEv
-   fun:_ZN12_GLOBAL__N_157ViEStandardIntegrationTest_RunsFileTestWithoutErrors_Test8TestBodyEv
-}
-
-{
    bug_270_1
    Memcheck:Uninitialized
    ...
