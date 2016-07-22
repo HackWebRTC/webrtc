@@ -98,6 +98,13 @@
     # Set to 1 to enable code coverage on Linux using the gcov library.
     'coverage%': 0,
 
+    # Set to "func", "block", "edge" for coverage generation.
+    # At unit test runtime set UBSAN_OPTIONS="coverage=1".
+    # It is recommend to set include_examples=0.
+    # Use llvm's sancov -html-report for human readable reports.
+    # See http://clang.llvm.org/docs/SanitizerCoverage.html .
+    'webrtc_sanitize_coverage%': "",
+
     # Remote bitrate estimator logging/plotting.
     'enable_bwe_test_logging%': 0,
 
@@ -398,6 +405,17 @@
                     '-fprofile-arcs' ],
         'ldflags': [ '--coverage' ],
         'link_settings': { 'libraries': [ '-lgcov' ] },
+      }],
+     ['webrtc_sanitize_coverage!=""', {
+        'cflags': [ '-fsanitize-coverage=<(webrtc_sanitize_coverage)' ],
+        'ldflags': [ '-fsanitize-coverage=<(webrtc_sanitize_coverage)' ],
+     }],
+     ['webrtc_sanitize_coverage!="" and OS=="mac"', {
+        'xcode_settings': {
+            'OTHER_CFLAGS': [
+               '-fsanitize-coverage=func',
+            ],
+         },
       }],
       ['os_posix==1', {
         # For access to standard POSIXish features, use WEBRTC_POSIX instead of

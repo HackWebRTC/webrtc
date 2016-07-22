@@ -64,6 +64,13 @@ declare_args() {
 
   rtc_restrict_logging = true
 
+  # Set to "func", "block", "edge" for coverage generation.
+  # At unit test runtime set UBSAN_OPTIONS="coverage=1".
+  # It is recommend to set include_examples=0.
+  # Use llvm's sancov -html-report for human readable reports.
+  # See http://clang.llvm.org/docs/SanitizerCoverage.html .
+  rtc_sanitize_coverage = ""
+
   # Enable libevent task queues on platforms that support it.
   if (is_win || is_mac || is_ios || is_nacl) {
     rtc_enable_libevent = false

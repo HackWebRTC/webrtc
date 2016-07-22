@@ -18,6 +18,8 @@ import("//third_party/protobuf/proto_library.gni")
 # target_defaults and direct_dependent_settings.
 config("common_inherited_config") {
   defines = []
+  cflags = []
+  ldflags = []
   if (build_with_mozilla) {
     defines += [ "WEBRTC_MOZILLA_BUILD" ]
   }
@@ -75,6 +77,12 @@ config("common_inherited_config") {
   }
   if (is_chromeos) {
     defines += [ "CHROMEOS" ]
+  }
+
+  if (rtc_sanitize_coverage != "") {
+    assert(is_clang, "sanitizer coverage requires clang")
+    cflags += [ "-fsanitize-coverage=${rtc_sanitize_coverage}" ]
+    ldflags += [ "-fsanitize-coverage=${rtc_sanitize_coverage}" ]
   }
 
   # TODO(GYP): Support these in GN.
