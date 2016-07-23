@@ -66,7 +66,9 @@ JOW_OBSERVER_METHOD(void, nativeCapturerStarted)
   LOG(LS_INFO) << "AndroidVideoTrackSourceObserve_nativeCapturerStarted";
   webrtc::AndroidVideoTrackSource* source =
       AndroidVideoTrackSourceFromJavaProxy(j_source);
-  source->SetState(webrtc::AndroidVideoTrackSource::SourceState::kLive);
+  source->SetState(j_success
+                       ? webrtc::AndroidVideoTrackSource::SourceState::kLive
+                       : webrtc::AndroidVideoTrackSource::SourceState::kEnded);
 }
 
 JOW_OBSERVER_METHOD(void, nativeCapturerStopped)
