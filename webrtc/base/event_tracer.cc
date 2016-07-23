@@ -197,7 +197,9 @@ class EventLogger final {
 
 static bool EventTracingThreadFunc(void* params) {
   static_cast<EventLogger*>(params)->Log();
-  return true;
+  // False indicates that the thread function has done its job and doesn't need
+  // to be restarted again. Log() runs its own internal loop.
+  return false;
 }
 
 static EventLogger* volatile g_event_logger = nullptr;
