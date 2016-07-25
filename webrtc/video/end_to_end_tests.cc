@@ -768,8 +768,7 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
           retransmission_payload_type_(GetPayloadType(enable_rtx, enable_red)),
           encoder_(VideoEncoder::Create(VideoEncoder::EncoderType::kVp8)),
           marker_bits_observed_(0),
-          retransmitted_timestamp_(0),
-          frame_retransmitted_(false) {}
+          retransmitted_timestamp_(0) {}
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
@@ -787,7 +786,6 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
       if (header.timestamp == retransmitted_timestamp_) {
         EXPECT_EQ(retransmission_ssrc_, header.ssrc);
         EXPECT_EQ(retransmission_payload_type_, header.payloadType);
-        frame_retransmitted_ = true;
         return SEND_PACKET;
       }
 
@@ -798,6 +796,18 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
         // This should be the only dropped packet.
         EXPECT_EQ(0u, retransmitted_timestamp_);
         retransmitted_timestamp_ = header.timestamp;
+        if (std::find(rendered_timestamps_.begin(), rendered_timestamps_.end(),
+                      retransmitted_timestamp_) != rendered_timestamps_.end()) {
+          // Frame was rendered before last packet was scheduled for sending.
+          // This is extremly rare but possible scenario because prober able to
+          // resend packet before it was send.
+          // TODO(danilchap): Remove this corner case when prober would not be
+          // able to sneak in between packet saved to history for resending and
+          // pacer notified about existance of that packet for sending.
+          // See https://bugs.chromium.org/p/webrtc/issues/detail?id=5540 for
+          // details.
+          observation_complete_.Set();
+        }
         return DROP_PACKET;
       }
 
@@ -806,10 +816,9 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
 
     void FrameCallback(VideoFrame* frame) override {
       rtc::CritScope lock(&crit_);
-      if (frame->timestamp() == retransmitted_timestamp_) {
-        EXPECT_TRUE(frame_retransmitted_);
+      if (frame->timestamp() == retransmitted_timestamp_)
         observation_complete_.Set();
-      }
+      rendered_timestamps_.push_back(frame->timestamp());
     }
 
     void ModifyVideoConfigs(
@@ -872,7 +881,7 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
     const std::string payload_name_;
     int marker_bits_observed_;
     uint32_t retransmitted_timestamp_ GUARDED_BY(&crit_);
-    bool frame_retransmitted_;
+    std::vector<uint32_t> rendered_timestamps_ GUARDED_BY(&crit_);
   } test(enable_rtx, enable_red);
 
   RunBaseTest(&test);
