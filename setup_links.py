@@ -33,6 +33,7 @@ DIRECTORIES = [
   'buildtools',
   'mojo',  # TODO(kjellander): Remove, see webrtc:5629.
   'testing',
+  'third_party/afl',
   'third_party/binutils',
   'third_party/boringssl',
   'third_party/colorama',

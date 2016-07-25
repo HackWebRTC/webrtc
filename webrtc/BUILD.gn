@@ -227,7 +227,7 @@ config("common_config") {
     ]
   }
 
-  if (use_libfuzzer || use_drfuzz) {
+  if (use_libfuzzer || use_drfuzz || use_afl) {
     # Used in Chromium's overrides to disable logging
     defines += [ "WEBRTC_UNSAFE_FUZZER_MODE" ]
   }
@@ -375,7 +375,7 @@ if (rtc_enable_protobuf) {
   }
 }
 
-if (use_libfuzzer || use_drfuzz) {
+if (use_libfuzzer || use_drfuzz || use_afl) {
   # This target is only here for gn to discover fuzzer build targets under
   # webrtc/test/fuzzers/.
   group("webrtc_fuzzers_dummy") {
