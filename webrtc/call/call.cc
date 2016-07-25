@@ -710,7 +710,9 @@ void Call::OnNetworkChanged(uint32_t target_bitrate_bps, uint8_t fraction_loss,
   bitrate_allocator_->OnNetworkChanged(target_bitrate_bps, fraction_loss,
                                        rtt_ms);
 
-  {
+  // Ignore updates where the bitrate is zero because the aggregate network
+  // state is down.
+  if (target_bitrate_bps > 0) {
     rtc::CritScope lock(&bitrate_crit_);
     // We only update these stats if we have send streams, and assume that
     // OnNetworkChanged is called roughly with a fixed frequency.
