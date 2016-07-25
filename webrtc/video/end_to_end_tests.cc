@@ -791,18 +791,10 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
         return SEND_PACKET;
       }
 
-      EXPECT_EQ(kVideoSendSsrcs[0], header.ssrc)
-          << "Unexpected packet length " << length
-          << ", header_length " << header.headerLength
-          << ", padding_length " << header.paddingLength
-          << ", timestamp " << header.timestamp
-          << ", expected timestamp " << retransmitted_timestamp_
-          << ", payload type " << static_cast<int>(header.payloadType);
-      EXPECT_EQ(payload_type_, header.payloadType);
-
       // Found the final packet of the frame to inflict loss to, drop this and
       // expect a retransmission.
-      if (header.markerBit && ++marker_bits_observed_ == kDroppedFrameNumber) {
+      if (header.payloadType == payload_type_ && header.markerBit &&
+          ++marker_bits_observed_ == kDroppedFrameNumber) {
         // This should be the only dropped packet.
         EXPECT_EQ(0u, retransmitted_timestamp_);
         retransmitted_timestamp_ = header.timestamp;
