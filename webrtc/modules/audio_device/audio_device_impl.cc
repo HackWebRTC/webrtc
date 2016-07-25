@@ -658,7 +658,6 @@ bool AudioDeviceModuleImpl::MicrophoneIsInitialized() const {
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceModuleImpl::MaxSpeakerVolume(uint32_t* maxVolume) const {
-  LOG(INFO) << __FUNCTION__;
   CHECK_INITIALIZED();
 
   uint32_t maxVol(0);
@@ -668,7 +667,6 @@ int32_t AudioDeviceModuleImpl::MaxSpeakerVolume(uint32_t* maxVolume) const {
   }
 
   *maxVolume = maxVol;
-  LOG(INFO) << "output: " << *maxVolume;
   return (0);
 }
 
@@ -677,7 +675,6 @@ int32_t AudioDeviceModuleImpl::MaxSpeakerVolume(uint32_t* maxVolume) const {
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceModuleImpl::MinSpeakerVolume(uint32_t* minVolume) const {
-  LOG(INFO) << __FUNCTION__;
   CHECK_INITIALIZED();
 
   uint32_t minVol(0);
@@ -687,7 +684,6 @@ int32_t AudioDeviceModuleImpl::MinSpeakerVolume(uint32_t* minVolume) const {
   }
 
   *minVolume = minVol;
-  LOG(INFO) << "output: " << *minVolume;
   return (0);
 }
 
@@ -1147,7 +1143,6 @@ int32_t AudioDeviceModuleImpl::RecordingIsAvailable(bool* available) {
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceModuleImpl::MaxMicrophoneVolume(uint32_t* maxVolume) const {
-  LOG(INFO) << __FUNCTION__;
   CHECK_INITIALIZED();
 
   uint32_t maxVol(0);
@@ -1157,7 +1152,6 @@ int32_t AudioDeviceModuleImpl::MaxMicrophoneVolume(uint32_t* maxVolume) const {
   }
 
   *maxVolume = maxVol;
-  LOG(INFO) << "output: " << *maxVolume;
   return (0);
 }
 
@@ -1166,7 +1160,6 @@ int32_t AudioDeviceModuleImpl::MaxMicrophoneVolume(uint32_t* maxVolume) const {
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceModuleImpl::MinMicrophoneVolume(uint32_t* minVolume) const {
-  LOG(INFO) << __FUNCTION__;
   CHECK_INITIALIZED();
 
   uint32_t minVol(0);
@@ -1176,7 +1169,6 @@ int32_t AudioDeviceModuleImpl::MinMicrophoneVolume(uint32_t* minVolume) const {
   }
 
   *minVolume = minVol;
-  LOG(INFO) << "output: " << *minVolume;
   return (0);
 }
 
@@ -1336,6 +1328,9 @@ int32_t AudioDeviceModuleImpl::SetRecordingDevice(WindowsDeviceType device) {
 int32_t AudioDeviceModuleImpl::InitPlayout() {
   LOG(INFO) << __FUNCTION__;
   CHECK_INITIALIZED();
+  if (PlayoutIsInitialized()) {
+    return 0;
+  }
   _audioDeviceBuffer.InitPlayout();
   int32_t result = _ptrAudioDevice->InitPlayout();
   LOG(INFO) << "output: " << result;
@@ -1351,6 +1346,9 @@ int32_t AudioDeviceModuleImpl::InitPlayout() {
 int32_t AudioDeviceModuleImpl::InitRecording() {
   LOG(INFO) << __FUNCTION__;
   CHECK_INITIALIZED();
+  if (RecordingIsInitialized()) {
+    return 0;
+  }
   _audioDeviceBuffer.InitRecording();
   int32_t result = _ptrAudioDevice->InitRecording();
   LOG(INFO) << "output: " << result;
@@ -1386,6 +1384,9 @@ bool AudioDeviceModuleImpl::RecordingIsInitialized() const {
 int32_t AudioDeviceModuleImpl::StartPlayout() {
   LOG(INFO) << __FUNCTION__;
   CHECK_INITIALIZED();
+  if (Playing()) {
+    return 0;
+  }
   int32_t result = _ptrAudioDevice->StartPlayout();
   LOG(INFO) << "output: " << result;
   RTC_HISTOGRAM_BOOLEAN("WebRTC.Audio.StartPlayoutSuccess",
@@ -1424,6 +1425,9 @@ bool AudioDeviceModuleImpl::Playing() const {
 int32_t AudioDeviceModuleImpl::StartRecording() {
   LOG(INFO) << __FUNCTION__;
   CHECK_INITIALIZED();
+  if (Recording()) {
+    return 0;
+  }
   int32_t result = _ptrAudioDevice->StartRecording();
   LOG(INFO) << "output: " << result;
   RTC_HISTOGRAM_BOOLEAN("WebRTC.Audio.StartRecordingSuccess",
