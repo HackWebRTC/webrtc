@@ -204,6 +204,12 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         break;
       }
       case ParsedRtcEventLog::BWE_PACKET_LOSS_EVENT: {
+        BwePacketLossEvent bwe_update;
+        bwe_update.timestamp = parsed_log_.GetTimestamp(i);
+        parsed_log_.GetBwePacketLossEvent(i, &bwe_update.new_bitrate,
+                                             &bwe_update.fraction_loss,
+                                             &bwe_update.expected_packets);
+        bwe_loss_updates_.push_back(bwe_update);
         break;
       }
       case ParsedRtcEventLog::BWE_PACKET_DELAY_EVENT: {
@@ -556,6 +562,20 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
     plot->series.back().label = "Outgoing bitrate";
   }
   plot->series.back().style = LINE_GRAPH;
+
+  // Overlay the send-side bandwidth estimate over the outgoing bitrate.
+  if (desired_direction == kOutgoingPacket) {
+    plot->series.push_back(TimeSeries());
+    for (auto& bwe_update : bwe_loss_updates_) {
+      float x =
+          static_cast<float>(bwe_update.timestamp - begin_time_) / 1000000;
+      float y = static_cast<float>(bwe_update.new_bitrate) / 1000;
+      max_y = std::max(max_y, y);
+      plot->series.back().points.emplace_back(x, y);
+    }
+    plot->series.back().label = "Loss-based estimate";
+    plot->series.back().style = LINE_GRAPH;
+  }
 
   plot->xaxis_min = kDefaultXMin;
   plot->xaxis_max = (end_time_ - begin_time_) / 1000000 * kXMargin;
