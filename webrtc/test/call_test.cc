@@ -62,8 +62,8 @@ void CallTest::RunBaseTest(BaseTest* test) {
     CreateReceiverCall(recv_config);
   }
   test->OnCallsCreated(sender_call_.get(), receiver_call_.get());
-  send_transport_.reset(test->CreateSendTransport(sender_call_.get()));
   receive_transport_.reset(test->CreateReceiveTransport());
+  send_transport_.reset(test->CreateSendTransport(sender_call_.get()));
 
   if (test->ShouldCreateReceivers()) {
     send_transport_->SetReceiver(receiver_call_->Receiver());

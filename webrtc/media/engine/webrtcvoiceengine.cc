@@ -1136,6 +1136,14 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
       stream_ = nullptr;
     }
     config_.rtp.extensions = extensions;
+    if (webrtc::field_trial::FindFullName("WebRTC-AdaptAudioBitrate") ==
+        "Enabled") {
+      // TODO(mflodman): Keep testing this and set proper values.
+      // Note: This is an early experiment currently only supported by Opus.
+      config_.min_bitrate_kbps = kOpusMinBitrate;
+      config_.max_bitrate_kbps = kOpusBitrateFb;
+    }
+
     RTC_DCHECK(!stream_);
     stream_ = call_->CreateAudioSendStream(config_);
     RTC_CHECK(stream_);

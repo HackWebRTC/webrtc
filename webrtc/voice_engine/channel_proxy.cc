@@ -158,6 +158,11 @@ bool ChannelProxy::SendTelephoneEventOutband(int event, int duration_ms) {
   return channel()->SendTelephoneEventOutband(event, duration_ms) == 0;
 }
 
+void ChannelProxy::SetBitrate(int bitrate_bps) {
+  // May be called on different threads and needs to be handled by the channel.
+  channel()->SetBitRate(bitrate_bps);
+}
+
 void ChannelProxy::SetSink(std::unique_ptr<AudioSinkInterface> sink) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   channel()->SetSink(std::move(sink));

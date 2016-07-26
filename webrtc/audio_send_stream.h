@@ -88,6 +88,12 @@ class AudioSendStream {
     // TODO(solenberg): Implement, once we configure codecs through the new API.
     // std::unique_ptr<AudioEncoder> encoder;
     int cng_payload_type = -1;  // pt, or -1 to disable Comfort Noise Generator.
+
+    // Bitrate limits used for variable audio bitrate streams. Set both to -1 to
+    // disable audio bitrate adaptation.
+    // Note: This is still an experimental feature and not ready for real usage.
+    int min_bitrate_kbps = -1;
+    int max_bitrate_kbps = -1;
   };
 
   // Starts stream activity.
