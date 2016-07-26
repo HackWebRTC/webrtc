@@ -1418,7 +1418,7 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_G722_stereo_20ms) {
 }
 #endif
 
-TEST_F(AcmSenderBitExactnessOldApi, Opus_stereo_20ms) {
+TEST_F(AcmSenderBitExactnessOldApi, DISABLED_Opus_stereo_20ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 2, 120, 960, 960));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "855041f2490b887302bce9d544731849",
@@ -1433,7 +1433,7 @@ TEST_F(AcmSenderBitExactnessOldApi, Opus_stereo_20ms) {
       50, test::AcmReceiveTestOldApi::kStereoOutput);
 }
 
-TEST_F(AcmSenderBitExactnessOldApi, Opus_stereo_20ms_voip) {
+TEST_F(AcmSenderBitExactnessOldApi, DISABLED_Opus_stereo_20ms_voip) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 2, 120, 960, 960));
   // If not set, default will be kAudio in case of stereo.
   EXPECT_EQ(0, send_test_->acm()->SetOpusApplication(kVoip));
@@ -1621,7 +1621,7 @@ TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_50kbps) {
 #endif // WEBRTC_ANDROID
 }
 
-TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_100kbps) {
+TEST_F(AcmChangeBitRateOldApi, DISABLED_Opus_48khz_20ms_100kbps) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
 #if defined(WEBRTC_ANDROID)
   Run(100000, 32200, 51480);
