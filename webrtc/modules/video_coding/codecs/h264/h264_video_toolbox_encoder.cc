@@ -28,6 +28,11 @@
 
 namespace internal {
 
+// The ratio between kVTCompressionPropertyKey_DataRateLimits and
+// kVTCompressionPropertyKey_AverageBitRate. The data rate limit is set higher
+// than the average bit rate to avoid undershooting the target.
+const float kLimitToAverageBitRateFactor = 1.5f;
+
 // Convenience function for creating a dictionary.
 inline CFDictionaryRef CreateCFDictionary(CFTypeRef* keys,
                                           CFTypeRef* values,
@@ -519,11 +524,12 @@ void H264VideoToolboxEncoder::SetEncoderBitrateBps(uint32_t bitrate_bps) {
                                    bitrate_bps);
 
     // TODO(tkchin): Add a helper method to set array value.
-    int64_t bytes_per_second_value = bitrate_bps / 8;
+    int64_t data_limit_bytes_per_second_value = static_cast<int64_t>(
+        bitrate_bps * internal::kLimitToAverageBitRateFactor / 8);
     CFNumberRef bytes_per_second =
         CFNumberCreate(kCFAllocatorDefault,
                        kCFNumberSInt64Type,
-                       &bytes_per_second_value);
+                       &data_limit_bytes_per_second_value);
     int64_t one_second_value = 1;
     CFNumberRef one_second =
         CFNumberCreate(kCFAllocatorDefault,
