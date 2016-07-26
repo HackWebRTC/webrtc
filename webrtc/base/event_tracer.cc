@@ -239,7 +239,6 @@ void SetupInternalTracer() {
   RTC_CHECK(rtc::AtomicOps::CompareAndSwapPtr(
                 &g_event_logger, static_cast<EventLogger*>(nullptr),
                 new EventLogger()) == nullptr);
-  g_event_logger = new EventLogger();
   webrtc::SetupEventTracer(InternalGetCategoryEnabled, InternalAddTraceEvent);
 }
 
