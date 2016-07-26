@@ -1084,4 +1084,38 @@ if (rtc_include_tests) {
       deps += [ ":rtc_event_log_source" ]
     }
   }
+
+  source_set("neteq_test_tools") {
+    testonly = true
+    sources = [
+      "neteq/test/NETEQTEST_DummyRTPpacket.cc",
+      "neteq/test/NETEQTEST_DummyRTPpacket.h",
+      "neteq/test/NETEQTEST_RTPpacket.cc",
+      "neteq/test/NETEQTEST_RTPpacket.h",
+    ]
+
+    deps = [
+      ":cng",
+      ":g711",
+      ":g722",
+      ":ilbc",
+      ":isac",
+      ":pcm16b",
+      "../..:webrtc_common",
+      "//testing/gtest",
+    ]
+
+    include_dirs = [
+      "neteq/include",
+      "neteq/test",
+      "../../",
+    ]
+
+    if (is_win) {
+      cflags = [
+        # Disable warnings to enable Win64 build, issue 1323.
+        "/wd4267",  # size_t to int truncation
+      ]
+    }
+  }
 }
