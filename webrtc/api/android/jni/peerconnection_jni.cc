@@ -1726,7 +1726,10 @@ JOW(jobject, PeerConnection_createDataChannel)(
   // vararg parameter as 64-bit and reading memory that doesn't belong to the
   // 32-bit parameter.
   jlong nativeChannelPtr = jlongFromPointer(channel.get());
-  RTC_CHECK(nativeChannelPtr) << "Failed to create DataChannel";
+  if (!nativeChannelPtr) {
+    LOG(LS_ERROR) << "Failed to create DataChannel";
+    return nullptr;
+  }
   jclass j_data_channel_class = FindClass(jni, "org/webrtc/DataChannel");
   jmethodID j_data_channel_ctor = GetMethodID(
       jni, j_data_channel_class, "<init>", "(J)V");
