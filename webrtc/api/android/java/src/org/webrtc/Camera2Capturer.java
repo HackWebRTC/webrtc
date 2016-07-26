@@ -267,6 +267,7 @@ public class Camera2Capturer implements
 
     Logging.d(TAG, "Close and release.");
     setCameraState(CameraState.STOPPING);
+    capturerObserver.onCapturerStopped();
 
     // Remove all pending Runnables posted from |this|.
     cameraThreadHandler.removeCallbacksAndMessages(this /* token */);
@@ -575,7 +576,6 @@ public class Camera2Capturer implements
       if (eventsHandler != null) {
         eventsHandler.onCameraClosed();
       }
-      capturerObserver.onCapturerStopped();
     }
   }
 
@@ -861,6 +861,11 @@ public class Camera2Capturer implements
   public void onTextureFrameAvailable(
       int oesTextureId, float[] transformMatrix, long timestampNs) {
     checkIsOnCameraThread();
+
+    if (cameraState != CameraState.RUNNING) {
+      Logging.d(TAG, "Texture frame received while camera was not running.");
+      return;
+    }
 
     if (eventsHandler != null && !firstFrameReported) {
       eventsHandler.onFirstFrameAvailable();

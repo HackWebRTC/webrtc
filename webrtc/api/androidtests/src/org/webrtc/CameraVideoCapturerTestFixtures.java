@@ -22,6 +22,10 @@ import java.util.concurrent.CountDownLatch;
 
 class CameraVideoCapturerTestFixtures {
   static final String TAG = "CameraVideoCapturerTestFixtures";
+  // Default values used for starting capturing
+  static final int DEFAULT_WIDTH = 640;
+  static final int DEFAULT_HEIGHT = 480;
+  static final int DEFAULT_FPS = 15;
 
   static private class RendererCallbacks implements VideoRenderer.Callbacks {
     private int framesRendered = 0;
@@ -344,6 +348,11 @@ class CameraVideoCapturerTestFixtures {
   }
 
   private void disposeCapturer(CapturerInstance instance) {
+    try {
+      instance.capturer.stopCapture();
+    } catch (InterruptedException e) {
+      // TODO(sakal): Remove this once stopCapture no longer throws InterruptedException
+    }
     instance.capturer.dispose();
     instance.surfaceTextureHelper.returnTextureFrame();
     instance.surfaceTextureHelper.dispose();
@@ -352,8 +361,8 @@ class CameraVideoCapturerTestFixtures {
   private VideoTrackWithRenderer createVideoTrackWithRenderer(CameraVideoCapturer capturer,
       VideoRenderer.Callbacks rendererCallbacks) {
     VideoTrackWithRenderer videoTrackWithRenderer = new VideoTrackWithRenderer();
-    videoTrackWithRenderer.source =
-        peerConnectionFactory.createVideoSource(capturer, new MediaConstraints());
+    videoTrackWithRenderer.source = peerConnectionFactory.createVideoSource(capturer);
+    capturer.startCapture(DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_FPS);
     videoTrackWithRenderer.track =
         peerConnectionFactory.createVideoTrack("dummy", videoTrackWithRenderer.source);
     videoTrackWithRenderer.track.addRenderer(new VideoRenderer(rendererCallbacks));
@@ -402,8 +411,8 @@ class CameraVideoCapturerTestFixtures {
     final VideoTrackWithRenderer videoTrackWithRenderer =
         createVideoTrackWithRenderer(capturerInstance.capturer);
     assertTrue(videoTrackWithRenderer.rendererCallbacks.waitForNextFrameToRender() > 0);
-    disposeVideoTrackWithRenderer(videoTrackWithRenderer);
     disposeCapturer(capturerInstance);
+    disposeVideoTrackWithRenderer(videoTrackWithRenderer);
   }
 
   // Test methods
@@ -466,8 +475,8 @@ class CameraVideoCapturerTestFixtures {
     assertTrue(cameraSwitchSuccessful[0]);
     // Ensure that frames are received.
     assertTrue(videoTrackWithRenderer.rendererCallbacks.waitForNextFrameToRender() > 0);
-    disposeVideoTrackWithRenderer(videoTrackWithRenderer);
     disposeCapturer(capturerInstance);
+    disposeVideoTrackWithRenderer(videoTrackWithRenderer);
   }
 
   public void cameraEventsInvoked() throws InterruptedException {
@@ -493,8 +502,8 @@ class CameraVideoCapturerTestFixtures {
 
     // We can't change |capturer| at this point, but we should not crash.
     capturerInstance.capturer.switchCamera(null /* switchEventsHandler */);
-    capturerInstance.capturer.onOutputFormatRequest(640, 480, 15);
-    capturerInstance.capturer.changeCaptureFormat(640, 480, 15);
+    capturerInstance.capturer.onOutputFormatRequest(DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_FPS);
+    capturerInstance.capturer.changeCaptureFormat(DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_FPS);
 
     disposeCapturer(capturerInstance);
   }
@@ -507,15 +516,15 @@ class CameraVideoCapturerTestFixtures {
     assertTrue(videoTrackWithRenderer.rendererCallbacks.waitForNextFrameToRender() > 0);
     assertEquals(MediaSource.State.LIVE, videoTrackWithRenderer.source.state());
 
-    videoTrackWithRenderer.source.stop();
+    capturerInstance.capturer.stopCapture();
     assertEquals(MediaSource.State.ENDED, videoTrackWithRenderer.source.state());
 
-    videoTrackWithRenderer.source.restart();
+    startCapture(capturerInstance);
     assertTrue(videoTrackWithRenderer.rendererCallbacks.waitForNextFrameToRender() > 0);
     assertEquals(MediaSource.State.LIVE, videoTrackWithRenderer.source.state());
 
-    disposeVideoTrackWithRenderer(videoTrackWithRenderer);
     disposeCapturer(capturerInstance);
+    disposeVideoTrackWithRenderer(videoTrackWithRenderer);
   }
 
   public void startStopWithDifferentResolutions() throws InterruptedException {
@@ -585,8 +594,8 @@ class CameraVideoCapturerTestFixtures {
     capturerInstance.capturer.stopCapture();
 
     // Dispose everything.
-    disposeVideoTrackWithRenderer(videoTrackWithRenderer);
     disposeCapturer(capturerInstance);
+    disposeVideoTrackWithRenderer(videoTrackWithRenderer);
 
     // Return the frame(s), on a different thread out of spite.
     final List<I420Frame> pendingFrames =
@@ -643,8 +652,8 @@ class CameraVideoCapturerTestFixtures {
           &&  videoTrackWithRenderer.rendererCallbacks.frameHeight() == scaledHeight);
     } while (!gotExpectedResolution && numberOfInspectedFrames < 30);
 
-    disposeVideoTrackWithRenderer(videoTrackWithRenderer);
     disposeCapturer(capturerInstance);
+    disposeVideoTrackWithRenderer(videoTrackWithRenderer);
 
     assertTrue(gotExpectedResolution);
   }
