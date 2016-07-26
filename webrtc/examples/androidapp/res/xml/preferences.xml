@@ -123,6 +123,18 @@
             android:title="@string/pref_disable_built_in_aec_title"
             android:dialogTitle="@string/pref_disable_built_in_aec_dlg"
             android:defaultValue="@string/pref_disable_built_in_aec_default" />
+
+        <CheckBoxPreference
+            android:key="@string/pref_disable_built_in_agc_key"
+            android:title="@string/pref_disable_built_in_agc_title"
+            android:dialogTitle="@string/pref_disable_built_in_agc_dlg"
+            android:defaultValue="@string/pref_disable_built_in_agc_default" />
+
+        <CheckBoxPreference
+            android:key="@string/pref_disable_built_in_ns_key"
+            android:title="@string/pref_disable_built_in_ns_title"
+            android:dialogTitle="@string/pref_disable_built_in_ns_dlg"
+            android:defaultValue="@string/pref_disable_built_in_ns_default" />
     </PreferenceCategory>
 
     <PreferenceCategory

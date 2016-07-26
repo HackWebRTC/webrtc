@@ -283,7 +283,9 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
             false, /* noAudioProcessing */
             false, /* aecDump */
             false /* useOpenSLES */,
-            false /* disableBuiltInAEC */);
+            false /* disableBuiltInAEC */,
+            false /* disableBuiltInAGC */,
+            false /* disableBuiltInNS */);
     return peerConnectionParameters;
   }
 
@@ -311,7 +313,9 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
             false, /* noAudioProcessing */
             false, /* aecDump */
             false /* useOpenSLES */,
-            false /* disableBuiltInAEC */);
+            false /* disableBuiltInAEC */,
+            false /* disableBuiltInAGC */,
+            false /* disableBuiltInNS */);
     return peerConnectionParameters;
   }
 

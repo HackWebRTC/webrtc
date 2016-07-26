@@ -44,6 +44,8 @@ public class SettingsActivity extends Activity
   private String keyprefAecDump;
   private String keyprefOpenSLES;
   private String keyprefDisableBuiltInAEC;
+  private String keyprefDisableBuiltInAGC;
+  private String keyprefDisableBuiltInNS;
 
   private String keyPrefRoomServerUrl;
   private String keyPrefDisplayHud;
@@ -70,6 +72,8 @@ public class SettingsActivity extends Activity
     keyprefAecDump = getString(R.string.pref_aecdump_key);
     keyprefOpenSLES = getString(R.string.pref_opensles_key);
     keyprefDisableBuiltInAEC = getString(R.string.pref_disable_built_in_aec_key);
+    keyprefDisableBuiltInAGC = getString(R.string.pref_disable_built_in_agc_key);
+    keyprefDisableBuiltInNS = getString(R.string.pref_disable_built_in_ns_key);
 
     keyPrefRoomServerUrl = getString(R.string.pref_room_server_url_key);
     keyPrefDisplayHud = getString(R.string.pref_displayhud_key);
@@ -109,6 +113,8 @@ public class SettingsActivity extends Activity
     updateSummaryB(sharedPreferences, keyprefAecDump);
     updateSummaryB(sharedPreferences, keyprefOpenSLES);
     updateSummaryB(sharedPreferences, keyprefDisableBuiltInAEC);
+    updateSummaryB(sharedPreferences, keyprefDisableBuiltInAGC);
+    updateSummaryB(sharedPreferences, keyprefDisableBuiltInNS);
 
     updateSummary(sharedPreferences, keyPrefRoomServerUrl);
     updateSummaryB(sharedPreferences, keyPrefDisplayHud);
@@ -131,6 +137,24 @@ public class SettingsActivity extends Activity
 
       disableBuiltInAECPreference.setSummary(getString(R.string.pref_built_in_aec_not_available));
       disableBuiltInAECPreference.setEnabled(false);
+    }
+
+    WebRtcAudioUtils.setWebRtcBasedAutomaticGainControl(false);
+    if (!WebRtcAudioUtils.isAutomaticGainControlSupported()) {
+      Preference disableBuiltInAGCPreference =
+          settingsFragment.findPreference(keyprefDisableBuiltInAGC);
+
+      disableBuiltInAGCPreference.setSummary(getString(R.string.pref_built_in_agc_not_available));
+      disableBuiltInAGCPreference.setEnabled(false);
+    }
+
+    WebRtcAudioUtils.setWebRtcBasedNoiseSuppressor(false);
+    if (!WebRtcAudioUtils.isNoiseSuppressorSupported()) {
+      Preference disableBuiltInNSPreference =
+          settingsFragment.findPreference(keyprefDisableBuiltInNS);
+
+      disableBuiltInNSPreference.setSummary(getString(R.string.pref_built_in_ns_not_available));
+      disableBuiltInNSPreference.setEnabled(false);
     }
   }
 

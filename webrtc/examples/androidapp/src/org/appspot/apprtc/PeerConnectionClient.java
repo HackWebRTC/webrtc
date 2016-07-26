@@ -160,6 +160,8 @@ public class PeerConnectionClient {
     public final boolean aecDump;
     public final boolean useOpenSLES;
     public final boolean disableBuiltInAEC;
+    public final boolean disableBuiltInAGC;
+    public final boolean disableBuiltInNS;
 
     public PeerConnectionParameters(
         boolean videoCallEnabled, boolean loopback, boolean tracing, boolean useCamera2,
@@ -167,7 +169,7 @@ public class PeerConnectionClient {
         int videoStartBitrate, String videoCodec, boolean videoCodecHwAcceleration,
         boolean captureToTexture, int audioStartBitrate, String audioCodec,
         boolean noAudioProcessing, boolean aecDump, boolean useOpenSLES,
-        boolean disableBuiltInAEC) {
+        boolean disableBuiltInAEC, boolean disableBuiltInAGC, boolean disableBuiltInNS) {
       this.videoCallEnabled = videoCallEnabled;
       this.useCamera2 = useCamera2;
       this.loopback = loopback;
@@ -185,6 +187,8 @@ public class PeerConnectionClient {
       this.aecDump = aecDump;
       this.useOpenSLES = useOpenSLES;
       this.disableBuiltInAEC = disableBuiltInAEC;
+      this.disableBuiltInAGC = disableBuiltInAGC;
+      this.disableBuiltInNS = disableBuiltInNS;
     }
   }
 
@@ -366,6 +370,22 @@ public class PeerConnectionClient {
     } else {
       Log.d(TAG, "Enable built-in AEC if device supports it");
       WebRtcAudioUtils.setWebRtcBasedAcousticEchoCanceler(false);
+    }
+
+    if (peerConnectionParameters.disableBuiltInAGC) {
+      Log.d(TAG, "Disable built-in AGC even if device supports it");
+      WebRtcAudioUtils.setWebRtcBasedAutomaticGainControl(true);
+    } else {
+      Log.d(TAG, "Enable built-in AGC if device supports it");
+      WebRtcAudioUtils.setWebRtcBasedAutomaticGainControl(false);
+    }
+
+    if (peerConnectionParameters.disableBuiltInNS) {
+      Log.d(TAG, "Disable built-in NS even if device supports it");
+      WebRtcAudioUtils.setWebRtcBasedNoiseSuppressor(true);
+    } else {
+      Log.d(TAG, "Enable built-in NS if device supports it");
+      WebRtcAudioUtils.setWebRtcBasedNoiseSuppressor(false);
     }
 
     // Create peer connection factory.

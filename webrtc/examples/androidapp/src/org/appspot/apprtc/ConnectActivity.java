@@ -71,6 +71,8 @@ public class ConnectActivity extends Activity {
   private String keyprefAecDump;
   private String keyprefOpenSLES;
   private String keyprefDisableBuiltInAec;
+  private String keyprefDisableBuiltInAgc;
+  private String keyprefDisableBuiltInNs;
   private String keyprefDisplayHud;
   private String keyprefTracing;
   private String keyprefRoomServerUrl;
@@ -103,6 +105,8 @@ public class ConnectActivity extends Activity {
     keyprefAecDump = getString(R.string.pref_aecdump_key);
     keyprefOpenSLES = getString(R.string.pref_opensles_key);
     keyprefDisableBuiltInAec = getString(R.string.pref_disable_built_in_aec_key);
+    keyprefDisableBuiltInAgc = getString(R.string.pref_disable_built_in_agc_key);
+    keyprefDisableBuiltInNs = getString(R.string.pref_disable_built_in_ns_key);
     keyprefDisplayHud = getString(R.string.pref_displayhud_key);
     keyprefTracing = getString(R.string.pref_tracing_key);
     keyprefRoomServerUrl = getString(R.string.pref_room_server_url_key);
@@ -299,6 +303,16 @@ public class ConnectActivity extends Activity {
         keyprefDisableBuiltInAec,
         Boolean.valueOf(getString(R.string.pref_disable_built_in_aec_default)));
 
+    // Check Disable built-in AGC flag.
+    boolean disableBuiltInAGC = sharedPref.getBoolean(
+        keyprefDisableBuiltInAgc,
+        Boolean.valueOf(getString(R.string.pref_disable_built_in_agc_default)));
+
+    // Check Disable built-in NS flag.
+    boolean disableBuiltInNS = sharedPref.getBoolean(
+        keyprefDisableBuiltInNs,
+        Boolean.valueOf(getString(R.string.pref_disable_built_in_ns_default)));
+
     // Get video resolution from settings.
     int videoWidth = 0;
     int videoHeight = 0;
@@ -385,6 +399,8 @@ public class ConnectActivity extends Activity {
       intent.putExtra(CallActivity.EXTRA_AECDUMP_ENABLED, aecDump);
       intent.putExtra(CallActivity.EXTRA_OPENSLES_ENABLED, useOpenSLES);
       intent.putExtra(CallActivity.EXTRA_DISABLE_BUILT_IN_AEC, disableBuiltInAEC);
+      intent.putExtra(CallActivity.EXTRA_DISABLE_BUILT_IN_AGC, disableBuiltInAGC);
+      intent.putExtra(CallActivity.EXTRA_DISABLE_BUILT_IN_NS, disableBuiltInNS);
       intent.putExtra(CallActivity.EXTRA_AUDIO_BITRATE, audioStartBitrate);
       intent.putExtra(CallActivity.EXTRA_AUDIOCODEC, audioCodec);
       intent.putExtra(CallActivity.EXTRA_DISPLAY_HUD, displayHud);
