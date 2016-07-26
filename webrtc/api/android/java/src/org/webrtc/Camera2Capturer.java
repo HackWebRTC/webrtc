@@ -413,18 +413,16 @@ public class Camera2Capturer implements
       return;
     }
 
+    Range<Integer>[] fpsRanges =
+        cameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
+    fpsUnitFactor = Camera2Enumerator.getFpsUnitFactor(fpsRanges);
     List<CaptureFormat.FramerateRange> framerateRanges =
-        Camera2Enumerator.getSupportedFramerateRanges(cameraCharacteristics);
+        Camera2Enumerator.convertFramerates(fpsRanges, fpsUnitFactor);
     List<Size> sizes = Camera2Enumerator.getSupportedSizes(cameraCharacteristics);
 
     if (framerateRanges.isEmpty() || sizes.isEmpty()) {
       reportError("No supported capture formats.");
     }
-
-    // Some LEGACY camera implementations use fps rates that are multiplied with 1000. Make sure
-    // all values are multiplied with 1000 for consistency.
-    this.fpsUnitFactor = (framerateRanges.get(0).max > 1000) ? 1 : 1000;
-
     final CaptureFormat.FramerateRange bestFpsRange =
         CameraEnumerationAndroid.getClosestSupportedFramerateRange(
             framerateRanges, requestedFramerate);

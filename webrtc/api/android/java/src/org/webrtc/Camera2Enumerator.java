@@ -97,21 +97,11 @@ public class Camera2Enumerator implements CameraEnumerator {
     return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
   }
 
-  static List<CaptureFormat.FramerateRange> getSupportedFramerateRanges(
-      CameraCharacteristics cameraCharacteristics) {
-    final Range<Integer>[] fpsRanges =
-        cameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
-
-    if (fpsRanges == null) {
-      return new ArrayList<CaptureFormat.FramerateRange>();
+  static int getFpsUnitFactor(Range<Integer>[] fpsRanges) {
+    if (fpsRanges.length == 0) {
+      return 1000;
     }
-
-    int maxFps = 0;
-    for (Range<Integer> fpsRange : fpsRanges) {
-      maxFps = Math.max(maxFps, fpsRange.getUpper());
-    }
-    int unitFactor = maxFps < 1000 ? 1000 : 1;
-    return convertFramerates(fpsRanges, unitFactor);
+    return fpsRanges[0].getUpper() < 1000 ? 1000 : 1;
   }
 
   static List<Size> getSupportedSizes(
@@ -152,8 +142,10 @@ public class Camera2Enumerator implements CameraEnumerator {
       final StreamConfigurationMap streamMap =
           cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
 
-      List<CaptureFormat.FramerateRange> framerateRanges = getSupportedFramerateRanges(
-          cameraCharacteristics);
+      Range<Integer>[] fpsRanges =
+          cameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
+      List<CaptureFormat.FramerateRange> framerateRanges =
+          convertFramerates(fpsRanges, getFpsUnitFactor(fpsRanges));
       List<Size> sizes = getSupportedSizes(cameraCharacteristics);
 
       int defaultMaxFps = 0;
@@ -195,7 +187,7 @@ public class Camera2Enumerator implements CameraEnumerator {
   }
 
   // Convert from android.util.Range<Integer> to CaptureFormat.FramerateRange.
-  private static List<CaptureFormat.FramerateRange> convertFramerates(
+  static List<CaptureFormat.FramerateRange> convertFramerates(
       Range<Integer>[] arrayRanges, int unitFactor) {
     final List<CaptureFormat.FramerateRange> ranges = new ArrayList<CaptureFormat.FramerateRange>();
     for (Range<Integer> range : arrayRanges) {
