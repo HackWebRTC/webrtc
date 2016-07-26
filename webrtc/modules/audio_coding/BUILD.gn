@@ -1118,4 +1118,27 @@ if (rtc_include_tests) {
       ]
     }
   }
+
+  executable("rtp_analyze") {
+    testonly = true
+
+    sources = [
+      "neteq/tools/rtp_analyze.cc",
+    ]
+
+    deps = [
+      ":neteq",
+      ":neteq_unittest_tools",
+      ":pcm16b",
+      "../../system_wrappers:system_wrappers_default",
+      "//testing/gtest",
+      "//third_party/gflags:gflags",
+    ]
+
+    if (is_clang) {
+      # Suppress warnings from Chrome's Clang plugins.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
 }
