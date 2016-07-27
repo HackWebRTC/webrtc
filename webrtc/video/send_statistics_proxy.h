@@ -139,6 +139,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   const VideoSendStream::Config config_;
   rtc::CriticalSection crit_;
   VideoEncoderConfig::ContentType content_type_ GUARDED_BY(crit_);
+  const int64_t start_ms_;
   VideoSendStream::Stats stats_ GUARDED_BY(crit_);
   uint32_t last_sent_frame_timestamp_ GUARDED_BY(crit_);
   std::map<uint32_t, StatsUpdateTimes> update_times_ GUARDED_BY(crit_);

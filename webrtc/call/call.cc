@@ -136,6 +136,7 @@ class Call : public webrtc::Call,
 
   void UpdateSendHistograms() EXCLUSIVE_LOCKS_REQUIRED(&bitrate_crit_);
   void UpdateReceiveHistograms();
+  void UpdateHistograms();
   void UpdateAggregateNetworkState();
 
   Clock* const clock_;
@@ -196,6 +197,7 @@ class Call : public webrtc::Call,
   VieRemb remb_;
   const std::unique_ptr<CongestionController> congestion_controller_;
   const std::unique_ptr<SendDelayStats> video_send_delay_stats_;
+  const int64_t start_ms_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Call);
 };
@@ -231,11 +233,11 @@ Call::Call(const Call::Config& config)
       min_allocated_send_bitrate_bps_(0),
       num_bitrate_updates_(0),
       configured_max_padding_bitrate_bps_(0),
-
       remb_(clock_),
       congestion_controller_(
           new CongestionController(clock_, this, &remb_, event_log_.get())),
-      video_send_delay_stats_(new SendDelayStats(clock_)) {
+      video_send_delay_stats_(new SendDelayStats(clock_)),
+      start_ms_(clock_->TimeInMilliseconds()) {
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   RTC_DCHECK_GE(config.bitrate_config.min_bitrate_bps, 0);
   RTC_DCHECK_GE(config.bitrate_config.start_bitrate_bps,
@@ -285,8 +287,15 @@ Call::~Call() {
   // they won't try to concurrently update stats.
   UpdateSendHistograms();
   UpdateReceiveHistograms();
+  UpdateHistograms();
 
   Trace::ReturnTrace();
+}
+
+void Call::UpdateHistograms() {
+  RTC_LOGGED_HISTOGRAM_COUNTS_100000(
+      "WebRTC.Call.LifetimeInSeconds",
+      (clock_->TimeInMilliseconds() - start_ms_) / 1000);
 }
 
 void Call::UpdateSendHistograms() {

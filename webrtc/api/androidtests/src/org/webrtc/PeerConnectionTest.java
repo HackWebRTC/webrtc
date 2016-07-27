@@ -744,13 +744,13 @@ public class PeerConnectionTest extends ActivityTestCase {
     answeringExpectations.expectStateChange(DataChannel.State.CLOSED);
     answeringExpectations.dataChannel.close();
     offeringExpectations.dataChannel.close();
-    getMetrics();
 
     // Free the Java-land objects and collect them.
     shutdownPC(offeringPC, offeringExpectations);
     offeringPC = null;
     shutdownPC(answeringPC, answeringExpectations);
     answeringPC = null;
+    getMetrics();
     videoSource.dispose();
     factory.dispose();
     System.gc();
@@ -1026,13 +1026,11 @@ public class PeerConnectionTest extends ActivityTestCase {
   private static void getMetrics() {
     Metrics metrics = Metrics.getAndReset();
     assertTrue(metrics.map.size() > 0);
-    // Test for example that the configured video codec is recorded when a
-    // VideoSendStream is created.
-    String name = "WebRTC.Video.Encoder.CodecType";
+    // Test for example that the lifetime of a Call is recorded.
+    String name = "WebRTC.Call.LifetimeInSeconds";
     assertTrue(metrics.map.containsKey(name));
     HistogramInfo info = metrics.map.get(name);
-    assertEquals(1, info.samples.size());       // samples: <sample value, # of events>
-    assertTrue(info.samples.containsValue(2));  // <codec type, 2>, same codec configured
+    assertTrue(info.samples.size() > 0);
   }
 
   private static void shutdownPC(

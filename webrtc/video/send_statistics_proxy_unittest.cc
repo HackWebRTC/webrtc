@@ -302,6 +302,21 @@ TEST_F(SendStatisticsProxyTest, SwitchContentTypeUpdatesHistograms) {
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.InputWidthInPixels"));
 }
 
+TEST_F(SendStatisticsProxyTest, LifetimeHistogramIsUpdated) {
+  const int64_t kTimeSec = 3;
+  fake_clock_.AdvanceTimeMilliseconds(kTimeSec * 1000);
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.SendStreamLifetimeInSeconds"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.SendStreamLifetimeInSeconds",
+                                  kTimeSec));
+}
+
+TEST_F(SendStatisticsProxyTest, CodecTypeHistogramIsUpdated) {
+  fake_clock_.AdvanceTimeMilliseconds(metrics::kMinRunTimeInSeconds * 1000);
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.Encoder.CodecType"));
+}
+
 TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp8) {
   EncodedImage encoded_image;
   CodecSpecificInfo codec_info;

@@ -104,6 +104,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   // ReceiveStatisticsProxy() ctor to accept a const& of Config (since we'll
   // then no longer store a pointer to the object).
   const VideoReceiveStream::Config& config_;
+  const int64_t start_ms_;
 
   rtc::CriticalSection crit_;
   VideoReceiveStream::Stats stats_ GUARDED_BY(crit_);

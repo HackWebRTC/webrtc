@@ -77,16 +77,23 @@ SendStatisticsProxy::SendStatisticsProxy(
     : clock_(clock),
       config_(config),
       content_type_(content_type),
+      start_ms_(clock->TimeInMilliseconds()),
       last_sent_frame_timestamp_(0),
       encode_time_(kEncodeTimeWeigthFactor),
       uma_container_(
           new UmaSamplesContainer(GetUmaPrefix(content_type_), stats_, clock)) {
-  UpdateCodecTypeHistogram(config_.encoder_settings.payload_name);
 }
 
 SendStatisticsProxy::~SendStatisticsProxy() {
   rtc::CritScope lock(&crit_);
   uma_container_->UpdateHistograms(config_, stats_);
+
+  int64_t elapsed_sec = (clock_->TimeInMilliseconds() - start_ms_) / 1000;
+  RTC_LOGGED_HISTOGRAM_COUNTS_100000("WebRTC.Video.SendStreamLifetimeInSeconds",
+                                     elapsed_sec);
+
+  if (elapsed_sec >= metrics::kMinRunTimeInSeconds)
+    UpdateCodecTypeHistogram(config_.encoder_settings.payload_name);
 }
 
 SendStatisticsProxy::UmaSamplesContainer::UmaSamplesContainer(
