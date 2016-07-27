@@ -15,6 +15,7 @@ import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.ImageFormat;
+import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
@@ -108,12 +109,30 @@ public class Camera2Enumerator implements CameraEnumerator {
       CameraCharacteristics cameraCharacteristics) {
     final StreamConfigurationMap streamMap =
           cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-    final android.util.Size[] sizes = streamMap.getOutputSizes(SurfaceTexture.class);
-    if (sizes == null) {
-      Logging.e(TAG, "No supported camera output sizes.");
-      return new ArrayList<Size>();
+    final int supportLevel =
+        cameraCharacteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
+
+    final android.util.Size[] nativeSizes = streamMap.getOutputSizes(SurfaceTexture.class);
+    final List<Size> sizes = convertSizes(nativeSizes);
+
+    // Video may be stretched pre LMR1 on legacy implementations.
+    // Filter out formats that have different aspect ratio than the sensor array.
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP_MR1 &&
+        supportLevel == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY) {
+      final Rect activeArraySize =
+          cameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+      final ArrayList<Size> filteredSizes = new ArrayList<Size>();
+
+      for (Size size : sizes) {
+        if (activeArraySize.width() * size.height == activeArraySize.height() * size.width) {
+          filteredSizes.add(size);
+        }
+      }
+
+      return filteredSizes;
+    } else {
+      return sizes;
     }
-    return convertSizes(sizes);
   }
 
   static List<CaptureFormat> getSupportedFormats(Context context, String cameraId) {
