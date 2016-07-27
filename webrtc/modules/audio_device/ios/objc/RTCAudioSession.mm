@@ -10,6 +10,8 @@
 
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
 
+#import <UIKit/UIKit.h>
+
 #include "webrtc/base/atomicops.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/criticalsection.h"
@@ -36,6 +38,7 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
   BOOL _useManualAudio;
   BOOL _isAudioEnabled;
   BOOL _canPlayOrRecord;
+  BOOL _isInterrupted;
 }
 
 @synthesize session = _session;
@@ -71,6 +74,11 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
     [center addObserver:self
                selector:@selector(handleMediaServicesWereReset:)
                    name:AVAudioSessionMediaServicesWereResetNotification
+                 object:nil];
+    // Also track foreground event in order to deal with interruption ended situation.
+    [center addObserver:self
+               selector:@selector(handleApplicationDidBecomeActive:)
+                   name:UIApplicationDidBecomeActiveNotification
                  object:nil];
   }
   return self;
@@ -434,10 +442,12 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
     case AVAudioSessionInterruptionTypeBegan:
       RTCLog(@"Audio session interruption began.");
       self.isActive = NO;
+      self.isInterrupted = YES;
       [self notifyDidBeginInterruption];
       break;
     case AVAudioSessionInterruptionTypeEnded: {
       RTCLog(@"Audio session interruption ended.");
+      self.isInterrupted = NO;
       [self updateAudioSessionAfterEvent];
       NSNumber *optionsNumber =
           notification.userInfo[AVAudioSessionInterruptionOptionKey];
@@ -505,6 +515,15 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
   [self notifyMediaServicesWereReset];
 }
 
+- (void)handleApplicationDidBecomeActive:(NSNotification *)notification {
+  if (self.isInterrupted) {
+    RTCLog(@"Application became active after an interruption. Treating as interruption end.");
+    self.isInterrupted = NO;
+    [self updateAudioSessionAfterEvent];
+    [self notifyDidEndInterruptionWithShouldResumeSession:YES];
+  }
+}
+
 #pragma mark - Private
 
 + (NSError *)lockError {
@@ -563,6 +582,21 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
 
 - (BOOL)canPlayOrRecord {
   return !self.useManualAudio || self.isAudioEnabled;
+}
+
+- (BOOL)isInterrupted {
+  @synchronized(self) {
+    return _isInterrupted;
+  }
+}
+
+- (void)setIsInterrupted:(BOOL)isInterrupted {
+  @synchronized(self) {
+    if (_isInterrupted == isInterrupted) {
+      return;
+   }
+   _isInterrupted = isInterrupted;
+  }
 }
 
 - (BOOL)checkLock:(NSError **)outError {

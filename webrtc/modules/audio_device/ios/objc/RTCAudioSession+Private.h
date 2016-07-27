@@ -31,6 +31,11 @@ NS_ASSUME_NONNULL_BEGIN
 /** Convenience BOOL that checks useManualAudio and isAudioEnebled. */
 @property(readonly) BOOL canPlayOrRecord;
 
+/** Tracks whether we have been sent an interruption event that hasn't been matched by either an
+ *  interrupted end event or a foreground event.
+ */
+@property(nonatomic, assign) BOOL isInterrupted;
+
 - (BOOL)checkLock:(NSError **)outError;
 
 /** Adds the delegate to the list of delegates, and places it at the front of
