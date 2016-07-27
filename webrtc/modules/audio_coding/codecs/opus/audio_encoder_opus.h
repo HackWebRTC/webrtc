@@ -75,6 +75,7 @@ class AudioEncoderOpus final : public AudioEncoder {
   // being inactive. During that, it still sends 2 packets (one for content, one
   // for signaling) about every 400 ms.
   bool SetDtx(bool enable) override;
+  bool GetDtx() const override;
 
   bool SetApplication(Application application) override;
   void SetMaxPlaybackRate(int frequency_hz) override;
@@ -84,7 +85,6 @@ class AudioEncoderOpus final : public AudioEncoder {
   // Getters for testing.
   double packet_loss_rate() const { return packet_loss_rate_; }
   ApplicationMode application() const { return config_.application; }
-  bool dtx_enabled() const { return config_.dtx_enabled; }
 
  protected:
   EncodedInfo EncodeImpl(uint32_t rtp_timestamp,

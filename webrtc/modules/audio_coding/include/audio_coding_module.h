@@ -250,6 +250,10 @@ class AudioCodingModule {
   virtual void ModifyEncoder(
       FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) = 0;
 
+  // |modifier| is called exactly once with one argument: a const pointer to the
+  // current encoder (which is null if there is no current encoder).
+  virtual void QueryEncoder(FunctionView<void(AudioEncoder const*)> query) = 0;
+
   // Utility method for simply replacing the existing encoder with a new one.
   void SetEncoder(std::unique_ptr<AudioEncoder> new_encoder) {
     ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {

@@ -131,6 +131,12 @@ class WEBRTC_DLLEXPORT VoECodec {
   // success, and -1 if failed.
   virtual int SetOpusDtx(int channel, bool enable_dtx) = 0;
 
+  // If send codec is Opus on a specified |channel|, return its DTX status.
+  // Returns 0 on success, and -1 if failed.
+  // TODO(ivoc): Make GetOpusDtxStatus() pure virtual when all deriving classes
+  // are updated.
+  virtual int GetOpusDtxStatus(int channel, bool* enabled) { return -1; }
+
  protected:
   VoECodec() {}
   virtual ~VoECodec() {}

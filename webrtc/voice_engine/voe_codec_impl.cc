@@ -376,6 +376,23 @@ int VoECodecImpl::SetOpusDtx(int channel, bool enable_dtx) {
   return channelPtr->SetOpusDtx(enable_dtx);
 }
 
+int VoECodecImpl::GetOpusDtxStatus(int channel, bool* enabled) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+               "GetOpusDtx(channel=%d)", channel);
+  if (!_shared->statistics().Initialized()) {
+    _shared->SetLastError(VE_NOT_INITED, kTraceError);
+    return -1;
+  }
+  voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
+  voe::Channel* channelPtr = ch.channel();
+  if (channelPtr == NULL) {
+    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+                          "GetOpusDtx failed to locate channel");
+    return -1;
+  }
+  return channelPtr->GetOpusDtx(enabled);
+}
+
 #endif  // WEBRTC_VOICE_ENGINE_CODEC_API
 
 }  // namespace webrtc

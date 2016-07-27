@@ -127,6 +127,10 @@ class AudioEncoder {
   // supported).
   virtual bool SetDtx(bool enable);
 
+  // Returns the status of codec-internal DTX. The default implementation always
+  // returns false.
+  virtual bool GetDtx() const;
+
   // Sets the application mode. Returns true if the codec was able to comply.
   // The default implementation just returns false.
   enum class Application { kSpeech, kAudio };

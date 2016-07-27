@@ -48,6 +48,8 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   void ModifyEncoder(
       FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) override;
 
+  void QueryEncoder(FunctionView<void(const AudioEncoder*)> query) override;
+
   // Get current send codec.
   rtc::Optional<CodecInst> SendCodec() const override;
 
@@ -594,6 +596,12 @@ void AudioCodingModuleImpl::ModifyEncoder(
   }
 
   modifier(&encoder_stack_);
+}
+
+void AudioCodingModuleImpl::QueryEncoder(
+    FunctionView<void(const AudioEncoder*)> query) {
+  rtc::CritScope lock(&acm_crit_sect_);
+  query(encoder_stack_.get());
 }
 
 // Get current send codec.

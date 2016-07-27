@@ -50,6 +50,10 @@ bool AudioEncoder::SetDtx(bool enable) {
   return !enable;
 }
 
+bool AudioEncoder::GetDtx() const {
+  return false;
+}
+
 bool AudioEncoder::SetApplication(Application application) {
   return false;
 }

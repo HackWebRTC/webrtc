@@ -1548,6 +1548,17 @@ int Channel::SetOpusDtx(bool enable_dtx) {
   return 0;
 }
 
+int Channel::GetOpusDtx(bool* enabled) {
+  int success = -1;
+  audio_coding_->QueryEncoder([&](AudioEncoder const* encoder) {
+    if (encoder) {
+      *enabled = encoder->GetDtx();
+      success = 0;
+    }
+  });
+  return success;
+}
+
 int32_t Channel::RegisterExternalTransport(Transport* transport) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::RegisterExternalTransport()");

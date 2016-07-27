@@ -228,6 +228,7 @@ class Channel
   int32_t SetSendCNPayloadType(int type, PayloadFrequencies frequency);
   int SetOpusMaxPlaybackRate(int frequency_hz);
   int SetOpusDtx(bool enable_dtx);
+  int GetOpusDtx(bool* enabled);
 
   // VoENetwork
   int32_t RegisterExternalTransport(Transport* transport);

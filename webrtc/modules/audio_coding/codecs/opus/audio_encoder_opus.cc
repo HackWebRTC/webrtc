@@ -152,6 +152,10 @@ bool AudioEncoderOpus::SetDtx(bool enable) {
   return RecreateEncoderInstance(conf);
 }
 
+bool AudioEncoderOpus::GetDtx() const {
+  return config_.dtx_enabled;
+}
+
 bool AudioEncoderOpus::SetApplication(Application application) {
   auto conf = config_;
   switch (application) {
