@@ -622,10 +622,13 @@ bool PeerConnection::Initialize(
   media_controller_.reset(
       factory_->CreateMediaController(configuration.media_config));
 
-  session_.reset(
-      new WebRtcSession(media_controller_.get(), factory_->network_thread(),
-                        factory_->worker_thread(), factory_->signaling_thread(),
-                        port_allocator_.get()));
+  session_.reset(new WebRtcSession(
+      media_controller_.get(), factory_->network_thread(),
+      factory_->worker_thread(), factory_->signaling_thread(),
+      port_allocator_.get(),
+      std::unique_ptr<cricket::TransportController>(
+          factory_->CreateTransportController(port_allocator_.get()))));
+
   stats_.reset(new StatsCollector(this));
 
   // Initialize the WebRtcSession. It creates transport channels etc.
@@ -800,6 +803,9 @@ bool PeerConnection::RemoveTrack(RtpSenderInterface* sender) {
 rtc::scoped_refptr<DtmfSenderInterface> PeerConnection::CreateDtmfSender(
     AudioTrackInterface* track) {
   TRACE_EVENT0("webrtc", "PeerConnection::CreateDtmfSender");
+  if (IsClosed()) {
+    return nullptr;
+  }
   if (!track) {
     LOG(LS_ERROR) << "CreateDtmfSender - track is NULL.";
     return NULL;
@@ -822,6 +828,9 @@ rtc::scoped_refptr<RtpSenderInterface> PeerConnection::CreateSender(
     const std::string& kind,
     const std::string& stream_id) {
   TRACE_EVENT0("webrtc", "PeerConnection::CreateSender");
+  if (IsClosed()) {
+    return nullptr;
+  }
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> new_sender;
   if (kind == MediaStreamTrackInterface::kAudioKind) {
     new_sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
@@ -1033,6 +1042,9 @@ void PeerConnection::SetLocalDescription(
     SetSessionDescriptionObserver* observer,
     SessionDescriptionInterface* desc) {
   TRACE_EVENT0("webrtc", "PeerConnection::SetLocalDescription");
+  if (IsClosed()) {
+    return;
+  }
   if (!VERIFY(observer != nullptr)) {
     LOG(LS_ERROR) << "SetLocalDescription - observer is NULL.";
     return;
@@ -1112,6 +1124,9 @@ void PeerConnection::SetRemoteDescription(
     SetSessionDescriptionObserver* observer,
     SessionDescriptionInterface* desc) {
   TRACE_EVENT0("webrtc", "PeerConnection::SetRemoteDescription");
+  if (IsClosed()) {
+    return;
+  }
   if (!VERIFY(observer != nullptr)) {
     LOG(LS_ERROR) << "SetRemoteDescription - observer is NULL.";
     return;
@@ -1234,6 +1249,9 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration) {
 bool PeerConnection::AddIceCandidate(
     const IceCandidateInterface* ice_candidate) {
   TRACE_EVENT0("webrtc", "PeerConnection::AddIceCandidate");
+  if (IsClosed()) {
+    return false;
+  }
   return session_->ProcessIceMessage(ice_candidate);
 }
 
@@ -1420,17 +1438,26 @@ void PeerConnection::OnIceGatheringChange(
 
 void PeerConnection::OnIceCandidate(const IceCandidateInterface* candidate) {
   RTC_DCHECK(signaling_thread()->IsCurrent());
+  if (IsClosed()) {
+    return;
+  }
   observer_->OnIceCandidate(candidate);
 }
 
 void PeerConnection::OnIceCandidatesRemoved(
     const std::vector<cricket::Candidate>& candidates) {
   RTC_DCHECK(signaling_thread()->IsCurrent());
+  if (IsClosed()) {
+    return;
+  }
   observer_->OnIceCandidatesRemoved(candidates);
 }
 
 void PeerConnection::OnIceConnectionReceivingChange(bool receiving) {
   RTC_DCHECK(signaling_thread()->IsCurrent());
+  if (IsClosed()) {
+    return;
+  }
   observer_->OnIceConnectionReceivingChange(receiving);
 }
 
@@ -1450,6 +1477,9 @@ void PeerConnection::ChangeSignalingState(
 
 void PeerConnection::OnAudioTrackAdded(AudioTrackInterface* track,
                                        MediaStreamInterface* stream) {
+  if (IsClosed()) {
+    return;
+  }
   auto sender = FindSenderForTrack(track);
   if (sender != senders_.end()) {
     // We already have a sender for this track, so just change the stream_id
@@ -1482,6 +1512,9 @@ void PeerConnection::OnAudioTrackAdded(AudioTrackInterface* track,
 // indefinitely, when we have unified plan SDP.
 void PeerConnection::OnAudioTrackRemoved(AudioTrackInterface* track,
                                          MediaStreamInterface* stream) {
+  if (IsClosed()) {
+    return;
+  }
   auto sender = FindSenderForTrack(track);
   if (sender == senders_.end()) {
     LOG(LS_WARNING) << "RtpSender for track with id " << track->id()
@@ -1494,6 +1527,9 @@ void PeerConnection::OnAudioTrackRemoved(AudioTrackInterface* track,
 
 void PeerConnection::OnVideoTrackAdded(VideoTrackInterface* track,
                                        MediaStreamInterface* stream) {
+  if (IsClosed()) {
+    return;
+  }
   auto sender = FindSenderForTrack(track);
   if (sender != senders_.end()) {
     // We already have a sender for this track, so just change the stream_id
@@ -1517,6 +1553,9 @@ void PeerConnection::OnVideoTrackAdded(VideoTrackInterface* track,
 
 void PeerConnection::OnVideoTrackRemoved(VideoTrackInterface* track,
                                          MediaStreamInterface* stream) {
+  if (IsClosed()) {
+    return;
+  }
   auto sender = FindSenderForTrack(track);
   if (sender == senders_.end()) {
     LOG(LS_WARNING) << "RtpSender for track with id " << track->id()

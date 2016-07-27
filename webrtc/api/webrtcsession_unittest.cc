@@ -211,17 +211,20 @@ class MockIceObserver : public webrtc::IceObserver {
 
 class WebRtcSessionForTest : public webrtc::WebRtcSession {
  public:
-  WebRtcSessionForTest(webrtc::MediaControllerInterface* media_controller,
-                       rtc::Thread* network_thread,
-                       rtc::Thread* worker_thread,
-                       rtc::Thread* signaling_thread,
-                       cricket::PortAllocator* port_allocator,
-                       webrtc::IceObserver* ice_observer)
+  WebRtcSessionForTest(
+      webrtc::MediaControllerInterface* media_controller,
+      rtc::Thread* network_thread,
+      rtc::Thread* worker_thread,
+      rtc::Thread* signaling_thread,
+      cricket::PortAllocator* port_allocator,
+      webrtc::IceObserver* ice_observer,
+      std::unique_ptr<cricket::TransportController> transport_controller)
       : WebRtcSession(media_controller,
                       network_thread,
                       worker_thread,
                       signaling_thread,
-                      port_allocator) {
+                      port_allocator,
+                      std::move(transport_controller)) {
     RegisterIceObserver(ice_observer);
   }
   virtual ~WebRtcSessionForTest() {}
@@ -380,7 +383,11 @@ class WebRtcSessionTest
     ASSERT_TRUE(session_.get() == NULL);
     session_.reset(new WebRtcSessionForTest(
         media_controller_.get(), rtc::Thread::Current(), rtc::Thread::Current(),
-        rtc::Thread::Current(), allocator_.get(), &observer_));
+        rtc::Thread::Current(), allocator_.get(), &observer_,
+        std::unique_ptr<cricket::TransportController>(
+            new cricket::TransportController(rtc::Thread::Current(),
+                                             rtc::Thread::Current(),
+                                             allocator_.get()))));
     session_->SignalDataChannelOpenMessage.connect(
         this, &WebRtcSessionTest::OnDataChannelOpenMessage);
     session_->GetOnDestroyedSignal()->connect(

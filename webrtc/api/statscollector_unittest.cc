@@ -72,11 +72,16 @@ class MockWebRtcSession : public webrtc::WebRtcSession {
   // warnings from -Winconsistent-missing-override. See
   // http://crbug.com/428099.
   explicit MockWebRtcSession(webrtc::MediaControllerInterface* media_controller)
-      : WebRtcSession(media_controller,
-                      rtc::Thread::Current(),
-                      rtc::Thread::Current(),
-                      rtc::Thread::Current(),
-                      nullptr) {}
+      : WebRtcSession(
+            media_controller,
+            rtc::Thread::Current(),
+            rtc::Thread::Current(),
+            rtc::Thread::Current(),
+            nullptr,
+            std::unique_ptr<cricket::TransportController>(
+                new cricket::TransportController(rtc::Thread::Current(),
+                                                 rtc::Thread::Current(),
+                                                 nullptr))) {}
   MOCK_METHOD0(voice_channel, cricket::VoiceChannel*());
   MOCK_METHOD0(video_channel, cricket::VideoChannel*());
   // Libjingle uses "local" for a outgoing track, and "remote" for a incoming

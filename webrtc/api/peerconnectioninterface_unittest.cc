@@ -40,6 +40,7 @@
 #include "webrtc/media/base/fakevideocapturer.h"
 #include "webrtc/media/sctp/sctpdataengine.h"
 #include "webrtc/p2p/base/fakeportallocator.h"
+#include "webrtc/p2p/base/faketransportcontroller.h"
 #include "webrtc/pc/mediasession.h"
 
 static const char kStreamLabel1[] = "local_stream_1";
@@ -491,11 +492,13 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
   void OnIceConnectionChange(
       PeerConnectionInterface::IceConnectionState new_state) override {
     EXPECT_EQ(pc_->ice_connection_state(), new_state);
+    callback_triggered = true;
   }
   void OnIceGatheringChange(
       PeerConnectionInterface::IceGatheringState new_state) override {
     EXPECT_EQ(pc_->ice_gathering_state(), new_state);
     ice_complete_ = new_state == PeerConnectionInterface::kIceGatheringComplete;
+    callback_triggered = true;
   }
   void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override {
     EXPECT_NE(PeerConnectionInterface::kIceGatheringNew,
@@ -507,6 +510,16 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
     last_candidate_.reset(webrtc::CreateIceCandidate(candidate->sdp_mid(),
         candidate->sdp_mline_index(), sdp, NULL));
     EXPECT_TRUE(last_candidate_.get() != NULL);
+    callback_triggered = true;
+  }
+
+  void OnIceCandidatesRemoved(
+      const std::vector<cricket::Candidate>& candidates) override {
+    callback_triggered = true;
+  }
+
+  void OnIceConnectionReceivingChange(bool receiving) override {
+    callback_triggered = true;
   }
 
   // Returns the label of the last added stream.
@@ -529,6 +542,7 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
   rtc::scoped_refptr<StreamCollection> remote_streams_;
   bool renegotiation_needed_ = false;
   bool ice_complete_ = false;
+  bool callback_triggered = false;
 
  private:
   scoped_refptr<MediaStreamInterface> last_added_stream_;
@@ -536,6 +550,36 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
 };
 
 }  // namespace
+
+// The PeerConnectionMediaConfig tests below verify that configuration
+// and constraints are propagated into the MediaConfig passed to
+// CreateMediaController. These settings are intended for MediaChannel
+// constructors, but that is not exercised by these unittest.
+class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
+ public:
+  webrtc::MediaControllerInterface* CreateMediaController(
+      const cricket::MediaConfig& config) const override {
+    create_media_controller_called_ = true;
+    create_media_controller_config_ = config;
+
+    webrtc::MediaControllerInterface* mc =
+        PeerConnectionFactory::CreateMediaController(config);
+    EXPECT_TRUE(mc != nullptr);
+    return mc;
+  }
+
+  cricket::TransportController* CreateTransportController(
+      cricket::PortAllocator* port_allocator) override {
+    transport_controller = new cricket::TransportController(
+        rtc::Thread::Current(), rtc::Thread::Current(), port_allocator);
+    return transport_controller;
+  }
+
+  cricket::TransportController* transport_controller;
+  // Mutable, so they can be modified in the above const-declared method.
+  mutable bool create_media_controller_called_ = false;
+  mutable cricket::MediaConfig create_media_controller_config_;
+};
 
 class PeerConnectionInterfaceTest : public testing::Test {
  protected:
@@ -550,6 +594,9 @@ class PeerConnectionInterfaceTest : public testing::Test {
         rtc::Thread::Current(), rtc::Thread::Current(), rtc::Thread::Current(),
         nullptr, nullptr, nullptr);
     ASSERT_TRUE(pc_factory_);
+    pc_factory_for_test_ =
+        new rtc::RefCountedObject<PeerConnectionFactoryForTest>();
+    pc_factory_for_test_->Initialize();
   }
 
   void CreatePeerConnection() {
@@ -732,7 +779,9 @@ class PeerConnectionInterfaceTest : public testing::Test {
     } else {
       pc_->SetRemoteDescription(observer, desc);
     }
-    EXPECT_EQ_WAIT(true, observer->called(), kTimeout);
+    if (pc_->signaling_state() != PeerConnectionInterface::kClosed) {
+      EXPECT_EQ_WAIT(true, observer->called(), kTimeout);
+    }
     return observer->result();
   }
 
@@ -994,10 +1043,36 @@ class PeerConnectionInterfaceTest : public testing::Test {
 
   cricket::FakePortAllocator* port_allocator_ = nullptr;
   scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory_;
+  scoped_refptr<PeerConnectionFactoryForTest> pc_factory_for_test_;
   scoped_refptr<PeerConnectionInterface> pc_;
   MockPeerConnectionObserver observer_;
   rtc::scoped_refptr<StreamCollection> reference_collection_;
 };
+
+// Test that no callbacks on the PeerConnectionObserver are called after the
+// PeerConnection is closed.
+TEST_F(PeerConnectionInterfaceTest, CloseAndTestCallbackFunctions) {
+  scoped_refptr<PeerConnectionInterface> pc(
+      pc_factory_for_test_->CreatePeerConnection(
+          PeerConnectionInterface::RTCConfiguration(), nullptr, nullptr,
+          nullptr, &observer_));
+  observer_.SetPeerConnectionInterface(pc.get());
+  pc->Close();
+
+  // No callbacks is expected to be called.
+  observer_.callback_triggered = false;
+  std::vector<cricket::Candidate> candidates;
+  pc_factory_for_test_->transport_controller->SignalGatheringState(
+      cricket::IceGatheringState{});
+  pc_factory_for_test_->transport_controller->SignalCandidatesGathered(
+      "", candidates);
+  pc_factory_for_test_->transport_controller->SignalConnectionState(
+      cricket::IceConnectionState{});
+  pc_factory_for_test_->transport_controller->SignalCandidatesRemoved(
+      candidates);
+  pc_factory_for_test_->transport_controller->SignalReceiving(false);
+  EXPECT_FALSE(observer_.callback_triggered);
+}
 
 // Generate different CNAMEs when PeerConnections are created.
 // The CNAMEs are expected to be generated randomly. It is possible
@@ -2554,28 +2629,6 @@ TEST_F(PeerConnectionInterfaceTest,
   EXPECT_TRUE(ContainsSender(new_senders, kAudioTracks[0], kStreams[1]));
   EXPECT_TRUE(ContainsSender(new_senders, kVideoTracks[0], kStreams[1]));
 }
-
-// The PeerConnectionMediaConfig tests below verify that configuration
-// and constraints are propagated into the MediaConfig passed to
-// CreateMediaController. These settings are intended for MediaChannel
-// constructors, but that is not exercised by these unittest.
-class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
- public:
-  webrtc::MediaControllerInterface* CreateMediaController(
-      const cricket::MediaConfig& config) const override {
-    create_media_controller_called_ = true;
-    create_media_controller_config_ = config;
-
-    webrtc::MediaControllerInterface* mc =
-        PeerConnectionFactory::CreateMediaController(config);
-    EXPECT_TRUE(mc != nullptr);
-    return mc;
-  }
-
-  // Mutable, so they can be modified in the above const-declared method.
-  mutable bool create_media_controller_called_ = false;
-  mutable cricket::MediaConfig create_media_controller_config_;
-};
 
 class PeerConnectionMediaConfigTest : public testing::Test {
  protected:

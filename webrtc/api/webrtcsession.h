@@ -136,11 +136,13 @@ class WebRtcSession :
     ERROR_TRANSPORT = 2,  // transport error of some kind
   };
 
-  WebRtcSession(webrtc::MediaControllerInterface* media_controller,
-                rtc::Thread* network_thread,
-                rtc::Thread* worker_thread,
-                rtc::Thread* signaling_thread,
-                cricket::PortAllocator* port_allocator);
+  WebRtcSession(
+      webrtc::MediaControllerInterface* media_controller,
+      rtc::Thread* network_thread,
+      rtc::Thread* worker_thread,
+      rtc::Thread* signaling_thread,
+      cricket::PortAllocator* port_allocator,
+      std::unique_ptr<cricket::TransportController> transport_controller);
   virtual ~WebRtcSession();
 
   // These are const to allow them to be called from const methods.

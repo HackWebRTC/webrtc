@@ -300,6 +300,13 @@ webrtc::MediaControllerInterface* PeerConnectionFactory::CreateMediaController(
                                           channel_manager_.get());
 }
 
+cricket::TransportController* PeerConnectionFactory::CreateTransportController(
+    cricket::PortAllocator* port_allocator) {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  return new cricket::TransportController(signaling_thread_, network_thread_,
+                                          port_allocator);
+}
+
 rtc::Thread* PeerConnectionFactory::signaling_thread() {
   // This method can be called on a different thread when the factory is
   // created in CreatePeerConnectionFactory().
