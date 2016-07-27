@@ -322,8 +322,6 @@ if (rtc_include_tests) {
         "audio_processing/high_pass_filter_unittest.cc",
         "audio_processing/level_estimator_unittest.cc",
         "audio_processing/noise_suppression_unittest.cc",
-        "audio_processing/test/audio_buffer_tools.cc",
-        "audio_processing/test/audio_buffer_tools.h",
         "audio_processing/test/bitexactness_tools.cc",
         "audio_processing/test/bitexactness_tools.h",
         "audio_processing/test/debug_dump_replayer.cc",

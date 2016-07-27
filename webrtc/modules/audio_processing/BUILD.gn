@@ -319,6 +319,8 @@ if (rtc_include_tests) {
   source_set("audioproc_test_utils") {
     testonly = true
     sources = [
+      "test/audio_buffer_tools.cc",
+      "test/audio_buffer_tools.h",
       "test/test_utils.cc",
       "test/test_utils.h",
     ]

@@ -619,6 +619,72 @@ if (rtc_include_tests) {
     }
   }
 
+  source_set("video_quality_test") {
+    testonly = true
+    configs += [ ":common_config" ]
+    public_configs = [ ":common_inherited_config" ]
+    sources = [
+      "video/video_quality_test.cc",
+      "video/video_quality_test.h",
+    ]
+    deps = [
+      ":webrtc",
+      "system_wrappers",
+      "//testing/gtest",
+    ]
+    if (!is_android) {
+      deps += [ "modules/video_capture:video_capture_internal_impl" ]
+    }
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
+  test("webrtc_perf_tests") {
+    testonly = true
+    configs += [
+      ":common_config",
+      ":rtc_unittests_config",
+    ]
+    public_configs = [ ":common_inherited_config" ]
+    sources = [
+      "call/call_perf_tests.cc",
+      "call/rampup_tests.cc",
+      "call/rampup_tests.h",
+      "modules/audio_coding/neteq/test/neteq_performance_unittest.cc",
+      "modules/audio_processing/audio_processing_performance_unittest.cc",
+      "modules/audio_processing/level_controller/level_controller_complexity_unittest.cc",
+      "modules/remote_bitrate_estimator/remote_bitrate_estimators_test.cc",
+      "video/full_stack.cc",
+    ]
+    deps = [
+      ":video_quality_test",
+      ":webrtc",
+      "modules/audio_coding:neteq_test_support",
+      "modules/audio_processing",
+      "modules/audio_processing:audioproc_test_utils",
+      "modules/remote_bitrate_estimator:bwe_simulator",
+      "modules/rtp_rtcp",
+      "test:channel_transport",
+      "test:test_common",
+      "test:test_main",
+      "test:test_renderer",
+      "voice_engine",
+      "//testing/gmock",
+      "//testing/gtest",
+    ]
+    if (is_android) {
+      deps += [ "//testing/android/native_test:native_test_native_code" ]
+    }
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
   test("webrtc_nonparallel_tests") {
     testonly = true
     configs += [
