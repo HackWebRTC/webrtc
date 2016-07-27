@@ -24,8 +24,6 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureFailure;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
-import android.hardware.camera2.params.StreamConfigurationMap;
-import android.os.Build;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.util.Range;
@@ -523,6 +521,7 @@ public class Camera2Capturer implements
           Logging.w(TAG, "Opening camera failed, trying again: " + getErrorDescription(errorCode));
 
           postDelayedOnCameraThread(OPEN_CAMERA_DELAY_MS, new Runnable() {
+            @Override
             public void run() {
               openCamera();
             }

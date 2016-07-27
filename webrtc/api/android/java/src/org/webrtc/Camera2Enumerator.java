@@ -14,7 +14,6 @@ import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.graphics.ImageFormat;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
