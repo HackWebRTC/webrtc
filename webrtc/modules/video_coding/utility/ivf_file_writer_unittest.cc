@@ -13,6 +13,7 @@
 #include <memory>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
@@ -31,15 +32,14 @@ static const int kMaxFileRetries = 5;
 class IvfFileWriterTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    const int64_t start_id =
-        reinterpret_cast<int64_t>(this) ^ rtc::TimeMicros();
-    int64_t id = start_id;
+    const uint64_t start_id = rtc::CreateRandomId64();
+    uint64_t id = start_id;
     do {
       std::ostringstream oss;
       oss << test::OutputPath() << "ivf_test_file_" << id++ << ".ivf";
       file_name_ = oss.str();
-    } while (id < start_id + 100 && FileExists(false));
-    ASSERT_LT(id, start_id + 100);
+    } while ((id - start_id) < 100u && FileExists(false));
+    ASSERT_LT(id - start_id, 100u);
   }
 
   bool WriteDummyTestFrames(int width,
