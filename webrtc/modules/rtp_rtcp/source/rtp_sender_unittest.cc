@@ -152,10 +152,10 @@ class RtpSenderTest : public ::testing::Test {
   }
 
   SimulatedClock fake_clock_;
-  MockRtcEventLog mock_rtc_event_log_;
+  testing::NiceMock<MockRtcEventLog> mock_rtc_event_log_;
   MockRtpPacketSender mock_paced_sender_;
-  MockTransportSequenceNumberAllocator seq_num_allocator_;
-  MockSendPacketObserver send_packet_observer_;
+  testing::StrictMock<MockTransportSequenceNumberAllocator> seq_num_allocator_;
+  testing::StrictMock<MockSendPacketObserver> send_packet_observer_;
   RateLimiter retransmission_rate_limiter_;
   std::unique_ptr<RTPSender> rtp_sender_;
   int payload_;
@@ -491,10 +491,6 @@ TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacketWithAbsoluteSendTimeExtension) {
 }
 
 TEST_F(RtpSenderTestWithoutPacer, SendsPacketsWithTransportSequenceNumber) {
-  // Ignore rtc event calls.
-  EXPECT_CALL(mock_rtc_event_log_,
-              LogRtpHeader(PacketDirection::kOutgoingPacket, _, _, _));
-
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionTransportSequenceNumber,
                    kTransportSequenceNumberExtensionId));
@@ -521,10 +517,14 @@ TEST_F(RtpSenderTestWithoutPacer, SendsPacketsWithTransportSequenceNumber) {
             rtp_header.extension.transportSequenceNumber);
 }
 
-TEST_F(RtpSenderTestWithoutPacer, OnSendPacketUpdated) {
-  EXPECT_CALL(mock_rtc_event_log_,  // Ignore rtc event calls.
-              LogRtpHeader(PacketDirection::kOutgoingPacket, _, _, _));
+TEST_F(RtpSenderTestWithoutPacer, NoAllocationIfNotRegistered) {
+  SendGenericPayload();
+}
 
+TEST_F(RtpSenderTestWithoutPacer, OnSendPacketUpdated) {
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+                   kRtpExtensionTransportSequenceNumber,
+                   kTransportSequenceNumberExtensionId));
   EXPECT_CALL(seq_num_allocator_, AllocateSequenceNumber())
       .WillOnce(testing::Return(kTransportSequenceNumber));
   EXPECT_CALL(send_packet_observer_,
@@ -972,8 +972,9 @@ TEST_F(RtpSenderTest, SendPadding) {
 }
 
 TEST_F(RtpSenderTest, OnSendPacketUpdated) {
-  EXPECT_CALL(mock_rtc_event_log_,  // Ignore rtc event calls.
-              LogRtpHeader(PacketDirection::kOutgoingPacket, _, _, _));
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+                   kRtpExtensionTransportSequenceNumber,
+                   kTransportSequenceNumberExtensionId));
   rtp_sender_->SetStorePacketsStatus(true, 10);
 
   EXPECT_CALL(send_packet_observer_,
@@ -991,8 +992,9 @@ TEST_F(RtpSenderTest, OnSendPacketUpdated) {
 }
 
 TEST_F(RtpSenderTest, OnSendPacketNotUpdatedForRetransmits) {
-  EXPECT_CALL(mock_rtc_event_log_,  // Ignore rtc event calls.
-              LogRtpHeader(PacketDirection::kOutgoingPacket, _, _, _));
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+                   kRtpExtensionTransportSequenceNumber,
+                   kTransportSequenceNumberExtensionId));
   rtp_sender_->SetStorePacketsStatus(true, 10);
 
   EXPECT_CALL(send_packet_observer_, OnSendPacket(_, _, _)).Times(0);
@@ -1012,6 +1014,9 @@ TEST_F(RtpSenderTest, OnSendPacketNotUpdatedWithoutSeqNumAllocator) {
       false, &fake_clock_, &transport_, &mock_paced_sender_,
       nullptr /* TransportSequenceNumberAllocator */, nullptr, nullptr, nullptr,
       nullptr, nullptr, &send_packet_observer_, nullptr));
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+                   kRtpExtensionTransportSequenceNumber,
+                   kTransportSequenceNumberExtensionId));
   rtp_sender_->SetSequenceNumber(kSeqNum);
   rtp_sender_->SetStorePacketsStatus(true, 10);
 

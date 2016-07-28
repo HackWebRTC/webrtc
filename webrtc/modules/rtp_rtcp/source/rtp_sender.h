@@ -166,17 +166,24 @@ class RTPSender : public RTPSenderInterface {
 
   size_t RtpHeaderExtensionLength() const;
 
-  uint16_t BuildRTPHeaderExtension(uint8_t* data_buffer, bool marker_bit) const;
+  uint16_t BuildRTPHeaderExtension(uint8_t* data_buffer, bool marker_bit) const
+      EXCLUSIVE_LOCKS_REQUIRED(send_critsect_);
 
-  uint8_t BuildTransmissionTimeOffsetExtension(uint8_t *data_buffer) const;
-  uint8_t BuildAudioLevelExtension(uint8_t* data_buffer) const;
-  uint8_t BuildAbsoluteSendTimeExtension(uint8_t* data_buffer) const;
-  uint8_t BuildVideoRotationExtension(uint8_t* data_buffer) const;
+  uint8_t BuildTransmissionTimeOffsetExtension(uint8_t* data_buffer) const
+      EXCLUSIVE_LOCKS_REQUIRED(send_critsect_);
+  uint8_t BuildAudioLevelExtension(uint8_t* data_buffer) const
+      EXCLUSIVE_LOCKS_REQUIRED(send_critsect_);
+  uint8_t BuildAbsoluteSendTimeExtension(uint8_t* data_buffer) const
+      EXCLUSIVE_LOCKS_REQUIRED(send_critsect_);
+  uint8_t BuildVideoRotationExtension(uint8_t* data_buffer) const
+      EXCLUSIVE_LOCKS_REQUIRED(send_critsect_);
   uint8_t BuildTransportSequenceNumberExtension(uint8_t* data_buffer,
-                                                uint16_t sequence_number) const;
+                                                uint16_t sequence_number) const
+      EXCLUSIVE_LOCKS_REQUIRED(send_critsect_);
   uint8_t BuildPlayoutDelayExtension(uint8_t* data_buffer,
                                      uint16_t min_playout_delay_ms,
-                                     uint16_t max_playout_delay_ms) const;
+                                     uint16_t max_playout_delay_ms) const
+      EXCLUSIVE_LOCKS_REQUIRED(send_critsect_);
 
   // Verifies that the specified extension is registered, and that it is
   // present in rtp packet. If extension is not registered kNotRegistered is
@@ -335,7 +342,8 @@ class RTPSender : public RTPSenderInterface {
                          bool marker_bit,
                          uint32_t timestamp,
                          uint16_t sequence_number,
-                         const std::vector<uint32_t>& csrcs) const;
+                         const std::vector<uint32_t>& csrcs) const
+      EXCLUSIVE_LOCKS_REQUIRED(send_critsect_);
 
   bool PrepareAndSendPacket(uint8_t* buffer,
                             size_t length,
@@ -370,7 +378,8 @@ class RTPSender : public RTPSenderInterface {
                                    const uint8_t* rtp_packet,
                                    size_t rtp_packet_length,
                                    const RTPHeader& rtp_header,
-                                   size_t* position) const;
+                                   size_t* position) const
+      EXCLUSIVE_LOCKS_REQUIRED(send_critsect_);
 
   void UpdateTransmissionTimeOffset(uint8_t* rtp_packet,
                                     size_t rtp_packet_length,
@@ -381,10 +390,10 @@ class RTPSender : public RTPSenderInterface {
                               const RTPHeader& rtp_header,
                               int64_t now_ms) const;
 
-  bool UpdateTransportSequenceNumber(uint16_t sequence_number,
-                                     uint8_t* rtp_packet,
+  bool UpdateTransportSequenceNumber(uint8_t* rtp_packet,
                                      size_t rtp_packet_length,
-                                     const RTPHeader& rtp_header) const;
+                                     const RTPHeader& rtp_header,
+                                     int* sequence_number) const;
 
   void UpdatePlayoutDelayLimits(uint8_t* rtp_packet,
                                 size_t rtp_packet_length,
@@ -423,7 +432,7 @@ class RTPSender : public RTPSenderInterface {
   int8_t payload_type_ GUARDED_BY(send_critsect_);
   std::map<int8_t, RtpUtility::Payload*> payload_type_map_;
 
-  RtpHeaderExtensionMap rtp_header_extension_map_;
+  RtpHeaderExtensionMap rtp_header_extension_map_ GUARDED_BY(send_critsect_);
   int32_t transmission_time_offset_;
   uint32_t absolute_send_time_;
   VideoRotation rotation_;

@@ -591,9 +591,9 @@ size_t RTPSender::SendPadData(size_t bytes,
   size_t padding_bytes_in_packet =
       std::min(MaxDataPayloadLength(), kMaxPaddingLength);
   size_t bytes_sent = 0;
-  bool using_transport_seq = rtp_header_extension_map_.IsRegistered(
-                                 kRtpExtensionTransportSequenceNumber) &&
-                             transport_sequence_number_allocator_;
+  bool using_transport_seq =
+      IsRtpHeaderExtensionRegistered(kRtpExtensionTransportSequenceNumber) &&
+      transport_sequence_number_allocator_;
   for (; bytes > 0; bytes -= padding_bytes_in_packet) {
     if (bytes < padding_bytes_in_packet)
       bytes = padding_bytes_in_packet;
@@ -647,9 +647,13 @@ size_t RTPSender::SendPadData(size_t bytes,
     }
 
     uint8_t padding_packet[IP_PACKET_SIZE];
-    size_t header_length =
-        CreateRtpHeader(padding_packet, payload_type, ssrc, false, timestamp,
-                        sequence_number, std::vector<uint32_t>());
+    size_t header_length = 0;
+    {
+      rtc::CritScope lock(&send_critsect_);
+      header_length =
+          CreateRtpHeader(padding_packet, payload_type, ssrc, false, timestamp,
+                          sequence_number, std::vector<uint32_t>());
+    }
     BuildPaddingPacket(padding_packet, header_length, padding_bytes_in_packet);
     size_t length = padding_bytes_in_packet + header_length;
     int64_t now_ms = clock_->TimeInMilliseconds();
@@ -666,13 +670,11 @@ size_t RTPSender::SendPadData(size_t bytes,
     UpdateAbsoluteSendTime(padding_packet, length, rtp_header, now_ms);
 
     PacketOptions options;
-    if (AllocateTransportSequenceNumber(&options.packet_id)) {
-      if (UpdateTransportSequenceNumber(options.packet_id, padding_packet,
-                                        length, rtp_header)) {
-        if (transport_feedback_observer_)
-          transport_feedback_observer_->AddPacket(options.packet_id, length,
-                                                  probe_cluster_id);
-      }
+    if (UpdateTransportSequenceNumber(padding_packet, length, rtp_header,
+                                      &options.packet_id)) {
+      if (transport_feedback_observer_)
+        transport_feedback_observer_->AddPacket(options.packet_id, length,
+                                                probe_cluster_id);
     }
 
     if (!SendPacketToNetwork(padding_packet, length, options))
@@ -859,13 +861,11 @@ bool RTPSender::PrepareAndSendPacket(uint8_t* buffer,
   UpdateAbsoluteSendTime(buffer_to_send_ptr, length, rtp_header, now_ms);
 
   PacketOptions options;
-  if (AllocateTransportSequenceNumber(&options.packet_id)) {
-    if (UpdateTransportSequenceNumber(options.packet_id, buffer_to_send_ptr,
-                                      length, rtp_header)) {
-      if (transport_feedback_observer_)
-        transport_feedback_observer_->AddPacket(options.packet_id, length,
-                                                probe_cluster_id);
-    }
+  if (UpdateTransportSequenceNumber(buffer_to_send_ptr, length, rtp_header,
+                                    &options.packet_id)) {
+    if (transport_feedback_observer_)
+      transport_feedback_observer_->AddPacket(options.packet_id, length,
+                                              probe_cluster_id);
   }
 
   if (!is_retransmit && !send_over_rtx) {
@@ -992,13 +992,11 @@ int32_t RTPSender::SendToNetwork(uint8_t* buffer,
   }
 
   PacketOptions options;
-  if (AllocateTransportSequenceNumber(&options.packet_id)) {
-    if (UpdateTransportSequenceNumber(options.packet_id, buffer, length,
-                                      rtp_header)) {
-      if (transport_feedback_observer_)
-        transport_feedback_observer_->AddPacket(options.packet_id, length,
-                                                PacketInfo::kNotAProbe);
-    }
+  if (UpdateTransportSequenceNumber(buffer, length, rtp_header,
+                                    &options.packet_id)) {
+    if (transport_feedback_observer_)
+      transport_feedback_observer_->AddPacket(options.packet_id, length,
+                                              PacketInfo::kNotAProbe);
   }
   UpdateDelayStatistics(capture_time_ms, now_ms);
   UpdateOnSendPacket(options.packet_id, capture_time_ms, rtp_header.ssrc);
@@ -1587,11 +1585,11 @@ void RTPSender::UpdateAbsoluteSendTime(uint8_t* rtp_packet,
                                           ConvertMsTo24Bits(now_ms));
 }
 
-bool RTPSender::UpdateTransportSequenceNumber(
-    uint16_t sequence_number,
-    uint8_t* rtp_packet,
-    size_t rtp_packet_length,
-    const RTPHeader& rtp_header) const {
+bool RTPSender::UpdateTransportSequenceNumber(uint8_t* rtp_packet,
+                                              size_t rtp_packet_length,
+                                              const RTPHeader& rtp_header,
+                                              int* sequence_number) const {
+  RTC_DCHECK(sequence_number);
   size_t offset;
   rtc::CritScope lock(&send_critsect_);
 
@@ -1609,7 +1607,10 @@ bool RTPSender::UpdateTransportSequenceNumber(
       RTC_NOTREACHED();
   }
 
-  BuildTransportSequenceNumberExtension(rtp_packet + offset, sequence_number);
+  if (!AllocateTransportSequenceNumber(sequence_number))
+    return false;
+
+  BuildTransportSequenceNumberExtension(rtp_packet + offset, *sequence_number);
   return true;
 }
 
