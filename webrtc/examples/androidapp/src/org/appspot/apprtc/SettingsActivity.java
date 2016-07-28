@@ -190,6 +190,8 @@ public class SettingsActivity extends Activity
         || key.equals(keyprefAecDump)
         || key.equals(keyprefOpenSLES)
         || key.equals(keyprefDisableBuiltInAEC)
+        || key.equals(keyprefDisableBuiltInAGC)
+        || key.equals(keyprefDisableBuiltInNS)
         || key.equals(keyPrefDisplayHud)) {
       updateSummaryB(sharedPreferences, key);
     }
