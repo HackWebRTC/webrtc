@@ -22,6 +22,8 @@ import android.os.Build;
 import org.webrtc.Logging;
 
 import java.lang.Math;
+import java.util.Timer;
+import java.util.TimerTask;
 
 // WebRtcAudioManager handles tasks that uses android.media.AudioManager.
 // At construction, storeAudioParameters() is called and it retrieves
@@ -32,8 +34,6 @@ import java.lang.Math;
 // dispose(). This class can also be used without calling init() if the user
 // prefers to set up the audio environment separately. However, it is
 // recommended to always use AudioManager.MODE_IN_COMMUNICATION.
-// This class also adds support for output volume control of the
-// STREAM_VOICE_CALL-type stream.
 public class WebRtcAudioManager {
   private static final boolean DEBUG = false;
 
@@ -69,6 +69,62 @@ public class WebRtcAudioManager {
       "MODE_IN_COMMUNICATION",
   };
 
+  // Private utility class that periodically checks and logs the volume level
+  // of the audio stream that is currently controlled by the volume control.
+  // A timer triggers logs once every 10 seconds and the timer's associated
+  // thread is named "WebRtcVolumeLevelLoggerThread".
+  private static class VolumeLogger {
+    private static final String THREAD_NAME = "WebRtcVolumeLevelLoggerThread";
+    private static final int TIMER_PERIOD_IN_SECONDS = 10;
+
+    private final AudioManager audioManager;
+    private Timer timer;
+
+    public VolumeLogger(AudioManager audioManager) {
+      this.audioManager = audioManager;
+    }
+
+    public void start() {
+      timer = new Timer(THREAD_NAME);
+      timer.schedule(new LogVolumeTask(
+          audioManager.getStreamMaxVolume(AudioManager.STREAM_RING),
+          audioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL)),
+          0, TIMER_PERIOD_IN_SECONDS * 1000);
+    }
+
+    private class LogVolumeTask extends TimerTask {
+      private final int maxRingVolume;
+      private final int maxVoiceCallVolume;
+
+      LogVolumeTask(int maxRingVolume, int maxVoiceCallVolume) {
+        this.maxRingVolume = maxRingVolume;
+        this.maxVoiceCallVolume = maxVoiceCallVolume;
+      }
+
+      public void run() {
+        final int mode = audioManager.getMode();
+        if (mode == AudioManager.MODE_RINGTONE) {
+          Logging.d(TAG, "STREAM_RING stream volume: "
+              + audioManager.getStreamVolume(AudioManager.STREAM_RING)
+              + " (max=" + maxRingVolume + ")");
+        } else if (mode == AudioManager.MODE_IN_COMMUNICATION) {
+          Logging.d(TAG, "VOICE_CALL stream volume: "
+              + audioManager.getStreamVolume(AudioManager.STREAM_VOICE_CALL)
+              + " (max=" + maxVoiceCallVolume + ")");
+        } else {
+          Logging.w(TAG, "Invalid audio mode: " + AUDIO_MODES[mode]);
+        }
+      }
+    }
+
+    private void stop() {
+      if (timer != null) {
+        timer.cancel();
+        timer = null;
+      }
+    }
+  }
+
   private final long nativeAudioManager;
   private final Context context;
   private final AudioManager audioManager;
@@ -87,6 +143,8 @@ public class WebRtcAudioManager {
   private int outputBufferSize;
   private int inputBufferSize;
 
+  private final VolumeLogger volumeLogger;
+
   WebRtcAudioManager(Context context, long nativeAudioManager) {
     Logging.d(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
     this.context = context;
@@ -96,6 +154,7 @@ public class WebRtcAudioManager {
     if (DEBUG) {
       WebRtcAudioUtils.logDeviceInfo(TAG);
     }
+    volumeLogger = new VolumeLogger(audioManager);
     storeAudioParameters();
     nativeCacheAudioParameters(
         sampleRate, channels, hardwareAEC, hardwareAGC, hardwareNS,
@@ -110,6 +169,7 @@ public class WebRtcAudioManager {
     }
     Logging.d(TAG, "audio mode is: " + AUDIO_MODES[audioManager.getMode()]);
     initialized = true;
+    volumeLogger.start();
     return true;
   }
 
@@ -118,6 +178,7 @@ public class WebRtcAudioManager {
     if (!initialized) {
       return;
     }
+    volumeLogger.stop();
   }
 
   private boolean isCommunicationModeEnabled() {
