@@ -81,6 +81,7 @@ VP9EncoderImpl::VP9EncoderImpl()
       // Use two spatial when screensharing with flexible mode.
       spatial_layer_(new ScreenshareLayersVP9(2)) {
   memset(&codec_, 0, sizeof(codec_));
+  memset(&svc_internal_.svc_params, 0, sizeof(vpx_svc_extra_cfg_t));
   uint32_t seed = rtc::Time32();
   srand(seed);
 }
