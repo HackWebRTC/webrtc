@@ -64,21 +64,6 @@ class MixerAudioSource {
   MixerAudioSource();
   virtual ~MixerAudioSource();
 };
-
-class OldAudioMixerOutputReceiver {
- public:
-  // This callback function provides the mixed audio for this mix iteration.
-  // Note that uniqueAudioFrames is an array of AudioFrame pointers with the
-  // size according to the size parameter.
-  virtual void NewMixedAudio(const int32_t id,
-                             const AudioFrame& generalAudioFrame,
-                             const AudioFrame** uniqueAudioFrames,
-                             const uint32_t size) = 0;
-
- protected:
-  OldAudioMixerOutputReceiver() {}
-  virtual ~OldAudioMixerOutputReceiver() {}
-};
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_MIXER_INCLUDE_AUDIO_MIXER_DEFINES_H_

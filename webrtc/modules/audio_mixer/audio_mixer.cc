@@ -22,17 +22,6 @@
 namespace webrtc {
 namespace voe {
 
-void AudioMixer::NewMixedAudio(int32_t id,
-                               const AudioFrame& generalAudioFrame,
-                               const AudioFrame** uniqueAudioFrames,
-                               uint32_t size) {
-  WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),
-               "AudioMixer::NewMixedAudio(id=%d, size=%u)", id, size);
-
-  _audioFrame.CopyFrom(generalAudioFrame);
-  _audioFrame.id_ = id;
-}
-
 void AudioMixer::PlayNotification(int32_t id, uint32_t durationMs) {
   WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),
                "AudioMixer::PlayNotification(id=%d, durationMs=%d)", id,
@@ -58,7 +47,7 @@ void AudioMixer::PlayFileEnded(int32_t id) {
 void AudioMixer::RecordFileEnded(int32_t id) {
   WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),
                "AudioMixer::RecordFileEnded(id=%d)", id);
-  assert(id == _instanceId);
+  RTC_DCHECK_EQ(id, _instanceId);
 
   rtc::CritScope cs(&_fileCritSect);
   _outputFileRecording = false;
@@ -93,12 +82,6 @@ AudioMixer::AudioMixer(uint32_t instanceId)
       _outputFileRecording(false) {
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, -1),
                "AudioMixer::AudioMixer() - ctor");
-
-  if (_mixerModule.RegisterMixedStreamCallback(this) == -1) {
-    WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId, -1),
-                 "AudioMixer::AudioMixer() failed to register mixer"
-                 "callbacks");
-  }
 }
 
 void AudioMixer::Destroy(AudioMixer*& mixer) {
@@ -123,7 +106,6 @@ AudioMixer::~AudioMixer() {
       _outputFileRecorderPtr = NULL;
     }
   }
-  _mixerModule.UnRegisterMixedStreamCallback();
   delete &_mixerModule;
 }
 
@@ -167,18 +149,18 @@ int AudioMixer::DeRegisterExternalMediaProcessing() {
   return 0;
 }
 
-int32_t AudioMixer::SetMixabilityStatus(MixerAudioSource& participant,
+int32_t AudioMixer::SetMixabilityStatus(MixerAudioSource& audio_source,
                                         bool mixable) {
-  return _mixerModule.SetMixabilityStatus(&participant, mixable);
+  return _mixerModule.SetMixabilityStatus(&audio_source, mixable);
 }
 
-int32_t AudioMixer::SetAnonymousMixabilityStatus(MixerAudioSource& participant,
+int32_t AudioMixer::SetAnonymousMixabilityStatus(MixerAudioSource& audio_source,
                                                  bool mixable) {
-  return _mixerModule.SetAnonymousMixabilityStatus(&participant, mixable);
+  return _mixerModule.SetAnonymousMixabilityStatus(&audio_source, mixable);
 }
 
 int32_t AudioMixer::MixActiveChannels() {
-  _mixerModule.Process();
+  _mixerModule.Mix(&_audioFrame);
   return 0;
 }
 
@@ -414,7 +396,7 @@ int32_t AudioMixer::DoOperationsOnCombinedSignal(bool feed_data_to_apm) {
       // Pure stereo mode (we are receiving a stereo signal).
     }
 
-    assert(_audioFrame.num_channels_ == 2);
+    RTC_DCHECK_EQ(_audioFrame.num_channels_, static_cast<size_t>(2));
     AudioFrameOperations::Scale(_panLeft, _panRight, _audioFrame);
   }
 

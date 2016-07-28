@@ -40,10 +40,10 @@ class NewMixHistory {
   NewMixHistory();
   ~NewMixHistory();
 
-  // Returns true if the participant is being mixed.
+  // Returns true if the audio source is being mixed.
   bool IsMixed() const;
 
-  // Returns true if the participant was mixed previous mix
+  // Returns true if the audio source was mixed previous mix
   // iteration.
   bool WasMixed() const;
 
@@ -72,17 +72,15 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
   void Process() override;
 
   // NewAudioConferenceMixer functions
-  int32_t RegisterMixedStreamCallback(
-      OldAudioMixerOutputReceiver* mixReceiver) override;
-  int32_t UnRegisterMixedStreamCallback() override;
-  int32_t SetMixabilityStatus(MixerAudioSource* participant,
+  int32_t SetMixabilityStatus(MixerAudioSource* audio_source,
                               bool mixable) override;
-  bool MixabilityStatus(const MixerAudioSource& participant) const override;
-  int32_t SetMinimumMixingFrequency(Frequency freq) override;
-  int32_t SetAnonymousMixabilityStatus(MixerAudioSource* participant,
+  bool MixabilityStatus(const MixerAudioSource& audio_source) const override;
+  int32_t SetAnonymousMixabilityStatus(MixerAudioSource* audio_source,
                                        bool mixable) override;
+  void Mix(AudioFrame* audio_frame_for_mixing) override;
+  int32_t SetMinimumMixingFrequency(Frequency freq) override;
   bool AnonymousMixabilityStatus(
-      const MixerAudioSource& participant) const override;
+      const MixerAudioSource& audio_source) const override;
 
  private:
   enum { DEFAULT_AUDIO_FRAME_POOLSIZE = 50 };
@@ -100,7 +98,7 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
   // should be ramped out over this AudioFrame to avoid audio discontinuities.
   void UpdateToMix(AudioFrameList* mixList,
                    AudioFrameList* rampOutList,
-                   std::map<int, MixerAudioSource*>* mixParticipantList,
+                   std::map<int, MixerAudioSource*>* mixAudioSourceList,
                    size_t* maxAudioFrameCounter) const;
 
   // Return the lowest mixing frequency that can be used without having to
@@ -112,29 +110,31 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
   // Return the AudioFrames that should be mixed anonymously.
   void GetAdditionalAudio(AudioFrameList* additionalFramesList) const;
 
-  // Update the NewMixHistory of all MixerAudioSources. mixedParticipantsList
+  // Update the NewMixHistory of all MixerAudioSources. mixedAudioSourcesList
   // should contain a map of MixerAudioSources that have been mixed.
   void UpdateMixedStatus(
-      const std::map<int, MixerAudioSource*>& mixedParticipantsList) const;
+      const std::map<int, MixerAudioSource*>& mixedAudioSourcesList) const;
 
   // Clears audioFrameList and reclaims all memory associated with it.
   void ClearAudioFrameList(AudioFrameList* audioFrameList) const;
 
   // This function returns true if it finds the MixerAudioSource in the
   // specified list of MixerAudioSources.
-  bool IsParticipantInList(const MixerAudioSource& participant,
-                           const MixerAudioSourceList& participantList) const;
+  bool IsAudioSourceInList(const MixerAudioSource& audio_source,
+                           const MixerAudioSourceList& audioSourceList) const;
 
   // Add/remove the MixerAudioSource to the specified
   // MixerAudioSource list.
-  bool AddParticipantToList(MixerAudioSource* participant,
-                            MixerAudioSourceList* participantList) const;
-  bool RemoveParticipantFromList(MixerAudioSource* removeParticipant,
-                                 MixerAudioSourceList* participantList) const;
+  bool AddAudioSourceToList(MixerAudioSource* audio_source,
+                            MixerAudioSourceList* audioSourceList) const;
+  bool RemoveAudioSourceFromList(MixerAudioSource* removeAudioSource,
+                                 MixerAudioSourceList* audioSourceList) const;
 
   // Mix the AudioFrames stored in audioFrameList into mixedAudio.
-  int32_t MixFromList(AudioFrame* mixedAudio,
-                      const AudioFrameList& audioFrameList) const;
+  static int32_t MixFromList(AudioFrame* mixedAudio,
+                             const AudioFrameList& audioFrameList,
+                             int32_t id,
+                             bool use_limiter);
 
   // Mix the AudioFrames stored in audioFrameList into mixedAudio. No
   // record will be kept of this mix (e.g. the corresponding MixerAudioSources
@@ -151,9 +151,6 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
 
   Frequency _minimumMixingFreq;
 
-  // Mix result callback
-  OldAudioMixerOutputReceiver* _mixReceiver;
-
   // The current sample frequency and sample size when mixing.
   Frequency _outputFrequency;
   size_t _sampleSize;
@@ -161,12 +158,12 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
   // Memory pool to avoid allocating/deallocating AudioFrames
   MemoryPool<AudioFrame>* _audioFramePool;
 
-  // List of all participants. Note all lists are disjunct
-  MixerAudioSourceList _participantList;  // May be mixed.
+  // List of all audio sources. Note all lists are disjunct
+  MixerAudioSourceList audio_source_list_;  // May be mixed.
   // Always mixed, anonomously.
-  MixerAudioSourceList _additionalParticipantList;
+  MixerAudioSourceList additional_audio_source_list_;
 
-  size_t _numMixedParticipants;
+  size_t num_mixed_audio_sources_;
   // Determines if we will use a limiter for clipping protection during
   // mixing.
   bool use_limiter_;

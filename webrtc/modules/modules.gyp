@@ -233,6 +233,7 @@
             'audio_coding/neteq/tools/packet_unittest.cc',
             'audio_conference_mixer/test/audio_conference_mixer_unittest.cc',
             'audio_device/fine_audio_buffer_unittest.cc',
+            'audio_mixer/test/audio_mixer_unittest.cc',
             'audio_processing/aec/echo_cancellation_unittest.cc',
             'audio_processing/aec/system_delay_unittest.cc',
             'audio_processing/agc/agc_manager_direct_unittest.cc',

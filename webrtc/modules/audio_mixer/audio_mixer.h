@@ -32,7 +32,7 @@ class Statistics;
 // Note: this class is in the process of being rewritten and merged
 // with AudioConferenceMixer. Expect inheritance chains to be changed,
 // member functions removed or renamed.
-class AudioMixer : public OldAudioMixerOutputReceiver, public FileCallback {
+class AudioMixer : public FileCallback {
  public:
   static int32_t Create(AudioMixer*& mixer, uint32_t instanceId);  // NOLINT
 
@@ -52,11 +52,12 @@ class AudioMixer : public OldAudioMixerOutputReceiver, public FileCallback {
 
   int32_t DoOperationsOnCombinedSignal(bool feed_data_to_apm);
 
-  int32_t SetMixabilityStatus(MixerAudioSource& participant,  // NOLINT
+  int32_t SetMixabilityStatus(MixerAudioSource& audio_source,  // NOLINT
                               bool mixable);
 
-  int32_t SetAnonymousMixabilityStatus(MixerAudioSource& participant,  // NOLINT
-                                       bool mixable);
+  int32_t SetAnonymousMixabilityStatus(
+      MixerAudioSource& audio_source,  // NOLINT
+      bool mixable);
 
   int GetMixedAudio(int sample_rate_hz,
                     size_t num_channels,
@@ -78,12 +79,6 @@ class AudioMixer : public OldAudioMixerOutputReceiver, public FileCallback {
   int StopRecordingPlayout();
 
   virtual ~AudioMixer();
-
-  // from AudioMixerOutputReceiver
-  virtual void NewMixedAudio(int32_t id,
-                             const AudioFrame& generalAudioFrame,
-                             const AudioFrame** uniqueAudioFrames,
-                             uint32_t size);
 
   // For file recording
   void PlayNotification(int32_t id, uint32_t durationMs);

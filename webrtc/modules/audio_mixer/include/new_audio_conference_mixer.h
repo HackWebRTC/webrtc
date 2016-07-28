@@ -16,13 +16,11 @@
 #include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
-class OldAudioMixerOutputReceiver;
 class MixerAudioSource;
-class Trace;
 
 class NewAudioConferenceMixer : public Module {
  public:
-  enum { kMaximumAmountOfMixedParticipants = 3 };
+  enum { kMaximumAmountOfMixedAudioSources = 3 };
   enum Frequency {
     kNbInHz = 8000,
     kWbInHz = 16000,
@@ -40,31 +38,31 @@ class NewAudioConferenceMixer : public Module {
   int64_t TimeUntilNextProcess() override = 0;
   void Process() override = 0;
 
-  // Register/unregister a callback class for receiving the mixed audio.
-  virtual int32_t RegisterMixedStreamCallback(
-      OldAudioMixerOutputReceiver* receiver) = 0;
-  virtual int32_t UnRegisterMixedStreamCallback() = 0;
-
-  // Add/remove participants as candidates for mixing.
-  virtual int32_t SetMixabilityStatus(MixerAudioSource* participant,
+  // Add/remove audio sources as candidates for mixing.
+  virtual int32_t SetMixabilityStatus(MixerAudioSource* audio_source,
                                       bool mixable) = 0;
-  // Returns true if a participant is a candidate for mixing.
-  virtual bool MixabilityStatus(const MixerAudioSource& participant) const = 0;
+  // Returns true if an audio source is a candidate for mixing.
+  virtual bool MixabilityStatus(const MixerAudioSource& audio_source) const = 0;
 
-  // Inform the mixer that the participant should always be mixed and not
-  // count toward the number of mixed participants. Note that a participant
+  // Inform the mixer that the audio source should always be mixed and not
+  // count toward the number of mixed audio sources. Note that an audio source
   // must have been added to the mixer (by calling SetMixabilityStatus())
   // before this function can be successfully called.
-  virtual int32_t SetAnonymousMixabilityStatus(MixerAudioSource* participant,
+  virtual int32_t SetAnonymousMixabilityStatus(MixerAudioSource* audio_source,
                                                bool mixable) = 0;
-  // Returns true if the participant is mixed anonymously.
-  virtual bool AnonymousMixabilityStatus(
-      const MixerAudioSource& participant) const = 0;
+
+  // Performs mixing by asking registered audio sources for audio.
+  // The mixed result is placed in the provided AudioFrame.
+  virtual void Mix(AudioFrame* audio_frame_for_mixing) = 0;
 
   // Set the minimum sampling frequency at which to mix. The mixing algorithm
   // may still choose to mix at a higher samling frequency to avoid
   // downsampling of audio contributing to the mixed audio.
   virtual int32_t SetMinimumMixingFrequency(Frequency freq) = 0;
+
+  // Returns true if the audio source is mixed anonymously.
+  virtual bool AnonymousMixabilityStatus(
+      const MixerAudioSource& audio_source) const = 0;
 
  protected:
   NewAudioConferenceMixer() {}
