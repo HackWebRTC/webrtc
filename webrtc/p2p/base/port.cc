@@ -645,7 +645,7 @@ void Port::SendBindingErrorResponse(StunMessage* request,
 }
 
 void Port::OnMessage(rtc::Message *pmsg) {
-  ASSERT(pmsg->message_id == MSG_DEAD);
+  ASSERT(pmsg->message_id == MSG_CHECK_DEAD);
   if (dead()) {
     Destroy();
   }
@@ -702,10 +702,17 @@ void Port::OnConnectionDestroyed(Connection* conn) {
   // On the controlled side, ports time out after all connections fail.
   // Note: If a new connection is added after this message is posted, but it
   // fails and is removed before kPortTimeoutDelay, then this message will
-  // still cause the Port to be destroyed.
-  if (dead()) {
-    thread_->PostDelayed(RTC_FROM_HERE, timeout_delay_, this, MSG_DEAD);
+  // not cause the Port to be destroyed.
+  if (ice_role_ == ICEROLE_CONTROLLED && connections_.empty()) {
+    last_time_all_connections_removed_ = rtc::TimeMillis();
+    thread_->PostDelayed(RTC_FROM_HERE, timeout_delay_, this, MSG_CHECK_DEAD);
   }
+}
+
+bool Port::dead() const {
+  return ice_role_ == ICEROLE_CONTROLLED && connections_.empty() &&
+         rtc::TimeMillis() - last_time_all_connections_removed_ >=
+             timeout_delay_;
 }
 
 void Port::Destroy() {

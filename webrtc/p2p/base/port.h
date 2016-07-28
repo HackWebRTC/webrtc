@@ -297,10 +297,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
   int16_t network_cost() const { return network_cost_; }
 
  protected:
-  enum {
-    MSG_DEAD = 0,
-    MSG_FIRST_AVAILABLE
-  };
+  enum { MSG_CHECK_DEAD = 0, MSG_FIRST_AVAILABLE };
 
   virtual void UpdateNetworkCost();
 
@@ -359,9 +356,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
 
   // Whether this port is dead, and hence, should be destroyed on the controlled
   // side.
-  bool dead() const {
-    return ice_role_ == ICEROLE_CONTROLLED && connections_.empty();
-  }
+  bool dead() const;
 
   void OnNetworkTypeChanged(const rtc::Network* network);
 
@@ -401,6 +396,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
   // (WiFi. vs. Cellular). It takes precedence over the priority when
   // comparing two connections.
   uint16_t network_cost_;
+  int64_t last_time_all_connections_removed_ = 0;
 
   friend class Connection;
 };

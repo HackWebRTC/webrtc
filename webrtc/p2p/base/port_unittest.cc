@@ -2592,15 +2592,17 @@ TEST_F(PortTest, TestControllingNoTimeout) {
 }
 
 // This test case verifies that the CONTROLLED port does time out, but only
-// after connectivity is lost.
+// after connectivity is lost and no connection was created during the timeout
+// period.
 TEST_F(PortTest, TestControlledTimeout) {
+  rtc::ScopedFakeClock clock;
   UDPPort* port1 = CreateUdpPort(kLocalAddr1);
   port1->SetIceRole(cricket::ICEROLE_CONTROLLING);
   port1->SetIceTiebreaker(kTiebreaker1);
 
   UDPPort* port2 = CreateUdpPort(kLocalAddr2);
   ConnectToSignalDestroyed(port2);
-  port2->set_timeout_delay(10);  // milliseconds
+  port2->set_timeout_delay(100);  // milliseconds
   port2->SetIceRole(cricket::ICEROLE_CONTROLLED);
   port2->SetIceTiebreaker(kTiebreaker2);
 
@@ -2617,8 +2619,21 @@ TEST_F(PortTest, TestControlledTimeout) {
   // Simulate a connection that succeeds, and then is destroyed.
   StartConnectAndStopChannels(&ch1, &ch2);
 
-  // The controlled port should be destroyed after 10 milliseconds.
-  EXPECT_TRUE_WAIT(destroyed(), kTimeout);
+  SIMULATED_WAIT(false, 80, clock);
+  ch2.CreateConnection(GetCandidate(ch1.port()));
+
+  // ch2 creates a connection so it will not be destroyed.
+  SIMULATED_WAIT(destroyed(), 80, clock);
+  EXPECT_FALSE(destroyed());
+
+  // Even if ch2 stops now, it won't be destroyed until 100ms after the
+  // connection is destroyed.
+  ch2.Stop();
+  SIMULATED_WAIT(destroyed(), 80, clock);
+  EXPECT_FALSE(destroyed());
+
+  // The controlled port should be destroyed after timeout.
+  EXPECT_TRUE_SIMULATED_WAIT(destroyed(), 30, clock);
 }
 
 // This test case verifies that if the role of a port changes from controlled
