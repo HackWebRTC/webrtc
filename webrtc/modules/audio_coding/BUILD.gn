@@ -968,6 +968,35 @@ if (rtc_include_tests) {
     ]
   }  # delay_test
 
+  executable("insert_packet_with_timing") {
+    testonly = true
+    sources = [
+      "test/Channel.cc",
+      "test/PCMFile.cc",
+      "test/insert_packet_with_timing.cc",
+    ]
+
+    configs += [ "../..:common_config" ]
+    public_configs = [ "../..:common_inherited_config" ]
+
+    if (is_clang) {
+      # Suppress warnings from Chrome's Clang plugins.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    deps = [
+      ":audio_coding",
+      "../../:webrtc_common",
+      "../../system_wrappers",
+      "../../system_wrappers:system_wrappers_default",
+      "../../test:test_support",
+      "../rtp_rtcp",
+      "//testing/gtest",
+      "//third_party/gflags:gflags",
+    ]
+  }  # insert_packet_with_timing
+
   if (rtc_enable_protobuf) {
     proto_library("neteq_unittest_proto") {
       sources = [
