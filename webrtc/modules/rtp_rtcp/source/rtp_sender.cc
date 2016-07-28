@@ -1128,7 +1128,7 @@ size_t RTPSender::CreateRtpHeader(uint8_t* header,
   }
 
   uint16_t len =
-      BuildRTPHeaderExtension(header + rtp_header_length, marker_bit);
+      BuildRtpHeaderExtension(header + rtp_header_length, marker_bit);
   if (len > 0) {
     header[0] |= 0x10;  // Set extension bit.
     rtp_header_length += len;
@@ -1143,17 +1143,19 @@ int32_t RTPSender::BuildRTPheader(uint8_t* data_buffer,
                                   int64_t capture_time_ms,
                                   bool timestamp_provided,
                                   bool inc_sequence_number) {
+  return BuildRtpHeader(data_buffer, payload_type, marker_bit,
+                        capture_timestamp, capture_time_ms);
+}
+
+int32_t RTPSender::BuildRtpHeader(uint8_t* data_buffer,
+                                  int8_t payload_type,
+                                  bool marker_bit,
+                                  uint32_t capture_timestamp,
+                                  int64_t capture_time_ms) {
   assert(payload_type >= 0);
   rtc::CritScope lock(&send_critsect_);
 
-  if (timestamp_provided) {
-    timestamp_ = start_timestamp_ + capture_timestamp;
-  } else {
-    // Make a unique time stamp.
-    // We can't inc by the actual time, since then we increase the risk of back
-    // timing.
-    timestamp_++;
-  }
+  timestamp_ = start_timestamp_ + capture_timestamp;
   last_timestamp_time_ms_ = clock_->TimeInMilliseconds();
   uint32_t sequence_number = sequence_number_++;
   capture_time_ms_ = capture_time_ms;
@@ -1162,7 +1164,7 @@ int32_t RTPSender::BuildRTPheader(uint8_t* data_buffer,
                          timestamp_, sequence_number, csrcs_);
 }
 
-uint16_t RTPSender::BuildRTPHeaderExtension(uint8_t* data_buffer,
+uint16_t RTPSender::BuildRtpHeaderExtension(uint8_t* data_buffer,
                                             bool marker_bit) const {
   if (rtp_header_extension_map_.Size() <= 0) {
     return 0;
@@ -1775,8 +1777,8 @@ void RTPSender::SetGenericFECStatus(bool enable,
 }
 
 void RTPSender::GenericFECStatus(bool* enable,
-                                    uint8_t* payload_type_red,
-                                    uint8_t* payload_type_fec) const {
+                                 uint8_t* payload_type_red,
+                                 uint8_t* payload_type_fec) const {
   RTC_DCHECK(!audio_configured_);
   video_->GenericFECStatus(enable, payload_type_red, payload_type_fec);
 }

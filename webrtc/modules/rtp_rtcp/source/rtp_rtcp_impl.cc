@@ -46,25 +46,7 @@ RTPExtensionType StringToRtpExtensionType(const std::string& extension) {
 }
 
 RtpRtcp::Configuration::Configuration()
-    : audio(false),
-      receiver_only(false),
-      clock(nullptr),
-      receive_statistics(NullObjectReceiveStatistics()),
-      outgoing_transport(nullptr),
-      intra_frame_callback(nullptr),
-      bandwidth_callback(nullptr),
-      transport_feedback_callback(nullptr),
-      rtt_stats(nullptr),
-      rtcp_packet_type_counter_observer(nullptr),
-      remote_bitrate_estimator(nullptr),
-      paced_sender(nullptr),
-      transport_sequence_number_allocator(nullptr),
-      send_bitrate_observer(nullptr),
-      send_frame_count_observer(nullptr),
-      send_side_delay_observer(nullptr),
-      event_log(nullptr),
-      send_packet_observer(nullptr),
-      retransmission_rate_limiter(nullptr) {}
+    : receive_statistics(NullObjectReceiveStatistics()) {}
 
 RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
   if (configuration.clock) {
@@ -245,8 +227,8 @@ int32_t ModuleRtpRtcpImpl::IncomingRtcpPacket(
     return -1;
   }
   RTCPHelp::RTCPPacketInformation rtcp_packet_information;
-  int32_t ret_val = rtcp_receiver_.IncomingRTCPPacket(
-      rtcp_packet_information, &rtcp_parser);
+  int32_t ret_val =
+      rtcp_receiver_.IncomingRTCPPacket(rtcp_packet_information, &rtcp_parser);
   if (ret_val == 0) {
     rtcp_receiver_.TriggerCallbacksFromRTCPPacket(rtcp_packet_information);
   }
@@ -256,11 +238,8 @@ int32_t ModuleRtpRtcpImpl::IncomingRtcpPacket(
 int32_t ModuleRtpRtcpImpl::RegisterSendPayload(
     const CodecInst& voice_codec) {
   return rtp_sender_.RegisterPayload(
-           voice_codec.plname,
-           voice_codec.pltype,
-           voice_codec.plfreq,
-           voice_codec.channels,
-           (voice_codec.rate < 0) ? 0 : voice_codec.rate);
+      voice_codec.plname, voice_codec.pltype, voice_codec.plfreq,
+      voice_codec.channels, (voice_codec.rate < 0) ? 0 : voice_codec.rate);
 }
 
 int32_t ModuleRtpRtcpImpl::RegisterSendPayload(const VideoCodec& video_codec) {
@@ -413,7 +392,7 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
     const uint8_t* payload_data,
     size_t payload_size,
     const RTPFragmentationHeader* fragmentation,
-    const RTPVideoHeader* rtp_video_hdr) {
+    const RTPVideoHeader* rtp_video_header) {
   rtcp_sender_.SetLastRtpTime(time_stamp, capture_time_ms);
   // Make sure an RTCP report isn't queued behind a key frame.
   if (rtcp_sender_.TimeToSendRTCPReport(kVideoFrameKey == frame_type)) {
@@ -421,7 +400,7 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
   }
   return rtp_sender_.SendOutgoingData(
       frame_type, payload_type, time_stamp, capture_time_ms, payload_data,
-      payload_size, fragmentation, rtp_video_hdr);
+      payload_size, fragmentation, rtp_video_header);
 }
 
 bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,

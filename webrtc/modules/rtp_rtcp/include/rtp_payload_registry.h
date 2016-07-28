@@ -29,24 +29,24 @@ class RTPPayloadStrategy {
   virtual bool CodecsMustBeUnique() const = 0;
 
   virtual bool PayloadIsCompatible(const RtpUtility::Payload& payload,
-                                   const uint32_t frequency,
-                                   const size_t channels,
-                                   const uint32_t rate) const = 0;
+                                   uint32_t frequency,
+                                   size_t channels,
+                                   uint32_t rate) const = 0;
 
   virtual void UpdatePayloadRate(RtpUtility::Payload* payload,
-                                 const uint32_t rate) const = 0;
+                                 uint32_t rate) const = 0;
 
   virtual RtpUtility::Payload* CreatePayloadType(
-      const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-      const int8_t payloadType,
-      const uint32_t frequency,
-      const size_t channels,
-      const uint32_t rate) const = 0;
+      const char payload_name[RTP_PAYLOAD_NAME_SIZE],
+      int8_t payload_type,
+      uint32_t frequency,
+      size_t channels,
+      uint32_t rate) const = 0;
 
   virtual int GetPayloadTypeFrequency(
       const RtpUtility::Payload& payload) const = 0;
 
-  static RTPPayloadStrategy* CreateStrategy(const bool handling_audio);
+  static RTPPayloadStrategy* CreateStrategy(bool handling_audio);
 
  protected:
   RTPPayloadStrategy() {}
@@ -58,23 +58,20 @@ class RTPPayloadRegistry {
   explicit RTPPayloadRegistry(RTPPayloadStrategy* rtp_payload_strategy);
   ~RTPPayloadRegistry();
 
-  int32_t RegisterReceivePayload(
-      const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-      const int8_t payload_type,
-      const uint32_t frequency,
-      const size_t channels,
-      const uint32_t rate,
-      bool* created_new_payload_type);
+  int32_t RegisterReceivePayload(const char payload_name[RTP_PAYLOAD_NAME_SIZE],
+                                 int8_t payload_type,
+                                 uint32_t frequency,
+                                 size_t channels,
+                                 uint32_t rate,
+                                 bool* created_new_payload_type);
 
-  int32_t DeRegisterReceivePayload(
-      const int8_t payload_type);
+  int32_t DeRegisterReceivePayload(int8_t payload_type);
 
-  int32_t ReceivePayloadType(
-      const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-      const uint32_t frequency,
-      const size_t channels,
-      const uint32_t rate,
-      int8_t* payload_type) const;
+  int32_t ReceivePayloadType(const char payload_name[RTP_PAYLOAD_NAME_SIZE],
+                             uint32_t frequency,
+                             size_t channels,
+                             uint32_t rate,
+                             int8_t* payload_type) const;
 
   bool RtxEnabled() const;
 
@@ -154,21 +151,21 @@ class RTPPayloadRegistry {
   // Prunes the payload type map of the specific payload type, if it exists.
   void DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-      const size_t payload_name_length,
-      const uint32_t frequency,
-      const size_t channels,
-      const uint32_t rate);
+      size_t payload_name_length,
+      uint32_t frequency,
+      size_t channels,
+      uint32_t rate);
 
   bool IsRtxInternal(const RTPHeader& header) const;
 
   rtc::CriticalSection crit_sect_;
   RtpUtility::PayloadTypeMap payload_type_map_;
   std::unique_ptr<RTPPayloadStrategy> rtp_payload_strategy_;
-  int8_t  red_payload_type_;
+  int8_t red_payload_type_;
   int8_t ulpfec_payload_type_;
   int8_t incoming_payload_type_;
-  int8_t  last_received_payload_type_;
-  int8_t  last_received_media_payload_type_;
+  int8_t last_received_payload_type_;
+  int8_t last_received_media_payload_type_;
   bool rtx_;
   // TODO(changbin): Remove rtx_payload_type_ once interop with old clients that
   // only understand one RTX PT is no longer needed.

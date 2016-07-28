@@ -22,20 +22,20 @@ class MockRTPPayloadStrategy : public RTPPayloadStrategy {
       bool());
   MOCK_CONST_METHOD4(PayloadIsCompatible,
                      bool(const RtpUtility::Payload& payload,
-                          const uint32_t frequency,
-                          const size_t channels,
-                          const uint32_t rate));
+                          uint32_t frequency,
+                          size_t channels,
+                          uint32_t rate));
   MOCK_CONST_METHOD2(UpdatePayloadRate,
-                     void(RtpUtility::Payload* payload, const uint32_t rate));
+                     void(RtpUtility::Payload* payload, uint32_t rate));
   MOCK_CONST_METHOD1(GetPayloadTypeFrequency,
                      int(const RtpUtility::Payload& payload));
   MOCK_CONST_METHOD5(
       CreatePayloadType,
-      RtpUtility::Payload*(const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-                           const int8_t payloadType,
-                           const uint32_t frequency,
-                           const size_t channels,
-                           const uint32_t rate));
+      RtpUtility::Payload*(const char payload_name[RTP_PAYLOAD_NAME_SIZE],
+                           int8_t payload_type,
+                           uint32_t frequency,
+                           size_t channels,
+                           uint32_t rate));
 };
 
 }  // namespace webrtc

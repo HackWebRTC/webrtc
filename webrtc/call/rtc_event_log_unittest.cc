@@ -144,13 +144,9 @@ size_t GenerateRtpPacket(uint32_t extensions_bitvector,
   bool marker_bit = prng->Rand<bool>();
   uint32_t capture_timestamp = prng->Rand<uint32_t>();
   int64_t capture_time_ms = prng->Rand<uint32_t>();
-  bool timestamp_provided = prng->Rand<bool>();
-  bool inc_sequence_number = prng->Rand<bool>();
 
-  size_t header_size = rtp_sender.BuildRTPheader(
-      packet, payload_type, marker_bit, capture_timestamp, capture_time_ms,
-      timestamp_provided, inc_sequence_number);
-
+  size_t header_size = rtp_sender.BuildRtpHeader(
+      packet, payload_type, marker_bit, capture_timestamp, capture_time_ms);
   for (size_t i = header_size; i < packet_size; i++) {
     packet[i] = prng->Rand<uint8_t>();
   }

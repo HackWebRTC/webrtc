@@ -90,13 +90,13 @@ class RtpStreamReceiver : public RtpData, public RtpFeedback,
   bool OnRecoveredPacket(const uint8_t* packet, size_t packet_length) override;
 
   // Implements RtpFeedback.
-  int32_t OnInitializeDecoder(const int8_t payload_type,
+  int32_t OnInitializeDecoder(int8_t payload_type,
                               const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-                              const int frequency,
-                              const size_t channels,
-                              const uint32_t rate) override;
-  void OnIncomingSSRCChanged(const uint32_t ssrc) override;
-  void OnIncomingCSRCChanged(const uint32_t CSRC, const bool added) override {}
+                              int frequency,
+                              size_t channels,
+                              uint32_t rate) override;
+  void OnIncomingSSRCChanged(uint32_t ssrc) override;
+  void OnIncomingCSRCChanged(uint32_t CSRC, bool added) override {}
 
   // Implements VCMFrameTypeCallback.
   int32_t RequestKeyFrame() override;

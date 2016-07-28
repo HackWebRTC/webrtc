@@ -47,6 +47,9 @@ class RTPSenderInterface {
   virtual uint32_t SSRC() const = 0;
   virtual uint32_t Timestamp() const = 0;
 
+  // Deprecated version of BuildRtpHeader(). |timestamp_provided| and
+  // |inc_sequence_number| are ignored.
+  // TODO(sergeyu): Remove this method.
   virtual int32_t BuildRTPheader(uint8_t* data_buffer,
                                  int8_t payload_type,
                                  bool marker_bit,
@@ -54,6 +57,12 @@ class RTPSenderInterface {
                                  int64_t capture_time_ms,
                                  bool timestamp_provided = true,
                                  bool inc_sequence_number = true) = 0;
+
+  virtual int32_t BuildRtpHeader(uint8_t* data_buffer,
+                                 int8_t payload_type,
+                                 bool marker_bit,
+                                 uint32_t capture_timestamp,
+                                 int64_t capture_time_ms) = 0;
 
   // This returns the expected header length taking into consideration
   // the optional RTP header extensions that may not be currently active.
@@ -152,7 +161,7 @@ class RTPSender : public RTPSenderInterface {
                            const uint8_t* payload_data,
                            size_t payload_size,
                            const RTPFragmentationHeader* fragmentation,
-                           const RTPVideoHeader* rtp_hdr = NULL);
+                           const RTPVideoHeader* rtp_header);
 
   // RTP header extension
   int32_t SetTransmissionTimeOffset(int32_t transmission_time_offset);
@@ -166,7 +175,7 @@ class RTPSender : public RTPSenderInterface {
 
   size_t RtpHeaderExtensionLength() const;
 
-  uint16_t BuildRTPHeaderExtension(uint8_t* data_buffer, bool marker_bit) const
+  uint16_t BuildRtpHeaderExtension(uint8_t* data_buffer, bool marker_bit) const
       EXCLUSIVE_LOCKS_REQUIRED(send_critsect_);
 
   uint8_t BuildTransmissionTimeOffsetExtension(uint8_t* data_buffer) const
@@ -251,8 +260,13 @@ class RTPSender : public RTPSenderInterface {
                          bool marker_bit,
                          uint32_t capture_timestamp,
                          int64_t capture_time_ms,
-                         const bool timestamp_provided = true,
-                         const bool inc_sequence_number = true) override;
+                         bool timestamp_provided = true,
+                         bool inc_sequence_number = true) override;
+  int32_t BuildRtpHeader(uint8_t* data_buffer,
+                         int8_t payload_type,
+                         bool marker_bit,
+                         uint32_t capture_timestamp,
+                         int64_t capture_time_ms) override;
 
   size_t RtpHeaderLength() const override;
   uint16_t AllocateSequenceNumber(uint16_t packets_to_send) override;
@@ -308,7 +322,6 @@ class RTPSender : public RTPSenderInterface {
                      bool timestamp_provided,
                      uint32_t timestamp,
                      int64_t capture_time_ms);
-
   size_t SendPadData(size_t bytes,
                      bool timestamp_provided,
                      uint32_t timestamp,
