@@ -11,6 +11,7 @@
 #include "webrtc/tools/event_log_visualizer/plot_python.h"
 
 #include <stdio.h>
+#include <memory>
 
 namespace webrtc {
 namespace plotting {
@@ -58,6 +59,11 @@ void PythonPlot::draw() {
       } else if (series[i].style == LINE_GRAPH) {
         printf("plt.plot(x%zu, y%zu, color=rgb_colors[%zu], label=\'%s\')\n", i,
                i, i, series[i].label.c_str());
+      } else if (series[i].style == LINE_DOT_GRAPH) {
+        printf(
+            "plt.plot(x%zu, y%zu, color=rgb_colors[%zu], label=\'%s\', "
+            "marker='.')\n",
+            i, i, i, series[i].label.c_str());
       } else {
         printf("raise Exception(\"Unknown graph type\")\n");
       }

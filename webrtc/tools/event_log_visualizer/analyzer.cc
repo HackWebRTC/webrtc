@@ -22,9 +22,12 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/call.h"
 #include "webrtc/common_types.h"
+#include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
 
@@ -92,21 +95,15 @@ bool EventLogAnalyzer::StreamId::operator<(const StreamId& other) const {
     return true;
   }
   if (ssrc_ == other.ssrc_) {
-    if (media_type_ < other.media_type_) {
+    if (direction_ < other.direction_) {
       return true;
-    }
-    if (media_type_ == other.media_type_) {
-      if (direction_ < other.direction_) {
-        return true;
-      }
     }
   }
   return false;
 }
 
 bool EventLogAnalyzer::StreamId::operator==(const StreamId& other) const {
-  return ssrc_ == other.ssrc_ && direction_ == other.direction_ &&
-         media_type_ == other.media_type_;
+  return ssrc_ == other.ssrc_ && direction_ == other.direction_;
 }
 
 
@@ -115,12 +112,11 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
   uint64_t first_timestamp = std::numeric_limits<uint64_t>::max();
   uint64_t last_timestamp = std::numeric_limits<uint64_t>::min();
 
-  // Maps a stream identifier consisting of ssrc, direction and MediaType
+  // Maps a stream identifier consisting of ssrc and direction
   // to the header extensions used by that stream,
   std::map<StreamId, RtpHeaderExtensionMap> extension_maps;
 
   PacketDirection direction;
-  MediaType media_type;
   uint8_t header[IP_PACKET_SIZE];
   size_t header_length;
   size_t total_length;
@@ -140,8 +136,7 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
       case ParsedRtcEventLog::VIDEO_RECEIVER_CONFIG_EVENT: {
         VideoReceiveStream::Config config(nullptr);
         parsed_log_.GetVideoReceiveConfig(i, &config);
-        StreamId stream(config.rtp.remote_ssrc, kIncomingPacket,
-                        MediaType::VIDEO);
+        StreamId stream(config.rtp.remote_ssrc, kIncomingPacket);
         extension_maps[stream].Erase();
         for (size_t j = 0; j < config.rtp.extensions.size(); ++j) {
           const std::string& extension = config.rtp.extensions[j].uri;
@@ -155,7 +150,7 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         VideoSendStream::Config config(nullptr);
         parsed_log_.GetVideoSendConfig(i, &config);
         for (auto ssrc : config.rtp.ssrcs) {
-          StreamId stream(ssrc, kOutgoingPacket, MediaType::VIDEO);
+          StreamId stream(ssrc, kOutgoingPacket);
           extension_maps[stream].Erase();
           for (size_t j = 0; j < config.rtp.extensions.size(); ++j) {
             const std::string& extension = config.rtp.extensions[j].uri;
@@ -177,13 +172,14 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         break;
       }
       case ParsedRtcEventLog::RTP_EVENT: {
+        MediaType media_type;
         parsed_log_.GetRtpHeader(i, &direction, &media_type, header,
                                  &header_length, &total_length);
         // Parse header to get SSRC.
         RtpUtility::RtpHeaderParser rtp_parser(header, header_length);
         RTPHeader parsed_header;
         rtp_parser.Parse(&parsed_header);
-        StreamId stream(parsed_header.ssrc, direction, media_type);
+        StreamId stream(parsed_header.ssrc, direction);
         // Look up the extension_map and parse it again to get the extensions.
         if (extension_maps.count(stream) == 1) {
           RtpHeaderExtensionMap* extension_map = &extension_maps[stream];
@@ -191,10 +187,45 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         }
         uint64_t timestamp = parsed_log_.GetTimestamp(i);
         rtp_packets_[stream].push_back(
-            LoggedRtpPacket(timestamp, parsed_header));
+            LoggedRtpPacket(timestamp, parsed_header, total_length));
         break;
       }
       case ParsedRtcEventLog::RTCP_EVENT: {
+        uint8_t packet[IP_PACKET_SIZE];
+        MediaType media_type;
+        parsed_log_.GetRtcpPacket(i, &direction, &media_type, packet,
+                                  &total_length);
+
+        RtpUtility::RtpHeaderParser rtp_parser(packet, total_length);
+        RTPHeader parsed_header;
+        RTC_CHECK(rtp_parser.ParseRtcp(&parsed_header));
+        uint32_t ssrc = parsed_header.ssrc;
+
+        RTCPUtility::RTCPParserV2 rtcp_parser(packet, total_length, true);
+        RTC_CHECK(rtcp_parser.IsValid());
+
+        RTCPUtility::RTCPPacketTypes packet_type = rtcp_parser.Begin();
+        while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
+          switch (packet_type) {
+            case RTCPUtility::RTCPPacketTypes::kTransportFeedback: {
+              // Currently feedback is logged twice, both for audio and video.
+              // Only act on one of them.
+              if (media_type == MediaType::VIDEO) {
+                std::unique_ptr<rtcp::RtcpPacket> rtcp_packet(
+                    rtcp_parser.ReleaseRtcpPacket());
+                StreamId stream(ssrc, direction);
+                uint64_t timestamp = parsed_log_.GetTimestamp(i);
+                rtcp_packets_[stream].push_back(LoggedRtcpPacket(
+                    timestamp, kRtcpTransportFeedback, std::move(rtcp_packet)));
+              }
+              break;
+            }
+            default:
+              break;
+          }
+          rtcp_parser.Iterate();
+          packet_type = rtcp_parser.PacketType();
+        }
         break;
       }
       case ParsedRtcEventLog::LOG_START: {
@@ -231,6 +262,33 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
   begin_time_ = first_timestamp;
   end_time_ = last_timestamp;
 }
+
+class BitrateObserver : public CongestionController::Observer,
+                        public RemoteBitrateObserver {
+ public:
+  BitrateObserver() : last_bitrate_bps_(0), bitrate_updated_(false) {}
+
+  void OnNetworkChanged(uint32_t bitrate_bps,
+                        uint8_t fraction_loss,
+                        int64_t rtt_ms) override {
+    last_bitrate_bps_ = bitrate_bps;
+    bitrate_updated_ = true;
+  }
+
+  void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
+                               uint32_t bitrate) override {}
+
+  uint32_t last_bitrate_bps() const { return last_bitrate_bps_; }
+  bool GetAndResetBitrateUpdated() {
+    bool bitrate_updated = bitrate_updated_;
+    bitrate_updated_ = false;
+    return bitrate_updated;
+  }
+
+ private:
+  uint32_t last_bitrate_bps_;
+  bool bitrate_updated_;
+};
 
 void EventLogAnalyzer::CreatePacketGraph(PacketDirection desired_direction,
                                          Plot* plot) {
@@ -673,6 +731,114 @@ void EventLogAnalyzer::CreateStreamBitrateGraph(
   } else if (desired_direction == webrtc::PacketDirection::kOutgoingPacket) {
     plot->title = "Outgoing bitrate per stream";
   }
+}
+
+void EventLogAnalyzer::CreateBweGraph(Plot* plot) {
+  std::map<uint64_t, const LoggedRtpPacket*> outgoing_rtp;
+  std::map<uint64_t, const LoggedRtcpPacket*> incoming_rtcp;
+
+  for (const auto& kv : rtp_packets_) {
+    if (kv.first.GetDirection() == PacketDirection::kOutgoingPacket) {
+      for (const LoggedRtpPacket& rtp_packet : kv.second)
+        outgoing_rtp.insert(std::make_pair(rtp_packet.timestamp, &rtp_packet));
+    }
+  }
+
+  for (const auto& kv : rtcp_packets_) {
+    if (kv.first.GetDirection() == PacketDirection::kIncomingPacket) {
+      for (const LoggedRtcpPacket& rtcp_packet : kv.second)
+        incoming_rtcp.insert(
+            std::make_pair(rtcp_packet.timestamp, &rtcp_packet));
+    }
+  }
+
+  SimulatedClock clock(0);
+  BitrateObserver observer;
+  RtcEventLogNullImpl null_event_log;
+  CongestionController cc(&clock, &observer, &observer, &null_event_log);
+  // TODO(holmer): Log the call config and use that here instead.
+  static const uint32_t kDefaultStartBitrateBps = 300000;
+  cc.SetBweBitrates(0, kDefaultStartBitrateBps, -1);
+
+  TimeSeries time_series;
+  time_series.label = "BWE";
+  time_series.style = LINE_DOT_GRAPH;
+  uint32_t max_y = 10;
+  uint32_t min_y = 0;
+
+  auto rtp_iterator = outgoing_rtp.begin();
+  auto rtcp_iterator = incoming_rtcp.begin();
+
+  auto NextRtpTime = [&]() {
+    if (rtp_iterator != outgoing_rtp.end())
+      return static_cast<int64_t>(rtp_iterator->first);
+    return std::numeric_limits<int64_t>::max();
+  };
+
+  auto NextRtcpTime = [&]() {
+    if (rtcp_iterator != incoming_rtcp.end())
+      return static_cast<int64_t>(rtcp_iterator->first);
+    return std::numeric_limits<int64_t>::max();
+  };
+
+  auto NextProcessTime = [&]() {
+    if (rtcp_iterator != incoming_rtcp.end() ||
+        rtp_iterator != outgoing_rtp.end()) {
+      return clock.TimeInMicroseconds() +
+             std::max<int64_t>(cc.TimeUntilNextProcess() * 1000, 0);
+    }
+    return std::numeric_limits<int64_t>::max();
+  };
+
+  int64_t time_us = std::min(NextRtpTime(), NextRtcpTime());
+  while (time_us != std::numeric_limits<int64_t>::max()) {
+    clock.AdvanceTimeMicroseconds(time_us - clock.TimeInMicroseconds());
+    if (clock.TimeInMicroseconds() >= NextRtcpTime()) {
+      clock.AdvanceTimeMilliseconds(rtcp_iterator->first / 1000 -
+                                    clock.TimeInMilliseconds());
+      const LoggedRtcpPacket& rtcp = *rtcp_iterator->second;
+      if (rtcp.type == kRtcpTransportFeedback) {
+        cc.GetTransportFeedbackObserver()->OnTransportFeedback(
+            *static_cast<rtcp::TransportFeedback*>(rtcp.packet.get()));
+      }
+      ++rtcp_iterator;
+    }
+    if (clock.TimeInMicroseconds() >= NextRtpTime()) {
+      clock.AdvanceTimeMilliseconds(rtp_iterator->first / 1000 -
+                                    clock.TimeInMilliseconds());
+      const LoggedRtpPacket& rtp = *rtp_iterator->second;
+      if (rtp.header.extension.hasTransportSequenceNumber) {
+        RTC_DCHECK(rtp.header.extension.hasTransportSequenceNumber);
+        cc.GetTransportFeedbackObserver()->AddPacket(
+            rtp.header.extension.transportSequenceNumber, rtp.total_length, 0);
+        rtc::SentPacket sent_packet(
+            rtp.header.extension.transportSequenceNumber, rtp.timestamp / 1000);
+        cc.OnSentPacket(sent_packet);
+      }
+      ++rtp_iterator;
+    }
+    if (clock.TimeInMicroseconds() >= NextProcessTime())
+      cc.Process();
+    if (observer.GetAndResetBitrateUpdated()) {
+      uint32_t y = observer.last_bitrate_bps() / 1000;
+      max_y = std::max(max_y, y);
+      min_y = std::min(min_y, y);
+      float x = static_cast<float>(clock.TimeInMicroseconds() - begin_time_) /
+                1000000;
+      time_series.points.emplace_back(x, y);
+    }
+    time_us = std::min({NextRtpTime(), NextRtcpTime(), NextProcessTime()});
+  }
+  // Add the data set to the plot.
+  plot->series.push_back(std::move(time_series));
+
+  plot->xaxis_min = kDefaultXMin;
+  plot->xaxis_max = (end_time_ - begin_time_) / 1000000 * kXMargin;
+  plot->xaxis_label = "Time (s)";
+  plot->yaxis_min = min_y - (kYMargin - 1) / 2 * (max_y - min_y);
+  plot->yaxis_max = max_y + (kYMargin - 1) / 2 * (max_y - min_y);
+  plot->yaxis_label = "Bitrate (kbps)";
+  plot->title = "BWE";
 }
 
 }  // namespace plotting

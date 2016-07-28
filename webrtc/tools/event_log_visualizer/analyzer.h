@@ -13,8 +13,12 @@
 
 #include <vector>
 #include <map>
+#include <memory>
+#include <utility>
 
 #include "webrtc/call/rtc_event_log_parser.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/tools/event_log_visualizer/plot_base.h"
 
 namespace webrtc {
@@ -41,30 +45,41 @@ class EventLogAnalyzer {
 
   void CreateStreamBitrateGraph(PacketDirection desired_direction, Plot* plot);
 
+  void CreateBweGraph(Plot* plot);
+
  private:
   class StreamId {
    public:
-    StreamId(uint32_t ssrc,
-             webrtc::PacketDirection direction,
-             webrtc::MediaType media_type)
-        : ssrc_(ssrc), direction_(direction), media_type_(media_type) {}
+    StreamId(uint32_t ssrc, webrtc::PacketDirection direction)
+        : ssrc_(ssrc), direction_(direction) {}
     bool operator<(const StreamId& other) const;
     bool operator==(const StreamId& other) const;
     uint32_t GetSsrc() const { return ssrc_; }
     webrtc::PacketDirection GetDirection() const { return direction_; }
-    webrtc::MediaType GetMediaType() const { return media_type_; }
 
    private:
     uint32_t ssrc_;
     webrtc::PacketDirection direction_;
-    webrtc::MediaType media_type_;
   };
 
   struct LoggedRtpPacket {
-    LoggedRtpPacket(uint64_t timestamp, RTPHeader header)
-        : timestamp(timestamp), header(header) {}
+    LoggedRtpPacket(uint64_t timestamp, RTPHeader header, size_t total_length)
+        : timestamp(timestamp), header(header), total_length(total_length) {}
     uint64_t timestamp;
     RTPHeader header;
+    size_t total_length;
+  };
+
+  struct LoggedRtcpPacket {
+    LoggedRtcpPacket(uint64_t timestamp,
+                     RTCPPacketType rtcp_type,
+                     std::unique_ptr<rtcp::RtcpPacket> rtcp_packet)
+        : timestamp(timestamp),
+          type(rtcp_type),
+          packet(std::move(rtcp_packet)) {}
+    uint64_t timestamp;
+    RTCPPacketType type;
+    std::unique_ptr<rtcp::RtcpPacket> packet;
   };
 
   struct BwePacketLossEvent {
@@ -84,6 +99,8 @@ class EventLogAnalyzer {
   // to the parsed RTP headers in that stream. Header extensions are parsed
   // if the stream has been configured.
   std::map<StreamId, std::vector<LoggedRtpPacket>> rtp_packets_;
+
+  std::map<StreamId, std::vector<LoggedRtcpPacket>> rtcp_packets_;
 
   // A list of all updates from the send-side loss-based bandwidth estimator.
   std::vector<BwePacketLossEvent> bwe_loss_updates_;
