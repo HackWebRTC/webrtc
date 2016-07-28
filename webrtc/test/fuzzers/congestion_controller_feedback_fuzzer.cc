@@ -26,13 +26,42 @@ class NullBitrateObserver : public CongestionController::Observer,
                                uint32_t bitrate) override {}
 };
 
+class NullEventLog : public RtcEventLog {
+ public:
+  ~NullEventLog() override {}
+  bool StartLogging(const std::string& file_name,
+                    int64_t max_size_bytes) override {
+    return true;
+  }
+  bool StartLogging(rtc::PlatformFile platform_file, int64_t max_size_bytes) {
+    return true;
+  }
+  void StopLogging() override{};
+  void LogVideoReceiveStreamConfig(
+      const webrtc::VideoReceiveStream::Config& config) override {}
+  void LogVideoSendStreamConfig(
+      const webrtc::VideoSendStream::Config& config) override {}
+  void LogRtpHeader(PacketDirection direction,
+                    MediaType media_type,
+                    const uint8_t* header,
+                    size_t packet_length) override {}
+  void LogRtcpPacket(PacketDirection direction,
+                     MediaType media_type,
+                     const uint8_t* packet,
+                     size_t length) override {}
+  void LogAudioPlayout(uint32_t ssrc) override {}
+  void LogBwePacketLossEvent(int32_t bitrate,
+                             uint8_t fraction_loss,
+                             int32_t total_packets) override {}
+};
+
 void FuzzOneInput(const uint8_t* data, size_t size) {
   size_t i = 0;
   if (size < sizeof(int64_t) + sizeof(uint8_t) + sizeof(uint32_t))
     return;
   SimulatedClock clock(data[i++]);
   NullBitrateObserver observer;
-  RtcEventLogNullImpl event_log;
+  NullEventLog event_log;
   CongestionController cc(&clock, &observer, &observer, &event_log);
   RemoteBitrateEstimator* rbe = cc.GetRemoteBitrateEstimator(true);
   RTPHeader header;

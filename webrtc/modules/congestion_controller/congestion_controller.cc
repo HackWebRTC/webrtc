@@ -304,7 +304,7 @@ void CongestionController::SignalNetworkState(NetworkState state) {
 
 void CongestionController::OnSentPacket(const rtc::SentPacket& sent_packet) {
   transport_feedback_adapter_.OnSentPacket(sent_packet.packet_id,
-                                           sent_packet.send_time_ms);
+                                            sent_packet.send_time_ms);
 }
 
 void CongestionController::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {

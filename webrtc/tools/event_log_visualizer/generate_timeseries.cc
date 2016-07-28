@@ -43,10 +43,6 @@ DEFINE_bool(plot_total_bitrate,
 DEFINE_bool(plot_stream_bitrate,
             false,
             "Plot the bitrate used by each stream.");
-DEFINE_bool(plot_bwe,
-            false,
-            "Run the bandwidth estimator with the logged rtp and rtcp and plot "
-            "the output.");
 
 int main(int argc, char* argv[]) {
   std::string program_name = argv[0];
@@ -134,10 +130,6 @@ int main(int argc, char* argv[]) {
           webrtc::PacketDirection::kOutgoingPacket,
           collection->append_new_plot());
     }
-  }
-
-  if (FLAGS_plot_all || FLAGS_plot_bwe) {
-    analyzer.CreateBweGraph(collection->append_new_plot());
   }
 
   collection->draw();
