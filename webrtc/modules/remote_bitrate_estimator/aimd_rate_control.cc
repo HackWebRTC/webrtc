@@ -23,7 +23,6 @@
 namespace webrtc {
 
 static const int64_t kDefaultRttMs = 200;
-static const int64_t kLogIntervalMs = 1000;
 static const double kWithinIncomingBitrateHysteresis = 1.05;
 static const int64_t kMaxFeedbackIntervalMs = 1000;
 
@@ -43,7 +42,6 @@ AimdRateControl::AimdRateControl()
       bitrate_is_initialized_(false),
       beta_(0.85f),
       rtt_(kDefaultRttMs),
-      time_of_last_log_(-1),
       in_experiment_(!AdaptiveThresholdExperimentIsDisabled()) {}
 
 void AimdRateControl::SetMinBitrate(int min_bitrate_bps) {
@@ -90,9 +88,6 @@ uint32_t AimdRateControl::UpdateBandwidthEstimate(int64_t now_ms) {
   current_bitrate_bps_ = ChangeBitrate(
       current_bitrate_bps_,
       current_input_.incoming_bitrate.value_or(current_bitrate_bps_), now_ms);
-  if (now_ms - time_of_last_log_ > kLogIntervalMs) {
-    time_of_last_log_ = now_ms;
-  }
   return current_bitrate_bps_;
 }
 

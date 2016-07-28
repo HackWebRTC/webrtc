@@ -78,7 +78,6 @@ class AimdRateControl {
   bool bitrate_is_initialized_;
   float beta_;
   int64_t rtt_;
-  int64_t time_of_last_log_;
   bool in_experiment_;
 };
 }  // namespace webrtc
