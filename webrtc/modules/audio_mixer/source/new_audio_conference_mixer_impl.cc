@@ -114,14 +114,13 @@ NewAudioConferenceMixerImpl::NewAudioConferenceMixerImpl(int id)
       _minimumMixingFreq(kLowestPossible),
       _outputFrequency(kDefaultFrequency),
       _sampleSize(0),
-      _audioFramePool(NULL),
       audio_source_list_(),
       additional_audio_source_list_(),
       num_mixed_audio_sources_(0),
       use_limiter_(true),
       _timeStamp(0) {
   thread_checker_.DetachFromThread();
-      }
+}
 
 bool NewAudioConferenceMixerImpl::Init() {
   _crit.reset(CriticalSectionWrapper::CreateCriticalSection());
@@ -136,11 +135,6 @@ bool NewAudioConferenceMixerImpl::Init() {
   config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
   _limiter.reset(AudioProcessing::Create(config));
   if (!_limiter.get())
-    return false;
-
-  MemoryPool<AudioFrame>::CreateMemoryPool(_audioFramePool,
-                                           DEFAULT_AUDIO_FRAME_POOLSIZE);
-  if (_audioFramePool == NULL)
     return false;
 
   if (SetOutputFrequency(kDefaultFrequency) == -1)
@@ -167,11 +161,6 @@ bool NewAudioConferenceMixerImpl::Init() {
     return false;
 
   return true;
-}
-
-NewAudioConferenceMixerImpl::~NewAudioConferenceMixerImpl() {
-  MemoryPool<AudioFrame>::DeleteMemoryPool(_audioFramePool);
-  RTC_DCHECK_EQ(_audioFramePool, static_cast<MemoryPool<AudioFrame>*>(nullptr));
 }
 
 void NewAudioConferenceMixerImpl::Mix(AudioFrame* audio_frame_for_mixing) {
@@ -463,47 +452,39 @@ void NewAudioConferenceMixerImpl::UpdateToMix(
 
     bool wasMixed = false;
     wasMixed = (*audio_source)->_mixHistory->WasMixed();
-    AudioFrame* audioFrame = NULL;
-    if (_audioFramePool->PopMemory(audioFrame) == -1) {
-      WEBRTC_TRACE(kTraceMemory, kTraceAudioMixerServer, _id,
-                   "failed PopMemory() call");
-      RTC_NOTREACHED();
-      return;
-    }
-    audioFrame->sample_rate_hz_ = _outputFrequency;
 
-    auto ret = (*audio_source)->GetAudioFrameWithMuted(_id, audioFrame);
+    auto audio_frame_with_info =
+        (*audio_source)->GetAudioFrameWithMuted(_id, _outputFrequency);
+    auto ret = audio_frame_with_info.audio_frame_info;
+    AudioFrame* audio_frame = audio_frame_with_info.audio_frame;
     if (ret == MixerAudioSource::AudioFrameInfo::kError) {
-      WEBRTC_TRACE(kTraceWarning, kTraceAudioMixerServer, _id,
-                   "failed to GetAudioFrameWithMuted() from audio source");
-      _audioFramePool->PushMemory(audioFrame);
       continue;
     }
     const bool muted = (ret == MixerAudioSource::AudioFrameInfo::kMuted);
     if (audio_source_list_.size() != 1) {
       // TODO(wu): Issue 3390, add support for multiple audio sources case.
-      audioFrame->ntp_time_ms_ = -1;
+      audio_frame->ntp_time_ms_ = -1;
     }
 
     // TODO(aleloi): this assert triggers in some test cases where SRTP is
     // used which prevents NetEQ from making a VAD. Temporarily disable this
     // assert until the problem is fixed on a higher level.
-    // RTC_DCHECK_NE(audioFrame->vad_activity_, AudioFrame::kVadUnknown);
-    if (audioFrame->vad_activity_ == AudioFrame::kVadUnknown) {
+    // RTC_DCHECK_NE(audio_frame->vad_activity_, AudioFrame::kVadUnknown);
+    if (audio_frame->vad_activity_ == AudioFrame::kVadUnknown) {
       WEBRTC_TRACE(kTraceWarning, kTraceAudioMixerServer, _id,
                    "invalid VAD state from audio source");
     }
 
-    if (audioFrame->vad_activity_ == AudioFrame::kVadActive) {
+    if (audio_frame->vad_activity_ == AudioFrame::kVadActive) {
       if (!wasMixed && !muted) {
-        RampIn(*audioFrame);
+        RampIn(*audio_frame);
       }
 
       if (activeList.size() >= *maxAudioFrameCounter) {
         // There are already more active audio sources than should be
         // mixed. Only keep the ones with the highest energy.
         AudioFrameList::iterator replaceItem;
-        uint32_t lowestEnergy = muted ? 0 : CalculateEnergy(*audioFrame);
+        uint32_t lowestEnergy = muted ? 0 : CalculateEnergy(*audio_frame);
 
         bool found_replace_item = false;
         for (AudioFrameList::iterator iter = activeList.begin();
@@ -532,8 +513,8 @@ void NewAudioConferenceMixerImpl::UpdateToMix(
           mixAudioSourceList->erase(replaceFrame.frame->id_);
           activeList.erase(replaceItem);
 
-          activeList.push_front(FrameAndMuteInfo(audioFrame, muted));
-          (*mixAudioSourceList)[audioFrame->id_] = *audio_source;
+          activeList.push_front(FrameAndMuteInfo(audio_frame, muted));
+          (*mixAudioSourceList)[audio_frame->id_] = *audio_source;
           RTC_DCHECK_LE(mixAudioSourceList->size(),
                         static_cast<size_t>(kMaximumAmountOfMixedAudioSources));
 
@@ -545,42 +526,36 @@ void NewAudioConferenceMixerImpl::UpdateToMix(
             RTC_DCHECK_LE(
                 rampOutList->size(),
                 static_cast<size_t>(kMaximumAmountOfMixedAudioSources));
-          } else {
-            _audioFramePool->PushMemory(replaceFrame.frame);
           }
         } else {
           if (wasMixed) {
             if (!muted) {
-              RampOut(*audioFrame);
+              RampOut(*audio_frame);
             }
-            rampOutList->push_back(FrameAndMuteInfo(audioFrame, muted));
+            rampOutList->push_back(FrameAndMuteInfo(audio_frame, muted));
             RTC_DCHECK_LE(
                 rampOutList->size(),
                 static_cast<size_t>(kMaximumAmountOfMixedAudioSources));
-          } else {
-            _audioFramePool->PushMemory(audioFrame);
           }
         }
       } else {
-        activeList.push_front(FrameAndMuteInfo(audioFrame, muted));
-        (*mixAudioSourceList)[audioFrame->id_] = *audio_source;
+        activeList.push_front(FrameAndMuteInfo(audio_frame, muted));
+        (*mixAudioSourceList)[audio_frame->id_] = *audio_source;
         RTC_DCHECK_LE(mixAudioSourceList->size(),
                       static_cast<size_t>(kMaximumAmountOfMixedAudioSources));
       }
     } else {
       if (wasMixed) {
         AudioSourceWithFrame* part_struct =
-            new AudioSourceWithFrame(*audio_source, audioFrame, muted);
+            new AudioSourceWithFrame(*audio_source, audio_frame, muted);
         passiveWasMixedList.push_back(part_struct);
       } else if (mustAddToPassiveList) {
         if (!muted) {
-          RampIn(*audioFrame);
+          RampIn(*audio_frame);
         }
         AudioSourceWithFrame* part_struct =
-            new AudioSourceWithFrame(*audio_source, audioFrame, muted);
+            new AudioSourceWithFrame(*audio_source, audio_frame, muted);
         passiveWasNotMixedList.push_back(part_struct);
-      } else {
-        _audioFramePool->PushMemory(audioFrame);
       }
     }
   }
@@ -604,8 +579,6 @@ void NewAudioConferenceMixerImpl::UpdateToMix(
       (*mixAudioSourceList)[(*iter)->audio_frame->id_] = (*iter)->audio_source;
       RTC_DCHECK_LE(mixAudioSourceList->size(),
                     static_cast<size_t>(kMaximumAmountOfMixedAudioSources));
-    } else {
-      _audioFramePool->PushMemory((*iter)->audio_frame);
     }
     delete *iter;
   }
@@ -619,8 +592,6 @@ void NewAudioConferenceMixerImpl::UpdateToMix(
       (*mixAudioSourceList)[(*iter)->audio_frame->id_] = (*iter)->audio_source;
       RTC_DCHECK_LE(mixAudioSourceList->size(),
                     static_cast<size_t>(kMaximumAmountOfMixedAudioSources));
-    } else {
-      _audioFramePool->PushMemory((*iter)->audio_frame);
     }
     delete *iter;
   }
@@ -633,9 +604,9 @@ void NewAudioConferenceMixerImpl::GetAdditionalAudio(
   WEBRTC_TRACE(kTraceStream, kTraceAudioMixerServer, _id,
                "GetAdditionalAudio(additionalFramesList)");
   // The GetAudioFrameWithMuted() callback may result in the audio source being
-  // removed from additionalAudioSourceList_. If that happens it will
+  // removed from additionalAudioFramesList_. If that happens it will
   // invalidate any iterators. Create a copy of the audio sources list such
-  // that the list of audio sources can be traversed safely.
+  // that the list of participants can be traversed safely.
   MixerAudioSourceList additionalAudioSourceList;
   additionalAudioSourceList.insert(additionalAudioSourceList.begin(),
                                    additional_audio_source_list_.begin(),
@@ -644,28 +615,21 @@ void NewAudioConferenceMixerImpl::GetAdditionalAudio(
   for (MixerAudioSourceList::const_iterator audio_source =
            additionalAudioSourceList.begin();
        audio_source != additionalAudioSourceList.end(); ++audio_source) {
-    AudioFrame* audioFrame = NULL;
-    if (_audioFramePool->PopMemory(audioFrame) == -1) {
-      WEBRTC_TRACE(kTraceMemory, kTraceAudioMixerServer, _id,
-                   "failed PopMemory() call");
-      RTC_NOTREACHED();
-      return;
-    }
-    audioFrame->sample_rate_hz_ = _outputFrequency;
-    auto ret = (*audio_source)->GetAudioFrameWithMuted(_id, audioFrame);
+    auto audio_frame_with_info =
+        (*audio_source)->GetAudioFrameWithMuted(_id, _outputFrequency);
+    auto ret = audio_frame_with_info.audio_frame_info;
+    AudioFrame* audio_frame = audio_frame_with_info.audio_frame;
     if (ret == MixerAudioSource::AudioFrameInfo::kError) {
       WEBRTC_TRACE(kTraceWarning, kTraceAudioMixerServer, _id,
                    "failed to GetAudioFrameWithMuted() from audio_source");
-      _audioFramePool->PushMemory(audioFrame);
       continue;
     }
-    if (audioFrame->samples_per_channel_ == 0) {
+    if (audio_frame->samples_per_channel_ == 0) {
       // Empty frame. Don't use it.
-      _audioFramePool->PushMemory(audioFrame);
       continue;
     }
     additionalFramesList->push_back(FrameAndMuteInfo(
-        audioFrame, ret == MixerAudioSource::AudioFrameInfo::kMuted));
+        audio_frame, ret == MixerAudioSource::AudioFrameInfo::kMuted));
   }
 }
 
@@ -698,10 +662,6 @@ void NewAudioConferenceMixerImpl::ClearAudioFrameList(
     AudioFrameList* audioFrameList) const {
   WEBRTC_TRACE(kTraceStream, kTraceAudioMixerServer, _id,
                "ClearAudioFrameList(audioFrameList)");
-  for (AudioFrameList::iterator iter = audioFrameList->begin();
-       iter != audioFrameList->end(); ++iter) {
-    _audioFramePool->PushMemory(iter->frame);
-  }
   audioFrameList->clear();
 }
 

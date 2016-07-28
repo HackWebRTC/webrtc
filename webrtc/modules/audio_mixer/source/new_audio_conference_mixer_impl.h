@@ -62,7 +62,8 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
   enum { kProcessPeriodicityInMs = 10 };
 
   explicit NewAudioConferenceMixerImpl(int id);
-  ~NewAudioConferenceMixerImpl();
+  // The dtor not needed, because this class does no longer manage
+  // memory.
 
   // Must be called after ctor.
   bool Init();
@@ -79,8 +80,6 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
       const MixerAudioSource& audio_source) const override;
 
  private:
-  enum { DEFAULT_AUDIO_FRAME_POOLSIZE = 50 };
-
   // Set/get mix frequency
   int32_t SetOutputFrequency(const Frequency& frequency);
   Frequency OutputFrequency() const;
@@ -151,11 +150,9 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
   Frequency _outputFrequency;
   size_t _sampleSize;
 
-  // Memory pool to avoid allocating/deallocating AudioFrames
-  MemoryPool<AudioFrame>* _audioFramePool;
-
   // List of all audio sources. Note all lists are disjunct
   MixerAudioSourceList audio_source_list_;  // May be mixed.
+
   // Always mixed, anonomously.
   MixerAudioSourceList additional_audio_source_list_;
 

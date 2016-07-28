@@ -19,7 +19,7 @@
 #include "webrtc/modules/audio_mixer/source/new_audio_conference_mixer_impl.h"
 
 using testing::_;
-using testing::AtLeast;
+using testing::Exactly;
 using testing::Invoke;
 using testing::Return;
 
@@ -29,19 +29,24 @@ namespace webrtc {
 class MockMixerAudioSource : public MixerAudioSource {
  public:
   MockMixerAudioSource() {
-    ON_CALL(*this, GetAudioFrame(_, _))
-        .WillByDefault(Invoke(this, &MockMixerAudioSource::FakeAudioFrame));
+    ON_CALL(*this, GetAudioFrameWithMuted(_, _))
+        .WillByDefault(
+            Invoke(this, &MockMixerAudioSource::FakeAudioFrameWithMuted));
   }
-  MOCK_METHOD2(GetAudioFrame,
-               int32_t(const int32_t id, AudioFrame* audio_frame));
+  MOCK_METHOD2(GetAudioFrameWithMuted,
+               AudioFrameWithInfo(const int32_t id, int sample_rate_hz));
   MOCK_CONST_METHOD1(NeededFrequency, int32_t(const int32_t id));
+
   AudioFrame* fake_frame() { return &fake_frame_; }
 
  private:
   AudioFrame fake_frame_;
-  int32_t FakeAudioFrame(const int32_t id, AudioFrame* audio_frame) {
-    audio_frame->CopyFrom(fake_frame_);
-    return 0;
+  AudioFrameWithInfo FakeAudioFrameWithMuted(const int32_t id,
+                                             int sample_rate_hz) {
+    return {
+        fake_frame(),             // audio_frame_pointer
+        AudioFrameInfo::kNormal,  // audio_frame_info
+    };
   }
 };
 
@@ -168,7 +173,8 @@ TEST(AudioMixer, LargestEnergyVadActiveMixed) {
     participants[i].fake_frame()->data_[80] = i;
 
     EXPECT_EQ(0, mixer->SetMixabilityStatus(&participants[i], true));
-    EXPECT_CALL(participants[i], GetAudioFrame(_, _)).Times(AtLeast(1));
+    EXPECT_CALL(participants[i], GetAudioFrameWithMuted(_, _))
+        .Times(Exactly(1));
     EXPECT_CALL(participants[i], NeededFrequency(_))
         .WillRepeatedly(Return(kSampleRateHz));
   }
@@ -196,7 +202,7 @@ TEST(AudioMixer, LargestEnergyVadActiveMixed) {
 }
 
 TEST_F(BothMixersTest, CompareInitialFrameAudio) {
-  EXPECT_CALL(participant_, GetAudioFrame(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(participant_, GetAudioFrameWithMuted(_, _)).Times(Exactly(1));
 
   // Make sure the participant is marked as 'non-mixed' so that it is
   // ramped in next round.
@@ -222,7 +228,7 @@ TEST_F(BothMixersTest, CompareInitialFrameAudio) {
 }
 
 TEST_F(BothMixersTest, CompareSecondFrameAudio) {
-  EXPECT_CALL(participant_, GetAudioFrame(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(participant_, GetAudioFrameWithMuted(_, _)).Times(Exactly(2));
 
   // Make sure the participant is marked as 'non-mixed' so that it is
   // ramped in next round.

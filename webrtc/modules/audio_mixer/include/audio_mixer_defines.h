@@ -21,22 +21,6 @@ class NewMixHistory;
 // A callback class that all mixer participants must inherit from/implement.
 class MixerAudioSource {
  public:
-  // The implementation of this function should update audioFrame with new
-  // audio every time it's called.
-  //
-  // If it returns -1, the frame will not be added to the mix.
-  //
-  // NOTE: This function should not be called. It will remain for a short
-  // time so that subclasses can override it without getting warnings.
-  // TODO(henrik.lundin) Remove this function.
-  virtual int32_t GetAudioFrame(int32_t id, AudioFrame* audioFrame) {
-    RTC_CHECK(false);
-    return -1;
-  }
-
-  // The implementation of GetAudioFrameWithMuted should update audio_frame
-  // with new audio every time it's called. The return value will be
-  // interpreted as follows.
   enum class AudioFrameInfo {
     kNormal,  // The samples in audio_frame are valid and should be used.
     kMuted,   // The samples in audio_frame should not be used, but should be
@@ -45,11 +29,19 @@ class MixerAudioSource {
     kError    // audio_frame will not be used.
   };
 
-  virtual AudioFrameInfo GetAudioFrameWithMuted(int32_t id,
-                                                AudioFrame* audio_frame) {
-    return GetAudioFrame(id, audio_frame) == -1 ? AudioFrameInfo::kError
-                                                : AudioFrameInfo::kNormal;
-  }
+  struct AudioFrameWithInfo {
+    AudioFrame* audio_frame;
+    AudioFrameInfo audio_frame_info;
+  };
+
+  // The implementation of GetAudioFrameWithMuted should update
+  // audio_frame with new audio every time it's called. Implementing
+  // classes are allowed to return the same AudioFrame pointer on
+  // different calls. The pointer must stay valid until the next
+  // mixing call or until this audio source is disconnected from the
+  // mixer.
+  virtual AudioFrameWithInfo GetAudioFrameWithMuted(int32_t id,
+                                                    int sample_rate_hz) = 0;
 
   // Returns true if the participant was mixed this mix iteration.
   bool IsMixed() const;
