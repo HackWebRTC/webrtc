@@ -136,9 +136,7 @@ void P2PTransportChannel::AddAllocatorSession(
 
   session->set_generation(static_cast<uint32_t>(allocator_sessions_.size()));
   session->SignalPortReady.connect(this, &P2PTransportChannel::OnPortReady);
-  session->SignalPortsRemoved.connect(this,
-                                      &P2PTransportChannel::OnPortsRemoved);
-  session->SignalPortPruned.connect(this, &P2PTransportChannel::OnPortPruned);
+  session->SignalPortsPruned.connect(this, &P2PTransportChannel::OnPortsPruned);
   session->SignalCandidatesReady.connect(
       this, &P2PTransportChannel::OnCandidatesReady);
   session->SignalCandidatesRemoved.connect(
@@ -149,7 +147,7 @@ void P2PTransportChannel::AddAllocatorSession(
   // We now only want to apply new candidates that we receive to the ports
   // created by this new session because these are replacing those of the
   // previous sessions.
-  removed_ports_.insert(removed_ports_.end(), ports_.begin(), ports_.end());
+  pruned_ports_.insert(pruned_ports_.end(), ports_.begin(), ports_.end());
   ports_.clear();
 
   allocator_sessions_.push_back(std::move(session));
@@ -242,7 +240,7 @@ void P2PTransportChannel::SetIceRole(IceRole ice_role) {
     }
     // Update role on removed ports as well, because they may still have
     // connections alive that should be using the correct role.
-    for (PortInterface* port : removed_ports_) {
+    for (PortInterface* port : pruned_ports_) {
       port->SetIceRole(ice_role);
     }
   }
@@ -250,7 +248,7 @@ void P2PTransportChannel::SetIceRole(IceRole ice_role) {
 
 void P2PTransportChannel::SetIceTiebreaker(uint64_t tiebreaker) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
-  if (!ports_.empty() || !removed_ports_.empty()) {
+  if (!ports_.empty() || !pruned_ports_.empty()) {
     LOG(LS_ERROR)
         << "Attempt to change tiebreaker after Port has been allocated.";
     return;
@@ -1678,20 +1676,19 @@ void P2PTransportChannel::OnPortDestroyed(PortInterface* port) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
 
   ports_.erase(std::remove(ports_.begin(), ports_.end(), port), ports_.end());
-  removed_ports_.erase(
-      std::remove(removed_ports_.begin(), removed_ports_.end(), port),
-      removed_ports_.end());
+  pruned_ports_.erase(
+      std::remove(pruned_ports_.begin(), pruned_ports_.end(), port),
+      pruned_ports_.end());
   LOG(INFO) << "Removed port because it is destroyed: " << ports_.size()
             << " remaining";
 }
 
-void P2PTransportChannel::OnPortsRemoved(
+void P2PTransportChannel::OnPortsPruned(
     PortAllocatorSession* session,
     const std::vector<PortInterface*>& ports) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
-  LOG(LS_INFO) << "Remove " << ports.size() << " ports";
   for (PortInterface* port : ports) {
-    if (RemovePort(port)) {
+    if (OnPortPruned(port)) {
       LOG(INFO) << "Removed port: " << port->ToString() << " " << ports_.size()
                 << " remaining";
     }
@@ -1730,22 +1727,14 @@ void P2PTransportChannel::OnRegatherOnFailedNetworks() {
                         MSG_REGATHER_ON_FAILED_NETWORKS);
 }
 
-void P2PTransportChannel::OnPortPruned(PortAllocatorSession* session,
-                                       PortInterface* port) {
-  if (RemovePort(port)) {
-    LOG(INFO) << "Removed port because it is pruned: " << port->ToString()
-              << " " << ports_.size() << " remaining";
-  }
-}
-
-bool P2PTransportChannel::RemovePort(PortInterface* port) {
+bool P2PTransportChannel::OnPortPruned(PortInterface* port) {
   auto it = std::find(ports_.begin(), ports_.end(), port);
   // Don't need to do anything if the port has been deleted from the port list.
   if (it == ports_.end()) {
     return false;
   }
   ports_.erase(it);
-  removed_ports_.push_back(port);
+  pruned_ports_.push_back(port);
   return true;
 }
 

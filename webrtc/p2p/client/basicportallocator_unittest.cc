@@ -239,8 +239,8 @@ class BasicPortAllocatorTest : public testing::Test,
         sid, content_name, component, ice_ufrag, ice_pwd);
     session->SignalPortReady.connect(this,
                                      &BasicPortAllocatorTest::OnPortReady);
-    session->SignalPortPruned.connect(this,
-                                      &BasicPortAllocatorTest::OnPortPruned);
+    session->SignalPortsPruned.connect(this,
+                                       &BasicPortAllocatorTest::OnPortsPruned);
     session->SignalCandidatesReady.connect(
         this, &BasicPortAllocatorTest::OnCandidatesReady);
     session->SignalCandidatesAllocationDone.connect(
@@ -415,13 +415,18 @@ class BasicPortAllocatorTest : public testing::Test,
     EXPECT_NE(ready_ports.end(),
               std::find(ready_ports.begin(), ready_ports.end(), port));
   }
-  void OnPortPruned(PortAllocatorSession* ses, PortInterface* port) {
-    LOG(LS_INFO) << "OnPortPruned: " << port->ToString();
-    ports_.erase(std::remove(ports_.begin(), ports_.end(), port), ports_.end());
-    // Make sure the pruned port is not in ReadyPorts.
+  void OnPortsPruned(PortAllocatorSession* ses,
+                     const std::vector<PortInterface*>& ports_pruned) {
+    LOG(LS_INFO) << "Number of ports pruned: " << ports_pruned.size();
     auto ready_ports = ses->ReadyPorts();
-    EXPECT_EQ(ready_ports.end(),
-              std::find(ready_ports.begin(), ready_ports.end(), port));
+    auto new_end = ports_.end();
+    for (PortInterface* port : ports_pruned) {
+      new_end = std::remove(ports_.begin(), new_end, port);
+      // Make sure the pruned port is not in ReadyPorts.
+      EXPECT_EQ(ready_ports.end(),
+                std::find(ready_ports.begin(), ready_ports.end(), port));
+    }
+    ports_.erase(new_end, ports_.end());
   }
 
   void OnCandidatesReady(PortAllocatorSession* ses,

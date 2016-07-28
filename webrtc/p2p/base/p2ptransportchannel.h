@@ -276,11 +276,8 @@ class P2PTransportChannel : public TransportChannelImpl,
   void AddConnection(Connection* connection);
 
   void OnPortReady(PortAllocatorSession *session, PortInterface* port);
-  // TODO(honghaiz): Merge the two methods OnPortsRemoved and OnPortPruned but
-  // still log the reason of removing.
-  void OnPortsRemoved(PortAllocatorSession* session,
-                      const std::vector<PortInterface*>& ports);
-  void OnPortPruned(PortAllocatorSession* session, PortInterface* port);
+  void OnPortsPruned(PortAllocatorSession* session,
+                     const std::vector<PortInterface*>& ports);
   void OnCandidatesReady(PortAllocatorSession *session,
                          const std::vector<Candidate>& candidates);
   void OnCandidatesRemoved(PortAllocatorSession* session,
@@ -294,11 +291,11 @@ class P2PTransportChannel : public TransportChannelImpl,
                         bool port_muxed);
 
   // When a port is destroyed, remove it from both lists |ports_|
-  // and |removed_ports_|.
+  // and |pruned_ports_|.
   void OnPortDestroyed(PortInterface* port);
-  // When removing a port, move it from |ports_| to |removed_ports_|.
+  // When pruning a port, move it from |ports_| to |pruned_ports_|.
   // Returns true if the port is found and removed from |ports_|.
-  bool RemovePort(PortInterface* port);
+  bool OnPortPruned(PortInterface* port);
   void OnRoleConflict(PortInterface* port);
 
   void OnConnectionStateChange(Connection* connection);
@@ -366,11 +363,11 @@ class P2PTransportChannel : public TransportChannelImpl,
   // |ports_| contains ports that are used to form new connections when
   // new remote candidates are added.
   std::vector<PortInterface*> ports_;
-  // |removed_ports_| contains ports that have been removed from |ports_| and
+  // |pruned_ports_| contains ports that have been removed from |ports_| and
   // are not being used to form new connections, but that aren't yet destroyed.
   // They may have existing connections, and they still fire signals such as
   // SignalUnknownAddress.
-  std::vector<PortInterface*> removed_ports_;
+  std::vector<PortInterface*> pruned_ports_;
 
   // |connections_| is a sorted list with the first one always be the
   // |selected_connection_| when it's not nullptr. The combination of
