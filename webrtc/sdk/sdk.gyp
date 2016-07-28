@@ -57,7 +57,9 @@
                 'objc/Framework/Classes/RTCCameraPreviewView.m',
                 'objc/Framework/Classes/RTCUIApplication.h',
                 'objc/Framework/Classes/RTCUIApplication.mm',
+                'objc/Framework/Classes/UIDevice+RTCDevice.mm',
                 'objc/Framework/Headers/WebRTC/RTCCameraPreviewView.h',
+                'objc/Framework/Headers/WebRTC/UIDevice+RTCDevice.h',
               ],
               'link_settings': {
                 'xcode_settings': {
@@ -273,6 +275,7 @@
             'objc/Framework/Headers/WebRTC/RTCVideoRenderer.h',
             'objc/Framework/Headers/WebRTC/RTCVideoSource.h',
             'objc/Framework/Headers/WebRTC/RTCVideoTrack.h',
+            'objc/Framework/Headers/WebRTC/UIDevice+RTCDevice.h',
             'objc/Framework/Headers/WebRTC/WebRTC.h',
           ],
           'dependencies': [

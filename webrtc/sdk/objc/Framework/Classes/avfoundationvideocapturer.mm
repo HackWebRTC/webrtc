@@ -18,6 +18,9 @@
 
 #import "RTCDispatcher+Private.h"
 #import "WebRTC/RTCLogging.h"
+#if TARGET_OS_IPHONE
+#import "WebRTC/UIDevice+RTCDevice.h"
+#endif
 
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
@@ -30,6 +33,12 @@ static cricket::VideoFormat const kDefaultFormat =
     cricket::VideoFormat(640,
                          480,
                          cricket::VideoFormat::FpsToInterval(30),
+                         cricket::FOURCC_NV12);
+// iPhone4S is too slow to handle 30fps.
+static cricket::VideoFormat const kIPhone4SFormat =
+    cricket::VideoFormat(640,
+                         480,
+                         cricket::VideoFormat::FpsToInterval(15),
                          cricket::FOURCC_NV12);
 
 // This class used to capture frames using AVFoundation APIs on iOS. It is meant
@@ -383,6 +392,11 @@ static cricket::VideoFormat const kDefaultFormat =
   AVCaptureDeviceInput *input = self.useBackCamera ?
       backCameraInput : frontCameraInput;
   [captureSession addInput:input];
+#if TARGET_OS_IPHONE
+  if ([UIDevice deviceType] == RTCDeviceTypeIPhone4S) {
+    [self setMinFrameDuration:CMTimeMake(1, 15) forDevice:input.device];
+  }
+#endif
   _captureSession = captureSession;
   return YES;
 }
@@ -465,6 +479,17 @@ static cricket::VideoFormat const kDefaultFormat =
   return _backCameraInput;
 }
 
+- (void)setMinFrameDuration:(CMTime)minFrameDuration
+                  forDevice:(AVCaptureDevice *)device {
+  NSError *error = nil;
+  if (![device lockForConfiguration:&error]) {
+    RTCLogError(@"Failed to lock device for configuration. Error: %@", error.localizedDescription);
+    return;
+  }
+  device.activeVideoMinFrameDuration = minFrameDuration;
+  [device unlockForConfiguration];
+}
+
 // Called from capture session queue.
 - (void)updateOrientation {
   AVCaptureConnection *connection =
@@ -520,6 +545,11 @@ static cricket::VideoFormat const kDefaultFormat =
     }
     [self updateOrientation];
     [_captureSession commitConfiguration];
+#if TARGET_OS_IPHONE
+    if ([UIDevice deviceType] == RTCDeviceTypeIPhone4S) {
+      [self setMinFrameDuration:CMTimeMake(1, 15) forDevice:newInput.device];
+    }
+#endif
   }];
 }
 
@@ -541,9 +571,17 @@ struct AVFoundationFrame {
 AVFoundationVideoCapturer::AVFoundationVideoCapturer()
     : _capturer(nil), _startThread(nullptr) {
   // Set our supported formats. This matches kDefaultPreset.
-  std::vector<cricket::VideoFormat> supportedFormats;
-  supportedFormats.push_back(cricket::VideoFormat(kDefaultFormat));
-  SetSupportedFormats(supportedFormats);
+  std::vector<cricket::VideoFormat> supported_formats;
+#if TARGET_OS_IPHONE
+  if ([UIDevice deviceType] == RTCDeviceTypeIPhone4S) {
+    supported_formats.push_back(cricket::VideoFormat(kIPhone4SFormat));
+  } else {
+    supported_formats.push_back(cricket::VideoFormat(kDefaultFormat));
+  }
+#else
+  supported_formats.push_back(cricket::VideoFormat(kDefaultFormat));
+#endif
+  SetSupportedFormats(supported_formats);
   _capturer =
       [[RTCAVFoundationVideoCapturerInternal alloc] initWithCapturer:this];
 }
@@ -562,7 +600,7 @@ cricket::CaptureState AVFoundationVideoCapturer::Start(
     LOG(LS_ERROR) << "The capturer is already running.";
     return cricket::CaptureState::CS_FAILED;
   }
-  if (format != kDefaultFormat) {
+  if (format != kDefaultFormat && format != kIPhone4SFormat) {
     LOG(LS_ERROR) << "Unsupported format provided.";
     return cricket::CaptureState::CS_FAILED;
   }
