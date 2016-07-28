@@ -15,10 +15,10 @@
 #include <map>
 #include <memory>
 
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_mixer/include/new_audio_conference_mixer.h"
 #include "webrtc/modules/audio_conference_mixer/source/memory_pool.h"
-#include "webrtc/modules/audio_conference_mixer/source/time_scheduler.h"
 #include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
@@ -66,10 +66,6 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
 
   // Must be called after ctor.
   bool Init();
-
-  // Module functions
-  int64_t TimeUntilNextProcess() override;
-  void Process() override;
 
   // NewAudioConferenceMixer functions
   int32_t SetMixabilityStatus(MixerAudioSource* audio_source,
@@ -170,12 +166,8 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
 
   uint32_t _timeStamp;
 
-  // Metronome class.
-  TimeScheduler _timeScheduler;
-
-  // Counter keeping track of concurrent calls to process.
-  // Note: should never be higher than 1 or lower than 0.
-  int16_t _processCalls;
+  // Ensures that Mix is called from the same thread.
+  rtc::ThreadChecker thread_checker_;
 
   // Used for inhibiting saturation in mixing.
   std::unique_ptr<AudioProcessing> _limiter;

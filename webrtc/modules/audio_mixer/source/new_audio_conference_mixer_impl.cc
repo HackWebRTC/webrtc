@@ -119,9 +119,9 @@ NewAudioConferenceMixerImpl::NewAudioConferenceMixerImpl(int id)
       additional_audio_source_list_(),
       num_mixed_audio_sources_(0),
       use_limiter_(true),
-      _timeStamp(0),
-      _timeScheduler(kProcessPeriodicityInMs),
-      _processCalls(0) {}
+      _timeStamp(0) {
+  thread_checker_.DetachFromThread();
+      }
 
 bool NewAudioConferenceMixerImpl::Init() {
   _crit.reset(CriticalSectionWrapper::CreateCriticalSection());
@@ -174,36 +174,9 @@ NewAudioConferenceMixerImpl::~NewAudioConferenceMixerImpl() {
   RTC_DCHECK_EQ(_audioFramePool, static_cast<MemoryPool<AudioFrame>*>(nullptr));
 }
 
-// Process should be called every kProcessPeriodicityInMs ms
-int64_t NewAudioConferenceMixerImpl::TimeUntilNextProcess() {
-  int64_t timeUntilNextProcess = 0;
-  CriticalSectionScoped cs(_crit.get());
-  if (_timeScheduler.TimeToNextUpdate(timeUntilNextProcess) != 0) {
-    WEBRTC_TRACE(kTraceError, kTraceAudioMixerServer, _id,
-                 "failed in TimeToNextUpdate() call");
-    // Sanity check
-    RTC_NOTREACHED();
-    return -1;
-  }
-  return timeUntilNextProcess;
-}
-
-void NewAudioConferenceMixerImpl::Process() {
-  // TODO(aleloi) Remove this method.
-  RTC_NOTREACHED();
-}
-
 void NewAudioConferenceMixerImpl::Mix(AudioFrame* audio_frame_for_mixing) {
   size_t remainingAudioSourcesAllowedToMix = kMaximumAmountOfMixedAudioSources;
-  {
-    CriticalSectionScoped cs(_crit.get());
-    RTC_DCHECK_EQ(_processCalls, 0);
-    _processCalls++;
-
-    // Let the scheduler know that we are running one iteration.
-    _timeScheduler.UpdateScheduler();
-  }
-
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   AudioFrameList mixList;
   AudioFrameList rampOutList;
   AudioFrameList additionalFramesList;
@@ -223,8 +196,6 @@ void NewAudioConferenceMixerImpl::Mix(AudioFrame* audio_frame_for_mixing) {
       lowFreq = 32000;
     }
     if (lowFreq <= 0) {
-      CriticalSectionScoped cs(_crit.get());
-      _processCalls--;
       return;
     } else {
       switch (lowFreq) {
@@ -250,9 +221,6 @@ void NewAudioConferenceMixerImpl::Mix(AudioFrame* audio_frame_for_mixing) {
           break;
         default:
           RTC_NOTREACHED();
-
-          CriticalSectionScoped cs(_crit.get());
-          _processCalls--;
           return;
       }
     }
@@ -303,10 +271,6 @@ void NewAudioConferenceMixerImpl::Mix(AudioFrame* audio_frame_for_mixing) {
   ClearAudioFrameList(&mixList);
   ClearAudioFrameList(&rampOutList);
   ClearAudioFrameList(&additionalFramesList);
-  {
-    CriticalSectionScoped cs(_crit.get());
-    _processCalls--;
-  }
   return;
 }
 

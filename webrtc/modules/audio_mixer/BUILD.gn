@@ -65,6 +65,7 @@ source_set("audio_conference_mixer") {
   }
 
   deps = [
+    "../../base:rtc_base_approved",
     "../../modules/audio_processing",
     "../../modules/utility",
     "../../system_wrappers",

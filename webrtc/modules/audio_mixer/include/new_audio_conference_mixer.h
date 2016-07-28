@@ -18,7 +18,7 @@
 namespace webrtc {
 class MixerAudioSource;
 
-class NewAudioConferenceMixer : public Module {
+class NewAudioConferenceMixer {
  public:
   enum { kMaximumAmountOfMixedAudioSources = 3 };
   enum Frequency {
@@ -34,10 +34,6 @@ class NewAudioConferenceMixer : public Module {
   static NewAudioConferenceMixer* Create(int id);
   virtual ~NewAudioConferenceMixer() {}
 
-  // Module functions
-  int64_t TimeUntilNextProcess() override = 0;
-  void Process() override = 0;
-
   // Add/remove audio sources as candidates for mixing.
   virtual int32_t SetMixabilityStatus(MixerAudioSource* audio_source,
                                       bool mixable) = 0;
@@ -51,8 +47,9 @@ class NewAudioConferenceMixer : public Module {
   virtual int32_t SetAnonymousMixabilityStatus(MixerAudioSource* audio_source,
                                                bool mixable) = 0;
 
-  // Performs mixing by asking registered audio sources for audio.
-  // The mixed result is placed in the provided AudioFrame.
+  // Performs mixing by asking registered audio sources for audio. The
+  // mixed result is placed in the provided AudioFrame. Can only be
+  // called from a single thread.
   virtual void Mix(AudioFrame* audio_frame_for_mixing) = 0;
 
   // Set the minimum sampling frequency at which to mix. The mixing algorithm
