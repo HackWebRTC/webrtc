@@ -11,6 +11,7 @@
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSessionConfiguration.h"
 
 #import "WebRTC/RTCDispatcher.h"
+#import "WebRTC/UIDevice+RTCDevice.h"
 
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
 
@@ -82,7 +83,7 @@ static RTCAudioSessionConfiguration *gWebRTCConfiguration = nil;
     NSUInteger processorCount = [NSProcessInfo processInfo].processorCount;
     // Use best sample rate and buffer duration if the CPU has more than one
     // core.
-    if (processorCount > 1) {
+    if (processorCount > 1 && [UIDevice deviceType] != RTCDeviceTypeIPhone4S) {
       _sampleRate = kRTCAudioSessionHighPerformanceSampleRate;
       _ioBufferDuration = kRTCAudioSessionHighPerformanceIOBufferDuration;
     } else {
