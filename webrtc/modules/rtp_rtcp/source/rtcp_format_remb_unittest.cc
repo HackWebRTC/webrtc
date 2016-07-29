@@ -12,6 +12,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/rate_limiter.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_observer.h"
@@ -69,7 +70,8 @@ class RtcpFormatRembTest : public ::testing::Test {
         remote_bitrate_observer_(),
         remote_bitrate_estimator_(
             new RemoteBitrateEstimatorSingleStream(&remote_bitrate_observer_,
-                                                   system_clock_)) {}
+                                                   system_clock_)),
+        retransmission_rate_limiter_(Clock::GetRealTimeClock(), 1000) {}
   void SetUp() override;
   void TearDown() override;
 
@@ -83,6 +85,7 @@ class RtcpFormatRembTest : public ::testing::Test {
   test::NullTransport null_transport_;
   MockRemoteBitrateObserver remote_bitrate_observer_;
   std::unique_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
+  RateLimiter retransmission_rate_limiter_;
 };
 
 void RtcpFormatRembTest::SetUp() {
@@ -91,6 +94,7 @@ void RtcpFormatRembTest::SetUp() {
   configuration.clock = system_clock_;
   configuration.remote_bitrate_estimator = remote_bitrate_estimator_.get();
   configuration.outgoing_transport = &null_transport_;
+  configuration.retransmission_rate_limiter = &retransmission_rate_limiter_;
   dummy_rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(configuration);
   rtcp_receiver_ = new RTCPReceiver(system_clock_, false, nullptr, nullptr,
                                     nullptr, nullptr, dummy_rtp_rtcp_impl_);

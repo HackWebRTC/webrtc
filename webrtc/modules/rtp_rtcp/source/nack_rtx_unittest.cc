@@ -175,7 +175,7 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
         receiver_(),
         payload_data_length(sizeof(payload_data)),
         fake_clock(123456),
-        retranmission_rate_limiter_(&fake_clock, kMaxRttMs) {}
+        retransmission_rate_limiter_(&fake_clock, kMaxRttMs) {}
   ~RtpRtcpRtxNackTest() {}
 
   void SetUp() override {
@@ -185,7 +185,7 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
     receive_statistics_.reset(ReceiveStatistics::Create(&fake_clock));
     configuration.receive_statistics = receive_statistics_.get();
     configuration.outgoing_transport = &transport_;
-    configuration.retransmission_rate_limiter = &retranmission_rate_limiter_;
+    configuration.retransmission_rate_limiter = &retransmission_rate_limiter_;
     rtp_rtcp_module_ = RtpRtcp::CreateRtpRtcp(configuration);
 
     rtp_feedback_.reset(new TestRtpFeedback(rtp_rtcp_module_));
@@ -292,7 +292,7 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
   uint8_t payload_data[65000];
   size_t payload_data_length;
   SimulatedClock fake_clock;
-  RateLimiter retranmission_rate_limiter_;
+  RateLimiter retransmission_rate_limiter_;
 };
 
 TEST_F(RtpRtcpRtxNackTest, LongNackList) {

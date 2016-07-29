@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/rate_limiter.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_payload_registry.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
@@ -38,7 +39,8 @@ class RtpRtcpVideoTest : public ::testing::Test {
         test_ssrc_(3456),
         test_timestamp_(4567),
         test_sequence_number_(2345),
-        fake_clock(123456) {}
+        fake_clock(123456),
+        retransmission_rate_limiter_(&fake_clock, 1000) {}
   ~RtpRtcpVideoTest() {}
 
   virtual void SetUp() {
@@ -49,6 +51,7 @@ class RtpRtcpVideoTest : public ::testing::Test {
     configuration.audio = false;
     configuration.clock = &fake_clock;
     configuration.outgoing_transport = transport_;
+    configuration.retransmission_rate_limiter = &retransmission_rate_limiter_;
 
     video_module_ = RtpRtcp::CreateRtpRtcp(configuration);
     rtp_receiver_.reset(RtpReceiver::CreateVideoReceiver(
@@ -139,6 +142,7 @@ class RtpRtcpVideoTest : public ::testing::Test {
   uint8_t  video_frame_[65000];
   size_t payload_data_length_;
   SimulatedClock fake_clock;
+  RateLimiter retransmission_rate_limiter_;
 };
 
 TEST_F(RtpRtcpVideoTest, BasicVideo) {

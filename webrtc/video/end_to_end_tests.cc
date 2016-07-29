@@ -19,12 +19,15 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/event.h"
+#include "webrtc/base/optional.h"
+#include "webrtc/base/rate_limiter.h"
 #include "webrtc/call.h"
 #include "webrtc/call/transport_adapter.h"
 #include "webrtc/common_video/include/frame_callback.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/nack.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rapid_resync_request.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
@@ -482,6 +485,77 @@ TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
     uint64_t sent_rtp_packets_;
     int packets_left_to_drop_;
     int nacks_left_ GUARDED_BY(&crit_);
+  } test;
+
+  RunBaseTest(&test);
+}
+
+TEST_F(EndToEndTest, ReceivesNackAndRetransmitsAudio) {
+  class NackObserver : public test::EndToEndTest {
+   public:
+    NackObserver()
+        : EndToEndTest(kLongTimeoutMs),
+          local_ssrc_(0),
+          remote_ssrc_(0),
+          receive_transport_(nullptr) {}
+
+   private:
+    size_t GetNumVideoStreams() const override { return 0; }
+    size_t GetNumAudioStreams() const override { return 1; }
+
+    test::PacketTransport* CreateReceiveTransport() override {
+      test::PacketTransport* receive_transport = new test::PacketTransport(
+          nullptr, this, test::PacketTransport::kReceiver,
+          FakeNetworkPipe::Config());
+      receive_transport_ = receive_transport;
+      return receive_transport;
+    }
+
+    Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      RTPHeader header;
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
+
+      if (!sequence_number_to_retransmit_) {
+        sequence_number_to_retransmit_ =
+            rtc::Optional<uint16_t>(header.sequenceNumber);
+
+        // Don't ask for retransmission straight away, may be deduped in pacer.
+      } else if (header.sequenceNumber == *sequence_number_to_retransmit_) {
+        observation_complete_.Set();
+      } else {
+        // Send a NACK as often as necessary until retransmission is received.
+        rtcp::Nack nack;
+        nack.From(local_ssrc_);
+        nack.To(remote_ssrc_);
+        uint16_t nack_list[] = {*sequence_number_to_retransmit_};
+        nack.WithList(nack_list, 1);
+        rtc::Buffer buffer = nack.Build();
+
+        EXPECT_TRUE(receive_transport_->SendRtcp(buffer.data(), buffer.size()));
+      }
+
+      return SEND_PACKET;
+    }
+
+    void ModifyAudioConfigs(
+        AudioSendStream::Config* send_config,
+        std::vector<AudioReceiveStream::Config>* receive_configs) override {
+      send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+      (*receive_configs)[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+      local_ssrc_ = (*receive_configs)[0].rtp.local_ssrc;
+      remote_ssrc_ = (*receive_configs)[0].rtp.remote_ssrc;
+    }
+
+    void PerformTest() override {
+      EXPECT_TRUE(Wait())
+          << "Timed out waiting for packets to be NACKed, retransmitted and "
+             "rendered.";
+    }
+
+    uint32_t local_ssrc_;
+    uint32_t remote_ssrc_;
+    Transport* receive_transport_;
+    rtc::Optional<uint16_t> sequence_number_to_retransmit_;
   } test;
 
   RunBaseTest(&test);
@@ -1807,7 +1881,8 @@ TEST_F(EndToEndTest, RembWithSendSideBwe) {
           poller_thread_(&BitrateStatsPollingThread,
                          this,
                          "BitrateStatsPollingThread"),
-          state_(kWaitForFirstRampUp) {}
+          state_(kWaitForFirstRampUp),
+          retransmission_rate_limiter_(clock_, 1000) {}
 
     ~BweObserver() {}
 
@@ -1847,6 +1922,7 @@ TEST_F(EndToEndTest, RembWithSendSideBwe) {
       config.receiver_only = true;
       config.clock = clock_;
       config.outgoing_transport = receive_transport_;
+      config.retransmission_rate_limiter = &retransmission_rate_limiter_;
       rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(config));
       rtp_rtcp_->SetRemoteSSRC((*receive_configs)[0].rtp.remote_ssrc);
       rtp_rtcp_->SetSSRC((*receive_configs)[0].rtp.local_ssrc);
@@ -1919,6 +1995,7 @@ TEST_F(EndToEndTest, RembWithSendSideBwe) {
     rtc::Event event_;
     rtc::PlatformThread poller_thread_;
     TestState state_;
+    RateLimiter retransmission_rate_limiter_;
   } test;
 
   RunBaseTest(&test);

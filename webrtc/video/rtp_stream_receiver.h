@@ -62,7 +62,8 @@ class RtpStreamReceiver : public RtpData, public RtpFeedback,
                     VieRemb* remb,
                     const VideoReceiveStream::Config* config,
                     ReceiveStatisticsProxy* receive_stats_proxy,
-                    ProcessThread* process_thread);
+                    ProcessThread* process_thread,
+                    RateLimiter* retransmission_rate_limiter);
   ~RtpStreamReceiver();
 
   bool SetReceiveCodec(const VideoCodec& video_codec);

@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/rate_limiter.h"
 #include "webrtc/test/null_transport.h"
 
 namespace webrtc {
@@ -80,7 +81,8 @@ int32_t TestRtpReceiver::OnReceivedPayloadData(
 
 class RtpRtcpAPITest : public ::testing::Test {
  protected:
-  RtpRtcpAPITest() : fake_clock_(123456) {
+  RtpRtcpAPITest()
+      : fake_clock_(123456), retransmission_rate_limiter_(&fake_clock_, 1000) {
     test_csrcs_.push_back(1234);
     test_csrcs_.push_back(2345);
     test_ssrc_ = 3456;
@@ -94,6 +96,7 @@ class RtpRtcpAPITest : public ::testing::Test {
     configuration.audio = true;
     configuration.clock = &fake_clock_;
     configuration.outgoing_transport = &null_transport_;
+    configuration.retransmission_rate_limiter = &retransmission_rate_limiter_;
     module_.reset(RtpRtcp::CreateRtpRtcp(configuration));
     rtp_payload_registry_.reset(new RTPPayloadRegistry(
             RTPPayloadStrategy::CreateStrategy(true)));
@@ -110,6 +113,7 @@ class RtpRtcpAPITest : public ::testing::Test {
   std::vector<uint32_t> test_csrcs_;
   SimulatedClock fake_clock_;
   test::NullTransport null_transport_;
+  RateLimiter retransmission_rate_limiter_;
 };
 
 TEST_F(RtpRtcpAPITest, Basic) {

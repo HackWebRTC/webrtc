@@ -36,7 +36,6 @@
 #include "webrtc/voice_engine/voice_engine_defines.h"
 
 namespace rtc {
-
 class TimestampWrapAroundHandler;
 }
 
@@ -47,6 +46,7 @@ class Config;
 class FileWrapper;
 class PacketRouter;
 class ProcessThread;
+class RateLimiter;
 class ReceiveStatistics;
 class RemoteNtpTimeEstimator;
 class RtcEventLog;
@@ -589,6 +589,7 @@ class Channel
   std::unique_ptr<TransportFeedbackProxy> feedback_observer_proxy_;
   std::unique_ptr<TransportSequenceNumberProxy> seq_num_allocator_proxy_;
   std::unique_ptr<RtpPacketSenderProxy> rtp_packet_sender_proxy_;
+  std::unique_ptr<RateLimiter> retransmission_rate_limiter_;
 
   // TODO(ossu): Remove once GetAudioDecoderFactory() is no longer needed.
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;

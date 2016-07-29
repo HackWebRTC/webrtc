@@ -14,6 +14,7 @@
 
 #include <set>
 #include <string>
+#include <utility>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -162,17 +163,19 @@ VideoReceiveStream::VideoReceiveStream(
       call_stats_(call_stats),
       video_receiver_(clock_, nullptr, this, this, this),
       stats_proxy_(&config_, clock_),
-      rtp_stream_receiver_(&video_receiver_,
-                           congestion_controller_->GetRemoteBitrateEstimator(
-                               UseSendSideBwe(config_)),
-                           &transport_adapter_,
-                           call_stats_->rtcp_rtt_stats(),
-                           congestion_controller_->pacer(),
-                           congestion_controller_->packet_router(),
-                           remb,
-                           &config_,
-                           &stats_proxy_,
-                           process_thread_),
+      rtp_stream_receiver_(
+          &video_receiver_,
+          congestion_controller_->GetRemoteBitrateEstimator(
+              UseSendSideBwe(config_)),
+          &transport_adapter_,
+          call_stats_->rtcp_rtt_stats(),
+          congestion_controller_->pacer(),
+          congestion_controller_->packet_router(),
+          remb,
+          &config_,
+          &stats_proxy_,
+          process_thread_,
+          congestion_controller_->GetRetransmissionRateLimiter()),
       vie_sync_(&video_receiver_) {
   LOG(LS_INFO) << "VideoReceiveStream: " << config_.ToString();
 

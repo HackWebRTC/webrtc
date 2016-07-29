@@ -1013,7 +1013,7 @@ TEST_F(RtpSenderTest, OnSendPacketNotUpdatedWithoutSeqNumAllocator) {
   rtp_sender_.reset(new RTPSender(
       false, &fake_clock_, &transport_, &mock_paced_sender_,
       nullptr /* TransportSequenceNumberAllocator */, nullptr, nullptr, nullptr,
-      nullptr, nullptr, &send_packet_observer_, nullptr));
+      nullptr, nullptr, &send_packet_observer_, &retransmission_rate_limiter_));
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionTransportSequenceNumber,
                    kTransportSequenceNumberExtensionId));
@@ -1034,7 +1034,8 @@ TEST_F(RtpSenderTest, SendRedundantPayloads) {
   MockTransport transport;
   rtp_sender_.reset(new RTPSender(
       false, &fake_clock_, &transport, &mock_paced_sender_, nullptr, nullptr,
-      nullptr, nullptr, nullptr, &mock_rtc_event_log_, nullptr, nullptr));
+      nullptr, nullptr, nullptr, &mock_rtc_event_log_, nullptr,
+      &retransmission_rate_limiter_));
 
   rtp_sender_->SetSequenceNumber(kSeqNum);
   rtp_sender_->SetRtxPayloadType(kRtxPayload, kPayload);
@@ -1178,9 +1179,10 @@ TEST_F(RtpSenderTest, FrameCountCallbacks) {
     FrameCounts frame_counts_;
   } callback;
 
-  rtp_sender_.reset(new RTPSender(
-      false, &fake_clock_, &transport_, &mock_paced_sender_, nullptr, nullptr,
-      nullptr, &callback, nullptr, nullptr, nullptr, nullptr));
+  rtp_sender_.reset(new RTPSender(false, &fake_clock_, &transport_,
+                                  &mock_paced_sender_, nullptr, nullptr,
+                                  nullptr, &callback, nullptr, nullptr, nullptr,
+                                  &retransmission_rate_limiter_));
 
   char payload_name[RTP_PAYLOAD_NAME_SIZE] = "GENERIC";
   const uint8_t payload_type = 127;
@@ -1239,9 +1241,9 @@ TEST_F(RtpSenderTest, BitrateCallbacks) {
     uint32_t total_bitrate_;
     uint32_t retransmit_bitrate_;
   } callback;
-  rtp_sender_.reset(new RTPSender(false, &fake_clock_, &transport_, nullptr,
-                                  nullptr, nullptr, &callback, nullptr, nullptr,
-                                  nullptr, nullptr, nullptr));
+  rtp_sender_.reset(new RTPSender(
+      false, &fake_clock_, &transport_, nullptr, nullptr, nullptr, &callback,
+      nullptr, nullptr, nullptr, nullptr, &retransmission_rate_limiter_));
 
   // Simulate kNumPackets sent with kPacketInterval ms intervals, with the
   // number of packets selected so that we fill (but don't overflow) the one
@@ -1296,9 +1298,9 @@ class RtpSenderAudioTest : public RtpSenderTest {
 
   void SetUp() override {
     payload_ = kAudioPayload;
-    rtp_sender_.reset(new RTPSender(true, &fake_clock_, &transport_, nullptr,
-                                    nullptr, nullptr, nullptr, nullptr, nullptr,
-                                    nullptr, nullptr, nullptr));
+    rtp_sender_.reset(new RTPSender(
+        true, &fake_clock_, &transport_, nullptr, nullptr, nullptr, nullptr,
+        nullptr, nullptr, nullptr, nullptr, &retransmission_rate_limiter_));
     rtp_sender_->SetSequenceNumber(kSeqNum);
   }
 };

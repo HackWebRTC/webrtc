@@ -20,6 +20,7 @@
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/random.h"
+#include "webrtc/base/rate_limiter.h"
 #include "webrtc/call.h"
 #include "webrtc/call/rtc_event_log.h"
 #include "webrtc/call/rtc_event_log_parser.h"
@@ -111,19 +112,20 @@ size_t GenerateRtpPacket(uint32_t extensions_bitvector,
                          Random* prng) {
   RTC_CHECK_GE(packet_size, 16 + 4 * csrcs_count + 4 * kNumExtensions);
   Clock* clock = Clock::GetRealTimeClock();
+  RateLimiter retranmission_rate_limiter(clock, 1000);
 
-  RTPSender rtp_sender(false,     // bool audio
-                       clock,     // Clock* clock
-                       nullptr,   // Transport*
-                       nullptr,   // PacedSender*
-                       nullptr,   // PacketRouter*
-                       nullptr,   // SendTimeObserver*
-                       nullptr,   // BitrateStatisticsObserver*
-                       nullptr,   // FrameCountObserver*
-                       nullptr,   // SendSideDelayObserver*
-                       nullptr,   // RtcEventLog*
-                       nullptr,   // SendPacketObserver*
-                       nullptr);  // NackRateLimiter*
+  RTPSender rtp_sender(false,    // bool audio
+                       clock,    // Clock* clock
+                       nullptr,  // Transport*
+                       nullptr,  // PacedSender*
+                       nullptr,  // PacketRouter*
+                       nullptr,  // SendTimeObserver*
+                       nullptr,  // BitrateStatisticsObserver*
+                       nullptr,  // FrameCountObserver*
+                       nullptr,  // SendSideDelayObserver*
+                       nullptr,  // RtcEventLog*
+                       nullptr,  // SendPacketObserver*
+                       &retranmission_rate_limiter);
 
   std::vector<uint32_t> csrcs;
   for (unsigned i = 0; i < csrcs_count; i++) {

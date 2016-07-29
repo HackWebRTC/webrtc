@@ -13,6 +13,7 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/rate_limiter.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_observer.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
@@ -80,24 +81,24 @@ class RtcpReceiverTest : public ::testing::Test {
         remote_bitrate_observer_(),
         remote_bitrate_estimator_(
             new RemoteBitrateEstimatorSingleStream(&remote_bitrate_observer_,
-                                                   &system_clock_)) {
-    test_transport_ = new TestTransport();
+                                                   &system_clock_)),
+        retransmission_rate_limiter_(&system_clock_, 1000) {
+    test_transport_.reset(new TestTransport());
 
     RtpRtcp::Configuration configuration;
     configuration.audio = false;
     configuration.clock = &system_clock_;
-    configuration.outgoing_transport = test_transport_;
+    configuration.outgoing_transport = test_transport_.get();
     configuration.remote_bitrate_estimator = remote_bitrate_estimator_.get();
-    rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(configuration);
-    rtcp_receiver_ = new RTCPReceiver(&system_clock_, false, nullptr, nullptr,
-                                      nullptr, nullptr, rtp_rtcp_impl_);
-    test_transport_->SetRTCPReceiver(rtcp_receiver_);
+    configuration.retransmission_rate_limiter = &retransmission_rate_limiter_;
+    rtp_rtcp_impl_.reset(new ModuleRtpRtcpImpl(configuration));
+    rtcp_receiver_.reset(new RTCPReceiver(&system_clock_, false, nullptr,
+                                          nullptr, nullptr, nullptr,
+                                          rtp_rtcp_impl_.get()));
+    test_transport_->SetRTCPReceiver(rtcp_receiver_.get());
   }
-  ~RtcpReceiverTest() {
-    delete rtcp_receiver_;
-    delete rtp_rtcp_impl_;
-    delete test_transport_;
-  }
+
+  ~RtcpReceiverTest() {}
 
   // Injects an RTCP packet into the receiver.
   // Returns 0 for OK, non-0 for failure.
@@ -142,12 +143,13 @@ class RtcpReceiverTest : public ::testing::Test {
 
   OverUseDetectorOptions over_use_detector_options_;
   SimulatedClock system_clock_;
-  ModuleRtpRtcpImpl* rtp_rtcp_impl_;
-  RTCPReceiver* rtcp_receiver_;
-  TestTransport* test_transport_;
+  std::unique_ptr<TestTransport> test_transport_;
+  std::unique_ptr<ModuleRtpRtcpImpl> rtp_rtcp_impl_;
+  std::unique_ptr<RTCPReceiver> rtcp_receiver_;
   RTCPHelp::RTCPPacketInformation rtcp_packet_info_;
   MockRemoteBitrateObserver remote_bitrate_observer_;
   std::unique_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
+  RateLimiter retransmission_rate_limiter_;
 };
 
 

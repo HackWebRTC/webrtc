@@ -39,7 +39,8 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
     RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
     RemoteBitrateEstimator* remote_bitrate_estimator,
     RtpPacketSender* paced_sender,
-    TransportSequenceNumberAllocator* transport_sequence_number_allocator) {
+    TransportSequenceNumberAllocator* transport_sequence_number_allocator,
+    RateLimiter* retransmission_rate_limiter) {
   RtpRtcp::Configuration configuration;
   configuration.audio = false;
   configuration.receiver_only = true;
@@ -58,7 +59,7 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
   configuration.send_packet_observer = nullptr;
   configuration.bandwidth_callback = nullptr;
   configuration.transport_feedback_callback = nullptr;
-  configuration.retransmission_rate_limiter = nullptr;
+  configuration.retransmission_rate_limiter = retransmission_rate_limiter;
 
   std::unique_ptr<RtpRtcp> rtp_rtcp(RtpRtcp::CreateRtpRtcp(configuration));
   rtp_rtcp->SetSendingStatus(false);
@@ -80,7 +81,8 @@ RtpStreamReceiver::RtpStreamReceiver(
     VieRemb* remb,
     const VideoReceiveStream::Config* config,
     ReceiveStatisticsProxy* receive_stats_proxy,
-    ProcessThread* process_thread)
+    ProcessThread* process_thread,
+    RateLimiter* retransmission_rate_limiter)
     : clock_(Clock::GetRealTimeClock()),
       config_(*config),
       video_receiver_(video_receiver),
@@ -106,7 +108,8 @@ RtpStreamReceiver::RtpStreamReceiver(
                                     receive_stats_proxy,
                                     remote_bitrate_estimator_,
                                     paced_sender,
-                                    packet_router)) {
+                                    packet_router,
+                                    retransmission_rate_limiter)) {
   packet_router_->AddRtpModule(rtp_rtcp_.get());
   rtp_receive_statistics_->RegisterRtpStatisticsCallback(receive_stats_proxy);
   rtp_receive_statistics_->RegisterRtcpStatisticsCallback(receive_stats_proxy);

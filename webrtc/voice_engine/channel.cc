@@ -17,6 +17,7 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/rate_limiter.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/call/rtc_event_log.h"
@@ -46,6 +47,9 @@ namespace webrtc {
 namespace voe {
 
 namespace {
+
+constexpr int64_t kMaxRetransmissionWindowMs = 1000;
+constexpr int64_t kMinRetransmissionWindowMs = 30;
 
 bool RegisterReceiveCodec(std::unique_ptr<AudioCodingModule>* acm,
                           acm2::RentACodec* rac,
@@ -902,6 +906,8 @@ Channel::Channel(int32_t channelId,
       feedback_observer_proxy_(new TransportFeedbackProxy()),
       seq_num_allocator_proxy_(new TransportSequenceNumberProxy()),
       rtp_packet_sender_proxy_(new RtpPacketSenderProxy()),
+      retransmission_rate_limiter_(new RateLimiter(Clock::GetRealTimeClock(),
+                                                   kMaxRetransmissionWindowMs)),
       decoder_factory_(decoder_factory) {
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::Channel() - ctor");
@@ -933,6 +939,8 @@ Channel::Channel(int32_t channelId,
     configuration.transport_feedback_callback = feedback_observer_proxy_.get();
   }
   configuration.event_log = &(*event_log_proxy_);
+  configuration.retransmission_rate_limiter =
+      retransmission_rate_limiter_.get();
 
   _rtpRtcpModule.reset(RtpRtcp::CreateRtpRtcp(configuration));
   _rtpRtcpModule->SetSendingMediaStatus(false);
@@ -1352,6 +1360,7 @@ void Channel::SetBitRate(int bitrate_bps) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::SetBitRate(bitrate_bps=%d)", bitrate_bps);
   audio_coding_->SetBitRate(bitrate_bps);
+  retransmission_rate_limiter_->SetMaxRate(bitrate_bps);
 }
 
 void Channel::OnIncomingFractionLoss(int fraction_lost) {
@@ -1710,6 +1719,15 @@ int32_t Channel::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
     // Waiting for valid RTT.
     return 0;
   }
+
+  int64_t nack_window_ms = rtt;
+  if (nack_window_ms < kMinRetransmissionWindowMs) {
+    nack_window_ms = kMinRetransmissionWindowMs;
+  } else if (nack_window_ms > kMaxRetransmissionWindowMs) {
+    nack_window_ms = kMaxRetransmissionWindowMs;
+  }
+  retransmission_rate_limiter_->SetWindowSize(nack_window_ms);
+
   uint32_t ntp_secs = 0;
   uint32_t ntp_frac = 0;
   uint32_t rtp_timestamp = 0;

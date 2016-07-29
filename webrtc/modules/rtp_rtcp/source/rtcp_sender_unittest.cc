@@ -13,6 +13,7 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/rate_limiter.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
@@ -229,11 +230,13 @@ class RtcpSenderTest : public ::testing::Test {
  protected:
   RtcpSenderTest()
       : clock_(1335900000),
-        receive_statistics_(ReceiveStatistics::Create(&clock_)) {
+        receive_statistics_(ReceiveStatistics::Create(&clock_)),
+        retransmission_rate_limiter_(&clock_, 1000) {
     RtpRtcp::Configuration configuration;
     configuration.audio = false;
     configuration.clock = &clock_;
     configuration.outgoing_transport = &test_transport_;
+    configuration.retransmission_rate_limiter = &retransmission_rate_limiter_;
 
     rtp_rtcp_impl_.reset(new ModuleRtpRtcpImpl(configuration));
     rtcp_sender_.reset(new RTCPSender(false, &clock_, receive_statistics_.get(),
@@ -265,6 +268,7 @@ class RtcpSenderTest : public ::testing::Test {
   std::unique_ptr<ReceiveStatistics> receive_statistics_;
   std::unique_ptr<ModuleRtpRtcpImpl> rtp_rtcp_impl_;
   std::unique_ptr<RTCPSender> rtcp_sender_;
+  RateLimiter retransmission_rate_limiter_;
 };
 
 TEST_F(RtcpSenderTest, SetRtcpStatus) {

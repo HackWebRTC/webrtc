@@ -19,6 +19,7 @@
 #include "webrtc/base/event.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/platform_thread.h"
+#include "webrtc/base/rate_limiter.h"
 #include "webrtc/call.h"
 #include "webrtc/call/transport_adapter.h"
 #include "webrtc/common_video/include/frame_callback.h"
@@ -819,13 +820,13 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
     RembObserver()
         : SendTest(kDefaultTimeoutMs),
           clock_(Clock::GetRealTimeClock()),
+          stream_(nullptr),
           test_state_(kBeforeSuspend),
           rtp_count_(0),
           last_sequence_number_(0),
           suspended_frame_count_(0),
           low_remb_bps_(0),
-          high_remb_bps_(0) {
-    }
+          high_remb_bps_(0) {}
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
@@ -1049,8 +1050,9 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
    public:
     BitrateObserver()
         : SendTest(kDefaultTimeoutMs),
-          bitrate_capped_(false) {
-    }
+          retranmission_rate_limiter_(Clock::GetRealTimeClock(), 1000),
+          stream_(nullptr),
+          bitrate_capped_(false) {}
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
@@ -1092,6 +1094,7 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
       stream_ = send_stream;
       RtpRtcp::Configuration config;
       config.outgoing_transport = feedback_transport_.get();
+      config.retransmission_rate_limiter = &retranmission_rate_limiter_;
       rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(config));
       rtp_rtcp_->SetREMBStatus(true);
       rtp_rtcp_->SetRTCPStatus(RtcpMode::kReducedSize);
@@ -1114,6 +1117,7 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
 
     std::unique_ptr<RtpRtcp> rtp_rtcp_;
     std::unique_ptr<internal::TransportAdapter> feedback_transport_;
+    RateLimiter retranmission_rate_limiter_;
     VideoSendStream* stream_;
     bool bitrate_capped_;
   } test;
@@ -1504,6 +1508,7 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
    public:
     EncoderStateObserver()
         : SendTest(kDefaultTimeoutMs),
+          stream_(nullptr),
           initialized_(false),
           callback_registered_(false),
           num_releases_(0),
@@ -1624,7 +1629,8 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
         : SendTest(kDefaultTimeoutMs),
           FakeEncoder(Clock::GetRealTimeClock()),
           init_encode_event_(false, false),
-          num_initializations_(0) {}
+          num_initializations_(0),
+          stream_(nullptr) {}
 
    private:
     void ModifyVideoConfigs(
@@ -1689,7 +1695,8 @@ class VideoCodecConfigObserver : public test::SendTest,
         video_codec_type_(video_codec_type),
         codec_name_(codec_name),
         init_encode_event_(false, false),
-        num_initializations_(0) {
+        num_initializations_(0),
+        stream_(nullptr) {
     memset(&encoder_settings_, 0, sizeof(encoder_settings_));
   }
 
@@ -1931,7 +1938,9 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
         : SendTest(kDefaultTimeoutMs),
           FakeEncoder(Clock::GetRealTimeClock()),
           init_encode_event_(false, false),
-          num_initializations_(0) {}
+          num_initializations_(0),
+          call_(nullptr),
+          send_stream_(nullptr) {}
 
    private:
     int32_t InitEncode(const VideoCodec* codecSettings,
@@ -2045,7 +2054,8 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
    public:
     ScreencastTargetBitrateTest()
         : SendTest(kDefaultTimeoutMs),
-          test::FakeEncoder(Clock::GetRealTimeClock()) {}
+          test::FakeEncoder(Clock::GetRealTimeClock()),
+          send_stream_(nullptr) {}
 
    private:
     int32_t Encode(const VideoFrame& input_image,

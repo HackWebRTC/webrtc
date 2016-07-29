@@ -15,6 +15,7 @@
 
 #include "webrtc/modules/rtp_rtcp/test/testAPI/test_api.h"
 
+#include "webrtc/base/rate_limiter.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -77,7 +78,8 @@ class RTPCallback : public NullRtpFeedback {
 
 class RtpRtcpAudioTest : public ::testing::Test {
  protected:
-  RtpRtcpAudioTest() : fake_clock(123456) {
+  RtpRtcpAudioTest()
+      : fake_clock(123456), retransmission_rate_limiter_(&fake_clock, 1000) {
     test_CSRC[0] = 1234;
     test_CSRC[2] = 2345;
     test_ssrc = 3456;
@@ -106,6 +108,7 @@ class RtpRtcpAudioTest : public ::testing::Test {
     configuration.clock = &fake_clock;
     configuration.receive_statistics = receive_statistics1_.get();
     configuration.outgoing_transport = transport1;
+    configuration.retransmission_rate_limiter = &retransmission_rate_limiter_;
 
     module1 = RtpRtcp::CreateRtpRtcp(configuration);
     rtp_receiver1_.reset(RtpReceiver::CreateAudioReceiver(
@@ -152,6 +155,7 @@ class RtpRtcpAudioTest : public ::testing::Test {
   uint16_t test_sequence_number;
   uint32_t test_CSRC[webrtc::kRtpCsrcSize];
   SimulatedClock fake_clock;
+  RateLimiter retransmission_rate_limiter_;
 };
 
 TEST_F(RtpRtcpAudioTest, Basic) {
