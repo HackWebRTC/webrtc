@@ -109,9 +109,12 @@
           'target_name': 'event_log_visualizer',
           'type': 'executable',
           'dependencies': [
+            '<(webrtc_root)/webrtc.gyp:rtc_event_log',
             '<(webrtc_root)/webrtc.gyp:rtc_event_log_parser',
+            '<(webrtc_root)/modules/modules.gyp:congestion_controller',
             '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
+            '<(webrtc_root)/test/test.gyp:field_trial',
             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
           ],
           'sources': [
