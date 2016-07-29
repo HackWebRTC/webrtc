@@ -47,6 +47,7 @@ public class SettingsActivity extends Activity
   private String keyprefDisableBuiltInAGC;
   private String keyprefDisableBuiltInNS;
   private String keyprefEnableLevelControl;
+  private String keyprefSpeakerphone;
 
   private String keyPrefRoomServerUrl;
   private String keyPrefDisplayHud;
@@ -76,6 +77,7 @@ public class SettingsActivity extends Activity
     keyprefDisableBuiltInAGC = getString(R.string.pref_disable_built_in_agc_key);
     keyprefDisableBuiltInNS = getString(R.string.pref_disable_built_in_ns_key);
     keyprefEnableLevelControl = getString(R.string.pref_enable_level_control_key);
+    keyprefSpeakerphone = getString(R.string.pref_speakerphone_key);
 
     keyPrefRoomServerUrl = getString(R.string.pref_room_server_url_key);
     keyPrefDisplayHud = getString(R.string.pref_displayhud_key);
@@ -118,6 +120,7 @@ public class SettingsActivity extends Activity
     updateSummaryB(sharedPreferences, keyprefDisableBuiltInAGC);
     updateSummaryB(sharedPreferences, keyprefDisableBuiltInNS);
     updateSummaryB(sharedPreferences, keyprefEnableLevelControl);
+    updateSummaryList(sharedPreferences, keyprefSpeakerphone);
 
     updateSummary(sharedPreferences, keyPrefRoomServerUrl);
     updateSummaryB(sharedPreferences, keyPrefDisplayHud);
@@ -198,6 +201,8 @@ public class SettingsActivity extends Activity
         || key.equals(keyprefEnableLevelControl)
         || key.equals(keyPrefDisplayHud)) {
       updateSummaryB(sharedPreferences, key);
+    } else if (key.equals(keyprefSpeakerphone)) {
+      updateSummaryList(sharedPreferences, key);
     }
     if (key.equals(keyprefStartVideoBitrateType)) {
       setVideoBitrateEnable(sharedPreferences);
@@ -224,6 +229,11 @@ public class SettingsActivity extends Activity
     updatedPref.setSummary(sharedPreferences.getBoolean(key, true)
         ? getString(R.string.pref_value_enabled)
         : getString(R.string.pref_value_disabled));
+  }
+
+  private void updateSummaryList(SharedPreferences sharedPreferences, String key) {
+    ListPreference updatedPref = (ListPreference) settingsFragment.findPreference(key);
+    updatedPref.setSummary(updatedPref.getEntry());
   }
 
   private void setVideoBitrateEnable(SharedPreferences sharedPreferences) {

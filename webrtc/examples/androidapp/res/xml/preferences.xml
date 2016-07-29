@@ -140,6 +140,14 @@
             android:key="@string/pref_enable_level_control_key"
             android:title="@string/pref_enable_level_control_title"
             android:defaultValue="@string/pref_enable_level_control_default" />
+
+        <ListPreference
+            android:key="@string/pref_speakerphone_key"
+            android:title="@string/pref_speakerphone_title"
+            android:defaultValue="@string/pref_speakerphone_default"
+            android:dialogTitle="@string/pref_speakerphone_dlg"
+            android:entries="@array/speakerphone"
+            android:entryValues="@array/speakerphoneValues" />
     </PreferenceCategory>
 
     <PreferenceCategory
