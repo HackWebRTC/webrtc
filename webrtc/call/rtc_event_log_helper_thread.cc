@@ -224,7 +224,11 @@ void RtcEventLogHelperThread::StopLogFile() {
   output_string_.clear();
 
   rtclog::Event end_event;
-  end_event.set_timestamp_us(stop_time_);
+  // This function can be called either because we have reached the stop time,
+  // or because we have reached the log file size limit. Therefore, use the
+  // current time if we have not reached the time limit.
+  end_event.set_timestamp_us(
+      std::min(stop_time_, clock_->TimeInMicroseconds()));
   end_event.set_type(rtclog::Event::LOG_END);
   AppendEventToString(&end_event);
 
