@@ -295,7 +295,7 @@ static cricket::VideoFormat const kIPhone4SFormat =
 - (void)handleCaptureSessionRuntimeError:(NSNotification *)notification {
   NSError *error =
       [notification.userInfo objectForKey:AVCaptureSessionErrorKey];
-  RTCLogError(@"Capture session runtime error: %@", error.localizedDescription);
+  RTCLogError(@"Capture session runtime error: %@", error);
 
   [RTCDispatcher dispatchAsyncOnType:RTCDispatcherTypeCaptureSession
                                block:^{
