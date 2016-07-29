@@ -108,6 +108,7 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   std::vector<Candidate> ReadyCandidates() const override;
   bool CandidatesAllocationDone() const override;
   void RegatherOnFailedNetworks() override;
+  void PruneAllPorts() override;
 
  protected:
   void UpdateIceParametersInternal() override;

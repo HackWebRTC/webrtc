@@ -416,11 +416,11 @@ class BasicPortAllocatorTest : public testing::Test,
               std::find(ready_ports.begin(), ready_ports.end(), port));
   }
   void OnPortsPruned(PortAllocatorSession* ses,
-                     const std::vector<PortInterface*>& ports_pruned) {
-    LOG(LS_INFO) << "Number of ports pruned: " << ports_pruned.size();
+                     const std::vector<PortInterface*>& pruned_ports) {
+    LOG(LS_INFO) << "Number of ports pruned: " << pruned_ports.size();
     auto ready_ports = ses->ReadyPorts();
     auto new_end = ports_.end();
-    for (PortInterface* port : ports_pruned) {
+    for (PortInterface* port : pruned_ports) {
       new_end = std::remove(ports_.begin(), new_end, port);
       // Make sure the pruned port is not in ReadyPorts.
       EXPECT_EQ(ready_ports.end(),

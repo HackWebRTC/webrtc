@@ -127,9 +127,10 @@ class P2PTransportChannel : public TransportChannelImpl,
   const Connection* selected_connection() const { return selected_connection_; }
   void set_incoming_only(bool value) { incoming_only_ = value; }
 
-  // Note: This is only for testing purpose.
-  // |ports_| should not be changed from outside.
+  // Note: These are only for testing purpose.
+  // |ports_| and |pruned_ports| should not be changed from outside.
   const std::vector<PortInterface*>& ports() { return ports_; }
+  const std::vector<PortInterface*>& pruned_ports() { return pruned_ports_; }
 
   IceMode remote_ice_mode() const { return remote_ice_mode_; }
 
@@ -184,6 +185,7 @@ class P2PTransportChannel : public TransportChannelImpl,
     return false;
   }
 
+  void PruneAllPorts();
   int receiving_timeout() const { return config_.receiving_timeout; }
   int check_receiving_interval() const { return check_receiving_interval_; }
 
@@ -295,7 +297,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   void OnPortDestroyed(PortInterface* port);
   // When pruning a port, move it from |ports_| to |pruned_ports_|.
   // Returns true if the port is found and removed from |ports_|.
-  bool OnPortPruned(PortInterface* port);
+  bool PrunePort(PortInterface* port);
   void OnRoleConflict(PortInterface* port);
 
   void OnConnectionStateChange(Connection* connection);

@@ -198,6 +198,8 @@ void Port::Construct() {
   network_->SignalTypeChanged.connect(this, &Port::OnNetworkTypeChanged);
   network_cost_ = network_->GetCost();
 
+  thread_->PostDelayed(RTC_FROM_HERE, timeout_delay_, this,
+                       MSG_DESTROY_IF_DEAD);
   LOG_J(LS_INFO, this) << "Port created with network cost " << network_cost_;
 }
 
@@ -644,9 +646,25 @@ void Port::SendBindingErrorResponse(StunMessage* request,
                        << " to " << addr.ToSensitiveString();
 }
 
+void Port::KeepAliveUntilPruned() {
+  // If it is pruned, we won't bring it up again.
+  if (state_ == State::INIT) {
+    state_ = State::KEEP_ALIVE_UNTIL_PRUNED;
+  }
+}
+
+void Port::Prune() {
+  state_ = State::PRUNED;
+  thread_->Post(RTC_FROM_HERE, this, MSG_DESTROY_IF_DEAD);
+}
+
 void Port::OnMessage(rtc::Message *pmsg) {
-  ASSERT(pmsg->message_id == MSG_CHECK_DEAD);
-  if (dead()) {
+  ASSERT(pmsg->message_id == MSG_DESTROY_IF_DEAD);
+  bool dead =
+      (state_ == State::INIT || state_ == State::PRUNED) &&
+      connections_.empty() &&
+      rtc::TimeMillis() - last_time_all_connections_removed_ >= timeout_delay_;
+  if (dead) {
     Destroy();
   }
 }
@@ -699,20 +717,16 @@ void Port::OnConnectionDestroyed(Connection* conn) {
   connections_.erase(iter);
   HandleConnectionDestroyed(conn);
 
-  // On the controlled side, ports time out after all connections fail.
+  // Ports time out after all connections fail if it is not marked as
+  // "keep alive until pruned."
   // Note: If a new connection is added after this message is posted, but it
   // fails and is removed before kPortTimeoutDelay, then this message will
   // not cause the Port to be destroyed.
-  if (ice_role_ == ICEROLE_CONTROLLED && connections_.empty()) {
+  if (connections_.empty()) {
     last_time_all_connections_removed_ = rtc::TimeMillis();
-    thread_->PostDelayed(RTC_FROM_HERE, timeout_delay_, this, MSG_CHECK_DEAD);
+    thread_->PostDelayed(RTC_FROM_HERE, timeout_delay_, this,
+                         MSG_DESTROY_IF_DEAD);
   }
-}
-
-bool Port::dead() const {
-  return ice_role_ == ICEROLE_CONTROLLED && connections_.empty() &&
-         rtc::TimeMillis() - last_time_all_connections_removed_ >=
-             timeout_delay_;
 }
 
 void Port::Destroy() {

@@ -2497,6 +2497,13 @@ class P2PTransportChannelPingTest : public testing::Test,
     return static_cast<Port*>(ch->ports()[0]);
   }
 
+  Port* GetPrunedPort(P2PTransportChannel* ch) {
+    if (ch->pruned_ports().empty()) {
+      return nullptr;
+    }
+    return static_cast<Port*>(ch->pruned_ports()[0]);
+  }
+
   Connection* GetConnectionTo(P2PTransportChannel* ch,
                               const std::string& ip,
                               int port_num) {
@@ -3579,14 +3586,14 @@ TEST_F(P2PTransportChannelPingTest, TestIceRoleUpdatedOnPortAfterIceRestart) {
 }
 
 // Test that after some amount of time without receiving data, the connection
-// and port are destroyed.
-TEST_F(P2PTransportChannelPingTest, TestPortDestroyedAfterTimeout) {
+// will be destroyed. The port will only be destroyed after it is marked as
+// "pruned."
+TEST_F(P2PTransportChannelPingTest, TestPortDestroyedAfterTimeoutAndPruned) {
   rtc::ScopedFakeClock fake_clock;
 
   FakePortAllocator pa(rtc::Thread::Current(), nullptr);
   P2PTransportChannel ch("test channel", ICE_CANDIDATE_COMPONENT_DEFAULT, &pa);
   PrepareChannel(&ch);
-  // Only a controlled channel should expect its ports to be destroyed.
   ch.SetIceRole(ICEROLE_CONTROLLED);
   ch.MaybeStartGathering();
   ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));
@@ -3600,7 +3607,14 @@ TEST_F(P2PTransportChannelPingTest, TestPortDestroyedAfterTimeout) {
     fake_clock.AdvanceTime(rtc::TimeDelta::FromSeconds(1));
   }
   EXPECT_EQ(nullptr, GetConnectionTo(&ch, "1.1.1.1", 1));
-  EXPECT_EQ(nullptr, GetPort(&ch));
+  // Port will not be removed because it is not pruned yet.
+  PortInterface* port = GetPort(&ch);
+  ASSERT_NE(nullptr, port);
+
+  // If the session prunes all ports, the port will be destroyed.
+  ch.allocator_session()->PruneAllPorts();
+  EXPECT_EQ_SIMULATED_WAIT(nullptr, GetPort(&ch), 1, fake_clock);
+  EXPECT_EQ_SIMULATED_WAIT(nullptr, GetPrunedPort(&ch), 1, fake_clock);
 }
 
 class P2PTransportChannelMostLikelyToWorkFirstTest

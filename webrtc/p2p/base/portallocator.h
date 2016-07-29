@@ -189,6 +189,9 @@ class PortAllocatorSession : public sigslot::has_slots<> {
   virtual std::vector<PortInterface*> ReadyPorts() const = 0;
   virtual std::vector<Candidate> ReadyCandidates() const = 0;
   virtual bool CandidatesAllocationDone() const = 0;
+  // Marks all ports in the current session as "pruned" so that they may be
+  // destroyed if no connection is using them.
+  virtual void PruneAllPorts() {}
 
   sigslot::signal2<PortAllocatorSession*, PortInterface*> SignalPortReady;
   // Fires this signal when the network of the ports failed (either because the

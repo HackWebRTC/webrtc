@@ -143,14 +143,15 @@ void P2PTransportChannel::AddAllocatorSession(
       this, &P2PTransportChannel::OnCandidatesRemoved);
   session->SignalCandidatesAllocationDone.connect(
       this, &P2PTransportChannel::OnCandidatesAllocationDone);
+  if (!allocator_sessions_.empty()) {
+    allocator_session()->PruneAllPorts();
+  }
+  allocator_sessions_.push_back(std::move(session));
 
   // We now only want to apply new candidates that we receive to the ports
   // created by this new session because these are replacing those of the
   // previous sessions.
-  pruned_ports_.insert(pruned_ports_.end(), ports_.begin(), ports_.end());
-  ports_.clear();
-
-  allocator_sessions_.push_back(std::move(session));
+  PruneAllPorts();
 }
 
 void P2PTransportChannel::AddConnection(Connection* connection) {
@@ -238,7 +239,7 @@ void P2PTransportChannel::SetIceRole(IceRole ice_role) {
     for (PortInterface* port : ports_) {
       port->SetIceRole(ice_role);
     }
-    // Update role on removed ports as well, because they may still have
+    // Update role on pruned ports as well, because they may still have
     // connections alive that should be using the correct role.
     for (PortInterface* port : pruned_ports_) {
       port->SetIceRole(ice_role);
@@ -1688,7 +1689,7 @@ void P2PTransportChannel::OnPortsPruned(
     const std::vector<PortInterface*>& ports) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
   for (PortInterface* port : ports) {
-    if (OnPortPruned(port)) {
+    if (PrunePort(port)) {
       LOG(INFO) << "Removed port: " << port->ToString() << " " << ports_.size()
                 << " remaining";
     }
@@ -1727,7 +1728,12 @@ void P2PTransportChannel::OnRegatherOnFailedNetworks() {
                         MSG_REGATHER_ON_FAILED_NETWORKS);
 }
 
-bool P2PTransportChannel::OnPortPruned(PortInterface* port) {
+void P2PTransportChannel::PruneAllPorts() {
+  pruned_ports_.insert(pruned_ports_.end(), ports_.begin(), ports_.end());
+  ports_.clear();
+}
+
+bool P2PTransportChannel::PrunePort(PortInterface* port) {
   auto it = std::find(ports_.begin(), ports_.end(), port);
   // Don't need to do anything if the port has been deleted from the port list.
   if (it == ports_.end()) {

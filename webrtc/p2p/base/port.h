@@ -122,6 +122,12 @@ typedef std::set<rtc::SocketAddress> ServerAddresses;
 class Port : public PortInterface, public rtc::MessageHandler,
              public sigslot::has_slots<> {
  public:
+  // INIT: The state when a port is just created.
+  // KEEP_ALIVE_UNTIL_PRUNED: A port should not be destroyed even if no
+  // connection is using it.
+  // PRUNED: It will be destroyed if no connection is using it for a period of
+  // 30 seconds.
+  enum class State { INIT, KEEP_ALIVE_UNTIL_PRUNED, PRUNED };
   Port(rtc::Thread* thread,
        const std::string& type,
        rtc::PacketSocketFactory* factory,
@@ -152,6 +158,12 @@ class Port : public PortInterface, public rtc::MessageHandler,
 
   virtual bool SharedSocket() const { return shared_socket_; }
   void ResetSharedSocket() { shared_socket_ = false; }
+
+  // Should not destroy the port even if no connection is using it. Called when
+  // a port is ready to use.
+  void KeepAliveUntilPruned();
+  // Allows a port to be destroyed if no connection is using it.
+  void Prune();
 
   // The thread on which this port performs its I/O.
   rtc::Thread* thread() { return thread_; }
@@ -297,7 +309,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
   int16_t network_cost() const { return network_cost_; }
 
  protected:
-  enum { MSG_CHECK_DEAD = 0, MSG_FIRST_AVAILABLE };
+  enum { MSG_DESTROY_IF_DEAD = 0, MSG_FIRST_AVAILABLE };
 
   virtual void UpdateNetworkCost();
 
@@ -354,10 +366,6 @@ class Port : public PortInterface, public rtc::MessageHandler,
   // Called when one of our connections deletes itself.
   void OnConnectionDestroyed(Connection* conn);
 
-  // Whether this port is dead, and hence, should be destroyed on the controlled
-  // side.
-  bool dead() const;
-
   void OnNetworkTypeChanged(const rtc::Network* network);
 
   rtc::Thread* thread_;
@@ -396,6 +404,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
   // (WiFi. vs. Cellular). It takes precedence over the priority when
   // comparing two connections.
   uint16_t network_cost_;
+  State state_ = State::INIT;
   int64_t last_time_all_connections_removed_ = 0;
 
   friend class Connection;

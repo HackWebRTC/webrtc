@@ -149,6 +149,7 @@ class FakePortAllocatorSession : public PortAllocatorSession {
   std::vector<Candidate> ReadyCandidates() const override {
     return candidates_;
   }
+  void PruneAllPorts() override { port_->Prune(); }
   bool CandidatesAllocationDone() const override { return allocation_done_; }
 
   int port_config_count() { return port_config_count_; }
@@ -181,6 +182,7 @@ class FakePortAllocatorSession : public PortAllocatorSession {
     port->PrepareAddress();
     ready_ports_.push_back(port);
     SignalPortReady(this, port);
+    port->KeepAliveUntilPruned();
   }
   void OnPortComplete(cricket::Port* port) {
     const std::vector<Candidate>& candidates = port->Candidates();

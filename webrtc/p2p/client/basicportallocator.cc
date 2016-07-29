@@ -706,6 +706,7 @@ void BasicPortAllocatorSession::OnCandidateReady(
     if (!data->pruned()) {
       LOG_J(LS_INFO, port) << "Port ready.";
       SignalPortReady(this, port);
+      port->KeepAliveUntilPruned();
     }
   }
 
@@ -761,6 +762,7 @@ bool BasicPortAllocatorSession::PruneTurnPorts(Port* newly_pairable_turn_port) {
         ComparePort(data.port(), best_turn_port) < 0) {
       data.set_pruned();
       pruned = true;
+      data.port()->Prune();
       if (data.port() != newly_pairable_turn_port) {
         pruned_ports.push_back(data.port());
       }
@@ -771,6 +773,12 @@ bool BasicPortAllocatorSession::PruneTurnPorts(Port* newly_pairable_turn_port) {
     SignalPortsPruned(this, pruned_ports);
   }
   return pruned;
+}
+
+void BasicPortAllocatorSession::PruneAllPorts() {
+  for (PortData& data : ports_) {
+    data.port()->Prune();
+  }
 }
 
 void BasicPortAllocatorSession::OnPortComplete(Port* port) {
@@ -942,6 +950,8 @@ void BasicPortAllocatorSession::RemovePortsAndCandidates(
                   data.sequence()->network()) == networks.end()) {
       continue;
     }
+    // Prune the port so that it may be destroyed.
+    data.port()->Prune();
     ports_to_remove.push_back(data.port());
     if (data.has_pairable_candidate()) {
       GetCandidatesFromPort(data, &candidates_to_remove);
