@@ -344,7 +344,7 @@ int RelayPort::SendTo(const void* data, size_t size,
     ASSERT(!entries_.empty());
     entry = entries_[0];
     if (!entry->connected()) {
-      error_ = EWOULDBLOCK;
+      error_ = ENOTCONN;
       return SOCKET_ERROR;
     }
   }

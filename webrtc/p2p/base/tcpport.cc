@@ -348,7 +348,7 @@ int TCPConnection::Send(const void* data, size_t size,
   // the connection a chance to reconnect.
   if (pretending_to_be_writable_ || write_state() != STATE_WRITABLE) {
     // TODO: Should STATE_WRITE_TIMEOUT return a non-blocking error?
-    error_ = EWOULDBLOCK;
+    error_ = ENOTCONN;
     return SOCKET_ERROR;
   }
   stats_.sent_total_packets++;

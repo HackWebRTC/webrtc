@@ -341,7 +341,7 @@ class TestChannel : public sigslot::has_slots<> {
   }
 
  private:
-  // ReadyToSend will only issue after a Connection recovers from EWOULDBLOCK.
+  // ReadyToSend will only issue after a Connection recovers from ENOTCONN
   void OnConnectionReadyToSend(Connection* conn) {
     ASSERT_EQ(conn, conn_);
     connection_ready_to_send_ = true;
@@ -696,7 +696,7 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
       EXPECT_TRUE_WAIT(ch1.connection_ready_to_send(),
                        kTcpReconnectTimeout);
       // Channel2 is the passive one so a new connection is created during
-      // reconnect. This new connection should never have issued EWOULDBLOCK
+      // reconnect. This new connection should never have issued ENOTCONN
       // hence the connection_ready_to_send() should be false.
       EXPECT_FALSE(ch2.connection_ready_to_send());
     } else {

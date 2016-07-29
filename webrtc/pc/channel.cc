@@ -758,8 +758,8 @@ bool BaseChannel::SendPacket(bool rtcp,
   int ret = channel->SendPacket(packet->data<char>(), packet->size(),
                                 updated_options, flags);
   if (ret != static_cast<int>(packet->size())) {
-    if (channel->GetError() == EWOULDBLOCK) {
-      LOG(LS_WARNING) << "Got EWOULDBLOCK from socket.";
+    if (channel->GetError() == ENOTCONN) {
+      LOG(LS_WARNING) << "Got ENOTCONN from transport.";
       SetReadyToSend(rtcp, false);
     }
     return false;

@@ -928,10 +928,10 @@ int P2PTransportChannel::SendPacket(const char *data, size_t len,
     error_ = EINVAL;
     return -1;
   }
-  // If we don't think the connection is working yet, return EWOULDBLOCK
+  // If we don't think the connection is working yet, return ENOTCONN
   // instead of sending a packet that will probably be dropped.
   if (!ReadyToSend()) {
-    error_ = EWOULDBLOCK;
+    error_ = ENOTCONN;
     return -1;
   }
 
@@ -1292,7 +1292,7 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn) {
                          << selected_connection_->ToString();
     SignalRouteChange(this, selected_connection_->remote_candidate());
     // This is a temporary, but safe fix to webrtc issue 5705.
-    // TODO(honghaiz): Make all EWOULDBLOCK error routed through the transport
+    // TODO(honghaiz): Make all ENOTCONN error routed through the transport
     // channel so that it knows whether the media channel is allowed to
     // send; then it will only signal ready-to-send if the media channel
     // has been disallowed to send.

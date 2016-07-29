@@ -468,7 +468,7 @@ OpenSSLAdapter::Send(const void* pv, size_t cb) {
 
   case SSL_WAIT:
   case SSL_CONNECTING:
-    SetError(EWOULDBLOCK);
+    SetError(ENOTCONN);
     return SOCKET_ERROR;
 
   case SSL_CONNECTED:
@@ -534,7 +534,7 @@ int OpenSSLAdapter::Recv(void* pv, size_t cb, int64_t* timestamp) {
 
   case SSL_WAIT:
   case SSL_CONNECTING:
-    SetError(EWOULDBLOCK);
+    SetError(ENOTCONN);
     return SOCKET_ERROR;
 
   case SSL_CONNECTED:

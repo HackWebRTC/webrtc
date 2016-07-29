@@ -518,7 +518,7 @@ int TurnPort::SendTo(const void* data, size_t size,
   }
 
   if (!ready()) {
-    error_ = EWOULDBLOCK;
+    error_ = ENOTCONN;
     return SOCKET_ERROR;
   }
 
