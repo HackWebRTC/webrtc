@@ -80,6 +80,7 @@ public class PeerConnectionClient {
   private static final String AUDIO_AUTO_GAIN_CONTROL_CONSTRAINT= "googAutoGainControl";
   private static final String AUDIO_HIGH_PASS_FILTER_CONSTRAINT  = "googHighpassFilter";
   private static final String AUDIO_NOISE_SUPPRESSION_CONSTRAINT = "googNoiseSuppression";
+  private static final String AUDIO_LEVEL_CONTROL_CONSTRAINT = "levelControl";
   private static final String MAX_VIDEO_WIDTH_CONSTRAINT = "maxWidth";
   private static final String MIN_VIDEO_WIDTH_CONSTRAINT = "minWidth";
   private static final String MAX_VIDEO_HEIGHT_CONSTRAINT = "maxHeight";
@@ -162,6 +163,7 @@ public class PeerConnectionClient {
     public final boolean disableBuiltInAEC;
     public final boolean disableBuiltInAGC;
     public final boolean disableBuiltInNS;
+    public final boolean enableLevelControl;
 
     public PeerConnectionParameters(
         boolean videoCallEnabled, boolean loopback, boolean tracing, boolean useCamera2,
@@ -169,7 +171,8 @@ public class PeerConnectionClient {
         int videoStartBitrate, String videoCodec, boolean videoCodecHwAcceleration,
         boolean captureToTexture, int audioStartBitrate, String audioCodec,
         boolean noAudioProcessing, boolean aecDump, boolean useOpenSLES,
-        boolean disableBuiltInAEC, boolean disableBuiltInAGC, boolean disableBuiltInNS) {
+        boolean disableBuiltInAEC, boolean disableBuiltInAGC, boolean disableBuiltInNS,
+        boolean enableLevelControl) {
       this.videoCallEnabled = videoCallEnabled;
       this.useCamera2 = useCamera2;
       this.loopback = loopback;
@@ -189,6 +192,7 @@ public class PeerConnectionClient {
       this.disableBuiltInAEC = disableBuiltInAEC;
       this.disableBuiltInAGC = disableBuiltInAGC;
       this.disableBuiltInNS = disableBuiltInNS;
+      this.enableLevelControl = enableLevelControl;
     }
   }
 
@@ -454,6 +458,11 @@ public class PeerConnectionClient {
             AUDIO_HIGH_PASS_FILTER_CONSTRAINT, "false"));
       audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
            AUDIO_NOISE_SUPPRESSION_CONSTRAINT , "false"));
+    }
+    if (peerConnectionParameters.enableLevelControl) {
+      Log.d(TAG, "Enabling level control.");
+      audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
+          AUDIO_LEVEL_CONTROL_CONSTRAINT, "true"));
     }
     // Create SDP constraints.
     sdpMediaConstraints = new MediaConstraints();

@@ -73,6 +73,7 @@ public class ConnectActivity extends Activity {
   private String keyprefDisableBuiltInAec;
   private String keyprefDisableBuiltInAgc;
   private String keyprefDisableBuiltInNs;
+  private String keyprefEnableLevelControl;
   private String keyprefDisplayHud;
   private String keyprefTracing;
   private String keyprefRoomServerUrl;
@@ -107,6 +108,7 @@ public class ConnectActivity extends Activity {
     keyprefDisableBuiltInAec = getString(R.string.pref_disable_built_in_aec_key);
     keyprefDisableBuiltInAgc = getString(R.string.pref_disable_built_in_agc_key);
     keyprefDisableBuiltInNs = getString(R.string.pref_disable_built_in_ns_key);
+    keyprefEnableLevelControl = getString(R.string.pref_enable_level_control_key);
     keyprefDisplayHud = getString(R.string.pref_displayhud_key);
     keyprefTracing = getString(R.string.pref_tracing_key);
     keyprefRoomServerUrl = getString(R.string.pref_room_server_url_key);
@@ -313,6 +315,11 @@ public class ConnectActivity extends Activity {
         keyprefDisableBuiltInNs,
         Boolean.valueOf(getString(R.string.pref_disable_built_in_ns_default)));
 
+    // Check Enable level control.
+    boolean enableLevelControl = sharedPref.getBoolean(
+        keyprefEnableLevelControl,
+        Boolean.valueOf(getString(R.string.pref_enable_level_control_key)));
+
     // Get video resolution from settings.
     int videoWidth = 0;
     int videoHeight = 0;
@@ -401,6 +408,7 @@ public class ConnectActivity extends Activity {
       intent.putExtra(CallActivity.EXTRA_DISABLE_BUILT_IN_AEC, disableBuiltInAEC);
       intent.putExtra(CallActivity.EXTRA_DISABLE_BUILT_IN_AGC, disableBuiltInAGC);
       intent.putExtra(CallActivity.EXTRA_DISABLE_BUILT_IN_NS, disableBuiltInNS);
+      intent.putExtra(CallActivity.EXTRA_ENABLE_LEVEL_CONTROL, enableLevelControl);
       intent.putExtra(CallActivity.EXTRA_AUDIO_BITRATE, audioStartBitrate);
       intent.putExtra(CallActivity.EXTRA_AUDIOCODEC, audioCodec);
       intent.putExtra(CallActivity.EXTRA_DISPLAY_HUD, displayHud);

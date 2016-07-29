@@ -46,6 +46,7 @@ public class SettingsActivity extends Activity
   private String keyprefDisableBuiltInAEC;
   private String keyprefDisableBuiltInAGC;
   private String keyprefDisableBuiltInNS;
+  private String keyprefEnableLevelControl;
 
   private String keyPrefRoomServerUrl;
   private String keyPrefDisplayHud;
@@ -74,6 +75,7 @@ public class SettingsActivity extends Activity
     keyprefDisableBuiltInAEC = getString(R.string.pref_disable_built_in_aec_key);
     keyprefDisableBuiltInAGC = getString(R.string.pref_disable_built_in_agc_key);
     keyprefDisableBuiltInNS = getString(R.string.pref_disable_built_in_ns_key);
+    keyprefEnableLevelControl = getString(R.string.pref_enable_level_control_key);
 
     keyPrefRoomServerUrl = getString(R.string.pref_room_server_url_key);
     keyPrefDisplayHud = getString(R.string.pref_displayhud_key);
@@ -115,6 +117,7 @@ public class SettingsActivity extends Activity
     updateSummaryB(sharedPreferences, keyprefDisableBuiltInAEC);
     updateSummaryB(sharedPreferences, keyprefDisableBuiltInAGC);
     updateSummaryB(sharedPreferences, keyprefDisableBuiltInNS);
+    updateSummaryB(sharedPreferences, keyprefEnableLevelControl);
 
     updateSummary(sharedPreferences, keyPrefRoomServerUrl);
     updateSummaryB(sharedPreferences, keyPrefDisplayHud);
@@ -192,6 +195,7 @@ public class SettingsActivity extends Activity
         || key.equals(keyprefDisableBuiltInAEC)
         || key.equals(keyprefDisableBuiltInAGC)
         || key.equals(keyprefDisableBuiltInNS)
+        || key.equals(keyprefEnableLevelControl)
         || key.equals(keyPrefDisplayHud)) {
       updateSummaryB(sharedPreferences, key);
     }

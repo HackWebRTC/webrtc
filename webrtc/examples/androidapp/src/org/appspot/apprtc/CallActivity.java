@@ -88,6 +88,8 @@ public class CallActivity extends Activity
       "org.appspot.apprtc.DISABLE_BUILT_IN_AGC";
   public static final String EXTRA_DISABLE_BUILT_IN_NS =
       "org.appspot.apprtc.DISABLE_BUILT_IN_NS";
+    public static final String EXTRA_ENABLE_LEVEL_CONTROL =
+      "org.appspot.apprtc.ENABLE_LEVEL_CONTROL";
   public static final String EXTRA_DISPLAY_HUD =
       "org.appspot.apprtc.DISPLAY_HUD";
   public static final String EXTRA_TRACING = "org.appspot.apprtc.TRACING";
@@ -253,7 +255,8 @@ public class CallActivity extends Activity
         intent.getBooleanExtra(EXTRA_OPENSLES_ENABLED, false),
         intent.getBooleanExtra(EXTRA_DISABLE_BUILT_IN_AEC, false),
         intent.getBooleanExtra(EXTRA_DISABLE_BUILT_IN_AGC, false),
-        intent.getBooleanExtra(EXTRA_DISABLE_BUILT_IN_NS, false));
+        intent.getBooleanExtra(EXTRA_DISABLE_BUILT_IN_NS, false),
+        intent.getBooleanExtra(EXTRA_ENABLE_LEVEL_CONTROL, false));
     commandLineRun = intent.getBooleanExtra(EXTRA_CMDLINE, false);
     runTimeMs = intent.getIntExtra(EXTRA_RUNTIME, 0);
 

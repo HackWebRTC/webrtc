@@ -135,6 +135,11 @@
             android:title="@string/pref_disable_built_in_ns_title"
             android:dialogTitle="@string/pref_disable_built_in_ns_dlg"
             android:defaultValue="@string/pref_disable_built_in_ns_default" />
+
+        <CheckBoxPreference
+            android:key="@string/pref_enable_level_control_key"
+            android:title="@string/pref_enable_level_control_title"
+            android:defaultValue="@string/pref_enable_level_control_default" />
     </PreferenceCategory>
 
     <PreferenceCategory

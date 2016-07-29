@@ -285,7 +285,8 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
             false /* useOpenSLES */,
             false /* disableBuiltInAEC */,
             false /* disableBuiltInAGC */,
-            false /* disableBuiltInNS */);
+            false /* disableBuiltInNS */,
+            false /* enableLevelControl */);
     return peerConnectionParameters;
   }
 
@@ -315,7 +316,8 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
             false /* useOpenSLES */,
             false /* disableBuiltInAEC */,
             false /* disableBuiltInAGC */,
-            false /* disableBuiltInNS */);
+            false /* disableBuiltInNS */,
+            false /* enableLevelControl */);
     return peerConnectionParameters;
   }
 
