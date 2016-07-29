@@ -23,6 +23,9 @@ class CriticalSectionWrapper;
 
 const uint32_t kPulsePeriodMs = 1000;
 const size_t kMaxBufferSizeBytes = 3840;  // 10ms in stereo @ 96kHz
+// Delta times between two successive playout callbacks are limited to this
+// value before added to an internal array.
+const size_t kMaxDeltaTimeInMs = 500;
 
 class AudioDeviceObserver;
 
@@ -167,6 +170,16 @@ class AudioDeviceBuffer {
 
   // Time stamp of last stat report.
   uint64_t last_log_stat_time_;
+
+  // Time stamp of last playout callback.
+  uint64_t last_playout_time_;
+
+  // An array where the position corresponds to time differences (in
+  // milliseconds) between two successive playout callbacks, and the stored
+  // value is the number of times a given time difference was found.
+  // Writing to the array is done without a lock since it is only read once at
+  // destruction when no audio is running.
+  uint32_t playout_diff_times_[kMaxDeltaTimeInMs + 1] = {0};
 };
 
 }  // namespace webrtc

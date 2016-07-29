@@ -8,8 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <algorithm>
+
 #include "webrtc/modules/audio_device/audio_device_buffer.h"
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -72,6 +75,25 @@ AudioDeviceBuffer::AudioDeviceBuffer()
 AudioDeviceBuffer::~AudioDeviceBuffer() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   LOG(INFO) << "AudioDeviceBuffer::~dtor";
+
+  size_t total_diff_time = 0;
+  int num_measurements = 0;
+  LOG(INFO) << "[playout diff time => #measurements]";
+  for (size_t diff = 0; diff < arraysize(playout_diff_times_); ++diff) {
+    uint32_t num_elements = playout_diff_times_[diff];
+    if (num_elements > 0) {
+      total_diff_time += num_elements * diff;
+      num_measurements += num_elements;
+      LOG(INFO) << "[" << diff << " => " << num_elements << "]";
+    }
+  }
+  if (num_measurements > 0) {
+    LOG(INFO) << "total_diff_time: " << total_diff_time;
+    LOG(INFO) << "num_measurements: " << num_measurements;
+    LOG(INFO) << "average: "
+             << static_cast<float>(total_diff_time) / num_measurements;
+  }
+
   _recFile.Flush();
   _recFile.CloseFile();
   delete &_recFile;
@@ -92,6 +114,7 @@ int32_t AudioDeviceBuffer::RegisterAudioCallback(
 int32_t AudioDeviceBuffer::InitPlayout() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   LOG(INFO) << __FUNCTION__;
+  last_playout_time_ = rtc::TimeMillis();
   if (!timer_has_started_) {
     StartTimer();
     timer_has_started_ = true;
@@ -332,6 +355,17 @@ int32_t AudioDeviceBuffer::RequestPlayoutData(size_t nSamples) {
   uint32_t playSampleRate = 0;
   size_t playBytesPerSample = 0;
   size_t playChannels = 0;
+
+  // Measure time since last function call and update an array where the
+  // position/index corresponds to time differences (in milliseconds) between
+  // two successive playout callbacks, and the stored value is the number of
+  // times a given time difference was found.
+  int64_t now_time = rtc::TimeMillis();
+  size_t diff_time = rtc::TimeDiff(now_time, last_playout_time_);
+  // Truncate at 500ms to limit the size of the array.
+  diff_time = std::min(kMaxDeltaTimeInMs, diff_time);
+  last_playout_time_ = now_time;
+  playout_diff_times_[diff_time]++;
 
   // TOOD(henrika): improve bad locking model and make it more clear that only
   // 10ms buffer sizes is supported in WebRTC.
