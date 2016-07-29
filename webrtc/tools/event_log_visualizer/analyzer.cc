@@ -20,6 +20,7 @@
 #include "webrtc/audio_receive_stream.h"
 #include "webrtc/audio_send_stream.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/call.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
@@ -77,6 +78,16 @@ int64_t WrappingDifference(uint32_t later, uint32_t earlier, int64_t modulus) {
     difference += modulus;
   }
   return difference;
+}
+
+void RegisterHeaderExtensions(
+    const std::vector<webrtc::RtpExtension>& extensions,
+    webrtc::RtpHeaderExtensionMap* extension_map) {
+  extension_map->Erase();
+  for (const webrtc::RtpExtension& extension : extensions) {
+    extension_map->Register(webrtc::StringToRtpExtensionType(extension.uri),
+                            extension.id);
+  }
 }
 
 const double kXMargin = 1.02;
@@ -137,12 +148,12 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         VideoReceiveStream::Config config(nullptr);
         parsed_log_.GetVideoReceiveConfig(i, &config);
         StreamId stream(config.rtp.remote_ssrc, kIncomingPacket);
-        extension_maps[stream].Erase();
-        for (size_t j = 0; j < config.rtp.extensions.size(); ++j) {
-          const std::string& extension = config.rtp.extensions[j].uri;
-          int id = config.rtp.extensions[j].id;
-          extension_maps[stream].Register(StringToRtpExtensionType(extension),
-                                          id);
+        RegisterHeaderExtensions(config.rtp.extensions,
+                                 &extension_maps[stream]);
+        for (auto kv : config.rtp.rtx) {
+          StreamId rtx_stream(kv.second.ssrc, kIncomingPacket);
+          RegisterHeaderExtensions(config.rtp.extensions,
+                                   &extension_maps[rtx_stream]);
         }
         break;
       }
@@ -151,13 +162,13 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         parsed_log_.GetVideoSendConfig(i, &config);
         for (auto ssrc : config.rtp.ssrcs) {
           StreamId stream(ssrc, kOutgoingPacket);
-          extension_maps[stream].Erase();
-          for (size_t j = 0; j < config.rtp.extensions.size(); ++j) {
-            const std::string& extension = config.rtp.extensions[j].uri;
-            int id = config.rtp.extensions[j].id;
-            extension_maps[stream].Register(StringToRtpExtensionType(extension),
-                                            id);
-          }
+          RegisterHeaderExtensions(config.rtp.extensions,
+                                   &extension_maps[stream]);
+        }
+        for (auto ssrc : config.rtp.rtx.ssrcs) {
+          StreamId stream(ssrc, kOutgoingPacket);
+          RegisterHeaderExtensions(config.rtp.extensions,
+                                   &extension_maps[stream]);
         }
         break;
       }
