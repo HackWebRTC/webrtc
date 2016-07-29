@@ -29,7 +29,7 @@ class MixerAudioSource {
     kError    // audio_frame will not be used.
   };
 
-  struct AudioFrameWithMuted {
+  struct AudioFrameWithInfo {
     AudioFrame* audio_frame;
     AudioFrameInfo audio_frame_info;
   };
@@ -40,8 +40,8 @@ class MixerAudioSource {
   // different calls. The pointer must stay valid until the next
   // mixing call or until this audio source is disconnected from the
   // mixer.
-  virtual AudioFrameWithMuted GetAudioFrameWithMuted(int32_t id,
-                                                     int sample_rate_hz) = 0;
+  virtual AudioFrameWithInfo GetAudioFrameWithMuted(int32_t id,
+                                                    int sample_rate_hz) = 0;
 
   // Returns true if the participant was mixed this mix iteration.
   bool IsMixed() const;

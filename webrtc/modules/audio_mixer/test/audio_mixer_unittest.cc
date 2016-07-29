@@ -9,12 +9,9 @@
  */
 
 #include <memory>
-#include <utility>
 
 #include "testing/gmock/include/gmock/gmock.h"
 
-#include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer.h"
-#include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer_defines.h"
 #include "webrtc/modules/audio_conference_mixer/source/audio_frame_manipulator.h"
 #include "webrtc/modules/audio_mixer/audio_mixer.h"
 #include "webrtc/modules/audio_mixer/include/audio_mixer_defines.h"
@@ -29,152 +26,28 @@ using testing::Return;
 using webrtc::voe::AudioMixer;
 
 namespace webrtc {
-class MockMixerParticipant : public MixerParticipant {
- public:
-  MockMixerParticipant()
-      : fake_audio_frame_info_(MixerParticipant::AudioFrameInfo::kNormal) {
-    ON_CALL(*this, GetAudioFrameWithMuted(_, _))
-        .WillByDefault(
-            Invoke(this, &MockMixerParticipant::FakeAudioFrameWithMuted));
-  }
-
-  MOCK_METHOD2(GetAudioFrameWithMuted,
-               AudioFrameInfo(const int32_t id, AudioFrame* audio_frame));
-  MOCK_CONST_METHOD1(NeededFrequency, int32_t(const int32_t id));
-
-  AudioFrame* fake_frame() { return &fake_frame_; }
-  AudioFrameInfo fake_info() { return this->fake_audio_frame_info_; }
-  void set_fake_info(const AudioFrameInfo audio_frame_info) {
-    fake_audio_frame_info_ = audio_frame_info;
-  }
-
- private:
-  AudioFrame fake_frame_;
-  AudioFrameInfo fake_audio_frame_info_;
-  AudioFrameInfo FakeAudioFrameWithMuted(const int32_t id,
-                                         AudioFrame* audio_frame) {
-    audio_frame->CopyFrom(*fake_frame());
-    return fake_info();
-  }
-};
-
 class MockMixerAudioSource : public MixerAudioSource {
  public:
-  MockMixerAudioSource()
-      : fake_audio_frame_info_(MixerAudioSource::AudioFrameInfo::kNormal) {
+  MockMixerAudioSource() {
     ON_CALL(*this, GetAudioFrameWithMuted(_, _))
         .WillByDefault(
             Invoke(this, &MockMixerAudioSource::FakeAudioFrameWithMuted));
   }
-
   MOCK_METHOD2(GetAudioFrameWithMuted,
-               AudioFrameWithMuted(const int32_t id, int sample_rate_hz));
+               AudioFrameWithInfo(const int32_t id, int sample_rate_hz));
   MOCK_CONST_METHOD1(NeededFrequency, int32_t(const int32_t id));
 
   AudioFrame* fake_frame() { return &fake_frame_; }
-  AudioFrameInfo fake_info() { return fake_audio_frame_info_; }
-  void set_fake_info(const AudioFrameInfo audio_frame_info) {
-    fake_audio_frame_info_ = audio_frame_info;
-  }
 
  private:
   AudioFrame fake_frame_;
-  AudioFrameInfo fake_audio_frame_info_;
-  AudioFrameWithMuted FakeAudioFrameWithMuted(const int32_t id,
-                                              int sample_rate_hz) {
+  AudioFrameWithInfo FakeAudioFrameWithMuted(const int32_t id,
+                                             int sample_rate_hz) {
     return {
-        fake_frame(),  // audio_frame_pointer
-        fake_info(),   // audio_frame_info
+        fake_frame(),             // audio_frame_pointer
+        AudioFrameInfo::kNormal,  // audio_frame_info
     };
   }
-};
-
-// Keeps two identical sets of participants and two mixers to test
-// that the same participants are chosen for mixing.
-class CompareWithOldMixerTest : public testing::Test, AudioMixerOutputReceiver {
- protected:
-  constexpr static int kId = 1;
-  constexpr static int kSampleRateHz = 32000;
-
-  CompareWithOldMixerTest()
-      : old_mixer_(AudioConferenceMixer::Create(kId)),
-        new_mixer_(NewAudioConferenceMixer::Create(kId)) {}
-
-  ~CompareWithOldMixerTest() { Reset(); }
-
-  // Mixes with both mixers and compares results: resulting frames and
-  // mix statuses.
-  void MixAndCompare() {
-    old_mixer_->Process();
-    new_mixer_->Mix(&new_mixer_frame_);
-    EXPECT_EQ(0, memcmp(old_mixer_frame_.data_, new_mixer_frame_.data_,
-                        sizeof(old_mixer_frame_.data_)));
-
-    for (auto& participant_pair : participants_) {
-      EXPECT_EQ(participant_pair.first->IsMixed(),
-                participant_pair.second->IsMixed());
-    }
-  }
-
-  std::unique_ptr<AudioFrame> last_mixed_audio_old() {
-    std::unique_ptr<AudioFrame> result(new AudioFrame);
-    result->CopyFrom(old_mixer_frame_);
-    return result;
-  }
-
-  void Reset() {
-    old_mixer_.reset(AudioConferenceMixer::Create(kId));
-    new_mixer_.reset(NewAudioConferenceMixer::Create(kId));
-    for (auto& participant_pair : participants_) {
-      delete participant_pair.first;
-      delete participant_pair.second;
-    }
-    participants_.clear();
-  }
-
-  void ResetFrame(AudioFrame* audio_frame) {
-    audio_frame->sample_rate_hz_ = kSampleRateHz;
-    audio_frame->speech_type_ = AudioFrame::kNormalSpeech;
-    audio_frame->vad_activity_ = AudioFrame::kVadActive;
-    audio_frame->num_channels_ = 1;
-  }
-
-  void AddParticipant(AudioFrame* audio_frame,
-                      MixerParticipant::AudioFrameInfo audio_frame_info) {
-    auto old_participant = new MockMixerParticipant;
-    auto new_participant = new MockMixerAudioSource;
-    old_participant->fake_frame()->CopyFrom(*audio_frame);
-    new_participant->fake_frame()->CopyFrom(*audio_frame);
-    old_participant->set_fake_info(audio_frame_info);
-    MixerAudioSource::AudioFrameInfo new_audio_frame_info;
-    switch (audio_frame_info) {
-      case MixerParticipant::AudioFrameInfo::kNormal:
-        new_audio_frame_info = MixerAudioSource::AudioFrameInfo::kNormal;
-        break;
-      case MixerParticipant::AudioFrameInfo::kMuted:
-        new_audio_frame_info = MixerAudioSource::AudioFrameInfo::kMuted;
-        break;
-      default:
-        new_audio_frame_info = MixerAudioSource::AudioFrameInfo::kError;
-    }
-    new_participant->set_fake_info(new_audio_frame_info);
-    participants_.emplace_back(old_participant, new_participant);
-  }
-
-  void NewMixedAudio(const int32_t id,
-                     const AudioFrame& generalAudioFrame,
-                     const AudioFrame** uniqueAudioFrames,
-                     const uint32_t size) override {
-    old_mixer_frame_.CopyFrom(generalAudioFrame);
-  }
-
-  AudioFrame old_mixer_frame_;
-  AudioFrame new_mixer_frame_;
-
-  std::vector<std::pair<MockMixerParticipant*, MockMixerAudioSource*>>
-      participants_;
-  std::unique_ptr<AudioConferenceMixer> old_mixer_;
-  std::unique_ptr<NewAudioConferenceMixer> new_mixer_;
 };
 
 class BothMixersTest : public testing::Test {
@@ -371,73 +244,6 @@ TEST_F(BothMixersTest, CompareSecondFrameAudio) {
   EXPECT_EQ(0,
             memcmp(participant_.fake_frame()->data_, mixed_results_frame_.data_,
                    sizeof(mixing_round_frame.data_)));
-}
-
-TEST_F(CompareWithOldMixerTest, TwoParticipantsNormalFrames) {
-  Reset();
-  AudioFrame first_frame, second_frame;
-
-  ResetFrame(&first_frame);
-  ResetFrame(&second_frame);
-
-  first_frame.id_ = 1;
-  second_frame.id_ = 2;
-
-  AddParticipant(&first_frame, MixerParticipant::AudioFrameInfo::kNormal);
-  AddParticipant(&second_frame, MixerParticipant::AudioFrameInfo::kNormal);
-
-  for (int i = 0; i < 3; ++i) {
-    MixAndCompare();
-  }
-}
-
-TEST_F(CompareWithOldMixerTest, ThreeParticipantsDifferentFrames) {
-  Reset();
-  AudioFrame first_frame, second_frame, third_frame;
-
-  ResetFrame(&first_frame);
-  ResetFrame(&second_frame);
-  ResetFrame(&third_frame);
-
-  first_frame.id_ = 1;
-  second_frame.id_ = 2;
-  third_frame.id_ = 3;
-  second_frame.vad_activity_ = AudioFrame::kVadPassive;
-
-  AddParticipant(&first_frame, MixerParticipant::AudioFrameInfo::kNormal);
-  AddParticipant(&second_frame, MixerParticipant::AudioFrameInfo::kMuted);
-  AddParticipant(&third_frame, MixerParticipant::AudioFrameInfo::kMuted);
-
-  for (int i = 0; i < 3; ++i) {
-    MixAndCompare();
-  }
-}
-
-TEST_F(CompareWithOldMixerTest, ManyParticipantsDifferentFrames) {
-  Reset();
-  constexpr int num_participants = 20;
-  AudioFrame audio_frames[num_participants];
-
-  for (int i = 0; i < num_participants; ++i) {
-    ResetFrame(&audio_frames[i]);
-    audio_frames[i].id_ = 1;
-    audio_frames[i].data_[10] = 100 * (i % 5);
-    audio_frames[i].data_[100] = 100 * (i % 5);
-    if (i % 2 == 0) {
-      audio_frames[i].vad_activity_ = AudioFrame::kVadPassive;
-    }
-  }
-
-  for (int i = 0; i < num_participants; ++i) {
-    if (i % 2 == 0) {
-      AddParticipant(&audio_frames[i],
-                     MixerParticipant::AudioFrameInfo::kMuted);
-    } else {
-      AddParticipant(&audio_frames[i],
-                     MixerParticipant::AudioFrameInfo::kNormal);
-    }
-    MixAndCompare();
-  }
 }
 
 }  // namespace webrtc

@@ -84,10 +84,17 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
   int32_t SetOutputFrequency(const Frequency& frequency);
   Frequency OutputFrequency() const;
 
-  // Compute what audio sources to mix from audio_source_list_. Ramp in
-  // and out. Update mixed status. maxAudioFrameCounter specifies how
-  // many participants are allowed to be mixed.
-  AudioFrameList UpdateToMix(size_t maxAudioFrameCounter) const;
+  // Fills mixList with the AudioFrames pointers that should be used when
+  // mixing.
+  // maxAudioFrameCounter both input and output specifies how many more
+  // AudioFrames that are allowed to be mixed.
+  // rampOutList contain AudioFrames corresponding to an audio stream that
+  // used to be mixed but shouldn't be mixed any longer. These AudioFrames
+  // should be ramped out over this AudioFrame to avoid audio discontinuities.
+  void UpdateToMix(AudioFrameList* mixList,
+                   AudioFrameList* rampOutList,
+                   std::map<int, MixerAudioSource*>* mixAudioSourceList,
+                   size_t* maxAudioFrameCounter) const;
 
   // Return the lowest mixing frequency that can be used without having to
   // downsample any audio.
@@ -97,6 +104,11 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
 
   // Return the AudioFrames that should be mixed anonymously.
   void GetAdditionalAudio(AudioFrameList* additionalFramesList) const;
+
+  // Update the NewMixHistory of all MixerAudioSources. mixedAudioSourcesList
+  // should contain a map of MixerAudioSources that have been mixed.
+  void UpdateMixedStatus(
+      const std::map<int, MixerAudioSource*>& mixedAudioSourcesList) const;
 
   // Clears audioFrameList and reclaims all memory associated with it.
   void ClearAudioFrameList(AudioFrameList* audioFrameList) const;
