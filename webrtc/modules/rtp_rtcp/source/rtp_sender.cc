@@ -127,8 +127,6 @@ RTPSender::RTPSender(
       csrcs_(),
       rtx_(kRtxOff),
       retransmission_rate_limiter_(retransmission_rate_limiter) {
-  RTC_DCHECK(retransmission_rate_limiter_ != nullptr);
-
   // We need to seed the random generator for BuildPaddingPacket() below.
   // TODO(holmer,tommi): Note that TimeInMilliseconds might return 0 on Mac
   // early on in the process.
