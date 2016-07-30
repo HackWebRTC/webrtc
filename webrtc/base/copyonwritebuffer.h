@@ -119,9 +119,7 @@ class CopyOnWriteBuffer {
   CopyOnWriteBuffer& operator=(CopyOnWriteBuffer&& buf) {
     RTC_DCHECK(IsConsistent());
     RTC_DCHECK(buf.IsConsistent());
-    // TODO(jbauch): use std::move once scoped_refptr supports it (issue 5556)
-    buffer_.swap(buf.buffer_);
-    buf.buffer_ = nullptr;
+    buffer_ = std::move(buf.buffer_);
     return *this;
   }
 

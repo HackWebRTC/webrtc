@@ -20,9 +20,8 @@ CopyOnWriteBuffer::CopyOnWriteBuffer(const CopyOnWriteBuffer& buf)
     : buffer_(buf.buffer_) {
 }
 
-CopyOnWriteBuffer::CopyOnWriteBuffer(CopyOnWriteBuffer&& buf) {
-  // TODO(jbauch): use std::move once scoped_refptr supports it (issue 5556)
-  std::swap(buffer_, buf.buffer_);
+CopyOnWriteBuffer::CopyOnWriteBuffer(CopyOnWriteBuffer&& buf)
+    : buffer_(std::move(buf.buffer_)) {
 }
 
 CopyOnWriteBuffer::CopyOnWriteBuffer(size_t size)
