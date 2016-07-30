@@ -89,7 +89,7 @@ class CopyOnWriteBuffer {
   template <typename T = uint8_t,
             typename std::enable_if<
                 internal::BufferCompat<uint8_t, T>::value>::type* = nullptr>
-  T* cdata() const {
+  const T* cdata() const {
     RTC_DCHECK(IsConsistent());
     if (!buffer_) {
       return nullptr;
