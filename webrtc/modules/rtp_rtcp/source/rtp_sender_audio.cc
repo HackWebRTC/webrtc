@@ -418,8 +418,11 @@ int32_t RTPSenderAudio::SendTelephoneEventPacket(bool ended,
   }
   do {
     // Send DTMF data
-    rtp_sender_->BuildRtpHeader(dtmfbuffer, dtmf_payload_type, marker_bit,
-                                dtmf_timestamp, clock_->TimeInMilliseconds());
+    int32_t header_length = rtp_sender_->BuildRtpHeader(
+        dtmfbuffer, dtmf_payload_type, marker_bit, dtmf_timestamp,
+        clock_->TimeInMilliseconds());
+    if (header_length <= 0)
+      return -1;
 
     // reset CSRC and X bit
     dtmfbuffer[0] &= 0xe0;

@@ -266,8 +266,10 @@ int32_t RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
     }
 
     // Write RTP header.
-    rtp_sender_->BuildRtpHeader(dataBuffer, payload_type, last,
-                                capture_timestamp, capture_time_ms);
+    int32_t header_length = rtp_sender_->BuildRtpHeader(
+        dataBuffer, payload_type, last, capture_timestamp, capture_time_ms);
+    if (header_length <= 0)
+      return -1;
 
     // According to
     // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/

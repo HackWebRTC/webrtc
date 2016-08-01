@@ -373,8 +373,7 @@ class RTPSender : public RTPSenderInterface {
                           size_t header_length,
                           size_t padding_length);
 
-  void BuildRtxPacket(uint8_t* buffer, size_t* length,
-                      uint8_t* buffer_rtx);
+  bool BuildRtxPacket(uint8_t* buffer, size_t* length, uint8_t* buffer_rtx);
 
   bool SendPacketToNetwork(const uint8_t* packet,
                            size_t size,

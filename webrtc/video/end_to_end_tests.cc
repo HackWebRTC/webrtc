@@ -3062,9 +3062,9 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx,
         : test::RtpRtcpObserver(kDefaultTimeoutMs),
           ssrcs_to_observe_(kNumSsrcs) {
       for (size_t i = 0; i < kNumSsrcs; ++i) {
-        configured_ssrcs_[kVideoSendSsrcs[i]] = true;
+        ssrc_is_rtx_[kVideoSendSsrcs[i]] = false;
         if (use_rtx)
-          configured_ssrcs_[kSendRtxSsrcs[i]] = true;
+          ssrc_is_rtx_[kSendRtxSsrcs[i]] = true;
       }
     }
 
@@ -3107,7 +3107,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx,
       const bool only_padding =
           header.headerLength + header.paddingLength == length;
 
-      EXPECT_TRUE(configured_ssrcs_[ssrc])
+      EXPECT_TRUE(ssrc_is_rtx_.find(ssrc) != ssrc_is_rtx_.end())
           << "Received SSRC that wasn't configured: " << ssrc;
 
       static const int64_t kMaxSequenceNumberGap = 100;
@@ -3133,14 +3133,16 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx,
         }
       }
 
-      rtc::CritScope lock(&crit_);
-      ValidateTimestampGap(ssrc, timestamp, only_padding);
+      if (!ssrc_is_rtx_[ssrc]) {
+        rtc::CritScope lock(&crit_);
+        ValidateTimestampGap(ssrc, timestamp, only_padding);
 
-      // Wait for media packets on all ssrcs.
-      if (!ssrc_observed_[ssrc] && !only_padding) {
-        ssrc_observed_[ssrc] = true;
-        if (--ssrcs_to_observe_ == 0)
-          observation_complete_.Set();
+        // Wait for media packets on all ssrcs.
+        if (!ssrc_observed_[ssrc] && !only_padding) {
+          ssrc_observed_[ssrc] = true;
+          if (--ssrcs_to_observe_ == 0)
+            observation_complete_.Set();
+        }
       }
 
       return SEND_PACKET;
@@ -3162,7 +3164,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx,
     SequenceNumberUnwrapper seq_numbers_unwrapper_;
     std::map<uint32_t, std::list<int64_t>> last_observed_seq_numbers_;
     std::map<uint32_t, uint32_t> last_observed_timestamp_;
-    std::map<uint32_t, bool> configured_ssrcs_;
+    std::map<uint32_t, bool> ssrc_is_rtx_;
 
     rtc::CriticalSection crit_;
     size_t ssrcs_to_observe_ GUARDED_BY(crit_);
@@ -3272,14 +3274,11 @@ TEST_F(EndToEndTest, RestartingSendStreamPreservesRtpState) {
   TestRtpStatePreservation(false, false);
 }
 
-// These tests are flaky. See:
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=4332
-TEST_F(EndToEndTest, DISABLED_RestartingSendStreamPreservesRtpStatesWithRtx) {
+TEST_F(EndToEndTest, RestartingSendStreamPreservesRtpStatesWithRtx) {
   TestRtpStatePreservation(true, false);
 }
 
-TEST_F(EndToEndTest,
-       DISABLED_RestartingSendStreamKeepsRtpAndRtcpTimestampsSynced) {
+TEST_F(EndToEndTest, RestartingSendStreamKeepsRtpAndRtcpTimestampsSynced) {
   TestRtpStatePreservation(true, true);
 }
 

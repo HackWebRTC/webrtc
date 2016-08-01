@@ -850,7 +850,8 @@ bool RTPSender::PrepareAndSendPacket(uint8_t* buffer,
 
   uint8_t data_buffer_rtx[IP_PACKET_SIZE];
   if (send_over_rtx) {
-    BuildRtxPacket(buffer, &length, data_buffer_rtx);
+    if (!BuildRtxPacket(buffer, &length, data_buffer_rtx))
+      return false;
     buffer_to_send_ptr = data_buffer_rtx;
   }
 
@@ -1154,6 +1155,8 @@ int32_t RTPSender::BuildRtpHeader(uint8_t* data_buffer,
                                   int64_t capture_time_ms) {
   assert(payload_type >= 0);
   rtc::CritScope lock(&send_critsect_);
+  if (!sending_media_)
+    return -1;
 
   timestamp_ = start_timestamp_ + capture_timestamp;
   last_timestamp_time_ms_ = clock_->TimeInMilliseconds();
@@ -1793,9 +1796,12 @@ int32_t RTPSender::SetFecParameters(
   return 0;
 }
 
-void RTPSender::BuildRtxPacket(uint8_t* buffer, size_t* length,
+bool RTPSender::BuildRtxPacket(uint8_t* buffer,
+                               size_t* length,
                                uint8_t* buffer_rtx) {
   rtc::CritScope lock(&send_critsect_);
+  if (!sending_media_)
+    return false;
   uint8_t* data_buffer_rtx = buffer_rtx;
   // Add RTX header.
   RtpUtility::RtpHeaderParser rtp_parser(
@@ -1836,6 +1842,7 @@ void RTPSender::BuildRtxPacket(uint8_t* buffer, size_t* length,
   memcpy(ptr, buffer + rtp_header.headerLength,
          *length - rtp_header.headerLength);
   *length += 2;
+  return true;
 }
 
 void RTPSender::RegisterRtpStatisticsCallback(
