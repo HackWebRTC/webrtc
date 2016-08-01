@@ -137,7 +137,9 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
     if (event_type != ParsedRtcEventLog::VIDEO_RECEIVER_CONFIG_EVENT &&
         event_type != ParsedRtcEventLog::VIDEO_SENDER_CONFIG_EVENT &&
         event_type != ParsedRtcEventLog::AUDIO_RECEIVER_CONFIG_EVENT &&
-        event_type != ParsedRtcEventLog::AUDIO_SENDER_CONFIG_EVENT) {
+        event_type != ParsedRtcEventLog::AUDIO_SENDER_CONFIG_EVENT &&
+        event_type != ParsedRtcEventLog::LOG_START &&
+        event_type != ParsedRtcEventLog::LOG_END) {
       uint64_t timestamp = parsed_log_.GetTimestamp(i);
       first_timestamp = std::min(first_timestamp, timestamp);
       last_timestamp = std::max(last_timestamp, timestamp);
