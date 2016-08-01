@@ -10,6 +10,8 @@
 
 #include "webrtc/p2p/base/turnserver.h"
 
+#include <tuple>  // for std::tie
+
 #include "webrtc/p2p/base/asyncstuntcpsocket.h"
 #include "webrtc/p2p/base/common.h"
 #include "webrtc/p2p/base/packetsocketfactory.h"
@@ -544,7 +546,7 @@ bool TurnServerConnection::operator==(const TurnServerConnection& c) const {
 }
 
 bool TurnServerConnection::operator<(const TurnServerConnection& c) const {
-  return src_ < c.src_ || dst_ < c.dst_ || proto_ < c.proto_;
+  return std::tie(src_, dst_, proto_) < std::tie(c.src_, c.dst_, c.proto_);
 }
 
 std::string TurnServerConnection::ToString() const {

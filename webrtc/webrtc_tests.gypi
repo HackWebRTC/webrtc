@@ -117,6 +117,7 @@
         'p2p/base/transportdescriptionfactory_unittest.cc',
         'p2p/base/tcpport_unittest.cc',
         'p2p/base/turnport_unittest.cc',
+        'p2p/base/turnserver_unittest.cc',
         'p2p/client/basicportallocator_unittest.cc',
         'p2p/stunprober/stunprober_unittest.cc',
       ],

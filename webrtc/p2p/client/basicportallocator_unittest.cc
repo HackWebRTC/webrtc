@@ -1291,17 +1291,9 @@ TEST_F(BasicPortAllocatorTest, TestIPv6TurnPortPrunesIPv4TurnPorts) {
                rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
 }
 
-// Test has an assert error on win_x64_dbg and win_dbg. See: webrtc:6068
-#if defined(WEBRTC_WIN)
-#define MAYBE_TestEachInterfaceHasItsOwnTurnPorts \
-  DISABLED_TestEachInterfaceHasItsOwnTurnPort
-#else
-#define MAYBE_TestEachInterfaceHasItsOwnTurnPorts \
-  TestEachInterfaceHasItsOwnTurnPorts
-#endif
 // Tests that if prune_turn_ports is set, each network interface
 // will has its own set of TurnPorts based on their priorities.
-TEST_F(BasicPortAllocatorTest, MAYBE_TestEachInterfaceHasItsOwnTurnPorts) {
+TEST_F(BasicPortAllocatorTest, TestEachInterfaceHasItsOwnTurnPorts) {
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   turn_server_.AddInternalSocket(kTurnUdpIntIPv6Addr, PROTO_UDP);
   turn_server_.AddInternalSocket(kTurnTcpIntIPv6Addr, PROTO_TCP);
