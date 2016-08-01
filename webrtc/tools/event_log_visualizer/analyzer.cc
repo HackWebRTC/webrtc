@@ -32,6 +32,9 @@
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
 
+namespace webrtc {
+namespace plotting {
+
 namespace {
 
 std::string SsrcToString(uint32_t ssrc) {
@@ -90,16 +93,12 @@ void RegisterHeaderExtensions(
   }
 }
 
-const double kXMargin = 1.02;
-const double kYMargin = 1.1;
-const double kDefaultXMin = -1;
-const double kDefaultYMin = -1;
+constexpr float kLeftMargin = 0.01f;
+constexpr float kRightMargin = 0.02f;
+constexpr float kBottomMargin = 0.02f;
+constexpr float kTopMargin = 0.05f;
 
 }  // namespace
-
-namespace webrtc {
-namespace plotting {
-
 
 bool EventLogAnalyzer::StreamId::operator<(const StreamId& other) const {
   if (ssrc_ < other.ssrc_) {
@@ -274,6 +273,7 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
   }
   begin_time_ = first_timestamp;
   end_time_ = last_timestamp;
+  call_duration_s_ = static_cast<float>(end_time_ - begin_time_) / 1000000;
 }
 
 class BitrateObserver : public CongestionController::Observer,
@@ -311,7 +311,6 @@ void EventLogAnalyzer::CreatePacketGraph(PacketDirection desired_direction,
   MediaType media_type;
   uint8_t header[IP_PACKET_SIZE];
   size_t header_length, total_length;
-  float max_y = 0;
 
   for (size_t i = 0; i < parsed_log_.GetNumberOfEvents(); i++) {
     ParsedRtcEventLog::EventType event_type = parsed_log_.GetEventType(i);
@@ -328,7 +327,6 @@ void EventLogAnalyzer::CreatePacketGraph(PacketDirection desired_direction,
           uint64_t timestamp = parsed_log_.GetTimestamp(i);
           float x = static_cast<float>(timestamp - begin_time_) / 1000000;
           float y = total_length;
-          max_y = std::max(max_y, y);
           time_series[parsed_header.ssrc].points.push_back(
               TimeSeriesPoint(x, y));
         }
@@ -340,19 +338,16 @@ void EventLogAnalyzer::CreatePacketGraph(PacketDirection desired_direction,
   for (auto& kv : time_series) {
     kv.second.label = SsrcToString(kv.first);
     kv.second.style = BAR_GRAPH;
-    plot->series.push_back(std::move(kv.second));
+    plot->series_list_.push_back(std::move(kv.second));
   }
 
-  plot->xaxis_min = kDefaultXMin;
-  plot->xaxis_max = (end_time_ - begin_time_) / 1000000 * kXMargin;
-  plot->xaxis_label = "Time (s)";
-  plot->yaxis_min = kDefaultYMin;
-  plot->yaxis_max = max_y * kYMargin;
-  plot->yaxis_label = "Packet size (bytes)";
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 1, "Packet size (bytes)", kBottomMargin,
+                          kTopMargin);
   if (desired_direction == webrtc::PacketDirection::kIncomingPacket) {
-    plot->title = "Incoming RTP packets";
+    plot->SetTitle("Incoming RTP packets");
   } else if (desired_direction == webrtc::PacketDirection::kOutgoingPacket) {
-    plot->title = "Outgoing RTP packets";
+    plot->SetTitle("Outgoing RTP packets");
   }
 }
 
@@ -362,7 +357,6 @@ void EventLogAnalyzer::CreatePlayoutGraph(Plot* plot) {
   std::map<uint32_t, uint64_t> last_playout;
 
   uint32_t ssrc;
-  float max_y = 0;
 
   for (size_t i = 0; i < parsed_log_.GetNumberOfEvents(); i++) {
     ParsedRtcEventLog::EventType event_type = parsed_log_.GetEventType(i);
@@ -377,7 +371,6 @@ void EventLogAnalyzer::CreatePlayoutGraph(Plot* plot) {
           // Generate a point, but place it on the x-axis.
           y = 0;
         }
-        max_y = std::max(max_y, y);
         time_series[ssrc].points.push_back(TimeSeriesPoint(x, y));
         last_playout[ssrc] = timestamp;
       }
@@ -388,16 +381,13 @@ void EventLogAnalyzer::CreatePlayoutGraph(Plot* plot) {
   for (auto& kv : time_series) {
     kv.second.label = SsrcToString(kv.first);
     kv.second.style = BAR_GRAPH;
-    plot->series.push_back(std::move(kv.second));
+    plot->series_list_.push_back(std::move(kv.second));
   }
 
-  plot->xaxis_min = kDefaultXMin;
-  plot->xaxis_max = (end_time_ - begin_time_) / 1000000 * kXMargin;
-  plot->xaxis_label = "Time (s)";
-  plot->yaxis_min = kDefaultYMin;
-  plot->yaxis_max = max_y * kYMargin;
-  plot->yaxis_label = "Time since last playout (ms)";
-  plot->title = "Audio playout";
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 1, "Time since last playout (ms)", kBottomMargin,
+                          kTopMargin);
+  plot->SetTitle("Audio playout");
 }
 
 // For each SSRC, plot the time between the consecutive playouts.
@@ -409,9 +399,6 @@ void EventLogAnalyzer::CreateSequenceNumberGraph(Plot* plot) {
   MediaType media_type;
   uint8_t header[IP_PACKET_SIZE];
   size_t header_length, total_length;
-
-  int max_y = 1;
-  int min_y = 0;
 
   for (size_t i = 0; i < parsed_log_.GetNumberOfEvents(); i++) {
     ParsedRtcEventLog::EventType event_type = parsed_log_.GetEventType(i);
@@ -434,8 +421,6 @@ void EventLogAnalyzer::CreateSequenceNumberGraph(Plot* plot) {
             // Generate a point, but place it on the x-axis.
             y = 0;
           }
-          max_y = std::max(max_y, y);
-          min_y = std::min(min_y, y);
           time_series[parsed_header.ssrc].points.push_back(
               TimeSeriesPoint(x, y));
           last_seqno[parsed_header.ssrc] = parsed_header.sequenceNumber;
@@ -448,22 +433,16 @@ void EventLogAnalyzer::CreateSequenceNumberGraph(Plot* plot) {
   for (auto& kv : time_series) {
     kv.second.label = SsrcToString(kv.first);
     kv.second.style = BAR_GRAPH;
-    plot->series.push_back(std::move(kv.second));
+    plot->series_list_.push_back(std::move(kv.second));
   }
 
-  plot->xaxis_min = kDefaultXMin;
-  plot->xaxis_max = (end_time_ - begin_time_) / 1000000 * kXMargin;
-  plot->xaxis_label = "Time (s)";
-  plot->yaxis_min = min_y - (kYMargin - 1) / 2 * (max_y - min_y);
-  plot->yaxis_max = max_y + (kYMargin - 1) / 2 * (max_y - min_y);
-  plot->yaxis_label = "Difference since last packet";
-  plot->title = "Sequence number";
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 1, "Difference since last packet", kBottomMargin,
+                          kTopMargin);
+  plot->SetTitle("Sequence number");
 }
 
 void EventLogAnalyzer::CreateDelayChangeGraph(Plot* plot) {
-  double max_y = 10;
-  double min_y = 0;
-
   for (auto& kv : rtp_packets_) {
     StreamId stream_id = kv.first;
     // Filter on direction and SSRC.
@@ -498,28 +477,20 @@ void EventLogAnalyzer::CreateDelayChangeGraph(Plot* plot) {
           // Generate a point, but place it on the x-axis.
           y = 0;
         }
-        max_y = std::max(max_y, y);
-        min_y = std::min(min_y, y);
         time_series.points.emplace_back(x, y);
       }
     }
     // Add the data set to the plot.
-    plot->series.push_back(std::move(time_series));
+    plot->series_list_.push_back(std::move(time_series));
   }
 
-  plot->xaxis_min = kDefaultXMin;
-  plot->xaxis_max = (end_time_ - begin_time_) / 1000000 * kXMargin;
-  plot->xaxis_label = "Time (s)";
-  plot->yaxis_min = min_y - (kYMargin - 1) / 2 * (max_y - min_y);
-  plot->yaxis_max = max_y + (kYMargin - 1) / 2 * (max_y - min_y);
-  plot->yaxis_label = "Latency change (ms)";
-  plot->title = "Network latency change between consecutive packets";
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 1, "Latency change (ms)", kBottomMargin,
+                          kTopMargin);
+  plot->SetTitle("Network latency change between consecutive packets");
 }
 
 void EventLogAnalyzer::CreateAccumulatedDelayChangeGraph(Plot* plot) {
-  double max_y = 10;
-  double min_y = 0;
-
   for (auto& kv : rtp_packets_) {
     StreamId stream_id = kv.first;
     // Filter on direction and SSRC.
@@ -554,22 +525,17 @@ void EventLogAnalyzer::CreateAccumulatedDelayChangeGraph(Plot* plot) {
           // Generate a point, but place it on the x-axis.
           accumulated_delay_ms = 0;
         }
-        max_y = std::max(max_y, accumulated_delay_ms);
-        min_y = std::min(min_y, accumulated_delay_ms);
         time_series.points.emplace_back(x, accumulated_delay_ms);
       }
     }
     // Add the data set to the plot.
-    plot->series.push_back(std::move(time_series));
+    plot->series_list_.push_back(std::move(time_series));
   }
 
-  plot->xaxis_min = kDefaultXMin;
-  plot->xaxis_max = (end_time_ - begin_time_) / 1000000 * kXMargin;
-  plot->xaxis_label = "Time (s)";
-  plot->yaxis_min = min_y - (kYMargin - 1) / 2 * (max_y - min_y);
-  plot->yaxis_max = max_y + (kYMargin - 1) / 2 * (max_y - min_y);
-  plot->yaxis_label = "Latency change (ms)";
-  plot->title = "Accumulated network latency change";
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 1, "Latency change (ms)", kBottomMargin,
+                          kTopMargin);
+  plot->SetTitle("Accumulated network latency change");
 }
 
 // Plot the total bandwidth used by all RTP streams.
@@ -602,10 +568,9 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
   size_t window_index_begin = 0;
   size_t window_index_end = 0;
   size_t bytes_in_window = 0;
-  float max_y = 0;
 
   // Calculate a moving average of the bitrate and store in a TimeSeries.
-  plot->series.push_back(TimeSeries());
+  plot->series_list_.push_back(TimeSeries());
   for (uint64_t time = begin_time_; time < end_time_ + step_; time += step_) {
     while (window_index_end < packets.size() &&
            packets[window_index_end].timestamp < time) {
@@ -622,42 +587,36 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
         static_cast<float>(window_duration_) / 1000000;
     float x = static_cast<float>(time - begin_time_) / 1000000;
     float y = bytes_in_window * 8 / window_duration_in_seconds / 1000;
-    max_y = std::max(max_y, y);
-    plot->series.back().points.push_back(TimeSeriesPoint(x, y));
+    plot->series_list_.back().points.push_back(TimeSeriesPoint(x, y));
   }
 
   // Set labels.
   if (desired_direction == webrtc::PacketDirection::kIncomingPacket) {
-    plot->series.back().label = "Incoming bitrate";
+    plot->series_list_.back().label = "Incoming bitrate";
   } else if (desired_direction == webrtc::PacketDirection::kOutgoingPacket) {
-    plot->series.back().label = "Outgoing bitrate";
+    plot->series_list_.back().label = "Outgoing bitrate";
   }
-  plot->series.back().style = LINE_GRAPH;
+  plot->series_list_.back().style = LINE_GRAPH;
 
   // Overlay the send-side bandwidth estimate over the outgoing bitrate.
   if (desired_direction == kOutgoingPacket) {
-    plot->series.push_back(TimeSeries());
+    plot->series_list_.push_back(TimeSeries());
     for (auto& bwe_update : bwe_loss_updates_) {
       float x =
           static_cast<float>(bwe_update.timestamp - begin_time_) / 1000000;
       float y = static_cast<float>(bwe_update.new_bitrate) / 1000;
-      max_y = std::max(max_y, y);
-      plot->series.back().points.emplace_back(x, y);
+      plot->series_list_.back().points.emplace_back(x, y);
     }
-    plot->series.back().label = "Loss-based estimate";
-    plot->series.back().style = LINE_GRAPH;
+    plot->series_list_.back().label = "Loss-based estimate";
+    plot->series_list_.back().style = LINE_GRAPH;
   }
-
-  plot->xaxis_min = kDefaultXMin;
-  plot->xaxis_max = (end_time_ - begin_time_) / 1000000 * kXMargin;
-  plot->xaxis_label = "Time (s)";
-  plot->yaxis_min = kDefaultYMin;
-  plot->yaxis_max = max_y * kYMargin;
-  plot->yaxis_label = "Bitrate (kbps)";
+  plot->series_list_.back().style = LINE_GRAPH;
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 1, "Bitrate (kbps)", kBottomMargin, kTopMargin);
   if (desired_direction == webrtc::PacketDirection::kIncomingPacket) {
-    plot->title = "Incoming RTP bitrate";
+    plot->SetTitle("Incoming RTP bitrate");
   } else if (desired_direction == webrtc::PacketDirection::kOutgoingPacket) {
-    plot->title = "Outgoing RTP bitrate";
+    plot->SetTitle("Outgoing RTP bitrate");
   }
 }
 
@@ -698,15 +657,13 @@ void EventLogAnalyzer::CreateStreamBitrateGraph(
     }
   }
 
-  float max_y = 0;
-
   for (auto& kv : packets) {
     size_t window_index_begin = 0;
     size_t window_index_end = 0;
     size_t bytes_in_window = 0;
 
     // Calculate a moving average of the bitrate and store in a TimeSeries.
-    plot->series.push_back(TimeSeries());
+    plot->series_list_.push_back(TimeSeries());
     for (uint64_t time = begin_time_; time < end_time_ + step_; time += step_) {
       while (window_index_end < kv.second.size() &&
              kv.second[window_index_end].timestamp < time) {
@@ -724,25 +681,20 @@ void EventLogAnalyzer::CreateStreamBitrateGraph(
           static_cast<float>(window_duration_) / 1000000;
       float x = static_cast<float>(time - begin_time_) / 1000000;
       float y = bytes_in_window * 8 / window_duration_in_seconds / 1000;
-      max_y = std::max(max_y, y);
-      plot->series.back().points.push_back(TimeSeriesPoint(x, y));
+      plot->series_list_.back().points.push_back(TimeSeriesPoint(x, y));
     }
 
     // Set labels.
-    plot->series.back().label = SsrcToString(kv.first);
-    plot->series.back().style = LINE_GRAPH;
+    plot->series_list_.back().label = SsrcToString(kv.first);
+    plot->series_list_.back().style = LINE_GRAPH;
   }
 
-  plot->xaxis_min = kDefaultXMin;
-  plot->xaxis_max = (end_time_ - begin_time_) / 1000000 * kXMargin;
-  plot->xaxis_label = "Time (s)";
-  plot->yaxis_min = kDefaultYMin;
-  plot->yaxis_max = max_y * kYMargin;
-  plot->yaxis_label = "Bitrate (kbps)";
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 1, "Bitrate (kbps)", kBottomMargin, kTopMargin);
   if (desired_direction == webrtc::PacketDirection::kIncomingPacket) {
-    plot->title = "Incoming bitrate per stream";
+    plot->SetTitle("Incoming bitrate per stream");
   } else if (desired_direction == webrtc::PacketDirection::kOutgoingPacket) {
-    plot->title = "Outgoing bitrate per stream";
+    plot->SetTitle("Outgoing bitrate per stream");
   }
 }
 
@@ -776,8 +728,6 @@ void EventLogAnalyzer::CreateBweGraph(Plot* plot) {
   TimeSeries time_series;
   time_series.label = "BWE";
   time_series.style = LINE_DOT_GRAPH;
-  uint32_t max_y = 10;
-  uint32_t min_y = 0;
 
   auto rtp_iterator = outgoing_rtp.begin();
   auto rtcp_iterator = incoming_rtcp.begin();
@@ -834,8 +784,6 @@ void EventLogAnalyzer::CreateBweGraph(Plot* plot) {
       cc.Process();
     if (observer.GetAndResetBitrateUpdated()) {
       uint32_t y = observer.last_bitrate_bps() / 1000;
-      max_y = std::max(max_y, y);
-      min_y = std::min(min_y, y);
       float x = static_cast<float>(clock.TimeInMicroseconds() - begin_time_) /
                 1000000;
       time_series.points.emplace_back(x, y);
@@ -843,15 +791,11 @@ void EventLogAnalyzer::CreateBweGraph(Plot* plot) {
     time_us = std::min({NextRtpTime(), NextRtcpTime(), NextProcessTime()});
   }
   // Add the data set to the plot.
-  plot->series.push_back(std::move(time_series));
+  plot->series_list_.push_back(std::move(time_series));
 
-  plot->xaxis_min = kDefaultXMin;
-  plot->xaxis_max = (end_time_ - begin_time_) / 1000000 * kXMargin;
-  plot->xaxis_label = "Time (s)";
-  plot->yaxis_min = min_y - (kYMargin - 1) / 2 * (max_y - min_y);
-  plot->yaxis_max = max_y + (kYMargin - 1) / 2 * (max_y - min_y);
-  plot->yaxis_label = "Bitrate (kbps)";
-  plot->title = "BWE";
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 10, "Bitrate (kbps)", kBottomMargin, kTopMargin);
+  plot->SetTitle("Simulated BWE behavior");
 }
 
 }  // namespace plotting

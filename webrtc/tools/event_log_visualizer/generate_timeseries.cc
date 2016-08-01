@@ -82,44 +82,44 @@ int main(int argc, char* argv[]) {
   if (FLAGS_plot_all || FLAGS_plot_packets) {
     if (FLAGS_incoming) {
       analyzer.CreatePacketGraph(webrtc::PacketDirection::kIncomingPacket,
-                                 collection->append_new_plot());
+                                 collection->AppendNewPlot());
     }
     if (FLAGS_outgoing) {
       analyzer.CreatePacketGraph(webrtc::PacketDirection::kOutgoingPacket,
-                                 collection->append_new_plot());
+                                 collection->AppendNewPlot());
     }
   }
 
   if (FLAGS_plot_all || FLAGS_plot_audio_playout) {
-    analyzer.CreatePlayoutGraph(collection->append_new_plot());
+    analyzer.CreatePlayoutGraph(collection->AppendNewPlot());
   }
 
   if (FLAGS_plot_all || FLAGS_plot_sequence_number) {
     if (FLAGS_incoming) {
-      analyzer.CreateSequenceNumberGraph(collection->append_new_plot());
+      analyzer.CreateSequenceNumberGraph(collection->AppendNewPlot());
     }
   }
 
   if (FLAGS_plot_all || FLAGS_plot_delay_change) {
     if (FLAGS_incoming) {
-      analyzer.CreateDelayChangeGraph(collection->append_new_plot());
+      analyzer.CreateDelayChangeGraph(collection->AppendNewPlot());
     }
   }
 
   if (FLAGS_plot_all || FLAGS_plot_accumulated_delay_change) {
     if (FLAGS_incoming) {
-      analyzer.CreateAccumulatedDelayChangeGraph(collection->append_new_plot());
+      analyzer.CreateAccumulatedDelayChangeGraph(collection->AppendNewPlot());
     }
   }
 
   if (FLAGS_plot_all || FLAGS_plot_total_bitrate) {
     if (FLAGS_incoming) {
       analyzer.CreateTotalBitrateGraph(webrtc::PacketDirection::kIncomingPacket,
-                                       collection->append_new_plot());
+                                       collection->AppendNewPlot());
     }
     if (FLAGS_outgoing) {
       analyzer.CreateTotalBitrateGraph(webrtc::PacketDirection::kOutgoingPacket,
-                                       collection->append_new_plot());
+                                       collection->AppendNewPlot());
     }
   }
 
@@ -127,20 +127,20 @@ int main(int argc, char* argv[]) {
     if (FLAGS_incoming) {
       analyzer.CreateStreamBitrateGraph(
           webrtc::PacketDirection::kIncomingPacket,
-          collection->append_new_plot());
+          collection->AppendNewPlot());
     }
     if (FLAGS_outgoing) {
       analyzer.CreateStreamBitrateGraph(
           webrtc::PacketDirection::kOutgoingPacket,
-          collection->append_new_plot());
+          collection->AppendNewPlot());
     }
   }
 
   if (FLAGS_plot_all || FLAGS_plot_bwe) {
-    analyzer.CreateBweGraph(collection->append_new_plot());
+    analyzer.CreateBweGraph(collection->AppendNewPlot());
   }
 
-  collection->draw();
+  collection->Draw();
 
   return 0;
 }

@@ -115,6 +115,9 @@ class EventLogAnalyzer {
   // First and last events of the log.
   uint64_t begin_time_;
   uint64_t end_time_;
+
+  // Duration (in seconds) of log file.
+  float call_duration_s_;
 };
 
 }  // namespace plotting

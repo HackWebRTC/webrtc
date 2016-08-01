@@ -19,15 +19,15 @@ class PythonPlot final : public Plot {
  public:
   PythonPlot();
   ~PythonPlot() override;
-  void draw() override;
+  void Draw() override;
 };
 
 class PythonPlotCollection final : public PlotCollection {
  public:
   PythonPlotCollection();
   ~PythonPlotCollection() override;
-  void draw() override;
-  Plot* append_new_plot() override;
+  void Draw() override;
+  Plot* AppendNewPlot() override;
 };
 
 }  // namespace plotting

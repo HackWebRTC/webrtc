@@ -121,6 +121,7 @@
             'event_log_visualizer/analyzer.cc',
             'event_log_visualizer/analyzer.h',
             'event_log_visualizer/generate_timeseries.cc',
+            'event_log_visualizer/plot_base.cc',
             'event_log_visualizer/plot_base.h',
             'event_log_visualizer/plot_python.cc',
             'event_log_visualizer/plot_python.h',

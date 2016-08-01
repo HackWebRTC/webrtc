@@ -44,32 +44,79 @@ struct TimeSeries {
   std::vector<TimeSeriesPoint> points;
 };
 
-// This is basically a struct that represents of a general graph, with axes,
-// title and one or more data series. We make it a class only to document that
-// it also specifies an interface for the draw()ing objects.
+// A container that represents a general graph, with axes, title and one or
+// more data series. A subclass should define the output format by overriding
+// the Draw() method.
 class Plot {
  public:
   virtual ~Plot() {}
-  virtual void draw() = 0;
 
-  float xaxis_min;
-  float xaxis_max;
-  std::string xaxis_label;
-  float yaxis_min;
-  float yaxis_max;
-  std::string yaxis_label;
-  std::vector<TimeSeries> series;
-  std::string title;
+  // Overloaded to draw the plot.
+  virtual void Draw() = 0;
+
+  // Sets the lower x-axis limit to min_value (if left_margin == 0).
+  // Sets the upper x-axis limit to max_value (if right_margin == 0).
+  // The margins are measured as fractions of the interval
+  // (max_value - min_value) and are added to either side of the plot.
+  void SetXAxis(float min_value,
+                float max_value,
+                std::string label,
+                float left_margin = 0,
+                float right_margin = 0);
+
+  // Sets the lower and upper x-axis limits based on min_value and max_value,
+  // but modified such that all points in the data series can be represented
+  // on the x-axis. The margins are measured as fractions of the range of
+  // x-values and are added to either side of the plot.
+  void SetSuggestedXAxis(float min_value,
+                         float max_value,
+                         std::string label,
+                         float left_margin = 0,
+                         float right_margin = 0);
+
+  // Sets the lower y-axis limit to min_value (if bottom_margin == 0).
+  // Sets the upper y-axis limit to max_value (if top_margin == 0).
+  // The margins are measured as fractions of the interval
+  // (max_value - min_value) and are added to either side of the plot.
+  void SetYAxis(float min_value,
+                float max_value,
+                std::string label,
+                float bottom_margin = 0,
+                float top_margin = 0);
+
+  // Sets the lower and upper y-axis limits based on min_value and max_value,
+  // but modified such that all points in the data series can be represented
+  // on the y-axis. The margins are measured as fractions of the range of
+  // y-values and are added to either side of the plot.
+  void SetSuggestedYAxis(float min_value,
+                         float max_value,
+                         std::string label,
+                         float bottom_margin = 0,
+                         float top_margin = 0);
+
+  // Sets the title of the plot.
+  void SetTitle(std::string title);
+
+  std::vector<TimeSeries> series_list_;
+
+ protected:
+  float xaxis_min_;
+  float xaxis_max_;
+  std::string xaxis_label_;
+  float yaxis_min_;
+  float yaxis_max_;
+  std::string yaxis_label_;
+  std::string title_;
 };
 
 class PlotCollection {
  public:
   virtual ~PlotCollection() {}
-  virtual void draw() = 0;
-  virtual Plot* append_new_plot() = 0;
+  virtual void Draw() = 0;
+  virtual Plot* AppendNewPlot() = 0;
 
  protected:
-  std::vector<std::unique_ptr<Plot> > plots;
+  std::vector<std::unique_ptr<Plot> > plots_;
 };
 
 }  // namespace plotting
