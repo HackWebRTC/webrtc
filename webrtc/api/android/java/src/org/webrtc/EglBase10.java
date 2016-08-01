@@ -26,7 +26,7 @@ import javax.microedition.khronos.egl.EGLSurface;
  * Holds EGL state and utility methods for handling an egl 1.0 EGLContext, an EGLDisplay,
  * and an EGLSurface.
  */
-final class EglBase10 extends EglBase {
+public final class EglBase10 extends EglBase {
   // This constant is taken from EGL14.EGL_CONTEXT_CLIENT_VERSION.
   private static final int EGL_CONTEXT_CLIENT_VERSION = 0x3098;
 
@@ -46,7 +46,7 @@ final class EglBase10 extends EglBase {
   }
 
   // Create a new context with the specified config type, sharing data with sharedContext.
-  EglBase10(Context sharedContext, int[] configAttributes) {
+  public EglBase10(Context sharedContext, int[] configAttributes) {
     this.egl = (EGL10) EGLContext.getEGL();
     eglDisplay = getEglDisplay();
     eglConfig = getEglConfig(eglDisplay, configAttributes);
