@@ -17,6 +17,7 @@ import static org.webrtc.NetworkMonitorAutoDetect.NetworkInformation;
 import org.webrtc.Logging;
 
 import android.content.Context;
+import android.os.Build;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -115,11 +116,16 @@ public class NetworkMonitor {
     nativeNetworkObservers.remove(nativeObserver);
   }
 
+  // Called by the native code to get the Android SDK version.
+  private static int androidSdkInt() {
+    return Build.VERSION.SDK_INT;
+  }
+
   private ConnectionType getCurrentConnectionType() {
     return currentConnectionType;
   }
 
-  private int getCurrentDefaultNetId() {
+  private long getCurrentDefaultNetId() {
     return autoDetector == null ? INVALID_NET_ID : autoDetector.getDefaultNetId();
   }
 
@@ -150,7 +156,7 @@ public class NetworkMonitor {
           }
 
           @Override
-          public void onNetworkDisconnect(int networkHandle) {
+          public void onNetworkDisconnect(long networkHandle) {
             notifyObserversOfNetworkDisconnect(networkHandle);
           }
         },
@@ -185,7 +191,7 @@ public class NetworkMonitor {
     }
   }
 
-  private void notifyObserversOfNetworkDisconnect(int networkHandle) {
+  private void notifyObserversOfNetworkDisconnect(long networkHandle) {
     for (long nativeObserver : nativeNetworkObservers) {
       nativeNotifyOfNetworkDisconnect(nativeObserver, networkHandle);
     }
@@ -236,7 +242,7 @@ public class NetworkMonitor {
 
   private native void nativeNotifyConnectionTypeChanged(long nativePtr);
   private native void nativeNotifyOfNetworkConnect(long nativePtr, NetworkInformation networkInfo);
-  private native void nativeNotifyOfNetworkDisconnect(long nativePtr, int networkHandle);
+  private native void nativeNotifyOfNetworkDisconnect(long nativePtr, long networkHandle);
   private native void nativeNotifyOfActiveNetworkList(long nativePtr,
                                                       NetworkInformation[] networkInfos);
 

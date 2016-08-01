@@ -71,9 +71,9 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
   public static class NetworkInformation{
     public final String name;
     public final ConnectionType type;
-    public final int handle;
+    public final long handle;
     public final IPAddress[] ipAddresses;
-    public NetworkInformation(String name, ConnectionType type, int handle,
+    public NetworkInformation(String name, ConnectionType type, long handle,
                               IPAddress[] addresses) {
       this.name = name;
       this.type = type;
@@ -246,7 +246,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
      * Only callable on Lollipop and newer releases.
      */
     @SuppressLint("NewApi")
-    int getDefaultNetId() {
+    long getDefaultNetId() {
       if (!supportNetworkCallback()) {
         return INVALID_NET_ID;
       }
@@ -259,7 +259,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
         return INVALID_NET_ID;
       }
       final Network[] networks = getAllNetworks();
-      int defaultNetId = INVALID_NET_ID;
+      long defaultNetId = INVALID_NET_ID;
       for (Network network : networks) {
         if (!hasInternetCapability(network)) {
           continue;
@@ -404,7 +404,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
 
   }
 
-  static final int INVALID_NET_ID = -1;
+  static final long INVALID_NET_ID = -1;
   private static final String TAG = "NetworkMonitorAutoDetect";
 
   // Observer for the connection type change.
@@ -433,7 +433,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
      */
     public void onConnectionTypeChanged(ConnectionType newConnectionType);
     public void onNetworkConnect(NetworkInformation networkInfo);
-    public void onNetworkDisconnect(int networkHandle);
+    public void onNetworkDisconnect(long networkHandle);
   }
 
   /**
@@ -537,7 +537,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
    * Only implemented on Lollipop and newer releases, returns INVALID_NET_ID
    * when not implemented.
    */
-  public int getDefaultNetId() {
+  public long getDefaultNetId() {
     return connectivityManagerDelegate.getDefaultNetId();
   }
 
@@ -610,13 +610,18 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
   }
 
   /**
-   * Extracts NetID of network. Only available on Lollipop and newer releases.
+   * Extracts NetID of network on Lollipop and NetworkHandle (which is mungled
+   * NetID) on Marshmallow and newer releases. Only available on Lollipop and
+   * newer releases. Returns long since getNetworkHandle returns long.
    */
   @SuppressLint("NewApi")
-  private static int networkToNetId(Network network) {
-    // NOTE(pauljensen): This depends on Android framework implementation details.
-    // Fortunately this functionality is unlikely to ever change.
-    // TODO(honghaiz): When we update to Android M SDK, use Network.getNetworkHandle().
+  private static long networkToNetId(Network network) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      return network.getNetworkHandle();
+    }
+
+    // NOTE(honghaiz): This depends on Android framework implementation details.
+    // These details cannot change because Lollipop has been released.
     return Integer.parseInt(network.toString());
   }
 }

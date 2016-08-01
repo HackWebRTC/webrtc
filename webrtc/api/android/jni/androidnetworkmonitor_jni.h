@@ -21,7 +21,7 @@
 
 namespace webrtc_jni {
 
-typedef uint32_t NetworkHandle;
+typedef long NetworkHandle;
 
 // c++ equivalent of java NetworkMonitorAutoDetect.ConnectionType.
 enum NetworkType {
@@ -65,6 +65,8 @@ class AndroidNetworkMonitor : public rtc::NetworkMonitorBase,
   void SetNetworkInfos(const std::vector<NetworkInformation>& network_infos);
 
  private:
+  static jobject application_context_;
+  static int android_sdk_int_;
   JNIEnv* jni() { return AttachCurrentThreadIfNeeded(); }
 
   void OnNetworkConnected_w(const NetworkInformation& network_info);
@@ -73,7 +75,6 @@ class AndroidNetworkMonitor : public rtc::NetworkMonitorBase,
   ScopedGlobalRef<jclass> j_network_monitor_class_;
   ScopedGlobalRef<jobject> j_network_monitor_;
   rtc::ThreadChecker thread_checker_;
-  static jobject application_context_;
   bool started_ = false;
   std::map<std::string, rtc::AdapterType> adapter_type_by_name_;
   std::map<rtc::IPAddress, NetworkHandle> network_handle_by_address_;

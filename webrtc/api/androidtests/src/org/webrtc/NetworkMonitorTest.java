@@ -72,7 +72,7 @@ public class NetworkMonitorTest extends ActivityTestCase {
     // Dummy implementations to avoid NullPointerExceptions in default implementations:
 
     @Override
-    public int getDefaultNetId() {
+    public long getDefaultNetId() {
       return INVALID_NET_ID;
     }
 
@@ -127,7 +127,7 @@ public class NetworkMonitorTest extends ActivityTestCase {
     public void onNetworkConnect(NetworkInformation networkInfo) {}
 
     @Override
-    public void onNetworkDisconnect(int networkHandle) {}
+    public void onNetworkDisconnect(long networkHandle) {}
   }
 
   private static final Object lock = new Object();

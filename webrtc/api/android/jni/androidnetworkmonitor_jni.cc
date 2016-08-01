@@ -11,6 +11,8 @@
 #include "webrtc/api/android/jni/androidnetworkmonitor_jni.h"
 
 #include <dlfcn.h>
+// This was added in Lollipop to dlfcn.h
+#define RTLD_NOLOAD 4
 
 #include "webrtc/api/android/jni/classreferenceholder.h"
 #include "webrtc/api/android/jni/jni_helpers.h"
@@ -20,7 +22,13 @@
 
 namespace webrtc_jni {
 
+enum AndroidSdkVersion {
+  SDK_VERSION_LOLLIPOP = 21,
+  SDK_VERSION_MARSHMALLOW = 23
+};
+
 jobject AndroidNetworkMonitor::application_context_ = nullptr;
+int AndroidNetworkMonitor::android_sdk_int_ = 0;
 
 static NetworkType GetNetworkTypeFromJava(JNIEnv* jni, jobject j_network_type) {
   std::string enum_name =
@@ -123,7 +131,7 @@ static NetworkInformation GetNetworkInformationFromJava(
   jclass j_network_info_class = GetObjectClass(jni, j_network_info);
   jfieldID j_interface_name_id =
       GetFieldID(jni, j_network_info_class, "name", "Ljava/lang/String;");
-  jfieldID j_handle_id = GetFieldID(jni, j_network_info_class, "handle", "I");
+  jfieldID j_handle_id = GetFieldID(jni, j_network_info_class, "handle", "J");
   jfieldID j_type_id =
       GetFieldID(jni, j_network_info_class, "type",
                  "Lorg/webrtc/NetworkMonitorAutoDetect$ConnectionType;");
@@ -134,8 +142,8 @@ static NetworkInformation GetNetworkInformationFromJava(
   NetworkInformation network_info;
   network_info.interface_name = JavaToStdString(
       jni, GetStringField(jni, j_network_info, j_interface_name_id));
-  network_info.handle =
-      static_cast<NetworkHandle>(GetIntField(jni, j_network_info, j_handle_id));
+  network_info.handle = static_cast<NetworkHandle>(
+      GetLongField(jni, j_network_info, j_handle_id));
   network_info.type = GetNetworkTypeFromJava(
       jni, GetObjectField(jni, j_network_info, j_type_id));
   jobjectArray j_ip_addresses = static_cast<jobjectArray>(
@@ -178,6 +186,12 @@ AndroidNetworkMonitor::AndroidNetworkMonitor()
               application_context_)) {
   ASSERT(application_context_ != nullptr);
   CHECK_EXCEPTION(jni()) << "Error during NetworkMonitor.init";
+  if (android_sdk_int_ <= 0) {
+    jmethodID m = GetStaticMethodID(jni(), *j_network_monitor_class_,
+                                    "androidSdkInt", "()I");
+    android_sdk_int_ = jni()->CallStaticIntMethod(*j_network_monitor_class_, m);
+    CHECK_EXCEPTION(jni()) << "Error during NetworkMonitor.androidSdkInt";
+  }
 }
 
 void AndroidNetworkMonitor::Start() {
@@ -220,43 +234,85 @@ void AndroidNetworkMonitor::Stop() {
   network_info_by_handle_.clear();
 }
 
+// The implementation is largely taken from UDPSocketPosix::BindToNetwork in
+// https://cs.chromium.org/chromium/src/net/udp/udp_socket_posix.cc
 int AndroidNetworkMonitor::BindSocketToNetwork(int socket_fd,
                                                const rtc::IPAddress& address) {
   RTC_CHECK(thread_checker_.CalledOnValidThread());
   // Android prior to Lollipop didn't have support for binding sockets to
-  // networks. However, in that case it should not have reached here because
-  // |network_handle_by_address_| should only be populated in Android Lollipop
+  // networks. In that case it should not have reached here because
+  // |network_handle_by_address_| is only populated in Android Lollipop
   // and above.
-  // TODO(honghaiz): Add a check for Android version here so that it won't try
-  // to look for handle if the Android version is before Lollipop.
+  if (android_sdk_int_ < SDK_VERSION_LOLLIPOP) {
+    LOG(LS_ERROR) << "BindSocketToNetwork is not supported in Android SDK "
+                  << android_sdk_int_;
+    return rtc::NETWORK_BIND_NOT_IMPLEMENTED;
+  }
+
   auto iter = network_handle_by_address_.find(address);
   if (iter == network_handle_by_address_.end()) {
     return rtc::NETWORK_BIND_ADDRESS_NOT_FOUND;
   }
   NetworkHandle network_handle = iter->second;
 
-  // NOTE: This does rely on Android implementation details, but
-  // these details are unlikely to change.
-  typedef int (*SetNetworkForSocket)(unsigned netId, int socketFd);
-  static SetNetworkForSocket setNetworkForSocket;
-  // This is not threadsafe, but we are running this only on the worker thread.
-  if (setNetworkForSocket == nullptr) {
-    // Android's netd client library should always be loaded in our address
-    // space as it shims libc functions like connect().
-    const std::string net_library_path = "libnetd_client.so";
-    void* lib = dlopen(net_library_path.c_str(), RTLD_LAZY);
-    if (lib == nullptr) {
-      LOG(LS_ERROR) << "Library " << net_library_path << " not found!";
+  int rv = 0;
+  if (android_sdk_int_ >= SDK_VERSION_MARSHMALLOW) {
+    // See declaration of android_setsocknetwork() here:
+    // http://androidxref.com/6.0.0_r1/xref/development/ndk/platforms/android-M/include/android/multinetwork.h#65
+    // Function cannot be called directly as it will cause app to fail to load
+    // on pre-marshmallow devices.
+    typedef int (*MarshmallowSetNetworkForSocket)(NetworkHandle net,
+                                                  int socket);
+    static MarshmallowSetNetworkForSocket marshmallowSetNetworkForSocket;
+    // This is not thread-safe, but we are running this only on the worker
+    // thread.
+    if (!marshmallowSetNetworkForSocket) {
+      const std::string android_native_lib_path = "libandroid.so";
+      void* lib = dlopen(android_native_lib_path.c_str(), RTLD_NOW);
+      if (lib == nullptr) {
+        LOG(LS_ERROR) << "Library " << android_native_lib_path << " not found!";
+        return rtc::NETWORK_BIND_NOT_IMPLEMENTED;
+      }
+      marshmallowSetNetworkForSocket =
+          reinterpret_cast<MarshmallowSetNetworkForSocket>(
+              dlsym(lib, "android_setsocknetwork"));
+    }
+    if (!marshmallowSetNetworkForSocket) {
+      LOG(LS_ERROR) << "Symbol marshmallowSetNetworkForSocket is not found";
       return rtc::NETWORK_BIND_NOT_IMPLEMENTED;
     }
-    setNetworkForSocket = reinterpret_cast<SetNetworkForSocket>(
-        dlsym(lib, "setNetworkForSocket"));
+    rv = marshmallowSetNetworkForSocket(network_handle, socket_fd);
+  } else {
+    // NOTE: This relies on Android implementation details, but it won't change
+    // because Lollipop is already released.
+    typedef int (*LollipopSetNetworkForSocket)(unsigned net, int socket);
+    static LollipopSetNetworkForSocket lollipopSetNetworkForSocket;
+    // This is not threadsafe, but we are running this only on the worker
+    // thread.
+    if (!lollipopSetNetworkForSocket) {
+      // Android's netd client library should always be loaded in our address
+      // space as it shims libc functions like connect().
+      const std::string net_library_path = "libnetd_client.so";
+      // Use RTLD_NOW to match Android's prior loading of the library:
+      // http://androidxref.com/6.0.0_r5/xref/bionic/libc/bionic/NetdClient.cpp#37
+      // Use RTLD_NOLOAD to assert that the library is already loaded and
+      // avoid doing any disk IO.
+      void* lib = dlopen(net_library_path.c_str(), RTLD_NOW | RTLD_NOLOAD);
+      if (lib == nullptr) {
+        LOG(LS_ERROR) << "Library " << net_library_path << " not found!";
+        return rtc::NETWORK_BIND_NOT_IMPLEMENTED;
+      }
+      lollipopSetNetworkForSocket =
+          reinterpret_cast<LollipopSetNetworkForSocket>(
+              dlsym(lib, "setNetworkForSocket"));
+    }
+    if (!lollipopSetNetworkForSocket) {
+      LOG(LS_ERROR) << "Symbol lollipopSetNetworkForSocket is not found ";
+      return rtc::NETWORK_BIND_NOT_IMPLEMENTED;
+    }
+    rv = lollipopSetNetworkForSocket(network_handle, socket_fd);
   }
-  if (setNetworkForSocket == nullptr) {
-    LOG(LS_ERROR) << "Symbol setNetworkForSocket not found ";
-    return rtc::NETWORK_BIND_NOT_IMPLEMENTED;
-  }
-  int rv = setNetworkForSocket(network_handle, socket_fd);
+
   // If |network| has since disconnected, |rv| will be ENONET.  Surface this as
   // ERR_NETWORK_CHANGED, rather than MapSystemError(ENONET) which gives back
   // the less descriptive ERR_FAILED.
@@ -369,7 +425,7 @@ JOW(void, NetworkMonitor_nativeNotifyOfNetworkConnect)(
 
 JOW(void, NetworkMonitor_nativeNotifyOfNetworkDisconnect)(
     JNIEnv* jni, jobject j_monitor, jlong j_native_monitor,
-    jint network_handle) {
+    jlong network_handle) {
   AndroidNetworkMonitor* network_monitor =
       reinterpret_cast<AndroidNetworkMonitor*>(j_native_monitor);
   network_monitor->OnNetworkDisconnected(
