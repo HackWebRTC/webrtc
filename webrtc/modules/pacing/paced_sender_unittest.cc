@@ -588,6 +588,7 @@ TEST_F(PacedSenderTest, HighPrioDoesntAffectBudget) {
 TEST_F(PacedSenderTest, Pause) {
   uint32_t ssrc_low_priority = 12345;
   uint32_t ssrc = 12346;
+  uint32_t ssrc_high_priority = 12347;
   uint16_t sequence_number = 1234;
   int64_t capture_time_ms = clock_.TimeInMilliseconds();
 
@@ -607,48 +608,86 @@ TEST_F(PacedSenderTest, Pause) {
 
   send_bucket_->Pause();
 
-  send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                             sequence_number++, capture_time_ms, 250, false);
-  send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                             sequence_number++, capture_time_ms, 250, false);
-  send_bucket_->InsertPacket(PacedSender::kHighPriority, ssrc,
-                             sequence_number++, capture_time_ms, 250, false);
-
+  for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
+    send_bucket_->InsertPacket(PacedSender::kLowPriority, ssrc_low_priority,
+                               sequence_number++, capture_time_ms, 250, false);
+    send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
+                               sequence_number++, capture_time_ms, 250, false);
+    send_bucket_->InsertPacket(PacedSender::kHighPriority, ssrc_high_priority,
+                               sequence_number++, capture_time_ms, 250, false);
+  }
   clock_.AdvanceTimeMilliseconds(10000);
   int64_t second_capture_time_ms = clock_.TimeInMilliseconds();
+  for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
+    send_bucket_->InsertPacket(PacedSender::kLowPriority, ssrc_low_priority,
+                               sequence_number++, second_capture_time_ms, 250,
+                               false);
+    send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
+                               sequence_number++, second_capture_time_ms, 250,
+                               false);
+    send_bucket_->InsertPacket(PacedSender::kHighPriority, ssrc_high_priority,
+                               sequence_number++, second_capture_time_ms, 250,
+                               false);
+  }
 
   // Expect everything to be queued.
-  send_bucket_->InsertPacket(PacedSender::kLowPriority, ssrc_low_priority,
-                             sequence_number++, second_capture_time_ms, 250,
-                             false);
-
-  EXPECT_EQ(clock_.TimeInMilliseconds() - capture_time_ms,
+  EXPECT_EQ(second_capture_time_ms - capture_time_ms,
             send_bucket_->QueueInMs());
 
-  // Expect no packet to come out while paused.
+  // Expect only high priority packets to come out while paused.
   EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
   EXPECT_CALL(callback_, TimeToSendPacket(_, _, _, _, _)).Times(0);
+  EXPECT_CALL(callback_,
+              TimeToSendPacket(ssrc_high_priority, _, capture_time_ms, _, _))
+      .Times(packets_to_send_per_interval)
+      .WillRepeatedly(Return(true));
+  EXPECT_CALL(callback_, TimeToSendPacket(ssrc_high_priority, _,
+                                          second_capture_time_ms, _, _))
+      .Times(packets_to_send_per_interval)
+      .WillRepeatedly(Return(true));
 
   for (int i = 0; i < 10; ++i) {
     clock_.AdvanceTimeMilliseconds(5);
     EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
     send_bucket_->Process();
   }
-  // Expect high prio packets to come out first followed by all packets in the
-  // way they were added.
-  EXPECT_CALL(callback_, TimeToSendPacket(_, _, capture_time_ms, false, _))
-      .Times(3)
-      .WillRepeatedly(Return(true));
-  EXPECT_CALL(callback_,
-              TimeToSendPacket(_, _, second_capture_time_ms, false, _))
-      .Times(1)
-      .WillRepeatedly(Return(true));
+
+  // Expect normal prio packets to come out first (in capture order)
+  // followed by all low prio packets (in capture order).
+  {
+    ::testing::InSequence sequence;
+    for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
+      EXPECT_CALL(callback_, TimeToSendPacket(ssrc, _, capture_time_ms, _, _))
+          .Times(1)
+          .WillRepeatedly(Return(true));
+    }
+    for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
+      EXPECT_CALL(callback_,
+                  TimeToSendPacket(ssrc, _, second_capture_time_ms, _, _))
+          .Times(1)
+          .WillRepeatedly(Return(true));
+    }
+    for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
+      EXPECT_CALL(callback_,
+                  TimeToSendPacket(ssrc_low_priority, _, capture_time_ms, _, _))
+          .Times(1)
+          .WillRepeatedly(Return(true));
+    }
+    for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
+      EXPECT_CALL(callback_, TimeToSendPacket(ssrc_low_priority, _,
+                                              second_capture_time_ms, _, _))
+          .Times(1)
+          .WillRepeatedly(Return(true));
+    }
+  }
   send_bucket_->Resume();
 
-  EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
-  clock_.AdvanceTimeMilliseconds(5);
-  EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
-  send_bucket_->Process();
+  for (size_t i = 0; i < 4; i++) {
+    EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
+    clock_.AdvanceTimeMilliseconds(5);
+    EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
+    send_bucket_->Process();
+  }
 
   EXPECT_EQ(0, send_bucket_->QueueInMs());
 }

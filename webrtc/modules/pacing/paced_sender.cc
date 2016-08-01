@@ -267,11 +267,13 @@ PacedSender::PacedSender(Clock* clock, PacketSender* packet_sender)
 PacedSender::~PacedSender() {}
 
 void PacedSender::Pause() {
+  LOG(LS_INFO) << "PacedSender paused.";
   CriticalSectionScoped cs(critsect_.get());
   paused_ = true;
 }
 
 void PacedSender::Resume() {
+  LOG(LS_INFO) << "PacedSender resumed.";
   CriticalSectionScoped cs(critsect_.get());
   paused_ = false;
 }
@@ -282,6 +284,8 @@ void PacedSender::SetProbingEnabled(bool enabled) {
 }
 
 void PacedSender::SetEstimatedBitrate(uint32_t bitrate_bps) {
+  if (bitrate_bps == 0)
+    LOG(LS_ERROR) << "PacedSender is not designed to handle 0 bitrate.";
   CriticalSectionScoped cs(critsect_.get());
   estimated_bitrate_bps_ = bitrate_bps;
   padding_budget_->set_target_rate_kbps(
@@ -398,9 +402,6 @@ void PacedSender::Process() {
   int probe_cluster_id = is_probing ? prober_->CurrentClusterId()
                                     : PacketInfo::kNotAProbe;
   while (!packets_->Empty()) {
-    if (media_budget_->bytes_remaining() == 0 && !is_probing)
-      return;
-
     // Since we need to release the lock in order to send, we first pop the
     // element from the priority queue but keep it in storage, so that we can
     // reinsert it if send fails.
@@ -418,8 +419,9 @@ void PacedSender::Process() {
     }
   }
 
+  RTC_DCHECK(packets_->Empty());
   // TODO(holmer): Remove the paused_ check when issue 5307 has been fixed.
-  if (paused_ || !packets_->Empty())
+  if (paused_)
     return;
 
   // We can not send padding unless a normal packet has first been sent. If we
@@ -438,8 +440,14 @@ bool PacedSender::SendPacket(const paced_sender::Packet& packet,
   // TODO(holmer): Because of this bug issue 5307 we have to send audio
   // packets even when the pacer is paused. Here we assume audio packets are
   // always high priority and that they are the only high priority packets.
-  if (paused_ && packet.priority != kHighPriority)
-    return false;
+  if (packet.priority != kHighPriority) {
+    if (paused_)
+      return false;
+    if (media_budget_->bytes_remaining() == 0 &&
+        probe_cluster_id == PacketInfo::kNotAProbe) {
+      return false;
+    }
+  }
   critsect_->Leave();
   const bool success = packet_sender_->TimeToSendPacket(
       packet.ssrc, packet.sequence_number, packet.capture_time_ms,
