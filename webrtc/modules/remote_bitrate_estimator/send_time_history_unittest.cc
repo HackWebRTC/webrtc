@@ -14,6 +14,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/send_time_history.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
