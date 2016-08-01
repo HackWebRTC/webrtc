@@ -234,13 +234,13 @@ void AndroidVideoCapturerJni::OnMemoryBufferFrame(void* video_frame,
     scaled_buffer->ScaleFrom(buffer);
     buffer = scaled_buffer;
   }
-  capturer_->OnFrame(cricket::WebRtcVideoFrame(
-                         buffer,
-                         capturer_->apply_rotation()
-                             ? webrtc::kVideoRotation_0
-                             : static_cast<webrtc::VideoRotation>(rotation),
-                         translated_camera_time_us),
-                     width, height);
+  capturer_->OnFrame(
+      cricket::WebRtcVideoFrame(
+          buffer, capturer_->apply_rotation()
+                      ? webrtc::kVideoRotation_0
+                      : static_cast<webrtc::VideoRotation>(rotation),
+          translated_camera_time_us, 0),
+      width, height);
 }
 
 void AndroidVideoCapturerJni::OnTextureFrame(int width,
@@ -289,16 +289,15 @@ void AndroidVideoCapturerJni::OnTextureFrame(int width,
     matrix.Rotate(static_cast<webrtc::VideoRotation>(rotation));
   }
 
-  capturer_->OnFrame(
-      cricket::WebRtcVideoFrame(
-          surface_texture_helper_->CreateTextureFrame(
-              adapted_width, adapted_height,
-              NativeHandleImpl(handle.oes_texture_id, matrix)),
-          capturer_->apply_rotation()
-              ? webrtc::kVideoRotation_0
-              : static_cast<webrtc::VideoRotation>(rotation),
-          translated_camera_time_us),
-      width, height);
+  capturer_->OnFrame(cricket::WebRtcVideoFrame(
+                         surface_texture_helper_->CreateTextureFrame(
+                             adapted_width, adapted_height,
+                             NativeHandleImpl(handle.oes_texture_id, matrix)),
+                         capturer_->apply_rotation()
+                             ? webrtc::kVideoRotation_0
+                             : static_cast<webrtc::VideoRotation>(rotation),
+                         translated_camera_time_us, 0),
+                     width, height);
 }
 
 void AndroidVideoCapturerJni::OnOutputFormatRequest(int width,

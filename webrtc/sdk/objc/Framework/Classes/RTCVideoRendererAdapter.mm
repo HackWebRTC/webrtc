@@ -36,9 +36,9 @@ class VideoRendererAdapter
       rtc::scoped_refptr<webrtc::VideoFrameBuffer> i420Buffer =
           nativeVideoFrame.video_frame_buffer()->NativeToI420Buffer();
       std::unique_ptr<cricket::VideoFrame> cpuFrame(
-          new cricket::WebRtcVideoFrame(i420Buffer,
-                                        nativeVideoFrame.rotation(),
-                                        nativeVideoFrame.timestamp_us()));
+          new cricket::WebRtcVideoFrame(i420Buffer, nativeVideoFrame.rotation(),
+                                        nativeVideoFrame.timestamp_us(),
+                                        nativeVideoFrame.transport_frame_id()));
       const cricket::VideoFrame *rotatedFrame =
           cpuFrame->GetCopyWithRotationApplied();
       videoFrame = [[RTCVideoFrame alloc] initWithNativeFrame:rotatedFrame];

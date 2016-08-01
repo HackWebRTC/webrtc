@@ -139,8 +139,8 @@ TEST(VideoBroadcasterTest, SinkWantsBlackFrames) {
   // Makes it not all black.
   buffer->InitializeData();
 
-  cricket::WebRtcVideoFrame frame1(
-      buffer, webrtc::kVideoRotation_0, 10 /* timestamp_us */);
+  cricket::WebRtcVideoFrame frame1(buffer, webrtc::kVideoRotation_0,
+                                   10 /* timestamp_us */, 0 /* frame_id */);
   broadcaster.OnFrame(frame1);
   EXPECT_TRUE(sink1.black_frame());
   EXPECT_EQ(10000, sink1.timestamp());
@@ -153,8 +153,8 @@ TEST(VideoBroadcasterTest, SinkWantsBlackFrames) {
   wants2.black_frames = true;
   broadcaster.AddOrUpdateSink(&sink2, wants2);
 
-  cricket::WebRtcVideoFrame frame2(
-      buffer, webrtc::kVideoRotation_0, 30 /* timestamp_us */);
+  cricket::WebRtcVideoFrame frame2(buffer, webrtc::kVideoRotation_0,
+                                   30 /* timestamp_us */, 0 /* frame_id */);
   broadcaster.OnFrame(frame2);
   EXPECT_FALSE(sink1.black_frame());
   EXPECT_EQ(30000, sink1.timestamp());

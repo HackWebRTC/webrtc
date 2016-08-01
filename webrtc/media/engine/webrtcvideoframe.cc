@@ -28,9 +28,11 @@ WebRtcVideoFrame::WebRtcVideoFrame()
 WebRtcVideoFrame::WebRtcVideoFrame(
     const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
     webrtc::VideoRotation rotation,
-    int64_t timestamp_us)
+    int64_t timestamp_us,
+    uint32_t transport_frame_id)
     : video_frame_buffer_(buffer),
       timestamp_us_(timestamp_us),
+      transport_frame_id_(transport_frame_id),
       rotation_(rotation) {}
 
 WebRtcVideoFrame::WebRtcVideoFrame(
@@ -39,7 +41,8 @@ WebRtcVideoFrame::WebRtcVideoFrame(
     webrtc::VideoRotation rotation)
     : WebRtcVideoFrame(buffer,
                        rotation,
-                       time_stamp_ns / rtc::kNumNanosecsPerMicrosec) {}
+                       time_stamp_ns / rtc::kNumNanosecsPerMicrosec,
+                       0) {}
 
 WebRtcVideoFrame::~WebRtcVideoFrame() {}
 
@@ -78,8 +81,25 @@ WebRtcVideoFrame::video_frame_buffer() const {
   return video_frame_buffer_;
 }
 
+uint32_t WebRtcVideoFrame::transport_frame_id() const {
+  return transport_frame_id_;
+}
+
+int64_t WebRtcVideoFrame::timestamp_us() const {
+  return timestamp_us_;
+}
+
+void WebRtcVideoFrame::set_timestamp_us(int64_t time_us) {
+  timestamp_us_ = time_us;
+}
+
+webrtc::VideoRotation WebRtcVideoFrame::rotation() const {
+  return rotation_;
+}
+
 VideoFrame* WebRtcVideoFrame::Copy() const {
-  return new WebRtcVideoFrame(video_frame_buffer_, rotation_, timestamp_us_);
+  return new WebRtcVideoFrame(video_frame_buffer_, rotation_, timestamp_us_,
+                              transport_frame_id_);
 }
 
 size_t WebRtcVideoFrame::ConvertToRgbBuffer(uint32_t to_fourcc,
@@ -195,8 +215,8 @@ const VideoFrame* WebRtcVideoFrame::GetCopyWithRotationApplied() const {
       current_width, current_height,
       static_cast<libyuv::RotationMode>(rotation()));
   if (ret == 0) {
-    rotated_frame_.reset(
-        new WebRtcVideoFrame(buffer, webrtc::kVideoRotation_0, timestamp_us_));
+    rotated_frame_.reset(new WebRtcVideoFrame(
+        buffer, webrtc::kVideoRotation_0, timestamp_us_, transport_frame_id_));
   }
 
   return rotated_frame_.get();

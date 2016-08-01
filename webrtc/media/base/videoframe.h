@@ -38,6 +38,9 @@ class VideoFrame {
   virtual const rtc::scoped_refptr<webrtc::VideoFrameBuffer>&
   video_frame_buffer() const = 0;
 
+  // Frame ID. Normally RTP timestamp when the frame was received using RTP.
+  virtual uint32_t transport_frame_id() const = 0;
+
   // System monotonic clock, same timebase as rtc::TimeMicros().
   virtual int64_t timestamp_us() const = 0;
   virtual void set_timestamp_us(int64_t time_us) = 0;

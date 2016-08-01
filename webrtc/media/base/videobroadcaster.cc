@@ -55,8 +55,8 @@ void VideoBroadcaster::OnFrame(const cricket::VideoFrame& frame) {
   for (auto& sink_pair : sink_pairs()) {
     if (sink_pair.wants.black_frames) {
       sink_pair.sink->OnFrame(cricket::WebRtcVideoFrame(
-          GetBlackFrameBuffer(frame.width(), frame.height()),
-          frame.rotation(), frame.timestamp_us()));
+          GetBlackFrameBuffer(frame.width(), frame.height()), frame.rotation(),
+          frame.timestamp_us(), frame.transport_frame_id()));
     } else {
       sink_pair.sink->OnFrame(frame);
     }

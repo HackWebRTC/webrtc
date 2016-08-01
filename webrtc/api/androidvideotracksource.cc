@@ -146,7 +146,7 @@ void AndroidVideoTrackSource::OnByteBufferFrameCaptured(const void* frame_data,
               buffer,
               apply_rotation_ ? webrtc::kVideoRotation_0
                               : static_cast<webrtc::VideoRotation>(rotation),
-              translated_camera_time_us),
+              translated_camera_time_us, 0),
           width, height);
 }
 
@@ -197,7 +197,7 @@ void AndroidVideoTrackSource::OnTextureFrameCaptured(
                   webrtc_jni::NativeHandleImpl(handle.oes_texture_id, matrix)),
               apply_rotation_ ? webrtc::kVideoRotation_0
                               : static_cast<webrtc::VideoRotation>(rotation),
-              translated_camera_time_us),
+              translated_camera_time_us, 0),
           width, height);
 }
 

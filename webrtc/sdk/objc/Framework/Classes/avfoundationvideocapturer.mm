@@ -718,7 +718,7 @@ void AVFoundationVideoCapturer::OnFrameMessage(CVImageBufferRef image_buffer,
   }
 
   OnFrame(cricket::WebRtcVideoFrame(buffer, webrtc::kVideoRotation_0,
-                                    translated_camera_time_us),
+                                    translated_camera_time_us, 0),
           captured_width, captured_height);
 
   CVBufferRelease(image_buffer);

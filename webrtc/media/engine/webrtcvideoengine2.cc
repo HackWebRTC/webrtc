@@ -2469,9 +2469,9 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::OnFrame(
   last_width_ = frame.width();
   last_height_ = frame.height();
 
-  const WebRtcVideoFrame render_frame(
+  WebRtcVideoFrame render_frame(
       frame.video_frame_buffer(), frame.rotation(),
-      frame.render_time_ms() * rtc::kNumNanosecsPerMicrosec);
+      frame.render_time_ms() * rtc::kNumNanosecsPerMicrosec, frame.timestamp());
   sink_->OnFrame(render_frame);
 }
 

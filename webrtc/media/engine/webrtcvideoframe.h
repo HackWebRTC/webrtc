@@ -38,12 +38,13 @@ class WebRtcVideoFrame : public VideoFrame {
   // Preferred constructor.
   WebRtcVideoFrame(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
                    webrtc::VideoRotation rotation,
-                   int64_t timestamp_us);
+                   int64_t timestamp_us,
+                   uint32_t transport_frame_id);
 
   // TODO(nisse): Deprecated, delete as soon as all callers have switched to the
   // above constructor with microsecond timestamp.
   WebRtcVideoFrame(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
-                   int64_t time_stamp_ns,
+                   int64_t timestamp_ns,
                    webrtc::VideoRotation rotation);
 
   ~WebRtcVideoFrame();
@@ -59,7 +60,7 @@ class WebRtcVideoFrame : public VideoFrame {
             int dh,
             uint8_t* sample,
             size_t sample_size,
-            int64_t time_stamp_ns,
+            int64_t timestamp_ns,
             webrtc::VideoRotation rotation);
 
   // TODO(nisse): We're moving to have all timestamps use the same
@@ -79,11 +80,12 @@ class WebRtcVideoFrame : public VideoFrame {
   const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& video_frame_buffer()
       const override;
 
-  /* System monotonic clock */
-  int64_t timestamp_us() const override { return timestamp_us_; }
-  void set_timestamp_us(int64_t time_us) override { timestamp_us_ = time_us; };
+  uint32_t transport_frame_id() const override;
 
-  webrtc::VideoRotation rotation() const override { return rotation_; }
+  int64_t timestamp_us() const override;
+  void set_timestamp_us(int64_t time_us) override;
+
+  webrtc::VideoRotation rotation() const override;
 
   VideoFrame* Copy() const override;
 
@@ -118,6 +120,7 @@ class WebRtcVideoFrame : public VideoFrame {
   // An opaque reference counted handle that stores the pixel data.
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;
   int64_t timestamp_us_;
+  uint32_t transport_frame_id_;
   webrtc::VideoRotation rotation_;
 
   // This is mutable as the calculation is expensive but once calculated, it

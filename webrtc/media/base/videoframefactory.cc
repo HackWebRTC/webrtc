@@ -44,7 +44,8 @@ VideoFrame* VideoFrameFactory::CreateAliasedFrame(
   scaled_buffer->CropAndScaleFrom(cropped_input_frame->video_frame_buffer());
 
   return new WebRtcVideoFrame(scaled_buffer, cropped_input_frame->rotation(),
-                              cropped_input_frame->timestamp_us());
+                              cropped_input_frame->timestamp_us(),
+                              cropped_input_frame->transport_frame_id());
 }
 
 }  // namespace cricket
