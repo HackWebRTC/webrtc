@@ -997,6 +997,47 @@ if (rtc_include_tests) {
     ]
   }  # insert_packet_with_timing
 
+  test("audio_decoder_unittests") {
+    testonly = true
+    sources = [
+      "neteq/audio_decoder_unittest.cc",
+    ]
+
+    configs += [ "../..:common_config" ]
+    public_configs = [ "../..:common_inherited_config" ]
+
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    deps = []
+
+    defines = neteq_defines
+
+    deps += audio_coding_deps
+    deps += [
+      ":audio_decoder_interface",
+      ":isac",
+      ":isac_fix",
+      ":neteq",
+      ":neteq_unittest_tools",
+      "../../common_audio/",
+      "../../test:test_support_main",
+      "//testing/gtest",
+    ]
+
+    if (is_android) {
+      deps += [ "//testing/android/native_test:native_test_native_code" ]
+    }
+
+    if (is_ios) {
+      data = [
+        "//resources/audio_coding/testfile32kHz.pcm",
+      ]
+    }
+  }  # audio_decoder_unittests
+
   if (rtc_enable_protobuf) {
     proto_library("neteq_unittest_proto") {
       sources = [

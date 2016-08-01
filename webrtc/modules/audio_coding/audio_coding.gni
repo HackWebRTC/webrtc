@@ -28,3 +28,4 @@ if (!build_with_mozilla && !build_with_chromium) {
 }
 
 audio_coding_defines = audio_codec_defines
+neteq_defines = audio_codec_defines
