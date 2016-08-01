@@ -14,6 +14,8 @@ source_set("congestion_controller") {
     "delay_based_bwe.cc",
     "delay_based_bwe.h",
     "include/congestion_controller.h",
+    "probe_bitrate_estimator.cc",
+    "probe_bitrate_estimator.h",
   ]
 
   configs += [ "../..:common_config" ]

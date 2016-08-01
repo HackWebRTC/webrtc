@@ -18,9 +18,11 @@
       ],
       'sources': [
         'congestion_controller.cc',
-        'include/congestion_controller.h',
         'delay_based_bwe.cc',
         'delay_based_bwe.h',
+        'include/congestion_controller.h',
+        'probe_bitrate_estimator.cc',
+        'probe_bitrate_estimator.h',
       ],
       # TODO(jschuh): Bug 1348: fix size_t to int truncations.
       'msvs_disabled_warnings': [ 4267, ],
