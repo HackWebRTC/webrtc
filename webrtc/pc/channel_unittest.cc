@@ -12,6 +12,7 @@
 
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/buffer.h"
+#include "webrtc/base/fakeclock.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/media/base/fakemediaengine.h"
@@ -1752,6 +1753,15 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
         0x00, 0x00,
         0x00, 0x00,
         0x00, 0x01};
+
+    // Using fake clock because this tests that SRTP errors are signaled at
+    // specific times based on set_signal_silent_time.
+    rtc::ScopedFakeClock fake_clock;
+    // Some code uses a time of 0 as a special value, so we must start with
+    // a non-zero time.
+    // TODO(deadbeef): Fix this.
+    fake_clock.AdvanceTime(rtc::TimeDelta::FromSeconds(1));
+
     CreateChannels(RTCP | SECURE, RTCP | SECURE);
     EXPECT_FALSE(channel1_->secure());
     EXPECT_FALSE(channel2_->secure());
@@ -1777,11 +1787,11 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
                              rtc::PacketOptions());
     // Wait for a while to ensure no message comes in.
     WaitForThreads();
-    rtc::Thread::Current()->ProcessMessages(200);
+    fake_clock.AdvanceTime(rtc::TimeDelta::FromMilliseconds(200));
     EXPECT_EQ(cricket::SrtpFilter::ERROR_NONE, error_handler.error_);
     EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, error_handler.mode_);
     // Wait for a little more - the error will be triggered again.
-    rtc::Thread::Current()->ProcessMessages(200);
+    fake_clock.AdvanceTime(rtc::TimeDelta::FromMilliseconds(200));
     media_channel2_->SendRtp(kBadPacket, sizeof(kBadPacket),
                              rtc::PacketOptions());
     WaitForThreads();
@@ -1801,6 +1811,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     });
     EXPECT_EQ(cricket::SrtpFilter::ERROR_FAIL, error_handler.error_);
     EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, error_handler.mode_);
+    // Terminate channels before the fake clock is destroyed.
+    EXPECT_TRUE(SendTerminate());
   }
 
   void TestOnReadyToSend() {
