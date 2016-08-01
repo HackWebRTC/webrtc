@@ -247,7 +247,7 @@ void CongestionController::ResetBweAndBitrates(int bitrate_bps,
   if (remote_bitrate_estimator_)
     remote_bitrate_estimator_->SetMinBitrate(min_bitrate_bps);
 
-  RemoteBitrateEstimator* rbe = new RemoteBitrateEstimatorAbsSendTime(
+  RemoteBitrateEstimator* rbe = new DelayBasedBwe(
       &transport_feedback_adapter_, clock_);
   transport_feedback_adapter_.SetBitrateEstimator(rbe);
   rbe->SetMinBitrate(min_bitrate_bps);
