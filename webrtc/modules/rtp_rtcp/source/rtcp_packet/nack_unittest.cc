@@ -12,36 +12,48 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-
-using ::testing::_;
-using ::testing::ElementsAreArray;
-using ::testing::Invoke;
-using ::testing::UnorderedElementsAreArray;
-
-using webrtc::rtcp::Nack;
-using webrtc::RTCPUtility::RtcpCommonHeader;
-using webrtc::RTCPUtility::RtcpParseCommonHeader;
+#include "webrtc/test/rtcp_packet_parser.h"
 
 namespace webrtc {
 namespace {
 
-const uint32_t kSenderSsrc = 0x12345678;
-const uint32_t kRemoteSsrc = 0x23456789;
+using ::testing::_;
+using ::testing::ElementsAreArray;
+using ::testing::Invoke;
+using ::testing::make_tuple;
+using ::testing::UnorderedElementsAreArray;
+using ::webrtc::rtcp::Nack;
 
-const uint16_t kList[] = {0, 1, 3, 8, 16};
-const size_t kListLength = sizeof(kList) / sizeof(kList[0]);
-const uint8_t kPacket[] = {0x81, 205,  0x00, 0x03, 0x12, 0x34, 0x56, 0x78,
-                           0x23, 0x45, 0x67, 0x89, 0x00, 0x00, 0x80, 0x85};
-const size_t kPacketLength = sizeof(kPacket);
+constexpr uint32_t kSenderSsrc = 0x12345678;
+constexpr uint32_t kRemoteSsrc = 0x23456789;
 
-const uint16_t kWrapList[] = {0xffdc, 0xffec, 0xfffe, 0xffff, 0x0000,
-                              0x0001, 0x0003, 0x0014, 0x0064};
-const size_t kWrapListLength = sizeof(kWrapList) / sizeof(kWrapList[0]);
-const uint8_t kWrapPacket[] = {0x81, 205,  0x00, 0x06, 0x12, 0x34, 0x56, 0x78,
-                               0x23, 0x45, 0x67, 0x89, 0xff, 0xdc, 0x80, 0x00,
-                               0xff, 0xfe, 0x00, 0x17, 0x00, 0x14, 0x00, 0x00,
-                               0x00, 0x64, 0x00, 0x00};
-const size_t kWrapPacketLength = sizeof(kWrapPacket);
+constexpr uint16_t kList[] = {0, 1, 3, 8, 16};
+constexpr size_t kListLength = sizeof(kList) / sizeof(kList[0]);
+constexpr uint8_t kVersionBits = 2 << 6;
+// clang-format off
+constexpr uint8_t kPacket[] = {
+    kVersionBits | Nack::kFeedbackMessageType, Nack::kPacketType, 0, 3,
+    0x12, 0x34, 0x56, 0x78,
+    0x23, 0x45, 0x67, 0x89,
+    0x00, 0x00, 0x80, 0x85};
+
+constexpr uint16_t kWrapList[] = {0xffdc, 0xffec, 0xfffe, 0xffff, 0x0000,
+                                  0x0001, 0x0003, 0x0014, 0x0064};
+constexpr size_t kWrapListLength = sizeof(kWrapList) / sizeof(kWrapList[0]);
+constexpr uint8_t kWrapPacket[] = {
+    kVersionBits | Nack::kFeedbackMessageType, Nack::kPacketType, 0, 6,
+    0x12, 0x34, 0x56, 0x78,
+    0x23, 0x45, 0x67, 0x89,
+    0xff, 0xdc, 0x80, 0x00,
+    0xff, 0xfe, 0x00, 0x17,
+    0x00, 0x14, 0x00, 0x00,
+    0x00, 0x64, 0x00, 0x00};
+constexpr uint8_t kTooSmallPacket[] = {
+    kVersionBits | Nack::kFeedbackMessageType, Nack::kPacketType, 0, 2,
+    0x12, 0x34, 0x56, 0x78,
+    0x23, 0x45, 0x67, 0x89};
+// clang-format on
+}  // namespace
 
 TEST(RtcpPacketNackTest, Create) {
   Nack nack;
@@ -51,18 +63,13 @@ TEST(RtcpPacketNackTest, Create) {
 
   rtc::Buffer packet = nack.Build();
 
-  EXPECT_EQ(kPacketLength, packet.size());
-  EXPECT_EQ(0, memcmp(kPacket, packet.data(), kPacketLength));
+  EXPECT_THAT(make_tuple(packet.data(), packet.size()),
+              ElementsAreArray(kPacket));
 }
 
 TEST(RtcpPacketNackTest, Parse) {
-  RtcpCommonHeader header;
-  EXPECT_TRUE(RtcpParseCommonHeader(kPacket, kPacketLength, &header));
-  EXPECT_EQ(kPacketLength, header.BlockSize());
   Nack parsed;
-
-  EXPECT_TRUE(
-      parsed.Parse(header, kPacket + RtcpCommonHeader::kHeaderSizeBytes));
+  EXPECT_TRUE(test::ParseSinglePacket(kPacket, &parsed));
   const Nack& const_parsed = parsed;
 
   EXPECT_EQ(kSenderSsrc, const_parsed.sender_ssrc());
@@ -78,18 +85,13 @@ TEST(RtcpPacketNackTest, CreateWrap) {
 
   rtc::Buffer packet = nack.Build();
 
-  EXPECT_EQ(kWrapPacketLength, packet.size());
-  EXPECT_EQ(0, memcmp(kWrapPacket, packet.data(), kWrapPacketLength));
+  EXPECT_THAT(make_tuple(packet.data(), packet.size()),
+              ElementsAreArray(kWrapPacket));
 }
 
 TEST(RtcpPacketNackTest, ParseWrap) {
-  RtcpCommonHeader header;
-  EXPECT_TRUE(RtcpParseCommonHeader(kWrapPacket, kWrapPacketLength, &header));
-  EXPECT_EQ(kWrapPacketLength, header.BlockSize());
-
   Nack parsed;
-  EXPECT_TRUE(
-      parsed.Parse(header, kWrapPacket + RtcpCommonHeader::kHeaderSizeBytes));
+  EXPECT_TRUE(test::ParseSinglePacket(kWrapPacket, &parsed));
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
   EXPECT_EQ(kRemoteSsrc, parsed.media_ssrc());
@@ -109,10 +111,7 @@ TEST(RtcpPacketNackTest, BadOrder) {
   rtc::Buffer packet = nack.Build();
 
   Nack parsed;
-  RtcpCommonHeader header;
-  EXPECT_TRUE(RtcpParseCommonHeader(packet.data(), packet.size(), &header));
-  EXPECT_TRUE(parsed.Parse(
-      header, packet.data() + RtcpCommonHeader::kHeaderSizeBytes));
+  EXPECT_TRUE(test::ParseSinglePacket(packet, &parsed));
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
   EXPECT_EQ(kRemoteSsrc, parsed.media_ssrc());
@@ -136,12 +135,8 @@ TEST(RtcpPacketNackTest, CreateFragmented) {
    public:
     explicit NackVerifier(std::vector<uint16_t> ids) : ids_(ids) {}
     void operator()(uint8_t* data, size_t length) {
-      RtcpCommonHeader header;
-      EXPECT_TRUE(RtcpParseCommonHeader(data, length, &header));
-      EXPECT_EQ(length, header.BlockSize());
       Nack nack;
-      EXPECT_TRUE(
-          nack.Parse(header, data + RtcpCommonHeader::kHeaderSizeBytes));
+      EXPECT_TRUE(test::ParseSinglePacket(data, length, &nack));
       EXPECT_EQ(kSenderSsrc, nack.sender_ssrc());
       EXPECT_EQ(kRemoteSsrc, nack.media_ssrc());
       EXPECT_THAT(nack.packet_ids(), ElementsAreArray(ids_));
@@ -176,13 +171,8 @@ TEST(RtcpPacketNackTest, CreateFailsWithTooSmallBuffer) {
 }
 
 TEST(RtcpPacketNackTest, ParseFailsWithTooSmallBuffer) {
-  RtcpCommonHeader header;
-  EXPECT_TRUE(RtcpParseCommonHeader(kPacket, kPacketLength, &header));
-  header.payload_size_bytes--;  // Damage the packet
   Nack parsed;
-  EXPECT_FALSE(
-      parsed.Parse(header, kPacket + RtcpCommonHeader::kHeaderSizeBytes));
+  EXPECT_FALSE(test::ParseSinglePacket(kTooSmallPacket, &parsed));
 }
 
-}  // namespace
 }  // namespace webrtc
