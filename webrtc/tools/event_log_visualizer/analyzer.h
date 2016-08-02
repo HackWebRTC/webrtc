@@ -47,6 +47,8 @@ class EventLogAnalyzer {
 
   void CreateBweGraph(Plot* plot);
 
+  void CreateNetworkDelayFeebackGraph(Plot* plot);
+
  private:
   class StreamId {
    public:

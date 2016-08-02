@@ -43,6 +43,9 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
                  size_t length,
                  int probe_cluster_id) override;
   void OnSentPacket(uint16_t sequence_number, int64_t send_time_ms);
+
+  const std::vector<PacketInfo> GetPacketFeedbackVector(
+      const rtcp::TransportFeedback& feedback);
   void OnTransportFeedback(const rtcp::TransportFeedback& feedback) override;
 
   // Implements CallStatsObserver.

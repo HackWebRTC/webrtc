@@ -757,8 +757,7 @@ void EventLogAnalyzer::CreateBweGraph(Plot* plot) {
   while (time_us != std::numeric_limits<int64_t>::max()) {
     clock.AdvanceTimeMicroseconds(time_us - clock.TimeInMicroseconds());
     if (clock.TimeInMicroseconds() >= NextRtcpTime()) {
-      clock.AdvanceTimeMilliseconds(rtcp_iterator->first / 1000 -
-                                    clock.TimeInMilliseconds());
+      RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextRtcpTime());
       const LoggedRtcpPacket& rtcp = *rtcp_iterator->second;
       if (rtcp.type == kRtcpTransportFeedback) {
         cc.GetTransportFeedbackObserver()->OnTransportFeedback(
@@ -767,8 +766,7 @@ void EventLogAnalyzer::CreateBweGraph(Plot* plot) {
       ++rtcp_iterator;
     }
     if (clock.TimeInMicroseconds() >= NextRtpTime()) {
-      clock.AdvanceTimeMilliseconds(rtp_iterator->first / 1000 -
-                                    clock.TimeInMilliseconds());
+      RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextRtpTime());
       const LoggedRtpPacket& rtp = *rtp_iterator->second;
       if (rtp.header.extension.hasTransportSequenceNumber) {
         RTC_DCHECK(rtp.header.extension.hasTransportSequenceNumber);
@@ -780,8 +778,10 @@ void EventLogAnalyzer::CreateBweGraph(Plot* plot) {
       }
       ++rtp_iterator;
     }
-    if (clock.TimeInMicroseconds() >= NextProcessTime())
+    if (clock.TimeInMicroseconds() >= NextProcessTime()) {
+      RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextProcessTime());
       cc.Process();
+    }
     if (observer.GetAndResetBitrateUpdated()) {
       uint32_t y = observer.last_bitrate_bps() / 1000;
       float x = static_cast<float>(clock.TimeInMicroseconds() - begin_time_) /
@@ -798,5 +798,93 @@ void EventLogAnalyzer::CreateBweGraph(Plot* plot) {
   plot->SetTitle("Simulated BWE behavior");
 }
 
+void EventLogAnalyzer::CreateNetworkDelayFeebackGraph(Plot* plot) {
+  std::map<uint64_t, const LoggedRtpPacket*> outgoing_rtp;
+  std::map<uint64_t, const LoggedRtcpPacket*> incoming_rtcp;
+
+  for (const auto& kv : rtp_packets_) {
+    if (kv.first.GetDirection() == PacketDirection::kOutgoingPacket) {
+      for (const LoggedRtpPacket& rtp_packet : kv.second)
+        outgoing_rtp.insert(std::make_pair(rtp_packet.timestamp, &rtp_packet));
+    }
+  }
+
+  for (const auto& kv : rtcp_packets_) {
+    if (kv.first.GetDirection() == PacketDirection::kIncomingPacket) {
+      for (const LoggedRtcpPacket& rtcp_packet : kv.second)
+        incoming_rtcp.insert(
+            std::make_pair(rtcp_packet.timestamp, &rtcp_packet));
+    }
+  }
+
+  SimulatedClock clock(0);
+  TransportFeedbackAdapter feedback_adapter(nullptr, &clock);
+
+  TimeSeries time_series;
+  time_series.label = "Network Delay Change";
+  time_series.style = LINE_DOT_GRAPH;
+  int64_t estimated_base_delay_ms = std::numeric_limits<int64_t>::max();
+
+  auto rtp_iterator = outgoing_rtp.begin();
+  auto rtcp_iterator = incoming_rtcp.begin();
+
+  auto NextRtpTime = [&]() {
+    if (rtp_iterator != outgoing_rtp.end())
+      return static_cast<int64_t>(rtp_iterator->first);
+    return std::numeric_limits<int64_t>::max();
+  };
+
+  auto NextRtcpTime = [&]() {
+    if (rtcp_iterator != incoming_rtcp.end())
+      return static_cast<int64_t>(rtcp_iterator->first);
+    return std::numeric_limits<int64_t>::max();
+  };
+
+  int64_t time_us = std::min(NextRtpTime(), NextRtcpTime());
+  while (time_us != std::numeric_limits<int64_t>::max()) {
+    clock.AdvanceTimeMicroseconds(time_us - clock.TimeInMicroseconds());
+    if (clock.TimeInMicroseconds() >= NextRtcpTime()) {
+      RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextRtcpTime());
+      const LoggedRtcpPacket& rtcp = *rtcp_iterator->second;
+      if (rtcp.type == kRtcpTransportFeedback) {
+        std::vector<PacketInfo> feedback =
+            feedback_adapter.GetPacketFeedbackVector(
+                *static_cast<rtcp::TransportFeedback*>(rtcp.packet.get()));
+        for (const PacketInfo& packet : feedback) {
+          int64_t y = packet.arrival_time_ms - packet.send_time_ms;
+          float x =
+              static_cast<float>(clock.TimeInMicroseconds() - begin_time_) /
+              1000000;
+          estimated_base_delay_ms = std::min(y, estimated_base_delay_ms);
+          time_series.points.emplace_back(x, y);
+        }
+      }
+      ++rtcp_iterator;
+    }
+    if (clock.TimeInMicroseconds() >= NextRtpTime()) {
+      RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextRtpTime());
+      const LoggedRtpPacket& rtp = *rtp_iterator->second;
+      if (rtp.header.extension.hasTransportSequenceNumber) {
+        RTC_DCHECK(rtp.header.extension.hasTransportSequenceNumber);
+        feedback_adapter.AddPacket(rtp.header.extension.transportSequenceNumber,
+                                   rtp.total_length, 0);
+        feedback_adapter.OnSentPacket(
+            rtp.header.extension.transportSequenceNumber, rtp.timestamp / 1000);
+      }
+      ++rtp_iterator;
+    }
+    time_us = std::min(NextRtpTime(), NextRtcpTime());
+  }
+  // We assume that the base network delay (w/o queues) is the min delay
+  // observed during the call.
+  for (TimeSeriesPoint& point : time_series.points)
+    point.y -= estimated_base_delay_ms;
+  // Add the data set to the plot.
+  plot->series_list_.push_back(std::move(time_series));
+
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 10, "Delay (ms)", kBottomMargin, kTopMargin);
+  plot->SetTitle("Network Delay Change.");
+}
 }  // namespace plotting
 }  // namespace webrtc

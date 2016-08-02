@@ -47,6 +47,10 @@ DEFINE_bool(plot_bwe,
             false,
             "Run the bandwidth estimator with the logged rtp and rtcp and plot "
             "the output.");
+DEFINE_bool(plot_network_delay_feedback,
+            false,
+            "Compute network delay based on sent packets and the received "
+            "transport feedback.");
 
 int main(int argc, char* argv[]) {
   std::string program_name = argv[0];
@@ -138,6 +142,10 @@ int main(int argc, char* argv[]) {
 
   if (FLAGS_plot_all || FLAGS_plot_bwe) {
     analyzer.CreateBweGraph(collection->AppendNewPlot());
+  }
+
+  if (FLAGS_plot_all || FLAGS_plot_network_delay_feedback) {
+    analyzer.CreateNetworkDelayFeebackGraph(collection->AppendNewPlot());
   }
 
   collection->Draw();

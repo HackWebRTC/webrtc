@@ -70,7 +70,7 @@ void TransportFeedbackAdapter::OnSentPacket(uint16_t sequence_number,
   send_time_history_.OnSentPacket(sequence_number, send_time_ms);
 }
 
-void TransportFeedbackAdapter::OnTransportFeedback(
+const std::vector<PacketInfo> TransportFeedbackAdapter::GetPacketFeedbackVector(
     const rtcp::TransportFeedback& feedback) {
   int64_t timestamp_us = feedback.GetBaseTimeUs();
   // Add timestamp deltas to a local time base selected on first packet arrival.
@@ -125,7 +125,13 @@ void TransportFeedbackAdapter::OnTransportFeedback(
                       << ". Send time history too small?";
     }
   }
+  return packet_feedback_vector;
+}
 
+void TransportFeedbackAdapter::OnTransportFeedback(
+    const rtcp::TransportFeedback& feedback) {
+  const std::vector<PacketInfo> packet_feedback_vector =
+      GetPacketFeedbackVector(feedback);
   RTC_DCHECK(bitrate_estimator_.get() != nullptr);
   bitrate_estimator_->IncomingPacketFeedbackVector(packet_feedback_vector);
 }
