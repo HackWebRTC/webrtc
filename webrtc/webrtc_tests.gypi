@@ -471,9 +471,6 @@
       'type': '<(gtest_target_type)',
       'sources': [
         'base/nullsocketserver_unittest.cc',
-        'base/physicalsocketserver_unittest.cc',
-        'base/socket_unittest.cc',
-        'base/socket_unittest.h',
         'base/socketaddress_unittest.cc',
         'base/virtualsocket_unittest.cc',
       ],
@@ -493,16 +490,17 @@
         }],
         ['OS=="win"', {
           'sources': [
-            'base/win32socketserver_unittest.cc',
+              # TODO(ronghuawu): Fix TestUdpReadyToSendIPv6 on windows bot
+              # then reenable these tests.
+              # 'base/win32socketserver_unittest.cc',
           ],
-          'sources!': [
-            # TODO(ronghuawu): Fix TestUdpReadyToSendIPv6 on windows bot
-            # then reenable these tests.
-            # TODO(pbos): Move test disabling to ifdefs within the test files
-            # instead of here.
+        }, {
+          # TODO(pbos): Move test disabling to ifdefs within the test files
+          # instead of here.
+          'sources': [
             'base/physicalsocketserver_unittest.cc',
             'base/socket_unittest.cc',
-            'base/win32socketserver_unittest.cc',
+            'base/socket_unittest.h',
           ],
         }],
         ['OS=="mac"', {
