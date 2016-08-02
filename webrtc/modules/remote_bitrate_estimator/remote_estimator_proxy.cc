@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/remote_bitrate_estimator/remote_estimator_proxy.h"
 
+#include <limits>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/system_wrappers/include/clock.h"
@@ -22,6 +24,11 @@ namespace webrtc {
 // TODO(sprang): Tune these!
 const int RemoteEstimatorProxy::kDefaultProcessIntervalMs = 50;
 const int RemoteEstimatorProxy::kBackWindowMs = 500;
+
+// The maximum allowed value for a timestamp in milliseconds. This is lower
+// than the numerical limit since we often convert to microseconds.
+static constexpr int64_t kMaxTimeMs =
+    std::numeric_limits<int64_t>::max() / 1000;
 
 RemoteEstimatorProxy::RemoteEstimatorProxy(Clock* clock,
                                            PacketRouter* packet_router)
@@ -89,6 +96,11 @@ void RemoteEstimatorProxy::Process() {
 
 void RemoteEstimatorProxy::OnPacketArrival(uint16_t sequence_number,
                                            int64_t arrival_time) {
+  if (arrival_time < 0 || arrival_time > kMaxTimeMs) {
+    LOG(LS_WARNING) << "Arrival time out of bounds: " << arrival_time;
+    return;
+  }
+
   // TODO(holmer): We should handle a backwards wrap here if the first
   // sequence number was small and the new sequence number is large. The
   // SequenceNumberUnwrapper doesn't do this, so we should replace this with
