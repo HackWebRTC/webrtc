@@ -65,6 +65,7 @@ TEST(BitrateProberTest, DoesntProbeWithoutRecentPackets) {
   prober.OnIncomingPacket(300000, 1000, now_ms);
   EXPECT_TRUE(prober.IsProbing());
   EXPECT_EQ(0, prober.TimeUntilNextProbe(now_ms));
+  prober.PacketSent(now_ms, 1000);
   // Let time pass, no large enough packets put into prober.
   now_ms += 6000;
   EXPECT_EQ(-1, prober.TimeUntilNextProbe(now_ms));

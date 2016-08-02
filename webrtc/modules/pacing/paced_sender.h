@@ -143,7 +143,6 @@ class PacedSender : public Module, public RtpPacketSender {
 
   std::unique_ptr<CriticalSectionWrapper> critsect_;
   bool paused_ GUARDED_BY(critsect_);
-  bool probing_enabled_;
   // This is the media budget, keeping track of how many bits of media
   // we can pace out during the current interval.
   std::unique_ptr<paced_sender::IntervalBudget> media_budget_

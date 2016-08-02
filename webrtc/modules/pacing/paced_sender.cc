@@ -250,7 +250,6 @@ PacedSender::PacedSender(Clock* clock, PacketSender* packet_sender)
       packet_sender_(packet_sender),
       critsect_(CriticalSectionWrapper::CreateCriticalSection()),
       paused_(false),
-      probing_enabled_(true),
       media_budget_(new paced_sender::IntervalBudget(0)),
       padding_budget_(new paced_sender::IntervalBudget(0)),
       prober_(new BitrateProber()),
@@ -280,7 +279,8 @@ void PacedSender::Resume() {
 
 void PacedSender::SetProbingEnabled(bool enabled) {
   RTC_CHECK_EQ(0u, packet_counter_);
-  probing_enabled_ = enabled;
+  CriticalSectionScoped cs(critsect_.get());
+  prober_->SetEnabled(enabled);
 }
 
 void PacedSender::SetEstimatedBitrate(uint32_t bitrate_bps) {
@@ -317,8 +317,6 @@ void PacedSender::InsertPacket(RtpPacketSender::Priority priority,
   RTC_DCHECK(estimated_bitrate_bps_ > 0)
         << "SetEstimatedBitrate must be called before InsertPacket.";
 
-  if (probing_enabled_ && !prober_->IsProbing())
-    prober_->SetEnabled(true);
   int64_t now_ms = clock_->TimeInMilliseconds();
   prober_->OnIncomingPacket(estimated_bitrate_bps_, bytes, now_ms);
 
