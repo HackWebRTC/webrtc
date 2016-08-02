@@ -120,12 +120,12 @@ class AdapterEncodedImageCallback : public webrtc::EncodedImageCallback {
                               size_t stream_idx)
       : adapter_(adapter), stream_idx_(stream_idx) {}
 
-  EncodedImageCallback::Result OnEncodedImage(
-      const webrtc::EncodedImage& encoded_image,
-      const webrtc::CodecSpecificInfo* codec_specific_info,
-      const webrtc::RTPFragmentationHeader* fragmentation) override {
-    return adapter_->OnEncodedImage(stream_idx_, encoded_image,
-                                    codec_specific_info, fragmentation);
+  int32_t Encoded(
+      const webrtc::EncodedImage& encodedImage,
+      const webrtc::CodecSpecificInfo* codecSpecificInfo = NULL,
+      const webrtc::RTPFragmentationHeader* fragmentation = NULL) override {
+    return adapter_->Encoded(stream_idx_, encodedImage, codecSpecificInfo,
+                             fragmentation);
   }
 
  private:
@@ -404,7 +404,7 @@ int SimulcastEncoderAdapter::SetRates(uint32_t new_bitrate_kbit,
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-EncodedImageCallback::Result SimulcastEncoderAdapter::OnEncodedImage(
+int32_t SimulcastEncoderAdapter::Encoded(
     size_t stream_idx,
     const EncodedImage& encodedImage,
     const CodecSpecificInfo* codecSpecificInfo,
@@ -413,7 +413,7 @@ EncodedImageCallback::Result SimulcastEncoderAdapter::OnEncodedImage(
   CodecSpecificInfoVP8* vp8Info = &(stream_codec_specific.codecSpecific.VP8);
   vp8Info->simulcastIdx = stream_idx;
 
-  return encoded_complete_callback_->OnEncodedImage(
+  return encoded_complete_callback_->Encoded(
       encodedImage, &stream_codec_specific, fragmentation);
 }
 

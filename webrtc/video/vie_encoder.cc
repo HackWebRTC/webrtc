@@ -193,10 +193,9 @@ int64_t ViEEncoder::time_of_last_frame_activity_ms() {
   return time_of_last_frame_activity_ms_;
 }
 
-EncodedImageCallback::Result ViEEncoder::OnEncodedImage(
-    const EncodedImage& encoded_image,
-    const CodecSpecificInfo* codec_specific_info,
-    const RTPFragmentationHeader* fragmentation) {
+int32_t ViEEncoder::Encoded(const EncodedImage& encoded_image,
+                            const CodecSpecificInfo* codec_specific_info,
+                            const RTPFragmentationHeader* fragmentation) {
   {
     rtc::CritScope lock(&data_cs_);
     time_of_last_frame_activity_ms_ = rtc::TimeMillis();
@@ -205,11 +204,11 @@ EncodedImageCallback::Result ViEEncoder::OnEncodedImage(
     stats_proxy_->OnSendEncodedImage(encoded_image, codec_specific_info);
   }
 
-  EncodedImageCallback::Result result =
-      sink_->OnEncodedImage(encoded_image, codec_specific_info, fragmentation);
+  int success =
+      sink_->Encoded(encoded_image, codec_specific_info, fragmentation);
 
   overuse_detector_->FrameSent(encoded_image._timeStamp);
-  return result;
+  return success;
 }
 
 void ViEEncoder::SendStatistics(uint32_t bit_rate,

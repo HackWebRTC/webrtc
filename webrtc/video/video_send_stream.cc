@@ -720,10 +720,9 @@ void VideoSendStream::NormalUsage() {
     config_.overuse_callback->OnLoadUpdate(LoadObserver::kUnderuse);
 }
 
-EncodedImageCallback::Result VideoSendStream::OnEncodedImage(
-    const EncodedImage& encoded_image,
-    const CodecSpecificInfo* codec_specific_info,
-    const RTPFragmentationHeader* fragmentation) {
+int32_t VideoSendStream::Encoded(const EncodedImage& encoded_image,
+                                 const CodecSpecificInfo* codec_specific_info,
+                                 const RTPFragmentationHeader* fragmentation) {
   if (config_.post_encode_callback) {
     config_.post_encode_callback->EncodedFrameCallback(
         EncodedFrame(encoded_image._buffer, encoded_image._length,
@@ -731,7 +730,7 @@ EncodedImageCallback::Result VideoSendStream::OnEncodedImage(
   }
 
   protection_bitrate_calculator_.UpdateWithEncodedData(encoded_image);
-  EncodedImageCallback::Result result = payload_router_.OnEncodedImage(
+  int32_t return_value = payload_router_.Encoded(
       encoded_image, codec_specific_info, fragmentation);
 
   if (kEnableFrameRecording) {
@@ -757,7 +756,7 @@ EncodedImageCallback::Result VideoSendStream::OnEncodedImage(
     }
   }
 
-  return result;
+  return return_value;
 }
 
 void VideoSendStream::ConfigureProtection() {

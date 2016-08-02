@@ -165,9 +165,8 @@ class RtpRtcpRtcpTest : public ::testing::Test {
     // the receiving module.
     // send RTP packet with the data "testtest"
     const uint8_t test[9] = "testtest";
-    EXPECT_EQ(true,
-              module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96, 0, -1,
-                                        test, 8, nullptr, nullptr, nullptr));
+    EXPECT_EQ(0, module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96,
+                                           0, -1, test, 8));
   }
 
   virtual void TearDown() {

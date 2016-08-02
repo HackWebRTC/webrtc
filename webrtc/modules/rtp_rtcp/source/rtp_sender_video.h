@@ -42,15 +42,15 @@ class RTPSenderVideo {
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
       int8_t payload_type);
 
-  bool SendVideo(RtpVideoCodecTypes video_type,
-                 FrameType frame_type,
-                 int8_t payload_type,
-                 uint32_t capture_timestamp,
-                 int64_t capture_time_ms,
-                 const uint8_t* payload_data,
-                 size_t payload_size,
-                 const RTPFragmentationHeader* fragmentation,
-                 const RTPVideoHeader* video_header);
+  int32_t SendVideo(RtpVideoCodecTypes video_type,
+                    FrameType frame_type,
+                    int8_t payload_type,
+                    uint32_t capture_timestamp,
+                    int64_t capture_time_ms,
+                    const uint8_t* payload_data,
+                    size_t payload_size,
+                    const RTPFragmentationHeader* fragmentation,
+                    const RTPVideoHeader* video_header);
 
   int32_t SendRTPIntraRequest();
 

@@ -61,9 +61,9 @@ class Vp8TestEncodedImageCallback : public EncodedImageCallback {
     delete[] encoded_frame_._buffer;
   }
 
-  virtual Result OnEncodedImage(const EncodedImage& encoded_image,
-                                const CodecSpecificInfo* codec_specific_info,
-                                const RTPFragmentationHeader* fragmentation) {
+  virtual int32_t Encoded(const EncodedImage& encoded_image,
+                          const CodecSpecificInfo* codec_specific_info,
+                          const RTPFragmentationHeader* fragmentation) {
     // Only store the base layer.
     if (codec_specific_info->codecSpecific.VP8.simulcastIdx == 0) {
       if (encoded_image._frameType == kVideoFrameKey) {
@@ -89,7 +89,7 @@ class Vp8TestEncodedImageCallback : public EncodedImageCallback {
         codec_specific_info->codecSpecific.VP8.layerSync;
     temporal_layer_[codec_specific_info->codecSpecific.VP8.simulcastIdx] =
         codec_specific_info->codecSpecific.VP8.temporalIdx;
-    return Result(Result::OK, encoded_image._timeStamp);
+    return 0;
   }
   void GetLastEncodedFrameInfo(int* picture_id,
                                int* temporal_layer,
@@ -338,38 +338,34 @@ class TestVp8Simulcast : public ::testing::Test {
     if (expected_video_streams >= 1) {
       EXPECT_CALL(
           encoder_callback_,
-          OnEncodedImage(
+          Encoded(
               AllOf(Field(&EncodedImage::_frameType, frame_type),
                     Field(&EncodedImage::_encodedWidth, kDefaultWidth / 4),
                     Field(&EncodedImage::_encodedHeight, kDefaultHeight / 4)),
               _, _))
           .Times(1)
-          .WillRepeatedly(Return(EncodedImageCallback::Result(
-              EncodedImageCallback::Result::OK, 0)));
+          .WillRepeatedly(Return(0));
     }
     if (expected_video_streams >= 2) {
       EXPECT_CALL(
           encoder_callback_,
-          OnEncodedImage(
+          Encoded(
               AllOf(Field(&EncodedImage::_frameType, frame_type),
                     Field(&EncodedImage::_encodedWidth, kDefaultWidth / 2),
                     Field(&EncodedImage::_encodedHeight, kDefaultHeight / 2)),
               _, _))
           .Times(1)
-          .WillRepeatedly(Return(EncodedImageCallback::Result(
-              EncodedImageCallback::Result::OK, 0)));
+          .WillRepeatedly(Return(0));
     }
     if (expected_video_streams >= 3) {
       EXPECT_CALL(
           encoder_callback_,
-          OnEncodedImage(
-              AllOf(Field(&EncodedImage::_frameType, frame_type),
-                    Field(&EncodedImage::_encodedWidth, kDefaultWidth),
-                    Field(&EncodedImage::_encodedHeight, kDefaultHeight)),
-              _, _))
+          Encoded(AllOf(Field(&EncodedImage::_frameType, frame_type),
+                        Field(&EncodedImage::_encodedWidth, kDefaultWidth),
+                        Field(&EncodedImage::_encodedHeight, kDefaultHeight)),
+                  _, _))
           .Times(1)
-          .WillRepeatedly(Return(EncodedImageCallback::Result(
-              EncodedImageCallback::Result::OK, 0)));
+          .WillRepeatedly(Return(0));
     }
   }
 
@@ -594,15 +590,13 @@ class TestVp8Simulcast : public ::testing::Test {
     encoder_->SetRates(kMaxBitrates[0] + kMaxBitrates[1], 30);
     std::vector<FrameType> frame_types(kNumberOfSimulcastStreams,
                                        kVideoFrameDelta);
-    EXPECT_CALL(
-        encoder_callback_,
-        OnEncodedImage(AllOf(Field(&EncodedImage::_frameType, kVideoFrameKey),
-                             Field(&EncodedImage::_encodedWidth, width),
-                             Field(&EncodedImage::_encodedHeight, height)),
-                       _, _))
+    EXPECT_CALL(encoder_callback_,
+                Encoded(AllOf(Field(&EncodedImage::_frameType, kVideoFrameKey),
+                              Field(&EncodedImage::_encodedWidth, width),
+                              Field(&EncodedImage::_encodedHeight, height)),
+                        _, _))
         .Times(1)
-        .WillRepeatedly(Return(
-            EncodedImageCallback::Result(EncodedImageCallback::Result::OK, 0)));
+        .WillRepeatedly(Return(0));
     EXPECT_EQ(0, encoder_->Encode(input_frame_, NULL, &frame_types));
 
     // Switch back.

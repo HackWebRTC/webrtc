@@ -21,7 +21,6 @@
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 namespace webrtc {
-
 VCMGenericEncoder::VCMGenericEncoder(
     VideoEncoder* encoder,
     VCMEncodedFrameCallback* encoded_frame_callback,
@@ -144,25 +143,23 @@ VCMEncodedFrameCallback::VCMEncodedFrameCallback(
 
 VCMEncodedFrameCallback::~VCMEncodedFrameCallback() {}
 
-EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
+int32_t VCMEncodedFrameCallback::Encoded(
     const EncodedImage& encoded_image,
     const CodecSpecificInfo* codec_specific,
     const RTPFragmentationHeader* fragmentation_header) {
   TRACE_EVENT_INSTANT1("webrtc", "VCMEncodedFrameCallback::Encoded",
                        "timestamp", encoded_image._timeStamp);
-  Result result = post_encode_callback_->OnEncodedImage(
-      encoded_image, codec_specific, fragmentation_header);
-  if (result.error != Result::OK)
-    return result;
+  int ret_val = post_encode_callback_->Encoded(encoded_image, codec_specific,
+                                               fragmentation_header);
+  if (ret_val < 0)
+    return ret_val;
 
   if (media_opt_) {
     media_opt_->UpdateWithEncodedData(encoded_image);
-    if (internal_source_) {
-      // Signal to encoder to drop next frame.
-      result.drop_next_frame = media_opt_->DropFrame();
-    }
+    if (internal_source_)
+      return media_opt_->DropFrame();  // Signal to encoder to drop next frame.
   }
-  return result;
+  return VCM_OK;
 }
 
 }  // namespace webrtc

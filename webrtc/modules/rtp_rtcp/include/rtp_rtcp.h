@@ -225,21 +225,8 @@ class RtpRtcp : public Module {
   // |payload_size|  - size of payload buffer to send
   // |fragmentation| - fragmentation offset data for fragmented frames such
   //                   as layers or RED
-  // |transport_frame_id_out| - set to RTP timestamp.
-  // Returns true on success.
-
-  virtual bool SendOutgoingData(FrameType frame_type,
-                                int8_t payload_type,
-                                uint32_t timestamp,
-                                int64_t capture_time_ms,
-                                const uint8_t* payload_data,
-                                size_t payload_size,
-                                const RTPFragmentationHeader* fragmentation,
-                                const RTPVideoHeader* rtp_video_header,
-                                uint32_t* transport_frame_id_out) = 0;
-
-  // Deprecated version of the method above.
-  int32_t SendOutgoingData(
+  // Returns -1 on failure else 0.
+  virtual int32_t SendOutgoingData(
       FrameType frame_type,
       int8_t payload_type,
       uint32_t timestamp,
@@ -247,14 +234,7 @@ class RtpRtcp : public Module {
       const uint8_t* payload_data,
       size_t payload_size,
       const RTPFragmentationHeader* fragmentation = nullptr,
-      const RTPVideoHeader* rtp_video_header = nullptr) {
-    return SendOutgoingData(frame_type, payload_type, timestamp,
-                            capture_time_ms, payload_data, payload_size,
-                            fragmentation, rtp_video_header,
-                            /*frame_id_out=*/nullptr)
-               ? 0
-               : -1;
-  }
+      const RTPVideoHeader* rtp_video_header = nullptr) = 0;
 
   virtual bool TimeToSendPacket(uint32_t ssrc,
                                 uint16_t sequence_number,

@@ -324,7 +324,7 @@ void VideoReceiveStream::OnFrame(const VideoFrame& video_frame) {
 
 // TODO(asapersson): Consider moving callback from video_encoder.h or
 // creating a different callback.
-EncodedImageCallback::Result VideoReceiveStream::OnEncodedImage(
+int32_t VideoReceiveStream::Encoded(
     const EncodedImage& encoded_image,
     const CodecSpecificInfo* codec_specific_info,
     const RTPFragmentationHeader* fragmentation) {
@@ -348,7 +348,7 @@ EncodedImageCallback::Result VideoReceiveStream::OnEncodedImage(
     }
   }
 
-  return Result(Result::OK, encoded_image._timeStamp);
+  return 0;
 }
 
 bool VideoReceiveStream::DecodeThreadFunction(void* ptr) {
