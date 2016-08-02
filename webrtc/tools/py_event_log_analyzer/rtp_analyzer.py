@@ -26,6 +26,7 @@ class RTPStatistics(object):
   """Has methods for calculating and plotting RTP stream statistics."""
 
   BANDWIDTH_SMOOTHING_WINDOW_SIZE = 10
+  PLOT_RESOLUTION_MS = 50
 
   def __init__(self, data_points):
     """Initializes object with data_points and computes simple statistics.
@@ -170,7 +171,7 @@ class RTPStatistics(object):
     for point in self.data_points:
       point.real_send_time_ms = (point.timestamp -
                                  self.data_points[0].timestamp) / freq
-      point.delay = point.arrival_timestamp_ms -point.real_send_time_ms
+      point.delay = point.arrival_timestamp_ms - point.real_send_time_ms
 
   def print_duration_statistics(self):
     """Prints delay, clock drift and bitrate statistics."""
@@ -221,13 +222,15 @@ class RTPStatistics(object):
     BANDWIDTH_SMOOTHING_WINDOW_SIZE. Averaging is done with
     numpy.correlate.
     """
-    self.bandwidth_kbps = []
-    for i in range(len(self.data_points) - 1):
-      self.bandwidth_kbps.append(self.data_points[i].size * 8 /
-                                 (self.data_points[i +
-                                                   1].real_send_time_ms -
-                                  self.data_points[i].real_send_time_ms)
-                                )
+    start_ms = self.data_points[0].real_send_time_ms
+    stop_ms = self.data_points[-1].real_send_time_ms
+    (self.bandwidth_kbps, _) = numpy.histogram(
+        [point.real_send_time_ms for point in self.data_points],
+        bins=numpy.arange(start_ms, stop_ms,
+                          RTPStatistics.PLOT_RESOLUTION_MS),
+        weights=[point.size * 8 / RTPStatistics.PLOT_RESOLUTION_MS
+                 for point in self.data_points]
+    )
     correlate_filter = (numpy.ones(
         RTPStatistics.BANDWIDTH_SMOOTHING_WINDOW_SIZE) /
                         RTPStatistics.BANDWIDTH_SMOOTHING_WINDOW_SIZE)
@@ -235,20 +238,46 @@ class RTPStatistics(object):
 
   def plot_statistics(self):
     """Plots changes in delay and average bandwidth."""
+
+    start_ms = self.data_points[0].real_send_time_ms
+    stop_ms = self.data_points[-1].real_send_time_ms
+    time_axis = numpy.arange(start_ms / 1000, stop_ms / 1000,
+                             RTPStatistics.PLOT_RESOLUTION_MS / 1000)
+
+    delay = calculate_delay(start_ms, stop_ms,
+                            RTPStatistics.PLOT_RESOLUTION_MS,
+                            self.data_points)
+
     plt.figure(1)
-    plt.plot([f.real_send_time_ms / 1000 for f in self.data_points],
-             [f.absdelay for f in self.data_points])
+    plt.plot(time_axis, delay)
     plt.xlabel("Send time [s]")
     plt.ylabel("Relative transport delay [ms]")
 
     plt.figure(2)
-    plt.plot([f.real_send_time_ms / 1000 for f in
-              self.data_points][:len(self.smooth_bw_kbps)],
-             self.smooth_bw_kbps[:len(self.data_points)])
+    plt.plot(time_axis[:len(self.smooth_bw_kbps)], self.smooth_bw_kbps)
     plt.xlabel("Send time [s]")
     plt.ylabel("Bandwidth [kbps]")
 
     plt.show()
+
+
+def calculate_delay(start, stop, step, points):
+  """Quantizes the time coordinates for the delay.
+
+  Quantizes points by rounding the timestamps downwards to the nearest
+  point in the time sequence start, start+step, start+2*step... Takes
+  the average of the delays of points rounded to the same. Returns
+  masked array, in which time points with no value are masked.
+
+  """
+  grouped_delays = [[] for _ in numpy.arange(start, stop, step)]
+  rounded_value_index = lambda x: int((x - start) / step)
+  for point in points:
+    grouped_delays[rounded_value_index(point.real_send_time_ms)
+                  ].append(point.absdelay)
+  regularized_delays = [numpy.average(arr) if arr else None for arr in
+                        grouped_delays]
+  return numpy.ma.masked_values(regularized_delays, None)
 
 
 def main():
