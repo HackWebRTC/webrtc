@@ -1317,6 +1317,20 @@ if (rtc_include_tests) {
     ]
   }
 
+  executable("rtpcat") {
+    testonly = true
+
+    sources = [
+      "neteq/tools/rtpcat.cc",
+    ]
+
+    deps = [
+      "../../system_wrappers:system_wrappers_default",
+      "../../test:rtp_test_utils",
+      "//testing/gtest",
+    ]
+  }
+
   executable("rtp_analyze") {
     testonly = true
 
