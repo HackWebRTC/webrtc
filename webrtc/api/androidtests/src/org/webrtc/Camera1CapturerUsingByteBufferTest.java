@@ -14,9 +14,9 @@ import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 
 import android.content.Context;
 import android.test.InstrumentationTestCase;
-import android.test.suitebuilder.annotation.SmallTest;
-import android.test.suitebuilder.annotation.MediumTest;
 import android.test.suitebuilder.annotation.LargeTest;
+import android.test.suitebuilder.annotation.MediumTest;
+import android.test.suitebuilder.annotation.SmallTest;
 
 public class Camera1CapturerUsingByteBufferTest extends InstrumentationTestCase {
   static final String TAG = "Camera1CapturerUsingByteBufferTest";
@@ -141,7 +141,7 @@ public class Camera1CapturerUsingByteBufferTest extends InstrumentationTestCase 
   // been stopped and restarted. It does not test or use the C++ layer.
   @LargeTest
   public void testReturnBufferLate() throws InterruptedException {
-    fixtures.returnBufferLateEndToEnd();
+    fixtures.returnBufferLate();
   }
 
   // This test that we can capture frames, keep the frames in a local renderer, stop capturing,
