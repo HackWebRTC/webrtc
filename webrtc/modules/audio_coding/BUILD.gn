@@ -1250,6 +1250,61 @@ if (rtc_include_tests) {
     }
   }
 
+  config("RTPencode_config") {
+    defines = [
+      "CODEC_ILBC",
+      "CODEC_PCM16B",
+      "CODEC_G711",
+      "CODEC_G722",
+      "CODEC_ISAC",
+      "CODEC_PCM16B_WB",
+      "CODEC_ISAC_SWB",
+      "CODEC_PCM16B_32KHZ",
+      "CODEC_PCM16B_48KHZ",
+      "CODEC_CNGCODEC8",
+      "CODEC_CNGCODEC16",
+      "CODEC_CNGCODEC32",
+      "CODEC_ATEVENT_DECODE",
+      "CODEC_RED",
+      "CODEC_OPUS",
+    ]
+  }
+
+  executable("RTPencode") {
+    testonly = true
+
+    deps = [
+      # TODO(hlundin): Make RTPencode use ACM to encode files.
+      ":cng",
+      ":g711",
+      ":g722",
+      ":ilbc",
+      ":isac",
+      ":neteq_test_tools",
+      ":pcm16b",
+      ":webrtc_opus",
+      "../../common_audio",
+    ]
+
+    configs += [ ":RTPencode_config" ]
+
+    sources = [
+      "neteq/test/RTPencode.cc",
+    ]
+
+    include_dirs = [
+      "neteq/include",
+      "neteq/test",
+    ]
+
+    if (is_win) {
+      cflags = [
+        # Disable warnings to enable Win64 build, issue 1323.
+        "/wd4267",  # size_t to int truncation
+      ]
+    }
+  }
+
   executable("rtp_analyze") {
     testonly = true
 
