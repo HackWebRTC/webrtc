@@ -1331,6 +1331,19 @@ if (rtc_include_tests) {
     ]
   }
 
+  executable("RTPtimeshift") {
+    testonly = true
+
+    sources = [
+      "neteq/test/RTPtimeshift.cc",
+    ]
+
+    deps = [
+      ":neteq_test_tools",
+      "//testing/gtest",
+    ]
+  }
+
   executable("rtp_analyze") {
     testonly = true
 
