@@ -12,16 +12,14 @@ package org.webrtc;
 
 import android.annotation.TargetApi;
 import android.media.MediaCodec;
-import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecInfo;
+import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecList;
 import android.media.MediaFormat;
 import android.opengl.GLES20;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Surface;
-
-import org.webrtc.Logging;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;

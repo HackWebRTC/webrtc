@@ -10,9 +10,8 @@
 
 package org.webrtc.voiceengine;
 
-import java.lang.System;
-import java.nio.ByteBuffer;
-import java.util.concurrent.TimeUnit;
+import org.webrtc.Logging;
+import org.webrtc.ThreadUtils;
 
 import android.content.Context;
 import android.media.AudioFormat;
@@ -20,8 +19,9 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder.AudioSource;
 import android.os.Process;
 
-import org.webrtc.Logging;
-import org.webrtc.ThreadUtils;
+import java.lang.System;
+import java.nio.ByteBuffer;
+import java.util.concurrent.TimeUnit;
 
 public class  WebRtcAudioRecord {
   private static final boolean DEBUG = false;

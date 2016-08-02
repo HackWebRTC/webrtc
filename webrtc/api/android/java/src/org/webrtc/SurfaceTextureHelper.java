@@ -21,7 +21,6 @@ import android.os.SystemClock;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**

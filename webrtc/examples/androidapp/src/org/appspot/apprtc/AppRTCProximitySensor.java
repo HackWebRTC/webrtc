@@ -10,6 +10,8 @@
 
 package org.appspot.apprtc;
 
+import org.appspot.apprtc.util.AppRTCUtils;
+
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -18,7 +20,6 @@ import android.hardware.SensorManager;
 import android.os.Build;
 import android.util.Log;
 
-import org.appspot.apprtc.util.AppRTCUtils;
 import org.webrtc.ThreadUtils;
 
 /**

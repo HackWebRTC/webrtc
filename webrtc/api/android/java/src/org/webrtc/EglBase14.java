@@ -20,8 +20,6 @@ import android.opengl.EGLExt;
 import android.opengl.EGLSurface;
 import android.view.Surface;
 
-import org.webrtc.Logging;
-
 /**
  * Holds EGL state and utility methods for handling an EGL14 EGLContext, an EGLDisplay,
  * and an EGLSurface.

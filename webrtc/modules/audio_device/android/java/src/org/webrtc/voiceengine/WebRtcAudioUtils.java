@@ -10,19 +10,14 @@
 
 package org.webrtc.voiceengine;
 
+import org.webrtc.Logging;
+
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.media.audiofx.AcousticEchoCanceler;
-import android.media.audiofx.AudioEffect;
-import android.media.audiofx.AudioEffect.Descriptor;
-import android.media.AudioManager;
 import android.os.Build;
 import android.os.Process;
 
-import org.webrtc.Logging;
-
 import java.lang.Thread;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 

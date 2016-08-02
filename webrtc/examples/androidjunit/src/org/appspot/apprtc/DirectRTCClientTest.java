@@ -10,16 +10,6 @@
 
 package org.appspot.apprtc;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
-import org.webrtc.IceCandidate;
-import org.webrtc.SessionDescription;
-
-import java.util.regex.Matcher;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -29,6 +19,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
+import org.webrtc.IceCandidate;
+import org.webrtc.SessionDescription;
 
 /**
  * Test for DirectRTCClient. Test is very simple and only tests the overall sanity of the class

@@ -20,8 +20,6 @@ import android.util.AttributeSet;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
-import org.webrtc.Logging;
-
 import java.util.concurrent.CountDownLatch;
 
 import javax.microedition.khronos.egl.EGLContext;

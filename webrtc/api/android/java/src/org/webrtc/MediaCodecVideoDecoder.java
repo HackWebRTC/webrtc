@@ -19,16 +19,14 @@ import android.os.Build;
 import android.os.SystemClock;
 import android.view.Surface;
 
-import org.webrtc.Logging;
-
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
 // Java-side of peerconnection_jni.cc:MediaCodecVideoDecoder.

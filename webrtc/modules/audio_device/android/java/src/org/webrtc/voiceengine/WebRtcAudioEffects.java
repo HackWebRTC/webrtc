@@ -10,6 +10,8 @@
 
 package org.webrtc.voiceengine;
 
+import org.webrtc.Logging;
+
 import android.annotation.TargetApi;
 import android.media.audiofx.AcousticEchoCanceler;
 import android.media.audiofx.AudioEffect;
@@ -18,10 +20,7 @@ import android.media.audiofx.AutomaticGainControl;
 import android.media.audiofx.NoiseSuppressor;
 import android.os.Build;
 
-import org.webrtc.Logging;
-
 import java.util.List;
-
 import java.util.UUID;
 
 // This class wraps control of three different platform effects. Supported

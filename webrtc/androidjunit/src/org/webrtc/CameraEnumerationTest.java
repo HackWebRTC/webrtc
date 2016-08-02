@@ -13,7 +13,6 @@ package org.webrtc;
 import static org.junit.Assert.assertEquals;
 import static org.webrtc.CameraEnumerationAndroid.getClosestSupportedFramerateRange;
 
-import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat.FramerateRange;
 
 import org.junit.Test;

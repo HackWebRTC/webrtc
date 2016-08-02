@@ -9,6 +9,8 @@
  */
 package org.webrtc;
 
+import org.webrtc.MediaCodecVideoEncoder.OutputBufferInfo;
+
 import android.annotation.TargetApi;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
@@ -16,8 +18,6 @@ import android.os.Build;
 import android.test.ActivityTestCase;
 import android.test.suitebuilder.annotation.SmallTest;
 import android.util.Log;
-
-import org.webrtc.MediaCodecVideoEncoder.OutputBufferInfo;
 
 import java.nio.ByteBuffer;
 

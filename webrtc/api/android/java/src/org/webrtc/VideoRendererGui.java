@@ -10,13 +10,7 @@
 
 package org.webrtc;
 
-import java.util.ArrayList;
-import java.util.concurrent.CountDownLatch;
-
-import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.egl.EGL10;
-import javax.microedition.khronos.egl.EGLContext;
-import javax.microedition.khronos.opengles.GL10;
+import org.webrtc.VideoRenderer.I420Frame;
 
 import android.annotation.SuppressLint;
 import android.graphics.Point;
@@ -25,8 +19,13 @@ import android.opengl.EGL14;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 
-import org.webrtc.Logging;
-import org.webrtc.VideoRenderer.I420Frame;
+import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
+
+import javax.microedition.khronos.egl.EGL10;
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.egl.EGLContext;
+import javax.microedition.khronos.opengles.GL10;
 
 /**
  * Efficiently renders YUV frames using the GPU for CSC.

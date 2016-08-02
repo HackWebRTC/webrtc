@@ -13,12 +13,7 @@ package org.webrtc;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 
-import org.webrtc.GlShader;
-import org.webrtc.GlUtil;
-
-import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
-import java.util.Arrays;
 import java.util.IdentityHashMap;
 import java.util.Map;
 

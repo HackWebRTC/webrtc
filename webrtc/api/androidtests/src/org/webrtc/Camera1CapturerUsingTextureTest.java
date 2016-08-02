@@ -10,8 +10,6 @@
 
 package org.webrtc;
 
-import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
-
 import android.content.Context;
 import android.test.InstrumentationTestCase;
 import android.test.suitebuilder.annotation.LargeTest;

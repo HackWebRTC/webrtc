@@ -11,8 +11,8 @@
 package org.webrtc;
 
 import android.graphics.Canvas;
-import android.graphics.SurfaceTexture;
 import android.graphics.Rect;
+import android.graphics.SurfaceTexture;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 

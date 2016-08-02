@@ -10,12 +10,12 @@
 
 package org.webrtc;
 
-import org.webrtc.Metrics;
 import org.webrtc.Metrics.HistogramInfo;
 import org.webrtc.PeerConnection.IceConnectionState;
 import org.webrtc.PeerConnection.IceGatheringState;
 import org.webrtc.PeerConnection.SignalingState;
 
+import android.test.ActivityTestCase;
 import android.test.suitebuilder.annotation.MediumTest;
 
 import java.io.File;
@@ -23,18 +23,16 @@ import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /** End-to-end tests for PeerConnection.java. */
-import android.test.ActivityTestCase;
-
 public class PeerConnectionTest extends ActivityTestCase {
   private static final int TIMEOUT_SECONDS = 20;
   private TreeSet<String> threadsBeforeTest = null;

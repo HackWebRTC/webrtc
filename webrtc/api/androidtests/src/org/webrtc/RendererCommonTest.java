@@ -10,16 +10,15 @@
 
 package org.webrtc;
 
-import android.test.ActivityTestCase;
-import android.test.MoreAsserts;
-import android.test.suitebuilder.annotation.SmallTest;
-
-import android.graphics.Point;
-
 import static org.webrtc.RendererCommon.ScalingType.*;
 import static org.webrtc.RendererCommon.getDisplaySize;
 import static org.webrtc.RendererCommon.getLayoutMatrix;
 import static org.webrtc.RendererCommon.rotateTextureMatrix;
+
+import android.graphics.Point;
+import android.test.ActivityTestCase;
+import android.test.MoreAsserts;
+import android.test.suitebuilder.annotation.SmallTest;
 
 public final class RendererCommonTest extends ActivityTestCase {
   @SmallTest

@@ -13,8 +13,8 @@ package org.webrtc;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.EnumSet;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /** Java wrapper for WebRTC logging. */
 public class Logging {

@@ -14,8 +14,6 @@ import static org.webrtc.NetworkMonitorAutoDetect.ConnectionType;
 import static org.webrtc.NetworkMonitorAutoDetect.INVALID_NET_ID;
 import static org.webrtc.NetworkMonitorAutoDetect.NetworkInformation;
 
-import org.webrtc.Logging;
-
 import android.content.Context;
 import android.os.Build;
 

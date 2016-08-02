@@ -10,6 +10,8 @@
 
 package org.webrtc.voiceengine;
 
+import org.webrtc.Logging;
+
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -19,9 +21,6 @@ import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.os.Build;
 
-import org.webrtc.Logging;
-
-import java.lang.Math;
 import java.util.Timer;
 import java.util.TimerTask;
 

@@ -10,8 +10,7 @@
 
 package org.webrtc.voiceengine;
 
-import java.lang.Thread;
-import java.nio.ByteBuffer;
+import org.webrtc.Logging;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -20,7 +19,8 @@ import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.os.Process;
 
-import org.webrtc.Logging;
+import java.lang.Thread;
+import java.nio.ByteBuffer;
 
 public class WebRtcAudioTrack {
   private static final boolean DEBUG = false;
