@@ -51,6 +51,7 @@ function build_webrtc {
   local flavor=$2
   local target_arch=$3
   local build_type=$4
+  local libvpx_build_vp9=$5
 
   local ninja_output_dir=${base_output_dir}/${target_arch}_ninja
   local library_output_dir=${base_output_dir}/${target_arch}_libs
@@ -86,7 +87,8 @@ function build_webrtc {
 
   export GYP_DEFINES="OS=ios target_arch=${target_arch} use_objc_h264=1 \
 clang_xcode=1 ios_deployment_target=8.0 \
-ios_override_visibility=${override_visibility}"
+ios_override_visibility=${override_visibility} \
+libvpx_build_vp9=${libvpx_build_vp9}"
   export GYP_GENERATORS="ninja"
   export GYP_GENERATOR_FLAGS="output_dir=${ninja_output_dir}"
 
@@ -146,6 +148,9 @@ BUILD_TYPE="framework"
 PERFORM_CLEAN=0
 FLAVOR="Profile"
 POINT_VERSION="0"
+# TODO(tkchin): Add ability to pass in a flag to build vp9. Odds are mobile
+# clients will not want it though because of the higher CPU usage.
+LIBVPX_BUILD_VP9=0
 
 # Parse arguments.
 while getopts "hb:co:r:" opt; do
@@ -172,7 +177,7 @@ ARCHS=( "arm" "arm64" "ia32" "x64" )
 for ARCH in "${ARCHS[@]}"
 do
   echo "Building WebRTC arch: ${ARCH}"
-  build_webrtc ${OUTPUT_DIR} ${FLAVOR} $ARCH ${BUILD_TYPE}
+  build_webrtc ${OUTPUT_DIR} ${FLAVOR} $ARCH ${BUILD_TYPE} ${LIBVPX_BUILD_VP9}
 done
 
 ARM_NINJA_DIR=${OUTPUT_DIR}/arm_ninja/${FLAVOR}-iphoneos
