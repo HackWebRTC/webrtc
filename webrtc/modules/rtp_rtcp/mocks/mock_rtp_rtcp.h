@@ -98,15 +98,16 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_CONST_METHOD0(GetVideoBitrateObserver, BitrateStatisticsObserver*(void));
   MOCK_CONST_METHOD1(EstimatedReceiveBandwidth,
                      int(uint32_t* available_bandwidth));
-  MOCK_METHOD8(SendOutgoingData,
-               int32_t(FrameType frame_type,
-                       int8_t payload_type,
-                       uint32_t timestamp,
-                       int64_t capture_time_ms,
-                       const uint8_t* payload_data,
-                       size_t payload_size,
-                       const RTPFragmentationHeader* fragmentation,
-                       const RTPVideoHeader* rtp_video_header));
+  MOCK_METHOD9(SendOutgoingData,
+               bool(FrameType frame_type,
+                    int8_t payload_type,
+                    uint32_t timestamp,
+                    int64_t capture_time_ms,
+                    const uint8_t* payload_data,
+                    size_t payload_size,
+                    const RTPFragmentationHeader* fragmentation,
+                    const RTPVideoHeader* rtp_video_header,
+                    uint32_t* frame_id_out));
   MOCK_METHOD5(TimeToSendPacket,
                bool(uint32_t ssrc,
                     uint16_t sequence_number,

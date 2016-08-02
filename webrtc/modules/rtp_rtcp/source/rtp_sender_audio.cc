@@ -145,7 +145,7 @@ bool RTPSenderAudio::MarkerBit(FrameType frame_type, int8_t payload_type) {
   return marker_bit;
 }
 
-int32_t RTPSenderAudio::SendAudio(FrameType frame_type,
+bool RTPSenderAudio::SendAudio(FrameType frame_type,
                                   int8_t payload_type,
                                   uint32_t capture_timestamp,
                                   const uint8_t* payload_data,
@@ -195,7 +195,7 @@ int32_t RTPSenderAudio::SendAudio(FrameType frame_type,
       if (packet_size_samples >
           (capture_timestamp - dtmf_timestamp_last_sent_)) {
         // not time to send yet
-        return 0;
+        return true;
       }
     }
     dtmf_timestamp_last_sent_ = capture_timestamp;
@@ -228,24 +228,24 @@ int32_t RTPSenderAudio::SendAudio(FrameType frame_type,
             ended, dtmf_payload_type, dtmf_timestamp_,
             static_cast<uint16_t>(dtmf_duration_samples), false);
       } else {
-        if (SendTelephoneEventPacket(ended, dtmf_payload_type, dtmf_timestamp_,
-                                     dtmf_duration_samples,
-                                     !dtmf_event_first_packet_sent_) != 0) {
-          return -1;
+        if (!SendTelephoneEventPacket(ended, dtmf_payload_type, dtmf_timestamp_,
+                                      dtmf_duration_samples,
+                                      !dtmf_event_first_packet_sent_)) {
+          return false;
         }
         dtmf_event_first_packet_sent_ = true;
-        return 0;
+        return true;
       }
     }
-    return 0;
+    return true;
   }
   if (payload_size == 0 || payload_data == NULL) {
     if (frame_type == kEmptyFrame) {
       // we don't send empty audio RTP packets
       // no error since we use it to drive DTMF when we use VAD
-      return 0;
+      return true;
     }
-    return -1;
+    return false;
   }
   uint8_t data_buffer[IP_PACKET_SIZE];
   bool marker_bit = MarkerBit(frame_type, payload_type);
@@ -269,11 +269,11 @@ int32_t RTPSenderAudio::SendAudio(FrameType frame_type,
                                                   clock_->TimeInMilliseconds());
   }
   if (rtpHeaderLength <= 0) {
-    return -1;
+    return false;
   }
   if (max_payload_length < (rtpHeaderLength + payload_size)) {
     // Too large payload buffer.
-    return -1;
+    return false;
   }
   if (red_payload_type >= 0 &&  // Have we configured RED?
       fragmentation && fragmentation->fragmentationVectorSize > 1 &&
@@ -281,7 +281,7 @@ int32_t RTPSenderAudio::SendAudio(FrameType frame_type,
     if (timestampOffset <= 0x3fff) {
       if (fragmentation->fragmentationVectorSize != 2) {
         // we only support 2 codecs when using RED
-        return -1;
+        return false;
       }
       // only 0x80 if we have multiple blocks
       data_buffer[rtpHeaderLength++] =
@@ -290,7 +290,7 @@ int32_t RTPSenderAudio::SendAudio(FrameType frame_type,
 
       // sanity blockLength
       if (blockLength > 0x3ff) {  // block length 10 bits 1023 bytes
-        return -1;
+        return false;
       }
       uint32_t REDheader = (timestampOffset << 10) + blockLength;
       ByteWriter<uint32_t>::WriteBigEndian(data_buffer + rtpHeaderLength,
@@ -349,7 +349,7 @@ int32_t RTPSenderAudio::SendAudio(FrameType frame_type,
   TRACE_EVENT_ASYNC_END2("webrtc", "Audio", capture_timestamp, "timestamp",
                          rtp_sender_->Timestamp(), "seqnum",
                          rtp_sender_->SequenceNumber());
-  int32_t send_result = rtp_sender_->SendToNetwork(
+  bool send_result = rtp_sender_->SendToNetwork(
       data_buffer, payload_size, rtpHeaderLength, rtc::TimeMillis(),
       kAllowRetransmission, RtpPacketSender::kHighPriority);
   if (first_packet_sent_()) {
@@ -403,18 +403,18 @@ int32_t RTPSenderAudio::SendTelephoneEvent(uint8_t key,
   return AddDTMF(key, time_ms, level);
 }
 
-int32_t RTPSenderAudio::SendTelephoneEventPacket(bool ended,
-                                                 int8_t dtmf_payload_type,
-                                                 uint32_t dtmf_timestamp,
-                                                 uint16_t duration,
-                                                 bool marker_bit) {
+bool RTPSenderAudio::SendTelephoneEventPacket(bool ended,
+                                              int8_t dtmf_payload_type,
+                                              uint32_t dtmf_timestamp,
+                                              uint16_t duration,
+                                              bool marker_bit) {
   uint8_t dtmfbuffer[IP_PACKET_SIZE];
-  uint8_t sendCount = 1;
-  int32_t retVal = 0;
+  uint8_t send_count = 1;
+  bool result = true;
 
   if (ended) {
     // resend last packet in an event 3 times
-    sendCount = 3;
+    send_count = 3;
   }
   do {
     // Send DTMF data
@@ -422,7 +422,7 @@ int32_t RTPSenderAudio::SendTelephoneEventPacket(bool ended,
         dtmfbuffer, dtmf_payload_type, marker_bit, dtmf_timestamp,
         clock_->TimeInMilliseconds());
     if (header_length <= 0)
-      return -1;
+      return false;
 
     // reset CSRC and X bit
     dtmfbuffer[0] &= 0xe0;
@@ -451,12 +451,12 @@ int32_t RTPSenderAudio::SendTelephoneEventPacket(bool ended,
     TRACE_EVENT_INSTANT2(
         TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "Audio::SendTelephoneEvent",
         "timestamp", dtmf_timestamp, "seqnum", rtp_sender_->SequenceNumber());
-    retVal = rtp_sender_->SendToNetwork(dtmfbuffer, 4, 12, rtc::TimeMillis(),
+    result = rtp_sender_->SendToNetwork(dtmfbuffer, 4, 12, rtc::TimeMillis(),
                                         kAllowRetransmission,
                                         RtpPacketSender::kHighPriority);
-    sendCount--;
-  } while (sendCount > 0 && retVal == 0);
+    send_count--;
+  } while (send_count > 0 && result);
 
-  return retVal;
+  return result;
 }
 }  // namespace webrtc

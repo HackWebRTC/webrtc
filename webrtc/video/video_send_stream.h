@@ -108,9 +108,10 @@ class VideoSendStream : public webrtc::VideoSendStream,
   // Implements EncodedImageCallback. The implementation routes encoded frames
   // to the |payload_router_| and |config.pre_encode_callback| if set.
   // Called on an arbitrary encoder callback thread.
-  int32_t Encoded(const EncodedImage& encoded_image,
-                  const CodecSpecificInfo* codec_specific_info,
-                  const RTPFragmentationHeader* fragmentation) override;
+  EncodedImageCallback::Result OnEncodedImage(
+      const EncodedImage& encoded_image,
+      const CodecSpecificInfo* codec_specific_info,
+      const RTPFragmentationHeader* fragmentation) override;
 
   static bool EncoderThreadFunction(void* obj);
   void EncoderProcess();

@@ -32,8 +32,8 @@ struct RTPVideoHeader;
 class PayloadRouter : public EncodedImageCallback {
  public:
   // Rtp modules are assumed to be sorted in simulcast index order.
-  explicit PayloadRouter(const std::vector<RtpRtcp*>& rtp_modules,
-                         int payload_type);
+  PayloadRouter(const std::vector<RtpRtcp*>& rtp_modules,
+                int payload_type);
   ~PayloadRouter();
 
   static size_t DefaultMaxPayloadLength();
@@ -46,9 +46,10 @@ class PayloadRouter : public EncodedImageCallback {
 
   // Implements EncodedImageCallback.
   // Returns 0 if the packet was routed / sent, -1 otherwise.
-  int32_t Encoded(const EncodedImage& encoded_image,
-                  const CodecSpecificInfo* codec_specific_info,
-                  const RTPFragmentationHeader* fragmentation) override;
+  EncodedImageCallback::Result OnEncodedImage(
+      const EncodedImage& encoded_image,
+      const CodecSpecificInfo* codec_specific_info,
+      const RTPFragmentationHeader* fragmentation) override;
 
   // Returns the maximum allowed data payload length, given the configured MTU
   // and RTP headers.
