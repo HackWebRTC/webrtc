@@ -1305,6 +1305,18 @@ if (rtc_include_tests) {
     }
   }
 
+  executable("RTPchange") {
+    testonly = true
+
+    sources = [
+      "neteq/test/RTPchange.cc",
+    ]
+
+    deps = [
+      ":neteq_test_tools",
+    ]
+  }
+
   executable("rtp_analyze") {
     testonly = true
 
