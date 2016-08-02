@@ -360,12 +360,12 @@ int32_t Channel::SendData(FrameType frameType,
   // Push data from ACM to RTP/RTCP-module to deliver audio frame for
   // packetization.
   // This call will trigger Transport::SendPacket() from the RTP/RTCP module.
-  if (_rtpRtcpModule->SendOutgoingData(
+  if (!_rtpRtcpModule->SendOutgoingData(
           (FrameType&)frameType, payloadType, timeStamp,
           // Leaving the time when this frame was
           // received from the capture device as
           // undefined for voice for now.
-          -1, payloadData, payloadSize, fragmentation) == -1) {
+          -1, payloadData, payloadSize, fragmentation, nullptr, nullptr)) {
     _engineStatisticsPtr->SetLastError(
         VE_RTP_RTCP_MODULE_ERROR, kTraceWarning,
         "Channel::SendData() failed to send data to RTP/RTCP module");

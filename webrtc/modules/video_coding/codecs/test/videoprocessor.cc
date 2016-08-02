@@ -410,7 +410,8 @@ const char* VideoCodecTypeToStr(webrtc::VideoCodecType e) {
 }
 
 // Callbacks
-int32_t VideoProcessorImpl::VideoProcessorEncodeCompleteCallback::Encoded(
+EncodedImageCallback::Result
+VideoProcessorImpl::VideoProcessorEncodeCompleteCallback::OnEncodedImage(
     const EncodedImage& encoded_image,
     const webrtc::CodecSpecificInfo* codec_specific_info,
     const webrtc::RTPFragmentationHeader* fragmentation) {
@@ -419,7 +420,7 @@ int32_t VideoProcessorImpl::VideoProcessorEncodeCompleteCallback::Encoded(
   video_processor_->FrameEncoded(codec_specific_info->codecType,
                                  encoded_image,
                                  fragmentation);
-  return 0;
+  return Result(Result::OK, 0);
 }
 int32_t VideoProcessorImpl::VideoProcessorDecodeCompleteCallback::Decoded(
     VideoFrame& image) {

@@ -41,9 +41,10 @@ class VCMEncodedFrameCallback : public EncodedImageCallback {
   virtual ~VCMEncodedFrameCallback();
 
   // Implements EncodedImageCallback.
-  int32_t Encoded(const EncodedImage& encoded_image,
-                  const CodecSpecificInfo* codec_specific,
-                  const RTPFragmentationHeader* fragmentation_header) override;
+  EncodedImageCallback::Result OnEncodedImage(
+      const EncodedImage& encoded_image,
+      const CodecSpecificInfo* codec_specific_info,
+      const RTPFragmentationHeader* fragmentation) override;
   void SetInternalSource(bool internal_source) {
     internal_source_ = internal_source;
   }

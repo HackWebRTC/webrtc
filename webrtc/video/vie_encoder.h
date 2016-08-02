@@ -82,9 +82,10 @@ class ViEEncoder : public EncodedImageCallback,
 
 
   // Implements EncodedImageCallback.
-  int32_t Encoded(const EncodedImage& encoded_image,
-                  const CodecSpecificInfo* codec_specific_info,
-                  const RTPFragmentationHeader* fragmentation) override;
+  EncodedImageCallback::Result OnEncodedImage(
+      const EncodedImage& encoded_image,
+      const CodecSpecificInfo* codec_specific_info,
+      const RTPFragmentationHeader* fragmentation) override;
 
   // Implements VideoSendStatisticsCallback.
   void SendStatistics(uint32_t bit_rate,

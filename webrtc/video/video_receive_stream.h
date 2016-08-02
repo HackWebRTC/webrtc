@@ -67,9 +67,10 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   void OnFrame(const VideoFrame& video_frame) override;
 
   // Overrides EncodedImageCallback.
-  int32_t Encoded(const EncodedImage& encoded_image,
-                  const CodecSpecificInfo* codec_specific_info,
-                  const RTPFragmentationHeader* fragmentation) override;
+  EncodedImageCallback::Result OnEncodedImage(
+      const EncodedImage& encoded_image,
+      const CodecSpecificInfo* codec_specific_info,
+      const RTPFragmentationHeader* fragmentation) override;
 
   const Config& config() const { return config_; }
 

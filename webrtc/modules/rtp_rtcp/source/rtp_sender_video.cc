@@ -79,18 +79,18 @@ void RTPSenderVideo::SendVideoPacket(uint8_t* data_buffer,
                                      uint32_t capture_timestamp,
                                      int64_t capture_time_ms,
                                      StorageType storage) {
-  if (rtp_sender_->SendToNetwork(data_buffer, payload_length, rtp_header_length,
-                                 capture_time_ms, storage,
-                                 RtpPacketSender::kLowPriority) == 0) {
-    rtc::CritScope cs(&stats_crit_);
-    video_bitrate_.Update(payload_length + rtp_header_length,
-                          clock_->TimeInMilliseconds());
-    TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
-                         "Video::PacketNormal", "timestamp", capture_timestamp,
-                         "seqnum", seq_num);
-  } else {
+  if (!rtp_sender_->SendToNetwork(data_buffer, payload_length,
+                                  rtp_header_length, capture_time_ms, storage,
+                                  RtpPacketSender::kLowPriority)) {
     LOG(LS_WARNING) << "Failed to send video packet " << seq_num;
+    return;
   }
+  rtc::CritScope cs(&stats_crit_);
+  video_bitrate_.Update(payload_length + rtp_header_length,
+                        clock_->TimeInMilliseconds());
+  TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
+                       "Video::PacketNormal", "timestamp", capture_timestamp,
+                       "seqnum", seq_num);
 }
 
 void RTPSenderVideo::SendVideoPacketAsRed(uint8_t* data_buffer,
@@ -206,18 +206,17 @@ void RTPSenderVideo::SetFecParameters(const FecProtectionParams* delta_params,
   }
 }
 
-int32_t RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
-                                  FrameType frame_type,
-                                  int8_t payload_type,
-                                  uint32_t capture_timestamp,
-                                  int64_t capture_time_ms,
-                                  const uint8_t* payload_data,
-                                  size_t payload_size,
-                                  const RTPFragmentationHeader* fragmentation,
-                                  const RTPVideoHeader* video_header) {
-  if (payload_size == 0) {
-    return -1;
-  }
+bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
+                               FrameType frame_type,
+                               int8_t payload_type,
+                               uint32_t capture_timestamp,
+                               int64_t capture_time_ms,
+                               const uint8_t* payload_data,
+                               size_t payload_size,
+                               const RTPFragmentationHeader* fragmentation,
+                               const RTPVideoHeader* video_header) {
+  if (payload_size == 0)
+    return false;
 
   std::unique_ptr<RtpPacketizer> packetizer(RtpPacketizer::Create(
       video_type, rtp_sender_->MaxDataPayloadLength(),
@@ -262,14 +261,14 @@ int32_t RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
 
     if (!packetizer->NextPacket(&dataBuffer[rtp_header_length],
                                 &payload_bytes_in_packet, &last)) {
-      return -1;
+      return false;
     }
 
     // Write RTP header.
     int32_t header_length = rtp_sender_->BuildRtpHeader(
         dataBuffer, payload_type, last, capture_timestamp, capture_time_ms);
     if (header_length <= 0)
-      return -1;
+      return false;
 
     // According to
     // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/
@@ -324,7 +323,7 @@ int32_t RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
 
   TRACE_EVENT_ASYNC_END1("webrtc", "Video", capture_time_ms, "timestamp",
                          rtp_sender_->Timestamp());
-  return 0;
+  return true;
 }
 
 uint32_t RTPSenderVideo::VideoBitrateSent() const {

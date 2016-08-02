@@ -137,15 +137,16 @@ void PayloadRouter::UpdateModuleSendingState() {
   }
 }
 
-int32_t PayloadRouter::Encoded(const EncodedImage& encoded_image,
-                               const CodecSpecificInfo* codec_specific_info,
-                               const RTPFragmentationHeader* fragmentation) {
+EncodedImageCallback::Result PayloadRouter::OnEncodedImage(
+    const EncodedImage& encoded_image,
+    const CodecSpecificInfo* codec_specific_info,
+    const RTPFragmentationHeader* fragmentation) {
   rtc::CritScope lock(&crit_);
   RTC_DCHECK(!rtp_modules_.empty());
   if (!active_ || num_sending_modules_ == 0)
-    return -1;
+    return Result(Result::ERROR_SEND_FAILED);
 
-  int stream_idx = 0;
+  int stream_index = 0;
 
   RTPVideoHeader rtp_video_header;
   memset(&rtp_video_header, 0, sizeof(RTPVideoHeader));
@@ -158,13 +159,19 @@ int32_t PayloadRouter::Encoded(const EncodedImage& encoded_image,
   // The simulcast index might actually be larger than the number of modules
   // in case the encoder was processing a frame during a codec reconfig.
   if (rtp_video_header.simulcastIdx >= num_sending_modules_)
-    return -1;
-  stream_idx = rtp_video_header.simulcastIdx;
+    return Result(Result::ERROR_SEND_FAILED);
+  stream_index = rtp_video_header.simulcastIdx;
 
-  return rtp_modules_[stream_idx]->SendOutgoingData(
+  uint32_t frame_id;
+  int send_result = rtp_modules_[stream_index]->SendOutgoingData(
       encoded_image._frameType, payload_type_, encoded_image._timeStamp,
       encoded_image.capture_time_ms_, encoded_image._buffer,
-      encoded_image._length, fragmentation, &rtp_video_header);
+      encoded_image._length, fragmentation, &rtp_video_header, &frame_id);
+
+  if (send_result < 0)
+    return Result(Result::ERROR_SEND_FAILED);
+
+  return Result(Result::OK, frame_id);
 }
 
 size_t PayloadRouter::MaxPayloadLength() const {

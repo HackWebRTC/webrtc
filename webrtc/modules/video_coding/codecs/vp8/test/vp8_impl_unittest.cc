@@ -43,9 +43,9 @@ class Vp8UnitTestEncodeCompleteCallback : public webrtc::EncodedImageCallback {
                                     void* decoderSpecificInfo)
       : encoded_frame_(frame), encode_complete_(false) {}
 
-  virtual int Encoded(const EncodedImage& encoded_frame_,
-                      const CodecSpecificInfo* codecSpecificInfo,
-                      const RTPFragmentationHeader*);
+  Result OnEncodedImage(const EncodedImage& encoded_frame_,
+                        const CodecSpecificInfo* codec_specific_info,
+                        const RTPFragmentationHeader* fragmentation) override;
   bool EncodeComplete();
 
  private:
@@ -54,9 +54,10 @@ class Vp8UnitTestEncodeCompleteCallback : public webrtc::EncodedImageCallback {
   bool encode_complete_;
 };
 
-int Vp8UnitTestEncodeCompleteCallback::Encoded(
+webrtc::EncodedImageCallback::Result
+Vp8UnitTestEncodeCompleteCallback::OnEncodedImage(
     const EncodedImage& encoded_frame,
-    const CodecSpecificInfo* codecSpecificInfo,
+    const CodecSpecificInfo* codec_specific_info,
     const RTPFragmentationHeader* fragmentation) {
   if (encoded_frame_->_size < encoded_frame._length) {
     delete[] encoded_frame_->_buffer;
@@ -72,7 +73,7 @@ int Vp8UnitTestEncodeCompleteCallback::Encoded(
   encoded_frame_->_frameType = encoded_frame._frameType;
   encoded_frame_->_completeFrame = encoded_frame._completeFrame;
   encode_complete_ = true;
-  return 0;
+  return Result(Result::OK, 0);
 }
 
 bool Vp8UnitTestEncodeCompleteCallback::EncodeComplete() {
