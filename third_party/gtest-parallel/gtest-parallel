@@ -180,7 +180,7 @@ class RawFormat:
     sys.stdout.flush()
     stdout_lock.release()
   def logfile(self, job_id, name):
-    with open(self.outputs[job_id]) as f:
+    with open(name) as f:
       for line in f.readlines():
         self.log(str(job_id) + '> ' + line.rstrip())
   def end(self):
