@@ -21,6 +21,7 @@
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/typedefs.h"
 
 namespace {
@@ -78,7 +79,7 @@ DelayBasedBwe::DelayBasedBwe(RemoteBitrateObserver* observer, Clock* clock)
       total_probes_received_(0),
       first_packet_time_ms_(-1),
       last_update_ms_(-1),
-      ssrcs_() {
+      uma_recorded_(false) {
   RTC_DCHECK(observer_);
   // NOTE! The BitrateEstimatorTest relies on this EXACT log line.
   LOG(LS_INFO) << "RemoteBitrateEstimatorAbsSendTime: Instantiating.";
@@ -196,6 +197,12 @@ bool DelayBasedBwe::IsBitrateImproving(int new_bitrate_bps) const {
 void DelayBasedBwe::IncomingPacketFeedbackVector(
     const std::vector<PacketInfo>& packet_feedback_vector) {
   RTC_DCHECK(network_thread_.CalledOnValidThread());
+  if (!uma_recorded_) {
+    RTC_LOGGED_HISTOGRAM_ENUMERATION(kBweTypeHistogram,
+                                     BweNames::kSendSideTransportSeqNum,
+                                     BweNames::kBweNamesMax);
+    uma_recorded_ = true;
+  }
   for (const auto& packet_info : packet_feedback_vector) {
     IncomingPacketInfo(packet_info.arrival_time_ms,
                        ConvertMsTo24Bits(packet_info.send_time_ms),

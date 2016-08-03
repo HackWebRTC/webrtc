@@ -131,6 +131,7 @@ class RemoteBitrateEstimatorAbsSendTime : public RemoteBitrateEstimator {
   size_t total_probes_received_;
   int64_t first_packet_time_ms_;
   int64_t last_update_ms_;
+  bool uma_recorded_;
 
   rtc::CriticalSection crit_;
   Ssrcs ssrcs_ GUARDED_BY(&crit_);

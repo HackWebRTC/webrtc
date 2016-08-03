@@ -61,6 +61,7 @@ class RemoteBitrateEstimatorSingleStream : public RemoteBitrateEstimator {
   std::unique_ptr<CriticalSectionWrapper> crit_sect_;
   int64_t last_process_time_;
   int64_t process_interval_ms_ GUARDED_BY(crit_sect_.get());
+  bool uma_recorded_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RemoteBitrateEstimatorSingleStream);
 };

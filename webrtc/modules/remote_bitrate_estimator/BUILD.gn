@@ -18,6 +18,7 @@ source_set("remote_bitrate_estimator") {
   sources = [
     "aimd_rate_control.cc",
     "aimd_rate_control.h",
+    "bwe_defines.cc",
     "include/bwe_defines.h",
     "include/remote_bitrate_estimator.h",
     "include/send_time_history.h",

@@ -28,6 +28,7 @@
         'include/send_time_history.h',
         'aimd_rate_control.cc',
         'aimd_rate_control.h',
+        'bwe_defines.cc',
         'inter_arrival.cc',
         'inter_arrival.h',
         'overuse_detector.cc',

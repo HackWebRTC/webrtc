@@ -21,6 +21,7 @@
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -91,7 +92,7 @@ bool RemoteBitrateEstimatorAbsSendTime::IsWithinClusterBounds(
         total_probes_received_(0),
         first_packet_time_ms_(-1),
         last_update_ms_(-1),
-        ssrcs_() {
+        uma_recorded_(false) {
     RTC_DCHECK(observer_);
     LOG(LS_INFO) << "RemoteBitrateEstimatorAbsSendTime: Instantiating.";
     network_thread_.DetachFromThread();
@@ -237,6 +238,12 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
     size_t payload_size,
     uint32_t ssrc) {
   RTC_CHECK(send_time_24bits < (1ul << 24));
+  if (!uma_recorded_) {
+    RTC_LOGGED_HISTOGRAM_ENUMERATION(kBweTypeHistogram,
+                                     BweNames::kReceiverAbsSendTime,
+                                     BweNames::kBweNamesMax);
+    uma_recorded_ = true;
+  }
   // Shift up send time to use the full 32 bits that inter_arrival works with,
   // so wrapping works properly.
   uint32_t timestamp = send_time_24bits << kAbsSendTimeInterArrivalUpshift;
