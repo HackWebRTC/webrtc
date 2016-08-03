@@ -30,8 +30,8 @@ TEST(Win32SocketServerTest, TestPump) {
   server.Pump();
   MSG msg;
   EXPECT_EQ(TRUE, PeekMessage(&msg, NULL, WM_USER, 0, PM_REMOVE));
-  EXPECT_EQ(WM_USER, msg.message);
-  EXPECT_EQ(999, msg.wParam);
+  EXPECT_EQ(static_cast<UINT>(WM_USER), msg.message);
+  EXPECT_EQ(999u, msg.wParam);
 }
 
 // Test that Win32Socket passes all the generic Socket tests.
