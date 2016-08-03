@@ -179,8 +179,8 @@ if (is_ios) {
     sources = [
       "codecs/h264/h264_video_toolbox_decoder.cc",
       "codecs/h264/h264_video_toolbox_decoder.h",
-      "codecs/h264/h264_video_toolbox_encoder.cc",
       "codecs/h264/h264_video_toolbox_encoder.h",
+      "codecs/h264/h264_video_toolbox_encoder.mm",
       "codecs/h264/h264_video_toolbox_nalu.cc",
       "codecs/h264/h264_video_toolbox_nalu.h",
     ]

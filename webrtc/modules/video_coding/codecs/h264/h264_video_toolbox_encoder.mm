@@ -18,6 +18,7 @@
 #include <vector>
 
 #if defined(WEBRTC_IOS)
+#import "WebRTC/UIDevice+RTCDevice.h"
 #include "RTCUIApplication.h"
 #endif
 #include "libyuv/convert_from.h"
@@ -217,7 +218,14 @@ namespace webrtc {
 H264VideoToolboxEncoder::H264VideoToolboxEncoder()
     : callback_(nullptr),
       compression_session_(nullptr),
-      bitrate_adjuster_(Clock::GetRealTimeClock(), .5, .95) {}
+      bitrate_adjuster_(Clock::GetRealTimeClock(), .5, .95),
+      enable_scaling_(true) {
+#if defined(WEBRTC_IOS)
+  if ([UIDevice deviceType] == RTCDeviceTypeIPhone4S) {
+    enable_scaling_ = false;
+  }
+#endif
+}
 
 H264VideoToolboxEncoder::~H264VideoToolboxEncoder() {
   DestroyCompressionSession();
@@ -228,6 +236,8 @@ int H264VideoToolboxEncoder::InitEncode(const VideoCodec* codec_settings,
                                         size_t max_payload_size) {
   RTC_DCHECK(codec_settings);
   RTC_DCHECK_EQ(codec_settings->codecType, kVideoCodecH264);
+  width_ = codec_settings->width;
+  height_ = codec_settings->height;
   {
     rtc::CritScope lock(&quality_scaler_crit_);
     quality_scaler_.Init(QualityScaler::kLowH264QpThreshold,
@@ -237,8 +247,10 @@ int H264VideoToolboxEncoder::InitEncode(const VideoCodec* codec_settings,
     QualityScaler::Resolution res = quality_scaler_.GetScaledResolution();
     // TODO(tkchin): We may need to enforce width/height dimension restrictions
     // to match what the encoder supports.
-    width_ = res.width;
-    height_ = res.height;
+    if (enable_scaling_) {
+      width_ = res.width;
+      height_ = res.height;
+    }
   }
   // We can only set average bitrate on the HW encoder.
   target_bitrate_bps_ = codec_settings->startBitrate;
@@ -260,7 +272,8 @@ H264VideoToolboxEncoder::GetScaledBufferOnEncode(
 
   // Handle native (CVImageRef) scaling.
   const QualityScaler::Resolution res = quality_scaler_.GetScaledResolution();
-  if (res.width == frame->width() && res.height == frame->height())
+  if (!enable_scaling_ ||
+      (res.width == frame->width() && res.height == frame->height()))
     return frame;
   // TODO(magjed): Implement efficient CVImageRef -> CVImageRef scaling instead
   // of doing it via I420.

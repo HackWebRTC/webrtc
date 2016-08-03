@@ -582,6 +582,7 @@ AVFoundationVideoCapturer::AVFoundationVideoCapturer()
 #if TARGET_OS_IPHONE
   if ([UIDevice deviceType] == RTCDeviceTypeIPhone4S) {
     supported_formats.push_back(cricket::VideoFormat(kIPhone4SFormat));
+    set_enable_video_adapter(false);
   } else {
     supported_formats.push_back(cricket::VideoFormat(kDefaultFormat));
   }

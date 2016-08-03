@@ -79,8 +79,8 @@
           'sources': [
             'h264_video_toolbox_decoder.cc',
             'h264_video_toolbox_decoder.h',
-            'h264_video_toolbox_encoder.cc',
             'h264_video_toolbox_encoder.h',
+            'h264_video_toolbox_encoder.mm',
             'h264_video_toolbox_nalu.cc',
             'h264_video_toolbox_nalu.h',
           ],
