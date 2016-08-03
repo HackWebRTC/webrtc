@@ -149,6 +149,7 @@ class RtpSenderTest : public ::testing::Test {
         &mock_rtc_event_log_, &send_packet_observer_,
         &retransmission_rate_limiter_));
     rtp_sender_->SetSequenceNumber(kSeqNum);
+    rtp_sender_->SetSendPayloadType(kPayload);
   }
 
   SimulatedClock fake_clock_;

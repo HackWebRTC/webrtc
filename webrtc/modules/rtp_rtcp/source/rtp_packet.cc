@@ -78,18 +78,19 @@ bool Packet::Parse(const uint8_t* buffer, size_t buffer_size) {
     Clear();
     return false;
   }
-  RTC_DCHECK_EQ(size(), buffer_size);
   buffer_.SetData(buffer, buffer_size);
+  RTC_DCHECK_EQ(size(), buffer_size);
   return true;
 }
 
-bool Packet::Parse(rtc::Buffer buffer) {
-  if (!ParseBuffer(buffer.data(), buffer.size())) {
+bool Packet::Parse(rtc::CopyOnWriteBuffer buffer) {
+  if (!ParseBuffer(buffer.cdata(), buffer.size())) {
     Clear();
     return false;
   }
-  RTC_DCHECK_EQ(size(), buffer.size());
+  size_t buffer_size = buffer.size();
   buffer_ = std::move(buffer);
+  RTC_DCHECK_EQ(size(), buffer_size);
   return true;
 }
 
@@ -174,16 +175,22 @@ const uint8_t* Packet::payload() const {
   return data() + payload_offset_;
 }
 
+rtc::CopyOnWriteBuffer Packet::Buffer() const {
+  return buffer_;
+}
+
 size_t Packet::capacity() const {
-  return buffer_.size();
+  return buffer_.capacity();
 }
 
 size_t Packet::size() const {
-  return payload_offset_ + payload_size_ + padding_size_;
+  size_t ret = payload_offset_ + payload_size_ + padding_size_;
+  RTC_DCHECK_EQ(buffer_.size(), ret);
+  return ret;
 }
 
 const uint8_t* Packet::data() const {
-  return buffer_.data();
+  return buffer_.cdata();
 }
 
 size_t Packet::FreeCapacity() const {
@@ -194,7 +201,7 @@ size_t Packet::MaxPayloadSize() const {
   return capacity() - payload_offset_;
 }
 
-void Packet::CopyHeader(const Packet& packet) {
+void Packet::CopyHeaderFrom(const Packet& packet) {
   RTC_DCHECK_GE(capacity(), packet.headers_size());
 
   marker_ = packet.marker_;
@@ -257,6 +264,7 @@ void Packet::SetCsrcs(const std::vector<uint32_t>& csrcs) {
     ByteWriter<uint32_t>::WriteBigEndian(WriteAt(offset), csrc);
     offset += 4;
   }
+  buffer_.SetSize(payload_offset_);
 }
 
 uint8_t* Packet::AllocatePayload(size_t size_bytes) {
@@ -266,6 +274,7 @@ uint8_t* Packet::AllocatePayload(size_t size_bytes) {
     return nullptr;
   }
   payload_size_ = size_bytes;
+  buffer_.SetSize(payload_offset_ + payload_size_);
   return WriteAt(payload_offset_);
 }
 
@@ -273,6 +282,7 @@ void Packet::SetPayloadSize(size_t size_bytes) {
   RTC_DCHECK_EQ(padding_size_, 0u);
   RTC_DCHECK_LE(size_bytes, payload_size_);
   payload_size_ = size_bytes;
+  buffer_.SetSize(payload_offset_ + payload_size_);
 }
 
 bool Packet::SetPadding(uint8_t size_bytes, Random* random) {
@@ -284,6 +294,7 @@ bool Packet::SetPadding(uint8_t size_bytes, Random* random) {
     return false;
   }
   padding_size_ = size_bytes;
+  buffer_.SetSize(payload_offset_ + payload_size_ + padding_size_);
   if (padding_size_ > 0) {
     size_t padding_offset = payload_offset_ + payload_size_;
     size_t padding_end = padding_offset + padding_size_;
@@ -311,6 +322,7 @@ void Packet::Clear() {
   extensions_size_ = 0;
 
   memset(WriteAt(0), 0, kFixedHeaderSize);
+  buffer_.SetSize(kFixedHeaderSize);
   WriteAt(0, kRtpVersion << 6);
 }
 
@@ -497,6 +509,7 @@ bool Packet::AllocateExtension(ExtensionType type,
   memset(WriteAt(extensions_offset + extensions_size_), 0,
          extension_padding_size);
   payload_offset_ = extensions_offset + 4 * extensions_words;
+  buffer_.SetSize(payload_offset_);
   return true;
 }
 

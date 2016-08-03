@@ -13,8 +13,7 @@
 #include <vector>
 
 #include "webrtc/base/basictypes.h"
-#include "webrtc/base/buffer.h"
-#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/copyonwritebuffer.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
@@ -33,7 +32,7 @@ class Packet {
   bool Parse(const uint8_t* buffer, size_t size);
 
   // Parse and move given buffer into Packet.
-  bool Parse(rtc::Buffer packet);
+  bool Parse(rtc::CopyOnWriteBuffer packet);
 
   // Maps parsed extensions to their types to allow use of GetExtension.
   // Used after parsing when |extensions| can't be provided until base rtp
@@ -60,6 +59,7 @@ class Packet {
   const uint8_t* payload() const;
 
   // Buffer.
+  rtc::CopyOnWriteBuffer Buffer() const;
   size_t capacity() const;
   size_t size() const;
   const uint8_t* data() const;
@@ -70,7 +70,7 @@ class Packet {
   void Clear();
 
   // Header setters.
-  void CopyHeader(const Packet& packet);
+  void CopyHeaderFrom(const Packet& packet);
   void SetMarker(bool marker_bit);
   void SetPayloadType(uint8_t payload_type);
   void SetSequenceNumber(uint16_t seq_no);
@@ -103,8 +103,11 @@ class Packet {
   // Adding and getting extensions will fail until |extensions| is
   // provided via constructor or IdentifyExtensions function.
   explicit Packet(const ExtensionManager* extensions);
+  Packet(const Packet&) = default;
   Packet(const ExtensionManager* extensions, size_t capacity);
   virtual ~Packet();
+
+  Packet& operator=(const Packet&) = default;
 
  private:
   struct ExtensionInfo {
@@ -152,9 +155,9 @@ class Packet {
   uint8_t num_extensions_ = 0;
   ExtensionInfo extension_entries_[kMaxExtensionHeaders];
   uint16_t extensions_size_ = 0;  // Unaligned.
-  rtc::Buffer buffer_;
+  rtc::CopyOnWriteBuffer buffer_;
 
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(Packet);
+  Packet() = delete;
 };
 
 template <typename Extension, typename... Values>

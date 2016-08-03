@@ -10,7 +10,6 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
 
-#include <stdlib.h>  // srand
 #include <algorithm>
 #include <utility>
 
@@ -24,22 +23,22 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/playout_delay_oracle.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_audio.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "webrtc/modules/rtp_rtcp/source/time_util.h"
 
 namespace webrtc {
 
-// Max in the RFC 3550 is 255 bytes, we limit it to be modulus 32 for SRTP.
-static const size_t kMaxPaddingLength = 224;
-static const int kSendSideDelayWindowMs = 1000;
-static const uint32_t kAbsSendTimeFraction = 18;
-static const int kBitrateStatisticsWindowMs = 1000;
-
 namespace {
-
-const size_t kRtpHeaderLength = 12;
-const uint16_t kMaxInitRtpSeqNumber = 32767;  // 2^15 -1.
+// Max in the RFC 3550 is 255 bytes, we limit it to be modulus 32 for SRTP.
+constexpr size_t kMaxPaddingLength = 224;
+constexpr int kSendSideDelayWindowMs = 1000;
+constexpr size_t kRtpHeaderLength = 12;
+constexpr uint16_t kMaxInitRtpSeqNumber = 32767;  // 2^15 -1.
+constexpr uint32_t kTimestampTicksPerMs = 90;
+constexpr int kBitrateStatisticsWindowMs = 1000;
 
 const char* FrameTypeToString(FrameType frame_type) {
   switch (frame_type) {
@@ -53,16 +52,13 @@ const char* FrameTypeToString(FrameType frame_type) {
   return "";
 }
 
-// TODO(holmer): Merge this with the implementation in
-// remote_bitrate_estimator_abs_send_time.cc.
-uint32_t ConvertMsTo24Bits(int64_t time_ms) {
-  uint32_t time_24_bits =
-      static_cast<uint32_t>(
-          ((static_cast<uint64_t>(time_ms) << kAbsSendTimeFraction) + 500) /
-          1000) &
-      0x00FFFFFF;
-  return time_24_bits;
+void CountPacket(RtpPacketCounter* counter, const RtpPacketToSend& packet) {
+  ++counter->packets;
+  counter->header_bytes += packet.headers_size();
+  counter->padding_bytes += packet.padding_size();
+  counter->payload_bytes += packet.payload_size();
 }
+
 }  // namespace
 
 RTPSender::RTPSender(
@@ -127,10 +123,6 @@ RTPSender::RTPSender(
       csrcs_(),
       rtx_(kRtxOff),
       retransmission_rate_limiter_(retransmission_rate_limiter) {
-  // We need to seed the random generator for BuildPaddingPacket() below.
-  // TODO(holmer,tommi): Note that TimeInMilliseconds might return 0 on Mac
-  // early on in the process.
-  srand(static_cast<uint32_t>(clock_->TimeInMilliseconds()));
   ssrc_ = ssrc_db_->CreateSSRC();
   RTC_DCHECK(ssrc_ != 0);
   ssrc_rtx_ = ssrc_db_->CreateSSRC();
@@ -346,17 +338,12 @@ void RTPSender::SetMaxPayloadLength(size_t max_payload_length) {
 }
 
 size_t RTPSender::MaxDataPayloadLength() const {
-  int rtx;
-  {
-    rtc::CritScope lock(&send_critsect_);
-    rtx = rtx_;
-  }
   if (audio_configured_) {
     return max_payload_length_ - RtpHeaderLength();
   } else {
     return max_payload_length_ - RtpHeaderLength()  // RTP overhead.
            - video_->FECPacketOverhead()            // FEC/ULP/RED overhead.
-           - ((rtx) ? 2 : 0);                       // RTX overhead.
+           - (RtxStatus() ? kRtxHeaderSize : 0);    // RTX overhead.
   }
 }
 
@@ -543,39 +530,18 @@ size_t RTPSender::TrySendRedundantPayloads(size_t bytes_to_send,
       return 0;
   }
 
-  uint8_t buffer[IP_PACKET_SIZE];
   int bytes_left = static_cast<int>(bytes_to_send);
   while (bytes_left > 0) {
-    size_t length = bytes_left;
-    int64_t capture_time_ms;
-    if (!packet_history_.GetBestFittingPacket(buffer, &length,
-                                              &capture_time_ms)) {
+    std::unique_ptr<RtpPacketToSend> packet =
+        packet_history_.GetBestFittingPacket(bytes_left);
+    if (!packet)
       break;
-    }
-    if (!PrepareAndSendPacket(buffer, length, capture_time_ms, true, false,
-                              probe_cluster_id))
+    size_t payload_size = packet->payload_size();
+    if (!PrepareAndSendPacket(std::move(packet), true, false, probe_cluster_id))
       break;
-    RtpUtility::RtpHeaderParser rtp_parser(buffer, length);
-    RTPHeader rtp_header;
-    rtp_parser.Parse(&rtp_header);
-    bytes_left -= static_cast<int>(length - rtp_header.headerLength);
+    bytes_left -= payload_size;
   }
   return bytes_to_send - bytes_left;
-}
-
-void RTPSender::BuildPaddingPacket(uint8_t* packet,
-                                   size_t header_length,
-                                   size_t padding_length) {
-  packet[0] |= 0x20;  // Set padding bit.
-  int32_t* data = reinterpret_cast<int32_t*>(&(packet[header_length]));
-
-  // Fill data buffer with random data.
-  for (size_t j = 0; j < (padding_length >> 2); ++j) {
-    data[j] = rand();  // NOLINT
-  }
-  // Set number of padding bytes in the last byte of the packet.
-  packet[header_length + padding_length - 1] =
-      static_cast<uint8_t>(padding_length);
 }
 
 size_t RTPSender::SendPadData(size_t bytes,
@@ -653,42 +619,36 @@ size_t RTPSender::SendPadData(size_t bytes,
       }
     }
 
-    uint8_t padding_packet[IP_PACKET_SIZE];
-    size_t header_length = 0;
-    {
-      rtc::CritScope lock(&send_critsect_);
-      header_length =
-          CreateRtpHeader(padding_packet, payload_type, ssrc, false, timestamp,
-                          sequence_number, std::vector<uint32_t>());
-    }
-    BuildPaddingPacket(padding_packet, header_length, padding_bytes_in_packet);
-    size_t length = padding_bytes_in_packet + header_length;
+    RtpPacketToSend padding_packet(&rtp_header_extension_map_, IP_PACKET_SIZE);
+    padding_packet.SetPayloadType(payload_type);
+    padding_packet.SetMarker(false);
+    padding_packet.SetSequenceNumber(sequence_number);
+    padding_packet.SetTimestamp(timestamp);
+    padding_packet.SetSsrc(ssrc);
+
     int64_t now_ms = clock_->TimeInMilliseconds();
 
-    RtpUtility::RtpHeaderParser rtp_parser(padding_packet, length);
-    RTPHeader rtp_header;
-    rtp_parser.Parse(&rtp_header);
-
     if (capture_time_ms > 0) {
-      UpdateTransmissionTimeOffset(
-          padding_packet, length, rtp_header, now_ms - capture_time_ms);
+      padding_packet.SetExtension<TransmissionOffset>(
+          kTimestampTicksPerMs * (now_ms - capture_time_ms));
     }
-
-    UpdateAbsoluteSendTime(padding_packet, length, rtp_header, now_ms);
+    padding_packet.SetExtension<AbsoluteSendTime>(now_ms);
 
     PacketOptions options;
-    if (UpdateTransportSequenceNumber(padding_packet, length, rtp_header,
-                                      &options.packet_id)) {
-      if (transport_feedback_observer_)
-        transport_feedback_observer_->AddPacket(options.packet_id, length,
-                                                probe_cluster_id);
-    }
+    bool has_transport_seq_no =
+        UpdateTransportSequenceNumber(&padding_packet, &options.packet_id);
 
-    if (!SendPacketToNetwork(padding_packet, length, options))
+    padding_packet.SetPadding(padding_bytes_in_packet, &random_);
+
+    if (has_transport_seq_no && transport_feedback_observer_)
+      transport_feedback_observer_->AddPacket(
+          options.packet_id, padding_packet.size(), probe_cluster_id);
+
+    if (!SendPacketToNetwork(padding_packet, options))
       break;
 
     bytes_sent += padding_bytes_in_packet;
-    UpdateRtpStats(padding_packet, length, rtp_header, over_rtx, false);
+    UpdateRtpStats(padding_packet, over_rtx, false);
   }
 
   return bytes_sent;
@@ -703,13 +663,9 @@ bool RTPSender::StorePackets() const {
 }
 
 int32_t RTPSender::ReSendPacket(uint16_t packet_id, int64_t min_resend_time) {
-  size_t length = IP_PACKET_SIZE;
-  uint8_t data_buffer[IP_PACKET_SIZE];
-  int64_t capture_time_ms;
-
-  if (!packet_history_.GetPacketAndSetSendTime(packet_id, min_resend_time, true,
-                                               data_buffer, &length,
-                                               &capture_time_ms)) {
+  std::unique_ptr<RtpPacketToSend> packet =
+      packet_history_.GetPacketAndSetSendTime(packet_id, min_resend_time, true);
+  if (!packet) {
     // Packet not found.
     return 0;
   }
@@ -717,53 +673,44 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, int64_t min_resend_time) {
   // Check if we're overusing retransmission bitrate.
   // TODO(sprang): Add histograms for nack success or failure reasons.
   RTC_DCHECK(retransmission_rate_limiter_);
-  if (!retransmission_rate_limiter_->TryUseRate(length))
+  if (!retransmission_rate_limiter_->TryUseRate(packet->size()))
     return -1;
 
   if (paced_sender_) {
-    RtpUtility::RtpHeaderParser rtp_parser(data_buffer, length);
-    RTPHeader header;
-    if (!rtp_parser.Parse(&header)) {
-      assert(false);
-      return -1;
-    }
     // Convert from TickTime to Clock since capture_time_ms is based on
     // TickTime.
-    int64_t corrected_capture_tims_ms = capture_time_ms + clock_delta_ms_;
-    paced_sender_->InsertPacket(
-        RtpPacketSender::kNormalPriority, header.ssrc, header.sequenceNumber,
-        corrected_capture_tims_ms, length - header.headerLength, true);
+    int64_t corrected_capture_tims_ms =
+        packet->capture_time_ms() + clock_delta_ms_;
+    paced_sender_->InsertPacket(RtpPacketSender::kNormalPriority,
+                                packet->Ssrc(), packet->SequenceNumber(),
+                                corrected_capture_tims_ms,
+                                packet->payload_size(), true);
 
-    return length;
+    return packet->size();
   }
-  int rtx = kRtxOff;
-  {
-    rtc::CritScope lock(&send_critsect_);
-    rtx = rtx_;
-  }
-  if (!PrepareAndSendPacket(data_buffer, length, capture_time_ms,
-                            (rtx & kRtxRetransmitted) > 0, true,
-                            PacketInfo::kNotAProbe)) {
+  bool rtx = (RtxStatus() & kRtxRetransmitted) > 0;
+  int32_t packet_size = static_cast<int32_t>(packet->size());
+  if (!PrepareAndSendPacket(std::move(packet), rtx, true,
+                            PacketInfo::kNotAProbe))
     return -1;
-  }
-  return static_cast<int32_t>(length);
+  return packet_size;
 }
 
-bool RTPSender::SendPacketToNetwork(const uint8_t* packet,
-                                    size_t size,
+bool RTPSender::SendPacketToNetwork(const RtpPacketToSend& packet,
                                     const PacketOptions& options) {
   int bytes_sent = -1;
   if (transport_) {
-    bytes_sent = transport_->SendRtp(packet, size, options)
-                     ? static_cast<int>(size)
+    bytes_sent = transport_->SendRtp(packet.data(), packet.size(), options)
+                     ? static_cast<int>(packet.size())
                      : -1;
     if (event_log_ && bytes_sent > 0) {
-      event_log_->LogRtpHeader(kOutgoingPacket, MediaType::ANY, packet, size);
+      event_log_->LogRtpHeader(kOutgoingPacket, MediaType::ANY, packet.data(),
+                               packet.size());
     }
   }
   TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
-                       "RTPSender::SendPacketToNetwork", "size", size, "sent",
-                       bytes_sent);
+                       "RTPSender::SendPacketToNetwork", "size", packet.size(),
+                       "sent", bytes_sent);
   // TODO(pwestin): Add a separate bitrate for sent bitrate after pacer.
   if (bytes_sent <= 0) {
     LOG(LS_WARNING) << "Transport failed to send packet";
@@ -811,89 +758,75 @@ bool RTPSender::TimeToSendPacket(uint16_t sequence_number,
                                  int64_t capture_time_ms,
                                  bool retransmission,
                                  int probe_cluster_id) {
-  size_t length = IP_PACKET_SIZE;
-  uint8_t data_buffer[IP_PACKET_SIZE];
-  int64_t stored_time_ms;
-
-  if (!packet_history_.GetPacketAndSetSendTime(sequence_number,
-                                               0,
-                                               retransmission,
-                                               data_buffer,
-                                               &length,
-                                               &stored_time_ms)) {
+  std::unique_ptr<RtpPacketToSend> packet =
+      packet_history_.GetPacketAndSetSendTime(sequence_number, 0,
+                                              retransmission);
+  if (!packet)
     // Packet cannot be found. Allow sending to continue.
     return true;
-  }
 
-  int rtx;
-  {
-    rtc::CritScope lock(&send_critsect_);
-    rtx = rtx_;
-  }
-  return PrepareAndSendPacket(data_buffer, length, capture_time_ms,
-                              retransmission && (rtx & kRtxRetransmitted) > 0,
-                              retransmission, probe_cluster_id);
+  return PrepareAndSendPacket(
+      std::move(packet),
+      retransmission && (RtxStatus() & kRtxRetransmitted) > 0, retransmission,
+      probe_cluster_id);
 }
 
-bool RTPSender::PrepareAndSendPacket(uint8_t* buffer,
-                                     size_t length,
-                                     int64_t capture_time_ms,
+bool RTPSender::PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
                                      bool send_over_rtx,
                                      bool is_retransmit,
                                      int probe_cluster_id) {
-  uint8_t* buffer_to_send_ptr = buffer;
+  RTC_DCHECK(packet);
+  int64_t capture_time_ms = packet->capture_time_ms();
+  RtpPacketToSend* packet_to_send = packet.get();
 
-  RtpUtility::RtpHeaderParser rtp_parser(buffer, length);
-  RTPHeader rtp_header;
-  rtp_parser.Parse(&rtp_header);
-  if (!is_retransmit && rtp_header.markerBit) {
+  if (!is_retransmit && packet->Marker()) {
     TRACE_EVENT_ASYNC_END0(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "PacedSend",
                            capture_time_ms);
   }
 
-  TRACE_EVENT_INSTANT2(
-      TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "PrepareAndSendPacket",
-      "timestamp", rtp_header.timestamp, "seqnum", rtp_header.sequenceNumber);
+  TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
+                       "PrepareAndSendPacket", "timestamp", packet->Timestamp(),
+                       "seqnum", packet->SequenceNumber());
 
-  uint8_t data_buffer_rtx[IP_PACKET_SIZE];
+  std::unique_ptr<RtpPacketToSend> packet_rtx;
   if (send_over_rtx) {
-    if (!BuildRtxPacket(buffer, &length, data_buffer_rtx))
+    packet_rtx = BuildRtxPacket(*packet);
+    if (!packet_rtx)
       return false;
-    buffer_to_send_ptr = data_buffer_rtx;
+    packet_to_send = packet_rtx.get();
   }
 
   int64_t now_ms = clock_->TimeInMilliseconds();
   int64_t diff_ms = now_ms - capture_time_ms;
-  UpdateTransmissionTimeOffset(buffer_to_send_ptr, length, rtp_header,
-                               diff_ms);
-  UpdateAbsoluteSendTime(buffer_to_send_ptr, length, rtp_header, now_ms);
+  packet_to_send->SetExtension<TransmissionOffset>(kTimestampTicksPerMs *
+                                                   diff_ms);
+  packet_to_send->SetExtension<AbsoluteSendTime>(now_ms);
 
   PacketOptions options;
-  if (UpdateTransportSequenceNumber(buffer_to_send_ptr, length, rtp_header,
-                                    &options.packet_id)) {
-    if (transport_feedback_observer_)
-      transport_feedback_observer_->AddPacket(options.packet_id, length,
-                                              probe_cluster_id);
+  if (UpdateTransportSequenceNumber(packet_to_send, &options.packet_id) &&
+      transport_feedback_observer_) {
+    transport_feedback_observer_->AddPacket(
+        options.packet_id, packet_to_send->size(), probe_cluster_id);
   }
 
   if (!is_retransmit && !send_over_rtx) {
-    UpdateDelayStatistics(capture_time_ms, now_ms);
-    UpdateOnSendPacket(options.packet_id, capture_time_ms, rtp_header.ssrc);
+    UpdateDelayStatistics(packet->capture_time_ms(), now_ms);
+    UpdateOnSendPacket(options.packet_id, packet->capture_time_ms(),
+                       packet->Ssrc());
   }
 
-  bool ret = SendPacketToNetwork(buffer_to_send_ptr, length, options);
-  if (ret) {
+  if (!SendPacketToNetwork(*packet_to_send, options))
+    return false;
+
+  {
     rtc::CritScope lock(&send_critsect_);
     media_has_been_sent_ = true;
   }
-  UpdateRtpStats(buffer_to_send_ptr, length, rtp_header, send_over_rtx,
-                 is_retransmit);
-  return ret;
+  UpdateRtpStats(*packet_to_send, send_over_rtx, is_retransmit);
+  return true;
 }
 
-void RTPSender::UpdateRtpStats(const uint8_t* buffer,
-                               size_t packet_length,
-                               const RTPHeader& header,
+void RTPSender::UpdateRtpStats(const RtpPacketToSend& packet,
                                bool is_rtx,
                                bool is_retransmit) {
   StreamDataCounters* counters;
@@ -908,27 +841,26 @@ void RTPSender::UpdateRtpStats(const uint8_t* buffer,
     counters = &rtp_stats_;
   }
 
-  total_bitrate_sent_.Update(packet_length, now_ms);
+  total_bitrate_sent_.Update(packet.size(), now_ms);
 
-  if (counters->first_packet_time_ms == -1)
+  if (counters->first_packet_time_ms == -1) {
     counters->first_packet_time_ms = clock_->TimeInMilliseconds();
-
-  if (IsFecPacket(buffer, header))
-    counters->fec.AddPacket(packet_length, header);
-
-  if (is_retransmit) {
-    counters->retransmitted.AddPacket(packet_length, header);
-    nack_bitrate_sent_.Update(packet_length, now_ms);
   }
+  if (IsFecPacket(packet)) {
+    CountPacket(&counters->fec, packet);
+  }
+  if (is_retransmit) {
+    CountPacket(&counters->retransmitted, packet);
+    nack_bitrate_sent_.Update(packet.size(), now_ms);
+  }
+  CountPacket(&counters->transmitted, packet);
 
-  counters->transmitted.AddPacket(packet_length, header);
-
-  if (rtp_stats_callback_)
+  if (rtp_stats_callback_) {
     rtp_stats_callback_->DataCountersUpdated(*counters, ssrc);
+  }
 }
 
-bool RTPSender::IsFecPacket(const uint8_t* buffer,
-                            const RTPHeader& header) const {
+bool RTPSender::IsFecPacket(const RtpPacketToSend& packet) const {
   if (!video_) {
     return false;
   }
@@ -936,9 +868,8 @@ bool RTPSender::IsFecPacket(const uint8_t* buffer,
   uint8_t pt_red;
   uint8_t pt_fec;
   video_->GenericFECStatus(&fec_enabled, &pt_red, &pt_fec);
-  return fec_enabled &&
-      header.payloadType == pt_red &&
-      buffer[header.headerLength] == pt_fec;
+  return fec_enabled && packet.PayloadType() == pt_red &&
+         packet.payload()[0] == pt_fec;
 }
 
 size_t RTPSender::TimeToSendPadding(size_t bytes, int probe_cluster_id) {
@@ -951,7 +882,6 @@ size_t RTPSender::TimeToSendPadding(size_t bytes, int probe_cluster_id) {
   return bytes_sent;
 }
 
-// TODO(pwestin): send in the RtpHeaderParser to avoid parsing it again.
 bool RTPSender::SendToNetwork(uint8_t* buffer,
                               size_t payload_length,
                               size_t rtp_header_length,
@@ -959,35 +889,38 @@ bool RTPSender::SendToNetwork(uint8_t* buffer,
                               StorageType storage,
                               RtpPacketSender::Priority priority) {
   size_t length = payload_length + rtp_header_length;
-  RtpUtility::RtpHeaderParser rtp_parser(buffer, length);
+  std::unique_ptr<RtpPacketToSend> packet(
+      new RtpPacketToSend(&rtp_header_extension_map_, length));
+  RTC_CHECK(packet->Parse(buffer, length));
+  packet->set_capture_time_ms(capture_time_ms);
+  return SendToNetwork(std::move(packet), storage, priority);
+}
 
-  RTPHeader rtp_header;
-  rtp_parser.Parse(&rtp_header);
-
+bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
+                              StorageType storage,
+                              RtpPacketSender::Priority priority) {
+  RTC_DCHECK(packet);
   int64_t now_ms = clock_->TimeInMilliseconds();
 
   // |capture_time_ms| <= 0 is considered invalid.
   // TODO(holmer): This should be changed all over Video Engine so that negative
   // time is consider invalid, while 0 is considered a valid time.
-  if (capture_time_ms > 0) {
-    UpdateTransmissionTimeOffset(buffer, length, rtp_header,
-                                 now_ms - capture_time_ms);
+  if (packet->capture_time_ms() > 0) {
+    packet->SetExtension<TransmissionOffset>(
+        kTimestampTicksPerMs * (now_ms - packet->capture_time_ms()));
   }
-
-  UpdateAbsoluteSendTime(buffer, length, rtp_header, now_ms);
-
-  // Used for NACK and to spread out the transmission of packets.
-  if (packet_history_.PutRTPPacket(buffer, length, capture_time_ms, storage) !=
-      0) {
-    return false;
-  }
+  packet->SetExtension<AbsoluteSendTime>(now_ms);
 
   if (paced_sender_) {
+    uint16_t seq_no = packet->SequenceNumber();
+    uint32_t ssrc = packet->Ssrc();
     // Correct offset between implementations of millisecond time stamps in
     // TickTime and Clock.
-    int64_t corrected_time_ms = capture_time_ms + clock_delta_ms_;
-    paced_sender_->InsertPacket(priority, rtp_header.ssrc,
-                                rtp_header.sequenceNumber, corrected_time_ms,
+    int64_t corrected_time_ms = packet->capture_time_ms() + clock_delta_ms_;
+    size_t payload_length = packet->payload_size();
+    packet_history_.PutRtpPacket(std::move(packet), storage, false);
+
+    paced_sender_->InsertPacket(priority, ssrc, seq_no, corrected_time_ms,
                                 payload_length, false);
     if (last_capture_time_ms_sent_ == 0 ||
         corrected_time_ms > last_capture_time_ms_sent_) {
@@ -1000,31 +933,32 @@ bool RTPSender::SendToNetwork(uint8_t* buffer,
   }
 
   PacketOptions options;
-  if (UpdateTransportSequenceNumber(buffer, length, rtp_header,
-                                    &options.packet_id)) {
-    if (transport_feedback_observer_)
-      transport_feedback_observer_->AddPacket(options.packet_id, length,
-                                              PacketInfo::kNotAProbe);
+  if (UpdateTransportSequenceNumber(packet.get(), &options.packet_id) &&
+      transport_feedback_observer_) {
+    transport_feedback_observer_->AddPacket(options.packet_id, packet->size(),
+                                            PacketInfo::kNotAProbe);
   }
-  UpdateDelayStatistics(capture_time_ms, now_ms);
-  UpdateOnSendPacket(options.packet_id, capture_time_ms, rtp_header.ssrc);
 
-  bool sent = SendPacketToNetwork(buffer, length, options);
+  UpdateDelayStatistics(packet->capture_time_ms(), now_ms);
+  UpdateOnSendPacket(options.packet_id, packet->capture_time_ms(),
+                     packet->Ssrc());
+
+  bool sent = SendPacketToNetwork(*packet, options);
+
+  if (sent) {
+    {
+      rtc::CritScope lock(&send_critsect_);
+      media_has_been_sent_ = true;
+    }
+    UpdateRtpStats(*packet, false, false);
+  }
 
   // Mark the packet as sent in the history even if send failed. Dropping a
   // packet here should be treated as any other packet drop so we should be
   // ready for a retransmission.
-  packet_history_.SetSent(rtp_header.sequenceNumber);
+  packet_history_.PutRtpPacket(std::move(packet), storage, true);
 
-  if (!sent)
-    return false;
-
-  {
-    rtc::CritScope lock(&send_critsect_);
-    media_has_been_sent_ = true;
-  }
-  UpdateRtpStats(buffer, length, rtp_header, false, false);
-  return true;
+  return sent;
 }
 
 void RTPSender::UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms) {
@@ -1494,31 +1428,6 @@ RTPSender::ExtensionStatus RTPSender::VerifyExtension(
   return ExtensionStatus::kOk;
 }
 
-void RTPSender::UpdateTransmissionTimeOffset(uint8_t* rtp_packet,
-                                             size_t rtp_packet_length,
-                                             const RTPHeader& rtp_header,
-                                             int64_t time_diff_ms) const {
-  size_t offset;
-  rtc::CritScope lock(&send_critsect_);
-  switch (VerifyExtension(kRtpExtensionTransmissionTimeOffset, rtp_packet,
-                          rtp_packet_length, rtp_header,
-                          kTransmissionTimeOffsetLength, &offset)) {
-    case ExtensionStatus::kNotRegistered:
-      return;
-    case ExtensionStatus::kError:
-      LOG(LS_WARNING) << "Failed to update transmission time offset.";
-      return;
-    case ExtensionStatus::kOk:
-      break;
-    default:
-      RTC_NOTREACHED();
-  }
-
-  // Update transmission offset field (converting to a 90 kHz timestamp).
-  ByteWriter<int32_t, 3>::WriteBigEndian(rtp_packet + offset + 1,
-                                         time_diff_ms * 90);  // RTP timestamp.
-}
-
 bool RTPSender::UpdateAudioLevel(uint8_t* rtp_packet,
                                  size_t rtp_packet_length,
                                  const RTPHeader& rtp_header,
@@ -1570,67 +1479,22 @@ bool RTPSender::UpdateVideoRotation(uint8_t* rtp_packet,
   return true;
 }
 
-void RTPSender::UpdateAbsoluteSendTime(uint8_t* rtp_packet,
-                                       size_t rtp_packet_length,
-                                       const RTPHeader& rtp_header,
-                                       int64_t now_ms) const {
-  size_t offset;
+bool RTPSender::UpdateTransportSequenceNumber(RtpPacketToSend* packet,
+                                              int* packet_id) const {
+  RTC_DCHECK(packet);
+  RTC_DCHECK(packet_id);
   rtc::CritScope lock(&send_critsect_);
-
-  switch (VerifyExtension(kRtpExtensionAbsoluteSendTime, rtp_packet,
-                          rtp_packet_length, rtp_header,
-                          kAbsoluteSendTimeLength, &offset)) {
-    case ExtensionStatus::kNotRegistered:
-      return;
-    case ExtensionStatus::kError:
-      LOG(LS_WARNING) << "Failed to update absolute send time";
-      return;
-    case ExtensionStatus::kOk:
-      break;
-    default:
-      RTC_NOTREACHED();
-  }
-
-  // Update absolute send time field (convert ms to 24-bit unsigned with 18 bit
-  // fractional part).
-  ByteWriter<uint32_t, 3>::WriteBigEndian(rtp_packet + offset + 1,
-                                          ConvertMsTo24Bits(now_ms));
-}
-
-bool RTPSender::UpdateTransportSequenceNumber(uint8_t* rtp_packet,
-                                              size_t rtp_packet_length,
-                                              const RTPHeader& rtp_header,
-                                              int* sequence_number) const {
-  RTC_DCHECK(sequence_number);
-  size_t offset;
-  rtc::CritScope lock(&send_critsect_);
-
-  switch (VerifyExtension(kRtpExtensionTransportSequenceNumber, rtp_packet,
-                          rtp_packet_length, rtp_header,
-                          kTransportSequenceNumberLength, &offset)) {
-    case ExtensionStatus::kNotRegistered:
-      return false;
-    case ExtensionStatus::kError:
-      LOG(LS_WARNING) << "Failed to update transport sequence number";
-      return false;
-    case ExtensionStatus::kOk:
-      break;
-    default:
-      RTC_NOTREACHED();
-  }
-
-  if (!AllocateTransportSequenceNumber(sequence_number))
+  if (!rtp_header_extension_map_.IsRegistered(TransportSequenceNumber::kId))
     return false;
 
-  BuildTransportSequenceNumberExtension(rtp_packet + offset, *sequence_number);
-  return true;
-}
-
-bool RTPSender::AllocateTransportSequenceNumber(int* packet_id) const {
   if (!transport_sequence_number_allocator_)
     return false;
 
   *packet_id = transport_sequence_number_allocator_->AllocateSequenceNumber();
+
+  if (!packet->SetExtension<TransportSequenceNumber>(*packet_id))
+    return false;
+
   return true;
 }
 
@@ -1803,53 +1667,46 @@ int32_t RTPSender::SetFecParameters(
   return 0;
 }
 
-bool RTPSender::BuildRtxPacket(uint8_t* buffer,
-                               size_t* length,
-                               uint8_t* buffer_rtx) {
-  rtc::CritScope lock(&send_critsect_);
-  if (!sending_media_)
-    return false;
-  uint8_t* data_buffer_rtx = buffer_rtx;
-  // Add RTX header.
-  RtpUtility::RtpHeaderParser rtp_parser(
-      reinterpret_cast<const uint8_t*>(buffer), *length);
-
-  RTPHeader rtp_header;
-  rtp_parser.Parse(&rtp_header);
-
+std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
+    const RtpPacketToSend& packet) {
+  // TODO(danilchap): Create rtx packet with extra capacity for SRTP
+  // when transport interface would be updated to take buffer class.
+  std::unique_ptr<RtpPacketToSend> rtx_packet(new RtpPacketToSend(
+      &rtp_header_extension_map_, packet.size() + kRtxHeaderSize));
   // Add original RTP header.
-  memcpy(data_buffer_rtx, buffer, rtp_header.headerLength);
+  rtx_packet->CopyHeaderFrom(packet);
+  {
+    rtc::CritScope lock(&send_critsect_);
+    if (!sending_media_)
+      return nullptr;
+    // Replace payload type, if a specific type is set for RTX.
+    auto kv = rtx_payload_type_map_.find(packet.PayloadType());
 
-  // Replace payload type, if a specific type is set for RTX.
-  auto kv = rtx_payload_type_map_.find(rtp_header.payloadType);
-  // Use rtx mapping associated with media codec if we can't find one, assuming
-  // it's red.
-  // TODO(holmer): Remove once old Chrome versions don't rely on this.
-  if (kv == rtx_payload_type_map_.end())
-    kv = rtx_payload_type_map_.find(payload_type_);
-  if (kv != rtx_payload_type_map_.end())
-    data_buffer_rtx[1] = kv->second;
-  if (rtp_header.markerBit)
-    data_buffer_rtx[1] |= kRtpMarkerBitMask;
+    // Use rtx mapping associated with media codec if we can't find one,
+    // assume it's red.
+    // TODO(holmer): Remove once old Chrome versions don't rely on this.
+    if (kv == rtx_payload_type_map_.end())
+      kv = rtx_payload_type_map_.find(payload_type_);
+    if (kv != rtx_payload_type_map_.end())
+      rtx_packet->SetPayloadType(kv->second);
 
-  // Replace sequence number.
-  uint8_t* ptr = data_buffer_rtx + 2;
-  ByteWriter<uint16_t>::WriteBigEndian(ptr, sequence_number_rtx_++);
+    // Replace sequence number.
+    rtx_packet->SetSequenceNumber(sequence_number_rtx_++);
 
-  // Replace SSRC.
-  ptr += 6;
-  ByteWriter<uint32_t>::WriteBigEndian(ptr, ssrc_rtx_);
+    // Replace SSRC.
+    rtx_packet->SetSsrc(ssrc_rtx_);
+  }
 
+  uint8_t* rtx_payload =
+      rtx_packet->AllocatePayload(packet.payload_size() + kRtxHeaderSize);
+  RTC_DCHECK(rtx_payload);
   // Add OSN (original sequence number).
-  ptr = data_buffer_rtx + rtp_header.headerLength;
-  ByteWriter<uint16_t>::WriteBigEndian(ptr, rtp_header.sequenceNumber);
-  ptr += 2;
+  ByteWriter<uint16_t>::WriteBigEndian(rtx_payload, packet.SequenceNumber());
 
   // Add original payload data.
-  memcpy(ptr, buffer + rtp_header.headerLength,
-         *length - rtp_header.headerLength);
-  *length += 2;
-  return true;
+  memcpy(rtx_payload + kRtxHeaderSize, packet.payload(), packet.payload_size());
+
+  return rtx_packet;
 }
 
 void RTPSender::RegisterRtpStatisticsCallback(

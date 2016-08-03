@@ -45,8 +45,8 @@ class TransmissionOffset {
   static constexpr uint8_t kValueSizeBytes = 3;
   static const char* kName;
   static bool IsSupportedFor(MediaType type);
-  static bool Parse(const uint8_t* data, int32_t* time_ms);
-  static bool Write(uint8_t* data, int64_t time_ms);
+  static bool Parse(const uint8_t* data, int32_t* rtp_time);
+  static bool Write(uint8_t* data, int32_t rtp_time);
 };
 
 class TransportSequenceNumber {

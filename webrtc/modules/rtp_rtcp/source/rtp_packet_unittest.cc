@@ -174,12 +174,12 @@ TEST(RtpPacketTest, ParseMinimum) {
 }
 
 TEST(RtpPacketTest, ParseBuffer) {
-  rtc::Buffer unparsed(kMinimumPacket);
+  rtc::CopyOnWriteBuffer unparsed(kMinimumPacket);
   const uint8_t* raw = unparsed.data();
 
   RtpPacketReceived packet;
   EXPECT_TRUE(packet.Parse(std::move(unparsed)));
-  EXPECT_EQ(raw, packet.data());  // Expect packet took over the buffer.
+  EXPECT_EQ(raw, packet.data());  // Expect packet take the buffer without copy.
   EXPECT_EQ(kSeqNum, packet.SequenceNumber());
   EXPECT_EQ(kTimestamp, packet.Timestamp());
   EXPECT_EQ(kSsrc, packet.Ssrc());

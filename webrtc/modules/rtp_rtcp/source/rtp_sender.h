@@ -35,9 +35,10 @@
 namespace webrtc {
 
 class RateLimiter;
+class RtcEventLog;
+class RtpPacketToSend;
 class RTPSenderAudio;
 class RTPSenderVideo;
-class RtcEventLog;
 
 class RTPSenderInterface {
  public:
@@ -277,12 +278,16 @@ class RTPSender : public RTPSenderInterface {
   uint32_t Timestamp() const override;
   uint32_t SSRC() const override;
 
+  // Deprecated. Create RtpPacketToSend instead and use next function.
   bool SendToNetwork(uint8_t* data_buffer,
                      size_t payload_length,
                      size_t rtp_header_length,
                      int64_t capture_time_ms,
                      StorageType storage,
                      RtpPacketSender::Priority priority) override;
+  bool SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
+                     StorageType storage,
+                     RtpPacketSender::Priority priority);
 
   // Audio.
 
@@ -359,9 +364,7 @@ class RTPSender : public RTPSenderInterface {
                          const std::vector<uint32_t>& csrcs) const
       EXCLUSIVE_LOCKS_REQUIRED(send_critsect_);
 
-  bool PrepareAndSendPacket(uint8_t* buffer,
-                            size_t length,
-                            int64_t capture_time_ms,
+  bool PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
                             bool send_over_rtx,
                             bool is_retransmit,
                             int probe_cluster_id);
@@ -370,14 +373,10 @@ class RTPSender : public RTPSenderInterface {
   // return a larger value that their argument.
   size_t TrySendRedundantPayloads(size_t bytes, int probe_cluster_id);
 
-  void BuildPaddingPacket(uint8_t* packet,
-                          size_t header_length,
-                          size_t padding_length);
+  std::unique_ptr<RtpPacketToSend> BuildRtxPacket(
+      const RtpPacketToSend& packet);
 
-  bool BuildRtxPacket(uint8_t* buffer, size_t* length, uint8_t* buffer_rtx);
-
-  bool SendPacketToNetwork(const uint8_t* packet,
-                           size_t size,
+  bool SendPacketToNetwork(const RtpPacketToSend& packet,
                            const PacketOptions& options);
 
   void UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms);
@@ -394,19 +393,8 @@ class RTPSender : public RTPSenderInterface {
                                    size_t* position) const
       EXCLUSIVE_LOCKS_REQUIRED(send_critsect_);
 
-  void UpdateTransmissionTimeOffset(uint8_t* rtp_packet,
-                                    size_t rtp_packet_length,
-                                    const RTPHeader& rtp_header,
-                                    int64_t time_diff_ms) const;
-  void UpdateAbsoluteSendTime(uint8_t* rtp_packet,
-                              size_t rtp_packet_length,
-                              const RTPHeader& rtp_header,
-                              int64_t now_ms) const;
-
-  bool UpdateTransportSequenceNumber(uint8_t* rtp_packet,
-                                     size_t rtp_packet_length,
-                                     const RTPHeader& rtp_header,
-                                     int* sequence_number) const;
+  bool UpdateTransportSequenceNumber(RtpPacketToSend* packet,
+                                     int* packet_id) const;
 
   void UpdatePlayoutDelayLimits(uint8_t* rtp_packet,
                                 size_t rtp_packet_length,
@@ -414,14 +402,10 @@ class RTPSender : public RTPSenderInterface {
                                 uint16_t min_playout_delay,
                                 uint16_t max_playout_delay) const;
 
-  bool AllocateTransportSequenceNumber(int* packet_id) const;
-
-  void UpdateRtpStats(const uint8_t* buffer,
-                      size_t packet_length,
-                      const RTPHeader& header,
+  void UpdateRtpStats(const RtpPacketToSend& packet,
                       bool is_rtx,
                       bool is_retransmit);
-  bool IsFecPacket(const uint8_t* buffer, const RTPHeader& header) const;
+  bool IsFecPacket(const RtpPacketToSend& packet) const;
 
   Clock* const clock_;
   const int64_t clock_delta_ms_;
@@ -458,7 +442,7 @@ class RTPSender : public RTPSenderInterface {
   PlayoutDelayOracle playout_delay_oracle_;
   bool playout_delay_active_ GUARDED_BY(send_critsect_);
 
-  RTPPacketHistory packet_history_;
+  RtpPacketHistory packet_history_;
 
   // Statistics
   rtc::CriticalSection statistics_crit_;

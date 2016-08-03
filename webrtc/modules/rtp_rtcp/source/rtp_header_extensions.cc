@@ -124,14 +124,14 @@ bool TransmissionOffset::IsSupportedFor(MediaType type) {
   return false;
 }
 
-bool TransmissionOffset::Parse(const uint8_t* data, int32_t* value) {
-  *value = ByteReader<int32_t, 3>::ReadBigEndian(data);
+bool TransmissionOffset::Parse(const uint8_t* data, int32_t* rtp_time) {
+  *rtp_time = ByteReader<int32_t, 3>::ReadBigEndian(data);
   return true;
 }
 
-bool TransmissionOffset::Write(uint8_t* data, int64_t value) {
-  RTC_CHECK_LE(value, 0x00ffffff);
-  ByteWriter<int32_t, 3>::WriteBigEndian(data, value);
+bool TransmissionOffset::Write(uint8_t* data, int32_t rtp_time) {
+  RTC_DCHECK_LE(rtp_time, 0x00ffffff);
+  ByteWriter<int32_t, 3>::WriteBigEndian(data, rtp_time);
   return true;
 }
 
