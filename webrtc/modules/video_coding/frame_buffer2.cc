@@ -42,13 +42,15 @@ bool FrameBuffer::FrameComp::operator()(const FrameKey& f1,
 
 FrameBuffer::FrameBuffer(Clock* clock,
                          VCMJitterEstimator* jitter_estimator,
-                         const VCMTiming* timing)
+                         VCMTiming* timing)
     : clock_(clock),
       frame_inserted_event_(false, false),
       jitter_estimator_(jitter_estimator),
       timing_(timing),
+      inter_frame_delay_(clock_->TimeInMilliseconds()),
       newest_picture_id_(-1),
-      stopped_(false) {}
+      stopped_(false),
+      protection_mode_(kProtectionNack) {}
 
 std::unique_ptr<FrameObject> FrameBuffer::NextFrame(int64_t max_wait_time_ms) {
   int64_t latest_return_time = clock_->TimeInMilliseconds() + max_wait_time_ms;
@@ -56,7 +58,7 @@ std::unique_ptr<FrameObject> FrameBuffer::NextFrame(int64_t max_wait_time_ms) {
   int64_t wait_ms = max_wait_time_ms;
   while (true) {
     std::map<FrameKey, std::unique_ptr<FrameObject>, FrameComp>::iterator
-        next_frame;
+        next_frame_it;
     {
       rtc::CritScope lock(&crit_);
       frame_inserted_event_.Reset();
@@ -65,14 +67,18 @@ std::unique_ptr<FrameObject> FrameBuffer::NextFrame(int64_t max_wait_time_ms) {
 
       now = clock_->TimeInMilliseconds();
       wait_ms = max_wait_time_ms;
-      next_frame = frames_.end();
+      next_frame_it = frames_.end();
       for (auto frame_it = frames_.begin(); frame_it != frames_.end();
            ++frame_it) {
         const FrameObject& frame = *frame_it->second;
         if (IsContinuous(frame)) {
-          next_frame = frame_it;
-          int64_t render_time = timing_->RenderTimeMs(frame.timestamp, now);
+          next_frame_it = frame_it;
+          int64_t render_time =
+              next_frame_it->second->RenderTime() == -1
+                  ? timing_->RenderTimeMs(frame.timestamp, now)
+                  : next_frame_it->second->RenderTime();
           wait_ms = timing_->MaxWaitingTime(render_time, now);
+          frame_it->second->SetRenderTime(render_time);
 
           // This will cause the frame buffer to prefer high framerate rather
           // than high resolution in the case of the decoder not decoding fast
@@ -85,25 +91,41 @@ std::unique_ptr<FrameObject> FrameBuffer::NextFrame(int64_t max_wait_time_ms) {
       }
     }
 
-    // If the timout occures, return. Otherwise a new frame has been inserted
-    // and the best frame to decode next will be selected again.
     wait_ms = std::min<int64_t>(wait_ms, latest_return_time - now);
     wait_ms = std::max<int64_t>(wait_ms, 0);
+    // If the timeout occurs, return. Otherwise a new frame has been inserted
+    // and the best frame to decode next will be selected again.
     if (!frame_inserted_event_.Wait(wait_ms)) {
       rtc::CritScope lock(&crit_);
-      if (next_frame != frames_.end()) {
-        // TODO(philipel): update jitter estimator with correct values.
-        jitter_estimator_->UpdateEstimate(100, 100);
+      if (next_frame_it != frames_.end()) {
+        int64_t received_timestamp = next_frame_it->second->ReceivedTime();
+        uint32_t timestamp = next_frame_it->second->Timestamp();
 
-        decoded_frames_.insert(next_frame->first);
-        std::unique_ptr<FrameObject> frame = std::move(next_frame->second);
-        frames_.erase(frames_.begin(), ++next_frame);
+        int64_t frame_delay;
+        if (inter_frame_delay_.CalculateDelay(timestamp, &frame_delay,
+                                              received_timestamp)) {
+          jitter_estimator_->UpdateEstimate(frame_delay,
+                                            next_frame_it->second->size);
+        }
+        float rtt_mult = protection_mode_ == kProtectionNackFEC ? 0.0 : 1.0;
+        timing_->SetJitterDelay(jitter_estimator_->GetJitterEstimate(rtt_mult));
+        timing_->UpdateCurrentDelay(next_frame_it->second->RenderTime(),
+                                    clock_->TimeInMilliseconds());
+
+        decoded_frames_.insert(next_frame_it->first);
+        std::unique_ptr<FrameObject> frame = std::move(next_frame_it->second);
+        frames_.erase(frames_.begin(), ++next_frame_it);
         return frame;
       } else {
         return std::unique_ptr<FrameObject>();
       }
     }
   }
+}
+
+void FrameBuffer::SetProtectionMode(VCMVideoProtection mode) {
+  rtc::CritScope lock(&crit_);
+  protection_mode_ = mode;
 }
 
 void FrameBuffer::Start() {
@@ -119,6 +141,7 @@ void FrameBuffer::Stop() {
 
 void FrameBuffer::InsertFrame(std::unique_ptr<FrameObject> frame) {
   rtc::CritScope lock(&crit_);
+  // If |newest_picture_id_| is -1 then this is the first frame we received.
   if (newest_picture_id_ == -1)
     newest_picture_id_ = frame->picture_id;
 
@@ -129,7 +152,7 @@ void FrameBuffer::InsertFrame(std::unique_ptr<FrameObject> frame) {
   while (decoded_frames_.size() > kMaxNumHistoryFrames)
     decoded_frames_.erase(decoded_frames_.begin());
 
-  // Remove frames that are too old, |kMaxNumHistoryFrames|.
+  // Remove frames that are too old.
   uint16_t old_picture_id = Subtract<1 << 16>(newest_picture_id_, kMaxFrameAge);
   auto old_decoded_it =
       decoded_frames_.lower_bound(FrameKey(old_picture_id, 0));

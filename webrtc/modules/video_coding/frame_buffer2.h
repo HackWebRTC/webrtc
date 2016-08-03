@@ -21,6 +21,8 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/modules/video_coding/include/video_coding_defines.h"
+#include "webrtc/modules/video_coding/inter_frame_delay.h"
 
 namespace webrtc {
 
@@ -36,7 +38,7 @@ class FrameBuffer {
  public:
   FrameBuffer(Clock* clock,
               VCMJitterEstimator* jitter_estimator,
-              const VCMTiming* timing);
+              VCMTiming* timing);
 
   // Insert a frame into the frame buffer.
   void InsertFrame(std::unique_ptr<FrameObject> frame);
@@ -45,6 +47,12 @@ class FrameBuffer {
   // |max_wait_time_ms|, with either a managed FrameObject or an empty
   // unique ptr if there is no available frame for decoding.
   std::unique_ptr<FrameObject> NextFrame(int64_t max_wait_time_ms);
+
+  // Tells the FrameBuffer which protection mode that is in use. Affects
+  // the frame timing.
+  // TODO(philipel): Remove this when new timing calculations has been
+  //                 implemented.
+  void SetProtectionMode(VCMVideoProtection mode);
 
   // Start the frame buffer, has no effect if the frame buffer is started.
   // The frame buffer is started upon construction.
@@ -78,10 +86,12 @@ class FrameBuffer {
   rtc::CriticalSection crit_;
   Clock* const clock_;
   rtc::Event frame_inserted_event_;
-  VCMJitterEstimator* const jitter_estimator_;
-  const VCMTiming* const timing_;
+  VCMJitterEstimator* const jitter_estimator_ GUARDED_BY(crit_);
+  VCMTiming* const timing_ GUARDED_BY(crit_);
+  VCMInterFrameDelay inter_frame_delay_ GUARDED_BY(crit_);
   int newest_picture_id_ GUARDED_BY(crit_);
   bool stopped_ GUARDED_BY(crit_);
+  VCMVideoProtection protection_mode_ GUARDED_BY(crit_);
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(FrameBuffer);
 };
