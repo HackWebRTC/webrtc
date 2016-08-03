@@ -29,6 +29,7 @@
 
 // TODO(tkchin): support other formats.
 static NSString *const kDefaultPreset = AVCaptureSessionPreset640x480;
+static NSString *const kIPhone4SPreset = AVCaptureSessionPreset352x288;
 static cricket::VideoFormat const kDefaultFormat =
     cricket::VideoFormat(640,
                          480,
@@ -36,8 +37,8 @@ static cricket::VideoFormat const kDefaultFormat =
                          cricket::FOURCC_NV12);
 // iPhone4S is too slow to handle 30fps.
 static cricket::VideoFormat const kIPhone4SFormat =
-    cricket::VideoFormat(640,
-                         480,
+    cricket::VideoFormat(352,
+                         288,
                          cricket::VideoFormat::FpsToInterval(15),
                          cricket::FOURCC_NV12);
 
@@ -360,11 +361,17 @@ static cricket::VideoFormat const kIPhone4SFormat =
     captureSession.usesApplicationAudioSession = NO;
   }
 #endif
-  if (![captureSession canSetSessionPreset:kDefaultPreset]) {
+  NSString *preset = kDefaultPreset;
+#if TARGET_OS_IPHONE
+  if ([UIDevice deviceType] == RTCDeviceTypeIPhone4S) {
+    preset = kIPhone4SPreset;
+  }
+#endif
+  if (![captureSession canSetSessionPreset:preset]) {
     RTCLogError(@"Session preset unsupported.");
     return NO;
   }
-  captureSession.sessionPreset = kDefaultPreset;
+  captureSession.sessionPreset = preset;
 
   // Add the output.
   AVCaptureVideoDataOutput *videoDataOutput = [self videoDataOutput];
@@ -570,7 +577,7 @@ struct AVFoundationFrame {
 
 AVFoundationVideoCapturer::AVFoundationVideoCapturer()
     : _capturer(nil), _startThread(nullptr) {
-  // Set our supported formats. This matches kDefaultPreset.
+  // Set our supported formats. This matches preset.
   std::vector<cricket::VideoFormat> supported_formats;
 #if TARGET_OS_IPHONE
   if ([UIDevice deviceType] == RTCDeviceTypeIPhone4S) {
