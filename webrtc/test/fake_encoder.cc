@@ -148,10 +148,9 @@ int32_t FakeH264Encoder::RegisterEncodeCompleteCallback(
   return 0;
 }
 
-EncodedImageCallback::Result FakeH264Encoder::OnEncodedImage(
-    const EncodedImage& encoded_image,
-    const CodecSpecificInfo* codec_specific_info,
-    const RTPFragmentationHeader* fragments) {
+int32_t FakeH264Encoder::Encoded(const EncodedImage& encoded_image,
+                                 const CodecSpecificInfo* codec_specific_info,
+                                 const RTPFragmentationHeader* fragments) {
   const size_t kSpsSize = 8;
   const size_t kPpsSize = 11;
   const int kIdrFrequency = 10;
@@ -191,7 +190,7 @@ EncodedImageCallback::Result FakeH264Encoder::OnEncodedImage(
       ++fragment_counter;
     }
   }
-  return callback_->OnEncodedImage(encoded_image, NULL, &fragmentation);
+  return callback_->Encoded(encoded_image, NULL, &fragmentation);
 }
 
 DelayedEncoder::DelayedEncoder(Clock* clock, int delay_ms)

@@ -242,16 +242,16 @@ class TestSimulcastEncoderAdapterFake : public ::testing::Test,
         last_encoded_image_simulcast_index_(-1) {}
   virtual ~TestSimulcastEncoderAdapterFake() {}
 
-  Result OnEncodedImage(const EncodedImage& encoded_image,
-                        const CodecSpecificInfo* codec_specific_info,
-                        const RTPFragmentationHeader* fragmentation) override {
-    last_encoded_image_width_ = encoded_image._encodedWidth;
-    last_encoded_image_height_ = encoded_image._encodedHeight;
-    if (codec_specific_info) {
+  int32_t Encoded(const EncodedImage& encodedImage,
+                  const CodecSpecificInfo* codecSpecificInfo = NULL,
+                  const RTPFragmentationHeader* fragmentation = NULL) override {
+    last_encoded_image_width_ = encodedImage._encodedWidth;
+    last_encoded_image_height_ = encodedImage._encodedHeight;
+    if (codecSpecificInfo) {
       last_encoded_image_simulcast_index_ =
-          codec_specific_info->codecSpecific.VP8.simulcastIdx;
+          codecSpecificInfo->codecSpecific.VP8.simulcastIdx;
     }
-    return Result(Result::OK, encoded_image._timeStamp);
+    return 0;
   }
 
   bool GetLastEncodedImageInfo(int* out_width,

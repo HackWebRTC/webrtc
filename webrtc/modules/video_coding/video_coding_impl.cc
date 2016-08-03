@@ -45,8 +45,7 @@ namespace {
 class EncodedImageCallbackWrapper : public EncodedImageCallback {
  public:
   EncodedImageCallbackWrapper()
-      : cs_(CriticalSectionWrapper::CreateCriticalSection()),
-        callback_(nullptr) {}
+      : cs_(CriticalSectionWrapper::CreateCriticalSection()), callback_(NULL) {}
 
   virtual ~EncodedImageCallbackWrapper() {}
 
@@ -55,15 +54,14 @@ class EncodedImageCallbackWrapper : public EncodedImageCallback {
     callback_ = callback;
   }
 
-  virtual Result OnEncodedImage(const EncodedImage& encoded_image,
-                                const CodecSpecificInfo* codec_specific_info,
-                                const RTPFragmentationHeader* fragmentation) {
+  virtual int32_t Encoded(const EncodedImage& encoded_image,
+                          const CodecSpecificInfo* codec_specific_info,
+                          const RTPFragmentationHeader* fragmentation) {
     CriticalSectionScoped cs(cs_.get());
-    if (callback_) {
-      return callback_->OnEncodedImage(encoded_image, codec_specific_info,
-                                       fragmentation);
-    }
-    return Result(Result::ERROR_SEND_FAILED);
+    if (callback_)
+      return callback_->Encoded(encoded_image, codec_specific_info,
+                                fragmentation);
+    return 0;
   }
 
  private:

@@ -112,15 +112,15 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   // Used by the codec module to deliver a video or audio frame for
   // packetization.
-  bool SendOutgoingData(FrameType frame_type,
-                        int8_t payload_type,
-                        uint32_t time_stamp,
-                        int64_t capture_time_ms,
-                        const uint8_t* payload_data,
-                        size_t payload_size,
-                        const RTPFragmentationHeader* fragmentation,
-                        const RTPVideoHeader* rtp_video_header,
-                        uint32_t* transport_frame_id_out) override;
+  int32_t SendOutgoingData(
+      FrameType frame_type,
+      int8_t payload_type,
+      uint32_t time_stamp,
+      int64_t capture_time_ms,
+      const uint8_t* payload_data,
+      size_t payload_size,
+      const RTPFragmentationHeader* fragmentation = NULL,
+      const RTPVideoHeader* rtp_video_header = NULL) override;
 
   bool TimeToSendPacket(uint32_t ssrc,
                         uint16_t sequence_number,

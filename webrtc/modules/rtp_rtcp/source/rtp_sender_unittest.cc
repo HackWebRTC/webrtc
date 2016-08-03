@@ -190,9 +190,9 @@ class RtpSenderTest : public ::testing::Test {
     ASSERT_GE(rtp_length, 0);
 
     // Packet should be stored in a send bucket.
-    EXPECT_TRUE(rtp_sender_->SendToNetwork(
-        packet_, payload_length, rtp_length, capture_time_ms,
-        kAllowRetransmission, RtpPacketSender::kNormalPriority));
+    EXPECT_EQ(0, rtp_sender_->SendToNetwork(
+                     packet_, payload_length, rtp_length, capture_time_ms,
+                     kAllowRetransmission, RtpPacketSender::kNormalPriority));
   }
 
   void SendGenericPayload() {
@@ -204,9 +204,9 @@ class RtpSenderTest : public ::testing::Test {
     EXPECT_EQ(0, rtp_sender_->RegisterPayload(payload_name, kPayloadType, 90000,
                                               0, 1500));
 
-    EXPECT_TRUE(rtp_sender_->SendOutgoingData(
-        kVideoFrameKey, kPayloadType, kTimestamp, kCaptureTimeMs, kPayload,
-        sizeof(kPayload), nullptr, nullptr, nullptr));
+    EXPECT_EQ(0, rtp_sender_->SendOutgoingData(
+                     kVideoFrameKey, kPayloadType, kTimestamp, kCaptureTimeMs,
+                     kPayload, sizeof(kPayload), nullptr, nullptr));
   }
 };
 
@@ -753,9 +753,9 @@ TEST_F(RtpSenderTest, TrafficSmoothingWithExtensions) {
   size_t rtp_length = static_cast<size_t>(rtp_length_int);
 
   // Packet should be stored in a send bucket.
-  EXPECT_TRUE(rtp_sender_->SendToNetwork(packet_, 0, rtp_length,
-                                         capture_time_ms, kAllowRetransmission,
-                                         RtpPacketSender::kNormalPriority));
+  EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_, 0, rtp_length,
+                                          capture_time_ms, kAllowRetransmission,
+                                          RtpPacketSender::kNormalPriority));
 
   EXPECT_EQ(0, transport_.packets_sent_);
 
@@ -806,9 +806,9 @@ TEST_F(RtpSenderTest, TrafficSmoothingRetransmits) {
   size_t rtp_length = static_cast<size_t>(rtp_length_int);
 
   // Packet should be stored in a send bucket.
-  EXPECT_TRUE(rtp_sender_->SendToNetwork(packet_, 0, rtp_length,
-                                         capture_time_ms, kAllowRetransmission,
-                                         RtpPacketSender::kNormalPriority));
+  EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_, 0, rtp_length,
+                                          capture_time_ms, kAllowRetransmission,
+                                          RtpPacketSender::kNormalPriority));
 
   EXPECT_EQ(0, transport_.packets_sent_);
 
@@ -888,9 +888,9 @@ TEST_F(RtpSenderTest, SendPadding) {
   size_t rtp_length = static_cast<size_t>(rtp_length_int);
 
   // Packet should be stored in a send bucket.
-  EXPECT_TRUE(rtp_sender_->SendToNetwork(packet_, 0, rtp_length,
-                                         capture_time_ms, kAllowRetransmission,
-                                         RtpPacketSender::kNormalPriority));
+  EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_, 0, rtp_length,
+                                          capture_time_ms, kAllowRetransmission,
+                                          RtpPacketSender::kNormalPriority));
 
   int total_packets_sent = 0;
   EXPECT_EQ(total_packets_sent, transport_.packets_sent_);
@@ -948,9 +948,9 @@ TEST_F(RtpSenderTest, SendPadding) {
               InsertPacket(RtpPacketSender::kNormalPriority, _, _, _, _, _));
 
   // Packet should be stored in a send bucket.
-  EXPECT_TRUE(rtp_sender_->SendToNetwork(packet_, 0, rtp_length,
-                                         capture_time_ms, kAllowRetransmission,
-                                         RtpPacketSender::kNormalPriority));
+  EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_, 0, rtp_length,
+                                          capture_time_ms, kAllowRetransmission,
+                                          RtpPacketSender::kNormalPriority));
 
   rtp_sender_->TimeToSendPacket(seq_num, capture_time_ms, false,
                                 PacketInfo::kNotAProbe);
@@ -1115,9 +1115,9 @@ TEST_F(RtpSenderTestWithoutPacer, SendGenericVideo) {
   uint8_t payload[] = {47, 11, 32, 93, 89};
 
   // Send keyframe
-  ASSERT_TRUE(rtp_sender_->SendOutgoingData(kVideoFrameKey, payload_type, 1234,
-                                            4321, payload, sizeof(payload),
-                                            nullptr, nullptr, nullptr));
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kVideoFrameKey, payload_type, 1234,
+                                             4321, payload, sizeof(payload),
+                                             nullptr, nullptr));
 
   RtpUtility::RtpHeaderParser rtp_parser(transport_.last_sent_packet_,
                                          transport_.last_sent_packet_len_);
@@ -1141,9 +1141,9 @@ TEST_F(RtpSenderTestWithoutPacer, SendGenericVideo) {
   payload[1] = 42;
   payload[4] = 13;
 
-  ASSERT_TRUE(rtp_sender_->SendOutgoingData(
-      kVideoFrameDelta, payload_type, 1234, 4321, payload, sizeof(payload),
-      nullptr, nullptr, nullptr));
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(
+                   kVideoFrameDelta, payload_type, 1234, 4321, payload,
+                   sizeof(payload), nullptr, nullptr));
 
   RtpUtility::RtpHeaderParser rtp_parser2(transport_.last_sent_packet_,
                                           transport_.last_sent_packet_len_);
@@ -1195,18 +1195,18 @@ TEST_F(RtpSenderTest, FrameCountCallbacks) {
   EXPECT_CALL(mock_paced_sender_, InsertPacket(_, _, _, _, _, _))
       .Times(::testing::AtLeast(2));
 
-  ASSERT_TRUE(rtp_sender_->SendOutgoingData(kVideoFrameKey, payload_type, 1234,
-                                            4321, payload, sizeof(payload),
-                                            nullptr, nullptr, nullptr));
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kVideoFrameKey, payload_type, 1234,
+                                             4321, payload, sizeof(payload),
+                                             nullptr, nullptr));
 
   EXPECT_EQ(1U, callback.num_calls_);
   EXPECT_EQ(ssrc, callback.ssrc_);
   EXPECT_EQ(1, callback.frame_counts_.key_frames);
   EXPECT_EQ(0, callback.frame_counts_.delta_frames);
 
-  ASSERT_TRUE(rtp_sender_->SendOutgoingData(
-      kVideoFrameDelta, payload_type, 1234, 4321, payload, sizeof(payload),
-      nullptr, nullptr, nullptr));
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(
+                   kVideoFrameDelta, payload_type, 1234, 4321, payload,
+                   sizeof(payload), nullptr, nullptr));
 
   EXPECT_EQ(2U, callback.num_calls_);
   EXPECT_EQ(ssrc, callback.ssrc_);
@@ -1268,9 +1268,9 @@ TEST_F(RtpSenderTest, BitrateCallbacks) {
 
   // Send a few frames.
   for (uint32_t i = 0; i < kNumPackets; ++i) {
-    ASSERT_TRUE(rtp_sender_->SendOutgoingData(
-        kVideoFrameKey, payload_type, 1234, 4321, payload, sizeof(payload),
-        nullptr, nullptr, nullptr));
+    ASSERT_EQ(0, rtp_sender_->SendOutgoingData(
+                     kVideoFrameKey, payload_type, 1234, 4321, payload,
+                     sizeof(payload), nullptr, nullptr));
     fake_clock_.AdvanceTimeMilliseconds(kPacketInterval);
   }
 
@@ -1349,9 +1349,9 @@ TEST_F(RtpSenderTestWithoutPacer, StreamDataCountersCallbacks) {
   rtp_sender_->RegisterRtpStatisticsCallback(&callback);
 
   // Send a frame.
-  ASSERT_TRUE(rtp_sender_->SendOutgoingData(
-                      kVideoFrameKey, payload_type, 1234, 4321, payload,
-                      sizeof(payload), nullptr, nullptr, nullptr));
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kVideoFrameKey, payload_type, 1234,
+                                             4321, payload, sizeof(payload),
+                                             nullptr, nullptr));
   StreamDataCounters expected;
   expected.transmitted.payload_bytes = 6;
   expected.transmitted.header_bytes = 12;
@@ -1391,9 +1391,9 @@ TEST_F(RtpSenderTestWithoutPacer, StreamDataCountersCallbacks) {
   fec_params.fec_rate = 1;
   fec_params.max_fec_frames = 1;
   rtp_sender_->SetFecParameters(&fec_params, &fec_params);
-  ASSERT_TRUE(rtp_sender_->SendOutgoingData(
-                      kVideoFrameDelta, payload_type, 1234, 4321, payload,
-                      sizeof(payload), nullptr, nullptr, nullptr));
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(
+                   kVideoFrameDelta, payload_type, 1234, 4321, payload,
+                   sizeof(payload), nullptr, nullptr));
   expected.transmitted.payload_bytes = 40;
   expected.transmitted.header_bytes = 60;
   expected.transmitted.packets = 5;
@@ -1410,9 +1410,9 @@ TEST_F(RtpSenderAudioTest, SendAudio) {
                                             0, 1500));
   uint8_t payload[] = {47, 11, 32, 93, 89};
 
-  ASSERT_TRUE(rtp_sender_->SendOutgoingData(
-                      kAudioFrameCN, payload_type, 1234, 4321, payload,
-                      sizeof(payload), nullptr, nullptr, nullptr));
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kAudioFrameCN, payload_type, 1234,
+                                             4321, payload, sizeof(payload),
+                                             nullptr, nullptr));
 
   RtpUtility::RtpHeaderParser rtp_parser(transport_.last_sent_packet_,
                                          transport_.last_sent_packet_len_);
@@ -1439,9 +1439,9 @@ TEST_F(RtpSenderAudioTest, SendAudioWithAudioLevelExtension) {
                                             0, 1500));
   uint8_t payload[] = {47, 11, 32, 93, 89};
 
-  ASSERT_TRUE(rtp_sender_->SendOutgoingData(
-                      kAudioFrameCN, payload_type, 1234, 4321, payload,
-                      sizeof(payload), nullptr, nullptr, nullptr));
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kAudioFrameCN, payload_type, 1234,
+                                             4321, payload, sizeof(payload),
+                                             nullptr, nullptr));
 
   RtpUtility::RtpHeaderParser rtp_parser(transport_.last_sent_packet_,
                                          transport_.last_sent_packet_len_);
@@ -1490,15 +1490,15 @@ TEST_F(RtpSenderAudioTest, CheckMarkerBitForTelephoneEvents) {
   // During start, it takes the starting timestamp as last sent timestamp.
   // The duration is calculated as the difference of current and last sent
   // timestamp. So for first call it will skip since the duration is zero.
-  ASSERT_TRUE(rtp_sender_->SendOutgoingData(kEmptyFrame, payload_type,
-                                                capture_time_ms, 0, nullptr, 0,
-                                                nullptr, nullptr, nullptr));
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kEmptyFrame, payload_type,
+                                             capture_time_ms, 0, nullptr, 0,
+                                             nullptr, nullptr));
   // DTMF Sample Length is (Frequency/1000) * Duration.
   // So in this case, it is (8000/1000) * 500 = 4000.
   // Sending it as two packets.
-  ASSERT_TRUE(rtp_sender_->SendOutgoingData(
-                      kEmptyFrame, payload_type, capture_time_ms + 2000, 0,
-                      nullptr, 0, nullptr, nullptr, nullptr));
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kEmptyFrame, payload_type,
+                                             capture_time_ms + 2000, 0, nullptr,
+                                             0, nullptr, nullptr));
   std::unique_ptr<webrtc::RtpHeaderParser> rtp_parser(
       webrtc::RtpHeaderParser::Create());
   ASSERT_TRUE(rtp_parser.get() != nullptr);
@@ -1508,9 +1508,9 @@ TEST_F(RtpSenderAudioTest, CheckMarkerBitForTelephoneEvents) {
   // Marker Bit should be set to 1 for first packet.
   EXPECT_TRUE(rtp_header.markerBit);
 
-  ASSERT_TRUE(rtp_sender_->SendOutgoingData(
-                      kEmptyFrame, payload_type, capture_time_ms + 4000, 0,
-                      nullptr, 0, nullptr, nullptr, nullptr));
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kEmptyFrame, payload_type,
+                                             capture_time_ms + 4000, 0, nullptr,
+                                             0, nullptr, nullptr));
   ASSERT_TRUE(rtp_parser->Parse(transport_.last_sent_packet_,
                                 transport_.last_sent_packet_len_, &rtp_header));
   // Marker Bit should be set to 0 for rest of the packets.
@@ -1529,9 +1529,9 @@ TEST_F(RtpSenderTestWithoutPacer, BytesReportedCorrectly) {
                                             0, 1500));
   uint8_t payload[] = {47, 11, 32, 93, 89};
 
-  ASSERT_TRUE(rtp_sender_->SendOutgoingData(
-                      kVideoFrameKey, kPayloadType, 1234, 4321, payload,
-                      sizeof(payload), nullptr, nullptr, nullptr));
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kVideoFrameKey, kPayloadType, 1234,
+                                             4321, payload, sizeof(payload),
+                                             nullptr, nullptr));
 
   // Will send 2 full-size padding packets.
   rtp_sender_->TimeToSendPadding(1, PacketInfo::kNotAProbe);

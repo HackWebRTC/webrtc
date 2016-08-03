@@ -34,12 +34,12 @@ class RTPSenderAudio : public DTMFqueue {
                                uint32_t rate,
                                RtpUtility::Payload** payload);
 
-  bool SendAudio(FrameType frame_type,
-                 int8_t payload_type,
-                 uint32_t capture_timestamp,
-                 const uint8_t* payload_data,
-                 size_t payload_size,
-                 const RTPFragmentationHeader* fragmentation);
+  int32_t SendAudio(FrameType frame_type,
+                    int8_t payload_type,
+                    uint32_t capture_timestamp,
+                    const uint8_t* payload_data,
+                    size_t payload_size,
+                    const RTPFragmentationHeader* fragmentation);
 
   // set audio packet size, used to determine when it's time to send a DTMF
   // packet in silence (CNG)
@@ -62,7 +62,7 @@ class RTPSenderAudio : public DTMFqueue {
   int32_t RED(int8_t* payload_type) const;
 
  protected:
-  bool SendTelephoneEventPacket(
+  int32_t SendTelephoneEventPacket(
       bool ended,
       int8_t dtmf_payload_type,
       uint32_t dtmf_timestamp,

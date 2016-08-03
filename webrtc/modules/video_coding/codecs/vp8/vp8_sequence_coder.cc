@@ -26,9 +26,9 @@ class Vp8SequenceCoderEncodeCallback : public webrtc::EncodedImageCallback {
   explicit Vp8SequenceCoderEncodeCallback(FILE* encoded_file)
       : encoded_file_(encoded_file), encoded_bytes_(0) {}
   ~Vp8SequenceCoderEncodeCallback();
-  Result OnEncodedImage(const webrtc::EncodedImage& encoded_image,
-                        const webrtc::CodecSpecificInfo* codec_specific_info,
-                        const webrtc::RTPFragmentationHeader*);
+  int Encoded(const webrtc::EncodedImage& encoded_image,
+              const webrtc::CodecSpecificInfo* codecSpecificInfo,
+              const webrtc::RTPFragmentationHeader*);
   // Returns the encoded image.
   webrtc::EncodedImage encoded_image() { return encoded_image_; }
   size_t encoded_bytes() { return encoded_bytes_; }
@@ -43,9 +43,7 @@ Vp8SequenceCoderEncodeCallback::~Vp8SequenceCoderEncodeCallback() {
   delete[] encoded_image_._buffer;
   encoded_image_._buffer = NULL;
 }
-
-webrtc::EncodedImageCallback::Result
-Vp8SequenceCoderEncodeCallback::OnEncodedImage(
+int Vp8SequenceCoderEncodeCallback::Encoded(
     const webrtc::EncodedImage& encoded_image,
     const webrtc::CodecSpecificInfo* codecSpecificInfo,
     const webrtc::RTPFragmentationHeader* fragmentation) {
@@ -60,11 +58,11 @@ Vp8SequenceCoderEncodeCallback::OnEncodedImage(
   if (encoded_file_ != NULL) {
     if (fwrite(encoded_image._buffer, 1, encoded_image._length,
                encoded_file_) != encoded_image._length) {
-      return Result(Result::ERROR_SEND_FAILED, 0);
+      return -1;
     }
   }
   encoded_bytes_ += encoded_image_._length;
-  return Result(Result::OK, 0);
+  return 0;
 }
 
 // TODO(mikhal): Add support for varying the frame size.
