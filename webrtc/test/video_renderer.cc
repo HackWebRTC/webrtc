@@ -24,10 +24,8 @@ VideoRenderer* VideoRenderer::Create(const char* window_title,
                                      size_t width,
                                      size_t height) {
   VideoRenderer* renderer = CreatePlatformRenderer(window_title, width, height);
-  if (renderer != NULL) {
-    // TODO(mflodman) Add a warning log.
+  if (renderer != nullptr)
     return renderer;
-  }
 
   return new NullRenderer();
 }

@@ -220,7 +220,6 @@ using namespace videocapturemodule;
 - (void)captureOutput:(QTCaptureOutput *)captureOutput
     didDropVideoFrameWithSampleBuffer:(QTSampleBuffer *)sampleBuffer
                        fromConnection:(QTCaptureConnection *)connection {
-  // TODO(mflodman) Experiment more when this happens.
 }
 
 - (void)captureOutput:(QTCaptureOutput *)captureOutput

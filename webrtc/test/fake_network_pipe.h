@@ -63,7 +63,6 @@ class NetworkPacket {
 // capacity and adding an extra transport delay in addition to the capacity
 // introduced delay.
 
-// TODO(mflodman) Add random and bursty packet loss.
 class FakeNetworkPipe {
  public:
   struct Config {
