@@ -1344,6 +1344,17 @@ if (rtc_include_tests) {
     ]
   }
 
+  executable("RTPjitter") {
+    testonly = true
+    deps = [
+      "../..:webrtc_common",
+      "//testing/gtest",
+    ]
+    sources = [
+      "neteq/test/RTPjitter.cc",
+    ]
+  }
+
   executable("rtp_analyze") {
     testonly = true
 

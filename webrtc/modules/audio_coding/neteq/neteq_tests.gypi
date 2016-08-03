@@ -80,6 +80,7 @@
       'target_name': 'RTPjitter',
       'type': 'executable',
       'dependencies': [
+        '<(webrtc_root)/common.gyp:webrtc_common',
         '<(DEPTH)/testing/gtest.gyp:gtest',
       ],
       'sources': [
