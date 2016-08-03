@@ -418,6 +418,7 @@ def _CommonChecks(input_api, output_api):
   # they do not follow C++ lint rules.
   black_list = input_api.DEFAULT_BLACK_LIST + (
     r".*\bobjc[\\\/].*",
+    r"webrtc\/build\/ios\/SDK\/.*",
   )
   source_file_filter = lambda x: input_api.FilterSourceFile(x, None, black_list)
   results.extend(_CheckApprovedFilesLintClean(
