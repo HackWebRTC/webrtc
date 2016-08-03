@@ -171,8 +171,9 @@ TEST_F(RtpRtcpAudioTest, Basic) {
 
   // Send an empty RTP packet.
   // Should fail since we have not registered the payload type.
-  EXPECT_EQ(-1, module1->SendOutgoingData(webrtc::kAudioFrameSpeech,
-                                          96, 0, -1, NULL, 0));
+  EXPECT_FALSE(module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96, 0, -1,
+                                         nullptr, 0, nullptr, nullptr,
+                                         nullptr));
 
   CodecInst voice_codec;
   memset(&voice_codec, 0, sizeof(voice_codec));
@@ -197,8 +198,9 @@ TEST_F(RtpRtcpAudioTest, Basic) {
       (voice_codec.rate < 0) ? 0 : voice_codec.rate));
 
   const uint8_t test[5] = "test";
-  EXPECT_EQ(0, module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96,
-                                         0, -1, test, 4));
+  EXPECT_EQ(true,
+            module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96, 0, -1,
+                                      test, 4, nullptr, nullptr, nullptr));
 
   EXPECT_EQ(test_ssrc, rtp_receiver2_->SSRC());
   uint32_t timestamp;
@@ -271,9 +273,9 @@ TEST_F(RtpRtcpAudioTest, RED) {
 
   const uint8_t test[5] = "test";
   // Send a RTP packet.
-  EXPECT_EQ(0, module1->SendOutgoingData(webrtc::kAudioFrameSpeech,
-                                         96, 160, -1, test, 4,
-                                         &fragmentation));
+  EXPECT_TRUE(module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96, 160, -1,
+                                        test, 4, &fragmentation, nullptr,
+                                        nullptr));
 
   EXPECT_EQ(0, module1->SetSendREDPayloadType(-1));
   EXPECT_EQ(-1, module1->SendREDPayloadType(&red));
@@ -333,16 +335,18 @@ TEST_F(RtpRtcpAudioTest, DTMF) {
   // Send RTP packets for 16 tones a 160 ms  100ms
   // pause between = 2560ms + 1600ms = 4160ms
   for (; timeStamp <= 250 * 160; timeStamp += 160) {
-    EXPECT_EQ(0, module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96,
-                                           timeStamp, -1, test, 4));
+    EXPECT_TRUE(module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96,
+                                          timeStamp, -1, test, 4, nullptr,
+                                          nullptr, nullptr));
     fake_clock.AdvanceTimeMilliseconds(20);
     module1->Process();
   }
   EXPECT_EQ(0, module1->SendTelephoneEventOutband(32, 9000, 10));
 
   for (; timeStamp <= 740 * 160; timeStamp += 160) {
-    EXPECT_EQ(0, module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96,
-                                           timeStamp, -1, test, 4));
+    EXPECT_TRUE(module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96,
+                                          timeStamp, -1, test, 4, nullptr,
+                                          nullptr, nullptr));
     fake_clock.AdvanceTimeMilliseconds(20);
     module1->Process();
   }

@@ -85,10 +85,12 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
 
   class FakeEncodedImageCallback : public EncodedImageCallback {
    public:
-    int32_t Encoded(const EncodedImage& encoded_image,
-                    const CodecSpecificInfo* codec_specific_info,
-                    const RTPFragmentationHeader* fragmentation) override {
-      return ++callback_count_;
+    Result OnEncodedImage(
+        const EncodedImage& encoded_image,
+        const CodecSpecificInfo* codec_specific_info,
+        const RTPFragmentationHeader* fragmentation) override {
+      ++callback_count_;
+      return Result(Result::OK, callback_count_);
     }
     int callback_count_ = 0;
   };

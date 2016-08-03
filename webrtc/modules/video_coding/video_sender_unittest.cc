@@ -93,13 +93,13 @@ class EncodedImageCallbackImpl : public EncodedImageCallback {
 
   virtual ~EncodedImageCallbackImpl() {}
 
-  int32_t Encoded(const EncodedImage& encoded_image,
-                  const CodecSpecificInfo* codec_specific_info,
-                  const RTPFragmentationHeader* fragmentation) override {
+  Result OnEncodedImage(const EncodedImage& encoded_image,
+                        const CodecSpecificInfo* codec_specific_info,
+                        const RTPFragmentationHeader* fragmentation) override {
     assert(codec_specific_info);
     frame_data_.push_back(
         FrameData(encoded_image._length, *codec_specific_info));
-    return 0;
+    return Result(Result::OK, encoded_image._timeStamp);
   }
 
   void Reset() {

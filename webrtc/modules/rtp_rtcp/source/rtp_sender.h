@@ -76,12 +76,12 @@ class RTPSenderInterface {
   virtual size_t MaxDataPayloadLength() const = 0;
   virtual uint16_t ActualSendBitrateKbit() const = 0;
 
-  virtual int32_t SendToNetwork(uint8_t* data_buffer,
-                                size_t payload_length,
-                                size_t rtp_header_length,
-                                int64_t capture_time_ms,
-                                StorageType storage,
-                                RtpPacketSender::Priority priority) = 0;
+  virtual bool SendToNetwork(uint8_t* data_buffer,
+                             size_t payload_length,
+                             size_t rtp_header_length,
+                             int64_t capture_time_ms,
+                             StorageType storage,
+                             RtpPacketSender::Priority priority) = 0;
 
   virtual bool UpdateVideoRotation(uint8_t* rtp_packet,
                                    size_t rtp_packet_length,
@@ -154,14 +154,15 @@ class RTPSender : public RTPSenderInterface {
 
   void SetMaxPayloadLength(size_t max_payload_length);
 
-  int32_t SendOutgoingData(FrameType frame_type,
-                           int8_t payload_type,
-                           uint32_t timestamp,
-                           int64_t capture_time_ms,
-                           const uint8_t* payload_data,
-                           size_t payload_size,
-                           const RTPFragmentationHeader* fragmentation,
-                           const RTPVideoHeader* rtp_header);
+  bool SendOutgoingData(FrameType frame_type,
+                        int8_t payload_type,
+                        uint32_t timestamp,
+                        int64_t capture_time_ms,
+                        const uint8_t* payload_data,
+                        size_t payload_size,
+                        const RTPFragmentationHeader* fragmentation,
+                        const RTPVideoHeader* rtp_header,
+                        uint32_t* transport_frame_id_out);
 
   // RTP header extension
   int32_t SetTransmissionTimeOffset(int32_t transmission_time_offset);
@@ -276,12 +277,12 @@ class RTPSender : public RTPSenderInterface {
   uint32_t Timestamp() const override;
   uint32_t SSRC() const override;
 
-  int32_t SendToNetwork(uint8_t* data_buffer,
-                        size_t payload_length,
-                        size_t rtp_header_length,
-                        int64_t capture_time_ms,
-                        StorageType storage,
-                        RtpPacketSender::Priority priority) override;
+  bool SendToNetwork(uint8_t* data_buffer,
+                     size_t payload_length,
+                     size_t rtp_header_length,
+                     int64_t capture_time_ms,
+                     StorageType storage,
+                     RtpPacketSender::Priority priority) override;
 
   // Audio.
 

@@ -61,9 +61,9 @@ class FakeH264Encoder : public FakeEncoder, public EncodedImageCallback {
   int32_t RegisterEncodeCompleteCallback(
       EncodedImageCallback* callback) override;
 
-  int32_t Encoded(const EncodedImage& encodedImage,
-                  const CodecSpecificInfo* codecSpecificInfo,
-                  const RTPFragmentationHeader* fragments) override;
+  Result OnEncodedImage(const EncodedImage& encodedImage,
+                        const CodecSpecificInfo* codecSpecificInfo,
+                        const RTPFragmentationHeader* fragments) override;
 
  private:
   EncodedImageCallback* callback_;
