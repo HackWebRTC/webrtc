@@ -744,7 +744,6 @@ std::unique_ptr<TransportFeedback> TransportFeedback::ParseFrom(
     }
   }
 
-  RTC_DCHECK_GE(index, end_index - 3);
   RTC_DCHECK_LE(index, end_index);
 
   return packet;
