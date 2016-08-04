@@ -94,6 +94,7 @@ if 'android' in target_os:
     'third_party/ashmem',
     'third_party/bouncycastle',
     'third_party/catapult',
+    'third_party/closure_compiler',
     'third_party/guava',
     'third_party/hamcrest',
     'third_party/icu',

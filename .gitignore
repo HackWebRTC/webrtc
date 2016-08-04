@@ -86,6 +86,7 @@
 /third_party/catapult
 /third_party/clang_format
 /third_party/class-dump
+/third_party/closure_compiler
 /third_party/colorama
 /third_party/cygwin
 /third_party/directxsdk
