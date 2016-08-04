@@ -15,6 +15,7 @@
 #include "webrtc/base/fakeclock.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/media/base/fakemediaengine.h"
 #include "webrtc/media/base/fakertp.h"
 #include "webrtc/media/base/mediachannel.h"
@@ -94,7 +95,7 @@ template<class T>
 class ChannelTest : public testing::Test, public sigslot::has_slots<> {
  public:
   enum Flags { RTCP = 0x1, RTCP_MUX = 0x2, SECURE = 0x4, SSRC_MUX = 0x8,
-               DTLS = 0x10 };
+               DTLS = 0x10, GCM_CIPHER = 0x20 };
 
   ChannelTest(bool verify_playout,
               rtc::ArrayView<const uint8_t> rtp_data,
@@ -135,10 +136,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     media_channel2_ = ch2;
     channel1_.reset(
         CreateChannel(worker_thread, network_thread_, &media_engine_, ch1,
-                      transport_controller1_.get(), (flags1 & RTCP) != 0));
+                      transport_controller1_.get(), flags1));
     channel2_.reset(
         CreateChannel(worker_thread, network_thread_, &media_engine_, ch2,
-                      transport_controller2_.get(), (flags2 & RTCP) != 0));
+                      transport_controller2_.get(), flags2));
     channel1_->SignalMediaMonitor.connect(this,
                                           &ChannelTest<T>::OnMediaMonitor1);
     channel2_->SignalMediaMonitor.connect(this,
@@ -187,10 +188,14 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
       cricket::MediaEngineInterface* engine,
       typename T::MediaChannel* ch,
       cricket::TransportController* transport_controller,
-      bool rtcp) {
+      int flags) {
     typename T::Channel* channel =
         new typename T::Channel(worker_thread, network_thread, engine, ch,
-                                transport_controller, cricket::CN_AUDIO, rtcp);
+                                transport_controller, cricket::CN_AUDIO,
+                                (flags & RTCP) != 0);
+    rtc::CryptoOptions crypto_options;
+    crypto_options.enable_gcm_crypto_suites = (flags & GCM_CIPHER) != 0;
+    channel->SetCryptoOptions(crypto_options);
     if (!channel->Init_w(nullptr)) {
       delete channel;
       channel = NULL;
@@ -368,6 +373,21 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   }
   bool CheckNoRtcp2() {
     return media_channel2_->CheckNoRtcp();
+  }
+  // Checks that the channel is using GCM iff GCM_CIPHER is set in flags.
+  // Returns true if so.
+  bool CheckGcmCipher(typename T::Channel* channel, int flags) {
+    int suite;
+    if (!channel->transport_channel()->GetSrtpCryptoSuite(&suite)) {
+      return false;
+    }
+
+    if (flags & GCM_CIPHER) {
+      return rtc::IsGcmCryptoSuite(suite);
+    } else {
+      return (suite != rtc::SRTP_INVALID_CRYPTO_SUITE &&
+          !rtc::IsGcmCryptoSuite(suite));
+    }
   }
 
   void CreateContent(int flags,
@@ -1289,8 +1309,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   // Test that we properly send SRTP with RTCP in both directions.
   // You can pass in DTLS and/or RTCP_MUX as flags.
   void SendSrtpToSrtp(int flags1_in = 0, int flags2_in = 0) {
-    ASSERT((flags1_in & ~(RTCP_MUX | DTLS)) == 0);
-    ASSERT((flags2_in & ~(RTCP_MUX | DTLS)) == 0);
+    ASSERT((flags1_in & ~(RTCP_MUX | DTLS | GCM_CIPHER)) == 0);
+    ASSERT((flags2_in & ~(RTCP_MUX | DTLS | GCM_CIPHER)) == 0);
 
     int flags1 = RTCP | SECURE | flags1_in;
     int flags2 = RTCP | SECURE | flags2_in;
@@ -1308,6 +1328,14 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(channel2_->secure());
     EXPECT_EQ(dtls1 && dtls2, channel1_->secure_dtls());
     EXPECT_EQ(dtls1 && dtls2, channel2_->secure_dtls());
+    // We can only query the negotiated cipher suite for DTLS-SRTP transport
+    // channels.
+    if (dtls1 && dtls2) {
+      // A GCM cipher is only used if both channels support GCM ciphers.
+      int common_gcm_flags = flags1 & flags2 & GCM_CIPHER;
+      EXPECT_TRUE(CheckGcmCipher(channel1_.get(), common_gcm_flags));
+      EXPECT_TRUE(CheckGcmCipher(channel2_.get(), common_gcm_flags));
+    }
     SendRtp1();
     SendRtp2();
     SendRtcp1();
@@ -2034,10 +2062,14 @@ cricket::VideoChannel* ChannelTest<VideoTraits>::CreateChannel(
     cricket::MediaEngineInterface* engine,
     cricket::FakeVideoMediaChannel* ch,
     cricket::TransportController* transport_controller,
-    bool rtcp) {
+    int flags) {
   cricket::VideoChannel* channel =
       new cricket::VideoChannel(worker_thread, network_thread, ch,
-                                transport_controller, cricket::CN_VIDEO, rtcp);
+                                transport_controller, cricket::CN_VIDEO,
+                                (flags & RTCP) != 0);
+  rtc::CryptoOptions crypto_options;
+  crypto_options.enable_gcm_crypto_suites = (flags & GCM_CIPHER) != 0;
+  channel->SetCryptoOptions(crypto_options);
   if (!channel->Init_w(nullptr)) {
     delete channel;
     channel = NULL;
@@ -2263,6 +2295,21 @@ TEST_F(VoiceChannelSingleThreadTest, SendDtlsSrtpToSrtp) {
 TEST_F(VoiceChannelSingleThreadTest, SendDtlsSrtpToDtlsSrtp) {
   MAYBE_SKIP_TEST(HaveDtlsSrtp);
   Base::SendSrtpToSrtp(DTLS, DTLS);
+}
+
+TEST_F(VoiceChannelSingleThreadTest, SendDtlsSrtpToDtlsSrtpGcmBoth) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
+  Base::SendSrtpToSrtp(DTLS | GCM_CIPHER, DTLS | GCM_CIPHER);
+}
+
+TEST_F(VoiceChannelSingleThreadTest, SendDtlsSrtpToDtlsSrtpGcmOne) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
+  Base::SendSrtpToSrtp(DTLS | GCM_CIPHER, DTLS);
+}
+
+TEST_F(VoiceChannelSingleThreadTest, SendDtlsSrtpToDtlsSrtpGcmTwo) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
+  Base::SendSrtpToSrtp(DTLS, DTLS | GCM_CIPHER);
 }
 
 TEST_F(VoiceChannelSingleThreadTest, SendDtlsSrtpToDtlsSrtpRtcpMux) {
@@ -2593,6 +2640,21 @@ TEST_F(VoiceChannelDoubleThreadTest, SendDtlsSrtpToSrtp) {
 TEST_F(VoiceChannelDoubleThreadTest, SendDtlsSrtpToDtlsSrtp) {
   MAYBE_SKIP_TEST(HaveDtlsSrtp);
   Base::SendSrtpToSrtp(DTLS, DTLS);
+}
+
+TEST_F(VoiceChannelDoubleThreadTest, SendDtlsSrtpToDtlsSrtpGcmBoth) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
+  Base::SendSrtpToSrtp(DTLS | GCM_CIPHER, DTLS | GCM_CIPHER);
+}
+
+TEST_F(VoiceChannelDoubleThreadTest, SendDtlsSrtpToDtlsSrtpGcmOne) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
+  Base::SendSrtpToSrtp(DTLS | GCM_CIPHER, DTLS);
+}
+
+TEST_F(VoiceChannelDoubleThreadTest, SendDtlsSrtpToDtlsSrtpGcmTwo) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
+  Base::SendSrtpToSrtp(DTLS, DTLS | GCM_CIPHER);
 }
 
 TEST_F(VoiceChannelDoubleThreadTest, SendDtlsSrtpToDtlsSrtpRtcpMux) {
@@ -3274,10 +3336,14 @@ cricket::DataChannel* ChannelTest<DataTraits>::CreateChannel(
     cricket::MediaEngineInterface* engine,
     cricket::FakeDataMediaChannel* ch,
     cricket::TransportController* transport_controller,
-    bool rtcp) {
+    int flags) {
   cricket::DataChannel* channel =
       new cricket::DataChannel(worker_thread, network_thread, ch,
-                               transport_controller, cricket::CN_DATA, rtcp);
+                               transport_controller, cricket::CN_DATA,
+                               (flags & RTCP) != 0);
+  rtc::CryptoOptions crypto_options;
+  crypto_options.enable_gcm_crypto_suites = (flags & GCM_CIPHER) != 0;
+  channel->SetCryptoOptions(crypto_options);
   if (!channel->Init_w(nullptr)) {
     delete channel;
     channel = NULL;

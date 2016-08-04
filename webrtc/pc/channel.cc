@@ -555,6 +555,11 @@ int BaseChannel::SetOption_n(SocketType type,
   return channel ? channel->SetOption(opt, value) : -1;
 }
 
+bool BaseChannel::SetCryptoOptions(const rtc::CryptoOptions& crypto_options) {
+  crypto_options_ = crypto_options;
+  return true;
+}
+
 void BaseChannel::OnWritableState(TransportChannel* channel) {
   RTC_DCHECK(channel == transport_channel_ ||
              channel == rtcp_transport_channel_);
@@ -964,7 +969,7 @@ bool BaseChannel::SetDtlsSrtpCryptoSuites_n(TransportChannel* tc, bool rtcp) {
   if (!rtcp) {
     GetSrtpCryptoSuites_n(&crypto_suites);
   } else {
-    GetDefaultSrtpCryptoSuites(&crypto_suites);
+    GetDefaultSrtpCryptoSuites(crypto_options(), &crypto_suites);
   }
   return tc->SetSrtpCryptoSuites(crypto_suites);
 }
@@ -996,9 +1001,16 @@ bool BaseChannel::SetupDtlsSrtp_n(bool rtcp_channel) {
                << content_name() << " "
                << PacketType(rtcp_channel);
 
+  int key_len;
+  int salt_len;
+  if (!rtc::GetSrtpKeyAndSaltLengths(selected_crypto_suite, &key_len,
+      &salt_len)) {
+    LOG(LS_ERROR) << "Unknown DTLS-SRTP crypto suite" << selected_crypto_suite;
+    return false;
+  }
+
   // OK, we're now doing DTLS (RFC 5764)
-  std::vector<unsigned char> dtls_buffer(SRTP_MASTER_KEY_KEY_LEN * 2 +
-                                         SRTP_MASTER_KEY_SALT_LEN * 2);
+  std::vector<unsigned char> dtls_buffer(key_len * 2 + salt_len * 2);
 
   // RFC 5705 exporter using the RFC 5764 parameters
   if (!channel->ExportKeyingMaterial(
@@ -1011,22 +1023,16 @@ bool BaseChannel::SetupDtlsSrtp_n(bool rtcp_channel) {
   }
 
   // Sync up the keys with the DTLS-SRTP interface
-  std::vector<unsigned char> client_write_key(SRTP_MASTER_KEY_KEY_LEN +
-    SRTP_MASTER_KEY_SALT_LEN);
-  std::vector<unsigned char> server_write_key(SRTP_MASTER_KEY_KEY_LEN +
-    SRTP_MASTER_KEY_SALT_LEN);
+  std::vector<unsigned char> client_write_key(key_len + salt_len);
+  std::vector<unsigned char> server_write_key(key_len + salt_len);
   size_t offset = 0;
-  memcpy(&client_write_key[0], &dtls_buffer[offset],
-    SRTP_MASTER_KEY_KEY_LEN);
-  offset += SRTP_MASTER_KEY_KEY_LEN;
-  memcpy(&server_write_key[0], &dtls_buffer[offset],
-    SRTP_MASTER_KEY_KEY_LEN);
-  offset += SRTP_MASTER_KEY_KEY_LEN;
-  memcpy(&client_write_key[SRTP_MASTER_KEY_KEY_LEN],
-    &dtls_buffer[offset], SRTP_MASTER_KEY_SALT_LEN);
-  offset += SRTP_MASTER_KEY_SALT_LEN;
-  memcpy(&server_write_key[SRTP_MASTER_KEY_KEY_LEN],
-    &dtls_buffer[offset], SRTP_MASTER_KEY_SALT_LEN);
+  memcpy(&client_write_key[0], &dtls_buffer[offset], key_len);
+  offset += key_len;
+  memcpy(&server_write_key[0], &dtls_buffer[offset], key_len);
+  offset += key_len;
+  memcpy(&client_write_key[key_len], &dtls_buffer[offset], salt_len);
+  offset += salt_len;
+  memcpy(&server_write_key[key_len], &dtls_buffer[offset], salt_len);
 
   std::vector<unsigned char> *send_key, *recv_key;
   rtc::SSLRole role;
@@ -1846,7 +1852,7 @@ void VoiceChannel::OnAudioMonitorUpdate(AudioMonitor* monitor,
 
 void VoiceChannel::GetSrtpCryptoSuites_n(
     std::vector<int>* crypto_suites) const {
-  GetSupportedAudioCryptoSuites(crypto_suites);
+  GetSupportedAudioCryptoSuites(crypto_options(), crypto_suites);
 }
 
 VideoChannel::VideoChannel(rtc::Thread* worker_thread,
@@ -2107,7 +2113,7 @@ void VideoChannel::OnMediaMonitorUpdate(
 
 void VideoChannel::GetSrtpCryptoSuites_n(
     std::vector<int>* crypto_suites) const {
-  GetSupportedVideoCryptoSuites(crypto_suites);
+  GetSupportedVideoCryptoSuites(crypto_options(), crypto_suites);
 }
 
 DataChannel::DataChannel(rtc::Thread* worker_thread,
@@ -2420,7 +2426,7 @@ void DataChannel::OnDataChannelReadyToSend(bool writable) {
 }
 
 void DataChannel::GetSrtpCryptoSuites_n(std::vector<int>* crypto_suites) const {
-  GetSupportedDataCryptoSuites(crypto_suites);
+  GetSupportedDataCryptoSuites(crypto_options(), crypto_suites);
 }
 
 bool DataChannel::ShouldSetupDtlsSrtp_n() const {

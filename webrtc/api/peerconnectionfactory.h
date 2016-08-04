@@ -31,9 +31,7 @@ namespace webrtc {
 
 class PeerConnectionFactory : public PeerConnectionFactoryInterface {
  public:
-  void SetOptions(const Options& options) override {
-    options_ = options;
-  }
+  void SetOptions(const Options& options) override;
 
   // Deprecated, use version without constraints.
   rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(

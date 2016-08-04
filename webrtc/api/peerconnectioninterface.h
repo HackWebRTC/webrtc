@@ -597,7 +597,8 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
           disable_sctp_data_channels(false),
           disable_network_monitor(false),
           network_ignore_mask(rtc::kDefaultNetworkIgnoreMask),
-          ssl_max_version(rtc::SSL_PROTOCOL_DTLS_12) {}
+          ssl_max_version(rtc::SSL_PROTOCOL_DTLS_12),
+          crypto_options(rtc::CryptoOptions::NoGcm()) {}
     bool disable_encryption;
     bool disable_sctp_data_channels;
     bool disable_network_monitor;
@@ -611,6 +612,9 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
     // supported by both ends will be used for the connection, i.e. if one
     // party supports DTLS 1.0 and the other DTLS 1.2, DTLS 1.0 will be used.
     rtc::SSLProtocolVersion ssl_max_version;
+
+    // Sets crypto related options, e.g. enabled cipher suites.
+    rtc::CryptoOptions crypto_options;
   };
 
   virtual void SetOptions(const Options& options) = 0;

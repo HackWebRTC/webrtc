@@ -245,6 +245,13 @@ bool CreateRandomString(size_t len, const std::string& table,
                             static_cast<int>(table.size()), str);
 }
 
+bool CreateRandomData(size_t length, std::string* data) {
+  data->resize(length);
+  // std::string is guaranteed to use contiguous memory in c++11 so we can
+  // safely write directly to it.
+  return Rng().Generate(&data->at(0), length);
+}
+
 // Version 4 UUID is of the form:
 // xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
 // Where 'x' is a hex digit, and 'y' is 8, 9, a or b.

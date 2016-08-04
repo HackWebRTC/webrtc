@@ -73,6 +73,8 @@ using cricket::SEC_ENABLED;
 using cricket::SEC_REQUIRED;
 using rtc::CS_AES_CM_128_HMAC_SHA1_32;
 using rtc::CS_AES_CM_128_HMAC_SHA1_80;
+using rtc::CS_AEAD_AES_128_GCM;
+using rtc::CS_AEAD_AES_256_GCM;
 using webrtc::RtpExtension;
 
 static const AudioCodec kAudioCodecs1[] = {
@@ -453,6 +455,52 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
     return true;
   }
 
+  void TestVideoGcmCipher(bool gcm_offer, bool gcm_answer) {
+    MediaSessionOptions offer_opts;
+    offer_opts.recv_video = true;
+    offer_opts.crypto_options.enable_gcm_crypto_suites = gcm_offer;
+    MediaSessionOptions answer_opts;
+    answer_opts.recv_video = true;
+    answer_opts.crypto_options.enable_gcm_crypto_suites = gcm_answer;
+    f1_.set_secure(SEC_ENABLED);
+    f2_.set_secure(SEC_ENABLED);
+    std::unique_ptr<SessionDescription> offer(
+        f1_.CreateOffer(offer_opts, NULL));
+    ASSERT_TRUE(offer.get() != NULL);
+    std::unique_ptr<SessionDescription> answer(
+        f2_.CreateAnswer(offer.get(), answer_opts, NULL));
+    const ContentInfo* ac = answer->GetContentByName("audio");
+    const ContentInfo* vc = answer->GetContentByName("video");
+    ASSERT_TRUE(ac != NULL);
+    ASSERT_TRUE(vc != NULL);
+    EXPECT_EQ(std::string(NS_JINGLE_RTP), ac->type);
+    EXPECT_EQ(std::string(NS_JINGLE_RTP), vc->type);
+    const AudioContentDescription* acd =
+        static_cast<const AudioContentDescription*>(ac->description);
+    const VideoContentDescription* vcd =
+        static_cast<const VideoContentDescription*>(vc->description);
+    EXPECT_EQ(MEDIA_TYPE_AUDIO, acd->type());
+    EXPECT_EQ(MAKE_VECTOR(kAudioCodecsAnswer), acd->codecs());
+    EXPECT_EQ(kAutoBandwidth, acd->bandwidth());  // negotiated auto bw
+    EXPECT_NE(0U, acd->first_ssrc());             // a random nonzero ssrc
+    EXPECT_TRUE(acd->rtcp_mux());                 // negotiated rtcp-mux
+    if (gcm_offer && gcm_answer) {
+      ASSERT_CRYPTO(acd, 1U, CS_AEAD_AES_256_GCM);
+    } else {
+      ASSERT_CRYPTO(acd, 1U, CS_AES_CM_128_HMAC_SHA1_32);
+    }
+    EXPECT_EQ(MEDIA_TYPE_VIDEO, vcd->type());
+    EXPECT_EQ(MAKE_VECTOR(kVideoCodecsAnswer), vcd->codecs());
+    EXPECT_NE(0U, vcd->first_ssrc());             // a random nonzero ssrc
+    EXPECT_TRUE(vcd->rtcp_mux());                 // negotiated rtcp-mux
+    if (gcm_offer && gcm_answer) {
+      ASSERT_CRYPTO(vcd, 1U, CS_AEAD_AES_256_GCM);
+    } else {
+      ASSERT_CRYPTO(vcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
+    }
+    EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), vcd->protocol());
+  }
+
  protected:
   MediaSessionDescriptionFactory f1_;
   MediaSessionDescriptionFactory f2_;
@@ -766,6 +814,34 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateAudioAnswer) {
   EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), acd->protocol());
 }
 
+// Create a typical audio answer with GCM ciphers enabled, and ensure it
+// matches what we expect.
+TEST_F(MediaSessionDescriptionFactoryTest, TestCreateAudioAnswerGcm) {
+  f1_.set_secure(SEC_ENABLED);
+  f2_.set_secure(SEC_ENABLED);
+  MediaSessionOptions options;
+  options.crypto_options.enable_gcm_crypto_suites = true;
+  std::unique_ptr<SessionDescription> offer(
+      f1_.CreateOffer(options, NULL));
+  ASSERT_TRUE(offer.get() != NULL);
+  std::unique_ptr<SessionDescription> answer(
+      f2_.CreateAnswer(offer.get(), options, NULL));
+  const ContentInfo* ac = answer->GetContentByName("audio");
+  const ContentInfo* vc = answer->GetContentByName("video");
+  ASSERT_TRUE(ac != NULL);
+  ASSERT_TRUE(vc == NULL);
+  EXPECT_EQ(std::string(NS_JINGLE_RTP), ac->type);
+  const AudioContentDescription* acd =
+      static_cast<const AudioContentDescription*>(ac->description);
+  EXPECT_EQ(MEDIA_TYPE_AUDIO, acd->type());
+  EXPECT_EQ(MAKE_VECTOR(kAudioCodecsAnswer), acd->codecs());
+  EXPECT_NE(0U, acd->first_ssrc());             // a random nonzero ssrc
+  EXPECT_EQ(kAutoBandwidth, acd->bandwidth());  // negotiated auto bw
+  EXPECT_TRUE(acd->rtcp_mux());                 // negotiated rtcp-mux
+  ASSERT_CRYPTO(acd, 1U, CS_AEAD_AES_256_GCM);
+  EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), acd->protocol());
+}
+
 // Create a typical video answer, and ensure it matches what we expect.
 TEST_F(MediaSessionDescriptionFactoryTest, TestCreateVideoAnswer) {
   MediaSessionOptions opts;
@@ -800,6 +876,24 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateVideoAnswer) {
   EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), vcd->protocol());
 }
 
+// Create a typical video answer with GCM ciphers enabled, and ensure it
+// matches what we expect.
+TEST_F(MediaSessionDescriptionFactoryTest, TestCreateVideoAnswerGcm) {
+  TestVideoGcmCipher(true, true);
+}
+
+// Create a typical video answer with GCM ciphers enabled for the offer only,
+// and ensure it matches what we expect.
+TEST_F(MediaSessionDescriptionFactoryTest, TestCreateVideoAnswerGcmOffer) {
+  TestVideoGcmCipher(true, false);
+}
+
+// Create a typical video answer with GCM ciphers enabled for the answer only,
+// and ensure it matches what we expect.
+TEST_F(MediaSessionDescriptionFactoryTest, TestCreateVideoAnswerGcmAnswer) {
+  TestVideoGcmCipher(false, true);
+}
+
 TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataAnswer) {
   MediaSessionOptions opts;
   opts.data_channel_type = cricket::DCT_RTP;
@@ -830,6 +924,40 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataAnswer) {
   EXPECT_NE(0U, vcd->first_ssrc());             // a random nonzero ssrc
   EXPECT_TRUE(vcd->rtcp_mux());                 // negotiated rtcp-mux
   ASSERT_CRYPTO(vcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
+  EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), vcd->protocol());
+}
+
+TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataAnswerGcm) {
+  MediaSessionOptions opts;
+  opts.data_channel_type = cricket::DCT_RTP;
+  opts.crypto_options.enable_gcm_crypto_suites = true;
+  f1_.set_secure(SEC_ENABLED);
+  f2_.set_secure(SEC_ENABLED);
+  std::unique_ptr<SessionDescription> offer(f1_.CreateOffer(opts, NULL));
+  ASSERT_TRUE(offer.get() != NULL);
+  std::unique_ptr<SessionDescription> answer(
+      f2_.CreateAnswer(offer.get(), opts, NULL));
+  const ContentInfo* ac = answer->GetContentByName("audio");
+  const ContentInfo* vc = answer->GetContentByName("data");
+  ASSERT_TRUE(ac != NULL);
+  ASSERT_TRUE(vc != NULL);
+  EXPECT_EQ(std::string(NS_JINGLE_RTP), ac->type);
+  EXPECT_EQ(std::string(NS_JINGLE_RTP), vc->type);
+  const AudioContentDescription* acd =
+      static_cast<const AudioContentDescription*>(ac->description);
+  const DataContentDescription* vcd =
+      static_cast<const DataContentDescription*>(vc->description);
+  EXPECT_EQ(MEDIA_TYPE_AUDIO, acd->type());
+  EXPECT_EQ(MAKE_VECTOR(kAudioCodecsAnswer), acd->codecs());
+  EXPECT_EQ(kAutoBandwidth, acd->bandwidth());  // negotiated auto bw
+  EXPECT_NE(0U, acd->first_ssrc());             // a random nonzero ssrc
+  EXPECT_TRUE(acd->rtcp_mux());                 // negotiated rtcp-mux
+  ASSERT_CRYPTO(acd, 1U, CS_AEAD_AES_256_GCM);
+  EXPECT_EQ(MEDIA_TYPE_DATA, vcd->type());
+  EXPECT_EQ(MAKE_VECTOR(kDataCodecsAnswer), vcd->codecs());
+  EXPECT_NE(0U, vcd->first_ssrc());             // a random nonzero ssrc
+  EXPECT_TRUE(vcd->rtcp_mux());                 // negotiated rtcp-mux
+  ASSERT_CRYPTO(vcd, 1U, CS_AEAD_AES_256_GCM);
   EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), vcd->protocol());
 }
 

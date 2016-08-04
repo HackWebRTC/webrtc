@@ -18,6 +18,7 @@
 #include <unordered_map>
 #include <utility>
 
+#include "webrtc/base/base64.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
@@ -36,11 +37,13 @@ static const uint32_t kMaxSctpSid = 1023;
 namespace {
 const char kInline[] = "inline:";
 
-void GetSupportedCryptoSuiteNames(void (*func)(std::vector<int>*),
+void GetSupportedCryptoSuiteNames(void (*func)(const rtc::CryptoOptions&,
+                                      std::vector<int>*),
+                                  const rtc::CryptoOptions& crypto_options,
                                   std::vector<std::string>* names) {
 #ifdef HAVE_SRTP
   std::vector<int> crypto_suites;
-  func(&crypto_suites);
+  func(crypto_options, &crypto_suites);
   for (const auto crypto : crypto_suites) {
     names->push_back(rtc::SrtpCryptoSuiteToName(crypto));
   }
@@ -107,12 +110,22 @@ static bool IsMediaContentOfType(const ContentInfo* content,
 
 static bool CreateCryptoParams(int tag, const std::string& cipher,
                                CryptoParams *out) {
-  std::string key;
-  key.reserve(SRTP_MASTER_KEY_BASE64_LEN);
-
-  if (!rtc::CreateRandomString(SRTP_MASTER_KEY_BASE64_LEN, &key)) {
+  int key_len;
+  int salt_len;
+  if (!rtc::GetSrtpKeyAndSaltLengths(
+      rtc::SrtpCryptoSuiteFromName(cipher), &key_len, &salt_len)) {
     return false;
   }
+
+  int master_key_len = key_len + salt_len;
+  std::string master_key;
+  if (!rtc::CreateRandomData(master_key_len, &master_key)) {
+    return false;
+  }
+
+  RTC_CHECK_EQ(static_cast<size_t>(master_key_len), master_key.size());
+  std::string key = rtc::Base64::Encode(master_key);
+
   out->tag = tag;
   out->cipher_suite = cipher;
   out->key_params = kInline;
@@ -171,63 +184,80 @@ bool FindMatchingCrypto(const CryptoParamsVec& cryptos,
   return false;
 }
 
-// For audio, HMAC 32 is prefered because of the low overhead.
-void GetSupportedAudioCryptoSuites(std::vector<int>* crypto_suites) {
+// For audio, HMAC 32 is prefered over HMAC 80 because of the low overhead.
+void GetSupportedAudioCryptoSuites(const rtc::CryptoOptions& crypto_options,
+    std::vector<int>* crypto_suites) {
 #ifdef HAVE_SRTP
+  if (crypto_options.enable_gcm_crypto_suites) {
+    crypto_suites->push_back(rtc::SRTP_AEAD_AES_256_GCM);
+    crypto_suites->push_back(rtc::SRTP_AEAD_AES_128_GCM);
+  }
   crypto_suites->push_back(rtc::SRTP_AES128_CM_SHA1_32);
   crypto_suites->push_back(rtc::SRTP_AES128_CM_SHA1_80);
 #endif
 }
 
-void GetSupportedAudioCryptoSuiteNames(
+void GetSupportedAudioCryptoSuiteNames(const rtc::CryptoOptions& crypto_options,
     std::vector<std::string>* crypto_suite_names) {
   GetSupportedCryptoSuiteNames(GetSupportedAudioCryptoSuites,
-                               crypto_suite_names);
+                               crypto_options, crypto_suite_names);
 }
 
-void GetSupportedVideoCryptoSuites(std::vector<int>* crypto_suites) {
-  GetDefaultSrtpCryptoSuites(crypto_suites);
+void GetSupportedVideoCryptoSuites(const rtc::CryptoOptions& crypto_options,
+    std::vector<int>* crypto_suites) {
+  GetDefaultSrtpCryptoSuites(crypto_options, crypto_suites);
 }
 
-void GetSupportedVideoCryptoSuiteNames(
+void GetSupportedVideoCryptoSuiteNames(const rtc::CryptoOptions& crypto_options,
     std::vector<std::string>* crypto_suite_names) {
   GetSupportedCryptoSuiteNames(GetSupportedVideoCryptoSuites,
-                               crypto_suite_names);
+                               crypto_options, crypto_suite_names);
 }
 
-void GetSupportedDataCryptoSuites(std::vector<int>* crypto_suites) {
-  GetDefaultSrtpCryptoSuites(crypto_suites);
+void GetSupportedDataCryptoSuites(const rtc::CryptoOptions& crypto_options,
+    std::vector<int>* crypto_suites) {
+  GetDefaultSrtpCryptoSuites(crypto_options, crypto_suites);
 }
 
-void GetSupportedDataCryptoSuiteNames(
+void GetSupportedDataCryptoSuiteNames(const rtc::CryptoOptions& crypto_options,
     std::vector<std::string>* crypto_suite_names) {
   GetSupportedCryptoSuiteNames(GetSupportedDataCryptoSuites,
-                               crypto_suite_names);
+                               crypto_options, crypto_suite_names);
 }
 
-void GetDefaultSrtpCryptoSuites(std::vector<int>* crypto_suites) {
+void GetDefaultSrtpCryptoSuites(const rtc::CryptoOptions& crypto_options,
+    std::vector<int>* crypto_suites) {
 #ifdef HAVE_SRTP
+  if (crypto_options.enable_gcm_crypto_suites) {
+    crypto_suites->push_back(rtc::SRTP_AEAD_AES_256_GCM);
+    crypto_suites->push_back(rtc::SRTP_AEAD_AES_128_GCM);
+  }
   crypto_suites->push_back(rtc::SRTP_AES128_CM_SHA1_80);
 #endif
 }
 
-void GetDefaultSrtpCryptoSuiteNames(
+void GetDefaultSrtpCryptoSuiteNames(const rtc::CryptoOptions& crypto_options,
     std::vector<std::string>* crypto_suite_names) {
-  GetSupportedCryptoSuiteNames(GetDefaultSrtpCryptoSuites, crypto_suite_names);
+  GetSupportedCryptoSuiteNames(GetDefaultSrtpCryptoSuites,
+                               crypto_options, crypto_suite_names);
 }
 
-// For video support only 80-bit SHA1 HMAC. For audio 32-bit HMAC is
-// tolerated unless bundle is enabled because it is low overhead. Pick the
-// crypto in the list that is supported.
+// Support any GCM cipher (if enabled through options). For video support only
+// 80-bit SHA1 HMAC. For audio 32-bit HMAC is tolerated unless bundle is enabled
+// because it is low overhead.
+// Pick the crypto in the list that is supported.
 static bool SelectCrypto(const MediaContentDescription* offer,
                          bool bundle,
+                         const rtc::CryptoOptions& crypto_options,
                          CryptoParams *crypto) {
   bool audio = offer->type() == MEDIA_TYPE_AUDIO;
   const CryptoParamsVec& cryptos = offer->cryptos();
 
   for (CryptoParamsVec::const_iterator i = cryptos.begin();
        i != cryptos.end(); ++i) {
-    if (rtc::CS_AES_CM_128_HMAC_SHA1_80 == i->cipher_suite ||
+    if ((crypto_options.enable_gcm_crypto_suites &&
+         rtc::IsGcmCryptoSuiteName(i->cipher_suite)) ||
+        rtc::CS_AES_CM_128_HMAC_SHA1_80 == i->cipher_suite ||
         (rtc::CS_AES_CM_128_HMAC_SHA1_32 == i->cipher_suite && audio &&
          !bundle)) {
       return CreateCryptoParams(i->tag, i->cipher_suite, crypto);
@@ -1034,7 +1064,7 @@ static bool CreateMediaContentAnswer(
 
   if (sdes_policy != SEC_DISABLED) {
     CryptoParams crypto;
-    if (SelectCrypto(offer, bundle_enabled, &crypto)) {
+    if (SelectCrypto(offer, bundle_enabled, options.crypto_options, &crypto)) {
       if (current_cryptos) {
         FindMatchingCrypto(*current_cryptos, crypto, &crypto);
       }
@@ -1672,7 +1702,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
 
   std::unique_ptr<AudioContentDescription> audio(new AudioContentDescription());
   std::vector<std::string> crypto_suites;
-  GetSupportedAudioCryptoSuiteNames(&crypto_suites);
+  GetSupportedAudioCryptoSuiteNames(options.crypto_options, &crypto_suites);
   if (!CreateMediaContentOffer(
           options,
           audio_codecs,
@@ -1722,7 +1752,7 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
 
   std::unique_ptr<VideoContentDescription> video(new VideoContentDescription());
   std::vector<std::string> crypto_suites;
-  GetSupportedVideoCryptoSuiteNames(&crypto_suites);
+  GetSupportedVideoCryptoSuiteNames(options.crypto_options, &crypto_suites);
   if (!CreateMediaContentOffer(
           options,
           video_codecs,
@@ -1798,7 +1828,7 @@ bool MediaSessionDescriptionFactory::AddDataContentForOffer(
     data->set_protocol(
         secure_transport ? kMediaProtocolDtlsSctp : kMediaProtocolSctp);
   } else {
-    GetSupportedDataCryptoSuiteNames(&crypto_suites);
+    GetSupportedDataCryptoSuiteNames(options.crypto_options, &crypto_suites);
   }
 
   if (!CreateMediaContentOffer(

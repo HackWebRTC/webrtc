@@ -64,6 +64,7 @@ void ChannelManager::Construct(MediaEngineInterface* me,
   network_thread_ = network_thread;
   capturing_ = false;
   enable_rtx_ = false;
+  crypto_options_ = rtc::CryptoOptions::NoGcm();
 }
 
 ChannelManager::~ChannelManager() {
@@ -95,6 +96,30 @@ bool ChannelManager::SetVideoRtxEnabled(bool enable) {
     LOG(LS_WARNING) << "Cannot toggle rtx after initialization!";
     return false;
   }
+}
+
+bool ChannelManager::SetCryptoOptions(
+    const rtc::CryptoOptions& crypto_options) {
+  return worker_thread_->Invoke<bool>(RTC_FROM_HERE, Bind(
+      &ChannelManager::SetCryptoOptions_w, this, crypto_options));
+}
+
+bool ChannelManager::SetCryptoOptions_w(
+    const rtc::CryptoOptions& crypto_options) {
+  if (!video_channels_.empty() || !voice_channels_.empty() ||
+      !data_channels_.empty()) {
+    LOG(LS_WARNING) << "Not changing crypto options in existing channels.";
+  }
+  crypto_options_ = crypto_options;
+#if defined(ENABLE_EXTERNAL_AUTH)
+  if (crypto_options_.enable_gcm_crypto_suites) {
+    // TODO(jbauch): Re-enable once https://crbug.com/628400 is resolved.
+    crypto_options_.enable_gcm_crypto_suites = false;
+    LOG(LS_WARNING) << "GCM ciphers are not supported with " <<
+        "ENABLE_EXTERNAL_AUTH and will be disabled.";
+  }
+#endif
+  return true;
 }
 
 void ChannelManager::GetSupportedAudioSendCodecs(
@@ -218,6 +243,7 @@ VoiceChannel* ChannelManager::CreateVoiceChannel_w(
   VoiceChannel* voice_channel =
       new VoiceChannel(worker_thread_, network_thread_, media_engine_.get(),
                        media_channel, transport_controller, content_name, rtcp);
+  voice_channel->SetCryptoOptions(crypto_options_);
   if (!voice_channel->Init_w(bundle_transport_name)) {
     delete voice_channel;
     return nullptr;
@@ -281,6 +307,7 @@ VideoChannel* ChannelManager::CreateVideoChannel_w(
   VideoChannel* video_channel =
       new VideoChannel(worker_thread_, network_thread_, media_channel,
                        transport_controller, content_name, rtcp);
+  video_channel->SetCryptoOptions(crypto_options_);
   if (!video_channel->Init_w(bundle_transport_name)) {
     delete video_channel;
     return NULL;
@@ -344,6 +371,7 @@ DataChannel* ChannelManager::CreateDataChannel_w(
   DataChannel* data_channel =
       new DataChannel(worker_thread_, network_thread_, media_channel,
                       transport_controller, content_name, rtcp);
+  data_channel->SetCryptoOptions(crypto_options_);
   if (!data_channel->Init_w(bundle_transport_name)) {
     LOG(LS_WARNING) << "Failed to init data channel.";
     delete data_channel;

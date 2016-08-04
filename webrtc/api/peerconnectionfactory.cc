@@ -164,11 +164,19 @@ bool PeerConnectionFactory::Initialize() {
       media_engine, worker_thread_, network_thread_));
 
   channel_manager_->SetVideoRtxEnabled(true);
+  channel_manager_->SetCryptoOptions(options_.crypto_options);
   if (!channel_manager_->Init()) {
     return false;
   }
 
   return true;
+}
+
+void PeerConnectionFactory::SetOptions(const Options& options) {
+  options_ = options;
+  if (channel_manager_) {
+    channel_manager_->SetCryptoOptions(options.crypto_options);
+  }
 }
 
 rtc::scoped_refptr<AudioSourceInterface>

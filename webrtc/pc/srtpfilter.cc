@@ -15,6 +15,7 @@
 #include <algorithm>
 
 #include "webrtc/base/base64.h"
+#include "webrtc/base/buffer.h"
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
@@ -48,16 +49,9 @@ extern "C" debug_module_t mod_alloc;
 extern "C" debug_module_t mod_aes_icm;
 extern "C" debug_module_t mod_aes_hmac;
 #endif
-#else
-// SrtpFilter needs that constant.
-#define SRTP_MASTER_KEY_LEN 30
 #endif  // HAVE_SRTP
 
 namespace cricket {
-
-const int SRTP_MASTER_KEY_BASE64_LEN = SRTP_MASTER_KEY_LEN * 4 / 3;
-const int SRTP_MASTER_KEY_KEY_LEN = 16;
-const int SRTP_MASTER_KEY_SALT_LEN = 14;
 
 #ifndef HAVE_SRTP
 
@@ -403,19 +397,45 @@ bool SrtpFilter::ApplyParams(const CryptoParams& send_params,
     // We do not want to reset the ROC if the keys are the same. So just return.
     return true;
   }
+
+  int send_suite = rtc::SrtpCryptoSuiteFromName(send_params.cipher_suite);
+  int recv_suite = rtc::SrtpCryptoSuiteFromName(recv_params.cipher_suite);
+  if (send_suite == rtc::SRTP_INVALID_CRYPTO_SUITE ||
+      recv_suite == rtc::SRTP_INVALID_CRYPTO_SUITE) {
+    LOG(LS_WARNING) << "Unknown crypto suite(s) received:"
+                    << " send cipher_suite " << send_params.cipher_suite
+                    << " recv cipher_suite " << recv_params.cipher_suite;
+    return false;
+  }
+
+  int send_key_len, send_salt_len;
+  int recv_key_len, recv_salt_len;
+  if (!rtc::GetSrtpKeyAndSaltLengths(send_suite, &send_key_len,
+                                     &send_salt_len) ||
+      !rtc::GetSrtpKeyAndSaltLengths(recv_suite, &recv_key_len,
+                                     &recv_salt_len)) {
+    LOG(LS_WARNING) << "Could not get lengths for crypto suite(s):"
+                    << " send cipher_suite " << send_params.cipher_suite
+                    << " recv cipher_suite " << recv_params.cipher_suite;
+    return false;
+  }
+
   // TODO(juberti): Zero these buffers after use.
   bool ret;
-  uint8_t send_key[SRTP_MASTER_KEY_LEN], recv_key[SRTP_MASTER_KEY_LEN];
-  ret = (ParseKeyParams(send_params.key_params, send_key, sizeof(send_key)) &&
-         ParseKeyParams(recv_params.key_params, recv_key, sizeof(recv_key)));
+  rtc::Buffer send_key(send_key_len + send_salt_len);
+  rtc::Buffer recv_key(recv_key_len + recv_salt_len);
+  ret = (ParseKeyParams(send_params.key_params, send_key.data(),
+                        send_key.size()) &&
+         ParseKeyParams(recv_params.key_params, recv_key.data(),
+                        recv_key.size()));
   if (ret) {
     CreateSrtpSessions();
     ret = (send_session_->SetSend(
-               rtc::SrtpCryptoSuiteFromName(send_params.cipher_suite), send_key,
-               sizeof(send_key)) &&
+               rtc::SrtpCryptoSuiteFromName(send_params.cipher_suite),
+               send_key.data(), send_key.size()) &&
            recv_session_->SetRecv(
-               rtc::SrtpCryptoSuiteFromName(recv_params.cipher_suite), recv_key,
-               sizeof(recv_key)));
+               rtc::SrtpCryptoSuiteFromName(recv_params.cipher_suite),
+               recv_key.data(), recv_key.size()));
   }
   if (ret) {
     LOG(LS_INFO) << "SRTP activated with negotiated parameters:"
@@ -442,7 +462,7 @@ bool SrtpFilter::ResetParams() {
 
 bool SrtpFilter::ParseKeyParams(const std::string& key_params,
                                 uint8_t* key,
-                                int len) {
+                                size_t len) {
   // example key_params: "inline:YUJDZGVmZ2hpSktMbW9QUXJzVHVWd3l6MTIzNDU2"
 
   // Fail if key-method is wrong.
@@ -453,8 +473,7 @@ bool SrtpFilter::ParseKeyParams(const std::string& key_params,
   // Fail if base64 decode fails, or the key is the wrong size.
   std::string key_b64(key_params.substr(7)), key_str;
   if (!rtc::Base64::Decode(key_b64, rtc::Base64::DO_STRICT,
-                           &key_str, nullptr) ||
-      static_cast<int>(key_str.size()) != len) {
+                           &key_str, nullptr) || key_str.size() != len) {
     return false;
   }
 
@@ -488,11 +507,11 @@ SrtpSession::~SrtpSession() {
   }
 }
 
-bool SrtpSession::SetSend(int cs, const uint8_t* key, int len) {
+bool SrtpSession::SetSend(int cs, const uint8_t* key, size_t len) {
   return SetKey(ssrc_any_outbound, cs, key, len);
 }
 
-bool SrtpSession::SetRecv(int cs, const uint8_t* key, int len) {
+bool SrtpSession::SetRecv(int cs, const uint8_t* key, size_t len) {
   return SetKey(ssrc_any_inbound, cs, key, len);
 }
 
@@ -646,7 +665,7 @@ void SrtpSession::set_signal_silent_time(int signal_silent_time_in_ms) {
   srtp_stat_->set_signal_silent_time(signal_silent_time_in_ms);
 }
 
-bool SrtpSession::SetKey(int type, int cs, const uint8_t* key, int len) {
+bool SrtpSession::SetKey(int type, int cs, const uint8_t* key, size_t len) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (session_) {
     LOG(LS_ERROR) << "Failed to create SRTP session: "
@@ -660,20 +679,39 @@ bool SrtpSession::SetKey(int type, int cs, const uint8_t* key, int len) {
 
   srtp_policy_t policy;
   memset(&policy, 0, sizeof(policy));
-
   if (cs == rtc::SRTP_AES128_CM_SHA1_80) {
     crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtp);
     crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);
   } else if (cs == rtc::SRTP_AES128_CM_SHA1_32) {
     crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtp);   // rtp is 32,
     crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);  // rtcp still 80
+#if !defined(ENABLE_EXTERNAL_AUTH)
+    // TODO(jbauch): Re-enable once https://crbug.com/628400 is resolved.
+  } else if (cs == rtc::SRTP_AEAD_AES_128_GCM) {
+    crypto_policy_set_aes_gcm_128_16_auth(&policy.rtp);
+    crypto_policy_set_aes_gcm_128_16_auth(&policy.rtcp);
+  } else if (cs == rtc::SRTP_AEAD_AES_256_GCM) {
+    crypto_policy_set_aes_gcm_256_16_auth(&policy.rtp);
+    crypto_policy_set_aes_gcm_256_16_auth(&policy.rtcp);
+#endif  // ENABLE_EXTERNAL_AUTH
   } else {
     LOG(LS_WARNING) << "Failed to create SRTP session: unsupported"
                     << " cipher_suite " << cs;
     return false;
   }
 
-  if (!key || len != SRTP_MASTER_KEY_LEN) {
+  int expected_key_len;
+  int expected_salt_len;
+  if (!rtc::GetSrtpKeyAndSaltLengths(cs, &expected_key_len,
+      &expected_salt_len)) {
+    // This should never happen.
+    LOG(LS_WARNING) << "Failed to create SRTP session: unsupported"
+                    << " cipher_suite without length information" << cs;
+    return false;
+  }
+
+  if (!key ||
+      len != static_cast<size_t>(expected_key_len + expected_salt_len)) {
     LOG(LS_WARNING) << "Failed to create SRTP session: invalid key";
     return false;
   }

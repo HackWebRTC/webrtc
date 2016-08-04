@@ -170,6 +170,8 @@ class BaseChannel
 
   virtual cricket::MediaType media_type() = 0;
 
+  bool SetCryptoOptions(const rtc::CryptoOptions& crypto_options);
+
  protected:
   virtual MediaChannel* media_channel() const { return media_channel_; }
   // Sets the |transport_channel_| (and |rtcp_transport_channel_|, if |rtcp_| is
@@ -303,6 +305,10 @@ class BaseChannel
   // From MessageHandler
   void OnMessage(rtc::Message* pmsg) override;
 
+  const rtc::CryptoOptions& crypto_options() const {
+    return crypto_options_;
+  }
+
   // Handled in derived classes
   // Get the SRTP crypto suites to use for RTP media
   virtual void GetSrtpCryptoSuites_n(std::vector<int>* crypto_suites) const = 0;
@@ -351,6 +357,7 @@ class BaseChannel
   bool has_received_packet_;
   bool dtls_keyed_;
   bool secure_required_;
+  rtc::CryptoOptions crypto_options_;
   int rtp_abs_sendtime_extn_id_;
 
   // MediaChannel related members that should be access from worker thread.

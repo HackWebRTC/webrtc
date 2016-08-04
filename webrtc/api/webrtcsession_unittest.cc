@@ -461,6 +461,14 @@ class WebRtcSessionTest
     Init();
   }
 
+  void InitWithGcm() {
+    rtc::CryptoOptions crypto_options;
+    crypto_options.enable_gcm_crypto_suites = true;
+    channel_manager_->SetCryptoOptions(crypto_options);
+    with_gcm_ = true;
+    Init();
+  }
+
   void SendAudioVideoStream1() {
     send_stream_1_ = true;
     send_stream_2_ = false;
@@ -551,6 +559,10 @@ class WebRtcSessionTest
     if (session_->data_channel_type() == cricket::DCT_SCTP && data_channel_) {
       session_options->data_channel_type = cricket::DCT_SCTP;
     }
+
+    if (with_gcm_) {
+      session_options->crypto_options.enable_gcm_crypto_suites = true;
+    }
   }
 
   void GetOptionsForAnswer(cricket::MediaSessionOptions* session_options) {
@@ -565,6 +577,10 @@ class WebRtcSessionTest
 
     if (session_->data_channel_type() == cricket::DCT_SCTP) {
       session_options->data_channel_type = cricket::DCT_SCTP;
+    }
+
+    if (with_gcm_) {
+      session_options->crypto_options.enable_gcm_crypto_suites = true;
     }
   }
 
@@ -628,7 +644,8 @@ class WebRtcSessionTest
             session_->video_channel() != NULL);
   }
 
-  void VerifyCryptoParams(const cricket::SessionDescription* sdp) {
+  void VerifyCryptoParams(const cricket::SessionDescription* sdp,
+      bool gcm_enabled = false) {
     ASSERT_TRUE(session_.get() != NULL);
     const cricket::ContentInfo* content = cricket::GetFirstAudioContent(sdp);
     ASSERT_TRUE(content != NULL);
@@ -636,12 +653,24 @@ class WebRtcSessionTest
         static_cast<const cricket::AudioContentDescription*>(
             content->description);
     ASSERT_TRUE(audio_content != NULL);
-    ASSERT_EQ(1U, audio_content->cryptos().size());
-    ASSERT_EQ(47U, audio_content->cryptos()[0].key_params.size());
-    ASSERT_EQ("AES_CM_128_HMAC_SHA1_80",
-              audio_content->cryptos()[0].cipher_suite);
-    EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf),
-              audio_content->protocol());
+    if (!gcm_enabled) {
+      ASSERT_EQ(1U, audio_content->cryptos().size());
+      ASSERT_EQ(47U, audio_content->cryptos()[0].key_params.size());
+      ASSERT_EQ("AES_CM_128_HMAC_SHA1_80",
+                audio_content->cryptos()[0].cipher_suite);
+      EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf),
+                audio_content->protocol());
+    } else {
+      // The offer contains 3 possible crypto suites, the answer 1.
+      EXPECT_LE(1U, audio_content->cryptos().size());
+      EXPECT_NE(2U, audio_content->cryptos().size());
+      EXPECT_GE(3U, audio_content->cryptos().size());
+      ASSERT_EQ(67U, audio_content->cryptos()[0].key_params.size());
+      ASSERT_EQ("AEAD_AES_256_GCM",
+                audio_content->cryptos()[0].cipher_suite);
+      EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf),
+                audio_content->protocol());
+    }
 
     content = cricket::GetFirstVideoContent(sdp);
     ASSERT_TRUE(content != NULL);
@@ -649,12 +678,24 @@ class WebRtcSessionTest
         static_cast<const cricket::VideoContentDescription*>(
             content->description);
     ASSERT_TRUE(video_content != NULL);
-    ASSERT_EQ(1U, video_content->cryptos().size());
-    ASSERT_EQ("AES_CM_128_HMAC_SHA1_80",
-              video_content->cryptos()[0].cipher_suite);
-    ASSERT_EQ(47U, video_content->cryptos()[0].key_params.size());
-    EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf),
-              video_content->protocol());
+    if (!gcm_enabled) {
+      ASSERT_EQ(1U, video_content->cryptos().size());
+      ASSERT_EQ("AES_CM_128_HMAC_SHA1_80",
+                video_content->cryptos()[0].cipher_suite);
+      ASSERT_EQ(47U, video_content->cryptos()[0].key_params.size());
+      EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf),
+                video_content->protocol());
+    } else {
+      // The offer contains 3 possible crypto suites, the answer 1.
+      EXPECT_LE(1U, video_content->cryptos().size());
+      EXPECT_NE(2U, video_content->cryptos().size());
+      EXPECT_GE(3U, video_content->cryptos().size());
+      ASSERT_EQ("AEAD_AES_256_GCM",
+                video_content->cryptos()[0].cipher_suite);
+      ASSERT_EQ(67U, video_content->cryptos()[0].key_params.size());
+      EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf),
+                video_content->protocol());
+    }
   }
 
   void VerifyNoCryptoParams(const cricket::SessionDescription* sdp, bool dtls) {
@@ -1470,6 +1511,7 @@ class WebRtcSessionTest
   std::string last_data_channel_label_;
   InternalDataChannelInit last_data_channel_config_;
   bool session_destroyed_ = false;
+  bool with_gcm_ = false;
 };
 
 TEST_P(WebRtcSessionTest, TestInitializeWithDtls) {
@@ -2770,6 +2812,16 @@ TEST_F(WebRtcSessionTest, VerifyCryptoParamsInSDP) {
   VerifyCryptoParams(answer->description());
 }
 
+TEST_F(WebRtcSessionTest, VerifyCryptoParamsInSDPGcm) {
+  InitWithGcm();
+  SendAudioVideoStream1();
+  std::unique_ptr<SessionDescriptionInterface> offer(CreateOffer());
+  VerifyCryptoParams(offer->description(), true);
+  SetRemoteDescriptionWithoutError(offer.release());
+  std::unique_ptr<SessionDescriptionInterface> answer(CreateAnswer());
+  VerifyCryptoParams(answer->description(), true);
+}
+
 TEST_F(WebRtcSessionTest, VerifyNoCryptoParamsInSDP) {
   options_.disable_encryption = true;
   Init();
@@ -3393,6 +3445,12 @@ TEST_F(WebRtcSessionTest, TestDisabledRtcpMuxWithBundleEnabled) {
   SetRemoteDescriptionOfferExpectError(kBundleWithoutRtcpMux, remote_offer);
   // Trying unmodified SDP.
   SetLocalDescriptionWithoutError(offer);
+}
+
+TEST_F(WebRtcSessionTest, SetSetupGcm) {
+  InitWithGcm();
+  SendAudioVideoStream1();
+  CreateAndSetRemoteOfferAndLocalAnswer();
 }
 
 TEST_F(WebRtcSessionTest, CanNotInsertDtmf) {

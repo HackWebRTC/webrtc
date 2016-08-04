@@ -31,6 +31,12 @@ const int SRTP_AES128_CM_SHA1_80 = 0x0001;
 #ifndef SRTP_AES128_CM_SHA1_32
 const int SRTP_AES128_CM_SHA1_32 = 0x0002;
 #endif
+#ifndef SRTP_AEAD_AES_128_GCM
+const int SRTP_AEAD_AES_128_GCM = 0x0007;
+#endif
+#ifndef SRTP_AEAD_AES_256_GCM
+const int SRTP_AEAD_AES_256_GCM = 0x0008;
+#endif
 
 // Cipher suite to use for SRTP. Typically a 80-bit HMAC will be used, except
 // in applications (voice) where the additional bandwidth may be significant.
@@ -39,6 +45,10 @@ const int SRTP_AES128_CM_SHA1_32 = 0x0002;
 extern const char CS_AES_CM_128_HMAC_SHA1_80[];
 // 128-bit AES with 32-bit SHA-1 HMAC.
 extern const char CS_AES_CM_128_HMAC_SHA1_32[];
+// 128-bit AES GCM with 16 byte AEAD auth tag.
+extern const char CS_AEAD_AES_128_GCM[];
+// 256-bit AES GCM with 16 byte AEAD auth tag.
+extern const char CS_AEAD_AES_256_GCM[];
 
 // Given the DTLS-SRTP protection profile ID, as defined in
 // https://tools.ietf.org/html/rfc4568#section-6.2 , return the SRTP profile
@@ -47,6 +57,30 @@ std::string SrtpCryptoSuiteToName(int crypto_suite);
 
 // The reverse of above conversion.
 int SrtpCryptoSuiteFromName(const std::string& crypto_suite);
+
+// Get key length and salt length for given crypto suite. Returns true for
+// valid suites, otherwise false.
+bool GetSrtpKeyAndSaltLengths(int crypto_suite, int *key_length,
+    int *salt_length);
+
+// Returns true if the given crypto suite id uses a GCM cipher.
+bool IsGcmCryptoSuite(int crypto_suite);
+
+// Returns true if the given crypto suite name uses a GCM cipher.
+bool IsGcmCryptoSuiteName(const std::string& crypto_suite);
+
+struct CryptoOptions {
+  CryptoOptions() {}
+
+  // Helper method to return an instance of the CryptoOptions with GCM crypto
+  // suites disabled. This method should be used instead of depending on current
+  // default values set by the constructor.
+  static CryptoOptions NoGcm();
+
+  // Enable GCM crypto suites from RFC 7714 for SRTP. GCM will only be used
+  // if both sides enable it.
+  bool enable_gcm_crypto_suites = false;
+};
 
 // SSLStreamAdapter : A StreamInterfaceAdapter that does SSL/TLS.
 // After SSL has been started, the stream will only open on successful

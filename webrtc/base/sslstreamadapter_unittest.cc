@@ -947,7 +947,6 @@ TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpLow) {
   ASSERT_EQ(client_cipher, rtc::SRTP_AES128_CM_SHA1_32);
 };
 
-
 // Test DTLS-SRTP with a mismatch -- should not converge
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpHighLow) {
   MAYBE_SKIP_TEST(HaveDtlsSrtp);
@@ -982,6 +981,107 @@ TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpMixed) {
 
   ASSERT_EQ(client_cipher, server_cipher);
   ASSERT_EQ(client_cipher, rtc::SRTP_AES128_CM_SHA1_80);
+};
+
+// Test DTLS-SRTP with all GCM-128 ciphers.
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpGCM128) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
+  std::vector<int> gcm128;
+  gcm128.push_back(rtc::SRTP_AEAD_AES_128_GCM);
+  SetDtlsSrtpCryptoSuites(gcm128, true);
+  SetDtlsSrtpCryptoSuites(gcm128, false);
+  TestHandshake();
+
+  int client_cipher;
+  ASSERT_TRUE(GetDtlsSrtpCryptoSuite(true, &client_cipher));
+  int server_cipher;
+  ASSERT_TRUE(GetDtlsSrtpCryptoSuite(false, &server_cipher));
+
+  ASSERT_EQ(client_cipher, server_cipher);
+  ASSERT_EQ(client_cipher, rtc::SRTP_AEAD_AES_128_GCM);
+};
+
+// Test DTLS-SRTP with all GCM-256 ciphers.
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpGCM256) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
+  std::vector<int> gcm256;
+  gcm256.push_back(rtc::SRTP_AEAD_AES_256_GCM);
+  SetDtlsSrtpCryptoSuites(gcm256, true);
+  SetDtlsSrtpCryptoSuites(gcm256, false);
+  TestHandshake();
+
+  int client_cipher;
+  ASSERT_TRUE(GetDtlsSrtpCryptoSuite(true, &client_cipher));
+  int server_cipher;
+  ASSERT_TRUE(GetDtlsSrtpCryptoSuite(false, &server_cipher));
+
+  ASSERT_EQ(client_cipher, server_cipher);
+  ASSERT_EQ(client_cipher, rtc::SRTP_AEAD_AES_256_GCM);
+};
+
+// Test DTLS-SRTP with mixed GCM-128/-256 ciphers -- should not converge.
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpGCMMismatch) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
+  std::vector<int> gcm128;
+  gcm128.push_back(rtc::SRTP_AEAD_AES_128_GCM);
+  std::vector<int> gcm256;
+  gcm256.push_back(rtc::SRTP_AEAD_AES_256_GCM);
+  SetDtlsSrtpCryptoSuites(gcm128, true);
+  SetDtlsSrtpCryptoSuites(gcm256, false);
+  TestHandshake();
+
+  int client_cipher;
+  ASSERT_FALSE(GetDtlsSrtpCryptoSuite(true, &client_cipher));
+  int server_cipher;
+  ASSERT_FALSE(GetDtlsSrtpCryptoSuite(false, &server_cipher));
+};
+
+// Test DTLS-SRTP with both GCM-128/-256 ciphers -- should select GCM-256.
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpGCMMixed) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
+  std::vector<int> gcmBoth;
+  gcmBoth.push_back(rtc::SRTP_AEAD_AES_256_GCM);
+  gcmBoth.push_back(rtc::SRTP_AEAD_AES_128_GCM);
+  SetDtlsSrtpCryptoSuites(gcmBoth, true);
+  SetDtlsSrtpCryptoSuites(gcmBoth, false);
+  TestHandshake();
+
+  int client_cipher;
+  ASSERT_TRUE(GetDtlsSrtpCryptoSuite(true, &client_cipher));
+  int server_cipher;
+  ASSERT_TRUE(GetDtlsSrtpCryptoSuite(false, &server_cipher));
+
+  ASSERT_EQ(client_cipher, server_cipher);
+  ASSERT_EQ(client_cipher, rtc::SRTP_AEAD_AES_256_GCM);
+};
+
+// Test SRTP cipher suite lengths.
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpKeyAndSaltLengths) {
+  int key_len;
+  int salt_len;
+
+  ASSERT_FALSE(rtc::GetSrtpKeyAndSaltLengths(
+      rtc::SRTP_INVALID_CRYPTO_SUITE, &key_len, &salt_len));
+
+  ASSERT_TRUE(rtc::GetSrtpKeyAndSaltLengths(
+      rtc::SRTP_AES128_CM_SHA1_32, &key_len, &salt_len));
+  ASSERT_EQ(128/8, key_len);
+  ASSERT_EQ(112/8, salt_len);
+
+  ASSERT_TRUE(rtc::GetSrtpKeyAndSaltLengths(
+      rtc::SRTP_AES128_CM_SHA1_80, &key_len, &salt_len));
+  ASSERT_EQ(128/8, key_len);
+  ASSERT_EQ(112/8, salt_len);
+
+  ASSERT_TRUE(rtc::GetSrtpKeyAndSaltLengths(
+      rtc::SRTP_AEAD_AES_128_GCM, &key_len, &salt_len));
+  ASSERT_EQ(128/8, key_len);
+  ASSERT_EQ(96/8, salt_len);
+
+  ASSERT_TRUE(rtc::GetSrtpKeyAndSaltLengths(
+      rtc::SRTP_AEAD_AES_256_GCM, &key_len, &salt_len));
+  ASSERT_EQ(256/8, key_len);
+  ASSERT_EQ(96/8, salt_len);
 };
 
 // Test an exporter

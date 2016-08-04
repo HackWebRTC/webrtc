@@ -100,6 +100,7 @@ static const char kDataChannelLabel[] = "data_channel";
 // SRTP cipher name negotiated by the tests. This must be updated if the
 // default changes.
 static const int kDefaultSrtpCryptoSuite = rtc::SRTP_AES128_CM_SHA1_32;
+static const int kDefaultSrtpCryptoSuiteGcm = rtc::SRTP_AEAD_AES_256_GCM;
 #endif
 
 static void RemoveLinesFromSdp(const std::string& line_start,
@@ -1364,6 +1365,28 @@ class P2PTestConductor : public testing::Test {
     return true;
   }
 
+  void TestGcmNegotiation(bool local_gcm_enabled, bool remote_gcm_enabled,
+      int expected_cipher_suite) {
+    PeerConnectionFactory::Options init_options;
+    init_options.crypto_options.enable_gcm_crypto_suites = local_gcm_enabled;
+    PeerConnectionFactory::Options recv_options;
+    recv_options.crypto_options.enable_gcm_crypto_suites = remote_gcm_enabled;
+    ASSERT_TRUE(
+        CreateTestClients(nullptr, &init_options, nullptr, &recv_options));
+    rtc::scoped_refptr<webrtc::FakeMetricsObserver>
+        init_observer =
+            new rtc::RefCountedObject<webrtc::FakeMetricsObserver>();
+    initializing_client()->pc()->RegisterUMAObserver(init_observer);
+    LocalP2PTest();
+
+    EXPECT_EQ_WAIT(rtc::SrtpCryptoSuiteToName(expected_cipher_suite),
+                   initializing_client()->GetSrtpCipherStats(),
+                   kMaxWaitMs);
+    EXPECT_EQ(1,
+              init_observer->GetEnumCounter(webrtc::kEnumCounterAudioSrtpCipher,
+                                            expected_cipher_suite));
+  }
+
  private:
   // |ss_| is used by |network_thread_| so it must be destroyed later.
   std::unique_ptr<rtc::PhysicalSocketServer> pss_;
@@ -1812,6 +1835,26 @@ TEST_F(P2PTestConductor, GetDtls12Recv) {
   EXPECT_EQ(1,
             init_observer->GetEnumCounter(webrtc::kEnumCounterAudioSrtpCipher,
                                           kDefaultSrtpCryptoSuite));
+}
+
+// Test that a non-GCM cipher is used if both sides only support non-GCM.
+TEST_F(P2PTestConductor, GetGcmNone) {
+  TestGcmNegotiation(false, false, kDefaultSrtpCryptoSuite);
+}
+
+// Test that a GCM cipher is used if both ends support it.
+TEST_F(P2PTestConductor, GetGcmBoth) {
+  TestGcmNegotiation(true, true, kDefaultSrtpCryptoSuiteGcm);
+}
+
+// Test that GCM isn't used if only the initiator supports it.
+TEST_F(P2PTestConductor, GetGcmInit) {
+  TestGcmNegotiation(true, false, kDefaultSrtpCryptoSuite);
+}
+
+// Test that GCM isn't used if only the receiver supports it.
+TEST_F(P2PTestConductor, GetGcmRecv) {
+  TestGcmNegotiation(false, true, kDefaultSrtpCryptoSuite);
 }
 
 // This test sets up a call between two parties with audio, video and an RTP

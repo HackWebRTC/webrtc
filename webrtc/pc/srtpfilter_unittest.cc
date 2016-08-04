@@ -26,6 +26,8 @@ extern "C" {
 
 using rtc::CS_AES_CM_128_HMAC_SHA1_80;
 using rtc::CS_AES_CM_128_HMAC_SHA1_32;
+using rtc::CS_AEAD_AES_128_GCM;
+using rtc::CS_AEAD_AES_256_GCM;
 using cricket::CryptoParams;
 using cricket::CS_LOCAL;
 using cricket::CS_REMOTE;
@@ -41,10 +43,26 @@ static const std::string kTestKeyParams3 =
     "inline:1234X19zZW1jdGwgKCkgewkyMjA7fQp9CnVubGVz";
 static const std::string kTestKeyParams4 =
     "inline:4567QCVeeCFCanVmcjkpPywjNWhcYD0mXXtxaVBR";
+static const std::string kTestKeyParamsGcm1 =
+    "inline:e166KFlKzJsGW0d5apX+rrI05vxbrvMJEzFI14aTDCa63IRTlLK4iH66uOI=";
+static const std::string kTestKeyParamsGcm2 =
+    "inline:6X0oCd55zfz4VgtOwsuqcFq61275PDYN5uwuu3p7ZUHbfUY2FMpdP4m2PEo=";
+static const std::string kTestKeyParamsGcm3 =
+    "inline:YKlABGZWMgX32xuMotrG0v0T7G83veegaVzubQ==";
+static const std::string kTestKeyParamsGcm4 =
+    "inline:gJ6tWoUym2v+/F6xjr7xaxiS3QbJJozl3ZD/0A==";
 static const cricket::CryptoParams kTestCryptoParams1(
     1, "AES_CM_128_HMAC_SHA1_80", kTestKeyParams1, "");
 static const cricket::CryptoParams kTestCryptoParams2(
     1, "AES_CM_128_HMAC_SHA1_80", kTestKeyParams2, "");
+static const cricket::CryptoParams kTestCryptoParamsGcm1(
+    1, "AEAD_AES_256_GCM", kTestKeyParamsGcm1, "");
+static const cricket::CryptoParams kTestCryptoParamsGcm2(
+    1, "AEAD_AES_256_GCM", kTestKeyParamsGcm2, "");
+static const cricket::CryptoParams kTestCryptoParamsGcm3(
+    1, "AEAD_AES_128_GCM", kTestKeyParamsGcm3, "");
+static const cricket::CryptoParams kTestCryptoParamsGcm4(
+    1, "AEAD_AES_128_GCM", kTestKeyParamsGcm4, "");
 
 static int rtp_auth_tag_len(const std::string& cs) {
   return (cs == CS_AES_CM_128_HMAC_SHA1_32) ? 4 : 10;
@@ -133,6 +151,13 @@ TEST_F(SrtpFilterTest, TestGoodSetupOneCipherSuite) {
   EXPECT_TRUE(f1_.IsActive());
 }
 
+TEST_F(SrtpFilterTest, TestGoodSetupOneCipherSuiteGcm) {
+  EXPECT_TRUE(f1_.SetOffer(MakeVector(kTestCryptoParamsGcm1), CS_LOCAL));
+  EXPECT_FALSE(f1_.IsActive());
+  EXPECT_TRUE(f1_.SetAnswer(MakeVector(kTestCryptoParamsGcm2), CS_REMOTE));
+  EXPECT_TRUE(f1_.IsActive());
+}
+
 // Test that we can set up things with multiple params.
 TEST_F(SrtpFilterTest, TestGoodSetupMultipleCipherSuites) {
   std::vector<CryptoParams> offer(MakeVector(kTestCryptoParams1));
@@ -142,6 +167,18 @@ TEST_F(SrtpFilterTest, TestGoodSetupMultipleCipherSuites) {
   offer[1].cipher_suite = CS_AES_CM_128_HMAC_SHA1_32;
   answer[0].tag = 2;
   answer[0].cipher_suite = CS_AES_CM_128_HMAC_SHA1_32;
+  EXPECT_TRUE(f1_.SetOffer(offer, CS_LOCAL));
+  EXPECT_FALSE(f1_.IsActive());
+  EXPECT_TRUE(f1_.SetAnswer(answer, CS_REMOTE));
+  EXPECT_TRUE(f1_.IsActive());
+}
+
+TEST_F(SrtpFilterTest, TestGoodSetupMultipleCipherSuitesGcm) {
+  std::vector<CryptoParams> offer(MakeVector(kTestCryptoParamsGcm1));
+  std::vector<CryptoParams> answer(MakeVector(kTestCryptoParamsGcm3));
+  offer.push_back(kTestCryptoParamsGcm4);
+  offer[1].tag = 2;
+  answer[0].tag = 2;
   EXPECT_TRUE(f1_.SetOffer(offer, CS_LOCAL));
   EXPECT_FALSE(f1_.IsActive());
   EXPECT_TRUE(f1_.SetAnswer(answer, CS_REMOTE));

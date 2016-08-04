@@ -1623,6 +1623,7 @@ bool PeerConnection::GetOptionsForOffer(
   }
 
   session_options->rtcp_cname = rtcp_cname_;
+  session_options->crypto_options = factory_->options().crypto_options;
   return true;
 }
 
@@ -1650,6 +1651,7 @@ void PeerConnection::FinishOptionsForAnswer(
   if (session_->data_channel_type() == cricket::DCT_SCTP) {
     session_options->data_channel_type = cricket::DCT_SCTP;
   }
+  session_options->crypto_options = factory_->options().crypto_options;
 }
 
 bool PeerConnection::GetOptionsForAnswer(

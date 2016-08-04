@@ -163,6 +163,7 @@ struct MediaSessionOptions {
   // content name ("mid") => options.
   std::map<std::string, TransportOptions> transport_options;
   std::string rtcp_cname;
+  rtc::CryptoOptions crypto_options;
 
   struct Stream {
     Stream(MediaType type,
@@ -594,17 +595,21 @@ VideoContentDescription* GetFirstVideoContentDescription(
 DataContentDescription* GetFirstDataContentDescription(
     SessionDescription* sdesc);
 
-void GetSupportedAudioCryptoSuites(std::vector<int>* crypto_suites);
-void GetSupportedVideoCryptoSuites(std::vector<int>* crypto_suites);
-void GetSupportedDataCryptoSuites(std::vector<int>* crypto_suites);
-void GetDefaultSrtpCryptoSuites(std::vector<int>* crypto_suites);
-void GetSupportedAudioCryptoSuiteNames(
+void GetSupportedAudioCryptoSuites(const rtc::CryptoOptions& crypto_options,
+    std::vector<int>* crypto_suites);
+void GetSupportedVideoCryptoSuites(const rtc::CryptoOptions& crypto_options,
+    std::vector<int>* crypto_suites);
+void GetSupportedDataCryptoSuites(const rtc::CryptoOptions& crypto_options,
+    std::vector<int>* crypto_suites);
+void GetDefaultSrtpCryptoSuites(const rtc::CryptoOptions& crypto_options,
+    std::vector<int>* crypto_suites);
+void GetSupportedAudioCryptoSuiteNames(const rtc::CryptoOptions& crypto_options,
     std::vector<std::string>* crypto_suite_names);
-void GetSupportedVideoCryptoSuiteNames(
+void GetSupportedVideoCryptoSuiteNames(const rtc::CryptoOptions& crypto_options,
     std::vector<std::string>* crypto_suite_names);
-void GetSupportedDataCryptoSuiteNames(
+void GetSupportedDataCryptoSuiteNames(const rtc::CryptoOptions& crypto_options,
     std::vector<std::string>* crypto_suite_names);
-void GetDefaultSrtpCryptoSuiteNames(
+void GetDefaultSrtpCryptoSuiteNames(const rtc::CryptoOptions& crypto_options,
     std::vector<std::string>* crypto_suite_names);
 
 }  // namespace cricket
