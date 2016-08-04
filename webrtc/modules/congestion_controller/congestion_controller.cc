@@ -33,8 +33,7 @@ namespace webrtc {
 namespace {
 
 static const uint32_t kTimeOffsetSwitchThreshold = 30;
-static const int64_t kMinRetransmitWindowSizeMs = 30;
-static const int64_t kMaxRetransmitWindowSizeMs = 1000;
+static const int64_t kRetransmitWindowSizeMs = 500;
 
 // Makes sure that the bitrate and the min, max values are in valid range.
 static void ClampBitrates(int* bitrate_bps,
@@ -168,7 +167,7 @@ CongestionController::CongestionController(
       bitrate_controller_(
           BitrateController::CreateBitrateController(clock_, event_log)),
       retransmission_rate_limiter_(
-          new RateLimiter(clock, kMaxRetransmitWindowSizeMs)),
+          new RateLimiter(clock, kRetransmitWindowSizeMs)),
       remote_estimator_proxy_(clock_, packet_router_.get()),
       transport_feedback_adapter_(bitrate_controller_.get(), clock_),
       min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps),
@@ -197,7 +196,7 @@ CongestionController::CongestionController(
       bitrate_controller_(
           BitrateController::CreateBitrateController(clock_, event_log)),
       retransmission_rate_limiter_(
-          new RateLimiter(clock, kMaxRetransmitWindowSizeMs)),
+          new RateLimiter(clock, kRetransmitWindowSizeMs)),
       remote_estimator_proxy_(clock_, packet_router_.get()),
       transport_feedback_adapter_(bitrate_controller_.get(), clock_),
       min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps),
@@ -310,14 +309,6 @@ void CongestionController::OnSentPacket(const rtc::SentPacket& sent_packet) {
 void CongestionController::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
   remote_bitrate_estimator_->OnRttUpdate(avg_rtt_ms, max_rtt_ms);
   transport_feedback_adapter_.OnRttUpdate(avg_rtt_ms, max_rtt_ms);
-
-  int64_t nack_window_size_ms = max_rtt_ms;
-  if (nack_window_size_ms > kMaxRetransmitWindowSizeMs) {
-    nack_window_size_ms = kMaxRetransmitWindowSizeMs;
-  } else if (nack_window_size_ms < kMinRetransmitWindowSizeMs) {
-    nack_window_size_ms = kMinRetransmitWindowSizeMs;
-  }
-  retransmission_rate_limiter_->SetWindowSize(nack_window_size_ms);
 }
 
 int64_t CongestionController::TimeUntilNextProcess() {
