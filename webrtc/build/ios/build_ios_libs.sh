@@ -216,11 +216,11 @@ if [[ ${BUILD_TYPE} = "framework" ]]; then
 
   # Modify the version number.
   INFOPLIST_PATH=${OUTPUT_DIR}/WebRTC.framework/Info.plist
-  MAJOR_MINOR=$(plistbuddy -c "Print :CFBundleShortVersionString" \
+  MAJOR_MINOR=$(PlistBuddy -c "Print :CFBundleShortVersionString" \
                 ${INFOPLIST_PATH})
   VERSION_NUMBER="${MAJOR_MINOR}.${POINT_VERSION}"
   echo "Substituting revision number: ${VERSION_NUMBER}"
-  plistbuddy -c "Set :CFBundleVersion ${VERSION_NUMBER}" ${INFOPLIST_PATH}
+  PlistBuddy -c "Set :CFBundleVersion ${VERSION_NUMBER}" ${INFOPLIST_PATH}
   plutil -convert binary1 ${INFOPLIST_PATH}
 
   # Copy pod file.
