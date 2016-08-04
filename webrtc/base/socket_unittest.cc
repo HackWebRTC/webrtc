@@ -681,7 +681,7 @@ void SocketTest::SocketServerWaitInternal(const IPAddress& loopback) {
 }
 
 void SocketTest::TcpInternal(const IPAddress& loopback, size_t data_size,
-    ptrdiff_t max_send_size) {
+    ssize_t max_send_size) {
   testing::StreamSink sink;
   SocketAddress accept_addr;
 
@@ -719,7 +719,6 @@ void SocketTest::TcpInternal(const IPAddress& loopback, size_t data_size,
     char ch = static_cast<char>(i % 256);
     send_buffer.AppendData(&ch, sizeof(ch));
   }
-  rtc::Buffer recved_data(0, data_size);
 
   // Send and receive a bunch of data.
   size_t sent_size = 0;
@@ -742,7 +741,7 @@ void SocketTest::TcpInternal(const IPAddress& loopback, size_t data_size,
         EXPECT_LE(sent, unsent_size);
         sent_size += sent;
         if (max_send_size >= 0) {
-          EXPECT_LE(static_cast<ptrdiff_t>(sent), max_send_size);
+          EXPECT_LE(static_cast<ssize_t>(sent), max_send_size);
           if (sent < unsent_size) {
             // If max_send_size is limiting the amount to send per call such
             // that the sent amount is less than the unsent amount, we simulate
@@ -767,7 +766,8 @@ void SocketTest::TcpInternal(const IPAddress& loopback, size_t data_size,
       }
 
       // Receive as much as we can get in a single recv call.
-      int recved_size = receiver->Recv(recved_data.data(), data_size, nullptr);
+      char recved_data[data_size];
+      int recved_size = receiver->Recv(recved_data, data_size, nullptr);
 
       if (!recv_called) {
         // The first Recv() after getting readability should succeed and receive
@@ -780,7 +780,7 @@ void SocketTest::TcpInternal(const IPAddress& loopback, size_t data_size,
       if (recved_size >= 0) {
         EXPECT_LE(static_cast<size_t>(recved_size),
             sent_size - recv_buffer.size());
-        recv_buffer.AppendData(recved_data.data(), recved_size);
+        recv_buffer.AppendData(recved_data, recved_size);
       } else {
         ASSERT_TRUE(receiver->IsBlocking());
         readable = false;
@@ -790,7 +790,7 @@ void SocketTest::TcpInternal(const IPAddress& loopback, size_t data_size,
     // Once all that we've sent has been received, expect to be able to send
     // again.
     if (!writable) {
-      ASSERT_TRUE_WAIT(sink.Check(sender.get(), testing::SSE_WRITE),
+      EXPECT_TRUE_WAIT(sink.Check(sender.get(), testing::SSE_WRITE),
                        kTimeout);
       writable = true;
       send_called = false;

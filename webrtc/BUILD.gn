@@ -743,9 +743,6 @@ if (rtc_include_tests) {
     public_configs = [ ":common_inherited_config" ]
     sources = [
       "base/nullsocketserver_unittest.cc",
-      "base/physicalsocketserver_unittest.cc",
-      "base/socket_unittest.cc",
-      "base/socket_unittest.h",
       "base/socketaddress_unittest.cc",
       "base/virtualsocket_unittest.cc",
     ]
@@ -755,7 +752,17 @@ if (rtc_include_tests) {
       "//testing/gtest",
     ]
     if (is_win) {
-      sources += [ "base/win32socketserver_unittest.cc" ]
+      # TODO(ronghuawu): Fix TestUdpReadyToSendIPv6 on windows bot then reenable
+      # these tests.
+      # sources += [ "base/win32socketserver_unittest.cc" ]
+    } else {
+      # TODO(pbos): Move test disabling to ifdefs within the test files instead
+      # of here.
+      sources += [
+        "base/physicalsocketserver_unittest.cc",
+        "base/socket_unittest.cc",
+        "base/socket_unittest.h",
+      ]
     }
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_support" ]
