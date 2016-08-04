@@ -908,7 +908,7 @@ class VoiceMediaChannel : public MediaChannel {
       uint32_t ssrc,
       const webrtc::RtpParameters& parameters) = 0;
   // Starts or stops playout of received audio.
-  virtual bool SetPlayout(bool playout) = 0;
+  virtual void SetPlayout(bool playout) = 0;
   // Starts or stops sending (and potentially capture) of local audio.
   virtual void SetSend(bool send) = 0;
   // Configure stream for sending.

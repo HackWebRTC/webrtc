@@ -177,9 +177,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
       uint32_t ssrc,
       const webrtc::RtpParameters& parameters) override;
 
-  bool SetPlayout(bool playout) override;
-  bool PausePlayout();
-  bool ResumePlayout();
+  void SetPlayout(bool playout) override;
   void SetSend(bool send) override;
   bool SetAudioSend(uint32_t ssrc,
                     bool enable,
@@ -245,8 +243,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   WebRtcVoiceEngine* engine() { return engine_; }
   int GetLastEngineError() { return engine()->GetLastEngineError(); }
   int GetOutputLevel(int channel);
-  bool SetPlayout(int channel, bool playout);
-  bool ChangePlayout(bool playout);
+  void ChangePlayout(bool playout);
   int CreateVoEChannel();
   bool DeleteVoEChannel(int channel);
   bool IsDefaultRecvStream(uint32_t ssrc) {

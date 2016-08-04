@@ -128,7 +128,6 @@ class FakeWebRtcVoiceEngine
     Channel() {
       memset(&send_codec, 0, sizeof(send_codec));
     }
-    bool playout = false;
     bool vad = false;
     bool codec_fec = false;
     int max_encoding_bandwidth = 0;
@@ -154,9 +153,6 @@ class FakeWebRtcVoiceEngine
   bool IsInited() const { return inited_; }
   int GetLastChannel() const { return last_channel_; }
   int GetNumChannels() const { return static_cast<int>(channels_.size()); }
-  bool GetPlayout(int channel) {
-    return channels_[channel]->playout;
-  }
   bool GetVAD(int channel) {
     return channels_[channel]->vad;
   }
@@ -173,9 +169,6 @@ class FakeWebRtcVoiceEngine
     return (wideband) ?
         channels_[channel]->cn16_type :
         channels_[channel]->cn8_type;
-  }
-  void set_playout_fail_channel(int channel) {
-    playout_fail_channel_ = channel;
   }
   void set_fail_create_channel(bool fail_create_channel) {
     fail_create_channel_ = fail_create_channel;
@@ -245,24 +238,10 @@ class FakeWebRtcVoiceEngine
     return 0;
   }
   WEBRTC_STUB(StartReceive, (int channel));
-  WEBRTC_FUNC(StartPlayout, (int channel)) {
-    if (playout_fail_channel_ != channel) {
-      WEBRTC_CHECK_CHANNEL(channel);
-      channels_[channel]->playout = true;
-      return 0;
-    } else {
-      // When playout_fail_channel_ == channel, fail the StartPlayout on this
-      // channel.
-      return -1;
-    }
-  }
+  WEBRTC_STUB(StartPlayout, (int channel));
   WEBRTC_STUB(StartSend, (int channel));
   WEBRTC_STUB(StopReceive, (int channel));
-  WEBRTC_FUNC(StopPlayout, (int channel)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->playout = false;
-    return 0;
-  }
+  WEBRTC_STUB(StopPlayout, (int channel));
   WEBRTC_STUB(StopSend, (int channel));
   WEBRTC_STUB(GetVersion, (char version[1024]));
   WEBRTC_STUB(LastError, ());
@@ -300,8 +279,6 @@ class FakeWebRtcVoiceEngine
                                   const webrtc::CodecInst& codec)) {
     WEBRTC_CHECK_CHANNEL(channel);
     Channel* ch = channels_[channel];
-    if (ch->playout)
-      return -1;  // Channel is in use.
     // Check if something else already has this slot.
     if (codec.pltype != -1) {
       for (std::vector<webrtc::CodecInst>::iterator it =
@@ -583,7 +560,6 @@ class FakeWebRtcVoiceEngine
   webrtc::NsModes ns_mode_ = webrtc::kNsDefault;
   webrtc::AgcModes agc_mode_ = webrtc::kAgcDefault;
   webrtc::AgcConfig agc_config_;
-  int playout_fail_channel_ = -1;
   FakeAudioProcessing audio_processing_;
 };
 

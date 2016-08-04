@@ -753,14 +753,13 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRecvCodecsWhilePlaying) {
   parameters.codecs.push_back(kIsacCodec);
   parameters.codecs.push_back(kCn16000Codec);
   EXPECT_TRUE(channel_->SetRecvParameters(parameters));
-  EXPECT_TRUE(channel_->SetPlayout(true));
+  channel_->SetPlayout(true);
   EXPECT_TRUE(channel_->SetRecvParameters(parameters));
 
   // Changing the payload type of a codec should fail.
   parameters.codecs[0].id = 127;
   EXPECT_FALSE(channel_->SetRecvParameters(parameters));
-  int channel_num = voe_.GetLastChannel();
-  EXPECT_TRUE(voe_.GetPlayout(channel_num));
+  EXPECT_TRUE(GetRecvStream(kSsrc1).started());
 }
 
 // Test that we can add a codec while playing.
@@ -770,12 +769,11 @@ TEST_F(WebRtcVoiceEngineTestFake, AddRecvCodecsWhilePlaying) {
   parameters.codecs.push_back(kIsacCodec);
   parameters.codecs.push_back(kCn16000Codec);
   EXPECT_TRUE(channel_->SetRecvParameters(parameters));
-  EXPECT_TRUE(channel_->SetPlayout(true));
+  channel_->SetPlayout(true);
 
   parameters.codecs.push_back(kOpusCodec);
   EXPECT_TRUE(channel_->SetRecvParameters(parameters));
-  int channel_num = voe_.GetLastChannel();
-  EXPECT_TRUE(voe_.GetPlayout(channel_num));
+  EXPECT_TRUE(GetRecvStream(kSsrc1).started());
   webrtc::CodecInst gcodec;
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(kOpusCodec, &gcodec));
   EXPECT_EQ(kOpusCodec.id, gcodec.pltype);
@@ -2173,12 +2171,11 @@ TEST_F(WebRtcVoiceEngineTestFake, SendStateWhenStreamsAreRecreated) {
 // Test that we can create a channel and start playing out on it.
 TEST_F(WebRtcVoiceEngineTestFake, Playout) {
   EXPECT_TRUE(SetupRecvStream());
-  int channel_num = voe_.GetLastChannel();
   EXPECT_TRUE(channel_->SetRecvParameters(recv_parameters_));
-  EXPECT_TRUE(channel_->SetPlayout(true));
-  EXPECT_TRUE(voe_.GetPlayout(channel_num));
-  EXPECT_TRUE(channel_->SetPlayout(false));
-  EXPECT_FALSE(voe_.GetPlayout(channel_num));
+  channel_->SetPlayout(true);
+  EXPECT_TRUE(GetRecvStream(kSsrc1).started());
+  channel_->SetPlayout(false);
+  EXPECT_FALSE(GetRecvStream(kSsrc1).started());
 }
 
 // Test that we can add and remove send streams.
@@ -2332,50 +2329,41 @@ TEST_F(WebRtcVoiceEngineTestFake, GetStatsWithMultipleSendStreams) {
 // We can receive on multiple streams while sending one stream.
 TEST_F(WebRtcVoiceEngineTestFake, PlayoutWithMultipleStreams) {
   EXPECT_TRUE(SetupSendStream());
-  int channel_num1 = voe_.GetLastChannel();
 
   // Start playout without a receive stream.
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
-  EXPECT_TRUE(channel_->SetPlayout(true));
-  EXPECT_FALSE(voe_.GetPlayout(channel_num1));
+  channel_->SetPlayout(true);
 
   // Adding another stream should enable playout on the new stream only.
   EXPECT_TRUE(AddRecvStream(kSsrc2));
-  int channel_num2 = voe_.GetLastChannel();
   SetSend(channel_, true);
   EXPECT_TRUE(GetSendStream(kSsrc1).IsSending());
 
   // Make sure only the new stream is played out.
-  EXPECT_FALSE(voe_.GetPlayout(channel_num1));
-  EXPECT_TRUE(voe_.GetPlayout(channel_num2));
+  EXPECT_TRUE(GetRecvStream(kSsrc2).started());
 
   // Adding yet another stream should have stream 2 and 3 enabled for playout.
   EXPECT_TRUE(AddRecvStream(kSsrc3));
-  int channel_num3 = voe_.GetLastChannel();
-  EXPECT_FALSE(voe_.GetPlayout(channel_num1));
-  EXPECT_TRUE(voe_.GetPlayout(channel_num2));
-  EXPECT_TRUE(voe_.GetPlayout(channel_num3));
+  EXPECT_TRUE(GetRecvStream(kSsrc2).started());
+  EXPECT_TRUE(GetRecvStream(kSsrc3).started());
 
   // Stop sending.
   SetSend(channel_, false);
   EXPECT_FALSE(GetSendStream(kSsrc1).IsSending());
 
   // Stop playout.
-  EXPECT_TRUE(channel_->SetPlayout(false));
-  EXPECT_FALSE(voe_.GetPlayout(channel_num1));
-  EXPECT_FALSE(voe_.GetPlayout(channel_num2));
-  EXPECT_FALSE(voe_.GetPlayout(channel_num3));
+  channel_->SetPlayout(false);
+  EXPECT_FALSE(GetRecvStream(kSsrc2).started());
+  EXPECT_FALSE(GetRecvStream(kSsrc3).started());
 
-  // Restart playout and make sure only recv streams are played out.
-  EXPECT_TRUE(channel_->SetPlayout(true));
-  EXPECT_FALSE(voe_.GetPlayout(channel_num1));
-  EXPECT_TRUE(voe_.GetPlayout(channel_num2));
-  EXPECT_TRUE(voe_.GetPlayout(channel_num3));
+  // Restart playout and make sure recv streams are played out.
+  channel_->SetPlayout(true);
+  EXPECT_TRUE(GetRecvStream(kSsrc2).started());
+  EXPECT_TRUE(GetRecvStream(kSsrc3).started());
 
-  // Now remove the recv streams and verify that the send stream doesn't play.
+  // Now remove the recv streams.
   EXPECT_TRUE(channel_->RemoveRecvStream(3));
   EXPECT_TRUE(channel_->RemoveRecvStream(2));
-  EXPECT_FALSE(voe_.GetPlayout(channel_num1));
 }
 
 // Test that we can create a channel configured for Codian bridges,
@@ -2739,18 +2727,6 @@ TEST_F(WebRtcVoiceEngineTestFake, InsertDtmfOnSendStreamAsCaller) {
 // Test the InsertDtmf on specified send stream as callee.
 TEST_F(WebRtcVoiceEngineTestFake, InsertDtmfOnSendStreamAsCallee) {
   TestInsertDtmf(kSsrc1, false);
-}
-
-TEST_F(WebRtcVoiceEngineTestFake, TestSetPlayoutError) {
-  EXPECT_TRUE(SetupSendStream());
-  EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
-  SetSend(channel_, true);
-  EXPECT_TRUE(AddRecvStream(2));
-  EXPECT_TRUE(AddRecvStream(3));
-  EXPECT_TRUE(channel_->SetPlayout(true));
-  voe_.set_playout_fail_channel(voe_.GetLastChannel() - 1);
-  EXPECT_TRUE(channel_->SetPlayout(false));
-  EXPECT_FALSE(channel_->SetPlayout(true));
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {

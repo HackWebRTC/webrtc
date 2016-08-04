@@ -1363,6 +1363,18 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     stream_->SetGain(volume);
   }
 
+  void SetPlayout(bool playout) {
+    RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(stream_);
+    if (playout) {
+      LOG(LS_INFO) << "Starting playout for channel #" << channel();
+      stream_->Start();
+    } else {
+      LOG(LS_INFO) << "Stopping playout for channel #" << channel();
+      stream_->Stop();
+    }
+  }
+
  private:
   void RecreateAudioReceiveStream(
       uint32_t local_ssrc,
@@ -1642,7 +1654,7 @@ bool WebRtcVoiceMediaChannel::SetRecvCodecs(
   if (playout_) {
     // Receive codecs can not be changed while playing. So we temporarily
     // pause playout.
-    PausePlayout();
+    ChangePlayout(false);
   }
 
   bool result = true;
@@ -1670,7 +1682,7 @@ bool WebRtcVoiceMediaChannel::SetRecvCodecs(
   }
 
   if (desired_playout_ && !playout_) {
-    ResumePlayout();
+    ChangePlayout(desired_playout_);
   }
   return result;
 }
@@ -1925,35 +1937,22 @@ bool WebRtcVoiceMediaChannel::SetSendCodec(
   return true;
 }
 
-bool WebRtcVoiceMediaChannel::SetPlayout(bool playout) {
+void WebRtcVoiceMediaChannel::SetPlayout(bool playout) {
   desired_playout_ = playout;
   return ChangePlayout(desired_playout_);
 }
 
-bool WebRtcVoiceMediaChannel::PausePlayout() {
-  return ChangePlayout(false);
-}
-
-bool WebRtcVoiceMediaChannel::ResumePlayout() {
-  return ChangePlayout(desired_playout_);
-}
-
-bool WebRtcVoiceMediaChannel::ChangePlayout(bool playout) {
+void WebRtcVoiceMediaChannel::ChangePlayout(bool playout) {
   TRACE_EVENT0("webrtc", "WebRtcVoiceMediaChannel::ChangePlayout");
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   if (playout_ == playout) {
-    return true;
+    return;
   }
 
-  for (const auto& ch : recv_streams_) {
-    if (!SetPlayout(ch.second->channel(), playout)) {
-      LOG(LS_ERROR) << "SetPlayout " << playout << " on channel "
-                    << ch.second->channel() << " failed";
-      return false;
-    }
+  for (const auto& kv : recv_streams_) {
+    kv.second->SetPlayout(playout);
   }
   playout_ = playout;
-  return true;
 }
 
 void WebRtcVoiceMediaChannel::SetSend(bool send) {
@@ -2180,7 +2179,7 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
                                          sp.sync_label, recv_rtp_extensions_,
                                          call_, this,
                                          engine()->decoder_factory_)));
-  SetPlayout(channel, playout_);
+  recv_streams_[ssrc]->SetPlayout(playout_);
 
   return true;
 }
@@ -2613,20 +2612,6 @@ int WebRtcVoiceMediaChannel::GetSendChannelId(uint32_t ssrc) const {
     return it->second->channel();
   }
   return -1;
-}
-
-bool WebRtcVoiceMediaChannel::SetPlayout(int channel, bool playout) {
-  if (playout) {
-    LOG(LS_INFO) << "Starting playout for channel #" << channel;
-    if (engine()->voe()->base()->StartPlayout(channel) == -1) {
-      LOG_RTCERR1(StartPlayout, channel);
-      return false;
-    }
-  } else {
-    LOG(LS_INFO) << "Stopping playout for channel #" << channel;
-    engine()->voe()->base()->StopPlayout(channel);
-  }
-  return true;
 }
 }  // namespace cricket
 

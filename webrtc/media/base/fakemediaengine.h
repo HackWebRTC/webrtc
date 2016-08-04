@@ -319,10 +319,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
             SetRecvRtpHeaderExtensions(params.extensions));
   }
 
-  virtual bool SetPlayout(bool playout) {
-    set_playout(playout);
-    return true;
-  }
+  virtual void SetPlayout(bool playout) { set_playout(playout); }
   virtual void SetSend(bool send) { set_sending(send); }
   virtual bool SetAudioSend(uint32_t ssrc,
                             bool enable,

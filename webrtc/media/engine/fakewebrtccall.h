@@ -79,11 +79,12 @@ class FakeAudioReceiveStream final : public webrtc::AudioReceiveStream {
   bool DeliverRtp(const uint8_t* packet,
                   size_t length,
                   const webrtc::PacketTime& packet_time);
+  bool started() const { return started_; }
 
  private:
   // webrtc::AudioReceiveStream implementation.
-  void Start() override {}
-  void Stop() override {}
+  void Start() override { started_ = true; }
+  void Stop() override { started_ = false; }
 
   webrtc::AudioReceiveStream::Stats GetStats() const override;
   void SetSink(std::unique_ptr<webrtc::AudioSinkInterface> sink) override;
@@ -95,6 +96,7 @@ class FakeAudioReceiveStream final : public webrtc::AudioReceiveStream {
   std::unique_ptr<webrtc::AudioSinkInterface> sink_;
   float gain_ = 1.0f;
   rtc::Buffer last_packet_;
+  bool started_ = false;
 };
 
 class FakeVideoSendStream final : public webrtc::VideoSendStream,

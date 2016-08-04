@@ -154,10 +154,17 @@ AudioReceiveStream::~AudioReceiveStream() {
 
 void AudioReceiveStream::Start() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  ScopedVoEInterface<VoEBase> base(voice_engine());
+  int error = base->StartPlayout(config_.voe_channel_id);
+  if (error != 0) {
+    LOG(LS_ERROR) << "AudioReceiveStream::Start failed with error: " << error;
+  }
 }
 
 void AudioReceiveStream::Stop() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  ScopedVoEInterface<VoEBase> base(voice_engine());
+  base->StopPlayout(config_.voe_channel_id);
 }
 
 webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
