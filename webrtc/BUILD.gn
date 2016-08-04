@@ -341,6 +341,7 @@ source_set("rtc_event_log") {
 
   deps = [
     ":webrtc_common",
+    "modules/rtp_rtcp",
   ]
 
   if (rtc_enable_protobuf) {
