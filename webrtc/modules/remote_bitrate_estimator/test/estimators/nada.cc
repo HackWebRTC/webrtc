@@ -28,6 +28,13 @@ namespace webrtc {
 namespace testing {
 namespace bwe {
 
+namespace {
+// Used as an upper bound for calling AcceleratedRampDown.
+const float kMaxCongestionSignalMs =
+    40.0f + NadaBweSender::kMinNadaBitrateKbps / 15;
+}  // namespace
+
+const int NadaBweSender::kMinNadaBitrateKbps = 50;
 const int64_t NadaBweReceiver::kReceivingRateTimeWindowMs = 500;
 
 NadaBweReceiver::NadaBweReceiver(int flow_id)
@@ -160,11 +167,10 @@ NadaBweSender::NadaBweSender(int kbps, BitrateObserver* observer, Clock* clock)
 }
 
 NadaBweSender::NadaBweSender(BitrateObserver* observer, Clock* clock)
-    : BweSender(kMinBitrateKbps),  // Referred as "Reference Rate" = R_n.
+    : BweSender(kMinNadaBitrateKbps),  // Referred as "Reference Rate" = R_n.
       clock_(clock),
       observer_(observer),
-      original_operating_mode_(true) {
-}
+      original_operating_mode_(true) {}
 
 NadaBweSender::~NadaBweSender() {
 }
@@ -213,23 +219,23 @@ void NadaBweSender::GiveFeedback(const FeedbackPacket& feedback) {
     if (fb.congestion_signal() == fb.est_queuing_delay_signal_ms() &&
         fb.est_queuing_delay_signal_ms() < kQueuingDelayUpperBoundMs &&
         fb.exp_smoothed_delay_ms() <
-            kMinBitrateKbps / kProportionalityDelayBits &&
+            kMinNadaBitrateKbps / kProportionalityDelayBits &&
         fb.derivative() < kDerivativeUpperBound &&
-        fb.receiving_rate() > kMinBitrateKbps) {
+        fb.receiving_rate() > kMinNadaBitrateKbps) {
       AcceleratedRampUp(fb);
     } else if (fb.congestion_signal() > kMaxCongestionSignalMs ||
                fb.exp_smoothed_delay_ms() > kMaxCongestionSignalMs) {
       AcceleratedRampDown(fb);
     } else {
       double bitrate_reference =
-          (2.0 * bitrate_kbps_) / (kMaxBitrateKbps + kMinBitrateKbps);
+          (2.0 * bitrate_kbps_) / (kMaxBitrateKbps + kMinNadaBitrateKbps);
       double smoothing_factor = pow(bitrate_reference, 0.75);
       GradualRateUpdate(fb, delta_s, smoothing_factor);
     }
   }
 
   bitrate_kbps_ = std::min(bitrate_kbps_, kMaxBitrateKbps);
-  bitrate_kbps_ = std::max(bitrate_kbps_, kMinBitrateKbps);
+  bitrate_kbps_ = std::max(bitrate_kbps_, kMinNadaBitrateKbps);
 
   observer_->OnNetworkChanged(1000 * bitrate_kbps_, 0, rtt_ms);
 }
@@ -271,14 +277,14 @@ void NadaBweSender::GradualRateUpdate(const NadaFeedback& fb,
 
   float x_hat = fb.congestion_signal() + kEta * kTauOMs * fb.derivative();
 
-  float kTheta =
-      kPriorityWeight * (kMaxBitrateKbps - kMinBitrateKbps) * kReferenceDelayMs;
+  float kTheta = kPriorityWeight * (kMaxBitrateKbps - kMinNadaBitrateKbps) *
+                 kReferenceDelayMs;
 
-  int original_increase =
-      static_cast<int>((kKappa * delta_s *
-                        (kTheta - (bitrate_kbps_ - kMinBitrateKbps) * x_hat)) /
-                           (kTauOMs * kTauOMs) +
-                       0.5f);
+  int original_increase = static_cast<int>(
+      (kKappa * delta_s *
+       (kTheta - (bitrate_kbps_ - kMinNadaBitrateKbps) * x_hat)) /
+          (kTauOMs * kTauOMs) +
+      0.5f);
 
   bitrate_kbps_ = bitrate_kbps_ + smoothing_factor * original_increase;
 }

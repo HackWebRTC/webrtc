@@ -331,7 +331,7 @@ TEST_F(OveruseDetectorTest, MAYBE_LowGaussianVariance30Kbit3fps) {
   EXPECT_EQ(0, unique_overuse);
   int frames_until_overuse = RunUntilOveruse(packets_per_frame, packet_size,
       frame_duration_ms, sigma_ms, drift_per_frame_ms);
-  EXPECT_EQ(21, frames_until_overuse);
+  EXPECT_EQ(20, frames_until_overuse);
 }
 
 TEST_F(OveruseDetectorTest, LowGaussianVarianceFastDrift30Kbit3fps) {
@@ -393,7 +393,7 @@ TEST_F(OveruseDetectorTest, MAYBE_LowGaussianVariance100Kbit5fps) {
   EXPECT_EQ(0, unique_overuse);
   int frames_until_overuse = RunUntilOveruse(packets_per_frame, packet_size,
       frame_duration_ms, sigma_ms, drift_per_frame_ms);
-  EXPECT_EQ(21, frames_until_overuse);
+  EXPECT_EQ(20, frames_until_overuse);
 }
 
 #if defined(WEBRTC_ANDROID)
@@ -433,7 +433,7 @@ TEST_F(OveruseDetectorTest, MAYBE_LowGaussianVariance100Kbit10fps) {
   EXPECT_EQ(0, unique_overuse);
   int frames_until_overuse = RunUntilOveruse(packets_per_frame, packet_size,
       frame_duration_ms, sigma_ms, drift_per_frame_ms);
-  EXPECT_EQ(21, frames_until_overuse);
+  EXPECT_EQ(20, frames_until_overuse);
 }
 
 #if defined(WEBRTC_ANDROID)

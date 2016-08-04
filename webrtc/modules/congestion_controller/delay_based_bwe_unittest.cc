@@ -217,7 +217,7 @@ TEST_F(DelayBasedBweTest, CapacityDropOneStreamWrap) {
 }
 
 TEST_F(DelayBasedBweTest, CapacityDropTwoStreamsWrap) {
-  CapacityDropTestHelper(2, true, 567, 0);
+  CapacityDropTestHelper(2, true, 767, 0);
 }
 
 TEST_F(DelayBasedBweTest, CapacityDropThreeStreamsWrap) {

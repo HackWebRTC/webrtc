@@ -19,6 +19,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
@@ -59,11 +60,11 @@ bool ReadExperimentConstants(double* k_up, double* k_down) {
 }
 
 OveruseDetector::OveruseDetector(const OverUseDetectorOptions& options)
-      // Experiment is on by default, but can be disabled with finch by setting
-      // the field trial string to "WebRTC-AdaptiveBweThreshold/Disabled/".
+    // Experiment is on by default, but can be disabled with finch by setting
+    // the field trial string to "WebRTC-AdaptiveBweThreshold/Disabled/".
     : in_experiment_(!AdaptiveThresholdExperimentIsDisabled()),
-      k_up_(0.004),
-      k_down_(0.00006),
+      k_up_(0.0087),
+      k_down_(0.039),
       overusing_time_threshold_(100),
       options_(options),
       threshold_(12.5),
