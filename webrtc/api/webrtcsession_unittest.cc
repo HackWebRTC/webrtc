@@ -558,8 +558,6 @@ class WebRtcSessionTest
 
     if (session_->data_channel_type() == cricket::DCT_SCTP && data_channel_) {
       session_options->data_channel_type = cricket::DCT_SCTP;
-    } else if (session_->data_channel_type() == cricket::DCT_QUIC) {
-      session_options->data_channel_type = cricket::DCT_QUIC;
     }
 
     if (with_gcm_) {
@@ -577,7 +575,9 @@ class WebRtcSessionTest
         (session_options->has_audio() || session_options->has_video() ||
          session_options->has_data());
 
-    session_options->data_channel_type = session_->data_channel_type();
+    if (session_->data_channel_type() == cricket::DCT_SCTP) {
+      session_options->data_channel_type = cricket::DCT_SCTP;
+    }
 
     if (with_gcm_) {
       session_options->crypto_options.enable_gcm_crypto_suites = true;
@@ -4211,26 +4211,6 @@ TEST_P(WebRtcSessionTest, TestRenegotiateNewMediaWithCandidatesSeparated) {
   answer = CreateAnswer();
   SetLocalDescriptionWithoutError(answer);
 }
-
-#ifdef HAVE_QUIC
-TEST_P(WebRtcSessionTest, TestNegotiateQuic) {
-  configuration_.enable_quic = true;
-  InitWithDtls(GetParam());
-  EXPECT_TRUE(session_->data_channel_type() == cricket::DCT_QUIC);
-  SessionDescriptionInterface* offer = CreateOffer();
-  ASSERT_TRUE(offer);
-  ASSERT_TRUE(offer->description());
-  SetLocalDescriptionWithoutError(offer);
-  cricket::MediaSessionOptions options;
-  options.recv_audio = true;
-  options.recv_video = true;
-  SessionDescriptionInterface* answer =
-      CreateRemoteAnswer(offer, options, cricket::SEC_DISABLED);
-  ASSERT_TRUE(answer);
-  ASSERT_TRUE(answer->description());
-  SetRemoteDescriptionWithoutError(answer);
-}
-#endif  // HAVE_QUIC
 
 // Tests that RTX codec is removed from the answer when it isn't supported
 // by local side.

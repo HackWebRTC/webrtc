@@ -30,10 +30,6 @@
 #include "webrtc/p2p/base/transportcontroller.h"
 #include "webrtc/pc/mediasession.h"
 
-#ifdef HAVE_QUIC
-#include "webrtc/api/quicdatatransport.h"
-#endif  // HAVE_QUIC
-
 namespace cricket {
 
 class ChannelManager;
@@ -41,10 +37,6 @@ class DataChannel;
 class StatsReport;
 class VideoChannel;
 class VoiceChannel;
-
-#ifdef HAVE_QUIC
-class QuicTransportChannel;
-#endif  // HAVE_QUIC
 
 }  // namespace cricket
 
@@ -154,7 +146,6 @@ class WebRtcSession :
   virtual ~WebRtcSession();
 
   // These are const to allow them to be called from const methods.
-  rtc::Thread* network_thread() const { return network_thread_; }
   rtc::Thread* worker_thread() const { return worker_thread_; }
   rtc::Thread* signaling_thread() const { return signaling_thread_; }
 
@@ -310,11 +301,6 @@ class WebRtcSession :
   // std::string represents the data channel label.
   sigslot::signal2<const std::string&, const InternalDataChannelInit&>
       SignalDataChannelOpenMessage;
-#ifdef HAVE_QUIC
-  QuicDataTransport* quic_data_transport() {
-    return quic_data_transport_.get();
-  }
-#endif  // HAVE_QUIC
 
  private:
   // Indicates the type of SessionDescription in a call to SetLocalDescription
@@ -459,9 +445,6 @@ class WebRtcSession :
 
   void OnSentPacket_w(const rtc::SentPacket& sent_packet);
 
-  const std::string GetTransportName(const std::string& content_name);
-
-  rtc::Thread* const network_thread_;
   rtc::Thread* const worker_thread_;
   rtc::Thread* const signaling_thread_;
 
@@ -512,10 +495,6 @@ class WebRtcSession :
 
   bool received_first_video_packet_ = false;
   bool received_first_audio_packet_ = false;
-
-#ifdef HAVE_QUIC
-  std::unique_ptr<QuicDataTransport> quic_data_transport_;
-#endif  // HAVE_QUIC
 
   RTC_DISALLOW_COPY_AND_ASSIGN(WebRtcSession);
 };

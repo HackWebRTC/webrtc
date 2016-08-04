@@ -168,7 +168,11 @@ class CompositeMediaEngine : public MediaEngineInterface {
   VIDEO video_;
 };
 
-enum DataChannelType { DCT_NONE = 0, DCT_RTP = 1, DCT_SCTP = 2, DCT_QUIC = 3 };
+enum DataChannelType {
+  DCT_NONE = 0,
+  DCT_RTP = 1,
+  DCT_SCTP = 2
+};
 
 class DataEngineInterface {
  public:

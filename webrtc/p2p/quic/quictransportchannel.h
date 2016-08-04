@@ -211,8 +211,6 @@ class QuicTransportChannel : public TransportChannelImpl,
   // Creates a new QUIC stream that can send data.
   ReliableQuicStream* CreateQuicStream();
 
-  TransportChannelImpl* ice_transport_channel() { return channel_.get(); }
-
   // Emitted when |quic_| creates a QUIC stream to receive data from the remote
   // peer, when the stream did not exist previously.
   sigslot::signal1<ReliableQuicStream*> SignalIncomingStream;

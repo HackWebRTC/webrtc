@@ -174,13 +174,12 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
       const std::string& id,
       const MediaConstraintsInterface* constraints,
       const PeerConnectionFactory::Options* options,
-      const PeerConnectionInterface::RTCConfiguration& config,
       std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
       bool prefer_constraint_apis,
       rtc::Thread* network_thread,
       rtc::Thread* worker_thread) {
     PeerConnectionTestClient* client(new PeerConnectionTestClient(id));
-    if (!client->Init(constraints, options, config, std::move(cert_generator),
+    if (!client->Init(constraints, options, std::move(cert_generator),
                       prefer_constraint_apis, network_thread, worker_thread)) {
       delete client;
       return nullptr;
@@ -192,31 +191,29 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
       const std::string& id,
       const MediaConstraintsInterface* constraints,
       const PeerConnectionFactory::Options* options,
-      const PeerConnectionInterface::RTCConfiguration& config,
       rtc::Thread* network_thread,
       rtc::Thread* worker_thread) {
     std::unique_ptr<FakeRTCCertificateGenerator> cert_generator(
         rtc::SSLStreamAdapter::HaveDtlsSrtp() ?
             new FakeRTCCertificateGenerator() : nullptr);
 
-    return CreateClientWithDtlsIdentityStore(id, constraints, options, config,
-                                             std::move(cert_generator), true,
-                                             network_thread, worker_thread);
+    return CreateClientWithDtlsIdentityStore(
+        id, constraints, options, std::move(cert_generator), true,
+        network_thread, worker_thread);
   }
 
   static PeerConnectionTestClient* CreateClientPreferNoConstraints(
       const std::string& id,
       const PeerConnectionFactory::Options* options,
-      const PeerConnectionInterface::RTCConfiguration& config,
       rtc::Thread* network_thread,
       rtc::Thread* worker_thread) {
     std::unique_ptr<FakeRTCCertificateGenerator> cert_generator(
         rtc::SSLStreamAdapter::HaveDtlsSrtp() ?
             new FakeRTCCertificateGenerator() : nullptr);
 
-    return CreateClientWithDtlsIdentityStore(id, nullptr, options, config,
-                                             std::move(cert_generator), false,
-                                             network_thread, worker_thread);
+    return CreateClientWithDtlsIdentityStore(
+        id, nullptr, options, std::move(cert_generator), false,
+        network_thread, worker_thread);
   }
 
   ~PeerConnectionTestClient() {
@@ -460,10 +457,8 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     data_observer_.reset(new MockDataChannelObserver(data_channel));
   }
 
-  void CreateDataChannel() { CreateDataChannel(nullptr); }
-
-  void CreateDataChannel(const webrtc::DataChannelInit* init) {
-    data_channel_ = pc()->CreateDataChannel(kDataChannelLabel, init);
+  void CreateDataChannel() {
+    data_channel_ = pc()->CreateDataChannel(kDataChannelLabel, nullptr);
     ASSERT_TRUE(data_channel_.get() != nullptr);
     data_observer_.reset(new MockDataChannelObserver(data_channel_));
   }
@@ -850,7 +845,6 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
   bool Init(
       const MediaConstraintsInterface* constraints,
       const PeerConnectionFactory::Options* options,
-      const PeerConnectionInterface::RTCConfiguration& config,
       std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
       bool prefer_constraint_apis,
       rtc::Thread* network_thread,
@@ -882,18 +876,21 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     if (options) {
       peer_connection_factory_->SetOptions(*options);
     }
-    peer_connection_ =
-        CreatePeerConnection(std::move(port_allocator), constraints, config,
-                             std::move(cert_generator));
-
+    peer_connection_ = CreatePeerConnection(
+        std::move(port_allocator), constraints, std::move(cert_generator));
     return peer_connection_.get() != nullptr;
   }
 
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> CreatePeerConnection(
       std::unique_ptr<cricket::PortAllocator> port_allocator,
       const MediaConstraintsInterface* constraints,
-      const PeerConnectionInterface::RTCConfiguration& config,
       std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator) {
+    // CreatePeerConnection with RTCConfiguration.
+    webrtc::PeerConnectionInterface::RTCConfiguration config;
+    webrtc::PeerConnectionInterface::IceServer ice_server;
+    ice_server.uri = "stun:stun.l.google.com:19302";
+    config.servers.push_back(ice_server);
+
     return peer_connection_factory_->CreatePeerConnection(
         config, constraints, std::move(port_allocator),
         std::move(cert_generator), this);
@@ -1081,9 +1078,6 @@ class P2PTestConductor : public testing::Test {
         worker_thread_(rtc::Thread::Create()) {
     RTC_CHECK(network_thread_->Start());
     RTC_CHECK(worker_thread_->Start());
-    webrtc::PeerConnectionInterface::IceServer ice_server;
-    ice_server.uri = "stun:stun.l.google.com:19302";
-    config_.servers.push_back(ice_server);
   }
 
   bool SessionActive() {
@@ -1193,12 +1187,10 @@ class P2PTestConductor : public testing::Test {
   bool CreateTestClientsThatPreferNoConstraints() {
     initiating_client_.reset(
         PeerConnectionTestClient::CreateClientPreferNoConstraints(
-            "Caller: ", nullptr, config_, network_thread_.get(),
-            worker_thread_.get()));
+            "Caller: ", nullptr, network_thread_.get(), worker_thread_.get()));
     receiving_client_.reset(
         PeerConnectionTestClient::CreateClientPreferNoConstraints(
-            "Callee: ", nullptr, config_, network_thread_.get(),
-            worker_thread_.get()));
+            "Callee: ", nullptr, network_thread_.get(), worker_thread_.get()));
     if (!initiating_client_ || !receiving_client_) {
       return false;
     }
@@ -1218,11 +1210,11 @@ class P2PTestConductor : public testing::Test {
                          MediaConstraintsInterface* recv_constraints,
                          PeerConnectionFactory::Options* recv_options) {
     initiating_client_.reset(PeerConnectionTestClient::CreateClient(
-        "Caller: ", init_constraints, init_options, config_,
-        network_thread_.get(), worker_thread_.get()));
+        "Caller: ", init_constraints, init_options, network_thread_.get(),
+        worker_thread_.get()));
     receiving_client_.reset(PeerConnectionTestClient::CreateClient(
-        "Callee: ", recv_constraints, recv_options, config_,
-        network_thread_.get(), worker_thread_.get()));
+        "Callee: ", recv_constraints, recv_options, network_thread_.get(),
+        worker_thread_.get()));
     if (!initiating_client_ || !receiving_client_) {
       return false;
     }
@@ -1322,7 +1314,7 @@ class P2PTestConductor : public testing::Test {
 
     // Make sure the new client is using a different certificate.
     return PeerConnectionTestClient::CreateClientWithDtlsIdentityStore(
-        "New Peer: ", &setup_constraints, nullptr, config_,
+        "New Peer: ", &setup_constraints, nullptr,
         std::move(cert_generator), prefer_constraint_apis_,
         network_thread_.get(), worker_thread_.get());
   }
@@ -1361,9 +1353,6 @@ class P2PTestConductor : public testing::Test {
     PeerConnectionTestClient* old = receiving_client_.release();
     receiving_client_.reset(client);
     return old;
-  }
-  webrtc::PeerConnectionInterface::RTCConfiguration* config() {
-    return &config_;
   }
 
   bool AllObserversReceived(
@@ -1410,7 +1399,6 @@ class P2PTestConductor : public testing::Test {
   std::unique_ptr<PeerConnectionTestClient> initiating_client_;
   std::unique_ptr<PeerConnectionTestClient> receiving_client_;
   bool prefer_constraint_apis_ = true;
-  webrtc::PeerConnectionInterface::RTCConfiguration config_;
 };
 
 // Disable for TSan v2, see
@@ -2127,77 +2115,6 @@ TEST_F(P2PTestConductor, EarlyWarmupTest) {
   EXPECT_TRUE_WAIT(FramesHaveArrived(kEndAudioFrameCount, kEndVideoFrameCount),
                    kMaxWaitForFramesMs);
 }
-
-#ifdef HAVE_QUIC
-// This test sets up a call between two parties using QUIC instead of DTLS for
-// audio and video, and a QUIC data channel.
-TEST_F(P2PTestConductor, LocalP2PTestQuicDataChannel) {
-  config()->enable_quic = true;
-  ASSERT_TRUE(CreateTestClients());
-  webrtc::DataChannelInit init;
-  init.ordered = false;
-  init.reliable = true;
-  init.id = 1;
-  initializing_client()->CreateDataChannel(&init);
-  receiving_client()->CreateDataChannel(&init);
-  LocalP2PTest();
-  ASSERT_NE(nullptr, initializing_client()->data_channel());
-  ASSERT_NE(nullptr, receiving_client()->data_channel());
-  EXPECT_TRUE_WAIT(initializing_client()->data_observer()->IsOpen(),
-                   kMaxWaitMs);
-  EXPECT_TRUE_WAIT(receiving_client()->data_observer()->IsOpen(), kMaxWaitMs);
-
-  std::string data = "hello world";
-
-  initializing_client()->data_channel()->Send(DataBuffer(data));
-  EXPECT_EQ_WAIT(data, receiving_client()->data_observer()->last_message(),
-                 kMaxWaitMs);
-
-  receiving_client()->data_channel()->Send(DataBuffer(data));
-  EXPECT_EQ_WAIT(data, initializing_client()->data_observer()->last_message(),
-                 kMaxWaitMs);
-}
-
-// Tests that negotiation of QUIC data channels is completed without error.
-TEST_F(P2PTestConductor, NegotiateQuicDataChannel) {
-  config()->enable_quic = true;
-  FakeConstraints constraints;
-  constraints.SetMandatory(MediaConstraintsInterface::kEnableDtlsSrtp, true);
-  ASSERT_TRUE(CreateTestClients(&constraints, &constraints));
-  webrtc::DataChannelInit init;
-  init.ordered = false;
-  init.reliable = true;
-  init.id = 1;
-  initializing_client()->CreateDataChannel(&init);
-  initializing_client()->Negotiate(false, false);
-}
-
-// This test sets up a JSEP call using QUIC. The callee only receives video.
-TEST_F(P2PTestConductor, LocalP2PTestVideoOnlyWithQuic) {
-  config()->enable_quic = true;
-  ASSERT_TRUE(CreateTestClients());
-  receiving_client()->SetReceiveAudioVideo(false, true);
-  LocalP2PTest();
-}
-
-// This test sets up a JSEP call using QUIC. The callee only receives audio.
-TEST_F(P2PTestConductor, LocalP2PTestAudioOnlyWithQuic) {
-  config()->enable_quic = true;
-  ASSERT_TRUE(CreateTestClients());
-  receiving_client()->SetReceiveAudioVideo(true, false);
-  LocalP2PTest();
-}
-
-// This test sets up a JSEP call using QUIC. The callee rejects both audio and
-// video.
-TEST_F(P2PTestConductor, LocalP2PTestNoVideoAudioWithQuic) {
-  config()->enable_quic = true;
-  ASSERT_TRUE(CreateTestClients());
-  receiving_client()->SetReceiveAudioVideo(false, false);
-  LocalP2PTest();
-}
-
-#endif  // HAVE_QUIC
 
 TEST_F(P2PTestConductor, ForwardVideoOnlyStream) {
   ASSERT_TRUE(CreateTestClients());

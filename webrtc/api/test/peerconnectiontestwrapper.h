@@ -32,9 +32,7 @@ class PeerConnectionTestWrapper
                             rtc::Thread* worker_thread);
   virtual ~PeerConnectionTestWrapper();
 
-  bool CreatePc(
-      const webrtc::MediaConstraintsInterface* constraints,
-      const webrtc::PeerConnectionInterface::RTCConfiguration& config);
+  bool CreatePc(const webrtc::MediaConstraintsInterface* constraints);
 
   rtc::scoped_refptr<webrtc::DataChannelInterface> CreateDataChannel(
       const std::string& label,

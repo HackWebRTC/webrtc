@@ -24,7 +24,6 @@
 #include "webrtc/api/webrtcsessiondescriptionfactory.h"
 #include "webrtc/audio_sink.h"
 #include "webrtc/base/basictypes.h"
-#include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
@@ -38,10 +37,6 @@
 #include "webrtc/pc/channel.h"
 #include "webrtc/pc/channelmanager.h"
 #include "webrtc/pc/mediasession.h"
-
-#ifdef HAVE_QUIC
-#include "webrtc/p2p/quic/quictransportchannel.h"
-#endif  // HAVE_QUIC
 
 using cricket::ContentInfo;
 using cricket::ContentInfos;
@@ -465,8 +460,7 @@ WebRtcSession::WebRtcSession(
     rtc::Thread* signaling_thread,
     cricket::PortAllocator* port_allocator,
     std::unique_ptr<cricket::TransportController> transport_controller)
-    : network_thread_(network_thread),
-      worker_thread_(worker_thread),
+    : worker_thread_(worker_thread),
       signaling_thread_(signaling_thread),
       // RFC 3264: The numeric value of the session id and version in the
       // o line MUST be representable with a "64 bit signed integer".
@@ -511,11 +505,6 @@ WebRtcSession::~WebRtcSession() {
     SignalDataChannelDestroyed();
     channel_manager_->DestroyDataChannel(data_channel_.release());
   }
-#ifdef HAVE_QUIC
-  if (quic_data_transport_) {
-    quic_data_transport_.reset();
-  }
-#endif
   SignalDestroyed();
 
   LOG(LS_INFO) << "Session: " << id() << " is destroyed.";
@@ -556,21 +545,7 @@ bool WebRtcSession::Initialize(
   // PeerConnectionFactoryInterface::Options.
   if (rtc_configuration.enable_rtp_data_channel) {
     data_channel_type_ = cricket::DCT_RTP;
-  }
-#ifdef HAVE_QUIC
-  else if (rtc_configuration.enable_quic) {
-    // Use QUIC instead of DTLS when |enable_quic| is true.
-    data_channel_type_ = cricket::DCT_QUIC;
-    transport_controller_->use_quic();
-    if (dtls_enabled_) {
-      LOG(LS_INFO) << "Using QUIC instead of DTLS";
-    }
-    quic_data_transport_.reset(
-        new QuicDataTransport(signaling_thread(), worker_thread(),
-                              network_thread(), transport_controller_.get()));
-  }
-#endif  // HAVE_QUIC
-  else {
+  } else {
     // DTLS has to be enabled to use SCTP.
     if (!options.disable_sctp_data_channels && dtls_enabled_) {
       data_channel_type_ = cricket::DCT_SCTP;
@@ -1059,15 +1034,6 @@ bool WebRtcSession::EnableBundle(const cricket::ContentGroup& bundle) {
   }
   const std::string& transport_name = *first_content_name;
   cricket::BaseChannel* first_channel = GetChannel(transport_name);
-
-#ifdef HAVE_QUIC
-  if (quic_data_transport_ &&
-      bundle.HasContentName(quic_data_transport_->content_name()) &&
-      quic_data_transport_->transport_name() != transport_name) {
-    LOG(LS_ERROR) << "Unable to BUNDLE " << quic_data_transport_->content_name()
-                  << " on " << transport_name << "with QUIC.";
-  }
-#endif
 
   auto maybe_set_transport = [this, bundle, transport_name,
                               first_channel](cricket::BaseChannel* ch) {
@@ -1577,17 +1543,9 @@ void WebRtcSession::RemoveUnusedChannels(const SessionDescription* desc) {
 
   const cricket::ContentInfo* data_info =
       cricket::GetFirstDataContent(desc);
-  if (!data_info || data_info->rejected) {
-    if (data_channel_) {
-      SignalDataChannelDestroyed();
-      channel_manager_->DestroyDataChannel(data_channel_.release());
-    }
-#ifdef HAVE_QUIC
-    // Clean up the existing QuicDataTransport and its QuicTransportChannels.
-    if (quic_data_transport_) {
-      quic_data_transport_.reset();
-    }
-#endif
+  if ((!data_info || data_info->rejected) && data_channel_) {
+    SignalDataChannelDestroyed();
+    channel_manager_->DestroyDataChannel(data_channel_.release());
   }
 }
 
@@ -1701,15 +1659,6 @@ bool WebRtcSession::CreateVideoChannel(const cricket::ContentInfo* content,
 
 bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content,
                                       const std::string* bundle_transport) {
-#ifdef HAVE_QUIC
-  if (data_channel_type_ == cricket::DCT_QUIC) {
-    RTC_DCHECK(transport_controller_->quic());
-    const std::string transport_name =
-        bundle_transport ? *bundle_transport : content->name;
-    quic_data_transport_->SetTransport(transport_name);
-    return true;
-  }
-#endif  // HAVE_QUIC
   bool sctp = (data_channel_type_ == cricket::DCT_SCTP);
   bool require_rtcp_mux =
       rtcp_mux_policy_ == PeerConnectionInterface::kRtcpMuxPolicyRequire;
@@ -1893,7 +1842,7 @@ bool WebRtcSession::ReadyToUseRemoteCandidate(
     const IceCandidateInterface* candidate,
     const SessionDescriptionInterface* remote_desc,
     bool* valid) {
-  *valid = true;
+  *valid = true;;
 
   const SessionDescriptionInterface* current_remote_desc =
       remote_desc ? remote_desc : remote_desc_.get();
@@ -1916,12 +1865,13 @@ bool WebRtcSession::ReadyToUseRemoteCandidate(
 
   cricket::ContentInfo content =
       current_remote_desc->description()->contents()[mediacontent_index];
-
-  const std::string transport_name = GetTransportName(content.name);
-  if (transport_name.empty()) {
+  cricket::BaseChannel* channel = GetChannel(content.name);
+  if (!channel) {
     return false;
   }
-  return transport_controller_->ReadyForRemoteCandidates(transport_name);
+
+  return transport_controller_->ReadyForRemoteCandidates(
+      channel->transport_name());
 }
 
 void WebRtcSession::OnTransportControllerGatheringState(
@@ -2058,19 +2008,4 @@ void WebRtcSession::OnSentPacket_w(const rtc::SentPacket& sent_packet) {
   media_controller_->call_w()->OnSentPacket(sent_packet);
 }
 
-const std::string WebRtcSession::GetTransportName(
-    const std::string& content_name) {
-  cricket::BaseChannel* channel = GetChannel(content_name);
-  if (!channel) {
-#ifdef HAVE_QUIC
-    if (data_channel_type_ == cricket::DCT_QUIC && quic_data_transport_ &&
-        content_name == quic_data_transport_->transport_name()) {
-      return quic_data_transport_->transport_name();
-    }
-#endif
-    // Return an empty string if failed to retrieve the transport name.
-    return "";
-  }
-  return channel->transport_name();
-}
 }  // namespace webrtc

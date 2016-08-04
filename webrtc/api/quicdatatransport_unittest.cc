@@ -30,7 +30,6 @@ using webrtc::DataChannelObserver;
 using webrtc::QuicDataChannel;
 using webrtc::QuicDataTransport;
 using cricket::FakeTransportChannel;
-using cricket::FakeTransportController;
 using cricket::QuicTransportChannel;
 using cricket::ReliableQuicStream;
 
@@ -38,7 +37,6 @@ namespace {
 
 // Timeout for asynchronous operations.
 static const int kTimeoutMs = 1000;  // milliseconds
-static const char kTransportName[] = "data";
 
 // FakeObserver receives messages from the data channel.
 class FakeObserver : public DataChannelObserver {
@@ -66,16 +64,11 @@ class FakeObserver : public DataChannelObserver {
 class QuicDataTransportPeer {
  public:
   QuicDataTransportPeer()
-      : fake_transport_controller_(new FakeTransportController()),
-        quic_data_transport_(rtc::Thread::Current(),
+      : quic_data_transport_(rtc::Thread::Current(),
                              rtc::Thread::Current(),
-                             rtc::Thread::Current(),
-                             fake_transport_controller_.get()) {
-    fake_transport_controller_->use_quic();
-    quic_data_transport_.set_content_name("data");
-    quic_data_transport_.SetTransport(kTransportName);
-    ice_transport_channel_ = static_cast<FakeTransportChannel*>(
-        quic_data_transport_.quic_transport_channel()->ice_transport_channel());
+                             rtc::Thread::Current()),
+        ice_transport_channel_(new FakeTransportChannel("data", 0)),
+        quic_transport_channel_(ice_transport_channel_) {
     ice_transport_channel_->SetAsync(true);
   }
 
@@ -83,8 +76,7 @@ class QuicDataTransportPeer {
     rtc::scoped_refptr<rtc::RTCCertificate> local_cert =
         rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
             rtc::SSLIdentity::Generate("cert_name", rtc::KT_DEFAULT)));
-    quic_data_transport_.quic_transport_channel()->SetLocalCertificate(
-        local_cert);
+    quic_transport_channel_.SetLocalCertificate(local_cert);
     local_fingerprint_.reset(CreateFingerprint(local_cert.get()));
   }
 
@@ -98,15 +90,14 @@ class QuicDataTransportPeer {
   }
 
   QuicTransportChannel* quic_transport_channel() {
-    return quic_data_transport_.quic_transport_channel();
+    return &quic_transport_channel_;
   }
 
   // Write a messge directly to the ReliableQuicStream.
   void WriteMessage(int data_channel_id,
                     uint64_t message_id,
                     const std::string& message) {
-    ReliableQuicStream* stream =
-        quic_data_transport_.quic_transport_channel()->CreateQuicStream();
+    ReliableQuicStream* stream = quic_transport_channel_.CreateQuicStream();
     rtc::CopyOnWriteBuffer payload;
     webrtc::WriteQuicDataChannelMessageHeader(data_channel_id, message_id,
                                               &payload);
@@ -131,9 +122,9 @@ class QuicDataTransportPeer {
     return fingerprint.release();
   }
 
-  std::unique_ptr<FakeTransportController> fake_transport_controller_;
   QuicDataTransport quic_data_transport_;
   FakeTransportChannel* ice_transport_channel_;
+  QuicTransportChannel quic_transport_channel_;
   std::unique_ptr<rtc::SSLFingerprint> local_fingerprint_;
 };
 
@@ -147,6 +138,13 @@ class QuicDataTransportTest : public testing::Test {
     ASSERT_TRUE_WAIT(peer1_.quic_transport_channel()->writable() &&
                          peer2_.quic_transport_channel()->writable(),
                      kTimeoutMs);
+  }
+
+  void SetTransportChannels() {
+    ASSERT_TRUE(peer1_.quic_data_transport()->SetTransportChannel(
+        peer1_.quic_transport_channel()));
+    ASSERT_TRUE(peer2_.quic_data_transport()->SetTransportChannel(
+        peer2_.quic_transport_channel()));
   }
 
   // Sets crypto parameters required for the QUIC handshake.
@@ -209,7 +207,7 @@ TEST_F(QuicDataTransportTest, CannotCreateDataChannelsWithSameId) {
 }
 
 // Tests that any data channels created by the QuicDataTransport are in state
-// kConnecting before the QuicTransportChannel is set, then transition to state
+// kConnecting before the QuicTransportChannel is set, then transiton to state
 // kOpen when the transport channel becomes writable.
 TEST_F(QuicDataTransportTest, DataChannelsOpenWhenTransportChannelWritable) {
   webrtc::DataChannelInit config1;
@@ -217,6 +215,7 @@ TEST_F(QuicDataTransportTest, DataChannelsOpenWhenTransportChannelWritable) {
   rtc::scoped_refptr<DataChannelInterface> data_channel1 =
       peer2_.CreateDataChannel(&config1);
   EXPECT_EQ(webrtc::DataChannelInterface::kConnecting, data_channel1->state());
+  SetTransportChannels();
   EXPECT_EQ(webrtc::DataChannelInterface::kConnecting, data_channel1->state());
   webrtc::DataChannelInit config2;
   config2.id = 14;
@@ -240,6 +239,7 @@ TEST_F(QuicDataTransportTest, DataChannelsOpenWhenTransportChannelWritable) {
 // Tests that the QuicTransport dispatches messages for one QuicDataChannel.
 TEST_F(QuicDataTransportTest, ReceiveMessagesForSingleDataChannel) {
   ConnectTransportChannels();
+  SetTransportChannels();
 
   int data_channel_id = 1337;
   webrtc::DataChannelInit config;
@@ -269,6 +269,7 @@ TEST_F(QuicDataTransportTest, ReceiveMessagesForSingleDataChannel) {
 // when multiple are in use.
 TEST_F(QuicDataTransportTest, ReceiveMessagesForMultipleDataChannels) {
   ConnectTransportChannels();
+  SetTransportChannels();
 
   std::vector<rtc::scoped_refptr<DataChannelInterface>> data_channels;
   for (int data_channel_id = 0; data_channel_id < 5; ++data_channel_id) {
@@ -298,6 +299,7 @@ TEST_F(QuicDataTransportTest, ReceiveMessagesForMultipleDataChannels) {
 // send/receive messages using a QuicDataTransport.
 TEST_F(QuicDataTransportTest, EndToEndSendReceiveMessages) {
   ConnectTransportChannels();
+  SetTransportChannels();
 
   std::vector<rtc::scoped_refptr<DataChannelInterface>> peer1_data_channels;
   std::vector<rtc::scoped_refptr<DataChannelInterface>> peer2_data_channels;
@@ -337,14 +339,18 @@ TEST_F(QuicDataTransportTest, EndToEndSendReceiveMessages) {
   }
 }
 
-// Tests that SetTransport returns false when setting a transport that is not
-// equivalent to the one already set.
-TEST_F(QuicDataTransportTest, SetTransportReturnValue) {
+// Tests that SetTransportChannel returns false when setting a NULL transport
+// channel or a transport channel that is not equivalent to the one already set.
+TEST_F(QuicDataTransportTest, SetTransportChannelReturnValue) {
   QuicDataTransport* quic_data_transport = peer1_.quic_data_transport();
-  // Ignore the same transport name.
-  EXPECT_TRUE(quic_data_transport->SetTransport(kTransportName));
-  // Return false when setting a different transport name.
-  EXPECT_FALSE(quic_data_transport->SetTransport("another transport name"));
+  EXPECT_FALSE(quic_data_transport->SetTransportChannel(nullptr));
+  QuicTransportChannel* transport_channel = peer1_.quic_transport_channel();
+  EXPECT_TRUE(quic_data_transport->SetTransportChannel(transport_channel));
+  EXPECT_TRUE(quic_data_transport->SetTransportChannel(transport_channel));
+  QuicTransportChannel* other_transport_channel =
+      peer2_.quic_transport_channel();
+  EXPECT_FALSE(
+      quic_data_transport->SetTransportChannel(other_transport_channel));
 }
 
 }  // namespace
