@@ -41,6 +41,8 @@ class EventLogAnalyzer {
 
   void CreateAccumulatedDelayChangeGraph(Plot* plot);
 
+  void CreateFractionLossGraph(Plot* plot);
+
   void CreateTotalBitrateGraph(PacketDirection desired_direction, Plot* plot);
 
   void CreateStreamBitrateGraph(PacketDirection desired_direction, Plot* plot);

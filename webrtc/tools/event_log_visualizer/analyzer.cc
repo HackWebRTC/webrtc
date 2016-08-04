@@ -538,6 +538,23 @@ void EventLogAnalyzer::CreateAccumulatedDelayChangeGraph(Plot* plot) {
   plot->SetTitle("Accumulated network latency change");
 }
 
+// Plot the fraction of packets lost (as perceived by the loss-based BWE).
+void EventLogAnalyzer::CreateFractionLossGraph(Plot* plot) {
+  plot->series_list_.push_back(TimeSeries());
+  for (auto& bwe_update : bwe_loss_updates_) {
+    float x = static_cast<float>(bwe_update.timestamp - begin_time_) / 1000000;
+    float y = static_cast<float>(bwe_update.fraction_loss) / 255 * 100;
+    plot->series_list_.back().points.emplace_back(x, y);
+  }
+  plot->series_list_.back().label = "Fraction lost";
+  plot->series_list_.back().style = LINE_DOT_GRAPH;
+
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 10, "Percent lost packets", kBottomMargin,
+                          kTopMargin);
+  plot->SetTitle("Reported packet loss");
+}
+
 // Plot the total bandwidth used by all RTP streams.
 void EventLogAnalyzer::CreateTotalBitrateGraph(
     PacketDirection desired_direction,

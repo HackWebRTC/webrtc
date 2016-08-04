@@ -51,6 +51,10 @@ DEFINE_bool(plot_network_delay_feedback,
             false,
             "Compute network delay based on sent packets and the received "
             "transport feedback.");
+DEFINE_bool(plot_fraction_loss,
+            false,
+            "Plot packet loss in percent for outgoing packets (as perceived by "
+            "the send-side bandwidth estimator).");
 
 int main(int argc, char* argv[]) {
   std::string program_name = argv[0];
@@ -114,6 +118,10 @@ int main(int argc, char* argv[]) {
     if (FLAGS_incoming) {
       analyzer.CreateAccumulatedDelayChangeGraph(collection->AppendNewPlot());
     }
+  }
+
+  if (FLAGS_plot_all || FLAGS_plot_fraction_loss) {
+    analyzer.CreateFractionLossGraph(collection->AppendNewPlot());
   }
 
   if (FLAGS_plot_all || FLAGS_plot_total_bitrate) {
