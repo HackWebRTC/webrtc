@@ -403,6 +403,12 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
     LOG(LS_INFO) << "Set receiving_switching_delay to"
                  << *config_.receiving_switching_delay;
   }
+
+  if (config_.default_nomination_mode != config.default_nomination_mode) {
+    config_.default_nomination_mode = config.default_nomination_mode;
+    LOG(LS_INFO) << "Set default nomination mode to "
+                 << static_cast<int>(config_.default_nomination_mode);
+  }
 }
 
 const IceConfig& P2PTransportChannel::config() const {
@@ -1140,10 +1146,10 @@ int P2PTransportChannel::CompareConnections(
   if (ice_role_ == ICEROLE_CONTROLLED) {
     // Compare the connections based on the nomination states and the last data
     // received time if this is on the controlled side.
-    if (a->nominated() && !b->nominated()) {
+    if (a->remote_nomination() > b->remote_nomination()) {
       return a_is_better;
     }
-    if (!a->nominated() && b->nominated()) {
+    if (a->remote_nomination() < b->remote_nomination()) {
       return b_is_better;
     }
 
@@ -1285,6 +1291,7 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn) {
   Connection* old_selected_connection = selected_connection_;
   selected_connection_ = conn;
   if (selected_connection_) {
+    ++nomination_;
     if (old_selected_connection) {
       LOG_J(LS_INFO, this) << "Previous selected connection: "
                            << old_selected_connection->ToString();
@@ -1585,30 +1592,64 @@ void P2PTransportChannel::MarkConnectionPinged(Connection* conn) {
 }
 
 // Apart from sending ping from |conn| this method also updates
-// |use_candidate_attr| flag. The criteria to update this flag is
-// explained below.
-// Set USE-CANDIDATE if doing ICE AND this channel is in CONTROLLING AND
-//    a) Channel is in FULL ICE AND
-//      a.1) |conn| is the selected connection OR
-//      a.2) there is no selected connection OR
-//      a.3) the selected connection is unwritable OR
-//      a.4) |conn| has higher priority than selected_connection.
-//    b) we're doing LITE ICE AND
-//      b.1) |conn| is the selected_connection AND
-//      b.2) |conn| is writable.
+// |use_candidate_attr| and |nomination| flags. One of the flags is set to
+// nominate |conn| if this channel is in CONTROLLING.
 void P2PTransportChannel::PingConnection(Connection* conn) {
-  bool use_candidate = false;
-  if (remote_ice_mode_ == ICEMODE_FULL && ice_role_ == ICEROLE_CONTROLLING) {
-    use_candidate =
-        (conn == selected_connection_) || (selected_connection_ == NULL) ||
-        (!selected_connection_->writable()) ||
-        (CompareConnectionCandidates(selected_connection_, conn) < 0);
-  } else if (remote_ice_mode_ == ICEMODE_LITE && conn == selected_connection_) {
-    use_candidate = selected_connection_->writable();
+  bool use_candidate_attr = false;
+  uint32_t nomination = 0;
+  if (ice_role_ == ICEROLE_CONTROLLING) {
+    if (remote_supports_renomination_) {
+      nomination = GetNominationAttr(conn);
+    } else {
+      use_candidate_attr =
+          GetUseCandidateAttr(conn, config_.default_nomination_mode);
+    }
   }
-  conn->set_use_candidate_attr(use_candidate);
+  conn->set_nomination(nomination);
+  conn->set_use_candidate_attr(use_candidate_attr);
   last_ping_sent_ms_ = rtc::TimeMillis();
   conn->Ping(last_ping_sent_ms_);
+}
+
+uint32_t P2PTransportChannel::GetNominationAttr(Connection* conn) const {
+  return (conn == selected_connection_) ? nomination_ : 0;
+}
+
+// Nominate a connection based on the NominationMode.
+bool P2PTransportChannel::GetUseCandidateAttr(Connection* conn,
+                                              NominationMode mode) const {
+  switch (mode) {
+    case NominationMode::REGULAR:
+      // TODO(honghaiz): Implement regular nomination.
+      return false;
+    case NominationMode::AGGRESSIVE:
+      if (remote_ice_mode_ == ICEMODE_LITE) {
+        return GetUseCandidateAttr(conn, NominationMode::REGULAR);
+      }
+      return true;
+    case NominationMode::SEMI_AGGRESSIVE: {
+      // Nominate if
+      // a) Remote is in FULL ICE AND
+      //    a.1) |conn| is the selected connection OR
+      //    a.2) there is no selected connection OR
+      //    a.3) the selected connection is unwritable OR
+      //    a.4) |conn| has higher priority than selected_connection.
+      // b) Remote is in LITE ICE AND
+      //    b.1) |conn| is the selected_connection AND
+      //    b.2) |conn| is writable.
+      bool selected = conn == selected_connection_;
+      if (remote_ice_mode_ == ICEMODE_LITE) {
+        return selected && conn->writable();
+      }
+      bool better_than_selected =
+          !selected_connection_ || !selected_connection_->writable() ||
+          CompareConnectionCandidates(selected_connection_, conn) < 0;
+      return selected || better_than_selected;
+    }
+    default:
+      RTC_DCHECK(false);
+      return false;
+  }
 }
 
 // When a connection's state changes, we need to figure out who to use as

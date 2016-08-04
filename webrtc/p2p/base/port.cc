@@ -775,14 +775,16 @@ class ConnectionRequest : public StunRequest {
     if (connection_->port()->GetIceRole() == ICEROLE_CONTROLLING) {
       request->AddAttribute(new StunUInt64Attribute(
           STUN_ATTR_ICE_CONTROLLING, connection_->port()->IceTiebreaker()));
-      // Since we are trying aggressive nomination, sending USE-CANDIDATE
-      // attribute in every ping.
-      // If we are dealing with a ice-lite end point, nomination flag
-      // in Connection will be set to false by default. Once the connection
-      // becomes "best connection", nomination flag will be turned on.
+      // We should have either USE_CANDIDATE attribute or ICE_NOMINATION
+      // attribute but not both. That was enforced in p2ptransportchannel.
       if (connection_->use_candidate_attr()) {
         request->AddAttribute(new StunByteStringAttribute(
             STUN_ATTR_USE_CANDIDATE));
+      }
+      if (connection_->nomination() &&
+          connection_->nomination() != connection_->acked_nomination()) {
+        request->AddAttribute(new StunUInt32Attribute(
+            STUN_ATTR_NOMINATION, connection_->nomination()));
       }
     } else if (connection_->port()->GetIceRole() == ICEROLE_CONTROLLED) {
       request->AddAttribute(new StunUInt64Attribute(
@@ -846,12 +848,13 @@ Connection::Connection(Port* port,
     : port_(port),
       local_candidate_index_(index),
       remote_candidate_(remote_candidate),
+      recv_rate_tracker_(100, 10u),
+      send_rate_tracker_(100, 10u),
       write_state_(STATE_WRITE_INIT),
       receiving_(false),
       connected_(true),
       pruned_(false),
       use_candidate_attr_(false),
-      nominated_(false),
       remote_ice_mode_(ICEMODE_FULL),
       requests_(port->thread()),
       rtt_(DEFAULT_RTT),
@@ -859,8 +862,6 @@ Connection::Connection(Port* port,
       last_ping_received_(0),
       last_data_received_(0),
       last_ping_response_received_(0),
-      recv_rate_tracker_(100, 10u),
-      send_rate_tracker_(100, 10u),
       reported_(false),
       state_(STATE_WAITING),
       receiving_timeout_(WEAK_CONNECTION_RECEIVE_TIMEOUT),
@@ -1062,10 +1063,24 @@ void Connection::HandleBindingRequest(IceMessage* msg) {
   }
 
   if (port_->GetIceRole() == ICEROLE_CONTROLLED) {
-    const StunByteStringAttribute* use_candidate_attr =
-        msg->GetByteString(STUN_ATTR_USE_CANDIDATE);
-    if (use_candidate_attr) {
-      set_nominated(true);
+    const StunUInt32Attribute* nomination_attr =
+        msg->GetUInt32(STUN_ATTR_NOMINATION);
+    uint32_t nomination = 0;
+    if (nomination_attr) {
+      nomination = nomination_attr->value();
+      if (nomination == 0) {
+        LOG(LS_ERROR) << "Invalid nomination: " << nomination;
+      }
+    } else {
+      const StunByteStringAttribute* use_candidate_attr =
+          msg->GetByteString(STUN_ATTR_USE_CANDIDATE);
+      if (use_candidate_attr) {
+        nomination = 1;
+      }
+    }
+    // We don't un-nominate a connection, so we only keep a larger nomination.
+    if (nomination > remote_nomination_) {
+      set_remote_nomination(nomination);
       SignalNominated(this);
     }
   }
@@ -1199,9 +1214,10 @@ void Connection::UpdateState(int64_t now) {
 void Connection::Ping(int64_t now) {
   last_ping_sent_ = now;
   ConnectionRequest *req = new ConnectionRequest(this);
-  pings_since_last_response_.push_back(SentPing(req->id(), now));
+  pings_since_last_response_.push_back(SentPing(req->id(), now, nomination_));
   LOG_J(LS_VERBOSE, this) << "Sending STUN ping "
-                          << ", id=" << rtc::hex_encode(req->id());
+                          << ", id=" << rtc::hex_encode(req->id())
+                          << ", nomination=" << nomination_;
   requests_.Send(req);
   state_ = STATE_INPROGRESS;
   num_pings_sent_++;
@@ -1212,17 +1228,25 @@ void Connection::ReceivedPing() {
   UpdateReceiving(last_ping_received_);
 }
 
-void Connection::ReceivedPingResponse(int rtt) {
+void Connection::ReceivedPingResponse(int rtt, const std::string& request_id) {
   // We've already validated that this is a STUN binding response with
   // the correct local and remote username for this connection.
   // So if we're not already, become writable. We may be bringing a pruned
   // connection back to life, but if we don't really want it, we can always
   // prune it again.
+  auto iter = std::find_if(
+      pings_since_last_response_.begin(), pings_since_last_response_.end(),
+      [request_id](const SentPing& ping) { return ping.id == request_id; });
+  if (iter != pings_since_last_response_.end() &&
+      iter->nomination > acked_nomination_) {
+    acked_nomination_ = iter->nomination;
+  }
+
+  pings_since_last_response_.clear();
   last_ping_response_received_ = rtc::TimeMillis();
   UpdateReceiving(last_ping_response_received_);
   set_write_state(STATE_WRITABLE);
   set_state(STATE_SUCCEEDED);
-  pings_since_last_response_.clear();
   rtt_samples_++;
   rtt_ = (RTT_RATIO * rtt_ + rtt) / (RTT_RATIO + 1);
 }
@@ -1295,21 +1319,16 @@ std::string Connection::ToString() const {
   const Candidate& local = local_candidate();
   const Candidate& remote = remote_candidate();
   std::stringstream ss;
-  ss << "Conn[" << ToDebugId()
-     << ":" << port_->content_name()
-     << ":" << local.id() << ":" << local.component()
-     << ":" << local.generation()
-     << ":" << local.type() << ":" << local.protocol()
-     << ":" << local.address().ToSensitiveString()
-     << "->" << remote.id() << ":" << remote.component()
-     << ":" << remote.priority()
-     << ":" << remote.type() << ":"
-     << remote.protocol() << ":" << remote.address().ToSensitiveString() << "|"
-     << CONNECT_STATE_ABBREV[connected()]
-     << RECEIVE_STATE_ABBREV[receiving()]
-     << WRITE_STATE_ABBREV[write_state()]
-     << ICESTATE[state()] << "|"
-     << priority() << "|";
+  ss << "Conn[" << ToDebugId() << ":" << port_->content_name() << ":"
+     << local.id() << ":" << local.component() << ":" << local.generation()
+     << ":" << local.type() << ":" << local.protocol() << ":"
+     << local.address().ToSensitiveString() << "->" << remote.id() << ":"
+     << remote.component() << ":" << remote.priority() << ":" << remote.type()
+     << ":" << remote.protocol() << ":" << remote.address().ToSensitiveString()
+     << "|" << CONNECT_STATE_ABBREV[connected()]
+     << RECEIVE_STATE_ABBREV[receiving()] << WRITE_STATE_ABBREV[write_state()]
+     << ICESTATE[state()] << "|" << remote_nomination() << "|" << nomination()
+     << "|" << priority() << "|";
   if (rtt_ < DEFAULT_RTT) {
     ss << rtt_ << "]";
   } else {
@@ -1330,20 +1349,16 @@ void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
 
   int rtt = request->Elapsed();
 
-  ReceivedPingResponse(rtt);
-
   if (LOG_CHECK_LEVEL_V(sev)) {
-    bool use_candidate = (
-        response->GetByteString(STUN_ATTR_USE_CANDIDATE) != nullptr);
     std::string pings;
     PrintPingsSinceLastResponse(&pings, 5);
     LOG_JV(sev, this) << "Received STUN ping response"
                       << ", id=" << rtc::hex_encode(request->id())
                       << ", code=0"  // Makes logging easier to parse.
                       << ", rtt=" << rtt
-                      << ", use_candidate=" << use_candidate
                       << ", pings_since_last_response=" << pings;
   }
+  ReceivedPingResponse(rtt, request->id());
 
   stats_.recv_ping_responses++;
 
@@ -1390,10 +1405,10 @@ void Connection::OnConnectionRequestTimeout(ConnectionRequest* request) {
 void Connection::OnConnectionRequestSent(ConnectionRequest* request) {
   // Log at LS_INFO if we send a ping on an unwritable connection.
   rtc::LoggingSeverity sev = !writable() ? rtc::LS_INFO : rtc::LS_VERBOSE;
-  bool use_candidate = use_candidate_attr();
   LOG_JV(sev, this) << "Sent STUN ping"
                     << ", id=" << rtc::hex_encode(request->id())
-                    << ", use_candidate=" << use_candidate;
+                    << ", use_candidate=" << use_candidate_attr()
+                    << ", nomination=" << nomination();
   stats_.sent_ping_requests_total++;
   if (stats_.recv_ping_responses == 0) {
     stats_.sent_ping_requests_before_first_response++;

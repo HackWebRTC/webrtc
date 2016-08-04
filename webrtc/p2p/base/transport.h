@@ -162,6 +162,15 @@ struct TransportStats {
   TransportChannelStatsList channel_stats;
 };
 
+// ICE Nomination mode.
+enum class NominationMode {
+  REGULAR,         // Nominate once per ICE restart (Not implemented yet).
+  AGGRESSIVE,      // Nominate every connection except that it will behave as if
+                   // REGULAR when the remote is an ICE-LITE endpoint.
+  SEMI_AGGRESSIVE  // Our current implementation of the nomination algorithm.
+                   // The details are described in P2PTransportChannel.
+};
+
 // Information about ICE configuration.
 // TODO(deadbeef): Use rtc::Optional to represent unset values, instead of
 // -1.
@@ -198,6 +207,10 @@ struct IceConfig {
   // when a new connection becomes receiving but the selected connection is not
   // in case that the selected connection may become receiving soon.
   rtc::Optional<int> receiving_switching_delay;
+
+  // TODO(honghaiz): Change the default to regular nomination.
+  // Default nomination mode if the remote does not support renomination.
+  NominationMode default_nomination_mode = NominationMode::SEMI_AGGRESSIVE;
 
   IceConfig() {}
   IceConfig(int receiving_timeout_ms,

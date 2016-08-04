@@ -209,6 +209,11 @@ class P2PTransportChannel : public TransportChannelImpl,
     return remote_candidates_;
   }
 
+  // Public for unit tests.
+  void set_remote_supports_renomination(bool remote_supports_renomination) {
+    remote_supports_renomination_ = remote_supports_renomination;
+  }
+
  private:
   rtc::Thread* thread() const { return worker_thread_; }
   bool IsGettingPorts() { return allocator_session()->IsGettingPorts(); }
@@ -313,6 +318,9 @@ class P2PTransportChannel : public TransportChannelImpl,
   void OnCheckAndPing();
   void OnRegatherOnFailedNetworks();
 
+  uint32_t GetNominationAttr(Connection* conn) const;
+  bool GetUseCandidateAttr(Connection* conn, NominationMode mode) const;
+
   // Returns true if we should switch to the new connection.
   // sets |missed_receiving_unchanged_threshold| to true if either
   // the selected connection or the new connection missed its
@@ -402,6 +410,13 @@ class P2PTransportChannel : public TransportChannelImpl,
   IceConfig config_;
   int last_sent_packet_id_ = -1;  // -1 indicates no packet was sent before.
   bool started_pinging_ = false;
+  // TODO(honghaiz): Put this and ICE role inside ICEParameters and rename this
+  // as renomination. Set its value in subsequent CLs based on signaling
+  // exchange.
+  bool remote_supports_renomination_ = false;
+  // The value put in the "nomination" attribute for the next nominated
+  // connection. A zero-value indicates the connection will not be nominated.
+  uint32_t nomination_ = 0;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(P2PTransportChannel);
 };
