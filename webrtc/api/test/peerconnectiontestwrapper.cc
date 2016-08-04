@@ -58,7 +58,8 @@ PeerConnectionTestWrapper::PeerConnectionTestWrapper(
 PeerConnectionTestWrapper::~PeerConnectionTestWrapper() {}
 
 bool PeerConnectionTestWrapper::CreatePc(
-  const MediaConstraintsInterface* constraints) {
+    const MediaConstraintsInterface* constraints,
+    const webrtc::PeerConnectionInterface::RTCConfiguration& config) {
   std::unique_ptr<cricket::PortAllocator> port_allocator(
       new cricket::FakePortAllocator(network_thread_, nullptr));
 
@@ -74,11 +75,6 @@ bool PeerConnectionTestWrapper::CreatePc(
     return false;
   }
 
-  // CreatePeerConnection with RTCConfiguration.
-  webrtc::PeerConnectionInterface::RTCConfiguration config;
-  webrtc::PeerConnectionInterface::IceServer ice_server;
-  ice_server.uri = "stun:stun.l.google.com:19302";
-  config.servers.push_back(ice_server);
   std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator(
       rtc::SSLStreamAdapter::HaveDtlsSrtp() ? new FakeRTCCertificateGenerator()
                                             : nullptr);

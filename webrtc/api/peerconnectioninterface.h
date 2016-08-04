@@ -296,6 +296,7 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // default applies.
     bool disable_ipv6 = false;
     bool enable_rtp_data_channel = false;
+    bool enable_quic = false;
     rtc::Optional<int> screencast_min_bitrate;
     rtc::Optional<bool> combined_audio_video_bwe;
     rtc::Optional<bool> enable_dtls_srtp;

@@ -242,7 +242,6 @@ static const char kSdpStringMs1Video1[] =
 
 using ::testing::Exactly;
 using cricket::StreamParams;
-using rtc::scoped_refptr;
 using webrtc::AudioSourceInterface;
 using webrtc::AudioTrack;
 using webrtc::AudioTrackInterface;
@@ -535,18 +534,18 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
     return "";
   }
 
-  scoped_refptr<PeerConnectionInterface> pc_;
+  rtc::scoped_refptr<PeerConnectionInterface> pc_;
   PeerConnectionInterface::SignalingState state_;
   std::unique_ptr<IceCandidateInterface> last_candidate_;
-  scoped_refptr<DataChannelInterface> last_datachannel_;
+  rtc::scoped_refptr<DataChannelInterface> last_datachannel_;
   rtc::scoped_refptr<StreamCollection> remote_streams_;
   bool renegotiation_needed_ = false;
   bool ice_complete_ = false;
   bool callback_triggered = false;
 
  private:
-  scoped_refptr<MediaStreamInterface> last_added_stream_;
-  scoped_refptr<MediaStreamInterface> last_removed_stream_;
+  rtc::scoped_refptr<MediaStreamInterface> last_added_stream_;
+  rtc::scoped_refptr<MediaStreamInterface> last_removed_stream_;
 };
 
 }  // namespace
@@ -664,7 +663,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
     server.uri = uri;
     config.servers.push_back(server);
 
-    scoped_refptr<PeerConnectionInterface> pc;
+    rtc::scoped_refptr<PeerConnectionInterface> pc;
     pc = pc_factory_->CreatePeerConnection(config, nullptr, nullptr, nullptr,
                                            &observer_);
     EXPECT_EQ(nullptr, pc);
@@ -700,11 +699,11 @@ class PeerConnectionInterfaceTest : public testing::Test {
 
   void AddVideoStream(const std::string& label) {
     // Create a local stream.
-    scoped_refptr<MediaStreamInterface> stream(
+    rtc::scoped_refptr<MediaStreamInterface> stream(
         pc_factory_->CreateLocalMediaStream(label));
-    scoped_refptr<VideoTrackSourceInterface> video_source(
+    rtc::scoped_refptr<VideoTrackSourceInterface> video_source(
         pc_factory_->CreateVideoSource(new cricket::FakeVideoCapturer(), NULL));
-    scoped_refptr<VideoTrackInterface> video_track(
+    rtc::scoped_refptr<VideoTrackInterface> video_track(
         pc_factory_->CreateVideoTrack(label + "v0", video_source));
     stream->AddTrack(video_track.get());
     EXPECT_TRUE(pc_->AddStream(stream));
@@ -714,9 +713,9 @@ class PeerConnectionInterfaceTest : public testing::Test {
 
   void AddVoiceStream(const std::string& label) {
     // Create a local stream.
-    scoped_refptr<MediaStreamInterface> stream(
+    rtc::scoped_refptr<MediaStreamInterface> stream(
         pc_factory_->CreateLocalMediaStream(label));
-    scoped_refptr<AudioTrackInterface> audio_track(
+    rtc::scoped_refptr<AudioTrackInterface> audio_track(
         pc_factory_->CreateAudioTrack(label + "a0", NULL));
     stream->AddTrack(audio_track.get());
     EXPECT_TRUE(pc_->AddStream(stream));
@@ -728,13 +727,13 @@ class PeerConnectionInterfaceTest : public testing::Test {
                            const std::string& audio_track_label,
                            const std::string& video_track_label) {
     // Create a local stream.
-    scoped_refptr<MediaStreamInterface> stream(
+    rtc::scoped_refptr<MediaStreamInterface> stream(
         pc_factory_->CreateLocalMediaStream(stream_label));
-    scoped_refptr<AudioTrackInterface> audio_track(
+    rtc::scoped_refptr<AudioTrackInterface> audio_track(
         pc_factory_->CreateAudioTrack(
             audio_track_label, static_cast<AudioSourceInterface*>(NULL)));
     stream->AddTrack(audio_track.get());
-    scoped_refptr<VideoTrackInterface> video_track(
+    rtc::scoped_refptr<VideoTrackInterface> video_track(
         pc_factory_->CreateVideoTrack(
             video_track_label,
             pc_factory_->CreateVideoSource(new cricket::FakeVideoCapturer())));
@@ -1042,9 +1041,9 @@ class PeerConnectionInterfaceTest : public testing::Test {
   }
 
   cricket::FakePortAllocator* port_allocator_ = nullptr;
-  scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory_;
-  scoped_refptr<PeerConnectionFactoryForTest> pc_factory_for_test_;
-  scoped_refptr<PeerConnectionInterface> pc_;
+  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory_;
+  rtc::scoped_refptr<PeerConnectionFactoryForTest> pc_factory_for_test_;
+  rtc::scoped_refptr<PeerConnectionInterface> pc_;
   MockPeerConnectionObserver observer_;
   rtc::scoped_refptr<StreamCollection> reference_collection_;
 };
@@ -1052,7 +1051,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
 // Test that no callbacks on the PeerConnectionObserver are called after the
 // PeerConnection is closed.
 TEST_F(PeerConnectionInterfaceTest, CloseAndTestCallbackFunctions) {
-  scoped_refptr<PeerConnectionInterface> pc(
+  rtc::scoped_refptr<PeerConnectionInterface> pc(
       pc_factory_for_test_->CreatePeerConnection(
           PeerConnectionInterface::RTCConfiguration(), nullptr, nullptr,
           nullptr, &observer_));
@@ -1170,11 +1169,11 @@ TEST_F(PeerConnectionInterfaceTest, AddStreams) {
   ASSERT_EQ(2u, pc_->local_streams()->count());
 
   // Test we can add multiple local streams to one peerconnection.
-  scoped_refptr<MediaStreamInterface> stream(
+  rtc::scoped_refptr<MediaStreamInterface> stream(
       pc_factory_->CreateLocalMediaStream(kStreamLabel3));
-  scoped_refptr<AudioTrackInterface> audio_track(
-      pc_factory_->CreateAudioTrack(
-          kStreamLabel3, static_cast<AudioSourceInterface*>(NULL)));
+  rtc::scoped_refptr<AudioTrackInterface> audio_track(
+      pc_factory_->CreateAudioTrack(kStreamLabel3,
+                                    static_cast<AudioSourceInterface*>(NULL)));
   stream->AddTrack(audio_track.get());
   EXPECT_TRUE(pc_->AddStream(stream));
   EXPECT_EQ(3u, pc_->local_streams()->count());
@@ -1252,15 +1251,16 @@ TEST_F(PeerConnectionInterfaceTest, RemoveStream) {
 TEST_F(PeerConnectionInterfaceTest, AddTrackRemoveTrack) {
   CreatePeerConnection();
   // Create a dummy stream, so tracks share a stream label.
-  scoped_refptr<MediaStreamInterface> stream(
+  rtc::scoped_refptr<MediaStreamInterface> stream(
       pc_factory_->CreateLocalMediaStream(kStreamLabel1));
   std::vector<MediaStreamInterface*> stream_list;
   stream_list.push_back(stream.get());
-  scoped_refptr<AudioTrackInterface> audio_track(
+  rtc::scoped_refptr<AudioTrackInterface> audio_track(
       pc_factory_->CreateAudioTrack("audio_track", nullptr));
-  scoped_refptr<VideoTrackInterface> video_track(pc_factory_->CreateVideoTrack(
-      "video_track",
-      pc_factory_->CreateVideoSource(new cricket::FakeVideoCapturer())));
+  rtc::scoped_refptr<VideoTrackInterface> video_track(
+      pc_factory_->CreateVideoTrack(
+          "video_track",
+          pc_factory_->CreateVideoSource(new cricket::FakeVideoCapturer())));
   auto audio_sender = pc_->AddTrack(audio_track, stream_list);
   auto video_sender = pc_->AddTrack(video_track, stream_list);
   EXPECT_EQ(1UL, audio_sender->stream_ids().size());
@@ -1326,11 +1326,12 @@ TEST_F(PeerConnectionInterfaceTest, AddTrackRemoveTrack) {
 TEST_F(PeerConnectionInterfaceTest, AddTrackWithoutStream) {
   CreatePeerConnection();
   // Create a dummy stream, so tracks share a stream label.
-  scoped_refptr<AudioTrackInterface> audio_track(
+  rtc::scoped_refptr<AudioTrackInterface> audio_track(
       pc_factory_->CreateAudioTrack("audio_track", nullptr));
-  scoped_refptr<VideoTrackInterface> video_track(pc_factory_->CreateVideoTrack(
-      "video_track",
-      pc_factory_->CreateVideoSource(new cricket::FakeVideoCapturer())));
+  rtc::scoped_refptr<VideoTrackInterface> video_track(
+      pc_factory_->CreateVideoTrack(
+          "video_track",
+          pc_factory_->CreateVideoSource(new cricket::FakeVideoCapturer())));
   auto audio_sender =
       pc_->AddTrack(audio_track, std::vector<MediaStreamInterface*>());
   auto video_sender =
@@ -1489,9 +1490,10 @@ TEST_F(PeerConnectionInterfaceTest, AddTrackAfterAddStream) {
   MediaStreamInterface* stream = pc_->local_streams()->at(0);
 
   // Add video track to the audio-only stream.
-  scoped_refptr<VideoTrackInterface> video_track(pc_factory_->CreateVideoTrack(
-      "video_label",
-      pc_factory_->CreateVideoSource(new cricket::FakeVideoCapturer())));
+  rtc::scoped_refptr<VideoTrackInterface> video_track(
+      pc_factory_->CreateVideoTrack(
+          "video_label",
+          pc_factory_->CreateVideoSource(new cricket::FakeVideoCapturer())));
   stream->AddTrack(video_track.get());
 
   std::unique_ptr<SessionDescriptionInterface> offer;
@@ -1543,7 +1545,7 @@ TEST_F(PeerConnectionInterfaceTest, GetStatsForSpecificTrack) {
   InitiateCall();
   ASSERT_LT(0u, pc_->remote_streams()->count());
   ASSERT_LT(0u, pc_->remote_streams()->at(0)->GetAudioTracks().size());
-  scoped_refptr<MediaStreamTrackInterface> remote_audio =
+  rtc::scoped_refptr<MediaStreamTrackInterface> remote_audio =
       pc_->remote_streams()->at(0)->GetAudioTracks()[0];
   EXPECT_TRUE(DoGetStats(remote_audio));
 
@@ -1565,7 +1567,7 @@ TEST_F(PeerConnectionInterfaceTest, GetStatsForVideoTrack) {
   InitiateCall();
   ASSERT_LT(0u, pc_->remote_streams()->count());
   ASSERT_LT(0u, pc_->remote_streams()->at(0)->GetVideoTracks().size());
-  scoped_refptr<MediaStreamTrackInterface> remote_video =
+  rtc::scoped_refptr<MediaStreamTrackInterface> remote_video =
       pc_->remote_streams()->at(0)->GetVideoTracks()[0];
   EXPECT_TRUE(DoGetStats(remote_video));
 }
@@ -1576,7 +1578,7 @@ TEST_F(PeerConnectionInterfaceTest, GetStatsForVideoTrack) {
 // data is returned for the track.
 TEST_F(PeerConnectionInterfaceTest, DISABLED_GetStatsForInvalidTrack) {
   InitiateCall();
-  scoped_refptr<AudioTrackInterface> unknown_audio_track(
+  rtc::scoped_refptr<AudioTrackInterface> unknown_audio_track(
       pc_factory_->CreateAudioTrack("unknown track", NULL));
   EXPECT_FALSE(DoGetStats(unknown_audio_track));
 }
@@ -1586,9 +1588,9 @@ TEST_F(PeerConnectionInterfaceTest, TestDataChannel) {
   FakeConstraints constraints;
   constraints.SetAllowRtpDataChannels();
   CreatePeerConnection(&constraints);
-  scoped_refptr<DataChannelInterface> data1  =
+  rtc::scoped_refptr<DataChannelInterface> data1 =
       pc_->CreateDataChannel("test1", NULL);
-  scoped_refptr<DataChannelInterface> data2  =
+  rtc::scoped_refptr<DataChannelInterface> data2 =
       pc_->CreateDataChannel("test2", NULL);
   ASSERT_TRUE(data1 != NULL);
   std::unique_ptr<MockDataChannelObserver> observer1(
@@ -1633,9 +1635,9 @@ TEST_F(PeerConnectionInterfaceTest, TestSendBinaryOnRtpDataChannel) {
   FakeConstraints constraints;
   constraints.SetAllowRtpDataChannels();
   CreatePeerConnection(&constraints);
-  scoped_refptr<DataChannelInterface> data1  =
+  rtc::scoped_refptr<DataChannelInterface> data1 =
       pc_->CreateDataChannel("test1", NULL);
-  scoped_refptr<DataChannelInterface> data2  =
+  rtc::scoped_refptr<DataChannelInterface> data2 =
       pc_->CreateDataChannel("test2", NULL);
   ASSERT_TRUE(data1 != NULL);
   std::unique_ptr<MockDataChannelObserver> observer1(
@@ -1663,7 +1665,7 @@ TEST_F(PeerConnectionInterfaceTest, TestSendOnlyDataChannel) {
   FakeConstraints constraints;
   constraints.SetAllowRtpDataChannels();
   CreatePeerConnection(&constraints);
-  scoped_refptr<DataChannelInterface> data1  =
+  rtc::scoped_refptr<DataChannelInterface> data1 =
       pc_->CreateDataChannel("test1", NULL);
   std::unique_ptr<MockDataChannelObserver> observer1(
       new MockDataChannelObserver(data1));
@@ -1687,7 +1689,7 @@ TEST_F(PeerConnectionInterfaceTest, TestReceiveOnlyDataChannel) {
   CreatePeerConnection(&constraints);
 
   std::string offer_label = "offer_channel";
-  scoped_refptr<DataChannelInterface> offer_channel  =
+  rtc::scoped_refptr<DataChannelInterface> offer_channel =
       pc_->CreateDataChannel(offer_label, NULL);
 
   CreateOfferAsLocalDescription();
@@ -1730,7 +1732,7 @@ TEST_F(PeerConnectionInterfaceTest, CreateReliableRtpDataChannelShouldFail) {
   std::string label = "test";
   webrtc::DataChannelInit config;
   config.reliable = true;
-  scoped_refptr<DataChannelInterface> channel  =
+  rtc::scoped_refptr<DataChannelInterface> channel =
       pc_->CreateDataChannel(label, &config);
   EXPECT_TRUE(channel == NULL);
 }
@@ -1742,11 +1744,11 @@ TEST_F(PeerConnectionInterfaceTest, RtpDuplicatedLabelNotAllowed) {
   CreatePeerConnection(&constraints);
 
   std::string label = "test";
-  scoped_refptr<DataChannelInterface> channel =
+  rtc::scoped_refptr<DataChannelInterface> channel =
       pc_->CreateDataChannel(label, nullptr);
   EXPECT_NE(channel, nullptr);
 
-  scoped_refptr<DataChannelInterface> dup_channel =
+  rtc::scoped_refptr<DataChannelInterface> dup_channel =
       pc_->CreateDataChannel(label, nullptr);
   EXPECT_EQ(dup_channel, nullptr);
 }
@@ -1760,7 +1762,7 @@ TEST_F(PeerConnectionInterfaceTest, CreateSctpDataChannel) {
 
   webrtc::DataChannelInit config;
 
-  scoped_refptr<DataChannelInterface> channel =
+  rtc::scoped_refptr<DataChannelInterface> channel =
       pc_->CreateDataChannel("1", &config);
   EXPECT_TRUE(channel != NULL);
   EXPECT_TRUE(channel->reliable());
@@ -1801,7 +1803,7 @@ TEST_F(PeerConnectionInterfaceTest,
   config.maxRetransmits = 0;
   config.maxRetransmitTime = 0;
 
-  scoped_refptr<DataChannelInterface> channel =
+  rtc::scoped_refptr<DataChannelInterface> channel =
       pc_->CreateDataChannel(label, &config);
   EXPECT_TRUE(channel == NULL);
 }
@@ -1815,7 +1817,7 @@ TEST_F(PeerConnectionInterfaceTest,
   CreatePeerConnection(&constraints);
 
   webrtc::DataChannelInit config;
-  scoped_refptr<DataChannelInterface> channel;
+  rtc::scoped_refptr<DataChannelInterface> channel;
 
   config.id = 1;
   channel = pc_->CreateDataChannel("1", &config);
@@ -1843,11 +1845,11 @@ TEST_F(PeerConnectionInterfaceTest, SctpDuplicatedLabelAllowed) {
   CreatePeerConnection(&constraints);
 
   std::string label = "test";
-  scoped_refptr<DataChannelInterface> channel =
+  rtc::scoped_refptr<DataChannelInterface> channel =
       pc_->CreateDataChannel(label, nullptr);
   EXPECT_NE(channel, nullptr);
 
-  scoped_refptr<DataChannelInterface> dup_channel =
+  rtc::scoped_refptr<DataChannelInterface> dup_channel =
       pc_->CreateDataChannel(label, nullptr);
   EXPECT_NE(dup_channel, nullptr);
 }
@@ -1859,12 +1861,12 @@ TEST_F(PeerConnectionInterfaceTest, RenegotiationNeededForNewRtpDataChannel) {
   constraints.SetAllowRtpDataChannels();
   CreatePeerConnection(&constraints);
 
-  scoped_refptr<DataChannelInterface> dc1  =
+  rtc::scoped_refptr<DataChannelInterface> dc1 =
       pc_->CreateDataChannel("test1", NULL);
   EXPECT_TRUE(observer_.renegotiation_needed_);
   observer_.renegotiation_needed_ = false;
 
-  scoped_refptr<DataChannelInterface> dc2  =
+  rtc::scoped_refptr<DataChannelInterface> dc2 =
       pc_->CreateDataChannel("test2", NULL);
   EXPECT_TRUE(observer_.renegotiation_needed_);
 }
@@ -1875,9 +1877,9 @@ TEST_F(PeerConnectionInterfaceTest, DataChannelCloseWhenPeerConnectionClose) {
   constraints.SetAllowRtpDataChannels();
   CreatePeerConnection(&constraints);
 
-  scoped_refptr<DataChannelInterface> data1  =
+  rtc::scoped_refptr<DataChannelInterface> data1 =
       pc_->CreateDataChannel("test1", NULL);
-  scoped_refptr<DataChannelInterface> data2  =
+  rtc::scoped_refptr<DataChannelInterface> data2 =
       pc_->CreateDataChannel("test2", NULL);
   ASSERT_TRUE(data1 != NULL);
   std::unique_ptr<MockDataChannelObserver> observer1(
@@ -1900,7 +1902,7 @@ TEST_F(PeerConnectionInterfaceTest, TestRejectDataChannelInAnswer) {
   constraints.SetAllowRtpDataChannels();
   CreatePeerConnection(&constraints);
 
-  scoped_refptr<DataChannelInterface> offer_channel(
+  rtc::scoped_refptr<DataChannelInterface> offer_channel(
       pc_->CreateDataChannel("offer_channel", NULL));
 
   CreateOfferAsLocalDescription();
@@ -2106,8 +2108,8 @@ TEST_F(PeerConnectionInterfaceTest, CloseAndTestStreamsAndStates) {
   EXPECT_EQ(1u, pc_->local_streams()->count());
   EXPECT_EQ(1u, pc_->remote_streams()->count());
 
-  scoped_refptr<MediaStreamInterface> remote_stream =
-          pc_->remote_streams()->at(0);
+  rtc::scoped_refptr<MediaStreamInterface> remote_stream =
+      pc_->remote_streams()->at(0);
   // Track state may be updated asynchronously.
   EXPECT_EQ_WAIT(MediaStreamTrackInterface::kEnded,
                  remote_stream->GetAudioTracks()[0]->state(), kTimeout);
@@ -2124,7 +2126,7 @@ TEST_F(PeerConnectionInterfaceTest, CloseAndTestMethods) {
   CreateAnswerAsLocalDescription();
 
   ASSERT_EQ(1u, pc_->local_streams()->count());
-  scoped_refptr<MediaStreamInterface> local_stream =
+  rtc::scoped_refptr<MediaStreamInterface> local_stream =
       pc_->local_streams()->at(0);
 
   pc_->Close();
@@ -2217,10 +2219,10 @@ TEST_F(PeerConnectionInterfaceTest,
   EXPECT_TRUE(DoSetRemoteDescription(desc_ms1_two_tracks.release()));
   EXPECT_TRUE(CompareStreamCollections(observer_.remote_streams(),
                                        reference_collection_));
-  scoped_refptr<AudioTrackInterface> audio_track2 =
+  rtc::scoped_refptr<AudioTrackInterface> audio_track2 =
       observer_.remote_streams()->at(0)->GetAudioTracks()[1];
   EXPECT_EQ(webrtc::MediaStreamTrackInterface::kLive, audio_track2->state());
-  scoped_refptr<VideoTrackInterface> video_track2 =
+  rtc::scoped_refptr<VideoTrackInterface> video_track2 =
       observer_.remote_streams()->at(0)->GetVideoTracks()[1];
   EXPECT_EQ(webrtc::MediaStreamTrackInterface::kLive, video_track2->state());
 
@@ -2641,15 +2643,14 @@ class PeerConnectionMediaConfigTest : public testing::Test {
       const MediaConstraintsInterface *constraints) {
     pcf_->create_media_controller_called_ = false;
 
-    scoped_refptr<PeerConnectionInterface> pc(
-        pcf_->CreatePeerConnection(config, constraints, nullptr, nullptr,
-                                   &observer_));
+    rtc::scoped_refptr<PeerConnectionInterface> pc(pcf_->CreatePeerConnection(
+        config, constraints, nullptr, nullptr, &observer_));
     EXPECT_TRUE(pc.get());
     EXPECT_TRUE(pcf_->create_media_controller_called_);
     return pcf_->create_media_controller_config_;
   }
 
-  scoped_refptr<PeerConnectionFactoryForTest> pcf_;
+  rtc::scoped_refptr<PeerConnectionFactoryForTest> pcf_;
   MockPeerConnectionObserver observer_;
 };
 

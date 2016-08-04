@@ -29,6 +29,10 @@
 #include "webrtc/base/sslfingerprint.h"
 #include "webrtc/base/thread.h"
 
+#ifdef HAVE_QUIC
+#include "webrtc/p2p/quic/quictransport.h"
+#endif
+
 namespace cricket {
 
 class FakeTransport;
@@ -453,6 +457,21 @@ class FakeTransport : public Transport {
   rtc::SSLProtocolVersion ssl_max_version_ = rtc::SSL_PROTOCOL_DTLS_12;
 };
 
+#ifdef HAVE_QUIC
+class FakeQuicTransport : public QuicTransport {
+ public:
+  FakeQuicTransport(const std::string& transport_name)
+      : QuicTransport(transport_name, nullptr, nullptr) {}
+
+ protected:
+  QuicTransportChannel* CreateTransportChannel(int component) override {
+    FakeTransportChannel* fake_ice_transport_channel =
+        new FakeTransportChannel(name(), component);
+    return new QuicTransportChannel(fake_ice_transport_channel);
+  }
+};
+#endif
+
 // Fake candidate pair class, which can be passed to BaseChannel for testing
 // purposes.
 class FakeCandidatePair : public CandidatePairInterface {
@@ -541,6 +560,11 @@ class FakeTransportController : public TransportController {
 
  protected:
   Transport* CreateTransport_n(const std::string& transport_name) override {
+#ifdef HAVE_QUIC
+    if (quic()) {
+      return new FakeQuicTransport(transport_name);
+    }
+#endif
     return new FakeTransport(transport_name);
   }
 
