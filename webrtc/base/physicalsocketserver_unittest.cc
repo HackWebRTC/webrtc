@@ -259,11 +259,23 @@ void PhysicalSocketTest::WritableAfterPartialWrite(const IPAddress& loopback) {
   TcpInternal(loopback, kDataSize, kMaxSendSize);
 }
 
-TEST_F(PhysicalSocketTest, TestWritableAfterPartialWriteIPv4) {
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=6167
+#if defined(WEBRTC_WIN)
+#define MAYBE_TestWritableAfterPartialWriteIPv4 DISABLED_TestWritableAfterPartialWriteIPv4
+#else
+#define MAYBE_TestWritableAfterPartialWriteIPv4 TestWritableAfterPartialWriteIPv4
+#endif
+TEST_F(PhysicalSocketTest, MAYBE_TestWritableAfterPartialWriteIPv4) {
   WritableAfterPartialWrite(kIPv4Loopback);
 }
 
-TEST_F(PhysicalSocketTest, TestWritableAfterPartialWriteIPv6) {
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=6167
+#if defined(WEBRTC_WIN)
+#define MAYBE_TestWritableAfterPartialWriteIPv6 DISABLED_TestWritableAfterPartialWriteIPv6
+#else
+#define MAYBE_TestWritableAfterPartialWriteIPv6 TestWritableAfterPartialWriteIPv6
+#endif
+TEST_F(PhysicalSocketTest, MAYBE_TestWritableAfterPartialWriteIPv6) {
   MAYBE_SKIP_IPV6;
   WritableAfterPartialWrite(kIPv6Loopback);
 }
@@ -372,7 +384,13 @@ TEST_F(PhysicalSocketTest, MAYBE_TestUdpReadyToSendIPv4) {
   SocketTest::TestUdpReadyToSendIPv4();
 }
 
-TEST_F(PhysicalSocketTest, TestUdpReadyToSendIPv6) {
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=6167
+#if defined(WEBRTC_WIN)
+#define MAYBE_TestUdpReadyToSendIPv6 DISABLED_TestUdpReadyToSendIPv6
+#else
+#define MAYBE_TestUdpReadyToSendIPv6 TestUdpReadyToSendIPv6
+#endif
+TEST_F(PhysicalSocketTest, MAYBE_TestUdpReadyToSendIPv6) {
   SocketTest::TestUdpReadyToSendIPv6();
 }
 
