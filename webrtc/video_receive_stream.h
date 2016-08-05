@@ -43,6 +43,8 @@ class VideoReceiveStream {
     // Name of the decoded payload (such as VP8). Maps back to the depacketizer
     // used to unpack incoming packets.
     std::string payload_name;
+
+    DecoderSpecificSettings decoder_specific;
   };
 
   struct Stats {

@@ -48,6 +48,11 @@ std::string VideoReceiveStream::Decoder::ToString() const {
   ss << "{decoder: " << (decoder ? "(VideoDecoder)" : "nullptr");
   ss << ", payload_type: " << payload_type;
   ss << ", payload_name: " << payload_name;
+  ss << ", decoder_specific: {";
+  ss << " h264_extra_settings: "
+     << (decoder_specific.h264_extra_settings ? "(h264_extra_settings)"
+                                              : "nullptr");
+  ss << '}';
   ss << '}';
 
   return ss.str();

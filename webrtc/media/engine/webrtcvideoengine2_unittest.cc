@@ -3595,6 +3595,40 @@ TEST_F(WebRtcVideoChannel2Test, GetRtpReceiveParametersCodecs) {
   EXPECT_EQ(kVp9Codec.ToCodecParameters(), rtp_parameters.codecs[1]);
 }
 
+TEST_F(WebRtcVideoChannel2Test, GetRtpReceiveFmtpSprop) {
+  cricket::VideoRecvParameters parameters;
+  cricket::VideoCodec kH264sprop1(101, "H264", 640, 400, 15);
+  kH264sprop1.SetParam("sprop-parameter-sets", "uvw");
+  parameters.codecs.push_back(kH264sprop1);
+  cricket::VideoCodec kH264sprop2(102, "H264", 640, 400, 15);
+  kH264sprop2.SetParam("sprop-parameter-sets", "xyz");
+  parameters.codecs.push_back(kH264sprop2);
+  EXPECT_TRUE(channel_->SetRecvParameters(parameters));
+
+  FakeVideoReceiveStream* recv_stream = AddRecvStream();
+  const webrtc::VideoReceiveStream::Config& cfg = recv_stream->GetConfig();
+  webrtc::RtpParameters rtp_parameters =
+      channel_->GetRtpReceiveParameters(last_ssrc_);
+  ASSERT_EQ(2u, rtp_parameters.codecs.size());
+  EXPECT_EQ(kH264sprop1.ToCodecParameters(), rtp_parameters.codecs[0]);
+  ASSERT_EQ(2u, cfg.decoders.size());
+  EXPECT_EQ(101, cfg.decoders[0].payload_type);
+  EXPECT_EQ("H264", cfg.decoders[0].payload_name);
+  std::string sprop;
+  const webrtc::DecoderSpecificSettings* decoder_specific;
+  decoder_specific = &cfg.decoders[0].decoder_specific;
+  ASSERT_TRUE(static_cast<bool>(decoder_specific->h264_extra_settings));
+  sprop = decoder_specific->h264_extra_settings->sprop_parameter_sets;
+  EXPECT_EQ("uvw", sprop);
+
+  EXPECT_EQ(102, cfg.decoders[1].payload_type);
+  EXPECT_EQ("H264", cfg.decoders[1].payload_name);
+  decoder_specific = &cfg.decoders[1].decoder_specific;
+  ASSERT_TRUE(static_cast<bool>(decoder_specific->h264_extra_settings));
+  sprop = decoder_specific->h264_extra_settings->sprop_parameter_sets;
+  EXPECT_EQ("xyz", sprop);
+}
+
 // Test that RtpParameters for receive stream has one encoding and it has
 // the correct SSRC.
 TEST_F(WebRtcVideoChannel2Test, RtpEncodingParametersSsrcIsSet) {

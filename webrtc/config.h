@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/optional.h"
 #include "webrtc/common.h"
 #include "webrtc/common_types.h"
 #include "webrtc/typedefs.h"
@@ -144,6 +145,16 @@ struct VideoEncoderConfig {
   // unless the estimated bandwidth indicates that the link can handle it.
   int min_transmit_bitrate_bps;
   bool expect_encode_from_texture;
+};
+
+struct VideoDecoderH264Settings {
+  std::string sprop_parameter_sets;
+};
+
+class DecoderSpecificSettings {
+ public:
+  virtual ~DecoderSpecificSettings() {}
+  rtc::Optional<VideoDecoderH264Settings> h264_extra_settings;
 };
 
 // Controls the capacity of the packet buffer in NetEq. The capacity is the
