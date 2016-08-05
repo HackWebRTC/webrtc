@@ -38,6 +38,8 @@
       'video/report_block_stats.h',
       'video/rtp_stream_receiver.cc',
       'video/rtp_stream_receiver.h',
+      'video/rtp_streams_synchronizer.cc',
+      'video/rtp_streams_synchronizer.h',
       'video/send_delay_stats.cc',
       'video/send_delay_stats.h',
       'video/send_statistics_proxy.cc',
@@ -60,8 +62,6 @@
       'video/vie_encoder.h',
       'video/vie_remb.cc',
       'video/vie_remb.h',
-      'video/vie_sync_module.cc',
-      'video/vie_sync_module.h',
     ],
   },
 }

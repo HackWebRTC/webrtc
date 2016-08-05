@@ -25,6 +25,8 @@ source_set("video") {
     "report_block_stats.h",
     "rtp_stream_receiver.cc",
     "rtp_stream_receiver.h",
+    "rtp_streams_synchronizer.cc",
+    "rtp_streams_synchronizer.h",
     "send_delay_stats.cc",
     "send_delay_stats.h",
     "send_statistics_proxy.cc",
@@ -47,8 +49,6 @@ source_set("video") {
     "vie_encoder.h",
     "vie_remb.cc",
     "vie_remb.h",
-    "vie_sync_module.cc",
-    "vie_sync_module.h",
   ]
 
   configs += [ "..:common_config" ]

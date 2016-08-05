@@ -27,6 +27,7 @@
 #include "webrtc/video/call_stats.h"
 #include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video_receive_stream.h"
+#include "webrtc/voice_engine/include/voe_video_sync.h"
 
 namespace webrtc {
 
@@ -176,7 +177,7 @@ VideoReceiveStream::VideoReceiveStream(
           &stats_proxy_,
           process_thread_,
           congestion_controller_->GetRetransmissionRateLimiter()),
-      vie_sync_(&video_receiver_) {
+      rtp_stream_sync_(&video_receiver_, &rtp_stream_receiver_) {
   LOG(LS_INFO) << "VideoReceiveStream: " << config_.ToString();
 
   RTC_DCHECK(process_thread_);
@@ -204,14 +205,14 @@ VideoReceiveStream::VideoReceiveStream(
   video_receiver_.SetRenderDelay(config.render_delay_ms);
 
   process_thread_->RegisterModule(&video_receiver_);
-  process_thread_->RegisterModule(&vie_sync_);
+  process_thread_->RegisterModule(&rtp_stream_sync_);
 }
 
 VideoReceiveStream::~VideoReceiveStream() {
   LOG(LS_INFO) << "~VideoReceiveStream: " << config_.ToString();
   Stop();
 
-  process_thread_->DeRegisterModule(&vie_sync_);
+  process_thread_->DeRegisterModule(&rtp_stream_sync_);
   process_thread_->DeRegisterModule(&video_receiver_);
 
   // Deregister external decoders so they are no longer running during
@@ -285,13 +286,10 @@ void VideoReceiveStream::SetSyncChannel(VoiceEngine* voice_engine,
                                         int audio_channel_id) {
   if (voice_engine && audio_channel_id != -1) {
     VoEVideoSync* voe_sync_interface = VoEVideoSync::GetInterface(voice_engine);
-    vie_sync_.ConfigureSync(audio_channel_id, voe_sync_interface,
-                            rtp_stream_receiver_.rtp_rtcp(),
-                            rtp_stream_receiver_.GetRtpReceiver());
+    rtp_stream_sync_.ConfigureSync(audio_channel_id, voe_sync_interface);
     voe_sync_interface->Release();
   } else {
-    vie_sync_.ConfigureSync(-1, nullptr, rtp_stream_receiver_.rtp_rtcp(),
-                            rtp_stream_receiver_.GetRtpReceiver());
+    rtp_stream_sync_.ConfigureSync(-1, nullptr);
   }
 }
 
@@ -310,7 +308,7 @@ void VideoReceiveStream::OnFrame(const VideoFrame& video_frame) {
   // function itself, another in GetChannel() and a third in
   // GetPlayoutTimestamp.  Seems excessive.  Anyhow, I'm assuming the function
   // succeeds most of the time, which leads to grabbing a fourth lock.
-  if (vie_sync_.GetStreamSyncOffsetInMs(video_frame, &sync_offset_ms)) {
+  if (rtp_stream_sync_.GetStreamSyncOffsetInMs(video_frame, &sync_offset_ms)) {
     // TODO(tommi): OnSyncOffsetUpdated grabs a lock.
     stats_proxy_.OnSyncOffsetUpdated(sync_offset_ms);
   }

@@ -18,8 +18,6 @@
 
 namespace webrtc {
 
-struct ViESyncDelay;
-
 class StreamSynchronization {
  public:
   struct Measurements {
@@ -30,7 +28,6 @@ class StreamSynchronization {
   };
 
   StreamSynchronization(uint32_t video_primary_ssrc, int audio_channel_id);
-  ~StreamSynchronization();
 
   bool ComputeDelays(int relative_delay_ms,
                      int current_audio_delay_ms,
@@ -48,7 +45,14 @@ class StreamSynchronization {
   void SetTargetBufferingDelay(int target_delay_ms);
 
  private:
-  ViESyncDelay* channel_delay_;
+  struct SynchronizationDelays {
+    int extra_video_delay_ms = 0;
+    int last_video_delay_ms = 0;
+    int extra_audio_delay_ms = 0;
+    int last_audio_delay_ms = 0;
+  };
+
+  SynchronizationDelays channel_delay_;
   const uint32_t video_primary_ssrc_;
   const int audio_channel_id_;
   int base_target_delay_ms_;

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/video/vie_sync_module.h"
+#include "webrtc/video/rtp_streams_synchronizer.h"
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -25,17 +25,17 @@
 namespace webrtc {
 namespace {
 int UpdateMeasurements(StreamSynchronization::Measurements* stream,
-                       const RtpRtcp& rtp_rtcp, const RtpReceiver& receiver) {
-  if (!receiver.Timestamp(&stream->latest_timestamp))
+                       RtpRtcp* rtp_rtcp, RtpReceiver* receiver) {
+  if (!receiver->Timestamp(&stream->latest_timestamp))
     return -1;
-  if (!receiver.LastReceivedTimeMs(&stream->latest_receive_time_ms))
+  if (!receiver->LastReceivedTimeMs(&stream->latest_receive_time_ms))
     return -1;
 
   uint32_t ntp_secs = 0;
   uint32_t ntp_frac = 0;
   uint32_t rtp_timestamp = 0;
-  if (rtp_rtcp.RemoteNTP(&ntp_secs, &ntp_frac, nullptr, nullptr,
-                         &rtp_timestamp) != 0) {
+  if (rtp_rtcp->RemoteNTP(&ntp_secs, &ntp_frac, nullptr, nullptr,
+                          &rtp_timestamp) != 0) {
     return -1;
   }
 
@@ -49,57 +49,69 @@ int UpdateMeasurements(StreamSynchronization::Measurements* stream,
 }
 }  // namespace
 
-ViESyncModule::ViESyncModule(vcm::VideoReceiver* video_receiver)
-    : video_receiver_(video_receiver),
-      clock_(Clock::GetRealTimeClock()),
-      rtp_receiver_(nullptr),
-      video_rtp_rtcp_(nullptr),
+RtpStreamsSynchronizer::RtpStreamsSynchronizer(
+    vcm::VideoReceiver* video_receiver,
+    RtpStreamReceiver* rtp_stream_receiver)
+    : clock_(Clock::GetRealTimeClock()),
+      video_receiver_(video_receiver),
+      video_rtp_receiver_(rtp_stream_receiver->GetRtpReceiver()),
+      video_rtp_rtcp_(rtp_stream_receiver->rtp_rtcp()),
       voe_channel_id_(-1),
       voe_sync_interface_(nullptr),
-      last_sync_time_(rtc::TimeNanos()),
-      sync_() {}
-
-ViESyncModule::~ViESyncModule() {
+      audio_rtp_receiver_(nullptr),
+      audio_rtp_rtcp_(nullptr),
+      sync_(),
+      last_sync_time_(rtc::TimeNanos()) {
+  process_thread_checker_.DetachFromThread();
 }
 
-void ViESyncModule::ConfigureSync(int voe_channel_id,
-                                  VoEVideoSync* voe_sync_interface,
-                                  RtpRtcp* video_rtcp_module,
-                                  RtpReceiver* rtp_receiver) {
+void RtpStreamsSynchronizer::ConfigureSync(int voe_channel_id,
+                                           VoEVideoSync* voe_sync_interface) {
   if (voe_channel_id != -1)
     RTC_DCHECK(voe_sync_interface);
-  rtc::CritScope lock(&data_cs_);
-  // Prevent expensive no-ops.
+
+  rtc::CritScope lock(&crit_);
   if (voe_channel_id_ == voe_channel_id &&
-      voe_sync_interface_ == voe_sync_interface &&
-      rtp_receiver_ == rtp_receiver && video_rtp_rtcp_ == video_rtcp_module) {
+      voe_sync_interface_ == voe_sync_interface) {
+    // This prevents expensive no-ops.
     return;
   }
   voe_channel_id_ = voe_channel_id;
   voe_sync_interface_ = voe_sync_interface;
-  rtp_receiver_ = rtp_receiver;
-  video_rtp_rtcp_ = video_rtcp_module;
-  sync_.reset(
-      new StreamSynchronization(video_rtp_rtcp_->SSRC(), voe_channel_id));
+
+  audio_rtp_rtcp_ = nullptr;
+  audio_rtp_receiver_ = nullptr;
+  sync_.reset(nullptr);
+
+  if (voe_channel_id_ != -1) {
+    voe_sync_interface_->GetRtpRtcp(voe_channel_id_, &audio_rtp_rtcp_,
+                                    &audio_rtp_receiver_);
+    RTC_DCHECK(audio_rtp_rtcp_);
+    RTC_DCHECK(audio_rtp_receiver_);
+    sync_.reset(new StreamSynchronization(video_rtp_rtcp_->SSRC(),
+                                          voe_channel_id_));
+  }
 }
 
-int64_t ViESyncModule::TimeUntilNextProcess() {
+int64_t RtpStreamsSynchronizer::TimeUntilNextProcess() {
+  RTC_DCHECK_RUN_ON(&process_thread_checker_);
   const int64_t kSyncIntervalMs = 1000;
   return kSyncIntervalMs -
       (rtc::TimeNanos() - last_sync_time_) / rtc::kNumNanosecsPerMillisec;
 }
 
-void ViESyncModule::Process() {
-  rtc::CritScope lock(&data_cs_);
-  last_sync_time_ = rtc::TimeNanos();
+void RtpStreamsSynchronizer::Process() {
+  RTC_DCHECK_RUN_ON(&process_thread_checker_);
 
   const int current_video_delay_ms = video_receiver_->Delay();
+  last_sync_time_ = rtc::TimeNanos();
 
+  rtc::CritScope lock(&crit_);
   if (voe_channel_id_ == -1) {
     return;
   }
-  assert(video_rtp_rtcp_ && voe_sync_interface_);
-  assert(sync_.get());
+  RTC_DCHECK(voe_sync_interface_);
+  RTC_DCHECK(sync_.get());
 
   int audio_jitter_buffer_delay_ms = 0;
   int playout_buffer_delay_ms = 0;
@@ -111,22 +123,13 @@ void ViESyncModule::Process() {
   const int current_audio_delay_ms = audio_jitter_buffer_delay_ms +
       playout_buffer_delay_ms;
 
-  RtpRtcp* voice_rtp_rtcp = nullptr;
-  RtpReceiver* voice_receiver = nullptr;
-  if (voe_sync_interface_->GetRtpRtcp(voe_channel_id_, &voice_rtp_rtcp,
-                                      &voice_receiver) != 0) {
-    return;
-  }
-  assert(voice_rtp_rtcp);
-  assert(voice_receiver);
-
-  if (UpdateMeasurements(&video_measurement_, *video_rtp_rtcp_,
-                         *rtp_receiver_) != 0) {
+  if (UpdateMeasurements(&video_measurement_, video_rtp_rtcp_,
+                         video_rtp_receiver_) != 0) {
     return;
   }
 
-  if (UpdateMeasurements(&audio_measurement_, *voice_rtp_rtcp,
-                         *voice_receiver) != 0) {
+  if (UpdateMeasurements(&audio_measurement_, audio_rtp_rtcp_,
+                         audio_rtp_receiver_) != 0) {
     return;
   }
 
@@ -158,9 +161,9 @@ void ViESyncModule::Process() {
   video_receiver_->SetMinimumPlayoutDelay(target_video_delay_ms);
 }
 
-bool ViESyncModule::GetStreamSyncOffsetInMs(const VideoFrame& frame,
-                                            int64_t* stream_offset_ms) const {
-  rtc::CritScope lock(&data_cs_);
+bool RtpStreamsSynchronizer::GetStreamSyncOffsetInMs(
+    const VideoFrame& frame, int64_t* stream_offset_ms) const {
+  rtc::CritScope lock(&crit_);
   if (voe_channel_id_ == -1)
     return false;
 
