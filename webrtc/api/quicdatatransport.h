@@ -19,6 +19,7 @@
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/p2p/base/transportcontroller.h"
 
 namespace cricket {
 class QuicTransportChannel;
@@ -38,14 +39,17 @@ class QuicDataTransport : public sigslot::has_slots<> {
  public:
   QuicDataTransport(rtc::Thread* signaling_thread,
                     rtc::Thread* worker_thread,
-                    rtc::Thread* network_thread);
+                    rtc::Thread* network_thread,
+                    cricket::TransportController* transport_controller);
   ~QuicDataTransport() override;
 
-  // Sets the QUIC transport channel for the QuicDataChannels and the
-  // QuicDataTransport. Returns false if a different QUIC transport channel is
-  // already set, the QUIC transport channel cannot be set for any of the
-  // QuicDataChannels, or |channel| is NULL.
-  bool SetTransportChannel(cricket::QuicTransportChannel* channel);
+  // The QuicDataTransport acts like a BaseChannel with these functions.
+  bool SetTransport(const std::string& transport_name);
+  const std::string& transport_name() const { return transport_name_; }
+  const std::string& content_name() const { return content_name_; }
+  void set_content_name(const std::string& content_name) {
+    content_name_ = content_name;
+  }
 
   // Creates a QuicDataChannel that uses this QuicDataTransport.
   rtc::scoped_refptr<DataChannelInterface> CreateDataChannel(
@@ -62,7 +66,17 @@ class QuicDataTransport : public sigslot::has_slots<> {
   // True if the QuicDataTransport has data channels.
   bool HasDataChannels() const;
 
+  cricket::QuicTransportChannel* quic_transport_channel() {
+    return quic_transport_channel_;
+  }
+
  private:
+  // Sets the QUIC transport channel for the QuicDataChannels and the
+  // QuicDataTransport. Returns false if a different QUIC transport channel is
+  // already set, the QUIC transport channel cannot be set for any of the
+  // QuicDataChannels, or |channel| is NULL.
+  bool SetTransportChannel(cricket::QuicTransportChannel* channel);
+
   // Called from the QuicTransportChannel when a ReliableQuicStream is created
   // to receive incoming data.
   void OnIncomingStream(cricket::ReliableQuicStream* stream);
@@ -73,6 +87,10 @@ class QuicDataTransport : public sigslot::has_slots<> {
   void OnDataReceived(net::QuicStreamId stream_id,
                       const char* data,
                       size_t len);
+
+  cricket::QuicTransportChannel* CreateTransportChannel(
+      const std::string& transport_name);
+  void DestroyTransportChannel(cricket::TransportChannel* transport_channel);
 
   // Map of data channel ID => QUIC data channel values.
   std::unordered_map<int, rtc::scoped_refptr<QuicDataChannel>>
@@ -86,6 +104,10 @@ class QuicDataTransport : public sigslot::has_slots<> {
   rtc::Thread* const signaling_thread_;
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;
+
+  cricket::TransportController* transport_controller_;
+  std::string content_name_;
+  std::string transport_name_;
 };
 
 }  // namespace webrtc

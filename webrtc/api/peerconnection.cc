@@ -907,6 +907,23 @@ PeerConnection::CreateDataChannel(
     const std::string& label,
     const DataChannelInit* config) {
   TRACE_EVENT0("webrtc", "PeerConnection::CreateDataChannel");
+#ifdef HAVE_QUIC
+  if (session_->data_channel_type() == cricket::DCT_QUIC) {
+    // TODO(zhihuang): Handle case when config is NULL.
+    if (!config) {
+      LOG(LS_ERROR) << "Missing config for QUIC data channel.";
+      return nullptr;
+    }
+    // TODO(zhihuang): Allow unreliable or ordered QUIC data channels.
+    if (!config->reliable || config->ordered) {
+      LOG(LS_ERROR) << "QUIC data channel does not implement unreliable or "
+                       "ordered delivery.";
+      return nullptr;
+    }
+    return session_->quic_data_transport()->CreateDataChannel(label, config);
+  }
+#endif  // HAVE_QUIC
+
   bool first_datachannel = !HasDataChannels();
 
   std::unique_ptr<InternalDataChannelInit> internal_config;
@@ -1618,8 +1635,13 @@ bool PeerConnection::GetOptionsForOffer(
       (session_options->has_audio() || session_options->has_video() ||
        session_options->has_data());
 
-  if (session_->data_channel_type() == cricket::DCT_SCTP && HasDataChannels()) {
-    session_options->data_channel_type = cricket::DCT_SCTP;
+  // Intentionally unset the data channel type for RTP data channel with the
+  // second condition. Otherwise the RTP data channels would be successfully
+  // negotiated by default and the unit tests in WebRtcDataBrowserTest will fail
+  // when building with chromium. We want to leave RTP data channels broken, so
+  // people won't try to use them.
+  if (HasDataChannels() && session_->data_channel_type() != cricket::DCT_RTP) {
+    session_options->data_channel_type = session_->data_channel_type();
   }
 
   session_options->rtcp_cname = rtcp_cname_;
@@ -1648,8 +1670,12 @@ void PeerConnection::FinishOptionsForAnswer(
   // RTP data channel is handled in MediaSessionOptions::AddStream. SCTP streams
   // are not signaled in the SDP so does not go through that path and must be
   // handled here.
-  if (session_->data_channel_type() == cricket::DCT_SCTP) {
-    session_options->data_channel_type = cricket::DCT_SCTP;
+  // Intentionally unset the data channel type for RTP data channel. Otherwise
+  // the RTP data channels would be successfully negotiated by default and the
+  // unit tests in WebRtcDataBrowserTest will fail when building with chromium.
+  // We want to leave RTP data channels broken, so people won't try to use them.
+  if (session_->data_channel_type() != cricket::DCT_RTP) {
+    session_options->data_channel_type = session_->data_channel_type();
   }
   session_options->crypto_options = factory_->options().crypto_options;
 }
@@ -2054,7 +2080,13 @@ rtc::scoped_refptr<DataChannel> PeerConnection::InternalCreateDataChannel(
 }
 
 bool PeerConnection::HasDataChannels() const {
+#ifdef HAVE_QUIC
+  return !rtp_data_channels_.empty() || !sctp_data_channels_.empty() ||
+         (session_->quic_data_transport() &&
+          session_->quic_data_transport()->HasDataChannels());
+#else
   return !rtp_data_channels_.empty() || !sctp_data_channels_.empty();
+#endif  // HAVE_QUIC
 }
 
 void PeerConnection::AllocateSctpSids(rtc::SSLRole role) {

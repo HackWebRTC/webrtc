@@ -10,24 +10,48 @@
 
 #include "webrtc/api/quicdatatransport.h"
 
+#include "webrtc/base/bind.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/p2p/quic/quictransportchannel.h"
 #include "webrtc/p2p/quic/reliablequicstream.h"
 
 namespace webrtc {
 
-QuicDataTransport::QuicDataTransport(rtc::Thread* signaling_thread,
-                                     rtc::Thread* worker_thread,
-                                     rtc::Thread* network_thread)
+QuicDataTransport::QuicDataTransport(
+    rtc::Thread* signaling_thread,
+    rtc::Thread* worker_thread,
+    rtc::Thread* network_thread,
+    cricket::TransportController* transport_controller)
     : signaling_thread_(signaling_thread),
       worker_thread_(worker_thread),
-      network_thread_(network_thread) {
+      network_thread_(network_thread),
+      transport_controller_(transport_controller) {
   RTC_DCHECK(signaling_thread_);
   RTC_DCHECK(worker_thread_);
   RTC_DCHECK(network_thread_);
 }
 
-QuicDataTransport::~QuicDataTransport() {}
+QuicDataTransport::~QuicDataTransport() {
+  DestroyTransportChannel(quic_transport_channel_);
+  LOG(LS_INFO) << "Destroyed the QUIC data transport.";
+}
+
+bool QuicDataTransport::SetTransport(const std::string& transport_name) {
+  if (transport_name_ == transport_name) {
+    // Nothing to do if transport name isn't changing
+    return true;
+  }
+
+  cricket::QuicTransportChannel* transport_channel =
+      CreateTransportChannel(transport_name);
+  if (!SetTransportChannel(transport_channel)) {
+    DestroyTransportChannel(transport_channel);
+    return false;
+  }
+
+  transport_name_ = transport_name;
+  return true;
+}
 
 bool QuicDataTransport::SetTransportChannel(
     cricket::QuicTransportChannel* channel) {
@@ -48,7 +72,6 @@ bool QuicDataTransport::SetTransportChannel(
   quic_transport_channel_ = channel;
   quic_transport_channel_->SignalIncomingStream.connect(
       this, &QuicDataTransport::OnIncomingStream);
-
   bool success = true;
   for (const auto& kv : data_channel_by_id_) {
     rtc::scoped_refptr<QuicDataChannel> data_channel = kv.second;
@@ -145,6 +168,30 @@ void QuicDataTransport::OnDataReceived(net::QuicStreamId id,
   message.buffer = rtc::CopyOnWriteBuffer(data, len);
   message.stream = stream;
   data_channel->OnIncomingMessage(std::move(message));
+}
+
+cricket::QuicTransportChannel* QuicDataTransport::CreateTransportChannel(
+    const std::string& transport_name) {
+  DCHECK(transport_controller_->quic());
+
+  cricket::TransportChannel* transport_channel =
+      network_thread_->Invoke<cricket::TransportChannel*>(
+          RTC_FROM_HERE,
+          rtc::Bind(&cricket::TransportController::CreateTransportChannel_n,
+                    transport_controller_, transport_name,
+                    cricket::ICE_CANDIDATE_COMPONENT_DEFAULT));
+  return static_cast<cricket::QuicTransportChannel*>(transport_channel);
+}
+
+void QuicDataTransport::DestroyTransportChannel(
+    cricket::TransportChannel* transport_channel) {
+  if (transport_channel) {
+    network_thread_->Invoke<void>(
+        RTC_FROM_HERE,
+        rtc::Bind(&cricket::TransportController::DestroyTransportChannel_n,
+                  transport_controller_, transport_channel->transport_name(),
+                  cricket::ICE_CANDIDATE_COMPONENT_DEFAULT));
+  }
 }
 
 }  // namespace webrtc
