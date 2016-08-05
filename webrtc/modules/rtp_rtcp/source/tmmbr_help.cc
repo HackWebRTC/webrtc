@@ -10,35 +10,29 @@
 
 #include "webrtc/modules/rtp_rtcp/source/tmmbr_help.h"
 
-#include <assert.h>
-#include <string.h>
-
+#include <algorithm>
 #include <limits>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
 
 namespace webrtc {
-void
-TMMBRSet::VerifyAndAllocateSet(uint32_t minimumSize)
-{
+void TMMBRSet::VerifyAndAllocateSet(uint32_t minimumSize) {
   clear();
   reserve(minimumSize);
 }
 
-void
-TMMBRSet::VerifyAndAllocateSetKeepingData(uint32_t minimumSize)
-{
+void TMMBRSet::VerifyAndAllocateSetKeepingData(uint32_t minimumSize) {
   reserve(minimumSize);
 }
 
 void TMMBRSet::SetEntry(unsigned int i,
-                         uint32_t tmmbrSet,
-                         uint32_t packetOHSet,
-                         uint32_t ssrcSet) {
+                        uint32_t tmmbrSet,
+                        uint32_t packetOHSet,
+                        uint32_t ssrcSet) {
   RTC_DCHECK_LT(i, capacity());
   if (i >= size()) {
-    resize(i+1);
+    resize(i + 1);
   }
   (*this)[i].set_bitrate_bps(tmmbrSet * 1000);
   (*this)[i].set_packet_overhead(packetOHSet);
@@ -57,338 +51,213 @@ void TMMBRSet::RemoveEntry(uint32_t sourceIdx) {
   erase(begin() + sourceIdx);
 }
 
-void TMMBRSet::SwapEntries(uint32_t i, uint32_t j) {
-  using std::swap;
-  swap((*this)[i], (*this)[j]);
+TMMBRSet* TMMBRHelp::VerifyAndAllocateCandidateSet(uint32_t minimumSize) {
+  _candidateSet.VerifyAndAllocateSet(minimumSize);
+  return &_candidateSet;
 }
 
-void TMMBRSet::ClearEntry(uint32_t idx) {
-  SetEntry(idx, 0, 0, 0);
+TMMBRSet* TMMBRHelp::CandidateSet() {
+  return &_candidateSet;
 }
 
-TMMBRHelp::TMMBRHelp()
-    : _candidateSet(),
-      _boundingSet(),
-      _ptrIntersectionBoundingSet(NULL),
-      _ptrMaxPRBoundingSet(NULL) {
-}
+int32_t TMMBRHelp::FindTMMBRBoundingSet(TMMBRSet*& boundingSet) {
+  // Work on local variable, will be modified
+  TMMBRSet candidateSet;
+  candidateSet.VerifyAndAllocateSet(_candidateSet.capacity());
 
-TMMBRHelp::~TMMBRHelp() {
-  delete [] _ptrIntersectionBoundingSet;
-  delete [] _ptrMaxPRBoundingSet;
-  _ptrIntersectionBoundingSet = 0;
-  _ptrMaxPRBoundingSet = 0;
-}
-
-TMMBRSet*
-TMMBRHelp::VerifyAndAllocateBoundingSet(uint32_t minimumSize)
-{
-    if(minimumSize > _boundingSet.capacity())
-    {
-        // make sure that our buffers are big enough
-        if(_ptrIntersectionBoundingSet)
-        {
-            delete [] _ptrIntersectionBoundingSet;
-            delete [] _ptrMaxPRBoundingSet;
-        }
-        _ptrIntersectionBoundingSet = new float[minimumSize];
-        _ptrMaxPRBoundingSet = new float[minimumSize];
-    }
-    _boundingSet.VerifyAndAllocateSet(minimumSize);
-    return &_boundingSet;
-}
-
-TMMBRSet* TMMBRHelp::BoundingSet() {
-  return &_boundingSet;
-}
-
-TMMBRSet*
-TMMBRHelp::VerifyAndAllocateCandidateSet(uint32_t minimumSize)
-{
-    _candidateSet.VerifyAndAllocateSet(minimumSize);
-    return &_candidateSet;
-}
-
-TMMBRSet*
-TMMBRHelp::CandidateSet()
-{
-    return &_candidateSet;
-}
-
-int32_t
-TMMBRHelp::FindTMMBRBoundingSet(TMMBRSet*& boundingSet)
-{
-    // Work on local variable, will be modified
-    TMMBRSet    candidateSet;
-    candidateSet.VerifyAndAllocateSet(_candidateSet.capacity());
-
-    for (uint32_t i = 0; i < _candidateSet.size(); i++)
-    {
-        if(_candidateSet.Tmmbr(i))
-        {
-            candidateSet.AddEntry(_candidateSet.Tmmbr(i),
-                                  _candidateSet.PacketOH(i),
-                                  _candidateSet.Ssrc(i));
-        }
-        else
-        {
-            // make sure this is zero if tmmbr = 0
-            assert(_candidateSet.PacketOH(i) == 0);
-            // Old code:
-            // _candidateSet.ptrPacketOHSet[i] = 0;
-        }
-    }
-
-    // Number of set candidates
-    int32_t numSetCandidates = candidateSet.lengthOfSet();
-    // Find bounding set
-    uint32_t numBoundingSet = 0;
-    if (numSetCandidates > 0)
-    {
-        numBoundingSet =  FindTMMBRBoundingSet(numSetCandidates, candidateSet);
-        if(numBoundingSet < 1 || (numBoundingSet > _candidateSet.size()))
-        {
-            return -1;
-        }
-        boundingSet = &_boundingSet;
-    }
-    return numBoundingSet;
-}
-
-
-int32_t
-TMMBRHelp::FindTMMBRBoundingSet(int32_t numCandidates, TMMBRSet& candidateSet)
-{
-    uint32_t numBoundingSet = 0;
-    VerifyAndAllocateBoundingSet(candidateSet.capacity());
-
-    if (numCandidates == 1)
-    {
-        for (uint32_t i = 0; i < candidateSet.size(); i++)
-        {
-            if (candidateSet.Tmmbr(i) > 0)
-            {
-                _boundingSet.AddEntry(candidateSet.Tmmbr(i),
-                                    candidateSet.PacketOH(i),
-                                    candidateSet.Ssrc(i));
-                numBoundingSet++;
-            }
-        }
-        return (numBoundingSet == 1) ? 1 : -1;
-    }
-
-    // 1. Sort by increasing packetOH
-    for (int i = candidateSet.size() - 1; i >= 0; i--)
-    {
-        for (int j = 1; j <= i; j++)
-        {
-            if (candidateSet.PacketOH(j-1) > candidateSet.PacketOH(j))
-            {
-                candidateSet.SwapEntries(j-1, j);
-            }
-        }
-    }
-    // 2. For tuples with same OH, keep the one w/ the lowest bitrate
-    for (uint32_t i = 0; i < candidateSet.size(); i++)
-    {
-        if (candidateSet.Tmmbr(i) > 0)
-        {
-            // get min bitrate for packets w/ same OH
-            uint32_t currentPacketOH = candidateSet.PacketOH(i);
-            uint32_t currentMinTMMBR = candidateSet.Tmmbr(i);
-            uint32_t currentMinIndexTMMBR = i;
-            for (uint32_t j = i+1; j < candidateSet.size(); j++)
-            {
-                if(candidateSet.PacketOH(j) == currentPacketOH)
-                {
-                    if(candidateSet.Tmmbr(j) < currentMinTMMBR)
-                    {
-                        currentMinTMMBR = candidateSet.Tmmbr(j);
-                        currentMinIndexTMMBR = j;
-                    }
-                }
-            }
-            // keep lowest bitrate
-            for (uint32_t j = 0; j < candidateSet.size(); j++)
-            {
-              if(candidateSet.PacketOH(j) == currentPacketOH
-                  && j != currentMinIndexTMMBR)
-                {
-                    candidateSet.ClearEntry(j);
-                    numCandidates--;
-                }
-            }
-        }
-    }
-    // 3. Select and remove tuple w/ lowest tmmbr.
-    // (If more than 1, choose the one w/ highest OH).
-    uint32_t minTMMBR = 0;
-    uint32_t minIndexTMMBR = 0;
-    for (uint32_t i = 0; i < candidateSet.size(); i++)
-    {
-        if (candidateSet.Tmmbr(i) > 0)
-        {
-            minTMMBR = candidateSet.Tmmbr(i);
-            minIndexTMMBR = i;
-            break;
-        }
-    }
-
-    for (uint32_t i = 0; i < candidateSet.size(); i++)
-    {
-        if (candidateSet.Tmmbr(i) > 0 && candidateSet.Tmmbr(i) <= minTMMBR)
-        {
-            // get min bitrate
-            minTMMBR = candidateSet.Tmmbr(i);
-            minIndexTMMBR = i;
-        }
-    }
-    // first member of selected list
-    _boundingSet.SetEntry(numBoundingSet,
-                          candidateSet.Tmmbr(minIndexTMMBR),
-                          candidateSet.PacketOH(minIndexTMMBR),
-                          candidateSet.Ssrc(minIndexTMMBR));
-
-    // set intersection value
-    _ptrIntersectionBoundingSet[numBoundingSet] = 0;
-    // calculate its maximum packet rate (where its line crosses x-axis)
-    uint32_t packet_overhead_bits = 8 * _boundingSet.PacketOH(numBoundingSet);
-    if (packet_overhead_bits == 0) {
-      // Avoid division by zero.
-      _ptrMaxPRBoundingSet[numBoundingSet] = std::numeric_limits<float>::max();
+  for (size_t i = 0; i < _candidateSet.size(); i++) {
+    if (_candidateSet.Tmmbr(i)) {
+      candidateSet.AddEntry(_candidateSet.Tmmbr(i), _candidateSet.PacketOH(i),
+                            _candidateSet.Ssrc(i));
     } else {
-      _ptrMaxPRBoundingSet[numBoundingSet] =
-          _boundingSet.Tmmbr(numBoundingSet) * 1000 /
-          static_cast<float>(packet_overhead_bits);
+      // make sure this is zero if tmmbr = 0
+      RTC_DCHECK_EQ(_candidateSet.PacketOH(i), 0u);
+      // Old code:
+      // _candidateSet.ptrPacketOHSet[i] = 0;
     }
-    numBoundingSet++;
-    // remove from candidate list
-    candidateSet.ClearEntry(minIndexTMMBR);
-    numCandidates--;
+  }
 
-    // 4. Discard from candidate list all tuple w/ lower OH
-    // (next tuple must be steeper)
-    for (uint32_t i = 0; i < candidateSet.size(); i++)
-    {
-        if(candidateSet.Tmmbr(i) > 0
-            && candidateSet.PacketOH(i) < _boundingSet.PacketOH(0))
-        {
-            candidateSet.ClearEntry(i);
-            numCandidates--;
-        }
+  // Number of set candidates
+  int32_t numSetCandidates = candidateSet.lengthOfSet();
+  // Find bounding set
+  uint32_t numBoundingSet = 0;
+  if (numSetCandidates > 0) {
+    FindBoundingSet(std::move(candidateSet), &_boundingSet);
+    numBoundingSet = _boundingSet.size();
+    if (numBoundingSet < 1 || (numBoundingSet > _candidateSet.size())) {
+      return -1;
     }
-
-    if (numCandidates == 0)
-    {
-        // Should be true already:_boundingSet.lengthOfSet = numBoundingSet;
-        assert(_boundingSet.lengthOfSet() == numBoundingSet);
-        return numBoundingSet;
-    }
-
-    bool getNewCandidate = true;
-    uint32_t curCandidateTMMBR = 0;
-    size_t curCandidateIndex = 0;
-    uint32_t curCandidatePacketOH = 0;
-    uint32_t curCandidateSSRC = 0;
-    do
-    {
-        if (getNewCandidate)
-        {
-            // 5. Remove first remaining tuple from candidate list
-            for (uint32_t i = 0; i < candidateSet.size(); i++)
-            {
-                if (candidateSet.Tmmbr(i) > 0)
-                {
-                    curCandidateTMMBR    = candidateSet.Tmmbr(i);
-                    curCandidatePacketOH = candidateSet.PacketOH(i);
-                    curCandidateSSRC     = candidateSet.Ssrc(i);
-                    curCandidateIndex    = i;
-                    candidateSet.ClearEntry(curCandidateIndex);
-                    break;
-                }
-            }
-        }
-
-        // 6. Calculate packet rate and intersection of the current
-        // line with line of last tuple in selected list
-        RTC_DCHECK_NE(curCandidatePacketOH,
-                      _boundingSet.PacketOH(numBoundingSet - 1));
-        float packetRate
-            = float(curCandidateTMMBR
-                    - _boundingSet.Tmmbr(numBoundingSet-1))*1000
-            / (8*(curCandidatePacketOH
-                  - _boundingSet.PacketOH(numBoundingSet-1)));
-
-        // 7. If the packet rate is equal or lower than intersection of
-        //    last tuple in selected list,
-        //    remove last tuple in selected list & go back to step 6
-        if(packetRate <= _ptrIntersectionBoundingSet[numBoundingSet-1])
-        {
-            // remove last tuple and goto step 6
-            numBoundingSet--;
-            _boundingSet.ClearEntry(numBoundingSet);
-            _ptrIntersectionBoundingSet[numBoundingSet] = 0;
-            _ptrMaxPRBoundingSet[numBoundingSet]        = 0;
-            getNewCandidate = false;
-        } else
-        {
-            // 8. If packet rate is lower than maximum packet rate of
-            // last tuple in selected list, add current tuple to selected
-            // list
-            if (packetRate < _ptrMaxPRBoundingSet[numBoundingSet-1])
-            {
-                _boundingSet.SetEntry(numBoundingSet,
-                                      curCandidateTMMBR,
-                                      curCandidatePacketOH,
-                                      curCandidateSSRC);
-                _ptrIntersectionBoundingSet[numBoundingSet] = packetRate;
-                float packet_overhead_bits =
-                    8 * _boundingSet.PacketOH(numBoundingSet);
-                RTC_DCHECK_NE(packet_overhead_bits, 0.0f);
-                _ptrMaxPRBoundingSet[numBoundingSet] =
-                    _boundingSet.Tmmbr(numBoundingSet) * 1000 /
-                    packet_overhead_bits;
-                numBoundingSet++;
-            }
-            numCandidates--;
-            getNewCandidate = true;
-        }
-
-        // 9. Go back to step 5 if any tuple remains in candidate list
-    } while (numCandidates > 0);
-
-    return numBoundingSet;
+    boundingSet = &_boundingSet;
+  }
+  return numBoundingSet;
 }
 
-bool TMMBRHelp::IsOwner(const uint32_t ssrc,
-                        const uint32_t length) const {
+void TMMBRHelp::FindBoundingSet(std::vector<rtcp::TmmbItem> candidates,
+                                std::vector<rtcp::TmmbItem>* bounding_set) {
+  RTC_DCHECK(bounding_set);
+  RTC_DCHECK(!candidates.empty());
+  size_t num_candidates = candidates.size();
+
+  if (num_candidates == 1) {
+    RTC_DCHECK(candidates[0].bitrate_bps());
+    *bounding_set = std::move(candidates);
+    return;
+  }
+
+  // 1. Sort by increasing packet overhead.
+  std::sort(candidates.begin(), candidates.end(),
+            [](const rtcp::TmmbItem& lhs, const rtcp::TmmbItem& rhs) {
+              return lhs.packet_overhead() < rhs.packet_overhead();
+            });
+
+  // 2. For tuples with same overhead, keep the one with the lowest bitrate.
+  for (auto it = candidates.begin(); it != candidates.end();) {
+    RTC_DCHECK(it->bitrate_bps());
+    auto current_min = it;
+    auto next_it = it + 1;
+    // Use fact candidates are sorted by overhead, so candidates with same
+    // overhead are adjusted.
+    while (next_it != candidates.end() &&
+           next_it->packet_overhead() == current_min->packet_overhead()) {
+      if (next_it->bitrate_bps() < current_min->bitrate_bps()) {
+        current_min->set_bitrate_bps(0);
+        current_min = next_it;
+      } else {
+        next_it->set_bitrate_bps(0);
+      }
+      ++next_it;
+      --num_candidates;
+    }
+    it = next_it;
+  }
+
+  // 3. Select and remove tuple with lowest tmmbr.
+  // (If more than 1, choose the one with highest overhead).
+  auto min_bitrate_it = candidates.end();
+  for (auto it = candidates.begin(); it != candidates.end(); ++it) {
+    if (it->bitrate_bps()) {
+      min_bitrate_it = it;
+      break;
+    }
+  }
+
+  for (auto it = min_bitrate_it; it != candidates.end(); ++it) {
+    if (it->bitrate_bps() &&
+        it->bitrate_bps() <= min_bitrate_it->bitrate_bps()) {
+      // Get min bitrate.
+      min_bitrate_it = it;
+    }
+  }
+
+  bounding_set->clear();
+  bounding_set->reserve(num_candidates);
+  std::vector<float> intersection(num_candidates);
+  std::vector<float> max_packet_rate(num_candidates);
+
+  // First member of selected list.
+  bounding_set->push_back(*min_bitrate_it);
+  intersection[0] = 0;
+  // Calculate its maximum packet rate (where its line crosses x-axis).
+  uint16_t packet_overhead = bounding_set->back().packet_overhead();
+  if (packet_overhead == 0) {
+    // Avoid division by zero.
+    max_packet_rate[0] = std::numeric_limits<float>::max();
+  } else {
+    max_packet_rate[0] = bounding_set->back().bitrate_bps() /
+                         static_cast<float>(packet_overhead);
+  }
+  // Remove from candidate list.
+  min_bitrate_it->set_bitrate_bps(0);
+  --num_candidates;
+
+  // 4. Discard from candidate list all tuple with lower overhead
+  // (next tuple must be steeper).
+  for (auto it = candidates.begin(); it != candidates.end(); ++it) {
+    if (it->bitrate_bps() &&
+        it->packet_overhead() < bounding_set->front().packet_overhead()) {
+      it->set_bitrate_bps(0);
+      --num_candidates;
+    }
+  }
+
+  bool get_new_candidate = true;
+  rtcp::TmmbItem cur_candidate;
+  while (num_candidates > 0) {
+    if (get_new_candidate) {
+      // 5. Remove first remaining tuple from candidate list.
+      for (auto it = candidates.begin(); it != candidates.end(); ++it) {
+        if (it->bitrate_bps()) {
+          cur_candidate = *it;
+          it->set_bitrate_bps(0);
+          break;
+        }
+      }
+    }
+
+    // 6. Calculate packet rate and intersection of the current
+    // line with line of last tuple in selected list.
+    RTC_DCHECK_NE(cur_candidate.packet_overhead(),
+                  bounding_set->back().packet_overhead());
+    float packet_rate = static_cast<float>(cur_candidate.bitrate_bps() -
+                                           bounding_set->back().bitrate_bps()) /
+                        (cur_candidate.packet_overhead() -
+                         bounding_set->back().packet_overhead());
+
+    // 7. If the packet rate is equal or lower than intersection of
+    //    last tuple in selected list,
+    //    remove last tuple in selected list & go back to step 6.
+    if (packet_rate <= intersection[bounding_set->size() - 1]) {
+      // Remove last tuple and goto step 6.
+      bounding_set->pop_back();
+      get_new_candidate = false;
+    } else {
+      // 8. If packet rate is lower than maximum packet rate of
+      // last tuple in selected list, add current tuple to selected
+      // list.
+      if (packet_rate < max_packet_rate[bounding_set->size() - 1]) {
+        bounding_set->push_back(cur_candidate);
+        intersection[bounding_set->size() - 1] = packet_rate;
+        uint16_t packet_overhead = bounding_set->back().packet_overhead();
+        RTC_DCHECK_NE(packet_overhead, 0);
+        max_packet_rate[bounding_set->size() - 1] =
+            bounding_set->back().bitrate_bps() /
+            static_cast<float>(packet_overhead);
+      }
+      --num_candidates;
+      get_new_candidate = true;
+    }
+
+    // 9. Go back to step 5 if any tuple remains in candidate list.
+  }
+}
+
+bool TMMBRHelp::IsOwner(const uint32_t ssrc, const uint32_t length) const {
   if (length == 0) {
     // Empty bounding set.
     return false;
   }
-  for(uint32_t i = 0;
-      (i < length) && (i < _boundingSet.size()); ++i) {
-    if(_boundingSet.Ssrc(i) == ssrc) {
+  for (size_t i = 0; (i < length) && (i < _boundingSet.size()); ++i) {
+    if (_boundingSet.Ssrc(i) == ssrc) {
       return true;
     }
   }
   return false;
 }
 
-bool TMMBRHelp::CalcMinBitRate( uint32_t* minBitrateKbit) const {
+bool TMMBRHelp::CalcMinBitRate(uint32_t* minBitrateKbit) const {
   if (_candidateSet.size() == 0) {
     // Empty bounding set.
     return false;
   }
   *minBitrateKbit = std::numeric_limits<uint32_t>::max();
 
-  for (uint32_t i = 0; i < _candidateSet.lengthOfSet(); ++i) {
+  for (size_t i = 0; i < _candidateSet.lengthOfSet(); ++i) {
     uint32_t curNetBitRateKbit = _candidateSet.Tmmbr(i);
     if (curNetBitRateKbit < MIN_VIDEO_BW_MANAGEMENT_BITRATE) {
       curNetBitRateKbit = MIN_VIDEO_BW_MANAGEMENT_BITRATE;
     }
-    *minBitrateKbit = curNetBitRateKbit < *minBitrateKbit ?
-        curNetBitRateKbit : *minBitrateKbit;
+    *minBitrateKbit = curNetBitRateKbit < *minBitrateKbit ? curNetBitRateKbit
+                                                          : *minBitrateKbit;
   }
   return true;
 }
