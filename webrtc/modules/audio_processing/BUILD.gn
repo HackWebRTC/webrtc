@@ -316,6 +316,94 @@ if (rtc_build_with_neon) {
 }
 
 if (rtc_include_tests) {
+  executable("audioproc") {
+    testonly = true
+    sources = [
+      "test/process_test.cc",
+    ]
+
+    configs += [ "../..:common_config" ]
+    public_configs = [ "../..:common_inherited_config" ]
+
+    if (is_clang) {
+      # Suppress warnings from Chrome's Clang plugins.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    deps = [
+      ":audio_processing",
+      ":audioproc_debug_proto",
+      ":audioproc_protobuf_utils",
+      ":audioproc_test_utils",
+      "../../system_wrappers",
+      "../../system_wrappers:system_wrappers_default",
+      "../../test:test_support",
+      "//testing/gtest",
+      "//third_party/gflags:gflags",
+    ]
+  }  # audioproc
+
+  executable("unpack_aecdump") {
+    testonly = true
+    sources = [
+      "test/unpack.cc",
+    ]
+
+    configs += [ "../..:common_config" ]
+    public_configs = [ "../..:common_inherited_config" ]
+
+    if (is_clang) {
+      # Suppress warnings from Chrome's Clang plugins.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    deps = [
+      ":audio_processing",
+      ":audioproc_debug_proto",
+      ":audioproc_protobuf_utils",
+      ":audioproc_test_utils",
+      "../../common_audio",
+      "../../system_wrappers:system_wrappers_default",
+      "//third_party/gflags:gflags",
+    ]
+  }  # unpack_aecdump
+
+  executable("audioproc_f") {
+    testonly = true
+    sources = [
+      "test/aec_dump_based_simulator.cc",
+      "test/aec_dump_based_simulator.h",
+      "test/audio_processing_simulator.cc",
+      "test/audio_processing_simulator.h",
+      "test/audioproc_float.cc",
+      "test/wav_based_simulator.cc",
+      "test/wav_based_simulator.h",
+    ]
+
+    configs += [ "../..:common_config" ]
+    public_configs = [ "../..:common_inherited_config" ]
+
+    if (is_clang) {
+      # Suppress warnings from Chrome's Clang plugins.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    deps = [
+      ":audio_processing",
+      ":audioproc_debug_proto",
+      ":audioproc_protobuf_utils",
+      ":audioproc_test_utils",
+      "../../system_wrappers",
+      "../../system_wrappers:system_wrappers_default",
+      "../../test:test_support",
+      "//testing/gtest",
+      "//third_party/gflags:gflags",
+    ]
+  }  # audioproc_f
+
   source_set("audioproc_test_utils") {
     testonly = true
     sources = [
