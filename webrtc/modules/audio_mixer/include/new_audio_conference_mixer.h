@@ -49,13 +49,11 @@ class NewAudioConferenceMixer {
 
   // Performs mixing by asking registered audio sources for audio. The
   // mixed result is placed in the provided AudioFrame. Can only be
-  // called from a single thread.
-  virtual void Mix(AudioFrame* audio_frame_for_mixing) = 0;
-
-  // Set the minimum sampling frequency at which to mix. The mixing algorithm
-  // may still choose to mix at a higher samling frequency to avoid
-  // downsampling of audio contributing to the mixed audio.
-  virtual int32_t SetMinimumMixingFrequency(Frequency freq) = 0;
+  // called from a single thread. The rate and channels arguments
+  // specify the rate and number of channels of the mix result.
+  virtual void Mix(int sample_rate,
+                   size_t number_of_channels,
+                   AudioFrame* audio_frame_for_mixing) = 0;
 
   // Returns true if the audio source is mixed anonymously.
   virtual bool AnonymousMixabilityStatus(

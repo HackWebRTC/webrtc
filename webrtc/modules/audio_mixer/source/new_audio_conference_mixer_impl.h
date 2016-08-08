@@ -62,8 +62,6 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
   enum { kProcessPeriodicityInMs = 10 };
 
   explicit NewAudioConferenceMixerImpl(int id);
-  // The dtor not needed, because this class does no longer manage
-  // memory.
 
   // Must be called after ctor.
   bool Init();
@@ -74,8 +72,9 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
   bool MixabilityStatus(const MixerAudioSource& audio_source) const override;
   int32_t SetAnonymousMixabilityStatus(MixerAudioSource* audio_source,
                                        bool mixable) override;
-  void Mix(AudioFrame* audio_frame_for_mixing) override;
-  int32_t SetMinimumMixingFrequency(Frequency freq) override;
+  void Mix(int sample_rate,
+           size_t number_of_channels,
+           AudioFrame* audio_frame_for_mixing) override;
   bool AnonymousMixabilityStatus(
       const MixerAudioSource& audio_source) const override;
 
@@ -97,9 +96,6 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
 
   // Return the AudioFrames that should be mixed anonymously.
   void GetAdditionalAudio(AudioFrameList* additionalFramesList) const;
-
-  // Clears audioFrameList and reclaims all memory associated with it.
-  void ClearAudioFrameList(AudioFrameList* audioFrameList) const;
 
   // This function returns true if it finds the MixerAudioSource in the
   // specified list of MixerAudioSources.
@@ -131,8 +127,6 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
   std::unique_ptr<CriticalSectionWrapper> _cbCrit;
 
   int32_t _id;
-
-  Frequency _minimumMixingFreq;
 
   // The current sample frequency and sample size when mixing.
   Frequency _outputFrequency;

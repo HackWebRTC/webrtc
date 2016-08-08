@@ -46,10 +46,6 @@ class MixerAudioSource {
   // Returns true if the participant was mixed this mix iteration.
   bool IsMixed() const;
 
-  // This function specifies the sampling frequency needed for the AudioFrame
-  // for future GetAudioFrame(..) calls.
-  virtual int32_t NeededFrequency(int32_t id) const = 0;
-
   NewMixHistory* _mixHistory;
 
  protected:

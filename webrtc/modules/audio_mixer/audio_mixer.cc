@@ -159,11 +159,6 @@ int32_t AudioMixer::SetAnonymousMixabilityStatus(MixerAudioSource& audio_source,
   return _mixerModule.SetAnonymousMixabilityStatus(&audio_source, mixable);
 }
 
-int32_t AudioMixer::MixActiveChannels() {
-  _mixerModule.Mix(&_audioFrame);
-  return 0;
-}
-
 int AudioMixer::GetSpeechOutputLevel(uint32_t& level) {
   int8_t currentLevel = _audioLevel.Level();
   level = static_cast<uint32_t>(currentLevel);
@@ -371,11 +366,8 @@ int AudioMixer::GetMixedAudio(int sample_rate_hz,
       _outputFileRecorderPtr->RecordAudioToFile(_audioFrame);
   }
 
-  frame->num_channels_ = num_channels;
-  frame->sample_rate_hz_ = sample_rate_hz;
-  // TODO(andrew): Ideally the downmixing would occur much earlier, in
-  // AudioCodingModule.
-  RemixAndResample(_audioFrame, &resampler_, frame);
+  _mixerModule.Mix(sample_rate_hz, num_channels, frame);
+
   return 0;
 }
 

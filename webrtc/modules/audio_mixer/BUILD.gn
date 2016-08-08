@@ -51,6 +51,11 @@ source_set("audio_conference_mixer") {
     "source/new_audio_conference_mixer_impl.h",
   ]
 
+  public = [
+    "include/audio_mixer_defines.h",
+    "include/new_audio_conference_mixer.h",
+  ]
+
   configs += [ "../..:common_config" ]
 
   public_configs = [

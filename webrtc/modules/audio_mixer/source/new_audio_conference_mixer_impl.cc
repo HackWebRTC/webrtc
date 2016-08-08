@@ -19,6 +19,7 @@
 #include "webrtc/modules/utility/include/audio_frame_operations.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
+#include "webrtc/voice_engine/utility.h"
 
 namespace webrtc {
 namespace {
@@ -58,6 +59,16 @@ class SourceFrame {
   bool was_mixed_before_;
 };
 
+// Remixes a frame between stereo and mono.
+void RemixFrame(AudioFrame* frame, size_t number_of_channels) {
+  RTC_DCHECK(number_of_channels == 1 || number_of_channels == 2);
+  if (frame->num_channels_ == 1 && number_of_channels == 2) {
+    AudioFrameOperations::MonoToStereo(frame);
+  } else if (frame->num_channels_ == 2 && number_of_channels == 1) {
+    AudioFrameOperations::StereoToMono(frame);
+  }
+}
+
 // Mix |frame| into |mixed_frame|, with saturation protection and upmixing.
 // These effects are applied to |frame| itself prior to mixing. Assumes that
 // |mixed_frame| always has at least as many channels as |frame|. Supports
@@ -71,24 +82,8 @@ void MixFrames(AudioFrame* mixed_frame, AudioFrame* frame, bool use_limiter) {
     // This is only meaningful if the limiter will be used.
     *frame >>= 1;
   }
-  if (mixed_frame->num_channels_ > frame->num_channels_) {
-    // We only support mono-to-stereo.
-    RTC_DCHECK_EQ(mixed_frame->num_channels_, static_cast<size_t>(2));
-    RTC_DCHECK_EQ(frame->num_channels_, static_cast<size_t>(1));
-    AudioFrameOperations::MonoToStereo(frame);
-  }
-
+  RTC_DCHECK_EQ(frame->num_channels_, mixed_frame->num_channels_);
   *mixed_frame += *frame;
-}
-
-// Return the max number of channels from a |list| composed of AudioFrames.
-size_t MaxNumChannels(const AudioFrameList* list) {
-  size_t max_num_channels = 1;
-  for (AudioFrameList::const_iterator iter = list->begin(); iter != list->end();
-       ++iter) {
-    max_num_channels = std::max(max_num_channels, (*iter).frame->num_channels_);
-  }
-  return max_num_channels;
 }
 
 }  // namespace
@@ -137,7 +132,6 @@ NewAudioConferenceMixer* NewAudioConferenceMixer::Create(int id) {
 
 NewAudioConferenceMixerImpl::NewAudioConferenceMixerImpl(int id)
     : _id(id),
-      _minimumMixingFreq(kLowestPossible),
       _outputFrequency(kDefaultFrequency),
       _sampleSize(0),
       audio_source_list_(),
@@ -189,7 +183,10 @@ bool NewAudioConferenceMixerImpl::Init() {
   return true;
 }
 
-void NewAudioConferenceMixerImpl::Mix(AudioFrame* audio_frame_for_mixing) {
+void NewAudioConferenceMixerImpl::Mix(int sample_rate,
+                                      size_t number_of_channels,
+                                      AudioFrame* audio_frame_for_mixing) {
+  RTC_DCHECK(number_of_channels == 1 || number_of_channels == 2);
   size_t remainingAudioSourcesAllowedToMix = kMaximumAmountOfMixedAudioSources;
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   AudioFrameList mixList;
@@ -197,46 +194,28 @@ void NewAudioConferenceMixerImpl::Mix(AudioFrame* audio_frame_for_mixing) {
   std::map<int, MixerAudioSource*> mixedAudioSourcesMap;
   {
     CriticalSectionScoped cs(_cbCrit.get());
+    Frequency mixing_frequency;
 
-    int32_t lowFreq = GetLowestMixingFrequency();
-    // SILK can run in 12 kHz and 24 kHz. These frequencies are not
-    // supported so use the closest higher frequency to not lose any
-    // information.
-    // TODO(aleloi): this is probably more appropriate to do in
-    //                GetLowestMixingFrequency().
-    if (lowFreq == 12000) {
-      lowFreq = 16000;
-    } else if (lowFreq == 24000) {
-      lowFreq = 32000;
+    switch (sample_rate) {
+      case 8000:
+        mixing_frequency = kNbInHz;
+        break;
+      case 16000:
+        mixing_frequency = kWbInHz;
+        break;
+      case 32000:
+        mixing_frequency = kSwbInHz;
+        break;
+      case 48000:
+        mixing_frequency = kFbInHz;
+        break;
+      default:
+        RTC_NOTREACHED();
+        return;
     }
-    if (lowFreq <= 0) {
-      return;
-    } else {
-      switch (lowFreq) {
-        case 8000:
-          if (OutputFrequency() != kNbInHz) {
-            SetOutputFrequency(kNbInHz);
-          }
-          break;
-        case 16000:
-          if (OutputFrequency() != kWbInHz) {
-            SetOutputFrequency(kWbInHz);
-          }
-          break;
-        case 32000:
-          if (OutputFrequency() != kSwbInHz) {
-            SetOutputFrequency(kSwbInHz);
-          }
-          break;
-        case 48000:
-          if (OutputFrequency() != kFbInHz) {
-            SetOutputFrequency(kFbInHz);
-          }
-          break;
-        default:
-          RTC_NOTREACHED();
-          return;
-      }
+
+    if (OutputFrequency() != mixing_frequency) {
+      SetOutputFrequency(mixing_frequency);
     }
 
     mixList = UpdateToMix(remainingAudioSourcesAllowedToMix);
@@ -244,16 +223,16 @@ void NewAudioConferenceMixerImpl::Mix(AudioFrame* audio_frame_for_mixing) {
     GetAdditionalAudio(&additionalFramesList);
   }
 
-  // TODO(aleloi): it might be better to decide the number of channels
-  //                with an API instead of dynamically.
-
-  // Find the max channels over all mixing lists.
-  const size_t num_mixed_channels =
-      std::max(MaxNumChannels(&mixList), MaxNumChannels(&additionalFramesList));
+  for (FrameAndMuteInfo& frame_and_mute : mixList) {
+    RemixFrame(frame_and_mute.frame, number_of_channels);
+  }
+  for (FrameAndMuteInfo& frame_and_mute : additionalFramesList) {
+    RemixFrame(frame_and_mute.frame, number_of_channels);
+  }
 
   audio_frame_for_mixing->UpdateFrame(
       -1, _timeStamp, NULL, 0, _outputFrequency, AudioFrame::kNormalSpeech,
-      AudioFrame::kVadPassive, num_mixed_channels);
+      AudioFrame::kVadPassive, number_of_channels);
 
   _timeStamp += static_cast<uint32_t>(_sampleSize);
 
@@ -388,59 +367,6 @@ bool NewAudioConferenceMixerImpl::AnonymousMixabilityStatus(
     const MixerAudioSource& audio_source) const {
   CriticalSectionScoped cs(_cbCrit.get());
   return IsAudioSourceInList(audio_source, additional_audio_source_list_);
-}
-
-int32_t NewAudioConferenceMixerImpl::SetMinimumMixingFrequency(Frequency freq) {
-  // Make sure that only allowed sampling frequencies are used. Use closest
-  // higher sampling frequency to avoid losing information.
-  if (static_cast<int>(freq) == 12000) {
-    freq = kWbInHz;
-  } else if (static_cast<int>(freq) == 24000) {
-    freq = kSwbInHz;
-  }
-
-  if ((freq == kNbInHz) || (freq == kWbInHz) || (freq == kSwbInHz) ||
-      (freq == kLowestPossible)) {
-    _minimumMixingFreq = freq;
-    return 0;
-  } else {
-    WEBRTC_TRACE(kTraceError, kTraceAudioMixerServer, _id,
-                 "SetMinimumMixingFrequency incorrect frequency: %i", freq);
-    RTC_NOTREACHED();
-    return -1;
-  }
-}
-
-// Check all AudioFrames that are to be mixed. The highest sampling frequency
-// found is the lowest that can be used without losing information.
-int32_t NewAudioConferenceMixerImpl::GetLowestMixingFrequency() const {
-  const int audioSourceListFrequency =
-      GetLowestMixingFrequencyFromList(audio_source_list_);
-  const int anonymousListFrequency =
-      GetLowestMixingFrequencyFromList(additional_audio_source_list_);
-  const int highestFreq = (audioSourceListFrequency > anonymousListFrequency)
-                              ? audioSourceListFrequency
-                              : anonymousListFrequency;
-  // Check if the user specified a lowest mixing frequency.
-  if (_minimumMixingFreq != kLowestPossible) {
-    if (_minimumMixingFreq > highestFreq) {
-      return _minimumMixingFreq;
-    }
-  }
-  return highestFreq;
-}
-
-int32_t NewAudioConferenceMixerImpl::GetLowestMixingFrequencyFromList(
-    const MixerAudioSourceList& mixList) const {
-  int32_t highestFreq = 8000;
-  for (MixerAudioSourceList::const_iterator iter = mixList.begin();
-       iter != mixList.end(); ++iter) {
-    const int32_t neededFrequency = (*iter)->NeededFrequency(_id);
-    if (neededFrequency > highestFreq) {
-      highestFreq = neededFrequency;
-    }
-  }
-  return highestFreq;
 }
 
 AudioFrameList NewAudioConferenceMixerImpl::UpdateToMix(

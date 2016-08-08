@@ -48,8 +48,6 @@ class AudioMixer : public FileCallback {
 
   int DeRegisterExternalMediaProcessing();
 
-  int32_t MixActiveChannels();
-
   int32_t DoOperationsOnCombinedSignal(bool feed_data_to_apm);
 
   int32_t SetMixabilityStatus(MixerAudioSource& audio_source,  // NOLINT
@@ -100,8 +98,6 @@ class AudioMixer : public FileCallback {
   rtc::CriticalSection _fileCritSect;
   NewAudioConferenceMixer& _mixerModule;
   AudioFrame _audioFrame;
-  // Converts mixed audio to the audio device output rate.
-  PushResampler<int16_t> resampler_;
   // Converts mixed audio to the audio processing rate.
   PushResampler<int16_t> audioproc_resampler_;
   AudioLevel _audioLevel;  // measures audio level for the combined signal
