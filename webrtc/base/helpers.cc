@@ -56,19 +56,6 @@ class SecureRandomGenerator : public RandomGenerator {
   }
 };
 
-#elif defined(SSL_USE_NSS_RNG)
-// The NSS RNG.
-class SecureRandomGenerator : public RandomGenerator {
- public:
-  SecureRandomGenerator() {}
-  ~SecureRandomGenerator() override {}
-  bool Init(const void* seed, size_t len) override { return true; }
-  bool Generate(void* buf, size_t len) override {
-    return (PK11_GenerateRandom(reinterpret_cast<unsigned char*>(buf),
-                                static_cast<int>(len)) == SECSuccess);
-  }
-};
-
 #else
 #if defined(WEBRTC_WIN)
 class SecureRandomGenerator : public RandomGenerator {
