@@ -242,8 +242,13 @@ public class MediaCodecVideoEncoder {
     }
 
     for (int i = 0; i < MediaCodecList.getCodecCount(); ++i) {
-      MediaCodecInfo info = MediaCodecList.getCodecInfoAt(i);
-      if (!info.isEncoder()) {
+      MediaCodecInfo info = null;
+      try {
+        info = MediaCodecList.getCodecInfoAt(i);
+      } catch (IllegalArgumentException e) {
+        Logging.e(TAG,  "Cannot retrieve encoder codec info", e);
+      }
+      if (info == null || !info.isEncoder()) {
         continue;
       }
       String name = null;
@@ -281,7 +286,13 @@ public class MediaCodecVideoEncoder {
       }
 
       // Check if HW codec supports known color format.
-      CodecCapabilities capabilities = info.getCapabilitiesForType(mime);
+      CodecCapabilities capabilities;
+      try {
+        capabilities = info.getCapabilitiesForType(mime);
+      } catch (IllegalArgumentException e) {
+        Logging.e(TAG,  "Cannot retrieve encoder capabilities", e);
+        continue;
+      }
       for (int colorFormat : capabilities.colorFormats) {
         Logging.v(TAG, "   Color: 0x" + Integer.toHexString(colorFormat));
       }
