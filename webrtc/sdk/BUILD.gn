@@ -186,10 +186,7 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
       configs -= [ "//build/config/clang:find_bad_constructs" ]
     }
 
-    libs += [
-      "AVFoundation.framework",
-      "stdc++",
-    ]
+    libs += [ "AVFoundation.framework" ]
 
     deps = [
       ":rtc_sdk_common_objc",

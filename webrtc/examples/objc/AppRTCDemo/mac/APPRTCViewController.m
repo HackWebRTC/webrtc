@@ -47,11 +47,13 @@ static NSUInteger const kLogViewHeight = 280;
   NSTextField* _roomLabel;
   NSTextField* _roomField;
   NSTextView* _logView;
-  RTCNSGLVideoView* _localVideoView;
-  RTCNSGLVideoView* _remoteVideoView;
   CGSize _localVideoSize;
   CGSize _remoteVideoSize;
 }
+
+@synthesize delegate = _delegate;
+@synthesize localVideoView = _localVideoView;
+@synthesize remoteVideoView = _remoteVideoView;
 
 + (BOOL)requiresConstraintBasedLayout {
   return YES;

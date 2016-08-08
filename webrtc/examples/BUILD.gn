@@ -9,17 +9,21 @@
 if (is_android) {
   import("//build/config/android/config.gni")
   import("//build/config/android/rules.gni")
+} else if (is_mac) {
+  import("//build/config/mac/rules.gni")
+} else if (is_ios) {
+  import("//build/config/ios/rules.gni")
 }
 
 group("examples") {
   deps = []
 
-  if (is_android && !build_with_chromium) {
+  if (is_android) {
     deps += [ ":AppRTCDemo" ]
   }
 }
 
-if (is_android && !build_with_chromium) {
+if (is_android) {
   android_apk("AppRTCDemo") {
     apk_name = "AppRTCDemo"
     android_manifest = "androidapp/AndroidManifest.xml"
@@ -98,6 +102,265 @@ if (is_android && !build_with_chromium) {
       ":AppRTCDemo_javalib",
       "//webrtc/api:libjingle_peerconnection_java",
       "//webrtc/api:libjingle_peerconnection_jni",
+    ]
+  }
+}
+
+if (is_ios || (is_mac && target_cpu != "x86")) {
+  config("warnings_config") {
+    # GN orders flags on a target before flags from configs. The default config
+    # adds these flags so to cancel them out they need to come from a config and
+    # cannot be on the target directly.
+    if (is_ios) {
+      # Suppress compiler warnings about deprecated that triggered
+      # when moving from ios_deployment_target 7.0 to 9.0.
+      # See webrtc:5549 for more details.
+      cflags = [ "-Wno-deprecated-declarations" ]
+    }
+  }
+
+  config("apprtc_common_config") {
+    include_dirs = [ "objc/AppRTCDemo/common" ]
+  }
+
+  source_set("apprtc_common") {
+    sources = [
+      "objc/AppRTCDemo/common/ARDUtilities.h",
+      "objc/AppRTCDemo/common/ARDUtilities.m",
+    ]
+    configs += [
+      "..:common_config",
+      ":warnings_config",
+      "//build/config/compiler:enable_arc",
+    ]
+    public_configs = [
+      "..:common_inherited_config",
+      ":apprtc_common_config",
+    ]
+
+    deps = [
+      "../sdk:rtc_sdk_common_objc",
+      "../system_wrappers:field_trial_default",
+      "../system_wrappers:metrics_default",
+    ]
+  }
+
+  config("apprtc_signaling_config") {
+    include_dirs = [ "objc/AppRTCDemo" ]
+
+    # GN orders flags on a target before flags from configs. The default config
+    # adds these flags so to cancel them out they need to come from a config and
+    # cannot be on the target directly.
+    cflags = [
+      "-Wno-sign-compare",
+      "-Wno-unused-variable",
+    ]
+    if (is_mac) {
+      cflags += [ "-Wno-partial-availability" ]
+    }
+  }
+
+  source_set("apprtc_signaling") {
+    sources = [
+      "objc/AppRTCDemo/ARDAppClient+Internal.h",
+      "objc/AppRTCDemo/ARDAppClient.h",
+      "objc/AppRTCDemo/ARDAppClient.m",
+      "objc/AppRTCDemo/ARDAppEngineClient.h",
+      "objc/AppRTCDemo/ARDAppEngineClient.m",
+      "objc/AppRTCDemo/ARDBitrateTracker.h",
+      "objc/AppRTCDemo/ARDBitrateTracker.m",
+      "objc/AppRTCDemo/ARDCEODTURNClient.h",
+      "objc/AppRTCDemo/ARDCEODTURNClient.m",
+      "objc/AppRTCDemo/ARDJoinResponse+Internal.h",
+      "objc/AppRTCDemo/ARDJoinResponse.h",
+      "objc/AppRTCDemo/ARDJoinResponse.m",
+      "objc/AppRTCDemo/ARDMessageResponse+Internal.h",
+      "objc/AppRTCDemo/ARDMessageResponse.h",
+      "objc/AppRTCDemo/ARDMessageResponse.m",
+      "objc/AppRTCDemo/ARDRoomServerClient.h",
+      "objc/AppRTCDemo/ARDSDPUtils.h",
+      "objc/AppRTCDemo/ARDSDPUtils.m",
+      "objc/AppRTCDemo/ARDSignalingChannel.h",
+      "objc/AppRTCDemo/ARDSignalingMessage.h",
+      "objc/AppRTCDemo/ARDSignalingMessage.m",
+      "objc/AppRTCDemo/ARDStatsBuilder.h",
+      "objc/AppRTCDemo/ARDStatsBuilder.m",
+      "objc/AppRTCDemo/ARDTURNClient.h",
+      "objc/AppRTCDemo/ARDWebSocketChannel.h",
+      "objc/AppRTCDemo/ARDWebSocketChannel.m",
+      "objc/AppRTCDemo/RTCIceCandidate+JSON.h",
+      "objc/AppRTCDemo/RTCIceCandidate+JSON.m",
+      "objc/AppRTCDemo/RTCIceServer+JSON.h",
+      "objc/AppRTCDemo/RTCIceServer+JSON.m",
+      "objc/AppRTCDemo/RTCMediaConstraints+JSON.h",
+      "objc/AppRTCDemo/RTCMediaConstraints+JSON.m",
+      "objc/AppRTCDemo/RTCSessionDescription+JSON.h",
+      "objc/AppRTCDemo/RTCSessionDescription+JSON.m",
+    ]
+    configs += [
+      "..:common_config",
+      "//build/config/compiler:enable_arc",
+      ":warnings_config",
+    ]
+    public_configs = [
+      "..:common_inherited_config",
+      ":apprtc_signaling_config",
+    ]
+    deps = [
+      ":apprtc_common",
+      ":socketrocket",
+    ]
+    public_deps = [
+      "../sdk:rtc_sdk_peerconnection_objc",
+    ]
+    libs = [ "QuartzCore.framework" ]
+  }
+
+  if (is_ios) {
+    ios_app_bundle("AppRTCDemo") {
+      sources = [
+        "objc/AppRTCDemo/ios/ARDAppDelegate.m",
+        "objc/AppRTCDemo/ios/ARDMainView.h",
+        "objc/AppRTCDemo/ios/ARDMainView.m",
+        "objc/AppRTCDemo/ios/ARDMainViewController.h",
+        "objc/AppRTCDemo/ios/ARDMainViewController.m",
+        "objc/AppRTCDemo/ios/ARDStatsView.h",
+        "objc/AppRTCDemo/ios/ARDStatsView.m",
+        "objc/AppRTCDemo/ios/ARDVideoCallView.h",
+        "objc/AppRTCDemo/ios/ARDVideoCallView.m",
+        "objc/AppRTCDemo/ios/ARDVideoCallViewController.h",
+        "objc/AppRTCDemo/ios/ARDVideoCallViewController.m",
+        "objc/AppRTCDemo/ios/AppRTCDemo-Prefix.pch",
+        "objc/AppRTCDemo/ios/UIImage+ARDUtilities.h",
+        "objc/AppRTCDemo/ios/UIImage+ARDUtilities.m",
+        "objc/AppRTCDemo/ios/main.m",
+      ]
+
+      info_plist = "objc/AppRTCDemo/ios/Info.plist"
+
+      configs += [
+        "..:common_config",
+        "//build/config/compiler:enable_arc",
+        ":warnings_config",
+      ]
+      public_configs = [ "..:common_inherited_config" ]
+
+      deps = [
+        ":AppRTCDemo_ios_bundle_data",
+        ":apprtc_common",
+        ":apprtc_signaling",
+      ]
+
+      if (target_cpu == "x86") {
+        deps += [ "//testing/iossim:iossim" ]
+      }
+    }
+
+    bundle_data("AppRTCDemo_ios_bundle_data") {
+      sources = [
+        "objc/AppRTCDemo/ios/resources/Roboto-Regular.ttf",
+        "objc/AppRTCDemo/ios/resources/iPhone5@2x.png",
+        "objc/AppRTCDemo/ios/resources/iPhone6@2x.png",
+        "objc/AppRTCDemo/ios/resources/iPhone6p@3x.png",
+        "objc/AppRTCDemo/ios/resources/ic_call_end_black_24dp.png",
+        "objc/AppRTCDemo/ios/resources/ic_call_end_black_24dp@2x.png",
+        "objc/AppRTCDemo/ios/resources/ic_clear_black_24dp.png",
+        "objc/AppRTCDemo/ios/resources/ic_clear_black_24dp@2x.png",
+        "objc/AppRTCDemo/ios/resources/ic_surround_sound_black_24dp.png",
+        "objc/AppRTCDemo/ios/resources/ic_surround_sound_black_24dp@2x.png",
+        "objc/AppRTCDemo/ios/resources/ic_switch_video_black_24dp.png",
+        "objc/AppRTCDemo/ios/resources/ic_switch_video_black_24dp@2x.png",
+        "objc/AppRTCDemo/ios/resources/mozart.mp3",
+        "objc/Icon.png",
+      ]
+      outputs = [
+        "{{bundle_resources_dir}}/{{source_file_part}}",
+      ]
+    }
+  }
+
+  if (is_mac) {
+    source_set("AppRTCDemo_app") {
+      sources = [
+        "objc/AppRTCDemo/mac/APPRTCAppDelegate.h",
+        "objc/AppRTCDemo/mac/APPRTCAppDelegate.m",
+        "objc/AppRTCDemo/mac/APPRTCViewController.h",
+        "objc/AppRTCDemo/mac/APPRTCViewController.m",
+      ]
+      configs += [
+        "..:common_config",
+        "..:common_objc",
+        "//build/config/compiler:enable_arc",
+      ]
+      deps = [
+        ":apprtc_common",
+        ":apprtc_signaling",
+      ]
+    }
+
+    mac_app_bundle("AppRTCDemo") {
+      output_name = "AppRTCDemo"
+
+      extra_substitutions = [ "MACOSX_DEPLOYMENT_TARGET=10.8" ]
+
+      sources = [
+        "objc/AppRTCDemo/mac/main.m",
+      ]
+
+      public_configs = [ "..:common_inherited_config" ]
+
+      info_plist = "objc/AppRTCDemo/mac/Info.plist"
+
+      libs = [ "AppKit.framework" ]
+
+      deps = [
+        ":AppRTCDemo_app",
+      ]
+    }
+  }
+
+  config("socketrocket_include_config") {
+    include_dirs = [ "objc/AppRTCDemo/third_party/SocketRocket" ]
+  }
+
+  config("socketrocket_warning_config") {
+    # GN orders flags on a target before flags from configs. The default config
+    # adds these flags so to cancel them out they need to come from a config and
+    # cannot be on the target directly.
+    cflags = [
+      "-Wno-deprecated-declarations",
+      "-Wno-nonnull",
+      "-Wno-objc-missing-property-synthesis",
+      "-Wno-semicolon-before-method-body",
+      "-Wno-unused-variable",
+    ]
+
+    # Enabled for cflags_objc in build/config/compiler/BUILD.gn.
+    cflags_objc = [ "-Wno-objc-missing-property-synthesis" ]
+
+    if (is_mac) {
+      cflags += [ "-Wno-partial-availability" ]
+    }
+  }
+
+  source_set("socketrocket") {
+    sources = [
+      "objc/AppRTCDemo/third_party/SocketRocket/SRWebSocket.h",
+      "objc/AppRTCDemo/third_party/SocketRocket/SRWebSocket.m",
+    ]
+    configs += [
+      "..:common_config",
+      "//build/config/compiler:enable_arc",
+      ":socketrocket_warning_config",
+    ]
+    public_configs = [
+      "..:common_inherited_config",
+      ":socketrocket_include_config",
+    ]
+
+    libs = [
+      "CFNetwork.framework",
+      "icucore",
     ]
   }
 }

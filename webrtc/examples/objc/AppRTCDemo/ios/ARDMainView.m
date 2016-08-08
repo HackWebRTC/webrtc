@@ -19,7 +19,6 @@ static CGFloat const kRoomTextButtonSize = 40;
 static CGFloat const kRoomTextFieldHeight = 40;
 static CGFloat const kRoomTextFieldMargin = 8;
 static CGFloat const kCallControlMargin = 8;
-static CGFloat const kAppLabelHeight = 20;
 
 // Helper view that contains a text field and a clear button.
 @interface ARDRoomTextField : UIView <UITextFieldDelegate>
