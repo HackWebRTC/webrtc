@@ -14,6 +14,7 @@
 #include <vector>
 #include <map>
 #include <memory>
+#include <set>
 #include <utility>
 
 #include "webrtc/call/rtc_event_log_parser.h"
@@ -56,8 +57,14 @@ class EventLogAnalyzer {
    public:
     StreamId(uint32_t ssrc, webrtc::PacketDirection direction)
         : ssrc_(ssrc), direction_(direction) {}
-    bool operator<(const StreamId& other) const;
-    bool operator==(const StreamId& other) const;
+    bool operator<(const StreamId& other) const {
+      return std::tie(ssrc_, direction_) <
+             std::tie(other.ssrc_, other.direction_);
+    }
+    bool operator==(const StreamId& other) const {
+      return std::tie(ssrc_, direction_) ==
+             std::tie(other.ssrc_, other.direction_);
+    }
     uint32_t GetSsrc() const { return ssrc_; }
     webrtc::PacketDirection GetDirection() const { return direction_; }
 
@@ -93,15 +100,30 @@ class EventLogAnalyzer {
     int32_t expected_packets;
   };
 
+  bool IsRtxSsrc(StreamId stream_id);
+
+  bool IsVideoSsrc(StreamId stream_id);
+
+  bool IsAudioSsrc(StreamId stream_id);
+
   const ParsedRtcEventLog& parsed_log_;
 
   // A list of SSRCs we are interested in analysing.
   // If left empty, all SSRCs will be considered relevant.
   std::vector<uint32_t> desired_ssrc_;
 
-  // Maps a stream identifier consisting of ssrc, direction and MediaType
-  // to the parsed RTP headers in that stream. Header extensions are parsed
-  // if the stream has been configured.
+  // Tracks what each stream is configured for. Note that a single SSRC can be
+  // in several sets. For example, the SSRC used for sending video over RTX
+  // will appear in both video_ssrcs_ and rtx_ssrcs_. In the unlikely case that
+  // an SSRC is reconfigured to a different media type mid-call, it will also
+  // appear in multiple sets.
+  std::set<StreamId> rtx_ssrcs_;
+  std::set<StreamId> video_ssrcs_;
+  std::set<StreamId> audio_ssrcs_;
+
+  // Maps a stream identifier consisting of ssrc and direction to the parsed
+  // RTP headers in that stream. Header extensions are parsed if the stream
+  // has been configured.
   std::map<StreamId, std::vector<LoggedRtpPacket>> rtp_packets_;
 
   std::map<StreamId, std::vector<LoggedRtcpPacket>> rtcp_packets_;

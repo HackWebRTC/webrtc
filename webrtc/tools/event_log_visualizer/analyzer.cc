@@ -100,23 +100,6 @@ constexpr float kTopMargin = 0.05f;
 
 }  // namespace
 
-bool EventLogAnalyzer::StreamId::operator<(const StreamId& other) const {
-  if (ssrc_ < other.ssrc_) {
-    return true;
-  }
-  if (ssrc_ == other.ssrc_) {
-    if (direction_ < other.direction_) {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool EventLogAnalyzer::StreamId::operator==(const StreamId& other) const {
-  return ssrc_ == other.ssrc_ && direction_ == other.direction_;
-}
-
-
 EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
     : parsed_log_(log), window_duration_(250000), step_(10000) {
   uint64_t first_timestamp = std::numeric_limits<uint64_t>::max();
@@ -151,10 +134,13 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         StreamId stream(config.rtp.remote_ssrc, kIncomingPacket);
         RegisterHeaderExtensions(config.rtp.extensions,
                                  &extension_maps[stream]);
+        video_ssrcs_.insert(stream);
         for (auto kv : config.rtp.rtx) {
           StreamId rtx_stream(kv.second.ssrc, kIncomingPacket);
           RegisterHeaderExtensions(config.rtp.extensions,
                                    &extension_maps[rtx_stream]);
+          video_ssrcs_.insert(rtx_stream);
+          rtx_ssrcs_.insert(rtx_stream);
         }
         break;
       }
@@ -165,11 +151,14 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
           StreamId stream(ssrc, kOutgoingPacket);
           RegisterHeaderExtensions(config.rtp.extensions,
                                    &extension_maps[stream]);
+          video_ssrcs_.insert(stream);
         }
         for (auto ssrc : config.rtp.rtx.ssrcs) {
-          StreamId stream(ssrc, kOutgoingPacket);
+          StreamId rtx_stream(ssrc, kOutgoingPacket);
           RegisterHeaderExtensions(config.rtp.extensions,
-                                   &extension_maps[stream]);
+                                   &extension_maps[rtx_stream]);
+          video_ssrcs_.insert(rtx_stream);
+          rtx_ssrcs_.insert(rtx_stream);
         }
         break;
       }
@@ -302,6 +291,18 @@ class BitrateObserver : public CongestionController::Observer,
   uint32_t last_bitrate_bps_;
   bool bitrate_updated_;
 };
+
+bool EventLogAnalyzer::IsRtxSsrc(StreamId stream_id) {
+  return rtx_ssrcs_.count(stream_id) == 1;
+}
+
+bool EventLogAnalyzer::IsVideoSsrc(StreamId stream_id) {
+  return video_ssrcs_.count(stream_id) == 1;
+}
+
+bool EventLogAnalyzer::IsAudioSsrc(StreamId stream_id) {
+  return audio_ssrcs_.count(stream_id) == 1;
+}
 
 void EventLogAnalyzer::CreatePacketGraph(PacketDirection desired_direction,
                                          Plot* plot) {
