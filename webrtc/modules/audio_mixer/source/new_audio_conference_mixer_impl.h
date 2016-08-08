@@ -53,7 +53,7 @@ class NewMixHistory {
   void ResetMixedStatus();
 
  private:
-  bool _isMixed;
+  bool is_mixed_;
 };
 
 class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
@@ -123,14 +123,14 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
 
   bool LimitMixedAudio(AudioFrame* mixedAudio) const;
 
-  std::unique_ptr<CriticalSectionWrapper> _crit;
-  std::unique_ptr<CriticalSectionWrapper> _cbCrit;
+  std::unique_ptr<CriticalSectionWrapper> crit_;
+  std::unique_ptr<CriticalSectionWrapper> cb_crit_;
 
-  int32_t _id;
+  int32_t id_;
 
   // The current sample frequency and sample size when mixing.
-  Frequency _outputFrequency;
-  size_t _sampleSize;
+  Frequency output_frequency_;
+  size_t sample_size_;
 
   // List of all audio sources. Note all lists are disjunct
   MixerAudioSourceList audio_source_list_;  // May be mixed.
@@ -143,13 +143,13 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
   // mixing.
   bool use_limiter_;
 
-  uint32_t _timeStamp;
+  uint32_t time_stamp_;
 
   // Ensures that Mix is called from the same thread.
   rtc::ThreadChecker thread_checker_;
 
   // Used for inhibiting saturation in mixing.
-  std::unique_ptr<AudioProcessing> _limiter;
+  std::unique_ptr<AudioProcessing> limiter_;
 };
 }  // namespace webrtc
 
