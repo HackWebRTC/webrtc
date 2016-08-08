@@ -180,3 +180,20 @@ source_set("rtp_rtcp") {
     ]
   }
 }
+
+if (rtc_include_tests) {
+  executable("test_packet_masks_metrics") {
+    testonly = true
+
+    sources = [
+      "test/testFec/average_residual_loss_xor_codes.h",
+      "test/testFec/test_packet_masks_metrics.cc",
+    ]
+
+    deps = [
+      ":rtp_rtcp",
+      "//testing/gtest",
+      "//webrtc/test:test_support_main",
+    ]
+  }  # test_packet_masks_metrics
+}
