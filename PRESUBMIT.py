@@ -20,6 +20,7 @@ CPPLINT_DIRS = [
   'webrtc/call',
   'webrtc/common_video',
   'webrtc/examples',
+  'webrtc/modules/audio_mixer',
   'webrtc/modules/bitrate_controller',
   'webrtc/modules/congestion_controller',
   'webrtc/modules/pacing',

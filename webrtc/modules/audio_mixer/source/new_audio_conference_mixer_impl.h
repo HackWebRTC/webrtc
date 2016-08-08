@@ -14,6 +14,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <vector>
 
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/engine_configurations.h"
