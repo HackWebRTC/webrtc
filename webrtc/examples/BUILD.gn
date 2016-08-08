@@ -14,12 +14,27 @@ if (is_android) {
 } else if (is_ios) {
   import("//build/config/ios/rules.gni")
 }
+if (is_linux || is_win) {
+  import("//webrtc/build/webrtc.gni")
+}
+if (is_linux) {
+  import("//build/config/linux/pkg_config.gni")
+}
 
 group("examples") {
   deps = []
 
   if (is_android) {
     deps += [ ":AppRTCDemo" ]
+  }
+  if (is_linux) {
+    deps += [
+      ":peerconnection_client",
+      ":peerconnection_server",
+      ":relayserver",
+      ":stunserver",
+      ":turnserver",
+    ]
   }
 }
 
@@ -362,5 +377,136 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       "CFNetwork.framework",
       "icucore",
     ]
+  }
+}
+
+if (is_linux || is_win) {
+  if (is_linux) {
+    pkg_config("gtk2_config") {
+      # Gtk requires gmodule, but it does not list it as a dependency in some
+      # misconfigured systems.
+      packages = [
+        "gmodule-2.0",
+        "gtk+-2.0",
+        "gthread-2.0",
+      ]
+    }
+  }
+
+  executable("peerconnection_client") {
+    sources = [
+      "peerconnection/client/conductor.cc",
+      "peerconnection/client/conductor.h",
+      "peerconnection/client/defaults.cc",
+      "peerconnection/client/defaults.h",
+      "peerconnection/client/peer_connection_client.cc",
+      "peerconnection/client/peer_connection_client.h",
+    ]
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+    if (is_win) {
+      sources += [
+        "peerconnection/client/flagdefs.h",
+        "peerconnection/client/main.cc",
+        "peerconnection/client/main_wnd.cc",
+        "peerconnection/client/main_wnd.h",
+      ]
+      cflags = [ "/wd4245" ]
+      configs += [ "//build/config/win:windowed" ]
+    }
+    if (is_linux) {
+      sources += [
+        "peerconnection/client/linux/main.cc",
+        "peerconnection/client/linux/main_wnd.cc",
+        "peerconnection/client/linux/main_wnd.h",
+      ]
+      libs = [
+        "X11",
+        "Xcomposite",
+        "Xext",
+        "Xrender",
+      ]
+      public_configs = [ ":gtk2_config" ]
+    }
+    deps = [
+      "//webrtc/api:libjingle_peerconnection",
+      "//webrtc/system_wrappers:field_trial_default",
+      "//webrtc/system_wrappers:metrics_default",
+    ]
+    if (rtc_build_json) {
+      deps += [ "//third_party/jsoncpp" ]
+    }
+  }
+  executable("peerconnection_server") {
+    sources = [
+      "peerconnection/server/data_socket.cc",
+      "peerconnection/server/data_socket.h",
+      "peerconnection/server/main.cc",
+      "peerconnection/server/peer_channel.cc",
+      "peerconnection/server/peer_channel.h",
+      "peerconnection/server/utils.cc",
+      "peerconnection/server/utils.h",
+    ]
+    deps = [
+      "//webrtc:webrtc_common",
+      "//webrtc/base:rtc_base_approved",
+      "//webrtc/tools:command_line_parser",
+    ]
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+  executable("relayserver") {
+    sources = [
+      "relayserver/relayserver_main.cc",
+    ]
+    deps = [
+      "//webrtc/base:rtc_base_approved",
+      "//webrtc/pc:rtc_pc",
+      "//webrtc/system_wrappers:field_trial_default",
+      "//webrtc/system_wrappers:metrics_default",
+    ]
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+  executable("turnserver") {
+    sources = [
+      "turnserver/turnserver_main.cc",
+    ]
+    deps = [
+      "//webrtc/base:rtc_base_approved",
+      "//webrtc/pc:rtc_pc",
+      "//webrtc/system_wrappers:field_trial_default",
+      "//webrtc/system_wrappers:metrics_default",
+    ]
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+  executable("stunserver") {
+    sources = [
+      "stunserver/stunserver_main.cc",
+    ]
+    deps = [
+      "//webrtc/base:rtc_base_approved",
+      "//webrtc/pc:rtc_pc",
+      "//webrtc/system_wrappers:field_trial_default",
+      "//webrtc/system_wrappers:metrics_default",
+    ]
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
   }
 }
