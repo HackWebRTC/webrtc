@@ -25,7 +25,6 @@ bool InitRandom(const char* seed, size_t len);
 
 // Generates a (cryptographically) random string of the given length.
 // We generate base64 values so that they will be printable.
-// WARNING: could silently fail. Use the version below instead.
 std::string CreateRandomString(size_t length);
 
 // Generates a (cryptographically) random string of the given length.

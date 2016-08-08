@@ -28,6 +28,7 @@
 
 #include "webrtc/base/base64.h"
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/timeutils.h"
 
@@ -202,7 +203,7 @@ bool InitRandom(const char* seed, size_t len) {
 
 std::string CreateRandomString(size_t len) {
   std::string str;
-  CreateRandomString(len, &str);
+  RTC_CHECK(CreateRandomString(len, &str));
   return str;
 }
 
@@ -245,10 +246,7 @@ bool CreateRandomData(size_t length, std::string* data) {
 std::string CreateRandomUuid() {
   std::string str;
   std::unique_ptr<uint8_t[]> bytes(new uint8_t[31]);
-  if (!Rng().Generate(bytes.get(), 31)) {
-    LOG(LS_ERROR) << "Failed to generate random string!";
-    return str;
-  }
+  RTC_CHECK(Rng().Generate(bytes.get(), 31));
   str.reserve(36);
   for (size_t i = 0; i < 8; ++i) {
     str.push_back(kHex[bytes[i] % 16]);
@@ -276,9 +274,7 @@ std::string CreateRandomUuid() {
 
 uint32_t CreateRandomId() {
   uint32_t id;
-  if (!Rng().Generate(&id, sizeof(id))) {
-    LOG(LS_ERROR) << "Failed to generate random id!";
-  }
+  RTC_CHECK(Rng().Generate(&id, sizeof(id)));
   return id;
 }
 
