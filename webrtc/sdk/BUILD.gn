@@ -81,6 +81,7 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
       "objc/Framework/Classes/RTCDataChannel.mm",
       "objc/Framework/Classes/RTCDataChannelConfiguration+Private.h",
       "objc/Framework/Classes/RTCDataChannelConfiguration.mm",
+      "objc/Framework/Classes/RTCI420Shader.mm",
       "objc/Framework/Classes/RTCIceCandidate+Private.h",
       "objc/Framework/Classes/RTCIceCandidate.mm",
       "objc/Framework/Classes/RTCIceServer+Private.h",
@@ -91,6 +92,7 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
       "objc/Framework/Classes/RTCMediaStream.mm",
       "objc/Framework/Classes/RTCMediaStreamTrack+Private.h",
       "objc/Framework/Classes/RTCMediaStreamTrack.mm",
+      "objc/Framework/Classes/RTCOpenGLDefines.h",
       "objc/Framework/Classes/RTCOpenGLVideoRenderer.h",
       "objc/Framework/Classes/RTCOpenGLVideoRenderer.mm",
       "objc/Framework/Classes/RTCPeerConnection+DataChannel.mm",
@@ -111,6 +113,9 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
       "objc/Framework/Classes/RTCRtpSender.mm",
       "objc/Framework/Classes/RTCSessionDescription+Private.h",
       "objc/Framework/Classes/RTCSessionDescription.mm",
+      "objc/Framework/Classes/RTCShader+Private.h",
+      "objc/Framework/Classes/RTCShader.h",
+      "objc/Framework/Classes/RTCShader.mm",
       "objc/Framework/Classes/RTCStatsReport+Private.h",
       "objc/Framework/Classes/RTCStatsReport.mm",
       "objc/Framework/Classes/RTCVideoFrame+Private.h",
@@ -152,6 +157,7 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
     if (is_ios) {
       sources += [
         "objc/Framework/Classes/RTCEAGLVideoView.m",
+        "objc/Framework/Classes/RTCNativeNV12Shader.mm",
         "objc/Framework/Headers/WebRTC/RTCEAGLVideoView.h",
       ]
       libs = [
