@@ -42,8 +42,8 @@
       'Linux UBSan': 'gyp_ubsan_clang_release_bot_x64',
       'Linux UBSan vptr': 'gyp_ubsan_vptr_clang_release_bot_x64',
       'Linux64 Release [large tests]': 'gyp_release_bot_x64',
-      'Linux64 Debug (GN)': 'gn_openh264_debug_bot_x64',
-      'Linux64 Release (GN)': 'gn_openh264_release_bot_x64',
+      'Linux64 Debug (GN)': 'gn_debug_bot_x64',
+      'Linux64 Release (GN)': 'gn_release_bot_x64',
 
       # Android
       'Android32 Builder': 'android_gyp_release_bot_arm',
@@ -65,48 +65,48 @@
     },
     'tryserver.webrtc': {
       # iOS
-      'ios_dbg': 'ios_gyp_debug_trybot_arm_device',
-      'ios_rel': 'ios_gyp_release_trybot_arm_device',
-      'ios_arm64_dbg': 'ios_gyp_debug_trybot_arm64_device',
-      'ios_arm64_rel': 'ios_gyp_release_trybot_arm64_device',
-      'ios32_sim_dbg': 'ios_gyp_debug_trybot_x86',
-      'ios64_sim_dbg': 'ios_gyp_debug_trybot_x64',
-      'ios64_gn_dbg': 'ios_gn_debug_trybot_arm64_device',
-      'ios64_gn_rel': 'ios_gn_release_trybot_arm64_device',
+      'ios_dbg': 'ios_gyp_debug_bot_arm_device',
+      'ios_rel': 'ios_gyp_release_bot_arm_device',
+      'ios_arm64_dbg': 'ios_gyp_debug_bot_arm64_device',
+      'ios_arm64_rel': 'ios_gyp_release_bot_arm64_device',
+      'ios32_sim_dbg': 'ios_gyp_debug_bot_x86',
+      'ios64_sim_dbg': 'ios_gyp_debug_bot_x64',
+      'ios64_gn_dbg': 'ios_gn_debug_bot_arm64_device',
+      'ios64_gn_rel': 'ios_gn_release_bot_arm64_device',
 
       # Linux
-      'linux_compile_dbg': 'gyp_debug_trybot_x64',
-      'linux_compile_rel': 'gyp_release_trybot_x64',
-      'linux_dbg': 'gyp_debug_trybot_x64',
-      'linux_rel': 'gyp_release_trybot_x64',
-      'linux_gn_dbg': 'gn_openh264_debug_trybot_x64',
-      'linux_gn_rel': 'gn_openh264_release_trybot_x64',
-      'linux_arm': 'gyp_release_trybot_arm',
-      'linux_asan': 'gyp_asan_lsan_clang_release_trybot_x64',
-      'linux_memcheck': 'gyp_memcheck_release_trybot_x64',
-      'linux_msan': 'gyp_msan_clang_release_trybot_x64',
-      'linux_tsan2': 'gyp_tsan_clang_release_trybot_x64',
-      'linux_ubsan': 'gyp_ubsan_clang_release_trybot_x64',
-      'linux_ubsan_vptr': 'gyp_ubsan_vptr_clang_release_trybot_x64',
-      'linux_baremetal': 'gyp_release_trybot_x64',
-      'linux_swarming': 'swarming_gyp_debug_trybot_x64',
+      'linux_compile_dbg': 'gyp_debug_bot_x64',
+      'linux_compile_rel': 'gyp_release_bot_x64',
+      'linux_dbg': 'gyp_debug_bot_x64',
+      'linux_rel': 'gyp_release_bot_x64',
+      'linux_gn_dbg': 'gn_debug_bot_x64',
+      'linux_gn_rel': 'gn_release_bot_x64',
+      'linux_arm': 'gyp_release_bot_arm',
+      'linux_asan': 'gyp_asan_lsan_clang_release_bot_x64',
+      'linux_memcheck': 'gyp_memcheck_release_bot_x64',
+      'linux_msan': 'gyp_msan_clang_release_bot_x64',
+      'linux_tsan2': 'gyp_tsan_clang_release_bot_x64',
+      'linux_ubsan': 'gyp_ubsan_clang_release_bot_x64',
+      'linux_ubsan_vptr': 'gyp_ubsan_vptr_clang_release_bot_x64',
+      'linux_baremetal': 'gyp_release_bot_x64',
+      'linux_swarming': 'swarming_gyp_debug_bot_x64',
 
       # Android
-      'android_compile_dbg': 'android_gyp_debug_trybot_arm',
-      'android_compile_rel': 'android_gyp_release_trybot_arm',
-      'android_compile_arm64_dbg': 'android_gyp_debug_trybot_arm64',
-      'android_compile_arm64_rel': 'android_gyp_release_trybot_arm64',
-      'android_compile_x86_dbg': 'android_gyp_debug_trybot_x86',
-      'android_compile_x86_rel': 'android_gyp_release_trybot_x86',
-      'android_compile_x64_dbg': 'android_gyp_debug_trybot_x64',
-      'android_compile_mips_dbg': 'android_gyp_clang_debug_trybot_mipsel',
-      'android_dbg': 'android_gyp_debug_trybot_arm',
-      'android_rel': 'android_gyp_release_trybot_arm',
-      'android_clang_dbg': 'android_gyp_clang_debug_trybot_arm',
-      'android_amd64_rel': 'android_gyp_release_trybot_arm64',
-      'android_n6': 'android_gyp_debug_trybot_arm',
-      'android_gn_dbg': 'android_gn_debug_trybot_arm',
-      'android_gn_rel': 'android_gn_release_trybot_arm',
+      'android_compile_dbg': 'android_gyp_debug_bot_arm',
+      'android_compile_rel': 'android_gyp_release_bot_arm',
+      'android_compile_arm64_dbg': 'android_gyp_debug_bot_arm64',
+      'android_compile_arm64_rel': 'android_gyp_release_bot_arm64',
+      'android_compile_x86_dbg': 'android_gyp_debug_bot_x86',
+      'android_compile_x86_rel': 'android_gyp_release_bot_x86',
+      'android_compile_x64_dbg': 'android_gyp_debug_bot_x64',
+      'android_compile_mips_dbg': 'android_gyp_clang_debug_bot_mipsel',
+      'android_dbg': 'android_gyp_debug_bot_arm',
+      'android_rel': 'android_gyp_release_bot_arm',
+      'android_clang_dbg': 'android_gyp_clang_debug_bot_arm',
+      'android_amd64_rel': 'android_gyp_release_bot_arm64',
+      'android_n6': 'android_gyp_debug_bot_arm',
+      'android_gn_dbg': 'android_gn_debug_bot_arm',
+      'android_gn_rel': 'android_gn_release_bot_arm',
     },
   },
 
@@ -141,177 +141,84 @@
     'ios_gyp_debug_bot_x64': [
       'ios', 'gyp', 'ios_release_bot', 'x64'
     ],
-    # iOS trybots
-    'ios_gn_debug_trybot_arm64_device': [
-      'ios', 'gn', 'ios_debug_trybot', 'arm64', 'device'
-    ],
-    'ios_gn_release_trybot_arm64_device': [
-      'ios', 'gn', 'ios_release_trybot', 'arm64', 'device'
-    ],
-    'ios_gyp_debug_trybot_arm_device': [
-      'ios', 'gyp', 'ios_debug_trybot', 'arm', 'device'
-    ],
-    'ios_gyp_release_trybot_arm_device': [
-      'ios', 'gyp', 'ios_release_trybot', 'arm', 'device'
-    ],
-    'ios_gyp_debug_trybot_arm64_device': [
-      'ios', 'gyp', 'ios_debug_trybot', 'arm64', 'device'
-    ],
-    'ios_gyp_release_trybot_arm64_device': [
-      'ios', 'gyp', 'ios_release_trybot', 'arm64', 'device'
-    ],
-    'ios_gyp_debug_trybot_x86': [
-      'ios', 'gyp', 'ios_debug_trybot', 'x86'
-    ],
-    'ios_gyp_debug_trybot_x64': [
-      'ios', 'gyp', 'ios_release_trybot', 'x64'
-    ],
 
     # Linux
     'gyp_release_bot_arm': [
-      'gyp', 'release_bot', 'arm'
+      'gyp', 'openh264_release_bot', 'arm'
     ],
     'gyp_debug_bot_x86': [
-      'gyp', 'debug_bot', 'x86'
+      'gyp', 'openh264_debug_bot', 'x86'
     ],
     'gyp_release_bot_x86': [
-      'gyp', 'release_bot', 'x86'
+      'gyp', 'openh264_release_bot', 'x86'
     ],
     'gyp_debug_bot_x64': [
-      'gyp', 'debug_bot', 'x64'
+      'gyp', 'openh264_debug_bot', 'x64'
     ],
     'gyp_release_bot_x64': [
-      'gyp', 'release_bot', 'x64'
+      'gyp', 'openh264_release_bot', 'x64'
     ],
     'gyp_asan_lsan_clang_release_bot_x64': [
-      'gyp', 'asan', 'lsan', 'clang', 'release_bot', 'x64'
+      'gyp', 'asan', 'lsan', 'clang', 'openh264_release_bot', 'x64'
     ],
     'gyp_memcheck_release_bot_x64': [
-      'gyp', 'memcheck', 'release_bot', 'x64'
+      'gyp', 'memcheck', 'openh264_release_bot', 'x64'
     ],
     'gyp_msan_clang_release_bot_x64': [
-      'gyp', 'msan', 'clang', 'release_bot', 'x64'
+      'gyp', 'msan', 'clang', 'openh264_release_bot', 'x64'
     ],
     'gyp_tsan_clang_release_bot_x64': [
-      'gyp', 'tsan', 'clang', 'release_bot', 'x64'
+      'gyp', 'tsan', 'clang', 'openh264_release_bot', 'x64'
     ],
     'gyp_ubsan_clang_release_bot_x64': [
-      'gyp', 'ubsan', 'clang', 'release_bot', 'x64'
+      'gyp', 'ubsan', 'clang', 'openh264_release_bot', 'x64'
     ],
     'gyp_ubsan_vptr_clang_release_bot_x64': [
-      'gyp', 'ubsan_vptr', 'clang', 'release_bot', 'x64'
+      'gyp', 'ubsan_vptr', 'clang', 'openh264_release_bot', 'x64'
     ],
-    'gn_openh264_debug_bot_x64': [
-      'gn', 'openh264', 'debug_bot', 'x64'
+    'gn_debug_bot_x64': [
+      'gn', 'openh264_debug_bot', 'x64'
     ],
-    'gn_openh264_release_bot_x64': [
-      'gn', 'openh264', 'release_bot', 'x64'
+    'gn_release_bot_x64': [
+      'gn', 'openh264_release_bot', 'x64'
     ],
-    # Linux trybot
-    'gyp_release_trybot_arm': [
-      'gyp', 'release_trybot', 'arm'
-    ],
-    'gyp_debug_trybot_x64': [
-      'gyp', 'debug_trybot', 'x64'
-    ],
-    'gyp_release_trybot_x64': [
-      'gyp', 'release_trybot', 'x64'
-    ],
-    'gyp_asan_lsan_clang_release_trybot_x64': [
-      'gyp', 'asan', 'lsan', 'clang', 'release_trybot', 'x64'
-    ],
-    'gyp_memcheck_release_trybot_x64': [
-      'gyp', 'memcheck', 'release_trybot', 'x64'
-    ],
-    'gyp_msan_clang_release_trybot_x64': [
-      'gyp', 'msan', 'clang', 'release_trybot', 'x64'
-    ],
-    'gyp_tsan_clang_release_trybot_x64': [
-      'gyp', 'tsan', 'clang', 'release_trybot', 'x64'
-    ],
-    'gyp_ubsan_clang_release_trybot_x64': [
-      'gyp', 'ubsan', 'clang', 'release_trybot', 'x64'
-    ],
-    'gyp_ubsan_vptr_clang_release_trybot_x64': [
-      'gyp', 'ubsan_vptr', 'clang', 'release_trybot', 'x64'
-    ],
-    'gn_openh264_debug_trybot_x64': [
-      'gn', 'openh264', 'debug_trybot', 'x64'
-    ],
-    'gn_openh264_release_trybot_x64': [
-      'gn', 'openh264', 'release_trybot', 'x64'
-    ],
-    'swarming_gyp_debug_trybot_x64': [
-      'swarming', 'gyp', 'debug', 'debug_trybot', 'x64'
+    'swarming_gyp_debug_bot_x64': [
+      'swarming', 'gyp', 'openh264_debug_bot', 'x64'
     ],
 
     # Android
-    'android_gyp_release_bot_arm': [
-      'android', 'gyp', 'release_bot', 'arm'
-    ],
     'android_gyp_debug_bot_arm': [
       'android', 'gyp', 'debug_bot', 'arm'
     ],
-    'android_gyp_release_bot_x86': [
-      'android', 'gyp', 'release_bot', 'x86'
+    'android_gyp_release_bot_arm': [
+      'android', 'gyp', 'release_bot', 'arm'
     ],
     'android_gyp_debug_bot_x86': [
       'android', 'gyp', 'debug_bot', 'x86'
     ],
-    'android_gyp_clang_debug_bot_mipsel': [
-      'android', 'gyp', 'clang', 'debug_bot', 'mipsel'
+    'android_gyp_release_bot_x86': [
+      'android', 'gyp', 'release_bot', 'x86'
     ],
     'android_gyp_clang_debug_bot_arm': [
       'android', 'gyp', 'clang', 'debug_bot', 'arm'
     ],
-    'android_gyp_release_bot_arm64': [
-      'android', 'gyp', 'release_bot', 'arm64'
+    'android_gyp_clang_debug_bot_mipsel': [
+      'android', 'gyp', 'clang', 'debug_bot', 'mipsel'
     ],
     'android_gyp_debug_bot_arm64': [
       'android', 'gyp', 'debug_bot', 'arm64'
     ],
+    'android_gyp_release_bot_arm64': [
+      'android', 'gyp', 'release_bot', 'arm64'
+    ],
     'android_gyp_debug_bot_x64': [
       'android', 'gyp', 'debug_bot', 'x64'
-    ],
-    'android_gn_release_bot_arm': [
-      'android', 'gn', 'release_bot', 'arm'
     ],
     'android_gn_debug_bot_arm': [
       'android', 'gn', 'debug_bot', 'arm'
     ],
-    # Android trybots
-    'android_gyp_debug_trybot_arm': [
-      'android', 'gyp', 'debug_trybot', 'arm',
-    ],
-    'android_gyp_release_trybot_arm': [
-      'android', 'gyp', 'release_trybot', 'arm',
-    ],
-    'android_gyp_debug_trybot_arm64': [
-      'android', 'gyp', 'debug_trybot', 'arm64',
-    ],
-    'android_gyp_release_trybot_arm64': [
-      'android', 'gyp', 'release_trybot', 'arm64',
-    ],
-    'android_gyp_debug_trybot_x86': [
-      'android', 'gyp', 'debug_trybot', 'x86',
-    ],
-    'android_gyp_release_trybot_x86': [
-      'android', 'gyp', 'release_trybot', 'x86',
-    ],
-    'android_gyp_debug_trybot_x64': [
-      'android', 'gyp', 'debug_trybot', 'x64',
-    ],
-    'android_gyp_clang_debug_trybot_mipsel': [
-      'android', 'gyp', 'clang', 'debug_trybot', 'mipsel',
-    ],
-    'android_gyp_clang_debug_trybot_arm': [
-      'android', 'gyp', 'clang', 'debug_trybot', 'arm',
-    ],
-    'android_gn_debug_trybot_arm': [
-      'android', 'gn', 'debug_trybot', 'arm',
-    ],
-    'android_gn_release_trybot_arm': [
-      'android', 'gn', 'release_trybot', 'arm',
+    'android_gn_release_bot_arm': [
+      'android', 'gn', 'release_bot', 'arm'
     ],
 
     # This is used for tracking purposes; any bot that uses this config
@@ -362,10 +269,6 @@
       'mixins': ['debug', 'shared', 'goma'],
     },
 
-    'debug_trybot': {
-      'mixins': ['debug_bot', 'dcheck_always_on'],
-    },
-
     'device': {
       'gn_args': 'ios_enable_code_signing=false',
       'gyp_defines': 'chromium_ios_signing=0',
@@ -400,16 +303,8 @@
       'mixins': ['debug', 'shared']
     },
 
-    'ios_debug_trybot': {
-      'mixins': ['ios_debug_bot', 'dcheck_always_on']
-    },
-
     'ios_release_bot': {
       'mixins': ['release', 'static']
-    },
-
-    'ios_release_trybot': {
-      'mixins': ['ios_release_bot', 'dcheck_always_on']
     },
 
     'lsan': {
@@ -433,14 +328,17 @@
                       'use_prebuilt_instrumented_libraries=1'),
     },
 
-    'tsan': {
-      'gn_args': 'is_tsan=true',
-      'gyp_defines': 'tsan=1',
-    },
-
     'openh264': {
       'gn_args': 'ffmpeg_branding="Chrome" rtc_use_h264=true',
       'gyp_defines': 'ffmpeg_branding=Chrome rtc_use_h264=1',
+    },
+
+    'openh264_debug_bot': {
+      'mixins': ['openh264', 'debug_bot'],
+    },
+
+    'openh264_release_bot': {
+      'mixins': ['openh264', 'release_bot'],
     },
 
     'release': {
@@ -448,11 +346,7 @@
     },
 
     'release_bot': {
-      'mixins': ['release', 'static', 'goma'],
-    },
-
-    'release_trybot': {
-      'mixins': ['release_bot', 'dcheck_always_on'],
+      'mixins': ['release', 'static', 'dcheck_always_on', 'goma'],
     },
 
     'shared': {
@@ -468,6 +362,11 @@
     'swarming': {
       'gn_args': '',
       'gyp_defines': 'test_isolation_mode=prepare',
+    },
+
+    'tsan': {
+      'gn_args': 'is_tsan=true',
+      'gyp_defines': 'tsan=1',
     },
 
     'ubsan': {
