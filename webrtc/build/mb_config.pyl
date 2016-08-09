@@ -30,7 +30,7 @@
       'iOS64 Release (GN)': 'ios_gn_release_bot_arm64_device',
 
       # Linux
-      'Linux32 ARM': 'gyp_release_bot_arm',
+      'Linux32 ARM': 'gyp_crosscompile_release_bot_arm',
       'Linux32 Debug': 'gyp_debug_bot_x86',
       'Linux32 Release': 'gyp_release_bot_x86',
       'Linux64 Debug': 'gyp_debug_bot_x64',
@@ -81,7 +81,7 @@
       'linux_rel': 'gyp_release_bot_x64',
       'linux_gn_dbg': 'gn_debug_bot_x64',
       'linux_gn_rel': 'gn_release_bot_x64',
-      'linux_arm': 'gyp_release_bot_arm',
+      'linux_arm': 'gyp_crosscompile_release_bot_arm',
       'linux_asan': 'gyp_asan_lsan_clang_release_bot_x64',
       'linux_memcheck': 'gyp_memcheck_release_bot_x64',
       'linux_msan': 'gyp_msan_clang_release_bot_x64',
@@ -143,8 +143,8 @@
     ],
 
     # Linux
-    'gyp_release_bot_arm': [
-      'gyp', 'openh264_release_bot', 'arm'
+    'gyp_crosscompile_release_bot_arm': [
+      'gyp', 'crosscompile', 'openh264_release_bot', 'arm'
     ],
     'gyp_debug_bot_x86': [
       'gyp', 'openh264_debug_bot', 'x86'
@@ -254,6 +254,14 @@
     'clang': {
       'gn_args': 'is_clang=true',
       'gyp_defines': 'clang=1',
+    },
+
+    'crosscompile': {
+      # This mixin is only needed on GYP bots that are doing cross-compiles
+      # but are *not* targetting Android or iOS (where
+      # webrtc/build/gyp_webrtc.py will set the crosscompile variable
+      # automatically). It is not need in GN at all.
+      'gyp_crosscompile': True,
     },
 
     'dcheck_always_on': {
