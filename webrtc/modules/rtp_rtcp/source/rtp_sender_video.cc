@@ -30,7 +30,7 @@ namespace webrtc {
 
 enum { REDForFECHeaderLength = 1 };
 
-RTPSenderVideo::RTPSenderVideo(Clock* clock, RTPSenderInterface* rtp_sender)
+RTPSenderVideo::RTPSenderVideo(Clock* clock, RTPSender* rtp_sender)
     : rtp_sender_(rtp_sender),
       clock_(clock),
       // Generic FEC

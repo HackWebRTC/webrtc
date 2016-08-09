@@ -31,7 +31,7 @@ namespace webrtc {
 
 class RTPSenderVideo {
  public:
-  RTPSenderVideo(Clock* clock, RTPSenderInterface* rtp_sender);
+  RTPSenderVideo(Clock* clock, RTPSender* rtpSender);
   virtual ~RTPSenderVideo();
 
   virtual RtpVideoCodecTypes VideoCodecType() const;
@@ -92,7 +92,7 @@ class RTPSenderVideo {
                             StorageType media_packet_storage,
                             bool protect);
 
-  RTPSenderInterface* const rtp_sender_;
+  RTPSender* const rtp_sender_;
   Clock* const clock_;
 
   // Should never be held when calling out of this class.

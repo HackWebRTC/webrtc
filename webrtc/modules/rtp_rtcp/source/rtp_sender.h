@@ -40,59 +40,7 @@ class RtpPacketToSend;
 class RTPSenderAudio;
 class RTPSenderVideo;
 
-class RTPSenderInterface {
- public:
-  RTPSenderInterface() {}
-  virtual ~RTPSenderInterface() {}
-
-  virtual uint32_t SSRC() const = 0;
-  virtual uint32_t Timestamp() const = 0;
-
-  // Deprecated version of BuildRtpHeader(). |timestamp_provided| and
-  // |inc_sequence_number| are ignored.
-  // TODO(sergeyu): Remove this method.
-  virtual int32_t BuildRTPheader(uint8_t* data_buffer,
-                                 int8_t payload_type,
-                                 bool marker_bit,
-                                 uint32_t capture_timestamp,
-                                 int64_t capture_time_ms,
-                                 bool timestamp_provided = true,
-                                 bool inc_sequence_number = true) = 0;
-
-  virtual int32_t BuildRtpHeader(uint8_t* data_buffer,
-                                 int8_t payload_type,
-                                 bool marker_bit,
-                                 uint32_t capture_timestamp,
-                                 int64_t capture_time_ms) = 0;
-
-  // This returns the expected header length taking into consideration
-  // the optional RTP header extensions that may not be currently active.
-  virtual size_t RtpHeaderLength() const = 0;
-  // Returns the next sequence number to use for a packet and allocates
-  // 'packets_to_send' number of sequence numbers. It's important all allocated
-  // sequence numbers are used in sequence to avoid perceived packet loss.
-  virtual uint16_t AllocateSequenceNumber(uint16_t packets_to_send) = 0;
-  virtual uint16_t SequenceNumber() const = 0;
-  virtual size_t MaxPayloadLength() const = 0;
-  virtual size_t MaxDataPayloadLength() const = 0;
-  virtual uint16_t ActualSendBitrateKbit() const = 0;
-
-  virtual bool SendToNetwork(uint8_t* data_buffer,
-                             size_t payload_length,
-                             size_t rtp_header_length,
-                             int64_t capture_time_ms,
-                             StorageType storage,
-                             RtpPacketSender::Priority priority) = 0;
-
-  virtual bool UpdateVideoRotation(uint8_t* rtp_packet,
-                                   size_t rtp_packet_length,
-                                   const RTPHeader& rtp_header,
-                                   VideoRotation rotation) const = 0;
-  virtual bool IsRtpHeaderExtensionRegistered(RTPExtensionType type) = 0;
-  virtual bool ActivateCVORtpHeaderExtension() = 0;
-};
-
-class RTPSender : public RTPSenderInterface {
+class RTPSender {
  public:
   RTPSender(bool audio,
             Clock* clock,
@@ -107,18 +55,18 @@ class RTPSender : public RTPSenderInterface {
             SendPacketObserver* send_packet_observer,
             RateLimiter* nack_rate_limiter);
 
-  virtual ~RTPSender();
+  ~RTPSender();
 
   void ProcessBitrate();
 
-  uint16_t ActualSendBitrateKbit() const override;
+  uint16_t ActualSendBitrateKbit() const;
 
   uint32_t VideoBitrateSent() const;
   uint32_t FecOverheadRate() const;
   uint32_t NackOverheadRate() const;
 
   // Includes size of RTP and FEC headers.
-  size_t MaxDataPayloadLength() const override;
+  size_t MaxDataPayloadLength() const;
 
   int32_t RegisterPayload(const char* payload_name,
                           const int8_t payload_type,
@@ -148,7 +96,7 @@ class RTPSender : public RTPSenderInterface {
   uint32_t GenerateNewSSRC();
   void SetSSRC(uint32_t ssrc);
 
-  uint16_t SequenceNumber() const override;
+  uint16_t SequenceNumber() const;
   void SetSequenceNumber(uint16_t seq);
 
   void SetCsrcs(const std::vector<uint32_t>& csrcs);
@@ -172,7 +120,7 @@ class RTPSender : public RTPSenderInterface {
   int32_t SetTransportSequenceNumber(uint16_t sequence_number);
 
   int32_t RegisterRtpHeaderExtension(RTPExtensionType type, uint8_t id);
-  bool IsRtpHeaderExtensionRegistered(RTPExtensionType type) override;
+  bool IsRtpHeaderExtensionRegistered(RTPExtensionType type);
   int32_t DeregisterRtpHeaderExtension(RTPExtensionType type);
 
   size_t RtpHeaderExtensionLength() const;
@@ -224,7 +172,7 @@ class RTPSender : public RTPSenderInterface {
   bool UpdateVideoRotation(uint8_t* rtp_packet,
                            size_t rtp_packet_length,
                            const RTPHeader& rtp_header,
-                           VideoRotation rotation) const override;
+                           VideoRotation rotation) const;
 
   bool TimeToSendPacket(uint16_t sequence_number,
                         int64_t capture_time_ms,
@@ -263,20 +211,20 @@ class RTPSender : public RTPSenderInterface {
                          uint32_t capture_timestamp,
                          int64_t capture_time_ms,
                          bool timestamp_provided = true,
-                         bool inc_sequence_number = true) override;
+                         bool inc_sequence_number = true);
   int32_t BuildRtpHeader(uint8_t* data_buffer,
                          int8_t payload_type,
                          bool marker_bit,
                          uint32_t capture_timestamp,
-                         int64_t capture_time_ms) override;
+                         int64_t capture_time_ms);
 
-  size_t RtpHeaderLength() const override;
-  uint16_t AllocateSequenceNumber(uint16_t packets_to_send) override;
-  size_t MaxPayloadLength() const override;
+  size_t RtpHeaderLength() const;
+  uint16_t AllocateSequenceNumber(uint16_t packets_to_send);
+  size_t MaxPayloadLength() const;
 
   // Current timestamp.
-  uint32_t Timestamp() const override;
-  uint32_t SSRC() const override;
+  uint32_t Timestamp() const;
+  uint32_t SSRC() const;
 
   // Deprecated. Create RtpPacketToSend instead and use next function.
   bool SendToNetwork(uint8_t* data_buffer,
@@ -284,7 +232,7 @@ class RTPSender : public RTPSenderInterface {
                      size_t rtp_header_length,
                      int64_t capture_time_ms,
                      StorageType storage,
-                     RtpPacketSender::Priority priority) override;
+                     RtpPacketSender::Priority priority);
   bool SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
                      StorageType storage,
                      RtpPacketSender::Priority priority);
@@ -344,7 +292,7 @@ class RTPSender : public RTPSenderInterface {
   RtpState GetRtpState() const;
   void SetRtxRtpState(const RtpState& rtp_state);
   RtpState GetRtxRtpState() const;
-  bool ActivateCVORtpHeaderExtension() override;
+  bool ActivateCVORtpHeaderExtension();
 
  protected:
   int32_t CheckPayloadType(int8_t payload_type, RtpVideoCodecTypes* video_type);
