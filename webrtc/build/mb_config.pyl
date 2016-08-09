@@ -19,6 +19,7 @@
   # page on the buildbots, *not* alphabetically.
   'masters': {
     'client.webrtc': {
+      # iOS
       'iOS32 Debug': 'ios_gyp_debug_bot_arm_device',
       'iOS32 Release': 'ios_gyp_release_bot_arm_device',
       'iOS64 Debug': 'ios_gyp_debug_bot_arm64_device',
@@ -27,16 +28,52 @@
       'iOS64 Debug Simulator': 'ios_gyp_debug_bot_x64',
       'iOS64 Debug (GN)': 'ios_gn_debug_bot_arm64_device',
       'iOS64 Release (GN)': 'ios_gn_release_bot_arm64_device',
+
+      # Linux
+      'Linux32 ARM': 'gyp_release_bot_arm',
+      'Linux32 Debug': 'gyp_debug_bot_x86',
+      'Linux32 Release': 'gyp_release_bot_x86',
+      'Linux64 Debug': 'gyp_debug_bot_x64',
+      'Linux64 Release': 'gyp_release_bot_x64',
+      'Linux Asan': 'gyp_asan_lsan_clang_release_bot_x64',
+      'Linux Memcheck': 'gyp_memcheck_release_bot_x64',
+      'Linux MSan': 'gyp_msan_clang_release_bot_x64',
+      'Linux Tsan v2': 'gyp_tsan_clang_release_bot_x64',
+      'Linux UBSan': 'gyp_ubsan_clang_release_bot_x64',
+      'Linux UBSan vptr': 'gyp_ubsan_vptr_clang_release_bot_x64',
+      'Linux64 Release [large tests]': 'gyp_release_bot_x64',
+      'Linux64 Debug (GN)': 'gn_openh264_debug_bot_x64',
+      'Linux64 Release (GN)': 'gn_openh264_release_bot_x64',
+      'Linux64 Release (Libfuzzer)':
+        'gn_openh264_libfuzzer_asan_clang_release_bot_x64',
     },
     'tryserver.webrtc': {
-      'ios_dbg': 'ios_gyp_debug_bot_arm_device',
-      'ios_rel': 'ios_gyp_release_bot_arm_device',
-      'ios_arm64_dbg': 'ios_gyp_debug_bot_arm64_device',
-      'ios_arm64_rel': 'ios_gyp_release_bot_arm64_device',
-      'ios32_sim_dbg': 'ios_gyp_debug_bot_x86',
-      'ios64_sim_dbg': 'ios_gyp_debug_bot_x64',
-      'ios64_gn_dbg': 'ios_gn_debug_bot_arm64_device',
-      'ios64_gn_rel': 'ios_gn_release_bot_arm64_device',
+      # iOS
+      'ios_dbg': 'ios_gyp_debug_trybot_arm_device',
+      'ios_rel': 'ios_gyp_release_trybot_arm_device',
+      'ios_arm64_dbg': 'ios_gyp_debug_trybot_arm64_device',
+      'ios_arm64_rel': 'ios_gyp_release_trybot_arm64_device',
+      'ios32_sim_dbg': 'ios_gyp_debug_trybot_x86',
+      'ios64_sim_dbg': 'ios_gyp_debug_trybot_x64',
+      'ios64_gn_dbg': 'ios_gn_debug_trybot_arm64_device',
+      'ios64_gn_rel': 'ios_gn_release_trybot_arm64_device',
+
+      # Linux
+      'linux_compile_dbg': 'gyp_debug_trybot_x64',
+      'linux_compile_rel': 'gyp_release_trybot_x64',
+      'linux_dbg': 'gyp_debug_trybot_x64',
+      'linux_rel': 'gyp_release_trybot_x64',
+      'linux_gn_dbg': 'gn_openh264_debug_trybot_x64',
+      'linux_gn_rel': 'gn_openh264_release_trybot_x64',
+      'linux_arm': 'gyp_release_trybot_arm',
+      'linux_asan': 'gyp_asan_lsan_clang_release_trybot_x64',
+      'linux_memcheck': 'gyp_memcheck_release_trybot_x64',
+      'linux_msan': 'gyp_msan_clang_release_trybot_x64',
+      'linux_tsan2': 'gyp_tsan_clang_release_trybot_x64',
+      'linux_ubsan': 'gyp_ubsan_clang_release_trybot_x64',
+      'linux_ubsan_clang_vptr': 'gyp_ubsan_vptr_clang_release_trybot_x64',
+      'linux_baremetal': 'gyp_release_trybot_x64',
+      'linux_swarming': 'swarming_gyp_debug_trybot_x64',
     },
   },
 
@@ -46,30 +83,137 @@
   # is not necessarily so (i.e., we might have mac, win, and linux
   # bots all using the 'gn_release_bot' config).
   'configs': {
+    # iOS
     'ios_gn_debug_bot_arm64_device': [
-      'ios', 'gn', 'debug_bot', 'arm64', 'device'
+      'ios', 'gn', 'ios_debug_bot', 'arm64', 'device'
     ],
     'ios_gn_release_bot_arm64_device': [
-      'ios', 'gn', 'release_bot', 'arm64', 'device'
+      'ios', 'gn', 'ios_release_bot', 'arm64', 'device'
     ],
     'ios_gyp_debug_bot_arm_device': [
-      'ios', 'gyp', 'debug_bot', 'arm', 'device'
+      'ios', 'gyp', 'ios_debug_bot', 'arm', 'device'
     ],
     'ios_gyp_release_bot_arm_device': [
-      'ios', 'gyp', 'release_bot', 'arm', 'device'
+      'ios', 'gyp', 'ios_release_bot', 'arm', 'device'
     ],
     'ios_gyp_debug_bot_arm64_device': [
-      'ios', 'gyp', 'debug_bot', 'arm64', 'device'
+      'ios', 'gyp', 'ios_debug_bot', 'arm64', 'device'
     ],
     'ios_gyp_release_bot_arm64_device': [
-      'ios', 'gyp', 'release_bot', 'arm64', 'device'
+      'ios', 'gyp', 'ios_release_bot', 'arm64', 'device'
     ],
     'ios_gyp_debug_bot_x86': [
-      'ios', 'gyp', 'debug_bot', 'x86'
+      'ios', 'gyp', 'ios_debug_bot', 'x86'
     ],
     'ios_gyp_debug_bot_x64': [
-      'ios', 'gyp', 'release_bot', 'x64'
+      'ios', 'gyp', 'ios_release_bot', 'x64'
     ],
+    # iOS trybots
+    'ios_gn_debug_trybot_arm64_device': [
+      'ios', 'gn', 'ios_debug_trybot', 'arm64', 'device'
+    ],
+    'ios_gn_release_trybot_arm64_device': [
+      'ios', 'gn', 'ios_release_trybot', 'arm64', 'device'
+    ],
+    'ios_gyp_debug_trybot_arm_device': [
+      'ios', 'gyp', 'ios_debug_trybot', 'arm', 'device'
+    ],
+    'ios_gyp_release_trybot_arm_device': [
+      'ios', 'gyp', 'ios_release_trybot', 'arm', 'device'
+    ],
+    'ios_gyp_debug_trybot_arm64_device': [
+      'ios', 'gyp', 'ios_debug_trybot', 'arm64', 'device'
+    ],
+    'ios_gyp_release_trybot_arm64_device': [
+      'ios', 'gyp', 'ios_release_trybot', 'arm64', 'device'
+    ],
+    'ios_gyp_debug_trybot_x86': [
+      'ios', 'gyp', 'ios_debug_trybot', 'x86'
+    ],
+    'ios_gyp_debug_trybot_x64': [
+      'ios', 'gyp', 'ios_release_trybot', 'x64'
+    ],
+
+    # Linux
+    'gyp_release_bot_arm': [
+      'gyp', 'release_bot', 'arm'
+    ],
+    'gyp_debug_bot_x86': [
+      'gyp', 'debug_bot', 'x86'
+    ],
+    'gyp_release_bot_x86': [
+      'gyp', 'release_bot', 'x86'
+    ],
+    'gyp_debug_bot_x64': [
+      'gyp', 'debug_bot', 'x64'
+    ],
+    'gyp_release_bot_x64': [
+      'gyp', 'release_bot', 'x64'
+    ],
+    'gyp_asan_lsan_clang_release_bot_x64': [
+      'gyp', 'asan', 'lsan', 'clang', 'release_bot', 'x64'
+    ],
+    'gyp_memcheck_release_bot_x64': [
+      'gyp', 'memcheck', 'release_bot', 'x64'
+    ],
+    'gyp_msan_clang_release_bot_x64': [
+      'gyp', 'msan', 'clang', 'release_bot', 'x64'
+    ],
+    'gyp_tsan_clang_release_bot_x64': [
+      'gyp', 'tsan', 'clang', 'release_bot', 'x64'
+    ],
+    'gyp_ubsan_clang_release_bot_x64': [
+      'gyp', 'ubsan', 'clang', 'release_bot', 'x64'
+    ],
+    'gyp_ubsan_vptr_clang_release_bot_x64': [
+      'gyp', 'ubsan_vptr', 'clang', 'release_bot', 'x64'
+    ],
+    'gn_openh264_debug_bot_x64': [
+      'gn', 'openh264', 'debug_bot', 'x64'
+    ],
+    'gn_openh264_release_bot_x64': [
+      'gn', 'openh264', 'release_bot', 'x64'
+    ],
+    'gn_openh264_libfuzzer_asan_clang_release_bot_x64': [
+      'gn', 'openh264', 'libfuzzer', 'asan', 'clang', 'release_bot', 'x64'
+    ],
+    # Linux trybot
+    'gyp_release_trybot_arm': [
+      'gyp', 'release_trybot', 'arm'
+    ],
+    'gyp_debug_trybot_x64': [
+      'gyp', 'debug_trybot', 'x64'
+    ],
+    'gyp_release_trybot_x64': [
+      'gyp', 'release_trybot', 'x64'
+    ],
+    'gyp_asan_lsan_clang_release_trybot_x64': [
+      'gyp', 'asan', 'lsan', 'clang', 'release_trybot', 'x64'
+    ],
+    'gyp_memcheck_release_trybot_x64': [
+      'gyp', 'memcheck', 'release_trybot', 'x64'
+    ],
+    'gyp_msan_clang_release_trybot_x64': [
+      'gyp', 'msan', 'clang', 'release_trybot', 'x64'
+    ],
+    'gyp_tsan_clang_release_trybot_x64': [
+      'gyp', 'tsan', 'clang', 'release_trybot', 'x64'
+    ],
+    'gyp_ubsan_clang_release_trybot_x64': [
+      'gyp', 'ubsan', 'clang', 'release_trybot', 'x64'
+    ],
+    'gyp_ubsan_vptr_clang_release_trybot_x64': [
+      'gyp', 'ubsan_vptr', 'clang', 'release_trybot', 'x64'
+    ],
+    'gn_openh264_debug_trybot_x64': [
+      'gn', 'openh264', 'debug_trybot', 'x64'
+    ],
+    'gn_openh264_release_trybot_x64': [
+      'gn', 'openh264', 'release_trybot', 'x64'
+    ],
+    'swarming_gyp_debug_trybot_x64': [
+      'swarming', 'gyp', 'debug', 'debug_trybot', 'x64'
+    ]
   },
 
   # This is a dict mapping a given 'mixin' name to a dict of settings that
@@ -90,12 +234,31 @@
       'gyp_defines': 'target_arch=arm64',
     },
 
+    'asan': {
+      'gn_args': 'is_asan=true',
+      'gyp_defines': 'asan=1',
+    },
+
+    'clang': {
+      'gn_args': 'is_clang=true',
+      'gyp_defines': 'clang=1',
+    },
+
+    'dcheck_always_on': {
+      'gn_args': 'dcheck_always_on=true',
+      'gyp_defines': 'dcheck_always_on=1',
+    },
+
     'debug': {
       'gn_args': 'is_debug=true',
     },
 
     'debug_bot': {
-      'mixins': ['debug', 'shared'],
+      'mixins': ['debug', 'shared', 'goma'],
+    },
+
+    'debug_trybot': {
+      'mixins': ['debug_bot', 'dcheck_always_on'],
     },
 
     'device': {
@@ -105,14 +268,69 @@
 
     'gn': {'type': 'gn'},
 
+    'goma': {
+      # The MB code will properly escape goma_dir if necessary in the GYP
+      # code path; the GN code path needs no escaping.
+      'gn_args': 'use_goma=true',
+      'gyp_defines': 'use_goma=1',
+    },
+
     'gyp': {'type': 'gyp'},
+
+    'ios_debug_bot': {
+      'mixins': ['debug', 'shared']
+    },
+
+    'ios_debug_trybot': {
+      'mixins': ['ios_debug_bot', 'dcheck_always_on']
+    },
+
+    'ios_release_bot': {
+      'mixins': ['release', 'static']
+    },
+
+    'ios_release_trybot': {
+      'mixins': ['ios_release_bot', 'dcheck_always_on']
+    },
+
+    'libfuzzer': { 'gn_args': 'use_libfuzzer=true' },
+
+    'lsan': {
+      'gn_args': 'is_lsan=true',
+      'gyp_defines': 'lsan=1',
+    },
+
+    'memcheck': {
+      'gyp_defines': 'build_for_tool=memcheck',
+    },
+
+    'msan': {
+      'gn_args': ('is_msan=true msan_track_origins=2 '
+                  'use_prebuilt_instrumented_libraries=true'),
+      'gyp_defines': ('msan=1 msan_track_origins=2 '
+                      'use_prebuilt_instrumented_libraries=1'),
+    },
+
+    'tsan': {
+      'gn_args': 'is_tsan=true',
+      'gyp_defines': 'tsan=1',
+    },
+
+    'openh264': {
+      'gn_args': 'ffmpeg_branding="Chrome" rtc_use_h264=true',
+      'gyp_defines': 'ffmpeg_branding=Chrome rtc_use_h264=1',
+    },
 
     'release': {
       'gn_args': 'is_debug=false',
     },
 
     'release_bot': {
-      'mixins': ['release', 'static'],
+      'mixins': ['release', 'static', 'goma'],
+    },
+
+    'release_trybot': {
+      'mixins': ['release_bot', 'dcheck_always_on'],
     },
 
     'shared': {
@@ -123,6 +341,21 @@
     'static': {
       'gn_args': 'is_component_build=false',
       'gyp_defines': 'component=static_library',
+    },
+
+    'swarming': {
+      'gn_args': '',
+      'gyp_defines': 'test_isolation_mode=prepare',
+    },
+
+    'ubsan': {
+      'gn_args': 'is_ubsan=true',
+      'gyp_defines': 'ubsan=1',
+    },
+
+    'ubsan_vptr': {
+      'gn_args': 'is_ubsan_vptr=true',
+      'gyp_defines': 'ubsan_vptr=1',
     },
 
     'x64': {
