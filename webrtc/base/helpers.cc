@@ -207,10 +207,15 @@ std::string CreateRandomString(size_t len) {
   return str;
 }
 
-bool CreateRandomString(size_t len,
+static bool CreateRandomString(size_t len,
                         const char* table, int table_size,
                         std::string* str) {
   str->clear();
+  // Avoid biased modulo division below.
+  if (256 % table_size) {
+    LOG(LS_ERROR) << "Table size must divide 256 evenly!";
+    return false;
+  }
   std::unique_ptr<uint8_t[]> bytes(new uint8_t[len]);
   if (!Rng().Generate(bytes.get(), len)) {
     LOG(LS_ERROR) << "Failed to generate random string!";

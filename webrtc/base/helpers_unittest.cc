@@ -55,6 +55,17 @@ TEST_F(RandomTest, TestCreateRandomData) {
   EXPECT_NE(0, memcmp(random1.data(), random2.data(), kRandomDataLength));
 }
 
+TEST_F(RandomTest, TestCreateRandomStringEvenlyDivideTable) {
+  static std::string kUnbiasedTable("01234567");
+  std::string random;
+  EXPECT_TRUE(CreateRandomString(256, kUnbiasedTable, &random));
+  EXPECT_EQ(256U, random.size());
+
+  static std::string kBiasedTable("0123456789");
+  EXPECT_FALSE(CreateRandomString(256, kBiasedTable, &random));
+  EXPECT_EQ(0U, random.size());
+}
+
 TEST_F(RandomTest, TestCreateRandomUuid) {
   std::string random = CreateRandomUuid();
   EXPECT_EQ(36U, random.size());
@@ -90,8 +101,8 @@ TEST_F(RandomTest, TestCreateRandomForTest) {
   std::string str;
   EXPECT_TRUE(CreateRandomString(16, "a", &str));
   EXPECT_EQ("aaaaaaaaaaaaaaaa", str);
-  EXPECT_TRUE(CreateRandomString(16, "abc", &str));
-  EXPECT_EQ("acbccaaaabbaacbb", str);
+  EXPECT_TRUE(CreateRandomString(16, "abcd", &str));
+  EXPECT_EQ("dbaaabdaccbcabbd", str);
 
   // Turn off test mode for other tests.
   SetRandomTestMode(false);
