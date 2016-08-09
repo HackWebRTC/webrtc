@@ -31,15 +31,6 @@ using PacketList = ForwardErrorCorrection::PacketList;
 using ReceivedPacketList = ForwardErrorCorrection::ReceivedPacketList;
 using RecoveredPacketList = ForwardErrorCorrection::RecoveredPacketList;
 
-template <typename T> void ClearList(std::list<T*>* my_list) {
-  T* packet = NULL;
-  while (!my_list->empty()) {
-    packet = my_list->front();
-    delete packet;
-    my_list->pop_front();
-  }
-}
-
 class RtpFecTest : public ::testing::Test {
  protected:
   RtpFecTest()
@@ -54,7 +45,7 @@ class RtpFecTest : public ::testing::Test {
   uint16_t fec_seq_num_;
 
   PacketList media_packet_list_;
-  PacketList fec_packet_list_;
+  std::list<ForwardErrorCorrection::Packet*> fec_packet_list_;
   ReceivedPacketList received_packet_list_;
   RecoveredPacketList recovered_packet_list_;
 
@@ -72,6 +63,9 @@ class RtpFecTest : public ::testing::Test {
   int ConstructMediaPacketsSeqNum(int num_media_packets, int start_seq_num);
   int ConstructMediaPackets(int num_media_packets);
 
+  // Deep copies |src| to |dst|, but only keeps every Nth packet.
+  void DeepCopyEveryNthPacket(const PacketList& src, int n, PacketList* dst);
+
   // Construct the received packet list: a subset of the media and FEC packets.
   void NetworkReceivedPackets();
 
@@ -79,14 +73,11 @@ class RtpFecTest : public ::testing::Test {
   // |loss_mask|.
   // The |packet_list| may be a media packet list (is_fec = false), or a
   // FEC packet list (is_fec = true).
-  void ReceivedPackets(const PacketList& packet_list, int* loss_mask,
-                       bool is_fec);
+  template <typename T>
+  void ReceivedPackets(const T& packet_list, int* loss_mask, bool is_fec);
 
   // Check for complete recovery after FEC decoding.
   bool IsRecoveryComplete();
-
-  // Delete the received packets.
-  void FreeRecoveredPacketList();
 
   // Delete the media and FEC packets.
   void TearDown();
@@ -145,7 +136,7 @@ TEST_F(RtpFecTest, FecRecoveryWithLoss) {
 
   // One packet lost, one FEC packet, expect complete recovery.
   EXPECT_TRUE(IsRecoveryComplete());
-  FreeRecoveredPacketList();
+  recovered_packet_list_.clear();
 
   // 2 media packets lost.
   memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
@@ -188,7 +179,7 @@ TEST_F(RtpFecTest, FecRecoveryWithSeqNumGapTwoFrames) {
   ReceivedPackets(fec_packet_list_, fec_loss_mask_, true);
 
   // Construct media packets for second frame, with sequence number wrap.
-  ClearList(&media_packet_list_);
+  media_packet_list_.clear();
   fec_seq_num_ = ConstructMediaPacketsSeqNum(3, 65535);
 
   // Expect 3 media packets for this frame.
@@ -208,7 +199,6 @@ TEST_F(RtpFecTest, FecRecoveryWithSeqNumGapTwoFrames) {
   // recovered packets is 2, and not equal to number of media packets (=3).
   EXPECT_EQ(2, static_cast<int>(recovered_packet_list_.size()));
   EXPECT_TRUE(recovered_packet_list_.size() != media_packet_list_.size());
-  FreeRecoveredPacketList();
 }
 
 // Verify we can still recovery frame if sequence number wrap occurs within
@@ -245,7 +235,6 @@ TEST_F(RtpFecTest, FecRecoveryWithSeqNumGapOneFrameRecovery) {
   // Wrap-around won't remove FEC packet, as it follows the wrap.
   EXPECT_EQ(3, static_cast<int>(recovered_packet_list_.size()));
   EXPECT_TRUE(IsRecoveryComplete());
-  FreeRecoveredPacketList();
 }
 
 // Sequence number wrap occurs within the FEC packets for the frame.
@@ -290,7 +279,6 @@ TEST_F(RtpFecTest, FecRecoveryWithSeqNumGapOneFrameNoRecovery) {
   EXPECT_EQ(2, static_cast<int>(recovered_packet_list_.size()));
   EXPECT_TRUE(recovered_packet_list_.size() != media_packet_list_.size());
   EXPECT_FALSE(IsRecoveryComplete());
-  FreeRecoveredPacketList();
 }
 
 // Verify we can still recovery frame if FEC is received before media packets.
@@ -326,7 +314,6 @@ TEST_F(RtpFecTest, FecRecoveryWithFecOutOfOrder) {
   // Expect 3 media packets in recovered list, and complete recovery.
   EXPECT_EQ(3, static_cast<int>(recovered_packet_list_.size()));
   EXPECT_TRUE(IsRecoveryComplete());
-  FreeRecoveredPacketList();
 }
 
 // Test 50% protection with random mask type: Two cases are considered:
@@ -371,7 +358,7 @@ TEST_F(RtpFecTest, FecRecoveryWithLoss50percRandomMask) {
 
   // With media packet#1 and FEC packets #1, #2, #3, expect complete recovery.
   EXPECT_TRUE(IsRecoveryComplete());
-  FreeRecoveredPacketList();
+  recovered_packet_list_.clear();
 
   // 4 consecutive packets lost: media packets 0, 1, 2, 3.
   memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
@@ -431,7 +418,7 @@ TEST_F(RtpFecTest, FecRecoveryWithLoss50percBurstyMask) {
 
   // Expect complete recovery for consecutive packet loss <= 50%.
   EXPECT_TRUE(IsRecoveryComplete());
-  FreeRecoveredPacketList();
+  recovered_packet_list_.clear();
 
   // 4 consecutive packets lost: media packets 1,2, 3, and FEC packet 0.
   memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
@@ -447,7 +434,7 @@ TEST_F(RtpFecTest, FecRecoveryWithLoss50percBurstyMask) {
 
   // Expect complete recovery for consecutive packet loss <= 50%.
   EXPECT_TRUE(IsRecoveryComplete());
-  FreeRecoveredPacketList();
+  recovered_packet_list_.clear();
 
   // 4 packets lost (non-consecutive loss): media packets 0, 3, and FEC# 0, 3.
   memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
@@ -518,7 +505,7 @@ TEST_F(RtpFecTest, FecRecoveryWithLossUep) {
 
   // One packet lost, one FEC packet, expect complete recovery.
   EXPECT_TRUE(IsRecoveryComplete());
-  FreeRecoveredPacketList();
+  recovered_packet_list_.clear();
 
   // 2 media packets lost.
   memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
@@ -574,7 +561,7 @@ TEST_F(RtpFecTest, FecRecoveryWithLoss50percUepRandomMask) {
 
   // With media packet#3 and FEC packets #0, #1, #3, expect complete recovery.
   EXPECT_TRUE(IsRecoveryComplete());
-  FreeRecoveredPacketList();
+  recovered_packet_list_.clear();
 
   // 5 packets lost: 4 media packets and one FEC packet#2 lost.
   memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
@@ -604,11 +591,7 @@ TEST_F(RtpFecTest, FecRecoveryNonConsecutivePackets) {
   // Create a new temporary packet list for generating FEC packets.
   // This list should have every other packet removed.
   PacketList protected_media_packets;
-  int i = 0;
-  for (auto it = media_packet_list_.begin(); it != media_packet_list_.end();
-       ++it, ++i) {
-    if (i % 2 == 0) protected_media_packets.push_back(*it);
-  }
+  DeepCopyEveryNthPacket(media_packet_list_, 2, &protected_media_packets);
 
   EXPECT_EQ(0, fec_->GenerateFec(protected_media_packets, kProtectionFactor,
                                  kNumImportantPackets, kUseUnequalProtection,
@@ -628,7 +611,7 @@ TEST_F(RtpFecTest, FecRecoveryNonConsecutivePackets) {
 
   // One packet lost, one FEC packet, expect complete recovery.
   EXPECT_TRUE(IsRecoveryComplete());
-  FreeRecoveredPacketList();
+  recovered_packet_list_.clear();
 
   // Unprotected packet lost.
   memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
@@ -641,7 +624,7 @@ TEST_F(RtpFecTest, FecRecoveryNonConsecutivePackets) {
 
   // Unprotected packet lost. Recovery not possible.
   EXPECT_FALSE(IsRecoveryComplete());
-  FreeRecoveredPacketList();
+  recovered_packet_list_.clear();
 
   // 2 media packets lost.
   memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
@@ -668,11 +651,7 @@ TEST_F(RtpFecTest, FecRecoveryNonConsecutivePacketsExtension) {
   // Create a new temporary packet list for generating FEC packets.
   // This list should have every other packet removed.
   PacketList protected_media_packets;
-  int i = 0;
-  for (auto it = media_packet_list_.begin(); it != media_packet_list_.end();
-       ++it, ++i) {
-    if (i % 2 == 0) protected_media_packets.push_back(*it);
-  }
+  DeepCopyEveryNthPacket(media_packet_list_, 2, &protected_media_packets);
 
   // Zero column insertion will have to extend the size of the packet
   // mask since the number of actual packets are 21, while the number
@@ -695,7 +674,7 @@ TEST_F(RtpFecTest, FecRecoveryNonConsecutivePacketsExtension) {
 
   // One packet lost, one FEC packet, expect complete recovery.
   EXPECT_TRUE(IsRecoveryComplete());
-  FreeRecoveredPacketList();
+  recovered_packet_list_.clear();
 
   // Last unprotected packet lost.
   memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
@@ -708,7 +687,7 @@ TEST_F(RtpFecTest, FecRecoveryNonConsecutivePacketsExtension) {
 
   // Unprotected packet lost. Recovery not possible.
   EXPECT_FALSE(IsRecoveryComplete());
-  FreeRecoveredPacketList();
+  recovered_packet_list_.clear();
 
   // 6 media packets lost.
   memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
@@ -739,11 +718,7 @@ TEST_F(RtpFecTest, FecRecoveryNonConsecutivePacketsWrap) {
   // Create a new temporary packet list for generating FEC packets.
   // This list should have every other packet removed.
   PacketList protected_media_packets;
-  int i = 0;
-  for (auto it = media_packet_list_.begin(); it != media_packet_list_.end();
-       ++it, ++i) {
-    if (i % 2 == 0) protected_media_packets.push_back(*it);
-  }
+  DeepCopyEveryNthPacket(media_packet_list_, 2, &protected_media_packets);
 
   // Zero column insertion will have to extend the size of the packet
   // mask since the number of actual packets are 21, while the number
@@ -766,7 +741,7 @@ TEST_F(RtpFecTest, FecRecoveryNonConsecutivePacketsWrap) {
 
   // One packet lost, one FEC packet, expect complete recovery.
   EXPECT_TRUE(IsRecoveryComplete());
-  FreeRecoveredPacketList();
+  recovered_packet_list_.clear();
 
   // Last unprotected packet lost.
   memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
@@ -779,7 +754,7 @@ TEST_F(RtpFecTest, FecRecoveryNonConsecutivePacketsWrap) {
 
   // Unprotected packet lost. Recovery not possible.
   EXPECT_FALSE(IsRecoveryComplete());
-  FreeRecoveredPacketList();
+  recovered_packet_list_.clear();
 
   // 6 media packets lost.
   memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
@@ -802,13 +777,9 @@ TEST_F(RtpFecTest, FecRecoveryNonConsecutivePacketsWrap) {
 void RtpFecTest::TearDown() {
   fec_->ResetState(&recovered_packet_list_);
   delete fec_;
-  FreeRecoveredPacketList();
-  ClearList(&media_packet_list_);
+  recovered_packet_list_.clear();
+  media_packet_list_.clear();
   EXPECT_TRUE(media_packet_list_.empty());
-}
-
-void RtpFecTest::FreeRecoveredPacketList() {
-  ClearList(&recovered_packet_list_);
 }
 
 bool RtpFecTest::IsRecoveryComplete() {
@@ -819,8 +790,11 @@ bool RtpFecTest::IsRecoveryComplete() {
 
   // All recovered packets must be identical to the corresponding
   // original packets.
-  auto cmp = [](ForwardErrorCorrection::Packet* media_packet,
-                ForwardErrorCorrection::RecoveredPacket* recovered_packet) {
+  using PacketPtr = std::unique_ptr<ForwardErrorCorrection::Packet>;
+  using RecoveredPacketPtr =
+    std::unique_ptr<ForwardErrorCorrection::RecoveredPacket>;
+  auto cmp = [](const PacketPtr& media_packet,
+                const RecoveredPacketPtr& recovered_packet) {
     if (media_packet->length != recovered_packet->pkt->length) {
       return false;
     }
@@ -841,16 +815,17 @@ void RtpFecTest::NetworkReceivedPackets() {
   ReceivedPackets(fec_packet_list_, fec_loss_mask_, kFecPacket);
 }
 
-void RtpFecTest::ReceivedPackets(const PacketList& packet_list, int* loss_mask,
+template <typename T>
+void RtpFecTest::ReceivedPackets(const T& packet_list, int* loss_mask,
                                  bool is_fec) {
   int seq_num = fec_seq_num_;
   int packet_idx = 0;
 
-  for (const auto* packet : packet_list) {
+  for (const auto& packet : packet_list) {
     if (loss_mask[packet_idx] == 0) {
-      auto received_packet = new ForwardErrorCorrection::ReceivedPacket();
+      std::unique_ptr<ForwardErrorCorrection::ReceivedPacket> received_packet(
+          new ForwardErrorCorrection::ReceivedPacket());
       received_packet->pkt = new ForwardErrorCorrection::Packet();
-      received_packet_list_.push_back(received_packet);
       received_packet->pkt->length = packet->length;
       memcpy(received_packet->pkt->data, packet->data, packet->length);
       received_packet->is_fec = is_fec;
@@ -869,6 +844,7 @@ void RtpFecTest::ReceivedPackets(const PacketList& packet_list, int* loss_mask,
         // media packets in ConstructMediaPackets().
         received_packet->ssrc = ssrc_;
       }
+      received_packet_list_.push_back(std::move(received_packet));
     }
     packet_idx++;
     // Sequence number of FEC packets are defined as increment by 1 from
@@ -880,13 +856,12 @@ void RtpFecTest::ReceivedPackets(const PacketList& packet_list, int* loss_mask,
 int RtpFecTest::ConstructMediaPacketsSeqNum(int num_media_packets,
                                             int start_seq_num) {
   RTC_DCHECK_GT(num_media_packets, 0);
-  ForwardErrorCorrection::Packet* media_packet = NULL;
   int sequence_number = start_seq_num;
   int time_stamp = random_.Rand<int>();
 
   for (int i = 0; i < num_media_packets; ++i) {
-    media_packet = new ForwardErrorCorrection::Packet();
-    media_packet_list_.push_back(media_packet);
+    std::unique_ptr<ForwardErrorCorrection::Packet> media_packet(
+        new ForwardErrorCorrection::Packet());
     const uint32_t kMinPacketSize = kRtpHeaderSize;
     const uint32_t kMaxPacketSize = IP_PACKET_SIZE - kRtpHeaderSize -
                                     kTransportOverhead -
@@ -921,8 +896,11 @@ int RtpFecTest::ConstructMediaPacketsSeqNum(int num_media_packets,
       media_packet->data[j] = random_.Rand<uint8_t>();
     }
     sequence_number++;
+    media_packet_list_.push_back(std::move(media_packet));
   }
   // Last packet, set marker bit.
+  ForwardErrorCorrection::Packet* media_packet =
+      media_packet_list_.back().get();
   RTC_DCHECK(media_packet);
   media_packet->data[1] |= 0x80;
   return sequence_number;
@@ -930,4 +908,16 @@ int RtpFecTest::ConstructMediaPacketsSeqNum(int num_media_packets,
 
 int RtpFecTest::ConstructMediaPackets(int num_media_packets) {
   return ConstructMediaPacketsSeqNum(num_media_packets, random_.Rand<int>());
+}
+
+void RtpFecTest::DeepCopyEveryNthPacket(const PacketList& src, int n,
+                                        PacketList* dst) {
+  RTC_DCHECK_GT(n, 0);
+  int i = 0;
+  for (const auto& packet : src) {
+    if (i % n == 0) {
+      dst->emplace_back(new ForwardErrorCorrection::Packet(*packet));
+    }
+    ++i;
+  }
 }

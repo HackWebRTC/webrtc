@@ -56,24 +56,25 @@ void ReceivePackets(
       }
       random_variable = random->Rand<float>();
     }
-    ForwardErrorCorrection::ReceivedPacket* received_packet = *it;
-    to_decode_list->push_back(received_packet);
+    to_decode_list->push_back(std::move(*it));
+    received_packet_list->erase(it);
 
     // Duplicate packets.
+    ForwardErrorCorrection::ReceivedPacket* received_packet =
+        to_decode_list->back().get();
     random_variable = random->Rand<float>();
     while (random_variable < duplicate_rate) {
-      ForwardErrorCorrection::ReceivedPacket* duplicate_packet =
-          new ForwardErrorCorrection::ReceivedPacket();
+      std::unique_ptr<ForwardErrorCorrection::ReceivedPacket> duplicate_packet(
+          new ForwardErrorCorrection::ReceivedPacket());
       *duplicate_packet = *received_packet;
       duplicate_packet->pkt = new ForwardErrorCorrection::Packet();
       memcpy(duplicate_packet->pkt->data, received_packet->pkt->data,
              received_packet->pkt->length);
       duplicate_packet->pkt->length = received_packet->pkt->length;
 
-      to_decode_list->push_back(duplicate_packet);
+      to_decode_list->push_back(std::move(duplicate_packet));
       random_variable = random->Rand<float>();
     }
-    received_packet_list->erase(it);
   }
 }
 
@@ -108,13 +109,12 @@ TEST(FecTest, MAYBE_FecTest) {
 
   ForwardErrorCorrection fec;
   ForwardErrorCorrection::PacketList media_packet_list;
-  ForwardErrorCorrection::PacketList fec_packet_list;
+  std::list<ForwardErrorCorrection::Packet*> fec_packet_list;
   ForwardErrorCorrection::ReceivedPacketList to_decode_list;
   ForwardErrorCorrection::ReceivedPacketList received_packet_list;
   ForwardErrorCorrection::RecoveredPacketList recovered_packet_list;
   std::list<uint8_t*> fec_mask_list;
 
-  ForwardErrorCorrection::Packet* media_packet = nullptr;
   // Running over only one loss rate to limit execution time.
   const float loss_rate[] = {0.5f};
   const uint32_t loss_rate_size = sizeof(loss_rate) / sizeof(*loss_rate);
@@ -234,8 +234,8 @@ TEST(FecTest, MAYBE_FecTest) {
             // around is detected. This case is currently not handled below.
             seq_num = 0;
             for (uint32_t i = 0; i < num_media_packets; ++i) {
-              media_packet = new ForwardErrorCorrection::Packet();
-              media_packet_list.push_back(media_packet);
+              std::unique_ptr<ForwardErrorCorrection::Packet> media_packet(
+                  new ForwardErrorCorrection::Packet());
               const uint32_t kMinPacketSize = 12;
               const uint32_t kMaxPacketSize = static_cast<uint32_t>(
                   IP_PACKET_SIZE - 12 - 28 -
@@ -273,9 +273,10 @@ TEST(FecTest, MAYBE_FecTest) {
               for (size_t j = 12; j < media_packet->length; ++j) {
                 media_packet->data[j] = random.Rand<uint8_t>();
               }
+              media_packet_list.push_back(std::move(media_packet));
               seq_num++;
             }
-            media_packet->data[1] |= 0x80;
+            media_packet_list.back()->data[1] |= 0x80;
 
             ASSERT_EQ(0, fec.GenerateFec(media_packet_list, protection_factor,
                                          num_imp_packets, kUseUnequalProtection,
@@ -288,23 +289,23 @@ TEST(FecTest, MAYBE_FecTest) {
 
             memset(media_loss_mask, 0, sizeof(media_loss_mask));
             uint32_t media_packet_idx = 0;
-            for (auto* media_packet : media_packet_list) {
+            for (const auto& media_packet : media_packet_list) {
               // We want a value between 0 and 1.
               const float loss_random_variable = random.Rand<float>();
 
               if (loss_random_variable >= loss_rate[loss_rate_idx]) {
                 media_loss_mask[media_packet_idx] = 1;
-                auto received_packet =
-                    new ForwardErrorCorrection::ReceivedPacket();
+                std::unique_ptr<ForwardErrorCorrection::ReceivedPacket>
+                    received_packet(
+                        new ForwardErrorCorrection::ReceivedPacket());
                 received_packet->pkt = new ForwardErrorCorrection::Packet();
-                received_packet_list.push_back(received_packet);
-
                 received_packet->pkt->length = media_packet->length;
                 memcpy(received_packet->pkt->data, media_packet->data,
                        media_packet->length);
                 received_packet->seq_num =
                     ByteReader<uint16_t>::ReadBigEndian(&media_packet->data[2]);
                 received_packet->is_fec = false;
+                received_packet_list.push_back(std::move(received_packet));
               }
               media_packet_idx++;
             }
@@ -315,19 +316,17 @@ TEST(FecTest, MAYBE_FecTest) {
               const float loss_random_variable = random.Rand<float>();
               if (loss_random_variable >= loss_rate[loss_rate_idx]) {
                 fec_loss_mask[fec_packet_idx] = 1;
-                auto received_packet =
-                    new ForwardErrorCorrection::ReceivedPacket();
+                std::unique_ptr<ForwardErrorCorrection::ReceivedPacket>
+                    received_packet(
+                        new ForwardErrorCorrection::ReceivedPacket());
                 received_packet->pkt = new ForwardErrorCorrection::Packet();
-
-                received_packet_list.push_back(received_packet);
-
                 received_packet->pkt->length = fec_packet->length;
                 memcpy(received_packet->pkt->data, fec_packet->data,
                        fec_packet->length);
-
                 received_packet->seq_num = seq_num;
                 received_packet->is_fec = true;
                 received_packet->ssrc = ssrc;
+                received_packet_list.push_back(std::move(received_packet));
 
                 fec_mask_list.push_back(fec_packet_masks[fec_packet_idx]);
               }
@@ -388,7 +387,7 @@ TEST(FecTest, MAYBE_FecTest) {
                              duplicate_rate, &random);
 
               if (fec_packet_received == false) {
-                for (auto* received_packet : to_decode_list) {
+                for (const auto& received_packet : to_decode_list) {
                   if (received_packet->is_fec) {
                     fec_packet_received = true;
                   }
@@ -401,7 +400,7 @@ TEST(FecTest, MAYBE_FecTest) {
                   << "Received packet list is not empty.";
             }
             media_packet_idx = 0;
-            for (auto* media_packet : media_packet_list) {
+            for (const auto& media_packet : media_packet_list) {
               if (media_loss_mask[media_packet_idx] == 1) {
                 // Should have recovered this packet.
                 auto recovered_packet_list_it = recovered_packet_list.cbegin();
@@ -410,7 +409,7 @@ TEST(FecTest, MAYBE_FecTest) {
                              recovered_packet_list.end())
                     << "Insufficient number of recovered packets.";
                 ForwardErrorCorrection::RecoveredPacket* recovered_packet =
-                    *recovered_packet_list_it;
+                    recovered_packet_list_it->get();
 
                 ASSERT_EQ(recovered_packet->pkt->length, media_packet->length)
                     << "Recovered packet length not identical to original "
@@ -419,7 +418,6 @@ TEST(FecTest, MAYBE_FecTest) {
                                     media_packet->data, media_packet->length))
                     << "Recovered packet payload not identical to original "
                     << "media packet";
-                delete recovered_packet;
                 recovered_packet_list.pop_front();
               }
               ++media_packet_idx;
@@ -429,13 +427,7 @@ TEST(FecTest, MAYBE_FecTest) {
                 << "Excessive number of recovered packets.\t size is: "
                 << recovered_packet_list.size();
             // -- Teardown --
-            auto media_packet_list_it = media_packet_list.begin();
-            while (media_packet_list_it != media_packet_list.end()) {
-              delete *media_packet_list_it;
-              ++media_packet_list_it;
-              media_packet_list.pop_front();
-            }
-            RTC_DCHECK(media_packet_list.empty());
+            media_packet_list.clear();
 
             // Clear FEC packet list, so we don't pass in a non-empty
             // list in the next call to DecodeFec().
@@ -443,13 +435,7 @@ TEST(FecTest, MAYBE_FecTest) {
 
             // Delete received packets we didn't pass to DecodeFec(), due to
             // early frame completion.
-            auto received_packet_it = received_packet_list.cbegin();
-            while (received_packet_it != received_packet_list.end()) {
-              delete *received_packet_it;
-              ++received_packet_it;
-              received_packet_list.pop_front();
-            }
-            RTC_DCHECK(received_packet_list.empty());
+            received_packet_list.clear();
 
             while (!fec_mask_list.empty()) {
               fec_mask_list.pop_front();
@@ -461,7 +447,7 @@ TEST(FecTest, MAYBE_FecTest) {
     }  // loop over loss rates
   }    // loop over mask types
 
-  // Have DecodeFec free allocated memory.
+  // Have DecodeFec clear the recovered packet list.
   fec.ResetState(&recovered_packet_list);
   ASSERT_TRUE(recovered_packet_list.empty())
       << "Recovered packet list is not empty";

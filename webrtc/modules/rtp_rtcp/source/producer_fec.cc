@@ -10,6 +10,9 @@
 
 #include "webrtc/modules/rtp_rtcp/source/producer_fec.h"
 
+#include <memory>
+#include <utility>
+
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
@@ -139,11 +142,11 @@ int ProducerFec::AddRtpPacketAndGenerateFec(const uint8_t* data_buffer,
   const bool marker_bit = (data_buffer[1] & kRtpMarkerBitMask) ? true : false;
   if (media_packets_fec_.size() < ForwardErrorCorrection::kMaxMediaPackets) {
     // Generic FEC can only protect up to kMaxMediaPackets packets.
-    ForwardErrorCorrection::Packet* packet =
-        new ForwardErrorCorrection::Packet();
+    std::unique_ptr<ForwardErrorCorrection::Packet> packet(
+        new ForwardErrorCorrection::Packet());
     packet->length = payload_length + rtp_header_length;
     memcpy(packet->data, data_buffer, packet->length);
-    media_packets_fec_.push_back(packet);
+    media_packets_fec_.push_back(std::move(packet));
   }
   if (marker_bit) {
     ++num_frames_;
@@ -219,7 +222,7 @@ std::vector<RedPacket*> ProducerFec::GetFecPackets(int red_pl_type,
     // media packet.
     ForwardErrorCorrection::Packet* packet_to_send = fec_packets_.front();
     ForwardErrorCorrection::Packet* last_media_packet =
-        media_packets_fec_.back();
+        media_packets_fec_.back().get();
 
     RedPacket* red_packet = new RedPacket(
         packet_to_send->length + kREDForFECHeaderLength + rtp_header_length);
@@ -251,11 +254,7 @@ int ProducerFec::Overhead() const {
 }
 
 void ProducerFec::DeletePackets() {
-  while (!media_packets_fec_.empty()) {
-    delete media_packets_fec_.front();
-    media_packets_fec_.pop_front();
-  }
-  assert(media_packets_fec_.empty());
+  media_packets_fec_.clear();
 }
 
 }  // namespace webrtc

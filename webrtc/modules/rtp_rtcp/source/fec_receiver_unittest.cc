@@ -39,7 +39,7 @@ class ReceiverFecTest : public ::testing::Test {
   }
 
   void GenerateFec(ForwardErrorCorrection::PacketList* media_packets,
-                   ForwardErrorCorrection::PacketList* fec_packets,
+                   std::list<ForwardErrorCorrection::Packet*>* fec_packets,
                    unsigned int num_fec_packets) {
     uint8_t protection_factor = num_fec_packets * 255 / media_packets->size();
     EXPECT_EQ(0, fec_->GenerateFec(*media_packets, protection_factor,
@@ -53,9 +53,10 @@ class ReceiverFecTest : public ::testing::Test {
                      ForwardErrorCorrection::PacketList* media_packets) {
     generator_->NewFrame(num_media_packets);
     for (int i = 0; i < num_media_packets; ++i) {
-      media_rtp_packets->push_back(
-          generator_->NextPacket(frame_offset + i, kRtpHeaderSize + 10));
-      media_packets->push_back(media_rtp_packets->back());
+      std::unique_ptr<test::RawRtpPacket> next_packet(
+        generator_->NextPacket(frame_offset + i, kRtpHeaderSize + 10));
+      media_rtp_packets->push_back(next_packet.get());
+      media_packets->push_back(std::move(next_packet));
     }
   }
 
@@ -97,19 +98,12 @@ class ReceiverFecTest : public ::testing::Test {
   std::unique_ptr<FrameGenerator> generator_;
 };
 
-void DeletePackets(ForwardErrorCorrection::PacketList* packets) {
-  while (!packets->empty()) {
-    delete packets->front();
-    packets->pop_front();
-  }
-}
-
 TEST_F(ReceiverFecTest, TwoMediaOneFec) {
   const unsigned int kNumFecPackets = 1u;
   std::list<test::RawRtpPacket*> media_rtp_packets;
   ForwardErrorCorrection::PacketList media_packets;
   GenerateFrame(2, 0, &media_rtp_packets, &media_packets);
-  ForwardErrorCorrection::PacketList fec_packets;
+  std::list<ForwardErrorCorrection::Packet*> fec_packets;
   GenerateFec(&media_packets, &fec_packets, kNumFecPackets);
 
   // Recovery
@@ -128,8 +122,6 @@ TEST_F(ReceiverFecTest, TwoMediaOneFec) {
   EXPECT_EQ(2U, counter.num_packets);
   EXPECT_EQ(1U, counter.num_fec_packets);
   EXPECT_EQ(1U, counter.num_recovered_packets);
-
-  DeletePackets(&media_packets);
 }
 
 void ReceiverFecTest::InjectGarbagePacketLength(size_t fec_garbage_offset) {
@@ -140,7 +132,7 @@ void ReceiverFecTest::InjectGarbagePacketLength(size_t fec_garbage_offset) {
   std::list<test::RawRtpPacket*> media_rtp_packets;
   ForwardErrorCorrection::PacketList media_packets;
   GenerateFrame(2, 0, &media_rtp_packets, &media_packets);
-  ForwardErrorCorrection::PacketList fec_packets;
+  std::list<ForwardErrorCorrection::Packet*> fec_packets;
   GenerateFec(&media_packets, &fec_packets, kNumFecPackets);
   ByteWriter<uint16_t>::WriteBigEndian(
       &fec_packets.front()->data[fec_garbage_offset], 0x4711);
@@ -155,8 +147,6 @@ void ReceiverFecTest::InjectGarbagePacketLength(size_t fec_garbage_offset) {
   EXPECT_EQ(2u, counter.num_packets);
   EXPECT_EQ(1u, counter.num_fec_packets);
   EXPECT_EQ(0u, counter.num_recovered_packets);
-
-  DeletePackets(&media_packets);
 }
 
 TEST_F(ReceiverFecTest, InjectGarbageFecHeaderLengthRecovery) {
@@ -175,7 +165,7 @@ TEST_F(ReceiverFecTest, TwoMediaTwoFec) {
   std::list<test::RawRtpPacket*> media_rtp_packets;
   ForwardErrorCorrection::PacketList media_packets;
   GenerateFrame(2, 0, &media_rtp_packets, &media_packets);
-  ForwardErrorCorrection::PacketList fec_packets;
+  std::list<ForwardErrorCorrection::Packet*> fec_packets;
   GenerateFec(&media_packets, &fec_packets, kNumFecPackets);
 
   // Recovery
@@ -190,8 +180,6 @@ TEST_F(ReceiverFecTest, TwoMediaTwoFec) {
   ++it;
   VerifyReconstructedMediaPacket(*it, 1);
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
-
-  DeletePackets(&media_packets);
 }
 
 TEST_F(ReceiverFecTest, TwoFramesOneFec) {
@@ -200,7 +188,7 @@ TEST_F(ReceiverFecTest, TwoFramesOneFec) {
   ForwardErrorCorrection::PacketList media_packets;
   GenerateFrame(1, 0, &media_rtp_packets, &media_packets);
   GenerateFrame(1, 1, &media_rtp_packets, &media_packets);
-  ForwardErrorCorrection::PacketList fec_packets;
+  std::list<ForwardErrorCorrection::Packet*> fec_packets;
   GenerateFec(&media_packets, &fec_packets, kNumFecPackets);
 
   // Recovery
@@ -213,8 +201,6 @@ TEST_F(ReceiverFecTest, TwoFramesOneFec) {
   ++it;
   VerifyReconstructedMediaPacket(*it, 1);
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
-
-  DeletePackets(&media_packets);
 }
 
 TEST_F(ReceiverFecTest, OneCompleteOneUnrecoverableFrame) {
@@ -224,7 +210,7 @@ TEST_F(ReceiverFecTest, OneCompleteOneUnrecoverableFrame) {
   GenerateFrame(1, 0, &media_rtp_packets, &media_packets);
   GenerateFrame(2, 1, &media_rtp_packets, &media_packets);
 
-  ForwardErrorCorrection::PacketList fec_packets;
+  std::list<ForwardErrorCorrection::Packet*> fec_packets;
   GenerateFec(&media_packets, &fec_packets, kNumFecPackets);
 
   // Recovery
@@ -236,8 +222,6 @@ TEST_F(ReceiverFecTest, OneCompleteOneUnrecoverableFrame) {
   BuildAndAddRedMediaPacket(*it);  // First packet of second frame.
   VerifyReconstructedMediaPacket(*it, 1);
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
-
-  DeletePackets(&media_packets);
 }
 
 TEST_F(ReceiverFecTest, MaxFramesOneFec) {
@@ -248,7 +232,7 @@ TEST_F(ReceiverFecTest, MaxFramesOneFec) {
   for (unsigned int i = 0; i < kNumMediaPackets; ++i) {
     GenerateFrame(1, i, &media_rtp_packets, &media_packets);
   }
-  ForwardErrorCorrection::PacketList fec_packets;
+  std::list<ForwardErrorCorrection::Packet*> fec_packets;
   GenerateFec(&media_packets, &fec_packets, kNumFecPackets);
 
   // Recovery
@@ -263,8 +247,6 @@ TEST_F(ReceiverFecTest, MaxFramesOneFec) {
   it = media_rtp_packets.begin();
   VerifyReconstructedMediaPacket(*it, 1);
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
-
-  DeletePackets(&media_packets);
 }
 
 TEST_F(ReceiverFecTest, TooManyFrames) {
@@ -275,12 +257,10 @@ TEST_F(ReceiverFecTest, TooManyFrames) {
   for (unsigned int i = 0; i < kNumMediaPackets; ++i) {
     GenerateFrame(1, i, &media_rtp_packets, &media_packets);
   }
-  ForwardErrorCorrection::PacketList fec_packets;
+  std::list<ForwardErrorCorrection::Packet*> fec_packets;
   EXPECT_EQ(-1, fec_->GenerateFec(media_packets,
                                   kNumFecPackets * 255 / kNumMediaPackets, 0,
                                   false, kFecMaskBursty, &fec_packets));
-
-  DeletePackets(&media_packets);
 }
 
 TEST_F(ReceiverFecTest, PacketNotDroppedTooEarly) {
@@ -293,7 +273,7 @@ TEST_F(ReceiverFecTest, PacketNotDroppedTooEarly) {
   ForwardErrorCorrection::PacketList media_packets_batch1;
   GenerateFrame(kNumMediaPacketsBatch1, 0, &media_rtp_packets_batch1,
                 &media_packets_batch1);
-  ForwardErrorCorrection::PacketList fec_packets;
+  std::list<ForwardErrorCorrection::Packet*> fec_packets;
   GenerateFec(&media_packets_batch1, &fec_packets, kNumFecPacketsBatch1);
 
   BuildAndAddRedMediaPacket(media_rtp_packets_batch1.front());
@@ -322,9 +302,6 @@ TEST_F(ReceiverFecTest, PacketNotDroppedTooEarly) {
   EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
       .Times(1).WillRepeatedly(Return(true));
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
-
-  DeletePackets(&media_packets_batch1);
-  DeletePackets(&media_packets_batch2);
 }
 
 TEST_F(ReceiverFecTest, PacketDroppedWhenTooOld) {
@@ -337,7 +314,7 @@ TEST_F(ReceiverFecTest, PacketDroppedWhenTooOld) {
   ForwardErrorCorrection::PacketList media_packets_batch1;
   GenerateFrame(kNumMediaPacketsBatch1, 0, &media_rtp_packets_batch1,
                 &media_packets_batch1);
-  ForwardErrorCorrection::PacketList fec_packets;
+  std::list<ForwardErrorCorrection::Packet*> fec_packets;
   GenerateFec(&media_packets_batch1, &fec_packets, kNumFecPacketsBatch1);
 
   BuildAndAddRedMediaPacket(media_rtp_packets_batch1.front());
@@ -367,9 +344,6 @@ TEST_F(ReceiverFecTest, PacketDroppedWhenTooOld) {
   EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
       .Times(0);
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
-
-  DeletePackets(&media_packets_batch1);
-  DeletePackets(&media_packets_batch2);
 }
 
 TEST_F(ReceiverFecTest, OldFecPacketDropped) {
@@ -381,7 +355,7 @@ TEST_F(ReceiverFecTest, OldFecPacketDropped) {
   for (unsigned int i = 0; i < kNumMediaPackets / 2; ++i) {
     std::list<test::RawRtpPacket*> frame_media_rtp_packets;
     ForwardErrorCorrection::PacketList frame_media_packets;
-    ForwardErrorCorrection::PacketList fec_packets;
+    std::list<ForwardErrorCorrection::Packet*> fec_packets;
     GenerateFrame(2, 0, &frame_media_rtp_packets, &frame_media_packets);
     GenerateFec(&frame_media_packets, &fec_packets, 1);
     for (auto it = fec_packets.begin(); it != fec_packets.end(); ++it) {
@@ -391,8 +365,10 @@ TEST_F(ReceiverFecTest, OldFecPacketDropped) {
           .Times(0);
       EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
     }
-    media_packets.insert(media_packets.end(), frame_media_packets.begin(),
-                         frame_media_packets.end());
+    // Move unique_ptr's to media_packets for lifetime management.
+    media_packets.insert(media_packets.end(),
+                         std::make_move_iterator(frame_media_packets.begin()),
+                         std::make_move_iterator(frame_media_packets.end()));
     media_rtp_packets.insert(media_rtp_packets.end(),
                              frame_media_rtp_packets.begin(),
                              frame_media_rtp_packets.end());
@@ -404,8 +380,6 @@ TEST_F(ReceiverFecTest, OldFecPacketDropped) {
   EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
       .Times(1).WillRepeatedly(Return(true));
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
-
-  DeletePackets(&media_packets);
 }
 
 void ReceiverFecTest::SurvivesMaliciousPacket(const uint8_t* data,

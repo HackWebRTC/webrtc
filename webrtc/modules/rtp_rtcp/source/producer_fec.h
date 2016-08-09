@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_PRODUCER_FEC_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_PRODUCER_FEC_H_
 
+#include <list>
 #include <vector>
 
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
@@ -72,7 +73,7 @@ class ProducerFec {
   int Overhead() const;
   ForwardErrorCorrection* fec_;
   ForwardErrorCorrection::PacketList media_packets_fec_;
-  ForwardErrorCorrection::PacketList fec_packets_;
+  std::list<ForwardErrorCorrection::Packet*> fec_packets_;
   int num_frames_;
   int num_first_partition_;
   int minimum_media_packets_fec_;

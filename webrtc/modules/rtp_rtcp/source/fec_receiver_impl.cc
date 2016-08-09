@@ -11,6 +11,7 @@
 #include "webrtc/modules/rtp_rtcp/source/fec_receiver_impl.h"
 
 #include <memory>
+#include <utility>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -29,10 +30,7 @@ FecReceiverImpl::FecReceiverImpl(RtpData* callback)
       fec_(new ForwardErrorCorrection()) {}
 
 FecReceiverImpl::~FecReceiverImpl() {
-  while (!received_packet_list_.empty()) {
-    delete received_packet_list_.front();
-    received_packet_list_.pop_front();
-  }
+  received_packet_list_.clear();
   if (fec_ != NULL) {
     fec_->ResetState(&recovered_packet_list_);
     delete fec_;
@@ -209,9 +207,9 @@ int32_t FecReceiverImpl::AddReceivedRedPacket(
     return 0;
   }
 
-  received_packet_list_.push_back(received_packet.release());
+  received_packet_list_.push_back(std::move(received_packet));
   if (second_received_packet) {
-    received_packet_list_.push_back(second_received_packet.release());
+    received_packet_list_.push_back(std::move(second_received_packet));
   }
   return 0;
 }
@@ -237,7 +235,7 @@ int32_t FecReceiverImpl::ProcessReceivedFec() {
     RTC_DCHECK(received_packet_list_.empty());
   }
   // Send any recovered media packets to VCM.
-  for(auto* recovered_packet : recovered_packet_list_) {
+  for (const auto& recovered_packet : recovered_packet_list_) {
     if (recovered_packet->returned) {
       // Already sent to the VCM and the jitter buffer.
       continue;
