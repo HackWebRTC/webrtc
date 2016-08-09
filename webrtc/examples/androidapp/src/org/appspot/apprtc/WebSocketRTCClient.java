@@ -15,8 +15,9 @@ import org.appspot.apprtc.WebSocketChannelClient.WebSocketChannelEvents;
 import org.appspot.apprtc.WebSocketChannelClient.WebSocketConnectionState;
 import org.appspot.apprtc.util.AsyncHttpURLConnection;
 import org.appspot.apprtc.util.AsyncHttpURLConnection.AsyncHttpEvents;
-import org.appspot.apprtc.util.LooperExecutor;
 
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -48,7 +49,7 @@ public class WebSocketRTCClient implements AppRTCClient,
   private enum MessageType {
     MESSAGE, LEAVE
   };
-  private final LooperExecutor executor;
+  private final Handler handler;
   private boolean initiator;
   private SignalingEvents events;
   private WebSocketChannelClient wsClient;
@@ -57,11 +58,12 @@ public class WebSocketRTCClient implements AppRTCClient,
   private String messageUrl;
   private String leaveUrl;
 
-  public WebSocketRTCClient(SignalingEvents events, LooperExecutor executor) {
+  public WebSocketRTCClient(SignalingEvents events) {
     this.events = events;
-    this.executor = executor;
     roomState = ConnectionState.NEW;
-    executor.requestStart();
+    final HandlerThread handlerThread = new HandlerThread(TAG);
+    handlerThread.start();
+    handler = new Handler(handlerThread.getLooper());
   }
 
   // --------------------------------------------------------------------
@@ -71,7 +73,7 @@ public class WebSocketRTCClient implements AppRTCClient,
   @Override
   public void connectToRoom(RoomConnectionParameters connectionParameters) {
     this.connectionParameters = connectionParameters;
-    executor.execute(new Runnable() {
+    handler.post(new Runnable() {
       @Override
       public void run() {
         connectToRoomInternal();
@@ -81,13 +83,13 @@ public class WebSocketRTCClient implements AppRTCClient,
 
   @Override
   public void disconnectFromRoom() {
-    executor.execute(new Runnable() {
+    handler.post(new Runnable() {
       @Override
       public void run() {
         disconnectFromRoomInternal();
+        handler.getLooper().quit();
       }
     });
-    executor.requestStop();
   }
 
   // Connects to room - function runs on a local looper thread.
@@ -95,13 +97,13 @@ public class WebSocketRTCClient implements AppRTCClient,
     String connectionUrl = getConnectionUrl(connectionParameters);
     Log.d(TAG, "Connect to room: " + connectionUrl);
     roomState = ConnectionState.NEW;
-    wsClient = new WebSocketChannelClient(executor, this);
+    wsClient = new WebSocketChannelClient(handler, this);
 
     RoomParametersFetcherEvents callbacks = new RoomParametersFetcherEvents() {
       @Override
       public void onSignalingParametersReady(
           final SignalingParameters params) {
-        WebSocketRTCClient.this.executor.execute(new Runnable() {
+        WebSocketRTCClient.this.handler.post(new Runnable() {
           @Override
           public void run() {
             WebSocketRTCClient.this.signalingParametersReady(params);
@@ -184,7 +186,7 @@ public class WebSocketRTCClient implements AppRTCClient,
   // Send local offer SDP to the other participant.
   @Override
   public void sendOfferSdp(final SessionDescription sdp) {
-    executor.execute(new Runnable() {
+    handler.post(new Runnable() {
       @Override
       public void run() {
         if (roomState != ConnectionState.CONNECTED) {
@@ -209,7 +211,7 @@ public class WebSocketRTCClient implements AppRTCClient,
   // Send local answer SDP to the other participant.
   @Override
   public void sendAnswerSdp(final SessionDescription sdp) {
-    executor.execute(new Runnable() {
+    handler.post(new Runnable() {
       @Override
       public void run() {
         if (connectionParameters.loopback) {
@@ -227,7 +229,7 @@ public class WebSocketRTCClient implements AppRTCClient,
   // Send Ice candidate to the other participant.
   @Override
   public void sendLocalIceCandidate(final IceCandidate candidate) {
-    executor.execute(new Runnable() {
+    handler.post(new Runnable() {
       @Override
       public void run() {
         JSONObject json = new JSONObject();
@@ -256,7 +258,7 @@ public class WebSocketRTCClient implements AppRTCClient,
   // Send removed Ice candidates to the other participant.
   @Override
   public void sendLocalIceCandidateRemovals(final IceCandidate[] candidates) {
-    executor.execute(new Runnable() {
+    handler.post(new Runnable() {
       @Override
       public void run() {
         JSONObject json = new JSONObject();
@@ -359,7 +361,7 @@ public class WebSocketRTCClient implements AppRTCClient,
   // Helper functions.
   private void reportError(final String errorMessage) {
     Log.e(TAG, errorMessage);
-    executor.execute(new Runnable() {
+    handler.post(new Runnable() {
       @Override
       public void run() {
         if (roomState != ConnectionState.ERROR) {

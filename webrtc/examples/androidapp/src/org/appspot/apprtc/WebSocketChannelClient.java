@@ -12,8 +12,8 @@ package org.appspot.apprtc;
 
 import org.appspot.apprtc.util.AsyncHttpURLConnection;
 import org.appspot.apprtc.util.AsyncHttpURLConnection.AsyncHttpEvents;
-import org.appspot.apprtc.util.LooperExecutor;
 
+import android.os.Handler;
 import android.util.Log;
 
 import de.tavendo.autobahn.WebSocket.WebSocketConnectionObserver;
@@ -39,7 +39,7 @@ public class WebSocketChannelClient {
   private static final String TAG = "WSChannelRTCClient";
   private static final int CLOSE_TIMEOUT = 1000;
   private final WebSocketChannelEvents events;
-  private final LooperExecutor executor;
+  private final Handler handler;
   private WebSocketConnection ws;
   private WebSocketObserver wsObserver;
   private String wsServerUrl;
@@ -70,8 +70,8 @@ public class WebSocketChannelClient {
     void onWebSocketError(final String description);
   }
 
-  public WebSocketChannelClient(LooperExecutor executor, WebSocketChannelEvents events) {
-    this.executor = executor;
+  public WebSocketChannelClient(Handler handler, WebSocketChannelEvents events) {
+    this.handler = handler;
     this.events = events;
     roomID = null;
     clientID = null;
@@ -204,7 +204,7 @@ public class WebSocketChannelClient {
 
   private void reportError(final String errorMessage) {
     Log.e(TAG, errorMessage);
-    executor.execute(new Runnable() {
+    handler.post(new Runnable() {
       @Override
       public void run() {
         if (state != WebSocketConnectionState.ERROR) {
@@ -233,10 +233,10 @@ public class WebSocketChannelClient {
     httpConnection.send();
   }
 
-   // Helper method for debugging purposes. Ensures that WebSocket method is
-   // called on a looper thread.
+  // Helper method for debugging purposes. Ensures that WebSocket method is
+  // called on a looper thread.
   private void checkIfCalledOnValidThread() {
-    if (!executor.checkOnLooperThread()) {
+    if (Thread.currentThread() != handler.getLooper().getThread()) {
       throw new IllegalStateException(
           "WebSocket method is not called on valid thread");
     }
@@ -246,7 +246,7 @@ public class WebSocketChannelClient {
     @Override
     public void onOpen() {
       Log.d(TAG, "WebSocket connection opened to: " + wsServerUrl);
-      executor.execute(new Runnable() {
+      handler.post(new Runnable() {
         @Override
         public void run() {
           state = WebSocketConnectionState.CONNECTED;
@@ -266,7 +266,7 @@ public class WebSocketChannelClient {
         closeEvent = true;
         closeEventLock.notify();
       }
-      executor.execute(new Runnable() {
+      handler.post(new Runnable() {
         @Override
         public void run() {
           if (state != WebSocketConnectionState.CLOSED) {
@@ -281,7 +281,7 @@ public class WebSocketChannelClient {
     public void onTextMessage(String payload) {
       Log.d(TAG, "WSS->C: " + payload);
       final String message = payload;
-      executor.execute(new Runnable() {
+      handler.post(new Runnable() {
         @Override
         public void run() {
           if (state == WebSocketConnectionState.CONNECTED

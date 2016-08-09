@@ -76,7 +76,6 @@ if (is_android) {
       "androidapp/src/org/appspot/apprtc/WebSocketRTCClient.java",
       "androidapp/src/org/appspot/apprtc/util/AppRTCUtils.java",
       "androidapp/src/org/appspot/apprtc/util/AsyncHttpURLConnection.java",
-      "androidapp/src/org/appspot/apprtc/util/LooperExecutor.java",
     ]
 
     deps = [
@@ -110,7 +109,6 @@ if (is_android) {
     java_files = [
       "androidjunit/src/org/appspot/apprtc/DirectRTCClientTest.java",
       "androidjunit/src/org/appspot/apprtc/TCPChannelClientTest.java",
-      "androidjunit/src/org/appspot/apprtc/util/LooperExecutorTest.java",
     ]
 
     deps = [
