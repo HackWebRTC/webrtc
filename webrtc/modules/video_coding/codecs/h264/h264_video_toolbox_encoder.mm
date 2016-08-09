@@ -307,27 +307,30 @@ int H264VideoToolboxEncoder::Encode(
       return ret;
   }
 
+  // Get a pixel buffer from the pool and copy frame data over.
+  CVPixelBufferPoolRef pixel_buffer_pool =
+      VTCompressionSessionGetPixelBufferPool(compression_session_);
+#if defined(WEBRTC_IOS)
+  if (!pixel_buffer_pool) {
+    // Kind of a hack. On backgrounding, the compression session seems to get
+    // invalidated, which causes this pool call to fail when the application
+    // is foregrounded and frames are being sent for encoding again.
+    // Resetting the session when this happens fixes the issue.
+    // In addition we request a keyframe so video can recover quickly.
+    ResetCompressionSession();
+    pixel_buffer_pool =
+        VTCompressionSessionGetPixelBufferPool(compression_session_);
+    is_keyframe_required = true;
+    LOG(LS_INFO) << "Resetting compression session due to invalid pool.";
+  }
+#endif
+
   CVPixelBufferRef pixel_buffer =
       static_cast<CVPixelBufferRef>(input_image->native_handle());
   if (pixel_buffer) {
     CVBufferRetain(pixel_buffer);
+    pixel_buffer_pool = nullptr;
   } else {
-    // Get a pixel buffer from the pool and copy frame data over.
-    CVPixelBufferPoolRef pixel_buffer_pool =
-        VTCompressionSessionGetPixelBufferPool(compression_session_);
-#if defined(WEBRTC_IOS)
-    if (!pixel_buffer_pool) {
-      // Kind of a hack. On backgrounding, the compression session seems to get
-      // invalidated, which causes this pool call to fail when the application
-      // is foregrounded and frames are being sent for encoding again.
-      // Resetting the session when this happens fixes the issue.
-      // In addition we request a keyframe so video can recover quickly.
-      ResetCompressionSession();
-      pixel_buffer_pool =
-          VTCompressionSessionGetPixelBufferPool(compression_session_);
-      is_keyframe_required = true;
-    }
-#endif
     if (!pixel_buffer_pool) {
       LOG(LS_ERROR) << "Failed to get pixel buffer pool.";
       return WEBRTC_VIDEO_CODEC_ERROR;
