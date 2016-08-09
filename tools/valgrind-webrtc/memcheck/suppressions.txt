@@ -11,15 +11,6 @@
 # third_party libraries
 
 {
-   libnss_leak_hitting_trusty_machines
-   Memcheck:Leak
-   fun:calloc
-   obj:/usr/lib/x86_64-linux-gnu/libnss3.so
-   ...
-   fun:NSS_NoDB_Init
-   ...
-}
-{
    libc_free_hitting_gce_vms
    Memcheck:Free
    fun:free
@@ -63,18 +54,6 @@
    fun:_ZN9rtc6Thread15ProcessMessagesEi
    fun:_ZN9rtc6Thread3RunEv
    fun:_ZN9rtc6Thread6PreRunEPv
-}
-{
-   bug_1976_2
-   Memcheck:Leak
-   fun:calloc
-   obj:/usr/lib/x86_64-linux-gnu/libnss3.so
-   ...
-   fun:NSS_NoDB_Init
-   fun:_ZN9rtc10NSSContext13InitializeSSLEPFbPvE
-   fun:_ZN9rtc13InitializeSSLEPFbPvE
-   fun:_ZN9rtc10RandomTest13SetUpTestCaseEv
-   fun:_ZN7testing8TestCase16RunSetUpTestCaseEv
 }
 {
    bug_2100_3
