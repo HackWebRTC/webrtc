@@ -44,6 +44,24 @@
       'Linux64 Release [large tests]': 'gyp_release_bot_x64',
       'Linux64 Debug (GN)': 'gn_openh264_debug_bot_x64',
       'Linux64 Release (GN)': 'gn_openh264_release_bot_x64',
+
+      # Android
+      'Android32 Builder': 'android_gyp_release_bot_arm',
+      'Android32 Builder (dbg)': 'android_gyp_debug_bot_arm',
+      'Android32 Builder x86': 'android_gyp_release_bot_x86',
+      'Android32 Builder x86 (dbg)': 'android_gyp_debug_bot_x86',
+      'Android32 Builder MIPS (dbg)': 'android_gyp_clang_debug_bot_mipsel',
+      'Android32 Clang (dbg)': 'android_gyp_clang_debug_bot_arm',
+      'Android64 Builder': 'android_gyp_release_bot_arm64',
+      'Android64 Builder (dbg)': 'android_gyp_debug_bot_arm64',
+      'Android64 Builder x64 (dbg)': 'android_gyp_debug_bot_x64',
+      'Android32 GN': 'android_gn_release_bot_arm',
+      'Android32 GN (dbg)': 'android_gn_debug_bot_arm',
+      'Android32 Tests (L Nexus5)(dbg)': 'none',
+      'Android32 Tests (L Nexus5)': 'none',
+      'Android32 Tests (L Nexus7.2)(dbg)': 'none',
+      'Android32 Tests (L Nexus7.2)': 'none',
+      'Android64 Tests (L Nexus9)': 'none',
     },
     'tryserver.webrtc': {
       # iOS
@@ -72,6 +90,23 @@
       'linux_ubsan_vptr': 'gyp_ubsan_vptr_clang_release_trybot_x64',
       'linux_baremetal': 'gyp_release_trybot_x64',
       'linux_swarming': 'swarming_gyp_debug_trybot_x64',
+
+      # Android
+      'android_compile_dbg': 'android_gyp_debug_trybot_arm',
+      'android_compile_rel': 'android_gyp_release_trybot_arm',
+      'android_compile_arm64_dbg': 'android_gyp_debug_trybot_arm64',
+      'android_compile_arm64_rel': 'android_gyp_release_trybot_arm64',
+      'android_compile_x86_dbg': 'android_gyp_debug_trybot_x86',
+      'android_compile_x86_rel': 'android_gyp_release_trybot_x86',
+      'android_compile_x64_dbg': 'android_gyp_debug_trybot_x64',
+      'android_compile_mips_dbg': 'android_gyp_clang_debug_trybot_mipsel',
+      'android_dbg': 'android_gyp_debug_trybot_arm',
+      'android_rel': 'android_gyp_release_trybot_arm',
+      'android_clang_dbg': 'android_gyp_clang_debug_trybot_arm',
+      'android_amd64_rel': 'android_gyp_release_trybot_arm64',
+      'android_n6': 'android_gyp_debug_trybot_arm',
+      'android_gn_dbg': 'android_gn_debug_trybot_arm',
+      'android_gn_rel': 'android_gn_release_trybot_arm',
     },
   },
 
@@ -208,15 +243,90 @@
     ],
     'swarming_gyp_debug_trybot_x64': [
       'swarming', 'gyp', 'debug', 'debug_trybot', 'x64'
-    ]
+    ],
+
+    # Android
+    'android_gyp_release_bot_arm': [
+      'android', 'gyp', 'release_bot', 'arm'
+    ],
+    'android_gyp_debug_bot_arm': [
+      'android', 'gyp', 'debug_bot', 'arm'
+    ],
+    'android_gyp_release_bot_x86': [
+      'android', 'gyp', 'release_bot', 'x86'
+    ],
+    'android_gyp_debug_bot_x86': [
+      'android', 'gyp', 'debug_bot', 'x86'
+    ],
+    'android_gyp_clang_debug_bot_mipsel': [
+      'android', 'gyp', 'clang', 'debug_bot', 'mipsel'
+    ],
+    'android_gyp_clang_debug_bot_arm': [
+      'android', 'gyp', 'clang', 'debug_bot', 'arm'
+    ],
+    'android_gyp_release_bot_arm64': [
+      'android', 'gyp', 'release_bot', 'arm64'
+    ],
+    'android_gyp_debug_bot_arm64': [
+      'android', 'gyp', 'debug_bot', 'arm64'
+    ],
+    'android_gyp_debug_bot_x64': [
+      'android', 'gyp', 'debug_bot', 'x64'
+    ],
+    'android_gn_release_bot_arm': [
+      'android', 'gn', 'release_bot', 'arm'
+    ],
+    'android_gn_debug_bot_arm': [
+      'android', 'gn', 'debug_bot', 'arm'
+    ],
+    # Android trybots
+    'android_gyp_debug_trybot_arm': [
+      'android', 'gyp', 'debug_trybot', 'arm',
+    ],
+    'android_gyp_release_trybot_arm': [
+      'android', 'gyp', 'release_trybot', 'arm',
+    ],
+    'android_gyp_debug_trybot_arm64': [
+      'android', 'gyp', 'debug_trybot', 'arm64',
+    ],
+    'android_gyp_release_trybot_arm64': [
+      'android', 'gyp', 'release_trybot', 'arm64',
+    ],
+    'android_gyp_debug_trybot_x86': [
+      'android', 'gyp', 'debug_trybot', 'x86',
+    ],
+    'android_gyp_release_trybot_x86': [
+      'android', 'gyp', 'release_trybot', 'x86',
+    ],
+    'android_gyp_debug_trybot_x64': [
+      'android', 'gyp', 'debug_trybot', 'x64',
+    ],
+    'android_gyp_clang_debug_trybot_mipsel': [
+      'android', 'gyp', 'clang', 'debug_trybot', 'mipsel',
+    ],
+    'android_gyp_clang_debug_trybot_arm': [
+      'android', 'gyp', 'clang', 'debug_trybot', 'arm',
+    ],
+    'android_gn_debug_trybot_arm': [
+      'android', 'gn', 'debug_trybot', 'arm',
+    ],
+    'android_gn_release_trybot_arm': [
+      'android', 'gn', 'release_trybot', 'arm',
+    ],
+
+    # This is used for tracking purposes; any bot that uses this config
+    # should never actually run MB.
+    'none': [
+      'error',
+    ],
   },
 
   # This is a dict mapping a given 'mixin' name to a dict of settings that
   # mb should use. See //tools/mb/docs/user_guide.md for more information.
   'mixins': {
-    'ios': {
-      'gn_args': 'target_os="ios"',
-      'gyp_defines': 'OS=ios',
+    'android': {
+      'gn_args': 'target_os="android"',
+      'gyp_defines': 'OS=android',
     },
 
     'arm': {
@@ -261,6 +371,15 @@
       'gyp_defines': 'chromium_ios_signing=0',
     },
 
+    # This mixin is used to force configs that use it to fail. It
+    # is used in two cases: when we have bots that we haven't looked
+    # at yet and don't know whether they need MB or not, and for bots
+    # that are test-only and should never run MB.
+    'error': {
+      'gn_args': 'error',
+      'gyp_defines': 'target_arch=unknown',
+    },
+
     'gn': {'type': 'gn'},
 
     'goma': {
@@ -271,6 +390,11 @@
     },
 
     'gyp': {'type': 'gyp'},
+
+    'ios': {
+      'gn_args': 'target_os="ios"',
+      'gyp_defines': 'OS=ios',
+    },
 
     'ios_debug_bot': {
       'mixins': ['debug', 'shared']
@@ -295,6 +419,11 @@
 
     'memcheck': {
       'gyp_defines': 'build_for_tool=memcheck',
+    },
+
+    'mipsel': {
+      'gn_args': 'target_cpu="mipsel"',
+      'gyp_defines': 'target_arch=mipsel',
     },
 
     'msan': {
