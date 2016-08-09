@@ -140,18 +140,6 @@
     },
 
     {
-      'target_name': 'rtp_to_text',
-      'type': 'executable',
-      'dependencies': [
-        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
-        'neteq_test_tools',
-      ],
-      'sources': [
-        'test/rtp_to_text.cc',
-      ],
-    },
-
-    {
       'target_name': 'audio_classifier_test',
       'type': 'executable',
       'dependencies': [
