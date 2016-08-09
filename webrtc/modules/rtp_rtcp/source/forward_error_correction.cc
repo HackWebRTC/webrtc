@@ -523,6 +523,8 @@ void ForwardErrorCorrection::InsertFecPacket(
         protected_packet->seq_num =
             static_cast<uint16_t>(seq_num_base + (byte_idx << 3) + bit_idx);
         protected_packet->pkt = nullptr;
+        // Note that |protected_pkt_list| is sorted (according to sequence
+        // number) by construction.
         fec_packet->protected_packets.push_back(std::move(protected_packet));
       }
     }
@@ -534,6 +536,11 @@ void ForwardErrorCorrection::InsertFecPacket(
     AssignRecoveredPackets(fec_packet.get(), recovered_packets);
     // TODO(holmer): Consider replacing this with a binary search for the right
     // position, and then just insert the new packet. Would get rid of the sort.
+    //
+    // For correct decoding, |fec_packet_list_| does not necessarily
+    // need to be sorted by sequence number (see decoding algorithm in
+    // AttemptRecover()), but by keeping it sorted we try to recover the
+    // oldest lost packets first.
     received_fec_packets_.push_back(std::move(fec_packet));
     received_fec_packets_.sort(SortablePacket::LessThan());
     if (received_fec_packets_.size() > kMaxFecPackets) {
