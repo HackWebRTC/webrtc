@@ -9,6 +9,7 @@
  */
 
 #include <memory>
+#include <utility>
 
 #include "webrtc/modules/desktop_capture/screen_capturer.h"
 
@@ -75,8 +76,8 @@ ACTION_P(SaveUniquePtrArg, dest) {
 TEST_F(ScreenCapturerTest, GetScreenListAndSelectScreen) {
   webrtc::ScreenCapturer::ScreenList screens;
   EXPECT_TRUE(capturer_->GetScreenList(&screens));
-  for(webrtc::ScreenCapturer::ScreenList::iterator it = screens.begin();
-      it != screens.end(); ++it) {
+  for (webrtc::ScreenCapturer::ScreenList::iterator it = screens.begin();
+       it != screens.end(); ++it) {
     EXPECT_TRUE(capturer_->SelectScreen(it->id));
   }
 }
@@ -142,6 +143,40 @@ TEST_F(ScreenCapturerTest, UseMagnifier) {
   capturer_->Start(&callback_);
   capturer_->Capture(DesktopRegion());
   ASSERT_TRUE(frame);
+}
+
+TEST_F(ScreenCapturerTest, UseDirectxCapturer) {
+  DesktopCaptureOptions options(DesktopCaptureOptions::CreateDefault());
+  options.set_allow_directx_capturer(true);
+  capturer_.reset(ScreenCapturer::Create(options));
+
+  std::unique_ptr<DesktopFrame> frame;
+  EXPECT_CALL(callback_,
+              OnCaptureResultPtr(DesktopCapturer::Result::SUCCESS, _))
+      .WillOnce(SaveUniquePtrArg(&frame));
+
+  capturer_->Start(&callback_);
+  capturer_->Capture(DesktopRegion());
+  ASSERT_TRUE(frame);
+}
+
+TEST_F(ScreenCapturerTest, UseDirectxCapturerWithSharedBuffers) {
+  DesktopCaptureOptions options(DesktopCaptureOptions::CreateDefault());
+  options.set_allow_directx_capturer(true);
+  capturer_.reset(ScreenCapturer::Create(options));
+
+  std::unique_ptr<DesktopFrame> frame;
+  EXPECT_CALL(callback_,
+              OnCaptureResultPtr(DesktopCapturer::Result::SUCCESS, _))
+      .WillOnce(SaveUniquePtrArg(&frame));
+
+  capturer_->Start(&callback_);
+  capturer_->SetSharedMemoryFactory(
+      std::unique_ptr<SharedMemoryFactory>(new FakeSharedMemoryFactory()));
+  capturer_->Capture(DesktopRegion());
+  ASSERT_TRUE(frame);
+  ASSERT_TRUE(frame->shared_memory());
+  EXPECT_EQ(frame->shared_memory()->id(), kTestSharedMemoryId);
 }
 
 #endif  // defined(WEBRTC_WIN)

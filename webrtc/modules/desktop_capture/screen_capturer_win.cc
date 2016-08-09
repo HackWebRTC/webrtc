@@ -24,7 +24,7 @@ namespace webrtc {
 ScreenCapturer* ScreenCapturer::Create(const DesktopCaptureOptions& options) {
   std::unique_ptr<ScreenCapturer> capturer;
   if (options.allow_directx_capturer() &&
-      ScreenCapturerWinDirectx::Initialize()) {
+      ScreenCapturerWinDirectx::IsSupported()) {
     capturer.reset(new ScreenCapturerWinDirectx(options));
   } else {
     capturer.reset(new ScreenCapturerWinGdi(options));
