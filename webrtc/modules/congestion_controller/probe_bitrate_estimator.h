@@ -23,6 +23,7 @@ struct ProbingResult {
 
   ProbingResult();
   ProbingResult(int bps, int64_t timestamp);
+  bool valid() const;
 
   int bps;
   int64_t timestamp;

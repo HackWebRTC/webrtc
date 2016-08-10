@@ -277,7 +277,7 @@
             'congestion_controller/delay_based_bwe_unittest.cc',
             'congestion_controller/delay_based_bwe_unittest_helper.cc',
             'congestion_controller/delay_based_bwe_unittest_helper.h',
-            'congestion_controller/probe_bitrate_controller_unittest.cc',
+            'congestion_controller/probe_bitrate_estimator_unittest.cc',
             'media_file/media_file_unittest.cc',
             'module_common_types_unittest.cc',
             'pacing/bitrate_prober_unittest.cc',

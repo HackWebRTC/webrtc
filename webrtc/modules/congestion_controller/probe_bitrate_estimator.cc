@@ -32,6 +32,10 @@ ProbingResult::ProbingResult() : bps(kNoEstimate), timestamp(0) {}
 ProbingResult::ProbingResult(int bps, int64_t timestamp)
     : bps(bps), timestamp(timestamp) {}
 
+bool ProbingResult::valid() const {
+  return bps != kNoEstimate;
+}
+
 ProbeBitrateEstimator::ProbeBitrateEstimator() : last_valid_cluster_id_(0) {}
 
 ProbingResult ProbeBitrateEstimator::PacketFeedback(
@@ -52,7 +56,7 @@ ProbingResult ProbeBitrateEstimator::PacketFeedback(
       std::min(cluster->first_receive_ms, packet_info.arrival_time_ms);
   cluster->last_receive_ms =
       std::max(cluster->last_receive_ms, packet_info.arrival_time_ms);
-  cluster->size += packet_info.payload_size;
+  cluster->size += packet_info.payload_size * 8;
   cluster->num_probes += 1;
 
   // Clean up old clusters.
@@ -62,9 +66,17 @@ ProbingResult ProbeBitrateEstimator::PacketFeedback(
   if (cluster->num_probes < kMinNumProbesValidCluster)
     return ProbingResult();
 
-  int send_interval_ms = cluster->last_send_ms - cluster->first_send_ms;
-  int receive_interval_ms =
+  float send_interval_ms = cluster->last_send_ms - cluster->first_send_ms;
+  float receive_interval_ms =
       cluster->last_receive_ms - cluster->first_receive_ms;
+
+  // Since the send/receive interval does not include the send/receive time of
+  // the last/first packet we expand the interval by the average inverval
+  // between the probing packets.
+  float interval_correction =
+      static_cast<float>(cluster->num_probes) / (cluster->num_probes - 1);
+  send_interval_ms *= interval_correction;
+  receive_interval_ms *= interval_correction;
 
   if (send_interval_ms == 0 || receive_interval_ms == 0) {
     LOG(LS_INFO) << "Probing unsuccessful, invalid send/receive interval"
@@ -74,7 +86,6 @@ ProbingResult ProbeBitrateEstimator::PacketFeedback(
 
     return ProbingResult();
   }
-
   float send_bps = static_cast<float>(cluster->size) / send_interval_ms * 1000;
   float receive_bps =
       static_cast<float>(cluster->size) / receive_interval_ms * 1000;
