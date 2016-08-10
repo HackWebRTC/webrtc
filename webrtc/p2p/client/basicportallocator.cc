@@ -1296,6 +1296,19 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
       continue;
     }
 
+    // Do not create a port if the server address family is known and does
+    // not match the local IP address family.
+    int server_ip_family = relay_port->address.ipaddr().family();
+    int local_ip_family = ip_.family();
+    if (server_ip_family != AF_UNSPEC && server_ip_family != local_ip_family) {
+      LOG(LS_INFO) << "Server and local address families are not compatible. "
+                   << "Server address: "
+                   << relay_port->address.ipaddr().ToString()
+                   << " Local address: " << ip_.ToString();
+      continue;
+    }
+
+
     // Shared socket mode must be enabled only for UDP based ports. Hence
     // don't pass shared socket for ports which will create TCP sockets.
     // TODO(mallinath) - Enable shared socket mode for TURN ports. Disabled
