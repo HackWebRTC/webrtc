@@ -20,6 +20,8 @@
 #import "WebRTC/RTCVideoFrame.h"
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/optional.h"
+#include "webrtc/common_video/rotation.h"
 
 static const char kNV12FragmentShaderSource[] =
   SHADER_VERSION
@@ -46,6 +48,9 @@ static const char kNV12FragmentShaderSource[] =
   GLint _ySampler;
   GLint _uvSampler;
   CVOpenGLESTextureCacheRef _textureCache;
+  // Store current rotation and only upload new vertex data when rotation
+  // changes.
+  rtc::Optional<webrtc::VideoRotation> _currentRotation;
 }
 
 - (instancetype)initWithContext:(GlContextType *)context {
@@ -149,6 +154,11 @@ static const char kNV12FragmentShaderSource[] =
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
   glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
+  if (!_currentRotation || frame.rotation != *_currentRotation) {
+    _currentRotation = rtc::Optional<webrtc::VideoRotation>(
+        static_cast<webrtc::VideoRotation>(frame.rotation));
+    RTCSetVertexData(*_currentRotation);
+  }
   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
   CFRelease(chromaTexture);

@@ -13,7 +13,7 @@
 #import <GLKit/GLKit.h>
 
 #import "RTCOpenGLVideoRenderer.h"
-#import "WebRTC//RTCVideoFrame.h"
+#import "WebRTC/RTCVideoFrame.h"
 
 // RTCDisplayLinkTimer wraps a CADisplayLink and is set to fire every two screen
 // refreshes, which should be 30fps. We wrap the display link in order to avoid

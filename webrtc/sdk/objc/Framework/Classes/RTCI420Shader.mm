@@ -15,6 +15,9 @@
 #import "RTCShader+Private.h"
 #import "WebRTC/RTCVideoFrame.h"
 
+#include "webrtc/base/optional.h"
+#include "webrtc/common_video/rotation.h"
+
 // |kNumTextures| must not exceed 8, which is the limit in OpenGLES2. Two sets
 // of 3 textures are used here, one for each of the Y, U and V planes. Having
 // two sets alleviates CPU blockage in the event that the GPU is asked to render
@@ -57,6 +60,9 @@ static const char kI420FragmentShaderSource[] =
   GLint _ySampler;
   GLint _uSampler;
   GLint _vSampler;
+  // Store current rotation and only upload new vertex data when rotation
+  // changes.
+  rtc::Optional<webrtc::VideoRotation> _currentRotation;
   // Used to create a non-padded plane for GPU upload when we receive padded
   // frames.
   std::vector<uint8_t> _planeBuffer;
@@ -119,6 +125,11 @@ static const char kI420FragmentShaderSource[] =
   glBindVertexArray(_vertexArray);
 #endif
   glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
+  if (!_currentRotation || frame.rotation != *_currentRotation) {
+    _currentRotation = rtc::Optional<webrtc::VideoRotation>(
+        static_cast<webrtc::VideoRotation>(frame.rotation));
+    RTCSetVertexData(*_currentRotation);
+  }
   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
   return YES;

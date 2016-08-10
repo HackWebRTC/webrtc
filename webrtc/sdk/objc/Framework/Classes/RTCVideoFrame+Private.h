@@ -10,6 +10,7 @@
 
 #import "WebRTC/RTCVideoFrame.h"
 
+#include "webrtc/common_video/rotation.h"
 #include "webrtc/media/base/videoframe.h"
 
 NS_ASSUME_NONNULL_BEGIN
@@ -19,7 +20,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, readonly)
     rtc::scoped_refptr<webrtc::VideoFrameBuffer> i420Buffer;
 
-- (instancetype)initWithNativeFrame:(const cricket::VideoFrame *)nativeFrame
+- (instancetype)initWithVideoBuffer:
+                    (rtc::scoped_refptr<webrtc::VideoFrameBuffer>)videoBuffer
+                           rotation:(webrtc::VideoRotation)rotation
+                        timeStampNs:(int64_t)timeStampNs
     NS_DESIGNATED_INITIALIZER;
 
 @end

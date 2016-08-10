@@ -12,17 +12,25 @@
 
 #include <memory>
 
+#include "webrtc/common_video/rotation.h"
+
 @implementation RTCVideoFrame {
-  std::unique_ptr<cricket::VideoFrame> _videoFrame;
+  rtc::scoped_refptr<webrtc::VideoFrameBuffer> _videoBuffer;
+  webrtc::VideoRotation _rotation;
+  int64_t _timeStampNs;
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> _i420Buffer;
 }
 
 - (size_t)width {
-  return _videoFrame->width();
+  return _videoBuffer->width();
 }
 
 - (size_t)height {
-  return _videoFrame->height();
+  return _videoBuffer->height();
+}
+
+- (int)rotation {
+  return static_cast<int>(_rotation);
 }
 
 // TODO(nisse): chromaWidth and chromaHeight are used only in
@@ -78,34 +86,32 @@
   return self.i420Buffer->StrideV();
 }
 
-- (int64_t)timeStamp {
-  return _videoFrame->GetTimeStamp();
+- (int64_t)timeStampNs {
+  return _timeStampNs;
 }
 
 - (CVPixelBufferRef)nativeHandle {
-  return static_cast<CVPixelBufferRef>(
-      _videoFrame->video_frame_buffer()->native_handle());
+  return static_cast<CVPixelBufferRef>(_videoBuffer->native_handle());
 }
 
 - (void)convertBufferIfNeeded {
   if (!_i420Buffer) {
-    if (_videoFrame->video_frame_buffer()->native_handle()) {
-      // Convert to I420.
-      _i420Buffer = _videoFrame->video_frame_buffer()->NativeToI420Buffer();
-    } else {
-      // Should already be I420.
-      _i420Buffer = _videoFrame->video_frame_buffer();
-    }
+    _i420Buffer = _videoBuffer->native_handle()
+                      ? _videoBuffer->NativeToI420Buffer()
+                      : _videoBuffer;
   }
 }
 
 #pragma mark - Private
 
-- (instancetype)initWithNativeFrame:(const cricket::VideoFrame *)nativeFrame {
+- (instancetype)initWithVideoBuffer:
+                    (rtc::scoped_refptr<webrtc::VideoFrameBuffer>)videoBuffer
+                           rotation:(webrtc::VideoRotation)rotation
+                        timeStampNs:(int64_t)timeStampNs {
   if (self = [super init]) {
-    // Keep a shallow copy of the video frame. The underlying frame buffer is
-    // not copied.
-    _videoFrame.reset(nativeFrame->Copy());
+    _videoBuffer = videoBuffer;
+    _rotation = rotation;
+    _timeStampNs = timeStampNs;
   }
   return self;
 }
