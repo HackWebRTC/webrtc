@@ -614,13 +614,10 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildTMMBR(
       // add current tuple
       candidateSet->SetEntry(lengthOfBoundingSet, tmmbr_send_, packet_oh_send_,
                              ssrc_);
-      int numCandidates = lengthOfBoundingSet + 1;
 
       // find bounding set
-      TMMBRSet* boundingSet = nullptr;
-      int numBoundingSet = tmmbr_help.FindTMMBRBoundingSet(boundingSet);
-      if (numBoundingSet > 0 || numBoundingSet <= numCandidates)
-        tmmbrOwner = tmmbr_help.IsOwner(ssrc_, numBoundingSet);
+      std::vector<rtcp::TmmbItem> bounding = tmmbr_help.FindTMMBRBoundingSet();
+      tmmbrOwner = TMMBRHelp::IsOwner(bounding, ssrc_);
       if (!tmmbrOwner) {
         // Did not enter bounding set, no meaning to send this request.
         return nullptr;

@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <utility>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
@@ -60,7 +61,7 @@ TMMBRSet* TMMBRHelp::CandidateSet() {
   return &_candidateSet;
 }
 
-int32_t TMMBRHelp::FindTMMBRBoundingSet(TMMBRSet*& boundingSet) {
+std::vector<rtcp::TmmbItem> TMMBRHelp::FindTMMBRBoundingSet() {
   // Work on local variable, will be modified
   TMMBRSet candidateSet;
   candidateSet.VerifyAndAllocateSet(_candidateSet.capacity());
@@ -80,16 +81,14 @@ int32_t TMMBRHelp::FindTMMBRBoundingSet(TMMBRSet*& boundingSet) {
   // Number of set candidates
   int32_t numSetCandidates = candidateSet.lengthOfSet();
   // Find bounding set
-  uint32_t numBoundingSet = 0;
+  std::vector<rtcp::TmmbItem> bounding;
   if (numSetCandidates > 0) {
-    FindBoundingSet(std::move(candidateSet), &_boundingSet);
-    numBoundingSet = _boundingSet.size();
-    if (numBoundingSet < 1 || (numBoundingSet > _candidateSet.size())) {
-      return -1;
-    }
-    boundingSet = &_boundingSet;
+    FindBoundingSet(std::move(candidateSet), &bounding);
+    size_t numBoundingSet = bounding.size();
+    RTC_DCHECK_GE(numBoundingSet, 1u);
+    RTC_DCHECK_LE(numBoundingSet, _candidateSet.size());
   }
-  return numBoundingSet;
+  return bounding;
 }
 
 void TMMBRHelp::FindBoundingSet(std::vector<rtcp::TmmbItem> candidates,
@@ -231,13 +230,10 @@ void TMMBRHelp::FindBoundingSet(std::vector<rtcp::TmmbItem> candidates,
   }
 }
 
-bool TMMBRHelp::IsOwner(const uint32_t ssrc, const uint32_t length) const {
-  if (length == 0) {
-    // Empty bounding set.
-    return false;
-  }
-  for (size_t i = 0; (i < length) && (i < _boundingSet.size()); ++i) {
-    if (_boundingSet.Ssrc(i) == ssrc) {
+bool TMMBRHelp::IsOwner(const std::vector<rtcp::TmmbItem>& bounding,
+                        uint32_t ssrc) {
+  for (const rtcp::TmmbItem& item : bounding) {
+    if (item.ssrc() == ssrc) {
       return true;
     }
   }

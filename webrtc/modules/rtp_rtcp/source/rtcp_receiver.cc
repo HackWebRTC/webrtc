@@ -1234,7 +1234,6 @@ void RTCPReceiver::HandleTransportFeedback(
 }
 int32_t RTCPReceiver::UpdateTMMBR() {
   TMMBRHelp tmmbr_help;
-  int32_t numBoundingSet = 0;
   uint32_t bitrate = 0;
   uint32_t accNumCandidates = 0;
 
@@ -1245,19 +1244,14 @@ int32_t RTCPReceiver::UpdateTMMBR() {
     accNumCandidates = TMMBRReceived(size, accNumCandidates, candidateSet);
   }
   // Find bounding set
-  TMMBRSet* boundingSet = NULL;
-  numBoundingSet = tmmbr_help.FindTMMBRBoundingSet(boundingSet);
-  if (numBoundingSet == -1) {
-    LOG(LS_WARNING) << "Failed to find TMMBR bounding set.";
-    return -1;
-  }
+  std::vector<rtcp::TmmbItem> bounding = tmmbr_help.FindTMMBRBoundingSet();
   // Set bounding set
   // Inform remote clients about the new bandwidth
   // inform the remote client
-  _rtpRtcp.SetTMMBN(boundingSet);
+  _rtpRtcp.SetTMMBN(&bounding);
 
   // might trigger a TMMBN
-  if (numBoundingSet == 0) {
+  if (bounding.empty()) {
     // owner of max bitrate request has timed out
     // empty bounding set has been sent
     return 0;
