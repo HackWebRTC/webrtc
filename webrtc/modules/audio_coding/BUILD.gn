@@ -1377,4 +1377,27 @@ if (rtc_include_tests) {
       configs -= [ "//build/config/clang:find_bad_constructs" ]
     }
   }
+
+  executable("neteq_opus_quality_test") {
+    testonly = true
+
+    sources = [
+      "neteq/test/neteq_opus_quality_test.cc",
+    ]
+
+    deps = [
+      ":neteq",
+      ":neteq_test_support",
+      ":webrtc_opus",
+      "../../test:test_support_main",
+      "//testing/gtest",
+      "//third_party/gflags",
+    ]
+
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugins
+      # (bugs.webrtc.org/163).
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
 }

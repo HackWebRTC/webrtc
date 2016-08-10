@@ -276,6 +276,8 @@ GilbertElliotLoss::GilbertElliotLoss(double prob_trans_11, double prob_trans_01)
       uniform_loss_model_(new UniformLoss(0)) {
 }
 
+GilbertElliotLoss::~GilbertElliotLoss() {}
+
 bool GilbertElliotLoss::Lost() {
   // Simulate bursty channel (Gilbert model).
   // (1st order) Markov chain model with memory of the previous/last

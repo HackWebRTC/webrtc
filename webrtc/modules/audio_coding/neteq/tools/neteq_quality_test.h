@@ -51,6 +51,7 @@ class UniformLoss : public LossModel {
 class GilbertElliotLoss : public LossModel {
  public:
   GilbertElliotLoss(double prob_trans_11, double prob_trans_01);
+  ~GilbertElliotLoss() override;
   bool Lost() override;
 
  private:
@@ -68,7 +69,7 @@ class NetEqQualityTest : public ::testing::Test {
                    int in_sampling_khz,
                    int out_sampling_khz,
                    NetEqDecoder decoder_type);
-  virtual ~NetEqQualityTest();
+  ~NetEqQualityTest() override;
 
   void SetUp() override;
 
