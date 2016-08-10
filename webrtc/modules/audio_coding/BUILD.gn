@@ -1400,4 +1400,20 @@ if (rtc_include_tests) {
       configs -= [ "//build/config/clang:find_bad_constructs" ]
     }
   }
+
+  executable("neteq_speed_test") {
+    testonly = true
+
+    sources = [
+      "neteq/test/neteq_speed_test.cc",
+    ]
+
+    deps = [
+      ":neteq",
+      ":neteq_test_support",
+      "../../system_wrappers:system_wrappers_default",
+      "../../test:test_support",
+      "//third_party/gflags",
+    ]
+  }
 }
