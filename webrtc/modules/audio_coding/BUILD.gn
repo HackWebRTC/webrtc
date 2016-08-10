@@ -1416,4 +1416,16 @@ if (rtc_include_tests) {
       "//third_party/gflags",
     ]
   }
+
+  executable("audio_classifier_test") {
+    testonly = true
+    sources = [
+      "neteq/test/audio_classifier_test.cc",
+    ]
+    deps = [
+      ":neteq",
+      ":webrtc_opus",
+      "../../system_wrappers:system_wrappers_default",
+    ]
+  }
 }

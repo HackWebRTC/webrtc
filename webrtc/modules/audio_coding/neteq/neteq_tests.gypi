@@ -145,6 +145,7 @@
       'dependencies': [
         'neteq',
         'webrtc_opus',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
       ],
       'sources': [
         'test/audio_classifier_test.cc',
