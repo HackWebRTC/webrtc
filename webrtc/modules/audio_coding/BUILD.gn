@@ -1443,4 +1443,21 @@ if (rtc_include_tests) {
       "//third_party/gflags",
     ]
   }
+
+  executable("neteq_isac_quality_test") {
+    testonly = true
+
+    sources = [
+      "neteq/test/neteq_isac_quality_test.cc",
+    ]
+
+    deps = [
+      ":isac_fix",
+      ":neteq",
+      ":neteq_test_support",
+      "../../test:test_support_main",
+      "//testing/gtest",
+      "//third_party/gflags",
+    ]
+  }
 }
