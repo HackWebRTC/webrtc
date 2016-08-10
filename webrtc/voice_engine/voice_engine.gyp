@@ -29,6 +29,7 @@
         '<(webrtc_root)/modules/modules.gyp:webrtc_utility',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/webrtc.gyp:rtc_event_log',
+        'level_indicator',
       ],
       'export_dependent_settings': [
         '<(webrtc_root)/modules/modules.gyp:audio_coding_module',
@@ -52,8 +53,6 @@
         'channel_manager.h',
         'channel_proxy.cc',
         'channel_proxy.h',
-        'level_indicator.cc',
-        'level_indicator.h',
         'monitor_module.cc',
         'monitor_module.h',
         'network_predictor.cc',
@@ -95,6 +94,19 @@
         'voice_engine_impl.h',
       ],
     },
+    {
+      'target_name': 'level_indicator',
+      'type': 'static_library',
+      'dependencies': [
+        '<(webrtc_root)/base/base.gyp:rtc_base_approved',
+        '<(webrtc_root)/common.gyp:webrtc_common',
+        '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
+      ],
+      'sources': [
+        'level_indicator.cc',
+        'level_indicator.h',
+      ]
+    }
   ],
   'conditions': [
     ['OS=="win"', {

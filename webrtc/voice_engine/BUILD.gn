@@ -29,8 +29,6 @@ source_set("voice_engine") {
     "include/voe_rtp_rtcp.h",
     "include/voe_video_sync.h",
     "include/voe_volume_control.h",
-    "level_indicator.cc",
-    "level_indicator.h",
     "monitor_module.cc",
     "monitor_module.h",
     "network_predictor.cc",
@@ -91,6 +89,7 @@ source_set("voice_engine") {
   }
 
   deps = [
+    ":level_indicator",
     "..:rtc_event_log",
     "..:webrtc_common",
     "../base:rtc_base_approved",
@@ -105,6 +104,22 @@ source_set("voice_engine") {
     "../modules/rtp_rtcp",
     "../modules/utility",
     "../system_wrappers",
+  ]
+}
+
+source_set("level_indicator") {
+  sources = [
+    "level_indicator.cc",
+    "level_indicator.h",
+  ]
+
+  configs += [ "..:common_config" ]
+  public_configs = [ "..:common_inherited_config" ]
+
+  deps = [
+    "..:webrtc_common",
+    "../base:rtc_base_approved",
+    "../common_audio",
   ]
 }
 

@@ -13,7 +13,6 @@
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/voice_engine/voice_engine_defines.h"
 
 namespace webrtc {
 
