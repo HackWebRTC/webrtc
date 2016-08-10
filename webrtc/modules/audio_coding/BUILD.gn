@@ -1167,6 +1167,7 @@ if (rtc_include_tests) {
       "neteq/tools/audio_checksum.h",
       "neteq/tools/audio_loop.cc",
       "neteq/tools/audio_loop.h",
+      "neteq/tools/audio_sink.cc",
       "neteq/tools/audio_sink.h",
       "neteq/tools/constant_pcm_packet_source.cc",
       "neteq/tools/constant_pcm_packet_source.h",
@@ -1388,17 +1389,12 @@ if (rtc_include_tests) {
     deps = [
       ":neteq",
       ":neteq_test_support",
+      ":neteq_unittest_tools",
       ":webrtc_opus",
       "../../test:test_support_main",
       "//testing/gtest",
       "//third_party/gflags",
     ]
-
-    if (is_clang) {
-      # Suppress warnings from the Chromium Clang plugins
-      # (bugs.webrtc.org/163).
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 
   executable("neteq_speed_test") {
@@ -1426,6 +1422,25 @@ if (rtc_include_tests) {
       ":neteq",
       ":webrtc_opus",
       "../../system_wrappers:system_wrappers_default",
+    ]
+  }
+
+  executable("neteq_ilbc_quality_test") {
+    testonly = true
+
+    sources = [
+      "neteq/test/neteq_ilbc_quality_test.cc",
+    ]
+
+    deps = [
+      ":ilbc",
+      ":neteq",
+      ":neteq_test_support",
+      ":neteq_unittest_tools",
+      "../../system_wrappers:system_wrappers_default",
+      "../../test:test_support_main",
+      "//testing/gtest",
+      "//third_party/gflags",
     ]
   }
 }

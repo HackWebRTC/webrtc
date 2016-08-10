@@ -228,6 +228,7 @@
             'tools/audio_loop.cc',
             'tools/audio_loop.h',
             'tools/audio_sink.h',
+            'tools/audio_sink.cc',
             'tools/constant_pcm_packet_source.cc',
             'tools/constant_pcm_packet_source.h',
             'tools/fake_decode_from_file.cc',
