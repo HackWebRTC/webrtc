@@ -25,6 +25,31 @@
 namespace webrtc {
 namespace plotting {
 
+struct LoggedRtpPacket {
+  LoggedRtpPacket(uint64_t timestamp, RTPHeader header, size_t total_length)
+      : timestamp(timestamp), header(header), total_length(total_length) {}
+  uint64_t timestamp;
+  RTPHeader header;
+  size_t total_length;
+};
+
+struct LoggedRtcpPacket {
+  LoggedRtcpPacket(uint64_t timestamp,
+                   RTCPPacketType rtcp_type,
+                   std::unique_ptr<rtcp::RtcpPacket> rtcp_packet)
+      : timestamp(timestamp), type(rtcp_type), packet(std::move(rtcp_packet)) {}
+  uint64_t timestamp;
+  RTCPPacketType type;
+  std::unique_ptr<rtcp::RtcpPacket> packet;
+};
+
+struct BwePacketLossEvent {
+  uint64_t timestamp;
+  int32_t new_bitrate;
+  uint8_t fraction_loss;
+  int32_t expected_packets;
+};
+
 class EventLogAnalyzer {
  public:
   // The EventLogAnalyzer keeps a reference to the ParsedRtcEventLog for the
@@ -71,33 +96,6 @@ class EventLogAnalyzer {
    private:
     uint32_t ssrc_;
     webrtc::PacketDirection direction_;
-  };
-
-  struct LoggedRtpPacket {
-    LoggedRtpPacket(uint64_t timestamp, RTPHeader header, size_t total_length)
-        : timestamp(timestamp), header(header), total_length(total_length) {}
-    uint64_t timestamp;
-    RTPHeader header;
-    size_t total_length;
-  };
-
-  struct LoggedRtcpPacket {
-    LoggedRtcpPacket(uint64_t timestamp,
-                     RTCPPacketType rtcp_type,
-                     std::unique_ptr<rtcp::RtcpPacket> rtcp_packet)
-        : timestamp(timestamp),
-          type(rtcp_type),
-          packet(std::move(rtcp_packet)) {}
-    uint64_t timestamp;
-    RTCPPacketType type;
-    std::unique_ptr<rtcp::RtcpPacket> packet;
-  };
-
-  struct BwePacketLossEvent {
-    uint64_t timestamp;
-    int32_t new_bitrate;
-    uint8_t fraction_loss;
-    int32_t expected_packets;
   };
 
   bool IsRtxSsrc(StreamId stream_id);

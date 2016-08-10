@@ -57,7 +57,7 @@ double AbsSendTimeToMicroseconds(int64_t abs_send_time) {
   // and 18 bits for fractions of a second. Thus, we divide by 2^18 to get the
   // time in seconds and then multiply by 1000000 to convert to microseconds.
   static constexpr double kTimestampToMicroSec =
-      1000000.0 / static_cast<double>(1 << 18);
+      1000000.0 / static_cast<double>(1ul << 18);
   return abs_send_time * kTimestampToMicroSec;
 }
 
@@ -97,6 +97,81 @@ constexpr float kLeftMargin = 0.01f;
 constexpr float kRightMargin = 0.02f;
 constexpr float kBottomMargin = 0.02f;
 constexpr float kTopMargin = 0.05f;
+
+class NetworkDelayDiff {
+ public:
+  class AbsSendTime {
+   public:
+    using DataType = LoggedRtpPacket;
+    using ResultType = double;
+    double operator()(const LoggedRtpPacket& old_packet,
+                      const LoggedRtpPacket& new_packet) {
+      if (old_packet.header.extension.hasAbsoluteSendTime &&
+          new_packet.header.extension.hasAbsoluteSendTime) {
+        int64_t send_time_diff = WrappingDifference(
+            new_packet.header.extension.absoluteSendTime,
+            old_packet.header.extension.absoluteSendTime, 1ul << 24);
+        int64_t recv_time_diff = new_packet.timestamp - old_packet.timestamp;
+        return static_cast<double>(recv_time_diff -
+                                   AbsSendTimeToMicroseconds(send_time_diff)) /
+               1000;
+      } else {
+        return 0;
+      }
+    }
+  };
+
+  class CaptureTime {
+   public:
+    using DataType = LoggedRtpPacket;
+    using ResultType = double;
+    double operator()(const LoggedRtpPacket& old_packet,
+                      const LoggedRtpPacket& new_packet) {
+      int64_t send_time_diff = WrappingDifference(
+          new_packet.header.timestamp, old_packet.header.timestamp, 1ull << 32);
+      int64_t recv_time_diff = new_packet.timestamp - old_packet.timestamp;
+
+      const double kVideoSampleRate = 90000;
+      // TODO(terelius): We treat all streams as video for now, even though
+      // audio might be sampled at e.g. 16kHz, because it is really difficult to
+      // figure out the true sampling rate of a stream. The effect is that the
+      // delay will be scaled incorrectly for non-video streams.
+
+      double delay_change =
+          static_cast<double>(recv_time_diff) / 1000 -
+          static_cast<double>(send_time_diff) / kVideoSampleRate * 1000;
+      return delay_change;
+    }
+  };
+};
+
+template <typename Extractor>
+class Accumulated {
+ public:
+  using DataType = typename Extractor::DataType;
+  using ResultType = typename Extractor::ResultType;
+  ResultType operator()(const DataType& old_packet,
+                        const DataType& new_packet) {
+    sum += extract(old_packet, new_packet);
+    return sum;
+  }
+
+ private:
+  Extractor extract;
+  ResultType sum = 0;
+};
+
+template <typename Extractor>
+void Pairwise(const std::vector<typename Extractor::DataType>& data,
+              uint64_t begin_time,
+              TimeSeries* result) {
+  Extractor extract;
+  for (size_t i = 1; i < data.size(); i++) {
+    float x = static_cast<float>(data[i].timestamp - begin_time) / 1000000;
+    float y = extract(data[i - 1], data[i]);
+    result->points.emplace_back(x, y);
+  }
+}
 
 }  // namespace
 
@@ -446,43 +521,28 @@ void EventLogAnalyzer::CreateSequenceNumberGraph(Plot* plot) {
 void EventLogAnalyzer::CreateDelayChangeGraph(Plot* plot) {
   for (auto& kv : rtp_packets_) {
     StreamId stream_id = kv.first;
+    const std::vector<LoggedRtpPacket>& packet_stream = kv.second;
+    uint32_t ssrc = stream_id.GetSsrc();
     // Filter on direction and SSRC.
     if (stream_id.GetDirection() != kIncomingPacket ||
-        !MatchingSsrc(stream_id.GetSsrc(), desired_ssrc_)) {
+        !MatchingSsrc(ssrc, desired_ssrc_) || IsAudioSsrc(stream_id) ||
+        !IsVideoSsrc(stream_id) || IsRtxSsrc(stream_id)) {
       continue;
     }
 
-    TimeSeries time_series;
-    time_series.label = SsrcToString(stream_id.GetSsrc());
-    time_series.style = BAR_GRAPH;
-    const std::vector<LoggedRtpPacket>& packet_stream = kv.second;
-    int64_t last_abs_send_time = 0;
-    int64_t last_timestamp = 0;
-    for (const LoggedRtpPacket& packet : packet_stream) {
-      if (packet.header.extension.hasAbsoluteSendTime) {
-        int64_t send_time_diff =
-            WrappingDifference(packet.header.extension.absoluteSendTime,
-                               last_abs_send_time, 1ul << 24);
-        int64_t recv_time_diff = packet.timestamp - last_timestamp;
+    TimeSeries capture_time_data;
+    capture_time_data.label = SsrcToString(ssrc) + " capture-time";
+    capture_time_data.style = BAR_GRAPH;
+    Pairwise<NetworkDelayDiff::CaptureTime>(packet_stream, begin_time_,
+                                            &capture_time_data);
+    plot->series_list_.push_back(std::move(capture_time_data));
 
-        last_abs_send_time = packet.header.extension.absoluteSendTime;
-        last_timestamp = packet.timestamp;
-
-        float x = static_cast<float>(packet.timestamp - begin_time_) / 1000000;
-        double y =
-            static_cast<double>(recv_time_diff -
-                                AbsSendTimeToMicroseconds(send_time_diff)) /
-            1000;
-        if (time_series.points.size() == 0) {
-          // There were no previously logged packets for this SSRC.
-          // Generate a point, but place it on the x-axis.
-          y = 0;
-        }
-        time_series.points.emplace_back(x, y);
-      }
-    }
-    // Add the data set to the plot.
-    plot->series_list_.push_back(std::move(time_series));
+    TimeSeries send_time_data;
+    send_time_data.label = SsrcToString(ssrc) + " abs-send-time";
+    send_time_data.style = BAR_GRAPH;
+    Pairwise<NetworkDelayDiff::AbsSendTime>(packet_stream, begin_time_,
+                                            &send_time_data);
+    plot->series_list_.push_back(std::move(send_time_data));
   }
 
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
@@ -494,43 +554,28 @@ void EventLogAnalyzer::CreateDelayChangeGraph(Plot* plot) {
 void EventLogAnalyzer::CreateAccumulatedDelayChangeGraph(Plot* plot) {
   for (auto& kv : rtp_packets_) {
     StreamId stream_id = kv.first;
+    const std::vector<LoggedRtpPacket>& packet_stream = kv.second;
+    uint32_t ssrc = stream_id.GetSsrc();
     // Filter on direction and SSRC.
     if (stream_id.GetDirection() != kIncomingPacket ||
-        !MatchingSsrc(stream_id.GetSsrc(), desired_ssrc_)) {
+        !MatchingSsrc(ssrc, desired_ssrc_) || IsAudioSsrc(stream_id) ||
+        !IsVideoSsrc(stream_id) || IsRtxSsrc(stream_id)) {
       continue;
     }
-    TimeSeries time_series;
-    time_series.label = SsrcToString(stream_id.GetSsrc());
-    time_series.style = LINE_GRAPH;
-    const std::vector<LoggedRtpPacket>& packet_stream = kv.second;
-    int64_t last_abs_send_time = 0;
-    int64_t last_timestamp = 0;
-    double accumulated_delay_ms = 0;
-    for (const LoggedRtpPacket& packet : packet_stream) {
-      if (packet.header.extension.hasAbsoluteSendTime) {
-        int64_t send_time_diff =
-            WrappingDifference(packet.header.extension.absoluteSendTime,
-                               last_abs_send_time, 1ul << 24);
-        int64_t recv_time_diff = packet.timestamp - last_timestamp;
 
-        last_abs_send_time = packet.header.extension.absoluteSendTime;
-        last_timestamp = packet.timestamp;
+    TimeSeries capture_time_data;
+    capture_time_data.label = SsrcToString(ssrc) + " capture-time";
+    capture_time_data.style = LINE_GRAPH;
+    Pairwise<Accumulated<NetworkDelayDiff::CaptureTime>>(
+        packet_stream, begin_time_, &capture_time_data);
+    plot->series_list_.push_back(std::move(capture_time_data));
 
-        float x = static_cast<float>(packet.timestamp - begin_time_) / 1000000;
-        accumulated_delay_ms +=
-            static_cast<double>(recv_time_diff -
-                                AbsSendTimeToMicroseconds(send_time_diff)) /
-            1000;
-        if (time_series.points.size() == 0) {
-          // There were no previously logged packets for this SSRC.
-          // Generate a point, but place it on the x-axis.
-          accumulated_delay_ms = 0;
-        }
-        time_series.points.emplace_back(x, accumulated_delay_ms);
-      }
-    }
-    // Add the data set to the plot.
-    plot->series_list_.push_back(std::move(time_series));
+    TimeSeries send_time_data;
+    send_time_data.label = SsrcToString(ssrc) + " abs-send-time";
+    send_time_data.style = LINE_GRAPH;
+    Pairwise<Accumulated<NetworkDelayDiff::AbsSendTime>>(
+        packet_stream, begin_time_, &send_time_data);
+    plot->series_list_.push_back(std::move(send_time_data));
   }
 
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
