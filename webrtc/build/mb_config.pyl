@@ -103,7 +103,7 @@
       'android_dbg': 'android_gyp_debug_bot_arm',
       'android_rel': 'android_gyp_release_bot_arm',
       'android_clang_dbg': 'android_gyp_clang_debug_bot_arm',
-      'android_amd64_rel': 'android_gyp_release_bot_arm64',
+      'android_arm64_rel': 'android_gyp_release_bot_arm64',
       'android_n6': 'android_gyp_debug_bot_arm',
       'android_gn_dbg': 'android_gn_debug_bot_arm',
       'android_gn_rel': 'android_gn_release_bot_arm',
