@@ -399,4 +399,39 @@ if (rtc_include_tests) {
       deps += [ "//testing/android/native_test:native_test_support" ]
     }
   }
+
+  if (is_android) {
+    instrumentation_test_apk("libjingle_peerconnection_android_unittest") {
+      apk_name = "libjingle_peerconnection_android_unittest"
+      android_manifest = "androidtests/AndroidManifest.xml"
+
+      java_files = [
+        "androidtests/src/org/webrtc/Camera1CapturerUsingByteBufferTest.java",
+        "androidtests/src/org/webrtc/Camera1CapturerUsingTextureTest.java",
+        "androidtests/src/org/webrtc/Camera2CapturerTest.java",
+        "androidtests/src/org/webrtc/CameraVideoCapturerTestFixtures.java",
+        "androidtests/src/org/webrtc/GlRectDrawerTest.java",
+        "androidtests/src/org/webrtc/MediaCodecVideoEncoderTest.java",
+        "androidtests/src/org/webrtc/NetworkMonitorTest.java",
+        "androidtests/src/org/webrtc/PeerConnectionTest.java",
+        "androidtests/src/org/webrtc/RendererCommonTest.java",
+        "androidtests/src/org/webrtc/SurfaceTextureHelperTest.java",
+        "androidtests/src/org/webrtc/SurfaceViewRendererOnMeasureTest.java",
+      ]
+
+      deps = [
+        ":libjingle_peerconnection_android_unittest_resources",
+        ":libjingle_peerconnection_java",
+        "//base:base_java",
+        "//webrtc/base:base_java",
+      ]
+
+      shared_libraries = [ ":libjingle_peerconnection_so" ]
+    }
+
+    android_resources("libjingle_peerconnection_android_unittest_resources") {
+      resource_dirs = [ "androidtests/res" ]
+      custom_package = "org.webrtc"
+    }
+  }
 }
