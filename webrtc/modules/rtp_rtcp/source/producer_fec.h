@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_PRODUCER_FEC_H_
 
 #include <list>
+#include <memory>
 #include <vector>
 
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
@@ -21,9 +22,11 @@ namespace webrtc {
 class RedPacket {
  public:
   explicit RedPacket(size_t length);
-  ~RedPacket();
-  void CreateHeader(const uint8_t* rtp_header, size_t header_length,
-                    int red_pl_type, int pl_type);
+
+  void CreateHeader(const uint8_t* rtp_header,
+                    size_t header_length,
+                    int red_payload_type,
+                    int payload_type);
   void SetSeqNum(int seq_num);
   void AssignPayload(const uint8_t* payload, size_t length);
   void ClearMarkerBit();
@@ -31,7 +34,7 @@ class RedPacket {
   size_t length() const;
 
  private:
-  uint8_t* data_;
+  std::unique_ptr<uint8_t[]> data_;
   size_t length_;
   size_t header_length_;
 };
@@ -41,42 +44,55 @@ class ProducerFec {
   explicit ProducerFec(ForwardErrorCorrection* fec);
   ~ProducerFec();
 
+  static std::unique_ptr<RedPacket> BuildRedPacket(const uint8_t* data_buffer,
+                                                   size_t payload_length,
+                                                   size_t rtp_header_length,
+                                                   int red_payload_type);
+
   void SetFecParameters(const FecProtectionParams* params,
-                        int max_fec_frames);
+                        int num_first_partition);
 
-  // The caller is expected to delete the memory when done.
-  RedPacket* BuildRedPacket(const uint8_t* data_buffer,
-                            size_t payload_length,
-                            size_t rtp_header_length,
-                            int red_pl_type);
-
+  // Adds a media packet to the internal buffer. When enough media packets
+  // have been added, the FEC packets are generated and stored internally.
+  // These FEC packets are then obtained by calling GetFecPacketsAsRed().
   int AddRtpPacketAndGenerateFec(const uint8_t* data_buffer,
                                  size_t payload_length,
                                  size_t rtp_header_length);
 
-  bool ExcessOverheadBelowMax();
+  // Returns true if the excess overhead (actual - target) for the FEC is below
+  // the amount |kMaxExcessOverhead|. This effects the lower protection level
+  // cases and low number of media packets/frame. The target overhead is given
+  // by |params_.fec_rate|, and is only achievable in the limit of large number
+  // of media packets.
+  bool ExcessOverheadBelowMax() const;
 
-  bool MinimumMediaPacketsReached();
+  // Returns true if the number of added media packets is at least
+  // |min_num_media_packets_|. This condition tries to capture the effect
+  // that, for the same amount of protection/overhead, longer codes
+  // (e.g. (2k,2m) vs (k,m)) are generally more effective at recovering losses.
+  bool MinimumMediaPacketsReached() const;
 
+  // Returns true if there are generated FEC packets available.
   bool FecAvailable() const;
+
   size_t NumAvailableFecPackets() const;
 
-  // GetFecPackets allocates memory and creates FEC packets, but the caller is
-  // assumed to delete the memory when done with the packets.
-  std::vector<RedPacket*> GetFecPackets(int red_pl_type,
-                                        int fec_pl_type,
-                                        uint16_t first_seq_num,
-                                        size_t rtp_header_length);
+  // Returns generated FEC packets with RED headers added.
+  std::vector<std::unique_ptr<RedPacket>> GetFecPacketsAsRed(
+      int red_payload_type,
+      int ulpfec_payload_type,
+      uint16_t first_seq_num,
+      size_t rtp_header_length);
 
  private:
-  void DeletePackets();
+  void DeleteMediaPackets();
   int Overhead() const;
   ForwardErrorCorrection* fec_;
-  ForwardErrorCorrection::PacketList media_packets_fec_;
-  std::list<ForwardErrorCorrection::Packet*> fec_packets_;
-  int num_frames_;
-  int num_first_partition_;
-  int minimum_media_packets_fec_;
+  ForwardErrorCorrection::PacketList media_packets_;
+  std::list<ForwardErrorCorrection::Packet*> generated_fec_packets_;
+  int num_protected_frames_;
+  int num_important_packets_;
+  int min_num_media_packets_;
   FecProtectionParams params_;
   FecProtectionParams new_params_;
 };

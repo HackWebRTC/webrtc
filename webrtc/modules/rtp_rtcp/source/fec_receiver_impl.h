@@ -11,8 +11,6 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_FEC_RECEIVER_IMPL_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_FEC_RECEIVER_IMPL_H_
 
-// This header is included to get the nested declaration of Packet structure.
-
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/rtp_rtcp/include/fec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -38,12 +36,12 @@ class FecReceiverImpl : public FecReceiver {
  private:
   rtc::CriticalSection crit_sect_;
   RtpData* recovered_packet_callback_;
-  ForwardErrorCorrection* fec_;
-  // TODO(holmer): In the current version received_packet_list_ is never more
+  ForwardErrorCorrection fec_;
+  // TODO(holmer): In the current version |received_packets_| is never more
   // than one packet, since we process FEC every time a new packet
   // arrives. We should remove the list.
-  ForwardErrorCorrection::ReceivedPacketList received_packet_list_;
-  ForwardErrorCorrection::RecoveredPacketList recovered_packet_list_;
+  ForwardErrorCorrection::ReceivedPacketList received_packets_;
+  ForwardErrorCorrection::RecoveredPacketList recovered_packets_;
   FecPacketCounter packet_counter_;
 };
 }  // namespace webrtc

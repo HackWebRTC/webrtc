@@ -72,19 +72,19 @@ class ReceiverFecTest : public ::testing::Test {
   }
 
   void BuildAndAddRedMediaPacket(test::RawRtpPacket* packet) {
-    test::RawRtpPacket* red_packet = generator_->BuildMediaRedPacket(packet);
+    std::unique_ptr<test::RawRtpPacket> red_packet(
+        generator_->BuildMediaRedPacket(packet));
     EXPECT_EQ(0, receiver_fec_->AddReceivedRedPacket(
                      red_packet->header.header, red_packet->data,
                      red_packet->length, kFecPayloadType));
-    delete red_packet;
   }
 
   void BuildAndAddRedFecPacket(Packet* packet) {
-    test::RawRtpPacket* red_packet = generator_->BuildFecRedPacket(packet);
+    std::unique_ptr<test::RawRtpPacket> red_packet(
+        generator_->BuildFecRedPacket(packet));
     EXPECT_EQ(0, receiver_fec_->AddReceivedRedPacket(
                      red_packet->header.header, red_packet->data,
                      red_packet->length, kFecPayloadType));
-    delete red_packet;
   }
 
   void InjectGarbagePacketLength(size_t fec_garbage_offset);

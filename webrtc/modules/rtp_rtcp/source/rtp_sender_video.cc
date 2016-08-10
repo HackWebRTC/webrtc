@@ -102,14 +102,14 @@ void RTPSenderVideo::SendVideoPacketAsRed(uint8_t* data_buffer,
                                           StorageType media_packet_storage,
                                           bool protect) {
   std::unique_ptr<RedPacket> red_packet;
-  std::vector<RedPacket*> fec_packets;
+  std::vector<std::unique_ptr<RedPacket>> fec_packets;
   StorageType fec_storage = kDontRetransmit;
   uint16_t next_fec_sequence_number = 0;
   {
     // Only protect while creating RED and FEC packets, not when sending.
     rtc::CritScope cs(&crit_);
-    red_packet.reset(producer_fec_.BuildRedPacket(
-        data_buffer, payload_length, rtp_header_length, red_payload_type_));
+    red_packet = ProducerFec::BuildRedPacket(
+        data_buffer, payload_length, rtp_header_length, red_payload_type_);
     if (protect) {
       producer_fec_.AddRtpPacketAndGenerateFec(data_buffer, payload_length,
                                                rtp_header_length);
@@ -118,7 +118,7 @@ void RTPSenderVideo::SendVideoPacketAsRed(uint8_t* data_buffer,
     if (num_fec_packets > 0) {
       next_fec_sequence_number =
           rtp_sender_->AllocateSequenceNumber(num_fec_packets);
-      fec_packets = producer_fec_.GetFecPackets(
+      fec_packets = producer_fec_.GetFecPacketsAsRed(
           red_payload_type_, fec_payload_type_, next_fec_sequence_number,
           rtp_header_length);
       RTC_DCHECK_EQ(num_fec_packets, fec_packets.size());
@@ -138,7 +138,7 @@ void RTPSenderVideo::SendVideoPacketAsRed(uint8_t* data_buffer,
   } else {
     LOG(LS_WARNING) << "Failed to send RED packet " << media_seq_num;
   }
-  for (RedPacket* fec_packet : fec_packets) {
+  for (const auto& fec_packet : fec_packets) {
     if (rtp_sender_->SendToNetwork(
             fec_packet->data(), fec_packet->length() - rtp_header_length,
             rtp_header_length, capture_time_ms, fec_storage,
@@ -152,7 +152,6 @@ void RTPSenderVideo::SendVideoPacketAsRed(uint8_t* data_buffer,
       LOG(LS_WARNING) << "Failed to send FEC packet "
                       << next_fec_sequence_number;
     }
-    delete fec_packet;
     ++next_fec_sequence_number;
   }
 }
@@ -229,7 +228,11 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
     rtc::CritScope cs(&crit_);
     FecProtectionParams* fec_params =
         frame_type == kVideoFrameKey ? &key_fec_params_ : &delta_fec_params_;
-    producer_fec_.SetFecParameters(fec_params, 0);
+    // We currently do not use unequal protection in the FEC.
+    // This is signalled both here (by setting the number of important
+    // packets to zero), as well as in ProducerFec::AddRtpPacketAndGenerateFec.
+    constexpr int kNumImportantPackets = 0;
+    producer_fec_.SetFecParameters(fec_params, kNumImportantPackets);
     storage = packetizer->GetStorageType(retransmission_settings_);
     red_payload_type = red_payload_type_;
   }
