@@ -20,14 +20,15 @@
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/random.h"
-#include "webrtc/base/rate_limiter.h"
 #include "webrtc/call.h"
 #include "webrtc/call/rtc_event_log.h"
 #include "webrtc/call/rtc_event_log_parser.h"
 #include "webrtc/call/rtc_event_log_unittest_helper.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/test_suite.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -105,55 +106,37 @@ void PrintExpectedEvents(size_t rtp_count,
  * presence of extension number i from kExtensionTypes / kExtensionNames.
  * The least significant bit extension_bitvector has number 0.
  */
-size_t GenerateRtpPacket(uint32_t extensions_bitvector,
-                         uint32_t csrcs_count,
-                         uint8_t* packet,
-                         size_t packet_size,
-                         Random* prng) {
+RtpPacketToSend GenerateRtpPacket(const RtpHeaderExtensionMap* extensions,
+                                  uint32_t csrcs_count,
+                                  size_t packet_size,
+                                  Random* prng) {
   RTC_CHECK_GE(packet_size, 16 + 4 * csrcs_count + 4 * kNumExtensions);
-  Clock* clock = Clock::GetRealTimeClock();
-  RateLimiter retranmission_rate_limiter(clock, 1000);
-
-  RTPSender rtp_sender(false,    // bool audio
-                       clock,    // Clock* clock
-                       nullptr,  // Transport*
-                       nullptr,  // PacedSender*
-                       nullptr,  // PacketRouter*
-                       nullptr,  // SendTimeObserver*
-                       nullptr,  // BitrateStatisticsObserver*
-                       nullptr,  // FrameCountObserver*
-                       nullptr,  // SendSideDelayObserver*
-                       nullptr,  // RtcEventLog*
-                       nullptr,  // SendPacketObserver*
-                       &retranmission_rate_limiter);
 
   std::vector<uint32_t> csrcs;
   for (unsigned i = 0; i < csrcs_count; i++) {
     csrcs.push_back(prng->Rand<uint32_t>());
   }
-  rtp_sender.SetCsrcs(csrcs);
-  rtp_sender.SetSSRC(prng->Rand<uint32_t>());
-  rtp_sender.SetStartTimestamp(prng->Rand<uint32_t>(), true);
-  rtp_sender.SetSequenceNumber(prng->Rand<uint16_t>());
 
-  for (unsigned i = 0; i < kNumExtensions; i++) {
-    if (extensions_bitvector & (1u << i)) {
-      rtp_sender.RegisterRtpHeaderExtension(kExtensionTypes[i], i + 1);
-    }
+  RtpPacketToSend rtp_packet(extensions, packet_size);
+  rtp_packet.SetPayloadType(prng->Rand(127));
+  rtp_packet.SetMarker(prng->Rand<bool>());
+  rtp_packet.SetSequenceNumber(prng->Rand<uint16_t>());
+  rtp_packet.SetSsrc(prng->Rand<uint32_t>());
+  rtp_packet.SetTimestamp(prng->Rand<uint32_t>());
+  rtp_packet.SetCsrcs(csrcs);
+
+  rtp_packet.SetExtension<TransmissionOffset>(prng->Rand(0x00ffffff));
+  rtp_packet.SetExtension<AudioLevel>(prng->Rand<bool>(), prng->Rand(127));
+  rtp_packet.SetExtension<AbsoluteSendTime>(prng->Rand<int32_t>());
+  rtp_packet.SetExtension<VideoOrientation>(prng->Rand(2));
+  rtp_packet.SetExtension<TransportSequenceNumber>(prng->Rand<uint16_t>());
+
+  size_t payload_size = packet_size - rtp_packet.headers_size();
+  uint8_t* payload = rtp_packet.AllocatePayload(payload_size);
+  for (size_t i = 0; i < payload_size; i++) {
+    payload[i] = prng->Rand<uint8_t>();
   }
-
-  int8_t payload_type = prng->Rand(0, 127);
-  bool marker_bit = prng->Rand<bool>();
-  uint32_t capture_timestamp = prng->Rand<uint32_t>();
-  int64_t capture_time_ms = prng->Rand<uint32_t>();
-
-  size_t header_size = rtp_sender.BuildRtpHeader(
-      packet, payload_type, marker_bit, capture_timestamp, capture_time_ms);
-  for (size_t i = header_size; i < packet_size; i++) {
-    packet[i] = prng->Rand<uint8_t>();
-  }
-
-  return header_size;
+  return rtp_packet;
 }
 
 rtc::Buffer GenerateRtcpPacket(Random* prng) {
@@ -232,9 +215,8 @@ void LogSessionAndReadBack(size_t rtp_count,
   ASSERT_LE(rtcp_count, rtp_count);
   ASSERT_LE(playout_count, rtp_count);
   ASSERT_LE(bwe_loss_count, rtp_count);
-  std::vector<rtc::Buffer> rtp_packets;
+  std::vector<RtpPacketToSend> rtp_packets;
   std::vector<rtc::Buffer> rtcp_packets;
-  std::vector<size_t> rtp_header_sizes;
   std::vector<uint32_t> playout_ssrcs;
   std::vector<std::pair<int32_t, uint8_t> > bwe_loss_updates;
 
@@ -243,14 +225,18 @@ void LogSessionAndReadBack(size_t rtp_count,
 
   Random prng(random_seed);
 
+  // Initialize rtp header extensions to be used in generated rtp packets.
+  RtpHeaderExtensionMap extensions;
+  for (unsigned i = 0; i < kNumExtensions; i++) {
+    if (extensions_bitvector & (1u << i)) {
+      extensions.Register(kExtensionTypes[i], i + 1);
+    }
+  }
   // Create rtp_count RTP packets containing random data.
   for (size_t i = 0; i < rtp_count; i++) {
     size_t packet_size = prng.Rand(1000, 1100);
-    rtp_packets.push_back(rtc::Buffer(packet_size));
-    size_t header_size =
-        GenerateRtpPacket(extensions_bitvector, csrcs_count,
-                          rtp_packets[i].data(), packet_size, &prng);
-    rtp_header_sizes.push_back(header_size);
+    rtp_packets.push_back(
+        GenerateRtpPacket(&extensions, csrcs_count, packet_size, &prng));
   }
   // Create rtcp_count RTCP packets containing random data.
   for (size_t i = 0; i < rtcp_count; i++) {
@@ -353,7 +339,7 @@ void LogSessionAndReadBack(size_t rtp_count,
         parsed_log, event_index,
         (i % 2 == 0) ? kIncomingPacket : kOutgoingPacket,
         (i % 3 == 0) ? MediaType::AUDIO : MediaType::VIDEO,
-        rtp_packets[i - 1].data(), rtp_header_sizes[i - 1],
+        rtp_packets[i - 1].data(), rtp_packets[i - 1].headers_size(),
         rtp_packets[i - 1].size());
     event_index++;
     if (i * rtcp_count >= rtcp_index * rtp_count) {
@@ -423,9 +409,8 @@ TEST(RtcEventLogTest, LogEventAndReadBack) {
 
   // Create one RTP and one RTCP packet containing random data.
   size_t packet_size = prng.Rand(1000, 1100);
-  rtc::Buffer rtp_packet(packet_size);
-  size_t header_size =
-      GenerateRtpPacket(0, 0, rtp_packet.data(), packet_size, &prng);
+  RtpPacketToSend rtp_packet =
+      GenerateRtpPacket(nullptr, 0, packet_size, &prng);
   rtc::Buffer rtcp_packet = GenerateRtcpPacket(&prng);
 
   // Find the name of the current test, in order to use it as a temporary
@@ -461,9 +446,9 @@ TEST(RtcEventLogTest, LogEventAndReadBack) {
 
   RtcEventLogTestHelper::VerifyLogStartEvent(parsed_log, 0);
 
-  RtcEventLogTestHelper::VerifyRtpEvent(parsed_log, 1, kIncomingPacket,
-                                        MediaType::VIDEO, rtp_packet.data(),
-                                        header_size, rtp_packet.size());
+  RtcEventLogTestHelper::VerifyRtpEvent(
+      parsed_log, 1, kIncomingPacket, MediaType::VIDEO, rtp_packet.data(),
+      rtp_packet.headers_size(), rtp_packet.size());
 
   RtcEventLogTestHelper::VerifyRtcpEvent(parsed_log, 2, kOutgoingPacket,
                                          MediaType::VIDEO, rtcp_packet.data(),
