@@ -75,7 +75,7 @@ class RtpFrameObject : public FrameObject {
   RTPVideoTypeHeader* GetCodecHeader() const;
 
  private:
-  PacketBuffer* packet_buffer_;
+  rtc::scoped_refptr<PacketBuffer> packet_buffer_;
   enum FrameType frame_type_;
   VideoCodecType codec_type_;
   uint16_t first_seq_num_;

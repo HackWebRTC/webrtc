@@ -12,8 +12,10 @@
 #define WEBRTC_MODULES_VIDEO_CODING_PACKET_BUFFER_H_
 
 #include <vector>
+#include <memory>
 
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/packet.h"
@@ -29,23 +31,37 @@ namespace video_coding {
 class FrameObject;
 class RtpFrameObject;
 
-class OnCompleteFrameCallback {
+// A received frame is a frame which has received all its packets.
+class OnReceivedFrameCallback {
  public:
-  virtual ~OnCompleteFrameCallback() {}
-  virtual void OnCompleteFrame(std::unique_ptr<FrameObject> frame) = 0;
+  virtual ~OnReceivedFrameCallback() {}
+  virtual void OnReceivedFrame(std::unique_ptr<RtpFrameObject> frame) = 0;
 };
 
 class PacketBuffer {
  public:
+  static rtc::scoped_refptr<PacketBuffer> Create(
+      Clock* clock,
+      size_t start_buffer_size,
+      size_t max_buffer_size,
+      OnReceivedFrameCallback* frame_callback);
+
+  virtual ~PacketBuffer();
+
+  // Made virtual for testing.
+  virtual bool InsertPacket(const VCMPacket& packet);
+  void ClearTo(uint16_t seq_num);
+  void Clear();
+
+  int AddRef() const;
+  int Release() const;
+
+ protected:
   // Both |start_buffer_size| and |max_buffer_size| must be a power of 2.
   PacketBuffer(Clock* clock,
                size_t start_buffer_size,
                size_t max_buffer_size,
-               OnCompleteFrameCallback* frame_callback);
-
-  bool InsertPacket(const VCMPacket& packet);
-  void ClearTo(uint16_t seq_num);
-  void Clear();
+               OnReceivedFrameCallback* frame_callback);
 
  private:
   friend RtpFrameObject;
@@ -85,13 +101,16 @@ class PacketBuffer {
   void FindFrames(uint16_t seq_num) EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Copy the bitstream for |frame| to |destination|.
-  bool GetBitstream(const RtpFrameObject& frame, uint8_t* destination);
+  // Virtual for testing.
+  virtual bool GetBitstream(const RtpFrameObject& frame, uint8_t* destination);
 
   // Get the packet with sequence number |seq_num|.
-  VCMPacket* GetPacket(uint16_t seq_num);
+  // Virtual for testing.
+  virtual VCMPacket* GetPacket(uint16_t seq_num);
 
   // Mark all slots used by |frame| as not used.
-  void ReturnFrame(RtpFrameObject* frame);
+  // Virtual for testing.
+  virtual void ReturnFrame(RtpFrameObject* frame);
 
   rtc::CriticalSection crit_;
 
@@ -115,9 +134,10 @@ class PacketBuffer {
   // and information needed to determine the continuity between packets.
   std::vector<ContinuityInfo> sequence_buffer_ GUARDED_BY(crit_);
 
-  // Frames that have received all their packets are handed off to the
-  // |reference_finder_| which finds the dependencies between the frames.
-  RtpFrameReferenceFinder reference_finder_;
+  // Called when a received frame is found.
+  OnReceivedFrameCallback* const received_frame_callback_;
+
+  mutable volatile int ref_count_ = 0;
 };
 
 }  // namespace video_coding
