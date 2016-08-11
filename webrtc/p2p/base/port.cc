@@ -799,8 +799,12 @@ class ConnectionRequest : public StunRequest {
     // priority = (2^24)*(type preference) +
     //           (2^8)*(local preference) +
     //           (2^0)*(256 - component ID)
+    uint32_t type_preference =
+        (connection_->local_candidate().protocol() == TCP_PROTOCOL_NAME)
+            ? ICE_TYPE_PREFERENCE_PRFLX_TCP
+            : ICE_TYPE_PREFERENCE_PRFLX;
     uint32_t prflx_priority =
-        ICE_TYPE_PREFERENCE_PRFLX << 24 |
+        type_preference << 24 |
         (connection_->local_candidate().priority() & 0x00FFFFFF);
     request->AddAttribute(
         new StunUInt32Attribute(STUN_ATTR_PRIORITY, prflx_priority));
@@ -1362,7 +1366,7 @@ void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
 
   stats_.recv_ping_responses++;
 
-  MaybeAddPrflxCandidate(request, response);
+  MaybeUpdateLocalCandidate(request, response);
 }
 
 void Connection::OnConnectionRequestErrorResponse(ConnectionRequest* request,
@@ -1471,8 +1475,8 @@ ConnectionInfo Connection::stats() {
   return stats_;
 }
 
-void Connection::MaybeAddPrflxCandidate(ConnectionRequest* request,
-                                        StunMessage* response) {
+void Connection::MaybeUpdateLocalCandidate(ConnectionRequest* request,
+                                           StunMessage* response) {
   // RFC 5245
   // The agent checks the mapped address from the STUN response.  If the
   // transport address does not match any of the local candidates that the
@@ -1487,15 +1491,17 @@ void Connection::MaybeAddPrflxCandidate(ConnectionRequest* request,
     return;
   }
 
-  bool known_addr = false;
   for (size_t i = 0; i < port_->Candidates().size(); ++i) {
     if (port_->Candidates()[i].address() == addr->GetAddress()) {
-      known_addr = true;
-      break;
+      if (local_candidate_index_ != i) {
+        LOG_J(LS_INFO, this) << "Updating local candidate type to srflx.";
+        local_candidate_index_ = i;
+        // SignalStateChange to force a re-sort in P2PTransportChannel as this
+        // Connection's local candidate has changed.
+        SignalStateChange(this);
+      }
+      return;
     }
-  }
-  if (known_addr) {
-    return;
   }
 
   // RFC 5245
@@ -1532,6 +1538,7 @@ void Connection::MaybeAddPrflxCandidate(ConnectionRequest* request,
   new_local_candidate.set_network_cost(local_candidate().network_cost());
 
   // Change the local candidate of this Connection to the new prflx candidate.
+  LOG_J(LS_INFO, this) << "Updating local candidate type to prflx.";
   local_candidate_index_ = port_->AddPrflxCandidate(new_local_candidate);
 
   // SignalStateChange to force a re-sort in P2PTransportChannel as this

@@ -89,6 +89,7 @@ enum IcePriorityValue {
   // For TLS ICE_TYPE_PREFERENCE_RELAY will be 0.
   // Check turnport.cc for setting these values.
   ICE_TYPE_PREFERENCE_RELAY = 2,
+  ICE_TYPE_PREFERENCE_PRFLX_TCP = 80,
   ICE_TYPE_PREFERENCE_HOST_TCP = 90,
   ICE_TYPE_PREFERENCE_SRFLX = 100,
   ICE_TYPE_PREFERENCE_PRFLX = 110,
@@ -653,6 +654,11 @@ class Connection : public CandidatePairInterface,
   rtc::RateTracker send_rate_tracker_;
 
  private:
+  // Update the local candidate based on the mapped address attribute.
+  // If the local candidate changed, fires SignalStateChange.
+  void MaybeUpdateLocalCandidate(ConnectionRequest* request,
+                                 StunMessage* response);
+
   WriteState write_state_;
   bool receiving_;
   bool connected_;
@@ -686,9 +692,6 @@ class Connection : public CandidatePairInterface,
   int64_t last_ping_response_received_;
   int64_t receiving_unchanged_since_ = 0;
   std::vector<SentPing> pings_since_last_response_;
-
-  void MaybeAddPrflxCandidate(ConnectionRequest* request,
-                              StunMessage* response);
 
   bool reported_;
   State state_;

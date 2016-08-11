@@ -210,23 +210,24 @@ class P2PTransportChannelTestBase : public testing::Test,
   };
 
   struct Result {
-    Result(const std::string& lt, const std::string& lp,
-           const std::string& rt, const std::string& rp,
-           const std::string& lt2, const std::string& lp2,
-           const std::string& rt2, const std::string& rp2, int wait)
-        : local_type(lt), local_proto(lp), remote_type(rt), remote_proto(rp),
-          local_type2(lt2), local_proto2(lp2), remote_type2(rt2),
-          remote_proto2(rp2), connect_wait(wait) {
-    }
+    Result(const std::string& controlling_type,
+           const std::string& controlling_protocol,
+           const std::string& controlled_type,
+           const std::string& controlled_protocol,
+           int wait)
+        : controlling_type(controlling_type),
+          controlling_protocol(controlling_protocol),
+          controlled_type(controlled_type),
+          controlled_protocol(controlled_protocol),
+          connect_wait(wait) {}
 
-    std::string local_type;
-    std::string local_proto;
-    std::string remote_type;
-    std::string remote_proto;
-    std::string local_type2;
-    std::string local_proto2;
-    std::string remote_type2;
-    std::string remote_proto2;
+    // The expected candidate type and protocol of the controlling ICE agent.
+    std::string controlling_type;
+    std::string controlling_protocol;
+    // The expected candidate type and protocol of the controlled ICE agent.
+    std::string controlled_type;
+    std::string controlled_protocol;
+    // How long to wait before the correct candidate pair is selected.
     int connect_wait;
   };
 
@@ -381,9 +382,11 @@ class P2PTransportChannelTestBase : public testing::Test,
   static const Result kPrflxUdpToLocalUdp;
   static const Result kStunUdpToLocalUdp;
   static const Result kStunUdpToStunUdp;
+  static const Result kStunUdpToPrflxUdp;
   static const Result kPrflxUdpToStunUdp;
   static const Result kLocalUdpToRelayUdp;
   static const Result kPrflxUdpToRelayUdp;
+  static const Result kRelayUdpToPrflxUdp;
   static const Result kLocalTcpToLocalTcp;
   static const Result kLocalTcpToPrflxTcp;
   static const Result kPrflxTcpToLocalTcp;
@@ -442,30 +445,19 @@ class P2PTransportChannelTestBase : public testing::Test,
   void SetAllowTcpListen(int endpoint, bool allow_tcp_listen) {
     return GetEndpoint(endpoint)->SetAllowTcpListen(allow_tcp_listen);
   }
-  bool IsLocalToPrflxOrTheReverse(const Result& expected) {
-    return (
-        (expected.local_type == "local" && expected.remote_type == "prflx") ||
-        (expected.local_type == "prflx" && expected.remote_type == "local"));
-  }
 
   // Return true if the approprite parts of the expected Result, based
   // on the local and remote candidate of ep1_ch1, match.  This can be
   // used in an EXPECT_TRUE_WAIT.
   bool CheckCandidate1(const Result& expected) {
     const std::string& local_type = LocalCandidate(ep1_ch1())->type();
-    const std::string& local_proto = LocalCandidate(ep1_ch1())->protocol();
+    const std::string& local_protocol = LocalCandidate(ep1_ch1())->protocol();
     const std::string& remote_type = RemoteCandidate(ep1_ch1())->type();
-    const std::string& remote_proto = RemoteCandidate(ep1_ch1())->protocol();
-    return ((local_proto == expected.local_proto &&
-             remote_proto == expected.remote_proto) &&
-            ((local_type == expected.local_type &&
-              remote_type == expected.remote_type) ||
-             // Sometimes we expect local -> prflx or prflx -> local
-             // and instead get prflx -> local or local -> prflx, and
-             // that's OK.
-             (IsLocalToPrflxOrTheReverse(expected) &&
-              local_type == expected.remote_type &&
-              remote_type == expected.local_type)));
+    const std::string& remote_protocol = RemoteCandidate(ep1_ch1())->protocol();
+    return (local_protocol == expected.controlling_protocol &&
+            remote_protocol == expected.controlled_protocol &&
+            local_type == expected.controlling_type &&
+            remote_type == expected.controlled_type);
   }
 
   // EXPECT_EQ on the approprite parts of the expected Result, based
@@ -478,41 +470,27 @@ class P2PTransportChannelTestBase : public testing::Test,
     }
 
     const std::string& local_type = LocalCandidate(ep1_ch1())->type();
-    const std::string& local_proto = LocalCandidate(ep1_ch1())->protocol();
+    const std::string& local_protocol = LocalCandidate(ep1_ch1())->protocol();
     const std::string& remote_type = RemoteCandidate(ep1_ch1())->type();
-    const std::string& remote_proto = RemoteCandidate(ep1_ch1())->protocol();
-    EXPECT_EQ(expected.local_type, local_type);
-    EXPECT_EQ(expected.remote_type, remote_type);
-    EXPECT_EQ(expected.local_proto, local_proto);
-    EXPECT_EQ(expected.remote_proto, remote_proto);
+    const std::string& remote_protocol = RemoteCandidate(ep1_ch1())->protocol();
+    EXPECT_EQ(expected.controlling_type, local_type);
+    EXPECT_EQ(expected.controlled_type, remote_type);
+    EXPECT_EQ(expected.controlling_protocol, local_protocol);
+    EXPECT_EQ(expected.controlled_protocol, remote_protocol);
   }
 
   // Return true if the approprite parts of the expected Result, based
   // on the local and remote candidate of ep2_ch1, match.  This can be
   // used in an EXPECT_TRUE_WAIT.
   bool CheckCandidate2(const Result& expected) {
-    const std::string& local_proto = LocalCandidate(ep2_ch1())->protocol();
-    const std::string& remote_proto = RemoteCandidate(ep2_ch1())->protocol();
-    // Removed remote_type comparision aginst selected connection remote
-    // candidate. This is done to handle remote type discrepancy from
-    // local to stun based on the test type.
-    // For example in case of Open -> NAT, ep2 channels will have LULU
-    // and in other cases like NAT -> NAT it will be LUSU. To avoid these
-    // mismatches and we are doing comparision in different way.
-    // i.e. when don't match its remote type is either local or stun.
-    //
-    // Update(deadbeef): Also had to remove local type comparison. There
-    // is currently an issue where the local type is not updated to stun.
-    // So one side may see local<->relay while the other sees relay<->stun.
-    // This mean the other side may prioritize prflx<->relay, and won't have
-    // a local type of relay no matter how long we wait.
-    // TODO(deadbeef): Fix this!! It's causing us to have very sparse test
-    // coverage and is a very real bug.
-    //
-    // TODO(ronghuawu): Refine the test criteria.
-    // https://code.google.com/p/webrtc/issues/detail?id=1953
-    return ((local_proto == expected.local_proto2 &&
-             remote_proto == expected.remote_proto2));
+    const std::string& local_type = LocalCandidate(ep2_ch1())->type();
+    const std::string& local_protocol = LocalCandidate(ep2_ch1())->protocol();
+    const std::string& remote_type = RemoteCandidate(ep2_ch1())->type();
+    const std::string& remote_protocol = RemoteCandidate(ep2_ch1())->protocol();
+    return (local_protocol == expected.controlled_protocol &&
+            remote_protocol == expected.controlling_protocol &&
+            local_type == expected.controlled_type &&
+            remote_type == expected.controlling_type);
   }
 
   // EXPECT_EQ on the approprite parts of the expected Result, based
@@ -525,13 +503,13 @@ class P2PTransportChannelTestBase : public testing::Test,
     }
 
     const std::string& local_type = LocalCandidate(ep2_ch1())->type();
-    const std::string& local_proto = LocalCandidate(ep2_ch1())->protocol();
+    const std::string& local_protocol = LocalCandidate(ep2_ch1())->protocol();
     const std::string& remote_type = RemoteCandidate(ep2_ch1())->type();
-    const std::string& remote_proto = RemoteCandidate(ep2_ch1())->protocol();
-    EXPECT_EQ(expected.local_type2, local_type);
-    EXPECT_EQ(expected.remote_type2, remote_type);
-    EXPECT_EQ(expected.local_proto2, local_proto);
-    EXPECT_EQ(expected.remote_proto2, remote_proto);
+    const std::string& remote_protocol = RemoteCandidate(ep2_ch1())->protocol();
+    EXPECT_EQ(expected.controlled_type, local_type);
+    EXPECT_EQ(expected.controlling_type, remote_type);
+    EXPECT_EQ(expected.controlled_protocol, local_protocol);
+    EXPECT_EQ(expected.controlling_protocol, remote_protocol);
   }
 
   void Test(const Result& expected) {
@@ -879,42 +857,90 @@ class P2PTransportChannelTestBase : public testing::Test,
 };
 
 // The tests have only a few outcomes, which we predefine.
-const P2PTransportChannelTestBase::Result P2PTransportChannelTestBase::
-    kLocalUdpToLocalUdp("local", "udp", "local", "udp",
-                        "local", "udp", "local", "udp", 1000);
-const P2PTransportChannelTestBase::Result P2PTransportChannelTestBase::
-    kLocalUdpToStunUdp("local", "udp", "stun", "udp",
-                       "local", "udp", "stun", "udp", 1000);
-const P2PTransportChannelTestBase::Result P2PTransportChannelTestBase::
-    kLocalUdpToPrflxUdp("local", "udp", "prflx", "udp",
-                        "prflx", "udp", "local", "udp", 1000);
-const P2PTransportChannelTestBase::Result P2PTransportChannelTestBase::
-    kPrflxUdpToLocalUdp("prflx", "udp", "local", "udp",
-                        "local", "udp", "prflx", "udp", 1000);
-const P2PTransportChannelTestBase::Result P2PTransportChannelTestBase::
-    kStunUdpToLocalUdp("stun", "udp", "local", "udp",
-                       "local", "udp", "stun", "udp", 1000);
-const P2PTransportChannelTestBase::Result P2PTransportChannelTestBase::
-    kStunUdpToStunUdp("stun", "udp", "stun", "udp",
-                      "stun", "udp", "stun", "udp", 1000);
-const P2PTransportChannelTestBase::Result P2PTransportChannelTestBase::
-    kPrflxUdpToStunUdp("prflx", "udp", "stun", "udp",
-                       "local", "udp", "prflx", "udp", 1000);
-const P2PTransportChannelTestBase::Result P2PTransportChannelTestBase::
-    kLocalUdpToRelayUdp("local", "udp", "relay", "udp",
-                        "relay", "udp", "local", "udp", 2000);
-const P2PTransportChannelTestBase::Result P2PTransportChannelTestBase::
-    kPrflxUdpToRelayUdp("prflx", "udp", "relay", "udp",
-                        "relay", "udp", "prflx", "udp", 2000);
-const P2PTransportChannelTestBase::Result P2PTransportChannelTestBase::
-    kLocalTcpToLocalTcp("local", "tcp", "local", "tcp",
-                        "local", "tcp", "local", "tcp", 3000);
-const P2PTransportChannelTestBase::Result P2PTransportChannelTestBase::
-    kLocalTcpToPrflxTcp("local", "tcp", "prflx", "tcp",
-                        "prflx", "tcp", "local", "tcp", 3000);
-const P2PTransportChannelTestBase::Result P2PTransportChannelTestBase::
-    kPrflxTcpToLocalTcp("prflx", "tcp", "local", "tcp",
-                        "local", "tcp", "prflx", "tcp", 3000);
+const P2PTransportChannelTestBase::Result
+    P2PTransportChannelTestBase::kLocalUdpToLocalUdp("local",
+                                                     "udp",
+                                                     "local",
+                                                     "udp",
+                                                     1000);
+const P2PTransportChannelTestBase::Result
+    P2PTransportChannelTestBase::kLocalUdpToStunUdp("local",
+                                                    "udp",
+                                                    "stun",
+                                                    "udp",
+                                                    1000);
+const P2PTransportChannelTestBase::Result
+    P2PTransportChannelTestBase::kLocalUdpToPrflxUdp("local",
+                                                     "udp",
+                                                     "prflx",
+                                                     "udp",
+                                                     1000);
+const P2PTransportChannelTestBase::Result
+    P2PTransportChannelTestBase::kPrflxUdpToLocalUdp("prflx",
+                                                     "udp",
+                                                     "local",
+                                                     "udp",
+                                                     1000);
+const P2PTransportChannelTestBase::Result
+    P2PTransportChannelTestBase::kStunUdpToLocalUdp("stun",
+                                                    "udp",
+                                                    "local",
+                                                    "udp",
+                                                    1000);
+const P2PTransportChannelTestBase::Result
+    P2PTransportChannelTestBase::kStunUdpToStunUdp("stun",
+                                                   "udp",
+                                                   "stun",
+                                                   "udp",
+                                                   1000);
+const P2PTransportChannelTestBase::Result
+    P2PTransportChannelTestBase::kStunUdpToPrflxUdp("stun",
+                                                    "udp",
+                                                    "prflx",
+                                                    "udp",
+                                                    1000);
+const P2PTransportChannelTestBase::Result
+    P2PTransportChannelTestBase::kPrflxUdpToStunUdp("prflx",
+                                                    "udp",
+                                                    "stun",
+                                                    "udp",
+                                                    1000);
+const P2PTransportChannelTestBase::Result
+    P2PTransportChannelTestBase::kLocalUdpToRelayUdp("local",
+                                                     "udp",
+                                                     "relay",
+                                                     "udp",
+                                                     2000);
+const P2PTransportChannelTestBase::Result
+    P2PTransportChannelTestBase::kPrflxUdpToRelayUdp("prflx",
+                                                     "udp",
+                                                     "relay",
+                                                     "udp",
+                                                     2000);
+const P2PTransportChannelTestBase::Result
+    P2PTransportChannelTestBase::kRelayUdpToPrflxUdp("relay",
+                                                     "udp",
+                                                     "prflx",
+                                                     "udp",
+                                                     2000);
+const P2PTransportChannelTestBase::Result
+    P2PTransportChannelTestBase::kLocalTcpToLocalTcp("local",
+                                                     "tcp",
+                                                     "local",
+                                                     "tcp",
+                                                     3000);
+const P2PTransportChannelTestBase::Result
+    P2PTransportChannelTestBase::kLocalTcpToPrflxTcp("local",
+                                                     "tcp",
+                                                     "prflx",
+                                                     "tcp",
+                                                     3000);
+const P2PTransportChannelTestBase::Result
+    P2PTransportChannelTestBase::kPrflxTcpToLocalTcp("prflx",
+                                                     "tcp",
+                                                     "local",
+                                                     "tcp",
+                                                     3000);
 
 // Test the matrix of all the connectivity types we expect to see in the wild.
 // Just test every combination of the configs in the Config enum.
@@ -1027,9 +1053,11 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
 #define PULU &kPrflxUdpToLocalUdp
 #define SULU &kStunUdpToLocalUdp
 #define SUSU &kStunUdpToStunUdp
+#define SUPU &kStunUdpToPrflxUdp
 #define PUSU &kPrflxUdpToStunUdp
 #define LURU &kLocalUdpToRelayUdp
 #define PURU &kPrflxUdpToRelayUdp
+#define RUPU &kRelayUdpToPrflxUdp
 #define LTLT &kLocalTcpToLocalTcp
 #define LTPT &kLocalTcpToPrflxTcp
 #define PTLT &kPrflxTcpToLocalTcp
@@ -1042,20 +1070,21 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
 // TODO: Fix NULLs caused by lack of TCP support in NATSocket.
 // TODO: Fix NULLs caused by no HTTP proxy support.
 // TODO: Rearrange rows/columns from best to worst.
-const P2PTransportChannelTest::Result* P2PTransportChannelTest::kMatrix[NUM_CONFIGS][NUM_CONFIGS] = {
-    //      OPEN  CONE  ADDR  PORT  SYMM  2CON  SCON  !UDP  !TCP  HTTP  PRXH  PRXS
-    /*OP*/ {LULU, LUSU, LUSU, LUSU, LUPU, LUSU, LUPU, PTLT, LTPT, LSRS, NULL, LTPT},
-    /*CO*/ {LULU, LUSU, LUSU, LUSU, LUPU, LUSU, LUPU, NULL, NULL, LSRS, NULL, LTRT},
-    /*AD*/ {LULU, LUSU, LUSU, LUSU, LUPU, LUSU, LUPU, NULL, NULL, LSRS, NULL, LTRT},
-    /*PO*/ {LULU, LUSU, LUSU, LUSU, LURU, LUSU, LURU, NULL, NULL, LSRS, NULL, LTRT},
-    /*SY*/ {PULU, PUSU, PUSU, PURU, PURU, PUSU, PURU, NULL, NULL, LSRS, NULL, LTRT},
-    /*2C*/ {LULU, LUSU, LUSU, LUSU, LUPU, LUSU, LUPU, NULL, NULL, LSRS, NULL, LTRT},
-    /*SC*/ {PULU, PUSU, PUSU, PURU, PURU, PUSU, PURU, NULL, NULL, LSRS, NULL, LTRT},
-    /*!U*/ {PTLT, NULL, NULL, NULL, NULL, NULL, NULL, PTLT, LTPT, LSRS, NULL, LTRT},
-    /*!T*/ {LTRT, NULL, NULL, NULL, NULL, NULL, NULL, PTLT, LTRT, LSRS, NULL, LTRT},
-    /*HT*/ {LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, NULL, LSRS},
-    /*PR*/ {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-    /*PR*/ {LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LSRS, NULL, LTRT},
+const P2PTransportChannelTest::Result*
+    P2PTransportChannelTest::kMatrix[NUM_CONFIGS][NUM_CONFIGS] = {
+//      OPEN  CONE  ADDR  PORT  SYMM  2CON  SCON  !UDP  !TCP  HTTP  PRXH  PRXS
+/*OP*/ {LULU, LUSU, LUSU, LUSU, LUPU, LUSU, LUPU, LTPT, LTPT, LSRS, NULL, LTPT},
+/*CO*/ {SULU, SUSU, SUSU, SUSU, SUPU, SUSU, SUPU, NULL, NULL, LSRS, NULL, LTRT},
+/*AD*/ {SULU, SUSU, SUSU, SUSU, SUPU, SUSU, SUPU, NULL, NULL, LSRS, NULL, LTRT},
+/*PO*/ {SULU, SUSU, SUSU, SUSU, RUPU, SUSU, RUPU, NULL, NULL, LSRS, NULL, LTRT},
+/*SY*/ {PULU, PUSU, PUSU, PURU, PURU, PUSU, PURU, NULL, NULL, LSRS, NULL, LTRT},
+/*2C*/ {SULU, SUSU, SUSU, SUSU, SUPU, SUSU, SUPU, NULL, NULL, LSRS, NULL, LTRT},
+/*SC*/ {PULU, PUSU, PUSU, PURU, PURU, PUSU, PURU, NULL, NULL, LSRS, NULL, LTRT},
+/*!U*/ {LTPT, NULL, NULL, NULL, NULL, NULL, NULL, LTPT, LTPT, LSRS, NULL, LTRT},
+/*!T*/ {PTLT, NULL, NULL, NULL, NULL, NULL, NULL, PTLT, LTRT, LSRS, NULL, LTRT},
+/*HT*/ {LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, NULL, LSRS},
+/*PR*/ {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+/*PR*/ {LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LSRS, NULL, LTRT},
 };
 
 // The actual tests that exercise all the various configurations.
@@ -1073,23 +1102,18 @@ const P2PTransportChannelTest::Result* P2PTransportChannelTest::kMatrix[NUM_CONF
 #define P2P_TEST(x, y) \
   P2P_TEST_DECLARATION(x, y,)
 
-#define FLAKY_P2P_TEST(x, y) \
-  P2P_TEST_DECLARATION(x, y, DISABLED_)
-
-// TODO(holmer): Disabled due to randomly failing on webrtc buildbots.
-// Issue: webrtc/2383
-#define P2P_TEST_SET(x) \
-  P2P_TEST(x, OPEN) \
-  FLAKY_P2P_TEST(x, NAT_FULL_CONE) \
-  FLAKY_P2P_TEST(x, NAT_ADDR_RESTRICTED) \
-  FLAKY_P2P_TEST(x, NAT_PORT_RESTRICTED) \
-  P2P_TEST(x, NAT_SYMMETRIC) \
-  FLAKY_P2P_TEST(x, NAT_DOUBLE_CONE) \
-  P2P_TEST(x, NAT_SYMMETRIC_THEN_CONE) \
-  P2P_TEST(x, BLOCK_UDP) \
-  P2P_TEST(x, BLOCK_UDP_AND_INCOMING_TCP) \
+#define P2P_TEST_SET(x)                    \
+  P2P_TEST(x, OPEN)                        \
+  P2P_TEST(x, NAT_FULL_CONE)               \
+  P2P_TEST(x, NAT_ADDR_RESTRICTED)         \
+  P2P_TEST(x, NAT_PORT_RESTRICTED)         \
+  P2P_TEST(x, NAT_SYMMETRIC)               \
+  P2P_TEST(x, NAT_DOUBLE_CONE)             \
+  P2P_TEST(x, NAT_SYMMETRIC_THEN_CONE)     \
+  P2P_TEST(x, BLOCK_UDP)                   \
+  P2P_TEST(x, BLOCK_UDP_AND_INCOMING_TCP)  \
   P2P_TEST(x, BLOCK_ALL_BUT_OUTGOING_HTTP) \
-  P2P_TEST(x, PROXY_HTTPS) \
+  P2P_TEST(x, PROXY_HTTPS)                 \
   P2P_TEST(x, PROXY_SOCKS)
 
 P2P_TEST_SET(OPEN)
@@ -1840,8 +1864,8 @@ class P2PTransportChannelSameNatTest : public P2PTransportChannelTestBase {
 
 TEST_F(P2PTransportChannelSameNatTest, TestConesBehindSameCone) {
   ConfigureEndpoints(NAT_FULL_CONE, NAT_FULL_CONE, NAT_FULL_CONE);
-  Test(P2PTransportChannelTestBase::Result(
-      "prflx", "udp", "stun", "udp", "stun", "udp", "prflx", "udp", 1000));
+  Test(
+      P2PTransportChannelTestBase::Result("prflx", "udp", "stun", "udp", 1000));
 }
 
 // Test what happens when we have multiple available pathways.
