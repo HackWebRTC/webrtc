@@ -57,7 +57,8 @@ class SocketTest : public testing::Test {
   void TestUdpReadyToSendIPv6();
   void TestGetSetOptionsIPv4();
   void TestGetSetOptionsIPv6();
-  void TestSocketRecvTimestamp();
+  void TestSocketRecvTimestampIPv4();
+  void TestSocketRecvTimestampIPv6();
 
   static const int kTimeout = 5000;  // ms
   const IPAddress kIPv4Loopback;

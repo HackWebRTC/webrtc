@@ -184,8 +184,13 @@ void SocketTest::TestGetSetOptionsIPv6() {
   GetSetOptionsInternal(kIPv6Loopback);
 }
 
-void SocketTest::TestSocketRecvTimestamp() {
+void SocketTest::TestSocketRecvTimestampIPv4() {
   SocketRecvTimestamp(kIPv4Loopback);
+}
+
+void SocketTest::TestSocketRecvTimestampIPv6() {
+  MAYBE_SKIP_IPV6;
+  SocketRecvTimestamp(kIPv6Loopback);
 }
 
 // For unbound sockets, GetLocalAddress / GetRemoteAddress return AF_UNSPEC
@@ -1033,19 +1038,26 @@ void SocketTest::SocketRecvTimestamp(const IPAddress& loopback) {
   EXPECT_EQ(0, socket->Bind(SocketAddress(loopback, 0)));
   SocketAddress address = socket->GetLocalAddress();
 
+  uint64_t send_time_1 = TimeMicros();
   socket->SendTo("foo", 3, address);
-  int64_t timestamp;
+  int64_t recv_timestamp_1;
   char buffer[3];
-  socket->RecvFrom(buffer, 3, nullptr, &timestamp);
-  EXPECT_GT(timestamp, -1);
-  int64_t prev_timestamp = timestamp;
+  socket->RecvFrom(buffer, 3, nullptr, &recv_timestamp_1);
+  EXPECT_GT(recv_timestamp_1, -1);
 
-  const int64_t kTimeBetweenPacketsMs = 10;
+  const int64_t kTimeBetweenPacketsMs = 100;
   Thread::SleepMs(kTimeBetweenPacketsMs);
 
+  uint64_t send_time_2 = TimeMicros();
   socket->SendTo("bar", 3, address);
-  socket->RecvFrom(buffer, 3, nullptr, &timestamp);
-  EXPECT_NEAR(timestamp, prev_timestamp + kTimeBetweenPacketsMs * 1000, 2000);
+  int64_t recv_timestamp_2;
+  socket->RecvFrom(buffer, 3, nullptr, &recv_timestamp_2);
+
+  int64_t system_time_diff = send_time_2 - send_time_1;
+  int64_t recv_timestamp_diff = recv_timestamp_2 - recv_timestamp_1;
+  // Compare against the system time at the point of sending, because
+  // SleepMs may not sleep for exactly the requested time.
+  EXPECT_NEAR(system_time_diff, recv_timestamp_diff, 10000);
 }
 
 }  // namespace rtc

@@ -404,18 +404,14 @@ TEST_F(PhysicalSocketTest, TestGetSetOptionsIPv6) {
 
 #if defined(WEBRTC_POSIX)
 
+// We don't get recv timestamps on Mac.
 #if !defined(WEBRTC_MAC)
 TEST_F(PhysicalSocketTest, TestSocketRecvTimestampIPv4) {
-  SocketTest::TestSocketRecvTimestamp();
+  SocketTest::TestSocketRecvTimestampIPv4();
 }
 
-#if defined(WEBRTC_LINUX)
-#define MAYBE_TestSocketRecvTimestampIPv6 DISABLED_TestSocketRecvTimestampIPv6
-#else
-#define MAYBE_TestSocketRecvTimestampIPv6 TestSocketRecvTimestampIPv6
-#endif
-TEST_F(PhysicalSocketTest, MAYBE_TestSocketRecvTimestampIPv6) {
-  SocketTest::TestSocketRecvTimestamp();
+TEST_F(PhysicalSocketTest, TestSocketRecvTimestampIPv6) {
+  SocketTest::TestSocketRecvTimestampIPv6();
 }
 #endif
 
