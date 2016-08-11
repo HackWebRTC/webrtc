@@ -232,6 +232,9 @@ void PeerConnectionDelegateAdapter::OnIceCandidatesRemoved(
                                                     nullptr,
                                                     nullptr,
                                                     _observer.get());
+    if (!_peerConnection) {
+      return nil;
+    }
     _localStreams = [[NSMutableArray alloc] init];
     _delegate = delegate;
   }
