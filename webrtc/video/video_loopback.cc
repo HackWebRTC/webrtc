@@ -227,14 +227,10 @@ void Loopback() {
   VideoQualityTest::Params params{
       {flags::Width(), flags::Height(), flags::Fps(),
        flags::MinBitrateKbps() * 1000, flags::TargetBitrateKbps() * 1000,
-       flags::MaxBitrateKbps() * 1000,
-       flags::FLAGS_suspend_below_min_bitrate,
-       flags::Codec(),
-       flags::NumTemporalLayers(), flags::SelectedTL(),
+       flags::MaxBitrateKbps() * 1000, flags::FLAGS_suspend_below_min_bitrate,
+       flags::Codec(), flags::NumTemporalLayers(), flags::SelectedTL(),
        0,  // No min transmit bitrate.
-       call_bitrate_config,
-       flags::FLAGS_send_side_bwe,
-       flags::FLAGS_use_fec},
+       flags::FLAGS_send_side_bwe, flags::FLAGS_use_fec, call_bitrate_config},
       {flags::Clip()},
       {},  // Screenshare specific.
       {"video", 0.0, 0.0, flags::DurationSecs(), flags::OutputFilename(),

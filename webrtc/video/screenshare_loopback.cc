@@ -228,8 +228,8 @@ void Loopback() {
        flags::MinBitrateKbps() * 1000, flags::TargetBitrateKbps() * 1000,
        flags::MaxBitrateKbps() * 1000, false, flags::Codec(),
        flags::NumTemporalLayers(), flags::SelectedTL(),
-       flags::MinTransmitBitrateKbps() * 1000, call_bitrate_config,
-       flags::FLAGS_send_side_bwe},
+       flags::MinTransmitBitrateKbps() * 1000, flags::FLAGS_send_side_bwe,
+       false, call_bitrate_config},
       {},  // Video specific.
       {true, flags::SlideChangeInterval(), flags::ScrollDuration()},
       {"screenshare", 0.0, 0.0, flags::DurationSecs(), flags::OutputFilename(),

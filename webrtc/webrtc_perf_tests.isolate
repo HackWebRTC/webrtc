@@ -12,6 +12,7 @@
         'files': [
           '<(DEPTH)/resources/audio_coding/speech_mono_16kHz.pcm',
           '<(DEPTH)/resources/audio_coding/testfile32kHz.pcm',
+          '<(DEPTH)/resources/ConferenceMotion_1280_720_50.yuv',
           '<(DEPTH)/resources/foreman_cif.yuv',
           '<(DEPTH)/resources/paris_qcif.yuv',
           '<(DEPTH)/resources/voice_engine/audio_long16.pcm',

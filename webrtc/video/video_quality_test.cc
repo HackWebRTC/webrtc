@@ -41,6 +41,7 @@ static const int kSendStatsPollingIntervalMs = 1000;
 static const int kPayloadTypeH264 = 122;
 static const int kPayloadTypeVP8 = 123;
 static const int kPayloadTypeVP9 = 124;
+static const size_t kMaxComparisons = 10;
 
 class VideoAnalyzer : public PacketReceiver,
                       public Transport,
@@ -408,10 +409,16 @@ class VideoAnalyzer : public PacketReceiver,
 
     VideoFrame reference_copy;
     VideoFrame render_copy;
-    reference_copy.CopyFrame(reference);
-    render_copy.CopyFrame(render);
 
     rtc::CritScope crit(&comparison_lock_);
+    if (comparisons_.size() < kMaxComparisons) {
+      reference_copy.CopyFrame(reference);
+      render_copy.CopyFrame(render);
+    } else {
+      // Copy the time to ensure that delay calculations can still be made.
+      reference_copy.set_ntp_time_ms(reference.ntp_time_ms());
+      render_copy.set_ntp_time_ms(render.ntp_time_ms());
+    }
     comparisons_.push_back(FrameComparison(reference_copy, render_copy, dropped,
                                            send_time_ms, recv_time_ms,
                                            render_time_ms, encoded_size));
@@ -546,8 +553,12 @@ class VideoAnalyzer : public PacketReceiver,
 
   void PerformFrameComparison(const FrameComparison& comparison) {
     // Perform expensive psnr and ssim calculations while not holding lock.
-    double psnr = I420PSNR(&comparison.reference, &comparison.render);
-    double ssim = I420SSIM(&comparison.reference, &comparison.render);
+    double psnr = -1.0;
+    double ssim = -1.0;
+    if (!comparison.reference.IsZeroSize()) {
+      psnr = I420PSNR(&comparison.reference, &comparison.render);
+      ssim = I420SSIM(&comparison.reference, &comparison.render);
+    }
 
     int64_t input_time_ms = comparison.reference.ntp_time_ms();
 
@@ -558,8 +569,10 @@ class VideoAnalyzer : public PacketReceiver,
                  comparison.recv_time_ms, comparison.render_time_ms,
                  comparison.encoded_frame_size, psnr, ssim));
     }
-    psnr_.AddSample(psnr);
-    ssim_.AddSample(ssim);
+    if (psnr >= 0.0)
+      psnr_.AddSample(psnr);
+    if (ssim >= 0.0)
+      ssim_.AddSample(ssim);
 
     if (comparison.dropped) {
       ++dropped_frames_;

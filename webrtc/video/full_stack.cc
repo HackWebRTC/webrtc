@@ -68,7 +68,7 @@ TEST_F(FullStackTest, ForemanCifPlr5Vp9) {
 
 TEST_F(FullStackTest, ParisQcifWithoutPacketLoss) {
   VideoQualityTest::Params paris_qcif = {
-      {176, 144, 30, 300000, 300000, 300000, false, "VP8", 1},
+      {176, 144, 30, 300000, 300000, 300000, false, "VP8", 1, 0, 0, true},
       {"paris_qcif"},
       {},
       {"net_delay_0_0_plr_0", 36.0, 0.96, kFullStackTestDurationSecs}};
@@ -78,17 +78,17 @@ TEST_F(FullStackTest, ParisQcifWithoutPacketLoss) {
 TEST_F(FullStackTest, ForemanCifWithoutPacketLoss) {
   // TODO(pbos): Decide on psnr/ssim thresholds for foreman_cif.
   VideoQualityTest::Params foreman_cif = {
-      {352, 288, 30, 700000, 700000, 700000, false, "VP8", 1},
+      {352, 288, 30, 700000, 700000, 700000, false, "VP8", 1, 0, 0, true},
       {"foreman_cif"},
       {},
-      {"foreman_cif_net_delay_0_0_plr_0", 0.0, 0.0, kFullStackTestDurationSecs}
-  };
+      {"foreman_cif_net_delay_0_0_plr_0", 0.0, 0.0,
+       kFullStackTestDurationSecs}};
   RunTest(foreman_cif);
 }
 
 TEST_F(FullStackTest, ForemanCifPlr5) {
   VideoQualityTest::Params foreman_cif = {
-      {352, 288, 30, 30000, 500000, 2000000, false, "VP8", 1},
+      {352, 288, 30, 30000, 500000, 2000000, false, "VP8", 1, 0, 0, true},
       {"foreman_cif"},
       {},
       {"foreman_cif_delay_50_0_plr_5", 0.0, 0.0, kFullStackTestDurationSecs}};
@@ -99,7 +99,7 @@ TEST_F(FullStackTest, ForemanCifPlr5) {
 
 TEST_F(FullStackTest, ForemanCif500kbps) {
   VideoQualityTest::Params foreman_cif = {
-      {352, 288, 30, 30000, 500000, 2000000, false, "VP8", 1},
+      {352, 288, 30, 30000, 500000, 2000000, false, "VP8", 1, 0, 0, true},
       {"foreman_cif"},
       {},
       {"foreman_cif_500kbps", 0.0, 0.0, kFullStackTestDurationSecs}};
@@ -111,11 +111,11 @@ TEST_F(FullStackTest, ForemanCif500kbps) {
 
 TEST_F(FullStackTest, ForemanCif500kbpsLimitedQueue) {
   VideoQualityTest::Params foreman_cif = {
-      {352, 288, 30, 30000, 500000, 2000000, false, "VP8", 1},
+      {352, 288, 30, 30000, 500000, 2000000, false, "VP8", 1, 0, 0, true},
       {"foreman_cif"},
       {},
-      {"foreman_cif_500kbps_32pkts_queue", 0.0, 0.0, kFullStackTestDurationSecs}
-  };
+      {"foreman_cif_500kbps_32pkts_queue", 0.0, 0.0,
+       kFullStackTestDurationSecs}};
   foreman_cif.pipe.queue_length_packets = 32;
   foreman_cif.pipe.queue_delay_ms = 0;
   foreman_cif.pipe.link_capacity_kbps = 500;
@@ -124,7 +124,7 @@ TEST_F(FullStackTest, ForemanCif500kbpsLimitedQueue) {
 
 TEST_F(FullStackTest, ForemanCif500kbps100ms) {
   VideoQualityTest::Params foreman_cif = {
-      {352, 288, 30, 30000, 500000, 2000000, false, "VP8", 1},
+      {352, 288, 30, 30000, 500000, 2000000, false, "VP8", 1, 0, 0, true},
       {"foreman_cif"},
       {},
       {"foreman_cif_500kbps_100ms", 0.0, 0.0, kFullStackTestDurationSecs}};
@@ -136,11 +136,24 @@ TEST_F(FullStackTest, ForemanCif500kbps100ms) {
 
 TEST_F(FullStackTest, ForemanCif500kbps100msLimitedQueue) {
   VideoQualityTest::Params foreman_cif = {
-      {352, 288, 30, 30000, 500000, 2000000, false, "VP8", 1},
+      {352, 288, 30, 30000, 500000, 2000000, false, "VP8", 1, 0, 0, true},
       {"foreman_cif"},
       {},
       {"foreman_cif_500kbps_100ms_32pkts_queue", 0.0, 0.0,
-        kFullStackTestDurationSecs}};
+       kFullStackTestDurationSecs}};
+  foreman_cif.pipe.queue_length_packets = 32;
+  foreman_cif.pipe.queue_delay_ms = 100;
+  foreman_cif.pipe.link_capacity_kbps = 500;
+  RunTest(foreman_cif);
+}
+
+TEST_F(FullStackTest, ForemanCif500kbps100msLimitedQueueRecvBwe) {
+  VideoQualityTest::Params foreman_cif = {
+      {352, 288, 30, 30000, 500000, 2000000, false, "VP8", 1, 0, 0, false},
+      {"foreman_cif"},
+      {},
+      {"foreman_cif_500kbps_100ms_32pkts_queue", 0.0, 0.0,
+       kFullStackTestDurationSecs}};
   foreman_cif.pipe.queue_length_packets = 32;
   foreman_cif.pipe.queue_delay_ms = 100;
   foreman_cif.pipe.link_capacity_kbps = 500;
@@ -149,20 +162,33 @@ TEST_F(FullStackTest, ForemanCif500kbps100msLimitedQueue) {
 
 TEST_F(FullStackTest, ForemanCif1000kbps100msLimitedQueue) {
   VideoQualityTest::Params foreman_cif = {
-      {352, 288, 30, 30000, 2000000, 2000000, false, "VP8", 1},
+      {352, 288, 30, 30000, 2000000, 2000000, false, "VP8", 1, 0, 0, true},
       {"foreman_cif"},
       {},
       {"foreman_cif_1000kbps_100ms_32pkts_queue", 0.0, 0.0,
-        kFullStackTestDurationSecs}};
+       kFullStackTestDurationSecs}};
   foreman_cif.pipe.queue_length_packets = 32;
   foreman_cif.pipe.queue_delay_ms = 100;
   foreman_cif.pipe.link_capacity_kbps = 1000;
   RunTest(foreman_cif);
 }
 
+TEST_F(FullStackTest, ConferenceMotionHd2000kbps100msLimitedQueue) {
+  VideoQualityTest::Params conf_motion_hd = {
+      {1280, 720, 50, 30000, 3000000, 3000000, false, "VP8", 1, 0, 0, true},
+      {"ConferenceMotion_1280_720_50"},
+      {},
+      {"conference_motion_hd_2000kbps_100ms_32pkts_queue", 0.0, 0.0,
+       kFullStackTestDurationSecs}};
+  conf_motion_hd.pipe.queue_length_packets = 32;
+  conf_motion_hd.pipe.queue_delay_ms = 100;
+  conf_motion_hd.pipe.link_capacity_kbps = 2000;
+  RunTest(conf_motion_hd);
+}
+
 TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL) {
   VideoQualityTest::Params screenshare = {
-      {1850, 1110, 5, 50000, 200000, 2000000, false, "VP8", 2, 1, 400000},
+      {1850, 1110, 5, 50000, 200000, 2000000, false, "VP8", 2, 1, 400000, true},
       {},
       {true, 10},
       {"screenshare_slides", 0.0, 0.0, kFullStackTestDurationSecs}};
@@ -171,7 +197,8 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL) {
 
 TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_Scroll) {
   VideoQualityTest::Params config = {
-      {1850, 1110 / 2, 5, 50000, 200000, 2000000, false, "VP8", 2, 1, 400000},
+      {1850, 1110 / 2, 5, 50000, 200000, 2000000, false, "VP8", 2, 1, 400000,
+       true},
       {},
       {true, 10, 2},
       {"screenshare_slides_scrolling", 0.0, 0.0, kFullStackTestDurationSecs}};
@@ -180,7 +207,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_Scroll) {
 
 TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_LossyNet) {
   VideoQualityTest::Params screenshare = {
-      {1850, 1110, 5, 50000, 200000, 2000000, false, "VP8", 2, 1, 400000},
+      {1850, 1110, 5, 50000, 200000, 2000000, false, "VP8", 2, 1, 400000, true},
       {},          // Video-specific.
       {true, 10},  // Screenshare-specific.
       {"screenshare_slides_lossy_net", 0.0, 0.0, kFullStackTestDurationSecs}};
@@ -192,7 +219,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_LossyNet) {
 
 TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_VeryLossyNet) {
   VideoQualityTest::Params screenshare = {
-      {1850, 1110, 5, 50000, 200000, 2000000, false, "VP8", 2, 1, 400000},
+      {1850, 1110, 5, 50000, 200000, 2000000, false, "VP8", 2, 1, 400000, true},
       {},          // Video-specific.
       {true, 10},  // Screenshare-specific.
       {"screenshare_slides_very_lossy", 0.0, 0.0, kFullStackTestDurationSecs}};
@@ -205,7 +232,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_VeryLossyNet) {
 #if !defined(RTC_DISABLE_VP9)
 TEST_F(FullStackTest, ScreenshareSlidesVP9_2SL) {
   VideoQualityTest::Params screenshare = {
-      {1850, 1110, 5, 50000, 200000, 2000000, false, "VP9", 1, 0, 400000},
+      {1850, 1110, 5, 50000, 200000, 2000000, false, "VP9", 1, 0, 400000, true},
       {},
       {true, 10},
       {"screenshare_slides_vp9_2sl", 0.0, 0.0, kFullStackTestDurationSecs},
