@@ -45,6 +45,10 @@ class SendStatisticsProxyTest : public ::testing::Test {
         &fake_clock_, GetTestConfig(),
         VideoEncoderConfig::ContentType::kRealtimeVideo));
     expected_ = VideoSendStream::Stats();
+    for (const auto& ssrc : config_.rtp.ssrcs)
+      expected_.substreams[ssrc].is_rtx = false;
+    for (const auto& ssrc : config_.rtp.rtx.ssrcs)
+      expected_.substreams[ssrc].is_rtx = true;
   }
 
   VideoSendStream::Config GetTestConfig() {
@@ -73,6 +77,7 @@ class SendStatisticsProxyTest : public ::testing::Test {
       const VideoSendStream::StreamStats& a = it->second;
       const VideoSendStream::StreamStats& b = corresponding_it->second;
 
+      EXPECT_EQ(a.is_rtx, b.is_rtx);
       EXPECT_EQ(a.frame_counts.key_frames, b.frame_counts.key_frames);
       EXPECT_EQ(a.frame_counts.delta_frames, b.frame_counts.delta_frames);
       EXPECT_EQ(a.total_bitrate_bps, b.total_bitrate_bps);

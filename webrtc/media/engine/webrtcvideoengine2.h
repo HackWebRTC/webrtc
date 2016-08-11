@@ -274,7 +274,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     void OnLoadUpdate(Load load) override;
 
     const std::vector<uint32_t>& GetSsrcs() const;
-    VideoSenderInfo GetVideoSenderInfo();
+    VideoSenderInfo GetVideoSenderInfo(bool log_stats);
     void FillBandwidthEstimationInfo(BandwidthEstimationInfo* bwe_info);
 
    private:
@@ -442,7 +442,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
 
     void SetSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink);
 
-    VideoReceiverInfo GetVideoReceiverInfo();
+    VideoReceiverInfo GetVideoReceiverInfo(bool log_stats);
 
     // Used to disable RED/FEC when the remote description doesn't contain those
     // codecs. This is needed to be able to work around an RTX bug which is only
@@ -514,8 +514,8 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   static bool ReceiveCodecsHaveChanged(std::vector<VideoCodecSettings> before,
                                        std::vector<VideoCodecSettings> after);
 
-  void FillSenderStats(VideoMediaInfo* info);
-  void FillReceiverStats(VideoMediaInfo* info);
+  void FillSenderStats(VideoMediaInfo* info, bool log_stats);
+  void FillReceiverStats(VideoMediaInfo* info, bool log_stats);
   void FillBandwidthEstimationStats(const webrtc::Call::Stats& stats,
                                     VideoMediaInfo* info);
 
@@ -553,6 +553,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   VideoOptions default_send_options_;
   VideoRecvParameters recv_params_;
   bool red_disabled_by_remote_side_;
+  int64_t last_stats_log_ms_;
 };
 
 }  // namespace cricket

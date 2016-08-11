@@ -92,6 +92,8 @@ class Call {
   };
 
   struct Stats {
+    std::string ToString(int64_t time_ms) const;
+
     int send_bandwidth_bps = 0;       // Estimated available send bandwidth.
     int max_padding_bitrate_bps = 0;  // Cumulative configured max padding.
     int recv_bandwidth_bps = 0;       // Estimated available receive bandwidth.

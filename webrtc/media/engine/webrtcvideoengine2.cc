@@ -342,6 +342,9 @@ static const int kDefaultRtcpReceiverReportSsrc = 1;
 // Down grade resolution at most 2 times for CPU reasons.
 static const int kMaxCpuDowngrades = 2;
 
+// Minimum time interval for logging stats.
+static const int64_t kStatsLogIntervalMs = 10000;
+
 // Adds |codec| to |list|, and also adds an RTX codec if |codec|'s name is
 // recognized.
 // TODO(deadbeef): Should we add RTX codecs for external codecs whose names we
@@ -676,7 +679,8 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
       external_encoder_factory_(external_encoder_factory),
       external_decoder_factory_(external_decoder_factory),
       default_send_options_(options),
-      red_disabled_by_remote_side_(false) {
+      red_disabled_by_remote_side_(false),
+      last_stats_log_ms_(-1) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
 
   rtcp_receiver_report_ssrc_ = kDefaultRtcpReceiverReportSsrc;
@@ -1344,9 +1348,19 @@ bool WebRtcVideoChannel2::SetSink(uint32_t ssrc,
 
 bool WebRtcVideoChannel2::GetStats(VideoMediaInfo* info) {
   TRACE_EVENT0("webrtc", "WebRtcVideoChannel2::GetStats");
+
+  // Log stats periodically.
+  bool log_stats = false;
+  int64_t now_ms = rtc::TimeMillis();
+  if (last_stats_log_ms_ == -1 ||
+      now_ms - last_stats_log_ms_ > kStatsLogIntervalMs) {
+    last_stats_log_ms_ = now_ms;
+    log_stats = true;
+  }
+
   info->Clear();
-  FillSenderStats(info);
-  FillReceiverStats(info);
+  FillSenderStats(info, log_stats);
+  FillReceiverStats(info, log_stats);
   webrtc::Call::Stats stats = call_->GetStats();
   FillBandwidthEstimationStats(stats, info);
   if (stats.rtt_ms != -1) {
@@ -1354,24 +1368,32 @@ bool WebRtcVideoChannel2::GetStats(VideoMediaInfo* info) {
       info->senders[i].rtt_ms = stats.rtt_ms;
     }
   }
+
+  if (log_stats)
+    LOG(LS_INFO) << stats.ToString(now_ms);
+
   return true;
 }
 
-void WebRtcVideoChannel2::FillSenderStats(VideoMediaInfo* video_media_info) {
+void WebRtcVideoChannel2::FillSenderStats(VideoMediaInfo* video_media_info,
+                                          bool log_stats) {
   rtc::CritScope stream_lock(&stream_crit_);
   for (std::map<uint32_t, WebRtcVideoSendStream*>::iterator it =
            send_streams_.begin();
        it != send_streams_.end(); ++it) {
-    video_media_info->senders.push_back(it->second->GetVideoSenderInfo());
+    video_media_info->senders.push_back(
+        it->second->GetVideoSenderInfo(log_stats));
   }
 }
 
-void WebRtcVideoChannel2::FillReceiverStats(VideoMediaInfo* video_media_info) {
+void WebRtcVideoChannel2::FillReceiverStats(VideoMediaInfo* video_media_info,
+                                            bool log_stats) {
   rtc::CritScope stream_lock(&stream_crit_);
   for (std::map<uint32_t, WebRtcVideoReceiveStream*>::iterator it =
            receive_streams_.begin();
        it != receive_streams_.end(); ++it) {
-    video_media_info->receivers.push_back(it->second->GetVideoReceiverInfo());
+    video_media_info->receivers.push_back(
+        it->second->GetVideoReceiverInfo(log_stats));
   }
 }
 
@@ -2096,8 +2118,8 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnLoadUpdate(Load load) {
   source_->AddOrUpdateSink(this, sink_wants_);
 }
 
-VideoSenderInfo
-WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
+VideoSenderInfo WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo(
+    bool log_stats) {
   VideoSenderInfo info;
   webrtc::VideoSendStream::Stats stats;
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
@@ -2123,6 +2145,10 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo() {
 
     stats = stream_->GetStats();
   }
+
+  if (log_stats)
+    LOG(LS_INFO) << stats.ToString(rtc::TimeMillis());
+
   info.adapt_changes = number_of_cpu_adapt_changes_;
   info.adapt_reason =
       cpu_restricted_counter_ <= 0 ? ADAPTREASON_NONE : ADAPTREASON_CPU;
@@ -2512,7 +2538,8 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetCodecNameFromPayloadType(
 }
 
 VideoReceiverInfo
-WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo() {
+WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo(
+    bool log_stats) {
   VideoReceiverInfo info;
   info.ssrc_groups = stream_params_.ssrc_groups;
   info.add_ssrc(config_.rtp.remote_ssrc);
@@ -2550,6 +2577,9 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo() {
   info.firs_sent = stats.rtcp_packet_type_counts.fir_packets;
   info.plis_sent = stats.rtcp_packet_type_counts.pli_packets;
   info.nacks_sent = stats.rtcp_packet_type_counts.nack_packets;
+
+  if (log_stats)
+    LOG(LS_INFO) << stats.ToString(rtc::TimeMillis());
 
   return info;
 }

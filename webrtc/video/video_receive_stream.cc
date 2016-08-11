@@ -116,6 +116,34 @@ std::string VideoReceiveStream::Config::Rtp::ToString() const {
   return ss.str();
 }
 
+std::string VideoReceiveStream::Stats::ToString(int64_t time_ms) const {
+  std::stringstream ss;
+  ss << "VideoReceiveStream stats: " << time_ms << ", {ssrc: " << ssrc << ", ";
+  ss << "total_bps: " << total_bitrate_bps << ", ";
+  ss << "width: " << width << ", ";
+  ss << "height: " << height << ", ";
+  ss << "key: " << frame_counts.key_frames << ", ";
+  ss << "delta: " << frame_counts.delta_frames << ", ";
+  ss << "network_fps: " << network_frame_rate << ", ";
+  ss << "decode_fps: " << decode_frame_rate << ", ";
+  ss << "render_fps: " << render_frame_rate << ", ";
+  ss << "decode_ms: " << decode_ms << ", ";
+  ss << "max_decode_ms: " << max_decode_ms << ", ";
+  ss << "cur_delay_ms: " << current_delay_ms << ", ";
+  ss << "targ_delay_ms: " << target_delay_ms << ", ";
+  ss << "jb_delay_ms: " << jitter_buffer_ms << ", ";
+  ss << "min_playout_delay_ms: " << min_playout_delay_ms << ", ";
+  ss << "discarded: " << discarded_packets << ", ";
+  ss << "sync_offset_ms: " << sync_offset_ms << ", ";
+  ss << "cum_loss: " << rtcp_stats.cumulative_lost << ", ";
+  ss << "max_ext_seq: " << rtcp_stats.extended_max_sequence_number << ", ";
+  ss << "nack: " << rtcp_packet_type_counts.nack_packets << ", ";
+  ss << "fir: " << rtcp_packet_type_counts.fir_packets << ", ";
+  ss << "pli: " << rtcp_packet_type_counts.pli_packets;
+  ss << '}';
+  return ss.str();
+}
+
 namespace {
 VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
   VideoCodec codec;

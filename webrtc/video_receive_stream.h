@@ -48,6 +48,8 @@ class VideoReceiveStream {
   };
 
   struct Stats {
+    std::string ToString(int64_t time_ms) const;
+
     int network_frame_rate = 0;
     int decode_frame_rate = 0;
     int render_frame_rate = 0;
@@ -67,6 +69,9 @@ class VideoReceiveStream {
 
     int total_bitrate_bps = 0;
     int discarded_packets = 0;
+
+    int width = 0;
+    int height = 0;
 
     int sync_offset_ms = std::numeric_limits<int>::max();
 

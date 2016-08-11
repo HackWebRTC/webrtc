@@ -41,7 +41,10 @@ class VideoCaptureInput {
 class VideoSendStream {
  public:
   struct StreamStats {
+    std::string ToString() const;
+
     FrameCounts frame_counts;
+    bool is_rtx = false;
     int width = 0;
     int height = 0;
     // TODO(holmer): Move bitrate_bps out to the webrtc::Call layer.
@@ -55,6 +58,7 @@ class VideoSendStream {
   };
 
   struct Stats {
+    std::string ToString(int64_t time_ms) const;
     std::string encoder_implementation_name = "unknown";
     int input_frame_rate = 0;
     int encode_frame_rate = 0;

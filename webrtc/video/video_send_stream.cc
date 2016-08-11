@@ -162,6 +162,46 @@ std::string VideoSendStream::Config::ToString() const {
   return ss.str();
 }
 
+std::string VideoSendStream::Stats::ToString(int64_t time_ms) const {
+  std::stringstream ss;
+  ss << "VideoSendStream stats: " << time_ms << ", {";
+  ss << "input_fps: " << input_frame_rate << ", ";
+  ss << "encode_fps: " << encode_frame_rate << ", ";
+  ss << "encode_ms: " << avg_encode_time_ms << ", ";
+  ss << "encode_usage_perc: " << encode_usage_percent << ", ";
+  ss << "target_bps: " << target_media_bitrate_bps << ", ";
+  ss << "media_bps: " << media_bitrate_bps << ", ";
+  ss << "suspended: " << (suspended ? "true" : "false") << ", ";
+  ss << "bw_adapted: " << (bw_limited_resolution ? "true" : "false");
+  ss << '}';
+  for (const auto& substream : substreams) {
+    if (!substream.second.is_rtx) {
+      ss << " {ssrc: " << substream.first << ", ";
+      ss << substream.second.ToString();
+      ss << '}';
+    }
+  }
+  return ss.str();
+}
+
+std::string VideoSendStream::StreamStats::ToString() const {
+  std::stringstream ss;
+  ss << "width: " << width << ", ";
+  ss << "height: " << height << ", ";
+  ss << "key: " << frame_counts.key_frames << ", ";
+  ss << "delta: " << frame_counts.delta_frames << ", ";
+  ss << "total_bps: " << total_bitrate_bps << ", ";
+  ss << "retransmit_bps: " << retransmit_bitrate_bps << ", ";
+  ss << "avg_delay_ms: " << avg_delay_ms << ", ";
+  ss << "max_delay_ms: " << max_delay_ms << ", ";
+  ss << "cum_loss: " << rtcp_stats.cumulative_lost << ", ";
+  ss << "max_ext_seq: " << rtcp_stats.extended_max_sequence_number << ", ";
+  ss << "nack: " << rtcp_packet_type_counts.nack_packets << ", ";
+  ss << "fir: " << rtcp_packet_type_counts.fir_packets << ", ";
+  ss << "pli: " << rtcp_packet_type_counts.pli_packets;
+  return ss.str();
+}
+
 namespace {
 
 VideoCodecType PayloadNameToCodecType(const std::string& payload_name) {

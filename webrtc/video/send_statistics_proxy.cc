@@ -402,15 +402,21 @@ VideoSendStream::StreamStats* SendStatisticsProxy::GetStatsEntry(
   if (it != stats_.substreams.end())
     return &it->second;
 
+  bool is_rtx = false;
   if (std::find(config_.rtp.ssrcs.begin(), config_.rtp.ssrcs.end(), ssrc) ==
-          config_.rtp.ssrcs.end() &&
-      std::find(config_.rtp.rtx.ssrcs.begin(),
-                config_.rtp.rtx.ssrcs.end(),
-                ssrc) == config_.rtp.rtx.ssrcs.end()) {
-    return nullptr;
+      config_.rtp.ssrcs.end()) {
+    if (std::find(config_.rtp.rtx.ssrcs.begin(), config_.rtp.rtx.ssrcs.end(),
+                  ssrc) == config_.rtp.rtx.ssrcs.end()) {
+      return nullptr;
+    }
+    is_rtx = true;
   }
 
-  return &stats_.substreams[ssrc];  // Insert new entry and return ptr.
+  // Insert new entry and return ptr.
+  VideoSendStream::StreamStats* entry = &stats_.substreams[ssrc];
+  entry->is_rtx = is_rtx;
+
+  return entry;
 }
 
 void SendStatisticsProxy::OnInactiveSsrc(uint32_t ssrc) {

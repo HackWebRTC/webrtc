@@ -203,6 +203,18 @@ class Call : public webrtc::Call,
 };
 }  // namespace internal
 
+std::string Call::Stats::ToString(int64_t time_ms) const {
+  std::stringstream ss;
+  ss << "Call stats: " << time_ms << ", {";
+  ss << "send_bw_bps: " << send_bandwidth_bps << ", ";
+  ss << "recv_bw_bps: " << recv_bandwidth_bps << ", ";
+  ss << "max_pad_bps: " << max_padding_bitrate_bps << ", ";
+  ss << "pacer_delay_ms: " << pacer_delay_ms << ", ";
+  ss << "rtt_ms: " << rtt_ms;
+  ss << '}';
+  return ss.str();
+}
+
 Call* Call::Create(const Call::Config& config) {
   return new internal::Call(config);
 }
