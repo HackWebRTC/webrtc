@@ -84,6 +84,7 @@
 /third_party/boringssl
 /third_party/bouncycastle
 /third_party/catapult
+/third_party/ced
 /third_party/clang_format
 /third_party/class-dump
 /third_party/closure_compiler
