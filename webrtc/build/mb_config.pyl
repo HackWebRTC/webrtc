@@ -29,6 +29,14 @@
       'iOS64 Debug (GN)': 'ios_gn_debug_bot_arm64_device',
       'iOS64 Release (GN)': 'ios_gn_release_bot_arm64_device',
 
+      # Mac
+      'Mac64 Debug': 'gyp_debug_bot_x64',
+      'Mac64 Release': 'gyp_release_bot_x64',
+      'Mac64 Debug (GN)': 'gn_debug_bot_x64',
+      'Mac64 Release (GN)': 'gn_release_bot_x64',
+      'Mac Asan': 'mac_gyp_asan_clang_release_bot_x64',
+      'Mac64 Release [large tests]': 'gyp_release_bot_x64',
+
       # Linux
       'Linux32 ARM': 'gyp_crosscompile_release_bot_arm',
       'Linux32 Debug': 'gyp_debug_bot_x86',
@@ -89,6 +97,17 @@
       'ios64_sim_dbg': 'ios_gyp_debug_bot_x64',
       'ios64_gn_dbg': 'ios_gn_debug_bot_arm64_device',
       'ios64_gn_rel': 'ios_gn_release_bot_arm64_device',
+
+      # Mac
+      'mac_compile_dbg': 'gyp_debug_bot_x64',
+      'mac_compile_rel': 'gyp_release_bot_x64',
+      'mac_dbg': 'gyp_debug_bot_x64',
+      'mac_rel': 'gyp_release_bot_x64',
+      'mac_gn_dbg': 'gn_debug_bot_x64',
+      'mac_gn_rel': 'gn_release_bot_x64',
+      'mac_asan': 'mac_gyp_asan_clang_release_bot_x64',
+      'mac_baremetal': 'gyp_release_bot_x64',
+      'mac_swarming': 'swarming_gyp_debug_bot_x64',
 
       # Linux
       'linux_compile_dbg': 'gyp_debug_bot_x64',
@@ -243,6 +262,11 @@
     # (http://crbug.com/636414).
     'win_gyp_drmemory_debug_bot_x86': [
       'gyp', 'drmemory', 'minimal_symbols', 'openh264_debug_bot', 'x86',
+    ],
+
+    # Mac
+    'mac_gyp_asan_clang_release_bot_x64': [
+      'gyp', 'asan', 'clang', 'openh264_release_bot', 'x64',
     ],
 
     # Android
