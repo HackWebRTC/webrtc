@@ -181,12 +181,12 @@ public class Camera2CapturerTest extends InstrumentationTestCase {
   }
 
   @SmallTest
-  public void testCreateAndDispose() {
+  public void testCreateAndDispose() throws InterruptedException {
     fixtures.createCapturerAndDispose();
   }
 
   @SmallTest
-  public void testCreateNonExistingCamera() {
+  public void testCreateNonExistingCamera() throws InterruptedException {
     fixtures.createNonExistingCamera();
   }
 

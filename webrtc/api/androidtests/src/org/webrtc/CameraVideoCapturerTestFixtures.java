@@ -191,9 +191,13 @@ class CameraVideoCapturerTestFixtures {
     public boolean onFirstFrameAvailableCalled;
     public final Object onCameraFreezedLock = new Object();
     private String onCameraFreezedDescription;
+    public final Object cameraClosedLock = new Object();
+    private boolean cameraClosed = true;
 
     @Override
     public void onCameraError(String errorDescription) {
+      Logging.w(TAG, "Camera error: " + errorDescription);
+      cameraClosed = true;
     }
 
     @Override
@@ -207,6 +211,9 @@ class CameraVideoCapturerTestFixtures {
     @Override
     public void onCameraOpening(int cameraId) {
       onCameraOpeningCalled = true;
+      synchronized (cameraClosedLock) {
+        cameraClosed = false;
+      }
     }
 
     @Override
@@ -215,13 +222,27 @@ class CameraVideoCapturerTestFixtures {
     }
 
     @Override
-    public void onCameraClosed() { }
+    public void onCameraClosed() {
+      synchronized (cameraClosedLock) {
+        cameraClosed = true;
+        cameraClosedLock.notifyAll();
+      }
+    }
 
     public String waitForCameraFreezed() throws InterruptedException {
       Logging.d(TAG, "Waiting for the camera to freeze");
       synchronized (onCameraFreezedLock) {
         onCameraFreezedLock.wait();
         return onCameraFreezedDescription;
+      }
+    }
+
+    public void waitForCameraClosed() throws InterruptedException {
+      synchronized (cameraClosedLock) {
+        while (!cameraClosed) {
+          Logging.d(TAG, "Waiting for the camera to close.");
+          cameraClosedLock.wait();
+        }
       }
     }
   }
@@ -332,7 +353,8 @@ class CameraVideoCapturerTestFixtures {
   }
 
   private CapturerInstance createCapturer(boolean initialize) {
-    return createCapturer("", initialize);
+    String name = testObjectFactory.cameraEnumerator.getDeviceNames()[0];
+    return createCapturer(name, initialize);
   }
 
   private void startCapture(CapturerInstance instance) {
@@ -347,12 +369,9 @@ class CameraVideoCapturerTestFixtures {
     instance.format = format;
   }
 
-  private void disposeCapturer(CapturerInstance instance) {
-    try {
-      instance.capturer.stopCapture();
-    } catch (InterruptedException e) {
-      // TODO(sakal): Remove this once stopCapture no longer throws InterruptedException
-    }
+  private void disposeCapturer(CapturerInstance instance) throws InterruptedException {
+    instance.capturer.stopCapture();
+    instance.cameraEvents.waitForCameraClosed();
     instance.capturer.dispose();
     instance.surfaceTextureHelper.returnTextureFrame();
     instance.surfaceTextureHelper.dispose();
@@ -416,11 +435,11 @@ class CameraVideoCapturerTestFixtures {
   }
 
   // Test methods
-  public void createCapturerAndDispose() {
+  public void createCapturerAndDispose() throws InterruptedException {
     disposeCapturer(createCapturer(true /* initialize */));
   }
 
-  public void createNonExistingCamera() {
+  public void createNonExistingCamera() throws InterruptedException {
     try {
       disposeCapturer(createCapturer("non-existing camera", false /* initialize */));
     } catch (IllegalArgumentException e) {
@@ -431,7 +450,8 @@ class CameraVideoCapturerTestFixtures {
   }
 
   public void createCapturerAndRender() throws InterruptedException  {
-    createCapturerAndRender("");
+    String name = testObjectFactory.cameraEnumerator.getDeviceNames()[0];
+    createCapturerAndRender(name);
   }
 
   public void createFrontFacingCapturerAndRender() throws InterruptedException {
@@ -452,6 +472,8 @@ class CameraVideoCapturerTestFixtures {
     final CapturerInstance capturerInstance = createCapturer(false /* initialize */);
     final VideoTrackWithRenderer videoTrackWithRenderer =
         createVideoTrackWithRenderer(capturerInstance.capturer);
+    // Wait for the camera to start so we can switch it
+    assertTrue(videoTrackWithRenderer.rendererCallbacks.waitForNextFrameToRender() > 0);
 
     // Array with one element to avoid final problem in nested classes.
     final boolean[] cameraSwitchSuccessful = new boolean[1];
@@ -485,7 +507,6 @@ class CameraVideoCapturerTestFixtures {
     // Make sure camera is started and first frame is received and then stop it.
     assertTrue(capturerInstance.observer.waitForCapturerToStart());
     capturerInstance.observer.waitForNextCapturedFrame();
-    capturerInstance.capturer.stopCapture();
     disposeCapturer(capturerInstance);
 
     assertTrue(capturerInstance.cameraEvents.onCameraOpeningCalled);
@@ -670,7 +691,6 @@ class CameraVideoCapturerTestFixtures {
     if (android.os.Build.VERSION.SDK_INT > android.os.Build.VERSION_CODES.LOLLIPOP_MR1) {
       // The first opened camera client will be evicted.
       assertTrue(capturerInstance.observer.waitForCapturerToStart());
-      capturerInstance.capturer.stopCapture();
     } else {
       assertFalse(capturerInstance.observer.waitForCapturerToStart());
     }
@@ -699,7 +719,6 @@ class CameraVideoCapturerTestFixtures {
     Logging.d(TAG, "startWhileCameraIsAlreadyOpenAndCloseCamera: Waiting for capture to start.");
     videoTrackWithRenderer.rendererCallbacks.waitForNextFrameToRender();
     Logging.d(TAG, "startWhileCameraIsAlreadyOpenAndCloseCamera: Stopping capture.");
-    capturerInstance.capturer.stopCapture();
     disposeCapturer(capturerInstance);
   }
 
@@ -711,8 +730,6 @@ class CameraVideoCapturerTestFixtures {
     final Object competingCamera = testObjectFactory.rawOpenCamera(cameraName);
 
     startCapture(capturerInstance);
-
-    capturerInstance.capturer.stopCapture();
     disposeCapturer(capturerInstance);
 
     testObjectFactory.rawCloseCamera(competingCamera);

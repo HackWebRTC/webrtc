@@ -22,20 +22,13 @@ public class Camera1CapturerUsingByteBufferTest extends InstrumentationTestCase 
   private class TestObjectFactory
       extends CameraVideoCapturerTestFixtures.TestObjectFactory {
     @Override
-    public CameraVideoCapturer createCapturer(
-        String name,
-        CameraVideoCapturer.CameraEventsHandler eventsHandler) {
-      return new VideoCapturerAndroid(name, eventsHandler, isCapturingToTexture());
-    }
-
-    @Override
     public boolean isCapturingToTexture() {
       return false;
     }
 
     @Override
     public CameraEnumerator getCameraEnumerator() {
-      return new Camera1Enumerator();
+      return new Camera1Enumerator(false);
     }
 
     @Override
@@ -69,12 +62,12 @@ public class Camera1CapturerUsingByteBufferTest extends InstrumentationTestCase 
   }
 
   @SmallTest
-  public void testCreateAndDispose() {
+  public void testCreateAndDispose() throws InterruptedException {
     fixtures.createCapturerAndDispose();
   }
 
   @SmallTest
-  public void testCreateNonExistingCamera() {
+  public void testCreateNonExistingCamera() throws InterruptedException {
     fixtures.createNonExistingCamera();
   }
 

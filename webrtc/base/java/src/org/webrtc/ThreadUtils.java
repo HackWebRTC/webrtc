@@ -136,6 +136,15 @@ public class ThreadUtils {
     return result;
   }
 
+  public static void waitUninterruptibly(final Object object) {
+    executeUninterruptibly(new BlockingOperation() {
+      @Override
+      public void run() throws InterruptedException {
+        object.wait();
+      }
+    });
+  }
+
   /**
    * Post |callable| to |handler| and wait for the result.
    */
