@@ -252,7 +252,7 @@ class SSLAdapterTestDummyServer : public sigslot::has_slots<> {
     ssl_stream_adapter_->SetPeerCertificateDigest(rtc::DIGEST_SHA_1, digest,
         digest_len);
 
-    ssl_stream_adapter_->StartSSLWithPeer();
+    ssl_stream_adapter_->StartSSL();
 
     ssl_stream_adapter_->SignalEvent.connect(this,
         &SSLAdapterTestDummyServer::OnSSLStreamAdapterEvent);

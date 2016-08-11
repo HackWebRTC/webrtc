@@ -385,10 +385,10 @@ class SSLStreamAdapterTestBase : public testing::Test,
     int rv;
 
     server_ssl_->SetServerRole();
-    rv = server_ssl_->StartSSLWithPeer();
+    rv = server_ssl_->StartSSL();
     ASSERT_EQ(0, rv);
 
-    rv = client_ssl_->StartSSLWithPeer();
+    rv = client_ssl_->StartSSL();
     ASSERT_EQ(0, rv);
 
     // Now run the handshake

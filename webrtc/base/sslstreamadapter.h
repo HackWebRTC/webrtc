@@ -127,21 +127,18 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   void set_client_auth_enabled(bool enabled) { client_auth_enabled_ = enabled; }
   bool client_auth_enabled() const { return client_auth_enabled_; }
 
-  // Specify our SSL identity: key and certificate. Mostly this is
-  // only used in the peer-to-peer mode (unless we actually want to
-  // provide a client certificate to a server).
-  // SSLStream takes ownership of the SSLIdentity object and will
-  // free it when appropriate. Should be called no more than once on a
-  // given SSLStream instance.
+  // Specify our SSL identity: key and certificate. SSLStream takes ownership
+  // of the SSLIdentity object and will free it when appropriate. Should be
+  // called no more than once on a given SSLStream instance.
   virtual void SetIdentity(SSLIdentity* identity) = 0;
 
-  // Call this to indicate that we are to play the server's role in
-  // the peer-to-peer mode.
-  // The default argument is for backward compatibility
+  // Call this to indicate that we are to play the server role (or client role,
+  // if the default argument is replaced by SSL_CLIENT).
+  // The default argument is for backward compatibility.
   // TODO(ekr@rtfm.com): rename this SetRole to reflect its new function
   virtual void SetServerRole(SSLRole role = SSL_SERVER) = 0;
 
-  // Do DTLS or TLS
+  // Do DTLS or TLS.
   virtual void SetMode(SSLMode mode) = 0;
 
   // Set maximum supported protocol version. The highest version supported by
@@ -151,42 +148,29 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   // next lower will be used.
   virtual void SetMaxProtocolVersion(SSLProtocolVersion version) = 0;
 
-  // The mode of operation is selected by calling either
-  // StartSSLWithServer or StartSSLWithPeer.
-  // Use of the stream prior to calling either of these functions will
-  // pass data in clear text.
-  // Calling one of these functions causes SSL negotiation to begin as
-  // soon as possible: right away if the underlying wrapped stream is
-  // already opened, or else as soon as it opens.
+  // StartSSL starts negotiation with a peer, whose certificate is verified
+  // using the certificate digest. Generally, SetIdentity() and possibly
+  // SetServerRole() should have been called before this.
+  // SetPeerCertificateDigest() must also be called. It may be called after
+  // StartSSLWithPeer() but must be called before the underlying stream opens.
   //
-  // These functions return a negative error code on failure.
-  // Returning 0 means success so far, but negotiation is probably not
-  // complete and will continue asynchronously.  In that case, the
-  // exposed stream will open after successful negotiation and
-  // verification, or an SE_CLOSE event will be raised if negotiation
-  // fails.
+  // Use of the stream prior to calling StartSSL will pass data in clear text.
+  // Calling StartSSL causes SSL negotiation to begin as soon as possible: right
+  // away if the underlying wrapped stream is already opened, or else as soon as
+  // it opens.
+  //
+  // StartSSL returns a negative error code on failure. Returning 0 means
+  // success so far, but negotiation is probably not complete and will continue
+  // asynchronously. In that case, the exposed stream will open after
+  // successful negotiation and verification, or an SE_CLOSE event will be
+  // raised if negotiation fails.
+  virtual int StartSSL() = 0;
 
-  // StartSSLWithServer starts SSL negotiation with a server in
-  // traditional mode. server_name specifies the expected server name
-  // which the server's certificate needs to specify.
-  virtual int StartSSLWithServer(const char* server_name) = 0;
-
-  // StartSSLWithPeer starts negotiation in the special peer-to-peer
-  // mode.
-  // Generally, SetIdentity() and possibly SetServerRole() should have
-  // been called before this.
-  // SetPeerCertificate() or SetPeerCertificateDigest() must also be called.
-  // It may be called after StartSSLWithPeer() but must be called before the
-  // underlying stream opens.
-  virtual int StartSSLWithPeer() = 0;
-
-  // Specify the digest of the certificate that our peer is expected to use in
-  // peer-to-peer mode. Only this certificate will be accepted during
-  // SSL verification. The certificate is assumed to have been
-  // obtained through some other secure channel (such as the XMPP
-  // channel). Unlike SetPeerCertificate(), this must specify the
-  // terminal certificate, not just a CA.
-  // SSLStream makes a copy of the digest value.
+  // Specify the digest of the certificate that our peer is expected to use.
+  // Only this certificate will be accepted during SSL verification. The
+  // certificate is assumed to have been obtained through some other secure
+  // channel (such as the signaling channel). This must specify the terminal
+  // certificate, not just a CA. SSLStream makes a copy of the digest value.
   virtual bool SetPeerCertificateDigest(const std::string& digest_alg,
                                         const unsigned char* digest_val,
                                         size_t digest_len) = 0;

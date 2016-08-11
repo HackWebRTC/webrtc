@@ -571,14 +571,14 @@ void DtlsTransportChannelWrapper::OnDtlsEvent(rtc::StreamInterface* dtls,
 
 void DtlsTransportChannelWrapper::MaybeStartDtls() {
   if (dtls_ && channel_->writable()) {
-    if (dtls_->StartSSLWithPeer()) {
+    if (dtls_->StartSSL()) {
       // This should never fail:
       // Because we are operating in a nonblocking mode and all
       // incoming packets come in via OnReadPacket(), which rejects
       // packets in this state, the incoming queue must be empty. We
       // ignore write errors, thus any errors must be because of
       // configuration and therefore are our fault.
-      RTC_DCHECK(false) << "StartSSLWithPeer failed.";
+      RTC_DCHECK(false) << "StartSSL failed.";
       LOG_J(LS_ERROR, this) << "Couldn't start DTLS handshake";
       set_dtls_state(DTLS_TRANSPORT_FAILED);
       return;

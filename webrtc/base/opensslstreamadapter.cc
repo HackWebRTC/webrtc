@@ -286,7 +286,6 @@ OpenSSLStreamAdapter::OpenSSLStreamAdapter(StreamInterface* stream)
       ssl_write_needs_read_(false),
       ssl_(NULL),
       ssl_ctx_(NULL),
-      custom_verification_succeeded_(false),
       ssl_mode_(SSL_MODE_TLS),
       ssl_max_version_(SSL_PROTOCOL_TLS_12) {}
 
@@ -317,7 +316,6 @@ bool OpenSSLStreamAdapter::SetPeerCertificateDigest(const std::string
                                                     size_t digest_len) {
   ASSERT(!peer_certificate_);
   ASSERT(peer_certificate_digest_algorithm_.size() == 0);
-  ASSERT(ssl_server_name_.empty());
   size_t expected_len;
 
   if (!OpenSSLDigest::GetDigestSize(digest_alg, &expected_len)) {
@@ -470,16 +468,21 @@ bool OpenSSLStreamAdapter::GetDtlsSrtpCryptoSuite(int* crypto_suite) {
 #endif
 }
 
-int OpenSSLStreamAdapter::StartSSLWithServer(const char* server_name) {
-  ASSERT(server_name != NULL && server_name[0] != '\0');
-  ssl_server_name_ = server_name;
-  return StartSSL();
-}
+int OpenSSLStreamAdapter::StartSSL() {
+  ASSERT(state_ == SSL_NONE);
 
-int OpenSSLStreamAdapter::StartSSLWithPeer() {
-  ASSERT(ssl_server_name_.empty());
-  // It is permitted to specify peer_certificate_ only later.
-  return StartSSL();
+  if (StreamAdapterInterface::GetState() != SS_OPEN) {
+    state_ = SSL_WAIT;
+    return 0;
+  }
+
+  state_ = SSL_CONNECTING;
+  if (int err = BeginSSL()) {
+    Error("BeginSSL", err, false);
+    return err;
+  }
+
+  return 0;
 }
 
 void OpenSSLStreamAdapter::SetMode(SSLMode mode) {
@@ -732,36 +735,16 @@ void OpenSSLStreamAdapter::OnEvent(StreamInterface* stream, int events,
     StreamAdapterInterface::OnEvent(stream, events_to_signal, signal_error);
 }
 
-int OpenSSLStreamAdapter::StartSSL() {
-  ASSERT(state_ == SSL_NONE);
-
-  if (StreamAdapterInterface::GetState() != SS_OPEN) {
-    state_ = SSL_WAIT;
-    return 0;
-  }
-
-  state_ = SSL_CONNECTING;
-  if (int err = BeginSSL()) {
-    Error("BeginSSL", err, false);
-    return err;
-  }
-
-  return 0;
-}
-
 int OpenSSLStreamAdapter::BeginSSL() {
   ASSERT(state_ == SSL_CONNECTING);
-  // The underlying stream has open. If we are in peer-to-peer mode
-  // then a peer certificate must have been specified by now.
-  ASSERT(!ssl_server_name_.empty() ||
-         !peer_certificate_digest_algorithm_.empty());
-  LOG(LS_INFO) << "BeginSSL: "
-               << (!ssl_server_name_.empty() ? ssl_server_name_ :
-                                               "with peer");
+  // The underlying stream has opened.
+  // A peer certificate digest must have been specified by now.
+  ASSERT(!peer_certificate_digest_algorithm_.empty());
+  LOG(LS_INFO) << "BeginSSL with peer.";
 
   BIO* bio = NULL;
 
-  // First set up the context
+  // First set up the context.
   ASSERT(ssl_ctx_ == NULL);
   ssl_ctx_ = SetupSSLContext();
   if (!ssl_ctx_)
@@ -827,7 +810,7 @@ int OpenSSLStreamAdapter::ContinueSSL() {
     case SSL_ERROR_NONE:
       LOG(LS_VERBOSE) << " -- success";
 
-      if (!SSLPostConnectionCheck(ssl_, ssl_server_name_.c_str(), NULL,
+      if (!SSLPostConnectionCheck(ssl_, NULL,
                                   peer_certificate_digest_algorithm_)) {
         LOG(LS_ERROR) << "TLS post connection check failed";
         return -1;
@@ -1094,36 +1077,12 @@ int OpenSSLStreamAdapter::SSLVerifyCallback(int ok, X509_STORE_CTX* store) {
   return 1;
 }
 
-// This code is taken from the "Network Security with OpenSSL"
-// sample in chapter 5
 bool OpenSSLStreamAdapter::SSLPostConnectionCheck(SSL* ssl,
-                                                  const char* server_name,
                                                   const X509* peer_cert,
                                                   const std::string
                                                   &peer_digest) {
-  ASSERT(server_name != NULL);
-  bool ok;
-  if (server_name[0] != '\0') {  // traditional mode
-    ok = OpenSSLAdapter::VerifyServerName(ssl, server_name, ignore_bad_cert());
-
-    if (ok) {
-      ok = (SSL_get_verify_result(ssl) == X509_V_OK ||
-            custom_verification_succeeded_);
-    }
-  } else {  // peer-to-peer mode
-    ASSERT((peer_cert != NULL) || (!peer_digest.empty()));
-    // no server name validation
-    ok = true;
-  }
-
-  if (!ok && ignore_bad_cert()) {
-    LOG(LS_ERROR) << "SSL_get_verify_result(ssl) = "
-                  << SSL_get_verify_result(ssl);
-    LOG(LS_INFO) << "Other TLS post connection checks failed.";
-    ok = true;
-  }
-
-  return ok;
+  ASSERT((peer_cert != NULL) || (!peer_digest.empty()));
+  return true;
 }
 
 bool OpenSSLStreamAdapter::HaveDtls() {
