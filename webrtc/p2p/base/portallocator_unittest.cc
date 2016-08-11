@@ -15,7 +15,6 @@
 #include "webrtc/p2p/base/fakeportallocator.h"
 #include "webrtc/p2p/base/portallocator.h"
 
-static const char kSessionId[] = "session id";
 static const char kContentName[] = "test content";
 // Based on ICE_UFRAG_LENGTH
 static const char kIceUfrag[] = "UF00";
@@ -39,7 +38,6 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
   }
 
   std::unique_ptr<cricket::FakePortAllocatorSession> CreateSession(
-      const std::string& sid,
       const std::string& content_name,
       int component,
       const std::string& ice_ufrag,
@@ -47,8 +45,7 @@ class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
     return std::unique_ptr<cricket::FakePortAllocatorSession>(
         static_cast<cricket::FakePortAllocatorSession*>(
             allocator_
-                ->CreateSession(sid, content_name, component, ice_ufrag,
-                                ice_pwd)
+                ->CreateSession(content_name, component, ice_ufrag, ice_pwd)
                 .release()));
   }
 
@@ -95,7 +92,7 @@ TEST_F(PortAllocatorTest, TestDefaults) {
 // candidate filter are applied as expected.
 TEST_F(PortAllocatorTest, CreateSession) {
   allocator_->set_candidate_filter(cricket::CF_RELAY);
-  auto session = CreateSession(kSessionId, kContentName, 1, kIceUfrag, kIcePwd);
+  auto session = CreateSession(kContentName, 1, kIceUfrag, kIcePwd);
   ASSERT_NE(nullptr, session);
   EXPECT_EQ(cricket::CF_RELAY, session->candidate_filter());
   EXPECT_EQ(kContentName, session->content_name());

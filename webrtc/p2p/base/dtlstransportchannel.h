@@ -118,7 +118,6 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   bool GetStats(ConnectionInfos* infos) override {
     return channel_->GetStats(infos);
   }
-  const std::string SessionId() const override { return channel_->SessionId(); }
 
   virtual bool SetSslMaxProtocolVersion(rtc::SSLProtocolVersion version);
 

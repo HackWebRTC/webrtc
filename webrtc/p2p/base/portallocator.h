@@ -301,7 +301,6 @@ class PortAllocator : public sigslot::has_slots<> {
   virtual void SetNetworkIgnoreMask(int network_ignore_mask) = 0;
 
   std::unique_ptr<PortAllocatorSession> CreateSession(
-      const std::string& sid,
       const std::string& content_name,
       int component,
       const std::string& ice_ufrag,

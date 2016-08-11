@@ -66,10 +66,6 @@ class TransportChannel : public sigslot::has_slots<> {
     return TransportChannelState::STATE_CONNECTING;
   }
 
-  // TODO(mallinath) - Remove this API, as it's no longer useful.
-  // Returns the session id of this channel.
-  virtual const std::string SessionId() const { return std::string(); }
-
   const std::string& transport_name() const { return transport_name_; }
   int component() const { return component_; }
 

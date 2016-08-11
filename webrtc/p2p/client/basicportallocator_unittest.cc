@@ -235,8 +235,8 @@ class BasicPortAllocatorTest : public testing::Test,
       int component,
       const std::string& ice_ufrag,
       const std::string& ice_pwd) {
-    std::unique_ptr<PortAllocatorSession> session = allocator_->CreateSession(
-        sid, content_name, component, ice_ufrag, ice_pwd);
+    std::unique_ptr<PortAllocatorSession> session =
+        allocator_->CreateSession(content_name, component, ice_ufrag, ice_pwd);
     session->SignalPortReady.connect(this,
                                      &BasicPortAllocatorTest::OnPortReady);
     session->SignalPortsPruned.connect(this,

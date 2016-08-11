@@ -447,7 +447,7 @@ void P2PTransportChannel::MaybeStartGathering() {
       }
     } else {
       AddAllocatorSession(allocator_->CreateSession(
-          SessionId(), transport_name(), component(), ice_ufrag_, ice_pwd_));
+          transport_name(), component(), ice_ufrag_, ice_pwd_));
       allocator_sessions_.back()->StartGettingPorts();
     }
   }

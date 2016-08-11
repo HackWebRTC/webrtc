@@ -68,7 +68,6 @@ void PortAllocator::SetConfiguration(
 }
 
 std::unique_ptr<PortAllocatorSession> PortAllocator::CreateSession(
-    const std::string& sid,
     const std::string& content_name,
     int component,
     const std::string& ice_ufrag,
