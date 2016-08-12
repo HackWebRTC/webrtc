@@ -567,8 +567,11 @@ public class PeerConnectionTest extends ActivityTestCase {
 
     // We want to use the same camera for offerer & answerer, so create it here
     // instead of in addTracksToPC.
-    VideoSource videoSource = factory.createVideoSource(
-        VideoCapturerAndroid.create("", null), new MediaConstraints());
+    final CameraEnumerator enumerator = new Camera1Enumerator(false /* captureToTexture */);
+    final VideoCapturer videoCapturer =
+        enumerator.createCapturer(enumerator.getDeviceNames()[0], null);
+    final VideoSource videoSource = factory.createVideoSource(videoCapturer);
+    videoCapturer.startCapture(640, 480, 30);
 
     offeringExpectations.expectRenegotiationNeeded();
     WeakReference<MediaStream> oLMS = addTracksToPC(
@@ -749,6 +752,8 @@ public class PeerConnectionTest extends ActivityTestCase {
     shutdownPC(answeringPC, answeringExpectations);
     answeringPC = null;
     getMetrics();
+    videoCapturer.stopCapture();
+    videoCapturer.dispose();
     videoSource.dispose();
     factory.dispose();
     System.gc();
@@ -785,8 +790,11 @@ public class PeerConnectionTest extends ActivityTestCase {
 
     // We want to use the same camera for offerer & answerer, so create it here
     // instead of in addTracksToPC.
-    VideoSource videoSource = factory.createVideoSource(
-        VideoCapturerAndroid.create("", null), new MediaConstraints());
+    final CameraEnumerator enumerator = new Camera1Enumerator(false /* captureToTexture */);
+    final VideoCapturer videoCapturer =
+        enumerator.createCapturer(enumerator.getDeviceNames()[0], null);
+    final VideoSource videoSource = factory.createVideoSource(videoCapturer);
+    videoCapturer.startCapture(640, 480, 30);
 
     // Add offerer media stream.
     offeringExpectations.expectRenegotiationNeeded();
@@ -1016,6 +1024,8 @@ public class PeerConnectionTest extends ActivityTestCase {
     answeringPC = null;
     offererVideoTrack.dispose();
     offererAudioTrack.dispose();
+    videoCapturer.stopCapture();
+    videoCapturer.dispose();
     videoSource.dispose();
     factory.dispose();
     System.gc();
