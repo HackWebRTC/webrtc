@@ -1418,22 +1418,22 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_G722_stereo_20ms) {
 }
 #endif
 
-TEST_F(AcmSenderBitExactnessOldApi, DISABLED_Opus_stereo_20ms) {
+TEST_F(AcmSenderBitExactnessOldApi, Opus_stereo_20ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 2, 120, 960, 960));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "855041f2490b887302bce9d544731849",
           "855041f2490b887302bce9d544731849",
           "9692eede45638eb425e0daf9c75b5c7a",
-          "c4faa472fbb0730370aaf34920381a09"),
+          "86d3552bb3492247f965cdd0e88a1c82"),
       AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "d781cce1ab986b618d0da87226cdde30",
           "d781cce1ab986b618d0da87226cdde30",
           "8d6782b905c3230d4b0e3e83e1fc3439",
-          "8b0126eab82d9e4e367ab33ded2f1a8e"),
+          "798347a685fac7d0c2d8f748ffe66881"),
       50, test::AcmReceiveTestOldApi::kStereoOutput);
 }
 
-TEST_F(AcmSenderBitExactnessOldApi, DISABLED_Opus_stereo_20ms_voip) {
+TEST_F(AcmSenderBitExactnessOldApi, Opus_stereo_20ms_voip) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 2, 120, 960, 960));
   // If not set, default will be kAudio in case of stereo.
   EXPECT_EQ(0, send_test_->acm()->SetOpusApplication(kVoip));
@@ -1441,12 +1441,12 @@ TEST_F(AcmSenderBitExactnessOldApi, DISABLED_Opus_stereo_20ms_voip) {
           "9b9e12bc3cc793740966e11cbfa8b35b",
           "9b9e12bc3cc793740966e11cbfa8b35b",
           "0de6249018fdd316c21086db84e10610",
-          "fd21a19b6b1e891f5daea6c4a299c254"),
+          "9c4cb69db77b85841a5f8225bb8f508b"),
       AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "c7340b1189652ab6b5e80dade7390cb4",
           "c7340b1189652ab6b5e80dade7390cb4",
           "95612864c954ee63e28cc6eebad56626",
-          "49954b0d5a5f705a8798e7071b0c6f36"),
+          "ae33ea2e43407cf9ebdabbbd6ca912a3"),
       50, test::AcmReceiveTestOldApi::kStereoOutput);
 }
 
@@ -1621,10 +1621,14 @@ TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_50kbps) {
 #endif // WEBRTC_ANDROID
 }
 
-TEST_F(AcmChangeBitRateOldApi, DISABLED_Opus_48khz_20ms_100kbps) {
+TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_100kbps) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
 #if defined(WEBRTC_ANDROID)
-  Run(100000, 32200, 51480);
+  #if defined(WEBRTC_ARCH_ARM64)
+    Run(100000, 32200, 51152);
+  #else
+    Run(100000, 32200, 51248);
+  #endif // WEBRTC_ARCH_ARM64
 #else
   Run(100000, 32200, 50584);
 #endif // WEBRTC_ANDROID

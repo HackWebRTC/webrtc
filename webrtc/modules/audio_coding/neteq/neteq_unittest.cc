@@ -492,21 +492,21 @@ TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
 #else
 #define MAYBE_TestOpusBitExactness DISABLED_TestOpusBitExactness
 #endif
-TEST_F(NetEqDecodingTest, DISABLED_TestOpusBitExactness) {
+TEST_F(NetEqDecodingTest, MAYBE_TestOpusBitExactness) {
   const std::string input_rtp_file =
       webrtc::test::ResourcePath("audio_coding/neteq_opus", "rtp");
 
   const std::string output_checksum = PlatformChecksum(
-      "19ad24b4a1eb7a9620e6da09f98c49aa5792ade4",
-      "19ad24b4a1eb7a9620e6da09f98c49aa5792ade4",
-      "19ad24b4a1eb7a9620e6da09f98c49aa5792ade4",
-      "19ad24b4a1eb7a9620e6da09f98c49aa5792ade4");
+      "9d7d52bc94e941d106aa518f324f16a58d231586",
+      "9d7d52bc94e941d106aa518f324f16a58d231586",
+      "9d7d52bc94e941d106aa518f324f16a58d231586",
+      "9d7d52bc94e941d106aa518f324f16a58d231586");
 
   const std::string network_stats_checksum = PlatformChecksum(
-      "6eab76efbde753d4dde38983445ca16b4ce59b39",
-      "6eab76efbde753d4dde38983445ca16b4ce59b39",
-      "6eab76efbde753d4dde38983445ca16b4ce59b39",
-      "6eab76efbde753d4dde38983445ca16b4ce59b39");
+      "191af29ed3b8b6dd4c4cc94dc3f33bdf48f055ef",
+      "191af29ed3b8b6dd4c4cc94dc3f33bdf48f055ef",
+      "191af29ed3b8b6dd4c4cc94dc3f33bdf48f055ef",
+      "191af29ed3b8b6dd4c4cc94dc3f33bdf48f055ef");
 
   const std::string rtcp_stats_checksum = PlatformChecksum(
       "e37c797e3de6a64dda88c9ade7a013d022a2e1e0",

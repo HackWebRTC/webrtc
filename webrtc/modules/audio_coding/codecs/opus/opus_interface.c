@@ -95,7 +95,11 @@ int WebRtcOpus_Encode(OpusEncInst* inst,
                     encoded,
                     (opus_int32)length_encoded_buffer);
 
-  if (res == 1) {
+  if (res <= 0) {
+    return -1;
+  }
+
+  if (res <= 2) {
     // Indicates DTX since the packet has nothing but a header. In principle,
     // there is no need to send this packet. However, we do transmit the first
     // occurrence to let the decoder know that the encoder enters DTX mode.
@@ -105,12 +109,10 @@ int WebRtcOpus_Encode(OpusEncInst* inst,
       inst->in_dtx_mode = 1;
       return 1;
     }
-  } else if (res > 1) {
-    inst->in_dtx_mode = 0;
-    return res;
   }
 
-  return -1;
+  inst->in_dtx_mode = 0;
+  return res;
 }
 
 int16_t WebRtcOpus_SetBitRate(OpusEncInst* inst, int32_t rate) {
