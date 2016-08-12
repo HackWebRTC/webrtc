@@ -297,10 +297,11 @@ void DataChannel::OnTransportChannelCreated() {
   }
 }
 
-// The underlying transport channel was destroyed.
-// This function makes sure the DataChannel is disconnected and changes state to
-// kClosed.
 void DataChannel::OnTransportChannelDestroyed() {
+  // This method needs to synchronously close the data channel, which means any
+  // queued data needs to be discarded.
+  queued_send_data_.Clear();
+  queued_control_data_.Clear();
   DoClose();
 }
 

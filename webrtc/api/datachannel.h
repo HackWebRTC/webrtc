@@ -158,6 +158,8 @@ class DataChannel : public DataChannelInterface,
   // Only needs to be called for SCTP data channels.
   void OnTransportChannelCreated();
   // Called when the transport channel is destroyed.
+  // This method makes sure the DataChannel is disconnected and changes state
+  // to kClosed.
   void OnTransportChannelDestroyed();
 
   // The following methods are for RTP only.
