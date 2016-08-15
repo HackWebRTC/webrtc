@@ -12,8 +12,8 @@
 // multiple file formats. The unencoded input data is written to file in the
 // encoded format specified.
 
-#ifndef WEBRTC_MODULES_UTILITY_SOURCE_FILE_RECORDER_IMPL_H_
-#define WEBRTC_MODULES_UTILITY_SOURCE_FILE_RECORDER_IMPL_H_
+#ifndef WEBRTC_VOICE_ENGINE_FILE_RECORDER_IMPL_H_
+#define WEBRTC_VOICE_ENGINE_FILE_RECORDER_IMPL_H_
 
 #include <list>
 
@@ -24,10 +24,10 @@
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/media_file/media_file.h"
 #include "webrtc/modules/media_file/media_file_defines.h"
-#include "webrtc/modules/utility/include/file_recorder.h"
-#include "webrtc/modules/utility/source/coder.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/voice_engine/coder.h"
+#include "webrtc/voice_engine/file_recorder.h"
 
 namespace webrtc {
 // The largest decoded frame size in samples (60ms with 32kHz sample rate).
@@ -76,4 +76,5 @@ private:
     Resampler _audioResampler;
 };
 }  // namespace webrtc
-#endif // WEBRTC_MODULES_UTILITY_SOURCE_FILE_RECORDER_IMPL_H_
+
+#endif // WEBRTC_VOICE_ENGINE_FILE_RECORDER_IMPL_H_

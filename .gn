@@ -19,7 +19,12 @@ secondary_source = "//build/secondary/"
 # their includes checked for proper dependencies when you run either
 # "gn check" or "gn gen --check".
 # TODO(kjellander): Keep adding paths to this list as work in webrtc:5589 is done.
-check_targets = [ "//webrtc/voice_engine:level_indicator" ]
+check_targets = [
+  "//webrtc/voice_engine:audio_coder",
+  "//webrtc/voice_engine:file_player",
+  "//webrtc/voice_engine:file_recorder",
+  "//webrtc/voice_engine:level_indicator",
+]
 
 # These are the list of GN files that run exec_script. This whitelist exists
 # to force additional review for new uses of exec_script, which is strongly
