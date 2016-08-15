@@ -414,7 +414,6 @@ static cricket::VideoFormat const kIPhone4SFormat =
     // currently supported on iPhone / iPad.
     AVCaptureVideoDataOutput *videoDataOutput =
         [[AVCaptureVideoDataOutput alloc] init];
-    videoDataOutput = [[AVCaptureVideoDataOutput alloc] init];
     videoDataOutput.videoSettings = @{
       (NSString *)kCVPixelBufferPixelFormatTypeKey :
         @(kCVPixelFormatType_420YpCbCr8BiPlanarFullRange)
