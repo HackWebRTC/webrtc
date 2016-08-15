@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_MIXER_INCLUDE_AUDIO_MIXER_DEFINES_H_
-#define WEBRTC_MODULES_AUDIO_MIXER_INCLUDE_AUDIO_MIXER_DEFINES_H_
+#ifndef WEBRTC_MODULES_AUDIO_MIXER_AUDIO_MIXER_DEFINES_H_
+#define WEBRTC_MODULES_AUDIO_MIXER_AUDIO_MIXER_DEFINES_H_
 
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/include/module_common_types.h"
@@ -54,4 +54,4 @@ class MixerAudioSource {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_MIXER_INCLUDE_AUDIO_MIXER_DEFINES_H_
+#endif  // WEBRTC_MODULES_AUDIO_MIXER_AUDIO_MIXER_DEFINES_H_

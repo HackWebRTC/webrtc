@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_mixer/source/new_audio_conference_mixer_impl.h"
+#include "webrtc/modules/audio_mixer/new_audio_conference_mixer_impl.h"
 
 #include <algorithm>
 #include <functional>
 
-#include "webrtc/modules/audio_conference_mixer/source/audio_frame_manipulator.h"
-#include "webrtc/modules/audio_mixer/include/audio_mixer_defines.h"
+#include "webrtc/modules/audio_mixer/audio_frame_manipulator.h"
+#include "webrtc/modules/audio_mixer/audio_mixer_defines.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/utility/include/audio_frame_operations.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
@@ -32,7 +32,7 @@ class SourceFrame {
         muted_(m),
         was_mixed_before_(was_mixed_before) {
     if (!muted_) {
-      energy_ = CalculateEnergy(*a);
+      energy_ = NewMixerCalculateEnergy(*a);
     }
   }
 
@@ -410,7 +410,7 @@ AudioFrameList NewAudioConferenceMixerImpl::UpdateToMix(
     if (maxAudioFrameCounter > 0) {
       --maxAudioFrameCounter;
       if (!p.was_mixed_before_) {
-        RampIn(*p.audio_frame_);
+        NewMixerRampIn(p.audio_frame_);
       }
       result.emplace_back(p.audio_frame_, false);
       is_mixed = true;
@@ -418,7 +418,7 @@ AudioFrameList NewAudioConferenceMixerImpl::UpdateToMix(
 
     // Ramp out unmuted.
     if (p.was_mixed_before_ && !is_mixed) {
-      RampOut(*p.audio_frame_);
+      NewMixerRampOut(p.audio_frame_);
       result.emplace_back(p.audio_frame_, false);
     }
 

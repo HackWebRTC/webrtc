@@ -17,9 +17,9 @@
 #include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer_defines.h"
 #include "webrtc/modules/audio_conference_mixer/source/audio_frame_manipulator.h"
 #include "webrtc/modules/audio_mixer/audio_mixer.h"
-#include "webrtc/modules/audio_mixer/include/audio_mixer_defines.h"
-#include "webrtc/modules/audio_mixer/include/new_audio_conference_mixer.h"
-#include "webrtc/modules/audio_mixer/source/new_audio_conference_mixer_impl.h"
+#include "webrtc/modules/audio_mixer/audio_mixer_defines.h"
+#include "webrtc/modules/audio_mixer/new_audio_conference_mixer.h"
+#include "webrtc/modules/audio_mixer/new_audio_conference_mixer_impl.h"
 
 using testing::_;
 using testing::Exactly;
@@ -455,10 +455,10 @@ TEST_F(CompareWithOldMixerTest, ThreeParticipantsDifferentFrames) {
 
 TEST_F(CompareWithOldMixerTest, ManyParticipantsDifferentFrames) {
   Reset();
-  constexpr int num_participants = 20;
-  AudioFrame audio_frames[num_participants];
+  constexpr int kNumParticipants = 20;
+  AudioFrame audio_frames[kNumParticipants];
 
-  for (int i = 0; i < num_participants; ++i) {
+  for (int i = 0; i < kNumParticipants; ++i) {
     ResetFrame(&audio_frames[i]);
     audio_frames[i].id_ = 1;
     audio_frames[i].data_[10] = 100 * (i % 5);
@@ -468,7 +468,7 @@ TEST_F(CompareWithOldMixerTest, ManyParticipantsDifferentFrames) {
     }
   }
 
-  for (int i = 0; i < num_participants; ++i) {
+  for (int i = 0; i < kNumParticipants; ++i) {
     if (i % 2 == 0) {
       AddParticipant(&audio_frames[i],
                      MixerParticipant::AudioFrameInfo::kMuted);

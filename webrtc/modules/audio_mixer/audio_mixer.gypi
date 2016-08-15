@@ -18,10 +18,12 @@
         '<(webrtc_root)/base/base.gyp:rtc_base_approved',
       ],
       'sources': [
-        'include/new_audio_conference_mixer.h',
-        'include/audio_mixer_defines.h',
-        'source/new_audio_conference_mixer_impl.cc',
-        'source/new_audio_conference_mixer_impl.h',
+        'audio_frame_manipulator.cc',
+        'audio_frame_manipulator.h',
+        'new_audio_conference_mixer.h',
+        'audio_mixer_defines.h',
+        'new_audio_conference_mixer_impl.cc',
+        'new_audio_conference_mixer_impl.h',
       ],
     },
     {

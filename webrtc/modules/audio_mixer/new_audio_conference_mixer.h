@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_MIXER_INCLUDE_NEW_AUDIO_CONFERENCE_MIXER_H_
-#define WEBRTC_MODULES_AUDIO_MIXER_INCLUDE_NEW_AUDIO_CONFERENCE_MIXER_H_
+#ifndef WEBRTC_MODULES_AUDIO_MIXER_NEW_AUDIO_CONFERENCE_MIXER_H_
+#define WEBRTC_MODULES_AUDIO_MIXER_NEW_AUDIO_CONFERENCE_MIXER_H_
 
-#include "webrtc/modules/audio_mixer/include/audio_mixer_defines.h"
+#include "webrtc/modules/audio_mixer/audio_mixer_defines.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/include/module_common_types.h"
 
@@ -64,4 +64,4 @@ class NewAudioConferenceMixer {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_MIXER_INCLUDE_NEW_AUDIO_CONFERENCE_MIXER_H_
+#endif  // WEBRTC_MODULES_AUDIO_MIXER_NEW_AUDIO_CONFERENCE_MIXER_H_

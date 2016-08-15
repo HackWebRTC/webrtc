@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_MIXER_SOURCE_NEW_AUDIO_CONFERENCE_MIXER_IMPL_H_
-#define WEBRTC_MODULES_AUDIO_MIXER_SOURCE_NEW_AUDIO_CONFERENCE_MIXER_IMPL_H_
+#ifndef WEBRTC_MODULES_AUDIO_MIXER_NEW_AUDIO_CONFERENCE_MIXER_IMPL_H_
+#define WEBRTC_MODULES_AUDIO_MIXER_NEW_AUDIO_CONFERENCE_MIXER_IMPL_H_
 
 #include <list>
 #include <map>
@@ -18,7 +18,7 @@
 
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/engine_configurations.h"
-#include "webrtc/modules/audio_mixer/include/new_audio_conference_mixer.h"
+#include "webrtc/modules/audio_mixer/new_audio_conference_mixer.h"
 #include "webrtc/modules/audio_conference_mixer/source/memory_pool.h"
 #include "webrtc/modules/include/module_common_types.h"
 
@@ -154,4 +154,4 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_MIXER_SOURCE_NEW_AUDIO_CONFERENCE_MIXER_IMPL_H_
+#endif  // WEBRTC_MODULES_AUDIO_MIXER_NEW_AUDIO_CONFERENCE_MIXER_IMPL_H_

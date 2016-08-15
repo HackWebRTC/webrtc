@@ -45,15 +45,17 @@ source_set("audio_mixer") {
 
 source_set("audio_conference_mixer") {
   sources = [
-    "include/audio_mixer_defines.h",
-    "include/new_audio_conference_mixer.h",
-    "source/new_audio_conference_mixer_impl.cc",
-    "source/new_audio_conference_mixer_impl.h",
+    "audio_frame_manipulator.cc",
+    "audio_frame_manipulator.h",
+    "audio_mixer_defines.h",
+    "new_audio_conference_mixer.h",
+    "new_audio_conference_mixer_impl.cc",
+    "new_audio_conference_mixer_impl.h",
   ]
 
   public = [
-    "include/audio_mixer_defines.h",
-    "include/new_audio_conference_mixer.h",
+    "audio_mixer_defines.h",
+    "new_audio_conference_mixer.h",
   ]
 
   configs += [ "../..:common_config" ]
