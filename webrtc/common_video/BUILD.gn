@@ -124,6 +124,8 @@ if (rtc_include_tests) {
       data = [
         "//resources/foreman_cif.yuv",
       ]
+
+      shard_timeout = 900
     }
   }
 }

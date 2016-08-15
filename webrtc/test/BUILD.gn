@@ -325,6 +325,8 @@ test("test_support_unittests") {
       "//resources/video_coding/ssrcs-2.pcap",
       "//resources/video_coding/ssrcs-3.pcap",
     ]
+
+    shard_timeout = 900
   }
   deps += [
     ":channel_transport",

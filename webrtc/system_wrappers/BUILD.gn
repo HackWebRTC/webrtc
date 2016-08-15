@@ -240,6 +240,8 @@ if (rtc_include_tests) {
 
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_support" ]
+
+      shard_timeout = 900
     }
   }
 }

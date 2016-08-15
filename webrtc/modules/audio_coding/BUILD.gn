@@ -1029,6 +1029,7 @@ if (rtc_include_tests) {
 
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_native_code" ]
+      shard_timeout = 900
     }
 
     if (is_ios) {
@@ -1117,6 +1118,7 @@ if (rtc_include_tests) {
 
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_native_code" ]
+      shard_timeout = 900
     }
 
     deps += [

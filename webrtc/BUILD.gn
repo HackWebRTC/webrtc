@@ -578,6 +578,7 @@ if (rtc_include_tests) {
 
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_support" ]
+      shard_timeout = 900
     }
 
     if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
@@ -665,6 +666,9 @@ if (rtc_include_tests) {
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
       configs -= [ "//build/config/clang:find_bad_constructs" ]
     }
+    if (is_android) {
+      shard_timeout = 900
+    }
   }
 
   source_set("video_quality_test") {
@@ -725,6 +729,7 @@ if (rtc_include_tests) {
     ]
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_native_code" ]
+      shard_timeout = 2700
     }
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin.
@@ -758,6 +763,7 @@ if (rtc_include_tests) {
     }
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_support" ]
+      shard_timeout = 900
     }
 
     if (is_mac) {
