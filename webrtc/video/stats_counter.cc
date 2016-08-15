@@ -195,10 +195,10 @@ bool PermilleCounter::GetMetric(int* metric) const {
   return true;
 }
 
-RateCounter::RateCounter(Clock* clock, StatsCounterObserver* observer)
-    : StatsCounter(clock,
-                   true,  // |include_empty_intervals|
-                   observer) {}
+RateCounter::RateCounter(Clock* clock,
+                         StatsCounterObserver* observer,
+                         bool include_empty_intervals)
+    : StatsCounter(clock, include_empty_intervals, observer) {}
 
 void RateCounter::Add(int sample) {
   StatsCounter::Add(sample);
@@ -211,10 +211,10 @@ bool RateCounter::GetMetric(int* metric) const {
   return true;
 }
 
-RateAccCounter::RateAccCounter(Clock* clock, StatsCounterObserver* observer)
-    : StatsCounter(clock,
-                   true,  // |include_empty_intervals|
-                   observer) {}
+RateAccCounter::RateAccCounter(Clock* clock,
+                               StatsCounterObserver* observer,
+                               bool include_empty_intervals)
+    : StatsCounter(clock, include_empty_intervals, observer) {}
 
 void RateAccCounter::Set(int sample) {
   StatsCounter::Set(sample);

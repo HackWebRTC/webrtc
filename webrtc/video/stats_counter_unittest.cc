@@ -170,7 +170,7 @@ TEST_F(StatsCounterTest, TestMetric_PermilleCounter) {
 
 TEST_F(StatsCounterTest, TestMetric_RateCounter) {
   StatsCounterObserverImpl* observer = new StatsCounterObserverImpl();
-  RateCounter counter(&clock_, observer);
+  RateCounter counter(&clock_, observer, true);
   counter.Add(186);
   counter.Add(350);
   counter.Add(22);
@@ -189,7 +189,7 @@ TEST_F(StatsCounterTest, TestMetric_RateCounter) {
 
 TEST_F(StatsCounterTest, TestMetric_RateAccCounter) {
   StatsCounterObserverImpl* observer = new StatsCounterObserverImpl();
-  RateAccCounter counter(&clock_, observer);
+  RateAccCounter counter(&clock_, observer, true);
   counter.Set(175);
   counter.Set(188);
   clock_.AdvanceTimeMilliseconds(kProcessIntervalMs);
@@ -252,7 +252,7 @@ TEST_F(StatsCounterTest, TestRateAccCounter_NegativeRateIgnored) {
   const int kSample1 = 200;  //  200 / 2 sec
   const int kSample2 = 100;  // -100 / 2 sec - negative ignored
   const int kSample3 = 700;  //  600 / 2 sec
-  RateAccCounter counter(&clock_, observer);
+  RateAccCounter counter(&clock_, observer, true);
   SetSampleAndAdvance(kSample1, kProcessIntervalMs, &counter);
   SetSampleAndAdvance(kSample2, kProcessIntervalMs, &counter);
   SetSampleAndAdvance(kSample3, kProcessIntervalMs, &counter);
@@ -292,11 +292,38 @@ TEST_F(StatsCounterTest, TestAvgCounter_IntervalsWithoutSamplesIgnored) {
   EXPECT_EQ(8, stats.max);
 }
 
-TEST_F(StatsCounterTest, TestRateCounter_IntervalsWithoutSamplesIncluded) {
+TEST_F(StatsCounterTest, TestRateCounter_IntervalsWithoutSamplesIgnored) {
+  const bool kIncludeEmptyIntervals = false;
   StatsCounterObserverImpl* observer = new StatsCounterObserverImpl();
   const int kSample1 = 50;  //  50 / 2 sec
   const int kSample2 = 20;  //  20 / 2 sec
-  RateCounter counter(&clock_, observer);
+  RateCounter counter(&clock_, observer, kIncludeEmptyIntervals);
+  counter.Add(kSample1);
+  clock_.AdvanceTimeMilliseconds(kProcessIntervalMs * 3 - 1);
+  // Trigger process (sample included in next interval).
+  counter.Add(kSample2);
+  // [25:1],  one interval without samples passed.
+  EXPECT_EQ(1, observer->num_calls_);
+  EXPECT_EQ(25, observer->last_sample_);
+  // Make last interval pass.
+  clock_.AdvanceTimeMilliseconds(1);
+  counter.Add(111);  // Trigger process (sample included in next interval).
+  // [10:1],[25:1]
+  EXPECT_EQ(2, observer->num_calls_);
+  EXPECT_EQ(10, observer->last_sample_);
+  // Aggregated stats.
+  AggregatedStats stats = counter.GetStats();
+  EXPECT_EQ(2, stats.num_samples);
+  EXPECT_EQ(10, stats.min);
+  EXPECT_EQ(25, stats.max);
+}
+
+TEST_F(StatsCounterTest, TestRateCounter_IntervalsWithoutSamplesIncluded) {
+  const bool kIncludeEmptyIntervals = true;
+  StatsCounterObserverImpl* observer = new StatsCounterObserverImpl();
+  const int kSample1 = 50;  //  50 / 2 sec
+  const int kSample2 = 20;  //  20 / 2 sec
+  RateCounter counter(&clock_, observer, kIncludeEmptyIntervals);
   counter.Add(kSample1);
   clock_.AdvanceTimeMilliseconds(kProcessIntervalMs * 3 - 1);
   // Trigger process (sample included in next interval).

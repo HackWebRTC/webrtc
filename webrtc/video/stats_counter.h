@@ -191,7 +191,9 @@ class PermilleCounter : public StatsCounter {
 //
 class RateCounter : public StatsCounter {
  public:
-  RateCounter(Clock* clock, StatsCounterObserver* observer);
+  RateCounter(Clock* clock,
+              StatsCounterObserver* observer,
+              bool include_empty_intervals);
   ~RateCounter() override {}
 
   void Add(int sample);
@@ -211,7 +213,9 @@ class RateCounter : public StatsCounter {
 //
 class RateAccCounter : public StatsCounter {
  public:
-  RateAccCounter(Clock* clock, StatsCounterObserver* observer);
+  RateAccCounter(Clock* clock,
+                 StatsCounterObserver* observer,
+                 bool include_empty_intervals);
   ~RateAccCounter() override {}
 
   void Set(int sample);
