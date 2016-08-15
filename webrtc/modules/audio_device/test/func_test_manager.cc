@@ -563,6 +563,21 @@ int32_t AudioTransportImpl::NeedMorePlayData(
     return 0;
 }
 
+void AudioTransportImpl::PushCaptureData(int voe_channel,
+                                         const void* audio_data,
+                                         int bits_per_sample,
+                                         int sample_rate,
+                                         size_t number_of_channels,
+                                         size_t number_of_frames) {}
+
+void AudioTransportImpl::PullRenderData(int bits_per_sample,
+                                        int sample_rate,
+                                        size_t number_of_channels,
+                                        size_t number_of_frames,
+                                        void* audio_data,
+                                        int64_t* elapsed_time_ms,
+                                        int64_t* ntp_time_ms) {}
+
 FuncTestManager::FuncTestManager() :
     _audioDevice(NULL),
     _audioEventObserver(NULL),

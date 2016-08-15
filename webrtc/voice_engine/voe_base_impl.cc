@@ -107,43 +107,6 @@ int32_t VoEBaseImpl::NeedMorePlayData(const size_t nSamples,
   return 0;
 }
 
-int VoEBaseImpl::OnDataAvailable(const int voe_channels[],
-                                 size_t number_of_voe_channels,
-                                 const int16_t* audio_data, int sample_rate,
-                                 size_t number_of_channels,
-                                 size_t number_of_frames,
-                                 int audio_delay_milliseconds, int volume,
-                                 bool key_pressed, bool need_audio_processing) {
-  if (number_of_voe_channels == 0) return 0;
-
-  if (need_audio_processing) {
-    return ProcessRecordedDataWithAPM(
-        voe_channels, number_of_voe_channels, audio_data, sample_rate,
-        number_of_channels, number_of_frames, audio_delay_milliseconds, 0,
-        volume, key_pressed);
-  }
-
-  // No need to go through the APM, demultiplex the data to each VoE channel,
-  // encode and send to the network.
-  for (size_t i = 0; i < number_of_voe_channels; ++i) {
-    // TODO(ajm): In the case where multiple channels are using the same codec
-    // rate, this path needlessly does extra conversions. We should convert once
-    // and share between channels.
-    PushCaptureData(voe_channels[i], audio_data, 16, sample_rate,
-                    number_of_channels, number_of_frames);
-  }
-
-  // Return 0 to indicate no need to change the volume.
-  return 0;
-}
-
-void VoEBaseImpl::OnData(int voe_channel, const void* audio_data,
-                         int bits_per_sample, int sample_rate,
-                         size_t number_of_channels, size_t number_of_frames) {
-  PushCaptureData(voe_channel, audio_data, bits_per_sample, sample_rate,
-                  number_of_channels, number_of_frames);
-}
-
 void VoEBaseImpl::PushCaptureData(int voe_channel, const void* audio_data,
                                   int bits_per_sample, int sample_rate,
                                   size_t number_of_channels,

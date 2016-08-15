@@ -54,14 +54,14 @@ class AudioEventObserverAPI: public AudioDeviceObserver {
         warning_(kRecordingWarning),
         audio_device_(audioDevice) {}
 
-  ~AudioEventObserverAPI() {}
+  ~AudioEventObserverAPI() override {}
 
-  virtual void OnErrorIsReported(const ErrorCode error) {
+  void OnErrorIsReported(const ErrorCode error) override {
     TEST_LOG("\n[*** ERROR ***] => OnErrorIsReported(%d)\n\n", error);
     error_ = error;
   }
 
-  virtual void OnWarningIsReported(const WarningCode warning) {
+  void OnWarningIsReported(const WarningCode warning) override {
     TEST_LOG("\n[*** WARNING ***] => OnWarningIsReported(%d)\n\n", warning);
     warning_ = warning;
     EXPECT_EQ(0, audio_device_->StopRecording());
@@ -82,7 +82,7 @@ class AudioTransportAPI: public AudioTransport {
         play_count_(0) {
   }
 
-  ~AudioTransportAPI() {}
+  ~AudioTransportAPI() override {}
 
   int32_t RecordedDataIsAvailable(const void* audioSamples,
                                   const size_t nSamples,
@@ -130,6 +130,21 @@ class AudioTransportAPI: public AudioTransport {
     return 0;
   }
 
+  void PushCaptureData(int voe_channel,
+                       const void* audio_data,
+                       int bits_per_sample,
+                       int sample_rate,
+                       size_t number_of_channels,
+                       size_t number_of_frames) override {}
+
+  void PullRenderData(int bits_per_sample,
+                      int sample_rate,
+                      size_t number_of_channels,
+                      size_t number_of_frames,
+                      void* audio_data,
+                      int64_t* elapsed_time_ms,
+                      int64_t* ntp_time_ms) override {}
+
  private:
   uint32_t rec_count_;
   uint32_t play_count_;
@@ -139,7 +154,7 @@ class AudioDeviceAPITest: public testing::Test {
  protected:
   AudioDeviceAPITest() {}
 
-  virtual ~AudioDeviceAPITest() {}
+  ~AudioDeviceAPITest() override {}
 
   static void SetUpTestCase() {
     process_thread_ = ProcessThread::Create("ProcessThread");
@@ -258,7 +273,7 @@ class AudioDeviceAPITest: public testing::Test {
     PRINT_TEST_RESULTS;
   }
 
-  void SetUp() {
+  void SetUp() override {
     if (linux_alsa_) {
       FAIL() << "API Test is not available on ALSA on Linux!";
     }
@@ -266,9 +281,7 @@ class AudioDeviceAPITest: public testing::Test {
     EXPECT_TRUE(audio_device_->Initialized());
   }
 
-  void TearDown() {
-    EXPECT_EQ(0, audio_device_->Terminate());
-  }
+  void TearDown() override { EXPECT_EQ(0, audio_device_->Terminate()); }
 
   void CheckVolume(uint32_t expected, uint32_t actual) {
     // Mac and Windows have lower resolution on the volume settings.

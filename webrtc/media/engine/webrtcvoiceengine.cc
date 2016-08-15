@@ -1218,12 +1218,9 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     RTC_DCHECK(!worker_thread_checker_.CalledOnValidThread());
     RTC_DCHECK(audio_capture_thread_checker_.CalledOnValidThread());
     RTC_DCHECK(voe_audio_transport_);
-    voe_audio_transport_->OnData(config_.voe_channel_id,
-                                 audio_data,
-                                 bits_per_sample,
-                                 sample_rate,
-                                 number_of_channels,
-                                 number_of_frames);
+    voe_audio_transport_->PushCaptureData(config_.voe_channel_id, audio_data,
+                                          bits_per_sample, sample_rate,
+                                          number_of_channels, number_of_frames);
   }
 
   // Callback from the |source_| when it is going away. In case Start() has

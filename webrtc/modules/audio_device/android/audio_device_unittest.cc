@@ -390,6 +390,7 @@ class MockAudioTransport : public AudioTransport {
                         const uint32_t currentMicLevel,
                         const bool keyPressed,
                         uint32_t& newMicLevel));
+
   MOCK_METHOD8(NeedMorePlayData,
                int32_t(const size_t nSamples,
                        const size_t nBytesPerSample,
@@ -399,6 +400,23 @@ class MockAudioTransport : public AudioTransport {
                        size_t& nSamplesOut,
                        int64_t* elapsed_time_ms,
                        int64_t* ntp_time_ms));
+
+  MOCK_METHOD6(PushCaptureData,
+               void(int voe_channel,
+                    const void* audio_data,
+                    int bits_per_sample,
+                    int sample_rate,
+                    size_t number_of_channels,
+                    size_t number_of_frames));
+
+  MOCK_METHOD7(PullRenderData,
+               void(int bits_per_sample,
+                    int sample_rate,
+                    size_t number_of_channels,
+                    size_t number_of_frames,
+                    void* audio_data,
+                    int64_t* elapsed_time_ms,
+                    int64_t* ntp_time_ms));
 
   // Set default actions of the mock object. We are delegating to fake
   // implementations (of AudioStreamInterface) here.
