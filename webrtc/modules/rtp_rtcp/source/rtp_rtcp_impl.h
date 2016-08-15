@@ -266,12 +266,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
                                     uint16_t time_ms,
                                     uint8_t level) override;
 
-  // Set payload type for Redundant Audio Data RFC 2198.
-  int32_t SetSendREDPayloadType(int8_t payload_type) override;
-
-  // Get payload type for Redundant Audio Data RFC 2198.
-  int32_t SendREDPayloadType(int8_t* payload_type) const override;
-
   // Store the audio level in d_bov for header-extension-for-audio-level-
   // indication.
   int32_t SetAudioLevel(uint8_t level_d_bov) override;

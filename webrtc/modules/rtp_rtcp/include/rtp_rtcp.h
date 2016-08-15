@@ -442,14 +442,6 @@ class RtpRtcp : public Module {
                                             uint16_t time_ms,
                                             uint8_t level) = 0;
 
-  // Sets payload type for Redundant Audio Data RFC 2198.
-  // Returns -1 on failure else 0.
-  virtual int32_t SetSendREDPayloadType(int8_t payload_type) = 0;
-
-  // Get payload type for Redundant Audio Data RFC 2198.
-  // Returns -1 on failure else 0.
-  virtual int32_t SendREDPayloadType(int8_t* payload_type) const = 0;
-
   // Store the audio level in dBov for header-extension-for-audio-level-
   // indication.
   // This API shall be called before transmision of an RTP packet to ensure

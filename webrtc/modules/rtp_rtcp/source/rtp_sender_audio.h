@@ -55,12 +55,6 @@ class RTPSenderAudio : public DTMFqueue {
 
   int AudioFrequency() const;
 
-  // Set payload type for Redundant Audio Data RFC 2198
-  int32_t SetRED(int8_t payload_type);
-
-  // Get payload type for Redundant Audio Data RFC 2198
-  int32_t RED(int8_t* payload_type) const;
-
  protected:
   bool SendTelephoneEventPacket(
       bool ended,
@@ -89,8 +83,6 @@ class RTPSenderAudio : public DTMFqueue {
   uint8_t dtmf_level_;
   int64_t dtmf_time_last_sent_;
   uint32_t dtmf_timestamp_last_sent_;
-
-  int8_t red_payload_type_ GUARDED_BY(send_audio_critsect_);
 
   // VAD detection, used for marker bit.
   bool inband_vad_active_ GUARDED_BY(send_audio_critsect_);

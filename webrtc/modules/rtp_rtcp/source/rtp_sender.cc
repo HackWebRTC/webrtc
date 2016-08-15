@@ -392,16 +392,6 @@ int32_t RTPSender::CheckPayloadType(int8_t payload_type,
     LOG(LS_ERROR) << "Invalid payload_type " << payload_type;
     return -1;
   }
-  if (audio_configured_) {
-    int8_t red_pl_type = -1;
-    if (audio_->RED(&red_pl_type) == 0) {
-      // We have configured RED.
-      if (red_pl_type == payload_type) {
-        // And it's a match...
-        return 0;
-      }
-    }
-  }
   if (payload_type_ == payload_type) {
     if (!audio_configured_) {
       *video_type = video_->VideoCodecType();
@@ -1622,20 +1612,6 @@ int32_t RTPSender::SetAudioPacketSize(uint16_t packet_size_samples) {
 
 int32_t RTPSender::SetAudioLevel(uint8_t level_d_bov) {
   return audio_->SetAudioLevel(level_d_bov);
-}
-
-int32_t RTPSender::SetRED(int8_t payload_type) {
-  if (!audio_configured_) {
-    return -1;
-  }
-  return audio_->SetRED(payload_type);
-}
-
-int32_t RTPSender::RED(int8_t *payload_type) const {
-  if (!audio_configured_) {
-    return -1;
-  }
-  return audio_->RED(payload_type);
 }
 
 RtpVideoCodecTypes RTPSender::VideoCodecType() const {

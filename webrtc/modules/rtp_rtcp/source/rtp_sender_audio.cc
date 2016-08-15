@@ -35,7 +35,6 @@ RTPSenderAudio::RTPSenderAudio(Clock* clock, RTPSender* rtp_sender)
       dtmf_level_(0),
       dtmf_time_last_sent_(0),
       dtmf_timestamp_last_sent_(0),
-      red_payload_type_(-1),
       inband_vad_active_(false),
       cngnb_payload_type_(-1),
       cngwb_payload_type_(-1),
@@ -156,13 +155,11 @@ bool RTPSenderAudio::SendAudio(FrameType frame_type,
   size_t max_payload_length = rtp_sender_->MaxPayloadLength();
   uint16_t dtmf_length_ms = 0;
   uint8_t key = 0;
-  int red_payload_type;
   uint8_t audio_level_dbov;
   int8_t dtmf_payload_type;
   uint16_t packet_size_samples;
   {
     rtc::CritScope cs(&send_audio_critsect_);
-    red_payload_type = red_payload_type_;
     audio_level_dbov = audio_level_dbov_;
     dtmf_payload_type = dtmf_payload_type_;
     packet_size_samples = packet_size_samples_;
@@ -251,23 +248,10 @@ bool RTPSenderAudio::SendAudio(FrameType frame_type,
   bool marker_bit = MarkerBit(frame_type, payload_type);
 
   int32_t rtpHeaderLength = 0;
-  uint16_t timestampOffset = 0;
 
-  if (red_payload_type >= 0 && fragmentation && !marker_bit &&
-      fragmentation->fragmentationVectorSize > 1) {
-    // have we configured RED? use its payload type
-    // we need to get the current timestamp to calc the diff
-    uint32_t old_timestamp = rtp_sender_->Timestamp();
-    rtpHeaderLength = rtp_sender_->BuildRtpHeader(data_buffer, red_payload_type,
-                                                  marker_bit, capture_timestamp,
-                                                  clock_->TimeInMilliseconds());
-
-    timestampOffset = uint16_t(rtp_sender_->Timestamp() - old_timestamp);
-  } else {
-    rtpHeaderLength = rtp_sender_->BuildRtpHeader(data_buffer, payload_type,
-                                                  marker_bit, capture_timestamp,
-                                                  clock_->TimeInMilliseconds());
-  }
+  rtpHeaderLength = rtp_sender_->BuildRtpHeader(data_buffer, payload_type,
+                                                marker_bit, capture_timestamp,
+                                                clock_->TimeInMilliseconds());
   if (rtpHeaderLength <= 0) {
     return false;
   }
@@ -275,63 +259,16 @@ bool RTPSenderAudio::SendAudio(FrameType frame_type,
     // Too large payload buffer.
     return false;
   }
-  if (red_payload_type >= 0 &&  // Have we configured RED?
-      fragmentation && fragmentation->fragmentationVectorSize > 1 &&
-      !marker_bit) {
-    if (timestampOffset <= 0x3fff) {
-      if (fragmentation->fragmentationVectorSize != 2) {
-        // we only support 2 codecs when using RED
-        return false;
-      }
-      // only 0x80 if we have multiple blocks
-      data_buffer[rtpHeaderLength++] =
-          0x80 + fragmentation->fragmentationPlType[1];
-      size_t blockLength = fragmentation->fragmentationLength[1];
+  if (fragmentation && fragmentation->fragmentationVectorSize > 0) {
+    // use the fragment info if we have one
+    data_buffer[rtpHeaderLength++] = fragmentation->fragmentationPlType[0];
+    memcpy(data_buffer + rtpHeaderLength,
+           payload_data + fragmentation->fragmentationOffset[0],
+           fragmentation->fragmentationLength[0]);
 
-      // sanity blockLength
-      if (blockLength > 0x3ff) {  // block length 10 bits 1023 bytes
-        return false;
-      }
-      uint32_t REDheader = (timestampOffset << 10) + blockLength;
-      ByteWriter<uint32_t>::WriteBigEndian(data_buffer + rtpHeaderLength,
-                                           REDheader);
-      rtpHeaderLength += 3;
-
-      data_buffer[rtpHeaderLength++] = fragmentation->fragmentationPlType[0];
-      // copy the RED data
-      memcpy(data_buffer + rtpHeaderLength,
-             payload_data + fragmentation->fragmentationOffset[1],
-             fragmentation->fragmentationLength[1]);
-
-      // copy the normal data
-      memcpy(
-          data_buffer + rtpHeaderLength + fragmentation->fragmentationLength[1],
-          payload_data + fragmentation->fragmentationOffset[0],
-          fragmentation->fragmentationLength[0]);
-
-      payload_size = fragmentation->fragmentationLength[0] +
-                     fragmentation->fragmentationLength[1];
-    } else {
-      // silence for too long send only new data
-      data_buffer[rtpHeaderLength++] = fragmentation->fragmentationPlType[0];
-      memcpy(data_buffer + rtpHeaderLength,
-             payload_data + fragmentation->fragmentationOffset[0],
-             fragmentation->fragmentationLength[0]);
-
-      payload_size = fragmentation->fragmentationLength[0];
-    }
+    payload_size = fragmentation->fragmentationLength[0];
   } else {
-    if (fragmentation && fragmentation->fragmentationVectorSize > 0) {
-      // use the fragment info if we have one
-      data_buffer[rtpHeaderLength++] = fragmentation->fragmentationPlType[0];
-      memcpy(data_buffer + rtpHeaderLength,
-             payload_data + fragmentation->fragmentationOffset[0],
-             fragmentation->fragmentationLength[0]);
-
-      payload_size = fragmentation->fragmentationLength[0];
-    } else {
-      memcpy(data_buffer + rtpHeaderLength, payload_data, payload_size);
-    }
+    memcpy(data_buffer + rtpHeaderLength, payload_data, payload_size);
   }
 
   {
@@ -365,27 +302,6 @@ int32_t RTPSenderAudio::SetAudioLevel(uint8_t level_dbov) {
   }
   rtc::CritScope cs(&send_audio_critsect_);
   audio_level_dbov_ = level_dbov;
-  return 0;
-}
-
-// Set payload type for Redundant Audio Data RFC 2198
-int32_t RTPSenderAudio::SetRED(int8_t payload_type) {
-  if (payload_type < -1) {
-    return -1;
-  }
-  rtc::CritScope cs(&send_audio_critsect_);
-  red_payload_type_ = payload_type;
-  return 0;
-}
-
-// Get payload type for Redundant Audio Data RFC 2198
-int32_t RTPSenderAudio::RED(int8_t* payload_type) const {
-  rtc::CritScope cs(&send_audio_critsect_);
-  if (red_payload_type_ == -1) {
-    // not configured
-    return -1;
-  }
-  *payload_type = red_payload_type_;
   return 0;
 }
 

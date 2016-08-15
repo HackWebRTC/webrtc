@@ -250,12 +250,6 @@ class RTPSender {
   // header-extension-for-audio-level-indication.
   int32_t SetAudioLevel(uint8_t level_d_bov);
 
-  // Set payload type for Redundant Audio Data RFC 2198.
-  int32_t SetRED(int8_t payload_type);
-
-  // Get payload type for Redundant Audio Data RFC 2198.
-  int32_t RED(int8_t *payload_type) const;
-
   RtpVideoCodecTypes VideoCodecType() const;
 
   uint32_t MaxConfiguredBitrateVideo() const;

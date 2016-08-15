@@ -786,17 +786,6 @@ int32_t ModuleRtpRtcpImpl::SetAudioLevel(
   return rtp_sender_.SetAudioLevel(level_d_bov);
 }
 
-// Set payload type for Redundant Audio Data RFC 2198.
-int32_t ModuleRtpRtcpImpl::SetSendREDPayloadType(
-    const int8_t payload_type) {
-  return rtp_sender_.SetRED(payload_type);
-}
-
-// Get payload type for Redundant Audio Data RFC 2198.
-int32_t ModuleRtpRtcpImpl::SendREDPayloadType(int8_t* payload_type) const {
-  return rtp_sender_.RED(payload_type);
-}
-
 int32_t ModuleRtpRtcpImpl::SetKeyFrameRequestMethod(
     const KeyFrameRequestMethod method) {
   key_frame_req_method_ = method;
