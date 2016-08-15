@@ -38,8 +38,13 @@ static const int kQvgaNumPixels = 400 * 300;  // 320x240
 const int QualityScaler::kLowVp8QpThreshold = 29;
 const int QualityScaler::kBadVp8QpThreshold = 95;
 
+#if defined(WEBRTC_IOS)
 const int QualityScaler::kLowH264QpThreshold = 32;
 const int QualityScaler::kBadH264QpThreshold = 42;
+#else
+const int QualityScaler::kLowH264QpThreshold = 22;
+const int QualityScaler::kBadH264QpThreshold = 35;
+#endif
 
 QualityScaler::QualityScaler() : low_qp_threshold_(-1) {}
 
