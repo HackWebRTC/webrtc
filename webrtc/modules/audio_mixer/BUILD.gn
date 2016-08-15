@@ -72,9 +72,11 @@ source_set("audio_conference_mixer") {
   }
 
   deps = [
+    "../..:webrtc_common",
     "../../base:rtc_base_approved",
     "../../modules/audio_processing",
     "../../modules/utility",
     "../../system_wrappers",
+    "../../system_wrappers:system_wrappers_default",
   ]
 }
