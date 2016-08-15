@@ -761,7 +761,7 @@ void EventLogAnalyzer::CreateStreamBitrateGraph(
   }
 }
 
-void EventLogAnalyzer::CreateBweGraph(Plot* plot) {
+void EventLogAnalyzer::CreateBweSimulationGraph(Plot* plot) {
   std::map<uint64_t, const LoggedRtpPacket*> outgoing_rtp;
   std::map<uint64_t, const LoggedRtcpPacket*> incoming_rtcp;
 
@@ -789,7 +789,7 @@ void EventLogAnalyzer::CreateBweGraph(Plot* plot) {
   cc.SetBweBitrates(0, kDefaultStartBitrateBps, -1);
 
   TimeSeries time_series;
-  time_series.label = "BWE";
+  time_series.label = "Delay-based estimate";
   time_series.style = LINE_DOT_GRAPH;
 
   auto rtp_iterator = outgoing_rtp.begin();
@@ -861,7 +861,7 @@ void EventLogAnalyzer::CreateBweGraph(Plot* plot) {
   plot->SetTitle("Simulated BWE behavior");
 }
 
-void EventLogAnalyzer::CreateNetworkDelayFeebackGraph(Plot* plot) {
+void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
   std::map<uint64_t, const LoggedRtpPacket*> outgoing_rtp;
   std::map<uint64_t, const LoggedRtcpPacket*> incoming_rtcp;
 

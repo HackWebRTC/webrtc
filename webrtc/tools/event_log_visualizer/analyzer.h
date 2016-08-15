@@ -73,9 +73,9 @@ class EventLogAnalyzer {
 
   void CreateStreamBitrateGraph(PacketDirection desired_direction, Plot* plot);
 
-  void CreateBweGraph(Plot* plot);
+  void CreateBweSimulationGraph(Plot* plot);
 
-  void CreateNetworkDelayFeebackGraph(Plot* plot);
+  void CreateNetworkDelayFeedbackGraph(Plot* plot);
 
  private:
   class StreamId {

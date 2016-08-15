@@ -149,11 +149,11 @@ int main(int argc, char* argv[]) {
   }
 
   if (FLAGS_plot_all || FLAGS_plot_bwe) {
-    analyzer.CreateBweGraph(collection->AppendNewPlot());
+    analyzer.CreateBweSimulationGraph(collection->AppendNewPlot());
   }
 
   if (FLAGS_plot_all || FLAGS_plot_network_delay_feedback) {
-    analyzer.CreateNetworkDelayFeebackGraph(collection->AppendNewPlot());
+    analyzer.CreateNetworkDelayFeedbackGraph(collection->AppendNewPlot());
   }
 
   collection->Draw();
