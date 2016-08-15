@@ -19,6 +19,7 @@
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_mixer/new_audio_conference_mixer.h"
+#include "webrtc/modules/audio_conference_mixer/source/memory_pool.h"
 #include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
@@ -62,8 +63,6 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
   enum { kProcessPeriodicityInMs = 10 };
 
   explicit NewAudioConferenceMixerImpl(int id);
-
-  ~NewAudioConferenceMixerImpl() override;
 
   // Must be called after ctor.
   bool Init();

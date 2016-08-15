@@ -19,6 +19,7 @@
 #include "webrtc/modules/utility/include/audio_frame_operations.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
+#include "webrtc/voice_engine/utility.h"
 
 namespace webrtc {
 namespace {
@@ -140,8 +141,6 @@ NewAudioConferenceMixerImpl::NewAudioConferenceMixerImpl(int id)
       time_stamp_(0) {
   thread_checker_.DetachFromThread();
 }
-
-NewAudioConferenceMixerImpl::~NewAudioConferenceMixerImpl() {}
 
 bool NewAudioConferenceMixerImpl::Init() {
   crit_.reset(CriticalSectionWrapper::CreateCriticalSection());
