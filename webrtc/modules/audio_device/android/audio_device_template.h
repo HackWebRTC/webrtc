@@ -216,7 +216,6 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   bool Recording() const override {
-    LOG(LS_VERBOSE) << __FUNCTION__;
     return input_.Recording() ;
   }
 
@@ -421,7 +420,6 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   int32_t PlayoutDelay(uint16_t& delay_ms) const override {
     // Best guess we can do is to use half of the estimated total delay.
     delay_ms = audio_manager_->GetDelayEstimateInMilliseconds() / 2;
-    LOG(LS_VERBOSE) << __FUNCTION__ << " delay = " << delay_ms;
     RTC_DCHECK_GT(delay_ms, 0);
     return 0;
   }
@@ -440,22 +438,18 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
   bool PlayoutWarning() const override {
-    LOG(LS_VERBOSE) << __FUNCTION__;
     return false;
   }
 
   bool PlayoutError() const override {
-    LOG(LS_VERBOSE) << __FUNCTION__;
     return false;
   }
 
   bool RecordingWarning() const override {
-    LOG(LS_VERBOSE) << __FUNCTION__;
     return false;
   }
 
   bool RecordingError() const override {
-    LOG(LS_VERBOSE) << __FUNCTION__;
     return false;
   }
 

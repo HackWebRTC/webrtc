@@ -387,7 +387,6 @@ AudioDeviceModuleImpl::~AudioDeviceModuleImpl() {
 // ----------------------------------------------------------------------------
 
 int64_t AudioDeviceModuleImpl::TimeUntilNextProcess() {
-  LOG(LS_VERBOSE) << __FUNCTION__;
   int64_t now = rtc::TimeMillis();
   int64_t deltaProcess = kAdmMaxIdleTimeProcess - (now - _lastProcessTime);
   return deltaProcess;
@@ -401,7 +400,6 @@ int64_t AudioDeviceModuleImpl::TimeUntilNextProcess() {
 // ----------------------------------------------------------------------------
 
 void AudioDeviceModuleImpl::Process() {
-  LOG(LS_VERBOSE) << __FUNCTION__;
   _lastProcessTime = rtc::TimeMillis();
 
   // kPlayoutWarning
@@ -1606,7 +1604,6 @@ int32_t AudioDeviceModuleImpl::PlayoutBuffer(BufferType* type,
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceModuleImpl::PlayoutDelay(uint16_t* delayMS) const {
-  LOG(LS_VERBOSE) << __FUNCTION__;
   CHECK_INITIALIZED();
 
   uint16_t delay(0);
@@ -1617,7 +1614,6 @@ int32_t AudioDeviceModuleImpl::PlayoutDelay(uint16_t* delayMS) const {
   }
 
   *delayMS = delay;
-  LOG(LS_VERBOSE) << "output: " << *delayMS;
   return (0);
 }
 
