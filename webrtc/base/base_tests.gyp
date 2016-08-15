@@ -21,6 +21,7 @@
         'fakesslidentity.h',
         'faketaskrunner.h',
         'gunit.h',
+        'test/faketiming.h',
         'testbase64.h',
         'testechoserver.h',
         'testutils.h',
