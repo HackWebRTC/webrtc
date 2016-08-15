@@ -8,10 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/voice_engine/file_recorder_impl.h"
-
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/media_file/media_file.h"
+#include "webrtc/modules/utility/source/file_recorder_impl.h"
 #include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
