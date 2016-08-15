@@ -21,10 +21,11 @@ TEST(BitrateProberTest, VerifyStatesAndTimeBetweenProbes) {
   int64_t now_ms = 0;
   EXPECT_EQ(-1, prober.TimeUntilNextProbe(now_ms));
 
-  prober.SetEnabled(true);
+  prober.ProbeAtBitrate(900000, 6);
+  prober.ProbeAtBitrate(1800000, 5);
   EXPECT_FALSE(prober.IsProbing());
 
-  prober.OnIncomingPacket(300000, 1000, now_ms);
+  prober.OnIncomingPacket(1000);
   EXPECT_TRUE(prober.IsProbing());
   EXPECT_EQ(0, prober.CurrentClusterId());
 
@@ -59,10 +60,10 @@ TEST(BitrateProberTest, DoesntProbeWithoutRecentPackets) {
   int64_t now_ms = 0;
   EXPECT_EQ(-1, prober.TimeUntilNextProbe(now_ms));
 
-  prober.SetEnabled(true);
+  prober.ProbeAtBitrate(900000, 6);
   EXPECT_FALSE(prober.IsProbing());
 
-  prober.OnIncomingPacket(300000, 1000, now_ms);
+  prober.OnIncomingPacket(1000);
   EXPECT_TRUE(prober.IsProbing());
   EXPECT_EQ(0, prober.TimeUntilNextProbe(now_ms));
   prober.PacketSent(now_ms, 1000);
@@ -70,16 +71,16 @@ TEST(BitrateProberTest, DoesntProbeWithoutRecentPackets) {
   now_ms += 6000;
   EXPECT_EQ(-1, prober.TimeUntilNextProbe(now_ms));
   // Insert a small packet, not a candidate for probing.
-  prober.OnIncomingPacket(300000, 100, now_ms);
+  prober.OnIncomingPacket(100);
   prober.PacketSent(now_ms, 100);
   EXPECT_EQ(-1, prober.TimeUntilNextProbe(now_ms));
   // Insert a large-enough packet after downtime while probing should reset to
   // perform a new probe since the requested one didn't finish.
-  prober.OnIncomingPacket(300000, 1000, now_ms);
+  prober.OnIncomingPacket(1000);
   EXPECT_EQ(0, prober.TimeUntilNextProbe(now_ms));
   prober.PacketSent(now_ms, 1000);
   // Next packet should be part of new probe and be sent with non-zero delay.
-  prober.OnIncomingPacket(300000, 1000, now_ms);
+  prober.OnIncomingPacket(1000);
   EXPECT_GT(prober.TimeUntilNextProbe(now_ms), 0);
 }
 
@@ -88,7 +89,7 @@ TEST(BitrateProberTest, DoesntInitializeProbingForSmallPackets) {
   prober.SetEnabled(true);
   EXPECT_FALSE(prober.IsProbing());
 
-  prober.OnIncomingPacket(300000, 100, 0);
+  prober.OnIncomingPacket(100);
   EXPECT_FALSE(prober.IsProbing());
 }
 

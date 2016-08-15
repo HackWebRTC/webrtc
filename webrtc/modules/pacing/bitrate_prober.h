@@ -11,10 +11,9 @@
 #ifndef WEBRTC_MODULES_PACING_BITRATE_PROBER_H_
 #define WEBRTC_MODULES_PACING_BITRATE_PROBER_H_
 
-#include <cstddef>
-#include <list>
 #include <queue>
 
+#include "webrtc/base/basictypes.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -35,9 +34,11 @@ class BitrateProber {
   // Initializes a new probing session if the prober is allowed to probe. Does
   // not initialize the prober unless the packet size is large enough to probe
   // with.
-  void OnIncomingPacket(uint32_t bitrate_bps,
-                        size_t packet_size,
-                        int64_t now_ms);
+  void OnIncomingPacket(size_t packet_size);
+
+  // Create a cluster used to probe for |bitrate_bps| with |num_packets| number
+  // of packets.
+  void ProbeAtBitrate(uint32_t bitrate_bps, int num_packets);
 
   // Returns the number of milliseconds until the next packet should be sent to
   // get accurate probing.

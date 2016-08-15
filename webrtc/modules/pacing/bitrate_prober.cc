@@ -10,11 +10,7 @@
 
 #include "webrtc/modules/pacing/bitrate_prober.h"
 
-#include <assert.h>
 #include <algorithm>
-#include <limits>
-#include <sstream>
-#include <utility>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -28,7 +24,7 @@ namespace {
 constexpr int kInactivityThresholdMs = 5000;
 
 int ComputeDeltaFromBitrate(size_t packet_size, uint32_t bitrate_bps) {
-  assert(bitrate_bps > 0);
+  RTC_CHECK_GT(bitrate_bps, 0u);
   // Compute the time delta needed to send packet_size bytes at bitrate_bps
   // bps. Result is in milliseconds.
   return static_cast<int>((1000ll * packet_size * 8) / bitrate_bps);
@@ -59,41 +55,40 @@ bool BitrateProber::IsProbing() const {
   return probing_state_ == ProbingState::kActive;
 }
 
-void BitrateProber::OnIncomingPacket(uint32_t bitrate_bps,
-                                     size_t packet_size,
-                                     int64_t now_ms) {
+void BitrateProber::OnIncomingPacket(size_t packet_size) {
   // Don't initialize probing unless we have something large enough to start
   // probing.
-  if (packet_size < PacedSender::kMinProbePacketSize)
-    return;
-  if (probing_state_ != ProbingState::kInactive)
-    return;
-  // Max number of packets used for probing.
-  const int kMaxNumProbes = 2;
-  const int kPacketsPerProbe = 5;
-  const float kProbeBitrateMultipliers[kMaxNumProbes] = {3, 6};
-  std::stringstream bitrate_log;
-  bitrate_log << "Start probing for bandwidth, (bitrate:packets): ";
-  for (int i = 0; i < kMaxNumProbes; ++i) {
-    ProbeCluster cluster;
-    // We need one extra to get 5 deltas for the first probe, therefore (i == 0)
-    cluster.max_probe_packets = kPacketsPerProbe + (i == 0 ? 1 : 0);
-    cluster.probe_bitrate_bps = kProbeBitrateMultipliers[i] * bitrate_bps;
-    cluster.id = next_cluster_id_++;
-
-    bitrate_log << "(" << cluster.probe_bitrate_bps << ":"
-                << cluster.max_probe_packets << ") ";
-
-    clusters_.push(cluster);
+  if (probing_state_ == ProbingState::kInactive &&
+      packet_size >= PacedSender::kMinProbePacketSize) {
+    probing_state_ = ProbingState::kActive;
   }
-  LOG(LS_INFO) << bitrate_log.str().c_str();
-  probing_state_ = ProbingState::kActive;
+}
+
+void BitrateProber::ProbeAtBitrate(uint32_t bitrate_bps, int num_packets) {
+  ProbeCluster cluster;
+  cluster.max_probe_packets = num_packets;
+  cluster.probe_bitrate_bps = bitrate_bps;
+  cluster.id = next_cluster_id_++;
+  clusters_.push(cluster);
+  LOG(LS_INFO) << "Probe cluster (bitrate:packets): ("
+               << cluster.probe_bitrate_bps << ":" << cluster.max_probe_packets
+               << ") ";
+  if (probing_state_ != ProbingState::kActive)
+    probing_state_ = ProbingState::kInactive;
 }
 
 void BitrateProber::ResetState() {
   time_last_probe_sent_ms_ = -1;
   packet_size_last_sent_ = 0;
-  clusters_ = std::queue<ProbeCluster>();
+
+  // Recreate all probing clusters.
+  std::queue<ProbeCluster> clusters;
+  clusters.swap(clusters_);
+  while (!clusters.empty()) {
+    ProbeAtBitrate(clusters.front().probe_bitrate_bps,
+                   clusters.front().max_probe_packets);
+    clusters.pop();
+  }
   // If its enabled, reset to inactive.
   if (probing_state_ != ProbingState::kDisabled)
     probing_state_ = ProbingState::kInactive;

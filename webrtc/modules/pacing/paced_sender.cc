@@ -261,6 +261,8 @@ PacedSender::PacedSender(Clock* clock, PacketSender* packet_sender)
       packets_(new paced_sender::PacketQueue(clock)),
       packet_counter_(0) {
   UpdateBytesPerInterval(kMinPacketLimitMs);
+  prober_->ProbeAtBitrate(900000, 6);
+  prober_->ProbeAtBitrate(1800000, 5);
 }
 
 PacedSender::~PacedSender() {}
@@ -318,7 +320,7 @@ void PacedSender::InsertPacket(RtpPacketSender::Priority priority,
         << "SetEstimatedBitrate must be called before InsertPacket.";
 
   int64_t now_ms = clock_->TimeInMilliseconds();
-  prober_->OnIncomingPacket(estimated_bitrate_bps_, bytes, now_ms);
+  prober_->OnIncomingPacket(bytes);
 
   if (capture_time_ms < 0)
     capture_time_ms = now_ms;
