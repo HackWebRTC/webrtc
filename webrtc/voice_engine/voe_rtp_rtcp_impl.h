@@ -71,11 +71,6 @@ class VoERTP_RTCPImpl : public VoERTP_RTCP {
       int channel,
       std::vector<ReportBlock>* report_blocks) override;
 
-  // RED
-  int SetREDStatus(int channel, bool enable, int redPayloadtype = -1) override;
-
-  int GetREDStatus(int channel, bool& enabled, int& redPayloadtype) override;
-
   // NACK
   int SetNACKStatus(int channel, bool enable, int maxNoPackets) override;
 

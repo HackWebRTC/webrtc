@@ -187,20 +187,6 @@ class WEBRTC_DLLEXPORT VoERTP_RTCP {
       int channel,
       std::vector<ReportBlock>* receive_blocks) = 0;
 
-  // Sets the Redundant Coding (RED) status on a specific |channel|.
-  // TODO(minyue): Make SetREDStatus() pure virtual when fakewebrtcvoiceengine
-  // in talk is ready.
-  virtual int SetREDStatus(int channel, bool enable, int redPayloadtype = -1) {
-    return -1;
-  }
-
-  // Gets the RED status on a specific |channel|.
-  // TODO(minyue): Make GetREDStatus() pure virtual when fakewebrtcvoiceengine
-  // in talk is ready.
-  virtual int GetREDStatus(int channel, bool& enabled, int& redPayloadtype) {
-    return -1;
-  }
-
   // This function enables Negative Acknowledgment (NACK) using RTCP,
   // implemented based on RFC 4585. NACK retransmits RTP packets if lost on
   // the network. This creates a lossless transport at the expense of delay.

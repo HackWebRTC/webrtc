@@ -359,25 +359,6 @@ int VoERTP_RTCPImpl::GetRemoteRTCPReportBlocks(
   return channel_ptr->GetRemoteRTCPReportBlocks(report_blocks);
 }
 
-int VoERTP_RTCPImpl::SetREDStatus(int channel,
-                                  bool enable,
-                                  int redPayloadtype) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "SetREDStatus(channel=%d, enable=%d, redPayloadtype=%d)",
-               channel, enable, redPayloadtype);
-  _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-                        "SetREDStatus() RED is not supported");
-  return -1;
-}
-
-int VoERTP_RTCPImpl::GetREDStatus(int channel,
-                                  bool& enabled,
-                                  int& redPayloadtype) {
-  _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-                        "GetREDStatus() RED is not supported");
-  return -1;
-}
-
 int VoERTP_RTCPImpl::SetNACKStatus(int channel, bool enable, int maxNoPackets) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "SetNACKStatus(channel=%d, enable=%d, maxNoPackets=%d)", channel,
