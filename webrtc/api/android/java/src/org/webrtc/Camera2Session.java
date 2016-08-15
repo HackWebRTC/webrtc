@@ -318,21 +318,35 @@ public class Camera2Session implements CameraSession {
   @Override
   public void stop() {
     Logging.d(TAG, "Stop camera2 session on camera " + cameraId);
-    final CountDownLatch stopLatch = new CountDownLatch(1);
-
-    cameraThreadHandler.post(new Runnable() {
-      @Override
-      public void run() {
-        if (state != SessionState.STOPPED) {
-          state = SessionState.STOPPED;
-          capturerObserver.onCapturerStopped();
-          stopLatch.countDown();
-          stopInternal();
-        }
+    if (Thread.currentThread() == cameraThreadHandler.getLooper().getThread()) {
+      if (state != SessionState.STOPPED) {
+        state = SessionState.STOPPED;
+        capturerObserver.onCapturerStopped();
+        // Post the stopInternal to return earlier.
+        cameraThreadHandler.post(new Runnable() {
+          @Override
+          public void run() {
+            stopInternal();
+          }
+        });
       }
-    });
+    } else {
+      final CountDownLatch stopLatch = new CountDownLatch(1);
 
-    ThreadUtils.awaitUninterruptibly(stopLatch);
+      cameraThreadHandler.post(new Runnable() {
+        @Override
+        public void run() {
+          if (state != SessionState.STOPPED) {
+            state = SessionState.STOPPED;
+            capturerObserver.onCapturerStopped();
+            stopLatch.countDown();
+            stopInternal();
+          }
+        }
+      });
+
+      ThreadUtils.awaitUninterruptibly(stopLatch);
+    }
   }
 
   private void stopInternal() {

@@ -10,17 +10,19 @@
 
 package org.webrtc;
 
-import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
-
 import android.content.Context;
 import android.os.Handler;
-import android.os.SystemClock;
 
 import java.util.Arrays;
-import java.util.List;
 
 @SuppressWarnings("deprecation")
 public abstract class CameraCapturer implements CameraVideoCapturer {
+  enum SwitchState {
+    IDLE,        // No switch requested.
+    PENDING,     // Waiting for previous capture session to open.
+    IN_PROGRESS, // Waiting for new switched capture session to start.
+  }
+
   private static final String TAG = "CameraCapturer";
   private final static int MAX_OPEN_CAMERA_ATTEMPTS = 3;
   private final static int OPEN_CAMERA_DELAY_MS = 500;
@@ -39,12 +41,17 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
             currentSession = session;
             stateLock.notifyAll();
 
-            if (switchEventsHandler != null) {
-              switchEventsHandler.onCameraSwitchDone(
-                  cameraEnumerator.isFrontFacing(cameraName));
-              switchEventsHandler = null;
+            if (switchState == SwitchState.IN_PROGRESS) {
+              if (switchEventsHandler != null) {
+                switchEventsHandler.onCameraSwitchDone(
+                    cameraEnumerator.isFrontFacing(cameraName));
+                switchEventsHandler = null;
+              }
+              switchState = SwitchState.IDLE;
+            } else if (switchState == SwitchState.PENDING) {
+              switchState = SwitchState.IDLE;
+              switchCameraInternal(switchEventsHandler);
             }
-            switchInProgress = false;
           }
         }
 
@@ -58,11 +65,13 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
               sessionOpening = false;
               stateLock.notifyAll();
 
-              if (switchEventsHandler != null) {
-                switchEventsHandler.onCameraSwitchError(error);
-                switchEventsHandler = null;
+              if (switchState != SwitchState.IDLE) {
+                if (switchEventsHandler != null) {
+                  switchEventsHandler.onCameraSwitchError(error);
+                  switchEventsHandler = null;
+                }
+                switchState = SwitchState.IDLE;
               }
-              switchInProgress = false;
 
               eventsHandler.onCameraError(error);
             } else {
@@ -76,8 +85,6 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
 
   // Initialized on initialize
   // -------------------------
-  // Use postOnCameraThread() instead of posting directly to the handler - this way all
-  // callbacks with a specifed token can be removed at once.
   private Handler cameraThreadHandler;
   private Context applicationContext;
   private CapturerObserver capturerObserver;
@@ -91,7 +98,7 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
   private int height;                              /* guarded by stateLock */
   private int framerate;                           /* guarded by stateLock */
   private int openAttemptsRemaining;               /* guarded by stateLock */
-  private boolean switchInProgress;                /* guarded by stateLock */
+  private SwitchState switchState = SwitchState.IDLE; /* guarded by stateLock */
   private CameraSwitchHandler switchEventsHandler; /* guarded by stateLock */
 
   public CameraCapturer(
@@ -219,6 +226,16 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
   @Override
   public void switchCamera(final CameraSwitchHandler switchEventsHandler) {
     Logging.d(TAG, "switchCamera");
+    cameraThreadHandler.post(new Runnable() {
+      @Override
+      public void run() {
+        switchCameraInternal(switchEventsHandler);
+      }
+    });
+  }
+
+  private void switchCameraInternal(final CameraSwitchHandler switchEventsHandler) {
+    Logging.d(TAG, "switchCamera internal");
 
     final String[] deviceNames = cameraEnumerator.getDeviceNames();
 
@@ -230,7 +247,7 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
     }
 
     synchronized (stateLock) {
-      if (switchInProgress) {
+      if (switchState != SwitchState.IDLE) {
         Logging.d(TAG, "switchCamera switchInProgress");
         if (switchEventsHandler != null) {
           switchEventsHandler.onCameraSwitchError("Camera switch already in progress.");
@@ -238,12 +255,12 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
         return;
       }
 
+      this.switchEventsHandler = switchEventsHandler;
       if (sessionOpening) {
-        Logging.d(TAG, "switchCamera sessionOpening");
-        if (switchEventsHandler != null) {
-          switchEventsHandler.onCameraSwitchError("Session is still opening.");
-        }
+        switchState = SwitchState.PENDING;
         return;
+      } else {
+        switchState = SwitchState.IN_PROGRESS;
       }
 
       if (currentSession == null) {
@@ -261,8 +278,6 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
       int cameraNameIndex = Arrays.asList(deviceNames).indexOf(cameraName);
       cameraName = deviceNames[(cameraNameIndex + 1) % deviceNames.length];
 
-      switchInProgress = true;
-      this.switchEventsHandler = switchEventsHandler;
       sessionOpening = true;
       openAttemptsRemaining = 1;
       createSessionInternal(0);
