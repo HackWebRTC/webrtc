@@ -173,6 +173,7 @@ TEST_F(VolumeTest, DefaultMicrophoneVolumeIsAtMost255) {
   }
 }
 
+// The test below is disabled due to issue webrtc:6206.
 TEST_F(VolumeTest, DISABLED_ManualRequiresMicrophoneCanSetMicrophoneVolumeWithAgcOff) {
   SwitchToManualMicrophone();
   EXPECT_EQ(0, voe_apm_->SetAgcStatus(false));
