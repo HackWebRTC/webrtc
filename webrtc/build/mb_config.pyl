@@ -20,13 +20,13 @@
   'masters': {
     'client.webrtc': {
       # iOS
-      'iOS32 Debug': 'ios_gyp_debug_bot_arm_device',
+      'iOS32 Debug': 'ios_gyp_debug_static_bot_arm_device',
       'iOS32 Release': 'ios_gyp_release_bot_arm_device',
-      'iOS64 Debug': 'ios_gyp_debug_bot_arm64_device',
+      'iOS64 Debug': 'ios_gyp_debug_static_bot_arm64_device',
       'iOS64 Release': 'ios_gyp_release_bot_arm64_device',
-      'iOS32 Debug Simulator': 'ios_gyp_debug_bot_x86',
-      'iOS64 Debug Simulator': 'ios_gyp_debug_bot_x64',
-      'iOS64 Debug (GN)': 'ios_gn_debug_bot_arm64_device',
+      'iOS32 Debug Simulator': 'ios_gyp_debug_static_bot_x86',
+      'iOS64 Debug Simulator': 'ios_gyp_debug_static_bot_x64',
+      'iOS64 Debug (GN)': 'ios_gn_debug_static_bot_arm64_device',
       'iOS64 Release (GN)': 'ios_gn_release_bot_arm64_device',
 
       # Mac
@@ -89,13 +89,13 @@
     },
     'tryserver.webrtc': {
       # iOS
-      'ios_dbg': 'ios_gyp_debug_bot_arm_device',
+      'ios_dbg': 'ios_gyp_debug_static_bot_arm_device',
       'ios_rel': 'ios_gyp_release_bot_arm_device',
-      'ios_arm64_dbg': 'ios_gyp_debug_bot_arm64_device',
+      'ios_arm64_dbg': 'ios_gyp_debug_static_bot_arm64_device',
       'ios_arm64_rel': 'ios_gyp_release_bot_arm64_device',
-      'ios32_sim_dbg': 'ios_gyp_debug_bot_x86',
-      'ios64_sim_dbg': 'ios_gyp_debug_bot_x64',
-      'ios64_gn_dbg': 'ios_gn_debug_bot_arm64_device',
+      'ios32_sim_dbg': 'ios_gyp_debug_static_bot_x86',
+      'ios64_sim_dbg': 'ios_gyp_debug_static_bot_x64',
+      'ios64_gn_dbg': 'ios_gn_debug_static_bot_arm64_device',
       'ios64_gn_rel': 'ios_gn_release_bot_arm64_device',
 
       # Mac
@@ -173,29 +173,29 @@
   # bots all using the 'gn_release_bot' config).
   'configs': {
     # iOS
-    'ios_gn_debug_bot_arm64_device': [
-      'ios', 'gn', 'ios_debug_bot', 'arm64', 'device'
+    'ios_gn_debug_static_bot_arm64_device': [
+      'ios', 'gn', 'debug_static_bot', 'arm64', 'device'
     ],
     'ios_gn_release_bot_arm64_device': [
-      'ios', 'gn', 'ios_release_bot', 'arm64', 'device'
+      'ios', 'gn', 'release_bot', 'arm64', 'device'
     ],
-    'ios_gyp_debug_bot_arm_device': [
-      'ios', 'gyp', 'ios_debug_bot', 'arm', 'device'
+    'ios_gyp_debug_static_bot_arm_device': [
+      'ios', 'gyp', 'debug_static_bot', 'arm', 'device'
     ],
     'ios_gyp_release_bot_arm_device': [
-      'ios', 'gyp', 'ios_release_bot', 'arm', 'device'
+      'ios', 'gyp', 'release_bot', 'arm', 'device'
     ],
-    'ios_gyp_debug_bot_arm64_device': [
-      'ios', 'gyp', 'ios_debug_bot', 'arm64', 'device'
+    'ios_gyp_debug_static_bot_arm64_device': [
+      'ios', 'gyp', 'debug_static_bot', 'arm64', 'device'
     ],
     'ios_gyp_release_bot_arm64_device': [
-      'ios', 'gyp', 'ios_release_bot', 'arm64', 'device'
+      'ios', 'gyp', 'release_bot', 'arm64', 'device'
     ],
-    'ios_gyp_debug_bot_x86': [
-      'ios', 'gyp', 'ios_debug_bot', 'x86'
+    'ios_gyp_debug_static_bot_x86': [
+      'ios', 'gyp', 'debug_static_bot', 'x86'
     ],
-    'ios_gyp_debug_bot_x64': [
-      'ios', 'gyp', 'ios_release_bot', 'x64'
+    'ios_gyp_debug_static_bot_x64': [
+      'ios', 'gyp', 'release_bot', 'x64'
     ],
 
     # Linux, Mac and Windows
@@ -397,14 +397,6 @@
     'ios': {
       'gn_args': 'target_os="ios"',
       'gyp_defines': 'OS=ios',
-    },
-
-    'ios_debug_bot': {
-      'mixins': ['debug', 'shared']
-    },
-
-    'ios_release_bot': {
-      'mixins': ['release', 'static']
     },
 
     'lsan': {
