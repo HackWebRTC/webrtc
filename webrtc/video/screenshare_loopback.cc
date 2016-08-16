@@ -235,11 +235,7 @@ void Loopback() {
       {"screenshare", 0.0, 0.0, flags::DurationSecs(), flags::OutputFilename(),
        flags::GraphTitle()},
       pipe_config,
-      flags::FLAGS_logs,
-      {},  // ss.
-      false,  // audio.
-      false,  // audio_video_sync.
-      };
+      flags::FLAGS_logs};
 
   std::vector<std::string> stream_descriptors;
   stream_descriptors.push_back(flags::Stream0());
@@ -255,7 +251,7 @@ void Loopback() {
   if (flags::DurationSecs()) {
     test.RunWithAnalyzer(params);
   } else {
-    test.RunWithRenderers(params);
+    test.RunWithVideoRenderer(params);
   }
 }
 }  // namespace webrtc

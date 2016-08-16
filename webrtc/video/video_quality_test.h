@@ -70,8 +70,6 @@ class VideoQualityTest : public test::CallTest {
       // If empty, bitrates are generated in VP9Impl automatically.
       std::vector<SpatialLayer> spatial_layers;
     } ss;
-    bool audio;
-    bool audio_video_sync;
   };
   // (*) Set to -1.1 if generating graph data for simulcast or SVC and the
   // selected stream/layer doesn't have the same resolution as the largest
@@ -79,7 +77,7 @@ class VideoQualityTest : public test::CallTest {
 
   VideoQualityTest();
   void RunWithAnalyzer(const Params& params);
-  void RunWithRenderers(const Params& params);
+  void RunWithVideoRenderer(const Params& params);
 
   static void FillScalabilitySettings(
       Params* params,
