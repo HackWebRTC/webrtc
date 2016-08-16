@@ -191,6 +191,11 @@ DEFINE_bool(allow_reordering, false, "Allow packet reordering to occur");
 
 DEFINE_bool(use_fec, false, "Use forward error correction.");
 
+DEFINE_bool(audio, false, "Add audio stream");
+
+DEFINE_bool(audio_video_sync, false, "Sync audio and video stream (no effect if"
+    " audio is false)");
+
 DEFINE_string(
     force_fieldtrials,
     "",
@@ -236,7 +241,10 @@ void Loopback() {
       {"video", 0.0, 0.0, flags::DurationSecs(), flags::OutputFilename(),
        flags::GraphTitle()},
       pipe_config,
-      flags::FLAGS_logs};
+      flags::FLAGS_logs,
+      {},  // ss.
+      flags::FLAGS_audio,
+      flags::FLAGS_audio_video_sync};
 
   std::vector<std::string> stream_descriptors;
   stream_descriptors.push_back(flags::Stream0());
@@ -252,7 +260,7 @@ void Loopback() {
   if (flags::DurationSecs()) {
     test.RunWithAnalyzer(params);
   } else {
-    test.RunWithVideoRenderer(params);
+    test.RunWithRenderers(params);
   }
 }
 }  // namespace webrtc
