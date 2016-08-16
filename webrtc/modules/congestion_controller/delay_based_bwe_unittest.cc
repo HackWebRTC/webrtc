@@ -65,50 +65,6 @@ TEST_F(DelayBasedBweTest, ProbeDetectionNonPacedPackets) {
   EXPECT_GT(bitrate_observer_->latest_bitrate(), 800000u);
 }
 
-// Packets will require 5 ms to be transmitted to the receiver, causing packets
-// of the second probe to be dispersed.
-TEST_F(DelayBasedBweTest, ProbeDetectionTooHighBitrate) {
-  int64_t now_ms = clock_.TimeInMilliseconds();
-  int64_t send_time_ms = 0;
-  uint16_t seq_num = 0;
-  // First burst sent at 8 * 1000 / 10 = 800 kbps.
-  for (int i = 0; i < kNumProbes; ++i) {
-    clock_.AdvanceTimeMilliseconds(10);
-    now_ms = clock_.TimeInMilliseconds();
-    send_time_ms += 10;
-    IncomingFeedback(now_ms, send_time_ms, seq_num++, 1000, 0);
-  }
-
-  // Second burst sent at 8 * 1000 / 5 = 1600 kbps, arriving at 8 * 1000 / 8 =
-  // 1000 kbps.
-  for (int i = 0; i < kNumProbes; ++i) {
-    clock_.AdvanceTimeMilliseconds(8);
-    now_ms = clock_.TimeInMilliseconds();
-    send_time_ms += 5;
-    IncomingFeedback(now_ms, send_time_ms, seq_num++, 1000, 1);
-  }
-
-  EXPECT_TRUE(bitrate_observer_->updated());
-  EXPECT_NEAR(bitrate_observer_->latest_bitrate(), 800000u, 10000u);
-}
-
-TEST_F(DelayBasedBweTest, ProbeDetectionSlightlyFasterArrival) {
-  int64_t now_ms = clock_.TimeInMilliseconds();
-  uint16_t seq_num = 0;
-  // First burst sent at 8 * 1000 / 10 = 800 kbps.
-  // Arriving at 8 * 1000 / 5 = 1600 kbps.
-  int64_t send_time_ms = 0;
-  for (int i = 0; i < kNumProbes; ++i) {
-    clock_.AdvanceTimeMilliseconds(5);
-    send_time_ms += 10;
-    now_ms = clock_.TimeInMilliseconds();
-    IncomingFeedback(now_ms, send_time_ms, seq_num++, 1000, 23);
-  }
-
-  EXPECT_TRUE(bitrate_observer_->updated());
-  EXPECT_GT(bitrate_observer_->latest_bitrate(), 800000u);
-}
-
 TEST_F(DelayBasedBweTest, ProbeDetectionFasterArrival) {
   int64_t now_ms = clock_.TimeInMilliseconds();
   uint16_t seq_num = 0;
@@ -157,35 +113,6 @@ TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrivalHighBitrate) {
 
   EXPECT_TRUE(bitrate_observer_->updated());
   EXPECT_NEAR(bitrate_observer_->latest_bitrate(), 4000000u, 10000u);
-}
-
-TEST_F(DelayBasedBweTest, ProbingIgnoresSmallPackets) {
-  int64_t now_ms = clock_.TimeInMilliseconds();
-  uint16_t seq_num = 0;
-  // Probing with 200 bytes every 10 ms, should be ignored by the probe
-  // detection.
-  for (int i = 0; i < kNumProbes; ++i) {
-    clock_.AdvanceTimeMilliseconds(10);
-    now_ms = clock_.TimeInMilliseconds();
-    IncomingFeedback(now_ms, now_ms, seq_num++,
-                     PacedSender::kMinProbePacketSize, 1);
-  }
-
-  EXPECT_FALSE(bitrate_observer_->updated());
-
-  // Followed by a probe with 1000 bytes packets, should be detected as a
-  // probe.
-  for (int i = 0; i < kNumProbes; ++i) {
-    clock_.AdvanceTimeMilliseconds(10);
-    now_ms = clock_.TimeInMilliseconds();
-    IncomingFeedback(now_ms, now_ms, seq_num++, 1000, 1);
-  }
-
-  // Wait long enough so that we can call Process again.
-  clock_.AdvanceTimeMilliseconds(1000);
-
-  EXPECT_TRUE(bitrate_observer_->updated());
-  EXPECT_NEAR(bitrate_observer_->latest_bitrate(), 800000u, 10000u);
 }
 
 TEST_F(DelayBasedBweTest, InitialBehavior) {

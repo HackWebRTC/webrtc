@@ -18,11 +18,13 @@
 
 namespace webrtc {
 
-const size_t kMtu = 1200;
-const uint32_t kAcceptedBitrateErrorBps = 50000;
+constexpr size_t kMtu = 1200;
+constexpr uint32_t kAcceptedBitrateErrorBps = 50000;
 
 // Number of packets needed before we have a valid estimate.
-const int kNumInitialPackets = 2;
+constexpr int kNumInitialPackets = 2;
+
+constexpr int kInitialProbingPackets = 5;
 
 namespace test {
 
@@ -168,7 +170,7 @@ void DelayBasedBweTest::IncomingFeedback(int64_t arrival_time_ms,
                                          uint16_t sequence_number,
                                          size_t payload_size) {
   IncomingFeedback(arrival_time_ms, send_time_ms, sequence_number, payload_size,
-                   0);
+                   PacketInfo::kNotAProbe);
 }
 
 void DelayBasedBweTest::IncomingFeedback(int64_t arrival_time_ms,
@@ -268,6 +270,10 @@ void DelayBasedBweTest::InitialBehaviorTestHelper(
   clock_.AdvanceTimeMilliseconds(1000);
   // Inserting packets for 5 seconds to get a valid estimate.
   for (int i = 0; i < 5 * kFramerate + 1 + kNumInitialPackets; ++i) {
+    // NOTE!!! If the following line is moved under the if case then this test
+    //         wont work on windows realease bots.
+    int cluster_id = i < kInitialProbingPackets ? 0 : PacketInfo::kNotAProbe;
+
     if (i == kNumInitialPackets) {
       bitrate_estimator_->Process();
       EXPECT_FALSE(bitrate_estimator_->LatestEstimate(&ssrcs, &bitrate_bps));
@@ -275,9 +281,8 @@ void DelayBasedBweTest::InitialBehaviorTestHelper(
       EXPECT_FALSE(bitrate_observer_->updated());
       bitrate_observer_->Reset();
     }
-
     IncomingFeedback(clock_.TimeInMilliseconds(), send_time_ms,
-                     sequence_number++, kMtu);
+                     sequence_number++, kMtu, cluster_id);
     clock_.AdvanceTimeMilliseconds(1000 / kFramerate);
     send_time_ms += kFrameIntervalMs;
   }
@@ -289,10 +294,6 @@ void DelayBasedBweTest::InitialBehaviorTestHelper(
   EXPECT_TRUE(bitrate_observer_->updated());
   bitrate_observer_->Reset();
   EXPECT_EQ(bitrate_observer_->latest_bitrate(), bitrate_bps);
-  bitrate_estimator_->RemoveStream(kDefaultSsrc);
-  EXPECT_TRUE(bitrate_estimator_->LatestEstimate(&ssrcs, &bitrate_bps));
-  ASSERT_EQ(0u, ssrcs.size());
-  EXPECT_EQ(0u, bitrate_bps);
 }
 
 void DelayBasedBweTest::RateIncreaseReorderingTestHelper(
@@ -303,6 +304,10 @@ void DelayBasedBweTest::RateIncreaseReorderingTestHelper(
   uint16_t sequence_number = 0;
   // Inserting packets for five seconds to get a valid estimate.
   for (int i = 0; i < 5 * kFramerate + 1 + kNumInitialPackets; ++i) {
+    // NOTE!!! If the following line is moved under the if case then this test
+    //         wont work on windows realease bots.
+    int cluster_id = i < kInitialProbingPackets ? 0 : PacketInfo::kNotAProbe;
+
     // TODO(sprang): Remove this hack once the single stream estimator is gone,
     // as it doesn't do anything in Process().
     if (i == kNumInitialPackets) {
@@ -310,9 +315,8 @@ void DelayBasedBweTest::RateIncreaseReorderingTestHelper(
       bitrate_estimator_->Process();
       EXPECT_FALSE(bitrate_observer_->updated());  // No valid estimate.
     }
-
     IncomingFeedback(clock_.TimeInMilliseconds(), send_time_ms,
-                     sequence_number++, kMtu);
+                     sequence_number++, kMtu, cluster_id);
     clock_.AdvanceTimeMilliseconds(kFrameIntervalMs);
     send_time_ms += kFrameIntervalMs;
   }
