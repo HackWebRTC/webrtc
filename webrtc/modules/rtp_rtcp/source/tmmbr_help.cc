@@ -12,10 +12,8 @@
 
 #include <algorithm>
 #include <limits>
-#include <utility>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
 
 namespace webrtc {
 void TMMBRSet::VerifyAndAllocateSet(uint32_t minimumSize) {
@@ -52,56 +50,20 @@ void TMMBRSet::RemoveEntry(uint32_t sourceIdx) {
   erase(begin() + sourceIdx);
 }
 
-TMMBRSet* TMMBRHelp::VerifyAndAllocateCandidateSet(uint32_t minimumSize) {
-  _candidateSet.VerifyAndAllocateSet(minimumSize);
-  return &_candidateSet;
-}
-
-TMMBRSet* TMMBRHelp::CandidateSet() {
-  return &_candidateSet;
-}
-
-std::vector<rtcp::TmmbItem> TMMBRHelp::FindTMMBRBoundingSet() {
-  // Work on local variable, will be modified
-  TMMBRSet candidateSet;
-  candidateSet.VerifyAndAllocateSet(_candidateSet.capacity());
-
-  for (size_t i = 0; i < _candidateSet.size(); i++) {
-    if (_candidateSet.Tmmbr(i)) {
-      candidateSet.AddEntry(_candidateSet.Tmmbr(i), _candidateSet.PacketOH(i),
-                            _candidateSet.Ssrc(i));
-    } else {
-      // make sure this is zero if tmmbr = 0
-      RTC_DCHECK_EQ(_candidateSet.PacketOH(i), 0u);
-      // Old code:
-      // _candidateSet.ptrPacketOHSet[i] = 0;
-    }
+std::vector<rtcp::TmmbItem> TMMBRHelp::FindBoundingSet(
+    std::vector<rtcp::TmmbItem> candidates) {
+  // Filter out candidates with 0 bitrate.
+  for (auto it = candidates.begin(); it != candidates.end();) {
+    if (!it->bitrate_bps())
+      it = candidates.erase(it);
+    else
+      ++it;
   }
 
-  // Number of set candidates
-  int32_t numSetCandidates = candidateSet.lengthOfSet();
-  // Find bounding set
-  std::vector<rtcp::TmmbItem> bounding;
-  if (numSetCandidates > 0) {
-    FindBoundingSet(std::move(candidateSet), &bounding);
-    size_t numBoundingSet = bounding.size();
-    RTC_DCHECK_GE(numBoundingSet, 1u);
-    RTC_DCHECK_LE(numBoundingSet, _candidateSet.size());
-  }
-  return bounding;
-}
+  if (candidates.size() <= 1)
+    return candidates;
 
-void TMMBRHelp::FindBoundingSet(std::vector<rtcp::TmmbItem> candidates,
-                                std::vector<rtcp::TmmbItem>* bounding_set) {
-  RTC_DCHECK(bounding_set);
-  RTC_DCHECK(!candidates.empty());
   size_t num_candidates = candidates.size();
-
-  if (num_candidates == 1) {
-    RTC_DCHECK(candidates[0].bitrate_bps());
-    *bounding_set = std::move(candidates);
-    return;
-  }
 
   // 1. Sort by increasing packet overhead.
   std::sort(candidates.begin(), candidates.end(),
@@ -130,7 +92,7 @@ void TMMBRHelp::FindBoundingSet(std::vector<rtcp::TmmbItem> candidates,
     it = next_it;
   }
 
-  // 3. Select and remove tuple with lowest tmmbr.
+  // 3. Select and remove tuple with lowest bitrate.
   // (If more than 1, choose the one with highest overhead).
   auto min_bitrate_it = candidates.end();
   for (auto it = candidates.begin(); it != candidates.end(); ++it) {
@@ -148,22 +110,22 @@ void TMMBRHelp::FindBoundingSet(std::vector<rtcp::TmmbItem> candidates,
     }
   }
 
-  bounding_set->clear();
-  bounding_set->reserve(num_candidates);
+  std::vector<rtcp::TmmbItem> bounding_set;
+  bounding_set.reserve(num_candidates);
   std::vector<float> intersection(num_candidates);
   std::vector<float> max_packet_rate(num_candidates);
 
   // First member of selected list.
-  bounding_set->push_back(*min_bitrate_it);
+  bounding_set.push_back(*min_bitrate_it);
   intersection[0] = 0;
   // Calculate its maximum packet rate (where its line crosses x-axis).
-  uint16_t packet_overhead = bounding_set->back().packet_overhead();
+  uint16_t packet_overhead = bounding_set.back().packet_overhead();
   if (packet_overhead == 0) {
     // Avoid division by zero.
     max_packet_rate[0] = std::numeric_limits<float>::max();
   } else {
-    max_packet_rate[0] = bounding_set->back().bitrate_bps() /
-                         static_cast<float>(packet_overhead);
+    max_packet_rate[0] =
+        bounding_set.back().bitrate_bps() / static_cast<float>(packet_overhead);
   }
   // Remove from candidate list.
   min_bitrate_it->set_bitrate_bps(0);
@@ -173,7 +135,7 @@ void TMMBRHelp::FindBoundingSet(std::vector<rtcp::TmmbItem> candidates,
   // (next tuple must be steeper).
   for (auto it = candidates.begin(); it != candidates.end(); ++it) {
     if (it->bitrate_bps() &&
-        it->packet_overhead() < bounding_set->front().packet_overhead()) {
+        it->packet_overhead() < bounding_set.front().packet_overhead()) {
       it->set_bitrate_bps(0);
       --num_candidates;
     }
@@ -196,30 +158,30 @@ void TMMBRHelp::FindBoundingSet(std::vector<rtcp::TmmbItem> candidates,
     // 6. Calculate packet rate and intersection of the current
     // line with line of last tuple in selected list.
     RTC_DCHECK_NE(cur_candidate.packet_overhead(),
-                  bounding_set->back().packet_overhead());
+                  bounding_set.back().packet_overhead());
     float packet_rate = static_cast<float>(cur_candidate.bitrate_bps() -
-                                           bounding_set->back().bitrate_bps()) /
+                                           bounding_set.back().bitrate_bps()) /
                         (cur_candidate.packet_overhead() -
-                         bounding_set->back().packet_overhead());
+                         bounding_set.back().packet_overhead());
 
     // 7. If the packet rate is equal or lower than intersection of
     //    last tuple in selected list,
     //    remove last tuple in selected list & go back to step 6.
-    if (packet_rate <= intersection[bounding_set->size() - 1]) {
+    if (packet_rate <= intersection[bounding_set.size() - 1]) {
       // Remove last tuple and goto step 6.
-      bounding_set->pop_back();
+      bounding_set.pop_back();
       get_new_candidate = false;
     } else {
       // 8. If packet rate is lower than maximum packet rate of
       // last tuple in selected list, add current tuple to selected
       // list.
-      if (packet_rate < max_packet_rate[bounding_set->size() - 1]) {
-        bounding_set->push_back(cur_candidate);
-        intersection[bounding_set->size() - 1] = packet_rate;
-        uint16_t packet_overhead = bounding_set->back().packet_overhead();
+      if (packet_rate < max_packet_rate[bounding_set.size() - 1]) {
+        bounding_set.push_back(cur_candidate);
+        intersection[bounding_set.size() - 1] = packet_rate;
+        uint16_t packet_overhead = bounding_set.back().packet_overhead();
         RTC_DCHECK_NE(packet_overhead, 0);
-        max_packet_rate[bounding_set->size() - 1] =
-            bounding_set->back().bitrate_bps() /
+        max_packet_rate[bounding_set.size() - 1] =
+            bounding_set.back().bitrate_bps() /
             static_cast<float>(packet_overhead);
       }
       --num_candidates;
@@ -228,6 +190,8 @@ void TMMBRHelp::FindBoundingSet(std::vector<rtcp::TmmbItem> candidates,
 
     // 9. Go back to step 5 if any tuple remains in candidate list.
   }
+  RTC_DCHECK(!bounding_set.empty());
+  return bounding_set;
 }
 
 bool TMMBRHelp::IsOwner(const std::vector<rtcp::TmmbItem>& bounding,
@@ -240,21 +204,13 @@ bool TMMBRHelp::IsOwner(const std::vector<rtcp::TmmbItem>& bounding,
   return false;
 }
 
-bool TMMBRHelp::CalcMinBitRate(uint32_t* minBitrateKbit) const {
-  if (_candidateSet.size() == 0) {
-    // Empty bounding set.
-    return false;
-  }
-  *minBitrateKbit = std::numeric_limits<uint32_t>::max();
-
-  for (size_t i = 0; i < _candidateSet.lengthOfSet(); ++i) {
-    uint32_t curNetBitRateKbit = _candidateSet.Tmmbr(i);
-    if (curNetBitRateKbit < MIN_VIDEO_BW_MANAGEMENT_BITRATE) {
-      curNetBitRateKbit = MIN_VIDEO_BW_MANAGEMENT_BITRATE;
-    }
-    *minBitrateKbit = curNetBitRateKbit < *minBitrateKbit ? curNetBitRateKbit
-                                                          : *minBitrateKbit;
-  }
-  return true;
+uint64_t TMMBRHelp::CalcMinBitrateBps(
+    const std::vector<rtcp::TmmbItem>& candidates) {
+  RTC_DCHECK(!candidates.empty());
+  uint64_t min_bitrate_bps = std::numeric_limits<uint64_t>::max();
+  for (const rtcp::TmmbItem& item : candidates)
+    if (item.bitrate_bps() < min_bitrate_bps)
+      min_bitrate_bps = item.bitrate_bps();
+  return min_bitrate_bps;
 }
 }  // namespace webrtc

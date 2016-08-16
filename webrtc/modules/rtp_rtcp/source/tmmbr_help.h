@@ -41,21 +41,14 @@ class TMMBRSet : public std::vector<rtcp::TmmbItem> {
 
 class TMMBRHelp {
  public:
-  TMMBRSet* CandidateSet();
-
-  TMMBRSet* VerifyAndAllocateCandidateSet(const uint32_t minimumSize);
-  std::vector<rtcp::TmmbItem> FindTMMBRBoundingSet();
+  static std::vector<rtcp::TmmbItem> FindBoundingSet(
+      std::vector<rtcp::TmmbItem> candidates);
 
   static bool IsOwner(const std::vector<rtcp::TmmbItem>& bounding,
                       uint32_t ssrc);
 
-  bool CalcMinBitRate(uint32_t* minBitrateKbit) const;
-
-  static void FindBoundingSet(std::vector<rtcp::TmmbItem> candidates,
-                              std::vector<rtcp::TmmbItem>* bounding_set);
-
- private:
-  TMMBRSet _candidateSet;
+  static uint64_t CalcMinBitrateBps(
+      const std::vector<rtcp::TmmbItem>& candidates);
 };
 }  // namespace webrtc
 

@@ -13,6 +13,8 @@
 #include <assert.h>
 #include <string.h>
 
+#include <limits>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
@@ -1233,18 +1235,16 @@ void RTCPReceiver::HandleTransportFeedback(
   rtcp_parser->Iterate();
 }
 int32_t RTCPReceiver::UpdateTMMBR() {
-  TMMBRHelp tmmbr_help;
-  uint32_t bitrate = 0;
-  uint32_t accNumCandidates = 0;
-
   int32_t size = TMMBRReceived(0, 0, NULL);
+  TMMBRSet candidates;
   if (size > 0) {
-    TMMBRSet* candidateSet = tmmbr_help.VerifyAndAllocateCandidateSet(size);
+    candidates.reserve(size);
     // Get candidate set from receiver.
-    accNumCandidates = TMMBRReceived(size, accNumCandidates, candidateSet);
+    TMMBRReceived(size, 0, &candidates);
   }
   // Find bounding set
-  std::vector<rtcp::TmmbItem> bounding = tmmbr_help.FindTMMBRBoundingSet();
+  std::vector<rtcp::TmmbItem> bounding =
+      TMMBRHelp::FindBoundingSet(std::move(candidates));
   // Set bounding set
   // Inform remote clients about the new bandwidth
   // inform the remote client
@@ -1256,12 +1256,11 @@ int32_t RTCPReceiver::UpdateTMMBR() {
     // empty bounding set has been sent
     return 0;
   }
-  // Get net bitrate from bounding set depending on sent packet rate
-  if (tmmbr_help.CalcMinBitRate(&bitrate)) {
-    // we have a new bandwidth estimate on this channel
-    if (_cbRtcpBandwidthObserver) {
-        _cbRtcpBandwidthObserver->OnReceivedEstimatedBitrate(bitrate * 1000);
-    }
+  // We have a new bandwidth estimate on this channel.
+  if (_cbRtcpBandwidthObserver) {
+    uint64_t bitrate_bps = TMMBRHelp::CalcMinBitrateBps(bounding);
+    if (bitrate_bps <= std::numeric_limits<uint32_t>::max())
+      _cbRtcpBandwidthObserver->OnReceivedEstimatedBitrate(bitrate_bps);
   }
   return 0;
 }

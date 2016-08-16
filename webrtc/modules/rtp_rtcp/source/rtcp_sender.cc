@@ -589,22 +589,20 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildTMMBR(
   // * If the sender is an owner of the TMMBN -> send TMMBR
   // * If not an owner but the TMMBR would enter the TMMBN -> send TMMBR
 
-  TMMBRHelp tmmbr_help;
   // get current bounding set from RTCP receiver
   bool tmmbrOwner = false;
-  // store in candidateSet, allocates one extra slot
-  TMMBRSet* candidateSet = tmmbr_help.CandidateSet();
+  TMMBRSet candidates;
 
   // holding critical_section_rtcp_sender_ while calling RTCPreceiver which
   // will accuire criticalSectionRTCPReceiver_ is a potental deadlock but
   // since RTCPreceiver is not doing the reverse we should be fine
   int32_t lengthOfBoundingSet =
-      ctx.feedback_state_.module->BoundingSet(&tmmbrOwner, candidateSet);
+      ctx.feedback_state_.module->BoundingSet(&tmmbrOwner, &candidates);
 
   if (lengthOfBoundingSet > 0) {
     for (int32_t i = 0; i < lengthOfBoundingSet; i++) {
-      if (candidateSet->Tmmbr(i) == tmmbr_send_ &&
-          candidateSet->PacketOH(i) == packet_oh_send_) {
+      if (candidates.Tmmbr(i) == tmmbr_send_ &&
+          candidates.PacketOH(i) == packet_oh_send_) {
         // Do not send the same tuple.
         return nullptr;
       }
@@ -612,11 +610,12 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildTMMBR(
     if (!tmmbrOwner) {
       // use received bounding set as candidate set
       // add current tuple
-      candidateSet->SetEntry(lengthOfBoundingSet, tmmbr_send_, packet_oh_send_,
-                             ssrc_);
+      candidates.SetEntry(lengthOfBoundingSet, tmmbr_send_, packet_oh_send_,
+                          ssrc_);
 
       // find bounding set
-      std::vector<rtcp::TmmbItem> bounding = tmmbr_help.FindTMMBRBoundingSet();
+      std::vector<rtcp::TmmbItem> bounding =
+          TMMBRHelp::FindBoundingSet(std::move(candidates));
       tmmbrOwner = TMMBRHelp::IsOwner(bounding, ssrc_);
       if (!tmmbrOwner) {
         // Did not enter bounding set, no meaning to send this request.
