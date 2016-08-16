@@ -24,8 +24,8 @@
       'iOS32 Release': 'ios_gyp_release_bot_arm_device',
       'iOS64 Debug': 'ios_gyp_debug_static_bot_arm64_device',
       'iOS64 Release': 'ios_gyp_release_bot_arm64_device',
-      'iOS32 Debug Simulator': 'ios_gyp_debug_static_bot_x86',
-      'iOS64 Debug Simulator': 'ios_gyp_debug_static_bot_x64',
+      'iOS32 Simulator Debug': 'ios_gyp_debug_static_bot_x86',
+      'iOS64 Simulator Debug': 'ios_gyp_debug_static_bot_x64',
       'iOS64 Debug (GN)': 'ios_gn_debug_static_bot_arm64_device',
       'iOS64 Release (GN)': 'ios_gn_release_bot_arm64_device',
 
