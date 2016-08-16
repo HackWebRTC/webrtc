@@ -179,6 +179,16 @@ class FakeAudioCaptureModule
   int32_t EnableBuiltInAGC(bool enable) override { return -1; }
   bool BuiltInNSIsAvailable() const override { return false; }
   int32_t EnableBuiltInNS(bool enable) override { return -1; }
+#if defined(WEBRTC_IOS)
+  int GetPlayoutAudioParameters(
+      webrtc::AudioParameters* params) const override {
+    return -1;
+  }
+  int GetRecordAudioParameters(webrtc::AudioParameters* params) const override {
+    return -1;
+  }
+#endif  // WEBRTC_IOS
+
   // End of functions inherited from webrtc::AudioDeviceModule.
 
   // The following function is inherited from rtc::MessageHandler.

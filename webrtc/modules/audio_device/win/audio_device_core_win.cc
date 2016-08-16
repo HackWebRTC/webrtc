@@ -4194,11 +4194,6 @@ int32_t AudioDeviceWindowsCore::EnableBuiltInAEC(bool enable)
     return 0;
 }
 
-bool AudioDeviceWindowsCore::BuiltInAECIsEnabled() const
-{
-    return _builtInAecEnabled;
-}
-
 int AudioDeviceWindowsCore::SetDMOProperties()
 {
     HRESULT hr = S_OK;

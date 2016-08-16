@@ -1776,14 +1776,6 @@ int32_t AudioDeviceModuleImpl::GetLoudspeakerStatus(bool* enabled) const {
   return ok;
 }
 
-bool AudioDeviceModuleImpl::BuiltInAECIsEnabled() const {
-  LOG(INFO) << __FUNCTION__;
-  CHECK_INITIALIZED_BOOL();
-  bool isEnabled = _ptrAudioDevice->BuiltInAECIsEnabled();
-  LOG(INFO) << "output: " << isEnabled;
-  return isEnabled;
-}
-
 bool AudioDeviceModuleImpl::BuiltInAECIsAvailable() const {
   LOG(INFO) << __FUNCTION__;
   CHECK_INITIALIZED_BOOL();
@@ -1832,6 +1824,7 @@ int32_t AudioDeviceModuleImpl::EnableBuiltInNS(bool enable) {
   return ok;
 }
 
+#if defined(WEBRTC_IOS)
 int AudioDeviceModuleImpl::GetPlayoutAudioParameters(
     AudioParameters* params) const {
   LOG(INFO) << __FUNCTION__;
@@ -1847,6 +1840,7 @@ int AudioDeviceModuleImpl::GetRecordAudioParameters(
   LOG(INFO) << "output: " << r;
   return r;
 }
+#endif  // WEBRTC_IOS
 
 // ============================================================================
 //                                 Private Methods

@@ -192,30 +192,23 @@ class AudioDeviceModule : public RefCountedModule {
   virtual int32_t GetLoudspeakerStatus(bool* enabled) const = 0;
 
   // Only supported on Android.
-  // TODO(henrika): Make pure virtual after updating Chromium.
-  virtual bool BuiltInAECIsAvailable() const { return false; }
-  virtual bool BuiltInAGCIsAvailable() const { return false; }
-  virtual bool BuiltInNSIsAvailable() const { return false; }
+  virtual bool BuiltInAECIsAvailable() const = 0;
+  virtual bool BuiltInAGCIsAvailable() const = 0;
+  virtual bool BuiltInNSIsAvailable() const = 0;
 
   // Enables the built-in audio effects. Only supported on Android.
-  // TODO(henrika): Make pure virtual after updating Chromium.
-  virtual int32_t EnableBuiltInAEC(bool enable) { return -1; }
-  virtual int32_t EnableBuiltInAGC(bool enable) { return -1; }
-  virtual int32_t EnableBuiltInNS(bool enable) { return -1; }
-  // Don't use.
-  virtual bool BuiltInAECIsEnabled() const { return false; }
+  virtual int32_t EnableBuiltInAEC(bool enable) = 0;
+  virtual int32_t EnableBuiltInAGC(bool enable) = 0;
+  virtual int32_t EnableBuiltInNS(bool enable) = 0;
 
-  // Only supported on iOS.
-  // TODO(henrika): Make pure virtual after updating Chromium.
-  virtual int GetPlayoutAudioParameters(AudioParameters* params) const {
-    return -1;
-  }
-  virtual int GetRecordAudioParameters(AudioParameters* params) const {
-    return -1;
-  }
+// Only supported on iOS.
+#if defined(WEBRTC_IOS)
+  virtual int GetPlayoutAudioParameters(AudioParameters* params) const = 0;
+  virtual int GetRecordAudioParameters(AudioParameters* params) const = 0;
+#endif  // WEBRTC_IOS
 
  protected:
-  virtual ~AudioDeviceModule() {}
+  ~AudioDeviceModule() override {}
 };
 
 }  // namespace webrtc

@@ -192,7 +192,6 @@ public:
     virtual int32_t CPULoad(uint16_t& load) const;
 
     virtual int32_t EnableBuiltInAEC(bool enable);
-    virtual bool BuiltInAECIsEnabled() const;
 
 public:
     virtual bool PlayoutWarning() const;
