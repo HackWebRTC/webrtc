@@ -177,7 +177,7 @@ if (use_desktop_capture_differ_sse2) {
     configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
-    if (is_posix && !is_mac) {
+    if (is_posix) {
       cflags = [ "-msse2" ]
     }
   }
