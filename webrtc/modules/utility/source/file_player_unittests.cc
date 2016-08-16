@@ -55,9 +55,8 @@ class FilePlayerTest : public ::testing::Test {
                         const std::string& ref_checksum,
                         int output_length_ms) {
     const float kScaling = 1;
-    ASSERT_EQ(0,
-              player_->StartPlayingFile(
-                  input_file.c_str(), false, 0, kScaling, 0, 0, NULL));
+    ASSERT_EQ(0, player_->StartPlayingFile(input_file.c_str(), false, 0,
+                                           kScaling, 0, 0, NULL));
     rtc::Md5Digest checksum;
     for (int i = 0; i < output_length_ms / 10; ++i) {
       int16_t out[10 * kSampleRateHz / 1000] = {0};

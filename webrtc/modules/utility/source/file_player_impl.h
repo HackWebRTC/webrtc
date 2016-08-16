@@ -22,57 +22,53 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-class FilePlayerImpl : public FilePlayer
-{
-public:
-    FilePlayerImpl(uint32_t instanceID, FileFormats fileFormat);
-    ~FilePlayerImpl();
+class FilePlayerImpl : public FilePlayer {
+ public:
+  FilePlayerImpl(uint32_t instanceID, FileFormats fileFormat);
+  ~FilePlayerImpl();
 
-    virtual int Get10msAudioFromFile(
-        int16_t* outBuffer,
-        size_t& lengthInSamples,
-        int frequencyInHz);
-    virtual int32_t RegisterModuleFileCallback(FileCallback* callback);
-    virtual int32_t StartPlayingFile(
-        const char* fileName,
-        bool loop,
-        uint32_t startPosition,
-        float volumeScaling,
-        uint32_t notification,
-        uint32_t stopPosition = 0,
-        const CodecInst* codecInst = NULL);
-    virtual int32_t StartPlayingFile(
-        InStream& sourceStream,
-        uint32_t startPosition,
-        float volumeScaling,
-        uint32_t notification,
-        uint32_t stopPosition = 0,
-        const CodecInst* codecInst = NULL);
-    virtual int32_t StopPlayingFile();
-    virtual bool IsPlayingFile() const;
-    virtual int32_t GetPlayoutPosition(uint32_t& durationMs);
-    virtual int32_t AudioCodec(CodecInst& audioCodec) const;
-    virtual int32_t Frequency() const;
-    virtual int32_t SetAudioScaling(float scaleFactor);
+  virtual int Get10msAudioFromFile(int16_t* outBuffer,
+                                   size_t& lengthInSamples,
+                                   int frequencyInHz);
+  virtual int32_t RegisterModuleFileCallback(FileCallback* callback);
+  virtual int32_t StartPlayingFile(const char* fileName,
+                                   bool loop,
+                                   uint32_t startPosition,
+                                   float volumeScaling,
+                                   uint32_t notification,
+                                   uint32_t stopPosition = 0,
+                                   const CodecInst* codecInst = NULL);
+  virtual int32_t StartPlayingFile(InStream& sourceStream,
+                                   uint32_t startPosition,
+                                   float volumeScaling,
+                                   uint32_t notification,
+                                   uint32_t stopPosition = 0,
+                                   const CodecInst* codecInst = NULL);
+  virtual int32_t StopPlayingFile();
+  virtual bool IsPlayingFile() const;
+  virtual int32_t GetPlayoutPosition(uint32_t& durationMs);
+  virtual int32_t AudioCodec(CodecInst& audioCodec) const;
+  virtual int32_t Frequency() const;
+  virtual int32_t SetAudioScaling(float scaleFactor);
 
-protected:
-    int32_t SetUpAudioDecoder();
+ protected:
+  int32_t SetUpAudioDecoder();
 
-    uint32_t _instanceID;
-    const FileFormats _fileFormat;
-    MediaFile& _fileModule;
+  uint32_t _instanceID;
+  const FileFormats _fileFormat;
+  MediaFile& _fileModule;
 
-    uint32_t _decodedLengthInMS;
+  uint32_t _decodedLengthInMS;
 
-private:
-    AudioCoder _audioDecoder;
+ private:
+  AudioCoder _audioDecoder;
 
-    CodecInst _codec;
-    int32_t _numberOf10MsPerFrame;
-    int32_t _numberOf10MsInDecoder;
+  CodecInst _codec;
+  int32_t _numberOf10MsPerFrame;
+  int32_t _numberOf10MsInDecoder;
 
-    Resampler _resampler;
-    float _scaling;
+  Resampler _resampler;
+  float _scaling;
 };
 }  // namespace webrtc
-#endif // WEBRTC_MODULES_UTILITY_SOURCE_FILE_PLAYER_IMPL_H_
+#endif  // WEBRTC_MODULES_UTILITY_SOURCE_FILE_PLAYER_IMPL_H_

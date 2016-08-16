@@ -19,46 +19,39 @@
 
 namespace webrtc {
 
-class FileRecorder
-{
-public:
+class FileRecorder {
+ public:
+  // Note: will return NULL for unsupported formats.
+  static FileRecorder* CreateFileRecorder(const uint32_t instanceID,
+                                          const FileFormats fileFormat);
 
-    // Note: will return NULL for unsupported formats.
-    static FileRecorder* CreateFileRecorder(const uint32_t instanceID,
-                                            const FileFormats fileFormat);
+  static void DestroyFileRecorder(FileRecorder* recorder);
 
-    static void DestroyFileRecorder(FileRecorder* recorder);
+  virtual int32_t RegisterModuleFileCallback(FileCallback* callback) = 0;
 
-    virtual int32_t RegisterModuleFileCallback(
-        FileCallback* callback) = 0;
+  virtual FileFormats RecordingFileFormat() const = 0;
 
-    virtual FileFormats RecordingFileFormat() const = 0;
+  virtual int32_t StartRecordingAudioFile(const char* fileName,
+                                          const CodecInst& codecInst,
+                                          uint32_t notification) = 0;
 
-    virtual int32_t StartRecordingAudioFile(
-        const char* fileName,
-        const CodecInst& codecInst,
-        uint32_t notification) = 0;
+  virtual int32_t StartRecordingAudioFile(OutStream& destStream,
+                                          const CodecInst& codecInst,
+                                          uint32_t notification) = 0;
 
-    virtual int32_t StartRecordingAudioFile(
-        OutStream& destStream,
-        const CodecInst& codecInst,
-        uint32_t notification) = 0;
+  // Stop recording.
+  virtual int32_t StopRecording() = 0;
 
-    // Stop recording.
-    virtual int32_t StopRecording() = 0;
+  // Return true if recording.
+  virtual bool IsRecording() const = 0;
 
-    // Return true if recording.
-    virtual bool IsRecording() const = 0;
+  virtual int32_t codec_info(CodecInst& codecInst) const = 0;
 
-    virtual int32_t codec_info(CodecInst& codecInst) const = 0;
+  // Write frame to file. Frame should contain 10ms of un-ecoded audio data.
+  virtual int32_t RecordAudioToFile(const AudioFrame& frame) = 0;
 
-    // Write frame to file. Frame should contain 10ms of un-ecoded audio data.
-    virtual int32_t RecordAudioToFile(
-        const AudioFrame& frame) = 0;
-
-protected:
-    virtual ~FileRecorder() {}
-
+ protected:
+  virtual ~FileRecorder() {}
 };
 }  // namespace webrtc
-#endif // WEBRTC_MODULES_UTILITY_INCLUDE_FILE_RECORDER_H_
+#endif  // WEBRTC_MODULES_UTILITY_INCLUDE_FILE_RECORDER_H_
