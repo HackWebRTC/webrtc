@@ -234,6 +234,7 @@
             'base/fakertp.h',
             'base/fakevideocapturer.h',
             'base/fakevideorenderer.h',
+            'base/test/mock_mediachannel.h',
             'base/testutils.cc',
             'base/testutils.h',
             'engine/fakewebrtccall.cc',

@@ -24,12 +24,15 @@
 #include "webrtc/api/peerconnectionfactory.h"
 #include "webrtc/api/test/fakedatachannelprovider.h"
 #include "webrtc/api/test/fakevideotracksource.h"
+#include "webrtc/api/test/mock_peerconnection.h"
+#include "webrtc/api/test/mock_webrtcsession.h"
 #include "webrtc/api/videotrack.h"
 #include "webrtc/base/base64.h"
 #include "webrtc/base/fakesslidentity.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/network.h"
 #include "webrtc/media/base/fakemediaengine.h"
+#include "webrtc/media/base/test/mock_mediachannel.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
 #include "webrtc/pc/channelmanager.h"
 
@@ -64,73 +67,6 @@ const char kNotFound[] = "NOT FOUND";
 const char kLocalTrackId[] = "local_track_id";
 const char kRemoteTrackId[] = "remote_track_id";
 const uint32_t kSsrcOfTrack = 1234;
-
-class MockWebRtcSession : public webrtc::WebRtcSession {
- public:
-  // TODO(nisse): Valid overrides commented out, because the gmock
-  // methods don't use any override declarations, and we want to avoid
-  // warnings from -Winconsistent-missing-override. See
-  // http://crbug.com/428099.
-  explicit MockWebRtcSession(webrtc::MediaControllerInterface* media_controller)
-      : WebRtcSession(
-            media_controller,
-            rtc::Thread::Current(),
-            rtc::Thread::Current(),
-            rtc::Thread::Current(),
-            nullptr,
-            std::unique_ptr<cricket::TransportController>(
-                new cricket::TransportController(rtc::Thread::Current(),
-                                                 rtc::Thread::Current(),
-                                                 nullptr))) {}
-  MOCK_METHOD0(voice_channel, cricket::VoiceChannel*());
-  MOCK_METHOD0(video_channel, cricket::VideoChannel*());
-  // Libjingle uses "local" for a outgoing track, and "remote" for a incoming
-  // track.
-  MOCK_METHOD2(GetLocalTrackIdBySsrc, bool(uint32_t, std::string*));
-  MOCK_METHOD2(GetRemoteTrackIdBySsrc, bool(uint32_t, std::string*));
-  MOCK_METHOD1(GetTransportStats, bool(SessionStats*));
-  MOCK_METHOD2(GetLocalCertificate,
-               bool(const std::string& transport_name,
-                    rtc::scoped_refptr<rtc::RTCCertificate>* certificate));
-
-  // Workaround for gmock's inability to cope with move-only return values.
-  std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate(
-      const std::string& transport_name) /* override */ {
-    return std::unique_ptr<rtc::SSLCertificate>(
-        GetRemoteSSLCertificate_ReturnsRawPointer(transport_name));
-  }
-  MOCK_METHOD1(GetRemoteSSLCertificate_ReturnsRawPointer,
-               rtc::SSLCertificate*(const std::string& transport_name));
-};
-
-// The factory isn't really used; it just satisfies the base PeerConnection.
-class FakePeerConnectionFactory
-    : public rtc::RefCountedObject<PeerConnectionFactory> {};
-
-class MockPeerConnection
-    : public rtc::RefCountedObject<webrtc::PeerConnection> {
- public:
-  MockPeerConnection()
-      : rtc::RefCountedObject<webrtc::PeerConnection>(
-            new FakePeerConnectionFactory()) {}
-  MOCK_METHOD0(session, WebRtcSession*());
-  MOCK_CONST_METHOD0(sctp_data_channels,
-                     const std::vector<rtc::scoped_refptr<DataChannel>>&());
-};
-
-class MockVideoMediaChannel : public cricket::FakeVideoMediaChannel {
- public:
-  MockVideoMediaChannel() :
-      cricket::FakeVideoMediaChannel(NULL, cricket::VideoOptions()) {}
-  MOCK_METHOD1(GetStats, bool(cricket::VideoMediaInfo*));
-};
-
-class MockVoiceMediaChannel : public cricket::FakeVoiceMediaChannel {
- public:
-  MockVoiceMediaChannel() :
-      cricket::FakeVoiceMediaChannel(NULL, cricket::AudioOptions()) {}
-  MOCK_METHOD1(GetStats, bool(cricket::VoiceMediaInfo*));
-};
 
 class FakeAudioProcessor : public webrtc::AudioProcessorInterface {
  public:

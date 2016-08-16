@@ -333,6 +333,8 @@ if (rtc_include_tests) {
       "test/fakeperiodicvideocapturer.h",
       "test/fakertccertificategenerator.h",
       "test/fakevideotrackrenderer.h",
+      "test/mock_peerconnection.h",
+      "test/mock_webrtcsession.h",
       "test/mockpeerconnectionobservers.h",
       "test/peerconnectiontestwrapper.cc",
       "test/peerconnectiontestwrapper.h",
