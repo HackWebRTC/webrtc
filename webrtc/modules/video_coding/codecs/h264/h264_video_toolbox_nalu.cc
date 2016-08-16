@@ -19,8 +19,14 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/common_video/h264/h264_common.h"
 
 namespace webrtc {
+
+using H264::NaluType;
+using H264::kAud;
+using H264::kSps;
+using H264::ParseNaluType;
 
 const char kAnnexBHeaderBytes[4] = {0, 0, 0, 1};
 const size_t kAvccHeaderByteSize = sizeof(uint32_t);
@@ -253,9 +259,17 @@ bool H264AnnexBBufferHasVideoFormatDescription(const uint8_t* annexb_buffer,
   // embedded by the RTP depacketizer. Extract NALU information.
   // TODO(tkchin): handle potential case where sps and pps are delivered
   // separately.
-  uint8_t first_nalu_type = annexb_buffer[4] & 0x1f;
-  bool is_first_nalu_type_sps = first_nalu_type == 0x7;
-  return is_first_nalu_type_sps;
+  NaluType first_nalu_type = ParseNaluType(annexb_buffer[4]);
+  bool is_first_nalu_type_sps = first_nalu_type == kSps;
+  if (is_first_nalu_type_sps)
+    return true;
+  bool is_first_nalu_type_aud = first_nalu_type == kAud;
+  // Start code + access unit delimiter + start code = 4 + 2 + 4 = 10.
+  if (!is_first_nalu_type_aud || annexb_buffer_size <= 10u)
+    return false;
+  NaluType second_nalu_type = ParseNaluType(annexb_buffer[10]);
+  bool is_second_nalu_type_sps = second_nalu_type == kSps;
+  return is_second_nalu_type_sps;
 }
 
 CMVideoFormatDescriptionRef CreateVideoFormatDescription(
@@ -271,6 +285,13 @@ CMVideoFormatDescriptionRef CreateVideoFormatDescription(
   // Parse the SPS and PPS into a CMVideoFormatDescription.
   const uint8_t* param_set_ptrs[2] = {};
   size_t param_set_sizes[2] = {};
+  // Skip AUD.
+  if (ParseNaluType(annexb_buffer[4]) == kAud) {
+    if (!reader.ReadNalu(&param_set_ptrs[0], &param_set_sizes[0])) {
+      LOG(LS_ERROR) << "Failed to read AUD";
+      return nullptr;
+    }
+  }
   if (!reader.ReadNalu(&param_set_ptrs[0], &param_set_sizes[0])) {
     LOG(LS_ERROR) << "Failed to read SPS";
     return nullptr;
