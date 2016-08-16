@@ -13,13 +13,13 @@
 
 #include <map>
 #include <string>
-#include <vector>
 
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/include/frame_callback.h"
 #include "webrtc/config.h"
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/transport.h"
+#include "webrtc/media/base/videosinkinterface.h"
 
 namespace webrtc {
 
@@ -72,28 +72,13 @@ class VideoSendStream {
   };
 
   struct Config {
-   public:
     Config() = delete;
-    Config(Config&&) = default;
     explicit Config(Transport* send_transport)
         : send_transport(send_transport) {}
-
-    Config& operator=(Config&&) = default;
-    Config& operator=(const Config&) = delete;
-
-    // Mostly used by tests.  Avoid creating copies if you can.
-    Config Copy() const { return Config(*this); }
 
     std::string ToString() const;
 
     struct EncoderSettings {
-      EncoderSettings() = default;
-      EncoderSettings(std::string payload_name,
-                      int payload_type,
-                      VideoEncoder* encoder)
-          : payload_name(std::move(payload_name)),
-            payload_type(payload_type),
-            encoder(encoder) {}
       std::string ToString() const;
 
       std::string payload_name;
@@ -166,6 +151,10 @@ class VideoSendStream {
     // than the measuring window, since the sample data will have been dropped.
     EncodedFrameObserver* post_encode_callback = nullptr;
 
+    // Renderer for local preview. The local renderer will be called even if
+    // sending hasn't started. 'nullptr' disables local rendering.
+    rtc::VideoSinkInterface<VideoFrame>* local_renderer = nullptr;
+
     // Expected delay needed by the renderer, i.e. the frame will be delivered
     // this many milliseconds, if possible, earlier than expected render time.
     // Only valid if |local_renderer| is set.
@@ -179,11 +168,6 @@ class VideoSendStream {
     // below the minimum configured bitrate. If this variable is false, the
     // stream may send at a rate higher than the estimated available bitrate.
     bool suspend_below_min_bitrate = false;
-
-   private:
-    // Access to the copy constructor is private to force use of the Copy()
-    // method for those exceptional cases where we do use it.
-    Config(const Config&) = default;
   };
 
   // Starts stream activity.
@@ -200,7 +184,7 @@ class VideoSendStream {
   // Set which streams to send. Must have at least as many SSRCs as configured
   // in the config. Encoder settings are passed on to the encoder instance along
   // with the VideoStream settings.
-  virtual void ReconfigureVideoEncoder(VideoEncoderConfig config) = 0;
+  virtual void ReconfigureVideoEncoder(const VideoEncoderConfig& config) = 0;
 
   virtual Stats GetStats() = 0;
 

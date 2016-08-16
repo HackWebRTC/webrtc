@@ -9,6 +9,7 @@
  */
 
 #include <string.h>
+
 #include <algorithm>
 #include <map>
 #include <memory>
@@ -21,7 +22,6 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/task_queue.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/base/trace_event.h"
@@ -74,8 +74,8 @@ class Call : public webrtc::Call,
       webrtc::AudioReceiveStream* receive_stream) override;
 
   webrtc::VideoSendStream* CreateVideoSendStream(
-      webrtc::VideoSendStream::Config config,
-      VideoEncoderConfig encoder_config) override;
+      const webrtc::VideoSendStream::Config& config,
+      const VideoEncoderConfig& encoder_config) override;
   void DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) override;
 
   webrtc::VideoReceiveStream* CreateVideoReceiveStream(
@@ -198,11 +198,6 @@ class Call : public webrtc::Call,
   const std::unique_ptr<CongestionController> congestion_controller_;
   const std::unique_ptr<SendDelayStats> video_send_delay_stats_;
   const int64_t start_ms_;
-  // TODO(perkj): |worker_queue_| is supposed to replace
-  // |module_process_thread_|.
-  // |worker_queue| is defined last to ensure all pending tasks are cancelled
-  // and deleted before any other members.
-  rtc::TaskQueue worker_queue_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Call);
 };
@@ -254,8 +249,7 @@ Call::Call(const Call::Config& config)
       congestion_controller_(
           new CongestionController(clock_, this, &remb_, event_log_.get())),
       video_send_delay_stats_(new SendDelayStats(clock_)),
-      start_ms_(clock_->TimeInMilliseconds()),
-      worker_queue_("call_worker_queue") {
+      start_ms_(clock_->TimeInMilliseconds()) {
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   RTC_DCHECK_GE(config.bitrate_config.min_bitrate_bps, 0);
   RTC_DCHECK_GE(config.bitrate_config.start_bitrate_bps,
@@ -285,7 +279,6 @@ Call::Call(const Call::Config& config)
 Call::~Call() {
   RTC_DCHECK(!remb_.InUse());
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
-
   RTC_CHECK(audio_send_ssrcs_.empty());
   RTC_CHECK(video_send_ssrcs_.empty());
   RTC_CHECK(video_send_streams_.empty());
@@ -304,10 +297,7 @@ Call::~Call() {
 
   // Only update histograms after process threads have been shut down, so that
   // they won't try to concurrently update stats.
-  {
-    rtc::CritScope lock(&bitrate_crit_);
-    UpdateSendHistograms();
-  }
+  UpdateSendHistograms();
   UpdateReceiveHistograms();
   UpdateHistograms();
 
@@ -379,7 +369,7 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
   TRACE_EVENT0("webrtc", "Call::CreateAudioSendStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   AudioSendStream* send_stream = new AudioSendStream(
-      config, config_.audio_state, &worker_queue_, congestion_controller_.get(),
+      config, config_.audio_state, congestion_controller_.get(),
       bitrate_allocator_.get());
   {
     WriteLockScoped write_lock(*send_crit_);
@@ -455,28 +445,22 @@ void Call::DestroyAudioReceiveStream(
 }
 
 webrtc::VideoSendStream* Call::CreateVideoSendStream(
-    webrtc::VideoSendStream::Config config,
-    VideoEncoderConfig encoder_config) {
+    const webrtc::VideoSendStream::Config& config,
+    const VideoEncoderConfig& encoder_config) {
   TRACE_EVENT0("webrtc", "Call::CreateVideoSendStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
 
   video_send_delay_stats_->AddSsrcs(config);
-  event_log_->LogVideoSendStreamConfig(config);
-
   // TODO(mflodman): Base the start bitrate on a current bandwidth estimate, if
   // the call has already started.
-  // Copy ssrcs from |config| since |config| is moved.
-  std::vector<uint32_t> ssrcs = config.rtp.ssrcs;
   VideoSendStream* send_stream = new VideoSendStream(
-      num_cpu_cores_, module_process_thread_.get(), &worker_queue_,
-      call_stats_.get(), congestion_controller_.get(), bitrate_allocator_.get(),
-      video_send_delay_stats_.get(), &remb_, event_log_.get(),
-      std::move(config), std::move(encoder_config),
-      suspended_video_send_ssrcs_);
-
+      num_cpu_cores_, module_process_thread_.get(), call_stats_.get(),
+      congestion_controller_.get(), bitrate_allocator_.get(),
+      video_send_delay_stats_.get(), &remb_, event_log_.get(), config,
+      encoder_config, suspended_video_send_ssrcs_);
   {
     WriteLockScoped write_lock(*send_crit_);
-    for (uint32_t ssrc : ssrcs) {
+    for (uint32_t ssrc : config.rtp.ssrcs) {
       RTC_DCHECK(video_send_ssrcs_.find(ssrc) == video_send_ssrcs_.end());
       video_send_ssrcs_[ssrc] = send_stream;
     }
@@ -484,7 +468,7 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   }
   send_stream->SignalNetworkState(video_network_state_);
   UpdateAggregateNetworkState();
-
+  event_log_->LogVideoSendStreamConfig(config);
   return send_stream;
 }
 
@@ -511,11 +495,11 @@ void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
   }
   RTC_CHECK(send_stream_impl != nullptr);
 
-  VideoSendStream::RtpStateMap rtp_state =
-      send_stream_impl->StopPermanentlyAndGetRtpStates();
+  VideoSendStream::RtpStateMap rtp_state = send_stream_impl->GetRtpStates();
 
   for (VideoSendStream::RtpStateMap::iterator it = rtp_state.begin();
-       it != rtp_state.end(); ++it) {
+       it != rtp_state.end();
+       ++it) {
     suspended_video_send_ssrcs_[it->first] = it->second;
   }
 
@@ -745,15 +729,6 @@ void Call::OnSentPacket(const rtc::SentPacket& sent_packet) {
 
 void Call::OnNetworkChanged(uint32_t target_bitrate_bps, uint8_t fraction_loss,
                             int64_t rtt_ms) {
-  // TODO(perkj): Consider making sure CongestionController operates on
-  // |worker_queue_|.
-  if (!worker_queue_.IsCurrent()) {
-    worker_queue_.PostTask([this, target_bitrate_bps, fraction_loss, rtt_ms] {
-      OnNetworkChanged(target_bitrate_bps, fraction_loss, rtt_ms);
-    });
-    return;
-  }
-  RTC_DCHECK_RUN_ON(&worker_queue_);
   bitrate_allocator_->OnNetworkChanged(target_bitrate_bps, fraction_loss,
                                        rtt_ms);
 

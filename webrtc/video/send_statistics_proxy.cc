@@ -75,8 +75,7 @@ SendStatisticsProxy::SendStatisticsProxy(
     const VideoSendStream::Config& config,
     VideoEncoderConfig::ContentType content_type)
     : clock_(clock),
-      payload_name_(config.encoder_settings.payload_name),
-      rtp_config_(config.rtp),
+      config_(config),
       content_type_(content_type),
       start_ms_(clock->TimeInMilliseconds()),
       last_sent_frame_timestamp_(0),
@@ -87,14 +86,14 @@ SendStatisticsProxy::SendStatisticsProxy(
 
 SendStatisticsProxy::~SendStatisticsProxy() {
   rtc::CritScope lock(&crit_);
-  uma_container_->UpdateHistograms(rtp_config_, stats_);
+  uma_container_->UpdateHistograms(config_, stats_);
 
   int64_t elapsed_sec = (clock_->TimeInMilliseconds() - start_ms_) / 1000;
   RTC_LOGGED_HISTOGRAM_COUNTS_100000("WebRTC.Video.SendStreamLifetimeInSeconds",
                                      elapsed_sec);
 
   if (elapsed_sec >= metrics::kMinRunTimeInSeconds)
-    UpdateCodecTypeHistogram(payload_name_);
+    UpdateCodecTypeHistogram(config_.encoder_settings.payload_name);
 }
 
 SendStatisticsProxy::UmaSamplesContainer::UmaSamplesContainer(
@@ -113,11 +112,12 @@ SendStatisticsProxy::UmaSamplesContainer::UmaSamplesContainer(
 
 SendStatisticsProxy::UmaSamplesContainer::~UmaSamplesContainer() {}
 
-void AccumulateRtxStats(const VideoSendStream::Stats& stats,
-                        const std::vector<uint32_t>& rtx_ssrcs,
+void AccumulateRtpStats(const VideoSendStream::Stats& stats,
+                        const VideoSendStream::Config& config,
                         StreamDataCounters* total_rtp_stats,
                         StreamDataCounters* rtx_stats) {
   for (auto it : stats.substreams) {
+    const std::vector<uint32_t> rtx_ssrcs = config.rtp.rtx.ssrcs;
     if (std::find(rtx_ssrcs.begin(), rtx_ssrcs.end(), it.first) !=
         rtx_ssrcs.end()) {
       rtx_stats->Add(it.second.rtp_stats);
@@ -128,7 +128,7 @@ void AccumulateRtxStats(const VideoSendStream::Stats& stats,
 }
 
 void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
-    const VideoSendStream::Config::Rtp& rtp_config,
+    const VideoSendStream::Config& config,
     const VideoSendStream::Stats& current_stats) {
   RTC_DCHECK(uma_prefix_ == kRealtimePrefix || uma_prefix_ == kScreenPrefix);
   const int kIndex = uma_prefix_ == kScreenPrefix ? 1 : 0;
@@ -262,7 +262,7 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
       // UmaSamplesContainer, we save the initial state of the counters, so that
       // we can calculate the delta here and aggregate over all ssrcs.
       RtcpPacketTypeCounter counters;
-      for (uint32_t ssrc : rtp_config.ssrcs) {
+      for (uint32_t ssrc : config.rtp.ssrcs) {
         auto kv = current_stats.substreams.find(ssrc);
         if (kv == current_stats.substreams.end())
           continue;
@@ -298,11 +298,10 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
     if (elapsed_sec >= metrics::kMinRunTimeInSeconds) {
       StreamDataCounters rtp;
       StreamDataCounters rtx;
-      AccumulateRtxStats(current_stats, rtp_config.rtx.ssrcs, &rtp, &rtx);
+      AccumulateRtpStats(current_stats, config, &rtp, &rtx);
       StreamDataCounters start_rtp;
       StreamDataCounters start_rtx;
-      AccumulateRtxStats(start_stats_, rtp_config.rtx.ssrcs, &start_rtp,
-                         &start_rtx);
+      AccumulateRtpStats(start_stats_, config, &start_rtp, &start_rtx);
       rtp.Subtract(start_rtp);
       rtx.Subtract(start_rtx);
       StreamDataCounters rtp_rtx = rtp;
@@ -323,13 +322,13 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
           kIndex, uma_prefix_ + "RetransmittedBitrateSentInKbps",
           static_cast<int>(rtp_rtx.retransmitted.TotalBytes() * 8 /
                            elapsed_sec / 1000));
-      if (!rtp_config.rtx.ssrcs.empty()) {
+      if (!config.rtp.rtx.ssrcs.empty()) {
         RTC_LOGGED_HISTOGRAMS_COUNTS_10000(
             kIndex, uma_prefix_ + "RtxBitrateSentInKbps",
             static_cast<int>(rtx.transmitted.TotalBytes() * 8 / elapsed_sec /
                              1000));
       }
-      if (rtp_config.fec.red_payload_type != -1) {
+      if (config.rtp.fec.red_payload_type != -1) {
         RTC_LOGGED_HISTOGRAMS_COUNTS_10000(
             kIndex, uma_prefix_ + "FecBitrateSentInKbps",
             static_cast<int>(rtp_rtx.fec.TotalBytes() * 8 / elapsed_sec /
@@ -343,7 +342,7 @@ void SendStatisticsProxy::SetContentType(
     VideoEncoderConfig::ContentType content_type) {
   rtc::CritScope lock(&crit_);
   if (content_type_ != content_type) {
-    uma_container_->UpdateHistograms(rtp_config_, stats_);
+    uma_container_->UpdateHistograms(config_, stats_);
     uma_container_.reset(
         new UmaSamplesContainer(GetUmaPrefix(content_type), stats_, clock_));
     content_type_ = content_type;
@@ -404,10 +403,10 @@ VideoSendStream::StreamStats* SendStatisticsProxy::GetStatsEntry(
     return &it->second;
 
   bool is_rtx = false;
-  if (std::find(rtp_config_.ssrcs.begin(), rtp_config_.ssrcs.end(), ssrc) ==
-      rtp_config_.ssrcs.end()) {
-    if (std::find(rtp_config_.rtx.ssrcs.begin(), rtp_config_.rtx.ssrcs.end(),
-                  ssrc) == rtp_config_.rtx.ssrcs.end()) {
+  if (std::find(config_.rtp.ssrcs.begin(), config_.rtp.ssrcs.end(), ssrc) ==
+      config_.rtp.ssrcs.end()) {
+    if (std::find(config_.rtp.rtx.ssrcs.begin(), config_.rtp.rtx.ssrcs.end(),
+                  ssrc) == config_.rtp.rtx.ssrcs.end()) {
       return nullptr;
     }
     is_rtx = true;
@@ -450,12 +449,12 @@ void SendStatisticsProxy::OnSendEncodedImage(
     }
   }
 
-  if (simulcast_idx >= rtp_config_.ssrcs.size()) {
+  if (simulcast_idx >= config_.rtp.ssrcs.size()) {
     LOG(LS_ERROR) << "Encoded image outside simulcast range (" << simulcast_idx
-                  << " >= " << rtp_config_.ssrcs.size() << ").";
+                  << " >= " << config_.rtp.ssrcs.size() << ").";
     return;
   }
-  uint32_t ssrc = rtp_config_.ssrcs[simulcast_idx];
+  uint32_t ssrc = config_.rtp.ssrcs[simulcast_idx];
 
   rtc::CritScope lock(&crit_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
@@ -493,7 +492,7 @@ void SendStatisticsProxy::OnSendEncodedImage(
 
   if (encoded_image.qp_ != -1 && codec_info) {
     if (codec_info->codecType == kVideoCodecVP8) {
-      int spatial_idx = (rtp_config_.ssrcs.size() == 1)
+      int spatial_idx = (config_.rtp.ssrcs.size() == 1)
                             ? -1
                             : static_cast<int>(simulcast_idx);
       uma_container_->qp_counters_[spatial_idx].vp8.Add(encoded_image.qp_);

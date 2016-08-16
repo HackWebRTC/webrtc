@@ -1143,8 +1143,8 @@ bool WebRtcVideoChannel2::AddSendStream(const StreamParams& sp) {
   webrtc::VideoSendStream::Config config(this);
   config.suspend_below_min_bitrate = video_config_.suspend_below_min_bitrate;
   WebRtcVideoSendStream* stream = new WebRtcVideoSendStream(
-      call_, sp, std::move(config), default_send_options_,
-      external_encoder_factory_, video_config_.enable_cpu_overuse_detection,
+      call_, sp, config, default_send_options_, external_encoder_factory_,
+      video_config_.enable_cpu_overuse_detection,
       bitrate_config_.max_bitrate_bps, send_codec_, send_rtp_extensions_,
       send_params_);
 
@@ -1533,11 +1533,11 @@ bool WebRtcVideoChannel2::SendRtcp(const uint8_t* data, size_t len) {
 
 WebRtcVideoChannel2::WebRtcVideoSendStream::VideoSendStreamParameters::
     VideoSendStreamParameters(
-        webrtc::VideoSendStream::Config config,
+        const webrtc::VideoSendStream::Config& config,
         const VideoOptions& options,
         int max_bitrate_bps,
         const rtc::Optional<VideoCodecSettings>& codec_settings)
-    : config(std::move(config)),
+    : config(config),
       options(options),
       max_bitrate_bps(max_bitrate_bps),
       codec_settings(codec_settings) {}
@@ -1560,7 +1560,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::AllocatedEncoder::AllocatedEncoder(
 WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
     webrtc::Call* call,
     const StreamParams& sp,
-    webrtc::VideoSendStream::Config config,
+    const webrtc::VideoSendStream::Config& config,
     const VideoOptions& options,
     WebRtcVideoEncoderFactory* external_encoder_factory,
     bool enable_cpu_overuse_detection,
@@ -1579,7 +1579,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
       source_(nullptr),
       external_encoder_factory_(external_encoder_factory),
       stream_(nullptr),
-      parameters_(std::move(config), options, max_bitrate_bps, codec_settings),
+      parameters_(config, options, max_bitrate_bps, codec_settings),
       rtp_parameters_(CreateRtpParametersWithOneEncoding()),
       pending_encoder_reconfiguration_(false),
       allocated_encoder_(nullptr, webrtc::kVideoCodecUnknown, false),
@@ -2035,11 +2035,11 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::ReconfigureEncoder() {
   encoder_config.encoder_specific_settings = ConfigureVideoEncoderSettings(
       codec_settings.codec);
 
-  stream_->ReconfigureVideoEncoder(encoder_config.Copy());
+  stream_->ReconfigureVideoEncoder(encoder_config);
 
   encoder_config.encoder_specific_settings = NULL;
 
-  parameters_.encoder_config = std::move(encoder_config);
+  parameters_.encoder_config = encoder_config;
 }
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSend(bool send) {
@@ -2232,14 +2232,13 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::RecreateWebRtcStream() {
   parameters_.encoder_config.encoder_specific_settings =
       ConfigureVideoEncoderSettings(parameters_.codec_settings->codec);
 
-  webrtc::VideoSendStream::Config config = parameters_.config.Copy();
+  webrtc::VideoSendStream::Config config = parameters_.config;
   if (!config.rtp.rtx.ssrcs.empty() && config.rtp.rtx.payload_type == -1) {
     LOG(LS_WARNING) << "RTX SSRCs configured but there's no configured RTX "
                        "payload type the set codec. Ignoring RTX.";
     config.rtp.rtx.ssrcs.clear();
   }
-  stream_ = call_->CreateVideoSendStream(std::move(config),
-                                         parameters_.encoder_config.Copy());
+  stream_ = call_->CreateVideoSendStream(config, parameters_.encoder_config);
 
   parameters_.encoder_config.encoder_specific_settings = NULL;
   pending_encoder_reconfiguration_ = false;

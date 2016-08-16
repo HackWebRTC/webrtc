@@ -378,10 +378,10 @@
         'video/send_statistics_proxy_unittest.cc',
         'video/stats_counter_unittest.cc',
         'video/stream_synchronization_unittest.cc',
+        'video/video_capture_input_unittest.cc',
         'video/video_decoder_unittest.cc',
         'video/video_encoder_unittest.cc',
         'video/video_send_stream_tests.cc',
-        'video/vie_encoder_unittest.cc',
         'video/vie_remb_unittest.cc',
       ],
       'dependencies': [

@@ -54,9 +54,7 @@ BitrateAllocator::BitrateAllocator(LimitObserver* limit_observer)
       last_rtt_(0),
       num_pause_events_(0),
       clock_(Clock::GetRealTimeClock()),
-      last_bwe_log_time_(0) {
-  sequenced_checker_.Detach();
-}
+      last_bwe_log_time_(0) {}
 
 BitrateAllocator::~BitrateAllocator() {
   RTC_LOGGED_HISTOGRAM_COUNTS_100("WebRTC.Call.NumberOfPauseEvents",
@@ -66,7 +64,7 @@ BitrateAllocator::~BitrateAllocator() {
 void BitrateAllocator::OnNetworkChanged(uint32_t target_bitrate_bps,
                                         uint8_t fraction_loss,
                                         int64_t rtt) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
+  rtc::CritScope lock(&crit_sect_);
   last_bitrate_bps_ = target_bitrate_bps;
   last_non_zero_bitrate_bps_ =
       target_bitrate_bps > 0 ? target_bitrate_bps : last_non_zero_bitrate_bps_;
@@ -119,7 +117,7 @@ void BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
                                    uint32_t max_bitrate_bps,
                                    uint32_t pad_up_bitrate_bps,
                                    bool enforce_min_bitrate) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
+  rtc::CritScope lock(&crit_sect_);
   auto it = FindObserverConfig(observer);
 
   // Update settings if the observer already exists, create a new one otherwise.
@@ -157,15 +155,17 @@ void BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
 }
 
 void BitrateAllocator::UpdateAllocationLimits() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
   uint32_t total_requested_padding_bitrate = 0;
   uint32_t total_requested_min_bitrate = 0;
 
-  for (const auto& config : bitrate_observer_configs_) {
-    if (config.enforce_min_bitrate) {
-      total_requested_min_bitrate += config.min_bitrate_bps;
+  {
+    rtc::CritScope lock(&crit_sect_);
+    for (const auto& config : bitrate_observer_configs_) {
+      if (config.enforce_min_bitrate) {
+        total_requested_min_bitrate += config.min_bitrate_bps;
+      }
+      total_requested_padding_bitrate += config.pad_up_bitrate_bps;
     }
-    total_requested_padding_bitrate += config.pad_up_bitrate_bps;
   }
 
   LOG(LS_INFO) << "UpdateAllocationLimits : total_requested_min_bitrate: "
@@ -177,26 +177,27 @@ void BitrateAllocator::UpdateAllocationLimits() {
 }
 
 void BitrateAllocator::RemoveObserver(BitrateAllocatorObserver* observer) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
-  auto it = FindObserverConfig(observer);
-  if (it != bitrate_observer_configs_.end()) {
-    bitrate_observer_configs_.erase(it);
+  {
+    rtc::CritScope lock(&crit_sect_);
+    auto it = FindObserverConfig(observer);
+    if (it != bitrate_observer_configs_.end()) {
+      bitrate_observer_configs_.erase(it);
+    }
   }
-
   UpdateAllocationLimits();
 }
 
 int BitrateAllocator::GetStartBitrate(BitrateAllocatorObserver* observer) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
+  rtc::CritScope lock(&crit_sect_);
   const auto& it = FindObserverConfig(observer);
   if (it == bitrate_observer_configs_.end()) {
     // This observer hasn't been added yet, just give it its fair share.
     return last_non_zero_bitrate_bps_ /
-           static_cast<int>((bitrate_observer_configs_.size() + 1));
+             static_cast<int>((bitrate_observer_configs_.size() + 1));
   } else if (it->allocated_bitrate_bps == -1) {
     // This observer hasn't received an allocation yet, so do the same.
     return last_non_zero_bitrate_bps_ /
-           static_cast<int>(bitrate_observer_configs_.size());
+             static_cast<int>(bitrate_observer_configs_.size());
   } else {
     // This observer already has an allocation.
     return it->allocated_bitrate_bps;
@@ -204,8 +205,8 @@ int BitrateAllocator::GetStartBitrate(BitrateAllocatorObserver* observer) {
 }
 
 BitrateAllocator::ObserverConfigs::iterator
-BitrateAllocator::FindObserverConfig(const BitrateAllocatorObserver* observer) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
+BitrateAllocator::FindObserverConfig(
+    const BitrateAllocatorObserver* observer) {
   for (auto it = bitrate_observer_configs_.begin();
        it != bitrate_observer_configs_.end(); ++it) {
     if (it->observer == observer)
@@ -216,7 +217,6 @@ BitrateAllocator::FindObserverConfig(const BitrateAllocatorObserver* observer) {
 
 BitrateAllocator::ObserverAllocation BitrateAllocator::AllocateBitrates(
     uint32_t bitrate) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
   if (bitrate_observer_configs_.empty())
     return ObserverAllocation();
 
@@ -245,7 +245,6 @@ BitrateAllocator::ObserverAllocation BitrateAllocator::AllocateBitrates(
 }
 
 BitrateAllocator::ObserverAllocation BitrateAllocator::ZeroRateAllocation() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
   ObserverAllocation allocation;
   for (const auto& observer_config : bitrate_observer_configs_)
     allocation[observer_config.observer] = 0;
@@ -254,8 +253,8 @@ BitrateAllocator::ObserverAllocation BitrateAllocator::ZeroRateAllocation() {
 
 BitrateAllocator::ObserverAllocation BitrateAllocator::LowRateAllocation(
     uint32_t bitrate) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
   ObserverAllocation allocation;
+
   // Start by allocating bitrate to observers enforcing a min bitrate, hence
   // remaining_bitrate might turn negative.
   int64_t remaining_bitrate = bitrate;
@@ -309,7 +308,7 @@ BitrateAllocator::ObserverAllocation BitrateAllocator::LowRateAllocation(
 BitrateAllocator::ObserverAllocation BitrateAllocator::NormalRateAllocation(
     uint32_t bitrate,
     uint32_t sum_min_bitrates) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
+
   ObserverAllocation allocation;
   for (const auto& observer_config : bitrate_observer_configs_)
     allocation[observer_config.observer] = observer_config.min_bitrate_bps;
@@ -322,9 +321,7 @@ BitrateAllocator::ObserverAllocation BitrateAllocator::NormalRateAllocation(
 }
 
 BitrateAllocator::ObserverAllocation BitrateAllocator::MaxRateAllocation(
-    uint32_t bitrate,
-    uint32_t sum_max_bitrates) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
+    uint32_t bitrate, uint32_t sum_max_bitrates) {
   ObserverAllocation allocation;
 
   for (const auto& observer_config : bitrate_observer_configs_) {
@@ -338,12 +335,12 @@ BitrateAllocator::ObserverAllocation BitrateAllocator::MaxRateAllocation(
 
 uint32_t BitrateAllocator::LastAllocatedBitrate(
     const ObserverConfig& observer_config) {
+
   // Return the configured minimum bitrate for newly added observers, to avoid
   // requiring an extra high bitrate for the observer to get an allocated
   // bitrate.
-  return observer_config.allocated_bitrate_bps == -1
-             ? observer_config.min_bitrate_bps
-             : observer_config.allocated_bitrate_bps;
+  return observer_config.allocated_bitrate_bps == -1 ?
+      observer_config.min_bitrate_bps : observer_config.allocated_bitrate_bps;
 }
 
 uint32_t BitrateAllocator::MinBitrateWithHysteresis(
@@ -369,7 +366,6 @@ void BitrateAllocator::DistributeBitrateEvenly(uint32_t bitrate,
                                                bool include_zero_allocations,
                                                int max_multiplier,
                                                ObserverAllocation* allocation) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
   RTC_DCHECK_EQ(allocation->size(), bitrate_observer_configs_.size());
 
   ObserverSortingMap list_max_bitrates;
@@ -402,12 +398,10 @@ void BitrateAllocator::DistributeBitrateEvenly(uint32_t bitrate,
 
 bool BitrateAllocator::EnoughBitrateForAllObservers(uint32_t bitrate,
                                                     uint32_t sum_min_bitrates) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
   if (bitrate < sum_min_bitrates)
     return false;
 
-  uint32_t extra_bitrate_per_observer =
-      (bitrate - sum_min_bitrates) /
+  uint32_t extra_bitrate_per_observer = (bitrate - sum_min_bitrates) /
       static_cast<uint32_t>(bitrate_observer_configs_.size());
   for (const auto& observer_config : bitrate_observer_configs_) {
     if (observer_config.min_bitrate_bps + extra_bitrate_per_observer <

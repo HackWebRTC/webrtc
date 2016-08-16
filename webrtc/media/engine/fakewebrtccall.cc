@@ -98,22 +98,21 @@ void FakeAudioReceiveStream::SetGain(float gain) {
 }
 
 FakeVideoSendStream::FakeVideoSendStream(
-    webrtc::VideoSendStream::Config config,
-    webrtc::VideoEncoderConfig encoder_config)
+    const webrtc::VideoSendStream::Config& config,
+    const webrtc::VideoEncoderConfig& encoder_config)
     : sending_(false),
-      config_(std::move(config)),
+      config_(config),
       codec_settings_set_(false),
       num_swapped_frames_(0) {
   RTC_DCHECK(config.encoder_settings.encoder != NULL);
-  ReconfigureVideoEncoder(std::move(encoder_config));
+  ReconfigureVideoEncoder(encoder_config);
 }
 
-const webrtc::VideoSendStream::Config& FakeVideoSendStream::GetConfig() const {
+webrtc::VideoSendStream::Config FakeVideoSendStream::GetConfig() const {
   return config_;
 }
 
-const webrtc::VideoEncoderConfig& FakeVideoSendStream::GetEncoderConfig()
-    const {
+webrtc::VideoEncoderConfig FakeVideoSendStream::GetEncoderConfig() const {
   return encoder_config_;
 }
 
@@ -178,7 +177,8 @@ webrtc::VideoSendStream::Stats FakeVideoSendStream::GetStats() {
 }
 
 void FakeVideoSendStream::ReconfigureVideoEncoder(
-    webrtc::VideoEncoderConfig config) {
+    const webrtc::VideoEncoderConfig& config) {
+  encoder_config_ = config;
   if (config.encoder_specific_settings != NULL) {
     if (config_.encoder_settings.payload_name == "VP8") {
       vpx_settings_.vp8 = *reinterpret_cast<const webrtc::VideoCodecVP8*>(
@@ -199,7 +199,6 @@ void FakeVideoSendStream::ReconfigureVideoEncoder(
                     << config_.encoder_settings.payload_name;
     }
   }
-  encoder_config_ = std::move(config);
   codec_settings_set_ = config.encoder_specific_settings != NULL;
   ++num_encoder_reconfigurations_;
 }
@@ -360,10 +359,10 @@ void FakeCall::DestroyAudioReceiveStream(
 }
 
 webrtc::VideoSendStream* FakeCall::CreateVideoSendStream(
-    webrtc::VideoSendStream::Config config,
-    webrtc::VideoEncoderConfig encoder_config) {
+    const webrtc::VideoSendStream::Config& config,
+    const webrtc::VideoEncoderConfig& encoder_config) {
   FakeVideoSendStream* fake_stream =
-      new FakeVideoSendStream(std::move(config), std::move(encoder_config));
+      new FakeVideoSendStream(config, encoder_config);
   video_send_streams_.push_back(fake_stream);
   ++num_created_send_streams_;
   return fake_stream;

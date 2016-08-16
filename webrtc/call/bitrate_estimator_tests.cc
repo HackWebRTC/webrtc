@@ -173,8 +173,7 @@ class BitrateEstimatorTest : public test::CallTest {
       test_->video_send_config_.rtp.ssrcs[0]++;
       test_->video_send_config_.encoder_settings.encoder = &fake_encoder_;
       send_stream_ = test_->sender_call_->CreateVideoSendStream(
-          test_->video_send_config_.Copy(),
-          test_->video_encoder_config_.Copy());
+          test_->video_send_config_, test_->video_encoder_config_);
       RTC_DCHECK_EQ(1u, test_->video_encoder_config_.streams.size());
       frame_generator_capturer_.reset(test::FrameGeneratorCapturer::Create(
           send_stream_->Input(), test_->video_encoder_config_.streams[0].width,

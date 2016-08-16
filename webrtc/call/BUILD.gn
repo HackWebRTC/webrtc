@@ -29,7 +29,6 @@ source_set("call") {
     "..:rtc_event_log",
     "..:webrtc_common",
     "../audio",
-    "../base:rtc_task_queue",
     "../modules/congestion_controller",
     "../modules/rtp_rtcp",
     "../system_wrappers",
@@ -52,7 +51,6 @@ if (rtc_include_tests) {
       "//testing/gmock",
       "//testing/gtest",
     ]
-    configs += [ "..:common_config" ]
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.

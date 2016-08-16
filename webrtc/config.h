@@ -125,20 +125,12 @@ struct VideoStream {
 };
 
 struct VideoEncoderConfig {
- public:
   enum class ContentType {
     kRealtimeVideo,
     kScreen,
   };
 
-  VideoEncoderConfig& operator=(VideoEncoderConfig&&) = default;
-  VideoEncoderConfig& operator=(const VideoEncoderConfig&) = delete;
-
-  // Mostly used by tests.  Avoid creating copies if you can.
-  VideoEncoderConfig Copy() const { return VideoEncoderConfig(*this); }
-
   VideoEncoderConfig();
-  VideoEncoderConfig(VideoEncoderConfig&&) = default;
   ~VideoEncoderConfig();
   std::string ToString() const;
 
@@ -153,11 +145,6 @@ struct VideoEncoderConfig {
   // unless the estimated bandwidth indicates that the link can handle it.
   int min_transmit_bitrate_bps;
   bool expect_encode_from_texture;
-
- private:
-  // Access to the copy constructor is private to force use of the Copy()
-  // method for those exceptional cases where we do use it.
-  VideoEncoderConfig(const VideoEncoderConfig&) = default;
 };
 
 struct VideoDecoderH264Settings {

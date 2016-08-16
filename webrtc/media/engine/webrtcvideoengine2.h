@@ -248,7 +248,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     WebRtcVideoSendStream(
         webrtc::Call* call,
         const StreamParams& sp,
-        webrtc::VideoSendStream::Config config,
+        const webrtc::VideoSendStream::Config& config,
         const VideoOptions& options,
         WebRtcVideoEncoderFactory* external_encoder_factory,
         bool enable_cpu_overuse_detection,
@@ -284,7 +284,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     // similar parameters depending on which options changed etc.
     struct VideoSendStreamParameters {
       VideoSendStreamParameters(
-          webrtc::VideoSendStream::Config config,
+          const webrtc::VideoSendStream::Config& config,
           const VideoOptions& options,
           int max_bitrate_bps,
           const rtc::Optional<VideoCodecSettings>& codec_settings);

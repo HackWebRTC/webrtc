@@ -113,8 +113,8 @@ class Call {
       AudioReceiveStream* receive_stream) = 0;
 
   virtual VideoSendStream* CreateVideoSendStream(
-      VideoSendStream::Config config,
-      VideoEncoderConfig encoder_config) = 0;
+      const VideoSendStream::Config& config,
+      const VideoEncoderConfig& encoder_config) = 0;
   virtual void DestroyVideoSendStream(VideoSendStream* send_stream) = 0;
 
   virtual VideoReceiveStream* CreateVideoReceiveStream(
