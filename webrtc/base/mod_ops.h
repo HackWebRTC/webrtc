@@ -43,7 +43,7 @@ inline unsigned long Subtract(unsigned long a, unsigned long b) {  // NOLINT
 // uint8_t x = 253;
 // uint8_t y = 2;
 //
-// ForwardDiff(x, y) == 4
+// ForwardDiff(x, y) == 5
 //
 //   252   253   254   255    0     1     2     3
 // #################################################
