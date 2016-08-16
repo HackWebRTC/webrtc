@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_UTILITY_SOURCE_FILE_PLAYER_IMPL_H_
-#define WEBRTC_MODULES_UTILITY_SOURCE_FILE_PLAYER_IMPL_H_
+#ifndef WEBRTC_VOICE_ENGINE_FILE_PLAYER_IMPL_H_
+#define WEBRTC_VOICE_ENGINE_FILE_PLAYER_IMPL_H_
 
 #include "webrtc/common_audio/resampler/include/resampler.h"
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/media_file/media_file.h"
 #include "webrtc/modules/media_file/media_file_defines.h"
-#include "webrtc/modules/utility/include/file_player.h"
-#include "webrtc/modules/utility/source/coder.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/voice_engine/coder.h"
+#include "webrtc/voice_engine/file_player.h"
 
 namespace webrtc {
 class FilePlayerImpl : public FilePlayer
@@ -75,4 +75,5 @@ private:
     float _scaling;
 };
 }  // namespace webrtc
-#endif // WEBRTC_MODULES_UTILITY_SOURCE_FILE_PLAYER_IMPL_H_
+
+#endif // WEBRTC_VOICE_ENGINE_FILE_PLAYER_IMPL_H_

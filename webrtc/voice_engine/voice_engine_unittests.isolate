@@ -19,5 +19,13 @@
         ],
       },
     }],
+    ['OS=="linux" or OS=="mac" or OS=="win" or OS=="android"', {
+      'variables': {
+        'files': [
+          '<(DEPTH)/resources/utility/encapsulated_pcm16b_8khz.wav',
+          '<(DEPTH)/resources/utility/encapsulated_pcmu_8khz.wav',
+        ],
+      },
+    }],
   ],
 }

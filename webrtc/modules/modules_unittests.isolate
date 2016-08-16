@@ -110,8 +110,6 @@
           '<(DEPTH)/resources/synthetic-trace.rx',
           '<(DEPTH)/resources/tmobile-downlink.rx',
           '<(DEPTH)/resources/tmobile-uplink.rx',
-          '<(DEPTH)/resources/utility/encapsulated_pcm16b_8khz.wav',
-          '<(DEPTH)/resources/utility/encapsulated_pcmu_8khz.wav',
           '<(DEPTH)/resources/verizon3g-downlink.rx',
           '<(DEPTH)/resources/verizon3g-uplink.rx',
           '<(DEPTH)/resources/verizon4g-downlink.rx',

@@ -29,6 +29,8 @@
         '<(webrtc_root)/modules/modules.gyp:webrtc_utility',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/webrtc.gyp:rtc_event_log',
+        'file_player',
+        'file_recorder',
         'level_indicator',
       ],
       'export_dependent_settings': [
@@ -95,6 +97,53 @@
       ],
     },
     {
+      'target_name': 'audio_coder',
+      'type': 'static_library',
+      'sources': [
+        'coder.cc',
+        'coder.h',
+      ],
+      'dependencies': [
+        '<(webrtc_root)/common.gyp:webrtc_common',
+        '<(webrtc_root)/modules/modules.gyp:audio_coding_module',
+        '<(webrtc_root)/modules/modules.gyp:builtin_audio_decoder_factory',
+        '<(webrtc_root)/modules/modules.gyp:rent_a_codec',
+      ],
+    },
+    {
+      'target_name': 'file_player',
+      'type': 'static_library',
+      'sources': [
+        'file_player.h',
+        'file_player_impl.cc',
+        'file_player_impl.h',
+      ],
+      'dependencies': [
+        '<(webrtc_root)/common.gyp:webrtc_common',
+        '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
+        '<(webrtc_root)/modules/modules.gyp:media_file',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
+        'audio_coder',
+      ],
+    },
+    {
+      'target_name': 'file_recorder',
+      'type': 'static_library',
+      'sources': [
+        'file_recorder.h',
+        'file_recorder_impl.cc',
+        'file_recorder_impl.h',
+      ],
+      'dependencies': [
+        '<(webrtc_root)/base/base.gyp:rtc_base_approved',
+        '<(webrtc_root)/common.gyp:webrtc_common',
+        '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
+        '<(webrtc_root)/modules/modules.gyp:media_file',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
+        'audio_coder',
+      ],
+    },
+    {
       'target_name': 'level_indicator',
       'type': 'static_library',
       'dependencies': [
@@ -121,6 +170,7 @@
             'voice_engine',
             '<(DEPTH)/testing/gmock.gyp:gmock',
             '<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
             # The rest are to satisfy the unittests' include chain.
             # This would be unnecessary if we used qualified includes.
             '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
@@ -136,6 +186,7 @@
           ],
           'sources': [
             'channel_unittest.cc',
+            'file_player_unittests.cc',
             'network_predictor_unittest.cc',
             'transmit_mixer_unittest.cc',
             'utility_unittest.cc',
@@ -150,6 +201,12 @@
             ['OS=="android"', {
               'dependencies': [
                 '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
+              ],
+            }],
+            ['OS=="ios"', {
+              'mac_bundle_resources': [
+                '<(DEPTH)/resources/utility/encapsulated_pcm16b_8khz.wav',
+                '<(DEPTH)/resources/utility/encapsulated_pcmu_8khz.wav',
               ],
             }],
           ],
