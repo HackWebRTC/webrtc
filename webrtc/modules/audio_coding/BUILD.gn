@@ -1483,4 +1483,24 @@ if (rtc_include_tests) {
       "//third_party/gflags",
     ]
   }
+
+  executable("isac_fix_test") {
+    testonly = true
+
+    sources = [
+      "codecs/isac/fix/test/kenny.cc",
+    ]
+
+    deps = [
+      ":isac_fix",
+      "../../test:test_support",
+    ]
+
+    if (is_win) {
+      cflags = [
+        # Disable warnings to enable Win64 build, issue 1323.
+        "/wd4267",  # size_t to int truncation
+      ]
+    }
+  }
 }
