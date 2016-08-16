@@ -92,9 +92,7 @@ public:
     bool RtcpRrSequenceNumberTimeout(int64_t rtcp_interval_ms);
 
     // Get TMMBR
-    int32_t TMMBRReceived(uint32_t size,
-                          uint32_t accNumCandidates,
-                          TMMBRSet* candidateSet) const;
+    std::vector<rtcp::TmmbItem> TMMBRReceived() const;
 
     bool UpdateRTCPReceiveInformationTimers();
 

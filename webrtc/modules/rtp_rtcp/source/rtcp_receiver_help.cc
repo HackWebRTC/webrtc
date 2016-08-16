@@ -159,30 +159,23 @@ void RTCPReceiveInformation::InsertTMMBRItem(
   _tmmbrSetTimeouts.push_back(currentTimeMS);
 }
 
-int32_t RTCPReceiveInformation::GetTMMBRSet(
-    const uint32_t sourceIdx,
-    const uint32_t targetIdx,
-    TMMBRSet* candidateSet,
-    const int64_t currentTimeMS) {
-  if (sourceIdx >= TmmbrSet.lengthOfSet()) {
-    return -1;
+void RTCPReceiveInformation::GetTMMBRSet(
+    int64_t current_time_ms,
+    std::vector<rtcp::TmmbItem>* candidates) {
+  // Erase timeout entries.
+  for (size_t source_idx = 0; source_idx < TmmbrSet.size();) {
+    // Use audio define since we don't know what interval the remote peer is
+    // using.
+    if (current_time_ms - _tmmbrSetTimeouts[source_idx] >
+        5 * RTCP_INTERVAL_AUDIO_MS) {
+      // Value timed out.
+      TmmbrSet.erase(TmmbrSet.begin() + source_idx);
+      _tmmbrSetTimeouts.erase(_tmmbrSetTimeouts.begin() + source_idx);
+      continue;
+    }
+    candidates->push_back(TmmbrSet[source_idx]);
+    ++source_idx;
   }
-  if (targetIdx >= candidateSet->sizeOfSet()) {
-    return -1;
-  }
-  // use audio define since we don't know what interval the remote peer is using
-  if (currentTimeMS - _tmmbrSetTimeouts[sourceIdx] >
-      5 * RTCP_INTERVAL_AUDIO_MS) {
-    // value timed out
-    TmmbrSet.RemoveEntry(sourceIdx);
-    _tmmbrSetTimeouts.erase(_tmmbrSetTimeouts.begin() + sourceIdx);
-    return -1;
-  }
-  candidateSet->SetEntry(targetIdx,
-                         TmmbrSet.Tmmbr(sourceIdx),
-                         TmmbrSet.PacketOH(sourceIdx),
-                         TmmbrSet.Ssrc(sourceIdx));
-  return 0;
 }
 
 void RTCPReceiveInformation::VerifyAndAllocateBoundingSet(

@@ -1033,7 +1033,7 @@ TEST_F(RtcpReceiverTest, ReceiveReportTimeout) {
 
 TEST_F(RtcpReceiverTest, TmmbrReceivedWithNoIncomingPacket) {
   // This call is expected to fail because no data has arrived.
-  EXPECT_EQ(-1, rtcp_receiver_->TMMBRReceived(0, 0, nullptr));
+  EXPECT_EQ(0u, rtcp_receiver_->TMMBRReceived().size());
 }
 
 TEST_F(RtcpReceiverTest, TmmbrPacketAccepted) {
@@ -1055,12 +1055,10 @@ TEST_F(RtcpReceiverTest, TmmbrPacketAccepted) {
   rtc::Buffer packet = compound.Build();
   EXPECT_EQ(0, InjectRtcpPacket(packet.data(), packet.size()));
 
-  EXPECT_EQ(1, rtcp_receiver_->TMMBRReceived(0, 0, nullptr));
-  TMMBRSet candidate_set;
-  candidate_set.VerifyAndAllocateSet(1);
-  EXPECT_EQ(1, rtcp_receiver_->TMMBRReceived(1, 0, &candidate_set));
-  EXPECT_LT(0U, candidate_set.Tmmbr(0));
-  EXPECT_EQ(kSenderSsrc, candidate_set.Ssrc(0));
+  std::vector<rtcp::TmmbItem> candidate_set = rtcp_receiver_->TMMBRReceived();
+  EXPECT_EQ(1u, candidate_set.size());
+  EXPECT_LT(0U, candidate_set[0].bitrate_bps());
+  EXPECT_EQ(kSenderSsrc, candidate_set[0].ssrc());
 }
 
 TEST_F(RtcpReceiverTest, TmmbrPacketNotForUsIgnored) {
@@ -1083,7 +1081,7 @@ TEST_F(RtcpReceiverTest, TmmbrPacketNotForUsIgnored) {
   ssrcs.insert(kMediaFlowSsrc);
   rtcp_receiver_->SetSsrcs(kMediaFlowSsrc, ssrcs);
   EXPECT_EQ(0, InjectRtcpPacket(packet.data(), packet.size()));
-  EXPECT_EQ(0, rtcp_receiver_->TMMBRReceived(0, 0, nullptr));
+  EXPECT_EQ(0u, rtcp_receiver_->TMMBRReceived().size());
 }
 
 TEST_F(RtcpReceiverTest, TmmbrPacketZeroRateIgnored) {
@@ -1105,7 +1103,7 @@ TEST_F(RtcpReceiverTest, TmmbrPacketZeroRateIgnored) {
   rtc::Buffer packet = compound.Build();
 
   EXPECT_EQ(0, InjectRtcpPacket(packet.data(), packet.size()));
-  EXPECT_EQ(0, rtcp_receiver_->TMMBRReceived(0, 0, nullptr));
+  EXPECT_EQ(0u, rtcp_receiver_->TMMBRReceived().size());
 }
 
 TEST_F(RtcpReceiverTest, TmmbrThreeConstraintsTimeOut) {
@@ -1133,18 +1131,15 @@ TEST_F(RtcpReceiverTest, TmmbrThreeConstraintsTimeOut) {
     system_clock_.AdvanceTimeMilliseconds(5000);
   }
   // It is now starttime + 15.
-  EXPECT_EQ(3, rtcp_receiver_->TMMBRReceived(0, 0, nullptr));
-  TMMBRSet candidate_set;
-  candidate_set.VerifyAndAllocateSet(3);
-  EXPECT_EQ(3, rtcp_receiver_->TMMBRReceived(3, 0, &candidate_set));
-  EXPECT_LT(0U, candidate_set.Tmmbr(0));
+  std::vector<rtcp::TmmbItem> candidate_set = rtcp_receiver_->TMMBRReceived();
+  EXPECT_EQ(3u, candidate_set.size());
+  EXPECT_LT(0U, candidate_set[0].bitrate_bps());
   // We expect the timeout to be 25 seconds. Advance the clock by 12
   // seconds, timing out the first packet.
   system_clock_.AdvanceTimeMilliseconds(12000);
-  // Odd behaviour: Just counting them does not trigger the timeout.
-  EXPECT_EQ(3, rtcp_receiver_->TMMBRReceived(0, 0, nullptr));
-  EXPECT_EQ(2, rtcp_receiver_->TMMBRReceived(3, 0, &candidate_set));
-  EXPECT_EQ(kSenderSsrc + 1, candidate_set.Ssrc(0));
+  candidate_set = rtcp_receiver_->TMMBRReceived();
+  EXPECT_EQ(2u, candidate_set.size());
+  EXPECT_EQ(kSenderSsrc + 1, candidate_set[0].ssrc());
 }
 
 TEST_F(RtcpReceiverTest, Callbacks) {

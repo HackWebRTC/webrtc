@@ -109,10 +109,8 @@ public:
                          const int64_t currentTimeMS);
 
     // get
-    int32_t GetTMMBRSet(const uint32_t sourceIdx,
-                        const uint32_t targetIdx,
-                        TMMBRSet* candidateSet,
-                        const int64_t currentTimeMS);
+    void GetTMMBRSet(int64_t current_time_ms,
+                     std::vector<rtcp::TmmbItem>* candidates);
 
     int64_t lastTimeReceived;
 

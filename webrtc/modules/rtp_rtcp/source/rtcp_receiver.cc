@@ -1234,17 +1234,11 @@ void RTCPReceiver::HandleTransportFeedback(
 
   rtcp_parser->Iterate();
 }
+
 int32_t RTCPReceiver::UpdateTMMBR() {
-  int32_t size = TMMBRReceived(0, 0, NULL);
-  TMMBRSet candidates;
-  if (size > 0) {
-    candidates.reserve(size);
-    // Get candidate set from receiver.
-    TMMBRReceived(size, 0, &candidates);
-  }
   // Find bounding set
   std::vector<rtcp::TmmbItem> bounding =
-      TMMBRHelp::FindBoundingSet(std::move(candidates));
+      TMMBRHelp::FindBoundingSet(TMMBRReceived());
   // Set bounding set
   // Inform remote clients about the new bandwidth
   // inform the remote client
@@ -1399,44 +1393,18 @@ int32_t RTCPReceiver::CNAME(uint32_t remoteSSRC,
   return 0;
 }
 
-// no callbacks allowed inside this function
-int32_t RTCPReceiver::TMMBRReceived(uint32_t size,
-                                    uint32_t accNumCandidates,
-                                    TMMBRSet* candidateSet) const {
+std::vector<rtcp::TmmbItem> RTCPReceiver::TMMBRReceived() const {
   rtc::CritScope lock(&_criticalSectionRTCPReceiver);
+  std::vector<rtcp::TmmbItem> candidates;
 
-  std::map<uint32_t, RTCPReceiveInformation*>::const_iterator
-      receiveInfoIt = _receivedInfoMap.begin();
-  if (receiveInfoIt == _receivedInfoMap.end()) {
-    return -1;
+  int64_t now_ms = _clock->TimeInMilliseconds();
+
+  for (const auto& kv : _receivedInfoMap) {
+    RTCPReceiveInformation* receive_info = kv.second;
+    RTC_DCHECK(receive_info);
+    receive_info->GetTMMBRSet(now_ms, &candidates);
   }
-  uint32_t num = accNumCandidates;
-  if (candidateSet) {
-    while( num < size && receiveInfoIt != _receivedInfoMap.end()) {
-      RTCPReceiveInformation* receiveInfo = receiveInfoIt->second;
-      if (receiveInfo == NULL) {
-        return 0;
-      }
-      for (uint32_t i = 0;
-           (num < size) && (i < receiveInfo->TmmbrSet.lengthOfSet()); i++) {
-        if (receiveInfo->GetTMMBRSet(i, num, candidateSet,
-                                     _clock->TimeInMilliseconds()) == 0) {
-          num++;
-        }
-      }
-      receiveInfoIt++;
-    }
-  } else {
-    while (receiveInfoIt != _receivedInfoMap.end()) {
-      RTCPReceiveInformation* receiveInfo = receiveInfoIt->second;
-      if(receiveInfo == NULL) {
-        return -1;
-      }
-      num += receiveInfo->TmmbrSet.lengthOfSet();
-      receiveInfoIt++;
-    }
-  }
-  return num;
+  return candidates;
 }
 
 }  // namespace webrtc
