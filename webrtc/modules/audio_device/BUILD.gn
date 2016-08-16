@@ -29,6 +29,7 @@ source_set("audio_device") {
     "../..:webrtc_common",
     "../../base:rtc_base",
     "../../base:rtc_base_approved",
+    "../../base:rtc_task_queue",
     "../../common_audio",
     "../../system_wrappers",
     "../utility",
@@ -208,5 +209,32 @@ source_set("audio_device") {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
     configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+}
+
+# These tests do not work on ios, see
+# https://bugs.chromium.org/p/webrtc/issues/detail?id=4755
+if (rtc_include_tests && !is_ios) {
+  executable("audio_device_tests") {
+    testonly = true
+    sources = [
+      "test/audio_device_test_api.cc",
+      "test/audio_device_test_defines.h",
+    ]
+    deps = [
+      ":audio_device",
+      "../..:webrtc_common",
+      "../../system_wrappers",
+      "../../test:test_support",
+      "../../test:test_support_main",
+      "../rtp_rtcp",
+      "../utility",
+      "//testing/gtest",
+    ]
+    configs += [ "../..:common_config" ]
+    public_configs = [
+      "../..:common_inherited_config",
+      ":audio_device_config",
+    ]
   }
 }
