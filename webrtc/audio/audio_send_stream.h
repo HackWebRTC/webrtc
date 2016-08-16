@@ -33,6 +33,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
  public:
   AudioSendStream(const webrtc::AudioSendStream::Config& config,
                   const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
+                  rtc::TaskQueue* worker_queue,
                   CongestionController* congestion_controller,
                   BitrateAllocator* bitrate_allocator);
   ~AudioSendStream() override;
@@ -59,6 +60,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   VoiceEngine* voice_engine() const;
 
   rtc::ThreadChecker thread_checker_;
+  rtc::TaskQueue* worker_queue_;
   const webrtc::AudioSendStream::Config config_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
   std::unique_ptr<voe::ChannelProxy> channel_proxy_;

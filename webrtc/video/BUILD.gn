@@ -35,8 +35,6 @@ source_set("video") {
     "stats_counter.h",
     "stream_synchronization.cc",
     "stream_synchronization.h",
-    "video_capture_input.cc",
-    "video_capture_input.h",
     "video_decoder.cc",
     "video_encoder.cc",
     "video_receive_stream.cc",
@@ -64,6 +62,7 @@ source_set("video") {
     "..:rtc_event_log",
     "..:webrtc_common",
     "../base:rtc_base_approved",
+    "../base:rtc_task_queue",
     "../common_video",
     "../modules/bitrate_controller",
     "../modules/congestion_controller",
@@ -94,10 +93,10 @@ if (rtc_include_tests) {
       "send_statistics_proxy_unittest.cc",
       "stats_counter_unittest.cc",
       "stream_synchronization_unittest.cc",
-      "video_capture_input_unittest.cc",
       "video_decoder_unittest.cc",
       "video_encoder_unittest.cc",
       "video_send_stream_tests.cc",
+      "vie_encoder_unittest.cc",
       "vie_remb_unittest.cc",
     ]
     configs += [ "..:common_config" ]

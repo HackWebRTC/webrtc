@@ -12,6 +12,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 
@@ -33,7 +34,7 @@ FakeEncoder::FakeEncoder(Clock* clock)
 FakeEncoder::~FakeEncoder() {}
 
 void FakeEncoder::SetMaxBitrate(int max_kbps) {
-  assert(max_kbps >= -1);  // max_kbps == -1 disables it.
+  RTC_DCHECK_GE(max_kbps, -1);  // max_kbps == -1 disables it.
   max_target_bitrate_kbps_ = max_kbps;
 }
 
@@ -48,7 +49,7 @@ int32_t FakeEncoder::InitEncode(const VideoCodec* config,
 int32_t FakeEncoder::Encode(const VideoFrame& input_image,
                             const CodecSpecificInfo* codec_specific_info,
                             const std::vector<FrameType>* frame_types) {
-  assert(config_.maxFramerate > 0);
+  RTC_DCHECK_GT(config_.maxFramerate, 0);
   int64_t time_since_last_encode_ms = 1000 / config_.maxFramerate;
   int64_t time_now_ms = clock_->TimeInMilliseconds();
   const bool first_encode = last_encode_time_ms_ == 0;
@@ -75,7 +76,7 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     bits_available = max_bits;
   last_encode_time_ms_ = time_now_ms;
 
-  assert(config_.numberOfSimulcastStreams > 0);
+  RTC_DCHECK_GT(config_.numberOfSimulcastStreams, 0);
   for (unsigned char i = 0; i < config_.numberOfSimulcastStreams; ++i) {
     CodecSpecificInfo specifics;
     memset(&specifics, 0, sizeof(specifics));
@@ -97,6 +98,9 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     if (stream_bytes > sizeof(encoded_buffer_))
       stream_bytes = sizeof(encoded_buffer_);
 
+    // Always encode something on the first frame.
+    if (min_stream_bits > bits_available && i > 0)
+      continue;
     EncodedImage encoded(
         encoded_buffer_, stream_bytes, sizeof(encoded_buffer_));
     encoded._timeStamp = input_image.timestamp();
@@ -104,10 +108,7 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     encoded._frameType = (*frame_types)[i];
     encoded._encodedWidth = config_.simulcastStream[i].width;
     encoded._encodedHeight = config_.simulcastStream[i].height;
-    // Always encode something on the first frame.
-    if (min_stream_bits > bits_available && i > 0)
-      continue;
-    assert(callback_ != NULL);
+    RTC_DCHECK(callback_ != NULL);
     if (callback_->Encoded(encoded, &specifics, NULL) != 0)
       return -1;
     bits_available -= std::min(encoded._length * 8, bits_available);

@@ -193,7 +193,6 @@ OveruseFrameDetector::OveruseFrameDetector(
       in_quick_rampup_(false),
       current_rampup_delay_ms_(kStandardRampUpDelayMs),
       usage_(new SendProcessingUsage(options)) {
-  RTC_DCHECK(metrics_observer);
   processing_thread_.DetachFromThread();
 }
 

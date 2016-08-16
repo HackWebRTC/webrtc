@@ -672,7 +672,7 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
       encoder_config->streams[0].target_bitrate_bps =
           encoder_config->streams[0].max_bitrate_bps = 2000000;
 
-      encoder_config_ = *encoder_config;
+      encoder_config_ = encoder_config->Copy();
     }
 
     void OnVideoStreamsCreated(
@@ -686,7 +686,7 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
           << "Timed out before receiving an initial high bitrate.";
       encoder_config_.streams[0].width *= 2;
       encoder_config_.streams[0].height *= 2;
-      send_stream_->ReconfigureVideoEncoder(encoder_config_);
+      send_stream_->ReconfigureVideoEncoder(encoder_config_.Copy());
       EXPECT_TRUE(Wait())
           << "Timed out while waiting for a couple of high bitrate estimates "
              "after reconfiguring the send stream.";

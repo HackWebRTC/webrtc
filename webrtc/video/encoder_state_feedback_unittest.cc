@@ -21,9 +21,14 @@ namespace webrtc {
 
 class MockVieEncoder : public ViEEncoder {
  public:
-  explicit MockVieEncoder(ProcessThread* process_thread)
-      : ViEEncoder(1, process_thread, nullptr, nullptr, nullptr) {}
-  ~MockVieEncoder() {}
+  MockVieEncoder()
+      : ViEEncoder(1,
+                   nullptr,
+                   VideoSendStream::Config::EncoderSettings("fake", 0, nullptr),
+                   nullptr,
+                   nullptr,
+                   nullptr) {}
+  ~MockVieEncoder() { Stop(); }
 
   MOCK_METHOD1(OnReceivedIntraFrameRequest, void(size_t));
   MOCK_METHOD1(OnReceivedSLI, void(uint8_t picture_id));
@@ -33,8 +38,7 @@ class MockVieEncoder : public ViEEncoder {
 class VieKeyRequestTest : public ::testing::Test {
  public:
   VieKeyRequestTest()
-      : encoder_(&process_thread_),
-        simulated_clock_(123456789),
+      : simulated_clock_(123456789),
         encoder_state_feedback_(
             &simulated_clock_,
             std::vector<uint32_t>(1, VieKeyRequestTest::kSsrc),
@@ -42,7 +46,6 @@ class VieKeyRequestTest : public ::testing::Test {
 
  protected:
   const uint32_t kSsrc = 1234;
-  NiceMock<MockProcessThread> process_thread_;
   MockVieEncoder encoder_;
   SimulatedClock simulated_clock_;
   EncoderStateFeedback encoder_state_feedback_;

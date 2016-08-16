@@ -136,7 +136,8 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
       EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   Clock* const clock_;
-  const VideoSendStream::Config config_;
+  const std::string payload_name_;
+  const VideoSendStream::Config::Rtp rtp_config_;
   rtc::CriticalSection crit_;
   VideoEncoderConfig::ContentType content_type_ GUARDED_BY(crit_);
   const int64_t start_ms_;
@@ -154,7 +155,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
                         Clock* clock);
     ~UmaSamplesContainer();
 
-    void UpdateHistograms(const VideoSendStream::Config& config,
+    void UpdateHistograms(const VideoSendStream::Config::Rtp& rtp_config,
                           const VideoSendStream::Stats& current_stats);
 
     const std::string uma_prefix_;

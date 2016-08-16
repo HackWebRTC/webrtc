@@ -16,7 +16,9 @@
 #include "webrtc/audio/conversion.h"
 #include "webrtc/audio/scoped_voe_interface.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/event.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/task_queue.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -59,9 +61,11 @@ namespace internal {
 AudioSendStream::AudioSendStream(
     const webrtc::AudioSendStream::Config& config,
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
+    rtc::TaskQueue* worker_queue,
     CongestionController* congestion_controller,
     BitrateAllocator* bitrate_allocator)
-    : config_(config),
+    : worker_queue_(worker_queue),
+      config_(config),
       audio_state_(audio_state),
       bitrate_allocator_(bitrate_allocator) {
   LOG(LS_INFO) << "AudioSendStream: " << config_.ToString();
@@ -109,8 +113,13 @@ void AudioSendStream::Start() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (config_.min_bitrate_kbps != -1 && config_.max_bitrate_kbps != -1) {
     RTC_DCHECK_GE(config_.max_bitrate_kbps, config_.min_bitrate_kbps);
-    bitrate_allocator_->AddObserver(this, config_.min_bitrate_kbps * 1000,
-                                    config_.max_bitrate_kbps * 1000, 0, true);
+    rtc::Event thread_sync_event(false /* manual_reset */, false);
+    worker_queue_->PostTask([this, &thread_sync_event] {
+      bitrate_allocator_->AddObserver(this, config_.min_bitrate_kbps * 1000,
+                                      config_.max_bitrate_kbps * 1000, 0, true);
+      thread_sync_event.Set();
+    });
+    thread_sync_event.Wait(rtc::Event::kForever);
   }
 
   ScopedVoEInterface<VoEBase> base(voice_engine());
@@ -122,7 +131,13 @@ void AudioSendStream::Start() {
 
 void AudioSendStream::Stop() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  bitrate_allocator_->RemoveObserver(this);
+  rtc::Event thread_sync_event(false /* manual_reset */, false);
+  worker_queue_->PostTask([this, &thread_sync_event] {
+    bitrate_allocator_->RemoveObserver(this);
+    thread_sync_event.Set();
+  });
+  thread_sync_event.Wait(rtc::Event::kForever);
+
   ScopedVoEInterface<VoEBase> base(voice_engine());
   int error = base->StopSend(config_.voe_channel_id);
   if (error != 0) {

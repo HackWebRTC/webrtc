@@ -1153,7 +1153,8 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
     EXPECT_TRUE(streams.size() > 0);
     FakeVideoSendStream* stream = streams[streams.size() - 1];
 
-    webrtc::VideoEncoderConfig encoder_config = stream->GetEncoderConfig();
+    webrtc::VideoEncoderConfig encoder_config =
+        stream->GetEncoderConfig().Copy();
     EXPECT_EQ(1, encoder_config.streams.size());
     return encoder_config.streams[0].max_bitrate_bps;
   }
@@ -1645,7 +1646,8 @@ TEST_F(WebRtcVideoChannel2Test, UsesCorrectSettingsForScreencast) {
   EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
 
   // Verify non-screencast settings.
-  webrtc::VideoEncoderConfig encoder_config = send_stream->GetEncoderConfig();
+  webrtc::VideoEncoderConfig encoder_config =
+      send_stream->GetEncoderConfig().Copy();
   EXPECT_EQ(webrtc::VideoEncoderConfig::ContentType::kRealtimeVideo,
             encoder_config.content_type);
   EXPECT_EQ(codec.width, encoder_config.streams.front().width);
@@ -1666,7 +1668,7 @@ TEST_F(WebRtcVideoChannel2Test, UsesCorrectSettingsForScreencast) {
   EXPECT_EQ(3, send_stream->GetNumberOfSwappedFrames());
 
   // Verify screencast settings.
-  encoder_config = send_stream->GetEncoderConfig();
+  encoder_config = send_stream->GetEncoderConfig().Copy();
   EXPECT_EQ(webrtc::VideoEncoderConfig::ContentType::kScreen,
             encoder_config.content_type);
   EXPECT_EQ(kScreenshareMinBitrateKbps * 1000,
@@ -1693,7 +1695,7 @@ TEST_F(WebRtcVideoChannel2Test, NoRecreateStreamForScreencast) {
 
   ASSERT_EQ(1, fake_call_->GetNumCreatedSendStreams());
   FakeVideoSendStream* stream = fake_call_->GetVideoSendStreams().front();
-  webrtc::VideoEncoderConfig encoder_config = stream->GetEncoderConfig();
+  webrtc::VideoEncoderConfig encoder_config = stream->GetEncoderConfig().Copy();
   EXPECT_EQ(webrtc::VideoEncoderConfig::ContentType::kRealtimeVideo,
             encoder_config.content_type);
 
@@ -1710,7 +1712,7 @@ TEST_F(WebRtcVideoChannel2Test, NoRecreateStreamForScreencast) {
   ASSERT_EQ(stream, fake_call_->GetVideoSendStreams().front());
   EXPECT_EQ(2, stream->GetNumberOfSwappedFrames());
 
-  encoder_config = stream->GetEncoderConfig();
+  encoder_config = stream->GetEncoderConfig().Copy();
   EXPECT_EQ(webrtc::VideoEncoderConfig::ContentType::kScreen,
             encoder_config.content_type);
 
@@ -1723,7 +1725,7 @@ TEST_F(WebRtcVideoChannel2Test, NoRecreateStreamForScreencast) {
   ASSERT_EQ(stream, fake_call_->GetVideoSendStreams().front());
   EXPECT_EQ(3, stream->GetNumberOfSwappedFrames());
 
-  encoder_config = stream->GetEncoderConfig();
+  encoder_config = stream->GetEncoderConfig().Copy();
   EXPECT_EQ(webrtc::VideoEncoderConfig::ContentType::kRealtimeVideo,
             encoder_config.content_type);
 
@@ -1752,10 +1754,11 @@ TEST_F(WebRtcVideoChannel2Test,
   ASSERT_EQ(1u, fake_call_->GetVideoSendStreams().size());
   FakeVideoSendStream* send_stream = fake_call_->GetVideoSendStreams().front();
 
-  webrtc::VideoEncoderConfig encoder_config = send_stream->GetEncoderConfig();
+  webrtc::VideoEncoderConfig encoder_config =
+      send_stream->GetEncoderConfig().Copy();
 
   // Verify screencast settings.
-  encoder_config = send_stream->GetEncoderConfig();
+  encoder_config = send_stream->GetEncoderConfig().Copy();
   EXPECT_EQ(webrtc::VideoEncoderConfig::ContentType::kScreen,
             encoder_config.content_type);
   ASSERT_EQ(1u, encoder_config.streams.size());
@@ -2310,7 +2313,7 @@ TEST_F(WebRtcVideoChannel2Test, SetDefaultSendCodecs) {
   const std::vector<uint32_t> rtx_ssrcs = MAKE_VECTOR(kRtxSsrcs1);
   FakeVideoSendStream* stream = AddSendStream(
       cricket::CreateSimWithRtxStreamParams("cname", ssrcs, rtx_ssrcs));
-  webrtc::VideoSendStream::Config config = stream->GetConfig();
+  webrtc::VideoSendStream::Config config = stream->GetConfig().Copy();
 
   // Make sure NACK and FEC are enabled on the correct payload types.
   EXPECT_EQ(1000, config.rtp.nack.rtp_history_ms);
@@ -2329,7 +2332,7 @@ TEST_F(WebRtcVideoChannel2Test, SetSendCodecsWithoutFec) {
   ASSERT_TRUE(channel_->SetSendParameters(parameters));
 
   FakeVideoSendStream* stream = AddSendStream();
-  webrtc::VideoSendStream::Config config = stream->GetConfig();
+  webrtc::VideoSendStream::Config config = stream->GetConfig().Copy();
 
   EXPECT_EQ(-1, config.rtp.fec.ulpfec_payload_type);
   EXPECT_EQ(-1, config.rtp.fec.red_payload_type);
@@ -2368,7 +2371,7 @@ TEST_F(WebRtcVideoChannel2Test, SetSendCodecsWithoutFecDisablesFec) {
   ASSERT_TRUE(channel_->SetSendParameters(parameters));
 
   FakeVideoSendStream* stream = AddSendStream();
-  webrtc::VideoSendStream::Config config = stream->GetConfig();
+  webrtc::VideoSendStream::Config config = stream->GetConfig().Copy();
 
   EXPECT_EQ(kUlpfecCodec.id, config.rtp.fec.ulpfec_payload_type);
 
@@ -2376,7 +2379,7 @@ TEST_F(WebRtcVideoChannel2Test, SetSendCodecsWithoutFecDisablesFec) {
   ASSERT_TRUE(channel_->SetSendParameters(parameters));
   stream = fake_call_->GetVideoSendStreams()[0];
   ASSERT_TRUE(stream != NULL);
-  config = stream->GetConfig();
+  config = stream->GetConfig().Copy();
   EXPECT_EQ(-1, config.rtp.fec.ulpfec_payload_type)
       << "SetSendCodec without FEC should disable current FEC.";
 }
