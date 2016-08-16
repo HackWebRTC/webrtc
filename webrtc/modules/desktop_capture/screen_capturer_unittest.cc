@@ -16,10 +16,15 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
 #include "webrtc/modules/desktop_capture/screen_capturer_mock_objects.h"
+
+#if defined(WEBRTC_WIN)
+#include "webrtc/modules/desktop_capture/win/screen_capturer_win_directx.h"
+#endif  // defined(WEBRTC_WIN)
 
 using ::testing::_;
 using ::testing::AnyNumber;
@@ -146,6 +151,11 @@ TEST_F(ScreenCapturerTest, UseMagnifier) {
 }
 
 TEST_F(ScreenCapturerTest, UseDirectxCapturer) {
+  if (!ScreenCapturerWinDirectx::IsSupported()) {
+    LOG(LS_WARNING) << "Directx capturer is not supported";
+    return;
+  }
+
   DesktopCaptureOptions options(DesktopCaptureOptions::CreateDefault());
   options.set_allow_directx_capturer(true);
   capturer_.reset(ScreenCapturer::Create(options));
@@ -161,6 +171,11 @@ TEST_F(ScreenCapturerTest, UseDirectxCapturer) {
 }
 
 TEST_F(ScreenCapturerTest, UseDirectxCapturerWithSharedBuffers) {
+  if (!ScreenCapturerWinDirectx::IsSupported()) {
+    LOG(LS_WARNING) << "Directx capturer is not supported";
+    return;
+  }
+
   DesktopCaptureOptions options(DesktopCaptureOptions::CreateDefault());
   options.set_allow_directx_capturer(true);
   capturer_.reset(ScreenCapturer::Create(options));
