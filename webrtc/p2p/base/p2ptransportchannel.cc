@@ -85,6 +85,9 @@ static const int RECEIVING_SWITCHING_DELAY = 1000;  // ms
 // We periodically check if any existing networks do not have any connection
 // and regather on those networks.
 static const int DEFAULT_REGATHER_ON_FAILED_NETWORKS_INTERVAL = 5 * 60 * 1000;
+
+static constexpr int DEFAULT_BACKUP_CONNECTION_PING_INTERVAL = 25 * 1000;
+
 static constexpr int a_is_better = 1;
 static constexpr int b_is_better = -1;
 
@@ -109,7 +112,7 @@ P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
       gathering_state_(kIceGatheringNew),
       check_receiving_interval_(MIN_CHECK_RECEIVING_INTERVAL * 5),
       config_(MIN_CHECK_RECEIVING_INTERVAL * 50 /* receiving_timeout */,
-              0 /* backup_connection_ping_interval */,
+              DEFAULT_BACKUP_CONNECTION_PING_INTERVAL,
               GATHER_ONCE /* continual_gathering_policy */,
               false /* prioritize_most_likely_candidate_pairs */,
               STABLE_WRITABLE_CONNECTION_PING_INTERVAL,
