@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_FILE_RECORDER_H_
-#define WEBRTC_VOICE_ENGINE_FILE_RECORDER_H_
+#ifndef WEBRTC_MODULES_UTILITY_INCLUDE_FILE_RECORDER_H_
+#define WEBRTC_MODULES_UTILITY_INCLUDE_FILE_RECORDER_H_
 
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
@@ -61,5 +61,4 @@ protected:
 
 };
 }  // namespace webrtc
-
-#endif // WEBRTC_VOICE_ENGINE_FILE_RECORDER_H_
+#endif // WEBRTC_MODULES_UTILITY_INCLUDE_FILE_RECORDER_H_

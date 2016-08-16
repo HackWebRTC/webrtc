@@ -9,74 +9,6 @@
 import("../build/webrtc.gni")
 import("//testing/test.gni")
 
-source_set("audio_coder") {
-  sources = [
-    "coder.cc",
-    "coder.h",
-  ]
-  configs += [ "..:common_config" ]
-  public_configs = [ "..:common_inherited_config" ]
-  deps = [
-    "..:webrtc_common",
-    "../modules/audio_coding:audio_coding",
-    "../modules/audio_coding:builtin_audio_decoder_factory",
-    "../modules/audio_coding:rent_a_codec",
-  ]
-
-  if (is_clang) {
-    # Suppress warnings from Chrome's Clang plugins.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
-  }
-}
-
-source_set("file_player") {
-  sources = [
-    "file_player.h",
-    "file_player_impl.cc",
-    "file_player_impl.h",
-  ]
-  configs += [ "..:common_config" ]
-  public_configs = [ "..:common_inherited_config" ]
-  deps = [
-    ":audio_coder",
-    "..:webrtc_common",
-    "../common_audio:common_audio",
-    "../modules/media_file:media_file",
-    "../system_wrappers:system_wrappers",
-  ]
-
-  if (is_clang) {
-    # Suppress warnings from Chrome's Clang plugins.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
-  }
-}
-
-source_set("file_recorder") {
-  sources = [
-    "file_recorder.h",
-    "file_recorder_impl.cc",
-    "file_recorder_impl.h",
-  ]
-  configs += [ "..:common_config" ]
-  public_configs = [ "..:common_inherited_config" ]
-  deps = [
-    ":audio_coder",
-    "..:webrtc_common",
-    "../base:rtc_base_approved",
-    "../common_audio:common_audio",
-    "../modules/media_file:media_file",
-    "../system_wrappers:system_wrappers",
-  ]
-
-  if (is_clang) {
-    # Suppress warnings from Chrome's Clang plugins.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
-  }
-}
-
 source_set("voice_engine") {
   sources = [
     "channel.cc",
@@ -157,8 +89,6 @@ source_set("voice_engine") {
   }
 
   deps = [
-    ":file_player",
-    ":file_recorder",
     ":level_indicator",
     "..:rtc_event_log",
     "..:webrtc_common",
@@ -199,7 +129,6 @@ if (rtc_include_tests) {
       ":voice_engine",
       "//testing/gmock",
       "//testing/gtest",
-      "//third_party/gflags",
       "//webrtc/common_audio",
       "//webrtc/modules/audio_coding",
       "//webrtc/modules/audio_conference_mixer",
@@ -215,15 +144,10 @@ if (rtc_include_tests) {
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_native_code" ]
       shard_timeout = 900
-      data = [
-        "//resources/utility/encapsulated_pcm16b_8khz.wav",
-        "//resources/utility/encapsulated_pcmu_8khz.wav",
-      ]
     }
 
     sources = [
       "channel_unittest.cc",
-      "file_player_unittests.cc",
       "network_predictor_unittest.cc",
       "transmit_mixer_unittest.cc",
       "utility_unittest.cc",

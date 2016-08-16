@@ -10,6 +10,8 @@
 
 // Unit tests for FilePlayer.
 
+#include "webrtc/modules/utility/include/file_player.h"
+
 #include <stdio.h>
 #include <string>
 
@@ -18,7 +20,6 @@
 #include "webrtc/base/md5digest.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/voice_engine/file_player.h"
 
 DEFINE_bool(file_player_output, false, "Generate reference files.");
 
