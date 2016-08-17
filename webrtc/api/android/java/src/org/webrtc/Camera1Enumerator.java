@@ -38,23 +38,30 @@ public class Camera1Enumerator implements CameraEnumerator {
   // Returns device names that can be used to create a new VideoCapturerAndroid.
   @Override
   public String[] getDeviceNames() {
-    String[] names = new String[android.hardware.Camera.getNumberOfCameras()];
+    ArrayList<String> namesList = new ArrayList<>();
     for (int i = 0; i < android.hardware.Camera.getNumberOfCameras(); ++i) {
-      names[i] = getDeviceName(i);
+      String name = getDeviceName(i);
+      if (name != null) {
+        namesList.add(name);
+        Logging.d(TAG, "Index: " + i + ". " + name);
+      } else {
+        Logging.e(TAG, "Index: " + i + ". Failed to query camera name.");
+      }
     }
-    return names;
+    String[] namesArray = new String[namesList.size()];
+    return namesList.toArray(namesArray);
   }
 
   @Override
   public boolean isFrontFacing(String deviceName) {
     android.hardware.Camera.CameraInfo info = getCameraInfo(getCameraIndex(deviceName));
-    return info.facing == android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT;
+    return info != null && info.facing == android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT;
   }
 
   @Override
   public boolean isBackFacing(String deviceName) {
     android.hardware.Camera.CameraInfo info = getCameraInfo(getCameraIndex(deviceName));
-    return info.facing == android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK;
+    return info != null && info.facing == android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK;
   }
 
   @Override
@@ -68,7 +75,7 @@ public class Camera1Enumerator implements CameraEnumerator {
     try {
       android.hardware.Camera.getCameraInfo(index, info);
     } catch (Exception e) {
-      Logging.e(TAG, "getCameraInfo failed on index " + index,e);
+      Logging.e(TAG, "getCameraInfo failed on index " + index, e);
       return null;
     }
     return info;
@@ -163,6 +170,9 @@ public class Camera1Enumerator implements CameraEnumerator {
   // camera can not be used.
   static String getDeviceName(int index) {
     android.hardware.Camera.CameraInfo info = getCameraInfo(index);
+    if (info == null) {
+      return null;
+    }
 
     String facing =
         (info.facing == android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT) ? "front" : "back";
