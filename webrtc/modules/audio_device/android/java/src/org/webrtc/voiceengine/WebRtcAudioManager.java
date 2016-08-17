@@ -110,8 +110,6 @@ public class WebRtcAudioManager {
           Logging.d(TAG, "VOICE_CALL stream volume: "
               + audioManager.getStreamVolume(AudioManager.STREAM_VOICE_CALL)
               + " (max=" + maxVoiceCallVolume + ")");
-        } else {
-          Logging.w(TAG, "Invalid audio mode: " + AUDIO_MODES[mode]);
         }
       }
     }
