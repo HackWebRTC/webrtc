@@ -834,7 +834,8 @@ void EventLogAnalyzer::CreateBweSimulationGraph(Plot* plot) {
       if (rtp.header.extension.hasTransportSequenceNumber) {
         RTC_DCHECK(rtp.header.extension.hasTransportSequenceNumber);
         cc.GetTransportFeedbackObserver()->AddPacket(
-            rtp.header.extension.transportSequenceNumber, rtp.total_length, 0);
+            rtp.header.extension.transportSequenceNumber, rtp.total_length,
+            PacketInfo::kNotAProbe);
         rtc::SentPacket sent_packet(
             rtp.header.extension.transportSequenceNumber, rtp.timestamp / 1000);
         cc.OnSentPacket(sent_packet);
