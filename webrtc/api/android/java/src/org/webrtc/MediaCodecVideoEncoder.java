@@ -95,10 +95,8 @@ public class MediaCodecVideoEncoder {
       "OMX.qcom.", Build.VERSION_CODES.KITKAT, false /* bitrateAdjustmentRequired */);
   private static final MediaCodecProperties exynosVp8HwProperties = new MediaCodecProperties(
       "OMX.Exynos.", Build.VERSION_CODES.M, false /* bitrateAdjustmentRequired */);
-  private static final MediaCodecProperties intelVp8HwProperties = new MediaCodecProperties(
-      "OMX.Intel.", Build.VERSION_CODES.LOLLIPOP, false /* bitrateAdjustmentRequired */);
   private static final MediaCodecProperties[] vp8HwList = new MediaCodecProperties[] {
-    qcomVp8HwProperties, exynosVp8HwProperties, intelVp8HwProperties
+    qcomVp8HwProperties, exynosVp8HwProperties
   };
 
   // List of supported HW VP9 encoders.
