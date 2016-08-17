@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_device/dummy/file_audio_device.h"
 
 namespace webrtc {
@@ -24,10 +25,13 @@ char FileAudioDeviceFactory::_outputAudioFilename[MAX_FILENAME_LEN] = "";
 FileAudioDevice* FileAudioDeviceFactory::CreateFileAudioDevice(
     const int32_t id) {
   // Bail out here if the files haven't been set explicitly.
+  // audio_device_impl.cc should then fall back to dummy audio.
   if (!_isConfigured) {
-    printf("Was compiled with WEBRTC_DUMMY_AUDIO_PLAY_STATIC_FILE "
-           "but did not set input/output files to use. Bailing out.\n");
-    std::exit(1);
+    LOG(LS_WARNING) << "WebRTC configured with WEBRTC_DUMMY_FILE_DEVICES but "
+                    << "no device files supplied. Will fall back to dummy "
+                    << "audio.";
+
+    return nullptr;
   }
   return new FileAudioDevice(id, _inputAudioFilename, _outputAudioFilename);
 }

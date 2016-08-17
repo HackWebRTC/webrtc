@@ -186,7 +186,13 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects() {
   LOG(INFO) << "Dummy Audio APIs will be utilized";
 #elif defined(WEBRTC_DUMMY_FILE_DEVICES)
   ptrAudioDevice = FileAudioDeviceFactory::CreateFileAudioDevice(Id());
-  LOG(INFO) << "Will use file-playing dummy device.";
+  if (ptrAudioDevice) {
+    LOG(INFO) << "Will use file-playing dummy device.";
+  } else {
+    // Create a dummy device instead.
+    ptrAudioDevice = new AudioDeviceDummy(Id());
+    LOG(INFO) << "Dummy Audio APIs will be utilized";
+  }
 #else
   AudioLayer audioLayer(PlatformAudioLayer());
 
