@@ -191,7 +191,7 @@ void P2PTransportChannel::AddConnection(Connection* connection) {
 bool P2PTransportChannel::ShouldSwitchSelectedConnection(
     Connection* new_connection,
     bool* missed_receiving_unchanged_threshold) const {
-  if (!new_connection || selected_connection_ == new_connection) {
+  if (!ReadyToSend(new_connection) || selected_connection_ == new_connection) {
     return false;
   }
 
@@ -940,7 +940,7 @@ int P2PTransportChannel::SendPacket(const char *data, size_t len,
   }
   // If we don't think the connection is working yet, return ENOTCONN
   // instead of sending a packet that will probably be dropped.
-  if (!ReadyToSend()) {
+  if (!ReadyToSend(selected_connection_)) {
     error_ = ENOTCONN;
     return -1;
   }
@@ -1315,7 +1315,8 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn) {
     LOG_J(LS_INFO, this) << "No selected connection";
   }
   SignalSelectedCandidatePairChanged(this, selected_connection_,
-                                     last_sent_packet_id_, ReadyToSend());
+                                     last_sent_packet_id_,
+                                     ReadyToSend(selected_connection_));
 }
 
 // Warning: UpdateState should eventually be called whenever a connection
@@ -1409,15 +1410,14 @@ bool P2PTransportChannel::weak() const {
   return !selected_connection_ || selected_connection_->weak();
 }
 
-bool P2PTransportChannel::ReadyToSend() const {
+bool P2PTransportChannel::ReadyToSend(Connection* connection) const {
   // Note that we allow sending on an unreliable connection, because it's
   // possible that it became unreliable simply due to bad chance.
   // So this shouldn't prevent attempting to send media.
-  return selected_connection_ != nullptr &&
-         (selected_connection_->writable() ||
-          PresumedWritable(selected_connection_) ||
-          selected_connection_->write_state() ==
-              Connection::STATE_WRITE_UNRELIABLE);
+  return connection != nullptr &&
+         (connection->writable() ||
+          connection->write_state() == Connection::STATE_WRITE_UNRELIABLE ||
+          PresumedWritable(connection));
 }
 
 // If we have a selected connection, return it, otherwise return top one in the
