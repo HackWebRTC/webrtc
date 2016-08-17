@@ -93,158 +93,166 @@
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
           ],
           'conditions': [
-            ['OS=="android"', {
-              'sources': [
-                'android/audio_device_template.h',
-                'android/audio_manager.cc',
-                'android/audio_manager.h',
-                'android/audio_record_jni.cc',
-                'android/audio_record_jni.h',
-                'android/audio_track_jni.cc',
-                'android/audio_track_jni.h',
-                'android/build_info.cc',
-                'android/build_info.h',
-                'android/opensles_common.cc',
-                'android/opensles_common.h',
-                'android/opensles_player.cc',
-                'android/opensles_player.h',
-              ],
-              'link_settings': {
-                'libraries': [
-                  '-llog',
-                  '-lOpenSLES',
-                ],
-              },
-            }],
-            ['OS=="linux"', {
-              'sources': [
-                'linux/alsasymboltable_linux.cc',
-                'linux/alsasymboltable_linux.h',
-                'linux/audio_device_alsa_linux.cc',
-                'linux/audio_device_alsa_linux.h',
-                'linux/audio_mixer_manager_alsa_linux.cc',
-                'linux/audio_mixer_manager_alsa_linux.h',
-                'linux/latebindingsymboltable_linux.cc',
-                'linux/latebindingsymboltable_linux.h',
-              ],
+            ['use_dummy_audio_file_devices==1', {
               'defines': [
-                'LINUX_ALSA',
+               'WEBRTC_DUMMY_FILE_DEVICES',
               ],
-              'link_settings': {
-                'libraries': [
-                  '-ldl','-lX11',
-                ],
-              },
+            }, { # use_dummy_audio_file_devices==0, so use a platform device.
               'conditions': [
-                ['include_pulse_audio==1', {
-                  'defines': [
-                    'LINUX_PULSE',
-                  ],
+                ['OS=="android"', {
                   'sources': [
-                    'linux/audio_device_pulse_linux.cc',
-                    'linux/audio_device_pulse_linux.h',
-                    'linux/audio_mixer_manager_pulse_linux.cc',
-                    'linux/audio_mixer_manager_pulse_linux.h',
-                    'linux/pulseaudiosymboltable_linux.cc',
-                    'linux/pulseaudiosymboltable_linux.h',
+                    'android/audio_device_template.h',
+                    'android/audio_manager.cc',
+                    'android/audio_manager.h',
+                    'android/audio_record_jni.cc',
+                    'android/audio_record_jni.h',
+                    'android/audio_track_jni.cc',
+                    'android/audio_track_jni.h',
+                    'android/build_info.cc',
+                    'android/build_info.h',
+                    'android/opensles_common.cc',
+                    'android/opensles_common.h',
+                    'android/opensles_player.cc',
+                    'android/opensles_player.h',
+                  ],
+                  'link_settings': {
+                    'libraries': [
+                      '-llog',
+                      '-lOpenSLES',
+                    ],
+                  },
+                }],
+                ['OS=="linux"', {
+                  'sources': [
+                    'linux/alsasymboltable_linux.cc',
+                    'linux/alsasymboltable_linux.h',
+                    'linux/audio_device_alsa_linux.cc',
+                    'linux/audio_device_alsa_linux.h',
+                    'linux/audio_mixer_manager_alsa_linux.cc',
+                    'linux/audio_mixer_manager_alsa_linux.h',
+                    'linux/latebindingsymboltable_linux.cc',
+                    'linux/latebindingsymboltable_linux.h',
+                  ],
+                  'defines': [
+                    'LINUX_ALSA',
+                  ],
+                  'link_settings': {
+                    'libraries': [
+                      '-ldl','-lX11',
+                    ],
+                  },
+                  'conditions': [
+                    ['include_pulse_audio==1', {
+                      'defines': [
+                        'LINUX_PULSE',
+                      ],
+                      'sources': [
+                        'linux/audio_device_pulse_linux.cc',
+                        'linux/audio_device_pulse_linux.h',
+                        'linux/audio_mixer_manager_pulse_linux.cc',
+                        'linux/audio_mixer_manager_pulse_linux.h',
+                        'linux/pulseaudiosymboltable_linux.cc',
+                        'linux/pulseaudiosymboltable_linux.h',
+                      ],
+                    }],
                   ],
                 }],
-              ],
-            }],
-            ['OS=="mac"', {
-              'sources': [
-                'mac/audio_device_mac.cc',
-                'mac/audio_device_mac.h',
-                'mac/audio_mixer_manager_mac.cc',
-                'mac/audio_mixer_manager_mac.h',
-                'mac/portaudio/pa_memorybarrier.h',
-                'mac/portaudio/pa_ringbuffer.c',
-                'mac/portaudio/pa_ringbuffer.h',
-              ],
-              'link_settings': {
-                'libraries': [
-                  '$(SDKROOT)/System/Library/Frameworks/AudioToolbox.framework',
-                  '$(SDKROOT)/System/Library/Frameworks/CoreAudio.framework',
-                ],
-              },
-            }],
-            ['OS=="ios"', {
-              'dependencies': [
-                '<(webrtc_root)/sdk/sdk.gyp:rtc_sdk_common_objc',
-              ],
-              'export_dependent_settings': [
-                '<(webrtc_root)/sdk/sdk.gyp:rtc_sdk_common_objc',
-              ],
-              'sources': [
-                'ios/audio_device_ios.h',
-                'ios/audio_device_ios.mm',
-                'ios/audio_device_not_implemented_ios.mm',
-                'ios/audio_session_observer.h',
-                'ios/objc/RTCAudioSession+Configuration.mm',
-                'ios/objc/RTCAudioSession+Private.h',
-                'ios/objc/RTCAudioSession.h',
-                'ios/objc/RTCAudioSession.mm',
-                'ios/objc/RTCAudioSessionConfiguration.h',
-                'ios/objc/RTCAudioSessionConfiguration.m',
-                'ios/objc/RTCAudioSessionDelegateAdapter.h',
-                'ios/objc/RTCAudioSessionDelegateAdapter.mm',
-                'ios/voice_processing_audio_unit.h',
-                'ios/voice_processing_audio_unit.mm',
-              ],
-              'xcode_settings': {
-                'CLANG_ENABLE_OBJC_ARC': 'YES',
-              },
-              'link_settings': {
-                'xcode_settings': {
-                  'OTHER_LDFLAGS': [
-                    '-framework AudioToolbox',
-                    '-framework AVFoundation',
-                    '-framework Foundation',
-                    '-framework UIKit',
+                ['OS=="mac"', {
+                  'sources': [
+                    'mac/audio_device_mac.cc',
+                    'mac/audio_device_mac.h',
+                    'mac/audio_mixer_manager_mac.cc',
+                    'mac/audio_mixer_manager_mac.h',
+                    'mac/portaudio/pa_memorybarrier.h',
+                    'mac/portaudio/pa_ringbuffer.c',
+                    'mac/portaudio/pa_ringbuffer.h',
                   ],
-                },
-              },
-            }],
-            ['OS=="win"', {
-              'sources': [
-                'win/audio_device_core_win.cc',
-                'win/audio_device_core_win.h',
-                'win/audio_device_wave_win.cc',
-                'win/audio_device_wave_win.h',
-                'win/audio_mixer_manager_win.cc',
-                'win/audio_mixer_manager_win.h',
-              ],
-              'link_settings': {
-                'libraries': [
-                  # Required for the built-in WASAPI AEC.
-                  '-ldmoguids.lib',
-                  '-lwmcodecdspuuid.lib',
-                  '-lamstrmid.lib',
-                  '-lmsdmo.lib',
-                ],
-              },
-            }],
-            ['OS=="win" and clang==1', {
-              'msvs_settings': {
-                'VCCLCompilerTool': {
-                  'AdditionalOptions': [
-                    # Disable warnings failing when compiling with Clang on Windows.
-                    # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
-                    '-Wno-bool-conversion',
-                    '-Wno-delete-non-virtual-dtor',
-                    '-Wno-logical-op-parentheses',
-                    '-Wno-microsoft-extra-qualification',
-                    '-Wno-microsoft-goto',
-                    '-Wno-missing-braces',
-                    '-Wno-parentheses-equality',
-                    '-Wno-reorder',
-                    '-Wno-shift-overflow',
-                    '-Wno-tautological-compare',
-                    '-Wno-unused-private-field',
+                  'link_settings': {
+                    'libraries': [
+                      '$(SDKROOT)/System/Library/Frameworks/AudioToolbox.framework',
+                      '$(SDKROOT)/System/Library/Frameworks/CoreAudio.framework',
+                    ],
+                  },
+                }],
+                ['OS=="ios"', {
+                  'dependencies': [
+                    '<(webrtc_root)/sdk/sdk.gyp:rtc_sdk_common_objc',
                   ],
-                },
-              },
-            }],
+                  'export_dependent_settings': [
+                    '<(webrtc_root)/sdk/sdk.gyp:rtc_sdk_common_objc',
+                  ],
+                  'sources': [
+                    'ios/audio_device_ios.h',
+                    'ios/audio_device_ios.mm',
+                    'ios/audio_device_not_implemented_ios.mm',
+                    'ios/audio_session_observer.h',
+                    'ios/objc/RTCAudioSession+Configuration.mm',
+                    'ios/objc/RTCAudioSession+Private.h',
+                    'ios/objc/RTCAudioSession.h',
+                    'ios/objc/RTCAudioSession.mm',
+                    'ios/objc/RTCAudioSessionConfiguration.h',
+                    'ios/objc/RTCAudioSessionConfiguration.m',
+                    'ios/objc/RTCAudioSessionDelegateAdapter.h',
+                    'ios/objc/RTCAudioSessionDelegateAdapter.mm',
+                    'ios/voice_processing_audio_unit.h',
+                    'ios/voice_processing_audio_unit.mm',
+                  ],
+                  'xcode_settings': {
+                    'CLANG_ENABLE_OBJC_ARC': 'YES',
+                  },
+                  'link_settings': {
+                    'xcode_settings': {
+                      'OTHER_LDFLAGS': [
+                        '-framework AudioToolbox',
+                        '-framework AVFoundation',
+                        '-framework Foundation',
+                        '-framework UIKit',
+                      ],
+                    },
+                  },
+                }],
+                ['OS=="win"', {
+                  'sources': [
+                    'win/audio_device_core_win.cc',
+                    'win/audio_device_core_win.h',
+                    'win/audio_device_wave_win.cc',
+                    'win/audio_device_wave_win.h',
+                    'win/audio_mixer_manager_win.cc',
+                    'win/audio_mixer_manager_win.h',
+                  ],
+                  'link_settings': {
+                    'libraries': [
+                      # Required for the built-in WASAPI AEC.
+                      '-ldmoguids.lib',
+                      '-lwmcodecdspuuid.lib',
+                      '-lamstrmid.lib',
+                      '-lmsdmo.lib',
+                    ],
+                  },
+                }],
+                ['OS=="win" and clang==1', {
+                  'msvs_settings': {
+                    'VCCLCompilerTool': {
+                      'AdditionalOptions': [
+                        # Disable warnings failing when compiling with Clang on Windows.
+                        # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
+                        '-Wno-bool-conversion',
+                        '-Wno-delete-non-virtual-dtor',
+                        '-Wno-logical-op-parentheses',
+                        '-Wno-microsoft-extra-qualification',
+                        '-Wno-microsoft-goto',
+                        '-Wno-missing-braces',
+                        '-Wno-parentheses-equality',
+                        '-Wno-reorder',
+                        '-Wno-shift-overflow',
+                        '-Wno-tautological-compare',
+                        '-Wno-unused-private-field',
+                      ],
+                    },
+                  },
+                }],
+              ], # conditions (for non-dummy devices)
+            }], # use_dummy_audio_file_devices check
           ], # conditions
         }], # include_internal_audio_device==1
       ], # conditions

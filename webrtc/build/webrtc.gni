@@ -112,6 +112,10 @@ declare_args() {
   # Determines whether QUIC code will be built.
   rtc_use_quic = false
 
+  # By default, use normal platform audio support or dummy audio, but don't
+  # use file-based audio playout and record.
+  rtc_use_dummy_audio_file_devices = false
+
   # FFmpeg must be initialized for |H264DecoderImpl| to work. This can be done
   # by WebRTC during |H264DecoderImpl::InitDecode| or externally. FFmpeg must
   # only be initialized once. Projects that initialize FFmpeg externally, such

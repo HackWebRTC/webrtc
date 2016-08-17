@@ -173,6 +173,10 @@
     # Determines whether QUIC code will be built.
     'use_quic%': 0,
 
+    # By default, use normal platform audio support or dummy audio, but don't
+    # use file-based audio playout and record.
+    'use_dummy_audio_file_devices%': 0,
+
     'conditions': [
       # Enable this to build OpenH264 encoder/FFmpeg decoder. This is supported
       # on all platforms except Android and iOS. Because FFmpeg can be built
