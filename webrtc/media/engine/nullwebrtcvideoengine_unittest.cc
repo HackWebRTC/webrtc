@@ -12,6 +12,7 @@
 
 #include "webrtc/media/engine/nullwebrtcvideoengine.h"
 #include "webrtc/media/engine/webrtcvoiceengine.h"
+#include "webrtc/modules/audio_coding/codecs/mock/mock_audio_decoder_factory.h"
 
 namespace cricket {
 
@@ -34,7 +35,9 @@ class WebRtcMediaEngineNullVideo
 // Simple test to check if NullWebRtcVideoEngine implements the methods
 // required by CompositeMediaEngine.
 TEST(NullWebRtcVideoEngineTest, CheckInterface) {
-  WebRtcMediaEngineNullVideo engine(nullptr, nullptr, nullptr, nullptr);
+  WebRtcMediaEngineNullVideo engine(
+      nullptr, webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr,
+      nullptr);
   EXPECT_TRUE(engine.Init());
 }
 

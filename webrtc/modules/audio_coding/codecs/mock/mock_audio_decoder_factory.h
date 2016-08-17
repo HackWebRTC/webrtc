@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "testing/gmock/include/gmock/gmock.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder_factory.h"
 
 namespace webrtc {
@@ -30,6 +31,45 @@ class MockAudioDecoderFactory : public AudioDecoderFactory {
   MOCK_METHOD2(MakeAudioDecoderMock,
                void(const SdpAudioFormat& format,
                     std::unique_ptr<AudioDecoder>* return_value));
+
+  // Creates a MockAudioDecoderFactory with no formats and that may not be
+  // invoked to create a codec - useful for initializing a voice engine, for
+  // example.
+  static rtc::scoped_refptr<webrtc::MockAudioDecoderFactory>
+  CreateUnusedFactory() {
+    using testing::_;
+    using testing::AnyNumber;
+    using testing::Return;
+
+    rtc::scoped_refptr<webrtc::MockAudioDecoderFactory> factory =
+        new rtc::RefCountedObject<webrtc::MockAudioDecoderFactory>;
+    ON_CALL(*factory.get(), GetSupportedFormats())
+        .WillByDefault(Return(std::vector<webrtc::SdpAudioFormat>()));
+    EXPECT_CALL(*factory.get(), GetSupportedFormats()).Times(AnyNumber());
+    EXPECT_CALL(*factory.get(), MakeAudioDecoderMock(_, _)).Times(0);
+    return factory;
+  }
+
+  // Creates a MockAudioDecoderFactory with no formats that may be invoked to
+  // create a codec any number of times. It will, though, return nullptr on each
+  // call, since it supports no codecs.
+  static rtc::scoped_refptr<webrtc::MockAudioDecoderFactory>
+  CreateEmptyFactory() {
+    using testing::_;
+    using testing::AnyNumber;
+    using testing::Return;
+    using testing::SetArgPointee;
+
+    rtc::scoped_refptr<webrtc::MockAudioDecoderFactory> factory =
+        new rtc::RefCountedObject<webrtc::MockAudioDecoderFactory>;
+    ON_CALL(*factory.get(), GetSupportedFormats())
+        .WillByDefault(Return(std::vector<webrtc::SdpAudioFormat>()));
+    EXPECT_CALL(*factory.get(), GetSupportedFormats()).Times(AnyNumber());
+    ON_CALL(*factory.get(), MakeAudioDecoderMock(_, _))
+        .WillByDefault(SetArgPointee<1>(nullptr));
+    EXPECT_CALL(*factory.get(), MakeAudioDecoderMock(_, _)).Times(AnyNumber());
+    return factory;
+  }
 };
 
 }  // namespace webrtc
