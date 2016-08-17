@@ -243,7 +243,7 @@ class RtcpSenderTest : public ::testing::Test {
                                       nullptr, nullptr, &test_transport_));
     rtcp_sender_->SetSSRC(kSenderSsrc);
     rtcp_sender_->SetRemoteSSRC(kRemoteSsrc);
-    rtcp_sender_->SetTimestampOffset(kStartRtpTimestamp);
+    rtcp_sender_->SetStartTimestamp(kStartRtpTimestamp);
     rtcp_sender_->SetLastRtpTime(kRtpTimestamp, clock_.TimeInMilliseconds());
   }
 
@@ -813,7 +813,7 @@ TEST_F(RtcpSenderTest, ByeMustBeLast) {
                                     nullptr, nullptr, &mock_transport));
   rtcp_sender_->SetSSRC(kSenderSsrc);
   rtcp_sender_->SetRemoteSSRC(kRemoteSsrc);
-  rtcp_sender_->SetTimestampOffset(kStartRtpTimestamp);
+  rtcp_sender_->SetStartTimestamp(kStartRtpTimestamp);
   rtcp_sender_->SetLastRtpTime(kRtpTimestamp, clock_.TimeInMilliseconds());
 
   // Set up XR VoIP metric to be included with BYE

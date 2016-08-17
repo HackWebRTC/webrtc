@@ -150,7 +150,6 @@ class RtpSenderTest : public ::testing::Test {
         &retransmission_rate_limiter_));
     rtp_sender_->SetSequenceNumber(kSeqNum);
     rtp_sender_->SetSendPayloadType(kPayload);
-    rtp_sender_->SetTimestampOffset(0);
   }
 
   SimulatedClock fake_clock_;

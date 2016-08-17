@@ -105,11 +105,6 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
   uint32_t SSRC = rtp_sender_.SSRC();
   rtcp_sender_.SetSSRC(SSRC);
   SetRtcpReceiverSsrcs(SSRC);
-
-  // Make sure rtcp sender use same timestamp offset as rtp sender.
-  rtcp_sender_.SetTimestampOffset(rtp_sender_.TimestampOffset());
-
-  // Set default packet size limit.
   SetMaxTransferUnit(IP_PACKET_SIZE);
 }
 
@@ -267,13 +262,13 @@ int8_t ModuleRtpRtcpImpl::SendPayloadType() const {
 }
 
 uint32_t ModuleRtpRtcpImpl::StartTimestamp() const {
-  return rtp_sender_.TimestampOffset();
+  return rtp_sender_.StartTimestamp();
 }
 
 // Configure start timestamp, default is a random number.
 void ModuleRtpRtcpImpl::SetStartTimestamp(const uint32_t timestamp) {
-  rtcp_sender_.SetTimestampOffset(timestamp);
-  rtp_sender_.SetTimestampOffset(timestamp);
+  rtcp_sender_.SetStartTimestamp(timestamp);
+  rtp_sender_.SetStartTimestamp(timestamp, true);
 }
 
 uint16_t ModuleRtpRtcpImpl::SequenceNumber() const {
@@ -286,8 +281,8 @@ void ModuleRtpRtcpImpl::SetSequenceNumber(const uint16_t seq_num) {
 }
 
 void ModuleRtpRtcpImpl::SetRtpState(const RtpState& rtp_state) {
+  SetStartTimestamp(rtp_state.start_timestamp);
   rtp_sender_.SetRtpState(rtp_state);
-  rtcp_sender_.SetTimestampOffset(rtp_state.start_timestamp);
 }
 
 void ModuleRtpRtcpImpl::SetRtxState(const RtpState& rtp_state) {
@@ -358,8 +353,13 @@ int32_t ModuleRtpRtcpImpl::SetSendingStatus(const bool sending) {
 
     collision_detected_ = false;
 
+    // Generate a new time_stamp if true and not configured via API
     // Generate a new SSRC for the next "call" if false
     rtp_sender_.SetSendingStatus(sending);
+    if (sending) {
+      // Make sure the RTCP sender has the same timestamp offset.
+      rtcp_sender_.SetStartTimestamp(rtp_sender_.StartTimestamp());
+    }
 
     // Make sure that RTCP objects are aware of our SSRC (it could have changed
     // Due to collision)
