@@ -13,6 +13,8 @@
 #include "webrtc/modules/utility/include/file_player.h"
 
 #include <stdio.h>
+
+#include <memory>
 #include <string>
 
 #include "gflags/gflags.h"
@@ -32,7 +34,7 @@ class FilePlayerTest : public ::testing::Test {
   static const int kSampleRateHz = 8000;
 
   FilePlayerTest()
-      : player_(FilePlayer::CreateFilePlayer(kId, kFileFormat)),
+      : player_(FilePlayer::NewFilePlayer(kId, kFileFormat)),
         output_file_(NULL) {}
 
   void SetUp() override {
@@ -48,8 +50,6 @@ class FilePlayerTest : public ::testing::Test {
     if (output_file_)
       fclose(output_file_);
   }
-
-  ~FilePlayerTest() { FilePlayer::DestroyFilePlayer(player_); }
 
   void PlayFileAndCheck(const std::string& input_file,
                         const std::string& ref_checksum,
@@ -76,7 +76,7 @@ class FilePlayerTest : public ::testing::Test {
               rtc::hex_encode(checksum_result, sizeof(checksum_result)));
   }
 
-  FilePlayer* player_;
+  std::unique_ptr<FilePlayer> player_;
   FILE* output_file_;
 };
 

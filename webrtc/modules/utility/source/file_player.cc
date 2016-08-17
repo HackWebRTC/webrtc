@@ -53,16 +53,14 @@ class FilePlayerImpl : public FilePlayer {
   virtual int32_t Frequency() const;
   virtual int32_t SetAudioScaling(float scaleFactor);
 
- protected:
+ private:
   int32_t SetUpAudioDecoder();
 
-  uint32_t _instanceID;
   const FileFormats _fileFormat;
   MediaFile& _fileModule;
 
   uint32_t _decodedLengthInMS;
 
- private:
   AudioCoder _audioDecoder;
 
   CodecInst _codec;
@@ -75,8 +73,7 @@ class FilePlayerImpl : public FilePlayer {
 
 FilePlayerImpl::FilePlayerImpl(const uint32_t instanceID,
                                const FileFormats fileFormat)
-    : _instanceID(instanceID),
-      _fileFormat(fileFormat),
+    : _fileFormat(fileFormat),
       _fileModule(*MediaFile::CreateMediaFile(instanceID)),
       _decodedLengthInMS(0),
       _audioDecoder(instanceID),
@@ -373,8 +370,9 @@ int32_t FilePlayerImpl::SetUpAudioDecoder() {
 
 }  // namespace
 
-FilePlayer* FilePlayer::CreateFilePlayer(uint32_t instanceID,
-                                         FileFormats fileFormat) {
+std::unique_ptr<FilePlayer> FilePlayer::NewFilePlayer(
+    uint32_t instanceID,
+    FileFormats fileFormat) {
   switch (fileFormat) {
     case kFileFormatWavFile:
     case kFileFormatCompressedFile:
@@ -383,11 +381,17 @@ FilePlayer* FilePlayer::CreateFilePlayer(uint32_t instanceID,
     case kFileFormatPcm8kHzFile:
     case kFileFormatPcm32kHzFile:
       // audio formats
-      return new FilePlayerImpl(instanceID, fileFormat);
+      return std::unique_ptr<FilePlayer>(
+          new FilePlayerImpl(instanceID, fileFormat));
     default:
       assert(false);
-      return NULL;
+      return nullptr;
   }
+}
+
+FilePlayer* FilePlayer::CreateFilePlayer(uint32_t instanceID,
+                                         FileFormats fileFormat) {
+  return FilePlayer::NewFilePlayer(instanceID, fileFormat).release();
 }
 
 void FilePlayer::DestroyFilePlayer(FilePlayer* player) {

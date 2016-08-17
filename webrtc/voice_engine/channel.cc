@@ -677,8 +677,8 @@ MixerParticipant::AudioFrameInfo Channel::GetAudioFrameWithMuted(
   {
     rtc::CritScope cs(&_fileCritSect);
 
-    if (_outputFileRecording && _outputFileRecorderPtr) {
-      _outputFileRecorderPtr->RecordAudioToFile(*audioFrame);
+    if (_outputFileRecording && output_file_recorder_) {
+      output_file_recorder_->RecordAudioToFile(*audioFrame);
     }
   }
 
@@ -742,9 +742,9 @@ int32_t Channel::NeededFrequency(int32_t id) const {
   // limit the spectrum anyway.
   if (channel_state_.Get().output_file_playing) {
     rtc::CritScope cs(&_fileCritSect);
-    if (_outputFilePlayerPtr) {
-      if (_outputFilePlayerPtr->Frequency() > highestNeeded) {
-        highestNeeded = _outputFilePlayerPtr->Frequency();
+    if (output_file_player_) {
+      if (output_file_player_->Frequency() > highestNeeded) {
+        highestNeeded = output_file_player_->Frequency();
       }
     }
   }
@@ -847,9 +847,6 @@ Channel::Channel(int32_t channelId,
       telephone_event_handler_(rtp_receiver_->GetTelephoneEventHandler()),
       _outputAudioLevel(),
       _externalTransport(false),
-      _inputFilePlayerPtr(NULL),
-      _outputFilePlayerPtr(NULL),
-      _outputFileRecorderPtr(NULL),
       // Avoid conflict with other channels by adding 1024 - 1026,
       // won't use as much as 1024 channels.
       _inputFilePlayerId(VoEModuleId(instanceId, channelId) + 1024),
@@ -970,23 +967,17 @@ Channel::~Channel() {
 
   {
     rtc::CritScope cs(&_fileCritSect);
-    if (_inputFilePlayerPtr) {
-      _inputFilePlayerPtr->RegisterModuleFileCallback(NULL);
-      _inputFilePlayerPtr->StopPlayingFile();
-      FilePlayer::DestroyFilePlayer(_inputFilePlayerPtr);
-      _inputFilePlayerPtr = NULL;
+    if (input_file_player_) {
+      input_file_player_->RegisterModuleFileCallback(NULL);
+      input_file_player_->StopPlayingFile();
     }
-    if (_outputFilePlayerPtr) {
-      _outputFilePlayerPtr->RegisterModuleFileCallback(NULL);
-      _outputFilePlayerPtr->StopPlayingFile();
-      FilePlayer::DestroyFilePlayer(_outputFilePlayerPtr);
-      _outputFilePlayerPtr = NULL;
+    if (output_file_player_) {
+      output_file_player_->RegisterModuleFileCallback(NULL);
+      output_file_player_->StopPlayingFile();
     }
-    if (_outputFileRecorderPtr) {
-      _outputFileRecorderPtr->RegisterModuleFileCallback(NULL);
-      _outputFileRecorderPtr->StopRecording();
-      FileRecorder::DestroyFileRecorder(_outputFileRecorderPtr);
-      _outputFileRecorderPtr = NULL;
+    if (output_file_recorder_) {
+      output_file_recorder_->RegisterModuleFileCallback(NULL);
+      output_file_recorder_->StopRecording();
     }
   }
 
@@ -1769,16 +1760,15 @@ int Channel::StartPlayingFileLocally(const char* fileName,
   {
     rtc::CritScope cs(&_fileCritSect);
 
-    if (_outputFilePlayerPtr) {
-      _outputFilePlayerPtr->RegisterModuleFileCallback(NULL);
-      FilePlayer::DestroyFilePlayer(_outputFilePlayerPtr);
-      _outputFilePlayerPtr = NULL;
+    if (output_file_player_) {
+      output_file_player_->RegisterModuleFileCallback(NULL);
+      output_file_player_.reset();
     }
 
-    _outputFilePlayerPtr = FilePlayer::CreateFilePlayer(
+    output_file_player_ = FilePlayer::NewFilePlayer(
         _outputFilePlayerId, (const FileFormats)format);
 
-    if (_outputFilePlayerPtr == NULL) {
+    if (!output_file_player_) {
       _engineStatisticsPtr->SetLastError(
           VE_INVALID_ARGUMENT, kTraceError,
           "StartPlayingFileLocally() filePlayer format is not correct");
@@ -1787,18 +1777,17 @@ int Channel::StartPlayingFileLocally(const char* fileName,
 
     const uint32_t notificationTime(0);
 
-    if (_outputFilePlayerPtr->StartPlayingFile(
+    if (output_file_player_->StartPlayingFile(
             fileName, loop, startPosition, volumeScaling, notificationTime,
             stopPosition, (const CodecInst*)codecInst) != 0) {
       _engineStatisticsPtr->SetLastError(
           VE_BAD_FILE, kTraceError,
           "StartPlayingFile() failed to start file playout");
-      _outputFilePlayerPtr->StopPlayingFile();
-      FilePlayer::DestroyFilePlayer(_outputFilePlayerPtr);
-      _outputFilePlayerPtr = NULL;
+      output_file_player_->StopPlayingFile();
+      output_file_player_.reset();
       return -1;
     }
-    _outputFilePlayerPtr->RegisterModuleFileCallback(this);
+    output_file_player_->RegisterModuleFileCallback(this);
     channel_state_.SetOutputFilePlaying(true);
   }
 
@@ -1837,17 +1826,16 @@ int Channel::StartPlayingFileLocally(InStream* stream,
     rtc::CritScope cs(&_fileCritSect);
 
     // Destroy the old instance
-    if (_outputFilePlayerPtr) {
-      _outputFilePlayerPtr->RegisterModuleFileCallback(NULL);
-      FilePlayer::DestroyFilePlayer(_outputFilePlayerPtr);
-      _outputFilePlayerPtr = NULL;
+    if (output_file_player_) {
+      output_file_player_->RegisterModuleFileCallback(NULL);
+      output_file_player_.reset();
     }
 
     // Create the instance
-    _outputFilePlayerPtr = FilePlayer::CreateFilePlayer(
+    output_file_player_ = FilePlayer::NewFilePlayer(
         _outputFilePlayerId, (const FileFormats)format);
 
-    if (_outputFilePlayerPtr == NULL) {
+    if (!output_file_player_) {
       _engineStatisticsPtr->SetLastError(
           VE_INVALID_ARGUMENT, kTraceError,
           "StartPlayingFileLocally() filePlayer format isnot correct");
@@ -1856,18 +1844,17 @@ int Channel::StartPlayingFileLocally(InStream* stream,
 
     const uint32_t notificationTime(0);
 
-    if (_outputFilePlayerPtr->StartPlayingFile(*stream, startPosition,
-                                               volumeScaling, notificationTime,
-                                               stopPosition, codecInst) != 0) {
+    if (output_file_player_->StartPlayingFile(*stream, startPosition,
+                                              volumeScaling, notificationTime,
+                                              stopPosition, codecInst) != 0) {
       _engineStatisticsPtr->SetLastError(VE_BAD_FILE, kTraceError,
                                          "StartPlayingFile() failed to "
                                          "start file playout");
-      _outputFilePlayerPtr->StopPlayingFile();
-      FilePlayer::DestroyFilePlayer(_outputFilePlayerPtr);
-      _outputFilePlayerPtr = NULL;
+      output_file_player_->StopPlayingFile();
+      output_file_player_.reset();
       return -1;
     }
-    _outputFilePlayerPtr->RegisterModuleFileCallback(this);
+    output_file_player_->RegisterModuleFileCallback(this);
     channel_state_.SetOutputFilePlaying(true);
   }
 
@@ -1888,15 +1875,14 @@ int Channel::StopPlayingFileLocally() {
   {
     rtc::CritScope cs(&_fileCritSect);
 
-    if (_outputFilePlayerPtr->StopPlayingFile() != 0) {
+    if (output_file_player_->StopPlayingFile() != 0) {
       _engineStatisticsPtr->SetLastError(
           VE_STOP_RECORDING_FAILED, kTraceError,
           "StopPlayingFile() could not stop playing");
       return -1;
     }
-    _outputFilePlayerPtr->RegisterModuleFileCallback(NULL);
-    FilePlayer::DestroyFilePlayer(_outputFilePlayerPtr);
-    _outputFilePlayerPtr = NULL;
+    output_file_player_->RegisterModuleFileCallback(NULL);
+    output_file_player_.reset();
     channel_state_.SetOutputFilePlaying(false);
   }
   // _fileCritSect cannot be taken while calling
@@ -1936,9 +1922,8 @@ int Channel::RegisterFilePlayingToMixer() {
     _engineStatisticsPtr->SetLastError(
         VE_AUDIO_CONF_MIX_MODULE_ERROR, kTraceError,
         "StartPlayingFile() failed to add participant as file to mixer");
-    _outputFilePlayerPtr->StopPlayingFile();
-    FilePlayer::DestroyFilePlayer(_outputFilePlayerPtr);
-    _outputFilePlayerPtr = NULL;
+    output_file_player_->StopPlayingFile();
+    output_file_player_.reset();
     return -1;
   }
 
@@ -1969,17 +1954,16 @@ int Channel::StartPlayingFileAsMicrophone(const char* fileName,
   }
 
   // Destroy the old instance
-  if (_inputFilePlayerPtr) {
-    _inputFilePlayerPtr->RegisterModuleFileCallback(NULL);
-    FilePlayer::DestroyFilePlayer(_inputFilePlayerPtr);
-    _inputFilePlayerPtr = NULL;
+  if (input_file_player_) {
+    input_file_player_->RegisterModuleFileCallback(NULL);
+    input_file_player_.reset();
   }
 
   // Create the instance
-  _inputFilePlayerPtr = FilePlayer::CreateFilePlayer(_inputFilePlayerId,
-                                                     (const FileFormats)format);
+  input_file_player_ = FilePlayer::NewFilePlayer(_inputFilePlayerId,
+                                                    (const FileFormats)format);
 
-  if (_inputFilePlayerPtr == NULL) {
+  if (!input_file_player_) {
     _engineStatisticsPtr->SetLastError(
         VE_INVALID_ARGUMENT, kTraceError,
         "StartPlayingFileAsMicrophone() filePlayer format isnot correct");
@@ -1988,18 +1972,17 @@ int Channel::StartPlayingFileAsMicrophone(const char* fileName,
 
   const uint32_t notificationTime(0);
 
-  if (_inputFilePlayerPtr->StartPlayingFile(
+  if (input_file_player_->StartPlayingFile(
           fileName, loop, startPosition, volumeScaling, notificationTime,
           stopPosition, (const CodecInst*)codecInst) != 0) {
     _engineStatisticsPtr->SetLastError(
         VE_BAD_FILE, kTraceError,
         "StartPlayingFile() failed to start file playout");
-    _inputFilePlayerPtr->StopPlayingFile();
-    FilePlayer::DestroyFilePlayer(_inputFilePlayerPtr);
-    _inputFilePlayerPtr = NULL;
+    input_file_player_->StopPlayingFile();
+    input_file_player_.reset();
     return -1;
   }
-  _inputFilePlayerPtr->RegisterModuleFileCallback(this);
+  input_file_player_->RegisterModuleFileCallback(this);
   channel_state_.SetInputFilePlaying(true);
 
   return 0;
@@ -2033,17 +2016,16 @@ int Channel::StartPlayingFileAsMicrophone(InStream* stream,
   }
 
   // Destroy the old instance
-  if (_inputFilePlayerPtr) {
-    _inputFilePlayerPtr->RegisterModuleFileCallback(NULL);
-    FilePlayer::DestroyFilePlayer(_inputFilePlayerPtr);
-    _inputFilePlayerPtr = NULL;
+  if (input_file_player_) {
+    input_file_player_->RegisterModuleFileCallback(NULL);
+    input_file_player_.reset();
   }
 
   // Create the instance
-  _inputFilePlayerPtr = FilePlayer::CreateFilePlayer(_inputFilePlayerId,
-                                                     (const FileFormats)format);
+  input_file_player_ = FilePlayer::NewFilePlayer(_inputFilePlayerId,
+                                                    (const FileFormats)format);
 
-  if (_inputFilePlayerPtr == NULL) {
+  if (!input_file_player_) {
     _engineStatisticsPtr->SetLastError(
         VE_INVALID_ARGUMENT, kTraceError,
         "StartPlayingInputFile() filePlayer format isnot correct");
@@ -2052,19 +2034,18 @@ int Channel::StartPlayingFileAsMicrophone(InStream* stream,
 
   const uint32_t notificationTime(0);
 
-  if (_inputFilePlayerPtr->StartPlayingFile(*stream, startPosition,
-                                            volumeScaling, notificationTime,
-                                            stopPosition, codecInst) != 0) {
+  if (input_file_player_->StartPlayingFile(*stream, startPosition,
+                                           volumeScaling, notificationTime,
+                                           stopPosition, codecInst) != 0) {
     _engineStatisticsPtr->SetLastError(VE_BAD_FILE, kTraceError,
                                        "StartPlayingFile() failed to start "
                                        "file playout");
-    _inputFilePlayerPtr->StopPlayingFile();
-    FilePlayer::DestroyFilePlayer(_inputFilePlayerPtr);
-    _inputFilePlayerPtr = NULL;
+    input_file_player_->StopPlayingFile();
+    input_file_player_.reset();
     return -1;
   }
 
-  _inputFilePlayerPtr->RegisterModuleFileCallback(this);
+  input_file_player_->RegisterModuleFileCallback(this);
   channel_state_.SetInputFilePlaying(true);
 
   return 0;
@@ -2080,15 +2061,14 @@ int Channel::StopPlayingFileAsMicrophone() {
     return 0;
   }
 
-  if (_inputFilePlayerPtr->StopPlayingFile() != 0) {
+  if (input_file_player_->StopPlayingFile() != 0) {
     _engineStatisticsPtr->SetLastError(
         VE_STOP_RECORDING_FAILED, kTraceError,
         "StopPlayingFile() could not stop playing");
     return -1;
   }
-  _inputFilePlayerPtr->RegisterModuleFileCallback(NULL);
-  FilePlayer::DestroyFilePlayer(_inputFilePlayerPtr);
-  _inputFilePlayerPtr = NULL;
+  input_file_player_->RegisterModuleFileCallback(NULL);
+  input_file_player_.reset();
   channel_state_.SetInputFilePlaying(false);
 
   return 0;
@@ -2134,32 +2114,30 @@ int Channel::StartRecordingPlayout(const char* fileName,
   rtc::CritScope cs(&_fileCritSect);
 
   // Destroy the old instance
-  if (_outputFileRecorderPtr) {
-    _outputFileRecorderPtr->RegisterModuleFileCallback(NULL);
-    FileRecorder::DestroyFileRecorder(_outputFileRecorderPtr);
-    _outputFileRecorderPtr = NULL;
+  if (output_file_recorder_) {
+    output_file_recorder_->RegisterModuleFileCallback(NULL);
+    output_file_recorder_.reset();
   }
 
-  _outputFileRecorderPtr = FileRecorder::CreateFileRecorder(
+  output_file_recorder_ = FileRecorder::CreateFileRecorder(
       _outputFileRecorderId, (const FileFormats)format);
-  if (_outputFileRecorderPtr == NULL) {
+  if (!output_file_recorder_) {
     _engineStatisticsPtr->SetLastError(
         VE_INVALID_ARGUMENT, kTraceError,
         "StartRecordingPlayout() fileRecorder format isnot correct");
     return -1;
   }
 
-  if (_outputFileRecorderPtr->StartRecordingAudioFile(
+  if (output_file_recorder_->StartRecordingAudioFile(
           fileName, (const CodecInst&)*codecInst, notificationTime) != 0) {
     _engineStatisticsPtr->SetLastError(
         VE_BAD_FILE, kTraceError,
         "StartRecordingAudioFile() failed to start file recording");
-    _outputFileRecorderPtr->StopRecording();
-    FileRecorder::DestroyFileRecorder(_outputFileRecorderPtr);
-    _outputFileRecorderPtr = NULL;
+    output_file_recorder_->StopRecording();
+    output_file_recorder_.reset();
     return -1;
   }
-  _outputFileRecorderPtr->RegisterModuleFileCallback(this);
+  output_file_recorder_->RegisterModuleFileCallback(this);
   _outputFileRecording = true;
 
   return 0;
@@ -2200,33 +2178,31 @@ int Channel::StartRecordingPlayout(OutStream* stream,
   rtc::CritScope cs(&_fileCritSect);
 
   // Destroy the old instance
-  if (_outputFileRecorderPtr) {
-    _outputFileRecorderPtr->RegisterModuleFileCallback(NULL);
-    FileRecorder::DestroyFileRecorder(_outputFileRecorderPtr);
-    _outputFileRecorderPtr = NULL;
+  if (output_file_recorder_) {
+    output_file_recorder_->RegisterModuleFileCallback(NULL);
+    output_file_recorder_.reset();
   }
 
-  _outputFileRecorderPtr = FileRecorder::CreateFileRecorder(
+  output_file_recorder_ = FileRecorder::CreateFileRecorder(
       _outputFileRecorderId, (const FileFormats)format);
-  if (_outputFileRecorderPtr == NULL) {
+  if (!output_file_recorder_) {
     _engineStatisticsPtr->SetLastError(
         VE_INVALID_ARGUMENT, kTraceError,
         "StartRecordingPlayout() fileRecorder format isnot correct");
     return -1;
   }
 
-  if (_outputFileRecorderPtr->StartRecordingAudioFile(*stream, *codecInst,
-                                                      notificationTime) != 0) {
+  if (output_file_recorder_->StartRecordingAudioFile(*stream, *codecInst,
+                                                     notificationTime) != 0) {
     _engineStatisticsPtr->SetLastError(VE_BAD_FILE, kTraceError,
                                        "StartRecordingPlayout() failed to "
                                        "start file recording");
-    _outputFileRecorderPtr->StopRecording();
-    FileRecorder::DestroyFileRecorder(_outputFileRecorderPtr);
-    _outputFileRecorderPtr = NULL;
+    output_file_recorder_->StopRecording();
+    output_file_recorder_.reset();
     return -1;
   }
 
-  _outputFileRecorderPtr->RegisterModuleFileCallback(this);
+  output_file_recorder_->RegisterModuleFileCallback(this);
   _outputFileRecording = true;
 
   return 0;
@@ -2244,15 +2220,14 @@ int Channel::StopRecordingPlayout() {
 
   rtc::CritScope cs(&_fileCritSect);
 
-  if (_outputFileRecorderPtr->StopRecording() != 0) {
+  if (output_file_recorder_->StopRecording() != 0) {
     _engineStatisticsPtr->SetLastError(
         VE_STOP_RECORDING_FAILED, kTraceError,
         "StopRecording() could not stop recording");
     return (-1);
   }
-  _outputFileRecorderPtr->RegisterModuleFileCallback(NULL);
-  FileRecorder::DestroyFileRecorder(_outputFileRecorderPtr);
-  _outputFileRecorderPtr = NULL;
+  output_file_recorder_->RegisterModuleFileCallback(NULL);
+  output_file_recorder_.reset();
   _outputFileRecording = false;
 
   return 0;
@@ -3302,15 +3277,15 @@ int32_t Channel::MixOrReplaceAudioWithFile(int mixingFrequency) {
   {
     rtc::CritScope cs(&_fileCritSect);
 
-    if (_inputFilePlayerPtr == NULL) {
+    if (!input_file_player_) {
       WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
                    "Channel::MixOrReplaceAudioWithFile() fileplayer"
                    " doesnt exist");
       return -1;
     }
 
-    if (_inputFilePlayerPtr->Get10msAudioFromFile(fileBuffer.get(), fileSamples,
-                                                  mixingFrequency) == -1) {
+    if (input_file_player_->Get10msAudioFromFile(fileBuffer.get(), fileSamples,
+                                                 mixingFrequency) == -1) {
       WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
                    "Channel::MixOrReplaceAudioWithFile() file mixing "
                    "failed");
@@ -3350,15 +3325,15 @@ int32_t Channel::MixAudioWithFile(AudioFrame& audioFrame, int mixingFrequency) {
   {
     rtc::CritScope cs(&_fileCritSect);
 
-    if (_outputFilePlayerPtr == NULL) {
+    if (!output_file_player_) {
       WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
                    "Channel::MixAudioWithFile() file mixing failed");
       return -1;
     }
 
     // We should get the frequency we ask for.
-    if (_outputFilePlayerPtr->Get10msAudioFromFile(
-            fileBuffer.get(), fileSamples, mixingFrequency) == -1) {
+    if (output_file_player_->Get10msAudioFromFile(fileBuffer.get(), fileSamples,
+                                                  mixingFrequency) == -1) {
       WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
                    "Channel::MixAudioWithFile() file mixing failed");
       return -1;

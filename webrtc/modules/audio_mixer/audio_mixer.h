@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_MIXER_AUDIO_MIXER_H_
 #define WEBRTC_MODULES_AUDIO_MIXER_AUDIO_MIXER_H_
 
+#include <memory>
+
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_types.h"
@@ -107,7 +109,7 @@ class AudioMixer : public FileCallback {
   float _panLeft;
   float _panRight;
   int _mixingFrequencyHz;
-  FileRecorder* _outputFileRecorderPtr;
+  std::unique_ptr<FileRecorder> _outputFileRecorderPtr;
   bool _outputFileRecording;
 };
 

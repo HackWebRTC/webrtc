@@ -99,7 +99,6 @@ OutputMixer::OutputMixer(uint32_t instanceId) :
     _panLeft(1.0f),
     _panRight(1.0f),
     _mixingFrequencyHz(8000),
-    _outputFileRecorderPtr(NULL),
     _outputFileRecording(false)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId,-1),
@@ -133,12 +132,9 @@ OutputMixer::~OutputMixer()
     }
     {
         rtc::CritScope cs(&_fileCritSect);
-        if (_outputFileRecorderPtr)
-        {
-            _outputFileRecorderPtr->RegisterModuleFileCallback(NULL);
-            _outputFileRecorderPtr->StopRecording();
-            FileRecorder::DestroyFileRecorder(_outputFileRecorderPtr);
-            _outputFileRecorderPtr = NULL;
+        if (output_file_recorder_) {
+          output_file_recorder_->RegisterModuleFileCallback(NULL);
+          output_file_recorder_->StopRecording();
         }
     }
     _mixerModule.UnRegisterMixedStreamCallback();
@@ -295,38 +291,30 @@ int OutputMixer::StartRecordingPlayout(const char* fileName,
     rtc::CritScope cs(&_fileCritSect);
 
     // Destroy the old instance
-    if (_outputFileRecorderPtr)
-    {
-        _outputFileRecorderPtr->RegisterModuleFileCallback(NULL);
-        FileRecorder::DestroyFileRecorder(_outputFileRecorderPtr);
-        _outputFileRecorderPtr = NULL;
+    if (output_file_recorder_) {
+      output_file_recorder_->RegisterModuleFileCallback(NULL);
+      output_file_recorder_.reset();
     }
 
-    _outputFileRecorderPtr = FileRecorder::CreateFileRecorder(
-        _instanceId,
-        (const FileFormats)format);
-    if (_outputFileRecorderPtr == NULL)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_INVALID_ARGUMENT, kTraceError,
-            "StartRecordingPlayout() fileRecorder format isnot correct");
-        return -1;
+    output_file_recorder_ = FileRecorder::CreateFileRecorder(
+        _instanceId, (const FileFormats)format);
+    if (!output_file_recorder_) {
+      _engineStatisticsPtr->SetLastError(
+          VE_INVALID_ARGUMENT, kTraceError,
+          "StartRecordingPlayout() fileRecorder format isnot correct");
+      return -1;
     }
 
-    if (_outputFileRecorderPtr->StartRecordingAudioFile(
-        fileName,
-        (const CodecInst&)*codecInst,
-        notificationTime) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_BAD_FILE, kTraceError,
-            "StartRecordingAudioFile() failed to start file recording");
-        _outputFileRecorderPtr->StopRecording();
-        FileRecorder::DestroyFileRecorder(_outputFileRecorderPtr);
-        _outputFileRecorderPtr = NULL;
-        return -1;
+    if (output_file_recorder_->StartRecordingAudioFile(
+            fileName, (const CodecInst&)*codecInst, notificationTime) != 0) {
+      _engineStatisticsPtr->SetLastError(
+          VE_BAD_FILE, kTraceError,
+          "StartRecordingAudioFile() failed to start file recording");
+      output_file_recorder_->StopRecording();
+      output_file_recorder_.reset();
+      return -1;
     }
-    _outputFileRecorderPtr->RegisterModuleFileCallback(this);
+    output_file_recorder_->RegisterModuleFileCallback(this);
     _outputFileRecording = true;
 
     return 0;
@@ -375,37 +363,31 @@ int OutputMixer::StartRecordingPlayout(OutStream* stream,
     rtc::CritScope cs(&_fileCritSect);
 
     // Destroy the old instance
-    if (_outputFileRecorderPtr)
-    {
-        _outputFileRecorderPtr->RegisterModuleFileCallback(NULL);
-        FileRecorder::DestroyFileRecorder(_outputFileRecorderPtr);
-        _outputFileRecorderPtr = NULL;
+    if (output_file_recorder_) {
+      output_file_recorder_->RegisterModuleFileCallback(NULL);
+      output_file_recorder_.reset();
     }
 
-    _outputFileRecorderPtr = FileRecorder::CreateFileRecorder(
-        _instanceId,
-        (const FileFormats)format);
-    if (_outputFileRecorderPtr == NULL)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_INVALID_ARGUMENT, kTraceError,
-            "StartRecordingPlayout() fileRecorder format isnot correct");
-        return -1;
+    output_file_recorder_ = FileRecorder::CreateFileRecorder(
+        _instanceId, (const FileFormats)format);
+    if (!output_file_recorder_) {
+      _engineStatisticsPtr->SetLastError(
+          VE_INVALID_ARGUMENT, kTraceError,
+          "StartRecordingPlayout() fileRecorder format isnot correct");
+      return -1;
     }
 
-    if (_outputFileRecorderPtr->StartRecordingAudioFile(*stream,
-                                                        *codecInst,
-                                                        notificationTime) != 0)
-    {
-       _engineStatisticsPtr->SetLastError(VE_BAD_FILE, kTraceError,
-           "StartRecordingAudioFile() failed to start file recording");
-        _outputFileRecorderPtr->StopRecording();
-        FileRecorder::DestroyFileRecorder(_outputFileRecorderPtr);
-        _outputFileRecorderPtr = NULL;
-        return -1;
+    if (output_file_recorder_->StartRecordingAudioFile(*stream, *codecInst,
+                                                       notificationTime) != 0) {
+      _engineStatisticsPtr->SetLastError(
+          VE_BAD_FILE, kTraceError,
+          "StartRecordingAudioFile() failed to start file recording");
+      output_file_recorder_->StopRecording();
+      output_file_recorder_.reset();
+      return -1;
     }
 
-    _outputFileRecorderPtr->RegisterModuleFileCallback(this);
+    output_file_recorder_->RegisterModuleFileCallback(this);
     _outputFileRecording = true;
 
     return 0;
@@ -425,16 +407,14 @@ int OutputMixer::StopRecordingPlayout()
 
     rtc::CritScope cs(&_fileCritSect);
 
-    if (_outputFileRecorderPtr->StopRecording() != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_STOP_RECORDING_FAILED, kTraceError,
-            "StopRecording(), could not stop recording");
-        return -1;
+    if (output_file_recorder_->StopRecording() != 0) {
+      _engineStatisticsPtr->SetLastError(
+          VE_STOP_RECORDING_FAILED, kTraceError,
+          "StopRecording(), could not stop recording");
+      return -1;
     }
-    _outputFileRecorderPtr->RegisterModuleFileCallback(NULL);
-    FileRecorder::DestroyFileRecorder(_outputFileRecorderPtr);
-    _outputFileRecorderPtr = NULL;
+    output_file_recorder_->RegisterModuleFileCallback(NULL);
+    output_file_recorder_.reset();
     _outputFileRecording = false;
 
     return 0;
@@ -451,8 +431,8 @@ int OutputMixer::GetMixedAudio(int sample_rate_hz,
   // --- Record playout if enabled
   {
     rtc::CritScope cs(&_fileCritSect);
-    if (_outputFileRecording && _outputFileRecorderPtr)
-      _outputFileRecorderPtr->RecordAudioToFile(_audioFrame);
+    if (_outputFileRecording && output_file_recorder_)
+      output_file_recorder_->RecordAudioToFile(_audioFrame);
   }
 
   frame->num_channels_ = num_channels;

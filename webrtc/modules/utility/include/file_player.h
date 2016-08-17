@@ -11,12 +11,15 @@
 #ifndef WEBRTC_MODULES_UTILITY_INCLUDE_FILE_PLAYER_H_
 #define WEBRTC_MODULES_UTILITY_INCLUDE_FILE_PLAYER_H_
 
+#include <memory>
+
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
+
 class FileCallback;
 
 class FilePlayer {
@@ -26,10 +29,16 @@ class FilePlayer {
   enum { MAX_AUDIO_BUFFER_IN_BYTES = MAX_AUDIO_BUFFER_IN_SAMPLES * 2 };
 
   // Note: will return NULL for unsupported formats.
+  static std::unique_ptr<FilePlayer> NewFilePlayer(
+      const uint32_t instanceID,
+      const FileFormats fileFormat);
+
+  // Deprecated creation/destruction functions. Use NewFilePlayer instead.
   static FilePlayer* CreateFilePlayer(const uint32_t instanceID,
                                       const FileFormats fileFormat);
-
   static void DestroyFilePlayer(FilePlayer* player);
+
+  virtual ~FilePlayer() = default;
 
   // Read 10 ms of audio at |frequencyInHz| to |outBuffer|. |lengthInSamples|
   // will be set to the number of samples read (not the number of samples per
@@ -72,9 +81,6 @@ class FilePlayer {
 
   // Note: scaleFactor is in the range [0.0 - 2.0]
   virtual int32_t SetAudioScaling(float scaleFactor) = 0;
-
- protected:
-  virtual ~FilePlayer() {}
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_UTILITY_INCLUDE_FILE_PLAYER_H_

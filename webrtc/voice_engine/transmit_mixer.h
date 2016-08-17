@@ -11,6 +11,8 @@
 #ifndef WEBRTC_VOICE_ENGINE_TRANSMIT_MIXER_H
 #define WEBRTC_VOICE_ENGINE_TRANSMIT_MIXER_H
 
+#include <memory>
+
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_types.h"
@@ -196,9 +198,9 @@ private:
     MonitorModule _monitorModule;
     AudioFrame _audioFrame;
     PushResampler<int16_t> resampler_;  // ADM sample rate -> mixing rate
-    FilePlayer* _filePlayerPtr;
-    FileRecorder* _fileRecorderPtr;
-    FileRecorder* _fileCallRecorderPtr;
+    std::unique_ptr<FilePlayer> file_player_;
+    std::unique_ptr<FileRecorder> file_recorder_;
+    std::unique_ptr<FileRecorder> file_call_recorder_;
     int _filePlayerId;
     int _fileRecorderId;
     int _fileCallRecorderId;

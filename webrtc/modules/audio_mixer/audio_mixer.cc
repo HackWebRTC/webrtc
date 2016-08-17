@@ -78,7 +78,6 @@ AudioMixer::AudioMixer(uint32_t instanceId)
       _panLeft(1.0f),
       _panRight(1.0f),
       _mixingFrequencyHz(8000),
-      _outputFileRecorderPtr(NULL),
       _outputFileRecording(false) {
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, -1),
                "AudioMixer::AudioMixer() - ctor");
@@ -102,8 +101,6 @@ AudioMixer::~AudioMixer() {
     if (_outputFileRecorderPtr) {
       _outputFileRecorderPtr->RegisterModuleFileCallback(NULL);
       _outputFileRecorderPtr->StopRecording();
-      FileRecorder::DestroyFileRecorder(_outputFileRecorderPtr);
-      _outputFileRecorderPtr = NULL;
     }
   }
   delete &_mixerModule;
@@ -226,11 +223,8 @@ int AudioMixer::StartRecordingPlayout(const char* fileName,
 
   rtc::CritScope cs(&_fileCritSect);
 
-  // Destroy the old instance
   if (_outputFileRecorderPtr) {
     _outputFileRecorderPtr->RegisterModuleFileCallback(NULL);
-    FileRecorder::DestroyFileRecorder(_outputFileRecorderPtr);
-    _outputFileRecorderPtr = NULL;
   }
 
   _outputFileRecorderPtr =
@@ -248,8 +242,7 @@ int AudioMixer::StartRecordingPlayout(const char* fileName,
         VE_BAD_FILE, kTraceError,
         "StartRecordingAudioFile() failed to start file recording");
     _outputFileRecorderPtr->StopRecording();
-    FileRecorder::DestroyFileRecorder(_outputFileRecorderPtr);
-    _outputFileRecorderPtr = NULL;
+    _outputFileRecorderPtr.reset();
     return -1;
   }
   _outputFileRecorderPtr->RegisterModuleFileCallback(this);
@@ -292,11 +285,8 @@ int AudioMixer::StartRecordingPlayout(OutStream* stream,
 
   rtc::CritScope cs(&_fileCritSect);
 
-  // Destroy the old instance
   if (_outputFileRecorderPtr) {
     _outputFileRecorderPtr->RegisterModuleFileCallback(NULL);
-    FileRecorder::DestroyFileRecorder(_outputFileRecorderPtr);
-    _outputFileRecorderPtr = NULL;
   }
 
   _outputFileRecorderPtr =
@@ -314,8 +304,7 @@ int AudioMixer::StartRecordingPlayout(OutStream* stream,
         VE_BAD_FILE, kTraceError,
         "StartRecordingAudioFile() failed to start file recording");
     _outputFileRecorderPtr->StopRecording();
-    FileRecorder::DestroyFileRecorder(_outputFileRecorderPtr);
-    _outputFileRecorderPtr = NULL;
+    _outputFileRecorderPtr.reset();
     return -1;
   }
 
@@ -344,8 +333,7 @@ int AudioMixer::StopRecordingPlayout() {
     return -1;
   }
   _outputFileRecorderPtr->RegisterModuleFileCallback(NULL);
-  FileRecorder::DestroyFileRecorder(_outputFileRecorderPtr);
-  _outputFileRecorderPtr = NULL;
+  _outputFileRecorderPtr.reset();
   _outputFileRecording = false;
 
   return 0;

@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_UTILITY_INCLUDE_FILE_RECORDER_H_
 #define WEBRTC_MODULES_UTILITY_INCLUDE_FILE_RECORDER_H_
 
+#include <memory>
+
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/include/module_common_types.h"
@@ -22,10 +24,11 @@ namespace webrtc {
 class FileRecorder {
  public:
   // Note: will return NULL for unsupported formats.
-  static FileRecorder* CreateFileRecorder(const uint32_t instanceID,
-                                          const FileFormats fileFormat);
+  static std::unique_ptr<FileRecorder> CreateFileRecorder(
+      const uint32_t instanceID,
+      const FileFormats fileFormat);
 
-  static void DestroyFileRecorder(FileRecorder* recorder);
+  virtual ~FileRecorder() = default;
 
   virtual int32_t RegisterModuleFileCallback(FileCallback* callback) = 0;
 
@@ -49,9 +52,7 @@ class FileRecorder {
 
   // Write frame to file. Frame should contain 10ms of un-ecoded audio data.
   virtual int32_t RecordAudioToFile(const AudioFrame& frame) = 0;
-
- protected:
-  virtual ~FileRecorder() {}
 };
+
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_UTILITY_INCLUDE_FILE_RECORDER_H_

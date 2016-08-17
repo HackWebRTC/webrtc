@@ -506,9 +506,9 @@ class Channel
   AudioFrame _audioFrame;
   // Downsamples to the codec rate if necessary.
   PushResampler<int16_t> input_resampler_;
-  FilePlayer* _inputFilePlayerPtr;
-  FilePlayer* _outputFilePlayerPtr;
-  FileRecorder* _outputFileRecorderPtr;
+  std::unique_ptr<FilePlayer> input_file_player_;
+  std::unique_ptr<FilePlayer> output_file_player_;
+  std::unique_ptr<FileRecorder> output_file_recorder_;
   int _inputFilePlayerId;
   int _outputFilePlayerId;
   int _outputFileRecorderId;

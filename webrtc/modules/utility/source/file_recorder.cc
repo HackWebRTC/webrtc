@@ -40,7 +40,7 @@ class CriticalSectionWrapper;
 class FileRecorderImpl : public FileRecorder {
  public:
   FileRecorderImpl(uint32_t instanceID, FileFormats fileFormat);
-  virtual ~FileRecorderImpl();
+  ~FileRecorderImpl() override;
 
   // FileRecorder functions.
   int32_t RegisterModuleFileCallback(FileCallback* callback) override;
@@ -56,7 +56,7 @@ class FileRecorderImpl : public FileRecorder {
   int32_t codec_info(CodecInst& codecInst) const override;
   int32_t RecordAudioToFile(const AudioFrame& frame) override;
 
- protected:
+ private:
   int32_t WriteEncodedAudioData(const int8_t* audioBuffer, size_t bufferLength);
 
   int32_t SetUpAudioEncoder();
@@ -65,7 +65,6 @@ class FileRecorderImpl : public FileRecorder {
   FileFormats _fileFormat;
   MediaFile* _moduleFile;
 
- private:
   CodecInst codec_info_;
   int8_t _audioBuffer[MAX_AUDIO_BUFFER_IN_BYTES];
   AudioCoder _audioEncoder;
@@ -255,13 +254,11 @@ int32_t FileRecorderImpl::WriteEncodedAudioData(const int8_t* audioBuffer,
 
 }  // namespace
 
-FileRecorder* FileRecorder::CreateFileRecorder(uint32_t instanceID,
-                                               FileFormats fileFormat) {
-  return new FileRecorderImpl(instanceID, fileFormat);
-}
-
-void FileRecorder::DestroyFileRecorder(FileRecorder* recorder) {
-  delete recorder;
+std::unique_ptr<FileRecorder> FileRecorder::CreateFileRecorder(
+    uint32_t instanceID,
+    FileFormats fileFormat) {
+  return std::unique_ptr<FileRecorder>(
+      new FileRecorderImpl(instanceID, fileFormat));
 }
 
 }  // namespace webrtc
