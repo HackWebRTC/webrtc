@@ -57,16 +57,16 @@ class FilePlayer {
                                    uint32_t startPosition,
                                    float volumeScaling,
                                    uint32_t notification,
-                                   uint32_t stopPosition = 0,
-                                   const CodecInst* codecInst = NULL) = 0;
+                                   uint32_t stopPosition,
+                                   const CodecInst* codecInst) = 0;
 
   // Note: codecInst is used for pre-encoded files.
   virtual int32_t StartPlayingFile(InStream& sourceStream,
                                    uint32_t startPosition,
                                    float volumeScaling,
                                    uint32_t notification,
-                                   uint32_t stopPosition = 0,
-                                   const CodecInst* codecInst = NULL) = 0;
+                                   uint32_t stopPosition,
+                                   const CodecInst* codecInst) = 0;
 
   virtual int32_t StopPlayingFile() = 0;
 

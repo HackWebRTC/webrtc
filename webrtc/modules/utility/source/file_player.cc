@@ -38,14 +38,14 @@ class FilePlayerImpl : public FilePlayer {
                                    uint32_t startPosition,
                                    float volumeScaling,
                                    uint32_t notification,
-                                   uint32_t stopPosition = 0,
-                                   const CodecInst* codecInst = NULL);
+                                   uint32_t stopPosition,
+                                   const CodecInst* codecInst);
   virtual int32_t StartPlayingFile(InStream& sourceStream,
                                    uint32_t startPosition,
                                    float volumeScaling,
                                    uint32_t notification,
-                                   uint32_t stopPosition = 0,
-                                   const CodecInst* codecInst = NULL);
+                                   uint32_t stopPosition,
+                                   const CodecInst* codecInst);
   virtual int32_t StopPlayingFile();
   virtual bool IsPlayingFile() const;
   virtual int32_t GetPlayoutPosition(uint32_t& durationMs);
