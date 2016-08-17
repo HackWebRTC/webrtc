@@ -21,8 +21,8 @@ TEST(BitrateProberTest, VerifyStatesAndTimeBetweenProbes) {
   int64_t now_ms = 0;
   EXPECT_EQ(-1, prober.TimeUntilNextProbe(now_ms));
 
-  prober.ProbeAtBitrate(900000, 6);
-  prober.ProbeAtBitrate(1800000, 5);
+  prober.CreateProbeCluster(900000, 6);
+  prober.CreateProbeCluster(1800000, 5);
   EXPECT_FALSE(prober.IsProbing());
 
   prober.OnIncomingPacket(1000);
@@ -60,7 +60,7 @@ TEST(BitrateProberTest, DoesntProbeWithoutRecentPackets) {
   int64_t now_ms = 0;
   EXPECT_EQ(-1, prober.TimeUntilNextProbe(now_ms));
 
-  prober.ProbeAtBitrate(900000, 6);
+  prober.CreateProbeCluster(900000, 6);
   EXPECT_FALSE(prober.IsProbing());
 
   prober.OnIncomingPacket(1000);

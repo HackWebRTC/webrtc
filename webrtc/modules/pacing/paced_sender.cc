@@ -261,11 +261,14 @@ PacedSender::PacedSender(Clock* clock, PacketSender* packet_sender)
       packets_(new paced_sender::PacketQueue(clock)),
       packet_counter_(0) {
   UpdateBytesPerInterval(kMinPacketLimitMs);
-  prober_->ProbeAtBitrate(900000, 6);
-  prober_->ProbeAtBitrate(1800000, 5);
 }
 
 PacedSender::~PacedSender() {}
+
+void PacedSender::CreateProbeCluster(int bitrate_bps, int num_packets) {
+  CriticalSectionScoped cs(critsect_.get());
+  prober_->CreateProbeCluster(bitrate_bps, num_packets);
+}
 
 void PacedSender::Pause() {
   LOG(LS_INFO) << "PacedSender paused.";

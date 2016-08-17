@@ -71,6 +71,8 @@ class PacedSender : public Module, public RtpPacketSender {
 
   virtual ~PacedSender();
 
+  void CreateProbeCluster(int bitrate_bps, int num_packets);
+
   // Temporarily pause all sending.
   void Pause();
 

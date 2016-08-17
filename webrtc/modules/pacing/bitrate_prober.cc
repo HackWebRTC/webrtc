@@ -59,12 +59,13 @@ void BitrateProber::OnIncomingPacket(size_t packet_size) {
   // Don't initialize probing unless we have something large enough to start
   // probing.
   if (probing_state_ == ProbingState::kInactive &&
+      !clusters_.empty() &&
       packet_size >= PacedSender::kMinProbePacketSize) {
     probing_state_ = ProbingState::kActive;
   }
 }
 
-void BitrateProber::ProbeAtBitrate(uint32_t bitrate_bps, int num_packets) {
+void BitrateProber::CreateProbeCluster(int bitrate_bps, int num_packets) {
   ProbeCluster cluster;
   cluster.max_probe_packets = num_packets;
   cluster.probe_bitrate_bps = bitrate_bps;
@@ -85,8 +86,8 @@ void BitrateProber::ResetState() {
   std::queue<ProbeCluster> clusters;
   clusters.swap(clusters_);
   while (!clusters.empty()) {
-    ProbeAtBitrate(clusters.front().probe_bitrate_bps,
-                   clusters.front().max_probe_packets);
+    CreateProbeCluster(clusters.front().probe_bitrate_bps,
+                       clusters.front().max_probe_packets);
     clusters.pop();
   }
   // If its enabled, reset to inactive.

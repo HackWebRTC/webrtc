@@ -38,7 +38,7 @@ class BitrateProber {
 
   // Create a cluster used to probe for |bitrate_bps| with |num_packets| number
   // of packets.
-  void ProbeAtBitrate(uint32_t bitrate_bps, int num_packets);
+  void CreateProbeCluster(int bitrate_bps, int num_packets);
 
   // Returns the number of milliseconds until the next packet should be sent to
   // get accurate probing.

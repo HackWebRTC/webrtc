@@ -110,6 +110,8 @@ class PacedSenderTest : public ::testing::Test {
     srand(0);
     // Need to initialize PacedSender after we initialize clock.
     send_bucket_.reset(new PacedSender(&clock_, &callback_));
+    send_bucket_->CreateProbeCluster(900000, 6);
+    send_bucket_->CreateProbeCluster(1800000, 5);
     // Default to bitrate probing disabled for testing purposes. Probing tests
     // have to enable probing, either by creating a new PacedSender instance or
     // by calling SetProbingEnabled(true).
@@ -814,6 +816,8 @@ TEST_F(PacedSenderTest, ProbingWithInitialFrame) {
                                       expected_deltas + kNumDeltas);
   PacedSenderProbing callback(expected_deltas_list, &clock_);
   send_bucket_.reset(new PacedSender(&clock_, &callback));
+  send_bucket_->CreateProbeCluster(900000, 6);
+  send_bucket_->CreateProbeCluster(1800000, 5);
   send_bucket_->SetEstimatedBitrate(kInitialBitrateBps);
 
   for (int i = 0; i < kNumPackets; ++i) {
@@ -844,6 +848,8 @@ TEST_F(PacedSenderTest, ProbingWithTooSmallInitialFrame) {
                                       expected_deltas + kNumDeltas);
   PacedSenderProbing callback(expected_deltas_list, &clock_);
   send_bucket_.reset(new PacedSender(&clock_, &callback));
+  send_bucket_->CreateProbeCluster(900000, 6);
+  send_bucket_->CreateProbeCluster(1800000, 5);
   send_bucket_->SetEstimatedBitrate(kInitialBitrateBps);
 
   for (int i = 0; i < kNumPackets - 5; ++i) {

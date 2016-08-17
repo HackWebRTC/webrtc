@@ -171,6 +171,7 @@ CongestionController::CongestionController(
       remote_estimator_proxy_(clock_, packet_router_.get()),
       transport_feedback_adapter_(bitrate_controller_.get(), clock_),
       min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps),
+      max_bitrate_bps_(0),
       last_reported_bitrate_bps_(0),
       last_reported_fraction_loss_(0),
       last_reported_rtt_(0),
@@ -200,6 +201,7 @@ CongestionController::CongestionController(
       remote_estimator_proxy_(clock_, packet_router_.get()),
       transport_feedback_adapter_(bitrate_controller_.get(), clock_),
       min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps),
+      max_bitrate_bps_(0),
       last_reported_bitrate_bps_(0),
       last_reported_fraction_loss_(0),
       last_reported_rtt_(0),
@@ -214,6 +216,8 @@ void CongestionController::Init() {
       new DelayBasedBwe(&transport_feedback_adapter_, clock_));
   transport_feedback_adapter_.GetBitrateEstimator()->SetMinBitrate(
       min_bitrate_bps_);
+  pacer_->CreateProbeCluster(900000, 6);
+  pacer_->CreateProbeCluster(1800000, 5);
 }
 
 void CongestionController::SetBweBitrates(int min_bitrate_bps,
@@ -223,6 +227,21 @@ void CongestionController::SetBweBitrates(int min_bitrate_bps,
   bitrate_controller_->SetBitrates(start_bitrate_bps,
                                    min_bitrate_bps,
                                    max_bitrate_bps);
+
+  {
+    // Only do probing if:
+    //   - we are mid-call, which we consider to be if
+    //     |last_reported_bitrate_bps_| != 0, and
+    //   - the current bitrate is lower than the new |max_bitrate_bps|, and
+    //   - we actually want to increase the |max_bitrate_bps_|.
+    rtc::CritScope cs(&critsect_);
+    if (last_reported_bitrate_bps_ != 0 &&
+        last_reported_bitrate_bps_ < static_cast<uint32_t>(max_bitrate_bps) &&
+        max_bitrate_bps > max_bitrate_bps_) {
+      pacer_->CreateProbeCluster(max_bitrate_bps, 5);
+    }
+  }
+  max_bitrate_bps_ = max_bitrate_bps;
 
   if (remote_bitrate_estimator_)
     remote_bitrate_estimator_->SetMinBitrate(min_bitrate_bps);
@@ -241,6 +260,7 @@ void CongestionController::ResetBweAndBitrates(int bitrate_bps,
   bitrate_controller_->ResetBitrates(bitrate_bps, min_bitrate_bps,
                                      max_bitrate_bps);
   min_bitrate_bps_ = min_bitrate_bps;
+  max_bitrate_bps_ = max_bitrate_bps;
   // TODO(honghaiz): Recreate this object once the remote bitrate estimator is
   // no longer exposed outside CongestionController.
   if (remote_bitrate_estimator_)
