@@ -93,6 +93,7 @@
 
 @implementation RTCEAGLVideoView {
   RTCDisplayLinkTimer *_timer;
+  EAGLContext *_glContext;
   // This flag should only be set and read on the main thread (e.g. by
   // setNeedsDisplay)
   BOOL _isDirty;
@@ -123,11 +124,12 @@
   if (!glContext) {
     glContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
   }
-  _glRenderer = [[RTCOpenGLVideoRenderer alloc] initWithContext:glContext];
+  _glContext = glContext;
+  _glRenderer = [[RTCOpenGLVideoRenderer alloc] initWithContext:_glContext];
 
   // GLKView manages a framebuffer for us.
   _glkView = [[GLKView alloc] initWithFrame:CGRectZero
-                                    context:glContext];
+                                    context:_glContext];
   _glkView.drawableColorFormat = GLKViewDrawableColorFormatRGBA8888;
   _glkView.drawableDepthFormat = GLKViewDrawableDepthFormatNone;
   _glkView.drawableStencilFormat = GLKViewDrawableStencilFormatNone;
@@ -169,6 +171,9 @@
     [self teardownGL];
   }
   [_timer invalidate];
+  if (_glContext && [EAGLContext currentContext] == _glContext) {
+    [EAGLContext setCurrentContext:nil];
+  }
 }
 
 #pragma mark - UIView
