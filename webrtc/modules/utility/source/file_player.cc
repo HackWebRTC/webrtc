@@ -8,30 +8,70 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/utility/source/file_player_impl.h"
+#include "webrtc/modules/utility/include/file_player.h"
+
+#include "webrtc/common_audio/resampler/include/resampler.h"
+#include "webrtc/common_types.h"
+#include "webrtc/engine_configurations.h"
+#include "webrtc/modules/media_file/media_file.h"
+#include "webrtc/modules/media_file/media_file_defines.h"
+#include "webrtc/modules/utility/source/coder.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/logging.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
-FilePlayer* FilePlayer::CreateFilePlayer(uint32_t instanceID,
-                                         FileFormats fileFormat) {
-  switch (fileFormat) {
-    case kFileFormatWavFile:
-    case kFileFormatCompressedFile:
-    case kFileFormatPreencodedFile:
-    case kFileFormatPcm16kHzFile:
-    case kFileFormatPcm8kHzFile:
-    case kFileFormatPcm32kHzFile:
-      // audio formats
-      return new FilePlayerImpl(instanceID, fileFormat);
-    default:
-      assert(false);
-      return NULL;
-  }
-}
 
-void FilePlayer::DestroyFilePlayer(FilePlayer* player) {
-  delete player;
-}
+namespace {
+
+class FilePlayerImpl : public FilePlayer {
+ public:
+  FilePlayerImpl(uint32_t instanceID, FileFormats fileFormat);
+  ~FilePlayerImpl();
+
+  virtual int Get10msAudioFromFile(int16_t* outBuffer,
+                                   size_t& lengthInSamples,
+                                   int frequencyInHz);
+  virtual int32_t RegisterModuleFileCallback(FileCallback* callback);
+  virtual int32_t StartPlayingFile(const char* fileName,
+                                   bool loop,
+                                   uint32_t startPosition,
+                                   float volumeScaling,
+                                   uint32_t notification,
+                                   uint32_t stopPosition = 0,
+                                   const CodecInst* codecInst = NULL);
+  virtual int32_t StartPlayingFile(InStream& sourceStream,
+                                   uint32_t startPosition,
+                                   float volumeScaling,
+                                   uint32_t notification,
+                                   uint32_t stopPosition = 0,
+                                   const CodecInst* codecInst = NULL);
+  virtual int32_t StopPlayingFile();
+  virtual bool IsPlayingFile() const;
+  virtual int32_t GetPlayoutPosition(uint32_t& durationMs);
+  virtual int32_t AudioCodec(CodecInst& audioCodec) const;
+  virtual int32_t Frequency() const;
+  virtual int32_t SetAudioScaling(float scaleFactor);
+
+ protected:
+  int32_t SetUpAudioDecoder();
+
+  uint32_t _instanceID;
+  const FileFormats _fileFormat;
+  MediaFile& _fileModule;
+
+  uint32_t _decodedLengthInMS;
+
+ private:
+  AudioCoder _audioDecoder;
+
+  CodecInst _codec;
+  int32_t _numberOf10MsPerFrame;
+  int32_t _numberOf10MsInDecoder;
+
+  Resampler _resampler;
+  float _scaling;
+};
 
 FilePlayerImpl::FilePlayerImpl(const uint32_t instanceID,
                                const FileFormats fileFormat)
@@ -330,4 +370,28 @@ int32_t FilePlayerImpl::SetUpAudioDecoder() {
   _numberOf10MsInDecoder = 0;
   return 0;
 }
+
+}  // namespace
+
+FilePlayer* FilePlayer::CreateFilePlayer(uint32_t instanceID,
+                                         FileFormats fileFormat) {
+  switch (fileFormat) {
+    case kFileFormatWavFile:
+    case kFileFormatCompressedFile:
+    case kFileFormatPreencodedFile:
+    case kFileFormatPcm16kHzFile:
+    case kFileFormatPcm8kHzFile:
+    case kFileFormatPcm32kHzFile:
+      // audio formats
+      return new FilePlayerImpl(instanceID, fileFormat);
+    default:
+      assert(false);
+      return NULL;
+  }
+}
+
+void FilePlayer::DestroyFilePlayer(FilePlayer* player) {
+  delete player;
+}
+
 }  // namespace webrtc
