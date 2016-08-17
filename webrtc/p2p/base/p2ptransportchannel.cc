@@ -186,6 +186,8 @@ void P2PTransportChannel::AddConnection(Connection* connection) {
 //        b) last data received time.
 // iii) Lower cost / higher priority.
 // iv) rtt.
+// To further prevent switching to high-cost networks, does not switch to
+// a high-cost connection if it is not receiving.
 // TODO(honghaiz): Stop the aggressive nomination on the controlling side and
 // implement the ice-renomination option.
 bool P2PTransportChannel::ShouldSwitchSelectedConnection(
@@ -197,6 +199,14 @@ bool P2PTransportChannel::ShouldSwitchSelectedConnection(
 
   if (selected_connection_ == nullptr) {
     return true;
+  }
+
+  // Do not switch to a connection that is not receiving if it has higher cost
+  // because it may be just spuriously better.
+  if (new_connection->ComputeNetworkCost() >
+          selected_connection_->ComputeNetworkCost() &&
+      !new_connection->receiving()) {
+    return false;
   }
 
   rtc::Optional<int64_t> receiving_unchanged_threshold(
@@ -1525,7 +1535,8 @@ bool P2PTransportChannel::IsPingable(const Connection* conn,
   // Always ping active connections regardless whether the channel is completed
   // or not, but backup connections are pinged at a slower rate.
   if (IsBackupConnection(conn)) {
-    return (now >= conn->last_ping_response_received() +
+    return conn->rtt_samples() == 0 ||
+           (now >= conn->last_ping_response_received() +
                        config_.backup_connection_ping_interval);
   }
   // Don't ping inactive non-backup connections.

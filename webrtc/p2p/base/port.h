@@ -553,6 +553,8 @@ class Connection : public CandidatePairInterface,
   int64_t last_ping_response_received() const {
     return last_ping_response_received_;
   }
+  // Used to check if any STUN ping response has been received.
+  int rtt_samples() const { return rtt_samples_; }
 
   // Called whenever a valid ping is received on this connection.  This is
   // public because the connection intercepts the first ping for us.

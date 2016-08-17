@@ -54,8 +54,8 @@ static const SocketAddress kIPv6PublicAddrs[2] = {
     SocketAddress("2620:0:1000:1b03:2e41:38ff:fea6:f2a4", 0)
 };
 // For configuring multihomed clients.
-static const SocketAddress kAlternateAddrs[2] =
-    { SocketAddress("11.11.11.101", 0), SocketAddress("22.22.22.202", 0) };
+static const SocketAddress kAlternateAddrs[2] = {
+    SocketAddress("101.101.101.101", 0), SocketAddress("202.202.202.202", 0)};
 // Addresses for HTTP proxy servers.
 static const SocketAddress kHttpsProxyAddrs[2] =
     { SocketAddress("11.11.11.1", 443), SocketAddress("22.22.22.1", 443) };
@@ -673,7 +673,11 @@ class P2PTransportChannelTestBase : public testing::Test,
       CandidatePairInterface* selected_candidate_pair,
       int last_sent_packet_id,
       bool ready_to_send) {
-    ++selected_candidate_pair_switches_;
+    // Do not count if it switches to nullptr. This may happen if all
+    // connections timed out.
+    if (selected_candidate_pair != nullptr) {
+      ++selected_candidate_pair_switches_;
+    }
   }
 
   int reset_selected_candidate_pair_switches() {
@@ -1859,7 +1863,7 @@ class P2PTransportChannelMultihomedTest : public P2PTransportChannelTestBase {
     return nullptr;
   }
 
-  const cricket::Connection* GetConnectionWithLocalAddress(
+  cricket::Connection* GetConnectionWithLocalAddress(
       cricket::P2PTransportChannel* channel,
       const SocketAddress& address) {
     for (cricket::Connection* conn : channel->connections()) {
@@ -2176,6 +2180,59 @@ TEST_F(P2PTransportChannelMultihomedTest,
   EXPECT_TRUE(LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]));
   EXPECT_TRUE(RemoteCandidate(ep2_ch1())->address().EqualIPs(kPublicAddrs[0]));
   EXPECT_EQ(0, reset_selected_candidate_pair_switches());
+  DestroyChannels();
+}
+
+// Tests that if the remote side's network failed, it won't cause the local
+// side to switch connections and networks.
+TEST_F(P2PTransportChannelMultihomedTest, TestRemoteFailover) {
+  rtc::ScopedFakeClock clock;
+  // The interface names are chosen so that |cellular| would have higher
+  // candidate priority and higher cost.
+  auto& wifi = kPublicAddrs;
+  auto& cellular = kAlternateAddrs;
+  AddAddress(0, wifi[0], "wifi0", rtc::ADAPTER_TYPE_WIFI);
+  AddAddress(0, cellular[0], "cellular0", rtc::ADAPTER_TYPE_CELLULAR);
+  AddAddress(1, wifi[1], "wifi0", rtc::ADAPTER_TYPE_WIFI);
+
+  // Use only local ports for simplicity.
+  SetAllocatorFlags(0, kOnlyLocalPorts);
+  SetAllocatorFlags(1, kOnlyLocalPorts);
+  // Create channels and let them go writable, as usual.
+  CreateChannels(1);
+  // Make the receiving timeout shorter for testing.
+  // Set the backup connection ping interval to 25s.
+  IceConfig config = CreateIceConfig(1000, GATHER_ONCE, 25000);
+  // Ping the best connection more frequently since we don't have traffic.
+  config.stable_writable_connection_ping_interval = 900;
+  ep1_ch1()->SetIceConfig(config);
+  ep2_ch1()->SetIceConfig(config);
+  // Need to wait to make sure the connections on both networks are writable.
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                                 ep2_ch1()->receiving() &&
+                                 ep2_ch1()->writable(),
+                             3000, clock);
+  EXPECT_TRUE_SIMULATED_WAIT(
+      ep1_ch1()->selected_connection() &&
+          LocalCandidate(ep1_ch1())->address().EqualIPs(wifi[0]) &&
+          RemoteCandidate(ep1_ch1())->address().EqualIPs(wifi[1]),
+      kDefaultTimeout, clock);
+  Connection* backup_conn =
+      GetConnectionWithLocalAddress(ep1_ch1(), cellular[0]);
+  ASSERT_NE(nullptr, backup_conn);
+  // After a short while, the backup connection will be writable but not
+  // receiving because backup connection is pinged at a slower rate.
+  EXPECT_TRUE_SIMULATED_WAIT(
+      backup_conn->writable() && !backup_conn->receiving(), 5000, clock);
+  reset_selected_candidate_pair_switches();
+  // Blackhole any traffic to or from the remote WiFi networks.
+  LOG(LS_INFO) << "Failing over...";
+  fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, wifi[1]);
+
+  int num_switches = 0;
+  SIMULATED_WAIT((num_switches = reset_selected_candidate_pair_switches()) > 0,
+                 20000, clock);
+  EXPECT_EQ(0, num_switches);
   DestroyChannels();
 }
 
