@@ -23,7 +23,6 @@
 #include "webrtc/call/rtc_event_log.h"
 #include "webrtc/common.h"
 #include "webrtc/config.h"
-#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/include/module_common_types.h"
@@ -750,14 +749,6 @@ int32_t Channel::NeededFrequency(int32_t id) const {
   }
 
   return (highestNeeded);
-}
-
-int32_t Channel::CreateChannel(Channel*& channel,
-                               int32_t channelId,
-                               uint32_t instanceId,
-                               const Config& config) {
-  return CreateChannel(channel, channelId, instanceId, config,
-                       CreateBuiltinAudioDecoderFactory());
 }
 
 int32_t Channel::CreateChannel(

@@ -171,10 +171,6 @@ class Channel
   enum { KNumSocketThreads = 1 };
   enum { KNumberOfSocketBuffers = 8 };
   virtual ~Channel();
-  static int32_t CreateChannel(Channel*& channel,
-                               int32_t channelId,
-                               uint32_t instanceId,
-                               const Config& config);
   static int32_t CreateChannel(
       Channel*& channel,
       int32_t channelId,

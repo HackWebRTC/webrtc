@@ -97,11 +97,9 @@ class ChannelManager {
 
   // CreateChannel will always return a valid ChannelOwner instance. The channel
   // is created either based on internal configuration, i.e. |config_|, by
-  // calling CreateChannel(), or using and external configuration
+  // calling CreateChannel(...), or using and external configuration
   // |external_config| if the overloaded method
-  // CreateChannel(const Config& external_config) is called.
-  ChannelOwner CreateChannel();
-  ChannelOwner CreateChannel(const Config& external_config);
+  // CreateChannel(const Config& external_config, ...) is called.
   ChannelOwner CreateChannel(
       const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory);
   ChannelOwner CreateChannel(
