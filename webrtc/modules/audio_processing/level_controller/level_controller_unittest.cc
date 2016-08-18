@@ -69,18 +69,21 @@ void RunBitexactnessTest(int sample_rate_hz,
 }  // namespace
 
 TEST(LevelControlBitExactnessTest, DISABLED_Mono8kHz) {
-  const float kOutputReference[] = {-0.023242f, -0.020266f, -0.015097f};
-  RunBitexactnessTest(AudioProcessing::kSampleRate8kHz, 1, kOutputReference);
+  const float kOutputReference[] = {-0.013939f, -0.012154f, -0.009054f};
+  RunBitexactnessTest(AudioProcessing::kSampleRate8kHz, 1,
+                      kOutputReference);
 }
 
 TEST(LevelControlBitExactnessTest, DISABLED_Mono16kHz) {
-  const float kOutputReference[] = {-0.019461f, -0.018761f, -0.018481f};
-  RunBitexactnessTest(AudioProcessing::kSampleRate16kHz, 1, kOutputReference);
+  const float kOutputReference[] = {-0.013706f, -0.013215f, -0.013018f};
+  RunBitexactnessTest(AudioProcessing::kSampleRate16kHz, 1,
+                      kOutputReference);
 }
 
 TEST(LevelControlBitExactnessTest, DISABLED_Mono32kHz) {
-  const float kOutputReference[] = {-0.016872f, -0.019118f, -0.018722f};
-  RunBitexactnessTest(AudioProcessing::kSampleRate32kHz, 1, kOutputReference);
+  const float kOutputReference[] = {-0.014495f, -0.016425f, -0.016085f};
+  RunBitexactnessTest(AudioProcessing::kSampleRate32kHz, 1,
+                      kOutputReference);
 }
 
 // TODO(peah): Investigate why this particular testcase differ between Android
@@ -88,35 +91,42 @@ TEST(LevelControlBitExactnessTest, DISABLED_Mono32kHz) {
 TEST(LevelControlBitExactnessTest, DISABLED_Mono48kHz) {
 #if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
       defined(WEBRTC_ANDROID))
-  const float kOutputReference[] = {-0.016771f, -0.017831f, -0.020482f};
+  const float kOutputReference[] = {-0.014277f, -0.015180f, -0.017437f};
 #else
   const float kOutputReference[] = {-0.015949f, -0.016957f, -0.019478f};
 #endif
-  RunBitexactnessTest(AudioProcessing::kSampleRate48kHz, 1, kOutputReference);
+  RunBitexactnessTest(AudioProcessing::kSampleRate48kHz, 1,
+                      kOutputReference);
 }
 
 TEST(LevelControlBitExactnessTest, DISABLED_Stereo8kHz) {
-  const float kOutputReference[] = {-0.019304f, -0.011600f, -0.016690f,
-                                    -0.071335f, -0.031849f, -0.065694f};
-  RunBitexactnessTest(AudioProcessing::kSampleRate8kHz, 2, kOutputReference);
+  const float kOutputReference[] = {-0.014063f, -0.008450f, -0.012159f,
+                                    -0.051967f, -0.023202f, -0.047858f};
+  RunBitexactnessTest(AudioProcessing::kSampleRate8kHz, 2,
+                      kOutputReference);
 }
 
 TEST(LevelControlBitExactnessTest, DISABLED_Stereo16kHz) {
-  const float kOutputReference[] = {-0.016302f, -0.007559f, -0.015668f,
-                                    -0.068346f, -0.031476f, -0.066065f};
-  RunBitexactnessTest(AudioProcessing::kSampleRate16kHz, 2, kOutputReference);
+  const float kOutputReference[] = {-0.012714f, -0.005896f, -0.012220f,
+                                    -0.053306f, -0.024549f, -0.051527f};
+  RunBitexactnessTest(AudioProcessing::kSampleRate16kHz, 2,
+                      kOutputReference);
 }
 
 TEST(LevelControlBitExactnessTest, DISABLED_Stereo32kHz) {
-  const float kOutputReference[] = {-0.013944f, -0.008337f, -0.015972f,
-                                    -0.063563f, -0.031233f, -0.066784f};
-  RunBitexactnessTest(AudioProcessing::kSampleRate32kHz, 2, kOutputReference);
+  const float kOutputReference[] = {-0.011737f, -0.007018f, -0.013446f,
+                                    -0.053505f, -0.026292f, -0.056221f};
+  RunBitexactnessTest(AudioProcessing::kSampleRate32kHz, 2,
+                      kOutputReference);
 }
 
 TEST(LevelControlBitExactnessTest, DISABLED_Stereo48kHz) {
-  const float kOutputReference[] = {-0.013652f, -0.008125f, -0.014593f,
-                                    -0.062963f, -0.030270f, -0.064727f};
-  RunBitexactnessTest(AudioProcessing::kSampleRate48kHz, 2, kOutputReference);
+  const float kOutputReference[] = {-0.010643f, -0.006334f, -0.011377f,
+                                    -0.049088f, -0.023600f, -0.050465f};
+  RunBitexactnessTest(AudioProcessing::kSampleRate48kHz, 2,
+                      kOutputReference);
 }
+
+
 
 }  // namespace webrtc
