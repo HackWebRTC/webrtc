@@ -182,9 +182,9 @@ void WebRtcSpl_SynthesisQMF(const int16_t* low_band, const int16_t* high_band,
     for (i = 0; i < band_length; i++)
     {
         tmp = (int32_t)low_band[i] + (int32_t)high_band[i];
-        half_in1[i] = WEBRTC_SPL_LSHIFT_W32(tmp, 10);
+        half_in1[i] = tmp * (1 << 10);
         tmp = (int32_t)low_band[i] - (int32_t)high_band[i];
-        half_in2[i] = WEBRTC_SPL_LSHIFT_W32(tmp, 10);
+        half_in2[i] = tmp * (1 << 10);
     }
 
     // all-pass filter the sum and difference channels
