@@ -204,7 +204,7 @@ void PeerConnectionDelegateAdapter::OnIceCandidatesRemoved(
 
 
 @implementation RTCPeerConnection {
-  NSMutableArray *_localStreams;
+  NSMutableArray<RTCMediaStream *> *_localStreams;
   std::unique_ptr<webrtc::PeerConnectionDelegateAdapter> _observer;
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> _peerConnection;
   BOOL _hasStartedRtcEventLog;
@@ -241,7 +241,7 @@ void PeerConnectionDelegateAdapter::OnIceCandidatesRemoved(
   return self;
 }
 
-- (NSArray *)localStreams {
+- (NSArray<RTCMediaStream *> *)localStreams {
   return [_localStreams copy];
 }
 

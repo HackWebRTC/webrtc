@@ -115,7 +115,7 @@ RTC_EXPORT
  *  streams being added or removed.
  */
 @property(nonatomic, weak, nullable) id<RTCPeerConnectionDelegate> delegate;
-@property(nonatomic, readonly) NSArray *localStreams;
+@property(nonatomic, readonly) NSArray<RTCMediaStream *> *localStreams;
 @property(nonatomic, readonly, nullable)
     RTCSessionDescription *localDescription;
 @property(nonatomic, readonly, nullable)
