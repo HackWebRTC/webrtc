@@ -277,24 +277,6 @@
             'test/audio_device_test_defines.h',
           ],
         },
-        {
-          'target_name': 'audio_device_test_func',
-          'type': 'executable',
-          'dependencies': [
-            'audio_device',
-            'webrtc_utility',
-            '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
-            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
-            '<(webrtc_root)/test/test.gyp:test_support',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
-          ],
-          'sources': [
-            'test/audio_device_test_func.cc',
-            'test/audio_device_test_defines.h',
-            'test/func_test_manager.cc',
-            'test/func_test_manager.h',
-          ],
-        },
       ], # targets
     }], # include_tests==1 and OS!=ios
   ],
