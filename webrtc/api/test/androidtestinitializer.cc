@@ -39,7 +39,7 @@ void EnsureInitializedOnce() {
   JNIEnv* jni = ::base::android::AttachCurrentThread();
   JavaVM* jvm = NULL;
   RTC_CHECK_EQ(0, jni->GetJavaVM(&jvm));
-  jobject context = ::base::android::GetApplicationContext();
+  jobject context = ::base::android::GetApplicationContext().obj();
 
   RTC_CHECK_GE(webrtc_jni::InitGlobalJniVariables(jvm), 0);
   RTC_CHECK(rtc::InitializeSSL()) << "Failed to InitializeSSL()";
