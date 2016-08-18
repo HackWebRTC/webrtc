@@ -287,7 +287,6 @@ def GenerateCommitMessage(current_cr_rev, new_cr_rev, current_commit_pos,
     change_url = CHROMIUM_FILE_TEMPLATE % (rev_interval,
                                            CLANG_UPDATE_SCRIPT_URL_PATH)
     commit_msg.append('Details: %s\n' % change_url)
-    tbr_authors += 'pbos@webrtc.org'
   else:
     commit_msg.append('No update to Clang.\n')
 
