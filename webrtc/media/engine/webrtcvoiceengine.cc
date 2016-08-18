@@ -1093,8 +1093,8 @@ webrtc::AudioDeviceModule* WebRtcVoiceEngine::adm() {
 AudioCodecs WebRtcVoiceEngine::CollectRecvCodecs() const {
   PayloadTypeMapper mapper;
   AudioCodecs out;
-  const std::vector<webrtc::SdpAudioFormat>& formats =
-      decoder_factory_->GetSupportedFormats();
+  const std::vector<webrtc::AudioCodecSpec>& specs =
+      decoder_factory_->GetSupportedDecoders();
 
   // Only generate CN payload types for these clockrates
   std::map<int, bool, std::greater<int>> generate_cn = {{ 8000,  false },
@@ -1119,14 +1119,12 @@ AudioCodecs WebRtcVoiceEngine::CollectRecvCodecs() const {
     return true;
   };
 
-  for (const auto& format : formats) {
-    if (map_format(format)) {
-      // TODO(ossu): We should get more than just a format from the factory, so
-      // we can determine if a format should be used with CN or not. For now,
-      // generate a CN entry for each supported clock rate also used by a format
-      // supported by the factory.
-      auto cn = generate_cn.find(format.clockrate_hz);
-      if (cn != generate_cn.end() /* && format.allow_comfort_noise */) {
+  for (const auto& spec : specs) {
+    if (map_format(spec.format) && spec.allow_comfort_noise) {
+      // Generate a CN entry if the decoder allows it and we support the
+      // clockrate.
+      auto cn = generate_cn.find(spec.format.clockrate_hz);
+      if (cn != generate_cn.end()) {
         cn->second = true;
       }
     }

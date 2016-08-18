@@ -25,7 +25,7 @@ namespace webrtc {
 // NOTE: This class is still under development and may change without notice.
 class AudioDecoderFactory : public rtc::RefCountInterface {
  public:
-  virtual std::vector<SdpAudioFormat> GetSupportedFormats() = 0;
+  virtual std::vector<AudioCodecSpec> GetSupportedDecoders() = 0;
 
   virtual std::unique_ptr<AudioDecoder> MakeAudioDecoder(
       const SdpAudioFormat& format) = 0;
