@@ -98,7 +98,7 @@ int DelayManager::Update(uint16_t sequence_number,
         static_cast<uint32_t>(timestamp - last_timestamp_) /
         static_cast<uint16_t>(sequence_number - last_seq_no_);
     packet_len_ms =
-        rtc::checked_cast<int>(1000 * packet_len_samp / sample_rate_hz);
+        rtc::saturated_cast<int>(1000 * packet_len_samp / sample_rate_hz);
   }
 
   if (packet_len_ms > 0) {
