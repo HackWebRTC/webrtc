@@ -638,6 +638,8 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_dump_.debug_file->is_open()) {
+    RETURN_ON_ERR(WriteConfigMessage(false));
+
     debug_dump_.capture.event_msg->set_type(audioproc::Event::STREAM);
     audioproc::Stream* msg = debug_dump_.capture.event_msg->mutable_stream();
     const size_t data_size =
