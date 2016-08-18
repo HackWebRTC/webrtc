@@ -93,7 +93,7 @@ class RTCPSender {
 
   int32_t SetNackStatus(bool enable);
 
-  void SetStartTimestamp(uint32_t start_timestamp);
+  void SetTimestampOffset(uint32_t timestamp_offset);
 
   void SetLastRtpTime(uint32_t rtp_timestamp, int64_t capture_time_ms);
 
@@ -214,7 +214,7 @@ class RTCPSender {
 
   int64_t next_time_to_send_rtcp_ GUARDED_BY(critical_section_rtcp_sender_);
 
-  uint32_t start_timestamp_ GUARDED_BY(critical_section_rtcp_sender_);
+  uint32_t timestamp_offset_ GUARDED_BY(critical_section_rtcp_sender_);
   uint32_t last_rtp_timestamp_ GUARDED_BY(critical_section_rtcp_sender_);
   int64_t last_frame_capture_time_ms_ GUARDED_BY(critical_section_rtcp_sender_);
   uint32_t ssrc_ GUARDED_BY(critical_section_rtcp_sender_);

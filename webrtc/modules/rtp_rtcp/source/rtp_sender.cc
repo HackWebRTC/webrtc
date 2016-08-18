@@ -109,8 +109,6 @@ RTPSender::RTPSender(
       send_packet_observer_(send_packet_observer),
       bitrate_callback_(bitrate_callback),
       // RTP variables
-      start_timestamp_forced_(false),
-      start_timestamp_(0),
       ssrc_db_(SSRCDatabase::GetSSRCDatabase()),
       remote_ssrc_(0),
       sequence_number_forced_(false),
@@ -128,6 +126,8 @@ RTPSender::RTPSender(
   ssrc_rtx_ = ssrc_db_->CreateSSRC();
   RTC_DCHECK(ssrc_rtx_ != 0);
 
+  // This random initialization is not intended to be cryptographic strong.
+  timestamp_offset_ = random_.Rand<uint32_t>();
   // Random start, 16 bits. Can't be 0.
   sequence_number_rtx_ = random_.Rand(1, kMaxInitRtpSeqNumber);
   sequence_number_ = random_.Rand(1, kMaxInitRtpSeqNumber);
@@ -1089,7 +1089,7 @@ int32_t RTPSender::BuildRtpHeader(uint8_t* data_buffer,
   if (!sending_media_)
     return -1;
 
-  timestamp_ = start_timestamp_ + capture_timestamp;
+  timestamp_ = timestamp_offset_ + capture_timestamp;
   last_timestamp_time_ms_ = clock_->TimeInMilliseconds();
   uint32_t sequence_number = sequence_number_++;
   capture_time_ms_ = capture_time_ms;
@@ -1489,13 +1489,7 @@ bool RTPSender::UpdateTransportSequenceNumber(RtpPacketToSend* packet,
 }
 
 void RTPSender::SetSendingStatus(bool enabled) {
-  if (enabled) {
-    uint32_t frequency_hz = SendPayloadFrequency();
-    uint32_t RTPtime = CurrentRtp(*clock_, frequency_hz);
-
-    // Will be ignored if it's already configured via API.
-    SetStartTimestamp(RTPtime, false);
-  } else {
+  if (!enabled) {
     rtc::CritScope lock(&send_critsect_);
     if (!ssrc_forced_) {
       // Generate a new SSRC.
@@ -1526,21 +1520,14 @@ uint32_t RTPSender::Timestamp() const {
   return timestamp_;
 }
 
-void RTPSender::SetStartTimestamp(uint32_t timestamp, bool force) {
+void RTPSender::SetTimestampOffset(uint32_t timestamp) {
   rtc::CritScope lock(&send_critsect_);
-  if (force) {
-    start_timestamp_forced_ = true;
-    start_timestamp_ = timestamp;
-  } else {
-    if (!start_timestamp_forced_) {
-      start_timestamp_ = timestamp;
-    }
-  }
+  timestamp_offset_ = timestamp;
 }
 
-uint32_t RTPSender::StartTimestamp() const {
+uint32_t RTPSender::TimestampOffset() const {
   rtc::CritScope lock(&send_critsect_);
-  return start_timestamp_;
+  return timestamp_offset_;
 }
 
 uint32_t RTPSender::GenerateNewSSRC() {
@@ -1705,6 +1692,7 @@ void RTPSender::SetRtpState(const RtpState& rtp_state) {
   rtc::CritScope lock(&send_critsect_);
   sequence_number_ = rtp_state.sequence_number;
   sequence_number_forced_ = true;
+  timestamp_offset_ = rtp_state.start_timestamp;
   timestamp_ = rtp_state.timestamp;
   capture_time_ms_ = rtp_state.capture_time_ms;
   last_timestamp_time_ms_ = rtp_state.last_timestamp_time_ms;
@@ -1716,7 +1704,7 @@ RtpState RTPSender::GetRtpState() const {
 
   RtpState state;
   state.sequence_number = sequence_number_;
-  state.start_timestamp = start_timestamp_;
+  state.start_timestamp = timestamp_offset_;
   state.timestamp = timestamp_;
   state.capture_time_ms = capture_time_ms_;
   state.last_timestamp_time_ms = last_timestamp_time_ms_;
@@ -1735,7 +1723,7 @@ RtpState RTPSender::GetRtxRtpState() const {
 
   RtpState state;
   state.sequence_number = sequence_number_rtx_;
-  state.start_timestamp = start_timestamp_;
+  state.start_timestamp = timestamp_offset_;
 
   return state;
 }

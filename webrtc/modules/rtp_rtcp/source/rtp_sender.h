@@ -90,8 +90,8 @@ class RTPSender {
   void GetDataCounters(StreamDataCounters* rtp_stats,
                        StreamDataCounters* rtx_stats) const;
 
-  uint32_t StartTimestamp() const;
-  void SetStartTimestamp(uint32_t timestamp, bool force);
+  uint32_t TimestampOffset() const;
+  void SetTimestampOffset(uint32_t timestamp);
 
   uint32_t GenerateNewSSRC();
   void SetSSRC(uint32_t ssrc);
@@ -402,8 +402,7 @@ class RTPSender {
   BitrateStatisticsObserver* const bitrate_callback_;
 
   // RTP variables
-  bool start_timestamp_forced_ GUARDED_BY(send_critsect_);
-  uint32_t start_timestamp_ GUARDED_BY(send_critsect_);
+  uint32_t timestamp_offset_ GUARDED_BY(send_critsect_);
   SSRCDatabase* const ssrc_db_;
   uint32_t remote_ssrc_ GUARDED_BY(send_critsect_);
   bool sequence_number_forced_ GUARDED_BY(send_critsect_);

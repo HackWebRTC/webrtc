@@ -161,7 +161,7 @@ RTCPSender::RTCPSender(
       sending_(false),
       remb_enabled_(false),
       next_time_to_send_rtcp_(0),
-      start_timestamp_(0),
+      timestamp_offset_(0),
       last_rtp_timestamp_(0),
       last_frame_capture_time_ms_(-1),
       ssrc_(0),
@@ -288,9 +288,9 @@ void RTCPSender::SetMaxPayloadLength(size_t max_payload_length) {
   max_payload_length_ = max_payload_length;
 }
 
-void RTCPSender::SetStartTimestamp(uint32_t start_timestamp) {
+void RTCPSender::SetTimestampOffset(uint32_t timestamp_offset) {
   rtc::CritScope lock(&critical_section_rtcp_sender_);
-  start_timestamp_ = start_timestamp;
+  timestamp_offset_ = timestamp_offset;
 }
 
 void RTCPSender::SetLastRtpTime(uint32_t rtp_timestamp,
@@ -444,7 +444,7 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildSR(const RtcpContext& ctx) {
   // timestamp as the last frame's timestamp + the time since the last frame
   // was captured.
   uint32_t rtp_timestamp =
-      start_timestamp_ + last_rtp_timestamp_ +
+      timestamp_offset_ + last_rtp_timestamp_ +
       (clock_->TimeInMilliseconds() - last_frame_capture_time_ms_) *
           (ctx.feedback_state_.frequency_hz / 1000);
 
