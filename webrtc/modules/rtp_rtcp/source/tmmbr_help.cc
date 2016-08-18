@@ -16,40 +16,6 @@
 #include "webrtc/base/checks.h"
 
 namespace webrtc {
-void TMMBRSet::VerifyAndAllocateSet(uint32_t minimumSize) {
-  clear();
-  reserve(minimumSize);
-}
-
-void TMMBRSet::VerifyAndAllocateSetKeepingData(uint32_t minimumSize) {
-  reserve(minimumSize);
-}
-
-void TMMBRSet::SetEntry(unsigned int i,
-                        uint32_t tmmbrSet,
-                        uint32_t packetOHSet,
-                        uint32_t ssrcSet) {
-  RTC_DCHECK_LT(i, capacity());
-  if (i >= size()) {
-    resize(i + 1);
-  }
-  (*this)[i].set_bitrate_bps(tmmbrSet * 1000);
-  (*this)[i].set_packet_overhead(packetOHSet);
-  (*this)[i].set_ssrc(ssrcSet);
-}
-
-void TMMBRSet::AddEntry(uint32_t tmmbrSet,
-                        uint32_t packetOHSet,
-                        uint32_t ssrcSet) {
-  RTC_DCHECK_LT(size(), capacity());
-  SetEntry(size(), tmmbrSet, packetOHSet, ssrcSet);
-}
-
-void TMMBRSet::RemoveEntry(uint32_t sourceIdx) {
-  RTC_DCHECK_LT(sourceIdx, size());
-  erase(begin() + sourceIdx);
-}
-
 std::vector<rtcp::TmmbItem> TMMBRHelp::FindBoundingSet(
     std::vector<rtcp::TmmbItem> candidates) {
   // Filter out candidates with 0 bitrate.

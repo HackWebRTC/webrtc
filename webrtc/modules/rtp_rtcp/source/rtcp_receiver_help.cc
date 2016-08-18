@@ -115,72 +115,38 @@ RTCPReportBlockInformation::~RTCPReportBlockInformation()
 {
 }
 
-RTCPReceiveInformation::RTCPReceiveInformation()
-    : lastTimeReceived(0),
-      lastFIRSequenceNumber(-1),
-      lastFIRRequest(0),
-      readyForDelete(false) {
+RTCPReceiveInformation::RTCPReceiveInformation() = default;
+RTCPReceiveInformation::~RTCPReceiveInformation() = default;
+
+void RTCPReceiveInformation::InsertTmmbrItem(uint32_t sender_ssrc,
+                                             const rtcp::TmmbItem& tmmbr_item,
+                                             int64_t current_time_ms) {
+  TimedTmmbrItem* entry = &tmmbr_[sender_ssrc];
+  entry->tmmbr_item = rtcp::TmmbItem(sender_ssrc,
+                                     tmmbr_item.bitrate_bps(),
+                                     tmmbr_item.packet_overhead());
+  entry->last_updated_ms = current_time_ms;
 }
 
-RTCPReceiveInformation::~RTCPReceiveInformation() {
-}
-
-// Increase size of TMMBRSet if needed, and also take care of
-// the _tmmbrSetTimeouts vector.
-void RTCPReceiveInformation::VerifyAndAllocateTMMBRSet(
-    const uint32_t minimumSize) {
-  if (minimumSize > TmmbrSet.sizeOfSet()) {
-    TmmbrSet.VerifyAndAllocateSetKeepingData(minimumSize);
-    // make sure that our buffers are big enough
-    _tmmbrSetTimeouts.reserve(minimumSize);
-  }
-}
-
-void RTCPReceiveInformation::InsertTMMBRItem(
-    const uint32_t senderSSRC,
-    const RTCPUtility::RTCPPacketRTPFBTMMBRItem& TMMBRItem,
-    const int64_t currentTimeMS) {
-  // serach to see if we have it in our list
-  for (uint32_t i = 0; i < TmmbrSet.lengthOfSet(); i++)  {
-    if (TmmbrSet.Ssrc(i) == senderSSRC) {
-      // we already have this SSRC in our list update it
-      TmmbrSet.SetEntry(i,
-                        TMMBRItem.MaxTotalMediaBitRate,
-                        TMMBRItem.MeasuredOverhead,
-                        senderSSRC);
-      _tmmbrSetTimeouts[i] = currentTimeMS;
-      return;
-    }
-  }
-  VerifyAndAllocateTMMBRSet(TmmbrSet.lengthOfSet() + 1);
-  TmmbrSet.AddEntry(TMMBRItem.MaxTotalMediaBitRate,
-                    TMMBRItem.MeasuredOverhead,
-                    senderSSRC);
-  _tmmbrSetTimeouts.push_back(currentTimeMS);
-}
-
-void RTCPReceiveInformation::GetTMMBRSet(
+void RTCPReceiveInformation::GetTmmbrSet(
     int64_t current_time_ms,
     std::vector<rtcp::TmmbItem>* candidates) {
-  // Erase timeout entries.
-  for (size_t source_idx = 0; source_idx < TmmbrSet.size();) {
-    // Use audio define since we don't know what interval the remote peer is
-    // using.
-    if (current_time_ms - _tmmbrSetTimeouts[source_idx] >
-        5 * RTCP_INTERVAL_AUDIO_MS) {
-      // Value timed out.
-      TmmbrSet.erase(TmmbrSet.begin() + source_idx);
-      _tmmbrSetTimeouts.erase(_tmmbrSetTimeouts.begin() + source_idx);
-      continue;
+  // Use audio define since we don't know what interval the remote peer use.
+  int64_t timeouted_ms = current_time_ms - 5 * RTCP_INTERVAL_AUDIO_MS;
+  for (auto it = tmmbr_.begin(); it != tmmbr_.end();) {
+    if (it->second.last_updated_ms < timeouted_ms) {
+      // Erase timeout entries.
+      it = tmmbr_.erase(it);
+    } else {
+      candidates->push_back(it->second.tmmbr_item);
+      ++it;
     }
-    candidates->push_back(TmmbrSet[source_idx]);
-    ++source_idx;
   }
 }
 
-void RTCPReceiveInformation::VerifyAndAllocateBoundingSet(
-    const uint32_t minimumSize) {
-  TmmbnBoundingSet.VerifyAndAllocateSet(minimumSize);
+void RTCPReceiveInformation::ClearTmmbr() {
+  tmmbr_.clear();
 }
+
 }  // namespace RTCPHelp
 }  // namespace webrtc

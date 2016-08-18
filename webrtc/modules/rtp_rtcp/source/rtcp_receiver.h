@@ -96,7 +96,7 @@ public:
 
     bool UpdateRTCPReceiveInformationTimers();
 
-    int32_t BoundingSet(bool* tmmbrOwner, TMMBRSet* boundingSetRec);
+    std::vector<rtcp::TmmbItem> BoundingSet(bool* tmmbr_owner);
 
     int32_t UpdateTMMBR();
 
@@ -111,9 +111,6 @@ protected:
  RTCPHelp::RTCPReceiveInformation* CreateReceiveInformation(
      uint32_t remoteSSRC);
  RTCPHelp::RTCPReceiveInformation* GetReceiveInformation(uint32_t remoteSSRC);
-
-    void UpdateReceiveInformation(
-        RTCPHelp::RTCPReceiveInformation& receiveInformation);
 
     void HandleSenderReceiverReport(
         RTCPUtility::RTCPParserV2& rtcpParser,

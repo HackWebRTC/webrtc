@@ -241,7 +241,7 @@ class RTCPSender {
 
   std::vector<rtcp::TmmbItem> tmmbn_to_send_
       GUARDED_BY(critical_section_rtcp_sender_);
-  uint32_t tmmbr_send_ GUARDED_BY(critical_section_rtcp_sender_);
+  uint32_t tmmbr_send_bps_ GUARDED_BY(critical_section_rtcp_sender_);
   uint32_t packet_oh_send_ GUARDED_BY(critical_section_rtcp_sender_);
   size_t max_payload_length_;
 

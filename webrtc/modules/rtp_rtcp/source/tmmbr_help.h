@@ -16,28 +16,6 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-class TMMBRSet : public std::vector<rtcp::TmmbItem> {
- public:
-  void VerifyAndAllocateSet(uint32_t minimumSize);
-  void VerifyAndAllocateSetKeepingData(uint32_t minimumSize);
-  // Number of valid data items in set.
-  uint32_t lengthOfSet() const { return size(); }
-  // Presently allocated max size of set.
-  uint32_t sizeOfSet() const { return capacity(); }
-  void clearSet() { clear(); }
-  uint32_t Tmmbr(int i) const { return (*this)[i].bitrate_bps() / 1000; }
-  uint32_t PacketOH(int i) const { return (*this)[i].packet_overhead(); }
-  uint32_t Ssrc(int i) const { return (*this)[i].ssrc(); }
-  void SetEntry(unsigned int i,
-                uint32_t tmmbrSet,
-                uint32_t packetOHSet,
-                uint32_t ssrcSet);
-
-  void AddEntry(uint32_t tmmbrSet, uint32_t packetOHSet, uint32_t ssrcSet);
-
-  // Remove one entry from table, and move all others down.
-  void RemoveEntry(uint32_t sourceIdx);
-};
 
 class TMMBRHelp {
  public:

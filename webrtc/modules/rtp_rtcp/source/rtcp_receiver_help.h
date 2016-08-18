@@ -12,12 +12,12 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_HELP_H_
 
 #include <list>
+#include <map>
 #include <memory>
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"  // RTCPReportBlock
-#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/tmmbr_help.h"
 #include "webrtc/typedefs.h"
 
@@ -95,38 +95,36 @@ private:
     RTC_DISALLOW_COPY_AND_ASSIGN(RTCPPacketInformation);
 };
 
-class RTCPReceiveInformation
-{
-public:
-    RTCPReceiveInformation();
-    ~RTCPReceiveInformation();
+class RTCPReceiveInformation {
+ public:
+  RTCPReceiveInformation();
+  ~RTCPReceiveInformation();
 
-    void VerifyAndAllocateBoundingSet(const uint32_t minimumSize);
-    void VerifyAndAllocateTMMBRSet(const uint32_t minimumSize);
+  void InsertTmmbrItem(uint32_t sender_ssrc,
+                       const rtcp::TmmbItem& tmmbr_item,
+                       int64_t current_time_ms);
 
-    void InsertTMMBRItem(const uint32_t senderSSRC,
-                         const RTCPUtility::RTCPPacketRTPFBTMMBRItem& TMMBRItem,
-                         const int64_t currentTimeMS);
+  void GetTmmbrSet(int64_t current_time_ms,
+                   std::vector<rtcp::TmmbItem>* candidates);
 
-    // get
-    void GetTMMBRSet(int64_t current_time_ms,
-                     std::vector<rtcp::TmmbItem>* candidates);
+  void ClearTmmbr();
 
-    int64_t lastTimeReceived;
+  int64_t last_time_received_ms = 0;
 
-    // FIR
-    int32_t lastFIRSequenceNumber;
-    int64_t lastFIRRequest;
+  int32_t last_fir_sequence_number = -1;
+  int64_t last_fir_request_ms = 0;
 
-    // TMMBN
-    TMMBRSet        TmmbnBoundingSet;
+  bool ready_for_delete = false;
 
-    // TMMBR
-    TMMBRSet        TmmbrSet;
+  std::vector<rtcp::TmmbItem> tmmbn;
 
-    bool            readyForDelete;
-private:
-    std::vector<int64_t> _tmmbrSetTimeouts;
+ private:
+  struct TimedTmmbrItem {
+    rtcp::TmmbItem tmmbr_item;
+    int64_t last_updated_ms;
+  };
+
+  std::map<uint32_t, TimedTmmbrItem> tmmbr_;
 };
 
 }  // end namespace RTCPHelp
