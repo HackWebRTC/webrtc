@@ -696,6 +696,11 @@ if (rtc_include_tests) {
       configs -= [ "//build/config/clang:find_bad_constructs" ]
     }
     if (is_android) {
+      deps += [ "//testing/android/native_test:native_test_native_code" ]
+      data = [
+        "//resources/foreman_cif_short.yuv",
+        "//resources/voice_engine/audio_long16.pcm",
+      ]
       shard_timeout = 900
     }
   }
