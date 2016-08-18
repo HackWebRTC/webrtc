@@ -31,6 +31,7 @@
 #include "webrtc/api/test/fakevideotrackrenderer.h"
 #include "webrtc/api/test/mockpeerconnectionobservers.h"
 #include "webrtc/base/gunit.h"
+#include "webrtc/base/helpers.h"
 #include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/sslstreamadapter.h"
@@ -1337,6 +1338,8 @@ class P2PTestConductor : public testing::Test {
     }
   }
 
+  rtc::VirtualSocketServer* virtual_socket_server() { return ss_.get(); }
+
   PeerConnectionTestClient* initializing_client() {
     return initiating_client_.get();
   }
@@ -1922,6 +1925,66 @@ TEST_F(P2PTestConductor, LocalP2PTestSctpDataChannel) {
   receiving_client()->data_channel()->Send(DataBuffer(data));
   EXPECT_EQ_WAIT(data, initializing_client()->data_observer()->last_message(),
                  kMaxWaitMs);
+
+  receiving_client()->data_channel()->Close();
+  EXPECT_TRUE_WAIT(!initializing_client()->data_observer()->IsOpen(),
+                   kMaxWaitMs);
+  EXPECT_TRUE_WAIT(!receiving_client()->data_observer()->IsOpen(), kMaxWaitMs);
+}
+
+TEST_F(P2PTestConductor, UnorderedSctpDataChannel) {
+  ASSERT_TRUE(CreateTestClients());
+  webrtc::DataChannelInit init;
+  init.ordered = false;
+  initializing_client()->CreateDataChannel(&init);
+
+  // Introduce random network delays.
+  // Otherwise it's not a true "unordered" test.
+  virtual_socket_server()->set_delay_mean(20);
+  virtual_socket_server()->set_delay_stddev(5);
+  virtual_socket_server()->UpdateDelayDistribution();
+
+  initializing_client()->Negotiate();
+  ASSERT_TRUE(initializing_client()->data_channel() != nullptr);
+  EXPECT_TRUE_WAIT(receiving_client()->data_channel() != nullptr, kMaxWaitMs);
+  EXPECT_TRUE_WAIT(initializing_client()->data_observer()->IsOpen(),
+                   kMaxWaitMs);
+  EXPECT_TRUE_WAIT(receiving_client()->data_observer()->IsOpen(), kMaxWaitMs);
+
+  static constexpr int kNumMessages = 100;
+  // Deliberately chosen to be larger than the MTU so messages get fragmented.
+  static constexpr size_t kMaxMessageSize = 4096;
+  // Create and send random messages.
+  std::vector<std::string> sent_messages;
+  for (int i = 0; i < kNumMessages; ++i) {
+    size_t length = (rand() % kMaxMessageSize) + 1;
+    std::string message;
+    ASSERT_TRUE(rtc::CreateRandomString(length, &message));
+    initializing_client()->data_channel()->Send(DataBuffer(message));
+    receiving_client()->data_channel()->Send(DataBuffer(message));
+    sent_messages.push_back(message);
+  }
+
+  EXPECT_EQ_WAIT(
+      kNumMessages,
+      initializing_client()->data_observer()->received_message_count(),
+      kMaxWaitMs);
+  EXPECT_EQ_WAIT(kNumMessages,
+                 receiving_client()->data_observer()->received_message_count(),
+                 kMaxWaitMs);
+
+  // Sort and compare to make sure none of the messages were corrupted.
+  std::vector<std::string> initializing_client_received_messages =
+      initializing_client()->data_observer()->messages();
+  std::vector<std::string> receiving_client_received_messages =
+      receiving_client()->data_observer()->messages();
+  std::sort(sent_messages.begin(), sent_messages.end());
+  std::sort(initializing_client_received_messages.begin(),
+            initializing_client_received_messages.end());
+  std::sort(receiving_client_received_messages.begin(),
+            receiving_client_received_messages.end());
+  EXPECT_EQ(sent_messages, initializing_client_received_messages);
+  EXPECT_EQ(sent_messages, receiving_client_received_messages);
 
   receiving_client()->data_channel()->Close();
   EXPECT_TRUE_WAIT(!initializing_client()->data_observer()->IsOpen(),
