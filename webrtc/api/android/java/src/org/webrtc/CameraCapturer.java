@@ -12,6 +12,7 @@ package org.webrtc;
 
 import android.content.Context;
 import android.os.Handler;
+import android.os.Looper;
 
 import java.util.Arrays;
 
@@ -26,16 +27,18 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
   private static final String TAG = "CameraCapturer";
   private final static int MAX_OPEN_CAMERA_ATTEMPTS = 3;
   private final static int OPEN_CAMERA_DELAY_MS = 500;
+  private final static int OPEN_CAMERA_TIMEOUT = 10000;
 
   private final CameraEnumerator cameraEnumerator;
   private final CameraEventsHandler eventsHandler;
+  private final Handler uiThreadHandler;
 
   private final CameraSession.CreateSessionCallback createSessionCallback =
       new CameraSession.CreateSessionCallback() {
         @Override
         public void onDone(CameraSession session) {
           Logging.d(TAG, "Create session done");
-
+          uiThreadHandler.removeCallbacks(openCameraTimeoutRunnable);
           synchronized (stateLock) {
             sessionOpening = false;
             currentSession = session;
@@ -57,6 +60,7 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
 
         @Override
         public void onFailure(String error) {
+          uiThreadHandler.removeCallbacks(openCameraTimeoutRunnable);
           synchronized (stateLock) {
             openAttemptsRemaining--;
 
@@ -82,6 +86,13 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
           }
         }
       };
+
+  private final Runnable openCameraTimeoutRunnable = new Runnable() {
+    @Override
+    public void run() {
+      eventsHandler.onCameraError("Camera failed to start within timeout.");
+    }
+  };
 
   // Initialized on initialize
   // -------------------------
@@ -121,6 +132,7 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
     this.eventsHandler = eventsHandler;
     this.cameraEnumerator = cameraEnumerator;
     this.cameraName = cameraName;
+    uiThreadHandler = new Handler(Looper.getMainLooper());
 
     final String[] deviceNames = cameraEnumerator.getDeviceNames();
 
@@ -164,6 +176,7 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
   }
 
   private void createSessionInternal(int delayMs) {
+    uiThreadHandler.postDelayed(openCameraTimeoutRunnable, delayMs + OPEN_CAMERA_TIMEOUT);
     cameraThreadHandler.postDelayed(new Runnable() {
       @Override
       public void run() {
