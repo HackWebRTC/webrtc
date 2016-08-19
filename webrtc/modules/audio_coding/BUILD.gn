@@ -1144,8 +1144,6 @@ if (rtc_include_tests) {
       "neteq/tools/neteq_external_decoder_test.h",
       "neteq/tools/neteq_performance_test.cc",
       "neteq/tools/neteq_performance_test.h",
-      "neteq/tools/neteq_quality_test.cc",
-      "neteq/tools/neteq_quality_test.h",
     ]
 
     configs += [ "../..:common_config" ]
@@ -1161,6 +1159,28 @@ if (rtc_include_tests) {
       ":neteq_unittest_tools",
       ":pcm16b",
       "//testing/gtest",
+      "//third_party/gflags",
+    ]
+  }
+
+  source_set("neteq_quality_test_support") {
+    testonly = true
+    sources = [
+      "neteq/tools/neteq_quality_test.cc",
+      "neteq/tools/neteq_quality_test.h",
+    ]
+
+    configs += [ "../..:common_config" ]
+    public_configs = [ "../..:common_inherited_config" ]
+
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    deps = [
+      ":neteq",
+      ":neteq_unittest_tools",
       "//third_party/gflags",
     ]
   }
@@ -1402,7 +1422,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":neteq",
-      ":neteq_test_support",
+      ":neteq_quality_test_support",
       ":neteq_unittest_tools",
       ":webrtc_opus",
       "../../test:test_support_main",
@@ -1452,7 +1472,7 @@ if (rtc_include_tests) {
     deps = [
       ":ilbc",
       ":neteq",
-      ":neteq_test_support",
+      ":neteq_quality_test_support",
       ":neteq_unittest_tools",
       "../../system_wrappers:system_wrappers_default",
       "../../test:test_support_main",
@@ -1472,7 +1492,7 @@ if (rtc_include_tests) {
     deps = [
       ":isac_fix",
       ":neteq",
-      ":neteq_test_support",
+      ":neteq_quality_test_support",
       "../../test:test_support_main",
       "//build/config/sanitizers:deps",
       "//testing/gtest",
@@ -1490,7 +1510,7 @@ if (rtc_include_tests) {
     deps = [
       ":g711",
       ":neteq",
-      ":neteq_test_support",
+      ":neteq_quality_test_support",
       "../../test:test_support_main",
       "//build/config/sanitizers:deps",
       "//testing/gtest",

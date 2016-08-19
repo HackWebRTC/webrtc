@@ -167,6 +167,18 @@
         'tools/neteq_external_decoder_test.h',
         'tools/neteq_performance_test.cc',
         'tools/neteq_performance_test.h',
+      ],
+    }, # neteq_test_support
+
+    {
+      'target_name': 'neteq_quality_test_support',
+      'type': 'static_library',
+      'dependencies': [
+        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+        'neteq',
+        'neteq_unittest_tools',
+      ],
+      'sources': [
         'tools/neteq_quality_test.cc',
         'tools/neteq_quality_test.h',
       ],
@@ -195,7 +207,7 @@
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
         '<(webrtc_root)/test/test.gyp:test_support_main',
         'neteq',
-        'neteq_test_support',
+        'neteq_quality_test_support',
         'webrtc_opus',
       ],
       'sources': [
@@ -212,7 +224,7 @@
         '<(webrtc_root)/test/test.gyp:test_support_main',
         'isac_fix',
         'neteq',
-        'neteq_test_support',
+        'neteq_quality_test_support',
       ],
       'sources': [
         'test/neteq_isac_quality_test.cc',
@@ -228,7 +240,7 @@
         '<(webrtc_root)/test/test.gyp:test_support_main',
         'g711',
         'neteq',
-        'neteq_test_support',
+        'neteq_quality_test_support',
       ],
       'sources': [
         'test/neteq_pcmu_quality_test.cc',
@@ -244,7 +256,7 @@
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
         '<(webrtc_root)/test/test.gyp:test_support_main',
         'neteq',
-        'neteq_test_support',
+        'neteq_quality_test_support',
         'ilbc',
       ],
       'sources': [
