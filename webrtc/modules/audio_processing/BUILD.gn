@@ -339,6 +339,7 @@ if (rtc_include_tests) {
       "../../system_wrappers",
       "../../system_wrappers:system_wrappers_default",
       "../../test:test_support",
+      "//build/config/sanitizers:deps",
       "//testing/gtest",
       "//third_party/gflags:gflags",
     ]
@@ -366,6 +367,7 @@ if (rtc_include_tests) {
       ":audioproc_test_utils",
       "../../common_audio",
       "../../system_wrappers:system_wrappers_default",
+      "//build/config/sanitizers:deps",
       "//third_party/gflags:gflags",
     ]
   }  # unpack_aecdump
@@ -399,6 +401,7 @@ if (rtc_include_tests) {
       "../../system_wrappers",
       "../../system_wrappers:system_wrappers_default",
       "../../test:test_support",
+      "//build/config/sanitizers:deps",
       "//testing/gtest",
       "//third_party/gflags:gflags",
     ]
@@ -442,7 +445,7 @@ if (rtc_include_tests) {
       ]
 
       deps = [
-        ":audioproc_unittest_proto",
+        ":audioproc_debug_proto",
       ]
     }
   }

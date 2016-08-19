@@ -292,6 +292,7 @@ if (!build_with_chromium) {
       ":webrtc",
       "modules/video_capture:video_capture_internal_impl",
       "test",
+      "//build/config/sanitizers:deps",
     ]
   }
 
@@ -313,6 +314,7 @@ if (!build_with_chromium) {
       "test:field_trial",
       "test:test_common",
       "test:test_renderer",
+      "//build/config/sanitizers:deps",
       "//testing/gmock",
       "//testing/gtest",
       "//third_party/gflags",

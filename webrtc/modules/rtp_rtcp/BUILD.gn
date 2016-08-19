@@ -192,6 +192,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":rtp_rtcp",
+      "//build/config/sanitizers:deps",
       "//testing/gtest",
       "//webrtc/test:test_support_main",
     ]

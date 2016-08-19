@@ -181,6 +181,7 @@ if (rtc_include_tests) {
 
       deps = [
         ":voice_engine",
+        "//build/config/sanitizers:deps",
         "//testing/gmock",
         "//testing/gtest",
         "//third_party/gflags",

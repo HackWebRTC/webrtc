@@ -430,6 +430,7 @@ if (is_linux || is_win) {
       public_configs = [ ":gtk2_config" ]
     }
     deps = [
+      "//build/config/sanitizers:deps",
       "//webrtc/api:libjingle_peerconnection",
       "//webrtc/system_wrappers:field_trial_default",
       "//webrtc/system_wrappers:metrics_default",
@@ -449,6 +450,7 @@ if (is_linux || is_win) {
       "peerconnection/server/utils.h",
     ]
     deps = [
+      "//build/config/sanitizers:deps",
       "//webrtc:webrtc_common",
       "//webrtc/base:rtc_base_approved",
       "//webrtc/tools:command_line_parser",
@@ -464,6 +466,7 @@ if (is_linux || is_win) {
       "relayserver/relayserver_main.cc",
     ]
     deps = [
+      "//build/config/sanitizers:deps",
       "//webrtc/base:rtc_base_approved",
       "//webrtc/pc:rtc_pc",
       "//webrtc/system_wrappers:field_trial_default",
@@ -480,6 +483,7 @@ if (is_linux || is_win) {
       "turnserver/turnserver_main.cc",
     ]
     deps = [
+      "//build/config/sanitizers:deps",
       "//webrtc/base:rtc_base_approved",
       "//webrtc/pc:rtc_pc",
       "//webrtc/system_wrappers:field_trial_default",
@@ -496,6 +500,7 @@ if (is_linux || is_win) {
       "stunserver/stunserver_main.cc",
     ]
     deps = [
+      "//build/config/sanitizers:deps",
       "//webrtc/base:rtc_base_approved",
       "//webrtc/pc:rtc_pc",
       "//webrtc/system_wrappers:field_trial_default",

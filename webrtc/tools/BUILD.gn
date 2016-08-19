@@ -63,6 +63,7 @@ executable("frame_analyzer") {
   deps = [
     ":command_line_parser",
     ":video_quality_analysis",
+    "//build/config/sanitizers:deps",
     "//build/win:default_exe_manifest",
   ]
 }
@@ -78,6 +79,7 @@ executable("psnr_ssim_analyzer") {
   deps = [
     ":command_line_parser",
     ":video_quality_analysis",
+    "//build/config/sanitizers:deps",
     "//build/win:default_exe_manifest",
   ]
 }
@@ -95,6 +97,7 @@ executable("rgba_to_i420_converter") {
   deps = [
     ":command_line_parser",
     "../common_video",
+    "//build/config/sanitizers:deps",
     "//build/win:default_exe_manifest",
   ]
 }
@@ -133,6 +136,7 @@ executable("frame_editor") {
   deps = [
     ":command_line_parser",
     ":frame_editing_lib",
+    "//build/config/sanitizers:deps",
     "//build/win:default_exe_manifest",
   ]
 }
@@ -154,6 +158,7 @@ executable("force_mic_volume_max") {
   deps = [
     "../system_wrappers:system_wrappers_default",
     "../voice_engine",
+    "//build/config/sanitizers:deps",
     "//build/win:default_exe_manifest",
   ]
 }
@@ -201,6 +206,7 @@ if (rtc_include_tests) {
         "../modules/rtp_rtcp:rtp_rtcp",
         "../system_wrappers:system_wrappers_default",
         "../test:field_trial",
+        "//build/config/sanitizers:deps",
         "//third_party/gflags",
       ]
     }
