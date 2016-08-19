@@ -141,6 +141,7 @@ source_set("rtc_media") {
     ]
   }
 
+  include_dirs = []
   if (rtc_build_libyuv) {
     deps += [ "$rtc_libyuv_dir" ]
     public_deps = [
@@ -152,7 +153,7 @@ source_set("rtc_media") {
   }
 
   if (rtc_build_usrsctp) {
-    include_dirs = [
+    include_dirs += [
       # TODO(jiayl): move this into the public_configs of
       # //third_party/usrsctp/BUILD.gn.
       "//third_party/usrsctp/usrsctplib",
@@ -222,6 +223,8 @@ if (rtc_include_tests) {
   source_set("rtc_unittest_main") {
     testonly = true
 
+    include_dirs = []
+    public_deps = []
     deps = []
     sources = [
       "base/fakemediaengine.h",
@@ -250,9 +253,7 @@ if (rtc_include_tests) {
 
     if (rtc_build_libyuv) {
       deps += [ "$rtc_libyuv_dir" ]
-      public_deps = [
-        "$rtc_libyuv_dir",
-      ]
+      public_deps += [ "$rtc_libyuv_dir" ]
     } else {
       # Need to add a directory normally exported by libyuv.
       include_dirs += [ "$rtc_libyuv_dir/include" ]

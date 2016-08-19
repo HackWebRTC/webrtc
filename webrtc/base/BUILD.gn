@@ -81,7 +81,7 @@ if (is_linux && !build_with_chromium) {
   }
 }
 
-if (rtc_build_ssl == 0) {
+if (!rtc_build_ssl) {
   config("external_ssl_library") {
     assert(rtc_ssl_root != "",
            "You must specify rtc_ssl_root when rtc_build_ssl==0.")
@@ -506,7 +506,7 @@ static_library("rtc_base") {
     if (rtc_build_json) {
       deps += [ "//third_party/jsoncpp" ]
     } else {
-      include_dirs += [ rtc_jsoncpp_root ]
+      include_dirs = [ "$rtc_jsoncpp_root" ]
 
       # When defined changes the include path for json.h to where it is
       # expected to be when building json outside of the standalone build.
@@ -525,7 +525,7 @@ static_library("rtc_base") {
   if (rtc_build_ssl) {
     deps += [ "//third_party/boringssl" ]
   } else {
-    configs += [ "external_ssl_library" ]
+    configs += [ ":external_ssl_library" ]
   }
 
   if (is_android) {
