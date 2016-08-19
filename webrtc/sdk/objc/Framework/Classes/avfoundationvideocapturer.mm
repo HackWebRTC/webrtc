@@ -27,20 +27,42 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/common_video/include/corevideo_frame_buffer.h"
 
-// TODO(tkchin): support other formats.
-static NSString *const kDefaultPreset = AVCaptureSessionPreset640x480;
-static NSString *const kIPhone4SPreset = AVCaptureSessionPreset352x288;
-static cricket::VideoFormat const kDefaultFormat =
-    cricket::VideoFormat(640,
-                         480,
-                         cricket::VideoFormat::FpsToInterval(30),
-                         cricket::FOURCC_NV12);
-// iPhone4S is too slow to handle 30fps.
-static cricket::VideoFormat const kIPhone4SFormat =
-    cricket::VideoFormat(352,
-                         288,
-                         cricket::VideoFormat::FpsToInterval(15),
-                         cricket::FOURCC_NV12);
+struct AVCaptureSessionPresetResolution {
+  NSString *sessionPreset;
+  int width;
+  int height;
+};
+
+#if TARGET_OS_IPHONE
+static const AVCaptureSessionPresetResolution kAvailablePresets[] = {
+  { AVCaptureSessionPreset352x288, 352, 288},
+  { AVCaptureSessionPreset640x480, 640, 480},
+  { AVCaptureSessionPreset1280x720, 1280, 720},
+  { AVCaptureSessionPreset1920x1080, 1920, 1080},
+};
+#else // macOS
+static const AVCaptureSessionPresetResolution kAvailablePresets[] = {
+  { AVCaptureSessionPreset320x240, 320, 240},
+  { AVCaptureSessionPreset352x288, 352, 288},
+  { AVCaptureSessionPreset640x480, 640, 480},
+  { AVCaptureSessionPreset960x540, 960, 540},
+  { AVCaptureSessionPreset1280x720, 1280, 720},
+};
+#endif
+
+// Mapping from cricket::VideoFormat to AVCaptureSession presets.
+static NSString *GetSessionPresetForVideoFormat(
+  const cricket::VideoFormat& format) {
+  for (const auto preset : kAvailablePresets) {
+    // Check both orientations
+    if ((format.width == preset.width && format.height == preset.height) ||
+        (format.width == preset.height && format.height == preset.width)) {
+      return preset.sessionPreset;
+    }
+  }
+  // If no matching preset is found, use a default one.
+  return AVCaptureSessionPreset640x480;
+}
 
 // This class used to capture frames using AVFoundation APIs on iOS. It is meant
 // to be owned by an instance of AVFoundationVideoCapturer. The reason for this
@@ -60,6 +82,7 @@ static cricket::VideoFormat const kIPhone4SFormat =
 // when we receive frames. This is safe because this object should be owned by
 // it.
 - (instancetype)initWithCapturer:(webrtc::AVFoundationVideoCapturer *)capturer;
+- (AVCaptureDevice *)getActiveCaptureDevice;
 
 // Starts and stops the capture session asynchronously. We cannot do this
 // synchronously without blocking a WebRTC thread.
@@ -139,6 +162,10 @@ static cricket::VideoFormat const kIPhone4SFormat =
 
 - (AVCaptureSession *)captureSession {
   return _captureSession;
+}
+
+- (AVCaptureDevice *)getActiveCaptureDevice {
+  return self.useBackCamera ? _backCameraInput.device : _frontCameraInput.device;
 }
 
 - (dispatch_queue_t)frameQueue {
@@ -361,17 +388,6 @@ static cricket::VideoFormat const kIPhone4SFormat =
     captureSession.usesApplicationAudioSession = NO;
   }
 #endif
-  NSString *preset = kDefaultPreset;
-#if TARGET_OS_IPHONE
-  if ([UIDevice deviceType] == RTCDeviceTypeIPhone4S) {
-    preset = kIPhone4SPreset;
-  }
-#endif
-  if (![captureSession canSetSessionPreset:preset]) {
-    RTCLogError(@"Session preset unsupported.");
-    return NO;
-  }
-  captureSession.sessionPreset = preset;
 
   // Add the output.
   AVCaptureVideoDataOutput *videoDataOutput = [self videoDataOutput];
@@ -399,11 +415,7 @@ static cricket::VideoFormat const kIPhone4SFormat =
   AVCaptureDeviceInput *input = self.useBackCamera ?
       backCameraInput : frontCameraInput;
   [captureSession addInput:input];
-#if TARGET_OS_IPHONE
-  if ([UIDevice deviceType] == RTCDeviceTypeIPhone4S) {
-    [self setMinFrameDuration:CMTimeMake(1, 15) forDevice:input.device];
-  }
-#endif
+
   _captureSession = captureSession;
   return YES;
 }
@@ -551,11 +563,9 @@ static cricket::VideoFormat const kIPhone4SFormat =
     }
     [self updateOrientation];
     [_captureSession commitConfiguration];
-#if TARGET_OS_IPHONE
-    if ([UIDevice deviceType] == RTCDeviceTypeIPhone4S) {
-      [self setMinFrameDuration:CMTimeMake(1, 15) forDevice:newInput.device];
-    }
-#endif
+
+    const auto fps = cricket::VideoFormat::IntervalToFps(_capturer->GetCaptureFormat()->interval);
+    [self setMinFrameDuration:CMTimeMake(1, fps)forDevice:newInput.device];
   }];
 }
 
@@ -576,21 +586,32 @@ struct AVFoundationFrame {
 
 AVFoundationVideoCapturer::AVFoundationVideoCapturer()
     : _capturer(nil), _startThread(nullptr) {
-  // Set our supported formats. This matches preset.
-  std::vector<cricket::VideoFormat> supported_formats;
-#if TARGET_OS_IPHONE
-  if ([UIDevice deviceType] == RTCDeviceTypeIPhone4S) {
-    supported_formats.push_back(cricket::VideoFormat(kIPhone4SFormat));
-    set_enable_video_adapter(false);
-  } else {
-    supported_formats.push_back(cricket::VideoFormat(kDefaultFormat));
-  }
-#else
-  supported_formats.push_back(cricket::VideoFormat(kDefaultFormat));
-#endif
-  SetSupportedFormats(supported_formats);
+  // Set our supported formats. This matches kAvailablePresets.
   _capturer =
       [[RTCAVFoundationVideoCapturerInternal alloc] initWithCapturer:this];
+
+  std::vector<cricket::VideoFormat> supported_formats;
+  int framerate = 30;
+
+#if TARGET_OS_IPHONE
+  if ([UIDevice deviceType] == RTCDeviceTypeIPhone4S) {
+    set_enable_video_adapter(false);
+    framerate = 15;
+  }
+#endif
+
+  for (const auto preset : kAvailablePresets) {
+    if ([_capturer.captureSession canSetSessionPreset:preset.sessionPreset]) {
+      const auto format = cricket::VideoFormat(
+        preset.width,
+        preset.height,
+        cricket::VideoFormat::FpsToInterval(framerate),
+        cricket::FOURCC_NV12);
+      supported_formats.push_back(format);
+    }
+  }
+
+  SetSupportedFormats(supported_formats);
 }
 
 AVFoundationVideoCapturer::~AVFoundationVideoCapturer() {
@@ -607,10 +628,18 @@ cricket::CaptureState AVFoundationVideoCapturer::Start(
     LOG(LS_ERROR) << "The capturer is already running.";
     return cricket::CaptureState::CS_FAILED;
   }
-  if (format != kDefaultFormat && format != kIPhone4SFormat) {
-    LOG(LS_ERROR) << "Unsupported format provided.";
+
+  NSString *desiredPreset = GetSessionPresetForVideoFormat(format);
+  RTC_DCHECK(desiredPreset);
+
+  [_capturer.captureSession beginConfiguration];
+  if (![_capturer.captureSession canSetSessionPreset:desiredPreset]) {
+    LOG(LS_ERROR) << "Unsupported video format.";
+    [_capturer.captureSession commitConfiguration];
     return cricket::CaptureState::CS_FAILED;
   }
+  _capturer.captureSession.sessionPreset = desiredPreset;
+  [_capturer.captureSession commitConfiguration];
 
   // Keep track of which thread capture started on. This is the thread that
   // frames need to be sent to.
@@ -623,6 +652,11 @@ cricket::CaptureState AVFoundationVideoCapturer::Start(
   // TODO(tkchin): make this better.
   [_capturer start];
   SetCaptureState(cricket::CaptureState::CS_RUNNING);
+
+  // Adjust the framerate for all capture devices.
+  const auto fps = cricket::VideoFormat::IntervalToFps(format.interval);
+  AVCaptureDevice *activeDevice = [_capturer getActiveCaptureDevice];
+  [_capturer setMinFrameDuration:CMTimeMake(1, fps)forDevice:activeDevice];
 
   return cricket::CaptureState::CS_STARTING;
 }
