@@ -39,81 +39,67 @@ RTCPPacketInformation::RTCPPacketInformation()
       xr_dlrr_item(false),
       VoIPMetric(nullptr) {}
 
-RTCPPacketInformation::~RTCPPacketInformation()
-{
-    delete [] applicationData;
+RTCPPacketInformation::~RTCPPacketInformation() {
+  delete[] applicationData;
 }
 
-void
-RTCPPacketInformation::AddVoIPMetric(const RTCPVoIPMetric* metric)
-{
-    VoIPMetric.reset(new RTCPVoIPMetric());
-    memcpy(VoIPMetric.get(), metric, sizeof(RTCPVoIPMetric));
+void RTCPPacketInformation::AddVoIPMetric(const RTCPVoIPMetric* metric) {
+  VoIPMetric.reset(new RTCPVoIPMetric());
+  memcpy(VoIPMetric.get(), metric, sizeof(RTCPVoIPMetric));
 }
 
 void RTCPPacketInformation::AddApplicationData(const uint8_t* data,
                                                const uint16_t size) {
-    uint8_t* oldData = applicationData;
-    uint16_t oldLength = applicationLength;
+  uint8_t* oldData = applicationData;
+  uint16_t oldLength = applicationLength;
 
-    // Don't copy more than kRtcpAppCode_DATA_SIZE bytes.
-    uint16_t copySize = size;
-    if (size > kRtcpAppCode_DATA_SIZE) {
-        copySize = kRtcpAppCode_DATA_SIZE;
-    }
+  // Don't copy more than kRtcpAppCode_DATA_SIZE bytes.
+  uint16_t copySize = size;
+  if (size > kRtcpAppCode_DATA_SIZE) {
+    copySize = kRtcpAppCode_DATA_SIZE;
+  }
 
-    applicationLength += copySize;
-    applicationData = new uint8_t[applicationLength];
+  applicationLength += copySize;
+  applicationData = new uint8_t[applicationLength];
 
-    if (oldData)
-    {
-        memcpy(applicationData, oldData, oldLength);
-        memcpy(applicationData+oldLength, data, copySize);
-        delete [] oldData;
-    } else
-    {
-        memcpy(applicationData, data, copySize);
-    }
+  if (oldData) {
+    memcpy(applicationData, oldData, oldLength);
+    memcpy(applicationData + oldLength, data, copySize);
+    delete[] oldData;
+  } else {
+    memcpy(applicationData, data, copySize);
+  }
 }
 
-void
-RTCPPacketInformation::ResetNACKPacketIdArray()
-{
+void RTCPPacketInformation::ResetNACKPacketIdArray() {
   nackSequenceNumbers.clear();
 }
 
-void
-RTCPPacketInformation::AddNACKPacket(const uint16_t packetID)
-{
+void RTCPPacketInformation::AddNACKPacket(const uint16_t packetID) {
   if (nackSequenceNumbers.size() >= kSendSideNackListSizeSanity) {
     return;
   }
   nackSequenceNumbers.push_back(packetID);
 }
 
-void
-RTCPPacketInformation::AddReportInfo(
-    const RTCPReportBlockInformation& report_block_info)
-{
+void RTCPPacketInformation::AddReportInfo(
+    const RTCPReportBlockInformation& report_block_info) {
   this->rtt = report_block_info.RTT;
   report_blocks.push_back(report_block_info.remoteReceiveBlock);
 }
 
-RTCPReportBlockInformation::RTCPReportBlockInformation():
-    remoteReceiveBlock(),
-    remoteMaxJitter(0),
-    RTT(0),
-    minRTT(0),
-    maxRTT(0),
-    avgRTT(0),
-    numAverageCalcs(0)
-{
-    memset(&remoteReceiveBlock,0,sizeof(remoteReceiveBlock));
+RTCPReportBlockInformation::RTCPReportBlockInformation()
+    : remoteReceiveBlock(),
+      remoteMaxJitter(0),
+      RTT(0),
+      minRTT(0),
+      maxRTT(0),
+      avgRTT(0),
+      numAverageCalcs(0) {
+  memset(&remoteReceiveBlock, 0, sizeof(remoteReceiveBlock));
 }
 
-RTCPReportBlockInformation::~RTCPReportBlockInformation()
-{
-}
+RTCPReportBlockInformation::~RTCPReportBlockInformation() {}
 
 RTCPReceiveInformation::RTCPReceiveInformation() = default;
 RTCPReceiveInformation::~RTCPReceiveInformation() = default;
@@ -122,8 +108,7 @@ void RTCPReceiveInformation::InsertTmmbrItem(uint32_t sender_ssrc,
                                              const rtcp::TmmbItem& tmmbr_item,
                                              int64_t current_time_ms) {
   TimedTmmbrItem* entry = &tmmbr_[sender_ssrc];
-  entry->tmmbr_item = rtcp::TmmbItem(sender_ssrc,
-                                     tmmbr_item.bitrate_bps(),
+  entry->tmmbr_item = rtcp::TmmbItem(sender_ssrc, tmmbr_item.bitrate_bps(),
                                      tmmbr_item.packet_overhead());
   entry->last_updated_ms = current_time_ms;
 }
