@@ -155,12 +155,12 @@ bool CopyVideoFrameToPixelBuffer(
     const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& frame,
     CVPixelBufferRef pixel_buffer) {
   RTC_DCHECK(pixel_buffer);
-  RTC_DCHECK(CVPixelBufferGetPixelFormatType(pixel_buffer) ==
-             kCVPixelFormatType_420YpCbCr8BiPlanarFullRange);
-  RTC_DCHECK(CVPixelBufferGetHeightOfPlane(pixel_buffer, 0) ==
-             static_cast<size_t>(frame->height()));
-  RTC_DCHECK(CVPixelBufferGetWidthOfPlane(pixel_buffer, 0) ==
-             static_cast<size_t>(frame->width()));
+  RTC_DCHECK_EQ(CVPixelBufferGetPixelFormatType(pixel_buffer),
+                kCVPixelFormatType_420YpCbCr8BiPlanarFullRange);
+  RTC_DCHECK_EQ(CVPixelBufferGetHeightOfPlane(pixel_buffer, 0),
+                static_cast<size_t>(frame->height()));
+  RTC_DCHECK_EQ(CVPixelBufferGetWidthOfPlane(pixel_buffer, 0),
+                static_cast<size_t>(frame->width()));
 
   CVReturn cvRet = CVPixelBufferLockBaseAddress(pixel_buffer, 0);
   if (cvRet != kCVReturnSuccess) {
@@ -218,13 +218,7 @@ namespace webrtc {
 H264VideoToolboxEncoder::H264VideoToolboxEncoder()
     : callback_(nullptr),
       compression_session_(nullptr),
-      bitrate_adjuster_(Clock::GetRealTimeClock(), .5, .95),
-      enable_scaling_(true) {
-#if defined(WEBRTC_IOS)
-  if ([UIDevice deviceType] == RTCDeviceTypeIPhone4S) {
-    enable_scaling_ = false;
-  }
-#endif
+      bitrate_adjuster_(Clock::GetRealTimeClock(), .5, .95) {
 }
 
 H264VideoToolboxEncoder::~H264VideoToolboxEncoder() {
@@ -236,8 +230,6 @@ int H264VideoToolboxEncoder::InitEncode(const VideoCodec* codec_settings,
                                         size_t max_payload_size) {
   RTC_DCHECK(codec_settings);
   RTC_DCHECK_EQ(codec_settings->codecType, kVideoCodecH264);
-  width_ = codec_settings->width;
-  height_ = codec_settings->height;
   {
     rtc::CritScope lock(&quality_scaler_crit_);
     quality_scaler_.Init(QualityScaler::kLowH264QpThreshold,
@@ -247,10 +239,8 @@ int H264VideoToolboxEncoder::InitEncode(const VideoCodec* codec_settings,
     QualityScaler::Resolution res = quality_scaler_.GetScaledResolution();
     // TODO(tkchin): We may need to enforce width/height dimension restrictions
     // to match what the encoder supports.
-    if (enable_scaling_) {
-      width_ = res.width;
-      height_ = res.height;
-    }
+    width_ = res.width;
+    height_ = res.height;
   }
   // We can only set average bitrate on the HW encoder.
   target_bitrate_bps_ = codec_settings->startBitrate;
@@ -260,24 +250,6 @@ int H264VideoToolboxEncoder::InitEncode(const VideoCodec* codec_settings,
   // kVTCompressionPropertyKey_MaxH264SliceBytes.
 
   return ResetCompressionSession();
-}
-
-rtc::scoped_refptr<VideoFrameBuffer>
-H264VideoToolboxEncoder::GetScaledBufferOnEncode(
-    const rtc::scoped_refptr<VideoFrameBuffer>& frame) {
-  rtc::CritScope lock(&quality_scaler_crit_);
-  quality_scaler_.OnEncodeFrame(frame->width(), frame->height());
-  if (!frame->native_handle())
-    return quality_scaler_.GetScaledBuffer(frame);
-
-  // Handle native (CVImageRef) scaling.
-  const QualityScaler::Resolution res = quality_scaler_.GetScaledResolution();
-  if (!enable_scaling_ ||
-      (res.width == frame->width() && res.height == frame->height()))
-    return frame;
-  // TODO(magjed): Implement efficient CVImageRef -> CVImageRef scaling instead
-  // of doing it via I420.
-  return quality_scaler_.GetScaledBuffer(frame->NativeToI420Buffer());
 }
 
 int H264VideoToolboxEncoder::Encode(
@@ -296,12 +268,14 @@ int H264VideoToolboxEncoder::Encode(
   }
 #endif
   bool is_keyframe_required = false;
-  rtc::scoped_refptr<VideoFrameBuffer> input_image(
-      GetScaledBufferOnEncode(frame.video_frame_buffer()));
 
-  if (input_image->width() != width_ || input_image->height() != height_) {
-    width_ = input_image->width();
-    height_ = input_image->height();
+  quality_scaler_.OnEncodeFrame(frame.width(), frame.height());
+  const QualityScaler::Resolution scaled_res =
+      quality_scaler_.GetScaledResolution();
+
+  if (scaled_res.width != width_ || scaled_res.height != height_) {
+    width_ = scaled_res.width;
+    height_ = scaled_res.height;
     int ret = ResetCompressionSession();
     if (ret < 0)
       return ret;
@@ -325,9 +299,13 @@ int H264VideoToolboxEncoder::Encode(
   }
 #endif
 
-  CVPixelBufferRef pixel_buffer =
-      static_cast<CVPixelBufferRef>(input_image->native_handle());
+  CVPixelBufferRef pixel_buffer = static_cast<CVPixelBufferRef>(
+      frame.video_frame_buffer()->native_handle());
   if (pixel_buffer) {
+    // This pixel buffer might have a higher resolution than what the
+    // compression session is configured to. The compression session can handle
+    // that and will output encoded frames in the configured resolution
+    // regardless of the input pixel buffer resolution.
     CVBufferRetain(pixel_buffer);
     pixel_buffer_pool = nullptr;
   } else {
@@ -344,7 +322,12 @@ int H264VideoToolboxEncoder::Encode(
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
     RTC_DCHECK(pixel_buffer);
-    if (!internal::CopyVideoFrameToPixelBuffer(input_image, pixel_buffer)) {
+    // TODO(magjed): Optimize by merging scaling and NV12 pixel buffer
+    // conversion once libyuv::MergeUVPlanes is available.
+    rtc::scoped_refptr<VideoFrameBuffer> scaled_i420_buffer =
+        quality_scaler_.GetScaledBuffer(frame.video_frame_buffer());
+    if (!internal::CopyVideoFrameToPixelBuffer(scaled_i420_buffer,
+                                               pixel_buffer)) {
       LOG(LS_ERROR) << "Failed to copy frame data.";
       CVBufferRelease(pixel_buffer);
       return WEBRTC_VIDEO_CODEC_ERROR;
