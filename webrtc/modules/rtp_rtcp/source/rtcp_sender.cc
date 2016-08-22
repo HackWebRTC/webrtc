@@ -982,14 +982,9 @@ bool RTCPSender::RtcpXrReceiverReferenceTime() const {
   return xr_send_receiver_reference_time_enabled_;
 }
 
-// no callbacks allowed inside this function
-void RTCPSender::SetTMMBN(const std::vector<rtcp::TmmbItem>* bounding_set) {
+void RTCPSender::SetTmmbn(std::vector<rtcp::TmmbItem> bounding_set) {
   rtc::CritScope lock(&critical_section_rtcp_sender_);
-  if (bounding_set) {
-    tmmbn_to_send_ = *bounding_set;
-  } else {
-    tmmbn_to_send_.clear();
-  }
+  tmmbn_to_send_ = std::move(bounding_set);
   SetFlag(kRtcpTmmbn, true);
 }
 

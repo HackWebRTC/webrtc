@@ -88,14 +88,13 @@ class RTCPReceiver {
   // returns true once until a new RR is received.
   bool RtcpRrSequenceNumberTimeout(int64_t rtcp_interval_ms);
 
-  // Get TMMBR
-  std::vector<rtcp::TmmbItem> TMMBRReceived() const;
+  std::vector<rtcp::TmmbItem> TmmbrReceived() const;
 
   bool UpdateRTCPReceiveInformationTimers();
 
   std::vector<rtcp::TmmbItem> BoundingSet(bool* tmmbr_owner);
 
-  int32_t UpdateTMMBR();
+  void UpdateTmmbr();
 
   void RegisterRtcpStatisticsCallback(RtcpStatisticsCallback* callback);
   RtcpStatisticsCallback* GetRtcpStatisticsCallback();

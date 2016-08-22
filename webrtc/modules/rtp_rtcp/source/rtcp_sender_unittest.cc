@@ -738,7 +738,7 @@ TEST_F(RtcpSenderTest, SendTmmbn) {
   const uint32_t kSourceSsrc = 12345;
   const rtcp::TmmbItem tmmbn(kSourceSsrc, kBitrateKbps * 1000, kPacketOh);
   bounding_set.push_back(tmmbn);
-  rtcp_sender_->SetTMMBN(&bounding_set);
+  rtcp_sender_->SetTmmbn(bounding_set);
 
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpSr));
   EXPECT_EQ(1, parser()->sender_report()->num_packets());
@@ -760,7 +760,7 @@ TEST_F(RtcpSenderTest, SendsTmmbnIfSetAndEmpty) {
   rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);
   rtcp_sender_->SetSendingStatus(feedback_state(), true);
   std::vector<rtcp::TmmbItem> bounding_set;
-  rtcp_sender_->SetTMMBN(&bounding_set);
+  rtcp_sender_->SetTmmbn(bounding_set);
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpSr));
   EXPECT_EQ(1, parser()->sender_report()->num_packets());
   EXPECT_EQ(1, parser()->tmmbn()->num_packets());

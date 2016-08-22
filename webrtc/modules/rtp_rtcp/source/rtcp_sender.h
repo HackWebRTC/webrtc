@@ -135,7 +135,7 @@ class RTCPSender {
 
   void SetMaxPayloadLength(size_t max_payload_length);
 
-  void SetTMMBN(const std::vector<rtcp::TmmbItem>* boundingSet);
+  void SetTmmbn(std::vector<rtcp::TmmbItem> bounding_set);
 
   int32_t SetApplicationSpecificData(uint8_t subType,
                                      uint32_t name,

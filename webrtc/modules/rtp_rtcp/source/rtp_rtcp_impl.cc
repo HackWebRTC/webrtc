@@ -198,8 +198,8 @@ void ModuleRtpRtcpImpl::Process() {
     rtcp_sender_.SendRTCP(GetFeedbackState(), kRtcpReport);
 
   if (UpdateRTCPReceiveInformationTimers()) {
-    // A receiver has timed out
-    rtcp_receiver_.UpdateTMMBR();
+    // A receiver has timed out.
+    rtcp_receiver_.UpdateTmmbr();
   }
 }
 
@@ -661,9 +661,8 @@ void ModuleRtpRtcpImpl::SetTMMBRStatus(const bool enable) {
   rtcp_sender_.SetTMMBRStatus(enable);
 }
 
-void ModuleRtpRtcpImpl::SetTMMBN(
-    const std::vector<rtcp::TmmbItem>* bounding_set) {
-  rtcp_sender_.SetTMMBN(bounding_set);
+void ModuleRtpRtcpImpl::SetTmmbn(std::vector<rtcp::TmmbItem> bounding_set) {
+  rtcp_sender_.SetTmmbn(std::move(bounding_set));
 }
 
 // Returns the currently configured retransmission mode.

@@ -1210,28 +1210,20 @@ void RTCPReceiver::HandleTransportFeedback(
   rtcp_parser->Iterate();
 }
 
-int32_t RTCPReceiver::UpdateTMMBR() {
-  // Find bounding set
+void RTCPReceiver::UpdateTmmbr() {
+  // Find bounding set.
   std::vector<rtcp::TmmbItem> bounding =
-      TMMBRHelp::FindBoundingSet(TMMBRReceived());
-  // Set bounding set
-  // Inform remote clients about the new bandwidth
-  // inform the remote client
-  _rtpRtcp.SetTMMBN(&bounding);
+      TMMBRHelp::FindBoundingSet(TmmbrReceived());
 
-  // might trigger a TMMBN
-  if (bounding.empty()) {
-    // owner of max bitrate request has timed out
-    // empty bounding set has been sent
-    return 0;
-  }
-  // We have a new bandwidth estimate on this channel.
-  if (_cbRtcpBandwidthObserver) {
+  if (!bounding.empty() && _cbRtcpBandwidthObserver) {
+    // We have a new bandwidth estimate on this channel.
     uint64_t bitrate_bps = TMMBRHelp::CalcMinBitrateBps(bounding);
     if (bitrate_bps <= std::numeric_limits<uint32_t>::max())
       _cbRtcpBandwidthObserver->OnReceivedEstimatedBitrate(bitrate_bps);
   }
-  return 0;
+
+  // Set bounding set: inform remote clients about the new bandwidth.
+  _rtpRtcp.SetTmmbn(std::move(bounding));
 }
 
 void RTCPReceiver::RegisterRtcpStatisticsCallback(
@@ -1252,7 +1244,7 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
   // to OnNetworkChanged.
   if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpTmmbr) {
     // Might trigger a OnReceivedBandwidthEstimateUpdate.
-    UpdateTMMBR();
+    UpdateTmmbr();
   }
   uint32_t local_ssrc;
   std::set<uint32_t> registered_ssrcs;
@@ -1366,7 +1358,7 @@ int32_t RTCPReceiver::CNAME(uint32_t remoteSSRC,
   return 0;
 }
 
-std::vector<rtcp::TmmbItem> RTCPReceiver::TMMBRReceived() const {
+std::vector<rtcp::TmmbItem> RTCPReceiver::TmmbrReceived() const {
   rtc::CritScope lock(&_criticalSectionRTCPReceiver);
   std::vector<rtcp::TmmbItem> candidates;
 
