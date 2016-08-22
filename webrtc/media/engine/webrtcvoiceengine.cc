@@ -694,29 +694,9 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     }
   }
 
-  // Use optional to avoid uneccessary calls to BuiltInAGCIsAvailable while
-  // complying with the unittest requirements of only 1 call per test.
-  rtc::Optional<bool> built_in_agc_avaliable;
-  if (options.level_control) {
-    if (!built_in_agc_avaliable) {
-      built_in_agc_avaliable =
-          rtc::Optional<bool>(adm()->BuiltInAGCIsAvailable());
-    }
-    RTC_DCHECK(built_in_agc_avaliable);
-    if (*built_in_agc_avaliable) {
-      // Disable internal software level control if built-in AGC is enabled,
-      // i.e., replace the software AGC with the built-in AGC.
-      options.level_control = rtc::Optional<bool>(false);
-    }
-  }
-
   if (options.auto_gain_control) {
-    if (!built_in_agc_avaliable) {
-      built_in_agc_avaliable =
-          rtc::Optional<bool>(adm()->BuiltInAGCIsAvailable());
-    }
-    RTC_DCHECK(built_in_agc_avaliable);
-    if (*built_in_agc_avaliable) {
+    bool built_in_agc_avaliable = adm()->BuiltInAGCIsAvailable();
+    if (built_in_agc_avaliable) {
       if (adm()->EnableBuiltInAGC(*options.auto_gain_control) == 0 &&
           *options.auto_gain_control) {
         // Disable internal software AGC if built-in AGC is enabled,
