@@ -41,6 +41,12 @@ class WebRtcVideoFrame : public VideoFrame {
                    int64_t timestamp_us,
                    uint32_t transport_frame_id);
 
+  // Alternative constructor, when not knowing or caring about the
+  // transport_frame_id. Which is set to zero.
+  WebRtcVideoFrame(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
+                   webrtc::VideoRotation rotation,
+                   int64_t timestamp_us);
+
   // TODO(nisse): Deprecated, delete as soon as all callers have switched to the
   // above constructor with microsecond timestamp.
   WebRtcVideoFrame(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,

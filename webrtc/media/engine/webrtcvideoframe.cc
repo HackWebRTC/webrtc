@@ -37,6 +37,12 @@ WebRtcVideoFrame::WebRtcVideoFrame(
 
 WebRtcVideoFrame::WebRtcVideoFrame(
     const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
+    webrtc::VideoRotation rotation,
+    int64_t timestamp_us)
+    : WebRtcVideoFrame(buffer, rotation, timestamp_us, 0) {};
+
+WebRtcVideoFrame::WebRtcVideoFrame(
+    const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
     int64_t time_stamp_ns,
     webrtc::VideoRotation rotation)
     : WebRtcVideoFrame(buffer,
