@@ -164,11 +164,12 @@ void TestSps(SpsMode mode, SpsVuiRewriter::ParseResult expected_parse_result) {
   index.payload_start_offset += H264::kNaluTypeSize;
   index.payload_size -= H264::kNaluTypeSize;
 
+  std::unique_ptr<rtc::Buffer> rbsp_decoded =
+      H264::ParseRbsp(&buffer[index.payload_start_offset], index.payload_size);
   rtc::Optional<SpsParser::SpsState> sps;
   rtc::Buffer out_buffer;
-  SpsVuiRewriter::ParseResult result =
-      SpsVuiRewriter::ParseAndRewriteSps(&buffer[index.payload_start_offset],
-                                         index.payload_size, &sps, &out_buffer);
+  SpsVuiRewriter::ParseResult result = SpsVuiRewriter::ParseAndRewriteSps(
+      rbsp_decoded->data(), rbsp_decoded->size(), &sps, &out_buffer);
   EXPECT_EQ(expected_parse_result, result);
 }
 

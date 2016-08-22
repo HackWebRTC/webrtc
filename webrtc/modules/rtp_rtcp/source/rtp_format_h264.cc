@@ -11,8 +11,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_h264.h"
 
 #include <string.h>
-#include <memory>
-#include <utility>
 #include <vector>
 
 #include "webrtc/base/checks.h"
@@ -21,7 +19,6 @@
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/common_video/h264/sps_vui_rewriter.h"
 #include "webrtc/common_video/h264/h264_common.h"
-#include "webrtc/common_video/h264/pps_parser.h"
 #include "webrtc/common_video/h264/sps_parser.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
@@ -116,6 +113,10 @@ void RtpPacketizerH264::SetPayloadData(
       // RtpDepacketizerH264::ParseSingleNalu (receive side, in orderer to
       // protect us from unknown or legacy send clients).
 
+      // Create temporary RBSP decoded buffer of the payload (exlcuding the
+      // leading nalu type header byte (the SpsParser uses only the payload).
+      std::unique_ptr<rtc::Buffer> rbsp_buffer = H264::ParseRbsp(
+          buffer + H264::kNaluTypeSize, length - H264::kNaluTypeSize);
       rtc::Optional<SpsParser::SpsState> sps;
 
       std::unique_ptr<rtc::Buffer> output_buffer(new rtc::Buffer());
@@ -123,8 +124,7 @@ void RtpPacketizerH264::SetPayloadData(
       // can append modified payload on top of that.
       output_buffer->AppendData(buffer[0]);
       SpsVuiRewriter::ParseResult result = SpsVuiRewriter::ParseAndRewriteSps(
-          buffer + H264::kNaluTypeSize, length - H264::kNaluTypeSize, &sps,
-          output_buffer.get());
+          rbsp_buffer->data(), rbsp_buffer->size(), &sps, output_buffer.get());
 
       switch (result) {
         case SpsVuiRewriter::ParseResult::kVuiRewritten:
@@ -342,7 +342,6 @@ bool RtpDepacketizerH264::Parse(ParsedPayload* parsed_payload,
   modified_buffer_.reset();
 
   uint8_t nal_type = payload_data[0] & kTypeMask;
-  parsed_payload->type.Video.codecHeader.H264.nalus_length = 0;
   if (nal_type == H264::NaluType::kFuA) {
     // Fragmented NAL units (FU-A).
     if (!ParseFuaNalu(parsed_payload, payload_data))
@@ -409,114 +408,81 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
       return false;
     }
 
-    NaluInfo nalu;
-    nalu.type = payload_data[start_offset] & kTypeMask;
-    nalu.sps_id = -1;
-    nalu.pps_id = -1;
+    nal_type = payload_data[start_offset] & kTypeMask;
     start_offset += H264::kNaluTypeSize;
 
-    switch (nalu.type) {
-      case H264::NaluType::kSps: {
-        // Check if VUI is present in SPS and if it needs to be modified to
-        // avoid
-        // excessive decoder latency.
+    if (nal_type == H264::NaluType::kSps) {
+      // Check if VUI is present in SPS and if it needs to be modified to avoid
+      // excessive decoder latency.
 
-        // Copy any previous data first (likely just the first header).
-        std::unique_ptr<rtc::Buffer> output_buffer(new rtc::Buffer());
-        if (start_offset)
-          output_buffer->AppendData(payload_data, start_offset);
+      // Copy any previous data first (likely just the first header).
+      std::unique_ptr<rtc::Buffer> output_buffer(new rtc::Buffer());
+      if (start_offset)
+        output_buffer->AppendData(payload_data, start_offset);
 
-        rtc::Optional<SpsParser::SpsState> sps;
+      // RBSP decode of payload data.
+      std::unique_ptr<rtc::Buffer> rbsp_buffer = H264::ParseRbsp(
+          &payload_data[start_offset], end_offset - start_offset);
+      rtc::Optional<SpsParser::SpsState> sps;
 
-        SpsVuiRewriter::ParseResult result = SpsVuiRewriter::ParseAndRewriteSps(
-            &payload_data[start_offset], end_offset - start_offset, &sps,
-            output_buffer.get());
-        switch (result) {
-          case SpsVuiRewriter::ParseResult::kVuiRewritten:
-            if (modified_buffer_) {
-              LOG(LS_WARNING)
-                  << "More than one H264 SPS NAL units needing "
-                     "rewriting found within a single STAP-A packet. "
-                     "Keeping the first and rewriting the last.";
-            }
+      SpsVuiRewriter::ParseResult result = SpsVuiRewriter::ParseAndRewriteSps(
+          rbsp_buffer->data(), rbsp_buffer->size(), &sps, output_buffer.get());
+      switch (result) {
+        case SpsVuiRewriter::ParseResult::kVuiRewritten:
+          if (modified_buffer_) {
+            LOG(LS_WARNING) << "More than one H264 SPS NAL units needing "
+                               "rewriting found within a single STAP-A packet. "
+                               "Keeping the first and rewriting the last.";
+          }
 
-            // Rewrite length field to new SPS size.
-            if (h264_header->packetization_type == kH264StapA) {
-              size_t length_field_offset =
-                  start_offset - (H264::kNaluTypeSize + kLengthFieldSize);
-              // Stap-A Length includes payload data and type header.
-              size_t rewritten_size =
-                  output_buffer->size() - start_offset + H264::kNaluTypeSize;
-              ByteWriter<uint16_t>::WriteBigEndian(
-                  &(*output_buffer)[length_field_offset], rewritten_size);
-            }
+          // Rewrite length field to new SPS size.
+          if (h264_header->packetization_type == kH264StapA) {
+            size_t length_field_offset =
+                start_offset - (H264::kNaluTypeSize + kLengthFieldSize);
+            // Stap-A Length includes payload data and type header.
+            size_t rewritten_size =
+                output_buffer->size() - start_offset + H264::kNaluTypeSize;
+            ByteWriter<uint16_t>::WriteBigEndian(
+                &(*output_buffer)[length_field_offset], rewritten_size);
+          }
 
-            // Append rest of packet.
-            output_buffer->AppendData(
-                &payload_data[end_offset],
-                nalu_length + kNalHeaderSize - end_offset);
+          // Append rest of packet.
+          output_buffer->AppendData(&payload_data[end_offset],
+                                    nalu_length + kNalHeaderSize - end_offset);
 
-            modified_buffer_ = std::move(output_buffer);
-            length_ = modified_buffer_->size();
+          modified_buffer_ = std::move(output_buffer);
+          length_ = modified_buffer_->size();
 
-            RTC_HISTOGRAM_ENUMERATION(kSpsValidHistogramName,
-                                      SpsValidEvent::kReceivedSpsRewritten,
-                                      SpsValidEvent::kSpsRewrittenMax);
-            break;
-          case SpsVuiRewriter::ParseResult::kPocOk:
-            RTC_HISTOGRAM_ENUMERATION(kSpsValidHistogramName,
-                                      SpsValidEvent::kReceivedSpsPocOk,
-                                      SpsValidEvent::kSpsRewrittenMax);
-            break;
-          case SpsVuiRewriter::ParseResult::kVuiOk:
-            RTC_HISTOGRAM_ENUMERATION(kSpsValidHistogramName,
-                                      SpsValidEvent::kReceivedSpsVuiOk,
-                                      SpsValidEvent::kSpsRewrittenMax);
-            break;
-          case SpsVuiRewriter::ParseResult::kFailure:
-            RTC_HISTOGRAM_ENUMERATION(kSpsValidHistogramName,
-                                      SpsValidEvent::kReceivedSpsParseFailure,
-                                      SpsValidEvent::kSpsRewrittenMax);
-            break;
-        }
-
-        if (sps) {
-          parsed_payload->type.Video.width = sps->width;
-          parsed_payload->type.Video.height = sps->height;
-          nalu.sps_id = sps->id;
-        }
-        parsed_payload->frame_type = kVideoFrameKey;
-        break;
+          RTC_HISTOGRAM_ENUMERATION(kSpsValidHistogramName,
+                                    SpsValidEvent::kReceivedSpsRewritten,
+                                    SpsValidEvent::kSpsRewrittenMax);
+          break;
+        case SpsVuiRewriter::ParseResult::kPocOk:
+          RTC_HISTOGRAM_ENUMERATION(kSpsValidHistogramName,
+                                    SpsValidEvent::kReceivedSpsPocOk,
+                                    SpsValidEvent::kSpsRewrittenMax);
+          break;
+        case SpsVuiRewriter::ParseResult::kVuiOk:
+          RTC_HISTOGRAM_ENUMERATION(kSpsValidHistogramName,
+                                    SpsValidEvent::kReceivedSpsVuiOk,
+                                    SpsValidEvent::kSpsRewrittenMax);
+          break;
+        case SpsVuiRewriter::ParseResult::kFailure:
+          RTC_HISTOGRAM_ENUMERATION(kSpsValidHistogramName,
+                                    SpsValidEvent::kReceivedSpsParseFailure,
+                                    SpsValidEvent::kSpsRewrittenMax);
+          break;
       }
-      case H264::NaluType::kPps: {
-        rtc::Optional<PpsParser::PpsState> pps = PpsParser::ParsePps(
-            &payload_data[start_offset], end_offset - start_offset);
-        if (pps) {
-          nalu.sps_id = pps->sps_id;
-          nalu.pps_id = pps->id;
-        }
-        break;
+
+      if (sps) {
+        parsed_payload->type.Video.width = sps->width;
+        parsed_payload->type.Video.height = sps->height;
       }
-      case H264::NaluType::kSei:
-        FALLTHROUGH();
-      case H264::NaluType::kIdr:
-        parsed_payload->frame_type = kVideoFrameKey;
-        FALLTHROUGH();
-      default: {
-        rtc::Optional<uint32_t> pps_id = PpsParser::ParsePpsIdFromSlice(
-            &payload_data[start_offset], end_offset - start_offset);
-        if (pps_id)
-          nalu.pps_id = *pps_id;
-        break;
-      }
-    }
-    RTPVideoHeaderH264* h264 = &parsed_payload->type.Video.codecHeader.H264;
-    if (h264->nalus_length == kMaxNalusPerPacket) {
-      LOG(LS_WARNING)
-          << "Received packet containing more than " << kMaxNalusPerPacket
-          << " NAL units. Will not keep track sps and pps ids for all of them.";
-    } else {
-      h264->nalus[h264->nalus_length++] = nalu;
+      parsed_payload->frame_type = kVideoFrameKey;
+    } else if (nal_type == H264::NaluType::kPps ||
+               nal_type == H264::NaluType::kSei ||
+               nal_type == H264::NaluType::kIdr) {
+      parsed_payload->frame_type = kVideoFrameKey;
     }
   }
 
@@ -533,17 +499,10 @@ bool RtpDepacketizerH264::ParseFuaNalu(
   uint8_t fnri = payload_data[0] & (kFBit | kNriMask);
   uint8_t original_nal_type = payload_data[1] & kTypeMask;
   bool first_fragment = (payload_data[1] & kSBit) > 0;
-  NaluInfo nalu;
-  nalu.type = original_nal_type;
-  nalu.sps_id = -1;
-  nalu.pps_id = -1;
+
   if (first_fragment) {
     offset_ = 0;
     length_ -= kNalHeaderSize;
-    rtc::Optional<uint32_t> pps_id = PpsParser::ParsePpsIdFromSlice(
-        payload_data + 2 * kNalHeaderSize, length_ - kNalHeaderSize);
-    if (pps_id)
-      nalu.pps_id = *pps_id;
     uint8_t original_nal_header = fnri | original_nal_type;
     modified_buffer_.reset(new rtc::Buffer());
     modified_buffer_->AppendData(payload_data + kNalHeaderSize, length_);
@@ -562,11 +521,10 @@ bool RtpDepacketizerH264::ParseFuaNalu(
   parsed_payload->type.Video.height = 0;
   parsed_payload->type.Video.codec = kRtpVideoH264;
   parsed_payload->type.Video.isFirstPacket = first_fragment;
-  RTPVideoHeaderH264* h264 = &parsed_payload->type.Video.codecHeader.H264;
-  h264->packetization_type = kH264FuA;
-  h264->nalu_type = original_nal_type;
-  h264->nalus[h264->nalus_length] = nalu;
-  h264->nalus_length = 1;
+  RTPVideoHeaderH264* h264_header =
+      &parsed_payload->type.Video.codecHeader.H264;
+  h264_header->packetization_type = kH264FuA;
+  h264_header->nalu_type = original_nal_type;
   return true;
 }
 
