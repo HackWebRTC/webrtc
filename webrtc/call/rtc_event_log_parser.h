@@ -50,6 +50,12 @@ class ParsedRtcEventLog {
   // Reads an RtcEventLog file and returns true if parsing was successful.
   bool ParseFile(const std::string& file_name);
 
+  // Reads an RtcEventLog from a string and returns true if successful.
+  bool ParseString(const std::string& s);
+
+  // Reads an RtcEventLog from an istream and returns true if successful.
+  bool ParseStream(std::istream& stream);
+
   // Returns the number of events in an EventStream.
   size_t GetNumberOfEvents() const;
 
@@ -106,7 +112,7 @@ class ParsedRtcEventLog {
                              int32_t* total_packets) const;
 
  private:
-  std::vector<rtclog::Event> stream_;
+  std::vector<rtclog::Event> events_;
 };
 
 }  // namespace webrtc

@@ -13,6 +13,8 @@
 #include <string.h>
 
 #include <fstream>
+#include <istream>
+#include <utility>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -82,87 +84,107 @@ ParsedRtcEventLog::EventType GetRuntimeEventType(
   return ParsedRtcEventLog::EventType::UNKNOWN_EVENT;
 }
 
-bool ParseVarInt(std::FILE* file, uint64_t* varint, size_t* bytes_read) {
-  uint8_t byte;
-  *varint = 0;
-  for (*bytes_read = 0; *bytes_read < 10 && fread(&byte, 1, 1, file) == 1;
-       ++(*bytes_read)) {
+std::pair<uint64_t, bool> ParseVarInt(std::istream& stream) {
+  uint64_t varint = 0;
+  for (size_t bytes_read = 0; bytes_read < 10; ++bytes_read) {
     // The most significant bit of each byte is 0 if it is the last byte in
     // the varint and 1 otherwise. Thus, we take the 7 least significant bits
     // of each byte and shift them 7 bits for each byte read previously to get
     // the (unsigned) integer.
-    *varint |= static_cast<uint64_t>(byte & 0x7F) << (7 * *bytes_read);
+    int byte = stream.get();
+    if (stream.eof()) {
+      return std::make_pair(varint, false);
+    }
+    RTC_DCHECK(0 <= byte && byte <= 255);
+    varint |= static_cast<uint64_t>(byte & 0x7F) << (7 * bytes_read);
     if ((byte & 0x80) == 0) {
-      return true;
+      return std::make_pair(varint, true);
     }
   }
-  return false;
+  return std::make_pair(varint, false);
 }
 
 }  // namespace
 
 bool ParsedRtcEventLog::ParseFile(const std::string& filename) {
-  stream_.clear();
-  const size_t kMaxEventSize = (1u << 16) - 1;
-  char tmp_buffer[kMaxEventSize];
-
-  std::FILE* file = fopen(filename.c_str(), "rb");
-  if (!file) {
+  std::ifstream file(filename, std::ios_base::in | std::ios_base::binary);
+  if (!file.good() || !file.is_open()) {
     LOG(LS_WARNING) << "Could not open file for reading.";
     return false;
   }
 
+  return ParseStream(file);
+}
+
+bool ParsedRtcEventLog::ParseString(const std::string& s) {
+  std::istringstream stream(s, std::ios_base::in | std::ios_base::binary);
+  return ParseStream(stream);
+}
+
+bool ParsedRtcEventLog::ParseStream(std::istream& stream) {
+  events_.clear();
+  const size_t kMaxEventSize = (1u << 16) - 1;
+  char tmp_buffer[kMaxEventSize];
+  uint64_t tag;
+  uint64_t message_length;
+  bool success;
+
+  RTC_DCHECK(stream.good());
+
   while (1) {
-    // Peek at the next message tag. The tag number is defined as
+    // Check whether we have reached end of file.
+    stream.peek();
+    if (stream.eof()) {
+      return true;
+    }
+
+    // Read the next message tag. The tag number is defined as
     // (fieldnumber << 3) | wire_type. In our case, the field number is
     // supposed to be 1 and the wire type for an length-delimited field is 2.
     const uint64_t kExpectedTag = (1 << 3) | 2;
-    uint64_t tag;
-    size_t bytes_read;
-    if (!ParseVarInt(file, &tag, &bytes_read) || tag != kExpectedTag) {
-      fclose(file);
-      if (bytes_read == 0) {
-        return true;  // Reached end of file.
-      }
+    std::tie(tag, success) = ParseVarInt(stream);
+    if (!success) {
       LOG(LS_WARNING) << "Missing field tag from beginning of protobuf event.";
+      return false;
+    } else if (tag != kExpectedTag) {
+      LOG(LS_WARNING) << "Unexpected field tag at beginning of protobuf event.";
       return false;
     }
 
-    // Peek at the length field.
-    uint64_t message_length;
-    if (!ParseVarInt(file, &message_length, &bytes_read)) {
+    // Read the length field.
+    std::tie(message_length, success) = ParseVarInt(stream);
+    if (!success) {
       LOG(LS_WARNING) << "Missing message length after protobuf field tag.";
-      fclose(file);
       return false;
     } else if (message_length > kMaxEventSize) {
       LOG(LS_WARNING) << "Protobuf message length is too large.";
-      fclose(file);
       return false;
     }
 
-    if (fread(tmp_buffer, 1, message_length, file) != message_length) {
+    // Read the next protobuf event to a temporary char buffer.
+    stream.read(tmp_buffer, message_length);
+    if (stream.gcount() != static_cast<int>(message_length)) {
       LOG(LS_WARNING) << "Failed to read protobuf message from file.";
-      fclose(file);
       return false;
     }
 
+    // Parse the protobuf event from the buffer.
     rtclog::Event event;
     if (!event.ParseFromArray(tmp_buffer, message_length)) {
       LOG(LS_WARNING) << "Failed to parse protobuf message.";
-      fclose(file);
       return false;
     }
-    stream_.push_back(event);
+    events_.push_back(event);
   }
 }
 
 size_t ParsedRtcEventLog::GetNumberOfEvents() const {
-  return stream_.size();
+  return events_.size();
 }
 
 int64_t ParsedRtcEventLog::GetTimestamp(size_t index) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
-  const rtclog::Event& event = stream_[index];
+  const rtclog::Event& event = events_[index];
   RTC_CHECK(event.has_timestamp_us());
   return event.timestamp_us();
 }
@@ -170,7 +192,7 @@ int64_t ParsedRtcEventLog::GetTimestamp(size_t index) const {
 ParsedRtcEventLog::EventType ParsedRtcEventLog::GetEventType(
     size_t index) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
-  const rtclog::Event& event = stream_[index];
+  const rtclog::Event& event = events_[index];
   RTC_CHECK(event.has_type());
   return GetRuntimeEventType(event.type());
 }
@@ -183,7 +205,7 @@ void ParsedRtcEventLog::GetRtpHeader(size_t index,
                                      size_t* header_length,
                                      size_t* total_length) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
-  const rtclog::Event& event = stream_[index];
+  const rtclog::Event& event = events_[index];
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::RTP_EVENT);
   RTC_CHECK(event.has_rtp_packet());
@@ -225,7 +247,7 @@ void ParsedRtcEventLog::GetRtcpPacket(size_t index,
                                       uint8_t* packet,
                                       size_t* length) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
-  const rtclog::Event& event = stream_[index];
+  const rtclog::Event& event = events_[index];
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::RTCP_EVENT);
   RTC_CHECK(event.has_rtcp_packet());
@@ -258,7 +280,7 @@ void ParsedRtcEventLog::GetVideoReceiveConfig(
     size_t index,
     VideoReceiveStream::Config* config) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
-  const rtclog::Event& event = stream_[index];
+  const rtclog::Event& event = events_[index];
   RTC_CHECK(config != nullptr);
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::VIDEO_RECEIVER_CONFIG_EVENT);
@@ -313,7 +335,7 @@ void ParsedRtcEventLog::GetVideoSendConfig(
     size_t index,
     VideoSendStream::Config* config) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
-  const rtclog::Event& event = stream_[index];
+  const rtclog::Event& event = events_[index];
   RTC_CHECK(config != nullptr);
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::VIDEO_SENDER_CONFIG_EVENT);
@@ -356,7 +378,7 @@ void ParsedRtcEventLog::GetVideoSendConfig(
 
 void ParsedRtcEventLog::GetAudioPlayout(size_t index, uint32_t* ssrc) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
-  const rtclog::Event& event = stream_[index];
+  const rtclog::Event& event = events_[index];
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::AUDIO_PLAYOUT_EVENT);
   RTC_CHECK(event.has_audio_playout_event());
@@ -372,7 +394,7 @@ void ParsedRtcEventLog::GetBwePacketLossEvent(size_t index,
                                               uint8_t* fraction_loss,
                                               int32_t* total_packets) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
-  const rtclog::Event& event = stream_[index];
+  const rtclog::Event& event = events_[index];
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::BWE_PACKET_LOSS_EVENT);
   RTC_CHECK(event.has_bwe_packet_loss_event());
