@@ -1181,6 +1181,7 @@ if (rtc_include_tests) {
     deps = [
       ":neteq",
       ":neteq_unittest_tools",
+      "//testing/gtest",
       "//third_party/gflags",
     ]
   }

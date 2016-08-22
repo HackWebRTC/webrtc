@@ -174,6 +174,7 @@
       'target_name': 'neteq_quality_test_support',
       'type': 'static_library',
       'dependencies': [
+        '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
         'neteq',
         'neteq_unittest_tools',
