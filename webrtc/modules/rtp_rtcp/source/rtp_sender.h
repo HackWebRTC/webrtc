@@ -222,8 +222,6 @@ class RTPSender {
   uint16_t AllocateSequenceNumber(uint16_t packets_to_send);
   size_t MaxPayloadLength() const;
 
-  // Current timestamp.
-  uint32_t Timestamp() const;
   uint32_t SSRC() const;
 
   // Deprecated. Create RtpPacketToSend instead and use next function.
@@ -410,7 +408,7 @@ class RTPSender {
   uint16_t sequence_number_rtx_ GUARDED_BY(send_critsect_);
   bool ssrc_forced_ GUARDED_BY(send_critsect_);
   uint32_t ssrc_ GUARDED_BY(send_critsect_);
-  uint32_t timestamp_ GUARDED_BY(send_critsect_);
+  uint32_t last_rtp_timestamp_ GUARDED_BY(send_critsect_);
   int64_t capture_time_ms_ GUARDED_BY(send_critsect_);
   int64_t last_timestamp_time_ms_ GUARDED_BY(send_critsect_);
   bool media_has_been_sent_ GUARDED_BY(send_critsect_);

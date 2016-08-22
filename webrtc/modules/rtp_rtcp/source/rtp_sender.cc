@@ -113,7 +113,7 @@ RTPSender::RTPSender(
       remote_ssrc_(0),
       sequence_number_forced_(false),
       ssrc_forced_(false),
-      timestamp_(0),
+      last_rtp_timestamp_(0),
       capture_time_ms_(0),
       last_timestamp_time_ms_(0),
       media_has_been_sent_(false),
@@ -436,11 +436,15 @@ bool RTPSender::SendOutgoingData(FrameType frame_type,
                                  uint32_t* transport_frame_id_out) {
   uint32_t ssrc;
   uint16_t sequence_number;
+  uint32_t rtp_timestamp;
   {
     // Drop this packet if we're not sending media packets.
     rtc::CritScope lock(&send_critsect_);
     ssrc = ssrc_;
     sequence_number = sequence_number_;
+    rtp_timestamp = timestamp_offset_ + capture_timestamp;
+    if (transport_frame_id_out)
+      *transport_frame_id_out = rtp_timestamp;
     if (!sending_media_)
       return true;
   }
@@ -453,12 +457,12 @@ bool RTPSender::SendOutgoingData(FrameType frame_type,
 
   bool result;
   if (audio_configured_) {
-    TRACE_EVENT_ASYNC_STEP1("webrtc", "Audio", capture_timestamp,
-                            "Send", "type", FrameTypeToString(frame_type));
+    TRACE_EVENT_ASYNC_STEP1("webrtc", "Audio", rtp_timestamp, "Send", "type",
+                            FrameTypeToString(frame_type));
     assert(frame_type == kAudioFrameSpeech || frame_type == kAudioFrameCN ||
            frame_type == kEmptyFrame);
 
-    result = audio_->SendAudio(frame_type, payload_type, capture_timestamp,
+    result = audio_->SendAudio(frame_type, payload_type, rtp_timestamp,
                                payload_data, payload_size, fragmentation);
   } else {
     TRACE_EVENT_ASYNC_STEP1("webrtc", "Video", capture_time_ms,
@@ -485,15 +489,8 @@ bool RTPSender::SendOutgoingData(FrameType frame_type,
     }
 
     result = video_->SendVideo(video_type, frame_type, payload_type,
-                               capture_timestamp, capture_time_ms, payload_data,
+                               rtp_timestamp, capture_time_ms, payload_data,
                                payload_size, fragmentation, rtp_header);
-  }
-
-  if (transport_frame_id_out) {
-    rtc::CritScope lock(&send_critsect_);
-    // TODO(sergeyu): Move RTP timestamp calculation from BuildRTPheader() to
-    // SendOutgoingData() and pass it to SendVideo()/SendAudio() calls.
-    *transport_frame_id_out = timestamp_;
   }
 
   rtc::CritScope cs(&statistics_crit_);
@@ -570,7 +567,7 @@ size_t RTPSender::SendPadData(size_t bytes,
       if (!sending_media_)
         return bytes_sent;
       if (!timestamp_provided) {
-        timestamp = timestamp_;
+        timestamp = last_rtp_timestamp_;
         capture_time_ms = capture_time_ms_;
       }
       if (rtx_ == kRtxOff) {
@@ -1082,20 +1079,20 @@ int32_t RTPSender::BuildRTPheader(uint8_t* data_buffer,
 int32_t RTPSender::BuildRtpHeader(uint8_t* data_buffer,
                                   int8_t payload_type,
                                   bool marker_bit,
-                                  uint32_t capture_timestamp,
+                                  uint32_t rtp_timestamp,
                                   int64_t capture_time_ms) {
   assert(payload_type >= 0);
   rtc::CritScope lock(&send_critsect_);
   if (!sending_media_)
     return -1;
 
-  timestamp_ = timestamp_offset_ + capture_timestamp;
+  last_rtp_timestamp_ = rtp_timestamp;
   last_timestamp_time_ms_ = clock_->TimeInMilliseconds();
   uint32_t sequence_number = sequence_number_++;
   capture_time_ms_ = capture_time_ms;
   last_packet_marker_bit_ = marker_bit;
   return CreateRtpHeader(data_buffer, payload_type, ssrc_, marker_bit,
-                         timestamp_, sequence_number, csrcs_);
+                         rtp_timestamp, sequence_number, csrcs_);
 }
 
 uint16_t RTPSender::BuildRtpHeaderExtension(uint8_t* data_buffer,
@@ -1515,11 +1512,6 @@ bool RTPSender::SendingMedia() const {
   return sending_media_;
 }
 
-uint32_t RTPSender::Timestamp() const {
-  rtc::CritScope lock(&send_critsect_);
-  return timestamp_;
-}
-
 void RTPSender::SetTimestampOffset(uint32_t timestamp) {
   rtc::CritScope lock(&send_critsect_);
   timestamp_offset_ = timestamp;
@@ -1693,7 +1685,7 @@ void RTPSender::SetRtpState(const RtpState& rtp_state) {
   sequence_number_ = rtp_state.sequence_number;
   sequence_number_forced_ = true;
   timestamp_offset_ = rtp_state.start_timestamp;
-  timestamp_ = rtp_state.timestamp;
+  last_rtp_timestamp_ = rtp_state.timestamp;
   capture_time_ms_ = rtp_state.capture_time_ms;
   last_timestamp_time_ms_ = rtp_state.last_timestamp_time_ms;
   media_has_been_sent_ = rtp_state.media_has_been_sent;
@@ -1705,7 +1697,7 @@ RtpState RTPSender::GetRtpState() const {
   RtpState state;
   state.sequence_number = sequence_number_;
   state.start_timestamp = timestamp_offset_;
-  state.timestamp = timestamp_;
+  state.timestamp = last_rtp_timestamp_;
   state.capture_time_ms = capture_time_ms_;
   state.last_timestamp_time_ms = last_timestamp_time_ms_;
   state.media_has_been_sent = media_has_been_sent_;

@@ -145,11 +145,11 @@ bool RTPSenderAudio::MarkerBit(FrameType frame_type, int8_t payload_type) {
 }
 
 bool RTPSenderAudio::SendAudio(FrameType frame_type,
-                                  int8_t payload_type,
-                                  uint32_t capture_timestamp,
-                                  const uint8_t* payload_data,
-                                  size_t data_size,
-                                  const RTPFragmentationHeader* fragmentation) {
+                               int8_t payload_type,
+                               uint32_t rtp_timestamp,
+                               const uint8_t* payload_data,
+                               size_t data_size,
+                               const RTPFragmentationHeader* fragmentation) {
   // TODO(pwestin) Breakup function in smaller functions.
   size_t payload_size = data_size;
   size_t max_payload_length = rtp_sender_->MaxPayloadLength();
@@ -172,7 +172,7 @@ bool RTPSenderAudio::SendAudio(FrameType frame_type,
 
     if (delaySinceLastDTMF > 100) {
       // New tone to play
-      dtmf_timestamp_ = capture_timestamp;
+      dtmf_timestamp_ = rtp_timestamp;
       if (NextDTMF(&key, &dtmf_length_ms, &dtmf_level_) >= 0) {
         dtmf_event_first_packet_sent_ = false;
         dtmf_key_ = key;
@@ -189,14 +189,13 @@ bool RTPSenderAudio::SendAudio(FrameType frame_type,
       // kEmptyFrame is used to drive the DTMF when in CN mode
       // it can be triggered more frequently than we want to send the
       // DTMF packets.
-      if (packet_size_samples >
-          (capture_timestamp - dtmf_timestamp_last_sent_)) {
+      if (packet_size_samples > (rtp_timestamp - dtmf_timestamp_last_sent_)) {
         // not time to send yet
         return true;
       }
     }
-    dtmf_timestamp_last_sent_ = capture_timestamp;
-    uint32_t dtmf_duration_samples = capture_timestamp - dtmf_timestamp_;
+    dtmf_timestamp_last_sent_ = rtp_timestamp;
+    uint32_t dtmf_duration_samples = rtp_timestamp - dtmf_timestamp_;
     bool ended = false;
     bool send = true;
 
@@ -217,7 +216,7 @@ bool RTPSenderAudio::SendAudio(FrameType frame_type,
                                  static_cast<uint16_t>(0xffff), false);
 
         // set new timestap for this segment
-        dtmf_timestamp_ = capture_timestamp;
+        dtmf_timestamp_ = rtp_timestamp;
         dtmf_duration_samples -= 0xffff;
         dtmf_length_samples_ -= 0xffff;
 
@@ -249,9 +248,9 @@ bool RTPSenderAudio::SendAudio(FrameType frame_type,
 
   int32_t rtpHeaderLength = 0;
 
-  rtpHeaderLength = rtp_sender_->BuildRtpHeader(data_buffer, payload_type,
-                                                marker_bit, capture_timestamp,
-                                                clock_->TimeInMilliseconds());
+  rtpHeaderLength =
+      rtp_sender_->BuildRtpHeader(data_buffer, payload_type, marker_bit,
+                                  rtp_timestamp, clock_->TimeInMilliseconds());
   if (rtpHeaderLength <= 0) {
     return false;
   }
@@ -283,8 +282,8 @@ bool RTPSenderAudio::SendAudio(FrameType frame_type,
   rtp_sender_->UpdateAudioLevel(data_buffer, packetSize, rtp_header,
                                 (frame_type == kAudioFrameSpeech),
                                 audio_level_dbov);
-  TRACE_EVENT_ASYNC_END2("webrtc", "Audio", capture_timestamp, "timestamp",
-                         rtp_sender_->Timestamp(), "seqnum",
+  TRACE_EVENT_ASYNC_END2("webrtc", "Audio", rtp_timestamp, "timestamp",
+                         rtp_timestamp, "seqnum",
                          rtp_sender_->SequenceNumber());
   bool send_result = rtp_sender_->SendToNetwork(
       data_buffer, payload_size, rtpHeaderLength, rtc::TimeMillis(),
