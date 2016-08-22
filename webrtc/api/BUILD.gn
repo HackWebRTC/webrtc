@@ -113,7 +113,6 @@ source_set("libjingle_peerconnection") {
     "../call",
     "../media",
     "../pc",
-    "../system_wrappers:field_trial_default",
   ]
 
   if (rtc_use_quic) {
@@ -199,6 +198,7 @@ if (is_android && !build_with_chromium) {
 
     deps = [
       ":libjingle_peerconnection",
+      "../system_wrappers:field_trial_default",
       "../system_wrappers:metrics_default",
     ]
 
