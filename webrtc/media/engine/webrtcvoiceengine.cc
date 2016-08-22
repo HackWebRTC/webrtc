@@ -615,10 +615,12 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   }
 
 #if defined(WEBRTC_IOS)
-  // On iOS, VPIO provides built-in EC and AGC.
+  // On iOS, VPIO provides built-in EC, NS and AGC.
   options.echo_cancellation = rtc::Optional<bool>(false);
   options.auto_gain_control = rtc::Optional<bool>(false);
-  LOG(LS_INFO) << "Always disable AEC and AGC on iOS. Use built-in instead.";
+  options.noise_suppression = rtc::Optional<bool>(false);
+  LOG(LS_INFO)
+      << "Always disable AEC, NS and AGC on iOS. Use built-in instead.";
 #elif defined(ANDROID)
   ec_mode = webrtc::kEcAecm;
 #endif
