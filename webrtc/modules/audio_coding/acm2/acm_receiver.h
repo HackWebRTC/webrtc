@@ -201,6 +201,13 @@ class AcmReceiver {
   // The return value will be empty if no valid timestamp is available.
   rtc::Optional<uint32_t> GetPlayoutTimestamp();
 
+  // Returns the current total delay from NetEq (packet buffer and sync buffer)
+  // in ms, with smoothing applied to even out short-time fluctuations due to
+  // jitter. The packet buffer part of the delay is not updated during DTX/CNG
+  // periods.
+  //
+  int FilteredCurrentDelayMs() const;
+
   //
   // Get the audio codec associated with the last non-CNG/non-DTMF received
   // payload. If no non-CNG/non-DTMF packet is received -1 is returned,

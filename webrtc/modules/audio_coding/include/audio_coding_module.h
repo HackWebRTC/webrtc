@@ -679,6 +679,15 @@ class AudioCodingModule {
   virtual rtc::Optional<uint32_t> PlayoutTimestamp() = 0;
 
   ///////////////////////////////////////////////////////////////////////////
+  // int FilteredCurrentDelayMs()
+  // Returns the current total delay from NetEq (packet buffer and sync buffer)
+  // in ms, with smoothing applied to even out short-time fluctuations due to
+  // jitter. The packet buffer part of the delay is not updated during DTX/CNG
+  // periods.
+  //
+  virtual int FilteredCurrentDelayMs() const = 0;
+
+  ///////////////////////////////////////////////////////////////////////////
   // int32_t PlayoutData10Ms(
   // Get 10 milliseconds of raw audio data for playout, at the given sampling
   // frequency. ACM will perform a resampling if required.

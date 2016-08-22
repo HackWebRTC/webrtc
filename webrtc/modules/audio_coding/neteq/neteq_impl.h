@@ -146,6 +146,8 @@ class NetEqImpl : public webrtc::NetEq {
 
   int CurrentDelayMs() const override;
 
+  int FilteredCurrentDelayMs() const override;
+
   // Sets the playout mode to |mode|.
   // Deprecated.
   // TODO(henrik.lundin) Delete.

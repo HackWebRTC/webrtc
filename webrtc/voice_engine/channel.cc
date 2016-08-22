@@ -3173,11 +3173,7 @@ void Channel::GetDecodingCallStatistics(AudioDecodingCallStats* stats) const {
 bool Channel::GetDelayEstimate(int* jitter_buffer_delay_ms,
                                int* playout_buffer_delay_ms) const {
   rtc::CritScope lock(&video_sync_lock_);
-  if (_average_jitter_buffer_delay_us == 0) {
-    return false;
-  }
-  *jitter_buffer_delay_ms =
-      (_average_jitter_buffer_delay_us + 500) / 1000 + _recPacketDelayMs;
+  *jitter_buffer_delay_ms = audio_coding_->FilteredCurrentDelayMs();
   *playout_buffer_delay_ms = playout_delay_ms_;
   return true;
 }
@@ -3390,6 +3386,9 @@ void Channel::UpdatePlayoutTimestamp(bool rtcp) {
 }
 
 // Called for incoming RTP packets after successful RTP header parsing.
+// TODO(henrik.lundin): Clean out this method. With the introduction of
+// AudioCoding::FilteredCurrentDelayMs() most (if not all) of this method can
+// be deleted, along with a few member variables. (WebRTC issue 6237.)
 void Channel::UpdatePacketDelay(uint32_t rtp_timestamp,
                                 uint16_t sequence_number) {
   WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, _channelId),

@@ -309,6 +309,10 @@ rtc::Optional<uint32_t> AcmReceiver::GetPlayoutTimestamp() {
   return neteq_->GetPlayoutTimestamp();
 }
 
+int AcmReceiver::FilteredCurrentDelayMs() const {
+  return neteq_->FilteredCurrentDelayMs();
+}
+
 int AcmReceiver::LastAudioCodec(CodecInst* codec) const {
   rtc::CritScope lock(&crit_sect_);
   if (!last_audio_decoder_) {

@@ -223,6 +223,11 @@ class NetEq {
   // Returns the current total delay (packet buffer and sync buffer) in ms.
   virtual int CurrentDelayMs() const = 0;
 
+  // Returns the current total delay (packet buffer and sync buffer) in ms,
+  // with smoothing applied to even out short-time fluctuations due to jitter.
+  // The packet buffer part of the delay is not updated during DTX/CNG periods.
+  virtual int FilteredCurrentDelayMs() const = 0;
+
   // Sets the playout mode to |mode|.
   // Deprecated. Set the mode in the Config struct passed to the constructor.
   // TODO(henrik.lundin) Delete.
