@@ -531,21 +531,42 @@ TEST_F(RtpDepacketizerH264Test, TestSingleNaluSpsWithResolution) {
 }
 
 TEST_F(RtpDepacketizerH264Test, TestStapAKey) {
-  uint8_t packet[16] = {kStapA,  // F=0, NRI=0, Type=24.
-                        // Length, nal header, payload.
-                        0, 0x02, kSps, 0xFF,
-                        0, 0x03, kPps, 0xFF, 0x00,
-                        0, 0x04, kIdr, 0xFF, 0x00, 0x11};
-  RtpDepacketizer::ParsedPayload payload;
+  // clang-format off
+  const NaluInfo kExpectedNalus[] = { {H264::kSps, 0, -1},
+                                      {H264::kPps, 1, 2},
+                                      {H264::kIdr, -1, 0} };
+  uint8_t packet[] = {kStapA,  // F=0, NRI=0, Type=24.
+                      // Length, nal header, payload.
+                      0, 0x18, kExpectedNalus[0].type,
+                        0x7A, 0x00, 0x1F, 0xBC, 0xD9, 0x40, 0x50, 0x05, 0xBA,
+                        0x10, 0x00, 0x00, 0x03, 0x00, 0xC0, 0x00, 0x00, 0x03,
+                        0x2A, 0xE0, 0xF1, 0x83, 0x25,
+                      0, 0xD, kExpectedNalus[1].type,
+                        0x69, 0xFC, 0x0, 0x0, 0x3, 0x0, 0x7, 0xFF, 0xFF, 0xFF,
+                        0xF6, 0x40,
+                      0, 0xB, kExpectedNalus[2].type,
+                        0x85, 0xB8, 0x0, 0x4, 0x0, 0x0, 0x13, 0x93, 0x12, 0x0};
+  // clang-format on
 
+  RtpDepacketizer::ParsedPayload payload;
   ASSERT_TRUE(depacketizer_->Parse(&payload, packet, sizeof(packet)));
   ExpectPacket(&payload, packet, sizeof(packet));
   EXPECT_EQ(kVideoFrameKey, payload.frame_type);
   EXPECT_EQ(kRtpVideoH264, payload.type.Video.codec);
   EXPECT_TRUE(payload.type.Video.isFirstPacket);
-  EXPECT_EQ(kH264StapA, payload.type.Video.codecHeader.H264.packetization_type);
+  const RTPVideoHeaderH264& h264 = payload.type.Video.codecHeader.H264;
+  EXPECT_EQ(kH264StapA, h264.packetization_type);
   // NALU type for aggregated packets is the type of the first packet only.
-  EXPECT_EQ(kSps, payload.type.Video.codecHeader.H264.nalu_type);
+  EXPECT_EQ(kSps, h264.nalu_type);
+  ASSERT_EQ(3u, h264.nalus_length);
+  for (size_t i = 0; i < h264.nalus_length; ++i) {
+    EXPECT_EQ(kExpectedNalus[i].type, h264.nalus[i].type)
+        << "Failed parsing nalu " << i;
+    EXPECT_EQ(kExpectedNalus[i].sps_id, h264.nalus[i].sps_id)
+        << "Failed parsing nalu " << i;
+    EXPECT_EQ(kExpectedNalus[i].pps_id, h264.nalus[i].pps_id)
+        << "Failed parsing nalu " << i;
+  }
 }
 
 TEST_F(RtpDepacketizerH264Test, TestStapANaluSpsWithResolution) {
@@ -697,26 +718,29 @@ TEST_F(RtpDepacketizerH264Test, TestStapADelta) {
 }
 
 TEST_F(RtpDepacketizerH264Test, TestFuA) {
-  uint8_t packet1[3] = {
+  // clang-format off
+  uint8_t packet1[] = {
       kFuA,          // F=0, NRI=0, Type=28.
       kSBit | kIdr,  // FU header.
-      0x01           // Payload.
+      0x85, 0xB8, 0x0, 0x4, 0x0, 0x0, 0x13, 0x93, 0x12, 0x0  // Payload.
   };
-  const uint8_t kExpected1[2] = {kIdr, 0x01};
+  // clang-format on
+  const uint8_t kExpected1[] = {kIdr, 0x85, 0xB8, 0x0,  0x4, 0x0,
+                                0x0,  0x13, 0x93, 0x12, 0x0};
 
-  uint8_t packet2[3] = {
+  uint8_t packet2[] = {
       kFuA,  // F=0, NRI=0, Type=28.
       kIdr,  // FU header.
       0x02   // Payload.
   };
-  const uint8_t kExpected2[1] = {0x02};
+  const uint8_t kExpected2[] = {0x02};
 
-  uint8_t packet3[3] = {
+  uint8_t packet3[] = {
       kFuA,          // F=0, NRI=0, Type=28.
       kEBit | kIdr,  // FU header.
       0x03           // Payload.
   };
-  const uint8_t kExpected3[1] = {0x03};
+  const uint8_t kExpected3[] = {0x03};
 
   RtpDepacketizer::ParsedPayload payload;
 
@@ -727,8 +751,13 @@ TEST_F(RtpDepacketizerH264Test, TestFuA) {
   EXPECT_EQ(kVideoFrameKey, payload.frame_type);
   EXPECT_EQ(kRtpVideoH264, payload.type.Video.codec);
   EXPECT_TRUE(payload.type.Video.isFirstPacket);
-  EXPECT_EQ(kH264FuA, payload.type.Video.codecHeader.H264.packetization_type);
-  EXPECT_EQ(kIdr, payload.type.Video.codecHeader.H264.nalu_type);
+  const RTPVideoHeaderH264& h264 = payload.type.Video.codecHeader.H264;
+  EXPECT_EQ(kH264FuA, h264.packetization_type);
+  EXPECT_EQ(kIdr, h264.nalu_type);
+  ASSERT_EQ(1u, h264.nalus_length);
+  EXPECT_EQ(static_cast<H264::NaluType>(kIdr), h264.nalus[0].type);
+  EXPECT_EQ(-1, h264.nalus[0].sps_id);
+  EXPECT_EQ(0, h264.nalus[0].pps_id);
 
   // Following packets will be 2 bytes shorter since they will only be appended
   // onto the first packet.
@@ -738,8 +767,15 @@ TEST_F(RtpDepacketizerH264Test, TestFuA) {
   EXPECT_EQ(kVideoFrameKey, payload.frame_type);
   EXPECT_EQ(kRtpVideoH264, payload.type.Video.codec);
   EXPECT_FALSE(payload.type.Video.isFirstPacket);
-  EXPECT_EQ(kH264FuA, payload.type.Video.codecHeader.H264.packetization_type);
-  EXPECT_EQ(kIdr, payload.type.Video.codecHeader.H264.nalu_type);
+  {
+    const RTPVideoHeaderH264& h264 = payload.type.Video.codecHeader.H264;
+    EXPECT_EQ(kH264FuA, h264.packetization_type);
+    EXPECT_EQ(kIdr, h264.nalu_type);
+    ASSERT_EQ(1u, h264.nalus_length);
+    EXPECT_EQ(static_cast<H264::NaluType>(kIdr), h264.nalus[0].type);
+    EXPECT_EQ(-1, h264.nalus[0].sps_id);
+    EXPECT_EQ(-1, h264.nalus[0].pps_id);
+  }
 
   payload = RtpDepacketizer::ParsedPayload();
   ASSERT_TRUE(depacketizer_->Parse(&payload, packet3, sizeof(packet3)));
@@ -747,8 +783,15 @@ TEST_F(RtpDepacketizerH264Test, TestFuA) {
   EXPECT_EQ(kVideoFrameKey, payload.frame_type);
   EXPECT_EQ(kRtpVideoH264, payload.type.Video.codec);
   EXPECT_FALSE(payload.type.Video.isFirstPacket);
-  EXPECT_EQ(kH264FuA, payload.type.Video.codecHeader.H264.packetization_type);
-  EXPECT_EQ(kIdr, payload.type.Video.codecHeader.H264.nalu_type);
+  {
+    const RTPVideoHeaderH264& h264 = payload.type.Video.codecHeader.H264;
+    EXPECT_EQ(kH264FuA, h264.packetization_type);
+    EXPECT_EQ(kIdr, h264.nalu_type);
+    ASSERT_EQ(1u, h264.nalus_length);
+    EXPECT_EQ(static_cast<H264::NaluType>(kIdr), h264.nalus[0].type);
+    EXPECT_EQ(-1, h264.nalus[0].sps_id);
+    EXPECT_EQ(-1, h264.nalus[0].pps_id);
+  }
 }
 
 TEST_F(RtpDepacketizerH264Test, TestEmptyPayload) {

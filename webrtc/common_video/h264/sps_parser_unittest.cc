@@ -41,7 +41,10 @@ static const size_t kSpsBufferMaxSize = 256;
 // The fake SPS that this generates also always has at least one emulation byte
 // at offset 2, since the first two bytes are always 0, and has a 0x3 as the
 // level_idc, to make sure the parser doesn't eat all 0x3 bytes.
-void GenerateFakeSps(uint16_t width, uint16_t height, rtc::Buffer* out_buffer) {
+void GenerateFakeSps(uint16_t width,
+                     uint16_t height,
+                     int id,
+                     rtc::Buffer* out_buffer) {
   uint8_t rbsp[kSpsBufferMaxSize] = {0};
   rtc::BitBufferWriter writer(rbsp, kSpsBufferMaxSize);
   // Profile byte.
@@ -51,7 +54,7 @@ void GenerateFakeSps(uint16_t width, uint16_t height, rtc::Buffer* out_buffer) {
   // level_idc.
   writer.WriteUInt8(0x3u);
   // seq_paramter_set_id.
-  writer.WriteExponentialGolomb(0);
+  writer.WriteExponentialGolomb(id);
   // Profile is not special, so we skip all the chroma format settings.
 
   // Now some bit magic.
@@ -151,20 +154,22 @@ TEST_F(H264SpsParserTest, TestSampleSPSWeirdResolution) {
 
 TEST_F(H264SpsParserTest, TestSyntheticSPSQvgaLandscape) {
   rtc::Buffer buffer;
-  GenerateFakeSps(320u, 180u, &buffer);
+  GenerateFakeSps(320u, 180u, 1, &buffer);
   EXPECT_TRUE(static_cast<bool>(
       sps_ = SpsParser::ParseSps(buffer.data(), buffer.size())));
   EXPECT_EQ(320u, sps_->width);
   EXPECT_EQ(180u, sps_->height);
+  EXPECT_EQ(1u, sps_->id);
 }
 
 TEST_F(H264SpsParserTest, TestSyntheticSPSWeirdResolution) {
   rtc::Buffer buffer;
-  GenerateFakeSps(156u, 122u, &buffer);
+  GenerateFakeSps(156u, 122u, 2, &buffer);
   EXPECT_TRUE(static_cast<bool>(
       sps_ = SpsParser::ParseSps(buffer.data(), buffer.size())));
   EXPECT_EQ(156u, sps_->width);
   EXPECT_EQ(122u, sps_->height);
+  EXPECT_EQ(2u, sps_->id);
 }
 
 }  // namespace webrtc

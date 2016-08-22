@@ -260,6 +260,14 @@ enum H264PacketizationTypes {
                     // that was too large to fit into a single packet.
 };
 
+struct NaluInfo {
+  uint8_t type;
+  int sps_id;
+  int pps_id;
+};
+
+const size_t kMaxNalusPerPacket = 10;
+
 struct RTPVideoHeaderH264 {
   uint8_t nalu_type;  // The NAL unit type. If this is a header for a
                       // fragmented packet, it's the NAL unit type of
@@ -267,6 +275,8 @@ struct RTPVideoHeaderH264 {
                       // aggregated packet, it's the NAL unit type of
                       // the first NAL unit in the packet.
   H264PacketizationTypes packetization_type;
+  NaluInfo nalus[kMaxNalusPerPacket];
+  size_t nalus_length;
 };
 
 union RTPVideoTypeHeader {
