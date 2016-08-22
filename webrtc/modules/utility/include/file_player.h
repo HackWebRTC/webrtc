@@ -44,7 +44,7 @@ class FilePlayer {
   // will be set to the number of samples read (not the number of samples per
   // channel).
   virtual int Get10msAudioFromFile(int16_t* outBuffer,
-                                   size_t& lengthInSamples,
+                                   size_t* lengthInSamples,
                                    int frequencyInHz) = 0;
 
   // Register callback for receiving file playing notifications.
@@ -61,7 +61,7 @@ class FilePlayer {
                                    const CodecInst* codecInst) = 0;
 
   // Note: codecInst is used for pre-encoded files.
-  virtual int32_t StartPlayingFile(InStream& sourceStream,
+  virtual int32_t StartPlayingFile(InStream* sourceStream,
                                    uint32_t startPosition,
                                    float volumeScaling,
                                    uint32_t notification,
@@ -72,15 +72,37 @@ class FilePlayer {
 
   virtual bool IsPlayingFile() const = 0;
 
-  virtual int32_t GetPlayoutPosition(uint32_t& durationMs) = 0;
+  virtual int32_t GetPlayoutPosition(uint32_t* durationMs) = 0;
 
   // Set audioCodec to the currently used audio codec.
-  virtual int32_t AudioCodec(CodecInst& audioCodec) const = 0;
+  virtual int32_t AudioCodec(CodecInst* audioCodec) const = 0;
 
   virtual int32_t Frequency() const = 0;
 
   // Note: scaleFactor is in the range [0.0 - 2.0]
   virtual int32_t SetAudioScaling(float scaleFactor) = 0;
+
+  // Deprecated functions. Use the functions above with the same name instead.
+  int Get10msAudioFromFile(int16_t* outBuffer,
+                           size_t& lengthInSamples,
+                           int frequencyInHz) {
+    return Get10msAudioFromFile(outBuffer, &lengthInSamples, frequencyInHz);
+  }
+  int32_t StartPlayingFile(InStream& sourceStream,
+                           uint32_t startPosition,
+                           float volumeScaling,
+                           uint32_t notification,
+                           uint32_t stopPosition,
+                           const CodecInst* codecInst) {
+    return StartPlayingFile(&sourceStream, startPosition, volumeScaling,
+                            notification, stopPosition, codecInst);
+  }
+  int32_t GetPlayoutPosition(uint32_t& durationMs) {
+    return GetPlayoutPosition(&durationMs);
+  }
+  int32_t AudioCodec(CodecInst& audioCodec) const {
+    return AudioCodec(&audioCodec);
+  }
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_UTILITY_INCLUDE_FILE_PLAYER_H_

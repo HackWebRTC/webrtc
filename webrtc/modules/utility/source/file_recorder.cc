@@ -16,9 +16,7 @@
 #include "webrtc/common_audio/resampler/include/resampler.h"
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
-#include "webrtc/engine_configurations.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/media_file/media_file.h"
 #include "webrtc/modules/media_file/media_file.h"
 #include "webrtc/modules/media_file/media_file_defines.h"
 #include "webrtc/modules/utility/source/coder.h"
@@ -48,12 +46,12 @@ class FileRecorderImpl : public FileRecorder {
   int32_t StartRecordingAudioFile(const char* fileName,
                                   const CodecInst& codecInst,
                                   uint32_t notificationTimeMs) override;
-  int32_t StartRecordingAudioFile(OutStream& destStream,
+  int32_t StartRecordingAudioFile(OutStream* destStream,
                                   const CodecInst& codecInst,
                                   uint32_t notificationTimeMs) override;
   int32_t StopRecording() override;
   bool IsRecording() const override;
-  int32_t codec_info(CodecInst& codecInst) const override;
+  int32_t codec_info(CodecInst* codecInst) const override;
   int32_t RecordAudioToFile(const AudioFrame& frame) override;
 
  private:
@@ -120,12 +118,12 @@ int32_t FileRecorderImpl::StartRecordingAudioFile(const char* fileName,
   return retVal;
 }
 
-int32_t FileRecorderImpl::StartRecordingAudioFile(OutStream& destStream,
+int32_t FileRecorderImpl::StartRecordingAudioFile(OutStream* destStream,
                                                   const CodecInst& codecInst,
                                                   uint32_t notificationTimeMs) {
   codec_info_ = codecInst;
   int32_t retVal = _moduleFile->StartRecordingAudioStream(
-      destStream, _fileFormat, codecInst, notificationTimeMs);
+      *destStream, _fileFormat, codecInst, notificationTimeMs);
 
   if (retVal == 0) {
     retVal = SetUpAudioEncoder();
@@ -193,13 +191,13 @@ int32_t FileRecorderImpl::RecordAudioToFile(
   // Encode the audio data before writing to file. Don't encode if the codec
   // is PCM.
   // NOTE: stereo recording is only supported for WAV files.
-  // TODO (hellner): WAV expect PCM in little endian byte order. Not
+  // TODO(hellner): WAV expect PCM in little endian byte order. Not
   // "encoding" with PCM coder should be a problem for big endian systems.
   size_t encodedLenInBytes = 0;
   if (_fileFormat == kFileFormatPreencodedFile ||
       STR_CASE_CMP(codec_info_.plname, "L16") != 0) {
-    if (_audioEncoder.Encode(*ptrAudioFrame, _audioBuffer, encodedLenInBytes) ==
-        -1) {
+    if (_audioEncoder.Encode(*ptrAudioFrame, _audioBuffer,
+                             &encodedLenInBytes) == -1) {
       LOG(LS_WARNING) << "RecordAudioToFile() codec " << codec_info_.plname
                       << " not supported or failed to encode stream.";
       return -1;
@@ -212,7 +210,8 @@ int32_t FileRecorderImpl::RecordAudioToFile(
     _audioResampler.Push(
         ptrAudioFrame->data_,
         ptrAudioFrame->samples_per_channel_ * ptrAudioFrame->num_channels_,
-        (int16_t*)_audioBuffer, MAX_AUDIO_BUFFER_IN_BYTES, outLen);
+        reinterpret_cast<int16_t*>(_audioBuffer), MAX_AUDIO_BUFFER_IN_BYTES,
+        outLen);
     encodedLenInBytes = outLen * sizeof(int16_t);
   }
 
@@ -239,11 +238,11 @@ int32_t FileRecorderImpl::SetUpAudioEncoder() {
   return 0;
 }
 
-int32_t FileRecorderImpl::codec_info(CodecInst& codecInst) const {
+int32_t FileRecorderImpl::codec_info(CodecInst* codecInst) const {
   if (codec_info_.plfreq == 0) {
     return -1;
   }
-  codecInst = codec_info_;
+  *codecInst = codec_info_;
   return 0;
 }
 

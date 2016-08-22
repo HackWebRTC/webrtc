@@ -27,31 +27,31 @@ namespace {
 class FilePlayerImpl : public FilePlayer {
  public:
   FilePlayerImpl(uint32_t instanceID, FileFormats fileFormat);
-  ~FilePlayerImpl();
+  ~FilePlayerImpl() override;
 
-  virtual int Get10msAudioFromFile(int16_t* outBuffer,
-                                   size_t& lengthInSamples,
-                                   int frequencyInHz);
-  virtual int32_t RegisterModuleFileCallback(FileCallback* callback);
-  virtual int32_t StartPlayingFile(const char* fileName,
-                                   bool loop,
-                                   uint32_t startPosition,
-                                   float volumeScaling,
-                                   uint32_t notification,
-                                   uint32_t stopPosition,
-                                   const CodecInst* codecInst);
-  virtual int32_t StartPlayingFile(InStream& sourceStream,
-                                   uint32_t startPosition,
-                                   float volumeScaling,
-                                   uint32_t notification,
-                                   uint32_t stopPosition,
-                                   const CodecInst* codecInst);
-  virtual int32_t StopPlayingFile();
-  virtual bool IsPlayingFile() const;
-  virtual int32_t GetPlayoutPosition(uint32_t& durationMs);
-  virtual int32_t AudioCodec(CodecInst& audioCodec) const;
-  virtual int32_t Frequency() const;
-  virtual int32_t SetAudioScaling(float scaleFactor);
+  int Get10msAudioFromFile(int16_t* outBuffer,
+                           size_t* lengthInSamples,
+                           int frequencyInHz) override;
+  int32_t RegisterModuleFileCallback(FileCallback* callback) override;
+  int32_t StartPlayingFile(const char* fileName,
+                           bool loop,
+                           uint32_t startPosition,
+                           float volumeScaling,
+                           uint32_t notification,
+                           uint32_t stopPosition,
+                           const CodecInst* codecInst) override;
+  int32_t StartPlayingFile(InStream* sourceStream,
+                           uint32_t startPosition,
+                           float volumeScaling,
+                           uint32_t notification,
+                           uint32_t stopPosition,
+                           const CodecInst* codecInst) override;
+  int32_t StopPlayingFile() override;
+  bool IsPlayingFile() const override;
+  int32_t GetPlayoutPosition(uint32_t* durationMs) override;
+  int32_t AudioCodec(CodecInst* audioCodec) const override;
+  int32_t Frequency() const override;
+  int32_t SetAudioScaling(float scaleFactor) override;
 
  private:
   int32_t SetUpAudioDecoder();
@@ -108,13 +108,13 @@ int32_t FilePlayerImpl::Frequency() const {
   }
 }
 
-int32_t FilePlayerImpl::AudioCodec(CodecInst& audioCodec) const {
-  audioCodec = _codec;
+int32_t FilePlayerImpl::AudioCodec(CodecInst* audioCodec) const {
+  *audioCodec = _codec;
   return 0;
 }
 
 int32_t FilePlayerImpl::Get10msAudioFromFile(int16_t* outBuffer,
-                                             size_t& lengthInSamples,
+                                             size_t* lengthInSamples,
                                              int frequencyInHz) {
   if (_codec.plfreq == 0) {
     LOG(LS_WARNING) << "Get10msAudioFromFile() playing not started!"
@@ -129,13 +129,14 @@ int32_t FilePlayerImpl::Get10msAudioFromFile(int16_t* outBuffer,
 
     // L16 is un-encoded data. Just pull 10 ms.
     size_t lengthInBytes = sizeof(unresampledAudioFrame.data_);
-    if (_fileModule.PlayoutAudioData((int8_t*)unresampledAudioFrame.data_,
-                                     lengthInBytes) == -1) {
+    if (_fileModule.PlayoutAudioData(
+            reinterpret_cast<int8_t*>(unresampledAudioFrame.data_),
+            lengthInBytes) == -1) {
       // End of file reached.
       return -1;
     }
     if (lengthInBytes == 0) {
-      lengthInSamples = 0;
+      *lengthInSamples = 0;
       return 0;
     }
     // One sample is two bytes.
@@ -150,15 +151,15 @@ int32_t FilePlayerImpl::Get10msAudioFromFile(int16_t* outBuffer,
     if (++_numberOf10MsInDecoder >= _numberOf10MsPerFrame) {
       _numberOf10MsInDecoder = 0;
       size_t bytesFromFile = sizeof(encodedBuffer);
-      if (_fileModule.PlayoutAudioData((int8_t*)encodedBuffer, bytesFromFile) ==
-          -1) {
+      if (_fileModule.PlayoutAudioData(reinterpret_cast<int8_t*>(encodedBuffer),
+                                       bytesFromFile) == -1) {
         // End of file reached.
         return -1;
       }
       encodedLengthInBytes = bytesFromFile;
     }
-    if (_audioDecoder.Decode(unresampledAudioFrame, frequencyInHz,
-                             (int8_t*)encodedBuffer,
+    if (_audioDecoder.Decode(&unresampledAudioFrame, frequencyInHz,
+                             reinterpret_cast<int8_t*>(encodedBuffer),
                              encodedLengthInBytes) == -1) {
       return -1;
     }
@@ -178,7 +179,7 @@ int32_t FilePlayerImpl::Get10msAudioFromFile(int16_t* outBuffer,
                   unresampledAudioFrame.samples_per_channel_, outBuffer,
                   MAX_AUDIO_BUFFER_IN_SAMPLES, outLen);
 
-  lengthInSamples = outLen;
+  *lengthInSamples = outLen;
 
   if (_scaling != 1.0) {
     for (size_t i = 0; i < outLen; i++) {
@@ -270,7 +271,7 @@ int32_t FilePlayerImpl::StartPlayingFile(const char* fileName,
   return 0;
 }
 
-int32_t FilePlayerImpl::StartPlayingFile(InStream& sourceStream,
+int32_t FilePlayerImpl::StartPlayingFile(InStream* sourceStream,
                                          uint32_t startPosition,
                                          float volumeScaling,
                                          uint32_t notification,
@@ -304,7 +305,7 @@ int32_t FilePlayerImpl::StartPlayingFile(InStream& sourceStream,
       return -1;
     }
     if (_fileModule.StartPlayingAudioStream(
-            sourceStream, notification, _fileFormat, &codecInstL16,
+            *sourceStream, notification, _fileFormat, &codecInstL16,
             startPosition, stopPosition) == -1) {
       LOG(LS_ERROR) << "StartPlayingFile() failed to initialize stream "
                     << "playout.";
@@ -312,7 +313,7 @@ int32_t FilePlayerImpl::StartPlayingFile(InStream& sourceStream,
     }
 
   } else if (_fileFormat == kFileFormatPreencodedFile) {
-    if (_fileModule.StartPlayingAudioStream(sourceStream, notification,
+    if (_fileModule.StartPlayingAudioStream(*sourceStream, notification,
                                             _fileFormat, codecInst) == -1) {
       LOG(LS_ERROR) << "StartPlayingFile() failed to initialize stream "
                     << "playout.";
@@ -320,7 +321,7 @@ int32_t FilePlayerImpl::StartPlayingFile(InStream& sourceStream,
     }
   } else {
     CodecInst* no_inst = NULL;
-    if (_fileModule.StartPlayingAudioStream(sourceStream, notification,
+    if (_fileModule.StartPlayingAudioStream(*sourceStream, notification,
                                             _fileFormat, no_inst, startPosition,
                                             stopPosition) == -1) {
       LOG(LS_ERROR) << "StartPlayingFile() failed to initialize stream "
@@ -348,8 +349,8 @@ bool FilePlayerImpl::IsPlayingFile() const {
   return _fileModule.IsPlaying();
 }
 
-int32_t FilePlayerImpl::GetPlayoutPosition(uint32_t& durationMs) {
-  return _fileModule.PlayoutPositionMs(durationMs);
+int32_t FilePlayerImpl::GetPlayoutPosition(uint32_t* durationMs) {
+  return _fileModule.PlayoutPositionMs(*durationMs);
 }
 
 int32_t FilePlayerImpl::SetUpAudioDecoder() {

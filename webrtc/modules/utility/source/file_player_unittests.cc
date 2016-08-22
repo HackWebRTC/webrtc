@@ -61,8 +61,8 @@ class FilePlayerTest : public ::testing::Test {
     for (int i = 0; i < output_length_ms / 10; ++i) {
       int16_t out[10 * kSampleRateHz / 1000] = {0};
       size_t num_samples;
-      EXPECT_EQ(0,
-                player_->Get10msAudioFromFile(out, num_samples, kSampleRateHz));
+      EXPECT_EQ(
+          0, player_->Get10msAudioFromFile(out, &num_samples, kSampleRateHz));
       checksum.Update(out, num_samples * sizeof(out[0]));
       if (FLAGS_file_player_output) {
         ASSERT_EQ(num_samples,

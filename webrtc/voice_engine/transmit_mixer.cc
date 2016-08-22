@@ -568,9 +568,9 @@ int TransmitMixer::StartPlayingFileAsMicrophone(InStream* stream,
 
     const uint32_t notificationTime(0);
 
-    if (file_player_->StartPlayingFile(
-            (InStream&)*stream, startPosition, volumeScaling, notificationTime,
-            stopPosition, (const CodecInst*)codecInst) != 0) {
+    if (file_player_->StartPlayingFile(stream, startPosition, volumeScaling,
+                                       notificationTime, stopPosition,
+                                       (const CodecInst*)codecInst) != 0) {
       _engineStatisticsPtr->SetLastError(
           VE_BAD_FILE, kTraceError,
           "StartPlayingFile() failed to start file playout");
@@ -743,7 +743,7 @@ int TransmitMixer::StartRecordingMicrophone(OutStream* stream,
       return -1;
     }
 
-    if (file_recorder_->StartRecordingAudioFile(*stream, *codecInst,
+    if (file_recorder_->StartRecordingAudioFile(stream, *codecInst,
                                                 notificationTime) != 0) {
       _engineStatisticsPtr->SetLastError(
           VE_BAD_FILE, kTraceError,
@@ -912,7 +912,7 @@ int TransmitMixer::StartRecordingCall(OutStream* stream,
       return -1;
     }
 
-    if (file_call_recorder_->StartRecordingAudioFile(*stream, *codecInst,
+    if (file_call_recorder_->StartRecordingAudioFile(stream, *codecInst,
                                                      notificationTime) != 0) {
       _engineStatisticsPtr->SetLastError(
           VE_BAD_FILE, kTraceError,
@@ -1096,7 +1096,7 @@ int32_t TransmitMixer::MixOrReplaceAudioWithFile(
           return -1;
         }
 
-        if (file_player_->Get10msAudioFromFile(fileBuffer.get(), fileSamples,
+        if (file_player_->Get10msAudioFromFile(fileBuffer.get(), &fileSamples,
                                                mixingFrequency) == -1) {
           WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
                        "TransmitMixer::MixOrReplaceAudioWithFile() file"

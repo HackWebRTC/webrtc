@@ -38,7 +38,7 @@ class FileRecorder {
                                           const CodecInst& codecInst,
                                           uint32_t notification) = 0;
 
-  virtual int32_t StartRecordingAudioFile(OutStream& destStream,
+  virtual int32_t StartRecordingAudioFile(OutStream* destStream,
                                           const CodecInst& codecInst,
                                           uint32_t notification) = 0;
 
@@ -48,7 +48,7 @@ class FileRecorder {
   // Return true if recording.
   virtual bool IsRecording() const = 0;
 
-  virtual int32_t codec_info(CodecInst& codecInst) const = 0;
+  virtual int32_t codec_info(CodecInst* codecInst) const = 0;
 
   // Write frame to file. Frame should contain 10ms of un-ecoded audio data.
   virtual int32_t RecordAudioToFile(const AudioFrame& frame) = 0;

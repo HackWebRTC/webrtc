@@ -54,7 +54,7 @@ int32_t AudioCoder::SetDecodeCodec(const CodecInst& codec_inst) {
   return 0;
 }
 
-int32_t AudioCoder::Decode(AudioFrame& decoded_audio,
+int32_t AudioCoder::Decode(AudioFrame* decoded_audio,
                            uint32_t samp_freq_hz,
                            const int8_t* incoming_payload,
                            size_t payload_length) {
@@ -68,22 +68,22 @@ int32_t AudioCoder::Decode(AudioFrame& decoded_audio,
   }
   bool muted;
   int32_t ret =
-      acm_->PlayoutData10Ms((uint16_t)samp_freq_hz, &decoded_audio, &muted);
+      acm_->PlayoutData10Ms((uint16_t)samp_freq_hz, decoded_audio, &muted);
   RTC_DCHECK(!muted);
   return ret;
 }
 
-int32_t AudioCoder::PlayoutData(AudioFrame& decoded_audio,
-                                uint16_t& samp_freq_hz) {
+int32_t AudioCoder::PlayoutData(AudioFrame* decoded_audio,
+                                uint16_t samp_freq_hz) {
   bool muted;
-  int32_t ret = acm_->PlayoutData10Ms(samp_freq_hz, &decoded_audio, &muted);
+  int32_t ret = acm_->PlayoutData10Ms(samp_freq_hz, decoded_audio, &muted);
   RTC_DCHECK(!muted);
   return ret;
 }
 
 int32_t AudioCoder::Encode(const AudioFrame& audio,
                            int8_t* encoded_data,
-                           size_t& encoded_length_in_bytes) {
+                           size_t* encoded_length_in_bytes) {
   // Fake a timestamp in case audio doesn't contain a correct timestamp.
   // Make a local copy of the audio frame since audio is const
   AudioFrame audio_frame;
@@ -98,7 +98,7 @@ int32_t AudioCoder::Encode(const AudioFrame& audio,
     return -1;
   }
   encoded_data_ = encoded_data;
-  encoded_length_in_bytes = encoded_length_in_bytes_;
+  *encoded_length_in_bytes = encoded_length_in_bytes_;
   return 0;
 }
 

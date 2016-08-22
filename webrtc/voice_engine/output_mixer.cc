@@ -377,7 +377,7 @@ int OutputMixer::StartRecordingPlayout(OutStream* stream,
       return -1;
     }
 
-    if (output_file_recorder_->StartRecordingAudioFile(*stream, *codecInst,
+    if (output_file_recorder_->StartRecordingAudioFile(stream, *codecInst,
                                                        notificationTime) != 0) {
       _engineStatisticsPtr->SetLastError(
           VE_BAD_FILE, kTraceError,

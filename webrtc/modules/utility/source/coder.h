@@ -24,23 +24,23 @@ class AudioFrame;
 
 class AudioCoder : public AudioPacketizationCallback {
  public:
-  AudioCoder(uint32_t instance_id);
+  explicit AudioCoder(uint32_t instance_id);
   ~AudioCoder();
 
   int32_t SetEncodeCodec(const CodecInst& codec_inst);
 
   int32_t SetDecodeCodec(const CodecInst& codec_inst);
 
-  int32_t Decode(AudioFrame& decoded_audio,
+  int32_t Decode(AudioFrame* decoded_audio,
                  uint32_t samp_freq_hz,
                  const int8_t* incoming_payload,
                  size_t payload_length);
 
-  int32_t PlayoutData(AudioFrame& decoded_audio, uint16_t& samp_freq_hz);
+  int32_t PlayoutData(AudioFrame* decoded_audio, uint16_t samp_freq_hz);
 
   int32_t Encode(const AudioFrame& audio,
                  int8_t* encoded_data,
-                 size_t& encoded_length_in_bytes);
+                 size_t* encoded_length_in_bytes);
 
  protected:
   int32_t SendData(FrameType frame_type,
