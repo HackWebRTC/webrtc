@@ -17,10 +17,16 @@ namespace cricket {
 RtcpMuxFilter::RtcpMuxFilter() : state_(ST_INIT), offer_enable_(false) {
 }
 
+bool RtcpMuxFilter::IsFullyActive() const {
+  return state_ == ST_ACTIVE;
+}
+
+bool RtcpMuxFilter::IsProvisionallyActive() const {
+  return state_ == ST_SENTPRANSWER || state_ == ST_RECEIVEDPRANSWER;
+}
+
 bool RtcpMuxFilter::IsActive() const {
-  return state_ == ST_SENTPRANSWER ||
-         state_ == ST_RECEIVEDPRANSWER ||
-         state_ == ST_ACTIVE;
+  return IsFullyActive() || IsProvisionallyActive();
 }
 
 void RtcpMuxFilter::SetActive() {

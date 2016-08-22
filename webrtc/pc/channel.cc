@@ -169,22 +169,8 @@ BaseChannel::BaseChannel(rtc::Thread* worker_thread,
       content_name_(content_name),
 
       transport_controller_(transport_controller),
-      rtcp_transport_enabled_(rtcp),
-      transport_channel_(nullptr),
-      rtcp_transport_channel_(nullptr),
-      rtp_ready_to_send_(false),
-      rtcp_ready_to_send_(false),
-      writable_(false),
-      was_ever_writable_(false),
-      has_received_packet_(false),
-      dtls_keyed_(false),
-      secure_required_(false),
-      rtp_abs_sendtime_extn_id_(-1),
-
-      media_channel_(media_channel),
-      enabled_(false),
-      local_content_direction_(MD_INACTIVE),
-      remote_content_direction_(MD_INACTIVE) {
+      rtcp_enabled_(rtcp),
+      media_channel_(media_channel) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
   if (transport_controller) {
     RTC_DCHECK_EQ(network_thread, transport_controller->network_thread());
@@ -268,7 +254,7 @@ bool BaseChannel::InitNetwork_n(const std::string* bundle_transport_name) {
   if (!SetDtlsSrtpCryptoSuites_n(transport_channel_, false)) {
     return false;
   }
-  if (rtcp_transport_enabled() &&
+  if (rtcp_transport_channel_ &&
       !SetDtlsSrtpCryptoSuites_n(rtcp_transport_channel_, true)) {
     return false;
   }
@@ -308,10 +294,12 @@ bool BaseChannel::SetTransport_n(const std::string& transport_name) {
     srtp_filter_.ResetParams();
   }
 
-  // TODO(guoweis): Remove this grossness when we remove non-muxed RTCP.
-  if (rtcp_transport_enabled()) {
+  // If this BaseChannel uses RTCP and we haven't fully negotiated RTCP mux,
+  // we need an RTCP channel.
+  if (rtcp_enabled_ && !rtcp_mux_filter_.IsFullyActive()) {
     LOG(LS_INFO) << "Create RTCP TransportChannel for " << content_name()
                  << " on " << transport_name << " transport ";
+    // TODO(deadbeef): Remove this grossness when we remove non-muxed RTCP.
     SetRtcpTransportChannel_n(
         transport_controller_->CreateTransportChannel_n(
             transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP),
@@ -328,12 +316,11 @@ bool BaseChannel::SetTransport_n(const std::string& transport_name) {
     return false;
   }
 
-  // TODO(guoweis): Remove this grossness when we remove non-muxed RTCP.
-  if (rtcp_transport_enabled()) {
+  // TODO(deadbeef): Remove this grossness when we remove non-muxed RTCP.
+  if (rtcp_transport_channel_) {
     // We can only update the RTCP ready to send after set_transport_channel has
     // handled channel writability.
-    SetReadyToSend(
-        true, rtcp_transport_channel_ && rtcp_transport_channel_->writable());
+    SetReadyToSend(true, rtcp_transport_channel_->writable());
   }
   transport_name_ = transport_name;
   return true;
@@ -1208,7 +1195,6 @@ void BaseChannel::ActivateRtcpMux_n() {
   if (!rtcp_mux_filter_.IsActive()) {
     rtcp_mux_filter_.SetActive();
     SetRtcpTransportChannel_n(nullptr, true);
-    rtcp_transport_enabled_ = false;
   }
 }
 
@@ -1232,7 +1218,6 @@ bool BaseChannel::SetRtcpMux_n(bool enable,
                      << " by destroying RTCP transport channel for "
                      << transport_name();
         SetRtcpTransportChannel_n(nullptr, true);
-        rtcp_transport_enabled_ = false;
       }
       break;
     case CA_UPDATE:
