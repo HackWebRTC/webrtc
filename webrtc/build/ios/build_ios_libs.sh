@@ -13,6 +13,9 @@
 # Exit on errors.
 set -e
 
+# Environment
+export PATH=/usr/libexec:$PATH
+
 # Globals.
 SCRIPT_DIR=$(cd $(dirname $0) && pwd)
 WEBRTC_BASE_DIR=${SCRIPT_DIR}/../../..
