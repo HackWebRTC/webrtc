@@ -76,6 +76,7 @@ class RembReceiver : public BweReceiver, public RemoteBitrateObserver {
   int64_t latest_estimate_bps_;
   int64_t last_feedback_ms_;
   std::unique_ptr<RemoteBitrateEstimator> estimator_;
+  RTCPReportBlock latest_report_block_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RembReceiver);
 };

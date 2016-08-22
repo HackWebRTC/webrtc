@@ -152,14 +152,14 @@ TEST_F(BitrateControllerTest, OneBitrateObserverOneRtcpObserver) {
   time_ms += 1000;
 
   report_blocks.clear();
-  report_blocks.push_back(CreateReportBlock(1, 2, 0, 801));
+  report_blocks.push_back(CreateReportBlock(1, 2, 0, 101));
   bandwidth_observer_->OnReceivedRtcpReceiverReport(report_blocks, 50, time_ms);
   EXPECT_EQ(299732, bitrate_observer_.last_bitrate_);
   time_ms += 1000;
 
   // Reach max cap.
   report_blocks.clear();
-  report_blocks.push_back(CreateReportBlock(1, 2, 0, 101));
+  report_blocks.push_back(CreateReportBlock(1, 2, 0, 121));
   bandwidth_observer_->OnReceivedRtcpReceiverReport(report_blocks, 50, time_ms);
   EXPECT_EQ(300000, bitrate_observer_.last_bitrate_);
   time_ms += 1000;

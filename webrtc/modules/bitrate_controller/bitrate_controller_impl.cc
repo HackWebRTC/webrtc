@@ -15,6 +15,8 @@
 #include <map>
 #include <utility>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
@@ -43,22 +45,28 @@ class BitrateControllerImpl::RtcpBandwidthObserverImpl
 
     // Compute the a weighted average of the fraction loss from all report
     // blocks.
-    for (ReportBlockList::const_iterator it = report_blocks.begin();
-        it != report_blocks.end(); ++it) {
+    for (const RTCPReportBlock& report_block : report_blocks) {
       std::map<uint32_t, uint32_t>::iterator seq_num_it =
-          ssrc_to_last_received_extended_high_seq_num_.find(it->sourceSSRC);
+          ssrc_to_last_received_extended_high_seq_num_.find(
+              report_block.sourceSSRC);
 
       int number_of_packets = 0;
-      if (seq_num_it != ssrc_to_last_received_extended_high_seq_num_.end())
-        number_of_packets = it->extendedHighSeqNum -
-            seq_num_it->second;
+      if (seq_num_it != ssrc_to_last_received_extended_high_seq_num_.end()) {
+        number_of_packets =
+            report_block.extendedHighSeqNum - seq_num_it->second;
+      }
 
-      fraction_lost_aggregate += number_of_packets * it->fractionLost;
+      fraction_lost_aggregate += number_of_packets * report_block.fractionLost;
       total_number_of_packets += number_of_packets;
 
       // Update last received for this SSRC.
-      ssrc_to_last_received_extended_high_seq_num_[it->sourceSSRC] =
-          it->extendedHighSeqNum;
+      ssrc_to_last_received_extended_high_seq_num_[report_block.sourceSSRC] =
+          report_block.extendedHighSeqNum;
+    }
+    if (total_number_of_packets < 0) {
+      LOG(LS_WARNING) << "Received report block where extended high sequence "
+                         "number goes backwards, ignoring.";
+      return;
     }
     if (total_number_of_packets == 0)
       fraction_lost_aggregate = 0;
@@ -67,6 +75,8 @@ class BitrateControllerImpl::RtcpBandwidthObserverImpl
           total_number_of_packets / 2) / total_number_of_packets;
     if (fraction_lost_aggregate > 255)
       return;
+
+    RTC_DCHECK_GE(total_number_of_packets, 0);
 
     owner_->OnReceivedRtcpReceiverReport(fraction_lost_aggregate, rtt,
                                          total_number_of_packets, now_ms);

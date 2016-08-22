@@ -47,6 +47,7 @@ class FullBweSender : public BweSender, public RemoteBitrateObserver {
   bool has_received_ack_;
   uint16_t last_acked_seq_num_;
   int64_t last_log_time_ms_;
+  SequenceNumberUnwrapper seq_num_unwrapper_;
   ::testing::NiceMock<MockRtcEventLog> event_log_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(FullBweSender);

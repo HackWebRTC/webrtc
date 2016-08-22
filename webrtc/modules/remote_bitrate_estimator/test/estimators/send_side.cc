@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/remote_bitrate_estimator/test/estimators/send_side.h"
 
+#include <algorithm>
+
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
@@ -78,8 +80,10 @@ void FullBweSender::GiveFeedback(const FeedbackPacket& feedback) {
                          static_cast<int>(fb.packet_feedback_vector().size());
       report_block_.fractionLost = (lost_packets << 8) / expected_packets;
       report_block_.cumulativeLost += lost_packets;
+      uint32_t unwrapped = seq_num_unwrapper_.Unwrap(
+          packet_feedback_vector.back().sequence_number);
       report_block_.extendedHighSeqNum =
-          packet_feedback_vector.back().sequence_number;
+          std::max(unwrapped, report_block_.extendedHighSeqNum);
       ReportBlockList report_blocks;
       report_blocks.push_back(report_block_);
       feedback_observer_->OnReceivedRtcpReceiverReport(
