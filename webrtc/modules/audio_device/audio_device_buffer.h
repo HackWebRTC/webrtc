@@ -21,11 +21,11 @@
 namespace webrtc {
 class CriticalSectionWrapper;
 
-const uint32_t kPulsePeriodMs = 1000;
-const size_t kMaxBufferSizeBytes = 3840;  // 10ms in stereo @ 96kHz
 // Delta times between two successive playout callbacks are limited to this
 // value before added to an internal array.
 const size_t kMaxDeltaTimeInMs = 500;
+// TODO(henrika): remove when no longer used by external client.
+const size_t kMaxBufferSizeBytes = 3840;  // 10ms in stereo @ 96kHz
 
 class AudioDeviceObserver;
 
@@ -35,40 +35,47 @@ class AudioDeviceBuffer {
   virtual ~AudioDeviceBuffer();
 
   void SetId(uint32_t id) {};
-  int32_t RegisterAudioCallback(AudioTransport* audioCallback);
+  int32_t RegisterAudioCallback(AudioTransport* audio_callback);
 
   int32_t InitPlayout();
   int32_t InitRecording();
 
-  virtual int32_t SetRecordingSampleRate(uint32_t fsHz);
-  virtual int32_t SetPlayoutSampleRate(uint32_t fsHz);
+  int32_t SetRecordingSampleRate(uint32_t fsHz);
+  int32_t SetPlayoutSampleRate(uint32_t fsHz);
   int32_t RecordingSampleRate() const;
   int32_t PlayoutSampleRate() const;
 
-  virtual int32_t SetRecordingChannels(size_t channels);
-  virtual int32_t SetPlayoutChannels(size_t channels);
+  int32_t SetRecordingChannels(size_t channels);
+  int32_t SetPlayoutChannels(size_t channels);
   size_t RecordingChannels() const;
   size_t PlayoutChannels() const;
   int32_t SetRecordingChannel(const AudioDeviceModule::ChannelType channel);
   int32_t RecordingChannel(AudioDeviceModule::ChannelType& channel) const;
 
-  virtual int32_t SetRecordedBuffer(const void* audioBuffer, size_t nSamples);
+  virtual int32_t SetRecordedBuffer(const void* audio_buffer,
+                                    size_t num_samples);
   int32_t SetCurrentMicLevel(uint32_t level);
-  virtual void SetVQEData(int playDelayMS, int recDelayMS, int clockDrift);
+  virtual void SetVQEData(int play_delay_ms, int rec_delay_ms, int clock_drift);
   virtual int32_t DeliverRecordedData();
   uint32_t NewMicLevel() const;
 
-  virtual int32_t RequestPlayoutData(size_t nSamples);
-  virtual int32_t GetPlayoutData(void* audioBuffer);
+  virtual int32_t RequestPlayoutData(size_t num_samples);
+  virtual int32_t GetPlayoutData(void* audio_buffer);
 
+  // TODO(henrika): these methods should not be used and does not contain any
+  // valid implementation. Investigate the possibility to either remove them
+  // or add a proper implementation if needed.
   int32_t StartInputFileRecording(const char fileName[kAdmMaxFileNameSize]);
   int32_t StopInputFileRecording();
   int32_t StartOutputFileRecording(const char fileName[kAdmMaxFileNameSize]);
   int32_t StopOutputFileRecording();
 
-  int32_t SetTypingStatus(bool typingStatus);
+  int32_t SetTypingStatus(bool typing_status);
 
  private:
+  void AllocatePlayoutBufferIfNeeded();
+  void AllocateRecordingBufferIfNeeded();
+
   // Posts the first delayed task in the task queue and starts the periodic
   // timer.
   void StartTimer();
@@ -86,10 +93,14 @@ class AudioDeviceBuffer {
   // creates this object.
   rtc::ThreadChecker thread_checker_;
 
+  // Raw pointer to AudioTransport instance. Supplied to RegisterAudioCallback()
+  // and it must outlive this object.
+  AudioTransport* audio_transport_cb_;
+
+  // TODO(henrika): given usage of thread checker, it should be possible to
+  // remove all locks in this class.
   rtc::CriticalSection _critSect;
   rtc::CriticalSection _critSectCb;
-
-  AudioTransport* _ptrCbAudioTransport;
 
   // Task queue used to invoke LogStats() periodically. Tasks are executed on a
   // worker thread but it does not necessarily have to be the same thread for
@@ -99,45 +110,50 @@ class AudioDeviceBuffer {
   // Ensures that the timer is only started once.
   bool timer_has_started_;
 
-  uint32_t _recSampleRate;
-  uint32_t _playSampleRate;
+  // Sample rate in Hertz.
+  uint32_t rec_sample_rate_;
+  uint32_t play_sample_rate_;
 
-  size_t _recChannels;
-  size_t _playChannels;
+  // Number of audio channels.
+  size_t rec_channels_;
+  size_t play_channels_;
 
   // selected recording channel (left/right/both)
-  AudioDeviceModule::ChannelType _recChannel;
+  AudioDeviceModule::ChannelType rec_channel_;
 
-  // 2 or 4 depending on mono or stereo
-  size_t _recBytesPerSample;
-  size_t _playBytesPerSample;
+  // Number of bytes per audio sample (2 or 4).
+  size_t rec_bytes_per_sample_;
+  size_t play_bytes_per_sample_;
 
-  // 10ms in stereo @ 96kHz
-  int8_t _recBuffer[kMaxBufferSizeBytes];
+  // Number of audio samples/bytes per 10ms.
+  size_t rec_samples_per_10ms_;
+  size_t rec_bytes_per_10ms_;
+  size_t play_samples_per_10ms_;
+  size_t play_bytes_per_10ms_;
 
-  // one sample <=> 2 or 4 bytes
-  size_t _recSamples;
-  size_t _recSize;  // in bytes
+  // Buffer used for recorded audio samples. Size is given by
+  // |rec_bytes_per_10ms_| and the buffer is allocated in InitRecording() on the
+  // main/creating thread.
+  std::unique_ptr<int8_t[]> rec_buffer_;
 
-  // 10ms in stereo @ 96kHz
-  int8_t _playBuffer[kMaxBufferSizeBytes];
+  // Buffer used for audio samples to be played out. Size is given by
+  // |play_bytes_per_10ms_| and the buffer is allocated in InitPlayout() on the
+  // main/creating thread.
+  std::unique_ptr<int8_t[]> play_buffer_;
 
-  // one sample <=> 2 or 4 bytes
-  size_t _playSamples;
-  size_t _playSize;  // in bytes
+  // AGC parameters.
+  uint32_t current_mic_level_;
+  uint32_t new_mic_level_;
 
-  FileWrapper& _recFile;
-  FileWrapper& _playFile;
+  // Contains true of a key-press has been detected.
+  bool typing_status_;
 
-  uint32_t _currentMicLevel;
-  uint32_t _newMicLevel;
+  // Delay values used by the AEC.
+  int play_delay_ms_;
+  int rec_delay_ms_;
 
-  bool _typingStatus;
-
-  int _playDelayMS;
-  int _recDelayMS;
-  int _clockDrift;
-  int high_delay_counter_;
+  // Contains a clock-drift measurement.
+  int clock_drift_;
 
   // Counts number of times LogStats() has been called.
   size_t num_stat_reports_;
