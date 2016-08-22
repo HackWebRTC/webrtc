@@ -16,21 +16,25 @@
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rtpfb.h"
 
 namespace webrtc {
 namespace rtcp {
+class CommonHeader;
 
-class PacketStatusChunk;
-
-class TransportFeedback : public RtcpPacket {
+class TransportFeedback : public Rtpfb {
  public:
-  TransportFeedback();
-  virtual ~TransportFeedback();
+  class PacketStatusChunk;
+  // TODO(sprang): IANA reg?
+  static constexpr uint8_t kFeedbackMessageType = 15;
+  // Convert to multiples of 0.25ms.
+  static constexpr int kDeltaScaleFactor = 250;
 
-  void WithPacketSenderSsrc(uint32_t ssrc);
-  void WithMediaSourceSsrc(uint32_t ssrc);
+  TransportFeedback();
+  ~TransportFeedback() override;
+
+  void WithPacketSenderSsrc(uint32_t ssrc) { From(ssrc); }
+  void WithMediaSourceSsrc(uint32_t ssrc) { To(ssrc); }
   void WithBase(uint16_t base_sequence,     // Seq# of first packet in this msg.
                 int64_t ref_timestamp_us);  // Reference timestamp for this msg.
   void WithFeedbackSequenceNumber(uint8_t feedback_sequence);
@@ -53,12 +57,10 @@ class TransportFeedback : public RtcpPacket {
   // is relative the base time.
   std::vector<int64_t> GetReceiveDeltasUs() const;
 
-  uint32_t GetPacketSenderSsrc() const;
-  uint32_t GetMediaSourceSsrc() const;
-  static const int kDeltaScaleFactor = 250;  // Convert to multiples of 0.25ms.
-  static const uint8_t kFeedbackMessageType = 15;  // TODO(sprang): IANA reg?
-  static const uint8_t kPayloadType = 205;         // RTPFB, see RFC4585.
+  uint32_t GetPacketSenderSsrc() const { return sender_ssrc(); }
+  uint32_t GetMediaSourceSsrc() const { return media_ssrc(); }
 
+  bool Parse(const CommonHeader& packet);
   static std::unique_ptr<TransportFeedback> ParseFrom(const uint8_t* buffer,
                                                       size_t length);
 
@@ -83,8 +85,6 @@ class TransportFeedback : public RtcpPacket {
   void EmitVectorChunk();
   void EmitRunLengthChunk();
 
-  uint32_t packet_sender_ssrc_;
-  uint32_t media_source_ssrc_;
   int32_t base_seq_;
   int64_t base_time_;
   uint8_t feedback_seq_;
