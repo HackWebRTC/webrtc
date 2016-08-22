@@ -30,7 +30,6 @@
           'target_name': 'libjingle_peerconnection_jni',
           'type': 'static_library',
           'dependencies': [
-            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
             'libjingle_peerconnection',
           ],
@@ -104,6 +103,7 @@
       'dependencies': [
         '<(webrtc_root)/media/media.gyp:rtc_media',
         '<(webrtc_root)/pc/pc.gyp:rtc_pc',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
       ],
       'sources': [
         'audiotrack.cc',
