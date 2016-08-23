@@ -385,6 +385,7 @@ if (rtc_include_tests) {
         "test/androidtestinitializer.h",
       ]
       deps += [
+        ":libjingle_peerconnection_java",
         ":libjingle_peerconnection_jni",
         "//testing/android/native_test:native_test_support",
       ]
