@@ -129,6 +129,13 @@
             },
           },
         }], # OS=="mac" and build_with_chromium==0
+        ['OS=="android"', {
+          'link_settings': {
+            'libraries': [
+              '-llog',
+            ],
+          },
+        }],
       ],
     },
     {

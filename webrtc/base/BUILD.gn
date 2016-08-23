@@ -92,6 +92,7 @@ if (!rtc_build_ssl) {
 # The subset of rtc_base approved for use outside of libjingle.
 static_library("rtc_base_approved") {
   defines = []
+  libs = []
   deps = []
   configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
@@ -169,6 +170,10 @@ static_library("rtc_base_approved") {
     "timeutils.h",
     "trace_event.h",
   ]
+
+  if (is_android) {
+    libs += [ "log" ]
+  }
 
   if (build_with_chromium) {
     # Dependency on chromium's logging (in //base).

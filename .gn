@@ -24,6 +24,7 @@ check_targets = [
   "//webrtc/voice_engine:level_indicator",
   "//webrtc/modules/audio_coding:isac_fix_test",
   "//webrtc/modules/audio_mixer:audio_conference_mixer",
+  "//webrtc/modules/audio_coding:g711_test",
 ]
 
 # These are the list of GN files that run exec_script. This whitelist exists

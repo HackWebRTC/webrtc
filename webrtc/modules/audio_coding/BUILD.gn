@@ -1539,4 +1539,19 @@ if (rtc_include_tests) {
       ]
     }
   }
+
+  executable("g711_test") {
+    testonly = true
+
+    sources = [
+      "codecs/g711/test/testG711.cc",
+    ]
+
+    configs += [ "../..:common_config" ]
+    public_configs = [ "../..:common_inherited_config" ]
+
+    deps = [
+      ":g711",
+    ]
+  }
 }
