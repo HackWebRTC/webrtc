@@ -31,6 +31,7 @@
 #include "webrtc/modules/video_coding/codecs/vp8/simulcast_encoder_adapter.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
+#include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/video_decoder.h"
 #include "webrtc/video_encoder.h"
 
@@ -1576,6 +1577,8 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
       call_(call),
       cpu_restricted_counter_(0),
       number_of_cpu_adapt_changes_(0),
+      frame_count_(0),
+      cpu_restricted_frame_count_(0),
       source_(nullptr),
       external_encoder_factory_(external_encoder_factory),
       stream_(nullptr),
@@ -1621,6 +1624,16 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::~WebRtcVideoSendStream() {
     call_->DestroyVideoSendStream(stream_);
   }
   DestroyVideoEncoder(&allocated_encoder_);
+  UpdateHistograms();
+}
+
+void WebRtcVideoChannel2::WebRtcVideoSendStream::UpdateHistograms() const {
+  const int kMinRequiredFrames = 200;
+  if (frame_count_ > kMinRequiredFrames) {
+    RTC_LOGGED_HISTOGRAM_PERCENTAGE(
+        "WebRTC.Video.CpuLimitedResolutionInPercent",
+        cpu_restricted_frame_count_ * 100 / frame_count_);
+  }
 }
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
@@ -1674,6 +1687,10 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
   if (!sending_) {
     return;
   }
+
+  ++frame_count_;
+  if (cpu_restricted_counter_ > 0)
+    ++cpu_restricted_frame_count_;
 
   stream_->Input()->IncomingCapturedFrame(video_frame);
 }
