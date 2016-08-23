@@ -34,6 +34,7 @@
           'type': 'executable',
           'dependencies': [
             'g722',
+            '<(webrtc_root)/common.gyp:webrtc_common'
           ],
           'sources': [
             'test/testG722.cc',

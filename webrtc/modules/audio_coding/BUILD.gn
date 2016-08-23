@@ -1554,4 +1554,20 @@ if (rtc_include_tests) {
       ":g711",
     ]
   }
+
+  executable("g722_test") {
+    testonly = true
+
+    sources = [
+      "codecs/g722/test/testG722.cc",
+    ]
+
+    configs += [ "../..:common_config" ]
+    public_configs = [ "../..:common_inherited_config" ]
+
+    deps = [
+      ":g722",
+      "../..:webrtc_common",
+    ]
+  }
 }
