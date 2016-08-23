@@ -486,7 +486,7 @@ TEST_F(RampUpTest, DISABLED_UpDownUpOneStream) {
   RunBaseTest(&test);
 }
 
-TEST_F(RampUpTest, UpDownUpThreeStreams) {
+TEST_F(RampUpTest, DISABLED_UpDownUpThreeStreams) {
   RampUpDownUpTester test(3, 0, kStartBitrateBps, RtpExtension::kAbsSendTimeUri,
                           false, false);
   RunBaseTest(&test);
