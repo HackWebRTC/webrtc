@@ -20,6 +20,11 @@ struct CapturedFrame;
 // Creates instances of cricket::WebRtcVideoFrame.
 class WebRtcVideoFrameFactory : public VideoFrameFactory {
  public:
+  // Note: Overriding a method name overrides all overloaded versions.
+  // Without this using-declaration, we would hide the 5-argument
+  // method we want to inherit.
+  using VideoFrameFactory::CreateAliasedFrame;
+
   VideoFrame* CreateAliasedFrame(const CapturedFrame* aliased_frame,
                                  int width,
                                  int height) const override;
