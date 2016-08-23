@@ -288,7 +288,7 @@ class AllocationSequence : public rtc::MessageHandler,
                      PortConfiguration* config,
                      uint32_t flags);
   ~AllocationSequence();
-  bool Init();
+  void Init();
   void Clear();
   void OnNetworkFailed();
 

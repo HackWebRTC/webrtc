@@ -549,10 +549,14 @@ void BasicPortAllocatorSession::DoAllocate() {
   bool done_signal_needed = false;
   std::vector<rtc::Network*> networks = GetNetworks();
 
+  if (IsStopped()) {
+    return;
+  }
   if (networks.empty()) {
     LOG(LS_WARNING) << "Machine has no networks; no ports will be allocated";
     done_signal_needed = true;
   } else {
+    LOG(LS_INFO) << "Allocate ports on "<< networks.size() << " networks";
     PortConfiguration* config = configs_.empty() ? nullptr : configs_.back();
     for (uint32_t i = 0; i < networks.size(); ++i) {
       uint32_t sequence_flags = flags();
@@ -585,17 +589,12 @@ void BasicPortAllocatorSession::DoAllocate() {
 
       AllocationSequence* sequence =
           new AllocationSequence(this, networks[i], config, sequence_flags);
-      if (!sequence->Init()) {
-        delete sequence;
-        continue;
-      }
-      done_signal_needed = true;
       sequence->SignalPortAllocationComplete.connect(
           this, &BasicPortAllocatorSession::OnPortAllocationComplete);
-      if (!IsStopped()) {
-        sequence->Start();
-      }
+      sequence->Init();
+      sequence->Start();
       sequences_.push_back(sequence);
+      done_signal_needed = true;
     }
   }
   if (done_signal_needed) {
@@ -618,7 +617,10 @@ void BasicPortAllocatorSession::OnNetworksChanged() {
   }
   RemovePortsAndCandidates(failed_networks);
 
-  network_manager_started_ = true;
+  if (!network_manager_started_) {
+    LOG(LS_INFO) << "Network manager is started";
+    network_manager_started_ = true;
+  }
   if (allocation_started_)
     DoAllocate();
 }
@@ -986,7 +988,7 @@ AllocationSequence::AllocationSequence(BasicPortAllocatorSession* session,
       phase_(0) {
 }
 
-bool AllocationSequence::Init() {
+void AllocationSequence::Init() {
   if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET)) {
     udp_socket_.reset(session_->socket_factory()->CreateUdpSocket(
         rtc::SocketAddress(ip_, 0), session_->allocator()->min_port(),
@@ -998,7 +1000,6 @@ bool AllocationSequence::Init() {
     // Continuing if |udp_socket_| is NULL, as local TCP and RelayPort using TCP
     // are next available options to setup a communication channel.
   }
-  return true;
 }
 
 void AllocationSequence::Clear() {

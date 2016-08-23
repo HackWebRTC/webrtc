@@ -461,6 +461,7 @@ void P2PTransportChannel::MaybeStartGathering() {
     } else {
       AddAllocatorSession(allocator_->CreateSession(
           transport_name(), component(), ice_ufrag_, ice_pwd_));
+      LOG(LS_INFO) << "Start getting ports";
       allocator_sessions_.back()->StartGettingPorts();
     }
   }
