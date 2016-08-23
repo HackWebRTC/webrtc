@@ -99,32 +99,49 @@
     }, # force_mic_volume_max
   ],
   'conditions': [
-    ['enable_protobuf==1 and include_tests==1', {
-      # TODO(terelius): This tool requires the include_test condition to
-      # prevent build errors when gflags isn't found in downstream projects.
-      # There should be a cleaner way to do this. The tool is not test related.
+    ['enable_protobuf==1', {
       'targets': [
         {
-          # This target should only be built if enable_protobuf is set
-          'target_name': 'event_log_visualizer',
-          'type': 'executable',
+          # RTC event log visualization library
+          'target_name': 'event_log_visualizer_utils',
+          'type': 'static_library',
           'dependencies': [
             '<(webrtc_root)/webrtc.gyp:rtc_event_log',
             '<(webrtc_root)/webrtc.gyp:rtc_event_log_parser',
             '<(webrtc_root)/modules/modules.gyp:congestion_controller',
             '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
-            '<(webrtc_root)/test/test.gyp:field_trial',
-            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
           ],
           'sources': [
             'event_log_visualizer/analyzer.cc',
             'event_log_visualizer/analyzer.h',
-            'event_log_visualizer/main.cc',
             'event_log_visualizer/plot_base.cc',
             'event_log_visualizer/plot_base.h',
             'event_log_visualizer/plot_python.cc',
             'event_log_visualizer/plot_python.h',
+          ],
+	  'export_dependent_settings': [
+	    '<(webrtc_root)/webrtc.gyp:rtc_event_log_parser',
+	  ],
+        },
+      ],
+    }],
+    ['enable_protobuf==1 and include_tests==1', {
+      # TODO(terelius): This tool requires the include_test condition to
+      # prevent build errors when gflags isn't found in downstream projects.
+      # There should be a cleaner way to do this. The tool is not test related.
+      'targets': [
+        {
+          # Command line tool for RTC event log visualization
+          'target_name': 'event_log_visualizer',
+          'type': 'executable',
+          'dependencies': [
+            'event_log_visualizer_utils',
+            '<(webrtc_root)/test/test.gyp:field_trial',
+            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+          ],
+          'sources': [
+            'event_log_visualizer/main.cc',
           ],
         },
       ],
