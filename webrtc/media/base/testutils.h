@@ -114,28 +114,28 @@ class RtpTestUtility {
 };
 
 // Test helper for testing VideoCapturer implementations.
-class VideoCapturerListener : public sigslot::has_slots<> {
+class VideoCapturerListener
+    : public sigslot::has_slots<>,
+      public rtc::VideoSinkInterface<cricket::VideoFrame> {
  public:
   explicit VideoCapturerListener(VideoCapturer* cap);
+  ~VideoCapturerListener();
 
   CaptureState last_capture_state() const { return last_capture_state_; }
   int frame_count() const { return frame_count_; }
-  uint32_t frame_fourcc() const { return frame_fourcc_; }
   int frame_width() const { return frame_width_; }
   int frame_height() const { return frame_height_; }
-  uint32_t frame_size() const { return frame_size_; }
   bool resolution_changed() const { return resolution_changed_; }
 
   void OnStateChange(VideoCapturer* capturer, CaptureState state);
-  void OnFrameCaptured(VideoCapturer* capturer, const CapturedFrame* frame);
+  void OnFrame(const VideoFrame& frame) override;
 
  private:
+  VideoCapturer* capturer_;
   CaptureState last_capture_state_;
   int frame_count_;
-  uint32_t frame_fourcc_;
   int frame_width_;
   int frame_height_;
-  uint32_t frame_size_;
   bool resolution_changed_;
 };
 

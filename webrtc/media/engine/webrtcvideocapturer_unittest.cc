@@ -35,8 +35,7 @@ class WebRtcVideoCapturerTest : public testing::Test {
  public:
   WebRtcVideoCapturerTest()
       : factory_(new FakeWebRtcVcmFactory),
-        capturer_(new cricket::WebRtcVideoCapturer(factory_)),
-        listener_(capturer_.get()) {
+        capturer_(new cricket::WebRtcVideoCapturer(factory_)) {
     factory_->device_info.AddDevice(kTestDeviceName, kTestDeviceId);
     // add a VGA/I420 capability
     webrtc::VideoCaptureCapability vga;
@@ -50,7 +49,6 @@ class WebRtcVideoCapturerTest : public testing::Test {
  protected:
   FakeWebRtcVcmFactory* factory_;  // owned by capturer_
   std::unique_ptr<cricket::WebRtcVideoCapturer> capturer_;
-  cricket::VideoCapturerListener listener_;
 };
 
 TEST_F(WebRtcVideoCapturerTest, TestNotOpened) {
@@ -83,28 +81,29 @@ TEST_F(WebRtcVideoCapturerTest, TestInitVcm) {
 
 TEST_F(WebRtcVideoCapturerTest, TestCapture) {
   EXPECT_TRUE(capturer_->Init(cricket::Device(kTestDeviceName, kTestDeviceId)));
+  cricket::VideoCapturerListener listener(capturer_.get());
   cricket::VideoFormat format(
       capturer_->GetSupportedFormats()->at(0));
   EXPECT_EQ(cricket::CS_STARTING, capturer_->Start(format));
   EXPECT_TRUE(capturer_->IsRunning());
   ASSERT_TRUE(capturer_->GetCaptureFormat() != NULL);
   EXPECT_EQ(format, *capturer_->GetCaptureFormat());
-  EXPECT_EQ_WAIT(cricket::CS_RUNNING, listener_.last_capture_state(), 1000);
+  EXPECT_EQ_WAIT(cricket::CS_RUNNING, listener.last_capture_state(), 1000);
   factory_->modules[0]->SendFrame(640, 480);
-  EXPECT_TRUE_WAIT(listener_.frame_count() > 0, 5000);
-  EXPECT_EQ(capturer_->GetCaptureFormat()->fourcc, listener_.frame_fourcc());
-  EXPECT_EQ(640, listener_.frame_width());
-  EXPECT_EQ(480, listener_.frame_height());
+  EXPECT_TRUE_WAIT(listener.frame_count() > 0, 5000);
+  EXPECT_EQ(640, listener.frame_width());
+  EXPECT_EQ(480, listener.frame_height());
   EXPECT_EQ(cricket::CS_FAILED, capturer_->Start(format));
   capturer_->Stop();
   EXPECT_FALSE(capturer_->IsRunning());
   EXPECT_TRUE(capturer_->GetCaptureFormat() == NULL);
-  EXPECT_EQ_WAIT(cricket::CS_STOPPED, listener_.last_capture_state(), 1000);
+  EXPECT_EQ_WAIT(cricket::CS_STOPPED, listener.last_capture_state(), 1000);
 }
 
 TEST_F(WebRtcVideoCapturerTest, TestCaptureVcm) {
   EXPECT_TRUE(capturer_->Init(factory_->Create(0,
       reinterpret_cast<const char*>(kTestDeviceId.c_str()))));
+  cricket::VideoCapturerListener listener(capturer_.get());
   EXPECT_TRUE(capturer_->GetSupportedFormats()->empty());
   VideoFormat format;
   EXPECT_TRUE(capturer_->GetBestCaptureFormat(kDefaultVideoFormat, &format));
@@ -116,12 +115,11 @@ TEST_F(WebRtcVideoCapturerTest, TestCaptureVcm) {
   EXPECT_TRUE(capturer_->IsRunning());
   ASSERT_TRUE(capturer_->GetCaptureFormat() != NULL);
   EXPECT_EQ(format, *capturer_->GetCaptureFormat());
-  EXPECT_EQ_WAIT(cricket::CS_RUNNING, listener_.last_capture_state(), 1000);
+  EXPECT_EQ_WAIT(cricket::CS_RUNNING, listener.last_capture_state(), 1000);
   factory_->modules[0]->SendFrame(640, 480);
-  EXPECT_TRUE_WAIT(listener_.frame_count() > 0, 5000);
-  EXPECT_EQ(capturer_->GetCaptureFormat()->fourcc, listener_.frame_fourcc());
-  EXPECT_EQ(640, listener_.frame_width());
-  EXPECT_EQ(480, listener_.frame_height());
+  EXPECT_TRUE_WAIT(listener.frame_count() > 0, 5000);
+  EXPECT_EQ(640, listener.frame_width());
+  EXPECT_EQ(480, listener.frame_height());
   EXPECT_EQ(cricket::CS_FAILED, capturer_->Start(format));
   capturer_->Stop();
   EXPECT_FALSE(capturer_->IsRunning());

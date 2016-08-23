@@ -210,17 +210,19 @@ bool RtpTestUtility::VerifyPacket(const RtpDumpPacket* dump,
 
 // Implementation of VideoCaptureListener.
 VideoCapturerListener::VideoCapturerListener(VideoCapturer* capturer)
-    : last_capture_state_(CS_STARTING),
+    : capturer_(capturer),
+      last_capture_state_(CS_STARTING),
       frame_count_(0),
-      frame_fourcc_(0),
       frame_width_(0),
       frame_height_(0),
-      frame_size_(0),
       resolution_changed_(false) {
   capturer->SignalStateChange.connect(this,
       &VideoCapturerListener::OnStateChange);
-  capturer->SignalFrameCaptured.connect(this,
-      &VideoCapturerListener::OnFrameCaptured);
+  capturer->AddOrUpdateSink(this, rtc::VideoSinkWants());
+}
+
+VideoCapturerListener::~VideoCapturerListener() {
+  capturer_->RemoveSink(this);
 }
 
 void VideoCapturerListener::OnStateChange(VideoCapturer* capturer,
@@ -228,15 +230,12 @@ void VideoCapturerListener::OnStateChange(VideoCapturer* capturer,
   last_capture_state_ = result;
 }
 
-void VideoCapturerListener::OnFrameCaptured(VideoCapturer* capturer,
-                                            const CapturedFrame* frame) {
+void VideoCapturerListener::OnFrame(const VideoFrame& frame) {
   ++frame_count_;
   if (1 == frame_count_) {
-    frame_fourcc_ = frame->fourcc;
-    frame_width_ = frame->width;
-    frame_height_ = frame->height;
-    frame_size_ = frame->data_size;
-  } else if (frame_width_ != frame->width || frame_height_ != frame->height) {
+    frame_width_ = frame.width();
+    frame_height_ = frame.height();
+  } else if (frame_width_ != frame.width() || frame_height_ != frame.height()) {
     resolution_changed_ = true;
   }
 }

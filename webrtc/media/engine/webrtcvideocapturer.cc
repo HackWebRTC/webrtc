@@ -349,72 +349,24 @@ void WebRtcVideoCapturer::OnIncomingCapturedFrame(
   // This can only happen between Start() and Stop().
   RTC_DCHECK(start_thread_);
   RTC_DCHECK(async_invoker_);
-  if (start_thread_->IsCurrent()) {
-    SignalFrameCapturedOnStartThread(sample);
-  } else {
-    // This currently happens on with at least VideoCaptureModuleV4L2 and
-    // possibly other implementations of WebRTC's VideoCaptureModule.
-    // In order to maintain the threading contract with the upper layers and
-    // consistency with other capturers such as in Chrome, we need to do a
-    // thread hop.
-    // Note that Stop() can cause the async invoke call to be cancelled.
-    async_invoker_->AsyncInvoke<void>(
-        RTC_FROM_HERE, start_thread_,
-        // Note that Bind captures by value, so there's an intermediate copy
-        // of sample.
-        rtc::Bind(&WebRtcVideoCapturer::SignalFrameCapturedOnStartThread, this,
-                  sample));
-  }
-}
-
-void WebRtcVideoCapturer::OnCaptureDelayChanged(const int32_t id,
-                                                const int32_t delay) {
-  LOG(LS_INFO) << "Capture delay changed to " << delay << " ms";
-}
-
-void WebRtcVideoCapturer::SignalFrameCapturedOnStartThread(
-    const webrtc::VideoFrame& frame) {
-  // This can only happen between Start() and Stop().
-  RTC_DCHECK(start_thread_);
-  RTC_DCHECK(start_thread_->IsCurrent());
-  RTC_DCHECK(async_invoker_);
 
   ++captured_frames_;
   // Log the size and pixel aspect ratio of the first captured frame.
   if (1 == captured_frames_) {
     LOG(LS_INFO) << "Captured frame size "
-                 << frame.width() << "x" << frame.height()
+                 << sample.width() << "x" << sample.height()
                  << ". Expected format " << GetCaptureFormat()->ToString();
   }
 
-  // Signal down stream components on captured frame.
-  // The CapturedFrame class doesn't support planes. We have to ExtractBuffer
-  // to one block for it.
-  size_t length =
-      webrtc::CalcBufferSize(webrtc::kI420, frame.width(), frame.height());
-  capture_buffer_.resize(length);
-  // TODO(magjed): Refactor the WebRtcCapturedFrame to avoid memory copy or
-  // take over ownership of the buffer held by |frame| if that's possible.
-  webrtc::ExtractBuffer(frame, length, &capture_buffer_[0]);
-  WebRtcCapturedFrame webrtc_frame(frame, &capture_buffer_[0], length);
-  SignalFrameCaptured(this, &webrtc_frame);
+  OnFrame(cricket::WebRtcVideoFrame(
+              sample.video_frame_buffer(), sample.rotation(),
+              sample.render_time_ms() * rtc::kNumMicrosecsPerMillisec, 0),
+          sample.width(), sample.height());
 }
 
-// WebRtcCapturedFrame
-WebRtcCapturedFrame::WebRtcCapturedFrame(const webrtc::VideoFrame& sample,
-                                         void* buffer,
-                                         size_t length) {
-  width = sample.width();
-  height = sample.height();
-  fourcc = FOURCC_I420;
-  // TODO(hellner): Support pixel aspect ratio (for OSX).
-  pixel_width = 1;
-  pixel_height = 1;
-  // Convert units from VideoFrame RenderTimeMs to CapturedFrame (nanoseconds).
-  time_stamp = sample.render_time_ms() * rtc::kNumNanosecsPerMillisec;
-  data_size = rtc::checked_cast<uint32_t>(length);
-  data = buffer;
-  rotation = sample.rotation();
+void WebRtcVideoCapturer::OnCaptureDelayChanged(const int32_t id,
+                                                const int32_t delay) {
+  LOG(LS_INFO) << "Capture delay changed to " << delay << " ms";
 }
 
 }  // namespace cricket

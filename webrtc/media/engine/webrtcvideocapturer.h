@@ -87,13 +87,6 @@ class WebRtcVideoCapturer : public VideoCapturer,
   std::unique_ptr<rtc::AsyncInvoker> async_invoker_;
 };
 
-struct WebRtcCapturedFrame : public CapturedFrame {
- public:
-  WebRtcCapturedFrame(const webrtc::VideoFrame& frame,
-                      void* buffer,
-                      size_t length);
-};
-
 }  // namespace cricket
 
 #endif  // WEBRTC_MEDIA_WEBRTC_WEBRTCVIDEOCAPTURER_H_

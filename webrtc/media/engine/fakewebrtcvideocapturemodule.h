@@ -75,7 +75,7 @@ class FakeWebRtcVideoCaptureModule : public webrtc::VideoCaptureModule {
     return -1;  // not implemented
   }
   bool SetApplyRotation(bool enable) override {
-    return false;  // not implemented
+    return true;  // ignored
   }
   bool GetApplyRotation() override {
     return true;  // Rotation compensation is turned on.
