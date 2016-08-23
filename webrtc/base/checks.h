@@ -11,10 +11,27 @@
 #ifndef WEBRTC_BASE_CHECKS_H_
 #define WEBRTC_BASE_CHECKS_H_
 
+#include "webrtc/typedefs.h"
+
+#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
+#define RTC_DCHECK_IS_ON 1
+#else
+#define RTC_DCHECK_IS_ON 0
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+NO_RETURN void rtc_FatalMessage(const char* file, int line, const char* msg);
+#ifdef __cplusplus
+}  // extern "C"
+#endif
+
+#ifdef __cplusplus
+// C++ version.
+
 #include <sstream>
 #include <string>
-
-#include "webrtc/typedefs.h"
 
 // The macros here print a message to stderr and abort under various
 // conditions. All will accept additional stream messages. For example:
@@ -163,8 +180,7 @@ DEFINE_RTC_CHECK_OP_IMPL(GT, > )
 // The RTC_DCHECK macro is equivalent to RTC_CHECK except that it only generates
 // code in debug builds. It does reference the condition parameter in all cases,
 // though, so callers won't risk getting warnings about unused variables.
-#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
-#define RTC_DCHECK_IS_ON 1
+#if RTC_DCHECK_IS_ON
 #define RTC_DCHECK(condition) RTC_CHECK(condition)
 #define RTC_DCHECK_EQ(v1, v2) RTC_CHECK_EQ(v1, v2)
 #define RTC_DCHECK_NE(v1, v2) RTC_CHECK_NE(v1, v2)
@@ -173,7 +189,6 @@ DEFINE_RTC_CHECK_OP_IMPL(GT, > )
 #define RTC_DCHECK_GE(v1, v2) RTC_CHECK_GE(v1, v2)
 #define RTC_DCHECK_GT(v1, v2) RTC_CHECK_GT(v1, v2)
 #else
-#define RTC_DCHECK_IS_ON 0
 #define RTC_DCHECK(condition) RTC_EAT_STREAM_PARAMETERS(condition)
 #define RTC_DCHECK_EQ(v1, v2) RTC_EAT_STREAM_PARAMETERS((v1) == (v2))
 #define RTC_DCHECK_NE(v1, v2) RTC_EAT_STREAM_PARAMETERS((v1) != (v2))
@@ -226,5 +241,39 @@ inline T CheckedDivExact(T a, T b) {
 }
 
 }  // namespace rtc
+
+#else  // __cplusplus not defined
+// C version. Lacks many features compared to the C++ version, but usage
+// guidelines are the same.
+
+#define RTC_CHECK(condition)                                             \
+  do {                                                                   \
+    if (!(condition)) {                                                  \
+      rtc_FatalMessage(__FILE__, __LINE__, "CHECK failed: " #condition); \
+    }                                                                    \
+  } while (0)
+
+#define RTC_CHECK_EQ(a, b) RTC_CHECK((a) == (b))
+#define RTC_CHECK_NE(a, b) RTC_CHECK((a) != (b))
+#define RTC_CHECK_LE(a, b) RTC_CHECK((a) <= (b))
+#define RTC_CHECK_LT(a, b) RTC_CHECK((a) < (b))
+#define RTC_CHECK_GE(a, b) RTC_CHECK((a) >= (b))
+#define RTC_CHECK_GT(a, b) RTC_CHECK((a) > (b))
+
+#define RTC_DCHECK(condition)                                             \
+  do {                                                                    \
+    if (RTC_DCHECK_IS_ON && !(condition)) {                               \
+      rtc_FatalMessage(__FILE__, __LINE__, "DCHECK failed: " #condition); \
+    }                                                                     \
+  } while (0)
+
+#define RTC_DCHECK_EQ(a, b) RTC_DCHECK((a) == (b))
+#define RTC_DCHECK_NE(a, b) RTC_DCHECK((a) != (b))
+#define RTC_DCHECK_LE(a, b) RTC_DCHECK((a) <= (b))
+#define RTC_DCHECK_LT(a, b) RTC_DCHECK((a) < (b))
+#define RTC_DCHECK_GE(a, b) RTC_DCHECK((a) >= (b))
+#define RTC_DCHECK_GT(a, b) RTC_DCHECK((a) > (b))
+
+#endif  // __cplusplus
 
 #endif  // WEBRTC_BASE_CHECKS_H_

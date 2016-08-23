@@ -9,9 +9,10 @@
  */
 
 #include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
+
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_coding/codecs/opus/opus_inst.h"
 
-#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -51,7 +52,7 @@ int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst,
   }
 
   OpusEncInst* state = calloc(1, sizeof(OpusEncInst));
-  assert(state);
+  RTC_DCHECK(state);
 
   int error;
   state->encoder = opus_encoder_create(48000, (int)channels, opus_app,

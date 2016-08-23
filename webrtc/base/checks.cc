@@ -133,3 +133,8 @@ template std::string* MakeCheckOpString<std::string, std::string>(
 #endif
 
 }  // namespace rtc
+
+// Function to call from the C version of the RTC_CHECK and RTC_DCHECK macros.
+NO_RETURN void rtc_FatalMessage(const char* file, int line, const char* msg) {
+  rtc::FatalMessage(file, line).stream() << msg;
+}
