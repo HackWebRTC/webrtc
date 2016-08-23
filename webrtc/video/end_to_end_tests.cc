@@ -98,16 +98,19 @@ class EndToEndTest : public test::CallTest {
     bool SendRtp(const uint8_t* packet,
                  size_t length,
                  const PacketOptions& options) override {
+      rtc::CritScope lock(&crit_);
       need_rtp_ = false;
       return true;
     }
 
     bool SendRtcp(const uint8_t* packet, size_t length) override {
+      rtc::CritScope lock(&crit_);
       need_rtcp_ = false;
       return true;
     }
     bool need_rtp_;
     bool need_rtcp_;
+    rtc::CriticalSection crit_;
   };
 
   void DecodesRetransmittedFrame(bool enable_rtx, bool enable_red);
