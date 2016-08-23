@@ -92,10 +92,9 @@ void DelayBasedBwe::IncomingPacketInfo(const PacketInfo& info) {
     last_seen_packet_ms_ = now_ms;
 
     if (info.probe_cluster_id != PacketInfo::kNotAProbe) {
-      ProbingResult probe_result =
-          probe_bitrate_estimator_.PacketFeedback(info);
-      if (probe_result.valid()) {
-        remote_rate_.SetEstimate(probe_result.bps, probe_result.timestamp);
+      int bps = probe_bitrate_estimator_.HandleProbeAndEstimateBitrate(info);
+      if (bps > 0) {
+        remote_rate_.SetEstimate(bps, info.arrival_time_ms);
         update_estimate = true;
       }
     }

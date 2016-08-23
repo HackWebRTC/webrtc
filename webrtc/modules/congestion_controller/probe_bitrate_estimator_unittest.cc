@@ -19,6 +19,8 @@
 
 namespace webrtc {
 
+constexpr int INVALID_BPS = -1;
+
 class TestProbeBitrateEstimator : public ::testing::Test {
  public:
   TestProbeBitrateEstimator() : probe_bitrate_estimator_() {}
@@ -29,19 +31,12 @@ class TestProbeBitrateEstimator : public ::testing::Test {
                          int64_t arrival_time_ms) {
     PacketInfo info(arrival_time_ms, send_time_ms, 0, size_bytes,
                     probe_cluster_id);
-    ProbingResult res = probe_bitrate_estimator_.PacketFeedback(info);
-    if (res.valid())
-      results_.emplace_back(res.bps, res.timestamp);
-  }
-
-  void CheckResult(size_t index, int bps, int max_diff, int64_t timestamp) {
-    ASSERT_GT(results_.size(), index);
-    EXPECT_NEAR(results_[index].first, bps, max_diff);
-    EXPECT_EQ(results_[index].second, timestamp);
+    measured_bps_ =
+        probe_bitrate_estimator_.HandleProbeAndEstimateBitrate(info);
   }
 
  protected:
-  std::vector<std::pair<int, int64_t>> results_;
+  int measured_bps_ = INVALID_BPS;
   ProbeBitrateEstimator probe_bitrate_estimator_;
 };
 
@@ -51,7 +46,7 @@ TEST_F(TestProbeBitrateEstimator, OneCluster) {
   AddPacketFeedback(0, 1000, 20, 30);
   AddPacketFeedback(0, 1000, 30, 40);
 
-  CheckResult(0, 800000, 10, 40);
+  EXPECT_NEAR(measured_bps_, 800000, 10);
 }
 
 TEST_F(TestProbeBitrateEstimator, FastReceive) {
@@ -60,7 +55,7 @@ TEST_F(TestProbeBitrateEstimator, FastReceive) {
   AddPacketFeedback(0, 1000, 20, 35);
   AddPacketFeedback(0, 1000, 30, 40);
 
-  CheckResult(0, 800000, 10, 40);
+  EXPECT_NEAR(measured_bps_, 800000, 10);
 }
 
 TEST_F(TestProbeBitrateEstimator, TooFastReceive) {
@@ -69,7 +64,7 @@ TEST_F(TestProbeBitrateEstimator, TooFastReceive) {
   AddPacketFeedback(0, 1000, 20, 40);
   AddPacketFeedback(0, 1000, 40, 50);
 
-  EXPECT_TRUE(results_.empty());
+  EXPECT_EQ(measured_bps_, INVALID_BPS);
 }
 
 TEST_F(TestProbeBitrateEstimator, SlowReceive) {
@@ -78,7 +73,7 @@ TEST_F(TestProbeBitrateEstimator, SlowReceive) {
   AddPacketFeedback(0, 1000, 20, 70);
   AddPacketFeedback(0, 1000, 30, 85);
 
-  CheckResult(0, 320000, 10, 85);
+  EXPECT_NEAR(measured_bps_, 320000, 10);
 }
 
 TEST_F(TestProbeBitrateEstimator, BurstReceive) {
@@ -87,7 +82,7 @@ TEST_F(TestProbeBitrateEstimator, BurstReceive) {
   AddPacketFeedback(0, 1000, 20, 50);
   AddPacketFeedback(0, 1000, 40, 50);
 
-  EXPECT_TRUE(results_.empty());
+  EXPECT_EQ(measured_bps_, INVALID_BPS);
 }
 
 TEST_F(TestProbeBitrateEstimator, MultipleClusters) {
@@ -95,20 +90,22 @@ TEST_F(TestProbeBitrateEstimator, MultipleClusters) {
   AddPacketFeedback(0, 1000, 10, 20);
   AddPacketFeedback(0, 1000, 20, 30);
   AddPacketFeedback(0, 1000, 40, 60);
+
+  EXPECT_NEAR(measured_bps_, 480000, 10);
+
   AddPacketFeedback(0, 1000, 50, 60);
 
-  CheckResult(0, 480000, 10, 60);
-  CheckResult(1, 640000, 10, 60);
+  EXPECT_NEAR(measured_bps_, 640000, 10);
 
   AddPacketFeedback(1, 1000, 60, 70);
   AddPacketFeedback(1, 1000, 65, 77);
   AddPacketFeedback(1, 1000, 70, 84);
   AddPacketFeedback(1, 1000, 75, 90);
 
-  CheckResult(2, 1200000, 10, 90);
+  EXPECT_NEAR(measured_bps_, 1200000, 10);
 }
 
-TEST_F(TestProbeBitrateEstimator, OldProbe) {
+TEST_F(TestProbeBitrateEstimator, IgnoreOldClusters) {
   AddPacketFeedback(0, 1000, 0, 10);
   AddPacketFeedback(0, 1000, 10, 20);
   AddPacketFeedback(0, 1000, 20, 30);
@@ -118,11 +115,12 @@ TEST_F(TestProbeBitrateEstimator, OldProbe) {
   AddPacketFeedback(1, 1000, 70, 84);
   AddPacketFeedback(1, 1000, 75, 90);
 
-  CheckResult(0, 1200000, 10, 90);
+  EXPECT_NEAR(measured_bps_, 1200000, 10);
 
-  AddPacketFeedback(0, 1000, 40, 60);
+  // Coming in 6s later
+  AddPacketFeedback(0, 1000, 40 + 6000, 60 + 6000);
 
-  EXPECT_EQ(1ul, results_.size());
+  EXPECT_EQ(measured_bps_, INVALID_BPS);
 }
 
 }  // namespace webrtc

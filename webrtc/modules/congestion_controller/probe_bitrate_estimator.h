@@ -18,25 +18,13 @@
 
 namespace webrtc {
 
-struct ProbingResult {
-  static constexpr int kNoEstimate = -1;
-
-  ProbingResult();
-  ProbingResult(int bps, int64_t timestamp);
-  bool valid() const;
-
-  int bps;
-  int64_t timestamp;
-};
-
 class ProbeBitrateEstimator {
  public:
   ProbeBitrateEstimator();
 
-  // Should be called for every packet we receive feedback about. If the
-  // packet was used for probing it will validate/calculate the resulting
-  // bitrate and return the result.
-  ProbingResult PacketFeedback(const PacketInfo& packet_info);
+  // Should be called for every probe packet we receive feedback about.
+  // Returns the estimated bitrate if the probe completes a valid cluster.
+  int HandleProbeAndEstimateBitrate(const PacketInfo& packet_info);
 
  private:
   struct AggregatedCluster {
@@ -48,8 +36,10 @@ class ProbeBitrateEstimator {
     size_t size = 0;
   };
 
+  // Erases old cluster data that was seen before |timestamp_ms|.
+  void EraseOldClusters(int64_t timestamp_ms);
+
   std::map<int, AggregatedCluster> clusters_;
-  int last_valid_cluster_id_;
 };
 
 }  // namespace webrtc
