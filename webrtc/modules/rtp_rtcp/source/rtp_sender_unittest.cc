@@ -20,6 +20,7 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_video_generic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
@@ -50,6 +51,8 @@ const uint64_t kStartTime = 123456789;
 const size_t kMaxPaddingSize = 224u;
 const int kVideoRotationExtensionId = 5;
 const VideoRotation kRotation = kVideoRotation_270;
+const size_t kGenericHeaderLength = 1;
+const uint8_t kPayloadData[] = {47, 11, 32, 93, 89};
 
 using testing::_;
 
@@ -128,6 +131,12 @@ class MockSendPacketObserver : public SendPacketObserver {
   MOCK_METHOD3(OnSendPacket, void(uint16_t, int64_t, uint32_t));
 };
 
+class MockTransportFeedbackObserver : public TransportFeedbackObserver {
+ public:
+  MOCK_METHOD3(AddPacket, void(uint16_t, size_t, int));
+  MOCK_METHOD1(OnTransportFeedback, void(const rtcp::TransportFeedback&));
+};
+
 class RtpSenderTest : public ::testing::Test {
  protected:
   RtpSenderTest()
@@ -158,6 +167,7 @@ class RtpSenderTest : public ::testing::Test {
   MockRtpPacketSender mock_paced_sender_;
   testing::StrictMock<MockTransportSequenceNumberAllocator> seq_num_allocator_;
   testing::StrictMock<MockSendPacketObserver> send_packet_observer_;
+  testing::StrictMock<MockTransportFeedbackObserver> feedback_observer_;
   RateLimiter retransmission_rate_limiter_;
   std::unique_ptr<RTPSender> rtp_sender_;
   int payload_;
@@ -198,7 +208,6 @@ class RtpSenderTest : public ::testing::Test {
   }
 
   void SendGenericPayload() {
-    const uint8_t kPayload[] = {47, 11, 32, 93, 89};
     const uint32_t kTimestamp = 1234;
     const uint8_t kPayloadType = 127;
     const int64_t kCaptureTimeMs = fake_clock_.TimeInMilliseconds();
@@ -207,8 +216,8 @@ class RtpSenderTest : public ::testing::Test {
                                               0, 1500));
 
     EXPECT_TRUE(rtp_sender_->SendOutgoingData(
-        kVideoFrameKey, kPayloadType, kTimestamp, kCaptureTimeMs, kPayload,
-        sizeof(kPayload), nullptr, nullptr, nullptr));
+        kVideoFrameKey, kPayloadType, kTimestamp, kCaptureTimeMs, kPayloadData,
+        sizeof(kPayloadData), nullptr, nullptr, nullptr));
   }
 };
 
@@ -493,6 +502,11 @@ TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacketWithAbsoluteSendTimeExtension) {
 }
 
 TEST_F(RtpSenderTestWithoutPacer, SendsPacketsWithTransportSequenceNumber) {
+  rtp_sender_.reset(new RTPSender(
+      false, &fake_clock_, &transport_, nullptr,
+      &seq_num_allocator_, &feedback_observer_, nullptr, nullptr, nullptr,
+      &mock_rtc_event_log_, &send_packet_observer_,
+      &retransmission_rate_limiter_));
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionTransportSequenceNumber,
                    kTransportSequenceNumberExtensionId));
@@ -501,6 +515,11 @@ TEST_F(RtpSenderTestWithoutPacer, SendsPacketsWithTransportSequenceNumber) {
       .WillOnce(testing::Return(kTransportSequenceNumber));
   EXPECT_CALL(send_packet_observer_,
               OnSendPacket(kTransportSequenceNumber, _, _))
+      .Times(1);
+  EXPECT_CALL(feedback_observer_,
+              AddPacket(kTransportSequenceNumber,
+                        sizeof(kPayloadData) + kGenericHeaderLength,
+                        PacketInfo::kNotAProbe))
       .Times(1);
 
   SendGenericPayload();
@@ -733,6 +752,50 @@ TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacketWithHeaderExtensions) {
   EXPECT_FALSE(rtp_header2.extension.voiceActivity);
   EXPECT_EQ(0u, rtp_header2.extension.audioLevel);
   EXPECT_EQ(0u, rtp_header2.extension.transportSequenceNumber);
+}
+
+TEST_F(RtpSenderTest, SendsPacketsWithTransportSequenceNumber) {
+  rtp_sender_.reset(new RTPSender(
+      false, &fake_clock_, &transport_, &mock_paced_sender_,
+      &seq_num_allocator_, &feedback_observer_, nullptr, nullptr, nullptr,
+      &mock_rtc_event_log_, &send_packet_observer_,
+      &retransmission_rate_limiter_));
+  rtp_sender_->SetStorePacketsStatus(true, 10);
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+                   kRtpExtensionTransportSequenceNumber,
+                   kTransportSequenceNumberExtensionId));
+
+  uint16_t seq_num = 0;
+  EXPECT_CALL(mock_paced_sender_, InsertPacket(_, _, _, _, _, _))
+      .Times(1).WillRepeatedly(testing::SaveArg<2>(&seq_num));
+  EXPECT_CALL(seq_num_allocator_, AllocateSequenceNumber())
+      .WillOnce(testing::Return(kTransportSequenceNumber));
+  EXPECT_CALL(send_packet_observer_,
+              OnSendPacket(kTransportSequenceNumber, _, _))
+      .Times(1);
+  const int kProbeClusterId = 1;
+  EXPECT_CALL(
+      feedback_observer_,
+      AddPacket(kTransportSequenceNumber,
+                sizeof(kPayloadData) + kGenericHeaderLength, kProbeClusterId))
+      .Times(1);
+
+  SendGenericPayload();
+  rtp_sender_->TimeToSendPacket(seq_num, fake_clock_.TimeInMilliseconds(),
+                                false, kProbeClusterId);
+
+  RtpUtility::RtpHeaderParser rtp_parser(transport_.last_sent_packet_,
+                                         transport_.last_sent_packet_len_);
+  webrtc::RTPHeader rtp_header;
+  RtpHeaderExtensionMap map;
+  map.Register(kRtpExtensionTransportSequenceNumber,
+               kTransportSequenceNumberExtensionId);
+  EXPECT_TRUE(rtp_parser.Parse(&rtp_header, &map));
+  EXPECT_TRUE(rtp_header.extension.hasTransportSequenceNumber);
+  EXPECT_EQ(kTransportSequenceNumber,
+            rtp_header.extension.transportSequenceNumber);
+  EXPECT_EQ(transport_.last_packet_id_,
+            rtp_header.extension.transportSequenceNumber);
 }
 
 TEST_F(RtpSenderTest, TrafficSmoothingWithExtensions) {

@@ -629,7 +629,9 @@ size_t RTPSender::SendPadData(size_t bytes,
 
     if (has_transport_seq_no && transport_feedback_observer_)
       transport_feedback_observer_->AddPacket(
-          options.packet_id, padding_packet.size(), probe_cluster_id);
+          options.packet_id,
+          padding_packet.payload_size() + padding_packet.padding_size(),
+          probe_cluster_id);
 
     if (!SendPacketToNetwork(padding_packet, options))
       break;
@@ -748,9 +750,10 @@ bool RTPSender::TimeToSendPacket(uint16_t sequence_number,
   std::unique_ptr<RtpPacketToSend> packet =
       packet_history_.GetPacketAndSetSendTime(sequence_number, 0,
                                               retransmission);
-  if (!packet)
+  if (!packet) {
     // Packet cannot be found. Allow sending to continue.
     return true;
+  }
 
   return PrepareAndSendPacket(
       std::move(packet),
@@ -793,7 +796,9 @@ bool RTPSender::PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
   if (UpdateTransportSequenceNumber(packet_to_send, &options.packet_id) &&
       transport_feedback_observer_) {
     transport_feedback_observer_->AddPacket(
-        options.packet_id, packet_to_send->size(), probe_cluster_id);
+        options.packet_id,
+        packet_to_send->payload_size() + packet_to_send->padding_size(),
+        probe_cluster_id);
   }
 
   if (!is_retransmit && !send_over_rtx) {
@@ -922,8 +927,9 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
   PacketOptions options;
   if (UpdateTransportSequenceNumber(packet.get(), &options.packet_id) &&
       transport_feedback_observer_) {
-    transport_feedback_observer_->AddPacket(options.packet_id, packet->size(),
-                                            PacketInfo::kNotAProbe);
+    transport_feedback_observer_->AddPacket(
+        options.packet_id, packet->payload_size() + packet->padding_size(),
+        PacketInfo::kNotAProbe);
   }
 
   UpdateDelayStatistics(packet->capture_time_ms(), now_ms);
