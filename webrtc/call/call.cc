@@ -735,6 +735,12 @@ void Call::OnNetworkChanged(uint32_t target_bitrate_bps, uint8_t fraction_loss,
   // Ignore updates where the bitrate is zero because the aggregate network
   // state is down.
   if (target_bitrate_bps > 0) {
+    {
+      ReadLockScoped read_lock(*send_crit_);
+      // Do not update the stats if we are not sending video.
+      if (video_send_streams_.empty())
+        return;
+    }
     rtc::CritScope lock(&bitrate_crit_);
     // We only update these stats if we have send streams, and assume that
     // OnNetworkChanged is called roughly with a fixed frequency.
