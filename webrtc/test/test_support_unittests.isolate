@@ -10,6 +10,7 @@
     ['OS=="linux" or OS=="mac" or OS=="win" or OS=="android"', {
       'variables': {
         'files': [
+          '<(DEPTH)/resources/foreman_cif_short.yuv',
           '<(DEPTH)/resources/video_coding/frame-ethernet-ii.pcap',
           '<(DEPTH)/resources/video_coding/frame-loopback.pcap',
           '<(DEPTH)/resources/video_coding/pltype103.rtp',

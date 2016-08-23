@@ -127,6 +127,7 @@
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/testing/gmock.gyp:gmock',
         '<(webrtc_root)/base/base.gyp:gtest_prod',
+        '<(webrtc_root)/common_video/common_video.gyp:common_video',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
@@ -137,6 +138,8 @@
         'testsupport/frame_writer.cc',
         'testsupport/frame_writer.h',
         'testsupport/iosfileutils.mm',
+        'testsupport/metrics/video_metrics.h',
+        'testsupport/metrics/video_metrics.cc',
         'testsupport/mock/mock_frame_reader.h',
         'testsupport/mock/mock_frame_writer.h',
         'testsupport/packet_reader.cc',
@@ -207,6 +210,7 @@
         '<(DEPTH)/testing/gtest.gyp:gtest',
       ],
       'sources': [
+        'common_unittest.cc',
         'fake_network_pipe_unittest.cc',
         'frame_generator_unittest.cc',
         'rtp_file_reader_unittest.cc',
@@ -219,6 +223,7 @@
         'testsupport/fileutils_unittest.cc',
         'testsupport/frame_reader_unittest.cc',
         'testsupport/frame_writer_unittest.cc',
+        'testsupport/metrics/video_metrics_unittest.cc',
         'testsupport/packet_reader_unittest.cc',
         'testsupport/perf_test_unittest.cc',
       ],

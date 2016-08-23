@@ -318,6 +318,7 @@ test("test_support_unittests") {
     # This needs to be kept in sync with the test_support_unittests.isolate file.
     # TODO(kjellander); Move this to android_assets targets instead.
     data = [
+      "//resources/foreman_cif_short.yuv",
       "//resources/video_coding/frame-ethernet-ii.pcap",
       "//resources/video_coding/frame-loopback.pcap",
       "//resources/video_coding/pltype103.rtp",
