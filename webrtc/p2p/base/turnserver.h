@@ -16,8 +16,10 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "webrtc/p2p/base/portinterface.h"
+#include "webrtc/base/asyncinvoker.h"
 #include "webrtc/base/asyncpacketsocket.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/sigslot.h"
@@ -258,6 +260,9 @@ class TurnServer : public sigslot::has_slots<> {
   void OnAllocationDestroyed(TurnServerAllocation* allocation);
   void DestroyInternalSocket(rtc::AsyncPacketSocket* socket);
 
+  // Just clears |sockets_to_delete_|; called asynchronously.
+  void FreeSockets();
+
   typedef std::map<rtc::AsyncPacketSocket*,
                    ProtocolType> InternalSocketMap;
   typedef std::map<rtc::AsyncSocket*,
@@ -278,10 +283,14 @@ class TurnServer : public sigslot::has_slots<> {
 
   InternalSocketMap server_sockets_;
   ServerSocketMap server_listen_sockets_;
+  // Used when we need to delete a socket asynchronously.
+  std::vector<std::unique_ptr<rtc::AsyncPacketSocket>> sockets_to_delete_;
   std::unique_ptr<rtc::PacketSocketFactory> external_socket_factory_;
   rtc::SocketAddress external_addr_;
 
   AllocationMap allocations_;
+
+  rtc::AsyncInvoker invoker_;
 
   // For testing only. If this is non-zero, the next NONCE will be generated
   // from this value, and it will be reset to 0 after generating the NONCE.

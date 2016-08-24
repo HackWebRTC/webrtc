@@ -16,6 +16,7 @@
 #include "webrtc/p2p/base/common.h"
 #include "webrtc/p2p/base/packetsocketfactory.h"
 #include "webrtc/p2p/base/stun.h"
+#include "webrtc/base/bind.h"
 #include "webrtc/base/bytebuffer.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
@@ -525,11 +526,19 @@ void TurnServer::DestroyInternalSocket(rtc::AsyncPacketSocket* socket) {
   InternalSocketMap::iterator iter = server_sockets_.find(socket);
   if (iter != server_sockets_.end()) {
     rtc::AsyncPacketSocket* socket = iter->first;
-    // We must destroy the socket async to avoid invalidating the sigslot
-    // callback list iterator inside a sigslot callback.
-    rtc::Thread::Current()->Dispose(socket);
     server_sockets_.erase(iter);
+    // We must destroy the socket async to avoid invalidating the sigslot
+    // callback list iterator inside a sigslot callback. (In other words,
+    // deleting an object from within a callback from that object).
+    sockets_to_delete_.push_back(
+        std::unique_ptr<rtc::AsyncPacketSocket>(socket));
+    invoker_.AsyncInvoke<void>(RTC_FROM_HERE, rtc::Thread::Current(),
+                               rtc::Bind(&TurnServer::FreeSockets, this));
   }
+}
+
+void TurnServer::FreeSockets() {
+  sockets_to_delete_.clear();
 }
 
 TurnServerConnection::TurnServerConnection(const rtc::SocketAddress& src,
