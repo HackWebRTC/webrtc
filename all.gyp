@@ -28,6 +28,7 @@
         'webrtc/modules/modules.gyp:*',
         'webrtc/p2p/p2p.gyp:*',
         'webrtc/pc/pc.gyp:*',
+        'webrtc/stats/stats.gyp:*',
         'webrtc/system_wrappers/system_wrappers.gyp:*',
         'webrtc/tools/tools.gyp:*',
         'webrtc/voice_engine/voice_engine.gyp:*',

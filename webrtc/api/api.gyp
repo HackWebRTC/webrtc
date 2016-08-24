@@ -144,6 +144,8 @@
         'proxy.h',
         'remoteaudiosource.cc',
         'remoteaudiosource.h',
+        'rtcstats.h',
+        'rtcstatsreport.h',
         'rtpparameters.h',
         'rtpreceiver.cc',
         'rtpreceiver.h',

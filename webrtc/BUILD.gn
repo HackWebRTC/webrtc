@@ -259,6 +259,7 @@ if (!is_ios || !build_with_chromium) {
       "common_audio",
       "common_video",
       "modules",
+      "stats",
       "system_wrappers",
       "tools",
       "video",

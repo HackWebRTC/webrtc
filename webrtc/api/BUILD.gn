@@ -69,6 +69,8 @@ source_set("libjingle_peerconnection") {
     "proxy.h",
     "remoteaudiosource.cc",
     "remoteaudiosource.h",
+    "rtcstats.h",
+    "rtcstatsreport.h",
     "rtpparameters.h",
     "rtpreceiver.cc",
     "rtpreceiver.h",
