@@ -253,7 +253,6 @@ void BasicPortAllocatorSession::StartGettingPorts() {
 
 void BasicPortAllocatorSession::StopGettingPorts() {
   ASSERT(rtc::Thread::Current() == network_thread_);
-  network_thread_->Post(RTC_FROM_HERE, this, MSG_CONFIG_STOP);
   ClearGettingPorts();
   // Note: this must be called after ClearGettingPorts because both may set the
   // session state and we should set the state to STOPPED.
@@ -266,6 +265,7 @@ void BasicPortAllocatorSession::ClearGettingPorts() {
   for (uint32_t i = 0; i < sequences_.size(); ++i) {
     sequences_[i]->Stop();
   }
+  network_thread_->Post(RTC_FROM_HERE, this, MSG_CONFIG_STOP);
   state_ = SessionState::CLEARED;
 }
 

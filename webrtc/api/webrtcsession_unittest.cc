@@ -2258,6 +2258,10 @@ TEST_F(WebRtcSessionTest,
        TestLocalCandidatesAddedAndRemovedIfGatherContinually) {
   AddInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
   Init();
+  // Enable Continual Gathering.
+  cricket::IceConfig config;
+  config.continual_gathering_policy = cricket::GATHER_CONTINUALLY;
+  session_->SetIceConfig(config);
   SendAudioVideoStream1();
   CreateAndSetRemoteOfferAndLocalAnswer();
 
@@ -2267,7 +2271,8 @@ TEST_F(WebRtcSessionTest,
   ASSERT_TRUE(candidates != NULL);
   EXPECT_EQ(0u, candidates->count());
 
-  EXPECT_TRUE_WAIT(observer_.oncandidatesready_, kIceCandidatesTimeout);
+  // Since we're using continual gathering, we won't get "gathering done".
+  EXPECT_EQ_WAIT(2u, candidates->count(), kIceCandidatesTimeout);
 
   local_desc = session_->local_description();
   candidates = local_desc->candidates(kMediaContentIndex0);
@@ -2291,10 +2296,6 @@ TEST_F(WebRtcSessionTest,
 
   candidates = local_desc->candidates(kMediaContentIndex0);
   size_t num_local_candidates = candidates->count();
-  // Enable Continual Gathering
-  cricket::IceConfig config;
-  config.continual_gathering_policy = cricket::GATHER_CONTINUALLY;
-  session_->SetIceConfig(config);
   // Bring down the network interface to trigger candidate removals.
   RemoveInterface(rtc::SocketAddress(kClientAddrHost1, kClientAddrPort));
   // Verify that all local candidates are removed.

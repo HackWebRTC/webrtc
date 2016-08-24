@@ -351,9 +351,14 @@ void P2PTransportChannel::SetRemoteIceMode(IceMode mode) {
 
 void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
   if (config_.continual_gathering_policy != config.continual_gathering_policy) {
-    config_.continual_gathering_policy = config.continual_gathering_policy;
-    LOG(LS_INFO) << "Set continual_gathering_policy to "
-                 << config_.continual_gathering_policy;
+    if (!allocator_sessions_.empty()) {
+      LOG(LS_ERROR) << "Trying to change continual gathering policy "
+                    << "when gathering has already started!";
+    } else {
+      config_.continual_gathering_policy = config.continual_gathering_policy;
+      LOG(LS_INFO) << "Set continual_gathering_policy to "
+                   << config_.continual_gathering_policy;
+    }
   }
 
   if (config.backup_connection_ping_interval >= 0 &&
@@ -524,6 +529,13 @@ void P2PTransportChannel::OnCandidatesReady(
 void P2PTransportChannel::OnCandidatesAllocationDone(
     PortAllocatorSession* session) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
+  if (config_.gather_continually()) {
+    LOG(LS_INFO) << "P2PTransportChannel: " << transport_name()
+                 << ", component " << component()
+                 << " gathering complete, but using continual "
+                 << "gathering so not changing gathering state.";
+    return;
+  }
   gathering_state_ = kIceGatheringComplete;
   LOG(LS_INFO) << "P2PTransportChannel: " << transport_name() << ", component "
                << component() << " gathering complete";

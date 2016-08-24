@@ -158,14 +158,22 @@ class PortAllocatorSession : public sigslot::has_slots<> {
   // Default filter should be CF_ALL.
   virtual void SetCandidateFilter(uint32_t filter) = 0;
 
-  // Starts gathering STUN and Relay configurations.
+  // Starts gathering ports and ICE candidates.
   virtual void StartGettingPorts() = 0;
-  // Completely stops the gathering process and will not start new ones.
+  // Completely stops gathering. Will not gather again unless StartGettingPorts
+  // is called again.
   virtual void StopGettingPorts() = 0;
   // Whether the session is actively getting ports.
   virtual bool IsGettingPorts() = 0;
-  // ClearGettingPorts and IsCleared are used by continual gathering.
-  // Only stops the existing gathering process but may start new ones if needed.
+
+  //
+  // NOTE: The group of methods below is only used for continual gathering.
+  //
+
+  // ClearGettingPorts should have the same immediate effect as
+  // StopGettingPorts, but if the implementation supports continual gathering,
+  // ClearGettingPorts allows additional ports/candidates to be gathered if the
+  // network conditions change.
   virtual void ClearGettingPorts() = 0;
   // Whether it is in the state where the existing gathering process is stopped,
   // but new ones may be started (basically after calling ClearGettingPorts).

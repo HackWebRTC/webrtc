@@ -305,7 +305,9 @@ class P2PTransportChannelTestBase : public testing::Test,
       return ep2_.GetChannelData(channel);
   }
 
-  void CreateChannels(int num) {
+  void CreateChannels(int num,
+                      const IceConfig& ep1_config,
+                      const IceConfig& ep2_config) {
     std::string ice_ufrag_ep1_cd1_ch = kIceUfrag[0];
     std::string ice_pwd_ep1_cd1_ch = kIcePwd[0];
     std::string ice_ufrag_ep2_cd1_ch = kIceUfrag[1];
@@ -316,6 +318,8 @@ class P2PTransportChannelTestBase : public testing::Test,
     ep2_.cd1_.ch_.reset(CreateChannel(
         1, ICE_CANDIDATE_COMPONENT_DEFAULT, ice_ufrag_ep2_cd1_ch,
         ice_pwd_ep2_cd1_ch, ice_ufrag_ep1_cd1_ch, ice_pwd_ep1_cd1_ch));
+    ep1_.cd1_.ch_->SetIceConfig(ep1_config);
+    ep2_.cd1_.ch_->SetIceConfig(ep2_config);
     ep1_.cd1_.ch_->MaybeStartGathering();
     ep2_.cd1_.ch_->MaybeStartGathering();
     if (num == 2) {
@@ -329,10 +333,18 @@ class P2PTransportChannelTestBase : public testing::Test,
       ep2_.cd2_.ch_.reset(CreateChannel(
           1, ICE_CANDIDATE_COMPONENT_DEFAULT, ice_ufrag_ep2_cd2_ch,
           ice_pwd_ep2_cd2_ch, ice_ufrag_ep1_cd2_ch, ice_pwd_ep1_cd2_ch));
+      ep1_.cd2_.ch_->SetIceConfig(ep1_config);
+      ep2_.cd2_.ch_->SetIceConfig(ep2_config);
       ep1_.cd2_.ch_->MaybeStartGathering();
       ep2_.cd2_.ch_->MaybeStartGathering();
     }
   }
+
+  void CreateChannels(int num) {
+    IceConfig default_config;
+    CreateChannels(num, default_config, default_config);
+  }
+
   P2PTransportChannel* CreateChannel(int endpoint,
                                      int component,
                                      const std::string& local_ice_ufrag,
@@ -1573,10 +1585,11 @@ TEST_F(P2PTransportChannelTest, TestContinualGathering) {
                      kDefaultPortAllocatorFlags);
   SetAllocationStepDelay(0, kDefaultStepDelay);
   SetAllocationStepDelay(1, kDefaultStepDelay);
-  CreateChannels(1);
-  IceConfig config = CreateIceConfig(1000, GATHER_CONTINUALLY);
-  ep1_ch1()->SetIceConfig(config);
+  IceConfig continual_gathering_config =
+      CreateIceConfig(1000, GATHER_CONTINUALLY);
   // By default, ep2 does not gather continually.
+  IceConfig default_config;
+  CreateChannels(1, continual_gathering_config, default_config);
 
   EXPECT_TRUE_WAIT_MARGIN(ep1_ch1() != NULL && ep2_ch1() != NULL &&
                               ep1_ch1()->receiving() && ep1_ch1()->writable() &&
@@ -1908,8 +1921,10 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControlledSide) {
   SetAllocatorFlags(0, kOnlyLocalPorts);
   SetAllocatorFlags(1, kOnlyLocalPorts);
 
+  // Make the receiving timeout shorter for testing.
+  IceConfig config = CreateIceConfig(1000, GATHER_ONCE);
   // Create channels and let them go writable, as usual.
-  CreateChannels(1);
+  CreateChannels(1, config, config);
 
   EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
                                  ep2_ch1()->receiving() &&
@@ -1919,11 +1934,6 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControlledSide) {
               ep2_ch1()->selected_connection() &&
               LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]) &&
               RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
-
-  // Make the receiving timeout shorter for testing.
-  IceConfig config = CreateIceConfig(1000, GATHER_ONCE);
-  ep1_ch1()->SetIceConfig(config);
-  ep2_ch1()->SetIceConfig(config);
 
   // Blackhole any traffic to or from the public addrs.
   LOG(LS_INFO) << "Failing over...";
@@ -1964,8 +1974,10 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
   SetAllocatorFlags(0, kOnlyLocalPorts);
   SetAllocatorFlags(1, kOnlyLocalPorts);
 
+  // Make the receiving timeout shorter for testing.
+  IceConfig config = CreateIceConfig(1000, GATHER_ONCE);
   // Create channels and let them go writable, as usual.
-  CreateChannels(1);
+  CreateChannels(1, config, config);
   EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
                                  ep2_ch1()->receiving() &&
                                  ep2_ch1()->writable(),
@@ -1974,11 +1986,6 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
               ep2_ch1()->selected_connection() &&
               LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]) &&
               RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
-
-  // Make the receiving timeout shorter for testing.
-  IceConfig config = CreateIceConfig(1000, GATHER_ONCE);
-  ep1_ch1()->SetIceConfig(config);
-  ep2_ch1()->SetIceConfig(config);
 
   // Blackhole any traffic to or from the public addrs.
   LOG(LS_INFO) << "Failing over...";
@@ -2020,8 +2027,10 @@ TEST_F(P2PTransportChannelMultihomedTest, TestIceRenomination) {
   SetAllocatorFlags(0, kOnlyLocalPorts);
   SetAllocatorFlags(1, kOnlyLocalPorts);
 
+  // Make the receiving timeout shorter for testing.
+  IceConfig config = CreateIceConfig(1000, GATHER_ONCE);
   // Create channels and let them go writable, as usual.
-  CreateChannels(1);
+  CreateChannels(1, config, config);
   ep1_ch1()->set_remote_supports_renomination(true);
   EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
                                  ep2_ch1()->receiving() &&
@@ -2040,11 +2049,6 @@ TEST_F(P2PTransportChannelMultihomedTest, TestIceRenomination) {
   ConnectSignalNominated(selected_connection2);
   SIMULATED_WAIT(nominated(), 3000, clock);
   EXPECT_FALSE(nominated());
-
-  // Make the receiving timeout shorter for testing.
-  IceConfig config = CreateIceConfig(1000, GATHER_ONCE);
-  ep1_ch1()->SetIceConfig(config);
-  ep2_ch1()->SetIceConfig(config);
 
   // Blackhole any traffic to or from the public addrs.
   LOG(LS_INFO) << "Failing over...";
@@ -2362,9 +2366,9 @@ TEST_F(P2PTransportChannelMultihomedTest, TestNetworkBecomesInactive) {
   AddAddress(0, kPublicAddrs[0]);
   AddAddress(1, kPublicAddrs[1]);
   // Create channels and let them go writable, as usual.
-  CreateChannels(1);
-  ep1_ch1()->SetIceConfig(CreateIceConfig(2000, GATHER_CONTINUALLY));
-  ep2_ch1()->SetIceConfig(CreateIceConfig(2000, GATHER_ONCE));
+  IceConfig ep1_config = CreateIceConfig(2000, GATHER_CONTINUALLY);
+  IceConfig ep2_config = CreateIceConfig(2000, GATHER_ONCE);
+  CreateChannels(1, ep1_config, ep2_config);
 
   SetAllocatorFlags(0, kOnlyLocalPorts);
   SetAllocatorFlags(1, kOnlyLocalPorts);
@@ -2406,10 +2410,10 @@ TEST_F(P2PTransportChannelMultihomedTest,
   auto& cellular = kPublicAddrs;
   AddAddress(0, wifi[0], "test_wifi0", rtc::ADAPTER_TYPE_WIFI);
   AddAddress(1, cellular[1], "test_cell1", rtc::ADAPTER_TYPE_CELLULAR);
-  CreateChannels(1);
   // Set continual gathering policy.
-  ep1_ch1()->SetIceConfig(CreateIceConfig(1000, GATHER_CONTINUALLY));
-  ep2_ch1()->SetIceConfig(CreateIceConfig(1000, GATHER_CONTINUALLY));
+  IceConfig continual_gathering_config =
+      CreateIceConfig(1000, GATHER_CONTINUALLY);
+  CreateChannels(1, continual_gathering_config, continual_gathering_config);
   SetAllocatorFlags(0, kOnlyLocalPorts);
   SetAllocatorFlags(1, kOnlyLocalPorts);
   EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
@@ -2456,11 +2460,11 @@ TEST_F(P2PTransportChannelMultihomedTest,
   SetAllocatorFlags(0, kOnlyLocalPorts);
   SetAllocatorFlags(1, kOnlyLocalPorts);
 
-  // Create channels and let them go writable, as usual.
-  CreateChannels(1);
   // Set continual gathering policy.
-  ep1_ch1()->SetIceConfig(CreateIceConfig(1000, GATHER_CONTINUALLY));
-  ep2_ch1()->SetIceConfig(CreateIceConfig(1000, GATHER_CONTINUALLY));
+  IceConfig continual_gathering_config =
+      CreateIceConfig(1000, GATHER_CONTINUALLY);
+  // Create channels and let them go writable, as usual.
+  CreateChannels(1, continual_gathering_config, continual_gathering_config);
   EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
                                  ep2_ch1()->receiving() &&
                                  ep2_ch1()->writable(),
@@ -2514,12 +2518,10 @@ TEST_F(P2PTransportChannelMultihomedTest,
   SetAllocatorFlags(0, kOnlyLocalPorts);
   SetAllocatorFlags(1, kOnlyLocalPorts);
 
-  // Create channels and let them go writable, as usual.
-  CreateChannels(1);
   // Set continual gathering policy.
   IceConfig config = CreateIceConfig(1000, GATHER_CONTINUALLY_AND_RECOVER);
-  ep1_ch1()->SetIceConfig(config);
-  ep2_ch1()->SetIceConfig(config);
+  // Create channels and let them go writable, as usual.
+  CreateChannels(1, config, config);
   EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
                               ep2_ch1()->receiving() && ep2_ch1()->writable(),
                           3000, clock);
@@ -2558,11 +2560,9 @@ TEST_F(P2PTransportChannelMultihomedTest, TestRestoreBackupConnection) {
   SetAllocatorFlags(1, kOnlyLocalPorts);
 
   // Create channels and let them go writable, as usual.
-  CreateChannels(1);
   IceConfig config = CreateIceConfig(1000, GATHER_CONTINUALLY);
   config.regather_on_failed_networks_interval = rtc::Optional<int>(2000);
-  ep1_ch1()->SetIceConfig(config);
-  ep2_ch1()->SetIceConfig(config);
+  CreateChannels(1, config, config);
   EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
                                  ep2_ch1()->receiving() &&
                                  ep2_ch1()->writable(),
