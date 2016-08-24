@@ -279,10 +279,12 @@
 
     # Android
     'android_gyp_debug_static_bot_arm': [
-      'android', 'gyp', 'debug_static_bot', 'arm', 'exclude_tests'
+      'android', 'gyp', 'debug_static_bot', 'arm', 'exclude_tests',
+      'exclude_examples'
     ],
     'android_gyp_release_bot_arm': [
-      'android', 'gyp', 'release_bot', 'arm', 'exclude_tests'
+      'android', 'gyp', 'release_bot', 'arm', 'exclude_tests',
+      'exclude_examples'
     ],
     'android_gn_debug_static_bot_arm': [
       'android', 'gn', 'debug_static_bot', 'arm'
@@ -382,11 +384,6 @@
       'gyp_defines': 'component=shared_library build_for_tool=drmemory',
     },
 
-    'exclude_tests': {
-      'gn_args': 'rtc_include_tests=false',
-      'gyp_defines': 'include_tests=0',
-    },
-
     # This mixin is used to force configs that use it to fail. It
     # is used in two cases: when we have bots that we haven't looked
     # at yet and don't know whether they need MB or not, and for bots
@@ -394,6 +391,15 @@
     'error': {
       'gn_args': 'error',
       'gyp_defines': 'target_arch=unknown',
+    },
+
+    'exclude_examples': {
+      'gyp_defines': 'include_examples=0',
+    },
+
+    'exclude_tests': {
+      'gn_args': 'rtc_include_tests=false',
+      'gyp_defines': 'include_tests=0',
     },
 
     'gn': {'type': 'gn'},
