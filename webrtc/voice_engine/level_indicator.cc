@@ -28,6 +28,7 @@ AudioLevel::AudioLevel() :
     _count(0),
     _currentLevel(0),
     _currentLevelFullRange(0) {
+  WebRtcSpl_Init();
 }
 
 AudioLevel::~AudioLevel() {

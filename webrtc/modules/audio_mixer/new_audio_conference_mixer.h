@@ -59,6 +59,13 @@ class NewAudioConferenceMixer {
   virtual bool AnonymousMixabilityStatus(
       const MixerAudioSource& audio_source) const = 0;
 
+  // Output level functions for VoEVolumeControl. Return value
+  // between 0 and 9 is returned by voe::AudioLevel.
+  virtual int GetOutputAudioLevel() = 0;
+
+  // Return value between 0 and 0x7fff is returned by voe::AudioLevel.
+  virtual int GetOutputAudioLevelFullRange() = 0;
+
  protected:
   NewAudioConferenceMixer() {}
 };

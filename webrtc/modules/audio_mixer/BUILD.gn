@@ -77,5 +77,6 @@ source_set("audio_conference_mixer") {
     "../../modules/audio_processing",
     "../../modules/utility",
     "../../system_wrappers",
+    "../../voice_engine:level_indicator",
   ]
 }

@@ -16,6 +16,7 @@
         'webrtc_utility',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/base/base.gyp:rtc_base_approved',
+        '<(webrtc_root)/voice_engine/voice_engine.gyp:level_indicator',
       ],
       'sources': [
         'audio_frame_manipulator.cc',

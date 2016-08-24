@@ -20,6 +20,7 @@
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_mixer/new_audio_conference_mixer.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/voice_engine/level_indicator.h"
 
 namespace webrtc {
 class AudioProcessing;
@@ -125,6 +126,11 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
 
   bool LimitMixedAudio(AudioFrame* mixedAudio) const;
 
+  // Output level functions for VoEVolumeControl.
+  int GetOutputAudioLevel() override;
+
+  int GetOutputAudioLevelFullRange() override;
+
   std::unique_ptr<CriticalSectionWrapper> crit_;
   std::unique_ptr<CriticalSectionWrapper> cb_crit_;
 
@@ -152,6 +158,9 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
 
   // Used for inhibiting saturation in mixing.
   std::unique_ptr<AudioProcessing> limiter_;
+
+  // Measures audio level for the combined signal.
+  voe::AudioLevel audio_level_;
 };
 }  // namespace webrtc
 

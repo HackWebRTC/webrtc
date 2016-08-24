@@ -77,13 +77,14 @@ class MockMixerAudioSource : public MixerAudioSource {
   }
 
  private:
-  AudioFrame fake_frame_;
+  AudioFrame fake_frame_, output_frame_;
   AudioFrameInfo fake_audio_frame_info_;
   AudioFrameWithMuted FakeAudioFrameWithMuted(const int32_t id,
                                               int sample_rate_hz) {
+    output_frame_.CopyFrom(fake_frame_);
     return {
-        fake_frame(),  // audio_frame_pointer
-        fake_info(),   // audio_frame_info
+        &output_frame_,  // audio_frame_pointer
+        fake_info(),     // audio_frame_info
     };
   }
 };
@@ -274,10 +275,10 @@ TEST(AudioMixer, AnonymousAndNamed) {
 }
 
 TEST(AudioMixer, LargestEnergyVadActiveMixed) {
-  const int kId = 1;
-  const int kAudioSources =
+  constexpr int kId = 1;
+  constexpr int kAudioSources =
       NewAudioConferenceMixer::kMaximumAmountOfMixedAudioSources + 3;
-  const int kSampleRateHz = 32000;
+  constexpr int kSampleRateHz = 32000;
 
   std::unique_ptr<NewAudioConferenceMixer> mixer(
       NewAudioConferenceMixer::Create(kId));
@@ -328,7 +329,7 @@ TEST(AudioMixer, LargestEnergyVadActiveMixed) {
 }
 
 TEST(AudioMixer, ParticipantSampleRate) {
-  const int kId = 1;
+  constexpr int kId = 1;
   std::unique_ptr<NewAudioConferenceMixer> mixer(
       NewAudioConferenceMixer::Create(kId));
   AudioFrame frame_for_mixing;
@@ -350,7 +351,7 @@ TEST(AudioMixer, ParticipantSampleRate) {
 }
 
 TEST(AudioMixer, ParticipantNumberOfChannels) {
-  const int kId = 1;
+  constexpr int kId = 1;
   std::unique_ptr<NewAudioConferenceMixer> mixer(
       NewAudioConferenceMixer::Create(kId));
   AudioFrame frame_for_mixing;
@@ -368,6 +369,69 @@ TEST(AudioMixer, ParticipantNumberOfChannels) {
     mixer->Mix(8000, number_of_channels, &frame_for_mixing);
     EXPECT_EQ(number_of_channels, frame_for_mixing.num_channels_);
   }
+}
+
+// Test that the volume is reported as zero when the mixer input
+// comprises only zero values.
+TEST(AudioMixer, LevelIsZeroWhenMixingZeroes) {
+  constexpr int kId = 1;
+  constexpr int kSampleRateHz = 8000;
+  std::unique_ptr<NewAudioConferenceMixer> mixer(
+      NewAudioConferenceMixer::Create(kId));
+  AudioFrame frame_for_mixing;
+
+  MockMixerAudioSource participant;
+  participant.fake_frame()->sample_rate_hz_ = kSampleRateHz;
+  participant.fake_frame()->num_channels_ = 1;
+
+  // Frame duration 10ms.
+  participant.fake_frame()->samples_per_channel_ = kSampleRateHz / 100;
+
+  EXPECT_EQ(0, mixer->SetMixabilityStatus(&participant, true));
+  for (size_t i = 0; i < 11; i++) {
+    EXPECT_CALL(participant, GetAudioFrameWithMuted(_, kSampleRateHz))
+        .Times(Exactly(1));
+    mixer->Mix(8000, 1, &frame_for_mixing);
+  }
+
+  EXPECT_EQ(0, mixer->GetOutputAudioLevel());
+  EXPECT_EQ(0, mixer->GetOutputAudioLevelFullRange());
+}
+
+// Test that the reported volume is maximal when the mixer
+// input comprises frames with maximal values.
+TEST(AudioMixer, LevelIsMaximalWhenMixingMaximalValues) {
+  constexpr int kId = 1;
+  constexpr int kSampleRateHz = 8000;
+  std::unique_ptr<NewAudioConferenceMixer> mixer(
+      NewAudioConferenceMixer::Create(kId));
+  AudioFrame frame_for_mixing;
+
+  MockMixerAudioSource participant;
+  participant.fake_frame()->sample_rate_hz_ = kSampleRateHz;
+  participant.fake_frame()->num_channels_ = 1;
+
+  // Frame duration 10ms.
+  participant.fake_frame()->samples_per_channel_ = kSampleRateHz / 100;
+
+  // Fill participant frame data with maximal sound.
+  std::fill(participant.fake_frame()->data_,
+            participant.fake_frame()->data_ + kSampleRateHz / 100,
+            std::numeric_limits<int16_t>::max());
+
+  EXPECT_EQ(0, mixer->SetMixabilityStatus(&participant, true));
+  for (size_t i = 0; i < 11; i++) {
+    EXPECT_CALL(participant, GetAudioFrameWithMuted(_, kSampleRateHz))
+        .Times(Exactly(1));
+    mixer->Mix(8000, 1, &frame_for_mixing);
+  }
+
+  // 9 is the highest possible audio level
+  EXPECT_EQ(9, mixer->GetOutputAudioLevel());
+
+  // 0x7fff = 32767 is the highest full range audio level.
+  EXPECT_EQ(std::numeric_limits<int16_t>::max(),
+            mixer->GetOutputAudioLevelFullRange());
 }
 
 TEST_F(BothMixersTest, CompareInitialFrameAudio) {

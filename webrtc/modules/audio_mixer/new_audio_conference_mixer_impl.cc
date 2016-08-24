@@ -73,7 +73,6 @@ void RemixFrame(AudioFrame* frame, size_t number_of_channels) {
 // |mixed_frame| always has at least as many channels as |frame|. Supports
 // stereo at most.
 //
-// TODO(andrew): consider not modifying |frame| here.
 void MixFrames(AudioFrame* mixed_frame, AudioFrame* frame, bool use_limiter) {
   RTC_DCHECK_GE(mixed_frame->num_channels_, frame->num_channels_);
   if (use_limiter) {
@@ -237,8 +236,7 @@ void NewAudioConferenceMixerImpl::Mix(int sample_rate,
 
   time_stamp_ += static_cast<uint32_t>(sample_size_);
 
-  use_limiter_ = num_mixed_audio_sources_ > 1 &&
-                 output_frequency_ <= AudioProcessing::kMaxNativeSampleRateHz;
+  use_limiter_ = num_mixed_audio_sources_ > 1;
 
   // We only use the limiter if it supports the output sample rate and
   // we're actually mixing multiple streams.
@@ -257,6 +255,10 @@ void NewAudioConferenceMixerImpl::Mix(int sample_rate,
       LimitMixedAudio(audio_frame_for_mixing);
     }
   }
+
+  // Pass the final result to the level indicator.
+  audio_level_.ComputeLevel(*audio_frame_for_mixing);
+
   return;
 }
 
@@ -590,5 +592,19 @@ bool NewAudioConferenceMixerImpl::LimitMixedAudio(
     return false;
   }
   return true;
+}
+
+int NewAudioConferenceMixerImpl::GetOutputAudioLevel() {
+  const int level = audio_level_.Level();
+  WEBRTC_TRACE(kTraceStateInfo, kTraceAudioMixerServer, id_,
+               "GetAudioOutputLevel() => level=%d", level);
+  return level;
+}
+
+int NewAudioConferenceMixerImpl::GetOutputAudioLevelFullRange() {
+  const int level = audio_level_.LevelFullRange();
+  WEBRTC_TRACE(kTraceStateInfo, kTraceAudioMixerServer, id_,
+               "GetAudioOutputLevelFullRange() => level=%d", level);
+  return level;
 }
 }  // namespace webrtc
