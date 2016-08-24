@@ -29,6 +29,7 @@ struct LoggedRtpPacket {
   LoggedRtpPacket(uint64_t timestamp, RTPHeader header, size_t total_length)
       : timestamp(timestamp), header(header), total_length(total_length) {}
   uint64_t timestamp;
+  // TODO(terelius): This allocates space for 15 CSRCs even if none are used.
   RTPHeader header;
   size_t total_length;
 };

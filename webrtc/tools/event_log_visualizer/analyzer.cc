@@ -80,6 +80,12 @@ int64_t WrappingDifference(uint32_t later, uint32_t earlier, int64_t modulus) {
   if (difference < min_difference) {
     difference += modulus;
   }
+  if (difference > max_difference / 2 || difference < min_difference / 2) {
+    LOG(LS_WARNING) << "Difference between" << later << " and " << earlier
+                    << " expected to be in the range (" << min_difference / 2
+                    << "," << max_difference / 2 << ") but is " << difference
+                    << ". Correct unwrapping is uncertain.";
+  }
   return difference;
 }
 
@@ -97,6 +103,26 @@ constexpr float kLeftMargin = 0.01f;
 constexpr float kRightMargin = 0.02f;
 constexpr float kBottomMargin = 0.02f;
 constexpr float kTopMargin = 0.05f;
+
+class PacketSizeBytes {
+ public:
+  using DataType = LoggedRtpPacket;
+  using ResultType = size_t;
+  size_t operator()(const LoggedRtpPacket& packet) {
+    return packet.total_length;
+  }
+};
+
+class SequenceNumberDiff {
+ public:
+  using DataType = LoggedRtpPacket;
+  using ResultType = int64_t;
+  int64_t operator()(const LoggedRtpPacket& old_packet,
+                     const LoggedRtpPacket& new_packet) {
+    return WrappingDifference(new_packet.header.sequenceNumber,
+                              old_packet.header.sequenceNumber, 1ul << 16);
+  }
+};
 
 class NetworkDelayDiff {
  public:
@@ -140,6 +166,19 @@ class NetworkDelayDiff {
       double delay_change =
           static_cast<double>(recv_time_diff) / 1000 -
           static_cast<double>(send_time_diff) / kVideoSampleRate * 1000;
+      if (delay_change < -10000 || 10000 < delay_change) {
+        LOG(LS_WARNING) << "Very large delay change. Timestamps correct?";
+        LOG(LS_WARNING) << "Old capture time " << old_packet.header.timestamp
+                        << ", received time " << old_packet.timestamp;
+        LOG(LS_WARNING) << "New capture time " << new_packet.header.timestamp
+                        << ", received time " << new_packet.timestamp;
+        LOG(LS_WARNING) << "Receive time difference " << recv_time_diff << " = "
+                        << static_cast<double>(recv_time_diff) / 1000000 << "s";
+        LOG(LS_WARNING) << "Send time difference " << send_time_diff << " = "
+                        << static_cast<double>(send_time_diff) /
+                               kVideoSampleRate
+                        << "s";
+      }
       return delay_change;
     }
   };
@@ -161,6 +200,23 @@ class Accumulated {
   ResultType sum = 0;
 };
 
+// For each element in data, use |Extractor| to extract a y-coordinate and
+// store the result in a TimeSeries.
+template <typename Extractor>
+void Pointwise(const std::vector<typename Extractor::DataType>& data,
+               uint64_t begin_time,
+               TimeSeries* result) {
+  Extractor extract;
+  for (size_t i = 0; i < data.size(); i++) {
+    float x = static_cast<float>(data[i].timestamp - begin_time) / 1000000;
+    float y = extract(data[i]);
+    result->points.emplace_back(x, y);
+  }
+}
+
+// For each pair of adjacent elements in |data|, use |Extractor| to extract a
+// y-coordinate and store the result in a TimeSeries. Note that the x-coordinate
+// will be the time of the second element in the pair.
 template <typename Extractor>
 void Pairwise(const std::vector<typename Extractor::DataType>& data,
               uint64_t begin_time,
@@ -169,6 +225,41 @@ void Pairwise(const std::vector<typename Extractor::DataType>& data,
   for (size_t i = 1; i < data.size(); i++) {
     float x = static_cast<float>(data[i].timestamp - begin_time) / 1000000;
     float y = extract(data[i - 1], data[i]);
+    result->points.emplace_back(x, y);
+  }
+}
+
+// Calculates a moving average of |data| and stores the result in a TimeSeries.
+// A data point is generated every |step| microseconds from |begin_time|
+// to |end_time|. The value of each data point is the average of the data
+// during the preceeding |window_duration_us| microseconds.
+template <typename Extractor>
+void MovingAverage(const std::vector<typename Extractor::DataType>& data,
+                   uint64_t begin_time,
+                   uint64_t end_time,
+                   uint64_t window_duration_us,
+                   uint64_t step,
+                   float y_scaling,
+                   webrtc::plotting::TimeSeries* result) {
+  size_t window_index_begin = 0;
+  size_t window_index_end = 0;
+  typename Extractor::ResultType sum_in_window = 0;
+  Extractor extract;
+
+  for (uint64_t t = begin_time; t < end_time + step; t += step) {
+    while (window_index_end < data.size() &&
+           data[window_index_end].timestamp < t) {
+      sum_in_window += extract(data[window_index_end]);
+      ++window_index_end;
+    }
+    while (window_index_begin < data.size() &&
+           data[window_index_begin].timestamp < t - window_duration_us) {
+      sum_in_window -= extract(data[window_index_begin]);
+      ++window_index_begin;
+    }
+    float window_duration_s = static_cast<float>(window_duration_us) / 1000000;
+    float x = static_cast<float>(t - begin_time) / 1000000;
+    float y = sum_in_window / window_duration_s * y_scaling;
     result->points.emplace_back(x, y);
   }
 }
@@ -381,40 +472,20 @@ bool EventLogAnalyzer::IsAudioSsrc(StreamId stream_id) {
 
 void EventLogAnalyzer::CreatePacketGraph(PacketDirection desired_direction,
                                          Plot* plot) {
-  std::map<uint32_t, TimeSeries> time_series;
-
-  PacketDirection direction;
-  MediaType media_type;
-  uint8_t header[IP_PACKET_SIZE];
-  size_t header_length, total_length;
-
-  for (size_t i = 0; i < parsed_log_.GetNumberOfEvents(); i++) {
-    ParsedRtcEventLog::EventType event_type = parsed_log_.GetEventType(i);
-    if (event_type == ParsedRtcEventLog::RTP_EVENT) {
-      parsed_log_.GetRtpHeader(i, &direction, &media_type, header,
-                               &header_length, &total_length);
-      if (direction == desired_direction) {
-        // Parse header to get SSRC.
-        RtpUtility::RtpHeaderParser rtp_parser(header, header_length);
-        RTPHeader parsed_header;
-        rtp_parser.Parse(&parsed_header);
-        // Filter on SSRC.
-        if (MatchingSsrc(parsed_header.ssrc, desired_ssrc_)) {
-          uint64_t timestamp = parsed_log_.GetTimestamp(i);
-          float x = static_cast<float>(timestamp - begin_time_) / 1000000;
-          float y = total_length;
-          time_series[parsed_header.ssrc].points.push_back(
-              TimeSeriesPoint(x, y));
-        }
-      }
+  for (auto& kv : rtp_packets_) {
+    StreamId stream_id = kv.first;
+    const std::vector<LoggedRtpPacket>& packet_stream = kv.second;
+    // Filter on direction and SSRC.
+    if (stream_id.GetDirection() != desired_direction ||
+        !MatchingSsrc(stream_id.GetSsrc(), desired_ssrc_)) {
+      continue;
     }
-  }
 
-  // Set labels and put in graph.
-  for (auto& kv : time_series) {
-    kv.second.label = SsrcToString(kv.first);
-    kv.second.style = BAR_GRAPH;
-    plot->series_list_.push_back(std::move(kv.second));
+    TimeSeries time_series;
+    time_series.label = SsrcToString(stream_id.GetSsrc());
+    time_series.style = BAR_GRAPH;
+    Pointwise<PacketSizeBytes>(packet_stream, begin_time_, &time_series);
+    plot->series_list_.push_back(std::move(time_series));
   }
 
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
@@ -468,48 +539,20 @@ void EventLogAnalyzer::CreatePlayoutGraph(Plot* plot) {
 
 // For each SSRC, plot the time between the consecutive playouts.
 void EventLogAnalyzer::CreateSequenceNumberGraph(Plot* plot) {
-  std::map<uint32_t, TimeSeries> time_series;
-  std::map<uint32_t, uint16_t> last_seqno;
-
-  PacketDirection direction;
-  MediaType media_type;
-  uint8_t header[IP_PACKET_SIZE];
-  size_t header_length, total_length;
-
-  for (size_t i = 0; i < parsed_log_.GetNumberOfEvents(); i++) {
-    ParsedRtcEventLog::EventType event_type = parsed_log_.GetEventType(i);
-    if (event_type == ParsedRtcEventLog::RTP_EVENT) {
-      parsed_log_.GetRtpHeader(i, &direction, &media_type, header,
-                               &header_length, &total_length);
-      uint64_t timestamp = parsed_log_.GetTimestamp(i);
-      if (direction == PacketDirection::kIncomingPacket) {
-        // Parse header to get SSRC.
-        RtpUtility::RtpHeaderParser rtp_parser(header, header_length);
-        RTPHeader parsed_header;
-        rtp_parser.Parse(&parsed_header);
-        // Filter on SSRC.
-        if (MatchingSsrc(parsed_header.ssrc, desired_ssrc_)) {
-          float x = static_cast<float>(timestamp - begin_time_) / 1000000;
-          int y = WrappingDifference(parsed_header.sequenceNumber,
-                                     last_seqno[parsed_header.ssrc], 1ul << 16);
-          if (time_series[parsed_header.ssrc].points.size() == 0) {
-            // There were no previusly logged playout for this SSRC.
-            // Generate a point, but place it on the x-axis.
-            y = 0;
-          }
-          time_series[parsed_header.ssrc].points.push_back(
-              TimeSeriesPoint(x, y));
-          last_seqno[parsed_header.ssrc] = parsed_header.sequenceNumber;
-        }
-      }
+  for (auto& kv : rtp_packets_) {
+    StreamId stream_id = kv.first;
+    const std::vector<LoggedRtpPacket>& packet_stream = kv.second;
+    // Filter on direction and SSRC.
+    if (stream_id.GetDirection() != kIncomingPacket ||
+        !MatchingSsrc(stream_id.GetSsrc(), desired_ssrc_)) {
+      continue;
     }
-  }
 
-  // Set labels and put in graph.
-  for (auto& kv : time_series) {
-    kv.second.label = SsrcToString(kv.first);
-    kv.second.style = BAR_GRAPH;
-    plot->series_list_.push_back(std::move(kv.second));
+    TimeSeries time_series;
+    time_series.label = SsrcToString(stream_id.GetSsrc());
+    time_series.style = BAR_GRAPH;
+    Pairwise<SequenceNumberDiff>(packet_stream, begin_time_, &time_series);
+    plot->series_list_.push_back(std::move(time_series));
   }
 
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
@@ -638,13 +681,13 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
     while (window_index_end < packets.size() &&
            packets[window_index_end].timestamp < time) {
       bytes_in_window += packets[window_index_end].size;
-      window_index_end++;
+      ++window_index_end;
     }
     while (window_index_begin < packets.size() &&
            packets[window_index_begin].timestamp < time - window_duration_) {
       RTC_DCHECK_LE(packets[window_index_begin].size, bytes_in_window);
       bytes_in_window -= packets[window_index_begin].size;
-      window_index_begin++;
+      ++window_index_begin;
     }
     float window_duration_in_seconds =
         static_cast<float>(window_duration_) / 1000000;
@@ -687,69 +730,23 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
 void EventLogAnalyzer::CreateStreamBitrateGraph(
     PacketDirection desired_direction,
     Plot* plot) {
-  struct TimestampSize {
-    TimestampSize(uint64_t t, size_t s) : timestamp(t), size(s) {}
-    uint64_t timestamp;
-    size_t size;
-  };
-  std::map<uint32_t, std::vector<TimestampSize>> packets;
-
-  PacketDirection direction;
-  MediaType media_type;
-  uint8_t header[IP_PACKET_SIZE];
-  size_t header_length, total_length;
-
-  // Extract timestamps and sizes for the relevant packets.
-  for (size_t i = 0; i < parsed_log_.GetNumberOfEvents(); i++) {
-    ParsedRtcEventLog::EventType event_type = parsed_log_.GetEventType(i);
-    if (event_type == ParsedRtcEventLog::RTP_EVENT) {
-      parsed_log_.GetRtpHeader(i, &direction, &media_type, header,
-                               &header_length, &total_length);
-      if (direction == desired_direction) {
-        // Parse header to get SSRC.
-        RtpUtility::RtpHeaderParser rtp_parser(header, header_length);
-        RTPHeader parsed_header;
-        rtp_parser.Parse(&parsed_header);
-        // Filter on SSRC.
-        if (MatchingSsrc(parsed_header.ssrc, desired_ssrc_)) {
-          uint64_t timestamp = parsed_log_.GetTimestamp(i);
-          packets[parsed_header.ssrc].push_back(
-              TimestampSize(timestamp, total_length));
-        }
-      }
-    }
-  }
-
-  for (auto& kv : packets) {
-    size_t window_index_begin = 0;
-    size_t window_index_end = 0;
-    size_t bytes_in_window = 0;
-
-    // Calculate a moving average of the bitrate and store in a TimeSeries.
-    plot->series_list_.push_back(TimeSeries());
-    for (uint64_t time = begin_time_; time < end_time_ + step_; time += step_) {
-      while (window_index_end < kv.second.size() &&
-             kv.second[window_index_end].timestamp < time) {
-        bytes_in_window += kv.second[window_index_end].size;
-        window_index_end++;
-      }
-      while (window_index_begin < kv.second.size() &&
-             kv.second[window_index_begin].timestamp <
-                 time - window_duration_) {
-        RTC_DCHECK_LE(kv.second[window_index_begin].size, bytes_in_window);
-        bytes_in_window -= kv.second[window_index_begin].size;
-        window_index_begin++;
-      }
-      float window_duration_in_seconds =
-          static_cast<float>(window_duration_) / 1000000;
-      float x = static_cast<float>(time - begin_time_) / 1000000;
-      float y = bytes_in_window * 8 / window_duration_in_seconds / 1000;
-      plot->series_list_.back().points.push_back(TimeSeriesPoint(x, y));
+  for (auto& kv : rtp_packets_) {
+    StreamId stream_id = kv.first;
+    const std::vector<LoggedRtpPacket>& packet_stream = kv.second;
+    // Filter on direction and SSRC.
+    if (stream_id.GetDirection() != desired_direction ||
+        !MatchingSsrc(stream_id.GetSsrc(), desired_ssrc_)) {
+      continue;
     }
 
-    // Set labels.
-    plot->series_list_.back().label = SsrcToString(kv.first);
-    plot->series_list_.back().style = LINE_GRAPH;
+    TimeSeries time_series;
+    time_series.label = SsrcToString(stream_id.GetSsrc());
+    time_series.style = LINE_GRAPH;
+    double bytes_to_kilobits = 8.0 / 1000;
+    MovingAverage<PacketSizeBytes>(packet_stream, begin_time_, end_time_,
+                                   window_duration_, step_, bytes_to_kilobits,
+                                   &time_series);
+    plot->series_list_.push_back(std::move(time_series));
   }
 
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
