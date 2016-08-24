@@ -766,6 +766,20 @@ if (rtc_include_tests) {
     ]
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_native_code" ]
+      data = [
+        "//resources/audio_coding/speech_mono_16kHz.pcm",
+        "//resources/audio_coding/testfile32kHz.pcm",
+        "//resources/ConferenceMotion_1280_720_50.yuv",
+        "//resources/difficult_photo_1850_1110.yuv",
+        "//resources/foreman_cif.yuv",
+        "//resources/google-wifi-3mbps.rx",
+        "//resources/paris_qcif.yuv",
+        "//resources/photo_1850_1110.yuv",
+        "//resources/presentation_1850_1110.yuv",
+        "//resources/verizon4g-downlink.rx",
+        "//resources/voice_engine/audio_long16.pcm",
+        "//resources/web_screenshot_1850_1110.yuv",
+      ]
       shard_timeout = 2700
     }
     if (is_clang) {
