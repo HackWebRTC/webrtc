@@ -30,12 +30,16 @@
       'iOS64 Release (GN)': 'ios_gn_release_bot_arm64_device',
 
       # Mac
-      'Mac64 Debug': 'gyp_debug_bot_x64',
-      'Mac64 Release': 'gyp_release_bot_x64',
-      'Mac64 Debug (GN)': 'gn_debug_bot_x64',
-      'Mac64 Release (GN)': 'gn_release_bot_x64',
-      'Mac Asan': 'mac_gyp_asan_clang_release_bot_x64',
-      'Mac64 Release [large tests]': 'gyp_release_bot_x64',
+      'Mac64 Debug': 'gn_debug_bot_x64',
+      'Mac64 Release': 'gn_release_bot_x64',
+      'Mac Asan': 'mac_gn_asan_clang_release_bot_x64',
+      'Mac64 Release [large tests]': 'gn_release_bot_x64',
+      # TODO(kjellander): Remove the two GN configs below as soon we've renamed
+      # the bots to the GYP versions (duplicated now).
+      'Mac64 Debug (GN)': 'gyp_debug_bot_x64_exclude_tests',
+      'Mac64 Release (GN)': 'gyp_release_bot_x64_exclude_tests',
+      'Mac64 Debug (GYP)': 'gyp_debug_bot_x64_exclude_tests',
+      'Mac64 Release (GYP)': 'gyp_release_bot_x64_exclude_tests',
 
       # Linux
       'Linux32 ARM': 'gyp_crosscompile_release_bot_arm',
@@ -103,15 +107,19 @@
       'ios64_gn_rel': 'ios_gn_release_bot_arm64_device',
 
       # Mac
-      'mac_compile_dbg': 'gyp_debug_bot_x64',
-      'mac_compile_rel': 'gyp_release_bot_x64',
-      'mac_dbg': 'gyp_debug_bot_x64',
-      'mac_rel': 'gyp_release_bot_x64',
-      'mac_gn_dbg': 'gn_debug_bot_x64',
-      'mac_gn_rel': 'gn_release_bot_x64',
-      'mac_asan': 'mac_gyp_asan_clang_release_bot_x64',
-      'mac_baremetal': 'gyp_release_bot_x64',
-      'mac_swarming': 'swarming_gyp_debug_bot_x64',
+      'mac_compile_dbg': 'gn_debug_bot_x64',
+      'mac_compile_rel': 'gn_release_bot_x64',
+      'mac_dbg': 'gn_debug_bot_x64',
+      'mac_rel': 'gn_release_bot_x64',
+      'mac_asan': 'mac_gn_asan_clang_release_bot_x64',
+      'mac_baremetal': 'gn_release_bot_x64',
+      'mac_swarming': 'swarming_gn_debug_bot_x64',
+      # TODO(kjellander): Remove the two GN configs below as soon we've renamed
+      # the bots to the GYP versions (duplicated now).
+      'mac_gn_dbg': 'gyp_debug_bot_x64_exclude_tests',
+      'mac_gn_rel': 'gyp_release_bot_x64_exclude_tests',
+      'mac_gyp_dbg': 'gyp_debug_bot_x64_exclude_tests',
+      'mac_gyp_rel': 'gyp_release_bot_x64_exclude_tests',
 
       # Linux
       'linux_compile_dbg': 'gyp_debug_bot_x64',
@@ -219,8 +227,14 @@
     'gyp_debug_bot_x64': [
       'gyp', 'openh264_debug_bot', 'x64'
     ],
+    'gyp_debug_bot_x64_exclude_tests': [
+      'gyp', 'openh264_debug_bot', 'x64', 'exclude_tests', 'exclude_examples'
+    ],
     'gyp_release_bot_x64': [
       'gyp', 'openh264_release_bot', 'x64'
+    ],
+    'gyp_release_bot_x64_exclude_tests': [
+      'gyp', 'openh264_release_bot', 'x64', 'exclude_tests', 'exclude_examples'
     ],
     'gyp_asan_lsan_clang_release_bot_x64': [
       'gyp', 'asan', 'lsan', 'clang', 'openh264_release_bot', 'x64'
@@ -245,6 +259,9 @@
     ],
     'gn_release_bot_x64': [
       'gn', 'openh264_release_bot', 'x64'
+    ],
+    'swarming_gn_debug_bot_x64': [
+      'swarming', 'gn', 'openh264_debug_bot', 'x64'
     ],
     'swarming_gyp_debug_bot_x64': [
       'swarming', 'gyp', 'openh264_debug_bot', 'x64'
@@ -273,8 +290,8 @@
     ],
 
     # Mac
-    'mac_gyp_asan_clang_release_bot_x64': [
-      'gyp', 'asan', 'clang', 'openh264_release_bot', 'x64',
+    'mac_gn_asan_clang_release_bot_x64': [
+      'gn', 'asan', 'clang', 'openh264_release_bot', 'x64',
     ],
 
     # Android
