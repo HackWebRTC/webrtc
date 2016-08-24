@@ -142,6 +142,10 @@ void TransportFeedbackAdapter::OnReceiveBitrateChanged(
   bitrate_controller_->UpdateDelayBasedEstimate(bitrate);
 }
 
+void TransportFeedbackAdapter::OnProbeBitrate(uint32_t bitrate) {
+  bitrate_controller_->UpdateProbeBitrate(bitrate);
+}
+
 void TransportFeedbackAdapter::OnRttUpdate(int64_t avg_rtt_ms,
                                            int64_t max_rtt_ms) {
   RTC_DCHECK(bitrate_estimator_.get() != nullptr);

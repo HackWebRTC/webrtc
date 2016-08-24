@@ -79,6 +79,8 @@ class BitrateController : public Module {
 
   virtual void UpdateDelayBasedEstimate(uint32_t bitrate_bps) = 0;
 
+  virtual void UpdateProbeBitrate(uint32_t bitrate_bps) = 0;
+
   // Gets the available payload bandwidth in bits per second. Note that
   // this bandwidth excludes packet headers.
   virtual bool AvailableBandwidth(uint32_t* bandwidth) const = 0;

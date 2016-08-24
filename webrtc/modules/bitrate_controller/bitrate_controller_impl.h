@@ -61,6 +61,8 @@ class BitrateControllerImpl : public BitrateController {
                             uint8_t* fraction_loss,
                             int64_t* rtt) override;
 
+  void UpdateProbeBitrate(uint32_t bitrate_bps) override;
+
   int64_t TimeUntilNextProcess() override;
   void Process() override;
 

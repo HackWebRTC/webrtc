@@ -182,6 +182,14 @@ void BitrateControllerImpl::OnReceivedEstimatedBitrate(uint32_t bitrate) {
   MaybeTriggerOnNetworkChanged();
 }
 
+void BitrateControllerImpl::UpdateProbeBitrate(uint32_t bitrate_bps) {
+  {
+    rtc::CritScope cs(&critsect_);
+    bandwidth_estimation_.SetSendBitrate(bitrate_bps);
+  }
+  MaybeTriggerOnNetworkChanged();
+}
+
 void BitrateControllerImpl::UpdateDelayBasedEstimate(uint32_t bitrate_bps) {
   {
     rtc::CritScope cs(&critsect_);

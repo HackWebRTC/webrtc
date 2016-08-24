@@ -56,6 +56,8 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
   void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
                                uint32_t bitrate) override;
 
+  void OnProbeBitrate(uint32_t bitrate) override;
+
   rtc::CriticalSection lock_;
   SendTimeHistory send_time_history_ GUARDED_BY(&lock_);
   BitrateController* bitrate_controller_;
