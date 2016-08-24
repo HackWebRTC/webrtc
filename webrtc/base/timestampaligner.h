@@ -14,6 +14,7 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/optional.h"
+#include "webrtc/base/thread_checker.h"
 
 namespace rtc {
 
@@ -29,6 +30,8 @@ class TimestampAligner {
   int64_t ClipTimestamp(int64_t filtered_time_us, int64_t system_time_us);
 
  private:
+  rtc::ThreadChecker thread_checker_;
+
   // State for the timestamp translation.
   int frames_seen_;
   // Estimated offset between camera time and system monotonic time.
