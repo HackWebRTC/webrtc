@@ -83,6 +83,7 @@
 /third_party/binutils
 /third_party/boringssl
 /third_party/bouncycastle
+/third_party/byte_buddy
 /third_party/catapult
 /third_party/ced
 /third_party/clang_format
@@ -126,6 +127,7 @@
 /third_party/modp_b64
 /third_party/nss
 /third_party/oauth2
+/third_party/objenesis
 /third_party/ocmock
 /third_party/openh264
 /third_party/openmax_dl
