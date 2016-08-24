@@ -13,7 +13,7 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_defines.h"
-#include "webrtc/modules/audio_mixer/new_audio_conference_mixer.h"
+#include "webrtc/modules/audio_mixer/audio_mixer.h"
 
 using testing::_;
 using testing::Exactly;
@@ -85,8 +85,7 @@ void MixAndCompare(
   RTC_DCHECK(frames.size() == frame_info.size());
   RTC_DCHECK(frame_info.size() == expected_status.size());
 
-  std::unique_ptr<NewAudioConferenceMixer> mixer(
-      NewAudioConferenceMixer::Create(kId));
+  const std::unique_ptr<AudioMixer> mixer(AudioMixer::Create(kId));
   std::vector<MockMixerAudioSource> participants(num_audio_sources);
 
   for (int i = 0; i < num_audio_sources; i++) {
@@ -112,13 +111,10 @@ void MixAndCompare(
 TEST(AudioMixer, AnonymousAndNamed) {
   // Should not matter even if partipants are more than
   // kMaximumAmountOfMixedAudioSources.
-  constexpr int kNamed =
-      NewAudioConferenceMixer::kMaximumAmountOfMixedAudioSources + 1;
-  constexpr int kAnonymous =
-      NewAudioConferenceMixer::kMaximumAmountOfMixedAudioSources + 1;
+  constexpr int kNamed = AudioMixer::kMaximumAmountOfMixedAudioSources + 1;
+  constexpr int kAnonymous = AudioMixer::kMaximumAmountOfMixedAudioSources + 1;
 
-  std::unique_ptr<NewAudioConferenceMixer> mixer(
-      NewAudioConferenceMixer::Create(kId));
+  const std::unique_ptr<AudioMixer> mixer(AudioMixer::Create(kId));
 
   MockMixerAudioSource named[kNamed];
   MockMixerAudioSource anonymous[kAnonymous];
@@ -165,10 +161,9 @@ TEST(AudioMixer, AnonymousAndNamed) {
 
 TEST(AudioMixer, LargestEnergyVadActiveMixed) {
   constexpr int kAudioSources =
-      NewAudioConferenceMixer::kMaximumAmountOfMixedAudioSources + 3;
+      AudioMixer::kMaximumAmountOfMixedAudioSources + 3;
 
-  std::unique_ptr<NewAudioConferenceMixer> mixer(
-      NewAudioConferenceMixer::Create(kId));
+  const std::unique_ptr<AudioMixer> mixer(AudioMixer::Create(kId));
 
   MockMixerAudioSource participants[kAudioSources];
 
@@ -197,8 +192,7 @@ TEST(AudioMixer, LargestEnergyVadActiveMixed) {
   for (int i = 0; i < kAudioSources; ++i) {
     bool is_mixed = participants[i].IsMixed();
     if (i == kAudioSources - 1 ||
-        i < kAudioSources - 1 -
-                NewAudioConferenceMixer::kMaximumAmountOfMixedAudioSources) {
+        i < kAudioSources - 1 - AudioMixer::kMaximumAmountOfMixedAudioSources) {
       EXPECT_FALSE(is_mixed) << "Mixing status of AudioSource #" << i
                              << " wrong.";
     } else {
@@ -209,8 +203,7 @@ TEST(AudioMixer, LargestEnergyVadActiveMixed) {
 }
 
 TEST(AudioMixer, ParticipantSampleRate) {
-  std::unique_ptr<NewAudioConferenceMixer> mixer(
-      NewAudioConferenceMixer::Create(kId));
+  const std::unique_ptr<AudioMixer> mixer(AudioMixer::Create(kId));
 
   MockMixerAudioSource participant;
   ResetFrame(participant.fake_frame());
@@ -225,8 +218,7 @@ TEST(AudioMixer, ParticipantSampleRate) {
 }
 
 TEST(AudioMixer, ParticipantNumberOfChannels) {
-  std::unique_ptr<NewAudioConferenceMixer> mixer(
-      NewAudioConferenceMixer::Create(kId));
+  const std::unique_ptr<AudioMixer> mixer(AudioMixer::Create(kId));
 
   MockMixerAudioSource participant;
   ResetFrame(participant.fake_frame());
@@ -243,8 +235,7 @@ TEST(AudioMixer, ParticipantNumberOfChannels) {
 // Test that the volume is reported as zero when the mixer input
 // comprises only zero values.
 TEST(AudioMixer, LevelIsZeroWhenMixingZeroes) {
-  std::unique_ptr<NewAudioConferenceMixer> mixer(
-      NewAudioConferenceMixer::Create(kId));
+  const std::unique_ptr<AudioMixer> mixer(AudioMixer::Create(kId));
 
   MockMixerAudioSource participant;
   ResetFrame(participant.fake_frame());
@@ -263,8 +254,7 @@ TEST(AudioMixer, LevelIsZeroWhenMixingZeroes) {
 // Test that the reported volume is maximal when the mixer
 // input comprises frames with maximal values.
 TEST(AudioMixer, LevelIsMaximalWhenMixingMaximalValues) {
-  std::unique_ptr<NewAudioConferenceMixer> mixer(
-      NewAudioConferenceMixer::Create(kId));
+  const std::unique_ptr<AudioMixer> mixer(AudioMixer::Create(kId));
 
   MockMixerAudioSource participant;
   ResetFrame(participant.fake_frame());
@@ -296,10 +286,9 @@ TEST(AudioMixer, LevelIsMaximalWhenMixingMaximalValues) {
 // another participant with higher energy is added.
 TEST(AudioMixer, RampedOutSourcesShouldNotBeMarkedMixed) {
   constexpr int kAudioSources =
-      NewAudioConferenceMixer::kMaximumAmountOfMixedAudioSources + 1;
+      AudioMixer::kMaximumAmountOfMixedAudioSources + 1;
 
-  std::unique_ptr<NewAudioConferenceMixer> mixer(
-      NewAudioConferenceMixer::Create(kId));
+  const std::unique_ptr<AudioMixer> mixer(AudioMixer::Create(kId));
   MockMixerAudioSource participants[kAudioSources];
 
   for (int i = 0; i < kAudioSources; i++) {
@@ -350,7 +339,7 @@ TEST(AudioMixer, RampedOutSourcesShouldNotBeMarkedMixed) {
 
 TEST(AudioMixer, MutedShouldMixAfterUnmuted) {
   constexpr int kAudioSources =
-      NewAudioConferenceMixer::kMaximumAmountOfMixedAudioSources + 1;
+      AudioMixer::kMaximumAmountOfMixedAudioSources + 1;
 
   std::vector<AudioFrame> frames(kAudioSources);
   for (auto& frame : frames) {
@@ -368,7 +357,7 @@ TEST(AudioMixer, MutedShouldMixAfterUnmuted) {
 
 TEST(AudioMixer, PassiveShouldMixAfterNormal) {
   constexpr int kAudioSources =
-      NewAudioConferenceMixer::kMaximumAmountOfMixedAudioSources + 1;
+      AudioMixer::kMaximumAmountOfMixedAudioSources + 1;
 
   std::vector<AudioFrame> frames(kAudioSources);
   for (auto& frame : frames) {
@@ -386,7 +375,7 @@ TEST(AudioMixer, PassiveShouldMixAfterNormal) {
 
 TEST(AudioMixer, ActiveShouldMixBeforeLoud) {
   constexpr int kAudioSources =
-      NewAudioConferenceMixer::kMaximumAmountOfMixedAudioSources + 1;
+      AudioMixer::kMaximumAmountOfMixedAudioSources + 1;
 
   std::vector<AudioFrame> frames(kAudioSources);
   for (auto& frame : frames) {
@@ -406,7 +395,7 @@ TEST(AudioMixer, ActiveShouldMixBeforeLoud) {
 
 TEST(AudioMixer, UnmutedShouldMixBeforeLoud) {
   constexpr int kAudioSources =
-      NewAudioConferenceMixer::kMaximumAmountOfMixedAudioSources + 1;
+      AudioMixer::kMaximumAmountOfMixedAudioSources + 1;
 
   std::vector<AudioFrame> frames(kAudioSources);
   for (auto& frame : frames) {

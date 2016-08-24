@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_mixer/new_audio_conference_mixer_impl.h"
+#include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 
 #include <algorithm>
 #include <functional>
@@ -119,16 +119,16 @@ void NewMixHistory::ResetMixedStatus() {
   is_mixed_ = false;
 }
 
-NewAudioConferenceMixer* NewAudioConferenceMixer::Create(int id) {
-  NewAudioConferenceMixerImpl* mixer = new NewAudioConferenceMixerImpl(id);
+std::unique_ptr<AudioMixer> AudioMixer::Create(int id) {
+  AudioMixerImpl* mixer = new AudioMixerImpl(id);
   if (!mixer->Init()) {
     delete mixer;
     return NULL;
   }
-  return mixer;
+  return std::unique_ptr<AudioMixer>(mixer);
 }
 
-NewAudioConferenceMixerImpl::NewAudioConferenceMixerImpl(int id)
+AudioMixerImpl::AudioMixerImpl(int id)
     : id_(id),
       output_frequency_(kDefaultFrequency),
       sample_size_(0),
@@ -140,9 +140,9 @@ NewAudioConferenceMixerImpl::NewAudioConferenceMixerImpl(int id)
   thread_checker_.DetachFromThread();
 }
 
-NewAudioConferenceMixerImpl::~NewAudioConferenceMixerImpl() {}
+AudioMixerImpl::~AudioMixerImpl() {}
 
-bool NewAudioConferenceMixerImpl::Init() {
+bool AudioMixerImpl::Init() {
   crit_.reset(CriticalSectionWrapper::CreateCriticalSection());
   if (crit_.get() == NULL)
     return false;
@@ -183,9 +183,9 @@ bool NewAudioConferenceMixerImpl::Init() {
   return true;
 }
 
-void NewAudioConferenceMixerImpl::Mix(int sample_rate,
-                                      size_t number_of_channels,
-                                      AudioFrame* audio_frame_for_mixing) {
+void AudioMixerImpl::Mix(int sample_rate,
+                         size_t number_of_channels,
+                         AudioFrame* audio_frame_for_mixing) {
   RTC_DCHECK(number_of_channels == 1 || number_of_channels == 2);
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   AudioFrameList mixList;
@@ -260,26 +260,23 @@ void NewAudioConferenceMixerImpl::Mix(int sample_rate,
   return;
 }
 
-int32_t NewAudioConferenceMixerImpl::SetOutputFrequency(
-    const Frequency& frequency) {
+int32_t AudioMixerImpl::SetOutputFrequency(const Frequency& frequency) {
   CriticalSectionScoped cs(crit_.get());
 
   output_frequency_ = frequency;
   sample_size_ =
-      static_cast<size_t>((output_frequency_ * kProcessPeriodicityInMs) / 1000);
+      static_cast<size_t>((output_frequency_ * kFrameDurationInMs) / 1000);
 
   return 0;
 }
 
-NewAudioConferenceMixer::Frequency
-NewAudioConferenceMixerImpl::OutputFrequency() const {
+AudioMixer::Frequency AudioMixerImpl::OutputFrequency() const {
   CriticalSectionScoped cs(crit_.get());
   return output_frequency_;
 }
 
-int32_t NewAudioConferenceMixerImpl::SetMixabilityStatus(
-    MixerAudioSource* audio_source,
-    bool mixable) {
+int32_t AudioMixerImpl::SetMixabilityStatus(MixerAudioSource* audio_source,
+                                            bool mixable) {
   if (!mixable) {
     // Anonymous audio sources are in a separate list. Make sure that the
     // audio source is in the _audioSourceList if it is being mixed.
@@ -323,13 +320,13 @@ int32_t NewAudioConferenceMixerImpl::SetMixabilityStatus(
   return 0;
 }
 
-bool NewAudioConferenceMixerImpl::MixabilityStatus(
+bool AudioMixerImpl::MixabilityStatus(
     const MixerAudioSource& audio_source) const {
   CriticalSectionScoped cs(cb_crit_.get());
   return IsAudioSourceInList(audio_source, audio_source_list_);
 }
 
-int32_t NewAudioConferenceMixerImpl::SetAnonymousMixabilityStatus(
+int32_t AudioMixerImpl::SetAnonymousMixabilityStatus(
     MixerAudioSource* audio_source,
     bool anonymous) {
   CriticalSectionScoped cs(cb_crit_.get());
@@ -364,14 +361,13 @@ int32_t NewAudioConferenceMixerImpl::SetAnonymousMixabilityStatus(
              : -1;
 }
 
-bool NewAudioConferenceMixerImpl::AnonymousMixabilityStatus(
+bool AudioMixerImpl::AnonymousMixabilityStatus(
     const MixerAudioSource& audio_source) const {
   CriticalSectionScoped cs(cb_crit_.get());
   return IsAudioSourceInList(audio_source, additional_audio_source_list_);
 }
 
-AudioFrameList NewAudioConferenceMixerImpl::UpdateToMix(
-    size_t maxAudioFrameCounter) const {
+AudioFrameList AudioMixerImpl::UpdateToMix(size_t maxAudioFrameCounter) const {
   AudioFrameList result;
   std::vector<SourceFrame> audioSourceMixingDataList;
 
@@ -428,7 +424,7 @@ AudioFrameList NewAudioConferenceMixerImpl::UpdateToMix(
   return result;
 }
 
-void NewAudioConferenceMixerImpl::GetAdditionalAudio(
+void AudioMixerImpl::GetAdditionalAudio(
     AudioFrameList* additionalFramesList) const {
   WEBRTC_TRACE(kTraceStream, kTraceAudioMixerServer, id_,
                "GetAdditionalAudio(additionalFramesList)");
@@ -462,7 +458,7 @@ void NewAudioConferenceMixerImpl::GetAdditionalAudio(
   }
 }
 
-bool NewAudioConferenceMixerImpl::IsAudioSourceInList(
+bool AudioMixerImpl::IsAudioSourceInList(
     const MixerAudioSource& audio_source,
     const MixerAudioSourceList& audioSourceList) const {
   WEBRTC_TRACE(kTraceStream, kTraceAudioMixerServer, id_,
@@ -471,7 +467,7 @@ bool NewAudioConferenceMixerImpl::IsAudioSourceInList(
                    &audio_source) != audioSourceList.end();
 }
 
-bool NewAudioConferenceMixerImpl::AddAudioSourceToList(
+bool AudioMixerImpl::AddAudioSourceToList(
     MixerAudioSource* audio_source,
     MixerAudioSourceList* audioSourceList) const {
   WEBRTC_TRACE(kTraceStream, kTraceAudioMixerServer, id_,
@@ -482,7 +478,7 @@ bool NewAudioConferenceMixerImpl::AddAudioSourceToList(
   return true;
 }
 
-bool NewAudioConferenceMixerImpl::RemoveAudioSourceFromList(
+bool AudioMixerImpl::RemoveAudioSourceFromList(
     MixerAudioSource* audio_source,
     MixerAudioSourceList* audioSourceList) const {
   WEBRTC_TRACE(kTraceStream, kTraceAudioMixerServer, id_,
@@ -499,11 +495,10 @@ bool NewAudioConferenceMixerImpl::RemoveAudioSourceFromList(
   }
 }
 
-int32_t NewAudioConferenceMixerImpl::MixFromList(
-    AudioFrame* mixedAudio,
-    const AudioFrameList& audioFrameList,
-    int32_t id,
-    bool use_limiter) {
+int32_t AudioMixerImpl::MixFromList(AudioFrame* mixedAudio,
+                                    const AudioFrameList& audioFrameList,
+                                    int32_t id,
+                                    bool use_limiter) {
   WEBRTC_TRACE(kTraceStream, kTraceAudioMixerServer, id,
                "MixFromList(mixedAudio, audioFrameList)");
   if (audioFrameList.empty())
@@ -535,7 +530,7 @@ int32_t NewAudioConferenceMixerImpl::MixFromList(
 }
 
 // TODO(andrew): consolidate this function with MixFromList.
-int32_t NewAudioConferenceMixerImpl::MixAnonomouslyFromList(
+int32_t AudioMixerImpl::MixAnonomouslyFromList(
     AudioFrame* mixedAudio,
     const AudioFrameList& audioFrameList) const {
   WEBRTC_TRACE(kTraceStream, kTraceAudioMixerServer, id_,
@@ -553,8 +548,7 @@ int32_t NewAudioConferenceMixerImpl::MixAnonomouslyFromList(
   return 0;
 }
 
-bool NewAudioConferenceMixerImpl::LimitMixedAudio(
-    AudioFrame* mixedAudio) const {
+bool AudioMixerImpl::LimitMixedAudio(AudioFrame* mixedAudio) const {
   if (!use_limiter_) {
     return true;
   }
@@ -583,14 +577,14 @@ bool NewAudioConferenceMixerImpl::LimitMixedAudio(
   return true;
 }
 
-int NewAudioConferenceMixerImpl::GetOutputAudioLevel() {
+int AudioMixerImpl::GetOutputAudioLevel() {
   const int level = audio_level_.Level();
   WEBRTC_TRACE(kTraceStateInfo, kTraceAudioMixerServer, id_,
                "GetAudioOutputLevel() => level=%d", level);
   return level;
 }
 
-int NewAudioConferenceMixerImpl::GetOutputAudioLevelFullRange() {
+int AudioMixerImpl::GetOutputAudioLevelFullRange() {
   const int level = audio_level_.LevelFullRange();
   WEBRTC_TRACE(kTraceStateInfo, kTraceAudioMixerServer, id_,
                "GetAudioOutputLevelFullRange() => level=%d", level);

@@ -9,7 +9,7 @@
 {
   'targets': [
     {
-      'target_name': 'new_audio_conference_mixer',
+      'target_name': 'audio_mixer',
       'type': 'static_library',
       'dependencies': [
         'audio_processing',
@@ -21,23 +21,10 @@
       'sources': [
         'audio_frame_manipulator.cc',
         'audio_frame_manipulator.h',
-        'new_audio_conference_mixer.h',
-        'audio_mixer_defines.h',
-        'new_audio_conference_mixer_impl.cc',
-        'new_audio_conference_mixer_impl.h',
-      ],
-    },
-    {
-      'target_name': 'audio_mixer',
-      'type': 'static_library',
-      'dependencies': [
-        'new_audio_conference_mixer',
-        'webrtc_utility',
-        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
-      ],
-      'sources': [
         'audio_mixer.h',
-        'audio_mixer.cc',
+        'audio_mixer_defines.h',
+        'audio_mixer_impl.cc',
+        'audio_mixer_impl.h',
       ],
     },
   ], # targets

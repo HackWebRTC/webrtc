@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_MIXER_NEW_AUDIO_CONFERENCE_MIXER_IMPL_H_
-#define WEBRTC_MODULES_AUDIO_MIXER_NEW_AUDIO_CONFERENCE_MIXER_IMPL_H_
+#ifndef WEBRTC_MODULES_AUDIO_MIXER_AUDIO_MIXER_IMPL_H_
+#define WEBRTC_MODULES_AUDIO_MIXER_AUDIO_MIXER_IMPL_H_
 
 #include <list>
 #include <map>
@@ -18,7 +18,7 @@
 
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/engine_configurations.h"
-#include "webrtc/modules/audio_mixer/new_audio_conference_mixer.h"
+#include "webrtc/modules/audio_mixer/audio_mixer.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/voice_engine/level_indicator.h"
 
@@ -57,19 +57,19 @@ class NewMixHistory {
   bool is_mixed_;
 };
 
-class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
+class AudioMixerImpl : public AudioMixer {
  public:
   // AudioProcessing only accepts 10 ms frames.
-  enum { kProcessPeriodicityInMs = 10 };
+  static const int kFrameDurationInMs = 10;
 
-  explicit NewAudioConferenceMixerImpl(int id);
+  explicit AudioMixerImpl(int id);
 
-  ~NewAudioConferenceMixerImpl() override;
+  ~AudioMixerImpl() override;
 
   // Must be called after ctor.
   bool Init();
 
-  // NewAudioConferenceMixer functions
+  // AudioMixer functions
   int32_t SetMixabilityStatus(MixerAudioSource* audio_source,
                               bool mixable) override;
   bool MixabilityStatus(const MixerAudioSource& audio_source) const override;
@@ -164,4 +164,4 @@ class NewAudioConferenceMixerImpl : public NewAudioConferenceMixer {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_MIXER_NEW_AUDIO_CONFERENCE_MIXER_IMPL_H_
+#endif  // WEBRTC_MODULES_AUDIO_MIXER_AUDIO_MIXER_IMPL_H_

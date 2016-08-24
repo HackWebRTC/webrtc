@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -13,108 +13,64 @@
 
 #include <memory>
 
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/common_audio/resampler/include/push_resampler.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/audio_mixer/new_audio_conference_mixer.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_defines.h"
-#include "webrtc/modules/utility/include/file_recorder.h"
-#include "webrtc/voice_engine/level_indicator.h"
-#include "webrtc/voice_engine/voice_engine_defines.h"
+#include "webrtc/modules/include/module.h"
+#include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
+class MixerAudioSource;
 
-class AudioProcessing;
-class FileWrapper;
-class VoEMediaProcess;
-
-namespace voe {
-class Statistics;
-
-// Note: this class is in the process of being rewritten and merged
-// with AudioConferenceMixer. Expect inheritance chains to be changed,
-// member functions removed or renamed.
-class AudioMixer : public FileCallback {
+class AudioMixer {
  public:
-  static int32_t Create(AudioMixer*& mixer, uint32_t instanceId);  // NOLINT
+  static const int kMaximumAmountOfMixedAudioSources = 3;
+  enum Frequency {
+    kNbInHz = 8000,
+    kWbInHz = 16000,
+    kSwbInHz = 32000,
+    kFbInHz = 48000,
+    kLowestPossible = -1,
+    kDefaultFrequency = kWbInHz
+  };
 
-  static void Destroy(AudioMixer*& mixer);  // NOLINT
+  // Factory method. Constructor disabled.
+  static std::unique_ptr<AudioMixer> Create(int id);
+  virtual ~AudioMixer() {}
 
-  int32_t SetEngineInformation(Statistics& engineStatistics);  // NOLINT
+  // Add/remove audio sources as candidates for mixing.
+  virtual int32_t SetMixabilityStatus(MixerAudioSource* audio_source,
+                                      bool mixable) = 0;
+  // Returns true if an audio source is a candidate for mixing.
+  virtual bool MixabilityStatus(const MixerAudioSource& audio_source) const = 0;
 
-  int32_t SetAudioProcessingModule(AudioProcessing* audioProcessingModule);
+  // Inform the mixer that the audio source should always be mixed and not
+  // count toward the number of mixed audio sources. Note that an audio source
+  // must have been added to the mixer (by calling SetMixabilityStatus())
+  // before this function can be successfully called.
+  virtual int32_t SetAnonymousMixabilityStatus(MixerAudioSource* audio_source,
+                                               bool mixable) = 0;
 
-  // VoEExternalMedia
-  int RegisterExternalMediaProcessing(VoEMediaProcess&  // NOLINT
-                                      proccess_object);
+  // Performs mixing by asking registered audio sources for audio. The
+  // mixed result is placed in the provided AudioFrame. Can only be
+  // called from a single thread. The rate and channels arguments
+  // specify the rate and number of channels of the mix result.
+  virtual void Mix(int sample_rate,
+                   size_t number_of_channels,
+                   AudioFrame* audio_frame_for_mixing) = 0;
 
-  int DeRegisterExternalMediaProcessing();
+  // Returns true if the audio source is mixed anonymously.
+  virtual bool AnonymousMixabilityStatus(
+      const MixerAudioSource& audio_source) const = 0;
 
-  int32_t DoOperationsOnCombinedSignal(bool feed_data_to_apm);
+  // Output level functions for VoEVolumeControl. Return value
+  // between 0 and 9 is returned by voe::AudioLevel.
+  virtual int GetOutputAudioLevel() = 0;
 
-  int32_t SetMixabilityStatus(MixerAudioSource& audio_source,  // NOLINT
-                              bool mixable);
+  // Return value between 0 and 0x7fff is returned by voe::AudioLevel.
+  virtual int GetOutputAudioLevelFullRange() = 0;
 
-  int32_t SetAnonymousMixabilityStatus(
-      MixerAudioSource& audio_source,  // NOLINT
-      bool mixable);
-
-  int GetMixedAudio(int sample_rate_hz,
-                    size_t num_channels,
-                    AudioFrame* audioFrame);
-
-  // VoEVolumeControl
-  int GetSpeechOutputLevel(uint32_t& level);  // NOLINT
-
-  int GetSpeechOutputLevelFullRange(uint32_t& level);  // NOLINT
-
-  int SetOutputVolumePan(float left, float right);
-
-  int GetOutputVolumePan(float& left, float& right);  // NOLINT
-
-  // VoEFile
-  int StartRecordingPlayout(const char* fileName, const CodecInst* codecInst);
-
-  int StartRecordingPlayout(OutStream* stream, const CodecInst* codecInst);
-  int StopRecordingPlayout();
-
-  virtual ~AudioMixer();
-
-  // For file recording
-  void PlayNotification(int32_t id, uint32_t durationMs);
-
-  void RecordNotification(int32_t id, uint32_t durationMs);
-
-  void PlayFileEnded(int32_t id);
-  void RecordFileEnded(int32_t id);
-
- private:
-  explicit AudioMixer(uint32_t instanceId);
-
-  // uses
-  Statistics* _engineStatisticsPtr;
-  AudioProcessing* _audioProcessingModulePtr;
-
-  rtc::CriticalSection _callbackCritSect;
-  // protect the _outputFileRecorderPtr and _outputFileRecording
-  rtc::CriticalSection _fileCritSect;
-  NewAudioConferenceMixer& _mixerModule;
-  AudioFrame _audioFrame;
-  // Converts mixed audio to the audio processing rate.
-  PushResampler<int16_t> audioproc_resampler_;
-  AudioLevel _audioLevel;  // measures audio level for the combined signal
-  int _instanceId;
-  VoEMediaProcess* _externalMediaCallbackPtr;
-  bool _externalMedia;
-  float _panLeft;
-  float _panRight;
-  int _mixingFrequencyHz;
-  std::unique_ptr<FileRecorder> _outputFileRecorderPtr;
-  bool _outputFileRecording;
+ protected:
+  AudioMixer() {}
 };
-
-}  // namespace voe
-
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_MIXER_AUDIO_MIXER_H_

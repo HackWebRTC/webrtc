@@ -7,55 +7,22 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 config("audio_conference_mixer_config") {
-  visibility = [ ":*" ]  # Only targets in this file can depend on this.
-  include_dirs = [
-    "include",
-    "../../modules/include",
-  ]
+  include_dirs = [ "../../modules/include" ]
 }
 
 source_set("audio_mixer") {
   sources = [
-    "audio_mixer.cc",
-    "audio_mixer.h",
-  ]
-  deps = [
-    ":audio_conference_mixer",
-    "../../voice_engine:voice_engine",
-  ]
-
-  if (is_win) {
-    defines = [ "WEBRTC_DRIFT_COMPENSATION_SUPPORTED" ]
-
-    cflags = [
-      # TODO(kjellander): Bug 261: fix this warning.
-      "/wd4373",  # virtual function override.
-    ]
-  }
-
-  configs += [ "../..:common_config" ]
-  public_configs = [ "../..:common_inherited_config" ]
-
-  if (is_clang) {
-    # Suppress warnings from Chrome's Clang plugins.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
-  }
-}
-
-source_set("audio_conference_mixer") {
-  sources = [
     "audio_frame_manipulator.cc",
     "audio_frame_manipulator.h",
+    "audio_mixer.h",
     "audio_mixer_defines.h",
-    "new_audio_conference_mixer.h",
-    "new_audio_conference_mixer_impl.cc",
-    "new_audio_conference_mixer_impl.h",
+    "audio_mixer_impl.cc",
+    "audio_mixer_impl.h",
   ]
 
   public = [
     "audio_mixer_defines.h",
-    "new_audio_conference_mixer.h",
+    "audio_mixer.h",
   ]
 
   configs += [ "../..:common_config" ]
