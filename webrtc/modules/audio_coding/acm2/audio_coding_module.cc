@@ -477,7 +477,7 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
     return -1;
 
   if(!first_frame_) {
-    RTC_DCHECK_GT(input_data.input_timestamp, last_timestamp_)
+    RTC_DCHECK(IsNewerTimestamp(input_data.input_timestamp, last_timestamp_))
         << "Time should not move backwards";
   }
 
