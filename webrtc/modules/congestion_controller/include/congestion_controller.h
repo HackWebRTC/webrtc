@@ -125,6 +125,7 @@ class CongestionController : public CallStatsObserver, public Module {
   TransportFeedbackAdapter transport_feedback_adapter_;
   int min_bitrate_bps_;
   int max_bitrate_bps_;
+  bool initial_probing_triggered_;
   rtc::CriticalSection critsect_;
   uint32_t last_reported_bitrate_bps_ GUARDED_BY(critsect_);
   uint8_t last_reported_fraction_loss_ GUARDED_BY(critsect_);

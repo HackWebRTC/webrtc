@@ -20,7 +20,7 @@ namespace {
 constexpr int kMinNumProbesValidCluster = 4;
 
 // The maximum (receive rate)/(send rate) ratio for a valid estimate.
-constexpr float kValidRatio = 1.2f;
+constexpr float kValidRatio = 2.0f;
 
 // The maximum time period over which the cluster history is retained.
 // This is also the maximum time period beyond which a probing burst is not

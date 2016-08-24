@@ -60,9 +60,9 @@ TEST_F(TestProbeBitrateEstimator, FastReceive) {
 
 TEST_F(TestProbeBitrateEstimator, TooFastReceive) {
   AddPacketFeedback(0, 1000, 0, 19);
-  AddPacketFeedback(0, 1000, 10, 30);
-  AddPacketFeedback(0, 1000, 20, 40);
-  AddPacketFeedback(0, 1000, 40, 50);
+  AddPacketFeedback(0, 1000, 10, 22);
+  AddPacketFeedback(0, 1000, 20, 25);
+  AddPacketFeedback(0, 1000, 40, 27);
 
   EXPECT_EQ(measured_bps_, INVALID_BPS);
 }

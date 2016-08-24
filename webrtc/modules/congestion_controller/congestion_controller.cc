@@ -172,6 +172,7 @@ CongestionController::CongestionController(
       transport_feedback_adapter_(bitrate_controller_.get(), clock_),
       min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps),
       max_bitrate_bps_(0),
+      initial_probing_triggered_(false),
       last_reported_bitrate_bps_(0),
       last_reported_fraction_loss_(0),
       last_reported_rtt_(0),
@@ -202,6 +203,7 @@ CongestionController::CongestionController(
       transport_feedback_adapter_(bitrate_controller_.get(), clock_),
       min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps),
       max_bitrate_bps_(0),
+      initial_probing_triggered_(false),
       last_reported_bitrate_bps_(0),
       last_reported_fraction_loss_(0),
       last_reported_rtt_(0),
@@ -216,8 +218,6 @@ void CongestionController::Init() {
       new DelayBasedBwe(&transport_feedback_adapter_, clock_));
   transport_feedback_adapter_.GetBitrateEstimator()->SetMinBitrate(
       min_bitrate_bps_);
-  pacer_->CreateProbeCluster(900000, 6);
-  pacer_->CreateProbeCluster(1800000, 5);
 }
 
 void CongestionController::SetBweBitrates(int min_bitrate_bps,
@@ -229,12 +229,18 @@ void CongestionController::SetBweBitrates(int min_bitrate_bps,
                                    max_bitrate_bps);
 
   {
+    rtc::CritScope cs(&critsect_);
+    if (!initial_probing_triggered_) {
+      pacer_->CreateProbeCluster(start_bitrate_bps * 3, 6);
+      pacer_->CreateProbeCluster(start_bitrate_bps * 6, 5);
+      initial_probing_triggered_ = true;
+    }
+
     // Only do probing if:
     //   - we are mid-call, which we consider to be if
     //     |last_reported_bitrate_bps_| != 0, and
     //   - the current bitrate is lower than the new |max_bitrate_bps|, and
     //   - we actually want to increase the |max_bitrate_bps_|.
-    rtc::CritScope cs(&critsect_);
     if (last_reported_bitrate_bps_ != 0 &&
         last_reported_bitrate_bps_ < static_cast<uint32_t>(max_bitrate_bps) &&
         max_bitrate_bps > max_bitrate_bps_) {
