@@ -206,13 +206,13 @@ int NetEqImpl::GetAudio(AudioFrame* audio_frame, bool* muted) {
   TRACE_EVENT0("webrtc", "NetEqImpl::GetAudio");
   rtc::CritScope lock(&crit_sect_);
   int error = GetAudioInternal(audio_frame, muted);
-  RTC_DCHECK_EQ(
-      audio_frame->sample_rate_hz_,
-      rtc::checked_cast<int>(audio_frame->samples_per_channel_ * 100));
   if (error != 0) {
     error_code_ = error;
     return kFail;
   }
+  RTC_DCHECK_EQ(
+      audio_frame->sample_rate_hz_,
+      rtc::checked_cast<int>(audio_frame->samples_per_channel_ * 100));
   SetAudioFrameActivityAndType(vad_->enabled(), LastOutputType(),
                                last_vad_activity_, audio_frame);
   last_vad_activity_ = audio_frame->vad_activity_;

@@ -165,7 +165,7 @@ class NetEq {
   // |audio_frame|. All data in |audio_frame| is wiped; |data_|, |speech_type_|,
   // |num_channels_|, |sample_rate_hz_|, |samples_per_channel_|, and
   // |vad_activity_| are updated upon success. If an error is returned, some
-  // fields may not have been updated.
+  // fields may not have been updated, or may contain inconsistent values.
   // If muted state is enabled (through Config::enable_muted_state), |muted|
   // may be set to true after a prolonged expand period. When this happens, the
   // |data_| in |audio_frame| is not written, but should be interpreted as being
