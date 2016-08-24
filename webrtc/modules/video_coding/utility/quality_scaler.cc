@@ -42,8 +42,8 @@ const int QualityScaler::kBadVp8QpThreshold = 95;
 const int QualityScaler::kLowH264QpThreshold = 32;
 const int QualityScaler::kBadH264QpThreshold = 42;
 #else
-const int QualityScaler::kLowH264QpThreshold = 22;
-const int QualityScaler::kBadH264QpThreshold = 35;
+const int QualityScaler::kLowH264QpThreshold = 24;
+const int QualityScaler::kBadH264QpThreshold = 37;
 #endif
 
 QualityScaler::QualityScaler() : low_qp_threshold_(-1) {}
