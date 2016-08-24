@@ -84,11 +84,17 @@ void NetEqReplacementInput::ReplacePacket() {
 
   rtc::Optional<RTPHeader> next_hdr = source_->NextHeader();
   RTC_DCHECK(next_hdr);
-  uint8_t payload[8];
+  uint8_t payload[12];
   uint32_t input_frame_size_timestamps =
       next_hdr->timestamp - packet_->header.header.timestamp;
+  if (next_hdr->sequenceNumber != packet_->header.header.sequenceNumber + 1) {
+    // Gap in packet sequence. Cannot estimate payload length based on timestamp
+    // difference.
+    input_frame_size_timestamps = 0;
+  }
   FakeDecodeFromFile::PrepareEncoded(packet_->header.header.timestamp,
-                                     input_frame_size_timestamps, payload);
+                                     input_frame_size_timestamps,
+                                     packet_->payload.size(), payload);
   packet_->payload.SetData(payload);
   packet_->header.header.payloadType = replacement_payload_type_;
   return;

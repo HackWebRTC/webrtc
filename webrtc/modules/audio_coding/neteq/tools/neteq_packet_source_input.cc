@@ -43,8 +43,16 @@ std::unique_ptr<NetEqInput::PacketData> NetEqPacketSourceInput::PopPacket() {
   }
   std::unique_ptr<PacketData> packet_data(new PacketData);
   packet_->ConvertHeader(&packet_data->header);
-  packet_data->payload.SetData(packet_->payload(),
-                               packet_->payload_length_bytes());
+  if (packet_->payload_length_bytes() == 0 &&
+      packet_->virtual_payload_length_bytes() > 0) {
+    // This is a header-only "dummy" packet. Set the payload to all zeros, with
+    // length according to the virtual length.
+    packet_data->payload.SetSize(packet_->virtual_payload_length_bytes());
+    std::fill_n(packet_data->payload.data(), packet_data->payload.size(), 0);
+  } else {
+    packet_data->payload.SetData(packet_->payload(),
+                                 packet_->payload_length_bytes());
+  }
   packet_data->time_ms = packet_->time_ms();
 
   LoadNextPacket();
