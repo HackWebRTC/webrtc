@@ -137,6 +137,10 @@ static NSString *GetSessionPresetForVideoFormat(
                selector:@selector(handleCaptureSessionInterruptionEnded:)
                    name:AVCaptureSessionInterruptionEndedNotification
                  object:_captureSession];
+    [center addObserver:self
+               selector:@selector(handleApplicationDidBecomeActive:)
+                   name:UIApplicationDidBecomeActiveNotification
+                 object:[UIApplication sharedApplication]];
 #endif
     [center addObserver:self
                selector:@selector(handleCaptureSessionRuntimeError:)
@@ -377,6 +381,22 @@ static NSString *GetSessionPresetForVideoFormat(
     }
   }];
 }
+
+#if TARGET_OS_IPHONE
+
+#pragma mark - UIApplication notifications
+
+- (void)handleApplicationDidBecomeActive:(NSNotification *)notification {
+  [RTCDispatcher dispatchAsyncOnType:RTCDispatcherTypeCaptureSession
+                               block:^{
+    if (self.hasStarted && !self.captureSession.isRunning) {
+      RTCLog(@"Restarting capture session on active.");
+      [self.captureSession startRunning];
+    }
+  }];
+}
+
+#endif  // TARGET_OS_IPHONE
 
 #pragma mark - Private
 
