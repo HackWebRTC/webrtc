@@ -102,6 +102,18 @@
     ['enable_protobuf==1', {
       'targets': [
         {
+          'target_name': 'graph_proto',
+          'type': 'static_library',
+          'sources': [
+            'event_log_visualizer/graph.proto',
+          ],
+          'variables': {
+            'proto_in_dir': 'event_log_visualizer',
+            'proto_out_dir': 'webrtc/tools/event_log_visualizer',
+          },
+          'includes': ['../build/protoc.gypi'],
+        },
+        {
           # RTC event log visualization library
           'target_name': 'event_log_visualizer_utils',
           'type': 'static_library',
@@ -111,18 +123,22 @@
             '<(webrtc_root)/modules/modules.gyp:congestion_controller',
             '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
+            ':graph_proto',
           ],
           'sources': [
             'event_log_visualizer/analyzer.cc',
             'event_log_visualizer/analyzer.h',
             'event_log_visualizer/plot_base.cc',
             'event_log_visualizer/plot_base.h',
+            'event_log_visualizer/plot_protobuf.cc',
+            'event_log_visualizer/plot_protobuf.h',
             'event_log_visualizer/plot_python.cc',
             'event_log_visualizer/plot_python.h',
           ],
-	  'export_dependent_settings': [
-	    '<(webrtc_root)/webrtc.gyp:rtc_event_log_parser',
-	  ],
+          'export_dependent_settings': [
+            '<(webrtc_root)/webrtc.gyp:rtc_event_log_parser',
+            ':graph_proto',
+          ],
         },
       ],
     }],
