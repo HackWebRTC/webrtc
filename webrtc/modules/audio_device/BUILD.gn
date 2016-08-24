@@ -137,6 +137,9 @@ source_set("audio_device") {
           "mac/portaudio/pa_ringbuffer.h",
         ]
         libs = [
+          # Needed for CoreGraphics:
+          "ApplicationServices.framework",
+
           "AudioToolbox.framework",
           "CoreAudio.framework",
 
