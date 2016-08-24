@@ -33,7 +33,9 @@ class ProbeBitrateEstimator {
     int64_t last_send_ms = 0;
     int64_t first_receive_ms = std::numeric_limits<int64_t>::max();
     int64_t last_receive_ms = 0;
-    size_t size = 0;
+    int size_last_send = 0;
+    int size_first_receive = 0;
+    int size_total = 0;
   };
 
   // Erases old cluster data that was seen before |timestamp_ms|.

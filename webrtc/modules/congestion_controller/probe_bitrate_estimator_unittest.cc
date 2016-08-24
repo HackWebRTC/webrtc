@@ -123,4 +123,23 @@ TEST_F(TestProbeBitrateEstimator, IgnoreOldClusters) {
   EXPECT_EQ(measured_bps_, INVALID_BPS);
 }
 
+TEST_F(TestProbeBitrateEstimator, IgnoreSizeLastSendPacket) {
+  AddPacketFeedback(0, 1000, 0, 10);
+  AddPacketFeedback(0, 1000, 10, 20);
+  AddPacketFeedback(0, 1000, 20, 30);
+  AddPacketFeedback(0, 1000, 30, 40);
+  AddPacketFeedback(0, 1500, 40, 50);
+
+  EXPECT_NEAR(measured_bps_, 800000, 10);
+}
+
+TEST_F(TestProbeBitrateEstimator, IgnoreSizeFirstReceivePacket) {
+  AddPacketFeedback(0, 1500, 0, 10);
+  AddPacketFeedback(0, 1000, 10, 20);
+  AddPacketFeedback(0, 1000, 20, 30);
+  AddPacketFeedback(0, 1000, 30, 40);
+
+  EXPECT_NEAR(measured_bps_, 800000, 10);
+}
+
 }  // namespace webrtc
