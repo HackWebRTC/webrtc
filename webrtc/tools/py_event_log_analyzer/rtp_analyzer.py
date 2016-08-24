@@ -48,10 +48,10 @@ class RTPStatistics(object):
     self.smooth_bw_kbps = None
 
   def print_header_statistics(self):
-    print("{:>6}{:>11}{:>11}{:>6}{:>6}{:>3}{:>11}".format(
+    print("{:>6}{:>14}{:>14}{:>6}{:>6}{:>3}{:>11}".format(
         "SeqNo", "TimeStamp", "SendTime", "Size", "PT", "M", "SSRC"))
     for point in self.data_points:
-      print("{:>6}{:>11}{:>11}{:>6}{:>6}{:>3}{:>11}".format(
+      print("{:>6}{:>14}{:>14}{:>6}{:>6}{:>3}{:>11}".format(
           point.sequence_number, point.timestamp,
           int(point.arrival_timestamp_ms), point.size, point.payload_type,
           point.marker_bit, "0x{:x}".format(point.ssrc)))
