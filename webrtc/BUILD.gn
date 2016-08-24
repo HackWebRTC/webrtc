@@ -700,11 +700,13 @@ if (rtc_include_tests) {
     }
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_native_code" ]
+      shard_timeout = 900
+    }
+    if (is_android || is_ios) {
       data = [
         "//resources/foreman_cif_short.yuv",
         "//resources/voice_engine/audio_long16.pcm",
       ]
-      shard_timeout = 900
     }
   }
 

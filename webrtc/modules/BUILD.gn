@@ -506,9 +506,10 @@ if (rtc_include_tests) {
         "audio_device/android/ensure_initialized.cc",
         "audio_device/android/ensure_initialized.h",
       ]
+      shard_timeout = 900
+    }
 
-      # This needs to be kept in sync with the .isolate file.
-      # TODO(kjellander); Move this to android_assets targets instead.
+    if (is_android || is_ios) {
       data = [
         "//data/audio_processing/output_data_fixed.pb",
         "//data/audio_processing/output_data_float.pb",
@@ -611,8 +612,6 @@ if (rtc_include_tests) {
         "//resources/verizon4g-downlink.rx",
         "//resources/verizon4g-uplink.rx",
       ]
-
-      shard_timeout = 900
     }
 
     if (is_ios) {

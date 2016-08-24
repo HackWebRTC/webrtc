@@ -118,14 +118,13 @@ if (rtc_include_tests) {
 
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_support" ]
+      shard_timeout = 900
+    }
 
-      # This needs to be kept in sync with the .isolate file.
-      # TODO(kjellander); Move this to android_assets targets instead.
+    if (is_android || is_ios) {
       data = [
         "//resources/foreman_cif.yuv",
       ]
-
-      shard_timeout = 900
     }
   }
 }

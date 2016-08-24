@@ -1033,13 +1033,9 @@ if (rtc_include_tests) {
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_native_code" ]
       shard_timeout = 900
-
-      data = [
-        "//resources/audio_coding/testfile32kHz.pcm",
-      ]
     }
 
-    if (is_ios) {
+    if (is_android || is_ios) {
       data = [
         "//resources/audio_coding/testfile32kHz.pcm",
       ]

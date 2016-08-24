@@ -314,9 +314,10 @@ test("test_support_unittests") {
 
   if (is_android) {
     deps += [ "//testing/android/native_test:native_test_support" ]
+    shard_timeout = 900
+  }
 
-    # This needs to be kept in sync with the test_support_unittests.isolate file.
-    # TODO(kjellander); Move this to android_assets targets instead.
+  if (is_android || is_ios) {
     data = [
       "//resources/foreman_cif_short.yuv",
       "//resources/video_coding/frame-ethernet-ii.pcap",
@@ -326,9 +327,8 @@ test("test_support_unittests") {
       "//resources/video_coding/ssrcs-2.pcap",
       "//resources/video_coding/ssrcs-3.pcap",
     ]
-
-    shard_timeout = 900
   }
+
   deps += [
     ":channel_transport",
     ":test_common",
