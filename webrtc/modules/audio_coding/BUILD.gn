@@ -1600,4 +1600,28 @@ if (rtc_include_tests) {
       "../..:webrtc_common",
     ]
   }
+
+  executable("webrtc_opus_fec_test") {
+    testonly = true
+
+    sources = [
+      "codecs/opus/opus_fec_test.cc",
+    ]
+
+    deps = [
+      ":webrtc_opus",
+      "../../base:rtc_base",
+      "../../common_audio",
+      "../../test:test_support",
+      "../../test:test_support_main",
+      "//build/config/sanitizers:deps",
+      "//testing/gtest",
+    ]
+
+    if (is_clang) {
+      # Suppress warnings from Chrome's Clang plugins.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
 }
