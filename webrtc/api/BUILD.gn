@@ -224,6 +224,7 @@ if (is_android && !build_with_chromium) {
       ":libjingle_peerconnection",
       ":libjingle_peerconnection_jni",
     ]
+    output_extension = "so"
   }
 
   android_library("libjingle_peerconnection_java") {
