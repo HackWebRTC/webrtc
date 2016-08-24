@@ -1391,7 +1391,7 @@ void BuildSctpContentAttributes(std::string* message, int sctp_port) {
   InitAttrLine(kAttributeSctpmap, &os);
   os << kSdpDelimiterColon << sctp_port << kSdpDelimiterSpace
      << kDefaultSctpmapProtocol << kSdpDelimiterSpace
-     << (cricket::kMaxSctpSid + 1);
+     << cricket::kMaxSctpStreams;
   AddLine(os.str(), message);
 }
 

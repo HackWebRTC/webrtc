@@ -57,7 +57,8 @@ void SctpSidAllocator::ReleaseSid(int sid) {
 }
 
 bool SctpSidAllocator::IsSidAvailable(int sid) const {
-  if (sid < 0 || sid > static_cast<int>(cricket::kMaxSctpSid)) {
+  if (sid < static_cast<int>(cricket::kMinSctpSid) ||
+      sid > static_cast<int>(cricket::kMaxSctpSid)) {
     return false;
   }
   return used_sids_.find(sid) == used_sids_.end();

@@ -490,8 +490,8 @@ TEST_F(SctpDataMediaChannelTest, EngineSignalsRightChannel) {
 
 TEST_F(SctpDataMediaChannelTest, RefusesHighNumberedChannels) {
   SetupConnectedChannels();
-  EXPECT_TRUE(AddStream(1022));
-  EXPECT_FALSE(AddStream(1023));
+  EXPECT_TRUE(AddStream(kMaxSctpSid));
+  EXPECT_FALSE(AddStream(kMaxSctpSid + 1));
 }
 
 // Flaky, see webrtc:4453.

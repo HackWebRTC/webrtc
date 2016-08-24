@@ -28,12 +28,6 @@
 #include "webrtc/pc/channelmanager.h"
 #include "webrtc/pc/srtpfilter.h"
 
-#ifdef HAVE_SCTP
-#include "webrtc/media/sctp/sctpdataengine.h"
-#else
-static const uint32_t kMaxSctpSid = 1023;
-#endif
-
 namespace {
 const char kInline[] = "inline:";
 
@@ -282,33 +276,6 @@ static void GenerateSsrcs(const StreamParamsVec& params_vec,
   }
 }
 
-// Returns false if we exhaust the range of SIDs.
-static bool GenerateSctpSid(const StreamParamsVec& params_vec, uint32_t* sid) {
-  if (params_vec.size() > kMaxSctpSid) {
-    LOG(LS_WARNING) <<
-        "Could not generate an SCTP SID: too many SCTP streams.";
-    return false;
-  }
-  while (true) {
-    uint32_t candidate = rtc::CreateRandomNonZeroId() % kMaxSctpSid;
-    if (!GetStreamBySsrc(params_vec, candidate)) {
-      *sid = candidate;
-      return true;
-    }
-  }
-}
-
-static bool GenerateSctpSids(const StreamParamsVec& params_vec,
-                             std::vector<uint32_t>* sids) {
-  uint32_t sid;
-  if (!GenerateSctpSid(params_vec, &sid)) {
-    LOG(LS_WARNING) << "Could not generated an SCTP SID.";
-    return false;
-  }
-  sids->push_back(sid);
-  return true;
-}
-
 // Finds all StreamParams of all media types and attach them to stream_params.
 static void GetCurrentStreamParams(const SessionDescription* sdesc,
                                    StreamParamsVec* stream_params) {
@@ -454,6 +421,11 @@ static bool AddStreamParams(MediaType media_type,
                             StreamParamsVec* current_streams,
                             MediaContentDescriptionImpl<C>* content_description,
                             const bool add_legacy_stream) {
+  // SCTP streams are not negotiated using SDP/ContentDescriptions.
+  if (IsSctp(content_description)) {
+    return true;
+  }
+
   const bool include_rtx_streams =
       ContainsRtxCodec(content_description->codecs());
 
@@ -461,12 +433,8 @@ static bool AddStreamParams(MediaType media_type,
   if (streams.empty() && add_legacy_stream) {
     // TODO(perkj): Remove this legacy stream when all apps use StreamParams.
     std::vector<uint32_t> ssrcs;
-    if (IsSctp(content_description)) {
-      GenerateSctpSids(*current_streams, &ssrcs);
-    } else {
-      int num_ssrcs = include_rtx_streams ? 2 : 1;
-      GenerateSsrcs(*current_streams, num_ssrcs, &ssrcs);
-    }
+    int num_ssrcs = include_rtx_streams ? 2 : 1;
+    GenerateSsrcs(*current_streams, num_ssrcs, &ssrcs);
     if (include_rtx_streams) {
       content_description->AddLegacyStream(ssrcs[0], ssrcs[1]);
       content_description->set_multistream(true);
@@ -489,11 +457,7 @@ static bool AddStreamParams(MediaType media_type,
     if (!param) {
       // This is a new stream.
       std::vector<uint32_t> ssrcs;
-      if (IsSctp(content_description)) {
-        GenerateSctpSids(*current_streams, &ssrcs);
-      } else {
-        GenerateSsrcs(*current_streams, stream_it->num_sim_layers, &ssrcs);
-      }
+      GenerateSsrcs(*current_streams, stream_it->num_sim_layers, &ssrcs);
       StreamParams stream_param;
       stream_param.id = stream_it->id;
       // Add the generated ssrc.

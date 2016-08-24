@@ -284,12 +284,9 @@ void InitializeUsrSctp() {
   // See: http://svnweb.freebsd.org/base?view=revision&revision=229805
   // usrsctp_sysctl_set_sctp_blackhole(2);
 
-  // Set the number of default outgoing streams.  This is the number we'll
-  // send in the SCTP INIT message.  The 'appropriate default' in the
-  // second paragraph of
-  // http://tools.ietf.org/html/draft-ietf-rtcweb-data-channel-05#section-6.2
-  // is kMaxSctpSid.
-  usrsctp_sysctl_set_sctp_nr_outgoing_streams_default(kMaxSctpSid);
+  // Set the number of default outgoing streams. This is the number we'll
+  // send in the SCTP INIT message.
+  usrsctp_sysctl_set_sctp_nr_outgoing_streams_default(kMaxSctpStreams);
 }
 
 void UninitializeUsrSctp() {
@@ -751,23 +748,22 @@ bool SctpDataMediaChannel::AddStream(const StreamParams& stream) {
   }
 
   const uint32_t ssrc = stream.first_ssrc();
-  if (ssrc >= kMaxSctpSid) {
+  if (ssrc > kMaxSctpSid) {
     LOG(LS_WARNING) << debug_name_ << "->Add(Send|Recv)Stream(...): "
                     << "Not adding data stream '" << stream.id
-                    << "' with ssrc=" << ssrc
-                    << " because stream ssrc is too high.";
+                    << "' with sid=" << ssrc << " because sid is too high.";
     return false;
   } else if (open_streams_.find(ssrc) != open_streams_.end()) {
     LOG(LS_WARNING) << debug_name_ << "->Add(Send|Recv)Stream(...): "
                     << "Not adding data stream '" << stream.id
-                    << "' with ssrc=" << ssrc
+                    << "' with sid=" << ssrc
                     << " because stream is already open.";
     return false;
   } else if (queued_reset_streams_.find(ssrc) != queued_reset_streams_.end()
              || sent_reset_streams_.find(ssrc) != sent_reset_streams_.end()) {
     LOG(LS_WARNING) << debug_name_ << "->Add(Send|Recv)Stream(...): "
                     << "Not adding data stream '" << stream.id
-                    << "' with ssrc=" << ssrc
+                    << "' with sid=" << ssrc
                     << " because stream is still closing.";
     return false;
   }

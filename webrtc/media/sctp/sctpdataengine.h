@@ -37,9 +37,19 @@ struct sctp_stream_reset_event;
 // Defined by <sys/socket.h>
 struct socket;
 namespace cricket {
-// The highest stream ID (Sid) that SCTP allows, and the number of streams we
-// tell SCTP we're going to use.
-const uint32_t kMaxSctpSid = 1023;
+// The number of outgoing streams that we'll negotiate. Since stream IDs (SIDs)
+// are 0-based, the highest usable SID is 1023.
+//
+// It's recommended to use the maximum of 65535 in:
+// https://tools.ietf.org/html/draft-ietf-rtcweb-data-channel-13#section-6.2
+// However, we use 1024 in order to save memory. usrsctp allocates 104 bytes
+// for each pair of incoming/outgoing streams (on a 64-bit system), so 65535
+// streams would waste ~6MB.
+//
+// Note: "max" and "min" here are inclusive.
+constexpr uint16_t kMaxSctpStreams = 1024;
+constexpr uint16_t kMaxSctpSid = kMaxSctpStreams - 1;
+constexpr uint16_t kMinSctpSid = 0;
 
 // This is the default SCTP port to use. It is passed along the wire and the
 // connectee and connector must be using the same port. It is not related to the
