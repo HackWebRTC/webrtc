@@ -14,10 +14,11 @@
       'type': 'executable',
       'dependencies': [
         'isac',
+        '<(webrtc_root)/base/base.gyp:rtc_base',
       ],
       'include_dirs': [
-        './main/test',
         './main/include',
+        './main/test',
         './main/util',
         '<(webrtc_root)',
       ],
