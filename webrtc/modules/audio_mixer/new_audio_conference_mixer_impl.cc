@@ -187,7 +187,6 @@ void NewAudioConferenceMixerImpl::Mix(int sample_rate,
                                       size_t number_of_channels,
                                       AudioFrame* audio_frame_for_mixing) {
   RTC_DCHECK(number_of_channels == 1 || number_of_channels == 2);
-  size_t remainingAudioSourcesAllowedToMix = kMaximumAmountOfMixedAudioSources;
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   AudioFrameList mixList;
   AudioFrameList additionalFramesList;
@@ -218,8 +217,7 @@ void NewAudioConferenceMixerImpl::Mix(int sample_rate,
       SetOutputFrequency(mixing_frequency);
     }
 
-    mixList = UpdateToMix(remainingAudioSourcesAllowedToMix);
-    remainingAudioSourcesAllowedToMix -= mixList.size();
+    mixList = UpdateToMix(kMaximumAmountOfMixedAudioSources);
     GetAdditionalAudio(&additionalFramesList);
   }
 
@@ -526,15 +524,6 @@ int32_t NewAudioConferenceMixerImpl::MixFromList(
 
   for (AudioFrameList::const_iterator iter = audioFrameList.begin();
        iter != audioFrameList.end(); ++iter) {
-    if (position >= kMaximumAmountOfMixedAudioSources) {
-      WEBRTC_TRACE(
-          kTraceMemory, kTraceAudioMixerServer, id,
-          "Trying to mix more than max amount of mixed audio sources:%d!",
-          kMaximumAmountOfMixedAudioSources);
-      // Assert and avoid crash
-      RTC_NOTREACHED();
-      position = 0;
-    }
     if (!iter->muted) {
       MixFrames(mixedAudio, iter->frame, use_limiter);
     }
