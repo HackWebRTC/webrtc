@@ -54,17 +54,21 @@
       'Linux64 Release (GN)': 'gn_release_bot_x64',
 
       # Android
-      'Android32 Builder': 'android_gyp_release_bot_arm',
-      'Android32 Builder (dbg)': 'android_gyp_debug_static_bot_arm',
-      'Android32 Builder x86': 'android_gyp_release_bot_x86',
-      'Android32 Builder x86 (dbg)': 'android_gyp_debug_static_bot_x86',
-      'Android32 Builder MIPS (dbg)': 'android_gyp_clang_debug_static_bot_mipsel',
-      'Android32 Clang (dbg)': 'android_gyp_clang_debug_static_bot_arm',
-      'Android64 Builder': 'android_gyp_release_bot_arm64',
-      'Android64 Builder (dbg)': 'android_gyp_debug_static_bot_arm64',
-      'Android64 Builder x64 (dbg)': 'android_gyp_debug_static_bot_x64',
-      'Android32 GN': 'android_gn_release_bot_arm',
-      'Android32 GN (dbg)': 'android_gn_debug_static_bot_arm',
+      'Android32 Builder': 'android_gn_release_bot_arm',
+      'Android32 Builder (dbg)': 'android_gn_debug_static_bot_arm',
+      'Android32 Builder x86': 'android_gn_release_bot_x86',
+      'Android32 Builder x86 (dbg)': 'android_gn_debug_static_bot_x86',
+      'Android32 Builder MIPS (dbg)': 'android_gn_clang_debug_static_bot_mipsel',
+      'Android32 Clang (dbg)': 'android_gn_clang_debug_static_bot_arm',
+      'Android64 Builder': 'android_gn_release_bot_arm64',
+      'Android64 Builder (dbg)': 'android_gn_debug_static_bot_arm64',
+      'Android64 Builder x64 (dbg)': 'android_gn_debug_static_bot_x64',
+      # TODO(kjellander): Remove the 'Android32 GN' configs as soon we've
+      # renamed these bots to Android32 GYP in the main waterfall.
+      'Android32 GN': 'android_gyp_release_bot_arm',
+      'Android32 GN (dbg)': 'android_gyp_debug_static_bot_arm',
+      'Android32 GYP': 'android_gyp_release_bot_arm',
+      'Android32 GYP (dbg)': 'android_gyp_debug_static_bot_arm',
       'Android32 Tests (L Nexus5)(dbg)': 'none',
       'Android32 Tests (L Nexus5)': 'none',
       'Android32 Tests (L Nexus7.2)(dbg)': 'none',
@@ -127,21 +131,25 @@
       'linux_swarming': 'swarming_gyp_debug_bot_x64',
 
       # Android
-      'android_compile_dbg': 'android_gyp_debug_static_bot_arm',
-      'android_compile_rel': 'android_gyp_release_bot_arm',
-      'android_compile_arm64_dbg': 'android_gyp_debug_static_bot_arm64',
-      'android_compile_arm64_rel': 'android_gyp_release_bot_arm64',
-      'android_compile_x86_dbg': 'android_gyp_debug_static_bot_x86',
-      'android_compile_x86_rel': 'android_gyp_release_bot_x86',
-      'android_compile_x64_dbg': 'android_gyp_debug_static_bot_x64',
-      'android_compile_mips_dbg': 'android_gyp_clang_debug_static_bot_mipsel',
-      'android_dbg': 'android_gyp_debug_static_bot_arm',
-      'android_rel': 'android_gyp_release_bot_arm',
-      'android_clang_dbg': 'android_gyp_clang_debug_static_bot_arm',
-      'android_arm64_rel': 'android_gyp_release_bot_arm64',
-      'android_n6': 'android_gyp_debug_static_bot_arm',
-      'android_gn_dbg': 'android_gn_debug_static_bot_arm',
-      'android_gn_rel': 'android_gn_release_bot_arm',
+      'android_compile_dbg': 'android_gn_debug_static_bot_arm',
+      'android_compile_rel': 'android_gn_release_bot_arm',
+      'android_compile_arm64_dbg': 'android_gn_debug_static_bot_arm64',
+      'android_compile_arm64_rel': 'android_gn_release_bot_arm64',
+      'android_compile_x86_dbg': 'android_gn_debug_static_bot_x86',
+      'android_compile_x86_rel': 'android_gn_release_bot_x86',
+      'android_compile_x64_dbg': 'android_gn_debug_static_bot_x64',
+      'android_compile_mips_dbg': 'android_gn_clang_debug_static_bot_mipsel',
+      'android_dbg': 'android_gn_debug_static_bot_arm',
+      'android_rel': 'android_gn_release_bot_arm',
+      'android_clang_dbg': 'android_gn_clang_debug_static_bot_arm',
+      'android_arm64_rel': 'android_gn_release_bot_arm64',
+      'android_n6': 'android_gn_debug_static_bot_arm',
+      # TODO(kjellander): Remove the android_gn_* configs as soon we've renamed
+      # the bots to the GYP versions at the tryserver.
+      'android_gn_dbg': 'android_gyp_debug_static_bot_arm',
+      'android_gn_rel': 'android_gyp_release_bot_arm',
+      'android_gyp_dbg': 'android_gyp_debug_static_bot_arm',
+      'android_gyp_rel': 'android_gyp_release_bot_arm',
 
       # Windows
       'win_compile_dbg': 'gyp_debug_bot_x86',
@@ -271,37 +279,37 @@
 
     # Android
     'android_gyp_debug_static_bot_arm': [
-      'android', 'gyp', 'debug_static_bot', 'arm'
+      'android', 'gyp', 'debug_static_bot', 'arm', 'exclude_tests'
     ],
     'android_gyp_release_bot_arm': [
-      'android', 'gyp', 'release_bot', 'arm'
-    ],
-    'android_gyp_debug_static_bot_x86': [
-      'android', 'gyp', 'debug_static_bot', 'x86'
-    ],
-    'android_gyp_release_bot_x86': [
-      'android', 'gyp', 'release_bot', 'x86'
-    ],
-    'android_gyp_clang_debug_static_bot_arm': [
-      'android', 'gyp', 'clang', 'debug_static_bot', 'arm'
-    ],
-    'android_gyp_clang_debug_static_bot_mipsel': [
-      'android', 'gyp', 'clang', 'debug_static_bot', 'mipsel'
-    ],
-    'android_gyp_debug_static_bot_arm64': [
-      'android', 'gyp', 'debug_static_bot', 'arm64'
-    ],
-    'android_gyp_release_bot_arm64': [
-      'android', 'gyp', 'release_bot', 'arm64'
-    ],
-    'android_gyp_debug_static_bot_x64': [
-      'android', 'gyp', 'debug_static_bot', 'x64'
+      'android', 'gyp', 'release_bot', 'arm', 'exclude_tests'
     ],
     'android_gn_debug_static_bot_arm': [
       'android', 'gn', 'debug_static_bot', 'arm'
     ],
     'android_gn_release_bot_arm': [
       'android', 'gn', 'release_bot', 'arm'
+    ],
+    'android_gn_debug_static_bot_x86': [
+      'android', 'gn', 'debug_static_bot', 'x86'
+    ],
+    'android_gn_release_bot_x86': [
+      'android', 'gn', 'release_bot', 'x86'
+    ],
+    'android_gn_clang_debug_static_bot_arm': [
+      'android', 'gn', 'clang', 'debug_static_bot', 'arm'
+    ],
+    'android_gn_clang_debug_static_bot_mipsel': [
+      'android', 'gn', 'clang', 'debug_static_bot', 'mipsel'
+    ],
+    'android_gn_debug_static_bot_arm64': [
+      'android', 'gn', 'debug_static_bot', 'arm64'
+    ],
+    'android_gn_release_bot_arm64': [
+      'android', 'gn', 'release_bot', 'arm64'
+    ],
+    'android_gn_debug_static_bot_x64': [
+      'android', 'gn', 'debug_static_bot', 'x64'
     ],
 
     # This is used for tracking purposes; any bot that uses this config
@@ -372,6 +380,11 @@
     'drmemory': {
       'gn_args': 'is_component_build=true enable_iterator_debugging=false',
       'gyp_defines': 'component=shared_library build_for_tool=drmemory',
+    },
+
+    'exclude_tests': {
+      'gn_args': 'rtc_include_tests=false',
+      'gyp_defines': 'include_tests=0',
     },
 
     # This mixin is used to force configs that use it to fail. It
