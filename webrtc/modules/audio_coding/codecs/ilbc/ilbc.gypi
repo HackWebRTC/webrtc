@@ -12,6 +12,7 @@
       'target_name': 'ilbc',
       'type': 'static_library',
       'dependencies': [
+        '<(webrtc_root)/base/base.gyp:rtc_base_approved',
         '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
         'audio_encoder_interface',
       ],
@@ -172,6 +173,11 @@
             'ilbc',
           ],
           'sources': [
+            # The empty .cc file is a hack to get GYP to use the C++
+            # linker even though all sources here are .c files; this
+            # is necessary because we transitively depend on
+            # rtc_base_approved, which calls the C++ standard library.
+            'test/empty.cc',
             'test/iLBC_test.c',
           ],
         }, # ilbc_test

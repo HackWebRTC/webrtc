@@ -175,6 +175,7 @@
             'audio_coding/codecs/audio_decoder_factory_unittest.cc',
             'audio_coding/codecs/cng/audio_encoder_cng_unittest.cc',
             'audio_coding/codecs/cng/cng_unittest.cc',
+            'audio_coding/codecs/ilbc/ilbc_unittest.cc',
             'audio_coding/codecs/isac/fix/source/filterbanks_unittest.cc',
             'audio_coding/codecs/isac/fix/source/filters_unittest.cc',
             'audio_coding/codecs/isac/fix/source/lpc_masking_model_unittest.cc',

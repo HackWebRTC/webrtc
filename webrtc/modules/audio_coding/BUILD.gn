@@ -446,6 +446,7 @@ source_set("ilbc") {
   deps = [
     ":audio_decoder_interface",
     ":audio_encoder_interface",
+    "../../base:rtc_base_approved",
     "../../common_audio",
   ]
 }
