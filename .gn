@@ -26,7 +26,7 @@ check_targets = [
   "//webrtc/modules/audio_coding:isac_test",
   "//webrtc/modules/audio_coding:webrtc_opus_fec_test",
   "//webrtc/modules/audio_device/*",
-  "//webrtc/modules/audio_mixer:audio_conference_mixer",
+  "//webrtc/modules/audio_mixer/*",
   "//webrtc/voice_engine:level_indicator",
 ]
 
