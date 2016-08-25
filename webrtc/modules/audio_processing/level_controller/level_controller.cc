@@ -35,7 +35,7 @@ void UpdateAndRemoveDcLevel(float forgetting_factor,
                             rtc::ArrayView<float> x) {
   RTC_DCHECK(!x.empty());
   float mean =
-      std::accumulate(x.begin(), x.end(), 0) / static_cast<float>(x.size());
+      std::accumulate(x.begin(), x.end(), 0.0f) / static_cast<float>(x.size());
   *dc_level += forgetting_factor * (mean - *dc_level);
 
   for (float& v : x) {
