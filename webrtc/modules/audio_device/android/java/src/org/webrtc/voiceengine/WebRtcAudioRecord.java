@@ -105,7 +105,9 @@ public class  WebRtcAudioRecord {
       }
 
       try {
-        audioRecord.stop();
+        if (audioRecord != null) {
+          audioRecord.stop();
+        }
       } catch (IllegalStateException e) {
         Logging.e(TAG, "AudioRecord.stop failed: " + e.getMessage());
       }
