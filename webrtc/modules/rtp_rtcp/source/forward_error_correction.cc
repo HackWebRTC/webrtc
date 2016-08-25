@@ -306,10 +306,10 @@ int ForwardErrorCorrection::InsertZerosInBitMasks(
   ++media_packets_it;
 
   // Insert the first column.
-  CopyColumn(tmp_packet_mask_, new_mask_bytes, packet_mask, num_mask_bytes,
-             num_fec_packets, 0, 0);
-  int new_bit_index = 1;
-  int old_bit_index = 1;
+  internal::CopyColumn(tmp_packet_mask_, new_mask_bytes, packet_mask_,
+                       num_mask_bytes, num_fec_packets, 0, 0);
+  size_t new_bit_index = 1;
+  size_t old_bit_index = 1;
   // Insert zeros in the bit mask for every hole in the sequence.
   while (media_packets_it != media_packets.end()) {
     if (new_bit_index == 8 * kMaskSizeLBitSet) {
@@ -317,15 +317,17 @@ int ForwardErrorCorrection::InsertZerosInBitMasks(
       break;
     }
     uint16_t seq_num = ParseSequenceNumber((*media_packets_it)->data);
-    const int zeros_to_insert =
+    const int num_zeros_to_insert =
         static_cast<uint16_t>(seq_num - prev_seq_num - 1);
-    if (zeros_to_insert > 0) {
-      InsertZeroColumns(zeros_to_insert, tmp_packet_mask_, new_mask_bytes,
-                        num_fec_packets, new_bit_index);
+    if (num_zeros_to_insert > 0) {
+      internal::InsertZeroColumns(num_zeros_to_insert, tmp_packet_mask_,
+                                  new_mask_bytes, num_fec_packets,
+                                  new_bit_index);
     }
-    new_bit_index += zeros_to_insert;
-    CopyColumn(tmp_packet_mask_, new_mask_bytes, packet_mask, num_mask_bytes,
-               num_fec_packets, new_bit_index, old_bit_index);
+    new_bit_index += num_zeros_to_insert;
+    internal::CopyColumn(tmp_packet_mask_, new_mask_bytes, packet_mask_,
+                         num_mask_bytes, num_fec_packets, new_bit_index,
+                         old_bit_index);
     ++new_bit_index;
     ++old_bit_index;
     prev_seq_num = seq_num;
@@ -341,38 +343,6 @@ int ForwardErrorCorrection::InsertZerosInBitMasks(
   // Replace the old mask with the new.
   memcpy(packet_mask, tmp_packet_mask_, kMaskSizeLBitSet * num_fec_packets);
   return new_bit_index;
-}
-
-void ForwardErrorCorrection::InsertZeroColumns(int num_zeros,
-                                               uint8_t* new_mask,
-                                               int new_mask_bytes,
-                                               int num_fec_packets,
-                                               int new_bit_index) {
-  for (uint16_t row = 0; row < num_fec_packets; ++row) {
-    const int new_byte_index = row * new_mask_bytes + new_bit_index / 8;
-    const int max_shifts = (7 - (new_bit_index % 8));
-    new_mask[new_byte_index] <<= std::min(num_zeros, max_shifts);
-  }
-}
-
-void ForwardErrorCorrection::CopyColumn(uint8_t* new_mask,
-                                        int new_mask_bytes,
-                                        uint8_t* old_mask,
-                                        int old_mask_bytes,
-                                        int num_fec_packets,
-                                        int new_bit_index,
-                                        int old_bit_index) {
-  // Copy column from the old mask to the beginning of the new mask and shift it
-  // out from the old mask.
-  for (uint16_t row = 0; row < num_fec_packets; ++row) {
-    int new_byte_index = row * new_mask_bytes + new_bit_index / 8;
-    int old_byte_index = row * old_mask_bytes + old_bit_index / 8;
-    new_mask[new_byte_index] |= ((old_mask[old_byte_index] & 0x80) >> 7);
-    if (new_bit_index % 8 != 7) {
-      new_mask[new_byte_index] <<= 1;
-    }
-    old_mask[old_byte_index] <<= 1;
-  }
 }
 
 void ForwardErrorCorrection::GenerateFecUlpHeaders(

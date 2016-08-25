@@ -13,6 +13,8 @@
 #include <assert.h>
 #include <string.h>
 
+#include <algorithm>
+
 #include "webrtc/modules/rtp_rtcp/source/fec_private_tables_bursty.h"
 #include "webrtc/modules/rtp_rtcp/source/fec_private_tables_random.h"
 
@@ -391,6 +393,38 @@ void GeneratePacketMasks(int num_media_packets,
                           num_mask_bytes, packet_mask, mask_table);
   }  // End of UEP modification
 }  // End of GetPacketMasks
+
+void InsertZeroColumns(int num_zeros,
+                       uint8_t* new_mask,
+                       int new_mask_bytes,
+                       int num_fec_packets,
+                       int new_bit_index) {
+  for (uint16_t row = 0; row < num_fec_packets; ++row) {
+    const int new_byte_index = row * new_mask_bytes + new_bit_index / 8;
+    const int max_shifts = (7 - (new_bit_index % 8));
+    new_mask[new_byte_index] <<= std::min(num_zeros, max_shifts);
+  }
+}
+
+void CopyColumn(uint8_t* new_mask,
+                int new_mask_bytes,
+                uint8_t* old_mask,
+                int old_mask_bytes,
+                int num_fec_packets,
+                int new_bit_index,
+                int old_bit_index) {
+  // Copy column from the old mask to the beginning of the new mask and shift it
+  // out from the old mask.
+  for (uint16_t row = 0; row < num_fec_packets; ++row) {
+    int new_byte_index = row * new_mask_bytes + new_bit_index / 8;
+    int old_byte_index = row * old_mask_bytes + old_bit_index / 8;
+    new_mask[new_byte_index] |= ((old_mask[old_byte_index] & 0x80) >> 7);
+    if (new_bit_index % 8 != 7) {
+      new_mask[new_byte_index] <<= 1;
+    }
+    old_mask[old_byte_index] <<= 1;
+  }
+}
 
 }  // namespace internal
 }  // namespace webrtc
