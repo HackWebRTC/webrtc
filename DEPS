@@ -83,12 +83,5 @@ hooks = [
                '--bucket', 'chromium-webrtc-resources',
                'src/resources'],
   },
-  {
-    # A change to a .gyp, .gypi, or to GYP itself should run the generator.
-    'name': 'gyp',
-    'pattern': '.',
-    'action': ['python', 'src/webrtc/build/gyp_webrtc.py',
-               Var('extra_gyp_flag')],
-  },
 ]
 
