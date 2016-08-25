@@ -145,22 +145,13 @@ struct ExperimentalNs {
 // Use to enable beamforming. Must be provided through the constructor. It will
 // have no impact if used with AudioProcessing::SetExtraOptions().
 struct Beamforming {
-  Beamforming()
-      : enabled(false),
-        array_geometry(),
-        target_direction(
-            SphericalPointf(static_cast<float>(M_PI) / 2.f, 0.f, 1.f)) {}
-  Beamforming(bool enabled, const std::vector<Point>& array_geometry)
-      : Beamforming(enabled,
-                    array_geometry,
-                    SphericalPointf(static_cast<float>(M_PI) / 2.f, 0.f, 1.f)) {
-  }
+  Beamforming();
+  Beamforming(bool enabled, const std::vector<Point>& array_geometry);
   Beamforming(bool enabled,
               const std::vector<Point>& array_geometry,
-              SphericalPointf target_direction)
-      : enabled(enabled),
-        array_geometry(array_geometry),
-        target_direction(target_direction) {}
+              SphericalPointf target_direction);
+  ~Beamforming();
+
   static const ConfigOptionID identifier = ConfigOptionID::kBeamforming;
   const bool enabled;
   const std::vector<Point> array_geometry;
@@ -450,9 +441,7 @@ class AudioProcessing {
   // Same as above but uses an existing PlatformFile handle. Takes ownership
   // of |handle| and closes it at StopDebugRecording().
   // TODO(xians): Make this interface pure virtual.
-  virtual int StartDebugRecordingForPlatformFile(rtc::PlatformFile handle) {
-      return -1;
-  }
+  virtual int StartDebugRecordingForPlatformFile(rtc::PlatformFile handle);
 
   // Stops recording debugging information, and closes the file. Recording
   // cannot be resumed in the same file (without overwriting it).

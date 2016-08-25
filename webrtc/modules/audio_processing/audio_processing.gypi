@@ -62,6 +62,7 @@
         'agc/utility.h',
         'audio_buffer.cc',
         'audio_buffer.h',
+        'audio_processing.cc',
         'audio_processing_impl.cc',
         'audio_processing_impl.h',
         'beamformer/array_util.cc',
