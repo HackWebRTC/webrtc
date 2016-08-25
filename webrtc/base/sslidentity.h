@@ -28,6 +28,18 @@ namespace rtc {
 // Forward declaration due to circular dependency with SSLCertificate.
 class SSLCertChain;
 
+struct SSLCertificateStats {
+  SSLCertificateStats(std::string&& fingerprint,
+                      std::string&& fingerprint_algorithm,
+                      std::string&& base64_certificate,
+                      std::unique_ptr<SSLCertificateStats>&& issuer);
+  ~SSLCertificateStats();
+  std::string fingerprint;
+  std::string fingerprint_algorithm;
+  std::string base64_certificate;
+  std::unique_ptr<SSLCertificateStats> issuer;
+};
+
 // Abstract interface overridden by SSL library specific
 // implementations.
 
@@ -75,6 +87,15 @@ class SSLCertificate {
   // Returns the time in seconds relative to epoch, 1970-01-01T00:00:00Z (UTC),
   // or -1 if an expiration time could not be retrieved.
   virtual int64_t CertificateExpirationTime() const = 0;
+
+  // Gets information (fingerprint, etc.) about this certificate and its chain
+  // (if it has a certificate chain). This is used for certificate stats, see
+  // https://w3c.github.io/webrtc-stats/#certificatestats-dict*.
+  std::unique_ptr<SSLCertificateStats> GetStats() const;
+
+ private:
+  std::unique_ptr<SSLCertificateStats> GetStats(
+    std::unique_ptr<SSLCertificateStats> issuer) const;
 };
 
 // SSLCertChain is a simple wrapper for a vector of SSLCertificates. It serves

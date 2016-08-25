@@ -536,73 +536,34 @@ StatsReport* StatsCollector::PrepareReport(
   return report;
 }
 
-StatsReport* StatsCollector::AddOneCertificateReport(
-    const rtc::SSLCertificate* cert, const StatsReport* issuer) {
-  RTC_DCHECK(pc_->session()->signaling_thread()->IsCurrent());
-
-  // TODO(bemasc): Move this computation to a helper class that caches these
-  // values to reduce CPU use in GetStats.  This will require adding a fast
-  // SSLCertificate::Equals() method to detect certificate changes.
-
-  std::string digest_algorithm;
-  if (!cert->GetSignatureDigestAlgorithm(&digest_algorithm))
-    return nullptr;
-
-  std::unique_ptr<rtc::SSLFingerprint> ssl_fingerprint(
-      rtc::SSLFingerprint::Create(digest_algorithm, cert));
-
-  // SSLFingerprint::Create can fail if the algorithm returned by
-  // SSLCertificate::GetSignatureDigestAlgorithm is not supported by the
-  // implementation of SSLCertificate::ComputeDigest.  This currently happens
-  // with MD5- and SHA-224-signed certificates when linked to libNSS.
-  if (!ssl_fingerprint)
-    return nullptr;
-
-  std::string fingerprint = ssl_fingerprint->GetRfc4572Fingerprint();
-
-  rtc::Buffer der_buffer;
-  cert->ToDER(&der_buffer);
-  std::string der_base64;
-  rtc::Base64::EncodeFromArray(der_buffer.data(), der_buffer.size(),
-                               &der_base64);
-
-  StatsReport::Id id(StatsReport::NewTypedId(
-      StatsReport::kStatsReportTypeCertificate, fingerprint));
-  StatsReport* report = reports_.ReplaceOrAddNew(id);
-  report->set_timestamp(stats_gathering_started_);
-  report->AddString(StatsReport::kStatsValueNameFingerprint, fingerprint);
-  report->AddString(StatsReport::kStatsValueNameFingerprintAlgorithm,
-                    digest_algorithm);
-  report->AddString(StatsReport::kStatsValueNameDer, der_base64);
-  if (issuer)
-    report->AddId(StatsReport::kStatsValueNameIssuerId, issuer->id());
-  return report;
-}
-
 StatsReport* StatsCollector::AddCertificateReports(
     const rtc::SSLCertificate* cert) {
   RTC_DCHECK(pc_->session()->signaling_thread()->IsCurrent());
-  // Produces a chain of StatsReports representing this certificate and the rest
-  // of its chain, and adds those reports to |reports_|.  The return value is
-  // the id of the leaf report.  The provided cert must be non-null, so at least
-  // one report will always be provided and the returned string will never be
-  // empty.
   RTC_DCHECK(cert != NULL);
 
-  StatsReport* issuer = nullptr;
-  std::unique_ptr<rtc::SSLCertChain> chain = cert->GetChain();
-  if (chain) {
-    // This loop runs in reverse, i.e. from root to leaf, so that each
-    // certificate's issuer's report ID is known before the child certificate's
-    // report is generated.  The root certificate does not have an issuer ID
-    // value.
-    for (ptrdiff_t i = chain->GetSize() - 1; i >= 0; --i) {
-      const rtc::SSLCertificate& cert_i = chain->Get(i);
-      issuer = AddOneCertificateReport(&cert_i, issuer);
-    }
+  std::unique_ptr<rtc::SSLCertificateStats> first_stats = cert->GetStats();
+  StatsReport* first_report = nullptr;
+  StatsReport* prev_report = nullptr;
+  for (rtc::SSLCertificateStats* stats = first_stats.get(); stats;
+       stats = stats->issuer.get()) {
+    StatsReport::Id id(StatsReport::NewTypedId(
+        StatsReport::kStatsReportTypeCertificate, stats->fingerprint));
+
+    StatsReport* report = reports_.ReplaceOrAddNew(id);
+    report->set_timestamp(stats_gathering_started_);
+    report->AddString(StatsReport::kStatsValueNameFingerprint,
+                      stats->fingerprint);
+    report->AddString(StatsReport::kStatsValueNameFingerprintAlgorithm,
+                      stats->fingerprint_algorithm);
+    report->AddString(StatsReport::kStatsValueNameDer,
+                      stats->base64_certificate);
+    if (!first_report)
+      first_report = report;
+    else
+      prev_report->AddId(StatsReport::kStatsValueNameIssuerId, id);
+    prev_report = report;
   }
-  // Add the leaf certificate.
-  return AddOneCertificateReport(cert, issuer);
+  return first_report;
 }
 
 StatsReport* StatsCollector::AddConnectionInfoReport(
