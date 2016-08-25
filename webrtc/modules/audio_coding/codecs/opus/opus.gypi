@@ -58,7 +58,7 @@
           'type': 'executable',
           'dependencies': [
             'webrtc_opus',
-            '<(webrtc_root)/base/base.gyp:rtc_base',
+            '<(webrtc_root)/base/base.gyp:rtc_base_approved',
             '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
             '<(webrtc_root)/test/test.gyp:test_support_main',
             '<(DEPTH)/testing/gtest.gyp:gtest',

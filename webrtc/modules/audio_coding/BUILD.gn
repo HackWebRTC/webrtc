@@ -1553,7 +1553,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":isac",
-      "../../base:rtc_base",
+      "../../base:rtc_base_approved",
       "//build/config/sanitizers:deps",
     ]
 
@@ -1608,7 +1608,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":webrtc_opus",
-      "../../base:rtc_base",
+      "../../base:rtc_base_approved",
       "../../common_audio",
       "../../test:test_support",
       "../../test:test_support_main",
