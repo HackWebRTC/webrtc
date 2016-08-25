@@ -431,6 +431,75 @@ if (rtc_include_tests) {
     ]
   }
 
+  executable("transient_suppression_test") {
+    testonly = true
+    sources = [
+      "transient/file_utils.cc",
+      "transient/file_utils.h",
+      "transient/transient_suppression_test.cc",
+    ]
+    deps = [
+      ":audio_processing",
+      "../../system_wrappers:metrics_default",
+      "../../test:test_support",
+      "//testing/gtest",
+      "//third_party/gflags",
+    ]
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
+  executable("click_annotate") {
+    testonly = true
+    sources = [
+      "transient/click_annotate.cc",
+      "transient/file_utils.cc",
+      "transient/file_utils.h",
+    ]
+    deps = [
+      ":audio_processing",
+      "../../system_wrappers:metrics_default",
+    ]
+  }
+
+  executable("nonlinear_beamformer_test") {
+    testonly = true
+    sources = [
+      "beamformer/nonlinear_beamformer_test.cc",
+    ]
+    deps = [
+      ":audio_processing",
+      ":audioproc_test_utils",
+      "../../system_wrappers:metrics_default",
+      "//third_party/gflags",
+    ]
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
+  executable("intelligibility_proc") {
+    testonly = true
+    sources = [
+      "intelligibility/test/intelligibility_proc.cc",
+    ]
+    deps = [
+      ":audio_processing",
+      ":audioproc_test_utils",
+      "../../system_wrappers:metrics_default",
+      "../../test:test_support",
+      "//testing/gtest",
+      "//third_party/gflags",
+    ]
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
   if (rtc_enable_protobuf) {
     proto_library("audioproc_unittest_proto") {
       sources = [
