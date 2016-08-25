@@ -22,10 +22,13 @@
 #import "WebRTC/UIDevice+RTCDevice.h"
 #endif
 
+#include "libyuv/rotate.h"
+
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/common_video/include/corevideo_frame_buffer.h"
+#include "webrtc/common_video/rotation.h"
 
 struct AVCaptureSessionPresetResolution {
   NSString *sessionPreset;
@@ -98,7 +101,7 @@ static NSString *GetSessionPresetForVideoFormat(
   AVCaptureVideoDataOutput *_videoDataOutput;
   // The cricket::VideoCapturer that owns this class. Should never be NULL.
   webrtc::AVFoundationVideoCapturer *_capturer;
-  BOOL _orientationHasChanged;
+  webrtc::VideoRotation _rotation;
   BOOL _hasRetriedOnFatalError;
   BOOL _isRunning;
   BOOL _hasStarted;
@@ -232,7 +235,14 @@ static NSString *GetSessionPresetForVideoFormat(
   self.hasStarted = YES;
   [RTCDispatcher dispatchAsyncOnType:RTCDispatcherTypeCaptureSession
                                block:^{
-    _orientationHasChanged = NO;
+#if TARGET_OS_IPHONE
+     // Default to portrait orientation on iPhone. This will be reset in
+     // updateOrientation unless orientation is unknown/faceup/facedown.
+     _rotation = webrtc::kVideoRotation_90;
+#else
+    // No rotation on Mac.
+    _rotation = webrtc::kVideoRotation_0;
+#endif
     [self updateOrientation];
 #if TARGET_OS_IPHONE
     [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
@@ -267,7 +277,6 @@ static NSString *GetSessionPresetForVideoFormat(
 - (void)deviceOrientationDidChange:(NSNotification *)notification {
   [RTCDispatcher dispatchAsyncOnType:RTCDispatcherTypeCaptureSession
                                block:^{
-    _orientationHasChanged = YES;
     [self updateOrientation];
   }];
 }
@@ -282,7 +291,7 @@ static NSString *GetSessionPresetForVideoFormat(
   if (!self.hasStarted) {
     return;
   }
-  _capturer->CaptureSampleBuffer(sampleBuffer);
+  _capturer->CaptureSampleBuffer(sampleBuffer, _rotation);
 }
 
 - (void)captureOutput:(AVCaptureOutput *)captureOutput
@@ -530,36 +539,26 @@ static NSString *GetSessionPresetForVideoFormat(
 
 // Called from capture session queue.
 - (void)updateOrientation {
-  AVCaptureConnection *connection =
-      [_videoDataOutput connectionWithMediaType:AVMediaTypeVideo];
-  if (!connection.supportsVideoOrientation) {
-    // TODO(tkchin): set rotation bit on frames.
-    return;
-  }
 #if TARGET_OS_IPHONE
-  AVCaptureVideoOrientation orientation = AVCaptureVideoOrientationPortrait;
   switch ([UIDevice currentDevice].orientation) {
     case UIDeviceOrientationPortrait:
-      orientation = AVCaptureVideoOrientationPortrait;
+      _rotation = webrtc::kVideoRotation_90;
       break;
     case UIDeviceOrientationPortraitUpsideDown:
-      orientation = AVCaptureVideoOrientationPortraitUpsideDown;
+      _rotation = webrtc::kVideoRotation_270;
       break;
     case UIDeviceOrientationLandscapeLeft:
-      orientation = AVCaptureVideoOrientationLandscapeRight;
+      _rotation = webrtc::kVideoRotation_180;
       break;
     case UIDeviceOrientationLandscapeRight:
-      orientation = AVCaptureVideoOrientationLandscapeLeft;
+      _rotation = webrtc::kVideoRotation_0;
       break;
     case UIDeviceOrientationFaceUp:
     case UIDeviceOrientationFaceDown:
     case UIDeviceOrientationUnknown:
-      if (!_orientationHasChanged) {
-        connection.videoOrientation = orientation;
-      }
-      return;
+      // Ignore.
+      break;
   }
-  connection.videoOrientation = orientation;
 #endif
 }
 
@@ -598,9 +597,12 @@ enum AVFoundationVideoCapturerMessageType : uint32_t {
 };
 
 struct AVFoundationFrame {
-  AVFoundationFrame(CVImageBufferRef buffer, int64_t time)
-    : image_buffer(buffer), capture_time(time) {}
+  AVFoundationFrame(CVImageBufferRef buffer,
+                    webrtc::VideoRotation rotation,
+                    int64_t time)
+      : image_buffer(buffer), rotation(rotation), capture_time(time) {}
   CVImageBufferRef image_buffer;
+  webrtc::VideoRotation rotation;
   int64_t capture_time;
 };
 
@@ -708,14 +710,14 @@ bool AVFoundationVideoCapturer::GetUseBackCamera() const {
 }
 
 void AVFoundationVideoCapturer::CaptureSampleBuffer(
-    CMSampleBufferRef sampleBuffer) {
-  if (CMSampleBufferGetNumSamples(sampleBuffer) != 1 ||
-      !CMSampleBufferIsValid(sampleBuffer) ||
-      !CMSampleBufferDataIsReady(sampleBuffer)) {
+    CMSampleBufferRef sample_buffer, webrtc::VideoRotation rotation) {
+  if (CMSampleBufferGetNumSamples(sample_buffer) != 1 ||
+      !CMSampleBufferIsValid(sample_buffer) ||
+      !CMSampleBufferDataIsReady(sample_buffer)) {
     return;
   }
 
-  CVImageBufferRef image_buffer = CMSampleBufferGetImageBuffer(sampleBuffer);
+  CVImageBufferRef image_buffer = CMSampleBufferGetImageBuffer(sample_buffer);
   if (image_buffer == NULL) {
     return;
   }
@@ -723,7 +725,7 @@ void AVFoundationVideoCapturer::CaptureSampleBuffer(
   // Retain the buffer and post it to the webrtc thread. It will be released
   // after it has successfully been signaled.
   CVBufferRetain(image_buffer);
-  AVFoundationFrame frame(image_buffer, rtc::TimeNanos());
+  AVFoundationFrame frame(image_buffer, rotation, rtc::TimeNanos());
   _startThread->Post(RTC_FROM_HERE, this, kMessageTypeFrame,
                      new rtc::TypedMessageData<AVFoundationFrame>(frame));
 }
@@ -734,7 +736,7 @@ void AVFoundationVideoCapturer::OnMessage(rtc::Message *msg) {
       rtc::TypedMessageData<AVFoundationFrame>* data =
         static_cast<rtc::TypedMessageData<AVFoundationFrame>*>(msg->pdata);
       const AVFoundationFrame& frame = data->data();
-      OnFrameMessage(frame.image_buffer, frame.capture_time);
+      OnFrameMessage(frame.image_buffer, frame.rotation, frame.capture_time);
       delete data;
       break;
     }
@@ -742,6 +744,7 @@ void AVFoundationVideoCapturer::OnMessage(rtc::Message *msg) {
 }
 
 void AVFoundationVideoCapturer::OnFrameMessage(CVImageBufferRef image_buffer,
+                                               webrtc::VideoRotation rotation,
                                                int64_t capture_time_ns) {
   RTC_DCHECK(_startThread->IsCurrent());
 
@@ -769,16 +772,33 @@ void AVFoundationVideoCapturer::OnFrameMessage(CVImageBufferRef image_buffer,
   }
 
   if (adapted_width != captured_width || crop_width != captured_width ||
-      adapted_height != captured_height || crop_height != captured_height) {
+      adapted_height != captured_height || crop_height != captured_height ||
+      (apply_rotation() && rotation != webrtc::kVideoRotation_0)) {
     // TODO(magjed): Avoid converting to I420.
     rtc::scoped_refptr<webrtc::I420Buffer> scaled_buffer(
         _buffer_pool.CreateBuffer(adapted_width, adapted_height));
     scaled_buffer->CropAndScaleFrom(buffer->NativeToI420Buffer(), crop_x,
                                     crop_y, crop_width, crop_height);
-    buffer = scaled_buffer;
+    if (!apply_rotation() || rotation == webrtc::kVideoRotation_0) {
+      buffer = scaled_buffer;
+    } else {
+      // Applying rotation is only supported for legacy reasons and performance
+      // is not critical here.
+      buffer = (rotation == webrtc::kVideoRotation_180)
+          ? I420Buffer::Create(adapted_width, adapted_height)
+          : I420Buffer::Create(adapted_height, adapted_width);
+      libyuv::I420Rotate(scaled_buffer->DataY(), scaled_buffer->StrideY(),
+                         scaled_buffer->DataU(), scaled_buffer->StrideU(),
+                         scaled_buffer->DataV(), scaled_buffer->StrideV(),
+                         buffer->MutableDataY(), buffer->StrideY(),
+                         buffer->MutableDataU(), buffer->StrideU(),
+                         buffer->MutableDataV(), buffer->StrideV(),
+                         crop_width, crop_height,
+                         static_cast<libyuv::RotationMode>(rotation));
+    }
   }
 
-  OnFrame(cricket::WebRtcVideoFrame(buffer, webrtc::kVideoRotation_0,
+  OnFrame(cricket::WebRtcVideoFrame(buffer, rotation,
                                     translated_camera_time_us, 0),
           captured_width, captured_height);
 

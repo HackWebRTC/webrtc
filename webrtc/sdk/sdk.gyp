@@ -189,6 +189,9 @@
             'objc/Framework/Headers/WebRTC/RTCVideoTrack.h',
           ], # sources
           'conditions': [
+            ['build_libyuv==1', {
+              'dependencies': ['<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv'],
+            }],
             ['OS=="ios"', {
               'sources': [
                 'objc/Framework/Classes/RTCEAGLVideoView.m',

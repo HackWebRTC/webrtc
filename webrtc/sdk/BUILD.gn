@@ -198,6 +198,13 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
       ":rtc_sdk_common_objc",
       "../api:libjingle_peerconnection",
     ]
+
+    if (rtc_build_libyuv) {
+      deps += [ "$rtc_libyuv_dir" ]
+      public_deps = [
+        "$rtc_libyuv_dir",
+      ]
+    }
   }
 
   # TODO(tkchin): Add the rtc_sdk_framework_objc target.

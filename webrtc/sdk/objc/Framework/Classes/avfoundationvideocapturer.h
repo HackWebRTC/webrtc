@@ -56,13 +56,16 @@ class AVFoundationVideoCapturer : public cricket::VideoCapturer,
 
   // Converts the sample buffer into a cricket::CapturedFrame and signals the
   // frame for capture.
-  void CaptureSampleBuffer(CMSampleBufferRef sampleBuffer);
+  void CaptureSampleBuffer(CMSampleBufferRef sample_buffer,
+                           webrtc::VideoRotation rotation);
 
   // Handles messages from posts.
   void OnMessage(rtc::Message *msg) override;
 
  private:
-  void OnFrameMessage(CVImageBufferRef image_buffer, int64_t capture_time_ns);
+  void OnFrameMessage(CVImageBufferRef image_buffer,
+                      webrtc::VideoRotation rotation,
+                      int64_t capture_time_ns);
 
   RTCAVFoundationVideoCapturerInternal *_capturer;
   rtc::Thread *_startThread;  // Set in Start(), unset in Stop().
