@@ -1521,7 +1521,10 @@ TEST_F(NetEqDecodingTest, CngFirst) {
   EXPECT_EQ(AudioFrame::kCNG, out_frame_.speech_type_);
 
   // Insert some speech packets.
-  for (int i = 0; i < 3; ++i) {
+  const uint32_t first_speech_timestamp = timestamp;
+  int timeout_counter = 0;
+  do {
+    ASSERT_LT(timeout_counter++, 20) << "Test timed out";
     PopulateRtpInfo(seq_no, timestamp, &rtp_info);
     ASSERT_EQ(0, neteq_->InsertPacket(rtp_info, payload, 0));
     ++seq_no;
@@ -1530,7 +1533,7 @@ TEST_F(NetEqDecodingTest, CngFirst) {
     // Pull audio once.
     ASSERT_EQ(0, neteq_->GetAudio(&out_frame_, &muted));
     ASSERT_EQ(kBlockSize16kHz, out_frame_.samples_per_channel_);
-  }
+  } while (!IsNewerTimestamp(out_frame_.timestamp_, first_speech_timestamp));
   // Verify speech output.
   EXPECT_EQ(AudioFrame::kNormalSpeech, out_frame_.speech_type_);
 }

@@ -598,7 +598,6 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
 
     // Update codecs.
     timestamp_ = main_header.timestamp;
-    current_rtp_payload_type_ = main_header.payloadType;
 
     // Reset timestamp scaling.
     timestamp_scaler_->Reset();
@@ -744,13 +743,10 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     new_codec_ = true;
   }
 
-  if (current_rtp_payload_type_ != 0xFF) {
-    const DecoderDatabase::DecoderInfo* dec_info =
-        decoder_database_->GetDecoderInfo(current_rtp_payload_type_);
-    if (!dec_info) {
-      assert(false);  // Already checked that the payload type is known.
-    }
-  }
+  RTC_DCHECK(current_rtp_payload_type_ == 0xFF ||
+             decoder_database_->GetDecoderInfo(current_rtp_payload_type_))
+      << "Payload type " << static_cast<int>(current_rtp_payload_type_)
+      << " is unknown where it shouldn't be";
 
   if (update_sample_rate_and_channels && !packet_buffer_->Empty()) {
     // We do not use |current_rtp_payload_type_| to |set payload_type|, but
