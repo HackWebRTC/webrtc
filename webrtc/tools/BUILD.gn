@@ -264,6 +264,7 @@ if (rtc_include_tests) {
       "../test:channel_transport",
       "../test:test_support",
       "../voice_engine",
+      "//build/config/sanitizers:deps",
       "//build/win:default_exe_manifest",
       "//testing/gtest",
       "//third_party/gflags",
@@ -288,6 +289,7 @@ if (rtc_include_tests) {
     deps = [
       "../modules/audio_processing",
       "../system_wrappers:metrics_default",
+      "//build/config/sanitizers:deps",
       "//build/win:default_exe_manifest",
       "//testing/gtest",
       "//third_party/gflags",
@@ -313,6 +315,7 @@ if (rtc_include_tests) {
       "../system_wrappers:system_wrappers_default",
       "../test:channel_transport",
       "../voice_engine",
+      "//build/config/sanitizers:deps",
       "//build/win:default_exe_manifest",
       "//testing/gtest",
       "//third_party/gflags",

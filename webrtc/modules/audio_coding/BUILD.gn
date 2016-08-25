@@ -1578,6 +1578,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":g711",
+      "//build/config/sanitizers:deps",
     ]
   }
 
@@ -1594,6 +1595,7 @@ if (rtc_include_tests) {
     deps = [
       ":g722",
       "../..:webrtc_common",
+      "//build/config/sanitizers:deps",
     ]
   }
 
