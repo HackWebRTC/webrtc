@@ -29,7 +29,7 @@
 
 #include <memory>
 
-#include "webrtc/media/engine/webrtcvideoframe.h"
+#include "webrtc/media/base/videoframe.h"
 
 @implementation RTCI420Frame {
   std::unique_ptr<cricket::VideoFrame> _videoFrame;
@@ -98,10 +98,7 @@
   if (self = [super init]) {
     // Keep a shallow copy of the video frame. The underlying frame buffer is
     // not copied.
-    _videoFrame.reset(new cricket::WebRtcVideoFrame(
-        videoFrame->video_frame_buffer(),
-        videoFrame->rotation(),
-        videoFrame->timestamp_us()));
+    _videoFrame.reset(videoFrame->Copy());
   }
   return self;
 }

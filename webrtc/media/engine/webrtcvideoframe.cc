@@ -103,6 +103,11 @@ webrtc::VideoRotation WebRtcVideoFrame::rotation() const {
   return rotation_;
 }
 
+VideoFrame* WebRtcVideoFrame::Copy() const {
+  return new WebRtcVideoFrame(video_frame_buffer_, rotation_, timestamp_us_,
+                              transport_frame_id_);
+}
+
 size_t WebRtcVideoFrame::ConvertToRgbBuffer(uint32_t to_fourcc,
                                             uint8_t* buffer,
                                             size_t size,

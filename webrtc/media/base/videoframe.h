@@ -58,6 +58,16 @@ class VideoFrame {
   // Indicates the rotation angle in degrees.
   virtual webrtc::VideoRotation rotation() const = 0;
 
+  // Make a shallow copy of the frame. The frame buffer itself is not copied.
+  // Both the current and new VideoFrame will share a single reference-counted
+  // frame buffer.
+
+  // TODO(nisse): Deprecated, to be deleted in the cricket::VideoFrame and
+  // webrtc::VideoFrame merge. To make a copy, use the cricket::WebRtcVideoFrame
+  // constructor passing video_frame_buffer(), rotation() and timestamp_us() as
+  // arguments.
+  virtual VideoFrame *Copy() const = 0;
+
   // Return a copy of frame which has its pending rotation applied. The
   // ownership of the returned frame is held by this frame.
 
