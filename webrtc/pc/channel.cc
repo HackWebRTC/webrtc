@@ -15,6 +15,7 @@
 #include "webrtc/audio_sink.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/byteorder.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/copyonwritebuffer.h"
 #include "webrtc/base/dscp.h"
@@ -171,7 +172,7 @@ BaseChannel::BaseChannel(rtc::Thread* worker_thread,
       transport_controller_(transport_controller),
       rtcp_enabled_(rtcp),
       media_channel_(media_channel) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
   if (transport_controller) {
     RTC_DCHECK_EQ(network_thread, transport_controller->network_thread());
   }
@@ -180,7 +181,7 @@ BaseChannel::BaseChannel(rtc::Thread* worker_thread,
 
 BaseChannel::~BaseChannel() {
   TRACE_EVENT0("webrtc", "BaseChannel::~BaseChannel");
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
   Deinit();
   StopConnectionMonitor();
   // Eats any outstanding messages or packets.
@@ -280,7 +281,7 @@ bool BaseChannel::SetTransport_n(const std::string& transport_name) {
   RTC_DCHECK(network_thread_->IsCurrent());
 
   if (transport_name == transport_name_) {
-    // Nothing to do if transport name isn't changing
+    // Nothing to do if transport name isn't changing.
     return true;
   }
 
@@ -289,7 +290,7 @@ bool BaseChannel::SetTransport_n(const std::string& transport_name) {
   // negotiated parameters.
   if (ShouldSetupDtlsSrtp_n()) {
     // Set |writable_| to false such that UpdateWritableState_w can set up
-    // DTLS-SRTP when the writable_ becomes true again.
+    // DTLS-SRTP when |writable_| becomes true again.
     writable_ = false;
     srtp_filter_.ResetParams();
   }
@@ -320,7 +321,7 @@ bool BaseChannel::SetTransport_n(const std::string& transport_name) {
   if (rtcp_transport_channel_) {
     // We can only update the RTCP ready to send after set_transport_channel has
     // handled channel writability.
-    SetReadyToSend(true, rtcp_transport_channel_->writable());
+    SetTransportChannelReadyToSend(true, rtcp_transport_channel_->writable());
   }
   transport_name_ = transport_name;
   return true;
@@ -331,10 +332,10 @@ void BaseChannel::SetTransportChannel_n(TransportChannel* new_tc) {
 
   TransportChannel* old_tc = transport_channel_;
   if (!old_tc && !new_tc) {
-    // Nothing to do
+    // Nothing to do.
     return;
   }
-  ASSERT(old_tc != new_tc);
+  RTC_DCHECK(old_tc != new_tc);
 
   if (old_tc) {
     DisconnectFromTransportChannel(old_tc);
@@ -352,9 +353,16 @@ void BaseChannel::SetTransportChannel_n(TransportChannel* new_tc) {
   }
 
   // Update aggregate writable/ready-to-send state between RTP and RTCP upon
-  // setting new channel
+  // setting new transport channels.
   UpdateWritableState_n();
-  SetReadyToSend(false, new_tc && new_tc->writable());
+  // On setting a new channel, assume it's ready to send if it's writable,
+  // because we have no way of knowing otherwise (the channel doesn't give us
+  // "was last send successful?").
+  //
+  // This won't always be accurate (the last SendPacket call from another
+  // BaseChannel could have resulted in an error), but even so, we'll just
+  // encounter the error again and update "ready to send" accordingly.
+  SetTransportChannelReadyToSend(false, new_tc && new_tc->writable());
 }
 
 void BaseChannel::SetRtcpTransportChannel_n(TransportChannel* new_tc,
@@ -363,10 +371,10 @@ void BaseChannel::SetRtcpTransportChannel_n(TransportChannel* new_tc,
 
   TransportChannel* old_tc = rtcp_transport_channel_;
   if (!old_tc && !new_tc) {
-    // Nothing to do
+    // Nothing to do.
     return;
   }
-  ASSERT(old_tc != new_tc);
+  RTC_DCHECK(old_tc != new_tc);
 
   if (old_tc) {
     DisconnectFromTransportChannel(old_tc);
@@ -390,7 +398,14 @@ void BaseChannel::SetRtcpTransportChannel_n(TransportChannel* new_tc,
     // Update aggregate writable/ready-to-send state between RTP and RTCP upon
     // setting new channel
     UpdateWritableState_n();
-    SetReadyToSend(true, new_tc && new_tc->writable());
+    // On setting a new channel, assume it's ready to send if it's writable,
+    // because we have no way of knowing otherwise (the channel doesn't give us
+    // "was last send successful?").
+    //
+    // This won't always be accurate (the last SendPacket call from another
+    // BaseChannel could have resulted in an error), but even so, we'll just
+    // encounter the error again and update "ready to send" accordingly.
+    SetTransportChannelReadyToSend(true, new_tc && new_tc->writable());
   }
 }
 
@@ -487,22 +502,23 @@ bool BaseChannel::GetConnectionStats(ConnectionInfos* infos) {
   return transport_channel_->GetStats(infos);
 }
 
-bool BaseChannel::IsReadyToReceive_w() const {
+bool BaseChannel::IsReadyToReceiveMedia_w() const {
   // Receive data if we are enabled and have local content,
   return enabled() && IsReceiveContentDirection(local_content_direction_);
 }
 
-bool BaseChannel::IsReadyToSend_w() const {
+bool BaseChannel::IsReadyToSendMedia_w() const {
+  // Need to access some state updated on the network thread.
+  return network_thread_->Invoke<bool>(
+      RTC_FROM_HERE, Bind(&BaseChannel::IsReadyToSendMedia_n, this));
+}
+
+bool BaseChannel::IsReadyToSendMedia_n() const {
   // Send outgoing data if we are enabled, have local and remote content,
   // and we have had some form of connectivity.
   return enabled() && IsReceiveContentDirection(remote_content_direction_) &&
          IsSendContentDirection(local_content_direction_) &&
-         network_thread_->Invoke<bool>(
-             RTC_FROM_HERE, Bind(&BaseChannel::IsTransportReadyToSend_n, this));
-}
-
-bool BaseChannel::IsTransportReadyToSend_n() const {
-  return was_ever_writable() &&
+         was_ever_writable() &&
          (srtp_filter_.IsActive() || !ShouldSetupDtlsSrtp_n());
 }
 
@@ -570,8 +586,9 @@ void BaseChannel::OnChannelRead(TransportChannel* channel,
 }
 
 void BaseChannel::OnReadyToSend(TransportChannel* channel) {
-  ASSERT(channel == transport_channel_ || channel == rtcp_transport_channel_);
-  SetReadyToSend(channel == rtcp_transport_channel_, true);
+  RTC_DCHECK(channel == transport_channel_ ||
+             channel == rtcp_transport_channel_);
+  SetTransportChannelReadyToSend(channel == rtcp_transport_channel_, true);
 }
 
 void BaseChannel::OnDtlsState(TransportChannel* channel,
@@ -595,7 +612,8 @@ void BaseChannel::OnSelectedCandidatePairChanged(
     CandidatePairInterface* selected_candidate_pair,
     int last_sent_packet_id,
     bool ready_to_send) {
-  ASSERT(channel == transport_channel_ || channel == rtcp_transport_channel_);
+  RTC_DCHECK(channel == transport_channel_ ||
+             channel == rtcp_transport_channel_);
   RTC_DCHECK(network_thread_->IsCurrent());
   std::string transport_name = channel->transport_name();
   rtc::NetworkRoute network_route;
@@ -611,7 +629,7 @@ void BaseChannel::OnSelectedCandidatePairChanged(
            network_route));
 }
 
-void BaseChannel::SetReadyToSend(bool rtcp, bool ready) {
+void BaseChannel::SetTransportChannelReadyToSend(bool rtcp, bool ready) {
   RTC_DCHECK(network_thread_->IsCurrent());
   if (rtcp) {
     rtcp_ready_to_send_ = ready;
@@ -741,7 +759,7 @@ bool BaseChannel::SendPacket(bool rtcp,
     LOG(LS_ERROR) << "Can't send outgoing " << PacketType(rtcp)
                   << " packet when SRTP is inactive and crypto is required";
 
-    ASSERT(false);
+    RTC_DCHECK(false);
     return false;
   }
 
@@ -752,7 +770,7 @@ bool BaseChannel::SendPacket(bool rtcp,
   if (ret != static_cast<int>(packet->size())) {
     if (channel->GetError() == ENOTCONN) {
       LOG(LS_WARNING) << "Got ENOTCONN from transport.";
-      SetReadyToSend(rtcp, false);
+      SetTransportChannelReadyToSend(rtcp, false);
     }
     return false;
   }
@@ -883,23 +901,23 @@ bool BaseChannel::PushdownRemoteDescription(
 }
 
 void BaseChannel::EnableMedia_w() {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
   if (enabled_)
     return;
 
   LOG(LS_INFO) << "Channel enabled";
   enabled_ = true;
-  ChangeState_w();
+  UpdateMediaSendRecvState_w();
 }
 
 void BaseChannel::DisableMedia_w() {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
   if (!enabled_)
     return;
 
   LOG(LS_INFO) << "Channel disabled";
   enabled_ = false;
-  ChangeState_w();
+  UpdateMediaSendRecvState_w();
 }
 
 void BaseChannel::UpdateWritableState_n() {
@@ -934,7 +952,7 @@ void BaseChannel::ChannelWritable_n() {
   was_ever_writable_ = true;
   MaybeSetupDtlsSrtp_n();
   writable_ = true;
-  ChangeState();
+  UpdateMediaSendRecvState();
 }
 
 void BaseChannel::SignalDtlsSetupFailure_n(bool rtcp) {
@@ -945,7 +963,7 @@ void BaseChannel::SignalDtlsSetupFailure_n(bool rtcp) {
 }
 
 void BaseChannel::SignalDtlsSetupFailure_s(bool rtcp) {
-  ASSERT(signaling_thread() == rtc::Thread::Current());
+  RTC_DCHECK(signaling_thread() == rtc::Thread::Current());
   SignalDtlsSetupFailure(this, rtcp);
 }
 
@@ -1005,7 +1023,7 @@ bool BaseChannel::SetupDtlsSrtp_n(bool rtcp_channel) {
           NULL, 0, false,
           &dtls_buffer[0], dtls_buffer.size())) {
     LOG(LS_WARNING) << "DTLS-SRTP key export failed";
-    ASSERT(false);  // This should never happen
+    RTC_DCHECK(false);  // This should never happen
     return false;
   }
 
@@ -1085,7 +1103,7 @@ void BaseChannel::ChannelNotWritable_n() {
 
   LOG(LS_INFO) << "Channel not writable (" << content_name_ << ")";
   writable_ = false;
-  ChangeState();
+  UpdateMediaSendRecvState();
 }
 
 bool BaseChannel::SetRtpTransportParameters(
@@ -1208,6 +1226,8 @@ bool BaseChannel::SetRtcpMux_n(bool enable,
       ret = rtcp_mux_filter_.SetOffer(enable, src);
       break;
     case CA_PRANSWER:
+      // This may activate RTCP muxing, but we don't yet destroy the channel
+      // because the final answer may deactivate it.
       ret = rtcp_mux_filter_.SetProvisionalAnswer(enable, src);
       break;
     case CA_ANSWER:
@@ -1245,12 +1265,12 @@ bool BaseChannel::SetRtcpMux_n(bool enable,
 }
 
 bool BaseChannel::AddRecvStream_w(const StreamParams& sp) {
-  ASSERT(worker_thread() == rtc::Thread::Current());
+  RTC_DCHECK(worker_thread() == rtc::Thread::Current());
   return media_channel()->AddRecvStream(sp);
 }
 
 bool BaseChannel::RemoveRecvStream_w(uint32_t ssrc) {
-  ASSERT(worker_thread() == rtc::Thread::Current());
+  RTC_DCHECK(worker_thread() == rtc::Thread::Current());
   return media_channel()->RemoveRecvStream(ssrc);
 }
 
@@ -1664,21 +1684,22 @@ void VoiceChannel::OnChannelRead(TransportChannel* channel,
   }
 }
 
-void BaseChannel::ChangeState() {
+void BaseChannel::UpdateMediaSendRecvState() {
   RTC_DCHECK(network_thread_->IsCurrent());
-  invoker_.AsyncInvoke<void>(RTC_FROM_HERE, worker_thread_,
-                             Bind(&BaseChannel::ChangeState_w, this));
+  invoker_.AsyncInvoke<void>(
+      RTC_FROM_HERE, worker_thread_,
+      Bind(&BaseChannel::UpdateMediaSendRecvState_w, this));
 }
 
-void VoiceChannel::ChangeState_w() {
+void VoiceChannel::UpdateMediaSendRecvState_w() {
   // Render incoming data if we're the active call, and we have the local
   // content. We receive data on the default channel and multiplexed streams.
-  bool recv = IsReadyToReceive_w();
+  bool recv = IsReadyToReceiveMedia_w();
   media_channel()->SetPlayout(recv);
 
   // Send outgoing data if we're the active call, we have the remote content,
   // and we have had some form of connectivity.
-  bool send = IsReadyToSend_w();
+  bool send = IsReadyToSendMedia_w();
   media_channel()->SetSend(send);
 
   LOG(LS_INFO) << "Changing voice state, recv=" << recv << " send=" << send;
@@ -1693,12 +1714,12 @@ bool VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
                                      ContentAction action,
                                      std::string* error_desc) {
   TRACE_EVENT0("webrtc", "VoiceChannel::SetLocalContent_w");
-  ASSERT(worker_thread() == rtc::Thread::Current());
+  RTC_DCHECK(worker_thread() == rtc::Thread::Current());
   LOG(LS_INFO) << "Setting local voice description";
 
   const AudioContentDescription* audio =
       static_cast<const AudioContentDescription*>(content);
-  ASSERT(audio != NULL);
+  RTC_DCHECK(audio != NULL);
   if (!audio) {
     SafeSetError("Can't find audio content in local description.", error_desc);
     return false;
@@ -1730,7 +1751,7 @@ bool VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
   }
 
   set_local_content_direction(content->direction());
-  ChangeState_w();
+  UpdateMediaSendRecvState_w();
   return true;
 }
 
@@ -1738,12 +1759,12 @@ bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
                                       ContentAction action,
                                       std::string* error_desc) {
   TRACE_EVENT0("webrtc", "VoiceChannel::SetRemoteContent_w");
-  ASSERT(worker_thread() == rtc::Thread::Current());
+  RTC_DCHECK(worker_thread() == rtc::Thread::Current());
   LOG(LS_INFO) << "Setting remote voice description";
 
   const AudioContentDescription* audio =
       static_cast<const AudioContentDescription*>(content);
-  ASSERT(audio != NULL);
+  RTC_DCHECK(audio != NULL);
   if (!audio) {
     SafeSetError("Can't find audio content in remote description.", error_desc);
     return false;
@@ -1781,7 +1802,7 @@ bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
   }
 
   set_remote_content_direction(content->direction());
-  ChangeState_w();
+  UpdateMediaSendRecvState_w();
   return true;
 }
 
@@ -1826,7 +1847,7 @@ void VoiceChannel::OnConnectionMonitorUpdate(
 
 void VoiceChannel::OnMediaMonitorUpdate(
     VoiceMediaChannel* media_channel, const VoiceMediaInfo& info) {
-  ASSERT(media_channel == this->media_channel());
+  RTC_DCHECK(media_channel == this->media_channel());
   SignalMediaMonitor(this, info);
 }
 
@@ -1935,10 +1956,10 @@ bool VideoChannel::SetRtpReceiveParameters_w(uint32_t ssrc,
   return media_channel()->SetRtpReceiveParameters(ssrc, parameters);
 }
 
-void VideoChannel::ChangeState_w() {
+void VideoChannel::UpdateMediaSendRecvState_w() {
   // Send outgoing data if we're the active call, we have the remote content,
   // and we have had some form of connectivity.
-  bool send = IsReadyToSend_w();
+  bool send = IsReadyToSendMedia_w();
   if (!media_channel()->SetSend(send)) {
     LOG(LS_ERROR) << "Failed to SetSend on video channel";
     // TODO(gangji): Report error back to server.
@@ -1976,12 +1997,12 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
                                      ContentAction action,
                                      std::string* error_desc) {
   TRACE_EVENT0("webrtc", "VideoChannel::SetLocalContent_w");
-  ASSERT(worker_thread() == rtc::Thread::Current());
+  RTC_DCHECK(worker_thread() == rtc::Thread::Current());
   LOG(LS_INFO) << "Setting local video description";
 
   const VideoContentDescription* video =
       static_cast<const VideoContentDescription*>(content);
-  ASSERT(video != NULL);
+  RTC_DCHECK(video != NULL);
   if (!video) {
     SafeSetError("Can't find video content in local description.", error_desc);
     return false;
@@ -2013,7 +2034,7 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
   }
 
   set_local_content_direction(content->direction());
-  ChangeState_w();
+  UpdateMediaSendRecvState_w();
   return true;
 }
 
@@ -2021,12 +2042,12 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
                                       ContentAction action,
                                       std::string* error_desc) {
   TRACE_EVENT0("webrtc", "VideoChannel::SetRemoteContent_w");
-  ASSERT(worker_thread() == rtc::Thread::Current());
+  RTC_DCHECK(worker_thread() == rtc::Thread::Current());
   LOG(LS_INFO) << "Setting remote video description";
 
   const VideoContentDescription* video =
       static_cast<const VideoContentDescription*>(content);
-  ASSERT(video != NULL);
+  RTC_DCHECK(video != NULL);
   if (!video) {
     SafeSetError("Can't find video content in remote description.", error_desc);
     return false;
@@ -2065,7 +2086,7 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
   }
 
   set_remote_content_direction(content->direction());
-  ChangeState_w();
+  UpdateMediaSendRecvState_w();
   return true;
 }
 
@@ -2092,7 +2113,7 @@ void VideoChannel::OnConnectionMonitorUpdate(
 // audio, video, and data, perhaps by using templates.
 void VideoChannel::OnMediaMonitorUpdate(
     VideoMediaChannel* media_channel, const VideoMediaInfo &info) {
-  ASSERT(media_channel == this->media_channel());
+  RTC_DCHECK(media_channel == this->media_channel());
   SignalMediaMonitor(this, info);
 }
 
@@ -2197,12 +2218,12 @@ bool DataChannel::SetLocalContent_w(const MediaContentDescription* content,
                                     ContentAction action,
                                     std::string* error_desc) {
   TRACE_EVENT0("webrtc", "DataChannel::SetLocalContent_w");
-  ASSERT(worker_thread() == rtc::Thread::Current());
+  RTC_DCHECK(worker_thread() == rtc::Thread::Current());
   LOG(LS_INFO) << "Setting local data description";
 
   const DataContentDescription* data =
       static_cast<const DataContentDescription*>(content);
-  ASSERT(data != NULL);
+  RTC_DCHECK(data != NULL);
   if (!data) {
     SafeSetError("Can't find data content in local description.", error_desc);
     return false;
@@ -2245,7 +2266,7 @@ bool DataChannel::SetLocalContent_w(const MediaContentDescription* content,
   }
 
   set_local_content_direction(content->direction());
-  ChangeState_w();
+  UpdateMediaSendRecvState_w();
   return true;
 }
 
@@ -2253,11 +2274,11 @@ bool DataChannel::SetRemoteContent_w(const MediaContentDescription* content,
                                      ContentAction action,
                                      std::string* error_desc) {
   TRACE_EVENT0("webrtc", "DataChannel::SetRemoteContent_w");
-  ASSERT(worker_thread() == rtc::Thread::Current());
+  RTC_DCHECK(worker_thread() == rtc::Thread::Current());
 
   const DataContentDescription* data =
       static_cast<const DataContentDescription*>(content);
-  ASSERT(data != NULL);
+  RTC_DCHECK(data != NULL);
   if (!data) {
     SafeSetError("Can't find data content in remote description.", error_desc);
     return false;
@@ -2300,21 +2321,21 @@ bool DataChannel::SetRemoteContent_w(const MediaContentDescription* content,
   }
 
   set_remote_content_direction(content->direction());
-  ChangeState_w();
+  UpdateMediaSendRecvState_w();
   return true;
 }
 
-void DataChannel::ChangeState_w() {
+void DataChannel::UpdateMediaSendRecvState_w() {
   // Render incoming data if we're the active call, and we have the local
   // content. We receive data on the default channel and multiplexed streams.
-  bool recv = IsReadyToReceive_w();
+  bool recv = IsReadyToReceiveMedia_w();
   if (!media_channel()->SetReceive(recv)) {
     LOG(LS_ERROR) << "Failed to SetReceive on data channel";
   }
 
   // Send outgoing data if we're the active call, we have the remote content,
   // and we have had some form of connectivity.
-  bool send = IsReadyToSend_w();
+  bool send = IsReadyToSendMedia_w();
   if (!media_channel()->SetSend(send)) {
     LOG(LS_ERROR) << "Failed to SetSend on data channel";
   }
@@ -2384,7 +2405,7 @@ void DataChannel::StopMediaMonitor() {
 
 void DataChannel::OnMediaMonitorUpdate(
     DataMediaChannel* media_channel, const DataMediaInfo& info) {
-  ASSERT(media_channel == this->media_channel());
+  RTC_DCHECK(media_channel == this->media_channel());
   SignalMediaMonitor(this, info);
 }
 

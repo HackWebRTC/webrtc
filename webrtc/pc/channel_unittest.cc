@@ -1862,24 +1862,28 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(media_channel1_->ready_to_send());
 
     // rtp channel becomes not ready to send will be propagated to mediachannel
-    network_thread_->Invoke<void>(
-        RTC_FROM_HERE, [this] { channel1_->SetReadyToSend(false, false); });
+    network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
+      channel1_->SetTransportChannelReadyToSend(false, false);
+    });
     WaitForThreads();
     EXPECT_FALSE(media_channel1_->ready_to_send());
 
-    network_thread_->Invoke<void>(
-        RTC_FROM_HERE, [this] { channel1_->SetReadyToSend(false, true); });
+    network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
+      channel1_->SetTransportChannelReadyToSend(false, true);
+    });
     WaitForThreads();
     EXPECT_TRUE(media_channel1_->ready_to_send());
 
     // rtcp channel becomes not ready to send will be propagated to mediachannel
-    network_thread_->Invoke<void>(
-        RTC_FROM_HERE, [this] { channel1_->SetReadyToSend(true, false); });
+    network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
+      channel1_->SetTransportChannelReadyToSend(true, false);
+    });
     WaitForThreads();
     EXPECT_FALSE(media_channel1_->ready_to_send());
 
-    network_thread_->Invoke<void>(
-        RTC_FROM_HERE, [this] { channel1_->SetReadyToSend(true, true); });
+    network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
+      channel1_->SetTransportChannelReadyToSend(true, true);
+    });
     WaitForThreads();
     EXPECT_TRUE(media_channel1_->ready_to_send());
   }
@@ -1902,8 +1906,9 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     WaitForThreads();
     EXPECT_TRUE(media_channel1_->ready_to_send());
 
-    network_thread_->Invoke<void>(
-        RTC_FROM_HERE, [this] { channel1_->SetReadyToSend(false, false); });
+    network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
+      channel1_->SetTransportChannelReadyToSend(false, false);
+    });
     WaitForThreads();
     EXPECT_FALSE(media_channel1_->ready_to_send());
   }

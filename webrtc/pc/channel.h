@@ -160,7 +160,15 @@ class BaseChannel
   }
 
   // Made public for easier testing.
-  void SetReadyToSend(bool rtcp, bool ready);
+  //
+  // Updates "ready to send" for an individual channel, and informs the media
+  // channel that the transport is ready to send if each channel (in use) is
+  // ready to send. This is more specific than just "writable"; it means the
+  // last send didn't return ENOTCONN.
+  //
+  // This should be called whenever a channel's ready-to-send state changes,
+  // or when RTCP muxing becomes active/inactive.
+  void SetTransportChannelReadyToSend(bool rtcp, bool ready);
 
   // Only public for unit tests.  Otherwise, consider protected.
   int SetOption(SocketType type, rtc::Socket::Option o, int val)
@@ -175,8 +183,10 @@ class BaseChannel
 
  protected:
   virtual MediaChannel* media_channel() const { return media_channel_; }
-  // Sets the |transport_channel_| (and |rtcp_transport_channel_|, if |rtcp_| is
-  // true). Gets the transport channels from |transport_controller_|.
+
+  // Sets the |transport_channel_| (and |rtcp_transport_channel_|, if
+  // |rtcp_enabled_| is true). Gets the transport channels from
+  // |transport_controller_|.
   bool SetTransport_n(const std::string& transport_name);
 
   void SetTransportChannel_n(TransportChannel* transport);
@@ -193,8 +203,18 @@ class BaseChannel
   void set_secure_required(bool secure_required) {
     secure_required_ = secure_required;
   }
-  bool IsReadyToReceive_w() const;
-  bool IsReadyToSend_w() const;
+  // These methods verify that:
+  // * The required content description directions have been set.
+  // * The channel is enabled.
+  // * And for sending:
+  //   - The SRTP filter is active if it's needed.
+  //   - The transport has been writable before, meaning it should be at least
+  //     possible to succeed in sending a packet.
+  //
+  // When any of these properties change, UpdateMediaSendRecvState_w should be
+  // called.
+  bool IsReadyToReceiveMedia_w() const;
+  bool IsReadyToSendMedia_w() const;
   rtc::Thread* signaling_thread() {
     return transport_controller_->signaling_thread();
   }
@@ -242,9 +262,14 @@ class BaseChannel
 
   void EnableMedia_w();
   void DisableMedia_w();
+
+  // Performs actions if the RTP/RTCP writable state changed. This should
+  // be called whenever a channel's writable state changes or when RTCP muxing
+  // becomes active/inactive.
   void UpdateWritableState_n();
   void ChannelWritable_n();
   void ChannelNotWritable_n();
+
   bool AddRecvStream_w(const StreamParams& sp);
   bool RemoveRecvStream_w(uint32_t ssrc);
   bool AddSendStream_w(const StreamParams& sp);
@@ -257,8 +282,11 @@ class BaseChannel
   // Set the DTLS-SRTP cipher policy on this channel as appropriate.
   bool SetDtlsSrtpCryptoSuites_n(TransportChannel* tc, bool rtcp);
 
-  void ChangeState();
-  virtual void ChangeState_w() = 0;
+  // Should be called whenever the conditions for
+  // IsReadyToReceiveMedia/IsReadyToSendMedia are satisfied (or unsatisfied).
+  // Updates the send/recv state of the media channel.
+  void UpdateMediaSendRecvState();
+  virtual void UpdateMediaSendRecvState_w() = 0;
 
   // Gets the content info appropriate to the channel (audio or video).
   virtual const ContentInfo* GetFirstContent(
@@ -329,7 +357,7 @@ class BaseChannel
   void SignalSentPacket_n(TransportChannel* channel,
                           const rtc::SentPacket& sent_packet);
   void SignalSentPacket_w(const rtc::SentPacket& sent_packet);
-  bool IsTransportReadyToSend_n() const;
+  bool IsReadyToSendMedia_n() const;
   void CacheRtpAbsSendTimeHeaderExtension_n(int rtp_abs_sendtime_extn_id);
 
   rtc::Thread* const worker_thread_;
@@ -363,11 +391,12 @@ class BaseChannel
   rtc::CryptoOptions crypto_options_;
   int rtp_abs_sendtime_extn_id_ = -1;
 
-  // MediaChannel related members that should be access from worker thread.
+  // MediaChannel related members that should be accessed from the worker
+  // thread.
   MediaChannel* const media_channel_;
-  // Currently enabled_ flag accessed from signaling thread too, but it can
-  // be changed only when signaling thread does sunchronious call to worker
-  // thread, so it should be safe.
+  // Currently the |enabled_| flag is accessed from the signaling thread as
+  // well, but it can be changed only when signaling thread does a synchronous
+  // call to the worker thread, so it should be safe.
   bool enabled_ = false;
   std::vector<StreamParams> local_streams_;
   std::vector<StreamParams> remote_streams_;
@@ -458,7 +487,7 @@ class VoiceChannel : public BaseChannel {
                      size_t len,
                      const rtc::PacketTime& packet_time,
                      int flags) override;
-  void ChangeState_w() override;
+  void UpdateMediaSendRecvState_w() override;
   const ContentInfo* GetFirstContent(const SessionDescription* sdesc) override;
   bool SetLocalContent_w(const MediaContentDescription* content,
                          ContentAction action,
@@ -538,7 +567,7 @@ class VideoChannel : public BaseChannel {
 
  private:
   // overrides from BaseChannel
-  void ChangeState_w() override;
+  void UpdateMediaSendRecvState_w() override;
   const ContentInfo* GetFirstContent(const SessionDescription* sdesc) override;
   bool SetLocalContent_w(const MediaContentDescription* content,
                          ContentAction action,
@@ -663,7 +692,7 @@ class DataChannel : public BaseChannel {
   bool SetRemoteContent_w(const MediaContentDescription* content,
                           ContentAction action,
                           std::string* error_desc) override;
-  void ChangeState_w() override;
+  void UpdateMediaSendRecvState_w() override;
   bool WantsPacket(bool rtcp, const rtc::CopyOnWriteBuffer* packet) override;
 
   void OnMessage(rtc::Message* pmsg) override;
