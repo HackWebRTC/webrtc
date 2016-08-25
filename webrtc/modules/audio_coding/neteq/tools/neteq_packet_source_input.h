@@ -11,9 +11,11 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_PACKET_SOURCE_INPUT_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_PACKET_SOURCE_INPUT_H_
 
+#include <map>
 #include <string>
 
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_input.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
 namespace test {
@@ -24,6 +26,8 @@ class RtcEventLogSource;
 // An adapter class to dress up a PacketSource object as a NetEqInput.
 class NetEqPacketSourceInput : public NetEqInput {
  public:
+  using RtpHeaderExtensionMap = std::map<int, webrtc::RTPExtensionType>;
+
   NetEqPacketSourceInput();
   rtc::Optional<int64_t> NextPacketTime() const override;
   std::unique_ptr<PacketData> PopPacket() override;
@@ -43,7 +47,8 @@ class NetEqPacketSourceInput : public NetEqInput {
 // Implementation of NetEqPacketSourceInput to be used with an RtpFileSource.
 class NetEqRtpDumpInput final : public NetEqPacketSourceInput {
  public:
-  explicit NetEqRtpDumpInput(const std::string& file_name);
+  NetEqRtpDumpInput(const std::string& file_name,
+                    const RtpHeaderExtensionMap& hdr_ext_map);
 
   rtc::Optional<int64_t> NextOutputEventTime() const override;
   void AdvanceOutputEvent() override;
@@ -61,7 +66,8 @@ class NetEqRtpDumpInput final : public NetEqPacketSourceInput {
 // RtcEventLogSource.
 class NetEqEventLogInput final : public NetEqPacketSourceInput {
  public:
-  explicit NetEqEventLogInput(const std::string& file_name);
+  NetEqEventLogInput(const std::string& file_name,
+                     const RtpHeaderExtensionMap& hdr_ext_map);
 
   rtc::Optional<int64_t> NextOutputEventTime() const override;
   void AdvanceOutputEvent() override;

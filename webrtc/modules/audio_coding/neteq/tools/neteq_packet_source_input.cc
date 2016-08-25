@@ -60,8 +60,12 @@ std::unique_ptr<NetEqInput::PacketData> NetEqPacketSourceInput::PopPacket() {
   return packet_data;
 }
 
-NetEqRtpDumpInput::NetEqRtpDumpInput(const std::string& file_name)
+NetEqRtpDumpInput::NetEqRtpDumpInput(const std::string& file_name,
+                                     const RtpHeaderExtensionMap& hdr_ext_map)
     : source_(RtpFileSource::Create(file_name)) {
+  for (const auto& ext_pair : hdr_ext_map) {
+    source_->RegisterRtpHeaderExtension(ext_pair.second, ext_pair.first);
+  }
   LoadNextPacket();
 }
 
@@ -82,8 +86,12 @@ PacketSource* NetEqRtpDumpInput::source() {
   return source_.get();
 }
 
-NetEqEventLogInput::NetEqEventLogInput(const std::string& file_name)
+NetEqEventLogInput::NetEqEventLogInput(const std::string& file_name,
+                                       const RtpHeaderExtensionMap& hdr_ext_map)
     : source_(RtcEventLogSource::Create(file_name)) {
+  for (const auto& ext_pair : hdr_ext_map) {
+    source_->RegisterRtpHeaderExtension(ext_pair.second, ext_pair.first);
+  }
   LoadNextPacket();
   AdvanceOutputEvent();
 }
