@@ -279,7 +279,7 @@ if (rtc_include_tests) {
     # TODO(kjellander): Make the code compile without disabling these flags.
     # See https://bugs.webrtc.org/3307.
     if (is_clang && is_win) {
-      cflags += [ "-Wno-unused-function" ]
+      cflags = [ "-Wno-unused-function" ]
     }
     if (!is_win) {
       cflags = [ "-Wno-sign-compare" ]

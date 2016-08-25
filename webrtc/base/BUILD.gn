@@ -508,6 +508,15 @@ static_library("rtc_base") {
         "win32socketserver.h",
       ]
     }
+    if (is_win && is_clang) {
+      cflags += [
+        # Disable warnings failing when compiling with Clang on Windows.
+        # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
+        "-Wno-sign-compare",
+        "-Wno-missing-braces",
+      ]
+    }
+
     if (rtc_build_json) {
       deps += [ "//third_party/jsoncpp" ]
     } else {

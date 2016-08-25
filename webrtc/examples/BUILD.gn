@@ -415,6 +415,14 @@ if (is_linux || is_win) {
       cflags = [ "/wd4245" ]
       configs += [ "//build/config/win:windowed" ]
     }
+    if (is_win && is_clang) {
+      cflags = [
+        # Disable warnings failing when compiling with Clang on Windows.
+        # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
+        "-Wno-reorder",
+        "-Wno-unused-function",
+      ]
+    }
     if (is_linux) {
       sources += [
         "peerconnection/client/linux/main.cc",

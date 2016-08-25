@@ -417,7 +417,7 @@ config("test_renderer_exported_config") {
     # GN orders flags on a target before flags from configs. The default config
     # adds -Wall, and this flag have to be after -Wall -- so they need to
     # come from a config and cannot be on the target directly.
-    cflags += [
+    cflags = [
       "-Wno-bool-conversion",
       "-Wno-comment",
       "-Wno-delete-non-virtual-dtor",

@@ -136,6 +136,17 @@ if (!build_with_chromium) {
 
       deps += [ "//third_party/winsdk_samples" ]
     }
+    if (is_win && is_clang) {
+      cflags = [
+        "-Wno-comment",
+        "-Wno-ignored-attributes",
+        "-Wno-microsoft-extra-qualification",
+        "-Wno-missing-braces",
+        "-Wno-overloaded-virtual",
+        "-Wno-reorder",
+        "-Wno-writable-strings",
+      ]
+    }
     if (is_ios) {
       sources = [
         "ios/device_info_ios.h",
