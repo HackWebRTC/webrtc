@@ -11,7 +11,6 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_HELP_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_HELP_H_
 
-#include <list>
 #include <map>
 #include <memory>
 #include <vector>
@@ -61,7 +60,7 @@ class RTCPPacketInformation {
   uint32_t rtcpPacketTypeFlags;  // RTCPPacketTypeFlags bit field
   uint32_t remoteSSRC;
 
-  std::list<uint16_t> nackSequenceNumbers;
+  std::vector<uint16_t> nackSequenceNumbers;
 
   uint8_t applicationSubType;
   uint32_t applicationName;

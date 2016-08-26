@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <list>
 #include <memory>
 #include <vector>
 
@@ -1637,7 +1636,7 @@ TEST_F(RtpSenderTestWithoutPacer, RespectsNackBitrateLimit) {
 
   rtp_sender_->SetStorePacketsStatus(true, kNumPackets);
   const uint16_t kStartSequenceNumber = rtp_sender_->SequenceNumber();
-  std::list<uint16_t> sequence_numbers;
+  std::vector<uint16_t> sequence_numbers;
   for (int32_t i = 0; i < kNumPackets; ++i) {
     sequence_numbers.push_back(kStartSequenceNumber + i);
     fake_clock_.AdvanceTimeMilliseconds(1);
@@ -1650,14 +1649,14 @@ TEST_F(RtpSenderTestWithoutPacer, RespectsNackBitrateLimit) {
   // Resending should work - brings the bandwidth up to the limit.
   // NACK bitrate is capped to the same bitrate as the encoder, since the max
   // protection overhead is 50% (see MediaOptimization::SetTargetRates).
-  rtp_sender_->OnReceivedNACK(sequence_numbers, 0);
+  rtp_sender_->OnReceivedNack(sequence_numbers, 0);
   EXPECT_EQ(kNumPackets * 2, transport_.packets_sent_);
 
   // Must be at least 5ms in between retransmission attempts.
   fake_clock_.AdvanceTimeMilliseconds(5);
 
   // Resending should not work, bandwidth exceeded.
-  rtp_sender_->OnReceivedNACK(sequence_numbers, 0);
+  rtp_sender_->OnReceivedNack(sequence_numbers, 0);
   EXPECT_EQ(kNumPackets * 2, transport_.packets_sent_);
 }
 

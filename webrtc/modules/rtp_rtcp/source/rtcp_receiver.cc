@@ -1263,7 +1263,7 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
     if (rtcpPacketInformation.nackSequenceNumbers.size() > 0) {
       LOG(LS_VERBOSE) << "Incoming NACK length: "
                       << rtcpPacketInformation.nackSequenceNumbers.size();
-      _rtpRtcp.OnReceivedNACK(rtcpPacketInformation.nackSequenceNumbers);
+      _rtpRtcp.OnReceivedNack(rtcpPacketInformation.nackSequenceNumbers);
     }
   }
   {

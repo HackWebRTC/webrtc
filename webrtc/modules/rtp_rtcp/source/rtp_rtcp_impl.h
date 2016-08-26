@@ -11,7 +11,6 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RTCP_IMPL_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RTCP_IMPL_H_
 
-#include <list>
 #include <set>
 #include <utility>
 #include <vector>
@@ -312,7 +311,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   StreamDataCountersCallback* GetSendChannelRtpStatisticsCallback()
       const override;
 
-  void OnReceivedNACK(const std::list<uint16_t>& nack_sequence_numbers);
+  void OnReceivedNack(const std::vector<uint16_t>& nack_sequence_numbers);
   void OnReceivedRtcpReportBlocks(const ReportBlockList& report_blocks);
 
   void OnRequestSendReport();

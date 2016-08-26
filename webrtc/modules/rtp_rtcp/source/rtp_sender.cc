@@ -721,8 +721,9 @@ int RTPSender::SetSelectiveRetransmissions(uint8_t settings) {
   return 0;
 }
 
-void RTPSender::OnReceivedNACK(const std::list<uint16_t>& nack_sequence_numbers,
-                               int64_t avg_rtt) {
+void RTPSender::OnReceivedNack(
+    const std::vector<uint16_t>& nack_sequence_numbers,
+    int64_t avg_rtt) {
   TRACE_EVENT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
                "RTPSender::OnReceivedNACK", "num_seqnum",
                nack_sequence_numbers.size(), "avg_rtt", avg_rtt);

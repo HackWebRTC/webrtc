@@ -11,7 +11,6 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_H_
 
-#include <list>
 #include <map>
 #include <memory>
 #include <utility>
@@ -183,7 +182,7 @@ class RTPSender {
   // NACK.
   int SelectiveRetransmissions() const;
   int SetSelectiveRetransmissions(uint8_t settings);
-  void OnReceivedNACK(const std::list<uint16_t>& nack_sequence_numbers,
+  void OnReceivedNack(const std::vector<uint16_t>& nack_sequence_numbers,
                       int64_t avg_rtt);
 
   void SetStorePacketsStatus(bool enable, uint16_t number_to_store);
