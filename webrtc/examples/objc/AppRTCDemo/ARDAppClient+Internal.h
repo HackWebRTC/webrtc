@@ -43,6 +43,8 @@
 @property(nonatomic, strong) NSURL *webSocketRestURL;
 @property(nonatomic, readonly) BOOL isLoopback;
 @property(nonatomic, readonly) BOOL isAudioOnly;
+@property(nonatomic, readonly) BOOL shouldMakeAecDump;
+@property(nonatomic, assign) BOOL isAecDumpActive;
 
 @property(nonatomic, strong)
     RTCMediaConstraints *defaultPeerConnectionConstraints;

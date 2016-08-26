@@ -24,6 +24,7 @@
 - (instancetype)initForRoom:(NSString *)room
                  isLoopback:(BOOL)isLoopback
                 isAudioOnly:(BOOL)isAudioOnly
+          shouldMakeAecDump:(BOOL)shouldMakeAecDump
                    delegate:(id<ARDVideoCallViewControllerDelegate>)delegate;
 
 @end

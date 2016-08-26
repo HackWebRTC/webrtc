@@ -129,6 +129,8 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
     _defaultPeerConnectionConstraints;
 @synthesize isLoopback = _isLoopback;
 @synthesize isAudioOnly = _isAudioOnly;
+@synthesize shouldMakeAecDump = _shouldMakeAecDump;
+@synthesize isAecDumpActive = _isAecDumpActive;
 
 - (instancetype)init {
   if (self = [super init]) {
@@ -220,11 +222,13 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
 
 - (void)connectToRoomWithId:(NSString *)roomId
                  isLoopback:(BOOL)isLoopback
-                isAudioOnly:(BOOL)isAudioOnly {
+                isAudioOnly:(BOOL)isAudioOnly
+          shouldMakeAecDump:(BOOL)shouldMakeAecDump {
   NSParameterAssert(roomId.length);
   NSParameterAssert(_state == kARDAppClientStateDisconnected);
   _isLoopback = isLoopback;
   _isAudioOnly = isAudioOnly;
+  _shouldMakeAecDump = shouldMakeAecDump;
   self.state = kARDAppClientStateConnecting;
 
 #if defined(WEBRTC_IOS)
@@ -309,6 +313,10 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
   _hasReceivedSdp = NO;
   _messageQueue = [NSMutableArray array];
 #if defined(WEBRTC_IOS)
+  if (_isAecDumpActive) {
+    [_factory stopAecDump];
+    _isAecDumpActive = NO;
+  }
   [_peerConnection stopRtcEventLog];
 #endif
   _peerConnection = nil;
@@ -560,6 +568,22 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
     if (![_peerConnection startRtcEventLogWithFilePath:filePath
                                  maxSizeInBytes:kARDAppClientRtcEventLogMaxSizeInBytes]) {
       RTCLogError(@"Failed to start event logging.");
+    }
+  }
+
+  // Start aecdump diagnostic recording.
+  if (_shouldMakeAecDump) {
+    _isAecDumpActive = YES;
+    NSString *filePath = [self documentsFilePathForFileName:@"audio.aecdump"];
+    int fd = open(filePath.UTF8String, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+    if (fd < 0) {
+      RTCLogError(@"Failed to create the aecdump file!");
+      _isAecDumpActive = NO;
+    } else {
+      if (![_factory startAecDumpWithFileDescriptor:fd maxFileSizeInBytes:-1]) {
+        RTCLogError(@"Failed to create aecdump.");
+        _isAecDumpActive = NO;
+      }
     }
   }
 #endif

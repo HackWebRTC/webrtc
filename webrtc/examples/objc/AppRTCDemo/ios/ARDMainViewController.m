@@ -54,9 +54,10 @@
 #pragma mark - ARDMainViewDelegate
 
 - (void)mainView:(ARDMainView *)mainView
-      didInputRoom:(NSString *)room
-        isLoopback:(BOOL)isLoopback
-       isAudioOnly:(BOOL)isAudioOnly
+         didInputRoom:(NSString *)room
+           isLoopback:(BOOL)isLoopback
+          isAudioOnly:(BOOL)isAudioOnly
+    shouldMakeAecDump:(BOOL)shouldMakeAecDump
     useManualAudio:(BOOL)useManualAudio {
   if (!room.length) {
     [self showAlertWithMessage:@"Missing room name."];
@@ -96,6 +97,7 @@
       [[ARDVideoCallViewController alloc] initForRoom:trimmedRoom
                                            isLoopback:isLoopback
                                           isAudioOnly:isAudioOnly
+                                    shouldMakeAecDump:shouldMakeAecDump
                                              delegate:self];
   videoCallViewController.modalTransitionStyle =
       UIModalTransitionStyleCrossDissolve;

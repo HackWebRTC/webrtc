@@ -48,6 +48,19 @@
   return self;
 }
 
+- (BOOL)startAecDumpWithFileDescriptor:(int)fileDescriptor
+                    maxFileSizeInBytes:(int)maxFileSizeInBytes {
+  // Pass the file to the recorder. The file ownership
+  // is passed to the recorder, and the recorder
+  // closes the file when needed.
+  return _nativeFactory->StartAecDump(fileDescriptor, maxFileSizeInBytes);
+}
+
+- (void)stopAecDump {
+  // The file is closed by the call below.
+  _nativeFactory->StopAecDump();
+}
+
 - (RTCAVFoundationVideoSource *)avFoundationVideoSourceWithConstraints:
     (nullable RTCMediaConstraints *)constraints {
   return [[RTCAVFoundationVideoSource alloc] initWithFactory:self

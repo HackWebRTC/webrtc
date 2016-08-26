@@ -119,6 +119,8 @@ static CGFloat const kCallControlMargin = 8;
   UILabel *_callOptionsLabel;
   UISwitch *_audioOnlySwitch;
   UILabel *_audioOnlyLabel;
+  UISwitch *_aecdumpSwitch;
+  UILabel *_aecdumpLabel;
   UISwitch *_loopbackSwitch;
   UILabel *_loopbackLabel;
   UISwitch *_useManualAudioSwitch;
@@ -173,6 +175,17 @@ static CGFloat const kCallControlMargin = 8;
     _loopbackLabel.textColor = controlFontColor;
     [_loopbackLabel sizeToFit];
     [self addSubview:_loopbackLabel];
+
+    _aecdumpSwitch = [[UISwitch alloc] initWithFrame:CGRectZero];
+    [_aecdumpSwitch sizeToFit];
+    [self addSubview:_aecdumpSwitch];
+
+    _aecdumpLabel = [[UILabel alloc] initWithFrame:CGRectZero];
+    _aecdumpLabel.text = @"Create AecDump";
+    _aecdumpLabel.font = controlFont;
+    _aecdumpLabel.textColor = controlFontColor;
+    [_aecdumpLabel sizeToFit];
+    [self addSubview:_aecdumpLabel];
 
     _useManualAudioSwitch = [[UISwitch alloc] initWithFrame:CGRectZero];
     [_useManualAudioSwitch sizeToFit];
@@ -274,8 +287,21 @@ static CGFloat const kCallControlMargin = 8;
   _loopbackLabel.center = CGPointMake(loopbackModeLabelCenterX,
                                       CGRectGetMidY(loopbackModeRect));
 
-  CGFloat useManualAudioTop =
+  CGFloat aecdumpModeTop =
       CGRectGetMaxY(_loopbackSwitch.frame) + kCallControlMargin;
+  CGRect aecdumpModeRect = CGRectMake(kCallControlMargin * 3,
+                                      aecdumpModeTop,
+                                      _aecdumpSwitch.frame.size.width,
+                                      _aecdumpSwitch.frame.size.height);
+  _aecdumpSwitch.frame = aecdumpModeRect;
+  CGFloat aecdumpModeLabelCenterX = CGRectGetMaxX(aecdumpModeRect) +
+      kCallControlMargin + _aecdumpLabel.frame.size.width / 2;
+  _aecdumpLabel.center = CGPointMake(aecdumpModeLabelCenterX,
+                                     CGRectGetMidY(aecdumpModeRect));
+
+
+  CGFloat useManualAudioTop =
+      CGRectGetMaxY(_aecdumpSwitch.frame) + kCallControlMargin;
   CGRect useManualAudioRect =
       CGRectMake(kCallControlMargin * 3,
                  useManualAudioTop,
@@ -334,6 +360,7 @@ static CGFloat const kCallControlMargin = 8;
                 didInputRoom:room
                   isLoopback:_loopbackSwitch.isOn
                  isAudioOnly:_audioOnlySwitch.isOn
+           shouldMakeAecDump:_aecdumpSwitch.isOn
               useManualAudio:_useManualAudioSwitch.isOn];
 }
 

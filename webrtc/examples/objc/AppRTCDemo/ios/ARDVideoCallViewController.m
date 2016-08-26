@@ -39,13 +39,15 @@
 - (instancetype)initForRoom:(NSString *)room
                  isLoopback:(BOOL)isLoopback
                 isAudioOnly:(BOOL)isAudioOnly
+          shouldMakeAecDump:(BOOL)shouldMakeAecDump
                    delegate:(id<ARDVideoCallViewControllerDelegate>)delegate {
   if (self = [super init]) {
     _delegate = delegate;
     _client = [[ARDAppClient alloc] initWithDelegate:self];
     [_client connectToRoomWithId:room
                       isLoopback:isLoopback
-                     isAudioOnly:isAudioOnly];
+                     isAudioOnly:isAudioOnly
+               shouldMakeAecDump:shouldMakeAecDump];
   }
   return self;
 }

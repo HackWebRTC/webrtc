@@ -15,10 +15,11 @@
 @protocol ARDMainViewDelegate <NSObject>
 
 - (void)mainView:(ARDMainView *)mainView
-      didInputRoom:(NSString *)room
-        isLoopback:(BOOL)isLoopback
-       isAudioOnly:(BOOL)isAudioOnly
-    useManualAudio:(BOOL)useManualAudio;
+         didInputRoom:(NSString *)room
+           isLoopback:(BOOL)isLoopback
+          isAudioOnly:(BOOL)isAudioOnly
+    shouldMakeAecDump:(BOOL)shouldMakeAecDump
+       useManualAudio:(BOOL)useManualAudio;
 
 - (void)mainViewDidToggleAudioLoop:(ARDMainView *)mainView;
 

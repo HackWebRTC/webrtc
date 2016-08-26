@@ -64,9 +64,11 @@ typedef NS_ENUM(NSInteger, ARDAppClientState) {
 // Establishes a connection with the AppRTC servers for the given room id.
 // If |isLoopback| is true, the call will connect to itself.
 // If |isAudioOnly| is true, video will be disabled for the call.
+// If |shouldMakeAecDump| is true, an aecdump will be created for the call.
 - (void)connectToRoomWithId:(NSString *)roomId
                  isLoopback:(BOOL)isLoopback
-                isAudioOnly:(BOOL)isAudioOnly;
+                isAudioOnly:(BOOL)isAudioOnly
+          shouldMakeAecDump:(BOOL)shouldMakeAecDump;
 
 // Disconnects from the AppRTC servers and any connected clients.
 - (void)disconnect;
