@@ -3595,7 +3595,11 @@ TEST_F(WebRtcVideoChannel2Test, GetRtpReceiveParametersCodecs) {
   EXPECT_EQ(kVp9Codec.ToCodecParameters(), rtp_parameters.codecs[1]);
 }
 
+#if defined(WEBRTC_USE_H264)
 TEST_F(WebRtcVideoChannel2Test, GetRtpReceiveFmtpSprop) {
+#else
+TEST_F(WebRtcVideoChannel2Test, DISABLED_GetRtpReceiveFmtpSprop) {
+#endif
   cricket::VideoRecvParameters parameters;
   cricket::VideoCodec kH264sprop1(101, "H264", 640, 400, 15);
   kH264sprop1.SetParam("sprop-parameter-sets", "uvw");

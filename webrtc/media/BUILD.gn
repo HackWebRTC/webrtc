@@ -290,6 +290,7 @@ if (rtc_include_tests) {
   test("rtc_media_unittests") {
     testonly = true
 
+    defines = []
     deps = []
     sources = [
       "base/codec_unittest.cc",
@@ -322,6 +323,9 @@ if (rtc_include_tests) {
     ]
     public_configs = [ "..:common_inherited_config" ]
 
+    if (rtc_use_h264) {
+      defines += [ "WEBRTC_USE_H264" ]
+    }
     if (is_win) {
       cflags = [
         "/wd4245",  # conversion from int to size_t, signed/unsigned mismatch.

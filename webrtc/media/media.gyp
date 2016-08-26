@@ -294,6 +294,11 @@
             4389,  # signed/unsigned mismatch.
           ],
           'conditions': [
+            ['rtc_use_h264==1', {
+              'defines': [
+                 'WEBRTC_USE_H264'
+              ]
+            }],
             ['OS=="win"', {
               'msvs_settings': {
                 'VCLinkerTool': {
