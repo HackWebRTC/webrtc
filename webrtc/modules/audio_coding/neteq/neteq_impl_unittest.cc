@@ -269,24 +269,10 @@ TEST_F(NetEqImplTest, InsertPacket) {
 
         *dec = std::move(mock_decoder);
       }));
-  DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderPCMu, "");
+  DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderPCMu, "",
+                                    mock_decoder_factory);
 
   // Expectations for decoder database.
-  EXPECT_CALL(*mock_decoder_database_, IsRed(kPayloadType))
-      .WillRepeatedly(Return(false));  // This is not RED.
-  EXPECT_CALL(*mock_decoder_database_, CheckPayloadTypes(_))
-      .Times(2)
-      .WillRepeatedly(Return(DecoderDatabase::kOK));  // Payload type is valid.
-  EXPECT_CALL(*mock_decoder_database_, IsDtmf(kPayloadType))
-      .WillRepeatedly(Return(false));  // This is not DTMF.
-  EXPECT_CALL(*mock_decoder_database_, GetDecoder(kPayloadType))
-      .Times(3)
-      .WillRepeatedly(
-          Invoke([&info, mock_decoder_factory](uint8_t payload_type) {
-            return info.GetDecoder(mock_decoder_factory);
-          }));
-  EXPECT_CALL(*mock_decoder_database_, IsComfortNoise(kPayloadType))
-      .WillRepeatedly(Return(false));  // This is not CNG.
   EXPECT_CALL(*mock_decoder_database_, GetDecoderInfo(kPayloadType))
       .WillRepeatedly(Return(&info));
 

@@ -41,7 +41,10 @@ class DecoderDatabase {
   // Class that stores decoder info in the database.
   class DecoderInfo {
    public:
-    DecoderInfo(NetEqDecoder ct, const std::string& nm);
+    DecoderInfo(
+        NetEqDecoder ct,
+        const std::string& nm,
+        AudioDecoderFactory* factory = nullptr);
     DecoderInfo(NetEqDecoder ct,
                 const std::string& nm,
                 AudioDecoder* ext_dec);
@@ -49,11 +52,11 @@ class DecoderDatabase {
     ~DecoderInfo();
 
     // Get the AudioDecoder object, creating it first if necessary.
-    AudioDecoder* GetDecoder(AudioDecoderFactory* factory);
+    AudioDecoder* GetDecoder() const;
 
     // Delete the AudioDecoder object, unless it's external. (This means we can
     // always recreate it later if we need it.)
-    void DropDecoder() { decoder_.reset(); }
+    void DropDecoder() const { decoder_.reset(); }
 
     int SampleRateHz() const {
       RTC_DCHECK_EQ(1, !!decoder_ + !!external_decoder_ + !!cng_decoder_);
@@ -62,12 +65,22 @@ class DecoderDatabase {
                                           : cng_decoder_->sample_rate_hz;
     }
 
+    // Returns true if |codec_type| is comfort noise.
+    bool IsComfortNoise() const;
+
+    // Returns true if |codec_type| is DTMF.
+    bool IsDtmf() const;
+
+    // Returns true if |codec_type| is RED.
+    bool IsRed() const;
+
     const NetEqDecoder codec_type;
     const std::string name;
 
    private:
     const rtc::Optional<SdpAudioFormat> audio_format_;
-    std::unique_ptr<AudioDecoder> decoder_;
+    AudioDecoderFactory* factory_;
+    mutable std::unique_ptr<AudioDecoder> decoder_;
 
     // Set iff this is an external decoder.
     AudioDecoder* const external_decoder_;
@@ -129,31 +142,13 @@ class DecoderDatabase {
   // method may return any of them.
   virtual uint8_t GetRtpPayloadType(NetEqDecoder codec_type) const;
 
-  // Returns a pointer to the AudioDecoder object associated with
-  // |rtp_payload_type|, or NULL if none is registered. If the AudioDecoder
-  // object does not exist for that decoder, the object is created.
-  virtual AudioDecoder* GetDecoder(uint8_t rtp_payload_type);
-
-  // Returns true if |rtp_payload_type| is registered as a |codec_type|.
-  virtual bool IsType(uint8_t rtp_payload_type,
-                      NetEqDecoder codec_type) const;
-
-  // Returns true if |rtp_payload_type| is registered as comfort noise.
-  virtual bool IsComfortNoise(uint8_t rtp_payload_type) const;
-
-  // Returns true if |rtp_payload_type| is registered as DTMF.
-  virtual bool IsDtmf(uint8_t rtp_payload_type) const;
-
-  // Returns true if |rtp_payload_type| is registered as RED.
-  virtual bool IsRed(uint8_t rtp_payload_type) const;
-
   // Sets the active decoder to be |rtp_payload_type|. If this call results in a
   // change of active decoder, |new_decoder| is set to true. The previous active
   // decoder's AudioDecoder object is deleted.
   virtual int SetActiveDecoder(uint8_t rtp_payload_type, bool* new_decoder);
 
   // Returns the current active decoder, or NULL if no active decoder exists.
-  virtual AudioDecoder* GetActiveDecoder();
+  virtual AudioDecoder* GetActiveDecoder() const;
 
   // Sets the active comfort noise decoder to be |rtp_payload_type|. If this
   // call results in a change of active comfort noise decoder, the previous
@@ -162,11 +157,32 @@ class DecoderDatabase {
 
   // Returns the current active comfort noise decoder, or NULL if no active
   // comfort noise decoder exists.
-  virtual ComfortNoiseDecoder* GetActiveCngDecoder();
+  virtual ComfortNoiseDecoder* GetActiveCngDecoder() const;
+
+  // The following are utility methods: they will look up DecoderInfo through
+  // GetDecoderInfo and call the respective method on that info object, if it
+  // exists.
+
+  // Returns a pointer to the AudioDecoder object associated with
+  // |rtp_payload_type|, or NULL if none is registered. If the AudioDecoder
+  // object does not exist for that decoder, the object is created.
+  AudioDecoder* GetDecoder(uint8_t rtp_payload_type) const;
+
+  // Returns true if |rtp_payload_type| is registered as a |codec_type|.
+  bool IsType(uint8_t rtp_payload_type, NetEqDecoder codec_type) const;
+
+  // Returns true if |rtp_payload_type| is registered as comfort noise.
+  bool IsComfortNoise(uint8_t rtp_payload_type) const;
+
+  // Returns true if |rtp_payload_type| is registered as DTMF.
+  bool IsDtmf(uint8_t rtp_payload_type) const;
+
+  // Returns true if |rtp_payload_type| is registered as RED.
+  bool IsRed(uint8_t rtp_payload_type) const;
 
   // Returns kOK if all packets in |packet_list| carry payload types that are
   // registered in the database. Otherwise, returns kDecoderNotFound.
-  virtual int CheckPayloadTypes(const PacketList& packet_list) const;
+  int CheckPayloadTypes(const PacketList& packet_list) const;
 
  private:
   typedef std::map<uint8_t, DecoderInfo> DecoderMap;
@@ -174,7 +190,7 @@ class DecoderDatabase {
   DecoderMap decoders_;
   int active_decoder_type_;
   int active_cng_decoder_type_;
-  std::unique_ptr<ComfortNoiseDecoder> active_cng_decoder_;
+  mutable std::unique_ptr<ComfortNoiseDecoder> active_cng_decoder_;
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(DecoderDatabase);

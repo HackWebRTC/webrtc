@@ -174,10 +174,6 @@ TEST(PacketBuffer, InsertPacketList) {
   }
 
   MockDecoderDatabase decoder_database;
-  EXPECT_CALL(decoder_database, IsComfortNoise(0))
-      .WillRepeatedly(Return(false));
-  EXPECT_CALL(decoder_database, IsDtmf(0))
-      .WillRepeatedly(Return(false));
   uint8_t current_pt = 0xFF;
   uint8_t current_cng_pt = 0xFF;
   EXPECT_EQ(PacketBuffer::kOK, buffer.InsertPacketList(&list,
@@ -216,10 +212,6 @@ TEST(PacketBuffer, InsertPacketListChangePayloadType) {
 
 
   MockDecoderDatabase decoder_database;
-  EXPECT_CALL(decoder_database, IsComfortNoise(_))
-      .WillRepeatedly(Return(false));
-  EXPECT_CALL(decoder_database, IsDtmf(_))
-      .WillRepeatedly(Return(false));
   uint8_t current_pt = 0xFF;
   uint8_t current_cng_pt = 0xFF;
   EXPECT_EQ(PacketBuffer::kFlushed, buffer.InsertPacketList(&list,
@@ -349,10 +341,6 @@ TEST(PacketBuffer, Reordering) {
   }
 
   MockDecoderDatabase decoder_database;
-  EXPECT_CALL(decoder_database, IsComfortNoise(0))
-      .WillRepeatedly(Return(false));
-  EXPECT_CALL(decoder_database, IsDtmf(0))
-      .WillRepeatedly(Return(false));
   uint8_t current_pt = 0xFF;
   uint8_t current_cng_pt = 0xFF;
 
@@ -424,10 +412,6 @@ TEST(PacketBuffer, Failures) {
   list.push_back(packet);
   list.push_back(gen.NextPacket(payload_len));  // Valid packet.
   MockDecoderDatabase decoder_database;
-  EXPECT_CALL(decoder_database, IsComfortNoise(0))
-      .WillRepeatedly(Return(false));
-  EXPECT_CALL(decoder_database, IsDtmf(0))
-      .WillRepeatedly(Return(false));
   uint8_t current_pt = 0xFF;
   uint8_t current_cng_pt = 0xFF;
   EXPECT_EQ(PacketBuffer::kInvalidPacket,

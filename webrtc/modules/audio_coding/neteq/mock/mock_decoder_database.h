@@ -21,7 +21,9 @@ namespace webrtc {
 
 class MockDecoderDatabase : public DecoderDatabase {
  public:
-  MockDecoderDatabase() : DecoderDatabase(nullptr) {}
+  explicit MockDecoderDatabase(
+      rtc::scoped_refptr<AudioDecoderFactory> factory = nullptr)
+      : DecoderDatabase(factory) {}
   virtual ~MockDecoderDatabase() { Die(); }
   MOCK_METHOD0(Die, void());
   MOCK_CONST_METHOD0(Empty,
@@ -44,26 +46,14 @@ class MockDecoderDatabase : public DecoderDatabase {
       const DecoderInfo*(uint8_t rtp_payload_type));
   MOCK_CONST_METHOD1(GetRtpPayloadType,
       uint8_t(NetEqDecoder codec_type));
-  MOCK_METHOD1(GetDecoder,
-      AudioDecoder*(uint8_t rtp_payload_type));
-  MOCK_CONST_METHOD2(IsType,
-      bool(uint8_t rtp_payload_type, NetEqDecoder codec_type));
-  MOCK_CONST_METHOD1(IsComfortNoise,
-      bool(uint8_t rtp_payload_type));
-  MOCK_CONST_METHOD1(IsDtmf,
-      bool(uint8_t rtp_payload_type));
-  MOCK_CONST_METHOD1(IsRed,
-      bool(uint8_t rtp_payload_type));
   MOCK_METHOD2(SetActiveDecoder,
       int(uint8_t rtp_payload_type, bool* new_decoder));
-  MOCK_METHOD0(GetActiveDecoder,
+  MOCK_CONST_METHOD0(GetActiveDecoder,
       AudioDecoder*());
   MOCK_METHOD1(SetActiveCngDecoder,
       int(uint8_t rtp_payload_type));
-  MOCK_METHOD0(GetActiveCngDecoder,
+  MOCK_CONST_METHOD0(GetActiveCngDecoder,
       ComfortNoiseDecoder*());
-  MOCK_CONST_METHOD1(CheckPayloadTypes,
-      int(const PacketList& packet_list));
 };
 
 }  // namespace webrtc
