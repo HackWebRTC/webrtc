@@ -145,14 +145,15 @@ int Normal::Process(const int16_t* input,
     }
   } else if (last_mode == kModeRfc3389Cng) {
     assert(output->Channels() == 1);  // Not adapted for multi-channel yet.
-    static const size_t kCngLength = 32;
+    static const size_t kCngLength = 48;
+    RTC_DCHECK_LE(static_cast<size_t>(8 * fs_mult), kCngLength);
     int16_t cng_output[kCngLength];
     // Reset mute factor and start up fresh.
     external_mute_factor_array[0] = 16384;
     ComfortNoiseDecoder* cng_decoder = decoder_database_->GetActiveCngDecoder();
 
     if (cng_decoder) {
-      // Generate long enough for 32kHz.
+      // Generate long enough for 48kHz.
       if (!cng_decoder->Generate(cng_output, 0)) {
         // Error returned; set return vector to all zeros.
         memset(cng_output, 0, sizeof(cng_output));
