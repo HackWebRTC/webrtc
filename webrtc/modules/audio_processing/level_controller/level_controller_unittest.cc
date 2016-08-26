@@ -12,6 +12,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/array_view.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/level_controller/level_controller.h"
@@ -27,9 +28,13 @@ const int kNumFramesToProcess = 1000;
 // any errors.
 void RunBitexactnessTest(int sample_rate_hz,
                          size_t num_channels,
+                         rtc::Optional<float> initial_level,
                          rtc::ArrayView<const float> output_reference) {
   LevelController level_controller;
   level_controller.Initialize(sample_rate_hz);
+  if (initial_level) {
+    level_controller.SetInitialLevel(*initial_level);
+  }
 
   int samples_per_channel = rtc::CheckedDivExact(sample_rate_hz, 100);
   const StreamConfig capture_config(sample_rate_hz, num_channels, false);
@@ -71,19 +76,19 @@ void RunBitexactnessTest(int sample_rate_hz,
 TEST(LevelControlBitExactnessTest, DISABLED_Mono8kHz) {
   const float kOutputReference[] = {-0.013939f, -0.012154f, -0.009054f};
   RunBitexactnessTest(AudioProcessing::kSampleRate8kHz, 1,
-                      kOutputReference);
+                      rtc::Optional<float>(), kOutputReference);
 }
 
 TEST(LevelControlBitExactnessTest, DISABLED_Mono16kHz) {
   const float kOutputReference[] = {-0.013706f, -0.013215f, -0.013018f};
   RunBitexactnessTest(AudioProcessing::kSampleRate16kHz, 1,
-                      kOutputReference);
+                      rtc::Optional<float>(), kOutputReference);
 }
 
 TEST(LevelControlBitExactnessTest, DISABLED_Mono32kHz) {
   const float kOutputReference[] = {-0.014495f, -0.016425f, -0.016085f};
   RunBitexactnessTest(AudioProcessing::kSampleRate32kHz, 1,
-                      kOutputReference);
+                      rtc::Optional<float>(), kOutputReference);
 }
 
 // TODO(peah): Investigate why this particular testcase differ between Android
@@ -96,35 +101,41 @@ TEST(LevelControlBitExactnessTest, DISABLED_Mono48kHz) {
   const float kOutputReference[] = {-0.015949f, -0.016957f, -0.019478f};
 #endif
   RunBitexactnessTest(AudioProcessing::kSampleRate48kHz, 1,
-                      kOutputReference);
+                      rtc::Optional<float>(), kOutputReference);
 }
 
 TEST(LevelControlBitExactnessTest, DISABLED_Stereo8kHz) {
   const float kOutputReference[] = {-0.014063f, -0.008450f, -0.012159f,
                                     -0.051967f, -0.023202f, -0.047858f};
   RunBitexactnessTest(AudioProcessing::kSampleRate8kHz, 2,
-                      kOutputReference);
+                      rtc::Optional<float>(), kOutputReference);
 }
 
 TEST(LevelControlBitExactnessTest, DISABLED_Stereo16kHz) {
   const float kOutputReference[] = {-0.012714f, -0.005896f, -0.012220f,
                                     -0.053306f, -0.024549f, -0.051527f};
   RunBitexactnessTest(AudioProcessing::kSampleRate16kHz, 2,
-                      kOutputReference);
+                      rtc::Optional<float>(), kOutputReference);
 }
 
 TEST(LevelControlBitExactnessTest, DISABLED_Stereo32kHz) {
   const float kOutputReference[] = {-0.011737f, -0.007018f, -0.013446f,
                                     -0.053505f, -0.026292f, -0.056221f};
   RunBitexactnessTest(AudioProcessing::kSampleRate32kHz, 2,
-                      kOutputReference);
+                      rtc::Optional<float>(), kOutputReference);
 }
 
 TEST(LevelControlBitExactnessTest, DISABLED_Stereo48kHz) {
   const float kOutputReference[] = {-0.010643f, -0.006334f, -0.011377f,
                                     -0.049088f, -0.023600f, -0.050465f};
   RunBitexactnessTest(AudioProcessing::kSampleRate48kHz, 2,
-                      kOutputReference);
+                      rtc::Optional<float>(), kOutputReference);
+}
+
+TEST(LevelControlBitExactnessTest, DISABLED_MonoInitial48kHz) {
+  const float kOutputReference[] = {-0.013753f, -0.014623f, -0.016797f};
+  RunBitexactnessTest(AudioProcessing::kSampleRate48kHz, 1,
+                      rtc::Optional<float>(2000), kOutputReference);
 }
 
 
