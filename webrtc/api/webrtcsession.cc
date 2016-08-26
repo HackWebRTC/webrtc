@@ -493,6 +493,8 @@ WebRtcSession::WebRtcSession(
       this, &WebRtcSession::OnTransportControllerCandidatesGathered);
   transport_controller_->SignalCandidatesRemoved.connect(
       this, &WebRtcSession::OnTransportControllerCandidatesRemoved);
+  transport_controller_->SignalDtlsHandshakeError.connect(
+      this, &WebRtcSession::OnDtlsHandshakeError);
 }
 
 WebRtcSession::~WebRtcSession() {
@@ -2072,5 +2074,13 @@ const std::string WebRtcSession::GetTransportName(
     return "";
   }
   return channel->transport_name();
+}
+
+void WebRtcSession::OnDtlsHandshakeError(rtc::SSLHandshakeError error) {
+  if (metrics_observer_) {
+    metrics_observer_->IncrementEnumCounter(
+        webrtc::kEnumCounterDtlsHandshakeError, static_cast<int>(error),
+        static_cast<int>(rtc::SSLHandshakeError::MAX_VALUE));
+  }
 }
 }  // namespace webrtc

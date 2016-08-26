@@ -108,6 +108,13 @@ SSLStreamAdapter* SSLStreamAdapter::Create(StreamInterface* stream) {
 #endif  // SSL_USE_OPENSSL
 }
 
+SSLStreamAdapter::SSLStreamAdapter(StreamInterface* stream)
+    : StreamAdapterInterface(stream),
+      ignore_bad_cert_(false),
+      client_auth_enabled_(true) {}
+
+SSLStreamAdapter::~SSLStreamAdapter() {}
+
 bool SSLStreamAdapter::GetSslCipherSuite(int* cipher_suite) {
   return false;
 }

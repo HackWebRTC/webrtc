@@ -191,6 +191,8 @@ TransportChannel* TransportController::CreateTransportChannel_n(
       this, &TransportController::OnChannelRoleConflict_n);
   channel->SignalStateChanged.connect(
       this, &TransportController::OnChannelStateChanged_n);
+  channel->SignalDtlsHandshakeError.connect(
+      this, &TransportController::OnDtlsHandshakeError);
   channels_.insert(channels_.end(), RefCountedChannel(channel))->AddRef();
   // Adding a channel could cause aggregate state to change.
   UpdateAggregateStates_n();
@@ -683,6 +685,10 @@ void TransportController::UpdateAggregateStates_n() {
         RTC_FROM_HERE, this, MSG_ICEGATHERINGSTATE,
         new rtc::TypedMessageData<IceGatheringState>(new_gathering_state));
   }
+}
+
+void TransportController::OnDtlsHandshakeError(rtc::SSLHandshakeError error) {
+  SignalDtlsHandshakeError(error);
 }
 
 }  // namespace cricket

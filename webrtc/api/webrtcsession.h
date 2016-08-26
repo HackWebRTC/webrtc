@@ -461,6 +461,8 @@ class WebRtcSession :
 
   const std::string GetTransportName(const std::string& content_name);
 
+  void OnDtlsHandshakeError(rtc::SSLHandshakeError error);
+
   rtc::Thread* const network_thread_;
   rtc::Thread* const worker_thread_;
   rtc::Thread* const signaling_thread_;

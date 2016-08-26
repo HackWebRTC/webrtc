@@ -280,6 +280,8 @@ bool DtlsTransportChannelWrapper::SetupDtls() {
   dtls_->SetMaxProtocolVersion(ssl_max_version_);
   dtls_->SetServerRole(ssl_role_);
   dtls_->SignalEvent.connect(this, &DtlsTransportChannelWrapper::OnDtlsEvent);
+  dtls_->SignalSSLHandshakeError.connect(
+      this, &DtlsTransportChannelWrapper::OnDtlsHandshakeError);
   if (!dtls_->SetPeerCertificateDigest(
           remote_fingerprint_algorithm_,
           reinterpret_cast<unsigned char*>(remote_fingerprint_value_.data()),
@@ -674,6 +676,11 @@ void DtlsTransportChannelWrapper::OnChannelStateChanged(
     TransportChannelImpl* channel) {
   ASSERT(channel == channel_);
   SignalStateChanged(this);
+}
+
+void DtlsTransportChannelWrapper::OnDtlsHandshakeError(
+    rtc::SSLHandshakeError error) {
+  SignalDtlsHandshakeError(error);
 }
 
 }  // namespace cricket

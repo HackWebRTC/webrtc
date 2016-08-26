@@ -220,6 +220,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
       int last_sent_packet_id,
       bool ready_to_send);
   void OnChannelStateChanged(TransportChannelImpl* channel);
+  void OnDtlsHandshakeError(rtc::SSLHandshakeError error);
 
   rtc::Thread* worker_thread_;  // Everything should occur on this thread.
   // Underlying channel, not owned by this class.

@@ -110,6 +110,9 @@ enum SSLProtocolVersion {
 // Errors for Read -- in the high range so no conflict with OpenSSL.
 enum { SSE_MSG_TRUNC = 0xff0001 };
 
+// Used to send back UMA histogram value. Logged when Dtls handshake fails.
+enum class SSLHandshakeError { UNKNOWN, INCOMPATIBLE_CIPHERSUITE, MAX_VALUE };
+
 class SSLStreamAdapter : public StreamAdapterInterface {
  public:
   // Instantiate an SSLStreamAdapter wrapping the given stream,
@@ -117,9 +120,8 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   // Caller is responsible for freeing the returned object.
   static SSLStreamAdapter* Create(StreamInterface* stream);
 
-  explicit SSLStreamAdapter(StreamInterface* stream)
-      : StreamAdapterInterface(stream), ignore_bad_cert_(false),
-        client_auth_enabled_(true) { }
+  explicit SSLStreamAdapter(StreamInterface* stream);
+  ~SSLStreamAdapter() override;
 
   void set_ignore_bad_cert(bool ignore) { ignore_bad_cert_ = ignore; }
   bool ignore_bad_cert() const { return ignore_bad_cert_; }
@@ -224,6 +226,8 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   // introduced such that any caller could depend on sslstreamadapter.h without
   // depending on specific SSL implementation.
   static std::string SslCipherSuiteToName(int cipher_suite);
+
+  sigslot::signal1<SSLHandshakeError> SignalSSLHandshakeError;
 
  private:
   // If true, the server certificate need not match the configured

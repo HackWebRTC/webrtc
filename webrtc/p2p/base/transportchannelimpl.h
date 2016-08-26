@@ -100,6 +100,9 @@ class TransportChannelImpl : public TransportChannel {
   // Emitted whenever the transport channel state changed.
   sigslot::signal1<TransportChannelImpl*> SignalStateChanged;
 
+  // Emitted whenever the Dtls handshake failed on some transport channel.
+  sigslot::signal1<rtc::SSLHandshakeError> SignalDtlsHandshakeError;
+
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(TransportChannelImpl);
 };

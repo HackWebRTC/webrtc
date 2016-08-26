@@ -119,6 +119,8 @@ class TransportController : public sigslot::has_slots<>,
   // for unit test
   const rtc::scoped_refptr<rtc::RTCCertificate>& certificate_for_testing();
 
+  sigslot::signal1<rtc::SSLHandshakeError> SignalDtlsHandshakeError;
+
  protected:
   // Protected and virtual so we can override it in unit tests.
   virtual Transport* CreateTransport_n(const std::string& transport_name);
@@ -201,6 +203,8 @@ class TransportController : public sigslot::has_slots<>,
   void OnChannelStateChanged_n(TransportChannelImpl* channel);
 
   void UpdateAggregateStates_n();
+
+  void OnDtlsHandshakeError(rtc::SSLHandshakeError error);
 
   rtc::Thread* const signaling_thread_ = nullptr;
   rtc::Thread* const network_thread_ = nullptr;
