@@ -74,10 +74,6 @@ source_set("audio_processing") {
     "high_pass_filter_impl.cc",
     "high_pass_filter_impl.h",
     "include/audio_processing.h",
-    "intelligibility/intelligibility_enhancer.cc",
-    "intelligibility/intelligibility_enhancer.h",
-    "intelligibility/intelligibility_utils.cc",
-    "intelligibility/intelligibility_utils.h",
     "level_controller/biquad_filter.cc",
     "level_controller/biquad_filter.h",
     "level_controller/down_sampler.cc",
@@ -180,6 +176,18 @@ source_set("audio_processing") {
   if (rtc_enable_protobuf) {
     defines += [ "WEBRTC_AUDIOPROC_DEBUG_DUMP" ]
     deps += [ ":audioproc_debug_proto" ]
+  }
+
+  if (rtc_enable_intelligibility_enhancer) {
+    defines += [ "WEBRTC_INTELLIGIBILITY_ENHANCER=1" ]
+    sources += [
+      "intelligibility/intelligibility_enhancer.cc",
+      "intelligibility/intelligibility_enhancer.h",
+      "intelligibility/intelligibility_utils.cc",
+      "intelligibility/intelligibility_utils.h",
+    ]
+  } else {
+    defines += [ "WEBRTC_INTELLIGIBILITY_ENHANCER=0" ]
   }
 
   if (rtc_prefer_fixed_point) {
@@ -481,22 +489,24 @@ if (rtc_include_tests) {
     }
   }
 
-  executable("intelligibility_proc") {
-    testonly = true
-    sources = [
-      "intelligibility/test/intelligibility_proc.cc",
-    ]
-    deps = [
-      ":audio_processing",
-      ":audioproc_test_utils",
-      "../../system_wrappers:metrics_default",
-      "../../test:test_support",
-      "//testing/gtest",
-      "//third_party/gflags",
-    ]
-    if (is_clang) {
-      # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+  if (rtc_enable_intelligibility_enhancer) {
+    executable("intelligibility_proc") {
+      testonly = true
+      sources = [
+        "intelligibility/test/intelligibility_proc.cc",
+      ]
+      deps = [
+        ":audio_processing",
+        ":audioproc_test_utils",
+        "../../system_wrappers:metrics_default",
+        "../../test:test_support",
+        "//testing/gtest",
+        "//third_party/gflags",
+      ]
+      if (is_clang) {
+        # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
+        configs -= [ "//build/config/clang:find_bad_constructs" ]
+      }
     }
   }
 

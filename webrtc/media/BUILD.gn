@@ -141,6 +141,12 @@ source_set("rtc_media") {
     ]
   }
 
+  if (rtc_enable_intelligibility_enhancer) {
+    defines += [ "WEBRTC_INTELLIGIBILITY_ENHANCER=1" ]
+  } else {
+    defines += [ "WEBRTC_INTELLIGIBILITY_ENHANCER=0" ]
+  }
+
   include_dirs = []
   if (rtc_build_libyuv) {
     deps += [ "$rtc_libyuv_dir" ]

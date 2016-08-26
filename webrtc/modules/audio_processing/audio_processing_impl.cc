@@ -30,7 +30,9 @@
 #include "webrtc/modules/audio_processing/gain_control_for_experimental_agc.h"
 #include "webrtc/modules/audio_processing/gain_control_impl.h"
 #include "webrtc/modules/audio_processing/high_pass_filter_impl.h"
+#if WEBRTC_INTELLIGIBILITY_ENHANCER
 #include "webrtc/modules/audio_processing/intelligibility/intelligibility_enhancer.h"
+#endif
 #include "webrtc/modules/audio_processing/level_controller/level_controller.h"
 #include "webrtc/modules/audio_processing/level_estimator_impl.h"
 #include "webrtc/modules/audio_processing/noise_suppression_impl.h"
@@ -49,6 +51,14 @@
 #include "webrtc/modules/audio_processing/debug.pb.h"
 #endif
 #endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
+
+// Check to verify that the define for the intelligibility enhancer is properly
+// set.
+#if !defined(WEBRTC_INTELLIGIBILITY_ENHANCER) || \
+    (WEBRTC_INTELLIGIBILITY_ENHANCER != 0 &&     \
+     WEBRTC_INTELLIGIBILITY_ENHANCER != 1)
+#error "Set WEBRTC_INTELLIGIBILITY_ENHANCER to either 0 or 1"
+#endif
 
 #define RETURN_ON_ERR(expr) \
   do {                      \
@@ -124,7 +134,9 @@ struct AudioProcessingImpl::ApmPublicSubmodules {
 
   // Accessed internally from both render and capture.
   std::unique_ptr<TransientSuppressor> transient_suppressor;
+#if WEBRTC_INTELLIGIBILITY_ENHANCER
   std::unique_ptr<IntelligibilityEnhancer> intelligibility_enhancer;
+#endif
 };
 
 struct AudioProcessingImpl::ApmPrivateSubmodules {
@@ -321,7 +333,9 @@ int AudioProcessingImpl::InitializeLocked() {
   InitializeExperimentalAgc();
   InitializeTransient();
   InitializeBeamformer();
+#if WEBRTC_INTELLIGIBILITY_ENHANCER
   InitializeIntelligibility();
+#endif
   InitializeHighPassFilter();
   InitializeNoiseSuppression();
   InitializeLevelEstimator();
@@ -423,12 +437,14 @@ void AudioProcessingImpl::SetExtraOptions(const Config& config) {
     InitializeLevelController();
   }
 
+#if WEBRTC_INTELLIGIBILITY_ENHANCER
   if(capture_nonlocked_.intelligibility_enabled !=
      config.Get<Intelligibility>().enabled) {
     capture_nonlocked_.intelligibility_enabled =
         config.Get<Intelligibility>().enabled;
     InitializeIntelligibility();
   }
+#endif
 
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
   if (capture_nonlocked_.beamformer_enabled !=
@@ -725,6 +741,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
     ca->CopyLowPassToReference();
   }
   public_submodules_->noise_suppression->ProcessCaptureAudio(ca);
+#if WEBRTC_INTELLIGIBILITY_ENHANCER
   if (capture_nonlocked_.intelligibility_enabled) {
     RTC_DCHECK(public_submodules_->noise_suppression->is_enabled());
     int gain_db = public_submodules_->gain_control->is_enabled() ?
@@ -737,6 +754,7 @@ int AudioProcessingImpl::ProcessStreamLocked() {
     public_submodules_->intelligibility_enhancer->SetCaptureNoiseEstimate(
         public_submodules_->noise_suppression->NoiseEstimate(), gain);
   }
+#endif
 
   // Ensure that the stream delay was set before the call to the
   // AECM ProcessCaptureAudio function.
@@ -936,11 +954,13 @@ int AudioProcessingImpl::ProcessReverseStreamLocked() {
     ra->SplitIntoFrequencyBands();
   }
 
+#if WEBRTC_INTELLIGIBILITY_ENHANCER
   if (capture_nonlocked_.intelligibility_enabled) {
     public_submodules_->intelligibility_enhancer->ProcessRenderAudio(
         ra->split_channels_f(kBand0To8kHz), capture_nonlocked_.split_rate,
         ra->num_channels());
   }
+#endif
 
   RETURN_ON_ERR(public_submodules_->echo_cancellation->ProcessRenderAudio(ra));
   RETURN_ON_ERR(
@@ -1172,7 +1192,11 @@ bool AudioProcessingImpl::fwd_analysis_needed() const {
 }
 
 bool AudioProcessingImpl::is_rev_processed() const {
+#if WEBRTC_INTELLIGIBILITY_ENHANCER
   return capture_nonlocked_.intelligibility_enabled;
+#else
+  return false;
+#endif
 }
 
 bool AudioProcessingImpl::rev_synthesis_needed() const {
@@ -1237,12 +1261,14 @@ void AudioProcessingImpl::InitializeBeamformer() {
 }
 
 void AudioProcessingImpl::InitializeIntelligibility() {
+#if WEBRTC_INTELLIGIBILITY_ENHANCER
   if (capture_nonlocked_.intelligibility_enabled) {
     public_submodules_->intelligibility_enhancer.reset(
         new IntelligibilityEnhancer(capture_nonlocked_.split_rate,
                                     render_.render_audio->num_channels(),
                                     NoiseSuppressionImpl::num_noise_bins()));
   }
+#endif
 }
 
 void AudioProcessingImpl::InitializeHighPassFilter() {

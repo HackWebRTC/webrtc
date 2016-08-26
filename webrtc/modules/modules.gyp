@@ -249,8 +249,6 @@
             'audio_processing/beamformer/mock_nonlinear_beamformer.h',
             'audio_processing/beamformer/nonlinear_beamformer_unittest.cc',
             'audio_processing/echo_cancellation_impl_unittest.cc',
-            'audio_processing/intelligibility/intelligibility_enhancer_unittest.cc',
-            'audio_processing/intelligibility/intelligibility_utils_unittest.cc',
             'audio_processing/splitting_filter_unittest.cc',
             'audio_processing/transient/dyadic_decimator_unittest.cc',
             'audio_processing/transient/file_utils.cc',
@@ -398,6 +396,15 @@
             'video_processing/test/video_processing_unittest.h',
           ],
           'conditions': [
+            ['enable_intelligibility_enhancer==1', {
+              'defines': ['WEBRTC_INTELLIGIBILITY_ENHANCER=1',],
+              'sources': [
+                'audio_processing/intelligibility/intelligibility_enhancer_unittest.cc',
+                'audio_processing/intelligibility/intelligibility_utils_unittest.cc',
+              ],
+            }, {
+              'defines': ['WEBRTC_INTELLIGIBILITY_ENHANCER=0',],
+            }],
             ['libvpx_build_vp9==1', {
               'sources': [
                 'video_coding/codecs/vp9/vp9_screenshare_layers_unittest.cc',

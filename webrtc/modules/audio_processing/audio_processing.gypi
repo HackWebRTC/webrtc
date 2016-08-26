@@ -85,10 +85,6 @@
         'high_pass_filter_impl.cc',
         'high_pass_filter_impl.h',
         'include/audio_processing.h',
-        'intelligibility/intelligibility_enhancer.cc',
-        'intelligibility/intelligibility_enhancer.h',
-        'intelligibility/intelligibility_utils.cc',
-        'intelligibility/intelligibility_utils.h',
         'level_controller/biquad_filter.cc',
         'level_controller/biquad_filter.h',
         'level_controller/down_sampler.cc',
@@ -183,6 +179,17 @@
         ['enable_protobuf==1', {
           'dependencies': ['audioproc_debug_proto'],
           'defines': ['WEBRTC_AUDIOPROC_DEBUG_DUMP'],
+        }],
+        ['enable_intelligibility_enhancer==1', {
+          'defines': ['WEBRTC_INTELLIGIBILITY_ENHANCER=1',],
+          'sources': [
+            'intelligibility/intelligibility_enhancer.cc',
+            'intelligibility/intelligibility_enhancer.h',
+            'intelligibility/intelligibility_utils.cc',
+            'intelligibility/intelligibility_utils.h',
+          ],
+        }, {
+          'defines': ['WEBRTC_INTELLIGIBILITY_ENHANCER=0',],
         }],
         ['prefer_fixed_point==1', {
           'defines': ['WEBRTC_NS_FIXED'],

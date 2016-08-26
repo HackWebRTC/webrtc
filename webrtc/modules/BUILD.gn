@@ -199,8 +199,6 @@ if (rtc_include_tests) {
       "audio_processing/beamformer/mock_nonlinear_beamformer.h",
       "audio_processing/beamformer/nonlinear_beamformer_unittest.cc",
       "audio_processing/echo_cancellation_impl_unittest.cc",
-      "audio_processing/intelligibility/intelligibility_enhancer_unittest.cc",
-      "audio_processing/intelligibility/intelligibility_utils_unittest.cc",
       "audio_processing/splitting_filter_unittest.cc",
       "audio_processing/transient/dyadic_decimator_unittest.cc",
       "audio_processing/transient/file_utils.cc",
@@ -347,6 +345,16 @@ if (rtc_include_tests) {
       "video_processing/test/video_processing_unittest.cc",
       "video_processing/test/video_processing_unittest.h",
     ]
+
+    if (rtc_enable_intelligibility_enhancer) {
+      defines += [ "WEBRTC_INTELLIGIBILITY_ENHANCER=1" ]
+      sources += [
+        "audio_processing/intelligibility/intelligibility_enhancer_unittest.cc",
+        "audio_processing/intelligibility/intelligibility_utils_unittest.cc",
+      ]
+    } else {
+      defines += [ "WEBRTC_INTELLIGIBILITY_ENHANCER=0" ]
+    }
 
     if (rtc_libvpx_build_vp9) {
       sources +=

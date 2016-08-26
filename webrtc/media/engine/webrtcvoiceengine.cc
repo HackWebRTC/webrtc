@@ -64,6 +64,14 @@ const int kDefaultAudioDeviceId = 0;
 
 constexpr int kNackRtpHistoryMs = 5000;
 
+// Check to verify that the define for the intelligibility enhancer is properly
+// set.
+#if !defined(WEBRTC_INTELLIGIBILITY_ENHANCER) || \
+    (WEBRTC_INTELLIGIBILITY_ENHANCER != 0 &&     \
+     WEBRTC_INTELLIGIBILITY_ENHANCER != 1)
+#error "Set WEBRTC_INTELLIGIBILITY_ENHANCER to either 0 or 1"
+#endif
+
 // Codec parameters for Opus.
 // draft-spittka-payload-rtp-opus-03
 
@@ -647,6 +655,11 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
       ec_mode = webrtc::kEcConference;
     }
   }
+#endif
+
+#if (WEBRTC_INTELLIGIBILITY_ENHANCER == 0)
+  // Hardcode the intelligibility enhancer to be off.
+  options.intelligibility_enhancer = rtc::Optional<bool>(false);
 #endif
 
   webrtc::VoEAudioProcessing* voep = voe_wrapper_->processing();

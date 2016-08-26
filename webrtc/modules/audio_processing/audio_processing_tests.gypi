@@ -61,22 +61,29 @@
         'beamformer/nonlinear_beamformer_test.cc',
       ],
     }, # nonlinear_beamformer_test
-    {
-      'target_name': 'intelligibility_proc',
-      'type': 'executable',
-      'dependencies': [
-        'audioproc_test_utils',
-        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
-        '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(webrtc_root)/modules/modules.gyp:audio_processing',
-        '<(webrtc_root)/test/test.gyp:test_support',
-      ],
-      'sources': [
-        'intelligibility/test/intelligibility_proc.cc',
-      ],
-    }, # intelligibility_proc
   ],
   'conditions': [
+    ['enable_intelligibility_enhancer==1', {
+      'defines': ['WEBRTC_INTELLIGIBILITY_ENHANCER=1',],
+      'targets': [
+        {
+          'target_name': 'intelligibility_proc',
+          'type': 'executable',
+          'dependencies': [
+            'audioproc_test_utils',
+            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(webrtc_root)/modules/modules.gyp:audio_processing',
+            '<(webrtc_root)/test/test.gyp:test_support',
+          ],
+          'sources': [
+            'intelligibility/test/intelligibility_proc.cc',
+          ],
+        },
+      ],
+    }, {
+      'defines': ['WEBRTC_INTELLIGIBILITY_ENHANCER=0',],
+    }],
     ['enable_protobuf==1', {
       'targets': [
         {

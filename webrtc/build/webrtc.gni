@@ -36,6 +36,9 @@ declare_args() {
   # Enables the use of protocol buffers for debug recordings.
   rtc_enable_protobuf = true
 
+  # Disable the code for the intelligibility enhancer by default.
+  rtc_enable_intelligibility_enhancer = false
+
   # Disable these to not build components which can be externally provided.
   rtc_build_expat = true
   rtc_build_json = true

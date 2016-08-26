@@ -118,6 +118,9 @@
     # Enables the use of protocol buffers for debug recordings.
     'enable_protobuf%': 1,
 
+    # Disable the code for the intelligibility enhancer by default.
+    'enable_intelligibility_enhancer%': 0,
+
     # Disable these to not build components which can be externally provided.
     'build_expat%': 1,
     'build_json%': 1,
