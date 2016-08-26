@@ -97,4 +97,12 @@ int Agc::set_target_level_dbfs(int level) {
   return 0;
 }
 
+int Agc::target_level_dbfs() const {
+  return target_level_dbfs_;
+}
+
+float Agc::voice_probability() const {
+  return vad_.last_voice_probability();
+}
+
 }  // namespace webrtc

@@ -27,6 +27,7 @@ namespace webrtc {
 class VoiceActivityDetector {
  public:
   VoiceActivityDetector();
+  ~VoiceActivityDetector();
 
   // Processes each audio chunk and estimates the voice probability. The maximum
   // supported sample rate is 32kHz.

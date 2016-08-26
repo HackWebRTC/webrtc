@@ -40,11 +40,8 @@ class Agc {
   virtual void Reset();
 
   virtual int set_target_level_dbfs(int level);
-  virtual int target_level_dbfs() const { return target_level_dbfs_; }
-
-  virtual float voice_probability() const {
-    return vad_.last_voice_probability();
-  }
+  virtual int target_level_dbfs() const;
+  virtual float voice_probability() const;
 
  private:
   double target_level_loudness_;

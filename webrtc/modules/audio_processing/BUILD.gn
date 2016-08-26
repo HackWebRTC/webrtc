@@ -453,10 +453,6 @@ if (rtc_include_tests) {
       "//testing/gtest",
       "//third_party/gflags",
     ]
-    if (is_clang) {
-      # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 
   executable("click_annotate") {
