@@ -42,12 +42,10 @@ void GainSelector::Initialize(int sample_rate_hz) {
 float GainSelector::GetNewGain(float peak_level,
                                float noise_energy,
                                float saturating_gain,
-                               bool gain_jumpstart,
                                SignalClassifier::SignalType signal_type) {
   RTC_DCHECK_LT(0.f, peak_level);
 
-  if (signal_type == SignalClassifier::SignalType::kHighlyNonStationary ||
-      gain_jumpstart) {
+  if (signal_type == SignalClassifier::SignalType::kHighlyNonStationary) {
     highly_nonstationary_signal_hold_counter_ = 100;
   } else {
     highly_nonstationary_signal_hold_counter_ =

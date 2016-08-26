@@ -992,11 +992,6 @@ void AudioProcessingImpl::set_stream_key_pressed(bool key_pressed) {
   capture_.key_pressed = key_pressed;
 }
 
-void AudioProcessingImpl::SetLevelControllerInitialLevel(float level) {
-  rtc::CritScope cs(&crit_capture_);
-  private_submodules_->level_controller->SetInitialLevel(level);
-}
-
 void AudioProcessingImpl::set_delay_offset_ms(int offset) {
   rtc::CritScope cs(&crit_capture_);
   capture_.delay_offset_ms = offset;

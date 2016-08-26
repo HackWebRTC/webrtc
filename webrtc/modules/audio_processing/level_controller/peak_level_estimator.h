@@ -12,7 +12,6 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_LEVEL_CONTROLLER_PEAK_LEVEL_ESTIMATOR_H_
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/audio_processing/level_controller/lc_constants.h"
 #include "webrtc/modules/audio_processing/level_controller/signal_classifier.h"
 
 namespace webrtc {
@@ -24,11 +23,9 @@ class PeakLevelEstimator {
   void Initialize();
   float Analyze(SignalClassifier::SignalType signal_type,
                 float frame_peak_level);
-  void SetInitialPeakLevel(float level);
 
  private:
   float peak_level_;
-  float initial_peak_level_ = kTargetLcPeakLevel;
   int hold_counter_;
   bool initialization_phase_;
 

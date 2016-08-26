@@ -82,7 +82,6 @@ class AudioProcessingImpl : public AudioProcessing {
   void set_delay_offset_ms(int offset) override;
   int delay_offset_ms() const override;
   void set_stream_key_pressed(bool key_pressed) override;
-  void SetLevelControllerInitialLevel(float level) override;
 
   // Render-side exclusive methods possibly running APM in a
   // multi-threaded manner. Acquire the render lock.

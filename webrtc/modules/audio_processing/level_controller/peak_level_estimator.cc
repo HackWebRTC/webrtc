@@ -13,14 +13,10 @@
 #include <algorithm>
 
 #include "webrtc/modules/audio_processing/audio_buffer.h"
+#include "webrtc/modules/audio_processing/level_controller/lc_constants.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
 
 namespace webrtc {
-namespace {
-
-const float kMinLevel = 30.f;
-
-}  // namespace
 
 PeakLevelEstimator::PeakLevelEstimator() {
   Initialize();
@@ -29,26 +25,15 @@ PeakLevelEstimator::PeakLevelEstimator() {
 PeakLevelEstimator::~PeakLevelEstimator() {}
 
 void PeakLevelEstimator::Initialize() {
-  peak_level_ = initial_peak_level_;
+  peak_level_ = kTargetLcPeakLevel;
   hold_counter_ = 0;
   initialization_phase_ = true;
-}
-
-void PeakLevelEstimator::SetInitialPeakLevel(float level) {
-  RTC_DCHECK_LE(-100.f, level);
-  RTC_DCHECK_GE(0.f, level);
-
-  float linear_level = std::pow(10.f, level / 20.f) * 32768.f;
-
-  // Limit the supplied level to the level range used internally.
-  initial_peak_level_ = std::max(linear_level, kMinLevel);
-  Initialize();
 }
 
 float PeakLevelEstimator::Analyze(SignalClassifier::SignalType signal_type,
                                   float frame_peak_level) {
   if (frame_peak_level == 0) {
-    RTC_DCHECK_LE(kMinLevel, peak_level_);
+    RTC_DCHECK_LE(30.f, peak_level_);
     return peak_level_;
   }
 
@@ -72,7 +57,7 @@ float PeakLevelEstimator::Analyze(SignalClassifier::SignalType signal_type,
     }
   }
 
-  peak_level_ = std::max(peak_level_, kMinLevel);
+  peak_level_ = std::max(peak_level_, 30.f);
 
   return peak_level_;
 }

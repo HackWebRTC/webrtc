@@ -93,7 +93,6 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
   WEBRTC_STUB_CONST(stream_delay_ms, ());
   WEBRTC_BOOL_STUB_CONST(was_stream_delay_set, ());
   WEBRTC_VOID_STUB(set_stream_key_pressed, (bool key_pressed));
-  WEBRTC_VOID_STUB(SetLevelControllerInitialLevel, (float level));
   WEBRTC_VOID_STUB(set_delay_offset_ms, (int offset));
   WEBRTC_STUB_CONST(delay_offset_ms, ());
   WEBRTC_STUB(StartDebugRecording,

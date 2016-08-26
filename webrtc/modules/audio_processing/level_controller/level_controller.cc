@@ -155,11 +155,6 @@ LevelController::LevelController()
 
 LevelController::~LevelController() {}
 
-void LevelController::SetInitialLevel(float level) {
-  peak_level_estimator_.SetInitialPeakLevel(level);
-  gain_jumpstart_ = true;
-}
-
 void LevelController::Initialize(int sample_rate_hz) {
   RTC_DCHECK(sample_rate_hz == AudioProcessing::kSampleRate8kHz ||
              sample_rate_hz == AudioProcessing::kSampleRate16kHz ||
@@ -211,11 +206,8 @@ void LevelController::Process(AudioBuffer* audio) {
   float saturating_gain = saturating_gain_estimator_.GetGain();
 
   // Compute the new gain to apply.
-  last_gain_ = gain_selector_.GetNewGain(
-      peak_level, noise_energy, saturating_gain, gain_jumpstart_, signal_type);
-
-  // Unflag the jumpstart of the gain as it should only happen once.
-  gain_jumpstart_ = false;
+  last_gain_ = gain_selector_.GetNewGain(peak_level, noise_energy,
+                                         saturating_gain, signal_type);
 
   // Apply the gain to the signal.
   int num_saturations = gain_applier_.Process(last_gain_, audio);

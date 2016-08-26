@@ -410,11 +410,6 @@ class AudioProcessing {
   // with this chunk of audio.
   virtual void set_stream_key_pressed(bool key_pressed) = 0;
 
-  // Sets the initial peak level to use inside the level controller in order
-  // to compute the signal gain. The unit for the peak level is dBFS and
-  // the allowed range is [-100, 0].
-  virtual void SetLevelControllerInitialLevel(float level) = 0;
-
   // Sets a delay |offset| in ms to add to the values passed in through
   // set_stream_delay_ms(). May be positive or negative.
   //

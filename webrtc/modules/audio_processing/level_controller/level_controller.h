@@ -38,11 +38,6 @@ class LevelController {
   void Process(AudioBuffer* audio);
   float GetLastGain() { return last_gain_; }
 
-  // Sets the initial peak level to use inside the level controller in order
-  // to compute the signal gain. The unit for the peak level is dBFS and
-  // the allowed range is [-100, 0].
-  void SetInitialLevel(float level);
-
  private:
   class Metrics {
    public:
@@ -76,7 +71,6 @@ class LevelController {
   float dc_level_[2];
   float dc_forgetting_factor_;
   float last_gain_;
-  bool gain_jumpstart_ = false;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(LevelController);
 };
