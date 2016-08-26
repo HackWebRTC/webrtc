@@ -42,20 +42,22 @@
       'Mac64 Release (GYP)': 'gyp_release_bot_x64_exclude_tests',
 
       # Linux
-      'Linux32 ARM': 'gyp_crosscompile_release_bot_arm',
-      'Linux32 Debug': 'gyp_debug_bot_x86',
-      'Linux32 Release': 'gyp_release_bot_x86',
-      'Linux64 Debug': 'gyp_debug_bot_x64',
-      'Linux64 Release': 'gyp_release_bot_x64',
-      'Linux Asan': 'gyp_asan_lsan_clang_release_bot_x64',
-      'Linux Memcheck': 'gyp_memcheck_release_bot_x64',
-      'Linux MSan': 'gyp_msan_clang_release_bot_x64',
-      'Linux Tsan v2': 'gyp_tsan_clang_release_bot_x64',
-      'Linux UBSan': 'gyp_ubsan_clang_release_bot_x64',
-      'Linux UBSan vptr': 'gyp_ubsan_vptr_clang_release_bot_x64',
-      'Linux64 Release [large tests]': 'gyp_release_bot_x64',
-      'Linux64 Debug (GN)': 'gn_debug_bot_x64',
-      'Linux64 Release (GN)': 'gn_release_bot_x64',
+      'Linux32 ARM': 'gn_crosscompile_release_bot_arm',
+      'Linux64 Debug': 'gn_debug_bot_x64',
+      'Linux64 Release': 'gn_release_bot_x64',
+      'Linux Asan': 'gn_asan_lsan_clang_release_bot_x64',
+      'Linux Memcheck': 'gn_memcheck_release_bot_x64',
+      'Linux MSan': 'gn_msan_clang_release_bot_x64',
+      'Linux Tsan v2': 'gn_tsan_clang_release_bot_x64',
+      'Linux UBSan': 'gn_ubsan_clang_release_bot_x64',
+      'Linux UBSan vptr': 'gn_ubsan_vptr_clang_release_bot_x64',
+      'Linux64 Release [large tests]': 'gn_release_bot_x64',
+      # TODO(kjellander): Remove the two GN configs below as soon we've renamed
+      # the bots to the GYP versions (duplicated now).
+      'Linux64 Debug (GN)': 'gyp_debug_bot_x64_exclude_tests',
+      'Linux64 Release (GN)': 'gyp_release_bot_x64_exclude_tests',
+      'Linux64 Debug (GYP)': 'gyp_debug_bot_x64_exclude_tests',
+      'Linux64 Release (GYP)': 'gyp_release_bot_x64_exclude_tests',
 
       # Android
       'Android32 Builder': 'android_gn_release_bot_arm',
@@ -122,21 +124,25 @@
       'mac_gyp_rel': 'gyp_release_bot_x64_exclude_tests',
 
       # Linux
-      'linux_compile_dbg': 'gyp_debug_bot_x64',
-      'linux_compile_rel': 'gyp_release_bot_x64',
-      'linux_dbg': 'gyp_debug_bot_x64',
-      'linux_rel': 'gyp_release_bot_x64',
-      'linux_gn_dbg': 'gn_debug_bot_x64',
-      'linux_gn_rel': 'gn_release_bot_x64',
-      'linux_arm': 'gyp_crosscompile_release_bot_arm',
-      'linux_asan': 'gyp_asan_lsan_clang_release_bot_x64',
-      'linux_memcheck': 'gyp_memcheck_release_bot_x64',
-      'linux_msan': 'gyp_msan_clang_release_bot_x64',
-      'linux_tsan2': 'gyp_tsan_clang_release_bot_x64',
-      'linux_ubsan': 'gyp_ubsan_clang_release_bot_x64',
-      'linux_ubsan_vptr': 'gyp_ubsan_vptr_clang_release_bot_x64',
-      'linux_baremetal': 'gyp_release_bot_x64',
-      'linux_swarming': 'swarming_gyp_debug_bot_x64',
+      'linux_compile_dbg': 'gn_debug_bot_x64',
+      'linux_compile_rel': 'gn_release_bot_x64',
+      'linux_dbg': 'gn_debug_bot_x64',
+      'linux_rel': 'gn_release_bot_x64',
+      'linux_arm': 'gn_crosscompile_release_bot_arm',
+      'linux_asan': 'gn_asan_lsan_clang_release_bot_x64',
+      'linux_memcheck': 'gn_memcheck_release_bot_x64',
+      'linux_msan': 'gn_msan_clang_release_bot_x64',
+      'linux_tsan2': 'gn_tsan_clang_release_bot_x64',
+      'linux_ubsan': 'gn_ubsan_clang_release_bot_x64',
+      'linux_ubsan_vptr': 'gn_ubsan_vptr_clang_release_bot_x64',
+      'linux_baremetal': 'gn_release_bot_x64',
+      'linux_swarming': 'swarming_gn_debug_bot_x64',
+      # TODO(kjellander): Remove the two GN configs below as soon we've renamed
+      # the bots to the GYP versions (duplicated now).
+      'linux_gn_dbg': 'gyp_debug_bot_x64_exclude_tests',
+      'linux_gn_rel': 'gyp_release_bot_x64_exclude_tests',
+      'linux_gyp_dbg': 'gyp_debug_bot_x64_exclude_tests',
+      'linux_gyp_rel': 'gyp_release_bot_x64_exclude_tests',
 
       # Android
       'android_compile_dbg': 'android_gn_debug_static_bot_arm',
@@ -215,8 +221,8 @@
     ],
 
     # Linux, Mac and Windows
-    'gyp_crosscompile_release_bot_arm': [
-      'gyp', 'crosscompile', 'openh264_release_bot', 'arm'
+    'gn_crosscompile_release_bot_arm': [
+      'gn', 'crosscompile', 'openh264_release_bot', 'arm'
     ],
     'gyp_debug_bot_x86': [
       'gyp', 'openh264_debug_bot', 'x86'
@@ -236,23 +242,23 @@
     'gyp_release_bot_x64_exclude_tests': [
       'gyp', 'openh264_release_bot', 'x64', 'exclude_tests', 'exclude_examples'
     ],
-    'gyp_asan_lsan_clang_release_bot_x64': [
-      'gyp', 'asan', 'lsan', 'clang', 'openh264_release_bot', 'x64'
+    'gn_asan_lsan_clang_release_bot_x64': [
+      'gn', 'asan', 'lsan', 'clang', 'openh264_release_bot', 'x64'
     ],
-    'gyp_memcheck_release_bot_x64': [
-      'gyp', 'memcheck', 'openh264_release_bot', 'x64'
+    'gn_memcheck_release_bot_x64': [
+      'gn', 'memcheck', 'openh264_release_bot', 'x64'
     ],
-    'gyp_msan_clang_release_bot_x64': [
-      'gyp', 'msan', 'clang', 'openh264_release_bot', 'x64'
+    'gn_msan_clang_release_bot_x64': [
+      'gn', 'msan', 'clang', 'openh264_release_bot', 'x64'
     ],
-    'gyp_tsan_clang_release_bot_x64': [
-      'gyp', 'tsan', 'clang', 'openh264_release_bot', 'x64'
+    'gn_tsan_clang_release_bot_x64': [
+      'gn', 'tsan', 'clang', 'openh264_release_bot', 'x64'
     ],
-    'gyp_ubsan_clang_release_bot_x64': [
-      'gyp', 'ubsan', 'clang', 'openh264_release_bot', 'x64'
+    'gn_ubsan_clang_release_bot_x64': [
+      'gn', 'ubsan', 'clang', 'openh264_release_bot', 'x64'
     ],
-    'gyp_ubsan_vptr_clang_release_bot_x64': [
-      'gyp', 'ubsan_vptr', 'clang', 'openh264_release_bot', 'x64'
+    'gn_ubsan_vptr_clang_release_bot_x64': [
+      'gn', 'ubsan_vptr', 'clang', 'openh264_release_bot', 'x64'
     ],
     'gn_debug_bot_x64': [
       'gn', 'openh264_debug_bot', 'x64'
