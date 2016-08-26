@@ -10,11 +10,11 @@
 
 #include "webrtc/modules/audio_processing/ns/noise_suppression_x.h"
 
-#include <assert.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_audio/signal_processing/include/real_fft.h"
 #include "webrtc/modules/audio_processing/ns/nsx_core.h"
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
@@ -344,8 +344,8 @@ static void NoiseEstimationC(NoiseSuppressionFixedC* inst,
   size_t i, s, offset;
 
   tabind = inst->stages - inst->normData;
-  assert(tabind < 9);
-  assert(tabind > -9);
+  RTC_DCHECK_LT(tabind, 9);
+  RTC_DCHECK_GT(tabind, -9);
   if (tabind < 0) {
     logval = -WebRtcNsx_kLogTable[-tabind];
   } else {
@@ -362,7 +362,7 @@ static void NoiseEstimationC(NoiseSuppressionFixedC* inst,
       frac = (int16_t)((((uint32_t)magn[i] << zeros)
                               & 0x7FFFFFFF) >> 23);
       // log2(magn(i))
-      assert(frac < 256);
+      RTC_DCHECK_LT(frac, 256);
       log2 = (int16_t)(((31 - zeros) << 8)
                              + WebRtcNsx_kLogTableFrac[frac]);
       // log2(magn(i))*log(2)
@@ -380,7 +380,7 @@ static void NoiseEstimationC(NoiseSuppressionFixedC* inst,
 
     // Get counter values from state
     counter = inst->noiseEstCounter[s];
-    assert(counter < 201);
+    RTC_DCHECK_LT(counter, 201);
     countDiv = WebRtcNsx_kCounterDiv[counter];
     countProd = (int16_t)(counter * countDiv);
 
@@ -543,7 +543,7 @@ static void NormalizeRealBufferC(NoiseSuppressionFixedC* inst,
                                  const int16_t* in,
                                  int16_t* out) {
   size_t i = 0;
-  assert(inst->normData >= 0);
+  RTC_DCHECK_GE(inst->normData, 0);
   for (i = 0; i < inst->anaLen; ++i) {
     out[i] = in[i] << inst->normData;  // Q(normData)
   }
@@ -594,8 +594,8 @@ void WebRtcNsx_CalcParametricNoiseEstimate(NoiseSuppressionFixedC* inst,
 
   // Use pink noise estimate
   // noise_estimate = 2^(pinkNoiseNumerator + pinkNoiseExp * log2(j))
-  assert(freq_index >= 0);
-  assert(freq_index < 129);
+  RTC_DCHECK_GE(freq_index, 0);
+  RTC_DCHECK_LT(freq_index, 129);
   tmp32no2 = (pink_noise_exp_avg * kLogIndex[freq_index]) >> 15;  // Q11
   tmp32no1 = pink_noise_num_avg - tmp32no2; // Q11
 
@@ -1038,7 +1038,7 @@ void WebRtcNsx_ComputeSpectralFlatness(NoiseSuppressionFixedC* inst,
       frac = (int16_t)(((uint32_t)((uint32_t)(magn[i]) << zeros)
                               & 0x7FFFFFFF) >> 23);
       // log2(magn(i))
-      assert(frac < 256);
+      RTC_DCHECK_LT(frac, 256);
       tmpU32 = (uint32_t)(((31 - zeros) << 8)
                                 + WebRtcNsx_kLogTableFrac[frac]); // Q8
       avgSpectralFlatnessNum += tmpU32; // Q8
@@ -1053,7 +1053,7 @@ void WebRtcNsx_ComputeSpectralFlatness(NoiseSuppressionFixedC* inst,
   zeros = WebRtcSpl_NormU32(avgSpectralFlatnessDen);
   frac = (int16_t)(((avgSpectralFlatnessDen << zeros) & 0x7FFFFFFF) >> 23);
   // log2(avgSpectralFlatnessDen)
-  assert(frac < 256);
+  RTC_DCHECK_LT(frac, 256);
   tmp32 = (int32_t)(((31 - zeros) << 8) + WebRtcNsx_kLogTableFrac[frac]); // Q8
   logCurSpectralFlatness = (int32_t)avgSpectralFlatnessNum;
   logCurSpectralFlatness += ((int32_t)(inst->stages - 1) << (inst->stages + 7)); // Q(8+stages-1)
@@ -1286,7 +1286,7 @@ void WebRtcNsx_DataAnalysis(NoiseSuppressionFixedC* inst,
       frac = (int16_t)((((uint32_t)magnU16[inst->anaLen2] << zeros) &
                               0x7FFFFFFF) >> 23); // Q8
       // log2(magnU16(i)) in Q8
-      assert(frac < 256);
+      RTC_DCHECK_LT(frac, 256);
       log2 = (int16_t)(((31 - zeros) << 8) + WebRtcNsx_kLogTableFrac[frac]);
     }
 
@@ -1320,7 +1320,7 @@ void WebRtcNsx_DataAnalysis(NoiseSuppressionFixedC* inst,
           frac = (int16_t)((((uint32_t)magnU16[i] << zeros) &
                                   0x7FFFFFFF) >> 23);
           // log2(magnU16(i)) in Q8
-          assert(frac < 256);
+          RTC_DCHECK_LT(frac, 256);
           log2 = (int16_t)(((31 - zeros) << 8)
                                  + WebRtcNsx_kLogTableFrac[frac]);
         }
@@ -1347,14 +1347,14 @@ void WebRtcNsx_DataAnalysis(NoiseSuppressionFixedC* inst,
     // Shift to same Q-domain as whiteNoiseLevel
     tmpU32no1 >>= right_shifts_in_magnU16;
     // This operation is safe from wrap around as long as END_STARTUP_SHORT < 128
-    assert(END_STARTUP_SHORT < 128);
+    RTC_DCHECK_LT(END_STARTUP_SHORT, 128);
     inst->whiteNoiseLevel += tmpU32no1; // Q(minNorm-stages)
 
     // Estimate Pink noise parameters
     // Denominator used in both parameter estimates.
     // The value is only dependent on the size of the frequency band (kStartBand)
     // and to reduce computational complexity stored in a table (kDeterminantEstMatrix[])
-    assert(kStartBand < 66);
+    RTC_DCHECK_LT(kStartBand, 66);
     matrix_determinant = kDeterminantEstMatrix[kStartBand]; // Q0
     sum_log_i = kSumLogIndex[kStartBand]; // Q5
     sum_log_i_square = kSumSquareLogIndex[kStartBand]; // Q2
@@ -1469,13 +1469,13 @@ void WebRtcNsx_DataSynthesis(NoiseSuppressionFixedC* inst, short* outFrame) {
       inst->energyIn >>= 8 + scaleEnergyOut - inst->scaleEnergyIn;
     }
 
-    assert(inst->energyIn > 0);
+    RTC_DCHECK_GT(inst->energyIn, 0);
     energyRatio = (energyOut + inst->energyIn / 2) / inst->energyIn;  // Q8
     // Limit the ratio to [0, 1] in Q8, i.e., [0, 256]
     energyRatio = WEBRTC_SPL_SAT(256, energyRatio, 0);
 
     // all done in lookup tables now
-    assert(energyRatio < 257);
+    RTC_DCHECK_LT(energyRatio, 257);
     gainFactor1 = kFactor1Table[energyRatio]; // Q8
     gainFactor2 = inst->factor2Table[energyRatio]; // Q8
 
@@ -1534,24 +1534,24 @@ void WebRtcNsx_ProcessCore(NoiseSuppressionFixedC* inst,
   int q_domain_to_use = 0;
 
   // Code for ARMv7-Neon platform assumes the following:
-  assert(inst->anaLen > 0);
-  assert(inst->anaLen2 > 0);
-  assert(inst->anaLen % 16 == 0);
-  assert(inst->anaLen2 % 8 == 0);
-  assert(inst->blockLen10ms > 0);
-  assert(inst->blockLen10ms % 16 == 0);
-  assert(inst->magnLen == inst->anaLen2 + 1);
+  RTC_DCHECK_GT(inst->anaLen, 0);
+  RTC_DCHECK_GT(inst->anaLen2, 0);
+  RTC_DCHECK_EQ(0, inst->anaLen % 16);
+  RTC_DCHECK_EQ(0, inst->anaLen2 % 8);
+  RTC_DCHECK_GT(inst->blockLen10ms, 0);
+  RTC_DCHECK_EQ(0, inst->blockLen10ms % 16);
+  RTC_DCHECK_EQ(inst->magnLen, inst->anaLen2 + 1);
 
 #ifdef NS_FILEDEBUG
   if (fwrite(spframe, sizeof(short),
              inst->blockLen10ms, inst->infile) != inst->blockLen10ms) {
-    assert(false);
+    RTC_DCHECK(false);
   }
 #endif
 
   // Check that initialization has been done
-  assert(inst->initFlag == 1);
-  assert((num_bands - 1) <= NUM_HIGH_BANDS_MAX);
+  RTC_DCHECK_EQ(1, inst->initFlag);
+  RTC_DCHECK_LE(num_bands - 1, NUM_HIGH_BANDS_MAX);
 
   const short* const* speechFrameHB = NULL;
   short* const* outFrameHB = NULL;
@@ -1989,7 +1989,7 @@ void WebRtcNsx_ProcessCore(NoiseSuppressionFixedC* inst,
 
     //gain filter
     tmpU32no1 = inst->overdrive + ((priorSnr + 8192) >> 14);  // Q8
-    assert(inst->overdrive > 0);
+    RTC_DCHECK_GT(inst->overdrive, 0);
     tmpU16no1 = (priorSnr + tmpU32no1 / 2) / tmpU32no1;  // Q14
     inst->noiseSupFilter[i] = WEBRTC_SPL_SAT(16384, tmpU16no1, inst->denoiseBound); // 16384 = Q14(1.0) // Q14
 
@@ -2025,7 +2025,7 @@ void WebRtcNsx_ProcessCore(NoiseSuppressionFixedC* inst,
 #ifdef NS_FILEDEBUG
   if (fwrite(outframe, sizeof(short),
              inst->blockLen10ms, inst->outfile) != inst->blockLen10ms) {
-    assert(false);
+    RTC_DCHECK(false);
   }
 #endif
 
@@ -2052,7 +2052,7 @@ void WebRtcNsx_ProcessCore(NoiseSuppressionFixedC* inst,
       tmpU16no1 += nonSpeechProbFinal[i]; // Q8
       tmpU32no1 += (uint32_t)(inst->noiseSupFilter[i]); // Q14
     }
-    assert(inst->stages >= 7);
+    RTC_DCHECK_GE(inst->stages, 7);
     avgProbSpeechHB = (4096 - (tmpU16no1 >> (inst->stages - 7)));  // Q12
     avgFilterGainHB = (int16_t)(tmpU32no1 >> (inst->stages - 3));  // Q14
 

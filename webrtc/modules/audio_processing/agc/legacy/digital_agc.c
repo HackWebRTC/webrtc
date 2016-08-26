@@ -14,12 +14,12 @@
 
 #include "webrtc/modules/audio_processing/agc/legacy/digital_agc.h"
 
-#include <assert.h>
 #include <string.h>
 #ifdef WEBRTC_AGC_DEBUG_DUMP
 #include <stdio.h>
 #endif
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/agc/legacy/gain_control.h"
 
 // To generate the gaintable, copy&paste the following lines to a Matlab window:
@@ -109,7 +109,7 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t* gainTable,       // Q16
   diffGain =
       WebRtcSpl_DivW32W16ResW16(tmp32no1 + (kCompRatio >> 1), kCompRatio);
   if (diffGain < 0 || diffGain >= kGenFuncTableSize) {
-    assert(0);
+    RTC_DCHECK(0);
     return -1;
   }
 
@@ -268,7 +268,7 @@ int32_t WebRtcAgc_InitDigital(DigitalAgc* stt, int16_t agcMode) {
 int32_t WebRtcAgc_AddFarendToDigital(DigitalAgc* stt,
                                      const int16_t* in_far,
                                      size_t nrSamples) {
-  assert(stt != NULL);
+  RTC_DCHECK(stt);
   // VAD for far end
   WebRtcAgc_ProcessVad(&stt->vadFarend, in_far, nrSamples);
 

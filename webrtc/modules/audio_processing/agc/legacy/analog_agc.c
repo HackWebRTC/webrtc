@@ -19,11 +19,12 @@
 
 #include "webrtc/modules/audio_processing/agc/legacy/analog_agc.h"
 
-#include <assert.h>
 #include <stdlib.h>
 #ifdef WEBRTC_AGC_DEBUG_DUMP
 #include <stdio.h>
 #endif
+
+#include "webrtc/base/checks.h"
 
 /* The slope of in Q13*/
 static const int16_t kSlope1[8] = {21793, 12517, 7189, 4129,
@@ -155,14 +156,14 @@ int WebRtcAgc_AddMic(void* state,
   if (stt->micVol > stt->maxAnalog) {
     /* |maxLevel| is strictly >= |micVol|, so this condition should be
      * satisfied here, ensuring there is no divide-by-zero. */
-    assert(stt->maxLevel > stt->maxAnalog);
+    RTC_DCHECK_GT(stt->maxLevel, stt->maxAnalog);
 
     /* Q1 */
     tmp16 = (int16_t)(stt->micVol - stt->maxAnalog);
     tmp32 = (GAIN_TBL_LEN - 1) * tmp16;
     tmp16 = (int16_t)(stt->maxLevel - stt->maxAnalog);
     targetGainIdx = tmp32 / tmp16;
-    assert(targetGainIdx < GAIN_TBL_LEN);
+    RTC_DCHECK_LT(targetGainIdx, GAIN_TBL_LEN);
 
     /* Increment through the table towards the target gain.
      * If micVol drops below maxAnalog, we allow the gain

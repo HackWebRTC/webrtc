@@ -10,7 +10,6 @@
 
 #include "webrtc/system_wrappers/source/data_log_c_helpers_unittest.h"
 
-#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 

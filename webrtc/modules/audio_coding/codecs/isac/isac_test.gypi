@@ -23,6 +23,7 @@
         '<(webrtc_root)',
       ],
       'sources': [
+        'empty.cc',  # force build system to use C++ linker
         './main/test/simpleKenny.c',
         './main/util/utility.c',
       ],

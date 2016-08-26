@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <assert.h>
 #include <string.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/ns/noise_suppression_x.h"
 #include "webrtc/modules/audio_processing/ns/nsx_core.h"
 
@@ -184,7 +184,7 @@ void WebRtcNsx_SpeechNoiseProb(NoiseSuppressionFixedC* inst,
     if (inst->featureSpecDiff) {
       normTmp = WEBRTC_SPL_MIN(20 - inst->stages,
                                WebRtcSpl_NormU32(inst->featureSpecDiff));
-      assert(normTmp >= 0);
+      RTC_DCHECK_GE(normTmp, 0);
       tmpU32no1 = inst->featureSpecDiff << normTmp;  // Q(normTmp-2*stages)
       tmpU32no2 = inst->timeAvgMagnEnergy >> (20 - inst->stages - normTmp);
       if (tmpU32no2 > 0) {

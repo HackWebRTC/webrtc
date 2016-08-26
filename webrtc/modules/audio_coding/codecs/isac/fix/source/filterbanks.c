@@ -20,11 +20,10 @@
 
 #include "filterbank_internal.h"
 
-#include <assert.h>
-
 #include "codec.h"
 #include "filterbank_tables.h"
 #include "settings.h"
+#include "webrtc/base/checks.h"
 
 // Declare a function pointer.
 AllpassFilter2FixDec16 WebRtcIsacfix_AllpassFilter2FixDec16;
@@ -44,7 +43,7 @@ void WebRtcIsacfix_AllpassFilter2FixDec16C(
   int32_t a = 0, b = 0;
 
   // Assembly file assumption.
-  assert(length % 2 == 0);
+  RTC_DCHECK_EQ(0, length % 2);
 
   for (n = 0; n < length; n++) {
     // Process channel 1:
