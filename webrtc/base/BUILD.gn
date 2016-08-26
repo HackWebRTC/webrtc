@@ -236,6 +236,17 @@ static_library("rtc_task_queue") {
   }
 }
 
+config("rtc_base_warnings_config") {
+  if (is_win && is_clang) {
+    cflags = [
+      # Disable warnings failing when compiling with Clang on Windows.
+      # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
+      "-Wno-sign-compare",
+      "-Wno-missing-braces",
+    ]
+  }
+}
+
 static_library("rtc_base") {
   cflags = []
   cflags_cc = []
@@ -260,7 +271,6 @@ static_library("rtc_base") {
   ]
 
   all_dependent_configs = [ ":rtc_base_all_dependent_config" ]
-
   defines = [ "LOGGING=1" ]
 
   sources = [
@@ -405,6 +415,14 @@ static_library("rtc_base") {
     "worker.h",
   ]
 
+  # TODO(henrike): issue 3307, make rtc_base build with the Chromium default
+  # compiler settings.
+  configs -= [ "//build/config/compiler:chromium_code" ]
+  configs += [ "//build/config/compiler:no_chromium_code" ]
+  if (!is_win) {
+    cflags += [ "-Wno-uninitialized" ]
+  }
+
   if (build_with_chromium) {
     if (is_win) {
       sources += [ "../../webrtc_overrides/webrtc/base/win32socketinit.cc" ]
@@ -417,6 +435,7 @@ static_library("rtc_base") {
 
     public_configs += [ ":rtc_base_chromium_config" ]
   } else {
+    configs += [ ":rtc_base_warnings_config" ]
     sources += [
       "bandwidthsmoother.cc",
       "bandwidthsmoother.h",
@@ -508,14 +527,6 @@ static_library("rtc_base") {
         "win32socketserver.h",
       ]
     }
-    if (is_win && is_clang) {
-      cflags += [
-        # Disable warnings failing when compiling with Clang on Windows.
-        # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
-        "-Wno-sign-compare",
-        "-Wno-missing-braces",
-      ]
-    }
 
     if (rtc_build_json) {
       deps += [ "//third_party/jsoncpp" ]
@@ -527,14 +538,6 @@ static_library("rtc_base") {
       defines += [ "WEBRTC_EXTERNAL_JSON" ]
     }
   }  # !build_with_chromium
-
-  # TODO(henrike): issue 3307, make rtc_base build with the Chromium default
-  # compiler settings.
-  configs -= [ "//build/config/compiler:chromium_code" ]
-  configs += [ "//build/config/compiler:no_chromium_code" ]
-  if (!is_win) {
-    cflags += [ "-Wno-uninitialized" ]
-  }
 
   if (rtc_build_ssl) {
     deps += [ "//third_party/boringssl" ]
@@ -665,6 +668,10 @@ static_library("rtc_base") {
     defines += [ "timezone=_timezone" ]
     sources -= [ "ifaddrs_converter.cc" ]
   }
+  if (is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
 }
 
 source_set("gtest_prod") {
@@ -676,6 +683,16 @@ source_set("gtest_prod") {
 if (rtc_include_tests) {
   config("rtc_base_tests_utils_exported_config") {
     defines = [ "GTEST_RELATIVE_PATH" ]
+  }
+
+  config("rtc_base_tests_utils_warnings_config") {
+    if (is_win && is_clang) {
+      cflags = [
+        # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6270
+        "-Wno-reorder",
+        "-Wno-sign-compare",
+      ]
+    }
   }
 
   source_set("rtc_base_tests_utils") {
@@ -696,7 +713,10 @@ if (rtc_include_tests) {
       "timedelta.h",
       "unittest_main.cc",
     ]
-    configs += [ "..:common_config" ]
+    configs += [
+      "..:common_config",
+      ":rtc_base_tests_utils_warnings_config",
+    ]
     public_configs = [
       "..:common_inherited_config",
       ":rtc_base_tests_utils_exported_config",
@@ -709,6 +729,11 @@ if (rtc_include_tests) {
     public_deps = [
       "//testing/gtest",
     ]
+
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
   }
 }
 

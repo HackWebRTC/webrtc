@@ -33,13 +33,17 @@ config("channel_transport_warnings_config") {
     cflags = [ "/wd4302" ]  # cast truncation
 
     if (is_clang) {
-      # GN orders flags on a target before flags from configs. The default config
-      # adds -Wall, and this flag have to be after -Wall -- so they need to
-      # come from a config and cannot be on the target directly.
+      # GN orders flags on a target before flags from configs. The default
+      # config adds -Wall, and this flag have to be after -Wall -- so they need
+      # to come from a config and cannot be on the target directly.
       cflags += [
         "-Wno-parentheses-equality",
         "-Wno-reorder",
         "-Wno-tautological-constant-out-of-range-compare",
+
+        # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6268
+        # for -Wno-thread-safety-analysis
+        "-Wno-thread-safety-analysis",
         "-Wno-unused-private-field",
       ]
     }

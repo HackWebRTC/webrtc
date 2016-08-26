@@ -24,7 +24,37 @@ config("audio_device_config") {
   }
 }
 
+config("audio_device_warnings_config") {
+  if (is_win && is_clang) {
+    cflags = [
+      # Disable warnings failing when compiling with Clang on Windows.
+      # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
+      "-Wno-bool-conversion",
+      "-Wno-delete-non-virtual-dtor",
+      "-Wno-logical-op-parentheses",
+      "-Wno-microsoft-extra-qualification",
+      "-Wno-microsoft-goto",
+      "-Wno-missing-braces",
+      "-Wno-parentheses-equality",
+      "-Wno-reorder",
+      "-Wno-shift-overflow",
+      "-Wno-tautological-compare",
+
+      # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6265
+      # for -Wno-thread-safety-analysis
+      "-Wno-thread-safety-analysis",
+      "-Wno-unused-private-field",
+    ]
+  }
+}
+
 source_set("audio_device") {
+  configs += [ "../..:common_config" ]
+  public_configs = [
+    "../..:common_inherited_config",
+    ":audio_device_config",
+  ]
+
   deps = [
     "../..:webrtc_common",
     "../../base:rtc_base",
@@ -193,23 +223,7 @@ source_set("audio_device") {
           "msdmo.lib",
         ]
       }
-      if (is_win && is_clang) {
-        cflags += [
-          # Disable warnings failing when compiling with Clang on Windows.
-          # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
-          "-Wno-bool-conversion",
-          "-Wno-delete-non-virtual-dtor",
-          "-Wno-logical-op-parentheses",
-          "-Wno-microsoft-extra-qualification",
-          "-Wno-microsoft-goto",
-          "-Wno-missing-braces",
-          "-Wno-parentheses-equality",
-          "-Wno-reorder",
-          "-Wno-shift-overflow",
-          "-Wno-tautological-compare",
-          "-Wno-unused-private-field",
-        ]
-      }
+      configs += [ ":audio_device_warnings_config" ]
     }
   } else {
     defines = [ "WEBRTC_DUMMY_AUDIO_BUILD" ]
@@ -222,12 +236,6 @@ source_set("audio_device") {
       "dummy/file_audio_device_factory.h",
     ]
   }
-
-  configs += [ "../..:common_config" ]
-  public_configs = [
-    "../..:common_inherited_config",
-    ":audio_device_config",
-  ]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.

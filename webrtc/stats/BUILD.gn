@@ -52,5 +52,11 @@ if (rtc_include_tests) {
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_native_code" ]
     }
+
+    if (is_clang) {
+      # Suppress warnings from Chrome's Clang plugins.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
   }
 }

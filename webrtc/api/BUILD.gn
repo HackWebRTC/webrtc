@@ -301,7 +301,12 @@ if (rtc_include_tests) {
     # TODO(kjellander): Make the code compile without disabling these flags.
     # See https://bugs.webrtc.org/3307.
     if (is_clang && is_win) {
-      cflags = [ "-Wno-unused-function" ]
+      cflags = [
+        # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6267
+        # for -Wno-sign-compare
+        "-Wno-sign-compare",
+        "-Wno-unused-function",
+      ]
     }
 
     if (!is_win) {

@@ -391,6 +391,21 @@ if (is_linux || is_win) {
     }
   }
 
+  config("peerconnection_client_warnings_config") {
+    if (is_win && is_clang) {
+      cflags = [
+        # Disable warnings failing when compiling with Clang on Windows.
+        # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
+        "-Wno-format",
+
+        # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6271
+        # for -Wno-reorder and -Wno-sign-compare
+        "-Wno-reorder",
+        "-Wno-sign-compare",
+      ]
+    }
+  }
+
   executable("peerconnection_client") {
     sources = [
       "peerconnection/client/conductor.cc",
@@ -415,14 +430,6 @@ if (is_linux || is_win) {
       cflags = [ "/wd4245" ]
       configs += [ "//build/config/win:windowed" ]
     }
-    if (is_win && is_clang) {
-      cflags = [
-        # Disable warnings failing when compiling with Clang on Windows.
-        # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
-        "-Wno-reorder",
-        "-Wno-unused-function",
-      ]
-    }
     if (is_linux) {
       sources += [
         "peerconnection/client/linux/main.cc",
@@ -443,6 +450,7 @@ if (is_linux || is_win) {
       "//webrtc/system_wrappers:field_trial_default",
       "//webrtc/system_wrappers:metrics_default",
     ]
+    configs += [ ":peerconnection_client_warnings_config" ]
     if (rtc_build_json) {
       deps += [ "//third_party/jsoncpp" ]
     }
