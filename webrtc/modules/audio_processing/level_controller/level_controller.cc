@@ -25,6 +25,7 @@
 #include "webrtc/modules/audio_processing/level_controller/saturating_gain_estimator.h"
 #include "webrtc/modules/audio_processing/level_controller/signal_classifier.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
+#include "webrtc/system_wrappers/include/logging.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {
@@ -93,54 +94,86 @@ void LevelController::Metrics::Reset() {
   max_noise_energy_ = 0.f;
 }
 
-void LevelController::Metrics::Update(float peak_level,
+void LevelController::Metrics::Update(float long_term_peak_level,
                                       float noise_energy,
-                                      float gain) {
+                                      float gain,
+                                      float frame_peak_level) {
   const float kdBFSOffset = 90.3090f;
   gain_sum_ += gain;
-  peak_level_sum_ += peak_level;
+  peak_level_sum_ += long_term_peak_level;
   noise_energy_sum_ += noise_energy;
   max_gain_ = std::max(max_gain_, gain);
-  max_peak_level_ = std::max(max_peak_level_, peak_level);
+  max_peak_level_ = std::max(max_peak_level_, long_term_peak_level);
   max_noise_energy_ = std::max(max_noise_energy_, noise_energy);
 
   ++metrics_frame_counter_;
   if (metrics_frame_counter_ == kMetricsFrameInterval) {
-    RTC_HISTOGRAM_COUNTS(
-        "WebRTC.Audio.LevelControl.MaxNoisePower",
-        static_cast<int>(10 * log10(max_noise_energy_ / frame_length_ + 1e-10f)
-                         - kdBFSOffset),
-        -90, 0, 50);
-    RTC_HISTOGRAM_COUNTS(
-        "WebRTC.Audio.LevelControl.AverageNoisePower",
-        static_cast<int>(10 * log10(noise_energy_sum_ /
-                                    (frame_length_ * kMetricsFrameInterval) +
-                                    1e-10f) - kdBFSOffset),
-        -90, 0, 50);
+    RTC_DCHECK_LT(0, frame_length_);
+    RTC_DCHECK_LT(0, kMetricsFrameInterval);
 
-    RTC_HISTOGRAM_COUNTS(
-        "WebRTC.Audio.LevelControl.MaxPeakLevel",
-        static_cast<int>(10 * log10(max_peak_level_ * max_peak_level_ + 1e-10f)
-                         - kdBFSOffset),
-        -90, 0, 50);
-    RTC_HISTOGRAM_COUNTS(
-        "WebRTC.Audio.LevelControl.AveragePeakLevel",
-        static_cast<int>(10 * log10(peak_level_sum_ * peak_level_sum_ /
-                                    (kMetricsFrameInterval *
-                                     kMetricsFrameInterval) +
-                                    1e-10f) - kdBFSOffset),
-        -90, 0, 50);
+    const int max_noise_power_dbfs = static_cast<int>(
+        10 * log10(max_noise_energy_ / frame_length_ + 1e-10f) - kdBFSOffset);
+    RTC_HISTOGRAM_COUNTS("WebRTC.Audio.LevelControl.MaxNoisePower",
+                         max_noise_power_dbfs, -90, 0, 50);
+
+    const int average_noise_power_dbfs = static_cast<int>(
+        10 * log10(noise_energy_sum_ / (frame_length_ * kMetricsFrameInterval) +
+                   1e-10f) -
+        kdBFSOffset);
+    RTC_HISTOGRAM_COUNTS("WebRTC.Audio.LevelControl.AverageNoisePower",
+                         average_noise_power_dbfs, -90, 0, 50);
+
+    const int max_peak_level_dbfs = static_cast<int>(
+        10 * log10(max_peak_level_ * max_peak_level_ + 1e-10f) - kdBFSOffset);
+    RTC_HISTOGRAM_COUNTS("WebRTC.Audio.LevelControl.MaxPeakLevel",
+                         max_peak_level_dbfs, -90, 0, 50);
+
+    const int average_peak_level_dbfs = static_cast<int>(
+        10 * log10(peak_level_sum_ * peak_level_sum_ /
+                       (kMetricsFrameInterval * kMetricsFrameInterval) +
+                   1e-10f) -
+        kdBFSOffset);
+    RTC_HISTOGRAM_COUNTS("WebRTC.Audio.LevelControl.AveragePeakLevel",
+                         average_peak_level_dbfs, -90, 0, 50);
 
     RTC_DCHECK_LE(1.f, max_gain_);
     RTC_DCHECK_LE(1.f, gain_sum_ / kMetricsFrameInterval);
-    RTC_HISTOGRAM_COUNTS("WebRTC.Audio.LevelControl.MaxGain",
-                         static_cast<int>(10 * log10(max_gain_ * max_gain_)),
-                         0, 33, 30);
+
+    const int max_gain_db = static_cast<int>(10 * log10(max_gain_ * max_gain_));
+    RTC_HISTOGRAM_COUNTS("WebRTC.Audio.LevelControl.MaxGain", max_gain_db, 0,
+                         33, 30);
+
+    const int average_gain_db = static_cast<int>(
+        10 * log10(gain_sum_ * gain_sum_ /
+                   (kMetricsFrameInterval * kMetricsFrameInterval)));
     RTC_HISTOGRAM_COUNTS("WebRTC.Audio.LevelControl.AverageGain",
-                         static_cast<int>(10 * log10(gain_sum_ * gain_sum_ /
-                                                     (kMetricsFrameInterval *
-                                                      kMetricsFrameInterval))),
-                         0, 33, 30);
+                         average_gain_db, 0, 33, 30);
+
+    const int long_term_peak_level_dbfs = static_cast<int>(
+        10 * log10(long_term_peak_level * long_term_peak_level + 1e-10f) -
+        kdBFSOffset);
+
+    const int frame_peak_level_dbfs = static_cast<int>(
+        10 * log10(frame_peak_level * frame_peak_level + 1e-10f) - kdBFSOffset);
+
+    LOG(LS_INFO) << "Level Controller metrics: " << std::endl
+                 << "Max noise power:              " << max_noise_power_dbfs
+                 << " dBFS" << std::endl
+                 << "Average noise power:          " << average_noise_power_dbfs
+                 << " dBFS" << std::endl
+                 << "Max long term peak level:     " << max_peak_level_dbfs
+                 << " dBFS" << std::endl
+                 << "Average long term peak level: " << average_peak_level_dbfs
+                 << " dBFS" << std::endl
+                 << "Max gain:                     " << max_gain_db << " dB"
+                 << std::endl
+                 << "Average gain:                 " << average_gain_db << " dB"
+                 << std::endl
+                 << "Long term peak level:         "
+                 << long_term_peak_level_dbfs << " dBFS" << std::endl
+                 << "Last frame peak level:        " << frame_peak_level_dbfs
+                 << " dBFS";
+
     Reset();
   }
 }
@@ -200,13 +233,14 @@ void LevelController::Process(AudioBuffer* audio) {
       noise_level_estimator_.Analyze(signal_type, FrameEnergy(*audio));
 
   // Estimate the overall signal peak level.
-  float peak_level =
-      peak_level_estimator_.Analyze(signal_type, PeakLevel(*audio));
+  const float frame_peak_level = PeakLevel(*audio);
+  const float long_term_peak_level =
+      peak_level_estimator_.Analyze(signal_type, frame_peak_level);
 
   float saturating_gain = saturating_gain_estimator_.GetGain();
 
   // Compute the new gain to apply.
-  last_gain_ = gain_selector_.GetNewGain(peak_level, noise_energy,
+  last_gain_ = gain_selector_.GetNewGain(long_term_peak_level, noise_energy,
                                          saturating_gain, signal_type);
 
   // Apply the gain to the signal.
@@ -216,11 +250,12 @@ void LevelController::Process(AudioBuffer* audio) {
   saturating_gain_estimator_.Update(last_gain_, num_saturations);
 
   // Update the metrics.
-  metrics_.Update(peak_level, noise_energy, last_gain_);
+  metrics_.Update(long_term_peak_level, noise_energy, last_gain_,
+                  frame_peak_level);
 
   data_dumper_->DumpRaw("lc_selected_gain", 1, &last_gain_);
   data_dumper_->DumpRaw("lc_noise_energy", 1, &noise_energy);
-  data_dumper_->DumpRaw("lc_peak_level", 1, &peak_level);
+  data_dumper_->DumpRaw("lc_peak_level", 1, &long_term_peak_level);
   data_dumper_->DumpRaw("lc_saturating_gain", 1, &saturating_gain);
 
   data_dumper_->DumpWav("lc_output", audio->num_frames(),

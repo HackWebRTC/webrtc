@@ -43,7 +43,10 @@ class LevelController {
    public:
     Metrics() { Initialize(AudioProcessing::kSampleRate48kHz); }
     void Initialize(int sample_rate_hz);
-    void Update(float peak_level, float noise_level, float gain);
+    void Update(float long_term_peak_level,
+                float noise_level,
+                float gain,
+                float frame_peak_level);
 
    private:
     void Reset();
