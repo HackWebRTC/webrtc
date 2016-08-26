@@ -37,18 +37,13 @@ bool AbsoluteSendTime::IsSupportedFor(MediaType type) {
   return true;
 }
 
-bool AbsoluteSendTime::Parse(const uint8_t* data, uint32_t* value) {
-  *value = ByteReader<uint32_t, 3>::ReadBigEndian(data);
+bool AbsoluteSendTime::Parse(const uint8_t* data, uint32_t* time_24bits) {
+  *time_24bits = ByteReader<uint32_t, 3>::ReadBigEndian(data);
   return true;
 }
 
 bool AbsoluteSendTime::Write(uint8_t* data, int64_t time_ms) {
-  const uint32_t kAbsSendTimeFraction = 18;
-  uint32_t time_24_bits =
-      static_cast<uint32_t>(((time_ms << kAbsSendTimeFraction) + 500) / 1000) &
-      0x00FFFFFF;
-
-  ByteWriter<uint32_t, 3>::WriteBigEndian(data, time_24_bits);
+  ByteWriter<uint32_t, 3>::WriteBigEndian(data, MsTo24Bits(time_ms));
   return true;
 }
 

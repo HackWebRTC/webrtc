@@ -23,8 +23,12 @@ class AbsoluteSendTime {
   static constexpr uint8_t kValueSizeBytes = 3;
   static const char* kName;
   static bool IsSupportedFor(MediaType type);
-  static bool Parse(const uint8_t* data, uint32_t* time_ms);
+  static bool Parse(const uint8_t* data, uint32_t* time_24bits);
   static bool Write(uint8_t* data, int64_t time_ms);
+
+  static constexpr uint32_t MsTo24Bits(int64_t time_ms) {
+    return static_cast<uint32_t>(((time_ms << 18) + 500) / 1000) & 0x00FFFFFF;
+  }
 };
 
 class AudioLevel {
