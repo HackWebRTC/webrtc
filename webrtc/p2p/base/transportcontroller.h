@@ -31,6 +31,14 @@ namespace cricket {
 class TransportController : public sigslot::has_slots<>,
                             public rtc::MessageHandler {
  public:
+  // If |redetermine_role_on_ice_restart| is true, ICE role is redetermined
+  // upon setting a local transport description that indicates an ICE restart.
+  // For the constructor that doesn't take this parameter, it defaults to true.
+  TransportController(rtc::Thread* signaling_thread,
+                      rtc::Thread* network_thread,
+                      PortAllocator* port_allocator,
+                      bool redetermine_role_on_ice_restart);
+
   TransportController(rtc::Thread* signaling_thread,
                       rtc::Thread* network_thread,
                       PortAllocator* port_allocator);
@@ -224,6 +232,7 @@ class TransportController : public sigslot::has_slots<>,
   // TODO(deadbeef): Move the fields below down to the transports themselves
   IceConfig ice_config_;
   IceRole ice_role_ = ICEROLE_CONTROLLING;
+  bool redetermine_role_on_ice_restart_;
   uint64_t ice_tiebreaker_ = rtc::CreateRandomId64();
   rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
   rtc::AsyncInvoker invoker_;

@@ -504,6 +504,13 @@ class FakeTransportController : public TransportController {
                             nullptr),
         fail_create_channel_(false) {}
 
+  explicit FakeTransportController(bool redetermine_role_on_ice_restart)
+      : TransportController(rtc::Thread::Current(),
+                            rtc::Thread::Current(),
+                            nullptr,
+                            redetermine_role_on_ice_restart),
+        fail_create_channel_(false) {}
+
   explicit FakeTransportController(IceRole role)
       : TransportController(rtc::Thread::Current(),
                             rtc::Thread::Current(),

@@ -689,7 +689,7 @@ TEST_F(TransportControllerTest, TestSignalingOccursOnSignalingThread) {
 // See: https://bugs.chromium.org/p/chromium/issues/detail?id=628676
 // TODO(deadbeef): Remove this when these old versions of Chrome reach a low
 // enough population.
-TEST_F(TransportControllerTest, IceRoleRedeterminedOnIceRestart) {
+TEST_F(TransportControllerTest, IceRoleRedeterminedOnIceRestartByDefault) {
   FakeTransportChannel* channel = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel);
   std::string err;
@@ -715,6 +715,38 @@ TEST_F(TransportControllerTest, IceRoleRedeterminedOnIceRestart) {
   EXPECT_TRUE(transport_controller_->SetLocalTransportDescription(
       "audio", ice_restart_desc, CA_OFFER, &err));
   EXPECT_EQ(ICEROLE_CONTROLLING, channel->GetIceRole());
+}
+
+// Test that if the TransportController was created with the
+// |redetermine_role_on_ice_restart| parameter set to false, the role is *not*
+// redetermined on an ICE restart.
+TEST_F(TransportControllerTest, IceRoleNotRedetermined) {
+  bool redetermine_role = false;
+  transport_controller_.reset(new TransportControllerForTest(redetermine_role));
+  FakeTransportChannel* channel = CreateChannel("audio", 1);
+  ASSERT_NE(nullptr, channel);
+  std::string err;
+  // Do an initial offer answer, so that the next offer is an ICE restart.
+  transport_controller_->SetIceRole(ICEROLE_CONTROLLED);
+  TransportDescription remote_desc(std::vector<std::string>(), kIceUfrag1,
+                                   kIcePwd1, ICEMODE_FULL,
+                                   CONNECTIONROLE_ACTPASS, nullptr);
+  EXPECT_TRUE(transport_controller_->SetRemoteTransportDescription(
+      "audio", remote_desc, CA_OFFER, &err));
+  TransportDescription local_desc(std::vector<std::string>(), kIceUfrag2,
+                                  kIcePwd2, ICEMODE_FULL,
+                                  CONNECTIONROLE_ACTPASS, nullptr);
+  EXPECT_TRUE(transport_controller_->SetLocalTransportDescription(
+      "audio", local_desc, CA_ANSWER, &err));
+  EXPECT_EQ(ICEROLE_CONTROLLED, channel->GetIceRole());
+
+  // The endpoint that initiated an ICE restart should keep the existing role.
+  TransportDescription ice_restart_desc(std::vector<std::string>(), kIceUfrag3,
+                                        kIcePwd3, ICEMODE_FULL,
+                                        CONNECTIONROLE_ACTPASS, nullptr);
+  EXPECT_TRUE(transport_controller_->SetLocalTransportDescription(
+      "audio", ice_restart_desc, CA_OFFER, &err));
+  EXPECT_EQ(ICEROLE_CONTROLLED, channel->GetIceRole());
 }
 
 }  // namespace cricket {
