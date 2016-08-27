@@ -300,61 +300,30 @@ bool BaseChannel::SetTransport_n(const std::string& transport_name) {
   if (rtcp_enabled_ && !rtcp_mux_filter_.IsFullyActive()) {
     LOG(LS_INFO) << "Create RTCP TransportChannel for " << content_name()
                  << " on " << transport_name << " transport ";
-    // TODO(deadbeef): Remove this grossness when we remove non-muxed RTCP.
-    SetRtcpTransportChannel_n(
-        transport_controller_->CreateTransportChannel_n(
-            transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP),
-        false /* update_writablity */);
+    SetTransportChannel_n(
+        true, transport_controller_->CreateTransportChannel_n(
+                  transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP));
     if (!rtcp_transport_channel_) {
       return false;
     }
   }
 
-  // We're not updating the writablity during the transition state.
-  SetTransportChannel_n(transport_controller_->CreateTransportChannel_n(
-      transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  LOG(LS_INFO) << "Create non-RTCP TransportChannel for " << content_name()
+               << " on " << transport_name << " transport ";
+  SetTransportChannel_n(
+      false, transport_controller_->CreateTransportChannel_n(
+                 transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP));
   if (!transport_channel_) {
     return false;
   }
 
-  // TODO(deadbeef): Remove this grossness when we remove non-muxed RTCP.
-  if (rtcp_transport_channel_) {
-    // We can only update the RTCP ready to send after set_transport_channel has
-    // handled channel writability.
-    SetTransportChannelReadyToSend(true, rtcp_transport_channel_->writable());
-  }
   transport_name_ = transport_name;
-  return true;
-}
-
-void BaseChannel::SetTransportChannel_n(TransportChannel* new_tc) {
-  RTC_DCHECK(network_thread_->IsCurrent());
-
-  TransportChannel* old_tc = transport_channel_;
-  if (!old_tc && !new_tc) {
-    // Nothing to do.
-    return;
-  }
-  RTC_DCHECK(old_tc != new_tc);
-
-  if (old_tc) {
-    DisconnectFromTransportChannel(old_tc);
-    transport_controller_->DestroyTransportChannel_n(
-        transport_name_, cricket::ICE_CANDIDATE_COMPONENT_RTP);
-  }
-
-  transport_channel_ = new_tc;
-
-  if (new_tc) {
-    ConnectToTransportChannel(new_tc);
-    for (const auto& pair : socket_options_) {
-      new_tc->SetOption(pair.first, pair.second);
-    }
-  }
 
   // Update aggregate writable/ready-to-send state between RTP and RTCP upon
   // setting new transport channels.
   UpdateWritableState_n();
+  // We can only update ready-to-send after updating writability.
+  //
   // On setting a new channel, assume it's ready to send if it's writable,
   // because we have no way of knowing otherwise (the channel doesn't give us
   // "was last send successful?").
@@ -362,50 +331,45 @@ void BaseChannel::SetTransportChannel_n(TransportChannel* new_tc) {
   // This won't always be accurate (the last SendPacket call from another
   // BaseChannel could have resulted in an error), but even so, we'll just
   // encounter the error again and update "ready to send" accordingly.
-  SetTransportChannelReadyToSend(false, new_tc && new_tc->writable());
+  SetTransportChannelReadyToSend(
+      false, transport_channel_ && transport_channel_->writable());
+  SetTransportChannelReadyToSend(
+      true, rtcp_transport_channel_ && rtcp_transport_channel_->writable());
+  return true;
 }
 
-void BaseChannel::SetRtcpTransportChannel_n(TransportChannel* new_tc,
-                                            bool update_writablity) {
+void BaseChannel::SetTransportChannel_n(bool rtcp,
+                                        TransportChannel* new_channel) {
   RTC_DCHECK(network_thread_->IsCurrent());
+  TransportChannel*& old_channel =
+      rtcp ? rtcp_transport_channel_ : transport_channel_;
 
-  TransportChannel* old_tc = rtcp_transport_channel_;
-  if (!old_tc && !new_tc) {
+  if (!old_channel && !new_channel) {
     // Nothing to do.
     return;
   }
-  RTC_DCHECK(old_tc != new_tc);
+  RTC_DCHECK(old_channel != new_channel);
 
-  if (old_tc) {
-    DisconnectFromTransportChannel(old_tc);
+  if (old_channel) {
+    DisconnectFromTransportChannel(old_channel);
     transport_controller_->DestroyTransportChannel_n(
-        transport_name_, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+        transport_name_, rtcp ? cricket::ICE_CANDIDATE_COMPONENT_RTCP
+                              : cricket::ICE_CANDIDATE_COMPONENT_RTP);
   }
 
-  rtcp_transport_channel_ = new_tc;
+  old_channel = new_channel;
 
-  if (new_tc) {
-    RTC_CHECK(!(ShouldSetupDtlsSrtp_n() && srtp_filter_.IsActive()))
-        << "Setting RTCP for DTLS/SRTP after SrtpFilter is active "
-        << "should never happen.";
-    ConnectToTransportChannel(new_tc);
-    for (const auto& pair : rtcp_socket_options_) {
-      new_tc->SetOption(pair.first, pair.second);
+  if (new_channel) {
+    if (rtcp) {
+      RTC_CHECK(!(ShouldSetupDtlsSrtp_n() && srtp_filter_.IsActive()))
+          << "Setting RTCP for DTLS/SRTP after SrtpFilter is active "
+          << "should never happen.";
     }
-  }
-
-  if (update_writablity) {
-    // Update aggregate writable/ready-to-send state between RTP and RTCP upon
-    // setting new channel
-    UpdateWritableState_n();
-    // On setting a new channel, assume it's ready to send if it's writable,
-    // because we have no way of knowing otherwise (the channel doesn't give us
-    // "was last send successful?").
-    //
-    // This won't always be accurate (the last SendPacket call from another
-    // BaseChannel could have resulted in an error), but even so, we'll just
-    // encounter the error again and update "ready to send" accordingly.
-    SetTransportChannelReadyToSend(true, new_tc && new_tc->writable());
+    ConnectToTransportChannel(new_channel);
+    auto& socket_options = rtcp ? rtcp_socket_options_ : socket_options_;
+    for (const auto& pair : socket_options) {
+      new_channel->SetOption(pair.first, pair.second);
+    }
   }
 }
 
@@ -1212,7 +1176,11 @@ void BaseChannel::ActivateRtcpMux() {
 void BaseChannel::ActivateRtcpMux_n() {
   if (!rtcp_mux_filter_.IsActive()) {
     rtcp_mux_filter_.SetActive();
-    SetRtcpTransportChannel_n(nullptr, true);
+    SetTransportChannel_n(true, nullptr);
+    // Update aggregate writable/ready-to-send state between RTP and RTCP upon
+    // removing channel.
+    UpdateWritableState_n();
+    SetTransportChannelReadyToSend(true, false);
   }
 }
 
@@ -1237,7 +1205,9 @@ bool BaseChannel::SetRtcpMux_n(bool enable,
         LOG(LS_INFO) << "Enabling rtcp-mux for " << content_name()
                      << " by destroying RTCP transport channel for "
                      << transport_name();
-        SetRtcpTransportChannel_n(nullptr, true);
+        SetTransportChannel_n(true, nullptr);
+        UpdateWritableState_n();
+        SetTransportChannelReadyToSend(true, false);
       }
       break;
     case CA_UPDATE:

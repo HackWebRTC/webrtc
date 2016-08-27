@@ -48,15 +48,16 @@ namespace cricket {
 struct CryptoParams;
 class MediaContentDescription;
 
-// BaseChannel contains logic common to voice and video, including
-// enable, marshaling calls to a worker and network threads, and
-// connection and media monitors.
+// BaseChannel contains logic common to voice and video, including enable,
+// marshaling calls to a worker and network threads, and connection and media
+// monitors.
+//
 // BaseChannel assumes signaling and other threads are allowed to make
 // synchronous calls to the worker thread, the worker thread makes synchronous
 // calls only to the network thread, and the network thread can't be blocked by
 // other threads.
 // All methods with _n suffix must be called on network thread,
-//     methods with _w suffix - on worker thread
+//     methods with _w suffix on worker thread
 // and methods with _s suffix on signaling thread.
 // Network and worker threads may be the same thread.
 //
@@ -187,11 +188,12 @@ class BaseChannel
   // Sets the |transport_channel_| (and |rtcp_transport_channel_|, if
   // |rtcp_enabled_| is true). Gets the transport channels from
   // |transport_controller_|.
+  // This method also updates writability and "ready-to-send" state.
   bool SetTransport_n(const std::string& transport_name);
 
-  void SetTransportChannel_n(TransportChannel* transport);
-  void SetRtcpTransportChannel_n(TransportChannel* transport,
-                                 bool update_writablity);
+  // This does not update writability or "ready-to-send" state; it just
+  // disconnects from the old channel and connects to the new one.
+  void SetTransportChannel_n(bool rtcp, TransportChannel* new_channel);
 
   bool was_ever_writable() const { return was_ever_writable_; }
   void set_local_content_direction(MediaContentDirection direction) {
