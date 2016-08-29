@@ -43,10 +43,12 @@
 #include <memory>
 #include <utility>
 
+#include "webrtc/api/androidvideocapturer.h"
 #include "webrtc/api/androidvideotracksource.h"
 #include "webrtc/api/android/jni/androidmediadecoder_jni.h"
 #include "webrtc/api/android/jni/androidmediaencoder_jni.h"
 #include "webrtc/api/android/jni/androidnetworkmonitor_jni.h"
+#include "webrtc/api/android/jni/androidvideocapturer_jni.h"
 #include "webrtc/api/android/jni/classreferenceholder.h"
 #include "webrtc/api/android/jni/jni_helpers.h"
 #include "webrtc/api/android/jni/native_handle_impl.h"
@@ -1001,6 +1003,9 @@ JOW(jboolean, PeerConnectionFactory_initializeAndroidGlobals)
     RTC_DCHECK(j_application_context == nullptr);
     j_application_context = NewGlobalRef(jni, context);
 
+    if (initialize_video) {
+      failure |= AndroidVideoCapturerJni::SetAndroidObjects(jni, context);
+    }
     if (initialize_audio)
       failure |= webrtc::VoiceEngine::SetAndroidObjects(GetJVM(), context);
     factory_static_initialized = true;
@@ -1257,7 +1262,27 @@ JOW(jlong, PeerConnectionFactory_nativeCreateLocalMediaStream)(
   return (jlong)stream.release();
 }
 
-JOW(jlong, PeerConnectionFactory_nativeCreateVideoSource)
+JOW(jlong, PeerConnectionFactory_nativeCreateVideoSource)(
+    JNIEnv* jni, jclass, jlong native_factory, jobject j_egl_context,
+    jobject j_video_capturer, jobject j_constraints) {
+  // Create a cricket::VideoCapturer from |j_video_capturer|.
+  rtc::scoped_refptr<webrtc::AndroidVideoCapturerDelegate> delegate =
+      new rtc::RefCountedObject<AndroidVideoCapturerJni>(
+          jni, j_video_capturer, j_egl_context);
+  std::unique_ptr<cricket::VideoCapturer> capturer(
+      new webrtc::AndroidVideoCapturer(delegate));
+  // Create a webrtc::VideoTrackSourceInterface from the cricket::VideoCapturer,
+  // native factory and constraints.
+  std::unique_ptr<ConstraintsWrapper> constraints(
+      new ConstraintsWrapper(jni, j_constraints));
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
+      factoryFromJava(native_factory));
+  rtc::scoped_refptr<VideoTrackSourceInterface> source(
+      factory->CreateVideoSource(capturer.release(), constraints.get()));
+  return (jlong)source.release();
+}
+
+JOW(jlong, PeerConnectionFactory_nativeCreateVideoSource2)
 (JNIEnv* jni, jclass, jlong native_factory, jobject j_egl_context) {
   OwnedFactoryAndThreads* factory =
       reinterpret_cast<OwnedFactoryAndThreads*>(native_factory);
