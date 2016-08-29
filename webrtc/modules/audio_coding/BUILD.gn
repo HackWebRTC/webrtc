@@ -127,11 +127,6 @@ source_set("audio_coding") {
     ]
   }
 
-  if (is_clang) {
-    # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps = audio_coding_deps + [
            ":neteq",
            ":rent_a_codec",
