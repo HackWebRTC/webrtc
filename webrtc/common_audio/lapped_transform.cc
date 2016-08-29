@@ -92,6 +92,8 @@ LappedTransform::LappedTransform(size_t num_in_channels,
   RTC_CHECK_EQ(0u, block_length_ & (block_length_ - 1));
 }
 
+LappedTransform::~LappedTransform() = default;
+
 void LappedTransform::ProcessChunk(const float* const* in_chunk,
                                    float* const* out_chunk) {
   blocker_.ProcessChunk(in_chunk, chunk_length_, num_in_channels_,

@@ -63,6 +63,7 @@ class NonlinearBeamformer : public LappedTransform::Callback {
       size_t num_postfilter_channels = 1u,
       SphericalPointf target_direction =
           SphericalPointf(static_cast<float>(M_PI) / 2.f, 0.f, 1.f));
+  ~NonlinearBeamformer() override;
 
   // Sample rate corresponds to the lower band.
   // Needs to be called before the NonlinearBeamformer can be used.
@@ -86,7 +87,7 @@ class NonlinearBeamformer : public LappedTransform::Callback {
   // target signal es present and to false otherwise. This methods can be called
   // to know if the data is target signal or interference and process it
   // accordingly.
-  virtual bool is_target_present() { return is_target_present_; }
+  virtual bool is_target_present();
 
  protected:
   // Process one frequency-domain block of audio. This is where the fun

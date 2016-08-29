@@ -153,6 +153,7 @@ class ChannelBuffer {
 class IFChannelBuffer {
  public:
   IFChannelBuffer(size_t num_frames, size_t num_channels, size_t num_bands = 1);
+  ~IFChannelBuffer();
 
   ChannelBuffer<int16_t>* ibuf();
   ChannelBuffer<float>* fbuf();

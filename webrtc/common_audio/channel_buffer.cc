@@ -22,6 +22,8 @@ IFChannelBuffer::IFChannelBuffer(size_t num_frames,
       fvalid_(true),
       fbuf_(num_frames, num_channels, num_bands) {}
 
+IFChannelBuffer::~IFChannelBuffer() = default;
+
 ChannelBuffer<int16_t>* IFChannelBuffer::ibuf() {
   RefreshI();
   fvalid_ = false;

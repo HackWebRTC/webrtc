@@ -53,7 +53,7 @@ class LappedTransform {
                   size_t block_length,
                   size_t shift_amount,
                   Callback* callback);
-  ~LappedTransform() {}
+  ~LappedTransform();
 
   // Main audio processing helper method. Internally slices |in_chunk| into
   // blocks, transforms them to frequency domain, calls the callback for each
@@ -93,11 +93,11 @@ class LappedTransform {
    public:
     explicit BlockThunk(LappedTransform* parent) : parent_(parent) {}
 
-    virtual void ProcessBlock(const float* const* input,
+ void ProcessBlock(const float* const* input,
                               size_t num_frames,
                               size_t num_input_channels,
                               size_t num_output_channels,
-                              float* const* output);
+                              float* const* output) override;
 
    private:
     LappedTransform* const parent_;

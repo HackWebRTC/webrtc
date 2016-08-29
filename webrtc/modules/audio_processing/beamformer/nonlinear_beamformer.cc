@@ -222,6 +222,8 @@ NonlinearBeamformer::NonlinearBeamformer(
   WindowGenerator::KaiserBesselDerived(kKbdAlpha, kFftSize, window_);
 }
 
+NonlinearBeamformer::~NonlinearBeamformer() = default;
+
 void NonlinearBeamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
   chunk_length_ =
       static_cast<size_t>(sample_rate_hz / (1000.f / chunk_size_ms));
@@ -437,6 +439,8 @@ bool NonlinearBeamformer::IsInBeam(const SphericalPointf& spherical_point) {
   return fabs(spherical_point.azimuth() - target_angle_radians_) <
          kHalfBeamWidthRadians;
 }
+
+bool NonlinearBeamformer::is_target_present() { return is_target_present_; }
 
 void NonlinearBeamformer::ProcessAudioBlock(const complex_f* const* input,
                                             size_t num_input_channels,
