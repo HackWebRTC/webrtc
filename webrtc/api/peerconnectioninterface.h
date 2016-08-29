@@ -151,19 +151,6 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     kClosed,
   };
 
-  // TODO(bemasc): Remove IceState when callers are changed to
-  // IceConnection/GatheringState.
-  enum IceState {
-    kIceNew,
-    kIceGathering,
-    kIceWaiting,
-    kIceChecking,
-    kIceConnected,
-    kIceCompleted,
-    kIceFailed,
-    kIceClosed,
-  };
-
   enum IceGatheringState {
     kIceGatheringNew,
     kIceGatheringGathering,
@@ -487,10 +474,6 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // Returns the current SignalingState.
   virtual SignalingState signaling_state() = 0;
 
-  // TODO(bemasc): Remove ice_state when callers are changed to
-  // IceConnection/GatheringState.
-  // Returns the current IceState.
-  virtual IceState ice_state() = 0;
   virtual IceConnectionState ice_connection_state() = 0;
   virtual IceGatheringState ice_gathering_state() = 0;
 
