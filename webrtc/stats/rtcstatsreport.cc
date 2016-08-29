@@ -66,11 +66,20 @@ bool RTCStatsReport::AddStats(std::unique_ptr<const RTCStats> stats) {
                         std::move(stats))).second;
 }
 
-const RTCStats* RTCStatsReport::operator[](const std::string& id) const {
+const RTCStats* RTCStatsReport::Get(const std::string& id) const {
   StatsMap::const_iterator it = stats_.find(id);
   if (it != stats_.cend())
     return it->second.get();
   return nullptr;
+}
+
+void RTCStatsReport::TakeMembersFrom(
+    rtc::scoped_refptr<RTCStatsReport> victim) {
+  for (StatsMap::iterator it = victim->stats_.begin();
+       it != victim->stats_.end(); ++it) {
+    AddStats(std::unique_ptr<const RTCStats>(it->second.release()));
+  }
+  victim->stats_.clear();
 }
 
 RTCStatsReport::ConstIterator RTCStatsReport::begin() const {

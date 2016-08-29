@@ -37,6 +37,7 @@
           ],
           'sources': [
             'rtcstats_unittest.cc',
+            'rtcstatsreport_unittest.cc',
           ],
         },
       ],

@@ -55,9 +55,13 @@ class RTCStatsReport : public rtc::RefCountInterface {
   RTCStatsReport(const RTCStatsReport& other) = delete;
 
   bool AddStats(std::unique_ptr<const RTCStats> stats);
-  const RTCStats* operator[](const std::string& id) const;
+  const RTCStats* Get(const std::string& id) const;
   size_t size() const { return stats_.size(); }
 
+  // Takes ownership of all the stats in |victim|, leaving it empty.
+  void TakeMembersFrom(rtc::scoped_refptr<RTCStatsReport> victim);
+
+  // Stats iterators. Stats are ordered lexicographically on |RTCStats::id|.
   ConstIterator begin() const;
   ConstIterator end() const;
 

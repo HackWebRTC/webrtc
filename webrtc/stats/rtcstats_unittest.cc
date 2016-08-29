@@ -9,11 +9,9 @@
  */
 
 #include "webrtc/api/rtcstats.h"
-#include "webrtc/api/rtcstatsreport.h"
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/gunit.h"
-#include "webrtc/base/logging.h"
 
 namespace webrtc {
 
@@ -163,39 +161,6 @@ TEST(RTCStatsTest, RTCStatsGrandChild) {
   const RTCGrandChildStats& copy = copy_ptr->cast_to<RTCGrandChildStats>();
   EXPECT_EQ(*copy.child_int, *stats.child_int);
   EXPECT_EQ(*copy.grandchild_int, *stats.grandchild_int);
-}
-
-TEST(RTCStatsTest, TestRTCStatsReport) {
-  rtc::scoped_refptr<RTCStatsReport> report = RTCStatsReport::Create();
-  EXPECT_EQ(report->size(), static_cast<size_t>(0));
-  report->AddStats(std::unique_ptr<RTCStats>(new RTCTestStats("a0", 1.0)));
-  report->AddStats(std::unique_ptr<RTCStats>(new RTCTestStats("a1", 2.0)));
-  report->AddStats(std::unique_ptr<RTCStats>(new RTCChildStats("b0", 4.0)));
-  report->AddStats(std::unique_ptr<RTCStats>(new RTCChildStats("b1", 8.0)));
-  report->AddStats(std::unique_ptr<RTCStats>(new RTCTestStats("a2", 16.0)));
-  report->AddStats(std::unique_ptr<RTCStats>(new RTCChildStats("b2", 32.0)));
-  EXPECT_EQ(report->size(), static_cast<size_t>(6));
-
-  EXPECT_EQ((*report)["missing"], nullptr);
-  EXPECT_EQ((*report)["a0"]->id(), "a0");
-  EXPECT_EQ((*report)["b2"]->id(), "b2");
-
-  std::vector<const RTCTestStats*> a = report->GetStatsOfType<RTCTestStats>();
-  EXPECT_EQ(a.size(), static_cast<size_t>(3));
-  uint32_t mask = 0;
-  for (const RTCTestStats* stats : a)
-    mask |= static_cast<uint32_t>(stats->timestamp());
-  EXPECT_EQ(mask, static_cast<uint32_t>(1 | 2 | 16));
-
-  std::vector<const RTCChildStats*> b = report->GetStatsOfType<RTCChildStats>();
-  EXPECT_EQ(b.size(), static_cast<size_t>(3));
-  mask = 0;
-  for (const RTCChildStats* stats : b)
-    mask |= static_cast<uint32_t>(stats->timestamp());
-  EXPECT_EQ(mask, static_cast<uint32_t>(4 | 8 | 32));
-
-  EXPECT_EQ(report->GetStatsOfType<RTCGrandChildStats>().size(),
-            static_cast<size_t>(0));
 }
 
 // Death tests.

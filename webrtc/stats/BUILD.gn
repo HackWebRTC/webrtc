@@ -37,6 +37,7 @@ if (rtc_include_tests) {
     testonly = true
     sources = [
       "rtcstats_unittest.cc",
+      "rtcstatsreport_unittest.cc",
     ]
 
     configs += [ "..:common_config" ]
