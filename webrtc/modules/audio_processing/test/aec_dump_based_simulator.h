@@ -29,7 +29,7 @@ class AecDumpBasedSimulator final : public AudioProcessingSimulator {
  public:
   explicit AecDumpBasedSimulator(const SimulationSettings& settings)
       : AudioProcessingSimulator(settings) {}
-  virtual ~AecDumpBasedSimulator() {}
+  ~AecDumpBasedSimulator() override {}
 
   // Processes the messages in the aecdump file.
   void Process() override;

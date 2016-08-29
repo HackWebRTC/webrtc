@@ -16,6 +16,11 @@
 namespace webrtc {
 namespace test {
 
+WavBasedSimulator::WavBasedSimulator(const SimulationSettings& settings)
+      : AudioProcessingSimulator(settings) {}
+
+WavBasedSimulator::~WavBasedSimulator() = default;
+
 std::vector<WavBasedSimulator::SimulationEventType>
 WavBasedSimulator::GetDefaultEventChain() const {
   std::vector<WavBasedSimulator::SimulationEventType> call_chain(2);

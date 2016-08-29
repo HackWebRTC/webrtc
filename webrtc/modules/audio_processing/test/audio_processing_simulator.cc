@@ -44,6 +44,10 @@ std::string GetIndexedOutputWavFilename(const std::string& wav_name,
 
 }  // namespace
 
+SimulationSettings::SimulationSettings() = default;
+SimulationSettings::SimulationSettings(const SimulationSettings&) = default;
+SimulationSettings::~SimulationSettings() = default;
+
 void CopyToAudioFrame(const ChannelBuffer<float>& src, AudioFrame* dest) {
   RTC_CHECK_EQ(src.num_channels(), dest->num_channels_);
   RTC_CHECK_EQ(src.num_frames(), dest->samples_per_channel_);
@@ -54,6 +58,12 @@ void CopyToAudioFrame(const ChannelBuffer<float>& src, AudioFrame* dest) {
     }
   }
 }
+
+AudioProcessingSimulator::AudioProcessingSimulator(
+    const SimulationSettings& settings)
+    : settings_(settings) {}
+
+AudioProcessingSimulator::~AudioProcessingSimulator() = default;
 
 AudioProcessingSimulator::ScopedTimer::~ScopedTimer() {
   int64_t interval = rtc::TimeNanos() - start_time_;

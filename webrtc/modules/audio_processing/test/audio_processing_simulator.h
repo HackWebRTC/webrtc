@@ -28,6 +28,9 @@ namespace test {
 
 // Holds all the parameters available for controlling the simulation.
 struct SimulationSettings {
+  SimulationSettings();
+  SimulationSettings(const SimulationSettings&);
+  ~SimulationSettings();
   rtc::Optional<int> stream_delay;
   rtc::Optional<int> stream_drift_samples;
   rtc::Optional<int> output_sample_rate_hz;
@@ -92,9 +95,8 @@ class AudioProcessingSimulator {
  public:
   static const int kChunksPerSecond = 1000 / AudioProcessing::kChunkSizeMs;
 
-  explicit AudioProcessingSimulator(const SimulationSettings& settings)
-      : settings_(settings) {}
-  virtual ~AudioProcessingSimulator() {}
+  explicit AudioProcessingSimulator(const SimulationSettings& settings);
+  virtual ~AudioProcessingSimulator();
 
   // Processes the data in the input.
   virtual void Process() = 0;
