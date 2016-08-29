@@ -93,6 +93,12 @@ webrtc::SignalClassifier::SignalType ClassifySignal(
 
 }  // namespace
 
+SignalClassifier::FrameExtender::FrameExtender(size_t frame_size,
+                                               size_t extended_frame_size)
+    : x_old_(extended_frame_size - frame_size, 0.f) {}
+
+SignalClassifier::FrameExtender::~FrameExtender() = default;
+
 void SignalClassifier::FrameExtender::ExtendFrame(
     rtc::ArrayView<const float> x,
     rtc::ArrayView<float> x_extended) {

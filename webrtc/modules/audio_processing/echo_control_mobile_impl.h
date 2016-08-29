@@ -29,7 +29,7 @@ class EchoControlMobileImpl : public EchoControlMobile {
   EchoControlMobileImpl(rtc::CriticalSection* crit_render,
                         rtc::CriticalSection* crit_capture);
 
-  virtual ~EchoControlMobileImpl();
+  ~EchoControlMobileImpl() override;
 
   int ProcessRenderAudio(const AudioBuffer* audio);
   int ProcessCaptureAudio(AudioBuffer* audio, int stream_delay_ms);

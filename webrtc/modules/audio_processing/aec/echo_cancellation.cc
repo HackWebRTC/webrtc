@@ -28,6 +28,9 @@ extern "C" {
 
 namespace webrtc {
 
+Aec::Aec() = default;
+Aec::~Aec() = default;
+
 // Measured delays [ms]
 // Device                Chrome  GTP
 // MacBook Air           10

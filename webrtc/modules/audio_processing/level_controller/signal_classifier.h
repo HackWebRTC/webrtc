@@ -37,8 +37,8 @@ class SignalClassifier {
  private:
   class FrameExtender {
    public:
-    FrameExtender(size_t frame_size, size_t extended_frame_size)
-        : x_old_(extended_frame_size - frame_size, 0.f) {}
+    FrameExtender(size_t frame_size, size_t extended_frame_size);
+    ~FrameExtender();
 
     void ExtendFrame(rtc::ArrayView<const float> x,
                      rtc::ArrayView<float> x_extended);

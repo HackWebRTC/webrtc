@@ -239,11 +239,6 @@ source_set("audio_processing") {
   # TODO(jschuh): Bug 1348: fix this warning.
   configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 
-  if (is_clang) {
-    # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps += [
     "../../base:rtc_base_approved",
     "../../common_audio",

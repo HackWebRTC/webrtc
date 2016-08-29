@@ -278,6 +278,20 @@ int AudioProcessingImpl::MaybeInitializeCapture(
   return MaybeInitialize(processing_config);
 }
 
+#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
+
+AudioProcessingImpl::ApmDebugDumpThreadState::ApmDebugDumpThreadState()
+    : event_msg(new audioproc::Event()) {}
+
+AudioProcessingImpl::ApmDebugDumpThreadState::~ApmDebugDumpThreadState() {}
+
+AudioProcessingImpl::ApmDebugDumpState::ApmDebugDumpState()
+    : debug_file(FileWrapper::Create()) {}
+
+AudioProcessingImpl::ApmDebugDumpState::~ApmDebugDumpState() {}
+
+#endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
+
 // Calls InitializeLocked() if any of the audio parameters have changed from
 // their current values (needs to be called while holding the crit_render_lock).
 int AudioProcessingImpl::MaybeInitialize(
@@ -1523,5 +1537,29 @@ int AudioProcessingImpl::WriteConfigMessage(bool forced) {
   return kNoError;
 }
 #endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
+
+AudioProcessingImpl::ApmCaptureState::ApmCaptureState(
+    bool transient_suppressor_enabled,
+    const std::vector<Point>& array_geometry,
+    SphericalPointf target_direction)
+    : aec_system_delay_jumps(-1),
+      delay_offset_ms(0),
+      was_stream_delay_set(false),
+      last_stream_delay_ms(0),
+      last_aec_system_delay_ms(0),
+      stream_delay_jumps(-1),
+      output_will_be_muted(false),
+      key_pressed(false),
+      transient_suppressor_enabled(transient_suppressor_enabled),
+      array_geometry(array_geometry),
+      target_direction(target_direction),
+      fwd_proc_format(kSampleRate16kHz),
+      split_rate(kSampleRate16kHz) {}
+
+AudioProcessingImpl::ApmCaptureState::~ApmCaptureState() = default;
+
+AudioProcessingImpl::ApmRenderState::ApmRenderState() = default;
+
+AudioProcessingImpl::ApmRenderState::~ApmRenderState() = default;
 
 }  // namespace webrtc

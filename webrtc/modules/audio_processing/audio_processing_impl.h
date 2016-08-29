@@ -45,7 +45,7 @@ class AudioProcessingImpl : public AudioProcessing {
   explicit AudioProcessingImpl(const Config& config);
   // AudioProcessingImpl takes ownership of beamformer.
   AudioProcessingImpl(const Config& config, NonlinearBeamformer* beamformer);
-  virtual ~AudioProcessingImpl();
+  ~AudioProcessingImpl() override;
   int Initialize() override;
   int Initialize(int input_sample_rate_hz,
                  int output_sample_rate_hz,
@@ -133,7 +133,8 @@ class AudioProcessingImpl : public AudioProcessing {
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   // State for the debug dump.
   struct ApmDebugDumpThreadState {
-    ApmDebugDumpThreadState() : event_msg(new audioproc::Event()) {}
+    ApmDebugDumpThreadState();
+    ~ApmDebugDumpThreadState();
     std::unique_ptr<audioproc::Event> event_msg;  // Protobuf message.
     std::string event_str;  // Memory for protobuf serialization.
 
@@ -142,7 +143,8 @@ class AudioProcessingImpl : public AudioProcessing {
   };
 
   struct ApmDebugDumpState {
-    ApmDebugDumpState() : debug_file(FileWrapper::Create()) {}
+    ApmDebugDumpState();
+    ~ApmDebugDumpState();
     // Number of bytes that can still be written to the log before the maximum
     // size is reached. A value of <= 0 indicates that no limit is used.
     int64_t num_bytes_left_for_log_ = -1;
@@ -287,20 +289,8 @@ class AudioProcessingImpl : public AudioProcessing {
   struct ApmCaptureState {
     ApmCaptureState(bool transient_suppressor_enabled,
                     const std::vector<Point>& array_geometry,
-                    SphericalPointf target_direction)
-        : aec_system_delay_jumps(-1),
-          delay_offset_ms(0),
-          was_stream_delay_set(false),
-          last_stream_delay_ms(0),
-          last_aec_system_delay_ms(0),
-          stream_delay_jumps(-1),
-          output_will_be_muted(false),
-          key_pressed(false),
-          transient_suppressor_enabled(transient_suppressor_enabled),
-          array_geometry(array_geometry),
-          target_direction(target_direction),
-          fwd_proc_format(kSampleRate16kHz),
-          split_rate(kSampleRate16kHz) {}
+                    SphericalPointf target_direction);
+    ~ApmCaptureState();
     int aec_system_delay_jumps;
     int delay_offset_ms;
     bool was_stream_delay_set;
@@ -342,6 +332,8 @@ class AudioProcessingImpl : public AudioProcessing {
   } capture_nonlocked_;
 
   struct ApmRenderState {
+    ApmRenderState();
+    ~ApmRenderState();
     std::unique_ptr<AudioConverter> render_converter;
     std::unique_ptr<AudioBuffer> render_audio;
   } render_ GUARDED_BY(crit_render_);
