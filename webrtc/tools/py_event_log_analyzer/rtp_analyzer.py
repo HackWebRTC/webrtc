@@ -13,6 +13,7 @@ from __future__ import print_function
 
 import collections
 import optparse
+import os
 import sys
 
 import matplotlib.pyplot as plt
@@ -275,9 +276,9 @@ def calculate_delay(start, stop, step, points):
   for point in points:
     grouped_delays[rounded_value_index(point.real_send_time_ms)
                   ].append(point.absdelay)
-  regularized_delays = [numpy.average(arr) if arr else None for arr in
+  regularized_delays = [numpy.average(arr) if arr else -1 for arr in
                         grouped_delays]
-  return numpy.ma.masked_values(regularized_delays, None)
+  return numpy.ma.masked_values(regularized_delays, -1)
 
 
 def main():
@@ -290,13 +291,22 @@ def main():
                     default=False, action="store_true",
                     help="always query user for real sample rate")
 
+  parser.add_option("--working_directory",
+                    default=None, action="store",
+                    help="directory in which to search for relative paths")
+
   (options, args) = parser.parse_args()
 
   if len(args) < 1:
     parser.print_help()
     sys.exit(0)
 
-  data_points = pb_parse.parse_protobuf(args[0])
+  input_file = args[0]
+
+  if options.working_directory and not os.path.isabs(input_file):
+    input_file = os.path.join(options.working_directory, input_file)
+
+  data_points = pb_parse.parse_protobuf(input_file)
   rtp_stats = RTPStatistics(data_points)
 
   if options.dump_header_to_stdout:
