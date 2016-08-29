@@ -112,6 +112,8 @@ AcmReceiveTestOldApi::AcmReceiveTestOldApi(
       exptected_output_channels_(exptected_output_channels) {
 }
 
+AcmReceiveTestOldApi::~AcmReceiveTestOldApi() = default;
+
 void AcmReceiveTestOldApi::RegisterDefaultCodecs() {
   CodecInst my_codec_param;
   for (int n = 0; n < acm_->NumberOfCodecs(); n++) {

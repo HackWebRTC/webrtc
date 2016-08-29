@@ -246,6 +246,7 @@
             'tools/output_wav_file.h',
             'tools/packet.cc',
             'tools/packet.h',
+            'tools/packet_source.cc',
             'tools/packet_source.h',
             'tools/resample_input_audio_file.cc',
             'tools/resample_input_audio_file.h',

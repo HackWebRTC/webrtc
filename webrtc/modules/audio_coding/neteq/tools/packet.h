@@ -62,7 +62,7 @@ class Packet {
          size_t virtual_packet_length_bytes,
          double time_ms);
 
-  virtual ~Packet() {}
+  virtual ~Packet();
 
   // Parses the first bytes of the RTP payload, interpreting them as RED headers
   // according to RFC 2198. The headers will be inserted into |headers|. The

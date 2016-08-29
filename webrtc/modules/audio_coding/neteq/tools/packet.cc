@@ -77,6 +77,8 @@ Packet::Packet(uint8_t* packet_memory,
   valid_header_ = ParseHeader(*parser);
 }
 
+Packet::~Packet() = default;
+
 bool Packet::ExtractRedHeaders(std::list<RTPHeader*>* headers) const {
   //
   //  0                   1                    2                   3

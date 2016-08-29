@@ -24,21 +24,16 @@ namespace test {
 // Interface class for an object delivering RTP packets to test applications.
 class PacketSource {
  public:
-  PacketSource() : use_ssrc_filter_(false), ssrc_(0) {}
-  virtual ~PacketSource() {}
+  PacketSource();
+  virtual ~PacketSource();
 
   // Returns next packet. Returns nullptr if the source is depleted, or if an
   // error occurred.
   virtual std::unique_ptr<Packet> NextPacket() = 0;
 
-  virtual void FilterOutPayloadType(uint8_t payload_type) {
-    filter_.set(payload_type, true);
-  }
+  virtual void FilterOutPayloadType(uint8_t payload_type);
 
-  virtual void SelectSsrc(uint32_t ssrc) {
-    use_ssrc_filter_ = true;
-    ssrc_ = ssrc;
-  }
+  virtual void SelectSsrc(uint32_t ssrc);
 
  protected:
   std::bitset<128> filter_;  // Payload type is 7 bits in the RFC.

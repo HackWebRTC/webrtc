@@ -38,7 +38,7 @@ class AcmReceiveTestOldApi {
                        AudioSink* audio_sink,
                        int output_freq_hz,
                        NumOutputChannels exptected_output_channels);
-  virtual ~AcmReceiveTestOldApi() {}
+  virtual ~AcmReceiveTestOldApi();
 
   // Registers the codecs with default parameters from ACM.
   void RegisterDefaultCodecs();

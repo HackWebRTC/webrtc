@@ -898,11 +898,6 @@ if (rtc_include_tests) {
     configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
-    if (is_clang) {
-      # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
-    }
-
     defines = audio_coding_defines
 
     deps = audio_coding_deps + [
@@ -1209,6 +1204,7 @@ if (rtc_include_tests) {
       "neteq/tools/output_wav_file.h",
       "neteq/tools/packet.cc",
       "neteq/tools/packet.h",
+      "neteq/tools/packet_source.cc",
       "neteq/tools/packet_source.h",
       "neteq/tools/resample_input_audio_file.cc",
       "neteq/tools/resample_input_audio_file.h",
