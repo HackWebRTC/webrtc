@@ -917,11 +917,6 @@ if (rtc_include_tests) {
     configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
-    if (is_clang) {
-      # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
-    }
-
     defines = audio_coding_defines
 
     deps = audio_coding_deps + [
@@ -942,12 +937,6 @@ if (rtc_include_tests) {
 
     configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
-
-    if (is_clang) {
-      # Suppress warnings from Chrome's Clang plugins.
-      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
-    }
 
     deps = [
       ":audio_coding",

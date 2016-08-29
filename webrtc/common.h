@@ -71,15 +71,8 @@ class Config {
   // This instance gets ownership of the newly set value.
   template<typename T> void Set(T* value);
 
-  Config() {}
-  ~Config() {
-    // Note: this method is inline so webrtc public API depends only
-    // on the headers.
-    for (OptionMap::iterator it = options_.begin();
-         it != options_.end(); ++it) {
-      delete it->second;
-    }
-  }
+  Config();
+  ~Config();
 
  private:
   struct BaseOption {

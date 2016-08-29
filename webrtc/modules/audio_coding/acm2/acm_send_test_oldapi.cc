@@ -47,6 +47,8 @@ AcmSendTestOldApi::AcmSendTestOldApi(InputAudioFile* audio_source,
   acm_->RegisterTransportCallback(this);
 }
 
+AcmSendTestOldApi::~AcmSendTestOldApi() = default;
+
 bool AcmSendTestOldApi::RegisterCodec(const char* payload_name,
                                       int sampling_freq_hz,
                                       int channels,

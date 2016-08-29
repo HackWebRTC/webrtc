@@ -47,7 +47,7 @@ class Channel : public AudioPacketizationCallback {
  public:
 
   Channel(int16_t chID = -1);
-  ~Channel();
+  ~Channel() override;
 
   int32_t SendData(FrameType frameType,
                    uint8_t payloadType,

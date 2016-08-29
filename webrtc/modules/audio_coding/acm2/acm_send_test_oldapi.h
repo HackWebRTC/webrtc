@@ -32,7 +32,7 @@ class AcmSendTestOldApi : public AudioPacketizationCallback,
   AcmSendTestOldApi(InputAudioFile* audio_source,
                     int source_rate_hz,
                     int test_duration_ms);
-  virtual ~AcmSendTestOldApi() {}
+  ~AcmSendTestOldApi() override;
 
   // Registers the send codec. Returns true on success, false otherwise.
   bool RegisterCodec(const char* payload_name,

@@ -118,10 +118,8 @@ bool FixedPayloadTypeCodec(const char* payloadName);
 class VADCallback : public ACMVADCallback {
  public:
   VADCallback();
-  ~VADCallback() {
-  }
 
-  int32_t InFrameType(FrameType frame_type);
+  int32_t InFrameType(FrameType frame_type) override;
 
   void PrintFrameTypes();
   void Reset();

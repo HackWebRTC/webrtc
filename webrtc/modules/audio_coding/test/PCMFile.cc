@@ -46,6 +46,12 @@ PCMFile::PCMFile(uint32_t timestamp)
   timestamp_ = timestamp;
 }
 
+PCMFile::~PCMFile() {
+  if (pcm_file_) {
+    fclose(pcm_file_);
+  }
+}
+
 int16_t PCMFile::ChooseFile(std::string* file_name, int16_t max_len,
                             uint16_t* frequency_hz) {
   char tmp_name[MAX_FILE_NAME_LENGTH_BYTE];

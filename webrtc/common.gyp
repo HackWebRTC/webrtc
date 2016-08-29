@@ -13,6 +13,8 @@
       'type': 'static_library',
       'sources': [
         'audio_sink.h',
+        'common.cc',
+        'common.h',
         'common_types.cc',
         'common_types.h',
         'config.h',
