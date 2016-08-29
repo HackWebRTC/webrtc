@@ -51,9 +51,6 @@ class VideoFrame {
   virtual int64_t GetTimeStamp() const {
     return rtc::kNumNanosecsPerMicrosec * timestamp_us();
   }
-  virtual void SetTimeStamp(int64_t time_ns) {
-    set_timestamp_us(time_ns / rtc::kNumNanosecsPerMicrosec);
-  }
 
   // Indicates the rotation angle in degrees.
   virtual webrtc::VideoRotation rotation() const = 0;
