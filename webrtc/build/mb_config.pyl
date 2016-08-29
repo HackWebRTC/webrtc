@@ -82,20 +82,24 @@
       'Android64 Tests (L Nexus9)': 'none',
 
       # Windows
-      'Win32 Debug': 'gyp_debug_bot_x86',
-      'Win32 Release': 'gyp_release_bot_x86',
-      'Win64 Debug': 'gyp_debug_bot_x64',
-      'Win64 Release': 'gyp_release_bot_x64',
-      'Win64 Debug (GN)': 'gn_debug_bot_x64',
-      'Win64 Release (GN)': 'gn_release_bot_x64',
-      'Win32 Debug (Clang)': 'win_gyp_clang_debug_bot_x86',
-      'Win32 Release (Clang)': 'win_gyp_clang_release_bot_x86',
-      'Win64 Debug (Clang)': 'win_gyp_clang_debug_bot_x64',
-      'Win64 Release (Clang)': 'win_gyp_clang_release_bot_x64',
-      'Win SyzyASan': 'win_gyp_syzyasan_release_bot_x86',
-      'Win DrMemory Full': 'win_gyp_drmemory_debug_bot_x86',
-      'Win DrMemory Light': 'win_gyp_drmemory_debug_bot_x86',
-      'Win32 Release [large tests]': 'gyp_release_bot_x86',
+      'Win32 Debug': 'gn_debug_bot_x86',
+      'Win32 Release': 'gn_release_bot_x86',
+      'Win64 Debug': 'gn_debug_bot_x64',
+      'Win64 Release': 'gn_release_bot_x64',
+      'Win32 Debug (Clang)': 'win_gn_clang_debug_bot_x86',
+      'Win32 Release (Clang)': 'win_gn_clang_release_bot_x86',
+      'Win64 Debug (Clang)': 'win_gn_clang_debug_bot_x64',
+      'Win64 Release (Clang)': 'win_gn_clang_release_bot_x64',
+      'Win SyzyASan': 'win_gn_syzyasan_release_bot_x86',
+      'Win DrMemory Full': 'win_gn_drmemory_debug_bot_x86',
+      'Win DrMemory Light': 'win_gn_drmemory_debug_bot_x86',
+      'Win32 Release [large tests]': 'gn_release_bot_x86',
+      # TODO(kjellander): Remove the two GN configs below as soon we've renamed
+      # the bots to the GYP versions (duplicated now).
+      'Win64 Debug (GN)': 'gyp_debug_bot_x64_exclude_tests',
+      'Win64 Release (GN)': 'gyp_release_bot_x64_exclude_tests',
+      'Win64 Debug (GYP)': 'gyp_debug_bot_x64_exclude_tests',
+      'Win64 Release (GYP)': 'gyp_release_bot_x64_exclude_tests',
     },
     'tryserver.webrtc': {
       # iOS
@@ -166,25 +170,29 @@
       'android_gyp_rel': 'android_gyp_release_bot_arm',
 
       # Windows
-      'win_compile_dbg': 'gyp_debug_bot_x86',
-      'win_compile_rel': 'gyp_release_bot_x86',
-      'win_compile_x64_dbg': 'gyp_debug_bot_x64',
-      'win_compile_x64_rel': 'gyp_release_bot_x64',
-      'win_dbg': 'gyp_debug_bot_x86',
-      'win_rel': 'gyp_release_bot_x86',
-      'win_x64_dbg': 'gyp_debug_bot_x64',
-      'win_x64_rel': 'gyp_release_bot_x64',
-      'win_x64_gn_dbg': 'gn_debug_bot_x64',
-      'win_x64_gn_rel': 'gn_release_bot_x64',
-      'win_clang_dbg': 'win_gyp_clang_debug_bot_x86',
-      'win_clang_rel': 'win_gyp_clang_release_bot_x86',
-      'win_x64_clang_dbg': 'win_gyp_clang_debug_bot_x64',
-      'win_x64_clang_rel': 'win_gyp_clang_release_bot_x64',
-      'win_asan': 'win_gyp_syzyasan_release_bot_x86',
-      'win_drmemory_light': 'win_gyp_drmemory_debug_bot_x86',
-      'win_drmemory_full': 'win_gyp_drmemory_debug_bot_x86',
-      'win_baremetal': 'gyp_release_bot_x86',
-      'win_swarming': 'swarming_gyp_debug_bot_x64',
+      'win_compile_dbg': 'gn_debug_bot_x86',
+      'win_compile_rel': 'gn_release_bot_x86',
+      'win_compile_x64_dbg': 'gn_debug_bot_x64',
+      'win_compile_x64_rel': 'gn_release_bot_x64',
+      'win_dbg': 'gn_debug_bot_x86',
+      'win_rel': 'gn_release_bot_x86',
+      'win_x64_dbg': 'gn_debug_bot_x64',
+      'win_x64_rel': 'gn_release_bot_x64',
+      'win_clang_dbg': 'win_gn_clang_debug_bot_x86',
+      'win_clang_rel': 'win_gn_clang_release_bot_x86',
+      'win_x64_clang_dbg': 'win_gn_clang_debug_bot_x64',
+      'win_x64_clang_rel': 'win_gn_clang_release_bot_x64',
+      'win_asan': 'win_gn_syzyasan_release_bot_x86',
+      'win_drmemory_light': 'win_gn_drmemory_debug_bot_x86',
+      'win_drmemory_full': 'win_gn_drmemory_debug_bot_x86',
+      'win_baremetal': 'gn_release_bot_x86',
+      'win_swarming': 'swarming_gn_debug_bot_x64',
+      # TODO(kjellander): Remove the two GN configs below as soon we've renamed
+      # the bots to the GYP versions (duplicated now).
+      'win_x64_gn_dbg': 'gyp_debug_bot_x64_exclude_tests',
+      'win_x64_gn_rel': 'gyp_release_bot_x64_exclude_tests',
+      'win_x64_gyp_dbg': 'gyp_debug_bot_x64_exclude_tests',
+      'win_x64_gyp_rel': 'gyp_release_bot_x64_exclude_tests',
     },
   },
 
@@ -224,20 +232,8 @@
     'gn_crosscompile_release_bot_arm': [
       'gn', 'crosscompile', 'openh264_release_bot', 'arm'
     ],
-    'gyp_debug_bot_x86': [
-      'gyp', 'openh264_debug_bot', 'x86'
-    ],
-    'gyp_release_bot_x86': [
-      'gyp', 'openh264_release_bot', 'x86'
-    ],
-    'gyp_debug_bot_x64': [
-      'gyp', 'openh264_debug_bot', 'x64'
-    ],
     'gyp_debug_bot_x64_exclude_tests': [
       'gyp', 'openh264_debug_bot', 'x64', 'exclude_tests', 'exclude_examples'
-    ],
-    'gyp_release_bot_x64': [
-      'gyp', 'openh264_release_bot', 'x64'
     ],
     'gyp_release_bot_x64_exclude_tests': [
       'gyp', 'openh264_release_bot', 'x64', 'exclude_tests', 'exclude_examples'
@@ -260,6 +256,12 @@
     'gn_ubsan_vptr_clang_release_bot_x64': [
       'gn', 'ubsan_vptr', 'clang', 'openh264_release_bot', 'x64'
     ],
+    'gn_debug_bot_x86': [
+      'gn', 'openh264_debug_bot', 'x86'
+    ],
+    'gn_release_bot_x86': [
+      'gn', 'openh264_release_bot', 'x86'
+    ],
     'gn_debug_bot_x64': [
       'gn', 'openh264_debug_bot', 'x64'
     ],
@@ -269,30 +271,27 @@
     'swarming_gn_debug_bot_x64': [
       'swarming', 'gn', 'openh264_debug_bot', 'x64'
     ],
-    'swarming_gyp_debug_bot_x64': [
-      'swarming', 'gyp', 'openh264_debug_bot', 'x64'
-    ],
 
     # Windows
-    'win_gyp_clang_debug_bot_x86': [
-      'gyp', 'clang', 'openh264_debug_bot', 'x86',
+    'win_gn_clang_debug_bot_x86': [
+      'gn', 'clang', 'openh264_debug_bot', 'x86',
     ],
-    'win_gyp_clang_release_bot_x86': [
-      'gyp', 'clang', 'openh264_release_bot', 'x86',
+    'win_gn_clang_release_bot_x86': [
+      'gn', 'clang', 'openh264_release_bot', 'x86',
     ],
-    'win_gyp_clang_debug_bot_x64': [
-      'gyp', 'clang', 'openh264_debug_bot', 'x64',
+    'win_gn_clang_debug_bot_x64': [
+      'gn', 'clang', 'openh264_debug_bot', 'x64',
     ],
-    'win_gyp_clang_release_bot_x64': [
-      'gyp', 'clang', 'openh264_release_bot', 'x64',
+    'win_gn_clang_release_bot_x64': [
+      'gn', 'clang', 'openh264_release_bot', 'x64',
     ],
-    'win_gyp_syzyasan_release_bot_x86': [
-      'gyp', 'syzyasan', 'minimal_symbols', 'openh264_release_bot', 'x86',
+    'win_gn_syzyasan_release_bot_x86': [
+      'gn', 'syzyasan', 'minimal_symbols', 'openh264_release_bot', 'x86',
     ],
     # TODO(kjellander): Flip DrMemory bots over to Release after GN migration
     # (http://crbug.com/636414).
-    'win_gyp_drmemory_debug_bot_x86': [
-      'gyp', 'drmemory', 'minimal_symbols', 'openh264_debug_bot', 'x86',
+    'win_gn_drmemory_debug_bot_x86': [
+      'gn', 'drmemory', 'minimal_symbols', 'openh264_debug_bot', 'x86',
     ],
 
     # Mac
