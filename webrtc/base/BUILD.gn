@@ -668,7 +668,7 @@ static_library("rtc_base") {
     defines += [ "timezone=_timezone" ]
     sources -= [ "ifaddrs_converter.cc" ]
   }
-  if (is_clang) {
+  if (is_win && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }

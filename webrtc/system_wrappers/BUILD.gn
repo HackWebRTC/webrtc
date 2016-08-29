@@ -133,7 +133,7 @@ source_set("system_wrappers") {
     cflags = [ "/wd4334" ]  # Ignore warning on shift operator promotion.
   }
 
-  if (is_clang) {
+  if (is_win && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
