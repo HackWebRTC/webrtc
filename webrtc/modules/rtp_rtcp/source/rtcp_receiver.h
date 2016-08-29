@@ -20,22 +20,38 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_receiver_help.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-class ModuleRtpRtcpImpl;
+namespace rtcp {
+class TmmbItem;
+}  // namespace rtcp
 
 class RTCPReceiver {
  public:
+  class ModuleRtpRtcp {
+   public:
+    virtual void SetTmmbn(std::vector<rtcp::TmmbItem> bounding_set) = 0;
+    virtual void OnRequestSendReport() = 0;
+    virtual void OnReceivedNack(
+        const std::vector<uint16_t>& nack_sequence_numbers) = 0;
+    virtual void OnReceivedRtcpReportBlocks(
+        const ReportBlockList& report_blocks) = 0;
+
+   protected:
+    virtual ~ModuleRtpRtcp() = default;
+  };
+
   RTCPReceiver(Clock* clock,
                bool receiver_only,
                RtcpPacketTypeCounterObserver* packet_type_counter_observer,
                RtcpBandwidthObserver* rtcp_bandwidth_observer,
                RtcpIntraFrameObserver* rtcp_intra_frame_observer,
                TransportFeedbackObserver* transport_feedback_observer,
-               ModuleRtpRtcpImpl* owner);
+               ModuleRtpRtcp* owner);
   virtual ~RTCPReceiver();
+
+  bool IncomingPacket(const uint8_t* packet, size_t packet_size);
 
   int64_t LastReceived();
   int64_t LastReceivedReceiverReport() const;
@@ -257,7 +273,7 @@ class RTCPReceiver {
   Clock* const _clock;
   const bool receiver_only_;
   int64_t _lastReceived;
-  ModuleRtpRtcpImpl& _rtpRtcp;
+  ModuleRtpRtcp& _rtpRtcp;
 
   rtc::CriticalSection _criticalSectionFeedbacks;
   RtcpBandwidthObserver* const _cbRtcpBandwidthObserver;

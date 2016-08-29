@@ -26,7 +26,7 @@
 
 namespace webrtc {
 
-class ModuleRtpRtcpImpl : public RtpRtcp {
+class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
  public:
   explicit ModuleRtpRtcpImpl(const RtpRtcp::Configuration& configuration);
 
@@ -204,7 +204,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   void SetTMMBRStatus(bool enable) override;
 
-  void SetTmmbn(std::vector<rtcp::TmmbItem> bounding_set);
+  void SetTmmbn(std::vector<rtcp::TmmbItem> bounding_set) override;
 
   uint16_t MaxPayloadLength() const override;
 
@@ -311,10 +311,11 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   StreamDataCountersCallback* GetSendChannelRtpStatisticsCallback()
       const override;
 
-  void OnReceivedNack(const std::vector<uint16_t>& nack_sequence_numbers);
-  void OnReceivedRtcpReportBlocks(const ReportBlockList& report_blocks);
-
-  void OnRequestSendReport();
+  void OnReceivedNack(
+      const std::vector<uint16_t>& nack_sequence_numbers) override;
+  void OnReceivedRtcpReportBlocks(
+      const ReportBlockList& report_blocks) override;
+  void OnRequestSendReport() override;
 
  protected:
   bool UpdateRTCPReceiveInformationTimers();

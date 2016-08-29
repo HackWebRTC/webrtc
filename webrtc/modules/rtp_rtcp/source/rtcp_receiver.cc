@@ -20,7 +20,6 @@
 #include "webrtc/base/trace_event.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 #include "webrtc/modules/rtp_rtcp/source/time_util.h"
 #include "webrtc/modules/rtp_rtcp/source/tmmbr_help.h"
 #include "webrtc/system_wrappers/include/ntp_time.h"
@@ -46,7 +45,7 @@ RTCPReceiver::RTCPReceiver(
     RtcpBandwidthObserver* rtcp_bandwidth_observer,
     RtcpIntraFrameObserver* rtcp_intra_frame_observer,
     TransportFeedbackObserver* transport_feedback_observer,
-    ModuleRtpRtcpImpl* owner)
+    ModuleRtpRtcp* owner)
     : _clock(clock),
       receiver_only_(receiver_only),
       _lastReceived(0),
@@ -95,6 +94,20 @@ RTCPReceiver::~RTCPReceiver() {
     delete first->second;
     _receivedCnameMap.erase(first);
   }
+}
+
+bool RTCPReceiver::IncomingPacket(const uint8_t* packet, size_t packet_size) {
+  // Allow receive of non-compound RTCP packets.
+  RTCPUtility::RTCPParserV2 rtcp_parser(packet, packet_size, true);
+
+  if (!rtcp_parser.IsValid()) {
+    LOG(LS_WARNING) << "Incoming invalid RTCP packet";
+    return false;
+  }
+  RTCPHelp::RTCPPacketInformation rtcp_packet_information;
+  IncomingRTCPPacket(rtcp_packet_information, &rtcp_parser);
+  TriggerCallbacksFromRTCPPacket(rtcp_packet_information);
+  return true;
 }
 
 int64_t RTCPReceiver::LastReceived() {
