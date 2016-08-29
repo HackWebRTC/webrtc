@@ -541,6 +541,8 @@ source_set("isac") {
     ":audio_decoder_interface",
     ":audio_encoder_interface",
     ":isac_common",
+    "../..:webrtc_common",
+    "../../base:rtc_base_approved",
     "../../common_audio",
   ]
 }
@@ -1599,6 +1601,70 @@ if (rtc_include_tests) {
     deps = [
       ":g722",
       "../..:webrtc_common",
+      "//build/config/sanitizers:deps",
+    ]
+  }
+
+  executable("isac_api_test") {
+    testonly = true
+
+    sources = [
+      "codecs/isac/main/test/ReleaseTest-API/ReleaseTest-API.cc",
+      "codecs/isac/main/util/utility.c",
+    ]
+
+    configs += [ "../..:common_config" ]
+    public_configs = [ "../..:common_inherited_config" ]
+
+    deps = [
+      ":isac",
+      "../../base:rtc_base_approved",
+      "//build/config/sanitizers:deps",
+    ]
+
+    include_dirs = [
+      "codecs/isac/main/include",
+      "codecs/isac/main/test",
+      "codecs/isac/main/util",
+    ]
+  }
+
+  executable("isac_switch_samprate_test") {
+    testonly = true
+
+    sources = [
+      "codecs/isac/main/test/SwitchingSampRate/SwitchingSampRate.cc",
+      "codecs/isac/main/util/utility.c",
+    ]
+
+    configs += [ "../..:common_config" ]
+    public_configs = [ "../..:common_inherited_config" ]
+
+    deps = [
+      ":isac",
+      "//build/config/sanitizers:deps",
+    ]
+
+    include_dirs = [
+      "codecs/isac/main/include",
+      "codecs/isac/main/test",
+      "codecs/isac/main/util",
+      "../../common_audio/signal_processing/include",
+    ]
+  }
+
+  executable("ilbc_test") {
+    testonly = true
+
+    sources = [
+      "codecs/ilbc/test/iLBC_test.c",
+    ]
+
+    configs += [ "../..:common_config" ]
+    public_configs = [ "../..:common_inherited_config" ]
+
+    deps = [
+      ":ilbc",
       "//build/config/sanitizers:deps",
     ]
   }

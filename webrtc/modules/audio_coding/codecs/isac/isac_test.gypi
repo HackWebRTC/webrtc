@@ -47,6 +47,7 @@
       'type': 'executable',
       'dependencies': [
         'isac',
+        '<(webrtc_root)/base/base.gyp:rtc_base_approved',
       ],
       'include_dirs': [
         './main/test',
