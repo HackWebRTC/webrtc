@@ -428,11 +428,6 @@ if (rtc_include_tests) {
     configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
-    if (is_clang) {
-      # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
-    }
-
     deps = [
       "../../base:rtc_base_approved",
       "../../common_audio",
@@ -495,10 +490,6 @@ if (rtc_include_tests) {
         "//testing/gtest",
         "//third_party/gflags",
       ]
-      if (is_clang) {
-        # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
-        configs -= [ "//build/config/clang:find_bad_constructs" ]
-      }
     }
   }
 

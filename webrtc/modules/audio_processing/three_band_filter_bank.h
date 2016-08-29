@@ -35,6 +35,7 @@ namespace webrtc {
 class ThreeBandFilterBank final {
  public:
   explicit ThreeBandFilterBank(size_t length);
+  ~ThreeBandFilterBank();
 
   // Splits |in| into 3 downsampled frequency bands in |out|.
   // |length| is the |in| length. Each of the 3 bands of |out| has to have a

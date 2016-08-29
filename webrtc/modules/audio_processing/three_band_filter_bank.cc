@@ -131,6 +131,8 @@ ThreeBandFilterBank::ThreeBandFilterBank(size_t length)
   }
 }
 
+ThreeBandFilterBank::~ThreeBandFilterBank() = default;
+
 // The analysis can be separated in these steps:
 //   1. Serial to parallel downsampling by a factor of |kNumBands|.
 //   2. Filtering of |kSparsity| different delayed signals with polyphase

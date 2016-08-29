@@ -31,6 +31,8 @@ SplittingFilter::SplittingFilter(size_t num_channels,
   }
 }
 
+SplittingFilter::~SplittingFilter() = default;
+
 void SplittingFilter::Analysis(const IFChannelBuffer* data,
                                IFChannelBuffer* bands) {
   RTC_DCHECK_EQ(num_bands_, bands->num_bands());

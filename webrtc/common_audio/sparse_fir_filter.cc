@@ -26,6 +26,8 @@ SparseFIRFilter::SparseFIRFilter(const float* nonzero_coeffs,
   RTC_CHECK_GE(sparsity, 1u);
 }
 
+SparseFIRFilter::~SparseFIRFilter() = default;
+
 void SparseFIRFilter::Filter(const float* in, size_t length, float* out) {
   // Convolves the input signal |in| with the filter kernel |nonzero_coeffs_|
   // taking into account the previous state.
