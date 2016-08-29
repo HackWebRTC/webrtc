@@ -59,10 +59,14 @@ class DecoderDatabase {
     void DropDecoder() const { decoder_.reset(); }
 
     int SampleRateHz() const {
-      RTC_DCHECK_EQ(1, !!decoder_ + !!external_decoder_ + !!cng_decoder_);
-      return decoder_ ? decoder_->SampleRateHz()
-                      : external_decoder_ ? external_decoder_->SampleRateHz()
-                                          : cng_decoder_->sample_rate_hz;
+      const AudioDecoder* decoder = GetDecoder();
+      RTC_DCHECK_EQ(1, !!decoder + !!cng_decoder_);
+      return decoder ? decoder->SampleRateHz() : cng_decoder_->sample_rate_hz;
+    }
+
+    const SdpAudioFormat& GetFormat() const {
+      RTC_DCHECK(audio_format_);
+      return *audio_format_;
     }
 
     // Returns true if |codec_type| is comfort noise.
