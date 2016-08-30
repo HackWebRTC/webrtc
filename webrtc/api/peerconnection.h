@@ -105,6 +105,8 @@ class PeerConnection : public PeerConnectionInterface,
 
   SignalingState signaling_state() override;
 
+  // TODO(bemasc): Remove ice_state() when callers are removed.
+  IceState ice_state() override;
   IceConnectionState ice_connection_state() override;
   IceGatheringState ice_gathering_state() override;
 
@@ -379,6 +381,8 @@ class PeerConnection : public PeerConnectionInterface,
   PeerConnectionObserver* observer_;
   UMAObserver* uma_observer_;
   SignalingState signaling_state_;
+  // TODO(bemasc): Remove ice_state_.
+  IceState ice_state_;
   IceConnectionState ice_connection_state_;
   IceGatheringState ice_gathering_state_;
 

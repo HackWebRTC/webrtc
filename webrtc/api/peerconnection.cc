@@ -568,6 +568,7 @@ PeerConnection::PeerConnection(PeerConnectionFactory* factory)
       observer_(NULL),
       uma_observer_(NULL),
       signaling_state_(kStable),
+      ice_state_(kIceNew),
       ice_connection_state_(kIceConnectionNew),
       ice_gathering_state_(kIceGatheringNew),
       rtcp_cname_(GenerateRtcpCname()),
@@ -885,6 +886,10 @@ bool PeerConnection::GetStats(StatsObserver* observer,
 
 PeerConnectionInterface::SignalingState PeerConnection::signaling_state() {
   return signaling_state_;
+}
+
+PeerConnectionInterface::IceState PeerConnection::ice_state() {
+  return ice_state_;
 }
 
 PeerConnectionInterface::IceConnectionState
