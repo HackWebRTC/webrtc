@@ -63,14 +63,11 @@ RTC_EXPORT
                                               delegate:
     (nullable id<RTCPeerConnectionDelegate>)delegate;
 
-/** Start an aecdump recording with a file descriptor and
-    a specified maximum size limit (-1 specifies that no
-    limit should be used).
-    This API call will likely change in the future */
-- (BOOL)startAecDumpWithFileDescriptor:(int)fileDescriptor
-                    maxFileSizeInBytes:(int)maxFileSizeInBytes;
+/** Start an AecDump recording. This API call will likely change in the future. */
+- (BOOL)startAecDumpWithFilePath:(NSString *)filePath
+                  maxSizeInBytes:(int64_t)maxSizeInBytes;
 
-/* Stop an active aecdump recording */
+/* Stop an active AecDump recording */
 - (void)stopAecDump;
 
 @end

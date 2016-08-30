@@ -58,6 +58,7 @@ static NSString * const kARDVideoTrackId = @"ARDAMSv0";
 // TODO(tkchin): Add these as UI options.
 static BOOL const kARDAppClientEnableTracing = NO;
 static BOOL const kARDAppClientEnableRtcEventLog = YES;
+static int64_t const kARDAppClientAecDumpMaxSizeInBytes = 5e6;  // 5 MB.
 static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
 #endif
 
@@ -130,7 +131,6 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
 @synthesize isLoopback = _isLoopback;
 @synthesize isAudioOnly = _isAudioOnly;
 @synthesize shouldMakeAecDump = _shouldMakeAecDump;
-@synthesize isAecDumpActive = _isAecDumpActive;
 @synthesize shouldUseLevelControl = _shouldUseLevelControl;
 
 - (instancetype)init {
@@ -316,10 +316,7 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
   _hasReceivedSdp = NO;
   _messageQueue = [NSMutableArray array];
 #if defined(WEBRTC_IOS)
-  if (_isAecDumpActive) {
-    [_factory stopAecDump];
-    _isAecDumpActive = NO;
-  }
+  [_factory stopAecDump];
   [_peerConnection stopRtcEventLog];
 #endif
   _peerConnection = nil;
@@ -576,17 +573,10 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
 
   // Start aecdump diagnostic recording.
   if (_shouldMakeAecDump) {
-    _isAecDumpActive = YES;
-    NSString *filePath = [self documentsFilePathForFileName:@"audio.aecdump"];
-    int fd = open(filePath.UTF8String, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-    if (fd < 0) {
-      RTCLogError(@"Failed to create the aecdump file!");
-      _isAecDumpActive = NO;
-    } else {
-      if (![_factory startAecDumpWithFileDescriptor:fd maxFileSizeInBytes:-1]) {
-        RTCLogError(@"Failed to create aecdump.");
-        _isAecDumpActive = NO;
-      }
+    NSString *filePath = [self documentsFilePathForFileName:@"webrtc-audio.aecdump"];
+    if (![_factory startAecDumpWithFilePath:filePath
+                             maxSizeInBytes:kARDAppClientAecDumpMaxSizeInBytes]) {
+      RTCLogError(@"Failed to start aec dump.");
     }
   }
 #endif

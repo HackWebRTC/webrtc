@@ -19,11 +19,13 @@
 #import "RTCPeerConnection+Private.h"
 #import "RTCVideoSource+Private.h"
 #import "RTCVideoTrack+Private.h"
+#import "WebRTC/RTCLogging.h"
 
 @implementation RTCPeerConnectionFactory {
   std::unique_ptr<rtc::Thread> _networkThread;
   std::unique_ptr<rtc::Thread> _workerThread;
   std::unique_ptr<rtc::Thread> _signalingThread;
+  BOOL _hasStartedAecDump;
 }
 
 @synthesize nativeFactory = _nativeFactory;
@@ -48,19 +50,6 @@
     NSAssert(_nativeFactory, @"Failed to initialize PeerConnectionFactory!");
   }
   return self;
-}
-
-- (BOOL)startAecDumpWithFileDescriptor:(int)fileDescriptor
-                    maxFileSizeInBytes:(int)maxFileSizeInBytes {
-  // Pass the file to the recorder. The file ownership
-  // is passed to the recorder, and the recorder
-  // closes the file when needed.
-  return _nativeFactory->StartAecDump(fileDescriptor, maxFileSizeInBytes);
-}
-
-- (void)stopAecDump {
-  // The file is closed by the call below.
-  _nativeFactory->StopAecDump();
 }
 
 - (RTCAudioSource *)audioSourceWithConstraints:(nullable RTCMediaConstraints *)constraints {
@@ -113,6 +102,29 @@
                                       configuration:configuration
                                         constraints:constraints
                                            delegate:delegate];
+}
+
+- (BOOL)startAecDumpWithFilePath:(NSString *)filePath
+                  maxSizeInBytes:(int64_t)maxSizeInBytes {
+  RTC_DCHECK(filePath.length);
+  RTC_DCHECK_GT(maxSizeInBytes, 0);
+
+  if (_hasStartedAecDump) {
+    RTCLogError(@"Aec dump already started.");
+    return NO;
+  }
+  int fd = open(filePath.UTF8String, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  if (fd < 0) {
+    RTCLogError(@"Error opening file: %@. Error: %d", filePath, errno);
+    return NO;
+  }
+  _hasStartedAecDump = _nativeFactory->StartAecDump(fd, maxSizeInBytes);
+  return _hasStartedAecDump;
+}
+
+- (void)stopAecDump {
+  _nativeFactory->StopAecDump();
+  _hasStartedAecDump = NO;
 }
 
 @end
