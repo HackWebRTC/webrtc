@@ -38,13 +38,8 @@ source_set("desktop_capture") {
     "desktop_capture_options.cc",
     "desktop_capture_options.h",
     "desktop_capturer.h",
-    "desktop_capturer.h",
     "desktop_frame_win.cc",
     "desktop_frame_win.h",
-    "differ.cc",
-    "differ.h",
-    "differ_block.cc",
-    "differ_block.h",
     "mac/desktop_configuration.h",
     "mac/desktop_configuration.mm",
     "mac/desktop_configuration_monitor.cc",
@@ -126,6 +121,15 @@ source_set("desktop_capture") {
       "mouse_cursor_monitor_null.cc",
       "screen_capturer_null.cc",
       "window_capturer_null.cc",
+    ]
+  }
+
+  if (!is_ios) {
+    sources += [
+      "differ.cc",
+      "differ.h",
+      "differ_block.cc",
+      "differ_block.h",
     ]
   }
 
