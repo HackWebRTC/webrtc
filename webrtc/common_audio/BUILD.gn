@@ -284,7 +284,7 @@ if (rtc_include_tests) {
     ]
 
     # Does not compile on iOS for arm: webrtc:5544.
-    if (!is_ios || target_cpu != "arm" || target_cpu != "arm64") {
+    if (!is_ios || target_cpu != "arm") {
       sources += [ "resampler/sinc_resampler_unittest.cc" ]
     }
 
