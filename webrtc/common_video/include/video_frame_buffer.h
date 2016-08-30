@@ -18,6 +18,7 @@
 #include "webrtc/base/callback.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/common_video/rotation.h"
 #include "webrtc/system_wrappers/include/aligned_malloc.h"
 
 namespace webrtc {
@@ -129,6 +130,13 @@ class I420Buffer : public VideoFrameBuffer {
   // Create a new buffer with identical strides, and copy the pixel data.
   static rtc::scoped_refptr<I420Buffer> CopyKeepStride(
       const rtc::scoped_refptr<VideoFrameBuffer>& buffer);
+
+  // Returns a rotated versions of |src|. Native buffers are not
+  // supported. The reason this function doesn't return an I420Buffer,
+  // is that it returns |src| unchanged in case |rotation| is zero.
+  static rtc::scoped_refptr<VideoFrameBuffer> Rotate(
+      const rtc::scoped_refptr<VideoFrameBuffer>& src,
+      VideoRotation rotation);
 
  protected:
   ~I420Buffer() override;

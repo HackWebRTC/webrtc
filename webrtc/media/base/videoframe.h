@@ -58,9 +58,9 @@ class VideoFrame {
   // Return a copy of frame which has its pending rotation applied. The
   // ownership of the returned frame is held by this frame.
 
-  // TODO(nisse): Deprecated. Should be moved or deleted in the
-  // cricket::VideoFrame and webrtc::VideoFrame merge, possibly with a helper
-  // method on VideoFrameBuffer.
+  // TODO(nisse): Deprecated, no longer used within webrtc. Should be
+  // deleted as soon as downstream applications are updated. Use
+  // webrtc::I420Buffer::Rotate instead.
   virtual const VideoFrame* GetCopyWithRotationApplied() const = 0;
 
   // Converts the I420 data to RGB of a certain type such as ARGB and ABGR.

@@ -17,7 +17,7 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/base/win32window.h"
 #include "webrtc/media/base/videocommon.h"
-#include "webrtc/media/base/videoframe.h"
+#include "webrtc/media/engine/webrtcvideoframe.h"
 
 namespace cricket {
 
@@ -135,10 +135,13 @@ void GdiVideoRenderer::VideoWindow::OnFrame(const VideoFrame& video_frame) {
     return;
   }
 
-  const VideoFrame* frame = video_frame.GetCopyWithRotationApplied();
+  const cricket::WebRtcVideoFrame frame(
+      webrtc::I420Buffer::Rotate(video_frame.video_frame_buffer(),
+                                 video_frame.rotation()),
+      webrtc::kVideoRotation_0, video_frame.timestamp_us());
 
-  if (SetSize(frame->width(), frame->height())) {
-    SendMessage(handle(), kRenderFrameMsg, reinterpret_cast<WPARAM>(frame), 0);
+  if (SetSize(frame.width(), frame.height())) {
+    SendMessage(handle(), kRenderFrameMsg, reinterpret_cast<WPARAM>(&frame), 0);
   }
 }
 

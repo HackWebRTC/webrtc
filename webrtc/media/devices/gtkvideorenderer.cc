@@ -17,7 +17,7 @@
 #include <gtk/gtk.h>
 
 #include "webrtc/media/base/videocommon.h"
-#include "webrtc/media/base/videoframe.h"
+#include "webrtc/media/engine/webrtcvideoframe.h"
 
 namespace cricket {
 
@@ -81,19 +81,22 @@ bool GtkVideoRenderer::SetSize(int width, int height) {
 }
 
 void GtkVideoRenderer::OnFrame(const VideoFrame& video_frame) {
-  const VideoFrame* frame = video_frame.GetCopyWithRotationApplied();
+  const cricket::WebRtcVideoFrame frame(
+      webrtc::I420Buffer::Rotate(video_frame.video_frame_buffer(),
+                                 video_frame.rotation()),
+      webrtc::kVideoRotation_0, video_frame.timestamp_us());
 
   // Need to set size as the frame might be rotated.
-  if (!SetSize(frame->width(), frame->height())) {
+  if (!SetSize(frame.width(), frame.height())) {
     return;
   }
 
   // convert I420 frame to ABGR format, which is accepted by GTK
-  frame->ConvertToRgbBuffer(cricket::FOURCC_ABGR,
-                            image_.get(),
-                            static_cast<size_t>(frame->width()) *
-                              frame->height() * 4,
-                            frame->width() * 4);
+  frame.ConvertToRgbBuffer(cricket::FOURCC_ABGR,
+                           image_.get(),
+                           static_cast<size_t>(frame.width()) *
+                           frame.height() * 4,
+                           frame.width() * 4);
 
   ScopedGdkLock lock;
 
@@ -106,11 +109,11 @@ void GtkVideoRenderer::OnFrame(const VideoFrame& video_frame) {
                         draw_area_->style->fg_gc[GTK_STATE_NORMAL],
                         0,
                         0,
-                        frame->width(),
-                        frame->height(),
+                        frame.width(),
+                        frame.height(),
                         GDK_RGB_DITHER_MAX,
                         image_.get(),
-                        frame->width() * 4);
+                        frame.width() * 4);
 
   // Run the Gtk main loop to refresh the window.
   Pump();

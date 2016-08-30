@@ -18,6 +18,7 @@
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/media/engine/webrtcvideoframe.h"
 
 using rtc::sprintfn;
 
@@ -484,16 +485,19 @@ void GtkMainWnd::VideoRenderer::OnFrame(
     const cricket::VideoFrame& video_frame) {
   gdk_threads_enter();
 
-  const cricket::VideoFrame* frame = video_frame.GetCopyWithRotationApplied();
+  const cricket::WebRtcVideoFrame frame(
+      webrtc::I420Buffer::Rotate(video_frame.video_frame_buffer(),
+                                 video_frame.rotation()),
+      webrtc::kVideoRotation_0, video_frame.timestamp_us());
 
-  SetSize(frame->width(), frame->height());
+  SetSize(frame.width(), frame.height());
 
   int size = width_ * height_ * 4;
   // TODO(henrike): Convert directly to RGBA
-  frame->ConvertToRgbBuffer(cricket::FOURCC_ARGB,
-                            image_.get(),
-                            size,
-                            width_ * 4);
+  frame.ConvertToRgbBuffer(cricket::FOURCC_ARGB,
+                           image_.get(),
+                           size,
+                           width_ * 4);
   // Convert the B,G,R,A frame to R,G,B,A, which is accepted by GTK.
   // The 'A' is just padding for GTK, so we can use it as temp.
   uint8_t* pix = image_.get();
