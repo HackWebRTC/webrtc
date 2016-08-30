@@ -49,6 +49,7 @@
         'test/fakeperiodicvideocapturer.h',
         'test/fakertccertificategenerator.h',
         'test/fakevideotrackrenderer.h',
+        'test/mock_datachannel.h',
         'test/mock_peerconnection.h',
         'test/mock_webrtcsession.h',
         'test/mockpeerconnectionobservers.h',

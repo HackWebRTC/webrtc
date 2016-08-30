@@ -20,11 +20,19 @@ source_set("rtc_stats") {
   cflags = []
   sources = [
     "rtcstats.cc",
+    "rtcstats_objects.cc",
+    "rtcstatscollector.cc",
+    "rtcstatscollector.h",
     "rtcstatsreport.cc",
   ]
 
   configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
+
+  if (is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
 
   deps = [
     "../api:libjingle_peerconnection",
@@ -37,11 +45,17 @@ if (rtc_include_tests) {
     testonly = true
     sources = [
       "rtcstats_unittest.cc",
+      "rtcstatscollector_unittest.cc",
       "rtcstatsreport_unittest.cc",
     ]
 
     configs += [ "..:common_config" ]
     public_configs = [ "..:common_inherited_config" ]
+
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
 
     deps = [
       ":rtc_stats",
@@ -52,12 +66,6 @@ if (rtc_include_tests) {
 
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_native_code" ]
-    }
-
-    if (is_clang) {
-      # Suppress warnings from Chrome's Clang plugins.
-      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
     }
   }
 }

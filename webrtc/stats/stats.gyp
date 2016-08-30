@@ -18,6 +18,9 @@
       ],
       'sources': [
         'rtcstats.cc',
+        'rtcstats_objects.cc',
+        'rtcstatscollector.cc',
+        'rtcstatscollector.h',
         'rtcstatsreport.cc',
       ],
     },
@@ -37,6 +40,7 @@
           ],
           'sources': [
             'rtcstats_unittest.cc',
+            'rtcstatscollector_unittest.cc',
             'rtcstatsreport_unittest.cc',
           ],
         },

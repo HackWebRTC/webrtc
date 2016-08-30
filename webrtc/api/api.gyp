@@ -145,6 +145,7 @@
         'remoteaudiosource.cc',
         'remoteaudiosource.h',
         'rtcstats.h',
+        'rtcstats_objects.h',
         'rtcstatsreport.h',
         'rtpparameters.h',
         'rtpreceiver.cc',
