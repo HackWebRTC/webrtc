@@ -2281,8 +2281,6 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
       red_disabled_by_remote_side_(red_disabled_by_remote_side),
       external_decoder_factory_(external_decoder_factory),
       sink_(NULL),
-      last_width_(-1),
-      last_height_(-1),
       first_frame_timestamp_(-1),
       estimated_remote_start_ntp_time_ms_(0) {
   config_.renderer = this;
@@ -2524,9 +2522,6 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::OnFrame(
     return;
   }
 
-  last_width_ = frame.width();
-  last_height_ = frame.height();
-
   WebRtcVideoFrame render_frame(
       frame.video_frame_buffer(), frame.rotation(),
       frame.render_time_ms() * rtc::kNumNanosecsPerMicrosec, frame.timestamp());
@@ -2573,11 +2568,11 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo(
   info.framerate_rcvd = stats.network_frame_rate;
   info.framerate_decoded = stats.decode_frame_rate;
   info.framerate_output = stats.render_frame_rate;
+  info.frame_width = stats.width;
+  info.frame_height = stats.height;
 
   {
     rtc::CritScope frame_cs(&sink_lock_);
-    info.frame_width = last_width_;
-    info.frame_height = last_height_;
     info.capture_start_ntp_time_ms = estimated_remote_start_ntp_time_ms_;
   }
 

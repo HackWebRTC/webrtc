@@ -494,8 +494,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
 
     rtc::CriticalSection sink_lock_;
     rtc::VideoSinkInterface<cricket::VideoFrame>* sink_ GUARDED_BY(sink_lock_);
-    int last_width_ GUARDED_BY(sink_lock_);
-    int last_height_ GUARDED_BY(sink_lock_);
     // Expands remote RTP timestamps to int64_t to be able to estimate how long
     // the stream has been running.
     rtc::TimestampWrapAroundHandler timestamp_wraparound_handler_
