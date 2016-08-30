@@ -25,8 +25,9 @@
     "target_cpu=\"arm\""
   ],
   "use_analyze": false,
-  "mb_type": "gyp",
+  "mb_type": "gn",
   "compiler": "ninja",
+  "additional_compile_targets": [ "all" ],
   "configuration": "Release",
   "sdk": "iphoneos9.0",
   "tests": [

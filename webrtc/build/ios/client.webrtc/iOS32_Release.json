@@ -24,8 +24,9 @@
     "goma_dir=\"$(goma_dir)\"",
     "target_cpu=\"arm\""
   ],
-  "mb_type": "gyp",
+  "mb_type": "gn",
   "compiler": "ninja",
+  "additional_compile_targets": [ "all" ],
   "configuration": "Release",
   "sdk": "iphoneos9.0",
   "tests": [

@@ -24,9 +24,10 @@
     "goma_dir=\"$(goma_dir)\"",
     "target_cpu=\"x64\""
   ],
-  "mb_type": "gyp",
+  "mb_type": "gn",
   "use_analyze": false,
   "compiler": "ninja",
+  "additional_compile_targets": [ "all" ],
   "configuration": "Debug",
   "sdk": "iphonesimulator9.0",
   "tests": [

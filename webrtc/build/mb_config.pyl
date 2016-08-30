@@ -20,14 +20,18 @@
   'masters': {
     'client.webrtc': {
       # iOS
-      'iOS32 Debug': 'ios_gyp_debug_static_bot_arm_device',
-      'iOS32 Release': 'ios_gyp_release_bot_arm_device',
-      'iOS64 Debug': 'ios_gyp_debug_static_bot_arm64_device',
-      'iOS64 Release': 'ios_gyp_release_bot_arm64_device',
-      'iOS32 Simulator Debug': 'ios_gyp_debug_static_bot_x86',
-      'iOS64 Simulator Debug': 'ios_gyp_debug_static_bot_x64',
-      'iOS64 Debug (GN)': 'ios_gn_debug_static_bot_arm64_device',
-      'iOS64 Release (GN)': 'ios_gn_release_bot_arm64_device',
+      'iOS32 Debug': 'ios_gn_debug_static_bot_arm_device',
+      'iOS32 Release': 'ios_gn_release_bot_arm_device',
+      'iOS64 Debug': 'ios_gn_debug_static_bot_arm64_device',
+      'iOS64 Release': 'ios_gn_release_bot_arm64_device',
+      'iOS32 Simulator Debug': 'ios_gn_debug_static_bot_x86',
+      'iOS64 Simulator Debug': 'ios_gn_debug_static_bot_x64',
+      # TODO(kjellander): Remove the two GN configs below as soon we've renamed
+      # the bots to the GYP versions (duplicated now).
+      'iOS64 Debug (GN)': 'ios_gyp_debug_static_bot_arm64_device',
+      'iOS64 Release (GN)': 'ios_gyp_release_bot_arm64_device',
+      'iOS64 Debug (GYP)': 'ios_gyp_debug_static_bot_arm64_device',
+      'iOS64 Release (GYP)': 'ios_gyp_release_bot_arm64_device',
 
       # Mac
       'Mac64 Debug': 'gn_debug_bot_x64',
@@ -103,14 +107,18 @@
     },
     'tryserver.webrtc': {
       # iOS
-      'ios_dbg': 'ios_gyp_debug_static_bot_arm_device',
-      'ios_rel': 'ios_gyp_release_bot_arm_device',
-      'ios_arm64_dbg': 'ios_gyp_debug_static_bot_arm64_device',
-      'ios_arm64_rel': 'ios_gyp_release_bot_arm64_device',
-      'ios32_sim_dbg': 'ios_gyp_debug_static_bot_x86',
-      'ios64_sim_dbg': 'ios_gyp_debug_static_bot_x64',
-      'ios64_gn_dbg': 'ios_gn_debug_static_bot_arm64_device',
-      'ios64_gn_rel': 'ios_gn_release_bot_arm64_device',
+      'ios_dbg': 'ios_gn_debug_static_bot_arm_device',
+      'ios_rel': 'ios_gn_release_bot_arm_device',
+      'ios_arm64_dbg': 'ios_gn_debug_static_bot_arm64_device',
+      'ios_arm64_rel': 'ios_gn_release_bot_arm64_device',
+      'ios32_sim_dbg': 'ios_gn_debug_static_bot_x86',
+      'ios64_sim_dbg': 'ios_gn_debug_static_bot_x64',
+      # TODO(kjellander): Remove the two GN configs below as soon we've renamed
+      # the bots to the GYP versions (duplicated now).
+      'ios64_gn_dbg': 'ios_gyp_debug_static_bot_arm64_device',
+      'ios64_gn_rel': 'ios_gyp_release_bot_arm64_device',
+      'ios64_gyp_dbg': 'ios_gyp_debug_static_bot_arm64_device',
+      'ios64_gyp_rel': 'ios_gyp_release_bot_arm64_device',
 
       # Mac
       'mac_compile_dbg': 'gn_debug_bot_x64',
@@ -209,23 +217,23 @@
     'ios_gn_release_bot_arm64_device': [
       'ios', 'gn', 'release_bot', 'arm64', 'device'
     ],
-    'ios_gyp_debug_static_bot_arm_device': [
-      'ios', 'gyp', 'debug_static_bot', 'arm', 'device'
+    'ios_gn_debug_static_bot_arm_device': [
+      'ios', 'gn', 'debug_static_bot', 'arm', 'device'
     ],
-    'ios_gyp_release_bot_arm_device': [
-      'ios', 'gyp', 'release_bot', 'arm', 'device'
+    'ios_gn_release_bot_arm_device': [
+      'ios', 'gn', 'release_bot', 'arm', 'device'
+    ],
+    'ios_gn_debug_static_bot_x86': [
+      'ios', 'gn', 'debug_static_bot', 'x86'
+    ],
+    'ios_gn_debug_static_bot_x64': [
+      'ios', 'gn', 'debug_static_bot', 'x64'
     ],
     'ios_gyp_debug_static_bot_arm64_device': [
       'ios', 'gyp', 'debug_static_bot', 'arm64', 'device'
     ],
     'ios_gyp_release_bot_arm64_device': [
       'ios', 'gyp', 'release_bot', 'arm64', 'device'
-    ],
-    'ios_gyp_debug_static_bot_x86': [
-      'ios', 'gyp', 'debug_static_bot', 'x86'
-    ],
-    'ios_gyp_debug_static_bot_x64': [
-      'ios', 'gyp', 'release_bot', 'x64'
     ],
 
     # Linux, Mac and Windows
