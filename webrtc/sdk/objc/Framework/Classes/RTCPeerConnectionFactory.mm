@@ -12,7 +12,9 @@
 
 #import "NSString+StdString.h"
 #import "RTCAVFoundationVideoSource+Private.h"
+#import "RTCAudioSource+Private.h"
 #import "RTCAudioTrack+Private.h"
+#import "RTCMediaConstraints+Private.h"
 #import "RTCMediaStream+Private.h"
 #import "RTCPeerConnection+Private.h"
 #import "RTCVideoSource+Private.h"
@@ -61,15 +63,32 @@
   _nativeFactory->StopAecDump();
 }
 
+- (RTCAudioSource *)audioSourceWithConstraints:(nullable RTCMediaConstraints *)constraints {
+  std::unique_ptr<webrtc::MediaConstraints> nativeConstraints;
+  if (constraints) {
+    nativeConstraints = constraints.nativeConstraints;
+  }
+  rtc::scoped_refptr<webrtc::AudioSourceInterface> source =
+      _nativeFactory->CreateAudioSource(nativeConstraints.get());
+  return [[RTCAudioSource alloc] initWithNativeAudioSource:source];
+}
+
+- (RTCAudioTrack *)audioTrackWithTrackId:(NSString *)trackId {
+  RTCAudioSource *audioSource = [self audioSourceWithConstraints:nil];
+  return [self audioTrackWithSource:audioSource trackId:trackId];
+}
+
+- (RTCAudioTrack *)audioTrackWithSource:(RTCAudioSource *)source
+                                trackId:(NSString *)trackId {
+  return [[RTCAudioTrack alloc] initWithFactory:self
+                                         source:source
+                                        trackId:trackId];
+}
+
 - (RTCAVFoundationVideoSource *)avFoundationVideoSourceWithConstraints:
     (nullable RTCMediaConstraints *)constraints {
   return [[RTCAVFoundationVideoSource alloc] initWithFactory:self
                                                  constraints:constraints];
-}
-
-- (RTCAudioTrack *)audioTrackWithTrackId:(NSString *)trackId {
-  return [[RTCAudioTrack alloc] initWithFactory:self
-                                        trackId:trackId];
 }
 
 - (RTCVideoTrack *)videoTrackWithSource:(RTCVideoSource *)source

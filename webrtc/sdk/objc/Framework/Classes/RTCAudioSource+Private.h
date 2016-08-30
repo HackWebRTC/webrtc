@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 The WebRTC project authors. All Rights Reserved.
+ *  Copyright 2016 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,27 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "WebRTC/RTCVideoSource.h"
+#import "WebRTC/RTCAudioSource.h"
 
 #import "RTCMediaSource+Private.h"
 
-#include "webrtc/api/mediastreaminterface.h"
-
-NS_ASSUME_NONNULL_BEGIN
-
-@interface RTCVideoSource ()
+@interface RTCAudioSource ()
 
 /**
- * The VideoTrackSourceInterface object passed to this RTCVideoSource during
+ * The AudioSourceInterface object passed to this RTCAudioSource during
  * construction.
  */
-@property(nonatomic, readonly)
-    rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>
-        nativeVideoSource;
+@property(nonatomic, readonly) rtc::scoped_refptr<webrtc::AudioSourceInterface> nativeAudioSource;
 
-/** Initialize an RTCVideoSource from a native VideoTrackSourceInterface. */
-- (instancetype)initWithNativeVideoSource:
-    (rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>)nativeVideoSource
+/** Initialize an RTCAudioSource from a native AudioSourceInterface. */
+- (instancetype)initWithNativeAudioSource:
+    (rtc::scoped_refptr<webrtc::AudioSourceInterface>)nativeAudioSource
     NS_DESIGNATED_INITIALIZER;
 
 - (instancetype)initWithNativeMediaSource:
@@ -36,5 +30,3 @@ NS_ASSUME_NONNULL_BEGIN
                                      type:(RTCMediaSourceType)type NS_UNAVAILABLE;
 
 @end
-
-NS_ASSUME_NONNULL_END

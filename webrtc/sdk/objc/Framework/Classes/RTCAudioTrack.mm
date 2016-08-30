@@ -11,19 +11,30 @@
 #import "RTCAudioTrack+Private.h"
 
 #import "NSString+StdString.h"
+#import "RTCAudioSource+Private.h"
 #import "RTCMediaStreamTrack+Private.h"
 #import "RTCPeerConnectionFactory+Private.h"
 
+#include "webrtc/base/checks.h"
+
 @implementation RTCAudioTrack
 
+@synthesize source = _source;
+
 - (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
+                         source:(RTCAudioSource *)source
                         trackId:(NSString *)trackId {
-  NSParameterAssert(factory);
-  NSParameterAssert(trackId.length);
+  RTC_DCHECK(factory);
+  RTC_DCHECK(source);
+  RTC_DCHECK(trackId.length);
+
   std::string nativeId = [NSString stdStringForString:trackId];
   rtc::scoped_refptr<webrtc::AudioTrackInterface> track =
-      factory.nativeFactory->CreateAudioTrack(nativeId, nullptr);
-  return [self initWithNativeTrack:track type:RTCMediaStreamTrackTypeAudio];
+      factory.nativeFactory->CreateAudioTrack(nativeId, source.nativeAudioSource);
+  if ([self initWithNativeTrack:track type:RTCMediaStreamTrackTypeAudio]) {
+    _source = source;
+  }
+  return self;
 }
 
 - (instancetype)initWithNativeTrack:
@@ -32,6 +43,18 @@
   NSParameterAssert(nativeTrack);
   NSParameterAssert(type == RTCMediaStreamTrackTypeAudio);
   return [super initWithNativeTrack:nativeTrack type:type];
+}
+
+
+- (RTCAudioSource *)source {
+  if (!_source) {
+    rtc::scoped_refptr<webrtc::AudioSourceInterface> source =
+        self.nativeAudioTrack->GetSource();
+    if (source) {
+      _source = [[RTCAudioSource alloc] initWithNativeAudioSource:source.get()];
+    }
+  }
+  return _source;
 }
 
 #pragma mark - Private

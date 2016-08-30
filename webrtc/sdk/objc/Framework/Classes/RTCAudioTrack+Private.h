@@ -23,6 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /** Initialize an RTCAudioTrack with an id. */
 - (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
+                         source:(RTCAudioSource *)source
                         trackId:(NSString *)trackId;
 
 @end

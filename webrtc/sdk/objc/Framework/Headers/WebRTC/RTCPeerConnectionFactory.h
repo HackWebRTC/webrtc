@@ -15,6 +15,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class RTCAVFoundationVideoSource;
+@class RTCAudioSource;
 @class RTCAudioTrack;
 @class RTCConfiguration;
 @class RTCMediaConstraints;
@@ -29,12 +30,21 @@ RTC_EXPORT
 
 - (instancetype)init NS_DESIGNATED_INITIALIZER;
 
+/** Initialize an RTCAudioSource with constraints. */
+- (RTCAudioSource *)audioSourceWithConstraints:(nullable RTCMediaConstraints *)constraints;
+
+/** Initialize an RTCAudioTrack with an id. Convenience ctor to use an audio source with no
+ *  constraints.
+ */
+- (RTCAudioTrack *)audioTrackWithTrackId:(NSString *)trackId;
+
+/** Initialize an RTCAudioTrack with a source and an id. */
+- (RTCAudioTrack *)audioTrackWithSource:(RTCAudioSource *)source
+                                trackId:(NSString *)trackId;
+
 /** Initialize an RTCAVFoundationVideoSource with constraints. */
 - (RTCAVFoundationVideoSource *)avFoundationVideoSourceWithConstraints:
     (nullable RTCMediaConstraints *)constraints;
-
-/** Initialize an RTCAudioTrack with an id. */
-- (RTCAudioTrack *)audioTrackWithTrackId:(NSString *)trackId;
 
 /** Initialize an RTCVideoTrack with a source and an id. */
 - (RTCVideoTrack *)videoTrackWithSource:(RTCVideoSource *)source

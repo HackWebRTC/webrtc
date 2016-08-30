@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 The WebRTC project authors. All Rights Reserved.
+ *  Copyright 2016 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "RTCVideoSource+Private.h"
+#import "RTCAudioSource+Private.h"
 
 #include "webrtc/base/checks.h"
 
-@implementation RTCVideoSource {
-  rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> _nativeVideoSource;
+@implementation RTCAudioSource {
+  rtc::scoped_refptr<webrtc::AudioSourceInterface> _nativeAudioSource;
 }
 
-- (instancetype)initWithNativeVideoSource:
-    (rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>)nativeVideoSource {
-  RTC_DCHECK(nativeVideoSource);
-  if (self = [super initWithNativeMediaSource:nativeVideoSource
-                                         type:RTCMediaSourceTypeVideo]) {
-    _nativeVideoSource = nativeVideoSource;
+- (instancetype)initWithNativeAudioSource:
+    (rtc::scoped_refptr<webrtc::AudioSourceInterface>)nativeAudioSource {
+  RTC_DCHECK(nativeAudioSource);
+  if (self = [super initWithNativeMediaSource:nativeAudioSource
+                                         type:RTCMediaSourceTypeAudio]) {
+    _nativeAudioSource = nativeAudioSource;
   }
   return self;
 }
@@ -35,13 +35,13 @@
 
 - (NSString *)description {
   NSString *stateString = [[self class] stringForState:self.state];
-  return [NSString stringWithFormat:@"RTCVideoSource( %p ): %@", self, stateString];
+  return [NSString stringWithFormat:@"RTCAudioSource( %p ): %@", self, stateString];
 }
 
 #pragma mark - Private
 
-- (rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>)nativeVideoSource {
-  return _nativeVideoSource;
+- (rtc::scoped_refptr<webrtc::AudioSourceInterface>)nativeAudioSource {
+  return _nativeAudioSource;
 }
 
 @end
