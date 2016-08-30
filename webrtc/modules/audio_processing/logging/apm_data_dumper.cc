@@ -38,6 +38,15 @@ std::string FormFileName(const char* name,
 }  // namespace
 
 #if WEBRTC_AEC_DEBUG_DUMP == 1
+ApmDataDumper::ApmDataDumper(int instance_index)
+    : instance_index_(instance_index) {}
+#else
+ApmDataDumper::ApmDataDumper(int instance_index) {}
+#endif
+
+ApmDataDumper::~ApmDataDumper() {}
+
+#if WEBRTC_AEC_DEBUG_DUMP == 1
 FILE* ApmDataDumper::GetRawFile(const char* name) {
   std::string filename =
       FormFileName(name, instance_index_, recording_set_index_, ".dat");

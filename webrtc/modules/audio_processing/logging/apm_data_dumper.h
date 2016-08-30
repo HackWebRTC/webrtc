@@ -40,15 +40,12 @@ struct RawFileCloseFunctor {
 // Class that handles dumping of variables into files.
 class ApmDataDumper {
  public:
-// Constructor that takes an instance index that may
-// be used to distinguish data dumped from different
-// instances of the code.
-#if WEBRTC_AEC_DEBUG_DUMP == 1
-  explicit ApmDataDumper(int instance_index)
-      : instance_index_(instance_index) {}
-#else
-  explicit ApmDataDumper(int instance_index) {}
-#endif
+  // Constructor that takes an instance index that may
+  // be used to distinguish data dumped from different
+  // instances of the code.
+  explicit ApmDataDumper(int instance_index);
+
+  ~ApmDataDumper();
 
   // Reinitializes the data dumping such that new versions
   // of all files being dumped to are created.
