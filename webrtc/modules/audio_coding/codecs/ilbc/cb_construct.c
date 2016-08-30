@@ -27,13 +27,12 @@
  *---------------------------------------------------------------*/
 
 bool WebRtcIlbcfix_CbConstruct(
-    int16_t *decvector,  /* (o) Decoded vector */
-    int16_t *index,   /* (i) Codebook indices */
-    int16_t *gain_index,  /* (i) Gain quantization indices */
-    int16_t *mem,   /* (i) Buffer for codevector construction */
-    size_t lMem,   /* (i) Length of buffer */
-    size_t veclen   /* (i) Length of vector */
-                               ){
+    int16_t* decvector,        /* (o) Decoded vector */
+    const int16_t* index,      /* (i) Codebook indices */
+    const int16_t* gain_index, /* (i) Gain quantization indices */
+    int16_t* mem,              /* (i) Buffer for codevector construction */
+    size_t lMem,               /* (i) Length of buffer */
+    size_t veclen) {           /* (i) Length of vector */
   size_t j;
   int16_t gain[CB_NSTAGES];
   /* Stack based */
