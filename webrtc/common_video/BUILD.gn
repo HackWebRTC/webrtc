@@ -82,6 +82,20 @@ source_set("common_video") {
 }
 
 if (rtc_include_tests) {
+  if (is_android || is_ios) {
+    common_video_resources = [ "//resources/foreman_cif.yuv" ]
+  }
+
+  if (is_ios) {
+    bundle_data("common_video_unittests_bundle_data") {
+      testonly = true
+      sources = common_video_resources
+      outputs = [
+        "{{bundle_resources_dir}}/{{source_file_part}}",
+      ]
+    }
+  }
+
   test("common_video_unittests") {
     testonly = true
 
@@ -118,13 +132,12 @@ if (rtc_include_tests) {
 
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_support" ]
+      data = common_video_resources
       shard_timeout = 900
     }
 
-    if (is_android || is_ios) {
-      data = [
-        "//resources/foreman_cif.yuv",
-      ]
+    if (is_ios) {
+      deps += [ ":common_video_unittests_bundle_data" ]
     }
   }
 }

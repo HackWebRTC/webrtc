@@ -322,6 +322,20 @@ if (rtc_include_tests) {
     ]
   }
 
+  if (is_android || is_ios) {
+    tools_unittests_resources = [ "//resources/foreman_cif_short.yuv" ]
+  }
+
+  if (is_ios) {
+    bundle_data("tools_unittests_bundle_data") {
+      testonly = true
+      sources = tools_unittests_resources
+      outputs = [
+        "{{bundle_resources_dir}}/{{source_file_part}}",
+      ]
+    }
+  }
+
   test("tools_unittests") {
     testonly = true
 
@@ -353,12 +367,11 @@ if (rtc_include_tests) {
 
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_support" ]
+      data = tools_unittests_resources
       shard_timeout = 900
     }
-    if (is_android || is_ios) {
-      data = [
-        "//resources/foreman_cif.yuv",
-      ]
+    if (is_ios) {
+      deps += [ ":tools_unittests_bundle_data" ]
     }
   }
 

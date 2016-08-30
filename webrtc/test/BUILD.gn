@@ -279,6 +279,28 @@ source_set("test_support_main_threaded_mac") {
   ]
 }
 
+if (is_android || is_ios) {
+  test_support_unittests_resources = [
+    "//resources/foreman_cif_short.yuv",
+    "//resources/video_coding/frame-ethernet-ii.pcap",
+    "//resources/video_coding/frame-loopback.pcap",
+    "//resources/video_coding/pltype103.rtp",
+    "//resources/video_coding/pltype103_header_only.rtp",
+    "//resources/video_coding/ssrcs-2.pcap",
+    "//resources/video_coding/ssrcs-3.pcap",
+  ]
+}
+
+if (is_ios) {
+  bundle_data("test_support_unittests_bundle_data") {
+    testonly = true
+    sources = test_support_unittests_resources
+    outputs = [
+      "{{bundle_resources_dir}}/{{source_file_part}}",
+    ]
+  }
+}
+
 test("test_support_unittests") {
   deps = []
   sources = [
@@ -318,19 +340,12 @@ test("test_support_unittests") {
 
   if (is_android) {
     deps += [ "//testing/android/native_test:native_test_support" ]
+    data = test_support_unittests_resources
     shard_timeout = 900
   }
 
-  if (is_android || is_ios) {
-    data = [
-      "//resources/foreman_cif_short.yuv",
-      "//resources/video_coding/frame-ethernet-ii.pcap",
-      "//resources/video_coding/frame-loopback.pcap",
-      "//resources/video_coding/pltype103.rtp",
-      "//resources/video_coding/pltype103_header_only.rtp",
-      "//resources/video_coding/ssrcs-2.pcap",
-      "//resources/video_coding/ssrcs-3.pcap",
-    ]
+  if (is_ios) {
+    deps += [ ":test_support_unittests_bundle_data" ]
   }
 
   deps += [

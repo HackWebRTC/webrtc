@@ -685,6 +685,23 @@ if (rtc_include_tests) {
   }
 
   # TODO(pbos): Rename test suite, this is no longer "just" for video targets.
+  if (is_android || is_ios) {
+    video_engine_tests_resources = [
+      "//resources/foreman_cif_short.yuv",
+      "//resources/voice_engine/audio_long16.pcm",
+    ]
+  }
+
+  if (is_ios) {
+    bundle_data("video_engine_tests_bundle_data") {
+      testonly = true
+      sources = video_engine_tests_resources
+      outputs = [
+        "{{bundle_resources_dir}}/{{source_file_part}}",
+      ]
+    }
+  }
+
   test("video_engine_tests") {
     testonly = true
     deps = [
@@ -702,13 +719,12 @@ if (rtc_include_tests) {
     }
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_native_code" ]
+      data = video_engine_tests_resources
       shard_timeout = 900
     }
-    if (is_android || is_ios) {
-      data = [
-        "//resources/foreman_cif_short.yuv",
-        "//resources/voice_engine/audio_long16.pcm",
-      ]
+
+    if (is_ios) {
+      deps += [ ":video_engine_tests_bundle_data" ]
     }
   }
 
@@ -732,6 +748,33 @@ if (rtc_include_tests) {
       # Suppress warnings from the Chromium Clang plugin.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
       configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
+  if (is_android || is_ios) {
+    webrtc_perf_tests_resources = [
+      "//resources/audio_coding/speech_mono_16kHz.pcm",
+      "//resources/audio_coding/testfile32kHz.pcm",
+      "//resources/ConferenceMotion_1280_720_50.yuv",
+      "//resources/difficult_photo_1850_1110.yuv",
+      "//resources/foreman_cif.yuv",
+      "//resources/google-wifi-3mbps.rx",
+      "//resources/paris_qcif.yuv",
+      "//resources/photo_1850_1110.yuv",
+      "//resources/presentation_1850_1110.yuv",
+      "//resources/verizon4g-downlink.rx",
+      "//resources/voice_engine/audio_long16.pcm",
+      "//resources/web_screenshot_1850_1110.yuv",
+    ]
+  }
+
+  if (is_ios) {
+    bundle_data("webrtc_perf_tests_bundle_data") {
+      testonly = true
+      sources = webrtc_perf_tests_resources
+      outputs = [
+        "{{bundle_resources_dir}}/{{source_file_part}}",
+      ]
     }
   }
 
@@ -770,21 +813,11 @@ if (rtc_include_tests) {
     ]
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_native_code" ]
-      data = [
-        "//resources/audio_coding/speech_mono_16kHz.pcm",
-        "//resources/audio_coding/testfile32kHz.pcm",
-        "//resources/ConferenceMotion_1280_720_50.yuv",
-        "//resources/difficult_photo_1850_1110.yuv",
-        "//resources/foreman_cif.yuv",
-        "//resources/google-wifi-3mbps.rx",
-        "//resources/paris_qcif.yuv",
-        "//resources/photo_1850_1110.yuv",
-        "//resources/presentation_1850_1110.yuv",
-        "//resources/verizon4g-downlink.rx",
-        "//resources/voice_engine/audio_long16.pcm",
-        "//resources/web_screenshot_1850_1110.yuv",
-      ]
+      data = webrtc_perf_tests_resources
       shard_timeout = 2700
+    }
+    if (is_ios) {
+      deps += [ ":webrtc_perf_tests_bundle_data" ]
     }
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin.
