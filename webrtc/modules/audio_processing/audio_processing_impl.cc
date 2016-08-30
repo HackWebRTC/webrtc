@@ -73,18 +73,23 @@ namespace webrtc {
 const int AudioProcessing::kNativeSampleRatesHz[] = {
     AudioProcessing::kSampleRate8kHz,
     AudioProcessing::kSampleRate16kHz,
-#ifdef WEBRTC_ARCH_ARM_FAMILY
-    AudioProcessing::kSampleRate32kHz};
-#else
     AudioProcessing::kSampleRate32kHz,
     AudioProcessing::kSampleRate48kHz};
-#endif  // WEBRTC_ARCH_ARM_FAMILY
 const size_t AudioProcessing::kNumNativeSampleRates =
     arraysize(AudioProcessing::kNativeSampleRatesHz);
 const int AudioProcessing::kMaxNativeSampleRateHz = AudioProcessing::
     kNativeSampleRatesHz[AudioProcessing::kNumNativeSampleRates - 1];
 
 namespace {
+
+const int kInternalNativeRates[] = {AudioProcessing::kSampleRate8kHz,
+                                    AudioProcessing::kSampleRate16kHz,
+#ifdef WEBRTC_ARCH_ARM_FAMILY
+                                    AudioProcessing::kSampleRate32kHz};
+#else
+                                    AudioProcessing::kSampleRate32kHz,
+                                    AudioProcessing::kSampleRate48kHz};
+#endif  // WEBRTC_ARCH_ARM_FAMILY
 
 static bool LayoutHasKeyboard(AudioProcessing::ChannelLayout layout) {
   switch (layout) {
@@ -106,12 +111,12 @@ bool is_multi_band(int sample_rate_hz) {
 }
 
 int ClosestHigherNativeRate(int min_proc_rate) {
-  for (int rate : AudioProcessing::kNativeSampleRatesHz) {
+  for (int rate : kInternalNativeRates) {
     if (rate >= min_proc_rate) {
       return rate;
     }
   }
-  return AudioProcessing::kMaxNativeSampleRateHz;
+  return kInternalNativeRates[arraysize(kInternalNativeRates) - 1];
 }
 
 }  // namespace
