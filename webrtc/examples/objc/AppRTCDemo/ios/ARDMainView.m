@@ -121,6 +121,8 @@ static CGFloat const kCallControlMargin = 8;
   UILabel *_audioOnlyLabel;
   UISwitch *_aecdumpSwitch;
   UILabel *_aecdumpLabel;
+  UISwitch *_levelControlSwitch;
+  UILabel *_levelControlLabel;
   UISwitch *_loopbackSwitch;
   UILabel *_loopbackLabel;
   UISwitch *_useManualAudioSwitch;
@@ -186,6 +188,17 @@ static CGFloat const kCallControlMargin = 8;
     _aecdumpLabel.textColor = controlFontColor;
     [_aecdumpLabel sizeToFit];
     [self addSubview:_aecdumpLabel];
+
+    _levelControlSwitch = [[UISwitch alloc] initWithFrame:CGRectZero];
+    [_levelControlSwitch sizeToFit];
+    [self addSubview:_levelControlSwitch];
+
+    _levelControlLabel = [[UILabel alloc] initWithFrame:CGRectZero];
+    _levelControlLabel.text = @"Use level controller";
+    _levelControlLabel.font = controlFont;
+    _levelControlLabel.textColor = controlFontColor;
+    [_levelControlLabel sizeToFit];
+    [self addSubview:_levelControlLabel];
 
     _useManualAudioSwitch = [[UISwitch alloc] initWithFrame:CGRectZero];
     [_useManualAudioSwitch sizeToFit];
@@ -299,9 +312,20 @@ static CGFloat const kCallControlMargin = 8;
   _aecdumpLabel.center = CGPointMake(aecdumpModeLabelCenterX,
                                      CGRectGetMidY(aecdumpModeRect));
 
+  CGFloat levelControlModeTop =
+       CGRectGetMaxY(_aecdumpSwitch.frame) + kCallControlMargin;
+  CGRect levelControlModeRect = CGRectMake(kCallControlMargin * 3,
+                                           levelControlModeTop,
+                                           _levelControlSwitch.frame.size.width,
+                                           _levelControlSwitch.frame.size.height);
+  _levelControlSwitch.frame = levelControlModeRect;
+  CGFloat levelControlModeLabelCenterX = CGRectGetMaxX(levelControlModeRect) +
+      kCallControlMargin + _levelControlLabel.frame.size.width / 2;
+  _levelControlLabel.center = CGPointMake(levelControlModeLabelCenterX,
+                                         CGRectGetMidY(levelControlModeRect));
 
   CGFloat useManualAudioTop =
-      CGRectGetMaxY(_aecdumpSwitch.frame) + kCallControlMargin;
+      CGRectGetMaxY(_levelControlSwitch.frame) + kCallControlMargin;
   CGRect useManualAudioRect =
       CGRectMake(kCallControlMargin * 3,
                  useManualAudioTop,
@@ -361,6 +385,7 @@ static CGFloat const kCallControlMargin = 8;
                   isLoopback:_loopbackSwitch.isOn
                  isAudioOnly:_audioOnlySwitch.isOn
            shouldMakeAecDump:_aecdumpSwitch.isOn
+       shouldUseLevelControl:_levelControlSwitch.isOn
               useManualAudio:_useManualAudioSwitch.isOn];
 }
 

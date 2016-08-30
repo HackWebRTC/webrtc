@@ -40,6 +40,7 @@
                  isLoopback:(BOOL)isLoopback
                 isAudioOnly:(BOOL)isAudioOnly
           shouldMakeAecDump:(BOOL)shouldMakeAecDump
+      shouldUseLevelControl:(BOOL)shouldUseLevelControl
                    delegate:(id<ARDVideoCallViewControllerDelegate>)delegate {
   if (self = [super init]) {
     _delegate = delegate;
@@ -47,7 +48,8 @@
     [_client connectToRoomWithId:room
                       isLoopback:isLoopback
                      isAudioOnly:isAudioOnly
-               shouldMakeAecDump:shouldMakeAecDump];
+               shouldMakeAecDump:shouldMakeAecDump
+           shouldUseLevelControl:shouldUseLevelControl];
   }
   return self;
 }

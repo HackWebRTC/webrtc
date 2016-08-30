@@ -283,8 +283,16 @@
   weakAnswerer = answerer;
 
   // Kick off connection.
-  [caller connectToRoomWithId:roomId isLoopback:NO isAudioOnly:NO shouldMakeAecDump:NO];
-  [answerer connectToRoomWithId:roomId isLoopback:NO isAudioOnly:NO shouldMakeAecDump:NO];
+  [caller connectToRoomWithId:roomId
+                   isLoopback:NO
+                  isAudioOnly:NO
+            shouldMakeAecDump:NO
+        shouldUseLevelControl:NO];
+  [answerer connectToRoomWithId:roomId
+                     isLoopback:NO
+                    isAudioOnly:NO
+              shouldMakeAecDump:NO
+          shouldUseLevelControl:NO];
   [self waitForExpectationsWithTimeout:20 handler:^(NSError *error) {
     if (error) {
       NSLog(@"Expectations error: %@", error);

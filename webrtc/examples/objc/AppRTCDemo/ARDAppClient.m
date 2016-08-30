@@ -131,6 +131,7 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
 @synthesize isAudioOnly = _isAudioOnly;
 @synthesize shouldMakeAecDump = _shouldMakeAecDump;
 @synthesize isAecDumpActive = _isAecDumpActive;
+@synthesize shouldUseLevelControl = _shouldUseLevelControl;
 
 - (instancetype)init {
   if (self = [super init]) {
@@ -223,12 +224,14 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
 - (void)connectToRoomWithId:(NSString *)roomId
                  isLoopback:(BOOL)isLoopback
                 isAudioOnly:(BOOL)isAudioOnly
-          shouldMakeAecDump:(BOOL)shouldMakeAecDump {
+          shouldMakeAecDump:(BOOL)shouldMakeAecDump
+      shouldUseLevelControl:(BOOL)shouldUseLevelControl {
   NSParameterAssert(roomId.length);
   NSParameterAssert(_state == kARDAppClientStateDisconnected);
   _isLoopback = isLoopback;
   _isAudioOnly = isAudioOnly;
   _shouldMakeAecDump = shouldMakeAecDump;
+  _shouldUseLevelControl = shouldUseLevelControl;
   self.state = kARDAppClientStateConnecting;
 
 #if defined(WEBRTC_IOS)
@@ -689,10 +692,13 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
 }
 
 - (RTCRtpSender *)createAudioSender {
+  RTCMediaConstraints *constraints = [self defaultMediaAudioConstraints];
+  RTCAudioSource *source = [_factory audioSourceWithConstraints:constraints];
+  RTCAudioTrack *track = [_factory audioTrackWithSource:source
+                                                trackId:kARDAudioTrackId];
   RTCRtpSender *sender =
       [_peerConnection senderWithKind:kRTCMediaStreamTrackKindAudio
                              streamId:kARDMediaStreamId];
-  RTCAudioTrack *track = [_factory audioTrackWithTrackId:kARDAudioTrackId];
   sender.track = track;
   return sender;
 }
@@ -743,6 +749,16 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
 }
 
 #pragma mark - Defaults
+
+ - (RTCMediaConstraints *)defaultMediaAudioConstraints {
+   NSString *valueLevelControl = _shouldUseLevelControl ?
+       kRTCMediaConstraintsValueTrue : kRTCMediaConstraintsValueFalse;
+   NSDictionary *mandatoryConstraints = @{ kRTCMediaConstraintsLevelControl : valueLevelControl };
+   RTCMediaConstraints* constraints =
+       [[RTCMediaConstraints alloc]  initWithMandatoryConstraints:mandatoryConstraints
+                                              optionalConstraints:nil];
+   return constraints;
+}
 
 - (RTCMediaConstraints *)defaultMediaStreamConstraints {
   RTCMediaConstraints* constraints =

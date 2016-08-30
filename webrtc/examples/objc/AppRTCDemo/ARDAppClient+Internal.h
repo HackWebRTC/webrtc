@@ -45,6 +45,7 @@
 @property(nonatomic, readonly) BOOL isAudioOnly;
 @property(nonatomic, readonly) BOOL shouldMakeAecDump;
 @property(nonatomic, assign) BOOL isAecDumpActive;
+@property(nonatomic, readonly) BOOL shouldUseLevelControl;
 
 @property(nonatomic, strong)
     RTCMediaConstraints *defaultPeerConnectionConstraints;
