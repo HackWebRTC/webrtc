@@ -59,16 +59,7 @@ class TransportDescriptionFactoryTest : public testing::Test {
   // in the offer and answer is changed.
   // If |dtls| is true, the test verifies that the finger print is not changed.
   void TestIceRestart(bool dtls) {
-    if (dtls) {
-      f1_.set_secure(cricket::SEC_ENABLED);
-      f2_.set_secure(cricket::SEC_ENABLED);
-      f1_.set_certificate(cert1_);
-      f2_.set_certificate(cert2_);
-    } else {
-      f1_.set_secure(cricket::SEC_DISABLED);
-      f2_.set_secure(cricket::SEC_DISABLED);
-    }
-
+    SetDtls(dtls);
     cricket::TransportOptions options;
     // The initial offer / answer exchange.
     std::unique_ptr<TransportDescription> offer(f1_.CreateOffer(options, NULL));
@@ -109,7 +100,50 @@ class TransportDescriptionFactoryTest : public testing::Test {
     }
   }
 
+  void TestIceRenomination(bool dtls) {
+    SetDtls(dtls);
+
+    cricket::TransportOptions options;
+    // The initial offer / answer exchange.
+    std::unique_ptr<TransportDescription> offer(
+        f1_.CreateOffer(options, nullptr));
+    std::unique_ptr<TransportDescription> answer(
+        f2_.CreateAnswer(offer.get(), options, nullptr));
+    VerifyRenomination(offer.get(), false);
+    VerifyRenomination(answer.get(), false);
+
+    options.enable_ice_renomination = true;
+    std::unique_ptr<TransportDescription> renomination_offer(
+        f1_.CreateOffer(options, offer.get()));
+    VerifyRenomination(renomination_offer.get(), true);
+
+    std::unique_ptr<TransportDescription> renomination_answer(
+        f2_.CreateAnswer(renomination_offer.get(), options, answer.get()));
+    VerifyRenomination(renomination_answer.get(), true);
+  }
+
  protected:
+  void VerifyRenomination(TransportDescription* desc,
+                          bool renomination_expected) {
+    ASSERT_TRUE(desc != nullptr);
+    std::vector<std::string>& options = desc->transport_options;
+    auto iter = std::find(options.begin(), options.end(),
+                          cricket::ICE_RENOMINATION_STR);
+    EXPECT_EQ(renomination_expected, iter != options.end());
+  }
+
+  void SetDtls(bool dtls) {
+    if (dtls) {
+      f1_.set_secure(cricket::SEC_ENABLED);
+      f2_.set_secure(cricket::SEC_ENABLED);
+      f1_.set_certificate(cert1_);
+      f2_.set_certificate(cert2_);
+    } else {
+      f1_.set_secure(cricket::SEC_DISABLED);
+      f2_.set_secure(cricket::SEC_DISABLED);
+    }
+  }
+
   TransportDescriptionFactory f1_;
   TransportDescriptionFactory f2_;
 
@@ -255,4 +289,17 @@ TEST_F(TransportDescriptionFactoryTest, TestIceRestart) {
 // if |TransportDescriptionOptions::ice_restart| is true and DTLS is enabled.
 TEST_F(TransportDescriptionFactoryTest, TestIceRestartWithDtls) {
   TestIceRestart(true);
+}
+
+// Test that ice renomination is set in an updated offer and answer
+// if |TransportDescriptionOptions::enable_ice_renomination| is true.
+TEST_F(TransportDescriptionFactoryTest, TestIceRenomination) {
+  TestIceRenomination(false);
+}
+
+// Test that ice renomination is set in an updated offer and answer
+// if |TransportDescriptionOptions::enable_ice_renomination| is true and DTLS
+// is enabled.
+TEST_F(TransportDescriptionFactoryTest, TestIceRenominationWithDtls) {
+  TestIceRenomination(true);
 }

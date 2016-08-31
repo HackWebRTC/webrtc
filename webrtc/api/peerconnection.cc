@@ -633,6 +633,8 @@ bool PeerConnection::Initialize(
 
   stats_.reset(new StatsCollector(this));
 
+  enable_ice_renomination_ = configuration.enable_ice_renomination;
+
   // Initialize the WebRtcSession. It creates transport channels etc.
   if (!session_->Initialize(factory_->options(), std::move(cert_generator),
                             configuration)) {
@@ -1262,6 +1264,8 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration) {
 
   // TODO(deadbeef): Shouldn't have to hop to the worker thread twice...
   session_->SetIceConfig(session_->ParseIceConfig(configuration));
+
+  enable_ice_renomination_ = configuration.enable_ice_renomination;
   return true;
 }
 
@@ -1615,6 +1619,8 @@ bool PeerConnection::GetOptionsForOffer(
           cricket::TransportOptions();
     }
   }
+  session_options->enable_ice_renomination = enable_ice_renomination_;
+
   if (!ExtractMediaSessionOptions(rtc_options, true, session_options)) {
     return false;
   }
@@ -1651,6 +1657,13 @@ bool PeerConnection::GetOptionsForOffer(
   return true;
 }
 
+void PeerConnection::InitializeOptionsForAnswer(
+    cricket::MediaSessionOptions* session_options) {
+  session_options->recv_audio = false;
+  session_options->recv_video = false;
+  session_options->enable_ice_renomination = enable_ice_renomination_;
+}
+
 void PeerConnection::FinishOptionsForAnswer(
     cricket::MediaSessionOptions* session_options) {
   // TODO(deadbeef): Once we have transceivers, enumerate them here instead of
@@ -1685,8 +1698,7 @@ void PeerConnection::FinishOptionsForAnswer(
 bool PeerConnection::GetOptionsForAnswer(
     const MediaConstraintsInterface* constraints,
     cricket::MediaSessionOptions* session_options) {
-  session_options->recv_audio = false;
-  session_options->recv_video = false;
+  InitializeOptionsForAnswer(session_options);
   if (!ParseConstraintsForAnswer(constraints, session_options)) {
     return false;
   }
@@ -1699,8 +1711,7 @@ bool PeerConnection::GetOptionsForAnswer(
 bool PeerConnection::GetOptionsForAnswer(
     const RTCOfferAnswerOptions& options,
     cricket::MediaSessionOptions* session_options) {
-  session_options->recv_audio = false;
-  session_options->recv_video = false;
+  InitializeOptionsForAnswer(session_options);
   if (!ExtractMediaSessionOptions(options, false, session_options)) {
     return false;
   }

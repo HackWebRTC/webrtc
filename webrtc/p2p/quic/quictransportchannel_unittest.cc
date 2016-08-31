@@ -134,9 +134,8 @@ class QuicTestPeer : public sigslot::has_slots<> {
         std::vector<std::string>(), kIceUfrag, kIcePwd, cricket::ICEMODE_FULL,
         remote_connection_role, remote_fingerprint);
 
-    quic_channel_.SetIceCredentials(local_desc.ice_ufrag, local_desc.ice_pwd);
-    quic_channel_.SetRemoteIceCredentials(remote_desc.ice_ufrag,
-                                          remote_desc.ice_pwd);
+    quic_channel_.SetIceParameters(local_desc.GetIceParameters());
+    quic_channel_.SetRemoteIceParameters(remote_desc.GetIceParameters());
   }
 
   // Creates fingerprint from certificate.

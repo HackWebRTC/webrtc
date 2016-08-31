@@ -1423,19 +1423,18 @@ void Connection::HandleRoleConflictFromPeer() {
   port_->SignalRoleConflict(port_);
 }
 
-void Connection::MaybeSetRemoteIceCredentialsAndGeneration(
-    const std::string& ice_ufrag,
-    const std::string& ice_pwd,
+void Connection::MaybeSetRemoteIceParametersAndGeneration(
+    const IceParameters& ice_params,
     int generation) {
-  if (remote_candidate_.username() == ice_ufrag &&
+  if (remote_candidate_.username() == ice_params.ufrag &&
       remote_candidate_.password().empty()) {
-    remote_candidate_.set_password(ice_pwd);
+    remote_candidate_.set_password(ice_params.pwd);
   }
   // TODO(deadbeef): A value of '0' for the generation is used for both
   // generation 0 and "generation unknown". It should be changed to an
   // rtc::Optional to fix this.
-  if (remote_candidate_.username() == ice_ufrag &&
-      remote_candidate_.password() == ice_pwd &&
+  if (remote_candidate_.username() == ice_params.ufrag &&
+      remote_candidate_.password() == ice_params.pwd &&
       remote_candidate_.generation() == 0) {
     remote_candidate_.set_generation(generation);
   }

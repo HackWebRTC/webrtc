@@ -267,6 +267,16 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
     return true;
   }
 
+  // Returns true if the transport info contains "renomination" as an
+  // ICE option.
+  bool GetIceRenomination(const TransportInfo* transport_info) {
+    const std::vector<std::string>& ice_options =
+        transport_info->description.transport_options;
+    auto iter = std::find(ice_options.begin(), ice_options.end(),
+                          cricket::ICE_RENOMINATION_STR);
+    return iter != ice_options.end();
+  }
+
   void TestTransportInfo(bool offer, const MediaSessionOptions& options,
                          bool has_current_desc) {
     const std::string current_audio_ufrag = "current_audio_ufrag";
@@ -312,6 +322,7 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
         EXPECT_EQ(static_cast<size_t>(cricket::ICE_PWD_LENGTH),
                   ti_audio->description.ice_pwd.size());
       }
+      EXPECT_EQ(options.enable_ice_renomination, GetIceRenomination(ti_audio));
 
     } else {
       EXPECT_TRUE(ti_audio == NULL);
@@ -335,6 +346,7 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
                     ti_video->description.ice_pwd.size());
         }
       }
+      EXPECT_EQ(options.enable_ice_renomination, GetIceRenomination(ti_video));
     } else {
       EXPECT_TRUE(ti_video == NULL);
     }
@@ -357,6 +369,8 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
                     ti_data->description.ice_pwd.size());
         }
       }
+      EXPECT_EQ(options.enable_ice_renomination, GetIceRenomination(ti_data));
+
     } else {
       EXPECT_TRUE(ti_video == NULL);
     }
@@ -2140,6 +2154,13 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestTransportInfoOfferAudio) {
   TestTransportInfo(true, options, false);
 }
 
+TEST_F(MediaSessionDescriptionFactoryTest,
+       TestTransportInfoOfferIceRenomination) {
+  MediaSessionOptions options;
+  options.enable_ice_renomination = true;
+  TestTransportInfo(true, options, false);
+}
+
 TEST_F(MediaSessionDescriptionFactoryTest, TestTransportInfoOfferAudioCurrent) {
   MediaSessionOptions options;
   options.recv_audio = true;
@@ -2189,7 +2210,14 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestTransportInfoAnswerAudio) {
 }
 
 TEST_F(MediaSessionDescriptionFactoryTest,
-    TestTransportInfoAnswerAudioCurrent) {
+       TestTransportInfoAnswerIceRenomination) {
+  MediaSessionOptions options;
+  options.enable_ice_renomination = true;
+  TestTransportInfo(false, options, false);
+}
+
+TEST_F(MediaSessionDescriptionFactoryTest,
+       TestTransportInfoAnswerAudioCurrent) {
   MediaSessionOptions options;
   options.recv_audio = true;
   TestTransportInfo(false, options, true);

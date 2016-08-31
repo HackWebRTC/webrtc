@@ -43,18 +43,6 @@ extern const int STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL;
 extern const int STABLE_WRITABLE_CONNECTION_PING_INTERVAL;
 static const int MIN_PINGS_AT_WEAK_PING_INTERVAL = 3;
 
-struct IceParameters {
-  std::string ufrag;
-  std::string pwd;
-  IceParameters(const std::string& ice_ufrag, const std::string& ice_pwd)
-      : ufrag(ice_ufrag), pwd(ice_pwd) {}
-
-  bool operator==(const IceParameters& other) {
-    return ufrag == other.ufrag && pwd == other.pwd;
-  }
-  bool operator!=(const IceParameters& other) { return !(*this == other); }
-};
-
 // Adds the port on which the candidate originated.
 class RemoteCandidate : public Candidate {
  public:
@@ -88,10 +76,8 @@ class P2PTransportChannel : public TransportChannelImpl,
   void SetIceRole(IceRole role) override;
   IceRole GetIceRole() const override { return ice_role_; }
   void SetIceTiebreaker(uint64_t tiebreaker) override;
-  void SetIceCredentials(const std::string& ice_ufrag,
-                         const std::string& ice_pwd) override;
-  void SetRemoteIceCredentials(const std::string& ice_ufrag,
-                               const std::string& ice_pwd) override;
+  void SetIceParameters(const IceParameters& ice_params) override;
+  void SetRemoteIceParameters(const IceParameters& ice_params) override;
   void SetRemoteIceMode(IceMode mode) override;
   // TODO(deadbeef): Deprecated. Remove when Chromium's
   // IceTransportChannel does not depend on this.
@@ -207,11 +193,6 @@ class P2PTransportChannel : public TransportChannelImpl,
   // Public for unit tests.
   const std::vector<RemoteCandidate>& remote_candidates() const {
     return remote_candidates_;
-  }
-
-  // Public for unit tests.
-  void set_remote_supports_renomination(bool remote_supports_renomination) {
-    remote_supports_renomination_ = remote_supports_renomination;
   }
 
  private:
@@ -395,8 +376,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   bool had_connection_ = false;  // if connections_ has ever been nonempty
   typedef std::map<rtc::Socket::Option, int> OptionMap;
   OptionMap options_;
-  std::string ice_ufrag_;
-  std::string ice_pwd_;
+  IceParameters ice_parameters_;
   std::vector<IceParameters> remote_ice_parameters_;
   IceMode remote_ice_mode_;
   IceRole ice_role_;
@@ -410,10 +390,6 @@ class P2PTransportChannel : public TransportChannelImpl,
   IceConfig config_;
   int last_sent_packet_id_ = -1;  // -1 indicates no packet was sent before.
   bool started_pinging_ = false;
-  // TODO(honghaiz): Put this and ICE role inside ICEParameters and rename this
-  // as renomination. Set its value in subsequent CLs based on signaling
-  // exchange.
-  bool remote_supports_renomination_ = false;
   // The value put in the "nomination" attribute for the next nominated
   // connection. A zero-value indicates the connection will not be nominated.
   uint32_t nomination_ = 0;

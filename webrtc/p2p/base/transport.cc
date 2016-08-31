@@ -321,15 +321,13 @@ bool Transport::RemoveRemoteCandidates(const std::vector<Candidate>& candidates,
 
 bool Transport::ApplyLocalTransportDescription(TransportChannelImpl* ch,
                                                std::string* error_desc) {
-  ch->SetIceCredentials(local_description_->ice_ufrag,
-                        local_description_->ice_pwd);
+  ch->SetIceParameters(local_description_->GetIceParameters());
   return true;
 }
 
 bool Transport::ApplyRemoteTransportDescription(TransportChannelImpl* ch,
                                                 std::string* error_desc) {
-  ch->SetRemoteIceCredentials(remote_description_->ice_ufrag,
-                              remote_description_->ice_pwd);
+  ch->SetRemoteIceParameters(remote_description_->GetIceParameters());
   return true;
 }
 

@@ -239,6 +239,9 @@ class PeerConnection : public PeerConnectionInterface,
       const RTCOfferAnswerOptions& options,
       cricket::MediaSessionOptions* session_options);
 
+  void InitializeOptionsForAnswer(
+      cricket::MediaSessionOptions* session_options);
+
   // Helper function for options processing.
   // Deprecated.
   virtual void FinishOptionsForAnswer(
@@ -413,6 +416,8 @@ class PeerConnection : public PeerConnectionInterface,
   std::vector<rtc::scoped_refptr<DataChannel>> sctp_data_channels_to_free_;
 
   bool remote_peer_supports_msid_ = false;
+
+  bool enable_ice_renomination_ = false;
 
   std::vector<rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>>
       senders_;

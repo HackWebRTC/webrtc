@@ -308,38 +308,37 @@ TransportChannelState P2PTransportChannel::ComputeState() const {
   return TransportChannelState::STATE_COMPLETED;
 }
 
-void P2PTransportChannel::SetIceCredentials(const std::string& ice_ufrag,
-                                            const std::string& ice_pwd) {
+void P2PTransportChannel::SetIceParameters(const IceParameters& ice_params) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
-  ice_ufrag_ = ice_ufrag;
-  ice_pwd_ = ice_pwd;
+  ice_parameters_ = ice_params;
   // Note: Candidate gathering will restart when MaybeStartGathering is next
   // called.
 }
 
-void P2PTransportChannel::SetRemoteIceCredentials(const std::string& ice_ufrag,
-                                                  const std::string& ice_pwd) {
+void P2PTransportChannel::SetRemoteIceParameters(
+    const IceParameters& ice_params) {
   ASSERT(worker_thread_ == rtc::Thread::Current());
+  LOG(LS_INFO) << "Remote supports ICE renomination ? "
+               << ice_params.renomination;
   IceParameters* current_ice = remote_ice();
-  IceParameters new_ice(ice_ufrag, ice_pwd);
-  if (!current_ice || *current_ice != new_ice) {
+  if (!current_ice || *current_ice != ice_params) {
     // Keep the ICE credentials so that newer connections
     // are prioritized over the older ones.
-    remote_ice_parameters_.push_back(new_ice);
+    remote_ice_parameters_.push_back(ice_params);
   }
 
   // Update the pwd of remote candidate if needed.
   for (RemoteCandidate& candidate : remote_candidates_) {
-    if (candidate.username() == ice_ufrag && candidate.password().empty()) {
-      candidate.set_password(ice_pwd);
+    if (candidate.username() == ice_params.ufrag &&
+        candidate.password().empty()) {
+      candidate.set_password(ice_params.pwd);
     }
   }
   // We need to update the credentials and generation for any peer reflexive
   // candidates.
   for (Connection* conn : connections_) {
-    conn->MaybeSetRemoteIceCredentialsAndGeneration(
-        ice_ufrag, ice_pwd,
-        static_cast<int>(remote_ice_parameters_.size() - 1));
+    conn->MaybeSetRemoteIceParametersAndGeneration(
+        ice_params, static_cast<int>(remote_ice_parameters_.size() - 1));
   }
   // Updating the remote ICE candidate generation could change the sort order.
   RequestSortAndStateUpdate();
@@ -434,22 +433,23 @@ const IceConfig& P2PTransportChannel::config() const {
 }
 
 void P2PTransportChannel::MaybeStartGathering() {
-  if (ice_ufrag_.empty() || ice_pwd_.empty()) {
+  if (ice_parameters_.ufrag.empty() || ice_parameters_.pwd.empty()) {
     return;
   }
   // Start gathering if we never started before, or if an ICE restart occurred.
   if (allocator_sessions_.empty() ||
       IceCredentialsChanged(allocator_sessions_.back()->ice_ufrag(),
-                            allocator_sessions_.back()->ice_pwd(), ice_ufrag_,
-                            ice_pwd_)) {
+                            allocator_sessions_.back()->ice_pwd(),
+                            ice_parameters_.ufrag, ice_parameters_.pwd)) {
     if (gathering_state_ != kIceGatheringGathering) {
       gathering_state_ = kIceGatheringGathering;
       SignalGatheringState(this);
     }
     // Time for a new allocator.
     std::unique_ptr<PortAllocatorSession> pooled_session =
-        allocator_->TakePooledSession(transport_name(), component(), ice_ufrag_,
-                                      ice_pwd_);
+        allocator_->TakePooledSession(transport_name(), component(),
+                                      ice_parameters_.ufrag,
+                                      ice_parameters_.pwd);
     if (pooled_session) {
       AddAllocatorSession(std::move(pooled_session));
       PortAllocatorSession* raw_pooled_session =
@@ -465,7 +465,8 @@ void P2PTransportChannel::MaybeStartGathering() {
       }
     } else {
       AddAllocatorSession(allocator_->CreateSession(
-          transport_name(), component(), ice_ufrag_, ice_pwd_));
+          transport_name(), component(), ice_parameters_.ufrag,
+          ice_parameters_.pwd));
       LOG(LS_INFO) << "Start getting ports";
       allocator_sessions_.back()->StartGettingPorts();
     }
@@ -1625,7 +1626,10 @@ void P2PTransportChannel::PingConnection(Connection* conn) {
   bool use_candidate_attr = false;
   uint32_t nomination = 0;
   if (ice_role_ == ICEROLE_CONTROLLING) {
-    if (remote_supports_renomination_) {
+    bool renomination_supported = ice_parameters_.renomination &&
+                                  !remote_ice_parameters_.empty() &&
+                                  remote_ice_parameters_.back().renomination;
+    if (renomination_supported) {
       nomination = GetNominationAttr(conn);
     } else {
       use_candidate_attr =

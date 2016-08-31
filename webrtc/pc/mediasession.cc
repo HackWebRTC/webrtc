@@ -686,11 +686,13 @@ static bool IsRtxCodec(const C& codec) {
 
 static TransportOptions GetTransportOptions(const MediaSessionOptions& options,
                                             const std::string& content_name) {
+  TransportOptions transport_options;
   auto it = options.transport_options.find(content_name);
-  if (it == options.transport_options.end()) {
-    return TransportOptions();
+  if (it != options.transport_options.end()) {
+    transport_options = it->second;
   }
-  return it->second;
+  transport_options.enable_ice_renomination = options.enable_ice_renomination;
+  return transport_options;
 }
 
 // Create a media content to be offered in a session-initiate,

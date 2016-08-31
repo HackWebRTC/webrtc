@@ -393,6 +393,15 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
 
   bool ExpectIceRestart() const { return expect_ice_restart_; }
 
+  void SetExpectIceRenomination(bool expect_renomination) {
+    expect_ice_renomination_ = expect_renomination;
+  }
+  void SetExpectRemoteIceRenomination(bool expect_renomination) {
+    expect_remote_ice_renomination_ = expect_renomination;
+  }
+  bool ExpectIceRenomination() { return expect_ice_renomination_; }
+  bool ExpectRemoteIceRenomination() { return expect_remote_ice_renomination_; }
+
   void SetReceiveAudioVideo(bool audio, bool video) {
     SetReceiveAudio(audio);
     SetReceiveVideo(video);
@@ -667,6 +676,42 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
         EXPECT_EQ(ufrag_pwd.first, transport_desc->ice_ufrag);
         EXPECT_EQ(ufrag_pwd.second, transport_desc->ice_pwd);
       }
+    }
+  }
+
+  void VerifyLocalIceRenomination() {
+    ASSERT_TRUE(peer_connection_->local_description() != nullptr);
+    const cricket::SessionDescription* desc =
+        peer_connection_->local_description()->description();
+    const cricket::ContentInfos& contents = desc->contents();
+
+    for (auto content : contents) {
+      if (content.rejected)
+        continue;
+      const cricket::TransportDescription* transport_desc =
+          desc->GetTransportDescriptionByName(content.name);
+      const auto& options = transport_desc->transport_options;
+      auto iter = std::find(options.begin(), options.end(),
+                            cricket::ICE_RENOMINATION_STR);
+      EXPECT_EQ(ExpectIceRenomination(), iter != options.end());
+    }
+  }
+
+  void VerifyRemoteIceRenomination() {
+    ASSERT_TRUE(peer_connection_->remote_description() != nullptr);
+    const cricket::SessionDescription* desc =
+        peer_connection_->remote_description()->description();
+    const cricket::ContentInfos& contents = desc->contents();
+
+    for (auto content : contents) {
+      if (content.rejected)
+        continue;
+      const cricket::TransportDescription* transport_desc =
+          desc->GetTransportDescriptionByName(content.name);
+      const auto& options = transport_desc->transport_options;
+      auto iter = std::find(options.begin(), options.end(),
+                            cricket::ICE_RENOMINATION_STR);
+      EXPECT_EQ(ExpectRemoteIceRenomination(), iter != options.end());
     }
   }
 
@@ -1030,6 +1075,8 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
   typedef std::pair<std::string, std::string> IceUfragPwdPair;
   std::map<int, IceUfragPwdPair> ice_ufrag_pwd_;
   bool expect_ice_restart_ = false;
+  bool expect_ice_renomination_ = false;
+  bool expect_remote_ice_renomination_ = false;
 
   // Needed to keep track of number of frames sent.
   rtc::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module_;
@@ -2126,6 +2173,32 @@ TEST_F(P2PTestConductor, IceRestart) {
   // changed.
   EXPECT_NE(initiator_candidate, initiator_candidate_restart);
   EXPECT_NE(receiver_candidate, receiver_candidate_restart);
+}
+
+TEST_F(P2PTestConductor, IceRenominationDisabled) {
+  config()->enable_ice_renomination = false;
+  ASSERT_TRUE(CreateTestClients());
+  LocalP2PTest();
+
+  initializing_client()->VerifyLocalIceRenomination();
+  receiving_client()->VerifyLocalIceRenomination();
+  initializing_client()->VerifyRemoteIceRenomination();
+  receiving_client()->VerifyRemoteIceRenomination();
+}
+
+TEST_F(P2PTestConductor, IceRenominationEnabled) {
+  config()->enable_ice_renomination = true;
+  ASSERT_TRUE(CreateTestClients());
+  initializing_client()->SetExpectIceRenomination(true);
+  initializing_client()->SetExpectRemoteIceRenomination(true);
+  receiving_client()->SetExpectIceRenomination(true);
+  receiving_client()->SetExpectRemoteIceRenomination(true);
+  LocalP2PTest();
+
+  initializing_client()->VerifyLocalIceRenomination();
+  receiving_client()->VerifyLocalIceRenomination();
+  initializing_client()->VerifyRemoteIceRenomination();
+  receiving_client()->VerifyRemoteIceRenomination();
 }
 
 // This test sets up a call between two parties with audio, and video.

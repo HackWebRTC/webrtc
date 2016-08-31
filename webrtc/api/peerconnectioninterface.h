@@ -317,6 +317,9 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // If set to true, this means the ICE transport should presume TURN-to-TURN
     // candidate pairs will succeed, even before a binding response is received.
     bool presume_writable_when_fully_relayed = false;
+    // If true, "renomination" will be added to the ice options in the transport
+    // description.
+    bool enable_ice_renomination = false;
     // If true, ICE role is redetermined when peerconnection sets a local
     // transport description that indicates an ICE restart.
     bool redetermine_role_on_ice_restart = true;
@@ -329,18 +332,13 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // The default value for constraint offerToReceiveX:true.
     static const int kOfferToReceiveMediaTrue = 1;
 
-    int offer_to_receive_video;
-    int offer_to_receive_audio;
-    bool voice_activity_detection;
-    bool ice_restart;
-    bool use_rtp_mux;
+    int offer_to_receive_video = kUndefined;
+    int offer_to_receive_audio = kUndefined;
+    bool voice_activity_detection = true;
+    bool ice_restart = false;
+    bool use_rtp_mux = true;
 
-    RTCOfferAnswerOptions()
-        : offer_to_receive_video(kUndefined),
-          offer_to_receive_audio(kUndefined),
-          voice_activity_detection(true),
-          ice_restart(false),
-          use_rtp_mux(true) {}
+    RTCOfferAnswerOptions() = default;
 
     RTCOfferAnswerOptions(int offer_to_receive_video,
                           int offer_to_receive_audio,

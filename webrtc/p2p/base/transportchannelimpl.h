@@ -44,15 +44,26 @@ class TransportChannelImpl : public TransportChannel {
   // TODO(pthatcher): Remove this once it's no longer called in
   // remoting/protocol/libjingle_transport_factory.cc
   virtual void SetIceProtocolType(IceProtocolType type) {}
-  // SetIceCredentials only need to be implemented by the ICE
-  // transport channels. Non-ICE transport channels can just ignore.
-  // The ufrag and pwd must be set before candidate gathering can start.
+  // TODO(honghaiz): Remove this once the call in chromoting is removed.
   virtual void SetIceCredentials(const std::string& ice_ufrag,
-                                 const std::string& ice_pwd)  = 0;
-  // SetRemoteIceCredentials only need to be implemented by the ICE
-  // transport channels. Non-ICE transport channels can just ignore.
+                                 const std::string& ice_pwd) {
+    SetIceParameters(IceParameters(ice_ufrag, ice_pwd, false));
+  }
+  // TODO(honghaiz): Remove this once the call in chromoting is removed.
   virtual void SetRemoteIceCredentials(const std::string& ice_ufrag,
-                                       const std::string& ice_pwd) = 0;
+                                       const std::string& ice_pwd) {
+    SetRemoteIceParameters(IceParameters(ice_ufrag, ice_pwd, false));
+  }
+
+  // SetIceParameters only needs to be implemented by the ICE transport
+  // channels. Non-ICE transport channels should pass them down to the inner
+  // ICE transport channel. The ufrag and pwd in |ice_params| must be set
+  // before candidate gathering can start.
+  virtual void SetIceParameters(const IceParameters& ice_params) = 0;
+  // SetRemoteIceParameters only needs to be implemented by the ICE transport
+  // channels. Non-ICE transport channels should pass them down to the inner
+  // ICE transport channel.
+  virtual void SetRemoteIceParameters(const IceParameters& ice_params) = 0;
 
   // SetRemoteIceMode must be implemented only by the ICE transport channels.
   virtual void SetRemoteIceMode(IceMode mode) = 0;

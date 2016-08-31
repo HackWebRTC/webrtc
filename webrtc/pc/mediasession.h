@@ -160,6 +160,7 @@ struct MediaSessionOptions {
   // bps. -1 == auto.
   int video_bandwidth;
   int data_bandwidth;
+  bool enable_ice_renomination = false;
   // content name ("mid") => options.
   std::map<std::string, TransportOptions> transport_options;
   std::string rtcp_cname;

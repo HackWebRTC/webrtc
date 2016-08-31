@@ -88,15 +88,13 @@ class FakeTransportChannel : public TransportChannelImpl,
   void SetIceTiebreaker(uint64_t tiebreaker) override {
     tiebreaker_ = tiebreaker;
   }
-  void SetIceCredentials(const std::string& ice_ufrag,
-                         const std::string& ice_pwd) override {
-    ice_ufrag_ = ice_ufrag;
-    ice_pwd_ = ice_pwd;
+  void SetIceParameters(const IceParameters& ice_params) override {
+    ice_ufrag_ = ice_params.ufrag;
+    ice_pwd_ = ice_params.pwd;
   }
-  void SetRemoteIceCredentials(const std::string& ice_ufrag,
-                               const std::string& ice_pwd) override {
-    remote_ice_ufrag_ = ice_ufrag;
-    remote_ice_pwd_ = ice_pwd;
+  void SetRemoteIceParameters(const IceParameters& params) override {
+    remote_ice_ufrag_ = params.ufrag;
+    remote_ice_pwd_ = params.pwd;
   }
 
   void SetRemoteIceMode(IceMode mode) override { remote_ice_mode_ = mode; }

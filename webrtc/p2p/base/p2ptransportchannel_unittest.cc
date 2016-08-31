@@ -92,16 +92,19 @@ static const SocketAddress kTurnUdpExtAddr("99.99.99.5", 0);
 static const cricket::RelayCredentials kRelayCredentials("test", "test");
 
 // Based on ICE_UFRAG_LENGTH
-static const char* kIceUfrag[4] = {"UF00", "UF01",
-                                   "UF02", "UF03"};
+const char* kIceUfrag[4] = {"UF00", "UF01", "UF02", "UF03"};
 // Based on ICE_PWD_LENGTH
-static const char* kIcePwd[4] = {"TESTICEPWD00000000000000",
-                                 "TESTICEPWD00000000000001",
-                                 "TESTICEPWD00000000000002",
-                                 "TESTICEPWD00000000000003"};
+const char* kIcePwd[4] = {
+    "TESTICEPWD00000000000000", "TESTICEPWD00000000000001",
+    "TESTICEPWD00000000000002", "TESTICEPWD00000000000003"};
+const cricket::IceParameters kIceParams[4] = {
+    {kIceUfrag[0], kIcePwd[0], false},
+    {kIceUfrag[1], kIcePwd[1], false},
+    {kIceUfrag[2], kIcePwd[2], false},
+    {kIceUfrag[3], kIcePwd[3], false}};
 
-static const uint64_t kLowTiebreaker = 11111;
-static const uint64_t kHighTiebreaker = 22222;
+const uint64_t kLowTiebreaker = 11111;
+const uint64_t kHighTiebreaker = 22222;
 
 enum { MSG_ADD_CANDIDATES, MSG_REMOVE_CANDIDATES };
 
@@ -131,7 +134,7 @@ cricket::Candidate CreateUdpCandidate(const std::string& type,
   return c;
 }
 
-}  // namespace {
+}  // namespace
 
 namespace cricket {
 
@@ -305,34 +308,38 @@ class P2PTransportChannelTestBase : public testing::Test,
       return ep2_.GetChannelData(channel);
   }
 
+  IceParameters IceParamsWithRenomination(const IceParameters& ice,
+                                          bool renomination) {
+    IceParameters new_ice = ice;
+    new_ice.renomination = renomination;
+    return new_ice;
+  }
+
   void CreateChannels(int num,
                       const IceConfig& ep1_config,
-                      const IceConfig& ep2_config) {
-    std::string ice_ufrag_ep1_cd1_ch = kIceUfrag[0];
-    std::string ice_pwd_ep1_cd1_ch = kIcePwd[0];
-    std::string ice_ufrag_ep2_cd1_ch = kIceUfrag[1];
-    std::string ice_pwd_ep2_cd1_ch = kIcePwd[1];
-    ep1_.cd1_.ch_.reset(CreateChannel(
-        0, ICE_CANDIDATE_COMPONENT_DEFAULT, ice_ufrag_ep1_cd1_ch,
-        ice_pwd_ep1_cd1_ch, ice_ufrag_ep2_cd1_ch, ice_pwd_ep2_cd1_ch));
-    ep2_.cd1_.ch_.reset(CreateChannel(
-        1, ICE_CANDIDATE_COMPONENT_DEFAULT, ice_ufrag_ep2_cd1_ch,
-        ice_pwd_ep2_cd1_ch, ice_ufrag_ep1_cd1_ch, ice_pwd_ep1_cd1_ch));
+                      const IceConfig& ep2_config,
+                      bool renomination = false) {
+    IceParameters ice_ep1_cd1_ch =
+        IceParamsWithRenomination(kIceParams[0], renomination);
+    IceParameters ice_ep2_cd1_ch =
+        IceParamsWithRenomination(kIceParams[1], renomination);
+    ep1_.cd1_.ch_.reset(CreateChannel(0, ICE_CANDIDATE_COMPONENT_DEFAULT,
+                                      ice_ep1_cd1_ch, ice_ep2_cd1_ch));
+    ep2_.cd1_.ch_.reset(CreateChannel(1, ICE_CANDIDATE_COMPONENT_DEFAULT,
+                                      ice_ep2_cd1_ch, ice_ep1_cd1_ch));
     ep1_.cd1_.ch_->SetIceConfig(ep1_config);
     ep2_.cd1_.ch_->SetIceConfig(ep2_config);
     ep1_.cd1_.ch_->MaybeStartGathering();
     ep2_.cd1_.ch_->MaybeStartGathering();
     if (num == 2) {
-      std::string ice_ufrag_ep1_cd2_ch = kIceUfrag[2];
-      std::string ice_pwd_ep1_cd2_ch = kIcePwd[2];
-      std::string ice_ufrag_ep2_cd2_ch = kIceUfrag[3];
-      std::string ice_pwd_ep2_cd2_ch = kIcePwd[3];
-      ep1_.cd2_.ch_.reset(CreateChannel(
-          0, ICE_CANDIDATE_COMPONENT_DEFAULT, ice_ufrag_ep1_cd2_ch,
-          ice_pwd_ep1_cd2_ch, ice_ufrag_ep2_cd2_ch, ice_pwd_ep2_cd2_ch));
-      ep2_.cd2_.ch_.reset(CreateChannel(
-          1, ICE_CANDIDATE_COMPONENT_DEFAULT, ice_ufrag_ep2_cd2_ch,
-          ice_pwd_ep2_cd2_ch, ice_ufrag_ep1_cd2_ch, ice_pwd_ep1_cd2_ch));
+      IceParameters ice_ep1_cd2_ch =
+          IceParamsWithRenomination(kIceParams[2], renomination);
+      IceParameters ice_ep2_cd2_ch =
+          IceParamsWithRenomination(kIceParams[3], renomination);
+      ep1_.cd2_.ch_.reset(CreateChannel(0, ICE_CANDIDATE_COMPONENT_DEFAULT,
+                                        ice_ep1_cd2_ch, ice_ep2_cd2_ch));
+      ep2_.cd2_.ch_.reset(CreateChannel(1, ICE_CANDIDATE_COMPONENT_DEFAULT,
+                                        ice_ep2_cd2_ch, ice_ep1_cd2_ch));
       ep1_.cd2_.ch_->SetIceConfig(ep1_config);
       ep2_.cd2_.ch_->SetIceConfig(ep2_config);
       ep1_.cd2_.ch_->MaybeStartGathering();
@@ -342,15 +349,13 @@ class P2PTransportChannelTestBase : public testing::Test,
 
   void CreateChannels(int num) {
     IceConfig default_config;
-    CreateChannels(num, default_config, default_config);
+    CreateChannels(num, default_config, default_config, false);
   }
 
   P2PTransportChannel* CreateChannel(int endpoint,
                                      int component,
-                                     const std::string& local_ice_ufrag,
-                                     const std::string& local_ice_pwd,
-                                     const std::string& remote_ice_ufrag,
-                                     const std::string& remote_ice_pwd) {
+                                     const IceParameters& local_ice,
+                                     const IceParameters& remote_ice) {
     P2PTransportChannel* channel = new P2PTransportChannel(
         "test content name", component, GetAllocator(endpoint));
     channel->SignalReadyToSend.connect(
@@ -365,9 +370,9 @@ class P2PTransportChannelTestBase : public testing::Test,
         this, &P2PTransportChannelTestBase::OnRoleConflict);
     channel->SignalSelectedCandidatePairChanged.connect(
         this, &P2PTransportChannelTestBase::OnSelectedCandidatePairChanged);
-    channel->SetIceCredentials(local_ice_ufrag, local_ice_pwd);
-    if (remote_ice_credential_source_ == FROM_SETICECREDENTIALS) {
-      channel->SetRemoteIceCredentials(remote_ice_ufrag, remote_ice_pwd);
+    channel->SetIceParameters(local_ice);
+    if (remote_ice_parameter_source_ == FROM_SETICEPARAMETERS) {
+      channel->SetRemoteIceParameters(remote_ice);
     }
     channel->SetIceRole(GetEndpoint(endpoint)->ice_role());
     channel->SetIceTiebreaker(GetEndpoint(endpoint)->GetIceTiebreaker());
@@ -598,13 +603,13 @@ class P2PTransportChannelTestBase : public testing::Test,
   }
 
   // This test waits for the transport to become receiving and writable on both
-  // end points. Once they are, the end points set new local ice credentials and
+  // end points. Once they are, the end points set new local ice parameters and
   // restart the ice gathering. Finally it waits for the transport to select a
   // new connection using the newly generated ice candidates.
   // Before calling this function the end points must be configured.
   void TestHandleIceUfragPasswordChanged() {
-    ep1_ch1()->SetRemoteIceCredentials(kIceUfrag[1], kIcePwd[1]);
-    ep2_ch1()->SetRemoteIceCredentials(kIceUfrag[0], kIcePwd[0]);
+    ep1_ch1()->SetRemoteIceParameters(kIceParams[1]);
+    ep2_ch1()->SetRemoteIceParameters(kIceParams[0]);
     EXPECT_TRUE_WAIT_MARGIN(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
                             ep2_ch1()->receiving() && ep2_ch1()->writable(),
                             1000, 1000);
@@ -614,11 +619,12 @@ class P2PTransportChannelTestBase : public testing::Test,
     const Candidate* old_remote_candidate1 = RemoteCandidate(ep1_ch1());
     const Candidate* old_remote_candidate2 = RemoteCandidate(ep2_ch1());
 
-    ep1_ch1()->SetIceCredentials(kIceUfrag[2], kIcePwd[2]);
-    ep1_ch1()->SetRemoteIceCredentials(kIceUfrag[3], kIcePwd[3]);
+    ep1_ch1()->SetIceParameters(kIceParams[2]);
+    ep1_ch1()->SetRemoteIceParameters(kIceParams[3]);
     ep1_ch1()->MaybeStartGathering();
-    ep2_ch1()->SetIceCredentials(kIceUfrag[3], kIcePwd[3]);
-    ep2_ch1()->SetRemoteIceCredentials(kIceUfrag[2], kIcePwd[2]);
+    ep2_ch1()->SetIceParameters(kIceParams[3]);
+
+    ep2_ch1()->SetRemoteIceParameters(kIceParams[2]);
     ep2_ch1()->MaybeStartGathering();
 
     EXPECT_TRUE_WAIT_MARGIN(LocalCandidate(ep1_ch1())->generation() !=
@@ -745,7 +751,7 @@ class P2PTransportChannelTestBase : public testing::Test,
           return;
         }
         for (auto& c : data->candidates) {
-          if (remote_ice_credential_source_ != FROM_CANDIDATE) {
+          if (remote_ice_parameter_source_ != FROM_CANDIDATE) {
             c.set_username("");
             c.set_password("");
           }
@@ -830,13 +836,13 @@ class P2PTransportChannelTestBase : public testing::Test,
     return GetChannelData(ch)->ch_packets_;
   }
 
-  enum RemoteIceCredentialSource { FROM_CANDIDATE, FROM_SETICECREDENTIALS };
+  enum RemoteIceParameterSource { FROM_CANDIDATE, FROM_SETICEPARAMETERS };
 
-  // How does the test pass ICE credentials to the P2PTransportChannel?
-  // On the candidate itself, or through SetIceCredentials?
+  // How does the test pass ICE parameters to the P2PTransportChannel?
+  // On the candidate itself, or through SetRemoteIceParameters?
   // Goes through the candidate itself by default.
-  void set_remote_ice_credential_source(RemoteIceCredentialSource source) {
-    remote_ice_credential_source_ = source;
+  void set_remote_ice_parameter_source(RemoteIceParameterSource source) {
+    remote_ice_parameter_source_ = source;
   }
 
   void set_force_relay(bool relay) {
@@ -865,7 +871,7 @@ class P2PTransportChannelTestBase : public testing::Test,
   rtc::SocksProxyServer socks_server2_;
   Endpoint ep1_;
   Endpoint ep2_;
-  RemoteIceCredentialSource remote_ice_credential_source_ = FROM_CANDIDATE;
+  RemoteIceParameterSource remote_ice_parameter_source_ = FROM_CANDIDATE;
   bool force_relay_;
   int selected_candidate_pair_switches_ = 0;
 
@@ -991,7 +997,7 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
     SetAllocatorFlags(1, allocator_flags2);
     SetAllocationStepDelay(1, delay);
 
-    set_remote_ice_credential_source(FROM_SETICECREDENTIALS);
+    set_remote_ice_parameter_source(FROM_SETICEPARAMETERS);
   }
   void ConfigureEndpoint(int endpoint, Config config) {
     switch (config) {
@@ -1202,11 +1208,11 @@ TEST_F(P2PTransportChannelTest, GetStats) {
 TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignaling) {
   ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
                      kDefaultPortAllocatorFlags);
-  // Emulate no remote credentials coming in.
-  set_remote_ice_credential_source(FROM_CANDIDATE);
+  // Emulate no remote parameters coming in.
+  set_remote_ice_parameter_source(FROM_CANDIDATE);
   CreateChannels(1);
-  // Only have remote credentials come in for ep2, not ep1.
-  ep2_ch1()->SetRemoteIceCredentials(kIceUfrag[0], kIcePwd[0]);
+  // Only have remote parameters come in for ep2, not ep1.
+  ep2_ch1()->SetRemoteIceParameters(kIceParams[0]);
 
   // Pause sending ep2's candidates to ep1 until ep1 receives the peer reflexive
   // candidate.
@@ -1217,8 +1223,8 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignaling) {
   ASSERT_TRUE_WAIT(ep2_ch1()->selected_connection() != nullptr, 3000);
   // Add two sets of remote ICE credentials, so that the ones used by the
   // candidate will be generation 1 instead of 0.
-  ep1_ch1()->SetRemoteIceCredentials(kIceUfrag[3], kIcePwd[3]);
-  ep1_ch1()->SetRemoteIceCredentials(kIceUfrag[1], kIcePwd[1]);
+  ep1_ch1()->SetRemoteIceParameters(kIceParams[3]);
+  ep1_ch1()->SetRemoteIceParameters(kIceParams[1]);
   // The caller should have the selected connection connected to the peer
   // reflexive candidate.
   const Connection* selected_connection = nullptr;
@@ -1244,11 +1250,11 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignaling) {
 TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignalingWithNAT) {
   ConfigureEndpoints(OPEN, NAT_SYMMETRIC, kDefaultPortAllocatorFlags,
                      kDefaultPortAllocatorFlags);
-  // Emulate no remote credentials coming in.
-  set_remote_ice_credential_source(FROM_CANDIDATE);
+  // Emulate no remote parameters coming in.
+  set_remote_ice_parameter_source(FROM_CANDIDATE);
   CreateChannels(1);
-  // Only have remote credentials come in for ep2, not ep1.
-  ep2_ch1()->SetRemoteIceCredentials(kIceUfrag[0], kIcePwd[0]);
+  // Only have remote parameters come in for ep2, not ep1.
+  ep2_ch1()->SetRemoteIceParameters(kIceParams[0]);
   // Pause sending ep2's candidates to ep1 until ep1 receives the peer reflexive
   // candidate.
   PauseCandidates(1);
@@ -1258,8 +1264,8 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignalingWithNAT) {
   ASSERT_TRUE_WAIT(ep2_ch1()->selected_connection() != nullptr, 3000);
   // Add two sets of remote ICE credentials, so that the ones used by the
   // candidate will be generation 1 instead of 0.
-  ep1_ch1()->SetRemoteIceCredentials(kIceUfrag[3], kIcePwd[3]);
-  ep1_ch1()->SetRemoteIceCredentials(kIceUfrag[1], kIcePwd[1]);
+  ep1_ch1()->SetRemoteIceParameters(kIceParams[3]);
+  ep1_ch1()->SetRemoteIceParameters(kIceParams[1]);
 
   // The caller's selected connection should be connected to the peer reflexive
   // candidate.
@@ -1298,21 +1304,22 @@ TEST_F(P2PTransportChannelTest,
   // it's prioritized above the current candidate pair.
   GetEndpoint(0)->allocator_->set_candidate_filter(CF_RELAY);
   GetEndpoint(1)->allocator_->set_candidate_filter(CF_RELAY);
-  // Setting this allows us to control when SetRemoteIceCredentials is called.
-  set_remote_ice_credential_source(FROM_CANDIDATE);
+  // Setting this allows us to control when SetRemoteIceParameters is called.
+  set_remote_ice_parameter_source(FROM_CANDIDATE);
   CreateChannels(1);
   // Wait for the initial connection to be made.
-  ep1_ch1()->SetRemoteIceCredentials(kIceUfrag[1], kIcePwd[1]);
-  ep2_ch1()->SetRemoteIceCredentials(kIceUfrag[0], kIcePwd[0]);
+  ep1_ch1()->SetRemoteIceParameters(kIceParams[1]);
+  ep2_ch1()->SetRemoteIceParameters(kIceParams[0]);
   EXPECT_TRUE_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
                        ep2_ch1()->receiving() && ep2_ch1()->writable(),
                    kDefaultTimeout);
 
   // Simulate an ICE restart on ep2, but don't signal the candidate or new
-  // ICE credentials until after a prflx connection has been made.
+  // ICE parameters until after a prflx connection has been made.
   PauseCandidates(1);
-  ep2_ch1()->SetIceCredentials(kIceUfrag[3], kIcePwd[3]);
-  ep1_ch1()->SetRemoteIceCredentials(kIceUfrag[3], kIcePwd[3]);
+  ep2_ch1()->SetIceParameters(kIceParams[3]);
+
+  ep1_ch1()->SetRemoteIceParameters(kIceParams[3]);
   ep2_ch1()->MaybeStartGathering();
 
   // The caller should have the selected connection connected to the peer
@@ -1324,8 +1331,9 @@ TEST_F(P2PTransportChannelTest,
       ep1_ch1()->selected_connection();
 
   // Now simulate the ICE restart on ep1.
-  ep1_ch1()->SetIceCredentials(kIceUfrag[2], kIcePwd[2]);
-  ep2_ch1()->SetRemoteIceCredentials(kIceUfrag[2], kIcePwd[2]);
+  ep1_ch1()->SetIceParameters(kIceParams[2]);
+
+  ep2_ch1()->SetRemoteIceParameters(kIceParams[2]);
   ep1_ch1()->MaybeStartGathering();
 
   // Finally send the candidates from ep2's ICE restart and verify that ep1 uses
@@ -1341,7 +1349,7 @@ TEST_F(P2PTransportChannelTest,
 
 // Test that if remote candidates don't have ufrag and pwd, we still work.
 TEST_F(P2PTransportChannelTest, RemoteCandidatesWithoutUfragPwd) {
-  set_remote_ice_credential_source(FROM_SETICECREDENTIALS);
+  set_remote_ice_parameter_source(FROM_SETICEPARAMETERS);
   ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
                      kDefaultPortAllocatorFlags);
   CreateChannels(1);
@@ -1410,10 +1418,10 @@ TEST_F(P2PTransportChannelTest, TestTcpConnectionsFromActiveToPassive) {
   SetAllowTcpListen(0, true);   // actpass.
   SetAllowTcpListen(1, false);  // active.
 
-  // We want SetRemoteIceCredentials to be called as it normally would.
-  // Otherwise we won't know what credentials to use for the expected
+  // We want SetRemoteIceParameters to be called as it normally would.
+  // Otherwise we won't know what parameters to use for the expected
   // prflx TCP candidates.
-  set_remote_ice_credential_source(FROM_SETICECREDENTIALS);
+  set_remote_ice_parameter_source(FROM_SETICEPARAMETERS);
 
   // Pause candidate so we could verify the candidate properties.
   PauseCandidates(0);
@@ -1700,9 +1708,8 @@ TEST_F(P2PTransportChannelTest, TurnToTurnPresumedWritable) {
                      kDefaultPortAllocatorFlags);
   // Only configure one channel so we can control when the remote candidate
   // is added.
-  GetEndpoint(0)->cd1_.ch_.reset(
-      CreateChannel(0, ICE_CANDIDATE_COMPONENT_DEFAULT, kIceUfrag[0],
-                    kIcePwd[0], kIceUfrag[1], kIcePwd[1]));
+  GetEndpoint(0)->cd1_.ch_.reset(CreateChannel(
+      0, ICE_CANDIDATE_COMPONENT_DEFAULT, kIceParams[0], kIceParams[1]));
   IceConfig config;
   config.presume_writable_when_fully_relayed = true;
   ep1_ch1()->SetIceConfig(config);
@@ -1748,12 +1755,10 @@ TEST_F(P2PTransportChannelTest, TurnToPrflxPresumedWritable) {
   test_turn_server()->set_enable_permission_checks(false);
   IceConfig config;
   config.presume_writable_when_fully_relayed = true;
-  GetEndpoint(0)->cd1_.ch_.reset(
-      CreateChannel(0, ICE_CANDIDATE_COMPONENT_DEFAULT, kIceUfrag[0],
-                    kIcePwd[0], kIceUfrag[1], kIcePwd[1]));
-  GetEndpoint(1)->cd1_.ch_.reset(
-      CreateChannel(1, ICE_CANDIDATE_COMPONENT_DEFAULT, kIceUfrag[1],
-                    kIcePwd[1], kIceUfrag[0], kIcePwd[0]));
+  GetEndpoint(0)->cd1_.ch_.reset(CreateChannel(
+      0, ICE_CANDIDATE_COMPONENT_DEFAULT, kIceParams[0], kIceParams[1]));
+  GetEndpoint(1)->cd1_.ch_.reset(CreateChannel(
+      1, ICE_CANDIDATE_COMPONENT_DEFAULT, kIceParams[1], kIceParams[0]));
   ep1_ch1()->SetIceConfig(config);
   ep2_ch1()->SetIceConfig(config);
   // Don't signal candidates from channel 2, so that channel 1 sees the TURN
@@ -1789,12 +1794,10 @@ TEST_F(P2PTransportChannelTest, PresumedWritablePreferredOverUnreliable) {
                      kDefaultPortAllocatorFlags);
   IceConfig config;
   config.presume_writable_when_fully_relayed = true;
-  GetEndpoint(0)->cd1_.ch_.reset(
-      CreateChannel(0, ICE_CANDIDATE_COMPONENT_DEFAULT, kIceUfrag[0],
-                    kIcePwd[0], kIceUfrag[1], kIcePwd[1]));
-  GetEndpoint(1)->cd1_.ch_.reset(
-      CreateChannel(1, ICE_CANDIDATE_COMPONENT_DEFAULT, kIceUfrag[1],
-                    kIcePwd[1], kIceUfrag[0], kIcePwd[0]));
+  GetEndpoint(0)->cd1_.ch_.reset(CreateChannel(
+      0, ICE_CANDIDATE_COMPONENT_DEFAULT, kIceParams[0], kIceParams[1]));
+  GetEndpoint(1)->cd1_.ch_.reset(CreateChannel(
+      1, ICE_CANDIDATE_COMPONENT_DEFAULT, kIceParams[1], kIceParams[0]));
   ep1_ch1()->SetIceConfig(config);
   ep2_ch1()->SetIceConfig(config);
   ep1_ch1()->MaybeStartGathering();
@@ -1837,7 +1840,7 @@ class P2PTransportChannelSameNatTest : public P2PTransportChannelTestBase {
             static_cast<rtc::NATType>(nat_type - NAT_FULL_CONE));
     ConfigureEndpoint(outer_nat, 0, config1);
     ConfigureEndpoint(outer_nat, 1, config2);
-    set_remote_ice_credential_source(FROM_SETICECREDENTIALS);
+    set_remote_ice_parameter_source(FROM_SETICEPARAMETERS);
   }
   void ConfigureEndpoint(rtc::NATSocketServer::Translator* nat,
                          int endpoint, Config config) {
@@ -2027,11 +2030,12 @@ TEST_F(P2PTransportChannelMultihomedTest, TestIceRenomination) {
   SetAllocatorFlags(0, kOnlyLocalPorts);
   SetAllocatorFlags(1, kOnlyLocalPorts);
 
+  // We want it to set the remote ICE parameters when creating channels.
+  set_remote_ice_parameter_source(FROM_SETICEPARAMETERS);
   // Make the receiving timeout shorter for testing.
   IceConfig config = CreateIceConfig(1000, GATHER_ONCE);
-  // Create channels and let them go writable, as usual.
-  CreateChannels(1, config, config);
-  ep1_ch1()->set_remote_supports_renomination(true);
+  // Create channels with ICE renomination and let them go writable as usual.
+  CreateChannels(1, config, config, true);
   EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
                                  ep2_ch1()->receiving() &&
                                  ep2_ch1()->writable(),
@@ -2601,8 +2605,8 @@ class P2PTransportChannelPingTest : public testing::Test,
  protected:
   void PrepareChannel(P2PTransportChannel* ch) {
     ch->SetIceRole(ICEROLE_CONTROLLING);
-    ch->SetIceCredentials(kIceUfrag[0], kIcePwd[0]);
-    ch->SetRemoteIceCredentials(kIceUfrag[1], kIcePwd[1]);
+    ch->SetIceParameters(kIceParams[0]);
+    ch->SetRemoteIceParameters(kIceParams[1]);
     ch->SignalSelectedCandidatePairChanged.connect(
         this, &P2PTransportChannelPingTest::OnSelectedCandidatePairChanged);
     ch->SignalReadyToSend.connect(this,
@@ -2881,20 +2885,20 @@ TEST_F(P2PTransportChannelPingTest, TestStunPingIntervals) {
 }
 
 // Test that we start pinging as soon as we have a connection and remote ICE
-// credentials.
+// parameters.
 TEST_F(P2PTransportChannelPingTest, PingingStartedAsSoonAsPossible) {
   rtc::ScopedFakeClock clock;
 
   FakePortAllocator pa(rtc::Thread::Current(), nullptr);
   P2PTransportChannel ch("TestChannel", 1, &pa);
   ch.SetIceRole(ICEROLE_CONTROLLING);
-  ch.SetIceCredentials(kIceUfrag[0], kIcePwd[0]);
+  ch.SetIceParameters(kIceParams[0]);
   ch.MaybeStartGathering();
   EXPECT_EQ_WAIT(IceGatheringState::kIceGatheringComplete, ch.gathering_state(),
                  kDefaultTimeout);
 
   // Simulate a binding request being received, creating a peer reflexive
-  // candidate pair while we still don't have remote ICE credentials.
+  // candidate pair while we still don't have remote ICE parameters.
   IceMessage request;
   request.SetType(STUN_BINDING_REQUEST);
   request.AddAttribute(
@@ -2910,14 +2914,14 @@ TEST_F(P2PTransportChannelPingTest, PingingStartedAsSoonAsPossible) {
   ASSERT_NE(nullptr, conn);
 
   // Simulate waiting for a second (and change) and verify that no pings were
-  // sent, since we don't yet have remote ICE credentials.
+  // sent, since we don't yet have remote ICE parameters.
   SIMULATED_WAIT(conn->num_pings_sent() > 0, 1025, clock);
   EXPECT_EQ(0, conn->num_pings_sent());
 
-  // Set remote ICE credentials. Now we should be able to ping. Ensure that
+  // Set remote ICE parameters. Now we should be able to ping. Ensure that
   // the first ping is sent as soon as possible, within one simulated clock
   // tick.
-  ch.SetRemoteIceCredentials(kIceUfrag[1], kIcePwd[1]);
+  ch.SetRemoteIceParameters(kIceParams[1]);
   EXPECT_TRUE_SIMULATED_WAIT(conn->num_pings_sent() > 0, 1, clock);
 }
 
@@ -2981,7 +2985,7 @@ TEST_F(P2PTransportChannelPingTest, TestSignalStateChanged) {
 // is added with an old ufrag, it will be discarded. If it is added with a
 // ufrag that was not seen before, it will be used to create connections
 // although the ICE pwd in the remote candidate will be set when the ICE
-// credentials arrive. If a remote candidate is added with the current ICE
+// parameters arrive. If a remote candidate is added with the current ICE
 // ufrag, its pwd and generation will be set properly.
 TEST_F(P2PTransportChannelPingTest, TestAddRemoteCandidateWithVariousUfrags) {
   FakePortAllocator pa(rtc::Thread::Current(), nullptr);
@@ -2998,10 +3002,10 @@ TEST_F(P2PTransportChannelPingTest, TestAddRemoteCandidateWithVariousUfrags) {
   EXPECT_TRUE(candidate.password().empty());
   EXPECT_TRUE(FindNextPingableConnectionAndPingIt(&ch) == nullptr);
 
-  // Set the remote credentials with the "future" ufrag.
+  // Set the remote ICE parameters with the "future" ufrag.
   // This should set the ICE pwd in the remote candidate of |conn1|, making
   // it pingable.
-  ch.SetRemoteIceCredentials(kIceUfrag[2], kIcePwd[2]);
+  ch.SetRemoteIceParameters(kIceParams[2]);
   EXPECT_EQ(kIceUfrag[2], candidate.username());
   EXPECT_EQ(kIcePwd[2], candidate.password());
   EXPECT_EQ(conn1, FindNextPingableConnectionAndPingIt(&ch));
@@ -3261,8 +3265,8 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
   // Test that the request from an unknown address contains a ufrag from an old
   // generation.
   port->set_sent_binding_response(false);
-  ch.SetRemoteIceCredentials(kIceUfrag[2], kIcePwd[2]);
-  ch.SetRemoteIceCredentials(kIceUfrag[3], kIcePwd[3]);
+  ch.SetRemoteIceParameters(kIceParams[2]);
+  ch.SetRemoteIceParameters(kIceParams[3]);
   port->SignalUnknownAddress(port, rtc::SocketAddress("5.5.5.5", 5), PROTO_UDP,
                              &request, kIceUfrag[2], false);
   Connection* conn5 = WaitForConnectionTo(&ch, "5.5.5.5", 5);
@@ -3732,7 +3736,7 @@ TEST_F(P2PTransportChannelPingTest, TestStopPortAllocatorSessions) {
   // Start a new session. Even though conn1, which belongs to an older
   // session, becomes unwritable and writable again, it should not stop the
   // current session.
-  ch.SetIceCredentials(kIceUfrag[1], kIcePwd[1]);
+  ch.SetIceParameters(kIceParams[1]);
   ch.MaybeStartGathering();
   conn1->Prune();
   conn1->ReceivedPingResponse(LOW_RTT, "id");
@@ -3788,7 +3792,7 @@ TEST_F(P2PTransportChannelPingTest, TestIceRoleUpdatedOnPortAfterIceRestart) {
 
   // Do an ICE restart, change the role, and expect the old port to have its
   // role updated.
-  ch.SetIceCredentials(kIceUfrag[1], kIcePwd[1]);
+  ch.SetIceParameters(kIceParams[1]);
   ch.MaybeStartGathering();
   ch.SetIceRole(ICEROLE_CONTROLLED);
   EXPECT_EQ(ICEROLE_CONTROLLED, conn->port()->GetIceRole());

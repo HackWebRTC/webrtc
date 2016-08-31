@@ -142,13 +142,11 @@ class QuicTransportChannel : public TransportChannelImpl,
   void SetIceTiebreaker(uint64_t tiebreaker) override {
     channel_->SetIceTiebreaker(tiebreaker);
   }
-  void SetIceCredentials(const std::string& ice_ufrag,
-                         const std::string& ice_pwd) override {
-    channel_->SetIceCredentials(ice_ufrag, ice_pwd);
+  void SetIceParameters(const IceParameters& ice_params) override {
+    channel_->SetIceParameters(ice_params);
   }
-  void SetRemoteIceCredentials(const std::string& ice_ufrag,
-                               const std::string& ice_pwd) override {
-    channel_->SetRemoteIceCredentials(ice_ufrag, ice_pwd);
+  void SetRemoteIceParameters(const IceParameters& ice_params) override {
+    channel_->SetRemoteIceParameters(ice_params);
   }
   void SetRemoteIceMode(IceMode mode) override {
     channel_->SetRemoteIceMode(mode);
