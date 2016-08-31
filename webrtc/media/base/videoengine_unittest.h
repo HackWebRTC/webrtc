@@ -516,8 +516,10 @@ class VideoMediaChannelTest : public testing::Test,
       EXPECT_EQ_WAIT(NumRtpBytes(), GetReceiverStats(i).bytes_rcvd, kTimeout);
       EXPECT_EQ_WAIT(NumRtpPackets(), GetReceiverStats(i).packets_rcvd,
                      kTimeout);
-      EXPECT_EQ(DefaultCodec().width, GetReceiverStats(i).frame_width);
-      EXPECT_EQ(DefaultCodec().height, GetReceiverStats(i).frame_height);
+      EXPECT_EQ_WAIT(DefaultCodec().width, GetReceiverStats(i).frame_width,
+                     kTimeout);
+      EXPECT_EQ_WAIT(DefaultCodec().height, GetReceiverStats(i).frame_height,
+                     kTimeout);
     }
   }
   // Test that stats work properly for a conf call with multiple send streams.
