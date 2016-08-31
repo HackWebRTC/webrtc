@@ -13,13 +13,13 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/common_types.h"
-#include "webrtc/audio_receive_stream.h"
-#include "webrtc/audio_send_stream.h"
-#include "webrtc/audio_state.h"
+#include "webrtc/api/call/audio_receive_stream.h"
+#include "webrtc/api/call/audio_send_stream.h"
+#include "webrtc/api/call/audio_state.h"
 #include "webrtc/base/networkroute.h"
 #include "webrtc/base/platform_file.h"
 #include "webrtc/base/socket.h"
+#include "webrtc/common_types.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
 

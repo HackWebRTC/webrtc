@@ -204,6 +204,7 @@ source_set("rtc_media") {
 
   deps += [
     "..:webrtc_common",
+    "../api:call_api",
     "../base:rtc_base_approved",
     "../call",
     "../libjingle/xmllite",

@@ -31,6 +31,7 @@ source_set("audio") {
 
   deps = [
     "..:webrtc_common",
+    "../api:call_api",
     "../system_wrappers",
     "../voice_engine",
   ]

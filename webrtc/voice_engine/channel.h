@@ -13,7 +13,7 @@
 
 #include <memory>
 
-#include "webrtc/audio_sink.h"
+#include "webrtc/api/call/audio_sink.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"

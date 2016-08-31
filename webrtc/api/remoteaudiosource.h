@@ -14,8 +14,8 @@
 #include <list>
 #include <string>
 
+#include "webrtc/api/call/audio_sink.h"
 #include "webrtc/api/notifier.h"
-#include "webrtc/audio_sink.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/pc/channel.h"
 

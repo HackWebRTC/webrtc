@@ -95,9 +95,26 @@
   ],  # conditions
   'targets': [
     {
+      'target_name': 'call_api',
+      'type': 'static_library',
+      'dependencies': [
+        # TODO(kjellander): Add remaining dependencies when webrtc:4243 is done.
+        '<(webrtc_root)/base/base.gyp:rtc_base_approved',
+        '<(webrtc_root)/common.gyp:webrtc_common',
+        '<(webrtc_root)/modules/modules.gyp:audio_encoder_interface',
+      ],
+      'sources': [
+        'call/audio_receive_stream.h',
+        'call/audio_send_stream.h',
+        'call/audio_sink.h',
+        'call/audio_state.h',
+      ],
+    },
+    {
       'target_name': 'libjingle_peerconnection',
       'type': 'static_library',
       'dependencies': [
+        ':call_api',
         '<(webrtc_root)/media/media.gyp:rtc_media',
         '<(webrtc_root)/pc/pc.gyp:rtc_pc',
       ],

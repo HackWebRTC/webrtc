@@ -17,8 +17,8 @@
 #include <string>
 #include <utility>
 
-#include "webrtc/audio_receive_stream.h"
-#include "webrtc/audio_send_stream.h"
+#include "webrtc/api/call/audio_receive_stream.h"
+#include "webrtc/api/call/audio_send_stream.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/call.h"

@@ -23,8 +23,8 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/audio_receive_stream.h"
-#include "webrtc/audio_send_stream.h"
+#include "webrtc/api/call/audio_receive_stream.h"
+#include "webrtc/api/call/audio_send_stream.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/call.h"
 #include "webrtc/video_frame.h"

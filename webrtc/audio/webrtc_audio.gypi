@@ -8,6 +8,7 @@
 {
   'variables': {
     'webrtc_audio_dependencies': [
+      '<(webrtc_root)/api/api.gyp:call_api',
       '<(webrtc_root)/common.gyp:webrtc_common',
       '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',

@@ -18,7 +18,7 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/audio_sink.h"
+#include "webrtc/api/call/audio_sink.h"
 #include "webrtc/base/asyncinvoker.h"
 #include "webrtc/base/asyncudpsocket.h"
 #include "webrtc/base/criticalsection.h"

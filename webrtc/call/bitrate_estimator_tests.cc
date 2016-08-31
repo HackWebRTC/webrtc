@@ -14,7 +14,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
-#include "webrtc/audio_state.h"
+#include "webrtc/api/call/audio_state.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/logging.h"

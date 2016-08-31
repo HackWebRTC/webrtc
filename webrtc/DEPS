@@ -9,11 +9,7 @@ include_rules = [
   "+libyuv",
   "+testing",
   "-webrtc",  # Has to be disabled; otherwise all dirs below will be allowed.
-  # Individual headers that will be moved out of here, see webrtc:
-  "+webrtc/audio_receive_stream.h",
-  "+webrtc/audio_send_stream.h",
-  "+webrtc/audio_sink.h",
-  "+webrtc/audio_state.h",
+  # Individual headers that will be moved out of here, see webrtc:4243.
   "+webrtc/call.h",
   "+webrtc/common.h",
   "+webrtc/common_types.h",
@@ -29,20 +25,15 @@ include_rules = [
   "+webrtc/video_send_stream.h",
 
   "+WebRTC",
+  "+webrtc/api",
   "+webrtc/base",
   "+webrtc/modules/include",
   "+webrtc/test",
   "+webrtc/tools",
 ]
 
-# The below rules will be removed when webrtc: is fixed.
+# The below rules will be removed when webrtc:4243 is fixed.
 specific_include_rules = {
-  "audio_send_stream\.h": [
-    "+webrtc/modules/audio_coding",
-  ],
-  "audio_receive_stream\.h": [
-    "+webrtc/modules/audio_coding/codecs/audio_decoder_factory.h",
-  ],
   "video_frame\.h": [
     "+webrtc/common_video",
   ],

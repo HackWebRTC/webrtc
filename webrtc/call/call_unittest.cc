@@ -13,7 +13,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
-#include "webrtc/audio_state.h"
+#include "webrtc/api/call/audio_state.h"
 #include "webrtc/call.h"
 #include "webrtc/modules/audio_coding/codecs/mock/mock_audio_decoder_factory.h"
 #include "webrtc/test/mock_voice_engine.h"

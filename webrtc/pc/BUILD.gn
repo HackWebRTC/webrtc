@@ -49,6 +49,7 @@ source_set("rtc_pc") {
   ]
 
   deps = [
+    "../api:call_api",
     "../base:rtc_base",
     "../media",
   ]

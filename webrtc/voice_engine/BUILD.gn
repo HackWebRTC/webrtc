@@ -92,6 +92,7 @@ source_set("voice_engine") {
     ":level_indicator",
     "..:rtc_event_log",
     "..:webrtc_common",
+    "../api:call_api",
     "../base:rtc_base_approved",
     "../common_audio",
     "../modules/audio_coding",

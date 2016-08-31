@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_SEND_STREAM_H_
-#define WEBRTC_AUDIO_SEND_STREAM_H_
+#ifndef WEBRTC_API_CALL_AUDIO_SEND_STREAM_H_
+#define WEBRTC_API_CALL_AUDIO_SEND_STREAM_H_
 
 #include <memory>
 #include <string>
@@ -116,4 +116,4 @@ class AudioSendStream {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_AUDIO_SEND_STREAM_H_
+#endif  // WEBRTC_API_CALL_AUDIO_SEND_STREAM_H_

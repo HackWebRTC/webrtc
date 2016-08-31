@@ -11,7 +11,7 @@
 #ifndef WEBRTC_AUDIO_AUDIO_STATE_H_
 #define WEBRTC_AUDIO_AUDIO_STATE_H_
 
-#include "webrtc/audio_state.h"
+#include "webrtc/api/call/audio_state.h"
 #include "webrtc/audio/scoped_voe_interface.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"

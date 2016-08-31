@@ -17,9 +17,6 @@
       'target_name': 'webrtc',
       'type': 'static_library',
       'sources': [
-        'audio_receive_stream.h',
-        'audio_send_stream.h',
-        'audio_state.h',
         'call.h',
         'config.h',
         'transport.h',

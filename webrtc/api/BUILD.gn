@@ -19,6 +19,25 @@ group("api") {
   ]
 }
 
+source_set("call_api") {
+  sources = [
+    "call/audio_receive_stream.h",
+    "call/audio_send_stream.h",
+    "call/audio_sink.h",
+    "call/audio_state.h",
+  ]
+
+  configs += [ "..:common_config" ]
+  public_configs = [ "..:common_inherited_config" ]
+
+  deps = [
+    # TODO(kjellander): Add remaining dependencies when webrtc:4243 is done.
+    "..:webrtc_common",
+    "../base:rtc_base_approved",
+    "../modules/audio_coding:audio_encoder_interface",
+  ]
+}
+
 config("libjingle_peerconnection_warnings_config") {
   # GN orders flags on a target before flags from configs. The default config
   # adds these flags so to cancel them out they need to come from a config and
@@ -113,6 +132,7 @@ source_set("libjingle_peerconnection") {
   }
 
   deps = [
+    ":call_api",
     "../call",
     "../media",
     "../pc",

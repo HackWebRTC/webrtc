@@ -203,6 +203,7 @@
           'dependencies': [
             '<(DEPTH)/testing/gmock.gyp:gmock',
             '<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(webrtc_root)/api/api.gyp:call_api',
             '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
             '<(webrtc_root)/media/media.gyp:rtc_media',
           ],

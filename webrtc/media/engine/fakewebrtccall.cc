@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <utility>
 
-#include "webrtc/audio_sink.h"
+#include "webrtc/api/call/audio_sink.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/media/base/rtputils.h"

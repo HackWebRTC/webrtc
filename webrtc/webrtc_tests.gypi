@@ -385,6 +385,7 @@
       'dependencies': [
         '<(DEPTH)/testing/gmock.gyp:gmock',
         '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(webrtc_root)/api/api.gyp:call_api',
         '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
         '<(webrtc_root)/modules/modules.gyp:video_capture',
