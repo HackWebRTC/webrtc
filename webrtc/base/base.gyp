@@ -149,37 +149,52 @@
         'sequenced_task_checker.h',
         'sequenced_task_checker_impl.cc',
         'sequenced_task_checker_impl.h',
-        'task_queue.h',
-        'task_queue_posix.h',
       ],
       'conditions': [
-        ['build_libevent==1', {
-          'dependencies': [
-            '<(DEPTH)/base/third_party/libevent/libevent.gyp:libevent',
+        ['build_with_chromium==1', {
+          'include_dirs': [
+            '../../webrtc_overrides'
           ],
-        }],
-        ['enable_libevent==1', {
-          'sources': [
-            'task_queue_libevent.cc',
-            'task_queue_posix.cc',
+          'sources' : [
+            '../../webrtc_overrides/webrtc/base/task_queue.cc',
+            '../../webrtc_overrides/webrtc/base/task_queue.h',
+          ]
+        } , {
+          # If not build for chromium, use our own implementation.
+          'sources' : [
+            'task_queue.h',
+            'task_queue_posix.h',
           ],
-          'defines': [ 'WEBRTC_BUILD_LIBEVENT' ],
-          'all_dependent_settings': {
-            'defines': [ 'WEBRTC_BUILD_LIBEVENT' ]
-          },
-        }, {
-          # If not libevent, fall back to the other task queues.
           'conditions': [
-            ['OS=="mac" or OS=="ios"', {
-             'sources': [
-               'task_queue_gcd.cc',
-               'task_queue_posix.cc',
-             ],
+            ['build_libevent==1', {
+              'dependencies': [
+                '<(DEPTH)/base/third_party/libevent/libevent.gyp:libevent',
+              ],
             }],
-            ['OS=="win"', {
-              'sources': [ 'task_queue_win.cc' ],
-            }]
-          ],
+            ['enable_libevent==1', {
+              'sources': [
+                'task_queue_libevent.cc',
+                'task_queue_posix.cc',
+              ],
+              'defines': [ 'WEBRTC_BUILD_LIBEVENT' ],
+              'all_dependent_settings': {
+                'defines': [ 'WEBRTC_BUILD_LIBEVENT' ]
+              },
+            }, {
+              # If not libevent, fall back to the other task queues.
+              'conditions': [
+                ['OS=="mac" or OS=="ios"', {
+                 'sources': [
+                   'task_queue_gcd.cc',
+                   'task_queue_posix.cc',
+                 ],
+                }],
+                ['OS=="win"', {
+                  'sources': [ 'task_queue_win.cc' ],
+                }]
+              ],
+            }],
+          ]
         }],
       ],
     },

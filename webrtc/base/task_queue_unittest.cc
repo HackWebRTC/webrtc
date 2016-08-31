@@ -253,9 +253,6 @@ TEST(TaskQueueTest, PostALot) {
 
   EXPECT_GE(tasks_cleaned_up, tasks_executed);
   EXPECT_EQ(kTaskCount, tasks_cleaned_up);
-
-  LOG(INFO) << "tasks executed: " << tasks_executed
-            << ", tasks cleaned up: " << tasks_cleaned_up;
 }
 
 }  // namespace rtc
