@@ -47,6 +47,7 @@ TEST(BufferTest, TestConstructData) {
   Buffer buf(kTestData, 7);
   EXPECT_EQ(buf.size(), 7u);
   EXPECT_EQ(buf.capacity(), 7u);
+  EXPECT_FALSE(buf.empty());
   EXPECT_EQ(0, memcmp(buf.data(), kTestData, 7));
 }
 
@@ -54,6 +55,7 @@ TEST(BufferTest, TestConstructDataWithCapacity) {
   Buffer buf(kTestData, 7, 14);
   EXPECT_EQ(buf.size(), 7u);
   EXPECT_EQ(buf.capacity(), 14u);
+  EXPECT_FALSE(buf.empty());
   EXPECT_EQ(0, memcmp(buf.data(), kTestData, 7));
 }
 
@@ -61,6 +63,7 @@ TEST(BufferTest, TestConstructArray) {
   Buffer buf(kTestData);
   EXPECT_EQ(buf.size(), 16u);
   EXPECT_EQ(buf.capacity(), 16u);
+  EXPECT_FALSE(buf.empty());
   EXPECT_EQ(0, memcmp(buf.data(), kTestData, 16));
 }
 
@@ -69,6 +72,7 @@ TEST(BufferTest, TestSetData) {
   buf.SetData(kTestData, 9);
   EXPECT_EQ(buf.size(), 9u);
   EXPECT_EQ(buf.capacity(), 7u * 3 / 2);
+  EXPECT_FALSE(buf.empty());
   EXPECT_EQ(0, memcmp(buf.data(), kTestData, 9));
 }
 
@@ -85,6 +89,7 @@ TEST(BufferTest, TestSetSizeSmaller) {
   buf.SetSize(10);
   EXPECT_EQ(buf.size(), 10u);
   EXPECT_EQ(buf.capacity(), 15u);  // Hasn't shrunk.
+  EXPECT_FALSE(buf.empty());
   EXPECT_EQ(buf, Buffer(kTestData, 10));
 }
 
@@ -93,9 +98,11 @@ TEST(BufferTest, TestSetSizeLarger) {
   buf.SetData(kTestData, 15);
   EXPECT_EQ(buf.size(), 15u);
   EXPECT_EQ(buf.capacity(), 15u);
+  EXPECT_FALSE(buf.empty());
   buf.SetSize(20);
   EXPECT_EQ(buf.size(), 20u);
   EXPECT_EQ(buf.capacity(), 15u * 3 / 2);  // Has grown.
+  EXPECT_FALSE(buf.empty());
   EXPECT_EQ(0, memcmp(buf.data(), kTestData, 15));
 }
 
@@ -105,6 +112,7 @@ TEST(BufferTest, TestEnsureCapacitySmaller) {
   buf.EnsureCapacity(4);
   EXPECT_EQ(buf.capacity(), 16u);     // Hasn't shrunk.
   EXPECT_EQ(buf.data<char>(), data);  // No reallocation.
+  EXPECT_FALSE(buf.empty());
   EXPECT_EQ(buf, Buffer(kTestData));
 }
 
@@ -115,6 +123,7 @@ TEST(BufferTest, TestEnsureCapacityLarger) {
   EXPECT_EQ(buf.capacity(), 10u);
   buf.AppendData(kTestData + 5, 5);
   EXPECT_EQ(buf.data<int8_t>(), data);  // No reallocation.
+  EXPECT_FALSE(buf.empty());
   EXPECT_EQ(buf, Buffer(kTestData, 10));
 }
 
@@ -125,10 +134,12 @@ TEST(BufferTest, TestMoveConstruct) {
   EXPECT_EQ(buf2.size(), 3u);
   EXPECT_EQ(buf2.capacity(), 40u);
   EXPECT_EQ(buf2.data(), data);
+  EXPECT_FALSE(buf2.empty());
   buf1.Clear();
   EXPECT_EQ(buf1.size(), 0u);
   EXPECT_EQ(buf1.capacity(), 0u);
   EXPECT_EQ(buf1.data(), nullptr);
+  EXPECT_TRUE(buf1.empty());
 }
 
 TEST(BufferTest, TestMoveAssign) {
@@ -139,10 +150,12 @@ TEST(BufferTest, TestMoveAssign) {
   EXPECT_EQ(buf2.size(), 3u);
   EXPECT_EQ(buf2.capacity(), 40u);
   EXPECT_EQ(buf2.data(), data);
+  EXPECT_FALSE(buf2.empty());
   buf1.Clear();
   EXPECT_EQ(buf1.size(), 0u);
   EXPECT_EQ(buf1.capacity(), 0u);
   EXPECT_EQ(buf1.data(), nullptr);
+  EXPECT_TRUE(buf1.empty());
 }
 
 TEST(BufferTest, TestSwap) {
@@ -155,9 +168,11 @@ TEST(BufferTest, TestSwap) {
   EXPECT_EQ(buf1.size(), 6u);
   EXPECT_EQ(buf1.capacity(), 40u);
   EXPECT_EQ(buf1.data(), data2);
+  EXPECT_FALSE(buf1.empty());
   EXPECT_EQ(buf2.size(), 3u);
   EXPECT_EQ(buf2.capacity(), 3u);
   EXPECT_EQ(buf2.data(), data1);
+  EXPECT_FALSE(buf2.empty());
 }
 
 TEST(BufferTest, TestClear) {
@@ -165,11 +180,13 @@ TEST(BufferTest, TestClear) {
   buf.SetData(kTestData, 15);
   EXPECT_EQ(buf.size(), 15u);
   EXPECT_EQ(buf.capacity(), 15u);
+  EXPECT_FALSE(buf.empty());
   const char *data = buf.data<char>();
   buf.Clear();
   EXPECT_EQ(buf.size(), 0u);
   EXPECT_EQ(buf.capacity(), 15u);  // Hasn't shrunk.
   EXPECT_EQ(buf.data<char>(), data); // No reallocation.
+  EXPECT_TRUE(buf.empty());
 }
 
 TEST(BufferTest, TestLambdaSetAppend) {
@@ -188,6 +205,8 @@ TEST(BufferTest, TestLambdaSetAppend) {
   EXPECT_EQ(buf2.AppendData(15, setter), 15u);
   EXPECT_EQ(buf1, buf2);
   EXPECT_EQ(buf1.capacity(), buf2.capacity());
+  EXPECT_FALSE(buf1.empty());
+  EXPECT_FALSE(buf2.empty());
 }
 
 TEST(BufferTest, TestLambdaSetAppendSigned) {
@@ -206,6 +225,8 @@ TEST(BufferTest, TestLambdaSetAppendSigned) {
   EXPECT_EQ(buf2.AppendData<int8_t>(15, setter), 15u);
   EXPECT_EQ(buf1, buf2);
   EXPECT_EQ(buf1.capacity(), buf2.capacity());
+  EXPECT_FALSE(buf1.empty());
+  EXPECT_FALSE(buf2.empty());
 }
 
 TEST(BufferTest, TestLambdaAppendEmpty) {
@@ -222,6 +243,8 @@ TEST(BufferTest, TestLambdaAppendEmpty) {
   EXPECT_EQ(buf2.AppendData(15, setter), 15u);
   EXPECT_EQ(buf1, buf2);
   EXPECT_EQ(buf1.capacity(), buf2.capacity());
+  EXPECT_FALSE(buf1.empty());
+  EXPECT_FALSE(buf2.empty());
 }
 
 TEST(BufferTest, TestLambdaAppendPartial) {
@@ -236,6 +259,7 @@ TEST(BufferTest, TestLambdaAppendPartial) {
   EXPECT_EQ(buf.size(), 7u);            // Size is exactly what we wrote.
   EXPECT_GE(buf.capacity(), 7u);        // Capacity is valid.
   EXPECT_NE(buf.data<char>(), nullptr); // Data is actually stored.
+  EXPECT_FALSE(buf.empty());
 }
 
 TEST(BufferTest, TestMutableLambdaSetAppend) {
@@ -256,6 +280,7 @@ TEST(BufferTest, TestMutableLambdaSetAppend) {
   EXPECT_EQ(buf.size(), 30u);           // Size is exactly what we wrote.
   EXPECT_GE(buf.capacity(), 30u);       // Capacity is valid.
   EXPECT_NE(buf.data<char>(), nullptr); // Data is actually stored.
+  EXPECT_FALSE(buf.empty());
 
   for (uint8_t i = 0; i != buf.size(); ++i) {
     EXPECT_EQ(buf.data()[i], magic_number + i);
@@ -267,6 +292,7 @@ TEST(BufferTest, TestBracketRead) {
   EXPECT_EQ(buf.size(), 7u);
   EXPECT_EQ(buf.capacity(), 7u);
   EXPECT_NE(buf.data(), nullptr);
+  EXPECT_FALSE(buf.empty());
 
   for (size_t i = 0; i != 7u; ++i) {
     EXPECT_EQ(buf[i], kTestData[i]);
@@ -278,6 +304,7 @@ TEST(BufferTest, TestBracketReadConst) {
   EXPECT_EQ(buf.size(), 7u);
   EXPECT_EQ(buf.capacity(), 7u);
   EXPECT_NE(buf.data(), nullptr);
+  EXPECT_FALSE(buf.empty());
 
   const Buffer& cbuf = buf;
 
@@ -291,6 +318,7 @@ TEST(BufferTest, TestBracketWrite) {
   EXPECT_EQ(buf.size(), 7u);
   EXPECT_EQ(buf.capacity(), 7u);
   EXPECT_NE(buf.data(), nullptr);
+  EXPECT_FALSE(buf.empty());
 
   for (size_t i = 0; i != 7u; ++i) {
     buf[i] = kTestData[i];
@@ -307,6 +335,7 @@ TEST(BufferTest, TestInt16) {
   EXPECT_EQ(buf.size(), 5u);
   EXPECT_EQ(buf.capacity(), 5u);
   EXPECT_NE(buf.data(), nullptr);
+  EXPECT_FALSE(buf.empty());
   for (size_t i = 0; i != buf.size(); ++i) {
     EXPECT_EQ(test_data[i], buf[i]);
   }
@@ -322,10 +351,12 @@ TEST(BufferTest, TestFloat) {
   EXPECT_EQ(buf.size(), 0u);
   EXPECT_EQ(buf.capacity(), 0u);
   EXPECT_EQ(buf.data(), nullptr);
+  EXPECT_TRUE(buf.empty());
   buf.SetData(test_data);
   EXPECT_EQ(buf.size(), 5u);
   EXPECT_EQ(buf.capacity(), 5u);
   EXPECT_NE(buf.data(), nullptr);
+  EXPECT_FALSE(buf.empty());
   float* p1 = buf.data();
   while (buf.data() == p1) {
     buf.AppendData(test_data);
@@ -348,6 +379,7 @@ TEST(BufferTest, TestStruct) {
   EXPECT_EQ(buf.size(), 4u);
   EXPECT_EQ(buf.capacity(), 4u);
   EXPECT_NE(buf.data(), nullptr);
+  EXPECT_FALSE(buf.empty());
   BufferT<BloodStone*> buf2(4);
   for (size_t i = 0; i < buf2.size(); ++i) {
     buf2[i] = &buf[i];

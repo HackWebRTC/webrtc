@@ -124,6 +124,11 @@ class BufferT {
     return reinterpret_cast<U*>(data_.get());
   }
 
+  bool empty() const {
+    RTC_DCHECK(IsConsistent());
+    return size_ == 0;
+  }
+
   size_t size() const {
     RTC_DCHECK(IsConsistent());
     return size_;
