@@ -95,8 +95,6 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
       new_codec_(false),
       timestamp_(0),
       reset_decoder_(false),
-      current_rtp_payload_type_(0xFF),      // Invalid RTP payload type.
-      current_cng_rtp_payload_type_(0xFF),  // Invalid RTP payload type.
       ssrc_(0),
       first_packet_(true),
       error_code_(0),
@@ -537,10 +535,10 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
                       << static_cast<int>(rtp_header.header.payloadType);
       return kSyncPacketNotAccepted;
     }
-    if (first_packet_ ||
-        rtp_header.header.payloadType != current_rtp_payload_type_ ||
+    if (first_packet_ || !current_rtp_payload_type_ ||
+        rtp_header.header.payloadType != *current_rtp_payload_type_ ||
         rtp_header.header.ssrc != ssrc_) {
-      // Even if |current_rtp_payload_type_| is 0xFF, sync-packet isn't
+      // Even if |current_rtp_payload_type_| is empty, sync-packet isn't
       // accepted.
       LOG_F(LS_ERROR)
           << "Changing codec, SSRC or first packet with sync-packet.";
@@ -743,10 +741,11 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     new_codec_ = true;
   }
 
-  RTC_DCHECK(current_rtp_payload_type_ == 0xFF ||
-             decoder_database_->GetDecoderInfo(current_rtp_payload_type_))
-      << "Payload type " << static_cast<int>(current_rtp_payload_type_)
-      << " is unknown where it shouldn't be";
+  if (current_rtp_payload_type_) {
+    RTC_DCHECK(decoder_database_->GetDecoderInfo(*current_rtp_payload_type_))
+        << "Payload type " << static_cast<int>(*current_rtp_payload_type_)
+        << " is unknown where it shouldn't be";
+  }
 
   if (update_sample_rate_and_channels && !packet_buffer_->Empty()) {
     // We do not use |current_rtp_payload_type_| to |set payload_type|, but

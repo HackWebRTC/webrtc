@@ -16,6 +16,7 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_coding/neteq/audio_multi_vector.h"
 #include "webrtc/modules/audio_coding/neteq/defines.h"
@@ -397,8 +398,8 @@ class NetEqImpl : public webrtc::NetEq {
   bool new_codec_ GUARDED_BY(crit_sect_);
   uint32_t timestamp_ GUARDED_BY(crit_sect_);
   bool reset_decoder_ GUARDED_BY(crit_sect_);
-  uint8_t current_rtp_payload_type_ GUARDED_BY(crit_sect_);
-  uint8_t current_cng_rtp_payload_type_ GUARDED_BY(crit_sect_);
+  rtc::Optional<uint8_t> current_rtp_payload_type_ GUARDED_BY(crit_sect_);
+  rtc::Optional<uint8_t> current_cng_rtp_payload_type_ GUARDED_BY(crit_sect_);
   uint32_t ssrc_ GUARDED_BY(crit_sect_);
   bool first_packet_ GUARDED_BY(crit_sect_);
   int error_code_ GUARDED_BY(crit_sect_);  // Store last error code.

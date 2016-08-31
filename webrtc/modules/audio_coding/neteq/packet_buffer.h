@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_PACKET_BUFFER_H_
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"
 #include "webrtc/typedefs.h"
 
@@ -59,10 +60,11 @@ class PacketBuffer {
   // The last three parameters are included for legacy compatibility.
   // TODO(hlundin): Redesign to not use current_*_payload_type and
   // decoder_database.
-  virtual int InsertPacketList(PacketList* packet_list,
-                               const DecoderDatabase& decoder_database,
-                               uint8_t* current_rtp_payload_type,
-                               uint8_t* current_cng_rtp_payload_type);
+  virtual int InsertPacketList(
+      PacketList* packet_list,
+      const DecoderDatabase& decoder_database,
+      rtc::Optional<uint8_t>* current_rtp_payload_type,
+      rtc::Optional<uint8_t>* current_cng_rtp_payload_type);
 
   // Gets the timestamp for the first packet in the buffer and writes it to the
   // output variable |next_timestamp|.

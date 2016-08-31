@@ -174,16 +174,17 @@ TEST(PacketBuffer, InsertPacketList) {
   }
 
   MockDecoderDatabase decoder_database;
-  uint8_t current_pt = 0xFF;
-  uint8_t current_cng_pt = 0xFF;
+  rtc::Optional<uint8_t> current_pt;
+  rtc::Optional<uint8_t> current_cng_pt;
   EXPECT_EQ(PacketBuffer::kOK, buffer.InsertPacketList(&list,
                                                        decoder_database,
                                                        &current_pt,
                                                        &current_cng_pt));
   EXPECT_TRUE(list.empty());  // The PacketBuffer should have depleted the list.
   EXPECT_EQ(10u, buffer.NumPacketsInBuffer());
-  EXPECT_EQ(0, current_pt);  // Current payload type changed to 0.
-  EXPECT_EQ(0xFF, current_cng_pt);  // CNG payload type not changed.
+  EXPECT_EQ(rtc::Optional<uint8_t>(0),
+            current_pt);         // Current payload type changed to 0.
+  EXPECT_FALSE(current_cng_pt);  // CNG payload type not changed.
 
   buffer.Flush();  // Clean up.
 
@@ -212,16 +213,17 @@ TEST(PacketBuffer, InsertPacketListChangePayloadType) {
 
 
   MockDecoderDatabase decoder_database;
-  uint8_t current_pt = 0xFF;
-  uint8_t current_cng_pt = 0xFF;
+  rtc::Optional<uint8_t> current_pt;
+  rtc::Optional<uint8_t> current_cng_pt;
   EXPECT_EQ(PacketBuffer::kFlushed, buffer.InsertPacketList(&list,
                                                             decoder_database,
                                                             &current_pt,
                                                             &current_cng_pt));
   EXPECT_TRUE(list.empty());  // The PacketBuffer should have depleted the list.
   EXPECT_EQ(1u, buffer.NumPacketsInBuffer());  // Only the last packet.
-  EXPECT_EQ(1, current_pt);  // Current payload type changed to 0.
-  EXPECT_EQ(0xFF, current_cng_pt);  // CNG payload type not changed.
+  EXPECT_EQ(rtc::Optional<uint8_t>(1),
+            current_pt);         // Current payload type changed to 1.
+  EXPECT_FALSE(current_cng_pt);  // CNG payload type not changed.
 
   buffer.Flush();  // Clean up.
 
@@ -341,8 +343,8 @@ TEST(PacketBuffer, Reordering) {
   }
 
   MockDecoderDatabase decoder_database;
-  uint8_t current_pt = 0xFF;
-  uint8_t current_cng_pt = 0xFF;
+  rtc::Optional<uint8_t> current_pt;
+  rtc::Optional<uint8_t> current_cng_pt;
 
   EXPECT_EQ(PacketBuffer::kOK, buffer.InsertPacketList(&list,
                                                        decoder_database,
@@ -412,8 +414,8 @@ TEST(PacketBuffer, Failures) {
   list.push_back(packet);
   list.push_back(gen.NextPacket(payload_len));  // Valid packet.
   MockDecoderDatabase decoder_database;
-  uint8_t current_pt = 0xFF;
-  uint8_t current_cng_pt = 0xFF;
+  rtc::Optional<uint8_t> current_pt;
+  rtc::Optional<uint8_t> current_cng_pt;
   EXPECT_EQ(PacketBuffer::kInvalidPacket,
             buffer->InsertPacketList(&list,
                                      decoder_database,

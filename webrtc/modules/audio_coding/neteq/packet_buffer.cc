@@ -108,31 +108,34 @@ int PacketBuffer::InsertPacket(Packet* packet) {
   return return_val;
 }
 
-int PacketBuffer::InsertPacketList(PacketList* packet_list,
-                                   const DecoderDatabase& decoder_database,
-                                   uint8_t* current_rtp_payload_type,
-                                   uint8_t* current_cng_rtp_payload_type) {
+int PacketBuffer::InsertPacketList(
+    PacketList* packet_list,
+    const DecoderDatabase& decoder_database,
+    rtc::Optional<uint8_t>* current_rtp_payload_type,
+    rtc::Optional<uint8_t>* current_cng_rtp_payload_type) {
   bool flushed = false;
   while (!packet_list->empty()) {
     Packet* packet = packet_list->front();
     if (decoder_database.IsComfortNoise(packet->header.payloadType)) {
-      if (*current_cng_rtp_payload_type != 0xFF &&
-          *current_cng_rtp_payload_type != packet->header.payloadType) {
+      if (*current_cng_rtp_payload_type &&
+          **current_cng_rtp_payload_type != packet->header.payloadType) {
         // New CNG payload type implies new codec type.
-        *current_rtp_payload_type = 0xFF;
+        *current_rtp_payload_type = rtc::Optional<uint8_t>();
         Flush();
         flushed = true;
       }
-      *current_cng_rtp_payload_type = packet->header.payloadType;
+      *current_cng_rtp_payload_type =
+          rtc::Optional<uint8_t>(packet->header.payloadType);
     } else if (!decoder_database.IsDtmf(packet->header.payloadType)) {
       // This must be speech.
-      if (*current_rtp_payload_type != 0xFF &&
-          *current_rtp_payload_type != packet->header.payloadType) {
-        *current_cng_rtp_payload_type = 0xFF;
+      if (*current_rtp_payload_type &&
+          **current_rtp_payload_type != packet->header.payloadType) {
+        *current_cng_rtp_payload_type = rtc::Optional<uint8_t>();
         Flush();
         flushed = true;
       }
-      *current_rtp_payload_type = packet->header.payloadType;
+      *current_rtp_payload_type =
+          rtc::Optional<uint8_t>(packet->header.payloadType);
     }
     int return_val = InsertPacket(packet);
     packet_list->pop_front();
