@@ -24,3 +24,6 @@ build_with_chromium = false
 asan_suppressions_file = "//build/sanitizers/asan_suppressions.cc"
 lsan_suppressions_file = "//webrtc/build/sanitizers/lsan_suppressions_webrtc.cc"
 tsan_suppressions_file = "//webrtc/build/sanitizers/tsan_suppressions_webrtc.cc"
+
+# Android lint suppressions file
+lint_suppressions_file = "//webrtc/build/android/suppressions.xml"

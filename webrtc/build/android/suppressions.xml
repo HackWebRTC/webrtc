@@ -15,6 +15,22 @@
   <issue id="Assert" severity="ignore"/>
   <issue id="UseSparseArrays" severity="ignore"/>
 
+  <issue id="LongLogTag" severity="ignore"/>
+  <issue id="Registered" severity="ignore"/>
+  <issue id="Recycle" severity="ignore"/>
+  <issue id="MissingPermission" severity="ignore"/>
+  <issue id="CommitPrefEdits" severity="ignore"/>
+  <issue id="UnusedResources" severity="ignore"/>
+  <issue id="IconColors" severity="ignore"/>
+  <issue id="IconDipSize" severity="ignore"/>
+  <issue id="IconDuplicatesConfig" severity="ignore"/>
+  <issue id="RelativeOverlap" severity="ignore"/>
+  <issue id="RtlCompat" severity="ignore"/>
+  <issue id="IconMissingDensityFolder" severity="ignore"/>
+  <issue id="WrongCall" severity="ignore"/>
+  <issue id="NewApi" severity="ignore"/>
+  <issue id="OldTargetApi" severity="ignore"/>
+
   <!-- These are just from the dummy AndroidManifest.xml we use for linting.
        It's in the same directory as this file. -->
   <issue id="MissingApplicationIcon" severity="ignore"/>
