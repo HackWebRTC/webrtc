@@ -57,7 +57,7 @@ bool PacketBuffer::Empty() const {
 }
 
 int PacketBuffer::InsertPacket(Packet* packet) {
-  if (!packet || !packet->payload) {
+  if (!packet || packet->payload.empty()) {
     if (packet) {
       delete packet;
     }
@@ -88,7 +88,6 @@ int PacketBuffer::InsertPacket(Packet* packet) {
   // packet to list.
   if (rit != buffer_.rend() &&
       packet->header.timestamp == (*rit)->header.timestamp) {
-    delete [] packet->payload;
     delete packet;
     return return_val;
   }
@@ -99,7 +98,6 @@ int PacketBuffer::InsertPacket(Packet* packet) {
   PacketList::iterator it = rit.base();
   if (it != buffer_.end() &&
       packet->header.timestamp == (*it)->header.timestamp) {
-    delete [] (*it)->payload;
     delete *it;
     it = buffer_.erase(it);
   }
@@ -196,7 +194,7 @@ Packet* PacketBuffer::GetNextPacket(size_t* discard_count) {
 
   Packet* packet = buffer_.front();
   // Assert that the packet sanity checks in InsertPacket method works.
-  assert(packet && packet->payload);
+  assert(packet && !packet->payload.empty());
   buffer_.pop_front();
 
   // Discard other packets with the same timestamp. These are duplicates or
@@ -225,7 +223,7 @@ int PacketBuffer::DiscardNextPacket() {
   }
   // Assert that the packet sanity checks in InsertPacket method works.
   assert(buffer_.front());
-  assert(buffer_.front()->payload);
+  assert(!buffer_.front()->payload.empty());
   DeleteFirstPacket(&buffer_);
   return kOK;
 }
@@ -264,8 +262,8 @@ size_t PacketBuffer::NumSamplesInBuffer(DecoderDatabase* decoder_database,
       if (!packet->primary) {
         continue;
       }
-      int duration =
-          decoder->PacketDuration(packet->payload, packet->payload_length);
+      int duration = decoder->PacketDuration(packet->payload.data(),
+                                             packet->payload.size());
       if (duration >= 0) {
         last_duration = duration;  // Save the most up-to-date (valid) duration.
       }
@@ -280,7 +278,6 @@ bool PacketBuffer::DeleteFirstPacket(PacketList* packet_list) {
     return false;
   }
   Packet* first_packet = packet_list->front();
-  delete [] first_packet->payload;
   delete first_packet;
   packet_list->pop_front();
   return true;

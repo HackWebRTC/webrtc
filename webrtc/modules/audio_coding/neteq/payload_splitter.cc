@@ -11,6 +11,7 @@
 #include "webrtc/modules/audio_coding/neteq/payload_splitter.h"
 
 #include <assert.h>
+#include <iostream>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -29,10 +30,9 @@ int PayloadSplitter::SplitRed(PacketList* packet_list) {
   int ret = kOK;
   PacketList::iterator it = packet_list->begin();
   while (it != packet_list->end()) {
-    PacketList new_packets;  // An empty list to store the split packets in.
-    Packet* red_packet = (*it);
-    assert(red_packet->payload);
-    uint8_t* payload_ptr = red_packet->payload;
+    const Packet* red_packet = (*it);
+    assert(!red_packet->payload.empty());
+    const uint8_t* payload_ptr = red_packet->payload.data();
 
     // Read RED headers (according to RFC 2198):
     //
@@ -47,72 +47,74 @@ int PayloadSplitter::SplitRed(PacketList* packet_list) {
     //   |0|   Block PT  |
     //   +-+-+-+-+-+-+-+-+
 
+    struct RedHeader {
+      uint8_t payload_type;
+      uint32_t timestamp;
+      size_t payload_length;
+      bool primary;
+    };
+
+    std::vector<RedHeader> new_headers;
     bool last_block = false;
     size_t sum_length = 0;
     while (!last_block) {
-      Packet* new_packet = new Packet;
-      new_packet->header = red_packet->header;
+      RedHeader new_header;
       // Check the F bit. If F == 0, this was the last block.
       last_block = ((*payload_ptr & 0x80) == 0);
       // Bits 1 through 7 are payload type.
-      new_packet->header.payloadType = payload_ptr[0] & 0x7F;
+      new_header.payload_type = payload_ptr[0] & 0x7F;
       if (last_block) {
         // No more header data to read.
         ++sum_length;  // Account for RED header size of 1 byte.
-        new_packet->payload_length = red_packet->payload_length - sum_length;
-        new_packet->primary = true;  // Last block is always primary.
+        new_header.timestamp = red_packet->header.timestamp;
+        new_header.payload_length = red_packet->payload.size() - sum_length;
+        new_header.primary = true;  // Last block is always primary.
         payload_ptr += 1;  // Advance to first payload byte.
       } else {
         // Bits 8 through 21 are timestamp offset.
         int timestamp_offset = (payload_ptr[1] << 6) +
             ((payload_ptr[2] & 0xFC) >> 2);
-        new_packet->header.timestamp = red_packet->header.timestamp -
-            timestamp_offset;
+        new_header.timestamp = red_packet->header.timestamp - timestamp_offset;
         // Bits 22 through 31 are payload length.
-        new_packet->payload_length = ((payload_ptr[2] & 0x03) << 8) +
-            payload_ptr[3];
-        new_packet->primary = false;
+        new_header.payload_length =
+            ((payload_ptr[2] & 0x03) << 8) + payload_ptr[3];
+        new_header.primary = false;
         payload_ptr += 4;  // Advance to next RED header.
       }
-      sum_length += new_packet->payload_length;
+      sum_length += new_header.payload_length;
       sum_length += 4;  // Account for RED header size of 4 bytes.
       // Store in new list of packets.
-      new_packets.push_back(new_packet);
+      new_headers.push_back(new_header);
     }
 
     // Populate the new packets with payload data.
     // |payload_ptr| now points at the first payload byte.
-    PacketList::iterator new_it;
-    for (new_it = new_packets.begin(); new_it != new_packets.end(); ++new_it) {
-      size_t payload_length = (*new_it)->payload_length;
+    PacketList new_packets;  // An empty list to store the split packets in.
+    for (const auto& new_header : new_headers) {
+      size_t payload_length = new_header.payload_length;
       if (payload_ptr + payload_length >
-          red_packet->payload + red_packet->payload_length) {
+          red_packet->payload.data() + red_packet->payload.size()) {
         // The block lengths in the RED headers do not match the overall packet
         // length. Something is corrupt. Discard this and the remaining
         // payloads from this packet.
         LOG(LS_WARNING) << "SplitRed length mismatch";
-        while (new_it != new_packets.end()) {
-          // Payload should not have been allocated yet.
-          assert(!(*new_it)->payload);
-          delete (*new_it);
-          new_it = new_packets.erase(new_it);
-        }
         ret = kRedLengthMismatch;
         break;
       }
-      (*new_it)->payload = new uint8_t[payload_length];
-      memcpy((*new_it)->payload, payload_ptr, payload_length);
+      Packet* new_packet = new Packet;
+      new_packet->header = red_packet->header;
+      new_packet->header.timestamp = new_header.timestamp;
+      new_packet->header.payloadType = new_header.payload_type;
+      new_packet->primary = new_header.primary;
+      new_packet->payload.SetData(payload_ptr, payload_length);
+      new_packets.push_front(new_packet);
       payload_ptr += payload_length;
     }
-    // Reverse the order of the new packets, so that the primary payload is
-    // always first.
-    new_packets.reverse();
     // Insert new packets into original list, before the element pointed to by
     // iterator |it|.
     packet_list->splice(it, new_packets, new_packets.begin(),
                         new_packets.end());
     // Delete old packet payload.
-    delete [] (*it)->payload;
     delete (*it);
     // Remove |it| from the packet list. This operation effectively moves the
     // iterator |it| to the next packet in the list. Thus, we do not have to
@@ -148,7 +150,8 @@ int PayloadSplitter::SplitFec(PacketList* packet_list,
     // are handled separately.
     assert(decoder != NULL || decoder_database->IsComfortNoise(payload_type));
     if (!decoder ||
-        !decoder->PacketHasFec(packet->payload, packet->payload_length)) {
+        !decoder->PacketHasFec(packet->payload.data(),
+                               packet->payload.size())) {
       ++it;
       continue;
     }
@@ -162,12 +165,10 @@ int PayloadSplitter::SplitFec(PacketList* packet_list,
 
         Packet* new_packet = new Packet;
         new_packet->header = packet->header;
-        int duration = decoder->
-            PacketDurationRedundant(packet->payload, packet->payload_length);
+        int duration = decoder->PacketDurationRedundant(packet->payload.data(),
+                                                        packet->payload.size());
         new_packet->header.timestamp -= duration;
-        new_packet->payload = new uint8_t[packet->payload_length];
-        memcpy(new_packet->payload, packet->payload, packet->payload_length);
-        new_packet->payload_length = packet->payload_length;
+        new_packet->payload.SetData(packet->payload);
         new_packet->primary = false;
         new_packet->sync_packet = packet->sync_packet;
         // Waiting time should not be set here.
@@ -203,7 +204,6 @@ int PayloadSplitter::CheckRedPayloads(PacketList* packet_list,
         if (this_payload_type != main_payload_type) {
           // We do not allow redundant payloads of a different type.
           // Discard this payload.
-          delete [] (*it)->payload;
           delete (*it);
           // Remove |it| from the packet list. This operation effectively
           // moves the iterator |it| to the next packet in the list. Thus, we
@@ -304,15 +304,15 @@ int PayloadSplitter::SplitAudio(PacketList* packet_list,
       case NetEqDecoder::kDecoderILBC: {
         size_t bytes_per_frame;
         int timestamps_per_frame;
-        if (packet->payload_length >= 950) {
+        if (packet->payload.size() >= 950) {
           LOG(LS_WARNING) << "SplitAudio too large iLBC payload";
           return kTooLargePayload;
         }
-        if (packet->payload_length % 38 == 0) {
+        if (packet->payload.size() % 38 == 0) {
           // 20 ms frames.
           bytes_per_frame = 38;
           timestamps_per_frame = 160;
-        } else if (packet->payload_length % 50 == 0) {
+        } else if (packet->payload.size() % 50 == 0) {
           // 30 ms frames.
           bytes_per_frame = 50;
           timestamps_per_frame = 240;
@@ -348,7 +348,6 @@ int PayloadSplitter::SplitAudio(PacketList* packet_list,
     packet_list->splice(it, new_packets, new_packets.begin(),
                         new_packets.end());
     // Delete old packet payload.
-    delete [] (*it)->payload;
     delete (*it);
     // Remove |it| from the packet list. This operation effectively moves the
     // iterator |it| to the next packet in the list. Thus, we do not have to
@@ -365,7 +364,7 @@ void PayloadSplitter::SplitBySamples(const Packet* packet,
   assert(packet);
   assert(new_packets);
 
-  size_t split_size_bytes = packet->payload_length;
+  size_t split_size_bytes = packet->payload.size();
 
   // Find a "chunk size" >= 20 ms and < 40 ms.
   size_t min_chunk_size = bytes_per_ms * 20;
@@ -379,17 +378,15 @@ void PayloadSplitter::SplitBySamples(const Packet* packet,
       split_size_bytes * timestamps_per_ms / bytes_per_ms);
   uint32_t timestamp = packet->header.timestamp;
 
-  uint8_t* payload_ptr = packet->payload;
-  size_t len = packet->payload_length;
+  const uint8_t* payload_ptr = packet->payload.data();
+  size_t len = packet->payload.size();
   while (len >= (2 * split_size_bytes)) {
     Packet* new_packet = new Packet;
-    new_packet->payload_length = split_size_bytes;
     new_packet->header = packet->header;
     new_packet->header.timestamp = timestamp;
     timestamp += timestamps_per_chunk;
     new_packet->primary = packet->primary;
-    new_packet->payload = new uint8_t[split_size_bytes];
-    memcpy(new_packet->payload, payload_ptr, split_size_bytes);
+    new_packet->payload.SetData(payload_ptr, split_size_bytes);
     payload_ptr += split_size_bytes;
     new_packets->push_back(new_packet);
     len -= split_size_bytes;
@@ -397,12 +394,10 @@ void PayloadSplitter::SplitBySamples(const Packet* packet,
 
   if (len > 0) {
     Packet* new_packet = new Packet;
-    new_packet->payload_length = len;
     new_packet->header = packet->header;
     new_packet->header.timestamp = timestamp;
     new_packet->primary = packet->primary;
-    new_packet->payload = new uint8_t[len];
-    memcpy(new_packet->payload, payload_ptr, len);
+    new_packet->payload.SetData(payload_ptr, len);
     new_packets->push_back(new_packet);
   }
 }
@@ -411,29 +406,27 @@ int PayloadSplitter::SplitByFrames(const Packet* packet,
                                    size_t bytes_per_frame,
                                    uint32_t timestamps_per_frame,
                                    PacketList* new_packets) {
-  if (packet->payload_length % bytes_per_frame != 0) {
+  if (packet->payload.size() % bytes_per_frame != 0) {
     LOG(LS_WARNING) << "SplitByFrames length mismatch";
     return kFrameSplitError;
   }
 
-  if (packet->payload_length == bytes_per_frame) {
+  if (packet->payload.size() == bytes_per_frame) {
     // Special case. Do not split the payload.
     return kNoSplit;
   }
 
   uint32_t timestamp = packet->header.timestamp;
-  uint8_t* payload_ptr = packet->payload;
-  size_t len = packet->payload_length;
+  const uint8_t* payload_ptr = packet->payload.data();
+  size_t len = packet->payload.size();
   while (len > 0) {
     assert(len >= bytes_per_frame);
     Packet* new_packet = new Packet;
-    new_packet->payload_length = bytes_per_frame;
     new_packet->header = packet->header;
     new_packet->header.timestamp = timestamp;
     timestamp += timestamps_per_frame;
     new_packet->primary = packet->primary;
-    new_packet->payload = new uint8_t[bytes_per_frame];
-    memcpy(new_packet->payload, payload_ptr, bytes_per_frame);
+    new_packet->payload.SetData(payload_ptr, bytes_per_frame);
     payload_ptr += bytes_per_frame;
     new_packets->push_back(new_packet);
     len -= bytes_per_frame;

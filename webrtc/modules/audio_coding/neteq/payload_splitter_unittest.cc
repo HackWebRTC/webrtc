@@ -82,10 +82,10 @@ Packet* CreateRedPayload(size_t num_payloads,
   packet->header.payloadType = kRedPayloadType;
   packet->header.timestamp = kBaseTimestamp;
   packet->header.sequenceNumber = kSequenceNumber;
-  packet->payload_length = (kPayloadLength + 1) +
-      (num_payloads - 1) * (kPayloadLength + kRedHeaderLength);
-  uint8_t* payload = new uint8_t[packet->payload_length];
-  uint8_t* payload_ptr = payload;
+  packet->payload.SetSize((kPayloadLength + 1) +
+                          (num_payloads - 1) *
+                              (kPayloadLength + kRedHeaderLength));
+  uint8_t* payload_ptr = packet->payload.data();
   for (size_t i = 0; i < num_payloads; ++i) {
     // Write the RED headers.
     if (i == num_payloads - 1) {
@@ -117,7 +117,6 @@ Packet* CreateRedPayload(size_t num_payloads,
     }
     payload_ptr += kPayloadLength;
   }
-  packet->payload = payload;
   return packet;
 }
 
@@ -128,14 +127,12 @@ Packet* CreatePacket(uint8_t payload_type, size_t payload_length,
   packet->header.payloadType = payload_type;
   packet->header.timestamp = kBaseTimestamp;
   packet->header.sequenceNumber = kSequenceNumber;
-  packet->payload_length = payload_length;
-  uint8_t* payload = new uint8_t[packet->payload_length];
-  packet->payload = payload;
+  packet->payload.SetSize(payload_length);
   if (opus_fec) {
-    CreateOpusFecPayload(packet->payload, packet->payload_length,
+    CreateOpusFecPayload(packet->payload.data(), packet->payload.size(),
                          payload_value);
   } else {
-    memset(payload, payload_value, payload_length);
+    memset(packet->payload.data(), payload_value, packet->payload.size());
   }
   return packet;
 }
@@ -148,13 +145,13 @@ void VerifyPacket(const Packet* packet,
                   uint32_t timestamp,
                   uint8_t payload_value,
                   bool primary = true) {
-  EXPECT_EQ(payload_length, packet->payload_length);
+  EXPECT_EQ(payload_length, packet->payload.size());
   EXPECT_EQ(payload_type, packet->header.payloadType);
   EXPECT_EQ(sequence_number, packet->header.sequenceNumber);
   EXPECT_EQ(timestamp, packet->header.timestamp);
   EXPECT_EQ(primary, packet->primary);
-  ASSERT_FALSE(packet->payload == NULL);
-  for (size_t i = 0; i < packet->payload_length; ++i) {
+  ASSERT_FALSE(packet->payload.empty());
+  for (size_t i = 0; i < packet->payload.size(); ++i) {
     EXPECT_EQ(payload_value, packet->payload[i]);
   }
 }
@@ -180,14 +177,12 @@ TEST(RedPayloadSplitter, OnePacketTwoPayloads) {
   packet = packet_list.front();
   VerifyPacket(packet, kPayloadLength, payload_types[1], kSequenceNumber,
                kBaseTimestamp, 1, true);
-  delete [] packet->payload;
   delete packet;
   packet_list.pop_front();
   // Check second packet.
   packet = packet_list.front();
   VerifyPacket(packet, kPayloadLength, payload_types[0], kSequenceNumber,
                kBaseTimestamp - kTimestampOffset, 0, false);
-  delete [] packet->payload;
   delete packet;
 }
 
@@ -213,14 +208,12 @@ TEST(RedPayloadSplitter, TwoPacketsOnePayload) {
   packet = packet_list.front();
   VerifyPacket(packet, kPayloadLength, payload_types[0], kSequenceNumber,
                kBaseTimestamp, 0, true);
-  delete [] packet->payload;
   delete packet;
   packet_list.pop_front();
   // Check second packet.
   packet = packet_list.front();
   VerifyPacket(packet, kPayloadLength, payload_types[0], kSequenceNumber + 1,
                kBaseTimestamp + kTimestampOffset, 0, true);
-  delete [] packet->payload;
   delete packet;
 }
 
@@ -253,42 +246,36 @@ TEST(RedPayloadSplitter, TwoPacketsThreePayloads) {
   packet = packet_list.front();
   VerifyPacket(packet, kPayloadLength, payload_types[2], kSequenceNumber,
                kBaseTimestamp, 2, true);
-  delete [] packet->payload;
   delete packet;
   packet_list.pop_front();
   // Check second packet, A2.
   packet = packet_list.front();
   VerifyPacket(packet, kPayloadLength, payload_types[1], kSequenceNumber,
                kBaseTimestamp - kTimestampOffset, 1, false);
-  delete [] packet->payload;
   delete packet;
   packet_list.pop_front();
   // Check third packet, A3.
   packet = packet_list.front();
   VerifyPacket(packet, kPayloadLength, payload_types[0], kSequenceNumber,
                kBaseTimestamp - 2 * kTimestampOffset, 0, false);
-  delete [] packet->payload;
   delete packet;
   packet_list.pop_front();
   // Check fourth packet, B1.
   packet = packet_list.front();
   VerifyPacket(packet, kPayloadLength, payload_types[2], kSequenceNumber + 1,
                kBaseTimestamp + kTimestampOffset, 2, true);
-  delete [] packet->payload;
   delete packet;
   packet_list.pop_front();
   // Check fifth packet, B2.
   packet = packet_list.front();
   VerifyPacket(packet, kPayloadLength, payload_types[1], kSequenceNumber + 1,
                kBaseTimestamp, 1, false);
-  delete [] packet->payload;
   delete packet;
   packet_list.pop_front();
   // Check sixth packet, B3.
   packet = packet_list.front();
   VerifyPacket(packet, kPayloadLength, payload_types[0], kSequenceNumber + 1,
                kBaseTimestamp - kTimestampOffset, 0, false);
-  delete [] packet->payload;
   delete packet;
 }
 
@@ -327,7 +314,6 @@ TEST(RedPayloadSplitter, CheckRedPayloads) {
   for (int i = 0; i <= 2; ++i) {
     Packet* packet = packet_list.front();
     VerifyPacket(packet, 10, i, kSequenceNumber, kBaseTimestamp, 0, true);
-    delete [] packet->payload;
     delete packet;
     packet_list.pop_front();
   }
@@ -343,7 +329,7 @@ TEST(RedPayloadSplitter, WrongPayloadLength) {
   // Manually tamper with the payload length of the packet.
   // This is one byte too short for the second payload (out of three).
   // We expect only the first payload to be returned.
-  packet->payload_length -= kPayloadLength + 1;
+  packet->payload.SetSize(packet->payload.size() - (kPayloadLength + 1));
   PacketList packet_list;
   packet_list.push_back(packet);
   PayloadSplitter splitter;
@@ -354,7 +340,6 @@ TEST(RedPayloadSplitter, WrongPayloadLength) {
   packet = packet_list.front();
   VerifyPacket(packet, kPayloadLength, payload_types[0], kSequenceNumber,
                kBaseTimestamp - 2 * kTimestampOffset, 0, false);
-  delete [] packet->payload;
   delete packet;
   packet_list.pop_front();
 }
@@ -410,7 +395,6 @@ TEST(AudioPayloadSplitter, NonSplittable) {
     VerifyPacket((*it), kPayloadLength, payload_type, kSequenceNumber,
                  kBaseTimestamp, 10 * payload_type);
     ++payload_type;
-    delete [] (*it)->payload;
     delete (*it);
     it = packet_list.erase(it);
   }
@@ -441,7 +425,6 @@ TEST(AudioPayloadSplitter, UnknownPayloadType) {
   // Delete the packets and payloads to avoid having the test leak memory.
   PacketList::iterator it = packet_list.begin();
   while (it != packet_list.end()) {
-    delete [] (*it)->payload;
     delete (*it);
     it = packet_list.erase(it);
   }
@@ -561,7 +544,6 @@ TEST_P(SplitBySamplesTest, PayloadSizes) {
         expected_timestamp_offset_ms[i] * samples_per_ms_;
     VerifyPacket((*it), length_bytes, kPayloadType, kSequenceNumber,
                  expected_timestamp, expected_payload_value[i]);
-    delete [] (*it)->payload;
     delete (*it);
     it = packet_list.erase(it);
     ++i;
@@ -610,7 +592,7 @@ TEST_P(SplitIlbcTest, NumFrames) {
   size_t payload_length_bytes = frame_length_bytes_ * num_frames_;
   Packet* packet = CreatePacket(kPayloadType, payload_length_bytes, 0);
   // Fill payload with increasing integers {0, 1, 2, ...}.
-  for (size_t i = 0; i < packet->payload_length; ++i) {
+  for (size_t i = 0; i < packet->payload.size(); ++i) {
     packet->payload[i] = static_cast<uint8_t>(i);
   }
   packet_list.push_back(packet);
@@ -635,16 +617,15 @@ TEST_P(SplitIlbcTest, NumFrames) {
     Packet* packet = (*it);
     EXPECT_EQ(kBaseTimestamp + frame_length_samples * frame_num,
               packet->header.timestamp);
-    EXPECT_EQ(frame_length_bytes_, packet->payload_length);
+    EXPECT_EQ(frame_length_bytes_, packet->payload.size());
     EXPECT_EQ(kPayloadType, packet->header.payloadType);
     EXPECT_EQ(kSequenceNumber, packet->header.sequenceNumber);
     EXPECT_EQ(true, packet->primary);
-    ASSERT_FALSE(packet->payload == NULL);
-    for (size_t i = 0; i < packet->payload_length; ++i) {
+    ASSERT_FALSE(packet->payload.empty());
+    for (size_t i = 0; i < packet->payload.size(); ++i) {
       EXPECT_EQ(payload_value, packet->payload[i]);
       ++payload_value;
     }
-    delete [] (*it)->payload;
     delete (*it);
     it = packet_list.erase(it);
     ++frame_num;
@@ -695,7 +676,6 @@ TEST(IlbcPayloadSplitter, TooLargePayload) {
   // Delete the packets and payloads to avoid having the test leak memory.
   PacketList::iterator it = packet_list.begin();
   while (it != packet_list.end()) {
-    delete [] (*it)->payload;
     delete (*it);
     it = packet_list.erase(it);
   }
@@ -726,7 +706,6 @@ TEST(IlbcPayloadSplitter, UnevenPayload) {
   // Delete the packets and payloads to avoid having the test leak memory.
   PacketList::iterator it = packet_list.begin();
   while (it != packet_list.end()) {
-    delete [] (*it)->payload;
     delete (*it);
     it = packet_list.erase(it);
   }
@@ -760,9 +739,8 @@ TEST(FecPayloadSplitter, MixedPayload) {
   packet = packet_list.front();
   EXPECT_EQ(0, packet->header.payloadType);
   EXPECT_EQ(kBaseTimestamp - 20 * 48, packet->header.timestamp);
-  EXPECT_EQ(10U, packet->payload_length);
+  EXPECT_EQ(10U, packet->payload.size());
   EXPECT_FALSE(packet->primary);
-  delete [] packet->payload;
   delete packet;
   packet_list.pop_front();
 
@@ -770,23 +748,20 @@ TEST(FecPayloadSplitter, MixedPayload) {
   packet = packet_list.front();
   EXPECT_EQ(0, packet->header.payloadType);
   EXPECT_EQ(kBaseTimestamp, packet->header.timestamp);
-  EXPECT_EQ(10U, packet->payload_length);
+  EXPECT_EQ(10U, packet->payload.size());
   EXPECT_TRUE(packet->primary);
-  delete [] packet->payload;
   delete packet;
   packet_list.pop_front();
 
   // Check third packet.
   packet = packet_list.front();
   VerifyPacket(packet, 10, 0, kSequenceNumber, kBaseTimestamp, 0, true);
-  delete [] packet->payload;
   delete packet;
   packet_list.pop_front();
 
   // Check fourth packet.
   packet = packet_list.front();
   VerifyPacket(packet, 10, 1, kSequenceNumber, kBaseTimestamp, 0, true);
-  delete [] packet->payload;
   delete packet;
 }
 
@@ -812,10 +787,9 @@ TEST(FecPayloadSplitter, EmbedFecInRed) {
   packet = packet_list.front();
   EXPECT_EQ(0, packet->header.payloadType);
   EXPECT_EQ(kBaseTimestamp - kTimestampOffset, packet->header.timestamp);
-  EXPECT_EQ(kPayloadLength, packet->payload_length);
+  EXPECT_EQ(kPayloadLength, packet->payload.size());
   EXPECT_FALSE(packet->primary);
   EXPECT_EQ(packet->payload[3], 1);
-  delete [] packet->payload;
   delete packet;
   packet_list.pop_front();
 
@@ -823,10 +797,9 @@ TEST(FecPayloadSplitter, EmbedFecInRed) {
   packet = packet_list.front();
   EXPECT_EQ(0, packet->header.payloadType);
   EXPECT_EQ(kBaseTimestamp, packet->header.timestamp);
-  EXPECT_EQ(kPayloadLength, packet->payload_length);
+  EXPECT_EQ(kPayloadLength, packet->payload.size());
   EXPECT_TRUE(packet->primary);
   EXPECT_EQ(packet->payload[3], 1);
-  delete [] packet->payload;
   delete packet;
   packet_list.pop_front();
 
@@ -834,10 +807,9 @@ TEST(FecPayloadSplitter, EmbedFecInRed) {
   packet = packet_list.front();
   EXPECT_EQ(0, packet->header.payloadType);
   EXPECT_EQ(kBaseTimestamp - 2 * kTimestampOffset, packet->header.timestamp);
-  EXPECT_EQ(kPayloadLength, packet->payload_length);
+  EXPECT_EQ(kPayloadLength, packet->payload.size());
   EXPECT_FALSE(packet->primary);
   EXPECT_EQ(packet->payload[3], 0);
-  delete [] packet->payload;
   delete packet;
   packet_list.pop_front();
 
@@ -845,10 +817,9 @@ TEST(FecPayloadSplitter, EmbedFecInRed) {
   packet = packet_list.front();
   EXPECT_EQ(0, packet->header.payloadType);
   EXPECT_EQ(kBaseTimestamp - kTimestampOffset, packet->header.timestamp);
-  EXPECT_EQ(kPayloadLength, packet->payload_length);
+  EXPECT_EQ(kPayloadLength, packet->payload.size());
   EXPECT_TRUE(packet->primary);
   EXPECT_EQ(packet->payload[3], 0);
-  delete [] packet->payload;
   delete packet;
   packet_list.pop_front();
 }

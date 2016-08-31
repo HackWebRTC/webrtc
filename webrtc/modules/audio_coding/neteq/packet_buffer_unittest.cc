@@ -59,9 +59,8 @@ Packet* PacketGenerator::NextPacket(int payload_size_bytes) {
   packet->header.ssrc = 0x12345678;
   packet->header.numCSRCs = 0;
   packet->header.paddingLength = 0;
-  packet->payload_length = payload_size_bytes;
   packet->primary = true;
-  packet->payload = new uint8_t[payload_size_bytes];
+  packet->payload.SetSize(payload_size_bytes);
   ++seq_no_;
   ts_ += frame_size_;
   return packet;
@@ -284,7 +283,6 @@ TEST(PacketBuffer, ExtractOrderRedundancy) {
     Packet* packet = buffer.GetNextPacket(&drop_count);
     EXPECT_EQ(0u, drop_count);
     EXPECT_EQ(packet, expect_order[i]);  // Compare pointer addresses.
-    delete[] packet->payload;
     delete packet;
   }
   EXPECT_TRUE(buffer.Empty());
@@ -359,7 +357,6 @@ TEST(PacketBuffer, Reordering) {
     ASSERT_FALSE(packet == NULL);
     EXPECT_EQ(current_ts, packet->header.timestamp);
     current_ts += ts_increment;
-    delete [] packet->payload;
     delete packet;
   }
   EXPECT_TRUE(buffer.Empty());
@@ -379,8 +376,7 @@ TEST(PacketBuffer, Failures) {
   Packet* packet = NULL;
   EXPECT_EQ(PacketBuffer::kInvalidPacket, buffer->InsertPacket(packet));
   packet = gen.NextPacket(payload_len);
-  delete [] packet->payload;
-  packet->payload = NULL;
+  packet->payload.Clear();
   EXPECT_EQ(PacketBuffer::kInvalidPacket, buffer->InsertPacket(packet));
   // Packet is deleted by the PacketBuffer.
 
@@ -409,8 +405,7 @@ TEST(PacketBuffer, Failures) {
   PacketList list;
   list.push_back(gen.NextPacket(payload_len));  // Valid packet.
   packet = gen.NextPacket(payload_len);
-  delete [] packet->payload;
-  packet->payload = NULL;  // Invalid.
+  packet->payload.Clear();  // Invalid.
   list.push_back(packet);
   list.push_back(gen.NextPacket(payload_len));  // Valid packet.
   MockDecoderDatabase decoder_database;
@@ -486,9 +481,7 @@ TEST(PacketBuffer, ComparePackets) {
   EXPECT_FALSE(*a <= *b);
   EXPECT_TRUE(*a >= *b);
 
-  delete [] a->payload;
   delete a;
-  delete [] b->payload;
   delete b;
 }
 

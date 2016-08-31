@@ -14,6 +14,7 @@
 #include <list>
 #include <memory>
 
+#include "webrtc/base/buffer.h"
 #include "webrtc/modules/audio_coding/neteq/tick_timer.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
@@ -24,8 +25,7 @@ namespace webrtc {
 struct Packet {
   RTPHeader header;
   // Datagram excluding RTP header and header extension.
-  uint8_t* payload = nullptr;
-  size_t payload_length = 0;
+  rtc::Buffer payload;
   bool primary = true;  // Primary, i.e., not redundant payload.
   bool sync_packet = false;
   std::unique_ptr<TickTimer::Stopwatch> waiting_time;

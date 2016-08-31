@@ -29,15 +29,12 @@ int ComfortNoise::UpdateParameters(Packet* packet) {
   // Get comfort noise decoder.
   if (decoder_database_->SetActiveCngDecoder(packet->header.payloadType)
       != kOK) {
-    delete [] packet->payload;
     delete packet;
     return kUnknownPayloadType;
   }
   ComfortNoiseDecoder* cng_decoder = decoder_database_->GetActiveCngDecoder();
   RTC_DCHECK(cng_decoder);
-  cng_decoder->UpdateSid(rtc::ArrayView<const uint8_t>(
-      packet->payload, packet->payload_length));
-  delete [] packet->payload;
+  cng_decoder->UpdateSid(packet->payload);
   delete packet;
   return kOK;
 }

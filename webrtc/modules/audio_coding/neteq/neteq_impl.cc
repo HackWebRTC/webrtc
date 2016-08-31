@@ -559,17 +559,11 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     packet->header.timestamp = rtp_header.header.timestamp;
     packet->header.ssrc = rtp_header.header.ssrc;
     packet->header.numCSRCs = 0;
-    packet->payload_length = payload.size();
+    packet->payload.SetData(payload.data(), payload.size());
     packet->primary = true;
     // Waiting time will be set upon inserting the packet in the buffer.
     RTC_DCHECK(!packet->waiting_time);
-    packet->payload = new uint8_t[packet->payload_length];
     packet->sync_packet = is_sync_packet;
-    if (!packet->payload) {
-      LOG_F(LS_ERROR) << "Payload pointer is NULL.";
-    }
-    assert(!payload.empty());  // Already checked above.
-    memcpy(packet->payload, payload.data(), packet->payload_length);
     // Insert packet in a packet list.
     packet_list.push_back(packet);
     // Save main payloads header for later.
@@ -639,15 +633,13 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
   while (it != packet_list.end()) {
     Packet* current_packet = (*it);
     assert(current_packet);
-    assert(current_packet->payload);
+    assert(!current_packet->payload.empty());
     if (decoder_database_->IsDtmf(current_packet->header.payloadType)) {
       assert(!current_packet->sync_packet);  // We had a sanity check for this.
       DtmfEvent event;
-      int ret = DtmfBuffer::ParseEvent(
-          current_packet->header.timestamp,
-          current_packet->payload,
-          current_packet->payload_length,
-          &event);
+      int ret = DtmfBuffer::ParseEvent(current_packet->header.timestamp,
+                                       current_packet->payload.data(),
+                                       current_packet->payload.size(), &event);
       if (ret != DtmfBuffer::kOK) {
         PacketBuffer::DeleteAllPackets(&packet_list);
         return kDtmfParsingError;
@@ -656,8 +648,6 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
         PacketBuffer::DeleteAllPackets(&packet_list);
         return kDtmfInsertError;
       }
-      // TODO(hlundin): Let the destructor of Packet handle the payload.
-      delete [] current_packet->payload;
       delete current_packet;
       it = packet_list.erase(it);
     } else {
@@ -702,8 +692,8 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
         decoder_database_->GetDecoder(main_header.payloadType);
     assert(decoder);  // Should always get a valid object, since we have
     // already checked that the payload types are known.
-    decoder->IncomingPacket(packet_list.front()->payload,
-                            packet_list.front()->payload_length,
+    decoder->IncomingPacket(packet_list.front()->payload.data(),
+                            packet_list.front()->payload.size(),
                             packet_list.front()->header.sequenceNumber,
                             packet_list.front()->header.timestamp,
                             receive_timestamp);
@@ -1468,7 +1458,7 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, const Operations& operation,
            operation == kFastAccelerate || operation == kMerge ||
            operation == kPreemptiveExpand);
     packet_list->pop_front();
-    size_t payload_length = packet->payload_length;
+    const size_t payload_length = packet->payload.size();
     int decode_length;
     if (packet->sync_packet) {
       // Decode to silence with the same frame size as the last decode.
@@ -1479,18 +1469,16 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, const Operations& operation,
     } else if (!packet->primary) {
       // This is a redundant payload; call the special decoder method.
       decode_length = decoder->DecodeRedundant(
-          packet->payload, packet->payload_length, fs_hz_,
+          packet->payload.data(), packet->payload.size(), fs_hz_,
           (decoded_buffer_length_ - *decoded_length) * sizeof(int16_t),
           &decoded_buffer_[*decoded_length], speech_type);
     } else {
-      decode_length =
-          decoder->Decode(
-              packet->payload, packet->payload_length, fs_hz_,
-              (decoded_buffer_length_ - *decoded_length) * sizeof(int16_t),
-              &decoded_buffer_[*decoded_length], speech_type);
+      decode_length = decoder->Decode(
+          packet->payload.data(), packet->payload.size(), fs_hz_,
+          (decoded_buffer_length_ - *decoded_length) * sizeof(int16_t),
+          &decoded_buffer_[*decoded_length], speech_type);
     }
 
-    delete[] packet->payload;
     delete packet;
     packet = NULL;
     if (decode_length > 0) {
@@ -1963,7 +1951,7 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
     }
     stats_.PacketsDiscarded(discard_count);
     stats_.StoreWaitingTime(packet->waiting_time->ElapsedMs());
-    assert(packet->payload_length > 0);
+    assert(!packet->payload.empty());
     packet_list->push_back(packet);  // Store packet in list.
 
     if (first_packet) {
@@ -1988,11 +1976,11 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
         packet_duration = rtc::checked_cast<int>(decoder_frame_length_);
       } else {
         if (packet->primary) {
-          packet_duration = decoder->PacketDuration(packet->payload,
-                                                    packet->payload_length);
+          packet_duration = decoder->PacketDuration(packet->payload.data(),
+                                                    packet->payload.size());
         } else {
-          packet_duration = decoder->
-              PacketDurationRedundant(packet->payload, packet->payload_length);
+          packet_duration = decoder->PacketDurationRedundant(
+              packet->payload.data(), packet->payload.size());
           stats_.SecondaryDecodedSamples(packet_duration);
         }
       }
