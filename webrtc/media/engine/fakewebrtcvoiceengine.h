@@ -17,12 +17,10 @@
 
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/gunit.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/config.h"
 #include "webrtc/media/base/codec.h"
 #include "webrtc/media/base/rtputils.h"
-#include "webrtc/media/engine/fakewebrtccommon.h"
 #include "webrtc/media/engine/webrtcvoe.h"
 #include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
@@ -37,6 +35,25 @@ static const int kOpusBandwidthFb = 20000;
 
 #define WEBRTC_CHECK_CHANNEL(channel) \
   if (channels_.find(channel) == channels_.end()) return -1;
+
+#define WEBRTC_STUB(method, args) \
+  int method args override { return 0; }
+
+#define WEBRTC_STUB_CONST(method, args) \
+  int method args const override { return 0; }
+
+#define WEBRTC_BOOL_STUB(method, args) \
+  bool method args override { return true; }
+
+#define WEBRTC_BOOL_STUB_CONST(method, args) \
+  bool method args const override { return true; }
+
+#define WEBRTC_VOID_STUB(method, args) \
+  void method args override {}
+
+#define WEBRTC_FUNC(method, args) int method args override
+
+#define WEBRTC_VOID_FUNC(method, args) void method args override
 
 class FakeAudioProcessing : public webrtc::AudioProcessing {
  public:

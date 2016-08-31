@@ -244,7 +244,6 @@
             'base/testutils.h',
             'engine/fakewebrtccall.cc',
             'engine/fakewebrtccall.h',
-            'engine/fakewebrtccommon.h',
             'engine/fakewebrtcdeviceinfo.h',
             'engine/fakewebrtcvcmfactory.h',
             'engine/fakewebrtcvideocapturemodule.h',
