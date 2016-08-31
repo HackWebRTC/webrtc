@@ -406,30 +406,6 @@ struct AudioDecodingCallStats {
   int decoded_plc_cng;  // Number of calls resulted where PLC faded to CNG.
 };
 
-typedef struct
-{
-    int min;              // minumum
-    int max;              // maximum
-    int average;          // average
-} StatVal;
-
-typedef struct           // All levels are reported in dBm0
-{
-    StatVal speech_rx;   // long-term speech levels on receiving side
-    StatVal speech_tx;   // long-term speech levels on transmitting side
-    StatVal noise_rx;    // long-term noise/silence levels on receiving side
-    StatVal noise_tx;    // long-term noise/silence levels on transmitting side
-} LevelStatistics;
-
-typedef struct        // All levels are reported in dB
-{
-    StatVal erl;      // Echo Return Loss
-    StatVal erle;     // Echo Return Loss Enhancement
-    StatVal rerl;     // RERL = ERL + ERLE
-    // Echo suppression inside EC at the point just before its NLP
-    StatVal a_nlp;
-} EchoStatistics;
-
 enum NsModes    // type of Noise Suppression
 {
     kNsUnchanged = 0,   // previously set mode
@@ -477,13 +453,13 @@ enum AecmModes                 // mode of AECM
     kAecmLoudSpeakerphone      // Loud speakerphone
 };
 
-// AGC configuration
-typedef struct
+// AGC configuration parameters
+struct AgcConfig
 {
     unsigned short targetLeveldBOv;
     unsigned short digitalCompressionGaindB;
     bool           limiterEnable;
-} AgcConfig;                  // AGC configuration parameters
+};
 
 enum StereoChannel
 {
@@ -500,39 +476,6 @@ enum AudioLayers
     kAudioWindowsCore = 2,
     kAudioLinuxAlsa = 3,
     kAudioLinuxPulse = 4
-};
-
-// TODO(henrika): to be removed.
-enum NetEqModes             // NetEQ playout configurations
-{
-    // Optimized trade-off between low delay and jitter robustness for two-way
-    // communication.
-    kNetEqDefault = 0,
-    // Improved jitter robustness at the cost of increased delay. Can be
-    // used in one-way communication.
-    kNetEqStreaming = 1,
-    // Optimzed for decodability of fax signals rather than for perceived audio
-    // quality.
-    kNetEqFax = 2,
-    // Minimal buffer management. Inserts zeros for lost packets and during
-    // buffer increases.
-    kNetEqOff = 3,
-};
-
-// TODO(henrika): to be removed.
-enum OnHoldModes            // On Hold direction
-{
-    kHoldSendAndPlay = 0,    // Put both sending and playing in on-hold state.
-    kHoldSendOnly,           // Put only sending in on-hold state.
-    kHoldPlayOnly            // Put only playing in on-hold state.
-};
-
-// TODO(henrika): to be removed.
-enum AmrMode
-{
-    kRfc3267BwEfficient = 0,
-    kRfc3267OctetAligned = 1,
-    kRfc3267FileStorage = 2,
 };
 
 // ==================================================================
