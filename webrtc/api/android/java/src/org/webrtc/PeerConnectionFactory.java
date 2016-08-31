@@ -111,21 +111,10 @@ public class PeerConnectionFactory {
         nativeCreateLocalMediaStream(nativeFactory, label));
   }
 
-  // The VideoSource takes ownership of |capturer|, so capturer.dispose() should not be called
-  // manually after this. Video capturer is automatically started so there is no need to call
-  // startCapture after this method.
-  public VideoSource createVideoSource(
-      VideoCapturer capturer, MediaConstraints constraints) {
-    final EglBase.Context eglContext =
-        localEglbase == null ? null : localEglbase.getEglBaseContext();
-    return new VideoSource(nativeCreateVideoSource(nativeFactory,
-        eglContext, capturer, constraints));
-  }
-
   public VideoSource createVideoSource(VideoCapturer capturer) {
     final EglBase.Context eglContext =
         localEglbase == null ? null : localEglbase.getEglBaseContext();
-    long nativeAndroidVideoTrackSource = nativeCreateVideoSource2(nativeFactory, eglContext);
+    long nativeAndroidVideoTrackSource = nativeCreateVideoSource(nativeFactory, eglContext);
     VideoCapturer.CapturerObserver capturerObserver
         = new VideoCapturer.AndroidVideoTrackSourceObserver(nativeAndroidVideoTrackSource);
     nativeInitializeVideoCapturer(nativeFactory, capturer, nativeAndroidVideoTrackSource,
@@ -248,10 +237,6 @@ public class PeerConnectionFactory {
       long nativeFactory, String label);
 
   private static native long nativeCreateVideoSource(
-      long nativeFactory, EglBase.Context eglContext, VideoCapturer videoCapturer,
-      MediaConstraints constraints);
-
-  private static native long nativeCreateVideoSource2(
       long nativeFactory, EglBase.Context eglContext);
 
   private static native void nativeInitializeVideoCapturer(

@@ -94,7 +94,6 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/StatsReport$Value");
   LoadClass(jni, "org/webrtc/SurfaceTextureHelper");
   LoadClass(jni, "org/webrtc/VideoCapturer");
-  LoadClass(jni, "org/webrtc/VideoCapturer$NativeObserver");
   LoadClass(jni, "org/webrtc/VideoRenderer$I420Frame");
   LoadClass(jni, "org/webrtc/VideoTrack");
 }
