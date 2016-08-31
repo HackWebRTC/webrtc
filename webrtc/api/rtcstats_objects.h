@@ -19,8 +19,8 @@ namespace webrtc {
 
 class RTCPeerConnectionStats : public RTCStats {
  public:
-  RTCPeerConnectionStats(const std::string& id, double timestamp);
-  RTCPeerConnectionStats(std::string&& id, double timestamp);
+  RTCPeerConnectionStats(const std::string& id, int64_t timestamp_us);
+  RTCPeerConnectionStats(std::string&& id, int64_t timestamp_us);
 
   WEBRTC_RTCSTATS_IMPL(RTCStats, RTCPeerConnectionStats,
       &data_channels_opened,

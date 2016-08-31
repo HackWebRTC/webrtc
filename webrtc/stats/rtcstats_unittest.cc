@@ -17,8 +17,8 @@ namespace webrtc {
 
 class RTCTestStats : public RTCStats {
  public:
-  RTCTestStats(const std::string& id, double timestamp)
-      : RTCStats(id, timestamp),
+  RTCTestStats(const std::string& id, int64_t timestamp_us)
+      : RTCStats(id, timestamp_us),
         m_int32("mInt32"),
         m_uint32("mUint32"),
         m_int64("mInt64"),
@@ -72,8 +72,8 @@ const char RTCTestStats::kType[] = "test-stats";
 
 class RTCChildStats : public RTCStats {
  public:
-  RTCChildStats(const std::string& id, double timestamp)
-      : RTCStats(id, timestamp),
+  RTCChildStats(const std::string& id, int64_t timestamp_us)
+      : RTCStats(id, timestamp_us),
         child_int("childInt") {}
 
   WEBRTC_RTCSTATS_IMPL(RTCStats, RTCChildStats,
@@ -86,8 +86,8 @@ const char RTCChildStats::kType[] = "child-stats";
 
 class RTCGrandChildStats : public RTCChildStats {
  public:
-  RTCGrandChildStats(const std::string& id, double timestamp)
-      : RTCChildStats(id, timestamp),
+  RTCGrandChildStats(const std::string& id, int64_t timestamp_us)
+      : RTCChildStats(id, timestamp_us),
         grandchild_int("grandchildInt") {}
 
   WEBRTC_RTCSTATS_IMPL(RTCChildStats, RTCGrandChildStats,
@@ -99,9 +99,9 @@ class RTCGrandChildStats : public RTCChildStats {
 const char RTCGrandChildStats::kType[] = "grandchild-stats";
 
 TEST(RTCStatsTest, RTCStatsAndMembers) {
-  RTCTestStats stats("testId", 42.0);
+  RTCTestStats stats("testId", 42);
   EXPECT_EQ(stats.id(), "testId");
-  EXPECT_EQ(stats.timestamp(), 42.0);
+  EXPECT_EQ(stats.timestamp_us(), static_cast<int64_t>(42));
   std::vector<const RTCStatsMemberInterface*> members = stats.Members();
   EXPECT_EQ(members.size(), static_cast<size_t>(14));
   for (const RTCStatsMemberInterface* member : members) {

@@ -21,9 +21,12 @@
 #include "webrtc/api/test/mock_peerconnection.h"
 #include "webrtc/api/test/mock_webrtcsession.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/fakeclock.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/test/faketiming.h"
+#include "webrtc/base/timedelta.h"
+#include "webrtc/base/timeutils.h"
+#include "webrtc/base/timing.h"
 #include "webrtc/media/base/fakemediaengine.h"
 
 using testing::Return;
@@ -78,17 +81,16 @@ class RTCStatsCollectorTest : public testing::Test {
  public:
   RTCStatsCollectorTest()
     : test_(new rtc::RefCountedObject<RTCStatsCollectorTester>()),
-      timing_(new rtc::FakeTiming()),
-      collector_(&test_->pc(), 0.05, std::unique_ptr<rtc::Timing>(timing_)) {
+      collector_(&test_->pc(), 50 * rtc::kNumMicrosecsPerMillisec) {
   }
 
  protected:
   rtc::scoped_refptr<RTCStatsCollectorTester> test_;
-  rtc::FakeTiming* timing_;  // Owned by |collector_|.
   RTCStatsCollector collector_;
 };
 
 TEST_F(RTCStatsCollectorTest, CachedStatsReport) {
+  rtc::ScopedFakeClock fake_clock;
   // Caching should ensure |a| and |b| are the same report.
   rtc::scoped_refptr<const RTCStatsReport> a = collector_.GetStatsReport();
   rtc::scoped_refptr<const RTCStatsReport> b = collector_.GetStatsReport();
@@ -100,19 +102,24 @@ TEST_F(RTCStatsCollectorTest, CachedStatsReport) {
   EXPECT_TRUE(c);
   EXPECT_NE(b.get(), c.get());
   // Invalidate cache by advancing time.
-  timing_->AdvanceTimeMillisecs(51.0);
+  fake_clock.AdvanceTime(rtc::TimeDelta::FromMilliseconds(51));
   rtc::scoped_refptr<const RTCStatsReport> d = collector_.GetStatsReport();
   EXPECT_TRUE(d);
   EXPECT_NE(c.get(), d.get());
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
+  int64_t before = static_cast<int64_t>(
+      rtc::Timing::WallTimeNow() * rtc::kNumMicrosecsPerSec);
   rtc::scoped_refptr<const RTCStatsReport> report = collector_.GetStatsReport();
+  int64_t after = static_cast<int64_t>(
+      rtc::Timing::WallTimeNow() * rtc::kNumMicrosecsPerSec);
   EXPECT_EQ(report->GetStatsOfType<RTCPeerConnectionStats>().size(),
             static_cast<size_t>(1)) << "Expecting 1 RTCPeerConnectionStats.";
   const RTCStats* stats = report->Get("RTCPeerConnection");
   EXPECT_TRUE(stats);
-  EXPECT_EQ(stats->timestamp(), timing_->TimerNow());
+  EXPECT_LE(before, stats->timestamp_us());
+  EXPECT_LE(stats->timestamp_us(), after);
   {
     // Expected stats with no data channels
     const RTCPeerConnectionStats& pcstats =

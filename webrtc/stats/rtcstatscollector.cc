@@ -16,32 +16,38 @@
 
 #include "webrtc/api/peerconnection.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/timing.h"
 
 namespace webrtc {
 
 RTCStatsCollector::RTCStatsCollector(
     PeerConnection* pc,
-    double cache_lifetime,
-    std::unique_ptr<rtc::Timing> timing)
+    int64_t cache_lifetime_us)
     : pc_(pc),
-      timing_(std::move(timing)),
-      cache_timestamp_(0.0),
-      cache_lifetime_(cache_lifetime) {
+      cache_timestamp_us_(0),
+      cache_lifetime_us_(cache_lifetime_us) {
   RTC_DCHECK(pc_);
-  RTC_DCHECK(timing_);
   RTC_DCHECK(IsOnSignalingThread());
-  RTC_DCHECK_GE(cache_lifetime_, 0.0);
+  RTC_DCHECK_GE(cache_lifetime_us_, 0);
 }
 
 rtc::scoped_refptr<const RTCStatsReport> RTCStatsCollector::GetStatsReport() {
   RTC_DCHECK(IsOnSignalingThread());
-  double now = timing_->TimerNow();
-  if (cached_report_ && now - cache_timestamp_ <= cache_lifetime_)
+  // "Now" using a monotonically increasing timer.
+  int64_t cache_now_us = rtc::TimeMicros();
+  if (cached_report_ &&
+      cache_now_us - cache_timestamp_us_ <= cache_lifetime_us_) {
     return cached_report_;
-  cache_timestamp_ = now;
+  }
+  cache_timestamp_us_ = cache_now_us;
+  // "Now" using a system clock, relative to the UNIX epoch (Jan 1, 1970, UTC),
+  // in microseconds. The system clock could be modified and is not necessarily
+  // monotonically increasing.
+  int64_t timestamp_us = static_cast<int64_t>(
+      rtc::Timing::WallTimeNow() * rtc::kNumMicrosecsPerSec);
 
   rtc::scoped_refptr<RTCStatsReport> report = RTCStatsReport::Create();
-  report->AddStats(ProducePeerConnectionStats());
+  report->AddStats(ProducePeerConnectionStats(timestamp_us));
 
   cached_report_ = report;
   return cached_report_;
@@ -57,7 +63,7 @@ bool RTCStatsCollector::IsOnSignalingThread() const {
 }
 
 std::unique_ptr<RTCPeerConnectionStats>
-RTCStatsCollector::ProducePeerConnectionStats() const {
+RTCStatsCollector::ProducePeerConnectionStats(int64_t timestamp_us) const {
   // TODO(hbos): If data channels are removed from the peer connection this will
   // yield incorrect counts. Address before closing crbug.com/636818. See
   // https://w3c.github.io/webrtc-stats/webrtc-stats.html#pcstats-dict*.
@@ -71,7 +77,7 @@ RTCStatsCollector::ProducePeerConnectionStats() const {
   // There is always just one |RTCPeerConnectionStats| so its |id| can be a
   // constant.
   std::unique_ptr<RTCPeerConnectionStats> stats(
-    new RTCPeerConnectionStats("RTCPeerConnection", cache_timestamp_));
+    new RTCPeerConnectionStats("RTCPeerConnection", timestamp_us));
   stats->data_channels_opened = data_channels_opened;
   stats->data_channels_closed = static_cast<uint32_t>(data_channels.size()) -
                                 data_channels_opened;

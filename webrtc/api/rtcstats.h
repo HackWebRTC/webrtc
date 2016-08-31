@@ -49,17 +49,17 @@ class RTCStatsMemberInterface;
 // }
 class RTCStats {
  public:
-  RTCStats(const std::string& id, double timestamp)
-      : id_(id), timestamp_(timestamp) {}
-  RTCStats(std::string&& id, double timestamp)
-      : id_(std::move(id)), timestamp_(timestamp) {}
+  RTCStats(const std::string& id, int64_t timestamp_us)
+      : id_(id), timestamp_us_(timestamp_us) {}
+  RTCStats(std::string&& id, int64_t timestamp_us)
+      : id_(std::move(id)), timestamp_us_(timestamp_us) {}
   virtual ~RTCStats() {}
 
   virtual std::unique_ptr<RTCStats> copy() const = 0;
 
   const std::string& id() const { return id_; }
-  // Time relative to the UNIX epoch (Jan 1, 1970, UTC), in seconds.
-  double timestamp() const { return timestamp_; }
+  // Time relative to the UNIX epoch (Jan 1, 1970, UTC), in microseconds.
+  int64_t timestamp_us() const { return timestamp_us_; }
   // Returns the static member variable |kType| of the implementing class.
   virtual const char* type() const = 0;
   // Returns a vector of pointers to all the RTCStatsMemberInterface members of
@@ -88,7 +88,7 @@ class RTCStats {
       size_t additional_capacity) const;
 
   std::string const id_;
-  double timestamp_;
+  int64_t timestamp_us_;
 };
 
 // All |RTCStats| classes should use this macro in a public section of the class
@@ -112,8 +112,8 @@ class RTCStats {
 // rtcfoostats.h:
 //   class RTCFooStats : public RTCStats {
 //    public:
-//     RTCFooStats(const std::string& id, double timestamp)
-//         : RTCStats(id, timestamp),
+//     RTCFooStats(const std::string& id, int64_t timestamp_us)
+//         : RTCStats(id, timestamp_us),
 //           foo("foo"),
 //           bar("bar") {
 //     }

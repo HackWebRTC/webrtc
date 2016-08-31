@@ -16,7 +16,7 @@
 #include "webrtc/api/rtcstats_objects.h"
 #include "webrtc/api/rtcstatsreport.h"
 #include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/timing.h"
+#include "webrtc/base/timeutils.h"
 
 namespace webrtc {
 
@@ -28,9 +28,7 @@ class RTCStatsCollector {
  public:
   explicit RTCStatsCollector(
       PeerConnection* pc,
-      double cache_lifetime = 0.05,
-      std::unique_ptr<rtc::Timing> timing = std::unique_ptr<rtc::Timing>(
-          new rtc::Timing()));
+      int64_t cache_lifetime_us = 50 * rtc::kNumMicrosecsPerMillisec);
 
   // Gets a recent stats report. If there is a report cached that is still fresh
   // it is returned, otherwise new stats are gathered and returned. A report is
@@ -44,13 +42,16 @@ class RTCStatsCollector {
  private:
   bool IsOnSignalingThread() const;
 
-  std::unique_ptr<RTCPeerConnectionStats> ProducePeerConnectionStats() const;
+  std::unique_ptr<RTCPeerConnectionStats> ProducePeerConnectionStats(
+      int64_t timestamp_us) const;
 
   PeerConnection* const pc_;
-  mutable std::unique_ptr<rtc::Timing> timing_;
-  // Time relative to the UNIX epoch (Jan 1, 1970, UTC), in seconds.
-  double cache_timestamp_;
-  double cache_lifetime_;  // In seconds.
+  // A timestamp, in microseconds, that is based on a timer that is
+  // monotonically increasing. That is, even if the system clock is modified the
+  // difference between the timer and this timestamp is how fresh the cached
+  // report is.
+  int64_t cache_timestamp_us_;
+  int64_t cache_lifetime_us_;
   rtc::scoped_refptr<const RTCStatsReport> cached_report_;
 };
 

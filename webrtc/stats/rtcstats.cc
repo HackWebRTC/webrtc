@@ -51,7 +51,7 @@ std::string VectorOfStringsToString(const std::vector<T>& strings) {
 std::string RTCStats::ToString() const {
   std::ostringstream oss;
   oss << type() << " {\n  id: \"" << id_ << "\"\n  timestamp: "
-      << timestamp_ << '\n';
+      << timestamp_us_ << '\n';
   for (const RTCStatsMemberInterface* member : Members()) {
     oss << "  " << member->name() << ": ";
     if (member->is_defined()) {

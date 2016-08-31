@@ -15,13 +15,13 @@ namespace webrtc {
 const char RTCPeerConnectionStats::kType[] = "peer-connection";
 
 RTCPeerConnectionStats::RTCPeerConnectionStats(
-    const std::string& id, double timestamp)
-    : RTCPeerConnectionStats(std::string(id), timestamp) {
+    const std::string& id, int64_t timestamp_us)
+    : RTCPeerConnectionStats(std::string(id), timestamp_us) {
 }
 
 RTCPeerConnectionStats::RTCPeerConnectionStats(
-    std::string&& id, double timestamp)
-    : RTCStats(std::move(id), timestamp),
+    std::string&& id, int64_t timestamp_us)
+    : RTCStats(std::move(id), timestamp_us),
       data_channels_opened("dataChannelsOpened"),
       data_channels_closed("dataChannelsClosed") {
 }
