@@ -13,10 +13,8 @@
 #endif
 
 #import "APPRTCAppDelegate.h"
-
-#import "WebRTC/RTCSSLAdapter.h"
-
 #import "APPRTCViewController.h"
+#import "WebRTC/RTCSSLAdapter.h"
 
 @interface APPRTCAppDelegate () <NSWindowDelegate>
 @end

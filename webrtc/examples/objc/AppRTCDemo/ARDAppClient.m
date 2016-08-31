@@ -10,9 +10,7 @@
 
 #import "ARDAppClient+Internal.h"
 
-#if defined(WEBRTC_IOS)
 #import "WebRTC/RTCAVFoundationVideoSource.h"
-#endif
 #import "WebRTC/RTCAudioTrack.h"
 #import "WebRTC/RTCConfiguration.h"
 #import "WebRTC/RTCFileLogger.h"
@@ -53,14 +51,11 @@ static NSString * const kARDMediaStreamId = @"ARDAMS";
 static NSString * const kARDAudioTrackId = @"ARDAMSa0";
 static NSString * const kARDVideoTrackId = @"ARDAMSv0";
 
-// TODO(tkchin): Remove guard once rtc_sdk_common_objc compiles on Mac.
-#if defined(WEBRTC_IOS)
 // TODO(tkchin): Add these as UI options.
 static BOOL const kARDAppClientEnableTracing = NO;
 static BOOL const kARDAppClientEnableRtcEventLog = YES;
 static int64_t const kARDAppClientAecDumpMaxSizeInBytes = 5e6;  // 5 MB.
 static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
-#endif
 
 // We need a proxy to NSTimer because it causes a strong retain cycle. When
 // using the proxy, |invalidate| must be called before it properly deallocs.
@@ -698,9 +693,7 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
   // The iOS simulator doesn't provide any sort of camera capture
   // support or emulation (http://goo.gl/rHAnC1) so don't bother
   // trying to open a local stream.
-  // TODO(tkchin): local video capture for OSX. See
-  // https://code.google.com/p/webrtc/issues/detail?id=3417.
-#if !TARGET_IPHONE_SIMULATOR && TARGET_OS_IPHONE
+#if !TARGET_IPHONE_SIMULATOR
   if (!_isAudioOnly) {
     RTCMediaConstraints *mediaConstraints =
         [self defaultMediaStreamConstraints];
