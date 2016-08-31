@@ -14,6 +14,7 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_decoder_database.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"
 #include "webrtc/modules/audio_coding/neteq/tick_timer.h"
@@ -173,6 +174,11 @@ TEST(PacketBuffer, InsertPacketList) {
   }
 
   MockDecoderDatabase decoder_database;
+  auto factory = CreateBuiltinAudioDecoderFactory();
+  const DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderPCMu, "",
+                                          factory);
+  EXPECT_CALL(decoder_database, GetDecoderInfo(0))
+      .WillRepeatedly(Return(&info));
   rtc::Optional<uint8_t> current_pt;
   rtc::Optional<uint8_t> current_cng_pt;
   EXPECT_EQ(PacketBuffer::kOK, buffer.InsertPacketList(&list,
@@ -212,6 +218,15 @@ TEST(PacketBuffer, InsertPacketListChangePayloadType) {
 
 
   MockDecoderDatabase decoder_database;
+  auto factory = CreateBuiltinAudioDecoderFactory();
+  const DecoderDatabase::DecoderInfo info0(NetEqDecoder::kDecoderPCMu, "",
+                                           factory);
+  EXPECT_CALL(decoder_database, GetDecoderInfo(0))
+      .WillRepeatedly(Return(&info0));
+  const DecoderDatabase::DecoderInfo info1(NetEqDecoder::kDecoderPCMa, "",
+                                           factory);
+  EXPECT_CALL(decoder_database, GetDecoderInfo(1))
+      .WillRepeatedly(Return(&info1));
   rtc::Optional<uint8_t> current_pt;
   rtc::Optional<uint8_t> current_cng_pt;
   EXPECT_EQ(PacketBuffer::kFlushed, buffer.InsertPacketList(&list,
@@ -341,6 +356,11 @@ TEST(PacketBuffer, Reordering) {
   }
 
   MockDecoderDatabase decoder_database;
+  auto factory = CreateBuiltinAudioDecoderFactory();
+  const DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderPCMu, "",
+                                          factory);
+  EXPECT_CALL(decoder_database, GetDecoderInfo(0))
+      .WillRepeatedly(Return(&info));
   rtc::Optional<uint8_t> current_pt;
   rtc::Optional<uint8_t> current_cng_pt;
 
@@ -409,6 +429,11 @@ TEST(PacketBuffer, Failures) {
   list.push_back(packet);
   list.push_back(gen.NextPacket(payload_len));  // Valid packet.
   MockDecoderDatabase decoder_database;
+  auto factory = CreateBuiltinAudioDecoderFactory();
+  const DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderPCMu, "",
+                                          factory);
+  EXPECT_CALL(decoder_database, GetDecoderInfo(0))
+      .WillRepeatedly(Return(&info));
   rtc::Optional<uint8_t> current_pt;
   rtc::Optional<uint8_t> current_cng_pt;
   EXPECT_EQ(PacketBuffer::kInvalidPacket,
