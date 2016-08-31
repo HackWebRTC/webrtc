@@ -162,3 +162,21 @@ source_set("libstunprober") {
     "../base:rtc_base",
   ]
 }
+
+executable("stun_prober") {
+  sources = [
+    "stunprober/main.cc",
+  ]
+
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from Chrome's Clang plugins.
+    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
+  deps = [
+    ":libstunprober",
+    ":rtc_p2p",
+    "../system_wrappers:field_trial_default",
+  ]
+}

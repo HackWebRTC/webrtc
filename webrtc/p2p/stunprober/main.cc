@@ -26,7 +26,7 @@
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
-#include "webrtc/p2p/base/basicpacketsocketfactory.cc"
+#include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/stunprober/stunprober.h"
 
 using stunprober::StunProber;
