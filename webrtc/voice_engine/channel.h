@@ -466,14 +466,13 @@ class Channel
   int32_t MixOrReplaceAudioWithFile(int mixingFrequency);
   int32_t MixAudioWithFile(AudioFrame& audioFrame, int mixingFrequency);
   void UpdatePlayoutTimestamp(bool rtcp);
-  void UpdatePacketDelay(uint32_t timestamp, uint16_t sequenceNumber);
   void RegisterReceiveCodecsToRTPModule();
 
   int SetSendRtpHeaderExtension(bool enable,
                                 RTPExtensionType type,
                                 unsigned char id);
 
-  int32_t GetPlayoutFrequency();
+  int32_t GetPlayoutFrequency() const;
   int64_t GetRTT(bool allow_associate_channel) const;
 
   rtc::CriticalSection _fileCritSect;
@@ -565,9 +564,6 @@ class Channel
   AudioFrame::SpeechType _outputSpeechType;
   // VoEVideoSync
   rtc::CriticalSection video_sync_lock_;
-  uint32_t _average_jitter_buffer_delay_us GUARDED_BY(video_sync_lock_);
-  uint32_t _previousTimestamp;
-  uint16_t _recPacketDelayMs GUARDED_BY(video_sync_lock_);
   // VoEAudioProcessing
   bool _RxVadDetection;
   bool _rxAgcIsEnabled;

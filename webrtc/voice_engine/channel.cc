@@ -530,10 +530,6 @@ int32_t Channel::OnReceivedPayloadData(const uint8_t* payloadData,
     return -1;
   }
 
-  // Update the packet delay.
-  UpdatePacketDelay(rtpHeader->header.timestamp,
-                    rtpHeader->header.sequenceNumber);
-
   int64_t round_trip_time = 0;
   _rtpRtcpModule->RTT(rtp_receiver_->SSRC(), &round_trip_time, NULL, NULL,
                       NULL);
@@ -880,9 +876,6 @@ Channel::Channel(int32_t channelId,
       _lastPayloadType(0),
       _includeAudioLevelIndication(false),
       _outputSpeechType(AudioFrame::kNormalSpeech),
-      _average_jitter_buffer_delay_us(0),
-      _previousTimestamp(0),
-      _recPacketDelayMs(20),
       _RxVadDetection(false),
       _rxAgcIsEnabled(false),
       _rxNsIsEnabled(false),
@@ -3385,69 +3378,6 @@ void Channel::UpdatePlayoutTimestamp(bool rtcp) {
   }
 }
 
-// Called for incoming RTP packets after successful RTP header parsing.
-// TODO(henrik.lundin): Clean out this method. With the introduction of
-// AudioCoding::FilteredCurrentDelayMs() most (if not all) of this method can
-// be deleted, along with a few member variables. (WebRTC issue 6237.)
-void Channel::UpdatePacketDelay(uint32_t rtp_timestamp,
-                                uint16_t sequence_number) {
-  WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::UpdatePacketDelay(timestamp=%lu, sequenceNumber=%u)",
-               rtp_timestamp, sequence_number);
-
-  // Get frequency of last received payload
-  int rtp_receive_frequency = GetPlayoutFrequency();
-
-  // |jitter_buffer_playout_timestamp_| updated in UpdatePlayoutTimestamp for
-  // every incoming packet. May be empty if no valid playout timestamp is
-  // available.
-  // If |rtp_timestamp| is newer than |jitter_buffer_playout_timestamp_|, the
-  // resulting difference is positive and will be used. When the inverse is
-  // true (can happen when a network glitch causes a packet to arrive late,
-  // and during long comfort noise periods with clock drift), or when
-  // |jitter_buffer_playout_timestamp_| has no value, the difference is not
-  // changed from the initial 0.
-  uint32_t timestamp_diff_ms = 0;
-  if (jitter_buffer_playout_timestamp_ &&
-      IsNewerTimestamp(rtp_timestamp, *jitter_buffer_playout_timestamp_)) {
-    timestamp_diff_ms = (rtp_timestamp - *jitter_buffer_playout_timestamp_) /
-                        (rtp_receive_frequency / 1000);
-    if (timestamp_diff_ms > (2 * kVoiceEngineMaxMinPlayoutDelayMs)) {
-      // Diff is too large; set it to zero instead.
-      timestamp_diff_ms = 0;
-    }
-  }
-
-  uint16_t packet_delay_ms =
-      (rtp_timestamp - _previousTimestamp) / (rtp_receive_frequency / 1000);
-
-  _previousTimestamp = rtp_timestamp;
-
-  if (timestamp_diff_ms == 0)
-    return;
-
-  {
-    rtc::CritScope lock(&video_sync_lock_);
-
-    if (packet_delay_ms >= 10 && packet_delay_ms <= 60) {
-      _recPacketDelayMs = packet_delay_ms;
-    }
-
-    if (_average_jitter_buffer_delay_us == 0) {
-      _average_jitter_buffer_delay_us = timestamp_diff_ms * 1000;
-      return;
-    }
-
-    // Filter average delay value using exponential filter (alpha is
-    // 7/8). We derive 1000 *_average_jitter_buffer_delay_us here (reduces
-    // risk of rounding error) and compensate for it in GetDelayEstimate()
-    // later.
-    _average_jitter_buffer_delay_us =
-        (_average_jitter_buffer_delay_us * 7 + 1000 * timestamp_diff_ms + 500) /
-        8;
-  }
-}
-
 void Channel::RegisterReceiveCodecsToRTPModule() {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::RegisterReceiveCodecsToRTPModule()");
@@ -3491,7 +3421,7 @@ int Channel::SetSendRtpHeaderExtension(bool enable,
   return error;
 }
 
-int32_t Channel::GetPlayoutFrequency() {
+int32_t Channel::GetPlayoutFrequency() const {
   int32_t playout_frequency = audio_coding_->PlayoutFrequency();
   CodecInst current_recive_codec;
   if (audio_coding_->ReceiveCodec(&current_recive_codec) == 0) {
