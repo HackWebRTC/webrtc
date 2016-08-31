@@ -36,6 +36,7 @@ DIRECTORIES = [
   'third_party/afl',
   'third_party/binutils',
   'third_party/boringssl',
+  'third_party/closure_compiler',
   'third_party/colorama',
   'third_party/drmemory',
   'third_party/expat',
@@ -68,6 +69,7 @@ DIRECTORIES = [
   'tools/generate_library_loader',
   'tools/generate_stubs',
   'tools/gn',
+  'tools/grit',
   'tools/gyp',
   'tools/luci-go',
   'tools/mb',
@@ -96,7 +98,6 @@ if 'android' in target_os:
     'third_party/byte_buddy',
     'third_party/catapult',
     'third_party/ced',
-    'third_party/closure_compiler',
     'third_party/guava',
     'third_party/hamcrest',
     'third_party/icu',
@@ -115,7 +116,6 @@ if 'android' in target_os:
     'third_party/sqlite4java',
     'third_party/tcmalloc',
     'tools/android',
-    'tools/grit',
     'tools/telemetry',
   ]
 else:
