@@ -60,7 +60,11 @@ TransportFeedback::StatusSymbol DecodeSymbol(uint8_t value) {
       return TransportFeedback::StatusSymbol::kReceivedSmallDelta;
     case 2:
       return TransportFeedback::StatusSymbol::kReceivedLargeDelta;
+    case 3:
+      // It is invalid, but |value| comes from network, so can be any.
+      return TransportFeedback::StatusSymbol::kNotReceived;
     default:
+      // Caller should pass 2 bits max.
       RTC_NOTREACHED();
       return TransportFeedback::StatusSymbol::kNotReceived;
   }
