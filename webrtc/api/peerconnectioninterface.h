@@ -240,6 +240,18 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // methods for all settings which are of interest to applications,
     // Chrome in particular.
 
+    // A configuration that is safer to use, despite it may not have the best
+    // performance.
+    static RTCConfiguration SafeConfiguration() { return RTCConfiguration(); }
+
+    // An aggressive configuration that has better performance, although it
+    // may be riskier and may need extra support in the application.
+    static RTCConfiguration AggressiveConfiguration() {
+      RTCConfiguration config;
+      config.redetermine_role_on_ice_restart = false;
+      return config;
+    }
+
     bool dscp() { return media_config.enable_dscp; }
     void set_dscp(bool enable) { media_config.enable_dscp = enable; }
 
@@ -305,6 +317,9 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // If set to true, this means the ICE transport should presume TURN-to-TURN
     // candidate pairs will succeed, even before a binding response is received.
     bool presume_writable_when_fully_relayed = false;
+    // If true, ICE role is redetermined when peerconnection sets a local
+    // transport description that indicates an ICE restart.
+    bool redetermine_role_on_ice_restart = true;
   };
 
   struct RTCOfferAnswerOptions {

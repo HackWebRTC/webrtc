@@ -91,7 +91,8 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   virtual webrtc::MediaControllerInterface* CreateMediaController(
       const cricket::MediaConfig& config) const;
   virtual cricket::TransportController* CreateTransportController(
-      cricket::PortAllocator* port_allocator);
+      cricket::PortAllocator* port_allocator,
+      bool redetermine_role_on_ice_restart);
   virtual rtc::Thread* signaling_thread();
   virtual rtc::Thread* worker_thread();
   virtual rtc::Thread* network_thread();

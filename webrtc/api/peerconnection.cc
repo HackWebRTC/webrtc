@@ -627,7 +627,9 @@ bool PeerConnection::Initialize(
       factory_->worker_thread(), factory_->signaling_thread(),
       port_allocator_.get(),
       std::unique_ptr<cricket::TransportController>(
-          factory_->CreateTransportController(port_allocator_.get()))));
+          factory_->CreateTransportController(
+              port_allocator_.get(),
+              configuration.redetermine_role_on_ice_restart))));
 
   stats_.reset(new StatsCollector(this));
 

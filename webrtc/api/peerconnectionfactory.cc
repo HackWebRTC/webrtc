@@ -309,10 +309,12 @@ webrtc::MediaControllerInterface* PeerConnectionFactory::CreateMediaController(
 }
 
 cricket::TransportController* PeerConnectionFactory::CreateTransportController(
-    cricket::PortAllocator* port_allocator) {
+    cricket::PortAllocator* port_allocator,
+    bool redetermine_role_on_ice_restart) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   return new cricket::TransportController(signaling_thread_, network_thread_,
-                                          port_allocator);
+                                          port_allocator,
+                                          redetermine_role_on_ice_restart);
 }
 
 rtc::Thread* PeerConnectionFactory::signaling_thread() {

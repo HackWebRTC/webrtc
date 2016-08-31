@@ -568,9 +568,11 @@ class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
   }
 
   cricket::TransportController* CreateTransportController(
-      cricket::PortAllocator* port_allocator) override {
+      cricket::PortAllocator* port_allocator,
+      bool redetermine_role_on_ice_restart) override {
     transport_controller = new cricket::TransportController(
-        rtc::Thread::Current(), rtc::Thread::Current(), port_allocator);
+        rtc::Thread::Current(), rtc::Thread::Current(), port_allocator,
+        redetermine_role_on_ice_restart);
     return transport_controller;
   }
 

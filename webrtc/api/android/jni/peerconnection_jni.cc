@@ -1668,7 +1668,8 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
       reinterpret_cast<PeerConnectionFactoryInterface*>(
           factoryFromJava(factory)));
 
-  PeerConnectionInterface::RTCConfiguration rtc_config;
+  PeerConnectionInterface::RTCConfiguration rtc_config =
+      PeerConnectionInterface::RTCConfiguration::AggressiveConfiguration();
   JavaRTCConfigurationToJsepRTCConfiguration(jni, j_rtc_config, &rtc_config);
 
   jclass j_rtc_config_class = GetObjectClass(jni, j_rtc_config);
@@ -1809,7 +1810,8 @@ JOW(void, PeerConnection_setRemoteDescription)(
 
 JOW(jboolean, PeerConnection_setConfiguration)(
     JNIEnv* jni, jobject j_pc, jobject j_rtc_config) {
-  PeerConnectionInterface::RTCConfiguration rtc_config;
+  PeerConnectionInterface::RTCConfiguration rtc_config =
+      PeerConnectionInterface::RTCConfiguration::AggressiveConfiguration();
   JavaRTCConfigurationToJsepRTCConfiguration(jni, j_rtc_config, &rtc_config);
   return ExtractNativePC(jni, j_pc)->SetConfiguration(rtc_config);
 }
