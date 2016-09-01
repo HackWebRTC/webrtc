@@ -39,7 +39,6 @@
         'base/event_tracer_unittest.cc',
         'base/event_unittest.cc',
         'base/exp_filter_unittest.cc',
-        'base/file_unittest.cc',
         'base/filerotatingstream_unittest.cc',
         'base/fileutils_unittest.cc',
         'base/helpers_unittest.cc',

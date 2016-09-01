@@ -54,8 +54,6 @@
         'event_tracer.h',
         'exp_filter.cc',
         'exp_filter.h',
-        'file.cc',
-        'file.h',
         'format_macros.h',
         'location.h',
         'location.cc',
@@ -104,16 +102,6 @@
         'trace_event.h',
       ],
       'conditions': [
-        ['os_posix==1', {
-          'sources': [
-            'file_posix.cc',
-          ],
-        }],
-        ['OS=="win"', {
-          'sources': [
-            'file_win.cc',
-          ],
-        }],
         ['build_with_chromium==1', {
           'dependencies': [
             '<(DEPTH)/base/base.gyp:base',
