@@ -640,4 +640,9 @@ public class VideoCapturerAndroid implements
     frameObserver.onTextureFrameCaptured(captureFormat.width, captureFormat.height, oesTextureId,
         transformMatrix, rotation, timestampNs);
   }
+
+  @Override
+  public boolean isScreencast() {
+    return false;
+  }
 }

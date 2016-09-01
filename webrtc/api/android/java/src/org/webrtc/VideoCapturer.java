@@ -125,4 +125,9 @@ public interface VideoCapturer {
    * Perform any final cleanup here. No more capturing will be done after this call.
    */
   void dispose();
+
+  /**
+   * @return true if-and-only-if this is a screen capturer.
+   */
+  boolean isScreencast();
 }

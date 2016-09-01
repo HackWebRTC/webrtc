@@ -247,6 +247,11 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
     });
   }
 
+  @Override
+  public boolean isScreencast() {
+    return false;
+  }
+
   private void switchCameraInternal(final CameraSwitchHandler switchEventsHandler) {
     Logging.d(TAG, "switchCamera internal");
 

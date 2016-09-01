@@ -1258,13 +1258,14 @@ JOW(jlong, PeerConnectionFactory_nativeCreateLocalMediaStream)(
 }
 
 JOW(jlong, PeerConnectionFactory_nativeCreateVideoSource)
-(JNIEnv* jni, jclass, jlong native_factory, jobject j_egl_context) {
+(JNIEnv* jni, jclass, jlong native_factory, jobject j_egl_context,
+    jboolean is_screencast) {
   OwnedFactoryAndThreads* factory =
       reinterpret_cast<OwnedFactoryAndThreads*>(native_factory);
 
   rtc::scoped_refptr<webrtc::AndroidVideoTrackSource> source(
       new rtc::RefCountedObject<webrtc::AndroidVideoTrackSource>(
-          factory->signaling_thread(), jni, j_egl_context));
+          factory->signaling_thread(), jni, j_egl_context, is_screencast));
   rtc::scoped_refptr<webrtc::VideoTrackSourceProxy> proxy_source =
       webrtc::VideoTrackSourceProxy::Create(factory->signaling_thread(),
                                             factory->worker_thread(), source);

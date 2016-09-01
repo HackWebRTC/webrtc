@@ -16,12 +16,14 @@ namespace webrtc {
 
 AndroidVideoTrackSource::AndroidVideoTrackSource(rtc::Thread* signaling_thread,
                                                  JNIEnv* jni,
-                                                 jobject j_egl_context)
+                                                 jobject j_egl_context,
+                                                 bool is_screencast)
     : signaling_thread_(signaling_thread),
       surface_texture_helper_(webrtc_jni::SurfaceTextureHelper::create(
           jni,
           "Camera SurfaceTextureHelper",
-          j_egl_context)) {
+          j_egl_context)),
+      is_screencast_(is_screencast) {
   LOG(LS_INFO) << "AndroidVideoTrackSource ctor";
   worker_thread_checker_.DetachFromThread();
   camera_thread_checker_.DetachFromThread();

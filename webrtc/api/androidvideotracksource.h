@@ -31,7 +31,8 @@ class AndroidVideoTrackSource : public Notifier<VideoTrackSourceInterface> {
  public:
   AndroidVideoTrackSource(rtc::Thread* signaling_thread,
                           JNIEnv* jni,
-                          jobject j_egl_context);
+                          jobject j_egl_context,
+                          bool is_screencast = false);
 
   // Not used on Android.
   // TODO(sakal/magjed): Try to remove this from the interface.
@@ -40,8 +41,7 @@ class AndroidVideoTrackSource : public Notifier<VideoTrackSourceInterface> {
   // TODO(sakal/magjed): Try to remove this from the interface.
   void Restart() override { RTC_NOTREACHED(); }
 
-  // Currently, none of the Android implementations are screencast.
-  bool is_screencast() const override { return false; }
+  bool is_screencast() const override { return is_screencast_; }
 
   // Indicates that the encoder should denoise video before encoding it.
   // If it is not set, the default configuration is used which is different
@@ -102,6 +102,7 @@ class AndroidVideoTrackSource : public Notifier<VideoTrackSourceInterface> {
   webrtc::I420BufferPool pre_scale_pool_;
   webrtc::I420BufferPool post_scale_pool_;
   rtc::scoped_refptr<webrtc_jni::SurfaceTextureHelper> surface_texture_helper_;
+  const bool is_screencast_;
 
   void OnFrame(const cricket::VideoFrame& frame, int width, int height);
 
