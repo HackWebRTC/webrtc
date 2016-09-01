@@ -176,6 +176,7 @@ public class Camera2Session implements CameraSession {
 
               if (state != SessionState.RUNNING) {
                 Logging.d(TAG, "Texture frame captured but camera is no longer running.");
+                surfaceTextureHelper.returnTextureFrame();
                 return;
               }
 
