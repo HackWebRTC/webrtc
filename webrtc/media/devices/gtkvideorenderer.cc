@@ -16,7 +16,7 @@
 #include <glib.h>
 #include <gtk/gtk.h>
 
-#include "webrtc/media/base/videocommon.h"
+#include "libyuv/convert_argb.h"
 #include "webrtc/media/engine/webrtcvideoframe.h"
 
 namespace cricket {
@@ -92,11 +92,13 @@ void GtkVideoRenderer::OnFrame(const VideoFrame& video_frame) {
   }
 
   // convert I420 frame to ABGR format, which is accepted by GTK
-  frame.ConvertToRgbBuffer(cricket::FOURCC_ABGR,
-                           image_.get(),
-                           static_cast<size_t>(frame.width()) *
-                           frame.height() * 4,
-                           frame.width() * 4);
+  rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
+      frame.video_frame_buffer());
+  libyuv::I420ToARGB(buffer->DataY(), buffer->StrideY(),
+                     buffer->DataU(), buffer->StrideU(),
+                     buffer->DataV(), buffer->StrideV(),
+                     image_.get(), frame.width() * 4,
+                     buffer->width(), buffer->height());
 
   ScopedGdkLock lock;
 

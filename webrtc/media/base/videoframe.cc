@@ -12,37 +12,12 @@
 
 #include <string.h>
 
-#include "libyuv/convert_from.h"
-#include "libyuv/compare.h"
-#include "libyuv/planar_functions.h"
-#include "libyuv/scale.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/media/base/videocommon.h"
 
 namespace cricket {
-
-size_t VideoFrame::ConvertToRgbBuffer(uint32_t to_fourcc,
-                                      uint8_t* buffer,
-                                      size_t size,
-                                      int stride_rgb) const {
-  const size_t needed = std::abs(stride_rgb) * static_cast<size_t>(height());
-  if (size < needed) {
-    LOG(LS_WARNING) << "RGB buffer is not large enough";
-    return needed;
-  }
-
-  if (libyuv::ConvertFromI420(
-          video_frame_buffer()->DataY(), video_frame_buffer()->StrideY(),
-          video_frame_buffer()->DataU(), video_frame_buffer()->StrideU(),
-          video_frame_buffer()->DataV(), video_frame_buffer()->StrideV(),
-          buffer, stride_rgb, width(), height(), to_fourcc)) {
-    LOG(LS_ERROR) << "RGB type not supported: " << to_fourcc;
-    return 0;  // 0 indicates error
-  }
-  return needed;
-}
 
 static const size_t kMaxSampleSize = 1000000000u;
 // Returns whether a sample is valid.

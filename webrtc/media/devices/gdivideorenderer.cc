@@ -14,9 +14,9 @@
 
 #include "webrtc/media/devices/gdivideorenderer.h"
 
+#include "libyuv/convert_argb.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/win32window.h"
-#include "webrtc/media/base/videocommon.h"
 #include "webrtc/media/engine/webrtcvideoframe.h"
 
 namespace cricket {
@@ -229,9 +229,13 @@ void GdiVideoRenderer::VideoWindow::OnRenderFrame(const VideoFrame* frame) {
     return;
   }
   // Convert frame to ARGB format, which is accepted by GDI
-  frame->ConvertToRgbBuffer(cricket::FOURCC_ARGB, image_.get(),
-                            bmi_.bmiHeader.biSizeImage,
-                            bmi_.bmiHeader.biWidth * 4);
+  rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
+      frame->video_frame_buffer());
+  libyuv::I420ToARGB(buffer->DataY(), buffer->StrideY(),
+                     buffer->DataU(), buffer->StrideU(),
+                     buffer->DataV(), buffer->StrideV(),
+                     image_.get(), bmi_.bmiHeader.biWidth * 4,
+                     buffer->width(), buffer->height());
   InvalidateRect(handle(), 0, 0);
 }
 

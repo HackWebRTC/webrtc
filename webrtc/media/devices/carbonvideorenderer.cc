@@ -12,6 +12,7 @@
 
 #include "webrtc/media/devices/carbonvideorenderer.h"
 
+#include "libyuv/convert_from.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/media/base/videocommon.h"
 #include "webrtc/media/base/videoframe.h"
@@ -117,11 +118,13 @@ void CarbonVideoRenderer::OnFrame(const VideoFrame& video_frame) {
 
     // Grab the image lock so we are not trashing up the image being drawn.
     rtc::CritScope cs(&image_crit_);
-    frame.ConvertToRgbBuffer(cricket::FOURCC_ABGR,
-                             image_.get(),
-                             static_cast<size_t>(frame.width()) *
-                                 frame.height() * 4,
-                             frame.width() * 4);
+    rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
+        frame.video_frame_buffer());
+    libyuv::I420ToABGR(buffer->DataY(), buffer->StrideY(),
+                       buffer->DataU(), buffer->StrideU(),
+                       buffer->DataV(), buffer->StrideV(),
+                       image_.get(), frame.width() * 4,
+                       buffer->width(), buffer->height());
   }
 
   // Trigger a repaint event for the whole window.

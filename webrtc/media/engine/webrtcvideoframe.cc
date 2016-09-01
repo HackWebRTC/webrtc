@@ -103,15 +103,6 @@ webrtc::VideoRotation WebRtcVideoFrame::rotation() const {
   return rotation_;
 }
 
-size_t WebRtcVideoFrame::ConvertToRgbBuffer(uint32_t to_fourcc,
-                                            uint8_t* buffer,
-                                            size_t size,
-                                            int stride_rgb) const {
-  RTC_CHECK(video_frame_buffer_);
-  RTC_CHECK(video_frame_buffer_->native_handle() == nullptr);
-  return VideoFrame::ConvertToRgbBuffer(to_fourcc, buffer, size, stride_rgb);
-}
-
 bool WebRtcVideoFrame::Reset(uint32_t format,
                              int w,
                              int h,

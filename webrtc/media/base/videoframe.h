@@ -63,19 +63,6 @@ class VideoFrame {
   // webrtc::I420Buffer::Rotate instead.
   virtual const VideoFrame* GetCopyWithRotationApplied() const = 0;
 
-  // Converts the I420 data to RGB of a certain type such as ARGB and ABGR.
-  // Returns the frame's actual size, regardless of whether it was written or
-  // not (like snprintf). Parameters size and stride_rgb are in units of bytes.
-  // If there is insufficient space, nothing is written.
-
-  // TODO(nisse): Deprecated. Should be moved or deleted in the
-  // cricket::VideoFrame and webrtc::VideoFrame merge. Use
-  // libyuv::ConvertFromI420 directly instead.
-  virtual size_t ConvertToRgbBuffer(uint32_t to_fourcc,
-                                    uint8_t* buffer,
-                                    size_t size,
-                                    int stride_rgb) const;
-
   // Tests if sample is valid. Returns true if valid.
 
   // TODO(nisse): Deprecated. Should be deleted in the cricket::VideoFrame and

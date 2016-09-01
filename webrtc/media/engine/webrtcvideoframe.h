@@ -93,11 +93,6 @@ class WebRtcVideoFrame : public VideoFrame {
 
   webrtc::VideoRotation rotation() const override;
 
-  size_t ConvertToRgbBuffer(uint32_t to_fourcc,
-                            uint8_t* buffer,
-                            size_t size,
-                            int stride_rgb) const override;
-
   const VideoFrame* GetCopyWithRotationApplied() const override;
 
  protected:

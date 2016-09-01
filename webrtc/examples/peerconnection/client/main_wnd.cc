@@ -12,6 +12,7 @@
 
 #include <math.h>
 
+#include "libyuv/convert_argb.h"
 #include "webrtc/examples/peerconnection/client/defaults.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
@@ -613,11 +614,15 @@ void MainWnd::VideoRenderer::OnFrame(
     SetSize(frame.width(), frame.height());
 
     ASSERT(image_.get() != NULL);
-    frame.ConvertToRgbBuffer(cricket::FOURCC_ARGB,
-                             image_.get(),
-                             bmi_.bmiHeader.biSizeImage,
-                             bmi_.bmiHeader.biWidth *
-                             bmi_.bmiHeader.biBitCount / 8);
+    rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
+        frame.video_frame_buffer());
+    libyuv::I420ToARGB(buffer->DataY(), buffer->StrideY(),
+                       buffer->DataU(), buffer->StrideU(),
+                       buffer->DataV(), buffer->StrideV(),
+                       image_.get(),
+                       bmi_.bmiHeader.biWidth *
+                           bmi_.bmiHeader.biBitCount / 8,
+                       buffer->width(), buffer->height());
   }
   InvalidateRect(wnd_, NULL, TRUE);
 }

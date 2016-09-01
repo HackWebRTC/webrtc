@@ -446,6 +446,7 @@ if (is_linux || is_win) {
     }
     deps = [
       "//build/config/sanitizers:deps",
+      "//third_party/libyuv",
       "//webrtc/api:libjingle_peerconnection",
       "//webrtc/system_wrappers:field_trial_default",
       "//webrtc/system_wrappers:metrics_default",
