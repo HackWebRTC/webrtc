@@ -11,9 +11,6 @@ import("//third_party/protobuf/proto_library.gni")
 import("../../build/webrtc.gni")
 
 declare_args() {
-  # Outputs some low-level debug files.
-  aec_debug_dump = false
-
   # Disables the usual mode where we trust the reported system delay
   # values the AEC receives. The corresponding define is set appropriately
   # in the code, but it can be force-enabled here for testing.
@@ -163,10 +160,10 @@ source_set("audio_processing") {
     "../audio_coding:isac",
   ]
 
-  if (aec_debug_dump) {
-    defines += [ "WEBRTC_AEC_DEBUG_DUMP=1" ]
+  if (apm_debug_dump) {
+    defines += [ "WEBRTC_APM_DEBUG_DUMP=1" ]
   } else {
-    defines += [ "WEBRTC_AEC_DEBUG_DUMP=0" ]
+    defines += [ "WEBRTC_APM_DEBUG_DUMP=0" ]
   }
 
   if (aec_untrusted_delay_for_testing) {
@@ -270,10 +267,10 @@ if (current_cpu == "x86" || current_cpu == "x64") {
     configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
-    if (aec_debug_dump) {
-      defines = [ "WEBRTC_AEC_DEBUG_DUMP=1" ]
+    if (apm_debug_dump) {
+      defines = [ "WEBRTC_APM_DEBUG_DUMP=1" ]
     } else {
-      defines = [ "WEBRTC_AEC_DEBUG_DUMP=0" ]
+      defines = [ "WEBRTC_APM_DEBUG_DUMP=0" ]
     }
   }
 }
@@ -311,10 +308,10 @@ if (rtc_build_with_neon) {
       "../../common_audio",
     ]
 
-    if (aec_debug_dump) {
-      defines = [ "WEBRTC_AEC_DEBUG_DUMP=1" ]
+    if (apm_debug_dump) {
+      defines = [ "WEBRTC_APM_DEBUG_DUMP=1" ]
     } else {
-      defines = [ "WEBRTC_AEC_DEBUG_DUMP=0" ]
+      defines = [ "WEBRTC_APM_DEBUG_DUMP=0" ]
     }
   }
 }

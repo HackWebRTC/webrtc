@@ -9,8 +9,6 @@
 {
   'variables': {
     'shared_generated_dir': '<(SHARED_INTERMEDIATE_DIR)/audio_processing/asm_offsets',
-    # Outputs some low-level debug files.
-    'aec_debug_dump%': 0,
   },
   'targets': [
     {
@@ -165,10 +163,10 @@
         'voice_detection_impl.h',
       ],
       'conditions': [
-        ['aec_debug_dump==1', {
-          'defines': ['WEBRTC_AEC_DEBUG_DUMP=1',],
+        ['apm_debug_dump==1', {
+          'defines': ['WEBRTC_APM_DEBUG_DUMP=1',],
         }, {
-          'defines': ['WEBRTC_AEC_DEBUG_DUMP=0',],
+          'defines': ['WEBRTC_APM_DEBUG_DUMP=0',],
         }],
         ['aec_untrusted_delay_for_testing==1', {
           'defines': ['WEBRTC_UNTRUSTED_DELAY',],
@@ -278,10 +276,10 @@
             'aec/aec_rdft_sse2.cc',
           ],
           'conditions': [
-            ['aec_debug_dump==1', {
-              'defines': ['WEBRTC_AEC_DEBUG_DUMP=1',],
+            ['apm_debug_dump==1', {
+              'defines': ['WEBRTC_APM_DEBUG_DUMP=1',],
             }, {
-              'defines': ['WEBRTC_AEC_DEBUG_DUMP=0',],
+              'defines': ['WEBRTC_APM_DEBUG_DUMP=0',],
             }],
             ['os_posix==1', {
               'cflags': [ '-msse2', ],
@@ -308,11 +306,11 @@
           'ns/nsx_core_neon.c',
         ],
         'conditions': [
-          ['aec_debug_dump==1', {
-            'defines': ['WEBRTC_AEC_DEBUG_DUMP=1',],
+          ['apm_debug_dump==1', {
+            'defines': ['WEBRTC_APM_DEBUG_DUMP=1',],
           }],
-          ['aec_debug_dump==0', {
-            'defines': ['WEBRTC_AEC_DEBUG_DUMP=0',],
+          ['apm_debug_dump==0', {
+            'defines': ['WEBRTC_APM_DEBUG_DUMP=0',],
           }],
         ],
       }],

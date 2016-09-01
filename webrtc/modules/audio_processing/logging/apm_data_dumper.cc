@@ -15,16 +15,16 @@
 #include "webrtc/base/stringutils.h"
 
 // Check to verify that the define is properly set.
-#if !defined(WEBRTC_AEC_DEBUG_DUMP) || \
-    (WEBRTC_AEC_DEBUG_DUMP != 0 && WEBRTC_AEC_DEBUG_DUMP != 1)
-#error "Set WEBRTC_AEC_DEBUG_DUMP to either 0 or 1"
+#if !defined(WEBRTC_APM_DEBUG_DUMP) || \
+    (WEBRTC_APM_DEBUG_DUMP != 0 && WEBRTC_APM_DEBUG_DUMP != 1)
+#error "Set WEBRTC_APM_DEBUG_DUMP to either 0 or 1"
 #endif
 
 namespace webrtc {
 
 namespace {
 
-#if WEBRTC_AEC_DEBUG_DUMP == 1
+#if WEBRTC_APM_DEBUG_DUMP == 1
 std::string FormFileName(const char* name,
                          int instance_index,
                          int reinit_index,
@@ -37,7 +37,7 @@ std::string FormFileName(const char* name,
 
 }  // namespace
 
-#if WEBRTC_AEC_DEBUG_DUMP == 1
+#if WEBRTC_APM_DEBUG_DUMP == 1
 ApmDataDumper::ApmDataDumper(int instance_index)
     : instance_index_(instance_index) {}
 #else
@@ -46,7 +46,7 @@ ApmDataDumper::ApmDataDumper(int instance_index) {}
 
 ApmDataDumper::~ApmDataDumper() {}
 
-#if WEBRTC_AEC_DEBUG_DUMP == 1
+#if WEBRTC_APM_DEBUG_DUMP == 1
 FILE* ApmDataDumper::GetRawFile(const char* name) {
   std::string filename =
       FormFileName(name, instance_index_, recording_set_index_, ".dat");

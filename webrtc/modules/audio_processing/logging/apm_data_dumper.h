@@ -22,14 +22,14 @@
 #include "webrtc/common_audio/wav_file.h"
 
 // Check to verify that the define is properly set.
-#if !defined(WEBRTC_AEC_DEBUG_DUMP) || \
-    (WEBRTC_AEC_DEBUG_DUMP != 0 && WEBRTC_AEC_DEBUG_DUMP != 1)
-#error "Set WEBRTC_AEC_DEBUG_DUMP to either 0 or 1"
+#if !defined(WEBRTC_APM_DEBUG_DUMP) || \
+    (WEBRTC_APM_DEBUG_DUMP != 0 && WEBRTC_APM_DEBUG_DUMP != 1)
+#error "Set WEBRTC_APM_DEBUG_DUMP to either 0 or 1"
 #endif
 
 namespace webrtc {
 
-#if WEBRTC_AEC_DEBUG_DUMP == 1
+#if WEBRTC_APM_DEBUG_DUMP == 1
 // Functor used to use as a custom deleter in the map of file pointers to raw
 // files.
 struct RawFileCloseFunctor {
@@ -50,7 +50,7 @@ class ApmDataDumper {
   // Reinitializes the data dumping such that new versions
   // of all files being dumped to are created.
   void InitiateNewSetOfRecordings() {
-#if WEBRTC_AEC_DEBUG_DUMP == 1
+#if WEBRTC_APM_DEBUG_DUMP == 1
     ++recording_set_index_;
 #endif
   }
@@ -58,20 +58,20 @@ class ApmDataDumper {
   // Methods for performing dumping of data of various types into
   // various formats.
   void DumpRaw(const char* name, int v_length, const float* v) {
-#if WEBRTC_AEC_DEBUG_DUMP == 1
+#if WEBRTC_APM_DEBUG_DUMP == 1
     FILE* file = GetRawFile(name);
     fwrite(v, sizeof(v[0]), v_length, file);
 #endif
   }
 
   void DumpRaw(const char* name, rtc::ArrayView<const float> v) {
-#if WEBRTC_AEC_DEBUG_DUMP == 1
+#if WEBRTC_APM_DEBUG_DUMP == 1
     DumpRaw(name, v.size(), v.data());
 #endif
   }
 
   void DumpRaw(const char* name, int v_length, const bool* v) {
-#if WEBRTC_AEC_DEBUG_DUMP == 1
+#if WEBRTC_APM_DEBUG_DUMP == 1
     FILE* file = GetRawFile(name);
     for (int k = 0; k < v_length; ++k) {
       int16_t value = static_cast<int16_t>(v[k]);
@@ -81,33 +81,33 @@ class ApmDataDumper {
   }
 
   void DumpRaw(const char* name, rtc::ArrayView<const bool> v) {
-#if WEBRTC_AEC_DEBUG_DUMP == 1
+#if WEBRTC_APM_DEBUG_DUMP == 1
     DumpRaw(name, v.size(), v.data());
 #endif
   }
 
   void DumpRaw(const char* name, int v_length, const int16_t* v) {
-#if WEBRTC_AEC_DEBUG_DUMP == 1
+#if WEBRTC_APM_DEBUG_DUMP == 1
     FILE* file = GetRawFile(name);
     fwrite(v, sizeof(v[0]), v_length, file);
 #endif
   }
 
   void DumpRaw(const char* name, rtc::ArrayView<const int16_t> v) {
-#if WEBRTC_AEC_DEBUG_DUMP == 1
+#if WEBRTC_APM_DEBUG_DUMP == 1
     DumpRaw(name, v.size(), v.data());
 #endif
   }
 
   void DumpRaw(const char* name, int v_length, const int32_t* v) {
-#if WEBRTC_AEC_DEBUG_DUMP == 1
+#if WEBRTC_APM_DEBUG_DUMP == 1
     FILE* file = GetRawFile(name);
     fwrite(v, sizeof(v[0]), v_length, file);
 #endif
   }
 
   void DumpRaw(const char* name, rtc::ArrayView<const int32_t> v) {
-#if WEBRTC_AEC_DEBUG_DUMP == 1
+#if WEBRTC_APM_DEBUG_DUMP == 1
     DumpRaw(name, v.size(), v.data());
 #endif
   }
@@ -117,7 +117,7 @@ class ApmDataDumper {
                const float* v,
                int sample_rate_hz,
                int num_channels) {
-#if WEBRTC_AEC_DEBUG_DUMP == 1
+#if WEBRTC_APM_DEBUG_DUMP == 1
     WavWriter* file = GetWavFile(name, sample_rate_hz, num_channels);
     file->WriteSamples(v, v_length);
 #endif
@@ -127,13 +127,13 @@ class ApmDataDumper {
                rtc::ArrayView<const float> v,
                int sample_rate_hz,
                int num_channels) {
-#if WEBRTC_AEC_DEBUG_DUMP == 1
+#if WEBRTC_APM_DEBUG_DUMP == 1
     DumpWav(name, v.size(), v.data(), sample_rate_hz, num_channels);
 #endif
   }
 
  private:
-#if WEBRTC_AEC_DEBUG_DUMP == 1
+#if WEBRTC_APM_DEBUG_DUMP == 1
   const int instance_index_;
   int recording_set_index_ = 0;
   std::unordered_map<std::string, std::unique_ptr<FILE, RawFileCloseFunctor>>

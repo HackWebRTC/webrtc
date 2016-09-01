@@ -121,6 +121,10 @@
     # Disable the code for the intelligibility enhancer by default.
     'enable_intelligibility_enhancer%': 0,
 
+    # Selects whether debug dumps for the audio processing module
+    # should be generated.
+    'apm_debug_dump%': 0,
+
     # Disable these to not build components which can be externally provided.
     'build_expat%': 1,
     'build_json%': 1,
