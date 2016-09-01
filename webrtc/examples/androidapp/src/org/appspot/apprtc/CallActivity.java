@@ -658,6 +658,10 @@ public class CallActivity extends Activity
             appRtcClient.sendAnswerSdp(sdp);
           }
         }
+        if (peerConnectionParameters.videoMaxBitrate > 0) {
+          Log.d(TAG, "Set video maximum bitrate: " + peerConnectionParameters.videoMaxBitrate);
+          peerConnectionClient.setVideoMaxBitrate(peerConnectionParameters.videoMaxBitrate);
+        }
       }
     });
   }

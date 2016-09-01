@@ -59,15 +59,15 @@
     <string name="pref_capturequalityslider_dlg">Enable slider for changing capture quality.</string>
     <string name="pref_capturequalityslider_default">false</string>
 
-    <string name="pref_startvideobitrate_key">startvideobitrate_preference</string>
-    <string name="pref_startvideobitrate_title">Start video bitrate setting.</string>
-    <string name="pref_startvideobitrate_dlg">Start video bitrate setting.</string>
-    <string name="pref_startvideobitrate_default">Default</string>
+    <string name="pref_maxvideobitrate_key">maxvideobitrate_preference</string>
+    <string name="pref_maxvideobitrate_title">Maximum video bitrate setting.</string>
+    <string name="pref_maxvideobitrate_dlg">Maximum video bitrate setting.</string>
+    <string name="pref_maxvideobitrate_default">Default</string>
 
-    <string name="pref_startvideobitratevalue_key">startvideobitratevalue_preference</string>
-    <string name="pref_startvideobitratevalue_title">Video encoder start bitrate.</string>
-    <string name="pref_startvideobitratevalue_dlg">Enter video encoder start bitrate in kbps.</string>
-    <string name="pref_startvideobitratevalue_default">1000</string>
+    <string name="pref_maxvideobitratevalue_key">maxvideobitratevalue_preference</string>
+    <string name="pref_maxvideobitratevalue_title">Video encoder maximum bitrate.</string>
+    <string name="pref_maxvideobitratevalue_dlg">Enter video encoder maximum bitrate in kbps.</string>
+    <string name="pref_maxvideobitratevalue_default">1700</string>
 
     <string name="pref_videocodec_key">videocodec_preference</string>
     <string name="pref_videocodec_title">Default video codec.</string>

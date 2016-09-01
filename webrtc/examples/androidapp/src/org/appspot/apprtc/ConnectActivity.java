@@ -94,8 +94,8 @@ public class ConnectActivity extends Activity {
     keyprefResolution = getString(R.string.pref_resolution_key);
     keyprefFps = getString(R.string.pref_fps_key);
     keyprefCaptureQualitySlider = getString(R.string.pref_capturequalityslider_key);
-    keyprefVideoBitrateType = getString(R.string.pref_startvideobitrate_key);
-    keyprefVideoBitrateValue = getString(R.string.pref_startvideobitratevalue_key);
+    keyprefVideoBitrateType = getString(R.string.pref_maxvideobitrate_key);
+    keyprefVideoBitrateValue = getString(R.string.pref_maxvideobitratevalue_key);
     keyprefVideoCodec = getString(R.string.pref_videocodec_key);
     keyprefHwCodecAcceleration = getString(R.string.pref_hwcodec_key);
     keyprefCaptureToTexture = getString(R.string.pref_capturetotexture_key);
@@ -357,12 +357,12 @@ public class ConnectActivity extends Activity {
     // Get video and audio start bitrate.
     int videoStartBitrate = 0;
     String bitrateTypeDefault = getString(
-        R.string.pref_startvideobitrate_default);
+        R.string.pref_maxvideobitrate_default);
     String bitrateType = sharedPref.getString(
         keyprefVideoBitrateType, bitrateTypeDefault);
     if (!bitrateType.equals(bitrateTypeDefault)) {
       String bitrateValue = sharedPref.getString(keyprefVideoBitrateValue,
-          getString(R.string.pref_startvideobitratevalue_default));
+          getString(R.string.pref_maxvideobitratevalue_default));
       videoStartBitrate = Integer.parseInt(bitrateValue);
     }
     int audioStartBitrate = 0;

@@ -29,11 +29,12 @@ import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
 import org.webrtc.Logging;
 import org.webrtc.MediaConstraints;
-import org.webrtc.MediaConstraints.KeyValuePair;
 import org.webrtc.MediaStream;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnection.IceConnectionState;
 import org.webrtc.PeerConnectionFactory;
+import org.webrtc.RtpParameters;
+import org.webrtc.RtpSender;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
 import org.webrtc.StatsObserver;
@@ -66,6 +67,7 @@ import java.util.regex.Pattern;
 public class PeerConnectionClient {
   public static final String VIDEO_TRACK_ID = "ARDAMSv0";
   public static final String AUDIO_TRACK_ID = "ARDAMSa0";
+  public static final String VIDEO_TRACK_TYPE = "video";
   private static final String TAG = "PCRTCClient";
   private static final String VIDEO_CODEC_VP8 = "VP8";
   private static final String VIDEO_CODEC_VP9 = "VP9";
@@ -80,18 +82,13 @@ public class PeerConnectionClient {
   private static final String AUDIO_HIGH_PASS_FILTER_CONSTRAINT  = "googHighpassFilter";
   private static final String AUDIO_NOISE_SUPPRESSION_CONSTRAINT = "googNoiseSuppression";
   private static final String AUDIO_LEVEL_CONTROL_CONSTRAINT = "levelControl";
-  private static final String MAX_VIDEO_WIDTH_CONSTRAINT = "maxWidth";
-  private static final String MIN_VIDEO_WIDTH_CONSTRAINT = "minWidth";
-  private static final String MAX_VIDEO_HEIGHT_CONSTRAINT = "maxHeight";
-  private static final String MIN_VIDEO_HEIGHT_CONSTRAINT = "minHeight";
-  private static final String MAX_VIDEO_FPS_CONSTRAINT = "maxFrameRate";
-  private static final String MIN_VIDEO_FPS_CONSTRAINT = "minFrameRate";
   private static final String DTLS_SRTP_KEY_AGREEMENT_CONSTRAINT = "DtlsSrtpKeyAgreement";
   private static final int HD_VIDEO_WIDTH = 1280;
   private static final int HD_VIDEO_HEIGHT = 720;
   private static final int MAX_VIDEO_WIDTH = 1280;
   private static final int MAX_VIDEO_HEIGHT = 1280;
   private static final int MAX_VIDEO_FPS = 30;
+  private static final int BPS_IN_KBPS = 1000;
 
   private static final PeerConnectionClient instance = new PeerConnectionClient();
   private final PCObserver pcObserver = new PCObserver();
@@ -135,6 +132,7 @@ public class PeerConnectionClient {
   private boolean renderVideo;
   private VideoTrack localVideoTrack;
   private VideoTrack remoteVideoTrack;
+  private RtpSender localVideoSender;
   // enableAudio is set to true if audio should be sent.
   private boolean enableAudio;
   private AudioTrack localAudioTrack;
@@ -150,7 +148,7 @@ public class PeerConnectionClient {
     public final int videoWidth;
     public final int videoHeight;
     public final int videoFps;
-    public final int videoStartBitrate;
+    public final int videoMaxBitrate;
     public final String videoCodec;
     public final boolean videoCodecHwAcceleration;
     public final boolean captureToTexture;
@@ -167,7 +165,7 @@ public class PeerConnectionClient {
     public PeerConnectionParameters(
         boolean videoCallEnabled, boolean loopback, boolean tracing, boolean useCamera2,
         int videoWidth, int videoHeight, int videoFps,
-        int videoStartBitrate, String videoCodec, boolean videoCodecHwAcceleration,
+        int videoMaxBitrate, String videoCodec, boolean videoCodecHwAcceleration,
         boolean captureToTexture, int audioStartBitrate, String audioCodec,
         boolean noAudioProcessing, boolean aecDump, boolean useOpenSLES,
         boolean disableBuiltInAEC, boolean disableBuiltInAGC, boolean disableBuiltInNS,
@@ -179,7 +177,7 @@ public class PeerConnectionClient {
       this.videoWidth = videoWidth;
       this.videoHeight = videoHeight;
       this.videoFps = videoFps;
-      this.videoStartBitrate = videoStartBitrate;
+      this.videoMaxBitrate = videoMaxBitrate;
       this.videoCodec = videoCodec;
       this.videoCodecHwAcceleration = videoCodecHwAcceleration;
       this.captureToTexture = captureToTexture;
@@ -278,6 +276,7 @@ public class PeerConnectionClient {
     renderVideo = true;
     localVideoTrack = null;
     remoteVideoTrack = null;
+    localVideoSender = null;
     enableAudio = true;
     localAudioTrack = null;
     statsTimer = new Timer();
@@ -567,6 +566,9 @@ public class PeerConnectionClient {
 
     mediaStream.addTrack(createAudioTrack());
     peerConnection.addStream(mediaStream);
+    if (videoCallEnabled) {
+      findVideoSender();
+    }
 
     if (peerConnectionParameters.aecDump) {
       try {
@@ -770,14 +772,6 @@ public class PeerConnectionClient {
         if (videoCallEnabled) {
           sdpDescription = preferCodec(sdpDescription, preferredVideoCodec, false);
         }
-        if (videoCallEnabled && peerConnectionParameters.videoStartBitrate > 0) {
-          sdpDescription = setStartBitrate(VIDEO_CODEC_VP8, true,
-              sdpDescription, peerConnectionParameters.videoStartBitrate);
-          sdpDescription = setStartBitrate(VIDEO_CODEC_VP9, true,
-              sdpDescription, peerConnectionParameters.videoStartBitrate);
-          sdpDescription = setStartBitrate(VIDEO_CODEC_H264, true,
-              sdpDescription, peerConnectionParameters.videoStartBitrate);
-        }
         if (peerConnectionParameters.audioStartBitrate > 0) {
           sdpDescription = setStartBitrate(AUDIO_CODEC_OPUS, false,
               sdpDescription, peerConnectionParameters.audioStartBitrate);
@@ -818,6 +812,39 @@ public class PeerConnectionClient {
     });
   }
 
+  public void setVideoMaxBitrate(final Integer maxBitrateKbps) {
+    executor.execute(new Runnable() {
+      @Override
+      public void run() {
+        if (peerConnection == null || localVideoSender == null || isError) {
+          return;
+        }
+        Log.d(TAG, "Requested max video bitrate: " + maxBitrateKbps);
+        if (localVideoSender == null) {
+          Log.w(TAG, "Sender is not ready.");
+          return;
+        }
+
+        RtpParameters parameters = localVideoSender.getParameters();
+        if (parameters.encodings.size() == 0) {
+          Log.w(TAG, "RtpParameters are not ready.");
+          return;
+        }
+
+        for (RtpParameters.Encoding encoding : parameters.encodings) {
+          // Null value means no limit.
+          encoding.maxBitrateBps = maxBitrateKbps == null
+              ? null
+              : maxBitrateKbps * BPS_IN_KBPS;
+        }
+        if (!localVideoSender.setParameters(parameters)) {
+          Log.e(TAG, "RtpSender.setParameters failed.");
+        }
+        Log.d(TAG, "Configured max video bitrate to: " + maxBitrateKbps);
+      }
+    });
+  }
+
   private void reportError(final String errorMessage) {
     Log.e(TAG, "Peerconnection error: " + errorMessage);
     executor.execute(new Runnable() {
@@ -846,6 +873,18 @@ public class PeerConnectionClient {
     localVideoTrack.setEnabled(renderVideo);
     localVideoTrack.addRenderer(new VideoRenderer(localRender));
     return localVideoTrack;
+  }
+
+  private void findVideoSender() {
+    for (RtpSender sender : peerConnection.getSenders()) {
+      if (sender.track() != null) {
+        String trackType = sender.track().kind();
+        if (trackType.equals(VIDEO_TRACK_TYPE)) {
+          Log.d(TAG, "Found video sender.");
+          localVideoSender = sender;
+        }
+      }
+    }
   }
 
   private static String setStartBitrate(String codec, boolean isVideoCodec,

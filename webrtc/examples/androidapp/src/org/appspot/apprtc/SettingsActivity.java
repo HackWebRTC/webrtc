@@ -31,8 +31,8 @@ public class SettingsActivity extends Activity
   private String keyprefResolution;
   private String keyprefFps;
   private String keyprefCaptureQualitySlider;
-  private String keyprefStartVideoBitrateType;
-  private String keyprefStartVideoBitrateValue;
+  private String keyprefMaxVideoBitrateType;
+  private String keyprefMaxVideoBitrateValue;
   private String keyPrefVideoCodec;
   private String keyprefHwCodec;
   private String keyprefCaptureToTexture;
@@ -61,8 +61,8 @@ public class SettingsActivity extends Activity
     keyprefResolution = getString(R.string.pref_resolution_key);
     keyprefFps = getString(R.string.pref_fps_key);
     keyprefCaptureQualitySlider = getString(R.string.pref_capturequalityslider_key);
-    keyprefStartVideoBitrateType = getString(R.string.pref_startvideobitrate_key);
-    keyprefStartVideoBitrateValue = getString(R.string.pref_startvideobitratevalue_key);
+    keyprefMaxVideoBitrateType = getString(R.string.pref_maxvideobitrate_key);
+    keyprefMaxVideoBitrateValue = getString(R.string.pref_maxvideobitratevalue_key);
     keyPrefVideoCodec = getString(R.string.pref_videocodec_key);
     keyprefHwCodec = getString(R.string.pref_hwcodec_key);
     keyprefCaptureToTexture = getString(R.string.pref_capturetotexture_key);
@@ -102,8 +102,8 @@ public class SettingsActivity extends Activity
     updateSummary(sharedPreferences, keyprefResolution);
     updateSummary(sharedPreferences, keyprefFps);
     updateSummaryB(sharedPreferences, keyprefCaptureQualitySlider);
-    updateSummary(sharedPreferences, keyprefStartVideoBitrateType);
-    updateSummaryBitrate(sharedPreferences, keyprefStartVideoBitrateValue);
+    updateSummary(sharedPreferences, keyprefMaxVideoBitrateType);
+    updateSummaryBitrate(sharedPreferences, keyprefMaxVideoBitrateValue);
     setVideoBitrateEnable(sharedPreferences);
     updateSummary(sharedPreferences, keyPrefVideoCodec);
     updateSummaryB(sharedPreferences, keyprefHwCodec);
@@ -177,13 +177,13 @@ public class SettingsActivity extends Activity
       String key) {
     if (key.equals(keyprefResolution)
         || key.equals(keyprefFps)
-        || key.equals(keyprefStartVideoBitrateType)
+        || key.equals(keyprefMaxVideoBitrateType)
         || key.equals(keyPrefVideoCodec)
         || key.equals(keyprefStartAudioBitrateType)
         || key.equals(keyPrefAudioCodec)
         || key.equals(keyPrefRoomServerUrl)) {
       updateSummary(sharedPreferences, key);
-    } else if (key.equals(keyprefStartVideoBitrateValue)
+    } else if (key.equals(keyprefMaxVideoBitrateValue)
         || key.equals(keyprefStartAudioBitrateValue)) {
       updateSummaryBitrate(sharedPreferences, key);
     } else if (key.equals(keyprefVideoCall)
@@ -204,7 +204,7 @@ public class SettingsActivity extends Activity
     } else if (key.equals(keyprefSpeakerphone)) {
       updateSummaryList(sharedPreferences, key);
     }
-    if (key.equals(keyprefStartVideoBitrateType)) {
+    if (key.equals(keyprefMaxVideoBitrateType)) {
       setVideoBitrateEnable(sharedPreferences);
     }
     if (key.equals(keyprefStartAudioBitrateType)) {
@@ -238,10 +238,10 @@ public class SettingsActivity extends Activity
 
   private void setVideoBitrateEnable(SharedPreferences sharedPreferences) {
     Preference bitratePreferenceValue =
-        settingsFragment.findPreference(keyprefStartVideoBitrateValue);
-    String bitrateTypeDefault = getString(R.string.pref_startvideobitrate_default);
+        settingsFragment.findPreference(keyprefMaxVideoBitrateValue);
+    String bitrateTypeDefault = getString(R.string.pref_maxvideobitrate_default);
     String bitrateType = sharedPreferences.getString(
-        keyprefStartVideoBitrateType, bitrateTypeDefault);
+        keyprefMaxVideoBitrateType, bitrateTypeDefault);
     if (bitrateType.equals(bitrateTypeDefault)) {
       bitratePreferenceValue.setEnabled(false);
     } else {

@@ -38,19 +38,19 @@
             android:defaultValue="@string/pref_capturequalityslider_default" />
 
         <ListPreference
-            android:key="@string/pref_startvideobitrate_key"
-            android:title="@string/pref_startvideobitrate_title"
-            android:defaultValue="@string/pref_startvideobitrate_default"
-            android:dialogTitle="@string/pref_startvideobitrate_dlg"
+            android:key="@string/pref_maxvideobitrate_key"
+            android:title="@string/pref_maxvideobitrate_title"
+            android:defaultValue="@string/pref_maxvideobitrate_default"
+            android:dialogTitle="@string/pref_maxvideobitrate_dlg"
             android:entries="@array/startBitrate"
             android:entryValues="@array/startBitrate" />
 
         <EditTextPreference
-            android:key="@string/pref_startvideobitratevalue_key"
-            android:title="@string/pref_startvideobitratevalue_title"
+            android:key="@string/pref_maxvideobitratevalue_key"
+            android:title="@string/pref_maxvideobitratevalue_title"
             android:inputType="number"
-            android:defaultValue="@string/pref_startvideobitratevalue_default"
-            android:dialogTitle="@string/pref_startvideobitratevalue_dlg" />
+            android:defaultValue="@string/pref_maxvideobitratevalue_default"
+            android:dialogTitle="@string/pref_maxvideobitratevalue_dlg" />
 
         <ListPreference
             android:key="@string/pref_videocodec_key"
