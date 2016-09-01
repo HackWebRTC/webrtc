@@ -124,6 +124,8 @@ static_library("rtc_base_approved") {
     "event_tracer.h",
     "exp_filter.cc",
     "exp_filter.h",
+    "file.cc",
+    "file.h",
     "format_macros.h",
     "location.cc",
     "location.h",
@@ -174,6 +176,14 @@ static_library("rtc_base_approved") {
 
   if (is_android) {
     libs += [ "log" ]
+  }
+
+  if (is_posix) {
+    sources += [ "file_posix.cc" ]
+  }
+
+  if (is_win) {
+    sources += [ "file_win.cc" ]
   }
 
   if (build_with_chromium) {
