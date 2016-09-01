@@ -94,8 +94,8 @@ int32_t RTPReceiverVideo::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
 
   // Retrieve the video rotation information.
   if (rtp_header->header.extension.hasVideoRotation) {
-    rtp_header->type.Video.rotation = ConvertCVOByteToVideoRotation(
-        rtp_header->header.extension.videoRotation);
+    rtp_header->type.Video.rotation =
+        rtp_header->header.extension.videoRotation;
   }
 
   rtp_header->type.Video.playout_delay =
