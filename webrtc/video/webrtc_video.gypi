@@ -48,8 +48,6 @@
       'video/stats_counter.h',
       'video/stream_synchronization.cc',
       'video/stream_synchronization.h',
-      'video/video_capture_input.cc',
-      'video/video_capture_input.h',
       'video/video_decoder.cc',
       'video/video_encoder.cc',
       'video/video_receive_stream.cc',

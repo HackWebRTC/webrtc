@@ -1198,7 +1198,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
 
   SetupCommon(&transport, &transport);
 
-  video_send_config_.local_renderer = local_preview.get();
+  video_send_config_.pre_encode_callback = local_preview.get();
   video_receive_configs_[stream_id].renderer = loopback_video.get();
   if (params_.audio && params_.audio_video_sync)
     video_receive_configs_[stream_id].sync_group = kSyncGroup;
@@ -1218,8 +1218,8 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
   if (params_.screenshare.enabled)
     SetupScreenshare();
 
-  video_send_stream_ =
-      call->CreateVideoSendStream(video_send_config_, video_encoder_config_);
+  video_send_stream_ = call->CreateVideoSendStream(
+      video_send_config_.Copy(), video_encoder_config_.Copy());
   VideoReceiveStream* video_receive_stream =
       call->CreateVideoReceiveStream(video_receive_configs_[stream_id].Copy());
   CreateCapturer(video_send_stream_->Input());

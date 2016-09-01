@@ -1284,8 +1284,8 @@ class MultiStreamTest {
 
       UpdateSendConfig(i, &send_config, &encoder_config, &frame_generators[i]);
 
-      send_streams[i] =
-          sender_call->CreateVideoSendStream(send_config, encoder_config);
+      send_streams[i] = sender_call->CreateVideoSendStream(
+          send_config.Copy(), encoder_config.Copy());
       send_streams[i]->Start();
 
       VideoReceiveStream::Config receive_config(receiver_transport.get());
@@ -2489,7 +2489,7 @@ void EndToEndTest::TestSendsSetSsrcs(size_t num_ssrcs,
         }
       }
 
-      video_encoder_config_all_streams_ = *encoder_config;
+      video_encoder_config_all_streams_ = encoder_config->Copy();
       if (send_single_ssrc_first_)
         encoder_config->streams.resize(1);
     }
@@ -2508,7 +2508,7 @@ void EndToEndTest::TestSendsSetSsrcs(size_t num_ssrcs,
       if (send_single_ssrc_first_) {
         // Set full simulcast and continue with the rest of the SSRCs.
         send_stream_->ReconfigureVideoEncoder(
-            video_encoder_config_all_streams_);
+            std::move(video_encoder_config_all_streams_));
         EXPECT_TRUE(Wait()) << "Timed out while waiting on additional SSRCs.";
       }
     }
@@ -3203,7 +3203,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx,
 
   // Use the same total bitrates when sending a single stream to avoid lowering
   // the bitrate estimate and requiring a subsequent rampup.
-  VideoEncoderConfig one_stream = video_encoder_config_;
+  VideoEncoderConfig one_stream = video_encoder_config_.Copy();
   one_stream.streams.resize(1);
   for (size_t i = 1; i < video_encoder_config_.streams.size(); ++i) {
     one_stream.streams.front().min_bitrate_bps +=
@@ -3230,8 +3230,8 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx,
     sender_call_->DestroyVideoSendStream(video_send_stream_);
 
     // Re-create VideoSendStream with only one stream.
-    video_send_stream_ =
-        sender_call_->CreateVideoSendStream(video_send_config_, one_stream);
+    video_send_stream_ = sender_call_->CreateVideoSendStream(
+        video_send_config_.Copy(), one_stream.Copy());
     video_send_stream_->Start();
     if (provoke_rtcpsr_before_rtp) {
       // Rapid Resync Request forces sending RTCP Sender Report back.
@@ -3249,18 +3249,18 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx,
     EXPECT_TRUE(observer.Wait()) << "Timed out waiting for single RTP packet.";
 
     // Reconfigure back to use all streams.
-    video_send_stream_->ReconfigureVideoEncoder(video_encoder_config_);
+    video_send_stream_->ReconfigureVideoEncoder(video_encoder_config_.Copy());
     observer.ResetExpectedSsrcs(kNumSsrcs);
     EXPECT_TRUE(observer.Wait())
         << "Timed out waiting for all SSRCs to send packets.";
 
     // Reconfigure down to one stream.
-    video_send_stream_->ReconfigureVideoEncoder(one_stream);
+    video_send_stream_->ReconfigureVideoEncoder(one_stream.Copy());
     observer.ResetExpectedSsrcs(1);
     EXPECT_TRUE(observer.Wait()) << "Timed out waiting for single RTP packet.";
 
     // Reconfigure back to use all streams.
-    video_send_stream_->ReconfigureVideoEncoder(video_encoder_config_);
+    video_send_stream_->ReconfigureVideoEncoder(video_encoder_config_.Copy());
     observer.ResetExpectedSsrcs(kNumSsrcs);
     EXPECT_TRUE(observer.Wait())
         << "Timed out waiting for all SSRCs to send packets.";

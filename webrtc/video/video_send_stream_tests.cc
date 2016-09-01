@@ -866,7 +866,8 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
       return SEND_PACKET;
     }
 
-    // This method implements the rtc::VideoSinkInterface
+    // This method implements the rtc::VideoSinkInterface. This is called when
+    // a frame is provided to the VideoSendStream.
     void OnFrame(const VideoFrame& video_frame) override {
       rtc::CritScope lock(&crit_);
       if (test_state_ == kDuringSuspend &&
@@ -1205,7 +1206,7 @@ class MaxPaddingSetTest : public test::SendTest {
       encoder_config->min_transmit_bitrate_bps = kMinTransmitBitrateBps;
       encoder_config->content_type = VideoEncoderConfig::ContentType::kScreen;
     }
-    encoder_config_ = *encoder_config;
+    encoder_config_ = encoder_config->Copy();
   }
 
   void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
@@ -1229,7 +1230,7 @@ class MaxPaddingSetTest : public test::SendTest {
       packets_sent_ = 0;
       encoder_config_.min_transmit_bitrate_bps = kMinTransmitBitrateBps;
       encoder_config_.content_type = VideoEncoderConfig::ContentType::kScreen;
-      send_stream_->ReconfigureVideoEncoder(encoder_config_);
+      send_stream_->ReconfigureVideoEncoder(encoder_config_.Copy());
       running_without_padding_ = false;
       return SEND_PACKET;
     }
@@ -1324,7 +1325,7 @@ TEST_F(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
 
   video_encoder_config_.streams[0].max_bitrate_bps =
       2 * bitrate_config.start_bitrate_bps;
-  video_send_stream_->ReconfigureVideoEncoder(video_encoder_config_);
+  video_send_stream_->ReconfigureVideoEncoder(video_encoder_config_.Copy());
 
   // New bitrate should be reconfigured above the previous max. As there's no
   // network connection this shouldn't be flaky, as no bitrate should've been
@@ -1589,13 +1590,13 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       send_config->encoder_settings.encoder = this;
-      encoder_config_ = *encoder_config;
+      encoder_config_ = encoder_config->Copy();
     }
 
     void PerformTest() override {
       EXPECT_TRUE(Wait()) << "Timed out while waiting for Encode.";
       EXPECT_EQ(0u, num_releases());
-      stream_->ReconfigureVideoEncoder(encoder_config_);
+      stream_->ReconfigureVideoEncoder(std::move(encoder_config_));
       EXPECT_EQ(0u, num_releases());
       stream_->Stop();
       // Encoder should not be released before destroying the VideoSendStream.
@@ -1638,7 +1639,7 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       send_config->encoder_settings.encoder = this;
-      encoder_config_ = *encoder_config;
+      encoder_config_ = encoder_config->Copy();
     }
 
     void OnVideoStreamsCreated(
@@ -1667,7 +1668,7 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
       EXPECT_EQ(1u, num_initializations_) << "VideoEncoder not initialized.";
 
       encoder_config_.content_type = VideoEncoderConfig::ContentType::kScreen;
-      stream_->ReconfigureVideoEncoder(encoder_config_);
+      stream_->ReconfigureVideoEncoder(std::move(encoder_config_));
       EXPECT_TRUE(init_encode_event_.Wait(kDefaultTimeoutMs));
       EXPECT_EQ(2u, num_initializations_)
           << "ReconfigureVideoEncoder did not reinitialize the encoder with "
@@ -1714,7 +1715,7 @@ class VideoCodecConfigObserver : public test::SendTest,
     }
 
     encoder_config->encoder_specific_settings = &encoder_settings_;
-    encoder_config_ = *encoder_config;
+    encoder_config_ = encoder_config->Copy();
   }
 
   void OnVideoStreamsCreated(
@@ -1741,7 +1742,7 @@ class VideoCodecConfigObserver : public test::SendTest,
     ASSERT_EQ(1u, num_initializations_) << "VideoEncoder not initialized.";
 
     encoder_settings_.frameDroppingOn = true;
-    stream_->ReconfigureVideoEncoder(encoder_config_);
+    stream_->ReconfigureVideoEncoder(std::move(encoder_config_));
     ASSERT_TRUE(
         init_encode_event_.Wait(VideoSendStreamTest::kDefaultTimeoutMs));
     EXPECT_EQ(2u, num_initializations_)
@@ -1938,6 +1939,8 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
         : SendTest(kDefaultTimeoutMs),
           FakeEncoder(Clock::GetRealTimeClock()),
           init_encode_event_(false, false),
+          bitrate_changed_event_(false, false),
+          target_bitrate_(0),
           num_initializations_(0),
           call_(nullptr),
           send_stream_(nullptr) {}
@@ -1946,6 +1949,8 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
     int32_t InitEncode(const VideoCodec* codecSettings,
                        int32_t numberOfCores,
                        size_t maxPayloadSize) override {
+      EXPECT_GE(codecSettings->startBitrate, codecSettings->minBitrate);
+      EXPECT_LE(codecSettings->startBitrate, codecSettings->maxBitrate);
       if (num_initializations_ == 0) {
         EXPECT_EQ(static_cast<unsigned int>(kMinBitrateKbps),
                   codecSettings->minBitrate);
@@ -1964,13 +1969,31 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
       } else if (num_initializations_ == 2) {
         EXPECT_EQ(static_cast<unsigned int>(kIncreasedMaxBitrateKbps),
                   codecSettings->maxBitrate);
-        EXPECT_EQ(static_cast<unsigned int>(kIncreasedStartBitrateKbps),
-                  codecSettings->startBitrate);
+        // The start bitrate will be whatever the rate BitRateController
+        // has currently configured but in the span of the set max and min
+        // bitrate.
       }
       ++num_initializations_;
       init_encode_event_.Set();
       return FakeEncoder::InitEncode(codecSettings, numberOfCores,
                                      maxPayloadSize);
+    }
+
+    int32_t SetRates(uint32_t newBitRate, uint32_t frameRate) override {
+      {
+        rtc::CritScope lock(&crit_);
+        target_bitrate_ = newBitRate;
+      }
+      bitrate_changed_event_.Set();
+      return FakeEncoder::SetRates(newBitRate, frameRate);
+    }
+
+    void WaitForSetRates(uint32_t expected_bitrate) {
+      EXPECT_TRUE(
+          bitrate_changed_event_.Wait(VideoSendStreamTest::kDefaultTimeoutMs))
+          << "Timed out while waiting encoder rate to be set.";
+      rtc::CritScope lock(&crit_);
+      EXPECT_EQ(expected_bitrate, target_bitrate_);
     }
 
     Call::Config GetSenderCallConfig() override {
@@ -1990,7 +2013,7 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
       // capped.
       encoder_config->streams.front().min_bitrate_bps = kMinBitrateKbps * 1000;
       encoder_config->streams.front().max_bitrate_bps = kMaxBitrateKbps * 1000;
-      encoder_config_ = *encoder_config;
+      encoder_config_ = encoder_config->Copy();
     }
 
     void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
@@ -2006,32 +2029,42 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
     void PerformTest() override {
       ASSERT_TRUE(
           init_encode_event_.Wait(VideoSendStreamTest::kDefaultTimeoutMs))
-          << "Timed out while waiting encoder to be configured.";
+          << "Timed out while waiting for encoder to be configured.";
+      WaitForSetRates(kStartBitrateKbps);
       Call::Config::BitrateConfig bitrate_config;
       bitrate_config.start_bitrate_bps = kIncreasedStartBitrateKbps * 1000;
       bitrate_config.max_bitrate_bps = kIncreasedMaxBitrateKbps * 1000;
       call_->SetBitrateConfig(bitrate_config);
-      EXPECT_TRUE(Wait())
-          << "Timed out while waiting encoder to be configured.";
+      // Encoder rate is capped by EncoderConfig max_bitrate_bps.
+      WaitForSetRates(kMaxBitrateKbps);
+
       encoder_config_.streams[0].min_bitrate_bps = 0;
       encoder_config_.streams[0].max_bitrate_bps = kLowerMaxBitrateKbps * 1000;
-      send_stream_->ReconfigureVideoEncoder(encoder_config_);
+      send_stream_->ReconfigureVideoEncoder(encoder_config_.Copy());
       ASSERT_TRUE(
           init_encode_event_.Wait(VideoSendStreamTest::kDefaultTimeoutMs));
       EXPECT_EQ(2, num_initializations_)
           << "Encoder should have been reconfigured with the new value.";
+      WaitForSetRates(kLowerMaxBitrateKbps);
+
       encoder_config_.streams[0].target_bitrate_bps =
           encoder_config_.streams[0].min_bitrate_bps;
       encoder_config_.streams[0].max_bitrate_bps =
           kIncreasedMaxBitrateKbps * 1000;
-      send_stream_->ReconfigureVideoEncoder(encoder_config_);
+      send_stream_->ReconfigureVideoEncoder(encoder_config_.Copy());
       ASSERT_TRUE(
           init_encode_event_.Wait(VideoSendStreamTest::kDefaultTimeoutMs));
       EXPECT_EQ(3, num_initializations_)
           << "Encoder should have been reconfigured with the new value.";
+      // Expected target bitrate is the start bitrate set in the call to
+      // call_->SetBitrateConfig.
+      WaitForSetRates(kIncreasedStartBitrateKbps);
     }
 
     rtc::Event init_encode_event_;
+    rtc::Event bitrate_changed_event_;
+    rtc::CriticalSection crit_;
+    uint32_t target_bitrate_ GUARDED_BY(&crit_);
     int num_initializations_;
     webrtc::Call* call_;
     webrtc::VideoSendStream* send_stream_;
@@ -2153,7 +2186,7 @@ class Vp9HeaderObserver : public test::SendTest {
     EXPECT_EQ(1u, encoder_config->streams.size());
     encoder_config->streams[0].temporal_layer_thresholds_bps.resize(
         vp9_settings_.numberOfTemporalLayers - 1);
-    encoder_config_ = *encoder_config;
+    encoder_config_ = encoder_config->Copy();
   }
 
   void PerformTest() override {
