@@ -168,6 +168,7 @@ executable("stun_prober") {
     "stunprober/main.cc",
   ]
 
+  configs += [ "..:common_config" ]
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
