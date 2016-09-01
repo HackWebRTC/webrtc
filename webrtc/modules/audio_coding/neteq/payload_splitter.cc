@@ -11,7 +11,6 @@
 #include "webrtc/modules/audio_coding/neteq/payload_splitter.h"
 
 #include <assert.h>
-#include <iostream>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
