@@ -41,7 +41,8 @@
   if (self = [super init]) {
     _iceServers = [NSMutableArray array];
     // Copy defaults.
-    webrtc::PeerConnectionInterface::RTCConfiguration config;
+    webrtc::PeerConnectionInterface::RTCConfiguration config(
+        webrtc::PeerConnectionInterface::RTCConfigurationType::kAggressive);
     _iceTransportPolicy =
         [[self class] transportPolicyForTransportsType:config.type];
     _bundlePolicy =
@@ -93,7 +94,8 @@
 - (webrtc::PeerConnectionInterface::RTCConfiguration *)
     createNativeConfiguration {
   std::unique_ptr<webrtc::PeerConnectionInterface::RTCConfiguration>
-      nativeConfig(new webrtc::PeerConnectionInterface::RTCConfiguration());
+      nativeConfig(new webrtc::PeerConnectionInterface::RTCConfiguration(
+          webrtc::PeerConnectionInterface::RTCConfigurationType::kAggressive));
 
   for (RTCIceServer *iceServer in _iceServers) {
     nativeConfig->servers.push_back(iceServer.nativeServer);

@@ -227,6 +227,15 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     GATHER_CONTINUALLY
   };
 
+  enum class RTCConfigurationType {
+    // A configuration that is safer to use, despite not having the best
+    // performance. Currently this is the default configuration.
+    kSafe,
+    // An aggressive configuration that has better performance, although it
+    // may be riskier and may need extra support in the application.
+    kAggressive
+  };
+
   // TODO(hbos): Change into class with private data and public getters.
   // TODO(nisse): In particular, accessing fields directly from an
   // application is brittle, since the organization mirrors the
@@ -240,16 +249,11 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // methods for all settings which are of interest to applications,
     // Chrome in particular.
 
-    // A configuration that is safer to use, despite it may not have the best
-    // performance.
-    static RTCConfiguration SafeConfiguration() { return RTCConfiguration(); }
-
-    // An aggressive configuration that has better performance, although it
-    // may be riskier and may need extra support in the application.
-    static RTCConfiguration AggressiveConfiguration() {
-      RTCConfiguration config;
-      config.redetermine_role_on_ice_restart = false;
-      return config;
+    RTCConfiguration() = default;
+    RTCConfiguration(RTCConfigurationType type) {
+      if (type == RTCConfigurationType::kAggressive) {
+        redetermine_role_on_ice_restart = false;
+      }
     }
 
     bool dscp() { return media_config.enable_dscp; }
