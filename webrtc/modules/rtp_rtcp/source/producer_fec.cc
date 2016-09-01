@@ -57,7 +57,7 @@ void RedPacket::CreateHeader(const uint8_t* rtp_header,
                              size_t header_length,
                              int red_payload_type,
                              int payload_type) {
-  RTC_DCHECK_LT(header_length + kRedForFecHeaderLength, length_);
+  RTC_DCHECK_LE(header_length + kRedForFecHeaderLength, length_);
   memcpy(data_.get(), rtp_header, header_length);
   // Replace payload type.
   data_[1] &= 0x80;

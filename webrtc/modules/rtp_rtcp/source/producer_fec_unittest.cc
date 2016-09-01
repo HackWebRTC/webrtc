@@ -185,4 +185,22 @@ TEST_F(ProducerFecTest, BuildRedPacket) {
   delete packet;
 }
 
+TEST_F(ProducerFecTest, BuildRedPacketWithEmptyPayload) {
+  constexpr size_t kNumFrames = 1;
+  constexpr size_t kPayloadLength = 0;
+  constexpr size_t kRedForFecHeaderLength = 1;
+
+  generator_.NewFrame(kNumFrames);
+  std::unique_ptr<test::RawRtpPacket> packet(
+      generator_.NextPacket(0, kPayloadLength));
+  std::unique_ptr<RedPacket> red_packet =
+      ProducerFec::BuildRedPacket(packet->data, packet->length - kRtpHeaderSize,
+                                  kRtpHeaderSize, kRedPayloadType);
+  EXPECT_EQ(packet->length + kRedForFecHeaderLength, red_packet->length());
+  VerifyHeader(packet->header.header.sequenceNumber,
+               packet->header.header.timestamp, kRedPayloadType,
+               packet->header.header.payloadType, red_packet.get(),
+               true);  // Marker bit set.
+}
+
 }  // namespace webrtc
