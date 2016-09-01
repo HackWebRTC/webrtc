@@ -189,7 +189,6 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
   int32_t SetRates(uint32_t bitrate, uint32_t framerate) override;
   void OnDroppedFrame() override;
   bool SupportsNativeHandle() const override;
-  const char* ImplementationName() const override;
 
  private:
   bool InitFallbackEncoder();

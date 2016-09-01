@@ -88,9 +88,7 @@ class ViEEncoder : public EncodedImageCallback,
       const RTPFragmentationHeader* fragmentation) override;
 
   // Implements VideoSendStatisticsCallback.
-  void SendStatistics(uint32_t bit_rate,
-                      uint32_t frame_rate,
-                      const std::string& encoder_name) override;
+  void SendStatistics(uint32_t bit_rate, uint32_t frame_rate) override;
 
   // virtual to test EncoderStateFeedback with mocks.
   virtual void OnReceivedIntraFrameRequest(size_t stream_index);

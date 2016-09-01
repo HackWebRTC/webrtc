@@ -56,13 +56,7 @@ void VideoSender::Process() {
     if (send_stats_callback_) {
       uint32_t bitRate = _mediaOpt.SentBitRate();
       uint32_t frameRate = _mediaOpt.SentFrameRate();
-      std::string encoder_name;
-      {
-        rtc::CritScope cs(&params_crit_);
-        // Copy the string here so that we don't hold |params_crit_| in the CB.
-        encoder_name = encoder_name_;
-      }
-      send_stats_callback_->SendStatistics(bitRate, frameRate, encoder_name);
+      send_stats_callback_->SendStatistics(bitRate, frameRate);
     }
   }
 
@@ -314,8 +308,6 @@ int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
 
   {
     rtc::CritScope lock(&params_crit_);
-    encoder_name_ = _encoder->ImplementationName();
-
     // Change all keyframe requests to encode delta frames the next time.
     for (size_t i = 0; i < next_frame_types_.size(); ++i) {
       // Check for equality (same requested as before encoding) to not

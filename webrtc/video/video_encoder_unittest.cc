@@ -11,6 +11,7 @@
 #include "webrtc/video_encoder.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/video_error_codes.h"
 
 namespace webrtc {
@@ -36,6 +37,13 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
                    const CodecSpecificInfo* codec_specific_info,
                    const std::vector<FrameType>* frame_types) override {
       ++encode_count_;
+      if (encode_complete_callback_ &&
+          encode_return_code_ == WEBRTC_VIDEO_CODEC_OK) {
+        CodecSpecificInfo info;
+        info.codec_name = ImplementationName();
+        encode_complete_callback_->OnEncodedImage(EncodedImage(), &info,
+                                                  nullptr);
+      }
       return encode_return_code_;
     }
 
@@ -90,14 +98,19 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
         const CodecSpecificInfo* codec_specific_info,
         const RTPFragmentationHeader* fragmentation) override {
       ++callback_count_;
+      last_codec_name_ = codec_specific_info->codec_name;
       return Result(Result::OK, callback_count_);
     }
     int callback_count_ = 0;
+    std::string last_codec_name_;
   };
 
   void UtilizeFallbackEncoder();
   void FallbackFromEncodeRequest();
   void EncodeFrame();
+  void CheckLastEncoderName(const char* expected_name) {
+    EXPECT_STREQ(expected_name, callback_.last_codec_name_.c_str());
+  }
 
   FakeEncodedImageCallback callback_;
   CountingFakeEncoder fake_encoder_;
@@ -265,13 +278,20 @@ TEST_F(VideoEncoderSoftwareFallbackWrapperTest,
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, fallback_wrapper_.Release());
 }
 
+TEST_F(VideoEncoderSoftwareFallbackWrapperTest, ReportsImplementationName) {
+  VideoCodec codec = {};
+  fallback_wrapper_.RegisterEncodeCompleteCallback(&callback_);
+  fallback_wrapper_.InitEncode(&codec, 2, kMaxPayloadSize);
+  EncodeFrame();
+  CheckLastEncoderName("fake-encoder");
+}
+
 TEST_F(VideoEncoderSoftwareFallbackWrapperTest,
        ReportsFallbackImplementationName) {
   UtilizeFallbackEncoder();
   // Hard coded expected value since libvpx is the software implementation name
   // for VP8. Change accordingly if the underlying implementation does.
-  EXPECT_STREQ("libvpx (fallback from: fake-encoder)",
-               fallback_wrapper_.ImplementationName());
+  CheckLastEncoderName("libvpx");
 }
 
 }  // namespace webrtc

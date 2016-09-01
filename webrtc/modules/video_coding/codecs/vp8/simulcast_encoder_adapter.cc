@@ -410,6 +410,7 @@ EncodedImageCallback::Result SimulcastEncoderAdapter::OnEncodedImage(
     const CodecSpecificInfo* codecSpecificInfo,
     const RTPFragmentationHeader* fragmentation) {
   CodecSpecificInfo stream_codec_specific = *codecSpecificInfo;
+  stream_codec_specific.codec_name = implementation_name_.c_str();
   CodecSpecificInfoVP8* vp8Info = &(stream_codec_specific.codecSpecific.VP8);
   vp8Info->simulcastIdx = stream_idx;
 

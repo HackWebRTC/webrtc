@@ -960,6 +960,7 @@ void VP8EncoderImpl::PopulateCodecSpecific(
     bool only_predicting_from_key_frame) {
   assert(codec_specific != NULL);
   codec_specific->codecType = kVideoCodecVP8;
+  codec_specific->codec_name = ImplementationName();
   CodecSpecificInfoVP8* vp8Info = &(codec_specific->codecSpecific.VP8);
   vp8Info->pictureId = picture_id_[stream_idx];
   if (pkt.data.frame.flags & VPX_FRAME_IS_KEY) {

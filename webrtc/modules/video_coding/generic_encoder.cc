@@ -77,11 +77,6 @@ int32_t VCMGenericEncoder::Encode(const VideoFrame& frame,
   return result;
 }
 
-const char* VCMGenericEncoder::ImplementationName() const {
-  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
-  return encoder_->ImplementationName();
-}
-
 void VCMGenericEncoder::SetEncoderParameters(const EncoderParameters& params) {
   RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
   bool channel_parameters_have_changed;

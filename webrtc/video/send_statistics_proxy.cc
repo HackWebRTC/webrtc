@@ -349,14 +349,11 @@ void SendStatisticsProxy::SetContentType(
   }
 }
 
-void SendStatisticsProxy::OnEncoderStatsUpdate(
-    uint32_t framerate,
-    uint32_t bitrate,
-    const std::string& encoder_name) {
+void SendStatisticsProxy::OnEncoderStatsUpdate(uint32_t framerate,
+                                               uint32_t bitrate) {
   rtc::CritScope lock(&crit_);
   stats_.encode_frame_rate = framerate;
   stats_.media_bitrate_bps = bitrate;
-  stats_.encoder_implementation_name = encoder_name;
 }
 
 void SendStatisticsProxy::OnEncodedFrameTimeMeasured(
@@ -441,11 +438,15 @@ void SendStatisticsProxy::OnSendEncodedImage(
     const CodecSpecificInfo* codec_info) {
   size_t simulcast_idx = 0;
 
+  rtc::CritScope lock(&crit_);
   if (codec_info) {
     if (codec_info->codecType == kVideoCodecVP8) {
       simulcast_idx = codec_info->codecSpecific.VP8.simulcastIdx;
     } else if (codec_info->codecType == kVideoCodecGeneric) {
       simulcast_idx = codec_info->codecSpecific.generic.simulcast_idx;
+    }
+    if (codec_info->codec_name) {
+      stats_.encoder_implementation_name = codec_info->codec_name;
     }
   }
 
@@ -456,7 +457,6 @@ void SendStatisticsProxy::OnSendEncodedImage(
   }
   uint32_t ssrc = config_.rtp.ssrcs[simulcast_idx];
 
-  rtc::CritScope lock(&crit_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   if (!stats)
     return;

@@ -113,7 +113,6 @@ class VideoSender : public Module {
   rtc::CriticalSection params_crit_;
   EncoderParameters encoder_params_ GUARDED_BY(params_crit_);
   bool encoder_has_internal_source_ GUARDED_BY(params_crit_);
-  std::string encoder_name_ GUARDED_BY(params_crit_);
   std::vector<FrameType> next_frame_types_ GUARDED_BY(params_crit_);
 };
 

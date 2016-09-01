@@ -212,11 +212,9 @@ EncodedImageCallback::Result ViEEncoder::OnEncodedImage(
   return result;
 }
 
-void ViEEncoder::SendStatistics(uint32_t bit_rate,
-                                uint32_t frame_rate,
-                                const std::string& encoder_name) {
+void ViEEncoder::SendStatistics(uint32_t bit_rate, uint32_t frame_rate) {
   if (stats_proxy_)
-    stats_proxy_->OnEncoderStatsUpdate(frame_rate, bit_rate, encoder_name);
+    stats_proxy_->OnEncoderStatsUpdate(frame_rate, bit_rate);
 }
 
 void ViEEncoder::OnReceivedSLI(uint8_t picture_id) {

@@ -71,8 +71,6 @@ class VCMGenericEncoder {
                  const CodecSpecificInfo* codec_specific,
                  const std::vector<FrameType>& frame_types);
 
-  const char* ImplementationName() const;
-
   void SetEncoderParameters(const EncoderParameters& params);
   EncoderParameters GetEncoderParameters() const;
 

@@ -108,6 +108,7 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     if (min_stream_bits > bits_available && i > 0)
       continue;
     assert(callback_ != NULL);
+    specifics.codec_name = ImplementationName();
     if (callback_->Encoded(encoded, &specifics, NULL) != 0)
       return -1;
     bits_available -= std::min(encoded._length * 8, bits_available);

@@ -186,10 +186,4 @@ bool VideoEncoderSoftwareFallbackWrapper::SupportsNativeHandle() const {
   return encoder_->SupportsNativeHandle();
 }
 
-const char* VideoEncoderSoftwareFallbackWrapper::ImplementationName() const {
-  if (fallback_encoder_)
-    return fallback_implementation_name_.c_str();
-  return encoder_->ImplementationName();
-}
-
 }  // namespace webrtc

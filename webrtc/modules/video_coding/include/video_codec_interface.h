@@ -90,7 +90,9 @@ union CodecSpecificInfoUnion {
 // must be fitted with a copy-constructor. This is because it is copied
 // in the copy-constructor of VCMEncodedFrame.
 struct CodecSpecificInfo {
+  CodecSpecificInfo() : codecType(kVideoCodecUnknown), codec_name(nullptr) {}
   VideoCodecType codecType;
+  const char* codec_name;
   CodecSpecificInfoUnion codecSpecific;
 };
 
