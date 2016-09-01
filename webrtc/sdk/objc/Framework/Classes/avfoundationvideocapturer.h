@@ -25,8 +25,7 @@ class Thread;
 
 namespace webrtc {
 
-class AVFoundationVideoCapturer : public cricket::VideoCapturer,
-                                  public rtc::MessageHandler {
+class AVFoundationVideoCapturer : public cricket::VideoCapturer {
  public:
   AVFoundationVideoCapturer();
   ~AVFoundationVideoCapturer();
@@ -59,16 +58,8 @@ class AVFoundationVideoCapturer : public cricket::VideoCapturer,
   void CaptureSampleBuffer(CMSampleBufferRef sample_buffer,
                            webrtc::VideoRotation rotation);
 
-  // Handles messages from posts.
-  void OnMessage(rtc::Message *msg) override;
-
  private:
-  void OnFrameMessage(CVImageBufferRef image_buffer,
-                      webrtc::VideoRotation rotation,
-                      int64_t capture_time_ns);
-
   RTCAVFoundationVideoCapturerInternal *_capturer;
-  rtc::Thread *_startThread;  // Set in Start(), unset in Stop().
   webrtc::I420BufferPool _buffer_pool;
 };  // AVFoundationVideoCapturer
 

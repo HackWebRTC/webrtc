@@ -596,18 +596,7 @@ enum AVFoundationVideoCapturerMessageType : uint32_t {
   kMessageTypeFrame,
 };
 
-struct AVFoundationFrame {
-  AVFoundationFrame(CVImageBufferRef buffer,
-                    webrtc::VideoRotation rotation,
-                    int64_t time)
-      : image_buffer(buffer), rotation(rotation), capture_time(time) {}
-  CVImageBufferRef image_buffer;
-  webrtc::VideoRotation rotation;
-  int64_t capture_time;
-};
-
-AVFoundationVideoCapturer::AVFoundationVideoCapturer()
-    : _capturer(nil), _startThread(nullptr) {
+AVFoundationVideoCapturer::AVFoundationVideoCapturer() : _capturer(nil) {
   // Set our supported formats. This matches kAvailablePresets.
   _capturer =
       [[RTCAVFoundationVideoCapturerInternal alloc] initWithCapturer:this];
@@ -663,11 +652,6 @@ cricket::CaptureState AVFoundationVideoCapturer::Start(
   _capturer.captureSession.sessionPreset = desiredPreset;
   [_capturer.captureSession commitConfiguration];
 
-  // Keep track of which thread capture started on. This is the thread that
-  // frames need to be sent to.
-  RTC_DCHECK(!_startThread);
-  _startThread = rtc::Thread::Current();
-
   SetCaptureFormat(&format);
   // This isn't super accurate because it takes a while for the AVCaptureSession
   // to spin up, and this call returns async.
@@ -686,7 +670,6 @@ cricket::CaptureState AVFoundationVideoCapturer::Start(
 void AVFoundationVideoCapturer::Stop() {
   [_capturer stop];
   SetCaptureFormat(NULL);
-  _startThread = nullptr;
 }
 
 bool AVFoundationVideoCapturer::IsRunning() {
@@ -722,32 +705,6 @@ void AVFoundationVideoCapturer::CaptureSampleBuffer(
     return;
   }
 
-  // Retain the buffer and post it to the webrtc thread. It will be released
-  // after it has successfully been signaled.
-  CVBufferRetain(image_buffer);
-  AVFoundationFrame frame(image_buffer, rotation, rtc::TimeNanos());
-  _startThread->Post(RTC_FROM_HERE, this, kMessageTypeFrame,
-                     new rtc::TypedMessageData<AVFoundationFrame>(frame));
-}
-
-void AVFoundationVideoCapturer::OnMessage(rtc::Message *msg) {
-  switch (msg->message_id) {
-    case kMessageTypeFrame: {
-      rtc::TypedMessageData<AVFoundationFrame>* data =
-        static_cast<rtc::TypedMessageData<AVFoundationFrame>*>(msg->pdata);
-      const AVFoundationFrame& frame = data->data();
-      OnFrameMessage(frame.image_buffer, frame.rotation, frame.capture_time);
-      delete data;
-      break;
-    }
-  }
-}
-
-void AVFoundationVideoCapturer::OnFrameMessage(CVImageBufferRef image_buffer,
-                                               webrtc::VideoRotation rotation,
-                                               int64_t capture_time_ns) {
-  RTC_DCHECK(_startThread->IsCurrent());
-
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer =
       new rtc::RefCountedObject<webrtc::CoreVideoFrameBuffer>(image_buffer);
 
@@ -763,11 +720,10 @@ void AVFoundationVideoCapturer::OnFrameMessage(CVImageBufferRef image_buffer,
   int64_t translated_camera_time_us;
 
   if (!AdaptFrame(captured_width, captured_height,
-                  capture_time_ns / rtc::kNumNanosecsPerMicrosec,
+                  rtc::TimeNanos() / rtc::kNumNanosecsPerMicrosec,
                   rtc::TimeMicros(), &adapted_width, &adapted_height,
                   &crop_width, &crop_height, &crop_x, &crop_y,
                   &translated_camera_time_us)) {
-    CVBufferRelease(image_buffer);
     return;
   }
 
@@ -801,8 +757,6 @@ void AVFoundationVideoCapturer::OnFrameMessage(CVImageBufferRef image_buffer,
   OnFrame(cricket::WebRtcVideoFrame(buffer, rotation,
                                     translated_camera_time_us, 0),
           captured_width, captured_height);
-
-  CVBufferRelease(image_buffer);
 }
 
 }  // namespace webrtc

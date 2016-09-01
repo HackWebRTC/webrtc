@@ -13,16 +13,12 @@
 
 namespace rtc {
 
-TimestampAligner::TimestampAligner() : frames_seen_(0), offset_us_(0) {
-  thread_checker_.DetachFromThread();
-}
+TimestampAligner::TimestampAligner() : frames_seen_(0), offset_us_(0) {}
 
 TimestampAligner::~TimestampAligner() {}
 
 int64_t TimestampAligner::UpdateOffset(int64_t camera_time_us,
                                        int64_t system_time_us) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-
   // Estimate the offset between system monotonic time and the capture
   // time from the camera. The camera is assumed to provide more
   // accurate timestamps than we get from the system time. But the
@@ -91,8 +87,6 @@ int64_t TimestampAligner::UpdateOffset(int64_t camera_time_us,
 
 int64_t TimestampAligner::ClipTimestamp(int64_t time_us,
                                         int64_t system_time_us) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-
   // Make timestamps monotonic.
   if (!prev_translated_time_us_) {
     // Initialize.
