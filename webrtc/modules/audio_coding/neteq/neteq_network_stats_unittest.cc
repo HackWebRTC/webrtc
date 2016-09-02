@@ -201,7 +201,8 @@ NetEqNetworkStatsTest(NetEqDecoder codec,
                                                       frame_size_samples_,
                                                       &rtp_header_);
         if (!Lost(next_send_time)) {
-          InsertPacket(rtp_header_, payload_, next_send_time);
+          static const uint8_t payload[kPayloadSizeByte] = {0};
+          InsertPacket(rtp_header_, payload, next_send_time);
         }
       }
       GetOutputAudio(&output_frame_);
@@ -277,7 +278,6 @@ NetEqNetworkStatsTest(NetEqDecoder codec,
   WebRtcRTPHeader rtp_header_;
   uint32_t last_lost_time_;
   uint32_t packet_loss_interval_;
-  uint8_t payload_[kPayloadSizeByte];
   AudioFrame output_frame_;
 };
 

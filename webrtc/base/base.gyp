@@ -82,6 +82,7 @@
         'refcount.h',
         'safe_conversions.h',
         'safe_conversions_impl.h',
+        'sanitizer.h',
         'scoped_ref_ptr.h',
         'stringencode.cc',
         'stringencode.h',

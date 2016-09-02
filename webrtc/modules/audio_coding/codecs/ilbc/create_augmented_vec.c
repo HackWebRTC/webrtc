@@ -18,6 +18,7 @@
 
 #include "defines.h"
 #include "constants.h"
+#include "webrtc/base/sanitizer.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 
 /*----------------------------------------------------------------*
@@ -39,6 +40,9 @@ void WebRtcIlbcfix_CreateAugmentedVec(
      outside |cbVec|; clamping interp_len to stay within |cbVec|.
    */
   size_t interp_len = WEBRTC_SPL_MIN(index, 4);
+
+  rtc_MsanCheckInitialized(buffer - index - interp_len, sizeof(buffer[0]),
+                           index + interp_len);
 
   ilow = index - interp_len;
 

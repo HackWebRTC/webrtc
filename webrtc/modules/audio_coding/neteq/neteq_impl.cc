@@ -19,6 +19,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/safe_conversions.h"
+#include "webrtc/base/sanitizer.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
@@ -132,6 +133,7 @@ NetEqImpl::~NetEqImpl() = default;
 int NetEqImpl::InsertPacket(const WebRtcRTPHeader& rtp_header,
                             rtc::ArrayView<const uint8_t> payload,
                             uint32_t receive_timestamp) {
+  rtc::MsanCheckInitialized(payload);
   TRACE_EVENT0("webrtc", "NetEqImpl::InsertPacket");
   rtc::CritScope lock(&crit_sect_);
   int error =

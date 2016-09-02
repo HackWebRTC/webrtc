@@ -130,6 +130,11 @@ class ArrayView final {
   size_t size_;
 };
 
+template <typename T>
+inline ArrayView<T> MakeArrayView(T* data, size_t size) {
+  return ArrayView<T>(data, size);
+}
+
 }  // namespace rtc
 
 #endif  // WEBRTC_BASE_ARRAY_VIEW_H_
