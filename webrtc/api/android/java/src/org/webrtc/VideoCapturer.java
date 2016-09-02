@@ -91,11 +91,6 @@ public interface VideoCapturer {
   }
 
   /**
-   * Returns a list with all the formats this VideoCapturer supports.
-   */
-  List<CameraEnumerationAndroid.CaptureFormat> getSupportedFormats();
-
-  /**
    * This function is used to initialize the camera thread, the android application context, and the
    * capture observer. It will be called only once and before any startCapture() request. The
    * camera thread is guaranteed to be valid until dispose() is called. If the VideoCapturer wants

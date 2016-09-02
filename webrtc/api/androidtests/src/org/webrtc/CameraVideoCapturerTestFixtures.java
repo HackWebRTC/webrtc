@@ -348,7 +348,7 @@ class CameraVideoCapturerTestFixtures {
       instance.capturer.initialize(
           instance.surfaceTextureHelper, testObjectFactory.getAppContext(), instance.observer);
     }
-    instance.supportedFormats = instance.capturer.getSupportedFormats();
+    instance.supportedFormats = testObjectFactory.cameraEnumerator.getSupportedFormats(name);
     return instance;
   }
 

@@ -32,11 +32,6 @@ public class Camera2Capturer extends CameraCapturer {
   }
 
   @Override
-  public List<CaptureFormat> getSupportedFormats() {
-    return Camera2Enumerator.getSupportedFormats(cameraManager, getCameraName());
-  }
-
-  @Override
   protected void createCameraSession(
       CameraSession.CreateSessionCallback createSessionCallback,
       CameraEventsHandler eventsHandler, Context applicationContext,

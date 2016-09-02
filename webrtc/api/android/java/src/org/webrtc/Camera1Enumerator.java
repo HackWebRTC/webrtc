@@ -65,6 +65,11 @@ public class Camera1Enumerator implements CameraEnumerator {
   }
 
   @Override
+  public List<CaptureFormat> getSupportedFormats(String deviceName) {
+    return getSupportedFormats(getCameraIndex(deviceName));
+  }
+
+  @Override
   public CameraVideoCapturer createCapturer(String deviceName,
       CameraVideoCapturer.CameraEventsHandler eventsHandler) {
     return new VideoCapturerAndroid(deviceName, eventsHandler, captureToTexture);

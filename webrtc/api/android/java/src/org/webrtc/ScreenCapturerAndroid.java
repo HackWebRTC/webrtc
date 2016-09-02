@@ -99,15 +99,6 @@ public class ScreenCapturerAndroid implements
         applicationContext.getSystemService(Context.MEDIA_PROJECTION_SERVICE);
   }
 
-  /**
-   * This method is not called by native code, neither by the java app. It can be removed later
-   * once it is removed from the VideoCapturer interface.
-   */
-  @Override
-  public List<CameraEnumerationAndroid.CaptureFormat> getSupportedFormats() {
-    return null;
-  }
-
   @Override
   public synchronized void startCapture(final int width, final int height,
        final int ignoredFramerate) {
