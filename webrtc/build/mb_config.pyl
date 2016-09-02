@@ -433,7 +433,7 @@
     'gyp': {'type': 'gyp'},
 
     'gyp_limited_support_build': {
-      'gyp_defines': 'include_examples=0 include_tests=0 rtc_use_h264=0'
+      'gyp_defines': 'include_examples=0 include_tests=0'
     },
 
     'ios': {
