@@ -255,6 +255,40 @@ def _CheckNoRtcBaseDeps(input_api, gyp_files, output_api):
         items=violating_files)]
   return []
 
+def _CheckNoRtcBaseDepsGn(input_api, gn_files, output_api):
+  pattern = input_api.re.compile(r'base:rtc_base\s*"')
+  violating_files = []
+  for f in gn_files:
+    gn_exceptions = (
+        os.path.join('base_tests', 'BUILD.gn'),
+        os.path.join('desktop_capture', 'BUILD.gn'),
+        os.path.join('p2p', 'BUILD.gn'),
+        os.path.join('sdk', 'BUILD.gn'),
+        os.path.join('webrtc_test_common', 'BUILD.gn'),
+        os.path.join('webrtc_tests', 'BUILD.gn'),
+
+        # TODO(ehmaldonado): Clean up references to rtc_base in these files.
+        # See https://bugs.chromium.org/p/webrtc/issues/detail?id=3806
+        os.path.join('webrtc', 'BUILD.gn'),
+        os.path.join('xmllite', 'BUILD.gn'),
+        os.path.join('xmpp', 'BUILD.gn'),
+        os.path.join('modules', 'BUILD.gn'),
+        os.path.join('audio_device', 'BUILD.gn'),
+        os.path.join('pc', 'BUILD.gn'),
+    )
+    if f.LocalPath().endswith(gn_exceptions):
+      continue
+    contents = input_api.ReadFile(f)
+    if pattern.search(contents):
+      violating_files.append(f)
+  if violating_files:
+    return [output_api.PresubmitError(
+        'Depending on rtc_base is not allowed. Change your dependency to '
+        'rtc_base_approved and possibly sanitize and move the desired source '
+        'file(s) to rtc_base_approved.\nChanged GN files:',
+        items=violating_files)]
+  return []
+
 def _CheckNoSourcesAboveGyp(input_api, gyp_files, output_api):
   # Disallow referencing source files with paths above the GYP file location.
   source_pattern = input_api.re.compile(r'\'sources\'.*?\[(.*?)\]',
@@ -287,6 +321,34 @@ def _CheckNoSourcesAboveGyp(input_api, gyp_files, output_api):
         items=violating_gyp_files)]
   return []
 
+def _CheckNoSourcesAboveGn(input_api, gn_files, output_api):
+  # Disallow referencing source files with paths above the GN file location.
+  source_pattern = input_api.re.compile(r' +sources \+?= \[(.*?)\]',
+                                        re.MULTILINE | re.DOTALL)
+  file_pattern = input_api.re.compile(r'"((\.\./.*?)|(//.*?))"')
+  violating_gn_files = set()
+  violating_source_entries = []
+  for gn_file in gn_files:
+    contents = input_api.ReadFile(gn_file)
+    for source_block_match in source_pattern.finditer(contents):
+      # Find all source list entries starting with ../ in the source block
+      # (exclude overrides entries).
+      for file_list_match in file_pattern.finditer(source_block_match.group(1)):
+        source_file = file_list_match.group(1)
+        if 'overrides/' not in source_file:
+          violating_source_entries.append(source_file)
+          violating_gn_files.add(gn_file)
+  if violating_gn_files:
+    return [output_api.PresubmitError(
+        'Referencing source files above the directory of the GN file is not '
+        'allowed. Please introduce new GYP targets and/or GN files in the '
+        'proper location instead.\n'
+        'Invalid source entries:\n'
+        '%s\n'
+        'Violating GN files:' % '\n'.join(violating_source_entries),
+        items=violating_gn_files)]
+  return []
+
 def _CheckGypChanges(input_api, output_api):
   source_file_filter = lambda x: input_api.FilterSourceFile(
       x, white_list=(r'.+\.(gyp|gypi)$',))
@@ -304,6 +366,25 @@ def _CheckGypChanges(input_api, output_api):
         items=gyp_files))
     result.extend(_CheckNoRtcBaseDeps(input_api, gyp_files, output_api))
     result.extend(_CheckNoSourcesAboveGyp(input_api, gyp_files, output_api))
+  return result
+
+def _CheckGnChanges(input_api, output_api):
+  source_file_filter = lambda x: input_api.FilterSourceFile(
+      x, white_list=(r'.+\.(gn|gni)$',))
+
+  gn_files = []
+  for f in input_api.AffectedSourceFiles(source_file_filter):
+    if f.LocalPath().startswith('webrtc'):
+      gn_files.append(f)
+
+  result = []
+  if gn_files:
+    result.append(output_api.PresubmitNotifyResult(
+        'As you\'re changing GN files: please make sure corresponding GYP'
+        'files are also updated.\nChanged GN files:',
+        items=gn_files))
+    result.extend(_CheckNoRtcBaseDepsGn(input_api, gn_files, output_api))
+    result.extend(_CheckNoSourcesAboveGn(input_api, gn_files, output_api))
   return result
 
 def _CheckUnwantedDependencies(input_api, output_api):
@@ -489,6 +570,7 @@ def _CommonChecks(input_api, output_api):
   results.extend(_CheckNoIOStreamInHeaders(input_api, output_api))
   results.extend(_CheckNoFRIEND_TEST(input_api, output_api))
   results.extend(_CheckGypChanges(input_api, output_api))
+  results.extend(_CheckGnChanges(input_api, output_api))
   results.extend(_CheckUnwantedDependencies(input_api, output_api))
   results.extend(_CheckJSONParseErrors(input_api, output_api))
   results.extend(_RunPythonTests(input_api, output_api))
