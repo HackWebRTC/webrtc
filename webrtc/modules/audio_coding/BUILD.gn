@@ -944,7 +944,6 @@ if (rtc_include_tests) {
       "../../system_wrappers:system_wrappers_default",
       "../../test:test_support",
       "../rtp_rtcp",
-      "//build/config/sanitizers:deps",
       "//testing/gtest",
       "//third_party/gflags:gflags",
     ]
@@ -974,7 +973,6 @@ if (rtc_include_tests) {
       "../../system_wrappers:system_wrappers_default",
       "../../test:test_support",
       "../rtp_rtcp",
-      "//build/config/sanitizers:deps",
       "//testing/gtest",
       "//third_party/gflags:gflags",
     ]
@@ -1310,7 +1308,6 @@ if (rtc_include_tests) {
       ":pcm16b",
       ":webrtc_opus",
       "../../common_audio",
-      "//build/config/sanitizers:deps",
     ]
 
     configs += [ ":RTPencode_config" ]
@@ -1341,7 +1338,6 @@ if (rtc_include_tests) {
 
     deps = [
       ":neteq_test_tools",
-      "//build/config/sanitizers:deps",
     ]
   }
 
@@ -1355,7 +1351,6 @@ if (rtc_include_tests) {
     deps = [
       "../../system_wrappers:system_wrappers_default",
       "../../test:rtp_test_utils",
-      "//build/config/sanitizers:deps",
       "//testing/gtest",
     ]
   }
@@ -1369,7 +1364,6 @@ if (rtc_include_tests) {
 
     deps = [
       ":neteq_test_tools",
-      "//build/config/sanitizers:deps",
       "//testing/gtest",
     ]
   }
@@ -1378,7 +1372,6 @@ if (rtc_include_tests) {
     testonly = true
     deps = [
       "../..:webrtc_common",
-      "//build/config/sanitizers:deps",
       "//testing/gtest",
     ]
     sources = [
@@ -1398,7 +1391,6 @@ if (rtc_include_tests) {
       ":neteq_unittest_tools",
       ":pcm16b",
       "../../system_wrappers:system_wrappers_default",
-      "//build/config/sanitizers:deps",
       "//testing/gtest",
       "//third_party/gflags:gflags",
     ]
@@ -1423,7 +1415,6 @@ if (rtc_include_tests) {
       ":neteq_unittest_tools",
       ":webrtc_opus",
       "../../test:test_support_main",
-      "//build/config/sanitizers:deps",
       "//testing/gtest",
       "//third_party/gflags",
     ]
@@ -1441,7 +1432,6 @@ if (rtc_include_tests) {
       ":neteq_test_support",
       "../../system_wrappers:system_wrappers_default",
       "../../test:test_support",
-      "//build/config/sanitizers:deps",
       "//third_party/gflags",
     ]
   }
@@ -1455,7 +1445,6 @@ if (rtc_include_tests) {
       ":neteq",
       ":webrtc_opus",
       "../../system_wrappers:system_wrappers_default",
-      "//build/config/sanitizers:deps",
     ]
   }
 
@@ -1473,7 +1462,6 @@ if (rtc_include_tests) {
       ":neteq_unittest_tools",
       "../../system_wrappers:system_wrappers_default",
       "../../test:test_support_main",
-      "//build/config/sanitizers:deps",
       "//testing/gtest",
       "//third_party/gflags",
     ]
@@ -1491,7 +1479,6 @@ if (rtc_include_tests) {
       ":neteq",
       ":neteq_quality_test_support",
       "../../test:test_support_main",
-      "//build/config/sanitizers:deps",
       "//testing/gtest",
       "//third_party/gflags",
     ]
@@ -1509,7 +1496,6 @@ if (rtc_include_tests) {
       ":neteq",
       ":neteq_quality_test_support",
       "../../test:test_support_main",
-      "//build/config/sanitizers:deps",
       "//testing/gtest",
       "//third_party/gflags",
     ]
@@ -1525,7 +1511,6 @@ if (rtc_include_tests) {
     deps = [
       ":isac_fix",
       "../../test:test_support",
-      "//build/config/sanitizers:deps",
     ]
 
     if (is_win) {
@@ -1563,7 +1548,6 @@ if (rtc_include_tests) {
     deps = [
       ":isac",
       "../../base:rtc_base_approved",
-      "//build/config/sanitizers:deps",
     ]
 
     configs += [ ":isac_test_warnings_config" ]
@@ -1581,7 +1565,6 @@ if (rtc_include_tests) {
 
     deps = [
       ":g711",
-      "//build/config/sanitizers:deps",
     ]
   }
 
@@ -1598,7 +1581,6 @@ if (rtc_include_tests) {
     deps = [
       ":g722",
       "../..:webrtc_common",
-      "//build/config/sanitizers:deps",
     ]
   }
 
@@ -1616,7 +1598,6 @@ if (rtc_include_tests) {
     deps = [
       ":isac",
       "../../base:rtc_base_approved",
-      "//build/config/sanitizers:deps",
     ]
 
     include_dirs = [
@@ -1639,7 +1620,6 @@ if (rtc_include_tests) {
 
     deps = [
       ":isac",
-      "//build/config/sanitizers:deps",
     ]
 
     include_dirs = [
@@ -1662,7 +1642,6 @@ if (rtc_include_tests) {
 
     deps = [
       ":ilbc",
-      "//build/config/sanitizers:deps",
     ]
   }
 
@@ -1679,7 +1658,6 @@ if (rtc_include_tests) {
       "../../common_audio",
       "../../test:test_support",
       "../../test:test_support_main",
-      "//build/config/sanitizers:deps",
       "//testing/gtest",
     ]
 

@@ -9,6 +9,7 @@
 import("//build/config/arm.gni")
 import("//build/config/features.gni")
 import("//build/config/mips.gni")
+import("//build/config/sanitizers/sanitizers.gni")
 import("//build_overrides/webrtc.gni")
 import("//testing/test.gni")
 
@@ -219,6 +220,7 @@ template("rtc_executable") {
     forward_variables_from(invoker,
                            "*",
                            [
+                             "deps",
                              "configs",
                              "suppressed_configs",
                            ])
@@ -226,6 +228,10 @@ template("rtc_executable") {
     configs += rtc_add_configs
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
+    deps = [
+      "//build/config/sanitizers:deps",
+    ]
+    deps += invoker.deps
   }
 }
 

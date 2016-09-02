@@ -261,7 +261,6 @@ if (rtc_include_tests && !is_ios) {
       "../../test:test_support_main",
       "../rtp_rtcp",
       "../utility",
-      "//build/config/sanitizers:deps",
       "//testing/gtest",
     ]
     configs += [ "../..:common_config" ]
