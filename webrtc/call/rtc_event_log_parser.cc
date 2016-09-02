@@ -124,7 +124,7 @@ bool ParsedRtcEventLog::ParseString(const std::string& s) {
 bool ParsedRtcEventLog::ParseStream(std::istream& stream) {
   events_.clear();
   const size_t kMaxEventSize = (1u << 16) - 1;
-  char tmp_buffer[kMaxEventSize];
+  std::vector<char> tmp_buffer(kMaxEventSize);
   uint64_t tag;
   uint64_t message_length;
   bool success;
@@ -162,7 +162,7 @@ bool ParsedRtcEventLog::ParseStream(std::istream& stream) {
     }
 
     // Read the next protobuf event to a temporary char buffer.
-    stream.read(tmp_buffer, message_length);
+    stream.read(tmp_buffer.data(), message_length);
     if (stream.gcount() != static_cast<int>(message_length)) {
       LOG(LS_WARNING) << "Failed to read protobuf message from file.";
       return false;
@@ -170,7 +170,7 @@ bool ParsedRtcEventLog::ParseStream(std::istream& stream) {
 
     // Parse the protobuf event from the buffer.
     rtclog::Event event;
-    if (!event.ParseFromArray(tmp_buffer, message_length)) {
+    if (!event.ParseFromArray(tmp_buffer.data(), message_length)) {
       LOG(LS_WARNING) << "Failed to parse protobuf message.";
       return false;
     }
