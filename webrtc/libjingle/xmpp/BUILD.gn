@@ -30,7 +30,7 @@ config("xmpp_inherited_config") {
   ]
 }
 
-source_set("rtc_xmpp") {
+rtc_source_set("rtc_xmpp") {
   cflags = []
   sources = [
     "asyncsocket.h",
@@ -148,7 +148,7 @@ source_set("rtc_xmpp") {
     if (is_clang) {
       # Suppress warnings from Chrome's Clang plugins.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
 

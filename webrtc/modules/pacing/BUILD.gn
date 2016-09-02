@@ -6,7 +6,9 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-source_set("pacing") {
+import("../../build/webrtc.gni")
+
+rtc_source_set("pacing") {
   sources = [
     "bitrate_prober.cc",
     "bitrate_prober.h",
@@ -22,7 +24,7 @@ source_set("pacing") {
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
   deps = [

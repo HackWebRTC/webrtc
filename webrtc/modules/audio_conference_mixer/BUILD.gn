@@ -6,6 +6,8 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+import("../../build/webrtc.gni")
+
 config("audio_conference_mixer_config") {
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
   include_dirs = [
@@ -14,7 +16,7 @@ config("audio_conference_mixer_config") {
   ]
 }
 
-source_set("audio_conference_mixer") {
+rtc_source_set("audio_conference_mixer") {
   sources = [
     "include/audio_conference_mixer.h",
     "include/audio_conference_mixer_defines.h",
@@ -39,7 +41,7 @@ source_set("audio_conference_mixer") {
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
   deps = [

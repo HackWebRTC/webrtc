@@ -7,7 +7,6 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 import("../build/webrtc.gni")
-import("//testing/test.gni")
 
 config("common_video_config") {
   include_dirs = [
@@ -16,7 +15,7 @@ config("common_video_config") {
   ]
 }
 
-source_set("common_video") {
+rtc_source_set("common_video") {
   sources = [
     "bitrate_adjuster.cc",
     "h264/h264_common.cc",
@@ -53,7 +52,7 @@ source_set("common_video") {
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
   deps = [
@@ -96,7 +95,7 @@ if (rtc_include_tests) {
     }
   }
 
-  test("common_video_unittests") {
+  rtc_test("common_video_unittests") {
     testonly = true
 
     sources = [
@@ -118,7 +117,7 @@ if (rtc_include_tests) {
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     deps = [

@@ -6,13 +6,13 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+import("../build/webrtc.gni")
 import("//build/config/ui.gni")
-import("//testing/test.gni")
 if (is_android) {
   import("//build/config/android/rules.gni")
 }
 
-source_set("test") {
+rtc_source_set("test") {
   testonly = true
 
   deps = [
@@ -50,7 +50,7 @@ config("channel_transport_warnings_config") {
   }
 }
 
-source_set("channel_transport") {
+rtc_source_set("channel_transport") {
   testonly = true
   sources = [
     "channel_transport/channel_transport.cc",
@@ -83,7 +83,7 @@ source_set("channel_transport") {
   if (is_clang && !is_nacl) {
     # Suppress warnings from the Chromium Clang plugin.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
   deps = [
@@ -93,7 +93,7 @@ source_set("channel_transport") {
   ]
 }
 
-source_set("video_test_common") {
+rtc_source_set("video_test_common") {
   testonly = true
   sources = [
     "fake_texture_frame.cc",
@@ -110,7 +110,7 @@ source_set("video_test_common") {
   if (is_clang && !is_nacl) {
     # Suppress warnings from the Chromium Clang plugin.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
   deps = [
@@ -118,7 +118,7 @@ source_set("video_test_common") {
   ]
 }
 
-source_set("rtp_test_utils") {
+rtc_source_set("rtp_test_utils") {
   testonly = true
   sources = [
     "rtcp_packet_parser.cc",
@@ -135,7 +135,7 @@ source_set("rtp_test_utils") {
   if (is_clang && !is_nacl) {
     # Suppress warnings from the Chromium Clang plugin.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
   deps = [
@@ -145,7 +145,7 @@ source_set("rtp_test_utils") {
   ]
 }
 
-source_set("field_trial") {
+rtc_source_set("field_trial") {
   testonly = true
   sources = [
     "field_trial.cc",
@@ -162,7 +162,7 @@ source_set("field_trial") {
   public_configs = [ "..:common_inherited_config" ]
 }
 
-source_set("test_main") {
+rtc_source_set("test_main") {
   testonly = true
   sources = [
     "test_main.cc",
@@ -180,7 +180,7 @@ source_set("test_main") {
   public_configs = [ "..:common_inherited_config" ]
 }
 
-source_set("test_support") {
+rtc_source_set("test_support") {
   testonly = true
 
   sources = [
@@ -214,7 +214,7 @@ source_set("test_support") {
   if (is_clang) {
     # Suppress warnings from the Chromium Clang plugin.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
   if (is_ios) {
@@ -235,7 +235,7 @@ source_set("test_support") {
 
 # Depend on this target when you want to have test_support but also the
 # main method needed for gtest to execute!
-source_set("test_support_main") {
+rtc_source_set("test_support_main") {
   testonly = true
 
   sources = [
@@ -263,7 +263,7 @@ source_set("test_support_main") {
 # This main will provide all the scaffolding and objective-c black magic
 # for you. All you need to do is to implement a function in the
 # run_threaded_main_mac.h file (ImplementThisToRunYourTest).
-source_set("test_support_main_threaded_mac") {
+rtc_source_set("test_support_main_threaded_mac") {
   testonly = true
 
   sources = [
@@ -301,7 +301,7 @@ if (is_ios) {
   }
 }
 
-test("test_support_unittests") {
+rtc_test("test_support_unittests") {
   deps = []
   sources = [
     "channel_transport/udp_socket_manager_unittest.cc",
@@ -335,7 +335,7 @@ test("test_support_unittests") {
   if (is_clang) {
     # Suppress warnings from the Chromium Clang plugin.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
   if (is_android) {
@@ -358,7 +358,7 @@ test("test_support_unittests") {
   ]
 }
 
-source_set("test_common") {
+rtc_source_set("test_common") {
   testonly = true
   sources = [
     "call_test.cc",
@@ -412,7 +412,7 @@ source_set("test_common") {
   if (is_clang && !is_nacl) {
     # Suppress warnings from the Chromium Clang plugin.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
   deps = [
@@ -444,7 +444,7 @@ config("test_renderer_exported_config") {
   }
 }
 
-source_set("test_renderer") {
+rtc_source_set("test_renderer") {
   testonly = true
   libs = []
   sources = [
@@ -498,7 +498,7 @@ source_set("test_renderer") {
   if (is_clang && !is_nacl) {
     # Suppress warnings from the Chromium Clang plugin.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
   deps = [

@@ -8,7 +8,6 @@
 
 import("//build/config/arm.gni")
 import("../build/webrtc.gni")
-import("//testing/test.gni")
 
 config("common_audio_config") {
   include_dirs = [
@@ -18,7 +17,7 @@ config("common_audio_config") {
   ]
 }
 
-source_set("common_audio") {
+rtc_source_set("common_audio") {
   sources = [
     "audio_converter.cc",
     "audio_converter.h",
@@ -183,7 +182,7 @@ source_set("common_audio") {
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
   if (current_cpu == "x86" || current_cpu == "x64") {
@@ -192,7 +191,7 @@ source_set("common_audio") {
 }
 
 if (current_cpu == "x86" || current_cpu == "x64") {
-  source_set("common_audio_sse2") {
+  rtc_source_set("common_audio_sse2") {
     sources = [
       "fir_filter_sse.cc",
       "resampler/sinc_resampler_sse.cc",
@@ -207,13 +206,13 @@ if (current_cpu == "x86" || current_cpu == "x64") {
     if (is_clang) {
       # Suppress warnings from Chrome's Clang plugins.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
 }
 
 if (rtc_build_with_neon) {
-  source_set("common_audio_neon") {
+  rtc_source_set("common_audio_neon") {
     sources = [
       "fir_filter_neon.cc",
       "resampler/sinc_resampler_neon.cc",
@@ -226,7 +225,7 @@ if (rtc_build_with_neon) {
       # Enable compilation for the NEON instruction set. This is needed
       # since //build/config/arm.gni only enables NEON for iOS, not Android.
       # This provides the same functionality as webrtc/build/arm_neon.gypi.
-      configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
+      suppressed_configs += [ "//build/config/compiler:compiler_arm_fpu" ]
       cflags = [ "-mfpu=neon" ]
     }
 
@@ -245,13 +244,13 @@ if (rtc_build_with_neon) {
     if (is_clang) {
       # Suppress warnings from Chrome's Clang plugins.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
 }
 
 if (rtc_include_tests) {
-  test("common_audio_unittests") {
+  rtc_test("common_audio_unittests") {
     testonly = true
 
     sources = [
@@ -298,7 +297,7 @@ if (rtc_include_tests) {
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     deps = [

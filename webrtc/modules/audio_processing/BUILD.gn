@@ -17,7 +17,7 @@ declare_args() {
   aec_untrusted_delay_for_testing = false
 }
 
-source_set("audio_processing") {
+rtc_source_set("audio_processing") {
   sources = [
     "aec/aec_core.cc",
     "aec/aec_core.h",
@@ -254,7 +254,7 @@ if (rtc_enable_protobuf) {
 }
 
 if (current_cpu == "x86" || current_cpu == "x64") {
-  source_set("audio_processing_sse2") {
+  rtc_source_set("audio_processing_sse2") {
     sources = [
       "aec/aec_core_sse2.cc",
       "aec/aec_rdft_sse2.cc",
@@ -276,7 +276,7 @@ if (current_cpu == "x86" || current_cpu == "x64") {
 }
 
 if (rtc_build_with_neon) {
-  source_set("audio_processing_neon") {
+  rtc_source_set("audio_processing_neon") {
     sources = [
       "aec/aec_core_neon.cc",
       "aec/aec_rdft_neon.cc",
@@ -288,7 +288,7 @@ if (rtc_build_with_neon) {
       # Enable compilation for the NEON instruction set. This is needed
       # since //build/config/arm.gni only enables NEON for iOS, not Android.
       # This provides the same functionality as webrtc/build/arm_neon.gypi.
-      configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
+      suppressed_configs += [ "//build/config/compiler:compiler_arm_fpu" ]
       cflags = [ "-mfpu=neon" ]
     }
 
@@ -317,7 +317,7 @@ if (rtc_build_with_neon) {
 }
 
 if (rtc_include_tests) {
-  executable("audioproc") {
+  rtc_executable("audioproc") {
     testonly = true
     sources = [
       "test/process_test.cc",
@@ -340,7 +340,7 @@ if (rtc_include_tests) {
     ]
   }  # audioproc
 
-  executable("unpack_aecdump") {
+  rtc_executable("unpack_aecdump") {
     testonly = true
     sources = [
       "test/unpack.cc",
@@ -361,7 +361,7 @@ if (rtc_include_tests) {
     ]
   }  # unpack_aecdump
 
-  executable("audioproc_f") {
+  rtc_executable("audioproc_f") {
     testonly = true
     sources = [
       "test/aec_dump_based_simulator.cc",
@@ -390,7 +390,7 @@ if (rtc_include_tests) {
     ]
   }  # audioproc_f
 
-  source_set("audioproc_test_utils") {
+  rtc_source_set("audioproc_test_utils") {
     testonly = true
     sources = [
       "test/audio_buffer_tools.cc",
@@ -408,7 +408,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  executable("transient_suppression_test") {
+  rtc_executable("transient_suppression_test") {
     testonly = true
     sources = [
       "transient/file_utils.cc",
@@ -424,7 +424,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  executable("click_annotate") {
+  rtc_executable("click_annotate") {
     testonly = true
     sources = [
       "transient/click_annotate.cc",
@@ -437,7 +437,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  executable("nonlinear_beamformer_test") {
+  rtc_executable("nonlinear_beamformer_test") {
     testonly = true
     sources = [
       "beamformer/nonlinear_beamformer_test.cc",
@@ -451,7 +451,7 @@ if (rtc_include_tests) {
   }
 
   if (rtc_enable_intelligibility_enhancer) {
-    executable("intelligibility_proc") {
+    rtc_executable("intelligibility_proc") {
       testonly = true
       sources = [
         "intelligibility/test/intelligibility_proc.cc",
@@ -475,7 +475,7 @@ if (rtc_include_tests) {
       proto_out_dir = "webrtc/modules/audio_processing"
     }
 
-    source_set("audioproc_protobuf_utils") {
+    rtc_source_set("audioproc_protobuf_utils") {
       sources = [
         "test/protobuf_utils.cc",
         "test/protobuf_utils.h",

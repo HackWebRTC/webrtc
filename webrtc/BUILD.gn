@@ -11,7 +11,6 @@
 import("//build/config/linux/pkg_config.gni")
 import("//build/config/sanitizers/sanitizers.gni")
 import("build/webrtc.gni")
-import("//testing/test.gni")
 import("//third_party/protobuf/proto_library.gni")
 
 # Contains the defines and includes in common.gypi that are duplicated both as
@@ -240,7 +239,7 @@ config("common_objc") {
 }
 
 if (!is_ios || !build_with_chromium) {
-  source_set("webrtc") {
+  rtc_source_set("webrtc") {
     sources = [
       "call.h",
       "config.h",
@@ -287,7 +286,7 @@ if (!is_ios || !build_with_chromium) {
 }
 
 if (!build_with_chromium) {
-  executable("webrtc_tests") {
+  rtc_executable("webrtc_tests") {
     testonly = true
     deps = [
       ":webrtc",
@@ -297,7 +296,7 @@ if (!build_with_chromium) {
     ]
   }
 
-  executable("video_loopback") {
+  rtc_executable("video_loopback") {
     testonly = true
     sources = [
       "test/run_test.h",
@@ -323,12 +322,12 @@ if (!build_with_chromium) {
     if (is_clang && !is_nacl) {
       # Suppress warnings from Chrome's Clang plugins.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
 }
 
-source_set("webrtc_common") {
+rtc_source_set("webrtc_common") {
   sources = [
     "audio_sink.h",
     "common.cc",
@@ -347,7 +346,7 @@ source_set("webrtc_common") {
   if (is_clang && !is_nacl) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 }
 
@@ -360,7 +359,7 @@ if (rtc_enable_protobuf) {
   }
 }
 
-source_set("rtc_event_log") {
+rtc_source_set("rtc_event_log") {
   sources = [
     "call/rtc_event_log.cc",
     "call/rtc_event_log.h",
@@ -384,12 +383,12 @@ source_set("rtc_event_log") {
   if (is_clang && !is_nacl) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 }
 
 if (rtc_enable_protobuf) {
-  source_set("rtc_event_log_parser") {
+  rtc_source_set("rtc_event_log_parser") {
     sources = [
       "call/rtc_event_log_parser.cc",
       "call/rtc_event_log_parser.h",
@@ -406,7 +405,7 @@ if (rtc_enable_protobuf) {
     if (is_clang && !is_nacl) {
       # Suppress warnings from Chrome's Clang plugins.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
 }
@@ -436,7 +435,7 @@ if (rtc_include_tests) {
     }
   }
 
-  test("rtc_unittests") {
+  rtc_test("rtc_unittests") {
     testonly = true
     sources = [
       "base/array_view_unittest.cc",
@@ -597,7 +596,7 @@ if (rtc_include_tests) {
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     deps = [
@@ -639,7 +638,7 @@ if (rtc_include_tests) {
     }
   }
 
-  test("xmllite_xmpp_unittests") {
+  rtc_test("xmllite_xmpp_unittests") {
     configs += [
       ":common_config",
       ":rtc_unittests_config",
@@ -649,7 +648,7 @@ if (rtc_include_tests) {
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     deps = [
@@ -702,7 +701,7 @@ if (rtc_include_tests) {
     }
   }
 
-  test("video_engine_tests") {
+  rtc_test("video_engine_tests") {
     testonly = true
     deps = [
       "audio:audio_tests",
@@ -715,7 +714,7 @@ if (rtc_include_tests) {
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_native_code" ]
@@ -728,7 +727,7 @@ if (rtc_include_tests) {
     }
   }
 
-  source_set("video_quality_test") {
+  rtc_source_set("video_quality_test") {
     testonly = true
     configs += [ ":common_config" ]
     public_configs = [ ":common_inherited_config" ]
@@ -747,7 +746,7 @@ if (rtc_include_tests) {
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
 
@@ -778,7 +777,7 @@ if (rtc_include_tests) {
     }
   }
 
-  test("webrtc_perf_tests") {
+  rtc_test("webrtc_perf_tests") {
     testonly = true
     configs += [
       ":common_config",
@@ -787,7 +786,7 @@ if (rtc_include_tests) {
     public_configs = [ ":common_inherited_config" ]
 
     if (!is_debug) {
-      configs -= [ "//build/config/compiler:default_optimization" ]
+      suppressed_configs += [ "//build/config/compiler:default_optimization" ]
       configs += [ "//build/config/compiler:optimize_max" ]
     }
 
@@ -828,11 +827,11 @@ if (rtc_include_tests) {
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
 
-  test("webrtc_nonparallel_tests") {
+  rtc_test("webrtc_nonparallel_tests") {
     testonly = true
     configs += [
       ":common_config",
@@ -869,7 +868,7 @@ if (rtc_include_tests) {
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
 }

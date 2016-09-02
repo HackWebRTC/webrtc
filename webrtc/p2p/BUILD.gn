@@ -18,7 +18,7 @@ config("rtc_p2p_inherited_config") {
   defines = [ "FEATURE_ENABLE_VOICEMAIL" ]
 }
 
-source_set("rtc_p2p") {
+rtc_source_set("rtc_p2p") {
   sources = [
     "base/asyncstuntcpsocket.cc",
     "base/asyncstuntcpsocket.h",
@@ -122,7 +122,7 @@ source_set("rtc_p2p") {
     if (is_clang) {
       # Suppress warnings from Chrome's Clang plugins.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
 
@@ -146,7 +146,7 @@ source_set("rtc_p2p") {
   }
 }
 
-source_set("libstunprober") {
+rtc_source_set("libstunprober") {
   sources = [
     "stunprober/stunprober.cc",
   ]
@@ -154,7 +154,7 @@ source_set("libstunprober") {
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
   deps = [
@@ -165,8 +165,7 @@ source_set("libstunprober") {
 
 if (!build_with_chromium) {
   # Doesn't build within Chrome on Win.
-
-  executable("stun_prober") {
+  rtc_executable("stun_prober") {
     sources = [
       "stunprober/main.cc",
     ]
@@ -175,7 +174,7 @@ if (!build_with_chromium) {
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from Chrome's Clang plugins.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     deps = [

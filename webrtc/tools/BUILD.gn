@@ -6,11 +6,10 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-import("//testing/test.gni")
 import("//third_party/protobuf/proto_library.gni")
 import("../build/webrtc.gni")
 
-source_set("tools") {
+rtc_source_set("tools") {
   deps = [
     ":command_line_parser",
   ]
@@ -24,7 +23,7 @@ source_set("tools") {
   }
 }
 
-source_set("command_line_parser") {
+rtc_source_set("command_line_parser") {
   sources = [
     "simple_command_line_parser.cc",
     "simple_command_line_parser.h",
@@ -36,7 +35,7 @@ source_set("command_line_parser") {
   public_configs = [ "..:common_inherited_config" ]
 }
 
-source_set("video_quality_analysis") {
+rtc_source_set("video_quality_analysis") {
   sources = [
     "frame_analyzer/video_quality_analysis.cc",
     "frame_analyzer/video_quality_analysis.h",
@@ -53,7 +52,7 @@ source_set("video_quality_analysis") {
   ]
 }
 
-executable("frame_analyzer") {
+rtc_executable("frame_analyzer") {
   sources = [
     "frame_analyzer/frame_analyzer.cc",
   ]
@@ -69,7 +68,7 @@ executable("frame_analyzer") {
   ]
 }
 
-executable("psnr_ssim_analyzer") {
+rtc_executable("psnr_ssim_analyzer") {
   sources = [
     "psnr_ssim_analyzer/psnr_ssim_analyzer.cc",
   ]
@@ -85,7 +84,7 @@ executable("psnr_ssim_analyzer") {
   ]
 }
 
-executable("rgba_to_i420_converter") {
+rtc_executable("rgba_to_i420_converter") {
   sources = [
     "converter/converter.cc",
     "converter/converter.h",
@@ -103,7 +102,7 @@ executable("rgba_to_i420_converter") {
   ]
 }
 
-source_set("frame_editing_lib") {
+rtc_source_set("frame_editing_lib") {
   sources = [
     "frame_editing/frame_editing_lib.cc",
     "frame_editing/frame_editing_lib.h",
@@ -118,7 +117,7 @@ source_set("frame_editing_lib") {
   if (is_clang) {
     # Suppress warnings from the Chromium Clang plugin.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
   deps = [
@@ -126,7 +125,7 @@ source_set("frame_editing_lib") {
   ]
 }
 
-executable("frame_editor") {
+rtc_executable("frame_editor") {
   sources = [
     "frame_editing/frame_editing.cc",
   ]
@@ -142,7 +141,7 @@ executable("frame_editor") {
   ]
 }
 
-executable("force_mic_volume_max") {
+rtc_executable("force_mic_volume_max") {
   sources = [
     "force_mic_volume_max/force_mic_volume_max.cc",
   ]
@@ -153,7 +152,7 @@ executable("force_mic_volume_max") {
   if (is_clang) {
     # Suppress warnings from the Chromium Clang plugin.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
   deps = [
@@ -172,7 +171,7 @@ if (rtc_enable_protobuf) {
     proto_out_dir = "webrtc/tools/event_log_visualizer"
   }
 
-  source_set("event_log_visualizer_utils") {
+  rtc_source_set("event_log_visualizer_utils") {
     sources = [
       "event_log_visualizer/analyzer.cc",
       "event_log_visualizer/analyzer.h",
@@ -188,7 +187,7 @@ if (rtc_enable_protobuf) {
     if (is_clang && !is_nacl) {
       # Suppress warnings from the Chromium Clang plugin.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
     defines = [ "ENABLE_RTC_EVENT_LOG" ]
     deps = [
@@ -209,7 +208,7 @@ if (rtc_enable_protobuf) {
 # Exclude tools depending on gflags since that's not available in Chromium.
 if (rtc_include_tests) {
   if (rtc_enable_protobuf) {
-    executable("event_log_visualizer") {
+    rtc_executable("event_log_visualizer") {
       testonly = true
       sources = [
         "event_log_visualizer/main.cc",
@@ -221,7 +220,7 @@ if (rtc_include_tests) {
       if (is_clang && !is_nacl) {
         # Suppress warnings from the Chromium Clang plugin.
         # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-        configs -= [ "//build/config/clang:find_bad_constructs" ]
+        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
       }
 
       defines = [ "ENABLE_RTC_EVENT_LOG" ]
@@ -233,7 +232,7 @@ if (rtc_include_tests) {
     }
   }
 
-  executable("activity_metric") {
+  rtc_executable("activity_metric") {
     testonly = true
     sources = [
       "agc/activity_metric.cc",
@@ -245,7 +244,7 @@ if (rtc_include_tests) {
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     deps = [
@@ -258,7 +257,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  executable("audio_e2e_harness") {
+  rtc_executable("audio_e2e_harness") {
     testonly = true
     sources = [
       "e2e_quality/audio/audio_e2e_harness.cc",
@@ -270,7 +269,7 @@ if (rtc_include_tests) {
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     deps = [
@@ -298,7 +297,7 @@ if (rtc_include_tests) {
     }
   }
 
-  test("tools_unittests") {
+  rtc_test("tools_unittests") {
     testonly = true
 
     sources = [
@@ -316,7 +315,7 @@ if (rtc_include_tests) {
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     deps = [

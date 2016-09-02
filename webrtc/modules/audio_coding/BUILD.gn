@@ -9,7 +9,6 @@
 import("../../build/webrtc.gni")
 import("audio_coding.gni")
 import("//build/config/arm.gni")
-import("//testing/test.gni")
 import("//third_party/protobuf/proto_library.gni")
 
 audio_codec_deps = [
@@ -40,7 +39,7 @@ audio_coding_deps = audio_codec_deps + [
                       "../../system_wrappers",
                     ]
 
-source_set("audio_decoder_factory_interface") {
+rtc_source_set("audio_decoder_factory_interface") {
   sources = [
     "codecs/audio_decoder_factory.h",
     "codecs/audio_format.cc",
@@ -53,7 +52,7 @@ source_set("audio_decoder_factory_interface") {
   ]
 }
 
-source_set("builtin_audio_decoder_factory") {
+rtc_source_set("builtin_audio_decoder_factory") {
   sources = [
     "codecs/builtin_audio_decoder_factory.cc",
     "codecs/builtin_audio_decoder_factory.h",
@@ -67,7 +66,7 @@ source_set("builtin_audio_decoder_factory") {
   defines = audio_codec_defines
 }
 
-source_set("rent_a_codec") {
+rtc_source_set("rent_a_codec") {
   sources = [
     "acm2/acm_codec_database.cc",
     "acm2/acm_codec_database.h",
@@ -87,7 +86,7 @@ config("audio_coding_config") {
   ]
 }
 
-source_set("audio_coding") {
+rtc_source_set("audio_coding") {
   sources = [
     "acm2/acm_common_defs.h",
     "acm2/acm_receiver.cc",
@@ -135,7 +134,7 @@ source_set("audio_coding") {
   defines = audio_coding_defines
 }
 
-source_set("audio_decoder_interface") {
+rtc_source_set("audio_decoder_interface") {
   sources = [
     "codecs/audio_decoder.cc",
     "codecs/audio_decoder.h",
@@ -148,7 +147,7 @@ source_set("audio_decoder_interface") {
   ]
 }
 
-source_set("audio_encoder_interface") {
+rtc_source_set("audio_encoder_interface") {
   sources = [
     "codecs/audio_encoder.cc",
     "codecs/audio_encoder.h",
@@ -168,7 +167,7 @@ config("cng_config") {
   ]
 }
 
-source_set("cng") {
+rtc_source_set("cng") {
   sources = [
     "codecs/cng/audio_encoder_cng.cc",
     "codecs/cng/audio_encoder_cng.h",
@@ -193,7 +192,7 @@ config("red_config") {
   include_dirs = [ "codecs/red" ]
 }
 
-source_set("red") {
+rtc_source_set("red") {
   sources = [
     "codecs/red/audio_encoder_copy_red.cc",
     "codecs/red/audio_encoder_copy_red.h",
@@ -219,7 +218,7 @@ config("g711_config") {
   ]
 }
 
-source_set("g711") {
+rtc_source_set("g711") {
   sources = [
     "codecs/g711/audio_decoder_pcm.cc",
     "codecs/g711/audio_decoder_pcm.h",
@@ -251,7 +250,7 @@ config("g722_config") {
   ]
 }
 
-source_set("g722") {
+rtc_source_set("g722") {
   sources = [
     "codecs/g722/audio_decoder_g722.cc",
     "codecs/g722/audio_decoder_g722.h",
@@ -284,7 +283,7 @@ config("ilbc_config") {
   ]
 }
 
-source_set("ilbc") {
+rtc_source_set("ilbc") {
   sources = [
     "codecs/ilbc/abs_quant.c",
     "codecs/ilbc/abs_quant.h",
@@ -446,7 +445,7 @@ source_set("ilbc") {
   ]
 }
 
-source_set("isac_common") {
+rtc_source_set("isac_common") {
   sources = [
     "codecs/isac/audio_encoder_isac_t.h",
     "codecs/isac/audio_encoder_isac_t_impl.h",
@@ -463,7 +462,7 @@ config("isac_config") {
   ]
 }
 
-source_set("isac") {
+rtc_source_set("isac") {
   sources = [
     "codecs/isac/main/include/audio_decoder_isac.h",
     "codecs/isac/main/include/audio_encoder_isac.h",
@@ -549,7 +548,7 @@ config("isac_fix_config") {
   ]
 }
 
-source_set("isac_fix") {
+rtc_source_set("isac_fix") {
   sources = [
     "codecs/isac/fix/include/audio_decoder_isacfix.h",
     "codecs/isac/fix/include/audio_encoder_isacfix.h",
@@ -661,7 +660,7 @@ source_set("isac_fix") {
 }
 
 if (rtc_build_with_neon) {
-  source_set("isac_neon") {
+  rtc_source_set("isac_neon") {
     sources = [
       "codecs/isac/fix/source/entropy_coding_neon.c",
       "codecs/isac/fix/source/filterbanks_neon.c",
@@ -674,7 +673,7 @@ if (rtc_build_with_neon) {
       # Enable compilation for the NEON instruction set. This is needed
       # since //build/config/arm.gni only enables NEON for iOS, not Android.
       # This provides the same functionality as webrtc/build/arm_neon.gypi.
-      configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
+      suppressed_configs += [ "//build/config/compiler:compiler_arm_fpu" ]
       cflags = [ "-mfpu=neon" ]
     }
 
@@ -703,7 +702,7 @@ config("pcm16b_config") {
   ]
 }
 
-source_set("pcm16b") {
+rtc_source_set("pcm16b") {
   sources = [
     "codecs/pcm16b/audio_decoder_pcm16b.cc",
     "codecs/pcm16b/audio_decoder_pcm16b.h",
@@ -731,7 +730,7 @@ config("opus_config") {
   include_dirs = [ "../../.." ]
 }
 
-source_set("webrtc_opus") {
+rtc_source_set("webrtc_opus") {
   sources = [
     "codecs/opus/audio_decoder_opus.cc",
     "codecs/opus/audio_decoder_opus.h",
@@ -768,7 +767,7 @@ config("neteq_config") {
   ]
 }
 
-source_set("neteq") {
+rtc_source_set("neteq") {
   sources = [
     "neteq/accelerate.cc",
     "neteq/accelerate.h",
@@ -888,7 +887,7 @@ source_set("neteq") {
 }
 
 if (rtc_include_tests) {
-  source_set("acm_receive_test") {
+  rtc_source_set("acm_receive_test") {
     testonly = true
     sources = [
       "acm2/acm_receive_test_oldapi.cc",
@@ -907,7 +906,7 @@ if (rtc_include_tests) {
            ]
   }
 
-  source_set("acm_send_test") {
+  rtc_source_set("acm_send_test") {
     testonly = true
     sources = [
       "acm2/acm_send_test_oldapi.cc",
@@ -926,7 +925,7 @@ if (rtc_include_tests) {
            ]
   }
 
-  executable("delay_test") {
+  rtc_executable("delay_test") {
     testonly = true
     sources = [
       "test/Channel.cc",
@@ -951,7 +950,7 @@ if (rtc_include_tests) {
     ]
   }  # delay_test
 
-  executable("insert_packet_with_timing") {
+  rtc_executable("insert_packet_with_timing") {
     testonly = true
     sources = [
       "test/Channel.cc",
@@ -965,7 +964,7 @@ if (rtc_include_tests) {
     if (is_clang) {
       # Suppress warnings from Chrome's Clang plugins.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     deps = [
@@ -996,7 +995,7 @@ if (rtc_include_tests) {
     }
   }
 
-  test("audio_decoder_unittests") {
+  rtc_test("audio_decoder_unittests") {
     testonly = true
     sources = [
       "neteq/audio_decoder_unittest.cc",
@@ -1007,7 +1006,7 @@ if (rtc_include_tests) {
 
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     deps = []
@@ -1044,7 +1043,7 @@ if (rtc_include_tests) {
       proto_out_dir = "webrtc/audio_coding/neteq"
     }
 
-    source_set("rtc_event_log_source") {
+    rtc_source_set("rtc_event_log_source") {
       testonly = true
       sources = [
         "neteq/tools/rtc_event_log_source.cc",
@@ -1054,7 +1053,7 @@ if (rtc_include_tests) {
       if (is_clang) {
         # Suppress warnings from the Chromium Clang plugins
         # (bugs.webrtc.org/163).
-        configs -= [ "//build/config/clang:find_bad_constructs" ]
+        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
       }
 
       deps = [
@@ -1065,7 +1064,7 @@ if (rtc_include_tests) {
       ]
     }
 
-    test("neteq_rtpplay") {
+    rtc_test("neteq_rtpplay") {
       testonly = true
       defines = []
       deps = []
@@ -1076,7 +1075,7 @@ if (rtc_include_tests) {
       if (is_clang) {
         # Suppress warnings from the Chromium Clang plugins
         # (bugs.webrtc.org/163).
-        configs -= [ "//build/config/clang:find_bad_constructs" ]
+        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
       }
 
       if (is_win) {
@@ -1096,7 +1095,7 @@ if (rtc_include_tests) {
     }
   }
 
-  test("audio_codec_speed_tests") {
+  rtc_test("audio_codec_speed_tests") {
     testonly = true
     defines = []
     deps = []
@@ -1110,7 +1109,7 @@ if (rtc_include_tests) {
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugins
       # (bugs.webrtc.org/163).
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     if (is_android) {
@@ -1128,7 +1127,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  source_set("neteq_test_support") {
+  rtc_source_set("neteq_test_support") {
     testonly = true
     sources = [
       "neteq/tools/neteq_external_decoder_test.cc",
@@ -1141,13 +1140,13 @@ if (rtc_include_tests) {
     public_configs = [ "../..:common_inherited_config" ]
 
     if (!is_debug) {
-      configs -= [ "//build/config/compiler:default_optimization" ]
+      suppressed_configs += [ "//build/config/compiler:default_optimization" ]
       configs += [ "//build/config/compiler:optimize_max" ]
     }
 
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     deps = [
@@ -1159,7 +1158,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  source_set("neteq_quality_test_support") {
+  rtc_source_set("neteq_quality_test_support") {
     testonly = true
     sources = [
       "neteq/tools/neteq_quality_test.cc",
@@ -1171,7 +1170,7 @@ if (rtc_include_tests) {
 
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     deps = [
@@ -1186,7 +1185,7 @@ if (rtc_include_tests) {
     include_dirs = [ "tools" ]
   }
 
-  source_set("neteq_unittest_tools") {
+  rtc_source_set("neteq_unittest_tools") {
     testonly = true
     sources = [
       "neteq/tools/audio_checksum.h",
@@ -1229,7 +1228,7 @@ if (rtc_include_tests) {
 
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     deps = [
@@ -1243,7 +1242,7 @@ if (rtc_include_tests) {
     }
   }
 
-  source_set("neteq_test_tools") {
+  rtc_source_set("neteq_test_tools") {
     testonly = true
     sources = [
       "neteq/test/NETEQTEST_DummyRTPpacket.cc",
@@ -1297,7 +1296,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  executable("RTPencode") {
+  rtc_executable("RTPencode") {
     testonly = true
 
     deps = [
@@ -1333,7 +1332,7 @@ if (rtc_include_tests) {
     }
   }
 
-  executable("RTPchange") {
+  rtc_executable("RTPchange") {
     testonly = true
 
     sources = [
@@ -1346,7 +1345,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  executable("rtpcat") {
+  rtc_executable("rtpcat") {
     testonly = true
 
     sources = [
@@ -1361,7 +1360,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  executable("RTPtimeshift") {
+  rtc_executable("RTPtimeshift") {
     testonly = true
 
     sources = [
@@ -1375,7 +1374,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  executable("RTPjitter") {
+  rtc_executable("RTPjitter") {
     testonly = true
     deps = [
       "../..:webrtc_common",
@@ -1387,7 +1386,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  executable("rtp_analyze") {
+  rtc_executable("rtp_analyze") {
     testonly = true
 
     sources = [
@@ -1407,11 +1406,11 @@ if (rtc_include_tests) {
     if (is_clang) {
       # Suppress warnings from Chrome's Clang plugins.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
 
-  executable("neteq_opus_quality_test") {
+  rtc_executable("neteq_opus_quality_test") {
     testonly = true
 
     sources = [
@@ -1430,7 +1429,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  executable("neteq_speed_test") {
+  rtc_executable("neteq_speed_test") {
     testonly = true
 
     sources = [
@@ -1447,7 +1446,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  executable("audio_classifier_test") {
+  rtc_executable("audio_classifier_test") {
     testonly = true
     sources = [
       "neteq/test/audio_classifier_test.cc",
@@ -1460,7 +1459,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  executable("neteq_ilbc_quality_test") {
+  rtc_executable("neteq_ilbc_quality_test") {
     testonly = true
 
     sources = [
@@ -1480,7 +1479,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  executable("neteq_isac_quality_test") {
+  rtc_executable("neteq_isac_quality_test") {
     testonly = true
 
     sources = [
@@ -1498,7 +1497,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  executable("neteq_pcmu_quality_test") {
+  rtc_executable("neteq_pcmu_quality_test") {
     testonly = true
 
     sources = [
@@ -1516,7 +1515,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  executable("isac_fix_test") {
+  rtc_executable("isac_fix_test") {
     testonly = true
 
     sources = [
@@ -1547,7 +1546,7 @@ if (rtc_include_tests) {
     }
   }
 
-  executable("isac_test") {
+  rtc_executable("isac_test") {
     testonly = true
 
     sources = [
@@ -1570,7 +1569,7 @@ if (rtc_include_tests) {
     configs += [ ":isac_test_warnings_config" ]
   }
 
-  executable("g711_test") {
+  rtc_executable("g711_test") {
     testonly = true
 
     sources = [
@@ -1586,7 +1585,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  executable("g722_test") {
+  rtc_executable("g722_test") {
     testonly = true
 
     sources = [
@@ -1603,7 +1602,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  executable("isac_api_test") {
+  rtc_executable("isac_api_test") {
     testonly = true
 
     sources = [
@@ -1627,7 +1626,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  executable("isac_switch_samprate_test") {
+  rtc_executable("isac_switch_samprate_test") {
     testonly = true
 
     sources = [
@@ -1651,7 +1650,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  executable("ilbc_test") {
+  rtc_executable("ilbc_test") {
     testonly = true
 
     sources = [
@@ -1667,7 +1666,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  executable("webrtc_opus_fec_test") {
+  rtc_executable("webrtc_opus_fec_test") {
     testonly = true
 
     sources = [
@@ -1687,7 +1686,7 @@ if (rtc_include_tests) {
     if (is_clang) {
       # Suppress warnings from Chrome's Clang plugins.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
 }

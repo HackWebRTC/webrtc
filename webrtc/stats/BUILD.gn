@@ -7,7 +7,6 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 import("../build/webrtc.gni")
-import("//testing/test.gni")
 
 group("stats") {
   deps = [
@@ -16,7 +15,7 @@ group("stats") {
 }
 
 # GYP version: webrtc/stats/stats.gyp:rtc_stats
-source_set("rtc_stats") {
+rtc_source_set("rtc_stats") {
   cflags = []
   sources = [
     "rtcstats.cc",
@@ -31,7 +30,7 @@ source_set("rtc_stats") {
 
   if (is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
   deps = [
@@ -41,7 +40,7 @@ source_set("rtc_stats") {
 
 if (rtc_include_tests) {
   # GYP version: webrtc/stats/stats.gyp:rtc_stats_unittests
-  test("rtc_stats_unittests") {
+  rtc_test("rtc_stats_unittests") {
     testonly = true
     sources = [
       "rtcstats_unittest.cc",
@@ -54,7 +53,7 @@ if (rtc_include_tests) {
 
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     deps = [

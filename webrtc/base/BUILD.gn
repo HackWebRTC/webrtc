@@ -90,7 +90,7 @@ if (!rtc_build_ssl) {
 }
 
 # The subset of rtc_base approved for use outside of libjingle.
-static_library("rtc_base_approved") {
+rtc_static_library("rtc_base_approved") {
   defines = []
   libs = []
   deps = []
@@ -198,7 +198,7 @@ config("enable_libevent_config") {
   defines = [ "WEBRTC_BUILD_LIBEVENT" ]
 }
 
-static_library("rtc_task_queue") {
+rtc_static_library("rtc_task_queue") {
   public_deps = [
     ":rtc_base_approved",
   ]
@@ -258,7 +258,7 @@ config("rtc_base_warnings_config") {
   }
 }
 
-static_library("rtc_base") {
+rtc_static_library("rtc_base") {
   cflags = []
   cflags_cc = []
   libs = []
@@ -428,7 +428,7 @@ static_library("rtc_base") {
 
   # TODO(henrike): issue 3307, make rtc_base build with the Chromium default
   # compiler settings.
-  configs -= [ "//build/config/compiler:chromium_code" ]
+  suppressed_configs += [ "//build/config/compiler:chromium_code" ]
   configs += [ "//build/config/compiler:no_chromium_code" ]
   if (!is_win) {
     cflags += [ "-Wno-uninitialized" ]
@@ -681,11 +681,11 @@ static_library("rtc_base") {
   }
   if (is_win && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 }
 
-source_set("gtest_prod") {
+rtc_source_set("gtest_prod") {
   sources = [
     "gtest_prod_util.h",
   ]
@@ -706,7 +706,7 @@ if (rtc_include_tests) {
     }
   }
 
-  source_set("rtc_base_tests_utils") {
+  rtc_source_set("rtc_base_tests_utils") {
     testonly = true
     sources = [
       # Also use this as a convenient dumping ground for misc files that are
@@ -743,7 +743,7 @@ if (rtc_include_tests) {
 
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
 }

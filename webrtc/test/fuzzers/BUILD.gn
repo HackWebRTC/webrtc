@@ -6,12 +6,12 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+import("../../build/webrtc.gni")
 import("//build/config/features.gni")
 import("//build_overrides/webrtc.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
-import("//testing/test.gni")
 
-static_library("webrtc_fuzzer_main") {
+rtc_static_library("webrtc_fuzzer_main") {
   public_configs = [ "../..:common_inherited_config" ]
   sources = [
     "webrtc_fuzzer_main.cc",
@@ -119,7 +119,7 @@ webrtc_fuzzer_test("congestion_controller_feedback_fuzzer") {
   ]
 }
 
-source_set("audio_decoder_fuzzer") {
+rtc_source_set("audio_decoder_fuzzer") {
   public_configs = [ "../..:common_inherited_config" ]
   sources = [
     "audio_decoder_fuzzer.cc",

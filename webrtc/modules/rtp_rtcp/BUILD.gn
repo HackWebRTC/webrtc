@@ -8,7 +8,7 @@
 
 import("../../build/webrtc.gni")
 
-source_set("rtp_rtcp") {
+rtc_source_set("rtp_rtcp") {
   sources = [
     "include/fec_receiver.h",
     "include/receive_statistics.h",
@@ -160,7 +160,7 @@ source_set("rtp_rtcp") {
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
   deps = [
@@ -182,7 +182,7 @@ source_set("rtp_rtcp") {
 }
 
 if (rtc_include_tests) {
-  executable("test_packet_masks_metrics") {
+  rtc_executable("test_packet_masks_metrics") {
     testonly = true
 
     sources = [

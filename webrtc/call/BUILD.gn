@@ -8,7 +8,7 @@
 
 import("../build/webrtc.gni")
 
-source_set("call") {
+rtc_source_set("call") {
   sources = [
     "bitrate_allocator.cc",
     "call.cc",
@@ -22,7 +22,7 @@ source_set("call") {
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
   deps = [
@@ -39,7 +39,7 @@ source_set("call") {
 }
 
 if (rtc_include_tests) {
-  source_set("call_tests") {
+  rtc_source_set("call_tests") {
     testonly = true
     sources = [
       "bitrate_allocator_unittest.cc",
@@ -57,7 +57,7 @@ if (rtc_include_tests) {
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
 }

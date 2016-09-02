@@ -11,7 +11,7 @@ import("../../build/webrtc.gni")
 
 build_video_processing_sse2 = current_cpu == "x86" || current_cpu == "x64"
 
-source_set("video_processing") {
+rtc_source_set("video_processing") {
   sources = [
     "frame_preprocessor.cc",
     "frame_preprocessor.h",
@@ -54,12 +54,12 @@ source_set("video_processing") {
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 }
 
 if (build_video_processing_sse2) {
-  source_set("video_processing_sse2") {
+  rtc_source_set("video_processing_sse2") {
     sources = [
       "util/denoiser_filter_sse2.cc",
       "util/denoiser_filter_sse2.h",
@@ -71,7 +71,7 @@ if (build_video_processing_sse2) {
     if (is_clang) {
       # Suppress warnings from Chrome's Clang plugins.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     if (is_posix) {
@@ -81,13 +81,13 @@ if (build_video_processing_sse2) {
 }
 
 if (rtc_build_with_neon) {
-  source_set("video_processing_neon") {
+  rtc_source_set("video_processing_neon") {
     sources = [
       "util/denoiser_filter_neon.cc",
       "util/denoiser_filter_neon.h",
     ]
     if (current_cpu != "arm64") {
-      configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
+      suppressed_configs += [ "//build/config/compiler:compiler_arm_fpu" ]
       cflags = [ "-mfpu=neon" ]
     }
     configs += [ "../..:common_config" ]

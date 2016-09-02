@@ -10,6 +10,7 @@ import("//build/config/arm.gni")
 import("//build/config/features.gni")
 import("//build/config/mips.gni")
 import("//build_overrides/webrtc.gni")
+import("//testing/test.gni")
 
 declare_args() {
   # Disable this to avoid building the Opus audio codec.
@@ -148,3 +149,97 @@ declare_args() {
 rtc_libvpx_dir = "//third_party/libvpx"
 rtc_libyuv_dir = "//third_party/libyuv"
 rtc_opus_dir = "//third_party/opus"
+
+###############################################################################
+# Templates
+#
+
+# Points to //webrtc/ in webrtc stand-alone or to //third_party/webrtc/ in
+# chromium.
+# We need absolute paths for all configs in templates as they are shared in
+# different subdirectories.
+webrtc_root = get_path_info("../", "abspath")
+
+# Common configs to remove or add in all rtc targets.
+rtc_remove_configs = []
+rtc_add_configs = []
+
+set_defaults("rtc_test") {
+  configs = []
+  suppressed_configs = []
+}
+
+set_defaults("rtc_source_set") {
+  configs = []
+  suppressed_configs = []
+}
+
+set_defaults("rtc_executable") {
+  configs = []
+  suppressed_configs = []
+}
+
+set_defaults("rtc_static_library") {
+  configs = []
+  suppressed_configs = []
+}
+
+template("rtc_test") {
+  test(target_name) {
+    forward_variables_from(invoker,
+                           "*",
+                           [
+                             "configs",
+                             "suppressed_configs",
+                           ])
+    configs += invoker.configs
+    configs += rtc_add_configs
+    configs -= rtc_remove_configs
+    configs -= invoker.suppressed_configs
+  }
+}
+
+template("rtc_source_set") {
+  source_set(target_name) {
+    forward_variables_from(invoker,
+                           "*",
+                           [
+                             "configs",
+                             "suppressed_configs",
+                           ])
+    configs += invoker.configs
+    configs += rtc_add_configs
+    configs -= rtc_remove_configs
+    configs -= invoker.suppressed_configs
+  }
+}
+
+template("rtc_executable") {
+  executable(target_name) {
+    forward_variables_from(invoker,
+                           "*",
+                           [
+                             "configs",
+                             "suppressed_configs",
+                           ])
+    configs += invoker.configs
+    configs += rtc_add_configs
+    configs -= rtc_remove_configs
+    configs -= invoker.suppressed_configs
+  }
+}
+
+template("rtc_static_library") {
+  static_library(target_name) {
+    forward_variables_from(invoker,
+                           "*",
+                           [
+                             "configs",
+                             "suppressed_configs",
+                           ])
+    configs += invoker.configs
+    configs += rtc_add_configs
+    configs -= rtc_remove_configs
+    configs -= invoker.suppressed_configs
+  }
+}

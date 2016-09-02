@@ -48,7 +48,7 @@ config("audio_device_warnings_config") {
   }
 }
 
-source_set("audio_device") {
+rtc_source_set("audio_device") {
   configs += [ "../..:common_config" ]
   public_configs = [
     "../..:common_inherited_config",
@@ -240,14 +240,14 @@ source_set("audio_device") {
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 }
 
 # These tests do not work on ios, see
 # https://bugs.chromium.org/p/webrtc/issues/detail?id=4755
 if (rtc_include_tests && !is_ios) {
-  executable("audio_device_tests") {
+  rtc_executable("audio_device_tests") {
     testonly = true
     sources = [
       "test/audio_device_test_api.cc",

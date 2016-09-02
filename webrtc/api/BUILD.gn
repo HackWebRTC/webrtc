@@ -7,7 +7,6 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 import("../build/webrtc.gni")
-import("//testing/test.gni")
 if (is_android) {
   import("//build/config/android/config.gni")
   import("//build/config/android/rules.gni")
@@ -19,7 +18,7 @@ group("api") {
   ]
 }
 
-source_set("call_api") {
+rtc_source_set("call_api") {
   sources = [
     "call/audio_receive_stream.h",
     "call/audio_send_stream.h",
@@ -47,7 +46,7 @@ config("libjingle_peerconnection_warnings_config") {
   }
 }
 
-source_set("libjingle_peerconnection") {
+rtc_source_set("libjingle_peerconnection") {
   cflags = []
   sources = [
     "audiotrack.cc",
@@ -128,7 +127,7 @@ source_set("libjingle_peerconnection") {
 
   if (is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
   deps = [
@@ -167,7 +166,7 @@ if (is_android && !build_with_chromium) {
     }
   }
 
-  source_set("libjingle_peerconnection_jni") {
+  rtc_source_set("libjingle_peerconnection_jni") {
     sources = [
       "android/jni/androidmediacodeccommon.h",
       "android/jni/androidmediadecoder_jni.cc",
@@ -199,7 +198,7 @@ if (is_android && !build_with_chromium) {
 
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      configs -= [
+      suppressed_configs += [
         "//build/config/clang:extra_warnings",
         "//build/config/clang:find_bad_constructs",
       ]
@@ -332,7 +331,7 @@ if (rtc_include_tests) {
     }
   }
 
-  test("peerconnection_unittests") {
+  rtc_test("peerconnection_unittests") {
     testonly = true
     sources = [
       "datachannel_unittest.cc",
@@ -381,7 +380,7 @@ if (rtc_include_tests) {
 
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     # TODO(jschuh): Bug 1348: fix this warning.

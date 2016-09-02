@@ -18,7 +18,7 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
     ]
   }
 
-  source_set("rtc_sdk_common_objc") {
+  rtc_source_set("rtc_sdk_common_objc") {
     deps = [
       "../base:rtc_base",
     ]
@@ -69,7 +69,7 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
     }
   }
 
-  source_set("rtc_sdk_peerconnection_objc") {
+  rtc_source_set("rtc_sdk_peerconnection_objc") {
     sources = [
       "objc/Framework/Classes/RTCAVFoundationVideoSource+Private.h",
       "objc/Framework/Classes/RTCAVFoundationVideoSource.mm",
@@ -195,7 +195,7 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugins.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     libs += [ "AVFoundation.framework" ]

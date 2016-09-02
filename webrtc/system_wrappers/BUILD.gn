@@ -10,10 +10,9 @@ if (is_android) {
   import("//build/config/android/config.gni")
   import("//build/config/android/rules.gni")
 }
-import("//testing/test.gni")
 import("../build/webrtc.gni")
 
-source_set("system_wrappers") {
+rtc_source_set("system_wrappers") {
   sources = [
     "include/aligned_array.h",
     "include/aligned_malloc.h",
@@ -135,13 +134,13 @@ source_set("system_wrappers") {
 
   if (is_win && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
   deps += [ "../base:rtc_base_approved" ]
 }
 
-source_set("field_trial_default") {
+rtc_source_set("field_trial_default") {
   sources = [
     "include/field_trial_default.h",
     "source/field_trial_default.cc",
@@ -151,7 +150,7 @@ source_set("field_trial_default") {
   public_configs = [ "..:common_inherited_config" ]
 }
 
-source_set("metrics_default") {
+rtc_source_set("metrics_default") {
   sources = [
     "include/metrics_default.h",
     "source/metrics_default.cc",
@@ -161,7 +160,7 @@ source_set("metrics_default") {
   public_configs = [ "..:common_inherited_config" ]
 }
 
-source_set("system_wrappers_default") {
+rtc_source_set("system_wrappers_default") {
   configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
 
@@ -173,7 +172,7 @@ source_set("system_wrappers_default") {
 }
 
 if (is_android) {
-  source_set("cpu_features_android") {
+  rtc_source_set("cpu_features_android") {
     sources = [
       "source/cpu_features_android.c",
     ]
@@ -187,7 +186,7 @@ if (is_android) {
 }
 
 if (is_linux) {
-  source_set("cpu_features_linux") {
+  rtc_source_set("cpu_features_linux") {
     sources = [
       "source/cpu_features_linux.c",
     ]
@@ -198,7 +197,7 @@ if (is_linux) {
 }
 
 if (rtc_include_tests) {
-  test("system_wrappers_unittests") {
+  rtc_test("system_wrappers_unittests") {
     testonly = true
     sources = [
       "source/aligned_array_unittest.cc",
@@ -233,7 +232,7 @@ if (rtc_include_tests) {
     if (is_clang) {
       # Suppress warnings from Chrome's Clang plugins.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     deps = [

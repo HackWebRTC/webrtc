@@ -7,13 +7,12 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 import("../../build/webrtc.gni")
-import("//testing/test.gni")
 
 # Note this target is missing an implementation for the video capture.
 # Targets must link with either 'video_capture' or
 # 'video_capture_internal_impl' depending on whether they want to
 # use the internal capturer.
-source_set("video_capture_module") {
+rtc_source_set("video_capture_module") {
   sources = [
     "device_info_impl.cc",
     "device_info_impl.h",
@@ -40,11 +39,11 @@ source_set("video_capture_module") {
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 }
 
-source_set("video_capture") {
+rtc_source_set("video_capture") {
   sources = [
     "external/device_info_external.cc",
     "external/video_capture_external.cc",
@@ -61,7 +60,7 @@ source_set("video_capture") {
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 }
 
@@ -94,7 +93,7 @@ if (!build_with_chromium) {
     }
   }
 
-  source_set("video_capture_internal_impl") {
+  rtc_source_set("video_capture_internal_impl") {
     configs += [ ":video_capture_internal_impl_warnings_config" ]
 
     deps = [
@@ -186,12 +185,12 @@ if (!build_with_chromium) {
     if (is_clang) {
       # Suppress warnings from Chrome's Clang plugins.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
 
   if (!is_android && rtc_include_tests) {
-    test("video_capture_tests") {
+    rtc_test("video_capture_tests") {
       sources = [
         "test/video_capture_main_mac.mm",
         "test/video_capture_unittest.cc",
@@ -234,7 +233,7 @@ if (!build_with_chromium) {
       if (is_clang) {
         # Suppress warnings from Chrome's Clang plugins.
         # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-        configs -= [ "//build/config/clang:find_bad_constructs" ]
+        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
       }
     }
   }
