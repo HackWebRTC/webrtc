@@ -177,7 +177,7 @@ bool VideoOrientation::IsSupportedFor(MediaType type) {
 }
 
 bool VideoOrientation::Parse(const uint8_t* data, VideoRotation* rotation) {
-  *rotation = ConvertCVOByteToVideoRotation(data[0]);
+  *rotation = ConvertCVOByteToVideoRotation(data[0] & 0x03);
   return true;
 }
 

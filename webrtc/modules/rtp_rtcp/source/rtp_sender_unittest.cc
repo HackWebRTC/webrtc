@@ -262,7 +262,8 @@ class RtpSenderVideoTest : public RtpSenderTest {
     EXPECT_EQ(rtp_sender_->SSRC(), rtp_header.ssrc);
     EXPECT_EQ(0, rtp_header.numCSRCs);
     EXPECT_EQ(0U, rtp_header.paddingLength);
-    EXPECT_EQ(rotation, rtp_header.extension.videoRotation);
+    EXPECT_EQ(ConvertVideoRotationToCVOByte(rotation),
+              rtp_header.extension.videoRotation);
   }
 };
 
@@ -576,7 +577,8 @@ TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacketWithVideoRotation_MarkerBit) {
   VerifyRTPHeaderCommon(rtp_header);
   EXPECT_EQ(length, rtp_header.headerLength);
   EXPECT_TRUE(rtp_header.extension.hasVideoRotation);
-  EXPECT_EQ(kRotation, rtp_header.extension.videoRotation);
+  EXPECT_EQ(ConvertVideoRotationToCVOByte(kRotation),
+            rtp_header.extension.videoRotation);
 }
 
 // Test CVO header extension is not set when marker bit is false.
@@ -1689,26 +1691,4 @@ TEST_F(RtpSenderVideoTest, SendVideoWithCVO) {
       transport_.sent_packets_[1]->size(), true, &map, kSeqNum + 1,
       hdr.rotation);
 }
-
-// Make sure rotation is parsed correctly when the Camera (C) and Flip (F) bits
-// are set in the CVO byte.
-TEST_F(RtpSenderVideoTest, SendVideoWithCameraAndFlipCVO) {
-  // Test extracting rotation when Camera (C) and Flip (F) bits are zero.
-  EXPECT_EQ(kVideoRotation_0, ConvertCVOByteToVideoRotation(0));
-  EXPECT_EQ(kVideoRotation_90, ConvertCVOByteToVideoRotation(1));
-  EXPECT_EQ(kVideoRotation_180, ConvertCVOByteToVideoRotation(2));
-  EXPECT_EQ(kVideoRotation_270, ConvertCVOByteToVideoRotation(3));
-  // Test extracting rotation when Camera (C) and Flip (F) bits are set.
-  const int flip_bit = 1 << 2;
-  const int camera_bit = 1 << 3;
-  EXPECT_EQ(kVideoRotation_0,
-            ConvertCVOByteToVideoRotation(flip_bit | camera_bit | 0));
-  EXPECT_EQ(kVideoRotation_90,
-            ConvertCVOByteToVideoRotation(flip_bit | camera_bit | 1));
-  EXPECT_EQ(kVideoRotation_180,
-            ConvertCVOByteToVideoRotation(flip_bit | camera_bit | 2));
-  EXPECT_EQ(kVideoRotation_270,
-            ConvertCVOByteToVideoRotation(flip_bit | camera_bit | 3));
-}
-
 }  // namespace webrtc

@@ -443,7 +443,8 @@ void RtpStreamReceiver::NotifyReceiverOfFecPacket(const RTPHeader& header) {
   rtp_header.type.Video.codec = payload_specific.Video.videoCodecType;
   rtp_header.type.Video.rotation = kVideoRotation_0;
   if (header.extension.hasVideoRotation) {
-    rtp_header.type.Video.rotation = header.extension.videoRotation;
+    rtp_header.type.Video.rotation =
+        ConvertCVOByteToVideoRotation(header.extension.videoRotation);
   }
   rtp_header.type.Video.playout_delay = header.extension.playout_delay;
 

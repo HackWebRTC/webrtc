@@ -18,7 +18,6 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/common_video/rotation.h"
 #include "webrtc/typedefs.h"
 
 #if defined(_MSC_VER)
@@ -700,7 +699,7 @@ struct RTPHeaderExtension {
   // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/
   // ts_126114v120700p.pdf
   bool hasVideoRotation;
-  VideoRotation videoRotation;
+  uint8_t videoRotation;
 
   PlayoutDelay playout_delay = {-1, -1};
 };

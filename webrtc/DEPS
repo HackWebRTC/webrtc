@@ -13,7 +13,6 @@ include_rules = [
   "+webrtc/call.h",
   "+webrtc/common.h",
   "+webrtc/common_types.h",
-  "+webrtc/common_video/rotation.h",
   "+webrtc/config.h",
   "+webrtc/engine_configurations.h",
   "+webrtc/transport.h",
