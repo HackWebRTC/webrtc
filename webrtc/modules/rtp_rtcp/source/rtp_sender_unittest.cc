@@ -22,6 +22,8 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_video_generic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
@@ -53,7 +55,8 @@ const VideoRotation kRotation = kVideoRotation_270;
 const size_t kGenericHeaderLength = 1;
 const uint8_t kPayloadData[] = {47, 11, 32, 93, 89};
 
-using testing::_;
+using ::testing::_;
+using ::testing::ElementsAreArray;
 
 const uint8_t* GetPayloadData(const RTPHeader& rtp_header,
                               const uint8_t* packet) {
@@ -370,6 +373,101 @@ TEST_F(RtpSenderTestWithoutPacer, RegisterRtpVideoRotationHeaderExtension) {
   EXPECT_EQ(
       0, rtp_sender_->DeregisterRtpHeaderExtension(kRtpExtensionVideoRotation));
   EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionLength());
+}
+
+TEST_F(RtpSenderTestWithoutPacer, AllocatePacketSetCsrc) {
+  // Configure rtp_sender with csrc.
+  std::vector<uint32_t> csrcs;
+  csrcs.push_back(0x23456789);
+  rtp_sender_->SetCsrcs(csrcs);
+
+  auto packet = rtp_sender_->AllocatePacket();
+
+  ASSERT_TRUE(packet);
+  EXPECT_EQ(rtp_sender_->SSRC(), packet->Ssrc());
+  EXPECT_EQ(csrcs, packet->Csrcs());
+}
+
+TEST_F(RtpSenderTestWithoutPacer, AllocatePacketReserveExtensions) {
+  // Configure rtp_sender with extensions.
+  ASSERT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+                   kRtpExtensionTransmissionTimeOffset,
+                   kTransmissionTimeOffsetExtensionId));
+  ASSERT_EQ(
+      0, rtp_sender_->RegisterRtpHeaderExtension(kRtpExtensionAbsoluteSendTime,
+                                                 kAbsoluteSendTimeExtensionId));
+  ASSERT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(kRtpExtensionAudioLevel,
+                                                       kAudioLevelExtensionId));
+  ASSERT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+                   kRtpExtensionTransportSequenceNumber,
+                   kTransportSequenceNumberExtensionId));
+  ASSERT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+                   kRtpExtensionVideoRotation, kVideoRotationExtensionId));
+
+  auto packet = rtp_sender_->AllocatePacket();
+
+  ASSERT_TRUE(packet);
+  // Preallocate BWE extensions RtpSender set itself.
+  EXPECT_TRUE(packet->HasExtension<TransmissionOffset>());
+  EXPECT_TRUE(packet->HasExtension<AbsoluteSendTime>());
+  EXPECT_TRUE(packet->HasExtension<TransportSequenceNumber>());
+  // Do not allocate media specific extensions.
+  EXPECT_FALSE(packet->HasExtension<AudioLevel>());
+  EXPECT_FALSE(packet->HasExtension<VideoOrientation>());
+}
+
+TEST_F(RtpSenderTestWithoutPacer, AssignSequenceNumberAdvanceSequenceNumber) {
+  auto packet = rtp_sender_->AllocatePacket();
+  ASSERT_TRUE(packet);
+  const uint16_t sequence_number = rtp_sender_->SequenceNumber();
+
+  EXPECT_TRUE(rtp_sender_->AssignSequenceNumber(packet.get()));
+
+  EXPECT_EQ(sequence_number, packet->SequenceNumber());
+  EXPECT_EQ(sequence_number + 1, rtp_sender_->SequenceNumber());
+}
+
+TEST_F(RtpSenderTestWithoutPacer, AssignSequenceNumberFailsOnNotSending) {
+  auto packet = rtp_sender_->AllocatePacket();
+  ASSERT_TRUE(packet);
+
+  rtp_sender_->SetSendingMediaStatus(false);
+  EXPECT_FALSE(rtp_sender_->AssignSequenceNumber(packet.get()));
+}
+
+TEST_F(RtpSenderTestWithoutPacer, AssignSequenceNumberMayAllowPadding) {
+  constexpr size_t kPaddingSize = 100;
+  auto packet = rtp_sender_->AllocatePacket();
+  ASSERT_TRUE(packet);
+
+  ASSERT_FALSE(rtp_sender_->SendPadData(kPaddingSize, false, 0, 0, -1));
+  packet->SetMarker(false);
+  ASSERT_TRUE(rtp_sender_->AssignSequenceNumber(packet.get()));
+  // Packet without marker bit doesn't allow padding.
+  EXPECT_FALSE(rtp_sender_->SendPadData(kPaddingSize, false, 0, 0, -1));
+
+  packet->SetMarker(true);
+  ASSERT_TRUE(rtp_sender_->AssignSequenceNumber(packet.get()));
+  // Packet with marker bit allows send padding.
+  EXPECT_TRUE(rtp_sender_->SendPadData(kPaddingSize, false, 0, 0, -1));
+}
+
+TEST_F(RtpSenderTestWithoutPacer, AssignSequenceNumberSetPaddingTimestamps) {
+  constexpr size_t kPaddingSize = 100;
+  auto packet = rtp_sender_->AllocatePacket();
+  ASSERT_TRUE(packet);
+  packet->SetMarker(true);
+  packet->SetTimestamp(kTimestamp);
+
+  ASSERT_TRUE(rtp_sender_->AssignSequenceNumber(packet.get()));
+  ASSERT_TRUE(rtp_sender_->SendPadData(kPaddingSize, false, 0, 0, -1));
+
+  ASSERT_EQ(1u, transport_.sent_packets_.size());
+  // Parse the padding packet and verify its timestamp.
+  RtpPacketToSend padding_packet(nullptr);
+  ASSERT_TRUE(padding_packet.Parse(transport_.sent_packets_[0]->data(),
+                                   transport_.sent_packets_[0]->size()));
+  EXPECT_EQ(kTimestamp, padding_packet.Timestamp());
 }
 
 TEST_F(RtpSenderTestWithoutPacer, BuildRTPPacket) {

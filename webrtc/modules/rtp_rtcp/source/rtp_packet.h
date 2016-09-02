@@ -83,6 +83,9 @@ class Packet {
   void SetCsrcs(const std::vector<uint32_t>& csrcs);
 
   // Header extensions.
+  template <typename Extension>
+  bool HasExtension() const;
+
   template <typename Extension, typename... Values>
   bool GetExtension(Values...) const;
 
@@ -159,6 +162,12 @@ class Packet {
 
   Packet() = delete;
 };
+
+template <typename Extension>
+bool Packet::HasExtension() const {
+  uint16_t offset = 0;
+  return FindExtension(Extension::kId, Extension::kValueSizeBytes, &offset);
+}
 
 template <typename Extension, typename... Values>
 bool Packet::GetExtension(Values... values) const {

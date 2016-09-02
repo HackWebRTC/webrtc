@@ -1072,6 +1072,36 @@ size_t RTPSender::CreateRtpHeader(uint8_t* header,
   return rtp_header_length;
 }
 
+std::unique_ptr<RtpPacketToSend> RTPSender::AllocatePacket() const {
+  rtc::CritScope lock(&send_critsect_);
+  std::unique_ptr<RtpPacketToSend> packet(
+      new RtpPacketToSend(&rtp_header_extension_map_, max_payload_length_));
+  packet->SetSsrc(ssrc_);
+  packet->SetCsrcs(csrcs_);
+  // Reserve extensions, if registered, RtpSender set in SendToNetwork.
+  packet->ReserveExtension<AbsoluteSendTime>();
+  packet->ReserveExtension<TransmissionOffset>();
+  packet->ReserveExtension<TransportSequenceNumber>();
+  return packet;
+}
+
+bool RTPSender::AssignSequenceNumber(RtpPacketToSend* packet) {
+  rtc::CritScope lock(&send_critsect_);
+  if (!sending_media_)
+    return false;
+  RTC_DCHECK_EQ(packet->Ssrc(), ssrc_);
+  packet->SetSequenceNumber(sequence_number_++);
+
+  // Remember marker bit to determine if padding can be inserted with
+  // sequence number following |packet|.
+  last_packet_marker_bit_ = packet->Marker();
+  // Save timestamps to generate timestamp field and extensions for the padding.
+  last_rtp_timestamp_ = packet->Timestamp();
+  last_timestamp_time_ms_ = clock_->TimeInMilliseconds();
+  capture_time_ms_ = packet->capture_time_ms();
+  return true;
+}
+
 int32_t RTPSender::BuildRTPheader(uint8_t* data_buffer,
                                   int8_t payload_type,
                                   bool marker_bit,

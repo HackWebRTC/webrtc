@@ -203,6 +203,14 @@ class RTPSender {
 
   void SetRtxPayloadType(int payload_type, int associated_payload_type);
 
+  // Create empty packet, fills ssrc, csrcs and reserve place for header
+  // extensions RtpSender updates before sending.
+  std::unique_ptr<RtpPacketToSend> AllocatePacket() const;
+  // Allocate sequence number for provided packet.
+  // Save packet's fields to generate padding that doesn't break media stream.
+  // Return false if sending was turned off.
+  bool AssignSequenceNumber(RtpPacketToSend* packet);
+
   // Functions wrapping RTPSenderInterface.
   int32_t BuildRTPheader(uint8_t* data_buffer,
                          int8_t payload_type,
