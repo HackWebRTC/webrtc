@@ -51,6 +51,7 @@ public class MediaCodecVideoEncoder {
   private static final int MEDIA_CODEC_RELEASE_TIMEOUT_MS = 5000; // Timeout for codec releasing.
   private static final int DEQUEUE_TIMEOUT = 0;  // Non-blocking, no wait.
   private static final int BITRATE_ADJUSTMENT_FPS = 30;
+  private static final int MAXIMUM_INITIAL_FPS = 30;
   // Active running encoder instance. Set in initEncode() (called from native code)
   // and reset to null in release() call.
   private static MediaCodecVideoEncoder runningInstance = null;
@@ -377,9 +378,12 @@ public class MediaCodecVideoEncoder {
     bitrateAdjustmentRequired = properties.bitrateAdjustment;
     if (bitrateAdjustmentRequired) {
       fps = BITRATE_ADJUSTMENT_FPS;
+    } else  {
+      fps = Math.min(fps, MAXIMUM_INITIAL_FPS);
     }
     Logging.d(TAG, "Color format: " + colorFormat +
-        ". Bitrate adjustment: " + bitrateAdjustmentRequired);
+        ". Bitrate adjustment: " + bitrateAdjustmentRequired +
+        ". Initial fps: " + fps);
 
     mediaCodecThread = Thread.currentThread();
     try {
@@ -531,7 +535,7 @@ public class MediaCodecVideoEncoder {
       Logging.v(TAG, "setRates: " + kbps + " -> " + (codecBitrate / 1000)
           + " kbps. Fps: " + frameRate);
     } else {
-      Logging.v(TAG, "setRates: " + kbps);
+      Logging.v(TAG, "setRates: " + kbps + " kbps. Fps: " + frameRate);
     }
     try {
       Bundle params = new Bundle();
