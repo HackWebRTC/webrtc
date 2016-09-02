@@ -507,7 +507,10 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // TODO(bemasc): Remove ice_state when callers are changed to
   // IceConnection/GatheringState.
   // Returns the current IceState.
-  virtual IceState ice_state() = 0;
+  virtual IceState ice_state() {
+      RTC_NOTREACHED();
+    return kIceNew;
+  }
   virtual IceConnectionState ice_connection_state() = 0;
   virtual IceGatheringState ice_gathering_state() = 0;
 
