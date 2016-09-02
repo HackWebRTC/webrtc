@@ -200,14 +200,7 @@ TEST_F(WebRtcVideoEngine2Test, SupportsAbsoluteSenderTimeHeaderExtension) {
   FAIL() << "Absolute Sender Time extension not in header-extension list.";
 }
 
-class WebRtcVideoEngine2WithSendSideBweTest : public WebRtcVideoEngine2Test {
- public:
-  WebRtcVideoEngine2WithSendSideBweTest()
-      : WebRtcVideoEngine2Test("WebRTC-SendSideBwe/Enabled/") {}
-};
-
-TEST_F(WebRtcVideoEngine2WithSendSideBweTest,
-       SupportsTransportSequenceNumberHeaderExtension) {
+TEST_F(WebRtcVideoEngine2Test, SupportsTransportSequenceNumberHeaderExtension) {
   RtpCapabilities capabilities = engine_.GetCapabilities();
   ASSERT_FALSE(capabilities.header_extensions.empty());
   for (const RtpExtension& extension : capabilities.header_extensions) {
@@ -1293,19 +1286,11 @@ TEST_F(WebRtcVideoChannel2Test, FiltersExtensionsPicksAbsSendTime) {
   TestExtensionFilter(extensions, RtpExtension::kAbsSendTimeUri);
 }
 
-class WebRtcVideoChannel2WithSendSideBweTest : public WebRtcVideoChannel2Test {
- public:
-  WebRtcVideoChannel2WithSendSideBweTest()
-      : WebRtcVideoChannel2Test("WebRTC-SendSideBwe/Enabled/") {}
-};
-
 // Test support for transport sequence number header extension.
-TEST_F(WebRtcVideoChannel2WithSendSideBweTest,
-       SendTransportSequenceNumberHeaderExtensions) {
+TEST_F(WebRtcVideoChannel2Test, SendTransportSequenceNumberHeaderExtensions) {
   TestSetSendRtpHeaderExtensions(RtpExtension::kTransportSequenceNumberUri);
 }
-TEST_F(WebRtcVideoChannel2WithSendSideBweTest,
-       RecvTransportSequenceNumberHeaderExtensions) {
+TEST_F(WebRtcVideoChannel2Test, RecvTransportSequenceNumberHeaderExtensions) {
   TestSetRecvRtpHeaderExtensions(RtpExtension::kTransportSequenceNumberUri);
 }
 
