@@ -30,7 +30,8 @@ class VideoRendererAdapter
     RTCVideoFrame* videoFrame = [[RTCVideoFrame alloc]
         initWithVideoBuffer:nativeVideoFrame.video_frame_buffer()
                    rotation:nativeVideoFrame.rotation()
-                timeStampNs:nativeVideoFrame.GetTimeStamp()];
+                timeStampNs:nativeVideoFrame.timestamp_us() *
+                                rtc::kNumNanosecsPerMicrosec];
     CGSize current_size = (videoFrame.rotation % 180 == 0)
                               ? CGSizeMake(videoFrame.width, videoFrame.height)
                               : CGSizeMake(videoFrame.height, videoFrame.width);

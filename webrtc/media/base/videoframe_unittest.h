@@ -453,7 +453,7 @@ class VideoFrameTest : public testing::Test {
   static bool IsEqual(const cricket::VideoFrame& frame,
                       int width,
                       int height,
-                      int64_t time_stamp,
+                      int64_t timestamp_us,
                       const uint8_t* y,
                       uint32_t ypitch,
                       const uint8_t* u,
@@ -461,7 +461,8 @@ class VideoFrameTest : public testing::Test {
                       const uint8_t* v,
                       uint32_t vpitch,
                       int max_error) {
-    return IsSize(frame, width, height) && frame.GetTimeStamp() == time_stamp &&
+    return IsSize(frame, width, height) &&
+           frame.timestamp_us() == timestamp_us &&
            IsPlaneEqual("y", frame.video_frame_buffer()->DataY(),
                         frame.video_frame_buffer()->StrideY(), y, ypitch,
                         static_cast<uint32_t>(width),
@@ -481,7 +482,7 @@ class VideoFrameTest : public testing::Test {
                       int max_error) {
     return IsEqual(frame1,
                    frame2.width(), frame2.height(),
-                   frame2.GetTimeStamp(),
+                   frame2.timestamp_us(),
                    frame2.video_frame_buffer()->DataY(),
                    frame2.video_frame_buffer()->StrideY(),
                    frame2.video_frame_buffer()->DataU(),
@@ -499,7 +500,7 @@ class VideoFrameTest : public testing::Test {
            IsEqual(frame1,
                    frame2.width() - hcrop * 2,
                    frame2.height() - vcrop * 2,
-                   frame2.GetTimeStamp(),
+                   frame2.timestamp_us(),
                    frame2.video_frame_buffer()->DataY()
                        + vcrop * frame2.video_frame_buffer()->StrideY()
                        + hcrop,

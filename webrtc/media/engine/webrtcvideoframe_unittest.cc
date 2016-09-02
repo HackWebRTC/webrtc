@@ -186,15 +186,13 @@ TEST_F(WebRtcVideoFrameTest, TextureInitialValues) {
   webrtc::NativeHandleBuffer* buffer =
       new rtc::RefCountedObject<webrtc::test::FakeNativeHandleBuffer>(
           dummy_handle, 640, 480);
-  // Timestamp is converted from ns to us, so last three digits are lost.
-  WebRtcVideoFrame frame(buffer, 20000, webrtc::kVideoRotation_0);
+
+  WebRtcVideoFrame frame(buffer, webrtc::kVideoRotation_0, 20);
   EXPECT_EQ(dummy_handle, frame.video_frame_buffer()->native_handle());
   EXPECT_EQ(640, frame.width());
   EXPECT_EQ(480, frame.height());
-  EXPECT_EQ(20000, frame.GetTimeStamp());
   EXPECT_EQ(20, frame.timestamp_us());
   frame.set_timestamp_us(40);
-  EXPECT_EQ(40000, frame.GetTimeStamp());
   EXPECT_EQ(40, frame.timestamp_us());
 }
 
