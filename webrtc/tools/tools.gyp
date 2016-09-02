@@ -165,29 +165,6 @@
     ['include_tests==1', {
       'targets' : [
         {
-          'target_name': 'agc_test_utils',
-          'type': 'static_library',
-          'sources': [
-            'agc/test_utils.cc',
-            'agc/test_utils.h',
-          ],
-        },
-        {
-          'target_name': 'agc_harness',
-          'type': 'executable',
-          'dependencies': [
-            '<(DEPTH)/testing/gtest.gyp:gtest',
-            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
-            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
-            '<(webrtc_root)/test/test.gyp:channel_transport',
-            '<(webrtc_root)/test/test.gyp:test_support',
-            '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
-          ],
-          'sources': [
-            'agc/agc_harness.cc',
-          ],
-        },  # agc_harness
-        {
           'target_name': 'activity_metric',
           'type': 'executable',
           'dependencies': [

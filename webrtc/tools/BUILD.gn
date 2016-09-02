@@ -164,17 +164,6 @@ executable("force_mic_volume_max") {
   ]
 }
 
-source_set("agc_test_utils") {
-  testonly = true
-  sources = [
-    "agc/test_utils.cc",
-    "agc/test_utils.h",
-  ]
-
-  configs += [ "..:common_config" ]
-  public_configs = [ "..:common_inherited_config" ]
-}
-
 if (rtc_enable_protobuf) {
   proto_library("graph_proto") {
     sources = [
@@ -242,33 +231,6 @@ if (rtc_include_tests) {
         "//third_party/gflags",
       ]
     }
-  }
-
-  executable("agc_harness") {
-    testonly = true
-    sources = [
-      "agc/agc_harness.cc",
-    ]
-
-    configs += [ "..:common_config" ]
-    public_configs = [ "..:common_inherited_config" ]
-
-    if (is_clang) {
-      # Suppress warnings from the Chromium Clang plugin.
-      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      configs -= [ "//build/config/clang:find_bad_constructs" ]
-    }
-
-    deps = [
-      "../system_wrappers:system_wrappers_default",
-      "../test:channel_transport",
-      "../test:test_support",
-      "../voice_engine",
-      "//build/config/sanitizers:deps",
-      "//build/win:default_exe_manifest",
-      "//testing/gtest",
-      "//third_party/gflags",
-    ]
   }
 
   executable("activity_metric") {

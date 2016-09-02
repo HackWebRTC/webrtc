@@ -163,7 +163,6 @@
             '<(webrtc_root)/test/test.gyp:rtp_test_utils',
             '<(webrtc_root)/test/test.gyp:test_support_main',
             '<(webrtc_root)/test/test.gyp:test_common',
-            '<(webrtc_root)/tools/tools.gyp:agc_test_utils',
           ],
           'sources': [
             'audio_coding/acm2/acm_receiver_unittest_oldapi.cc',
@@ -237,8 +236,6 @@
             'audio_processing/aec/echo_cancellation_unittest.cc',
             'audio_processing/aec/system_delay_unittest.cc',
             'audio_processing/agc/agc_manager_direct_unittest.cc',
-            # TODO(ajm): Fix to match new interface.
-            # 'audio_processing/agc/agc_unittest.cc',
             'audio_processing/agc/loudness_histogram_unittest.cc',
             'audio_processing/agc/mock_agc.h',
             'audio_processing/audio_buffer_unittest.cc',
