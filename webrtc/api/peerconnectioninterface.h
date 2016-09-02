@@ -252,6 +252,16 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     RTCConfiguration() = default;
     RTCConfiguration(RTCConfigurationType type) {
       if (type == RTCConfigurationType::kAggressive) {
+        // These parameters are also defined in Java and IOS configurations,
+        // so their values may be overwritten by the Java or IOS configuration.
+        bundle_policy = kBundlePolicyMaxBundle;
+        rtcp_mux_policy = kRtcpMuxPolicyRequire;
+        ice_connection_receiving_timeout =
+            kAggressiveIceConnectionReceivingTimeout;
+
+        // These parameters are not defined in Java or IOS configuration,
+        // so their values will not be overwritten.
+        enable_ice_renomination = true;
         redetermine_role_on_ice_restart = false;
       }
     }
@@ -288,6 +298,8 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     static const int kUndefined = -1;
     // Default maximum number of packets in the audio jitter buffer.
     static const int kAudioJitterBufferMaxPackets = 50;
+    // ICE connection receiving timeout for aggressive configuration.
+    static const int kAggressiveIceConnectionReceivingTimeout = 1000;
     // TODO(pthatcher): Rename this ice_transport_type, but update
     // Chromium at the same time.
     IceTransportsType type = kAll;
