@@ -19,23 +19,7 @@ package org.webrtc;
  * its output to the encoder) can be too high to bear.
  */
 public class VideoSource extends MediaSource {
-
   public VideoSource(long nativeSource) {
     super(nativeSource);
   }
-
-  // Stop capture feeding this source.
-  public void stop() {
-    stop(nativeSource);
-  }
-
-  // Restart capture feeding this source.  stop() must have been called since
-  // the last call to restart() (if any).  Note that this isn't "start()";
-  // sources are started by default at birth.
-  public void restart() {
-    restart(nativeSource);
-  }
-
-  private static native void stop(long nativeSource);
-  private static native void restart(long nativeSource);
 }

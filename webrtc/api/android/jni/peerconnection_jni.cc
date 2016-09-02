@@ -2003,15 +2003,6 @@ JOW(void, VideoRenderer_nativeCopyPlane)(
   }
 }
 
-JOW(void, VideoSource_stop)(JNIEnv* jni, jclass, jlong j_p) {
-  reinterpret_cast<VideoTrackSourceInterface*>(j_p)->Stop();
-}
-
-JOW(void, VideoSource_restart)(
-    JNIEnv* jni, jclass, jlong j_p_source, jlong j_p_format) {
-  reinterpret_cast<VideoTrackSourceInterface*>(j_p_source)->Restart();
-}
-
 JOW(jstring, MediaStreamTrack_nativeId)(JNIEnv* jni, jclass, jlong j_p) {
   return JavaStringFromStdString(
       jni, reinterpret_cast<MediaStreamTrackInterface*>(j_p)->id());
