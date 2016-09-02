@@ -38,6 +38,7 @@ class SpsParser {
     uint32_t pic_order_cnt_type = 0;
     uint32_t max_num_ref_frames = 0;
     uint32_t vui_params_present = 0;
+    uint32_t id = 0;
   };
 
   // Unpack RBSP and parse SPS state from the supplied buffer.
