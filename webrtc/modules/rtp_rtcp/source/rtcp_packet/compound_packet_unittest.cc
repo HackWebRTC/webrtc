@@ -47,8 +47,8 @@ TEST(RtcpCompoundPacketTest, AppendPacket) {
   RtcpPacketParser parser;
   parser.Parse(packet.data(), packet.size());
   EXPECT_EQ(1, parser.receiver_report()->num_packets());
-  EXPECT_EQ(kSenderSsrc, parser.receiver_report()->Ssrc());
-  EXPECT_EQ(1, parser.report_block()->num_packets());
+  EXPECT_EQ(kSenderSsrc, parser.receiver_report()->sender_ssrc());
+  EXPECT_EQ(1u, parser.receiver_report()->report_blocks().size());
   EXPECT_EQ(1, parser.fir()->num_packets());
 }
 
@@ -75,7 +75,7 @@ TEST(RtcpCompoundPacketTest, AppendPacketWithOwnAppendedPacket) {
   parser.Parse(packet.data(), packet.size());
   EXPECT_EQ(1, parser.sender_report()->num_packets());
   EXPECT_EQ(1, parser.receiver_report()->num_packets());
-  EXPECT_EQ(1, parser.report_block()->num_packets());
+  EXPECT_EQ(1u, parser.receiver_report()->report_blocks().size());
   EXPECT_EQ(1, parser.bye()->num_packets());
   EXPECT_EQ(1, parser.fir()->num_packets());
 }
@@ -101,7 +101,7 @@ TEST(RtcpCompoundPacketTest, BuildWithInputBuffer) {
       RtcpPacketParser parser;
       parser.Parse(data, length);
       EXPECT_EQ(1, parser.receiver_report()->num_packets());
-      EXPECT_EQ(1, parser.report_block()->num_packets());
+      EXPECT_EQ(1u, parser.receiver_report()->report_blocks().size());
       EXPECT_EQ(1, parser.fir()->num_packets());
       ++packets_created_;
     }
@@ -136,12 +136,12 @@ TEST(RtcpCompoundPacketTest, BuildWithTooSmallBuffer_FragmentedSend) {
       switch (packets_created_++) {
         case 0:
           EXPECT_EQ(1, parser.receiver_report()->num_packets());
-          EXPECT_EQ(1, parser.report_block()->num_packets());
+          EXPECT_EQ(1U, parser.receiver_report()->report_blocks().size());
           EXPECT_EQ(0, parser.fir()->num_packets());
           break;
         case 1:
           EXPECT_EQ(0, parser.receiver_report()->num_packets());
-          EXPECT_EQ(0, parser.report_block()->num_packets());
+          EXPECT_EQ(0U, parser.receiver_report()->report_blocks().size());
           EXPECT_EQ(1, parser.fir()->num_packets());
           break;
         default:

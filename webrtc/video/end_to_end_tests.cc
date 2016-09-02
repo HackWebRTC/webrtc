@@ -746,7 +746,7 @@ TEST_F(EndToEndTest, ReceivedFecPacketsNotNacked) {
       if (state_ == kVerifyFecPacketNotInNackList) {
         test::RtcpPacketParser rtcp_parser;
         rtcp_parser.Parse(packet, length);
-        std::vector<uint16_t> nacks = rtcp_parser.nack_item()->last_nack_list();
+        const std::vector<uint16_t>& nacks = rtcp_parser.nack()->packet_ids();
         EXPECT_TRUE(std::find(nacks.begin(), nacks.end(),
                               fec_sequence_number_) == nacks.end())
             << "Got nack for FEC packet";
@@ -2034,7 +2034,7 @@ TEST_F(EndToEndTest, VerifyNackStats) {
       rtc::CritScope lock(&crit_);
       test::RtcpPacketParser rtcp_parser;
       rtcp_parser.Parse(packet, length);
-      std::vector<uint16_t> nacks = rtcp_parser.nack_item()->last_nack_list();
+      const std::vector<uint16_t>& nacks = rtcp_parser.nack()->packet_ids();
       if (!nacks.empty() && std::find(
           nacks.begin(), nacks.end(), dropped_rtp_packet_) != nacks.end()) {
         dropped_rtp_packet_requested_ = true;
@@ -3155,8 +3155,8 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx,
       test::RtcpPacketParser rtcp_parser;
       rtcp_parser.Parse(packet, length);
       if (rtcp_parser.sender_report()->num_packets() > 0) {
-        uint32_t ssrc = rtcp_parser.sender_report()->Ssrc();
-        uint32_t rtcp_timestamp = rtcp_parser.sender_report()->RtpTimestamp();
+        uint32_t ssrc = rtcp_parser.sender_report()->sender_ssrc();
+        uint32_t rtcp_timestamp = rtcp_parser.sender_report()->rtp_timestamp();
 
         rtc::CritScope lock(&crit_);
         ValidateTimestampGap(ssrc, rtcp_timestamp, false);

@@ -79,15 +79,14 @@ class SendTransport : public Transport,
   }
   bool SendRtcp(const uint8_t* data, size_t len) override {
     test::RtcpPacketParser parser;
-    parser.Parse(static_cast<const uint8_t*>(data), len);
-    last_nack_list_ = parser.nack_item()->last_nack_list();
+    parser.Parse(data, len);
+    last_nack_list_ = parser.nack()->packet_ids();
 
     if (clock_) {
       clock_->AdvanceTimeMilliseconds(delay_ms_);
     }
-    EXPECT_TRUE(receiver_ != NULL);
-    EXPECT_EQ(0, receiver_->IncomingRtcpPacket(
-        static_cast<const uint8_t*>(data), len));
+    EXPECT_TRUE(receiver_);
+    EXPECT_EQ(0, receiver_->IncomingRtcpPacket(data, len));
     return true;
   }
   ModuleRtpRtcpImpl* receiver_;
