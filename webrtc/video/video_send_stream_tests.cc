@@ -136,8 +136,16 @@ TEST_F(VideoSendStreamTest, SupportsAbsoluteSendTime) {
       EXPECT_FALSE(header.extension.hasTransmissionTimeOffset);
       EXPECT_TRUE(header.extension.hasAbsoluteSendTime);
       EXPECT_EQ(header.extension.transmissionTimeOffset, 0);
-      EXPECT_GT(header.extension.absoluteSendTime, 0u);
-      observation_complete_.Set();
+      if (header.extension.absoluteSendTime != 0) {
+        // Wait for at least one packet with a non-zero send time. The send time
+        // is a 16-bit value derived from the system clock, and it is valid
+        // for a packet to have a zero send time. To tell that from an
+        // unpopulated value we'll wait for a packet with non-zero send time.
+        observation_complete_.Set();
+      } else {
+        LOG(LS_WARNING) << "Got a packet with zero absoluteSendTime, waiting"
+                           " for another packet...";
+      }
 
       return SEND_PACKET;
     }
