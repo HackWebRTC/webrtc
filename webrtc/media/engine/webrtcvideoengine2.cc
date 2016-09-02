@@ -1664,8 +1664,9 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
     return;
   }
 
-  int64_t frame_delta_ms = frame.timestamp_us() / rtc::kNumMicrosecsPerMillisec;
+  int64_t frame_delta_ms = frame.GetTimeStamp() / rtc::kNumNanosecsPerMillisec;
 
+  // frame->GetTimeStamp() is essentially a delta, align to webrtc time
   if (!first_frame_timestamp_ms_) {
     first_frame_timestamp_ms_ =
         rtc::Optional<int64_t>(rtc::TimeMillis() - frame_delta_ms);

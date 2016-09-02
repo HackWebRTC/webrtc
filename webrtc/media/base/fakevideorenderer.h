@@ -26,7 +26,7 @@ class FakeVideoRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
         width_(0),
         height_(0),
         rotation_(webrtc::kVideoRotation_0),
-        timestamp_us_(0),
+        timestamp_(0),
         num_rendered_frames_(0),
         black_frame_(false) {}
 
@@ -43,7 +43,7 @@ class FakeVideoRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
     width_ = frame.width();
     height_ = frame.height();
     rotation_ = frame.rotation();
-    timestamp_us_ = frame.timestamp_us();
+    timestamp_ = frame.GetTimeStamp();
     SignalRenderFrame(&frame);
   }
 
@@ -61,9 +61,9 @@ class FakeVideoRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
     return rotation_;
   }
 
-  int64_t timestamp_us() const {
+  int64_t timestamp() const {
     rtc::CritScope cs(&crit_);
-    return timestamp_us_;
+    return timestamp_;
   }
   int num_rendered_frames() const {
     rtc::CritScope cs(&crit_);
@@ -133,7 +133,7 @@ class FakeVideoRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
   int width_;
   int height_;
   webrtc::VideoRotation rotation_;
-  int64_t timestamp_us_;
+  int64_t timestamp_;
   int num_rendered_frames_;
   bool black_frame_;
   rtc::CriticalSection crit_;
