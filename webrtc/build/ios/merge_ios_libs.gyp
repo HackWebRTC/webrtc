@@ -12,15 +12,6 @@
     ['OS=="ios" or OS=="mac"', {
       'targets': [
         {
-          'target_name': 'libjingle_peerconnection_objc_no_op',
-          'includes': [ 'objc_app.gypi' ],
-          'type': 'executable',
-          'dependencies': [
-            '../../../talk/app/webrtc/legacy_objc_api.gyp:libjingle_peerconnection_objc',
-          ],
-          'sources': ['no_op.cc',],
-        },
-        {
           'target_name': 'rtc_sdk_peerconnection_objc_no_op',
           'includes': [ 'objc_app.gypi' ],
           'type': 'executable',

@@ -72,10 +72,8 @@ function build_webrtc {
   # generating static libs.
   local override_visibility=0
   if [[ ${build_type} = "legacy" ]]; then
-    echo "Building legacy."
-    gyp_file=webrtc/build/ios/merge_ios_libs.gyp
-    gyp_target=libjingle_peerconnection_objc_no_op
-    override_visibility=1
+    echo "Building objc legacy libraries no longer supported."
+    exit 1
   elif [[ ${build_type} = "static_only" ]]; then
     echo "Building static only."
     gyp_file=webrtc/build/ios/merge_ios_libs.gyp
@@ -131,7 +129,7 @@ function usage {
   echo "The headers will be copied to out_ios_libs/include."
   echo "Usage: $0 [-h] [-b build_type] [-c] [-o output_dir]"
   echo "  -h Print this help."
-  echo "  -b The build type. Can be framework, static_only or legacy."
+  echo "  -b The build type. Can be framework or static_only."
   echo "     Defaults to framework."
   echo "  -c Removes generated build output."
   echo "  -o Specifies a directory to output build artifacts to."
@@ -145,8 +143,7 @@ check_preconditions
 # Set default arguments.
 # Output directory for build artifacts.
 OUTPUT_DIR=${WEBRTC_BASE_DIR}/out_ios_libs
-# The type of build to perform. Valid arguments are framework, static_only and
-# legacy.
+# The type of build to perform. Valid arguments are framework and static_only.
 BUILD_TYPE="framework"
 PERFORM_CLEAN=0
 FLAVOR="Profile"
@@ -230,16 +227,13 @@ if [[ ${BUILD_TYPE} = "framework" ]]; then
   FORMAT_STRING=s/\${FRAMEWORK_VERSION_NUMBER}/${VERSION_NUMBER}/g
   sed -e ${FORMAT_STRING} ${WEBRTC_BASE_DIR}/webrtc/sdk/objc/WebRTC.podspec > \
       ${OUTPUT_DIR}/WebRTC.podspec
-else
+elif [[ ${BUILD_TYPE} = "static_only" ]]; then
   echo "Merging static library slices."
   # Merge the static libraries together into individual FAT archives.
   ${MERGE_SCRIPT} ${OUTPUT_DIR}
 
   # Merge the dSYM files together.
   TARGET_NAME="rtc_sdk_peerconnection_objc_no_op"
-  if [[ ${BUILD_TYPE} = "legacy" ]]; then
-    TARGET_NAME="libjingle_peerconnection_objc_no_op"
-  fi
   DSYM_PATH="${TARGET_NAME}.app.dSYM/Contents/Resources/DWARF/${TARGET_NAME}"
   cp -R ${ARM_NINJA_DIR}/${TARGET_NAME}.app.dSYM ${OUTPUT_DIR}
   echo "Merging dSYM slices."
@@ -262,13 +256,11 @@ else
   if [[ -d ${OUTPUT_HEADER_DIR} ]]; then
     rm -rf ${OUTPUT_HEADER_DIR}
   fi
-  if [[ ${BUILD_TYPE} = "legacy" ]]; then
-    INPUT_HEADER_DIR="${WEBRTC_BASE_DIR}/talk/app/webrtc/objc/public"
-    ln -sf ${INPUT_HEADER_DIR} ${OUTPUT_HEADER_DIR}
-  else
-    mkdir -p ${OUTPUT_HEADER_DIR}
-    ln -sf ${INPUT_HEADER_DIR} ${OUTPUT_HEADER_DIR}/WebRTC
-  fi
+  mkdir -p ${OUTPUT_HEADER_DIR}
+  ln -sf ${INPUT_HEADER_DIR} ${OUTPUT_HEADER_DIR}/WebRTC
+else
+  echo "BUILD_TYPE ${BUILD_TYPE} not supported."
+  exit 1
 fi
 
 echo "Generating LICENSE.html."

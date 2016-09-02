@@ -2,6 +2,14 @@ This source tree contains third party source code which is governed by third
 party licenses. Paths to the files and associated licenses are collected here.
 
 Files governed by third party licenses:
+base/base64.cc
+base/base64.h
+base/md5.cc
+base/md5.h
+base/sha1.cc
+base/sha1.h
+base/sigslot.cc
+base/sigslot.h
 common_audio/fft4g.c
 common_audio/signal_processing/spl_sqrt_floor.c
 common_audio/signal_processing/spl_sqrt_floor_arm.S
@@ -21,6 +29,67 @@ system_wrappers/source/spreadsortlib/constants.hpp
 system_wrappers/source/spreadsortlib/spreadsort.hpp
 
 Individual licenses for each file:
+-------------------------------------------------------------------------------
+Files:
+base/base64.cc
+base/base64.h
+
+License:
+//*********************************************************************
+//* Base64 - a simple base64 encoder and decoder.
+//*
+//*     Copyright (c) 1999, Bob Withers - bwit@pobox.com
+//*
+//* This code may be freely used for any purpose, either personal
+//* or commercial, provided the authors copyright notice remains
+//* intact.
+//*
+//* Enhancements by Stanley Yamane:
+//*     o reverse lookup table for the decode function
+//*     o reserve string buffer space in advance
+//*
+//*********************************************************************
+-------------------------------------------------------------------------------
+Files:
+base/md5.cc
+base/md5.h
+
+License:
+/*
+ * This code implements the MD5 message-digest algorithm.
+ * The algorithm is due to Ron Rivest.  This code was
+ * written by Colin Plumb in 1993, no copyright is claimed.
+ * This code is in the public domain; do with it what you wish.
+ *
+-------------------------------------------------------------------------------
+Files:
+base/sha1.cc
+base/sha1.h
+
+License:
+/*
+ * SHA-1 in C
+ * By Steve Reid <sreid@sea-to-sky.net>
+ * 100% Public Domain
+ *
+ * -----------------
+ * Modified 7/98
+ * By James H. Brown <jbrown@burgoyne.com>
+ * Still 100% Public Domain
+ *
+-------------------------------------------------------------------------------
+Files:
+base/sigslot.cc
+base/sigslot.h
+
+License:
+// sigslot.h: Signal/Slot classes
+//
+// Written by Sarah Thompson (sarah@telergy.com) 2002.
+//
+// License: Public domain. You are free to use this code however you like, with
+// the proviso that the author takes on no responsibility or liability for any
+// use.
 -------------------------------------------------------------------------------
 Files:
 common_audio/signal_processing/spl_sqrt_floor.c

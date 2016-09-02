@@ -63,18 +63,6 @@
             'webrtc/sdk/sdk.gyp:*',
           ],
         }],
-        ['OS=="ios" or (OS=="mac" and target_arch!="ia32")', {
-          'dependencies': [
-            'talk/app/webrtc/legacy_objc_api.gyp:*',
-          ],
-          'conditions': [
-            ['include_tests==1', {
-              'dependencies': [
-                'talk/app/webrtc/legacy_objc_api_tests.gyp:*',
-              ],
-            }],
-          ],
-        }],
       ],
     },
   ],

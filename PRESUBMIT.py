@@ -63,7 +63,6 @@ NATIVE_API_DIRS = (
 # These directories should not be used but are maintained only to avoid breaking
 # some legacy downstream code.
 LEGACY_API_DIRS = (
-  'talk/app/webrtc',
   'webrtc/base',
   'webrtc/common_audio/include',
   'webrtc/modules/audio_coding/include',
@@ -459,6 +458,7 @@ def _CommonChecks(input_api, output_api):
                         ],
       pylintrc='pylintrc'))
 
+  # TODO(nisse): talk/ is no more, so make below checks simpler?
   # WebRTC can't use the presubmit_canned_checks.PanProjectChecks function since
   # we need to have different license checks in talk/ and webrtc/ directories.
   # Instead, hand-picked checks are included below.

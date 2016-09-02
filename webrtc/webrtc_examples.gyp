@@ -6,10 +6,6 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 {
-  'includes': [
-    '../talk/build/common.gypi',
-  ],
-
   'conditions': [
     ['OS=="linux" or OS=="win"', {
       'targets': [
