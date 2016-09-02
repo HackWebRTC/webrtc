@@ -477,6 +477,12 @@ if (rtc_include_tests) {
       "video_processing/test/video_processing_unittest.h",
     ]
 
+    if (apm_debug_dump) {
+      defines += [ "WEBRTC_APM_DEBUG_DUMP=1" ]
+    } else {
+      defines += [ "WEBRTC_APM_DEBUG_DUMP=0" ]
+    }
+
     if (rtc_enable_intelligibility_enhancer) {
       defines += [ "WEBRTC_INTELLIGIBILITY_ENHANCER=1" ]
       sources += [

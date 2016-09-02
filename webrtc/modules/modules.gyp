@@ -396,6 +396,11 @@
             'video_processing/test/video_processing_unittest.h',
           ],
           'conditions': [
+            ['apm_debug_dump==1', {
+              'defines': ['WEBRTC_APM_DEBUG_DUMP=1',],
+            }, {
+              'defines': ['WEBRTC_APM_DEBUG_DUMP=0',],
+            }],
             ['enable_intelligibility_enhancer==1', {
               'defines': ['WEBRTC_INTELLIGIBILITY_ENHANCER=1',],
               'sources': [
