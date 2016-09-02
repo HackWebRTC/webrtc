@@ -93,8 +93,6 @@ class WebRtcVideoFrame : public VideoFrame {
 
   webrtc::VideoRotation rotation() const override;
 
-  const VideoFrame* GetCopyWithRotationApplied() const override;
-
  protected:
   // Creates a frame from a raw sample with FourCC |format| and size |w| x |h|.
   // |h| can be negative indicating a vertically flipped image.

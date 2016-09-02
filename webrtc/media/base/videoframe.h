@@ -55,14 +55,6 @@ class VideoFrame {
   // Indicates the rotation angle in degrees.
   virtual webrtc::VideoRotation rotation() const = 0;
 
-  // Return a copy of frame which has its pending rotation applied. The
-  // ownership of the returned frame is held by this frame.
-
-  // TODO(nisse): Deprecated, no longer used within webrtc. Should be
-  // deleted as soon as downstream applications are updated. Use
-  // webrtc::I420Buffer::Rotate instead.
-  virtual const VideoFrame* GetCopyWithRotationApplied() const = 0;
-
   // Tests if sample is valid. Returns true if valid.
 
   // TODO(nisse): Deprecated. Should be deleted in the cricket::VideoFrame and
