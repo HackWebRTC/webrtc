@@ -384,6 +384,67 @@ TEST(PacketBuffer, Reordering) {
   EXPECT_CALL(decoder_database, Die());  // Called when object is deleted.
 }
 
+// The test first inserts a packet with narrow-band CNG, then a packet with
+// wide-band speech. The expected behavior of the packet buffer is to detect a
+// change in sample rate, even though no speech packet has been inserted before,
+// and flush out the CNG packet.
+TEST(PacketBuffer, CngFirstThenSpeechWithNewSampleRate) {
+  TickTimer tick_timer;
+  PacketBuffer buffer(10, &tick_timer);  // 10 packets.
+  const uint8_t kCngPt = 13;
+  const int kPayloadLen = 10;
+  const uint8_t kSpeechPt = 100;
+
+  MockDecoderDatabase decoder_database;
+  auto factory = CreateBuiltinAudioDecoderFactory();
+  const DecoderDatabase::DecoderInfo info_cng(NetEqDecoder::kDecoderCNGnb, "",
+                                              factory);
+  EXPECT_CALL(decoder_database, GetDecoderInfo(kCngPt))
+      .WillRepeatedly(Return(&info_cng));
+  const DecoderDatabase::DecoderInfo info_speech(NetEqDecoder::kDecoderPCM16Bwb,
+                                                 "", factory);
+  EXPECT_CALL(decoder_database, GetDecoderInfo(kSpeechPt))
+      .WillRepeatedly(Return(&info_speech));
+
+  // Insert first packet, which is narrow-band CNG.
+  PacketGenerator gen(0, 0, kCngPt, 10);
+  PacketList list;
+  list.push_back(gen.NextPacket(kPayloadLen));
+  rtc::Optional<uint8_t> current_pt;
+  rtc::Optional<uint8_t> current_cng_pt;
+  EXPECT_EQ(PacketBuffer::kOK,
+            buffer.InsertPacketList(&list, decoder_database, &current_pt,
+                                    &current_cng_pt));
+  EXPECT_TRUE(list.empty());
+  EXPECT_EQ(1u, buffer.NumPacketsInBuffer());
+  ASSERT_TRUE(buffer.NextRtpHeader());
+  EXPECT_EQ(kCngPt, buffer.NextRtpHeader()->payloadType);
+  EXPECT_FALSE(current_pt);  // Current payload type not set.
+  EXPECT_EQ(rtc::Optional<uint8_t>(kCngPt),
+            current_cng_pt);  // CNG payload type set.
+
+  // Insert second packet, which is wide-band speech.
+  Packet* packet = gen.NextPacket(kPayloadLen);
+  packet->header.payloadType = kSpeechPt;
+  list.push_back(packet);
+  // Expect the buffer to flush out the CNG packet, since it does not match the
+  // new speech sample rate.
+  EXPECT_EQ(PacketBuffer::kFlushed,
+            buffer.InsertPacketList(&list, decoder_database, &current_pt,
+                                    &current_cng_pt));
+  EXPECT_TRUE(list.empty());
+  EXPECT_EQ(1u, buffer.NumPacketsInBuffer());
+  ASSERT_TRUE(buffer.NextRtpHeader());
+  EXPECT_EQ(kSpeechPt, buffer.NextRtpHeader()->payloadType);
+
+  EXPECT_EQ(rtc::Optional<uint8_t>(kSpeechPt),
+            current_pt);         // Current payload type set.
+  EXPECT_FALSE(current_cng_pt);  // CNG payload type reset.
+
+  buffer.Flush();                        // Clean up.
+  EXPECT_CALL(decoder_database, Die());  // Called when object is deleted.
+}
+
 TEST(PacketBuffer, Failures) {
   const uint16_t start_seq_no = 17;
   const uint32_t start_ts = 4711;

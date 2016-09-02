@@ -22,7 +22,7 @@
 #include "webrtc/modules/audio_coding/neteq/tick_timer.h"
 
 namespace webrtc {
-
+namespace {
 // Predicate used when inserting packets in the buffer list.
 // Operator() returns true when |packet| goes before |new_packet|.
 class NewTimestampIsLarger {
@@ -37,6 +37,17 @@ class NewTimestampIsLarger {
  private:
   const Packet* new_packet_;
 };
+
+// Returns true if both payload types are known to the decoder database, and
+// have the same sample rate.
+bool EqualSampleRates(uint8_t pt1,
+                      uint8_t pt2,
+                      const DecoderDatabase& decoder_database) {
+  auto di1 = decoder_database.GetDecoderInfo(pt1);
+  auto di2 = decoder_database.GetDecoderInfo(pt2);
+  return di1 && di2 && di1->SampleRateHz() == di2->SampleRateHz();
+}
+}  // namespace
 
 PacketBuffer::PacketBuffer(size_t max_number_of_packets,
                            const TickTimer* tick_timer)
@@ -126,8 +137,12 @@ int PacketBuffer::InsertPacketList(
           rtc::Optional<uint8_t>(packet->header.payloadType);
     } else if (!decoder_database.IsDtmf(packet->header.payloadType)) {
       // This must be speech.
-      if (*current_rtp_payload_type &&
-          **current_rtp_payload_type != packet->header.payloadType) {
+      if ((*current_rtp_payload_type &&
+           **current_rtp_payload_type != packet->header.payloadType) ||
+          (*current_cng_rtp_payload_type &&
+           !EqualSampleRates(packet->header.payloadType,
+                             **current_cng_rtp_payload_type,
+                             decoder_database))) {
         *current_cng_rtp_payload_type = rtc::Optional<uint8_t>();
         Flush();
         flushed = true;
