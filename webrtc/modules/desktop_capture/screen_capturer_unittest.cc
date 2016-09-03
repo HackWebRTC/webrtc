@@ -8,6 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string.h>
+
+#include <algorithm>
+#include <initializer_list>
 #include <memory>
 #include <utility>
 
@@ -15,12 +19,16 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/modules/desktop_capture/rgba_color.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
 #include "webrtc/modules/desktop_capture/screen_capturer_mock_objects.h"
+#include "webrtc/modules/desktop_capture/screen_drawer.h"
+#include "webrtc/system_wrappers/include/sleep.h"
 
 #if defined(WEBRTC_WIN)
 #include "webrtc/modules/desktop_capture/win/screen_capturer_win_directx.h"
@@ -34,6 +42,48 @@ const int kTestSharedMemoryId = 123;
 
 namespace webrtc {
 
+namespace {
+
+ACTION_P(SaveUniquePtrArg, dest) {
+  *dest = std::move(*arg1);
+}
+
+// Expects |capturer| to successfully capture a frame, and returns it.
+std::unique_ptr<DesktopFrame> CaptureFrame(
+    ScreenCapturer* capturer,
+    MockScreenCapturerCallback* callback) {
+  std::unique_ptr<DesktopFrame> frame;
+  EXPECT_CALL(*callback,
+              OnCaptureResultPtr(DesktopCapturer::Result::SUCCESS, _))
+      .WillOnce(SaveUniquePtrArg(&frame));
+  capturer->Capture(DesktopRegion());
+  EXPECT_TRUE(frame);
+  return frame;
+}
+
+// Expects color in |rect| of |frame| is |color|.
+void ExpectPixelsAreColoredBy(const DesktopFrame& frame,
+                              DesktopRect rect,
+                              RgbaColor color) {
+  // updated_region() should cover the painted area.
+  DesktopRegion updated_region(frame.updated_region());
+  updated_region.IntersectWith(rect);
+  ASSERT_TRUE(updated_region.Equals(DesktopRegion(rect)));
+
+  // Color in the |rect| should be |color|.
+  uint8_t* row = frame.GetFrameDataAtPos(rect.top_left());
+  for (int i = 0; i < rect.height(); i++) {
+    uint8_t* column = row;
+    for (int j = 0; j < rect.width(); j++) {
+      ASSERT_EQ(color, RgbaColor(column));
+      column += DesktopFrame::kBytesPerPixel;
+    }
+    row += frame.stride();
+  }
+}
+
+}  // namespace
+
 class ScreenCapturerTest : public testing::Test {
  public:
   void SetUp() override {
@@ -42,6 +92,84 @@ class ScreenCapturerTest : public testing::Test {
   }
 
  protected:
+  void TestCaptureUpdatedRegion(
+      std::initializer_list<ScreenCapturer*> capturers) {
+    // A large enough area for the tests, which should be able to fulfill by
+    // most of systems.
+    const int kTestArea = 512;
+    const int kRectSize = 32;
+    std::unique_ptr<ScreenDrawer> drawer = ScreenDrawer::Create();
+    if (!drawer || drawer->DrawableRegion().is_empty()) {
+      LOG(LS_WARNING) << "No ScreenDrawer implementation for current platform.";
+      return;
+    }
+    if (drawer->DrawableRegion().width() < kTestArea ||
+        drawer->DrawableRegion().height() < kTestArea) {
+      LOG(LS_WARNING) << "ScreenDrawer::DrawableRegion() is too small for the "
+                         "CaptureUpdatedRegion tests.";
+      return;
+    }
+
+    for (ScreenCapturer* capturer : capturers) {
+      capturer->Start(&callback_);
+    }
+
+#if defined(WEBRTC_LINUX)
+    // TODO(zijiehe): ScreenCapturerX11 won't be able to capture correct images
+    // in the first several capture attempts.
+    for (int i = 0; i < 10; i++) {
+      for (ScreenCapturer* capturer : capturers) {
+        std::unique_ptr<DesktopFrame> frame =
+            CaptureFrame(capturer, &callback_);
+        if (!frame) {
+          return;
+        }
+      }
+    }
+#endif
+
+    for (int c = 0; c < 3; c++) {
+      for (int i = 0; i < kTestArea - kRectSize; i += 16) {
+        DesktopRect rect = DesktopRect::MakeXYWH(i, i, kRectSize, kRectSize);
+        rect.Translate(drawer->DrawableRegion().top_left());
+        RgbaColor color((c == 0 ? (i & 0xff) : 0x7f),
+                        (c == 1 ? (i & 0xff) : 0x7f),
+                        (c == 2 ? (i & 0xff) : 0x7f));
+        drawer->Clear();
+        drawer->DrawRectangle(rect, color);
+        drawer->WaitForPendingDraws();
+
+        for (ScreenCapturer* capturer : capturers) {
+          std::unique_ptr<DesktopFrame> frame =
+              CaptureFrame(capturer, &callback_);
+          if (!frame) {
+            return;
+          }
+
+          ExpectPixelsAreColoredBy(*frame, rect, color);
+        }
+      }
+    }
+  }
+
+  void TestCaptureUpdatedRegion() {
+    TestCaptureUpdatedRegion({capturer_.get()});
+  }
+
+#if defined(WEBRTC_WIN)
+  bool SetDirectxCapturerMode() {
+    if (!ScreenCapturerWinDirectx::IsSupported()) {
+      LOG(LS_WARNING) << "Directx capturer is not supported";
+      return false;
+    }
+
+    DesktopCaptureOptions options(DesktopCaptureOptions::CreateDefault());
+    options.set_allow_directx_capturer(true);
+    capturer_.reset(ScreenCapturer::Create(options));
+    return true;
+  }
+#endif  // defined(WEBRTC_WIN)
+
   std::unique_ptr<ScreenCapturer> capturer_;
   MockScreenCapturerCallback callback_;
 };
@@ -73,10 +201,6 @@ class FakeSharedMemoryFactory : public SharedMemoryFactory {
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(FakeSharedMemoryFactory);
 };
-
-ACTION_P(SaveUniquePtrArg, dest) {
-  *dest = std::move(*arg1);
-}
 
 TEST_F(ScreenCapturerTest, GetScreenListAndSelectScreen) {
   webrtc::ScreenCapturer::ScreenList screens;
@@ -117,6 +241,10 @@ TEST_F(ScreenCapturerTest, Capture) {
   EXPECT_TRUE(it.IsAtEnd());
 }
 
+TEST_F(ScreenCapturerTest, CaptureUpdatedRegion) {
+  TestCaptureUpdatedRegion();
+}
+
 #if defined(WEBRTC_WIN)
 
 TEST_F(ScreenCapturerTest, UseSharedBuffers) {
@@ -151,14 +279,9 @@ TEST_F(ScreenCapturerTest, UseMagnifier) {
 }
 
 TEST_F(ScreenCapturerTest, UseDirectxCapturer) {
-  if (!ScreenCapturerWinDirectx::IsSupported()) {
-    LOG(LS_WARNING) << "Directx capturer is not supported";
+  if (!SetDirectxCapturerMode()) {
     return;
   }
-
-  DesktopCaptureOptions options(DesktopCaptureOptions::CreateDefault());
-  options.set_allow_directx_capturer(true);
-  capturer_.reset(ScreenCapturer::Create(options));
 
   std::unique_ptr<DesktopFrame> frame;
   EXPECT_CALL(callback_,
@@ -171,14 +294,9 @@ TEST_F(ScreenCapturerTest, UseDirectxCapturer) {
 }
 
 TEST_F(ScreenCapturerTest, UseDirectxCapturerWithSharedBuffers) {
-  if (!ScreenCapturerWinDirectx::IsSupported()) {
-    LOG(LS_WARNING) << "Directx capturer is not supported";
+  if (!SetDirectxCapturerMode()) {
     return;
   }
-
-  DesktopCaptureOptions options(DesktopCaptureOptions::CreateDefault());
-  options.set_allow_directx_capturer(true);
-  capturer_.reset(ScreenCapturer::Create(options));
 
   std::unique_ptr<DesktopFrame> frame;
   EXPECT_CALL(callback_,
@@ -192,6 +310,25 @@ TEST_F(ScreenCapturerTest, UseDirectxCapturerWithSharedBuffers) {
   ASSERT_TRUE(frame);
   ASSERT_TRUE(frame->shared_memory());
   EXPECT_EQ(frame->shared_memory()->id(), kTestSharedMemoryId);
+}
+
+TEST_F(ScreenCapturerTest, CaptureUpdatedRegionWithDirectxCapturer) {
+  if (!SetDirectxCapturerMode()) {
+    return;
+  }
+
+  TestCaptureUpdatedRegion();
+}
+
+// TODO(zijiehe): Enable this test after CL 2299663003 has been submitted.
+TEST_F(ScreenCapturerTest, DISABLED_TwoDirectxCapturers) {
+  if (!SetDirectxCapturerMode()) {
+    return;
+  }
+
+  std::unique_ptr<ScreenCapturer> capturer2(capturer_.release());
+  RTC_CHECK(SetDirectxCapturerMode());
+  TestCaptureUpdatedRegion({capturer_.get(), capturer2.get()});
 }
 
 #endif  // defined(WEBRTC_WIN)

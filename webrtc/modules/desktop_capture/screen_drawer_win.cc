@@ -13,6 +13,7 @@
 #include <memory>
 
 #include "webrtc/modules/desktop_capture/screen_drawer.h"
+#include "webrtc/system_wrappers/include/sleep.h"
 
 namespace webrtc {
 
@@ -34,6 +35,11 @@ HWND CreateDrawerWindow(DesktopRect rect) {
   return hwnd;
 }
 
+COLORREF ColorToRef(RgbaColor color) {
+  // Windows device context does not support alpha.
+  return RGB(color.red, color.green, color.blue);
+}
+
 // A ScreenDrawer implementation for Windows.
 class ScreenDrawerWin : public ScreenDrawer {
  public:
@@ -42,10 +48,17 @@ class ScreenDrawerWin : public ScreenDrawer {
 
   // ScreenDrawer interface.
   DesktopRect DrawableRegion() override;
-  void DrawRectangle(DesktopRect rect, uint32_t rgba) override;
+  void DrawRectangle(DesktopRect rect, RgbaColor color) override;
   void Clear() override;
+  void WaitForPendingDraws() override;
 
  private:
+  // Draw a line with |color|.
+  void DrawLine(DesktopVector start, DesktopVector end, RgbaColor color);
+
+  // Draw a dot with |color|.
+  void DrawDot(DesktopVector vect, RgbaColor color);
+
   const DesktopRect rect_;
   HWND window_;
   HDC hdc_;
@@ -57,8 +70,12 @@ ScreenDrawerWin::ScreenDrawerWin()
       window_(CreateDrawerWindow(rect_)),
       hdc_(GetWindowDC(window_)) {
   // We do not need to handle any messages for the |window_|, so disable Windows
-  // process windows ghosting feature.
+  // from processing windows ghosting feature.
   DisableProcessWindowsGhosting();
+
+  // Always use stock pen (DC_PEN) and brush (DC_BRUSH).
+  SelectObject(hdc_, GetStockObject(DC_PEN));
+  SelectObject(hdc_, GetStockObject(DC_BRUSH));
 }
 
 ScreenDrawerWin::~ScreenDrawerWin() {
@@ -71,20 +88,51 @@ DesktopRect ScreenDrawerWin::DrawableRegion() {
   return rect_;
 }
 
-void ScreenDrawerWin::DrawRectangle(DesktopRect rect, uint32_t rgba) {
-  int r = (rgba & 0xff00) >> 8;
-  int g = (rgba & 0xff0000) >> 16;
-  int b = (rgba & 0xff000000) >> 24;
-  // Windows device context does not support Alpha.
-  SelectObject(hdc_, GetStockObject(DC_PEN));
-  SelectObject(hdc_, GetStockObject(DC_BRUSH));
-  SetDCBrushColor(hdc_, RGB(r, g, b));
-  SetDCPenColor(hdc_, RGB(r, g, b));
+void ScreenDrawerWin::DrawRectangle(DesktopRect rect, RgbaColor color) {
+  if (rect.width() == 1 && rect.height() == 1) {
+    // Rectangle function cannot draw a 1 pixel rectangle.
+    DrawDot(rect.top_left(), color);
+    return;
+  }
+
+  if (rect.width() == 1 || rect.height() == 1) {
+    // Rectangle function cannot draw a 1 pixel rectangle.
+    DrawLine(rect.top_left(), DesktopVector(rect.right(), rect.bottom()),
+             color);
+    return;
+  }
+
+  SetDCBrushColor(hdc_, ColorToRef(color));
+  SetDCPenColor(hdc_, ColorToRef(color));
   Rectangle(hdc_, rect.left(), rect.top(), rect.right(), rect.bottom());
 }
 
 void ScreenDrawerWin::Clear() {
-  DrawRectangle(DrawableRegion(), 0);
+  DrawRectangle(rect_, RgbaColor(0, 0, 0));
+}
+
+// TODO(zijiehe): Find the right signal to indicate the finish of all pending
+// paintings.
+void ScreenDrawerWin::WaitForPendingDraws() {
+  // DirectX capturer reads data from GPU, so there is a certain delay before
+  // Windows sends the data to GPU.
+  SleepMs(100);
+}
+
+void ScreenDrawerWin::DrawLine(DesktopVector start,
+                               DesktopVector end,
+                               RgbaColor color) {
+  POINT points[2];
+  points[0].x = start.x();
+  points[0].y = start.y();
+  points[1].x = end.x();
+  points[1].y = end.y();
+  SetDCPenColor(hdc_, ColorToRef(color));
+  Polyline(hdc_, points, 2);
+}
+
+void ScreenDrawerWin::DrawDot(DesktopVector vect, RgbaColor color) {
+  SetPixel(hdc_, vect.x(), vect.y(), ColorToRef(color));
 }
 
 }  // namespace
