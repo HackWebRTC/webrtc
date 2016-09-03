@@ -107,7 +107,6 @@ class VideoTrackSourceInterface
   };
 
   virtual void Stop() = 0;
-  virtual void Restart() = 0;
 
   // Indicates that parameters suitable for screencasts should be automatically
   // applied to RtpSenders.

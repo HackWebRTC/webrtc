@@ -58,7 +58,6 @@ class VideoCapturerTrackSource : public VideoTrackSource,
   bool GetStats(Stats* stats) override;
 
   void Stop() override;
-  void Restart() override;
 
  protected:
   VideoCapturerTrackSource(rtc::Thread* worker_thread,

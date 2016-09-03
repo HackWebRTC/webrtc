@@ -37,9 +37,6 @@ class AndroidVideoTrackSource : public Notifier<VideoTrackSourceInterface> {
   // Not used on Android.
   // TODO(sakal/magjed): Try to remove this from the interface.
   void Stop() override { RTC_NOTREACHED(); };
-  // Not used on Android.
-  // TODO(sakal/magjed): Try to remove this from the interface.
-  void Restart() override { RTC_NOTREACHED(); }
 
   bool is_screencast() const override { return is_screencast_; }
 

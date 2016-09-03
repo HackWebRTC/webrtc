@@ -157,30 +157,6 @@ TEST_F(VideoCapturerTrackSourceTest, CapturerStartStop) {
                  kMaxWaitMs);
 }
 
-// Test that a VideoSource can be stopped and restarted.
-TEST_F(VideoCapturerTrackSourceTest, StopRestart) {
-  // Initialize without constraints.
-  CreateVideoCapturerSource();
-  EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
-                 kMaxWaitMs);
-
-  ASSERT_TRUE(capturer_->CaptureFrame());
-  EXPECT_EQ(1, renderer_.num_rendered_frames());
-
-  source_->Stop();
-  EXPECT_EQ_WAIT(MediaSourceInterface::kEnded, state_observer_->state(),
-                 kMaxWaitMs);
-
-  source_->Restart();
-  EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
-                 kMaxWaitMs);
-
-  ASSERT_TRUE(capturer_->CaptureFrame());
-  EXPECT_EQ(2, renderer_.num_rendered_frames());
-
-  source_->Stop();
-}
-
 // Test that a VideoSource transition to kEnded if the capture device
 // fails.
 TEST_F(VideoCapturerTrackSourceTest, CameraFailed) {
