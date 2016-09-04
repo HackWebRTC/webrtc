@@ -29,6 +29,7 @@ const int kLimitNumPackets = 20;
 const int kDefaultMinBitrateBps = 10000;
 const int kDefaultMaxBitrateBps = 1000000000;
 const int64_t kLowBitrateLogPeriodMs = 10000;
+const int64_t kRtcEventLogPeriodMs = 5000;
 
 struct UmaRampUpMetric {
   const char* metric_name;
@@ -54,6 +55,7 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation(RtcEventLog* event_log)
       has_decreased_since_last_fraction_loss_(false),
       time_last_receiver_block_ms_(-1),
       last_fraction_loss_(0),
+      last_logged_fraction_loss_(0),
       last_round_trip_time_ms_(0),
       bwe_incoming_(0),
       delay_based_bitrate_bps_(0),
@@ -63,7 +65,8 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation(RtcEventLog* event_log)
       bitrate_at_2_seconds_kbps_(0),
       uma_update_state_(kNoUpdate),
       rampup_uma_stats_updated_(kNumUmaRampupMetrics, false),
-      event_log_(event_log) {
+      event_log_(event_log),
+      last_rtc_event_log_ms_(-1) {
   RTC_DCHECK(event_log);
 }
 
@@ -228,10 +231,6 @@ void SendSideBandwidthEstimation::UpdateEstimate(int64_t now_ms) {
       // (gives a little extra increase at low rates, negligible at higher
       // rates).
       bitrate_ += 1000;
-
-      event_log_->LogBwePacketLossEvent(
-          bitrate_, last_fraction_loss_,
-          expected_packets_since_last_loss_update_);
     } else if (last_fraction_loss_ <= 26) {
       // Loss between 2% - 10%: Do nothing.
     } else {
@@ -250,12 +249,19 @@ void SendSideBandwidthEstimation::UpdateEstimate(int64_t now_ms) {
             512.0);
         has_decreased_since_last_fraction_loss_ = true;
       }
-      event_log_->LogBwePacketLossEvent(
-          bitrate_, last_fraction_loss_,
-          expected_packets_since_last_loss_update_);
     }
   }
-  bitrate_ = CapBitrateToThresholds(now_ms, bitrate_);
+  uint32_t capped_bitrate = CapBitrateToThresholds(now_ms, bitrate_);
+  if (capped_bitrate != bitrate_ ||
+      last_fraction_loss_ != last_logged_fraction_loss_ ||
+      last_rtc_event_log_ms_ == -1 ||
+      now_ms - last_rtc_event_log_ms_ > kRtcEventLogPeriodMs) {
+    event_log_->LogBwePacketLossEvent(capped_bitrate, last_fraction_loss_,
+                                      expected_packets_since_last_loss_update_);
+    last_logged_fraction_loss_ = last_fraction_loss_;
+    last_rtc_event_log_ms_ = now_ms;
+  }
+  bitrate_ = capped_bitrate;
 }
 
 bool SendSideBandwidthEstimation::IsInStartPhase(int64_t now_ms) const {

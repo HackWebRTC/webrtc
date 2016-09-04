@@ -67,7 +67,7 @@ TEST(SendSideBweTest, DoesntReapplyBitrateDecreaseWithoutFollowingRemb) {
   MockRtcEventLog event_log;
   EXPECT_CALL(event_log,
               LogBwePacketLossEvent(testing::Gt(0), testing::Gt(0), 0))
-      .Times(3);
+      .Times(1);
   SendSideBandwidthEstimation bwe(&event_log);
   static const int kMinBitrateBps = 100000;
   static const int kInitialBitrateBps = 1000000;
