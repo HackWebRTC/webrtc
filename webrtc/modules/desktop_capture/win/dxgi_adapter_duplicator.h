@@ -15,9 +15,9 @@
 
 #include <vector>
 
-#include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
+#include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 #include "webrtc/modules/desktop_capture/win/d3d_device.h"
 #include "webrtc/modules/desktop_capture/win/dxgi_output_duplicator.h"
 
@@ -44,18 +44,15 @@ class DxgiAdapterDuplicator {
   // Initializes the DxgiAdapterDuplicator from a D3dDevice.
   bool Initialize();
 
-  // Sequential calls Duplicate function of all the DxgiOutputDuplicators owned
-  // by this instance.
-  bool Duplicate(Context* context,
-                 const DesktopFrame* last_frame,
-                 DesktopFrame* target);
+  // Sequentially calls Duplicate function of all the DxgiOutputDuplicator
+  // instances owned by this instance, and writes into |target|.
+  bool Duplicate(Context* context, SharedDesktopFrame* target);
 
-  // Captures one monitor and writes into target. |monitor_id| should be between
-  // [0, screen_count()).
+  // Captures one monitor and writes into |target|. |monitor_id| should be
+  // between [0, screen_count()).
   bool DuplicateMonitor(Context* context,
                         int monitor_id,
-                        const DesktopFrame* last_frame,
-                        DesktopFrame* target);
+                        SharedDesktopFrame* target);
 
   // Returns desktop rect covered by this DxgiAdapterDuplicator.
   DesktopRect desktop_rect() const { return desktop_rect_; }

@@ -11,12 +11,13 @@
 #ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_DXGI_DUPLICATOR_CONTROLLER_H_
 #define WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_DXGI_DUPLICATOR_CONTROLLER_H_
 
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
+#include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 #include "webrtc/modules/desktop_capture/win/d3d_device.h"
 #include "webrtc/modules/desktop_capture/win/dxgi_adapter_duplicator.h"
 
@@ -33,16 +34,6 @@ namespace webrtc {
 // but a later Duplicate() returns false, this usually means the display mode is
 // changing. Consumers should retry after a while. (Typically 50 milliseconds,
 // but according to hardware performance, this time may vary.)
-//
-// This class is normally used with double buffering, e.g. as in
-// ScreenCapturerWinDirectx, but it should work with consumers with one buffer,
-// i.e. consumers can always send nullptr for |last_frame|. Some minor changes
-// in DxgiOutputDuplicator class are nice to have to reduce size of data to copy
-// (Commented in dxgi_output_duplicator.cc). But this class won't work
-// with three or more buffers, the updated region merging logic will be broken
-// in such scenarios. If a consumer does have this requirement, one can always
-// send a new Context instance to Duplicate() function to force duplicator to
-// treat it as a new consumer.
 class DxgiDuplicatorController {
  public:
   // A context to store the status of a single consumer of
@@ -82,18 +73,15 @@ class DxgiDuplicatorController {
   // TODO(zijiehe): Windows cannot guarantee the frames returned by each
   // IDXGIOutputDuplication are synchronized. But we are using a totally
   // different threading model than the way Windows suggested, it's hard to
-  // synchronize them manually. But we should find a way to do it.
-  bool Duplicate(Context* context,
-                 const DesktopFrame* last_frame,
-                 DesktopFrame* target);
+  // synchronize them manually. We should find a way to do it.
+  bool Duplicate(Context* context, SharedDesktopFrame* target);
 
   // Captures one monitor and writes into target. |monitor_id| should >= 0. If
   // |monitor_id| is greater than the total screen count of all the Duplicators,
   // this function returns false.
   bool DuplicateMonitor(Context* context,
                         int monitor_id,
-                        const DesktopFrame* last_frame,
-                        DesktopFrame* target);
+                        SharedDesktopFrame* target);
 
   // Returns dpi of current system. Returns an empty DesktopVector if system
   // does not support DXGI based capturer.
@@ -153,8 +141,7 @@ class DxgiDuplicatorController {
   // Do the real duplication work. |monitor_id < 0| to capture entire screen.
   bool DoDuplicate(Context* context,
                    int monitor_id,
-                   const DesktopFrame* last_frame,
-                   DesktopFrame* target);
+                   SharedDesktopFrame* target);
 
   // This lock must be locked whenever accessing any of the following objects.
   rtc::CriticalSection lock_;

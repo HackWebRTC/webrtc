@@ -79,7 +79,7 @@ void ScreenCapturerWinDirectx::Capture(const DesktopRegion& region) {
 
   if (current_screen_id == kFullDesktopScreenId) {
     if (!DxgiDuplicatorController::Instance()->Duplicate(
-            &context_, frames_.previous_frame(), frames_.current_frame())) {
+            &context_, frames_.current_frame())) {
       // Screen size may be changed, so we need to reset the frames.
       frames_.Reset();
       callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
@@ -87,8 +87,7 @@ void ScreenCapturerWinDirectx::Capture(const DesktopRegion& region) {
     }
   } else {
     if (!DxgiDuplicatorController::Instance()->DuplicateMonitor(
-            &context_, current_screen_id, frames_.previous_frame(),
-            frames_.current_frame())) {
+            &context_, current_screen_id, frames_.current_frame())) {
       // Screen size may be changed, so we need to reset the frames.
       frames_.Reset();
       if (current_screen_id >=

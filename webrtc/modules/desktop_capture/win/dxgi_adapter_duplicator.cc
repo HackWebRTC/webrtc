@@ -113,11 +113,10 @@ void DxgiAdapterDuplicator::Unregister(const Context* const context) {
 }
 
 bool DxgiAdapterDuplicator::Duplicate(Context* context,
-                                      const DesktopFrame* last_frame,
-                                      DesktopFrame* target) {
+                                      SharedDesktopFrame* target) {
   RTC_DCHECK_EQ(context->contexts.size(), duplicators_.size());
   for (size_t i = 0; i < duplicators_.size(); i++) {
-    if (!duplicators_[i].Duplicate(&context->contexts[i], last_frame,
+    if (!duplicators_[i].Duplicate(&context->contexts[i],
                                    duplicators_[i].desktop_rect().top_left(),
                                    target)) {
       return false;
@@ -128,13 +127,12 @@ bool DxgiAdapterDuplicator::Duplicate(Context* context,
 
 bool DxgiAdapterDuplicator::DuplicateMonitor(Context* context,
                                              int monitor_id,
-                                             const DesktopFrame* last_frame,
-                                             DesktopFrame* target) {
+                                             SharedDesktopFrame* target) {
   RTC_DCHECK(monitor_id >= 0 &&
              monitor_id < static_cast<int>(duplicators_.size()) &&
              context->contexts.size() == duplicators_.size());
-  return duplicators_[monitor_id].Duplicate(
-      &context->contexts[monitor_id], last_frame, DesktopVector(), target);
+  return duplicators_[monitor_id].Duplicate(&context->contexts[monitor_id],
+                                            DesktopVector(), target);
 }
 
 DesktopRect DxgiAdapterDuplicator::ScreenRect(int id) const {

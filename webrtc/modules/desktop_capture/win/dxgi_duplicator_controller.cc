@@ -176,39 +176,33 @@ void DxgiDuplicatorController::Setup(Context* context) {
 }
 
 bool DxgiDuplicatorController::Duplicate(Context* context,
-                                         const DesktopFrame* last_frame,
-                                         DesktopFrame* target) {
-  return DoDuplicate(context, -1, last_frame, target);
+                                         SharedDesktopFrame* target) {
+  return DoDuplicate(context, -1, target);
 }
 
 bool DxgiDuplicatorController::DuplicateMonitor(Context* context,
                                                 int monitor_id,
-                                                const DesktopFrame* last_frame,
-                                                DesktopFrame* target) {
+                                                SharedDesktopFrame* target) {
   RTC_DCHECK_GE(monitor_id, 0);
-  return DoDuplicate(context, monitor_id, last_frame, target);
+  return DoDuplicate(context, monitor_id, target);
 }
 
 bool DxgiDuplicatorController::DoDuplicate(Context* context,
                                            int monitor_id,
-                                           const DesktopFrame* last_frame,
-                                           DesktopFrame* target) {
+                                           SharedDesktopFrame* target) {
   RTC_DCHECK(target);
-  if (last_frame && !target->size().equals(last_frame->size())) {
-    return false;
-  }
   target->mutable_updated_region()->Clear();
   rtc::CritScope lock(&lock_);
   if (!Initialize()) {
     // Cannot initialize COM components now, display mode may be changing.
     return false;
   }
+
   Setup(context);
   if (monitor_id < 0) {
     // Capture entire screen.
     for (size_t i = 0; i < duplicators_.size(); i++) {
-      if (!duplicators_[i].Duplicate(&context->contexts_[i], last_frame,
-                                     target)) {
+      if (!duplicators_[i].Duplicate(&context->contexts_[i], target)) {
         Deinitialize();
         return false;
       }
@@ -224,7 +218,7 @@ bool DxgiDuplicatorController::DoDuplicate(Context* context,
       monitor_id -= duplicators_[i].screen_count();
     } else {
       if (duplicators_[i].DuplicateMonitor(&context->contexts_[i], monitor_id,
-                                           last_frame, target)) {
+                                           target)) {
         target->set_dpi(dpi());
         return true;
       }
