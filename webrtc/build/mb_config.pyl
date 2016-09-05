@@ -202,6 +202,26 @@
       'win_x64_gyp_dbg': 'gyp_debug_bot_x64_exclude_tests',
       'win_x64_gyp_rel': 'gyp_release_bot_x64_exclude_tests',
     },
+    'client.webrtc.fyi': {
+      # Mac
+      'Mac64 Release (swarming)': 'swarming_gn_release_bot_x64',
+
+      # Linux
+      'Linux32 Debug': 'gn_debug_bot_x86',
+      'Linux32 Release': 'gn_release_bot_x86',
+      'Linux64 GCC': 'gn_gcc_release_bot_x64',
+      'Linux64 Release (swarming)': 'swarming_gn_release_bot_x64',
+
+      # Android
+      'Android32 ASan (L Nexus6)': 'android_gn_asan_shared_release_bot_arm',
+      'Android32 Builder': 'android_gn_release_bot_arm',
+      'Android32 Tests (J Nexus4)': 'none',
+      'Android32 Tests (K Nexus5)': 'none',
+      'Android32 Tests (L Nexus6)': 'none',
+
+      # Windows
+      'Win32 Release (swarming)': 'swarming_gn_release_bot_x86',
+    }
   },
 
   # This is the list of configs that you can pass to mb; each config
@@ -237,6 +257,9 @@
     ],
 
     # Linux, Mac and Windows
+    'gn_gcc_release_bot_x64': [
+      'gn', 'gcc', 'release_bot', 'x64'
+    ],
     'gn_crosscompile_release_bot_arm': [
       'gn', 'crosscompile', 'openh264_release_bot', 'arm'
     ],
@@ -276,8 +299,14 @@
     'gn_release_bot_x64': [
       'gn', 'openh264_release_bot', 'x64'
     ],
+    'swarming_gn_release_bot_x86': [
+      'swarming', 'gn', 'openh264_release_bot', 'x86'
+    ],
     'swarming_gn_debug_bot_x64': [
       'swarming', 'gn', 'openh264_debug_bot', 'x64'
+    ],
+    'swarming_gn_release_bot_x64': [
+      'swarming', 'gn', 'openh264_release_bot', 'x64'
     ],
 
     # Windows
@@ -340,6 +369,9 @@
     ],
     'android_gn_debug_static_bot_x64': [
       'android', 'gn', 'debug_static_bot', 'x64'
+    ],
+    'android_gn_asan_shared_release_bot_arm': [
+      'android', 'gn', 'asan', 'clang', 'shared', 'release_bot', 'arm'
     ],
 
     # This is used for tracking purposes; any bot that uses this config
@@ -419,6 +451,11 @@
     'error': {
       'gn_args': 'error',
       'gyp_defines': 'target_arch=unknown',
+    },
+
+    'gcc': {
+      'gn_args': 'is_clang=false use_sysroot=false',
+      'gyp_defines': 'clang=0',
     },
 
     'gn': {'type': 'gn'},
