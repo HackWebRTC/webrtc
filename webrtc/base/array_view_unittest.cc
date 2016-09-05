@@ -20,8 +20,45 @@
 namespace rtc {
 
 namespace {
+
+namespace test_has_data_and_size {
+
+template <typename C, typename T>
+using DS = internal::HasDataAndSize<C, T>;
+
+template <typename DR, typename SR>
+struct Test1 {
+  DR data();
+  SR size();
+};
+static_assert(DS<Test1<int*, int>, int>::value, "");
+static_assert(DS<Test1<int*, int>, const int>::value, "");
+static_assert(DS<Test1<const int*, int>, const int>::value, "");
+static_assert(!DS<Test1<const int*, int>, int>::value, "");  // Wrong const.
+static_assert(!DS<Test1<char*, size_t>, int>::value, "");  // Wrong ptr type.
+
+struct Test2 {
+  int* data;
+  size_t size;
+};
+static_assert(!DS<Test2, int>::value, "");  // Because they aren't methods.
+
+struct Test3 {
+  int* data();
+};
+static_assert(!DS<Test3, int>::value, "");  // Because .size() is missing.
+
+class Test4 {
+  int* data();
+  size_t size();
+};
+static_assert(!DS<Test4, int>::value, "");  // Because methods are private.
+
+}  // namespace test_has_data_and_size
+
 template <typename T>
 void Call(ArrayView<T>) {}
+
 }  // namespace
 
 TEST(ArrayViewTest, TestConstructFromPtrAndArray) {

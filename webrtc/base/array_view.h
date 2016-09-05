@@ -11,9 +11,36 @@
 #ifndef WEBRTC_BASE_ARRAY_VIEW_H_
 #define WEBRTC_BASE_ARRAY_VIEW_H_
 
+#include <type_traits>
+
 #include "webrtc/base/checks.h"
 
 namespace rtc {
+
+namespace internal {
+
+// (Internal; please don't use outside this file.) Determines if the given
+// class has zero-argument .data() and .size() methods whose return values are
+// convertible to T* and size_t, respectively.
+template <typename DS, typename T>
+class HasDataAndSize {
+ private:
+  template <
+      typename C,
+      typename std::enable_if<
+          std::is_convertible<decltype(std::declval<C>().data()), T*>::value &&
+          std::is_convertible<decltype(std::declval<C>().size()),
+                              size_t>::value>::type* = nullptr>
+  static int Test(int);
+
+  template <typename>
+  static char Test(...);
+
+ public:
+  static constexpr bool value = std::is_same<decltype(Test<DS>(0)), int>::value;
+};
+
+}  // namespace internal
 
 // Many functions read from or write to arrays. The obvious way to do this is
 // to use two arguments, a pointer to the first element and an element count:
@@ -95,7 +122,9 @@ class ArrayView final {
   // or ArrayView<const T>, const std::vector<T> to ArrayView<const T>, and
   // rtc::Buffer to ArrayView<uint8_t> (with the same const behavior as
   // std::vector).
-  template <typename U>
+  template <typename U,
+            typename std::enable_if<
+                internal::HasDataAndSize<U, T>::value>::type* = nullptr>
   ArrayView(U& u) : ArrayView(u.data(), u.size()) {}
 
   // Indexing, size, and iteration. These allow mutation even if the ArrayView
