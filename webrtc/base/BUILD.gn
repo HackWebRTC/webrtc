@@ -171,6 +171,7 @@ rtc_static_library("rtc_base_approved") {
     "timeutils.cc",
     "timeutils.h",
     "trace_event.h",
+    "type_traits.h",
   ]
 
   if (is_android) {

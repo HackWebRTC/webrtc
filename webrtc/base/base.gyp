@@ -103,6 +103,7 @@
         'timeutils.cc',
         'timeutils.h',
         'trace_event.h',
+        'type_traits.h',
       ],
       'conditions': [
         ['os_posix==1', {

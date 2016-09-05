@@ -19,6 +19,7 @@
 
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/type_traits.h"
 
 namespace rtc {
 
@@ -197,7 +198,12 @@ class BufferT {
     SetData(array, N);
   }
 
-  void SetData(const BufferT& buf) { SetData(buf.data(), buf.size()); }
+  template <typename W,
+            typename std::enable_if<
+                HasDataAndSize<const W, const T>::value>::type* = nullptr>
+  void SetData(const W& w) {
+    SetData(w.data(), w.size());
+  }
 
   // Replace the data in the buffer with at most |max_elements| of data, using
   // the function |setter|, which should have the following signature:
@@ -239,7 +245,12 @@ class BufferT {
     AppendData(array, N);
   }
 
-  void AppendData(const BufferT& buf) { AppendData(buf.data(), buf.size()); }
+  template <typename W,
+            typename std::enable_if<
+                HasDataAndSize<const W, const T>::value>::type* = nullptr>
+  void AppendData(const W& w) {
+    AppendData(w.data(), w.size());
+  }
 
   template <typename U,
             typename std::enable_if<

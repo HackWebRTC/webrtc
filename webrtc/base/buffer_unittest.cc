@@ -9,6 +9,8 @@
  */
 
 #include "webrtc/base/buffer.h"
+
+#include "webrtc/base/array_view.h"
 #include "webrtc/base/gunit.h"
 
 #include <type_traits>
@@ -74,6 +76,11 @@ TEST(BufferTest, TestSetData) {
   EXPECT_EQ(buf.capacity(), 7u * 3 / 2);
   EXPECT_FALSE(buf.empty());
   EXPECT_EQ(0, memcmp(buf.data(), kTestData, 9));
+  Buffer buf2;
+  buf2.SetData(buf);
+  EXPECT_EQ(buf.size(), 9u);
+  EXPECT_EQ(buf.capacity(), 7u * 3 / 2);
+  EXPECT_EQ(0, memcmp(buf.data(), kTestData, 9));
 }
 
 TEST(BufferTest, TestAppendData) {
@@ -81,6 +88,26 @@ TEST(BufferTest, TestAppendData) {
   buf.AppendData(kTestData + 10, 2);
   const int8_t exp[] = {0x4, 0x5, 0x6, 0xa, 0xb};
   EXPECT_EQ(buf, Buffer(exp));
+  Buffer buf2;
+  buf2.AppendData(buf);
+  buf2.AppendData(rtc::ArrayView<uint8_t>(buf));
+  const int8_t exp2[] = {0x4, 0x5, 0x6, 0xa, 0xb, 0x4, 0x5, 0x6, 0xa, 0xb};
+  EXPECT_EQ(buf2, Buffer(exp2));
+}
+
+TEST(BufferTest, TestSetAndAppendWithUnknownArg) {
+  struct TestDataContainer {
+    size_t size() const { return 3; }
+    const uint8_t* data() const { return kTestData; }
+  };
+  Buffer buf;
+  buf.SetData(TestDataContainer());
+  EXPECT_EQ(3u, buf.size());
+  EXPECT_EQ(Buffer(kTestData, 3), buf);
+  buf.AppendData(TestDataContainer());
+  EXPECT_EQ(6u, buf.size());
+  EXPECT_EQ(0, memcmp(buf.data(), kTestData, 3));
+  EXPECT_EQ(0, memcmp(buf.data() + 3, kTestData, 3));
 }
 
 TEST(BufferTest, TestSetSizeSmaller) {
