@@ -12,6 +12,7 @@
 #define WEBRTC_VIDEO_FRAME_H_
 
 #include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/include/video_frame_buffer.h"
 #include "webrtc/common_video/rotation.h"
@@ -28,8 +29,17 @@ class VideoFrame {
   // reasonable assumption that video_frame_buffer() returns a valid buffer.
   VideoFrame();
 
+  // TODO(nisse): This constructor is consistent with
+  // cricket::WebRtcVideoFrame. After the class
+  // cricket::WebRtcVideoFrame and its baseclass cricket::VideoFrame
+  // are deleted, we should consider whether or not we want to stick
+  // to this style and deprecate the other constructors.
+  VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
+             webrtc::VideoRotation rotation,
+             int64_t timestamp_us);
+
   // Preferred constructor.
-  VideoFrame(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
+  VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
              uint32_t timestamp,
              int64_t render_time_ms,
              VideoRotation rotation);
@@ -103,15 +113,21 @@ class VideoFrame {
   // Get frame height.
   int height() const;
 
+  // System monotonic clock, same timebase as rtc::TimeMicros().
+  int64_t timestamp_us() const { return timestamp_us_; }
+  void set_timestamp_us(int64_t timestamp_us) {
+    timestamp_us_ = timestamp_us;
+  }
+
   // TODO(nisse): After the cricket::VideoFrame and webrtc::VideoFrame
-  // merge, we'll have methods timestamp_us and set_timestamp_us, all
-  // other frame timestamps will likely be deprecated.
+  // merge, timestamps other than timestamp_us will likely be
+  // deprecated.
 
   // Set frame timestamp (90kHz).
-  void set_timestamp(uint32_t timestamp) { timestamp_ = timestamp; }
+  void set_timestamp(uint32_t timestamp) { timestamp_rtp_ = timestamp; }
 
   // Get frame timestamp (90kHz).
-  uint32_t timestamp() const { return timestamp_; }
+  uint32_t timestamp() const { return timestamp_rtp_; }
 
   // Set capture ntp time in milliseconds.
   void set_ntp_time_ms(int64_t ntp_time_ms) {
@@ -138,11 +154,13 @@ class VideoFrame {
 
   // Set render time in milliseconds.
   void set_render_time_ms(int64_t render_time_ms) {
-    render_time_ms_ = render_time_ms;
+    set_timestamp_us(render_time_ms * rtc::kNumMicrosecsPerMillisec);;
   }
 
   // Get render time in milliseconds.
-  int64_t render_time_ms() const { return render_time_ms_; }
+  int64_t render_time_ms() const {
+    return timestamp_us() / rtc::kNumMicrosecsPerMillisec;
+  }
 
   // Return true if and only if video_frame_buffer() is null. Which is possible
   // only if the object was default-constructed.
@@ -169,9 +187,9 @@ class VideoFrame {
  private:
   // An opaque reference counted handle that stores the pixel data.
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;
-  uint32_t timestamp_;
+  uint32_t timestamp_rtp_;
   int64_t ntp_time_ms_;
-  int64_t render_time_ms_;
+  int64_t timestamp_us_;
   VideoRotation rotation_;
 };
 

@@ -520,63 +520,6 @@ TEST_F(WebRtcVideoEngine2Test, PropagatesInputFrameTimestamp) {
   EXPECT_TRUE(channel->RemoveSendStream(kSsrc));
 }
 
-TEST_F(WebRtcVideoEngine2Test,
-       ProducesIncreasingTimestampsWithResetInputSources) {
-  cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
-  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
-  std::vector<cricket::VideoCodec> codecs;
-  codecs.push_back(kVp8Codec);
-
-  FakeCall* fake_call = new FakeCall(webrtc::Call::Config());
-  call_.reset(fake_call);
-  std::unique_ptr<VideoMediaChannel> channel(
-      SetUpForExternalEncoderFactory(&encoder_factory, codecs));
-
-  EXPECT_TRUE(
-      channel->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc)));
-  channel->SetSend(true);
-  FakeVideoSendStream* stream = fake_call->GetVideoSendStreams()[0];
-
-  FakeVideoCapturer capturer1;
-  EXPECT_TRUE(channel->SetVideoSend(kSsrc, true, nullptr, &capturer1));
-
-  cricket::CapturedFrame frame;
-  frame.width = 1280;
-  frame.height = 720;
-  frame.fourcc = cricket::FOURCC_I420;
-  frame.data_size = frame.width * frame.height +
-                    2 * ((frame.width + 1) / 2) * ((frame.height + 1) / 2);
-  std::unique_ptr<char[]> data(new char[frame.data_size]);
-  frame.data = data.get();
-  memset(frame.data, 1, frame.data_size);
-  int64_t initial_timestamp = rtc::TimeNanos();
-  frame.time_stamp = initial_timestamp;
-
-  // Deliver initial frame.
-  capturer1.SignalCapturedFrame(&frame);
-  // Deliver next frame 1 second later.
-  frame.time_stamp += rtc::kNumNanosecsPerSec;
-  rtc::Thread::Current()->SleepMs(1000);
-  capturer1.SignalCapturedFrame(&frame);
-
-  int64_t capturer1_last_timestamp = stream->GetLastTimestamp();
-  // Reset input source, should still be continuous even though input-frame
-  // timestamp is less than before.
-  FakeVideoCapturer capturer2;
-  EXPECT_TRUE(channel->SetVideoSend(kSsrc, true, nullptr, &capturer2));
-
-  rtc::Thread::Current()->SleepMs(1);
-  // Deliver with a timestamp (10 seconds) before the previous initial one,
-  // these should not be related at all anymore and it should still work fine.
-  frame.time_stamp = initial_timestamp - 10 * rtc::kNumNanosecsPerSec;
-  capturer2.SignalCapturedFrame(&frame);
-
-  // New timestamp should be at least 1ms in the future and not old.
-  EXPECT_GT(stream->GetLastTimestamp(), capturer1_last_timestamp);
-
-  EXPECT_TRUE(channel->RemoveSendStream(kSsrc));
-}
-
 VideoMediaChannel* WebRtcVideoEngine2Test::SetUpForExternalEncoderFactory(
     cricket::WebRtcVideoEncoderFactory* encoder_factory,
     const std::vector<VideoCodec>& codecs) {

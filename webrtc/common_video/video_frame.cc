@@ -25,19 +25,28 @@ const size_t EncodedImage::kBufferPaddingBytesH264 = 8;
 
 VideoFrame::VideoFrame()
     : video_frame_buffer_(nullptr),
-      timestamp_(0),
+      timestamp_rtp_(0),
       ntp_time_ms_(0),
-      render_time_ms_(0),
+      timestamp_us_(0),
       rotation_(kVideoRotation_0) {}
+
+VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
+                       webrtc::VideoRotation rotation,
+                       int64_t timestamp_us)
+    : video_frame_buffer_(buffer),
+      timestamp_rtp_(0),
+      ntp_time_ms_(0),
+      timestamp_us_(timestamp_us),
+      rotation_(rotation) {}
 
 VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
                        uint32_t timestamp,
                        int64_t render_time_ms,
                        VideoRotation rotation)
     : video_frame_buffer_(buffer),
-      timestamp_(timestamp),
+      timestamp_rtp_(timestamp),
       ntp_time_ms_(0),
-      render_time_ms_(render_time_ms),
+      timestamp_us_(render_time_ms * rtc::kNumMicrosecsPerMillisec),
       rotation_(rotation) {
   RTC_DCHECK(buffer);
 }
@@ -55,9 +64,9 @@ void VideoFrame::CreateEmptyFrame(int width,
   RTC_DCHECK_GE(stride_v, half_width);
 
   // Creating empty frame - reset all values.
-  timestamp_ = 0;
+  timestamp_rtp_ = 0;
   ntp_time_ms_ = 0;
-  render_time_ms_ = 0;
+  timestamp_us_ = 0;
   rotation_ = kVideoRotation_0;
 
   // Allocate a new buffer.
@@ -110,9 +119,9 @@ void VideoFrame::CopyFrame(const VideoFrame& videoFrame) {
 
 void VideoFrame::ShallowCopy(const VideoFrame& videoFrame) {
   video_frame_buffer_ = videoFrame.video_frame_buffer();
-  timestamp_ = videoFrame.timestamp_;
+  timestamp_rtp_ = videoFrame.timestamp_rtp_;
   ntp_time_ms_ = videoFrame.ntp_time_ms_;
-  render_time_ms_ = videoFrame.render_time_ms_;
+  timestamp_us_ = videoFrame.timestamp_us_;
   rotation_ = videoFrame.rotation_;
 }
 

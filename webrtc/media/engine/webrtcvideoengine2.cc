@@ -1585,7 +1585,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
       pending_encoder_reconfiguration_(false),
       allocated_encoder_(nullptr, webrtc::kVideoCodecUnknown, false),
       sending_(false),
-      last_frame_timestamp_ms_(0) {
+      last_frame_timestamp_us_(0) {
   parameters_.config.rtp.max_packet_size = kVideoMtu;
   parameters_.conference_mode = send_params.conference_mode;
 
@@ -1637,8 +1637,10 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::UpdateHistograms() const {
 void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
     const VideoFrame& frame) {
   TRACE_EVENT0("webrtc", "WebRtcVideoSendStream::OnFrame");
-  webrtc::VideoFrame video_frame(frame.video_frame_buffer(), 0, 0,
-                                 frame.rotation());
+  webrtc::VideoFrame video_frame(frame.video_frame_buffer(),
+                                 frame.rotation(),
+                                 frame.timestamp_us());
+
   rtc::CritScope cs(&lock_);
 
   if (video_frame.width() != last_frame_info_.width ||
@@ -1662,17 +1664,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
     return;
   }
 
-  int64_t frame_delta_ms = frame.GetTimeStamp() / rtc::kNumNanosecsPerMillisec;
-
-  // frame->GetTimeStamp() is essentially a delta, align to webrtc time
-  if (!first_frame_timestamp_ms_) {
-    first_frame_timestamp_ms_ =
-        rtc::Optional<int64_t>(rtc::TimeMillis() - frame_delta_ms);
-  }
-
-  last_frame_timestamp_ms_ = *first_frame_timestamp_ms_ + frame_delta_ms;
-
-  video_frame.set_render_time_ms(last_frame_timestamp_ms_);
+  last_frame_timestamp_us_ = video_frame.timestamp_us();
 
   if (pending_encoder_reconfiguration_) {
     ReconfigureEncoder();
@@ -1721,11 +1713,6 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoSend(
     }
 
     if (source_changing) {
-      // Reset timestamps to realign new incoming frames to a webrtc timestamp.
-      // A new source may have a different timestamp delta than the previous
-      // one.
-      first_frame_timestamp_ms_ = rtc::Optional<int64_t>();
-
       if (source == nullptr && stream_ != nullptr) {
         LOG(LS_VERBOSE) << "Disabling capturer, sending black frame.";
         // Force this black frame not to be dropped due to timestamp order
@@ -1733,15 +1720,15 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoSend(
         // timestamp is less than or equal to last frame's timestamp, it is
         // necessary to give this black frame a larger timestamp than the
         // previous one.
-        last_frame_timestamp_ms_ += 1;
+        last_frame_timestamp_us_ += rtc::kNumMicrosecsPerMillisec;
         rtc::scoped_refptr<webrtc::I420Buffer> black_buffer(
             webrtc::I420Buffer::Create(last_frame_info_.width,
                                        last_frame_info_.height));
         black_buffer->SetToBlack();
 
         stream_->Input()->IncomingCapturedFrame(webrtc::VideoFrame(
-            black_buffer,  0 /* timestamp (90 kHz) */,
-            last_frame_timestamp_ms_, last_frame_info_.rotation));
+            black_buffer, last_frame_info_.rotation,
+            last_frame_timestamp_us_));
       }
       source_ = source;
     }
