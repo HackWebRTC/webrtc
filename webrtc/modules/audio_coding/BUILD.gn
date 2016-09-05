@@ -1104,11 +1104,6 @@ if (rtc_include_tests) {
 
     public_configs = [ "../..:common_inherited_config" ]
 
-    if (!is_debug) {
-      suppressed_configs += [ "//build/config/compiler:default_optimization" ]
-      configs += [ "//build/config/compiler:optimize_max" ]
-    }
-
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]

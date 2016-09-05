@@ -770,11 +770,6 @@ if (rtc_include_tests) {
     configs += [ ":rtc_unittests_config" ]
     public_configs = [ ":common_inherited_config" ]
 
-    if (!is_debug) {
-      suppressed_configs += [ "//build/config/compiler:default_optimization" ]
-      configs += [ "//build/config/compiler:optimize_max" ]
-    }
-
     sources = [
       "call/call_perf_tests.cc",
       "call/rampup_tests.cc",

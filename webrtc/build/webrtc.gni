@@ -173,6 +173,11 @@ rtc_common_config = webrtc_root + ":common_config"
 rtc_remove_configs = []
 rtc_add_configs = [ rtc_common_config ]
 
+if (!is_debug) {
+  rtc_remove_configs += [ "//build/config/compiler:default_optimization" ]
+  rtc_add_configs += [ "//build/config/compiler:optimize_max" ]
+}
+
 set_defaults("rtc_test") {
   configs = rtc_add_configs
   suppressed_configs = []
