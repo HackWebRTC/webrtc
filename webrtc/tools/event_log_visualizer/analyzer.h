@@ -11,11 +11,12 @@
 #ifndef WEBRTC_TOOLS_EVENT_LOG_VISUALIZER_ANALYZER_H_
 #define WEBRTC_TOOLS_EVENT_LOG_VISUALIZER_ANALYZER_H_
 
-#include <vector>
 #include <map>
 #include <memory>
 #include <set>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "webrtc/call/rtc_event_log_parser.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -60,6 +61,9 @@ class EventLogAnalyzer {
 
   void CreatePacketGraph(PacketDirection desired_direction, Plot* plot);
 
+  void CreateAccumulatedPacketsGraph(PacketDirection desired_direction,
+                                     Plot* plot);
+
   void CreatePlayoutGraph(Plot* plot);
 
   void CreateSequenceNumberGraph(Plot* plot);
@@ -98,6 +102,13 @@ class EventLogAnalyzer {
     uint32_t ssrc_;
     webrtc::PacketDirection direction_;
   };
+
+  template <typename T>
+  void CreateAccumulatedPacketsTimeSeries(
+      PacketDirection desired_direction,
+      Plot* plot,
+      const std::map<StreamId, std::vector<T>>& packets,
+      const std::string& label_prefix);
 
   bool IsRtxSsrc(StreamId stream_id);
 

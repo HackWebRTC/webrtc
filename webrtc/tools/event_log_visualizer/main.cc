@@ -91,10 +91,16 @@ int main(int argc, char* argv[]) {
     if (FLAGS_incoming) {
       analyzer.CreatePacketGraph(webrtc::PacketDirection::kIncomingPacket,
                                  collection->AppendNewPlot());
+      analyzer.CreateAccumulatedPacketsGraph(
+          webrtc::PacketDirection::kIncomingPacket,
+          collection->AppendNewPlot());
     }
     if (FLAGS_outgoing) {
       analyzer.CreatePacketGraph(webrtc::PacketDirection::kOutgoingPacket,
                                  collection->AppendNewPlot());
+      analyzer.CreateAccumulatedPacketsGraph(
+          webrtc::PacketDirection::kOutgoingPacket,
+          collection->AppendNewPlot());
     }
   }
 

@@ -498,6 +498,53 @@ void EventLogAnalyzer::CreatePacketGraph(PacketDirection desired_direction,
   }
 }
 
+template <typename T>
+void EventLogAnalyzer::CreateAccumulatedPacketsTimeSeries(
+    PacketDirection desired_direction,
+    Plot* plot,
+    const std::map<StreamId, std::vector<T>>& packets,
+    const std::string& label_prefix) {
+  for (auto& kv : packets) {
+    StreamId stream_id = kv.first;
+    const std::vector<T>& packet_stream = kv.second;
+    // Filter on direction and SSRC.
+    if (stream_id.GetDirection() != desired_direction ||
+        !MatchingSsrc(stream_id.GetSsrc(), desired_ssrc_)) {
+      continue;
+    }
+
+    TimeSeries time_series;
+    time_series.label = label_prefix + " " + SsrcToString(stream_id.GetSsrc());
+    time_series.style = LINE_GRAPH;
+
+    for (size_t i = 0; i < packet_stream.size(); i++) {
+      float x = static_cast<float>(packet_stream[i].timestamp - begin_time_) /
+                1000000;
+      time_series.points.emplace_back(x, i);
+      time_series.points.emplace_back(x, i + 1);
+    }
+
+    plot->series_list_.push_back(std::move(time_series));
+  }
+}
+
+void EventLogAnalyzer::CreateAccumulatedPacketsGraph(
+    PacketDirection desired_direction,
+    Plot* plot) {
+  CreateAccumulatedPacketsTimeSeries(desired_direction, plot, rtp_packets_,
+                                     "RTP");
+  CreateAccumulatedPacketsTimeSeries(desired_direction, plot, rtcp_packets_,
+                                     "RTCP");
+
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 1, "Received Packets", kBottomMargin, kTopMargin);
+  if (desired_direction == webrtc::PacketDirection::kIncomingPacket) {
+    plot->SetTitle("Accumulated Incoming RTP/RTCP packets");
+  } else if (desired_direction == webrtc::PacketDirection::kOutgoingPacket) {
+    plot->SetTitle("Accumulated Outgoing RTP/RTCP packets");
+  }
+}
+
 // For each SSRC, plot the time between the consecutive playouts.
 void EventLogAnalyzer::CreatePlayoutGraph(Plot* plot) {
   std::map<uint32_t, TimeSeries> time_series;
