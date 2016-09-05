@@ -18,8 +18,6 @@ rtc_source_set("congestion_controller") {
     "probe_bitrate_estimator.h",
   ]
 
-  public_configs = [ "../..:common_inherited_config" ]
-
   # TODO(jschuh): Bug 1348: fix this warning.
   configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 

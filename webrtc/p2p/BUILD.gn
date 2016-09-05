@@ -95,10 +95,7 @@ rtc_source_set("rtc_p2p") {
     ]
   }
 
-  public_configs = [
-    "..:common_inherited_config",
-    ":rtc_p2p_inherited_config",
-  ]
+  public_configs = [ ":rtc_p2p_inherited_config" ]
 
   if (build_with_chromium) {
     if (is_nacl) {

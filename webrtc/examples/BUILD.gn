@@ -143,10 +143,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       ":warnings_config",
       "//build/config/compiler:enable_arc",
     ]
-    public_configs = [
-      "..:common_inherited_config",
-      ":apprtc_common_config",
-    ]
+    public_configs = [ ":apprtc_common_config" ]
 
     deps = [
       "../sdk:rtc_sdk_common_objc",
@@ -211,10 +208,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       "//build/config/compiler:enable_arc",
       ":warnings_config",
     ]
-    public_configs = [
-      "..:common_inherited_config",
-      ":apprtc_signaling_config",
-    ]
+    public_configs = [ ":apprtc_signaling_config" ]
     deps = [
       ":apprtc_common",
       ":socketrocket",
@@ -360,10 +354,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       "//build/config/compiler:enable_arc",
       ":socketrocket_warning_config",
     ]
-    public_configs = [
-      "..:common_inherited_config",
-      ":socketrocket_include_config",
-    ]
+    public_configs = [ ":socketrocket_include_config" ]
 
     libs = [
       "CFNetwork.framework",

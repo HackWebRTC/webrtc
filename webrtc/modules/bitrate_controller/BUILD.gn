@@ -18,8 +18,6 @@ rtc_source_set("bitrate_controller") {
     "send_side_bandwidth_estimation.h",
   ]
 
-  public_configs = [ "../..:common_inherited_config" ]
-
   # TODO(jschuh): Bug 1348: fix this warning.
   configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 

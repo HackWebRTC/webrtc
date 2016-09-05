@@ -94,7 +94,6 @@ rtc_static_library("rtc_base_approved") {
   defines = []
   libs = []
   deps = []
-  public_configs = [ "..:common_inherited_config" ]
   all_dependent_configs = [ ":rtc_base_approved_all_dependent_config" ]
 
   sources = [
@@ -283,7 +282,6 @@ rtc_static_library("rtc_base") {
   ]
 
   public_configs = [
-    "..:common_inherited_config",
     ":openssl_config",
     ":rtc_base_config",
   ]
@@ -732,10 +730,7 @@ if (rtc_include_tests) {
       "unittest_main.cc",
     ]
     configs += [ ":rtc_base_tests_utils_warnings_config" ]
-    public_configs = [
-      "..:common_inherited_config",
-      ":rtc_base_tests_utils_exported_config",
-    ]
+    public_configs = [ ":rtc_base_tests_utils_exported_config" ]
     deps = [
       ":rtc_base",
       "../test:field_trial",

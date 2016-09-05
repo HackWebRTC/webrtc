@@ -22,8 +22,6 @@ rtc_source_set("primitives") {
     "desktop_region.cc",
     "desktop_region.h",
   ]
-
-  public_configs = [ "../..:common_inherited_config" ]
 }
 
 rtc_source_set("desktop_capture") {
@@ -148,8 +146,6 @@ rtc_source_set("desktop_capture") {
     ]
   }
 
-  public_configs = [ "../..:common_inherited_config" ]
-
   if (is_clang && !is_nacl) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
@@ -176,8 +172,6 @@ if (use_desktop_capture_differ_sse2) {
       "differ_block_sse2.cc",
       "differ_block_sse2.h",
     ]
-
-    public_configs = [ "../..:common_inherited_config" ]
 
     if (is_posix) {
       cflags = [ "-msse2" ]

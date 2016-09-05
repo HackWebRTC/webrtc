@@ -45,7 +45,6 @@ rtc_source_set("audio_decoder_factory_interface") {
     "codecs/audio_format.cc",
     "codecs/audio_format.h",
   ]
-  public_configs = [ "../..:common_inherited_config" ]
   deps = [
     "../..:webrtc_common",
   ]
@@ -56,7 +55,6 @@ rtc_source_set("builtin_audio_decoder_factory") {
     "codecs/builtin_audio_decoder_factory.cc",
     "codecs/builtin_audio_decoder_factory.h",
   ]
-  public_configs = [ "../..:common_inherited_config" ]
   deps = [
            "../..:webrtc_common",
            ":audio_decoder_factory_interface",
@@ -71,7 +69,6 @@ rtc_source_set("rent_a_codec") {
     "acm2/rent_a_codec.cc",
     "acm2/rent_a_codec.h",
   ]
-  public_configs = [ "../..:common_inherited_config" ]
   deps = [ "../..:webrtc_common" ] + audio_codec_deps
   defines = audio_codec_defines
 }
@@ -103,10 +100,7 @@ rtc_source_set("audio_coding") {
 
   defines = []
 
-  public_configs = [
-    "../..:common_inherited_config",
-    ":audio_coding_config",
-  ]
+  public_configs = [ ":audio_coding_config" ]
 
   if (rtc_include_opus) {
     public_deps = [
@@ -134,7 +128,6 @@ rtc_source_set("audio_decoder_interface") {
     "codecs/audio_decoder.cc",
     "codecs/audio_decoder.h",
   ]
-  public_configs = [ "../..:common_inherited_config" ]
   deps = [
     "../..:webrtc_common",
     "../../base:rtc_base_approved",
@@ -146,7 +139,6 @@ rtc_source_set("audio_encoder_interface") {
     "codecs/audio_encoder.cc",
     "codecs/audio_encoder.h",
   ]
-  public_configs = [ "../..:common_inherited_config" ]
   deps = [
     "../..:webrtc_common",
     "../../base:rtc_base_approved",
@@ -168,10 +160,7 @@ rtc_source_set("cng") {
     "codecs/cng/webrtc_cng.h",
   ]
 
-  public_configs = [
-    "../..:common_inherited_config",
-    ":cng_config",
-  ]
+  public_configs = [ ":cng_config" ]
 
   deps = [
     ":audio_encoder_interface",
@@ -189,10 +178,7 @@ rtc_source_set("red") {
     "codecs/red/audio_encoder_copy_red.h",
   ]
 
-  public_configs = [
-    "../..:common_inherited_config",
-    ":red_config",
-  ]
+  public_configs = [ ":red_config" ]
 
   deps = [
     ":audio_encoder_interface",
@@ -219,10 +205,7 @@ rtc_source_set("g711") {
     "codecs/g711/g711_interface.h",
   ]
 
-  public_configs = [
-    "../..:common_inherited_config",
-    ":g711_config",
-  ]
+  public_configs = [ ":g711_config" ]
 
   deps = [
     ":audio_decoder_interface",
@@ -250,10 +233,7 @@ rtc_source_set("g722") {
     "codecs/g722/g722_interface.h",
   ]
 
-  public_configs = [
-    "../..:common_inherited_config",
-    ":g722_config",
-  ]
+  public_configs = [ ":g722_config" ]
 
   deps = [
     ":audio_decoder_interface",
@@ -415,10 +395,7 @@ rtc_source_set("ilbc") {
     "codecs/ilbc/xcorr_coef.h",
   ]
 
-  public_configs = [
-    "../..:common_inherited_config",
-    ":ilbc_config",
-  ]
+  public_configs = [ ":ilbc_config" ]
 
   deps = [
     ":audio_decoder_interface",
@@ -435,7 +412,6 @@ rtc_source_set("isac_common") {
     "codecs/isac/locked_bandwidth_info.cc",
     "codecs/isac/locked_bandwidth_info.h",
   ]
-  public_configs = [ "../..:common_inherited_config" ]
 }
 
 config("isac_config") {
@@ -507,10 +483,7 @@ rtc_source_set("isac") {
     libs = [ "m" ]
   }
 
-  public_configs = [
-    "../..:common_inherited_config",
-    ":isac_config",
-  ]
+  public_configs = [ ":isac_config" ]
 
   deps = [
     ":audio_decoder_interface",
@@ -585,10 +558,7 @@ rtc_source_set("isac_fix") {
     defines = [ "WEBRTC_LINUX" ]
   }
 
-  public_configs = [
-    "../..:common_inherited_config",
-    ":isac_fix_config",
-  ]
+  public_configs = [ ":isac_fix_config" ]
 
   deps = [
     ":audio_decoder_interface",
@@ -665,8 +635,6 @@ if (rtc_build_with_neon) {
       ]
     }
 
-    public_configs = [ "../..:common_inherited_config" ]
-
     deps = [
       "../../common_audio",
     ]
@@ -696,10 +664,7 @@ rtc_source_set("pcm16b") {
     ":g711",
   ]
 
-  public_configs = [
-    "../..:common_inherited_config",
-    ":pcm16b_config",
-  ]
+  public_configs = [ ":pcm16b_config" ]
 }
 
 config("opus_config") {
@@ -724,8 +689,6 @@ rtc_source_set("webrtc_opus") {
   ]
 
   if (rtc_build_opus) {
-    public_configs = [ "../..:common_inherited_config" ]
-
     public_deps = [
       rtc_opus_dir,
     ]
@@ -819,10 +782,7 @@ rtc_source_set("neteq") {
     "neteq/timestamp_scaler.h",
   ]
 
-  public_configs = [
-    "../..:common_inherited_config",
-    ":neteq_config",
-  ]
+  public_configs = [ ":neteq_config" ]
 
   deps = [
     ":audio_decoder_interface",
@@ -867,8 +827,6 @@ if (rtc_include_tests) {
       "acm2/acm_receive_test_oldapi.h",
     ]
 
-    public_configs = [ "../..:common_inherited_config" ]
-
     defines = audio_coding_defines
 
     deps = audio_coding_deps + [
@@ -884,8 +842,6 @@ if (rtc_include_tests) {
       "acm2/acm_send_test_oldapi.cc",
       "acm2/acm_send_test_oldapi.h",
     ]
-
-    public_configs = [ "../..:common_inherited_config" ]
 
     defines = audio_coding_defines
 
@@ -904,8 +860,6 @@ if (rtc_include_tests) {
       "test/delay_test.cc",
       "test/utility.cc",
     ]
-
-    public_configs = [ "../..:common_inherited_config" ]
 
     deps = [
       ":audio_coding",
@@ -926,8 +880,6 @@ if (rtc_include_tests) {
       "test/PCMFile.cc",
       "test/insert_packet_with_timing.cc",
     ]
-
-    public_configs = [ "../..:common_inherited_config" ]
 
     if (is_clang) {
       # Suppress warnings from Chrome's Clang plugins.
@@ -967,8 +919,6 @@ if (rtc_include_tests) {
     sources = [
       "neteq/audio_decoder_unittest.cc",
     ]
-
-    public_configs = [ "../..:common_inherited_config" ]
 
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
@@ -1102,8 +1052,6 @@ if (rtc_include_tests) {
       "neteq/tools/neteq_performance_test.h",
     ]
 
-    public_configs = [ "../..:common_inherited_config" ]
-
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
@@ -1124,8 +1072,6 @@ if (rtc_include_tests) {
       "neteq/tools/neteq_quality_test.cc",
       "neteq/tools/neteq_quality_test.h",
     ]
-
-    public_configs = [ "../..:common_inherited_config" ]
 
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
@@ -1179,10 +1125,7 @@ if (rtc_include_tests) {
       "neteq/tools/rtp_generator.h",
     ]
 
-    public_configs = [
-      "../..:common_inherited_config",
-      ":neteq_unittest_tools_config",
-    ]
+    public_configs = [ ":neteq_unittest_tools_config" ]
 
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
@@ -1520,8 +1463,6 @@ if (rtc_include_tests) {
       "codecs/g711/test/testG711.cc",
     ]
 
-    public_configs = [ "../..:common_inherited_config" ]
-
     deps = [
       ":g711",
     ]
@@ -1533,8 +1474,6 @@ if (rtc_include_tests) {
     sources = [
       "codecs/g722/test/testG722.cc",
     ]
-
-    public_configs = [ "../..:common_inherited_config" ]
 
     deps = [
       ":g722",
@@ -1549,8 +1488,6 @@ if (rtc_include_tests) {
       "codecs/isac/main/test/ReleaseTest-API/ReleaseTest-API.cc",
       "codecs/isac/main/util/utility.c",
     ]
-
-    public_configs = [ "../..:common_inherited_config" ]
 
     deps = [
       ":isac",
@@ -1572,8 +1509,6 @@ if (rtc_include_tests) {
       "codecs/isac/main/util/utility.c",
     ]
 
-    public_configs = [ "../..:common_inherited_config" ]
-
     deps = [
       ":isac",
     ]
@@ -1592,8 +1527,6 @@ if (rtc_include_tests) {
     sources = [
       "codecs/ilbc/test/iLBC_test.c",
     ]
-
-    public_configs = [ "../..:common_inherited_config" ]
 
     deps = [
       ":ilbc",

@@ -151,8 +151,6 @@ rtc_source_set("audio_processing") {
     "voice_detection_impl.h",
   ]
 
-  public_configs = [ "../..:common_inherited_config" ]
-
   defines = []
   deps = [
     "../..:webrtc_common",
@@ -263,8 +261,6 @@ if (current_cpu == "x86" || current_cpu == "x64") {
       cflags = [ "-msse2" ]
     }
 
-    public_configs = [ "../..:common_inherited_config" ]
-
     if (apm_debug_dump) {
       defines = [ "WEBRTC_APM_DEBUG_DUMP=1" ]
     } else {
@@ -299,8 +295,6 @@ if (rtc_build_with_neon) {
       ]
     }
 
-    public_configs = [ "../..:common_inherited_config" ]
-
     deps = [
       "../../common_audio",
     ]
@@ -320,8 +314,6 @@ if (rtc_include_tests) {
       "test/process_test.cc",
     ]
 
-    public_configs = [ "../..:common_inherited_config" ]
-
     deps = [
       ":audio_processing",
       ":audioproc_debug_proto",
@@ -340,8 +332,6 @@ if (rtc_include_tests) {
     sources = [
       "test/unpack.cc",
     ]
-
-    public_configs = [ "../..:common_inherited_config" ]
 
     deps = [
       ":audio_processing",
@@ -366,8 +356,6 @@ if (rtc_include_tests) {
       "test/wav_based_simulator.h",
     ]
 
-    public_configs = [ "../..:common_inherited_config" ]
-
     deps = [
       ":audio_processing",
       ":audioproc_debug_proto",
@@ -389,8 +377,6 @@ if (rtc_include_tests) {
       "test/test_utils.cc",
       "test/test_utils.h",
     ]
-
-    public_configs = [ "../..:common_inherited_config" ]
 
     deps = [
       "../../base:rtc_base_approved",

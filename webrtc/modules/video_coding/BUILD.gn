@@ -74,8 +74,6 @@ rtc_source_set("video_coding") {
     "video_sender.cc",
   ]
 
-  public_configs = [ "../..:common_inherited_config" ]
-
   # TODO(jschuh): Bug 1348: fix this warning.
   configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 
@@ -114,8 +112,6 @@ rtc_source_set("video_coding_utility") {
     "utility/vp8_header_parser.h",
   ]
 
-  public_configs = [ "../..:common_inherited_config" ]
-
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
@@ -133,8 +129,6 @@ rtc_source_set("webrtc_h264") {
     "codecs/h264/h264.cc",
     "codecs/h264/include/h264.h",
   ]
-
-  public_configs = [ "../..:common_inherited_config" ]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
@@ -227,8 +221,6 @@ rtc_source_set("webrtc_i420") {
     "codecs/i420/include/i420.h",
   ]
 
-  public_configs = [ "../..:common_inherited_config" ]
-
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
@@ -257,8 +249,6 @@ rtc_source_set("webrtc_vp8") {
     "codecs/vp8/vp8_impl.cc",
     "codecs/vp8/vp8_impl.h",
   ]
-
-  public_configs = [ "../..:common_inherited_config" ]
 
   # TODO(jschuh): Bug 1348: fix this warning.
   configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
@@ -291,8 +281,6 @@ rtc_source_set("webrtc_vp9") {
     "codecs/vp9/vp9_impl.h",
   ]
 
-  public_configs = [ "../..:common_inherited_config" ]
-
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
@@ -323,8 +311,6 @@ if (rtc_include_tests) {
       "codecs/test/videoprocessor.cc",
       "codecs/test/videoprocessor.h",
     ]
-
-    public_configs = [ "../..:common_inherited_config" ]
 
     if (is_clang) {
       # Suppress warnings from Chrome's Clang plugins.

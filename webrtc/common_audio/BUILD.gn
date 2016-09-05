@@ -172,10 +172,7 @@ rtc_source_set("common_audio") {
     cflags = [ "/wd4334" ]  # Ignore warning on shift operator promotion.
   }
 
-  public_configs = [
-    "..:common_inherited_config",
-    ":common_audio_config",
-  ]
+  public_configs = [ ":common_audio_config" ]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
@@ -198,8 +195,6 @@ if (current_cpu == "x86" || current_cpu == "x64") {
     if (is_posix) {
       cflags = [ "-msse2" ]
     }
-
-    configs += [ "..:common_inherited_config" ]
 
     if (is_clang) {
       # Suppress warnings from Chrome's Clang plugins.
@@ -235,8 +230,6 @@ if (rtc_build_with_neon) {
         "-ffat-lto-objects",
       ]
     }
-
-    public_configs = [ "..:common_inherited_config" ]
 
     if (is_clang) {
       # Suppress warnings from Chrome's Clang plugins.
@@ -283,8 +276,6 @@ if (rtc_include_tests) {
     if (!is_ios || target_cpu != "arm") {
       sources += [ "resampler/sinc_resampler_unittest.cc" ]
     }
-
-    public_configs = [ "..:common_inherited_config" ]
 
     if (rtc_use_openmax_dl) {
       defines = [ "RTC_USE_OPENMAX_DL" ]

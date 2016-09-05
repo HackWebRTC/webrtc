@@ -162,12 +162,19 @@ rtc_opus_dir = "//third_party/opus"
 webrtc_root = get_path_info("../", "abspath")
 
 # Global configuration that should be applied to all WebRTC targets.
-# You normally shouldn't need to # include this in your target as it's
+# You normally shouldn't need to include this in your target as it's
 # automatically included when using the rtc_* templates.
 # It sets defines, include paths and compilation warnings accordingly,
 # both for WebRTC stand-alone builds and for the scenario when WebRTC
 # native code is built as part of Chromium.
 rtc_common_config = webrtc_root + ":common_config"
+
+# Global public configuration that should be applied to all WebRTC targets. You
+# normally shouldn't need to include this in your target as it's automatically
+# included when using the rtc_* templates. It set the defines, include paths and
+# compilation warnings that should be propagated to dependents of the targets
+# depending on the target having this config.
+rtc_common_inherited_config = webrtc_root + ":common_inherited_config"
 
 # Common configs to remove or add in all rtc targets.
 rtc_remove_configs = []
@@ -204,11 +211,16 @@ template("rtc_test") {
                            "*",
                            [
                              "configs",
+                             "public_configs",
                              "suppressed_configs",
                            ])
     configs += invoker.configs
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
+    public_configs = [ rtc_common_inherited_config ]
+    if (defined(invoker.public_configs)) {
+      public_configs += invoker.public_configs
+    }
   }
 }
 
@@ -218,11 +230,16 @@ template("rtc_source_set") {
                            "*",
                            [
                              "configs",
+                             "public_configs",
                              "suppressed_configs",
                            ])
     configs += invoker.configs
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
+    public_configs = [ rtc_common_inherited_config ]
+    if (defined(invoker.public_configs)) {
+      public_configs += invoker.public_configs
+    }
   }
 }
 
@@ -233,6 +250,7 @@ template("rtc_executable") {
                            [
                              "deps",
                              "configs",
+                             "public_configs",
                              "suppressed_configs",
                            ])
     configs += invoker.configs
@@ -242,6 +260,10 @@ template("rtc_executable") {
       "//build/config/sanitizers:deps",
     ]
     deps += invoker.deps
+    public_configs = [ rtc_common_inherited_config ]
+    if (defined(invoker.public_configs)) {
+      public_configs += invoker.public_configs
+    }
   }
 }
 
@@ -251,10 +273,15 @@ template("rtc_static_library") {
                            "*",
                            [
                              "configs",
+                             "public_configs",
                              "suppressed_configs",
                            ])
     configs += invoker.configs
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
+    public_configs = [ rtc_common_inherited_config ]
+    if (defined(invoker.public_configs)) {
+      public_configs += invoker.public_configs
+    }
   }
 }

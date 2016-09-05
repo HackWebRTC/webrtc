@@ -25,8 +25,6 @@ rtc_source_set("rtc_stats") {
     "rtcstatsreport.cc",
   ]
 
-  public_configs = [ "..:common_inherited_config" ]
-
   if (is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
@@ -46,8 +44,6 @@ if (rtc_include_tests) {
       "rtcstatscollector_unittest.cc",
       "rtcstatsreport_unittest.cc",
     ]
-
-    public_configs = [ "..:common_inherited_config" ]
 
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

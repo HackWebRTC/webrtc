@@ -26,8 +26,6 @@ rtc_source_set("call_api") {
     "call/audio_state.h",
   ]
 
-  public_configs = [ "..:common_inherited_config" ]
-
   deps = [
     # TODO(kjellander): Add remaining dependencies when webrtc:4243 is done.
     "..:webrtc_common",
@@ -119,7 +117,6 @@ rtc_source_set("libjingle_peerconnection") {
   ]
 
   configs += [ ":libjingle_peerconnection_warnings_config" ]
-  public_configs = [ "..:common_inherited_config" ]
 
   if (is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -187,7 +184,6 @@ if (is_android && !build_with_chromium) {
     ]
 
     configs += [ ":libjingle_peerconnection_jni_warnings_config" ]
-    public_configs = [ "..:common_inherited_config" ]
 
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -366,7 +362,6 @@ if (rtc_include_tests) {
     defines = [ "HAVE_SCTP" ]
 
     configs += [ ":peerconnection_unittests_config" ]
-    public_configs = [ "..:common_inherited_config" ]
 
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

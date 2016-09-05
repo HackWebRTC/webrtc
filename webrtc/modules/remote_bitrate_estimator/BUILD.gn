@@ -46,8 +46,6 @@ rtc_source_set("remote_bitrate_estimator") {
     defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0" ]
   }
 
-  public_configs = [ "../..:common_inherited_config" ]
-
   if (is_clang) {
     # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
@@ -98,8 +96,6 @@ if (rtc_include_tests) {
     } else {
       defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0" ]
     }
-
-    public_configs = [ "../..:common_inherited_config" ]
 
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugins (bugs.webrtc.org/163).

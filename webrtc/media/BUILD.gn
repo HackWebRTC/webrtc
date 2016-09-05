@@ -119,8 +119,6 @@ rtc_source_set("rtc_media") {
 
   configs += [ ":rtc_media_warnings_config" ]
 
-  public_configs = [ "..:common_inherited_config" ]
-
   if (is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     suppressed_configs += [
@@ -163,6 +161,7 @@ rtc_source_set("rtc_media") {
     deps += [ "//third_party/usrsctp" ]
   }
 
+  public_configs = []
   if (build_with_chromium) {
     deps += [ "../modules/video_capture:video_capture" ]
   } else {
@@ -248,7 +247,6 @@ if (rtc_include_tests) {
     ]
 
     configs += [ ":rtc_unittest_main_config" ]
-    public_configs = [ "..:common_inherited_config" ]
 
     if (rtc_build_libyuv) {
       deps += [ "$rtc_libyuv_dir" ]
@@ -344,7 +342,6 @@ if (rtc_include_tests) {
     ]
 
     configs += [ ":rtc_media_unittests_config" ]
-    public_configs = [ "..:common_inherited_config" ]
 
     if (rtc_use_h264) {
       defines += [ "WEBRTC_USE_H264" ]

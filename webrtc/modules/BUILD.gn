@@ -54,8 +54,6 @@ if (rtc_include_tests) {
   rtc_test("modules_tests") {
     testonly = true
 
-    public_configs = [ "..:common_inherited_config" ]
-
     videoprocessor_defines = []
     if (rtc_use_h264) {
       videoprocessor_defines += [ "WEBRTC_VIDEOPROCESSOR_H264_TESTS" ]
@@ -565,8 +563,6 @@ if (rtc_include_tests) {
     if (rtc_build_libvpx) {
       deps += [ rtc_libvpx_dir ]
     }
-
-    public_configs = [ "..:common_inherited_config" ]
 
     # TODO(jschuh): bugs.webrtc.org/1348: fix this warning.
     configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]

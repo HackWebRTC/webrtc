@@ -12,7 +12,6 @@ import("//build_overrides/webrtc.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 
 rtc_static_library("webrtc_fuzzer_main") {
-  public_configs = [ "../..:common_inherited_config" ]
   sources = [
     "webrtc_fuzzer_main.cc",
   ]
@@ -120,7 +119,6 @@ webrtc_fuzzer_test("congestion_controller_feedback_fuzzer") {
 }
 
 rtc_source_set("audio_decoder_fuzzer") {
-  public_configs = [ "../..:common_inherited_config" ]
   sources = [
     "audio_decoder_fuzzer.cc",
     "audio_decoder_fuzzer.h",

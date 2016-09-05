@@ -43,10 +43,7 @@ rtc_source_set("common_video") {
 
   include_dirs = [ "../modules/interface" ]
 
-  public_configs = [
-    "..:common_inherited_config",
-    ":common_video_config",
-  ]
+  public_configs = [ ":common_video_config" ]
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
@@ -106,8 +103,6 @@ if (rtc_include_tests) {
       "i420_video_frame_unittest.cc",
       "libyuv/libyuv_unittest.cc",
     ]
-
-    public_configs = [ "..:common_inherited_config" ]
 
     # TODO(jschuh): Bug 1348: fix this warning.
     configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]

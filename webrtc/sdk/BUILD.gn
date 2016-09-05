@@ -23,10 +23,7 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
       "../base:rtc_base",
     ]
     configs += [ "//build/config/compiler:enable_arc" ]
-    public_configs = [
-      "..:common_inherited_config",
-      ":rtc_sdk_common_objc_config",
-    ]
+    public_configs = [ ":rtc_sdk_common_objc_config" ]
     sources = [
       "objc/Framework/Classes/NSString+StdString.h",
       "objc/Framework/Classes/NSString+StdString.mm",

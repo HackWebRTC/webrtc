@@ -247,7 +247,6 @@ if (!is_ios || !build_with_chromium) {
     ]
 
     defines = []
-    public_configs = [ ":common_inherited_config" ]
 
     deps = [
       ":webrtc_common",
@@ -337,8 +336,6 @@ rtc_source_set("webrtc_common") {
     "typedefs.h",
   ]
 
-  public_configs = [ ":common_inherited_config" ]
-
   if (is_clang && !is_nacl) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
@@ -364,7 +361,6 @@ rtc_source_set("rtc_event_log") {
   ]
 
   defines = []
-  public_configs = [ ":common_inherited_config" ]
 
   deps = [
     ":webrtc_common",
@@ -388,8 +384,6 @@ if (rtc_enable_protobuf) {
       "call/rtc_event_log_parser.cc",
       "call/rtc_event_log_parser.h",
     ]
-
-    public_configs = [ ":common_inherited_config" ]
 
     public_deps = [
       ":rtc_event_log_proto",
@@ -583,7 +577,6 @@ if (rtc_include_tests) {
     }
 
     configs += [ ":rtc_unittests_config" ]
-    public_configs = [ ":common_inherited_config" ]
 
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin.
@@ -632,7 +625,6 @@ if (rtc_include_tests) {
 
   rtc_test("xmllite_xmpp_unittests") {
     configs += [ ":rtc_unittests_config" ]
-    public_configs = [ ":common_inherited_config" ]
 
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin.
@@ -718,7 +710,6 @@ if (rtc_include_tests) {
 
   rtc_source_set("video_quality_test") {
     testonly = true
-    public_configs = [ ":common_inherited_config" ]
     sources = [
       "video/video_quality_test.cc",
       "video/video_quality_test.h",
@@ -768,7 +759,6 @@ if (rtc_include_tests) {
   rtc_test("webrtc_perf_tests") {
     testonly = true
     configs += [ ":rtc_unittests_config" ]
-    public_configs = [ ":common_inherited_config" ]
 
     sources = [
       "call/call_perf_tests.cc",
@@ -814,7 +804,6 @@ if (rtc_include_tests) {
   rtc_test("webrtc_nonparallel_tests") {
     testonly = true
     configs += [ ":rtc_unittests_config" ]
-    public_configs = [ ":common_inherited_config" ]
     sources = [
       "base/nullsocketserver_unittest.cc",
       "base/physicalsocketserver_unittest.cc",

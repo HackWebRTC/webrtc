@@ -75,7 +75,6 @@ rtc_source_set("channel_transport") {
   ]
 
   configs += [ ":channel_transport_warnings_config" ]
-  public_configs = [ "..:common_inherited_config" ]
 
   if (is_clang && !is_nacl) {
     # Suppress warnings from the Chromium Clang plugin.
@@ -101,8 +100,6 @@ rtc_source_set("video_test_common") {
     "frame_utils.h",
   ]
 
-  public_configs = [ "..:common_inherited_config" ]
-
   if (is_clang && !is_nacl) {
     # Suppress warnings from the Chromium Clang plugin.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
@@ -124,8 +121,6 @@ rtc_source_set("rtp_test_utils") {
     "rtp_file_writer.cc",
     "rtp_file_writer.h",
   ]
-
-  public_configs = [ "..:common_inherited_config" ]
 
   if (is_clang && !is_nacl) {
     # Suppress warnings from the Chromium Clang plugin.
@@ -152,8 +147,6 @@ rtc_source_set("field_trial") {
     "../system_wrappers",
     "../system_wrappers:field_trial_default",
   ]
-
-  public_configs = [ "..:common_inherited_config" ]
 }
 
 rtc_source_set("test_main") {
@@ -169,8 +162,6 @@ rtc_source_set("test_main") {
     "//testing/gtest",
     "//third_party/gflags",
   ]
-
-  public_configs = [ "..:common_inherited_config" ]
 }
 
 rtc_source_set("test_support") {
@@ -221,8 +212,6 @@ rtc_source_set("test_support") {
   if (is_android) {
     deps += [ "//base:base" ]
   }
-
-  public_configs = [ "..:common_inherited_config" ]
 }
 
 # Depend on this target when you want to have test_support but also the
@@ -244,8 +233,6 @@ rtc_source_set("test_support_main") {
     "//testing/gtest",
     "//third_party/gflags",
   ]
-
-  public_configs = [ "..:common_inherited_config" ]
 }
 
 # Depend on this target when you want to have test_support and a special
@@ -261,8 +248,6 @@ rtc_source_set("test_support_main_threaded_mac") {
     "testsupport/mac/run_threaded_main_mac.h",
     "testsupport/mac/run_threaded_main_mac.mm",
   ]
-
-  public_configs = [ "..:common_inherited_config" ]
 
   deps = [
     ":test_support",
@@ -311,8 +296,6 @@ rtc_test("test_support_unittests") {
     "testsupport/perf_test_unittest.cc",
     "testsupport/unittest_utils.h",
   ]
-
-  public_configs = [ "..:common_inherited_config" ]
 
   # TODO(jschuh): Bug 1348: fix this warning.
   configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
@@ -395,8 +378,6 @@ rtc_source_set("test_common") {
     ]
   }
 
-  public_configs = [ "..:common_inherited_config" ]
-
   if (is_clang && !is_nacl) {
     # Suppress warnings from the Chromium Clang plugin.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
@@ -477,10 +458,7 @@ rtc_source_set("test_renderer") {
     ]
   }
 
-  public_configs = [
-    "..:common_inherited_config",
-    ":test_renderer_exported_config",
-  ]
+  public_configs = [ ":test_renderer_exported_config" ]
 
   if (is_clang && !is_nacl) {
     # Suppress warnings from the Chromium Clang plugin.
