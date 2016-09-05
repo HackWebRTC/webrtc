@@ -15,40 +15,30 @@
 
 #include <memory>
 
-#include "webrtc/modules/desktop_capture/rgba_color.h"
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
 
 namespace webrtc {
 
-// A set of basic platform dependent functions to draw various shapes on the
-// screen.
+// A set of platform independent functions to draw various of shapes on the
+// screen. This class is for testing ScreenCapturer* implementations only, and
+// should not be used in production logic.
 class ScreenDrawer {
  public:
-  // Creates a ScreenDrawer for the current platform, returns nullptr if no
-  // ScreenDrawer implementation available.
+  // Creates a ScreenDrawer for the current platform.
   static std::unique_ptr<ScreenDrawer> Create();
 
   ScreenDrawer() {}
   virtual ~ScreenDrawer() {}
 
-  // Returns the region inside which DrawRectangle() function are expected to
-  // work, in capturer coordinates (assuming ScreenCapturer::SelectScreen has
-  // not been called). This region may exclude regions of the screen reserved by
-  // the OS for things like menu bars or app launchers.
+  // Returns a rect, on which this instance can draw.
   virtual DesktopRect DrawableRegion() = 0;
 
-  // Draws a rectangle to cover |rect| with |color|. Note, rect.bottom() and
-  // rect.right() two lines are not included. The part of |rect| which is out of
-  // DrawableRegion() will be ignored.
-  virtual void DrawRectangle(DesktopRect rect, RgbaColor color) = 0;
+  // Draws a rectangle to cover |rect| with color |rgba|. Note, rect.bottom()
+  // and rect.right() two lines are not included.
+  virtual void DrawRectangle(DesktopRect rect, uint32_t rgba) = 0;
 
-  // Clears all content on the screen by filling the area with black.
+  // Clears all content on the screen.
   virtual void Clear() = 0;
-
-  // Blocks current thread until OS finishes previous DrawRectangle() actions.
-  // ScreenCapturer should be able to capture the changes after this function
-  // finish.
-  virtual void WaitForPendingDraws() = 0;
 };
 
 }  // namespace webrtc

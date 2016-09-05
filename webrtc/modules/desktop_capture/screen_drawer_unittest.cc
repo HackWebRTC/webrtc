@@ -15,7 +15,6 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/random.h"
 #include "webrtc/base/timeutils.h"
-#include "webrtc/system_wrappers/include/logging.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 
 namespace webrtc {
@@ -27,16 +26,11 @@ namespace webrtc {
 TEST(ScreenDrawerTest, DISABLED_DrawRectangles) {
   std::unique_ptr<ScreenDrawer> drawer = ScreenDrawer::Create();
   if (!drawer) {
-    LOG(LS_WARNING) << "No ScreenDrawer implementation for current platform.";
+    // No ScreenDrawer implementation for current platform.
     return;
   }
 
-  if (drawer->DrawableRegion().is_empty()) {
-    LOG(LS_WARNING) << "ScreenDrawer of current platform does not provide a "
-                       "non-empty DrawableRegion().";
-    return;
-  }
-
+  drawer->Clear();
   DesktopRect rect = drawer->DrawableRegion();
   Random random(rtc::TimeMicros());
   for (int i = 0; i < 100; i++) {
@@ -46,15 +40,16 @@ TEST(ScreenDrawerTest, DISABLED_DrawRectangles) {
     drawer->DrawRectangle(
         DesktopRect::MakeLTRB(left, top, random.Rand(left + 1, rect.right()),
                               random.Rand(top + 1, rect.bottom())),
-        RgbaColor(random.Rand<uint8_t>(), random.Rand<uint8_t>(),
-                  random.Rand<uint8_t>(), random.Rand<uint8_t>()));
+        random.Rand<uint32_t>());
 
     if (i == 50) {
       SleepMs(10000);
+      drawer->Clear();
     }
   }
 
   SleepMs(10000);
+  drawer->Clear();
 }
 
 }  // namespace webrtc

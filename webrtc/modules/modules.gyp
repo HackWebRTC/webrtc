@@ -433,8 +433,6 @@
               'sources': [
                 'desktop_capture/desktop_and_cursor_composer_unittest.cc',
                 'desktop_capture/mouse_cursor_monitor_unittest.cc',
-                'desktop_capture/rgba_color.cc',
-                'desktop_capture/rgba_color.h',
                 'desktop_capture/screen_capturer_helper_unittest.cc',
                 'desktop_capture/screen_capturer_mac_unittest.cc',
                 'desktop_capture/screen_capturer_mock_objects.h',
