@@ -12,11 +12,16 @@
 
 #include <string.h>
 
+#include <memory>
+#include <utility>
+
 #include "webrtc/base/logging.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_packet_to_send.h"
 
 namespace webrtc {
 
@@ -148,11 +153,9 @@ bool RTPSenderAudio::SendAudio(FrameType frame_type,
                                int8_t payload_type,
                                uint32_t rtp_timestamp,
                                const uint8_t* payload_data,
-                               size_t data_size,
+                               size_t payload_size,
                                const RTPFragmentationHeader* fragmentation) {
   // TODO(pwestin) Breakup function in smaller functions.
-  size_t payload_size = data_size;
-  size_t max_payload_length = rtp_sender_->MaxPayloadLength();
   uint16_t dtmf_length_ms = 0;
   uint8_t key = 0;
   uint8_t audio_level_dbov;
@@ -243,51 +246,43 @@ bool RTPSenderAudio::SendAudio(FrameType frame_type,
     }
     return false;
   }
-  uint8_t data_buffer[IP_PACKET_SIZE];
-  bool marker_bit = MarkerBit(frame_type, payload_type);
+  std::unique_ptr<RtpPacketToSend> packet = rtp_sender_->AllocatePacket();
+  packet->SetMarker(MarkerBit(frame_type, payload_type));
+  packet->SetPayloadType(payload_type);
+  packet->SetTimestamp(rtp_timestamp);
+  packet->set_capture_time_ms(clock_->TimeInMilliseconds());
+  // Update audio level extension, if included.
+  packet->SetExtension<AudioLevel>(frame_type == kAudioFrameSpeech,
+                                   audio_level_dbov);
 
-  int32_t rtpHeaderLength = 0;
-
-  rtpHeaderLength =
-      rtp_sender_->BuildRtpHeader(data_buffer, payload_type, marker_bit,
-                                  rtp_timestamp, clock_->TimeInMilliseconds());
-  if (rtpHeaderLength <= 0) {
-    return false;
-  }
-  if (max_payload_length < (rtpHeaderLength + payload_size)) {
-    // Too large payload buffer.
-    return false;
-  }
   if (fragmentation && fragmentation->fragmentationVectorSize > 0) {
-    // use the fragment info if we have one
-    data_buffer[rtpHeaderLength++] = fragmentation->fragmentationPlType[0];
-    memcpy(data_buffer + rtpHeaderLength,
-           payload_data + fragmentation->fragmentationOffset[0],
+    // Use the fragment info if we have one.
+    uint8_t* payload =
+        packet->AllocatePayload(1 + fragmentation->fragmentationLength[0]);
+    if (!payload)  // Too large payload buffer.
+      return false;
+    payload[0] = fragmentation->fragmentationPlType[0];
+    memcpy(payload + 1, payload_data + fragmentation->fragmentationOffset[0],
            fragmentation->fragmentationLength[0]);
-
-    payload_size = fragmentation->fragmentationLength[0];
   } else {
-    memcpy(data_buffer + rtpHeaderLength, payload_data, payload_size);
+    uint8_t* payload = packet->AllocatePayload(payload_size);
+    if (!payload)  // Too large payload buffer.
+      return false;
+    memcpy(payload, payload_data, payload_size);
   }
+
+  if (!rtp_sender_->AssignSequenceNumber(packet.get()))
+    return false;
 
   {
     rtc::CritScope cs(&send_audio_critsect_);
     last_payload_type_ = payload_type;
   }
-  // Update audio level extension, if included.
-  size_t packetSize = payload_size + rtpHeaderLength;
-  RtpUtility::RtpHeaderParser rtp_parser(data_buffer, packetSize);
-  RTPHeader rtp_header;
-  rtp_parser.Parse(&rtp_header);
-  rtp_sender_->UpdateAudioLevel(data_buffer, packetSize, rtp_header,
-                                (frame_type == kAudioFrameSpeech),
-                                audio_level_dbov);
   TRACE_EVENT_ASYNC_END2("webrtc", "Audio", rtp_timestamp, "timestamp",
-                         rtp_timestamp, "seqnum",
-                         rtp_sender_->SequenceNumber());
+                         packet->Timestamp(), "seqnum",
+                         packet->SequenceNumber());
   bool send_result = rtp_sender_->SendToNetwork(
-      data_buffer, payload_size, rtpHeaderLength, rtc::TimeMillis(),
-      kAllowRetransmission, RtpPacketSender::kHighPriority);
+      std::move(packet), kAllowRetransmission, RtpPacketSender::kHighPriority);
   if (first_packet_sent_()) {
     LOG(LS_INFO) << "First audio RTP packet sent to pacer";
   }
@@ -323,7 +318,6 @@ bool RTPSenderAudio::SendTelephoneEventPacket(bool ended,
                                               uint32_t dtmf_timestamp,
                                               uint16_t duration,
                                               bool marker_bit) {
-  uint8_t dtmfbuffer[IP_PACKET_SIZE];
   uint8_t send_count = 1;
   bool result = true;
 
@@ -332,19 +326,23 @@ bool RTPSenderAudio::SendTelephoneEventPacket(bool ended,
     send_count = 3;
   }
   do {
-    // Send DTMF data
-    int32_t header_length = rtp_sender_->BuildRtpHeader(
-        dtmfbuffer, dtmf_payload_type, marker_bit, dtmf_timestamp,
-        clock_->TimeInMilliseconds());
-    if (header_length <= 0)
+    // Send DTMF data.
+    constexpr RtpPacketToSend::ExtensionManager* kNoExtensions = nullptr;
+    constexpr size_t kDtmfSize = 4;
+    std::unique_ptr<RtpPacketToSend> packet(
+        new RtpPacketToSend(kNoExtensions, kRtpHeaderSize + kDtmfSize));
+    packet->SetPayloadType(dtmf_payload_type);
+    packet->SetMarker(marker_bit);
+    packet->SetSsrc(rtp_sender_->SSRC());
+    packet->SetTimestamp(dtmf_timestamp);
+    packet->set_capture_time_ms(clock_->TimeInMilliseconds());
+    if (!rtp_sender_->AssignSequenceNumber(packet.get()))
       return false;
 
-    // reset CSRC and X bit
-    dtmfbuffer[0] &= 0xe0;
-
-    // Create DTMF data
+    // Create DTMF data.
+    uint8_t* dtmfbuffer = packet->AllocatePayload(kDtmfSize);
+    RTC_DCHECK(dtmfbuffer);
     /*    From RFC 2833:
-
      0                   1                   2                   3
      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -359,15 +357,14 @@ bool RTPSenderAudio::SendTelephoneEventPacket(bool ended,
     uint8_t E = ended ? 0x80 : 0x00;
 
     // First byte is Event number, equals key number
-    dtmfbuffer[12] = dtmf_key_;
-    dtmfbuffer[13] = E | R | volume;
-    ByteWriter<uint16_t>::WriteBigEndian(dtmfbuffer + 14, duration);
+    dtmfbuffer[0] = dtmf_key_;
+    dtmfbuffer[1] = E | R | volume;
+    ByteWriter<uint16_t>::WriteBigEndian(dtmfbuffer + 2, duration);
 
     TRACE_EVENT_INSTANT2(
         TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "Audio::SendTelephoneEvent",
-        "timestamp", dtmf_timestamp, "seqnum", rtp_sender_->SequenceNumber());
-    result = rtp_sender_->SendToNetwork(dtmfbuffer, 4, 12, rtc::TimeMillis(),
-                                        kAllowRetransmission,
+        "timestamp", packet->Timestamp(), "seqnum", packet->SequenceNumber());
+    result = rtp_sender_->SendToNetwork(std::move(packet), kAllowRetransmission,
                                         RtpPacketSender::kHighPriority);
     send_count--;
   } while (send_count > 0 && result);
