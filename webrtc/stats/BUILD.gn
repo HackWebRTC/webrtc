@@ -25,7 +25,6 @@ rtc_source_set("rtc_stats") {
     "rtcstatsreport.cc",
   ]
 
-  configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
 
   if (is_clang) {
@@ -48,7 +47,6 @@ if (rtc_include_tests) {
       "rtcstatsreport_unittest.cc",
     ]
 
-    configs += [ "..:common_config" ]
     public_configs = [ "..:common_inherited_config" ]
 
     if (is_clang) {

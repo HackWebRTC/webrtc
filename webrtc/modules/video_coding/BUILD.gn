@@ -74,7 +74,6 @@ rtc_source_set("video_coding") {
     "video_sender.cc",
   ]
 
-  configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
 
   # TODO(jschuh): Bug 1348: fix this warning.
@@ -115,7 +114,6 @@ rtc_source_set("video_coding_utility") {
     "utility/vp8_header_parser.h",
   ]
 
-  configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
 
   if (is_clang) {
@@ -136,7 +134,6 @@ rtc_source_set("webrtc_h264") {
     "codecs/h264/include/h264.h",
   ]
 
-  configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
 
   if (is_clang) {
@@ -190,6 +187,11 @@ if (is_ios) {
       "//build/config/compiler:enable_arc",
     ]
 
+    # TODO(hbos): Make webrtc_h264_video_toolbox compile with the standard set
+    # of warnings.
+    # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6307
+    suppressed_configs += [ rtc_common_config ]
+
     deps = [
       "../../sdk:rtc_sdk_common_objc",
     ]
@@ -225,7 +227,6 @@ rtc_source_set("webrtc_i420") {
     "codecs/i420/include/i420.h",
   ]
 
-  configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
 
   if (is_clang) {
@@ -257,7 +258,6 @@ rtc_source_set("webrtc_vp8") {
     "codecs/vp8/vp8_impl.h",
   ]
 
-  configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
 
   # TODO(jschuh): Bug 1348: fix this warning.
@@ -291,7 +291,6 @@ rtc_source_set("webrtc_vp9") {
     "codecs/vp9/vp9_impl.h",
   ]
 
-  configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
 
   if (is_clang) {
@@ -325,7 +324,6 @@ if (rtc_include_tests) {
       "codecs/test/videoprocessor.h",
     ]
 
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     if (is_clang) {

@@ -22,7 +22,6 @@ rtc_source_set("media_file") {
     "media_file_utility.h",
   ]
 
-  configs += [ "../..:common_config" ]
   public_configs = [
     "../..:common_inherited_config",
     ":media_file_config",

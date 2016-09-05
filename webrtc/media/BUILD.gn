@@ -117,10 +117,7 @@ rtc_source_set("rtc_media") {
     "sctp/sctpdataengine.h",
   ]
 
-  configs += [
-    "..:common_config",
-    ":rtc_media_warnings_config",
-  ]
+  configs += [ ":rtc_media_warnings_config" ]
 
   public_configs = [ "..:common_inherited_config" ]
 
@@ -250,10 +247,7 @@ if (rtc_include_tests) {
       "engine/fakewebrtcvoiceengine.h",
     ]
 
-    configs += [
-      "..:common_config",
-      ":rtc_unittest_main_config",
-    ]
+    configs += [ ":rtc_unittest_main_config" ]
     public_configs = [ "..:common_inherited_config" ]
 
     if (rtc_build_libyuv) {
@@ -349,10 +343,7 @@ if (rtc_include_tests) {
       "sctp/sctpdataengine_unittest.cc",
     ]
 
-    configs += [
-      "..:common_config",
-      ":rtc_media_unittests_config",
-    ]
+    configs += [ ":rtc_media_unittests_config" ]
     public_configs = [ "..:common_inherited_config" ]
 
     if (rtc_use_h264) {

@@ -18,7 +18,6 @@ rtc_source_set("pacing") {
     "packet_router.h",
   ]
 
-  configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
 
   if (is_clang) {

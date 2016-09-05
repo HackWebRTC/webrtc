@@ -161,27 +161,35 @@ rtc_opus_dir = "//third_party/opus"
 # different subdirectories.
 webrtc_root = get_path_info("../", "abspath")
 
+# Global configuration that should be applied to all WebRTC targets.
+# You normally shouldn't need to # include this in your target as it's
+# automatically included when using the rtc_* templates.
+# It sets defines, include paths and compilation warnings accordingly,
+# both for WebRTC stand-alone builds and for the scenario when WebRTC
+# native code is built as part of Chromium.
+rtc_common_config = webrtc_root + ":common_config"
+
 # Common configs to remove or add in all rtc targets.
 rtc_remove_configs = []
-rtc_add_configs = []
+rtc_add_configs = [ rtc_common_config ]
 
 set_defaults("rtc_test") {
-  configs = []
+  configs = rtc_add_configs
   suppressed_configs = []
 }
 
 set_defaults("rtc_source_set") {
-  configs = []
+  configs = rtc_add_configs
   suppressed_configs = []
 }
 
 set_defaults("rtc_executable") {
-  configs = []
+  configs = rtc_add_configs
   suppressed_configs = []
 }
 
 set_defaults("rtc_static_library") {
-  configs = []
+  configs = rtc_add_configs
   suppressed_configs = []
 }
 
@@ -194,7 +202,6 @@ template("rtc_test") {
                              "suppressed_configs",
                            ])
     configs += invoker.configs
-    configs += rtc_add_configs
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
   }
@@ -209,7 +216,6 @@ template("rtc_source_set") {
                              "suppressed_configs",
                            ])
     configs += invoker.configs
-    configs += rtc_add_configs
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
   }
@@ -225,7 +231,6 @@ template("rtc_executable") {
                              "suppressed_configs",
                            ])
     configs += invoker.configs
-    configs += rtc_add_configs
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
     deps = [
@@ -244,7 +249,6 @@ template("rtc_static_library") {
                              "suppressed_configs",
                            ])
     configs += invoker.configs
-    configs += rtc_add_configs
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
   }

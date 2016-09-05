@@ -46,7 +46,6 @@ rtc_source_set("remote_bitrate_estimator") {
     defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0" ]
   }
 
-  configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
 
   if (is_clang) {
@@ -100,7 +99,6 @@ if (rtc_include_tests) {
       defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0" ]
     }
 
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     if (is_clang) {

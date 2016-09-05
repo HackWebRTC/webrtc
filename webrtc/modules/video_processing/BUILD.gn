@@ -48,7 +48,6 @@ rtc_source_set("video_processing") {
     deps += [ ":video_processing_neon" ]
   }
 
-  configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
 
   if (is_clang) {
@@ -65,7 +64,6 @@ if (build_video_processing_sse2) {
       "util/denoiser_filter_sse2.h",
     ]
 
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     if (is_clang) {
@@ -90,7 +88,6 @@ if (rtc_build_with_neon) {
       suppressed_configs += [ "//build/config/compiler:compiler_arm_fpu" ]
       cflags = [ "-mfpu=neon" ]
     }
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
   }
 }

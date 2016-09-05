@@ -151,7 +151,6 @@ rtc_source_set("audio_processing") {
     "voice_detection_impl.h",
   ]
 
-  configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
 
   defines = []
@@ -264,7 +263,6 @@ if (current_cpu == "x86" || current_cpu == "x64") {
       cflags = [ "-msse2" ]
     }
 
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     if (apm_debug_dump) {
@@ -301,7 +299,6 @@ if (rtc_build_with_neon) {
       ]
     }
 
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     deps = [
@@ -323,7 +320,6 @@ if (rtc_include_tests) {
       "test/process_test.cc",
     ]
 
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     deps = [
@@ -345,7 +341,6 @@ if (rtc_include_tests) {
       "test/unpack.cc",
     ]
 
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     deps = [
@@ -371,7 +366,6 @@ if (rtc_include_tests) {
       "test/wav_based_simulator.h",
     ]
 
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     deps = [
@@ -396,7 +390,6 @@ if (rtc_include_tests) {
       "test/test_utils.h",
     ]
 
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     deps = [

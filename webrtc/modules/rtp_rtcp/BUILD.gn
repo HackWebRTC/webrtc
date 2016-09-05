@@ -154,7 +154,6 @@ rtc_source_set("rtp_rtcp") {
     "source/vp8_partition_aggregator.h",
   ]
 
-  configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
 
   if (is_clang) {

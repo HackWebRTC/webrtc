@@ -20,7 +20,6 @@ rtc_source_set("audio") {
     "scoped_voe_interface.h",
   ]
 
-  configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
 
   if (is_clang) {

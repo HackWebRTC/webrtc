@@ -26,7 +26,6 @@ rtc_source_set("call_api") {
     "call/audio_state.h",
   ]
 
-  configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
 
   deps = [
@@ -119,10 +118,7 @@ rtc_source_set("libjingle_peerconnection") {
     "webrtcsessiondescriptionfactory.h",
   ]
 
-  configs += [
-    "..:common_config",
-    ":libjingle_peerconnection_warnings_config",
-  ]
+  configs += [ ":libjingle_peerconnection_warnings_config" ]
   public_configs = [ "..:common_inherited_config" ]
 
   if (is_clang) {
@@ -190,10 +186,7 @@ if (is_android && !build_with_chromium) {
       "androidvideotracksource.h",
     ]
 
-    configs += [
-      "..:common_config",
-      ":libjingle_peerconnection_jni_warnings_config",
-    ]
+    configs += [ ":libjingle_peerconnection_jni_warnings_config" ]
     public_configs = [ "..:common_inherited_config" ]
 
     if (is_clang) {
@@ -372,10 +365,7 @@ if (rtc_include_tests) {
 
     defines = [ "HAVE_SCTP" ]
 
-    configs += [
-      "..:common_config",
-      ":peerconnection_unittests_config",
-    ]
+    configs += [ ":peerconnection_unittests_config" ]
     public_configs = [ "..:common_inherited_config" ]
 
     if (is_clang) {

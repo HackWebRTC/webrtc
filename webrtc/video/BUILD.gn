@@ -48,7 +48,6 @@ rtc_source_set("video") {
     "vie_remb.h",
   ]
 
-  configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
 
   if (is_clang) {
@@ -98,7 +97,6 @@ if (rtc_include_tests) {
       "vie_encoder_unittest.cc",
       "vie_remb_unittest.cc",
     ]
-    configs += [ "..:common_config" ]
     deps = [
       ":video",
       "//testing/gmock",

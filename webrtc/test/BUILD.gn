@@ -74,10 +74,7 @@ rtc_source_set("channel_transport") {
     "channel_transport/udp_transport_impl.h",
   ]
 
-  configs += [
-    "..:common_config",
-    ":channel_transport_warnings_config",
-  ]
+  configs += [ ":channel_transport_warnings_config" ]
   public_configs = [ "..:common_inherited_config" ]
 
   if (is_clang && !is_nacl) {
@@ -104,7 +101,6 @@ rtc_source_set("video_test_common") {
     "frame_utils.h",
   ]
 
-  configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
 
   if (is_clang && !is_nacl) {
@@ -129,7 +125,6 @@ rtc_source_set("rtp_test_utils") {
     "rtp_file_writer.h",
   ]
 
-  configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
 
   if (is_clang && !is_nacl) {
@@ -158,7 +153,6 @@ rtc_source_set("field_trial") {
     "../system_wrappers:field_trial_default",
   ]
 
-  configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
 }
 
@@ -176,7 +170,6 @@ rtc_source_set("test_main") {
     "//third_party/gflags",
   ]
 
-  configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
 }
 
@@ -229,7 +222,6 @@ rtc_source_set("test_support") {
     deps += [ "//base:base" ]
   }
 
-  configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
 }
 
@@ -253,7 +245,6 @@ rtc_source_set("test_support_main") {
     "//third_party/gflags",
   ]
 
-  configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
 }
 
@@ -271,7 +262,6 @@ rtc_source_set("test_support_main_threaded_mac") {
     "testsupport/mac/run_threaded_main_mac.mm",
   ]
 
-  configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
 
   deps = [
@@ -322,7 +312,6 @@ rtc_test("test_support_unittests") {
     "testsupport/unittest_utils.h",
   ]
 
-  configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
 
   # TODO(jschuh): Bug 1348: fix this warning.
@@ -406,7 +395,6 @@ rtc_source_set("test_common") {
     ]
   }
 
-  configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
 
   if (is_clang && !is_nacl) {
@@ -489,7 +477,6 @@ rtc_source_set("test_renderer") {
     ]
   }
 
-  configs += [ "..:common_config" ]
   public_configs = [
     "..:common_inherited_config",
     ":test_renderer_exported_config",

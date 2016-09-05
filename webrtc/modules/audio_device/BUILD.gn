@@ -49,7 +49,6 @@ config("audio_device_warnings_config") {
 }
 
 rtc_source_set("audio_device") {
-  configs += [ "../..:common_config" ]
   public_configs = [
     "../..:common_inherited_config",
     ":audio_device_config",
@@ -263,7 +262,6 @@ if (rtc_include_tests && !is_ios) {
       "../utility",
       "//testing/gtest",
     ]
-    configs += [ "../..:common_config" ]
     public_configs = [
       "../..:common_inherited_config",
       ":audio_device_config",

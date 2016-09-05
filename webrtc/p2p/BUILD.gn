@@ -95,7 +95,6 @@ rtc_source_set("rtc_p2p") {
     ]
   }
 
-  configs += [ "..:common_config" ]
   public_configs = [
     "..:common_inherited_config",
     ":rtc_p2p_inherited_config",
@@ -170,7 +169,6 @@ if (!build_with_chromium) {
       "stunprober/main.cc",
     ]
 
-    configs += [ "..:common_config" ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from Chrome's Clang plugins.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.

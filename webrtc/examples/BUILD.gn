@@ -140,7 +140,6 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       "objc/AppRTCDemo/common/ARDUtilities.m",
     ]
     configs += [
-      "..:common_config",
       ":warnings_config",
       "//build/config/compiler:enable_arc",
     ]
@@ -209,7 +208,6 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       "objc/AppRTCDemo/RTCSessionDescription+JSON.m",
     ]
     configs += [
-      "..:common_config",
       "//build/config/compiler:enable_arc",
       ":warnings_config",
     ]
@@ -299,7 +297,6 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "objc/AppRTCDemo/mac/APPRTCViewController.m",
       ]
       configs += [
-        "..:common_config",
         "..:common_objc",
         "//build/config/compiler:enable_arc",
       ]
@@ -360,7 +357,6 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       "objc/AppRTCDemo/third_party/SocketRocket/SRWebSocket.m",
     ]
     configs += [
-      "..:common_config",
       "//build/config/compiler:enable_arc",
       ":socketrocket_warning_config",
     ]
@@ -413,6 +409,11 @@ if (is_linux || is_win) {
       "peerconnection/client/peer_connection_client.cc",
       "peerconnection/client/peer_connection_client.h",
     ]
+
+    # TODO(ehmaldonado): Make peerconnection_client compile with the standard
+    # set of warnings.
+    # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6306
+    suppressed_configs += [ rtc_common_config ]
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.

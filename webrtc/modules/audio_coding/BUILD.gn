@@ -45,7 +45,6 @@ rtc_source_set("audio_decoder_factory_interface") {
     "codecs/audio_format.cc",
     "codecs/audio_format.h",
   ]
-  configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
   deps = [
     "../..:webrtc_common",
@@ -57,7 +56,6 @@ rtc_source_set("builtin_audio_decoder_factory") {
     "codecs/builtin_audio_decoder_factory.cc",
     "codecs/builtin_audio_decoder_factory.h",
   ]
-  configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
   deps = [
            "../..:webrtc_common",
@@ -73,7 +71,6 @@ rtc_source_set("rent_a_codec") {
     "acm2/rent_a_codec.cc",
     "acm2/rent_a_codec.h",
   ]
-  configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
   deps = [ "../..:webrtc_common" ] + audio_codec_deps
   defines = audio_codec_defines
@@ -106,8 +103,6 @@ rtc_source_set("audio_coding") {
 
   defines = []
 
-  configs += [ "../..:common_config" ]
-
   public_configs = [
     "../..:common_inherited_config",
     ":audio_coding_config",
@@ -139,7 +134,6 @@ rtc_source_set("audio_decoder_interface") {
     "codecs/audio_decoder.cc",
     "codecs/audio_decoder.h",
   ]
-  configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
   deps = [
     "../..:webrtc_common",
@@ -152,7 +146,6 @@ rtc_source_set("audio_encoder_interface") {
     "codecs/audio_encoder.cc",
     "codecs/audio_encoder.h",
   ]
-  configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
   deps = [
     "../..:webrtc_common",
@@ -175,8 +168,6 @@ rtc_source_set("cng") {
     "codecs/cng/webrtc_cng.h",
   ]
 
-  configs += [ "../..:common_config" ]
-
   public_configs = [
     "../..:common_inherited_config",
     ":cng_config",
@@ -197,8 +188,6 @@ rtc_source_set("red") {
     "codecs/red/audio_encoder_copy_red.cc",
     "codecs/red/audio_encoder_copy_red.h",
   ]
-
-  configs += [ "../..:common_config" ]
 
   public_configs = [
     "../..:common_inherited_config",
@@ -230,8 +219,6 @@ rtc_source_set("g711") {
     "codecs/g711/g711_interface.h",
   ]
 
-  configs += [ "../..:common_config" ]
-
   public_configs = [
     "../..:common_inherited_config",
     ":g711_config",
@@ -262,8 +249,6 @@ rtc_source_set("g722") {
     "codecs/g722/g722_interface.c",
     "codecs/g722/g722_interface.h",
   ]
-
-  configs += [ "../..:common_config" ]
 
   public_configs = [
     "../..:common_inherited_config",
@@ -430,8 +415,6 @@ rtc_source_set("ilbc") {
     "codecs/ilbc/xcorr_coef.h",
   ]
 
-  configs += [ "../..:common_config" ]
-
   public_configs = [
     "../..:common_inherited_config",
     ":ilbc_config",
@@ -524,8 +507,6 @@ rtc_source_set("isac") {
     libs = [ "m" ]
   }
 
-  configs += [ "../..:common_config" ]
-
   public_configs = [
     "../..:common_inherited_config",
     ":isac_config",
@@ -603,8 +584,6 @@ rtc_source_set("isac_fix") {
   if (!is_win) {
     defines = [ "WEBRTC_LINUX" ]
   }
-
-  configs += [ "../..:common_config" ]
 
   public_configs = [
     "../..:common_inherited_config",
@@ -686,7 +665,6 @@ if (rtc_build_with_neon) {
       ]
     }
 
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     deps = [
@@ -718,8 +696,6 @@ rtc_source_set("pcm16b") {
     ":g711",
   ]
 
-  configs += [ "../..:common_config" ]
-
   public_configs = [
     "../..:common_inherited_config",
     ":pcm16b_config",
@@ -748,7 +724,6 @@ rtc_source_set("webrtc_opus") {
   ]
 
   if (rtc_build_opus) {
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     public_deps = [
@@ -844,8 +819,6 @@ rtc_source_set("neteq") {
     "neteq/timestamp_scaler.h",
   ]
 
-  configs += [ "../..:common_config" ]
-
   public_configs = [
     "../..:common_inherited_config",
     ":neteq_config",
@@ -894,7 +867,6 @@ if (rtc_include_tests) {
       "acm2/acm_receive_test_oldapi.h",
     ]
 
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     defines = audio_coding_defines
@@ -913,7 +885,6 @@ if (rtc_include_tests) {
       "acm2/acm_send_test_oldapi.h",
     ]
 
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     defines = audio_coding_defines
@@ -934,7 +905,6 @@ if (rtc_include_tests) {
       "test/utility.cc",
     ]
 
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     deps = [
@@ -957,7 +927,6 @@ if (rtc_include_tests) {
       "test/insert_packet_with_timing.cc",
     ]
 
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     if (is_clang) {
@@ -999,7 +968,6 @@ if (rtc_include_tests) {
       "neteq/audio_decoder_unittest.cc",
     ]
 
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     if (is_clang) {
@@ -1134,7 +1102,6 @@ if (rtc_include_tests) {
       "neteq/tools/neteq_performance_test.h",
     ]
 
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     if (!is_debug) {
@@ -1163,7 +1130,6 @@ if (rtc_include_tests) {
       "neteq/tools/neteq_quality_test.h",
     ]
 
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     if (is_clang) {
@@ -1218,7 +1184,6 @@ if (rtc_include_tests) {
       "neteq/tools/rtp_generator.h",
     ]
 
-    configs += [ "../..:common_config" ]
     public_configs = [
       "../..:common_inherited_config",
       ":neteq_unittest_tools_config",
@@ -1560,7 +1525,6 @@ if (rtc_include_tests) {
       "codecs/g711/test/testG711.cc",
     ]
 
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     deps = [
@@ -1575,7 +1539,6 @@ if (rtc_include_tests) {
       "codecs/g722/test/testG722.cc",
     ]
 
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     deps = [
@@ -1592,7 +1555,6 @@ if (rtc_include_tests) {
       "codecs/isac/main/util/utility.c",
     ]
 
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     deps = [
@@ -1615,7 +1577,6 @@ if (rtc_include_tests) {
       "codecs/isac/main/util/utility.c",
     ]
 
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     deps = [
@@ -1637,7 +1598,6 @@ if (rtc_include_tests) {
       "codecs/ilbc/test/iLBC_test.c",
     ]
 
-    configs += [ "../..:common_config" ]
     public_configs = [ "../..:common_inherited_config" ]
 
     deps = [

@@ -78,7 +78,6 @@ rtc_source_set("voice_engine") {
     ]
   }
 
-  configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
 
   if (is_clang) {
@@ -113,7 +112,6 @@ rtc_source_set("level_indicator") {
     "level_indicator.h",
   ]
 
-  configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
 
   deps = [

@@ -63,7 +63,6 @@ rtc_source_set("rtc_pc") {
     deps += [ "//third_party/libsrtp" ]
   }
 
-  configs += [ "..:common_config" ]
   public_configs = [
     "..:common_inherited_config",
     ":rtc_pc_config",
@@ -100,10 +99,7 @@ if (rtc_include_tests) {
 
     include_dirs = [ "//third_party/libsrtp/srtp" ]
 
-    configs += [
-      "..:common_config",
-      ":rtc_pc_unittests_config",
-    ]
+    configs += [ ":rtc_pc_unittests_config" ]
     public_configs = [ "..:common_inherited_config" ]
 
     if (is_clang) {

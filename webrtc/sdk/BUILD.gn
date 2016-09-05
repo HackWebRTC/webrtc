@@ -22,10 +22,7 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
     deps = [
       "../base:rtc_base",
     ]
-    configs += [
-      "..:common_config",
-      "//build/config/compiler:enable_arc",
-    ]
+    configs += [ "//build/config/compiler:enable_arc" ]
     public_configs = [
       "..:common_inherited_config",
       ":rtc_sdk_common_objc_config",
@@ -189,6 +186,11 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
       "..:common_objc",
       "//build/config/compiler:enable_arc",
     ]
+
+    # TODO(tkchin): Make rtc_sdk_peerconnection_objc compile with the standard
+    # set of warnings.
+    # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6308
+    suppressed_configs += [ rtc_common_config ]
 
     public_configs = [ ":rtc_sdk_common_objc_config" ]
 

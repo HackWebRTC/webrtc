@@ -54,7 +54,6 @@ if (rtc_include_tests) {
   rtc_test("modules_tests") {
     testonly = true
 
-    configs += [ "..:common_config" ]
     public_configs = [ "..:common_inherited_config" ]
 
     videoprocessor_defines = []
@@ -567,7 +566,6 @@ if (rtc_include_tests) {
       deps += [ rtc_libvpx_dir ]
     }
 
-    configs += [ "..:common_config" ]
     public_configs = [ "..:common_inherited_config" ]
 
     # TODO(jschuh): bugs.webrtc.org/1348: fix this warning.

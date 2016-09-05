@@ -74,10 +74,7 @@ rtc_source_set("rtc_xmpp") {
     ]
   }
 
-  configs += [
-    "../..:common_config",
-    ":xmpp_warnings_config",
-  ]
+  configs += [ ":xmpp_warnings_config" ]
 
   public_configs = [
     "../..:common_inherited_config",

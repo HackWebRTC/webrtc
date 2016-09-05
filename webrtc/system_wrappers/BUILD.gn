@@ -75,8 +75,6 @@ rtc_source_set("system_wrappers") {
     "source/trace_win.h",
   ]
 
-  configs += [ "..:common_config" ]
-
   public_configs = [ "..:common_inherited_config" ]
 
   if (rtc_enable_data_logging) {
@@ -146,7 +144,6 @@ rtc_source_set("field_trial_default") {
     "source/field_trial_default.cc",
   ]
 
-  configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
 }
 
@@ -156,12 +153,10 @@ rtc_source_set("metrics_default") {
     "source/metrics_default.cc",
   ]
 
-  configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
 }
 
 rtc_source_set("system_wrappers_default") {
-  configs += [ "..:common_config" ]
   public_configs = [ "..:common_inherited_config" ]
 
   deps = [
@@ -177,7 +172,6 @@ if (is_android) {
       "source/cpu_features_android.c",
     ]
 
-    configs += [ "..:common_config" ]
     public_configs = [ "..:common_inherited_config" ]
     deps = [
       "//third_party/android_tools:cpu_features",
@@ -191,7 +185,6 @@ if (is_linux) {
       "source/cpu_features_linux.c",
     ]
 
-    configs += [ "..:common_config" ]
     public_configs = [ "..:common_inherited_config" ]
   }
 }
@@ -224,7 +217,6 @@ if (rtc_include_tests) {
       ]
     }
 
-    configs += [ "..:common_config" ]
     public_configs = [ "..:common_inherited_config" ]
 
     configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
