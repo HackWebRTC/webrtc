@@ -128,6 +128,8 @@ rtc_source_set("desktop_capture") {
       "differ.h",
       "differ_block.cc",
       "differ_block.h",
+      "screen_capturer_differ_wrapper.cc",
+      "screen_capturer_differ_wrapper.h",
     ]
   }
 
@@ -169,8 +171,8 @@ if (use_desktop_capture_differ_sse2) {
   rtc_source_set("desktop_capture_differ_sse2") {
     visibility = [ ":*" ]
     sources = [
-      "differ_block_sse2.cc",
-      "differ_block_sse2.h",
+      "differ_vector_sse2.cc",
+      "differ_vector_sse2.h",
     ]
 
     if (is_posix) {

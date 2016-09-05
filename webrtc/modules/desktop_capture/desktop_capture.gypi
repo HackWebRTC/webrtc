@@ -101,7 +101,6 @@
         'window_capturer.h',
         'window_capturer_mac.mm',
         'window_capturer_win.cc',
-
       ],
       'conditions': [
         ['OS!="ios" and (target_arch=="ia32" or target_arch=="x64")', {
@@ -145,6 +144,8 @@
             'differ.h',
             'differ_block.cc',
             'differ_block.h',
+            'screen_capturer_differ_wrapper.cc',
+            'screen_capturer_differ_wrapper.h',
           ],
         }],
         ['OS=="mac"', {
@@ -182,8 +183,8 @@
           'target_name': 'desktop_capture_differ_sse2',
           'type': 'static_library',
           'sources': [
-            'differ_block_sse2.cc',
-            'differ_block_sse2.h',
+            'differ_vector_sse2.cc',
+            'differ_vector_sse2.h',
           ],
           'conditions': [
             ['os_posix==1', {
