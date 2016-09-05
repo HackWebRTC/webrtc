@@ -36,6 +36,8 @@ class FrameObject;
 
 class FrameBuffer {
  public:
+  enum ReturnReason { kFrameFound, kTimeout, kStopped };
+
   FrameBuffer(Clock* clock,
               VCMJitterEstimator* jitter_estimator,
               VCMTiming* timing);
@@ -44,9 +46,14 @@ class FrameBuffer {
   void InsertFrame(std::unique_ptr<FrameObject> frame);
 
   // Get the next frame for decoding. Will return at latest after
-  // |max_wait_time_ms|, with either a managed FrameObject or an empty
-  // unique ptr if there is no available frame for decoding.
-  std::unique_ptr<FrameObject> NextFrame(int64_t max_wait_time_ms);
+  // |max_wait_time_ms|.
+  //  - If a frame is availiable within |max_wait_time_ms| it will return
+  //    kFrameFound and set |frame_out| to the resulting frame.
+  //  - If no frame is available after |max_wait_time_ms| it will return
+  //    kTimeout.
+  //  - If the FrameBuffer is stopped then it will return kStopped.
+  ReturnReason NextFrame(int64_t max_wait_time_ms,
+                         std::unique_ptr<FrameObject>* frame_out);
 
   // Tells the FrameBuffer which protection mode that is in use. Affects
   // the frame timing.

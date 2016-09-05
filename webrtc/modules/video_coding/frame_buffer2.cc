@@ -52,7 +52,9 @@ FrameBuffer::FrameBuffer(Clock* clock,
       stopped_(false),
       protection_mode_(kProtectionNack) {}
 
-std::unique_ptr<FrameObject> FrameBuffer::NextFrame(int64_t max_wait_time_ms) {
+FrameBuffer::ReturnReason FrameBuffer::NextFrame(
+    int64_t max_wait_time_ms,
+    std::unique_ptr<FrameObject>* frame_out) {
   int64_t latest_return_time = clock_->TimeInMilliseconds() + max_wait_time_ms;
   int64_t now = clock_->TimeInMilliseconds();
   int64_t wait_ms = max_wait_time_ms;
@@ -63,7 +65,7 @@ std::unique_ptr<FrameObject> FrameBuffer::NextFrame(int64_t max_wait_time_ms) {
       rtc::CritScope lock(&crit_);
       frame_inserted_event_.Reset();
       if (stopped_)
-        return std::unique_ptr<FrameObject>();
+        return kStopped;
 
       now = clock_->TimeInMilliseconds();
       wait_ms = max_wait_time_ms;
@@ -115,9 +117,10 @@ std::unique_ptr<FrameObject> FrameBuffer::NextFrame(int64_t max_wait_time_ms) {
         decoded_frames_.insert(next_frame_it->first);
         std::unique_ptr<FrameObject> frame = std::move(next_frame_it->second);
         frames_.erase(frames_.begin(), ++next_frame_it);
-        return frame;
+        *frame_out = std::move(frame);
+        return kFrameFound;
       } else {
-        return std::unique_ptr<FrameObject>();
+        return kTimeout;
       }
     }
   }

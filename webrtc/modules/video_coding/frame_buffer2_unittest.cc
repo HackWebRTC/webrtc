@@ -135,7 +135,10 @@ class TestFrameBuffer2 : public ::testing::Test {
   void ExtractFrame(int64_t max_wait_time = 0) {
     crit_.Enter();
     if (max_wait_time == 0) {
-      frames_.emplace_back(buffer_.NextFrame(0));
+      std::unique_ptr<FrameObject> frame;
+      FrameBuffer::ReturnReason res = buffer_.NextFrame(0, &frame);
+      if (res != FrameBuffer::ReturnReason::kStopped)
+        frames_.emplace_back(std::move(frame));
       crit_.Leave();
     } else {
       max_wait_time_ = max_wait_time;
@@ -170,7 +173,11 @@ class TestFrameBuffer2 : public ::testing::Test {
         if (tfb->tear_down_)
           return false;
 
-        tfb->frames_.emplace_back(tfb->buffer_.NextFrame(tfb->max_wait_time_));
+        std::unique_ptr<FrameObject> frame;
+        FrameBuffer::ReturnReason res =
+            tfb->buffer_.NextFrame(tfb->max_wait_time_, &frame);
+        if (res != FrameBuffer::ReturnReason::kStopped)
+          tfb->frames_.emplace_back(std::move(frame));
       }
     }
   }
