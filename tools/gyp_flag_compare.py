@@ -20,6 +20,9 @@ follows:
 When the GN and GYP target names differ, it should be called invoked as follows:
   $ python tools/gyp_flag_compare.py gyp_dir gn_dir gyp_target gn_target
 
+When all targets want to be compared, it should be called without a target name,
+i.e.:
+  $ python tools/gyp_flag_compare.py gyp_dir gn_dir
 
 This script can also be used interactively. Then ConfigureBuild can optionally
 be used to generate ninja files with GYP and GN.
@@ -113,7 +116,7 @@ def CountsByDirname(dict_of_list):
 class Comparison(object):
   """A comparison of the currently-configured build for a target."""
 
-  def __init__(self, gyp_target, gn_target=None, gyp_dir=_DEFAULT_GYP_DIR,
+  def __init__(self, gyp_target="", gn_target=None, gyp_dir=_DEFAULT_GYP_DIR,
                gn_dir=_DEFAULT_GN_DIR):
     """Creates a comparison of a GN and GYP target. If the target names differ
     between the two build systems, then two names may be passed.
@@ -389,18 +392,20 @@ def Run(command_line):
 
 
 def main():
-  if len(sys.argv) < 4:
-    print 'usage: %s gyp_dir gn_dir target' % __file__
+  if len(sys.argv) < 3:
+    print 'usage: %s gyp_dir gn_dir' % __file__
+    print '   or: %s gyp_dir gn_dir target' % __file__
     print '   or: %s gyp_dir gn_dir gyp_target gn_target' % __file__
     return 1
 
   gyp_dir = sys.argv[1]
   gn_dir = sys.argv[2]
 
-  gyp_target = sys.argv[3]
-  if len(sys.argv) == 4:
-    gn_target = gyp_target
-  else:
+  gyp_target = gn_target = ""
+
+  if len(sys.argv) > 3:
+    gyp_target = sys.argv[3]
+  if len(sys.argv) > 4:
     gn_target = sys.argv[4]
 
   print 'GYP output directory is %s' % gyp_dir
