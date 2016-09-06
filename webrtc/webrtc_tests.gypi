@@ -165,11 +165,6 @@
             'base/sslstreamadapter_unittest.cc',
           ],
         }],
-        ['OS=="ios" or (OS=="mac" and target_arch!="ia32")', {
-          'defines': [
-            'CARBON_DEPRECATED=YES',
-          ],
-        }],
         ['use_quic==1', {
           'sources': [
             'p2p/quic/quicconnectionhelper_unittest.cc',
@@ -501,11 +496,6 @@
         ['OS=="mac"', {
           'sources': [
             'base/macsocketserver_unittest.cc',
-          ],
-        }],
-        ['OS=="ios" or (OS=="mac" and target_arch!="ia32")', {
-          'defines': [
-            'CARBON_DEPRECATED=YES',
           ],
         }],
       ],

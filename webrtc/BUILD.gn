@@ -562,10 +562,6 @@ if (rtc_include_tests) {
         "base/sslstreamadapter_unittest.cc",
       ]
     }
-    if (is_ios || (is_mac && target_cpu != "x86")) {
-      defines = [ "CARBON_DEPRECATED=YES" ]
-    }
-
     if (rtc_use_quic) {
       sources += [
         "p2p/quic/quicconnectionhelper_unittest.cc",
@@ -827,9 +823,6 @@ if (rtc_include_tests) {
 
     if (is_mac) {
       sources += [ "base/macsocketserver_unittest.cc" ]
-    }
-    if (is_ios || (is_mac && target_cpu != "x86")) {
-      defines = [ "CARBON_DEPRECATED=YES" ]
     }
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin.

@@ -106,74 +106,7 @@ bool MacWindowPicker::IsVisible(const WindowId& id) {
 }
 
 bool MacWindowPicker::MoveToFront(const WindowId& id) {
-  // Init if we're not already initialized.
-  if (get_window_list_desc_ == NULL && !Init()) {
-    return false;
-  }
-  CGWindowID ids[1];
-  ids[0] = id.id();
-  CFArrayRef window_id_array =
-      CFArrayCreate(NULL, reinterpret_cast<const void **>(&ids), 1, NULL);
-
-  CFArrayRef window_array =
-      reinterpret_cast<CGWindowListCreateDescriptionFromArrayProc>(
-          get_window_list_desc_)(window_id_array);
-  if (window_array == NULL || 0 == CFArrayGetCount(window_array)) {
-    // Could not find the window. It might have been closed.
-    LOG(LS_INFO) << "Window not found";
-    CFRelease(window_id_array);
-    return false;
-  }
-
-  CFDictionaryRef window = reinterpret_cast<CFDictionaryRef>(
-      CFArrayGetValueAtIndex(window_array, 0));
-  CFStringRef window_name_ref = reinterpret_cast<CFStringRef>(
-      CFDictionaryGetValue(window, kCGWindowName));
-  CFNumberRef application_pid = reinterpret_cast<CFNumberRef>(
-      CFDictionaryGetValue(window, kCGWindowOwnerPID));
-
-  int pid_val;
-  CFNumberGetValue(application_pid, kCFNumberIntType, &pid_val);
-  std::string window_name;
-  ToUtf8(window_name_ref, &window_name);
-
-  // Build an applescript that sets the selected window to front
-  // within the application. Then set the application to front.
-  bool result = true;
-  std::stringstream ss;
-  ss << "tell application \"System Events\"\n"
-     << "set proc to the first item of (every process whose unix id is "
-     << pid_val
-     << ")\n"
-     << "tell proc to perform action \"AXRaise\" of window \""
-     << window_name
-     << "\"\n"
-     << "set the frontmost of proc to true\n"
-     << "end tell";
-  if (!RunAppleScript(ss.str())) {
-    // This might happen to for example X applications where the X
-    // server spawns of processes with their own PID but the X server
-    // is still registered as owner to the application windows. As a
-    // workaround, we put the X server process to front, meaning that
-    // all X applications will show up. The drawback with this
-    // workaround is that the application that we really wanted to set
-    // to front might be behind another X application.
-    ProcessSerialNumber psn;
-    pid_t pid = pid_val;
-    int res = GetProcessForPID(pid, &psn);
-    if (res != 0) {
-      LOG(LS_ERROR) << "Failed getting process for pid";
-      result = false;
-    }
-    res = SetFrontProcess(&psn);
-    if (res != 0) {
-      LOG(LS_ERROR) << "Failed setting process to front";
-      result = false;
-    }
-  }
-  CFRelease(window_id_array);
-  CFRelease(window_array);
-  return result;
+  return false;
 }
 
 bool MacWindowPicker::GetDesktopList(DesktopDescriptionList* descriptions) {

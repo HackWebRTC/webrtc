@@ -12,7 +12,6 @@
 #define WEBRTC_MODULES_DESKTOP_CAPTURE_MAC_DESKTOP_CONFIGURATION_H_
 
 #include <ApplicationServices/ApplicationServices.h>
-#include <Carbon/Carbon.h>
 #include <vector>
 
 #include "webrtc/typedefs.h"
@@ -49,7 +48,7 @@ struct MacDesktopConfiguration {
 
   // Returns the desktop & display configurations in Cocoa-style "bottom-up"
   // (the origin is the bottom-left of the primary monitor, and coordinates
-  // increase as you move up the screen) or Carbon-style "top-down" coordinates.
+  // increase as you move up the screen).
   static MacDesktopConfiguration GetCurrent(Origin origin);
 
   // Returns true if the given desktop configuration equals this one.

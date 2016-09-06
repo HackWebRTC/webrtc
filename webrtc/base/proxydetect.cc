@@ -1170,9 +1170,6 @@ bool GetMacProxySettings(ProxyInfo* proxy) {
       result = p_putPasswordInProxyInfo(proxy);
     }
 
-    // We created the dictionary with something that had the
-    // word 'copy' in it, so we have to release it, according
-    // to the Carbon memory management standards.
     CFRelease(proxyDict);
   } else {
     LOG(LS_ERROR) << "SCDynamicStoreCopyProxies failed";
@@ -1223,9 +1220,6 @@ bool GetiOSProxySettings(ProxyInfo* proxy) {
       result = true;
   }
 
-  // We created the dictionary with something that had the
-  // word 'copy' in it, so we have to release it, according
-  // to the Carbon memory management standards.
   CFRelease(proxy_dict);
 
   return result;

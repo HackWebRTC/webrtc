@@ -173,24 +173,6 @@
             },
           },
         }],
-        ['OS=="mac" and target_arch=="ia32"', {
-          'sources': [
-            'devices/carbonvideorenderer.cc',
-            'devices/carbonvideorenderer.h',
-          ],
-          'link_settings': {
-            'xcode_settings': {
-              'OTHER_LDFLAGS': [
-                '-framework Carbon',
-              ],
-            },
-          },
-        }],
-        ['OS=="ios" or (OS=="mac" and target_arch!="ia32")', {
-          'defines': [
-            'CARBON_DEPRECATED=YES',
-          ],
-        }],
       ],
     },  # target rtc_media
   ],  # targets.
