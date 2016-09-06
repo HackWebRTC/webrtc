@@ -71,8 +71,6 @@ declare_args() {
   # https://gcc.gnu.org/wiki/LinkTimeOptimization
   rtc_use_lto = false
 
-  rtc_restrict_logging = true
-
   # Set to "func", "block", "edge" for coverage generation.
   # At unit test runtime set UBSAN_OPTIONS="coverage=1".
   # It is recommend to set include_examples=0.
@@ -143,6 +141,8 @@ declare_args() {
 declare_args() {
   # Include the iLBC audio codec?
   rtc_include_ilbc = !(build_with_chromium || build_with_mozilla)
+
+  rtc_restrict_logging = build_with_chromium
 }
 
 # Make it possible to provide custom locations for some libraries (move these
