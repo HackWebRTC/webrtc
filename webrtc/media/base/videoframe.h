@@ -45,6 +45,13 @@ class VideoFrame {
   virtual int64_t timestamp_us() const = 0;
   virtual void set_timestamp_us(int64_t time_us) = 0;
 
+  // Deprecated methods, for backwards compatibility.
+  // TODO(nisse): Delete when usage in Chrome and other applications
+  // have been replaced.
+  virtual int64_t GetTimeStamp() const {
+    return rtc::kNumNanosecsPerMicrosec * timestamp_us();
+  }
+
   // Indicates the rotation angle in degrees.
   virtual webrtc::VideoRotation rotation() const = 0;
 
