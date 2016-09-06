@@ -15,6 +15,7 @@
 #include <stdlib.h>  // For strtoul.
 
 #include <algorithm>
+#include <ios>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -245,6 +246,8 @@ class FilterSsrcInput : public NetEqInput {
   FilterSsrcInput(std::unique_ptr<NetEqInput> source, uint32_t ssrc)
       : source_(std::move(source)), ssrc_(ssrc) {
     FindNextWithCorrectSsrc();
+    RTC_CHECK(source_->NextHeader()) << "Found no packet with SSRC = 0x"
+                                     << std::hex << ssrc_;
   }
 
   // All methods but PopPacket() simply relay to the |source_| object.
