@@ -305,7 +305,6 @@
             'rtp_rtcp/source/producer_fec_unittest.cc',
             'rtp_rtcp/source/receive_statistics_unittest.cc',
             'rtp_rtcp/source/remote_ntp_time_estimator_unittest.cc',
-            'rtp_rtcp/source/rtcp_format_remb_unittest.cc',
             'rtp_rtcp/source/rtcp_packet/app_unittest.cc',
             'rtp_rtcp/source/rtcp_packet/bye_unittest.cc',
             'rtp_rtcp/source/rtcp_packet/common_header_unittest.cc',

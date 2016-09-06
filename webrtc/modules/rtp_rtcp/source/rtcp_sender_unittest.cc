@@ -531,6 +531,14 @@ TEST_F(RtcpSenderTest, SendNack) {
   EXPECT_THAT(parser()->nack()->packet_ids(), ElementsAre(0, 1, 16));
 }
 
+TEST_F(RtcpSenderTest, RembStatus) {
+  EXPECT_FALSE(rtcp_sender_->REMB());
+  rtcp_sender_->SetREMBStatus(true);
+  EXPECT_TRUE(rtcp_sender_->REMB());
+  rtcp_sender_->SetREMBStatus(false);
+  EXPECT_FALSE(rtcp_sender_->REMB());
+}
+
 TEST_F(RtcpSenderTest, SendRemb) {
   const uint64_t kBitrate = 261011;
   std::vector<uint32_t> ssrcs;
