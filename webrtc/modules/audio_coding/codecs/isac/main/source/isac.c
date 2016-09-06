@@ -1253,6 +1253,17 @@ static int Decode(ISACStruct* ISAC_main_inst,
             return -1;
         }
 
+        if (numDecodedBytesUB < 0) {
+          instISAC->errorCode = numDecodedBytesUB;
+          return -1;
+        }
+        if (numDecodedBytesLB + numDecodedBytesUB > lenEncodedBytes) {
+          // We have supposedly decoded more bytes than we were given. Likely
+          // caused by bad input data.
+          instISAC->errorCode = ISAC_LENGTH_MISMATCH;
+          return -1;
+        }
+
         /* It might be less due to garbage. */
         if ((numDecodedBytesUB != lenNextStream) &&
             (numDecodedBytesUB != (lenNextStream -
