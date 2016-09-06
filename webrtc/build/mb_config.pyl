@@ -26,10 +26,6 @@
       'iOS64 Release': 'ios_gn_release_bot_arm64_device',
       'iOS32 Simulator Debug': 'ios_gn_debug_static_bot_x86',
       'iOS64 Simulator Debug': 'ios_gn_debug_static_bot_x64',
-      # TODO(kjellander): Remove the two GN configs below as soon we've renamed
-      # the bots to the GYP versions (duplicated now).
-      'iOS64 Debug (GN)': 'ios_gyp_debug_static_bot_arm64_device',
-      'iOS64 Release (GN)': 'ios_gyp_release_bot_arm64_device',
       'iOS64 Debug (GYP)': 'ios_gyp_debug_static_bot_arm64_device',
       'iOS64 Release (GYP)': 'ios_gyp_release_bot_arm64_device',
 
@@ -38,10 +34,6 @@
       'Mac64 Release': 'gn_release_bot_x64',
       'Mac Asan': 'mac_gn_asan_clang_release_bot_x64',
       'Mac64 Release [large tests]': 'gn_release_bot_x64',
-      # TODO(kjellander): Remove the two GN configs below as soon we've renamed
-      # the bots to the GYP versions (duplicated now).
-      'Mac64 Debug (GN)': 'gyp_debug_bot_x64_exclude_tests',
-      'Mac64 Release (GN)': 'gyp_release_bot_x64_exclude_tests',
       'Mac64 Debug (GYP)': 'gyp_debug_bot_x64_exclude_tests',
       'Mac64 Release (GYP)': 'gyp_release_bot_x64_exclude_tests',
 
@@ -56,10 +48,6 @@
       'Linux UBSan': 'gn_ubsan_clang_release_bot_x64',
       'Linux UBSan vptr': 'gn_ubsan_vptr_clang_release_bot_x64',
       'Linux64 Release [large tests]': 'gn_release_bot_x64',
-      # TODO(kjellander): Remove the two GN configs below as soon we've renamed
-      # the bots to the GYP versions (duplicated now).
-      'Linux64 Debug (GN)': 'gyp_debug_bot_x64_exclude_tests',
-      'Linux64 Release (GN)': 'gyp_release_bot_x64_exclude_tests',
       'Linux64 Debug (GYP)': 'gyp_debug_bot_x64_exclude_tests',
       'Linux64 Release (GYP)': 'gyp_release_bot_x64_exclude_tests',
 
@@ -73,10 +61,6 @@
       'Android64 Builder': 'android_gn_release_bot_arm64',
       'Android64 Builder (dbg)': 'android_gn_debug_static_bot_arm64',
       'Android64 Builder x64 (dbg)': 'android_gn_debug_static_bot_x64',
-      # TODO(kjellander): Remove the 'Android32 GN' configs as soon we've
-      # renamed these bots to Android32 GYP in the main waterfall.
-      'Android32 GN': 'android_gyp_release_bot_arm',
-      'Android32 GN (dbg)': 'android_gyp_debug_static_bot_arm',
       'Android32 GYP': 'android_gyp_release_bot_arm',
       'Android32 GYP (dbg)': 'android_gyp_debug_static_bot_arm',
       'Android32 Tests (L Nexus5)(dbg)': 'none',
@@ -98,10 +82,6 @@
       'Win DrMemory Full': 'win_gn_drmemory_debug_bot_x86',
       'Win DrMemory Light': 'win_gn_drmemory_debug_bot_x86',
       'Win32 Release [large tests]': 'gn_release_bot_x86',
-      # TODO(kjellander): Remove the two GN configs below as soon we've renamed
-      # the bots to the GYP versions (duplicated now).
-      'Win64 Debug (GN)': 'gyp_debug_bot_x64_exclude_tests',
-      'Win64 Release (GN)': 'gyp_release_bot_x64_exclude_tests',
       'Win64 Debug (GYP)': 'gyp_debug_bot_x64_exclude_tests',
       'Win64 Release (GYP)': 'gyp_release_bot_x64_exclude_tests',
     },
@@ -113,10 +93,6 @@
       'ios_arm64_rel': 'ios_gn_release_bot_arm64_device',
       'ios32_sim_dbg': 'ios_gn_debug_static_bot_x86',
       'ios64_sim_dbg': 'ios_gn_debug_static_bot_x64',
-      # TODO(kjellander): Remove the two GN configs below as soon we've renamed
-      # the bots to the GYP versions (duplicated now).
-      'ios64_gn_dbg': 'ios_gyp_debug_static_bot_arm64_device',
-      'ios64_gn_rel': 'ios_gyp_release_bot_arm64_device',
       'ios64_gyp_dbg': 'ios_gyp_debug_static_bot_arm64_device',
       'ios64_gyp_rel': 'ios_gyp_release_bot_arm64_device',
 
@@ -128,10 +104,6 @@
       'mac_asan': 'mac_gn_asan_clang_release_bot_x64',
       'mac_baremetal': 'gn_release_bot_x64',
       'mac_swarming': 'swarming_gn_debug_bot_x64',
-      # TODO(kjellander): Remove the two GN configs below as soon we've renamed
-      # the bots to the GYP versions (duplicated now).
-      'mac_gn_dbg': 'gyp_debug_bot_x64_exclude_tests',
-      'mac_gn_rel': 'gyp_release_bot_x64_exclude_tests',
       'mac_gyp_dbg': 'gyp_debug_bot_x64_exclude_tests',
       'mac_gyp_rel': 'gyp_release_bot_x64_exclude_tests',
 
@@ -151,10 +123,6 @@
       'linux_ubsan_vptr': 'gn_ubsan_vptr_clang_release_bot_x64',
       'linux_baremetal': 'gn_release_bot_x64',
       'linux_swarming': 'swarming_gn_debug_bot_x64',
-      # TODO(kjellander): Remove the two GN configs below as soon we've renamed
-      # the bots to the GYP versions (duplicated now).
-      'linux_gn_dbg': 'gyp_debug_bot_x64_exclude_tests',
-      'linux_gn_rel': 'gyp_release_bot_x64_exclude_tests',
       'linux_gyp_dbg': 'gyp_debug_bot_x64_exclude_tests',
       'linux_gyp_rel': 'gyp_release_bot_x64_exclude_tests',
 
@@ -172,10 +140,6 @@
       'android_clang_dbg': 'android_gn_clang_debug_static_bot_arm',
       'android_arm64_rel': 'android_gn_release_bot_arm64',
       'android_n6': 'android_gn_debug_static_bot_arm',
-      # TODO(kjellander): Remove the android_gn_* configs as soon we've renamed
-      # the bots to the GYP versions at the tryserver.
-      'android_gn_dbg': 'android_gyp_debug_static_bot_arm',
-      'android_gn_rel': 'android_gyp_release_bot_arm',
       'android_gyp_dbg': 'android_gyp_debug_static_bot_arm',
       'android_gyp_rel': 'android_gyp_release_bot_arm',
 
@@ -197,10 +161,6 @@
       'win_drmemory_full': 'win_gn_drmemory_debug_bot_x86',
       'win_baremetal': 'gn_release_bot_x86',
       'win_swarming': 'swarming_gn_debug_bot_x64',
-      # TODO(kjellander): Remove the two GN configs below as soon we've renamed
-      # the bots to the GYP versions (duplicated now).
-      'win_x64_gn_dbg': 'gyp_debug_bot_x64_exclude_tests',
-      'win_x64_gn_rel': 'gyp_release_bot_x64_exclude_tests',
       'win_x64_gyp_dbg': 'gyp_debug_bot_x64_exclude_tests',
       'win_x64_gyp_rel': 'gyp_release_bot_x64_exclude_tests',
     },
