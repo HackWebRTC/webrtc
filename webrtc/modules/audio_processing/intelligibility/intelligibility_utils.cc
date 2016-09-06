@@ -56,6 +56,8 @@ GainApplier::GainApplier(size_t freqs, float relative_change_limit)
       target_(freqs, 1.f),
       current_(freqs, 1.f) {}
 
+GainApplier::~GainApplier() {}
+
 void GainApplier::Apply(const std::complex<float>* in_block,
                         std::complex<float>* out_block) {
   for (size_t i = 0; i < num_freqs_; ++i) {

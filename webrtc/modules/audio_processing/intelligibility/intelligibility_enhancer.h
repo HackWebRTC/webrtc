@@ -35,7 +35,7 @@ class IntelligibilityEnhancer : public LappedTransform::Callback {
                           size_t num_render_channels,
                           size_t num_noise_bins);
 
-  ~IntelligibilityEnhancer();
+  ~IntelligibilityEnhancer() override;
 
   // Sets the capture noise magnitude spectrum estimate.
   void SetCaptureNoiseEstimate(std::vector<float> noise, float gain);

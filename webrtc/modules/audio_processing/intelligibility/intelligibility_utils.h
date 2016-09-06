@@ -48,6 +48,8 @@ class GainApplier {
  public:
   GainApplier(size_t freqs, float relative_change_limit);
 
+  ~GainApplier();
+
   // Copy |in_block| to |out_block|, multiplied by the current set of gains,
   // and step the current set of gains towards the target set.
   void Apply(const std::complex<float>* in_block,
