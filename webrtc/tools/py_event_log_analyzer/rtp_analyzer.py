@@ -94,13 +94,22 @@ class RTPStatistics(object):
       self.print_ssrc_info("", chosen_ssrc)
       return chosen_ssrc
 
-    for (i, ssrc) in enumerate(self.ssrc_frequencies):
+    ssrc_is_incoming = misc.ssrc_directions(self.data_points)
+    incoming = [ssrc for ssrc in ssrc_is_incoming if ssrc_is_incoming[ssrc]]
+    outgoing = [ssrc for ssrc in ssrc_is_incoming if not ssrc_is_incoming[ssrc]]
+
+    print("\nIncoming:\n")
+    for (i, ssrc) in enumerate(incoming):
       self.print_ssrc_info(i, ssrc)
+
+    print("\nOutgoing:\n")
+    for (i, ssrc) in enumerate(outgoing):
+      self.print_ssrc_info(i + len(incoming), ssrc)
 
     while True:
       chosen_index = int(misc.get_input("choose one> "))
       if 0 <= chosen_index < len(self.ssrc_frequencies):
-        return list(self.ssrc_frequencies)[chosen_index]
+        return (incoming + outgoing)[chosen_index]
       else:
         print("Invalid index!")
 

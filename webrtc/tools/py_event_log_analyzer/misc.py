@@ -72,6 +72,14 @@ def unwrap(data, mod):
                            mod // 2) % mod - (mod // 2)
   return lst
 
+
+def ssrc_directions(data_points):
+  ssrc_is_incoming = {}
+  for point in data_points:
+    ssrc_is_incoming[point.ssrc] = point.incoming
+  return ssrc_is_incoming
+
+
 # Python 2/3-compatible input function
 if sys.version_info[0] <= 2:
   get_input = raw_input
