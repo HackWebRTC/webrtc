@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// This file only exists because various iOS and macOS system APIs are only
-// available from Objective-C. See unixfilesystem.cc for the only use
+// This file only exists because various iOS system APIs are only
+// available from Objective-C.  See unixfilesystem.cc for the only use
 // (enforced by a lack of a header file).
 
 #import <Foundation/NSPathUtilities.h>
@@ -33,7 +33,7 @@ static char* copyString(NSString* s) {
 }
 
 // Return a (leaked) copy of a directory name suitable for application data.
-char* AppleDataDirectory() {
+char* IOSDataDirectory() {
   NSArray* paths = NSSearchPathForDirectoriesInDomains(
       NSApplicationSupportDirectory, NSUserDomainMask, YES);
   ASSERT([paths count] == 1);
@@ -41,13 +41,13 @@ char* AppleDataDirectory() {
 }
 
 // Return a (leaked) copy of a directory name suitable for use as a $TEMP.
-char* AppleTempDirectory() {
+char* IOSTempDirectory() {
   return copyString(NSTemporaryDirectory());
 }
 
 // Return the binary's path.
-void AppleAppName(rtc::Pathname* path) {
-  NSProcessInfo* pInfo = [NSProcessInfo processInfo];
+void IOSAppName(rtc::Pathname* path) {
+  NSProcessInfo *pInfo = [NSProcessInfo processInfo];
   NSString* argv0 = [[pInfo arguments] objectAtIndex:0];
   path->SetPathname([argv0 UTF8String]);
 }
