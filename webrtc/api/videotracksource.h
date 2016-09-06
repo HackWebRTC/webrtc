@@ -33,8 +33,6 @@ class VideoTrackSource : public Notifier<VideoTrackSourceInterface> {
   SourceState state() const override { return state_; }
   bool remote() const override { return remote_; }
 
-  void Stop() override{};
-
   bool is_screencast() const override { return false; }
   rtc::Optional<bool> needs_denoising() const override {
     return rtc::Optional<bool>(); }

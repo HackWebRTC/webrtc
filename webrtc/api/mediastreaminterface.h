@@ -106,8 +106,6 @@ class VideoTrackSourceInterface
     int input_height;
   };
 
-  virtual void Stop() = 0;
-
   // Indicates that parameters suitable for screencasts should be automatically
   // applied to RtpSenders.
   // TODO(perkj): Remove these once all known applications have moved to

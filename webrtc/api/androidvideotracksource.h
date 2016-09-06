@@ -34,10 +34,6 @@ class AndroidVideoTrackSource : public Notifier<VideoTrackSourceInterface> {
                           jobject j_egl_context,
                           bool is_screencast = false);
 
-  // Not used on Android.
-  // TODO(sakal/magjed): Try to remove this from the interface.
-  void Stop() override { RTC_NOTREACHED(); };
-
   bool is_screencast() const override { return is_screencast_; }
 
   // Indicates that the encoder should denoise video before encoding it.

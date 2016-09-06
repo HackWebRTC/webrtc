@@ -23,7 +23,6 @@ namespace webrtc {
 BEGIN_PROXY_MAP(VideoTrackSource)
   PROXY_CONSTMETHOD0(SourceState, state)
   PROXY_CONSTMETHOD0(bool, remote)
-  PROXY_METHOD0(void, Stop)
   PROXY_CONSTMETHOD0(bool, is_screencast)
   PROXY_CONSTMETHOD0(rtc::Optional<bool>, needs_denoising)
   PROXY_METHOD1(bool, GetStats, Stats*)
