@@ -140,6 +140,8 @@
       'linux_compile_rel': 'gn_release_bot_x64',
       'linux_dbg': 'gn_debug_bot_x64',
       'linux_rel': 'gn_release_bot_x64',
+      'linux32_dbg': 'gn_debug_bot_x86',
+      'linux32_rel': 'gn_release_bot_x86',
       'linux_arm': 'gn_crosscompile_release_bot_arm',
       'linux_asan': 'gn_asan_lsan_clang_release_bot_x64',
       'linux_memcheck': 'gn_memcheck_release_bot_x64',
