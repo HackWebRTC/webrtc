@@ -389,6 +389,12 @@ if (is_linux || is_win) {
         "-Wno-sign-compare",
       ]
     }
+    if (is_linux && target_cpu == "x86") {
+      cflags = [
+        # Needed to compile on Linux 32-bit.
+        "-Wno-sentinel",
+      ]
+    }
   }
 
   rtc_executable("peerconnection_client") {
@@ -445,6 +451,7 @@ if (is_linux || is_win) {
       deps += [ "//third_party/jsoncpp" ]
     }
   }
+
   rtc_executable("peerconnection_server") {
     sources = [
       "peerconnection/server/data_socket.cc",
