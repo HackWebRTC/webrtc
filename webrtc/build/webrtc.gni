@@ -10,7 +10,7 @@ import("//build/config/arm.gni")
 import("//build/config/features.gni")
 import("//build/config/mips.gni")
 import("//build/config/sanitizers/sanitizers.gni")
-import("//build_overrides/webrtc.gni")
+import("//build_overrides/build.gni")
 import("//testing/test.gni")
 
 declare_args() {
@@ -143,6 +143,16 @@ declare_args() {
   rtc_include_ilbc = !(build_with_chromium || build_with_mozilla)
 
   rtc_restrict_logging = build_with_chromium
+
+  # Excluded in Chromium since its prerequisites don't require Pulse Audio.
+  rtc_include_pulse_audio = !build_with_chromium
+
+  # Chromium uses its own IO handling, so the internal ADM is only built for
+  # standalone WebRTC.
+  rtc_include_internal_audio_device = !build_with_chromium
+
+  # Include tests in standalone checkout.
+  rtc_include_tests = !build_with_chromium
 }
 
 # Make it possible to provide custom locations for some libraries (move these

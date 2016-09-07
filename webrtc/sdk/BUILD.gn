@@ -7,7 +7,6 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 import("../build/webrtc.gni")
-import("//build_overrides/webrtc.gni")
 import("//build/config/mac/mac_sdk.gni")
 
 if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
