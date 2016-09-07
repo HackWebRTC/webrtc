@@ -3507,7 +3507,10 @@ TEST_F(EndToEndTest, CallReportsRttForSender) {
               clock_->TimeInMilliseconds())
         << "No RTT stats before timeout!";
     if (stats.rtt_ms != -1) {
-      EXPECT_GE(stats.rtt_ms, kSendDelayMs + kReceiveDelayMs);
+      // To avoid failures caused by rounding or minor ntp clock adjustments,
+      // relax expectation by 1ms.
+      constexpr int kAllowedErrorMs = 1;
+      EXPECT_GE(stats.rtt_ms, kSendDelayMs + kReceiveDelayMs - kAllowedErrorMs);
       break;
     }
     SleepMs(10);
