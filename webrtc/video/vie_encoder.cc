@@ -199,8 +199,11 @@ CpuOveruseOptions GetCpuOveruseOptions(bool full_overuse_time) {
 
 class ViEEncoder::EncodeTask : public rtc::QueuedTask {
  public:
-  EncodeTask(const VideoFrame& frame, ViEEncoder* vie_encoder)
-      : vie_encoder_(vie_encoder) {
+  EncodeTask(const VideoFrame& frame,
+             ViEEncoder* vie_encoder,
+             int64_t time_when_posted_in_ms)
+      : vie_encoder_(vie_encoder),
+        time_when_posted_ms_(time_when_posted_in_ms) {
     frame_.ShallowCopy(frame);
     ++vie_encoder_->posted_frames_waiting_for_encode_;
   }
@@ -209,7 +212,7 @@ class ViEEncoder::EncodeTask : public rtc::QueuedTask {
   bool Run() override {
     RTC_DCHECK_GT(vie_encoder_->posted_frames_waiting_for_encode_.Value(), 0);
     if (--vie_encoder_->posted_frames_waiting_for_encode_ == 0) {
-      vie_encoder_->EncodeVideoFrame(frame_);
+      vie_encoder_->EncodeVideoFrame(frame_, time_when_posted_ms_);
     } else {
       // There is a newer frame in flight. Do not encode this frame.
       LOG(LS_VERBOSE)
@@ -218,7 +221,8 @@ class ViEEncoder::EncodeTask : public rtc::QueuedTask {
     return true;
   }
   VideoFrame frame_;
-  ViEEncoder* vie_encoder_;
+  ViEEncoder* const vie_encoder_;
+  const int64_t time_when_posted_ms_;
 };
 
 ViEEncoder::ViEEncoder(uint32_t number_of_cores,
@@ -256,10 +260,11 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       encoder_queue_("EncoderQueue") {
   vp_->EnableTemporalDecimation(false);
 
-  encoder_queue_.PostTask([this] {
+  encoder_queue_.PostTask([this, encoder_timing] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     video_sender_.RegisterExternalEncoder(
         settings_.encoder, settings_.payload_type, settings_.internal_source);
+    overuse_detector_.StartCheckForOveruse();
   });
 }
 
@@ -276,19 +281,18 @@ void ViEEncoder::Stop() {
   }
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   video_sender_.RegisterExternalEncoder(nullptr, settings_.payload_type, false);
+  overuse_detector_.StopCheckForOveruse();
   shutdown_event_.Set();
 }
 
 void ViEEncoder::RegisterProcessThread(ProcessThread* module_process_thread) {
   RTC_DCHECK(!module_process_thread_);
   module_process_thread_ = module_process_thread;
-  module_process_thread_->RegisterModule(&overuse_detector_);
   module_process_thread_->RegisterModule(&video_sender_);
   module_process_thread_checker_.DetachFromThread();
 }
 
 void ViEEncoder::DeRegisterProcessThread() {
-  module_process_thread_->DeRegisterModule(&overuse_detector_);
   module_process_thread_->DeRegisterModule(&video_sender_);
 }
 
@@ -397,9 +401,8 @@ void ViEEncoder::IncomingCapturedFrame(const VideoFrame& video_frame) {
   }
 
   last_captured_timestamp_ = incoming_frame.ntp_time_ms();
-  overuse_detector_.FrameCaptured(incoming_frame);
-  encoder_queue_.PostTask(
-      std::unique_ptr<rtc::QueuedTask>(new EncodeTask(incoming_frame, this)));
+  encoder_queue_.PostTask(std::unique_ptr<rtc::QueuedTask>(
+      new EncodeTask(incoming_frame, this, clock_->TimeInMilliseconds())));
 }
 
 bool ViEEncoder::EncoderPaused() const {
@@ -430,7 +433,8 @@ void ViEEncoder::TraceFrameDropEnd() {
   encoder_paused_and_dropped_frame_ = false;
 }
 
-void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame) {
+void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
+                                  int64_t time_when_posted_in_ms) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   if (pre_encode_callback_)
     pre_encode_callback_->OnFrame(video_frame);
@@ -453,6 +457,8 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame) {
       return;
     }
   }
+
+  overuse_detector_.FrameCaptured(video_frame, time_when_posted_in_ms);
 
   if (encoder_config_.codecType == webrtc::kVideoCodecVP8) {
     webrtc::CodecSpecificInfo codec_specific_info;
@@ -498,7 +504,12 @@ EncodedImageCallback::Result ViEEncoder::OnEncodedImage(
   EncodedImageCallback::Result result =
       sink_->OnEncodedImage(encoded_image, codec_specific_info, fragmentation);
 
-  overuse_detector_.FrameSent(encoded_image._timeStamp);
+  int64_t time_sent = clock_->TimeInMilliseconds();
+  uint32_t timestamp = encoded_image._timeStamp;
+  encoder_queue_.PostTask([this, timestamp, time_sent] {
+    RTC_DCHECK_RUN_ON(&encoder_queue_);
+    overuse_detector_.FrameSent(timestamp, time_sent);
+  });
   return result;
 }
 
@@ -575,7 +586,7 @@ void ViEEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
 }
 
 void ViEEncoder::OveruseDetected() {
-  RTC_DCHECK_RUN_ON(&module_process_thread_checker_);
+  RTC_DCHECK_RUN_ON(&encoder_queue_);
   // TODO(perkj): When ViEEncoder inherit rtc::VideoSink instead of
   // VideoCaptureInput |load_observer_| should be removed and overuse be
   // expressed as rtc::VideoSinkWants instead.
@@ -584,7 +595,7 @@ void ViEEncoder::OveruseDetected() {
 }
 
 void ViEEncoder::NormalUsage() {
-  RTC_DCHECK_RUN_ON(&module_process_thread_checker_);
+  RTC_DCHECK_RUN_ON(&encoder_queue_);
   if (load_observer_)
     load_observer_->OnLoadUpdate(LoadObserver::kUnderuse);
 }

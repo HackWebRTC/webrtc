@@ -101,7 +101,8 @@ class ViEEncoder : public VideoCaptureInput,
   void SendStatistics(uint32_t bit_rate,
                       uint32_t frame_rate) override;
 
-  void EncodeVideoFrame(const VideoFrame& frame);
+  void EncodeVideoFrame(const VideoFrame& frame,
+                        int64_t time_when_posted_in_ms);
 
   // Implements EncodedImageCallback.
   EncodedImageCallback::Result OnEncodedImage(
@@ -125,8 +126,9 @@ class ViEEncoder : public VideoCaptureInput,
 
   const std::unique_ptr<VideoProcessing> vp_;
   vcm::VideoSender video_sender_ ACCESS_ON(&encoder_queue_);
-  OveruseFrameDetector overuse_detector_;
-  LoadObserver* const load_observer_ ACCESS_ON(&module_process_thread_checker_);
+
+  OveruseFrameDetector overuse_detector_ ACCESS_ON(&encoder_queue_);
+  LoadObserver* const load_observer_ ACCESS_ON(&encoder_queue_);
 
   SendStatisticsProxy* const stats_proxy_;
   rtc::VideoSinkInterface<VideoFrame>* const pre_encode_callback_;

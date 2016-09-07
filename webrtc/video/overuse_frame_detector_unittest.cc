@@ -15,10 +15,14 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/base/event.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video_frame.h"
 
 namespace webrtc {
+
+using ::testing::Invoke;
+
 namespace {
   const int kWidth = 640;
   const int kHeight = 480;
@@ -50,6 +54,23 @@ class CpuOveruseObserverImpl : public CpuOveruseObserver {
   int normaluse_;
 };
 
+class OveruseFrameDetectorUnderTest : public OveruseFrameDetector {
+ public:
+  OveruseFrameDetectorUnderTest(Clock* clock,
+                                const CpuOveruseOptions& options,
+                                CpuOveruseObserver* overuse_observer,
+                                EncodedFrameObserver* encoder_timing,
+                                CpuOveruseMetricsObserver* metrics_observer)
+      : OveruseFrameDetector(clock,
+                             options,
+                             overuse_observer,
+                             encoder_timing,
+                             metrics_observer) {}
+  ~OveruseFrameDetectorUnderTest() {}
+
+  using OveruseFrameDetector::CheckForOveruse;
+};
+
 class OveruseFrameDetectorTest : public ::testing::Test,
                                  public CpuOveruseMetricsObserver {
  protected:
@@ -61,7 +82,7 @@ class OveruseFrameDetectorTest : public ::testing::Test,
   }
 
   void ReinitializeOveruseDetector() {
-    overuse_detector_.reset(new OveruseFrameDetector(
+    overuse_detector_.reset(new OveruseFrameDetectorUnderTest(
         clock_.get(), options_, observer_.get(), nullptr, this));
   }
 
@@ -85,9 +106,9 @@ class OveruseFrameDetectorTest : public ::testing::Test,
     uint32_t timestamp = 0;
     while (num_frames-- > 0) {
       frame.set_timestamp(timestamp);
-      overuse_detector_->FrameCaptured(frame);
+      overuse_detector_->FrameCaptured(frame, clock_->TimeInMilliseconds());
       clock_->AdvanceTimeMilliseconds(delay_ms);
-      overuse_detector_->FrameSent(timestamp);
+      overuse_detector_->FrameSent(timestamp, clock_->TimeInMilliseconds());
       clock_->AdvanceTimeMilliseconds(interval_ms - delay_ms);
       timestamp += interval_ms * 90;
     }
@@ -105,7 +126,7 @@ class OveruseFrameDetectorTest : public ::testing::Test,
     for (int i = 0; i < num_times; ++i) {
       InsertAndSendFramesWithInterval(
           1000, kFrameInterval33ms, kWidth, kHeight, kDelayMs);
-      overuse_detector_->Process();
+      overuse_detector_->CheckForOveruse();
     }
   }
 
@@ -116,7 +137,7 @@ class OveruseFrameDetectorTest : public ::testing::Test,
         1300, kFrameInterval33ms, kWidth, kHeight, kDelayMs1);
     InsertAndSendFramesWithInterval(
         1, kFrameInterval33ms, kWidth, kHeight, kDelayMs2);
-    overuse_detector_->Process();
+    overuse_detector_->CheckForOveruse();
   }
 
   int UsagePercent() { return metrics_.encode_usage_percent; }
@@ -124,7 +145,7 @@ class OveruseFrameDetectorTest : public ::testing::Test,
   CpuOveruseOptions options_;
   std::unique_ptr<SimulatedClock> clock_;
   std::unique_ptr<MockCpuOveruseObserver> observer_;
-  std::unique_ptr<OveruseFrameDetector> overuse_detector_;
+  std::unique_ptr<OveruseFrameDetectorUnderTest> overuse_detector_;
   CpuOveruseMetrics metrics_;
 };
 
@@ -147,8 +168,8 @@ TEST_F(OveruseFrameDetectorTest, OveruseAndRecover) {
 }
 
 TEST_F(OveruseFrameDetectorTest, OveruseAndRecoverWithNoObserver) {
-  overuse_detector_.reset(
-      new OveruseFrameDetector(clock_.get(), options_, nullptr, nullptr, this));
+  overuse_detector_.reset(new OveruseFrameDetectorUnderTest(
+      clock_.get(), options_, nullptr, nullptr, this));
   EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(0);
   TriggerOveruse(options_.high_threshold_consecutive_count);
   EXPECT_CALL(*(observer_.get()), NormalUsage()).Times(0);
@@ -166,14 +187,14 @@ TEST_F(OveruseFrameDetectorTest, DoubleOveruseAndRecover) {
 TEST_F(OveruseFrameDetectorTest, TriggerUnderuseWithMinProcessCount) {
   options_.min_process_count = 1;
   CpuOveruseObserverImpl overuse_observer;
-  overuse_detector_.reset(new OveruseFrameDetector(
+  overuse_detector_.reset(new OveruseFrameDetectorUnderTest(
       clock_.get(), options_, &overuse_observer, nullptr, this));
   InsertAndSendFramesWithInterval(
       1200, kFrameInterval33ms, kWidth, kHeight, kProcessTime5ms);
-  overuse_detector_->Process();
+  overuse_detector_->CheckForOveruse();
   EXPECT_EQ(0, overuse_observer.normaluse_);
   clock_->AdvanceTimeMilliseconds(kProcessIntervalMs);
-  overuse_detector_->Process();
+  overuse_detector_->CheckForOveruse();
   EXPECT_EQ(1, overuse_observer.normaluse_);
 }
 
@@ -267,13 +288,14 @@ TEST_F(OveruseFrameDetectorTest, MeasuresMultipleConcurrentSamples) {
   for (size_t i = 0; i < 1000; ++i) {
     // Unique timestamps.
     frame.set_timestamp(static_cast<uint32_t>(i));
-    overuse_detector_->FrameCaptured(frame);
+    overuse_detector_->FrameCaptured(frame, clock_->TimeInMilliseconds());
     clock_->AdvanceTimeMilliseconds(kIntervalMs);
     if (i > kNumFramesEncodingDelay) {
       overuse_detector_->FrameSent(
-          static_cast<uint32_t>(i - kNumFramesEncodingDelay));
+          static_cast<uint32_t>(i - kNumFramesEncodingDelay),
+          clock_->TimeInMilliseconds());
     }
-    overuse_detector_->Process();
+    overuse_detector_->CheckForOveruse();
   }
 }
 
@@ -287,17 +309,47 @@ TEST_F(OveruseFrameDetectorTest, UpdatesExistingSamples) {
   uint32_t timestamp = 0;
   for (size_t i = 0; i < 1000; ++i) {
     frame.set_timestamp(timestamp);
-    overuse_detector_->FrameCaptured(frame);
+    overuse_detector_->FrameCaptured(frame, clock_->TimeInMilliseconds());
     // Encode and send first parts almost instantly.
     clock_->AdvanceTimeMilliseconds(1);
-    overuse_detector_->FrameSent(timestamp);
+    overuse_detector_->FrameSent(timestamp, clock_->TimeInMilliseconds());
     // Encode heavier part, resulting in >85% usage total.
     clock_->AdvanceTimeMilliseconds(kDelayMs - 1);
-    overuse_detector_->FrameSent(timestamp);
+    overuse_detector_->FrameSent(timestamp, clock_->TimeInMilliseconds());
     clock_->AdvanceTimeMilliseconds(kIntervalMs - kDelayMs);
     timestamp += kIntervalMs * 90;
-    overuse_detector_->Process();
+    overuse_detector_->CheckForOveruse();
   }
+}
+
+TEST_F(OveruseFrameDetectorTest, RunOnTqNormalUsage) {
+  rtc::TaskQueue queue("OveruseFrameDetectorTestQueue");
+
+  rtc::Event event(false, false);
+  queue.PostTask([this, &event] {
+    overuse_detector_->StartCheckForOveruse();
+    event.Set();
+  });
+  event.Wait(rtc::Event::kForever);
+
+  // Expect NormalUsage(). When called, stop the |overuse_detector_| and then
+  // set |event| to end the test.
+  EXPECT_CALL(*(observer_.get()), NormalUsage())
+      .WillOnce(Invoke([this, &event] {
+        overuse_detector_->StopCheckForOveruse();
+        event.Set();
+      }));
+
+  queue.PostTask([this, &event] {
+    const int kDelayMs1 = 5;
+    const int kDelayMs2 = 6;
+    InsertAndSendFramesWithInterval(1300, kFrameInterval33ms, kWidth, kHeight,
+                                    kDelayMs1);
+    InsertAndSendFramesWithInterval(1, kFrameInterval33ms, kWidth, kHeight,
+                                    kDelayMs2);
+  });
+
+  EXPECT_TRUE(event.Wait(10000));
 }
 
 }  // namespace webrtc

@@ -15,12 +15,11 @@
 #include <memory>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/base/exp_filter.h"
+#include "webrtc/base/sequenced_task_checker.h"
+#include "webrtc/base/task_queue.h"
 #include "webrtc/base/thread_annotations.h"
-#include "webrtc/base/thread_checker.h"
-#include "webrtc/modules/include/module.h"
 
 namespace webrtc {
 
@@ -72,8 +71,11 @@ class CpuOveruseMetricsObserver {
 };
 
 // Use to detect system overuse based on the send-side processing time of
-// incoming frames.
-class OveruseFrameDetector : public Module {
+// incoming frames. All methods must be called on a single task queue but it can
+// be created and destroyed on an arbitrary thread.
+// OveruseFrameDetector::StartCheckForOveruse  must be called to periodically
+// check for overuse.
+class OveruseFrameDetector {
  public:
   OveruseFrameDetector(Clock* clock,
                        const CpuOveruseOptions& options,
@@ -82,18 +84,25 @@ class OveruseFrameDetector : public Module {
                        CpuOveruseMetricsObserver* metrics_observer);
   ~OveruseFrameDetector();
 
+  // Start to periodically check for overuse.
+  void StartCheckForOveruse();
+
+  // StopCheckForOveruse must be called before destruction if
+  // StartCheckForOveruse has been called.
+  void StopCheckForOveruse();
+
   // Called for each captured frame.
-  void FrameCaptured(const VideoFrame& frame);
+  void FrameCaptured(const VideoFrame& frame, int64_t time_when_first_seen_ms);
 
   // Called for each sent frame.
-  void FrameSent(uint32_t timestamp);
+  void FrameSent(uint32_t timestamp, int64_t time_sent_in_ms);
 
-  // Implements Module.
-  int64_t TimeUntilNextProcess() override;
-  void Process() override;
+ protected:
+  void CheckForOveruse();  // Protected for test purposes.
 
  private:
   class SendProcessingUsage;
+  class CheckOveruseTask;
   struct FrameTiming {
     FrameTiming(int64_t capture_ntp_ms, uint32_t timestamp, int64_t now)
         : capture_ntp_ms(capture_ntp_ms),
@@ -106,23 +115,18 @@ class OveruseFrameDetector : public Module {
     int64_t last_send_ms;
   };
 
-  void EncodedFrameTimeMeasured(int encode_duration_ms)
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
-
-  // Only called on the processing thread.
+  void EncodedFrameTimeMeasured(int encode_duration_ms);
   bool IsOverusing(const CpuOveruseMetrics& metrics);
   bool IsUnderusing(const CpuOveruseMetrics& metrics, int64_t time_now);
 
-  bool FrameTimeoutDetected(int64_t now) const EXCLUSIVE_LOCKS_REQUIRED(crit_);
-  bool FrameSizeChanged(int num_pixels) const EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  bool FrameTimeoutDetected(int64_t now) const;
+  bool FrameSizeChanged(int num_pixels) const;
 
-  void ResetAll(int num_pixels) EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void ResetAll(int num_pixels);
 
-  // Protecting all members except const and those that are only accessed on the
-  // processing thread.
-  // TODO(asapersson): See if we can reduce locking.  As is, video frame
-  // processing contends with reading stats and the processing thread.
-  rtc::CriticalSection crit_;
+  rtc::SequencedTaskChecker task_checker_;
+  // Owned by the task queue from where StartCheckForOveruse is called.
+  CheckOveruseTask* check_overuse_task_;
 
   const CpuOveruseOptions options_;
 
@@ -132,32 +136,27 @@ class OveruseFrameDetector : public Module {
 
   // Stats metrics.
   CpuOveruseMetricsObserver* const metrics_observer_;
-  rtc::Optional<CpuOveruseMetrics> metrics_ GUARDED_BY(crit_);
-
+  rtc::Optional<CpuOveruseMetrics> metrics_ GUARDED_BY(task_checker_);
   Clock* const clock_;
-  int64_t num_process_times_ GUARDED_BY(crit_);
 
-  int64_t last_capture_time_ms_ GUARDED_BY(crit_);
-  int64_t last_processed_capture_time_ms_ GUARDED_BY(crit_);
+  int64_t num_process_times_ GUARDED_BY(task_checker_);
+
+  int64_t last_capture_time_ms_ GUARDED_BY(task_checker_);
+  int64_t last_processed_capture_time_ms_ GUARDED_BY(task_checker_);
 
   // Number of pixels of last captured frame.
-  int num_pixels_ GUARDED_BY(crit_);
-
-  // These seven members are only accessed on the processing thread.
-  int64_t next_process_time_ms_;
-  int64_t last_overuse_time_ms_;
-  int checks_above_threshold_;
-  int num_overuse_detections_;
-  int64_t last_rampup_time_ms_;
-  bool in_quick_rampup_;
-  int current_rampup_delay_ms_;
+  int num_pixels_ GUARDED_BY(task_checker_);
+  int64_t last_overuse_time_ms_ GUARDED_BY(task_checker_);
+  int checks_above_threshold_ GUARDED_BY(task_checker_);
+  int num_overuse_detections_ GUARDED_BY(task_checker_);
+  int64_t last_rampup_time_ms_ GUARDED_BY(task_checker_);
+  bool in_quick_rampup_ GUARDED_BY(task_checker_);
+  int current_rampup_delay_ms_ GUARDED_BY(task_checker_);
 
   // TODO(asapersson): Can these be regular members (avoid separate heap
   // allocs)?
-  const std::unique_ptr<SendProcessingUsage> usage_ GUARDED_BY(crit_);
-  std::list<FrameTiming> frame_timing_ GUARDED_BY(crit_);
-
-  rtc::ThreadChecker processing_thread_;
+  const std::unique_ptr<SendProcessingUsage> usage_ GUARDED_BY(task_checker_);
+  std::list<FrameTiming> frame_timing_ GUARDED_BY(task_checker_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(OveruseFrameDetector);
 };
