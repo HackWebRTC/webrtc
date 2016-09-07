@@ -481,8 +481,9 @@ bool RTPSender::SendOutgoingData(FrameType frame_type,
     // on what the oracle indicates.
     {
       rtc::CritScope lock(&send_critsect_);
-      if (playout_delay_active_ != playout_delay_oracle_.send_playout_delay()) {
-        playout_delay_active_ = playout_delay_oracle_.send_playout_delay();
+      bool send_playout_delay = playout_delay_oracle_.send_playout_delay();
+      if (playout_delay_active_ != send_playout_delay) {
+        playout_delay_active_ = send_playout_delay;
         rtp_header_extension_map_.SetActive(kRtpExtensionPlayoutDelay,
                                             playout_delay_active_);
       }
@@ -1177,11 +1178,12 @@ uint16_t RTPSender::BuildRtpHeaderExtension(uint8_t* data_buffer,
         block_length = BuildTransportSequenceNumberExtension(
             extension_data, transport_sequence_number_);
         break;
-      case kRtpExtensionPlayoutDelay:
+      case kRtpExtensionPlayoutDelay: {
+        PlayoutDelay playout_delay = playout_delay_oracle_.playout_delay();
         block_length = BuildPlayoutDelayExtension(
-            extension_data, playout_delay_oracle_.min_playout_delay_ms(),
-            playout_delay_oracle_.max_playout_delay_ms());
+            extension_data, playout_delay.min_ms, playout_delay.max_ms);
         break;
+      }
       default:
         assert(false);
     }

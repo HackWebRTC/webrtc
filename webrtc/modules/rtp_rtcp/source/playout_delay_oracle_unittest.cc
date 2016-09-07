@@ -38,16 +38,16 @@ class PlayoutDelayOracleTest : public ::testing::Test {
 
 TEST_F(PlayoutDelayOracleTest, DisabledByDefault) {
   EXPECT_FALSE(playout_delay_oracle_.send_playout_delay());
-  EXPECT_EQ(playout_delay_oracle_.min_playout_delay_ms(), -1);
-  EXPECT_EQ(playout_delay_oracle_.max_playout_delay_ms(), -1);
+  EXPECT_EQ(-1, playout_delay_oracle_.playout_delay().min_ms);
+  EXPECT_EQ(-1, playout_delay_oracle_.playout_delay().max_ms);
 }
 
 TEST_F(PlayoutDelayOracleTest, SendPlayoutDelayUntilSeqNumberExceeds) {
   PlayoutDelay playout_delay = {kMinPlayoutDelay, kMaxPlayoutDelay};
   playout_delay_oracle_.UpdateRequest(kSsrc, playout_delay, kSequenceNumber);
   EXPECT_TRUE(playout_delay_oracle_.send_playout_delay());
-  EXPECT_EQ(playout_delay_oracle_.min_playout_delay_ms(), kMinPlayoutDelay);
-  EXPECT_EQ(playout_delay_oracle_.max_playout_delay_ms(), kMaxPlayoutDelay);
+  EXPECT_EQ(kMinPlayoutDelay, playout_delay_oracle_.playout_delay().min_ms);
+  EXPECT_EQ(kMaxPlayoutDelay, playout_delay_oracle_.playout_delay().max_ms);
 
   // Oracle indicates playout delay should be sent if highest sequence number
   // acked is lower than the sequence number of the first packet containing
