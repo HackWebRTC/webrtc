@@ -62,12 +62,9 @@ class AudioMixerImpl : public AudioMixer {
   // AudioProcessing only accepts 10 ms frames.
   static const int kFrameDurationInMs = 10;
 
-  explicit AudioMixerImpl(int id);
+  static std::unique_ptr<AudioMixer> Create(int id);
 
   ~AudioMixerImpl() override;
-
-  // Must be called after ctor.
-  bool Init();
 
   // AudioMixer functions
   int32_t SetMixabilityStatus(MixerAudioSource* audio_source,
@@ -82,6 +79,8 @@ class AudioMixerImpl : public AudioMixer {
       const MixerAudioSource& audio_source) const override;
 
  private:
+  AudioMixerImpl(int id, std::unique_ptr<AudioProcessing> limiter);
+
   // Set/get mix frequency
   int32_t SetOutputFrequency(const Frequency& frequency);
   Frequency OutputFrequency() const;
@@ -89,7 +88,8 @@ class AudioMixerImpl : public AudioMixer {
   // Compute what audio sources to mix from audio_source_list_. Ramp in
   // and out. Update mixed status. maxAudioFrameCounter specifies how
   // many participants are allowed to be mixed.
-  AudioFrameList UpdateToMix(size_t maxAudioFrameCounter) const;
+  AudioFrameList UpdateToMix(size_t maxAudioFrameCounter) const
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Return the lowest mixing frequency that can be used without having to
   // downsample any audio.
@@ -98,7 +98,8 @@ class AudioMixerImpl : public AudioMixer {
       const MixerAudioSourceList& mixList) const;
 
   // Return the AudioFrames that should be mixed anonymously.
-  void GetAdditionalAudio(AudioFrameList* additionalFramesList) const;
+  void GetAdditionalAudio(AudioFrameList* additionalFramesList) const
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // This function returns true if it finds the MixerAudioSource in the
   // specified list of MixerAudioSources.
@@ -131,36 +132,35 @@ class AudioMixerImpl : public AudioMixer {
 
   int GetOutputAudioLevelFullRange() override;
 
-  std::unique_ptr<CriticalSectionWrapper> crit_;
-  std::unique_ptr<CriticalSectionWrapper> cb_crit_;
+  rtc::CriticalSection crit_;
 
-  int32_t id_;
+  const int32_t id_;
 
   // The current sample frequency and sample size when mixing.
-  Frequency output_frequency_;
-  size_t sample_size_;
+  Frequency output_frequency_ ACCESS_ON(&thread_checker_);
+  size_t sample_size_ ACCESS_ON(&thread_checker_);
 
   // List of all audio sources. Note all lists are disjunct
-  MixerAudioSourceList audio_source_list_;  // May be mixed.
+  MixerAudioSourceList audio_source_list_ GUARDED_BY(crit_);  // May be mixed.
 
   // Always mixed, anonomously.
-  MixerAudioSourceList additional_audio_source_list_;
+  MixerAudioSourceList additional_audio_source_list_ GUARDED_BY(crit_);
 
-  size_t num_mixed_audio_sources_;
+  size_t num_mixed_audio_sources_ GUARDED_BY(crit_);
   // Determines if we will use a limiter for clipping protection during
   // mixing.
-  bool use_limiter_;
+  bool use_limiter_ ACCESS_ON(&thread_checker_);
 
-  uint32_t time_stamp_;
+  uint32_t time_stamp_ ACCESS_ON(&thread_checker_);
 
   // Ensures that Mix is called from the same thread.
   rtc::ThreadChecker thread_checker_;
 
   // Used for inhibiting saturation in mixing.
-  std::unique_ptr<AudioProcessing> limiter_;
+  std::unique_ptr<AudioProcessing> limiter_ ACCESS_ON(&thread_checker_);
 
   // Measures audio level for the combined signal.
-  voe::AudioLevel audio_level_;
+  voe::AudioLevel audio_level_ ACCESS_ON(&thread_checker_);
 };
 }  // namespace webrtc
 

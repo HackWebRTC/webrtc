@@ -8,10 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string.h>
+
 #include <memory>
 #include <utility>
 
 #include "testing/gmock/include/gmock/gmock.h"
+#include "webrtc/base/bind.h"
+#include "webrtc/base/thread.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_defines.h"
 #include "webrtc/modules/audio_mixer/audio_mixer.h"
 
@@ -103,7 +107,7 @@ void MixAndCompare(
   mixer->Mix(kDefaultSampleRateHz, 1, &frame_for_mixing);
 
   for (int i = 0; i < num_audio_sources; i++) {
-    EXPECT_EQ(participants[i].IsMixed(), expected_status[i])
+    EXPECT_EQ(expected_status[i], participants[i].IsMixed())
         << "Mixed status of AudioSource #" << i << " wrong.";
   }
 }
@@ -200,6 +204,63 @@ TEST(AudioMixer, LargestEnergyVadActiveMixed) {
                             << " wrong.";
     }
   }
+}
+
+TEST(AudioMixer, FrameNotModifiedForSingleParticipant) {
+  const std::unique_ptr<AudioMixer> mixer(AudioMixer::Create(kId));
+
+  MockMixerAudioSource participant;
+
+  ResetFrame(participant.fake_frame());
+  const int n_samples = participant.fake_frame()->samples_per_channel_;
+
+  // Modify the frame so that it's not zero.
+  for (int j = 0; j < n_samples; j++) {
+    participant.fake_frame()->data_[j] = j;
+  }
+
+  EXPECT_EQ(0, mixer->SetMixabilityStatus(&participant, true));
+  EXPECT_CALL(participant, GetAudioFrameWithMuted(_, _)).Times(Exactly(2));
+
+  AudioFrame audio_frame;
+  // Two mix iteration to compare after the ramp-up step.
+  for (int i = 0; i < 2; i++) {
+    mixer->Mix(kDefaultSampleRateHz,
+               1,  // number of channels
+               &audio_frame);
+  }
+
+  EXPECT_EQ(
+      0, memcmp(participant.fake_frame()->data_, audio_frame.data_, n_samples));
+}
+
+TEST(AudioMixer, FrameNotModifiedForSingleAnonymousParticipant) {
+  const std::unique_ptr<AudioMixer> mixer(AudioMixer::Create(kId));
+
+  MockMixerAudioSource participant;
+
+  ResetFrame(participant.fake_frame());
+  const int n_samples = participant.fake_frame()->samples_per_channel_;
+
+  // Modify the frame so that it's not zero.
+  for (int j = 0; j < n_samples; j++) {
+    participant.fake_frame()->data_[j] = j;
+  }
+
+  EXPECT_EQ(0, mixer->SetMixabilityStatus(&participant, true));
+  EXPECT_EQ(0, mixer->SetAnonymousMixabilityStatus(&participant, true));
+  EXPECT_CALL(participant, GetAudioFrameWithMuted(_, _)).Times(Exactly(2));
+
+  AudioFrame audio_frame;
+  // Two mix iteration to compare after the ramp-up step.
+  for (int i = 0; i < 2; i++) {
+    mixer->Mix(kDefaultSampleRateHz,
+               1,  // number of channels
+               &audio_frame);
+  }
+
+  EXPECT_EQ(
+      0, memcmp(participant.fake_frame()->data_, audio_frame.data_, n_samples));
 }
 
 TEST(AudioMixer, ParticipantSampleRate) {
@@ -332,9 +393,39 @@ TEST(AudioMixer, RampedOutSourcesShouldNotBeMarkedMixed) {
 
   // The loudest participants should have been mixed.
   for (int i = 1; i < kAudioSources; i++) {
-    EXPECT_EQ(participants[i].IsMixed(), true)
+    EXPECT_EQ(true, participants[i].IsMixed())
         << "Mixed status of AudioSource #" << i << " wrong.";
   }
+}
+
+// This test checks that the initialization and participant addition
+// can be done on a different thread.
+TEST(AudioMixer, ConstructFromOtherThread) {
+  std::unique_ptr<rtc::Thread> init_thread = rtc::Thread::Create();
+  std::unique_ptr<rtc::Thread> participant_thread = rtc::Thread::Create();
+  init_thread->Start();
+  std::unique_ptr<AudioMixer> mixer(
+      init_thread->Invoke<std::unique_ptr<AudioMixer>>(
+          RTC_FROM_HERE, std::bind(&AudioMixer::Create, kId)));
+  MockMixerAudioSource participant;
+
+  ResetFrame(participant.fake_frame());
+
+  participant_thread->Start();
+  EXPECT_EQ(0, participant_thread->Invoke<int>(
+                   RTC_FROM_HERE, rtc::Bind(&AudioMixer::SetMixabilityStatus,
+                                            mixer.get(), &participant, true)));
+
+  EXPECT_EQ(
+      0, participant_thread->Invoke<int>(
+             RTC_FROM_HERE, rtc::Bind(&AudioMixer::SetAnonymousMixabilityStatus,
+                                      mixer.get(), &participant, true)));
+
+  EXPECT_CALL(participant, GetAudioFrameWithMuted(_, kDefaultSampleRateHz))
+      .Times(Exactly(1));
+
+  // Do one mixer iteration
+  mixer->Mix(kDefaultSampleRateHz, 1, &frame_for_mixing);
 }
 
 TEST(AudioMixer, MutedShouldMixAfterUnmuted) {
