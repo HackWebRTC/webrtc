@@ -29,7 +29,6 @@
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/trace_event.h"
-#include "webrtc/common.h"
 #include "webrtc/media/base/audiosource.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/streamparams.h"
@@ -538,7 +537,7 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(
     LOG(LS_INFO) << ToString(codec);
   }
 
-  voe_config_.Set<webrtc::VoicePacing>(new webrtc::VoicePacing(true));
+  channel_config_.enable_voice_pacing = true;
 
   // Temporarily turn logging level up for the Init() call.
   webrtc::Trace::SetTraceCallback(this);
@@ -802,17 +801,14 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   if (options.audio_jitter_buffer_max_packets) {
     LOG(LS_INFO) << "NetEq capacity is "
                  << *options.audio_jitter_buffer_max_packets;
-    voe_config_.Set<webrtc::NetEqCapacityConfig>(
-        new webrtc::NetEqCapacityConfig(
-            *options.audio_jitter_buffer_max_packets));
+    channel_config_.acm_config.neteq_config.max_packets_in_buffer =
+        std::max(20, *options.audio_jitter_buffer_max_packets);
   }
-
   if (options.audio_jitter_buffer_fast_accelerate) {
     LOG(LS_INFO) << "NetEq fast mode? "
                  << *options.audio_jitter_buffer_fast_accelerate;
-    voe_config_.Set<webrtc::NetEqFastAccelerate>(
-        new webrtc::NetEqFastAccelerate(
-            *options.audio_jitter_buffer_fast_accelerate));
+    channel_config_.acm_config.neteq_config.enable_fast_accelerate =
+        *options.audio_jitter_buffer_fast_accelerate;
   }
 
   if (options.typing_detection) {
@@ -1076,7 +1072,7 @@ void WebRtcVoiceEngine::StopAecDump() {
 
 int WebRtcVoiceEngine::CreateVoEChannel() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  return voe_wrapper_->base()->CreateChannel(voe_config_);
+  return voe_wrapper_->base()->CreateChannel(channel_config_);
 }
 
 webrtc::AudioDeviceModule* WebRtcVoiceEngine::adm() {

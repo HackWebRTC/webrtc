@@ -29,8 +29,8 @@ namespace webrtc {
 // improvement here.
 static int32_t gVoiceEngineInstanceCounter = 0;
 
-VoiceEngine* GetVoiceEngine(const Config* config, bool owns_config) {
-  VoiceEngineImpl* self = new VoiceEngineImpl(config, owns_config);
+VoiceEngine* GetVoiceEngine() {
+  VoiceEngineImpl* self = new VoiceEngineImpl();
   if (self != NULL) {
     self->AddRef();  // First reference.  Released in VoiceEngine::Delete.
     gVoiceEngineInstanceCounter++;
@@ -72,12 +72,7 @@ std::unique_ptr<voe::ChannelProxy> VoiceEngineImpl::GetChannelProxy(
 }
 
 VoiceEngine* VoiceEngine::Create() {
-  Config* config = new Config();
-  return GetVoiceEngine(config, true);
-}
-
-VoiceEngine* VoiceEngine::Create(const Config& config) {
-  return GetVoiceEngine(&config, false);
+  return GetVoiceEngine();
 }
 
 int VoiceEngine::SetTraceFilter(unsigned int filter) {

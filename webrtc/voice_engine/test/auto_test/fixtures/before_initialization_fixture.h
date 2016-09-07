@@ -11,9 +11,6 @@
 #ifndef SRC_VOICE_ENGINE_MAIN_TEST_AUTO_TEST_STANDARD_TEST_BASE_H_
 #define SRC_VOICE_ENGINE_MAIN_TEST_AUTO_TEST_STANDARD_TEST_BASE_H_
 
-#include <assert.h>
-
-#include "webrtc/common.h"
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
@@ -65,7 +62,6 @@ class BeforeInitializationFixture : public testing::Test {
   webrtc::VoEHardware*        voe_hardware_;
   webrtc::VoEExternalMedia*   voe_xmedia_;
   webrtc::VoENetEqStats*      voe_neteq_stats_;
-  webrtc::Config              config_;
 };
 
 #endif  // SRC_VOICE_ENGINE_MAIN_TEST_AUTO_TEST_STANDARD_TEST_BASE_H_

@@ -83,8 +83,8 @@ class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
 #endif
                         public VoEBaseImpl {
  public:
-  VoiceEngineImpl(const Config* config, bool owns_config)
-      : SharedData(*config),
+  VoiceEngineImpl()
+      : SharedData(),
 #ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
         VoEAudioProcessingImpl(this),
 #endif
@@ -114,9 +114,7 @@ class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
         VoEVolumeControlImpl(this),
 #endif
         VoEBaseImpl(this),
-        _ref_count(0),
-        own_config_(owns_config ? config : NULL) {
-  }
+        _ref_count(0) {}
   ~VoiceEngineImpl() override { assert(_ref_count.Value() == 0); }
 
   int AddRef();
@@ -132,8 +130,6 @@ class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
  // manipulate the reference count. See: fake_voice_engine.h.
  protected:
   Atomic32 _ref_count;
- private:
-  std::unique_ptr<const Config> own_config_;
 };
 
 }  // namespace webrtc

@@ -83,6 +83,8 @@
         'high_pass_filter_impl.cc',
         'high_pass_filter_impl.h',
         'include/audio_processing.h',
+        'include/config.cc',
+        'include/config.h',
         'level_controller/biquad_filter.cc',
         'level_controller/biquad_filter.h',
         'level_controller/down_sampler.cc',

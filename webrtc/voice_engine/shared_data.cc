@@ -22,9 +22,9 @@ namespace voe {
 
 static int32_t _gInstanceCounter = 0;
 
-SharedData::SharedData(const Config& config)
+SharedData::SharedData()
     : _instanceId(++_gInstanceCounter),
-      _channelManager(_gInstanceCounter, config),
+      _channelManager(_gInstanceCounter),
       _engineStatistics(_gInstanceCounter),
       _audioDevicePtr(NULL),
       _moduleProcessThreadPtr(

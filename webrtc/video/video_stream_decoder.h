@@ -28,7 +28,6 @@ namespace webrtc {
 
 class CallStatsObserver;
 class ChannelStatsObserver;
-class Config;
 class EncodedImageCallback;
 class I420FrameCallback;
 class ReceiveStatisticsProxy;

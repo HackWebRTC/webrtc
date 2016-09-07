@@ -22,7 +22,6 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/timeutils.h"
-#include "webrtc/common.h"
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/acm2/acm_common_defs.h"
@@ -48,7 +47,7 @@ void APITest::Wait(uint32_t waitLengthMs) {
   }
 }
 
-APITest::APITest(const Config& config)
+APITest::APITest()
     : _acmA(AudioCodingModule::Create(1)),
       _acmB(AudioCodingModule::Create(2)),
       _channel_A2B(NULL),

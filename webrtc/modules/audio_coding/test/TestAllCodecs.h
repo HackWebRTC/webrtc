@@ -20,8 +20,6 @@
 
 namespace webrtc {
 
-class Config;
-
 class TestPack : public AudioPacketizationCallback {
  public:
   TestPack();

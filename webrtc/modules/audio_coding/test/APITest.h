@@ -23,8 +23,6 @@
 
 namespace webrtc {
 
-class Config;
-
 enum APITESTAction {
   TEST_CHANGE_CODEC_ONLY = 0,
   DTX_TEST = 1
@@ -32,7 +30,7 @@ enum APITESTAction {
 
 class APITest : public ACMTest {
  public:
-  explicit APITest(const Config& config);
+  APITest();
   ~APITest();
 
   void Perform();

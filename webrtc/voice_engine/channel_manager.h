@@ -19,10 +19,10 @@
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/voice_engine/include/voe_base.h"
 
 namespace webrtc {
 
-class Config;
 class AudioDecoderFactory;
 
 namespace voe {
@@ -72,7 +72,7 @@ class ChannelOwner {
 
 class ChannelManager {
  public:
-  ChannelManager(uint32_t instance_id, const Config& config);
+  ChannelManager(uint32_t instance_id);
 
   // Upon construction of an Iterator it will grab a copy of the channel list of
   // the ChannelManager. The iteration will then occur over this state, not the
@@ -95,16 +95,8 @@ class ChannelManager {
     RTC_DISALLOW_COPY_AND_ASSIGN(Iterator);
   };
 
-  // CreateChannel will always return a valid ChannelOwner instance. The channel
-  // is created either based on internal configuration, i.e. |config_|, by
-  // calling CreateChannel(...), or using and external configuration
-  // |external_config| if the overloaded method
-  // CreateChannel(const Config& external_config, ...) is called.
-  ChannelOwner CreateChannel(
-      const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory);
-  ChannelOwner CreateChannel(
-      const Config& external_config,
-      const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory);
+  // CreateChannel will always return a valid ChannelOwner instance.
+  ChannelOwner CreateChannel(const VoEBase::ChannelConfig& config);
 
   // ChannelOwner.channel() will be NULL if channel_id is invalid or no longer
   // exists. This should be checked with ChannelOwner::IsValid().
@@ -117,19 +109,12 @@ class ChannelManager {
   size_t NumOfChannels() const;
 
  private:
-  // Create a channel given a configuration, |config|.
-  ChannelOwner CreateChannelInternal(
-      const Config& config,
-      const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory);
-
   uint32_t instance_id_;
 
   Atomic32 last_channel_id_;
 
   rtc::CriticalSection lock_;
   std::vector<ChannelOwner> channels_;
-
-  const Config& config_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ChannelManager);
 };

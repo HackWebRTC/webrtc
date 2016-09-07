@@ -25,8 +25,6 @@
 class ProcessThread;
 
 namespace webrtc {
-class Config;
-
 namespace voe {
 
 class TransmitMixer;
@@ -77,11 +75,10 @@ protected:
 
     AudioDeviceModule::AudioLayer _audioDeviceLayer;
 
-    SharedData(const Config& config);
+    SharedData();
     virtual ~SharedData();
 };
 
 }  // namespace voe
-
 }  // namespace webrtc
 #endif // WEBRTC_VOICE_ENGINE_SHARED_DATA_H

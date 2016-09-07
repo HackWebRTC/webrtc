@@ -322,6 +322,7 @@ if (rtc_include_tests) {
       "audio_processing/beamformer/matrix_unittest.cc",
       "audio_processing/beamformer/mock_nonlinear_beamformer.h",
       "audio_processing/beamformer/nonlinear_beamformer_unittest.cc",
+      "audio_processing/config_unittest.cc",
       "audio_processing/echo_cancellation_impl_unittest.cc",
       "audio_processing/splitting_filter_unittest.cc",
       "audio_processing/transient/dyadic_decimator_unittest.cc",

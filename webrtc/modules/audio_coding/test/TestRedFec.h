@@ -20,8 +20,6 @@
 
 namespace webrtc {
 
-class Config;
-
 class TestRedFec : public ACMTest {
  public:
   explicit TestRedFec();

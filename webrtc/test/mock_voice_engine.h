@@ -30,8 +30,7 @@ class MockVoiceEngine : public VoiceEngineImpl {
   // http://crbug.com/428099.
   MockVoiceEngine(
       rtc::scoped_refptr<AudioDecoderFactory> decoder_factory = nullptr)
-      : VoiceEngineImpl(new Config(), true),
-        decoder_factory_(decoder_factory) {
+      : decoder_factory_(decoder_factory) {
     // Increase ref count so this object isn't automatically deleted whenever
     // interfaces are Release():d.
     ++_ref_count;
@@ -123,7 +122,7 @@ class MockVoiceEngine : public VoiceEngineImpl {
   MOCK_METHOD0(audio_processing, AudioProcessing*());
   MOCK_METHOD0(Terminate, int());
   MOCK_METHOD0(CreateChannel, int());
-  MOCK_METHOD1(CreateChannel, int(const Config& config));
+  MOCK_METHOD1(CreateChannel, int(const ChannelConfig& config));
   MOCK_METHOD1(DeleteChannel, int(int channel));
   MOCK_METHOD1(StartReceive, int(int channel));
   MOCK_METHOD1(StopReceive, int(int channel));

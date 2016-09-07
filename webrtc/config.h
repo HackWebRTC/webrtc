@@ -17,7 +17,6 @@
 #include <vector>
 
 #include "webrtc/base/optional.h"
-#include "webrtc/common.h"
 #include "webrtc/common_types.h"
 #include "webrtc/typedefs.h"
 
@@ -168,35 +167,6 @@ class DecoderSpecificSettings {
  public:
   virtual ~DecoderSpecificSettings() {}
   rtc::Optional<VideoDecoderH264Settings> h264_extra_settings;
-};
-
-// Controls the capacity of the packet buffer in NetEq. The capacity is the
-// maximum number of packets that the buffer can contain. If the limit is
-// exceeded, the buffer will be flushed. The capacity does not affect the actual
-// audio delay in the general case, since this is governed by the target buffer
-// level (calculated from the jitter profile). It is only in the rare case of
-// severe network freezes that a higher capacity will lead to a (transient)
-// increase in audio delay.
-struct NetEqCapacityConfig {
-  NetEqCapacityConfig() : enabled(false), capacity(0) {}
-  explicit NetEqCapacityConfig(int value) : enabled(true), capacity(value) {}
-  static const ConfigOptionID identifier = ConfigOptionID::kNetEqCapacityConfig;
-  bool enabled;
-  int capacity;
-};
-
-struct NetEqFastAccelerate {
-  NetEqFastAccelerate() : enabled(false) {}
-  explicit NetEqFastAccelerate(bool value) : enabled(value) {}
-  static const ConfigOptionID identifier = ConfigOptionID::kNetEqFastAccelerate;
-  bool enabled;
-};
-
-struct VoicePacing {
-  VoicePacing() : enabled(false) {}
-  explicit VoicePacing(bool value) : enabled(value) {}
-  static const ConfigOptionID identifier = ConfigOptionID::kVoicePacing;
-  bool enabled;
 };
 
 }  // namespace webrtc

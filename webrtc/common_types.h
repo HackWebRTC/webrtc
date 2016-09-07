@@ -52,8 +52,6 @@
 
 namespace webrtc {
 
-class Config;
-
 class RewindableStream {
  public:
   virtual ~RewindableStream() {}

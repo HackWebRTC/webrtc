@@ -282,7 +282,6 @@ rtc_test("test_support_unittests") {
     "channel_transport/udp_socket_manager_unittest.cc",
     "channel_transport/udp_socket_wrapper_unittest.cc",
     "channel_transport/udp_transport_unittest.cc",
-    "common_unittest.cc",
     "fake_network_pipe_unittest.cc",
     "frame_generator_unittest.cc",
     "rtp_file_reader_unittest.cc",

@@ -12,7 +12,6 @@
 
 #include "webrtc/base/format_macros.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/common.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
@@ -355,25 +354,20 @@ int VoEBaseImpl::Terminate() {
 }
 
 int VoEBaseImpl::CreateChannel() {
-  rtc::CritScope cs(shared_->crit_sec());
-  if (!shared_->statistics().Initialized()) {
-    shared_->SetLastError(VE_NOT_INITED, kTraceError);
-    return -1;
-  }
-
-  voe::ChannelOwner channel_owner =
-      shared_->channel_manager().CreateChannel(decoder_factory_);
-  return InitializeChannel(&channel_owner);
+  return CreateChannel(ChannelConfig());
 }
 
-int VoEBaseImpl::CreateChannel(const Config& config) {
+int VoEBaseImpl::CreateChannel(const ChannelConfig& config) {
   rtc::CritScope cs(shared_->crit_sec());
   if (!shared_->statistics().Initialized()) {
     shared_->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
   }
+
+  ChannelConfig config_copy(config);
+  config_copy.acm_config.decoder_factory = decoder_factory_;
   voe::ChannelOwner channel_owner =
-      shared_->channel_manager().CreateChannel(config, decoder_factory_);
+      shared_->channel_manager().CreateChannel(config_copy);
   return InitializeChannel(&channel_owner);
 }
 

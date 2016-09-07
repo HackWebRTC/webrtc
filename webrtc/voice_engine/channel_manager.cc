@@ -10,7 +10,6 @@
 
 #include "webrtc/voice_engine/channel_manager.h"
 
-#include "webrtc/common.h"
 #include "webrtc/voice_engine/channel.h"
 
 namespace webrtc {
@@ -45,26 +44,13 @@ ChannelOwner& ChannelOwner::operator=(const ChannelOwner& other) {
 ChannelOwner::ChannelRef::ChannelRef(class Channel* channel)
     : channel(channel), ref_count(1) {}
 
-ChannelManager::ChannelManager(uint32_t instance_id, const Config& config)
-    : instance_id_(instance_id), last_channel_id_(-1), config_(config) {}
+ChannelManager::ChannelManager(uint32_t instance_id)
+    : instance_id_(instance_id), last_channel_id_(-1) {}
 
 ChannelOwner ChannelManager::CreateChannel(
-    const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) {
-  return CreateChannelInternal(config_, decoder_factory);
-}
-
-ChannelOwner ChannelManager::CreateChannel(
-    const Config& external_config,
-    const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) {
-  return CreateChannelInternal(external_config, decoder_factory);
-}
-
-ChannelOwner ChannelManager::CreateChannelInternal(
-    const Config& config,
-    const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) {
+    const VoEBase::ChannelConfig& config) {
   Channel* channel;
-  Channel::CreateChannel(channel, ++last_channel_id_, instance_id_, config,
-                         decoder_factory);
+  Channel::CreateChannel(channel, ++last_channel_id_, instance_id_, config);
   ChannelOwner channel_owner(channel);
 
   rtc::CritScope crit(&lock_);

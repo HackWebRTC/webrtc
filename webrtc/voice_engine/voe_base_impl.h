@@ -41,7 +41,7 @@ class VoEBaseImpl : public VoEBase,
   int Terminate() override;
 
   int CreateChannel() override;
-  int CreateChannel(const Config& config) override;
+  int CreateChannel(const ChannelConfig& config) override;
   int DeleteChannel(int channel) override;
 
   int StartReceive(int channel) override;

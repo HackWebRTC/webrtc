@@ -24,7 +24,6 @@
 #include "webrtc/base/stream.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/call.h"
-#include "webrtc/common.h"
 #include "webrtc/config.h"
 #include "webrtc/media/base/rtputils.h"
 #include "webrtc/media/engine/webrtccommon.h"
@@ -137,7 +136,7 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   std::vector<AudioCodec> send_codecs_;
   std::vector<AudioCodec> recv_codecs_;
   std::vector<WebRtcVoiceMediaChannel*> channels_;
-  webrtc::Config voe_config_;
+  webrtc::VoEBase::ChannelConfig channel_config_;
   bool is_dumping_aec_ = false;
 
   webrtc::AgcConfig default_agc_config_;

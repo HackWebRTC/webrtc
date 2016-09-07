@@ -210,7 +210,6 @@
         '<(DEPTH)/testing/gtest.gyp:gtest',
       ],
       'sources': [
-        'common_unittest.cc',
         'fake_network_pipe_unittest.cc',
         'frame_generator_unittest.cc',
         'rtp_file_reader_unittest.cc',

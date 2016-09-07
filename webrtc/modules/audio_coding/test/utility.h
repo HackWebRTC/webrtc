@@ -128,10 +128,6 @@ class VADCallback : public ACMVADCallback {
   uint32_t _numFrameTypes[5];
 };
 
-void UseLegacyAcm(webrtc::Config* config);
-
-void UseNewAcm(webrtc::Config* config);
-
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_CODING_TEST_UTILITY_H_

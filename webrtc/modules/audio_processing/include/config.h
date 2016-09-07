@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_COMMON_H_
-#define WEBRTC_COMMON_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_CONFIG_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_CONFIG_H_
 
 #include <map>
 
@@ -23,10 +23,10 @@ namespace webrtc {
 enum class ConfigOptionID {
   kMyExperimentForTest,
   kAlgo1CostFunctionForTest,
-  kTemporalLayersFactory,
-  kNetEqCapacityConfig,
-  kNetEqFastAccelerate,
-  kVoicePacing,
+  kTemporalLayersFactory,  // Deprecated
+  kNetEqCapacityConfig,  // Deprecated
+  kNetEqFastAccelerate,  // Deprecated
+  kVoicePacing,  // Deprecated
   kExtendedFilter,
   kDelayAgnostic,
   kExperimentalAgc,
@@ -128,7 +128,6 @@ void Config::Set(T* value) {
   delete it;
   it = new Option<T>(value);
 }
-
 }  // namespace webrtc
 
-#endif  // WEBRTC_COMMON_H_
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_CONFIG_H_

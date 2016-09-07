@@ -21,8 +21,8 @@
 
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/platform_file.h"
-#include "webrtc/common.h"
 #include "webrtc/modules/audio_processing/beamformer/array_util.h"
+#include "webrtc/modules/audio_processing/include/config.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

@@ -159,9 +159,9 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   FakeAudioDevice fake_audio_device(Clock::GetRealTimeClock(), audio_filename,
                                     audio_rtp_speed);
   EXPECT_EQ(0, voe_base->Init(&fake_audio_device, nullptr, decoder_factory_));
-  Config voe_config;
-  voe_config.Set<VoicePacing>(new VoicePacing(true));
-  int send_channel_id = voe_base->CreateChannel(voe_config);
+  VoEBase::ChannelConfig config;
+  config.enable_voice_pacing = true;
+  int send_channel_id = voe_base->CreateChannel(config);
   int recv_channel_id = voe_base->CreateChannel();
 
   AudioState::Config send_audio_state_config;

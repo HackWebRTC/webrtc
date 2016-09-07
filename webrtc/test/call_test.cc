@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 #include "webrtc/base/checks.h"
-#include "webrtc/common.h"
 #include "webrtc/config.h"
 #include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/test/call_test.h"
@@ -312,9 +311,9 @@ void CallTest::CreateVoiceEngines() {
   voe_send_.codec = VoECodec::GetInterface(voe_send_.voice_engine);
   EXPECT_EQ(0, voe_send_.base->Init(fake_send_audio_device_.get(), nullptr,
                                     decoder_factory_));
-  Config voe_config;
-  voe_config.Set<VoicePacing>(new VoicePacing(true));
-  voe_send_.channel_id = voe_send_.base->CreateChannel(voe_config);
+  VoEBase::ChannelConfig config;
+  config.enable_voice_pacing = true;
+  voe_send_.channel_id = voe_send_.base->CreateChannel(config);
   EXPECT_GE(voe_send_.channel_id, 0);
 
   voe_recv_.voice_engine = VoiceEngine::Create();

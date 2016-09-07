@@ -70,9 +70,9 @@ void CreateVoiceEngine(VoiceEngineState* voe,
   voe->base = webrtc::VoEBase::GetInterface(voe->voice_engine);
   voe->codec = webrtc::VoECodec::GetInterface(voe->voice_engine);
   EXPECT_EQ(0, voe->base->Init(nullptr, nullptr, decoder_factory));
-  webrtc::Config voe_config;
-  voe_config.Set<webrtc::VoicePacing>(new webrtc::VoicePacing(true));
-  voe->send_channel_id = voe->base->CreateChannel(voe_config);
+  webrtc::VoEBase::ChannelConfig config;
+  config.enable_voice_pacing = true;
+  voe->send_channel_id = voe->base->CreateChannel(config);
   EXPECT_GE(voe->send_channel_id, 0);
   voe->receive_channel_id = voe->base->CreateChannel();
   EXPECT_GE(voe->receive_channel_id, 0);

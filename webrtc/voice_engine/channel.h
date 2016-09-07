@@ -29,6 +29,7 @@
 #include "webrtc/modules/utility/include/file_player.h"
 #include "webrtc/modules/utility/include/file_recorder.h"
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
+#include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_network.h"
 #include "webrtc/voice_engine/level_indicator.h"
 #include "webrtc/voice_engine/network_predictor.h"
@@ -42,7 +43,6 @@ class TimestampWrapAroundHandler;
 namespace webrtc {
 
 class AudioDeviceModule;
-class Config;
 class FileWrapper;
 class PacketRouter;
 class ProcessThread;
@@ -175,12 +175,10 @@ class Channel
       Channel*& channel,
       int32_t channelId,
       uint32_t instanceId,
-      const Config& config,
-      const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory);
+      const VoEBase::ChannelConfig& config);
   Channel(int32_t channelId,
           uint32_t instanceId,
-          const Config& config,
-          const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory);
+          const VoEBase::ChannelConfig& config);
   int32_t Init();
   int32_t SetEngineInformation(Statistics& engineStatistics,
                                OutputMixer& outputMixer,

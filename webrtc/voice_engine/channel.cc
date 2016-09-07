@@ -21,7 +21,6 @@
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/call/rtc_event_log.h"
-#include "webrtc/common.h"
 #include "webrtc/config.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
@@ -34,7 +33,6 @@
 #include "webrtc/modules/utility/include/audio_frame_operations.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/system_wrappers/include/trace.h"
-#include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_external_media.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 #include "webrtc/voice_engine/output_mixer.h"
@@ -754,13 +752,12 @@ int32_t Channel::CreateChannel(
     Channel*& channel,
     int32_t channelId,
     uint32_t instanceId,
-    const Config& config,
-    const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) {
+    const VoEBase::ChannelConfig& config) {
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(instanceId, channelId),
                "Channel::CreateChannel(channelId=%d, instanceId=%d)", channelId,
                instanceId);
 
-  channel = new Channel(channelId, instanceId, config, decoder_factory);
+  channel = new Channel(channelId, instanceId, config);
   if (channel == NULL) {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(instanceId, channelId),
                  "Channel::CreateChannel() unable to allocate memory for"
@@ -819,8 +816,7 @@ void Channel::RecordFileEnded(int32_t id) {
 
 Channel::Channel(int32_t channelId,
                  uint32_t instanceId,
-                 const Config& config,
-                 const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory)
+                 const VoEBase::ChannelConfig& config)
     : _instanceId(instanceId),
       _channelId(channelId),
       event_log_proxy_(new RtcEventLogProxy()),
@@ -886,27 +882,18 @@ Channel::Channel(int32_t channelId,
       rtcp_observer_(new VoERtcpObserver(this)),
       network_predictor_(new NetworkPredictor(Clock::GetRealTimeClock())),
       associate_send_channel_(ChannelOwner(nullptr)),
-      pacing_enabled_(config.Get<VoicePacing>().enabled),
+      pacing_enabled_(config.enable_voice_pacing),
       feedback_observer_proxy_(new TransportFeedbackProxy()),
       seq_num_allocator_proxy_(new TransportSequenceNumberProxy()),
       rtp_packet_sender_proxy_(new RtpPacketSenderProxy()),
       retransmission_rate_limiter_(new RateLimiter(Clock::GetRealTimeClock(),
                                                    kMaxRetransmissionWindowMs)),
-      decoder_factory_(decoder_factory) {
+      decoder_factory_(config.acm_config.decoder_factory) {
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::Channel() - ctor");
-  AudioCodingModule::Config acm_config;
+  AudioCodingModule::Config acm_config(config.acm_config);
   acm_config.id = VoEModuleId(instanceId, channelId);
-  if (config.Get<NetEqCapacityConfig>().enabled) {
-    // Clamping the buffer capacity at 20 packets. While going lower will
-    // probably work, it makes little sense.
-    acm_config.neteq_config.max_packets_in_buffer =
-        std::max(20, config.Get<NetEqCapacityConfig>().capacity);
-  }
-  acm_config.neteq_config.enable_fast_accelerate =
-      config.Get<NetEqFastAccelerate>().enabled;
   acm_config.neteq_config.enable_muted_state = true;
-  acm_config.decoder_factory = decoder_factory;
   audio_coding_.reset(AudioCodingModule::Create(acm_config));
 
   _outputAudioLevel.Clear();
