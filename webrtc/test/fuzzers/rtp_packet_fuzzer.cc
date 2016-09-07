@@ -82,7 +82,8 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
         packet.GetExtension<TransportSequenceNumber>(&seqnum);
         break;
       case kRtpExtensionPlayoutDelay:
-        // TODO(katrielc) Add this once it's written.
+        PlayoutDelay playout;
+        packet.GetExtension<PlayoutDelayLimits>(&playout);
         break;
     }
   }

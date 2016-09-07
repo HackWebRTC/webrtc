@@ -75,5 +75,22 @@ class VideoOrientation {
   static bool Write(uint8_t* data, uint8_t value);
 };
 
+class PlayoutDelayLimits {
+ public:
+  static constexpr RTPExtensionType kId = kRtpExtensionPlayoutDelay;
+  static constexpr uint8_t kValueSizeBytes = 3;
+  static const char* kName;
+  static bool IsSupportedFor(MediaType type);
+  // Playout delay in milliseconds. A playout delay limit (min or max)
+  // has 12 bits allocated. This allows a range of 0-4095 values which
+  // translates to a range of 0-40950 in milliseconds.
+  static constexpr int kGranularityMs = 10;
+  // Maximum playout delay value in milliseconds.
+  static constexpr int kMaxMs = 0xfff * kGranularityMs;  // 40950.
+
+  static bool Parse(const uint8_t* data, PlayoutDelay* playout_delay);
+  static bool Write(uint8_t* data, const PlayoutDelay& playout_delay);
+};
+
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_HEADER_EXTENSIONS_H_
