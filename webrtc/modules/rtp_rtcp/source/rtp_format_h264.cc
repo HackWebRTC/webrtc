@@ -489,11 +489,16 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
         break;
       }
       case H264::NaluType::kPps: {
-        rtc::Optional<PpsParser::PpsState> pps = PpsParser::ParsePps(
-            &payload_data[start_offset], end_offset - start_offset);
-        if (pps) {
-          nalu.sps_id = pps->sps_id;
-          nalu.pps_id = pps->id;
+        uint32_t pps_id;
+        uint32_t sps_id;
+        if (PpsParser::ParsePpsIds(&payload_data[start_offset],
+                                    end_offset - start_offset, &pps_id,
+                                    &sps_id)) {
+          nalu.pps_id = pps_id;
+          nalu.sps_id = sps_id;
+        } else {
+          LOG(LS_WARNING)
+              << "Failed to parse PPS id and SPS id from PPS slice.";
         }
         break;
       }
