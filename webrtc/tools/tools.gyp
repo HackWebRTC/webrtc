@@ -102,10 +102,10 @@
     ['enable_protobuf==1', {
       'targets': [
         {
-          'target_name': 'graph_proto',
+          'target_name': 'chart_proto',
           'type': 'static_library',
           'sources': [
-            'event_log_visualizer/graph.proto',
+            'event_log_visualizer/chart.proto',
           ],
           'variables': {
             'proto_in_dir': 'event_log_visualizer',
@@ -123,7 +123,7 @@
             '<(webrtc_root)/modules/modules.gyp:congestion_controller',
             '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
-            ':graph_proto',
+            ':chart_proto',
           ],
           'sources': [
             'event_log_visualizer/analyzer.cc',
@@ -137,7 +137,7 @@
           ],
           'export_dependent_settings': [
             '<(webrtc_root)/webrtc.gyp:rtc_event_log_parser',
-            ':graph_proto',
+            ':chart_proto',
           ],
         },
       ],

@@ -136,9 +136,9 @@ rtc_executable("force_mic_volume_max") {
 }
 
 if (rtc_enable_protobuf) {
-  proto_library("graph_proto") {
+  proto_library("chart_proto") {
     sources = [
-      "event_log_visualizer/graph.proto",
+      "event_log_visualizer/chart.proto",
     ]
     proto_out_dir = "webrtc/tools/event_log_visualizer"
   }
@@ -169,7 +169,7 @@ if (rtc_enable_protobuf) {
       "//build/config/sanitizers:deps",
     ]
     public_deps = [
-      ":graph_proto",
+      ":chart_proto",
       "../:rtc_event_log_parser",
     ]
   }
