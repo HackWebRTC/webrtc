@@ -70,7 +70,7 @@ void TransportFeedbackAdapter::OnSentPacket(uint16_t sequence_number,
   send_time_history_.OnSentPacket(sequence_number, send_time_ms);
 }
 
-const std::vector<PacketInfo> TransportFeedbackAdapter::GetPacketFeedbackVector(
+std::vector<PacketInfo> TransportFeedbackAdapter::GetPacketFeedbackVector(
     const rtcp::TransportFeedback& feedback) {
   int64_t timestamp_us = feedback.GetBaseTimeUs();
   // Add timestamp deltas to a local time base selected on first packet arrival.
@@ -130,10 +130,15 @@ const std::vector<PacketInfo> TransportFeedbackAdapter::GetPacketFeedbackVector(
 
 void TransportFeedbackAdapter::OnTransportFeedback(
     const rtcp::TransportFeedback& feedback) {
-  const std::vector<PacketInfo> packet_feedback_vector =
-      GetPacketFeedbackVector(feedback);
-  RTC_DCHECK(bitrate_estimator_.get() != nullptr);
-  bitrate_estimator_->IncomingPacketFeedbackVector(packet_feedback_vector);
+  last_packet_feedback_vector_ = GetPacketFeedbackVector(feedback);
+  if (bitrate_estimator_.get())
+    bitrate_estimator_->IncomingPacketFeedbackVector(
+        last_packet_feedback_vector_);
+}
+
+std::vector<PacketInfo> TransportFeedbackAdapter::GetTransportFeedbackVector()
+    const {
+  return last_packet_feedback_vector_;
 }
 
 void TransportFeedbackAdapter::OnReceiveBitrateChanged(

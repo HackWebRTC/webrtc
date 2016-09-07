@@ -21,6 +21,7 @@
 #include "webrtc/api/call/audio_send_stream.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/rate_statistics.h"
 #include "webrtc/call.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
@@ -835,6 +836,9 @@ void EventLogAnalyzer::CreateBweSimulationGraph(Plot* plot) {
   TimeSeries time_series;
   time_series.label = "Delay-based estimate";
   time_series.style = LINE_DOT_GRAPH;
+  TimeSeries acked_time_series;
+  acked_time_series.label = "Acked bitrate";
+  acked_time_series.style = LINE_DOT_GRAPH;
 
   auto rtp_iterator = outgoing_rtp.begin();
   auto rtcp_iterator = incoming_rtcp.begin();
@@ -860,6 +864,8 @@ void EventLogAnalyzer::CreateBweSimulationGraph(Plot* plot) {
     return std::numeric_limits<int64_t>::max();
   };
 
+  RateStatistics acked_bitrate(1000, 8000);
+
   int64_t time_us = std::min(NextRtpTime(), NextRtcpTime());
   while (time_us != std::numeric_limits<int64_t>::max()) {
     clock.AdvanceTimeMicroseconds(time_us - clock.TimeInMicroseconds());
@@ -867,8 +873,23 @@ void EventLogAnalyzer::CreateBweSimulationGraph(Plot* plot) {
       RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextRtcpTime());
       const LoggedRtcpPacket& rtcp = *rtcp_iterator->second;
       if (rtcp.type == kRtcpTransportFeedback) {
-        cc.GetTransportFeedbackObserver()->OnTransportFeedback(
-            *static_cast<rtcp::TransportFeedback*>(rtcp.packet.get()));
+        TransportFeedbackObserver* observer = cc.GetTransportFeedbackObserver();
+        observer->OnTransportFeedback(*static_cast<rtcp::TransportFeedback*>(
+            rtcp.packet.get()));
+        std::vector<PacketInfo> feedback =
+            observer->GetTransportFeedbackVector();
+        rtc::Optional<uint32_t> bitrate_bps;
+        if (!feedback.empty()) {
+          for (const PacketInfo& packet : feedback)
+            acked_bitrate.Update(packet.payload_size, packet.arrival_time_ms);
+          bitrate_bps = acked_bitrate.Rate(feedback.back().arrival_time_ms);
+        }
+        uint32_t y = 0;
+        if (bitrate_bps)
+          y = *bitrate_bps / 1000;
+        float x = static_cast<float>(clock.TimeInMicroseconds() - begin_time_) /
+                  1000000;
+        acked_time_series.points.emplace_back(x, y);
       }
       ++rtcp_iterator;
     }
@@ -900,6 +921,7 @@ void EventLogAnalyzer::CreateBweSimulationGraph(Plot* plot) {
   }
   // Add the data set to the plot.
   plot->series_list_.push_back(std::move(time_series));
+  plot->series_list_.push_back(std::move(acked_time_series));
 
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 10, "Bitrate (kbps)", kBottomMargin, kTopMargin);
@@ -955,9 +977,10 @@ void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
       RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextRtcpTime());
       const LoggedRtcpPacket& rtcp = *rtcp_iterator->second;
       if (rtcp.type == kRtcpTransportFeedback) {
+        feedback_adapter.OnTransportFeedback(
+            *static_cast<rtcp::TransportFeedback*>(rtcp.packet.get()));
         std::vector<PacketInfo> feedback =
-            feedback_adapter.GetPacketFeedbackVector(
-                *static_cast<rtcp::TransportFeedback*>(rtcp.packet.get()));
+          feedback_adapter.GetTransportFeedbackVector();
         for (const PacketInfo& packet : feedback) {
           int64_t y = packet.arrival_time_ms - packet.send_time_ms;
           float x =

@@ -13,6 +13,7 @@
 
 #include <stddef.h>
 #include <list>
+#include <vector>
 
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/system_wrappers/include/clock.h"
@@ -310,6 +311,8 @@ class TransportFeedbackObserver {
                          int probe_cluster_id) = 0;
 
   virtual void OnTransportFeedback(const rtcp::TransportFeedback& feedback) = 0;
+
+  virtual std::vector<PacketInfo> GetTransportFeedbackVector() const = 0;
 };
 
 class RtcpRttStats {

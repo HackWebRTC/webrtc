@@ -44,9 +44,8 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
                  int probe_cluster_id) override;
   void OnSentPacket(uint16_t sequence_number, int64_t send_time_ms);
 
-  const std::vector<PacketInfo> GetPacketFeedbackVector(
-      const rtcp::TransportFeedback& feedback);
   void OnTransportFeedback(const rtcp::TransportFeedback& feedback) override;
+  std::vector<PacketInfo> GetTransportFeedbackVector() const override;
 
   // Implements CallStatsObserver.
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
@@ -58,6 +57,9 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
 
   void OnProbeBitrate(uint32_t bitrate) override;
 
+  std::vector<PacketInfo> GetPacketFeedbackVector(
+      const rtcp::TransportFeedback& feedback);
+
   rtc::CriticalSection lock_;
   SendTimeHistory send_time_history_ GUARDED_BY(&lock_);
   BitrateController* bitrate_controller_;
@@ -65,6 +67,7 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
   Clock* const clock_;
   int64_t current_offset_ms_;
   int64_t last_timestamp_us_;
+  std::vector<PacketInfo> last_packet_feedback_vector_;
 };
 
 }  // namespace webrtc

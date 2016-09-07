@@ -169,8 +169,11 @@ class TransportFeedbackProxy : public TransportFeedbackObserver {
   void OnTransportFeedback(const rtcp::TransportFeedback& feedback) override {
     RTC_DCHECK(network_thread_.CalledOnValidThread());
     rtc::CritScope lock(&crit_);
-    if (feedback_observer_)
-      feedback_observer_->OnTransportFeedback(feedback);
+    feedback_observer_->OnTransportFeedback(feedback);
+  }
+  std::vector<PacketInfo> GetTransportFeedbackVector() const override {
+    RTC_NOTREACHED();
+    return std::vector<PacketInfo>();
   }
 
  private:

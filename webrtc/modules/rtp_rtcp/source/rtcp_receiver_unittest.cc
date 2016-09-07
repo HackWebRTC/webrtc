@@ -77,6 +77,7 @@ class MockTransportFeedbackObserver : public TransportFeedbackObserver {
  public:
   MOCK_METHOD3(AddPacket, void(uint16_t, size_t, int));
   MOCK_METHOD1(OnTransportFeedback, void(const rtcp::TransportFeedback&));
+  MOCK_CONST_METHOD0(GetTransportFeedbackVector, std::vector<PacketInfo>());
 };
 
 class MockRtcpBandwidthObserver : public RtcpBandwidthObserver {
