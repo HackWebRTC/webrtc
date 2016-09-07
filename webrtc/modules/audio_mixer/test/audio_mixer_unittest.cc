@@ -273,6 +273,8 @@ TEST(AudioMixer, ParticipantSampleRate) {
   for (auto frequency : {8000, 16000, 32000, 48000}) {
     EXPECT_CALL(participant, GetAudioFrameWithMuted(_, frequency))
         .Times(Exactly(1));
+    participant.fake_frame()->sample_rate_hz_ = frequency;
+    participant.fake_frame()->samples_per_channel_ = frequency / 100;
     mixer->Mix(frequency, 1, &frame_for_mixing);
     EXPECT_EQ(frequency, frame_for_mixing.sample_rate_hz_);
   }

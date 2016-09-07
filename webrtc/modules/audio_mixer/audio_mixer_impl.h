@@ -11,7 +11,6 @@
 #ifndef WEBRTC_MODULES_AUDIO_MIXER_AUDIO_MIXER_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_MIXER_AUDIO_MIXER_IMPL_H_
 
-#include <list>
 #include <map>
 #include <memory>
 #include <vector>
@@ -26,14 +25,8 @@ namespace webrtc {
 class AudioProcessing;
 class CriticalSectionWrapper;
 
-struct FrameAndMuteInfo {
-  FrameAndMuteInfo(AudioFrame* f, bool m) : frame(f), muted(m) {}
-  AudioFrame* frame;
-  bool muted;
-};
-
-typedef std::list<FrameAndMuteInfo> AudioFrameList;
-typedef std::list<MixerAudioSource*> MixerAudioSourceList;
+typedef std::vector<AudioFrame*> AudioFrameList;
+typedef std::vector<MixerAudioSource*> MixerAudioSourceList;
 
 // Cheshire cat implementation of MixerAudioSource's non virtual functions.
 class NewMixHistory {
@@ -85,11 +78,10 @@ class AudioMixerImpl : public AudioMixer {
   int32_t SetOutputFrequency(const Frequency& frequency);
   Frequency OutputFrequency() const;
 
-  // Compute what audio sources to mix from audio_source_list_. Ramp in
-  // and out. Update mixed status. maxAudioFrameCounter specifies how
-  // many participants are allowed to be mixed.
-  AudioFrameList UpdateToMix(size_t maxAudioFrameCounter) const
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  // Compute what audio sources to mix from audio_source_list_. Ramp
+  // in and out. Update mixed status. Mixes up to
+  // kMaximumAmountOfMixedAudioSources audio sources.
+  AudioFrameList GetNonAnonymousAudio() const EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Return the lowest mixing frequency that can be used without having to
   // downsample any audio.
@@ -97,9 +89,9 @@ class AudioMixerImpl : public AudioMixer {
   int32_t GetLowestMixingFrequencyFromList(
       const MixerAudioSourceList& mixList) const;
 
-  // Return the AudioFrames that should be mixed anonymously.
-  void GetAdditionalAudio(AudioFrameList* additionalFramesList) const
-      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  // Return the AudioFrames that should be mixed anonymously. Ramp in
+  // and out. Update mixed status.
+  AudioFrameList GetAnonymousAudio() const EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // This function returns true if it finds the MixerAudioSource in the
   // specified list of MixerAudioSources.
@@ -118,12 +110,6 @@ class AudioMixerImpl : public AudioMixer {
                              const AudioFrameList& audioFrameList,
                              int32_t id,
                              bool use_limiter);
-
-  // Mix the AudioFrames stored in audioFrameList into mixedAudio. No
-  // record will be kept of this mix (e.g. the corresponding MixerAudioSources
-  // will not be marked as IsMixed()
-  int32_t MixAnonomouslyFromList(AudioFrame* mixedAudio,
-                                 const AudioFrameList& audioFrameList) const;
 
   bool LimitMixedAudio(AudioFrame* mixedAudio) const;
 

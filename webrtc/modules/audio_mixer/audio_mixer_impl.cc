@@ -37,6 +37,17 @@ class SourceFrame {
     }
   }
 
+  SourceFrame(MixerAudioSource* p,
+              AudioFrame* a,
+              bool m,
+              bool was_mixed_before,
+              uint32_t energy)
+      : audio_source_(p),
+        audio_frame_(a),
+        muted_(m),
+        energy_(energy),
+        was_mixed_before_(was_mixed_before) {}
+
   // a.shouldMixBefore(b) is used to select mixer participants.
   bool shouldMixBefore(const SourceFrame& other) const {
     if (muted_ != other.muted_) {
@@ -70,20 +81,19 @@ void RemixFrame(AudioFrame* frame, size_t number_of_channels) {
   }
 }
 
-// Mix |frame| into |mixed_frame|, with saturation protection and upmixing.
-// These effects are applied to |frame| itself prior to mixing. Assumes that
-// |mixed_frame| always has at least as many channels as |frame|. Supports
-// stereo at most.
-//
-void MixFrames(AudioFrame* mixed_frame, AudioFrame* frame, bool use_limiter) {
-  RTC_DCHECK_GE(mixed_frame->num_channels_, frame->num_channels_);
-  if (use_limiter) {
-    // Divide by two to avoid saturation in the mixing.
-    // This is only meaningful if the limiter will be used.
-    *frame >>= 1;
+void Ramp(const std::vector<SourceFrame>& mixed_sources_and_frames) {
+  for (const auto& source_frame : mixed_sources_and_frames) {
+    // Ramp in previously unmixed.
+    if (!source_frame.was_mixed_before_) {
+      NewMixerRampIn(source_frame.audio_frame_);
+    }
+
+    const bool is_mixed = source_frame.audio_source_->_mixHistory->IsMixed();
+    // Ramp out currently unmixed.
+    if (source_frame.was_mixed_before_ && !is_mixed) {
+      NewMixerRampOut(source_frame.audio_frame_);
+    }
   }
-  RTC_DCHECK_EQ(frame->num_channels_, mixed_frame->num_channels_);
-  *mixed_frame += *frame;
 }
 
 }  // namespace
@@ -188,21 +198,21 @@ void AudioMixerImpl::Mix(int sample_rate,
     SetOutputFrequency(static_cast<Frequency>(sample_rate));
   }
 
-  AudioFrameList mixList;
-  AudioFrameList additionalFramesList;
+  AudioFrameList mix_list;
+  AudioFrameList anonymous_mix_list;
   int num_mixed_audio_sources;
   {
     rtc::CritScope lock(&crit_);
-    mixList = UpdateToMix(kMaximumAmountOfMixedAudioSources);
-    GetAdditionalAudio(&additionalFramesList);
+    mix_list = GetNonAnonymousAudio();
+    anonymous_mix_list = GetAnonymousAudio();
     num_mixed_audio_sources = static_cast<int>(num_mixed_audio_sources_);
   }
 
-  for (FrameAndMuteInfo& frame_and_mute : mixList) {
-    RemixFrame(frame_and_mute.frame, number_of_channels);
-  }
-  for (FrameAndMuteInfo& frame_and_mute : additionalFramesList) {
-    RemixFrame(frame_and_mute.frame, number_of_channels);
+  mix_list.insert(mix_list.begin(), anonymous_mix_list.begin(),
+                  anonymous_mix_list.end());
+
+  for (const auto& frame : mix_list) {
+    RemixFrame(frame, number_of_channels);
   }
 
   audio_frame_for_mixing->UpdateFrame(
@@ -213,10 +223,9 @@ void AudioMixerImpl::Mix(int sample_rate,
 
   use_limiter_ = num_mixed_audio_sources > 1;
 
-  // We only use the limiter if it supports the output sample rate and
-  // we're actually mixing multiple streams.
-  MixFromList(audio_frame_for_mixing, mixList, id_, use_limiter_);
-  MixAnonomouslyFromList(audio_frame_for_mixing, additionalFramesList);
+  // We only use the limiter if we're actually mixing multiple streams.
+  MixFromList(audio_frame_for_mixing, mix_list, id_, use_limiter_);
+
   if (audio_frame_for_mixing->samples_per_channel_ == 0) {
     // Nothing was mixed, set the audio samples to silence.
     audio_frame_for_mixing->samples_per_channel_ = sample_size_;
@@ -332,10 +341,13 @@ bool AudioMixerImpl::AnonymousMixabilityStatus(
   return IsAudioSourceInList(audio_source, additional_audio_source_list_);
 }
 
-AudioFrameList AudioMixerImpl::UpdateToMix(size_t maxAudioFrameCounter) const {
+AudioFrameList AudioMixerImpl::GetNonAnonymousAudio() const {
   RTC_DCHECK_RUN_ON(&thread_checker_);
+  WEBRTC_TRACE(kTraceStream, kTraceAudioMixerServer, id_,
+               "GetNonAnonymousAudio()");
   AudioFrameList result;
   std::vector<SourceFrame> audioSourceMixingDataList;
+  std::vector<SourceFrame> ramp_list;
 
   // Get audio source audio and put it in the struct vector.
   for (MixerAudioSource* audio_source : audio_source_list_) {
@@ -360,6 +372,7 @@ AudioFrameList AudioMixerImpl::UpdateToMix(size_t maxAudioFrameCounter) const {
   std::sort(audioSourceMixingDataList.begin(), audioSourceMixingDataList.end(),
             std::mem_fn(&SourceFrame::shouldMixBefore));
 
+  int maxAudioFrameCounter = kMaximumAmountOfMixedAudioSources;
   // Go through list in order and put things in mixList.
   for (SourceFrame& p : audioSourceMixingDataList) {
     // Filter muted.
@@ -372,34 +385,28 @@ AudioFrameList AudioMixerImpl::UpdateToMix(size_t maxAudioFrameCounter) const {
     bool is_mixed = false;
     if (maxAudioFrameCounter > 0) {
       --maxAudioFrameCounter;
-      if (!p.was_mixed_before_) {
-        NewMixerRampIn(p.audio_frame_);
-      }
-      result.emplace_back(p.audio_frame_, false);
+      result.push_back(p.audio_frame_);
+      ramp_list.emplace_back(p.audio_source_, p.audio_frame_, false,
+                             p.was_mixed_before_, -1);
       is_mixed = true;
     }
-
-    // Ramp out unmuted.
-    if (p.was_mixed_before_ && !is_mixed) {
-      NewMixerRampOut(p.audio_frame_);
-      result.emplace_back(p.audio_frame_, false);
-    }
-
     p.audio_source_->_mixHistory->SetIsMixed(is_mixed);
   }
+  Ramp(ramp_list);
   return result;
 }
 
-void AudioMixerImpl::GetAdditionalAudio(
-    AudioFrameList* additionalFramesList) const {
+AudioFrameList AudioMixerImpl::GetAnonymousAudio() const {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   WEBRTC_TRACE(kTraceStream, kTraceAudioMixerServer, id_,
-               "GetAdditionalAudio(additionalFramesList)");
+               "GetAnonymousAudio()");
   // The GetAudioFrameWithMuted() callback may result in the audio source being
   // removed from additionalAudioFramesList_. If that happens it will
   // invalidate any iterators. Create a copy of the audio sources list such
   // that the list of participants can be traversed safely.
+  std::vector<SourceFrame> ramp_list;
   MixerAudioSourceList additionalAudioSourceList;
+  AudioFrameList result;
   additionalAudioSourceList.insert(additionalAudioSourceList.begin(),
                                    additional_audio_source_list_.begin(),
                                    additional_audio_source_list_.end());
@@ -416,13 +423,15 @@ void AudioMixerImpl::GetAdditionalAudio(
                    "failed to GetAudioFrameWithMuted() from audio_source");
       continue;
     }
-    if (audio_frame->samples_per_channel_ == 0) {
-      // Empty frame. Don't use it.
-      continue;
+    if (ret != MixerAudioSource::AudioFrameInfo::kMuted) {
+      result.push_back(audio_frame);
+      ramp_list.emplace_back(*audio_source, audio_frame, false,
+                             (*audio_source)->_mixHistory->IsMixed(), -1);
+      (*audio_source)->_mixHistory->SetIsMixed(true);
     }
-    additionalFramesList->push_back(FrameAndMuteInfo(
-        audio_frame, ret == MixerAudioSource::AudioFrameInfo::kMuted));
   }
+  Ramp(ramp_list);
+  return result;
 }
 
 bool AudioMixerImpl::IsAudioSourceInList(
@@ -474,9 +483,8 @@ int32_t AudioMixerImpl::MixFromList(AudioFrame* mixedAudio,
   uint32_t position = 0;
 
   if (audioFrameList.size() == 1) {
-    mixedAudio->timestamp_ = audioFrameList.front().frame->timestamp_;
-    mixedAudio->elapsed_time_ms_ =
-        audioFrameList.front().frame->elapsed_time_ms_;
+    mixedAudio->timestamp_ = audioFrameList.front()->timestamp_;
+    mixedAudio->elapsed_time_ms_ = audioFrameList.front()->elapsed_time_ms_;
   } else {
     // TODO(wu): Issue 3390.
     // Audio frame timestamp is only supported in one channel case.
@@ -484,34 +492,23 @@ int32_t AudioMixerImpl::MixFromList(AudioFrame* mixedAudio,
     mixedAudio->elapsed_time_ms_ = -1;
   }
 
-  for (AudioFrameList::const_iterator iter = audioFrameList.begin();
-       iter != audioFrameList.end(); ++iter) {
-    if (!iter->muted) {
-      MixFrames(mixedAudio, iter->frame, use_limiter);
-    }
+  for (const auto& frame : audioFrameList) {
+    RTC_DCHECK_EQ(mixedAudio->sample_rate_hz_, frame->sample_rate_hz_);
+    RTC_DCHECK_EQ(
+        frame->samples_per_channel_,
+        static_cast<size_t>((mixedAudio->sample_rate_hz_ * kFrameDurationInMs) /
+                            1000));
 
+    // Mix |f.frame| into |mixedAudio|, with saturation protection.
+    // These effect is applied to |f.frame| itself prior to mixing.
+    if (use_limiter) {
+      // Divide by two to avoid saturation in the mixing.
+      // This is only meaningful if the limiter will be used.
+      *frame >>= 1;
+    }
+    RTC_DCHECK_EQ(frame->num_channels_, mixedAudio->num_channels_);
+    *mixedAudio += *frame;
     position++;
-  }
-
-  return 0;
-}
-
-// TODO(andrew): consolidate this function with MixFromList.
-int32_t AudioMixerImpl::MixAnonomouslyFromList(
-    AudioFrame* mixedAudio,
-    const AudioFrameList& audioFrameList) const {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
-  WEBRTC_TRACE(kTraceStream, kTraceAudioMixerServer, id_,
-               "MixAnonomouslyFromList(mixedAudio, audioFrameList)");
-
-  if (audioFrameList.empty())
-    return 0;
-
-  for (AudioFrameList::const_iterator iter = audioFrameList.begin();
-       iter != audioFrameList.end(); ++iter) {
-    if (!iter->muted) {
-      MixFrames(mixedAudio, iter->frame, use_limiter_);
-    }
   }
   return 0;
 }
