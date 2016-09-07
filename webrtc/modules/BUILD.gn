@@ -599,6 +599,7 @@ if (rtc_include_tests) {
       "audio_coding",
       "audio_coding:acm_receive_test",
       "audio_coding:acm_send_test",
+      "audio_coding:audio_network_adaptor",
       "audio_coding:builtin_audio_decoder_factory",
       "audio_coding:cng",
       "audio_coding:isac_fix",

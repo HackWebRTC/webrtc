@@ -127,6 +127,7 @@
             'audio_conference_mixer',
             'audio_device'  ,
             'audio_mixer',
+            'audio_network_adaptor',
             'audio_processing',
             'audioproc_test_utils',
             'bitrate_controller',

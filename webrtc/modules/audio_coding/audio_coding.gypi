@@ -9,6 +9,7 @@
 {
   'includes': [
     '../../build/common.gypi',
+    'audio_network_adaptor/audio_network_adaptor.gypi',
     'codecs/interfaces.gypi',
     'codecs/cng/cng.gypi',
     'codecs/g711/g711.gypi',
@@ -147,6 +148,7 @@
         '<@(audio_coding_dependencies)',
         '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/webrtc.gyp:rtc_event_log',
+        'audio_network_adaptor',
         'neteq',
         'rent_a_codec',
       ],

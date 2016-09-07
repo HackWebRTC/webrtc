@@ -116,6 +116,7 @@ rtc_source_set("audio_coding") {
   }
 
   deps = audio_coding_deps + [
+           ":audio_network_adaptor",
            ":neteq",
            ":rent_a_codec",
            "../..:rtc_event_log",
@@ -695,6 +696,15 @@ rtc_source_set("webrtc_opus") {
   } else if (build_with_mozilla) {
     include_dirs = [ getenv("DIST") + "/include/opus" ]
   }
+}
+
+source_set("audio_network_adaptor") {
+  sources = [
+    "audio_network_adaptor/audio_network_adaptor.cc",
+    "audio_network_adaptor/include/audio_network_adaptor.h",
+  ]
+  configs += [ "../..:common_config" ]
+  public_configs = [ "../..:common_inherited_config" ]
 }
 
 config("neteq_config") {
