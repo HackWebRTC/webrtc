@@ -1100,6 +1100,8 @@ if (rtc_include_tests) {
       "neteq/tools/audio_sink.h",
       "neteq/tools/constant_pcm_packet_source.cc",
       "neteq/tools/constant_pcm_packet_source.h",
+      "neteq/tools/encode_neteq_input.cc",
+      "neteq/tools/encode_neteq_input.h",
       "neteq/tools/fake_decode_from_file.cc",
       "neteq/tools/fake_decode_from_file.h",
       "neteq/tools/input_audio_file.cc",

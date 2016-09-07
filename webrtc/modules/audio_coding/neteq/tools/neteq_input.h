@@ -65,7 +65,9 @@ class NetEqInput {
   // time).
   virtual void AdvanceOutputEvent() = 0;
 
-  // Returns true if the source has come to an end.
+  // Returns true if the source has come to an end. An implementation must
+  // eventually return true from this method, or the test will end up in an
+  // infinite loop.
   virtual bool ended() const = 0;
 
   // Returns the RTP header for the next packet, i.e., the packet that will be
