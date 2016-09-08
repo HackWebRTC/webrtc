@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include "webrtc/base/logging.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 
 namespace webrtc {
@@ -246,7 +247,7 @@ bool RtpHeaderParser::Parse(RTPHeader* header,
 
   // May not be present in packet.
   header->extension.hasVideoRotation = false;
-  header->extension.videoRotation = 0;
+  header->extension.videoRotation = kVideoRotation_0;
 
   // May not be present in packet.
   header->extension.playout_delay.min_ms = -1;
@@ -397,7 +398,8 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
           // |  ID   | len=0 |0 0 0 0 C F R R|
           // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
           header->extension.hasVideoRotation = true;
-          header->extension.videoRotation = ptr[0];
+          header->extension.videoRotation =
+              ConvertCVOByteToVideoRotation(ptr[0]);
           break;
         }
         case kRtpExtensionTransportSequenceNumber: {

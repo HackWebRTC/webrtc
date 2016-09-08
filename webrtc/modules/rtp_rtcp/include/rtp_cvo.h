@@ -34,8 +34,10 @@ inline uint8_t ConvertVideoRotationToCVOByte(VideoRotation rotation) {
   return 0;
 }
 
-inline VideoRotation ConvertCVOByteToVideoRotation(uint8_t rotation) {
-  switch (rotation) {
+inline VideoRotation ConvertCVOByteToVideoRotation(uint8_t cvo_byte) {
+  // CVO byte: |0 0 0 0 C F R R|.
+  const uint8_t rotation_bits = cvo_byte & 0x3;
+  switch (rotation_bits) {
     case 0:
       return kVideoRotation_0;
     case 1:
