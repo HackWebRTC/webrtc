@@ -151,56 +151,63 @@ public class ThreadUtils {
   public static <V> V invokeAtFrontUninterruptibly(
       final Handler handler, final Callable<V> callable) {
     if (handler.getLooper().getThread() == Thread.currentThread()) {
-      V value;
       try {
-        value = callable.call();
+        return callable.call();
       } catch (Exception e) {
-        final RuntimeException runtimeException =
-            new RuntimeException("Callable threw exception: " + e);
-        runtimeException.setStackTrace(e.getStackTrace());
-        throw runtimeException;
+        throw new RuntimeException(e);
       }
-      return value;
+    }
+    // Place-holder classes that are assignable inside nested class.
+    class CaughtException {
+      Exception e;
     }
     class Result {
       public V value;
     }
     final Result result = new Result();
+    final CaughtException caughtException = new CaughtException();
     final CountDownLatch barrier = new CountDownLatch(1);
     handler.post(new Runnable() {
       @Override public void run() {
         try {
           result.value = callable.call();
         } catch (Exception e) {
-          final RuntimeException runtimeException =
-              new RuntimeException("Callable threw exception: " + e);
-          runtimeException.setStackTrace(e.getStackTrace());
-          throw runtimeException;
+          caughtException.e = e;
         }
         barrier.countDown();
       }
     });
     awaitUninterruptibly(barrier);
+    // Re-throw any runtime exception caught inside the other thread. Since this is an invoke, add
+    // stack trace for the waiting thread as well.
+    if (caughtException.e != null) {
+      final RuntimeException runtimeException = new RuntimeException(caughtException.e);
+      runtimeException.setStackTrace(concatStackTraces(
+          caughtException.e.getStackTrace(),
+          runtimeException.getStackTrace()));
+      throw runtimeException;
+    }
     return result.value;
   }
 
   /**
-   * Post |runner| to |handler|, at the front, and wait for
-   * completion.
+   * Post |runner| to |handler|, at the front, and wait for completion.
    */
   public static void invokeAtFrontUninterruptibly(final Handler handler, final Runnable runner) {
-    if (handler.getLooper().getThread() == Thread.currentThread()) {
-      runner.run();
-      return;
-    }
-    final CountDownLatch barrier = new CountDownLatch(1);
-    handler.postAtFrontOfQueue(new Runnable() {
+    invokeAtFrontUninterruptibly(handler, new Callable<Void>() {
       @Override
-      public void run() {
+      public Void call() {
         runner.run();
-        barrier.countDown();
+        return null;
       }
     });
-    awaitUninterruptibly(barrier);
+  }
+
+  private static StackTraceElement[] concatStackTraces(
+      StackTraceElement[] inner, StackTraceElement[] outer) {
+    final StackTraceElement[] combined = new StackTraceElement[inner.length + outer.length];
+    System.arraycopy(inner, 0, combined, 0, inner.length);
+    System.arraycopy(outer, 0, combined, inner.length, outer.length);
+    return combined;
   }
 }
