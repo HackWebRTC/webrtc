@@ -189,7 +189,7 @@ public class WebRtcAudioTrack {
     // to the total buffer size |minBufferSizeInBytes|. But, we have seen
     // reports of "getMinBufferSize(): error querying hardware". Hence, it
     // can happen that |minBufferSizeInBytes| contains an invalid value.
-    if (byteBuffer.capacity() < minBufferSizeInBytes) {
+    if (minBufferSizeInBytes < byteBuffer.capacity()) {
       Logging.e(TAG, "AudioTrack.getMinBufferSize returns an invalid value.");
       return false;
     }
