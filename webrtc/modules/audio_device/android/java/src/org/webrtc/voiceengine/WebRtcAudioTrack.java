@@ -184,12 +184,22 @@ public class WebRtcAudioTrack {
         AudioFormat.CHANNEL_OUT_MONO,
         AudioFormat.ENCODING_PCM_16BIT);
     Logging.d(TAG, "AudioTrack.getMinBufferSize: " + minBufferSizeInBytes);
-    assertTrue(audioTrack == null);
-
     // For the streaming mode, data must be written to the audio sink in
     // chunks of size (given by byteBuffer.capacity()) less than or equal
-    // to the total buffer size |minBufferSizeInBytes|.
-    assertTrue(byteBuffer.capacity() < minBufferSizeInBytes);
+    // to the total buffer size |minBufferSizeInBytes|. But, we have seen
+    // reports of "getMinBufferSize(): error querying hardware". Hence, it
+    // can happen that |minBufferSizeInBytes| contains an invalid value.
+    if (byteBuffer.capacity() < minBufferSizeInBytes) {
+      Logging.e(TAG, "AudioTrack.getMinBufferSize returns an invalid value.");
+      return false;
+    }
+
+    // Ensure that prevision audio session was stopped correctly before trying
+    // to create a new AudioTrack.
+    if (audioTrack != null) {
+      Logging.e(TAG, "Conflict with existing AudioTrack.");
+      return false;
+    }
     try {
       // Create an AudioTrack object and initialize its associated audio buffer.
       // The size of this buffer determines how long an AudioTrack can play
