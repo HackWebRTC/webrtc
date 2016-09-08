@@ -18,6 +18,7 @@
 #include "webrtc/system_wrappers/include/clock.h"
 
 using testing::_;
+using testing::AtLeast;
 using testing::NiceMock;
 using testing::Return;
 using testing::SaveArg;
@@ -167,6 +168,22 @@ TEST_F(CongestionControllerTest,
       .WillOnce(Return(PacedSender::kMaxQueueLengthMs - 1));
   EXPECT_CALL(observer_, OnNetworkChanged(kInitialBitrateBps * 2, _, _));
   controller_->Process();
+}
+
+TEST_F(CongestionControllerTest, GetPacerQueuingDelayMs) {
+  EXPECT_CALL(observer_, OnNetworkChanged(_, _, _)).Times(AtLeast(1));
+
+  const int64_t kQueueTimeMs = 123;
+  EXPECT_CALL(*pacer_, QueueInMs()).WillRepeatedly(Return(kQueueTimeMs));
+  EXPECT_EQ(kQueueTimeMs, controller_->GetPacerQueuingDelayMs());
+
+  // Expect zero pacer delay when network is down.
+  controller_->SignalNetworkState(kNetworkDown);
+  EXPECT_EQ(0, controller_->GetPacerQueuingDelayMs());
+
+  // Network is up, pacer delay should be reported.
+  controller_->SignalNetworkState(kNetworkUp);
+  EXPECT_EQ(kQueueTimeMs, controller_->GetPacerQueuingDelayMs());
 }
 
 }  // namespace test

@@ -309,7 +309,7 @@ void CongestionController::SetAllocatedSendBitrateLimits(
 }
 
 int64_t CongestionController::GetPacerQueuingDelayMs() const {
-  return pacer_->QueueInMs();
+  return IsNetworkDown() ? 0 : pacer_->QueueInMs();
 }
 
 void CongestionController::SignalNetworkState(NetworkState state) {
