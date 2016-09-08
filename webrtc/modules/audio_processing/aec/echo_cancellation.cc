@@ -683,6 +683,7 @@ static void ProcessExtended(Aec* self,
                             int32_t skew) {
   size_t i;
   const int delay_diff_offset = kDelayDiffOffsetSamples;
+  RTC_DCHECK(num_samples == 80 || num_samples == 160);
 #if defined(WEBRTC_UNTRUSTED_DELAY)
   reported_delay_ms = kFixedDelayMs;
 #else

@@ -128,16 +128,20 @@ struct AecCore {
   int inSamples, outSamples;
   int delayEstCtr;
 
-  RingBuffer* nearFrBuf;
+  // Nearend buffer used for changing from FRAME_LEN to PART_LEN sample block
+  // sizes. The buffer stores all the incoming bands and for each band a maximum
+  // of PART_LEN - (FRAME_LEN - PART_LEN) values need to be buffered in order to
+  // change the block size from FRAME_LEN to PART_LEN.
+  float nearend_buffer[NUM_HIGH_BANDS_MAX + 1]
+                      [PART_LEN - (FRAME_LEN - PART_LEN)];
+  int nearend_buffer_size;
   RingBuffer* outFrBuf;
 
-  RingBuffer* nearFrBufH[NUM_HIGH_BANDS_MAX];
   RingBuffer* outFrBufH[NUM_HIGH_BANDS_MAX];
 
-  float dBuf[PART_LEN2];  // nearend
   float eBuf[PART_LEN2];  // error
 
-  float dBufH[NUM_HIGH_BANDS_MAX][PART_LEN2];  // nearend
+  float previous_nearend_block[NUM_HIGH_BANDS_MAX + 1][PART_LEN];
 
   float xPow[PART_LEN1];
   float dPow[PART_LEN1];
