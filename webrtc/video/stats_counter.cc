@@ -74,6 +74,10 @@ AggregatedStats StatsCounter::GetStats() {
   return aggregated_counter_->ComputeStats();
 }
 
+bool StatsCounter::HasSample() const {
+  return last_process_time_ms_ != -1;
+}
+
 bool StatsCounter::TimeToProcess() {
   int64_t now = clock_->TimeInMilliseconds();
   if (last_process_time_ms_ == -1)

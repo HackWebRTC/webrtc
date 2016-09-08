@@ -72,6 +72,13 @@ TEST_F(StatsCounterTest, TestRegisterObserver) {
   EXPECT_EQ(1, observer->num_calls_);
 }
 
+TEST_F(StatsCounterTest, HasSample) {
+  AvgCounter counter(&clock_, nullptr);
+  EXPECT_FALSE(counter.HasSample());
+  counter.Add(1);
+  EXPECT_TRUE(counter.HasSample());
+}
+
 TEST_F(StatsCounterTest, VerifyProcessInterval) {
   StatsCounterObserverImpl* observer = new StatsCounterObserverImpl();
   AvgCounter counter(&clock_, observer);

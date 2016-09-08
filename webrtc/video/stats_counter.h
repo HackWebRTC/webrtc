@@ -82,6 +82,9 @@ class StatsCounter {
 
   AggregatedStats GetStats();
 
+  // Checks if a sample has been added (i.e. Add or Set called).
+  bool HasSample() const;
+
  protected:
   StatsCounter(Clock* clock,
                bool include_empty_intervals,
