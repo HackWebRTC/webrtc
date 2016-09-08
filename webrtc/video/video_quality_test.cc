@@ -751,9 +751,9 @@ void VideoQualityTest::TestBody() {}
 
 std::string VideoQualityTest::GenerateGraphTitle() const {
   std::stringstream ss;
-  ss << params_.common.codec;
-  ss << " (" << params_.common.target_bitrate_bps / 1000 << "kbps";
-  ss << ", " << params_.common.fps << " FPS";
+  ss << params_.video.codec;
+  ss << " (" << params_.video.target_bitrate_bps / 1000 << "kbps";
+  ss << ", " << params_.video.fps << " FPS";
   if (params_.screenshare.scroll_duration)
     ss << ", " << params_.screenshare.scroll_duration << "s scroll";
   if (params_.ss.streams.size() > 1)
@@ -778,25 +778,23 @@ void VideoQualityTest::CheckParams() {
     // retransmitting the wrong packets.
     RTC_CHECK(params_.ss.selected_sl == -1 ||
               params_.ss.selected_sl == params_.ss.num_spatial_layers - 1);
-    RTC_CHECK(params_.common.selected_tl == -1 ||
-              params_.common.selected_tl ==
-                  params_.common.num_temporal_layers - 1);
+    RTC_CHECK(params_.video.selected_tl == -1 ||
+              params_.video.selected_tl ==
+                  params_.video.num_temporal_layers - 1);
   }
 
   // TODO(ivica): Should max_bitrate_bps == -1 represent inf max bitrate, as it
   // does in some parts of the code?
-  RTC_CHECK_GE(params_.common.max_bitrate_bps,
-               params_.common.target_bitrate_bps);
-  RTC_CHECK_GE(params_.common.target_bitrate_bps,
-               params_.common.min_bitrate_bps);
-  RTC_CHECK_LT(params_.common.selected_tl, params_.common.num_temporal_layers);
+  RTC_CHECK_GE(params_.video.max_bitrate_bps, params_.video.target_bitrate_bps);
+  RTC_CHECK_GE(params_.video.target_bitrate_bps, params_.video.min_bitrate_bps);
+  RTC_CHECK_LT(params_.video.selected_tl, params_.video.num_temporal_layers);
   RTC_CHECK_LT(params_.ss.selected_stream, params_.ss.streams.size());
   for (const VideoStream& stream : params_.ss.streams) {
     RTC_CHECK_GE(stream.min_bitrate_bps, 0);
     RTC_CHECK_GE(stream.target_bitrate_bps, stream.min_bitrate_bps);
     RTC_CHECK_GE(stream.max_bitrate_bps, stream.target_bitrate_bps);
     RTC_CHECK_EQ(static_cast<int>(stream.temporal_layer_thresholds_bps.size()),
-                 params_.common.num_temporal_layers - 1);
+                 params_.video.num_temporal_layers - 1);
   }
   // TODO(ivica): Should we check if the sum of all streams/layers is equal to
   // the total bitrate? We anyway have to update them in the case bitrate
@@ -806,9 +804,9 @@ void VideoQualityTest::CheckParams() {
   RTC_CHECK(params_.ss.spatial_layers.empty() ||
             params_.ss.spatial_layers.size() ==
                 static_cast<size_t>(params_.ss.num_spatial_layers));
-  if (params_.common.codec == "VP8") {
+  if (params_.video.codec == "VP8") {
     RTC_CHECK_EQ(params_.ss.num_spatial_layers, 1);
-  } else if (params_.common.codec == "VP9") {
+  } else if (params_.video.codec == "VP9") {
     RTC_CHECK_EQ(params_.ss.streams.size(), 1u);
   }
 }
@@ -844,14 +842,14 @@ std::vector<int> VideoQualityTest::ParseCSV(const std::string& str) {
 // Static.
 VideoStream VideoQualityTest::DefaultVideoStream(const Params& params) {
   VideoStream stream;
-  stream.width = params.common.width;
-  stream.height = params.common.height;
-  stream.max_framerate = params.common.fps;
-  stream.min_bitrate_bps = params.common.min_bitrate_bps;
-  stream.target_bitrate_bps = params.common.target_bitrate_bps;
-  stream.max_bitrate_bps = params.common.max_bitrate_bps;
+  stream.width = params.video.width;
+  stream.height = params.video.height;
+  stream.max_framerate = params.video.fps;
+  stream.min_bitrate_bps = params.video.min_bitrate_bps;
+  stream.target_bitrate_bps = params.video.target_bitrate_bps;
+  stream.max_bitrate_bps = params.video.max_bitrate_bps;
   stream.max_qp = 52;
-  if (params.common.num_temporal_layers == 2)
+  if (params.video.num_temporal_layers == 2)
     stream.temporal_layer_thresholds_bps.push_back(stream.target_bitrate_bps);
   return stream;
 }
@@ -894,7 +892,7 @@ void VideoQualityTest::FillScalabilitySettings(
           stream.temporal_layer_thresholds_bps.end(), v.begin() + 7, v.end());
     } else {
       // Automatic TL thresholds for more than two layers not supported.
-      RTC_CHECK_LE(params->common.num_temporal_layers, 2);
+      RTC_CHECK_LE(params->video.num_temporal_layers, 2);
     }
     params->ss.streams.push_back(stream);
   }
@@ -926,13 +924,13 @@ void VideoQualityTest::SetupCommon(Transport* send_transport,
   CreateSendConfig(num_streams, 0, send_transport);
 
   int payload_type;
-  if (params_.common.codec == "H264") {
+  if (params_.video.codec == "H264") {
     encoder_.reset(VideoEncoder::Create(VideoEncoder::kH264));
     payload_type = kPayloadTypeH264;
-  } else if (params_.common.codec == "VP8") {
+  } else if (params_.video.codec == "VP8") {
     encoder_.reset(VideoEncoder::Create(VideoEncoder::kVp8));
     payload_type = kPayloadTypeVP8;
-  } else if (params_.common.codec == "VP9") {
+  } else if (params_.video.codec == "VP9") {
     encoder_.reset(VideoEncoder::Create(VideoEncoder::kVp9));
     payload_type = kPayloadTypeVP9;
   } else {
@@ -940,7 +938,7 @@ void VideoQualityTest::SetupCommon(Transport* send_transport,
     return;
   }
   video_send_config_.encoder_settings.encoder = encoder_.get();
-  video_send_config_.encoder_settings.payload_name = params_.common.codec;
+  video_send_config_.encoder_settings.payload_name = params_.video.codec;
   video_send_config_.encoder_settings.payload_type = payload_type;
   video_send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
   video_send_config_.rtp.rtx.payload_type = kSendRtxPayloadType;
@@ -948,7 +946,7 @@ void VideoQualityTest::SetupCommon(Transport* send_transport,
     video_send_config_.rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[i]);
 
   video_send_config_.rtp.extensions.clear();
-  if (params_.common.send_side_bwe) {
+  if (params_.call.send_side_bwe) {
     video_send_config_.rtp.extensions.push_back(
         RtpExtension(RtpExtension::kTransportSequenceNumberUri,
                      test::kTransportSequenceNumberExtensionId));
@@ -958,7 +956,7 @@ void VideoQualityTest::SetupCommon(Transport* send_transport,
   }
 
   video_encoder_config_.min_transmit_bitrate_bps =
-      params_.common.min_transmit_bps;
+      params_.video.min_transmit_bps;
   video_encoder_config_.streams = params_.ss.streams;
   video_encoder_config_.spatial_layers = params_.ss.spatial_layers;
 
@@ -969,7 +967,7 @@ void VideoQualityTest::SetupCommon(Transport* send_transport,
     video_receive_configs_[i].rtp.rtx[payload_type].ssrc = kSendRtxSsrcs[i];
     video_receive_configs_[i].rtp.rtx[payload_type].payload_type =
         kSendRtxPayloadType;
-    video_receive_configs_[i].rtp.transport_cc = params_.common.send_side_bwe;
+    video_receive_configs_[i].rtp.transport_cc = params_.call.send_side_bwe;
   }
 }
 
@@ -978,19 +976,19 @@ void VideoQualityTest::SetupScreenshare() {
 
   // Fill out codec settings.
   video_encoder_config_.content_type = VideoEncoderConfig::ContentType::kScreen;
-  if (params_.common.codec == "VP8") {
+  if (params_.video.codec == "VP8") {
     codec_settings_.VP8 = VideoEncoder::GetDefaultVp8Settings();
     codec_settings_.VP8.denoisingOn = false;
     codec_settings_.VP8.frameDroppingOn = false;
     codec_settings_.VP8.numberOfTemporalLayers =
-        static_cast<unsigned char>(params_.common.num_temporal_layers);
+        static_cast<unsigned char>(params_.video.num_temporal_layers);
     video_encoder_config_.encoder_specific_settings = &codec_settings_.VP8;
-  } else if (params_.common.codec == "VP9") {
+  } else if (params_.video.codec == "VP9") {
     codec_settings_.VP9 = VideoEncoder::GetDefaultVp9Settings();
     codec_settings_.VP9.denoisingOn = false;
     codec_settings_.VP9.frameDroppingOn = false;
     codec_settings_.VP9.numberOfTemporalLayers =
-        static_cast<unsigned char>(params_.common.num_temporal_layers);
+        static_cast<unsigned char>(params_.video.num_temporal_layers);
     video_encoder_config_.encoder_specific_settings = &codec_settings_.VP9;
     codec_settings_.VP9.numberOfSpatialLayers =
         static_cast<unsigned char>(params_.ss.num_spatial_layers);
@@ -1009,10 +1007,10 @@ void VideoQualityTest::SetupScreenshare() {
     // Cycle image every slide_change_interval seconds.
     frame_generator_.reset(test::FrameGenerator::CreateFromYuvFile(
         slides, kWidth, kHeight,
-        params_.screenshare.slide_change_interval * params_.common.fps));
+        params_.screenshare.slide_change_interval * params_.video.fps));
   } else {
-    RTC_CHECK_LE(params_.common.width, kWidth);
-    RTC_CHECK_LE(params_.common.height, kHeight);
+    RTC_CHECK_LE(params_.video.width, kWidth);
+    RTC_CHECK_LE(params_.video.height, kHeight);
     RTC_CHECK_GT(params_.screenshare.slide_change_interval, 0);
     const int kPauseDurationMs = (params_.screenshare.slide_change_interval -
                                   params_.screenshare.scroll_duration) *
@@ -1022,8 +1020,8 @@ void VideoQualityTest::SetupScreenshare() {
 
     frame_generator_.reset(
         test::FrameGenerator::CreateScrollingInputFromYuvFiles(
-            clock_, slides, kWidth, kHeight, params_.common.width,
-            params_.common.height, params_.screenshare.scroll_duration * 1000,
+            clock_, slides, kWidth, kHeight, params_.video.width,
+            params_.video.height, params_.screenshare.scroll_duration * 1000,
             kPauseDurationMs));
   }
 }
@@ -1032,18 +1030,18 @@ void VideoQualityTest::CreateCapturer(VideoCaptureInput* input) {
   if (params_.screenshare.enabled) {
     test::FrameGeneratorCapturer* frame_generator_capturer =
         new test::FrameGeneratorCapturer(
-            clock_, input, frame_generator_.release(), params_.common.fps);
+            clock_, input, frame_generator_.release(), params_.video.fps);
     EXPECT_TRUE(frame_generator_capturer->Init());
     capturer_.reset(frame_generator_capturer);
   } else {
     if (params_.video.clip_name.empty()) {
-      capturer_.reset(test::VideoCapturer::Create(input, params_.common.width,
-                                                  params_.common.height,
-                                                  params_.common.fps, clock_));
+      capturer_.reset(test::VideoCapturer::Create(input, params_.video.width,
+                                                  params_.video.height,
+                                                  params_.video.fps, clock_));
     } else {
       capturer_.reset(test::FrameGeneratorCapturer::CreateFromYuvFile(
           input, test::ResourcePath(params_.video.clip_name, "yuv"),
-          params_.common.width, params_.common.height, params_.common.fps,
+          params_.video.width, params_.video.height, params_.video.fps,
           clock_));
       ASSERT_TRUE(capturer_) << "Could not create capturer for "
                              << params_.video.clip_name
@@ -1055,7 +1053,7 @@ void VideoQualityTest::CreateCapturer(VideoCaptureInput* input) {
 void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   params_ = params;
 
-  RTC_CHECK(!params_.audio);
+  RTC_CHECK(!params_.audio.enabled);
   // TODO(ivica): Merge with RunWithRenderer and use a flag / argument to
   // differentiate between the analyzer and the renderer case.
   CheckParams();
@@ -1070,13 +1068,13 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   }
 
   Call::Config call_config;
-  call_config.bitrate_config = params.common.call_bitrate_config;
+  call_config.bitrate_config = params_.call.call_bitrate_config;
   CreateCalls(call_config, call_config);
 
   test::LayerFilteringTransport send_transport(
-      params.pipe, sender_call_.get(), kPayloadTypeVP8, kPayloadTypeVP9,
-      params.common.selected_tl, params_.ss.selected_sl);
-  test::DirectTransport recv_transport(params.pipe, receiver_call_.get());
+      params_.pipe, sender_call_.get(), kPayloadTypeVP8, kPayloadTypeVP9,
+      params_.video.selected_tl, params_.ss.selected_sl);
+  test::DirectTransport recv_transport(params_.pipe, receiver_call_.get());
 
   std::string graph_title = params_.analyzer.graph_title;
   if (graph_title.empty())
@@ -1092,8 +1090,8 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
                         ? params_.ss.selected_sl
                         : params_.ss.num_spatial_layers - 1;
   bool disable_quality_check =
-      selected_stream.width != params_.common.width ||
-      selected_stream.height != params_.common.height ||
+      selected_stream.width != params_.video.width ||
+      selected_stream.height != params_.video.height ||
       (!params_.ss.spatial_layers.empty() &&
        params_.ss.spatial_layers[selected_sl].scaling_factor_num !=
            params_.ss.spatial_layers[selected_sl].scaling_factor_den);
@@ -1107,7 +1105,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
       &send_transport, params_.analyzer.test_label,
       disable_quality_check ? -1.1 : params_.analyzer.avg_psnr_threshold,
       disable_quality_check ? -1.1 : params_.analyzer.avg_ssim_threshold,
-      params_.analyzer.test_durations_secs * params_.common.fps,
+      params_.analyzer.test_durations_secs * params_.video.fps,
       graph_data_output_file, graph_title,
       kVideoSendSsrcs[params_.ss.selected_stream]);
 
@@ -1158,8 +1156,8 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
   CheckParams();
 
   std::unique_ptr<test::VideoRenderer> local_preview(
-      test::VideoRenderer::Create("Local Preview", params_.common.width,
-                                  params_.common.height));
+      test::VideoRenderer::Create("Local Preview", params_.video.width,
+                                  params_.video.height));
   size_t stream_id = params_.ss.selected_stream;
   std::string title = "Loopback Video";
   if (params_.ss.streams.size() > 1) {
@@ -1176,10 +1174,10 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
   // TODO(ivica): Remove bitrate_config and use the default Call::Config(), to
   // match the full stack tests.
   Call::Config call_config;
-  call_config.bitrate_config = params_.common.call_bitrate_config;
+  call_config.bitrate_config = params_.call.call_bitrate_config;
 
   ::VoiceEngineState voe;
-  if (params_.audio) {
+  if (params_.audio.enabled) {
     CreateVoiceEngine(&voe, decoder_factory_);
     AudioState::Config audio_state_config;
     audio_state_config.voice_engine = voe.voice_engine;
@@ -1190,7 +1188,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
 
   test::LayerFilteringTransport transport(
       params.pipe, call.get(), kPayloadTypeVP8, kPayloadTypeVP9,
-      params.common.selected_tl, params_.ss.selected_sl);
+      params.video.selected_tl, params_.ss.selected_sl);
   // TODO(ivica): Use two calls to be able to merge with RunWithAnalyzer or at
   // least share as much code as possible. That way this test would also match
   // the full stack tests better.
@@ -1200,13 +1198,13 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
 
   video_send_config_.pre_encode_callback = local_preview.get();
   video_receive_configs_[stream_id].renderer = loopback_video.get();
-  if (params_.audio && params_.audio_video_sync)
+  if (params_.audio.enabled && params_.audio.sync_video)
     video_receive_configs_[stream_id].sync_group = kSyncGroup;
 
   video_send_config_.suspend_below_min_bitrate =
-      params_.common.suspend_below_min_bitrate;
+      params_.video.suspend_below_min_bitrate;
 
-  if (params.common.fec) {
+  if (params.video.fec) {
     video_send_config_.rtp.fec.red_payload_type = kRedPayloadType;
     video_send_config_.rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
     video_receive_configs_[stream_id].rtp.fec.red_payload_type =
@@ -1225,7 +1223,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
   CreateCapturer(video_send_stream_->Input());
 
   AudioReceiveStream* audio_receive_stream = nullptr;
-  if (params_.audio) {
+  if (params_.audio.enabled) {
     audio_send_config_ = AudioSendStream::Config(&transport);
     audio_send_config_.voe_channel_id = voe.send_channel_id;
     audio_send_config_.rtp.ssrc = kAudioSendSsrc;
@@ -1233,7 +1231,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
     // Add extension to enable audio send side BWE, and allow audio bit rate
     // adaptation.
     audio_send_config_.rtp.extensions.clear();
-    if (params_.common.send_side_bwe) {
+    if (params_.call.send_side_bwe) {
       audio_send_config_.rtp.extensions.push_back(webrtc::RtpExtension(
           webrtc::RtpExtension::kTransportSequenceNumberUri,
           test::kTransportSequenceNumberExtensionId));
@@ -1248,10 +1246,10 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
     audio_config.rtcp_send_transport = &transport;
     audio_config.voe_channel_id = voe.receive_channel_id;
     audio_config.rtp.remote_ssrc = audio_send_config_.rtp.ssrc;
-    audio_config.rtp.transport_cc = params_.common.send_side_bwe;
+    audio_config.rtp.transport_cc = params_.call.send_side_bwe;
     audio_config.rtp.extensions = audio_send_config_.rtp.extensions;
     audio_config.decoder_factory = decoder_factory_;
-    if (params_.audio_video_sync)
+    if (params_.audio.sync_video)
       audio_config.sync_group = kSyncGroup;
 
     audio_receive_stream =call->CreateAudioReceiveStream(audio_config);
@@ -1265,7 +1263,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
   video_send_stream_->Start();
   capturer_->Start();
 
-  if (params_.audio) {
+  if (params_.audio.enabled) {
     // Start receiving audio.
     audio_receive_stream->Start();
     EXPECT_EQ(0, voe.base->StartPlayout(voe.receive_channel_id));
@@ -1278,7 +1276,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
 
   test::PressEnterToContinue();
 
-  if (params_.audio) {
+  if (params_.audio.enabled) {
     // Stop sending audio.
     EXPECT_EQ(0, voe.base->StopSend(voe.send_channel_id));
     audio_send_stream_->Stop();
@@ -1297,13 +1295,13 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
   call->DestroyVideoReceiveStream(video_receive_stream);
   call->DestroyVideoSendStream(video_send_stream_);
 
-  if (params_.audio) {
-     call->DestroyAudioSendStream(audio_send_stream_);
-     call->DestroyAudioReceiveStream(audio_receive_stream);
+  if (params_.audio.enabled) {
+    call->DestroyAudioSendStream(audio_send_stream_);
+    call->DestroyAudioReceiveStream(audio_receive_stream);
   }
 
   transport.StopSending();
-  if (params_.audio)
+  if (params_.audio.enabled)
     DestroyVoiceEngine(&voe);
 }
 
