@@ -35,6 +35,17 @@ hooks = [
                 'if os.path.exists(script) else 0')],
   },
   {
+    # TODO(kjellander): Remove when (crbug.com/644722 is fixed.
+    # This prunes origin for the mockito repo, which has some conflicting refs
+    # in the remote.
+    'name': 'local_prune_mockito_refs',
+    'pattern': '.',
+    'action': [
+       'python',
+       'src/webrtc/build/prune_third_party_mockito_origin.py'
+    ],
+  },
+  {
     # Clone chromium and its deps.
     'name': 'sync chromium',
     'pattern': '.',
