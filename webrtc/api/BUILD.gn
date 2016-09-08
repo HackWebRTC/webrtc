@@ -220,12 +220,12 @@ if (is_android && !build_with_chromium) {
     }
   }
 
-  shared_library("libjingle_peerconnection_so") {
+  rtc_shared_library("libjingle_peerconnection_so") {
     sources = [
       "android/jni/jni_onload.cc",
     ]
 
-    configs -= [ "//build/config/android:hide_native_jni_exports" ]
+    suppressed_configs += [ "//build/config/android:hide_native_jni_exports" ]
 
     deps = [
       ":libjingle_peerconnection",

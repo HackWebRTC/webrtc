@@ -215,6 +215,11 @@ set_defaults("rtc_static_library") {
   suppressed_configs = []
 }
 
+set_defaults("rtc_shared_library") {
+  configs = rtc_add_configs
+  suppressed_configs = []
+}
+
 template("rtc_test") {
   test(target_name) {
     forward_variables_from(invoker,
@@ -279,6 +284,25 @@ template("rtc_executable") {
 
 template("rtc_static_library") {
   static_library(target_name) {
+    forward_variables_from(invoker,
+                           "*",
+                           [
+                             "configs",
+                             "public_configs",
+                             "suppressed_configs",
+                           ])
+    configs += invoker.configs
+    configs -= rtc_remove_configs
+    configs -= invoker.suppressed_configs
+    public_configs = [ rtc_common_inherited_config ]
+    if (defined(invoker.public_configs)) {
+      public_configs += invoker.public_configs
+    }
+  }
+}
+
+template("rtc_shared_library") {
+  shared_library(target_name) {
     forward_variables_from(invoker,
                            "*",
                            [
