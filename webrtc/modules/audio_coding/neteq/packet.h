@@ -27,44 +27,28 @@ struct Packet {
   // Datagram excluding RTP header and header extension.
   rtc::Buffer payload;
   bool primary = true;  // Primary, i.e., not redundant payload.
-  bool sync_packet = false;
   std::unique_ptr<TickTimer::Stopwatch> waiting_time;
 
   Packet();
   ~Packet();
 
   // Comparison operators. Establish a packet ordering based on (1) timestamp,
-  // (2) sequence number, (3) regular packet vs sync-packet and (4) redundancy.
+  // (2) sequence number and (3) redundancy.
   // Timestamp and sequence numbers are compared taking wrap-around into
-  // account. If both timestamp and sequence numbers are identical and one of
-  // the packets is sync-packet, the regular packet is considered earlier. For
-  // two regular packets with the same sequence number and timestamp a primary
-  // payload is considered "smaller" than a secondary.
+  // account. For two packets with the same sequence number and timestamp a
+  // primary payload is considered "smaller" than a secondary.
   bool operator==(const Packet& rhs) const {
     return (this->header.timestamp == rhs.header.timestamp &&
         this->header.sequenceNumber == rhs.header.sequenceNumber &&
-        this->primary == rhs.primary &&
-        this->sync_packet == rhs.sync_packet);
+        this->primary == rhs.primary);
   }
   bool operator!=(const Packet& rhs) const { return !operator==(rhs); }
   bool operator<(const Packet& rhs) const {
     if (this->header.timestamp == rhs.header.timestamp) {
       if (this->header.sequenceNumber == rhs.header.sequenceNumber) {
-        // Timestamp and sequence numbers are identical. A sync packet should
-        // be recognized "larger" (i.e. "later") compared to a "network packet"
-        // (regular packet from network not sync-packet). If none of the packets
-        // are sync-packets, then deem the left hand side to be "smaller"
-        // (i.e., "earlier") if it is  primary, and right hand side is not.
-        //
-        // The condition on sync packets to be larger than "network packets,"
-        // given same RTP sequence number and timestamp, guarantees that a
-        // "network packet" to be inserted in an earlier position into
-        // |packet_buffer_| compared to a sync packet of same timestamp and
-        // sequence number.
-        if (rhs.sync_packet)
-          return true;
-        if (this->sync_packet)
-          return false;
+        // Timestamp and sequence numbers are identical - deem the left
+        // hand side to be "smaller" (i.e., "earlier") if it is primary, and
+        // right hand side is not.
         return (this->primary && !rhs.primary);
       }
       return (static_cast<uint16_t>(rhs.header.sequenceNumber

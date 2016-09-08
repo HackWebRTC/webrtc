@@ -108,18 +108,6 @@ class NetEqImpl : public webrtc::NetEq {
                    rtc::ArrayView<const uint8_t> payload,
                    uint32_t receive_timestamp) override;
 
-  // Inserts a sync-packet into packet queue. Sync-packets are decoded to
-  // silence and are intended to keep AV-sync intact in an event of long packet
-  // losses when Video NACK is enabled but Audio NACK is not. Clients of NetEq
-  // might insert sync-packet when they observe that buffer level of NetEq is
-  // decreasing below a certain threshold, defined by the application.
-  // Sync-packets should have the same payload type as the last audio payload
-  // type, i.e. they cannot have DTMF or CNG payload type, nor a codec change
-  // can be implied by inserting a sync-packet.
-  // Returns kOk on success, kFail on failure.
-  int InsertSyncPacket(const WebRtcRTPHeader& rtp_header,
-                       uint32_t receive_timestamp) override;
-
   int GetAudio(AudioFrame* audio_frame, bool* muted) override;
 
   int RegisterPayloadType(NetEqDecoder codec,
@@ -223,8 +211,7 @@ class NetEqImpl : public webrtc::NetEq {
   // TODO(hlundin): Merge this with InsertPacket above?
   int InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
                            rtc::ArrayView<const uint8_t> payload,
-                           uint32_t receive_timestamp,
-                           bool is_sync_packet)
+                           uint32_t receive_timestamp)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Delivers 10 ms of audio data. The data is written to |audio_frame|.

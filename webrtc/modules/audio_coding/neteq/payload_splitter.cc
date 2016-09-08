@@ -137,11 +137,6 @@ int PayloadSplitter::SplitFec(PacketList* packet_list,
       LOG(LS_WARNING) << "SplitFec unknown payload type";
       return kUnknownPayloadType;
     }
-    // No splitting for a sync-packet.
-    if (packet->sync_packet) {
-      ++it;
-      continue;
-    }
 
     // Not an FEC packet.
     AudioDecoder* decoder = decoder_database->GetDecoder(payload_type);
@@ -169,7 +164,6 @@ int PayloadSplitter::SplitFec(PacketList* packet_list,
         new_packet->header.timestamp -= duration;
         new_packet->payload.SetData(packet->payload);
         new_packet->primary = false;
-        new_packet->sync_packet = packet->sync_packet;
         // Waiting time should not be set here.
         RTC_DCHECK(!packet->waiting_time);
 
@@ -230,11 +224,6 @@ int PayloadSplitter::SplitAudio(PacketList* packet_list,
     if (!info) {
       LOG(LS_WARNING) << "SplitAudio unknown payload type";
       return kUnknownPayloadType;
-    }
-    // No splitting for a sync-packet.
-    if (packet->sync_packet) {
-      ++it;
-      continue;
     }
     PacketList new_packets;
     switch (info->codec_type) {

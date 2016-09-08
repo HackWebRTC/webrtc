@@ -128,8 +128,7 @@ class NetEq {
     kDecodedTooMuch,
     kFrameSplitError,
     kRedundancySplitError,
-    kPacketBufferCorruption,
-    kSyncPacketNotAccepted
+    kPacketBufferCorruption
   };
 
   // Creates a new NetEq object, with parameters set in |config|. The |config|
@@ -148,18 +147,6 @@ class NetEq {
   virtual int InsertPacket(const WebRtcRTPHeader& rtp_header,
                            rtc::ArrayView<const uint8_t> payload,
                            uint32_t receive_timestamp) = 0;
-
-  // Inserts a sync-packet into packet queue. Sync-packets are decoded to
-  // silence and are intended to keep AV-sync intact in an event of long packet
-  // losses when Video NACK is enabled but Audio NACK is not. Clients of NetEq
-  // might insert sync-packet when they observe that buffer level of NetEq is
-  // decreasing below a certain threshold, defined by the application.
-  // Sync-packets should have the same payload type as the last audio payload
-  // type, i.e. they cannot have DTMF or CNG payload type, nor a codec change
-  // can be implied by inserting a sync-packet.
-  // Returns kOk on success, kFail on failure.
-  virtual int InsertSyncPacket(const WebRtcRTPHeader& rtp_header,
-                               uint32_t receive_timestamp) = 0;
 
   // Instructs NetEq to deliver 10 ms of audio data. The data is written to
   // |audio_frame|. All data in |audio_frame| is wiped; |data_|, |speech_type_|,

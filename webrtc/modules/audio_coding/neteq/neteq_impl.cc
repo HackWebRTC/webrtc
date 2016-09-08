@@ -137,21 +137,7 @@ int NetEqImpl::InsertPacket(const WebRtcRTPHeader& rtp_header,
   TRACE_EVENT0("webrtc", "NetEqImpl::InsertPacket");
   rtc::CritScope lock(&crit_sect_);
   int error =
-      InsertPacketInternal(rtp_header, payload, receive_timestamp, false);
-  if (error != 0) {
-    error_code_ = error;
-    return kFail;
-  }
-  return kOK;
-}
-
-int NetEqImpl::InsertSyncPacket(const WebRtcRTPHeader& rtp_header,
-                                uint32_t receive_timestamp) {
-  rtc::CritScope lock(&crit_sect_);
-  const uint8_t kSyncPayload[] = { 's', 'y', 'n', 'c' };
-  int error =
-      InsertPacketInternal(rtp_header, kSyncPayload, receive_timestamp, true);
-
+      InsertPacketInternal(rtp_header, payload, receive_timestamp);
   if (error != 0) {
     error_code_ = error;
     return kFail;
@@ -522,31 +508,12 @@ Operations NetEqImpl::last_operation_for_test() const {
 
 int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
                                     rtc::ArrayView<const uint8_t> payload,
-                                    uint32_t receive_timestamp,
-                                    bool is_sync_packet) {
+                                    uint32_t receive_timestamp) {
   if (payload.empty()) {
     LOG_F(LS_ERROR) << "payload is empty";
     return kInvalidPointer;
   }
-  // Sanity checks for sync-packets.
-  if (is_sync_packet) {
-    if (decoder_database_->IsDtmf(rtp_header.header.payloadType) ||
-        decoder_database_->IsRed(rtp_header.header.payloadType) ||
-        decoder_database_->IsComfortNoise(rtp_header.header.payloadType)) {
-      LOG_F(LS_ERROR) << "Sync-packet with an unacceptable payload type "
-                      << static_cast<int>(rtp_header.header.payloadType);
-      return kSyncPacketNotAccepted;
-    }
-    if (first_packet_ || !current_rtp_payload_type_ ||
-        rtp_header.header.payloadType != *current_rtp_payload_type_ ||
-        rtp_header.header.ssrc != ssrc_) {
-      // Even if |current_rtp_payload_type_| is empty, sync-packet isn't
-      // accepted.
-      LOG_F(LS_ERROR)
-          << "Changing codec, SSRC or first packet with sync-packet.";
-      return kSyncPacketNotAccepted;
-    }
-  }
+
   PacketList packet_list;
   RTPHeader main_header;
   {
@@ -565,7 +532,6 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     packet->primary = true;
     // Waiting time will be set upon inserting the packet in the buffer.
     RTC_DCHECK(!packet->waiting_time);
-    packet->sync_packet = is_sync_packet;
     // Insert packet in a packet list.
     packet_list.push_back(packet);
     // Save main payloads header for later.
@@ -601,12 +567,10 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
   }
 
   // Update RTCP statistics, only for regular packets.
-  if (!is_sync_packet)
-    rtcp_.Update(main_header, receive_timestamp);
+  rtcp_.Update(main_header, receive_timestamp);
 
   // Check for RED payload type, and separate payloads into several packets.
   if (decoder_database_->IsRed(main_header.payloadType)) {
-    assert(!is_sync_packet);  // We had a sanity check for this.
     if (payload_splitter_->SplitRed(&packet_list) != PayloadSplitter::kOK) {
       PacketBuffer::DeleteAllPackets(&packet_list);
       return kRedundancySplitError;
@@ -637,7 +601,6 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     assert(current_packet);
     assert(!current_packet->payload.empty());
     if (decoder_database_->IsDtmf(current_packet->header.payloadType)) {
-      assert(!current_packet->sync_packet);  // We had a sanity check for this.
       DtmfEvent event;
       int ret = DtmfBuffer::ParseEvent(current_packet->header.timestamp,
                                        current_packet->payload.data(),
@@ -670,8 +633,7 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
   }
 
   // Split payloads into smaller chunks. This also verifies that all payloads
-  // are of a known payload type. SplitAudio() method is protected against
-  // sync-packets.
+  // are of a known payload type.
   ret = payload_splitter_->SplitAudio(&packet_list, *decoder_database_);
   if (ret != PayloadSplitter::kOK) {
     PacketBuffer::DeleteAllPackets(&packet_list);
@@ -685,9 +647,8 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     }
   }
 
-  // Update bandwidth estimate, if the packet is not sync-packet nor comfort
-  // noise.
-  if (!packet_list.empty() && !packet_list.front()->sync_packet &&
+  // Update bandwidth estimate, if the packet is not comfort noise.
+  if (!packet_list.empty() &&
       !decoder_database_->IsComfortNoise(main_header.payloadType)) {
     // The list can be empty here if we got nothing but DTMF payloads.
     AudioDecoder* decoder =
@@ -1462,13 +1423,7 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, const Operations& operation,
     packet_list->pop_front();
     const size_t payload_length = packet->payload.size();
     int decode_length;
-    if (packet->sync_packet) {
-      // Decode to silence with the same frame size as the last decode.
-      memset(&decoded_buffer_[*decoded_length], 0,
-             decoder_frame_length_ * decoder->Channels() *
-                 sizeof(decoded_buffer_[0]));
-      decode_length = rtc::checked_cast<int>(decoder_frame_length_);
-    } else if (!packet->primary) {
+    if (!packet->primary) {
       // This is a redundant payload; call the special decoder method.
       decode_length = decoder->DecodeRedundant(
           packet->payload.data(), packet->payload.size(), fs_hz_,
@@ -1974,17 +1929,13 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
     AudioDecoder* decoder = decoder_database_->GetDecoder(
         packet->header.payloadType);
     if (decoder) {
-      if (packet->sync_packet) {
-        packet_duration = rtc::checked_cast<int>(decoder_frame_length_);
+      if (packet->primary) {
+        packet_duration = decoder->PacketDuration(packet->payload.data(),
+                                                  packet->payload.size());
       } else {
-        if (packet->primary) {
-          packet_duration = decoder->PacketDuration(packet->payload.data(),
-                                                    packet->payload.size());
-        } else {
-          packet_duration = decoder->PacketDurationRedundant(
-              packet->payload.data(), packet->payload.size());
-          stats_.SecondaryDecodedSamples(packet_duration);
-        }
+        packet_duration = decoder->PacketDurationRedundant(
+            packet->payload.data(), packet->payload.size());
+        stats_.SecondaryDecodedSamples(packet_duration);
       }
     } else if (!decoder_database_->IsComfortNoise(packet->header.payloadType)) {
       LOG(LS_WARNING) << "Unknown payload type "

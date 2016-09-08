@@ -273,7 +273,7 @@ size_t PacketBuffer::NumSamplesInBuffer(DecoderDatabase* decoder_database,
     Packet* packet = (*it);
     AudioDecoder* decoder =
         decoder_database->GetDecoder(packet->header.payloadType);
-    if (decoder && !packet->sync_packet) {
+    if (decoder) {
       if (!packet->primary) {
         continue;
       }
