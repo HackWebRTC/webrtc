@@ -12,9 +12,6 @@
 #define WEBRTC_BASE_MACUTILS_H__
 
 #include <CoreFoundation/CoreFoundation.h>
-#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
-#include <Carbon/Carbon.h>
-#endif
 #include <string>
 
 namespace rtc {
@@ -44,10 +41,6 @@ enum MacOSVersionName {
 };
 
 MacOSVersionName GetOSVersionName();
-
-// Runs the given apple script. Only supports scripts that does not
-// require user interaction.
-bool RunAppleScript(const std::string& script);
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -31,64 +31,6 @@ class WakeThread : public Thread {
   SocketServer* ss_;
 };
 
-#ifndef CARBON_DEPRECATED
-
-// Test that MacCFSocketServer::Wait works as expected.
-TEST(MacCFSocketServerTest, TestWait) {
-  MacCFSocketServer server;
-  uint32_t start = Time();
-  server.Wait(1000, true);
-  EXPECT_GE(TimeSince(start), 1000);
-}
-
-// Test that MacCFSocketServer::Wakeup works as expected.
-TEST(MacCFSocketServerTest, TestWakeup) {
-  MacCFSocketServer server;
-  WakeThread thread(&server);
-  uint32_t start = Time();
-  thread.Start();
-  server.Wait(10000, true);
-  EXPECT_LT(TimeSince(start), 10000);
-}
-
-// Test that MacCarbonSocketServer::Wait works as expected.
-TEST(MacCarbonSocketServerTest, TestWait) {
-  MacCarbonSocketServer server;
-  uint32_t start = Time();
-  server.Wait(1000, true);
-  EXPECT_GE(TimeSince(start), 1000);
-}
-
-// Test that MacCarbonSocketServer::Wakeup works as expected.
-TEST(MacCarbonSocketServerTest, TestWakeup) {
-  MacCarbonSocketServer server;
-  WakeThread thread(&server);
-  uint32_t start = Time();
-  thread.Start();
-  server.Wait(10000, true);
-  EXPECT_LT(TimeSince(start), 10000);
-}
-
-// Test that MacCarbonAppSocketServer::Wait works as expected.
-TEST(MacCarbonAppSocketServerTest, TestWait) {
-  MacCarbonAppSocketServer server;
-  uint32_t start = Time();
-  server.Wait(1000, true);
-  EXPECT_GE(TimeSince(start), 1000);
-}
-
-// Test that MacCarbonAppSocketServer::Wakeup works as expected.
-TEST(MacCarbonAppSocketServerTest, TestWakeup) {
-  MacCarbonAppSocketServer server;
-  WakeThread thread(&server);
-  uint32_t start = Time();
-  thread.Start();
-  server.Wait(10000, true);
-  EXPECT_LT(TimeSince(start), 10000);
-}
-
-#endif
-
 // Test that MacAsyncSocket passes all the generic Socket tests.
 class MacAsyncSocketTest : public SocketTest {
  protected:
@@ -220,20 +162,4 @@ TEST_F(MacAsyncSocketTest, DISABLED_TestGetSetOptionsIPv4) {
 TEST_F(MacAsyncSocketTest, DISABLED_TestGetSetOptionsIPv6) {
   SocketTest::TestGetSetOptionsIPv6();
 }
-
-#ifndef CARBON_DEPRECATED
-class MacCarbonAppAsyncSocketTest : public MacAsyncSocketTest {
-  virtual MacBaseSocketServer* CreateSocketServer() {
-    return new MacCarbonAppSocketServer();
-  };
-};
-
-TEST_F(MacCarbonAppAsyncSocketTest, TestSocketServerWaitIPv4) {
-  SocketTest::TestSocketServerWaitIPv4();
-}
-
-TEST_F(MacCarbonAppAsyncSocketTest, TestSocketServerWaitIPv6) {
-  SocketTest::TestSocketServerWaitIPv6();
-}
-#endif
 }  // namespace rtc
