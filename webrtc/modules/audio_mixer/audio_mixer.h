@@ -28,7 +28,6 @@ class AudioMixer {
     kWbInHz = 16000,
     kSwbInHz = 32000,
     kFbInHz = 48000,
-    kLowestPossible = -1,
     kDefaultFrequency = kWbInHz
   };
 
@@ -70,6 +69,9 @@ class AudioMixer {
 
  protected:
   AudioMixer() {}
+
+ private:
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioMixer);
 };
 }  // namespace webrtc
 

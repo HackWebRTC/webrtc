@@ -83,12 +83,6 @@ class AudioMixerImpl : public AudioMixer {
   // kMaximumAmountOfMixedAudioSources audio sources.
   AudioFrameList GetNonAnonymousAudio() const EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  // Return the lowest mixing frequency that can be used without having to
-  // downsample any audio.
-  int32_t GetLowestMixingFrequency() const;
-  int32_t GetLowestMixingFrequencyFromList(
-      const MixerAudioSourceList& mixList) const;
-
   // Return the AudioFrames that should be mixed anonymously. Ramp in
   // and out. Update mixed status.
   AudioFrameList GetAnonymousAudio() const EXCLUSIVE_LOCKS_REQUIRED(crit_);
@@ -96,22 +90,22 @@ class AudioMixerImpl : public AudioMixer {
   // This function returns true if it finds the MixerAudioSource in the
   // specified list of MixerAudioSources.
   bool IsAudioSourceInList(const MixerAudioSource& audio_source,
-                           const MixerAudioSourceList& audioSourceList) const;
+                           const MixerAudioSourceList& audio_source_list) const;
 
   // Add/remove the MixerAudioSource to the specified
   // MixerAudioSource list.
   bool AddAudioSourceToList(MixerAudioSource* audio_source,
-                            MixerAudioSourceList* audioSourceList) const;
-  bool RemoveAudioSourceFromList(MixerAudioSource* removeAudioSource,
-                                 MixerAudioSourceList* audioSourceList) const;
+                            MixerAudioSourceList* audio_source_list) const;
+  bool RemoveAudioSourceFromList(MixerAudioSource* remove_audio_source,
+                                 MixerAudioSourceList* audio_source_list) const;
 
-  // Mix the AudioFrames stored in audioFrameList into mixedAudio.
-  static int32_t MixFromList(AudioFrame* mixedAudio,
-                             const AudioFrameList& audioFrameList,
+  // Mix the AudioFrames stored in audioFrameList into mixed_audio.
+  static int32_t MixFromList(AudioFrame* mixed_audio,
+                             const AudioFrameList& audio_frame_list,
                              int32_t id,
                              bool use_limiter);
 
-  bool LimitMixedAudio(AudioFrame* mixedAudio) const;
+  bool LimitMixedAudio(AudioFrame* mixed_audio) const;
 
   // Output level functions for VoEVolumeControl.
   int GetOutputAudioLevel() override;
@@ -129,7 +123,7 @@ class AudioMixerImpl : public AudioMixer {
   // List of all audio sources. Note all lists are disjunct
   MixerAudioSourceList audio_source_list_ GUARDED_BY(crit_);  // May be mixed.
 
-  // Always mixed, anonomously.
+  // Always mixed, anonymously.
   MixerAudioSourceList additional_audio_source_list_ GUARDED_BY(crit_);
 
   size_t num_mixed_audio_sources_ GUARDED_BY(crit_);
@@ -147,6 +141,8 @@ class AudioMixerImpl : public AudioMixer {
 
   // Measures audio level for the combined signal.
   voe::AudioLevel audio_level_ ACCESS_ON(&thread_checker_);
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioMixerImpl);
 };
 }  // namespace webrtc
 

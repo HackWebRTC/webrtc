@@ -46,7 +46,7 @@ class MixerAudioSource {
   // Returns true if the participant was mixed this mix iteration.
   bool IsMixed() const;
 
-  NewMixHistory* _mixHistory;
+  NewMixHistory* mix_history_;
 
  protected:
   MixerAudioSource();

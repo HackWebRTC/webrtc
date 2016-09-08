@@ -29,12 +29,6 @@ rtc_source_set("audio_mixer") {
 
   public_configs = [ ":audio_conference_mixer_config" ]
 
-  if (is_clang) {
-    # Suppress warnings from Chrome's Clang plugins.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps = [
     "../..:webrtc_common",
     "../../base:rtc_base_approved",
