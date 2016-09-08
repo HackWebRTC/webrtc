@@ -60,6 +60,7 @@
 // ----------------------------------------------------------------------------
 
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+// #define CARBON_RENDERING
 #define COCOA_RENDERING
 #endif
 

@@ -11,7 +11,9 @@
 #define WEBRTC_BASE_MACSOCKETSERVER_H__
 
 #include <set>
-#include <CoreFoundation/CoreFoundation.h>
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS) // Invalid on IOS
+#include <Carbon/Carbon.h>
+#endif
 #include "webrtc/base/physicalsocketserver.h"
 
 namespace rtc {
@@ -74,6 +76,61 @@ class MacCFSocketServer : public MacBaseSocketServer {
   CFRunLoopRef run_loop_;
   CFRunLoopSourceRef wake_up_;
 };
+
+#ifndef CARBON_DEPRECATED
+
+///////////////////////////////////////////////////////////////////////////////
+// MacCarbonSocketServer
+///////////////////////////////////////////////////////////////////////////////
+
+// Interacts with the Carbon event queue. While idle it will block,
+// waiting for events. When the socket server has work to do, it will
+// post a 'wake up' event to the queue, causing the thread to exit the
+// event loop until the next call to Wait. Other events are dispatched
+// to their target. Supports Carbon and Cocoa UI interaction.
+class MacCarbonSocketServer : public MacBaseSocketServer {
+ public:
+  MacCarbonSocketServer();
+  virtual ~MacCarbonSocketServer();
+
+  // SocketServer Interface
+  virtual bool Wait(int cms, bool process_io);
+  virtual void WakeUp();
+
+ private:
+  EventQueueRef event_queue_;
+  EventRef wake_up_;
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// MacCarbonAppSocketServer
+///////////////////////////////////////////////////////////////////////////////
+
+// Runs the Carbon application event loop on the current thread while
+// idle. When the socket server has work to do, it will post an event
+// to the queue, causing the thread to exit the event loop until the
+// next call to Wait. Other events are automatically dispatched to
+// their target.
+class MacCarbonAppSocketServer : public MacBaseSocketServer {
+ public:
+  MacCarbonAppSocketServer();
+  virtual ~MacCarbonAppSocketServer();
+
+  // SocketServer Interface
+  virtual bool Wait(int cms, bool process_io);
+  virtual void WakeUp();
+
+ private:
+  static OSStatus WakeUpEventHandler(EventHandlerCallRef next, EventRef event,
+                                     void *data);
+  static void TimerHandler(EventLoopTimerRef timer, void *data);
+
+  EventQueueRef event_queue_;
+  EventHandlerRef event_handler_;
+  EventLoopTimerRef timer_;
+};
+
+#endif
 } // namespace rtc
 
 #endif  // WEBRTC_BASE_MACSOCKETSERVER_H__

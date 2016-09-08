@@ -229,7 +229,6 @@
         'LOGGING=1',
       ],
       'sources': [
-        'applefilesystem.mm',
         'arraysize.h',
         'asyncfile.cc',
         'asyncfile.h',
@@ -278,6 +277,7 @@
         'httpcommon.h',
         'httprequest.cc',
         'httprequest.h',
+        'iosfilesystem.mm',
         'ipaddress.cc',
         'ipaddress.h',
         'linked_ptr.h',
@@ -603,6 +603,19 @@
               },
             },
           },
+          'conditions': [
+            ['target_arch=="ia32"', {
+              'all_dependent_settings': {
+                'link_settings': {
+                  'xcode_settings': {
+                    'OTHER_LDFLAGS': [
+                      '-framework Carbon',
+                    ],
+                  },
+                },
+              },
+            }],
+          ],
         }],
         ['OS=="win" and nacl_untrusted_build==0', {
           'sources': [
@@ -650,6 +663,11 @@
               ],
             },
           }
+        }],
+        ['OS=="ios" or (OS=="mac" and target_arch!="ia32")', {
+          'defines': [
+            'CARBON_DEPRECATED=YES',
+          ],
         }],
         ['OS=="linux" or OS=="android"', {
           'sources': [
