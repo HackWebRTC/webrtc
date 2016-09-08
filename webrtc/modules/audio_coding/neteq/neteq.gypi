@@ -231,8 +231,6 @@
             'tools/audio_sink.cc',
             'tools/constant_pcm_packet_source.cc',
             'tools/constant_pcm_packet_source.h',
-            'tools/encode_neteq_input.cc',
-            'tools/encode_neteq_input.h',
             'tools/fake_decode_from_file.cc',
             'tools/fake_decode_from_file.h',
             'tools/input_audio_file.cc',
