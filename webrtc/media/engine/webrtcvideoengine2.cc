@@ -2246,9 +2246,8 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::RecreateWebRtcStream() {
   parameters_.encoder_config.encoder_specific_settings = NULL;
   pending_encoder_reconfiguration_ = false;
 
-  if (sending_) {
-    stream_->Start();
-  }
+  // Call stream_->Start() if necessary conditions are met.
+  UpdateSendState();
 }
 
 WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(

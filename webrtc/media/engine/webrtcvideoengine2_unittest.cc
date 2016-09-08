@@ -3459,8 +3459,8 @@ TEST_F(WebRtcVideoChannel2Test,
   EXPECT_FALSE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
 }
 
-// Test that a stream will not be sending if its encoding is made
-// inactive through SetRtpSendParameters.
+// Test that a stream will not be sending if its encoding is made inactive
+// through SetRtpSendParameters.
 // TODO(deadbeef): Update this test when we start supporting setting parameters
 // for each encoding individually.
 TEST_F(WebRtcVideoChannel2Test, SetRtpSendParametersEncodingsActive) {
@@ -3480,6 +3480,46 @@ TEST_F(WebRtcVideoChannel2Test, SetRtpSendParametersEncodingsActive) {
   parameters.encodings[0].active = true;
   EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
   EXPECT_TRUE(stream->IsSending());
+}
+
+// Test that if a stream is reconfigured (due to a codec change or other
+// change) while its encoding is still inactive, it doesn't start sending.
+TEST_F(WebRtcVideoChannel2Test,
+       InactiveStreamDoesntStartSendingWhenReconfigured) {
+  // Set an initial codec list, which will be modified later.
+  cricket::VideoSendParameters parameters1;
+  parameters1.codecs.push_back(kVp8Codec);
+  parameters1.codecs.push_back(kVp9Codec);
+  EXPECT_TRUE(channel_->SetSendParameters(parameters1));
+
+  FakeVideoSendStream* stream = AddSendStream();
+  EXPECT_TRUE(channel_->SetSend(true));
+  EXPECT_TRUE(stream->IsSending());
+
+  // Get current parameters and change "active" to false.
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  ASSERT_EQ(1u, parameters.encodings.size());
+  ASSERT_TRUE(parameters.encodings[0].active);
+  parameters.encodings[0].active = false;
+  EXPECT_EQ(1u, GetFakeSendStreams().size());
+  EXPECT_EQ(1, fake_call_->GetNumCreatedSendStreams());
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
+  EXPECT_FALSE(stream->IsSending());
+
+  // Reorder the codec list, causing the stream to be reconfigured.
+  cricket::VideoSendParameters parameters2;
+  parameters2.codecs.push_back(kVp9Codec);
+  parameters2.codecs.push_back(kVp8Codec);
+  EXPECT_TRUE(channel_->SetSendParameters(parameters2));
+  auto new_streams = GetFakeSendStreams();
+  // Assert that a new underlying stream was created due to the codec change.
+  // Otherwise, this test isn't testing what it set out to test.
+  EXPECT_EQ(1u, GetFakeSendStreams().size());
+  EXPECT_EQ(2, fake_call_->GetNumCreatedSendStreams());
+
+  // Verify that we still are not sending anything, due to the inactive
+  // encoding.
+  EXPECT_FALSE(new_streams[0]->IsSending());
 }
 
 // Test that GetRtpSendParameters returns the currently configured codecs.
