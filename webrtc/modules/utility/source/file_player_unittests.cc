@@ -34,7 +34,7 @@ class FilePlayerTest : public ::testing::Test {
   static const int kSampleRateHz = 8000;
 
   FilePlayerTest()
-      : player_(FilePlayer::NewFilePlayer(kId, kFileFormat)),
+      : player_(FilePlayer::CreateFilePlayer(kId, kFileFormat)),
         output_file_(NULL) {}
 
   void SetUp() override {

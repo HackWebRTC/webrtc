@@ -29,14 +29,9 @@ class FilePlayer {
   enum { MAX_AUDIO_BUFFER_IN_BYTES = MAX_AUDIO_BUFFER_IN_SAMPLES * 2 };
 
   // Note: will return NULL for unsupported formats.
-  static std::unique_ptr<FilePlayer> NewFilePlayer(
+  static std::unique_ptr<FilePlayer> CreateFilePlayer(
       const uint32_t instanceID,
       const FileFormats fileFormat);
-
-  // Deprecated creation/destruction functions. Use NewFilePlayer instead.
-  static FilePlayer* CreateFilePlayer(const uint32_t instanceID,
-                                      const FileFormats fileFormat);
-  static void DestroyFilePlayer(FilePlayer* player);
 
   virtual ~FilePlayer() = default;
 
@@ -81,28 +76,6 @@ class FilePlayer {
 
   // Note: scaleFactor is in the range [0.0 - 2.0]
   virtual int32_t SetAudioScaling(float scaleFactor) = 0;
-
-  // Deprecated functions. Use the functions above with the same name instead.
-  int Get10msAudioFromFile(int16_t* outBuffer,
-                           size_t& lengthInSamples,
-                           int frequencyInHz) {
-    return Get10msAudioFromFile(outBuffer, &lengthInSamples, frequencyInHz);
-  }
-  int32_t StartPlayingFile(InStream& sourceStream,
-                           uint32_t startPosition,
-                           float volumeScaling,
-                           uint32_t notification,
-                           uint32_t stopPosition,
-                           const CodecInst* codecInst) {
-    return StartPlayingFile(&sourceStream, startPosition, volumeScaling,
-                            notification, stopPosition, codecInst);
-  }
-  int32_t GetPlayoutPosition(uint32_t& durationMs) {
-    return GetPlayoutPosition(&durationMs);
-  }
-  int32_t AudioCodec(CodecInst& audioCodec) const {
-    return AudioCodec(&audioCodec);
-  }
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_UTILITY_INCLUDE_FILE_PLAYER_H_

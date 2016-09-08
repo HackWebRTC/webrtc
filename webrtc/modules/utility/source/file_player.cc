@@ -371,7 +371,7 @@ int32_t FilePlayerImpl::SetUpAudioDecoder() {
 
 }  // namespace
 
-std::unique_ptr<FilePlayer> FilePlayer::NewFilePlayer(
+std::unique_ptr<FilePlayer> FilePlayer::CreateFilePlayer(
     uint32_t instanceID,
     FileFormats fileFormat) {
   switch (fileFormat) {
@@ -388,15 +388,6 @@ std::unique_ptr<FilePlayer> FilePlayer::NewFilePlayer(
       assert(false);
       return nullptr;
   }
-}
-
-FilePlayer* FilePlayer::CreateFilePlayer(uint32_t instanceID,
-                                         FileFormats fileFormat) {
-  return FilePlayer::NewFilePlayer(instanceID, fileFormat).release();
-}
-
-void FilePlayer::DestroyFilePlayer(FilePlayer* player) {
-  delete player;
 }
 
 }  // namespace webrtc

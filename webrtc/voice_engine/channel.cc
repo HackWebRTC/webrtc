@@ -1739,7 +1739,7 @@ int Channel::StartPlayingFileLocally(const char* fileName,
       output_file_player_.reset();
     }
 
-    output_file_player_ = FilePlayer::NewFilePlayer(
+    output_file_player_ = FilePlayer::CreateFilePlayer(
         _outputFilePlayerId, (const FileFormats)format);
 
     if (!output_file_player_) {
@@ -1806,7 +1806,7 @@ int Channel::StartPlayingFileLocally(InStream* stream,
     }
 
     // Create the instance
-    output_file_player_ = FilePlayer::NewFilePlayer(
+    output_file_player_ = FilePlayer::CreateFilePlayer(
         _outputFilePlayerId, (const FileFormats)format);
 
     if (!output_file_player_) {
@@ -1934,7 +1934,7 @@ int Channel::StartPlayingFileAsMicrophone(const char* fileName,
   }
 
   // Create the instance
-  input_file_player_ = FilePlayer::NewFilePlayer(_inputFilePlayerId,
+  input_file_player_ = FilePlayer::CreateFilePlayer(_inputFilePlayerId,
                                                     (const FileFormats)format);
 
   if (!input_file_player_) {
@@ -1996,7 +1996,7 @@ int Channel::StartPlayingFileAsMicrophone(InStream* stream,
   }
 
   // Create the instance
-  input_file_player_ = FilePlayer::NewFilePlayer(_inputFilePlayerId,
+  input_file_player_ = FilePlayer::CreateFilePlayer(_inputFilePlayerId,
                                                     (const FileFormats)format);
 
   if (!input_file_player_) {

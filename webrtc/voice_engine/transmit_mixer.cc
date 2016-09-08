@@ -491,7 +491,7 @@ int TransmitMixer::StartPlayingFileAsMicrophone(const char* fileName,
 
     // Dynamically create the instance
     file_player_ =
-        FilePlayer::NewFilePlayer(_filePlayerId, (const FileFormats)format);
+        FilePlayer::CreateFilePlayer(_filePlayerId, (const FileFormats)format);
 
     if (!file_player_) {
       _engineStatisticsPtr->SetLastError(
@@ -557,7 +557,7 @@ int TransmitMixer::StartPlayingFileAsMicrophone(InStream* stream,
 
     // Dynamically create the instance
     file_player_ =
-        FilePlayer::NewFilePlayer(_filePlayerId, (const FileFormats)format);
+        FilePlayer::CreateFilePlayer(_filePlayerId, (const FileFormats)format);
 
     if (!file_player_) {
       _engineStatisticsPtr->SetLastError(
