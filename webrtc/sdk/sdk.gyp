@@ -255,6 +255,7 @@
             'objc/Framework/Modules/module.modulemap',
           ],
           'mac_framework_headers': [
+            'objc/Framework/Headers/WebRTC/RTCAudioSource.h',
             'objc/Framework/Headers/WebRTC/RTCAudioTrack.h',
             'objc/Framework/Headers/WebRTC/RTCAVFoundationVideoSource.h',
             'objc/Framework/Headers/WebRTC/RTCCameraPreviewView.h',
@@ -270,6 +271,7 @@
             'objc/Framework/Headers/WebRTC/RTCLogging.h',
             'objc/Framework/Headers/WebRTC/RTCMacros.h',
             'objc/Framework/Headers/WebRTC/RTCMediaConstraints.h',
+            'objc/Framework/Headers/WebRTC/RTCMediaSource.h',
             'objc/Framework/Headers/WebRTC/RTCMediaStream.h',
             'objc/Framework/Headers/WebRTC/RTCMediaStreamTrack.h',
             'objc/Framework/Headers/WebRTC/RTCMetrics.h',
