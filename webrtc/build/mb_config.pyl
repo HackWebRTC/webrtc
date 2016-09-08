@@ -38,6 +38,8 @@
       'Mac64 Release (GYP)': 'gyp_release_bot_x64_exclude_tests',
 
       # Linux
+      'Linux32 Debug': 'gn_debug_bot_x86',
+      'Linux32 Release': 'gn_release_bot_x86',
       'Linux32 ARM': 'gn_crosscompile_release_bot_arm',
       'Linux64 Debug': 'gn_debug_bot_x64',
       'Linux64 Release': 'gn_release_bot_x64',
@@ -169,8 +171,6 @@
       'Mac64 Release (swarming)': 'swarming_gn_release_bot_x64',
 
       # Linux
-      'Linux32 Debug': 'gn_debug_bot_x86',
-      'Linux32 Release': 'gn_release_bot_x86',
       'Linux64 GCC': 'gn_gcc_release_bot_x64',
       'Linux64 Release (swarming)': 'swarming_gn_release_bot_x64',
 
