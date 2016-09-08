@@ -22,7 +22,6 @@ import misc
 
 
 class TestMisc(unittest.TestCase):
-
   def testUnwrapMod3(self):
     data = [0, 1, 2, 0, -1, -2, -3, -4]
     unwrapped_3 = misc.unwrap(data, 3)

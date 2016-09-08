@@ -280,7 +280,7 @@ def calculate_delay(start, stop, step, points):
   masked array, in which time points with no value are masked.
 
   """
-  grouped_delays = [[] for _ in numpy.arange(start, stop, step)]
+  grouped_delays = [[] for _ in numpy.arange(start, stop + step, step)]
   rounded_value_index = lambda x: int((x - start) / step)
   for point in points:
     grouped_delays[rounded_value_index(point.real_send_time_ms)
