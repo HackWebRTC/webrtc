@@ -65,6 +65,7 @@
         'md5digest.h',
         'mod_ops.h',
         'onetimeevent.h',
+        'optional.cc',
         'optional.h',
         'platform_file.cc',
         'platform_file.h',
