@@ -128,6 +128,7 @@ int main(int argc, char* argv[]) {
 
   if (FLAGS_plot_all || FLAGS_plot_fraction_loss) {
     analyzer.CreateFractionLossGraph(collection->AppendNewPlot());
+    analyzer.CreateIncomingPacketLossGraph(collection->AppendNewPlot());
   }
 
   if (FLAGS_plot_all || FLAGS_plot_total_bitrate) {

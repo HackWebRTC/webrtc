@@ -459,16 +459,31 @@ class BitrateObserver : public CongestionController::Observer,
   bool bitrate_updated_;
 };
 
-bool EventLogAnalyzer::IsRtxSsrc(StreamId stream_id) {
+bool EventLogAnalyzer::IsRtxSsrc(StreamId stream_id) const {
   return rtx_ssrcs_.count(stream_id) == 1;
 }
 
-bool EventLogAnalyzer::IsVideoSsrc(StreamId stream_id) {
+bool EventLogAnalyzer::IsVideoSsrc(StreamId stream_id) const {
   return video_ssrcs_.count(stream_id) == 1;
 }
 
-bool EventLogAnalyzer::IsAudioSsrc(StreamId stream_id) {
+bool EventLogAnalyzer::IsAudioSsrc(StreamId stream_id) const {
   return audio_ssrcs_.count(stream_id) == 1;
+}
+
+std::string EventLogAnalyzer::GetStreamName(StreamId stream_id) const {
+  std::stringstream name;
+  if (IsAudioSsrc(stream_id)) {
+    name << "Audio ";
+  } else if (IsVideoSsrc(stream_id)) {
+    name << "Video ";
+  } else {
+    name << "Unknown ";
+  }
+  if (IsRtxSsrc(stream_id))
+    name << "RTX ";
+  name << SsrcToString(stream_id.GetSsrc());
+  return name.str();
 }
 
 void EventLogAnalyzer::CreatePacketGraph(PacketDirection desired_direction,
@@ -483,7 +498,7 @@ void EventLogAnalyzer::CreatePacketGraph(PacketDirection desired_direction,
     }
 
     TimeSeries time_series;
-    time_series.label = SsrcToString(stream_id.GetSsrc());
+    time_series.label = GetStreamName(stream_id);
     time_series.style = BAR_GRAPH;
     Pointwise<PacketSizeBytes>(packet_stream, begin_time_, &time_series);
     plot->series_list_.push_back(std::move(time_series));
@@ -515,7 +530,7 @@ void EventLogAnalyzer::CreateAccumulatedPacketsTimeSeries(
     }
 
     TimeSeries time_series;
-    time_series.label = label_prefix + " " + SsrcToString(stream_id.GetSsrc());
+    time_series.label = label_prefix + " " + GetStreamName(stream_id);
     time_series.style = LINE_GRAPH;
 
     for (size_t i = 0; i < packet_stream.size(); i++) {
@@ -597,7 +612,7 @@ void EventLogAnalyzer::CreateSequenceNumberGraph(Plot* plot) {
     }
 
     TimeSeries time_series;
-    time_series.label = SsrcToString(stream_id.GetSsrc());
+    time_series.label = GetStreamName(stream_id);
     time_series.style = BAR_GRAPH;
     Pairwise<SequenceNumberDiff>(packet_stream, begin_time_, &time_series);
     plot->series_list_.push_back(std::move(time_series));
@@ -609,27 +624,72 @@ void EventLogAnalyzer::CreateSequenceNumberGraph(Plot* plot) {
   plot->SetTitle("Sequence number");
 }
 
+void EventLogAnalyzer::CreateIncomingPacketLossGraph(Plot* plot) {
+  for (auto& kv : rtp_packets_) {
+    StreamId stream_id = kv.first;
+    const std::vector<LoggedRtpPacket>& packet_stream = kv.second;
+    // Filter on direction and SSRC.
+    if (stream_id.GetDirection() != kIncomingPacket ||
+        !MatchingSsrc(stream_id.GetSsrc(), desired_ssrc_)) {
+      continue;
+    }
+
+    TimeSeries time_series;
+    time_series.label = GetStreamName(stream_id);
+    time_series.style = LINE_DOT_GRAPH;
+    const uint64_t kWindowUs = 1000000;
+    const LoggedRtpPacket* first_in_window = &packet_stream.front();
+    const LoggedRtpPacket* last_in_window = &packet_stream.front();
+    int packets_in_window = 0;
+    for (const LoggedRtpPacket& packet : packet_stream) {
+      if (packet.timestamp > first_in_window->timestamp + kWindowUs) {
+        uint16_t expected_num_packets = last_in_window->header.sequenceNumber -
+            first_in_window->header.sequenceNumber + 1;
+        float fraction_lost = (expected_num_packets - packets_in_window) /
+            static_cast<float>(expected_num_packets);
+        float y = fraction_lost * 100;
+        float x =
+            static_cast<float>(last_in_window->timestamp - begin_time_) /
+            1000000;
+        time_series.points.emplace_back(x, y);
+        first_in_window = &packet;
+        last_in_window = &packet;
+        packets_in_window = 1;
+        continue;
+      }
+      ++packets_in_window;
+      last_in_window = &packet;
+    }
+    plot->series_list_.push_back(std::move(time_series));
+  }
+
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 1, "Estimated loss rate (%)", kBottomMargin,
+                          kTopMargin);
+  plot->SetTitle("Estimated incoming loss rate");
+}
+
 void EventLogAnalyzer::CreateDelayChangeGraph(Plot* plot) {
   for (auto& kv : rtp_packets_) {
     StreamId stream_id = kv.first;
     const std::vector<LoggedRtpPacket>& packet_stream = kv.second;
-    uint32_t ssrc = stream_id.GetSsrc();
     // Filter on direction and SSRC.
     if (stream_id.GetDirection() != kIncomingPacket ||
-        !MatchingSsrc(ssrc, desired_ssrc_) || IsAudioSsrc(stream_id) ||
-        !IsVideoSsrc(stream_id) || IsRtxSsrc(stream_id)) {
+        !MatchingSsrc(stream_id.GetSsrc(), desired_ssrc_) ||
+        IsAudioSsrc(stream_id) || !IsVideoSsrc(stream_id) ||
+        IsRtxSsrc(stream_id)) {
       continue;
     }
 
     TimeSeries capture_time_data;
-    capture_time_data.label = SsrcToString(ssrc) + " capture-time";
+    capture_time_data.label = GetStreamName(stream_id) + " capture-time";
     capture_time_data.style = BAR_GRAPH;
     Pairwise<NetworkDelayDiff::CaptureTime>(packet_stream, begin_time_,
                                             &capture_time_data);
     plot->series_list_.push_back(std::move(capture_time_data));
 
     TimeSeries send_time_data;
-    send_time_data.label = SsrcToString(ssrc) + " abs-send-time";
+    send_time_data.label = GetStreamName(stream_id) + " abs-send-time";
     send_time_data.style = BAR_GRAPH;
     Pairwise<NetworkDelayDiff::AbsSendTime>(packet_stream, begin_time_,
                                             &send_time_data);
@@ -646,23 +706,23 @@ void EventLogAnalyzer::CreateAccumulatedDelayChangeGraph(Plot* plot) {
   for (auto& kv : rtp_packets_) {
     StreamId stream_id = kv.first;
     const std::vector<LoggedRtpPacket>& packet_stream = kv.second;
-    uint32_t ssrc = stream_id.GetSsrc();
     // Filter on direction and SSRC.
     if (stream_id.GetDirection() != kIncomingPacket ||
-        !MatchingSsrc(ssrc, desired_ssrc_) || IsAudioSsrc(stream_id) ||
-        !IsVideoSsrc(stream_id) || IsRtxSsrc(stream_id)) {
+        !MatchingSsrc(stream_id.GetSsrc(), desired_ssrc_) ||
+        IsAudioSsrc(stream_id) || !IsVideoSsrc(stream_id) ||
+        IsRtxSsrc(stream_id)) {
       continue;
     }
 
     TimeSeries capture_time_data;
-    capture_time_data.label = SsrcToString(ssrc) + " capture-time";
+    capture_time_data.label = GetStreamName(stream_id) + " capture-time";
     capture_time_data.style = LINE_GRAPH;
     Pairwise<Accumulated<NetworkDelayDiff::CaptureTime>>(
         packet_stream, begin_time_, &capture_time_data);
     plot->series_list_.push_back(std::move(capture_time_data));
 
     TimeSeries send_time_data;
-    send_time_data.label = SsrcToString(ssrc) + " abs-send-time";
+    send_time_data.label = GetStreamName(stream_id) + " abs-send-time";
     send_time_data.style = LINE_GRAPH;
     Pairwise<Accumulated<NetworkDelayDiff::AbsSendTime>>(
         packet_stream, begin_time_, &send_time_data);
@@ -788,7 +848,7 @@ void EventLogAnalyzer::CreateStreamBitrateGraph(
     }
 
     TimeSeries time_series;
-    time_series.label = SsrcToString(stream_id.GetSsrc());
+    time_series.label = GetStreamName(stream_id);
     time_series.style = LINE_GRAPH;
     double bytes_to_kilobits = 8.0 / 1000;
     MovingAverage<PacketSizeBytes>(packet_stream, begin_time_, end_time_,

@@ -68,6 +68,8 @@ class EventLogAnalyzer {
 
   void CreateSequenceNumberGraph(Plot* plot);
 
+  void CreateIncomingPacketLossGraph(Plot* plot);
+
   void CreateDelayChangeGraph(Plot* plot);
 
   void CreateAccumulatedDelayChangeGraph(Plot* plot);
@@ -110,11 +112,13 @@ class EventLogAnalyzer {
       const std::map<StreamId, std::vector<T>>& packets,
       const std::string& label_prefix);
 
-  bool IsRtxSsrc(StreamId stream_id);
+  bool IsRtxSsrc(StreamId stream_id) const;
 
-  bool IsVideoSsrc(StreamId stream_id);
+  bool IsVideoSsrc(StreamId stream_id) const;
 
-  bool IsAudioSsrc(StreamId stream_id);
+  bool IsAudioSsrc(StreamId stream_id) const;
+
+  std::string GetStreamName(StreamId) const;
 
   const ParsedRtcEventLog& parsed_log_;
 
