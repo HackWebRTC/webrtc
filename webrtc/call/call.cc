@@ -186,11 +186,10 @@ class Call : public webrtc::Call,
   // TODO(holmer): Remove this lock once BitrateController no longer calls
   // OnNetworkChanged from multiple threads.
   rtc::CriticalSection bitrate_crit_;
-  int64_t estimated_send_bitrate_sum_kbits_ GUARDED_BY(&bitrate_crit_);
-  int64_t pacer_bitrate_sum_kbits_ GUARDED_BY(&bitrate_crit_);
   uint32_t min_allocated_send_bitrate_bps_ GUARDED_BY(&bitrate_crit_);
-  int64_t num_bitrate_updates_ GUARDED_BY(&bitrate_crit_);
   uint32_t configured_max_padding_bitrate_bps_ GUARDED_BY(&bitrate_crit_);
+  AvgCounter estimated_send_bitrate_kbps_counter_ GUARDED_BY(&bitrate_crit_);
+  AvgCounter pacer_bitrate_kbps_counter_ GUARDED_BY(&bitrate_crit_);
 
   std::map<std::string, rtc::NetworkRoute> network_routes_;
 
@@ -244,11 +243,10 @@ Call::Call(const Call::Config& config)
       received_audio_bytes_per_second_counter_(clock_, nullptr, true),
       received_video_bytes_per_second_counter_(clock_, nullptr, true),
       received_rtcp_bytes_per_second_counter_(clock_, nullptr, true),
-      estimated_send_bitrate_sum_kbits_(0),
-      pacer_bitrate_sum_kbits_(0),
       min_allocated_send_bitrate_bps_(0),
-      num_bitrate_updates_(0),
       configured_max_padding_bitrate_bps_(0),
+      estimated_send_bitrate_kbps_counter_(clock_, nullptr, true),
+      pacer_bitrate_kbps_counter_(clock_, nullptr, true),
       remb_(clock_),
       congestion_controller_(
           new CongestionController(clock_, this, &remb_, event_log_.get())),
@@ -320,22 +318,24 @@ void Call::UpdateHistograms() {
 }
 
 void Call::UpdateSendHistograms() {
-  if (num_bitrate_updates_ == 0 || first_packet_sent_ms_ == -1)
+  if (first_packet_sent_ms_ == -1)
     return;
   int64_t elapsed_sec =
       (clock_->TimeInMilliseconds() - first_packet_sent_ms_) / 1000;
   if (elapsed_sec < metrics::kMinRunTimeInSeconds)
     return;
-  int send_bitrate_kbps =
-      estimated_send_bitrate_sum_kbits_ / num_bitrate_updates_;
-  int pacer_bitrate_kbps = pacer_bitrate_sum_kbits_ / num_bitrate_updates_;
-  if (send_bitrate_kbps > 0) {
+  const int kMinRequiredPeriodicSamples = 5;
+  AggregatedStats send_bitrate_stats =
+      estimated_send_bitrate_kbps_counter_.ProcessAndGetStats();
+  if (send_bitrate_stats.num_samples > kMinRequiredPeriodicSamples) {
     RTC_LOGGED_HISTOGRAM_COUNTS_100000("WebRTC.Call.EstimatedSendBitrateInKbps",
-                                       send_bitrate_kbps);
+                                       send_bitrate_stats.average);
   }
-  if (pacer_bitrate_kbps > 0) {
+  AggregatedStats pacer_bitrate_stats =
+      pacer_bitrate_kbps_counter_.ProcessAndGetStats();
+  if (pacer_bitrate_stats.num_samples > kMinRequiredPeriodicSamples) {
     RTC_LOGGED_HISTOGRAM_COUNTS_100000("WebRTC.Call.PacerBitrateInKbps",
-                                       pacer_bitrate_kbps);
+                                       pacer_bitrate_stats.average);
   }
 }
 
@@ -757,26 +757,32 @@ void Call::OnNetworkChanged(uint32_t target_bitrate_bps, uint8_t fraction_loss,
   bitrate_allocator_->OnNetworkChanged(target_bitrate_bps, fraction_loss,
                                        rtt_ms);
 
-  // Ignore updates where the bitrate is zero because the aggregate network
-  // state is down.
-  if (target_bitrate_bps > 0) {
-    {
-      ReadLockScoped read_lock(*send_crit_);
-      // Do not update the stats if we are not sending video.
-      if (video_send_streams_.empty())
-        return;
-    }
+  // Ignore updates if bitrate is zero (the aggregate network state is down).
+  if (target_bitrate_bps == 0) {
     rtc::CritScope lock(&bitrate_crit_);
-    // We only update these stats if we have send streams, and assume that
-    // OnNetworkChanged is called roughly with a fixed frequency.
-    estimated_send_bitrate_sum_kbits_ += target_bitrate_bps / 1000;
-    // Pacer bitrate might be higher than bitrate estimate if enforcing min
-    // bitrate.
-    uint32_t pacer_bitrate_bps =
-        std::max(target_bitrate_bps, min_allocated_send_bitrate_bps_);
-    pacer_bitrate_sum_kbits_ += pacer_bitrate_bps / 1000;
-    ++num_bitrate_updates_;
+    estimated_send_bitrate_kbps_counter_.ProcessAndPause();
+    pacer_bitrate_kbps_counter_.ProcessAndPause();
+    return;
   }
+
+  bool sending_video;
+  {
+    ReadLockScoped read_lock(*send_crit_);
+    sending_video = !video_send_streams_.empty();
+  }
+
+  rtc::CritScope lock(&bitrate_crit_);
+  if (!sending_video) {
+    // Do not update the stats if we are not sending video.
+    estimated_send_bitrate_kbps_counter_.ProcessAndPause();
+    pacer_bitrate_kbps_counter_.ProcessAndPause();
+    return;
+  }
+  estimated_send_bitrate_kbps_counter_.Add(target_bitrate_bps / 1000);
+  // Pacer bitrate may be higher than bitrate estimate if enforcing min bitrate.
+  uint32_t pacer_bitrate_bps =
+      std::max(target_bitrate_bps, min_allocated_send_bitrate_bps_);
+  pacer_bitrate_kbps_counter_.Add(pacer_bitrate_bps / 1000);
 }
 
 void Call::OnAllocationLimitsChanged(uint32_t min_send_bitrate_bps,

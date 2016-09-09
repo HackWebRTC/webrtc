@@ -10,6 +10,8 @@
 
 #include "webrtc/video/send_delay_stats.h"
 
+#include <utility>
+
 #include "webrtc/base/logging.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
@@ -61,7 +63,7 @@ AvgCounter* SendDelayStats::GetSendDelayCounter(uint32_t ssrc) {
   if (it != send_delay_counters_.end())
     return it->second.get();
 
-  AvgCounter* counter = new AvgCounter(clock_, nullptr);
+  AvgCounter* counter = new AvgCounter(clock_, nullptr, false);
   send_delay_counters_[ssrc].reset(counter);
   return counter;
 }
