@@ -363,12 +363,16 @@ int SimulcastEncoderAdapter::SetRates(uint32_t new_bitrate_kbit,
   if (codec_.maxBitrate > 0 && new_bitrate_kbit > codec_.maxBitrate) {
     new_bitrate_kbit = codec_.maxBitrate;
   }
-  if (new_bitrate_kbit < codec_.minBitrate) {
-    new_bitrate_kbit = codec_.minBitrate;
-  }
-  if (codec_.numberOfSimulcastStreams > 0 &&
-      new_bitrate_kbit < codec_.simulcastStream[0].minBitrate) {
-    new_bitrate_kbit = codec_.simulcastStream[0].minBitrate;
+  if (new_bitrate_kbit > 0) {
+    // Make sure the bitrate fits the configured min bitrates. 0 is a special
+    // value that means paused, though, so leave it alone.
+    if (new_bitrate_kbit < codec_.minBitrate) {
+      new_bitrate_kbit = codec_.minBitrate;
+    }
+    if (codec_.numberOfSimulcastStreams > 0 &&
+        new_bitrate_kbit < codec_.simulcastStream[0].minBitrate) {
+      new_bitrate_kbit = codec_.simulcastStream[0].minBitrate;
+    }
   }
   codec_.maxFramerate = new_framerate;
 

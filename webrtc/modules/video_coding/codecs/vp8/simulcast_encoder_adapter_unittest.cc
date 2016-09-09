@@ -133,6 +133,7 @@ class MockVideoEncoder : public VideoEncoder {
   int32_t Release() /* override */ { return 0; }
 
   int32_t SetRates(uint32_t newBitRate, uint32_t frameRate) /* override */ {
+    last_set_bitrate_ = static_cast<int32_t>(newBitRate);
     return 0;
   }
 
@@ -159,11 +160,14 @@ class MockVideoEncoder : public VideoEncoder {
   void set_supports_native_handle(bool enabled) {
     supports_native_handle_ = enabled;
   }
+  int32_t last_set_bitrate() const { return last_set_bitrate_; }
 
   MOCK_CONST_METHOD0(ImplementationName, const char*());
 
  private:
   bool supports_native_handle_ = false;
+  int32_t last_set_bitrate_ = -1;
+
   VideoCodec codec_;
   EncodedImageCallback* callback_;
 };
@@ -422,6 +426,26 @@ TEST_F(TestSimulcastEncoderAdapterFake, SupportsNativeHandleForSingleStreams) {
   EXPECT_TRUE(adapter_->SupportsNativeHandle());
   helper_->factory()->encoders()[0]->set_supports_native_handle(false);
   EXPECT_FALSE(adapter_->SupportsNativeHandle());
+}
+
+TEST_F(TestSimulcastEncoderAdapterFake, SetRatesUnderMinBitrate) {
+  TestVp8Simulcast::DefaultSettings(
+      &codec_, static_cast<const int*>(kTestTemporalLayerProfile));
+  codec_.minBitrate = 50;
+  codec_.numberOfSimulcastStreams = 1;
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
+
+  // Above min should be respected.
+  adapter_->SetRates(100, 30);
+  EXPECT_EQ(100, helper_->factory()->encoders()[0]->last_set_bitrate());
+
+  // Below min but non-zero should be replaced with the min bitrate.
+  adapter_->SetRates(15, 30);
+  EXPECT_EQ(50, helper_->factory()->encoders()[0]->last_set_bitrate());
+
+  // Zero should be passed on as is, since it means "pause".
+  adapter_->SetRates(0, 30);
+  EXPECT_EQ(0, helper_->factory()->encoders()[0]->last_set_bitrate());
 }
 
 TEST_F(TestSimulcastEncoderAdapterFake, SupportsImplementationName) {
