@@ -1018,10 +1018,73 @@ TEST_F(VirtualSocketServerTest, CanSendDatagramFromUnboundIPv6ToIPv4Any) {
                           true);
 }
 
+TEST_F(VirtualSocketServerTest, SetSendingBlockedWithUdpSocket) {
+  AsyncSocket* socket1 =
+      ss_->CreateAsyncSocket(kIPv4AnyAddress.family(), SOCK_DGRAM);
+  AsyncSocket* socket2 =
+      ss_->CreateAsyncSocket(kIPv4AnyAddress.family(), SOCK_DGRAM);
+  socket1->Bind(kIPv4AnyAddress);
+  socket2->Bind(kIPv4AnyAddress);
+  TestClient* client1 = new TestClient(new AsyncUDPSocket(socket1));
+
+  ss_->SetSendingBlocked(true);
+  EXPECT_EQ(-1, client1->SendTo("foo", 3, socket2->GetLocalAddress()));
+  EXPECT_TRUE(socket1->IsBlocking());
+  EXPECT_EQ(0, client1->ready_to_send_count());
+
+  ss_->SetSendingBlocked(false);
+  EXPECT_EQ(1, client1->ready_to_send_count());
+  EXPECT_EQ(3, client1->SendTo("foo", 3, socket2->GetLocalAddress()));
+}
+
+TEST_F(VirtualSocketServerTest, SetSendingBlockedWithTcpSocket) {
+  constexpr size_t kBufferSize = 1024;
+  ss_->set_send_buffer_capacity(kBufferSize);
+  ss_->set_recv_buffer_capacity(kBufferSize);
+
+  testing::StreamSink sink;
+  AsyncSocket* socket1 =
+      ss_->CreateAsyncSocket(kIPv4AnyAddress.family(), SOCK_STREAM);
+  AsyncSocket* socket2 =
+      ss_->CreateAsyncSocket(kIPv4AnyAddress.family(), SOCK_STREAM);
+  sink.Monitor(socket1);
+  sink.Monitor(socket2);
+  socket1->Bind(kIPv4AnyAddress);
+  socket2->Bind(kIPv4AnyAddress);
+
+  // Connect sockets.
+  EXPECT_EQ(0, socket1->Connect(socket2->GetLocalAddress()));
+  EXPECT_EQ(0, socket2->Connect(socket1->GetLocalAddress()));
+  ss_->ProcessMessagesUntilIdle();
+
+  char data[kBufferSize] = {};
+
+  // First Send call will fill the send buffer but not send anything.
+  ss_->SetSendingBlocked(true);
+  EXPECT_EQ(static_cast<int>(kBufferSize), socket1->Send(data, kBufferSize));
+  ss_->ProcessMessagesUntilIdle();
+  EXPECT_FALSE(sink.Check(socket1, testing::SSE_WRITE));
+  EXPECT_FALSE(sink.Check(socket2, testing::SSE_READ));
+  EXPECT_FALSE(socket1->IsBlocking());
+
+  // Since the send buffer is full, next Send will result in EWOULDBLOCK.
+  EXPECT_EQ(-1, socket1->Send(data, kBufferSize));
+  EXPECT_FALSE(sink.Check(socket1, testing::SSE_WRITE));
+  EXPECT_FALSE(sink.Check(socket2, testing::SSE_READ));
+  EXPECT_TRUE(socket1->IsBlocking());
+
+  // When sending is unblocked, the buffered data should be sent and
+  // SignalWriteEvent should fire.
+  ss_->SetSendingBlocked(false);
+  ss_->ProcessMessagesUntilIdle();
+  EXPECT_TRUE(sink.Check(socket1, testing::SSE_WRITE));
+  EXPECT_TRUE(sink.Check(socket2, testing::SSE_READ));
+}
+
 TEST_F(VirtualSocketServerTest, CreatesStandardDistribution) {
   const uint32_t kTestMean[] = {10, 100, 333, 1000};
   const double kTestDev[] = { 0.25, 0.1, 0.01 };
-  // TODO: The current code only works for 1000 data points or more.
+  // TODO(deadbeef): The current code only works for 1000 data points or more.
   const uint32_t kTestSamples[] = {/*10, 100,*/ 1000};
   for (size_t midx = 0; midx < arraysize(kTestMean); ++midx) {
     for (size_t didx = 0; didx < arraysize(kTestDev); ++didx) {

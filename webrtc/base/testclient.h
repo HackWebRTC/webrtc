@@ -77,7 +77,10 @@ class TestClient : public sigslot::has_slots<> {
   int GetError();
   int SetOption(Socket::Option opt, int value);
 
-  bool ready_to_send() const;
+  bool ready_to_send() const { return ready_to_send_count() > 0; }
+
+  // How many times SignalReadyToSend has been fired.
+  int ready_to_send_count() const { return ready_to_send_count_; }
 
  private:
   // Timeout for reads when no packet is expected.
@@ -94,7 +97,7 @@ class TestClient : public sigslot::has_slots<> {
   CriticalSection crit_;
   AsyncPacketSocket* socket_;
   std::vector<Packet*>* packets_;
-  bool ready_to_send_;
+  int ready_to_send_count_ = 0;
   int64_t prev_packet_timestamp_;
   RTC_DISALLOW_COPY_AND_ASSIGN(TestClient);
 };
