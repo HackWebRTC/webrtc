@@ -6,6 +6,5 @@ include_rules = [
   "+webrtc/modules/congestion_controller",
   "+webrtc/modules/rtp_rtcp",
   "+webrtc/system_wrappers",
-  "+webrtc/voice_engine",
 ]
 
