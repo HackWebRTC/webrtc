@@ -86,11 +86,15 @@ class AudioDeviceBuffer {
   // Called periodically on the internal thread created by the TaskQueue.
   void LogStats();
 
+  // Clears all members tracking stats for recording and playout.
+  void ResetRecStats();
+  void ResetPlayStats();
+
   // Updates counters in each play/record callback but does it on the task
   // queue to ensure that they can be read by LogStats() without any locks since
   // each task is serialized by the task queue.
-  void UpdateRecStats(size_t num_samples);
-  void UpdatePlayStats(size_t num_samples);
+  void UpdateRecStats(const void* audio_buffer, size_t num_samples);
+  void UpdatePlayStats(const void* audio_buffer, size_t num_samples);
 
   // Ensures that methods are called on the same thread as the thread that
   // creates this object.
@@ -199,6 +203,23 @@ class AudioDeviceBuffer {
   // Writing to the array is done without a lock since it is only read once at
   // destruction when no audio is running.
   uint32_t playout_diff_times_[kMaxDeltaTimeInMs + 1] = {0};
+
+  // Contains max level (max(abs(x))) of recorded audio packets over the last
+  // 10 seconds where a new measurement is done twice per second. The level
+  // is reset to zero at each call to LogStats(). Only modified on the task
+  // queue thread.
+  int16_t max_rec_level_;
+
+  // Contains max level of recorded audio packets over the last 10 seconds
+  // where a new measurement is done twice per second.
+  int16_t max_play_level_;
+
+  // Counts number of times we detect "no audio" corresponding to a case where
+  // all level measurements since the last log has been exactly zero.
+  // In other words: this counter is incremented only if 20 measurements
+  // (two per second) in a row equals zero. The member is only incremented on
+  // the task queue and max once every 10th second.
+  size_t num_rec_level_is_zero_;
 };
 
 }  // namespace webrtc
