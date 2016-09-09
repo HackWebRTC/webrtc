@@ -33,6 +33,15 @@
 #include <sanitizer/msan_interface.h>
 #endif
 
+#ifdef __has_attribute
+#if __has_attribute(no_sanitize)
+#define RTC_NO_SANITIZE(what) __attribute__((no_sanitize(what)))
+#endif
+#endif
+#ifndef RTC_NO_SANITIZE
+#define RTC_NO_SANITIZE(what)
+#endif
+
 // Ask ASan to mark the memory range [ptr, ptr + element_size * num_elements)
 // as being unaddressable, so that reads and writes are not allowed. ASan may
 // narrow the range to the nearest alignment boundaries.
