@@ -23,7 +23,6 @@
 #include "webrtc/media/base/videoadapter.h"
 #include "webrtc/media/base/videobroadcaster.h"
 #include "webrtc/media/base/videosinkinterface.h"
-#include "third_party/libyuv/include/libyuv/convert.h"
 
 namespace webrtc {
 
@@ -92,8 +91,8 @@ class AndroidVideoTrackSource : public Notifier<VideoTrackSourceInterface> {
   cricket::VideoAdapter video_adapter_;
   rtc::CriticalSection apply_rotation_crit_;
   bool apply_rotation_ GUARDED_BY(apply_rotation_crit_);
-  webrtc::I420BufferPool pre_scale_pool_;
-  webrtc::I420BufferPool post_scale_pool_;
+  std::vector<uint8_t> unscaled_uv_planes_;
+  webrtc::I420BufferPool buffer_pool_;
   rtc::scoped_refptr<webrtc_jni::SurfaceTextureHelper> surface_texture_helper_;
   const bool is_screencast_;
 

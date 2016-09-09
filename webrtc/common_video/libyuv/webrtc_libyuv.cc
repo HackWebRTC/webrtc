@@ -341,4 +341,34 @@ double I420SSIM(const VideoFrame* ref_frame, const VideoFrame* test_frame) {
                           test_frame->video_frame_buffer()->StrideV(),
                           test_frame->width(), test_frame->height());
 }
+
+void NV12ToI420Scale(uint8_t* tmp_data,
+                     const uint8_t* src_y, int src_stride_y,
+                     const uint8_t* src_uv, int src_stride_uv,
+                     int src_width, int src_height,
+                     uint8_t* dst_y, int dst_stride_y,
+                     uint8_t* dst_u, int dst_stride_u,
+                     uint8_t* dst_v, int dst_stride_v,
+                     int dst_width, int dst_height) {
+  // Split source UV plane into separate U and V plane using the temporary data.
+  const int src_uv_width = (src_width + 1) / 2;
+  const int src_uv_height = (src_height + 1) / 2;
+  uint8_t* const src_u = tmp_data;
+  uint8_t* const src_v = tmp_data + src_uv_width * src_uv_height;
+  libyuv::SplitUVPlane(src_uv, src_stride_uv,
+                       src_u, src_uv_width,
+                       src_v, src_uv_width,
+                       src_uv_width, src_uv_height);
+  // Scale the planes into the destination.
+  libyuv::I420Scale(src_y, src_stride_y,
+                    src_u, src_uv_width,
+                    src_v, src_uv_width,
+                    src_width, src_height,
+                    dst_y, dst_stride_y,
+                    dst_u, dst_stride_u,
+                    dst_v, dst_stride_v,
+                    dst_width, dst_height,
+                    libyuv::kFilterBox);
+}
+
 }  // namespace webrtc

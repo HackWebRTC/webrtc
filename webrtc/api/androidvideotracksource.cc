@@ -12,6 +12,9 @@
 
 #include <utility>
 
+#include "third_party/libyuv/include/libyuv/convert.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+
 namespace webrtc {
 
 AndroidVideoTrackSource::AndroidVideoTrackSource(rtc::Thread* signaling_thread,
@@ -106,42 +109,70 @@ void AndroidVideoTrackSource::OnByteBufferFrameCaptured(const void* frame_data,
     return;
   }
 
-  int rotated_width = crop_width;
-  int rotated_height = crop_height;
-
-  rtc::CritScope lock(&apply_rotation_crit_);
-  if (apply_rotation_ && (rotation == 90 || rotation == 270)) {
-    std::swap(adapted_width, adapted_height);
-    std::swap(rotated_width, rotated_height);
-  }
-
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer =
-      pre_scale_pool_.CreateBuffer(rotated_width, rotated_height);
-
   const uint8_t* y_plane = static_cast<const uint8_t*>(frame_data);
   const uint8_t* uv_plane = y_plane + width * height;
-  int uv_width = (width + 1) / 2;
+  const int uv_width = (width + 1) / 2;
 
   RTC_CHECK_GE(length, width * height + 2 * uv_width * ((height + 1) / 2));
 
   // Can only crop at even pixels.
   crop_x &= ~1;
   crop_y &= ~1;
+  // Crop just by modifying pointers.
+  y_plane += width * crop_y + crop_x;
+  uv_plane += uv_width * crop_y + crop_x;
 
-  libyuv::NV12ToI420Rotate(
-      y_plane + width * crop_y + crop_x, width,
-      uv_plane + uv_width * crop_y + crop_x, width, buffer->MutableDataY(),
-      buffer->StrideY(),
-      // Swap U and V, since we have NV21, not NV12.
-      buffer->MutableDataV(), buffer->StrideV(), buffer->MutableDataU(),
-      buffer->StrideU(), crop_width, crop_height,
-      static_cast<libyuv::RotationMode>(apply_rotation_ ? rotation : 0));
+  rtc::scoped_refptr<webrtc::I420Buffer> buffer =
+      buffer_pool_.CreateBuffer(adapted_width, adapted_height);
 
-  if (adapted_width != buffer->width() || adapted_height != buffer->height()) {
-    rtc::scoped_refptr<webrtc::I420Buffer> scaled_buffer(
-        post_scale_pool_.CreateBuffer(adapted_width, adapted_height));
-    scaled_buffer->ScaleFrom(buffer);
-    buffer = scaled_buffer;
+  if (adapted_width == crop_width && adapted_height == crop_height) {
+    // No scaling.
+    libyuv::NV12ToI420(
+        y_plane, width,
+        uv_plane, uv_width * 2,
+        buffer->MutableDataY(), buffer->StrideY(),
+        // Swap U and V, since we have NV21, not NV12.
+        buffer->MutableDataV(), buffer->StrideV(),
+        buffer->MutableDataU(), buffer->StrideU(),
+        buffer->width(), buffer->height());
+
+  } else {
+    // Scaling.
+    const int crop_uv_width = (crop_width + 1) / 2;
+    const int crop_uv_height = (crop_height + 1) / 2;
+    unscaled_uv_planes_.resize(crop_uv_width * crop_uv_height * 2);
+
+    NV12ToI420Scale(
+        unscaled_uv_planes_.data(),
+        y_plane, width,
+        uv_plane, uv_width * 2,
+        crop_width, crop_height,
+        buffer->MutableDataY(), buffer->StrideY(),
+        // Swap U and V, since we have NV21, not NV12.
+        buffer->MutableDataV(), buffer->StrideV(),
+        buffer->MutableDataU(), buffer->StrideU(),
+        buffer->width(), buffer->height());
+  }
+
+  // Applying rotation is only supported for legacy reasons, and the performance
+  // for this path is not critical.
+  rtc::CritScope lock(&apply_rotation_crit_);
+  if (apply_rotation_ && rotation != 0) {
+    rtc::scoped_refptr<I420Buffer> rotated_buffer = I420Buffer::Create(
+        rotation == 180 ? buffer->width() : buffer->height(),
+        rotation == 180 ? buffer->height() : buffer->width());
+
+    libyuv::I420Rotate(
+        buffer->DataY(), buffer->StrideY(),
+        buffer->DataU(), buffer->StrideU(),
+        buffer->DataV(), buffer->StrideV(),
+        rotated_buffer->MutableDataY(), rotated_buffer->StrideY(),
+        rotated_buffer->MutableDataU(), rotated_buffer->StrideU(),
+        rotated_buffer->MutableDataV(), rotated_buffer->StrideV(),
+        buffer->width(), buffer->height(),
+        static_cast<libyuv::RotationMode>(rotation));
+
+    buffer = rotated_buffer;
   }
 
   OnFrame(cricket::WebRtcVideoFrame(

@@ -123,6 +123,19 @@ double I420PSNR(const VideoFrame* ref_frame, const VideoFrame* test_frame);
 // Compute SSIM for an I420 frame (all planes).
 double I420SSIM(const VideoFrame* ref_frame, const VideoFrame* test_frame);
 
+// Helper function for directly converting and scaling NV12 to I420. The
+// |tmp_data| argument will be used for intermediary splitting the UV plane into
+// separate U and V planes, so the size of that memory region must be at least
+// 2 * ((src_width + 1) / 2) * ((src_height + 1) / 2).
+void NV12ToI420Scale(uint8_t* tmp_data,
+                     const uint8_t* src_y, int src_stride_y,
+                     const uint8_t* src_uv, int src_stride_uv,
+                     int src_width, int src_height,
+                     uint8_t* dst_y, int dst_stride_y,
+                     uint8_t* dst_u, int dst_stride_u,
+                     uint8_t* dst_v, int dst_stride_v,
+                     int dst_width, int dst_height);
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_COMMON_VIDEO_LIBYUV_INCLUDE_WEBRTC_LIBYUV_H_
