@@ -73,8 +73,11 @@ class AudioDeviceBuffer {
   int32_t SetTypingStatus(bool typing_status);
 
  private:
-  void AllocatePlayoutBufferIfNeeded();
-  void AllocateRecordingBufferIfNeeded();
+  // Playout and recording parameters can change on the fly. e.g. at device
+  // switch. These methods ensures that the callback methods always use the
+  // latest parameters.
+  void UpdatePlayoutParameters();
+  void UpdateRecordingParameters();
 
   // Posts the first delayed task in the task queue and starts the periodic
   // timer.
@@ -131,14 +134,14 @@ class AudioDeviceBuffer {
   size_t play_samples_per_10ms_;
   size_t play_bytes_per_10ms_;
 
-  // Buffer used for recorded audio samples. Size is given by
-  // |rec_bytes_per_10ms_| and the buffer is allocated in InitRecording() on the
-  // main/creating thread.
+  // Buffer used for recorded audio samples. Size is currently fixed
+  // but it should be changed to be dynamic and correspond to
+  // |play_bytes_per_10ms_|. TODO(henrika): avoid using fixed (max) size.
   std::unique_ptr<int8_t[]> rec_buffer_;
 
-  // Buffer used for audio samples to be played out. Size is given by
-  // |play_bytes_per_10ms_| and the buffer is allocated in InitPlayout() on the
-  // main/creating thread.
+  // Buffer used for audio samples to be played out. Size is currently fixed
+  // but it should be changed to be dynamic and correspond to
+  // |play_bytes_per_10ms_|. TODO(henrika): avoid using fixed (max) size.
   std::unique_ptr<int8_t[]> play_buffer_;
 
   // AGC parameters.

@@ -61,6 +61,10 @@ AudioDeviceBuffer::AudioDeviceBuffer()
       last_play_samples_(0),
       last_log_stat_time_(0) {
   LOG(INFO) << "AudioDeviceBuffer::ctor";
+  // TODO(henrika): improve buffer handling and ensure that we don't allocate
+  // more than what is required.
+  play_buffer_.reset(new int8_t[kMaxBufferSizeBytes]);
+  rec_buffer_.reset(new int8_t[kMaxBufferSizeBytes]);
 }
 
 AudioDeviceBuffer::~AudioDeviceBuffer() {
@@ -235,8 +239,7 @@ int32_t AudioDeviceBuffer::StopOutputFileRecording() {
 
 int32_t AudioDeviceBuffer::SetRecordedBuffer(const void* audio_buffer,
                                              size_t num_samples) {
-  AllocateRecordingBufferIfNeeded();
-  RTC_CHECK(rec_buffer_);
+  UpdateRecordingParameters();
   // WebRTC can only receive audio in 10ms chunks, hence we fail if the native
   // audio layer tries to deliver something else.
   RTC_CHECK_EQ(num_samples, rec_samples_per_10ms_);
@@ -269,7 +272,6 @@ int32_t AudioDeviceBuffer::SetRecordedBuffer(const void* audio_buffer,
 }
 
 int32_t AudioDeviceBuffer::DeliverRecordedData() {
-  RTC_CHECK(rec_buffer_);
   RTC_DCHECK(audio_transport_cb_);
   rtc::CritScope lock(&_critSectCb);
 
@@ -306,8 +308,7 @@ int32_t AudioDeviceBuffer::RequestPlayoutData(size_t num_samples) {
   last_playout_time_ = now_time;
   playout_diff_times_[diff_time]++;
 
-  AllocatePlayoutBufferIfNeeded();
-  RTC_CHECK(play_buffer_);
+  UpdatePlayoutParameters();
   // WebRTC can only provide audio in 10ms chunks, hence we fail if the native
   // audio layer asks for something else.
   RTC_CHECK_EQ(num_samples, play_samples_per_10ms_);
@@ -346,36 +347,22 @@ int32_t AudioDeviceBuffer::GetPlayoutData(void* audio_buffer) {
   return static_cast<int32_t>(play_samples_per_10ms_);
 }
 
-void AudioDeviceBuffer::AllocatePlayoutBufferIfNeeded() {
+void AudioDeviceBuffer::UpdatePlayoutParameters() {
   RTC_CHECK(play_bytes_per_sample_);
-  if (play_buffer_)
-    return;
-  LOG(INFO) << __FUNCTION__;
   rtc::CritScope lock(&_critSect);
-  // Derive the required buffer size given sample rate and number of channels.
+  // Update the required buffer size given sample rate and number of channels.
   play_samples_per_10ms_ = static_cast<size_t>(play_sample_rate_ * 10 / 1000);
   play_bytes_per_10ms_ = play_bytes_per_sample_ * play_samples_per_10ms_;
-  LOG(INFO) << "playout samples per 10ms: " << play_samples_per_10ms_;
-  LOG(INFO) << "playout bytes per 10ms: " << play_bytes_per_10ms_;
-  // Allocate memory for the playout audio buffer. It will always contain audio
-  // samples corresponding to 10ms of audio to be played out.
-  play_buffer_.reset(new int8_t[play_bytes_per_10ms_]);
+  RTC_DCHECK_LE(play_bytes_per_10ms_, kMaxBufferSizeBytes);
 }
 
-void AudioDeviceBuffer::AllocateRecordingBufferIfNeeded() {
+void AudioDeviceBuffer::UpdateRecordingParameters() {
   RTC_CHECK(rec_bytes_per_sample_);
-  if (rec_buffer_)
-    return;
-  LOG(INFO) << __FUNCTION__;
   rtc::CritScope lock(&_critSect);
-  // Derive the required buffer size given sample rate and number of channels.
+  // Update the required buffer size given sample rate and number of channels.
   rec_samples_per_10ms_ = static_cast<size_t>(rec_sample_rate_ * 10 / 1000);
   rec_bytes_per_10ms_ = rec_bytes_per_sample_ * rec_samples_per_10ms_;
-  LOG(INFO) << "recorded samples per 10ms: " << rec_samples_per_10ms_;
-  LOG(INFO) << "recorded bytes per 10ms: " << rec_bytes_per_10ms_;
-  // Allocate memory for the recording audio buffer. It will always contain
-  // audio samples corresponding to 10ms of audio.
-  rec_buffer_.reset(new int8_t[rec_bytes_per_10ms_]);
+  RTC_DCHECK_LE(rec_bytes_per_10ms_, kMaxBufferSizeBytes);
 }
 
 void AudioDeviceBuffer::StartTimer() {
