@@ -63,9 +63,9 @@
 #define WEBRTC_SPL_MUL_16_32_RSFT14(a, b)          \
   (WEBRTC_SPL_MUL_16_16(a, (b) >> 16) * (1 << 2) + \
    (((WEBRTC_SPL_MUL_16_U16(a, (uint16_t)(b)) >> 1) + 0x1000) >> 13))
-#define WEBRTC_SPL_MUL_16_32_RSFT15(a, b) \
-    ((WEBRTC_SPL_MUL_16_16(a, (b) >> 16) << 1) \
-    + (((WEBRTC_SPL_MUL_16_U16(a, (uint16_t)(b)) >> 1) + 0x2000) >> 14))
+#define WEBRTC_SPL_MUL_16_32_RSFT15(a, b)            \
+  ((WEBRTC_SPL_MUL_16_16(a, (b) >> 16) * (1 << 1)) + \
+   (((WEBRTC_SPL_MUL_16_U16(a, (uint16_t)(b)) >> 1) + 0x2000) >> 14))
 
 #define WEBRTC_SPL_MUL_16_16_RSFT(a, b, c) \
     (WEBRTC_SPL_MUL_16_16(a, b) >> (c))
