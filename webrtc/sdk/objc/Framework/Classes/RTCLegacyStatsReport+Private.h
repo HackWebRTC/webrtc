@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "WebRTC/RTCStatsReport.h"
+#import "WebRTC/RTCLegacyStatsReport.h"
 
 #include "webrtc/api/statstypes.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface RTCStatsReport ()
+@interface RTCLegacyStatsReport ()
 
-/** Initialize an RTCStatsReport object from a native StatsReport. */
+/** Initialize an RTCLegacyStatsReport object from a native StatsReport. */
 - (instancetype)initWithNativeReport:(const webrtc::StatsReport &)nativeReport;
 
 @end

@@ -10,7 +10,7 @@
 
 #import <Foundation/Foundation.h>
 
-@class RTCStatsReport;
+@class RTCLegacyStatsReport;
 
 /** Class used to accumulate stats information into a single displayable string.
  */
@@ -24,6 +24,6 @@
 /** Parses the information in the stats report into an appropriate internal
  *  format used to generate the stats string.
  */
-- (void)parseStatsReport:(RTCStatsReport *)statsReport;
+- (void)parseStatsReport:(RTCLegacyStatsReport *)statsReport;
 
 @end

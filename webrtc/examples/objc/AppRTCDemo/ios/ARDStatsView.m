@@ -10,7 +10,7 @@
 
 #import "ARDStatsView.h"
 
-#import "WebRTC/RTCStatsReport.h"
+#import "WebRTC/RTCLegacyStatsReport.h"
 
 #import "ARDStatsBuilder.h"
 
@@ -35,7 +35,7 @@
 }
 
 - (void)setStats:(NSArray *)stats {
-  for (RTCStatsReport *report in stats) {
+  for (RTCLegacyStatsReport *report in stats) {
     [_statsBuilder parseStatsReport:report];
   }
   _statsLabel.text = _statsBuilder.statsString;

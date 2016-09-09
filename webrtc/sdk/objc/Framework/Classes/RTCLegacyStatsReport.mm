@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "RTCStatsReport+Private.h"
+#import "RTCLegacyStatsReport+Private.h"
 
 #import "NSString+StdString.h"
 #import "WebRTC/RTCLogging.h"
 
 #include "webrtc/base/checks.h"
 
-@implementation RTCStatsReport
+@implementation RTCLegacyStatsReport
 
 @synthesize timestamp = _timestamp;
 @synthesize type = _type;
@@ -23,7 +23,7 @@
 @synthesize values = _values;
 
 - (NSString *)description {
-  return [NSString stringWithFormat:@"RTCStatsReport:\n%@\n%@\n%f\n%@",
+  return [NSString stringWithFormat:@"RTCLegacyStatsReport:\n%@\n%@\n%f\n%@",
                                     _reportId,
                                     _type,
                                     _timestamp,

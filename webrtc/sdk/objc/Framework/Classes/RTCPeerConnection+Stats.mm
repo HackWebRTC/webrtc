@@ -12,7 +12,7 @@
 
 #import "NSString+StdString.h"
 #import "RTCMediaStreamTrack+Private.h"
-#import "RTCStatsReport+Private.h"
+#import "RTCLegacyStatsReport+Private.h"
 
 #include "webrtc/base/checks.h"
 
@@ -21,7 +21,7 @@ namespace webrtc {
 class StatsObserverAdapter : public StatsObserver {
  public:
   StatsObserverAdapter(void (^completionHandler)
-      (NSArray<RTCStatsReport *> *stats)) {
+      (NSArray<RTCLegacyStatsReport *> *stats)) {
     completion_handler_ = completionHandler;
   }
 
@@ -33,8 +33,8 @@ class StatsObserverAdapter : public StatsObserver {
     RTC_DCHECK(completion_handler_);
     NSMutableArray *stats = [NSMutableArray arrayWithCapacity:reports.size()];
     for (const auto* report : reports) {
-      RTCStatsReport *statsReport =
-          [[RTCStatsReport alloc] initWithNativeReport:*report];
+      RTCLegacyStatsReport *statsReport =
+          [[RTCLegacyStatsReport alloc] initWithNativeReport:*report];
       [stats addObject:statsReport];
     }
     completion_handler_(stats);
@@ -42,7 +42,7 @@ class StatsObserverAdapter : public StatsObserver {
   }
 
  private:
-  void (^completion_handler_)(NSArray<RTCStatsReport *> *stats);
+  void (^completion_handler_)(NSArray<RTCLegacyStatsReport *> *stats);
 };
 }  // namespace webrtc
 
@@ -51,7 +51,7 @@ class StatsObserverAdapter : public StatsObserver {
 - (void)statsForTrack:(RTCMediaStreamTrack *)mediaStreamTrack
      statsOutputLevel:(RTCStatsOutputLevel)statsOutputLevel
     completionHandler:
-    (void (^)(NSArray<RTCStatsReport *> *stats))completionHandler {
+    (void (^)(NSArray<RTCLegacyStatsReport *> *stats))completionHandler {
   rtc::scoped_refptr<webrtc::StatsObserverAdapter> observer(
       new rtc::RefCountedObject<webrtc::StatsObserverAdapter>
           (completionHandler));

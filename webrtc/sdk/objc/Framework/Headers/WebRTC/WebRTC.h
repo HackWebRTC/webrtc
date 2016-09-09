@@ -21,6 +21,7 @@
 #import <WebRTC/RTCFileLogger.h>
 #import <WebRTC/RTCIceCandidate.h>
 #import <WebRTC/RTCIceServer.h>
+#import <WebRTC/RTCLegacyStatsReport.h>
 #import <WebRTC/RTCLogging.h>
 #import <WebRTC/RTCMacros.h>
 #import <WebRTC/RTCMediaConstraints.h>
@@ -38,7 +39,6 @@
 #import <WebRTC/RTCRtpSender.h>
 #import <WebRTC/RTCSSLAdapter.h>
 #import <WebRTC/RTCSessionDescription.h>
-#import <WebRTC/RTCStatsReport.h>
 #import <WebRTC/RTCTracing.h>
 #import <WebRTC/RTCVideoFrame.h>
 #import <WebRTC/RTCVideoRenderer.h>
