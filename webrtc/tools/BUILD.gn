@@ -117,22 +117,25 @@ rtc_executable("frame_editor") {
   ]
 }
 
-rtc_executable("force_mic_volume_max") {
-  sources = [
-    "force_mic_volume_max/force_mic_volume_max.cc",
-  ]
+# It doesn't make sense to build this tool without the ADM enabled.
+if (rtc_include_internal_audio_device) {
+  rtc_executable("force_mic_volume_max") {
+    sources = [
+      "force_mic_volume_max/force_mic_volume_max.cc",
+    ]
 
-  if (is_clang) {
-    # Suppress warnings from the Chromium Clang plugin.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    deps = [
+      "../modules/audio_device:audio_device",
+      "../system_wrappers:system_wrappers_default",
+      "//build/win:default_exe_manifest",
+    ]
   }
-
-  deps = [
-    "../system_wrappers:system_wrappers_default",
-    "../voice_engine",
-    "//build/win:default_exe_manifest",
-  ]
 }
 
 if (rtc_enable_protobuf) {

@@ -90,7 +90,7 @@
       'target_name': 'force_mic_volume_max',
       'type': 'executable',
       'dependencies': [
-        '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
+        '<(webrtc_root)/modules/modules.gyp:audio_device',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
       ],
       'sources': [
