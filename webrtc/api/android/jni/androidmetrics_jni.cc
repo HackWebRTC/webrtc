@@ -14,10 +14,12 @@
 #include "webrtc/api/android/jni/classreferenceholder.h"
 #include "webrtc/api/android/jni/jni_helpers.h"
 #include "webrtc/api/android/jni/native_handle_impl.h"
+#include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/metrics_default.h"
 
-// Enables collection of native histograms.
+// Enables collection of native histograms and creating them.
 namespace webrtc_jni {
+
 JOW(void, Metrics_nativeEnable)(JNIEnv* jni, jclass) {
   webrtc::metrics::Enable();
 }
@@ -56,4 +58,18 @@ JOW(jobject, Metrics_nativeGetAndReset)(JNIEnv* jni, jclass) {
   CHECK_EXCEPTION(jni);
   return j_metrics;
 }
+
+JOW(jlong, Metrics_00024Histogram_nativeCreateCounts)
+(JNIEnv* jni, jclass, jstring j_name, jint min, jint max, jint buckets) {
+  std::string name = JavaToStdString(jni, j_name);
+  return jlongFromPointer(
+      webrtc::metrics::HistogramFactoryGetCounts(name, min, max, buckets));
+}
+
+JOW(void, Metrics_00024Histogram_nativeAddSample)
+(JNIEnv* jni, jclass, jlong histogram, jint sample) {
+  HistogramAdd(reinterpret_cast<webrtc::metrics::Histogram*>(histogram),
+               sample);
+}
+
 }  // namespace webrtc_jni

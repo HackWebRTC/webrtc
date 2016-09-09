@@ -18,6 +18,10 @@
 namespace webrtc {
 namespace metrics {
 
+// This class does not actually exist. It is casted to an implementation defined
+// pointer inside the functions.
+class Histogram;
+
 struct SampleInfo {
   SampleInfo(const std::string& name, int min, int max, size_t bucket_count);
   ~SampleInfo();
@@ -50,6 +54,9 @@ int NumSamples(const std::string& name);
 
 // Returns the minimum sample value (or -1 if the histogram has no samples).
 int MinSample(const std::string& name);
+
+// Function for adding a |sample| to a histogram without checkking the name.
+void HistogramAdd(Histogram* histogram_pointer, int sample);
 
 }  // namespace metrics
 }  // namespace webrtc

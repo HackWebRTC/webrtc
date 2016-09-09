@@ -244,6 +244,15 @@ void HistogramAdd(Histogram* histogram_pointer,
   ptr->Add(sample);
 }
 
+// Fast path. Adds |sample| to cached |histogram_pointer|.
+void HistogramAdd(Histogram* histogram_pointer, int sample) {
+  if (!histogram_pointer)
+    return;
+
+  RtcHistogram* ptr = reinterpret_cast<RtcHistogram*>(histogram_pointer);
+  ptr->Add(sample);
+}
+
 SampleInfo::SampleInfo(const std::string& name,
                        int min,
                        int max,
