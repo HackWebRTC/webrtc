@@ -222,7 +222,13 @@ class CopyOnWriteBuffer {
       return;
     }
 
-    CloneDataIfReferenced(std::max(buffer_->capacity(), size));
+    // Clone data if referenced.
+    if (!buffer_->HasOneRef()) {
+      buffer_ = new RefCountedObject<Buffer>(
+          buffer_->data(),
+          std::min(buffer_->size(), size),
+          std::max(buffer_->capacity(), size));
+    }
     buffer_->SetSize(size);
     RTC_DCHECK(IsConsistent());
   }
