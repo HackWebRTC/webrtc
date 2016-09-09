@@ -262,4 +262,17 @@ void LevelController::Process(AudioBuffer* audio) {
                         audio->channels_f()[0], *sample_rate_hz_, 1);
 }
 
+std::string LevelController::ToString(
+    const AudioProcessing::Config::LevelController& config) {
+  std::stringstream ss;
+  ss << "{"
+     << "enabled: " << (config.enabled ? "true" : "false") << "}";
+  return ss.str();
+}
+
+bool LevelController::Validate(
+    const AudioProcessing::Config::LevelController& config) {
+  return true;
+}
+
 }  // namespace webrtc
