@@ -2,6 +2,7 @@ per-file androidvideocapturer*=magjed@webrtc.org
 per-file androidmediaencoder*=magjed@webrtc.org
 per-file androidmediadecoder*=magjed@webrtc.org
 per-file androidmediacodeccommon.h=magjed@webrtc.org
+per-file androidmetrics_jni.cc=sakal@webrtc.org
 per-file androidvideotracksource_jni.cc=magjed@webrtc.org
 per-file androidvideotracksource_jni.cc=sakal@webrtc.org
 per-file surfacetexturehelper*=magjed@webrtc.org
