@@ -14,7 +14,7 @@
 #include <array>
 #include <map>
 #include <memory>
-#include <queue>
+#include <deque>
 #include <set>
 #include <utility>
 
@@ -40,8 +40,21 @@ class OnCompleteFrameCallback {
 class RtpFrameReferenceFinder {
  public:
   explicit RtpFrameReferenceFinder(OnCompleteFrameCallback* frame_callback);
+
+  // Manage this frame until:
+  //  - We have all information needed to determine its references, after
+  //    which |frame_callback_| is called with the completed frame, or
+  //  - We have too many stashed frames (determined by |kMaxStashedFrames)
+  //    so we drop this frame, or
+  //  - It gets cleared by ClearTo, which also means we drop it.
   void ManageFrame(std::unique_ptr<RtpFrameObject> frame);
+
+  // Notifies that padding has been received, which the reference finder
+  // might need to calculate the references of a frame.
   void PaddingReceived(uint16_t seq_num);
+
+  // Clear all stashed frames that include packets older than |seq_num|.
+  void ClearTo(uint16_t seq_num);
 
  private:
   static const uint16_t kPicIdLength = 1 << 7;
@@ -146,7 +159,7 @@ class RtpFrameReferenceFinder {
 
   // Frames that have been fully received but didn't have all the information
   // needed to determine their references.
-  std::queue<std::unique_ptr<RtpFrameObject>> stashed_frames_ GUARDED_BY(crit_);
+  std::deque<std::unique_ptr<RtpFrameObject>> stashed_frames_ GUARDED_BY(crit_);
 
   // Holds the information about the last completed frame for a given temporal
   // layer given a Tl0 picture index.
@@ -176,6 +189,11 @@ class RtpFrameReferenceFinder {
   std::array<std::set<uint16_t, DescendingSeqNumComp<uint16_t, kPicIdLength>>,
              kMaxTemporalLayers>
       missing_frames_for_layer_ GUARDED_BY(crit_);
+
+  // How far frames have been cleared by sequence number. A frame will be
+  // cleared if it contains a packet with a sequence number older than
+  // |cleared_to_seq_num_|.
+  int cleared_to_seq_num_ GUARDED_BY(crit_);
 
   OnCompleteFrameCallback* frame_callback_;
 };

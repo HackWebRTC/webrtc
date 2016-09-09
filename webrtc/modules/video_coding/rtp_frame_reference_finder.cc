@@ -26,11 +26,19 @@ RtpFrameReferenceFinder::RtpFrameReferenceFinder(
     : last_picture_id_(-1),
       last_unwrap_(-1),
       current_ss_idx_(0),
+      cleared_to_seq_num_(-1),
       frame_callback_(frame_callback) {}
 
 void RtpFrameReferenceFinder::ManageFrame(
     std::unique_ptr<RtpFrameObject> frame) {
   rtc::CritScope lock(&crit_);
+
+  // If we have cleared past this frame, drop it.
+  if (cleared_to_seq_num_ != -1 &&
+      AheadOf<uint16_t>(cleared_to_seq_num_, frame->first_seq_num())) {
+    return;
+  }
+
   switch (frame->codec_type()) {
     case kVideoCodecULPFEC:
     case kVideoCodecRED:
@@ -59,6 +67,20 @@ void RtpFrameReferenceFinder::PaddingReceived(uint16_t seq_num) {
   stashed_padding_.insert(seq_num);
   UpdateLastPictureIdWithPadding(seq_num);
   RetryStashedFrames();
+}
+
+void RtpFrameReferenceFinder::ClearTo(uint16_t seq_num) {
+  rtc::CritScope lock(&crit_);
+  cleared_to_seq_num_ = seq_num;
+
+  auto it = stashed_frames_.begin();
+  while (it != stashed_frames_.end()) {
+    if (AheadOf<uint16_t>(cleared_to_seq_num_, (*it)->first_seq_num())) {
+      it = stashed_frames_.erase(it);
+    } else {
+      ++it;
+    }
+  }
 }
 
 void RtpFrameReferenceFinder::UpdateLastPictureIdWithPadding(uint16_t seq_num) {
@@ -92,14 +114,16 @@ void RtpFrameReferenceFinder::RetryStashedFrames() {
 
   // Clean up stashed frames if there are too many.
   while (stashed_frames_.size() > kMaxStashedFrames)
-    stashed_frames_.pop();
+    stashed_frames_.pop_front();
 
   // Since frames are stashed if there is not enough data to determine their
   // frame references we should at most check |stashed_frames_.size()| in
   // order to not pop and push frames in and endless loop.
+  // NOTE! This function may be called recursively, hence the
+  //       "!stashed_frames_.empty()" condition.
   for (size_t i = 0; i < num_stashed_frames && !stashed_frames_.empty(); ++i) {
     std::unique_ptr<RtpFrameObject> frame = std::move(stashed_frames_.front());
-    stashed_frames_.pop();
+    stashed_frames_.pop_front();
     ManageFrame(std::move(frame));
   }
 }
@@ -128,7 +152,7 @@ void RtpFrameReferenceFinder::ManageFrameGeneric(
 
   // We have received a frame but not yet a keyframe, stash this frame.
   if (last_seq_num_gop_.empty()) {
-    stashed_frames_.emplace(std::move(frame));
+    stashed_frames_.push_back(std::move(frame));
     return;
   }
 
@@ -156,7 +180,7 @@ void RtpFrameReferenceFinder::ManageFrameGeneric(
   if (frame->frame_type() == kVideoFrameDelta) {
     uint16_t prev_seq_num = frame->first_seq_num() - 1;
     if (prev_seq_num != last_picture_id_with_padding_gop) {
-      stashed_frames_.emplace(std::move(frame));
+      stashed_frames_.push_back(std::move(frame));
       return;
     }
   }
@@ -237,7 +261,7 @@ void RtpFrameReferenceFinder::ManageFrameVp8(
 
   // If we don't have the base layer frame yet, stash this frame.
   if (layer_info_it == layer_info_.end()) {
-    stashed_frames_.emplace(std::move(frame));
+    stashed_frames_.push_back(std::move(frame));
     return;
   }
 
@@ -276,7 +300,7 @@ void RtpFrameReferenceFinder::ManageFrameVp8(
     if (not_received_frame_it != not_yet_received_frames_.end() &&
         AheadOf<uint16_t, kPicIdLength>(frame->picture_id,
                                         *not_received_frame_it)) {
-      stashed_frames_.emplace(std::move(frame));
+      stashed_frames_.push_back(std::move(frame));
       return;
     }
 
@@ -398,7 +422,7 @@ void RtpFrameReferenceFinder::ManageFrameVp9(
 
   // Gof info for this frame is not available yet, stash this frame.
   if (gof_info_it == gof_info_.end()) {
-    stashed_frames_.emplace(std::move(frame));
+    stashed_frames_.push_back(std::move(frame));
     return;
   }
 
@@ -408,7 +432,7 @@ void RtpFrameReferenceFinder::ManageFrameVp9(
   // Make sure we don't miss any frame that could potentially have the
   // up switch flag set.
   if (MissingRequiredFrameVp9(frame->picture_id, *info)) {
-    stashed_frames_.emplace(std::move(frame));
+    stashed_frames_.push_back(std::move(frame));
     return;
   }
 

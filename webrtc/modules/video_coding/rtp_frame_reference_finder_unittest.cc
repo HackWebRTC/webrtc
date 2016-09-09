@@ -272,6 +272,24 @@ TEST_F(TestRtpFrameReferenceFinder, PaddingPacketsReorderedMultipleKeyframes) {
   EXPECT_EQ(4UL, frames_from_callback_.size());
 }
 
+TEST_F(TestRtpFrameReferenceFinder, ClearTo) {
+  uint16_t sn = Rand();
+
+  InsertGeneric(sn, sn + 1, true);
+  InsertGeneric(sn + 4, sn + 5, false);  // stashed
+  EXPECT_EQ(1UL, frames_from_callback_.size());
+
+  InsertGeneric(sn + 6, sn + 7, true);  // keyframe
+  EXPECT_EQ(2UL, frames_from_callback_.size());
+  reference_finder_->ClearTo(sn + 7);
+
+  InsertGeneric(sn + 8, sn + 9, false);  // first frame after keyframe.
+  EXPECT_EQ(3UL, frames_from_callback_.size());
+
+  InsertGeneric(sn + 2, sn + 3, false);  // late, cleared past this frame.
+  EXPECT_EQ(3UL, frames_from_callback_.size());
+}
+
 TEST_F(TestRtpFrameReferenceFinder, Vp8NoPictureId) {
   uint16_t sn = Rand();
 
