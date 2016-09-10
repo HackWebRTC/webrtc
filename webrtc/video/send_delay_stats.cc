@@ -44,8 +44,7 @@ void SendDelayStats::UpdateHistograms() {
   for (const auto& it : send_delay_counters_) {
     AggregatedStats stats = it.second->GetStats();
     if (stats.num_samples >= kMinRequiredPeriodicSamples) {
-      RTC_LOGGED_HISTOGRAM_COUNTS_10000("WebRTC.Video.SendDelayInMs",
-                                        stats.average);
+      RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.SendDelayInMs", stats.average);
     }
   }
 }

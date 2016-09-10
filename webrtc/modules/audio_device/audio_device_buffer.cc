@@ -100,7 +100,7 @@ AudioDeviceBuffer::~AudioDeviceBuffer() {
   // I am avoiding use of the task queue here since we are under destruction
   // and reading these members on the creating thread feels safe.
   if (rec_callbacks_ > 0 && num_stat_reports_ > 0) {
-    RTC_LOGGED_HISTOGRAM_BOOLEAN("WebRTC.Audio.RecordedOnlyZeros",
+    RTC_HISTOGRAM_BOOLEAN("WebRTC.Audio.RecordedOnlyZeros",
     static_cast<int>(num_stat_reports_ == num_rec_level_is_zero_));
   }
 }

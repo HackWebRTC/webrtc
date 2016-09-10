@@ -32,7 +32,6 @@ constexpr int kInterArrivalShift =
     kAbsSendTimeFraction + kAbsSendTimeInterArrivalUpshift;
 constexpr double kTimestampToMs =
     1000.0 / static_cast<double>(1 << kInterArrivalShift);
-
 // This ssrc is used to fulfill the current API but will be removed
 // after the API has been changed.
 constexpr uint32_t kFixedSsrc = 0;
@@ -59,9 +58,9 @@ void DelayBasedBwe::IncomingPacketFeedbackVector(
     const std::vector<PacketInfo>& packet_feedback_vector) {
   RTC_DCHECK(network_thread_.CalledOnValidThread());
   if (!uma_recorded_) {
-    RTC_LOGGED_HISTOGRAM_ENUMERATION(kBweTypeHistogram,
-                                     BweNames::kSendSideTransportSeqNum,
-                                     BweNames::kBweNamesMax);
+    RTC_HISTOGRAM_ENUMERATION(kBweTypeHistogram,
+                              BweNames::kSendSideTransportSeqNum,
+                              BweNames::kBweNamesMax);
     uma_recorded_ = true;
   }
   for (const auto& packet_info : packet_feedback_vector) {

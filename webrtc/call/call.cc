@@ -312,7 +312,7 @@ Call::~Call() {
 }
 
 void Call::UpdateHistograms() {
-  RTC_LOGGED_HISTOGRAM_COUNTS_100000(
+  RTC_HISTOGRAM_COUNTS_100000(
       "WebRTC.Call.LifetimeInSeconds",
       (clock_->TimeInMilliseconds() - start_ms_) / 1000);
 }
@@ -328,14 +328,14 @@ void Call::UpdateSendHistograms() {
   AggregatedStats send_bitrate_stats =
       estimated_send_bitrate_kbps_counter_.ProcessAndGetStats();
   if (send_bitrate_stats.num_samples > kMinRequiredPeriodicSamples) {
-    RTC_LOGGED_HISTOGRAM_COUNTS_100000("WebRTC.Call.EstimatedSendBitrateInKbps",
-                                       send_bitrate_stats.average);
+    RTC_HISTOGRAM_COUNTS_100000("WebRTC.Call.EstimatedSendBitrateInKbps",
+                                send_bitrate_stats.average);
   }
   AggregatedStats pacer_bitrate_stats =
       pacer_bitrate_kbps_counter_.ProcessAndGetStats();
   if (pacer_bitrate_stats.num_samples > kMinRequiredPeriodicSamples) {
-    RTC_LOGGED_HISTOGRAM_COUNTS_100000("WebRTC.Call.PacerBitrateInKbps",
-                                       pacer_bitrate_stats.average);
+    RTC_HISTOGRAM_COUNTS_100000("WebRTC.Call.PacerBitrateInKbps",
+                                pacer_bitrate_stats.average);
   }
 }
 
@@ -344,26 +344,26 @@ void Call::UpdateReceiveHistograms() {
   AggregatedStats video_bytes_per_sec =
       received_video_bytes_per_second_counter_.GetStats();
   if (video_bytes_per_sec.num_samples > kMinRequiredPeriodicSamples) {
-    RTC_LOGGED_HISTOGRAM_COUNTS_100000("WebRTC.Call.VideoBitrateReceivedInKbps",
-                                       video_bytes_per_sec.average * 8 / 1000);
+    RTC_HISTOGRAM_COUNTS_100000("WebRTC.Call.VideoBitrateReceivedInKbps",
+                                video_bytes_per_sec.average * 8 / 1000);
   }
   AggregatedStats audio_bytes_per_sec =
       received_audio_bytes_per_second_counter_.GetStats();
   if (audio_bytes_per_sec.num_samples > kMinRequiredPeriodicSamples) {
-    RTC_LOGGED_HISTOGRAM_COUNTS_100000("WebRTC.Call.AudioBitrateReceivedInKbps",
-                                       audio_bytes_per_sec.average * 8 / 1000);
+    RTC_HISTOGRAM_COUNTS_100000("WebRTC.Call.AudioBitrateReceivedInKbps",
+                                audio_bytes_per_sec.average * 8 / 1000);
   }
   AggregatedStats rtcp_bytes_per_sec =
       received_rtcp_bytes_per_second_counter_.GetStats();
   if (rtcp_bytes_per_sec.num_samples > kMinRequiredPeriodicSamples) {
-    RTC_LOGGED_HISTOGRAM_COUNTS_100000("WebRTC.Call.RtcpBitrateReceivedInBps",
-                                       rtcp_bytes_per_sec.average * 8);
+    RTC_HISTOGRAM_COUNTS_100000("WebRTC.Call.RtcpBitrateReceivedInBps",
+                                rtcp_bytes_per_sec.average * 8);
   }
   AggregatedStats recv_bytes_per_sec =
       received_bytes_per_second_counter_.GetStats();
   if (recv_bytes_per_sec.num_samples > kMinRequiredPeriodicSamples) {
-    RTC_LOGGED_HISTOGRAM_COUNTS_100000("WebRTC.Call.BitrateReceivedInKbps",
-                                       recv_bytes_per_sec.average * 8 / 1000);
+    RTC_HISTOGRAM_COUNTS_100000("WebRTC.Call.BitrateReceivedInKbps",
+                                recv_bytes_per_sec.average * 8 / 1000);
   }
 }
 

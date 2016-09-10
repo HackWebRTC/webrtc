@@ -59,8 +59,8 @@ BitrateAllocator::BitrateAllocator(LimitObserver* limit_observer)
 }
 
 BitrateAllocator::~BitrateAllocator() {
-  RTC_LOGGED_HISTOGRAM_COUNTS_100("WebRTC.Call.NumberOfPauseEvents",
-                                  num_pause_events_);
+  RTC_HISTOGRAM_COUNTS_100("WebRTC.Call.NumberOfPauseEvents",
+                           num_pause_events_);
 }
 
 void BitrateAllocator::OnNetworkChanged(uint32_t target_bitrate_bps,

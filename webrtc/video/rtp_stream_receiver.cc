@@ -522,15 +522,14 @@ bool RtpStreamReceiver::IsPacketRetransmitted(const RTPHeader& header,
 void RtpStreamReceiver::UpdateHistograms() {
   FecPacketCounter counter = fec_receiver_->GetPacketCounter();
   if (counter.num_packets > 0) {
-    RTC_LOGGED_HISTOGRAM_PERCENTAGE(
+    RTC_HISTOGRAM_PERCENTAGE(
         "WebRTC.Video.ReceivedFecPacketsInPercent",
         static_cast<int>(counter.num_fec_packets * 100 / counter.num_packets));
   }
   if (counter.num_fec_packets > 0) {
-    RTC_LOGGED_HISTOGRAM_PERCENTAGE(
-        "WebRTC.Video.RecoveredMediaPacketsInPercentOfFec",
-        static_cast<int>(counter.num_recovered_packets * 100 /
-                         counter.num_fec_packets));
+    RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.RecoveredMediaPacketsInPercentOfFec",
+                             static_cast<int>(counter.num_recovered_packets *
+                                              100 / counter.num_fec_packets));
   }
 }
 

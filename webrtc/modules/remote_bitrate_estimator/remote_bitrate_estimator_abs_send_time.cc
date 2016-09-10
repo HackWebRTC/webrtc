@@ -239,9 +239,8 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
     uint32_t ssrc) {
   RTC_CHECK(send_time_24bits < (1ul << 24));
   if (!uma_recorded_) {
-    RTC_LOGGED_HISTOGRAM_ENUMERATION(kBweTypeHistogram,
-                                     BweNames::kReceiverAbsSendTime,
-                                     BweNames::kBweNamesMax);
+    RTC_HISTOGRAM_ENUMERATION(kBweTypeHistogram, BweNames::kReceiverAbsSendTime,
+                              BweNames::kBweNamesMax);
     uma_recorded_ = true;
   }
   // Shift up send time to use the full 32 bits that inter_arrival works with,

@@ -77,8 +77,7 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(
     BweNames type = BweNames::kReceiverTOffset;
     if (!header.extension.hasTransmissionTimeOffset)
       type = BweNames::kReceiverNoExtension;
-    RTC_LOGGED_HISTOGRAM_ENUMERATION(
-        kBweTypeHistogram, type, BweNames::kBweNamesMax);
+    RTC_HISTOGRAM_ENUMERATION(kBweTypeHistogram, type, BweNames::kBweNamesMax);
     uma_recorded_ = true;
   }
   uint32_t ssrc = header.ssrc;

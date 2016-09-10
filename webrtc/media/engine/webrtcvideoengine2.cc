@@ -1628,9 +1628,8 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::~WebRtcVideoSendStream() {
 void WebRtcVideoChannel2::WebRtcVideoSendStream::UpdateHistograms() const {
   const int kMinRequiredFrames = 200;
   if (frame_count_ > kMinRequiredFrames) {
-    RTC_LOGGED_HISTOGRAM_PERCENTAGE(
-        "WebRTC.Video.CpuLimitedResolutionInPercent",
-        cpu_restricted_frame_count_ * 100 / frame_count_);
+    RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.CpuLimitedResolutionInPercent",
+                             cpu_restricted_frame_count_ * 100 / frame_count_);
   }
 }
 
