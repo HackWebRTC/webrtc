@@ -648,7 +648,8 @@ void P2PTransportChannel::OnUnknownAddress(
   Connection* connection =
       port->CreateConnection(remote_candidate, PortInterface::ORIGIN_THIS_PORT);
   if (!connection) {
-    ASSERT(false);
+    // This could happen in some scenarios. For example, a TurnPort may have
+    // had a refresh request timeout, so it won't create connections.
     port->SendBindingErrorResponse(stun_msg, address, STUN_ERROR_SERVER_ERROR,
                                    STUN_ERROR_REASON_SERVER_ERROR);
     return;
