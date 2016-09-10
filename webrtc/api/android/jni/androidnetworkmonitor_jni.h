@@ -21,7 +21,7 @@
 
 namespace webrtc_jni {
 
-typedef long NetworkHandle;
+typedef int64_t NetworkHandle;
 
 // c++ equivalent of java NetworkMonitorAutoDetect.ConnectionType.
 enum NetworkType {
