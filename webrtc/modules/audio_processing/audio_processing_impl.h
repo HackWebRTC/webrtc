@@ -132,6 +132,41 @@ class AudioProcessingImpl : public AudioProcessing {
   struct ApmPublicSubmodules;
   struct ApmPrivateSubmodules;
 
+  class ApmSubmoduleStates {
+   public:
+    ApmSubmoduleStates();
+    // Updates the submodule state and returns true if it has changed.
+    bool Update(bool high_pass_filter_enabled,
+                bool echo_canceller_enabled,
+                bool mobile_echo_controller_enabled,
+                bool noise_suppressor_enabled,
+                bool intelligibility_enhancer_enabled,
+                bool beamformer_enabled,
+                bool adaptive_gain_controller_enabled,
+                bool level_controller_enabled,
+                bool voice_activity_detector_enabled,
+                bool level_estimator_enabled,
+                bool transient_suppressor_enabled);
+    bool CaptureMultiBandSubModulesActive() const;
+    bool CaptureMultiBandProcessingActive() const;
+    bool RenderMultiBandSubModulesActive() const;
+    bool RenderMultiBandProcessingActive() const;
+
+   private:
+    bool high_pass_filter_enabled_ = false;
+    bool echo_canceller_enabled_ = false;
+    bool mobile_echo_controller_enabled_ = false;
+    bool noise_suppressor_enabled_ = false;
+    bool intelligibility_enhancer_enabled_ = false;
+    bool beamformer_enabled_ = false;
+    bool adaptive_gain_controller_enabled_ = false;
+    bool level_controller_enabled_ = false;
+    bool level_estimator_enabled_ = false;
+    bool voice_activity_detector_enabled_ = false;
+    bool transient_suppressor_enabled_ = false;
+    bool first_update_ = true;
+  };
+
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   // State for the debug dump.
   struct ApmDebugDumpThreadState {
@@ -162,21 +197,19 @@ class AudioProcessingImpl : public AudioProcessing {
   // that the capture thread blocks the render thread.
   // The struct is modified in a single-threaded manner by holding both the
   // render and capture locks.
-  int MaybeInitialize(const ProcessingConfig& config)
+  int MaybeInitialize(const ProcessingConfig& config, bool force_initialization)
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
 
   int MaybeInitializeRender(const ProcessingConfig& processing_config)
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
 
-  int MaybeInitializeCapture(const ProcessingConfig& processing_config)
+  int MaybeInitializeCapture(const ProcessingConfig& processing_config,
+                             bool force_initialization)
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
 
-  // Method for checking for the need of conversion. Accesses the formats
-  // structs in a read manner but the requirement for the render lock to be held
-  // was added as it currently anyway is always called in that manner.
-  bool rev_conversion_needed() const EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
-  bool render_check_rev_conversion_needed() const
-      EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
+  // Method for updating the state keeping track of the active submodules.
+  // Returns a bool indicating whether the state has changed.
+  bool UpdateActiveSubmoduleStates() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
   // Methods requiring APM running in a single-threaded manner.
   // Are called with both the render and capture locks already
@@ -210,10 +243,6 @@ class AudioProcessingImpl : public AudioProcessing {
   // Capture-side exclusive methods possibly running APM in a multi-threaded
   // manner that are called with the render lock already acquired.
   int ProcessStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
-  bool output_copy_needed() const EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
-  bool is_fwd_processed() const EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
-  bool fwd_synthesis_needed() const EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
-  bool fwd_analysis_needed() const EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void MaybeUpdateHistograms() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
   // Render-side exclusive methods possibly running APM in a multi-threaded
@@ -223,9 +252,6 @@ class AudioProcessingImpl : public AudioProcessing {
                                  const StreamConfig& input_config,
                                  const StreamConfig& output_config)
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
-  bool is_rev_processed() const EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
-  bool rev_synthesis_needed() const EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
-  bool rev_analysis_needed() const EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
   int ProcessReverseStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
 
 // Debug dump methods that are internal and called without locks.
@@ -255,6 +281,9 @@ class AudioProcessingImpl : public AudioProcessing {
   // Critical sections.
   rtc::CriticalSection crit_render_ ACQUIRED_BEFORE(crit_capture_);
   rtc::CriticalSection crit_capture_;
+
+  // Class containing information about what submodules are active.
+  ApmSubmoduleStates submodule_states_;
 
   // Structs containing the pointers to the submodules.
   std::unique_ptr<ApmPublicSubmodules> public_submodules_;

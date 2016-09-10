@@ -43,11 +43,6 @@ class GainControlImpl : public GainControl {
   bool is_limiter_enabled() const override;
   Mode mode() const override;
 
-  // Checks whether the module is enabled. Must only be
-  // called from the render side of APM as otherwise
-  // deadlocks may occur.
-  bool is_enabled_render_side_query() const;
-
   // Reads render side data that has been queued on the render call.
   void ReadQueuedRenderData();
 
