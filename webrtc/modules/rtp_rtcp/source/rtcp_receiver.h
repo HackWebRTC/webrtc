@@ -60,13 +60,6 @@ class RTCPReceiver {
   void SetRemoteSSRC(uint32_t ssrc);
   uint32_t RemoteSSRC() const;
 
-  int32_t IncomingRTCPPacket(
-      RTCPHelp::RTCPPacketInformation& rtcpPacketInformation,
-      RTCPUtility::RTCPParserV2* rtcpParser);
-
-  void TriggerCallbacksFromRTCPPacket(
-      RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
-
   // get received cname
   int32_t CNAME(uint32_t remoteSSRC, char cName[RTCP_CNAME_SIZE]) const;
 
@@ -115,7 +108,21 @@ class RTCPReceiver {
   void RegisterRtcpStatisticsCallback(RtcpStatisticsCallback* callback);
   RtcpStatisticsCallback* GetRtcpStatisticsCallback();
 
- protected:
+ private:
+  using ReceivedInfoMap = std::map<uint32_t, RTCPHelp::RTCPReceiveInformation*>;
+  // RTCP report block information mapped by remote SSRC.
+  using ReportBlockInfoMap =
+      std::map<uint32_t, RTCPHelp::RTCPReportBlockInformation*>;
+  // RTCP report block information map mapped by source SSRC.
+  using ReportBlockMap = std::map<uint32_t, ReportBlockInfoMap>;
+
+  int32_t IncomingRTCPPacket(
+      RTCPHelp::RTCPPacketInformation& rtcpPacketInformation,
+      RTCPUtility::RTCPParserV2* rtcpParser);
+
+  void TriggerCallbacksFromRTCPPacket(
+      RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
+
   RTCPUtility::RTCPCnameInformation* CreateCnameInformation(
       uint32_t remoteSSRC);
   RTCPUtility::RTCPCnameInformation* GetCnameInformation(
@@ -252,14 +259,6 @@ class RTCPReceiver {
       RTCPUtility::RTCPParserV2* rtcp_parser,
       RTCPHelp::RTCPPacketInformation* rtcp_packet_information)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
-
- private:
-  typedef std::map<uint32_t, RTCPHelp::RTCPReceiveInformation*> ReceivedInfoMap;
-  // RTCP report block information mapped by remote SSRC.
-  typedef std::map<uint32_t, RTCPHelp::RTCPReportBlockInformation*>
-      ReportBlockInfoMap;
-  // RTCP report block information map mapped by source SSRC.
-  typedef std::map<uint32_t, ReportBlockInfoMap> ReportBlockMap;
 
   RTCPHelp::RTCPReportBlockInformation* CreateOrGetReportBlockInformation(
       uint32_t remote_ssrc,
