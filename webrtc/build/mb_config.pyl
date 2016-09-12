@@ -212,10 +212,12 @@
       'ios', 'gn', 'debug_static_bot', 'x64'
     ],
     'ios_gyp_debug_static_bot_arm64_device': [
-      'ios', 'gyp', 'debug_static_bot', 'arm64', 'device'
+      'ios', 'gyp', 'gyp_limited_support_build', 'debug_static_bot', 'arm64',
+      'device'
     ],
     'ios_gyp_release_bot_arm64_device': [
-      'ios', 'gyp', 'release_bot', 'arm64', 'device'
+      'ios', 'gyp', 'gyp_limited_support_build', 'release_bot', 'arm64',
+      'device'
     ],
 
     # Linux, Mac and Windows
