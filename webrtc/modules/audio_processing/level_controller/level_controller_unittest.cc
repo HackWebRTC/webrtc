@@ -68,25 +68,6 @@ void RunBitexactnessTest(int sample_rate_hz,
 
 }  // namespace
 
-TEST(LevelControlConfigTest, ToStringEnabled) {
-  AudioProcessing::Config config;
-  config.level_controller.enabled = true;
-  EXPECT_EQ("{enabled: true}",
-            LevelController::ToString(config.level_controller));
-}
-
-TEST(LevelControlConfigTest, ToStringNotEnabled) {
-  AudioProcessing::Config config;
-  config.level_controller.enabled = false;
-  EXPECT_EQ("{enabled: false}",
-            LevelController::ToString(config.level_controller));
-}
-
-TEST(LevelControlConfigTest, DefaultValue) {
-  AudioProcessing::Config config;
-  EXPECT_FALSE(config.level_controller.enabled);
-}
-
 TEST(LevelControlBitExactnessTest, DISABLED_Mono8kHz) {
   const float kOutputReference[] = {-0.013939f, -0.012154f, -0.009054f};
   RunBitexactnessTest(AudioProcessing::kSampleRate8kHz, 1,

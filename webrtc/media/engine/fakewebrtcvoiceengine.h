@@ -70,7 +70,6 @@ class FakeAudioProcessing : public webrtc::AudioProcessing {
   WEBRTC_STUB(Initialize, (
       const webrtc::ProcessingConfig& processing_config));
 
-  WEBRTC_VOID_STUB(ApplyConfig, (const AudioProcessing::Config& config));
   WEBRTC_VOID_FUNC(SetExtraOptions, (const webrtc::Config& config)) {
     experimental_ns_enabled_ = config.Get<webrtc::ExperimentalNs>().enabled;
   }

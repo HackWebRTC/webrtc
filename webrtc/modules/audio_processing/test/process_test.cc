@@ -177,7 +177,6 @@ void void_main(int argc, char* argv[]) {
   int extra_delay_ms = 0;
   int override_delay_ms = 0;
   Config config;
-  AudioProcessing::Config apm_config;
 
   ASSERT_EQ(apm->kNoError, apm->level_estimator()->Enable(true));
   for (int i = 1; i < argc; i++) {
@@ -263,7 +262,8 @@ void void_main(int argc, char* argv[]) {
                         suppression_level)));
 
     } else if (strcmp(argv[i], "--level_control") == 0) {
-      apm_config.level_controller.enabled = true;
+      config.Set<LevelControl>(new LevelControl(true));
+
     } else if (strcmp(argv[i], "--extended_filter") == 0) {
       config.Set<ExtendedFilter>(new ExtendedFilter(true));
 
@@ -452,7 +452,6 @@ void void_main(int argc, char* argv[]) {
       FAIL() << "Unrecognized argument " << argv[i];
     }
   }
-  apm->ApplyConfig(apm_config);
   apm->SetExtraOptions(config);
 
   // If we're reading a protobuf file, ensure a simulation hasn't also

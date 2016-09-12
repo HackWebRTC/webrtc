@@ -198,18 +198,16 @@ void RunTogetherWithApm(std::string test_description,
   SubmodulePerformanceTimer capture_timer;
   SubmodulePerformanceTimer total_timer;
 
-  webrtc::Config config;
-  AudioProcessing::Config apm_config;
+  Config config;
   if (include_default_apm_processing) {
     config.Set<DelayAgnostic>(new DelayAgnostic(true));
     config.Set<ExtendedFilter>(new ExtendedFilter(true));
   }
-  apm_config.level_controller.enabled = true;
+  config.Set<LevelControl>(new LevelControl(true));
 
   std::unique_ptr<AudioProcessing> apm;
   apm.reset(AudioProcessing::Create(config));
   ASSERT_TRUE(apm.get());
-  apm->ApplyConfig(apm_config);
 
   ASSERT_EQ(AudioProcessing::kNoError,
             apm->gain_control()->Enable(include_default_apm_processing));

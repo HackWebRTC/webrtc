@@ -532,7 +532,7 @@ void EchoCancellationImpl::AllocateRenderQueue() {
   }
 }
 
-void EchoCancellationImpl::SetExtraOptions(const webrtc::Config& config) {
+void EchoCancellationImpl::SetExtraOptions(const Config& config) {
   {
     rtc::CritScope cs(crit_capture_);
     extended_filter_enabled_ = config.Get<ExtendedFilter>().enabled;

@@ -48,8 +48,7 @@ class DebugDumpGenerator {
                      const std::string& dump_file_name);
 
   // Constructor that uses default input files.
-  explicit DebugDumpGenerator(const Config& config,
-                              const AudioProcessing::Config& apm_config);
+  explicit DebugDumpGenerator(const Config& config);
 
   ~DebugDumpGenerator();
 
@@ -134,18 +133,11 @@ DebugDumpGenerator::DebugDumpGenerator(const std::string& input_file_name,
       dump_file_name_(dump_file_name) {
 }
 
-DebugDumpGenerator::DebugDumpGenerator(
-    const Config& config,
-    const AudioProcessing::Config& apm_config)
-    : DebugDumpGenerator(ResourcePath("near32_stereo", "pcm"),
-                         32000,
-                         2,
-                         ResourcePath("far32_stereo", "pcm"),
-                         32000,
-                         2,
-                         config,
-                         TempFilename(OutputPath(), "debug_aec")) {
-  apm_->ApplyConfig(apm_config);
+DebugDumpGenerator::DebugDumpGenerator(const Config& config)
+  : DebugDumpGenerator(ResourcePath("near32_stereo", "pcm"), 32000, 2,
+                       ResourcePath("far32_stereo", "pcm"), 32000, 2,
+                       config,
+                       TempFilename(OutputPath(), "debug_aec")) {
 }
 
 DebugDumpGenerator::~DebugDumpGenerator() {
@@ -273,7 +265,7 @@ void DebugDumpTest::VerifyDebugDump(const std::string& in_filename) {
 
 TEST_F(DebugDumpTest, SimpleCase) {
   Config config;
-  DebugDumpGenerator generator(config, AudioProcessing::Config());
+  DebugDumpGenerator generator(config);
   generator.StartRecording();
   generator.Process(100);
   generator.StopRecording();
@@ -282,8 +274,7 @@ TEST_F(DebugDumpTest, SimpleCase) {
 
 TEST_F(DebugDumpTest, ChangeInputFormat) {
   Config config;
-  DebugDumpGenerator generator(config, AudioProcessing::Config());
-
+  DebugDumpGenerator generator(config);
   generator.StartRecording();
   generator.Process(100);
   generator.SetInputRate(48000);
@@ -300,7 +291,7 @@ TEST_F(DebugDumpTest, ChangeInputFormat) {
 
 TEST_F(DebugDumpTest, ChangeReverseFormat) {
   Config config;
-  DebugDumpGenerator generator(config, AudioProcessing::Config());
+  DebugDumpGenerator generator(config);
   generator.StartRecording();
   generator.Process(100);
   generator.SetReverseRate(48000);
@@ -312,7 +303,7 @@ TEST_F(DebugDumpTest, ChangeReverseFormat) {
 
 TEST_F(DebugDumpTest, ChangeOutputFormat) {
   Config config;
-  DebugDumpGenerator generator(config, AudioProcessing::Config());
+  DebugDumpGenerator generator(config);
   generator.StartRecording();
   generator.Process(100);
   generator.SetOutputRate(48000);
@@ -324,7 +315,7 @@ TEST_F(DebugDumpTest, ChangeOutputFormat) {
 
 TEST_F(DebugDumpTest, ToggleAec) {
   Config config;
-  DebugDumpGenerator generator(config, AudioProcessing::Config());
+  DebugDumpGenerator generator(config);
   generator.StartRecording();
   generator.Process(100);
 
@@ -339,7 +330,7 @@ TEST_F(DebugDumpTest, ToggleAec) {
 TEST_F(DebugDumpTest, ToggleDelayAgnosticAec) {
   Config config;
   config.Set<DelayAgnostic>(new DelayAgnostic(true));
-  DebugDumpGenerator generator(config, AudioProcessing::Config());
+  DebugDumpGenerator generator(config);
   generator.StartRecording();
   generator.Process(100);
 
@@ -354,7 +345,7 @@ TEST_F(DebugDumpTest, ToggleDelayAgnosticAec) {
 TEST_F(DebugDumpTest, VerifyRefinedAdaptiveFilterExperimentalString) {
   Config config;
   config.Set<RefinedAdaptiveFilter>(new RefinedAdaptiveFilter(true));
-  DebugDumpGenerator generator(config, AudioProcessing::Config());
+  DebugDumpGenerator generator(config);
   generator.StartRecording();
   generator.Process(100);
   generator.StopRecording();
@@ -379,7 +370,7 @@ TEST_F(DebugDumpTest, VerifyCombinedExperimentalStringInclusive) {
   Config config;
   config.Set<RefinedAdaptiveFilter>(new RefinedAdaptiveFilter(true));
   config.Set<EchoCanceller3>(new EchoCanceller3(true));
-  DebugDumpGenerator generator(config, AudioProcessing::Config());
+  DebugDumpGenerator generator(config);
   generator.StartRecording();
   generator.Process(100);
   generator.StopRecording();
@@ -405,7 +396,7 @@ TEST_F(DebugDumpTest, VerifyCombinedExperimentalStringInclusive) {
 TEST_F(DebugDumpTest, VerifyCombinedExperimentalStringExclusive) {
   Config config;
   config.Set<RefinedAdaptiveFilter>(new RefinedAdaptiveFilter(true));
-  DebugDumpGenerator generator(config, AudioProcessing::Config());
+  DebugDumpGenerator generator(config);
   generator.StartRecording();
   generator.Process(100);
   generator.StopRecording();
@@ -431,7 +422,7 @@ TEST_F(DebugDumpTest, VerifyCombinedExperimentalStringExclusive) {
 TEST_F(DebugDumpTest, VerifyAec3ExperimentalString) {
   Config config;
   config.Set<EchoCanceller3>(new EchoCanceller3(true));
-  DebugDumpGenerator generator(config, AudioProcessing::Config());
+  DebugDumpGenerator generator(config);
   generator.StartRecording();
   generator.Process(100);
   generator.StopRecording();
@@ -454,9 +445,8 @@ TEST_F(DebugDumpTest, VerifyAec3ExperimentalString) {
 
 TEST_F(DebugDumpTest, VerifyLevelControllerExperimentalString) {
   Config config;
-  AudioProcessing::Config apm_config;
-  apm_config.level_controller.enabled = true;
-  DebugDumpGenerator generator(config, apm_config);
+  config.Set<LevelControl>(new LevelControl(true));
+  DebugDumpGenerator generator(config);
   generator.StartRecording();
   generator.Process(100);
   generator.StopRecording();
@@ -479,7 +469,7 @@ TEST_F(DebugDumpTest, VerifyLevelControllerExperimentalString) {
 
 TEST_F(DebugDumpTest, VerifyEmptyExperimentalString) {
   Config config;
-  DebugDumpGenerator generator(config, AudioProcessing::Config());
+  DebugDumpGenerator generator(config);
   generator.StartRecording();
   generator.Process(100);
   generator.StopRecording();
@@ -501,7 +491,7 @@ TEST_F(DebugDumpTest, VerifyEmptyExperimentalString) {
 
 TEST_F(DebugDumpTest, ToggleAecLevel) {
   Config config;
-  DebugDumpGenerator generator(config, AudioProcessing::Config());
+  DebugDumpGenerator generator(config);
   EchoCancellation* aec = generator.apm()->echo_cancellation();
   EXPECT_EQ(AudioProcessing::kNoError, aec->Enable(true));
   EXPECT_EQ(AudioProcessing::kNoError,
@@ -524,7 +514,7 @@ TEST_F(DebugDumpTest, ToggleAecLevel) {
 #endif
 TEST_F(DebugDumpTest, MAYBE_ToggleAgc) {
   Config config;
-  DebugDumpGenerator generator(config, AudioProcessing::Config());
+  DebugDumpGenerator generator(config);
   generator.StartRecording();
   generator.Process(100);
 
@@ -538,7 +528,7 @@ TEST_F(DebugDumpTest, MAYBE_ToggleAgc) {
 
 TEST_F(DebugDumpTest, ToggleNs) {
   Config config;
-  DebugDumpGenerator generator(config, AudioProcessing::Config());
+  DebugDumpGenerator generator(config);
   generator.StartRecording();
   generator.Process(100);
 
@@ -553,7 +543,7 @@ TEST_F(DebugDumpTest, ToggleNs) {
 TEST_F(DebugDumpTest, TransientSuppressionOn) {
   Config config;
   config.Set<ExperimentalNs>(new ExperimentalNs(true));
-  DebugDumpGenerator generator(config, AudioProcessing::Config());
+  DebugDumpGenerator generator(config);
   generator.StartRecording();
   generator.Process(100);
   generator.StopRecording();

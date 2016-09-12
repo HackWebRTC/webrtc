@@ -42,10 +42,9 @@ class AudioProcessingImpl : public AudioProcessing {
  public:
   // Methods forcing APM to run in a single-threaded manner.
   // Acquires both the render and capture locks.
-  explicit AudioProcessingImpl(const webrtc::Config& config);
+  explicit AudioProcessingImpl(const Config& config);
   // AudioProcessingImpl takes ownership of beamformer.
-  AudioProcessingImpl(const webrtc::Config& config,
-                      NonlinearBeamformer* beamformer);
+  AudioProcessingImpl(const Config& config, NonlinearBeamformer* beamformer);
   ~AudioProcessingImpl() override;
   int Initialize() override;
   int Initialize(int input_sample_rate_hz,
@@ -55,8 +54,7 @@ class AudioProcessingImpl : public AudioProcessing {
                  ChannelLayout output_layout,
                  ChannelLayout reverse_layout) override;
   int Initialize(const ProcessingConfig& processing_config) override;
-  void ApplyConfig(const AudioProcessing::Config& config) override;
-  void SetExtraOptions(const webrtc::Config& config) override;
+  void SetExtraOptions(const Config& config) override;
   void UpdateHistogramsOnCallEnd() override;
   int StartDebugRecording(const char filename[kMaxFilenameSize],
                           int64_t max_log_size_bytes) override;
@@ -343,12 +341,14 @@ class AudioProcessingImpl : public AudioProcessing {
 
   struct ApmCaptureNonLockedState {
     ApmCaptureNonLockedState(bool beamformer_enabled,
-                             bool intelligibility_enabled)
+                             bool intelligibility_enabled,
+                             bool level_controller_enabled)
         : fwd_proc_format(kSampleRate16kHz),
           split_rate(kSampleRate16kHz),
           stream_delay_ms(0),
           beamformer_enabled(beamformer_enabled),
-          intelligibility_enabled(intelligibility_enabled) {}
+          intelligibility_enabled(intelligibility_enabled),
+          level_controller_enabled(level_controller_enabled) {}
     // Only the rate and samples fields of fwd_proc_format_ are used because the
     // forward processing number of channels is mutable and is tracked by the
     // capture_audio_.
@@ -357,7 +357,7 @@ class AudioProcessingImpl : public AudioProcessing {
     int stream_delay_ms;
     bool beamformer_enabled;
     bool intelligibility_enabled;
-    bool level_controller_enabled = false;
+    bool level_controller_enabled;
   } capture_nonlocked_;
 
   struct ApmRenderState {

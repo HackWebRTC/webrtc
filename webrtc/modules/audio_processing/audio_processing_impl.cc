@@ -241,15 +241,15 @@ struct AudioProcessingImpl::ApmPrivateSubmodules {
 };
 
 AudioProcessing* AudioProcessing::Create() {
-  webrtc::Config config;
+  Config config;
   return Create(config, nullptr);
 }
 
-AudioProcessing* AudioProcessing::Create(const webrtc::Config& config) {
+AudioProcessing* AudioProcessing::Create(const Config& config) {
   return Create(config, nullptr);
 }
 
-AudioProcessing* AudioProcessing::Create(const webrtc::Config& config,
+AudioProcessing* AudioProcessing::Create(const Config& config,
                                          NonlinearBeamformer* beamformer) {
   AudioProcessingImpl* apm = new AudioProcessingImpl(config, beamformer);
   if (apm->Initialize() != kNoError) {
@@ -260,10 +260,10 @@ AudioProcessing* AudioProcessing::Create(const webrtc::Config& config,
   return apm;
 }
 
-AudioProcessingImpl::AudioProcessingImpl(const webrtc::Config& config)
+AudioProcessingImpl::AudioProcessingImpl(const Config& config)
     : AudioProcessingImpl(config, nullptr) {}
 
-AudioProcessingImpl::AudioProcessingImpl(const webrtc::Config& config,
+AudioProcessingImpl::AudioProcessingImpl(const Config& config,
                                          NonlinearBeamformer* beamformer)
     : public_submodules_(new ApmPublicSubmodules()),
       private_submodules_(new ApmPrivateSubmodules(beamformer)),
@@ -281,7 +281,8 @@ AudioProcessingImpl::AudioProcessingImpl(const webrtc::Config& config,
                config.Get<Beamforming>().array_geometry,
                config.Get<Beamforming>().target_direction),
       capture_nonlocked_(config.Get<Beamforming>().enabled,
-                         config.Get<Intelligibility>().enabled) {
+                         config.Get<Intelligibility>().enabled,
+                         config.Get<LevelControl>().enabled) {
   {
     rtc::CritScope cs_render(&crit_render_);
     rtc::CritScope cs_capture(&crit_capture_);
@@ -529,34 +530,7 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
   return InitializeLocked();
 }
 
-void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
-  AudioProcessing::Config config_to_use = config;
-
-  bool config_ok = LevelController::Validate(config_to_use.level_controller);
-  if (!config_ok) {
-    LOG(LS_ERROR) << "AudioProcessing module config error" << std::endl
-                  << "level_controller: "
-                  << LevelController::ToString(config_to_use.level_controller)
-                  << std::endl
-                  << "Reverting to default parameter set";
-    config_to_use.level_controller = AudioProcessing::Config::LevelController();
-  }
-
-  // Run in a single-threaded manner when applying the settings.
-  rtc::CritScope cs_render(&crit_render_);
-  rtc::CritScope cs_capture(&crit_capture_);
-
-  if (config.level_controller.enabled !=
-      capture_nonlocked_.level_controller_enabled) {
-    InitializeLevelController();
-    LOG(LS_INFO) << "Level controller activated: "
-                 << capture_nonlocked_.level_controller_enabled;
-    capture_nonlocked_.level_controller_enabled =
-        config.level_controller.enabled;
-  }
-}
-
-void AudioProcessingImpl::SetExtraOptions(const webrtc::Config& config) {
+void AudioProcessingImpl::SetExtraOptions(const Config& config) {
   // Run in a single-threaded manner when setting the extra options.
   rtc::CritScope cs_render(&crit_render_);
   rtc::CritScope cs_capture(&crit_capture_);
@@ -568,6 +542,16 @@ void AudioProcessingImpl::SetExtraOptions(const webrtc::Config& config) {
     capture_.transient_suppressor_enabled =
         config.Get<ExperimentalNs>().enabled;
     InitializeTransient();
+  }
+
+  if (capture_nonlocked_.level_controller_enabled !=
+      config.Get<LevelControl>().enabled) {
+    capture_nonlocked_.level_controller_enabled =
+        config.Get<LevelControl>().enabled;
+    LOG(LS_INFO) << "Level controller activated: "
+                 << config.Get<LevelControl>().enabled;
+
+    InitializeLevelController();
   }
 
 #if WEBRTC_INTELLIGIBILITY_ENHANCER

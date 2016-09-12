@@ -190,8 +190,8 @@ class MockAudioProcessing : public AudioProcessing {
           ChannelLayout reverse_layout));
   MOCK_METHOD1(Initialize,
       int(const ProcessingConfig& processing_config));
-  MOCK_METHOD1(ApplyConfig, void(const Config& config));
-  MOCK_METHOD1(SetExtraOptions, void(const webrtc::Config& config));
+  MOCK_METHOD1(SetExtraOptions,
+      void(const Config& config));
   MOCK_METHOD1(set_sample_rate_hz,
       int(int rate));
   MOCK_CONST_METHOD0(input_sample_rate_hz,
