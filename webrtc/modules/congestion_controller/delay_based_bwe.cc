@@ -18,6 +18,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
@@ -46,7 +47,6 @@ DelayBasedBwe::DelayBasedBwe(RemoteBitrateObserver* observer, Clock* clock)
       estimator_(),
       detector_(OverUseDetectorOptions()),
       incoming_bitrate_(kBitrateWindowMs, 8000),
-      first_packet_time_ms_(-1),
       last_update_ms_(-1),
       last_seen_packet_ms_(-1),
       uma_recorded_(false) {
@@ -71,11 +71,8 @@ void DelayBasedBwe::IncomingPacketFeedbackVector(
 void DelayBasedBwe::IncomingPacketInfo(const PacketInfo& info) {
   int64_t now_ms = clock_->TimeInMilliseconds();
 
-  if (first_packet_time_ms_ == -1)
-    first_packet_time_ms_ = now_ms;
-
   incoming_bitrate_.Update(info.payload_size, info.arrival_time_ms);
-  bool update_estimate = false;
+  bool delay_based_bwe_changed = false;
   uint32_t target_bitrate_bps = 0;
   {
     rtc::CritScope lock(&crit_);
@@ -89,15 +86,6 @@ void DelayBasedBwe::IncomingPacketInfo(const PacketInfo& info) {
       estimator_.reset(new OveruseEstimator(OverUseDetectorOptions()));
     }
     last_seen_packet_ms_ = now_ms;
-
-    if (info.probe_cluster_id != PacketInfo::kNotAProbe) {
-      int bps = probe_bitrate_estimator_.HandleProbeAndEstimateBitrate(info);
-      if (bps > 0) {
-        remote_rate_.SetEstimate(bps, info.arrival_time_ms);
-        observer_->OnProbeBitrate(bps);
-        update_estimate = true;
-      }
-    }
 
     uint32_t send_time_24bits =
         static_cast<uint32_t>(((static_cast<uint64_t>(info.send_time_ms)
@@ -121,39 +109,54 @@ void DelayBasedBwe::IncomingPacketInfo(const PacketInfo& info) {
                        estimator_->num_of_deltas(), info.arrival_time_ms);
     }
 
-    if (!update_estimate) {
-      // Check if it's time for a periodic update or if we should update because
-      // of an over-use.
-      if (last_update_ms_ == -1 ||
-          now_ms - last_update_ms_ > remote_rate_.GetFeedbackInterval()) {
-        update_estimate = true;
-      } else if (detector_.State() == kBwOverusing) {
-        rtc::Optional<uint32_t> incoming_rate =
-            incoming_bitrate_.Rate(info.arrival_time_ms);
-        if (incoming_rate &&
-            remote_rate_.TimeToReduceFurther(now_ms, *incoming_rate)) {
-          update_estimate = true;
-        }
-      }
+    int probing_bps = 0;
+    if (info.probe_cluster_id != PacketInfo::kNotAProbe) {
+      probing_bps =
+          probe_bitrate_estimator_.HandleProbeAndEstimateBitrate(info);
     }
 
-    if (update_estimate) {
-      // The first overuse should immediately trigger a new estimate.
-      // We also have to update the estimate immediately if we are overusing
-      // and the target bitrate is too high compared to what we are receiving.
-      const RateControlInput input(detector_.State(),
-                                   incoming_bitrate_.Rate(info.arrival_time_ms),
-                                   estimator_->var_noise());
-      remote_rate_.Update(&input, now_ms);
-      target_bitrate_bps = remote_rate_.UpdateBandwidthEstimate(now_ms);
-      update_estimate = remote_rate_.ValidEstimate();
+    // Currently overusing the bandwidth.
+    if (detector_.State() == kBwOverusing) {
+      rtc::Optional<uint32_t> incoming_rate =
+          incoming_bitrate_.Rate(info.arrival_time_ms);
+      if (incoming_rate &&
+          remote_rate_.TimeToReduceFurther(now_ms, *incoming_rate)) {
+        delay_based_bwe_changed =
+            UpdateEstimate(info.arrival_time_ms, now_ms, &target_bitrate_bps);
+      }
+    } else if (probing_bps > 0) {
+      // No overuse, but probing measured a bitrate.
+      remote_rate_.SetEstimate(probing_bps, info.arrival_time_ms);
+      observer_->OnProbeBitrate(probing_bps);
+      delay_based_bwe_changed =
+          UpdateEstimate(info.arrival_time_ms, now_ms, &target_bitrate_bps);
+    }
+    if (!delay_based_bwe_changed &&
+        (last_update_ms_ == -1 ||
+         now_ms - last_update_ms_ > remote_rate_.GetFeedbackInterval())) {
+      delay_based_bwe_changed =
+          UpdateEstimate(info.arrival_time_ms, now_ms, &target_bitrate_bps);
     }
   }
 
-  if (update_estimate) {
+  if (delay_based_bwe_changed) {
     last_update_ms_ = now_ms;
     observer_->OnReceiveBitrateChanged({kFixedSsrc}, target_bitrate_bps);
   }
+}
+
+bool DelayBasedBwe::UpdateEstimate(int64_t arrival_time_ms,
+                                   int64_t now_ms,
+                                   uint32_t* target_bitrate_bps) {
+  // The first overuse should immediately trigger a new estimate.
+  // We also have to update the estimate immediately if we are overusing
+  // and the target bitrate is too high compared to what we are receiving.
+  const RateControlInput input(detector_.State(),
+                               incoming_bitrate_.Rate(arrival_time_ms),
+                               estimator_->var_noise());
+  remote_rate_.Update(&input, now_ms);
+  *target_bitrate_bps = remote_rate_.UpdateBandwidthEstimate(now_ms);
+  return remote_rate_.ValidEstimate();
 }
 
 void DelayBasedBwe::Process() {}

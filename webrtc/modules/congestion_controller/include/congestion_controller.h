@@ -30,6 +30,7 @@ namespace webrtc {
 
 class BitrateController;
 class Clock;
+class ProbeController;
 class ProcessThread;
 class RateLimiter;
 class RemoteBitrateEstimator;
@@ -120,12 +121,12 @@ class CongestionController : public CallStatsObserver, public Module {
   const std::unique_ptr<PacedSender> pacer_;
   const std::unique_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
   const std::unique_ptr<BitrateController> bitrate_controller_;
+  const std::unique_ptr<ProbeController> probe_controller_;
   const std::unique_ptr<RateLimiter> retransmission_rate_limiter_;
   RemoteEstimatorProxy remote_estimator_proxy_;
   TransportFeedbackAdapter transport_feedback_adapter_;
   int min_bitrate_bps_;
   int max_bitrate_bps_;
-  bool initial_probing_triggered_;
   rtc::CriticalSection critsect_;
   uint32_t last_reported_bitrate_bps_ GUARDED_BY(critsect_);
   uint8_t last_reported_fraction_loss_ GUARDED_BY(critsect_);

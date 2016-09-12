@@ -31,7 +31,7 @@ class BitrateControllerImpl::RtcpBandwidthObserverImpl
   }
   // Received RTCP REMB or TMMBR.
   void OnReceivedEstimatedBitrate(uint32_t bitrate) override {
-    owner_->OnReceivedEstimatedBitrate(bitrate);
+    owner_->OnReceiverEstimatedBitrate(bitrate);
   }
   // Received RTCP receiver block.
   void OnReceivedRtcpReceiverReport(const ReportBlockList& report_blocks,
@@ -173,7 +173,8 @@ void BitrateControllerImpl::SetReservedBitrate(uint32_t reserved_bitrate_bps) {
   MaybeTriggerOnNetworkChanged();
 }
 
-void BitrateControllerImpl::OnReceivedEstimatedBitrate(uint32_t bitrate) {
+// This is called upon reception of REMB or TMMBR.
+void BitrateControllerImpl::OnReceiverEstimatedBitrate(uint32_t bitrate) {
   {
     rtc::CritScope cs(&critsect_);
     bandwidth_estimation_.UpdateReceiverEstimate(clock_->TimeInMilliseconds(),
@@ -182,7 +183,7 @@ void BitrateControllerImpl::OnReceivedEstimatedBitrate(uint32_t bitrate) {
   MaybeTriggerOnNetworkChanged();
 }
 
-void BitrateControllerImpl::UpdateProbeBitrate(uint32_t bitrate_bps) {
+void BitrateControllerImpl::OnProbeBitrate(uint32_t bitrate_bps) {
   {
     rtc::CritScope cs(&critsect_);
     bandwidth_estimation_.SetSendBitrate(bitrate_bps);
@@ -190,7 +191,10 @@ void BitrateControllerImpl::UpdateProbeBitrate(uint32_t bitrate_bps) {
   MaybeTriggerOnNetworkChanged();
 }
 
-void BitrateControllerImpl::UpdateDelayBasedEstimate(uint32_t bitrate_bps) {
+// TODO(isheriff): Perhaps need new interface for invocation from DelayBasedBwe.
+void BitrateControllerImpl::OnReceiveBitrateChanged(
+    const std::vector<uint32_t>& ssrcs,
+    uint32_t bitrate_bps) {
   {
     rtc::CritScope cs(&critsect_);
     bandwidth_estimation_.UpdateDelayBasedEstimate(clock_->TimeInMilliseconds(),

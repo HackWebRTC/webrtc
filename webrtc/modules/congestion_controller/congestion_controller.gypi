@@ -23,6 +23,8 @@
         'include/congestion_controller.h',
         'probe_bitrate_estimator.cc',
         'probe_bitrate_estimator.h',
+        'probe_controller.cc',
+        'probe_controller.h',
       ],
       # TODO(jschuh): Bug 1348: fix size_t to int truncations.
       'msvs_disabled_warnings': [ 4267, ],

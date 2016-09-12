@@ -19,6 +19,7 @@
 
 #include <list>
 #include <utility>
+#include <vector>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
@@ -52,7 +53,6 @@ class BitrateControllerImpl : public BitrateController {
                      int min_bitrate_bps,
                      int max_bitrate_bps) override;
 
-  void UpdateDelayBasedEstimate(uint32_t bitrate_bps) override;
 
   void SetReservedBitrate(uint32_t reserved_bitrate_bps) override;
 
@@ -61,7 +61,10 @@ class BitrateControllerImpl : public BitrateController {
                             uint8_t* fraction_loss,
                             int64_t* rtt) override;
 
-  void UpdateProbeBitrate(uint32_t bitrate_bps) override;
+  // RemoteBitrateObserver overrides.
+  void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
+                               uint32_t bitrate_bps) override;
+  void OnProbeBitrate(uint32_t bitrate_bps) override;
 
   int64_t TimeUntilNextProcess() override;
   void Process() override;
@@ -70,7 +73,7 @@ class BitrateControllerImpl : public BitrateController {
   class RtcpBandwidthObserverImpl;
 
   // Called by BitrateObserver's direct from the RTCP module.
-  void OnReceivedEstimatedBitrate(uint32_t bitrate);
+  void OnReceiverEstimatedBitrate(uint32_t bitrate);
 
   void OnReceivedRtcpReceiverReport(uint8_t fraction_loss,
                                     int64_t rtt,

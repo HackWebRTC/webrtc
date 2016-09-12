@@ -39,10 +39,8 @@ class PacketInfoComparator {
 };
 
 TransportFeedbackAdapter::TransportFeedbackAdapter(
-    BitrateController* bitrate_controller,
     Clock* clock)
     : send_time_history_(clock, kSendTimeHistoryWindowMs),
-      bitrate_controller_(bitrate_controller),
       clock_(clock),
       current_offset_ms_(kNoTimestamp),
       last_timestamp_us_(kNoTimestamp) {}
@@ -139,16 +137,6 @@ void TransportFeedbackAdapter::OnTransportFeedback(
 std::vector<PacketInfo> TransportFeedbackAdapter::GetTransportFeedbackVector()
     const {
   return last_packet_feedback_vector_;
-}
-
-void TransportFeedbackAdapter::OnReceiveBitrateChanged(
-    const std::vector<uint32_t>& ssrcs,
-    uint32_t bitrate) {
-  bitrate_controller_->UpdateDelayBasedEstimate(bitrate);
-}
-
-void TransportFeedbackAdapter::OnProbeBitrate(uint32_t bitrate) {
-  bitrate_controller_->UpdateProbeBitrate(bitrate);
 }
 
 void TransportFeedbackAdapter::OnRttUpdate(int64_t avg_rtt_ms,

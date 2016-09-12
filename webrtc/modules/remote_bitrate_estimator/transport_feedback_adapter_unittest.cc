@@ -40,7 +40,7 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
   virtual ~TransportFeedbackAdapterTest() {}
 
   virtual void SetUp() {
-    adapter_.reset(new TransportFeedbackAdapter(&bitrate_controller_, &clock_));
+    adapter_.reset(new TransportFeedbackAdapter(&clock_));
 
     bitrate_estimator_ = new MockRemoteBitrateEstimator();
     adapter_->SetBitrateEstimator(bitrate_estimator_);
@@ -60,7 +60,8 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
 
     ~MockBitrateControllerAdapter() override {}
 
-    void UpdateDelayBasedEstimate(uint32_t bitrate_bps) override {
+    void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
+                                 uint32_t bitrate_bps) override {
       owner_->receiver_estimated_bitrate_ = bitrate_bps;
     }
 

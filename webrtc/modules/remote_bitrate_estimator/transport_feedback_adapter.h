@@ -16,7 +16,6 @@
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/thread_annotations.h"
-#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/send_time_history.h"
@@ -24,13 +23,11 @@
 namespace webrtc {
 
 class ProcessThread;
-class RemoteBitrateEstimator;
 
 class TransportFeedbackAdapter : public TransportFeedbackObserver,
-                                 public CallStatsObserver,
-                                 public RemoteBitrateObserver {
+                                 public CallStatsObserver {
  public:
-  TransportFeedbackAdapter(BitrateController* bitrate_controller, Clock* clock);
+  explicit TransportFeedbackAdapter(Clock* clock);
   virtual ~TransportFeedbackAdapter();
 
   void SetBitrateEstimator(RemoteBitrateEstimator* rbe);
@@ -51,18 +48,11 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
 
  private:
-  // Implements RemoteBitrateObserver.
-  void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
-                               uint32_t bitrate) override;
-
-  void OnProbeBitrate(uint32_t bitrate) override;
-
   std::vector<PacketInfo> GetPacketFeedbackVector(
       const rtcp::TransportFeedback& feedback);
 
   rtc::CriticalSection lock_;
   SendTimeHistory send_time_history_ GUARDED_BY(&lock_);
-  BitrateController* bitrate_controller_;
   std::unique_ptr<RemoteBitrateEstimator> bitrate_estimator_;
   Clock* const clock_;
   int64_t current_offset_ms_;

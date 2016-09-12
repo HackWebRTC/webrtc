@@ -66,6 +66,7 @@ void BitrateProber::OnIncomingPacket(size_t packet_size) {
 }
 
 void BitrateProber::CreateProbeCluster(int bitrate_bps, int num_packets) {
+  RTC_DCHECK(probing_state_ != ProbingState::kDisabled);
   ProbeCluster cluster;
   cluster.max_probe_packets = num_packets;
   cluster.probe_bitrate_bps = bitrate_bps;

@@ -1008,7 +1008,7 @@ void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
   }
 
   SimulatedClock clock(0);
-  TransportFeedbackAdapter feedback_adapter(nullptr, &clock);
+  TransportFeedbackAdapter feedback_adapter(&clock);
 
   TimeSeries time_series;
   time_series.label = "Network Delay Change";

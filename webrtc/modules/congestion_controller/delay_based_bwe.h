@@ -57,6 +57,12 @@ class DelayBasedBwe : public RemoteBitrateEstimator {
 
  private:
   void IncomingPacketInfo(const PacketInfo& info);
+  // Updates the current remote rate estimate and returns true if a valid
+  // estimate exists.
+  bool UpdateEstimate(int64_t packet_arrival_time_ms,
+                      int64_t now_ms,
+                      uint32_t* target_bitrate_bps)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   rtc::ThreadChecker network_thread_;
   Clock* const clock_;
@@ -65,7 +71,6 @@ class DelayBasedBwe : public RemoteBitrateEstimator {
   std::unique_ptr<OveruseEstimator> estimator_;
   OveruseDetector detector_;
   RateStatistics incoming_bitrate_;
-  int64_t first_packet_time_ms_;
   int64_t last_update_ms_;
   int64_t last_seen_packet_ms_;
   bool uma_recorded_;

@@ -152,9 +152,8 @@ DelayBasedBweTest::DelayBasedBweTest()
     : clock_(100000000),
       bitrate_observer_(new test::TestBitrateObserver),
       bitrate_estimator_(new DelayBasedBwe(bitrate_observer_.get(), &clock_)),
-      stream_generator_(
-          new test::StreamGenerator(1e6,  // Capacity.
-                                    clock_.TimeInMicroseconds())),
+      stream_generator_(new test::StreamGenerator(1e6,  // Capacity.
+                                                  clock_.TimeInMicroseconds())),
       arrival_time_offset_ms_(0) {}
 
 DelayBasedBweTest::~DelayBasedBweTest() {}
