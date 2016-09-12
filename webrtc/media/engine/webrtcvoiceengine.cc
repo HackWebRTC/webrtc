@@ -868,8 +868,9 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 
   LOG(LS_INFO) << "Level control: "
                << (!!level_control_ ? *level_control_ : -1);
+  webrtc::AudioProcessing::Config apm_config;
   if (level_control_) {
-    config.Set<webrtc::LevelControl>(new webrtc::LevelControl(*level_control_));
+    apm_config.level_controller.enabled = *level_control_;
   }
 
   // We check audioproc for the benefit of tests, since FakeWebRtcVoiceEngine
@@ -877,6 +878,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   webrtc::AudioProcessing* audioproc = voe_wrapper_->base()->audio_processing();
   if (audioproc) {
     audioproc->SetExtraOptions(config);
+    audioproc->ApplyConfig(apm_config);
   }
 
   if (options.recording_sample_rate) {

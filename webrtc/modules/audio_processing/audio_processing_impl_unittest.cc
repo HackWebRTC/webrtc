@@ -23,8 +23,8 @@ namespace webrtc {
 
 class MockInitialize : public AudioProcessingImpl {
  public:
-  explicit MockInitialize(const Config& config) : AudioProcessingImpl(config) {
-  }
+  explicit MockInitialize(const webrtc::Config& config)
+      : AudioProcessingImpl(config) {}
 
   MOCK_METHOD0(InitializeLocked, int());
   int RealInitializeLocked() NO_THREAD_SAFETY_ANALYSIS {
@@ -33,7 +33,7 @@ class MockInitialize : public AudioProcessingImpl {
 };
 
 TEST(AudioProcessingImplTest, AudioParameterChangeTriggersInit) {
-  Config config;
+  webrtc::Config config;
   MockInitialize mock(config);
   ON_CALL(mock, InitializeLocked())
       .WillByDefault(Invoke(&mock, &MockInitialize::RealInitializeLocked));

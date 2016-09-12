@@ -38,6 +38,12 @@ class LevelController {
   void Process(AudioBuffer* audio);
   float GetLastGain() { return last_gain_; }
 
+  // Validates a config.
+  static bool Validate(const AudioProcessing::Config::LevelController& config);
+  // Dumps a config to a string.
+  static std::string ToString(
+      const AudioProcessing::Config::LevelController& config);
+
  private:
   class Metrics {
    public:

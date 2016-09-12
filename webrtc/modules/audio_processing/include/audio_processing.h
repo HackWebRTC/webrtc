@@ -91,14 +91,6 @@ struct RefinedAdaptiveFilter {
   bool enabled;
 };
 
-// Enables the adaptive level controller.
-struct LevelControl {
-  LevelControl() : enabled(false) {}
-  explicit LevelControl(bool enabled) : enabled(enabled) {}
-  static const ConfigOptionID identifier = ConfigOptionID::kLevelControl;
-  bool enabled;
-};
-
 // Enables delay-agnostic echo cancellation. This feature relies on internally
 // estimated delays between the process and reverse streams, thus not relying
 // on reported system delays. This configuration only applies to
@@ -205,6 +197,10 @@ struct Intelligibility {
 // Usage example, omitting error checking:
 // AudioProcessing* apm = AudioProcessing::Create(0);
 //
+// AudioProcessing::Config config;
+// config.level_controller.enabled = true;
+// apm->ApplyConfig(config)
+//
 // apm->high_pass_filter()->Enable(true);
 //
 // apm->echo_cancellation()->enable_drift_compensation(false);
@@ -244,14 +240,29 @@ struct Intelligibility {
 //
 class AudioProcessing {
  public:
+  // The struct below constitutes the new parameter scheme for the audio
+  // processing. It is being introduced gradually and until it is fully
+  // introduced, it is prone to change.
+  // TODO(peah): Remove this comment once the new config scheme is fully rolled
+  // out.
+  //
+  // The parameters and behavior of the audio processing module are controlled
+  // by changing the default values in the AudioProcessing::Config struct.
+  // The config is applied by passing the struct to the ApplyConfig method.
+  struct Config {
+    struct LevelController {
+      bool enabled = false;
+    } level_controller;
+  };
+
   // TODO(mgraczyk): Remove once all methods that use ChannelLayout are gone.
   enum ChannelLayout {
     kMono,
     // Left, right.
     kStereo,
-    // Mono, keyboard mic.
+    // Mono, keyboard, and mic.
     kMonoAndKeyboard,
-    // Left, right, keyboard mic.
+    // Left, right, keyboard, and mic.
     kStereoAndKeyboard
   };
 
@@ -262,9 +273,9 @@ class AudioProcessing {
   // be one instance for every incoming stream.
   static AudioProcessing* Create();
   // Allows passing in an optional configuration at create-time.
-  static AudioProcessing* Create(const Config& config);
+  static AudioProcessing* Create(const webrtc::Config& config);
   // Only for testing.
-  static AudioProcessing* Create(const Config& config,
+  static AudioProcessing* Create(const webrtc::Config& config,
                                  NonlinearBeamformer* beamformer);
   virtual ~AudioProcessing() {}
 
@@ -300,9 +311,13 @@ class AudioProcessing {
                          ChannelLayout output_layout,
                          ChannelLayout reverse_layout) = 0;
 
+  // TODO(peah): This method is a temporary solution used to take control
+  // over the parameters in the audio processing module and is likely to change.
+  virtual void ApplyConfig(const Config& config) = 0;
+
   // Pass down additional options which don't have explicit setters. This
   // ensures the options are applied immediately.
-  virtual void SetExtraOptions(const Config& config) = 0;
+  virtual void SetExtraOptions(const webrtc::Config& config) = 0;
 
   // TODO(ajm): Only intended for internal use. Make private and friend the
   // necessary classes?

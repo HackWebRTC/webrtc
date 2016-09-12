@@ -218,6 +218,7 @@ void AudioProcessingSimulator::DestroyAudioProcessor() {
 
 void AudioProcessingSimulator::CreateAudioProcessor() {
   Config config;
+  AudioProcessing::Config apm_config;
   if (settings_.use_bf && *settings_.use_bf) {
     config.Set<Beamforming>(new Beamforming(
         true, ParseArrayGeometry(*settings_.microphone_positions),
@@ -234,7 +235,7 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
     config.Set<EchoCanceller3>(new EchoCanceller3(*settings_.use_aec3));
   }
   if (settings_.use_lc) {
-    config.Set<LevelControl>(new LevelControl(true));
+    apm_config.level_controller.enabled = *settings_.use_lc;
   }
   if (settings_.use_refined_adaptive_filter) {
     config.Set<RefinedAdaptiveFilter>(
@@ -246,6 +247,9 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
                                               *settings_.use_delay_agnostic));
 
   ap_.reset(AudioProcessing::Create(config));
+  RTC_CHECK(ap_);
+
+  ap_->ApplyConfig(apm_config);
 
   if (settings_.use_aec) {
     RTC_CHECK_EQ(AudioProcessing::kNoError,

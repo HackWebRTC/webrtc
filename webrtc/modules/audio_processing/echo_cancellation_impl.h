@@ -43,7 +43,7 @@ class EchoCancellationImpl : public EchoCancellation {
                   size_t num_reverse_channels_,
                   size_t num_output_channels_,
                   size_t num_proc_channels_);
-  void SetExtraOptions(const Config& config);
+  void SetExtraOptions(const webrtc::Config& config);
   bool is_delay_agnostic_enabled() const;
   bool is_extended_filter_enabled() const;
   bool is_aec3_enabled() const;
