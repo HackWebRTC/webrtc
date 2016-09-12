@@ -13,6 +13,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_VP8_IMPL_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_VP8_IMPL_H_
 
+#include <memory>
 #include <vector>
 
 // NOTE: This include order must remain to avoid compile errors, even though
@@ -26,12 +27,12 @@
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp8/reference_picture_selection.h"
-#include "webrtc/modules/video_coding/utility/frame_dropper.h"
 #include "webrtc/modules/video_coding/utility/quality_scaler.h"
 #include "webrtc/video_frame.h"
 
 namespace webrtc {
 
+class SimulcastRateAllocator;
 class TemporalLayers;
 
 class VP8EncoderImpl : public VP8Encoder {
@@ -93,6 +94,7 @@ class VP8EncoderImpl : public VP8Encoder {
 
   EncodedImageCallback* encoded_complete_callback_;
   VideoCodec codec_;
+  std::unique_ptr<SimulcastRateAllocator> rate_allocator_;
   bool inited_;
   int64_t timestamp_;
   bool feedback_mode_;
@@ -104,8 +106,6 @@ class VP8EncoderImpl : public VP8Encoder {
   std::vector<TemporalLayers*> temporal_layers_;
   bool down_scale_requested_;
   uint32_t down_scale_bitrate_;
-  FrameDropper tl0_frame_dropper_;
-  FrameDropper tl1_frame_dropper_;
   std::vector<uint16_t> picture_id_;
   std::vector<int> last_key_frame_picture_id_;
   std::vector<bool> key_frame_request_;

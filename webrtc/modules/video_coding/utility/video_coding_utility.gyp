@@ -30,6 +30,8 @@
         'qp_parser.h',
         'quality_scaler.cc',
         'quality_scaler.h',
+        'simulcast_rate_allocator.cc',
+        'simulcast_rate_allocator.h',
         'vp8_header_parser.cc',
         'vp8_header_parser.h',
       ],

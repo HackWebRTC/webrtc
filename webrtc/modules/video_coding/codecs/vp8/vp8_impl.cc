@@ -29,6 +29,7 @@
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8_common_types.h"
 #include "webrtc/modules/video_coding/codecs/vp8/screenshare_layers.h"
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "webrtc/modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
@@ -57,46 +58,6 @@ int GCD(int a, int b) {
     c = a % b;
   }
   return b;
-}
-
-std::vector<int> GetStreamBitratesKbps(const VideoCodec& codec,
-                                       int bitrate_to_allocate_kbps) {
-  if (codec.numberOfSimulcastStreams <= 1) {
-    return std::vector<int>(1, bitrate_to_allocate_kbps);
-  }
-
-  std::vector<int> bitrates_kbps(codec.numberOfSimulcastStreams);
-  // Allocate min -> target bitrates as long as we have bitrate to spend.
-  size_t last_active_stream = 0;
-  for (size_t i = 0; i < static_cast<size_t>(codec.numberOfSimulcastStreams) &&
-                     bitrate_to_allocate_kbps >=
-                         static_cast<int>(codec.simulcastStream[i].minBitrate);
-       ++i) {
-    last_active_stream = i;
-    int allocated_bitrate_kbps =
-        std::min(static_cast<int>(codec.simulcastStream[i].targetBitrate),
-                 bitrate_to_allocate_kbps);
-    bitrates_kbps[i] = allocated_bitrate_kbps;
-    bitrate_to_allocate_kbps -= allocated_bitrate_kbps;
-  }
-
-  // Spend additional bits on the highest-quality active layer, up to max
-  // bitrate.
-  // TODO(pbos): Consider spending additional bits on last_active_stream-1 down
-  // to 0 and not just the top layer when we have additional bitrate to spend.
-  int allocated_bitrate_kbps = std::min(
-      static_cast<int>(codec.simulcastStream[last_active_stream].maxBitrate -
-                       bitrates_kbps[last_active_stream]),
-      bitrate_to_allocate_kbps);
-  bitrates_kbps[last_active_stream] += allocated_bitrate_kbps;
-  bitrate_to_allocate_kbps -= allocated_bitrate_kbps;
-
-  // Make sure we can always send something. Suspending below min bitrate is
-  // controlled outside the codec implementation and is not overriden by this.
-  if (bitrates_kbps[0] < static_cast<int>(codec.simulcastStream[0].minBitrate))
-    bitrates_kbps[0] = static_cast<int>(codec.simulcastStream[0].minBitrate);
-
-  return bitrates_kbps;
 }
 
 uint32_t SumStreamMaxBitrate(int streams, const VideoCodec& codec) {
@@ -149,10 +110,9 @@ VP8Decoder* VP8Decoder::Create() {
   return new VP8DecoderImpl();
 }
 
-const float kTl1MaxTimeToDropFrames = 20.0f;
-
 VP8EncoderImpl::VP8EncoderImpl()
-    : encoded_complete_callback_(NULL),
+    : encoded_complete_callback_(nullptr),
+      rate_allocator_(new SimulcastRateAllocator(codec_)),
       inited_(false),
       timestamp_(0),
       feedback_mode_(false),
@@ -162,8 +122,6 @@ VP8EncoderImpl::VP8EncoderImpl()
       token_partitions_(VP8_ONE_TOKENPARTITION),
       down_scale_requested_(false),
       down_scale_bitrate_(0),
-      tl0_frame_dropper_(),
-      tl1_frame_dropper_(kTl1MaxTimeToDropFrames),
       key_frame_request_(kMaxSimulcastStreams, false),
       quality_scaler_enabled_(false) {
   uint32_t seed = rtc::Time32();
@@ -273,8 +231,8 @@ int VP8EncoderImpl::SetRates(uint32_t new_bitrate_kbit,
     }
   }
 
-  std::vector<int> stream_bitrates =
-      GetStreamBitratesKbps(codec_, new_bitrate_kbit);
+  std::vector<uint32_t> stream_bitrates =
+      rate_allocator_->GetAllocation(new_bitrate_kbit);
   size_t stream_idx = encoders_.size() - 1;
   for (size_t i = 0; i < encoders_.size(); ++i, --stream_idx) {
     if (encoders_.size() > 1)
@@ -403,6 +361,7 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
 
   timestamp_ = 0;
   codec_ = *inst;
+  rate_allocator_.reset(new SimulcastRateAllocator(codec_));
 
   // Code expects simulcastStream resolutions to be correct, make sure they are
   // filled even when there are no simulcast layers.
@@ -570,8 +529,8 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
     // Note the order we use is different from webm, we have lowest resolution
     // at position 0 and they have highest resolution at position 0.
     int stream_idx = encoders_.size() - 1;
-    std::vector<int> stream_bitrates =
-        GetStreamBitratesKbps(codec_, inst->startBitrate);
+    std::vector<uint32_t> stream_bitrates =
+        rate_allocator_->GetAllocation(inst->startBitrate);
     SetStreamState(stream_bitrates[stream_idx] > 0, stream_idx);
     configurations_[0].rc_target_bitrate = stream_bitrates[stream_idx];
     temporal_layers_[stream_idx]->ConfigureBitrates(
