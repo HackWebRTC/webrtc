@@ -223,6 +223,29 @@ TEST(RtpPacketTest, ParseWithInvalidSizedExtension) {
               ElementsAreArray(kPayload));
 }
 
+TEST(RtpPacketTest, ParseWithOverSizedExtension) {
+  // clang-format off
+  const uint8_t bad_packet[] = {
+      0x90, kPayloadType, 0x00, kSeqNum,
+      0x65, 0x43, 0x12, 0x78,  // kTimestamp.
+      0x12, 0x34, 0x56, 0x78,  // kSsrc.
+      0xbe, 0xde, 0x00, 0x01,  // Extension of size 1x32bit word.
+      0x00,  // Add a byte of padding.
+            0x12,  // Extension id 1 size (2+1).
+                  0xda, 0x1a  // Only 2 bytes of extension payload.
+  };
+  // clang-format on
+  RtpPacketToSend::ExtensionManager extensions;
+  extensions.Register(TransmissionOffset::kId, 1);
+  RtpPacketReceived packet(&extensions);
+
+  // Parse should ignore bad extension and proceed.
+  EXPECT_TRUE(packet.Parse(bad_packet, sizeof(bad_packet)));
+  int32_t time_offset;
+  // But extracting extension should fail.
+  EXPECT_FALSE(packet.GetExtension<TransmissionOffset>(&time_offset));
+}
+
 TEST(RtpPacketTest, ParseWith2Extensions) {
   RtpPacketToSend::ExtensionManager extensions;
   extensions.Register(kRtpExtensionTransmissionTimeOffset,

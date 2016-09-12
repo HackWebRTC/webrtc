@@ -11,6 +11,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet.h"
 
 #include <cstring>
+#include <utility>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -397,11 +398,16 @@ bool Packet::ParseBuffer(const uint8_t* buffer, size_t size) {
         }
         uint8_t length =
             1 + (buffer[extension_offset + extensions_size_] & 0xf);
-        extensions_size_ += kOneByteHeaderSize;
-        if (num_extensions_ >= kMaxExtensionHeaders) {
-          LOG(LS_WARNING) << "Too many extensions.";
-          return false;
+        if (extensions_size_ + kOneByteHeaderSize + length >
+            extensions_capacity) {
+          LOG(LS_WARNING) << "Oversized rtp header extension.";
+          break;
         }
+        if (num_extensions_ >= kMaxExtensionHeaders) {
+          LOG(LS_WARNING) << "Too many rtp header extensions.";
+          break;
+        }
+        extensions_size_ += kOneByteHeaderSize;
         extension_entries_[num_extensions_].type =
             extensions_ ? extensions_->GetType(id)
                         : ExtensionManager::kInvalidType;
