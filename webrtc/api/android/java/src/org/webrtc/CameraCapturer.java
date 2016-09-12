@@ -252,6 +252,22 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
     return false;
   }
 
+  public void printStackTrace() {
+    Thread cameraThread = null;
+    if (cameraThreadHandler != null) {
+      cameraThread = cameraThreadHandler.getLooper().getThread();
+    }
+    if (cameraThread != null) {
+      StackTraceElement[] cameraStackTrace = cameraThread.getStackTrace();
+      if (cameraStackTrace.length > 0) {
+        Logging.d(TAG, "CameraCapturer stack trace:");
+        for (StackTraceElement traceElem : cameraStackTrace) {
+          Logging.d(TAG, traceElem.toString());
+        }
+      }
+    }
+  }
+
   private void switchCameraInternal(final CameraSwitchHandler switchEventsHandler) {
     Logging.d(TAG, "switchCamera internal");
 
