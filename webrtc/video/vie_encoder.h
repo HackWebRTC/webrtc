@@ -153,6 +153,10 @@ class ViEEncoder : public VideoCaptureInput,
   // Delta used for translating between NTP and internal timestamps.
   const int64_t delta_ntp_internal_ms_;
 
+  int64_t last_frame_log_ms_ GUARDED_BY(incoming_frame_race_checker_);
+  int captured_frame_count_ ACCESS_ON(&encoder_queue_);
+  int dropped_frame_count_ ACCESS_ON(&encoder_queue_);
+
   // All public methods are proxied to |encoder_queue_|. It must must be
   // destroyed first to make sure no tasks are run that use other members.
   rtc::TaskQueue encoder_queue_;

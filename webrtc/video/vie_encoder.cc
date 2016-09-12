@@ -20,7 +20,6 @@
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
-#include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/video/overuse_frame_detector.h"
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video_frame.h"
@@ -28,6 +27,8 @@
 namespace webrtc {
 
 namespace {
+// Time interval for logging frame counts.
+const int64_t kFrameLogIntervalMs = 60000;
 
 VideoCodecType PayloadNameToCodecType(const std::string& payload_name) {
   if (payload_name == "VP8")
@@ -201,28 +202,43 @@ class ViEEncoder::EncodeTask : public rtc::QueuedTask {
  public:
   EncodeTask(const VideoFrame& frame,
              ViEEncoder* vie_encoder,
-             int64_t time_when_posted_in_ms)
+             int64_t time_when_posted_in_ms,
+             bool log_stats)
       : vie_encoder_(vie_encoder),
-        time_when_posted_ms_(time_when_posted_in_ms) {
+        time_when_posted_ms_(time_when_posted_in_ms),
+        log_stats_(log_stats) {
     frame_.ShallowCopy(frame);
     ++vie_encoder_->posted_frames_waiting_for_encode_;
   }
 
  private:
   bool Run() override {
+    RTC_DCHECK_RUN_ON(&vie_encoder_->encoder_queue_);
     RTC_DCHECK_GT(vie_encoder_->posted_frames_waiting_for_encode_.Value(), 0);
+    ++vie_encoder_->captured_frame_count_;
     if (--vie_encoder_->posted_frames_waiting_for_encode_ == 0) {
       vie_encoder_->EncodeVideoFrame(frame_, time_when_posted_ms_);
     } else {
       // There is a newer frame in flight. Do not encode this frame.
       LOG(LS_VERBOSE)
           << "Incoming frame dropped due to that the encoder is blocked.";
+      ++vie_encoder_->dropped_frame_count_;
+    }
+    if (log_stats_) {
+      LOG(LS_INFO) << "Number of frames: captured "
+                   << vie_encoder_->captured_frame_count_
+                   << ", dropped (due to encoder blocked) "
+                   << vie_encoder_->dropped_frame_count_ << ", interval_ms "
+                   << kFrameLogIntervalMs;
+      vie_encoder_->captured_frame_count_ = 0;
+      vie_encoder_->dropped_frame_count_ = 0;
     }
     return true;
   }
   VideoFrame frame_;
   ViEEncoder* const vie_encoder_;
   const int64_t time_when_posted_ms_;
+  const bool log_stats_;
 };
 
 ViEEncoder::ViEEncoder(uint32_t number_of_cores,
@@ -257,6 +273,9 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       last_captured_timestamp_(0),
       delta_ntp_internal_ms_(clock_->CurrentNtpInMilliseconds() -
                              clock_->TimeInMilliseconds()),
+      last_frame_log_ms_(clock_->TimeInMilliseconds()),
+      captured_frame_count_(0),
+      dropped_frame_count_(0),
       encoder_queue_("EncoderQueue") {
   vp_->EnableTemporalDecimation(false);
 
@@ -400,9 +419,15 @@ void ViEEncoder::IncomingCapturedFrame(const VideoFrame& video_frame) {
     return;
   }
 
+  bool log_stats = false;
+  if (current_time - last_frame_log_ms_ > kFrameLogIntervalMs) {
+    last_frame_log_ms_ = current_time;
+    log_stats = true;
+  }
+
   last_captured_timestamp_ = incoming_frame.ntp_time_ms();
-  encoder_queue_.PostTask(std::unique_ptr<rtc::QueuedTask>(
-      new EncodeTask(incoming_frame, this, clock_->TimeInMilliseconds())));
+  encoder_queue_.PostTask(std::unique_ptr<rtc::QueuedTask>(new EncodeTask(
+      incoming_frame, this, clock_->TimeInMilliseconds(), log_stats)));
 }
 
 bool ViEEncoder::EncoderPaused() const {
