@@ -11,6 +11,7 @@
 package org.webrtc;
 
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
+import org.webrtc.Metrics.Histogram;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -31,10 +32,16 @@ import android.view.WindowManager;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 @TargetApi(21)
 public class Camera2Session implements CameraSession {
   private static final String TAG = "Camera2Session";
+
+  private static final Histogram camera2StartTimeMsHistogram =
+      Histogram.createCounts("WebRTC.Android.Camera2.StartTimeMs", 1, 10000, 50);
+  private static final Histogram camera2StopTimeMsHistogram =
+      Histogram.createCounts("WebRTC.Android.Camera2.StopTimeMs", 1, 10000, 50);
 
   private static enum SessionState { RUNNING, STOPPED };
 
@@ -68,6 +75,9 @@ public class Camera2Session implements CameraSession {
   // State
   private SessionState state = SessionState.RUNNING;
   private boolean firstFrameReported = false;
+
+  // Used only for stats. Only used on the camera thread.
+  private final long constructionTimeNs; // Construction time of this class.
 
   private class CameraStateCallback extends CameraDevice.StateCallback {
     private String getErrorDescription(int errorCode) {
@@ -183,6 +193,9 @@ public class Camera2Session implements CameraSession {
               if (!firstFrameReported) {
                 eventsHandler.onFirstFrameAvailable();
                 firstFrameReported = true;
+                final int startTimeMs =
+                    (int) TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - constructionTimeNs);
+                camera2StartTimeMsHistogram.addSample(startTimeMs);
               }
 
               int rotation = getFrameOrientation();
@@ -239,6 +252,8 @@ public class Camera2Session implements CameraSession {
       SurfaceTextureHelper surfaceTextureHelper,
       String cameraId, int width, int height, int framerate) {
     Logging.d(TAG, "Create new camera2 session on camera " + cameraId);
+
+    constructionTimeNs = System.nanoTime();
 
     this.cameraThreadHandler = new Handler();
     this.cameraManager = cameraManager;
@@ -318,6 +333,7 @@ public class Camera2Session implements CameraSession {
 
   @Override
   public void stop() {
+    final long stopStartTime = System.nanoTime();
     Logging.d(TAG, "Stop camera2 session on camera " + cameraId);
     if (Thread.currentThread() == cameraThreadHandler.getLooper().getThread()) {
       if (state != SessionState.STOPPED) {
@@ -328,6 +344,9 @@ public class Camera2Session implements CameraSession {
           @Override
           public void run() {
             stopInternal();
+            final int stopTimeMs =
+                (int) TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - stopStartTime);
+            camera2StopTimeMsHistogram.addSample(stopTimeMs);
           }
         });
       }
@@ -342,6 +361,9 @@ public class Camera2Session implements CameraSession {
             capturerObserver.onCapturerStopped();
             stopLatch.countDown();
             stopInternal();
+            final int stopTimeMs =
+                (int) TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - stopStartTime);
+            camera2StopTimeMsHistogram.addSample(stopTimeMs);
           }
         }
       });
