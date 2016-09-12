@@ -296,8 +296,7 @@ int32_t WebRtcAec_BufferFarend(void* aecInst,
   // Write the time-domain data to |far_pre_buf|.
   WebRtc_WriteBuffer(aecpc->far_pre_buf, farend_ptr, newNrOfSamples);
 
-  // TODO(minyue): reduce to |PART_LEN| samples for each buffering, when
-  // WebRtcAec_BufferFarendPartition() is changed to take |PART_LEN| samples.
+  // TODO(minyue): reduce to |PART_LEN| samples for each buffering.
   while (WebRtc_available_read(aecpc->far_pre_buf) >= PART_LEN2) {
     // We have enough data to pass to the FFT, hence read PART_LEN2 samples.
     {
@@ -305,7 +304,7 @@ int32_t WebRtcAec_BufferFarend(void* aecInst,
       float tmp[PART_LEN2];
       WebRtc_ReadBuffer(aecpc->far_pre_buf,
                         reinterpret_cast<void**>(&ptmp), tmp, PART_LEN2);
-      WebRtcAec_BufferFarendPartition(aecpc->aec, ptmp);
+      WebRtcAec_BufferFarendBlock(aecpc->aec, &ptmp[PART_LEN]);
     }
 
     // Rewind |far_pre_buf| PART_LEN samples for overlap before continuing.
@@ -653,7 +652,8 @@ static int ProcessNormal(Aec* aecpc,
         // the pointer |overhead_elements| since we have only added data
         // to the buffer and no delay compensation nor AEC processing
         // has been done.
-        WebRtcAec_MoveFarReadPtr(aecpc->aec, overhead_elements);
+        WebRtcAec_AdjustFarendBufferSizeAndSystemDelay(aecpc->aec,
+                                                       overhead_elements);
 
         // Enable the AEC
         aecpc->startup_phase = 0;
@@ -730,7 +730,8 @@ static void ProcessExtended(Aec* self,
 #endif
     int overhead_elements =
         (WebRtcAec_system_delay(self->aec) - target_delay) / PART_LEN;
-    WebRtcAec_MoveFarReadPtr(self->aec, overhead_elements);
+    WebRtcAec_AdjustFarendBufferSizeAndSystemDelay(self->aec,
+                                                   overhead_elements);
     self->startup_phase = 0;
   }
 
@@ -769,7 +770,9 @@ static void EstBufDelayNormal(Aec* aecpc) {
 
   // 3) Compensate for non-causality, if needed, by flushing one block.
   if (current_delay < PART_LEN) {
-    current_delay += WebRtcAec_MoveFarReadPtr(aecpc->aec, 1) * PART_LEN;
+    current_delay +=
+        WebRtcAec_AdjustFarendBufferSizeAndSystemDelay(aecpc->aec, 1) *
+        PART_LEN;
   }
 
   // We use -1 to signal an initialized state in the "extended" implementation;
@@ -824,7 +827,8 @@ static void EstBufDelayExtended(Aec* self) {
 
   // 3) Compensate for non-causality, if needed, by flushing two blocks.
   if (current_delay < PART_LEN) {
-    current_delay += WebRtcAec_MoveFarReadPtr(self->aec, 2) * PART_LEN;
+    current_delay +=
+        WebRtcAec_AdjustFarendBufferSizeAndSystemDelay(self->aec, 2) * PART_LEN;
   }
 
   if (self->filtDelay == -1) {
