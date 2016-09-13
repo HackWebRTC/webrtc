@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_TEST_CHANNEL_TRANSPORT_UDP_SOCKET2_WINDOWS_H_
-#define WEBRTC_TEST_CHANNEL_TRANSPORT_UDP_SOCKET2_WINDOWS_H_
+#ifndef WEBRTC_VOICE_ENGINE_TEST_CHANNEL_TRANSPORT_UDP_SOCKET2_WINDOWS_H_
+#define WEBRTC_VOICE_ENGINE_TEST_CHANNEL_TRANSPORT_UDP_SOCKET2_WINDOWS_H_
 
 // Disable deprication warning from traffic.h
 #pragma warning(disable : 4995)
@@ -24,8 +24,8 @@
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
-#include "webrtc/test/channel_transport/udp_socket2_manager_win.h"
-#include "webrtc/test/channel_transport/udp_socket_wrapper.h"
+#include "webrtc/voice_engine/test/channel_transport/udp_socket2_manager_win.h"
+#include "webrtc/voice_engine/test/channel_transport/udp_socket_wrapper.h"
 
 namespace webrtc {
 namespace test {
@@ -171,4 +171,4 @@ private:
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_TEST_CHANNEL_TRANSPORT_UDP_SOCKET2_WINDOWS_H_
+#endif  // WEBRTC_VOICE_ENGINE_TEST_CHANNEL_TRANSPORT_UDP_SOCKET2_WINDOWS_H_

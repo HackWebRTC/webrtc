@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_TEST_CHANNEL_TRANSPORT_UDP_SOCKET_WRAPPER_H_
-#define WEBRTC_TEST_CHANNEL_TRANSPORT_UDP_SOCKET_WRAPPER_H_
+#ifndef WEBRTC_VOICE_ENGINE_TEST_CHANNEL_TRANSPORT_UDP_SOCKET_WRAPPER_H_
+#define WEBRTC_VOICE_ENGINE_TEST_CHANNEL_TRANSPORT_UDP_SOCKET_WRAPPER_H_
 
-#include "webrtc/test/channel_transport/udp_transport.h"
+#include "webrtc/voice_engine/test/channel_transport/udp_transport.h"
 
 namespace webrtc {
 
@@ -109,4 +109,4 @@ private:
 }  // namespac test
 }  // namespace webrtc
 
-#endif  // WEBRTC_TEST_CHANNEL_TRANSPORT_UDP_SOCKET_WRAPPER_H_
+#endif  // WEBRTC_VOICE_ENGINE_TEST_CHANNEL_TRANSPORT_UDP_SOCKET_WRAPPER_H_

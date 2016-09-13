@@ -16,7 +16,6 @@ rtc_source_set("test") {
   testonly = true
 
   deps = [
-    ":channel_transport",
     ":field_trial",
     ":rtp_test_utils",
     ":test_common",
@@ -25,67 +24,6 @@ rtc_source_set("test") {
     ":test_support_main",
     ":test_support_unittests",
     ":video_test_common",
-  ]
-}
-
-config("channel_transport_warnings_config") {
-  if (is_win) {
-    cflags = [ "/wd4302" ]  # cast truncation
-
-    if (is_clang) {
-      # GN orders flags on a target before flags from configs. The default
-      # config adds -Wall, and this flag have to be after -Wall -- so they need
-      # to come from a config and cannot be on the target directly.
-      cflags += [
-        "-Wno-parentheses-equality",
-        "-Wno-reorder",
-        "-Wno-tautological-constant-out-of-range-compare",
-
-        # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6268
-        # for -Wno-thread-safety-analysis
-        "-Wno-thread-safety-analysis",
-        "-Wno-unused-private-field",
-      ]
-    }
-  }
-}
-
-rtc_source_set("channel_transport") {
-  testonly = true
-  sources = [
-    "channel_transport/channel_transport.cc",
-    "channel_transport/channel_transport.h",
-    "channel_transport/traffic_control_win.cc",
-    "channel_transport/traffic_control_win.h",
-    "channel_transport/udp_socket2_manager_win.cc",
-    "channel_transport/udp_socket2_manager_win.h",
-    "channel_transport/udp_socket2_win.cc",
-    "channel_transport/udp_socket2_win.h",
-    "channel_transport/udp_socket_manager_posix.cc",
-    "channel_transport/udp_socket_manager_posix.h",
-    "channel_transport/udp_socket_manager_wrapper.cc",
-    "channel_transport/udp_socket_manager_wrapper.h",
-    "channel_transport/udp_socket_posix.cc",
-    "channel_transport/udp_socket_posix.h",
-    "channel_transport/udp_socket_wrapper.cc",
-    "channel_transport/udp_socket_wrapper.h",
-    "channel_transport/udp_transport.h",
-    "channel_transport/udp_transport_impl.cc",
-    "channel_transport/udp_transport_impl.h",
-  ]
-
-  configs += [ ":channel_transport_warnings_config" ]
-
-  if (is_clang && !is_nacl) {
-    # Suppress warnings from the Chromium Clang plugin.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
-  deps = [
-    "..:webrtc_common",
-    "../system_wrappers",
-    "//testing/gtest",
   ]
 }
 
@@ -279,9 +217,6 @@ if (is_ios) {
 rtc_test("test_support_unittests") {
   deps = []
   sources = [
-    "channel_transport/udp_socket_manager_unittest.cc",
-    "channel_transport/udp_socket_wrapper_unittest.cc",
-    "channel_transport/udp_transport_unittest.cc",
     "fake_network_pipe_unittest.cc",
     "frame_generator_unittest.cc",
     "rtp_file_reader_unittest.cc",
@@ -320,7 +255,6 @@ rtc_test("test_support_unittests") {
   }
 
   deps += [
-    ":channel_transport",
     ":test_common",
     ":test_support_main",
     "../modules/video_capture",
