@@ -41,7 +41,7 @@ class RedPacket {
 
 class ProducerFec {
  public:
-  explicit ProducerFec(ForwardErrorCorrection* fec);
+  ProducerFec();
   ~ProducerFec();
 
   static std::unique_ptr<RedPacket> BuildRedPacket(const uint8_t* data_buffer,
@@ -77,6 +77,8 @@ class ProducerFec {
 
   size_t NumAvailableFecPackets() const;
 
+  size_t MaxPacketOverhead() const;
+
   // Returns generated FEC packets with RED headers added.
   std::vector<std::unique_ptr<RedPacket>> GetFecPacketsAsRed(
       int red_payload_type,
@@ -87,7 +89,7 @@ class ProducerFec {
  private:
   void DeleteMediaPackets();
   int Overhead() const;
-  ForwardErrorCorrection* fec_;
+  ForwardErrorCorrection fec_;
   ForwardErrorCorrection::PacketList media_packets_;
   std::list<ForwardErrorCorrection::Packet*> generated_fec_packets_;
   int num_protected_frames_;

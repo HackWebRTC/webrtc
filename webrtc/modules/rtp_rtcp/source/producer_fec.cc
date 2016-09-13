@@ -92,15 +92,10 @@ size_t RedPacket::length() const {
   return length_;
 }
 
-ProducerFec::ProducerFec(ForwardErrorCorrection* fec)
-    : fec_(fec),
-      media_packets_(),
-      generated_fec_packets_(),
-      num_protected_frames_(0),
+ProducerFec::ProducerFec()
+    : num_protected_frames_(0),
       num_important_packets_(0),
-      min_num_media_packets_(1),
-      params_(),
-      new_params_() {
+      min_num_media_packets_(1)  {
   memset(&params_, 0, sizeof(params_));
   memset(&new_params_, 0, sizeof(new_params_));
 }
@@ -180,9 +175,9 @@ int ProducerFec::AddRtpPacketAndGenerateFec(const uint8_t* data_buffer,
     // Since unequal protection is disabled, the value of
     // |num_important_packets_| has no importance when calling GenerateFec().
     constexpr bool kUseUnequalProtection = false;
-    int ret = fec_->GenerateFec(media_packets_, params_.fec_rate,
-                                num_important_packets_, kUseUnequalProtection,
-                                params_.fec_mask_type, &generated_fec_packets_);
+    int ret = fec_.GenerateFec(media_packets_, params_.fec_rate,
+                               num_important_packets_, kUseUnequalProtection,
+                               params_.fec_mask_type, &generated_fec_packets_);
     if (generated_fec_packets_.empty()) {
       num_protected_frames_ = 0;
       DeleteMediaPackets();
@@ -215,6 +210,10 @@ bool ProducerFec::FecAvailable() const {
 
 size_t ProducerFec::NumAvailableFecPackets() const {
   return generated_fec_packets_.size();
+}
+
+size_t ProducerFec::MaxPacketOverhead() const {
+  return fec_.MaxPacketOverhead();
 }
 
 std::vector<std::unique_ptr<RedPacket>> ProducerFec::GetFecPacketsAsRed(
@@ -258,7 +257,7 @@ int ProducerFec::Overhead() const {
   // generation is implemented.
   RTC_DCHECK(!media_packets_.empty());
   int num_fec_packets =
-      fec_->GetNumberOfFecPackets(media_packets_.size(), params_.fec_rate);
+      fec_.NumFecPackets(media_packets_.size(), params_.fec_rate);
   // Return the overhead in Q8.
   return (num_fec_packets << 8) / media_packets_.size();
 }

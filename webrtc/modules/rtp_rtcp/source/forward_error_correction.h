@@ -186,11 +186,11 @@ class ForwardErrorCorrection {
 
   // Get the number of generated FEC packets, given the number of media packets
   // and the protection factor.
-  int GetNumberOfFecPackets(int num_media_packets, int protection_factor);
+  static int NumFecPackets(int num_media_packets, int protection_factor);
 
-  // Gets the size in bytes of the FEC/ULP headers, which must be accounted for
-  // as packet overhead. Returns the packet overhead in bytes.
-  static size_t PacketOverhead();
+  // Gets the maximum size of the FEC headers in bytes, which must be
+  // accounted for as packet overhead.
+  size_t MaxPacketOverhead() const;
 
   // Reset internal states from last frame and clear |recovered_packets|.
   // Frees all memory allocated by this class.

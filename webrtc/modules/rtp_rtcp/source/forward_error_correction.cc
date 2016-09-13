@@ -119,18 +119,16 @@ int ForwardErrorCorrection::GenerateFec(const PacketList& media_packets,
   bool l_bit = (num_media_packets > 8 * kMaskSizeLBitClear);
   int num_mask_bytes = l_bit ? kMaskSizeLBitSet : kMaskSizeLBitClear;
 
-  // Do some error checking on the media packets.
+  // Error check the media packets.
   for (const auto& media_packet : media_packets) {
     RTC_DCHECK(media_packet);
-
     if (media_packet->length < kRtpHeaderSize) {
       LOG(LS_WARNING) << "Media packet " << media_packet->length << " bytes "
                       << "is smaller than RTP header.";
       return -1;
     }
-
-    // Ensure our FEC packets will fit in a typical MTU.
-    if (media_packet->length + PacketOverhead() + kTransportOverhead >
+    // Ensure the FEC packets will fit in a typical MTU.
+    if (media_packet->length + MaxPacketOverhead() + kTransportOverhead >
         IP_PACKET_SIZE) {
       LOG(LS_WARNING) << "Media packet " << media_packet->length << " bytes "
                       << "with overhead is larger than " << IP_PACKET_SIZE
@@ -138,8 +136,7 @@ int ForwardErrorCorrection::GenerateFec(const PacketList& media_packets,
     }
   }
 
-  int num_fec_packets = GetNumberOfFecPackets(num_media_packets,
-                                              protection_factor);
+  int num_fec_packets = NumFecPackets(num_media_packets, protection_factor);
   if (num_fec_packets == 0) {
     return 0;
   }
@@ -177,8 +174,8 @@ int ForwardErrorCorrection::GenerateFec(const PacketList& media_packets,
   return 0;
 }
 
-int ForwardErrorCorrection::GetNumberOfFecPackets(int num_media_packets,
-                                                  int protection_factor) {
+int ForwardErrorCorrection::NumFecPackets(int num_media_packets,
+                                          int protection_factor) {
   // Result in Q0 with an unsigned round.
   int num_fec_packets = (num_media_packets * protection_factor + (1 << 7)) >> 8;
   // Generate at least one FEC packet if we need protection.
@@ -776,7 +773,7 @@ int ForwardErrorCorrection::DecodeFec(
   return 0;
 }
 
-size_t ForwardErrorCorrection::PacketOverhead() {
+size_t ForwardErrorCorrection::MaxPacketOverhead() const {
   return kFecHeaderSize + kUlpHeaderSizeLBitSet;
 }
 }  // namespace webrtc

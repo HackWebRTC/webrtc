@@ -342,7 +342,7 @@ size_t RTPSender::MaxDataPayloadLength() const {
     return max_payload_length_ - RtpHeaderLength();
   } else {
     return max_payload_length_ - RtpHeaderLength()  // RTP overhead.
-           - video_->FECPacketOverhead()            // FEC/ULP/RED overhead.
+           - video_->FecPacketOverhead()            // FEC/ULP/RED overhead.
            - (RtxStatus() ? kRtxHeaderSize : 0);    // RTX overhead.
   }
 }

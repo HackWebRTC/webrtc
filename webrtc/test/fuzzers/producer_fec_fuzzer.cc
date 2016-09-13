@@ -18,8 +18,7 @@
 namespace webrtc {
 
 void FuzzOneInput(const uint8_t* data, size_t size) {
-  ForwardErrorCorrection fec;
-  ProducerFec producer(&fec);
+  ProducerFec producer;
   size_t i = 0;
   if (size < 4)
     return;

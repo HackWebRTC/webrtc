@@ -876,7 +876,7 @@ int RtpFecTest::ConstructMediaPacketsSeqNum(int num_media_packets,
     constexpr uint32_t kMinPacketSize = kRtpHeaderSize;
     const uint32_t kMaxPacketSize = IP_PACKET_SIZE - kRtpHeaderSize -
                                     kTransportOverhead -
-                                    ForwardErrorCorrection::PacketOverhead();
+                                    fec_.MaxPacketOverhead();
     media_packet->length = random_.Rand(kMinPacketSize, kMaxPacketSize);
 
     // Generate random values for the first 2 bytes

@@ -28,13 +28,13 @@
 
 namespace webrtc {
 
-enum { REDForFECHeaderLength = 1 };
+namespace {
+constexpr size_t kRedForFecHeaderLength = 1;
+}  // namespace
 
 RTPSenderVideo::RTPSenderVideo(Clock* clock, RTPSender* rtp_sender)
     : rtp_sender_(rtp_sender),
       clock_(clock),
-      // Generic FEC
-      producer_fec_(&fec_),
       fec_bitrate_(1000, RateStatistics::kBpsScale),
       video_bitrate_(1000, RateStatistics::kBpsScale) {}
 
@@ -177,7 +177,7 @@ void RTPSenderVideo::GenericFECStatus(bool* enable,
   *payload_type_fec = fec_payload_type_;
 }
 
-size_t RTPSenderVideo::FECPacketOverhead() const {
+size_t RTPSenderVideo::FecPacketOverhead() const {
   rtc::CritScope cs(&crit_);
   size_t overhead = 0;
   if (red_payload_type_ != 0) {
@@ -186,11 +186,11 @@ size_t RTPSenderVideo::FECPacketOverhead() const {
     // This reason for the header extensions to be included here is that
     // from an FEC viewpoint, they are part of the payload to be protected.
     // (The base RTP header is already protected by the FEC header.)
-    return ForwardErrorCorrection::PacketOverhead() + REDForFECHeaderLength +
+    return producer_fec_.MaxPacketOverhead() + kRedForFecHeaderLength +
            (rtp_sender_->RtpHeaderLength() - kRtpHeaderSize);
   }
   if (fec_enabled_)
-    overhead += ForwardErrorCorrection::PacketOverhead();
+    overhead += producer_fec_.MaxPacketOverhead();
   return overhead;
 }
 

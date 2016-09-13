@@ -238,8 +238,7 @@ TEST(FecTest, MAYBE_FecTest) {
                   new ForwardErrorCorrection::Packet());
               const uint32_t kMinPacketSize = 12;
               const uint32_t kMaxPacketSize = static_cast<uint32_t>(
-                  IP_PACKET_SIZE - 12 - 28 -
-                  ForwardErrorCorrection::PacketOverhead());
+                  IP_PACKET_SIZE - 12 - 28 - fec.MaxPacketOverhead());
               media_packet->length = random.Rand(kMinPacketSize,
                                                  kMaxPacketSize);
 

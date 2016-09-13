@@ -36,7 +36,7 @@ class RTPSenderVideo {
 
   virtual RtpVideoCodecTypes VideoCodecType() const;
 
-  size_t FECPacketOverhead() const;
+  size_t FecPacketOverhead() const;
 
   static RtpUtility::Payload* CreateVideoPayload(
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
@@ -102,7 +102,6 @@ class RTPSenderVideo {
   int32_t retransmission_settings_ GUARDED_BY(crit_) = kRetransmitBaseLayer;
 
   // FEC
-  ForwardErrorCorrection fec_;
   bool fec_enabled_ GUARDED_BY(crit_) = false;
   int8_t red_payload_type_ GUARDED_BY(crit_) = 0;
   int8_t fec_payload_type_ GUARDED_BY(crit_) = 0;
