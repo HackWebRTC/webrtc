@@ -153,9 +153,10 @@ class CopyOnWriteBuffer {
                 internal::BufferCompat<uint8_t, T>::value>::type* = nullptr>
   void SetData(const T* data, size_t size) {
     RTC_DCHECK(IsConsistent());
-    if (!buffer_ || !buffer_->HasOneRef()) {
-      buffer_ = size > 0 ? new RefCountedObject<Buffer>(data, size)
-                         : nullptr;
+    if (!buffer_) {
+      buffer_ = size > 0 ? new RefCountedObject<Buffer>(data, size) : nullptr;
+    } else if (!buffer_->HasOneRef()) {
+      buffer_ = new RefCountedObject<Buffer>(data, size, buffer_->capacity());
     } else {
       buffer_->SetData(data, size);
     }
@@ -253,13 +254,16 @@ class CopyOnWriteBuffer {
     RTC_DCHECK(IsConsistent());
   }
 
-  // Resets the buffer to zero size and capacity.
+  // Resets the buffer to zero size without altering capacity. Works even if the
+  // buffer has been moved from.
   void Clear() {
-    RTC_DCHECK(IsConsistent());
-    if (!buffer_ || !buffer_->HasOneRef()) {
-      buffer_ = nullptr;
-    } else {
+    if (!buffer_)
+      return;
+
+    if (buffer_->HasOneRef()) {
       buffer_->Clear();
+    } else {
+      buffer_ = new RefCountedObject<Buffer>(0, buffer_->capacity());
     }
     RTC_DCHECK(IsConsistent());
   }
