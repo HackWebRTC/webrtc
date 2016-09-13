@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/test/channel_transport/channel_transport.h"
+#include "webrtc/voice_engine/test/channel_transport/channel_transport.h"
 
 #include <stdio.h>
 
 #if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS)
 #include "testing/gtest/include/gtest/gtest.h"
 #endif
-#include "webrtc/test/channel_transport/udp_transport.h"
+#include "webrtc/voice_engine/test/channel_transport/udp_transport.h"
 #include "webrtc/voice_engine/include/voe_network.h"
 
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)

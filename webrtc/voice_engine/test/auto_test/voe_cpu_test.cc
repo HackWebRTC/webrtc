@@ -19,7 +19,7 @@
 
 #include <memory>
 
-#include "webrtc/test/channel_transport/channel_transport.h"
+#include "webrtc/voice_engine/test/channel_transport/channel_transport.h"
 #include "webrtc/voice_engine/test/auto_test/voe_test_defines.h"
 
 using namespace webrtc;

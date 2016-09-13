@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/test/channel_transport/traffic_control_win.h"
+#include "webrtc/voice_engine/test/channel_transport/traffic_control_win.h"
 
 #include <assert.h>
 

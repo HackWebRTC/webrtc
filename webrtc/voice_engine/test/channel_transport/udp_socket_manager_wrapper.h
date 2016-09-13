@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_TEST_CHANNEL_TRANSPORT_UDP_SOCKET_MANAGER_WRAPPER_H_
-#define WEBRTC_TEST_CHANNEL_TRANSPORT_UDP_SOCKET_MANAGER_WRAPPER_H_
+#ifndef WEBRTC_VOICE_ENGINE_TEST_CHANNEL_TRANSPORT_UDP_SOCKET_MANAGER_WRAPPER_H_
+#define WEBRTC_VOICE_ENGINE_TEST_CHANNEL_TRANSPORT_UDP_SOCKET_MANAGER_WRAPPER_H_
 
 #include "webrtc/system_wrappers/include/static_instance.h"
 #include "webrtc/typedefs.h"
@@ -67,4 +67,4 @@ private:
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_TEST_CHANNEL_TRANSPORT_UDP_SOCKET_MANAGER_WRAPPER_H_
+#endif  // WEBRTC_VOICE_ENGINE_TEST_CHANNEL_TRANSPORT_UDP_SOCKET_MANAGER_WRAPPER_H_
