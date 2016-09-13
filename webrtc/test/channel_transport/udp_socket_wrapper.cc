@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/voice_engine/test/channel_transport/udp_socket_wrapper.h"
+#include "webrtc/test/channel_transport/udp_socket_wrapper.h"
 
 #include <stdlib.h>
 #include <string.h>
 
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
-#include "webrtc/voice_engine/test/channel_transport/udp_socket_manager_wrapper.h"
+#include "webrtc/test/channel_transport/udp_socket_manager_wrapper.h"
 
 #if defined(_WIN32)
-    #include "webrtc/voice_engine/test/channel_transport/udp_socket2_win.h"
+    #include "webrtc/test/channel_transport/udp_socket2_win.h"
 #else
-    #include "webrtc/voice_engine/test/channel_transport/udp_socket_posix.h"
+    #include "webrtc/test/channel_transport/udp_socket_posix.h"
 #endif
 
 

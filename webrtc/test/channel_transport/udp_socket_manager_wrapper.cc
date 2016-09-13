@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/voice_engine/test/channel_transport/udp_socket_manager_wrapper.h"
+#include "webrtc/test/channel_transport/udp_socket_manager_wrapper.h"
 
 #include <assert.h>
 
 #ifdef _WIN32
 #include "webrtc/system_wrappers/include/fix_interlocked_exchange_pointer_win.h"
-#include "webrtc/voice_engine/test/channel_transport/udp_socket2_manager_win.h"
+#include "webrtc/test/channel_transport/udp_socket2_manager_win.h"
 #else
-#include "webrtc/voice_engine/test/channel_transport/udp_socket_manager_posix.h"
+#include "webrtc/test/channel_transport/udp_socket_manager_posix.h"
 #endif
 
 namespace webrtc {

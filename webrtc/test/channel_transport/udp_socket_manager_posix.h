@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_TEST_CHANNEL_TRANSPORT_UDP_SOCKET_MANAGER_POSIX_H_
-#define WEBRTC_VOICE_ENGINE_TEST_CHANNEL_TRANSPORT_UDP_SOCKET_MANAGER_POSIX_H_
+#ifndef WEBRTC_TEST_CHANNEL_TRANSPORT_UDP_SOCKET_MANAGER_POSIX_H_
+#define WEBRTC_TEST_CHANNEL_TRANSPORT_UDP_SOCKET_MANAGER_POSIX_H_
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -19,8 +19,8 @@
 
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/voice_engine/test/channel_transport/udp_socket_manager_wrapper.h"
-#include "webrtc/voice_engine/test/channel_transport/udp_socket_wrapper.h"
+#include "webrtc/test/channel_transport/udp_socket_manager_wrapper.h"
+#include "webrtc/test/channel_transport/udp_socket_wrapper.h"
 
 namespace webrtc {
 namespace test {
@@ -85,4 +85,4 @@ private:
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_VOICE_ENGINE_TEST_CHANNEL_TRANSPORT_UDP_SOCKET_MANAGER_POSIX_H_
+#endif  // WEBRTC_TEST_CHANNEL_TRANSPORT_UDP_SOCKET_MANAGER_POSIX_H_

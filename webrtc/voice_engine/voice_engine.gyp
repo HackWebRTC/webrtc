@@ -107,57 +107,7 @@
         'level_indicator.cc',
         'level_indicator.h',
       ]
-    },
-    {
-      'target_name': 'channel_transport',
-      'type': 'static_library',
-      'dependencies': [
-        '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(webrtc_root)/common.gyp:webrtc_common',
-        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
-      ],
-      'sources': [
-        'test/channel_transport/channel_transport.cc',
-        'test/channel_transport/channel_transport.h',
-        'test/channel_transport/traffic_control_win.cc',
-        'test/channel_transport/traffic_control_win.h',
-        'test/channel_transport/udp_socket_manager_posix.cc',
-        'test/channel_transport/udp_socket_manager_posix.h',
-        'test/channel_transport/udp_socket_manager_wrapper.cc',
-        'test/channel_transport/udp_socket_manager_wrapper.h',
-        'test/channel_transport/udp_socket_posix.cc',
-        'test/channel_transport/udp_socket_posix.h',
-        'test/channel_transport/udp_socket_wrapper.cc',
-        'test/channel_transport/udp_socket_wrapper.h',
-        'test/channel_transport/udp_socket2_manager_win.cc',
-        'test/channel_transport/udp_socket2_manager_win.h',
-        'test/channel_transport/udp_socket2_win.cc',
-        'test/channel_transport/udp_socket2_win.h',
-        'test/channel_transport/udp_transport.h',
-        'test/channel_transport/udp_transport_impl.cc',
-        'test/channel_transport/udp_transport_impl.h',
-      ],
-      'msvs_disabled_warnings': [
-        4302,  # cast truncation
-      ],
-      'conditions': [
-        ['OS=="win" and clang==1', {
-          'msvs_settings': {
-            'VCCLCompilerTool': {
-              'AdditionalOptions': [
-                # Disable warnings failing when compiling with Clang on Windows.
-                # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
-                '-Wno-parentheses-equality',
-                '-Wno-reorder',
-                '-Wno-tautological-constant-out-of-range-compare',
-                '-Wno-unused-private-field',
-              ],
-            },
-          },
-        }],
-      ],  # conditions.
-    },
-
+    }
   ],
   'conditions': [
     ['OS=="win"', {
@@ -169,7 +119,6 @@
           'target_name': 'voice_engine_unittests',
           'type': '<(gtest_target_type)',
           'dependencies': [
-            'channel_transport',
             'voice_engine',
             '<(DEPTH)/testing/gmock.gyp:gmock',
             '<(DEPTH)/testing/gtest.gyp:gtest',
@@ -189,9 +138,6 @@
           'sources': [
             'channel_unittest.cc',
             'network_predictor_unittest.cc',
-            'test/channel_transport/udp_transport_unittest.cc',
-            'test/channel_transport/udp_socket_manager_unittest.cc',
-            'test/channel_transport/udp_socket_wrapper_unittest.cc',
             'transmit_mixer_unittest.cc',
             'utility_unittest.cc',
             'voe_audio_processing_unittest.cc',
@@ -214,12 +160,12 @@
           'target_name': 'voe_cmd_test',
           'type': 'executable',
           'dependencies': [
-            'channel_transport',
             'voice_engine',
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
+            '<(webrtc_root)/test/test.gyp:channel_transport',
             '<(webrtc_root)/test/test.gyp:test_support',
             '<(webrtc_root)/webrtc.gyp:rtc_event_log',
           ],
@@ -235,13 +181,13 @@
               'target_name': 'voe_auto_test',
               'type': 'executable',
               'dependencies': [
-                'channel_transport',
                 'voice_engine',
                 '<(DEPTH)/testing/gmock.gyp:gmock',
                 '<(DEPTH)/testing/gtest.gyp:gtest',
                 '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
                 '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
                 '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
+                '<(webrtc_root)/test/test.gyp:channel_transport',
                 '<(webrtc_root)/test/test.gyp:test_common',
                 '<(webrtc_root)/test/test.gyp:test_support',
                 '<(webrtc_root)/webrtc.gyp:rtc_event_log',

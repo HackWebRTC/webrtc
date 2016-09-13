@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/voice_engine/test/channel_transport/udp_transport_impl.h"
+#include "webrtc/test/channel_transport/udp_transport_impl.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,7 +48,7 @@
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
-#include "webrtc/voice_engine/test/channel_transport/udp_socket_manager_wrapper.h"
+#include "webrtc/test/channel_transport/udp_socket_manager_wrapper.h"
 #include "webrtc/typedefs.h"
 
 #if defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)

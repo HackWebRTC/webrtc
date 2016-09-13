@@ -12,12 +12,12 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/voice_engine/test/channel_transport/udp_transport.h"
+#include "webrtc/test/channel_transport/udp_transport.h"
 // We include the implementation header file to get at the dependency-injecting
 // constructor.
-#include "webrtc/voice_engine/test/channel_transport/udp_transport_impl.h"
+#include "webrtc/test/channel_transport/udp_transport_impl.h"
 // We must mock the socket manager, for which we need its definition.
-#include "webrtc/voice_engine/test/channel_transport/udp_socket_manager_wrapper.h"
+#include "webrtc/test/channel_transport/udp_socket_manager_wrapper.h"
 
 using ::testing::_;
 using ::testing::Return;
@@ -95,7 +95,7 @@ class UDPTransportTest : public ::testing::Test {
     }
   }
 
-  size_t NumSocketsCreated() {
+  int NumSocketsCreated() {
     return sockets_created_.size();
   }
 
@@ -133,7 +133,7 @@ TEST_F(UDPTransportTest, InitializeSourcePorts) {
                                                  mock_maker,
                                                  mock_manager);
   EXPECT_EQ(0, transport->InitializeSourcePorts(4711, 4712));
-  EXPECT_EQ(2u, NumSocketsCreated());
+  EXPECT_EQ(2, NumSocketsCreated());
 
   delete transport;
   mock_manager->Destroy();

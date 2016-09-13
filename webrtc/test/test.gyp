@@ -13,6 +13,55 @@
   ],
   'targets': [
     {
+      'target_name': 'channel_transport',
+      'type': 'static_library',
+      'dependencies': [
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(webrtc_root)/common.gyp:webrtc_common',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
+      ],
+      'sources': [
+        'channel_transport/channel_transport.cc',
+        'channel_transport/channel_transport.h',
+        'channel_transport/traffic_control_win.cc',
+        'channel_transport/traffic_control_win.h',
+        'channel_transport/udp_socket_manager_posix.cc',
+        'channel_transport/udp_socket_manager_posix.h',
+        'channel_transport/udp_socket_manager_wrapper.cc',
+        'channel_transport/udp_socket_manager_wrapper.h',
+        'channel_transport/udp_socket_posix.cc',
+        'channel_transport/udp_socket_posix.h',
+        'channel_transport/udp_socket_wrapper.cc',
+        'channel_transport/udp_socket_wrapper.h',
+        'channel_transport/udp_socket2_manager_win.cc',
+        'channel_transport/udp_socket2_manager_win.h',
+        'channel_transport/udp_socket2_win.cc',
+        'channel_transport/udp_socket2_win.h',
+        'channel_transport/udp_transport.h',
+        'channel_transport/udp_transport_impl.cc',
+        'channel_transport/udp_transport_impl.h',
+      ],
+      'msvs_disabled_warnings': [
+        4302,  # cast truncation
+      ],
+      'conditions': [
+        ['OS=="win" and clang==1', {
+          'msvs_settings': {
+            'VCCLCompilerTool': {
+              'AdditionalOptions': [
+                # Disable warnings failing when compiling with Clang on Windows.
+                # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
+                '-Wno-parentheses-equality',
+                '-Wno-reorder',
+                '-Wno-tautological-constant-out-of-range-compare',
+                '-Wno-unused-private-field',
+              ],
+            },
+          },
+        }],
+      ],  # conditions.
+    },
+    {
       'target_name': 'video_test_common',
       'type': 'static_library',
       'sources': [
@@ -153,6 +202,7 @@
       'target_name': 'test_support_unittests',
       'type': '<(gtest_target_type)',
       'dependencies': [
+        'channel_transport',
         'test_common',
         'test_support_main',
         '<(webrtc_root)/modules/modules.gyp:video_capture',
@@ -164,6 +214,9 @@
         'frame_generator_unittest.cc',
         'rtp_file_reader_unittest.cc',
         'rtp_file_writer_unittest.cc',
+        'channel_transport/udp_transport_unittest.cc',
+        'channel_transport/udp_socket_manager_unittest.cc',
+        'channel_transport/udp_socket_wrapper_unittest.cc',
         'testsupport/always_passing_unittest.cc',
         'testsupport/unittest_utils.h',
         'testsupport/fileutils_unittest.cc',
