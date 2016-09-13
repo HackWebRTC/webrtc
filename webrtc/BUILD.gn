@@ -283,46 +283,6 @@ if (!is_ios || !build_with_chromium) {
   }
 }
 
-if (!build_with_chromium) {
-  rtc_executable("webrtc_tests") {
-    testonly = true
-    deps = [
-      ":webrtc",
-      "modules/video_capture:video_capture_internal_impl",
-      "test",
-    ]
-  }
-
-  rtc_executable("video_loopback") {
-    testonly = true
-    sources = [
-      "test/run_test.h",
-      "video/video_loopback.cc",
-    ]
-
-    if (is_mac) {
-      sources += [ "test/mac/run_test.mm" ]
-    } else {
-      sources += [ "test/run_test.cc" ]
-    }
-    deps = [
-      ":video_quality_test",
-      "system_wrappers:metrics_default",
-      "test:field_trial",
-      "test:test_common",
-      "test:test_renderer",
-      "//testing/gmock",
-      "//testing/gtest",
-      "//third_party/gflags",
-    ]
-    if (is_clang && !is_nacl) {
-      # Suppress warnings from Chrome's Clang plugins.
-      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-  }
-}
-
 rtc_source_set("webrtc_common") {
   sources = [
     "common_types.cc",
@@ -746,6 +706,44 @@ if (rtc_include_tests) {
       outputs = [
         "{{bundle_resources_dir}}/{{source_file_part}}",
       ]
+    }
+  }
+
+  rtc_executable("webrtc_tests") {
+    testonly = true
+    deps = [
+      ":webrtc",
+      "modules/video_capture:video_capture_internal_impl",
+      "test",
+    ]
+  }
+
+  rtc_executable("video_loopback") {
+    testonly = true
+    sources = [
+      "test/run_test.h",
+      "video/video_loopback.cc",
+    ]
+
+    if (is_mac) {
+      sources += [ "test/mac/run_test.mm" ]
+    } else {
+      sources += [ "test/run_test.cc" ]
+    }
+    deps = [
+      ":video_quality_test",
+      "system_wrappers:metrics_default",
+      "test:field_trial",
+      "test:test_common",
+      "test:test_renderer",
+      "//testing/gmock",
+      "//testing/gtest",
+      "//third_party/gflags",
+    ]
+    if (is_clang && !is_nacl) {
+      # Suppress warnings from Chrome's Clang plugins.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
 
