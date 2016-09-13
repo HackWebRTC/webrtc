@@ -513,9 +513,15 @@ class AudioProcessing {
     kSampleRate48kHz = 48000
   };
 
-  static const int kNativeSampleRatesHz[];
-  static const size_t kNumNativeSampleRates;
-  static const int kMaxNativeSampleRateHz;
+  // TODO(kwiberg): We currently need to support a compiler (Visual C++) that
+  // complains if we don't explicitly state the size of the array here. Remove
+  // the size when that's no longer the case.
+  static constexpr int kNativeSampleRatesHz[4] = {
+      kSampleRate8kHz, kSampleRate16kHz, kSampleRate32kHz, kSampleRate48kHz};
+  static constexpr size_t kNumNativeSampleRates =
+      arraysize(kNativeSampleRatesHz);
+  static constexpr int kMaxNativeSampleRateHz =
+      kNativeSampleRatesHz[kNumNativeSampleRates - 1];
 
   static const int kChunkSizeMs = 10;
 };

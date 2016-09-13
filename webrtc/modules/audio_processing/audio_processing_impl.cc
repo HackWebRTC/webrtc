@@ -70,15 +70,7 @@
 
 namespace webrtc {
 
-const int AudioProcessing::kNativeSampleRatesHz[] = {
-    AudioProcessing::kSampleRate8kHz,
-    AudioProcessing::kSampleRate16kHz,
-    AudioProcessing::kSampleRate32kHz,
-    AudioProcessing::kSampleRate48kHz};
-const size_t AudioProcessing::kNumNativeSampleRates =
-    arraysize(AudioProcessing::kNativeSampleRatesHz);
-const int AudioProcessing::kMaxNativeSampleRateHz = AudioProcessing::
-    kNativeSampleRatesHz[AudioProcessing::kNumNativeSampleRates - 1];
+constexpr int AudioProcessing::kNativeSampleRatesHz[];
 
 namespace {
 
@@ -103,12 +95,15 @@ bool SampleRateSupportsMultiBand(int sample_rate_hz) {
 
 int FindNativeProcessRateToUse(int minimum_rate, bool band_splitting_required) {
 #ifdef WEBRTC_ARCH_ARM_FAMILY
-  const int kMaxSplittingNativeProcessRate = AudioProcessing::kSampleRate32kHz;
+  constexpr int kMaxSplittingNativeProcessRate =
+      AudioProcessing::kSampleRate32kHz;
 #else
-  const int kMaxSplittingNativeProcessRate = AudioProcessing::kSampleRate48kHz;
+  constexpr int kMaxSplittingNativeProcessRate =
+      AudioProcessing::kSampleRate48kHz;
 #endif
-  RTC_DCHECK_LE(kMaxSplittingNativeProcessRate,
-                AudioProcessing::kMaxNativeSampleRateHz);
+  static_assert(
+      kMaxSplittingNativeProcessRate <= AudioProcessing::kMaxNativeSampleRateHz,
+      "");
   const int uppermost_native_rate = band_splitting_required
                                         ? kMaxSplittingNativeProcessRate
                                         : AudioProcessing::kSampleRate48kHz;
