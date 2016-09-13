@@ -11,7 +11,6 @@
 
 #import <Foundation/Foundation.h>
 #import <AppKit/AppKit.h>
-#include <assert.h>
 
 #include "webrtc/base/scoped_autorelease_pool.h"
 

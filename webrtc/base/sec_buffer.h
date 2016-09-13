@@ -73,16 +73,9 @@ class CSecBuffer: public CSecBufferBase {
     Clear();
   }
 
- private:
-  // A placeholder function for compile-time asserts on the class
-  void CompileAsserts() {
-    // never invoked...
-    assert(false); // _T("Notreached")
-
-    // This class must not extend the size of SecBuffer, since
-    // we use arrays of CSecBuffer in CSecBufferBundle below
-    cassert(sizeof(CSecBuffer<SSPIFree> == sizeof(SecBuffer)));
-  }
+  // This class must not extend the size of SecBuffer, since we use arrays of
+  // CSecBuffer in CSecBufferBundle below.
+  static_assert(sizeof(CSecBuffer<pfnFreeBuffer>) == sizeof(SecBuffer), "");
 };
 
 // Contains all generic implementation for the

@@ -10,11 +10,10 @@
 
 #include "webrtc/base/firewallsocketserver.h"
 
-#include <assert.h>
-
 #include <algorithm>
 
 #include "webrtc/base/asyncsocket.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 
 namespace rtc {
@@ -220,7 +219,7 @@ FirewallManager::FirewallManager() {
 }
 
 FirewallManager::~FirewallManager() {
-  assert(servers_.empty());
+  RTC_DCHECK(servers_.empty());
 }
 
 void FirewallManager::AddServer(FirewallSocketServer* server) {

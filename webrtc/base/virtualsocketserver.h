@@ -11,11 +11,10 @@
 #ifndef WEBRTC_BASE_VIRTUALSOCKETSERVER_H_
 #define WEBRTC_BASE_VIRTUALSOCKETSERVER_H_
 
-#include <assert.h>
-
 #include <deque>
 #include <map>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/socketserver.h"
@@ -86,7 +85,8 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   // is separate from calculations to drop based on queue size.
   double drop_probability() { return drop_prob_; }
   void set_drop_probability(double drop_prob) {
-    assert((0 <= drop_prob) && (drop_prob <= 1));
+    RTC_DCHECK_GE(drop_prob, 0.0);
+    RTC_DCHECK_LE(drop_prob, 1.0);
     drop_prob_ = drop_prob;
   }
 

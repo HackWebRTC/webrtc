@@ -13,8 +13,6 @@
 #pragma warning(disable:4786)
 #endif
 
-#include <assert.h>
-
 #ifdef MEMORY_SANITIZER
 #include <sanitizer/msan_interface.h>
 #endif

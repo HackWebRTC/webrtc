@@ -10,7 +10,6 @@
 
 #include "webrtc/base/bytebuffer.h"
 
-#include <assert.h>
 #include <string.h>
 
 #include <algorithm>

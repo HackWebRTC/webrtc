@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <assert.h>
+#include "webrtc/base/fileutils.h"
 
 #include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/pathutils.h"
-#include "webrtc/base/fileutils.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/stream.h"
 
@@ -112,7 +112,7 @@ std::string DirectoryIterator::Name() const {
 #if defined(WEBRTC_WIN)
   return ToUtf8(data_.cFileName);
 #else
-  assert(dirent_ != NULL);
+  RTC_DCHECK(dirent_);
   return dirent_->d_name;
 #endif
 }
