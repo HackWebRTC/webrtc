@@ -320,6 +320,9 @@ void VideoCapturerTrackSource::Initialize(
     }
   }
 
+  // Get default from the capturer, overridden by constraints, if any.
+  needs_denoising_ = video_capturer_->NeedsDenoising();
+
   if (constraints) {
     MediaConstraintsInterface::Constraints mandatory_constraints =
         constraints->GetMandatory();

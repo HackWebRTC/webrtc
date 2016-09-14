@@ -123,7 +123,7 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
 
   sigslot::signal1<FakeVideoCapturer*> SignalDestroyed;
 
-  virtual cricket::CaptureState Start(const cricket::VideoFormat& format) {
+  cricket::CaptureState Start(const cricket::VideoFormat& format) override {
     cricket::VideoFormat supported;
     if (GetBestCaptureFormat(format, &supported)) {
       SetCaptureFormat(&supported);
@@ -132,14 +132,17 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
     SetCaptureState(cricket::CS_RUNNING);
     return cricket::CS_RUNNING;
   }
-  virtual void Stop() {
+  void Stop() override {
     running_ = false;
     SetCaptureFormat(NULL);
     SetCaptureState(cricket::CS_STOPPED);
   }
-  virtual bool IsRunning() { return running_; }
-  virtual bool IsScreencast() const { return is_screencast_; }
-  bool GetPreferredFourccs(std::vector<uint32_t>* fourccs) {
+  bool IsRunning() override { return running_; }
+  bool IsScreencast() const override { return is_screencast_; }
+  rtc::Optional<bool> NeedsDenoising() const override {
+    return needs_denoising_;
+  }
+  bool GetPreferredFourccs(std::vector<uint32_t>* fourccs) override {
     fourccs->push_back(cricket::FOURCC_I420);
     fourccs->push_back(cricket::FOURCC_MJPG);
     return true;
@@ -151,11 +154,16 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
 
   webrtc::VideoRotation GetRotation() { return rotation_; }
 
+  void SetNeedsDenoising(rtc::Optional<bool> needs_denoising) {
+    needs_denoising_ = needs_denoising;
+  }
+
  private:
   bool running_;
   int64_t initial_timestamp_;
   int64_t next_timestamp_;
   const bool is_screencast_;
+  rtc::Optional<bool> needs_denoising_;
   webrtc::VideoRotation rotation_;
 };
 

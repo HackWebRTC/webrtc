@@ -444,6 +444,35 @@ TEST_F(VideoCapturerTrackSourceTest, ScreencastResolutionWithConstraint) {
   EXPECT_EQ(30, format->framerate());
 }
 
+TEST_F(VideoCapturerTrackSourceTest, DenoisingDefault) {
+  CreateVideoCapturerSource();
+  EXPECT_FALSE(source_->needs_denoising());
+}
+
+TEST_F(VideoCapturerTrackSourceTest, DenoisingConstraintOn) {
+  FakeConstraints constraints;
+  constraints.AddOptional(MediaConstraintsInterface::kNoiseReduction, true);
+  CreateVideoCapturerSource(&constraints);
+  ASSERT_TRUE(source_->needs_denoising());
+  EXPECT_TRUE(*source_->needs_denoising());
+}
+
+TEST_F(VideoCapturerTrackSourceTest, DenoisingCapturerOff) {
+  capturer_->SetNeedsDenoising(rtc::Optional<bool>(false));
+  CreateVideoCapturerSource();
+  ASSERT_TRUE(source_->needs_denoising());
+  EXPECT_FALSE(*source_->needs_denoising());
+}
+
+TEST_F(VideoCapturerTrackSourceTest, DenoisingConstraintOverridesCapturer) {
+  capturer_->SetNeedsDenoising(rtc::Optional<bool>(false));
+  FakeConstraints constraints;
+  constraints.AddOptional(MediaConstraintsInterface::kNoiseReduction, true);
+  CreateVideoCapturerSource(&constraints);
+  ASSERT_TRUE(source_->needs_denoising());
+  EXPECT_TRUE(*source_->needs_denoising());
+}
+
 TEST_F(VideoCapturerTrackSourceTest, MandatorySubOneFpsConstraints) {
   FakeConstraints constraints;
   constraints.AddMandatory(MediaConstraintsInterface::kMaxFrameRate, 0.5);
