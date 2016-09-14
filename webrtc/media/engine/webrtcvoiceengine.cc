@@ -1270,7 +1270,6 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
               int sample_rate,
               size_t number_of_channels,
               size_t number_of_frames) override {
-    RTC_DCHECK(!worker_thread_checker_.CalledOnValidThread());
     RTC_DCHECK(audio_capture_thread_checker_.CalledOnValidThread());
     RTC_DCHECK(voe_audio_transport_);
     voe_audio_transport_->PushCaptureData(config_.voe_channel_id, audio_data,
