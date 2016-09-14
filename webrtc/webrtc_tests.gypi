@@ -454,6 +454,12 @@
         'webrtc',
       ],
       'conditions': [
+        ['enable_intelligibility_enhancer==1', {
+         'defines': ['WEBRTC_INTELLIGIBILITY_ENHANCER=1',],
+        }, {
+         'defines': ['WEBRTC_INTELLIGIBILITY_ENHANCER=0',],
+        }],
+
         ['OS=="android"', {
           'dependencies': [
             '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',

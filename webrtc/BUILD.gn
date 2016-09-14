@@ -776,6 +776,13 @@ if (rtc_include_tests) {
       "//testing/gmock",
       "//testing/gtest",
     ]
+
+    if (rtc_enable_intelligibility_enhancer) {
+      defines = [ "WEBRTC_INTELLIGIBILITY_ENHANCER=1" ]
+    } else {
+      defines = [ "WEBRTC_INTELLIGIBILITY_ENHANCER=0" ]
+    }
+
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_native_code" ]
       data = webrtc_perf_tests_resources

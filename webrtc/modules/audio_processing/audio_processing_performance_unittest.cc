@@ -29,6 +29,14 @@
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/testsupport/perf_test.h"
 
+// Check to verify that the define for the intelligibility enhancer is properly
+// set.
+#if !defined(WEBRTC_INTELLIGIBILITY_ENHANCER) || \
+    (WEBRTC_INTELLIGIBILITY_ENHANCER != 0 &&     \
+     WEBRTC_INTELLIGIBILITY_ENHANCER != 1)
+#error "Set WEBRTC_INTELLIGIBILITY_ENHANCER to either 0 or 1"
+#endif
+
 namespace webrtc {
 
 namespace {
@@ -96,6 +104,7 @@ struct SimulationConfig {
       }
     }
 
+#if WEBRTC_INTELLIGIBILITY_ENHANCER == 1
     const SettingsType intelligibility_enhancer_settings[] = {
         SettingsType::kDefaultApmDesktopAndIntelligibilityEnhancer};
 
@@ -107,6 +116,7 @@ struct SimulationConfig {
         simulation_configs.push_back(SimulationConfig(sample_rate, settings));
       }
     }
+#endif
 
     const SettingsType beamformer_settings[] = {
         SettingsType::kDefaultApmDesktopAndBeamformer};
