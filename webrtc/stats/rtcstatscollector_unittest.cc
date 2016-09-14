@@ -58,6 +58,7 @@ class RTCStatsCollectorTestHelper : public SetSessionDescriptionObserver {
         ReturnRef(data_channels_));
   }
 
+  rtc::ScopedFakeClock& fake_clock() { return fake_clock_; }
   MockWebRtcSession& session() { return session_; }
   MockPeerConnection& pc() { return pc_; }
   std::vector<rtc::scoped_refptr<DataChannel>>& data_channels() {
@@ -71,6 +72,7 @@ class RTCStatsCollectorTestHelper : public SetSessionDescriptionObserver {
   }
 
  private:
+  rtc::ScopedFakeClock fake_clock_;
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;
   std::unique_ptr<cricket::ChannelManager> channel_manager_;
@@ -277,7 +279,6 @@ TEST_F(RTCStatsCollectorTest, MultipleCallbacks) {
 }
 
 TEST_F(RTCStatsCollectorTest, CachedStatsReports) {
-  rtc::ScopedFakeClock fake_clock;
   // Caching should ensure |a| and |b| are the same report.
   rtc::scoped_refptr<const RTCStatsReport> a = GetStatsReport();
   rtc::scoped_refptr<const RTCStatsReport> b = GetStatsReport();
@@ -287,21 +288,20 @@ TEST_F(RTCStatsCollectorTest, CachedStatsReports) {
   rtc::scoped_refptr<const RTCStatsReport> c = GetStatsReport();
   EXPECT_NE(b.get(), c.get());
   // Invalidate cache by advancing time.
-  fake_clock.AdvanceTime(rtc::TimeDelta::FromMilliseconds(51));
+  test_->fake_clock().AdvanceTime(rtc::TimeDelta::FromMilliseconds(51));
   rtc::scoped_refptr<const RTCStatsReport> d = GetStatsReport();
   EXPECT_TRUE(d);
   EXPECT_NE(c.get(), d.get());
 }
 
 TEST_F(RTCStatsCollectorTest, MultipleCallbacksWithInvalidatedCacheInBetween) {
-  rtc::ScopedFakeClock fake_clock;
   rtc::scoped_refptr<const RTCStatsReport> a;
   rtc::scoped_refptr<const RTCStatsReport> b;
   rtc::scoped_refptr<const RTCStatsReport> c;
   collector_->GetStatsReport(StatsCallback::Create(&a));
   collector_->GetStatsReport(StatsCallback::Create(&b));
   // Cache is invalidated after 50 ms.
-  fake_clock.AdvanceTime(rtc::TimeDelta::FromMilliseconds(51));
+  test_->fake_clock().AdvanceTime(rtc::TimeDelta::FromMilliseconds(51));
   collector_->GetStatsReport(StatsCallback::Create(&c));
   EXPECT_TRUE_WAIT(a, kGetStatsReportTimeoutMs);
   EXPECT_TRUE_WAIT(b, kGetStatsReportTimeoutMs);

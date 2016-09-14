@@ -10,6 +10,8 @@
 
 #include "webrtc/api/rtcstats.h"
 
+#include <cstring>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/gunit.h"
 
@@ -114,14 +116,30 @@ TEST(RTCStatsTest, RTCStatsAndMembers) {
   stats.m_double = 123.0;
   stats.m_static_string = "123";
   stats.m_string = std::string("123");
-  stats.m_sequence_int32 = std::vector<int32_t>();
-  stats.m_sequence_uint32 = std::vector<uint32_t>();
+
+  std::vector<int32_t> sequence_int32;
+  sequence_int32.push_back(static_cast<int32_t>(1));
+  std::vector<uint32_t> sequence_uint32;
+  sequence_uint32.push_back(static_cast<uint32_t>(2));
+  std::vector<int64_t> sequence_int64;
+  sequence_int64.push_back(static_cast<int64_t>(3));
+  std::vector<uint64_t> sequence_uint64;
+  sequence_uint64.push_back(static_cast<uint64_t>(4));
+  std::vector<double> sequence_double;
+  sequence_double.push_back(5.0);
+  std::vector<const char*> sequence_static_string;
+  sequence_static_string.push_back("six");
+  std::vector<std::string> sequence_string;
+  sequence_string.push_back(std::string("seven"));
+
+  stats.m_sequence_int32 = sequence_int32;
+  stats.m_sequence_uint32 = sequence_uint32;
   EXPECT_FALSE(stats.m_sequence_int64.is_defined());
-  stats.m_sequence_int64 = std::vector<int64_t>();
-  stats.m_sequence_uint64 = std::vector<uint64_t>();
-  stats.m_sequence_double = std::vector<double>();
-  stats.m_sequence_static_string = std::vector<const char*>();
-  stats.m_sequence_string = std::vector<std::string>();
+  stats.m_sequence_int64 = sequence_int64;
+  stats.m_sequence_uint64 = sequence_uint64;
+  stats.m_sequence_double = sequence_double;
+  stats.m_sequence_static_string = sequence_static_string;
+  stats.m_sequence_string = sequence_string;
   for (const RTCStatsMemberInterface* member : members) {
     EXPECT_TRUE(member->is_defined());
   }
@@ -130,17 +148,24 @@ TEST(RTCStatsTest, RTCStatsAndMembers) {
   EXPECT_EQ(*stats.m_int64, static_cast<int64_t>(123));
   EXPECT_EQ(*stats.m_uint64, static_cast<uint64_t>(123));
   EXPECT_EQ(*stats.m_double, 123.0);
-  EXPECT_EQ(*stats.m_static_string, "123");
+  EXPECT_EQ(strcmp(*stats.m_static_string, "123"), 0);
   EXPECT_EQ(*stats.m_string, std::string("123"));
-  EXPECT_EQ(*stats.m_sequence_int32, std::vector<int32_t>());
-  EXPECT_EQ(*stats.m_sequence_uint32, std::vector<uint32_t>());
-  EXPECT_EQ(*stats.m_sequence_int64, std::vector<int64_t>());
-  EXPECT_EQ(*stats.m_sequence_uint64, std::vector<uint64_t>());
-  EXPECT_EQ(*stats.m_sequence_double, std::vector<double>());
-  EXPECT_EQ(*stats.m_sequence_static_string, std::vector<const char*>());
-  EXPECT_EQ(*stats.m_sequence_string, std::vector<std::string>());
+  EXPECT_EQ(*stats.m_sequence_int32, sequence_int32);
+  EXPECT_EQ(*stats.m_sequence_uint32, sequence_uint32);
+  EXPECT_EQ(*stats.m_sequence_int64, sequence_int64);
+  EXPECT_EQ(*stats.m_sequence_uint64, sequence_uint64);
+  EXPECT_EQ(*stats.m_sequence_double, sequence_double);
+  EXPECT_EQ(stats.m_sequence_static_string->size(),
+            sequence_static_string.size());
+  for (size_t i = 0; i < sequence_static_string.size(); ++i) {
+    EXPECT_EQ(strcmp((*stats.m_sequence_static_string)[i],
+                     sequence_static_string[i]), 0);
+  }
+  EXPECT_EQ(*stats.m_sequence_string, sequence_string);
+
   int32_t numbers[] = { 4, 8, 15, 16, 23, 42 };
-  std::vector<int32_t> numbers_sequence(&numbers[0], &numbers[5]);
+  std::vector<int32_t> numbers_sequence(&numbers[0], &numbers[6]);
+  stats.m_sequence_int32->clear();
   stats.m_sequence_int32->insert(stats.m_sequence_int32->end(),
                                  numbers_sequence.begin(),
                                  numbers_sequence.end());
