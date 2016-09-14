@@ -14,6 +14,8 @@
         'audio_network_adaptor.cc',
         'audio_network_adaptor_impl.cc',
         'audio_network_adaptor_impl.h',
+        'channel_controller.cc',
+        'channel_controller.h',
         'controller.h',
         'controller.cc',
         'controller_manager.cc',

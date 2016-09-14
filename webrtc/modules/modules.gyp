@@ -173,6 +173,7 @@
             'audio_coding/acm2/initial_delay_manager_unittest.cc',
             'audio_coding/acm2/rent_a_codec_unittest.cc',
             'audio_coding/audio_network_adaptor/audio_network_adaptor_impl_unittest.cc',
+            'audio_coding/audio_network_adaptor/channel_controller_unittest.cc',
             'audio_coding/audio_network_adaptor/controller_manager_unittest.cc',
             'audio_coding/audio_network_adaptor/mock/mock_controller.h',
             'audio_coding/audio_network_adaptor/mock/mock_controller_manager.h',
