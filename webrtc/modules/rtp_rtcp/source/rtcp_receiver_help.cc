@@ -23,12 +23,7 @@ RTCPPacketInformation::RTCPPacketInformation()
     : rtcpPacketTypeFlags(0),
       remoteSSRC(0),
       nackSequenceNumbers(),
-      applicationSubType(0),
-      applicationName(0),
-      applicationData(),
-      applicationLength(0),
       rtt(0),
-      interArrivalJitter(0),
       sliPictureId(0),
       rpsiPictureId(0),
       receiverEstimatedMaxBitrate(0),
@@ -36,40 +31,9 @@ RTCPPacketInformation::RTCPPacketInformation()
       ntp_frac(0),
       rtp_timestamp(0),
       xr_originator_ssrc(0),
-      xr_dlrr_item(false),
-      VoIPMetric(nullptr) {}
+      xr_dlrr_item(false) {}
 
-RTCPPacketInformation::~RTCPPacketInformation() {
-  delete[] applicationData;
-}
-
-void RTCPPacketInformation::AddVoIPMetric(const RTCPVoIPMetric* metric) {
-  VoIPMetric.reset(new RTCPVoIPMetric());
-  memcpy(VoIPMetric.get(), metric, sizeof(RTCPVoIPMetric));
-}
-
-void RTCPPacketInformation::AddApplicationData(const uint8_t* data,
-                                               const uint16_t size) {
-  uint8_t* oldData = applicationData;
-  uint16_t oldLength = applicationLength;
-
-  // Don't copy more than kRtcpAppCode_DATA_SIZE bytes.
-  uint16_t copySize = size;
-  if (size > kRtcpAppCode_DATA_SIZE) {
-    copySize = kRtcpAppCode_DATA_SIZE;
-  }
-
-  applicationLength += copySize;
-  applicationData = new uint8_t[applicationLength];
-
-  if (oldData) {
-    memcpy(applicationData, oldData, oldLength);
-    memcpy(applicationData + oldLength, data, copySize);
-    delete[] oldData;
-  } else {
-    memcpy(applicationData, data, copySize);
-  }
-}
+RTCPPacketInformation::~RTCPPacketInformation() {}
 
 void RTCPPacketInformation::ResetNACKPacketIdArray() {
   nackSequenceNumbers.clear();

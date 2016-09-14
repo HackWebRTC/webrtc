@@ -168,11 +168,6 @@ class RTCPReceiver {
       RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
-  void HandleXRVOIPMetric(
-      RTCPUtility::RTCPParserV2& rtcpParser,
-      RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
-      EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
-
   void HandleNACK(RTCPUtility::RTCPParserV2& rtcpParser,
                   RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
@@ -208,14 +203,6 @@ class RTCPReceiver {
                       RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
-  void HandleIJ(RTCPUtility::RTCPParserV2& rtcpParser,
-                RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
-      EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
-
-  void HandleIJItem(const RTCPUtility::RTCPPacket& rtcpPacket,
-                    RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
-      EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
-
   void HandleTMMBR(RTCPUtility::RTCPParserV2& rtcpParser,
                    RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
@@ -244,14 +231,6 @@ class RTCPReceiver {
 
   void HandleFIRItem(RTCPHelp::RTCPReceiveInformation* receiveInfo,
                      const RTCPUtility::RTCPPacket& rtcpPacket,
-                     RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
-      EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
-
-  void HandleAPP(RTCPUtility::RTCPParserV2& rtcpParser,
-                 RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
-      EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
-
-  void HandleAPPItem(RTCPUtility::RTCPParserV2& rtcpParser,
                      RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 

@@ -48,10 +48,6 @@ class RTCPPacketInformation {
   RTCPPacketInformation();
   ~RTCPPacketInformation();
 
-  void AddVoIPMetric(const RTCPVoIPMetric* metric);
-
-  void AddApplicationData(const uint8_t* data, const uint16_t size);
-
   void AddNACKPacket(const uint16_t packetID);
   void ResetNACKPacketIdArray();
 
@@ -62,15 +58,8 @@ class RTCPPacketInformation {
 
   std::vector<uint16_t> nackSequenceNumbers;
 
-  uint8_t applicationSubType;
-  uint32_t applicationName;
-  uint8_t* applicationData;
-  uint16_t applicationLength;
-
   ReportBlockList report_blocks;
   int64_t rtt;
-
-  uint32_t interArrivalJitter;
 
   uint8_t sliPictureId;
   uint64_t rpsiPictureId;
@@ -82,7 +71,6 @@ class RTCPPacketInformation {
 
   uint32_t xr_originator_ssrc;
   bool xr_dlrr_item;
-  std::unique_ptr<RTCPVoIPMetric> VoIPMetric;
 
   std::unique_ptr<rtcp::TransportFeedback> transport_feedback_;
 

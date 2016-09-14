@@ -314,9 +314,6 @@ int32_t RTCPReceiver::IncomingRTCPPacket(
       case RTCPPacketTypes::kXrDlrrReportBlock:
         HandleXrDlrrReportBlock(*rtcpParser, rtcpPacketInformation);
         break;
-      case RTCPPacketTypes::kXrVoipMetric:
-        HandleXRVOIPMetric(*rtcpParser, rtcpPacketInformation);
-        break;
       case RTCPPacketTypes::kBye:
         HandleBYE(*rtcpParser);
         break;
@@ -341,22 +338,11 @@ int32_t RTCPReceiver::IncomingRTCPPacket(
       case RTCPPacketTypes::kPsfbRpsi:
         HandleRPSI(*rtcpParser, rtcpPacketInformation);
         break;
-      case RTCPPacketTypes::kExtendedIj:
-        HandleIJ(*rtcpParser, rtcpPacketInformation);
-        break;
       case RTCPPacketTypes::kPsfbFir:
         HandleFIR(*rtcpParser, rtcpPacketInformation);
         break;
       case RTCPPacketTypes::kPsfbApp:
         HandlePsfbApp(*rtcpParser, rtcpPacketInformation);
-        break;
-      case RTCPPacketTypes::kApp:
-        // generic application messages
-        HandleAPP(*rtcpParser, rtcpPacketInformation);
-        break;
-      case RTCPPacketTypes::kAppItem:
-        // generic application messages
-        HandleAPPItem(*rtcpParser, rtcpPacketInformation);
         break;
       case RTCPPacketTypes::kTransportFeedback:
         HandleTransportFeedback(rtcpParser, &rtcpPacketInformation);
@@ -909,49 +895,6 @@ void RTCPReceiver::HandleXrDlrrReportBlockItem(
   rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpXrDlrrReportBlock;
 }
 
-void RTCPReceiver::HandleXRVOIPMetric(
-    RTCPUtility::RTCPParserV2& rtcpParser,
-    RTCPPacketInformation& rtcpPacketInformation) {
-  const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
-
-  if (rtcpPacket.XRVOIPMetricItem.SSRC == main_ssrc_) {
-    // Store VoIP metrics block if it's about me
-    // from OriginatorSSRC do we filter it?
-    // rtcpPacket.XR.OriginatorSSRC;
-
-    RTCPVoIPMetric receivedVoIPMetrics;
-    receivedVoIPMetrics.burstDensity = rtcpPacket.XRVOIPMetricItem.burstDensity;
-    receivedVoIPMetrics.burstDuration =
-        rtcpPacket.XRVOIPMetricItem.burstDuration;
-    receivedVoIPMetrics.discardRate = rtcpPacket.XRVOIPMetricItem.discardRate;
-    receivedVoIPMetrics.endSystemDelay =
-        rtcpPacket.XRVOIPMetricItem.endSystemDelay;
-    receivedVoIPMetrics.extRfactor = rtcpPacket.XRVOIPMetricItem.extRfactor;
-    receivedVoIPMetrics.gapDensity = rtcpPacket.XRVOIPMetricItem.gapDensity;
-    receivedVoIPMetrics.gapDuration = rtcpPacket.XRVOIPMetricItem.gapDuration;
-    receivedVoIPMetrics.Gmin = rtcpPacket.XRVOIPMetricItem.Gmin;
-    receivedVoIPMetrics.JBabsMax = rtcpPacket.XRVOIPMetricItem.JBabsMax;
-    receivedVoIPMetrics.JBmax = rtcpPacket.XRVOIPMetricItem.JBmax;
-    receivedVoIPMetrics.JBnominal = rtcpPacket.XRVOIPMetricItem.JBnominal;
-    receivedVoIPMetrics.lossRate = rtcpPacket.XRVOIPMetricItem.lossRate;
-    receivedVoIPMetrics.MOSCQ = rtcpPacket.XRVOIPMetricItem.MOSCQ;
-    receivedVoIPMetrics.MOSLQ = rtcpPacket.XRVOIPMetricItem.MOSLQ;
-    receivedVoIPMetrics.noiseLevel = rtcpPacket.XRVOIPMetricItem.noiseLevel;
-    receivedVoIPMetrics.RERL = rtcpPacket.XRVOIPMetricItem.RERL;
-    receivedVoIPMetrics.Rfactor = rtcpPacket.XRVOIPMetricItem.Rfactor;
-    receivedVoIPMetrics.roundTripDelay =
-        rtcpPacket.XRVOIPMetricItem.roundTripDelay;
-    receivedVoIPMetrics.RXconfig = rtcpPacket.XRVOIPMetricItem.RXconfig;
-    receivedVoIPMetrics.signalLevel = rtcpPacket.XRVOIPMetricItem.signalLevel;
-
-    rtcpPacketInformation.AddVoIPMetric(&receivedVoIPMetrics);
-
-    rtcpPacketInformation.rtcpPacketTypeFlags |=
-        kRtcpXrVoipMetric;  // received signal
-  }
-  rtcpParser.Iterate();
-}
-
 void RTCPReceiver::HandlePLI(RTCPUtility::RTCPParserV2& rtcpParser,
                              RTCPPacketInformation& rtcpPacketInformation) {
   const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
@@ -1118,24 +1061,6 @@ void RTCPReceiver::HandlePsfbApp(RTCPUtility::RTCPParserV2& rtcpParser,
   }
 }
 
-void RTCPReceiver::HandleIJ(RTCPUtility::RTCPParserV2& rtcpParser,
-                            RTCPPacketInformation& rtcpPacketInformation) {
-  const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
-
-  RTCPUtility::RTCPPacketTypes pktType = rtcpParser.Iterate();
-  while (pktType == RTCPPacketTypes::kExtendedIjItem) {
-    HandleIJItem(rtcpPacket, rtcpPacketInformation);
-    pktType = rtcpParser.Iterate();
-  }
-}
-
-void RTCPReceiver::HandleIJItem(const RTCPUtility::RTCPPacket& rtcpPacket,
-                                RTCPPacketInformation& rtcpPacketInformation) {
-  rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpTransmissionTimeOffset;
-  rtcpPacketInformation.interArrivalJitter =
-      rtcpPacket.ExtendedJitterReportItem.Jitter;
-}
-
 void RTCPReceiver::HandleREMBItem(
     RTCPUtility::RTCPParserV2& rtcpParser,
     RTCPPacketInformation& rtcpPacketInformation) {
@@ -1188,27 +1113,6 @@ void RTCPReceiver::HandleFIRItem(RTCPReceiveInformation* receiveInfo,
     // received signal that we need to send a new key frame
     rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpFir;
   }
-}
-
-void RTCPReceiver::HandleAPP(RTCPUtility::RTCPParserV2& rtcpParser,
-                             RTCPPacketInformation& rtcpPacketInformation) {
-  const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
-
-  rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpApp;
-  rtcpPacketInformation.applicationSubType = rtcpPacket.APP.SubType;
-  rtcpPacketInformation.applicationName = rtcpPacket.APP.Name;
-
-  rtcpParser.Iterate();
-}
-
-void RTCPReceiver::HandleAPPItem(RTCPUtility::RTCPParserV2& rtcpParser,
-                                 RTCPPacketInformation& rtcpPacketInformation) {
-  const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
-
-  rtcpPacketInformation.AddApplicationData(rtcpPacket.APP.Data,
-                                           rtcpPacket.APP.Size);
-
-  rtcpParser.Iterate();
 }
 
 void RTCPReceiver::HandleTransportFeedback(
