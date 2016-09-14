@@ -115,7 +115,7 @@ void AndroidVideoTrackSource::OnByteBufferFrameCaptured(const void* frame_data,
     std::swap(rotated_width, rotated_height);
   }
 
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer =
+  rtc::scoped_refptr<webrtc::I420Buffer> buffer =
       pre_scale_pool_.CreateBuffer(rotated_width, rotated_height);
 
   const uint8_t* y_plane = static_cast<const uint8_t*>(frame_data);

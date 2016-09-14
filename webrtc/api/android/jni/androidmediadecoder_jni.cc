@@ -782,7 +782,9 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
     payload += output_buffer_offset;
 
     // Create yuv420 frame.
-    frame_buffer = decoded_frame_pool_.CreateBuffer(width, height);
+    rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer;
+
+    i420_buffer = decoded_frame_pool_.CreateBuffer(width, height);
     if (color_format == COLOR_FormatYUV420Planar) {
       RTC_CHECK_EQ(0, stride % 2);
       RTC_CHECK_EQ(0, slice_height % 2);
@@ -791,31 +793,23 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
       const uint8_t* y_ptr = payload;
       const uint8_t* u_ptr = y_ptr + stride * slice_height;
       const uint8_t* v_ptr = u_ptr + uv_stride * u_slice_height;
-      libyuv::I420Copy(y_ptr, stride,
-                       u_ptr, uv_stride,
-                       v_ptr, uv_stride,
-                       frame_buffer->MutableDataY(),
-                       frame_buffer->StrideY(),
-                       frame_buffer->MutableDataU(),
-                       frame_buffer->StrideU(),
-                       frame_buffer->MutableDataV(),
-                       frame_buffer->StrideV(),
+      libyuv::I420Copy(y_ptr, stride, u_ptr, uv_stride, v_ptr, uv_stride,
+                       i420_buffer->MutableDataY(), i420_buffer->StrideY(),
+                       i420_buffer->MutableDataU(), i420_buffer->StrideU(),
+                       i420_buffer->MutableDataV(), i420_buffer->StrideV(),
                        width, height);
     } else {
       // All other supported formats are nv12.
       const uint8_t* y_ptr = payload;
       const uint8_t* uv_ptr = y_ptr + stride * slice_height;
-      libyuv::NV12ToI420(
-          y_ptr, stride,
-          uv_ptr, stride,
-          frame_buffer->MutableDataY(),
-          frame_buffer->StrideY(),
-          frame_buffer->MutableDataU(),
-          frame_buffer->StrideU(),
-          frame_buffer->MutableDataV(),
-          frame_buffer->StrideV(),
-          width, height);
+      libyuv::NV12ToI420(y_ptr, stride, uv_ptr, stride,
+                         i420_buffer->MutableDataY(), i420_buffer->StrideY(),
+                         i420_buffer->MutableDataU(), i420_buffer->StrideU(),
+                         i420_buffer->MutableDataV(), i420_buffer->StrideV(),
+                         width, height);
     }
+    frame_buffer = i420_buffer;
+
     // Return output byte buffer back to codec.
     jni->CallVoidMethod(
         *j_media_codec_video_decoder_,
