@@ -915,10 +915,8 @@ if (rtc_include_tests) {
     ]
   }  # insert_packet_with_timing
 
-  if (is_android || is_ios) {
-    audio_decoder_unittests_resources =
-        [ "//resources/audio_coding/testfile32kHz.pcm" ]
-  }
+  audio_decoder_unittests_resources =
+      [ "//resources/audio_coding/testfile32kHz.pcm" ]
 
   if (is_ios) {
     bundle_data("audio_decoder_unittests_bundle_data") {
@@ -957,9 +955,10 @@ if (rtc_include_tests) {
       "//testing/gtest",
     ]
 
+    data = audio_decoder_unittests_resources
+
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_native_code" ]
-      data = audio_decoder_unittests_resources
       shard_timeout = 900
     }
     if (is_ios) {

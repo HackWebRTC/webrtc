@@ -192,17 +192,15 @@ rtc_source_set("test_support_main_threaded_mac") {
   ]
 }
 
-if (is_android || is_ios) {
-  test_support_unittests_resources = [
-    "//resources/foreman_cif_short.yuv",
-    "//resources/video_coding/frame-ethernet-ii.pcap",
-    "//resources/video_coding/frame-loopback.pcap",
-    "//resources/video_coding/pltype103.rtp",
-    "//resources/video_coding/pltype103_header_only.rtp",
-    "//resources/video_coding/ssrcs-2.pcap",
-    "//resources/video_coding/ssrcs-3.pcap",
-  ]
-}
+test_support_unittests_resources = [
+  "//resources/foreman_cif_short.yuv",
+  "//resources/video_coding/frame-ethernet-ii.pcap",
+  "//resources/video_coding/frame-loopback.pcap",
+  "//resources/video_coding/pltype103.rtp",
+  "//resources/video_coding/pltype103_header_only.rtp",
+  "//resources/video_coding/ssrcs-2.pcap",
+  "//resources/video_coding/ssrcs-3.pcap",
+]
 
 if (is_ios) {
   bundle_data("test_support_unittests_bundle_data") {
@@ -244,9 +242,9 @@ rtc_test("test_support_unittests") {
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
+  data = test_support_unittests_resources
   if (is_android) {
     deps += [ "//testing/android/native_test:native_test_support" ]
-    data = test_support_unittests_resources
     shard_timeout = 900
   }
 

@@ -278,17 +278,15 @@ if (rtc_include_tests) {
     }
   }
 
-  if (is_android || is_ios) {
-    rtc_media_unittests_resources = [
-      "//resources/media/captured-320x240-2s-48.frames",
-      "//resources/media/faces.1280x720_P420.yuv",
-      "//resources/media/faces_I420.jpg",
-      "//resources/media/faces_I422.jpg",
-      "//resources/media/faces_I444.jpg",
-      "//resources/media/faces_I411.jpg",
-      "//resources/media/faces_I400.jpg",
-    ]
-  }
+  rtc_media_unittests_resources = [
+    "//resources/media/captured-320x240-2s-48.frames",
+    "//resources/media/faces.1280x720_P420.yuv",
+    "//resources/media/faces_I420.jpg",
+    "//resources/media/faces_I422.jpg",
+    "//resources/media/faces_I444.jpg",
+    "//resources/media/faces_I411.jpg",
+    "//resources/media/faces_I400.jpg",
+  ]
 
   if (is_ios) {
     bundle_data("rtc_media_unittests_bundle_data") {
@@ -351,9 +349,10 @@ if (rtc_include_tests) {
       ]
     }
 
+    data = rtc_media_unittests_resources
+
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_support" ]
-      data = rtc_media_unittests_resources
       shard_timeout = 900
     }
 
