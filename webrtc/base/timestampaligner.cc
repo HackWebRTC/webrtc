@@ -8,14 +8,29 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <limits>
+
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/timestampaligner.h"
+#include "webrtc/base/timeutils.h"
 
 namespace rtc {
 
-TimestampAligner::TimestampAligner() : frames_seen_(0), offset_us_(0) {}
+TimestampAligner::TimestampAligner()
+    : frames_seen_(0),
+      offset_us_(0),
+      clip_bias_us_(0),
+      prev_translated_time_us_(std::numeric_limits<int64_t>::min()) {}
 
 TimestampAligner::~TimestampAligner() {}
+
+int64_t TimestampAligner::TranslateTimestamp(int64_t camera_time_us,
+                                             int64_t system_time_us) {
+  return ClipTimestamp(
+      camera_time_us + UpdateOffset(camera_time_us, system_time_us),
+      system_time_us);
+}
 
 int64_t TimestampAligner::UpdateOffset(int64_t camera_time_us,
                                        int64_t system_time_us) {
@@ -63,18 +78,19 @@ int64_t TimestampAligner::UpdateOffset(int64_t camera_time_us,
   // If the current difference is far from the currently estimated
   // offset, the filter is reset. This could happen, e.g., if the
   // camera clock is reset, or cameras are plugged in and out, or if
-  // the application process is temporarily suspended. The limit of
-  // 300 ms should make this unlikely in normal operation, and at the
-  // same time, converging gradually rather than resetting the filter
-  // should be tolerable for jumps in camera time below this
-  // threshold.
-  static const int64_t kResetLimitUs = 300000;
-  if (std::abs(error_us) > kResetLimitUs) {
+  // the application process is temporarily suspended. Expected to
+  // happen for the very first timestamp (|frames_seen_| = 0). The
+  // threshold of 300 ms should make this unlikely in normal
+  // operation, and at the same time, converging gradually rather than
+  // resetting the filter should be tolerable for jumps in camera time
+  // below this threshold.
+  static const int64_t kResetThresholdUs = 300000;
+  if (std::abs(error_us) > kResetThresholdUs) {
     LOG(LS_INFO) << "Resetting timestamp translation after averaging "
                  << frames_seen_ << " frames. Old offset: " << offset_us_
                  << ", new offset: " << diff_us;
     frames_seen_ = 0;
-    prev_translated_time_us_ = rtc::Optional<int64_t>();
+    clip_bias_us_ = 0;
   }
 
   static const int kWindowSize = 100;
@@ -85,23 +101,34 @@ int64_t TimestampAligner::UpdateOffset(int64_t camera_time_us,
   return offset_us_;
 }
 
-int64_t TimestampAligner::ClipTimestamp(int64_t time_us,
+int64_t TimestampAligner::ClipTimestamp(int64_t filtered_time_us,
                                         int64_t system_time_us) {
-  // Make timestamps monotonic.
-  if (!prev_translated_time_us_) {
-    // Initialize.
-    clip_bias_us_ = 0;
-  } else if (time_us < *prev_translated_time_us_) {
-    time_us = *prev_translated_time_us_;
-  }
-
-  // Clip to make sure we don't produce time stamps in the future.
-  time_us -= clip_bias_us_;
+  const int64_t kMinFrameIntervalUs = rtc::kNumMicrosecsPerMillisec;
+  // Clip to make sure we don't produce timestamps in the future.
+  int64_t time_us = filtered_time_us - clip_bias_us_;
   if (time_us > system_time_us) {
     clip_bias_us_ += time_us - system_time_us;
     time_us = system_time_us;
   }
-  prev_translated_time_us_ = rtc::Optional<int64_t>(time_us);
+  // Make timestamps monotonic, with a minimum inter-frame interval of 1 ms.
+  else if (time_us < prev_translated_time_us_ + kMinFrameIntervalUs) {
+    time_us = prev_translated_time_us_ + kMinFrameIntervalUs;
+    if (time_us > system_time_us) {
+      // In the anomalous case that this function is called with values of
+      // |system_time_us| less than |kMinFrameIntervalUs| apart, we may output
+      // timestamps with with too short inter-frame interval. We may even return
+      // duplicate timestamps in case this function is called several times with
+      // exactly the same |system_time_us|.
+      LOG(LS_WARNING) << "too short translated timestamp interval: "
+                      << "system time (us) = " << system_time_us
+                      << ", interval (us) = "
+                      << system_time_us - prev_translated_time_us_;
+      time_us = system_time_us;
+    }
+  }
+  RTC_DCHECK_GE(time_us, prev_translated_time_us_);
+  RTC_DCHECK_LE(time_us, system_time_us);
+  prev_translated_time_us_ = time_us;
   return time_us;
 }
 

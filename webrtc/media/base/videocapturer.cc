@@ -225,11 +225,10 @@ bool VideoCapturer::AdaptFrame(int width,
                                int* crop_x,
                                int* crop_y,
                                int64_t* translated_camera_time_us) {
-  int64_t offset_us =
-      translated_camera_time_us
-          ? timestamp_aligner_.UpdateOffset(camera_time_us, system_time_us)
-          : 0;
-
+  if (translated_camera_time_us) {
+    *translated_camera_time_us =
+        timestamp_aligner_.TranslateTimestamp(camera_time_us, system_time_us);
+  }
   if (!broadcaster_.frame_wanted()) {
     return false;
   }
@@ -252,10 +251,6 @@ bool VideoCapturer::AdaptFrame(int width,
     *crop_y = 0;
   }
 
-  if (translated_camera_time_us) {
-    *translated_camera_time_us = timestamp_aligner_.ClipTimestamp(
-        camera_time_us + offset_us, system_time_us);
-  }
   return true;
 }
 

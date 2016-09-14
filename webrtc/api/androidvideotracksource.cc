@@ -237,9 +237,8 @@ bool AndroidVideoTrackSource::AdaptFrame(int width,
   RTC_DCHECK(camera_thread_checker_.CalledOnValidThread());
 
   int64_t system_time_us = rtc::TimeMicros();
-
-  int64_t offset_us =
-      timestamp_aligner_.UpdateOffset(camera_time_us, system_time_us);
+  *translated_camera_time_us =
+      timestamp_aligner_.TranslateTimestamp(camera_time_us, system_time_us);
 
   if (!broadcaster_.frame_wanted()) {
     return false;
@@ -254,8 +253,6 @@ bool AndroidVideoTrackSource::AdaptFrame(int width,
   *crop_x = (width - *crop_width) / 2;
   *crop_y = (height - *crop_height) / 2;
 
-  *translated_camera_time_us = timestamp_aligner_.ClipTimestamp(
-      camera_time_us + offset_us, system_time_us);
   return true;
 }
 
