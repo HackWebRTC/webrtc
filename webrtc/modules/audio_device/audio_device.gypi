@@ -89,9 +89,6 @@
             'audio_device_impl.cc',
             'audio_device_impl.h',
           ],
-          'dependencies': [
-            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
-          ],
           'conditions': [
             ['use_dummy_audio_file_devices==1', {
               'defines': [
@@ -271,6 +268,7 @@
             '<(webrtc_root)/test/test.gyp:test_support_main',
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
+            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
           ],
           'sources': [
             'test/audio_device_test_api.cc',
