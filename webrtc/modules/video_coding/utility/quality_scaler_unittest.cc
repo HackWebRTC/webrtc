@@ -43,7 +43,7 @@ class QualityScalerTest : public ::testing::Test {
 
   QualityScalerTest() {
     input_frame_ = I420Buffer::Create(kWidth, kHeight);
-    qs_.Init(kLowQpThreshold, kHighQp, 0, 0, 0, kFramerate);
+    qs_.Init(kLowQpThreshold, kHighQp, 0, kWidth, kHeight, kFramerate);
     qs_.OnEncodeFrame(input_frame_->width(), input_frame_->height());
   }
 

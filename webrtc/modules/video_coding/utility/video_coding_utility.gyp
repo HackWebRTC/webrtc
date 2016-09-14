@@ -25,6 +25,7 @@
         'h264_bitstream_parser.h',
         'ivf_file_writer.cc',
         'ivf_file_writer.h',
+        'moving_average.cc',
         'moving_average.h',
         'qp_parser.cc',
         'qp_parser.h',

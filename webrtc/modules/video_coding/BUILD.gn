@@ -103,6 +103,7 @@ rtc_source_set("video_coding_utility") {
     "utility/h264_bitstream_parser.h",
     "utility/ivf_file_writer.cc",
     "utility/ivf_file_writer.h",
+    "utility/moving_average.cc",
     "utility/moving_average.h",
     "utility/qp_parser.cc",
     "utility/qp_parser.h",

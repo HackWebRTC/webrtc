@@ -389,6 +389,7 @@
             'video_coding/utility/frame_dropper_unittest.cc',
             'video_coding/utility/h264_bitstream_parser_unittest.cc',
             'video_coding/utility/ivf_file_writer_unittest.cc',
+            'video_coding/utility/moving_average_unittest.cc',
             'video_coding/utility/quality_scaler_unittest.cc',
             'video_coding/utility/simulcast_rate_allocator_unittest.cc',
             'video_coding/video_coding_robustness_unittest.cc',
