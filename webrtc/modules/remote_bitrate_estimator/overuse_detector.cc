@@ -36,6 +36,7 @@ const size_t kDisabledPrefixLength = sizeof(kDisabledPrefix) - 1;
 
 const double kMaxAdaptOffsetMs = 15.0;
 const double kOverUsingTimeThreshold = 10;
+const int kMinNumDeltas = 60;
 
 bool AdaptiveThresholdExperimentIsDisabled() {
   std::string experiment_string =
@@ -92,9 +93,9 @@ BandwidthUsage OveruseDetector::Detect(double offset,
   }
   const double prev_offset = prev_offset_;
   prev_offset_ = offset;
-  const double T = std::min(num_of_deltas, 60) * offset;
-  BWE_TEST_LOGGING_PLOT(1, "offset", now_ms, T);
-  BWE_TEST_LOGGING_PLOT(1, "threshold", now_ms, threshold_);
+  const double T = std::min(num_of_deltas, kMinNumDeltas) * offset;
+  BWE_TEST_LOGGING_PLOT(1, "offset[ms]", now_ms, offset);
+  BWE_TEST_LOGGING_PLOT(1, "gamma[ms]", now_ms, threshold_ / kMinNumDeltas);
   if (T > threshold_) {
     if (time_over_using_ == -1) {
       // Initialize the timer. Assume that we've been

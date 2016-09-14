@@ -10,10 +10,6 @@
   'includes': [
     '../../build/common.gypi',
   ],
-  'variables': {
-    # Set this to true to enable BWE test logging.
-    'enable_bwe_test_logging%': 0,
-  },
   'targets': [
     {
       'target_name': 'remote_bitrate_estimator',
@@ -47,13 +43,17 @@
         'test/bwe_test_logging.h',
       ], # source
       'conditions': [
-        ['enable_bwe_test_logging==1', {
-          'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1' ],
-          'sources': [
-            'test/bwe_test_logging.cc'
+        ['include_tests==0', {
+          'conditions': [
+            ['enable_bwe_test_logging==1', {
+              'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1' ],
+              'sources': [
+                'test/bwe_test_logging.cc'
+              ],
+            }, {
+              'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0' ],
+            }],
           ],
-        }, {
-          'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0' ],
         }],
       ],
     },
@@ -71,6 +71,7 @@
             '<(DEPTH)/testing/gmock.gyp:gmock',
           ],
           'sources': [
+            'bwe_simulations.cc',
             'test/bwe.cc',
             'test/bwe.h',
             'test/bwe_test.cc',

@@ -313,7 +313,8 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
                                       payload_size, &ts_delta, &t_delta,
                                       &size_delta)) {
       double ts_delta_ms = (1000.0 * ts_delta) / (1 << kInterArrivalShift);
-      estimator_->Update(t_delta, ts_delta_ms, size_delta, detector_.State());
+      estimator_->Update(t_delta, ts_delta_ms, size_delta, detector_.State(),
+                         arrival_time_ms);
       detector_.Detect(estimator_->offset(), ts_delta_ms,
                        estimator_->num_of_deltas(), arrival_time_ms);
     }

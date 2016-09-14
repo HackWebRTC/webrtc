@@ -20,6 +20,7 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/call.h"
 #include "webrtc/call/rtc_event_log.h"
+#include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/playout_delay_oracle.h"
@@ -904,6 +905,20 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
         kTimestampTicksPerMs * (now_ms - packet->capture_time_ms()));
   }
   packet->SetExtension<AbsoluteSendTime>(now_ms);
+
+  if (video_) {
+    BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoTotBitrate[kbps]", now_ms,
+                                    ActualSendBitrateKbit(), packet->Ssrc());
+    BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoFecBitrate[Kbps]", now_ms,
+                                    FecOverheadRate() / 1000, packet->Ssrc());
+    BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoNackBitrate[Kbps]", now_ms,
+                                    NackOverheadRate() / 1000, packet->Ssrc());
+  } else {
+    BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "AudioTotBitrate[kbps]", now_ms,
+                                    ActualSendBitrateKbit(), packet->Ssrc());
+    BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "AudioNackBitrate[Kbps]", now_ms,
+                                    NackOverheadRate() / 1000, packet->Ssrc());
+  }
 
   if (paced_sender_) {
     uint16_t seq_no = packet->SequenceNumber();

@@ -100,7 +100,7 @@ class OveruseDetectorTest : public ::testing::Test {
             &timestamp_delta, &time_delta, &size_delta)) {
       double timestamp_delta_ms = timestamp_delta / 90.0;
       overuse_estimator_->Update(time_delta, timestamp_delta_ms, size_delta,
-                                 overuse_detector_->State());
+                                 overuse_detector_->State(), receive_time_ms);
       overuse_detector_->Detect(
           overuse_estimator_->offset(), timestamp_delta_ms,
           overuse_estimator_->num_of_deltas(), receive_time_ms);

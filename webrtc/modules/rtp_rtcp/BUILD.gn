@@ -154,6 +154,12 @@ rtc_source_set("rtp_rtcp") {
     "source/vp8_partition_aggregator.h",
   ]
 
+  if (rtc_enable_bwe_test_logging) {
+    defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1" ]
+  } else {
+    defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0" ]
+  }
+
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.

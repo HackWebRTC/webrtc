@@ -163,7 +163,14 @@
         # Mocks
         'mocks/mock_rtp_rtcp.h',
         'source/mock/mock_rtp_payload_strategy.h',
-      ], # source
+       ], # source
+        'conditions': [
+            ['enable_bwe_test_logging==1', {
+              'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1' ],
+            }, {
+              'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0' ],
+            }],
+        ],
       # TODO(jschuh): Bug 1348: fix size_t to int truncations.
       'msvs_disabled_warnings': [ 4267, ],
     },

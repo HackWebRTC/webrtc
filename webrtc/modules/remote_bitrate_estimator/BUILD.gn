@@ -8,11 +8,6 @@
 
 import("../../build/webrtc.gni")
 
-declare_args() {
-  # Set this to true to enable BWE test logging.
-  rtc_enable_bwe_test_logging = false
-}
-
 rtc_source_set("remote_bitrate_estimator") {
   sources = [
     "aimd_rate_control.cc",
@@ -39,11 +34,13 @@ rtc_source_set("remote_bitrate_estimator") {
     "transport_feedback_adapter.h",
   ]
 
-  if (rtc_enable_bwe_test_logging) {
-    defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1" ]
-    sources += [ "test/bwe_test_logging.cc" ]
-  } else {
-    defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0" ]
+  if (!rtc_include_tests) {
+    if (rtc_enable_bwe_test_logging) {
+      defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1" ]
+      sources += [ "test/bwe_test_logging.cc" ]
+    } else {
+      defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0" ]
+    }
   }
 
   if (is_clang) {
@@ -62,6 +59,7 @@ if (rtc_include_tests) {
   rtc_source_set("bwe_simulator") {
     testonly = true
     sources = [
+      "bwe_simulations.cc",
       "test/bwe.cc",
       "test/bwe.h",
       "test/bwe_test.cc",

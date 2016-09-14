@@ -45,6 +45,9 @@ declare_args() {
   # should be generated.
   apm_debug_dump = false
 
+  # Set this to true to enable BWE test logging.
+  rtc_enable_bwe_test_logging = false
+
   # Disable these to not build components which can be externally provided.
   rtc_build_expat = true
   rtc_build_json = true

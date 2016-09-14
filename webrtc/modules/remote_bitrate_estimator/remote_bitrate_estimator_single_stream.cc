@@ -123,7 +123,7 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(
           &timestamp_delta, &time_delta, &size_delta)) {
     double timestamp_delta_ms = timestamp_delta * kTimestampToMs;
     estimator->estimator.Update(time_delta, timestamp_delta_ms, size_delta,
-                                estimator->detector.State());
+                                estimator->detector.State(), now_ms);
     estimator->detector.Detect(estimator->estimator.offset(),
                                timestamp_delta_ms,
                                estimator->estimator.num_of_deltas(), now_ms);
