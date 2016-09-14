@@ -108,6 +108,18 @@ class TimestampWrapAroundHandler {
 // is still 32 bits on many systems.
 int64_t TmToSeconds(const std::tm& tm);
 
+// Return the number of microseconds since January 1, 1970, UTC.
+// Useful mainly when producing logs to be correlated with other
+// devices, and when the devices in question all have properly
+// synchronized clocks.
+//
+// Note that this function obeys the system's idea about what the time
+// is. It is not guaranteed to be monotonic; it will jump in case the
+// system time is changed, e.g., by some other process calling
+// settimeofday. Always use rtc::TimeMicros(), not this function, for
+// measuring time intervals and timeouts.
+int64_t TimeUTCMicros();
+
 }  // namespace rtc
 
 #endif  // WEBRTC_BASE_TIMEUTILS_H_

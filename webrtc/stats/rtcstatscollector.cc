@@ -16,7 +16,6 @@
 
 #include "webrtc/api/peerconnection.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/timing.h"
 
 namespace webrtc {
 
@@ -63,8 +62,7 @@ void RTCStatsCollector::GetStatsReport(
     // "Now" using a system clock, relative to the UNIX epoch (Jan 1, 1970,
     // UTC), in microseconds. The system clock could be modified and is not
     // necessarily monotonically increasing.
-    int64_t timestamp_us = static_cast<int64_t>(
-        rtc::Timing::WallTimeNow() * rtc::kNumMicrosecsPerSec);
+    int64_t timestamp_us = rtc::TimeUTCMicros();
 
     num_pending_partial_reports_ = 3;
     partial_report_timestamp_us_ = cache_now_us;

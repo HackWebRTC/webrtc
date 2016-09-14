@@ -27,7 +27,6 @@
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/base/timedelta.h"
 #include "webrtc/base/timeutils.h"
-#include "webrtc/base/timing.h"
 #include "webrtc/media/base/fakemediaengine.h"
 
 using testing::Return;
@@ -314,11 +313,9 @@ TEST_F(RTCStatsCollectorTest, MultipleCallbacksWithInvalidatedCacheInBetween) {
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
-  int64_t before = static_cast<int64_t>(
-      rtc::Timing::WallTimeNow() * rtc::kNumMicrosecsPerSec);
+  int64_t before = rtc::TimeUTCMicros();
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
-  int64_t after = static_cast<int64_t>(
-      rtc::Timing::WallTimeNow() * rtc::kNumMicrosecsPerSec);
+  int64_t after = rtc::TimeUTCMicros();
   EXPECT_EQ(report->GetStatsOfType<RTCPeerConnectionStats>().size(),
             static_cast<size_t>(1)) << "Expecting 1 RTCPeerConnectionStats.";
   const RTCStats* stats = report->Get("RTCPeerConnection");

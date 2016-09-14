@@ -14,7 +14,6 @@
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/ratelimiter.h"
-#include "webrtc/base/timing.h"
 #include "webrtc/media/base/codec.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/rtputils.h"
@@ -37,7 +36,6 @@ static const size_t kMaxSrtpHmacOverhead = 16;
 RtpDataEngine::RtpDataEngine() {
   data_codecs_.push_back(
       DataCodec(kGoogleRtpDataCodecId, kGoogleRtpDataCodecName));
-  SetTiming(new rtc::Timing());
 }
 
 DataMediaChannel* RtpDataEngine::CreateChannel(
@@ -45,7 +43,7 @@ DataMediaChannel* RtpDataEngine::CreateChannel(
   if (data_channel_type != DCT_RTP) {
     return NULL;
   }
-  return new RtpDataMediaChannel(timing_.get());
+  return new RtpDataMediaChannel();
 }
 
 bool FindCodecByName(const std::vector<DataCodec>& codecs,
@@ -60,18 +58,13 @@ bool FindCodecByName(const std::vector<DataCodec>& codecs,
   return false;
 }
 
-RtpDataMediaChannel::RtpDataMediaChannel(rtc::Timing* timing) {
-  Construct(timing);
-}
-
 RtpDataMediaChannel::RtpDataMediaChannel() {
-  Construct(NULL);
+  Construct();
 }
 
-void RtpDataMediaChannel::Construct(rtc::Timing* timing) {
+void RtpDataMediaChannel::Construct() {
   sending_ = false;
   receiving_ = false;
-  timing_ = timing;
   send_limiter_.reset(new rtc::RateLimiter(kDataMaxBandwidth / 8, 1.0));
 }
 
@@ -313,7 +306,8 @@ bool RtpDataMediaChannel::SendData(
     return false;
   }
 
-  double now = timing_->TimerNow();
+  double now =
+      rtc::TimeMicros() / static_cast<double>(rtc::kNumMicrosecsPerSec);
 
   if (!send_limiter_->CanUse(packet_len, now)) {
     LOG(LS_VERBOSE) << "Dropped data packet of len=" << packet_len

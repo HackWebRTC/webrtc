@@ -15,27 +15,10 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/ssladapter.h"
-#include "webrtc/base/timing.h"
 #include "webrtc/media/base/fakenetworkinterface.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/rtpdataengine.h"
 #include "webrtc/media/base/rtputils.h"
-
-class FakeTiming : public rtc::Timing {
- public:
-  FakeTiming() : now_(0.0) {}
-
-  virtual double TimerNow() {
-    return now_;
-  }
-
-  void set_now(double now) {
-    now_ = now;
-  }
-
- private:
-  double now_;
-};
 
 class FakeDataReceiver : public sigslot::has_slots<> {
  public:
@@ -69,18 +52,16 @@ class RtpDataMediaChannelTest : public testing::Test {
   virtual void SetUp() {
     // Seed needed for each test to satisfy expectations.
     iface_.reset(new cricket::FakeNetworkInterface());
-    timing_ = new FakeTiming();
-    dme_.reset(CreateEngine(timing_));
+    dme_.reset(CreateEngine());
     receiver_.reset(new FakeDataReceiver());
   }
 
   void SetNow(double now) {
-    timing_->set_now(now);
+    clock_.SetTimeNanos(now * rtc::kNumNanosecsPerSec);
   }
 
-  cricket::RtpDataEngine* CreateEngine(FakeTiming* timing) {
+  cricket::RtpDataEngine* CreateEngine() {
     cricket::RtpDataEngine* dme = new cricket::RtpDataEngine();
-    dme->SetTiming(timing);
     return dme;
   }
 
@@ -143,8 +124,7 @@ class RtpDataMediaChannelTest : public testing::Test {
 
  private:
   std::unique_ptr<cricket::RtpDataEngine> dme_;
-  // Timing passed into dme_.  Owned by dme_;
-  FakeTiming* timing_;
+  rtc::ScopedFakeClock clock_;
   std::unique_ptr<cricket::FakeNetworkInterface> iface_;
   std::unique_ptr<FakeDataReceiver> receiver_;
 };
@@ -288,69 +268,6 @@ TEST_F(RtpDataMediaChannelTest, SendData) {
   EXPECT_EQ(static_cast<uint16_t>(header0.seq_num + 1),
             static_cast<uint16_t>(header1.seq_num));
   EXPECT_EQ(header0.timestamp + 180000, header1.timestamp);
-}
-
-TEST_F(RtpDataMediaChannelTest, SendDataMultipleClocks) {
-  // Timings owned by RtpDataEngines.
-  FakeTiming* timing1 = new FakeTiming();
-  std::unique_ptr<cricket::RtpDataEngine> dme1(CreateEngine(timing1));
-  std::unique_ptr<cricket::RtpDataMediaChannel> dmc1(
-      CreateChannel(dme1.get()));
-  FakeTiming* timing2 = new FakeTiming();
-  std::unique_ptr<cricket::RtpDataEngine> dme2(CreateEngine(timing2));
-  std::unique_ptr<cricket::RtpDataMediaChannel> dmc2(
-      CreateChannel(dme2.get()));
-
-  ASSERT_TRUE(dmc1->SetSend(true));
-  ASSERT_TRUE(dmc2->SetSend(true));
-
-  cricket::StreamParams stream1;
-  stream1.add_ssrc(41);
-  ASSERT_TRUE(dmc1->AddSendStream(stream1));
-  cricket::StreamParams stream2;
-  stream2.add_ssrc(42);
-  ASSERT_TRUE(dmc2->AddSendStream(stream2));
-
-  cricket::DataCodec codec;
-  codec.id = 103;
-  codec.name = cricket::kGoogleRtpDataCodecName;
-  cricket::DataSendParameters parameters;
-  parameters.codecs.push_back(codec);
-  ASSERT_TRUE(dmc1->SetSendParameters(parameters));
-  ASSERT_TRUE(dmc2->SetSendParameters(parameters));
-
-  cricket::SendDataParams params1;
-  params1.ssrc = 41;
-  cricket::SendDataParams params2;
-  params2.ssrc = 42;
-
-  unsigned char data[] = "foo";
-  rtc::CopyOnWriteBuffer payload(data, 3);
-  cricket::SendDataResult result;
-
-  EXPECT_TRUE(dmc1->SendData(params1, payload, &result));
-  EXPECT_TRUE(dmc2->SendData(params2, payload, &result));
-
-  // Should bump timestamp by 90000 because the clock rate is 90khz.
-  timing1->set_now(1);
-  // Should bump timestamp by 180000 because the clock rate is 90khz.
-  timing2->set_now(2);
-
-  EXPECT_TRUE(dmc1->SendData(params1, payload, &result));
-  EXPECT_TRUE(dmc2->SendData(params2, payload, &result));
-
-  ASSERT_TRUE(HasSentData(3));
-  cricket::RtpHeader header1a = GetSentDataHeader(0);
-  cricket::RtpHeader header2a = GetSentDataHeader(1);
-  cricket::RtpHeader header1b = GetSentDataHeader(2);
-  cricket::RtpHeader header2b = GetSentDataHeader(3);
-
-  EXPECT_EQ(static_cast<uint16_t>(header1a.seq_num + 1),
-            static_cast<uint16_t>(header1b.seq_num));
-  EXPECT_EQ(header1a.timestamp + 90000, header1b.timestamp);
-  EXPECT_EQ(static_cast<uint16_t>(header2a.seq_num + 1),
-            static_cast<uint16_t>(header2b.seq_num));
-  EXPECT_EQ(header2a.timestamp + 180000, header2b.timestamp);
 }
 
 TEST_F(RtpDataMediaChannelTest, SendDataRate) {

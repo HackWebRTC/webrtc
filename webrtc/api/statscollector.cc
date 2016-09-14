@@ -17,7 +17,6 @@
 #include "webrtc/api/peerconnection.h"
 #include "webrtc/base/base64.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/timing.h"
 #include "webrtc/pc/channel.h"
 
 namespace webrtc {
@@ -375,8 +374,10 @@ StatsCollector::~StatsCollector() {
   RTC_DCHECK(pc_->session()->signaling_thread()->IsCurrent());
 }
 
+// Wallclock time in ms.
 double StatsCollector::GetTimeNow() {
-  return rtc::Timing::WallTimeNow() * rtc::kNumMillisecsPerSec;
+  return rtc::TimeUTCMicros() /
+         static_cast<double>(rtc::kNumMicrosecsPerMillisec);
 }
 
 // Adds a MediaStream with tracks that can be used as a |selector| in a call

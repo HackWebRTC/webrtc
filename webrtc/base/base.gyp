@@ -363,8 +363,6 @@
         'taskrunner.h',
         'thread.cc',
         'thread.h',
-        'timing.cc',
-        'timing.h',
         'urlencode.cc',
         'urlencode.h',
         'worker.cc',
