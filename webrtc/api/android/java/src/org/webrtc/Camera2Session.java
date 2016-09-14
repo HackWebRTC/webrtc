@@ -316,13 +316,7 @@ public class Camera2Session implements CameraSession {
     checkIsOnCameraThread();
 
     Logging.d(TAG, "Opening camera " + cameraId);
-    int cameraIndex = -1;
-    try {
-      cameraIndex = Integer.parseInt(cameraId);
-    } catch (NumberFormatException e) {
-      Logging.d(TAG, "External camera with non-int identifier: " + cameraId);
-    }
-    eventsHandler.onCameraOpening(cameraIndex);
+    eventsHandler.onCameraOpening(cameraId);
 
     try {
       cameraManager.openCamera(cameraId, new CameraStateCallback(), cameraThreadHandler);

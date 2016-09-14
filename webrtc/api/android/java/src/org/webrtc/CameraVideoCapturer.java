@@ -29,7 +29,7 @@ public interface CameraVideoCapturer extends VideoCapturer {
     void onCameraFreezed(String errorDescription);
 
     // Callback invoked when camera is opening.
-    void onCameraOpening(int cameraId);
+    void onCameraOpening(String cameraName);
 
     // Callback invoked when first camera frame is available after camera is started.
     void onFirstFrameAvailable();

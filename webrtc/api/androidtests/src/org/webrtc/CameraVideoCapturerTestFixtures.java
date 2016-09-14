@@ -209,7 +209,7 @@ class CameraVideoCapturerTestFixtures {
     }
 
     @Override
-    public void onCameraOpening(int cameraId) {
+    public void onCameraOpening(String cameraName) {
       onCameraOpeningCalled = true;
       synchronized (cameraClosedLock) {
         cameraClosed = false;

@@ -323,7 +323,7 @@ public class VideoCapturerAndroid implements
         synchronized (cameraIdLock) {
           Logging.d(TAG, "Opening camera " + id);
           if (eventsHandler != null) {
-            eventsHandler.onCameraOpening(id);
+            eventsHandler.onCameraOpening(Camera1Enumerator.getDeviceName(id));
           }
           camera = android.hardware.Camera.open(id);
           info = new android.hardware.Camera.CameraInfo();

@@ -121,7 +121,7 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
         @Override
         public void onCameraFreezed(String errorDescription) {}
         @Override
-        public void onCameraOpening(int cameraId) {}
+        public void onCameraOpening(String cameraName) {}
         @Override
         public void onFirstFrameAvailable() {}
         @Override
