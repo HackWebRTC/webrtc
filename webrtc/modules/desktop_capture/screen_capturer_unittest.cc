@@ -48,19 +48,6 @@ ACTION_P(SaveUniquePtrArg, dest) {
   *dest = std::move(*arg1);
 }
 
-// Expects |capturer| to successfully capture a frame, and returns it.
-std::unique_ptr<DesktopFrame> CaptureFrame(
-    ScreenCapturer* capturer,
-    MockScreenCapturerCallback* callback) {
-  std::unique_ptr<DesktopFrame> frame;
-  EXPECT_CALL(*callback,
-              OnCaptureResultPtr(DesktopCapturer::Result::SUCCESS, _))
-      .WillOnce(SaveUniquePtrArg(&frame));
-  capturer->Capture(DesktopRegion());
-  EXPECT_TRUE(frame);
-  return frame;
-}
-
 // Returns true if color in |rect| of |frame| is |color|.
 bool ArePixelsColoredBy(const DesktopFrame& frame,
                         DesktopRect rect,
@@ -120,6 +107,9 @@ class ScreenCapturerTest : public testing::Test {
       capturer->Start(&callback_);
     }
 
+    // Draw a set of |kRectSize| by |kRectSize| rectangles at (|i|, |i|). One of
+    // (controlled by |c|) its primary colors is |i|, and the other two are
+    // 0xff. So we won't draw a white rectangle.
     for (int c = 0; c < 3; c++) {
       for (int i = 0; i < kTestArea - kRectSize; i += 16) {
         DesktopRect rect = DesktopRect::MakeXYWH(i, i, kRectSize, kRectSize);
@@ -129,39 +119,7 @@ class ScreenCapturerTest : public testing::Test {
                         (c == 2 ? (i & 0xff) : 0x7f));
         drawer->Clear();
         drawer->DrawRectangle(rect, color);
-
-        const int wait_first_capture_round = 20;
-        for (int j = 0; j < wait_first_capture_round; j++) {
-          drawer->WaitForPendingDraws();
-          std::unique_ptr<DesktopFrame> frame =
-              CaptureFrame(*capturers.begin(), &callback_);
-          if (!frame) {
-            return;
-          }
-
-          if (ArePixelsColoredBy(*frame, rect, color)) {
-            // The first capturer successfully captured the frame we expected.
-            // So the others should also be able to capture it.
-            break;
-          } else {
-            ASSERT_LT(j, wait_first_capture_round);
-          }
-        }
-
-        for (ScreenCapturer* capturer : capturers) {
-          if (capturer == *capturers.begin()) {
-            // TODO(zijiehe): ScreenCapturerX11 and ScreenCapturerWinGdi cannot
-            // capture a correct frame again if screen does not update.
-            continue;
-          }
-          std::unique_ptr<DesktopFrame> frame =
-              CaptureFrame(capturer, &callback_);
-          if (!frame) {
-            return;
-          }
-
-          ASSERT_TRUE(ArePixelsColoredBy(*frame, rect, color));
-        }
+        TestCaptureOneFrame(capturers, drawer.get(), rect, color);
       }
     }
   }
@@ -171,7 +129,7 @@ class ScreenCapturerTest : public testing::Test {
   }
 
 #if defined(WEBRTC_WIN)
-  bool SetDirectxCapturerMode() {
+  bool CreateDirectxCapturer() {
     if (!ScreenCapturerWinDirectx::IsSupported()) {
       LOG(LS_WARNING) << "Directx capturer is not supported";
       return false;
@@ -182,10 +140,68 @@ class ScreenCapturerTest : public testing::Test {
     capturer_.reset(ScreenCapturer::Create(options));
     return true;
   }
+
+  void CreateMagnifierCapturer() {
+    DesktopCaptureOptions options(DesktopCaptureOptions::CreateDefault());
+    options.set_allow_use_magnification_api(true);
+    capturer_.reset(ScreenCapturer::Create(options));
+  }
 #endif  // defined(WEBRTC_WIN)
 
   std::unique_ptr<ScreenCapturer> capturer_;
   MockScreenCapturerCallback callback_;
+
+ private:
+  // Repeats capturing the frame by using |capturers| one-by-one for 600 times,
+  // typically 30 seconds, until they succeeded captured a |color| rectangle at
+  // |rect|. This function uses |drawer|->WaitForPendingDraws() between two
+  // attempts to wait for the screen to update.
+  void TestCaptureOneFrame(std::vector<ScreenCapturer*> capturers,
+                           ScreenDrawer* drawer,
+                           DesktopRect rect,
+                           RgbaColor color) {
+    size_t succeeded_capturers = 0;
+    const int wait_capture_round = 600;
+    for (int i = 0; i < wait_capture_round; i++) {
+      drawer->WaitForPendingDraws();
+      for (size_t j = 0; j < capturers.size(); j++) {
+        if (capturers[j] == nullptr) {
+          // ScreenCapturer should return an empty updated_region() if no
+          // update detected. So we won't test it again if it has captured
+          // the rectangle we drew.
+          continue;
+        }
+        std::unique_ptr<DesktopFrame> frame = CaptureFrame(capturers[j]);
+        if (!frame) {
+          // CaptureFrame() has triggered an assertion failure already, we
+          // only need to return here.
+          return;
+        }
+
+        if (ArePixelsColoredBy(*frame, rect, color)) {
+          capturers[j] = nullptr;
+          succeeded_capturers++;
+        }
+      }
+
+      if (succeeded_capturers == capturers.size()) {
+        break;
+      }
+    }
+
+    ASSERT_EQ(succeeded_capturers, capturers.size());
+  }
+
+  // Expects |capturer| to successfully capture a frame, and returns it.
+  std::unique_ptr<DesktopFrame> CaptureFrame(ScreenCapturer* capturer) {
+    std::unique_ptr<DesktopFrame> frame;
+    EXPECT_CALL(callback_,
+                OnCaptureResultPtr(DesktopCapturer::Result::SUCCESS, _))
+        .WillOnce(SaveUniquePtrArg(&frame));
+    capturer->Capture(DesktopRegion());
+    EXPECT_TRUE(frame);
+    return frame;
+  }
 };
 
 class FakeSharedMemory : public SharedMemory {
@@ -259,6 +275,13 @@ TEST_F(ScreenCapturerTest, CaptureUpdatedRegion) {
   TestCaptureUpdatedRegion();
 }
 
+// TODO(zijiehe): Find out the reason of failure of this test on trybot.
+TEST_F(ScreenCapturerTest, DISABLED_TwoCapturers) {
+  std::unique_ptr<ScreenCapturer> capturer2 = std::move(capturer_);
+  SetUp();
+  TestCaptureUpdatedRegion({capturer_.get(), capturer2.get()});
+}
+
 #if defined(WEBRTC_WIN)
 
 TEST_F(ScreenCapturerTest, UseSharedBuffers) {
@@ -278,9 +301,7 @@ TEST_F(ScreenCapturerTest, UseSharedBuffers) {
 }
 
 TEST_F(ScreenCapturerTest, UseMagnifier) {
-  DesktopCaptureOptions options(DesktopCaptureOptions::CreateDefault());
-  options.set_allow_use_magnification_api(true);
-  capturer_.reset(ScreenCapturer::Create(options));
+  CreateMagnifierCapturer();
 
   std::unique_ptr<DesktopFrame> frame;
   EXPECT_CALL(callback_,
@@ -293,7 +314,7 @@ TEST_F(ScreenCapturerTest, UseMagnifier) {
 }
 
 TEST_F(ScreenCapturerTest, UseDirectxCapturer) {
-  if (!SetDirectxCapturerMode()) {
+  if (!CreateDirectxCapturer()) {
     return;
   }
 
@@ -308,7 +329,7 @@ TEST_F(ScreenCapturerTest, UseDirectxCapturer) {
 }
 
 TEST_F(ScreenCapturerTest, UseDirectxCapturerWithSharedBuffers) {
-  if (!SetDirectxCapturerMode()) {
+  if (!CreateDirectxCapturer()) {
     return;
   }
 
@@ -327,7 +348,7 @@ TEST_F(ScreenCapturerTest, UseDirectxCapturerWithSharedBuffers) {
 }
 
 TEST_F(ScreenCapturerTest, CaptureUpdatedRegionWithDirectxCapturer) {
-  if (!SetDirectxCapturerMode()) {
+  if (!CreateDirectxCapturer()) {
     return;
   }
 
@@ -335,12 +356,19 @@ TEST_F(ScreenCapturerTest, CaptureUpdatedRegionWithDirectxCapturer) {
 }
 
 TEST_F(ScreenCapturerTest, TwoDirectxCapturers) {
-  if (!SetDirectxCapturerMode()) {
+  if (!CreateDirectxCapturer()) {
     return;
   }
 
-  std::unique_ptr<ScreenCapturer> capturer2(capturer_.release());
-  RTC_CHECK(SetDirectxCapturerMode());
+  std::unique_ptr<ScreenCapturer> capturer2 = std::move(capturer_);
+  RTC_CHECK(CreateDirectxCapturer());
+  TestCaptureUpdatedRegion({capturer_.get(), capturer2.get()});
+}
+
+TEST_F(ScreenCapturerTest, TwoMagnifierCapturers) {
+  CreateMagnifierCapturer();
+  std::unique_ptr<ScreenCapturer> capturer2 = std::move(capturer_);
+  CreateMagnifierCapturer();
   TestCaptureUpdatedRegion({capturer_.get(), capturer2.get()});
 }
 

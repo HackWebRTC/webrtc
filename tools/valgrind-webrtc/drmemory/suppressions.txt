@@ -19,6 +19,7 @@ system call NtUserGetThreadDesktop parameter value #1
 *!webrtc::ScreenCapturerWinGdi::ScreenCapturerWinGdi
 *!webrtc::ScreenCapturer::Create
 *!webrtc::ScreenCapturerTest::SetUp
+...
 *!testing::internal::HandleSehExceptionsInMethodIfSupported<>
 
 UNINITIALIZED READ
@@ -28,7 +29,8 @@ system call NtUserGetThreadDesktop parameter value #1
 *!webrtc::ScopedThreadDesktop::ScopedThreadDesktop
 *!webrtc::ScreenCapturerWinGdi::ScreenCapturerWinGdi
 *!webrtc::ScreenCapturer::Create
-*!webrtc::ScreenCapturerTest_UseMagnifier_Test::TestBody
+*!webrtc::ScreenCapturerTest::CreateMagnifierCapturer
+...
 *!testing::internal::HandleSehExceptionsInMethodIfSupported<>
 
 UNINITIALIZED READ
@@ -38,7 +40,8 @@ system call NtUserGetThreadDesktop parameter value #1
 *!webrtc::ScopedThreadDesktop::ScopedThreadDesktop
 *!webrtc::ScreenCapturerWinMagnifier::ScreenCapturerWinMagnifier
 *!webrtc::ScreenCapturer::Create
-*!webrtc::ScreenCapturerTest_UseMagnifier_Test::TestBody
+*!webrtc::ScreenCapturerTest::CreateMagnifierCapturer
+...
 *!testing::internal::HandleSehExceptionsInMethodIfSupported<>
 
 UNINITIALIZED READ
