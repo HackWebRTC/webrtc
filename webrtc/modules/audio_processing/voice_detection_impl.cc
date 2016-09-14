@@ -103,7 +103,7 @@ int VoiceDetectionImpl::set_stream_has_voice(bool has_voice) {
 bool VoiceDetectionImpl::stream_has_voice() const {
   rtc::CritScope cs(crit_);
   // TODO(ajm): enable this assertion?
-  //assert(using_external_vad_ || is_component_enabled());
+  //RTC_DCHECK(using_external_vad_ || is_component_enabled());
   return stream_has_voice_;
 }
 

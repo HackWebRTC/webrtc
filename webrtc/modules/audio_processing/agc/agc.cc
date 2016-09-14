@@ -39,7 +39,7 @@ Agc::Agc()
 Agc::~Agc() {}
 
 float Agc::AnalyzePreproc(const int16_t* audio, size_t length) {
-  assert(length > 0);
+  RTC_DCHECK_GT(length, 0u);
   size_t num_clipped = 0;
   for (size_t i = 0; i < length; ++i) {
     if (audio[i] == 32767 || audio[i] == -32768)
@@ -62,7 +62,7 @@ int Agc::Process(const int16_t* audio, size_t length, int sample_rate_hz) {
 
 bool Agc::GetRmsErrorDb(int* error) {
   if (!error) {
-    assert(false);
+    RTC_NOTREACHED();
     return false;
   }
 

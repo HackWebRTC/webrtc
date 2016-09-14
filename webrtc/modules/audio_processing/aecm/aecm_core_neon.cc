@@ -11,8 +11,8 @@
 #include "webrtc/modules/audio_processing/aecm/aecm_core.h"
 
 #include <arm_neon.h>
-#include <assert.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_audio/signal_processing/include/real_fft.h"
 
 // TODO(kma): Re-write the corresponding assembly file, the offset
@@ -104,9 +104,9 @@ void WebRtcAecm_CalcLinearEnergiesNeon(AecmCore* aecm,
 void WebRtcAecm_StoreAdaptiveChannelNeon(AecmCore* aecm,
                                          const uint16_t* far_spectrum,
                                          int32_t* echo_est) {
-  assert((uintptr_t)echo_est % 32 == 0);
-  assert((uintptr_t)(aecm->channelStored) % 16 == 0);
-  assert((uintptr_t)(aecm->channelAdapt16) % 16 == 0);
+  RTC_DCHECK_EQ(0u, (uintptr_t)echo_est % 32);
+  RTC_DCHECK_EQ(0u, (uintptr_t)aecm->channelStored % 16);
+  RTC_DCHECK_EQ(0u, (uintptr_t)aecm->channelAdapt16 % 16);
 
   // This is C code of following optimized code.
   // During startup we store the channel every block.
@@ -161,9 +161,9 @@ void WebRtcAecm_StoreAdaptiveChannelNeon(AecmCore* aecm,
 }
 
 void WebRtcAecm_ResetAdaptiveChannelNeon(AecmCore* aecm) {
-  assert((uintptr_t)(aecm->channelStored) % 16 == 0);
-  assert((uintptr_t)(aecm->channelAdapt16) % 16 == 0);
-  assert((uintptr_t)(aecm->channelAdapt32) % 32 == 0);
+  RTC_DCHECK_EQ(0u, (uintptr_t)aecm->channelStored % 16);
+  RTC_DCHECK_EQ(0u, (uintptr_t)aecm->channelAdapt16 % 16);
+  RTC_DCHECK_EQ(0u, (uintptr_t)aecm->channelAdapt32 % 32);
 
   // The C code of following optimized code.
   // for (i = 0; i < PART_LEN1; i++) {

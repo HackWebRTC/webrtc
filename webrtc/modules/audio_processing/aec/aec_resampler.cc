@@ -14,11 +14,11 @@
 
 #include "webrtc/modules/audio_processing/aec/aec_resampler.h"
 
-#include <assert.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
 
 namespace webrtc {
@@ -74,11 +74,11 @@ void WebRtcAec_ResampleLinear(void* resampInst,
   float be, tnew;
   size_t tn, mm;
 
-  assert(size <= 2 * FRAME_LEN);
-  assert(resampInst != NULL);
-  assert(inspeech != NULL);
-  assert(outspeech != NULL);
-  assert(size_out != NULL);
+  RTC_DCHECK_LE(size, 2u * FRAME_LEN);
+  RTC_DCHECK(resampInst);
+  RTC_DCHECK(inspeech);
+  RTC_DCHECK(outspeech);
+  RTC_DCHECK(size_out);
 
   // Add new frame data in lookahead
   memcpy(&obj->buffer[FRAME_LEN + kResamplingDelay], inspeech,
@@ -163,7 +163,7 @@ int EstimateSkew(const int* rawSkew,
   if (n == 0) {
     return -1;
   }
-  assert(n > 0);
+  RTC_DCHECK_GT(n, 0);
   rawAvg /= n;
 
   for (i = 0; i < size; i++) {
@@ -172,7 +172,7 @@ int EstimateSkew(const int* rawSkew,
       rawAbsDev += err >= 0 ? err : -err;
     }
   }
-  assert(n > 0);
+  RTC_DCHECK_GT(n, 0);
   rawAbsDev /= n;
   upperLimit = static_cast<int>(rawAvg + 5 * rawAbsDev + 1);  // +1 for ceiling.
   lowerLimit = static_cast<int>(rawAvg - 5 * rawAbsDev - 1);  // -1 for floor.
@@ -193,7 +193,7 @@ int EstimateSkew(const int* rawSkew,
   if (n == 0) {
     return -1;
   }
-  assert(n > 0);
+  RTC_DCHECK_GT(n, 0);
   xAvg = x / n;
   denom = x2 - xAvg * x;
 

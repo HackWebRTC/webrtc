@@ -17,6 +17,7 @@
 #include <queue>
 
 #include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_audio/resampler/push_sinc_resampler.h"
@@ -92,7 +93,7 @@ size_t TotalChannelsFromLayout(AudioProcessing::ChannelLayout layout) {
     case AudioProcessing::kStereoAndKeyboard:
       return 3;
   }
-  assert(false);
+  RTC_NOTREACHED();
   return 0;
 }
 
@@ -265,7 +266,7 @@ std::string OutputFilePath(std::string name,
   } else if (num_output_channels == 2) {
     ss << "stereo";
   } else {
-    assert(false);
+    RTC_NOTREACHED();
   }
   ss << output_rate / 1000;
   if (num_reverse_output_channels == 1) {
@@ -273,7 +274,7 @@ std::string OutputFilePath(std::string name,
   } else if (num_reverse_output_channels == 2) {
     ss << "_rstereo";
   } else {
-    assert(false);
+    RTC_NOTREACHED();
   }
   ss << reverse_output_rate / 1000;
   ss << "_d" << file_direction << "_pcm";
@@ -311,7 +312,7 @@ bool ReadChunk(FILE* file, int16_t* int_data, float* float_data,
   size_t read_count = fread(int_data, sizeof(int16_t), frame_size, file);
   if (read_count != frame_size) {
     // Check that the file really ended.
-    assert(feof(file));
+    RTC_DCHECK(feof(file));
     return false;  // This is expected.
   }
 

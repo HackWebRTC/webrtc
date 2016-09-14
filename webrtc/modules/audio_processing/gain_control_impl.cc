@@ -296,7 +296,7 @@ int GainControlImpl::set_stream_analog_level(int level) {
 int GainControlImpl::stream_analog_level() {
   rtc::CritScope cs(crit_capture_);
   // TODO(ajm): enable this assertion?
-  //assert(mode_ == kAdaptiveAnalog);
+  //RTC_DCHECK_EQ(kAdaptiveAnalog, mode_);
 
   return analog_capture_level_;
 }
@@ -482,7 +482,7 @@ int GainControlImpl::Configure() {
   WebRtcAgcConfig config;
   // TODO(ajm): Flip the sign here (since AGC expects a positive value) if we
   //            change the interface.
-  //assert(target_level_dbfs_ <= 0);
+  //RTC_DCHECK_LE(target_level_dbfs_, 0);
   //config.targetLevelDbfs = static_cast<int16_t>(-target_level_dbfs_);
   config.targetLevelDbfs = static_cast<int16_t>(target_level_dbfs_);
   config.compressionGaindB =

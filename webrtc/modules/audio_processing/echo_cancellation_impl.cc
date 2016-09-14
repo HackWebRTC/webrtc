@@ -10,9 +10,9 @@
 
 #include "webrtc/modules/audio_processing/echo_cancellation_impl.h"
 
-#include <assert.h>
 #include <string.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
 #include "webrtc/modules/audio_processing/aec/echo_cancellation.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
@@ -29,7 +29,7 @@ int16_t MapSetting(EchoCancellation::SuppressionLevel level) {
     case EchoCancellation::kHighSuppression:
       return kAecNlpAggressive;
   }
-  assert(false);
+  RTC_NOTREACHED();
   return -1;
 }
 

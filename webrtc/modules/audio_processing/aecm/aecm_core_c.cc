@@ -10,7 +10,6 @@
 
 #include "webrtc/modules/audio_processing/aecm/aecm_core.h"
 
-#include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
 
@@ -23,6 +22,8 @@ extern "C" {
 extern "C" {
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 }
+
+#include "webrtc/base/checks.h"
 #include "webrtc/typedefs.h"
 
 // Square root of Hanning window in Q14.
@@ -483,7 +484,7 @@ int WebRtcAecm_ProcessBlock(AecmCore* aecm,
     }
 
     zeros16 = WebRtcSpl_NormW16(aecm->nearFilt[i]);
-    assert(zeros16 >= 0);  // |zeros16| is a norm, hence non-negative.
+    RTC_DCHECK_GE(zeros16, 0);  // |zeros16| is a norm, hence non-negative.
     dfa_clean_q_domain_diff = aecm->dfaCleanQDomain - aecm->dfaCleanQDomainOld;
     if (zeros16 < dfa_clean_q_domain_diff && aecm->nearFilt[i]) {
       tmp16no1 = aecm->nearFilt[i] << zeros16;
@@ -562,7 +563,7 @@ int WebRtcAecm_ProcessBlock(AecmCore* aecm,
     {
       avgHnl32 += (int32_t)hnl[i];
     }
-    assert(kMaxPrefBand - kMinPrefBand + 1 > 0);
+    RTC_DCHECK_GT(kMaxPrefBand - kMinPrefBand + 1, 0);
     avgHnl32 /= (kMaxPrefBand - kMinPrefBand + 1);
 
     for (i = kMaxPrefBand; i < PART_LEN1; i++)
@@ -652,8 +653,8 @@ static void ComfortNoise(AecmCore* aecm,
   int16_t shiftFromNearToNoise = kNoiseEstQDomain - aecm->dfaCleanQDomain;
   int16_t minTrackShift;
 
-  assert(shiftFromNearToNoise >= 0);
-  assert(shiftFromNearToNoise < 16);
+  RTC_DCHECK_GE(shiftFromNearToNoise, 0);
+  RTC_DCHECK_LT(shiftFromNearToNoise, 16);
 
   if (aecm->noiseEstCtr < 100)
   {

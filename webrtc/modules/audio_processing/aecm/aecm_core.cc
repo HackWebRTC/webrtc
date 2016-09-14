@@ -10,7 +10,6 @@
 
 #include "webrtc/modules/audio_processing/aecm/aecm_core.h"
 
-#include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
 
@@ -24,6 +23,7 @@ extern "C" {
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 }
 
+#include "webrtc/base/checks.h"
 #include "webrtc/typedefs.h"
 
 #ifdef AEC_DEBUG
@@ -193,7 +193,7 @@ const uint16_t* WebRtcAecm_AlignedFarend(AecmCore* self,
                                          int* far_q,
                                          int delay) {
   int buffer_position = 0;
-  assert(self != NULL);
+  RTC_DCHECK(self);
   buffer_position = self->far_history_pos - delay;
 
   // Check buffer position

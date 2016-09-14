@@ -10,13 +10,13 @@
 
 #include "webrtc/modules/audio_processing/agc/agc_manager_direct.h"
 
-#include <cassert>
 #include <cmath>
 
 #ifdef WEBRTC_AGC_DEBUG_DUMP
 #include <cstdio>
 #endif
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/agc/gain_map_internal.h"
 #include "webrtc/modules/audio_processing/gain_control_impl.h"
 #include "webrtc/modules/include/module_common_types.h"
@@ -61,7 +61,8 @@ int ClampLevel(int mic_level) {
 }
 
 int LevelFromGainError(int gain_error, int level) {
-  assert(level >= 0 && level <= kMaxMicLevel);
+  RTC_DCHECK_GE(level, 0);
+  RTC_DCHECK_LE(level, kMaxMicLevel);
   if (gain_error == 0) {
     return level;
   }
@@ -90,7 +91,7 @@ class DebugFile {
  public:
   explicit DebugFile(const char* filename)
       : file_(fopen(filename, "wb")) {
-    assert(file_);
+    RTC_DCHECK(file_);
   }
   ~DebugFile() {
     fclose(file_);
@@ -245,7 +246,7 @@ void AgcManagerDirect::Process(const int16_t* audio,
 
   if (agc_->Process(audio, length, sample_rate_hz) != 0) {
     LOG(LS_ERROR) << "Agc::Process failed";
-    assert(false);
+    RTC_NOTREACHED();
   }
 
   UpdateGain();
@@ -297,7 +298,7 @@ void AgcManagerDirect::SetLevel(int new_level) {
 }
 
 void AgcManagerDirect::SetMaxLevel(int level) {
-  assert(level >= kClippedLevelMin);
+  RTC_DCHECK_GE(level, kClippedLevelMin);
   max_level_ = level;
   // Scale the |kSurplusCompressionGain| linearly across the restricted
   // level range.

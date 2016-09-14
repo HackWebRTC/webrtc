@@ -13,6 +13,7 @@
 #include <cmath>
 #include <cstring>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
@@ -101,7 +102,7 @@ void LoudnessHistogram::Update(double rms, double activity_probaility) {
 
 // Doing nothing if buffer is not full, yet.
 void LoudnessHistogram::RemoveOldestEntryAndUpdate() {
-  assert(len_circular_buffer_ > 0);
+  RTC_DCHECK_GT(len_circular_buffer_, 0);
   // Do nothing if circular buffer is not full.
   if (!buffer_is_full_)
     return;
@@ -114,7 +115,7 @@ void LoudnessHistogram::RemoveOldestEntryAndUpdate() {
 void LoudnessHistogram::RemoveTransient() {
   // Don't expect to be here if high-activity region is longer than
   // |kTransientWidthThreshold| or there has not been any transient.
-  assert(len_high_activity_ <= kTransientWidthThreshold);
+  RTC_DCHECK_LE(len_high_activity_, kTransientWidthThreshold);
   int index =
       (buffer_index_ > 0) ? (buffer_index_ - 1) : len_circular_buffer_ - 1;
   while (len_high_activity_ > 0) {

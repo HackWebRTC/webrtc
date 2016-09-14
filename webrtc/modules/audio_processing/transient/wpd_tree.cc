@@ -10,10 +10,10 @@
 
 #include "webrtc/modules/audio_processing/transient/wpd_tree.h"
 
-#include <assert.h>
 #include <math.h>
 #include <string.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_processing/transient/dyadic_decimator.h"
 #include "webrtc/modules/audio_processing/transient/wpd_node.h"
 
@@ -25,10 +25,10 @@ WPDTree::WPDTree(size_t data_length, const float* high_pass_coefficients,
     : data_length_(data_length),
       levels_(levels),
       num_nodes_((1 << (levels + 1)) - 1) {
-  assert(data_length > (static_cast<size_t>(1) << levels) &&
-         high_pass_coefficients &&
-         low_pass_coefficients &&
-         levels > 0);
+  RTC_DCHECK_GT(data_length, (static_cast<size_t>(1) << levels));
+  RTC_DCHECK(high_pass_coefficients);
+  RTC_DCHECK(low_pass_coefficients);
+  RTC_DCHECK_GT(levels, 0);
   // Size is 1 more, so we can use the array as 1-based. nodes_[0] is never
   // allocated.
   nodes_.reset(new std::unique_ptr<WPDNode>[num_nodes_ + 1]);

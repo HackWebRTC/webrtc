@@ -15,7 +15,6 @@
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
 
 #include <algorithm>
-#include <assert.h>
 #include <math.h>
 #include <stddef.h>  // size_t
 #include <stdlib.h>
@@ -870,7 +869,7 @@ static void Fft(float time_data[PART_LEN2], float freq_data[2][PART_LEN1]) {
 static int SignalBasedDelayCorrection(AecCore* self) {
   int delay_correction = 0;
   int last_delay = -2;
-  assert(self != NULL);
+  RTC_DCHECK(self);
 #if !defined(WEBRTC_ANDROID)
   // On desktops, turn on correction after |kDelayCorrectionStart| frames.  This
   // is to let the delay estimation get a chance to converge.  Also, if the
@@ -1846,7 +1845,7 @@ void WebRtcAec_ProcessFrames(AecCore* aec,
   // Note that the two algorithms operate independently.  Currently, we only
   // allow one algorithm to be turned on.
 
-  assert(aec->num_bands == num_bands);
+  RTC_DCHECK_EQ(aec->num_bands, num_bands);
 
   for (size_t j = 0; j < num_samples; j += FRAME_LEN) {
     // 1) At most we process |aec->mult|+1 partitions in 10 ms. Make sure we
@@ -1949,9 +1948,9 @@ int WebRtcAec_GetDelayMetricsCore(AecCore* self,
                                   int* median,
                                   int* std,
                                   float* fraction_poor_delays) {
-  assert(self != NULL);
-  assert(median != NULL);
-  assert(std != NULL);
+  RTC_DCHECK(self);
+  RTC_DCHECK(median);
+  RTC_DCHECK(std);
 
   if (self->delay_logging_enabled == 0) {
     // Logging disabled.
@@ -1978,9 +1977,9 @@ void WebRtcAec_GetEchoStats(AecCore* self,
                             Stats* erle,
                             Stats* a_nlp,
                             float* divergent_filter_fraction) {
-  assert(erl != NULL);
-  assert(erle != NULL);
-  assert(a_nlp != NULL);
+  RTC_DCHECK(erl);
+  RTC_DCHECK(erle);
+  RTC_DCHECK(a_nlp);
   *erl = self->erl;
   *erle = self->erle;
   *a_nlp = self->aNlp;
@@ -1992,7 +1991,8 @@ void WebRtcAec_SetConfigCore(AecCore* self,
                              int nlp_mode,
                              int metrics_mode,
                              int delay_logging) {
-  assert(nlp_mode >= 0 && nlp_mode < 3);
+  RTC_DCHECK_GE(nlp_mode, 0);
+  RTC_DCHECK_LT(nlp_mode, 3);
   self->nlp_mode = nlp_mode;
   self->metricsMode = metrics_mode;
   if (self->metricsMode) {
@@ -2019,7 +2019,7 @@ void WebRtcAec_enable_aec3(AecCore* self, int enable) {
 }
 
 int WebRtcAec_aec3_enabled(AecCore* self) {
-  assert(self->aec3_enabled == 0 || self->aec3_enabled == 1);
+  RTC_DCHECK(self->aec3_enabled == 0 || self->aec3_enabled == 1);
   return self->aec3_enabled;
 }
 
@@ -2051,7 +2051,7 @@ int WebRtcAec_system_delay(AecCore* self) {
 }
 
 void WebRtcAec_SetSystemDelay(AecCore* self, int delay) {
-  assert(delay >= 0);
+  RTC_DCHECK_GE(delay, 0);
   self->system_delay = delay;
 }
 }  // namespace webrtc

@@ -10,8 +10,9 @@
 
 #include "webrtc/modules/audio_processing/rms_level.h"
 
-#include <assert.h>
 #include <math.h>
+
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 
@@ -49,7 +50,7 @@ int RMSLevel::RMS() {
   float rms = sum_square_ / (sample_count_ * kMaxSquaredLevel);
   // 20log_10(x^0.5) = 10log_10(x)
   rms = 10 * log10(rms);
-  assert(rms <= 0);
+  RTC_DCHECK_LE(rms, 0);
   if (rms < -kMinLevel)
     rms = -kMinLevel;
 

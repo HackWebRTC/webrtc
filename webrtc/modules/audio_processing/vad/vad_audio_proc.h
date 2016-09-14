@@ -50,25 +50,28 @@ class VadAudioProc {
   // For every 30 ms we compute 3 spectral peak there for 3 LPC analysis.
   // LPC is computed over 15 ms of windowed audio. For every 10 ms sub-frame
   // we need 5 ms of past signal to create the input of LPC analysis.
-  static const size_t kNumPastSignalSamples =
-      static_cast<size_t>(kSampleRateHz / 200);
+  enum : size_t {
+    kNumPastSignalSamples = static_cast<size_t>(kSampleRateHz / 200)
+  };
 
   // TODO(turajs): maybe defining this at a higher level (maybe enum) so that
   // all the code recognize it as "no-error."
-  static const int kNoError = 0;
+  enum : int { kNoError = 0 };
 
-  static const size_t kNum10msSubframes = 3;
-  static const size_t kNumSubframeSamples =
-      static_cast<size_t>(kSampleRateHz / 100);
-  static const size_t kNumSamplesToProcess =
-      kNum10msSubframes *
-      kNumSubframeSamples;  // Samples in 30 ms @ given sampling rate.
-  static const size_t kBufferLength =
-      kNumPastSignalSamples + kNumSamplesToProcess;
-  static const size_t kIpLength = kDftSize >> 1;
-  static const size_t kWLength = kDftSize >> 1;
-
-  static const size_t kLpcOrder = 16;
+  enum : size_t { kNum10msSubframes = 3 };
+  enum : size_t {
+    kNumSubframeSamples = static_cast<size_t>(kSampleRateHz / 100)
+  };
+  enum : size_t {
+    // Samples in 30 ms @ given sampling rate.
+    kNumSamplesToProcess = kNum10msSubframes * kNumSubframeSamples
+  };
+  enum : size_t {
+    kBufferLength = kNumPastSignalSamples + kNumSamplesToProcess
+  };
+  enum : size_t { kIpLength = kDftSize >> 1 };
+  enum : size_t { kWLength = kDftSize >> 1 };
+  enum : size_t { kLpcOrder = 16 };
 
   size_t ip_[kIpLength];
   float w_fft_[kWLength];

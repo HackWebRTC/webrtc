@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/resampler/push_sinc_resampler.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
@@ -25,7 +26,7 @@ const size_t kSamplesPer48kHzChannel = 480;
 
 int KeyboardChannelIndex(const StreamConfig& stream_config) {
   if (!stream_config.has_keyboard()) {
-    assert(false);
+    RTC_NOTREACHED();
     return 0;
   }
 
@@ -61,11 +62,12 @@ AudioBuffer::AudioBuffer(size_t input_num_frames,
     activity_(AudioFrame::kVadUnknown),
     keyboard_data_(NULL),
     data_(new IFChannelBuffer(proc_num_frames_, num_proc_channels_)) {
-  assert(input_num_frames_ > 0);
-  assert(proc_num_frames_ > 0);
-  assert(output_num_frames_ > 0);
-  assert(num_input_channels_ > 0);
-  assert(num_proc_channels_ > 0 && num_proc_channels_ <= num_input_channels_);
+  RTC_DCHECK_GT(input_num_frames_, 0u);
+  RTC_DCHECK_GT(proc_num_frames_, 0u);
+  RTC_DCHECK_GT(output_num_frames_, 0u);
+  RTC_DCHECK_GT(num_input_channels_, 0u);
+  RTC_DCHECK_GT(num_proc_channels_, 0u);
+  RTC_DCHECK_LE(num_proc_channels_, num_input_channels_);
 
   if (input_num_frames_ != proc_num_frames_ ||
       output_num_frames_ != proc_num_frames_) {
@@ -102,8 +104,8 @@ AudioBuffer::~AudioBuffer() {}
 
 void AudioBuffer::CopyFrom(const float* const* data,
                            const StreamConfig& stream_config) {
-  assert(stream_config.num_frames() == input_num_frames_);
-  assert(stream_config.num_channels() == num_input_channels_);
+  RTC_DCHECK_EQ(stream_config.num_frames(), input_num_frames_);
+  RTC_DCHECK_EQ(stream_config.num_channels(), num_input_channels_);
   InitForNewData();
   // Initialized lazily because there's a different condition in
   // DeinterleaveFrom.
@@ -147,8 +149,9 @@ void AudioBuffer::CopyFrom(const float* const* data,
 
 void AudioBuffer::CopyTo(const StreamConfig& stream_config,
                          float* const* data) {
-  assert(stream_config.num_frames() == output_num_frames_);
-  assert(stream_config.num_channels() == num_channels_ || num_channels_ == 1);
+  RTC_DCHECK_EQ(stream_config.num_frames(), output_num_frames_);
+  RTC_DCHECK(stream_config.num_channels() == num_channels_ ||
+             num_channels_ == 1);
 
   // Convert to the float range.
   float* const* data_ptr = data;
@@ -374,8 +377,8 @@ size_t AudioBuffer::num_bands() const {
 
 // The resampler is only for supporting 48kHz to 16kHz in the reverse stream.
 void AudioBuffer::DeinterleaveFrom(AudioFrame* frame) {
-  assert(frame->num_channels_ == num_input_channels_);
-  assert(frame->samples_per_channel_ == input_num_frames_);
+  RTC_DCHECK_EQ(frame->num_channels_, num_input_channels_);
+  RTC_DCHECK_EQ(frame->samples_per_channel_, input_num_frames_);
   InitForNewData();
   // Initialized lazily because there's a different condition in CopyFrom.
   if ((input_num_frames_ != proc_num_frames_) && !input_buffer_) {
@@ -395,7 +398,7 @@ void AudioBuffer::DeinterleaveFrom(AudioFrame* frame) {
     DownmixInterleavedToMono(frame->data_, input_num_frames_,
                              num_input_channels_, deinterleaved[0]);
   } else {
-    assert(num_proc_channels_ == num_input_channels_);
+    RTC_DCHECK_EQ(num_proc_channels_, num_input_channels_);
     Deinterleave(frame->data_,
                  input_num_frames_,
                  num_proc_channels_,
@@ -419,8 +422,8 @@ void AudioBuffer::InterleaveTo(AudioFrame* frame, bool data_changed) {
     return;
   }
 
-  assert(frame->num_channels_ == num_channels_ || num_channels_ == 1);
-  assert(frame->samples_per_channel_ == output_num_frames_);
+  RTC_DCHECK(frame->num_channels_ == num_channels_ || num_channels_ == 1);
+  RTC_DCHECK_EQ(frame->samples_per_channel_, output_num_frames_);
 
   // Resample if necessary.
   IFChannelBuffer* data_ptr = data_.get();

@@ -10,7 +10,6 @@
 
 #include "webrtc/modules/audio_processing/audio_processing_impl.h"
 
-#include <assert.h>
 #include <algorithm>
 
 #include "webrtc/base/checks.h"
@@ -84,7 +83,7 @@ static bool LayoutHasKeyboard(AudioProcessing::ChannelLayout layout) {
       return true;
   }
 
-  assert(false);
+  RTC_NOTREACHED();
   return false;
 }
 
@@ -693,8 +692,8 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
         MaybeInitializeCapture(processing_config, reinitialization_required));
   }
   rtc::CritScope cs_capture(&crit_capture_);
-  assert(processing_config.input_stream().num_frames() ==
-         formats_.api_format.input_stream().num_frames());
+  RTC_DCHECK_EQ(processing_config.input_stream().num_frames(),
+                formats_.api_format.input_stream().num_frames());
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_dump_.debug_file->is_open()) {
@@ -1010,8 +1009,8 @@ int AudioProcessingImpl::AnalyzeReverseStreamLocked(
   processing_config.reverse_output_stream() = reverse_output_config;
 
   RETURN_ON_ERR(MaybeInitializeRender(processing_config));
-  assert(reverse_input_config.num_frames() ==
-         formats_.api_format.reverse_input_stream().num_frames());
+  RTC_DCHECK_EQ(reverse_input_config.num_frames(),
+                formats_.api_format.reverse_input_stream().num_frames());
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_dump_.debug_file->is_open()) {
