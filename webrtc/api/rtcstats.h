@@ -171,7 +171,6 @@ class RTCStatsMemberInterface {
     kInt64,                 // int64_t
     kUint64,                // uint64_t
     kDouble,                // double
-    kStaticString,          // const char*
     kString,                // std::string
 
     kSequenceInt32,         // std::vector<int32_t>
@@ -179,7 +178,6 @@ class RTCStatsMemberInterface {
     kSequenceInt64,         // std::vector<int64_t>
     kSequenceUint64,        // std::vector<uint64_t>
     kSequenceDouble,        // std::vector<double>
-    kSequenceStaticString,  // std::vector<const char*>
     kSequenceString,        // std::vector<std::string>
   };
 

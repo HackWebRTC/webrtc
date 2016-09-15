@@ -103,8 +103,6 @@ WEBRTC_DEFINE_RTCSTATSMEMBER(uint64_t, kUint64, false, false,
                              rtc::ToString(value_));
 WEBRTC_DEFINE_RTCSTATSMEMBER(double, kDouble, false, false,
                              rtc::ToString(value_));
-WEBRTC_DEFINE_RTCSTATSMEMBER(const char*, kStaticString, false, true,
-                             value_);
 WEBRTC_DEFINE_RTCSTATSMEMBER(std::string, kString, false, true,
                              value_);
 WEBRTC_DEFINE_RTCSTATSMEMBER(
@@ -122,9 +120,6 @@ WEBRTC_DEFINE_RTCSTATSMEMBER(
 WEBRTC_DEFINE_RTCSTATSMEMBER(
     std::vector<double>, kSequenceDouble, true, false,
     VectorToString(value_));
-WEBRTC_DEFINE_RTCSTATSMEMBER(
-    std::vector<const char*>, kSequenceStaticString, true, false,
-    VectorOfStringsToString(value_));
 WEBRTC_DEFINE_RTCSTATSMEMBER(
     std::vector<std::string>, kSequenceString, true, false,
     VectorOfStringsToString(value_));

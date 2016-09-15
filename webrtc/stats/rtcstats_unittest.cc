@@ -26,14 +26,12 @@ class RTCTestStats : public RTCStats {
         m_int64("mInt64"),
         m_uint64("mUint64"),
         m_double("mDouble"),
-        m_static_string("mStaticString"),
         m_string("mString"),
         m_sequence_int32("mSequenceInt32"),
         m_sequence_uint32("mSequenceUint32"),
         m_sequence_int64("mSequenceInt64"),
         m_sequence_uint64("mSequenceUint64"),
         m_sequence_double("mSequenceDouble"),
-        m_sequence_static_string("mSequenceStaticString"),
         m_sequence_string("mSequenceString") {
   }
 
@@ -43,14 +41,12 @@ class RTCTestStats : public RTCStats {
       &m_int64,
       &m_uint64,
       &m_double,
-      &m_static_string,
       &m_string,
       &m_sequence_int32,
       &m_sequence_uint32,
       &m_sequence_int64,
       &m_sequence_uint64,
       &m_sequence_double,
-      &m_sequence_static_string,
       &m_sequence_string);
 
   RTCStatsMember<int32_t> m_int32;
@@ -58,7 +54,6 @@ class RTCTestStats : public RTCStats {
   RTCStatsMember<int64_t> m_int64;
   RTCStatsMember<uint64_t> m_uint64;
   RTCStatsMember<double> m_double;
-  RTCStatsMember<const char*> m_static_string;
   RTCStatsMember<std::string> m_string;
 
   RTCStatsMember<std::vector<int32_t>> m_sequence_int32;
@@ -66,7 +61,6 @@ class RTCTestStats : public RTCStats {
   RTCStatsMember<std::vector<int64_t>> m_sequence_int64;
   RTCStatsMember<std::vector<uint64_t>> m_sequence_uint64;
   RTCStatsMember<std::vector<double>> m_sequence_double;
-  RTCStatsMember<std::vector<const char*>> m_sequence_static_string;
   RTCStatsMember<std::vector<std::string>> m_sequence_string;
 };
 
@@ -105,7 +99,7 @@ TEST(RTCStatsTest, RTCStatsAndMembers) {
   EXPECT_EQ(stats.id(), "testId");
   EXPECT_EQ(stats.timestamp_us(), static_cast<int64_t>(42));
   std::vector<const RTCStatsMemberInterface*> members = stats.Members();
-  EXPECT_EQ(members.size(), static_cast<size_t>(14));
+  EXPECT_EQ(members.size(), static_cast<size_t>(12));
   for (const RTCStatsMemberInterface* member : members) {
     EXPECT_FALSE(member->is_defined());
   }
@@ -114,7 +108,6 @@ TEST(RTCStatsTest, RTCStatsAndMembers) {
   stats.m_int64 = 123;
   stats.m_uint64 = 123;
   stats.m_double = 123.0;
-  stats.m_static_string = "123";
   stats.m_string = std::string("123");
 
   std::vector<int32_t> sequence_int32;
@@ -127,10 +120,8 @@ TEST(RTCStatsTest, RTCStatsAndMembers) {
   sequence_uint64.push_back(static_cast<uint64_t>(4));
   std::vector<double> sequence_double;
   sequence_double.push_back(5.0);
-  std::vector<const char*> sequence_static_string;
-  sequence_static_string.push_back("six");
   std::vector<std::string> sequence_string;
-  sequence_string.push_back(std::string("seven"));
+  sequence_string.push_back(std::string("six"));
 
   stats.m_sequence_int32 = sequence_int32;
   stats.m_sequence_uint32 = sequence_uint32;
@@ -138,7 +129,6 @@ TEST(RTCStatsTest, RTCStatsAndMembers) {
   stats.m_sequence_int64 = sequence_int64;
   stats.m_sequence_uint64 = sequence_uint64;
   stats.m_sequence_double = sequence_double;
-  stats.m_sequence_static_string = sequence_static_string;
   stats.m_sequence_string = sequence_string;
   for (const RTCStatsMemberInterface* member : members) {
     EXPECT_TRUE(member->is_defined());
@@ -148,19 +138,12 @@ TEST(RTCStatsTest, RTCStatsAndMembers) {
   EXPECT_EQ(*stats.m_int64, static_cast<int64_t>(123));
   EXPECT_EQ(*stats.m_uint64, static_cast<uint64_t>(123));
   EXPECT_EQ(*stats.m_double, 123.0);
-  EXPECT_EQ(strcmp(*stats.m_static_string, "123"), 0);
   EXPECT_EQ(*stats.m_string, std::string("123"));
   EXPECT_EQ(*stats.m_sequence_int32, sequence_int32);
   EXPECT_EQ(*stats.m_sequence_uint32, sequence_uint32);
   EXPECT_EQ(*stats.m_sequence_int64, sequence_int64);
   EXPECT_EQ(*stats.m_sequence_uint64, sequence_uint64);
   EXPECT_EQ(*stats.m_sequence_double, sequence_double);
-  EXPECT_EQ(stats.m_sequence_static_string->size(),
-            sequence_static_string.size());
-  for (size_t i = 0; i < sequence_static_string.size(); ++i) {
-    EXPECT_EQ(strcmp((*stats.m_sequence_static_string)[i],
-                     sequence_static_string[i]), 0);
-  }
   EXPECT_EQ(*stats.m_sequence_string, sequence_string);
 
   int32_t numbers[] = { 4, 8, 15, 16, 23, 42 };
