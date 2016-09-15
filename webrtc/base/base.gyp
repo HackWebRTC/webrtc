@@ -29,6 +29,7 @@
       'target_name': 'rtc_base_approved',
       'type': 'static_library',
       'sources': [
+        'arraysize.h',
         'array_view.h',
         'atomicops.h',
         'bind.h',
@@ -231,7 +232,6 @@
       ],
       'sources': [
         'applefilesystem.mm',
-        'arraysize.h',
         'asyncfile.cc',
         'asyncfile.h',
         'asyncinvoker.cc',
