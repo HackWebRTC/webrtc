@@ -243,7 +243,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   // frames are then converted from cricket frames to webrtc frames.
   class WebRtcVideoSendStream
       : public rtc::VideoSinkInterface<cricket::VideoFrame>,
-        public rtc::VideoSourceInterface<webrtc::VideoFrame>,
         public webrtc::LoadObserver {
    public:
     WebRtcVideoSendStream(
@@ -262,16 +261,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     void SetSendParameters(const ChangedSendParameters& send_params);
     bool SetRtpParameters(const webrtc::RtpParameters& parameters);
     webrtc::RtpParameters GetRtpParameters() const;
-
-    // Implements rtc::VideoSourceInterface<webrtc::VideoFrame>.
-    // WebRtcVideoSendStream acts as a source to the webrtc::VideoSendStream
-    // in |stream_|. The reason is that WebRtcVideoSendStream receives
-    // cricket::VideoFrames and forwards webrtc::VideoFrames to |source_|.
-    // TODO(perkj, nisse): Refactor WebRtcVideoSendStream to directly connect
-    // the camera input |source_|
-    void AddOrUpdateSink(VideoSinkInterface<webrtc::VideoFrame>* sink,
-                         const rtc::VideoSinkWants& wants) override;
-    void RemoveSink(VideoSinkInterface<webrtc::VideoFrame>* sink) override;
 
     void OnFrame(const cricket::VideoFrame& frame) override;
     bool SetVideoSend(bool mute,
@@ -400,8 +389,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
 
     rtc::CriticalSection lock_;
     webrtc::VideoSendStream* stream_ GUARDED_BY(lock_);
-    rtc::VideoSinkInterface<webrtc::VideoFrame>* encoder_sink_
-        GUARDED_BY(lock_);
     // Contains settings that are the same for all streams in the MediaChannel,
     // such as codecs, header extensions, and the global bitrate limit for the
     // entire channel.

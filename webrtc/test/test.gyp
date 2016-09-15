@@ -187,6 +187,7 @@
        'statistics.h',
        'vcm_capturer.cc',
        'vcm_capturer.h',
+       'video_capturer.cc',
        'video_capturer.h',
        'win/run_loop_win.cc',
      ],

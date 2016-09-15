@@ -19,13 +19,24 @@
 #include "webrtc/common_video/include/frame_callback.h"
 #include "webrtc/config.h"
 #include "webrtc/media/base/videosinkinterface.h"
-#include "webrtc/media/base/videosourceinterface.h"
 #include "webrtc/transport.h"
 
 namespace webrtc {
 
 class LoadObserver;
 class VideoEncoder;
+
+// Class to deliver captured frame to the video send stream.
+class VideoCaptureInput {
+ public:
+  // These methods do not lock internally and must be called sequentially.
+  // If your application switches input sources synchronization must be done
+  // externally to make sure that any old frames are not delivered concurrently.
+  virtual void IncomingCapturedFrame(const VideoFrame& video_frame) = 0;
+
+ protected:
+  virtual ~VideoCaptureInput() {}
+};
 
 class VideoSendStream {
  public:
@@ -182,8 +193,9 @@ class VideoSendStream {
   // When a stream is stopped, it can't receive, process or deliver packets.
   virtual void Stop() = 0;
 
-  virtual void SetSource(
-      rtc::VideoSourceInterface<webrtc::VideoFrame>* source) = 0;
+  // Gets interface used to insert captured frames. Valid as long as the
+  // VideoSendStream is valid.
+  virtual VideoCaptureInput* Input() = 0;
 
   // Set which streams to send. Must have at least as many SSRCs as configured
   // in the config. Encoder settings are passed on to the encoder instance along

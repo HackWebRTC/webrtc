@@ -239,27 +239,6 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
 
 }  // namespace
 
-FrameForwarder::FrameForwarder() : sink_(nullptr) {}
-
-void FrameForwarder::IncomingCapturedFrame(const VideoFrame& video_frame) {
-  rtc::CritScope lock(&crit_);
-  if (sink_)
-    sink_->OnFrame(video_frame);
-}
-
-void FrameForwarder::AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
-                                     const rtc::VideoSinkWants& wants) {
-  rtc::CritScope lock(&crit_);
-  RTC_DCHECK(!sink_ || sink_ == sink);
-  sink_ = sink;
-}
-
-void FrameForwarder::RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) {
-  rtc::CritScope lock(&crit_);
-  RTC_DCHECK_EQ(sink, sink_);
-  sink_ = nullptr;
-}
-
 FrameGenerator* FrameGenerator::CreateChromaGenerator(size_t width,
                                                       size_t height) {
   return new ChromaGenerator(width, height);

@@ -1580,7 +1580,6 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
       source_(nullptr),
       external_encoder_factory_(external_encoder_factory),
       stream_(nullptr),
-      encoder_sink_(nullptr),
       parameters_(std::move(config), options, max_bitrate_bps, codec_settings),
       rtp_parameters_(CreateRtpParametersWithOneEncoding()),
       pending_encoder_reconfiguration_(false),
@@ -1659,7 +1658,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
                  << ", texture=" << last_frame_info_.is_texture;
   }
 
-  if (encoder_sink_ == NULL) {
+  if (stream_ == NULL) {
     // Frame input before send codecs are configured, dropping frame.
     return;
   }
@@ -1682,7 +1681,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
   if (cpu_restricted_counter_ > 0)
     ++cpu_restricted_frame_count_;
 
-  encoder_sink_->OnFrame(video_frame);
+  stream_->Input()->IncomingCapturedFrame(video_frame);
 }
 
 bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoSend(
@@ -1705,7 +1704,7 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoSend(
     if (options_present) {
       VideoOptions old_options = parameters_.options;
       parameters_.options.SetAll(*options);
-      // Reconfigure encoder settings on the next frame or stream
+      // Reconfigure encoder settings on the naext frame or stream
       // recreation if the options changed.
       if (parameters_.options != old_options) {
         pending_encoder_reconfiguration_ = true;
@@ -1713,7 +1712,7 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoSend(
     }
 
     if (source_changing) {
-      if (source == nullptr && encoder_sink_ != nullptr) {
+      if (source == nullptr && stream_ != nullptr) {
         LOG(LS_VERBOSE) << "Disabling capturer, sending black frame.";
         // Force this black frame not to be dropped due to timestamp order
         // check. As IncomingCapturedFrame will drop the frame if this frame's
@@ -1726,8 +1725,9 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoSend(
                                        last_frame_info_.height));
         black_buffer->SetToBlack();
 
-        encoder_sink_->OnFrame(webrtc::VideoFrame(
-            black_buffer, last_frame_info_.rotation, last_frame_timestamp_us_));
+        stream_->Input()->IncomingCapturedFrame(webrtc::VideoFrame(
+            black_buffer, last_frame_info_.rotation,
+            last_frame_timestamp_us_));
       }
       source_ = source;
     }
@@ -1743,7 +1743,7 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoSend(
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::DisconnectSource() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  if (source_ == nullptr) {
+  if (source_ == NULL) {
     return;
   }
 
@@ -2049,23 +2049,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSend(bool send) {
   UpdateSendState();
 }
 
-void WebRtcVideoChannel2::WebRtcVideoSendStream::AddOrUpdateSink(
-    VideoSinkInterface<webrtc::VideoFrame>* sink,
-    const rtc::VideoSinkWants& wants) {
-  // TODO(perkj): Actually consider the encoder |wants| and remove
-  // WebRtcVideoSendStream::OnLoadUpdate(Load load).
-  rtc::CritScope cs(&lock_);
-  RTC_DCHECK(!encoder_sink_ || encoder_sink_ == sink);
-  encoder_sink_ = sink;
-}
-
-void WebRtcVideoChannel2::WebRtcVideoSendStream::RemoveSink(
-    VideoSinkInterface<webrtc::VideoFrame>* sink) {
-  rtc::CritScope cs(&lock_);
-  RTC_DCHECK_EQ(encoder_sink_, sink);
-  encoder_sink_ = nullptr;
-}
-
 void WebRtcVideoChannel2::WebRtcVideoSendStream::OnLoadUpdate(Load load) {
   if (worker_thread_ != rtc::Thread::Current()) {
     invoker_.AsyncInvoke<void>(
@@ -2258,7 +2241,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::RecreateWebRtcStream() {
   }
   stream_ = call_->CreateVideoSendStream(std::move(config),
                                          parameters_.encoder_config.Copy());
-  stream_->SetSource(this);
 
   parameters_.encoder_config.encoder_specific_settings = NULL;
   pending_encoder_reconfiguration_ = false;

@@ -214,10 +214,8 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
   // check that the callbacks are done after processing video.
   std::unique_ptr<test::FrameGenerator> frame_generator(
       test::FrameGenerator::CreateChromaGenerator(kWidth, kHeight));
-  test::FrameForwarder frame_forwarder;
-  video_send_stream_->SetSource(&frame_forwarder);
-
-  frame_forwarder.IncomingCapturedFrame(*frame_generator->NextFrame());
+  video_send_stream_->Input()->IncomingCapturedFrame(
+      *frame_generator->NextFrame());
   EXPECT_TRUE(pre_render_callback.Wait())
       << "Timed out while waiting for pre-render callback.";
   EXPECT_TRUE(renderer.Wait())
@@ -261,9 +259,8 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
       test::FrameGenerator::CreateChromaGenerator(
           video_encoder_config_.streams[0].width,
           video_encoder_config_.streams[0].height));
-  test::FrameForwarder frame_forwarder;
-  video_send_stream_->SetSource(&frame_forwarder);
-  frame_forwarder.IncomingCapturedFrame(*frame_generator->NextFrame());
+  video_send_stream_->Input()->IncomingCapturedFrame(
+      *frame_generator->NextFrame());
 
   EXPECT_TRUE(renderer.Wait())
       << "Timed out while waiting for the frame to render.";
@@ -1307,8 +1304,8 @@ class MultiStreamTest {
       receive_streams[i]->Start();
 
       frame_generators[i] = test::FrameGeneratorCapturer::Create(
-          width, height, 30, Clock::GetRealTimeClock());
-      send_streams[i]->SetSource(frame_generators[i]);
+          send_streams[i]->Input(), width, height, 30,
+          Clock::GetRealTimeClock());
       frame_generators[i]->Start();
     }
 
@@ -1768,9 +1765,8 @@ TEST_F(EndToEndTest, ObserversEncodedFrames) {
       test::FrameGenerator::CreateChromaGenerator(
           video_encoder_config_.streams[0].width,
           video_encoder_config_.streams[0].height));
-  test::FrameForwarder forwarder;
-  video_send_stream_->SetSource(&forwarder);
-  forwarder.IncomingCapturedFrame(*frame_generator->NextFrame());
+  video_send_stream_->Input()->IncomingCapturedFrame(
+      *frame_generator->NextFrame());
 
   EXPECT_TRUE(post_encode_observer.Wait())
       << "Timed out while waiting for send-side encoded-frame callback.";

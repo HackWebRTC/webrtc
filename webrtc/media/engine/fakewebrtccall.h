@@ -99,13 +99,11 @@ class FakeAudioReceiveStream final : public webrtc::AudioReceiveStream {
   bool started_ = false;
 };
 
-class FakeVideoSendStream final
-    : public webrtc::VideoSendStream,
-      public rtc::VideoSinkInterface<webrtc::VideoFrame> {
+class FakeVideoSendStream final : public webrtc::VideoSendStream,
+                                  public webrtc::VideoCaptureInput {
  public:
   FakeVideoSendStream(webrtc::VideoSendStream::Config config,
                       webrtc::VideoEncoderConfig encoder_config);
-  ~FakeVideoSendStream() override;
   const webrtc::VideoSendStream::Config& GetConfig() const;
   const webrtc::VideoEncoderConfig& GetEncoderConfig() const;
   std::vector<webrtc::VideoStream> GetVideoStreams();
@@ -124,16 +122,14 @@ class FakeVideoSendStream final
   }
 
  private:
-  // rtc::VideoSinkInterface<VideoFrame> implementation.
-  void OnFrame(const webrtc::VideoFrame& frame) override;
+  void IncomingCapturedFrame(const webrtc::VideoFrame& frame) override;
 
   // webrtc::VideoSendStream implementation.
   void Start() override;
   void Stop() override;
-  void SetSource(
-      rtc::VideoSourceInterface<webrtc::VideoFrame>* source) override;
   webrtc::VideoSendStream::Stats GetStats() override;
   void ReconfigureVideoEncoder(webrtc::VideoEncoderConfig config) override;
+  webrtc::VideoCaptureInput* Input() override;
 
   bool sending_;
   webrtc::VideoSendStream::Config config_;
@@ -143,7 +139,6 @@ class FakeVideoSendStream final
     webrtc::VideoCodecVP8 vp8;
     webrtc::VideoCodecVP9 vp9;
   } vpx_settings_;
-  rtc::VideoSourceInterface<webrtc::VideoFrame>* source_;
   int num_swapped_frames_;
   webrtc::VideoFrame last_frame_;
   webrtc::VideoSendStream::Stats stats_;

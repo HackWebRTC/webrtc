@@ -12,21 +12,29 @@
 
 #include <stddef.h>
 
-#include "webrtc/media/base/videosourceinterface.h"
-#include "webrtc/video_frame.h"
-
 namespace webrtc {
 
 class Clock;
 
+class VideoCaptureInput;
+
 namespace test {
 
-class VideoCapturer : public rtc::VideoSourceInterface<VideoFrame> {
+class VideoCapturer {
  public:
+  static VideoCapturer* Create(VideoCaptureInput* input,
+                               size_t width,
+                               size_t height,
+                               int fps,
+                               Clock* clock);
   virtual ~VideoCapturer() {}
 
   virtual void Start() = 0;
   virtual void Stop() = 0;
+
+ protected:
+  explicit VideoCapturer(VideoCaptureInput* input);
+  VideoCaptureInput* input_;
 };
 }  // test
 }  // webrtc

@@ -16,7 +16,9 @@
 namespace webrtc {
 namespace test {
 
-VcmCapturer::VcmCapturer() : started_(false), sink_(nullptr), vcm_(NULL) {}
+VcmCapturer::VcmCapturer(webrtc::VideoCaptureInput* input)
+    : VideoCapturer(input), started_(false), vcm_(NULL) {
+}
 
 bool VcmCapturer::Init(size_t width, size_t height, size_t target_fps) {
   VideoCaptureModule::DeviceInfo* device_info =
@@ -52,10 +54,11 @@ bool VcmCapturer::Init(size_t width, size_t height, size_t target_fps) {
   return true;
 }
 
-VcmCapturer* VcmCapturer::Create(size_t width,
+VcmCapturer* VcmCapturer::Create(VideoCaptureInput* input,
+                                 size_t width,
                                  size_t height,
                                  size_t target_fps) {
-  VcmCapturer* vcm_capturer = new VcmCapturer();
+  VcmCapturer* vcm_capturer = new VcmCapturer(input);
   if (!vcm_capturer->Init(width, height, target_fps)) {
     // TODO(pbos): Log a warning that this failed.
     delete vcm_capturer;
@@ -75,19 +78,6 @@ void VcmCapturer::Stop() {
   started_ = false;
 }
 
-void VcmCapturer::AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
-                                  const rtc::VideoSinkWants& wants) {
-  rtc::CritScope lock(&crit_);
-  RTC_CHECK(!sink_);
-  sink_ = sink;
-}
-
-void VcmCapturer::RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) {
-  rtc::CritScope lock(&crit_);
-  RTC_CHECK(sink_ == sink);
-  sink_ = nullptr;
-}
-
 void VcmCapturer::Destroy() {
   if (!vcm_)
     return;
@@ -103,8 +93,8 @@ VcmCapturer::~VcmCapturer() { Destroy(); }
 void VcmCapturer::OnIncomingCapturedFrame(const int32_t id,
                                           const VideoFrame& frame) {
   rtc::CritScope lock(&crit_);
-  if (started_ && sink_)
-    sink_->OnFrame(frame);
+  if (started_)
+    input_->IncomingCapturedFrame(frame);
 }
 
 void VcmCapturer::OnCaptureDelayChanged(const int32_t id, const int32_t delay) {

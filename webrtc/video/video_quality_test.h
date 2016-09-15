@@ -103,7 +103,7 @@ class VideoQualityTest : public test::CallTest {
   static std::vector<int> ParseCSV(const std::string& str);
 
   // Helper methods for setting up the call.
-  void CreateCapturer();
+  void CreateCapturer(VideoCaptureInput* input);
   void SetupCommon(Transport* send_transport, Transport* recv_transport);
   void SetupScreenshare();
 

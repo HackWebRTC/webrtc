@@ -241,47 +241,6 @@ class ViEEncoder::EncodeTask : public rtc::QueuedTask {
   const bool log_stats_;
 };
 
-// VideoSourceProxy is responsible ensuring thread safety between calls to
-// ViEEncoder::SetSource that will happen on libjingles worker thread when a
-// video capturer is connected to the encoder and the encoder task queue
-// (encoder_queue_) where the encoder reports its VideoSinkWants.
-class ViEEncoder::VideoSourceProxy {
- public:
-  explicit VideoSourceProxy(ViEEncoder* vie_encoder)
-      : vie_encoder_(vie_encoder), source_(nullptr) {}
-
-  void SetSource(rtc::VideoSourceInterface<VideoFrame>* source) {
-    RTC_DCHECK_CALLED_SEQUENTIALLY(&main_checker_);
-    rtc::VideoSourceInterface<VideoFrame>* old_source = nullptr;
-    {
-      rtc::CritScope lock(&crit_);
-      old_source = source_;
-      source_ = source;
-    }
-
-    if (old_source != source && old_source != nullptr) {
-      old_source->RemoveSink(vie_encoder_);
-    }
-
-    if (!source) {
-      return;
-    }
-
-    // TODO(perkj): Let VideoSourceProxy implement LoadObserver and truly send
-    // CPU load as sink wants.
-    rtc::VideoSinkWants wants;
-    source->AddOrUpdateSink(vie_encoder_, wants);
-  }
-
- private:
-  rtc::CriticalSection crit_;
-  rtc::SequencedTaskChecker main_checker_;
-  ViEEncoder* vie_encoder_;
-  rtc::VideoSourceInterface<VideoFrame>* source_ GUARDED_BY(&crit_);
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(VideoSourceProxy);
-};
-
 ViEEncoder::ViEEncoder(uint32_t number_of_cores,
                        SendStatisticsProxy* stats_proxy,
                        const VideoSendStream::Config::EncoderSettings& settings,
@@ -290,7 +249,6 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
                        EncodedFrameObserver* encoder_timing)
     : shutdown_event_(true /* manual_reset */, false),
       number_of_cores_(number_of_cores),
-      source_proxy_(new VideoSourceProxy(this)),
       settings_(settings),
       vp_(VideoProcessing::Create()),
       video_sender_(Clock::GetRealTimeClock(), this, this),
@@ -330,27 +288,23 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
 }
 
 ViEEncoder::~ViEEncoder() {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_DCHECK(shutdown_event_.Wait(0))
       << "Must call ::Stop() before destruction.";
 }
 
 void ViEEncoder::Stop() {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
-  source_proxy_->SetSource(nullptr);
-  encoder_queue_.PostTask([this] {
-    RTC_DCHECK_RUN_ON(&encoder_queue_);
-    video_sender_.RegisterExternalEncoder(nullptr, settings_.payload_type,
-                                          false);
-    overuse_detector_.StopCheckForOveruse();
-    shutdown_event_.Set();
-  });
-
-  shutdown_event_.Wait(rtc::Event::kForever);
+  if (!encoder_queue_.IsCurrent()) {
+    encoder_queue_.PostTask([this] { Stop(); });
+    shutdown_event_.Wait(rtc::Event::kForever);
+    return;
+  }
+  RTC_DCHECK_RUN_ON(&encoder_queue_);
+  video_sender_.RegisterExternalEncoder(nullptr, settings_.payload_type, false);
+  overuse_detector_.StopCheckForOveruse();
+  shutdown_event_.Set();
 }
 
 void ViEEncoder::RegisterProcessThread(ProcessThread* module_process_thread) {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_DCHECK(!module_process_thread_);
   module_process_thread_ = module_process_thread;
   module_process_thread_->RegisterModule(&video_sender_);
@@ -358,13 +312,7 @@ void ViEEncoder::RegisterProcessThread(ProcessThread* module_process_thread) {
 }
 
 void ViEEncoder::DeRegisterProcessThread() {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
   module_process_thread_->DeRegisterModule(&video_sender_);
-}
-
-void ViEEncoder::SetSource(rtc::VideoSourceInterface<VideoFrame>* source) {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
-  source_proxy_->SetSource(source);
 }
 
 void ViEEncoder::SetSink(EncodedImageCallback* sink) {
@@ -436,7 +384,7 @@ void ViEEncoder::ConfigureEncoderInternal(const VideoCodec& video_codec,
   }
 }
 
-void ViEEncoder::OnFrame(const VideoFrame& video_frame) {
+void ViEEncoder::IncomingCapturedFrame(const VideoFrame& video_frame) {
   RTC_DCHECK_RUNS_SERIALIZED(&incoming_frame_race_checker_);
   stats_proxy_->OnIncomingFrame(video_frame.width(), video_frame.height());
 
