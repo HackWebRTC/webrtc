@@ -296,6 +296,7 @@ public class Camera2Session implements CameraSession {
     List<CaptureFormat.FramerateRange> framerateRanges =
         Camera2Enumerator.convertFramerates(fpsRanges, fpsUnitFactor);
     List<Size> sizes = Camera2Enumerator.getSupportedSizes(cameraCharacteristics);
+    Logging.d(TAG, "Available fps ranges: " + framerateRanges);
 
     if (framerateRanges.isEmpty() || sizes.isEmpty()) {
       reportError("No supported capture formats.");
