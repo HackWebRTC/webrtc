@@ -15,7 +15,7 @@ declare_args() {
 }
 
 group("modules") {
-  deps = [
+  public_deps = [
     "audio_coding",
     "audio_conference_mixer",
     "audio_device",

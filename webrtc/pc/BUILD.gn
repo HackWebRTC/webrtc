@@ -9,7 +9,7 @@
 import("../build/webrtc.gni")
 
 group("pc") {
-  deps = [
+  public_deps = [
     ":rtc_pc",
   ]
 }

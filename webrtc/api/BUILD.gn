@@ -13,7 +13,7 @@ if (is_android) {
 }
 
 group("api") {
-  deps = [
+  public_deps = [
     ":libjingle_peerconnection",
   ]
 }

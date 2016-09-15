@@ -20,13 +20,13 @@ if (is_linux) {
 }
 
 group("examples") {
-  deps = []
+  public_deps = []
 
   if (is_android) {
-    deps += [ ":AppRTCDemo" ]
+    public_deps += [ ":AppRTCDemo" ]
   }
   if (is_linux) {
-    deps += [
+    public_deps += [
       ":peerconnection_client",
       ":peerconnection_server",
       ":relayserver",

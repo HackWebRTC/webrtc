@@ -9,7 +9,7 @@
 import("../../build/webrtc.gni")
 
 group("xmpp") {
-  deps = [
+  public_deps = [
     ":rtc_xmpp",
   ]
 }

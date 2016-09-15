@@ -9,7 +9,7 @@
 import("../build/webrtc.gni")
 
 group("p2p") {
-  deps = [
+  public_deps = [
     ":rtc_p2p",
   ]
 }

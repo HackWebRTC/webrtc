@@ -9,7 +9,7 @@
 import("../../build/webrtc.gni")
 
 group("xmllite") {
-  deps = [
+  public_deps = [
     ":rtc_xmllite",
   ]
 }

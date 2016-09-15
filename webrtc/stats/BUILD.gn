@@ -9,7 +9,7 @@
 import("../build/webrtc.gni")
 
 group("stats") {
-  deps = [
+  public_deps = [
     ":rtc_stats",
   ]
 }

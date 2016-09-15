@@ -10,7 +10,7 @@ import("//build/config/linux/pkg_config.gni")
 import("../build/webrtc.gni")
 
 group("media") {
-  deps = [
+  public_deps = [
     ":rtc_media",
   ]
 }
