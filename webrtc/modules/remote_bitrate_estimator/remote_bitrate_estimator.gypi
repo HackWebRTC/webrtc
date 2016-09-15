@@ -62,55 +62,6 @@
     ['include_tests==1', {
       'targets': [
         {
-          'target_name': 'bwe_simulator',
-          'type': 'static_library',
-          'dependencies': [
-            '<(webrtc_root)/modules/modules.gyp:paced_sender',
-            '<(webrtc_root)/test/test.gyp:test_support',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
-            '<(DEPTH)/testing/gmock.gyp:gmock',
-          ],
-          'sources': [
-            'bwe_simulations.cc',
-            'test/bwe.cc',
-            'test/bwe.h',
-            'test/bwe_test.cc',
-            'test/bwe_test.h',
-            'test/bwe_test_baselinefile.cc',
-            'test/bwe_test_baselinefile.h',
-            'test/bwe_test_fileutils.cc',
-            'test/bwe_test_fileutils.h',
-            'test/bwe_test_framework.cc',
-            'test/bwe_test_framework.h',
-            'test/bwe_test_logging.h',
-            'test/metric_recorder.cc',
-            'test/metric_recorder.h',
-            'test/packet_receiver.cc',
-            'test/packet_receiver.h',
-            'test/packet_sender.cc',
-            'test/packet_sender.h',
-            'test/packet.h',
-            'test/estimators/nada.cc',
-            'test/estimators/nada.h',
-            'test/estimators/remb.cc',
-            'test/estimators/remb.h',
-            'test/estimators/send_side.cc',
-            'test/estimators/send_side.h',
-            'test/estimators/tcp.cc',
-            'test/estimators/tcp.h',
-          ],
-          'conditions': [
-            ['enable_bwe_test_logging==1', {
-              'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1' ],
-              'sources': [
-                'test/bwe_test_logging.cc'
-              ],
-            }, {
-              'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0' ],
-            }],
-          ],
-        },
-        {
           'target_name': 'bwe_tools_util',
           'type': 'static_library',
           'dependencies': [

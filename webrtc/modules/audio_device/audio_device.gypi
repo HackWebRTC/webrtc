@@ -255,28 +255,5 @@
       ], # conditions
     },
   ],
-  'conditions': [
-    # Does not compile on iOS: webrtc:4755.
-    ['include_tests==1 and OS!="ios"', {
-      'targets': [
-        {
-          'target_name': 'audio_device_tests',
-          'type': 'executable',
-          'dependencies': [
-            'audio_device',
-            'webrtc_utility',
-            '<(webrtc_root)/test/test.gyp:test_support_main',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
-            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
-            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
-          ],
-          'sources': [
-            'test/audio_device_test_api.cc',
-            'test/audio_device_test_defines.h',
-          ],
-        },
-      ], # targets
-    }], # include_tests==1 and OS!=ios
-  ],
 }
 

@@ -150,42 +150,6 @@
       ],
     },
     {
-      'target_name': 'test_support_unittests',
-      'type': '<(gtest_target_type)',
-      'dependencies': [
-        'test_common',
-        'test_support_main',
-        '<(webrtc_root)/modules/modules.gyp:video_capture',
-        '<(DEPTH)/testing/gmock.gyp:gmock',
-        '<(DEPTH)/testing/gtest.gyp:gtest',
-      ],
-      'sources': [
-        'fake_network_pipe_unittest.cc',
-        'frame_generator_unittest.cc',
-        'rtp_file_reader_unittest.cc',
-        'rtp_file_writer_unittest.cc',
-        'testsupport/always_passing_unittest.cc',
-        'testsupport/unittest_utils.h',
-        'testsupport/fileutils_unittest.cc',
-        'testsupport/frame_reader_unittest.cc',
-        'testsupport/frame_writer_unittest.cc',
-        'testsupport/metrics/video_metrics_unittest.cc',
-        'testsupport/packet_reader_unittest.cc',
-        'testsupport/perf_test_unittest.cc',
-      ],
-      # Disable warnings to enable Win64 build, issue 1323.
-      'msvs_disabled_warnings': [
-        4267,  # size_t to int truncation.
-      ],
-      'conditions': [
-        ['OS=="android"', {
-          'dependencies': [
-            '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
-          ],
-        }],
-      ],
-    },
-   {
      'target_name': 'test_common',
      'type': 'static_library',
      'sources': [
@@ -325,56 +289,5 @@
        ],
      },
     },
-  ],
-  'conditions': [
-    ['OS=="android"', {
-      'targets': [
-        {
-          'target_name': 'test_support_unittests_apk_target',
-          'type': 'none',
-          'dependencies': [
-            '<(android_tests_path):test_support_unittests_apk',
-          ],
-        },
-      ],
-      'conditions': [
-        ['test_isolation_mode != "noop"',
-          {
-            'targets': [
-              {
-                'target_name': 'test_support_unittests_apk_run',
-                'type': 'none',
-                'dependencies': [
-                  '<(android_tests_path):test_support_unittests_apk',
-                ],
-                'includes': [
-                  '../build/isolate.gypi',
-                ],
-                'sources': [
-                  'test_support_unittests_apk.isolate',
-                ],
-              },
-            ],
-          },
-        ],
-      ],
-    }],  # OS=="android"
-    ['test_isolation_mode != "noop"', {
-      'targets': [
-        {
-          'target_name': 'test_support_unittests_run',
-          'type': 'none',
-          'dependencies': [
-            'test_support_unittests',
-          ],
-          'includes': [
-            '../build/isolate.gypi',
-          ],
-          'sources': [
-            'test_support_unittests.isolate',
-          ],
-        },
-      ],
-    }],
   ],
 }

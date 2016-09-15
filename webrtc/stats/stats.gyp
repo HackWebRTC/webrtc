@@ -25,26 +25,4 @@
       ],
     },
   ],
-  'conditions': [
-    ['include_tests==1', {
-      'targets': [
-        {
-          # GN version: webrtc/stats:rtc_stats_unittests
-          'target_name': 'rtc_stats_unittests',
-          'type': '<(gtest_target_type)',
-          'dependencies': [
-            '<(DEPTH)/testing/gmock.gyp:gmock',
-            '<(webrtc_root)/base/base_tests.gyp:rtc_base_tests_utils',
-            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
-            'rtc_stats',
-          ],
-          'sources': [
-            'rtcstats_unittest.cc',
-            'rtcstatscollector_unittest.cc',
-            'rtcstatsreport_unittest.cc',
-          ],
-        },
-      ],
-    }],
-  ],
 }

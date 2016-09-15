@@ -47,9 +47,6 @@
             'webrtc/webrtc_tests.gypi',
           ],
           'dependencies': [
-            'webrtc/api/api_tests.gyp:*',
-            'webrtc/common_video/common_video_unittests.gyp:*',
-            'webrtc/system_wrappers/system_wrappers_tests.gyp:*',
             'webrtc/test/test.gyp:*',
           ],
         }],

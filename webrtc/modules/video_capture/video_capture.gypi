@@ -162,61 +162,6 @@
         },
       ],
     }], # build_with_chromium==0
-    ['include_tests==1 and OS!="android"', {
-      'targets': [
-        {
-          'target_name': 'video_capture_tests',
-          'type': '<(gtest_target_type)',
-          'dependencies': [
-            'video_capture_module',
-            'video_capture_module_internal_impl',
-            'webrtc_utility',
-            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
-            '<(webrtc_root)/test/test.gyp:video_test_common',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
-          ],
-          'sources': [
-            'test/video_capture_unittest.cc',
-            'test/video_capture_main_mac.mm',
-          ],
-          'conditions': [
-            ['OS=="mac" or OS=="linux"', {
-              'cflags': [
-                '-Wno-write-strings',
-              ],
-              'ldflags': [
-                '-lpthread -lm',
-              ],
-            }],
-            ['OS=="linux"', {
-              'libraries': [
-                '-lrt',
-                '-lXext',
-                '-lX11',
-              ],
-            }],
-            ['OS=="mac"', {
-              'dependencies': [
-                # Link with a special main for mac so we can use the webcam.
-                '<(webrtc_root)/test/test.gyp:test_support_main_threaded_mac',
-              ],
-              'xcode_settings': {
-                # TODO(andrew): CoreAudio and AudioToolbox shouldn't be needed.
-                'OTHER_LDFLAGS': [
-                  '-framework Foundation -framework AppKit -framework Cocoa -framework OpenGL -framework CoreVideo -framework CoreAudio -framework AudioToolbox',
-                ],
-              },
-            }], # OS=="mac"
-            ['OS!="mac"', {
-              'dependencies': [
-                # Otherwise, use the regular main.
-                '<(webrtc_root)/test/test.gyp:test_support_main',
-              ],
-            }], # OS!="mac"
-          ] # conditions
-        },
-      ], # targets
-    }],
   ],
 }
 

@@ -163,25 +163,4 @@
      ], # sources
     }, # ilbc
   ], # targets
-  'conditions': [
-    ['include_tests==1', {
-      'targets': [
-        {
-          'target_name': 'ilbc_test',
-          'type': 'executable',
-          'dependencies': [
-            'ilbc',
-          ],
-          'sources': [
-            # The empty .cc file is a hack to get GYP to use the C++
-            # linker even though all sources here are .c files; this
-            # is necessary because we transitively depend on
-            # rtc_base_approved, which calls the C++ standard library.
-            'test/empty.cc',
-            'test/iLBC_test.c',
-          ],
-        }, # ilbc_test
-      ], # targets
-    }], # include_tests
-  ], # conditions
 }
