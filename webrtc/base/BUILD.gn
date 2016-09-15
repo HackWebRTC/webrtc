@@ -93,7 +93,6 @@ rtc_static_library("rtc_base_approved") {
 
   sources = [
     "array_view.h",
-    "arraysize.h",
     "atomicops.h",
     "bind.h",
     "bitbuffer.cc",
@@ -289,6 +288,7 @@ rtc_static_library("rtc_base") {
 
   sources = [
     "applefilesystem.mm",
+    "arraysize.h",
     "asyncfile.cc",
     "asyncfile.h",
     "asyncinvoker-inl.h",
