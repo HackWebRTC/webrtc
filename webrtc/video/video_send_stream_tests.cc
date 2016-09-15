@@ -33,6 +33,7 @@
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/configurable_frame_size_encoder.h"
 #include "webrtc/test/fake_texture_frame.h"
+#include "webrtc/test/frame_generator.h"
 #include "webrtc/test/frame_utils.h"
 #include "webrtc/test/null_transport.h"
 #include "webrtc/test/testsupport/perf_test.h"
@@ -1473,8 +1474,10 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
       handle3, width, height, 5, 5, kVideoRotation_0));
 
   video_send_stream_->Start();
+  test::FrameForwarder forwarder;
+  video_send_stream_->SetSource(&forwarder);
   for (size_t i = 0; i < input_frames.size(); i++) {
-    video_send_stream_->Input()->IncomingCapturedFrame(input_frames[i]);
+    forwarder.IncomingCapturedFrame(input_frames[i]);
     // Do not send the next frame too fast, so the frame dropper won't drop it.
     if (i < input_frames.size() - 1)
       SleepMs(1000 / video_encoder_config_.streams[0].max_framerate);
@@ -1483,6 +1486,7 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
     observer.WaitOutputFrame();
   }
   video_send_stream_->Stop();
+  video_send_stream_->SetSource(nullptr);
 
   // Test if the input and output frames are the same. render_time_ms and
   // timestamp are not compared because capturer sets those values.

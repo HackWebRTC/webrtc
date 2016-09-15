@@ -545,12 +545,10 @@ void VideoSendStream::Stop() {
   worker_queue_->PostTask([send_stream] { send_stream->Stop(); });
 }
 
-VideoCaptureInput* VideoSendStream::Input() {
-  // Input() will be called on the thread that deliverers video frames from
-  // libjingle.
-  // TODO(perkj): Refactor ViEEncoder to register directly as a VideoSink to the
-  // VideoSource.
-  return vie_encoder_.get();
+void VideoSendStream::SetSource(
+    rtc::VideoSourceInterface<webrtc::VideoFrame>* source) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+  vie_encoder_->SetSource(source);
 }
 
 void VideoSendStream::ReconfigureVideoEncoder(VideoEncoderConfig config) {

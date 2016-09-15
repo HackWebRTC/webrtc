@@ -177,9 +177,10 @@ class BitrateEstimatorTest : public test::CallTest {
           test_->video_encoder_config_.Copy());
       RTC_DCHECK_EQ(1u, test_->video_encoder_config_.streams.size());
       frame_generator_capturer_.reset(test::FrameGeneratorCapturer::Create(
-          send_stream_->Input(), test_->video_encoder_config_.streams[0].width,
+          test_->video_encoder_config_.streams[0].width,
           test_->video_encoder_config_.streams[0].height, 30,
           Clock::GetRealTimeClock()));
+      send_stream_->SetSource(frame_generator_capturer_.get());
       send_stream_->Start();
       frame_generator_capturer_->Start();
 
@@ -216,8 +217,8 @@ class BitrateEstimatorTest : public test::CallTest {
 
     ~Stream() {
       EXPECT_FALSE(is_sending_receiving_);
-      frame_generator_capturer_.reset(nullptr);
       test_->sender_call_->DestroyVideoSendStream(send_stream_);
+      frame_generator_capturer_.reset(nullptr);
       send_stream_ = nullptr;
       if (audio_receive_stream_) {
         test_->receiver_call_->DestroyAudioReceiveStream(audio_receive_stream_);

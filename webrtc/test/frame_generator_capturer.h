@@ -18,6 +18,7 @@
 #include "webrtc/common_video/rotation.h"
 #include "webrtc/test/video_capturer.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/video_frame.h"
 
 namespace webrtc {
 
@@ -30,14 +31,12 @@ class FrameGenerator;
 
 class FrameGeneratorCapturer : public VideoCapturer {
  public:
-  static FrameGeneratorCapturer* Create(VideoCaptureInput* input,
-                                        size_t width,
+  static FrameGeneratorCapturer* Create(size_t width,
                                         size_t height,
                                         int target_fps,
                                         Clock* clock);
 
-  static FrameGeneratorCapturer* CreateFromYuvFile(VideoCaptureInput* input,
-                                                   const std::string& file_name,
+  static FrameGeneratorCapturer* CreateFromYuvFile(const std::string& file_name,
                                                    size_t width,
                                                    size_t height,
                                                    int target_fps,
@@ -46,13 +45,17 @@ class FrameGeneratorCapturer : public VideoCapturer {
 
   void Start() override;
   void Stop() override;
+
+  void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
+                       const rtc::VideoSinkWants& wants) override;
+  void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override;
+
   void ForceFrame();
   void SetFakeRotation(VideoRotation rotation);
 
   int64_t first_frame_capture_time() const { return first_frame_capture_time_; }
 
   FrameGeneratorCapturer(Clock* clock,
-                         VideoCaptureInput* input,
                          FrameGenerator* frame_generator,
                          int target_fps);
   bool Init();
@@ -63,6 +66,7 @@ class FrameGeneratorCapturer : public VideoCapturer {
 
   Clock* const clock_;
   bool sending_;
+  rtc::VideoSinkInterface<VideoFrame>* sink_ GUARDED_BY(&lock_);
 
   std::unique_ptr<EventTimerWrapper> tick_;
   rtc::CriticalSection lock_;

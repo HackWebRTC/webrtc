@@ -103,9 +103,15 @@ FakeVideoSendStream::FakeVideoSendStream(
     : sending_(false),
       config_(std::move(config)),
       codec_settings_set_(false),
+      source_(nullptr),
       num_swapped_frames_(0) {
   RTC_DCHECK(config.encoder_settings.encoder != NULL);
   ReconfigureVideoEncoder(std::move(encoder_config));
+}
+
+FakeVideoSendStream::~FakeVideoSendStream() {
+  if (source_)
+    source_->RemoveSink(this);
 }
 
 const webrtc::VideoSendStream::Config& FakeVideoSendStream::GetConfig() const {
@@ -162,8 +168,7 @@ int64_t FakeVideoSendStream::GetLastTimestamp() const {
   return last_frame_.render_time_ms();
 }
 
-void FakeVideoSendStream::IncomingCapturedFrame(
-    const webrtc::VideoFrame& frame) {
+void FakeVideoSendStream::OnFrame(const webrtc::VideoFrame& frame) {
   ++num_swapped_frames_;
   last_frame_.ShallowCopy(frame);
 }
@@ -204,16 +209,22 @@ void FakeVideoSendStream::ReconfigureVideoEncoder(
   ++num_encoder_reconfigurations_;
 }
 
-webrtc::VideoCaptureInput* FakeVideoSendStream::Input() {
-  return this;
-}
-
 void FakeVideoSendStream::Start() {
   sending_ = true;
 }
 
 void FakeVideoSendStream::Stop() {
   sending_ = false;
+}
+
+void FakeVideoSendStream::SetSource(
+    rtc::VideoSourceInterface<webrtc::VideoFrame>* source) {
+  RTC_DCHECK(source != source_);
+  if (source_)
+    source_->RemoveSink(this);
+  source_ = source;
+  if (source)
+    source->AddOrUpdateSink(this, rtc::VideoSinkWants());
 }
 
 FakeVideoReceiveStream::FakeVideoReceiveStream(
