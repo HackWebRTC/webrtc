@@ -327,7 +327,6 @@ rtc_source_set("test_common") {
     "../video",
     "//testing/gmock",
     "//testing/gtest",
-    "//third_party/gflags",
   ]
 }
 
