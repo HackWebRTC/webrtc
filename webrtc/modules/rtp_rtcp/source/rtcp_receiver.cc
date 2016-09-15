@@ -745,27 +745,24 @@ void RTCPReceiver::HandleSDES(RTCPUtility::RTCPParserV2& rtcpParser,
                               RTCPPacketInformation& rtcpPacketInformation) {
   RTCPUtility::RTCPPacketTypes pktType = rtcpParser.Iterate();
   while (pktType == RTCPPacketTypes::kSdesChunk) {
-    HandleSDESChunk(rtcpParser);
+    const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
+    RTCPCnameInformation* cnameInfo =
+        CreateCnameInformation(rtcpPacket.CName.SenderSSRC);
+    RTC_DCHECK(cnameInfo);
+
+    cnameInfo->name[RTCP_CNAME_SIZE - 1] = 0;
+    strncpy(cnameInfo->name, rtcpPacket.CName.CName, RTCP_CNAME_SIZE - 1);
+    {
+      rtc::CritScope lock(&_criticalSectionFeedbacks);
+      if (stats_callback_) {
+        stats_callback_->CNameChanged(rtcpPacket.CName.CName,
+                                      rtcpPacket.CName.SenderSSRC);
+      }
+    }
+
     pktType = rtcpParser.Iterate();
   }
   rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpSdes;
-}
-
-void RTCPReceiver::HandleSDESChunk(RTCPUtility::RTCPParserV2& rtcpParser) {
-  const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
-  RTCPCnameInformation* cnameInfo =
-      CreateCnameInformation(rtcpPacket.CName.SenderSSRC);
-  assert(cnameInfo);
-
-  cnameInfo->name[RTCP_CNAME_SIZE - 1] = 0;
-  strncpy(cnameInfo->name, rtcpPacket.CName.CName, RTCP_CNAME_SIZE - 1);
-  {
-    rtc::CritScope lock(&_criticalSectionFeedbacks);
-    if (stats_callback_ != NULL) {
-      stats_callback_->CNameChanged(rtcpPacket.CName.CName,
-                                    rtcpPacket.CName.SenderSSRC);
-    }
-  }
 }
 
 void RTCPReceiver::HandleNACK(RTCPUtility::RTCPParserV2& rtcpParser,
@@ -780,7 +777,21 @@ void RTCPReceiver::HandleNACK(RTCPUtility::RTCPParserV2& rtcpParser,
 
   RTCPUtility::RTCPPacketTypes pktType = rtcpParser.Iterate();
   while (pktType == RTCPPacketTypes::kRtpfbNackItem) {
-    HandleNACKItem(rtcpPacket, rtcpPacketInformation);
+    rtcpPacketInformation.AddNACKPacket(rtcpPacket.NACKItem.PacketID);
+    nack_stats_.ReportRequest(rtcpPacket.NACKItem.PacketID);
+
+    uint16_t bitMask = rtcpPacket.NACKItem.BitMask;
+    if (bitMask) {
+      for (int i = 1; i <= 16; ++i) {
+        if (bitMask & 0x01) {
+          rtcpPacketInformation.AddNACKPacket(rtcpPacket.NACKItem.PacketID + i);
+          nack_stats_.ReportRequest(rtcpPacket.NACKItem.PacketID + i);
+        }
+        bitMask = bitMask >> 1;
+      }
+    }
+    rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpNack;
+
     pktType = rtcpParser.Iterate();
   }
 
@@ -789,25 +800,6 @@ void RTCPReceiver::HandleNACK(RTCPUtility::RTCPParserV2& rtcpParser,
     packet_type_counter_.nack_requests = nack_stats_.requests();
     packet_type_counter_.unique_nack_requests = nack_stats_.unique_requests();
   }
-}
-
-void RTCPReceiver::HandleNACKItem(
-    const RTCPUtility::RTCPPacket& rtcpPacket,
-    RTCPPacketInformation& rtcpPacketInformation) {
-  rtcpPacketInformation.AddNACKPacket(rtcpPacket.NACKItem.PacketID);
-  nack_stats_.ReportRequest(rtcpPacket.NACKItem.PacketID);
-
-  uint16_t bitMask = rtcpPacket.NACKItem.BitMask;
-  if (bitMask) {
-    for (int i = 1; i <= 16; ++i) {
-      if (bitMask & 0x01) {
-        rtcpPacketInformation.AddNACKPacket(rtcpPacket.NACKItem.PacketID + i);
-        nack_stats_.ReportRequest(rtcpPacket.NACKItem.PacketID + i);
-      }
-      bitMask = bitMask >> 1;
-    }
-  }
-  rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpNack;
 }
 
 void RTCPReceiver::HandleBYE(RTCPUtility::RTCPParserV2& rtcpParser) {
@@ -881,41 +873,35 @@ void RTCPReceiver::HandleXrDlrrReportBlock(
   RTCPUtility::RTCPPacketTypes packet_type = parser.Iterate();
 
   while (packet_type == RTCPPacketTypes::kXrDlrrReportBlockItem) {
-    HandleXrDlrrReportBlockItem(packet, rtcpPacketInformation);
+    if (registered_ssrcs_.find(packet.XRDLRRReportBlockItem.SSRC) ==
+        registered_ssrcs_.end()) {
+      // Not to us.
+      return;
+    }
+
+    rtcpPacketInformation.xr_dlrr_item = true;
+
+    // Caller should explicitly enable rtt calculation using extended reports.
+    if (!xr_rrtr_status_)
+      return;
+
+    // The send_time and delay_rr fields are in units of 1/2^16 sec.
+    uint32_t send_time = packet.XRDLRRReportBlockItem.LastRR;
+    // RFC3611, section 4.5, LRR field discription states:
+    // If no such block has been received, the field is set to zero.
+    if (send_time == 0)
+      return;
+
+    uint32_t delay_rr = packet.XRDLRRReportBlockItem.DelayLastRR;
+    uint32_t now = CompactNtp(NtpTime(*_clock));
+
+    uint32_t rtt_ntp = now - delay_rr - send_time;
+    xr_rr_rtt_ms_ = CompactNtpRttToMs(rtt_ntp);
+
+    rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpXrDlrrReportBlock;
+
     packet_type = parser.Iterate();
   }
-}
-
-void RTCPReceiver::HandleXrDlrrReportBlockItem(
-    const RTCPUtility::RTCPPacket& packet,
-    RTCPPacketInformation& rtcpPacketInformation)
-    EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver) {
-  if (registered_ssrcs_.find(packet.XRDLRRReportBlockItem.SSRC) ==
-      registered_ssrcs_.end()) {
-    // Not to us.
-    return;
-  }
-
-  rtcpPacketInformation.xr_dlrr_item = true;
-
-  // Caller should explicitly enable rtt calculation using extended reports.
-  if (!xr_rrtr_status_)
-    return;
-
-  // The send_time and delay_rr fields are in units of 1/2^16 sec.
-  uint32_t send_time = packet.XRDLRRReportBlockItem.LastRR;
-  // RFC3611, section 4.5, LRR field discription states:
-  // If no such block has been received, the field is set to zero.
-  if (send_time == 0)
-    return;
-
-  uint32_t delay_rr = packet.XRDLRRReportBlockItem.DelayLastRR;
-  uint32_t now = CompactNtp(NtpTime(*_clock));
-
-  uint32_t rtt_ntp = now - delay_rr - send_time;
-  xr_rr_rtt_ms_ = CompactNtpRttToMs(rtt_ntp);
-
-  rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpXrDlrrReportBlock;
 }
 
 void RTCPReceiver::HandlePLI(RTCPUtility::RTCPParserV2& rtcpParser,
@@ -961,25 +947,18 @@ void RTCPReceiver::HandleTMMBR(RTCPUtility::RTCPParserV2& rtcpParser,
 
   RTCPUtility::RTCPPacketTypes pktType = rtcpParser.Iterate();
   while (pktType == RTCPPacketTypes::kRtpfbTmmbrItem) {
-    HandleTMMBRItem(*ptrReceiveInfo, rtcpPacket, rtcpPacketInformation,
-                    senderSSRC);
-    pktType = rtcpParser.Iterate();
-  }
-}
+    if (main_ssrc_ == rtcpPacket.TMMBRItem.SSRC &&
+        rtcpPacket.TMMBRItem.MaxTotalMediaBitRate > 0) {
+      ptrReceiveInfo->InsertTmmbrItem(
+          senderSSRC,
+          rtcp::TmmbItem(rtcpPacket.TMMBRItem.SSRC,
+                         rtcpPacket.TMMBRItem.MaxTotalMediaBitRate * 1000,
+                         rtcpPacket.TMMBRItem.MeasuredOverhead),
+          _clock->TimeInMilliseconds());
+      rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpTmmbr;
+    }
 
-void RTCPReceiver::HandleTMMBRItem(RTCPReceiveInformation& receiveInfo,
-                                   const RTCPUtility::RTCPPacket& rtcpPacket,
-                                   RTCPPacketInformation& rtcpPacketInformation,
-                                   uint32_t senderSSRC) {
-  if (main_ssrc_ == rtcpPacket.TMMBRItem.SSRC &&
-      rtcpPacket.TMMBRItem.MaxTotalMediaBitRate > 0) {
-    receiveInfo.InsertTmmbrItem(
-        senderSSRC,
-        rtcp::TmmbItem(rtcpPacket.TMMBRItem.SSRC,
-                       rtcpPacket.TMMBRItem.MaxTotalMediaBitRate * 1000,
-                       rtcpPacket.TMMBRItem.MeasuredOverhead),
-        _clock->TimeInMilliseconds());
-    rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpTmmbr;
+    pktType = rtcpParser.Iterate();
   }
 }
 
@@ -1007,7 +986,10 @@ void RTCPReceiver::HandleTMMBN(RTCPUtility::RTCPParserV2& rtcpParser,
 
   RTCPUtility::RTCPPacketTypes pktType = rtcpParser.Iterate();
   while (pktType == RTCPPacketTypes::kRtpfbTmmbnItem) {
-    HandleTMMBNItem(*ptrReceiveInfo, rtcpPacket);
+    ptrReceiveInfo->tmmbn.emplace_back(
+        rtcpPacket.TMMBNItem.SSRC,
+        rtcpPacket.TMMBNItem.MaxTotalMediaBitRate * 1000,
+        rtcpPacket.TMMBNItem.MeasuredOverhead);
     pktType = rtcpParser.Iterate();
   }
 }
@@ -1018,30 +1000,18 @@ void RTCPReceiver::HandleSR_REQ(RTCPUtility::RTCPParserV2& rtcpParser,
   rtcpParser.Iterate();
 }
 
-void RTCPReceiver::HandleTMMBNItem(RTCPReceiveInformation& receiveInfo,
-                                   const RTCPUtility::RTCPPacket& rtcpPacket) {
-  receiveInfo.tmmbn.emplace_back(
-      rtcpPacket.TMMBNItem.SSRC,
-      rtcpPacket.TMMBNItem.MaxTotalMediaBitRate * 1000,
-      rtcpPacket.TMMBNItem.MeasuredOverhead);
-}
-
 void RTCPReceiver::HandleSLI(RTCPUtility::RTCPParserV2& rtcpParser,
                              RTCPPacketInformation& rtcpPacketInformation) {
   const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
   RTCPUtility::RTCPPacketTypes pktType = rtcpParser.Iterate();
   while (pktType == RTCPPacketTypes::kPsfbSliItem) {
-    HandleSLIItem(rtcpPacket, rtcpPacketInformation);
+    // in theory there could be multiple slices lost
+    rtcpPacketInformation.rtcpPacketTypeFlags |=
+        kRtcpSli;  // received signal that we need to refresh a slice
+    rtcpPacketInformation.sliPictureId = rtcpPacket.SLIItem.PictureId;
+
     pktType = rtcpParser.Iterate();
   }
-}
-
-void RTCPReceiver::HandleSLIItem(const RTCPUtility::RTCPPacket& rtcpPacket,
-                                 RTCPPacketInformation& rtcpPacketInformation) {
-  // in theory there could be multiple slices lost
-  rtcpPacketInformation.rtcpPacketTypeFlags |=
-      kRtcpSli;  // received signal that we need to refresh a slice
-  rtcpPacketInformation.sliPictureId = rtcpPacket.SLIItem.PictureId;
 }
 
 void RTCPReceiver::HandleRPSI(
@@ -1078,19 +1048,14 @@ void RTCPReceiver::HandlePsfbApp(RTCPUtility::RTCPParserV2& rtcpParser,
   if (pktType == RTCPPacketTypes::kPsfbRemb) {
     pktType = rtcpParser.Iterate();
     if (pktType == RTCPPacketTypes::kPsfbRembItem) {
-      HandleREMBItem(rtcpParser, rtcpPacketInformation);
+      const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
+      rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpRemb;
+      rtcpPacketInformation.receiverEstimatedMaxBitrate =
+          rtcpPacket.REMBItem.BitRate;
+
       rtcpParser.Iterate();
     }
   }
-}
-
-void RTCPReceiver::HandleREMBItem(
-    RTCPUtility::RTCPParserV2& rtcpParser,
-    RTCPPacketInformation& rtcpPacketInformation) {
-  const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
-  rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpRemb;
-  rtcpPacketInformation.receiverEstimatedMaxBitrate =
-      rtcpPacket.REMBItem.BitRate;
 }
 
 void RTCPReceiver::HandleFIR(RTCPUtility::RTCPParserV2& rtcpParser,
@@ -1101,40 +1066,36 @@ void RTCPReceiver::HandleFIR(RTCPUtility::RTCPParserV2& rtcpParser,
 
   RTCPUtility::RTCPPacketTypes pktType = rtcpParser.Iterate();
   while (pktType == RTCPPacketTypes::kPsfbFirItem) {
-    HandleFIRItem(ptrReceiveInfo, rtcpPacket, rtcpPacketInformation);
-    pktType = rtcpParser.Iterate();
-  }
-}
-
-void RTCPReceiver::HandleFIRItem(RTCPReceiveInformation* receiveInfo,
-                                 const RTCPUtility::RTCPPacket& rtcpPacket,
-                                 RTCPPacketInformation& rtcpPacketInformation) {
-  // Is it our sender that is requested to generate a new keyframe
-  if (main_ssrc_ != rtcpPacket.FIRItem.SSRC) {
-    return;
-  }
-
-  ++packet_type_counter_.fir_packets;
-
-  // rtcpPacket.FIR.MediaSSRC SHOULD be 0 but we ignore to check it
-  // we don't know who this originate from
-  if (receiveInfo) {
-    // check if we have reported this FIRSequenceNumber before
-    if (rtcpPacket.FIRItem.CommandSequenceNumber !=
-        receiveInfo->last_fir_sequence_number) {
-      int64_t now = _clock->TimeInMilliseconds();
-      // sanity; don't go crazy with the callbacks
-      if ((now - receiveInfo->last_fir_request_ms) > RTCP_MIN_FRAME_LENGTH_MS) {
-        receiveInfo->last_fir_request_ms = now;
-        receiveInfo->last_fir_sequence_number =
-            rtcpPacket.FIRItem.CommandSequenceNumber;
-        // received signal that we need to send a new key frame
-        rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpFir;
-      }
+    // Is it our sender that is requested to generate a new keyframe
+    if (main_ssrc_ != rtcpPacket.FIRItem.SSRC) {
+      return;
     }
-  } else {
-    // received signal that we need to send a new key frame
-    rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpFir;
+
+    ++packet_type_counter_.fir_packets;
+
+    // rtcpPacket.FIR.MediaSSRC SHOULD be 0 but we ignore to check it
+    // we don't know who this originate from
+    if (ptrReceiveInfo) {
+      // check if we have reported this FIRSequenceNumber before
+      if (rtcpPacket.FIRItem.CommandSequenceNumber !=
+          ptrReceiveInfo->last_fir_sequence_number) {
+        int64_t now = _clock->TimeInMilliseconds();
+        // sanity; don't go crazy with the callbacks
+        if ((now - ptrReceiveInfo->last_fir_request_ms) >
+            RTCP_MIN_FRAME_LENGTH_MS) {
+          ptrReceiveInfo->last_fir_request_ms = now;
+          ptrReceiveInfo->last_fir_sequence_number =
+              rtcpPacket.FIRItem.CommandSequenceNumber;
+          // received signal that we need to send a new key frame
+          rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpFir;
+        }
+      }
+    } else {
+      // received signal that we need to send a new key frame
+      rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpFir;
+    }
+
+    pktType = rtcpParser.Iterate();
   }
 }
 
