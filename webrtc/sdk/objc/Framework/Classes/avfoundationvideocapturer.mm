@@ -740,17 +740,20 @@ void AVFoundationVideoCapturer::CaptureSampleBuffer(
     } else {
       // Applying rotation is only supported for legacy reasons and performance
       // is not critical here.
-      buffer = (rotation == webrtc::kVideoRotation_180)
-          ? I420Buffer::Create(adapted_width, adapted_height)
-          : I420Buffer::Create(adapted_height, adapted_width);
-      libyuv::I420Rotate(scaled_buffer->DataY(), scaled_buffer->StrideY(),
-                         scaled_buffer->DataU(), scaled_buffer->StrideU(),
-                         scaled_buffer->DataV(), scaled_buffer->StrideV(),
-                         buffer->MutableDataY(), buffer->StrideY(),
-                         buffer->MutableDataU(), buffer->StrideU(),
-                         buffer->MutableDataV(), buffer->StrideV(),
-                         crop_width, crop_height,
-                         static_cast<libyuv::RotationMode>(rotation));
+      rtc::scoped_refptr<webrtc::I420Buffer> rotated_buffer(
+          (rotation == webrtc::kVideoRotation_180)
+              ? I420Buffer::Create(adapted_width, adapted_height)
+              : I420Buffer::Create(adapted_height, adapted_width));
+      libyuv::I420Rotate(
+          scaled_buffer->DataY(), scaled_buffer->StrideY(),
+          scaled_buffer->DataU(), scaled_buffer->StrideU(),
+          scaled_buffer->DataV(), scaled_buffer->StrideV(),
+          rotated_buffer->MutableDataY(), rotated_buffer->StrideY(),
+          rotated_buffer->MutableDataU(), rotated_buffer->StrideU(),
+          rotated_buffer->MutableDataV(), rotated_buffer->StrideV(),
+          crop_width, crop_height,
+          static_cast<libyuv::RotationMode>(rotation));
+      buffer = rotated_buffer;
     }
   }
 
