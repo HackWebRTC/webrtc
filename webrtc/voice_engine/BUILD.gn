@@ -236,6 +236,31 @@ if (rtc_include_tests) {
     }
   }
 
+  rtc_executable("voe_cmd_test") {
+    testonly = true
+
+    deps = [
+      ":channel_transport",
+      ":voice_engine",
+      "//testing/gtest",
+      "//third_party/gflags",
+      "//webrtc:rtc_event_log",
+      "//webrtc/system_wrappers",
+      "//webrtc/system_wrappers:system_wrappers_default",
+      "//webrtc/test:test_support",
+    ]
+
+    sources = [
+      "test/cmd_test/voe_cmd_test.cc",
+    ]
+
+    if (is_clang) {
+      # Suppress warnings from Chrome's Clang plugins.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
   if (!is_ios) {
     rtc_executable("voe_auto_test") {
       testonly = true
