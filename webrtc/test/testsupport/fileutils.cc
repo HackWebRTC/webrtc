@@ -59,8 +59,6 @@ const char* kPathDelimiter = "/";
 #ifdef WEBRTC_ANDROID
 const char* kRootDirName = "/sdcard/chromium_tests_root/";
 #else
-// The file we're looking for to identify the project root dir.
-const char* kProjectRootFileName = "DEPS";
 #if !defined(WEBRTC_IOS)
 const char* kOutputDirName = "out";
 #endif
@@ -125,21 +123,22 @@ std::string ProjectRootPath() {
   if (path == kFallbackPath) {
     return kCannotFindProjectRootDir;
   }
-  if (relative_dir_path_set) {
+  if (relative_dir_path_set && strcmp(relative_dir_path, ".") != 0) {
     path = path + kPathDelimiter + relative_dir_path;
   }
-  // Check for our file that verifies the root dir.
+  // Remove two directory levels from the path, i.e. a path like
+  // /absolute/path/src/out/Debug will become /absolute/path/src/
   size_t path_delimiter_index = path.find_last_of(kPathDelimiter);
-  while (path_delimiter_index != std::string::npos) {
-    std::string root_filename = path + kPathDelimiter + kProjectRootFileName;
-    if (FileExists(root_filename)) {
-      return path + kPathDelimiter;
-    }
+  if (path_delimiter_index != std::string::npos) {
     // Move up one directory in the directory tree.
     path = path.substr(0, path_delimiter_index);
     path_delimiter_index = path.find_last_of(kPathDelimiter);
+    if (path_delimiter_index != std::string::npos) {
+      // Move up another directory in the directory tree. We should now be at
+      // the project root.
+      return path.substr(0, path_delimiter_index) + kPathDelimiter;
+    }
   }
-  // Reached the root directory.
   fprintf(stderr, "Cannot find project root directory!\n");
   return kCannotFindProjectRootDir;
 }

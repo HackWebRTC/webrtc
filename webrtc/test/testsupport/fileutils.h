@@ -75,10 +75,11 @@ extern const char* kCannotFindProjectRootDir;
 
 // Finds the root dir of the project, to be able to set correct paths to
 // resource files used by tests.
-// The implementation is simple: it just looks for the file defined by
-// kProjectRootFileName, starting in the current directory (the working
-// directory) and then steps upward until it is found (or it is at the root of
-// the file system).
+// For desktop, we assume that the project root is two levels above (i.e. the
+// current working directory + /../../)
+// For Android, it is assumed to be /sdcard/chromium_tests_root/
+// For iOS, the resource files are assumed to be included in the test's .app
+// bundle.
 // If the current working directory is above the project root dir, it will not
 // be found.
 //
