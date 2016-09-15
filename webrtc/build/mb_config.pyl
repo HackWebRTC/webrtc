@@ -59,7 +59,7 @@
       'Android32 Builder x86': 'android_gn_release_bot_x86',
       'Android32 Builder x86 (dbg)': 'android_gn_debug_static_bot_x86',
       'Android32 Builder MIPS (dbg)': 'android_gn_clang_debug_static_bot_mipsel',
-      'Android32 Clang (dbg)': 'android_gn_clang_debug_static_bot_arm',
+      'Android32 Clang (dbg)': 'android_gn_clang_debug_bot_arm',
       'Android64 Builder': 'android_gn_release_bot_arm64',
       'Android64 Builder (dbg)': 'android_gn_debug_static_bot_arm64',
       'Android64 Builder x64 (dbg)': 'android_gn_debug_static_bot_x64',
@@ -139,7 +139,7 @@
       'android_compile_mips_dbg': 'android_gn_clang_debug_static_bot_mipsel',
       'android_dbg': 'android_gn_debug_static_bot_arm',
       'android_rel': 'android_gn_release_bot_arm',
-      'android_clang_dbg': 'android_gn_clang_debug_static_bot_arm',
+      'android_clang_dbg': 'android_gn_clang_debug_bot_arm',
       'android_arm64_rel': 'android_gn_release_bot_arm64',
       'android_n6': 'android_gn_debug_static_bot_arm',
       'android_gyp_dbg': 'android_gyp_debug_static_bot_arm',
@@ -319,8 +319,8 @@
     'android_gn_release_bot_x86': [
       'android', 'gn', 'release_bot', 'x86'
     ],
-    'android_gn_clang_debug_static_bot_arm': [
-      'android', 'gn', 'clang', 'debug_static_bot', 'arm'
+    'android_gn_clang_debug_bot_arm': [
+      'android', 'gn', 'clang', 'debug_bot', 'arm'
     ],
     'android_gn_clang_debug_static_bot_mipsel': [
       'android', 'gn', 'clang', 'debug_static_bot', 'mipsel'
