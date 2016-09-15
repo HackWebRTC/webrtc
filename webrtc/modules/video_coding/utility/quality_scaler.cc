@@ -10,8 +10,15 @@
 
 #include "webrtc/modules/video_coding/utility/quality_scaler.h"
 
+#include <math.h>
+
 #include <algorithm>
-#include <cmath>
+
+// TODO(kthelgason): Some versions of Android have issues with log2.
+// See https://code.google.com/p/android/issues/detail?id=212634 for details
+#if defined(WEBRTC_ANDROID)
+#define log2(x) (log(x) / log(2))
+#endif
 
 namespace webrtc {
 
@@ -182,7 +189,7 @@ void QualityScaler::UpdateTargetResolution(int width, int height) {
     maximum_shift_ = 0;
   } else {
     maximum_shift_ = static_cast<int>(
-        std::log2(std::min(width, height) / kMinDownscaleDimension));
+        log2(std::min(width, height) / kMinDownscaleDimension));
   }
   target_res_ = Resolution{width, height};
 }
