@@ -474,6 +474,7 @@ bool TransportController::SetLocalTransportDescription_n(
     SetIceRole(new_ice_role);
   }
 
+  LOG(LS_INFO) << "Set local transport description on " << transport_name;
   return transport->SetLocalTransportDescription(tdesc, action, err);
 }
 
@@ -493,6 +494,7 @@ bool TransportController::SetRemoteTransportDescription_n(
     return true;
   }
 
+  LOG(LS_INFO) << "Set remote transport description on " << transport_name;
   return transport->SetRemoteTransportDescription(tdesc, action, err);
 }
 
