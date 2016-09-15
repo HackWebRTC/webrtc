@@ -235,6 +235,7 @@ def _CheckNoRtcBaseDeps(input_api, gyp_files, output_api):
   violating_files = []
   for f in gyp_files:
     gyp_exceptions = (
+        'audio_device.gypi',
         'base_tests.gyp',
         'desktop_capture.gypi',
         'p2p.gyp',
@@ -260,6 +261,7 @@ def _CheckNoRtcBaseDepsGn(input_api, gn_files, output_api):
   violating_files = []
   for f in gn_files:
     gn_exceptions = (
+        os.path.join('audio_device', 'BUILD.gn'),
         os.path.join('base_tests', 'BUILD.gn'),
         os.path.join('desktop_capture', 'BUILD.gn'),
         os.path.join('p2p', 'BUILD.gn'),

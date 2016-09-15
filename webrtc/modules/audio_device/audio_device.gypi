@@ -173,6 +173,7 @@
                 }],
                 ['OS=="ios"', {
                   'dependencies': [
+                    '<(webrtc_root)/base/base.gyp:rtc_base',
                     '<(webrtc_root)/sdk/sdk.gyp:rtc_sdk_common_objc',
                   ],
                   'export_dependent_settings': [

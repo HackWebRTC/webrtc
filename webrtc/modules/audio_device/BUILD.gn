@@ -53,7 +53,6 @@ rtc_source_set("audio_device") {
 
   deps = [
     "../..:webrtc_common",
-    "../../base:rtc_base",
     "../../base:rtc_base_approved",
     "../../base:rtc_task_queue",
     "../../common_audio",
@@ -175,6 +174,7 @@ rtc_source_set("audio_device") {
       }
       if (is_ios) {
         public_deps = [
+          "../../base:rtc_base",
           "../../sdk:rtc_sdk_common_objc",
         ]
         sources += [
