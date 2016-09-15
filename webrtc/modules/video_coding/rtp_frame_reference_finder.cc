@@ -291,7 +291,12 @@ void RtpFrameReferenceFinder::ManageFrameVp8(
   // Find all references for this frame.
   frame->num_references = 0;
   for (uint8_t layer = 0; layer <= codec_header.temporalIdx; ++layer) {
-    RTC_DCHECK_NE(-1, layer_info_it->second[layer]);
+    // If we have not yet received a previous frame on this temporal layer,
+    // stash this frame.
+    if (layer_info_it->second[layer] == -1) {
+      stashed_frames_.push_back(std::move(frame));
+      return;
+    }
 
     // If we have not yet received a frame between this frame and the referenced
     // frame then we have to wait for that frame to be completed first.
