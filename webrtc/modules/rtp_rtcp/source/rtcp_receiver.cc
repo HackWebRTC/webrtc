@@ -299,8 +299,10 @@ int32_t RTCPReceiver::IncomingRTCPPacket(
     // next top level packet.
     switch (pktType) {
       case RTCPPacketTypes::kSr:
+        HandleSenderReport(*rtcpParser, rtcpPacketInformation);
+        break;
       case RTCPPacketTypes::kRr:
-        HandleSenderReceiverReport(*rtcpParser, rtcpPacketInformation);
+        HandleReceiverReport(*rtcpParser, rtcpPacketInformation);
         break;
       case RTCPPacketTypes::kSdes:
         HandleSDES(*rtcpParser, rtcpPacketInformation);
@@ -374,24 +376,18 @@ int32_t RTCPReceiver::IncomingRTCPPacket(
   return 0;
 }
 
-void RTCPReceiver::HandleSenderReceiverReport(
+void RTCPReceiver::HandleSenderReport(
     RTCPUtility::RTCPParserV2& rtcpParser,
     RTCPPacketInformation& rtcpPacketInformation) {
   RTCPUtility::RTCPPacketTypes rtcpPacketType = rtcpParser.PacketType();
   const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
 
-  assert((rtcpPacketType == RTCPPacketTypes::kRr) ||
-         (rtcpPacketType == RTCPPacketTypes::kSr));
+  RTC_DCHECK(rtcpPacketType == RTCPPacketTypes::kSr);
 
   // SR.SenderSSRC
   // The synchronization source identifier for the originator of this SR packet
 
-  // rtcpPacket.RR.SenderSSRC
-  // The source of the packet sender, same as of SR? or is this a CE?
-
-  const uint32_t remoteSSRC = (rtcpPacketType == RTCPPacketTypes::kRr)
-                                  ? rtcpPacket.RR.SenderSSRC
-                                  : rtcpPacket.SR.SenderSSRC;
+  const uint32_t remoteSSRC = rtcpPacket.SR.SenderSSRC;
 
   rtcpPacketInformation.remoteSSRC = remoteSSRC;
 
@@ -401,40 +397,67 @@ void RTCPReceiver::HandleSenderReceiverReport(
     return;
   }
 
-  if (rtcpPacketType == RTCPPacketTypes::kSr) {
-    TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "SR",
-                         "remote_ssrc", remoteSSRC, "ssrc", main_ssrc_);
+  TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "SR",
+                       "remote_ssrc", remoteSSRC, "ssrc", main_ssrc_);
 
-    if (_remoteSSRC ==
-        remoteSSRC)  // have I received RTP packets from this party
-    {
-      // only signal that we have received a SR when we accept one
-      rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpSr;
+  // Have I received RTP packets from this party?
+  if (_remoteSSRC == remoteSSRC) {
+    // Only signal that we have received a SR when we accept one.
+    rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpSr;
 
-      rtcpPacketInformation.ntp_secs = rtcpPacket.SR.NTPMostSignificant;
-      rtcpPacketInformation.ntp_frac = rtcpPacket.SR.NTPLeastSignificant;
-      rtcpPacketInformation.rtp_timestamp = rtcpPacket.SR.RTPTimestamp;
+    rtcpPacketInformation.ntp_secs = rtcpPacket.SR.NTPMostSignificant;
+    rtcpPacketInformation.ntp_frac = rtcpPacket.SR.NTPLeastSignificant;
+    rtcpPacketInformation.rtp_timestamp = rtcpPacket.SR.RTPTimestamp;
 
-      // We will only store the send report from one source, but
-      // we will store all the receive block
+    // Save the NTP time of this report.
+    _remoteSenderInfo.NTPseconds = rtcpPacket.SR.NTPMostSignificant;
+    _remoteSenderInfo.NTPfraction = rtcpPacket.SR.NTPLeastSignificant;
+    _remoteSenderInfo.RTPtimeStamp = rtcpPacket.SR.RTPTimestamp;
+    _remoteSenderInfo.sendPacketCount = rtcpPacket.SR.SenderPacketCount;
+    _remoteSenderInfo.sendOctetCount = rtcpPacket.SR.SenderOctetCount;
 
-      // Save the NTP time of this report
-      _remoteSenderInfo.NTPseconds = rtcpPacket.SR.NTPMostSignificant;
-      _remoteSenderInfo.NTPfraction = rtcpPacket.SR.NTPLeastSignificant;
-      _remoteSenderInfo.RTPtimeStamp = rtcpPacket.SR.RTPTimestamp;
-      _remoteSenderInfo.sendPacketCount = rtcpPacket.SR.SenderPacketCount;
-      _remoteSenderInfo.sendOctetCount = rtcpPacket.SR.SenderOctetCount;
-
-      _clock->CurrentNtp(_lastReceivedSRNTPsecs, _lastReceivedSRNTPfrac);
-    } else {
-      rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpRr;
-    }
+    _clock->CurrentNtp(_lastReceivedSRNTPsecs, _lastReceivedSRNTPfrac);
   } else {
-    TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "RR",
-                         "remote_ssrc", remoteSSRC, "ssrc", main_ssrc_);
-
+    // We will only store the send report from one source, but
+    // we will store all the receive blocks.
     rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpRr;
   }
+  // Update that this remote is alive.
+  ptrReceiveInfo->last_time_received_ms = _clock->TimeInMilliseconds();
+
+  rtcpPacketType = rtcpParser.Iterate();
+
+  while (rtcpPacketType == RTCPPacketTypes::kReportBlockItem) {
+    HandleReportBlock(rtcpPacket, rtcpPacketInformation, remoteSSRC);
+    rtcpPacketType = rtcpParser.Iterate();
+  }
+}
+
+void RTCPReceiver::HandleReceiverReport(
+    RTCPUtility::RTCPParserV2& rtcpParser,
+    RTCPPacketInformation& rtcpPacketInformation) {
+  RTCPUtility::RTCPPacketTypes rtcpPacketType = rtcpParser.PacketType();
+  const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
+
+  RTC_DCHECK(rtcpPacketType == RTCPPacketTypes::kRr);
+
+  // rtcpPacket.RR.SenderSSRC
+  // The source of the packet sender, same as of SR? or is this a CE?
+  const uint32_t remoteSSRC = rtcpPacket.RR.SenderSSRC;
+
+  rtcpPacketInformation.remoteSSRC = remoteSSRC;
+
+  RTCPReceiveInformation* ptrReceiveInfo = CreateReceiveInformation(remoteSSRC);
+  if (!ptrReceiveInfo) {
+    rtcpParser.Iterate();
+    return;
+  }
+
+  TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "RR",
+                       "remote_ssrc", remoteSSRC, "ssrc", main_ssrc_);
+
+  rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpRr;
+
   // Update that this remote is alive.
   ptrReceiveInfo->last_time_received_ms = _clock->TimeInMilliseconds();
 

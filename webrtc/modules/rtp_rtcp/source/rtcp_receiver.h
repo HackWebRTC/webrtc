@@ -132,7 +132,12 @@ class RTCPReceiver {
       uint32_t remoteSSRC);
   RTCPHelp::RTCPReceiveInformation* GetReceiveInformation(uint32_t remoteSSRC);
 
-  void HandleSenderReceiverReport(
+  void HandleSenderReport(
+      RTCPUtility::RTCPParserV2& rtcpParser,
+      RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
+      EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
+
+  void HandleReceiverReport(
       RTCPUtility::RTCPParserV2& rtcpParser,
       RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
