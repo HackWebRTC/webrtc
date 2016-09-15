@@ -555,10 +555,6 @@ rtc_source_set("isac_fix") {
     "codecs/isac/fix/source/transform_tables.c",
   ]
 
-  if (!is_win) {
-    defines = [ "WEBRTC_LINUX" ]
-  }
-
   public_configs = [ ":isac_fix_config" ]
 
   deps = [
