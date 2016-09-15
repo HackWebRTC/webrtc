@@ -387,15 +387,6 @@ int32_t Channel::InFrameType(FrameType frame_type) {
   return 0;
 }
 
-int32_t Channel::OnRxVadDetected(int vadDecision) {
-  rtc::CritScope cs(&_callbackCritSect);
-  if (_rxVadObserverPtr) {
-    _rxVadObserverPtr->OnRxVad(_channelId, vadDecision);
-  }
-
-  return 0;
-}
-
 bool Channel::SendRtp(const uint8_t* data,
                       size_t len,
                       const PacketOptions& options) {
@@ -585,24 +576,12 @@ MixerParticipant::AudioFrameInfo Channel::GetAudioFrameWithMuted(
     audioFrame->Mute();
   }
 
-  if (_RxVadDetection) {
-    UpdateRxVadDetection(*audioFrame);
-  }
-
   // Convert module ID to internal VoE channel ID
   audioFrame->id_ = VoEChannelId(audioFrame->id_);
   // Store speech type for dead-or-alive detection
   _outputSpeechType = audioFrame->speech_type_;
 
   ChannelState::State state = channel_state_.Get();
-
-  if (state.rx_apm_is_enabled) {
-    int err = rx_audioproc_->ProcessStream(audioFrame);
-    if (err) {
-      LOG(LS_ERROR) << "ProcessStream() error: " << err;
-      assert(false);
-    }
-  }
 
   {
     // Pass the audio buffers to an optional sink callback, before applying
@@ -861,8 +840,6 @@ Channel::Channel(int32_t channelId,
       _voiceEngineObserverPtr(NULL),
       _callbackCritSectPtr(NULL),
       _transportPtr(NULL),
-      _rxVadObserverPtr(NULL),
-      _oldVadDecision(-1),
       _sendFrameType(0),
       _externalMixing(false),
       _mixFileWithMicrophone(false),
@@ -875,9 +852,6 @@ Channel::Channel(int32_t channelId,
       _lastPayloadType(0),
       _includeAudioLevelIndication(false),
       _outputSpeechType(AudioFrame::kNormalSpeech),
-      _RxVadDetection(false),
-      _rxAgcIsEnabled(false),
-      _rxNsIsEnabled(false),
       restored_packet_in_use_(false),
       rtcp_observer_(new VoERtcpObserver(this)),
       network_predictor_(new NetworkPredictor(Clock::GetRealTimeClock())),
@@ -919,10 +893,6 @@ Channel::Channel(int32_t channelId,
   statistics_proxy_.reset(new StatisticsProxy(_rtpRtcpModule->SSRC()));
   rtp_receive_statistics_->RegisterRtcpStatisticsCallback(
       statistics_proxy_.get());
-
-  Config audioproc_config;
-  audioproc_config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
-  rx_audioproc_.reset(AudioProcessing::Create(audioproc_config));
 }
 
 Channel::~Channel() {
@@ -1076,15 +1046,6 @@ int32_t Channel::Init() {
                      codec.pltype, codec.plfreq);
       }
     }
-  }
-
-  if (rx_audioproc_->noise_suppression()->set_level(kDefaultNsMode) != 0) {
-    LOG(LS_ERROR) << "noise_suppression()->set_level(kDefaultNsMode) failed.";
-    return -1;
-  }
-  if (rx_audioproc_->gain_control()->set_mode(kDefaultRxAgcMode) != 0) {
-    LOG(LS_ERROR) << "gain_control()->set_mode(kDefaultRxAgcMode) failed.";
-    return -1;
   }
 
   return 0;
@@ -2309,242 +2270,10 @@ int Channel::SetSendTelephoneEventPayloadType(int payload_type) {
   return 0;
 }
 
-int Channel::UpdateRxVadDetection(AudioFrame& audioFrame) {
-  WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::UpdateRxVadDetection()");
-
-  int vadDecision = 1;
-
-  vadDecision = (audioFrame.vad_activity_ == AudioFrame::kVadActive) ? 1 : 0;
-
-  if ((vadDecision != _oldVadDecision) && _rxVadObserverPtr) {
-    OnRxVadDetected(vadDecision);
-    _oldVadDecision = vadDecision;
-  }
-
-  WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::UpdateRxVadDetection() => vadDecision=%d",
-               vadDecision);
-  return 0;
-}
-
-int Channel::RegisterRxVadObserver(VoERxVadCallback& observer) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::RegisterRxVadObserver()");
-  rtc::CritScope cs(&_callbackCritSect);
-
-  if (_rxVadObserverPtr) {
-    _engineStatisticsPtr->SetLastError(
-        VE_INVALID_OPERATION, kTraceError,
-        "RegisterRxVadObserver() observer already enabled");
-    return -1;
-  }
-  _rxVadObserverPtr = &observer;
-  _RxVadDetection = true;
-  return 0;
-}
-
-int Channel::DeRegisterRxVadObserver() {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::DeRegisterRxVadObserver()");
-  rtc::CritScope cs(&_callbackCritSect);
-
-  if (!_rxVadObserverPtr) {
-    _engineStatisticsPtr->SetLastError(
-        VE_INVALID_OPERATION, kTraceWarning,
-        "DeRegisterRxVadObserver() observer already disabled");
-    return 0;
-  }
-  _rxVadObserverPtr = NULL;
-  _RxVadDetection = false;
-  return 0;
-}
-
 int Channel::VoiceActivityIndicator(int& activity) {
   activity = _sendFrameType;
   return 0;
 }
-
-#ifdef WEBRTC_VOICE_ENGINE_AGC
-
-int Channel::SetRxAgcStatus(bool enable, AgcModes mode) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::SetRxAgcStatus(enable=%d, mode=%d)", (int)enable,
-               (int)mode);
-
-  GainControl::Mode agcMode = kDefaultRxAgcMode;
-  switch (mode) {
-    case kAgcDefault:
-      break;
-    case kAgcUnchanged:
-      agcMode = rx_audioproc_->gain_control()->mode();
-      break;
-    case kAgcFixedDigital:
-      agcMode = GainControl::kFixedDigital;
-      break;
-    case kAgcAdaptiveDigital:
-      agcMode = GainControl::kAdaptiveDigital;
-      break;
-    default:
-      _engineStatisticsPtr->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
-                                         "SetRxAgcStatus() invalid Agc mode");
-      return -1;
-  }
-
-  if (rx_audioproc_->gain_control()->set_mode(agcMode) != 0) {
-    _engineStatisticsPtr->SetLastError(
-        VE_APM_ERROR, kTraceError, "SetRxAgcStatus() failed to set Agc mode");
-    return -1;
-  }
-  if (rx_audioproc_->gain_control()->Enable(enable) != 0) {
-    _engineStatisticsPtr->SetLastError(
-        VE_APM_ERROR, kTraceError, "SetRxAgcStatus() failed to set Agc state");
-    return -1;
-  }
-
-  _rxAgcIsEnabled = enable;
-  channel_state_.SetRxApmIsEnabled(_rxAgcIsEnabled || _rxNsIsEnabled);
-
-  return 0;
-}
-
-int Channel::GetRxAgcStatus(bool& enabled, AgcModes& mode) {
-  bool enable = rx_audioproc_->gain_control()->is_enabled();
-  GainControl::Mode agcMode = rx_audioproc_->gain_control()->mode();
-
-  enabled = enable;
-
-  switch (agcMode) {
-    case GainControl::kFixedDigital:
-      mode = kAgcFixedDigital;
-      break;
-    case GainControl::kAdaptiveDigital:
-      mode = kAgcAdaptiveDigital;
-      break;
-    default:
-      _engineStatisticsPtr->SetLastError(VE_APM_ERROR, kTraceError,
-                                         "GetRxAgcStatus() invalid Agc mode");
-      return -1;
-  }
-
-  return 0;
-}
-
-int Channel::SetRxAgcConfig(AgcConfig config) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::SetRxAgcConfig()");
-
-  if (rx_audioproc_->gain_control()->set_target_level_dbfs(
-          config.targetLeveldBOv) != 0) {
-    _engineStatisticsPtr->SetLastError(
-        VE_APM_ERROR, kTraceError,
-        "SetRxAgcConfig() failed to set target peak |level|"
-        "(or envelope) of the Agc");
-    return -1;
-  }
-  if (rx_audioproc_->gain_control()->set_compression_gain_db(
-          config.digitalCompressionGaindB) != 0) {
-    _engineStatisticsPtr->SetLastError(
-        VE_APM_ERROR, kTraceError,
-        "SetRxAgcConfig() failed to set the range in |gain| the"
-        " digital compression stage may apply");
-    return -1;
-  }
-  if (rx_audioproc_->gain_control()->enable_limiter(config.limiterEnable) !=
-      0) {
-    _engineStatisticsPtr->SetLastError(
-        VE_APM_ERROR, kTraceError,
-        "SetRxAgcConfig() failed to set hard limiter to the signal");
-    return -1;
-  }
-
-  return 0;
-}
-
-int Channel::GetRxAgcConfig(AgcConfig& config) {
-  config.targetLeveldBOv = rx_audioproc_->gain_control()->target_level_dbfs();
-  config.digitalCompressionGaindB =
-      rx_audioproc_->gain_control()->compression_gain_db();
-  config.limiterEnable = rx_audioproc_->gain_control()->is_limiter_enabled();
-
-  return 0;
-}
-
-#endif  // #ifdef WEBRTC_VOICE_ENGINE_AGC
-
-#ifdef WEBRTC_VOICE_ENGINE_NR
-
-int Channel::SetRxNsStatus(bool enable, NsModes mode) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::SetRxNsStatus(enable=%d, mode=%d)", (int)enable,
-               (int)mode);
-
-  NoiseSuppression::Level nsLevel = kDefaultNsMode;
-  switch (mode) {
-    case kNsDefault:
-      break;
-    case kNsUnchanged:
-      nsLevel = rx_audioproc_->noise_suppression()->level();
-      break;
-    case kNsConference:
-      nsLevel = NoiseSuppression::kHigh;
-      break;
-    case kNsLowSuppression:
-      nsLevel = NoiseSuppression::kLow;
-      break;
-    case kNsModerateSuppression:
-      nsLevel = NoiseSuppression::kModerate;
-      break;
-    case kNsHighSuppression:
-      nsLevel = NoiseSuppression::kHigh;
-      break;
-    case kNsVeryHighSuppression:
-      nsLevel = NoiseSuppression::kVeryHigh;
-      break;
-  }
-
-  if (rx_audioproc_->noise_suppression()->set_level(nsLevel) != 0) {
-    _engineStatisticsPtr->SetLastError(
-        VE_APM_ERROR, kTraceError, "SetRxNsStatus() failed to set NS level");
-    return -1;
-  }
-  if (rx_audioproc_->noise_suppression()->Enable(enable) != 0) {
-    _engineStatisticsPtr->SetLastError(
-        VE_APM_ERROR, kTraceError, "SetRxNsStatus() failed to set NS state");
-    return -1;
-  }
-
-  _rxNsIsEnabled = enable;
-  channel_state_.SetRxApmIsEnabled(_rxAgcIsEnabled || _rxNsIsEnabled);
-
-  return 0;
-}
-
-int Channel::GetRxNsStatus(bool& enabled, NsModes& mode) {
-  bool enable = rx_audioproc_->noise_suppression()->is_enabled();
-  NoiseSuppression::Level ncLevel = rx_audioproc_->noise_suppression()->level();
-
-  enabled = enable;
-
-  switch (ncLevel) {
-    case NoiseSuppression::kLow:
-      mode = kNsLowSuppression;
-      break;
-    case NoiseSuppression::kModerate:
-      mode = kNsModerateSuppression;
-      break;
-    case NoiseSuppression::kHigh:
-      mode = kNsHighSuppression;
-      break;
-    case NoiseSuppression::kVeryHigh:
-      mode = kNsVeryHighSuppression;
-      break;
-  }
-
-  return 0;
-}
-
-#endif  // #ifdef WEBRTC_VOICE_ENGINE_NR
 
 int Channel::SetLocalSSRC(unsigned int ssrc) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),

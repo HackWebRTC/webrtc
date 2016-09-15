@@ -488,18 +488,6 @@ class FakeWebRtcVoiceEngine
     enabledCNG = cng_enabled_;
     return 0;
   }
-  WEBRTC_STUB(SetRxNsStatus, (int channel, bool enable, webrtc::NsModes mode));
-  WEBRTC_STUB(GetRxNsStatus, (int channel, bool& enabled,
-                              webrtc::NsModes& mode));
-  WEBRTC_STUB(SetRxAgcStatus, (int channel, bool enable,
-                               webrtc::AgcModes mode));
-  WEBRTC_STUB(GetRxAgcStatus, (int channel, bool& enabled,
-                               webrtc::AgcModes& mode));
-  WEBRTC_STUB(SetRxAgcConfig, (int channel, webrtc::AgcConfig config));
-  WEBRTC_STUB(GetRxAgcConfig, (int channel, webrtc::AgcConfig& config));
-
-  WEBRTC_STUB(RegisterRxVadObserver, (int, webrtc::VoERxVadCallback&));
-  WEBRTC_STUB(DeRegisterRxVadObserver, (int channel));
   WEBRTC_STUB(VoiceActivityIndicator, (int channel));
   WEBRTC_FUNC(SetEcMetricsStatus, (bool enable)) {
     ec_metrics_enabled_ = enable;

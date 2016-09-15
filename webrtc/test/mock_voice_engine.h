@@ -79,15 +79,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
   MOCK_METHOD2(GetAecmMode, int(AecmModes& mode, bool& enabledCNG));
   MOCK_METHOD1(EnableHighPassFilter, int(bool enable));
   MOCK_METHOD0(IsHighPassFilterEnabled, bool());
-  MOCK_METHOD3(SetRxNsStatus, int(int channel, bool enable, NsModes mode));
-  MOCK_METHOD3(GetRxNsStatus, int(int channel, bool& enabled, NsModes& mode));
-  MOCK_METHOD3(SetRxAgcStatus, int(int channel, bool enable, AgcModes mode));
-  MOCK_METHOD3(GetRxAgcStatus, int(int channel, bool& enabled, AgcModes& mode));
-  MOCK_METHOD2(SetRxAgcConfig, int(int channel, AgcConfig config));
-  MOCK_METHOD2(GetRxAgcConfig, int(int channel, AgcConfig& config));
-  MOCK_METHOD2(RegisterRxVadObserver,
-               int(int channel, VoERxVadCallback& observer));
-  MOCK_METHOD1(DeRegisterRxVadObserver, int(int channel));
   MOCK_METHOD1(VoiceActivityIndicator, int(int channel));
   MOCK_METHOD1(SetEcMetricsStatus, int(bool enable));
   MOCK_METHOD1(GetEcMetricsStatus, int(bool& enabled));

@@ -313,151 +313,6 @@ int VoEAudioProcessingImpl::GetAgcConfig(AgcConfig& config) {
 #endif
 }
 
-int VoEAudioProcessingImpl::SetRxNsStatus(int channel,
-                                          bool enable,
-                                          NsModes mode) {
-#ifdef WEBRTC_VOICE_ENGINE_NR
-  if (!_shared->statistics().Initialized()) {
-    _shared->SetLastError(VE_NOT_INITED, kTraceError);
-    return -1;
-  }
-
-  voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-  voe::Channel* channelPtr = ch.channel();
-  if (channelPtr == NULL) {
-    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                          "SetRxNsStatus() failed to locate channel");
-    return -1;
-  }
-  return channelPtr->SetRxNsStatus(enable, mode);
-#else
-  _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-                        "SetRxNsStatus() NS is not supported");
-  return -1;
-#endif
-}
-
-int VoEAudioProcessingImpl::GetRxNsStatus(int channel,
-                                          bool& enabled,
-                                          NsModes& mode) {
-#ifdef WEBRTC_VOICE_ENGINE_NR
-  if (!_shared->statistics().Initialized()) {
-    _shared->SetLastError(VE_NOT_INITED, kTraceError);
-    return -1;
-  }
-
-  voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-  voe::Channel* channelPtr = ch.channel();
-  if (channelPtr == NULL) {
-    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                          "GetRxNsStatus() failed to locate channel");
-    return -1;
-  }
-  return channelPtr->GetRxNsStatus(enabled, mode);
-#else
-  _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-                        "GetRxNsStatus() NS is not supported");
-  return -1;
-#endif
-}
-
-int VoEAudioProcessingImpl::SetRxAgcStatus(int channel,
-                                           bool enable,
-                                           AgcModes mode) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "SetRxAgcStatus(channel=%d, enable=%d, mode=%d)", channel,
-               (int)enable, (int)mode);
-#ifdef WEBRTC_VOICE_ENGINE_AGC
-  if (!_shared->statistics().Initialized()) {
-    _shared->SetLastError(VE_NOT_INITED, kTraceError);
-    return -1;
-  }
-
-  voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-  voe::Channel* channelPtr = ch.channel();
-  if (channelPtr == NULL) {
-    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                          "SetRxAgcStatus() failed to locate channel");
-    return -1;
-  }
-  return channelPtr->SetRxAgcStatus(enable, mode);
-#else
-  _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-                        "SetRxAgcStatus() Agc is not supported");
-  return -1;
-#endif
-}
-
-int VoEAudioProcessingImpl::GetRxAgcStatus(int channel,
-                                           bool& enabled,
-                                           AgcModes& mode) {
-#ifdef WEBRTC_VOICE_ENGINE_AGC
-  if (!_shared->statistics().Initialized()) {
-    _shared->SetLastError(VE_NOT_INITED, kTraceError);
-    return -1;
-  }
-
-  voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-  voe::Channel* channelPtr = ch.channel();
-  if (channelPtr == NULL) {
-    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                          "GetRxAgcStatus() failed to locate channel");
-    return -1;
-  }
-  return channelPtr->GetRxAgcStatus(enabled, mode);
-#else
-  _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-                        "GetRxAgcStatus() Agc is not supported");
-  return -1;
-#endif
-}
-
-int VoEAudioProcessingImpl::SetRxAgcConfig(int channel, AgcConfig config) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "SetRxAgcConfig(channel=%d)", channel);
-#ifdef WEBRTC_VOICE_ENGINE_AGC
-  if (!_shared->statistics().Initialized()) {
-    _shared->SetLastError(VE_NOT_INITED, kTraceError);
-    return -1;
-  }
-
-  voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-  voe::Channel* channelPtr = ch.channel();
-  if (channelPtr == NULL) {
-    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                          "SetRxAgcConfig() failed to locate channel");
-    return -1;
-  }
-  return channelPtr->SetRxAgcConfig(config);
-#else
-  _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-                        "SetRxAgcConfig() Agc is not supported");
-  return -1;
-#endif
-}
-
-int VoEAudioProcessingImpl::GetRxAgcConfig(int channel, AgcConfig& config) {
-#ifdef WEBRTC_VOICE_ENGINE_AGC
-  if (!_shared->statistics().Initialized()) {
-    _shared->SetLastError(VE_NOT_INITED, kTraceError);
-    return -1;
-  }
-
-  voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-  voe::Channel* channelPtr = ch.channel();
-  if (channelPtr == NULL) {
-    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                          "GetRxAgcConfig() failed to locate channel");
-    return -1;
-  }
-  return channelPtr->GetRxAgcConfig(config);
-#else
-  _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-                        "GetRxAgcConfig() Agc is not supported");
-  return -1;
-#endif
-}
-
 bool VoEAudioProcessing::DriftCompensationSupported() {
 #if defined(WEBRTC_DRIFT_COMPENSATION_SUPPORTED)
   return true;
@@ -724,42 +579,6 @@ bool VoEAudioProcessingImpl::IsHighPassFilterEnabled() {
   return _shared->audio_processing()->high_pass_filter()->is_enabled();
 }
 
-int VoEAudioProcessingImpl::RegisterRxVadObserver(int channel,
-                                                  VoERxVadCallback& observer) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "RegisterRxVadObserver()");
-  if (!_shared->statistics().Initialized()) {
-    _shared->SetLastError(VE_NOT_INITED, kTraceError);
-    return -1;
-  }
-  voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-  voe::Channel* channelPtr = ch.channel();
-  if (channelPtr == NULL) {
-    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                          "RegisterRxVadObserver() failed to locate channel");
-    return -1;
-  }
-  return channelPtr->RegisterRxVadObserver(observer);
-}
-
-int VoEAudioProcessingImpl::DeRegisterRxVadObserver(int channel) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "DeRegisterRxVadObserver()");
-  if (!_shared->statistics().Initialized()) {
-    _shared->SetLastError(VE_NOT_INITED, kTraceError);
-    return -1;
-  }
-  voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
-  voe::Channel* channelPtr = ch.channel();
-  if (channelPtr == NULL) {
-    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                          "DeRegisterRxVadObserver() failed to locate channel");
-    return -1;
-  }
-
-  return channelPtr->DeRegisterRxVadObserver();
-}
-
 int VoEAudioProcessingImpl::VoiceActivityIndicator(int channel) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "VoiceActivityIndicator(channel=%d)", channel);
@@ -772,7 +591,7 @@ int VoEAudioProcessingImpl::VoiceActivityIndicator(int channel) {
   voe::Channel* channelPtr = ch.channel();
   if (channelPtr == NULL) {
     _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                          "DeRegisterRxVadObserver() failed to locate channel");
+                          "VoiceActivityIndicator() failed to locate channel");
     return -1;
   }
   int activity(-1);

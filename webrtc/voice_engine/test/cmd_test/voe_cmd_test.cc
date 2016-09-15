@@ -220,10 +220,8 @@ void RunTest(std::string out_path) {
   CodecInst cinst;
   bool enable_aec = false;
   bool enable_agc = false;
-  bool enable_rx_agc = false;
   bool enable_cng = false;
   bool enable_ns = false;
-  bool enable_rx_ns = false;
   bool typing_detection = false;
   bool muted = false;
   bool opus_stereo = false;
@@ -586,24 +584,6 @@ void RunTest(std::string out_path) {
         // Will use plughw for hardware devices
         res = hardware->SetRecordingDevice(num_rd);
         VALIDATE;
-      } else if (option_selection == option_index++) {
-        // Remote AGC
-        enable_rx_agc = !enable_rx_agc;
-        res = apm->SetRxAgcStatus(chan, enable_rx_agc);
-        VALIDATE;
-        if (enable_rx_agc)
-          printf("\n Receive-side AGC is now on! \n");
-        else
-          printf("\n Receive-side AGC is now off! \n");
-      } else if (option_selection == option_index++) {
-        // Remote NS
-        enable_rx_ns = !enable_rx_ns;
-        res = apm->SetRxNsStatus(chan, enable_rx_ns);
-        VALIDATE;
-        if (enable_rx_ns)
-          printf("\n Receive-side NS is now on! \n");
-        else
-          printf("\n Receive-side NS is now off! \n");
       } else if (option_selection == option_index++) {
         AgcModes agcmode;
         bool enable;

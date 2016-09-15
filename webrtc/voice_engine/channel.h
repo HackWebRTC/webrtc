@@ -83,22 +83,12 @@ class VoERtcpObserver;
 class ChannelState {
  public:
   struct State {
-    State()
-        : rx_apm_is_enabled(false),
-          input_external_media(false),
-          output_file_playing(false),
-          input_file_playing(false),
-          playing(false),
-          sending(false),
-          receiving(false) {}
-
-    bool rx_apm_is_enabled;
-    bool input_external_media;
-    bool output_file_playing;
-    bool input_file_playing;
-    bool playing;
-    bool sending;
-    bool receiving;
+    bool input_external_media = false;
+    bool output_file_playing = false;
+    bool input_file_playing = false;
+    bool playing = false;
+    bool sending = false;
+    bool receiving = false;
   };
 
   ChannelState() {}
@@ -112,11 +102,6 @@ class ChannelState {
   State Get() const {
     rtc::CritScope lock(&lock_);
     return state_;
-  }
-
-  void SetRxApmIsEnabled(bool enable) {
-    rtc::CritScope lock(&lock_);
-    state_.rx_apm_is_enabled = enable;
   }
 
   void SetInputExternalMedia(bool enable) {
@@ -308,20 +293,7 @@ class Channel
   int SetSendTelephoneEventPayloadType(int payload_type);
 
   // VoEAudioProcessingImpl
-  int UpdateRxVadDetection(AudioFrame& audioFrame);
-  int RegisterRxVadObserver(VoERxVadCallback& observer);
-  int DeRegisterRxVadObserver();
   int VoiceActivityIndicator(int& activity);
-#ifdef WEBRTC_VOICE_ENGINE_AGC
-  int SetRxAgcStatus(bool enable, AgcModes mode);
-  int GetRxAgcStatus(bool& enabled, AgcModes& mode);
-  int SetRxAgcConfig(AgcConfig config);
-  int GetRxAgcConfig(AgcConfig& config);
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_NR
-  int SetRxNsStatus(bool enable, NsModes mode);
-  int GetRxNsStatus(bool& enabled, NsModes& mode);
-#endif
 
   // VoERTP_RTCP
   int SetLocalSSRC(unsigned int ssrc);
@@ -374,8 +346,6 @@ class Channel
 
   // From ACMVADCallback in the ACM
   int32_t InFrameType(FrameType frame_type) override;
-
-  int32_t OnRxVadDetected(int vadDecision);
 
   // From RtpData in the RTP/RTCP module
   int32_t OnReceivedPayloadData(const uint8_t* payloadData,
@@ -541,9 +511,6 @@ class Channel
   rtc::CriticalSection* _callbackCritSectPtr;    // owned by base
   Transport* _transportPtr;  // WebRtc socket or external transport
   RMSLevel rms_level_;
-  std::unique_ptr<AudioProcessing> rx_audioproc_;  // far end AudioProcessing
-  VoERxVadCallback* _rxVadObserverPtr;
-  int32_t _oldVadDecision;
   int32_t _sendFrameType;  // Send data is voice, 1-voice, 0-otherwise
   // VoEBase
   bool _externalMixing;
@@ -563,9 +530,6 @@ class Channel
   // VoEVideoSync
   rtc::CriticalSection video_sync_lock_;
   // VoEAudioProcessing
-  bool _RxVadDetection;
-  bool _rxAgcIsEnabled;
-  bool _rxNsIsEnabled;
   bool restored_packet_in_use_;
   // RtcpBandwidthObserver
   std::unique_ptr<VoERtcpObserver> rtcp_observer_;
