@@ -38,8 +38,7 @@ class FakeNativeHandleBuffer : public NativeHandleBuffer {
 
  private:
   rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() override {
-    rtc::scoped_refptr<VideoFrameBuffer> buffer(
-        I420Buffer::Create(width_, height_));
+    rtc::scoped_refptr<I420Buffer> buffer = I420Buffer::Create(width_, height_);
     int half_height = (height_ + 1) / 2;
     int half_width = (width_ + 1) / 2;
     memset(buffer->MutableDataY(), 0, height_ * width_);
