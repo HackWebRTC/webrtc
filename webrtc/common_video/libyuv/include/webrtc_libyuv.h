@@ -94,8 +94,6 @@ int ExtractBuffer(const VideoFrame& input_frame, size_t size, uint8_t* buffer);
 //   - dst_frame        : Reference to a destination frame.
 // Return value: 0 if OK, < 0 otherwise.
 
-// TODO(nisse): Deprecated, see
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=5921.
 int ConvertToI420(VideoType src_video_type,
                   const uint8_t* src_frame,
                   int crop_x,
@@ -122,13 +120,8 @@ int ConvertFromI420(const VideoFrame& src_frame,
 // Compute PSNR for an I420 frame (all planes).
 // Returns the PSNR in decibel, to a maximum of kInfinitePSNR.
 double I420PSNR(const VideoFrame* ref_frame, const VideoFrame* test_frame);
-double I420PSNR(const VideoFrameBuffer& ref_buffer,
-                const VideoFrameBuffer& test_buffer);
-
 // Compute SSIM for an I420 frame (all planes).
 double I420SSIM(const VideoFrame* ref_frame, const VideoFrame* test_frame);
-double I420SSIM(const VideoFrameBuffer& ref_buffer,
-                const VideoFrameBuffer& test_buffer);
 
 }  // namespace webrtc
 

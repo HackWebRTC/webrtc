@@ -18,7 +18,6 @@
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/video_frame.h"
-#include "libyuv/convert.h"
 
 namespace webrtc {
 namespace test {
@@ -36,8 +35,8 @@ enum VideoMetricsType { kPSNR, kSSIM, kBoth };
 
 // Calculates metrics for a frame and adds statistics to the result for it.
 void CalculateFrame(VideoMetricsType video_metrics_type,
-                    const VideoFrameBuffer& ref,
-                    const VideoFrameBuffer& test,
+                    const VideoFrame* ref,
+                    const VideoFrame* test,
                     int frame_number,
                     QualityMetricsResult* result) {
   FrameResult frame_result = {0, 0};
@@ -111,57 +110,37 @@ int CalculateMetrics(VideoMetricsType video_metrics_type,
 
   // Read reference and test frames.
   const size_t frame_length = 3 * width * height >> 1;
-  rtc::scoped_refptr<I420Buffer> ref_i420_buffer;
-  rtc::scoped_refptr<I420Buffer> test_i420_buffer;
+  VideoFrame ref_frame;
+  VideoFrame test_frame;
   std::unique_ptr<uint8_t[]> ref_buffer(new uint8_t[frame_length]);
   std::unique_ptr<uint8_t[]> test_buffer(new uint8_t[frame_length]);
 
   // Set decoded image parameters.
   int half_width = (width + 1) / 2;
-  ref_i420_buffer =
-      I420Buffer::Create(width, height, width, half_width, half_width);
-  test_i420_buffer =
-      I420Buffer::Create(width, height, width, half_width, half_width);
+  ref_frame.CreateEmptyFrame(width, height, width, half_width, half_width);
+  test_frame.CreateEmptyFrame(width, height, width, half_width, half_width);
 
-  // TODO(nisse): Have a frame reader in one place. And read directly
-  // into the planes of an I420Buffer, the extra copying below is silly.
   size_t ref_bytes = fread(ref_buffer.get(), 1, frame_length, ref_fp);
   size_t test_bytes = fread(test_buffer.get(), 1, frame_length, test_fp);
   while (ref_bytes == frame_length && test_bytes == frame_length) {
     // Converting from buffer to plane representation.
-    size_t size_y = width * height;
-    size_t size_uv = half_width * ((height + 1) / 2);
-    libyuv::I420Copy(
-        ref_buffer.get(), width,
-        ref_buffer.get() + size_y, half_width,
-        ref_buffer.get() + size_y + size_uv, half_width,
-        ref_i420_buffer->MutableDataY(), ref_i420_buffer->StrideY(),
-        ref_i420_buffer->MutableDataU(), ref_i420_buffer->StrideU(),
-        ref_i420_buffer->MutableDataV(), ref_i420_buffer->StrideV(),
-        width, height);
-
-    libyuv::I420Copy(
-        test_buffer.get(), width,
-        test_buffer.get() + size_y, half_width,
-        test_buffer.get() + size_y + size_uv, half_width,
-        test_i420_buffer->MutableDataY(), test_i420_buffer->StrideY(),
-        test_i420_buffer->MutableDataU(), test_i420_buffer->StrideU(),
-        test_i420_buffer->MutableDataV(), test_i420_buffer->StrideV(),
-        width, height);
-
+    ConvertToI420(kI420, ref_buffer.get(), 0, 0, width, height, 0,
+                  kVideoRotation_0, &ref_frame);
+    ConvertToI420(kI420, test_buffer.get(), 0, 0, width, height, 0,
+                  kVideoRotation_0, &test_frame);
     switch (video_metrics_type) {
       case kPSNR:
-        CalculateFrame(kPSNR, *ref_i420_buffer, *test_i420_buffer, frame_number,
+        CalculateFrame(kPSNR, &ref_frame, &test_frame, frame_number,
                        psnr_result);
         break;
       case kSSIM:
-        CalculateFrame(kSSIM, *ref_i420_buffer, *test_i420_buffer, frame_number,
+        CalculateFrame(kSSIM, &ref_frame, &test_frame, frame_number,
                        ssim_result);
         break;
       case kBoth:
-        CalculateFrame(kPSNR, *ref_i420_buffer, *test_i420_buffer, frame_number,
+        CalculateFrame(kPSNR, &ref_frame, &test_frame, frame_number,
                        psnr_result);
-        CalculateFrame(kSSIM, *ref_i420_buffer, *test_i420_buffer, frame_number,
+        CalculateFrame(kSSIM, &ref_frame, &test_frame, frame_number,
                        ssim_result);
         break;
     }
