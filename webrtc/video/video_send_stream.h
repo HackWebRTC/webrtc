@@ -71,7 +71,10 @@ class VideoSendStream : public webrtc::VideoSendStream {
   // webrtc::VideoSendStream implementation.
   void Start() override;
   void Stop() override;
-  VideoCaptureInput* Input() override;
+
+  void SetSource(
+      rtc::VideoSourceInterface<webrtc::VideoFrame>* source) override;
+
   void ReconfigureVideoEncoder(VideoEncoderConfig) override;
   Stats GetStats() override;
 

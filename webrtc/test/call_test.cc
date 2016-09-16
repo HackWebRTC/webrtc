@@ -239,15 +239,15 @@ void CallTest::CreateFrameGeneratorCapturerWithDrift(Clock* clock,
                                                      float speed) {
   VideoStream stream = video_encoder_config_.streams.back();
   frame_generator_capturer_.reset(test::FrameGeneratorCapturer::Create(
-      video_send_stream_->Input(), stream.width, stream.height,
-      stream.max_framerate * speed, clock));
+      stream.width, stream.height, stream.max_framerate * speed, clock));
+  video_send_stream_->SetSource(frame_generator_capturer_.get());
 }
 
 void CallTest::CreateFrameGeneratorCapturer() {
   VideoStream stream = video_encoder_config_.streams.back();
   frame_generator_capturer_.reset(test::FrameGeneratorCapturer::Create(
-      video_send_stream_->Input(), stream.width, stream.height,
-      stream.max_framerate, clock_));
+      stream.width, stream.height, stream.max_framerate, clock_));
+  video_send_stream_->SetSource(frame_generator_capturer_.get());
 }
 
 void CallTest::CreateFakeAudioDevices() {

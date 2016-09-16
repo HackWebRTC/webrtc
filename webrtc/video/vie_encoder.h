@@ -40,11 +40,11 @@ class SendStatisticsProxy;
 // and produces an encoded bit stream.
 // Usage:
 //  Instantiate.
-//  Call SetStartRate and SetSink.
+//  Call SetSink.
+//  Call SetSource.
 //  Call ConfigureEncoder with the codec settings.
-//  Provide frames to encode by calling IncomingCapturedFrame.
 //  Call Stop() when done.
-class ViEEncoder : public VideoCaptureInput,
+class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
                    public EncodedImageCallback,
                    public VCMSendStatisticsCallback,
                    public CpuOveruseObserver {
@@ -63,6 +63,7 @@ class ViEEncoder : public VideoCaptureInput,
   void RegisterProcessThread(ProcessThread* module_process_thread);
   void DeRegisterProcessThread();
 
+  void SetSource(rtc::VideoSourceInterface<VideoFrame>* source);
   void SetSink(EncodedImageCallback* sink);
 
   // TODO(perkj): Can we remove VideoCodec.startBitrate ?
@@ -74,11 +75,6 @@ class ViEEncoder : public VideoCaptureInput,
   // Permanently stop encoding. After this method has returned, it is
   // guaranteed that no encoded frames will be delivered to the sink.
   void Stop();
-
-  // Implements VideoCaptureInput.
-  // TODO(perkj): Refactor ViEEncoder to inherit rtc::VideoSink instead of
-  // VideoCaptureInput.
-  void IncomingCapturedFrame(const VideoFrame& video_frame) override;
 
   void SendKeyFrame();
 
@@ -93,9 +89,13 @@ class ViEEncoder : public VideoCaptureInput,
 
  private:
   class EncodeTask;
+  class VideoSourceProxy;
 
   void ConfigureEncoderInternal(const VideoCodec& video_codec,
                                 size_t max_data_payload_length);
+
+  // Implements VideoSinkInterface.
+  void OnFrame(const VideoFrame& video_frame) override;
 
   // Implements VideoSendStatisticsCallback.
   void SendStatistics(uint32_t bit_rate,
@@ -121,6 +121,8 @@ class ViEEncoder : public VideoCaptureInput,
   rtc::Event shutdown_event_;
 
   const uint32_t number_of_cores_;
+
+  const std::unique_ptr<VideoSourceProxy> source_proxy_;
   EncodedImageCallback* sink_;
   const VideoSendStream::Config::EncoderSettings settings_;
 
@@ -134,6 +136,9 @@ class ViEEncoder : public VideoCaptureInput,
   rtc::VideoSinkInterface<VideoFrame>* const pre_encode_callback_;
   ProcessThread* module_process_thread_;
   rtc::ThreadChecker module_process_thread_checker_;
+  // |thread_checker_| checks that public methods that are related to lifetime
+  // of ViEEncoder are called on the same thread.
+  rtc::ThreadChecker thread_checker_;
 
   VideoCodec encoder_config_ ACCESS_ON(&encoder_queue_);
 
@@ -160,6 +165,8 @@ class ViEEncoder : public VideoCaptureInput,
   // All public methods are proxied to |encoder_queue_|. It must must be
   // destroyed first to make sure no tasks are run that use other members.
   rtc::TaskQueue encoder_queue_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(ViEEncoder);
 };
 
 }  // namespace webrtc

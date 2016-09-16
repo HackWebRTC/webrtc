@@ -12,6 +12,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_encoder.h"
+#include "webrtc/test/frame_generator.h"
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video/vie_encoder.h"
 
@@ -42,6 +43,7 @@ class ViEEncoderTest : public ::testing::Test {
         video_send_config_.encoder_settings, nullptr /* pre_encode_callback */,
         nullptr /* overuse_callback */, nullptr /* encoder_timing */));
     vie_encoder_->SetSink(&sink_);
+    vie_encoder_->SetSource(&video_source_);
     vie_encoder_->SetStartBitrate(10000);
     vie_encoder_->ConfigureEncoder(video_encoder_config_, 1440);
   }
@@ -95,7 +97,7 @@ class ViEEncoderTest : public ::testing::Test {
       int32_t result =
           FakeEncoder::Encode(input_image, codec_specific_info, frame_types);
       if (block_encode)
-        continue_encode_event_.Wait(kDefaultTimeoutMs);
+        EXPECT_TRUE(continue_encode_event_.Wait(kDefaultTimeoutMs));
       return result;
     }
 
@@ -138,7 +140,7 @@ class ViEEncoderTest : public ::testing::Test {
 
     void WaitForEncodedFrame(int64_t expected_ntp_time) {
       uint32_t timestamp = 0;
-      encoded_frame_event_.Wait(kDefaultTimeoutMs);
+      EXPECT_TRUE(encoded_frame_event_.Wait(kDefaultTimeoutMs));
       {
         rtc::CritScope lock(&crit_);
         timestamp = timestamp_;
@@ -164,6 +166,7 @@ class ViEEncoderTest : public ::testing::Test {
   TestEncoder fake_encoder_;
   SendStatisticsProxy stats_proxy_;
   TestSink sink_;
+  test::FrameForwarder video_source_;
   std::unique_ptr<ViEEncoder> vie_encoder_;
 };
 
@@ -171,22 +174,22 @@ TEST_F(ViEEncoderTest, EncodeOneFrame) {
   const int kTargetBitrateBps = 100000;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
   rtc::Event frame_destroyed_event(false, false);
-  vie_encoder_->IncomingCapturedFrame(CreateFrame(1, &frame_destroyed_event));
+  video_source_.IncomingCapturedFrame(CreateFrame(1, &frame_destroyed_event));
   sink_.WaitForEncodedFrame(1);
-  frame_destroyed_event.Wait(kDefaultTimeoutMs);
+  EXPECT_TRUE(frame_destroyed_event.Wait(kDefaultTimeoutMs));
   vie_encoder_->Stop();
 }
 
 TEST_F(ViEEncoderTest, DropsFramesBeforeFirstOnBitrateUpdated) {
   // Dropped since no target bitrate has been set.
   rtc::Event frame_destroyed_event(false, false);
-  vie_encoder_->IncomingCapturedFrame(CreateFrame(1, &frame_destroyed_event));
-  frame_destroyed_event.Wait(kDefaultTimeoutMs);
+  video_source_.IncomingCapturedFrame(CreateFrame(1, &frame_destroyed_event));
+  EXPECT_TRUE(frame_destroyed_event.Wait(kDefaultTimeoutMs));
 
   const int kTargetBitrateBps = 100000;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
-  vie_encoder_->IncomingCapturedFrame(CreateFrame(2, nullptr));
+  video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
   sink_.WaitForEncodedFrame(2);
   vie_encoder_->Stop();
 }
@@ -194,15 +197,15 @@ TEST_F(ViEEncoderTest, DropsFramesBeforeFirstOnBitrateUpdated) {
 TEST_F(ViEEncoderTest, DropsFramesWhenRateSetToZero) {
   const int kTargetBitrateBps = 100000;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
-  vie_encoder_->IncomingCapturedFrame(CreateFrame(1, nullptr));
+  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
   sink_.WaitForEncodedFrame(1);
 
   vie_encoder_->OnBitrateUpdated(0, 0, 0);
   // Dropped since bitrate is zero.
-  vie_encoder_->IncomingCapturedFrame(CreateFrame(2, nullptr));
+  video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
 
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
-  vie_encoder_->IncomingCapturedFrame(CreateFrame(3, nullptr));
+  video_source_.IncomingCapturedFrame(CreateFrame(3, nullptr));
   sink_.WaitForEncodedFrame(3);
   vie_encoder_->Stop();
 }
@@ -210,13 +213,13 @@ TEST_F(ViEEncoderTest, DropsFramesWhenRateSetToZero) {
 TEST_F(ViEEncoderTest, DropsFramesWithSameOrOldNtpTimestamp) {
   const int kTargetBitrateBps = 100000;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
-  vie_encoder_->IncomingCapturedFrame(CreateFrame(1, nullptr));
+  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
   sink_.WaitForEncodedFrame(1);
 
   // This frame will be dropped since it has the same ntp timestamp.
-  vie_encoder_->IncomingCapturedFrame(CreateFrame(1, nullptr));
+  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
 
-  vie_encoder_->IncomingCapturedFrame(CreateFrame(2, nullptr));
+  video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
   sink_.WaitForEncodedFrame(2);
   vie_encoder_->Stop();
 }
@@ -225,14 +228,14 @@ TEST_F(ViEEncoderTest, DropsFrameAfterStop) {
   const int kTargetBitrateBps = 100000;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
-  vie_encoder_->IncomingCapturedFrame(CreateFrame(1, nullptr));
+  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
   sink_.WaitForEncodedFrame(1);
 
   vie_encoder_->Stop();
   sink_.SetExpectNoFrames();
   rtc::Event frame_destroyed_event(false, false);
-  vie_encoder_->IncomingCapturedFrame(CreateFrame(2, &frame_destroyed_event));
-  frame_destroyed_event.Wait(kDefaultTimeoutMs);
+  video_source_.IncomingCapturedFrame(CreateFrame(2, &frame_destroyed_event));
+  EXPECT_TRUE(frame_destroyed_event.Wait(kDefaultTimeoutMs));
 }
 
 TEST_F(ViEEncoderTest, DropsPendingFramesOnSlowEncode) {
@@ -240,12 +243,12 @@ TEST_F(ViEEncoderTest, DropsPendingFramesOnSlowEncode) {
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
   fake_encoder_.BlockNextEncode();
-  vie_encoder_->IncomingCapturedFrame(CreateFrame(1, nullptr));
+  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
   sink_.WaitForEncodedFrame(1);
   // Here, the encoder thread will be blocked in the TestEncoder waiting for a
   // call to ContinueEncode.
-  vie_encoder_->IncomingCapturedFrame(CreateFrame(2, nullptr));
-  vie_encoder_->IncomingCapturedFrame(CreateFrame(3, nullptr));
+  video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
+  video_source_.IncomingCapturedFrame(CreateFrame(3, nullptr));
   fake_encoder_.ContinueEncode();
   sink_.WaitForEncodedFrame(3);
 

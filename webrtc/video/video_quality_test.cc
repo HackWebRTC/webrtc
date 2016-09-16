@@ -7,8 +7,9 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include <stdio.h>
+#include "webrtc/video/video_quality_test.h"
 
+#include <stdio.h>
 #include <algorithm>
 #include <deque>
 #include <map>
@@ -17,7 +18,6 @@
 #include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
-
 #include "webrtc/base/checks.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/format_macros.h"
@@ -32,8 +32,8 @@
 #include "webrtc/test/run_loop.h"
 #include "webrtc/test/statistics.h"
 #include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/vcm_capturer.h"
 #include "webrtc/test/video_renderer.h"
-#include "webrtc/video/video_quality_test.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
 
@@ -99,7 +99,6 @@ namespace webrtc {
 class VideoAnalyzer : public PacketReceiver,
                       public Transport,
                       public rtc::VideoSinkInterface<VideoFrame>,
-                      public VideoCaptureInput,
                       public EncodedFrameObserver {
  public:
   VideoAnalyzer(test::LayerFilteringTransport* transport,
@@ -110,10 +109,10 @@ class VideoAnalyzer : public PacketReceiver,
                 FILE* graph_data_output_file,
                 const std::string& graph_title,
                 uint32_t ssrc_to_analyze)
-      : input_(nullptr),
-        transport_(transport),
+      : transport_(transport),
         receiver_(nullptr),
         send_stream_(nullptr),
+        captured_frame_forwarder_(this),
         test_label_(test_label),
         graph_data_output_file_(graph_data_output_file),
         graph_title_(graph_title),
@@ -169,6 +168,19 @@ class VideoAnalyzer : public PacketReceiver,
 
   virtual void SetReceiver(PacketReceiver* receiver) { receiver_ = receiver; }
 
+  void SetSendStream(VideoSendStream* stream) {
+    rtc::CritScope lock(&crit_);
+    RTC_DCHECK(!send_stream_);
+    send_stream_ = stream;
+  }
+
+  rtc::VideoSinkInterface<VideoFrame>* InputInterface() {
+    return &captured_frame_forwarder_;
+  }
+  rtc::VideoSourceInterface<VideoFrame>* OutputInterface() {
+    return &captured_frame_forwarder_;
+  }
+
   DeliveryStatus DeliverPacket(MediaType media_type,
                                const uint8_t* packet,
                                size_t length,
@@ -196,17 +208,6 @@ class VideoAnalyzer : public PacketReceiver,
   void MeasuredEncodeTiming(int64_t ntp_time_ms, int encode_time_ms) {
     rtc::CritScope crit(&comparison_lock_);
     samples_encode_time_ms_[ntp_time_ms] = encode_time_ms;
-  }
-
-  void IncomingCapturedFrame(const VideoFrame& video_frame) override {
-    VideoFrame copy = video_frame;
-    copy.set_timestamp(copy.ntp_time_ms() * 90);
-    {
-      rtc::CritScope lock(&crit_);
-      frames_.push_back(copy);
-    }
-
-    input_->IncomingCapturedFrame(video_frame);
   }
 
   void PreEncodeOnFrame(const VideoFrame& video_frame) {
@@ -346,10 +347,8 @@ class VideoAnalyzer : public PacketReceiver,
   }
   EncodedFrameObserver* encode_timing_proxy() { return &encode_timing_proxy_; }
 
-  VideoCaptureInput* input_;
   test::LayerFilteringTransport* const transport_;
   PacketReceiver* receiver_;
-  VideoSendStream* send_stream_;
 
  private:
   struct FrameComparison {
@@ -697,6 +696,60 @@ class VideoAnalyzer : public PacketReceiver,
     }
   }
 
+  // Implements VideoSinkInterface to receive captured frames from a
+  // FrameGeneratorCapturer. Implements VideoSourceInterface to be able to act
+  // as a source to VideoSendStream.
+  // It forwards all input frames to the VideoAnalyzer for later comparison and
+  // forwards the captured frames to the VideoSendStream.
+  class CapturedFrameForwarder : public rtc::VideoSinkInterface<VideoFrame>,
+                                 public rtc::VideoSourceInterface<VideoFrame> {
+   public:
+    explicit CapturedFrameForwarder(VideoAnalyzer* analyzer)
+        : analyzer_(analyzer), send_stream_input_(nullptr) {}
+
+   private:
+    void OnFrame(const VideoFrame& video_frame) override {
+      VideoFrame copy = video_frame;
+      copy.set_timestamp(copy.ntp_time_ms() * 90);
+
+      analyzer_->AddCapturedFrameForComparison(video_frame);
+      rtc::CritScope lock(&crit_);
+      if (send_stream_input_)
+        send_stream_input_->OnFrame(video_frame);
+    }
+
+    // Called when |send_stream_.SetSource()| is called.
+    void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
+                         const rtc::VideoSinkWants& wants) override {
+      rtc::CritScope lock(&crit_);
+      RTC_DCHECK(!send_stream_input_ || send_stream_input_ == sink);
+      send_stream_input_ = sink;
+    }
+
+    // Called by |send_stream_| when |send_stream_.SetSource()| is called.
+    void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override {
+      rtc::CritScope lock(&crit_);
+      RTC_DCHECK(sink == send_stream_input_);
+      send_stream_input_ = nullptr;
+    }
+
+    VideoAnalyzer* const analyzer_;
+    rtc::CriticalSection crit_;
+    rtc::VideoSinkInterface<VideoFrame>* send_stream_input_ GUARDED_BY(crit_);
+  };
+
+  void AddCapturedFrameForComparison(const VideoFrame& video_frame) {
+    rtc::CritScope lock(&crit_);
+    RTC_DCHECK_EQ(0u, video_frame.timestamp());
+    // Frames from the capturer does not have a rtp timestamp. Create one so it
+    // can be used for comparison.
+    VideoFrame copy = video_frame;
+    copy.set_timestamp(copy.ntp_time_ms() * 90);
+    frames_.push_back(copy);
+  }
+
+  VideoSendStream* send_stream_;
+  CapturedFrameForwarder captured_frame_forwarder_;
   const std::string test_label_;
   FILE* const graph_data_output_file_;
   const std::string graph_title_;
@@ -1028,21 +1081,20 @@ void VideoQualityTest::SetupScreenshare() {
   }
 }
 
-void VideoQualityTest::CreateCapturer(VideoCaptureInput* input) {
+void VideoQualityTest::CreateCapturer() {
   if (params_.screenshare.enabled) {
     test::FrameGeneratorCapturer* frame_generator_capturer =
-        new test::FrameGeneratorCapturer(
-            clock_, input, frame_generator_.release(), params_.common.fps);
+        new test::FrameGeneratorCapturer(clock_, frame_generator_.release(),
+                                         params_.common.fps);
     EXPECT_TRUE(frame_generator_capturer->Init());
     capturer_.reset(frame_generator_capturer);
   } else {
     if (params_.video.clip_name.empty()) {
-      capturer_.reset(test::VideoCapturer::Create(input, params_.common.width,
-                                                  params_.common.height,
-                                                  params_.common.fps, clock_));
+      capturer_.reset(test::VcmCapturer::Create(
+          params_.common.width, params_.common.height, params_.common.fps));
     } else {
       capturer_.reset(test::FrameGeneratorCapturer::CreateFromYuvFile(
-          input, test::ResourcePath(params_.video.clip_name, "yuv"),
+          test::ResourcePath(params_.video.clip_name, "yuv"),
           params_.common.width, params_.common.height, params_.common.fps,
           clock_));
       ASSERT_TRUE(capturer_) << "Could not create capturer for "
@@ -1127,10 +1179,12 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
     SetupScreenshare();
 
   CreateVideoStreams();
-  analyzer.input_ = video_send_stream_->Input();
-  analyzer.send_stream_ = video_send_stream_;
+  analyzer.SetSendStream(video_send_stream_);
+  video_send_stream_->SetSource(analyzer.OutputInterface());
 
-  CreateCapturer(&analyzer);
+  CreateCapturer();
+  rtc::VideoSinkWants wants;
+  capturer_->AddOrUpdateSink(analyzer.InputInterface(), wants);
 
   video_send_stream_->Start();
   for (VideoReceiveStream* receive_stream : video_receive_streams_)
@@ -1222,7 +1276,8 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
       video_send_config_.Copy(), video_encoder_config_.Copy());
   VideoReceiveStream* video_receive_stream =
       call->CreateVideoReceiveStream(video_receive_configs_[stream_id].Copy());
-  CreateCapturer(video_send_stream_->Input());
+  CreateCapturer();
+  video_send_stream_->SetSource(capturer_.get());
 
   AudioReceiveStream* audio_receive_stream = nullptr;
   if (params_.audio) {
