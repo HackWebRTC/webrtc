@@ -12,6 +12,10 @@ import("//build/config/linux/pkg_config.gni")
 import("//build/config/sanitizers/sanitizers.gni")
 import("build/webrtc.gni")
 import("//third_party/protobuf/proto_library.gni")
+if (is_android) {
+  import("//build/config/android/config.gni")
+  import("//build/config/android/rules.gni")
+}
 
 # Contains the defines and includes in common.gypi that are duplicated both as
 # target_defaults and direct_dependent_settings.
@@ -825,6 +829,17 @@ if (rtc_include_tests) {
       # Suppress warnings from the Chromium Clang plugin.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
+  if (is_android) {
+    junit_binary("android_junit_tests") {
+      java_files = [ "androidjunit/src/org/webrtc/CameraEnumerationTest.java" ]
+
+      deps = [
+        "//webrtc/api:libjingle_peerconnection_java",
+        "//webrtc/api:libjingle_peerconnection_jni",
+      ]
     }
   }
 }
