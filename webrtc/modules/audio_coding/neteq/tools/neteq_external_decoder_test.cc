@@ -28,7 +28,6 @@ NetEqExternalDecoderTest::NetEqExternalDecoderTest(NetEqDecoder codec,
   NetEq::Config config;
   config.sample_rate_hz = sample_rate_hz_;
   neteq_.reset(NetEq::Create(config, CreateBuiltinAudioDecoderFactory()));
-  printf("%" PRIuS "\n", channels_);
 }
 
 void NetEqExternalDecoderTest::Init() {
