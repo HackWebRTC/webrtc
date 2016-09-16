@@ -184,57 +184,52 @@ webrtc_fuzzer_test("audio_decoder_opus_redundant_fuzzer") {
   ]
 }
 
-# TODO(katrielc) Enable in Chromium when CL 2022833002 lands.
-# Although the dependency on media compiles in standalone, it is
-# flagged by gn check, so breaks when rolled into Chromium.
-if (!build_with_chromium) {
-  webrtc_fuzzer_test("turn_unwrap_fuzzer") {
-    sources = [
-      "turn_unwrap_fuzzer.cc",
-    ]
-    deps = [
-      "../../media:media",
-    ]
-  }
+webrtc_fuzzer_test("turn_unwrap_fuzzer") {
+  sources = [
+    "turn_unwrap_fuzzer.cc",
+  ]
+  deps = [
+    "../../media:media",
+  ]
+}
 
-  webrtc_fuzzer_test("sdp_parser_fuzzer") {
-    sources = [
-      "sdp_parser_fuzzer.cc",
-    ]
-    deps = [
-      "../../api:libjingle_peerconnection",
-    ]
-    seed_corpus = "corpora/sdp-corpus"
-  }
+webrtc_fuzzer_test("sdp_parser_fuzzer") {
+  sources = [
+    "sdp_parser_fuzzer.cc",
+  ]
+  deps = [
+    "../../api:libjingle_peerconnection",
+  ]
+  seed_corpus = "corpora/sdp-corpus"
+}
 
-  webrtc_fuzzer_test("stun_parser_fuzzer") {
-    sources = [
-      "stun_parser_fuzzer.cc",
-    ]
-    deps = [
-      "../../p2p:rtc_p2p",
-    ]
-    seed_corpus = "corpora/stun-corpus"
-    dict = "corpora/stun.tokens"
-  }
+webrtc_fuzzer_test("stun_parser_fuzzer") {
+  sources = [
+    "stun_parser_fuzzer.cc",
+  ]
+  deps = [
+    "../../p2p:rtc_p2p",
+  ]
+  seed_corpus = "corpora/stun-corpus"
+  dict = "corpora/stun.tokens"
+}
 
-  webrtc_fuzzer_test("stun_validator_fuzzer") {
-    sources = [
-      "stun_validator_fuzzer.cc",
-    ]
-    deps = [
-      "../../p2p:rtc_p2p",
-    ]
-    seed_corpus = "corpora/stun-corpus"
-    dict = "corpora/stun.tokens"
-  }
+webrtc_fuzzer_test("stun_validator_fuzzer") {
+  sources = [
+    "stun_validator_fuzzer.cc",
+  ]
+  deps = [
+    "../../p2p:rtc_p2p",
+  ]
+  seed_corpus = "corpora/stun-corpus"
+  dict = "corpora/stun.tokens"
+}
 
-  webrtc_fuzzer_test("pseudotcp_parser_fuzzer") {
-    sources = [
-      "pseudotcp_parser_fuzzer.cc",
-    ]
-    deps = [
-      "../../p2p:rtc_p2p",
-    ]
-  }
+webrtc_fuzzer_test("pseudotcp_parser_fuzzer") {
+  sources = [
+    "pseudotcp_parser_fuzzer.cc",
+  ]
+  deps = [
+    "../../p2p:rtc_p2p",
+  ]
 }
