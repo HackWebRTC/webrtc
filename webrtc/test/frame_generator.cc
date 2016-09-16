@@ -18,7 +18,6 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "libyuv/convert.h"
 
 namespace webrtc {
 namespace test {
@@ -27,41 +26,35 @@ namespace {
 class ChromaGenerator : public FrameGenerator {
  public:
   ChromaGenerator(size_t width, size_t height)
-      : width_(width), height_(height), angle_(0.0) {
-    RTC_CHECK(width_ > 0);
-    RTC_CHECK(height_ > 0);
-    half_width_ = (width_ + 1) / 2;
-    y_size_ = width_ * height_;
-    uv_size_ = half_width_ * ((height_ + 1) / 2);
+      : angle_(0.0), width_(width), height_(height) {
+    assert(width > 0);
+    assert(height > 0);
   }
 
   VideoFrame* NextFrame() override {
+    frame_.CreateEmptyFrame(static_cast<int>(width_),
+                            static_cast<int>(height_),
+                            static_cast<int>(width_),
+                            static_cast<int>((width_ + 1) / 2),
+                            static_cast<int>((width_ + 1) / 2));
     angle_ += 30.0;
     uint8_t u = fabs(sin(angle_)) * 0xFF;
     uint8_t v = fabs(cos(angle_)) * 0xFF;
 
-    // Ensure stride == width.
-    rtc::scoped_refptr<I420Buffer> buffer(I420Buffer::Create(
-        static_cast<int>(width_), static_cast<int>(height_),
-        static_cast<int>(width_), static_cast<int>(half_width_),
-        static_cast<int>(half_width_)));
-
-    memset(buffer->MutableDataY(), 0x80, y_size_);
-    memset(buffer->MutableDataU(), u, uv_size_);
-    memset(buffer->MutableDataV(), v, uv_size_);
-
-    frame_.reset(new VideoFrame(buffer, 0, 0, webrtc::kVideoRotation_0));
-    return frame_.get();
+    memset(frame_.video_frame_buffer()->MutableDataY(), 0x80,
+           frame_.allocated_size(kYPlane));
+    memset(frame_.video_frame_buffer()->MutableDataU(), u,
+           frame_.allocated_size(kUPlane));
+    memset(frame_.video_frame_buffer()->MutableDataV(), v,
+           frame_.allocated_size(kVPlane));
+    return &frame_;
   }
 
  private:
-  int width_;
-  int height_;
-  int half_width_;
   double angle_;
-  size_t y_size_;
-  size_t uv_size_;
-  std::unique_ptr<VideoFrame> frame_;
+  size_t width_;
+  size_t height_;
+  VideoFrame frame_;
 };
 
 class YuvFileGenerator : public FrameGenerator {
@@ -96,13 +89,15 @@ class YuvFileGenerator : public FrameGenerator {
     if (++current_display_count_ >= frame_display_count_)
       current_display_count_ = 0;
 
-    temp_frame_.reset(
-        new VideoFrame(last_read_buffer_, 0, 0, webrtc::kVideoRotation_0));
-    return temp_frame_.get();
+    // If this is the last repeatition of this frame, it's OK to use the
+    // original instance, otherwise use a copy.
+    if (current_display_count_ == frame_display_count_)
+      return &last_read_frame_;
+
+    temp_frame_copy_.CopyFrame(last_read_frame_);
+    return &temp_frame_copy_;
   }
 
-  // TODO(nisse): Have a frame reader in one place. And read directly
-  // into the planes of an I420Buffer, the extra copying below is silly.
   void ReadNextFrame() {
     size_t bytes_read =
         fread(frame_buffer_.get(), 1, frame_size_, files_[file_index_]);
@@ -115,21 +110,14 @@ class YuvFileGenerator : public FrameGenerator {
       assert(bytes_read >= frame_size_);
     }
 
-    size_t half_width = (width_ + 1) / 2;
-    size_t size_y = width_ * height_;
-    size_t size_uv = half_width * ((height_ + 1) / 2);
-    last_read_buffer_ = I420Buffer::Create(
+    last_read_frame_.CreateEmptyFrame(
         static_cast<int>(width_), static_cast<int>(height_),
-        static_cast<int>(width_), static_cast<int>(half_width),
-        static_cast<int>(half_width));
-    libyuv::I420Copy(
-        frame_buffer_.get(), static_cast<int>(width_),
-        frame_buffer_.get() + size_y, static_cast<int>(half_width),
-        frame_buffer_.get() + size_y + size_uv, static_cast<int>(half_width),
-        last_read_buffer_->MutableDataY(), last_read_buffer_->StrideY(),
-        last_read_buffer_->MutableDataU(), last_read_buffer_->StrideU(),
-        last_read_buffer_->MutableDataV(), last_read_buffer_->StrideV(),
-        static_cast<int>(width_), static_cast<int>(height_));
+        static_cast<int>(width_), static_cast<int>((width_ + 1) / 2),
+        static_cast<int>((width_ + 1) / 2));
+
+    ConvertToI420(kI420, frame_buffer_.get(), 0, 0, static_cast<int>(width_),
+                  static_cast<int>(height_), 0, kVideoRotation_0,
+                  &last_read_frame_);
   }
 
  private:
@@ -141,8 +129,8 @@ class YuvFileGenerator : public FrameGenerator {
   const std::unique_ptr<uint8_t[]> frame_buffer_;
   const int frame_display_count_;
   int current_display_count_;
-  rtc::scoped_refptr<I420Buffer> last_read_buffer_;
-  std::unique_ptr<VideoFrame> temp_frame_;
+  VideoFrame last_read_frame_;
+  VideoFrame temp_frame_copy_;
 };
 
 class ScrollingImageFrameGenerator : public FrameGenerator {
