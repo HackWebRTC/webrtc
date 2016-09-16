@@ -110,34 +110,40 @@
 
 // The name of the histogram should not vary.
 // TODO(asapersson): Consider changing string to const char*.
-#define RTC_HISTOGRAM_COMMON_BLOCK(constant_name, sample, \
-                                   factory_get_invocation) \
-  do { \
+#define RTC_HISTOGRAM_COMMON_BLOCK(constant_name, sample,                  \
+                                   factory_get_invocation)                 \
+  do {                                                                     \
     static webrtc::metrics::Histogram* atomic_histogram_pointer = nullptr; \
-    webrtc::metrics::Histogram* histogram_pointer = \
-        rtc::AtomicOps::AcquireLoadPtr(&atomic_histogram_pointer); \
-    if (!histogram_pointer) { \
-      histogram_pointer = factory_get_invocation; \
-      webrtc::metrics::Histogram* prev_pointer = \
-          rtc::AtomicOps::CompareAndSwapPtr( \
-              &atomic_histogram_pointer, \
-              static_cast<webrtc::metrics::Histogram*>(nullptr), \
-              histogram_pointer); \
-      RTC_DCHECK(prev_pointer == nullptr || \
-                 prev_pointer == histogram_pointer); \
-    } \
-    webrtc::metrics::HistogramAdd(histogram_pointer, constant_name, sample); \
+    webrtc::metrics::Histogram* histogram_pointer =                        \
+        rtc::AtomicOps::AcquireLoadPtr(&atomic_histogram_pointer);         \
+    if (!histogram_pointer) {                                              \
+      histogram_pointer = factory_get_invocation;                          \
+      webrtc::metrics::Histogram* prev_pointer =                           \
+          rtc::AtomicOps::CompareAndSwapPtr(                               \
+              &atomic_histogram_pointer,                                   \
+              static_cast<webrtc::metrics::Histogram*>(nullptr),           \
+              histogram_pointer);                                          \
+      RTC_DCHECK(prev_pointer == nullptr ||                                \
+                 prev_pointer == histogram_pointer);                       \
+    }                                                                      \
+    if (histogram_pointer) {                                               \
+      RTC_DCHECK_EQ(constant_name,                                         \
+                    webrtc::metrics::GetHistogramName(histogram_pointer))  \
+          << "The name should not vary.";                                  \
+      webrtc::metrics::HistogramAdd(histogram_pointer, sample);            \
+    }                                                                      \
   } while (0)
 
 // Deprecated.
 // The histogram is constructed/found for each call.
-// May be used for histograms with infrequent updates.
+// May be used for histograms with infrequent updates.`
 #define RTC_HISTOGRAM_COMMON_BLOCK_SLOW(name, sample, factory_get_invocation) \
-  do { \
-    webrtc::metrics::Histogram* histogram_pointer = factory_get_invocation; \
-    webrtc::metrics::HistogramAdd(histogram_pointer, name, sample); \
+  do {                                                                        \
+    webrtc::metrics::Histogram* histogram_pointer = factory_get_invocation;   \
+    if (histogram_pointer) {                                                  \
+      webrtc::metrics::HistogramAdd(histogram_pointer, sample);               \
+    }                                                                         \
   } while (0)
-
 
 // Helper macros.
 // Macros for calling a histogram with varying name (e.g. when using a metric
@@ -212,10 +218,11 @@ Histogram* HistogramFactoryGetCounts(
 Histogram* HistogramFactoryGetEnumeration(
     const std::string& name, int boundary);
 
+// Returns name of the histogram.
+const std::string& GetHistogramName(Histogram* histogram_pointer);
+
 // Function for adding a |sample| to a histogram.
-// |name| can be used to verify that it matches the histogram name.
-void HistogramAdd(
-    Histogram* histogram_pointer, const std::string& name, int sample);
+void HistogramAdd(Histogram* histogram_pointer, int sample);
 
 }  // namespace metrics
 }  // namespace webrtc

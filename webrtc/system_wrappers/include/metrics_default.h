@@ -55,9 +55,6 @@ int NumSamples(const std::string& name);
 // Returns the minimum sample value (or -1 if the histogram has no samples).
 int MinSample(const std::string& name);
 
-// Function for adding a |sample| to a histogram without checkking the name.
-void HistogramAdd(Histogram* histogram_pointer, int sample);
-
 }  // namespace metrics
 }  // namespace webrtc
 

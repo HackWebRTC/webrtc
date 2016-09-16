@@ -68,8 +68,10 @@ JOW(jlong, Metrics_00024Histogram_nativeCreateCounts)
 
 JOW(void, Metrics_00024Histogram_nativeAddSample)
 (JNIEnv* jni, jclass, jlong histogram, jint sample) {
-  HistogramAdd(reinterpret_cast<webrtc::metrics::Histogram*>(histogram),
-               sample);
+  if (histogram) {
+    HistogramAdd(reinterpret_cast<webrtc::metrics::Histogram*>(histogram),
+                 sample);
+  }
 }
 
 }  // namespace webrtc_jni
