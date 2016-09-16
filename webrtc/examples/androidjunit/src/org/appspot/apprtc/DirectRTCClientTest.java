@@ -20,10 +20,10 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import org.chromium.testing.local.LocalRobolectricTestRunner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.webrtc.IceCandidate;
 import org.webrtc.SessionDescription;
@@ -32,7 +32,7 @@ import org.webrtc.SessionDescription;
  * Test for DirectRTCClient. Test is very simple and only tests the overall sanity of the class
  * behaviour.
  */
-@RunWith(RobolectricTestRunner.class)
+@RunWith(LocalRobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class DirectRTCClientTest {
   private static final String ROOM_URL = "";
