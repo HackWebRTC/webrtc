@@ -827,4 +827,15 @@ if (rtc_include_tests) {
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
+
+  if (is_android) {
+    junit_binary("android_junit_tests") {
+      java_files = [ "androidjunit/src/org/webrtc/CameraEnumerationTest.java" ]
+
+      deps = [
+        "//webrtc/api:libjingle_peerconnection_java",
+        "//webrtc/api:libjingle_peerconnection_jni",
+      ]
+    }
+  }
 }
