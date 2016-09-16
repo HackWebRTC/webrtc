@@ -248,6 +248,7 @@ if (rtc_include_tests) {
       "audio_coding/audio_network_adaptor/audio_network_adaptor_impl_unittest.cc",
       "audio_coding/audio_network_adaptor/channel_controller_unittest.cc",
       "audio_coding/audio_network_adaptor/controller_manager_unittest.cc",
+      "audio_coding/audio_network_adaptor/dtx_controller_unittest.cc",
       "audio_coding/audio_network_adaptor/mock/mock_controller.h",
       "audio_coding/audio_network_adaptor/mock/mock_controller_manager.h",
       "audio_coding/codecs/audio_decoder_factory_unittest.cc",

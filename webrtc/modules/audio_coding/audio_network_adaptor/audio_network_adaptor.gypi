@@ -20,6 +20,8 @@
         'controller.cc',
         'controller_manager.cc',
         'controller_manager.h',
+        'dtx_controller.h',
+        'dtx_controller.cc',
         'include/audio_network_adaptor.h'
       ], # source
     },
