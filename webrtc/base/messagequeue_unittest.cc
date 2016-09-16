@@ -10,7 +10,11 @@
 
 #include "webrtc/base/messagequeue.h"
 
+#include <functional>
+
+#include "webrtc/base/atomicops.h"
 #include "webrtc/base/bind.h"
+#include "webrtc/base/event.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
@@ -139,4 +143,75 @@ TEST(MessageQueueManager, Clear) {
   delete handler;
   EXPECT_TRUE(deleted);
   EXPECT_FALSE(MessageQueueManager::IsInitialized());
+}
+
+// Ensure that ProcessAllMessageQueues does its essential function; process
+// all messages (both delayed and non delayed) up until the current time, on
+// all registered message queues.
+TEST(MessageQueueManager, ProcessAllMessageQueues) {
+  Event entered_process_all_message_queues(true, false);
+  Thread a;
+  Thread b;
+  a.Start();
+  b.Start();
+
+  volatile int messages_processed = 0;
+  FunctorMessageHandler<void, std::function<void()>> incrementer(
+      [&messages_processed, &entered_process_all_message_queues] {
+        // Wait for event as a means to ensure Increment doesn't occur outside
+        // of ProcessAllMessageQueues. The event is set by a message posted to
+        // the main thread, which is guaranteed to be handled inside
+        // ProcessAllMessageQueues.
+        entered_process_all_message_queues.Wait(Event::kForever);
+        AtomicOps::Increment(&messages_processed);
+      });
+  FunctorMessageHandler<void, std::function<void()>> event_signaler(
+      [&entered_process_all_message_queues] {
+        entered_process_all_message_queues.Set();
+      });
+
+  // Post messages (both delayed and non delayed) to both threads.
+  a.Post(RTC_FROM_HERE, &incrementer);
+  b.Post(RTC_FROM_HERE, &incrementer);
+  a.PostDelayed(RTC_FROM_HERE, 0, &incrementer);
+  b.PostDelayed(RTC_FROM_HERE, 0, &incrementer);
+  rtc::Thread::Current()->Post(RTC_FROM_HERE, &event_signaler);
+
+  MessageQueueManager::ProcessAllMessageQueues();
+  EXPECT_EQ(4, AtomicOps::AcquireLoad(&messages_processed));
+}
+
+// Test that ProcessAllMessageQueues doesn't hang if a thread is quitting.
+TEST(MessageQueueManager, ProcessAllMessageQueuesWithQuittingThread) {
+  Thread t;
+  t.Start();
+  t.Quit();
+  MessageQueueManager::ProcessAllMessageQueues();
+}
+
+// Test that ProcessAllMessageQueues doesn't hang if a queue clears its
+// messages.
+TEST(MessageQueueManager, ProcessAllMessageQueuesWithClearedQueue) {
+  Event entered_process_all_message_queues(true, false);
+  Thread t;
+  t.Start();
+
+  FunctorMessageHandler<void, std::function<void()>> clearer(
+      [&entered_process_all_message_queues] {
+        // Wait for event as a means to ensure Clear doesn't occur outside of
+        // ProcessAllMessageQueues. The event is set by a message posted to the
+        // main thread, which is guaranteed to be handled inside
+        // ProcessAllMessageQueues.
+        entered_process_all_message_queues.Wait(Event::kForever);
+        rtc::Thread::Current()->Clear(nullptr);
+      });
+  FunctorMessageHandler<void, std::function<void()>> event_signaler(
+      [&entered_process_all_message_queues] {
+        entered_process_all_message_queues.Set();
+      });
+
+  // Post messages (both delayed and non delayed) to both threads.
+  t.Post(RTC_FROM_HERE, &clearer);
+  rtc::Thread::Current()->Post(RTC_FROM_HERE, &event_signaler);
+  MessageQueueManager::ProcessAllMessageQueues();
 }
