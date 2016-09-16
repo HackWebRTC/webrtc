@@ -12,7 +12,6 @@ rtc_source_set("bitrate_controller") {
   sources = [
     "bitrate_controller_impl.cc",
     "bitrate_controller_impl.h",
-    "include/bitrate_allocator.h",
     "include/bitrate_controller.h",
     "send_side_bandwidth_estimation.cc",
     "send_side_bandwidth_estimation.h",
