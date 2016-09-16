@@ -443,7 +443,7 @@ void AecDumpBasedSimulator::HandleMessage(
     }
 
     if (settings_.use_lc) {
-      apm_config.level_controller.enabled = true;
+      apm_config.level_controller.enabled = *settings_.use_lc;
     }
 
     ap_->ApplyConfig(apm_config);
