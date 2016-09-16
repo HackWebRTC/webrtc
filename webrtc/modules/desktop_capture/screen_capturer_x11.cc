@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <set>
+#include <utility>
 
 #include <X11/extensions/Xdamage.h>
 #include <X11/extensions/Xfixes.h>
@@ -27,6 +28,7 @@
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/differ.h"
 #include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
+#include "webrtc/modules/desktop_capture/screen_capturer_differ_wrapper.h"
 #include "webrtc/modules/desktop_capture/screen_capturer_helper.h"
 #include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 #include "webrtc/modules/desktop_capture/x11/x_server_pixel_buffer.h"
@@ -426,9 +428,15 @@ ScreenCapturer* ScreenCapturer::Create(const DesktopCaptureOptions& options) {
   if (!options.x_display())
     return nullptr;
 
-  std::unique_ptr<ScreenCapturerLinux> capturer(new ScreenCapturerLinux());
-  if (!capturer->Init(options))
-    capturer.reset();
+  std::unique_ptr<ScreenCapturer> capturer(new ScreenCapturerLinux());
+  if (!static_cast<ScreenCapturerLinux*>(capturer.get())->Init(options)) {
+    return nullptr;
+  }
+
+  if (options.detect_updated_region()) {
+    capturer.reset(new ScreenCapturerDifferWrapper(std::move(capturer)));
+  }
+
   return capturer.release();
 }
 

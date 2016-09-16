@@ -28,10 +28,11 @@ namespace webrtc {
 // implementation won't work when ScreenCaptureFrameQueue.kQueueLength is not 2.
 class ScreenCapturerWinDirectx : public ScreenCapturer {
  public:
-  // Whether the system support DirectX based capturing.
+  // Whether the system supports DirectX based capturing.
   static bool IsSupported();
 
   explicit ScreenCapturerWinDirectx(const DesktopCaptureOptions& options);
+
   virtual ~ScreenCapturerWinDirectx();
 
   void Start(Callback* callback) override;

@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <set>
+#include <utility>
 
 #include <ApplicationServices/ApplicationServices.h>
 #include <Cocoa/Cocoa.h>
@@ -33,6 +34,7 @@
 #include "webrtc/modules/desktop_capture/mac/desktop_configuration_monitor.h"
 #include "webrtc/modules/desktop_capture/mac/scoped_pixel_buffer_object.h"
 #include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
+#include "webrtc/modules/desktop_capture/screen_capturer_differ_wrapper.h"
 #include "webrtc/modules/desktop_capture/screen_capturer_helper.h"
 #include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 #include "webrtc/system_wrappers/include/logging.h"
@@ -937,10 +939,16 @@ ScreenCapturer* ScreenCapturer::Create(const DesktopCaptureOptions& options) {
   if (!options.configuration_monitor())
     return nullptr;
 
-  std::unique_ptr<ScreenCapturerMac> capturer(
+  std::unique_ptr<ScreenCapturer> capturer(
       new ScreenCapturerMac(options.configuration_monitor()));
-  if (!capturer->Init())
-    capturer.reset();
+  if (!static_cast<ScreenCapturerMac*>(capturer.get())->Init()) {
+    return nullptr;
+  }
+
+  if (options.detect_updated_region()) {
+    capturer.reset(new ScreenCapturerDifferWrapper(std::move(capturer)));
+  }
+
   return capturer.release();
 }
 

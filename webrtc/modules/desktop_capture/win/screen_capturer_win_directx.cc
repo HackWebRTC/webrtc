@@ -21,6 +21,7 @@ namespace webrtc {
 
 using Microsoft::WRL::ComPtr;
 
+// static
 bool ScreenCapturerWinDirectx::IsSupported() {
   // Forward IsSupported function call to DxgiDuplicatorController.
   return DxgiDuplicatorController::Instance()->IsSupported();

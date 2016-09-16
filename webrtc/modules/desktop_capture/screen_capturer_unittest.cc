@@ -129,15 +129,21 @@ class ScreenCapturerTest : public testing::Test {
   }
 
 #if defined(WEBRTC_WIN)
+  // Enable allow_directx_capturer in DesktopCaptureOptions, but let
+  // ScreenCapturer::Create to decide whether a DirectX capturer should be used.
+  void MaybeCreateDirectxCapturer() {
+    DesktopCaptureOptions options(DesktopCaptureOptions::CreateDefault());
+    options.set_allow_directx_capturer(true);
+    capturer_.reset(ScreenCapturer::Create(options));
+  }
+
   bool CreateDirectxCapturer() {
     if (!ScreenCapturerWinDirectx::IsSupported()) {
       LOG(LS_WARNING) << "Directx capturer is not supported";
       return false;
     }
 
-    DesktopCaptureOptions options(DesktopCaptureOptions::CreateDefault());
-    options.set_allow_directx_capturer(true);
-    capturer_.reset(ScreenCapturer::Create(options));
+    MaybeCreateDirectxCapturer();
     return true;
   }
 
@@ -380,6 +386,16 @@ TEST_F(ScreenCapturerTest, DISABLED_TwoMagnifierCapturers) {
   std::unique_ptr<ScreenCapturer> capturer2 = std::move(capturer_);
   CreateMagnifierCapturer();
   TestCaptureUpdatedRegion({capturer_.get(), capturer2.get()});
+}
+
+// Disabled due to being flaky due to the fact that it useds rendering / UI,
+// see webrtc/6366.
+TEST_F(ScreenCapturerTest,
+       DISABLED_MaybeCaptureUpdatedRegionWithDirectxCapturer) {
+  // Even DirectX capturer is not supported in current system, we should be able
+  // to select a usable capturer.
+  MaybeCreateDirectxCapturer();
+  TestCaptureUpdatedRegion();
 }
 
 #endif  // defined(WEBRTC_WIN)
