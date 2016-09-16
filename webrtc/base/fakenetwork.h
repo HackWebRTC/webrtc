@@ -31,7 +31,7 @@ const int kFakeIPv6NetworkPrefixLength = 64;
 class FakeNetworkManager : public NetworkManagerBase,
                            public MessageHandler {
  public:
-  FakeNetworkManager() : thread_(Thread::Current()) {}
+  FakeNetworkManager() {}
 
   typedef std::vector<std::pair<SocketAddress, AdapterType>> IfaceList;
 
@@ -68,7 +68,7 @@ class FakeNetworkManager : public NetworkManagerBase,
     ++start_count_;
     if (start_count_ == 1) {
       sent_first_update_ = false;
-      thread_->Post(RTC_FROM_HERE, this);
+      rtc::Thread::Current()->Post(RTC_FROM_HERE, this);
     } else {
       if (sent_first_update_) {
         SignalNetworksChanged();
@@ -115,7 +115,6 @@ class FakeNetworkManager : public NetworkManagerBase,
     }
   }
 
-  Thread* thread_;
   IfaceList ifaces_;
   int next_index_ = 0;
   int start_count_ = 0;
