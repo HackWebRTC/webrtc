@@ -22,10 +22,6 @@
 
 namespace rtc {
 
-File File::Open(const std::string& path) {
-  return File(::open(path.c_str(), O_RDWR));
-}
-
 size_t File::Write(const uint8_t* data, size_t length) {
   size_t total_written = 0;
   do {

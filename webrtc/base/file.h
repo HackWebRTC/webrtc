@@ -35,7 +35,10 @@ class File {
   File(File&& other);
   File& operator=(File&& other);
 
+  // Open and Create give files with both reading and writing enabled.
   static File Open(const std::string& path);
+  // If the file already exists it will be overwritten.
+  static File Create(const std::string& path);
 
   size_t Write(const uint8_t* data, size_t length);
   size_t Read(uint8_t* buffer, size_t length);

@@ -19,13 +19,6 @@
 
 namespace rtc {
 
-File File::Open(const std::string& path) {
-  HANDLE handle =
-      ::CreateFile(ToUtf16(path).c_str(), GENERIC_READ | GENERIC_WRITE, 0,
-                   nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-  return File(handle);
-}
-
 size_t File::Write(const uint8_t* data, size_t length) {
   RTC_DCHECK_LT(length, std::numeric_limits<DWORD>::max());
   size_t total_written = 0;

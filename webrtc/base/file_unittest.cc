@@ -8,10 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
 #include <limits>
 #include <memory>
 #include <string>
@@ -31,14 +27,6 @@
 #endif
 
 namespace rtc {
-
-void RemoveFile(const std::string& path) {
-#if defined(WEBRTC_WIN)
-  ::DeleteFile(ToUtf16(path).c_str());
-#else
-  ::unlink(path.c_str());
-#endif
-}
 
 int LastError() {
 #if defined(WEBRTC_WIN)
@@ -69,7 +57,7 @@ class FileTest : public ::testing::Test {
     ASSERT_FALSE(path_.empty());
   }
   rtc::File OpenTempFile() { return rtc::File::Open(path_); }
-  void TearDown() { RemoveFile(path_); }
+  void TearDown() { rtc::RemoveFile(path_); }
 };
 
 TEST_F(FileTest, DoubleClose) {

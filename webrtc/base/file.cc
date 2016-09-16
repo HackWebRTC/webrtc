@@ -18,6 +18,14 @@ File::~File() {
   Close();
 }
 
+File File::Open(const std::string& path) {
+  return File(OpenPlatformFile(path));
+}
+
+File File::Create(const std::string& path) {
+  return File(CreatePlatformFile(path));
+}
+
 File::File(File&& other) : file_(other.file_) {
   other.file_ = kInvalidPlatformFileValue;
 }
