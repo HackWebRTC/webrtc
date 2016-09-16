@@ -54,11 +54,13 @@ void ProbeController::SetBitrates(int min_bitrate_bps,
   }
 
   // Only do probing if:
-  //   - we are mid-call, which we consider to be if
-  //     |estimated_bitrate_bps_| != 0, and
-  //   - the current bitrate is lower than the new |max_bitrate_bps|, and
-  //   - we actually want to increase the |max_bitrate_bps_|.
-  if (estimated_bitrate_bps_ != 0 && estimated_bitrate_bps_ < max_bitrate_bps &&
+  //   we are mid-call, which we consider to be if
+  //     exponential probing is not active and
+  //     |estimated_bitrate_bps_| is valid (> 0) and
+  //     the current bitrate is lower than the new |max_bitrate_bps|, and
+  //     we actually want to increase the |max_bitrate_bps_|.
+  if (state_ != State::kWaitingForProbingResult &&
+      estimated_bitrate_bps_ != 0 && estimated_bitrate_bps_ < max_bitrate_bps &&
       max_bitrate_bps > max_bitrate_bps_) {
     InitiateProbing({max_bitrate_bps}, kExponentialProbingDisabled);
   }

@@ -29,6 +29,8 @@ constexpr int kMinBitrateBps = 100;
 constexpr int kStartBitrateBps = 300;
 constexpr int kMaxBitrateBps = 1000;
 
+constexpr int kExponentialProbingTimeoutMs = 5000;
+
 }  // namespace
 
 class ProbeControllerTest : public ::testing::Test {
@@ -53,9 +55,10 @@ TEST_F(ProbeControllerTest, InitiatesProbingOnMaxBitrateIncrease) {
   EXPECT_CALL(pacer_, CreateProbeCluster(_, _)).Times(AtLeast(2));
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps);
-  clock_.AdvanceTimeMilliseconds(25);
-
+  // Long enough to time out exponential probing.
+  clock_.AdvanceTimeMilliseconds(kExponentialProbingTimeoutMs);
   probe_controller_->SetEstimatedBitrate(kStartBitrateBps);
+
   EXPECT_CALL(pacer_, CreateProbeCluster(kMaxBitrateBps + 100, _));
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps + 100);
@@ -73,7 +76,7 @@ TEST_F(ProbeControllerTest, TestExponentialProbingTimeout) {
                                  kMaxBitrateBps);
 
   // Advance far enough to cause a time out in waiting for probing result.
-  clock_.AdvanceTimeMilliseconds(5000);
+  clock_.AdvanceTimeMilliseconds(kExponentialProbingTimeoutMs);
   EXPECT_CALL(pacer_, CreateProbeCluster(2 * 1800, _)).Times(0);
   probe_controller_->SetEstimatedBitrate(1800);
 }
