@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/stats/rtcstatscollector.h"
+#include "webrtc/api/rtcstatscollector.h"
 
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "webrtc/api/jsepsessiondescription.h"
-#include "webrtc/api/rtcstats_objects.h"
-#include "webrtc/api/rtcstatsreport.h"
+#include "webrtc/api/stats/rtcstats_objects.h"
+#include "webrtc/api/stats/rtcstatsreport.h"
 #include "webrtc/api/test/mock_datachannel.h"
 #include "webrtc/api/test/mock_peerconnection.h"
 #include "webrtc/api/test/mock_webrtcsession.h"

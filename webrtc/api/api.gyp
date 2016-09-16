@@ -115,8 +115,10 @@
       'type': 'static_library',
       'dependencies': [
         ':call_api',
+        ':rtc_stats_api',
         '<(webrtc_root)/media/media.gyp:rtc_media',
         '<(webrtc_root)/pc/pc.gyp:rtc_pc',
+        '<(webrtc_root)/stats/stats.gyp:rtc_stats',
       ],
       'sources': [
         'audiotrack.cc',
@@ -157,9 +159,8 @@
         'proxy.h',
         'remoteaudiosource.cc',
         'remoteaudiosource.h',
-        'rtcstats.h',
-        'rtcstats_objects.h',
-        'rtcstatsreport.h',
+        'rtcstatscollector.cc',
+        'rtcstatscollector.h',
         'rtpparameters.h',
         'rtpreceiver.cc',
         'rtpreceiver.h',
@@ -217,5 +218,18 @@
         }],
       ],
     },  # target libjingle_peerconnection
+    {
+      # GN version: webrtc/api:rtc_stats_api
+      'target_name': 'rtc_stats_api',
+      'type': 'static_library',
+      'dependencies': [
+        '<(webrtc_root)/base/base.gyp:rtc_base_approved',
+      ],
+      'sources': [
+        'stats/rtcstats.h',
+        'stats/rtcstats_objects.h',
+        'stats/rtcstatsreport.h',
+      ],
+    },  # target rtc_stats_api
   ],  # targets
 }

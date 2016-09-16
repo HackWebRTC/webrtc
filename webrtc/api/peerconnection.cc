@@ -632,6 +632,7 @@ bool PeerConnection::Initialize(
               configuration.redetermine_role_on_ice_restart))));
 
   stats_.reset(new StatsCollector(this));
+  stats_collector_ = RTCStatsCollector::Create(this);
 
   enable_ice_renomination_ = configuration.enable_ice_renomination;
 
@@ -886,6 +887,11 @@ bool PeerConnection::GetStats(StatsObserver* observer,
   signaling_thread()->Post(RTC_FROM_HERE, this, MSG_GETSTATS,
                            new GetStatsMsg(observer, track));
   return true;
+}
+
+void PeerConnection::GetStats(RTCStatsCollectorCallback* callback) {
+  RTC_DCHECK(stats_collector_);
+  stats_collector_->GetStatsReport(callback);
 }
 
 PeerConnectionInterface::SignalingState PeerConnection::signaling_state() {

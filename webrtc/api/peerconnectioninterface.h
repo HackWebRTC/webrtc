@@ -60,6 +60,7 @@
 #include "webrtc/api/dtmfsenderinterface.h"
 #include "webrtc/api/jsep.h"
 #include "webrtc/api/mediastreaminterface.h"
+#include "webrtc/api/rtcstatscollector.h"
 #include "webrtc/api/rtpreceiverinterface.h"
 #include "webrtc/api/rtpsenderinterface.h"
 #include "webrtc/api/statstypes.h"
@@ -440,6 +441,12 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   virtual bool GetStats(StatsObserver* observer,
                         MediaStreamTrackInterface* track,
                         StatsOutputLevel level) = 0;
+  // Gets stats using the new stats collection API, see webrtc/api/stats/. These
+  // will replace old stats collection API when the new API has matured enough.
+  // TODO(hbos): Default implementation that does nothing only exists as to not
+  // break third party projects. As soon as they have been updated this should
+  // be changed to "= 0;".
+  virtual void GetStats(RTCStatsCollectorCallback* callback) {}
 
   virtual rtc::scoped_refptr<DataChannelInterface> CreateDataChannel(
       const std::string& label,

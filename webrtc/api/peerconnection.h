@@ -18,6 +18,7 @@
 
 #include "webrtc/api/peerconnectionfactory.h"
 #include "webrtc/api/peerconnectioninterface.h"
+#include "webrtc/api/rtcstatscollector.h"
 #include "webrtc/api/rtpreceiver.h"
 #include "webrtc/api/rtpsender.h"
 #include "webrtc/api/statscollector.h"
@@ -102,6 +103,7 @@ class PeerConnection : public PeerConnectionInterface,
   bool GetStats(StatsObserver* observer,
                 webrtc::MediaStreamTrackInterface* track,
                 StatsOutputLevel level) override;
+  void GetStats(RTCStatsCollectorCallback* callback) override;
 
   SignalingState signaling_state() override;
 
@@ -427,6 +429,7 @@ class PeerConnection : public PeerConnectionInterface,
 
   std::unique_ptr<WebRtcSession> session_;
   std::unique_ptr<StatsCollector> stats_;
+  rtc::scoped_refptr<RTCStatsCollector> stats_collector_;
 };
 
 }  // namespace webrtc

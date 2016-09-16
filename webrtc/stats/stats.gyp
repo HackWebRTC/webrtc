@@ -14,13 +14,12 @@
       'target_name': 'rtc_stats',
       'type': 'static_library',
       'dependencies': [
-        '<(webrtc_root)/api/api.gyp:libjingle_peerconnection',
+        '<(webrtc_root)/api/api.gyp:rtc_stats_api',
+        '<(webrtc_root)/base/base.gyp:rtc_base_approved',
       ],
       'sources': [
         'rtcstats.cc',
         'rtcstats_objects.cc',
-        'rtcstatscollector.cc',
-        'rtcstatscollector.h',
         'rtcstatsreport.cc',
       ],
     },

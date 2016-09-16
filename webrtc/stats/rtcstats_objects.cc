@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/rtcstats_objects.h"
+#include "webrtc/api/stats/rtcstats_objects.h"
 
 namespace webrtc {
 

@@ -20,8 +20,6 @@ rtc_source_set("rtc_stats") {
   sources = [
     "rtcstats.cc",
     "rtcstats_objects.cc",
-    "rtcstatscollector.cc",
-    "rtcstatscollector.h",
     "rtcstatsreport.cc",
   ]
 
@@ -31,7 +29,8 @@ rtc_source_set("rtc_stats") {
   }
 
   deps = [
-    "../api:libjingle_peerconnection",
+    "../api:rtc_stats_api",
+    "../base:rtc_base_approved",
   ]
 }
 
@@ -41,7 +40,6 @@ if (rtc_include_tests) {
     testonly = true
     sources = [
       "rtcstats_unittest.cc",
-      "rtcstatscollector_unittest.cc",
       "rtcstatsreport_unittest.cc",
     ]
 

@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/rtcstatsreport.h"
+#include "webrtc/api/stats/rtcstatsreport.h"
 
-#include "webrtc/api/rtcstats.h"
+#include "webrtc/api/stats/rtcstats.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/gunit.h"
 

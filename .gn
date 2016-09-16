@@ -20,18 +20,20 @@ secondary_source = "//build/secondary/"
 # "gn check" or "gn gen --check".
 # TODO(kjellander): Keep adding paths to this list as work in webrtc:5589 is done.
 check_targets = [
+  "//webrtc/api:rtc_stats_api",
   "//webrtc/modules/audio_coding:g711_test",
   "//webrtc/modules/audio_coding:g722_test",
+  "//webrtc/modules/audio_coding:ilbc_test",
+  "//webrtc/modules/audio_coding:isac",
+  "//webrtc/modules/audio_coding:isac_api_test",
   "//webrtc/modules/audio_coding:isac_fix_test",
+  "//webrtc/modules/audio_coding:isac_switch_samprate_test",
   "//webrtc/modules/audio_coding:isac_test",
   "//webrtc/modules/audio_coding:webrtc_opus_fec_test",
   "//webrtc/modules/audio_device/*",
   "//webrtc/modules/audio_mixer/*",
+  "//webrtc/stats:rtc_stats",
   "//webrtc/voice_engine:level_indicator",
-  "//webrtc/modules/audio_coding:ilbc_test",
-  "//webrtc/modules/audio_coding:isac",
-  "//webrtc/modules/audio_coding:isac_api_test",
-  "//webrtc/modules/audio_coding:isac_switch_samprate_test",
 ]
 
 # These are the list of GN files that run exec_script. This whitelist exists
