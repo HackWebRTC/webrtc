@@ -304,12 +304,12 @@ class AudioProcessing {
   // Initialize with unpacked parameters. See Initialize() above for details.
   //
   // TODO(mgraczyk): Remove once clients are updated to use the new interface.
-  virtual int Initialize(int input_sample_rate_hz,
-                         int output_sample_rate_hz,
-                         int reverse_sample_rate_hz,
-                         ChannelLayout input_layout,
-                         ChannelLayout output_layout,
-                         ChannelLayout reverse_layout) = 0;
+  virtual int Initialize(int capture_input_sample_rate_hz,
+                         int capture_output_sample_rate_hz,
+                         int render_sample_rate_hz,
+                         ChannelLayout capture_input_layout,
+                         ChannelLayout capture_output_layout,
+                         ChannelLayout render_input_layout) = 0;
 
   // TODO(peah): This method is a temporary solution used to take control
   // over the parameters in the audio processing module and is likely to change.
@@ -394,14 +394,14 @@ class AudioProcessing {
   // TODO(mgraczyk): Remove once clients are updated to use the new interface.
   virtual int AnalyzeReverseStream(const float* const* data,
                                    size_t samples_per_channel,
-                                   int rev_sample_rate_hz,
+                                   int sample_rate_hz,
                                    ChannelLayout layout) = 0;
 
   // Accepts deinterleaved float audio with the range [-1, 1]. Each element of
   // |data| points to a channel buffer, arranged according to |reverse_config|.
   virtual int ProcessReverseStream(const float* const* src,
-                                   const StreamConfig& reverse_input_config,
-                                   const StreamConfig& reverse_output_config,
+                                   const StreamConfig& input_config,
+                                   const StreamConfig& output_config,
                                    float* const* dest) = 0;
 
   // This must be called if and only if echo processing is enabled.

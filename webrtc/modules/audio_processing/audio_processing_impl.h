@@ -48,12 +48,12 @@ class AudioProcessingImpl : public AudioProcessing {
                       NonlinearBeamformer* beamformer);
   ~AudioProcessingImpl() override;
   int Initialize() override;
-  int Initialize(int input_sample_rate_hz,
-                 int output_sample_rate_hz,
-                 int reverse_sample_rate_hz,
-                 ChannelLayout input_layout,
-                 ChannelLayout output_layout,
-                 ChannelLayout reverse_layout) override;
+  int Initialize(int capture_input_sample_rate_hz,
+                 int capture_output_sample_rate_hz,
+                 int render_sample_rate_hz,
+                 ChannelLayout capture_input_layout,
+                 ChannelLayout capture_output_layout,
+                 ChannelLayout render_input_layout) override;
   int Initialize(const ProcessingConfig& processing_config) override;
   void ApplyConfig(const AudioProcessing::Config& config) override;
   void SetExtraOptions(const webrtc::Config& config) override;
@@ -93,8 +93,8 @@ class AudioProcessingImpl : public AudioProcessing {
                            int sample_rate_hz,
                            ChannelLayout layout) override;
   int ProcessReverseStream(const float* const* src,
-                           const StreamConfig& reverse_input_config,
-                           const StreamConfig& reverse_output_config,
+                           const StreamConfig& input_config,
+                           const StreamConfig& output_config,
                            float* const* dest) override;
 
   // Methods only accessed from APM submodules or
@@ -214,27 +214,11 @@ class AudioProcessingImpl : public AudioProcessing {
   // Methods requiring APM running in a single-threaded manner.
   // Are called with both the render and capture locks already
   // acquired.
-  void InitializeExperimentalAgc()
-      EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
   void InitializeTransient()
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
   void InitializeBeamformer()
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
   void InitializeIntelligibility()
-      EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
-  void InitializeHighPassFilter()
-      EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
-  void InitializeNoiseSuppression()
-      EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
-  void InitializeLevelEstimator()
-      EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
-  void InitializeVoiceDetection()
-      EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
-  void InitializeEchoCanceller()
-      EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
-  void InitializeGainController()
-      EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
-  void InitializeEchoControlMobile()
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
   int InitializeLocked(const ProcessingConfig& config)
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
@@ -242,7 +226,7 @@ class AudioProcessingImpl : public AudioProcessing {
 
   // Capture-side exclusive methods possibly running APM in a multi-threaded
   // manner that are called with the render lock already acquired.
-  int ProcessStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  int ProcessCaptureStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void MaybeUpdateHistograms() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
   // Render-side exclusive methods possibly running APM in a multi-threaded
@@ -252,7 +236,7 @@ class AudioProcessingImpl : public AudioProcessing {
                                  const StreamConfig& input_config,
                                  const StreamConfig& output_config)
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
-  int ProcessReverseStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
+  int ProcessRenderStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
 
 // Debug dump methods that are internal and called without locks.
 // TODO(peah): Make thread safe.
@@ -302,9 +286,9 @@ class AudioProcessingImpl : public AudioProcessing {
                        {kSampleRate16kHz, 1, false},
                        {kSampleRate16kHz, 1, false},
                        {kSampleRate16kHz, 1, false}}}),
-          rev_proc_format(kSampleRate16kHz, 1) {}
+          render_processing_format(kSampleRate16kHz, 1) {}
     ProcessingConfig api_format;
-    StreamConfig rev_proc_format;
+    StreamConfig render_processing_format;
   } formats_;
 
   // APM constants.
@@ -334,25 +318,25 @@ class AudioProcessingImpl : public AudioProcessing {
     std::vector<Point> array_geometry;
     SphericalPointf target_direction;
     std::unique_ptr<AudioBuffer> capture_audio;
-    // Only the rate and samples fields of fwd_proc_format_ are used because the
-    // forward processing number of channels is mutable and is tracked by the
-    // capture_audio_.
-    StreamConfig fwd_proc_format;
+    // Only the rate and samples fields of capture_processing_format_ are used
+    // because the capture processing number of channels is mutable and is
+    // tracked by the capture_audio_.
+    StreamConfig capture_processing_format;
     int split_rate;
   } capture_ GUARDED_BY(crit_capture_);
 
   struct ApmCaptureNonLockedState {
     ApmCaptureNonLockedState(bool beamformer_enabled,
                              bool intelligibility_enabled)
-        : fwd_proc_format(kSampleRate16kHz),
+        : capture_processing_format(kSampleRate16kHz),
           split_rate(kSampleRate16kHz),
           stream_delay_ms(0),
           beamformer_enabled(beamformer_enabled),
           intelligibility_enabled(intelligibility_enabled) {}
-    // Only the rate and samples fields of fwd_proc_format_ are used because the
-    // forward processing number of channels is mutable and is tracked by the
-    // capture_audio_.
-    StreamConfig fwd_proc_format;
+    // Only the rate and samples fields of capture_processing_format_ are used
+    // because the forward processing number of channels is mutable and is
+    // tracked by the capture_audio_.
+    StreamConfig capture_processing_format;
     int split_rate;
     int stream_delay_ms;
     bool beamformer_enabled;
