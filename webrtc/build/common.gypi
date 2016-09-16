@@ -34,10 +34,8 @@
 
           ['build_with_chromium==1', {
             'webrtc_root%': '<(DEPTH)/third_party/webrtc',
-            'android_tests_path%': '<(DEPTH)/third_party/webrtc/build/android_tests_noop.gyp',
           }, {
             'webrtc_root%': '<(DEPTH)/webrtc',
-            'android_tests_path%': '<(DEPTH)/webrtc/build/android_tests.gyp',
           }],
 
           # Controls whether we use libevent on posix platforms.
@@ -57,7 +55,6 @@
       'build_libevent%': '<(build_libevent)',
       'enable_libevent%': '<(enable_libevent)',
       'webrtc_root%': '<(webrtc_root)',
-      'android_tests_path%': '<(android_tests_path)',
       'webrtc_vp8_dir%': '<(webrtc_root)/modules/video_coding/codecs/vp8',
       'webrtc_vp9_dir%': '<(webrtc_root)/modules/video_coding/codecs/vp9',
       'include_ilbc%': '<(include_ilbc)',
@@ -69,7 +66,6 @@
     'build_libevent%': '<(build_libevent)',
     'enable_libevent%': '<(enable_libevent)',
     'webrtc_root%': '<(webrtc_root)',
-    'android_tests_path%': '<(android_tests_path)',
     'test_runner_path': '<(DEPTH)/webrtc/build/android/test_runner.py',
     'webrtc_vp8_dir%': '<(webrtc_vp8_dir)',
     'webrtc_vp9_dir%': '<(webrtc_vp9_dir)',
