@@ -13,7 +13,7 @@
 
 #include <list>
 
-#include "webrtc/base/sequenced_task_checker.h"
+#include "webrtc/base/race_checker.h"
 #include "webrtc/common_video/include/video_frame_buffer.h"
 
 namespace webrtc {
@@ -40,7 +40,7 @@ class I420BufferPool {
   // needed by the pool to check exclusive access.
   using PooledI420Buffer = rtc::RefCountedObject<I420Buffer>;
 
-  rtc::SequencedTaskChecker sequenced_checker_;
+  rtc::RaceChecker race_checker_;
   std::list<rtc::scoped_refptr<PooledI420Buffer>> buffers_;
   // If true, newly allocated buffers are zero-initialized. Note that recycled
   // buffers are not zero'd before reuse. This is required of buffers used by
