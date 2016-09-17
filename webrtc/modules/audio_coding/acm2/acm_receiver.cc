@@ -245,27 +245,12 @@ void AcmReceiver::FlushBuffers() {
   neteq_->FlushBuffers();
 }
 
-// If failed in removing one of the codecs, this method continues to remove as
-// many as it can.
-int AcmReceiver::RemoveAllCodecs() {
-  int ret_val = 0;
+void AcmReceiver::RemoveAllCodecs() {
   rtc::CritScope lock(&crit_sect_);
-  for (auto it = decoders_.begin(); it != decoders_.end(); ) {
-    auto cur = it;
-    ++it;  // it will be valid even if we erase cur
-    if (neteq_->RemovePayloadType(cur->second.payload_type) == 0) {
-      decoders_.erase(cur);
-    } else {
-      LOG_F(LS_ERROR) << "Cannot remove payload "
-                      << static_cast<int>(cur->second.payload_type);
-      ret_val = -1;
-    }
-  }
-
-  // No codec is registered, invalidate last audio decoder.
+  neteq_->RemoveAllPayloadTypes();
+  decoders_.clear();
   last_audio_decoder_ = rtc::Optional<CodecInst>();
   last_packet_sample_rate_hz_ = rtc::Optional<int>();
-  return ret_val;
 }
 
 int AcmReceiver::RemoveCodec(uint8_t payload_type) {

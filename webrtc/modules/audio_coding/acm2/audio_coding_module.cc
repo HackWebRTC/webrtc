@@ -948,10 +948,8 @@ int AudioCodingModuleImpl::InitializeReceiverSafe() {
   // If the receiver is already initialized then we want to destroy any
   // existing decoders. After a call to this function, we should have a clean
   // start-up.
-  if (receiver_initialized_) {
-    if (receiver_.RemoveAllCodecs() < 0)
-      return -1;
-  }
+  if (receiver_initialized_)
+    receiver_.RemoveAllCodecs();
   receiver_.ResetInitialDelay();
   receiver_.SetMinimumDelay(0);
   receiver_.SetMaximumDelay(0);
