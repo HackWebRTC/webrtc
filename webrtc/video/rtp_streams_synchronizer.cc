@@ -123,6 +123,7 @@ void RtpStreamsSynchronizer::Process() {
   const int current_audio_delay_ms = audio_jitter_buffer_delay_ms +
       playout_buffer_delay_ms;
 
+  int64_t last_video_receive_ms = video_measurement_.latest_receive_time_ms;
   if (UpdateMeasurements(&video_measurement_, video_rtp_rtcp_,
                          video_rtp_receiver_) != 0) {
     return;
@@ -130,6 +131,11 @@ void RtpStreamsSynchronizer::Process() {
 
   if (UpdateMeasurements(&audio_measurement_, audio_rtp_rtcp_,
                          audio_rtp_receiver_) != 0) {
+    return;
+  }
+
+  if (last_video_receive_ms == video_measurement_.latest_receive_time_ms) {
+    // No new video packet has been received since last update.
     return;
   }
 
