@@ -16,6 +16,7 @@
 #define WEBRTC_COMMON_VIDEO_LIBYUV_INCLUDE_WEBRTC_LIBYUV_H_
 
 #include <stdio.h>
+#include <vector>
 
 #include "webrtc/common_types.h"  // RawVideoTypes.
 #include "webrtc/common_video/rotation.h"
@@ -122,6 +123,22 @@ int ConvertFromI420(const VideoFrame& src_frame,
 double I420PSNR(const VideoFrame* ref_frame, const VideoFrame* test_frame);
 // Compute SSIM for an I420 frame (all planes).
 double I420SSIM(const VideoFrame* ref_frame, const VideoFrame* test_frame);
+
+// Helper class for directly converting and scaling NV12 to I420. The Y-plane
+// will be scaled directly to the I420 destination, which makes this faster
+// than separate NV12->I420 + I420->I420 scaling.
+class NV12ToI420Scaler {
+ public:
+  void NV12ToI420Scale(const uint8_t* src_y, int src_stride_y,
+                       const uint8_t* src_uv, int src_stride_uv,
+                       int src_width, int src_height,
+                       uint8_t* dst_y, int dst_stride_y,
+                       uint8_t* dst_u, int dst_stride_u,
+                       uint8_t* dst_v, int dst_stride_v,
+                       int dst_width, int dst_height);
+ private:
+  std::vector<uint8_t> tmp_uv_planes_;
+};
 
 }  // namespace webrtc
 
