@@ -39,15 +39,6 @@ namespace acm2 {
 
 class AcmReceiver {
  public:
-  struct Decoder {
-    int acm_codec_id;
-    uint8_t payload_type;
-    // This field is meaningful for codecs where both mono and
-    // stereo versions are registered under the same ID.
-    size_t channels;
-    int sample_rate_hz;
-  };
-
   // Constructor of the class
   explicit AcmReceiver(const AudioCodingModule::Config& config);
 
@@ -262,14 +253,23 @@ class AcmReceiver {
   void GetDecodingCallStatistics(AudioDecodingCallStats* stats) const;
 
  private:
-  const Decoder* RtpHeaderToDecoder(const RTPHeader& rtp_header,
-                                    uint8_t payload_type) const
+  struct Decoder {
+    int acm_codec_id;
+    uint8_t payload_type;
+    // This field is meaningful for codecs where both mono and
+    // stereo versions are registered under the same ID.
+    size_t channels;
+    int sample_rate_hz;
+  };
+
+  const rtc::Optional<CodecInst> RtpHeaderToDecoder(const RTPHeader& rtp_header,
+                                                    uint8_t payload_type) const
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   uint32_t NowInTimestamp(int decoder_sampling_rate) const;
 
   rtc::CriticalSection crit_sect_;
-  const Decoder* last_audio_decoder_ GUARDED_BY(crit_sect_);
+  rtc::Optional<CodecInst> last_audio_decoder_ GUARDED_BY(crit_sect_);
   ACMResampler resampler_ GUARDED_BY(crit_sect_);
   std::unique_ptr<int16_t[]> last_audio_buffer_ GUARDED_BY(crit_sect_);
   CallStatistics call_stats_ GUARDED_BY(crit_sect_);

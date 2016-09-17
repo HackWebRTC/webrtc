@@ -252,6 +252,8 @@ class NetEq {
   // (Config::sample_rate_hz) is returned.
   virtual int last_output_sample_rate_hz() const = 0;
 
+  virtual rtc::Optional<CodecInst> GetDecoder(int payload_type) const = 0;
+
   // Not implemented.
   virtual int SetTargetNumberOfChannels() = 0;
 
