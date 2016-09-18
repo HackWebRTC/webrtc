@@ -291,11 +291,6 @@ int NetEqImpl::RemovePayloadType(uint8_t rtp_payload_type) {
   return kFail;
 }
 
-void NetEqImpl::RemoveAllPayloadTypes() {
-  rtc::CritScope lock(&crit_sect_);
-  decoder_database_->RemoveAll();
-}
-
 bool NetEqImpl::SetMinimumDelay(int delay_ms) {
   rtc::CritScope lock(&crit_sect_);
   if (delay_ms >= 0 && delay_ms < 10000) {

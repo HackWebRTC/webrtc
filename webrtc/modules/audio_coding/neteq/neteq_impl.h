@@ -123,8 +123,6 @@ class NetEqImpl : public webrtc::NetEq {
   // -1 on failure.
   int RemovePayloadType(uint8_t rtp_payload_type) override;
 
-  void RemoveAllPayloadTypes() override;
-
   bool SetMinimumDelay(int delay_ms) override;
 
   bool SetMaximumDelay(int delay_ms) override;

@@ -183,9 +183,6 @@ class NetEq {
   // -1 on failure.
   virtual int RemovePayloadType(uint8_t rtp_payload_type) = 0;
 
-  // Removes all payload types from the codec database.
-  virtual void RemoveAllPayloadTypes() = 0;
-
   // Sets a minimum delay in millisecond for packet buffer. The minimum is
   // maintained unless a higher latency is dictated by channel condition.
   // Returns true if the minimum is successfully applied, otherwise false is

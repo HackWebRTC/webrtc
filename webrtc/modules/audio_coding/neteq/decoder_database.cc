@@ -169,12 +169,6 @@ int DecoderDatabase::Remove(uint8_t rtp_payload_type) {
   return kOK;
 }
 
-void DecoderDatabase::RemoveAll() {
-  decoders_.clear();
-  active_decoder_type_ = -1;      // No active decoder.
-  active_cng_decoder_type_ = -1;  // No active CNG decoder.
-}
-
 const DecoderDatabase::DecoderInfo* DecoderDatabase::GetDecoderInfo(
     uint8_t rtp_payload_type) const {
   DecoderMap::const_iterator it = decoders_.find(rtp_payload_type);
