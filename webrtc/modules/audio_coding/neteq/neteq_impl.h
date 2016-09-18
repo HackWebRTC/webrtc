@@ -169,8 +169,6 @@ class NetEqImpl : public webrtc::NetEq {
 
   int last_output_sample_rate_hz() const override;
 
-  rtc::Optional<CodecInst> GetDecoder(int payload_type) const override;
-
   int SetTargetNumberOfChannels() override;
 
   int SetTargetSampleRate() override;

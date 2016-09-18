@@ -119,9 +119,9 @@ class AcmReceiverTestOldApi : public AudioPacketizationCallback,
     for (auto id : ids) {
       const auto i = RentACodec::CodecIndexFromId(id);
       ASSERT_TRUE(i);
-      ASSERT_EQ(0, receiver_->AddCodec(*i, codecs_[*i].pltype,
-                                       codecs_[*i].channels, codecs_[*i].plfreq,
-                                       nullptr, codecs_[*i].plname));
+      ASSERT_EQ(
+          0, receiver_->AddCodec(*i, codecs_[*i].pltype, codecs_[*i].channels,
+                                 codecs_[*i].plfreq, nullptr, ""));
     }
   }
 
