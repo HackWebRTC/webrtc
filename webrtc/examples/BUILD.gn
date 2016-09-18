@@ -377,8 +377,9 @@ if (is_linux || is_win) {
   }
 
   config("peerconnection_client_warnings_config") {
+    cflags = []
     if (is_win && is_clang) {
-      cflags = [
+      cflags += [
         # Disable warnings failing when compiling with Clang on Windows.
         # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
         "-Wno-format",
@@ -390,10 +391,17 @@ if (is_linux || is_win) {
       ]
     }
     if (is_linux && target_cpu == "x86") {
-      cflags = [
+      cflags += [
         # Needed to compile on Linux 32-bit.
         "-Wno-sentinel",
       ]
+    }
+
+    if (is_clang) {
+      # TODO(ehmaldonado): Make peerconnection_client compile with the standard
+      # set of warnings.
+      # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6306
+      cflags += [ "-Wno-inconsistent-missing-override" ]
     }
   }
 
@@ -407,10 +415,6 @@ if (is_linux || is_win) {
       "peerconnection/client/peer_connection_client.h",
     ]
 
-    # TODO(ehmaldonado): Make peerconnection_client compile with the standard
-    # set of warnings.
-    # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6306
-    suppressed_configs += [ rtc_common_config ]
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.

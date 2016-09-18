@@ -169,6 +169,15 @@ rtc_source_set("webrtc_h264") {
 }
 
 if (is_ios) {
+  config("webrtc_h264_video_toolbox_warnings_config") {
+    if (is_clang) {
+      # TODO(tkchin): Make webrtc_h264_video_toolbox compile with the standard set
+      # of warnings.
+      # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6307
+      cflags = [ "-Wno-thread-safety-analysis" ]
+    }
+  }
+
   rtc_source_set("webrtc_h264_video_toolbox") {
     sources = [
       "codecs/h264/h264_video_toolbox_decoder.cc",
@@ -180,14 +189,10 @@ if (is_ios) {
     ]
 
     configs += [
+      ":webrtc_h264_video_toolbox_warnings_config",
       "../..:common_objc",
       "//build/config/compiler:enable_arc",
     ]
-
-    # TODO(hbos): Make webrtc_h264_video_toolbox compile with the standard set
-    # of warnings.
-    # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6307
-    suppressed_configs += [ rtc_common_config ]
 
     deps = [
       "../../sdk:rtc_sdk_common_objc",
