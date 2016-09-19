@@ -440,16 +440,16 @@ TEST_F(RtpSenderTestWithoutPacer, AssignSequenceNumberMayAllowPadding) {
   auto packet = rtp_sender_->AllocatePacket();
   ASSERT_TRUE(packet);
 
-  ASSERT_FALSE(rtp_sender_->SendPadData(kPaddingSize, false, 0, 0, -1));
+  ASSERT_FALSE(rtp_sender_->TimeToSendPadding(kPaddingSize, -1));
   packet->SetMarker(false);
   ASSERT_TRUE(rtp_sender_->AssignSequenceNumber(packet.get()));
   // Packet without marker bit doesn't allow padding.
-  EXPECT_FALSE(rtp_sender_->SendPadData(kPaddingSize, false, 0, 0, -1));
+  EXPECT_FALSE(rtp_sender_->TimeToSendPadding(kPaddingSize, -1));
 
   packet->SetMarker(true);
   ASSERT_TRUE(rtp_sender_->AssignSequenceNumber(packet.get()));
   // Packet with marker bit allows send padding.
-  EXPECT_TRUE(rtp_sender_->SendPadData(kPaddingSize, false, 0, 0, -1));
+  EXPECT_TRUE(rtp_sender_->TimeToSendPadding(kPaddingSize, -1));
 }
 
 TEST_F(RtpSenderTestWithoutPacer, AssignSequenceNumberSetPaddingTimestamps) {
@@ -460,7 +460,7 @@ TEST_F(RtpSenderTestWithoutPacer, AssignSequenceNumberSetPaddingTimestamps) {
   packet->SetTimestamp(kTimestamp);
 
   ASSERT_TRUE(rtp_sender_->AssignSequenceNumber(packet.get()));
-  ASSERT_TRUE(rtp_sender_->SendPadData(kPaddingSize, false, 0, 0, -1));
+  ASSERT_TRUE(rtp_sender_->TimeToSendPadding(kPaddingSize, -1));
 
   ASSERT_EQ(1u, transport_.sent_packets_.size());
   // Parse the padding packet and verify its timestamp.

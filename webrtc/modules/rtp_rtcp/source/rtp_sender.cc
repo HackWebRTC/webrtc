@@ -533,19 +533,23 @@ size_t RTPSender::TrySendRedundantPayloads(size_t bytes_to_send,
   return bytes_to_send - bytes_left;
 }
 
-size_t RTPSender::SendPadData(size_t bytes,
-                              bool timestamp_provided,
-                              uint32_t timestamp,
-                              int64_t capture_time_ms) {
-  return SendPadData(bytes, timestamp_provided, timestamp, capture_time_ms,
-                     PacketInfo::kNotAProbe);
+size_t RTPSender::SendPadData(size_t bytes, int probe_cluster_id) {
+  return DeprecatedSendPadData(bytes, false, 0, 0, probe_cluster_id);
 }
 
 size_t RTPSender::SendPadData(size_t bytes,
                               bool timestamp_provided,
                               uint32_t timestamp,
-                              int64_t capture_time_ms,
-                              int probe_cluster_id) {
+                              int64_t capture_time_ms) {
+  return DeprecatedSendPadData(bytes, timestamp_provided, timestamp,
+                               capture_time_ms, PacketInfo::kNotAProbe);
+}
+
+size_t RTPSender::DeprecatedSendPadData(size_t bytes,
+                                        bool timestamp_provided,
+                                        uint32_t timestamp,
+                                        int64_t capture_time_ms,
+                                        int probe_cluster_id) {
   // Always send full padding packets. This is accounted for by the
   // RtpPacketSender,
   // which will make sure we don't send too much padding even if a single packet
@@ -872,8 +876,7 @@ size_t RTPSender::TimeToSendPadding(size_t bytes, int probe_cluster_id) {
     return 0;
   size_t bytes_sent = TrySendRedundantPayloads(bytes, probe_cluster_id);
   if (bytes_sent < bytes)
-    bytes_sent +=
-        SendPadData(bytes - bytes_sent, false, 0, 0, probe_cluster_id);
+    bytes_sent += SendPadData(bytes - bytes_sent, probe_cluster_id);
   return bytes_sent;
 }
 

@@ -18,6 +18,7 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/deprecation.h"
 #include "webrtc/base/random.h"
 #include "webrtc/base/rate_statistics.h"
 #include "webrtc/base/thread_annotations.h"
@@ -271,15 +272,11 @@ class RTPSender {
   int32_t SetFecParameters(const FecProtectionParams *delta_params,
                            const FecProtectionParams *key_params);
 
+  RTC_DEPRECATED
   size_t SendPadData(size_t bytes,
                      bool timestamp_provided,
                      uint32_t timestamp,
                      int64_t capture_time_ms);
-  size_t SendPadData(size_t bytes,
-                     bool timestamp_provided,
-                     uint32_t timestamp,
-                     int64_t capture_time_ms,
-                     int probe_cluster_id);
 
   // Called on update of RTP statistics.
   void RegisterRtpStatisticsCallback(StreamDataCountersCallback* callback);
@@ -301,6 +298,14 @@ class RTPSender {
   // Send-side delay is the difference between transmission time and capture
   // time.
   typedef std::map<int64_t, int> SendDelayMap;
+
+  size_t SendPadData(size_t bytes, int probe_cluster_id);
+
+  size_t DeprecatedSendPadData(size_t bytes,
+                               bool timestamp_provided,
+                               uint32_t timestamp,
+                               int64_t capture_time_ms,
+                               int probe_cluster_id);
 
   size_t CreateRtpHeader(uint8_t* header,
                          int8_t payload_type,
