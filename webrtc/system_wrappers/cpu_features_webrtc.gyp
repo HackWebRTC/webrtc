@@ -18,8 +18,7 @@
             'source/cpu_features_android.c',
           ],
           'dependencies': [
-            # Not supported, please refer to the GN build.
-            #'../../build/android/ndk.gyp:cpu_features',
+            '../../build/android/ndk.gyp:cpu_features',
           ],
         },
       ],
