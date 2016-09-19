@@ -290,56 +290,56 @@ int ConvertFromI420(const VideoFrame& src_frame,
 }
 
 // Compute PSNR for an I420 frame (all planes)
-double I420PSNR(const VideoFrame* ref_frame, const VideoFrame* test_frame) {
-  if (!ref_frame || !test_frame)
+double I420PSNR(const VideoFrameBuffer& ref_buffer,
+                const VideoFrameBuffer& test_buffer) {
+  if ((ref_buffer.width() != test_buffer.width()) ||
+      (ref_buffer.height() != test_buffer.height()))
     return -1;
-  else if ((ref_frame->width() !=  test_frame->width()) ||
-          (ref_frame->height() !=  test_frame->height()))
-    return -1;
-  else if (ref_frame->width() < 0 || ref_frame->height() < 0)
+  else if (ref_buffer.width() < 0 || ref_buffer.height() < 0)
     return -1;
 
-  double psnr = libyuv::I420Psnr(ref_frame->video_frame_buffer()->DataY(),
-                                 ref_frame->video_frame_buffer()->StrideY(),
-                                 ref_frame->video_frame_buffer()->DataU(),
-                                 ref_frame->video_frame_buffer()->StrideU(),
-                                 ref_frame->video_frame_buffer()->DataV(),
-                                 ref_frame->video_frame_buffer()->StrideV(),
-                                 test_frame->video_frame_buffer()->DataY(),
-                                 test_frame->video_frame_buffer()->StrideY(),
-                                 test_frame->video_frame_buffer()->DataU(),
-                                 test_frame->video_frame_buffer()->StrideU(),
-                                 test_frame->video_frame_buffer()->DataV(),
-                                 test_frame->video_frame_buffer()->StrideV(),
-                                 test_frame->width(), test_frame->height());
+  double psnr = libyuv::I420Psnr(ref_buffer.DataY(), ref_buffer.StrideY(),
+                                 ref_buffer.DataU(), ref_buffer.StrideU(),
+                                 ref_buffer.DataV(), ref_buffer.StrideV(),
+                                 test_buffer.DataY(), test_buffer.StrideY(),
+                                 test_buffer.DataU(), test_buffer.StrideU(),
+                                 test_buffer.DataV(), test_buffer.StrideV(),
+                                 test_buffer.width(), test_buffer.height());
   // LibYuv sets the max psnr value to 128, we restrict it here.
   // In case of 0 mse in one frame, 128 can skew the results significantly.
   return (psnr > kPerfectPSNR) ? kPerfectPSNR : psnr;
 }
 
+// Compute PSNR for an I420 frame (all planes)
+double I420PSNR(const VideoFrame* ref_frame, const VideoFrame* test_frame) {
+  if (!ref_frame || !test_frame)
+    return -1;
+  return I420PSNR(*ref_frame->video_frame_buffer(),
+                  *test_frame->video_frame_buffer());
+}
+
 // Compute SSIM for an I420 frame (all planes)
+double I420SSIM(const VideoFrameBuffer& ref_buffer,
+                const VideoFrameBuffer& test_buffer) {
+  if ((ref_buffer.width() != test_buffer.width()) ||
+      (ref_buffer.height() != test_buffer.height()))
+    return -1;
+  else if (ref_buffer.width() < 0 || ref_buffer.height() < 0)
+    return -1;
+
+  return libyuv::I420Ssim(ref_buffer.DataY(), ref_buffer.StrideY(),
+                          ref_buffer.DataU(), ref_buffer.StrideU(),
+                          ref_buffer.DataV(), ref_buffer.StrideV(),
+                          test_buffer.DataY(), test_buffer.StrideY(),
+                          test_buffer.DataU(), test_buffer.StrideU(),
+                          test_buffer.DataV(), test_buffer.StrideV(),
+                          test_buffer.width(), test_buffer.height());
+}
 double I420SSIM(const VideoFrame* ref_frame, const VideoFrame* test_frame) {
   if (!ref_frame || !test_frame)
     return -1;
-  else if ((ref_frame->width() !=  test_frame->width()) ||
-          (ref_frame->height() !=  test_frame->height()))
-    return -1;
-  else if (ref_frame->width() < 0 || ref_frame->height()  < 0)
-    return -1;
-
-  return libyuv::I420Ssim(ref_frame->video_frame_buffer()->DataY(),
-                          ref_frame->video_frame_buffer()->StrideY(),
-                          ref_frame->video_frame_buffer()->DataU(),
-                          ref_frame->video_frame_buffer()->StrideU(),
-                          ref_frame->video_frame_buffer()->DataV(),
-                          ref_frame->video_frame_buffer()->StrideV(),
-                          test_frame->video_frame_buffer()->DataY(),
-                          test_frame->video_frame_buffer()->StrideY(),
-                          test_frame->video_frame_buffer()->DataU(),
-                          test_frame->video_frame_buffer()->StrideU(),
-                          test_frame->video_frame_buffer()->DataV(),
-                          test_frame->video_frame_buffer()->StrideV(),
-                          test_frame->width(), test_frame->height());
+  return I420SSIM(*ref_frame->video_frame_buffer(),
+                  *test_frame->video_frame_buffer());
 }
 
 void NV12ToI420Scaler::NV12ToI420Scale(
