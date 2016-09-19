@@ -144,6 +144,7 @@
       'android_n6': 'android_gn_debug_static_bot_arm',
       'android_gyp_dbg': 'android_gyp_debug_static_bot_arm',
       'android_gyp_rel': 'android_gyp_release_bot_arm',
+      'android_swarming': 'swarming_android_gn_release_bot_arm',
 
       # Windows
       'win_compile_dbg': 'gn_debug_bot_x86',
@@ -175,6 +176,7 @@
       'Linux64 Release (swarming)': 'swarming_gn_release_bot_x64',
 
       # Android
+      'Android32 Release (swarming)': 'swarming_android_gn_release_bot_arm',
       'Android32 ASan (L Nexus6)': 'android_gn_asan_shared_release_bot_arm',
       'Android32 Builder': 'android_gn_release_bot_arm',
       'Android32 Tests (J Nexus4)': 'none',
@@ -336,6 +338,9 @@
     ],
     'android_gn_asan_shared_release_bot_arm': [
       'android', 'gn', 'asan', 'clang', 'shared', 'release_bot', 'arm'
+    ],
+    'swarming_android_gn_release_bot_arm': [
+      'swarming', 'android', 'gn', 'release_bot', 'arm'
     ],
 
     # This is used for tracking purposes; any bot that uses this config
