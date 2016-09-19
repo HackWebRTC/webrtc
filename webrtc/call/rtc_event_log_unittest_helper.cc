@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifdef ENABLE_RTC_EVENT_LOG
-
 #include "webrtc/call/rtc_event_log_unittest_helper.h"
 
 #include <string.h>
@@ -405,5 +403,3 @@ void RtcEventLogTestHelper::VerifyLogEndEvent(
 }
 
 }  // namespace webrtc
-
-#endif  // ENABLE_RTC_EVENT_LOG

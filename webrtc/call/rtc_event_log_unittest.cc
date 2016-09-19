@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifdef ENABLE_RTC_EVENT_LOG
-
 #include <map>
 #include <memory>
 #include <string>
@@ -459,6 +457,5 @@ TEST(RtcEventLogTest, LogEventAndReadBack) {
   // Clean up temporary file - can be pretty slow.
   remove(temp_filename.c_str());
 }
-}  // namespace webrtc
 
-#endif  // ENABLE_RTC_EVENT_LOG
+}  // namespace webrtc

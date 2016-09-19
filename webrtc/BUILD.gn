@@ -551,6 +551,10 @@ if (rtc_include_tests) {
       "//testing/gtest",
     ]
 
+    if (rtc_enable_protobuf) {
+      deps += [ "call:rtc_event_log_tests" ]
+    }
+
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_support" ]
       shard_timeout = 900
