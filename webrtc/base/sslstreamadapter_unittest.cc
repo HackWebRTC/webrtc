@@ -325,36 +325,42 @@ class SSLStreamAdapterTestBase : public testing::Test,
     }
   }
 
-  void SetPeerIdentitiesByDigest(bool correct) {
-    unsigned char digest[20];
-    size_t digest_len;
+  void SetPeerIdentitiesByDigest(bool correct, bool expect_success) {
+    unsigned char server_digest[20];
+    size_t server_digest_len;
+    unsigned char client_digest[20];
+    size_t client_digest_len;
     bool rv;
+    rtc::SSLPeerCertificateDigestError err;
+    rtc::SSLPeerCertificateDigestError expected_err =
+        expect_success
+            ? rtc::SSLPeerCertificateDigestError::NONE
+            : rtc::SSLPeerCertificateDigestError::VERIFICATION_FAILED;
 
     LOG(LS_INFO) << "Setting peer identities by digest";
 
-    rv = server_identity_->certificate().ComputeDigest(rtc::DIGEST_SHA_1,
-                                                       digest, 20,
-                                                       &digest_len);
+    rv = server_identity_->certificate().ComputeDigest(
+        rtc::DIGEST_SHA_1, server_digest, 20, &server_digest_len);
     ASSERT_TRUE(rv);
+    rv = client_identity_->certificate().ComputeDigest(
+        rtc::DIGEST_SHA_1, client_digest, 20, &client_digest_len);
+    ASSERT_TRUE(rv);
+
     if (!correct) {
       LOG(LS_INFO) << "Setting bogus digest for server cert";
-      digest[0]++;
+      server_digest[0]++;
     }
-    rv = client_ssl_->SetPeerCertificateDigest(rtc::DIGEST_SHA_1, digest,
-                                               digest_len);
-    ASSERT_TRUE(rv);
+    err = client_ssl_->SetPeerCertificateDigest(
+        rtc::DIGEST_SHA_1, server_digest, server_digest_len);
+    EXPECT_EQ(expected_err, err);
 
-
-    rv = client_identity_->certificate().ComputeDigest(rtc::DIGEST_SHA_1,
-                                                       digest, 20, &digest_len);
-    ASSERT_TRUE(rv);
     if (!correct) {
       LOG(LS_INFO) << "Setting bogus digest for client cert";
-      digest[0]++;
+      client_digest[0]++;
     }
-    rv = server_ssl_->SetPeerCertificateDigest(rtc::DIGEST_SHA_1, digest,
-                                               digest_len);
-    ASSERT_TRUE(rv);
+    err = server_ssl_->SetPeerCertificateDigest(
+        rtc::DIGEST_SHA_1, client_digest, client_digest_len);
+    EXPECT_EQ(expected_err, err);
 
     identities_set_ = true;
   }
@@ -379,7 +385,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
     }
 
     if (!identities_set_)
-      SetPeerIdentitiesByDigest(true);
+      SetPeerIdentitiesByDigest(true, true);
 
     // Start the handshake
     int rv;
@@ -399,6 +405,57 @@ class SSLStreamAdapterTestBase : public testing::Test,
     } else {
       EXPECT_TRUE_WAIT(client_ssl_->GetState() == rtc::SS_CLOSED,
                        handshake_wait_);
+    }
+  }
+
+  // This tests that the handshake can complete before the identity is
+  // verified, and the identity will be verified after the fact.
+  void TestHandshakeWithDelayedIdentity(bool valid_identity) {
+    server_ssl_->SetMode(dtls_ ? rtc::SSL_MODE_DTLS : rtc::SSL_MODE_TLS);
+    client_ssl_->SetMode(dtls_ ? rtc::SSL_MODE_DTLS : rtc::SSL_MODE_TLS);
+
+    if (!dtls_) {
+      // Make sure we simulate a reliable network for TLS.
+      // This is just a check to make sure that people don't write wrong
+      // tests.
+      ASSERT((mtu_ == 1460) && (loss_ == 0) && (lose_first_packet_ == 0));
+    }
+
+    // Start the handshake
+    int rv;
+
+    server_ssl_->SetServerRole();
+    rv = server_ssl_->StartSSL();
+    ASSERT_EQ(0, rv);
+
+    rv = client_ssl_->StartSSL();
+    ASSERT_EQ(0, rv);
+
+    // Now run the handshake.
+    EXPECT_TRUE_WAIT(
+        client_ssl_->IsTlsConnected() && server_ssl_->IsTlsConnected(),
+        handshake_wait_);
+
+    // Until the identity has been verified, the state should still be
+    // SS_OPENING and writes should return SR_BLOCK.
+    EXPECT_EQ(rtc::SS_OPENING, client_ssl_->GetState());
+    EXPECT_EQ(rtc::SS_OPENING, server_ssl_->GetState());
+    unsigned char packet[1];
+    size_t sent;
+    EXPECT_EQ(rtc::SR_BLOCK, client_ssl_->Write(&packet, 1, &sent, 0));
+    EXPECT_EQ(rtc::SR_BLOCK, server_ssl_->Write(&packet, 1, &sent, 0));
+
+    // If we set an invalid identity at this point, SetPeerCertificateDigest
+    // should return false.
+    SetPeerIdentitiesByDigest(valid_identity, valid_identity);
+    // State should then transition to SS_OPEN or SS_CLOSED based on validation
+    // of the identity.
+    if (valid_identity) {
+      EXPECT_EQ(rtc::SS_OPEN, client_ssl_->GetState());
+      EXPECT_EQ(rtc::SS_OPEN, server_ssl_->GetState());
+    } else {
+      EXPECT_EQ(rtc::SS_CLOSED, client_ssl_->GetState());
+      EXPECT_EQ(rtc::SS_CLOSED, server_ssl_->GetState());
     }
   }
 
@@ -849,8 +906,16 @@ TEST_P(SSLStreamAdapterTestTLS, ReadWriteAfterClose) {
 
 // Test a handshake with a bogus peer digest
 TEST_P(SSLStreamAdapterTestTLS, TestTLSBogusDigest) {
-  SetPeerIdentitiesByDigest(false);
+  SetPeerIdentitiesByDigest(false, true);
   TestHandshake(false);
+};
+
+TEST_P(SSLStreamAdapterTestTLS, TestTLSDelayedIdentity) {
+  TestHandshakeWithDelayedIdentity(true);
+};
+
+TEST_P(SSLStreamAdapterTestTLS, TestTLSDelayedIdentityWithBogusDigest) {
+  TestHandshakeWithDelayedIdentity(false);
 };
 
 // Test moving a bunch of data
@@ -909,6 +974,14 @@ TEST_P(SSLStreamAdapterTestDTLS, TestDTLSTransferWithDamage) {
                 // write happens at end of handshake.
   TestHandshake();
   TestTransfer(100);
+};
+
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSDelayedIdentity) {
+  TestHandshakeWithDelayedIdentity(true);
+};
+
+TEST_P(SSLStreamAdapterTestDTLS, TestDTLSDelayedIdentityWithBogusDigest) {
+  TestHandshakeWithDelayedIdentity(false);
 };
 
 // Test DTLS-SRTP with all high ciphers
