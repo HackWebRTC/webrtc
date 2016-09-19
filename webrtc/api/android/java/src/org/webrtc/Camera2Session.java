@@ -167,6 +167,7 @@ public class Camera2Session implements CameraSession {
             CaptureRequest.CONTROL_AE_MODE_ON);
         captureRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, false);
         chooseStabilizationMode(captureRequestBuilder);
+        chooseFocusMode(captureRequestBuilder);
 
         captureRequestBuilder.addTarget(surface);
         session.setRepeatingRequest(
@@ -247,6 +248,20 @@ public class Camera2Session implements CameraSession {
         }
       }
       Logging.d(TAG, "Stabilization not available.");
+    }
+
+    private void chooseFocusMode(CaptureRequest.Builder captureRequestBuilder) {
+      final int[] availableFocusModes = cameraCharacteristics.get(
+          CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES);
+      for (int mode : availableFocusModes) {
+        if (mode == CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO) {
+          captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
+              CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
+          Logging.d(TAG, "Using continuous video auto-focus.");
+          return;
+        }
+      }
+      Logging.d(TAG, "Auto-focus is not available.");
     }
   }
 
