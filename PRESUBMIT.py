@@ -448,6 +448,21 @@ def _CheckUnwantedDependencies(input_api, output_api):
         warning_descriptions))
   return results
 
+def _CheckChangeHasBugField(input_api, output_api):
+  """Requires that the changelist have a BUG= field.
+
+  This check is stricter than the one in depot_tools/presubmit_canned_checks.py
+  since it fails the presubmit if the BUG= field is missing or doesn't contain
+  a bug reference.
+  """
+  if input_api.change.BUG:
+    return []
+  else:
+    return [output_api.PresubmitError(
+        'The BUG=[bug number] field is mandatory. Please create a bug and '
+        'reference it using either of:\n'
+        ' * https://bugs.webrtc.org - reference it using BUG=webrtc:XXXX\n'
+        ' * https://crbug.com - reference it using BUG=chromium:XXXXXX')]
 
 def _CheckJSONParseErrors(input_api, output_api):
   """Check that JSON files do not contain syntax errors."""
@@ -597,8 +612,7 @@ def CheckChangeOnCommit(input_api, output_api):
       input_api, output_api))
   results.extend(input_api.canned_checks.CheckChangeHasDescription(
       input_api, output_api))
-  results.extend(input_api.canned_checks.CheckChangeHasBugField(
-      input_api, output_api))
+  results.extend(_CheckChangeHasBugField(input_api, output_api))
   results.extend(input_api.canned_checks.CheckChangeHasTestField(
       input_api, output_api))
   results.extend(input_api.canned_checks.CheckTreeIsOpen(
