@@ -168,6 +168,7 @@ public class Camera2Session implements CameraSession {
         captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
             CaptureRequest.CONTROL_AE_MODE_ON);
         captureRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, false);
+        chooseStabilizationMode(captureRequestBuilder);
 
         captureRequestBuilder.addTarget(surface);
         session.setRepeatingRequest(
@@ -220,6 +221,39 @@ public class Camera2Session implements CameraSession {
           surfaceTextureHelper, eventsHandler);
       Logging.d(TAG, "Camera device successfully started.");
       callback.onDone(Camera2Session.this);
+    }
+
+    // Prefers optical stabilization over software stabilization if available. Only enables one of
+    // the stabilization modes at a time because having both enabled can cause strange results.
+    private void chooseStabilizationMode(CaptureRequest.Builder captureRequestBuilder) {
+      final int[] availableOpticalStabilization = cameraCharacteristics.get(
+          CameraCharacteristics.LENS_INFO_AVAILABLE_OPTICAL_STABILIZATION);
+      if (availableOpticalStabilization != null) {
+        for (int mode : availableOpticalStabilization) {
+          if (mode == CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_ON) {
+            captureRequestBuilder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE,
+                CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_ON);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
+                CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_OFF);
+            Logging.d(TAG, "Using optical stabilization.");
+            return;
+          }
+        }
+      }
+      // If no optical mode is available, try software.
+      final int[] availableVideoStabilization = cameraCharacteristics.get(
+          CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES);
+      for (int mode : availableVideoStabilization) {
+        if (mode == CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON) {
+          captureRequestBuilder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
+              CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON);
+          captureRequestBuilder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE,
+              CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_OFF);
+          Logging.d(TAG, "Using video stabilization.");
+          return;
+        }
+      }
+      Logging.d(TAG, "Stabilization not available.");
     }
   }
 
