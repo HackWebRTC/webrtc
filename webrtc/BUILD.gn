@@ -834,11 +834,16 @@ if (rtc_include_tests) {
 
   if (is_android) {
     junit_binary("android_junit_tests") {
-      java_files = [ "androidjunit/src/org/webrtc/CameraEnumerationTest.java" ]
+      java_files = [
+        "androidjunit/src/org/webrtc/CameraEnumerationTest.java",
+        "examples/androidjunit/src/org/appspot/apprtc/DirectRTCClientTest.java",
+        "examples/androidjunit/src/org/appspot/apprtc/TCPChannelClientTest.java",
+      ]
 
       deps = [
         "//webrtc/api:libjingle_peerconnection_java",
         "//webrtc/api:libjingle_peerconnection_jni",
+        "//webrtc/examples:AppRTCDemo_javalib",
       ]
     }
   }

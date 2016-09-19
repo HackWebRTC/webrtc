@@ -102,19 +102,6 @@ if (is_android) {
       "//webrtc/api:libjingle_peerconnection_java",
     ]
   }
-
-  junit_binary("AppRTCDemoJUnitTest") {
-    java_files = [
-      "androidjunit/src/org/appspot/apprtc/DirectRTCClientTest.java",
-      "androidjunit/src/org/appspot/apprtc/TCPChannelClientTest.java",
-    ]
-
-    deps = [
-      ":AppRTCDemo_javalib",
-      "//webrtc/api:libjingle_peerconnection_java",
-      "//webrtc/api:libjingle_peerconnection_jni",
-    ]
-  }
 }
 
 if (is_ios || (is_mac && target_cpu != "x86")) {
