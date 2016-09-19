@@ -142,8 +142,13 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
       return has_pairable_candidate_ && state_ != STATE_ERROR &&
              state_ != STATE_PRUNED;
     }
-
-    void set_pruned() { state_ = STATE_PRUNED; }
+    // Sets the state to "PRUNED" and prunes the Port.
+    void Prune() {
+      state_ = STATE_PRUNED;
+      if (port()) {
+        port()->Prune();
+      }
+    }
     void set_has_pairable_candidate(bool has_pairable_candidate) {
       if (has_pairable_candidate) {
         ASSERT(state_ == STATE_INPROGRESS);
@@ -201,8 +206,12 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   // in order to avoid leaking any information.
   Candidate SanitizeRelatedAddress(const Candidate& c) const;
 
-  // Removes the ports and candidates on given networks.
-  void RemovePortsAndCandidates(const std::vector<rtc::Network*>& networks);
+  std::vector<PortData*> GetUnprunedPorts(
+      const std::vector<rtc::Network*>& networks);
+  // Prunes ports and signal the remote side to remove the candidates that
+  // were previously signaled from these ports.
+  void PrunePortsAndRemoveCandidates(
+      const std::vector<PortData*>& port_data_list);
   // Gets filtered and sanitized candidates generated from a port and
   // append to |candidates|.
   void GetCandidatesFromPort(const PortData& data,

@@ -112,6 +112,10 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   bool Wait(int cms, bool process_io) override;
   void WakeUp() override;
 
+  void SetDelayOnAddress(const rtc::SocketAddress& address, int delay_ms) {
+    delay_by_ip_[address.ipaddr()] = delay_ms;
+  }
+
   typedef std::pair<double, double> Point;
   typedef std::vector<Point> Function;
 
@@ -194,8 +198,10 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   // Computes the number of milliseconds required to send a packet of this size.
   uint32_t SendDelay(uint32_t size);
 
-  // Returns a random transit delay chosen from the appropriate distribution.
-  uint32_t GetRandomTransitDelay();
+  // If the delay has been set for the address of the socket, returns the set
+  // delay. Otherwise, returns a random transit delay chosen from the
+  // appropriate distribution.
+  uint32_t GetTransitDelay(Socket* socket);
 
   // Basic operations on functions.  Those that return a function also take
   // ownership of the function given (and hence, may modify or delete it).
@@ -243,7 +249,6 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   bool server_owned_;
   MessageQueue* msg_queue_;
   bool stop_on_idle_;
-  int64_t network_delay_;
   in_addr next_ipv4_;
   in6_addr next_ipv6_;
   uint16_t next_port_;
@@ -260,7 +265,10 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   uint32_t delay_mean_;
   uint32_t delay_stddev_;
   uint32_t delay_samples_;
-  Function* delay_dist_;
+
+  std::map<rtc::IPAddress, int> delay_by_ip_;
+  std::unique_ptr<Function> delay_dist_;
+
   CriticalSection delay_crit_;
 
   double drop_prob_;
@@ -358,6 +366,9 @@ class VirtualSocket : public AsyncSocket,
   // Network model that enforces bandwidth and capacity constraints
   NetworkQueue network_;
   size_t network_size_;
+  // The scheduled delivery time of the last packet sent on this socket.
+  // It is used to ensure ordered delivery of packets sent on this socket.
+  int64_t last_delivery_time_ = 0;
 
   // Data which has been received from the network
   RecvBuffer recv_buffer_;

@@ -79,7 +79,7 @@ static const char kIcePwd0[] = "TESTICEPWD00000000000000";
 
 static const char kContentName[] = "test content";
 
-static const int kDefaultAllocationTimeout = 1000;
+static const int kDefaultAllocationTimeout = 3000;
 static const char kTurnUsername[] = "test";
 static const char kTurnPassword[] = "test";
 
@@ -243,6 +243,8 @@ class BasicPortAllocatorTest : public testing::Test,
                                        &BasicPortAllocatorTest::OnPortsPruned);
     session->SignalCandidatesReady.connect(
         this, &BasicPortAllocatorTest::OnCandidatesReady);
+    session->SignalCandidatesRemoved.connect(
+        this, &BasicPortAllocatorTest::OnCandidatesRemoved);
     session->SignalCandidatesAllocationDone.connect(
         this, &BasicPortAllocatorTest::OnCandidatesAllocationDone);
     return session;
@@ -404,6 +406,8 @@ class BasicPortAllocatorTest : public testing::Test,
     EXPECT_EQ(total_ports, ports_.size());
   }
 
+  rtc::VirtualSocketServer* virtual_socket_server() { return vss_.get(); }
+
  protected:
   BasicPortAllocator& allocator() { return *allocator_; }
 
@@ -446,6 +450,21 @@ class BasicPortAllocatorTest : public testing::Test,
     }
   }
 
+  void OnCandidatesRemoved(PortAllocatorSession* session,
+                           const std::vector<Candidate>& removed_candidates) {
+    auto new_end = std::remove_if(
+        candidates_.begin(), candidates_.end(),
+        [removed_candidates](Candidate& candidate) {
+          for (const Candidate& removed_candidate : removed_candidates) {
+            if (candidate.MatchesForRemoval(removed_candidate)) {
+              return true;
+            }
+          }
+          return false;
+        });
+    candidates_.erase(new_end, candidates_.end());
+  }
+
   bool HasRelayAddress(const ProtocolAddress& proto_addr) {
     for (size_t i = 0; i < allocator_->turn_servers().size(); ++i) {
       RelayServerConfig server_config = allocator_->turn_servers()[i];
@@ -477,6 +496,143 @@ class BasicPortAllocatorTest : public testing::Test,
     allocator_.reset(new BasicPortAllocator(
         &network_manager_, nat_socket_factory_.get(), stun_servers));
     allocator().set_step_delay(kMinimumStepDelay);
+  }
+
+  void TestUdpTurnPortPrunesTcpTurnPort() {
+    turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
+    AddInterface(kClientAddr);
+    allocator_.reset(new BasicPortAllocator(&network_manager_));
+    allocator_->SetConfiguration(allocator_->stun_servers(),
+                                 allocator_->turn_servers(), 0, true);
+    AddTurnServers(kTurnUdpIntAddr, kTurnTcpIntAddr);
+    allocator_->set_step_delay(kMinimumStepDelay);
+    allocator_->set_flags(allocator().flags() |
+                          PORTALLOCATOR_ENABLE_SHARED_SOCKET |
+                          PORTALLOCATOR_DISABLE_TCP);
+
+    EXPECT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
+    session_->StartGettingPorts();
+    EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+    // Only 2 ports (one STUN and one TURN) are actually being used.
+    EXPECT_EQ(2U, session_->ReadyPorts().size());
+    // We have verified that each port, when it is added to |ports_|, it is
+    // found in |ready_ports|, and when it is pruned, it is not found in
+    // |ready_ports|, so we only need to verify the content in one of them.
+    EXPECT_EQ(2U, ports_.size());
+    EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kClientAddr));
+    EXPECT_EQ(1, CountPorts(ports_, "relay", PROTO_UDP, kClientAddr));
+    EXPECT_EQ(0, CountPorts(ports_, "relay", PROTO_TCP, kClientAddr));
+
+    // Now that we remove candidates when a TURN port is pruned, |candidates_|
+    // should only contains two candidates regardless whether the TCP TURN port
+    // is created before or after the UDP turn port.
+    EXPECT_EQ(2U, candidates_.size());
+    // There will only be 2 candidates in |ready_candidates| because it only
+    // includes the candidates in the ready ports.
+    const std::vector<Candidate>& ready_candidates =
+        session_->ReadyCandidates();
+    EXPECT_EQ(2U, ready_candidates.size());
+    EXPECT_PRED4(HasCandidate, ready_candidates, "local", "udp", kClientAddr);
+    EXPECT_PRED4(HasCandidate, ready_candidates, "relay", "udp",
+                 rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
+  }
+
+  void TestIPv6TurnPortPrunesIPv4TurnPort() {
+    turn_server_.AddInternalSocket(kTurnUdpIntIPv6Addr, PROTO_UDP);
+    // Add two IP addresses on the same interface.
+    AddInterface(kClientAddr, "net1");
+    AddInterface(kClientIPv6Addr, "net1");
+    allocator_.reset(new BasicPortAllocator(&network_manager_));
+    allocator_->SetConfiguration(allocator_->stun_servers(),
+                                 allocator_->turn_servers(), 0, true);
+    AddTurnServers(kTurnUdpIntIPv6Addr, rtc::SocketAddress());
+    AddTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
+
+    allocator_->set_step_delay(kMinimumStepDelay);
+    allocator_->set_flags(
+        allocator().flags() | PORTALLOCATOR_ENABLE_SHARED_SOCKET |
+        PORTALLOCATOR_ENABLE_IPV6 | PORTALLOCATOR_DISABLE_TCP);
+
+    EXPECT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
+    session_->StartGettingPorts();
+    EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+    // Three ports (one IPv4 STUN, one IPv6 STUN and one TURN) will be ready.
+    EXPECT_EQ(3U, session_->ReadyPorts().size());
+    EXPECT_EQ(3U, ports_.size());
+    EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kClientAddr));
+    EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kClientIPv6Addr));
+    EXPECT_EQ(1, CountPorts(ports_, "relay", PROTO_UDP, kClientIPv6Addr));
+    EXPECT_EQ(0, CountPorts(ports_, "relay", PROTO_UDP, kClientAddr));
+
+    // Now that we remove candidates when a TURN port is pruned, there will be
+    // exactly 3 candidates in both |candidates_| and |ready_candidates|.
+    EXPECT_EQ(3U, candidates_.size());
+    const std::vector<Candidate>& ready_candidates =
+        session_->ReadyCandidates();
+    EXPECT_EQ(3U, ready_candidates.size());
+    EXPECT_PRED4(HasCandidate, ready_candidates, "local", "udp", kClientAddr);
+    EXPECT_PRED4(HasCandidate, ready_candidates, "relay", "udp",
+                 rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
+  }
+
+  void TestEachInterfaceHasItsOwnTurnPorts() {
+    turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
+    turn_server_.AddInternalSocket(kTurnUdpIntIPv6Addr, PROTO_UDP);
+    turn_server_.AddInternalSocket(kTurnTcpIntIPv6Addr, PROTO_TCP);
+    // Add two interfaces both having IPv4 and IPv6 addresses.
+    AddInterface(kClientAddr, "net1", rtc::ADAPTER_TYPE_WIFI);
+    AddInterface(kClientIPv6Addr, "net1", rtc::ADAPTER_TYPE_WIFI);
+    AddInterface(kClientAddr2, "net2", rtc::ADAPTER_TYPE_CELLULAR);
+    AddInterface(kClientIPv6Addr2, "net2", rtc::ADAPTER_TYPE_CELLULAR);
+    allocator_.reset(new BasicPortAllocator(&network_manager_));
+    allocator_->SetConfiguration(allocator_->stun_servers(),
+                                 allocator_->turn_servers(), 0, true);
+    // Have both UDP/TCP and IPv4/IPv6 TURN ports.
+    AddTurnServers(kTurnUdpIntAddr, kTurnTcpIntAddr);
+    AddTurnServers(kTurnUdpIntIPv6Addr, kTurnTcpIntIPv6Addr);
+
+    allocator_->set_step_delay(kMinimumStepDelay);
+    allocator_->set_flags(allocator().flags() |
+                          PORTALLOCATOR_ENABLE_SHARED_SOCKET |
+                          PORTALLOCATOR_ENABLE_IPV6);
+    EXPECT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
+    session_->StartGettingPorts();
+    EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
+    // 10 ports (4 STUN and 1 TURN ports on each interface) will be ready to
+    // use.
+    EXPECT_EQ(10U, session_->ReadyPorts().size());
+    EXPECT_EQ(10U, ports_.size());
+    EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kClientAddr));
+    EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kClientAddr2));
+    EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kClientIPv6Addr));
+    EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kClientIPv6Addr2));
+    EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_TCP, kClientAddr));
+    EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_TCP, kClientAddr2));
+    EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_TCP, kClientIPv6Addr));
+    EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_TCP, kClientIPv6Addr2));
+    EXPECT_EQ(1, CountPorts(ports_, "relay", PROTO_UDP, kClientIPv6Addr));
+    EXPECT_EQ(1, CountPorts(ports_, "relay", PROTO_UDP, kClientIPv6Addr2));
+
+    // Now that we remove candidates when TURN ports are pruned, there will be
+    // exactly 10 candidates in |candidates_|.
+    EXPECT_EQ(10U, candidates_.size());
+    const std::vector<Candidate>& ready_candidates =
+        session_->ReadyCandidates();
+    EXPECT_EQ(10U, ready_candidates.size());
+    EXPECT_PRED4(HasCandidate, ready_candidates, "local", "udp", kClientAddr);
+    EXPECT_PRED4(HasCandidate, ready_candidates, "local", "udp", kClientAddr2);
+    EXPECT_PRED4(HasCandidate, ready_candidates, "local", "udp",
+                 kClientIPv6Addr);
+    EXPECT_PRED4(HasCandidate, ready_candidates, "local", "udp",
+                 kClientIPv6Addr2);
+    EXPECT_PRED4(HasCandidate, ready_candidates, "local", "tcp", kClientAddr);
+    EXPECT_PRED4(HasCandidate, ready_candidates, "local", "tcp", kClientAddr2);
+    EXPECT_PRED4(HasCandidate, ready_candidates, "local", "tcp",
+                 kClientIPv6Addr);
+    EXPECT_PRED4(HasCandidate, ready_candidates, "local", "tcp",
+                 kClientIPv6Addr2);
+    EXPECT_PRED4(HasCandidate, ready_candidates, "relay", "udp",
+                 rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
   }
 
   std::unique_ptr<rtc::PhysicalSocketServer> pss_;
@@ -1211,142 +1367,72 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketWithoutNatUsingTurn) {
   EXPECT_EQ(3U, candidates_.size());
 }
 
-// Test that if prune_turn_ports is set, TCP TurnPort will not
-// be used if UDP TurnPort is used.
-TEST_F(BasicPortAllocatorTest, TestUdpTurnPortPrunesTcpTurnPorts) {
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
-  AddInterface(kClientAddr);
-  allocator_.reset(new BasicPortAllocator(&network_manager_));
-  allocator_->SetConfiguration(allocator_->stun_servers(),
-                               allocator_->turn_servers(), 0, true);
-  AddTurnServers(kTurnUdpIntAddr, kTurnTcpIntAddr);
-  allocator_->set_step_delay(kMinimumStepDelay);
-  allocator_->set_flags(allocator().flags() |
-                        PORTALLOCATOR_ENABLE_SHARED_SOCKET |
-                        PORTALLOCATOR_DISABLE_TCP);
+// Test that if prune_turn_ports is set, TCP TURN port will not be used
+// if UDP TurnPort is used, given that TCP TURN port becomes ready first.
+TEST_F(BasicPortAllocatorTest,
+       TestUdpTurnPortPrunesTcpTurnPortWithTcpPortReadyFirst) {
+  // UDP has longer delay than TCP so that TCP TURN port becomes ready first.
+  virtual_socket_server()->SetDelayOnAddress(kTurnUdpIntAddr, 200);
+  virtual_socket_server()->SetDelayOnAddress(kTurnTcpIntAddr, 100);
 
-  EXPECT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
-  session_->StartGettingPorts();
-  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
-  // Only 2 ports (one STUN and one TURN) are actually being used.
-  EXPECT_EQ(2U, session_->ReadyPorts().size());
-  // We have verified that each port, when it is added to |ports_|, it is found
-  // in |ready_ports|, and when it is pruned, it is not found in |ready_ports|,
-  // so we only need to verify the content in one of them.
-  EXPECT_EQ(2U, ports_.size());
-  EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kClientAddr));
-  EXPECT_EQ(1, CountPorts(ports_, "relay", PROTO_UDP, kClientAddr));
-  EXPECT_EQ(0, CountPorts(ports_, "relay", PROTO_TCP, kClientAddr));
-
-  // We don't remove candidates, so the size of |candidates_| will depend on
-  // when the TCP TURN port becomes ready. If it is ready after the UDP TURN
-  // port becomes ready, its candidates will be used there will be 3 candidates.
-  // Otherwise there will be only 2 candidates.
-  EXPECT_LE(2U, candidates_.size());
-  // There will only be 2 candidates in |ready_candidates| because it only
-  // includes the candidates in the ready ports.
-  const std::vector<Candidate>& ready_candidates = session_->ReadyCandidates();
-  EXPECT_EQ(2U, ready_candidates.size());
-  EXPECT_PRED4(HasCandidate, ready_candidates, "local", "udp", kClientAddr);
-  EXPECT_PRED4(HasCandidate, ready_candidates, "relay", "udp",
-               rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
+  TestUdpTurnPortPrunesTcpTurnPort();
 }
 
-// Tests that if prune_turn_ports is set, IPv4 TurnPort will not
-// be used if IPv6 TurnPort is used.
-TEST_F(BasicPortAllocatorTest, TestIPv6TurnPortPrunesIPv4TurnPorts) {
-  turn_server_.AddInternalSocket(kTurnUdpIntIPv6Addr, PROTO_UDP);
-  // Add two IP addresses on the same interface.
-  AddInterface(kClientAddr, "net1");
-  AddInterface(kClientIPv6Addr, "net1");
-  allocator_.reset(new BasicPortAllocator(&network_manager_));
-  allocator_->SetConfiguration(allocator_->stun_servers(),
-                               allocator_->turn_servers(), 0, true);
-  AddTurnServers(kTurnUdpIntIPv6Addr, rtc::SocketAddress());
+// Test that if prune_turn_ports is set, TCP TURN port will not be used
+// if UDP TurnPort is used, given that UDP TURN port becomes ready first.
+TEST_F(BasicPortAllocatorTest,
+       TestUdpTurnPortPrunesTcpTurnPortsWithUdpPortReadyFirst) {
+  // UDP has shorter delay than TCP so that UDP TURN port becomes ready first.
+  virtual_socket_server()->SetDelayOnAddress(kTurnUdpIntAddr, 100);
+  virtual_socket_server()->SetDelayOnAddress(kTurnTcpIntAddr, 200);
 
-  allocator_->set_step_delay(kMinimumStepDelay);
-  allocator_->set_flags(allocator().flags() |
-                        PORTALLOCATOR_ENABLE_SHARED_SOCKET |
-                        PORTALLOCATOR_ENABLE_IPV6 | PORTALLOCATOR_DISABLE_TCP);
+  TestUdpTurnPortPrunesTcpTurnPort();
+}
 
-  EXPECT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
-  session_->StartGettingPorts();
-  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
-  // Three ports (one IPv4 STUN, one IPv6 STUN and one TURN) will be ready.
-  EXPECT_EQ(3U, session_->ReadyPorts().size());
-  EXPECT_EQ(3U, ports_.size());
-  EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kClientAddr));
-  EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kClientIPv6Addr));
-  EXPECT_EQ(1, CountPorts(ports_, "relay", PROTO_UDP, kClientIPv6Addr));
-  EXPECT_EQ(0, CountPorts(ports_, "relay", PROTO_UDP, kClientAddr));
+// Tests that if prune_turn_ports is set, IPv4 TurnPort will not be used
+// if IPv6 TurnPort is used, given that IPv4 TURN port becomes ready first.
+TEST_F(BasicPortAllocatorTest,
+       TestIPv6TurnPortPrunesIPv4TurnPortWithIPv4PortReadyFirst) {
+  // IPv6 has longer delay than IPv4, so that IPv4 TURN port becomes ready
+  // first.
+  virtual_socket_server()->SetDelayOnAddress(kTurnUdpIntAddr, 100);
+  virtual_socket_server()->SetDelayOnAddress(kTurnUdpIntIPv6Addr, 200);
 
-  // We don't remove candidates, so there may be more than 3 elemenets in
-  // |candidates_|, although |ready_candidates| only includes the candidates
-  // in |ready_ports|.
-  EXPECT_LE(3U, candidates_.size());
-  const std::vector<Candidate>& ready_candidates = session_->ReadyCandidates();
-  EXPECT_EQ(3U, ready_candidates.size());
-  EXPECT_PRED4(HasCandidate, ready_candidates, "local", "udp", kClientAddr);
-  EXPECT_PRED4(HasCandidate, ready_candidates, "relay", "udp",
-               rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
+  TestIPv6TurnPortPrunesIPv4TurnPort();
+}
+
+// Tests that if prune_turn_ports is set, IPv4 TurnPort will not be used
+// if IPv6 TurnPort is used, given that IPv6 TURN port becomes ready first.
+TEST_F(BasicPortAllocatorTest,
+       TestIPv6TurnPortPrunesIPv4TurnPortWithIPv6PortReadyFirst) {
+  // IPv6 has longer delay than IPv4, so that IPv6 TURN port becomes ready
+  // first.
+  virtual_socket_server()->SetDelayOnAddress(kTurnUdpIntAddr, 200);
+  virtual_socket_server()->SetDelayOnAddress(kTurnUdpIntIPv6Addr, 100);
+
+  TestIPv6TurnPortPrunesIPv4TurnPort();
 }
 
 // Tests that if prune_turn_ports is set, each network interface
-// will has its own set of TurnPorts based on their priorities.
-TEST_F(BasicPortAllocatorTest, TestEachInterfaceHasItsOwnTurnPorts) {
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
-  turn_server_.AddInternalSocket(kTurnUdpIntIPv6Addr, PROTO_UDP);
-  turn_server_.AddInternalSocket(kTurnTcpIntIPv6Addr, PROTO_TCP);
-  // Add two interfaces both having IPv4 and IPv6 addresses.
-  AddInterface(kClientAddr, "net1", rtc::ADAPTER_TYPE_WIFI);
-  AddInterface(kClientIPv6Addr, "net1", rtc::ADAPTER_TYPE_WIFI);
-  AddInterface(kClientAddr2, "net2", rtc::ADAPTER_TYPE_CELLULAR);
-  AddInterface(kClientIPv6Addr2, "net2", rtc::ADAPTER_TYPE_CELLULAR);
-  allocator_.reset(new BasicPortAllocator(&network_manager_));
-  allocator_->SetConfiguration(allocator_->stun_servers(),
-                               allocator_->turn_servers(), 0, true);
-  // Have both UDP/TCP and IPv4/IPv6 TURN ports.
-  AddTurnServers(kTurnUdpIntAddr, kTurnTcpIntAddr);
-  AddTurnServers(kTurnUdpIntIPv6Addr, kTurnTcpIntIPv6Addr);
+// will has its own set of TurnPorts based on their priorities, in the default
+// case where no transit delay is set.
+TEST_F(BasicPortAllocatorTest, TestEachInterfaceHasItsOwnTurnPortsNoDelay) {
+  TestEachInterfaceHasItsOwnTurnPorts();
+}
 
-  allocator_->set_step_delay(kMinimumStepDelay);
-  allocator_->set_flags(allocator().flags() |
-                        PORTALLOCATOR_ENABLE_SHARED_SOCKET |
-                        PORTALLOCATOR_ENABLE_IPV6);
-  EXPECT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
-  session_->StartGettingPorts();
-  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
-  // 10 ports (4 STUN and 1 TURN ports on each interface) will be ready to use.
-  EXPECT_EQ(10U, session_->ReadyPorts().size());
-  EXPECT_EQ(10U, ports_.size());
-  EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kClientAddr));
-  EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kClientAddr2));
-  EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kClientIPv6Addr));
-  EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kClientIPv6Addr2));
-  EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_TCP, kClientAddr));
-  EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_TCP, kClientAddr2));
-  EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_TCP, kClientIPv6Addr));
-  EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_TCP, kClientIPv6Addr2));
-  EXPECT_EQ(1, CountPorts(ports_, "relay", PROTO_UDP, kClientIPv6Addr));
-  EXPECT_EQ(1, CountPorts(ports_, "relay", PROTO_UDP, kClientIPv6Addr2));
+// Tests that if prune_turn_ports is set, each network interface
+// will has its own set of TurnPorts based on their priorities, given that
+// IPv4/TCP TURN port becomes ready first.
+TEST_F(BasicPortAllocatorTest,
+       TestEachInterfaceHasItsOwnTurnPortsWithTcpIPv4ReadyFirst) {
+  // IPv6/UDP have longer delay than IPv4/TCP, so that IPv4/TCP TURN port
+  // becomes ready last.
+  virtual_socket_server()->SetDelayOnAddress(kTurnTcpIntAddr, 10);
+  virtual_socket_server()->SetDelayOnAddress(kTurnUdpIntAddr, 100);
+  virtual_socket_server()->SetDelayOnAddress(kTurnTcpIntIPv6Addr, 20);
+  virtual_socket_server()->SetDelayOnAddress(kTurnUdpIntIPv6Addr, 300);
 
-  // We don't remove candidates, so there may be more than 10 candidates
-  // in |candidates_|.
-  EXPECT_LE(10U, candidates_.size());
-  const std::vector<Candidate>& ready_candidates = session_->ReadyCandidates();
-  EXPECT_EQ(10U, ready_candidates.size());
-  EXPECT_PRED4(HasCandidate, ready_candidates, "local", "udp", kClientAddr);
-  EXPECT_PRED4(HasCandidate, ready_candidates, "local", "udp", kClientAddr2);
-  EXPECT_PRED4(HasCandidate, ready_candidates, "local", "udp", kClientIPv6Addr);
-  EXPECT_PRED4(HasCandidate, ready_candidates, "local", "udp",
-               kClientIPv6Addr2);
-  EXPECT_PRED4(HasCandidate, ready_candidates, "local", "tcp", kClientAddr);
-  EXPECT_PRED4(HasCandidate, ready_candidates, "local", "tcp", kClientAddr2);
-  EXPECT_PRED4(HasCandidate, ready_candidates, "local", "tcp", kClientIPv6Addr);
-  EXPECT_PRED4(HasCandidate, ready_candidates, "local", "tcp",
-               kClientIPv6Addr2);
-  EXPECT_PRED4(HasCandidate, ready_candidates, "relay", "udp",
-               rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0));
+  TestEachInterfaceHasItsOwnTurnPorts();
 }
 
 // Testing DNS resolve for the TURN server, this will test AllocationSequence

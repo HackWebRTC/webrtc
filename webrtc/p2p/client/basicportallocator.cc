@@ -314,7 +314,12 @@ void BasicPortAllocatorSession::RegatherOnFailedNetworks() {
   }
   // Remove ports from being used locally and send signaling to remove
   // the candidates on the remote side.
-  RemovePortsAndCandidates(failed_networks);
+  std::vector<PortData*> ports_to_prune = GetUnprunedPorts(failed_networks);
+  if (!ports_to_prune.empty()) {
+    LOG(LS_INFO) << "Prune " << ports_to_prune.size()
+                 << " ports because their networks failed";
+    PrunePortsAndRemoveCandidates(ports_to_prune);
+  }
 
   if (allocation_started_ && network_manager_started_) {
     DoAllocate();
@@ -615,7 +620,12 @@ void BasicPortAllocatorSession::OnNetworksChanged() {
       failed_networks.push_back(sequence->network());
     }
   }
-  RemovePortsAndCandidates(failed_networks);
+  std::vector<PortData*> ports_to_prune = GetUnprunedPorts(failed_networks);
+  if (!ports_to_prune.empty()) {
+    LOG(LS_INFO) << "Prune " << ports_to_prune.size()
+                 << " ports because their networks were gone";
+    PrunePortsAndRemoveCandidates(ports_to_prune);
+  }
 
   if (!network_manager_started_) {
     LOG(LS_INFO) << "Network manager is started";
@@ -757,29 +767,32 @@ bool BasicPortAllocatorSession::PruneTurnPorts(Port* newly_pairable_turn_port) {
   RTC_CHECK(best_turn_port != nullptr);
 
   bool pruned = false;
-  std::vector<PortInterface*> pruned_ports;
+  std::vector<PortData*> ports_to_prune;
   for (PortData& data : ports_) {
     if (data.port()->Network()->name() == network_name &&
         data.port()->Type() == RELAY_PORT_TYPE && !data.pruned() &&
         ComparePort(data.port(), best_turn_port) < 0) {
-      data.set_pruned();
       pruned = true;
-      data.port()->Prune();
       if (data.port() != newly_pairable_turn_port) {
-        pruned_ports.push_back(data.port());
+        // These ports will be pruned in PrunePortsAndRemoveCandidates.
+        ports_to_prune.push_back(&data);
+      } else {
+        data.Prune();
       }
     }
   }
-  if (!pruned_ports.empty()) {
-    LOG(LS_INFO) << "Pruned " << pruned_ports.size() << " ports";
-    SignalPortsPruned(this, pruned_ports);
+
+  if (!ports_to_prune.empty()) {
+    LOG(LS_INFO) << "Prune " << ports_to_prune.size()
+                 << " low-priority TURN ports";
+    PrunePortsAndRemoveCandidates(ports_to_prune);
   }
   return pruned;
 }
 
 void BasicPortAllocatorSession::PruneAllPorts() {
   for (PortData& data : ports_) {
-    data.port()->Prune();
+    data.Prune();
   }
 }
 
@@ -942,32 +955,41 @@ BasicPortAllocatorSession::PortData* BasicPortAllocatorSession::FindPort(
   return NULL;
 }
 
-// Removes ports and candidates created on a given list of networks.
-void BasicPortAllocatorSession::RemovePortsAndCandidates(
+std::vector<BasicPortAllocatorSession::PortData*>
+BasicPortAllocatorSession::GetUnprunedPorts(
     const std::vector<rtc::Network*>& networks) {
-  std::vector<PortInterface*> ports_to_remove;
-  std::vector<Candidate> candidates_to_remove;
-  for (PortData& data : ports_) {
-    if (std::find(networks.begin(), networks.end(),
-                  data.sequence()->network()) == networks.end()) {
-      continue;
+  std::vector<PortData*> unpruned_ports;
+  for (PortData& port : ports_) {
+    if (!port.pruned() &&
+        std::find(networks.begin(), networks.end(),
+                  port.sequence()->network()) != networks.end()) {
+      unpruned_ports.push_back(&port);
     }
+  }
+  return unpruned_ports;
+}
+
+void BasicPortAllocatorSession::PrunePortsAndRemoveCandidates(
+    const std::vector<PortData*>& port_data_list) {
+  std::vector<PortInterface*> pruned_ports;
+  std::vector<Candidate> removed_candidates;
+  for (PortData* data : port_data_list) {
     // Prune the port so that it may be destroyed.
-    data.port()->Prune();
-    ports_to_remove.push_back(data.port());
-    if (data.has_pairable_candidate()) {
-      GetCandidatesFromPort(data, &candidates_to_remove);
+    data->Prune();
+    pruned_ports.push_back(data->port());
+    if (data->has_pairable_candidate()) {
+      GetCandidatesFromPort(*data, &removed_candidates);
       // Mark the port as having no pairable candidates so that its candidates
       // won't be removed multiple times.
-      data.set_has_pairable_candidate(false);
+      data->set_has_pairable_candidate(false);
     }
   }
-  if (!ports_to_remove.empty()) {
-    LOG(LS_INFO) << "Removed " << ports_to_remove.size() << " ports";
-    SignalPortsPruned(this, ports_to_remove);
+  if (!pruned_ports.empty()) {
+    SignalPortsPruned(this, pruned_ports);
   }
-  if (!candidates_to_remove.empty()) {
-    SignalCandidatesRemoved(this, candidates_to_remove);
+  if (!removed_candidates.empty()) {
+    LOG(LS_INFO) << "Removed " << removed_candidates.size() << " candidates";
+    SignalCandidatesRemoved(this, removed_candidates);
   }
 }
 

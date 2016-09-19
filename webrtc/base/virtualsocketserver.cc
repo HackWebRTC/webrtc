@@ -528,7 +528,6 @@ VirtualSocketServer::VirtualSocketServer(SocketServer* ss)
       server_owned_(false),
       msg_queue_(NULL),
       stop_on_idle_(false),
-      network_delay_(0),
       next_ipv4_(kInitialNextIPv4),
       next_ipv6_(kInitialNextIPv6),
       next_port_(kFirstEphemeralPort),
@@ -541,7 +540,6 @@ VirtualSocketServer::VirtualSocketServer(SocketServer* ss)
       delay_mean_(0),
       delay_stddev_(0),
       delay_samples_(NUM_SAMPLES),
-      delay_dist_(NULL),
       drop_prob_(0.0) {
   if (!server_) {
     server_ = new PhysicalSocketServer();
@@ -553,7 +551,6 @@ VirtualSocketServer::VirtualSocketServer(SocketServer* ss)
 VirtualSocketServer::~VirtualSocketServer() {
   delete bindings_;
   delete connections_;
-  delete delay_dist_;
   if (server_owned_) {
     delete server_;
   }
@@ -781,7 +778,7 @@ static double Random() {
 int VirtualSocketServer::Connect(VirtualSocket* socket,
                                  const SocketAddress& remote_addr,
                                  bool use_delay) {
-  uint32_t delay = use_delay ? GetRandomTransitDelay() : 0;
+  uint32_t delay = use_delay ? GetTransitDelay(socket) : 0;
   VirtualSocket* remote = LookupBinding(remote_addr);
   if (!CanInteractWith(socket, remote)) {
     LOG(LS_INFO) << "Address family mismatch between "
@@ -803,7 +800,7 @@ bool VirtualSocketServer::Disconnect(VirtualSocket* socket) {
   if (socket) {
     // If we simulate packets being delayed, we should simulate the
     // equivalent of a FIN being delayed as well.
-    uint32_t delay = GetRandomTransitDelay();
+    uint32_t delay = GetTransitDelay(socket);
     // Remove the mapping.
     msg_queue_->PostDelayed(RTC_FROM_HERE, delay, socket, MSG_ID_DISCONNECT);
     return true;
@@ -947,7 +944,7 @@ void VirtualSocketServer::AddPacketToNetwork(VirtualSocket* sender,
   sender->network_.push_back(entry);
 
   // Find the delay for crossing the many virtual hops of the network.
-  uint32_t transit_delay = GetRandomTransitDelay();
+  uint32_t transit_delay = GetTransitDelay(sender);
 
   // When the incoming packet is from a binding of the any address, translate it
   // to the default route here such that the recipient will see the default
@@ -964,12 +961,12 @@ void VirtualSocketServer::AddPacketToNetwork(VirtualSocket* sender,
   int64_t ts = TimeAfter(send_delay + transit_delay);
   if (ordered) {
     // Ensure that new packets arrive after previous ones
-    // TODO: consider ordering on a per-socket basis, since this
-    // introduces artificial delay.
-    ts = std::max(ts, network_delay_);
+    ts = std::max(ts, sender->last_delivery_time_);
+    // A socket should not have both ordered and unordered delivery, so its last
+    // delivery time only needs to be updated when it has ordered delivery.
+    sender->last_delivery_time_ = ts;
   }
   msg_queue_->PostAt(RTC_FROM_HERE, ts, recipient, MSG_ID_PACKET, p);
-  network_delay_ = std::max(ts, network_delay_);
 }
 
 void VirtualSocketServer::PurgeNetworkPackets(VirtualSocket* socket,
@@ -1016,8 +1013,7 @@ void VirtualSocketServer::UpdateDelayDistribution() {
   // We take a lock just to make sure we don't leak memory.
   {
     CritScope cs(&delay_crit_);
-    delete delay_dist_;
-    delay_dist_ = dist;
+    delay_dist_.reset(dist);
   }
 }
 
@@ -1060,10 +1056,16 @@ VirtualSocketServer::Function* VirtualSocketServer::CreateDistribution(
   return Resample(Invert(Accumulate(f)), 0, 1, samples);
 }
 
-uint32_t VirtualSocketServer::GetRandomTransitDelay() {
+uint32_t VirtualSocketServer::GetTransitDelay(Socket* socket) {
+  // Use the delay based on the address if it is set.
+  auto iter = delay_by_ip_.find(socket->GetLocalAddress().ipaddr());
+  if (iter != delay_by_ip_.end()) {
+    return static_cast<uint32_t>(iter->second);
+  }
+  // Otherwise, use the delay from the distribution distribution.
   size_t index = rand() % delay_dist_->size();
   double delay = (*delay_dist_)[index].second;
-  //LOG_F(LS_INFO) << "random[" << index << "] = " << delay;
+  // LOG_F(LS_INFO) << "random[" << index << "] = " << delay;
   return static_cast<uint32_t>(delay);
 }
 
