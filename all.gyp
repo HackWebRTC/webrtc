@@ -39,7 +39,8 @@
       'conditions': [
         ['OS=="android" and build_with_chromium==0', {
           'dependencies': [
-            'webrtc/api/api_java.gyp:*',
+            # No longer supported, please refer to GN targets.
+            #'webrtc/api/api_java.gyp:*',
           ],
         }],
         ['include_tests==1', {
