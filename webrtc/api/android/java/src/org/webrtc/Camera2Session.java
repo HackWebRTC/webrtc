@@ -46,11 +46,10 @@ public class Camera2Session implements CameraSession {
   private static enum SessionState { RUNNING, STOPPED };
 
   private final Handler cameraThreadHandler;
-  private final CameraManager cameraManager;
   private final CreateSessionCallback callback;
-  private final CameraVideoCapturer.CameraEventsHandler eventsHandler;
+  private final Events events;
   private final Context applicationContext;
-  private final CameraVideoCapturer.CapturerObserver capturerObserver;
+  private final CameraManager cameraManager;
   private final SurfaceTextureHelper surfaceTextureHelper;
   private final String cameraId;
   private final int width;
@@ -70,7 +69,6 @@ public class Camera2Session implements CameraSession {
 
   // Initialized when capture session is created
   private CameraCaptureSession captureSession;
-  private CameraVideoCapturer.CameraStatistics cameraStatistics;
 
   // State
   private SessionState state = SessionState.RUNNING;
@@ -134,7 +132,7 @@ public class Camera2Session implements CameraSession {
       checkIsOnCameraThread();
 
       Logging.d(TAG, "Camera device closed.");
-      eventsHandler.onCameraClosed();
+      events.onCameraClosed(Camera2Session.this);
     }
   }
 
@@ -192,7 +190,6 @@ public class Camera2Session implements CameraSession {
               }
 
               if (!firstFrameReported) {
-                eventsHandler.onFirstFrameAvailable();
                 firstFrameReported = true;
                 final int startTimeMs =
                     (int) TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - constructionTimeNs);
@@ -211,14 +208,10 @@ public class Camera2Session implements CameraSession {
               transformMatrix = RendererCommon.rotateTextureMatrix(
                   transformMatrix, -cameraOrientation);
 
-              cameraStatistics.addFrame();
-              capturerObserver.onTextureFrameCaptured(captureFormat.width, captureFormat.height,
-                  oesTextureId, transformMatrix, rotation, timestampNs);
+              events.onTextureFrameCaptured(Camera2Session.this, captureFormat.width,
+                  captureFormat.height, oesTextureId, transformMatrix, rotation, timestampNs);
             }
           });
-      capturerObserver.onCapturerStarted(true /* success */);
-      cameraStatistics = new CameraVideoCapturer.CameraStatistics(
-          surfaceTextureHelper, eventsHandler);
       Logging.d(TAG, "Camera device successfully started.");
       callback.onDone(Camera2Session.this);
     }
@@ -266,23 +259,20 @@ public class Camera2Session implements CameraSession {
   }
 
   public static void create(
-      CameraManager cameraManager, CreateSessionCallback callback,
-      CameraVideoCapturer.CameraEventsHandler eventsHandler, Context applicationContext,
-      CameraVideoCapturer.CapturerObserver capturerObserver,
+      CreateSessionCallback callback, Events events,
+      Context applicationContext, CameraManager cameraManager,
       SurfaceTextureHelper surfaceTextureHelper,
       String cameraId, int width, int height, int framerate) {
     new Camera2Session(
-        cameraManager, callback,
-        eventsHandler, applicationContext,
-        capturerObserver,
+        callback, events,
+        applicationContext, cameraManager,
         surfaceTextureHelper,
         cameraId, width, height, framerate);
   }
 
   private Camera2Session(
-      CameraManager cameraManager, CreateSessionCallback callback,
-      CameraVideoCapturer.CameraEventsHandler eventsHandler, Context applicationContext,
-      CameraVideoCapturer.CapturerObserver capturerObserver,
+      CreateSessionCallback callback, Events events,
+      Context applicationContext, CameraManager cameraManager,
       SurfaceTextureHelper surfaceTextureHelper,
       String cameraId, int width, int height, int framerate) {
     Logging.d(TAG, "Create new camera2 session on camera " + cameraId);
@@ -290,11 +280,10 @@ public class Camera2Session implements CameraSession {
     constructionTimeNs = System.nanoTime();
 
     this.cameraThreadHandler = new Handler();
-    this.cameraManager = cameraManager;
     this.callback = callback;
-    this.eventsHandler = eventsHandler;
+    this.events = events;
     this.applicationContext = applicationContext;
-    this.capturerObserver = capturerObserver;
+    this.cameraManager = cameraManager;
     this.surfaceTextureHelper = surfaceTextureHelper;
     this.cameraId = cameraId;
     this.width = width;
@@ -351,7 +340,7 @@ public class Camera2Session implements CameraSession {
     checkIsOnCameraThread();
 
     Logging.d(TAG, "Opening camera " + cameraId);
-    eventsHandler.onCameraOpening(cameraId);
+    events.onCameraOpening();
 
     try {
       cameraManager.openCamera(cameraId, new CameraStateCallback(), cameraThreadHandler);
@@ -367,7 +356,6 @@ public class Camera2Session implements CameraSession {
     if (Thread.currentThread() == cameraThreadHandler.getLooper().getThread()) {
       if (state != SessionState.STOPPED) {
         state = SessionState.STOPPED;
-        capturerObserver.onCapturerStopped();
         // Post the stopInternal to return earlier.
         cameraThreadHandler.post(new Runnable() {
           @Override
@@ -387,7 +375,6 @@ public class Camera2Session implements CameraSession {
         public void run() {
           if (state != SessionState.STOPPED) {
             state = SessionState.STOPPED;
-            capturerObserver.onCapturerStopped();
             stopLatch.countDown();
             stopInternal();
             final int stopTimeMs =
@@ -406,14 +393,19 @@ public class Camera2Session implements CameraSession {
     checkIsOnCameraThread();
 
     surfaceTextureHelper.stopListening();
-    cameraStatistics.release();
 
-    captureSession.close();
-    captureSession = null;
-    surface.release();
-    surface = null;
-    cameraDevice.close();
-    cameraDevice = null;
+    if (captureSession != null) {
+      captureSession.close();
+      captureSession = null;
+    }
+    if (surface != null) {
+      surface.release();
+      surface = null;
+    }
+    if (cameraDevice != null) {
+      cameraDevice.close();
+      cameraDevice = null;
+    }
 
     Logging.d(TAG, "Stop done");
   }
@@ -422,17 +414,13 @@ public class Camera2Session implements CameraSession {
     checkIsOnCameraThread();
     Logging.e(TAG, "Error: " + error);
 
-    if (captureSession == null) {
-      if (cameraDevice != null) {
-        cameraDevice.close();
-        cameraDevice = null;
-      }
-
-      state = SessionState.STOPPED;
+    final boolean startFailure = (captureSession == null);
+    state = SessionState.STOPPED;
+    stopInternal();
+    if (startFailure) {
       callback.onFailure(error);
-      capturerObserver.onCapturerStarted(false /* success */);
     } else {
-      eventsHandler.onCameraError(error);
+      events.onCameraError(this, error);
     }
   }
 

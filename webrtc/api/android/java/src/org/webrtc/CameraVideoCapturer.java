@@ -121,7 +121,6 @@ public interface CameraVideoCapturer extends VideoCapturer {
     }
 
     public void release() {
-      checkThread();
       surfaceTextureHelper.getHandler().removeCallbacks(cameraObserver);
     }
   }

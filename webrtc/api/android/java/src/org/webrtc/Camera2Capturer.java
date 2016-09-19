@@ -10,14 +10,9 @@
 
 package org.webrtc;
 
-import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
-
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.hardware.camera2.CameraManager;
-import android.os.Handler;
-
-import java.util.List;
 
 @TargetApi(21)
 public class Camera2Capturer extends CameraCapturer {
@@ -33,17 +28,13 @@ public class Camera2Capturer extends CameraCapturer {
 
   @Override
   protected void createCameraSession(
-      CameraSession.CreateSessionCallback createSessionCallback,
-      CameraEventsHandler eventsHandler, Context applicationContext,
-      CameraVideoCapturer.CapturerObserver capturerObserver,
-      SurfaceTextureHelper surfaceTextureHelper,
+      CameraSession.CreateSessionCallback createSessionCallback, CameraSession.Events events,
+      Context applicationContext, SurfaceTextureHelper surfaceTextureHelper,
       String cameraName, int width, int height, int framerate) {
     Camera2Session.create(
-      cameraManager,
-      createSessionCallback,
-      eventsHandler, applicationContext,
-      capturerObserver,
-      surfaceTextureHelper,
-      cameraName, width, height, framerate);
+        createSessionCallback, events,
+        applicationContext, cameraManager,
+        surfaceTextureHelper,
+        cameraName, width, height, framerate);
   }
 }
