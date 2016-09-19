@@ -14,57 +14,9 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/gunit.h"
+#include "webrtc/stats/test/rtcteststats.h"
 
 namespace webrtc {
-
-class RTCTestStats : public RTCStats {
- public:
-  RTCTestStats(const std::string& id, int64_t timestamp_us)
-      : RTCStats(id, timestamp_us),
-        m_int32("mInt32"),
-        m_uint32("mUint32"),
-        m_int64("mInt64"),
-        m_uint64("mUint64"),
-        m_double("mDouble"),
-        m_string("mString"),
-        m_sequence_int32("mSequenceInt32"),
-        m_sequence_uint32("mSequenceUint32"),
-        m_sequence_int64("mSequenceInt64"),
-        m_sequence_uint64("mSequenceUint64"),
-        m_sequence_double("mSequenceDouble"),
-        m_sequence_string("mSequenceString") {
-  }
-
-  WEBRTC_RTCSTATS_IMPL(RTCStats, RTCTestStats,
-      &m_int32,
-      &m_uint32,
-      &m_int64,
-      &m_uint64,
-      &m_double,
-      &m_string,
-      &m_sequence_int32,
-      &m_sequence_uint32,
-      &m_sequence_int64,
-      &m_sequence_uint64,
-      &m_sequence_double,
-      &m_sequence_string);
-
-  RTCStatsMember<int32_t> m_int32;
-  RTCStatsMember<uint32_t> m_uint32;
-  RTCStatsMember<int64_t> m_int64;
-  RTCStatsMember<uint64_t> m_uint64;
-  RTCStatsMember<double> m_double;
-  RTCStatsMember<std::string> m_string;
-
-  RTCStatsMember<std::vector<int32_t>> m_sequence_int32;
-  RTCStatsMember<std::vector<uint32_t>> m_sequence_uint32;
-  RTCStatsMember<std::vector<int64_t>> m_sequence_int64;
-  RTCStatsMember<std::vector<uint64_t>> m_sequence_uint64;
-  RTCStatsMember<std::vector<double>> m_sequence_double;
-  RTCStatsMember<std::vector<std::string>> m_sequence_string;
-};
-
-const char RTCTestStats::kType[] = "test-stats";
 
 class RTCChildStats : public RTCStats {
  public:

@@ -34,8 +34,25 @@ rtc_source_set("rtc_stats") {
   ]
 }
 
+rtc_source_set("rtc_stats_test_utils") {
+  cflags = []
+  sources = [
+    "test/rtcteststats.cc",
+    "test/rtcteststats.h",
+  ]
+
+  if (is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+
+  deps = [
+    ":rtc_stats",
+    "../api:rtc_stats_api",
+  ]
+}
+
 if (rtc_include_tests) {
-  # GYP version: webrtc/stats/stats.gyp:rtc_stats_unittests
   rtc_test("rtc_stats_unittests") {
     testonly = true
     sources = [
@@ -50,6 +67,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":rtc_stats",
+      ":rtc_stats_test_utils",
       "../base:rtc_base_tests_utils",
       "../system_wrappers:metrics_default",
       "//testing/gmock",
