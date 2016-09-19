@@ -42,7 +42,6 @@ using ::testing::Invoke;
 using ::testing::NiceMock;
 using ::testing::NotNull;
 using ::testing::Return;
-using ::testing::TestWithParam;
 
 // #define ENABLE_DEBUG_PRINTF
 #ifdef ENABLE_DEBUG_PRINTF
@@ -719,15 +718,22 @@ TEST_F(AudioDeviceTest, ConstructDestruct) {
 
 // We always ask for a default audio layer when the ADM is constructed. But the
 // ADM will then internally set the best suitable combination of audio layers,
-// for input and output based on if low-latency output audio in combination
-// with OpenSL ES is supported or not. This test ensures that the correct
-// selection is done.
+// for input and output based on if low-latency output and/or input audio in
+// combination with OpenSL ES is supported or not. This test ensures that the
+// correct selection is done.
 TEST_F(AudioDeviceTest, VerifyDefaultAudioLayer) {
   const AudioDeviceModule::AudioLayer audio_layer = GetActiveAudioLayer();
   bool low_latency_output = audio_manager()->IsLowLatencyPlayoutSupported();
-  AudioDeviceModule::AudioLayer expected_audio_layer = low_latency_output ?
-      AudioDeviceModule::kAndroidJavaInputAndOpenSLESOutputAudio :
-      AudioDeviceModule::kAndroidJavaAudio;
+  bool low_latency_input = audio_manager()->IsLowLatencyRecordSupported();
+  AudioDeviceModule::AudioLayer expected_audio_layer;
+  if (low_latency_output && low_latency_input) {
+    expected_audio_layer = AudioDeviceModule::kAndroidOpenSLESAudio;
+  } else if (low_latency_output && !low_latency_input) {
+    expected_audio_layer =
+        AudioDeviceModule::kAndroidJavaInputAndOpenSLESOutputAudio;
+  } else {
+    expected_audio_layer = AudioDeviceModule::kAndroidJavaAudio;
+  }
   EXPECT_EQ(expected_audio_layer, audio_layer);
 }
 
@@ -747,6 +753,14 @@ TEST_F(AudioDeviceTest, CorrectAudioLayerIsUsedForJavaInBothDirections) {
       AudioDeviceModule::kAndroidJavaAudio;
   AudioDeviceModule::AudioLayer active_layer = TestActiveAudioLayer(
       expected_layer);
+  EXPECT_EQ(expected_layer, active_layer);
+}
+
+TEST_F(AudioDeviceTest, CorrectAudioLayerIsUsedForOpenSLInBothDirections) {
+  AudioDeviceModule::AudioLayer expected_layer =
+      AudioDeviceModule::kAndroidOpenSLESAudio;
+  AudioDeviceModule::AudioLayer active_layer =
+      TestActiveAudioLayer(expected_layer);
   EXPECT_EQ(expected_layer, active_layer);
 }
 
@@ -863,12 +877,23 @@ TEST_F(AudioDeviceTest, StartStopRecording) {
 // Verify that calling StopPlayout() will leave us in an uninitialized state
 // which will require a new call to InitPlayout(). This test does not call
 // StartPlayout() while being uninitialized since doing so will hit a
-// RTC_DCHECK.
+// RTC_DCHECK and death tests are not supported on Android.
 TEST_F(AudioDeviceTest, StopPlayoutRequiresInitToRestart) {
   EXPECT_EQ(0, audio_device()->InitPlayout());
   EXPECT_EQ(0, audio_device()->StartPlayout());
   EXPECT_EQ(0, audio_device()->StopPlayout());
   EXPECT_FALSE(audio_device()->PlayoutIsInitialized());
+}
+
+// Verify that calling StopRecording() will leave us in an uninitialized state
+// which will require a new call to InitRecording(). This test does not call
+// StartRecording() while being uninitialized since doing so will hit a
+// RTC_DCHECK and death tests are not supported on Android.
+TEST_F(AudioDeviceTest, StopRecordingRequiresInitToRestart) {
+  EXPECT_EQ(0, audio_device()->InitRecording());
+  EXPECT_EQ(0, audio_device()->StartRecording());
+  EXPECT_EQ(0, audio_device()->StopRecording());
+  EXPECT_FALSE(audio_device()->RecordingIsInitialized());
 }
 
 // Start playout and verify that the native audio layer starts asking for real

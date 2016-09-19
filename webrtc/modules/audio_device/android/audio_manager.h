@@ -101,6 +101,7 @@ class AudioManager {
   // Returns true if the device supports the low-latency audio paths in
   // combination with OpenSL ES.
   bool IsLowLatencyPlayoutSupported() const;
+  bool IsLowLatencyRecordSupported() const;
 
   // Returns true if the device supports pro-audio features in combination with
   // OpenSL ES.
@@ -124,6 +125,7 @@ class AudioManager {
                                            jboolean hardware_agc,
                                            jboolean hardware_ns,
                                            jboolean low_latency_output,
+                                           jboolean low_latency_input,
                                            jboolean pro_audio,
                                            jint output_buffer_size,
                                            jint input_buffer_size,
@@ -135,6 +137,7 @@ class AudioManager {
                               jboolean hardware_agc,
                               jboolean hardware_ns,
                               jboolean low_latency_output,
+                              jboolean low_latency_input,
                               jboolean pro_audio,
                               jint output_buffer_size,
                               jint input_buffer_size);
@@ -178,8 +181,11 @@ class AudioManager {
   // True if device supports hardware (or built-in) NS.
   bool hardware_ns_;
 
-  // True if device supports the low-latency OpenSL ES audio path.
+  // True if device supports the low-latency OpenSL ES audio path for output.
   bool low_latency_playout_;
+
+  // True if device supports the low-latency OpenSL ES audio path for input.
+  bool low_latency_record_;
 
   // True if device supports the low-latency OpenSL ES pro-audio path.
   bool pro_audio_;

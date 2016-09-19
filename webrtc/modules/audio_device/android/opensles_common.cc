@@ -10,13 +10,10 @@
 
 #include "webrtc/modules/audio_device/android/opensles_common.h"
 
-#include <assert.h>
 #include <SLES/OpenSLES.h>
 
 #include "webrtc/base/arraysize.h"
-#include "webrtc/modules/audio_device/android/audio_common.h"
-
-using webrtc::kNumChannels;
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 
@@ -49,24 +46,58 @@ const char* GetSLErrorString(size_t code) {
   return sl_error_strings[code];
 }
 
-SLDataFormat_PCM CreatePcmConfiguration(int sample_rate) {
-  SLDataFormat_PCM configuration;
-  configuration.formatType = SL_DATAFORMAT_PCM;
-  configuration.numChannels = kNumChannels;
-  // According to the opensles documentation in the ndk:
-  // samplesPerSec is actually in units of milliHz, despite the misleading name.
-  // It further recommends using constants. However, this would lead to a lot
-  // of boilerplate code so it is not done here.
-  configuration.samplesPerSec = sample_rate * 1000;
-  configuration.bitsPerSample = SL_PCMSAMPLEFORMAT_FIXED_16;
-  configuration.containerSize = SL_PCMSAMPLEFORMAT_FIXED_16;
-  configuration.channelMask = SL_SPEAKER_FRONT_CENTER;
-  if (2 == configuration.numChannels) {
-    configuration.channelMask =
-        SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT;
+SLDataFormat_PCM CreatePCMConfiguration(size_t channels,
+                                        int sample_rate,
+                                        size_t bits_per_sample) {
+  RTC_CHECK_EQ(bits_per_sample, SL_PCMSAMPLEFORMAT_FIXED_16);
+  SLDataFormat_PCM format;
+  format.formatType = SL_DATAFORMAT_PCM;
+  format.numChannels = static_cast<SLuint32>(channels);
+  // Note that, the unit of sample rate is actually in milliHertz and not Hertz.
+  switch (sample_rate) {
+    case 8000:
+      format.samplesPerSec = SL_SAMPLINGRATE_8;
+      break;
+    case 16000:
+      format.samplesPerSec = SL_SAMPLINGRATE_16;
+      break;
+    case 22050:
+      format.samplesPerSec = SL_SAMPLINGRATE_22_05;
+      break;
+    case 32000:
+      format.samplesPerSec = SL_SAMPLINGRATE_32;
+      break;
+    case 44100:
+      format.samplesPerSec = SL_SAMPLINGRATE_44_1;
+      break;
+    case 48000:
+      format.samplesPerSec = SL_SAMPLINGRATE_48;
+      break;
+    case 64000:
+      format.samplesPerSec = SL_SAMPLINGRATE_64;
+      break;
+    case 88200:
+      format.samplesPerSec = SL_SAMPLINGRATE_88_2;
+      break;
+    case 96000:
+      format.samplesPerSec = SL_SAMPLINGRATE_96;
+      break;
+    default:
+      RTC_CHECK(false) << "Unsupported sample rate: " << sample_rate;
+      break;
   }
-  configuration.endianness = SL_BYTEORDER_LITTLEENDIAN;
-  return configuration;
+  format.bitsPerSample = SL_PCMSAMPLEFORMAT_FIXED_16;
+  format.containerSize = SL_PCMSAMPLEFORMAT_FIXED_16;
+  format.endianness = SL_BYTEORDER_LITTLEENDIAN;
+  if (format.numChannels == 1) {
+    format.channelMask = SL_SPEAKER_FRONT_CENTER;
+  } else if (format.numChannels == 2) {
+    format.channelMask = SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT;
+  } else {
+    RTC_CHECK(false) << "Unsupported number of channels: "
+                     << format.numChannels;
+  }
+  return format;
 }
 
-}  // namespace webrtc_opensl
+}  // namespace webrtc

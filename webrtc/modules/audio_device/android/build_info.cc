@@ -50,8 +50,10 @@ std::string BuildInfo::GetBuildRelease() {
   return GetStringFromJava("getBuildRelease");
 }
 
-std::string BuildInfo::GetSdkVersion() {
-  return GetStringFromJava("getSdkVersion");
+SdkCode BuildInfo::GetSdkVersion() {
+  jmethodID id = j_build_info_.GetStaticMethodId("getSdkVersion", "()I");
+  jint j_version = j_build_info_.CallStaticIntMethod(id);
+  return static_cast<SdkCode>(j_version);
 }
 
 }  // namespace webrtc

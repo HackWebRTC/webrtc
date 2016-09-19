@@ -11,8 +11,6 @@
 #ifndef WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_OPENSLES_PLAYER_H_
 #define WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_OPENSLES_PLAYER_H_
 
-#include <memory>
-
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
 #include <SLES/OpenSLES_AndroidConfiguration.h>
@@ -49,11 +47,13 @@ class FineAudioBuffer;
 // the output latency may be higher.
 class OpenSLESPlayer {
  public:
-  // The lower output latency path is used only if the application requests a
-  // buffer count of 2 or more, and a buffer size and sample rate that are
-  // compatible with the device's native output configuration provided via the
-  // audio manager at construction.
-  static const int kNumOfOpenSLESBuffers = 4;
+  // Beginning with API level 17 (Android 4.2), a buffer count of 2 or more is
+  // required for lower latency. Beginning with API level 18 (Android 4.3), a
+  // buffer count of 1 is sufficient for lower latency. In addition, the buffer
+  // size and sample rate must be compatible with the device's native output
+  // configuration provided via the audio manager at construction.
+  // TODO(henrika): perhaps set this value dynamically based on OS version.
+  static const int kNumOfOpenSLESBuffers = 2;
 
   explicit OpenSLESPlayer(AudioManager* audio_manager);
   ~OpenSLESPlayer();
@@ -87,11 +87,6 @@ class OpenSLESPlayer {
   // Can be called both on the main thread (during Start()) and from the
   // internal audio thread while output streaming is active.
   void EnqueuePlayoutData();
-
-  // Configures the SL_DATAFORMAT_PCM structure.
-  SLDataFormat_PCM CreatePCMConfiguration(size_t channels,
-                                          int sample_rate,
-                                          size_t bits_per_sample);
 
   // Allocate memory for audio buffers which will be used to render audio
   // via the SLAndroidSimpleBufferQueueItf interface.
@@ -144,11 +139,6 @@ class OpenSLESPlayer {
   // 32-bit float representation is needed.
   SLDataFormat_PCM pcm_format_;
 
-  // Number of bytes per audio buffer in each |audio_buffers_[i]|.
-  // Typical sizes are 480 or 512 bytes corresponding to native output buffer
-  // sizes of 240 or 256 audio frames respectively.
-  size_t bytes_per_buffer_;
-
   // Queue of audio buffers to be used by the player object for rendering
   // audio. They will be used in a Round-robin way and the size of each buffer
   // is given by FineAudioBuffer::RequiredBufferSizeBytes().
@@ -159,12 +149,12 @@ class OpenSLESPlayer {
   // a finer or coarser granularity. I.e. interacting with this class instead
   // of directly with the AudioDeviceBuffer one can ask for any number of
   // audio data samples.
-  // Example: native buffer size is 240 audio frames at 48kHz sample rate.
-  // WebRTC will provide 480 audio frames per 10ms but OpenSL ES asks for 240
-  // in each callback (one every 5ms). This class can then ask for 240 and the
-  // FineAudioBuffer will ask WebRTC for new data only every second callback
-  // and also cach non-utilized audio.
-  std::unique_ptr<FineAudioBuffer> fine_buffer_;
+  // Example: native buffer size can be 192 audio frames at 48kHz sample rate.
+  // WebRTC will provide 480 audio frames per 10ms but OpenSL ES asks for 192
+  // in each callback (one every 4th ms). This class can then ask for 192 and
+  // the FineAudioBuffer will ask WebRTC for new data approximately only every
+  // second callback and also cache non-utilized audio.
+  std::unique_ptr<FineAudioBuffer> fine_audio_buffer_;
 
   // Keeps track of active audio buffer 'n' in the audio_buffers_[n] queue.
   // Example (kNumOfOpenSLESBuffers = 2): counts 0, 1, 0, 1, ...

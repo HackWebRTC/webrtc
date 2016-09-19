@@ -10,6 +10,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
@@ -33,6 +34,7 @@
 #include "webrtc/modules/audio_device/android/audio_record_jni.h"
 #include "webrtc/modules/audio_device/android/audio_track_jni.h"
 #include "webrtc/modules/audio_device/android/opensles_player.h"
+#include "webrtc/modules/audio_device/android/opensles_recorder.h"
 #elif defined(WEBRTC_LINUX)
 #if defined(LINUX_ALSA)
 #include "audio_device_alsa_linux.h"
@@ -238,13 +240,18 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects() {
   _audioManagerAndroid.reset(new AudioManager());
   // Select best possible combination of audio layers.
   if (audioLayer == kPlatformDefaultAudio) {
-    if (_audioManagerAndroid->IsLowLatencyPlayoutSupported()) {
-      // Always use OpenSL ES for output on devices that supports the
+    if (_audioManagerAndroid->IsLowLatencyPlayoutSupported() &&
+        _audioManagerAndroid->IsLowLatencyRecordSupported()) {
+      // Use OpenSL ES for both playout and recording.
+      audioLayer = kAndroidOpenSLESAudio;
+    } else if (_audioManagerAndroid->IsLowLatencyPlayoutSupported() &&
+               !_audioManagerAndroid->IsLowLatencyRecordSupported()) {
+      // Use OpenSL ES for output on devices that only supports the
       // low-latency output audio path.
       audioLayer = kAndroidJavaInputAndOpenSLESOutputAudio;
     } else {
-      // Use Java-based audio in both directions when low-latency output
-      // is not supported.
+      // Use Java-based audio in both directions when low-latency output is
+      // not supported.
       audioLayer = kAndroidJavaAudio;
     }
   }
@@ -252,6 +259,10 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects() {
   if (audioLayer == kAndroidJavaAudio) {
     // Java audio for both input and output audio.
     ptrAudioDevice = new AudioDeviceTemplate<AudioRecordJni, AudioTrackJni>(
+        audioLayer, audio_manager);
+  } else if (audioLayer == kAndroidOpenSLESAudio) {
+    // OpenSL ES based audio for both input and output audio.
+    ptrAudioDevice = new AudioDeviceTemplate<OpenSLESRecorder, OpenSLESPlayer>(
         audioLayer, audio_manager);
   } else if (audioLayer == kAndroidJavaInputAndOpenSLESOutputAudio) {
     // Java audio for input and OpenSL ES for output audio (i.e. mixed APIs).
@@ -261,7 +272,7 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects() {
         audioLayer, audio_manager);
   } else {
     // Invalid audio layer.
-    ptrAudioDevice = NULL;
+    ptrAudioDevice = nullptr;
   }
 // END #if defined(WEBRTC_ANDROID)
 

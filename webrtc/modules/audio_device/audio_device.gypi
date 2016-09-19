@@ -111,6 +111,8 @@
                     'android/opensles_common.h',
                     'android/opensles_player.cc',
                     'android/opensles_player.h',
+                    'android/opensles_recorder.cc',
+                    'android/opensles_recorder.h',
                   ],
                   'link_settings': {
                     'libraries': [

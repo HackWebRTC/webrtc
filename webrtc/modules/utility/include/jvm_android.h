@@ -64,6 +64,7 @@ class JavaClass {
   jmethodID GetMethodId(const char* name, const char* signature);
   jmethodID GetStaticMethodId(const char* name, const char* signature);
   jobject CallStaticObjectMethod(jmethodID methodID, ...);
+  jint CallStaticIntMethod(jmethodID methodID, ...);
 
  protected:
   JNIEnv* const jni_;

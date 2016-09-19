@@ -73,12 +73,12 @@ AudioManager::AudioManager()
       hardware_agc_(false),
       hardware_ns_(false),
       low_latency_playout_(false),
+      low_latency_record_(false),
       delay_estimate_in_milliseconds_(0) {
   ALOGD("ctor%s", GetThreadInfo().c_str());
   RTC_CHECK(j_environment_);
   JNINativeMethod native_methods[] = {
-      {"nativeCacheAudioParameters",
-       "(IIZZZZZIIJ)V",
+      {"nativeCacheAudioParameters", "(IIZZZZZZIIJ)V",
        reinterpret_cast<void*>(&webrtc::AudioManager::CacheAudioParameters)}};
   j_native_registration_ = j_environment_->RegisterNatives(
       "org/webrtc/voiceengine/WebRtcAudioManager", native_methods,
@@ -206,6 +206,12 @@ bool AudioManager::IsLowLatencyPlayoutSupported() const {
       false : low_latency_playout_;
 }
 
+bool AudioManager::IsLowLatencyRecordSupported() const {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  ALOGD("IsLowLatencyRecordSupported()");
+  return low_latency_record_;
+}
+
 bool AudioManager::IsProAudioSupported() const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   ALOGD("IsProAudioSupported()");
@@ -227,6 +233,7 @@ void JNICALL AudioManager::CacheAudioParameters(JNIEnv* env,
                                                 jboolean hardware_agc,
                                                 jboolean hardware_ns,
                                                 jboolean low_latency_output,
+                                                jboolean low_latency_input,
                                                 jboolean pro_audio,
                                                 jint output_buffer_size,
                                                 jint input_buffer_size,
@@ -235,7 +242,8 @@ void JNICALL AudioManager::CacheAudioParameters(JNIEnv* env,
       reinterpret_cast<webrtc::AudioManager*>(native_audio_manager);
   this_object->OnCacheAudioParameters(
       env, sample_rate, channels, hardware_aec, hardware_agc, hardware_ns,
-      low_latency_output, pro_audio, output_buffer_size, input_buffer_size);
+      low_latency_output, low_latency_input, pro_audio, output_buffer_size,
+      input_buffer_size);
 }
 
 void AudioManager::OnCacheAudioParameters(JNIEnv* env,
@@ -245,6 +253,7 @@ void AudioManager::OnCacheAudioParameters(JNIEnv* env,
                                           jboolean hardware_agc,
                                           jboolean hardware_ns,
                                           jboolean low_latency_output,
+                                          jboolean low_latency_input,
                                           jboolean pro_audio,
                                           jint output_buffer_size,
                                           jint input_buffer_size) {
@@ -253,6 +262,7 @@ void AudioManager::OnCacheAudioParameters(JNIEnv* env,
   ALOGD("hardware_agc: %d", hardware_agc);
   ALOGD("hardware_ns: %d", hardware_ns);
   ALOGD("low_latency_output: %d", low_latency_output);
+  ALOGD("low_latency_input: %d", low_latency_input);
   ALOGD("pro_audio: %d", pro_audio);
   ALOGD("sample_rate: %d", sample_rate);
   ALOGD("channels: %d", channels);
@@ -263,6 +273,7 @@ void AudioManager::OnCacheAudioParameters(JNIEnv* env,
   hardware_agc_ = hardware_agc;
   hardware_ns_ = hardware_ns;
   low_latency_playout_ = low_latency_output;
+  low_latency_record_ = low_latency_input;
   pro_audio_ = pro_audio;
   // TODO(henrika): add support for stereo output.
   playout_parameters_.reset(sample_rate, static_cast<size_t>(channels),

@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <memory>
 #include <SLES/OpenSLES_Android.h>
 
 #include "testing/gtest/include/gtest/gtest.h"
@@ -128,6 +127,11 @@ TEST_F(AudioManagerTest, IsLowLatencyPlayoutSupported) {
         audio_manager()->IsLowLatencyPlayoutSupported() ? "Yes" : "No");
 }
 
+TEST_F(AudioManagerTest, IsLowLatencyRecordSupported) {
+  PRINT("%sLow latency input support: %s\n", kTag,
+        audio_manager()->IsLowLatencyRecordSupported() ? "Yes" : "No");
+}
+
 TEST_F(AudioManagerTest, IsProAudioSupported) {
   PRINT("%sPro audio support: %s\n", kTag,
         audio_manager()->IsProAudioSupported() ? "Yes" : "No");
@@ -135,6 +139,7 @@ TEST_F(AudioManagerTest, IsProAudioSupported) {
 
 TEST_F(AudioManagerTest, ShowAudioParameterInfo) {
   const bool low_latency_out = audio_manager()->IsLowLatencyPlayoutSupported();
+  const bool low_latency_in = audio_manager()->IsLowLatencyRecordSupported();
   PRINT("PLAYOUT:\n");
   PRINT("%saudio layer: %s\n", kTag,
         low_latency_out ? "Low latency OpenSL" : "Java/JNI based AudioTrack");
@@ -144,12 +149,28 @@ TEST_F(AudioManagerTest, ShowAudioParameterInfo) {
         playout_parameters_.frames_per_buffer(),
         playout_parameters_.GetBufferSizeInMilliseconds());
   PRINT("RECORD: \n");
-  PRINT("%saudio layer: %s\n", kTag, "Java/JNI based AudioRecord");
+  PRINT("%saudio layer: %s\n", kTag,
+        low_latency_in ? "Low latency OpenSL" : "Java/JNI based AudioRecord");
   PRINT("%ssample rate: %d Hz\n", kTag, record_parameters_.sample_rate());
   PRINT("%schannels: %" PRIuS "\n", kTag, record_parameters_.channels());
   PRINT("%sframes per buffer: %" PRIuS " <=> %.2f ms\n", kTag,
         record_parameters_.frames_per_buffer(),
         record_parameters_.GetBufferSizeInMilliseconds());
+}
+
+// The audio device module only suppors the same sample rate in both directions.
+// In addition, in full-duplex low-latency mode (OpenSL ES), both input and
+// output must use the same native buffer size to allow for usage of the fast
+// audio track in Android.
+TEST_F(AudioManagerTest, VerifyAudioParameters) {
+  const bool low_latency_out = audio_manager()->IsLowLatencyPlayoutSupported();
+  const bool low_latency_in = audio_manager()->IsLowLatencyRecordSupported();
+  EXPECT_EQ(playout_parameters_.sample_rate(),
+            record_parameters_.sample_rate());
+  if (low_latency_out && low_latency_in) {
+    EXPECT_EQ(playout_parameters_.frames_per_buffer(),
+              record_parameters_.frames_per_buffer());
+  }
 }
 
 // Add device-specific information to the test for logging purposes.
@@ -167,7 +188,7 @@ TEST_F(AudioManagerTest, ShowBuildInfo) {
   PRINT("%sbuild release: %s\n", kTag, build_info.GetBuildRelease().c_str());
   PRINT("%sbuild id: %s\n", kTag, build_info.GetAndroidBuildId().c_str());
   PRINT("%sbuild type: %s\n", kTag, build_info.GetBuildType().c_str());
-  PRINT("%sSDK version: %s\n", kTag, build_info.GetSdkVersion().c_str());
+  PRINT("%sSDK version: %d\n", kTag, build_info.GetSdkVersion());
 }
 
 // Basic test of the AudioParameters class using default construction where

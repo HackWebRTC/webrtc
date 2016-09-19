@@ -134,6 +134,7 @@ public class WebRtcAudioManager {
   private boolean hardwareAGC;
   private boolean hardwareNS;
   private boolean lowLatencyOutput;
+  private boolean lowLatencyInput;
   private boolean proAudio;
   private int sampleRate;
   private int channels;
@@ -153,10 +154,9 @@ public class WebRtcAudioManager {
     }
     volumeLogger = new VolumeLogger(audioManager);
     storeAudioParameters();
-    nativeCacheAudioParameters(
-        sampleRate, channels, hardwareAEC, hardwareAGC, hardwareNS,
-        lowLatencyOutput, proAudio, outputBufferSize, inputBufferSize,
-        nativeAudioManager);
+    nativeCacheAudioParameters(sampleRate, channels, hardwareAEC, hardwareAGC, hardwareNS,
+            lowLatencyOutput, lowLatencyInput, proAudio, outputBufferSize, inputBufferSize,
+            nativeAudioManager);
   }
 
   private boolean init() {
@@ -201,12 +201,13 @@ public class WebRtcAudioManager {
     hardwareAGC = isAutomaticGainControlSupported();
     hardwareNS = isNoiseSuppressorSupported();
     lowLatencyOutput = isLowLatencyOutputSupported();
+    lowLatencyInput = isLowLatencyInputSupported();
     proAudio = isProAudioSupported();
     outputBufferSize = lowLatencyOutput ?
         getLowLatencyOutputFramesPerBuffer() :
         getMinOutputFrameSize(sampleRate, channels);
-    // TODO(henrika): add support for low-latency input.
-    inputBufferSize = getMinInputFrameSize(sampleRate, channels);
+    inputBufferSize = lowLatencyInput ? getLowLatencyInputFramesPerBuffer()
+                                      : getMinInputFrameSize(sampleRate, channels);
   }
 
   // Gets the current earpiece state.
@@ -223,13 +224,15 @@ public class WebRtcAudioManager {
   }
 
   // Returns true if low-latency audio input is supported.
+  // TODO(henrika): remove the hardcoded false return value when OpenSL ES
+  // input performance has been evaluated and tested more.
   public boolean isLowLatencyInputSupported() {
     // TODO(henrika): investigate if some sort of device list is needed here
     // as well. The NDK doc states that: "As of API level 21, lower latency
     // audio input is supported on select devices. To take advantage of this
     // feature, first confirm that lower latency output is available".
-    return WebRtcAudioUtils.runningOnLollipopOrHigher()
-        && isLowLatencyOutputSupported();
+    return false;
+    // return WebRtcAudioUtils.runningOnLollipopOrHigher() && isLowLatencyOutputSupported();
   }
 
   // Returns true if the device has professional audio level of functionality
@@ -353,8 +356,8 @@ public class WebRtcAudioManager {
     }
   }
 
-  private native void nativeCacheAudioParameters(
-    int sampleRate, int channels, boolean hardwareAEC, boolean hardwareAGC,
-    boolean hardwareNS, boolean lowLatencyOutput, boolean proAudio,
-    int outputBufferSize, int inputBufferSize, long nativeAudioManager);
+  private native void nativeCacheAudioParameters(int sampleRate, int channels, boolean hardwareAEC,
+          boolean hardwareAGC, boolean hardwareNS, boolean lowLatencyOutput,
+          boolean lowLatencyInput, boolean proAudio, int outputBufferSize, int inputBufferSize,
+          long nativeAudioManager);
 }

@@ -288,7 +288,6 @@ int32_t AudioDeviceBuffer::SetRecordedBuffer(const void* audio_buffer,
 }
 
 int32_t AudioDeviceBuffer::DeliverRecordedData() {
-  RTC_DCHECK(audio_transport_cb_);
   rtc::CritScope lock(&_critSectCb);
 
   if (!audio_transport_cb_) {
