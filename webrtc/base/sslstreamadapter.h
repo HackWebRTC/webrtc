@@ -106,12 +106,6 @@ enum SSLProtocolVersion {
   SSL_PROTOCOL_DTLS_10 = SSL_PROTOCOL_TLS_11,
   SSL_PROTOCOL_DTLS_12 = SSL_PROTOCOL_TLS_12,
 };
-enum class SSLPeerCertificateDigestError {
-  NONE,
-  UNKNOWN_ALGORITHM,
-  INVALID_LENGTH,
-  VERIFICATION_FAILED,
-};
 
 // Errors for Read -- in the high range so no conflict with OpenSSL.
 enum { SSE_MSG_TRUNC = 0xff0001 };
@@ -179,10 +173,9 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   // certificate is assumed to have been obtained through some other secure
   // channel (such as the signaling channel). This must specify the terminal
   // certificate, not just a CA. SSLStream makes a copy of the digest value.
-  virtual SSLPeerCertificateDigestError SetPeerCertificateDigest(
-      const std::string& digest_alg,
-      const unsigned char* digest_val,
-      size_t digest_len) = 0;
+  virtual bool SetPeerCertificateDigest(const std::string& digest_alg,
+                                        const unsigned char* digest_val,
+                                        size_t digest_len) = 0;
 
   // Retrieves the peer's X.509 certificate, if a connection has been
   // established. It returns the transmitted over SSL, including the entire
@@ -217,12 +210,6 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   // DTLS-SRTP interface
   virtual bool SetDtlsSrtpCryptoSuites(const std::vector<int>& crypto_suites);
   virtual bool GetDtlsSrtpCryptoSuite(int* crypto_suite);
-
-  // Returns true if a TLS connection has been established.
-  // The only difference between this and "GetState() == SE_OPEN" is that if
-  // the peer certificate digest hasn't been verified, the state will still be
-  // SS_OPENING but IsTlsConnected should return true.
-  virtual bool IsTlsConnected() = 0;
 
   // Capabilities testing
   static bool HaveDtls();

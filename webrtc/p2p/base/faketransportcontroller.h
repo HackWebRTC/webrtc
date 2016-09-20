@@ -69,7 +69,6 @@ class FakeTransportChannel : public TransportChannelImpl,
   // If async, will send packets by "Post"-ing to message queue instead of
   // synchronously "Send"-ing.
   void SetAsync(bool async) { async_ = async; }
-  void SetAsyncDelay(int delay_ms) { async_delay_ms_ = delay_ms; }
 
   TransportChannelState GetState() const override {
     if (connection_count_ == 0) {
@@ -201,12 +200,7 @@ class FakeTransportChannel : public TransportChannelImpl,
 
     PacketMessageData* packet = new PacketMessageData(data, len);
     if (async_) {
-      if (async_delay_ms_) {
-        rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, async_delay_ms_,
-                                            this, 0, packet);
-      } else {
-        rtc::Thread::Current()->Post(RTC_FROM_HERE, this, 0, packet);
-      }
+      rtc::Thread::Current()->Post(RTC_FROM_HERE, this, 0, packet);
     } else {
       rtc::Thread::Current()->Send(RTC_FROM_HERE, this, 0, packet);
     }
@@ -317,7 +311,6 @@ class FakeTransportChannel : public TransportChannelImpl,
   FakeTransportChannel* dest_ = nullptr;
   State state_ = STATE_INIT;
   bool async_ = false;
-  int async_delay_ms_ = 0;
   Candidates remote_candidates_;
   rtc::scoped_refptr<rtc::RTCCertificate> local_cert_;
   rtc::FakeSSLCertificate* remote_cert_ = nullptr;
@@ -361,7 +354,6 @@ class FakeTransport : public Transport {
   // If async, will send packets by "Post"-ing to message queue instead of
   // synchronously "Send"-ing.
   void SetAsync(bool async) { async_ = async; }
-  void SetAsyncDelay(int delay_ms) { async_delay_ms_ = delay_ms; }
 
   // If |asymmetric| is true, only set the destination for this transport, and
   // not |dest|.
@@ -423,7 +415,6 @@ class FakeTransport : public Transport {
     FakeTransportChannel* channel = new FakeTransportChannel(name(), component);
     channel->set_ssl_max_protocol_version(ssl_max_version_);
     channel->SetAsync(async_);
-    channel->SetAsyncDelay(async_delay_ms_);
     SetChannelDestination(component, channel, false);
     channels_[component] = channel;
     return channel;
@@ -460,7 +451,6 @@ class FakeTransport : public Transport {
   ChannelMap channels_;
   FakeTransport* dest_ = nullptr;
   bool async_ = false;
-  int async_delay_ms_ = 0;
   rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
   rtc::SSLProtocolVersion ssl_max_version_ = rtc::SSL_PROTOCOL_DTLS_12;
 };

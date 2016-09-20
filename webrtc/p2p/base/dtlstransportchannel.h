@@ -193,12 +193,8 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   // Needed by DtlsTransport.
   TransportChannelImpl* channel() { return channel_; }
 
-  // For informational purposes. Tells if the DTLS handshake has finished.
-  // This may be true even if writable() is false, if the remote fingerprint
-  // has not yet been verified.
-  bool IsDtlsConnected();
-
  private:
+  void OnReadableState(TransportChannel* channel);
   void OnWritableState(TransportChannel* channel);
   void OnReadPacket(TransportChannel* channel, const char* data, size_t size,
                     const rtc::PacketTime& packet_time, int flags);
