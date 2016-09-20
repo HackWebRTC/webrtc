@@ -143,6 +143,8 @@ void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
     { StatsReport::kStatsValueNameDecodingCTN, info.decoding_calls_to_neteq },
     { StatsReport::kStatsValueNameDecodingCTSG,
       info.decoding_calls_to_silence_generator },
+    { StatsReport::kStatsValueNameDecodingMutedOutput,
+      info.decoding_muted_output },
     { StatsReport::kStatsValueNameDecodingNormal, info.decoding_normal },
     { StatsReport::kStatsValueNameDecodingPLC, info.decoding_plc },
     { StatsReport::kStatsValueNameDecodingPLCCNG, info.decoding_plc_cng },

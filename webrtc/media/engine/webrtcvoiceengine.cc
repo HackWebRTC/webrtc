@@ -2611,6 +2611,7 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     rinfo.decoding_plc = stats.decoding_plc;
     rinfo.decoding_cng = stats.decoding_cng;
     rinfo.decoding_plc_cng = stats.decoding_plc_cng;
+    rinfo.decoding_muted_output = stats.decoding_muted_output;
     rinfo.capture_start_ntp_time_ms = stats.capture_start_ntp_time_ms;
     info->receivers.push_back(rinfo);
   }

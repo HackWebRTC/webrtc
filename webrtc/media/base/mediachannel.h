@@ -620,6 +620,7 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
         decoding_plc(0),
         decoding_cng(0),
         decoding_plc_cng(0),
+        decoding_muted_output(0),
         capture_start_ntp_time_ms(-1) {}
 
   int ext_seqnum;
@@ -644,6 +645,7 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
   int decoding_plc;
   int decoding_cng;
   int decoding_plc_cng;
+  int decoding_muted_output;
   // Estimated capture start time in NTP time in ms.
   int64_t capture_start_ntp_time_ms;
 };

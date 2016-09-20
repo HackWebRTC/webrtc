@@ -385,7 +385,8 @@ struct AudioDecodingCallStats {
         decoded_normal(0),
         decoded_plc(0),
         decoded_cng(0),
-        decoded_plc_cng(0) {}
+        decoded_plc_cng(0),
+        decoded_muted_output(0) {}
 
   int calls_to_silence_generator;  // Number of calls where silence generated,
                                    // and NetEq was disengaged from decoding.
@@ -394,6 +395,7 @@ struct AudioDecodingCallStats {
   int decoded_plc;     // Number of calls resulted in PLC.
   int decoded_cng;  // Number of calls where comfort noise generated due to DTX.
   int decoded_plc_cng;  // Number of calls resulted where PLC faded to CNG.
+  int decoded_muted_output;  // Number of calls returning a muted state output.
 };
 
 // Type of Noise Suppression.

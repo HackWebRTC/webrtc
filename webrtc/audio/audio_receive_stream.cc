@@ -211,6 +211,7 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   stats.decoding_plc = ds.decoded_plc;
   stats.decoding_cng = ds.decoded_cng;
   stats.decoding_plc_cng = ds.decoded_plc_cng;
+  stats.decoding_muted_output = ds.decoded_muted_output;
 
   return stats;
 }

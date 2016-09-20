@@ -253,6 +253,7 @@ TEST_F(AudioCodingModuleTestOldApi, MAYBE_InitializedToZero) {
   EXPECT_EQ(0, stats.decoded_cng);
   EXPECT_EQ(0, stats.decoded_plc);
   EXPECT_EQ(0, stats.decoded_plc_cng);
+  EXPECT_EQ(0, stats.decoded_muted_output);
 }
 
 // Insert some packets and pull audio. Check statistics are valid. Then,
@@ -278,6 +279,7 @@ TEST_F(AudioCodingModuleTestOldApi, MAYBE_NetEqCalls) {
   EXPECT_EQ(0, stats.decoded_cng);
   EXPECT_EQ(0, stats.decoded_plc);
   EXPECT_EQ(0, stats.decoded_plc_cng);
+  EXPECT_EQ(0, stats.decoded_muted_output);
 
   const int kNumPlc = 3;
   const int kNumPlcCng = 5;
@@ -293,6 +295,8 @@ TEST_F(AudioCodingModuleTestOldApi, MAYBE_NetEqCalls) {
   EXPECT_EQ(0, stats.decoded_cng);
   EXPECT_EQ(kNumPlc, stats.decoded_plc);
   EXPECT_EQ(kNumPlcCng, stats.decoded_plc_cng);
+  EXPECT_EQ(0, stats.decoded_muted_output);
+  // TODO(henrik.lundin) Add a test with muted state enabled.
 }
 
 TEST_F(AudioCodingModuleTestOldApi, VerifyOutputFrame) {

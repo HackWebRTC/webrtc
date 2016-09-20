@@ -148,6 +148,7 @@ class StatsReport {
     kStatsValueNameDecodingCNG,
     kStatsValueNameDecodingCTN,
     kStatsValueNameDecodingCTSG,
+    kStatsValueNameDecodingMutedOutput,
     kStatsValueNameDecodingNormal,
     kStatsValueNameDecodingPLC,
     kStatsValueNameDecodingPLCCNG,

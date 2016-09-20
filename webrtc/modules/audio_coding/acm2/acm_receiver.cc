@@ -135,6 +135,7 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
 int AcmReceiver::GetAudio(int desired_freq_hz,
                           AudioFrame* audio_frame,
                           bool* muted) {
+  RTC_DCHECK(muted);
   // Accessing members, take the lock.
   rtc::CritScope lock(&crit_sect_);
 
@@ -191,7 +192,7 @@ int AcmReceiver::GetAudio(int desired_freq_hz,
          sizeof(int16_t) * audio_frame->samples_per_channel_ *
              audio_frame->num_channels_);
 
-  call_stats_.DecodedByNetEq(audio_frame->speech_type_);
+  call_stats_.DecodedByNetEq(audio_frame->speech_type_, *muted);
   return 0;
 }
 

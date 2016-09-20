@@ -43,6 +43,7 @@ AudioDecodingCallStats MakeAudioDecodeStatsForTest() {
   audio_decode_stats.decoded_plc = 123;
   audio_decode_stats.decoded_cng = 456;
   audio_decode_stats.decoded_plc_cng = 789;
+  audio_decode_stats.decoded_muted_output = 987;
   return audio_decode_stats;
 }
 
@@ -356,6 +357,8 @@ TEST(AudioReceiveStreamTest, GetStats) {
   EXPECT_EQ(kAudioDecodeStats.decoded_plc, stats.decoding_plc);
   EXPECT_EQ(kAudioDecodeStats.decoded_cng, stats.decoding_cng);
   EXPECT_EQ(kAudioDecodeStats.decoded_plc_cng, stats.decoding_plc_cng);
+  EXPECT_EQ(kAudioDecodeStats.decoded_muted_output,
+            stats.decoding_muted_output);
   EXPECT_EQ(kCallStats.capture_start_ntp_time_ms_,
             stats.capture_start_ntp_time_ms);
 }

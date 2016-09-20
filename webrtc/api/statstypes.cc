@@ -456,6 +456,8 @@ const char* StatsReport::Value::display_name() const {
       return "googDecodingCTSG";
     case kStatsValueNameDecodingCTN:
       return "googDecodingCTN";
+    case kStatsValueNameDecodingMutedOutput:
+      return "googDecodingMuted";
     case kStatsValueNameDecodingNormal:
       return "googDecodingNormal";
     case kStatsValueNameDecodingPLC:

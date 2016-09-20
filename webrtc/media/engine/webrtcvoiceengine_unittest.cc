@@ -450,7 +450,8 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     stats.decoding_plc = 1234;
     stats.decoding_cng = 5678;
     stats.decoding_plc_cng = 9012;
-    stats.capture_start_ntp_time_ms = 3456;
+    stats.decoding_muted_output = 3456;
+    stats.capture_start_ntp_time_ms = 7890;
     return stats;
   }
   void SetAudioReceiveStreamStats() {
@@ -485,6 +486,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_EQ(info.decoding_plc, stats.decoding_plc);
     EXPECT_EQ(info.decoding_cng, stats.decoding_cng);
     EXPECT_EQ(info.decoding_plc_cng, stats.decoding_plc_cng);
+    EXPECT_EQ(info.decoding_muted_output, stats.decoding_muted_output);
     EXPECT_EQ(info.capture_start_ntp_time_ms, stats.capture_start_ntp_time_ms);
   }
 

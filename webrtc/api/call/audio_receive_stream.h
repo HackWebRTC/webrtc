@@ -57,6 +57,7 @@ class AudioReceiveStream {
     int32_t decoding_plc = 0;
     int32_t decoding_cng = 0;
     int32_t decoding_plc_cng = 0;
+    int32_t decoding_muted_output = 0;
     int64_t capture_start_ntp_time_ms = 0;
   };
 
