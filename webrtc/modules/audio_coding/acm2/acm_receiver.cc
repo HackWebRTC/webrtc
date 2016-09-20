@@ -315,19 +315,15 @@ void AcmReceiver::GetNetworkStatistics(NetworkStatistics* acm_stat) {
 int AcmReceiver::DecoderByPayloadType(uint8_t payload_type,
                                       CodecInst* codec) const {
   rtc::CritScope lock(&crit_sect_);
-  auto it = decoders_.find(payload_type);
-  if (it == decoders_.end()) {
+  const rtc::Optional<CodecInst> ci = neteq_->GetDecoder(payload_type);
+  if (ci) {
+    *codec = *ci;
+    return 0;
+  } else {
     LOG(LERROR) << "AcmReceiver::DecoderByPayloadType "
                 << static_cast<int>(payload_type);
     return -1;
   }
-  const Decoder& decoder = it->second;
-  *codec = *RentACodec::CodecInstById(
-      *RentACodec::CodecIdFromIndex(decoder.acm_codec_id));
-  codec->pltype = decoder.payload_type;
-  codec->channels = decoder.channels;
-  codec->plfreq = decoder.sample_rate_hz;
-  return 0;
 }
 
 int AcmReceiver::EnableNack(size_t max_nack_list_size) {

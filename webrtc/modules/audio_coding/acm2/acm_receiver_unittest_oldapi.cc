@@ -174,10 +174,11 @@ class AcmReceiverTestOldApi : public AudioPacketizationCallback,
 TEST_F(AcmReceiverTestOldApi, MAYBE_AddCodecGetCodec) {
   // Add codec.
   for (size_t n = 0; n < codecs_.size(); ++n) {
-    if (n & 0x1)  // Just add codecs with odd index.
-      EXPECT_EQ(0,
-                receiver_->AddCodec(n, codecs_[n].pltype, codecs_[n].channels,
-                                    codecs_[n].plfreq, NULL, ""));
+    if (n & 0x1) {  // Just add codecs with odd index.
+      EXPECT_EQ(
+          0, receiver_->AddCodec(n, codecs_[n].pltype, codecs_[n].channels,
+                                 codecs_[n].plfreq, NULL, codecs_[n].plname));
+    }
   }
   // Get codec and compare.
   for (size_t n = 0; n < codecs_.size(); ++n) {
@@ -209,9 +210,9 @@ TEST_F(AcmReceiverTestOldApi, MAYBE_AddCodecChangePayloadType) {
   // Register the same codec with different payloads.
   EXPECT_EQ(0, receiver_->AddCodec(codec1.id, codec1.inst.pltype,
                                    codec1.inst.channels, codec1.inst.plfreq,
-                                   nullptr, ""));
+                                   nullptr, codec1.inst.plname));
   EXPECT_EQ(0, receiver_->AddCodec(codec1.id, codec2.pltype, codec2.channels,
-                                   codec2.plfreq, NULL, ""));
+                                   codec2.plfreq, NULL, codec2.plname));
 
   // Both payload types should exist.
   EXPECT_EQ(0,
@@ -235,10 +236,10 @@ TEST_F(AcmReceiverTestOldApi, AddCodecChangeCodecId) {
   // Register the same payload type with different codec ID.
   EXPECT_EQ(0, receiver_->AddCodec(codec1.id, codec1.inst.pltype,
                                    codec1.inst.channels, codec1.inst.plfreq,
-                                   nullptr, ""));
+                                   nullptr, codec1.inst.plname));
   EXPECT_EQ(0, receiver_->AddCodec(codec2.id, codec2.inst.pltype,
                                    codec2.inst.channels, codec2.inst.plfreq,
-                                   nullptr, ""));
+                                   nullptr, codec2.inst.plname));
 
   // Make sure that the last codec is used.
   EXPECT_EQ(0,
@@ -256,7 +257,7 @@ TEST_F(AcmReceiverTestOldApi, MAYBE_AddCodecRemoveCodec) {
   const int payload_type = codec.inst.pltype;
   EXPECT_EQ(
       0, receiver_->AddCodec(codec.id, codec.inst.pltype, codec.inst.channels,
-                             codec.inst.plfreq, nullptr, ""));
+                             codec.inst.plfreq, nullptr, codec.inst.plname));
 
   // Remove non-existing codec should not fail. ACM1 legacy.
   EXPECT_EQ(0, receiver_->RemoveCodec(payload_type + 1));
