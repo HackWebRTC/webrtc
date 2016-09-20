@@ -319,6 +319,10 @@
           '../..',
         ],
       }, {
+         'includes': [
+           # Rules for excluding e.g. foo_win.cc from the build on non-Windows.
+           'filename_rules.gypi',
+         ],
          # Include the top-level dir so the WebRTC code can use full paths.
         'include_dirs': [
           '../..',
