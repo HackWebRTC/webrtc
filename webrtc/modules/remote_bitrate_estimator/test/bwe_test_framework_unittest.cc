@@ -970,56 +970,6 @@ TEST(BweTestFramework_VideoSenderTest, FeedbackIneffective) {
   EXPECT_EQ(820000u, source.bits_per_second());
   TestVideoSender(&sender, 10000, 1000, 500, 1025000);
 }
-
-TEST(BweTestFramework_AdaptiveVideoSenderTest, FeedbackChangesBitrate) {
-  AdaptiveVideoSource source(0, 25.0f, 820, 0x1234, 0);
-  VideoSender sender(NULL, &source, kRembEstimator);
-  EXPECT_EQ(820000u, source.bits_per_second());
-  TestVideoSender(&sender, 9961, 1000, 500, 1025000);
-
-  // Make sure we can reduce the bitrate.
-  RembFeedback* feedback = new RembFeedback(0, 0, 0, 512000, RTCPReportBlock());
-  Packets packets;
-  packets.push_back(feedback);
-  sender.RunFor(0, &packets);
-  EXPECT_EQ(512000u, source.bits_per_second());
-  TestVideoSender(&sender, 10000, 750, 160, 640000);
-
-  // Increase the bitrate to the initial bitrate and verify that the output is
-  // the same.
-  feedback = new RembFeedback(0, 0, 0, 820000, RTCPReportBlock());
-  packets.push_back(feedback);
-  sender.RunFor(10000, &packets);
-  EXPECT_EQ(820000u, source.bits_per_second());
-
-  for (auto* packet : packets)
-    delete packet;
-}
-
-TEST(BweTestFramework_AdaptiveVideoSenderTest, Paced_FeedbackChangesBitrate) {
-  AdaptiveVideoSource source(0, 25.0f, 820, 0x1234, 0);
-  PacedVideoSender sender(NULL, &source, kRembEstimator);
-  EXPECT_EQ(820000u, source.bits_per_second());
-  TestVideoSender(&sender, 9998, 1000, 500, 1025000);
-
-  // Make sure we can reduce the bitrate.
-  RembFeedback* feedback = new RembFeedback(0, 1, 0, 512000, RTCPReportBlock());
-  Packets packets;
-  packets.push_back(feedback);
-  sender.RunFor(10000, &packets);
-  ASSERT_EQ(512000u, source.bits_per_second());
-  TestVideoSender(&sender, 10000, 750, 160, 640000);
-
-  // Increase the bitrate to the initial bitrate and verify that the output is
-  // the same.
-  feedback = new RembFeedback(0, 0, 0, 820000, RTCPReportBlock());
-  packets.push_back(feedback);
-  sender.RunFor(10000, &packets);
-  EXPECT_EQ(820000u, source.bits_per_second());
-
-  for (auto* packet : packets)
-    delete packet;
-}
 }  // namespace bwe
 }  // namespace testing
 }  // namespace webrtc

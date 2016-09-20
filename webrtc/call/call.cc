@@ -694,8 +694,11 @@ void Call::OnNetworkRouteChanged(const std::string& transport_name,
     LOG(LS_INFO) << "Network route changed on transport " << transport_name
                  << ": new local network id " << network_route.local_network_id
                  << " new remote network id " << network_route.remote_network_id
-                 << " Reset bitrate to "
-                 << config_.bitrate_config.start_bitrate_bps << "bps";
+                 << " Reset bitrates to min: "
+                 << config_.bitrate_config.min_bitrate_bps
+                 << " bps, start: " << config_.bitrate_config.start_bitrate_bps
+                 << " bps,  max: " << config_.bitrate_config.start_bitrate_bps
+                 << " bps.";
     congestion_controller_->ResetBweAndBitrates(
         config_.bitrate_config.start_bitrate_bps,
         config_.bitrate_config.min_bitrate_bps,

@@ -82,7 +82,9 @@ class SendSideBandwidthEstimation {
   int64_t last_low_bitrate_log_ms_;
 
   bool has_decreased_since_last_fraction_loss_;
-  int64_t time_last_receiver_block_ms_;
+  int64_t last_feedback_ms_;
+  int64_t last_packet_report_ms_;
+  int64_t last_timeout_ms_;
   uint8_t last_fraction_loss_;
   uint8_t last_logged_fraction_loss_;
   int64_t last_round_trip_time_ms_;
@@ -97,6 +99,7 @@ class SendSideBandwidthEstimation {
   std::vector<bool> rampup_uma_stats_updated_;
   RtcEventLog* event_log_;
   int64_t last_rtc_event_log_ms_;
+  bool in_timeout_experiment_;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_BITRATE_CONTROLLER_SEND_SIDE_BANDWIDTH_ESTIMATION_H_

@@ -89,7 +89,7 @@ TEST(SendSideBweTest, DoesntReapplyBitrateDecreaseWithoutFollowingRemb) {
   // Signal heavy loss to go down in bitrate.
   bwe.UpdateReceiverBlock(kFractionLoss, kRttMs, 100, now_ms);
   // Trigger an update 2 seconds later to not be rate limited.
-  now_ms += 2000;
+  now_ms += 1000;
   bwe.UpdateEstimate(now_ms);
 
   bwe.CurrentEstimate(&bitrate_bps, &fraction_loss, &rtt_ms);
@@ -107,7 +107,7 @@ TEST(SendSideBweTest, DoesntReapplyBitrateDecreaseWithoutFollowingRemb) {
   int last_bitrate_bps = bitrate_bps;
   // Trigger an update 2 seconds later to not be rate limited (but it still
   // shouldn't update).
-  now_ms += 2000;
+  now_ms += 1000;
   bwe.UpdateEstimate(now_ms);
   bwe.CurrentEstimate(&bitrate_bps, &fraction_loss, &rtt_ms);
 
