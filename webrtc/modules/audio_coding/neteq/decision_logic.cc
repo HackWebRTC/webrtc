@@ -108,24 +108,19 @@ Operations DecisionLogic::GetDecision(const SyncBuffer& sync_buffer,
                                       bool play_dtmf,
                                       size_t generated_noise_samples,
                                       bool* reset_decoder) {
-  if (prev_mode == kModeRfc3389Cng ||
-      prev_mode == kModeCodecInternalCng ||
-      prev_mode == kModeExpand) {
-    // If last mode was CNG (or Expand, since this could be covering up for
-    // a lost CNG packet), remember that CNG is on. This is needed if comfort
-    // noise is interrupted by DTMF.
-    if (prev_mode == kModeRfc3389Cng) {
-      cng_state_ = kCngRfc3389On;
-    } else if (prev_mode == kModeCodecInternalCng) {
-      cng_state_ = kCngInternalOn;
-    }
+  // If last mode was CNG (or Expand, since this could be covering up for
+  // a lost CNG packet), remember that CNG is on. This is needed if comfort
+  // noise is interrupted by DTMF.
+  if (prev_mode == kModeRfc3389Cng) {
+    cng_state_ = kCngRfc3389On;
+  } else if (prev_mode == kModeCodecInternalCng) {
+    cng_state_ = kCngInternalOn;
   }
 
   const size_t samples_left =
       sync_buffer.FutureLength() - expand.overlap_length();
   const size_t cur_size_samples =
-      samples_left + packet_buffer_.NumSamplesInBuffer(decoder_database_,
-                                                       decoder_frame_length);
+      samples_left + packet_buffer_.NumSamplesInBuffer(decoder_frame_length);
 
   prev_time_scale_ = prev_time_scale_ &&
       (prev_mode == kModeAccelerateSuccess ||

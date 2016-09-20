@@ -15,6 +15,7 @@
 #include <memory>
 
 #include "webrtc/base/buffer.h"
+#include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 #include "webrtc/modules/audio_coding/neteq/tick_timer.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
@@ -28,6 +29,7 @@ struct Packet {
   rtc::Buffer payload;
   bool primary = true;  // Primary, i.e., not redundant payload.
   std::unique_ptr<TickTimer::Stopwatch> waiting_time;
+  std::unique_ptr<AudioDecoder::EncodedAudioFrame> frame;
 
   Packet();
   ~Packet();
@@ -60,6 +62,8 @@ struct Packet {
   bool operator>(const Packet& rhs) const { return rhs.operator<(*this); }
   bool operator<=(const Packet& rhs) const { return !operator>(rhs); }
   bool operator>=(const Packet& rhs) const { return !operator<(rhs); }
+
+  bool empty() const { return !frame && payload.empty(); }
 };
 
 // A list of packets.

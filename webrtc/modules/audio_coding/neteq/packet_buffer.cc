@@ -68,7 +68,7 @@ bool PacketBuffer::Empty() const {
 }
 
 int PacketBuffer::InsertPacket(Packet* packet) {
-  if (!packet || packet->payload.empty()) {
+  if (!packet || packet->empty()) {
     if (packet) {
       delete packet;
     }
@@ -209,7 +209,7 @@ Packet* PacketBuffer::GetNextPacket(size_t* discard_count) {
 
   Packet* packet = buffer_.front();
   // Assert that the packet sanity checks in InsertPacket method works.
-  assert(packet && !packet->payload.empty());
+  RTC_DCHECK(packet && !packet->empty());
   buffer_.pop_front();
 
   // Discard other packets with the same timestamp. These are duplicates or
@@ -237,8 +237,8 @@ int PacketBuffer::DiscardNextPacket() {
     return kBufferEmpty;
   }
   // Assert that the packet sanity checks in InsertPacket method works.
-  assert(buffer_.front());
-  assert(!buffer_.front()->payload.empty());
+  RTC_DCHECK(buffer_.front());
+  RTC_DCHECK(!buffer_.front()->empty());
   DeleteFirstPacket(&buffer_);
   return kOK;
 }
@@ -260,26 +260,32 @@ int PacketBuffer::DiscardAllOldPackets(uint32_t timestamp_limit) {
   return DiscardOldPackets(timestamp_limit, 0);
 }
 
+void PacketBuffer::DiscardPacketsWithPayloadType(uint8_t payload_type) {
+  for (auto it = buffer_.begin(); it != buffer_.end(); /* */) {
+    Packet *packet = *it;
+    if (packet->header.payloadType == payload_type) {
+      delete packet;
+      it = buffer_.erase(it);
+    } else {
+      ++it;
+    }
+  }
+}
+
 size_t PacketBuffer::NumPacketsInBuffer() const {
   return buffer_.size();
 }
 
-size_t PacketBuffer::NumSamplesInBuffer(DecoderDatabase* decoder_database,
-                                        size_t last_decoded_length) const {
-  PacketList::const_iterator it;
+size_t PacketBuffer::NumSamplesInBuffer(size_t last_decoded_length) const {
   size_t num_samples = 0;
   size_t last_duration = last_decoded_length;
-  for (it = buffer_.begin(); it != buffer_.end(); ++it) {
-    Packet* packet = (*it);
-    AudioDecoder* decoder =
-        decoder_database->GetDecoder(packet->header.payloadType);
-    if (decoder) {
+  for (Packet* packet : buffer_) {
+    if (packet->frame) {
       if (!packet->primary) {
         continue;
       }
-      int duration = decoder->PacketDuration(packet->payload.data(),
-                                             packet->payload.size());
-      if (duration >= 0) {
+      size_t duration = packet->frame->Duration();
+      if (duration > 0) {
         last_duration = duration;  // Save the most up-to-date (valid) duration.
       }
     }

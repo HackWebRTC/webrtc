@@ -791,50 +791,41 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
   rtp_header.header.timestamp = 0x12345678;
   rtp_header.header.ssrc = 0x87654321;
 
-  class MockAudioDecoder : public AudioDecoder {
-   public:
-    // TODO(nisse): Valid overrides commented out, because the gmock
-    // methods don't use any override declarations, and we want to avoid
-    // warnings from -Winconsistent-missing-override. See
-    // http://crbug.com/428099.
-    void Reset() /* override */ {}
-    MOCK_CONST_METHOD2(PacketDuration, int(const uint8_t*, size_t));
-    MOCK_METHOD5(DecodeInternal, int(const uint8_t*, size_t, int, int16_t*,
-                                     SpeechType*));
-    int SampleRateHz() const /* override */ { return kSampleRateHz; }
-    size_t Channels() const /* override */ { return kChannels; }
-  } decoder_;
+  ::testing::NiceMock<MockAudioDecoder> decoder;
 
   const uint8_t kFirstPayloadValue = 1;
   const uint8_t kSecondPayloadValue = 2;
 
-  EXPECT_CALL(decoder_, PacketDuration(Pointee(kFirstPayloadValue),
-                                       kPayloadLengthBytes))
-    .Times(AtLeast(1))
-    .WillRepeatedly(Return(kNetEqMaxFrameSize + 1));
+  EXPECT_CALL(decoder,
+              PacketDuration(Pointee(kFirstPayloadValue), kPayloadLengthBytes))
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(kNetEqMaxFrameSize + 1));
 
-  EXPECT_CALL(decoder_,
-              DecodeInternal(Pointee(kFirstPayloadValue), _, _, _, _))
+  EXPECT_CALL(decoder, DecodeInternal(Pointee(kFirstPayloadValue), _, _, _, _))
       .Times(0);
 
-  EXPECT_CALL(decoder_, DecodeInternal(Pointee(kSecondPayloadValue),
-                                       kPayloadLengthBytes,
-                                       kSampleRateHz, _, _))
+  EXPECT_CALL(decoder, DecodeInternal(Pointee(kSecondPayloadValue),
+                                      kPayloadLengthBytes, kSampleRateHz, _, _))
       .Times(1)
-      .WillOnce(DoAll(SetArrayArgument<3>(dummy_output,
-                                          dummy_output +
-                                          kPayloadLengthSamples * kChannels),
-                      SetArgPointee<4>(AudioDecoder::kSpeech),
-                      Return(static_cast<int>(
-                          kPayloadLengthSamples * kChannels))));
+      .WillOnce(DoAll(
+          SetArrayArgument<3>(dummy_output,
+                              dummy_output + kPayloadLengthSamples * kChannels),
+          SetArgPointee<4>(AudioDecoder::kSpeech),
+          Return(static_cast<int>(kPayloadLengthSamples * kChannels))));
 
-  EXPECT_CALL(decoder_, PacketDuration(Pointee(kSecondPayloadValue),
-                                       kPayloadLengthBytes))
-    .Times(AtLeast(1))
-    .WillRepeatedly(Return(kNetEqMaxFrameSize));
+  EXPECT_CALL(decoder,
+              PacketDuration(Pointee(kSecondPayloadValue), kPayloadLengthBytes))
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(kNetEqMaxFrameSize));
+
+  EXPECT_CALL(decoder, SampleRateHz())
+      .WillRepeatedly(Return(kSampleRateHz));
+
+  EXPECT_CALL(decoder, Channels())
+      .WillRepeatedly(Return(kChannels));
 
   EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
-                            &decoder_, NetEqDecoder::kDecoderPCM16B,
+                            &decoder, NetEqDecoder::kDecoderPCM16B,
                             "dummy name", kPayloadType));
 
   // Insert one packet.
@@ -868,6 +859,10 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
   EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
   EXPECT_EQ(kExpectedOutputSize, output.samples_per_channel_ * kChannels);
   EXPECT_EQ(kChannels, output.num_channels_);
+
+  // Die isn't called through NiceMock (since it's called by the
+  // MockAudioDecoder constructor), so it needs to be mocked explicitly.
+  EXPECT_CALL(decoder, Die());
 }
 
 // This test inserts packets until the buffer is flushed. After that, it asks

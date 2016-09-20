@@ -14,6 +14,7 @@
 #include <memory.h>  // memset
 
 #include <algorithm>
+#include <utility>
 #include <vector>
 
 #include "webrtc/base/checks.h"
@@ -282,6 +283,7 @@ int NetEqImpl::RemovePayloadType(uint8_t rtp_payload_type) {
   rtc::CritScope lock(&crit_sect_);
   int ret = decoder_database_->Remove(rtp_payload_type);
   if (ret == DecoderDatabase::kOK) {
+    packet_buffer_->DiscardPacketsWithPayloadType(rtp_payload_type);
     return kOK;
   } else if (ret == DecoderDatabase::kDecoderNotFound) {
     error_code_ = kDecoderNotFound;
@@ -330,8 +332,7 @@ int NetEqImpl::CurrentDelayMs() const {
   // Sum up the samples in the packet buffer with the future length of the sync
   // buffer, and divide the sum by the sample rate.
   const size_t delay_samples =
-      packet_buffer_->NumSamplesInBuffer(decoder_database_.get(),
-                                         decoder_frame_length_) +
+      packet_buffer_->NumSamplesInBuffer(decoder_frame_length_) +
       sync_buffer_->FutureLength();
   // The division below will truncate.
   const int delay_ms =
@@ -376,8 +377,7 @@ int NetEqImpl::NetworkStatistics(NetEqNetworkStatistics* stats) {
   rtc::CritScope lock(&crit_sect_);
   assert(decoder_database_.get());
   const size_t total_samples_in_buffers =
-      packet_buffer_->NumSamplesInBuffer(decoder_database_.get(),
-                                         decoder_frame_length_) +
+      packet_buffer_->NumSamplesInBuffer(decoder_frame_length_) +
       sync_buffer_->FutureLength();
   assert(delay_manager_.get());
   assert(decision_logic_.get());
@@ -662,29 +662,64 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
                             receive_timestamp);
   }
 
+  PacketList parsed_packet_list;
+  while (!packet_list.empty()) {
+    std::unique_ptr<Packet> packet(packet_list.front());
+    packet_list.pop_front();
+    const DecoderDatabase::DecoderInfo* info =
+        decoder_database_->GetDecoderInfo(packet->header.payloadType);
+    if (!info) {
+      LOG(LS_WARNING) << "SplitAudio unknown payload type";
+      return kUnknownRtpPayloadType;
+    }
+
+    if (info->IsComfortNoise()) {
+      // Carry comfort noise packets along.
+      parsed_packet_list.push_back(packet.release());
+    } else {
+      std::vector<AudioDecoder::ParseResult> results =
+          info->GetDecoder()->ParsePayload(std::move(packet->payload),
+                                           packet->header.timestamp,
+                                           packet->primary);
+      const RTPHeader& original_header = packet->header;
+      for (auto& result : results) {
+        RTC_DCHECK(result.frame);
+        // Reuse the packet if possible
+        if (!packet) {
+          packet.reset(new Packet);
+          packet->header = original_header;
+        }
+        packet->header.timestamp = result.timestamp;
+        // TODO(ossu): Move from primary to some sort of priority level.
+        packet->primary = result.primary;
+        packet->frame = std::move(result.frame);
+        parsed_packet_list.push_back(packet.release());
+      }
+    }
+  }
+
   if (nack_enabled_) {
     RTC_DCHECK(nack_);
     if (update_sample_rate_and_channels) {
       nack_->Reset();
     }
-    nack_->UpdateLastReceivedPacket(packet_list.front()->header.sequenceNumber,
-                                    packet_list.front()->header.timestamp);
+    nack_->UpdateLastReceivedPacket(
+        parsed_packet_list.front()->header.sequenceNumber,
+        parsed_packet_list.front()->header.timestamp);
   }
 
   // Insert packets in buffer.
   const size_t buffer_length_before_insert =
       packet_buffer_->NumPacketsInBuffer();
   ret = packet_buffer_->InsertPacketList(
-      &packet_list,
-      *decoder_database_,
-      &current_rtp_payload_type_,
+      &parsed_packet_list, *decoder_database_, &current_rtp_payload_type_,
       &current_cng_rtp_payload_type_);
   if (ret == PacketBuffer::kFlushed) {
     // Reset DSP timestamp etc. if packet buffer flushed.
     new_codec_ = true;
     update_sample_rate_and_channels = true;
   } else if (ret != PacketBuffer::kOK) {
-    PacketBuffer::DeleteAllPackets(&packet_list);
+    PacketBuffer::DeleteAllPackets(&parsed_packet_list);
     return kOtherError;
   }
 
@@ -1421,36 +1456,29 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, const Operations& operation,
            operation == kFastAccelerate || operation == kMerge ||
            operation == kPreemptiveExpand);
     packet_list->pop_front();
-    const size_t payload_length = packet->payload.size();
-    int decode_length;
-    if (!packet->primary) {
-      // This is a redundant payload; call the special decoder method.
-      decode_length = decoder->DecodeRedundant(
-          packet->payload.data(), packet->payload.size(), fs_hz_,
-          (decoded_buffer_length_ - *decoded_length) * sizeof(int16_t),
-          &decoded_buffer_[*decoded_length], speech_type);
-    } else {
-      decode_length = decoder->Decode(
-          packet->payload.data(), packet->payload.size(), fs_hz_,
-          (decoded_buffer_length_ - *decoded_length) * sizeof(int16_t),
-          &decoded_buffer_[*decoded_length], speech_type);
-    }
-
+    auto opt_result = packet->frame->Decode(
+        rtc::ArrayView<int16_t>(&decoded_buffer_[*decoded_length],
+                                decoded_buffer_length_ - *decoded_length));
     delete packet;
     packet = NULL;
-    if (decode_length > 0) {
-      *decoded_length += decode_length;
-      // Update |decoder_frame_length_| with number of samples per channel.
-      decoder_frame_length_ =
-          static_cast<size_t>(decode_length) / decoder->Channels();
-    } else if (decode_length < 0) {
+    if (opt_result) {
+      const auto& result = *opt_result;
+      *speech_type = result.speech_type;
+      if (result.num_decoded_samples > 0) {
+        *decoded_length += rtc::checked_cast<int>(result.num_decoded_samples);
+        // Update |decoder_frame_length_| with number of samples per channel.
+        decoder_frame_length_ =
+            result.num_decoded_samples / decoder->Channels();
+      }
+    } else {
       // Error.
-      LOG(LS_WARNING) << "Decode " << decode_length << " " << payload_length;
+      // TODO(ossu): What to put here?
+      LOG(LS_WARNING) << "Decode error";
       *decoded_length = -1;
       PacketBuffer::DeleteAllPackets(packet_list);
       break;
     }
-    if (*decoded_length > static_cast<int>(decoded_buffer_length_)) {
+    if (*decoded_length > rtc::checked_cast<int>(decoded_buffer_length_)) {
       // Guard against overflow.
       LOG(LS_WARNING) << "Decoded too much.";
       PacketBuffer::DeleteAllPackets(packet_list);
@@ -1892,7 +1920,7 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
     return -1;
   }
   uint32_t first_timestamp = header->timestamp;
-  int extracted_samples = 0;
+  size_t extracted_samples = 0;
 
   // Packet extraction loop.
   do {
@@ -1908,7 +1936,7 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
     }
     stats_.PacketsDiscarded(discard_count);
     stats_.StoreWaitingTime(packet->waiting_time->ElapsedMs());
-    assert(!packet->payload.empty());
+    RTC_DCHECK(!packet->empty());
     packet_list->push_back(packet);  // Store packet in list.
 
     if (first_packet) {
@@ -1925,27 +1953,24 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
     }
 
     // Store number of extracted samples.
-    int packet_duration = 0;
-    AudioDecoder* decoder = decoder_database_->GetDecoder(
-        packet->header.payloadType);
-    if (decoder) {
-      if (packet->primary) {
-        packet_duration = decoder->PacketDuration(packet->payload.data(),
-                                                  packet->payload.size());
-      } else {
-        packet_duration = decoder->PacketDurationRedundant(
-            packet->payload.data(), packet->payload.size());
-        stats_.SecondaryDecodedSamples(packet_duration);
+    size_t packet_duration = 0;
+    if (packet->frame) {
+      packet_duration = packet->frame->Duration();
+      // TODO(ossu): Is this the correct way to track samples decoded from a
+      // redundant packet?
+      if (packet_duration > 0 && !packet->primary) {
+        stats_.SecondaryDecodedSamples(rtc::checked_cast<int>(packet_duration));
       }
     } else if (!decoder_database_->IsComfortNoise(packet->header.payloadType)) {
       LOG(LS_WARNING) << "Unknown payload type "
                       << static_cast<int>(packet->header.payloadType);
-      assert(false);
+      RTC_NOTREACHED();
     }
-    if (packet_duration <= 0) {
+
+    if (packet_duration == 0) {
       // Decoder did not return a packet duration. Assume that the packet
       // contains the same number of samples as the previous one.
-      packet_duration = rtc::checked_cast<int>(decoder_frame_length_);
+      packet_duration = decoder_frame_length_;
     }
     extracted_samples = packet->header.timestamp - first_timestamp +
         packet_duration;
@@ -1964,8 +1989,7 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
       }
       prev_sequence_number = header->sequenceNumber;
     }
-  } while (extracted_samples < rtc::checked_cast<int>(required_samples) &&
-           next_packet_available);
+  } while (extracted_samples < required_samples && next_packet_available);
 
   if (extracted_samples > 0) {
     // Delete old packets only when we are going to decode something. Otherwise,
@@ -1975,7 +1999,7 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
     packet_buffer_->DiscardAllOldPackets(timestamp_);
   }
 
-  return extracted_samples;
+  return rtc::checked_cast<int>(extracted_samples);
 }
 
 void NetEqImpl::UpdatePlcComponents(int fs_hz, size_t channels) {
