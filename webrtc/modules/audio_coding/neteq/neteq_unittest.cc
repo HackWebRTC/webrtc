@@ -1315,6 +1315,17 @@ class NetEqDecodingTestWithMutedState : public NetEqDecodingTest {
     EXPECT_EQ(0, neteq_->InsertPacket(rtp_info, payload, 0));
   }
 
+  void InsertCngPacket(uint32_t rtp_timestamp) {
+    uint8_t payload[kPayloadBytes] = {0};
+    WebRtcRTPHeader rtp_info;
+    size_t payload_len;
+    PopulateCng(0, rtp_timestamp, &rtp_info, payload, &payload_len);
+    EXPECT_EQ(
+        NetEq::kOK,
+        neteq_->InsertPacket(
+            rtp_info, rtc::ArrayView<const uint8_t>(payload, payload_len), 0));
+  }
+
   bool GetAudioReturnMuted() {
     bool muted;
     EXPECT_EQ(0, neteq_->GetAudio(&out_frame_, &muted));
@@ -1427,6 +1438,39 @@ TEST_F(NetEqDecodingTestWithMutedState, MutedStateOldPacket) {
   InsertPacket(kSamples * (counter_ - 1000));
   EXPECT_FALSE(GetAudioReturnMuted());
   EXPECT_EQ(AudioFrame::kNormalSpeech, out_frame_.speech_type_);
+}
+
+// Verifies that NetEq doesn't enter muted state when CNG mode is active and the
+// packet stream is suspended for a long time.
+TEST_F(NetEqDecodingTestWithMutedState, DoNotMuteExtendedCngWithoutPackets) {
+  // Insert one CNG packet.
+  InsertCngPacket(0);
+
+  // Pull 10 seconds of audio (10 ms audio generated per lap).
+  for (int i = 0; i < 1000; ++i) {
+    bool muted;
+    EXPECT_EQ(0, neteq_->GetAudio(&out_frame_, &muted));
+    ASSERT_FALSE(muted);
+  }
+  EXPECT_EQ(AudioFrame::kCNG, out_frame_.speech_type_);
+}
+
+// Verifies that NetEq goes back to normal after a long CNG period with the
+// packet stream suspended.
+TEST_F(NetEqDecodingTestWithMutedState, RecoverAfterExtendedCngWithoutPackets) {
+  // Insert one CNG packet.
+  InsertCngPacket(0);
+
+  // Pull 10 seconds of audio (10 ms audio generated per lap).
+  for (int i = 0; i < 1000; ++i) {
+    bool muted;
+    EXPECT_EQ(0, neteq_->GetAudio(&out_frame_, &muted));
+  }
+
+  // Insert new data. Timestamp is corrected for the time elapsed since the last
+  // packet. Verify that normal operation resumes.
+  InsertPacket(kSamples * counter_);
+  GetAudioUntilNormal();
 }
 
 class NetEqDecodingTestTwoInstances : public NetEqDecodingTest {
