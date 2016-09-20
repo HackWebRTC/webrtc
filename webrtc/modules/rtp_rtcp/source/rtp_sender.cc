@@ -828,35 +828,27 @@ bool RTPSender::PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
 void RTPSender::UpdateRtpStats(const RtpPacketToSend& packet,
                                bool is_rtx,
                                bool is_retransmit) {
-  StreamDataCounters* counters;
-  // Get ssrc before taking statistics_crit_ to avoid possible deadlock.
-  uint32_t ssrc = is_rtx ? RtxSsrc() : SSRC();
   int64_t now_ms = clock_->TimeInMilliseconds();
 
   rtc::CritScope lock(&statistics_crit_);
-  if (is_rtx) {
-    counters = &rtx_rtp_stats_;
-  } else {
-    counters = &rtp_stats_;
-  }
+  StreamDataCounters* counters = is_rtx ? &rtx_rtp_stats_ : &rtp_stats_;
 
   total_bitrate_sent_.Update(packet.size(), now_ms);
 
-  if (counters->first_packet_time_ms == -1) {
-    counters->first_packet_time_ms = clock_->TimeInMilliseconds();
-  }
-  if (IsFecPacket(packet)) {
+  if (counters->first_packet_time_ms == -1)
+    counters->first_packet_time_ms = now_ms;
+
+  if (IsFecPacket(packet))
     CountPacket(&counters->fec, packet);
-  }
+
   if (is_retransmit) {
     CountPacket(&counters->retransmitted, packet);
     nack_bitrate_sent_.Update(packet.size(), now_ms);
   }
   CountPacket(&counters->transmitted, packet);
 
-  if (rtp_stats_callback_) {
-    rtp_stats_callback_->DataCountersUpdated(*counters, ssrc);
-  }
+  if (rtp_stats_callback_)
+    rtp_stats_callback_->DataCountersUpdated(*counters, packet.Ssrc());
 }
 
 bool RTPSender::IsFecPacket(const RtpPacketToSend& packet) const {
