@@ -431,6 +431,27 @@ int NetEqImpl::last_output_sample_rate_hz() const {
   return last_output_sample_rate_hz_;
 }
 
+rtc::Optional<CodecInst> NetEqImpl::GetDecoder(int payload_type) const {
+  rtc::CritScope lock(&crit_sect_);
+  const DecoderDatabase::DecoderInfo* di =
+      decoder_database_->GetDecoderInfo(payload_type);
+  if (!di) {
+    return rtc::Optional<CodecInst>();
+  }
+
+  // Create a CodecInst with some fields set. The remaining fields are zeroed,
+  // but we tell MSan to consider them uninitialized.
+  CodecInst ci = {0};
+  rtc::MsanMarkUninitialized(rtc::MakeArrayView(&ci, 1));
+  ci.pltype = payload_type;
+  std::strncpy(ci.plname, di->name.c_str(), sizeof(ci.plname));
+  ci.plname[sizeof(ci.plname) - 1] = '\0';
+  ci.plfreq = di->IsRed() || di->IsDtmf() ? 8000 : di->SampleRateHz();
+  AudioDecoder* const decoder = di->GetDecoder();
+  ci.channels = decoder ? decoder->Channels() : 1;
+  return rtc::Optional<CodecInst>(ci);
+}
+
 int NetEqImpl::SetTargetNumberOfChannels() {
   return kNotImplemented;
 }
