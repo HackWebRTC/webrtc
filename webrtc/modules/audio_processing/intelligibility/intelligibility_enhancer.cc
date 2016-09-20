@@ -68,6 +68,7 @@ void MapToErbBands(const float* pow,
 
 IntelligibilityEnhancer::IntelligibilityEnhancer(int sample_rate_hz,
                                                  size_t num_render_channels,
+                                                 size_t num_bands,
                                                  size_t num_noise_bins)
     : freqs_(RealFourier::ComplexLength(
           RealFourier::FftOrder(sample_rate_hz * kWindowSizeMs / 1000))),
@@ -110,14 +111,24 @@ IntelligibilityEnhancer::IntelligibilityEnhancer(int sample_rate_hz,
   render_mangler_.reset(new LappedTransform(
       num_render_channels_, num_render_channels_, chunk_length_,
       kbd_window.data(), window_size, window_size / 2, this));
+
+  const size_t initial_delay = render_mangler_->initial_delay();
+  for (size_t i = 0u; i < num_bands - 1; ++i) {
+    high_bands_buffers_.push_back(std::unique_ptr<intelligibility::DelayBuffer>(
+        new intelligibility::DelayBuffer(initial_delay, num_render_channels_)));
+  }
 }
 
 IntelligibilityEnhancer::~IntelligibilityEnhancer() {
-  // Don't rely on this log, since the destructor isn't called when the app/tab
-  // is killed.
-  LOG(LS_INFO) << "Intelligibility Enhancer was active for "
-               << static_cast<float>(num_active_chunks_) / num_chunks_
-               << "% of the call.";
+  // Don't rely on this log, since the destructor isn't called when the
+  // app/tab is killed.
+  if (num_chunks_ > 0) {
+    LOG(LS_INFO) << "Intelligibility Enhancer was active for "
+                 << 100.f * static_cast<float>(num_active_chunks_) / num_chunks_
+                 << "% of the call.";
+  } else {
+    LOG(LS_INFO) << "Intelligibility Enhancer processed no chunk.";
+  }
 }
 
 void IntelligibilityEnhancer::SetCaptureNoiseEstimate(
@@ -132,16 +143,15 @@ void IntelligibilityEnhancer::SetCaptureNoiseEstimate(
   };
 }
 
-void IntelligibilityEnhancer::ProcessRenderAudio(float* const* audio,
-                                                 int sample_rate_hz,
-                                                 size_t num_channels) {
-  RTC_CHECK_EQ(sample_rate_hz_, sample_rate_hz);
-  RTC_CHECK_EQ(num_render_channels_, num_channels);
+void IntelligibilityEnhancer::ProcessRenderAudio(AudioBuffer* audio) {
+  RTC_DCHECK_EQ(num_render_channels_, audio->num_channels());
   while (noise_estimation_queue_.Remove(&noise_estimation_buffer_)) {
     noise_power_estimator_.Step(noise_estimation_buffer_.data());
   }
-  is_speech_ = IsSpeech(audio[0]);
-  render_mangler_->ProcessChunk(audio, audio);
+  float* const* low_band = audio->split_channels_f(kBand0To8kHz);
+  is_speech_ = IsSpeech(low_band[0]);
+  render_mangler_->ProcessChunk(low_band, low_band);
+  DelayHighBands(audio);
 }
 
 void IntelligibilityEnhancer::ProcessAudioBlock(
@@ -367,6 +377,14 @@ bool IntelligibilityEnhancer::IsSpeech(const float* audio) {
     ++chunks_since_voice_;
   }
   return chunks_since_voice_ < kSpeechOffsetDelay;
+}
+
+void IntelligibilityEnhancer::DelayHighBands(AudioBuffer* audio) {
+  RTC_DCHECK_EQ(audio->num_bands(), high_bands_buffers_.size() + 1u);
+  for (size_t i = 0u; i < high_bands_buffers_.size(); ++i) {
+    Band band = static_cast<Band>(i + 1);
+    high_bands_buffers_[i]->Delay(audio->split_channels_f(band), chunk_length_);
+  }
 }
 
 }  // namespace webrtc

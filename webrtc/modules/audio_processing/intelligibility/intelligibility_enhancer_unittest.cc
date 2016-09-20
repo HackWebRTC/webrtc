@@ -202,11 +202,12 @@ static_assert(arraysize(kTestCenterFreqs) ==
 const float kMaxTestError = 0.005f;
 
 // Enhancer initialization parameters.
-const int kSamples = 1000;
+const int kSamples = 10000;
 const int kSampleRate = 4000;
 const int kNumChannels = 1;
 const int kFragmentSize = kSampleRate / 100;
 const size_t kNumNoiseBins = 129;
+const size_t kNumBands = 1;
 
 // Number of frames to process in the bitexactness tests.
 const size_t kNumFramesToProcess = 1000;
@@ -228,10 +229,7 @@ void ProcessOneFrame(int sample_rate_hz,
     capture_audio_buffer->SplitIntoFrequencyBands();
   }
 
-  intelligibility_enhancer->ProcessRenderAudio(
-      render_audio_buffer->split_channels_f(kBand0To8kHz),
-      IntelligibilityEnhancerSampleRate(sample_rate_hz),
-      render_audio_buffer->num_channels());
+  intelligibility_enhancer->ProcessRenderAudio(render_audio_buffer);
 
   noise_suppressor->AnalyzeCaptureAudio(capture_audio_buffer);
   noise_suppressor->ProcessCaptureAudio(capture_audio_buffer);
@@ -276,7 +274,8 @@ void RunBitexactnessTest(int sample_rate_hz,
 
   IntelligibilityEnhancer intelligibility_enhancer(
       IntelligibilityEnhancerSampleRate(sample_rate_hz),
-      render_config.num_channels(), NoiseSuppressionImpl::num_noise_bins());
+      render_config.num_channels(), kNumBands,
+      NoiseSuppressionImpl::num_noise_bins());
 
   for (size_t frame_no = 0u; frame_no < kNumFramesToProcess; ++frame_no) {
     ReadFloatSamplesFromStereoFile(render_buffer.num_frames(),
@@ -320,24 +319,34 @@ float float_rand() {
 class IntelligibilityEnhancerTest : public ::testing::Test {
  protected:
   IntelligibilityEnhancerTest()
-      : clear_data_(kSamples), noise_data_(kSamples), orig_data_(kSamples) {
+      : clear_buffer_(kFragmentSize,
+                      kNumChannels,
+                      kFragmentSize,
+                      kNumChannels,
+                      kFragmentSize),
+        stream_config_(kSampleRate, kNumChannels),
+        clear_data_(kSamples),
+        noise_data_(kNumNoiseBins),
+        orig_data_(kSamples) {
     std::srand(1);
-    enh_.reset(
-        new IntelligibilityEnhancer(kSampleRate, kNumChannels, kNumNoiseBins));
+    enh_.reset(new IntelligibilityEnhancer(kSampleRate, kNumChannels, kNumBands,
+                                           kNumNoiseBins));
   }
 
   bool CheckUpdate() {
-    enh_.reset(
-        new IntelligibilityEnhancer(kSampleRate, kNumChannels, kNumNoiseBins));
+    enh_.reset(new IntelligibilityEnhancer(kSampleRate, kNumChannels, kNumBands,
+                                           kNumNoiseBins));
     float* clear_cursor = clear_data_.data();
-    float* noise_cursor = noise_data_.data();
     for (int i = 0; i < kSamples; i += kFragmentSize) {
-      enh_->ProcessRenderAudio(&clear_cursor, kSampleRate, kNumChannels);
+      enh_->SetCaptureNoiseEstimate(noise_data_, 1);
+      clear_buffer_.CopyFrom(&clear_cursor, stream_config_);
+      enh_->ProcessRenderAudio(&clear_buffer_);
+      clear_buffer_.CopyTo(stream_config_, &clear_cursor);
       clear_cursor += kFragmentSize;
-      noise_cursor += kFragmentSize;
     }
-    for (int i = 0; i < kSamples; i++) {
-      if (std::fabs(clear_data_[i] - orig_data_[i]) > kMaxTestError) {
+    for (int i = initial_delay_; i < kSamples; i++) {
+      if (std::fabs(clear_data_[i] - orig_data_[i - initial_delay_]) >
+          kMaxTestError) {
         return true;
       }
     }
@@ -345,22 +354,30 @@ class IntelligibilityEnhancerTest : public ::testing::Test {
   }
 
   std::unique_ptr<IntelligibilityEnhancer> enh_;
+  // Render clean speech buffer.
+  AudioBuffer clear_buffer_;
+  StreamConfig stream_config_;
   std::vector<float> clear_data_;
   std::vector<float> noise_data_;
   std::vector<float> orig_data_;
+  size_t initial_delay_;
 };
 
 // For each class of generated data, tests that render stream is updated when
 // it should be.
 TEST_F(IntelligibilityEnhancerTest, TestRenderUpdate) {
+  initial_delay_ = enh_->render_mangler_->initial_delay();
   std::fill(noise_data_.begin(), noise_data_.end(), 0.f);
   std::fill(orig_data_.begin(), orig_data_.end(), 0.f);
   std::fill(clear_data_.begin(), clear_data_.end(), 0.f);
   EXPECT_FALSE(CheckUpdate());
-  std::generate(noise_data_.begin(), noise_data_.end(), float_rand);
+  std::generate(clear_data_.begin(), clear_data_.end(), float_rand);
+  orig_data_ = clear_data_;
   EXPECT_FALSE(CheckUpdate());
   std::generate(clear_data_.begin(), clear_data_.end(), float_rand);
   orig_data_ = clear_data_;
+  std::generate(noise_data_.begin(), noise_data_.end(), float_rand);
+  FloatToFloatS16(noise_data_.data(), noise_data_.size(), noise_data_.data());
   EXPECT_TRUE(CheckUpdate());
 }
 
@@ -418,13 +435,49 @@ TEST_F(IntelligibilityEnhancerTest, TestNoiseGainHasExpectedResult) {
   float* clear_cursor = clear_data_.data();
   for (size_t i = 0; i < kNumFramesToProcess; ++i) {
     enh_->SetCaptureNoiseEstimate(noise, kGain);
-    enh_->ProcessRenderAudio(&clear_cursor, kSampleRate, kNumChannels);
+    clear_buffer_.CopyFrom(&clear_cursor, stream_config_);
+    enh_->ProcessRenderAudio(&clear_buffer_);
   }
   const std::vector<float>& estimated_psd =
       enh_->noise_power_estimator_.power();
   for (size_t i = 0; i < kNumNoiseBins; ++i) {
     EXPECT_LT(std::abs(estimated_psd[i] - noise_psd[i]) / noise_psd[i],
               kTolerance);
+  }
+}
+
+TEST_F(IntelligibilityEnhancerTest, TestAllBandsHaveSameDelay) {
+  const int kTestSampleRate = AudioProcessing::kSampleRate32kHz;
+  const int kTestSplitRate = AudioProcessing::kSampleRate16kHz;
+  const size_t kTestNumBands =
+      rtc::CheckedDivExact(kTestSampleRate, kTestSplitRate);
+  const size_t kTestFragmentSize = rtc::CheckedDivExact(kTestSampleRate, 100);
+  const size_t kTestSplitFragmentSize =
+      rtc::CheckedDivExact(kTestSplitRate, 100);
+  enh_.reset(new IntelligibilityEnhancer(kTestSplitRate, kNumChannels,
+                                         kTestNumBands, kNumNoiseBins));
+  size_t initial_delay = enh_->render_mangler_->initial_delay();
+  std::vector<float> rand_gen_buf(kTestFragmentSize);
+  AudioBuffer original_buffer(kTestFragmentSize, kNumChannels,
+                              kTestFragmentSize, kNumChannels,
+                              kTestFragmentSize);
+  AudioBuffer audio_buffer(kTestFragmentSize, kNumChannels, kTestFragmentSize,
+                           kNumChannels, kTestFragmentSize);
+  for (size_t i = 0u; i < kTestNumBands; ++i) {
+    std::generate(rand_gen_buf.begin(), rand_gen_buf.end(), float_rand);
+    original_buffer.split_data_f()->SetDataForTesting(rand_gen_buf.data(),
+                                                      rand_gen_buf.size());
+    audio_buffer.split_data_f()->SetDataForTesting(rand_gen_buf.data(),
+                                                   rand_gen_buf.size());
+  }
+  enh_->ProcessRenderAudio(&audio_buffer);
+  for (size_t i = 0u; i < kTestNumBands; ++i) {
+    const float* original_ptr = original_buffer.split_bands_const_f(0)[i];
+    const float* audio_ptr = audio_buffer.split_bands_const_f(0)[i];
+    for (size_t j = initial_delay; j < kTestSplitFragmentSize; ++j) {
+      EXPECT_LT(std::fabs(original_ptr[j - initial_delay] - audio_ptr[j]),
+                kMaxTestError);
+    }
   }
 }
 

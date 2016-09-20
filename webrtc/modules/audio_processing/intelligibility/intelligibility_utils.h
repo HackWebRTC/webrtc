@@ -65,6 +65,20 @@ class GainApplier {
   std::vector<float> current_;
 };
 
+// Helper class to delay a signal by an integer number of samples.
+class DelayBuffer {
+ public:
+  DelayBuffer(size_t delay, size_t num_channels);
+
+  ~DelayBuffer();
+
+  void Delay(float* const* data, size_t length);
+
+ private:
+  std::vector<std::vector<float>> buffer_;
+  size_t read_index_;
+};
+
 }  // namespace intelligibility
 
 }  // namespace webrtc

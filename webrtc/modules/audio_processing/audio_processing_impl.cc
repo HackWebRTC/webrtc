@@ -1118,8 +1118,7 @@ int AudioProcessingImpl::ProcessRenderStreamLocked() {
 #if WEBRTC_INTELLIGIBILITY_ENHANCER
   if (capture_nonlocked_.intelligibility_enabled) {
     public_submodules_->intelligibility_enhancer->ProcessRenderAudio(
-        render_buffer->split_channels_f(kBand0To8kHz),
-        capture_nonlocked_.split_rate, render_buffer->num_channels());
+        render_buffer);
   }
 #endif
 
@@ -1342,6 +1341,7 @@ void AudioProcessingImpl::InitializeIntelligibility() {
     public_submodules_->intelligibility_enhancer.reset(
         new IntelligibilityEnhancer(capture_nonlocked_.split_rate,
                                     render_.render_audio->num_channels(),
+                                    render_.render_audio->num_bands(),
                                     NoiseSuppressionImpl::num_noise_bins()));
   }
 #endif
