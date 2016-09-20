@@ -186,7 +186,7 @@ class AcmReceiver {
   //
   // Remove all registered codecs.
   //
-  int RemoveAllCodecs();
+  void RemoveAllCodecs();
 
   // Returns the RTP timestamp for the last sample delivered by GetAudio().
   // The return value will be empty if no valid timestamp is available.

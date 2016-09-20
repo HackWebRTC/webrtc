@@ -230,6 +230,12 @@ TEST_F(NetEqImplTest, RemovePayloadType) {
   EXPECT_EQ(NetEq::kFail, neteq_->RemovePayloadType(rtp_payload_type));
 }
 
+TEST_F(NetEqImplTest, RemoveAllPayloadTypes) {
+  CreateInstance();
+  EXPECT_CALL(*mock_decoder_database_, RemoveAll()).WillOnce(Return());
+  neteq_->RemoveAllPayloadTypes();
+}
+
 TEST_F(NetEqImplTest, InsertPacket) {
   CreateInstance();
   const size_t kPayloadLength = 100;

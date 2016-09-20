@@ -136,6 +136,9 @@ class DecoderDatabase {
   // Returns kDecoderNotFound or kOK depending on the outcome of the operation.
   virtual int Remove(uint8_t rtp_payload_type);
 
+  // Remove all entries.
+  virtual void RemoveAll();
+
   // Returns a pointer to the DecoderInfo struct for |rtp_payload_type|. If
   // no decoder is registered with that |rtp_payload_type|, NULL is returned.
   virtual const DecoderInfo* GetDecoderInfo(uint8_t rtp_payload_type) const;

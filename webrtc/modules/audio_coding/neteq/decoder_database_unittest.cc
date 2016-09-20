@@ -47,6 +47,21 @@ TEST(DecoderDatabase, InsertAndRemove) {
   EXPECT_TRUE(db.Empty());
 }
 
+TEST(DecoderDatabase, InsertAndRemoveAll) {
+  DecoderDatabase db(new rtc::RefCountedObject<MockAudioDecoderFactory>);
+  const std::string kCodecName1 = "Robert\'); DROP TABLE Students;";
+  const std::string kCodecName2 = "https://xkcd.com/327/";
+  EXPECT_EQ(DecoderDatabase::kOK,
+            db.RegisterPayload(0, NetEqDecoder::kDecoderPCMu, kCodecName1));
+  EXPECT_EQ(DecoderDatabase::kOK,
+            db.RegisterPayload(1, NetEqDecoder::kDecoderPCMa, kCodecName2));
+  EXPECT_EQ(2, db.Size());
+  EXPECT_FALSE(db.Empty());
+  db.RemoveAll();
+  EXPECT_EQ(0, db.Size());
+  EXPECT_TRUE(db.Empty());
+}
+
 TEST(DecoderDatabase, GetDecoderInfo) {
   rtc::scoped_refptr<MockAudioDecoderFactory> factory(
       new rtc::RefCountedObject<MockAudioDecoderFactory>);

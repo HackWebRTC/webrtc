@@ -42,6 +42,7 @@ class MockDecoderDatabase : public DecoderDatabase {
                    AudioDecoder* decoder));
   MOCK_METHOD1(Remove,
       int(uint8_t rtp_payload_type));
+  MOCK_METHOD0(RemoveAll, void());
   MOCK_CONST_METHOD1(GetDecoderInfo,
       const DecoderInfo*(uint8_t rtp_payload_type));
   MOCK_CONST_METHOD1(GetRtpPayloadType,
