@@ -398,25 +398,25 @@ void AudioDeviceBuffer::LogStats() {
   // Log the latest statistics but skip the first 10 seconds since we are not
   // sure of the exact starting point. I.e., the first log printout will be
   // after ~20 seconds.
-  if (++num_stat_reports_ > 1) {
+  if (++num_stat_reports_ > 1 && time_since_last > 0) {
     uint32_t diff_samples = rec_samples_ - last_rec_samples_;
-    uint32_t rate = diff_samples / kTimerIntervalInSeconds;
+    float rate = diff_samples / (static_cast<float>(time_since_last) / 1000.0);
     LOG(INFO) << "[REC : " << time_since_last << "msec, "
               << rec_sample_rate_ / 1000
               << "kHz] callbacks: " << rec_callbacks_ - last_rec_callbacks_
               << ", "
               << "samples: " << diff_samples << ", "
-              << "rate: " << rate << ", "
+              << "rate: " << static_cast<int>(rate + 0.5) << ", "
               << "level: " << max_rec_level_;
 
     diff_samples = play_samples_ - last_play_samples_;
-    rate = diff_samples / kTimerIntervalInSeconds;
+    rate = diff_samples / (static_cast<float>(time_since_last) / 1000.0);
     LOG(INFO) << "[PLAY: " << time_since_last << "msec, "
               << play_sample_rate_ / 1000
               << "kHz] callbacks: " << play_callbacks_ - last_play_callbacks_
               << ", "
               << "samples: " << diff_samples << ", "
-              << "rate: " << rate << ", "
+              << "rate: " << static_cast<int>(rate + 0.5) << ", "
               << "level: " << max_play_level_;
   }
 
