@@ -48,9 +48,6 @@ class RTCPPacketInformation {
   RTCPPacketInformation();
   ~RTCPPacketInformation();
 
-  void AddNACKPacket(const uint16_t packetID);
-  void ResetNACKPacketIdArray();
-
   void AddReportInfo(const RTCPReportBlockInformation& report_block_info);
 
   uint32_t rtcpPacketTypeFlags;  // RTCPPacketTypeFlags bit field

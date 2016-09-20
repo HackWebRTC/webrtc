@@ -50,9 +50,8 @@ class Tmmbr : public Rtpfb {
            TmmbItem::kLength * items_.size();
   }
 
-  // Media ssrc is unused, shadow base class setter and getter.
+  // Media ssrc is unused, shadow base class setter.
   void To(uint32_t ssrc);
-  uint32_t media_ssrc() const;
 
   std::vector<TmmbItem> items_;
 

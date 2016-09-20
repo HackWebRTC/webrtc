@@ -35,17 +35,6 @@ RTCPPacketInformation::RTCPPacketInformation()
 
 RTCPPacketInformation::~RTCPPacketInformation() {}
 
-void RTCPPacketInformation::ResetNACKPacketIdArray() {
-  nackSequenceNumbers.clear();
-}
-
-void RTCPPacketInformation::AddNACKPacket(const uint16_t packetID) {
-  if (nackSequenceNumbers.size() >= kSendSideNackListSizeSanity) {
-    return;
-  }
-  nackSequenceNumbers.push_back(packetID);
-}
-
 void RTCPPacketInformation::AddReportInfo(
     const RTCPReportBlockInformation& report_block_info) {
   this->rtt = report_block_info.RTT;
