@@ -50,7 +50,7 @@ uint32_t TimestampScaler::ToInternal(uint32_t external_timestamp,
       // support timestamp scaling of them.
       denominator_ = numerator_;
     } else {
-      denominator_ = info->GetFormat().clockrate_hz;
+      denominator_ = info->GetFormat()->clockrate_hz;
     }
   }
   if (numerator_ != denominator_) {

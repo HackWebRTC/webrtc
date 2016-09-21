@@ -457,6 +457,18 @@ rtc::Optional<CodecInst> NetEqImpl::GetDecoder(int payload_type) const {
   return rtc::Optional<CodecInst>(ci);
 }
 
+const SdpAudioFormat* NetEqImpl::GetDecoderFormat(int payload_type) const {
+  rtc::CritScope lock(&crit_sect_);
+  const DecoderDatabase::DecoderInfo* const di =
+      decoder_database_->GetDecoderInfo(payload_type);
+  if (!di) {
+    return nullptr;  // Payload type not registered.
+  }
+  // This will return null if the payload type was registered without an
+  // SdpAudioFormat.
+  return di->GetFormat();
+}
+
 int NetEqImpl::SetTargetNumberOfChannels() {
   return kNotImplemented;
 }

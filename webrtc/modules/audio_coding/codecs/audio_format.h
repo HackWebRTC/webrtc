@@ -35,6 +35,11 @@ struct SdpAudioFormat {
   SdpAudioFormat& operator=(const SdpAudioFormat&);
   SdpAudioFormat& operator=(SdpAudioFormat&&);
 
+  friend bool operator==(const SdpAudioFormat& a, const SdpAudioFormat& b);
+  friend bool operator!=(const SdpAudioFormat& a, const SdpAudioFormat& b) {
+    return !(a == b);
+  }
+
   std::string name;
   int clockrate_hz;
   int num_channels;

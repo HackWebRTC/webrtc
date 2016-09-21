@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/audio_coding/codecs/audio_format.h"
 
+#include "webrtc/common_types.h"
+
 namespace webrtc {
 
 SdpAudioFormat::SdpAudioFormat(const SdpAudioFormat&) = default;
@@ -32,6 +34,12 @@ SdpAudioFormat::SdpAudioFormat(const char* name,
 SdpAudioFormat::~SdpAudioFormat() = default;
 SdpAudioFormat& SdpAudioFormat::operator=(const SdpAudioFormat&) = default;
 SdpAudioFormat& SdpAudioFormat::operator=(SdpAudioFormat&&) = default;
+
+bool operator==(const SdpAudioFormat& a, const SdpAudioFormat& b) {
+  return STR_CASE_CMP(a.name.c_str(), b.name.c_str()) == 0 &&
+         a.clockrate_hz == b.clockrate_hz && a.num_channels == b.num_channels &&
+         a.parameters == b.parameters;
+}
 
 void swap(SdpAudioFormat& a, SdpAudioFormat& b) {
   using std::swap;

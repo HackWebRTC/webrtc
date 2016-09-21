@@ -259,6 +259,11 @@ class NetEq {
   // value if we have no decoder for that payload type.
   virtual rtc::Optional<CodecInst> GetDecoder(int payload_type) const = 0;
 
+  // Returns the decoder format for the given payload type. Returns null if no
+  // such payload type was registered, or if it was registered without
+  // providing an SdpAudioFormat.
+  virtual const SdpAudioFormat* GetDecoderFormat(int payload_type) const = 0;
+
   // Not implemented.
   virtual int SetTargetNumberOfChannels() = 0;
 

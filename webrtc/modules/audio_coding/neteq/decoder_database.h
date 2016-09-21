@@ -64,9 +64,8 @@ class DecoderDatabase {
       return decoder ? decoder->SampleRateHz() : cng_decoder_->sample_rate_hz;
     }
 
-    const SdpAudioFormat& GetFormat() const {
-      RTC_DCHECK(audio_format_);
-      return *audio_format_;
+    const SdpAudioFormat* GetFormat() const {
+      return audio_format_ ? &*audio_format_ : nullptr;
     }
 
     // Returns true if |codec_type| is comfort noise.
