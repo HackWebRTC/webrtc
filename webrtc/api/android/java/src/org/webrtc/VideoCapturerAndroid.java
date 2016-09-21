@@ -391,8 +391,11 @@ public class VideoCapturerAndroid implements
     final CaptureFormat.FramerateRange fpsRange =
         CameraEnumerationAndroid.getClosestSupportedFramerateRange(supportedFramerates, framerate);
 
-    final Size previewSize = CameraEnumerationAndroid.getClosestSupportedSize(
-        Camera1Enumerator.convertSizes(parameters.getSupportedPreviewSizes()), width, height);
+    final List<Size> supportedPreviewSizes =
+        Camera1Enumerator.convertSizes(parameters.getSupportedPreviewSizes());
+    final Size previewSize =
+        CameraEnumerationAndroid.getClosestSupportedSize(supportedPreviewSizes, width, height);
+    Logging.d(TAG, "Available preview sizes: " + supportedPreviewSizes);
 
     final CaptureFormat captureFormat =
         new CaptureFormat(previewSize.width, previewSize.height, fpsRange);
@@ -432,14 +435,15 @@ public class VideoCapturerAndroid implements
       camera.setPreviewCallbackWithBuffer(null);
     }
 
+    List<String> focusModes = parameters.getSupportedFocusModes();
+    if (focusModes.contains(android.hardware.Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
+      Logging.d(TAG, "Enable continuous auto focus mode.");
+      parameters.setFocusMode(android.hardware.Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+    }
+
     // (Re)start preview.
     Logging.d(TAG, "Start capturing: " + captureFormat);
     this.captureFormat = captureFormat;
-
-    List<String> focusModes = parameters.getSupportedFocusModes();
-    if (focusModes.contains(android.hardware.Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
-      parameters.setFocusMode(android.hardware.Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
-    }
 
     camera.setParameters(parameters);
     // Calculate orientation manually and send it as CVO instead.
