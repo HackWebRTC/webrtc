@@ -47,15 +47,6 @@ void DeepCopyEveryNthPacket(const ForwardErrorCorrection::PacketList& src,
 
 using ::testing::Types;
 
-// Subclass ForwardErrorCorrection to use gTest typed tests.
-class UlpfecForwardErrorCorrection : public ForwardErrorCorrection {
- public:
-  UlpfecForwardErrorCorrection()
-      : ForwardErrorCorrection(
-            std::unique_ptr<FecHeaderReader>(new UlpfecHeaderReader()),
-            std::unique_ptr<FecHeaderWriter>(new UlpfecHeaderWriter())) {}
-};
-
 template <typename ForwardErrorCorrectionType>
 class RtpFecTest : public ::testing::Test {
  protected:
@@ -100,10 +91,98 @@ class RtpFecTest : public ::testing::Test {
   int fec_loss_mask_[kUlpfecMaxMediaPackets];
 };
 
+template <typename ForwardErrorCorrectionType>
+void RtpFecTest<ForwardErrorCorrectionType>::NetworkReceivedPackets(
+    int* media_loss_mask,
+    int* fec_loss_mask) {
+  constexpr bool kFecPacket = true;
+  ReceivedPackets(media_packets_, media_loss_mask, !kFecPacket);
+  ReceivedPackets(generated_fec_packets_, fec_loss_mask, kFecPacket);
+}
+
+template <typename ForwardErrorCorrectionType>
+template <typename PacketListType>
+void RtpFecTest<ForwardErrorCorrectionType>::ReceivedPackets(
+    const PacketListType& packet_list,
+    int* loss_mask,
+    bool is_fec) {
+  uint16_t fec_seq_num = media_packet_generator_.GetFecSeqNum();
+  int packet_idx = 0;
+
+  for (const auto& packet : packet_list) {
+    if (loss_mask[packet_idx] == 0) {
+      std::unique_ptr<ForwardErrorCorrection::ReceivedPacket> received_packet(
+          new ForwardErrorCorrection::ReceivedPacket());
+      received_packet->pkt = new ForwardErrorCorrection::Packet();
+      received_packet->pkt->length = packet->length;
+      memcpy(received_packet->pkt->data, packet->data, packet->length);
+      received_packet->is_fec = is_fec;
+      if (!is_fec) {
+        // For media packets, the sequence number and marker bit is
+        // obtained from RTP header. These were set in ConstructMediaPackets().
+        received_packet->seq_num =
+            ByteReader<uint16_t>::ReadBigEndian(&packet->data[2]);
+      } else {
+        // The sequence number, marker bit, and ssrc number are defined in the
+        // RTP header of the FEC packet, which is not constructed in this test.
+        // So we set these values below based on the values generated in
+        // ConstructMediaPackets().
+        received_packet->seq_num = fec_seq_num;
+        // The ssrc value for FEC packets is set to the one used for the
+        // media packets in ConstructMediaPackets().
+        received_packet->ssrc = kMediaSsrc;
+      }
+      received_packets_.push_back(std::move(received_packet));
+    }
+    packet_idx++;
+    // Sequence number of FEC packets are defined as increment by 1 from
+    // last media packet in frame.
+    if (is_fec)
+      fec_seq_num++;
+  }
+}
+
+template <typename ForwardErrorCorrectionType>
+bool RtpFecTest<ForwardErrorCorrectionType>::IsRecoveryComplete() {
+  // We must have equally many recovered packets as original packets.
+  if (recovered_packets_.size() != media_packets_.size()) {
+    return false;
+  }
+
+  // All recovered packets must be identical to the corresponding
+  // original packets.
+  using PacketPtr = std::unique_ptr<ForwardErrorCorrection::Packet>;
+  using RecoveredPacketPtr =
+    std::unique_ptr<ForwardErrorCorrection::RecoveredPacket>;
+  auto cmp = [](const PacketPtr& media_packet,
+                const RecoveredPacketPtr& recovered_packet) {
+    if (media_packet->length != recovered_packet->pkt->length) {
+      return false;
+    }
+    if (memcmp(media_packet->data,
+               recovered_packet->pkt->data,
+               media_packet->length) != 0) {
+      return false;
+    }
+    return true;
+  };
+  return std::equal(media_packets_.cbegin(), media_packets_.cend(),
+                    recovered_packets_.cbegin(), cmp);
+}
+
 // Define gTest typed test to loop over both ULPFEC and FlexFEC.
 // Since the tests now are parameterized, we need to access
 // member variables using |this|, thereby enforcing runtime
 // resolution.
+
+class UlpfecForwardErrorCorrection : public ForwardErrorCorrection {
+ public:
+  UlpfecForwardErrorCorrection()
+      : ForwardErrorCorrection(
+            std::unique_ptr<FecHeaderReader>(new UlpfecHeaderReader()),
+            std::unique_ptr<FecHeaderWriter>(new UlpfecHeaderWriter())) {}
+};
+
 using FecTypes = Types<UlpfecForwardErrorCorrection>;
 TYPED_TEST_CASE(RtpFecTest, FecTypes);
 
@@ -868,85 +947,6 @@ TYPED_TEST(RtpFecTest, FecRecoveryNonConsecutivePacketsWrap) {
 
   // 5 protected packets lost, one FEC packet, cannot get complete recovery.
   EXPECT_FALSE(this->IsRecoveryComplete());
-}
-
-template <typename ForwardErrorCorrectionType>
-bool RtpFecTest<ForwardErrorCorrectionType>::IsRecoveryComplete() {
-  // We must have equally many recovered packets as original packets.
-  if (recovered_packets_.size() != media_packets_.size()) {
-    return false;
-  }
-
-  // All recovered packets must be identical to the corresponding
-  // original packets.
-  using PacketPtr = std::unique_ptr<ForwardErrorCorrection::Packet>;
-  using RecoveredPacketPtr =
-    std::unique_ptr<ForwardErrorCorrection::RecoveredPacket>;
-  auto cmp = [](const PacketPtr& media_packet,
-                const RecoveredPacketPtr& recovered_packet) {
-    if (media_packet->length != recovered_packet->pkt->length) {
-      return false;
-    }
-    if (memcmp(media_packet->data,
-               recovered_packet->pkt->data,
-               media_packet->length) != 0) {
-      return false;
-    }
-    return true;
-  };
-  return std::equal(media_packets_.cbegin(), media_packets_.cend(),
-                    recovered_packets_.cbegin(), cmp);
-}
-
-template <typename ForwardErrorCorrectionType>
-void RtpFecTest<ForwardErrorCorrectionType>::NetworkReceivedPackets(
-    int* media_loss_mask,
-    int* fec_loss_mask) {
-  constexpr bool kFecPacket = true;
-  ReceivedPackets(media_packets_, media_loss_mask, !kFecPacket);
-  ReceivedPackets(generated_fec_packets_, fec_loss_mask, kFecPacket);
-}
-
-template <typename ForwardErrorCorrectionType>
-template <typename PacketListType>
-void RtpFecTest<ForwardErrorCorrectionType>::ReceivedPackets(
-    const PacketListType& packet_list,
-    int* loss_mask,
-    bool is_fec) {
-  uint16_t fec_seq_num = media_packet_generator_.GetFecSeqNum();
-  int packet_idx = 0;
-
-  for (const auto& packet : packet_list) {
-    if (loss_mask[packet_idx] == 0) {
-      std::unique_ptr<ForwardErrorCorrection::ReceivedPacket> received_packet(
-          new ForwardErrorCorrection::ReceivedPacket());
-      received_packet->pkt = new ForwardErrorCorrection::Packet();
-      received_packet->pkt->length = packet->length;
-      memcpy(received_packet->pkt->data, packet->data, packet->length);
-      received_packet->is_fec = is_fec;
-      if (!is_fec) {
-        // For media packets, the sequence number and marker bit is
-        // obtained from RTP header. These were set in ConstructMediaPackets().
-        received_packet->seq_num =
-            ByteReader<uint16_t>::ReadBigEndian(&packet->data[2]);
-      } else {
-        // The sequence number, marker bit, and ssrc number are defined in the
-        // RTP header of the FEC packet, which is not constructed in this test.
-        // So we set these values below based on the values generated in
-        // ConstructMediaPackets().
-        received_packet->seq_num = fec_seq_num;
-        // The ssrc value for FEC packets is set to the one used for the
-        // media packets in ConstructMediaPackets().
-        received_packet->ssrc = kMediaSsrc;
-      }
-      received_packets_.push_back(std::move(received_packet));
-    }
-    packet_idx++;
-    // Sequence number of FEC packets are defined as increment by 1 from
-    // last media packet in frame.
-    if (is_fec)
-      fec_seq_num++;
-  }
 }
 
 }  // namespace webrtc
