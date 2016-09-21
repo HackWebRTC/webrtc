@@ -14,8 +14,6 @@
         'audio_network_adaptor.cc',
         'audio_network_adaptor_impl.cc',
         'audio_network_adaptor_impl.h',
-        'bitrate_controller.h',
-        'bitrate_controller.cc',
         'channel_controller.cc',
         'channel_controller.h',
         'controller.h',

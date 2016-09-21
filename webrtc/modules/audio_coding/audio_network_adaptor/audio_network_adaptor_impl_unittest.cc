@@ -28,7 +28,6 @@ constexpr size_t kNumControllers = 2;
 
 MATCHER_P(NetworkMetricsIs, metric, "") {
   return arg.uplink_bandwidth_bps == metric.uplink_bandwidth_bps &&
-         arg.target_audio_bitrate_bps == metric.target_audio_bitrate_bps &&
          arg.uplink_packet_loss_fraction == metric.uplink_packet_loss_fraction;
 }
 
