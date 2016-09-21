@@ -137,8 +137,6 @@ private:
     VideoRotation _rotateFrame;  // Set if the frame should be rotated by the
                                  // capture module.
 
-    VideoFrame _captureFrame;
-
     // Indicate whether rotation should be applied before delivered externally.
     bool apply_rotation_;
 };

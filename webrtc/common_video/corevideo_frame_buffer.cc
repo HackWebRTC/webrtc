@@ -35,7 +35,7 @@ CoreVideoFrameBuffer::NativeToI420Buffer() {
   size_t width = CVPixelBufferGetWidthOfPlane(pixel_buffer_, 0);
   size_t height = CVPixelBufferGetHeightOfPlane(pixel_buffer_, 0);
   // TODO(tkchin): Use a frame buffer pool.
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer =
+  rtc::scoped_refptr<webrtc::I420Buffer> buffer =
       new rtc::RefCountedObject<webrtc::I420Buffer>(width, height);
   CVPixelBufferLockBaseAddress(pixel_buffer_, kCVPixelBufferLock_ReadOnly);
   const uint8_t* src_y = static_cast<const uint8_t*>(

@@ -116,22 +116,18 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
   CountingFakeEncoder fake_encoder_;
   VideoEncoderSoftwareFallbackWrapper fallback_wrapper_;
   VideoCodec codec_ = {};
-  VideoFrame frame_;
+  std::unique_ptr<VideoFrame> frame_;
 };
 
 void VideoEncoderSoftwareFallbackWrapperTest::EncodeFrame() {
-  frame_.CreateEmptyFrame(kWidth, kHeight, kWidth, (kWidth + 1) / 2,
-                          (kWidth + 1) / 2);
-  memset(frame_.video_frame_buffer()->MutableDataY(), 16,
-         frame_.allocated_size(webrtc::kYPlane));
-  memset(frame_.video_frame_buffer()->MutableDataU(), 128,
-         frame_.allocated_size(webrtc::kUPlane));
-  memset(frame_.video_frame_buffer()->MutableDataV(), 128,
-         frame_.allocated_size(webrtc::kVPlane));
-
+  rtc::scoped_refptr<I420Buffer> buffer = I420Buffer::Create(
+      kWidth, kHeight, kWidth, (kWidth + 1) / 2, (kWidth + 1) / 2);
+  buffer->SetToBlack();
   std::vector<FrameType> types(1, kVideoFrameKey);
+
+  frame_.reset(new VideoFrame(buffer, 0, 0, webrtc::kVideoRotation_0));
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            fallback_wrapper_.Encode(frame_, nullptr, &types));
+            fallback_wrapper_.Encode(*frame_, nullptr, &types));
 }
 
 void VideoEncoderSoftwareFallbackWrapperTest::UtilizeFallbackEncoder() {
@@ -225,9 +221,9 @@ TEST_F(VideoEncoderSoftwareFallbackWrapperTest,
 
   // Encoding a frame using the fallback should arrive at the new callback.
   std::vector<FrameType> types(1, kVideoFrameKey);
-  frame_.set_timestamp(frame_.timestamp() + 1000);
+  frame_->set_timestamp(frame_->timestamp() + 1000);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            fallback_wrapper_.Encode(frame_, nullptr, &types));
+            fallback_wrapper_.Encode(*frame_, nullptr, &types));
 
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, fallback_wrapper_.Release());
 }

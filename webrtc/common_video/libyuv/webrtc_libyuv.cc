@@ -103,31 +103,33 @@ static int PrintPlane(const uint8_t* buf,
 }
 
 // TODO(nisse): Belongs with the test code?
-int PrintVideoFrame(const VideoFrame& frame, FILE* file) {
-  if (file == NULL)
-    return -1;
-  if (frame.IsZeroSize())
-    return -1;
-  int width = frame.video_frame_buffer()->width();
-  int height = frame.video_frame_buffer()->height();
+int PrintVideoFrame(const VideoFrameBuffer& frame, FILE* file) {
+  int width = frame.width();
+  int height = frame.height();
   int chroma_width = (width + 1) / 2;
   int chroma_height = (height + 1) / 2;
 
-  if (PrintPlane(frame.video_frame_buffer()->DataY(), width, height,
-                 frame.video_frame_buffer()->StrideY(), file) < 0) {
+  if (PrintPlane(frame.DataY(), width, height,
+                 frame.StrideY(), file) < 0) {
     return -1;
   }
-  if (PrintPlane(frame.video_frame_buffer()->DataU(),
+  if (PrintPlane(frame.DataU(),
                  chroma_width, chroma_height,
-                 frame.video_frame_buffer()->StrideU(), file) < 0) {
+                 frame.StrideU(), file) < 0) {
     return -1;
   }
-  if (PrintPlane(frame.video_frame_buffer()->DataV(),
+  if (PrintPlane(frame.DataV(),
                  chroma_width, chroma_height,
-                 frame.video_frame_buffer()->StrideV(), file) < 0) {
+                 frame.StrideV(), file) < 0) {
     return -1;
   }
   return 0;
+}
+
+int PrintVideoFrame(const VideoFrame& frame, FILE* file) {
+  if (frame.IsZeroSize())
+    return -1;
+  return PrintVideoFrame(*frame.video_frame_buffer(), file);
 }
 
 int ExtractBuffer(const rtc::scoped_refptr<VideoFrameBuffer>& input_frame,
@@ -249,23 +251,19 @@ int ConvertToI420(VideoType src_video_type,
                   int src_height,
                   size_t sample_size,
                   VideoRotation rotation,
-                  VideoFrame* dst_frame) {
-  int dst_width = dst_frame->width();
-  int dst_height = dst_frame->height();
+                  I420Buffer* dst_buffer) {
+  int dst_width = dst_buffer->width();
+  int dst_height = dst_buffer->height();
   // LibYuv expects pre-rotation values for dst.
   // Stride values should correspond to the destination values.
   if (rotation == kVideoRotation_90 || rotation == kVideoRotation_270) {
-    dst_width = dst_frame->height();
-    dst_height = dst_frame->width();
+    std::swap(dst_width, dst_height);
   }
   return libyuv::ConvertToI420(
       src_frame, sample_size,
-      dst_frame->video_frame_buffer()->MutableDataY(),
-      dst_frame->video_frame_buffer()->StrideY(),
-      dst_frame->video_frame_buffer()->MutableDataU(),
-      dst_frame->video_frame_buffer()->StrideU(),
-      dst_frame->video_frame_buffer()->MutableDataV(),
-      dst_frame->video_frame_buffer()->StrideV(),
+      dst_buffer->MutableDataY(), dst_buffer->StrideY(),
+      dst_buffer->MutableDataU(), dst_buffer->StrideU(),
+      dst_buffer->MutableDataV(), dst_buffer->StrideV(),
       crop_x, crop_y,
       src_width, src_height,
       dst_width, dst_height,

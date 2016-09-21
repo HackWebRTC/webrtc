@@ -52,7 +52,7 @@ TEST(TestI420BufferPool, FailToReuse) {
 }
 
 TEST(TestI420BufferPool, FrameValidAfterPoolDestruction) {
-  rtc::scoped_refptr<VideoFrameBuffer> buffer;
+  rtc::scoped_refptr<I420Buffer> buffer;
   {
     I420BufferPool pool;
     buffer = pool.CreateBuffer(16, 16);

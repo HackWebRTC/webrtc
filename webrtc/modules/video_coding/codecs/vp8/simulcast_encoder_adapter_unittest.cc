@@ -535,17 +535,11 @@ TEST_F(TestSimulcastEncoderAdapterFake, TestFailureReturnCodesFromEncodeCalls) {
       .WillOnce(Return(WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE));
 
   // Send a fake frame and assert the return is software fallback.
-  VideoFrame input_frame;
   int half_width = (kDefaultWidth + 1) / 2;
-  input_frame.CreateEmptyFrame(kDefaultWidth, kDefaultHeight, kDefaultWidth,
-                                half_width, half_width);
-  memset(input_frame.video_frame_buffer()->MutableDataY(), 0,
-         input_frame.allocated_size(kYPlane));
-  memset(input_frame.video_frame_buffer()->MutableDataU(), 0,
-         input_frame.allocated_size(kUPlane));
-  memset(input_frame.video_frame_buffer()->MutableDataV(), 0,
-         input_frame.allocated_size(kVPlane));
-
+  rtc::scoped_refptr<I420Buffer> input_buffer = I420Buffer::Create(
+      kDefaultWidth, kDefaultHeight, kDefaultWidth, half_width, half_width);
+  input_buffer->InitializeData();
+  VideoFrame input_frame(input_buffer, 0, 0, webrtc::kVideoRotation_0);
   std::vector<FrameType> frame_types(3, kVideoFrameKey);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE,
             adapter_->Encode(input_frame, nullptr, &frame_types));

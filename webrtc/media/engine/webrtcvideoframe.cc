@@ -121,7 +121,9 @@ bool WebRtcVideoFrame::Reset(uint32_t format,
     new_height = dw;
   }
 
-  InitToEmptyBuffer(new_width, new_height);
+  rtc::scoped_refptr<webrtc::I420Buffer> buffer =
+      webrtc::I420Buffer::Create(new_width, new_height);
+  video_frame_buffer_ = buffer;
   rotation_ = apply_rotation ? webrtc::kVideoRotation_0 : rotation;
 
   int horiz_crop = ((w - dw) / 2) & ~1;
@@ -132,15 +134,10 @@ bool WebRtcVideoFrame::Reset(uint32_t format,
   int idh = (h < 0) ? -dh : dh;
   int r = libyuv::ConvertToI420(
       sample, sample_size,
-      video_frame_buffer_->MutableDataY(),
-      video_frame_buffer_->StrideY(),
-      video_frame_buffer_->MutableDataU(),
-      video_frame_buffer_->StrideU(),
-      video_frame_buffer_->MutableDataV(),
-      video_frame_buffer_->StrideV(),
-      horiz_crop, vert_crop,
-      w, h,
-      dw, idh,
+      buffer->MutableDataY(), buffer->StrideY(),
+      buffer->MutableDataU(), buffer->StrideU(),
+      buffer->MutableDataV(), buffer->StrideV(),
+      horiz_crop, vert_crop, w, h, dw, idh,
       static_cast<libyuv::RotationMode>(
           apply_rotation ? rotation : webrtc::kVideoRotation_0),
       format);
@@ -154,7 +151,7 @@ bool WebRtcVideoFrame::Reset(uint32_t format,
 }
 
 void WebRtcVideoFrame::InitToEmptyBuffer(int w, int h) {
-  video_frame_buffer_ = new rtc::RefCountedObject<webrtc::I420Buffer>(w, h);
+  video_frame_buffer_ = webrtc::I420Buffer::Create(w, h);
   rotation_ = webrtc::kVideoRotation_0;
 }
 
