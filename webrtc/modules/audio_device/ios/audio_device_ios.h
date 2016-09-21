@@ -54,10 +54,10 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   bool Initialized() const override { return initialized_; }
 
   int32_t InitPlayout() override;
-  bool PlayoutIsInitialized() const override { return play_is_initialized_; }
+  bool PlayoutIsInitialized() const override { return audio_is_initialized_; }
 
   int32_t InitRecording() override;
-  bool RecordingIsInitialized() const override { return rec_is_initialized_; }
+  bool RecordingIsInitialized() const override { return audio_is_initialized_; }
 
   int32_t StartPlayout() override;
   int32_t StopPlayout() override;
@@ -280,11 +280,9 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   // Set to true after successful call to Init(), false otherwise.
   bool initialized_;
 
-  // Set to true after successful call to InitRecording(), false otherwise.
-  bool rec_is_initialized_;
-
-  // Set to true after successful call to InitPlayout(), false otherwise.
-  bool play_is_initialized_;
+  // Set to true after successful call to InitRecording() or InitPlayout(),
+  // false otherwise.
+  bool audio_is_initialized_;
 
   // Set to true if audio session is interrupted, false otherwise.
   bool is_interrupted_;

@@ -97,8 +97,7 @@ AudioDeviceIOS::AudioDeviceIOS()
       recording_(0),
       playing_(0),
       initialized_(false),
-      rec_is_initialized_(false),
-      play_is_initialized_(false),
+      audio_is_initialized_(false),
       is_interrupted_(false),
       has_configured_session_(false) {
   LOGI() << "ctor" << ios::GetCurrentThreadDescription();
@@ -165,15 +164,15 @@ int32_t AudioDeviceIOS::InitPlayout() {
   LOGI() << "InitPlayout";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(initialized_);
-  RTC_DCHECK(!play_is_initialized_);
+  RTC_DCHECK(!audio_is_initialized_);
   RTC_DCHECK(!playing_);
-  if (!rec_is_initialized_) {
+  if (!audio_is_initialized_) {
     if (!InitPlayOrRecord()) {
       LOG_F(LS_ERROR) << "InitPlayOrRecord failed for InitPlayout!";
       return -1;
     }
   }
-  play_is_initialized_ = true;
+  audio_is_initialized_ = true;
   return 0;
 }
 
@@ -181,22 +180,22 @@ int32_t AudioDeviceIOS::InitRecording() {
   LOGI() << "InitRecording";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(initialized_);
-  RTC_DCHECK(!rec_is_initialized_);
+  RTC_DCHECK(!audio_is_initialized_);
   RTC_DCHECK(!recording_);
-  if (!play_is_initialized_) {
+  if (!audio_is_initialized_) {
     if (!InitPlayOrRecord()) {
       LOG_F(LS_ERROR) << "InitPlayOrRecord failed for InitRecording!";
       return -1;
     }
   }
-  rec_is_initialized_ = true;
+  audio_is_initialized_ = true;
   return 0;
 }
 
 int32_t AudioDeviceIOS::StartPlayout() {
   LOGI() << "StartPlayout";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  RTC_DCHECK(play_is_initialized_);
+  RTC_DCHECK(audio_is_initialized_);
   RTC_DCHECK(!playing_);
   RTC_DCHECK(audio_unit_);
   if (fine_audio_buffer_) {
@@ -217,17 +216,13 @@ int32_t AudioDeviceIOS::StartPlayout() {
 int32_t AudioDeviceIOS::StopPlayout() {
   LOGI() << "StopPlayout";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  if (!play_is_initialized_) {
-    return 0;
-  }
-  if (!playing_) {
-    play_is_initialized_ = false;
+  if (!audio_is_initialized_ || !playing_) {
     return 0;
   }
   if (!recording_) {
     ShutdownPlayOrRecord();
+    audio_is_initialized_ = false;
   }
-  play_is_initialized_ = false;
   rtc::AtomicOps::ReleaseStore(&playing_, 0);
   return 0;
 }
@@ -235,7 +230,7 @@ int32_t AudioDeviceIOS::StopPlayout() {
 int32_t AudioDeviceIOS::StartRecording() {
   LOGI() << "StartRecording";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  RTC_DCHECK(rec_is_initialized_);
+  RTC_DCHECK(audio_is_initialized_);
   RTC_DCHECK(!recording_);
   RTC_DCHECK(audio_unit_);
   if (fine_audio_buffer_) {
@@ -256,17 +251,13 @@ int32_t AudioDeviceIOS::StartRecording() {
 int32_t AudioDeviceIOS::StopRecording() {
   LOGI() << "StopRecording";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  if (!rec_is_initialized_) {
-    return 0;
-  }
-  if (!recording_) {
-    rec_is_initialized_ = false;
+  if (!audio_is_initialized_ || !recording_) {
     return 0;
   }
   if (!playing_) {
     ShutdownPlayOrRecord();
+    audio_is_initialized_ = false;
   }
-  rec_is_initialized_ = false;
   rtc::AtomicOps::ReleaseStore(&recording_, 0);
   return 0;
 }
@@ -689,7 +680,7 @@ void AudioDeviceIOS::UpdateAudioUnit(bool can_play_or_record) {
 
   // If we're not initialized we don't need to do anything. Audio unit will
   // be initialized on initialization.
-  if (!rec_is_initialized_ && !play_is_initialized_)
+  if (!audio_is_initialized_)
     return;
 
   // If we're initialized, we must have an audio unit.
