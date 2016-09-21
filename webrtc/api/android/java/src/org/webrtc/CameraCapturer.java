@@ -396,6 +396,8 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
       }
 
       Logging.d(TAG, "switchCamera: Stopping session");
+      cameraStatistics.release();
+      cameraStatistics = null;
       currentSession.stop();
       currentSession = null;
 
