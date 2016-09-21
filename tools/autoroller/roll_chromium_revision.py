@@ -291,6 +291,7 @@ def GenerateCommitMessage(current_cr_rev, new_cr_rev, current_commit_pos,
     commit_msg.append('No update to Clang.\n')
 
   commit_msg.append('TBR=%s' % tbr_authors)
+  commit_msg.append('BUG=None')
   return '\n'.join(commit_msg)
 
 
