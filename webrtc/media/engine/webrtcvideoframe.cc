@@ -66,14 +66,6 @@ bool WebRtcVideoFrame::Init(uint32_t format,
                true /*apply_rotation*/);
 }
 
-bool WebRtcVideoFrame::Init(const CapturedFrame* frame, int dw, int dh,
-                            bool apply_rotation) {
-  return Reset(frame->fourcc, frame->width, frame->height, dw, dh,
-               static_cast<uint8_t*>(frame->data), frame->data_size,
-               frame->time_stamp / rtc::kNumNanosecsPerMicrosec,
-               frame->rotation, apply_rotation);
-}
-
 int WebRtcVideoFrame::width() const {
   return video_frame_buffer_ ? video_frame_buffer_->width() : 0;
 }
