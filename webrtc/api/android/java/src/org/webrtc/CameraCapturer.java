@@ -44,6 +44,8 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
           synchronized (stateLock) {
             sessionOpening = false;
             currentSession = session;
+            cameraStatistics = new CameraStatistics(surfaceHelper, eventsHandler);
+            firstFrameObserved = false;
             stateLock.notifyAll();
 
             if (switchState == SwitchState.IN_PROGRESS) {
@@ -57,9 +59,6 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
               switchState = SwitchState.IDLE;
               switchCameraInternal(switchEventsHandler);
             }
-
-            cameraStatistics = new CameraStatistics(surfaceHelper, eventsHandler);
-            firstFrameObserved = false;
           }
         }
 
@@ -379,6 +378,14 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
         return;
       }
 
+      if (!sessionOpening && currentSession == null) {
+        Logging.d(TAG, "switchCamera: No session open");
+        if (switchEventsHandler != null) {
+          switchEventsHandler.onCameraSwitchError("Camera is not running.");
+        }
+        return;
+      }
+
       this.switchEventsHandler = switchEventsHandler;
       if (sessionOpening) {
         switchState = SwitchState.PENDING;
@@ -387,15 +394,9 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
         switchState = SwitchState.IN_PROGRESS;
       }
 
-      if (currentSession == null) {
-        Logging.d(TAG, "switchCamera: No session open");
-        if (switchEventsHandler != null) {
-          switchEventsHandler.onCameraSwitchError("Camera is not running.");
-        }
-        return;
-      }
-
       Logging.d(TAG, "switchCamera: Stopping session");
+      cameraStatistics.release();
+      cameraStatistics = null;
       currentSession.stop();
       currentSession = null;
 
