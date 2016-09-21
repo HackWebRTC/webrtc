@@ -101,12 +101,13 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
        "  inputNumberOfChannels: %ld\n"
        "  outputLatency: %f\n"
        "  inputLatency: %f\n"
+       "  outputVolume: %f\n"
        "}";
   NSString *description = [NSString stringWithFormat:format,
       self.category, (long)self.categoryOptions, self.mode,
       self.isActive, self.sampleRate, self.IOBufferDuration,
       self.outputNumberOfChannels, self.inputNumberOfChannels,
-      self.outputLatency, self.inputLatency];
+      self.outputLatency, self.inputLatency, self.outputVolume];
   return description;
 }
 
