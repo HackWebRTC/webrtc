@@ -34,11 +34,19 @@ struct RgbaColor final {
   // Creates a color from four-byte in BGRA order, i.e. DesktopFrame::data().
   explicit RgbaColor(const uint8_t* bgra);
 
+  // Creates a color from BGRA channels in a uint format. Consumers should make
+  // sure the memory order of the uint32_t is always BGRA from left to right, no
+  // matter the system endian. This function creates an equivalent RgbaColor
+  // instance from the ToUInt32() result of another RgbaColor instance.
+  explicit RgbaColor(uint32_t bgra);
+
   // Returns true if |this| and |right| is the same color.
   bool operator==(const RgbaColor& right) const;
 
   // Returns true if |this| and |right| are different colors.
   bool operator!=(const RgbaColor& right) const;
+
+  uint32_t ToUInt32() const;
 
   uint8_t blue;
   uint8_t green;

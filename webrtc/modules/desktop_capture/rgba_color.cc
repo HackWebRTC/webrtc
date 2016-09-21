@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/desktop_capture/rgba_color.h"
 
+#include "webrtc/typedefs.h"
+
 namespace webrtc {
 
 namespace {
@@ -36,6 +38,9 @@ RgbaColor::RgbaColor(uint8_t blue, uint8_t green, uint8_t red)
 RgbaColor::RgbaColor(const uint8_t* bgra)
     : RgbaColor(bgra[0], bgra[1], bgra[2], bgra[3]) {}
 
+RgbaColor::RgbaColor(uint32_t bgra)
+    : RgbaColor(reinterpret_cast<uint8_t*>(&bgra)) {}
+
 bool RgbaColor::operator==(const RgbaColor& right) const {
   return blue == right.blue && green == right.green && red == right.red &&
          AlphaEquals(alpha, right.alpha);
@@ -43,6 +48,14 @@ bool RgbaColor::operator==(const RgbaColor& right) const {
 
 bool RgbaColor::operator!=(const RgbaColor& right) const {
   return !(*this == right);
+}
+
+uint32_t RgbaColor::ToUInt32() const {
+#if defined(WEBRTC_ARCH_LITTLE_ENDIAN)
+  return blue | (green << 8) | (red << 16) | (alpha << 24);
+#else
+  return (blue << 24) | (green << 16) | (red << 8) | alpha;
+#endif
 }
 
 }  // namespace webrtc

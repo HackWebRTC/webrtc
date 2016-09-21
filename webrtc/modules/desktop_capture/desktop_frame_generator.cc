@@ -17,6 +17,7 @@
 
 #include "webrtc/base/random.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/modules/desktop_capture/rgba_color.h"
 
 namespace webrtc {
 
@@ -60,11 +61,12 @@ void SetUpdatedRegion(DesktopFrame* frame,
 }
 
 // Paints pixels in |rect| of |frame| to |color|.
-void PaintRect(DesktopFrame* frame, DesktopRect rect, uint32_t color) {
+void PaintRect(DesktopFrame* frame, DesktopRect rect, RgbaColor rgba_color) {
   static_assert(DesktopFrame::kBytesPerPixel == sizeof(uint32_t),
                 "kBytesPerPixel should be 4.");
   RTC_DCHECK(frame->size().width() >= rect.right() &&
              frame->size().height() >= rect.bottom());
+  uint32_t color = rgba_color.ToUInt32();
   uint8_t* row = frame->GetFrameDataAtPos(rect.top_left());
   for (int i = 0; i < rect.height(); i++) {
     uint32_t* column = reinterpret_cast<uint32_t*>(row);
@@ -76,10 +78,12 @@ void PaintRect(DesktopFrame* frame, DesktopRect rect, uint32_t color) {
 }
 
 // Paints pixels in |region| of |frame| to |color|.
-void PaintRegion(DesktopFrame* frame, DesktopRegion* region, uint32_t color) {
+void PaintRegion(DesktopFrame* frame,
+                 DesktopRegion* region,
+                 RgbaColor rgba_color) {
   region->IntersectWith(DesktopRect::MakeSize(frame->size()));
   for (DesktopRegion::Iterator it(*region); !it.IsAtEnd(); it.Advance()) {
-    PaintRect(frame, it.rect(), color);
+    PaintRect(frame, it.rect(), rgba_color);
   }
 }
 
@@ -171,7 +175,7 @@ bool BlackWhiteDesktopFramePainter::Paint(DesktopFrame* frame,
                                           DesktopRegion* updated_region) {
   RTC_DCHECK(updated_region->is_empty());
   memset(frame->data(), 0, frame->stride() * frame->size().height());
-  PaintRegion(frame, &updated_region_, UINT32_MAX);
+  PaintRegion(frame, &updated_region_, RgbaColor(0xFFFFFFFF));
   updated_region_.Swap(updated_region);
   return true;
 }
