@@ -18,7 +18,9 @@
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/systeminfo.h"
+#include "webrtc/media/base/videoframefactory.h"
 #include "webrtc/media/engine/webrtcvideoframe.h"
+#include "webrtc/media/engine/webrtcvideoframefactory.h"
 
 namespace cricket {
 
@@ -32,6 +34,29 @@ static const int kYU12Penalty = 16;  // Needs to be higher than MJPG index.
 }  // namespace
 
 /////////////////////////////////////////////////////////////////////
+// Implementation of struct CapturedFrame
+/////////////////////////////////////////////////////////////////////
+CapturedFrame::CapturedFrame()
+    : width(0),
+      height(0),
+      fourcc(0),
+      pixel_width(0),
+      pixel_height(0),
+      time_stamp(0),
+      data_size(0),
+      rotation(webrtc::kVideoRotation_0),
+      data(NULL) {}
+
+// TODO(fbarchard): Remove this function once lmimediaengine stops using it.
+bool CapturedFrame::GetDataSize(uint32_t* size) const {
+  if (!size || data_size == CapturedFrame::kUnknownDataSize) {
+    return false;
+  }
+  *size = data_size;
+  return true;
+}
+
+/////////////////////////////////////////////////////////////////////
 // Implementation of class VideoCapturer
 /////////////////////////////////////////////////////////////////////
 VideoCapturer::VideoCapturer() : apply_rotation_(false) {
@@ -42,9 +67,16 @@ VideoCapturer::VideoCapturer() : apply_rotation_(false) {
 void VideoCapturer::Construct() {
   enable_camera_list_ = false;
   capture_state_ = CS_STOPPED;
+  SignalFrameCaptured.connect(this, &VideoCapturer::OnFrameCaptured);
   scaled_width_ = 0;
   scaled_height_ = 0;
   enable_video_adapter_ = true;
+  // There are lots of video capturers out there that don't call
+  // set_frame_factory.  We can either go change all of them, or we
+  // can set this default.
+  // TODO(pthatcher): Remove this hack and require the frame factory
+  // to be passed in the constructor.
+  set_frame_factory(new WebRtcVideoFrameFactory());
 }
 
 const std::vector<VideoFormat>* VideoCapturer::GetSupportedFormats() const {
@@ -120,6 +152,29 @@ void VideoCapturer::ConstrainSupportedFormats(const VideoFormat& max_format) {
   UpdateFilteredSupportedFormats();
 }
 
+std::string VideoCapturer::ToString(const CapturedFrame* captured_frame) const {
+  std::string fourcc_name = GetFourccName(captured_frame->fourcc) + " ";
+  for (std::string::const_iterator i = fourcc_name.begin();
+       i < fourcc_name.end(); ++i) {
+    // Test character is printable; Avoid isprint() which asserts on negatives.
+    if (*i < 32 || *i >= 127) {
+      fourcc_name = "";
+      break;
+    }
+  }
+
+  std::ostringstream ss;
+  ss << fourcc_name << captured_frame->width << "x" << captured_frame->height;
+  return ss.str();
+}
+
+void VideoCapturer::set_frame_factory(VideoFrameFactory* frame_factory) {
+  frame_factory_.reset(frame_factory);
+  if (frame_factory) {
+    frame_factory->SetApplyRotation(apply_rotation_);
+  }
+}
+
 bool VideoCapturer::GetInputSize(int* width, int* height) {
   rtc::CritScope cs(&frame_stats_crit_);
   if (!input_size_valid_) {
@@ -149,6 +204,9 @@ void VideoCapturer::AddOrUpdateSink(
 void VideoCapturer::OnSinkWantsChanged(const rtc::VideoSinkWants& wants) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   apply_rotation_ = wants.rotation_applied;
+  if (frame_factory_) {
+    frame_factory_->SetApplyRotation(apply_rotation_);
+  }
 
   if (video_adapter()) {
     video_adapter()->OnResolutionRequest(wants.max_pixel_count,
@@ -196,31 +254,54 @@ bool VideoCapturer::AdaptFrame(int width,
   return true;
 }
 
+void VideoCapturer::OnFrameCaptured(VideoCapturer*,
+                                    const CapturedFrame* captured_frame) {
+  int out_width;
+  int out_height;
+  int crop_width;
+  int crop_height;
+  int crop_x;
+  int crop_y;
+
+  // TODO(nisse): We don't do timestamp translation on this input
+  // path. It seems straight-forward to enable translation, but that
+  // breaks the WebRtcVideoEngine2Test.PropagatesInputFrameTimestamp
+  // test. Probably not worth the effort to fix, instead, try to
+  // delete or refactor all code using VideoFrameFactory and
+  // SignalCapturedFrame.
+  if (!AdaptFrame(captured_frame->width, captured_frame->height,
+                  captured_frame->time_stamp / rtc::kNumNanosecsPerMicrosec,
+                  0,
+                  &out_width, &out_height,
+                  &crop_width, &crop_height, &crop_x, &crop_y, nullptr)) {
+    return;
+  }
+
+  if (!frame_factory_) {
+    LOG(LS_ERROR) << "No video frame factory.";
+    return;
+  }
+
+  // TODO(nisse): Reorganize frame factory methods. crop_x and crop_y
+  // are ignored for now.
+  std::unique_ptr<VideoFrame> adapted_frame(frame_factory_->CreateAliasedFrame(
+      captured_frame, crop_width, crop_height, out_width, out_height));
+
+  if (!adapted_frame) {
+    // TODO(fbarchard): LOG more information about captured frame attributes.
+    LOG(LS_ERROR) << "Couldn't convert to I420! "
+                  << "From " << ToString(captured_frame) << " To "
+                  << out_width << " x " << out_height;
+    return;
+  }
+
+  OnFrame(*adapted_frame, captured_frame->width, captured_frame->height);
+}
+
 void VideoCapturer::OnFrame(const VideoFrame& frame,
                             int orig_width,
                             int orig_height) {
-  // For a child class which implements rotation itself, we should
-  // always have apply_rotation_ == false or frame.rotation() == 0.
-  // Except possibly during races where apply_rotation_ is changed
-  // mid-stream.
-  if (apply_rotation_ && frame.rotation() != webrtc::kVideoRotation_0) {
-    rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
-        frame.video_frame_buffer());
-    if (buffer->native_handle()) {
-      // Sources producing native frames must handle apply_rotation
-      // themselves. But even if they do, we may occasionally end up
-      // in this case, for frames in flight at the time
-      // applied_rotation is set to true. In that case, we just drop
-      // the frame.
-      LOG(LS_WARNING) << "Native frame requiring rotation. Discarding.";
-      return;
-    }
-    broadcaster_.OnFrame(WebRtcVideoFrame(
-        webrtc::I420Buffer::Rotate(buffer, frame.rotation()),
-        webrtc::kVideoRotation_0, frame.timestamp_us()));
-  } else {
-    broadcaster_.OnFrame(frame);
-  }
+  broadcaster_.OnFrame(frame);
   UpdateInputSize(orig_width, orig_height);
 }
 

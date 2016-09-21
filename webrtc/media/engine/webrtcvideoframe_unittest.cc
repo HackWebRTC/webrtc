@@ -22,6 +22,52 @@ class WebRtcVideoFrameTest : public VideoFrameTest<WebRtcVideoFrame> {
  public:
   WebRtcVideoFrameTest() {}
 
+  void TestInit(int cropped_width, int cropped_height,
+                webrtc::VideoRotation frame_rotation,
+                bool apply_rotation) {
+    const int frame_width = 1920;
+    const int frame_height = 1080;
+
+    // Build the CapturedFrame.
+    CapturedFrame captured_frame;
+    captured_frame.fourcc = FOURCC_I420;
+    captured_frame.time_stamp = rtc::TimeNanos();
+    captured_frame.rotation = frame_rotation;
+    captured_frame.width = frame_width;
+    captured_frame.height = frame_height;
+    captured_frame.data_size = (frame_width * frame_height) +
+        ((frame_width + 1) / 2) * ((frame_height + 1) / 2) * 2;
+    std::unique_ptr<uint8_t[]> captured_frame_buffer(
+        new uint8_t[captured_frame.data_size]);
+    // Initialize memory to satisfy DrMemory tests.
+    memset(captured_frame_buffer.get(), 0, captured_frame.data_size);
+    captured_frame.data = captured_frame_buffer.get();
+
+    // Create the new frame from the CapturedFrame.
+    WebRtcVideoFrame frame;
+    EXPECT_TRUE(
+        frame.Init(&captured_frame, cropped_width, cropped_height,
+                   apply_rotation));
+
+    // Verify the new frame.
+    EXPECT_EQ(captured_frame.time_stamp / rtc::kNumNanosecsPerMicrosec,
+              frame.timestamp_us());
+    if (apply_rotation)
+      EXPECT_EQ(webrtc::kVideoRotation_0, frame.rotation());
+    else
+      EXPECT_EQ(frame_rotation, frame.rotation());
+    // If |apply_rotation| and the frame rotation is 90 or 270, width and
+    // height are flipped.
+    if (apply_rotation && (frame_rotation == webrtc::kVideoRotation_90
+        || frame_rotation == webrtc::kVideoRotation_270)) {
+      EXPECT_EQ(cropped_width, frame.height());
+      EXPECT_EQ(cropped_height, frame.width());
+    } else {
+      EXPECT_EQ(cropped_width, frame.width());
+      EXPECT_EQ(cropped_height, frame.height());
+    }
+  }
+
   void SetFrameRotation(WebRtcVideoFrame* frame,
                         webrtc::VideoRotation rotation) {
     frame->rotation_ = rotation;
@@ -107,6 +153,32 @@ TEST_WEBRTCVIDEOFRAME(ValidateI420HugeSize)
 // TEST_WEBRTCVIDEOFRAME(ConstructARGBAllSizes)
 // TEST_WEBRTCVIDEOFRAME(ConvertToI422Buffer)
 // TEST_WEBRTCVIDEOFRAME(ConstructARGBBlackWhitePixel)
+
+// These functions test implementation-specific details.
+// Tests the Init function with different cropped size.
+TEST_F(WebRtcVideoFrameTest, InitEvenSize) {
+  TestInit(640, 360, webrtc::kVideoRotation_0, true);
+}
+
+TEST_F(WebRtcVideoFrameTest, InitOddWidth) {
+  TestInit(601, 480, webrtc::kVideoRotation_0, true);
+}
+
+TEST_F(WebRtcVideoFrameTest, InitOddHeight) {
+  TestInit(360, 765, webrtc::kVideoRotation_0, true);
+}
+
+TEST_F(WebRtcVideoFrameTest, InitOddWidthHeight) {
+  TestInit(355, 1021, webrtc::kVideoRotation_0, true);
+}
+
+TEST_F(WebRtcVideoFrameTest, InitRotated90ApplyRotation) {
+  TestInit(640, 360, webrtc::kVideoRotation_90, true);
+}
+
+TEST_F(WebRtcVideoFrameTest, InitRotated90DontApplyRotation) {
+  TestInit(640, 360, webrtc::kVideoRotation_90, false);
+}
 
 TEST_F(WebRtcVideoFrameTest, TextureInitialValues) {
   webrtc::test::FakeNativeHandle* dummy_handle =

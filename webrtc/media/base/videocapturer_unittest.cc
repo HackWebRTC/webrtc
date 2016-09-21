@@ -91,14 +91,14 @@ TEST_F(VideoCapturerTest, ScreencastScaledOddWidth) {
 
   std::vector<cricket::VideoFormat> formats;
   formats.push_back(cricket::VideoFormat(kWidth, kHeight,
-                                         cricket::VideoFormat::FpsToInterval(5),
-                                         cricket::FOURCC_I420));
+      cricket::VideoFormat::FpsToInterval(5), cricket::FOURCC_ARGB));
   capturer_->ResetSupportedFormats(formats);
 
-  EXPECT_EQ(cricket::CS_RUNNING,
-            capturer_->Start(cricket::VideoFormat(
-                kWidth, kHeight, cricket::VideoFormat::FpsToInterval(30),
-                cricket::FOURCC_ANY)));
+  EXPECT_EQ(cricket::CS_RUNNING, capturer_->Start(cricket::VideoFormat(
+      kWidth,
+      kHeight,
+      cricket::VideoFormat::FpsToInterval(30),
+      cricket::FOURCC_ARGB)));
   EXPECT_TRUE(capturer_->IsRunning());
   EXPECT_EQ(0, renderer_.num_rendered_frames());
   EXPECT_TRUE(capturer_->CaptureFrame());
@@ -245,10 +245,6 @@ TEST_F(VideoCapturerTest, TestRotationAppliedBySourceWhenDifferentWants) {
   EXPECT_EQ(webrtc::kVideoRotation_0, renderer2.rotation());
 }
 
-// TODO(nisse): This test doesn't quite fit here. It tests two things:
-// Aggregation of VideoSinkWants, which is the responsibility of
-// VideoBroadcaster, and translation of VideoSinkWants to actual
-// resolution, which is the responsibility of the VideoAdapter.
 TEST_F(VideoCapturerTest, SinkWantsMaxPixelAndMaxPixelCountStepUp) {
   EXPECT_EQ(cricket::CS_RUNNING,
             capturer_->Start(cricket::VideoFormat(

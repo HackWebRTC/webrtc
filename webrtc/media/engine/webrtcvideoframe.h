@@ -22,6 +22,8 @@
 
 namespace cricket {
 
+struct CapturedFrame;
+
 // TODO(nisse): This class will be deleted when the cricket::VideoFrame and
 // webrtc::VideoFrame classes are merged. See
 // https://bugs.chromium.org/p/webrtc/issues/detail?id=5682. Try to use only the
@@ -53,10 +55,6 @@ class WebRtcVideoFrame : public VideoFrame {
 
   ~WebRtcVideoFrame();
 
-  // TODO(nisse): Init (and its helpers Reset and Validate) are used
-  // only by the LoadFrame function used in the VideoFrame unittests.
-  // Rewrite tests, and delete this function.
-
   // Creates a frame from a raw sample with FourCC "format" and size "w" x "h".
   // "h" can be negative indicating a vertically flipped image.
   // "dh" is destination height if cropping is desired and is always positive.
@@ -70,6 +68,15 @@ class WebRtcVideoFrame : public VideoFrame {
             size_t sample_size,
             int64_t timestamp_ns,
             webrtc::VideoRotation rotation);
+
+  // TODO(nisse): We're moving to have all timestamps use the same
+  // time scale as rtc::TimeMicros. However, this method is used by
+  // WebRtcVideoFrameFactory::CreateAliasedFrame this code path
+  // currently does not conform to the new timestamp conventions and
+  // may use the camera's own clock instead. It's unclear if this
+  // should be fixed, or if instead all of the VideoFrameFactory
+  // abstraction should be eliminated.
+  bool Init(const CapturedFrame* frame, int dw, int dh, bool apply_rotation);
 
   void InitToEmptyBuffer(int w, int h);
 

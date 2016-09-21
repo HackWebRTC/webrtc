@@ -60,6 +60,7 @@ class WebRtcVideoChannelSendInfo;
 class WebRtcVoiceEngine;
 class WebRtcVoiceMediaChannel;
 
+struct CapturedFrame;
 struct Device;
 
 // Exposed here for unittests.
