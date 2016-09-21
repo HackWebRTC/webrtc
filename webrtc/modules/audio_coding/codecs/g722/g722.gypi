@@ -12,6 +12,8 @@
       'type': 'static_library',
       'dependencies': [
         'audio_encoder_interface',
+        'audio_decoder_interface',
+        'legacy_encoded_audio_frame',
       ],
       'sources': [
         'audio_decoder_g722.cc',

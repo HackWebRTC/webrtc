@@ -11,7 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_INCLUDE_AUDIO_DECODER_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_INCLUDE_AUDIO_DECODER_H_
 
-#include <stdlib.h>  // NULL
+#include <memory>
+#include <vector>
 
 #include <memory>
 #include <vector>

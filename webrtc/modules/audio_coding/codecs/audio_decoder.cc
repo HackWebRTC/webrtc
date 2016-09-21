@@ -11,6 +11,8 @@
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 
 #include <assert.h>
+#include <memory>
+#include <utility>
 
 #include <utility>
 
@@ -18,55 +20,9 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/sanitizer.h"
 #include "webrtc/base/trace_event.h"
+#include "webrtc/modules/audio_coding/codecs/legacy_encoded_audio_frame.h"
 
 namespace webrtc {
-
-namespace {
-class LegacyFrame final : public AudioDecoder::EncodedAudioFrame {
- public:
-  LegacyFrame(AudioDecoder* decoder,
-              rtc::Buffer&& payload,
-              bool is_primary_payload)
-      : decoder_(decoder),
-        payload_(std::move(payload)),
-        is_primary_payload_(is_primary_payload) {}
-
-  size_t Duration() const override {
-    int ret;
-    if (is_primary_payload_) {
-      ret = decoder_->PacketDuration(payload_.data(), payload_.size());
-    } else {
-      ret = decoder_->PacketDurationRedundant(payload_.data(), payload_.size());
-    }
-    return (ret < 0) ? 0 : static_cast<size_t>(ret);
-  }
-
-  rtc::Optional<DecodeResult> Decode(
-      rtc::ArrayView<int16_t> decoded) const override {
-    AudioDecoder::SpeechType speech_type = AudioDecoder::kSpeech;
-    int ret;
-    if (is_primary_payload_) {
-      ret = decoder_->Decode(
-          payload_.data(), payload_.size(), decoder_->SampleRateHz(),
-          decoded.size() * sizeof(int16_t), decoded.data(), &speech_type);
-    } else {
-      ret = decoder_->DecodeRedundant(
-          payload_.data(), payload_.size(), decoder_->SampleRateHz(),
-          decoded.size() * sizeof(int16_t), decoded.data(), &speech_type);
-    }
-
-    if (ret < 0)
-      return rtc::Optional<DecodeResult>();
-
-    return rtc::Optional<DecodeResult>({static_cast<size_t>(ret), speech_type});
-  }
-
- private:
-  AudioDecoder* const decoder_;
-  const rtc::Buffer payload_;
-  const bool is_primary_payload_;
-};
-}  // namespace
 
 AudioDecoder::ParseResult::ParseResult() = default;
 AudioDecoder::ParseResult::ParseResult(ParseResult&& b) = default;
@@ -86,7 +42,7 @@ std::vector<AudioDecoder::ParseResult> AudioDecoder::ParsePayload(
     bool is_primary) {
   std::vector<ParseResult> results;
   std::unique_ptr<EncodedAudioFrame> frame(
-      new LegacyFrame(this, std::move(payload), is_primary));
+      new LegacyEncodedAudioFrame(this, std::move(payload), is_primary));
   results.emplace_back(timestamp, is_primary, std::move(frame));
   return results;
 }

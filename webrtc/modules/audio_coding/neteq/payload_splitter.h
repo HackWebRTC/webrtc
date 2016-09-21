@@ -20,16 +20,14 @@ namespace webrtc {
 class DecoderDatabase;
 
 // This class handles splitting of payloads into smaller parts.
-// The class does not have any member variables, and the methods could have
-// been made static. The reason for not making them static is testability.
-// With this design, the splitting functionality can be mocked during testing
-// of the NetEqImpl class.
+
+// For RED and FEC the splitting is done internally. Other codecs' packets are
+// split by calling AudioDecoder::SplitPacket.
 class PayloadSplitter {
  public:
   enum SplitterReturnCodes {
     kOK = 0,
     kNoSplit = 1,
-    kTooLargePayload = -1,
     kFrameSplitError = -2,
     kUnknownPayloadType = -3,
     kRedLengthMismatch = -4,
@@ -60,29 +58,7 @@ class PayloadSplitter {
   virtual int CheckRedPayloads(PacketList* packet_list,
                                const DecoderDatabase& decoder_database);
 
-  // Iterates through |packet_list| and, if possible, splits each audio payload
-  // into suitable size chunks. The result is written back to |packet_list| as
-  // new packets. The decoder database is needed to get information about which
-  // payload type each packet contains.
-  virtual int SplitAudio(PacketList* packet_list,
-                         const DecoderDatabase& decoder_database);
-
  private:
-  // Splits the payload in |packet|. The payload is assumed to be from a
-  // sample-based codec.
-  virtual void SplitBySamples(const Packet* packet,
-                              size_t bytes_per_ms,
-                              uint32_t timestamps_per_ms,
-                              PacketList* new_packets);
-
-  // Splits the payload in |packet|. The payload will be split into chunks of
-  // size |bytes_per_frame|, corresponding to a |timestamps_per_frame|
-  // RTP timestamps.
-  virtual int SplitByFrames(const Packet* packet,
-                            size_t bytes_per_frame,
-                            uint32_t timestamps_per_frame,
-                            PacketList* new_packets);
-
   RTC_DISALLOW_COPY_AND_ASSIGN(PayloadSplitter);
 };
 

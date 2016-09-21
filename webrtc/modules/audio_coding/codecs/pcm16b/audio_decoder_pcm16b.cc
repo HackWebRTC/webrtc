@@ -11,6 +11,7 @@
 #include "webrtc/modules/audio_coding/codecs/pcm16b/audio_decoder_pcm16b.h"
 
 #include "webrtc/base/checks.h"
+#include "webrtc/modules/audio_coding/codecs/legacy_encoded_audio_frame.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/pcm16b.h"
 
 namespace webrtc {
@@ -42,6 +43,16 @@ int AudioDecoderPcm16B::DecodeInternal(const uint8_t* encoded,
   size_t ret = WebRtcPcm16b_Decode(encoded, encoded_len, decoded);
   *speech_type = ConvertSpeechType(1);
   return static_cast<int>(ret);
+}
+
+std::vector<AudioDecoder::ParseResult> AudioDecoderPcm16B::ParsePayload(
+    rtc::Buffer&& payload,
+    uint32_t timestamp,
+    bool is_primary) {
+  const int samples_per_ms = rtc::CheckedDivExact(sample_rate_hz_, 1000);
+  return LegacyEncodedAudioFrame::SplitBySamples(
+      this, std::move(payload), timestamp, is_primary,
+      samples_per_ms * 2 * num_channels_, samples_per_ms);
 }
 
 int AudioDecoderPcm16B::PacketDuration(const uint8_t* encoded,

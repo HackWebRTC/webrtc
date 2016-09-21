@@ -262,7 +262,9 @@ if (rtc_include_tests) {
     testonly = true
 
     defines = audio_coding_defines
-    deps = []
+    deps = [
+      "audio_coding:legacy_encoded_audio_frame",
+    ]
     sources = [
       "audio_coding/acm2/acm_receiver_unittest_oldapi.cc",
       "audio_coding/acm2/audio_coding_module_unittest_oldapi.cc",
@@ -281,6 +283,7 @@ if (rtc_include_tests) {
       "audio_coding/codecs/isac/main/source/audio_encoder_isac_unittest.cc",
       "audio_coding/codecs/isac/main/source/isac_unittest.cc",
       "audio_coding/codecs/isac/unittest.cc",
+      "audio_coding/codecs/legacy_encoded_audio_frame_unittest.cc",
       "audio_coding/codecs/mock/mock_audio_encoder.cc",
       "audio_coding/codecs/opus/audio_encoder_opus_unittest.cc",
       "audio_coding/codecs/opus/opus_unittest.cc",

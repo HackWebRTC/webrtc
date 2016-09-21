@@ -25,14 +25,6 @@ class MockPayloadSplitter : public PayloadSplitter {
       int(PacketList* packet_list, DecoderDatabase* decoder_database));
   MOCK_METHOD2(CheckRedPayloads,
       int(PacketList* packet_list, const DecoderDatabase& decoder_database));
-  MOCK_METHOD2(SplitAudio,
-      int(PacketList* packet_list, const DecoderDatabase& decoder_database));
-  MOCK_METHOD4(SplitBySamples,
-      void(const Packet* packet, size_t bytes_per_ms,
-           uint32_t timestamps_per_ms, PacketList* new_packets));
-  MOCK_METHOD4(SplitByFrames,
-      int(const Packet* packet, size_t bytes_per_frame,
-          uint32_t timestamps_per_frame, PacketList* new_packets));
 };
 
 }  // namespace webrtc

@@ -658,21 +658,6 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     }
   }
 
-  // Split payloads into smaller chunks. This also verifies that all payloads
-  // are of a known payload type.
-  ret = payload_splitter_->SplitAudio(&packet_list, *decoder_database_);
-  if (ret != PayloadSplitter::kOK) {
-    PacketBuffer::DeleteAllPackets(&packet_list);
-    switch (ret) {
-      case PayloadSplitter::kUnknownPayloadType:
-        return kUnknownRtpPayloadType;
-      case PayloadSplitter::kFrameSplitError:
-        return kFrameSplitError;
-      default:
-        return kOtherError;
-    }
-  }
-
   // Update bandwidth estimate, if the packet is not comfort noise.
   if (!packet_list.empty() &&
       !decoder_database_->IsComfortNoise(main_header.payloadType)) {
@@ -710,7 +695,7 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
       const RTPHeader& original_header = packet->header;
       for (auto& result : results) {
         RTC_DCHECK(result.frame);
-        // Reuse the packet if possible
+        // Reuse the packet if possible.
         if (!packet) {
           packet.reset(new Packet);
           packet->header = original_header;

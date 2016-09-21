@@ -336,9 +336,6 @@ TEST_F(NetEqImplTest, InsertPacket) {
   EXPECT_CALL(*mock_payload_splitter_, SplitFec(_, _))
       .Times(2)
       .WillRepeatedly(Return(PayloadSplitter::kOK));
-  EXPECT_CALL(*mock_payload_splitter_, SplitAudio(_, _))
-      .Times(2)
-      .WillRepeatedly(Return(PayloadSplitter::kOK));
 
   // Insert first packet.
   neteq_->InsertPacket(rtp_header, payload, kFirstReceiveTime);

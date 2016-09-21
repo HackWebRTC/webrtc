@@ -11,6 +11,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_coding/codecs/ilbc/audio_decoder_ilbc.h"
 #include "webrtc/modules/audio_coding/codecs/ilbc/audio_encoder_ilbc.h"
+#include "webrtc/modules/audio_coding/codecs/legacy_encoded_audio_frame.h"
 
 namespace webrtc {
 
@@ -52,6 +53,87 @@ TEST(IlbcTest, BadPacket) {
             decoder.Decode(packet.data(), packet.size(), encoder.SampleRateHz(),
                            sizeof(int16_t) * decoded_samples.size(),
                            decoded_samples.data(), &speech_type));
+}
+
+class SplitIlbcTest : public ::testing::TestWithParam<std::pair<int, int> > {
+ protected:
+  virtual void SetUp() {
+    const std::pair<int, int> parameters = GetParam();
+    num_frames_ = parameters.first;
+    frame_length_ms_ = parameters.second;
+    frame_length_bytes_ = (frame_length_ms_ == 20) ? 38 : 50;
+  }
+  size_t num_frames_;
+  int frame_length_ms_;
+  size_t frame_length_bytes_;
+};
+
+TEST_P(SplitIlbcTest, NumFrames) {
+  AudioDecoderIlbc decoder;
+  const size_t frame_length_samples = frame_length_ms_ * 8;
+  const auto generate_payload = [] (size_t payload_length_bytes) {
+    rtc::Buffer payload(payload_length_bytes);
+    // Fill payload with increasing integers {0, 1, 2, ...}.
+    for (size_t i = 0; i < payload.size(); ++i) {
+      payload[i] = static_cast<uint8_t>(i);
+    }
+    return payload;
+  };
+
+  const auto results = decoder.ParsePayload(
+      generate_payload(frame_length_bytes_ * num_frames_), 0, true);
+  EXPECT_EQ(num_frames_, results.size());
+
+  size_t frame_num = 0;
+  uint8_t payload_value = 0;
+  for (const auto& result : results) {
+    EXPECT_EQ(frame_length_samples * frame_num, result.timestamp);
+    const LegacyEncodedAudioFrame* frame =
+        static_cast<const LegacyEncodedAudioFrame*>(result.frame.get());
+    const rtc::Buffer& payload = frame->payload();
+    EXPECT_EQ(frame_length_bytes_, payload.size());
+    for (size_t i = 0; i < payload.size(); ++i, ++payload_value) {
+      EXPECT_EQ(payload_value, payload[i]);
+    }
+    ++frame_num;
+  }
+}
+
+// Test 1 through 5 frames of 20 and 30 ms size.
+// Also test the maximum number of frames in one packet for 20 and 30 ms.
+// The maximum is defined by the largest payload length that can be uniquely
+// resolved to a frame size of either 38 bytes (20 ms) or 50 bytes (30 ms).
+INSTANTIATE_TEST_CASE_P(
+    IlbcTest, SplitIlbcTest,
+    ::testing::Values(std::pair<int, int>(1, 20),  // 1 frame, 20 ms.
+                      std::pair<int, int>(2, 20),  // 2 frames, 20 ms.
+                      std::pair<int, int>(3, 20),  // And so on.
+                      std::pair<int, int>(4, 20),
+                      std::pair<int, int>(5, 20),
+                      std::pair<int, int>(24, 20),
+                      std::pair<int, int>(1, 30),
+                      std::pair<int, int>(2, 30),
+                      std::pair<int, int>(3, 30),
+                      std::pair<int, int>(4, 30),
+                      std::pair<int, int>(5, 30),
+                      std::pair<int, int>(18, 30)));
+
+// Test too large payload size.
+TEST(IlbcTest, SplitTooLargePayload) {
+  AudioDecoderIlbc decoder;
+  constexpr size_t kPayloadLengthBytes = 950;
+  const auto results =
+      decoder.ParsePayload(rtc::Buffer(kPayloadLengthBytes), 0, true);
+  EXPECT_TRUE(results.empty());
+}
+
+// Payload not an integer number of frames.
+TEST(IlbcTest, SplitUnevenPayload) {
+  AudioDecoderIlbc decoder;
+  constexpr size_t kPayloadLengthBytes = 39;  // Not an even number of frames.
+  const auto results =
+      decoder.ParsePayload(rtc::Buffer(kPayloadLengthBytes), 0, true);
+  EXPECT_TRUE(results.empty());
 }
 
 }  // namespace webrtc

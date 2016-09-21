@@ -24,6 +24,9 @@ class AudioDecoderG722 final : public AudioDecoder {
   ~AudioDecoderG722() override;
   bool HasDecodePlc() const override;
   void Reset() override;
+  std::vector<ParseResult> ParsePayload(rtc::Buffer&& payload,
+                                        uint32_t timestamp,
+                                        bool is_primary) override;
   int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
   int SampleRateHz() const override;
   size_t Channels() const override;
@@ -45,6 +48,9 @@ class AudioDecoderG722Stereo final : public AudioDecoder {
   AudioDecoderG722Stereo();
   ~AudioDecoderG722Stereo() override;
   void Reset() override;
+  std::vector<ParseResult> ParsePayload(rtc::Buffer&& payload,
+                                        uint32_t timestamp,
+                                        bool is_primary) override;
   int SampleRateHz() const override;
   size_t Channels() const override;
 

@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/modules/audio_coding/codecs/legacy_encoded_audio_frame.h"
 #include "webrtc/modules/audio_coding/codecs/g722/g722_interface.h"
 
 namespace webrtc {
@@ -45,6 +46,14 @@ int AudioDecoderG722::DecodeInternal(const uint8_t* encoded,
 
 void AudioDecoderG722::Reset() {
   WebRtcG722_DecoderInit(dec_state_);
+}
+
+std::vector<AudioDecoder::ParseResult> AudioDecoderG722::ParsePayload(
+    rtc::Buffer&& payload,
+    uint32_t timestamp,
+    bool is_primary) {
+  return LegacyEncodedAudioFrame::SplitBySamples(this, std::move(payload),
+                                                 timestamp, is_primary, 8, 16);
 }
 
 int AudioDecoderG722::PacketDuration(const uint8_t* encoded,
@@ -115,6 +124,14 @@ size_t AudioDecoderG722Stereo::Channels() const {
 void AudioDecoderG722Stereo::Reset() {
   WebRtcG722_DecoderInit(dec_state_left_);
   WebRtcG722_DecoderInit(dec_state_right_);
+}
+
+std::vector<AudioDecoder::ParseResult> AudioDecoderG722Stereo::ParsePayload(
+    rtc::Buffer&& payload,
+    uint32_t timestamp,
+    bool is_primary) {
+  return LegacyEncodedAudioFrame::SplitBySamples(
+      this, std::move(payload), timestamp, is_primary, 2 * 8, 16);
 }
 
 // Split the stereo packet and place left and right channel after each other
