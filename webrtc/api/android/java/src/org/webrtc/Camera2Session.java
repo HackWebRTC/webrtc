@@ -31,7 +31,6 @@ import android.view.WindowManager;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 @TargetApi(21)
@@ -366,40 +365,15 @@ public class Camera2Session implements CameraSession {
 
   @Override
   public void stop() {
-    final long stopStartTime = System.nanoTime();
     Logging.d(TAG, "Stop camera2 session on camera " + cameraId);
-    if (Thread.currentThread() == cameraThreadHandler.getLooper().getThread()) {
-      if (state != SessionState.STOPPED) {
-        state = SessionState.STOPPED;
-        // Post the stopInternal to return earlier.
-        cameraThreadHandler.post(new Runnable() {
-          @Override
-          public void run() {
-            stopInternal();
-            final int stopTimeMs =
-                (int) TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - stopStartTime);
-            camera2StopTimeMsHistogram.addSample(stopTimeMs);
-          }
-        });
-      }
-    } else {
-      final CountDownLatch stopLatch = new CountDownLatch(1);
-
-      cameraThreadHandler.post(new Runnable() {
-        @Override
-        public void run() {
-          if (state != SessionState.STOPPED) {
-            state = SessionState.STOPPED;
-            stopLatch.countDown();
-            stopInternal();
-            final int stopTimeMs =
-                (int) TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - stopStartTime);
-            camera2StopTimeMsHistogram.addSample(stopTimeMs);
-          }
-        }
-      });
-
-      ThreadUtils.awaitUninterruptibly(stopLatch);
+    checkIsOnCameraThread();
+    if (state != SessionState.STOPPED) {
+      final long stopStartTime = System.nanoTime();
+      state = SessionState.STOPPED;
+      stopInternal();
+      final int stopTimeMs =
+          (int) TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - stopStartTime);
+      camera2StopTimeMsHistogram.addSample(stopTimeMs);
     }
   }
 

@@ -40,8 +40,8 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
           checkIsOnCameraThread();
           Logging.d(TAG, "Create session done");
           uiThreadHandler.removeCallbacks(openCameraTimeoutRunnable);
-          capturerObserver.onCapturerStarted(true /* success */);
           synchronized (stateLock) {
+            capturerObserver.onCapturerStarted(true /* success */);
             sessionOpening = false;
             currentSession = session;
             cameraStatistics = new CameraStatistics(surfaceHelper, eventsHandler);
@@ -66,8 +66,8 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
         public void onFailure(String error) {
           checkIsOnCameraThread();
           uiThreadHandler.removeCallbacks(openCameraTimeoutRunnable);
-          capturerObserver.onCapturerStarted(false /* success */);
           synchronized (stateLock) {
+            capturerObserver.onCapturerStarted(false /* success */);
             openAttemptsRemaining--;
 
             if (openAttemptsRemaining <= 0) {
@@ -284,11 +284,18 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
         ThreadUtils.waitUninterruptibly(stateLock);
       }
 
+
       if (currentSession != null) {
-        Logging.d(TAG, "Stop capture: Stopping session");
+        Logging.d(TAG, "Stop capture: Nulling session");
         cameraStatistics.release();
         cameraStatistics = null;
-        currentSession.stop();
+        final CameraSession oldSession = currentSession;
+        cameraThreadHandler.post(new Runnable() {
+          @Override
+          public void run() {
+            oldSession.stop();
+          }
+        });
         currentSession = null;
         capturerObserver.onCapturerStopped();
       } else {
@@ -397,7 +404,13 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
       Logging.d(TAG, "switchCamera: Stopping session");
       cameraStatistics.release();
       cameraStatistics = null;
-      currentSession.stop();
+      final CameraSession oldSession = currentSession;
+      cameraThreadHandler.post(new Runnable() {
+        @Override
+        public void run() {
+          oldSession.stop();
+        }
+      });
       currentSession = null;
 
       int cameraNameIndex = Arrays.asList(deviceNames).indexOf(cameraName);
