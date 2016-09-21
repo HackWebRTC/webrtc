@@ -63,7 +63,8 @@ AudioSendStream::AudioSendStream(
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
     rtc::TaskQueue* worker_queue,
     CongestionController* congestion_controller,
-    BitrateAllocator* bitrate_allocator)
+    BitrateAllocator* bitrate_allocator,
+    RtcEventLog* event_log)
     : worker_queue_(worker_queue),
       config_(config),
       audio_state_(audio_state),
@@ -75,6 +76,7 @@ AudioSendStream::AudioSendStream(
 
   VoiceEngineImpl* voe_impl = static_cast<VoiceEngineImpl*>(voice_engine());
   channel_proxy_ = voe_impl->GetChannelProxy(config_.voe_channel_id);
+  channel_proxy_->SetRtcEventLog(event_log);
   channel_proxy_->RegisterSenderCongestionControlObjects(
       congestion_controller->pacer(),
       congestion_controller->GetTransportFeedbackObserver(),
@@ -107,6 +109,7 @@ AudioSendStream::~AudioSendStream() {
   LOG(LS_INFO) << "~AudioSendStream: " << config_.ToString();
   channel_proxy_->DeRegisterExternalTransport();
   channel_proxy_->ResetCongestionControlObjects();
+  channel_proxy_->SetRtcEventLog(nullptr);
 }
 
 void AudioSendStream::Start() {

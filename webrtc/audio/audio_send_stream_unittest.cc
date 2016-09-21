@@ -106,6 +106,10 @@ struct ConfigHelper {
               .Times(1);
           EXPECT_CALL(*channel_proxy_, DeRegisterExternalTransport())
               .Times(1);
+          EXPECT_CALL(*channel_proxy_, SetRtcEventLog(testing::NotNull()))
+              .Times(1);
+          EXPECT_CALL(*channel_proxy_, SetRtcEventLog(testing::IsNull()))
+              .Times(1);  // Destructor resets the event log
           return channel_proxy_;
         }));
     stream_config_.voe_channel_id = kChannelId;
@@ -128,6 +132,7 @@ struct ConfigHelper {
   }
   BitrateAllocator* bitrate_allocator() { return &bitrate_allocator_; }
   rtc::TaskQueue* worker_queue() { return &worker_queue_; }
+  RtcEventLog* event_log() { return &event_log_; }
 
   void SetupMockForSendTelephoneEvent() {
     EXPECT_TRUE(channel_proxy_);
@@ -210,14 +215,16 @@ TEST(AudioSendStreamTest, ConstructDestruct) {
   ConfigHelper helper;
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
-      helper.congestion_controller(), helper.bitrate_allocator());
+      helper.congestion_controller(), helper.bitrate_allocator(),
+      helper.event_log());
 }
 
 TEST(AudioSendStreamTest, SendTelephoneEvent) {
   ConfigHelper helper;
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
-      helper.congestion_controller(), helper.bitrate_allocator());
+      helper.congestion_controller(), helper.bitrate_allocator(),
+      helper.event_log());
   helper.SetupMockForSendTelephoneEvent();
   EXPECT_TRUE(send_stream.SendTelephoneEvent(kTelephoneEventPayloadType,
       kTelephoneEventCode, kTelephoneEventDuration));
@@ -227,7 +234,8 @@ TEST(AudioSendStreamTest, SetMuted) {
   ConfigHelper helper;
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
-      helper.congestion_controller(), helper.bitrate_allocator());
+      helper.congestion_controller(), helper.bitrate_allocator(),
+      helper.event_log());
   EXPECT_CALL(*helper.channel_proxy(), SetInputMute(true));
   send_stream.SetMuted(true);
 }
@@ -236,7 +244,8 @@ TEST(AudioSendStreamTest, GetStats) {
   ConfigHelper helper;
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
-      helper.congestion_controller(), helper.bitrate_allocator());
+      helper.congestion_controller(), helper.bitrate_allocator(),
+      helper.event_log());
   helper.SetupMockForGetStats();
   AudioSendStream::Stats stats = send_stream.GetStats();
   EXPECT_EQ(kSsrc, stats.local_ssrc);
@@ -265,7 +274,8 @@ TEST(AudioSendStreamTest, GetStatsTypingNoiseDetected) {
   ConfigHelper helper;
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
-      helper.congestion_controller(), helper.bitrate_allocator());
+      helper.congestion_controller(), helper.bitrate_allocator(),
+      helper.event_log());
   helper.SetupMockForGetStats();
   EXPECT_FALSE(send_stream.GetStats().typing_noise_detected);
 
