@@ -145,7 +145,7 @@ public class Camera1CapturerUsingTextureTest extends InstrumentationTestCase {
     fixtures.cameraFreezedEventOnBufferStarvation();
   }
 
-  // This test that frames forwarded to a renderer is scaled if onOutputFormatRequest is
+  // This test that frames forwarded to a renderer is scaled if adaptOutputFormat is
   // called. This test both Java and C++ parts of of the stack.
   @MediumTest
   public void testScaleCameraOutput() throws InterruptedException {

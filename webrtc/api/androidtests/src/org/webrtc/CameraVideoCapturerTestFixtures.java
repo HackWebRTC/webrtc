@@ -660,7 +660,7 @@ class CameraVideoCapturerTestFixtures {
     final int scaledHeight = startHeight / 2;
 
     // Request the captured frames to be scaled.
-    capturerInstance.capturer.onOutputFormatRequest(scaledWidth, scaledHeight, frameRate);
+    videoTrackWithRenderer.source.adaptOutputFormat(scaledWidth, scaledHeight, frameRate);
 
     boolean gotExpectedResolution = false;
     int numberOfInspectedFrames = 0;

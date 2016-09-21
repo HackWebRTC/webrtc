@@ -112,6 +112,10 @@ public interface VideoCapturer {
    */
   void stopCapture() throws InterruptedException;
 
+  /**
+   * Use VideoSource.adaptOutputFormat() instead.
+   */
+  @Deprecated
   void onOutputFormatRequest(int width, int height, int framerate);
 
   void changeCaptureFormat(int width, int height, int framerate);

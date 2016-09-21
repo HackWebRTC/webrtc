@@ -228,8 +228,6 @@ void AndroidVideoTrackSource::OnFrame(const cricket::VideoFrame& frame,
 void AndroidVideoTrackSource::OnOutputFormatRequest(int width,
                                                     int height,
                                                     int fps) {
-  RTC_DCHECK(camera_thread_checker_.CalledOnValidThread());
-
   cricket::VideoFormat format(width, height,
                               cricket::VideoFormat::FpsToInterval(fps), 0);
   video_adapter_.OnOutputFormatRequest(format);
