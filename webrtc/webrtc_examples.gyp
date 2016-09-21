@@ -371,7 +371,12 @@
                 'MACOSX_DEPLOYMENT_TARGET' : '10.8',
                 # SRWebSocket.m uses code with partial availability.
                 # https://code.google.com/p/webrtc/issues/detail?id=4695
-                'WARNING_CFLAGS!': ['-Wpartial-availability'],
+                'WARNING_CFLAGS!': [
+                  '-Wpartial-availability',
+                  # Hide the warning for SecRandomCopyBytes(), till we update
+                  # to upstream.
+                  # https://bugs.chromium.org/p/webrtc/issues/detail?id=6396
+                  '-Wno-unused-result'],
               },
             }],
           ],
