@@ -162,14 +162,16 @@ TEST(TestVideoFrame, CopyFrame) {
   EXPECT_EQ(kRotation, small_frame.rotation());
 
   // Frame of larger dimensions.
-  rtc::scoped_refptr<I420Buffer> buffer =
-      I420Buffer::Create(width, height, stride_y, stride_u, stride_v);
-  memset(buffer->MutableDataY(), 1, width * height);
-  memset(buffer->MutableDataU(), 2, ((height + 1) / 2) * stride_u);
-  memset(buffer->MutableDataV(), 3, ((height + 1) / 2) * stride_u);
-  VideoFrame other_frame(buffer, 0, 0, webrtc::kVideoRotation_0);
-  big_frame.CopyFrame(other_frame);
-  EXPECT_TRUE(test::FramesEqual(other_frame, big_frame));
+  small_frame.CreateEmptyFrame(width, height,
+                               stride_y, stride_u, stride_v);
+  memset(small_frame.video_frame_buffer()->MutableDataY(), 1,
+         small_frame.allocated_size(kYPlane));
+  memset(small_frame.video_frame_buffer()->MutableDataU(), 2,
+         small_frame.allocated_size(kUPlane));
+  memset(small_frame.video_frame_buffer()->MutableDataV(), 3,
+         small_frame.allocated_size(kVPlane));
+  big_frame.CopyFrame(small_frame);
+  EXPECT_TRUE(test::FramesEqual(small_frame, big_frame));
 }
 
 TEST(TestVideoFrame, ShallowCopy) {

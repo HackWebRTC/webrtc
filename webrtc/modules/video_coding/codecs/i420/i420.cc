@@ -137,7 +137,8 @@ int I420Encoder::RegisterEncodeCompleteCallback(
 }
 
 I420Decoder::I420Decoder()
-    : _width(0),
+    : _decodedImage(),
+      _width(0),
       _height(0),
       _inited(false),
       _decodeCompleteCallback(NULL) {}
@@ -198,19 +199,17 @@ int I420Decoder::Decode(const EncodedImage& inputImage,
   }
   // Set decoded image parameters.
   int half_width = (_width + 1) / 2;
-  rtc::scoped_refptr<webrtc::I420Buffer> frame_buffer =
-      I420Buffer::Create(_width, _height, _width, half_width, half_width);
-
-  // Converting from raw buffer I420Buffer.
+  _decodedImage.CreateEmptyFrame(_width, _height, _width, half_width,
+                                 half_width);
+  // Converting from buffer to plane representation.
   int ret = ConvertToI420(kI420, buffer, 0, 0, _width, _height, 0,
-                          kVideoRotation_0, frame_buffer.get());
+                          kVideoRotation_0, &_decodedImage);
   if (ret < 0) {
     return WEBRTC_VIDEO_CODEC_MEMORY;
   }
+  _decodedImage.set_timestamp(inputImage._timeStamp);
 
-  VideoFrame decoded_image(frame_buffer, inputImage._timeStamp, 0,
-                           webrtc::kVideoRotation_0);
-  _decodeCompleteCallback->Decoded(decoded_image);
+  _decodeCompleteCallback->Decoded(_decodedImage);
   return WEBRTC_VIDEO_CODEC_OK;
 }
 

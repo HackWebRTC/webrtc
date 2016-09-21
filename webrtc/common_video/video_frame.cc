@@ -87,18 +87,10 @@ void VideoFrame::CreateFrame(const uint8_t* buffer_y,
   const int expected_size_y = height * stride_y;
   const int expected_size_u = half_height * stride_u;
   const int expected_size_v = half_height * stride_v;
-  // Allocate a new buffer.
-  rtc::scoped_refptr<I420Buffer> buffer_ =
-      I420Buffer::Create(width, height, stride_y, stride_u, stride_v);
-
-  memcpy(buffer_->MutableDataY(), buffer_y, expected_size_y);
-  memcpy(buffer_->MutableDataU(), buffer_u, expected_size_u);
-  memcpy(buffer_->MutableDataV(), buffer_v, expected_size_v);
-
-  video_frame_buffer_ = buffer_;
-  timestamp_rtp_ = 0;
-  ntp_time_ms_ = 0;
-  timestamp_us_ = 0;
+  CreateEmptyFrame(width, height, stride_y, stride_u, stride_v);
+  memcpy(video_frame_buffer_->MutableDataY(), buffer_y, expected_size_y);
+  memcpy(video_frame_buffer_->MutableDataU(), buffer_u, expected_size_u);
+  memcpy(video_frame_buffer_->MutableDataV(), buffer_v, expected_size_v);
   rotation_ = rotation;
 }
 

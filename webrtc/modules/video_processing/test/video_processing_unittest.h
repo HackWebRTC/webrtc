@@ -33,6 +33,7 @@ class VideoProcessingTest : public ::testing::Test {
   static void TearDownTestCase() { Trace::ReturnTrace(); }
   VideoProcessing* vp_;
   FILE* source_file_;
+  VideoFrame video_frame_;
   const int width_;
   const int half_width_;
   const int height_;

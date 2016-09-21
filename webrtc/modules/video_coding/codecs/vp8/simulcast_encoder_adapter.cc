@@ -298,10 +298,11 @@ int SimulcastEncoderAdapter::Encode(
         return ret;
       }
     } else {
+      VideoFrame dst_frame;
+      // Making sure that destination frame is of sufficient size.
       // Aligning stride values based on width.
-      rtc::scoped_refptr<I420Buffer> dst_buffer =
-          I420Buffer::Create(dst_width, dst_height, dst_width,
-                             (dst_width + 1) / 2, (dst_width + 1) / 2);
+      dst_frame.CreateEmptyFrame(dst_width, dst_height, dst_width,
+                                 (dst_width + 1) / 2, (dst_width + 1) / 2);
       libyuv::I420Scale(input_image.video_frame_buffer()->DataY(),
                         input_image.video_frame_buffer()->StrideY(),
                         input_image.video_frame_buffer()->DataU(),
@@ -309,16 +310,18 @@ int SimulcastEncoderAdapter::Encode(
                         input_image.video_frame_buffer()->DataV(),
                         input_image.video_frame_buffer()->StrideV(),
                         src_width, src_height,
-                        dst_buffer->MutableDataY(), dst_buffer->StrideY(),
-                        dst_buffer->MutableDataU(), dst_buffer->StrideU(),
-                        dst_buffer->MutableDataV(), dst_buffer->StrideV(),
+                        dst_frame.video_frame_buffer()->MutableDataY(),
+                        dst_frame.video_frame_buffer()->StrideY(),
+                        dst_frame.video_frame_buffer()->MutableDataU(),
+                        dst_frame.video_frame_buffer()->StrideU(),
+                        dst_frame.video_frame_buffer()->MutableDataV(),
+                        dst_frame.video_frame_buffer()->StrideV(),
                         dst_width, dst_height,
                         libyuv::kFilterBilinear);
-
+      dst_frame.set_timestamp(input_image.timestamp());
+      dst_frame.set_render_time_ms(input_image.render_time_ms());
       int ret = streaminfos_[stream_idx].encoder->Encode(
-          VideoFrame(dst_buffer, input_image.timestamp(),
-                     input_image.render_time_ms(), webrtc::kVideoRotation_0),
-          codec_specific_info, &stream_frame_types);
+          dst_frame, codec_specific_info, &stream_frame_types);
       if (ret != WEBRTC_VIDEO_CODEC_OK) {
         return ret;
       }

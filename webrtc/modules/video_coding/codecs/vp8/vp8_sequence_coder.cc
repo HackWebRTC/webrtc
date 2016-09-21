@@ -148,7 +148,7 @@ int SequenceCoder(webrtc::test::CommandLineParser* parser) {
     return -1;
   }
   EXPECT_EQ(0, decoder->InitDecode(&inst, 1));
-
+  webrtc::VideoFrame input_frame;
   size_t length = webrtc::CalcBufferSize(webrtc::kI420, width, height);
   std::unique_ptr<uint8_t[]> frame_buffer(new uint8_t[length]);
 
@@ -163,18 +163,14 @@ int SequenceCoder(webrtc::test::CommandLineParser* parser) {
   int64_t starttime = rtc::TimeMillis();
   int frame_cnt = 1;
   int frames_processed = 0;
-  rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
-      webrtc::I420Buffer::Create(width, height, width, half_width, half_width);
-
+  input_frame.CreateEmptyFrame(width, height, width, half_width, half_width);
   while (!feof(input_file) &&
          (num_frames == -1 || frames_processed < num_frames)) {
     if (fread(frame_buffer.get(), 1, length, input_file) != length)
       continue;
     if (frame_cnt >= start_frame) {
       webrtc::ConvertToI420(webrtc::kI420, frame_buffer.get(), 0, 0, width,
-                            height, 0, webrtc::kVideoRotation_0, &i420_buffer);
-      webrtc::VideoFrame input_frame(i420_buffer, 0, 0,
-                                     webrtc::kVideoRotation_0);
+                            height, 0, webrtc::kVideoRotation_0, &input_frame);
       encoder->Encode(input_frame, NULL, NULL);
       decoder->Decode(encoder_callback.encoded_image(), false, NULL);
       ++frames_processed;

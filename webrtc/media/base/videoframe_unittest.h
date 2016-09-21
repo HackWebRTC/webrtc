@@ -453,6 +453,7 @@ class VideoFrameTest : public testing::Test {
   static bool IsEqual(const cricket::VideoFrame& frame,
                       int width,
                       int height,
+                      int64_t timestamp_us,
                       const uint8_t* y,
                       uint32_t ypitch,
                       const uint8_t* u,
@@ -461,6 +462,7 @@ class VideoFrameTest : public testing::Test {
                       uint32_t vpitch,
                       int max_error) {
     return IsSize(frame, width, height) &&
+           frame.timestamp_us() == timestamp_us &&
            IsPlaneEqual("y", frame.video_frame_buffer()->DataY(),
                         frame.video_frame_buffer()->StrideY(), y, ypitch,
                         static_cast<uint32_t>(width),
@@ -478,25 +480,15 @@ class VideoFrameTest : public testing::Test {
   static bool IsEqual(const cricket::VideoFrame& frame1,
                       const cricket::VideoFrame& frame2,
                       int max_error) {
-    return frame1.timestamp_us() == frame2.timestamp_us() &&
-           IsEqual(frame1,
+    return IsEqual(frame1,
                    frame2.width(), frame2.height(),
+                   frame2.timestamp_us(),
                    frame2.video_frame_buffer()->DataY(),
                    frame2.video_frame_buffer()->StrideY(),
                    frame2.video_frame_buffer()->DataU(),
                    frame2.video_frame_buffer()->StrideU(),
                    frame2.video_frame_buffer()->DataV(),
-                   frame2.video_frame_buffer()->StrideV(), max_error);
-  }
-
-  static bool IsEqual(
-      const cricket::VideoFrame& frame1,
-      const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
-      int max_error) {
-    return IsEqual(frame1, buffer->width(), buffer->height(),
-                   buffer->DataY(), buffer->StrideY(),
-                   buffer->DataU(), buffer->StrideU(),
-                   buffer->DataV(), buffer->StrideV(),
+                   frame2.video_frame_buffer()->StrideV(),
                    max_error);
   }
 
@@ -505,10 +497,10 @@ class VideoFrameTest : public testing::Test {
                               int hcrop, int vcrop, int max_error) {
     return frame1.width() <= frame2.width() &&
            frame1.height() <= frame2.height() &&
-           frame1.timestamp_us() == frame2.timestamp_us() &&
            IsEqual(frame1,
                    frame2.width() - hcrop * 2,
                    frame2.height() - vcrop * 2,
+                   frame2.timestamp_us(),
                    frame2.video_frame_buffer()->DataY()
                        + vcrop * frame2.video_frame_buffer()->StrideY()
                        + hcrop,
@@ -547,8 +539,8 @@ class VideoFrameTest : public testing::Test {
     const uint8_t* y = reinterpret_cast<uint8_t*>(ms.get()->GetBuffer());
     const uint8_t* u = y + kWidth * kHeight;
     const uint8_t* v = u + kWidth * kHeight / 4;
-    EXPECT_TRUE(IsEqual(frame, kWidth, kHeight, y, kWidth, u, kWidth / 2, v,
-                        kWidth / 2, 0));
+    EXPECT_TRUE(IsEqual(frame, kWidth, kHeight, 0, y, kWidth, u,
+                        kWidth / 2, v, kWidth / 2, 0));
   }
 
   // Test constructing an image from a YV12 buffer.
@@ -562,8 +554,8 @@ class VideoFrameTest : public testing::Test {
     const uint8_t* y = reinterpret_cast<uint8_t*>(ms.get()->GetBuffer());
     const uint8_t* v = y + kWidth * kHeight;
     const uint8_t* u = v + kWidth * kHeight / 4;
-    EXPECT_TRUE(IsEqual(frame, kWidth, kHeight, y, kWidth, u, kWidth / 2, v,
-                        kWidth / 2, 0));
+    EXPECT_TRUE(IsEqual(frame, kWidth, kHeight, 0, y, kWidth, u,
+                        kWidth / 2, v, kWidth / 2, 0));
   }
 
   // Test constructing an image from a I422 buffer.
@@ -780,8 +772,7 @@ class VideoFrameTest : public testing::Test {
 // Macro to help test different rotations
 #define TEST_MIRROR(FOURCC, BPP)                                               \
   void Construct##FOURCC##Mirror() {                                           \
-    T frame1, frame2;                                                          \
-    rtc::scoped_refptr<webrtc::I420Buffer> res_buffer;                         \
+    T frame1, frame2, frame3;                                                  \
     std::unique_ptr<rtc::MemoryStream> ms(                                     \
         CreateYuvSample(kWidth, kHeight, BPP));                                \
     ASSERT_TRUE(ms.get() != NULL);                                             \
@@ -797,18 +788,21 @@ class VideoFrameTest : public testing::Test {
                             data_size, 0, webrtc::kVideoRotation_0));          \
     int width_rotate = frame1.width();                                         \
     int height_rotate = frame1.height();                                       \
-    res_buffer = webrtc::I420Buffer::Create(width_rotate, height_rotate);      \
+    frame3.InitToEmptyBuffer(width_rotate, height_rotate);                     \
     libyuv::I420Mirror(frame2.video_frame_buffer()->DataY(),                   \
                        frame2.video_frame_buffer()->StrideY(),                 \
                        frame2.video_frame_buffer()->DataU(),                   \
                        frame2.video_frame_buffer()->StrideU(),                 \
                        frame2.video_frame_buffer()->DataV(),                   \
                        frame2.video_frame_buffer()->StrideV(),                 \
-                       res_buffer->MutableDataY(), res_buffer->StrideY(),      \
-                       res_buffer->MutableDataU(), res_buffer->StrideU(),      \
-                       res_buffer->MutableDataV(), res_buffer->StrideV(),      \
-                       kWidth, kHeight);                                       \
-    EXPECT_TRUE(IsEqual(frame1, res_buffer, 0));                               \
+                       frame3.video_frame_buffer()->MutableDataY(),            \
+                       frame3.video_frame_buffer()->StrideY(),                 \
+                       frame3.video_frame_buffer()->MutableDataU(),            \
+                       frame3.video_frame_buffer()->StrideU(),                 \
+                       frame3.video_frame_buffer()->MutableDataV(),            \
+                       frame3.video_frame_buffer()->StrideV(), kWidth,         \
+                       kHeight);                                               \
+    EXPECT_TRUE(IsEqual(frame1, frame3, 0));                                   \
   }
 
   TEST_MIRROR(I420, 420)
@@ -816,8 +810,7 @@ class VideoFrameTest : public testing::Test {
 // Macro to help test different rotations
 #define TEST_ROTATE(FOURCC, BPP, ROTATE)                                       \
   void Construct##FOURCC##Rotate##ROTATE() {                                   \
-    T frame1, frame2;                                                          \
-    rtc::scoped_refptr<webrtc::I420Buffer> res_buffer;                         \
+    T frame1, frame2, frame3;                                                  \
     std::unique_ptr<rtc::MemoryStream> ms(                                     \
         CreateYuvSample(kWidth, kHeight, BPP));                                \
     ASSERT_TRUE(ms.get() != NULL);                                             \
@@ -833,18 +826,21 @@ class VideoFrameTest : public testing::Test {
                             data_size, 0, webrtc::kVideoRotation_0));          \
     int width_rotate = frame1.width();                                         \
     int height_rotate = frame1.height();                                       \
-    res_buffer = webrtc::I420Buffer::Create(width_rotate, height_rotate);      \
+    frame3.InitToEmptyBuffer(width_rotate, height_rotate);                     \
     libyuv::I420Rotate(frame2.video_frame_buffer()->DataY(),                   \
                        frame2.video_frame_buffer()->StrideY(),                 \
                        frame2.video_frame_buffer()->DataU(),                   \
                        frame2.video_frame_buffer()->StrideU(),                 \
                        frame2.video_frame_buffer()->DataV(),                   \
                        frame2.video_frame_buffer()->StrideV(),                 \
-                       res_buffer->MutableDataY(), res_buffer->StrideY(),      \
-                       res_buffer->MutableDataU(), res_buffer->StrideU(),      \
-                       res_buffer->MutableDataV(), res_buffer->StrideV(),      \
-                       kWidth, kHeight, libyuv::kRotate##ROTATE);              \
-    EXPECT_TRUE(IsEqual(frame1, res_buffer, 0));                               \
+                       frame3.video_frame_buffer()->MutableDataY(),            \
+                       frame3.video_frame_buffer()->StrideY(),                 \
+                       frame3.video_frame_buffer()->MutableDataU(),            \
+                       frame3.video_frame_buffer()->StrideU(),                 \
+                       frame3.video_frame_buffer()->MutableDataV(),            \
+                       frame3.video_frame_buffer()->StrideV(), kWidth,         \
+                       kHeight, libyuv::kRotate##ROTATE);                      \
+    EXPECT_TRUE(IsEqual(frame1, frame3, 0));                                   \
   }
 
   // Test constructing an image with rotation.
@@ -948,7 +944,7 @@ class VideoFrameTest : public testing::Test {
     const uint8_t* y = pixel;
     const uint8_t* u = y + 1;
     const uint8_t* v = u + 1;
-    EXPECT_TRUE(IsEqual(frame, 1, 1, y, 1, u, 1, v, 1, 0));
+    EXPECT_TRUE(IsEqual(frame, 1, 1, 0, y, 1, u, 1, v, 1, 0));
   }
 
   // Test 5 pixel edge case image.

@@ -141,10 +141,8 @@ TEST_F(VideoProcessingTest, Denoiser) {
   while (fread(video_buffer.get(), 1, frame_length_, source_file_) ==
          frame_length_) {
     // Using ConvertToI420 to add stride to the image.
-    rtc::scoped_refptr<webrtc::I420Buffer> input_buffer =
-        I420Buffer::Create(width_, height_, width_, half_width_, half_width_);
     EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0, width_, height_,
-                               0, kVideoRotation_0, input_buffer.get()));
+                               0, kVideoRotation_0, &video_frame_));
 
     rtc::scoped_refptr<I420Buffer>* p_denoised_c = &denoised_frame_c;
     rtc::scoped_refptr<I420Buffer>* p_denoised_prev_c = &denoised_frame_prev_c;
@@ -159,9 +157,11 @@ TEST_F(VideoProcessingTest, Denoiser) {
       p_denoised_sse_neon = &denoised_frame_prev_sse_neon;
       p_denoised_prev_sse_neon = &denoised_frame_sse_neon;
     }
-    denoiser_c.DenoiseFrame(input_buffer, p_denoised_c, p_denoised_prev_c,
+    denoiser_c.DenoiseFrame(video_frame_.video_frame_buffer(),
+                            p_denoised_c, p_denoised_prev_c,
                             false);
-    denoiser_sse_neon.DenoiseFrame(input_buffer, p_denoised_sse_neon,
+    denoiser_sse_neon.DenoiseFrame(video_frame_.video_frame_buffer(),
+                                   p_denoised_sse_neon,
                                    p_denoised_prev_sse_neon, false);
     // Invert the flag.
     denoised_frame_toggle ^= 1;

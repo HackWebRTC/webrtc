@@ -66,13 +66,17 @@ void VerifyCodecHasDefaultFeedbackParams(const cricket::VideoCodec& codec) {
       cricket::kRtcpFbParamCcm, cricket::kRtcpFbCcmParamFir)));
 }
 
-static rtc::scoped_refptr<webrtc::VideoFrameBuffer> CreateBlackFrameBuffer(
-    int width,
-    int height) {
-  rtc::scoped_refptr<webrtc::I420Buffer> buffer =
-      webrtc::I420Buffer::Create(width, height);
-  buffer->SetToBlack();
-  return buffer;
+static void CreateBlackFrame(webrtc::VideoFrame* video_frame,
+                             int width,
+                             int height) {
+  video_frame->CreateEmptyFrame(
+      width, height, width, (width + 1) / 2, (width + 1) / 2);
+  memset(video_frame->video_frame_buffer()->MutableDataY(), 16,
+         video_frame->allocated_size(webrtc::kYPlane));
+  memset(video_frame->video_frame_buffer()->MutableDataU(), 128,
+         video_frame->allocated_size(webrtc::kUPlane));
+  memset(video_frame->video_frame_buffer()->MutableDataV(), 128,
+         video_frame->allocated_size(webrtc::kVPlane));
 }
 
 void VerifySendStreamHasRtxTypes(const webrtc::VideoSendStream::Config& config,
@@ -2200,9 +2204,9 @@ TEST_F(WebRtcVideoChannel2Test, EstimatesNtpStartTimeCorrectly) {
   cricket::FakeVideoRenderer renderer;
   EXPECT_TRUE(channel_->SetSink(last_ssrc_, &renderer));
 
-  webrtc::VideoFrame video_frame(CreateBlackFrameBuffer(4, 4),
-                                 kInitialTimestamp, 0,
-                                 webrtc::kVideoRotation_0);
+  webrtc::VideoFrame video_frame;
+  CreateBlackFrame(&video_frame, 4, 4);
+  video_frame.set_timestamp(kInitialTimestamp);
   // Initial NTP time is not available on the first frame, but should still be
   // able to be estimated.
   stream->InjectFrame(video_frame);

@@ -121,47 +121,52 @@ int H264DecoderImpl::AVGetBuffer2(
     return ret;
   }
 
-  // The video frame is stored in |frame_buffer|. |av_frame| is FFmpeg's version
-  // of a video frame and will be set up to reference |frame_buffer|'s data.
+  // The video frame is stored in |video_frame|. |av_frame| is FFmpeg's version
+  // of a video frame and will be set up to reference |video_frame|'s buffers.
+
+  // TODO(nisse): The VideoFrame's timestamp and rotation info is not used.
+  // Refactor to do not use a VideoFrame object at all.
 
   // FFmpeg expects the initial allocation to be zero-initialized according to
   // http://crbug.com/390941. Our pool is set up to zero-initialize new buffers.
-  // TODO(nisse): Delete that feature from the video pool, instead add
-  // an explicit call to InitializeData here.
-  rtc::scoped_refptr<I420Buffer> frame_buffer =
-      decoder->pool_.CreateBuffer(width, height);
+  VideoFrame* video_frame = new VideoFrame(
+      decoder->pool_.CreateBuffer(width, height),
+      0 /* timestamp */, 0 /* render_time_ms */, kVideoRotation_0);
 
-  int y_size = width * height;
-  int uv_size = ((width + 1) / 2) * ((height + 1) / 2);
   // DCHECK that we have a continuous buffer as is required.
-  RTC_DCHECK_EQ(frame_buffer->DataU(), frame_buffer->DataY() + y_size);
-  RTC_DCHECK_EQ(frame_buffer->DataV(), frame_buffer->DataU() + uv_size);
-  int total_size = y_size + 2 * uv_size;
+  RTC_DCHECK_EQ(video_frame->video_frame_buffer()->DataU(),
+                video_frame->video_frame_buffer()->DataY() +
+                video_frame->allocated_size(kYPlane));
+  RTC_DCHECK_EQ(video_frame->video_frame_buffer()->DataV(),
+                video_frame->video_frame_buffer()->DataU() +
+                video_frame->allocated_size(kUPlane));
+  int total_size = video_frame->allocated_size(kYPlane) +
+                   video_frame->allocated_size(kUPlane) +
+                   video_frame->allocated_size(kVPlane);
 
   av_frame->format = context->pix_fmt;
   av_frame->reordered_opaque = context->reordered_opaque;
 
   // Set |av_frame| members as required by FFmpeg.
-  av_frame->data[kYPlaneIndex] = frame_buffer->MutableDataY();
-  av_frame->linesize[kYPlaneIndex] = frame_buffer->StrideY();
-  av_frame->data[kUPlaneIndex] = frame_buffer->MutableDataU();
-  av_frame->linesize[kUPlaneIndex] = frame_buffer->StrideU();
-  av_frame->data[kVPlaneIndex] = frame_buffer->MutableDataV();
-  av_frame->linesize[kVPlaneIndex] = frame_buffer->StrideV();
+  av_frame->data[kYPlaneIndex] =
+      video_frame->video_frame_buffer()->MutableDataY();
+  av_frame->linesize[kYPlaneIndex] =
+      video_frame->video_frame_buffer()->StrideY();
+  av_frame->data[kUPlaneIndex] =
+      video_frame->video_frame_buffer()->MutableDataU();
+  av_frame->linesize[kUPlaneIndex] =
+      video_frame->video_frame_buffer()->StrideU();
+  av_frame->data[kVPlaneIndex] =
+      video_frame->video_frame_buffer()->MutableDataV();
+  av_frame->linesize[kVPlaneIndex] =
+      video_frame->video_frame_buffer()->StrideV();
   RTC_DCHECK_EQ(av_frame->extended_data, av_frame->data);
 
-  // Create a VideoFrame object, to keep a reference to the buffer.
-  // TODO(nisse): The VideoFrame's timestamp and rotation info is not used.
-  // Refactor to do not use a VideoFrame object at all.
-  av_frame->buf[0] = av_buffer_create(
-      av_frame->data[kYPlaneIndex],
-      total_size,
-      AVFreeBuffer2,
-      static_cast<void*>(new VideoFrame(frame_buffer,
-                                        0 /* timestamp */,
-                                        0 /* render_time_ms */,
-                                        kVideoRotation_0)),
-      0);
+  av_frame->buf[0] = av_buffer_create(av_frame->data[kYPlaneIndex],
+                                      total_size,
+                                      AVFreeBuffer2,
+                                      static_cast<void*>(video_frame),
+                                      0);
   RTC_CHECK(av_frame->buf[0]);
   return 0;
 }

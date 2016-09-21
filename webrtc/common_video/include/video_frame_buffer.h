@@ -45,6 +45,12 @@ class VideoFrameBuffer : public rtc::RefCountInterface {
   virtual const uint8_t* DataU() const = 0;
   virtual const uint8_t* DataV() const = 0;
 
+  // TODO(nisse): Move MutableData methods to the I420Buffer subclass.
+  // Non-const data access.
+  virtual uint8_t* MutableDataY();
+  virtual uint8_t* MutableDataU();
+  virtual uint8_t* MutableDataV();
+
   // Returns the number of bytes between successive rows for a given plane.
   virtual int StrideY() const = 0;
   virtual int StrideU() const = 0;
@@ -92,9 +98,9 @@ class I420Buffer : public VideoFrameBuffer {
   const uint8_t* DataU() const override;
   const uint8_t* DataV() const override;
 
-  uint8_t* MutableDataY();
-  uint8_t* MutableDataU();
-  uint8_t* MutableDataV();
+  uint8_t* MutableDataY() override;
+  uint8_t* MutableDataU() override;
+  uint8_t* MutableDataV() override;
   int StrideY() const override;
   int StrideU() const override;
   int StrideV() const override;

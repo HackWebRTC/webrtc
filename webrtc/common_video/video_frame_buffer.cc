@@ -31,6 +31,19 @@ int I420DataSize(int height, int stride_y, int stride_u, int stride_v) {
 
 }  // namespace
 
+uint8_t* VideoFrameBuffer::MutableDataY() {
+  RTC_NOTREACHED();
+  return nullptr;
+}
+uint8_t* VideoFrameBuffer::MutableDataU() {
+  RTC_NOTREACHED();
+  return nullptr;
+}
+uint8_t* VideoFrameBuffer::MutableDataV() {
+  RTC_NOTREACHED();
+  return nullptr;
+}
+
 VideoFrameBuffer::~VideoFrameBuffer() {}
 
 I420Buffer::I420Buffer(int width, int height)

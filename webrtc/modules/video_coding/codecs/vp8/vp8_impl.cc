@@ -1306,18 +1306,18 @@ int VP8DecoderImpl::ReturnFrame(const vpx_image_t* img,
   last_frame_width_ = img->d_w;
   last_frame_height_ = img->d_h;
   // Allocate memory for decoded image.
-  rtc::scoped_refptr<I420Buffer> buffer =
-      buffer_pool_.CreateBuffer(img->d_w, img->d_h);
-
+  VideoFrame decoded_image(buffer_pool_.CreateBuffer(img->d_w, img->d_h),
+                           timestamp, 0, kVideoRotation_0);
   libyuv::I420Copy(img->planes[VPX_PLANE_Y], img->stride[VPX_PLANE_Y],
                    img->planes[VPX_PLANE_U], img->stride[VPX_PLANE_U],
                    img->planes[VPX_PLANE_V], img->stride[VPX_PLANE_V],
-                   buffer->MutableDataY(), buffer->StrideY(),
-                   buffer->MutableDataU(), buffer->StrideU(),
-                   buffer->MutableDataV(), buffer->StrideV(),
+                   decoded_image.video_frame_buffer()->MutableDataY(),
+                   decoded_image.video_frame_buffer()->StrideY(),
+                   decoded_image.video_frame_buffer()->MutableDataU(),
+                   decoded_image.video_frame_buffer()->StrideU(),
+                   decoded_image.video_frame_buffer()->MutableDataV(),
+                   decoded_image.video_frame_buffer()->StrideV(),
                    img->d_w, img->d_h);
-
-  VideoFrame decoded_image(buffer, timestamp, 0, kVideoRotation_0);
   decoded_image.set_ntp_time_ms(ntp_time_ms);
   int ret = decode_complete_callback_->Decoded(decoded_image);
   if (ret != 0)
