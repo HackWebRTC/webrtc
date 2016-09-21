@@ -24,7 +24,9 @@
         'controller_manager.h',
         'dtx_controller.h',
         'dtx_controller.cc',
-        'include/audio_network_adaptor.h'
+        'include/audio_network_adaptor.h',
+        'smoothing_filter.h',
+        'smoothing_filter.cc',
       ], # source
     },
   ], # targets
