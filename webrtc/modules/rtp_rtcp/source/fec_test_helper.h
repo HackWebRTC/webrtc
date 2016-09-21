@@ -11,19 +11,20 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_FEC_TEST_HELPER_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_FEC_TEST_HELPER_H_
 
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/random.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
 
 namespace webrtc {
 namespace test {
+
+// Needed to not clash with another webrtc::FrameGenerator.
+namespace fec {
+
 struct RawRtpPacket : public ForwardErrorCorrection::Packet {
   WebRtcRTPHeader header;
 };
-}  // namespace test
-
-const uint8_t kFecPayloadType = 96;
-const uint8_t kRedPayloadType = 97;
-const uint8_t kVp8PayloadType = 120;
 
 class FrameGenerator {
  public:
@@ -33,16 +34,15 @@ class FrameGenerator {
 
   uint16_t NextSeqNum();
 
-  test::RawRtpPacket* NextPacket(int offset, size_t length);
+  RawRtpPacket* NextPacket(int offset, size_t length);
 
   // Creates a new RtpPacket with the RED header added to the packet.
-  test::RawRtpPacket* BuildMediaRedPacket(const test::RawRtpPacket* packet);
+  RawRtpPacket* BuildMediaRedPacket(const RawRtpPacket* packet);
 
   // Creates a new RtpPacket with FEC payload and red header. Does this by
   // creating a new fake media RtpPacket, clears the marker bit and adds a RED
   // header. Finally replaces the payload with the content of |packet->data|.
-  test::RawRtpPacket* BuildFecRedPacket(
-      const ForwardErrorCorrection::Packet* packet);
+  RawRtpPacket* BuildFecRedPacket(const ForwardErrorCorrection::Packet* packet);
 
   void SetRedHeader(ForwardErrorCorrection::Packet* red_packet,
                     uint8_t payload_type,
@@ -55,6 +55,39 @@ class FrameGenerator {
   uint16_t seq_num_;
   uint32_t timestamp_;
 };
+
+class MediaPacketGenerator {
+ public:
+  MediaPacketGenerator(uint32_t min_packet_size,
+                       uint32_t max_packet_size,
+                       uint32_t ssrc,
+                       Random* random)
+      : min_packet_size_(min_packet_size),
+        max_packet_size_(max_packet_size),
+        ssrc_(ssrc),
+        random_(random) {}
+
+  // Construct the media packets, up to |num_media_packets| packets.
+  ForwardErrorCorrection::PacketList ConstructMediaPackets(
+      int num_media_packets,
+      uint16_t start_seq_num);
+  ForwardErrorCorrection::PacketList ConstructMediaPackets(
+      int num_media_packets);
+
+  uint16_t GetFecSeqNum();
+
+ private:
+  uint32_t min_packet_size_;
+  uint32_t max_packet_size_;
+  uint32_t ssrc_;
+  Random* random_;
+
+  ForwardErrorCorrection::PacketList media_packets_;
+  uint16_t fec_seq_num_;
+};
+
+}  // namespace fec
+}  // namespace test
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_FEC_TEST_HELPER_H_

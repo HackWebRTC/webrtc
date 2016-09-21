@@ -10,10 +10,21 @@
 
 #include "webrtc/modules/rtp_rtcp/source/fec_test_helper.h"
 
+#include <memory>
+#include <utility>
+
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 
 namespace webrtc {
+namespace test {
+namespace fec {
+
+namespace {
+constexpr uint8_t kFecPayloadType = 96;
+constexpr uint8_t kRedPayloadType = 97;
+constexpr uint8_t kVp8PayloadType = 120;
+}  // namespace
 
 FrameGenerator::FrameGenerator()
     : num_packets_(0), seq_num_(0), timestamp_(0) {}
@@ -25,8 +36,8 @@ void FrameGenerator::NewFrame(int num_packets) {
 
 uint16_t FrameGenerator::NextSeqNum() { return ++seq_num_; }
 
-test::RawRtpPacket* FrameGenerator::NextPacket(int offset, size_t length) {
-  test::RawRtpPacket* rtp_packet = new test::RawRtpPacket;
+RawRtpPacket* FrameGenerator::NextPacket(int offset, size_t length) {
+  RawRtpPacket* rtp_packet = new RawRtpPacket;
   for (size_t i = 0; i < length; ++i)
     rtp_packet->data[i + kRtpHeaderSize] = offset + i;
   rtp_packet->length = length + kRtpHeaderSize;
@@ -44,10 +55,9 @@ test::RawRtpPacket* FrameGenerator::NextPacket(int offset, size_t length) {
 }
 
 // Creates a new RtpPacket with the RED header added to the packet.
-test::RawRtpPacket* FrameGenerator::BuildMediaRedPacket(
-    const test::RawRtpPacket* packet) {
+RawRtpPacket* FrameGenerator::BuildMediaRedPacket(const RawRtpPacket* packet) {
   const size_t kHeaderLength = packet->header.header.headerLength;
-  test::RawRtpPacket* red_packet = new test::RawRtpPacket;
+  RawRtpPacket* red_packet = new RawRtpPacket;
   red_packet->header = packet->header;
   red_packet->length = packet->length + 1;  // 1 byte RED header.
   memset(red_packet->data, 0, red_packet->length);
@@ -59,14 +69,14 @@ test::RawRtpPacket* FrameGenerator::BuildMediaRedPacket(
   return red_packet;
 }
 
-// Creates a new RtpPacket with FEC payload and red header. Does this by
+// Creates a new RtpPacket with FEC payload and RED header. Does this by
 // creating a new fake media RtpPacket, clears the marker bit and adds a RED
 // header. Finally replaces the payload with the content of |packet->data|.
-test::RawRtpPacket* FrameGenerator::BuildFecRedPacket(
+RawRtpPacket* FrameGenerator::BuildFecRedPacket(
     const ForwardErrorCorrection::Packet* packet) {
   // Create a fake media packet to get a correct header. 1 byte RED header.
   ++num_packets_;
-  test::RawRtpPacket* red_packet = NextPacket(0, packet->length + 1);
+  RawRtpPacket* red_packet = NextPacket(0, packet->length + 1);
   red_packet->data[1] &= ~0x80;  // Clear marker bit.
   const size_t kHeaderLength = red_packet->header.header.headerLength;
   SetRedHeader(red_packet, kFecPayloadType, kHeaderLength);
@@ -95,4 +105,69 @@ void FrameGenerator::BuildRtpHeader(uint8_t* data, const RTPHeader* header) {
   ByteWriter<uint32_t>::WriteBigEndian(data + 8, header->ssrc);
 }
 
+ForwardErrorCorrection::PacketList MediaPacketGenerator::ConstructMediaPackets(
+    int num_media_packets,
+    uint16_t start_seq_num) {
+  RTC_DCHECK_GT(num_media_packets, 0);
+  uint16_t seq_num = start_seq_num;
+  int time_stamp = random_->Rand<int>();
+
+  ForwardErrorCorrection::PacketList media_packets;
+
+  for (int i = 0; i < num_media_packets; ++i) {
+    std::unique_ptr<ForwardErrorCorrection::Packet> media_packet(
+        new ForwardErrorCorrection::Packet());
+    media_packet->length = random_->Rand(min_packet_size_, max_packet_size_);
+
+    // Generate random values for the first 2 bytes
+    media_packet->data[0] = random_->Rand<uint8_t>();
+    media_packet->data[1] = random_->Rand<uint8_t>();
+
+    // The first two bits are assumed to be 10 by the FEC encoder.
+    // In fact the FEC decoder will set the two first bits to 10 regardless of
+    // what they actually were. Set the first two bits to 10 so that a memcmp
+    // can be performed for the whole restored packet.
+    media_packet->data[0] |= 0x80;
+    media_packet->data[0] &= 0xbf;
+
+    // FEC is applied to a whole frame.
+    // A frame is signaled by multiple packets without the marker bit set
+    // followed by the last packet of the frame for which the marker bit is set.
+    // Only push one (fake) frame to the FEC.
+    media_packet->data[1] &= 0x7f;
+
+    webrtc::ByteWriter<uint16_t>::WriteBigEndian(&media_packet->data[2],
+                                                 seq_num);
+    webrtc::ByteWriter<uint32_t>::WriteBigEndian(&media_packet->data[4],
+                                                 time_stamp);
+    webrtc::ByteWriter<uint32_t>::WriteBigEndian(&media_packet->data[8], ssrc_);
+
+    // Generate random values for payload.
+    for (size_t j = 12; j < media_packet->length; ++j) {
+      media_packet->data[j] = random_->Rand<uint8_t>();
+    }
+    seq_num++;
+    media_packets.push_back(std::move(media_packet));
+  }
+  // Last packet, set marker bit.
+  ForwardErrorCorrection::Packet* media_packet = media_packets.back().get();
+  RTC_DCHECK(media_packet);
+  media_packet->data[1] |= 0x80;
+
+  fec_seq_num_ = seq_num;
+
+  return media_packets;
+}
+
+ForwardErrorCorrection::PacketList MediaPacketGenerator::ConstructMediaPackets(
+    int num_media_packets) {
+  return ConstructMediaPackets(num_media_packets, random_->Rand<uint16_t>());
+}
+
+uint16_t MediaPacketGenerator::GetFecSeqNum() {
+  return fec_seq_num_;
+}
+
+}  // namespace fec
+}  // namespace test
 }  // namespace webrtc

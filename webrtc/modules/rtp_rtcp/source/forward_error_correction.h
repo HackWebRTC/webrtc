@@ -147,14 +147,16 @@ class ForwardErrorCorrection {
   //                                of type Packet. Must be empty on entry.
   //                                The memory available through the list will
   //                                be valid until the next call to
-  //                                GenerateFec().
+  //                                EncodeFec().
   //
   // Returns 0 on success, -1 on failure.
   //
-  int GenerateFec(const PacketList& media_packets,
-                  uint8_t protection_factor, int num_important_packets,
-                  bool use_unequal_protection, FecMaskType fec_mask_type,
-                  std::list<Packet*>* fec_packets);
+  int EncodeFec(const PacketList& media_packets,
+                uint8_t protection_factor,
+                int num_important_packets,
+                bool use_unequal_protection,
+                FecMaskType fec_mask_type,
+                std::list<Packet*>* fec_packets);
 
   //
   // Decodes a list of received media and FEC packets. It will parse the

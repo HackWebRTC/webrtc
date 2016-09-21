@@ -94,19 +94,18 @@ ForwardErrorCorrection::~ForwardErrorCorrection() {}
 //   |                                                               |
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //
-// Note that any potential RED headers are added/removed before calling
-// GenerateFec() or DecodeFec().
-int ForwardErrorCorrection::GenerateFec(const PacketList& media_packets,
-                                        uint8_t protection_factor,
-                                        int num_important_packets,
-                                        bool use_unequal_protection,
-                                        FecMaskType fec_mask_type,
-                                        std::list<Packet*>* fec_packets) {
-  const uint16_t num_media_packets = media_packets.size();
+int ForwardErrorCorrection::EncodeFec(const PacketList& media_packets,
+                                      uint8_t protection_factor,
+                                      int num_important_packets,
+                                      bool use_unequal_protection,
+                                      FecMaskType fec_mask_type,
+                                      std::list<Packet*>* fec_packets) {
+  const size_t num_media_packets = media_packets.size();
+
   // Sanity check arguments.
-  RTC_DCHECK_GT(num_media_packets, 0);
+  RTC_DCHECK_GT(num_media_packets, 0u);
   RTC_DCHECK_GE(num_important_packets, 0);
-  RTC_DCHECK_LE(num_important_packets, num_media_packets);
+  RTC_DCHECK_LE(static_cast<size_t>(num_important_packets), num_media_packets);
   RTC_DCHECK(fec_packets->empty());
 
   if (num_media_packets > kMaxMediaPackets) {

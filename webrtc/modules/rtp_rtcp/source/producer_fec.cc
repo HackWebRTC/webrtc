@@ -24,12 +24,12 @@ namespace webrtc {
 constexpr size_t kRedForFecHeaderLength = 1;
 
 // This controls the maximum amount of excess overhead (actual - target)
-// allowed in order to trigger GenerateFec(), before |params_.max_fec_frames|
+// allowed in order to trigger EncodeFec(), before |params_.max_fec_frames|
 // is reached. Overhead here is defined as relative to number of media packets.
 constexpr int kMaxExcessOverhead = 50;  // Q8.
 
 // This is the minimum number of media packets required (above some protection
-// level) in order to trigger GenerateFec(), before |params_.max_fec_frames| is
+// level) in order to trigger EncodeFec(), before |params_.max_fec_frames| is
 // reached.
 constexpr size_t kMinMediaPackets = 4;
 
@@ -175,9 +175,9 @@ int ProducerFec::AddRtpPacketAndGenerateFec(const uint8_t* data_buffer,
     // Since unequal protection is disabled, the value of
     // |num_important_packets_| has no importance when calling GenerateFec().
     constexpr bool kUseUnequalProtection = false;
-    int ret = fec_.GenerateFec(media_packets_, params_.fec_rate,
-                               num_important_packets_, kUseUnequalProtection,
-                               params_.fec_mask_type, &generated_fec_packets_);
+    int ret = fec_.EncodeFec(media_packets_, params_.fec_rate,
+                             num_important_packets_, kUseUnequalProtection,
+                             params_.fec_mask_type, &generated_fec_packets_);
     if (generated_fec_packets_.empty()) {
       num_protected_frames_ = 0;
       DeleteMediaPackets();

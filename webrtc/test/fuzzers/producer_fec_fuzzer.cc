@@ -17,6 +17,11 @@
 
 namespace webrtc {
 
+namespace {
+constexpr uint8_t kFecPayloadType = 96;
+constexpr uint8_t kRedPayloadType = 97;
+}  // namespace
+
 void FuzzOneInput(const uint8_t* data, size_t size) {
   ProducerFec producer;
   size_t i = 0;

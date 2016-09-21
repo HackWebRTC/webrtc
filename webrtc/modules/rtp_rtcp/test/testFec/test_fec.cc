@@ -277,14 +277,14 @@ TEST(FecTest, MAYBE_FecTest) {
             }
             media_packet_list.back()->data[1] |= 0x80;
 
-            ASSERT_EQ(0, fec.GenerateFec(media_packet_list, protection_factor,
-                                         num_imp_packets, kUseUnequalProtection,
-                                         fec_mask_type, &fec_packet_list))
-                << "GenerateFec() failed";
+            ASSERT_EQ(0, fec.EncodeFec(media_packet_list, protection_factor,
+                                       num_imp_packets, kUseUnequalProtection,
+                                       fec_mask_type, &fec_packet_list))
+                << "EncodeFec() failed";
 
             ASSERT_EQ(num_fec_packets, fec_packet_list.size())
                 << "We requested " << num_fec_packets << " FEC packets, but "
-                << "GenerateFec() produced " << fec_packet_list.size();
+                << "EncodeFec() produced " << fec_packet_list.size();
 
             memset(media_loss_mask, 0, sizeof(media_loss_mask));
             uint32_t media_packet_idx = 0;
@@ -392,8 +392,8 @@ TEST(FecTest, MAYBE_FecTest) {
                   }
                 }
               }
-              ASSERT_EQ(0, fec.DecodeFec(&to_decode_list,
-                                         &recovered_packet_list))
+              ASSERT_EQ(0,
+                        fec.DecodeFec(&to_decode_list, &recovered_packet_list))
                   << "DecodeFec() failed";
               ASSERT_TRUE(to_decode_list.empty())
                   << "Received packet list is not empty.";
