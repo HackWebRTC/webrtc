@@ -90,6 +90,16 @@ bool PacketBuffer::InsertPacket(const VCMPacket& packet) {
   sequence_buffer_[index].used = true;
   data_buffer_[index] = packet;
 
+  // Since the data pointed to by |packet.dataPtr| is non-persistent the
+  // data has to be copied to its own buffer.
+  // TODO(philipel): Take ownership instead of copying payload when
+  //                 bitstream-fixing has been implemented.
+  if (packet.sizeBytes) {
+    uint8_t* payload = new uint8_t[packet.sizeBytes];
+    memcpy(payload, packet.dataPtr, packet.sizeBytes);
+    data_buffer_[index].dataPtr = payload;
+  }
+
   FindFrames(seq_num);
   return true;
 }
@@ -99,7 +109,9 @@ void PacketBuffer::ClearTo(uint16_t seq_num) {
   size_t index = first_seq_num_ % size_;
   while (AheadOf<uint16_t>(seq_num, first_seq_num_ + 1)) {
     index = (index + 1) % size_;
-    first_seq_num_ = Add<1 << 16>(first_seq_num_, 1);
+    ++first_seq_num_;
+    delete[] data_buffer_[index].dataPtr;
+    data_buffer_[index].dataPtr = nullptr;
     sequence_buffer_[index].used = false;
   }
 }
@@ -191,8 +203,11 @@ void PacketBuffer::ReturnFrame(RtpFrameObject* frame) {
   size_t end = (frame->last_seq_num() + 1) % size_;
   uint16_t seq_num = frame->first_seq_num();
   while (index != end) {
-    if (sequence_buffer_[index].seq_num == seq_num)
+    if (sequence_buffer_[index].seq_num == seq_num) {
+      delete[] data_buffer_[index].dataPtr;
+      data_buffer_[index].dataPtr = nullptr;
       sequence_buffer_[index].used = false;
+    }
 
     index = (index + 1) % size_;
     ++seq_num;
