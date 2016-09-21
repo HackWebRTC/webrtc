@@ -25,11 +25,12 @@ FecReceiver* FecReceiver::Create(RtpData* callback) {
 }
 
 FecReceiverImpl::FecReceiverImpl(RtpData* callback)
-    : recovered_packet_callback_(callback) {}
+    : recovered_packet_callback_(callback),
+      fec_(ForwardErrorCorrection::CreateUlpfec()) {}
 
 FecReceiverImpl::~FecReceiverImpl() {
   received_packets_.clear();
-  fec_.ResetState(&recovered_packets_);
+  fec_->ResetState(&recovered_packets_);
 }
 
 FecPacketCounter FecReceiverImpl::GetPacketCounter() const {
@@ -211,7 +212,7 @@ int32_t FecReceiverImpl::ProcessReceivedFec() {
       }
       crit_sect_.Enter();
     }
-    if (fec_.DecodeFec(&received_packets_, &recovered_packets_) != 0) {
+    if (fec_->DecodeFec(&received_packets_, &recovered_packets_) != 0) {
       crit_sect_.Leave();
       return -1;
     }

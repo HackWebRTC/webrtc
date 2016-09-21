@@ -39,14 +39,16 @@ using ::webrtc::test::fec::RawRtpPacket;
 
 class ReceiverFecTest : public ::testing::Test {
  protected:
-  ReceiverFecTest() : receiver_fec_(FecReceiver::Create(&rtp_data_callback_)) {}
+  ReceiverFecTest()
+      : fec_(ForwardErrorCorrection::CreateUlpfec()),
+        receiver_fec_(FecReceiver::Create(&rtp_data_callback_)) {}
 
   void EncodeFec(ForwardErrorCorrection::PacketList* media_packets,
                  std::list<ForwardErrorCorrection::Packet*>* fec_packets,
                  unsigned int num_fec_packets) {
     uint8_t protection_factor = num_fec_packets * 255 / media_packets->size();
-    EXPECT_EQ(0, fec_.EncodeFec(*media_packets, protection_factor, 0, false,
-                                kFecMaskBursty, fec_packets));
+    EXPECT_EQ(0, fec_->EncodeFec(*media_packets, protection_factor, 0, false,
+                                 kFecMaskBursty, fec_packets));
     ASSERT_EQ(num_fec_packets, fec_packets->size());
   }
 
@@ -95,7 +97,7 @@ class ReceiverFecTest : public ::testing::Test {
                                       uint8_t ulpfec_payload_type);
 
   MockRtpData rtp_data_callback_;
-  ForwardErrorCorrection fec_;
+  std::unique_ptr<ForwardErrorCorrection> fec_;
   std::unique_ptr<FecReceiver> receiver_fec_;
   FrameGenerator generator_;
 };
@@ -260,9 +262,9 @@ TEST_F(ReceiverFecTest, TooManyFrames) {
     GenerateFrame(1, i, &media_rtp_packets, &media_packets);
   }
   std::list<ForwardErrorCorrection::Packet*> fec_packets;
-  EXPECT_EQ(
-      -1, fec_.EncodeFec(media_packets, kNumFecPackets * 255 / kNumMediaPackets,
-                         0, false, kFecMaskBursty, &fec_packets));
+  EXPECT_EQ(-1, fec_->EncodeFec(media_packets,
+                                kNumFecPackets * 255 / kNumMediaPackets, 0,
+                                false, kFecMaskBursty, &fec_packets));
 }
 
 TEST_F(ReceiverFecTest, PacketNotDroppedTooEarly) {

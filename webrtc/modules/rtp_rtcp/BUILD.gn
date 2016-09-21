@@ -149,6 +149,8 @@ rtc_source_set("rtp_rtcp") {
     "source/time_util.h",
     "source/tmmbr_help.cc",
     "source/tmmbr_help.h",
+    "source/ulpfec_header_reader_writer.cc",
+    "source/ulpfec_header_reader_writer.h",
     "source/video_codec_information.h",
     "source/vp8_partition_aggregator.cc",
     "source/vp8_partition_aggregator.h",

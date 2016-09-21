@@ -730,24 +730,24 @@ class FecPacketMaskMetricsTest : public ::testing::Test {
     int code_index = 0;
     // Maximum number of media packets allowed for the mask type.
     const int packet_mask_max = kMaxMediaPackets[fec_mask_type];
-    uint8_t* packet_mask = new uint8_t[packet_mask_max * kMaskSizeLBitSet];
+    std::unique_ptr<uint8_t[]> packet_mask(
+        new uint8_t[packet_mask_max * kUlpfecMaxPacketMaskSize]);
     // Loop through codes up to |kMaxMediaPacketsTest|.
     for (int num_media_packets = 1; num_media_packets <= kMaxMediaPacketsTest;
         num_media_packets++) {
       const int mask_bytes_fec_packet =
-          (num_media_packets > 16) ? kMaskSizeLBitSet : kMaskSizeLBitClear;
+          static_cast<int>(internal::PacketMaskSize(num_media_packets));
       internal::PacketMaskTable mask_table(fec_mask_type, num_media_packets);
       for (int num_fec_packets = 1; num_fec_packets <= num_media_packets;
           num_fec_packets++) {
-        memset(packet_mask, 0, num_media_packets * mask_bytes_fec_packet);
-        memcpy(packet_mask, mask_table.fec_packet_mask_table()
-               [num_media_packets - 1][num_fec_packets - 1],
+        memset(packet_mask.get(), 0, num_media_packets * mask_bytes_fec_packet);
+        memcpy(packet_mask.get(),
+               mask_table.fec_packet_mask_table()[num_media_packets - 1]
+                                                 [num_fec_packets - 1],
                num_fec_packets * mask_bytes_fec_packet);
         // Convert to bit mask.
-        GetPacketMaskConvertToBitMask(packet_mask,
-                                      num_media_packets,
-                                      num_fec_packets,
-                                      mask_bytes_fec_packet,
+        GetPacketMaskConvertToBitMask(packet_mask.get(), num_media_packets,
+                                      num_fec_packets, mask_bytes_fec_packet,
                                       code_type);
         if (RejectInvalidMasks(num_media_packets, num_fec_packets) < 0) {
           return -1;
@@ -759,7 +759,6 @@ class FecPacketMaskMetricsTest : public ::testing::Test {
       }
     }
     assert(code_index == kNumberCodes);
-    delete [] packet_mask;
     return 0;
   }
 

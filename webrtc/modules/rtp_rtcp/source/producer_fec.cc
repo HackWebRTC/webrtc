@@ -93,9 +93,10 @@ size_t RedPacket::length() const {
 }
 
 ProducerFec::ProducerFec()
-    : num_protected_frames_(0),
+    : fec_(ForwardErrorCorrection::CreateUlpfec()),
+      num_protected_frames_(0),
       num_important_packets_(0),
-      min_num_media_packets_(1)  {
+      min_num_media_packets_(1) {
   memset(&params_, 0, sizeof(params_));
   memset(&new_params_, 0, sizeof(new_params_));
 }
@@ -124,9 +125,8 @@ void ProducerFec::SetFecParameters(const FecProtectionParams* params,
   // protection in 'unequal protection mode') cannot exceed kMaxMediaPackets.
   RTC_DCHECK_GE(params->fec_rate, 0);
   RTC_DCHECK_LE(params->fec_rate, 255);
-  if (num_important_packets >
-      static_cast<int>(ForwardErrorCorrection::kMaxMediaPackets)) {
-    num_important_packets = ForwardErrorCorrection::kMaxMediaPackets;
+  if (num_important_packets > static_cast<int>(kUlpfecMaxMediaPackets)) {
+    num_important_packets = kUlpfecMaxMediaPackets;
   }
   // Store the new params and apply them for the next set of FEC packets being
   // produced.
@@ -148,8 +148,8 @@ int ProducerFec::AddRtpPacketAndGenerateFec(const uint8_t* data_buffer,
   }
   bool complete_frame = false;
   const bool marker_bit = (data_buffer[1] & kRtpMarkerBitMask) ? true : false;
-  if (media_packets_.size() < ForwardErrorCorrection::kMaxMediaPackets) {
-    // Generic FEC can only protect up to |kMaxMediaPackets| packets.
+  if (media_packets_.size() < kUlpfecMaxMediaPackets) {
+    // Generic FEC can only protect up to |kUlpfecMaxMediaPackets| packets.
     std::unique_ptr<ForwardErrorCorrection::Packet> packet(
         new ForwardErrorCorrection::Packet());
     packet->length = payload_length + rtp_header_length;
@@ -168,16 +168,16 @@ int ProducerFec::AddRtpPacketAndGenerateFec(const uint8_t* data_buffer,
       (num_protected_frames_ == params_.max_fec_frames ||
        (ExcessOverheadBelowMax() && MinimumMediaPacketsReached()))) {
     RTC_DCHECK_LE(num_important_packets_,
-                  static_cast<int>(ForwardErrorCorrection::kMaxMediaPackets));
+                  static_cast<int>(kUlpfecMaxMediaPackets));
     // TODO(pbos): Consider whether unequal protection should be enabled or not,
     // it is currently always disabled.
     //
     // Since unequal protection is disabled, the value of
     // |num_important_packets_| has no importance when calling GenerateFec().
     constexpr bool kUseUnequalProtection = false;
-    int ret = fec_.EncodeFec(media_packets_, params_.fec_rate,
-                             num_important_packets_, kUseUnequalProtection,
-                             params_.fec_mask_type, &generated_fec_packets_);
+    int ret = fec_->EncodeFec(media_packets_, params_.fec_rate,
+                              num_important_packets_, kUseUnequalProtection,
+                              params_.fec_mask_type, &generated_fec_packets_);
     if (generated_fec_packets_.empty()) {
       num_protected_frames_ = 0;
       DeleteMediaPackets();
@@ -213,7 +213,7 @@ size_t ProducerFec::NumAvailableFecPackets() const {
 }
 
 size_t ProducerFec::MaxPacketOverhead() const {
-  return fec_.MaxPacketOverhead();
+  return fec_->MaxPacketOverhead();
 }
 
 std::vector<std::unique_ptr<RedPacket>> ProducerFec::GetFecPacketsAsRed(
@@ -238,15 +238,12 @@ std::vector<std::unique_ptr<RedPacket>> ProducerFec::GetFecPacketsAsRed(
     red_packet->SetSeqNum(seq_num++);
     red_packet->ClearMarkerBit();
     red_packet->AssignPayload(fec_packet->data, fec_packet->length);
-
     red_packets.push_back(std::move(red_packet));
   }
-
   // Reset state.
   DeleteMediaPackets();
   generated_fec_packets_.clear();
   num_protected_frames_ = 0;
-
   return red_packets;
 }
 
@@ -257,7 +254,7 @@ int ProducerFec::Overhead() const {
   // generation is implemented.
   RTC_DCHECK(!media_packets_.empty());
   int num_fec_packets =
-      fec_.NumFecPackets(media_packets_.size(), params_.fec_rate);
+      fec_->NumFecPackets(media_packets_.size(), params_.fec_rate);
   // Return the overhead in Q8.
   return (num_fec_packets << 8) / media_packets_.size();
 }

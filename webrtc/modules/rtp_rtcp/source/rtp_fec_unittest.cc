@@ -18,6 +18,7 @@
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/fec_test_helper.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
+#include "webrtc/modules/rtp_rtcp/source/ulpfec_header_reader_writer.h"
 
 namespace webrtc {
 
@@ -45,6 +46,15 @@ void DeepCopyEveryNthPacket(const ForwardErrorCorrection::PacketList& src,
 }  // namespace
 
 using ::testing::Types;
+
+// Subclass ForwardErrorCorrection to use gTest typed tests.
+class UlpfecForwardErrorCorrection : public ForwardErrorCorrection {
+ public:
+  UlpfecForwardErrorCorrection()
+      : ForwardErrorCorrection(
+            std::unique_ptr<FecHeaderReader>(new UlpfecHeaderReader()),
+            std::unique_ptr<FecHeaderWriter>(new UlpfecHeaderWriter())) {}
+};
 
 template <typename ForwardErrorCorrectionType>
 class RtpFecTest : public ::testing::Test {
@@ -86,15 +96,15 @@ class RtpFecTest : public ::testing::Test {
   ForwardErrorCorrection::ReceivedPacketList received_packets_;
   ForwardErrorCorrection::RecoveredPacketList recovered_packets_;
 
-  int media_loss_mask_[ForwardErrorCorrection::kMaxMediaPackets];
-  int fec_loss_mask_[ForwardErrorCorrection::kMaxMediaPackets];
+  int media_loss_mask_[kUlpfecMaxMediaPackets];
+  int fec_loss_mask_[kUlpfecMaxMediaPackets];
 };
 
 // Define gTest typed test to loop over both ULPFEC and FlexFEC.
 // Since the tests now are parameterized, we need to access
 // member variables using |this|, thereby enforcing runtime
 // resolution.
-using FecTypes = Types<ForwardErrorCorrection>;
+using FecTypes = Types<UlpfecForwardErrorCorrection>;
 TYPED_TEST_CASE(RtpFecTest, FecTypes);
 
 TYPED_TEST(RtpFecTest, FecRecoveryNoLoss) {

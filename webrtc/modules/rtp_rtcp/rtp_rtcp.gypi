@@ -158,6 +158,8 @@
         'source/rtp_format_vp9.h',
         'source/rtp_format_video_generic.cc',
         'source/rtp_format_video_generic.h',
+        'source/ulpfec_header_reader_writer.cc',
+        'source/ulpfec_header_reader_writer.h',
         'source/vp8_partition_aggregator.cc',
         'source/vp8_partition_aggregator.h',
         # Mocks

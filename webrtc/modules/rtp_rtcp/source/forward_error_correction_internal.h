@@ -16,10 +16,17 @@
 
 namespace webrtc {
 
-// Packet mask size in bytes (L bit is set).
-constexpr size_t kMaskSizeLBitSet = 6;
-// Packet mask size in bytes (L bit is cleared).
-constexpr size_t kMaskSizeLBitClear = 2;
+// Maximum number of media packets that can be protected
+// by these packet masks.
+constexpr size_t kUlpfecMaxMediaPackets = 48;
+
+// Packet mask size in bytes (given L bit).
+constexpr size_t kUlpfecPacketMaskSizeLBitClear = 2;
+constexpr size_t kUlpfecPacketMaskSizeLBitSet = 6;
+
+// Convenience constants.
+constexpr size_t kUlpfecMinPacketMaskSize = kUlpfecPacketMaskSizeLBitClear;
+constexpr size_t kUlpfecMaxPacketMaskSize = kUlpfecPacketMaskSizeLBitSet;
 
 namespace internal {
 
@@ -64,6 +71,10 @@ void GeneratePacketMasks(int num_media_packets, int num_fec_packets,
                          int num_imp_packets, bool use_unequal_protection,
                          const PacketMaskTable& mask_table,
                          uint8_t* packet_mask);
+
+// Returns the required packet mask size, given the number of sequence numbers
+// that will be covered.
+size_t PacketMaskSize(size_t num_sequence_numbers);
 
 // Inserts |num_zeros| zero columns into |new_mask| at position
 // |new_bit_index|. If the current byte of |new_mask| can't fit all zeros, the

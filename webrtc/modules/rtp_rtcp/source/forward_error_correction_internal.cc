@@ -15,6 +15,7 @@
 
 #include <algorithm>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/source/fec_private_tables_bursty.h"
 #include "webrtc/modules/rtp_rtcp/source/fec_private_tables_random.h"
 
@@ -202,11 +203,8 @@ void RemainingPacketProtection(int num_media_packets,
   if (mode == kModeNoOverlap) {
     // sub_mask21
 
-    const int l_bit =
-        (num_media_packets - num_fec_for_imp_packets) > 16 ? 1 : 0;
-
     const int res_mask_bytes =
-        (l_bit == 1) ? kMaskSizeLBitSet : kMaskSizeLBitClear;
+        PacketMaskSize(num_media_packets - num_fec_for_imp_packets);
 
     const uint8_t* packet_mask_sub_21 =
         mask_table.fec_packet_mask_table()[num_media_packets -
@@ -245,9 +243,7 @@ void ImportantPacketProtection(int num_fec_for_imp_packets,
                                int num_mask_bytes,
                                uint8_t* packet_mask,
                                const PacketMaskTable& mask_table) {
-  const int l_bit = num_imp_packets > 16 ? 1 : 0;
-  const int num_imp_mask_bytes =
-      (l_bit == 1) ? kMaskSizeLBitSet : kMaskSizeLBitClear;
+  const int num_imp_mask_bytes = PacketMaskSize(num_imp_packets);
 
   // Get sub_mask1 from table
   const uint8_t* packet_mask_sub_1 =
@@ -375,9 +371,7 @@ void GeneratePacketMasks(int num_media_packets,
   assert(num_fec_packets <= num_media_packets && num_fec_packets > 0);
   assert(num_imp_packets <= num_media_packets && num_imp_packets >= 0);
 
-  int l_bit = num_media_packets > 16 ? 1 : 0;
-  const int num_mask_bytes =
-      (l_bit == 1) ? kMaskSizeLBitSet : kMaskSizeLBitClear;
+  const int num_mask_bytes = PacketMaskSize(num_media_packets);
 
   // Equal-protection for these cases.
   if (!use_unequal_protection || num_imp_packets == 0) {
@@ -393,6 +387,14 @@ void GeneratePacketMasks(int num_media_packets,
                           num_mask_bytes, packet_mask, mask_table);
   }  // End of UEP modification
 }  // End of GetPacketMasks
+
+size_t PacketMaskSize(size_t num_sequence_numbers) {
+  RTC_DCHECK_LE(num_sequence_numbers, 8 * kUlpfecPacketMaskSizeLBitSet);
+  if (num_sequence_numbers > 8 * kUlpfecPacketMaskSizeLBitClear) {
+    return kUlpfecPacketMaskSizeLBitSet;
+  }
+  return kUlpfecPacketMaskSizeLBitClear;
+}
 
 void InsertZeroColumns(int num_zeros,
                        uint8_t* new_mask,

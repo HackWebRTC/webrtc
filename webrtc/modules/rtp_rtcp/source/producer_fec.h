@@ -89,7 +89,7 @@ class ProducerFec {
  private:
   void DeleteMediaPackets();
   int Overhead() const;
-  ForwardErrorCorrection fec_;
+  std::unique_ptr<ForwardErrorCorrection> fec_;
   ForwardErrorCorrection::PacketList media_packets_;
   std::list<ForwardErrorCorrection::Packet*> generated_fec_packets_;
   int num_protected_frames_;

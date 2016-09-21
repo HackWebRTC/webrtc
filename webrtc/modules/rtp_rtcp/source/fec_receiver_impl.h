@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_FEC_RECEIVER_IMPL_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_FEC_RECEIVER_IMPL_H_
 
+#include <memory>
+
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/rtp_rtcp/include/fec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -36,7 +38,7 @@ class FecReceiverImpl : public FecReceiver {
  private:
   rtc::CriticalSection crit_sect_;
   RtpData* recovered_packet_callback_;
-  ForwardErrorCorrection fec_;
+  std::unique_ptr<ForwardErrorCorrection> fec_;
   // TODO(holmer): In the current version |received_packets_| is never more
   // than one packet, since we process FEC every time a new packet
   // arrives. We should remove the list.
