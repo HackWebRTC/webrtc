@@ -31,7 +31,7 @@ DesktopFrame::DesktopFrame(DesktopSize size,
 
 DesktopFrame::~DesktopFrame() {}
 
-void DesktopFrame::CopyPixelsFrom(uint8_t* src_buffer, int src_stride,
+void DesktopFrame::CopyPixelsFrom(const uint8_t* src_buffer, int src_stride,
                                   const DesktopRect& dest_rect) {
   RTC_CHECK(DesktopRect::MakeSize(size()).ContainsRect(dest_rect));
 

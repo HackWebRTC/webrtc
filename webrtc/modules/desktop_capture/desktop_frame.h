@@ -58,7 +58,7 @@ class DesktopFrame {
 
   // Copies pixels from a buffer or another frame. |dest_rect| rect must lay
   // within bounds of this frame.
-  void CopyPixelsFrom(uint8_t* src_buffer,
+  void CopyPixelsFrom(const uint8_t* src_buffer,
                       int src_stride,
                       const DesktopRect& dest_rect);
   void CopyPixelsFrom(const DesktopFrame& src_frame,
