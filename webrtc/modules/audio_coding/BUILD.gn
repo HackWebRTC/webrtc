@@ -128,9 +128,10 @@ rtc_source_set("audio_decoder_interface") {
   sources = [
     "codecs/audio_decoder.cc",
     "codecs/audio_decoder.h",
+    "codecs/legacy_encoded_audio_frame.cc",
+    "codecs/legacy_encoded_audio_frame.h",
   ]
   deps = [
-    ":legacy_encoded_audio_frame",
     "../..:webrtc_common",
     "../../base:rtc_base_approved",
   ]
@@ -188,13 +189,6 @@ rtc_source_set("red") {
   ]
 }
 
-rtc_source_set("legacy_encoded_audio_frame") {
-  sources = [
-    "codecs/legacy_encoded_audio_frame.cc",
-    "codecs/legacy_encoded_audio_frame.h",
-  ]
-}
-
 config("g711_config") {
   include_dirs = [
     "../../..",
@@ -219,7 +213,6 @@ rtc_source_set("g711") {
   deps = [
     ":audio_decoder_interface",
     ":audio_encoder_interface",
-    ":legacy_encoded_audio_frame",
   ]
 }
 
@@ -248,7 +241,6 @@ rtc_source_set("g722") {
   deps = [
     ":audio_decoder_interface",
     ":audio_encoder_interface",
-    ":legacy_encoded_audio_frame",
   ]
 }
 

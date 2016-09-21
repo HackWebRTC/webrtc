@@ -186,26 +186,6 @@
         'include/audio_coding_module_typedefs.h',
       ],
     },
-    {
-      'target_name': 'legacy_encoded_audio_frame',
-      'type': 'static_library',
-      'dependencies': [
-        '<(webrtc_root)/common.gyp:webrtc_common',
-        'audio_decoder_interface',
-      ],
-      'include_dirs': [
-        '<(webrtc_root)',
-      ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          '<(webrtc_root)',
-        ],
-      },
-      'sources': [
-        'codecs/legacy_encoded_audio_frame.cc',
-        'codecs/legacy_encoded_audio_frame.h',
-      ],
-    },
   ],
   'conditions': [
     ['include_opus==1', {

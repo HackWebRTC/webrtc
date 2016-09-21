@@ -14,7 +14,6 @@
       'dependencies': [
         'audio_encoder_interface',
         'audio_decoder_interface',
-        'legacy_encoded_audio_frame',
       ],
       'sources': [
         'audio_decoder_pcm.cc',

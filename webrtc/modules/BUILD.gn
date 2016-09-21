@@ -237,9 +237,7 @@ if (rtc_include_tests) {
     testonly = true
 
     defines = audio_coding_defines
-    deps = [
-      "audio_coding:legacy_encoded_audio_frame",
-    ]
+    deps = []
     sources = [
       "audio_coding/acm2/acm_receiver_unittest_oldapi.cc",
       "audio_coding/acm2/audio_coding_module_unittest_oldapi.cc",

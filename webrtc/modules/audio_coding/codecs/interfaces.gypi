@@ -14,6 +14,8 @@
       'sources': [
         'audio_decoder.cc',
         'audio_decoder.h',
+        'legacy_encoded_audio_frame.cc',
+        'legacy_encoded_audio_frame.h',
       ],
       'dependencies': [
         '<(webrtc_root)/base/base.gyp:rtc_base_approved',
