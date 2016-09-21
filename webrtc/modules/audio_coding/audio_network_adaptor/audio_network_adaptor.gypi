@@ -22,6 +22,8 @@
         'controller_manager.h',
         'dtx_controller.h',
         'dtx_controller.cc',
+        'frame_length_controller.cc',
+        'frame_length_controller.h',
         'include/audio_network_adaptor.h',
         'smoothing_filter.h',
         'smoothing_filter.cc',
