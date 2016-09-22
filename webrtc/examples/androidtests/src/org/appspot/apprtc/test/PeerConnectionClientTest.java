@@ -291,7 +291,8 @@ public class PeerConnectionClientTest extends InstrumentationTestCase
 
   private PeerConnectionParameters createParametersForVideoCall(
       String videoCodec, boolean captureToTexture) {
-    final boolean useCamera2 = captureToTexture && Camera2Enumerator.isSupported();
+    final boolean useCamera2 = captureToTexture
+        && Camera2Enumerator.isSupported(getInstrumentation().getTargetContext());
 
     PeerConnectionParameters peerConnectionParameters =
         new PeerConnectionParameters(

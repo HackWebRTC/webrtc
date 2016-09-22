@@ -104,8 +104,42 @@ public class Camera2Enumerator implements CameraEnumerator {
     }
   }
 
+  /**
+   * Checks if Android version is new enough to support camera2.
+   *
+   * This method will be removed soon. Use isSupported(Context).
+   */
+  @Deprecated
   public static boolean isSupported() {
     return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
+  }
+
+  /**
+   * Checks if API is supported and all cameras have better than legacy support.
+   */
+  public static boolean isSupported(Context context) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+      return false;
+    }
+
+    CameraManager cameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+    try {
+      String[] cameraIds = cameraManager.getCameraIdList();
+      for (String id : cameraIds) {
+        CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
+        if (characteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL)
+            == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY) {
+          return false;
+        }
+      }
+    // On Android OS pre 4.4.2, a class will not load because of VerifyError if it contains a
+    // catch statement with an Exception from a newer API, even if the code is never executed.
+    // https://code.google.com/p/android/issues/detail?id=209129
+    } catch (/* CameraAccessException */ AndroidException e) {
+      Logging.e(TAG, "Camera access exception: " + e);
+      return false;
+    }
+    return true;
   }
 
   static int getFpsUnitFactor(Range<Integer>[] fpsRanges) {

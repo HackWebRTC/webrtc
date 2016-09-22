@@ -42,7 +42,7 @@
     <string name="pref_camera2_key">camera2_preference</string>
     <string name="pref_camera2_title">Use Camera2.</string>
     <string name="pref_camera2_default">true</string>
-    <string name="pref_camera2_not_supported">Only supported on Android Lollipop and forward.</string>
+    <string name="pref_camera2_not_supported">Not supported on this device.</string>
 
     <string name="pref_resolution_key">resolution_preference</string>
     <string name="pref_resolution_title">Video resolution.</string>

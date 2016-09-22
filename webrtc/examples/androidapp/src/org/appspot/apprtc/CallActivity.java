@@ -232,7 +232,7 @@ public class CallActivity extends Activity
     boolean loopback = intent.getBooleanExtra(EXTRA_LOOPBACK, false);
     boolean tracing = intent.getBooleanExtra(EXTRA_TRACING, false);
 
-    boolean useCamera2 = Camera2Enumerator.isSupported()
+    boolean useCamera2 = Camera2Enumerator.isSupported(this)
         && intent.getBooleanExtra(EXTRA_CAMERA2, true);
 
     peerConnectionParameters = new PeerConnectionParameters(

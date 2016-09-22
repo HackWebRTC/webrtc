@@ -126,7 +126,7 @@ public class SettingsActivity extends Activity
     updateSummaryB(sharedPreferences, keyPrefDisplayHud);
     updateSummaryB(sharedPreferences, keyPrefTracing);
 
-    if (!Camera2Enumerator.isSupported()) {
+    if (!Camera2Enumerator.isSupported(this)) {
       Preference camera2Preference =
           settingsFragment.findPreference(keyprefCamera2);
 
