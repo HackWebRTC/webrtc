@@ -57,8 +57,6 @@ class RtpReceiverImpl : public RtpReceiver {
 
   int32_t Energy(uint8_t array_of_energy[kRtpCsrcSize]) const override;
 
-  TelephoneEventHandler* GetTelephoneEventHandler() override;
-
  private:
   bool HaveReceivedFrame() const;
 

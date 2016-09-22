@@ -44,8 +44,6 @@ class RTPReceiverStrategy {
                                  int64_t timestamp_ms,
                                  bool is_first_packet) = 0;
 
-  virtual TelephoneEventHandler* GetTelephoneEventHandler() = 0;
-
   // Retrieves the last known applicable frequency.
   virtual int GetPayloadTypeFrequency() const = 0;
 

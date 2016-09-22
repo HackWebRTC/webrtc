@@ -25,9 +25,7 @@ RTPReceiverStrategy* RTPReceiverStrategy::CreateAudioStrategy(
 
 RTPReceiverAudio::RTPReceiverAudio(RtpData* data_callback)
     : RTPReceiverStrategy(data_callback),
-      TelephoneEventHandler(),
       last_received_frequency_(8000),
-      telephone_event_forward_to_decoder_(false),
       telephone_event_payload_type_(-1),
       cng_nb_payload_type_(-1),
       cng_wb_payload_type_(-1),
@@ -40,19 +38,6 @@ RTPReceiverAudio::RTPReceiverAudio(RtpData* data_callback)
       current_remote_energy_() {
   last_payload_.Audio.channels = 1;
   memset(current_remote_energy_, 0, sizeof(current_remote_energy_));
-}
-
-// Outband TelephoneEvent(DTMF) detection
-void RTPReceiverAudio::SetTelephoneEventForwardToDecoder(
-    bool forward_to_decoder) {
-  rtc::CritScope lock(&crit_sect_);
-  telephone_event_forward_to_decoder_ = forward_to_decoder;
-}
-
-// Is forwarding of outband telephone events turned on/off?
-bool RTPReceiverAudio::TelephoneEventForwardToDecoder() const {
-  rtc::CritScope lock(&crit_sect_);
-  return telephone_event_forward_to_decoder_;
 }
 
 bool RTPReceiverAudio::TelephoneEventPayloadType(
@@ -356,10 +341,6 @@ int32_t RTPReceiverAudio::ParseAudioCodecSpecific(
 
     // check if it's a DTMF event, hence something we can playout
     if (telephone_event_packet) {
-      if (!telephone_event_forward_to_decoder_) {
-        // don't forward event to decoder
-        return 0;
-      }
       std::set<uint8_t>::iterator first =
           telephone_event_reported_.begin();
       if (first != telephone_event_reported_.end() && *first > 15) {

@@ -200,10 +200,6 @@ bool RtpReceiverImpl::IncomingRtpPacket(
   return true;
 }
 
-TelephoneEventHandler* RtpReceiverImpl::GetTelephoneEventHandler() {
-  return rtp_media_receiver_->GetTelephoneEventHandler();
-}
-
 bool RtpReceiverImpl::Timestamp(uint32_t* timestamp) const {
   rtc::CritScope lock(&critical_section_rtp_receiver_);
   if (!HaveReceivedFrame())

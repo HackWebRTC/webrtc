@@ -809,7 +809,6 @@ Channel::Channel(int32_t channelId,
                                            this,
                                            this,
                                            rtp_payload_registry_.get())),
-      telephone_event_handler_(rtp_receiver_->GetTelephoneEventHandler()),
       _outputAudioLevel(),
       _externalTransport(false),
       // Avoid conflict with other channels by adding 1024 - 1026,
@@ -979,7 +978,6 @@ int32_t Channel::Init() {
   // disabled by the user.
   // After StopListen (when no sockets exists), RTCP packets will no longer
   // be transmitted since the Transport object will then be invalid.
-  telephone_event_handler_->SetTelephoneEventForwardToDecoder(true);
   // RTCP is enabled by default.
   _rtpRtcpModule->SetRTCPStatus(RtcpMode::kCompound);
   // --- Register all permanent callbacks
