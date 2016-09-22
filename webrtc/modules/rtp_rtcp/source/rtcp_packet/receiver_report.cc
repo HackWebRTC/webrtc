@@ -50,7 +50,7 @@ bool ReceiverReport::Parse(const CommonHeader& packet) {
     next_report_block += ReportBlock::kLength;
   }
 
-  RTC_DCHECK_EQ(next_report_block - packet.payload(),
+  RTC_DCHECK_LE(next_report_block - packet.payload(),
                 static_cast<ptrdiff_t>(packet.payload_size_bytes()));
   return true;
 }

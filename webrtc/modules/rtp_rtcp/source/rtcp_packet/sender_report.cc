@@ -68,7 +68,7 @@ bool SenderReport::Parse(const CommonHeader& packet) {
     next_block += ReportBlock::kLength;
   }
   // Double check we didn't read beyond provided buffer.
-  RTC_DCHECK_EQ(next_block - payload,
+  RTC_DCHECK_LE(next_block - payload,
                 static_cast<ptrdiff_t>(packet.payload_size_bytes()));
   return true;
 }
