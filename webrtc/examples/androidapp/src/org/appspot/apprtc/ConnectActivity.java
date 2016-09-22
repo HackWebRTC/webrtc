@@ -382,7 +382,7 @@ public class ConnectActivity extends Activity {
     boolean tracing = sharedPref.getBoolean(
             keyprefTracing, Boolean.valueOf(getString(R.string.pref_tracing_default)));
 
-    // Start AppRTCDemo activity.
+    // Start AppRTCMobile activity.
     Log.d(TAG, "Connecting to room " + roomId + " at URL " + roomUrl);
     if (validateUrl(roomUrl)) {
       Uri uri = Uri.parse(roomUrl);

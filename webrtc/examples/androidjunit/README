@@ -1,4 +1,4 @@
-This directory contains example JUnit tests for Android AppRTCDemo.
+This directory contains example JUnit tests for Android AppRTCMobile.
 Many of these test utilize Robolectric to mock Android classes.
 
 To compile:

@@ -26,7 +26,7 @@
 
 @end
 
-// The main view of AppRTCDemo. It contains an input field for entering a room
+// The main view of AppRTCMobile. It contains an input field for entering a room
 // name on apprtc to connect to.
 @interface ARDMainView : UIView
 

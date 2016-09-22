@@ -7,8 +7,8 @@ Prerequisites:
 Example of building & using the app:
 
 cd <path/to/webrtc>/src
-ninja -C out/Default AppRTCDemo
-adb install -r out/Default/apks/AppRTCDemo.apk
+ninja -C out/Default AppRTCMobile
+adb install -r out/Default/apks/AppRTCMobile.apk
 
 In desktop chrome, navigate to https://appr.tc and note the r=<NNN> room
 this redirects to or navigate directly to https://appr.tc/r/<NNN> with
