@@ -16,9 +16,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/controller.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/controller_manager.h"
-#include "webrtc/modules/audio_coding/audio_network_adaptor/debug_dump_writer.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
-#include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
 
@@ -27,26 +25,17 @@ class AudioNetworkAdaptorImpl final : public AudioNetworkAdaptor {
   struct Config {
     Config();
     ~Config();
-    const Clock* clock;
   };
 
   AudioNetworkAdaptorImpl(
       const Config& config,
       std::unique_ptr<ControllerManager> controller_manager);
 
-  // Dependency injection for testing.
-  AudioNetworkAdaptorImpl(
-      const Config& config,
-      std::unique_ptr<ControllerManager> controller_manager,
-      std::unique_ptr<DebugDumpWriter> debug_dump_writer = nullptr);
-
   ~AudioNetworkAdaptorImpl() override;
 
   void SetUplinkBandwidth(int uplink_bandwidth_bps) override;
 
   void SetUplinkPacketLossFraction(float uplink_packet_loss_fraction) override;
-
-  void SetRtt(int rtt_ms) override;
 
   void SetReceiverFrameLengthRange(int min_frame_length_ms,
                                    int max_frame_length_ms) override;
@@ -55,16 +44,10 @@ class AudioNetworkAdaptorImpl final : public AudioNetworkAdaptor {
 
   void StartDebugDump(FILE* file_handle) override;
 
-  void StopDebugDump() override;
-
  private:
-  void DumpNetworkMetrics();
-
   const Config config_;
 
   std::unique_ptr<ControllerManager> controller_manager_;
-
-  std::unique_ptr<DebugDumpWriter> debug_dump_writer_;
 
   Controller::NetworkMetrics last_metrics_;
 

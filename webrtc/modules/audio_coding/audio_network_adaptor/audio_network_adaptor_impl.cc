@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/audio_network_adaptor/audio_network_adaptor_impl.h"
-
 #include <utility>
+
+#include "webrtc/modules/audio_coding/audio_network_adaptor/audio_network_adaptor_impl.h"
 
 namespace webrtc {
 
@@ -21,15 +21,7 @@ AudioNetworkAdaptorImpl::Config::~Config() = default;
 AudioNetworkAdaptorImpl::AudioNetworkAdaptorImpl(
     const Config& config,
     std::unique_ptr<ControllerManager> controller_manager)
-    : AudioNetworkAdaptorImpl(config, std::move(controller_manager), nullptr) {}
-
-AudioNetworkAdaptorImpl::AudioNetworkAdaptorImpl(
-    const Config& config,
-    std::unique_ptr<ControllerManager> controller_manager,
-    std::unique_ptr<DebugDumpWriter> debug_dump_writer)
-    : config_(config),
-      controller_manager_(std::move(controller_manager)),
-      debug_dump_writer_(std::move(debug_dump_writer)) {
+    : config_(config), controller_manager_(std::move(controller_manager)) {
   RTC_DCHECK(controller_manager_);
 }
 
@@ -37,19 +29,16 @@ AudioNetworkAdaptorImpl::~AudioNetworkAdaptorImpl() = default;
 
 void AudioNetworkAdaptorImpl::SetUplinkBandwidth(int uplink_bandwidth_bps) {
   last_metrics_.uplink_bandwidth_bps = rtc::Optional<int>(uplink_bandwidth_bps);
-  DumpNetworkMetrics();
+
+  // TODO(minyue): Add debug dumping.
 }
 
 void AudioNetworkAdaptorImpl::SetUplinkPacketLossFraction(
     float uplink_packet_loss_fraction) {
   last_metrics_.uplink_packet_loss_fraction =
       rtc::Optional<float>(uplink_packet_loss_fraction);
-  DumpNetworkMetrics();
-}
 
-void AudioNetworkAdaptorImpl::SetRtt(int rtt_ms) {
-  last_metrics_.rtt_ms = rtc::Optional<int>(rtt_ms);
-  DumpNetworkMetrics();
+  // TODO(minyue): Add debug dumping.
 }
 
 AudioNetworkAdaptor::EncoderRuntimeConfig
@@ -60,9 +49,6 @@ AudioNetworkAdaptorImpl::GetEncoderRuntimeConfig() {
     controller->MakeDecision(last_metrics_, &config);
 
   // TODO(minyue): Add debug dumping.
-  if (debug_dump_writer_)
-    debug_dump_writer_->DumpEncoderRuntimeConfig(
-        config, config_.clock->TimeInMilliseconds());
 
   return config;
 }
@@ -81,17 +67,7 @@ void AudioNetworkAdaptorImpl::SetReceiverFrameLengthRange(
 }
 
 void AudioNetworkAdaptorImpl::StartDebugDump(FILE* file_handle) {
-  debug_dump_writer_ = DebugDumpWriter::Create(file_handle);
-}
-
-void AudioNetworkAdaptorImpl::StopDebugDump() {
-  debug_dump_writer_.reset(nullptr);
-}
-
-void AudioNetworkAdaptorImpl::DumpNetworkMetrics() {
-  if (debug_dump_writer_)
-    debug_dump_writer_->DumpNetworkMetrics(last_metrics_,
-                                           config_.clock->TimeInMilliseconds());
+  // TODO(minyue): Implement this method.
 }
 
 }  // namespace webrtc
