@@ -340,7 +340,8 @@ bool StunMessage::Read(ByteBufferReader* buf) {
     if (!buf->ReadUInt16(&attr_length))
       return false;
 
-    StunAttribute* attr = CreateAttribute(attr_type, attr_length);
+    std::unique_ptr<StunAttribute> attr(
+        CreateAttribute(attr_type, attr_length));
     if (!attr) {
       // Skip any unknown or malformed attributes.
       if ((attr_length % 4) != 0) {
@@ -351,7 +352,8 @@ bool StunMessage::Read(ByteBufferReader* buf) {
     } else {
       if (!attr->Read(buf))
         return false;
-      attrs_->push_back(attr);
+      // TODO(honghaiz): Change |attrs_| to be a vector of unique_ptrs.
+      attrs_->push_back(attr.release());
     }
   }
 
