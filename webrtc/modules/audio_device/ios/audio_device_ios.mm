@@ -491,6 +491,7 @@ void AudioDeviceIOS::HandleValidRouteChange() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
 
   RTCAudioSession* session = [RTCAudioSession sharedInstance];
+  RTCLog(@"%@", session);
   HandleSampleRateChange(session.sampleRate);
 }
 
