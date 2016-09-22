@@ -701,6 +701,8 @@ source_set("audio_network_adaptor") {
     "audio_network_adaptor/audio_network_adaptor.cc",
     "audio_network_adaptor/audio_network_adaptor_impl.cc",
     "audio_network_adaptor/audio_network_adaptor_impl.h",
+    "audio_network_adaptor/bitrate_controller.cc",
+    "audio_network_adaptor/bitrate_controller.h",
     "audio_network_adaptor/channel_controller.cc",
     "audio_network_adaptor/channel_controller.h",
     "audio_network_adaptor/controller.cc",

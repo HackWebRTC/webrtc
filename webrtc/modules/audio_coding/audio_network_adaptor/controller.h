@@ -23,6 +23,7 @@ class Controller {
     ~NetworkMetrics();
     rtc::Optional<int> uplink_bandwidth_bps;
     rtc::Optional<float> uplink_packet_loss_fraction;
+    rtc::Optional<int> target_audio_bitrate_bps;
   };
 
   struct Constraints {

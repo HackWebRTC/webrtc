@@ -233,6 +233,32 @@ if (rtc_include_tests) {
     }
   }
 
+  rtc_source_set("audio_network_adaptor_unittests") {
+    # Put sources for unittests of audio network adaptor in a separate
+    # rtc_source_set to solve name collision on bitrate_controller_unittest.cc.
+    testonly = true
+    sources = [
+      "audio_coding/audio_network_adaptor/audio_network_adaptor_impl_unittest.cc",
+      "audio_coding/audio_network_adaptor/bitrate_controller_unittest.cc",
+      "audio_coding/audio_network_adaptor/channel_controller_unittest.cc",
+      "audio_coding/audio_network_adaptor/controller_manager_unittest.cc",
+      "audio_coding/audio_network_adaptor/dtx_controller_unittest.cc",
+      "audio_coding/audio_network_adaptor/frame_length_controller_unittest.cc",
+      "audio_coding/audio_network_adaptor/mock/mock_controller.h",
+      "audio_coding/audio_network_adaptor/mock/mock_controller_manager.h",
+      "audio_coding/audio_network_adaptor/smoothing_filter_unittest.cc",
+    ]
+    deps = [
+      "audio_coding:audio_network_adaptor",
+      "//testing/gmock",
+      "//testing/gtest",
+    ]
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
   rtc_test("modules_unittests") {
     testonly = true
 
@@ -245,14 +271,6 @@ if (rtc_include_tests) {
       "audio_coding/acm2/codec_manager_unittest.cc",
       "audio_coding/acm2/initial_delay_manager_unittest.cc",
       "audio_coding/acm2/rent_a_codec_unittest.cc",
-      "audio_coding/audio_network_adaptor/audio_network_adaptor_impl_unittest.cc",
-      "audio_coding/audio_network_adaptor/channel_controller_unittest.cc",
-      "audio_coding/audio_network_adaptor/controller_manager_unittest.cc",
-      "audio_coding/audio_network_adaptor/dtx_controller_unittest.cc",
-      "audio_coding/audio_network_adaptor/frame_length_controller_unittest.cc",
-      "audio_coding/audio_network_adaptor/mock/mock_controller.h",
-      "audio_coding/audio_network_adaptor/mock/mock_controller_manager.h",
-      "audio_coding/audio_network_adaptor/smoothing_filter_unittest.cc",
       "audio_coding/codecs/audio_decoder_factory_unittest.cc",
       "audio_coding/codecs/cng/audio_encoder_cng_unittest.cc",
       "audio_coding/codecs/cng/cng_unittest.cc",
@@ -597,6 +615,7 @@ if (rtc_include_tests) {
     }
 
     deps += [
+      ":audio_network_adaptor_unittests",
       "..:webrtc_common",
       "../base:rtc_base",  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.
       "../common_audio",
@@ -610,7 +629,6 @@ if (rtc_include_tests) {
       "audio_coding",
       "audio_coding:acm_receive_test",
       "audio_coding:acm_send_test",
-      "audio_coding:audio_network_adaptor",
       "audio_coding:builtin_audio_decoder_factory",
       "audio_coding:cng",
       "audio_coding:isac_fix",
