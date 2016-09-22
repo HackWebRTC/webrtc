@@ -66,6 +66,7 @@ DIRECTORIES = [
   'third_party/zlib',
   'third_party/WebKit',  # TODO(kjellander): Remove, see webrtc:5629.
   'tools/clang',
+  'tools/determinism',
   'tools/generate_library_loader',
   'tools/generate_stubs',
   'tools/gn',
