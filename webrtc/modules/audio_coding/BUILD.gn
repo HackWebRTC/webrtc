@@ -711,6 +711,8 @@ source_set("audio_network_adaptor") {
     "audio_network_adaptor/controller_manager.h",
     "audio_network_adaptor/dtx_controller.cc",
     "audio_network_adaptor/dtx_controller.h",
+    "audio_network_adaptor/fec_controller.cc",
+    "audio_network_adaptor/fec_controller.h",
     "audio_network_adaptor/frame_length_controller.cc",
     "audio_network_adaptor/frame_length_controller.h",
     "audio_network_adaptor/include/audio_network_adaptor.h",
