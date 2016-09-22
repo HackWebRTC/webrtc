@@ -45,7 +45,6 @@ bool VideoBroadcaster::frame_wanted() const {
 }
 
 VideoSinkWants VideoBroadcaster::wants() const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   rtc::CritScope cs(&sinks_and_wants_lock_);
   return current_wants_;
 }
@@ -53,6 +52,15 @@ VideoSinkWants VideoBroadcaster::wants() const {
 void VideoBroadcaster::OnFrame(const cricket::VideoFrame& frame) {
   rtc::CritScope cs(&sinks_and_wants_lock_);
   for (auto& sink_pair : sink_pairs()) {
+    if (sink_pair.wants.rotation_applied &&
+        frame.rotation() != webrtc::kVideoRotation_0) {
+      // Calls to OnFrame are not synchronized with changes to the sink wants.
+      // When rotation_applied is set to true, one or a few frames may get here
+      // with rotation still pending. Protect sinks that don't expect any
+      // pending rotation.
+      LOG(LS_VERBOSE) << "Discarding frame with unexpected rotation.";
+      continue;
+    }
     if (sink_pair.wants.black_frames) {
       sink_pair.sink->OnFrame(cricket::WebRtcVideoFrame(
           GetBlackFrameBuffer(frame.width(), frame.height()), frame.rotation(),

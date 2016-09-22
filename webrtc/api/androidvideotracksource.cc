@@ -12,8 +12,6 @@
 
 #include <utility>
 
-#include "third_party/libyuv/include/libyuv/rotate.h"
-
 namespace webrtc {
 
 AndroidVideoTrackSource::AndroidVideoTrackSource(rtc::Thread* signaling_thread,
@@ -27,19 +25,7 @@ AndroidVideoTrackSource::AndroidVideoTrackSource(rtc::Thread* signaling_thread,
           j_egl_context)),
       is_screencast_(is_screencast) {
   LOG(LS_INFO) << "AndroidVideoTrackSource ctor";
-  worker_thread_checker_.DetachFromThread();
   camera_thread_checker_.DetachFromThread();
-}
-
-bool AndroidVideoTrackSource::GetStats(AndroidVideoTrackSource::Stats* stats) {
-  rtc::CritScope lock(&stats_crit_);
-
-  if (!stats_) {
-    return false;
-  }
-
-  *stats = *stats_;
-  return true;
 }
 
 void AndroidVideoTrackSource::SetState(SourceState state) {
@@ -56,34 +42,6 @@ void AndroidVideoTrackSource::SetState(SourceState state) {
   }
 }
 
-void AndroidVideoTrackSource::AddOrUpdateSink(
-    rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
-    const rtc::VideoSinkWants& wants) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-
-  broadcaster_.AddOrUpdateSink(sink, wants);
-  OnSinkWantsChanged(broadcaster_.wants());
-}
-
-void AndroidVideoTrackSource::RemoveSink(
-    rtc::VideoSinkInterface<cricket::VideoFrame>* sink) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-
-  broadcaster_.RemoveSink(sink);
-  OnSinkWantsChanged(broadcaster_.wants());
-}
-
-void AndroidVideoTrackSource::OnSinkWantsChanged(
-    const rtc::VideoSinkWants& wants) {
-  {
-    rtc::CritScope lock(&apply_rotation_crit_);
-    apply_rotation_ = wants.rotation_applied;
-  }
-
-  video_adapter_.OnResolutionRequest(wants.max_pixel_count,
-                                     wants.max_pixel_count_step_up);
-}
-
 void AndroidVideoTrackSource::OnByteBufferFrameCaptured(const void* frame_data,
                                                         int length,
                                                         int width,
@@ -94,17 +52,20 @@ void AndroidVideoTrackSource::OnByteBufferFrameCaptured(const void* frame_data,
   RTC_DCHECK(rotation == 0 || rotation == 90 || rotation == 180 ||
              rotation == 270);
 
+  int64_t camera_time_us = timestamp_ns / rtc::kNumNanosecsPerMicrosec;
+  int64_t translated_camera_time_us =
+      timestamp_aligner_.TranslateTimestamp(camera_time_us, rtc::TimeMicros());
+
   int adapted_width;
   int adapted_height;
   int crop_width;
   int crop_height;
   int crop_x;
   int crop_y;
-  int64_t translated_camera_time_us;
 
-  if (!AdaptFrame(width, height, timestamp_ns / rtc::kNumNanosecsPerMicrosec,
+  if (!AdaptFrame(width, height, camera_time_us,
                   &adapted_width, &adapted_height, &crop_width, &crop_height,
-                  &crop_x, &crop_y, &translated_camera_time_us)) {
+                  &crop_x, &crop_y)) {
     return;
   }
 
@@ -134,33 +95,9 @@ void AndroidVideoTrackSource::OnByteBufferFrameCaptured(const void* frame_data,
       buffer->MutableDataU(), buffer->StrideU(),
       buffer->width(), buffer->height());
 
-  // Applying rotation is only supported for legacy reasons, and the performance
-  // for this path is not critical.
-  rtc::CritScope lock(&apply_rotation_crit_);
-  if (apply_rotation_ && rotation != 0) {
-    rtc::scoped_refptr<I420Buffer> rotated_buffer =
-        rotation == 180 ? I420Buffer::Create(buffer->width(), buffer->height())
-                        : I420Buffer::Create(buffer->height(), buffer->width());
-
-    libyuv::I420Rotate(
-        buffer->DataY(), buffer->StrideY(),
-        buffer->DataU(), buffer->StrideU(),
-        buffer->DataV(), buffer->StrideV(),
-        rotated_buffer->MutableDataY(), rotated_buffer->StrideY(),
-        rotated_buffer->MutableDataU(), rotated_buffer->StrideU(),
-        rotated_buffer->MutableDataV(), rotated_buffer->StrideV(),
-        buffer->width(), buffer->height(),
-        static_cast<libyuv::RotationMode>(rotation));
-
-    buffer = rotated_buffer;
-  }
-
   OnFrame(cricket::WebRtcVideoFrame(
-              buffer,
-              apply_rotation_ ? webrtc::kVideoRotation_0
-                              : static_cast<webrtc::VideoRotation>(rotation),
-              translated_camera_time_us, 0),
-          width, height);
+              buffer, static_cast<webrtc::VideoRotation>(rotation),
+              translated_camera_time_us, 0));
 }
 
 void AndroidVideoTrackSource::OnTextureFrameCaptured(
@@ -173,17 +110,20 @@ void AndroidVideoTrackSource::OnTextureFrameCaptured(
   RTC_DCHECK(rotation == 0 || rotation == 90 || rotation == 180 ||
              rotation == 270);
 
+  int64_t camera_time_us = timestamp_ns / rtc::kNumNanosecsPerMicrosec;
+  int64_t translated_camera_time_us =
+      timestamp_aligner_.TranslateTimestamp(camera_time_us, rtc::TimeMicros());
+
   int adapted_width;
   int adapted_height;
   int crop_width;
   int crop_height;
   int crop_x;
   int crop_y;
-  int64_t translated_camera_time_us;
 
-  if (!AdaptFrame(width, height, timestamp_ns / rtc::kNumNanosecsPerMicrosec,
+  if (!AdaptFrame(width, height, camera_time_us,
                   &adapted_width, &adapted_height, &crop_width, &crop_height,
-                  &crop_x, &crop_y, &translated_camera_time_us)) {
+                  &crop_x, &crop_y)) {
     surface_texture_helper_->ReturnTextureFrame();
     return;
   }
@@ -195,8 +135,11 @@ void AndroidVideoTrackSource::OnTextureFrameCaptured(
               crop_x / static_cast<float>(width),
               crop_y / static_cast<float>(height));
 
-  rtc::CritScope lock(&apply_rotation_crit_);
-  if (apply_rotation_) {
+  // Make a local copy, since value of apply_rotation() may change
+  // under our feet.
+  bool do_rotate = apply_rotation();
+
+  if (do_rotate) {
     if (rotation == webrtc::kVideoRotation_90 ||
         rotation == webrtc::kVideoRotation_270) {
       std::swap(adapted_width, adapted_height);
@@ -208,21 +151,9 @@ void AndroidVideoTrackSource::OnTextureFrameCaptured(
               surface_texture_helper_->CreateTextureFrame(
                   adapted_width, adapted_height,
                   webrtc_jni::NativeHandleImpl(handle.oes_texture_id, matrix)),
-              apply_rotation_ ? webrtc::kVideoRotation_0
-                              : static_cast<webrtc::VideoRotation>(rotation),
-              translated_camera_time_us, 0),
-          width, height);
-}
-
-void AndroidVideoTrackSource::OnFrame(const cricket::VideoFrame& frame,
-                                      int width,
-                                      int height) {
-  {
-    rtc::CritScope lock(&stats_crit_);
-    stats_ = rtc::Optional<AndroidVideoTrackSource::Stats>({width, height});
-  }
-
-  broadcaster_.OnFrame(frame);
+              do_rotate ? webrtc::kVideoRotation_0
+                        : static_cast<webrtc::VideoRotation>(rotation),
+              translated_camera_time_us, 0));
 }
 
 void AndroidVideoTrackSource::OnOutputFormatRequest(int width,
@@ -230,39 +161,7 @@ void AndroidVideoTrackSource::OnOutputFormatRequest(int width,
                                                     int fps) {
   cricket::VideoFormat format(width, height,
                               cricket::VideoFormat::FpsToInterval(fps), 0);
-  video_adapter_.OnOutputFormatRequest(format);
-}
-
-bool AndroidVideoTrackSource::AdaptFrame(int width,
-                                         int height,
-                                         int64_t camera_time_us,
-                                         int* out_width,
-                                         int* out_height,
-                                         int* crop_width,
-                                         int* crop_height,
-                                         int* crop_x,
-                                         int* crop_y,
-                                         int64_t* translated_camera_time_us) {
-  RTC_DCHECK(camera_thread_checker_.CalledOnValidThread());
-
-  int64_t system_time_us = rtc::TimeMicros();
-  *translated_camera_time_us =
-      timestamp_aligner_.TranslateTimestamp(camera_time_us, system_time_us);
-
-  if (!broadcaster_.frame_wanted()) {
-    return false;
-  }
-
-  if (!video_adapter_.AdaptFrameResolution(
-          width, height, camera_time_us * rtc::kNumNanosecsPerMicrosec,
-          crop_width, crop_height, out_width, out_height)) {
-    // VideoAdapter dropped the frame.
-    return false;
-  }
-  *crop_x = (width - *crop_width) / 2;
-  *crop_y = (height - *crop_height) / 2;
-
-  return true;
+  video_adapter()->OnOutputFormatRequest(format);
 }
 
 }  // namespace webrtc

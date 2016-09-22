@@ -47,6 +47,8 @@ rtc_source_set("rtc_media") {
   libs = []
   deps = []
   sources = [
+    "base/adaptedvideotracksource.cc",
+    "base/adaptedvideotracksource.h",
     "base/audiosource.h",
     "base/codec.cc",
     "base/codec.h",

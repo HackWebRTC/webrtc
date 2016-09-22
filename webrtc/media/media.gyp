@@ -26,6 +26,8 @@
         ],
       },
       'sources': [
+        'base/adaptedvideotracksource.cc',
+        'base/adaptedvideotracksource.h',
         'base/audiosource.h',
         'base/codec.cc',
         'base/codec.h',

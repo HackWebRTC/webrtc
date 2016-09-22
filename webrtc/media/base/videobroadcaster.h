@@ -45,6 +45,10 @@ class VideoBroadcaster : public VideoSourceBase,
   // aggregated by all VideoSinkWants from all sinks.
   VideoSinkWants wants() const;
 
+  // This method ensures that if a sink sets rotation_applied == true,
+  // it will never receive a frame with pending rotation. Our caller
+  // may pass in frames without precise synchronization with changes
+  // to the VideoSinkWants.
   void OnFrame(const cricket::VideoFrame& frame) override;
 
  protected:
