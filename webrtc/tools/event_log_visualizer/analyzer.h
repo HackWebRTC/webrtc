@@ -66,6 +66,8 @@ class EventLogAnalyzer {
 
   void CreatePlayoutGraph(Plot* plot);
 
+  void CreateAudioLevelGraph(Plot* plot);
+
   void CreateSequenceNumberGraph(Plot* plot);
 
   void CreateIncomingPacketLossGraph(Plot* plot);

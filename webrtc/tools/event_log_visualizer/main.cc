@@ -25,6 +25,9 @@ DEFINE_bool(plot_packets,
 DEFINE_bool(plot_audio_playout,
             false,
             "Plot bar graph showing the time between each audio playout.");
+DEFINE_bool(plot_audio_level,
+            false,
+            "Plot line graph showing the audio level.");
 DEFINE_bool(
     plot_sequence_number,
     false,
@@ -106,6 +109,10 @@ int main(int argc, char* argv[]) {
 
   if (FLAGS_plot_all || FLAGS_plot_audio_playout) {
     analyzer.CreatePlayoutGraph(collection->AppendNewPlot());
+  }
+
+  if (FLAGS_plot_all || FLAGS_plot_audio_level) {
+    analyzer.CreateAudioLevelGraph(collection->AppendNewPlot());
   }
 
   if (FLAGS_plot_all || FLAGS_plot_sequence_number) {

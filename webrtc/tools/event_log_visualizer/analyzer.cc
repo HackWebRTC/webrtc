@@ -100,6 +100,22 @@ void RegisterHeaderExtensions(
   }
 }
 
+// Return default values for header extensions, to use on streams without stored
+// mapping data. Currently this only applies to audio streams, since the mapping
+// is not stored in the event log.
+// TODO(ivoc): Remove this once this mapping is stored in the event log for
+//             audio streams. Tracking bug: webrtc:6399
+webrtc::RtpHeaderExtensionMap GetDefaultHeaderExtensionMap() {
+  webrtc::RtpHeaderExtensionMap default_map;
+  default_map.Register(
+      webrtc::StringToRtpExtensionType(webrtc::RtpExtension::kAudioLevelUri),
+      webrtc::RtpExtension::kAudioLevelDefaultId);
+  default_map.Register(
+      webrtc::StringToRtpExtensionType(webrtc::RtpExtension::kAbsSendTimeUri),
+      webrtc::RtpExtension::kAbsSendTimeDefaultId);
+  return default_map;
+}
+
 constexpr float kLeftMargin = 0.01f;
 constexpr float kRightMargin = 0.02f;
 constexpr float kBottomMargin = 0.02f;
@@ -281,6 +297,11 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
   size_t header_length;
   size_t total_length;
 
+  // Make a default extension map for streams without configuration information.
+  // TODO(ivoc): Once configuration of audio streams is stored in the event log,
+  //             this can be removed. Tracking bug: webrtc:6399
+  RtpHeaderExtensionMap default_extension_map = GetDefaultHeaderExtensionMap();
+
   for (size_t i = 0; i < parsed_log_.GetNumberOfEvents(); i++) {
     ParsedRtcEventLog::EventType event_type = parsed_log_.GetEventType(i);
     if (event_type != ParsedRtcEventLog::VIDEO_RECEIVER_CONFIG_EVENT &&
@@ -352,6 +373,12 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         if (extension_maps.count(stream) == 1) {
           RtpHeaderExtensionMap* extension_map = &extension_maps[stream];
           rtp_parser.Parse(&parsed_header, extension_map);
+        } else {
+          // Use the default extension map.
+          // TODO(ivoc): Once configuration of audio streams is stored in the
+          //             event log, this can be removed.
+          //             Tracking bug: webrtc:6399
+          rtp_parser.Parse(&parsed_header, &default_extension_map);
         }
         uint64_t timestamp = parsed_log_.GetTimestamp(i);
         rtp_packets_[stream].push_back(
@@ -482,6 +509,11 @@ std::string EventLogAnalyzer::GetStreamName(StreamId stream_id) const {
   }
   if (IsRtxSsrc(stream_id))
     name << "RTX ";
+  if (stream_id.GetDirection() == kIncomingPacket) {
+    name << "(In) ";
+  } else {
+    name << "(Out) ";
+  }
   name << SsrcToString(stream_id.GetSsrc());
   return name.str();
 }
@@ -598,6 +630,39 @@ void EventLogAnalyzer::CreatePlayoutGraph(Plot* plot) {
   plot->SetSuggestedYAxis(0, 1, "Time since last playout (ms)", kBottomMargin,
                           kTopMargin);
   plot->SetTitle("Audio playout");
+}
+
+// For audio SSRCs, plot the audio level.
+void EventLogAnalyzer::CreateAudioLevelGraph(Plot* plot) {
+  std::map<StreamId, TimeSeries> time_series;
+
+  for (auto& kv : rtp_packets_) {
+    StreamId stream_id = kv.first;
+    const std::vector<LoggedRtpPacket>& packet_stream = kv.second;
+    // TODO(ivoc): When audio send/receive configs are stored in the event
+    //             log, a check should be added here to only process audio
+    //             streams. Tracking bug: webrtc:6399
+    for (auto& packet : packet_stream) {
+      if (packet.header.extension.hasAudioLevel) {
+        float x = static_cast<float>(packet.timestamp - begin_time_) / 1000000;
+        // The audio level is stored in -dBov (so e.g. -10 dBov is stored as 10)
+        // Here we convert it to dBov.
+        float y = static_cast<float>(-packet.header.extension.audioLevel);
+        time_series[stream_id].points.emplace_back(TimeSeriesPoint(x, y));
+      }
+    }
+  }
+
+  for (auto& series : time_series) {
+    series.second.label = GetStreamName(series.first);
+    series.second.style = LINE_GRAPH;
+    plot->series_list_.push_back(std::move(series.second));
+  }
+
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetYAxis(-127, 0, "Audio playout level (dBov)", kBottomMargin,
+                 kTopMargin);
+  plot->SetTitle("Audio level");
 }
 
 // For each SSRC, plot the time between the consecutive playouts.
