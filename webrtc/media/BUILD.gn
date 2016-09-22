@@ -88,7 +88,6 @@ rtc_source_set("rtc_media") {
     "base/videoframe.h",
     "base/videoframefactory.cc",
     "base/videoframefactory.h",
-    "base/videorenderer.h",
     "base/videosourcebase.cc",
     "base/videosourcebase.h",
     "devices/videorendererfactory.h",
