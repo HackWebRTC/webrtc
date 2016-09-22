@@ -28,8 +28,10 @@ namespace webrtc_jni {
 
 #define TAG_COMMON "MediaCodecVideo"
 
-// Color formats supported by encoder - should mirror supportedColorList
-// from MediaCodecVideoEncoder.java
+// Color formats supported by encoder or decoder - should include all
+// colors from supportedColorList in MediaCodecVideoEncoder.java and
+// MediaCodecVideoDecoder.java. Supported color format set in encoder
+// and decoder could be different.
 enum COLOR_FORMATTYPE {
   COLOR_FormatYUV420Planar = 0x13,
   COLOR_FormatYUV420SemiPlanar = 0x15,
@@ -38,6 +40,9 @@ enum COLOR_FORMATTYPE {
   // see /hardware/qcom/media/mm-core/inc/OMX_QCOMExtns.h
   // This format is presumably similar to COLOR_FormatYUV420SemiPlanar,
   // but requires some (16, 32?) byte alignment.
+  COLOR_QCOM_FORMATYVU420PackedSemiPlanar32m4ka = 0x7FA30C01,
+  COLOR_QCOM_FORMATYVU420PackedSemiPlanar16m4ka = 0x7FA30C02,
+  COLOR_QCOM_FORMATYVU420PackedSemiPlanar64x32Tile2m8ka = 0x7FA30C03,
   COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m = 0x7FA30C04
 };
 
