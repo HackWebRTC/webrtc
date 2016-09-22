@@ -60,7 +60,6 @@ Packet* PacketGenerator::NextPacket(int payload_size_bytes) {
   packet->header.ssrc = 0x12345678;
   packet->header.numCSRCs = 0;
   packet->header.paddingLength = 0;
-  packet->primary = true;
   packet->payload.SetSize(payload_size_bytes);
   ++seq_no_;
   ts_ += frame_size_;
@@ -284,7 +283,7 @@ TEST(PacketBuffer, ExtractOrderRedundancy) {
               packet_facts[i].payload_type,
               kFrameSize);
     Packet* packet = gen.NextPacket(kPayloadLength);
-    packet->primary = packet_facts[i].primary;
+    packet->priority.red_level = packet_facts[i].primary ? 0 : 1;
     EXPECT_EQ(PacketBuffer::kOK, buffer.InsertPacket(packet));
     if (packet_facts[i].extract_order >= 0) {
       expect_order[packet_facts[i].extract_order] = packet;
@@ -512,8 +511,8 @@ TEST(PacketBuffer, Failures) {
 // The function should return true if the first packet "goes before" the second.
 TEST(PacketBuffer, ComparePackets) {
   PacketGenerator gen(0, 0, 0, 10);
-  Packet* a = gen.NextPacket(10);  // SN = 0, TS = 0.
-  Packet* b = gen.NextPacket(10);  // SN = 1, TS = 10.
+  std::unique_ptr<Packet> a(gen.NextPacket(10));  // SN = 0, TS = 0.
+  std::unique_ptr<Packet> b(gen.NextPacket(10));  // SN = 1, TS = 10.
   EXPECT_FALSE(*a == *b);
   EXPECT_TRUE(*a != *b);
   EXPECT_TRUE(*a < *b);
@@ -556,10 +555,11 @@ TEST(PacketBuffer, ComparePackets) {
   EXPECT_TRUE(*a <= *b);
   EXPECT_FALSE(*a >= *b);
 
-  // Test equal timestamps and sequence numbers, but only 'b' is primary.
+  // Test equal timestamps and sequence numbers, but differing priorities.
   a->header.sequenceNumber = b->header.sequenceNumber;
-  a->primary = false;
-  b->primary = true;
+  a->priority = {1, 0};
+  b->priority = {0, 0};
+  // a after b
   EXPECT_FALSE(*a == *b);
   EXPECT_TRUE(*a != *b);
   EXPECT_FALSE(*a < *b);
@@ -567,8 +567,53 @@ TEST(PacketBuffer, ComparePackets) {
   EXPECT_FALSE(*a <= *b);
   EXPECT_TRUE(*a >= *b);
 
-  delete a;
-  delete b;
+  std::unique_ptr<Packet> c(gen.NextPacket(0));  // SN = 2, TS = 20.
+  std::unique_ptr<Packet> d(gen.NextPacket(0));  // SN = 3, TS = 20.
+  c->header.timestamp = b->header.timestamp;
+  d->header.timestamp = b->header.timestamp;
+  c->header.sequenceNumber = b->header.sequenceNumber;
+  d->header.sequenceNumber = b->header.sequenceNumber;
+  c->priority = {1, 1};
+  d->priority = {0, 1};
+  // c after d
+  EXPECT_FALSE(*c == *d);
+  EXPECT_TRUE(*c != *d);
+  EXPECT_FALSE(*c < *d);
+  EXPECT_TRUE(*c > *d);
+  EXPECT_FALSE(*c <= *d);
+  EXPECT_TRUE(*c >= *d);
+
+  // c after a
+  EXPECT_FALSE(*c == *a);
+  EXPECT_TRUE(*c != *a);
+  EXPECT_FALSE(*c < *a);
+  EXPECT_TRUE(*c > *a);
+  EXPECT_FALSE(*c <= *a);
+  EXPECT_TRUE(*c >= *a);
+
+  // c after b
+  EXPECT_FALSE(*c == *b);
+  EXPECT_TRUE(*c != *b);
+  EXPECT_FALSE(*c < *b);
+  EXPECT_TRUE(*c > *b);
+  EXPECT_FALSE(*c <= *b);
+  EXPECT_TRUE(*c >= *b);
+
+  // a after d
+  EXPECT_FALSE(*a == *d);
+  EXPECT_TRUE(*a != *d);
+  EXPECT_FALSE(*a < *d);
+  EXPECT_TRUE(*a > *d);
+  EXPECT_FALSE(*a <= *d);
+  EXPECT_TRUE(*a >= *d);
+
+  // d after b
+  EXPECT_FALSE(*d == *b);
+  EXPECT_TRUE(*d != *b);
+  EXPECT_FALSE(*d < *b);
+  EXPECT_TRUE(*d > *b);
+  EXPECT_FALSE(*d <= *b);
+  EXPECT_TRUE(*d >= *b);
 }
 
 // Test the DeleteFirstPacket DeleteAllPackets methods.

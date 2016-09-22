@@ -41,7 +41,7 @@
 #include "webrtc/modules/audio_coding/neteq/normal.h"
 #include "webrtc/modules/audio_coding/neteq/packet_buffer.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"
-#include "webrtc/modules/audio_coding/neteq/payload_splitter.h"
+#include "webrtc/modules/audio_coding/neteq/red_payload_splitter.h"
 #include "webrtc/modules/audio_coding/neteq/post_decode_vad.h"
 #include "webrtc/modules/audio_coding/neteq/preemptive_expand.h"
 #include "webrtc/modules/audio_coding/neteq/sync_buffer.h"
@@ -65,7 +65,7 @@ NetEqImpl::Dependencies::Dependencies(
       dtmf_tone_generator(new DtmfToneGenerator),
       packet_buffer(
           new PacketBuffer(config.max_packets_in_buffer, tick_timer.get())),
-      payload_splitter(new PayloadSplitter),
+      red_payload_splitter(new RedPayloadSplitter),
       timestamp_scaler(new TimestampScaler(*decoder_database)),
       accelerate_factory(new AccelerateFactory),
       expand_factory(new ExpandFactory),
@@ -84,7 +84,7 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
       dtmf_buffer_(std::move(deps.dtmf_buffer)),
       dtmf_tone_generator_(std::move(deps.dtmf_tone_generator)),
       packet_buffer_(std::move(deps.packet_buffer)),
-      payload_splitter_(std::move(deps.payload_splitter)),
+      red_payload_splitter_(std::move(deps.red_payload_splitter)),
       timestamp_scaler_(std::move(deps.timestamp_scaler)),
       vad_(new PostDecodeVad()),
       expand_factory_(std::move(deps.expand_factory)),
@@ -567,7 +567,6 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     packet->header.ssrc = rtp_header.header.ssrc;
     packet->header.numCSRCs = 0;
     packet->payload.SetData(payload.data(), payload.size());
-    packet->primary = true;
     // Waiting time will be set upon inserting the packet in the buffer.
     RTC_DCHECK(!packet->waiting_time);
     // Insert packet in a packet list.
@@ -609,13 +608,13 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
 
   // Check for RED payload type, and separate payloads into several packets.
   if (decoder_database_->IsRed(main_header.payloadType)) {
-    if (payload_splitter_->SplitRed(&packet_list) != PayloadSplitter::kOK) {
+    if (!red_payload_splitter_->SplitRed(&packet_list)) {
       PacketBuffer::DeleteAllPackets(&packet_list);
       return kRedundancySplitError;
     }
     // Only accept a few RED payloads of the same type as the main data,
     // DTMF events and CNG.
-    payload_splitter_->CheckRedPayloads(&packet_list, *decoder_database_);
+    red_payload_splitter_->CheckRedPayloads(&packet_list, *decoder_database_);
     // Update the stored main payload header since the main payload has now
     // changed.
     memcpy(&main_header, &packet_list.front()->header, sizeof(main_header));
@@ -658,18 +657,6 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     }
   }
 
-  // Check for FEC in packets, and separate payloads into several packets.
-  int ret = payload_splitter_->SplitFec(&packet_list, decoder_database_.get());
-  if (ret != PayloadSplitter::kOK) {
-    PacketBuffer::DeleteAllPackets(&packet_list);
-    switch (ret) {
-      case PayloadSplitter::kUnknownPayloadType:
-        return kUnknownRtpPayloadType;
-      default:
-        return kOtherError;
-    }
-  }
-
   // Update bandwidth estimate, if the packet is not comfort noise.
   if (!packet_list.empty() &&
       !decoder_database_->IsComfortNoise(main_header.payloadType)) {
@@ -702,9 +689,9 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     } else {
       std::vector<AudioDecoder::ParseResult> results =
           info->GetDecoder()->ParsePayload(std::move(packet->payload),
-                                           packet->header.timestamp,
-                                           packet->primary);
+                                           packet->header.timestamp);
       const RTPHeader& original_header = packet->header;
+      const Packet::Priority original_priority = packet->priority;
       for (auto& result : results) {
         RTC_DCHECK(result.frame);
         // Reuse the packet if possible.
@@ -713,8 +700,9 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
           packet->header = original_header;
         }
         packet->header.timestamp = result.timestamp;
-        // TODO(ossu): Move from primary to some sort of priority level.
-        packet->primary = result.primary;
+        RTC_DCHECK_GE(result.priority, 0);
+        packet->priority.codec_level = result.priority;
+        packet->priority.red_level = original_priority.red_level;
         packet->frame = std::move(result.frame);
         parsed_packet_list.push_back(packet.release());
       }
@@ -734,7 +722,7 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
   // Insert packets in buffer.
   const size_t buffer_length_before_insert =
       packet_buffer_->NumPacketsInBuffer();
-  ret = packet_buffer_->InsertPacketList(
+  const int ret = packet_buffer_->InsertPacketList(
       &parsed_packet_list, *decoder_database_, &current_rtp_payload_type_,
       &current_cng_rtp_payload_type_);
   if (ret == PacketBuffer::kFlushed) {
@@ -1979,9 +1967,8 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
     size_t packet_duration = 0;
     if (packet->frame) {
       packet_duration = packet->frame->Duration();
-      // TODO(ossu): Is this the correct way to track samples decoded from a
-      // redundant packet?
-      if (packet_duration > 0 && !packet->primary) {
+      // TODO(ossu): Is this the correct way to track Opus FEC packets?
+      if (packet->priority.codec_level > 0) {
         stats_.SecondaryDecodedSamples(rtc::checked_cast<int>(packet_duration));
       }
     } else if (!decoder_database_->IsComfortNoise(packet->header.payloadType)) {

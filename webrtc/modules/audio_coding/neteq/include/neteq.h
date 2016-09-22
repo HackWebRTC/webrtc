@@ -126,7 +126,6 @@ class NetEq {
     kStereoNotSupported,
     kSampleUnderrun,
     kDecodedTooMuch,
-    kFrameSplitError,
     kRedundancySplitError,
     kPacketBufferCorruption
   };

@@ -17,37 +17,22 @@
 namespace webrtc {
 
 LegacyEncodedAudioFrame::LegacyEncodedAudioFrame(AudioDecoder* decoder,
-                                                 rtc::Buffer&& payload,
-                                                 bool is_primary_payload)
-    : decoder_(decoder),
-      payload_(std::move(payload)),
-      is_primary_payload_(is_primary_payload) {}
+                                                 rtc::Buffer&& payload)
+    : decoder_(decoder), payload_(std::move(payload)) {}
 
 LegacyEncodedAudioFrame::~LegacyEncodedAudioFrame() = default;
 
 size_t LegacyEncodedAudioFrame::Duration() const {
-  int ret;
-  if (is_primary_payload_) {
-    ret = decoder_->PacketDuration(payload_.data(), payload_.size());
-  } else {
-    ret = decoder_->PacketDurationRedundant(payload_.data(), payload_.size());
-  }
+  const int ret = decoder_->PacketDuration(payload_.data(), payload_.size());
   return (ret < 0) ? 0 : static_cast<size_t>(ret);
 }
 
 rtc::Optional<AudioDecoder::EncodedAudioFrame::DecodeResult>
 LegacyEncodedAudioFrame::Decode(rtc::ArrayView<int16_t> decoded) const {
   AudioDecoder::SpeechType speech_type = AudioDecoder::kSpeech;
-  int ret;
-  if (is_primary_payload_) {
-    ret = decoder_->Decode(
-        payload_.data(), payload_.size(), decoder_->SampleRateHz(),
-        decoded.size() * sizeof(int16_t), decoded.data(), &speech_type);
-  } else {
-    ret = decoder_->DecodeRedundant(
-        payload_.data(), payload_.size(), decoder_->SampleRateHz(),
-        decoded.size() * sizeof(int16_t), decoded.data(), &speech_type);
-  }
+  const int ret = decoder_->Decode(
+      payload_.data(), payload_.size(), decoder_->SampleRateHz(),
+      decoded.size() * sizeof(int16_t), decoded.data(), &speech_type);
 
   if (ret < 0)
     return rtc::Optional<DecodeResult>();
@@ -59,7 +44,6 @@ std::vector<AudioDecoder::ParseResult> LegacyEncodedAudioFrame::SplitBySamples(
     AudioDecoder* decoder,
     rtc::Buffer&& payload,
     uint32_t timestamp,
-    bool is_primary,
     size_t bytes_per_ms,
     uint32_t timestamps_per_ms) {
   RTC_DCHECK(payload.data());
@@ -70,8 +54,8 @@ std::vector<AudioDecoder::ParseResult> LegacyEncodedAudioFrame::SplitBySamples(
   const size_t min_chunk_size = bytes_per_ms * 20;
   if (min_chunk_size >= payload.size()) {
     std::unique_ptr<LegacyEncodedAudioFrame> frame(
-        new LegacyEncodedAudioFrame(decoder, std::move(payload), is_primary));
-    results.emplace_back(timestamp, is_primary, std::move(frame));
+        new LegacyEncodedAudioFrame(decoder, std::move(payload)));
+    results.emplace_back(timestamp, 0, std::move(frame));
   } else {
     // Reduce the split size by half as long as |split_size_bytes| is at least
     // twice the minimum chunk size (so that the resulting size is at least as
@@ -92,10 +76,8 @@ std::vector<AudioDecoder::ParseResult> LegacyEncodedAudioFrame::SplitBySamples(
           std::min(split_size_bytes, payload.size() - byte_offset);
       rtc::Buffer new_payload(payload.data() + byte_offset, split_size_bytes);
       std::unique_ptr<LegacyEncodedAudioFrame> frame(
-          new LegacyEncodedAudioFrame(decoder, std::move(new_payload),
-                                      is_primary));
-      results.emplace_back(timestamp + timestamp_offset, is_primary,
-                           std::move(frame));
+          new LegacyEncodedAudioFrame(decoder, std::move(new_payload)));
+      results.emplace_back(timestamp + timestamp_offset, 0, std::move(frame));
     }
   }
 

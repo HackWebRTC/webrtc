@@ -20,16 +20,13 @@ namespace webrtc {
 
 class LegacyEncodedAudioFrame final : public AudioDecoder::EncodedAudioFrame {
  public:
-  LegacyEncodedAudioFrame(AudioDecoder* decoder,
-                          rtc::Buffer&& payload,
-                          bool is_primary_payload);
+  LegacyEncodedAudioFrame(AudioDecoder* decoder, rtc::Buffer&& payload);
   ~LegacyEncodedAudioFrame() override;
 
   static std::vector<AudioDecoder::ParseResult> SplitBySamples(
       AudioDecoder* decoder,
       rtc::Buffer&& payload,
       uint32_t timestamp,
-      bool is_primary,
       size_t bytes_per_ms,
       uint32_t timestamps_per_ms);
 
@@ -44,7 +41,6 @@ class LegacyEncodedAudioFrame final : public AudioDecoder::EncodedAudioFrame {
  private:
   AudioDecoder* const decoder_;
   const rtc::Buffer payload_;
-  const bool is_primary_payload_;
 };
 
 }  // namespace webrtc

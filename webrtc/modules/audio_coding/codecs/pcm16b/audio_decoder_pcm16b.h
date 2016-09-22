@@ -21,8 +21,7 @@ class AudioDecoderPcm16B final : public AudioDecoder {
   AudioDecoderPcm16B(int sample_rate_hz, size_t num_channels);
   void Reset() override;
   std::vector<ParseResult> ParsePayload(rtc::Buffer&& payload,
-                                        uint32_t timestamp,
-                                        bool is_primary) override;
+                                        uint32_t timestamp) override;
   int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
   int SampleRateHz() const override;
   size_t Channels() const override;

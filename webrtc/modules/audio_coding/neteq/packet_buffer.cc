@@ -76,6 +76,9 @@ int PacketBuffer::InsertPacket(Packet* packet) {
     return kInvalidPacket;
   }
 
+  RTC_DCHECK_GE(packet->priority.codec_level, 0);
+  RTC_DCHECK_GE(packet->priority.red_level, 0);
+
   int return_val = kOK;
 
   packet->waiting_time = tick_timer_->GetNewStopwatch();
@@ -262,7 +265,7 @@ int PacketBuffer::DiscardAllOldPackets(uint32_t timestamp_limit) {
 
 void PacketBuffer::DiscardPacketsWithPayloadType(uint8_t payload_type) {
   for (auto it = buffer_.begin(); it != buffer_.end(); /* */) {
-    Packet *packet = *it;
+    Packet* packet = *it;
     if (packet->header.payloadType == payload_type) {
       delete packet;
       it = buffer_.erase(it);
@@ -281,7 +284,9 @@ size_t PacketBuffer::NumSamplesInBuffer(size_t last_decoded_length) const {
   size_t last_duration = last_decoded_length;
   for (Packet* packet : buffer_) {
     if (packet->frame) {
-      if (!packet->primary) {
+      // TODO(hlundin): Verify that it's fine to count all packets and remove
+      // this check.
+      if (packet->priority != Packet::Priority(0, 0)) {
         continue;
       }
       size_t duration = packet->frame->Duration();

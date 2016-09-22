@@ -19,10 +19,9 @@ void AudioDecoderPcmU::Reset() {}
 
 std::vector<AudioDecoder::ParseResult> AudioDecoderPcmU::ParsePayload(
     rtc::Buffer&& payload,
-    uint32_t timestamp,
-    bool is_primary) {
+    uint32_t timestamp) {
   return LegacyEncodedAudioFrame::SplitBySamples(
-      this, std::move(payload), timestamp, is_primary, 8 * num_channels_, 8);
+      this, std::move(payload), timestamp, 8 * num_channels_, 8);
 }
 
 int AudioDecoderPcmU::SampleRateHz() const {
@@ -55,10 +54,9 @@ void AudioDecoderPcmA::Reset() {}
 
 std::vector<AudioDecoder::ParseResult> AudioDecoderPcmA::ParsePayload(
     rtc::Buffer&& payload,
-    uint32_t timestamp,
-    bool is_primary) {
+    uint32_t timestamp) {
   return LegacyEncodedAudioFrame::SplitBySamples(
-      this, std::move(payload), timestamp, is_primary, 8 * num_channels_, 8);
+      this, std::move(payload), timestamp, 8 * num_channels_, 8);
 }
 
 int AudioDecoderPcmA::SampleRateHz() const {

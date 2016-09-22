@@ -50,10 +50,9 @@ void AudioDecoderG722::Reset() {
 
 std::vector<AudioDecoder::ParseResult> AudioDecoderG722::ParsePayload(
     rtc::Buffer&& payload,
-    uint32_t timestamp,
-    bool is_primary) {
+    uint32_t timestamp) {
   return LegacyEncodedAudioFrame::SplitBySamples(this, std::move(payload),
-                                                 timestamp, is_primary, 8, 16);
+                                                 timestamp, 8, 16);
 }
 
 int AudioDecoderG722::PacketDuration(const uint8_t* encoded,
@@ -128,10 +127,9 @@ void AudioDecoderG722Stereo::Reset() {
 
 std::vector<AudioDecoder::ParseResult> AudioDecoderG722Stereo::ParsePayload(
     rtc::Buffer&& payload,
-    uint32_t timestamp,
-    bool is_primary) {
-  return LegacyEncodedAudioFrame::SplitBySamples(
-      this, std::move(payload), timestamp, is_primary, 2 * 8, 16);
+    uint32_t timestamp) {
+  return LegacyEncodedAudioFrame::SplitBySamples(this, std::move(payload),
+                                                 timestamp, 2 * 8, 16);
 }
 
 // Split the stereo packet and place left and right channel after each other

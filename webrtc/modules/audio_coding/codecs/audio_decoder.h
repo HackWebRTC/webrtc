@@ -8,11 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_INCLUDE_AUDIO_DECODER_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_INCLUDE_AUDIO_DECODER_H_
-
-#include <memory>
-#include <vector>
+#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_AUDIO_DECODER_H_
+#define WEBRTC_MODULES_AUDIO_CODING_CODECS_AUDIO_DECODER_H_
 
 #include <memory>
 #include <vector>
@@ -66,7 +63,7 @@ class AudioDecoder {
   struct ParseResult {
     ParseResult();
     ParseResult(uint32_t timestamp,
-                bool primary,
+                int priority,
                 std::unique_ptr<EncodedAudioFrame> frame);
     ParseResult(ParseResult&& b);
     ~ParseResult();
@@ -75,7 +72,10 @@ class AudioDecoder {
 
     // The timestamp of the frame is in samples per channel.
     uint32_t timestamp;
-    bool primary;
+    // The relative priority of the frame compared to other frames of the same
+    // payload and the same timeframe. A higher value means a lower priority.
+    // The highest priority is zero - negative values are not allowed.
+    int priority;
     std::unique_ptr<EncodedAudioFrame> frame;
   };
 
@@ -86,8 +86,7 @@ class AudioDecoder {
   // buffer. |timestamp| is the input timestamp, in samples, corresponding to
   // the start of the payload.
   virtual std::vector<ParseResult> ParsePayload(rtc::Buffer&& payload,
-                                                uint32_t timestamp,
-                                                bool is_primary);
+                                                uint32_t timestamp);
 
   // Decodes |encode_len| bytes from |encoded| and writes the result in
   // |decoded|. The maximum bytes allowed to be written into |decoded| is
@@ -177,4 +176,4 @@ class AudioDecoder {
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ_INCLUDE_AUDIO_DECODER_H_
+#endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_AUDIO_DECODER_H_

@@ -123,7 +123,7 @@ TEST_P(SplitBySamplesTest, PayloadSizes) {
     const auto results = LegacyEncodedAudioFrame::SplitBySamples(
         nullptr,
         generate_payload(expected_split.payload_size_ms * bytes_per_ms_),
-        kBaseTimestamp, true, bytes_per_ms_, samples_per_ms_);
+        kBaseTimestamp, bytes_per_ms_, samples_per_ms_);
 
     EXPECT_EQ(expected_split.num_frames, results.size());
     uint32_t expected_timestamp = kBaseTimestamp;

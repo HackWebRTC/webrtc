@@ -14,8 +14,6 @@
 #include <memory>
 #include <utility>
 
-#include <utility>
-
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/sanitizer.h"
@@ -27,9 +25,11 @@ namespace webrtc {
 AudioDecoder::ParseResult::ParseResult() = default;
 AudioDecoder::ParseResult::ParseResult(ParseResult&& b) = default;
 AudioDecoder::ParseResult::ParseResult(uint32_t timestamp,
-                                       bool primary,
+                                       int priority,
                                        std::unique_ptr<EncodedAudioFrame> frame)
-    : timestamp(timestamp), primary(primary), frame(std::move(frame)) {}
+    : timestamp(timestamp), priority(priority), frame(std::move(frame)) {
+  RTC_DCHECK_GE(priority, 0);
+}
 
 AudioDecoder::ParseResult::~ParseResult() = default;
 
@@ -38,12 +38,11 @@ AudioDecoder::ParseResult& AudioDecoder::ParseResult::operator=(
 
 std::vector<AudioDecoder::ParseResult> AudioDecoder::ParsePayload(
     rtc::Buffer&& payload,
-    uint32_t timestamp,
-    bool is_primary) {
+    uint32_t timestamp) {
   std::vector<ParseResult> results;
   std::unique_ptr<EncodedAudioFrame> frame(
-      new LegacyEncodedAudioFrame(this, std::move(payload), is_primary));
-  results.emplace_back(timestamp, is_primary, std::move(frame));
+      new LegacyEncodedAudioFrame(this, std::move(payload)));
+  results.emplace_back(timestamp, 0, std::move(frame));
   return results;
 }
 

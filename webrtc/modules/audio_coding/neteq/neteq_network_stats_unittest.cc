@@ -39,18 +39,57 @@ class MockAudioDecoder final : public AudioDecoder {
 
   MOCK_METHOD0(Reset, void());
 
-  int PacketDuration(const uint8_t* encoded,
-                     size_t encoded_len) const /* override */ {
-    return kPacketDuration;
+  class MockFrame : public AudioDecoder::EncodedAudioFrame {
+   public:
+    MockFrame(size_t num_channels) : num_channels_(num_channels) {}
+
+    size_t Duration() const override { return kPacketDuration; }
+
+    rtc::Optional<DecodeResult> Decode(
+        rtc::ArrayView<int16_t> decoded) const override {
+      const size_t output_size =
+          sizeof(int16_t) * kPacketDuration * num_channels_;
+      if (decoded.size() >= output_size) {
+        memset(decoded.data(), 0,
+               sizeof(int16_t) * kPacketDuration * num_channels_);
+        return rtc::Optional<DecodeResult>(
+            {kPacketDuration * num_channels_, kSpeech});
+      } else {
+        ADD_FAILURE() << "Expected decoded.size() to be >= output_size ("
+                      << decoded.size() << " vs. " << output_size << ")";
+        return rtc::Optional<DecodeResult>();
+      }
+    }
+
+   private:
+    const size_t num_channels_;
+  };
+
+  std::vector<ParseResult> ParsePayload(rtc::Buffer&& payload,
+                                        uint32_t timestamp) /* override */ {
+    std::vector<ParseResult> results;
+    if (fec_enabled_) {
+      std::unique_ptr<MockFrame> fec_frame(new MockFrame(num_channels_));
+      results.emplace_back(timestamp - kPacketDuration, 1,
+                           std::move(fec_frame));
+    }
+
+    std::unique_ptr<MockFrame> frame(new MockFrame(num_channels_));
+    results.emplace_back(timestamp, 0, std::move(frame));
+    return results;
   }
 
-  int PacketDurationRedundant(const uint8_t* encoded,
-                              size_t encoded_len) const /* override */ {
+  int PacketDuration(const uint8_t* encoded, size_t encoded_len) const
+  /* override */ {
+    ADD_FAILURE() << "Since going through ParsePayload, PacketDuration should "
+                     "never get called.";
     return kPacketDuration;
   }
 
   bool PacketHasFec(
       const uint8_t* encoded, size_t encoded_len) const /* override */ {
+    ADD_FAILURE() << "Since going through ParsePayload, PacketHasFec should "
+                     "never get called.";
     return fec_enabled_;
   }
 
@@ -63,24 +102,14 @@ class MockAudioDecoder final : public AudioDecoder {
   bool fec_enabled() const { return fec_enabled_; }
 
  protected:
-  // Override the following methods such that no actual payload is needed.
   int DecodeInternal(const uint8_t* encoded,
                      size_t encoded_len,
-                     int /*sample_rate_hz*/,
+                     int sample_rate_hz,
                      int16_t* decoded,
                      SpeechType* speech_type) /* override */ {
-    *speech_type = kSpeech;
-    memset(decoded, 0, sizeof(int16_t) * kPacketDuration * Channels());
-    return kPacketDuration * Channels();
-  }
-
-  int DecodeRedundantInternal(const uint8_t* encoded,
-                              size_t encoded_len,
-                              int sample_rate_hz,
-                              int16_t* decoded,
-                              SpeechType* speech_type) /* override */ {
-    return DecodeInternal(encoded, encoded_len, sample_rate_hz, decoded,
-                          speech_type);
+    ADD_FAILURE() << "Since going through ParsePayload, DecodeInternal should "
+                     "never get called.";
+    return -1;
   }
 
  private:

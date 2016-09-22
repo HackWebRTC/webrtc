@@ -81,7 +81,7 @@ TEST_P(SplitIlbcTest, NumFrames) {
   };
 
   const auto results = decoder.ParsePayload(
-      generate_payload(frame_length_bytes_ * num_frames_), 0, true);
+      generate_payload(frame_length_bytes_ * num_frames_), 0);
   EXPECT_EQ(num_frames_, results.size());
 
   size_t frame_num = 0;
@@ -123,7 +123,7 @@ TEST(IlbcTest, SplitTooLargePayload) {
   AudioDecoderIlbc decoder;
   constexpr size_t kPayloadLengthBytes = 950;
   const auto results =
-      decoder.ParsePayload(rtc::Buffer(kPayloadLengthBytes), 0, true);
+      decoder.ParsePayload(rtc::Buffer(kPayloadLengthBytes), 0);
   EXPECT_TRUE(results.empty());
 }
 
@@ -132,7 +132,7 @@ TEST(IlbcTest, SplitUnevenPayload) {
   AudioDecoderIlbc decoder;
   constexpr size_t kPayloadLengthBytes = 39;  // Not an even number of frames.
   const auto results =
-      decoder.ParsePayload(rtc::Buffer(kPayloadLengthBytes), 0, true);
+      decoder.ParsePayload(rtc::Buffer(kPayloadLengthBytes), 0);
   EXPECT_TRUE(results.empty());
 }
 

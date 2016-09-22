@@ -24,10 +24,52 @@ namespace webrtc {
 
 // Struct for holding RTP packets.
 struct Packet {
+  struct Priority {
+    Priority() : codec_level(0), red_level(0) {}
+    Priority(int codec_level, int red_level)
+        : codec_level(codec_level), red_level(red_level) {
+      CheckInvariant();
+    }
+
+    int codec_level;
+    int red_level;
+
+    // Priorities are sorted low-to-high, first on the level the codec
+    // prioritizes it, then on the level of RED packet it is; i.e. if it is a
+    // primary or secondary payload of a RED packet. For example: with Opus, an
+    // Fec packet (which the decoder prioritizes lower than a regular packet)
+    // will not be used if there is _any_ RED payload for the same
+    // timeframe. The highest priority packet will have levels {0, 0}. Negative
+    // priorities are not allowed.
+    bool operator<(const Priority& b) const {
+      CheckInvariant();
+      b.CheckInvariant();
+      if (codec_level == b.codec_level)
+        return red_level < b.red_level;
+
+      return codec_level < b.codec_level;
+    }
+    bool operator==(const Priority& b) const {
+      CheckInvariant();
+      b.CheckInvariant();
+      return codec_level == b.codec_level && red_level == b.red_level;
+    }
+    bool operator!=(const Priority& b) const { return !(*this == b); }
+    bool operator>(const Priority& b) const { return b < *this; }
+    bool operator<=(const Priority& b) const { return !(b > *this); }
+    bool operator>=(const Priority& b) const { return !(b < *this); }
+
+   private:
+    void CheckInvariant() const {
+      RTC_DCHECK_GE(codec_level, 0);
+      RTC_DCHECK_GE(red_level, 0);
+    }
+  };
+
   RTPHeader header;
   // Datagram excluding RTP header and header extension.
   rtc::Buffer payload;
-  bool primary = true;  // Primary, i.e., not redundant payload.
+  Priority priority;
   std::unique_ptr<TickTimer::Stopwatch> waiting_time;
   std::unique_ptr<AudioDecoder::EncodedAudioFrame> frame;
 
@@ -41,17 +83,16 @@ struct Packet {
   // primary payload is considered "smaller" than a secondary.
   bool operator==(const Packet& rhs) const {
     return (this->header.timestamp == rhs.header.timestamp &&
-        this->header.sequenceNumber == rhs.header.sequenceNumber &&
-        this->primary == rhs.primary);
+            this->header.sequenceNumber == rhs.header.sequenceNumber &&
+            this->priority == rhs.priority);
   }
   bool operator!=(const Packet& rhs) const { return !operator==(rhs); }
   bool operator<(const Packet& rhs) const {
     if (this->header.timestamp == rhs.header.timestamp) {
       if (this->header.sequenceNumber == rhs.header.sequenceNumber) {
-        // Timestamp and sequence numbers are identical - deem the left
-        // hand side to be "smaller" (i.e., "earlier") if it is primary, and
-        // right hand side is not.
-        return (this->primary && !rhs.primary);
+        // Timestamp and sequence numbers are identical - deem the left hand
+        // side to be "smaller" (i.e., "earlier") if it has higher priority.
+        return this->priority < rhs.priority;
       }
       return (static_cast<uint16_t>(rhs.header.sequenceNumber
           - this->header.sequenceNumber) < 0xFFFF / 2);

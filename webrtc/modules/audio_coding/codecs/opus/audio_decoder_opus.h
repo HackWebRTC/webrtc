@@ -22,6 +22,8 @@ class AudioDecoderOpus final : public AudioDecoder {
   explicit AudioDecoderOpus(size_t num_channels);
   ~AudioDecoderOpus() override;
 
+  std::vector<ParseResult> ParsePayload(rtc::Buffer&& payload,
+                                        uint32_t timestamp) override;
   void Reset() override;
   int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
   int PacketDurationRedundant(const uint8_t* encoded,

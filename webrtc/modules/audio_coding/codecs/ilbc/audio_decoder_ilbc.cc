@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/audio_coding/codecs/ilbc/audio_decoder_ilbc.h"
 
+#include <utility>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_coding/codecs/ilbc/ilbc.h"
@@ -53,8 +55,7 @@ void AudioDecoderIlbc::Reset() {
 
 std::vector<AudioDecoder::ParseResult> AudioDecoderIlbc::ParsePayload(
     rtc::Buffer&& payload,
-    uint32_t timestamp,
-    bool is_primary) {
+    uint32_t timestamp) {
   std::vector<ParseResult> results;
   size_t bytes_per_frame;
   int timestamps_per_frame;
@@ -78,8 +79,8 @@ std::vector<AudioDecoder::ParseResult> AudioDecoderIlbc::ParsePayload(
   RTC_DCHECK_EQ(0u, payload.size() % bytes_per_frame);
   if (payload.size() == bytes_per_frame) {
     std::unique_ptr<EncodedAudioFrame> frame(
-        new LegacyEncodedAudioFrame(this, std::move(payload), is_primary));
-    results.emplace_back(timestamp, is_primary, std::move(frame));
+        new LegacyEncodedAudioFrame(this, std::move(payload)));
+    results.emplace_back(timestamp, 0, std::move(frame));
   } else {
     size_t byte_offset;
     uint32_t timestamp_offset;
@@ -87,11 +88,9 @@ std::vector<AudioDecoder::ParseResult> AudioDecoderIlbc::ParsePayload(
          byte_offset < payload.size();
          byte_offset += bytes_per_frame,
              timestamp_offset += timestamps_per_frame) {
-      rtc::Buffer new_payload(payload.data() + byte_offset, bytes_per_frame);
       std::unique_ptr<EncodedAudioFrame> frame(new LegacyEncodedAudioFrame(
-          this, std::move(new_payload), is_primary));
-      results.emplace_back(timestamp + timestamp_offset, is_primary,
-                           std::move(frame));
+          this, rtc::Buffer(payload.data() + byte_offset, bytes_per_frame)));
+      results.emplace_back(timestamp + timestamp_offset, 0, std::move(frame));
     }
   }
 

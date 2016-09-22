@@ -28,7 +28,7 @@
 #include "webrtc/modules/audio_coding/neteq/mock/mock_dtmf_buffer.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_dtmf_tone_generator.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_packet_buffer.h"
-#include "webrtc/modules/audio_coding/neteq/mock/mock_payload_splitter.h"
+#include "webrtc/modules/audio_coding/neteq/mock/mock_red_payload_splitter.h"
 #include "webrtc/modules/audio_coding/neteq/preemptive_expand.h"
 #include "webrtc/modules/audio_coding/neteq/sync_buffer.h"
 #include "webrtc/modules/audio_coding/neteq/timestamp_scaler.h"
@@ -124,11 +124,11 @@ class NetEqImplTest : public ::testing::Test {
     packet_buffer_ = deps.packet_buffer.get();
 
     if (use_mock_payload_splitter_) {
-      std::unique_ptr<MockPayloadSplitter> mock(new MockPayloadSplitter);
+      std::unique_ptr<MockRedPayloadSplitter> mock(new MockRedPayloadSplitter);
       mock_payload_splitter_ = mock.get();
-      deps.payload_splitter = std::move(mock);
+      deps.red_payload_splitter = std::move(mock);
     }
-    payload_splitter_ = deps.payload_splitter.get();
+    red_payload_splitter_ = deps.red_payload_splitter.get();
 
     deps.timestamp_scaler = std::unique_ptr<TimestampScaler>(
         new TimestampScaler(*deps.decoder_database.get()));
@@ -197,8 +197,8 @@ class NetEqImplTest : public ::testing::Test {
   MockPacketBuffer* mock_packet_buffer_ = nullptr;
   PacketBuffer* packet_buffer_ = nullptr;
   bool use_mock_packet_buffer_ = true;
-  MockPayloadSplitter* mock_payload_splitter_ = nullptr;
-  PayloadSplitter* payload_splitter_ = nullptr;
+  MockRedPayloadSplitter* mock_payload_splitter_ = nullptr;
+  RedPayloadSplitter* red_payload_splitter_ = nullptr;
   bool use_mock_payload_splitter_ = true;
 };
 
@@ -331,11 +331,6 @@ TEST_F(NetEqImplTest, InsertPacket) {
     EXPECT_CALL(*mock_delay_manager_, SetPacketAudioLength(30))
         .WillOnce(Return(0));
   }
-
-  // Expectations for payload splitter.
-  EXPECT_CALL(*mock_payload_splitter_, SplitFec(_, _))
-      .Times(2)
-      .WillRepeatedly(Return(PayloadSplitter::kOK));
 
   // Insert first packet.
   neteq_->InsertPacket(rtp_header, payload, kFirstReceiveTime);

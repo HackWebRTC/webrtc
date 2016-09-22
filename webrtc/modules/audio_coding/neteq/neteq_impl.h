@@ -46,7 +46,7 @@ class Merge;
 class NackTracker;
 class Normal;
 class PacketBuffer;
-class PayloadSplitter;
+class RedPayloadSplitter;
 class PostDecodeVad;
 class PreemptiveExpand;
 class RandomVector;
@@ -86,7 +86,7 @@ class NetEqImpl : public webrtc::NetEq {
     std::unique_ptr<DtmfBuffer> dtmf_buffer;
     std::unique_ptr<DtmfToneGenerator> dtmf_tone_generator;
     std::unique_ptr<PacketBuffer> packet_buffer;
-    std::unique_ptr<PayloadSplitter> payload_splitter;
+    std::unique_ptr<RedPayloadSplitter> red_payload_splitter;
     std::unique_ptr<TimestampScaler> timestamp_scaler;
     std::unique_ptr<AccelerateFactory> accelerate_factory;
     std::unique_ptr<ExpandFactory> expand_factory;
@@ -353,7 +353,7 @@ class NetEqImpl : public webrtc::NetEq {
   const std::unique_ptr<DtmfToneGenerator> dtmf_tone_generator_
       GUARDED_BY(crit_sect_);
   const std::unique_ptr<PacketBuffer> packet_buffer_ GUARDED_BY(crit_sect_);
-  const std::unique_ptr<PayloadSplitter> payload_splitter_
+  const std::unique_ptr<RedPayloadSplitter> red_payload_splitter_
       GUARDED_BY(crit_sect_);
   const std::unique_ptr<TimestampScaler> timestamp_scaler_
       GUARDED_BY(crit_sect_);

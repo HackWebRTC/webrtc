@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_PAYLOAD_SPLITTER_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_PAYLOAD_SPLITTER_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_RED_PAYLOAD_SPLITTER_H_
+#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_RED_PAYLOAD_SPLITTER_H_
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"
@@ -19,24 +19,14 @@ namespace webrtc {
 // Forward declarations.
 class DecoderDatabase;
 
-// This class handles splitting of payloads into smaller parts.
-
-// For RED and FEC the splitting is done internally. Other codecs' packets are
-// split by calling AudioDecoder::SplitPacket.
-class PayloadSplitter {
+// This class handles splitting of RED payloads into smaller parts.
+// Codec-specific packet splitting can be performed by
+// AudioDecoder::ParsePayload.
+class RedPayloadSplitter {
  public:
-  enum SplitterReturnCodes {
-    kOK = 0,
-    kNoSplit = 1,
-    kFrameSplitError = -2,
-    kUnknownPayloadType = -3,
-    kRedLengthMismatch = -4,
-    kFecSplitError = -5,
-  };
+  RedPayloadSplitter() {}
 
-  PayloadSplitter() {}
-
-  virtual ~PayloadSplitter() {}
+  virtual ~RedPayloadSplitter() {}
 
   // Splits each packet in |packet_list| into its separate RED payloads. Each
   // RED payload is packetized into a Packet. The original elements in
@@ -44,23 +34,18 @@ class PayloadSplitter {
   // Note that all packets in |packet_list| must be RED payloads, i.e., have
   // RED headers according to RFC 2198 at the very beginning of the payload.
   // Returns kOK or an error.
-  virtual int SplitRed(PacketList* packet_list);
-
-  // Iterates through |packet_list| and, duplicate each audio payload that has
-  // FEC as new packet for redundant decoding. The decoder database is needed to
-  // get information about which payload type each packet contains.
-  virtual int SplitFec(PacketList* packet_list,
-                       DecoderDatabase* decoder_database);
+  virtual bool SplitRed(PacketList* packet_list);
 
   // Checks all packets in |packet_list|. Packets that are DTMF events or
   // comfort noise payloads are kept. Except that, only one single payload type
-  // is accepted. Any packet with another payload type is discarded.
+  // is accepted. Any packet with another payload type is discarded.  Returns
+  // the number of discarded packets.
   virtual int CheckRedPayloads(PacketList* packet_list,
                                const DecoderDatabase& decoder_database);
 
  private:
-  RTC_DISALLOW_COPY_AND_ASSIGN(PayloadSplitter);
+  RTC_DISALLOW_COPY_AND_ASSIGN(RedPayloadSplitter);
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ_PAYLOAD_SPLITTER_H_
+#endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ_RED_PAYLOAD_SPLITTER_H_

@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// Unit tests for PayloadSplitter class.
+// Unit tests for RedPayloadSplitter class.
 
-#include "webrtc/modules/audio_coding/neteq/payload_splitter.h"
+#include "webrtc/modules/audio_coding/neteq/red_payload_splitter.h"
 
 #include <assert.h>
 
@@ -46,7 +46,8 @@ static const uint32_t kBaseTimestamp = 0x12345678;
 // :                                                               |
 // |                                                               |
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-void CreateOpusFecPayload(uint8_t* payload, size_t payload_length,
+void CreateOpusFecPayload(uint8_t* payload,
+                          size_t payload_length,
                           uint8_t payload_value) {
   if (payload_length < 2) {
     return;
@@ -121,8 +122,10 @@ Packet* CreateRedPayload(size_t num_payloads,
 }
 
 // Create a packet with all payload bytes set to |payload_value|.
-Packet* CreatePacket(uint8_t payload_type, size_t payload_length,
-                     uint8_t payload_value, bool opus_fec = false) {
+Packet* CreatePacket(uint8_t payload_type,
+                     size_t payload_length,
+                     uint8_t payload_value,
+                     bool opus_fec = false) {
   Packet* packet = new Packet;
   packet->header.payloadType = payload_type;
   packet->header.timestamp = kBaseTimestamp;
@@ -144,22 +147,34 @@ void VerifyPacket(const Packet* packet,
                   uint16_t sequence_number,
                   uint32_t timestamp,
                   uint8_t payload_value,
-                  bool primary = true) {
+                  Packet::Priority priority) {
   EXPECT_EQ(payload_length, packet->payload.size());
   EXPECT_EQ(payload_type, packet->header.payloadType);
   EXPECT_EQ(sequence_number, packet->header.sequenceNumber);
   EXPECT_EQ(timestamp, packet->header.timestamp);
-  EXPECT_EQ(primary, packet->primary);
+  EXPECT_EQ(priority, packet->priority);
   ASSERT_FALSE(packet->payload.empty());
   for (size_t i = 0; i < packet->payload.size(); ++i) {
     ASSERT_EQ(payload_value, packet->payload.data()[i]);
   }
 }
 
+void VerifyPacket(const Packet* packet,
+                  size_t payload_length,
+                  uint8_t payload_type,
+                  uint16_t sequence_number,
+                  uint32_t timestamp,
+                  uint8_t payload_value,
+                  bool primary) {
+  return VerifyPacket(packet, payload_length, payload_type, sequence_number,
+                      timestamp, payload_value,
+                      Packet::Priority{0, primary ? 0 : 1});
+}
+
 // Start of test definitions.
 
-TEST(PayloadSplitter, CreateAndDestroy) {
-  PayloadSplitter* splitter = new PayloadSplitter;
+TEST(RedPayloadSplitter, CreateAndDestroy) {
+  RedPayloadSplitter* splitter = new RedPayloadSplitter;
   delete splitter;
 }
 
@@ -170,8 +185,8 @@ TEST(RedPayloadSplitter, OnePacketTwoPayloads) {
   Packet* packet = CreateRedPayload(2, payload_types, kTimestampOffset);
   PacketList packet_list;
   packet_list.push_back(packet);
-  PayloadSplitter splitter;
-  EXPECT_EQ(PayloadSplitter::kOK, splitter.SplitRed(&packet_list));
+  RedPayloadSplitter splitter;
+  EXPECT_TRUE(splitter.SplitRed(&packet_list));
   ASSERT_EQ(2u, packet_list.size());
   // Check first packet. The first in list should always be the primary payload.
   packet = packet_list.front();
@@ -201,8 +216,8 @@ TEST(RedPayloadSplitter, TwoPacketsOnePayload) {
   packet->header.timestamp += kTimestampOffset;
   packet->header.sequenceNumber++;
   packet_list.push_back(packet);
-  PayloadSplitter splitter;
-  EXPECT_EQ(PayloadSplitter::kOK, splitter.SplitRed(&packet_list));
+  RedPayloadSplitter splitter;
+  EXPECT_TRUE(splitter.SplitRed(&packet_list));
   ASSERT_EQ(2u, packet_list.size());
   // Check first packet.
   packet = packet_list.front();
@@ -239,43 +254,43 @@ TEST(RedPayloadSplitter, TwoPacketsThreePayloads) {
   packet->header.timestamp += kTimestampOffset;
   packet->header.sequenceNumber++;
   packet_list.push_back(packet);
-  PayloadSplitter splitter;
-  EXPECT_EQ(PayloadSplitter::kOK, splitter.SplitRed(&packet_list));
+  RedPayloadSplitter splitter;
+  EXPECT_TRUE(splitter.SplitRed(&packet_list));
   ASSERT_EQ(6u, packet_list.size());
   // Check first packet, A1.
   packet = packet_list.front();
   VerifyPacket(packet, kPayloadLength, payload_types[2], kSequenceNumber,
-               kBaseTimestamp, 2, true);
+               kBaseTimestamp, 2, {0, 0});
   delete packet;
   packet_list.pop_front();
   // Check second packet, A2.
   packet = packet_list.front();
   VerifyPacket(packet, kPayloadLength, payload_types[1], kSequenceNumber,
-               kBaseTimestamp - kTimestampOffset, 1, false);
+               kBaseTimestamp - kTimestampOffset, 1, {0, 1});
   delete packet;
   packet_list.pop_front();
   // Check third packet, A3.
   packet = packet_list.front();
   VerifyPacket(packet, kPayloadLength, payload_types[0], kSequenceNumber,
-               kBaseTimestamp - 2 * kTimestampOffset, 0, false);
+               kBaseTimestamp - 2 * kTimestampOffset, 0, {0, 2});
   delete packet;
   packet_list.pop_front();
   // Check fourth packet, B1.
   packet = packet_list.front();
   VerifyPacket(packet, kPayloadLength, payload_types[2], kSequenceNumber + 1,
-               kBaseTimestamp + kTimestampOffset, 2, true);
+               kBaseTimestamp + kTimestampOffset, 2, {0, 0});
   delete packet;
   packet_list.pop_front();
   // Check fifth packet, B2.
   packet = packet_list.front();
   VerifyPacket(packet, kPayloadLength, payload_types[1], kSequenceNumber + 1,
-               kBaseTimestamp, 1, false);
+               kBaseTimestamp, 1, {0, 1});
   delete packet;
   packet_list.pop_front();
   // Check sixth packet, B3.
   packet = packet_list.front();
   VerifyPacket(packet, kPayloadLength, payload_types[0], kSequenceNumber + 1,
-               kBaseTimestamp - kTimestampOffset, 0, false);
+               kBaseTimestamp - kTimestampOffset, 0, {0, 2});
   delete packet;
 }
 
@@ -305,7 +320,7 @@ TEST(RedPayloadSplitter, CheckRedPayloads) {
   decoder_database.RegisterPayload(2, NetEqDecoder::kDecoderAVT, "avt");
   decoder_database.RegisterPayload(3, NetEqDecoder::kDecoderILBC, "ilbc");
 
-  PayloadSplitter splitter;
+  RedPayloadSplitter splitter;
   splitter.CheckRedPayloads(&packet_list, decoder_database);
 
   ASSERT_EQ(3u, packet_list.size());  // Should have dropped the last packet.
@@ -332,124 +347,13 @@ TEST(RedPayloadSplitter, WrongPayloadLength) {
   packet->payload.SetSize(packet->payload.size() - (kPayloadLength + 1));
   PacketList packet_list;
   packet_list.push_back(packet);
-  PayloadSplitter splitter;
-  EXPECT_EQ(PayloadSplitter::kRedLengthMismatch,
-            splitter.SplitRed(&packet_list));
+  RedPayloadSplitter splitter;
+  EXPECT_FALSE(splitter.SplitRed(&packet_list));
   ASSERT_EQ(1u, packet_list.size());
   // Check first packet.
   packet = packet_list.front();
   VerifyPacket(packet, kPayloadLength, payload_types[0], kSequenceNumber,
-               kBaseTimestamp - 2 * kTimestampOffset, 0, false);
-  delete packet;
-  packet_list.pop_front();
-}
-
-TEST(FecPayloadSplitter, MixedPayload) {
-  PacketList packet_list;
-  DecoderDatabase decoder_database(CreateBuiltinAudioDecoderFactory());
-
-  decoder_database.RegisterPayload(0, NetEqDecoder::kDecoderOpus, "opus");
-  decoder_database.RegisterPayload(1, NetEqDecoder::kDecoderPCMu, "pcmu");
-
-  Packet* packet = CreatePacket(0, 10, 0xFF, true);
-  packet_list.push_back(packet);
-
-  packet = CreatePacket(0, 10, 0); // Non-FEC Opus payload.
-  packet_list.push_back(packet);
-
-  packet = CreatePacket(1, 10, 0); // Non-Opus payload.
-  packet_list.push_back(packet);
-
-  PayloadSplitter splitter;
-  EXPECT_EQ(PayloadSplitter::kOK,
-            splitter.SplitFec(&packet_list, &decoder_database));
-  EXPECT_EQ(4u, packet_list.size());
-
-  // Check first packet.
-  packet = packet_list.front();
-  EXPECT_EQ(0, packet->header.payloadType);
-  EXPECT_EQ(kBaseTimestamp - 20 * 48, packet->header.timestamp);
-  EXPECT_EQ(10U, packet->payload.size());
-  EXPECT_FALSE(packet->primary);
-  delete packet;
-  packet_list.pop_front();
-
-  // Check second packet.
-  packet = packet_list.front();
-  EXPECT_EQ(0, packet->header.payloadType);
-  EXPECT_EQ(kBaseTimestamp, packet->header.timestamp);
-  EXPECT_EQ(10U, packet->payload.size());
-  EXPECT_TRUE(packet->primary);
-  delete packet;
-  packet_list.pop_front();
-
-  // Check third packet.
-  packet = packet_list.front();
-  VerifyPacket(packet, 10, 0, kSequenceNumber, kBaseTimestamp, 0, true);
-  delete packet;
-  packet_list.pop_front();
-
-  // Check fourth packet.
-  packet = packet_list.front();
-  VerifyPacket(packet, 10, 1, kSequenceNumber, kBaseTimestamp, 0, true);
-  delete packet;
-}
-
-TEST(FecPayloadSplitter, EmbedFecInRed) {
-  PacketList packet_list;
-  DecoderDatabase decoder_database(CreateBuiltinAudioDecoderFactory());
-
-  const int kTimestampOffset = 20 * 48;  // 20 ms * 48 kHz.
-  uint8_t payload_types[] = {0, 0};
-  decoder_database.RegisterPayload(0, NetEqDecoder::kDecoderOpus, "opus");
-  Packet* packet = CreateRedPayload(2, payload_types, kTimestampOffset, true);
-  packet_list.push_back(packet);
-
-  PayloadSplitter splitter;
-  EXPECT_EQ(PayloadSplitter::kOK,
-            splitter.SplitRed(&packet_list));
-  EXPECT_EQ(PayloadSplitter::kOK,
-            splitter.SplitFec(&packet_list, &decoder_database));
-
-  EXPECT_EQ(4u, packet_list.size());
-
-  // Check first packet. FEC packet copied from primary payload in RED.
-  packet = packet_list.front();
-  EXPECT_EQ(0, packet->header.payloadType);
-  EXPECT_EQ(kBaseTimestamp - kTimestampOffset, packet->header.timestamp);
-  EXPECT_EQ(kPayloadLength, packet->payload.size());
-  EXPECT_FALSE(packet->primary);
-  EXPECT_EQ(packet->payload[3], 1);
-  delete packet;
-  packet_list.pop_front();
-
-  // Check second packet. Normal packet copied from primary payload in RED.
-  packet = packet_list.front();
-  EXPECT_EQ(0, packet->header.payloadType);
-  EXPECT_EQ(kBaseTimestamp, packet->header.timestamp);
-  EXPECT_EQ(kPayloadLength, packet->payload.size());
-  EXPECT_TRUE(packet->primary);
-  EXPECT_EQ(packet->payload[3], 1);
-  delete packet;
-  packet_list.pop_front();
-
-  // Check third packet. FEC packet copied from secondary payload in RED.
-  packet = packet_list.front();
-  EXPECT_EQ(0, packet->header.payloadType);
-  EXPECT_EQ(kBaseTimestamp - 2 * kTimestampOffset, packet->header.timestamp);
-  EXPECT_EQ(kPayloadLength, packet->payload.size());
-  EXPECT_FALSE(packet->primary);
-  EXPECT_EQ(packet->payload[3], 0);
-  delete packet;
-  packet_list.pop_front();
-
-  // Check fourth packet. Normal packet copied from primary payload in RED.
-  packet = packet_list.front();
-  EXPECT_EQ(0, packet->header.payloadType);
-  EXPECT_EQ(kBaseTimestamp - kTimestampOffset, packet->header.timestamp);
-  EXPECT_EQ(kPayloadLength, packet->payload.size());
-  EXPECT_TRUE(packet->primary);
-  EXPECT_EQ(packet->payload[3], 0);
+               kBaseTimestamp - 2 * kTimestampOffset, 0, {0, 2});
   delete packet;
   packet_list.pop_front();
 }
