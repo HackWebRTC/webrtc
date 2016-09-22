@@ -137,7 +137,7 @@ static CGFloat const kCallControlMargin = 8;
 - (instancetype)initWithFrame:(CGRect)frame {
   if (self = [super initWithFrame:frame]) {
     _appLabel = [[UILabel alloc] initWithFrame:CGRectZero];
-    _appLabel.text = @"AppRTCMobile";
+    _appLabel.text = @"AppRTCDemo";
     _appLabel.font = [UIFont fontWithName:@"Roboto" size:34];
     _appLabel.textColor = [UIColor colorWithWhite:0 alpha:.2];
     [_appLabel sizeToFit];

@@ -31,7 +31,7 @@ import java.io.StringWriter;
  */
 public class UnhandledExceptionHandler
     implements Thread.UncaughtExceptionHandler {
-  private static final String TAG = "AppRTCMobileActivity";
+  private static final String TAG = "AppRTCDemoActivity";
   private final Activity activity;
 
   public UnhandledExceptionHandler(final Activity activity) {
