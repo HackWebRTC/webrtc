@@ -458,6 +458,7 @@ class Channel
   std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;
   std::unique_ptr<StatisticsProxy> statistics_proxy_;
   std::unique_ptr<RtpReceiver> rtp_receiver_;
+  TelephoneEventHandler* telephone_event_handler_;
   std::unique_ptr<RtpRtcp> _rtpRtcpModule;
   std::unique_ptr<AudioCodingModule> audio_coding_;
   acm2::CodecManager codec_manager_;

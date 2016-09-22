@@ -18,6 +18,21 @@ namespace webrtc {
 
 class RTPPayloadRegistry;
 
+class TelephoneEventHandler {
+ public:
+  virtual ~TelephoneEventHandler() {}
+
+  // The following three methods implement the TelephoneEventHandler interface.
+  // Forward DTMFs to decoder for playout.
+  virtual void SetTelephoneEventForwardToDecoder(bool forward_to_decoder) = 0;
+
+  // Is forwarding of outband telephone events turned on/off?
+  virtual bool TelephoneEventForwardToDecoder() const = 0;
+
+  // Is TelephoneEvent configured with payload type payload_type
+  virtual bool TelephoneEventPayloadType(const int8_t payload_type) const = 0;
+};
+
 class RtpReceiver {
  public:
   // Creates a video-enabled RTP receiver.
@@ -35,6 +50,9 @@ class RtpReceiver {
       RTPPayloadRegistry* rtp_payload_registry);
 
   virtual ~RtpReceiver() {}
+
+  // Returns a TelephoneEventHandler if available.
+  virtual TelephoneEventHandler* GetTelephoneEventHandler() = 0;
 
   // Registers a receive payload in the payload registry and notifies the media
   // receiver strategy.

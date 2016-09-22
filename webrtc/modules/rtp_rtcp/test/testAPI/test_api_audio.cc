@@ -162,6 +162,9 @@ TEST_F(RtpRtcpAudioTest, Basic) {
   module1->SetSSRC(test_ssrc);
   module1->SetStartTimestamp(test_timestamp);
 
+  // Test detection at the end of a DTMF tone.
+  // EXPECT_EQ(0, module2->SetTelephoneEventForwardToDecoder(true));
+
   EXPECT_EQ(0, module1->SetSendingStatus(true));
 
   // Start basic RTP test.

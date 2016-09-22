@@ -33,6 +33,8 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
                          int64_t timestamp,
                          bool is_first_packet) override;
 
+  TelephoneEventHandler* GetTelephoneEventHandler() override { return NULL; }
+
   int GetPayloadTypeFrequency() const override;
 
   RTPAliveType ProcessDeadOrAlive(uint16_t last_payload_length) const override;
