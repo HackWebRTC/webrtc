@@ -58,7 +58,7 @@ class DxgiTextureStaging : public DxgiTexture {
   void AssertStageAndSurfaceAreSameObject();
 
   const DesktopRect desktop_rect_;
-  const D3dDevice& device_;
+  const D3dDevice device_;
   Microsoft::WRL::ComPtr<ID3D11Texture2D> stage_;
   Microsoft::WRL::ComPtr<IDXGISurface> surface_;
 };

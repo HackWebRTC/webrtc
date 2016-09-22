@@ -43,7 +43,7 @@ class D3dDevice {
   // function.
   D3dDevice();
 
-  // Initialize the D3dDevice from an IDXGIAdapter.
+  // Initializes the D3dDevice from an IDXGIAdapter.
   bool Initialize(const Microsoft::WRL::ComPtr<IDXGIAdapter>& adapter);
 
   Microsoft::WRL::ComPtr<ID3D11Device> d3d_device_;

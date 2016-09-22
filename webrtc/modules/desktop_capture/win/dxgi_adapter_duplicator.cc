@@ -62,11 +62,11 @@ bool DxgiAdapterDuplicator::DoInitialize() {
     }
 
     DXGI_OUTPUT_DESC desc;
-    error = _com_error(output->GetDesc(&desc));
+    error = output->GetDesc(&desc);
     if (error.Error() == S_OK) {
       if (desc.AttachedToDesktop && IsValidRect(desc.DesktopCoordinates)) {
         ComPtr<IDXGIOutput1> output1;
-        error = _com_error(output.As(&output1));
+        error = output.As(&output1);
         if (error.Error() != S_OK || !output1) {
           LOG(LS_WARNING) << "Failed to convert IDXGIOutput to IDXGIOutput1, "
                              "this usually means the system does not support "

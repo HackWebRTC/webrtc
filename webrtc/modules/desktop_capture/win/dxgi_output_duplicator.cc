@@ -147,7 +147,9 @@ bool DxgiOutputDuplicator::Duplicate(Context* context,
   // after it has been merged to updated_region.
   DesktopRegion updated_region;
   updated_region.Swap(&context->updated_region);
-  if (error.Error() == S_OK && frame_info.AccumulatedFrames > 0) {
+  if (error.Error() == S_OK &&
+      frame_info.AccumulatedFrames > 0 &&
+      resource) {
     DetectUpdatedRegion(frame_info, offset, &context->updated_region);
     if (!texture_->CopyFrom(frame_info, resource.Get(),
                             context->updated_region)) {
@@ -224,8 +226,8 @@ bool DxgiOutputDuplicator::DoDetectUpdatedRegion(
   DXGI_OUTDUPL_MOVE_RECT* move_rects =
       reinterpret_cast<DXGI_OUTDUPL_MOVE_RECT*>(metadata.data());
   size_t move_rects_count = 0;
-  _com_error error = _com_error(duplication_->GetFrameMoveRects(
-      static_cast<UINT>(metadata.capacity()), move_rects, &buff_size));
+  _com_error error = duplication_->GetFrameMoveRects(
+      static_cast<UINT>(metadata.capacity()), move_rects, &buff_size);
   if (error.Error() != S_OK) {
     LOG(LS_ERROR) << "Failed to get move rectangles, error "
                   << error.ErrorMessage() << ", code " << error.Error();
@@ -235,9 +237,9 @@ bool DxgiOutputDuplicator::DoDetectUpdatedRegion(
 
   RECT* dirty_rects = reinterpret_cast<RECT*>(metadata.data() + buff_size);
   size_t dirty_rects_count = 0;
-  error = _com_error(duplication_->GetFrameDirtyRects(
+  error = duplication_->GetFrameDirtyRects(
       static_cast<UINT>(metadata.capacity()) - buff_size, dirty_rects,
-      &buff_size));
+      &buff_size);
   if (error.Error() != S_OK) {
     LOG(LS_ERROR) << "Failed to get dirty rectangles, error "
                   << error.ErrorMessage() << ", code " << error.Error();

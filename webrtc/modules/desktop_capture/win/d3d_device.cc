@@ -47,7 +47,7 @@ bool D3dDevice::Initialize(const ComPtr<IDXGIAdapter>& adapter) {
     return false;
   }
 
-  error = _com_error(d3d_device_.As(&dxgi_device_));
+  error = d3d_device_.As(&dxgi_device_);
   if (error.Error() != S_OK || !dxgi_device_) {
     LOG(LS_WARNING) << "ID3D11Device is not an implementation of IDXGIDevice, "
                        "this usually means the system does not support DirectX "
@@ -61,9 +61,8 @@ bool D3dDevice::Initialize(const ComPtr<IDXGIAdapter>& adapter) {
 // static
 std::vector<D3dDevice> D3dDevice::EnumDevices() {
   ComPtr<IDXGIFactory1> factory;
-  _com_error error = _com_error(
-      CreateDXGIFactory1(__uuidof(IDXGIFactory1),
-                         reinterpret_cast<void**>(factory.GetAddressOf())));
+  _com_error error = CreateDXGIFactory1(__uuidof(IDXGIFactory1),
+      reinterpret_cast<void**>(factory.GetAddressOf()));
   if (error.Error() != S_OK || !factory) {
     return std::vector<D3dDevice>();
   }
@@ -71,7 +70,7 @@ std::vector<D3dDevice> D3dDevice::EnumDevices() {
   std::vector<D3dDevice> result;
   for (int i = 0;; i++) {
     ComPtr<IDXGIAdapter> adapter;
-    error = _com_error(factory->EnumAdapters(i, adapter.GetAddressOf()));
+    error = factory->EnumAdapters(i, adapter.GetAddressOf());
     if (error.Error() == S_OK) {
       D3dDevice device;
       if (!device.Initialize(adapter)) {
