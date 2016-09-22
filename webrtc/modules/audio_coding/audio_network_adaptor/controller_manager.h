@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_AUDIO_NETWORK_ADAPTOR_CONTROLLER_MANAGER_H_
 #define WEBRTC_MODULES_AUDIO_CODING_AUDIO_NETWORK_ADAPTOR_CONTROLLER_MANAGER_H_
 
+#include <map>
 #include <memory>
 #include <vector>
 
@@ -18,6 +19,8 @@
 #include "webrtc/modules/audio_coding/audio_network_adaptor/controller.h"
 
 namespace webrtc {
+
+class Clock;
 
 class ControllerManager {
  public:
@@ -33,15 +36,23 @@ class ControllerManager {
 class ControllerManagerImpl final : public ControllerManager {
  public:
   struct Config {
-    Config();
+    Config(int min_reordering_time_ms,
+           float min_reordering_squared_distance,
+           const Clock* clock);
     ~Config();
+    int min_reordering_time_ms;
+    float min_reordering_squared_distance;
+    const Clock* clock;
   };
 
   explicit ControllerManagerImpl(const Config& config);
 
   // Dependency injection for testing.
-  ControllerManagerImpl(const Config& config,
-                        std::vector<std::unique_ptr<Controller>> controllers);
+  ControllerManagerImpl(
+      const Config& config,
+      std::vector<std::unique_ptr<Controller>>&& controllers,
+      const std::map<const Controller*, std::pair<int, float>>&
+          chracteristic_points);
 
   ~ControllerManagerImpl() override;
 
@@ -52,11 +63,32 @@ class ControllerManagerImpl final : public ControllerManager {
   std::vector<Controller*> GetControllers() const override;
 
  private:
+  // Scoring point is a subset of NetworkMetrics that is used for comparing the
+  // significance of controllers.
+  struct ScoringPoint {
+    ScoringPoint(int uplink_bandwidth_bps, float uplink_packet_loss_fraction);
+
+    // Calculate the normalized [0,1] distance between two scoring points.
+    float SquaredDistanceTo(const ScoringPoint& scoring_point) const;
+
+    int uplink_bandwidth_bps;
+    float uplink_packet_loss_fraction;
+  };
+
   const Config config_;
 
   std::vector<std::unique_ptr<Controller>> controllers_;
 
+  rtc::Optional<int64_t> last_reordering_time_ms_;
+  ScoringPoint last_scoring_point_;
+
   std::vector<Controller*> default_sorted_controllers_;
+
+  std::vector<Controller*> sorted_controllers_;
+
+  // |scoring_points_| saves the characteristic scoring points of various
+  // controllers.
+  std::map<const Controller*, ScoringPoint> controller_scoring_points_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ControllerManagerImpl);
 };
