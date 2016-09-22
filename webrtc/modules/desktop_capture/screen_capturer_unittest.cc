@@ -277,15 +277,14 @@ TEST_F(ScreenCapturerTest, Capture) {
   EXPECT_TRUE(it.IsAtEnd());
 }
 
-// Disabled due to being flaky due to the fact that it useds rendering / UI,
-// see webrtc/6366.
+// Disabled due to being flaky due to the fact that it uses rendering / UI, see
+// webrtc/6366.
 TEST_F(ScreenCapturerTest, DISABLED_CaptureUpdatedRegion) {
   TestCaptureUpdatedRegion();
 }
 
-// Disabled due to being flaky due to the fact that it useds rendering / UI,
-// see webrtc/6366.
-// TODO(zijiehe): Find out the reason of failure of this test on trybot.
+// Disabled due to being flaky due to the fact that it uses rendering / UI, see
+// webrtc/6366.
 TEST_F(ScreenCapturerTest, DISABLED_TwoCapturers) {
   std::unique_ptr<ScreenCapturer> capturer2 = std::move(capturer_);
   SetUp();
@@ -357,8 +356,8 @@ TEST_F(ScreenCapturerTest, UseDirectxCapturerWithSharedBuffers) {
   EXPECT_EQ(frame->shared_memory()->id(), kTestSharedMemoryId);
 }
 
-// Disabled due to being flaky due to the fact that it useds rendering / UI,
-// see webrtc/6366.
+// Disabled due to being flaky due to the fact that it uses rendering / UI, see
+// webrtc/6366.
 TEST_F(ScreenCapturerTest, DISABLED_CaptureUpdatedRegionWithDirectxCapturer) {
   if (!CreateDirectxCapturer()) {
     return;
@@ -367,8 +366,8 @@ TEST_F(ScreenCapturerTest, DISABLED_CaptureUpdatedRegionWithDirectxCapturer) {
   TestCaptureUpdatedRegion();
 }
 
-// Disabled due to being flaky due to the fact that it useds rendering / UI,
-// see webrtc/6366.
+// Disabled due to being flaky due to the fact that it uses rendering / UI, see
+// webrtc/6366.
 TEST_F(ScreenCapturerTest, DISABLED_TwoDirectxCapturers) {
   if (!CreateDirectxCapturer()) {
     return;
@@ -379,8 +378,15 @@ TEST_F(ScreenCapturerTest, DISABLED_TwoDirectxCapturers) {
   TestCaptureUpdatedRegion({capturer_.get(), capturer2.get()});
 }
 
-// Disabled due to being flaky due to the fact that it useds rendering / UI,
-// see webrtc/6366.
+// Disabled due to being flaky due to the fact that it uses rendering / UI, see
+// webrtc/6366.
+TEST_F(ScreenCapturerTest, DISABLED_CaptureUpdatedRegionWithMagnifierCapturer) {
+  CreateMagnifierCapturer();
+  TestCaptureUpdatedRegion();
+}
+
+// Disabled due to being flaky due to the fact that it uses rendering / UI, see
+// webrtc/6366.
 TEST_F(ScreenCapturerTest, DISABLED_TwoMagnifierCapturers) {
   CreateMagnifierCapturer();
   std::unique_ptr<ScreenCapturer> capturer2 = std::move(capturer_);
@@ -388,8 +394,8 @@ TEST_F(ScreenCapturerTest, DISABLED_TwoMagnifierCapturers) {
   TestCaptureUpdatedRegion({capturer_.get(), capturer2.get()});
 }
 
-// Disabled due to being flaky due to the fact that it useds rendering / UI,
-// see webrtc/6366.
+// Disabled due to being flaky due to the fact that it uses rendering / UI, see
+// webrtc/6366.
 TEST_F(ScreenCapturerTest,
        DISABLED_MaybeCaptureUpdatedRegionWithDirectxCapturer) {
   // Even DirectX capturer is not supported in current system, we should be able
