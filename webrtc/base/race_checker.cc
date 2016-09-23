@@ -14,6 +14,14 @@ namespace rtc {
 
 RaceChecker::RaceChecker() {}
 
+// Note that the implementation here is in itself racy, but we pretend it does
+// not matter because we want this useful in release builds without having to
+// pay the cost of using atomics. A race hitting the race checker is likely to
+// cause access_count_ to diverge from zero and therefore cause the ThreadRef
+// comparison to fail, signaling a race, although it may not be in the exact
+// spot where a race *first* appeared in the code we're trying to protect. There
+// is also a chance that an actual race is missed, however the probability of
+// that has been considered small enough to be an acceptable trade off.
 bool RaceChecker::Acquire() const {
   const PlatformThreadRef current_thread = CurrentThreadRef();
   // Set new accessing thread if this is a new use.

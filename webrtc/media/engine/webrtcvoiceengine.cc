@@ -26,6 +26,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/race_checker.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/trace_event.h"
@@ -1155,7 +1156,6 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     // TODO(solenberg): Once we're not using FakeWebRtcVoiceEngine anymore:
     // RTC_DCHECK(voe_audio_transport);
     RTC_DCHECK(call);
-    audio_capture_thread_checker_.DetachFromThread();
     config_.rtp.ssrc = ssrc;
     config_.rtp.c_name = c_name;
     config_.voe_channel_id = ch;
@@ -1270,7 +1270,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
               int sample_rate,
               size_t number_of_channels,
               size_t number_of_frames) override {
-    RTC_DCHECK(audio_capture_thread_checker_.CalledOnValidThread());
+    RTC_CHECK_RUNS_SERIALIZED(&audio_capture_race_checker_);
     RTC_DCHECK(voe_audio_transport_);
     voe_audio_transport_->PushCaptureData(config_.voe_channel_id, audio_data,
                                           bits_per_sample, sample_rate,
@@ -1317,7 +1317,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
   }
 
   rtc::ThreadChecker worker_thread_checker_;
-  rtc::ThreadChecker audio_capture_thread_checker_;
+  rtc::RaceChecker audio_capture_race_checker_;
   webrtc::AudioTransport* const voe_audio_transport_ = nullptr;
   webrtc::Call* call_ = nullptr;
   webrtc::AudioSendStream::Config config_;
