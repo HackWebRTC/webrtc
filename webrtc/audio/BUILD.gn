@@ -8,7 +8,7 @@
 
 import("../build/webrtc.gni")
 
-rtc_source_set("audio") {
+rtc_static_library("audio") {
   sources = [
     "audio_receive_stream.cc",
     "audio_receive_stream.h",

@@ -12,7 +12,7 @@ config("media_file_config") {
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
 }
 
-rtc_source_set("media_file") {
+rtc_static_library("media_file") {
   sources = [
     "media_file.h",
     "media_file_defines.h",

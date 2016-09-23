@@ -8,7 +8,7 @@
 
 import("../../build/webrtc.gni")
 
-rtc_source_set("congestion_controller") {
+rtc_static_library("congestion_controller") {
   sources = [
     "congestion_controller.cc",
     "delay_based_bwe.cc",

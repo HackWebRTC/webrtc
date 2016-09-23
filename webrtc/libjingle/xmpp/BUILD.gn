@@ -30,7 +30,7 @@ config("xmpp_inherited_config") {
   ]
 }
 
-rtc_source_set("rtc_xmpp") {
+rtc_static_library("rtc_xmpp") {
   cflags = []
   sources = [
     "asyncsocket.h",

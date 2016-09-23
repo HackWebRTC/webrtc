@@ -39,7 +39,7 @@ audio_coding_deps = audio_codec_deps + [
                       "../../system_wrappers",
                     ]
 
-rtc_source_set("audio_decoder_factory_interface") {
+rtc_static_library("audio_decoder_factory_interface") {
   sources = [
     "codecs/audio_decoder_factory.h",
     "codecs/audio_format.cc",
@@ -50,7 +50,7 @@ rtc_source_set("audio_decoder_factory_interface") {
   ]
 }
 
-rtc_source_set("builtin_audio_decoder_factory") {
+rtc_static_library("builtin_audio_decoder_factory") {
   sources = [
     "codecs/builtin_audio_decoder_factory.cc",
     "codecs/builtin_audio_decoder_factory.h",
@@ -62,7 +62,7 @@ rtc_source_set("builtin_audio_decoder_factory") {
   defines = audio_codec_defines
 }
 
-rtc_source_set("rent_a_codec") {
+rtc_static_library("rent_a_codec") {
   sources = [
     "acm2/acm_codec_database.cc",
     "acm2/acm_codec_database.h",
@@ -80,7 +80,7 @@ config("audio_coding_config") {
   ]
 }
 
-rtc_source_set("audio_coding") {
+rtc_static_library("audio_coding") {
   sources = [
     "acm2/acm_common_defs.h",
     "acm2/acm_receiver.cc",
@@ -124,7 +124,7 @@ rtc_source_set("audio_coding") {
   defines = audio_coding_defines
 }
 
-rtc_source_set("audio_decoder_interface") {
+rtc_static_library("audio_decoder_interface") {
   sources = [
     "codecs/audio_decoder.cc",
     "codecs/audio_decoder.h",
@@ -137,7 +137,7 @@ rtc_source_set("audio_decoder_interface") {
   ]
 }
 
-rtc_source_set("audio_encoder_interface") {
+rtc_static_library("audio_encoder_interface") {
   sources = [
     "codecs/audio_encoder.cc",
     "codecs/audio_encoder.h",
@@ -155,7 +155,7 @@ config("cng_config") {
   ]
 }
 
-rtc_source_set("cng") {
+rtc_static_library("cng") {
   sources = [
     "codecs/cng/audio_encoder_cng.cc",
     "codecs/cng/audio_encoder_cng.h",
@@ -175,7 +175,7 @@ config("red_config") {
   include_dirs = [ "codecs/red" ]
 }
 
-rtc_source_set("red") {
+rtc_static_library("red") {
   sources = [
     "codecs/red/audio_encoder_copy_red.cc",
     "codecs/red/audio_encoder_copy_red.h",
@@ -196,7 +196,7 @@ config("g711_config") {
   ]
 }
 
-rtc_source_set("g711") {
+rtc_static_library("g711") {
   sources = [
     "codecs/g711/audio_decoder_pcm.cc",
     "codecs/g711/audio_decoder_pcm.h",
@@ -223,7 +223,7 @@ config("g722_config") {
   ]
 }
 
-rtc_source_set("g722") {
+rtc_static_library("g722") {
   sources = [
     "codecs/g722/audio_decoder_g722.cc",
     "codecs/g722/audio_decoder_g722.h",
@@ -251,7 +251,7 @@ config("ilbc_config") {
   ]
 }
 
-rtc_source_set("ilbc") {
+rtc_static_library("ilbc") {
   sources = [
     "codecs/ilbc/abs_quant.c",
     "codecs/ilbc/abs_quant.h",
@@ -408,7 +408,7 @@ rtc_source_set("ilbc") {
   ]
 }
 
-rtc_source_set("isac_common") {
+rtc_static_library("isac_common") {
   sources = [
     "codecs/isac/audio_encoder_isac_t.h",
     "codecs/isac/audio_encoder_isac_t_impl.h",
@@ -424,7 +424,7 @@ config("isac_config") {
   ]
 }
 
-rtc_source_set("isac") {
+rtc_static_library("isac") {
   sources = [
     "codecs/isac/main/include/audio_decoder_isac.h",
     "codecs/isac/main/include/audio_encoder_isac.h",
@@ -505,7 +505,7 @@ config("isac_fix_config") {
   ]
 }
 
-rtc_source_set("isac_fix") {
+rtc_static_library("isac_fix") {
   sources = [
     "codecs/isac/fix/include/audio_decoder_isacfix.h",
     "codecs/isac/fix/include/audio_encoder_isacfix.h",
@@ -608,7 +608,7 @@ rtc_source_set("isac_fix") {
 }
 
 if (rtc_build_with_neon) {
-  rtc_source_set("isac_neon") {
+  rtc_static_library("isac_neon") {
     sources = [
       "codecs/isac/fix/source/entropy_coding_neon.c",
       "codecs/isac/fix/source/filterbanks_neon.c",
@@ -647,7 +647,7 @@ config("pcm16b_config") {
   ]
 }
 
-rtc_source_set("pcm16b") {
+rtc_static_library("pcm16b") {
   sources = [
     "codecs/pcm16b/audio_decoder_pcm16b.cc",
     "codecs/pcm16b/audio_decoder_pcm16b.h",
@@ -670,7 +670,7 @@ config("opus_config") {
   include_dirs = [ "../../.." ]
 }
 
-rtc_source_set("webrtc_opus") {
+rtc_static_library("webrtc_opus") {
   sources = [
     "codecs/opus/audio_decoder_opus.cc",
     "codecs/opus/audio_decoder_opus.h",
@@ -749,7 +749,7 @@ config("neteq_config") {
   ]
 }
 
-rtc_source_set("neteq") {
+rtc_static_library("neteq") {
   sources = [
     "neteq/accelerate.cc",
     "neteq/accelerate.h",
@@ -1002,7 +1002,7 @@ if (rtc_include_tests) {
       proto_out_dir = "webrtc/audio_coding/neteq"
     }
 
-    rtc_source_set("rtc_event_log_source") {
+    rtc_static_library("rtc_event_log_source") {
       testonly = true
       sources = [
         "neteq/tools/rtc_event_log_source.cc",

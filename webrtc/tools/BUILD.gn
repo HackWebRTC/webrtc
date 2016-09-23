@@ -9,7 +9,7 @@
 import("//third_party/protobuf/proto_library.gni")
 import("../build/webrtc.gni")
 
-rtc_source_set("tools") {
+group("tools") {
   deps = [
     ":command_line_parser",
   ]
@@ -23,7 +23,7 @@ rtc_source_set("tools") {
   }
 }
 
-rtc_source_set("command_line_parser") {
+rtc_static_library("command_line_parser") {
   sources = [
     "simple_command_line_parser.cc",
     "simple_command_line_parser.h",
@@ -33,7 +33,7 @@ rtc_source_set("command_line_parser") {
   ]
 }
 
-rtc_source_set("video_quality_analysis") {
+rtc_static_library("video_quality_analysis") {
   sources = [
     "frame_analyzer/video_quality_analysis.cc",
     "frame_analyzer/video_quality_analysis.h",
@@ -85,7 +85,7 @@ rtc_executable("rgba_to_i420_converter") {
   ]
 }
 
-rtc_source_set("frame_editing_lib") {
+rtc_static_library("frame_editing_lib") {
   sources = [
     "frame_editing/frame_editing_lib.cc",
     "frame_editing/frame_editing_lib.h",
@@ -146,7 +146,7 @@ if (rtc_enable_protobuf) {
     proto_out_dir = "webrtc/tools/event_log_visualizer"
   }
 
-  rtc_source_set("event_log_visualizer_utils") {
+  rtc_static_library("event_log_visualizer_utils") {
     sources = [
       "event_log_visualizer/analyzer.cc",
       "event_log_visualizer/analyzer.h",

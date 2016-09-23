@@ -14,7 +14,7 @@ group("xmllite") {
   ]
 }
 
-rtc_source_set("rtc_xmllite") {
+rtc_static_library("rtc_xmllite") {
   sources = [
     "qname.cc",
     "qname.h",

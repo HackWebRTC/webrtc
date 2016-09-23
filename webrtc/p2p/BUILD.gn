@@ -18,7 +18,7 @@ config("rtc_p2p_inherited_config") {
   defines = [ "FEATURE_ENABLE_VOICEMAIL" ]
 }
 
-rtc_source_set("rtc_p2p") {
+rtc_static_library("rtc_p2p") {
   sources = [
     "base/asyncstuntcpsocket.cc",
     "base/asyncstuntcpsocket.h",
@@ -142,7 +142,7 @@ rtc_source_set("rtc_p2p") {
   }
 }
 
-rtc_source_set("libstunprober") {
+rtc_static_library("libstunprober") {
   sources = [
     "stunprober/stunprober.cc",
   ]

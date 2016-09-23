@@ -15,7 +15,7 @@ config("common_video_config") {
   ]
 }
 
-rtc_source_set("common_video") {
+rtc_static_library("common_video") {
   sources = [
     "bitrate_adjuster.cc",
     "h264/h264_common.cc",

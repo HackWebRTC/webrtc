@@ -8,7 +8,7 @@
 
 import("../build/webrtc.gni")
 
-rtc_source_set("video") {
+rtc_static_library("video") {
   sources = [
     "call_stats.cc",
     "call_stats.h",

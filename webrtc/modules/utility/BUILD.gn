@@ -8,7 +8,7 @@
 
 import("../../build/webrtc.gni")
 
-rtc_source_set("utility") {
+rtc_static_library("utility") {
   sources = [
     "include/audio_frame_operations.h",
     "include/file_player.h",

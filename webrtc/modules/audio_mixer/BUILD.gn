@@ -12,7 +12,7 @@ config("audio_conference_mixer_config") {
   include_dirs = [ "../../modules/include" ]
 }
 
-rtc_source_set("audio_mixer") {
+rtc_static_library("audio_mixer") {
   sources = [
     "audio_frame_manipulator.cc",
     "audio_frame_manipulator.h",

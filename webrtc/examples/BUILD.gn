@@ -121,7 +121,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
     include_dirs = [ "objc/AppRTCDemo/common" ]
   }
 
-  rtc_source_set("apprtc_common") {
+  rtc_static_library("apprtc_common") {
     sources = [
       "objc/AppRTCDemo/common/ARDUtilities.h",
       "objc/AppRTCDemo/common/ARDUtilities.m",
@@ -154,7 +154,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
     }
   }
 
-  rtc_source_set("apprtc_signaling") {
+  rtc_static_library("apprtc_signaling") {
     sources = [
       "objc/AppRTCDemo/ARDAppClient+Internal.h",
       "objc/AppRTCDemo/ARDAppClient.h",
@@ -270,7 +270,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
   }
 
   if (is_mac) {
-    rtc_source_set("AppRTCDemo_app") {
+    rtc_static_library("AppRTCDemo_app") {
       sources = [
         "objc/AppRTCDemo/mac/APPRTCAppDelegate.h",
         "objc/AppRTCDemo/mac/APPRTCAppDelegate.m",
@@ -338,7 +338,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
     }
   }
 
-  rtc_source_set("socketrocket") {
+  rtc_static_library("socketrocket") {
     sources = [
       "objc/AppRTCDemo/third_party/SocketRocket/SRWebSocket.h",
       "objc/AppRTCDemo/third_party/SocketRocket/SRWebSocket.m",

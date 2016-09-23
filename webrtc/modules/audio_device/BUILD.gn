@@ -48,7 +48,7 @@ config("audio_device_warnings_config") {
   }
 }
 
-rtc_source_set("audio_device") {
+rtc_static_library("audio_device") {
   public_configs = [ ":audio_device_config" ]
 
   deps = [

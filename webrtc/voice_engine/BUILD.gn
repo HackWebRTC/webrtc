@@ -8,7 +8,7 @@
 
 import("../build/webrtc.gni")
 
-rtc_source_set("voice_engine") {
+rtc_static_library("voice_engine") {
   sources = [
     "channel.cc",
     "channel.h",
@@ -106,7 +106,7 @@ rtc_source_set("voice_engine") {
   ]
 }
 
-rtc_source_set("level_indicator") {
+rtc_static_library("level_indicator") {
   sources = [
     "level_indicator.cc",
     "level_indicator.h",
@@ -142,7 +142,7 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_source_set("channel_transport") {
+  rtc_static_library("channel_transport") {
     testonly = true
     sources = [
       "test/channel_transport/channel_transport.cc",

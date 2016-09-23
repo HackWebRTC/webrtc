@@ -15,7 +15,7 @@ group("stats") {
 }
 
 # GYP version: webrtc/stats/stats.gyp:rtc_stats
-rtc_source_set("rtc_stats") {
+rtc_static_library("rtc_stats") {
   cflags = []
   sources = [
     "rtcstats.cc",

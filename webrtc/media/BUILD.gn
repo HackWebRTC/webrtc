@@ -42,7 +42,7 @@ if (is_linux && rtc_use_gtk) {
   }
 }
 
-rtc_source_set("rtc_media") {
+rtc_static_library("rtc_media") {
   defines = []
   libs = []
   deps = []

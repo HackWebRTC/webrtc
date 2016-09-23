@@ -11,7 +11,7 @@ import("../../build/webrtc.gni")
 
 build_video_processing_sse2 = current_cpu == "x86" || current_cpu == "x64"
 
-rtc_source_set("video_processing") {
+rtc_static_library("video_processing") {
   sources = [
     "frame_preprocessor.cc",
     "frame_preprocessor.h",
@@ -56,7 +56,7 @@ rtc_source_set("video_processing") {
 }
 
 if (build_video_processing_sse2) {
-  rtc_source_set("video_processing_sse2") {
+  rtc_static_library("video_processing_sse2") {
     sources = [
       "util/denoiser_filter_sse2.cc",
       "util/denoiser_filter_sse2.h",
@@ -75,7 +75,7 @@ if (build_video_processing_sse2) {
 }
 
 if (rtc_build_with_neon) {
-  rtc_source_set("video_processing_neon") {
+  rtc_static_library("video_processing_neon") {
     sources = [
       "util/denoiser_filter_neon.cc",
       "util/denoiser_filter_neon.h",

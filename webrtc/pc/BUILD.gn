@@ -22,7 +22,7 @@ config("rtc_pc_config") {
   ]
 }
 
-rtc_source_set("rtc_pc") {
+rtc_static_library("rtc_pc") {
   defines = []
   sources = [
     "audiomonitor.cc",

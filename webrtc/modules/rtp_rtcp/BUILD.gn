@@ -8,7 +8,7 @@
 
 import("../../build/webrtc.gni")
 
-rtc_source_set("rtp_rtcp") {
+rtc_static_library("rtp_rtcp") {
   sources = [
     "include/fec_receiver.h",
     "include/receive_statistics.h",

@@ -16,7 +16,7 @@ config("audio_conference_mixer_config") {
   ]
 }
 
-rtc_source_set("audio_conference_mixer") {
+rtc_static_library("audio_conference_mixer") {
   sources = [
     "include/audio_conference_mixer.h",
     "include/audio_conference_mixer_defines.h",

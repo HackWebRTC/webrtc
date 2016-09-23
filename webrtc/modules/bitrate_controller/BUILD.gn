@@ -8,7 +8,7 @@
 
 import("../../build/webrtc.gni")
 
-rtc_source_set("bitrate_controller") {
+rtc_static_library("bitrate_controller") {
   sources = [
     "bitrate_controller_impl.cc",
     "bitrate_controller_impl.h",
