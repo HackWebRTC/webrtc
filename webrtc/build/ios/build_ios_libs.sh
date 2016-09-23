@@ -86,7 +86,7 @@ function build_webrtc {
     exit 1
   fi
 
-  export GYP_DEFINES="OS=ios target_arch=${target_arch} use_objc_h264=1 \
+  export GYP_DEFINES="OS=ios target_arch=${target_arch} \
 clang_xcode=1 ios_deployment_target=8.0 \
 ios_override_visibility=${override_visibility} \
 libvpx_build_vp9=${libvpx_build_vp9}"

@@ -105,10 +105,6 @@ declare_args() {
   rtc_build_with_neon =
       (current_cpu == "arm" && arm_use_neon) || current_cpu == "arm64"
 
-  # Enable this to use HW H.264 encoder/decoder on iOS PeerConnections.
-  # Enabling this may break interop with Android clients that support H264.
-  rtc_use_objc_h264 = false
-
   # Enable this to build OpenH264 encoder/FFmpeg decoder. This is supported on
   # all platforms except Android and iOS. Because FFmpeg can be built
   # with/without H.264 support, |ffmpeg_branding| has to separately be set to a

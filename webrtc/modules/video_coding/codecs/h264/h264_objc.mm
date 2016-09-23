@@ -18,8 +18,7 @@
 namespace webrtc {
 
 bool IsH264CodecSupportedObjC() {
-#if defined(WEBRTC_OBJC_H264) && \
-    defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED) && \
+#if defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED) && \
     defined(WEBRTC_IOS)
   // Supported on iOS8+.
   return [[[UIDevice currentDevice] systemVersion] doubleValue] >= 8.0;

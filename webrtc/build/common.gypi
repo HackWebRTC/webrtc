@@ -163,10 +163,6 @@
     # Disable this to skip building source requiring GTK.
     'use_gtk%': 1,
 
-    # Enable this to use HW H.264 encoder/decoder on iOS/Mac PeerConnections.
-    # Enabling this may break interop with Android clients that support H264.
-    'use_objc_h264%': 0,
-
     # Enable this to prevent extern symbols from being hidden on iOS builds.
     # The chromium settings we inherit hide symbols by default on Release
     # builds. We want our symbols to be visible when distributing WebRTC via
@@ -446,11 +442,6 @@
           'GCC_INLINES_ARE_PRIVATE_EXTERN': 'NO',
           'GCC_SYMBOLS_PRIVATE_EXTERN': 'NO',
         }
-      }],
-      ['OS=="ios" and use_objc_h264==1', {
-        'defines': [
-          'WEBRTC_OBJC_H264',
-        ],
       }],
       ['OS=="linux"', {
         'defines': [
