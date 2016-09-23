@@ -583,7 +583,6 @@ class AudioDeviceTest : public ::testing::Test {
   }
 
   void StartPlayout() {
-    EXPECT_FALSE(audio_device()->PlayoutIsInitialized());
     EXPECT_FALSE(audio_device()->Playing());
     EXPECT_EQ(0, audio_device()->InitPlayout());
     EXPECT_TRUE(audio_device()->PlayoutIsInitialized());
@@ -594,11 +593,9 @@ class AudioDeviceTest : public ::testing::Test {
   void StopPlayout() {
     EXPECT_EQ(0, audio_device()->StopPlayout());
     EXPECT_FALSE(audio_device()->Playing());
-    EXPECT_FALSE(audio_device()->PlayoutIsInitialized());
   }
 
   void StartRecording() {
-    EXPECT_FALSE(audio_device()->RecordingIsInitialized());
     EXPECT_FALSE(audio_device()->Recording());
     EXPECT_EQ(0, audio_device()->InitRecording());
     EXPECT_TRUE(audio_device()->RecordingIsInitialized());
