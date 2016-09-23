@@ -12,18 +12,13 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_HELP_H_
 
 #include <map>
-#include <memory>
 #include <vector>
 
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/tmmbr_help.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-namespace rtcp {
-class TransportFeedback;
-}
 namespace RTCPHelp {
 
 class RTCPReportBlockInformation {
@@ -41,38 +36,6 @@ class RTCPReportBlockInformation {
   int64_t maxRTT;
   int64_t avgRTT;
   uint32_t numAverageCalcs;
-};
-
-class RTCPPacketInformation {
- public:
-  RTCPPacketInformation();
-  ~RTCPPacketInformation();
-
-  void AddReportInfo(const RTCPReportBlockInformation& report_block_info);
-
-  uint32_t rtcpPacketTypeFlags;  // RTCPPacketTypeFlags bit field
-  uint32_t remoteSSRC;
-
-  std::vector<uint16_t> nackSequenceNumbers;
-
-  ReportBlockList report_blocks;
-  int64_t rtt;
-
-  uint8_t sliPictureId;
-  uint64_t rpsiPictureId;
-  uint32_t receiverEstimatedMaxBitrate;
-
-  uint32_t ntp_secs;
-  uint32_t ntp_frac;
-  uint32_t rtp_timestamp;
-
-  uint32_t xr_originator_ssrc;
-  bool xr_dlrr_item;
-
-  std::unique_ptr<rtcp::TransportFeedback> transport_feedback_;
-
- private:
-  RTC_DISALLOW_COPY_AND_ASSIGN(RTCPPacketInformation);
 };
 
 class RTCPReceiveInformation {

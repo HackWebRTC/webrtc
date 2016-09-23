@@ -19,28 +19,6 @@
 namespace webrtc {
 namespace RTCPHelp {
 
-RTCPPacketInformation::RTCPPacketInformation()
-    : rtcpPacketTypeFlags(0),
-      remoteSSRC(0),
-      nackSequenceNumbers(),
-      rtt(0),
-      sliPictureId(0),
-      rpsiPictureId(0),
-      receiverEstimatedMaxBitrate(0),
-      ntp_secs(0),
-      ntp_frac(0),
-      rtp_timestamp(0),
-      xr_originator_ssrc(0),
-      xr_dlrr_item(false) {}
-
-RTCPPacketInformation::~RTCPPacketInformation() {}
-
-void RTCPPacketInformation::AddReportInfo(
-    const RTCPReportBlockInformation& report_block_info) {
-  this->rtt = report_block_info.RTT;
-  report_blocks.push_back(report_block_info.remoteReceiveBlock);
-}
-
 RTCPReportBlockInformation::RTCPReportBlockInformation()
     : remoteReceiveBlock(),
       remoteMaxJitter(0),

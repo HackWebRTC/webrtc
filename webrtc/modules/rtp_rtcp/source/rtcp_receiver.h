@@ -112,6 +112,7 @@ class RTCPReceiver {
   RtcpStatisticsCallback* GetRtcpStatisticsCallback();
 
  private:
+  struct PacketInformation;
   using ReceivedInfoMap = std::map<uint32_t, RTCPHelp::RTCPReceiveInformation*>;
   // RTCP report block information mapped by remote SSRC.
   using ReportBlockInfoMap =
@@ -121,10 +122,10 @@ class RTCPReceiver {
 
   bool ParseCompoundPacket(const uint8_t* packet_begin,
                            const uint8_t* packet_end,
-                           RTCPHelp::RTCPPacketInformation* packet_information);
+                           PacketInformation* packet_information);
 
   void TriggerCallbacksFromRTCPPacket(
-      RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
+      const PacketInformation& packet_information);
 
   RTCPUtility::RTCPCnameInformation* CreateCnameInformation(
       uint32_t remoteSSRC);
@@ -135,81 +136,75 @@ class RTCPReceiver {
       uint32_t remoteSSRC);
   RTCPHelp::RTCPReceiveInformation* GetReceiveInformation(uint32_t remoteSSRC);
 
-  void HandleSenderReport(
-      const rtcp::CommonHeader& rtcp_block,
-      RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
+  void HandleSenderReport(const rtcp::CommonHeader& rtcp_block,
+                          PacketInformation* packet_information)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
-  void HandleReceiverReport(
-      const rtcp::CommonHeader& rtcp_block,
-      RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
+  void HandleReceiverReport(const rtcp::CommonHeader& rtcp_block,
+                            PacketInformation* packet_information)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
   void HandleReportBlock(const rtcp::ReportBlock& report_block,
-                         RTCPHelp::RTCPPacketInformation& rtcpPacketInformation,
+                         PacketInformation* packet_information,
                          uint32_t remoteSSRC)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
   void HandleSDES(const rtcp::CommonHeader& rtcp_block,
-                  RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
+                  PacketInformation* packet_information)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
   void HandleXr(const rtcp::CommonHeader& rtcp_block,
-                RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
+                PacketInformation* packet_information)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
-  void HandleXrReceiveReferenceTime(
-      const rtcp::Rrtr& rrtr,
-      RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
+  void HandleXrReceiveReferenceTime(uint32_t sender_ssrc,
+                                    const rtcp::Rrtr& rrtr)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
-  void HandleXrDlrrReportBlock(
-      const rtcp::ReceiveTimeInfo& rti,
-      RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
+  void HandleXrDlrrReportBlock(const rtcp::ReceiveTimeInfo& rti)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
   void HandleNACK(const rtcp::CommonHeader& rtcp_block,
-                  RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
+                  PacketInformation* packet_information)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
   void HandleBYE(const rtcp::CommonHeader& rtcp_block)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
   void HandlePLI(const rtcp::CommonHeader& rtcp_block,
-                 RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
+                 PacketInformation* packet_information)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
   void HandleSLI(const rtcp::CommonHeader& rtcp_block,
-                 RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
+                 PacketInformation* packet_information)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
   void HandleRPSI(const rtcp::CommonHeader& rtcp_block,
-                  RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
+                  PacketInformation* packet_information)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
   void HandlePsfbApp(const rtcp::CommonHeader& rtcp_block,
-                     RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
+                     PacketInformation* packet_information)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
   void HandleTMMBR(const rtcp::CommonHeader& rtcp_block,
-                   RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
+                   PacketInformation* packet_information)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
   void HandleTMMBN(const rtcp::CommonHeader& rtcp_block,
-                   RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
+                   PacketInformation* packet_information)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
   void HandleSR_REQ(const rtcp::CommonHeader& rtcp_block,
-                    RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
+                    PacketInformation* packet_information)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
   void HandleFIR(const rtcp::CommonHeader& rtcp_block,
-                 RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
+                 PacketInformation* packet_information)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
-  void HandleTransportFeedback(
-      const rtcp::CommonHeader& rtcp_block,
-      RTCPHelp::RTCPPacketInformation* rtcp_packet_information)
+  void HandleTransportFeedback(const rtcp::CommonHeader& rtcp_block,
+                               PacketInformation* packet_information)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
   RTCPHelp::RTCPReportBlockInformation* CreateOrGetReportBlockInformation(
