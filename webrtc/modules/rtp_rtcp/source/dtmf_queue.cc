@@ -59,9 +59,4 @@ bool DTMFqueue::PendingDTMF() {
   rtc::CritScope lock(&dtmf_critsect_);
   return next_empty_index_ > 0;
 }
-
-void DTMFqueue::ResetDTMF() {
-  rtc::CritScope lock(&dtmf_critsect_);
-  next_empty_index_ = 0;
-}
 }  // namespace webrtc

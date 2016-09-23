@@ -169,14 +169,14 @@ bool RTPSenderAudio::SendAudio(FrameType frame_type,
   }
 
   // Check if we have pending DTMFs to send
-  if (!dtmf_event_is_on_ && PendingDTMF()) {
+  if (!dtmf_event_is_on_ && dtmf_queue_.PendingDTMF()) {
     int64_t delaySinceLastDTMF =
         clock_->TimeInMilliseconds() - dtmf_time_last_sent_;
 
     if (delaySinceLastDTMF > 100) {
       // New tone to play
       dtmf_timestamp_ = rtp_timestamp;
-      if (NextDTMF(&key, &dtmf_length_ms, &dtmf_level_) >= 0) {
+      if (dtmf_queue_.NextDTMF(&key, &dtmf_length_ms, &dtmf_level_) >= 0) {
         dtmf_event_first_packet_sent_ = false;
         dtmf_key_ = key;
         dtmf_length_samples_ = (kDtmfFrequencyHz / 1000) * dtmf_length_ms;
@@ -310,7 +310,7 @@ int32_t RTPSenderAudio::SendTelephoneEvent(uint8_t key,
       return -1;
     }
   }
-  return AddDTMF(key, time_ms, level);
+  return dtmf_queue_.AddDTMF(key, time_ms, level);
 }
 
 bool RTPSenderAudio::SendTelephoneEventPacket(bool ended,

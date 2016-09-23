@@ -19,12 +19,11 @@ namespace webrtc {
 class DTMFqueue {
  public:
   DTMFqueue();
-  virtual ~DTMFqueue();
+  ~DTMFqueue();
 
   int32_t AddDTMF(uint8_t dtmf_key, uint16_t len, uint8_t level);
   int8_t NextDTMF(uint8_t* dtmf_key, uint16_t* len, uint8_t* level);
   bool PendingDTMF();
-  void ResetDTMF();
 
  private:
   rtc::CriticalSection dtmf_critsect_;

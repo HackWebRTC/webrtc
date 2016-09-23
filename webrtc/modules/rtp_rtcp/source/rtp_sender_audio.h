@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_AUDIO_H_
 
 #include "webrtc/common_types.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/onetimeevent.h"
 #include "webrtc/modules/rtp_rtcp/source/dtmf_queue.h"
@@ -22,10 +23,10 @@
 
 namespace webrtc {
 
-class RTPSenderAudio : public DTMFqueue {
+class RTPSenderAudio {
  public:
   RTPSenderAudio(Clock* clock, RTPSender* rtp_sender);
-  virtual ~RTPSenderAudio();
+  ~RTPSenderAudio();
 
   int32_t RegisterAudioPayload(const char payloadName[RTP_PAYLOAD_NAME_SIZE],
                                int8_t payload_type,
@@ -83,6 +84,7 @@ class RTPSenderAudio : public DTMFqueue {
   uint8_t dtmf_level_;
   int64_t dtmf_time_last_sent_;
   uint32_t dtmf_timestamp_last_sent_;
+  DTMFqueue dtmf_queue_;
 
   // VAD detection, used for marker bit.
   bool inband_vad_active_ GUARDED_BY(send_audio_critsect_);
@@ -96,6 +98,8 @@ class RTPSenderAudio : public DTMFqueue {
   // (https://datatracker.ietf.org/doc/draft-lennox-avt-rtp-audio-level-exthdr/)
   uint8_t audio_level_dbov_ GUARDED_BY(send_audio_critsect_);
   OneTimeEvent first_packet_sent_;
+
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RTPSenderAudio);
 };
 
 }  // namespace webrtc
