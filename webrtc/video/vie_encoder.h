@@ -49,6 +49,15 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
                    public VCMSendStatisticsCallback,
                    public CpuOveruseObserver {
  public:
+  // Interface for receiving encoded video frames and notifications about
+  // configuration changes.
+  class EncoderSink : public EncodedImageCallback {
+   public:
+    virtual void OnEncoderConfigurationChanged(
+        std::vector<VideoStream> streams,
+        int min_transmit_bitrate_bps) = 0;
+  };
+
   ViEEncoder(uint32_t number_of_cores,
              SendStatisticsProxy* stats_proxy,
              const webrtc::VideoSendStream::Config::EncoderSettings& settings,
@@ -64,12 +73,12 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   void DeRegisterProcessThread();
 
   void SetSource(rtc::VideoSourceInterface<VideoFrame>* source);
-  void SetSink(EncodedImageCallback* sink);
+  void SetSink(EncoderSink* sink);
 
   // TODO(perkj): Can we remove VideoCodec.startBitrate ?
   void SetStartBitrate(int start_bitrate_bps);
 
-  void ConfigureEncoder(const VideoEncoderConfig& config,
+  void ConfigureEncoder(VideoEncoderConfig config,
                         size_t max_data_payload_length);
 
   // Permanently stop encoding. After this method has returned, it is
@@ -92,7 +101,9 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   class VideoSourceProxy;
 
   void ConfigureEncoderInternal(const VideoCodec& video_codec,
-                                size_t max_data_payload_length);
+                                size_t max_data_payload_length,
+                                std::vector<VideoStream> stream,
+                                int min_transmit_bitrate);
 
   // Implements VideoSinkInterface.
   void OnFrame(const VideoFrame& video_frame) override;
@@ -123,7 +134,7 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   const uint32_t number_of_cores_;
 
   const std::unique_ptr<VideoSourceProxy> source_proxy_;
-  EncodedImageCallback* sink_;
+  EncoderSink* sink_;
   const VideoSendStream::Config::EncoderSettings settings_;
 
   const std::unique_ptr<VideoProcessing> vp_;

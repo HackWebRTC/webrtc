@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <utility>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -367,7 +368,7 @@ void ViEEncoder::SetSource(rtc::VideoSourceInterface<VideoFrame>* source) {
   source_proxy_->SetSource(source);
 }
 
-void ViEEncoder::SetSink(EncodedImageCallback* sink) {
+void ViEEncoder::SetSink(EncoderSink* sink) {
   encoder_queue_.PostTask([this, sink] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     sink_ = sink;
@@ -381,18 +382,25 @@ void ViEEncoder::SetStartBitrate(int start_bitrate_bps) {
   });
 }
 
-void ViEEncoder::ConfigureEncoder(const VideoEncoderConfig& config,
+void ViEEncoder::ConfigureEncoder(VideoEncoderConfig config,
                                   size_t max_data_payload_length) {
   VideoCodec video_codec = VideoEncoderConfigToVideoCodec(
       config, settings_.payload_name, settings_.payload_type);
-  encoder_queue_.PostTask([this, video_codec, max_data_payload_length] {
-    ConfigureEncoderInternal(video_codec, max_data_payload_length);
+  LOG(LS_INFO) << "ConfigureEncoder: " << config.ToString();
+  std::vector<VideoStream> stream = std::move(config.streams);
+  int min_transmit_bitrate = config.min_transmit_bitrate_bps;
+  encoder_queue_.PostTask([this, video_codec, max_data_payload_length, stream,
+                           min_transmit_bitrate] {
+    ConfigureEncoderInternal(video_codec, max_data_payload_length, stream,
+                             min_transmit_bitrate);
   });
   return;
 }
 
 void ViEEncoder::ConfigureEncoderInternal(const VideoCodec& video_codec,
-                                          size_t max_data_payload_length) {
+                                          size_t max_data_payload_length,
+                                          std::vector<VideoStream> stream,
+                                          int min_transmit_bitrate) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   RTC_DCHECK_GE(encoder_start_bitrate_bps_, 0);
   RTC_DCHECK(sink_);
@@ -434,6 +442,8 @@ void ViEEncoder::ConfigureEncoderInternal(const VideoCodec& video_codec,
     }
     stats_proxy_->SetContentType(content_type);
   }
+
+  sink_->OnEncoderConfigurationChanged(stream, min_transmit_bitrate);
 }
 
 void ViEEncoder::OnFrame(const VideoFrame& video_frame) {

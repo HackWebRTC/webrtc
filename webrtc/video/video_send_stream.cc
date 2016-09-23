@@ -202,23 +202,23 @@ bool PayloadTypeSupportsSkippingFecPackets(const std::string& payload_name) {
   return false;
 }
 
-int CalculateMaxPadBitrateBps(const VideoEncoderConfig& config,
+int CalculateMaxPadBitrateBps(std::vector<VideoStream> streams,
+                              int min_transmit_bitrate_bps,
                               bool pad_to_min_bitrate) {
   int pad_up_to_bitrate_bps = 0;
   // Calculate max padding bitrate for a multi layer codec.
-  if (config.streams.size() > 1) {
+  if (streams.size() > 1) {
     // Pad to min bitrate of the highest layer.
-    pad_up_to_bitrate_bps =
-        config.streams[config.streams.size() - 1].min_bitrate_bps;
+    pad_up_to_bitrate_bps = streams[streams.size() - 1].min_bitrate_bps;
     // Add target_bitrate_bps of the lower layers.
-    for (size_t i = 0; i < config.streams.size() - 1; ++i)
-      pad_up_to_bitrate_bps += config.streams[i].target_bitrate_bps;
+    for (size_t i = 0; i < streams.size() - 1; ++i)
+      pad_up_to_bitrate_bps += streams[i].target_bitrate_bps;
   } else if (pad_to_min_bitrate) {
-    pad_up_to_bitrate_bps = config.streams[0].min_bitrate_bps;
+    pad_up_to_bitrate_bps = streams[0].min_bitrate_bps;
   }
 
   pad_up_to_bitrate_bps =
-      std::max(pad_up_to_bitrate_bps, config.min_transmit_bitrate_bps);
+      std::max(pad_up_to_bitrate_bps, min_transmit_bitrate_bps);
 
   return pad_up_to_bitrate_bps;
 }
@@ -236,7 +236,7 @@ namespace internal {
 // arbitrary thread.
 class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
                             public webrtc::VCMProtectionCallback,
-                            public EncodedImageCallback {
+                            public ViEEncoder::EncoderSink {
  public:
   VideoSendStreamImpl(SendStatisticsProxy* stats_proxy,
                       rtc::TaskQueue* worker_queue,
@@ -248,6 +248,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
                       ViEEncoder* vie_encoder,
                       RtcEventLog* event_log,
                       const VideoSendStream::Config* config,
+                      int initial_encoder_max_bitrate,
                       std::map<uint32_t, RtpState> suspended_ssrcs);
   ~VideoSendStreamImpl() override;
 
@@ -264,11 +265,11 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   void Start();
   void Stop();
 
-  void SignalEncoderConfigurationChanged(const VideoEncoderConfig& config);
   VideoSendStream::RtpStateMap GetRtpStates() const;
 
  private:
   class CheckEncoderActivityTask;
+  class EncoderReconfiguredTask;
 
   // Implements BitrateAllocatorObserver.
   uint32_t OnBitrateUpdated(uint32_t bitrate_bps,
@@ -281,6 +282,9 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
                         uint32_t* sent_video_rate_bps,
                         uint32_t* sent_nack_rate_bps,
                         uint32_t* sent_fec_rate_bps) override;
+
+  void OnEncoderConfigurationChanged(std::vector<VideoStream> streams,
+                                     int min_transmit_bitrate_bps) override;
 
   // Implements EncodedImageCallback. The implementation routes encoded frames
   // to the |payload_router_| and |config.pre_encode_callback| if set.
@@ -306,6 +310,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   rtc::CriticalSection encoder_activity_crit_sect_;
   CheckEncoderActivityTask* check_encoder_activity_task_
       GUARDED_BY(encoder_activity_crit_sect_);
+
   CallStats* const call_stats_;
   CongestionController* const congestion_controller_;
   BitrateAllocator* const bitrate_allocator_;
@@ -346,6 +351,7 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
                    VieRemb* remb,
                    RtcEventLog* event_log,
                    const VideoSendStream::Config* config,
+                   int initial_encoder_max_bitrate,
                    const std::map<uint32_t, RtpState>& suspended_ssrcs)
       : send_stream_(send_stream),
         done_event_(done_event),
@@ -358,6 +364,7 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
         remb_(remb),
         event_log_(event_log),
         config_(config),
+        initial_encoder_max_bitrate_(initial_encoder_max_bitrate),
         suspended_ssrcs_(suspended_ssrcs) {}
 
   ~ConstructionTask() override { done_event_->Set(); }
@@ -367,7 +374,8 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
     send_stream_->reset(new VideoSendStreamImpl(
         stats_proxy_, rtc::TaskQueue::Current(), call_stats_,
         congestion_controller_, bitrate_allocator_, send_delay_stats_, remb_,
-        vie_encoder_, event_log_, config_, std::move(suspended_ssrcs_)));
+        vie_encoder_, event_log_, config_, initial_encoder_max_bitrate_,
+        std::move(suspended_ssrcs_)));
     return true;
   }
 
@@ -382,6 +390,7 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
   VieRemb* const remb_;
   RtcEventLog* const event_log_;
   const VideoSendStream::Config* config_;
+  int initial_encoder_max_bitrate_;
   std::map<uint32_t, RtpState> suspended_ssrcs_;
 };
 
@@ -461,20 +470,25 @@ class VideoSendStreamImpl::CheckEncoderActivityTask : public rtc::QueuedTask {
   bool timed_out_;
 };
 
-class ReconfigureVideoEncoderTask : public rtc::QueuedTask {
+class VideoSendStreamImpl::EncoderReconfiguredTask : public rtc::QueuedTask {
  public:
-  ReconfigureVideoEncoderTask(VideoSendStreamImpl* send_stream,
-                              VideoEncoderConfig config)
-      : send_stream_(send_stream), config_(std::move(config)) {}
+  EncoderReconfiguredTask(VideoSendStreamImpl* send_stream,
+                          std::vector<VideoStream> streams,
+                          int min_transmit_bitrate_bps)
+      : send_stream_(send_stream),
+        streams_(std::move(streams)),
+        min_transmit_bitrate_bps_(min_transmit_bitrate_bps) {}
 
  private:
   bool Run() override {
-    send_stream_->SignalEncoderConfigurationChanged(std::move(config_));
+    send_stream_->OnEncoderConfigurationChanged(std::move(streams_),
+                                                min_transmit_bitrate_bps_);
     return true;
   }
 
   VideoSendStreamImpl* send_stream_;
-  VideoEncoderConfig config_;
+  std::vector<VideoStream> streams_;
+  int min_transmit_bitrate_bps_;
 };
 
 VideoSendStream::VideoSendStream(
@@ -501,11 +515,18 @@ VideoSendStream::VideoSendStream(
                      config_.pre_encode_callback, config_.overuse_callback,
                      config_.post_encode_callback));
 
+  // TODO(perkj): Remove vector<VideoStreams> from VideoEncoderConfig and
+  // replace with max_bitrate. The VideoStream should be created by ViEEncoder
+  // when the video resolution is known.
+  int initial_max_encoder_bitrate = 0;
+  for (const auto& stream : encoder_config.streams)
+    initial_max_encoder_bitrate += stream.max_bitrate_bps;
+
   worker_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(new ConstructionTask(
       &send_stream_, &thread_sync_event_, &stats_proxy_, vie_encoder_.get(),
       module_process_thread, call_stats, congestion_controller,
       bitrate_allocator, send_delay_stats, remb, event_log, &config_,
-      suspended_ssrcs)));
+      initial_max_encoder_bitrate, suspended_ssrcs)));
 
   // Wait for ConstructionTask to complete so that |send_stream_| can be used.
   // |module_process_thread| must be registered and deregistered on the thread
@@ -558,10 +579,8 @@ void VideoSendStream::ReconfigureVideoEncoder(VideoEncoderConfig config) {
   // TODO(perkj): Move logic for reconfiguration the encoder due to frame size
   // change from WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame to
   // be internally handled by ViEEncoder.
-  vie_encoder_->ConfigureEncoder(config, config_.rtp.max_packet_size);
-
-  worker_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(
-      new ReconfigureVideoEncoderTask(send_stream_.get(), std::move(config))));
+  vie_encoder_->ConfigureEncoder(std::move(config),
+                                 config_.rtp.max_packet_size);
 }
 
 VideoSendStream::Stats VideoSendStream::GetStats() {
@@ -607,6 +626,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     ViEEncoder* vie_encoder,
     RtcEventLog* event_log,
     const VideoSendStream::Config* config,
+    int initial_encoder_max_bitrate,
     std::map<uint32_t, RtpState> suspended_ssrcs)
     : stats_proxy_(stats_proxy),
       config_(config),
@@ -620,7 +640,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
       remb_(remb),
       max_padding_bitrate_(0),
       encoder_min_bitrate_bps_(0),
-      encoder_max_bitrate_bps_(0),
+      encoder_max_bitrate_bps_(initial_encoder_max_bitrate),
       encoder_target_rate_bps_(0),
       vie_encoder_(vie_encoder),
       encoder_feedback_(Clock::GetRealTimeClock(),
@@ -801,35 +821,44 @@ void VideoSendStreamImpl::SignalEncoderActive() {
       max_padding_bitrate_, !config_->suspend_below_min_bitrate);
 }
 
-void VideoSendStreamImpl::SignalEncoderConfigurationChanged(
-    const VideoEncoderConfig& config) {
-  RTC_DCHECK_GE(config_->rtp.ssrcs.size(), config.streams.size());
-  TRACE_EVENT0("webrtc", "VideoSendStream::SignalEncoderConfigurationChanged");
-  LOG(LS_INFO) << "SignalEncoderConfigurationChanged: " << config.ToString();
-  RTC_DCHECK_GE(config_->rtp.ssrcs.size(), config.streams.size());
+void VideoSendStreamImpl::OnEncoderConfigurationChanged(
+    std::vector<VideoStream> streams,
+    int min_transmit_bitrate_bps) {
+  if (!worker_queue_->IsCurrent()) {
+    // TODO(perkj): Using |this| in post is safe for now since destruction of
+    // VideoSendStreamImpl is synchronized in
+    // VideoSendStream::StopPermanentlyAndGetRtpStates. But we should really
+    // use some kind of weak_ptr to guarantee that VideoSendStreamImpl is still
+    // alive when this task runs.
+    worker_queue_->PostTask(
+        std::unique_ptr<rtc::QueuedTask>(new EncoderReconfiguredTask(
+            this, std::move(streams), min_transmit_bitrate_bps)));
+    return;
+  }
+  RTC_DCHECK_GE(config_->rtp.ssrcs.size(), streams.size());
+  TRACE_EVENT0("webrtc", "VideoSendStream::OnEncoderConfigurationChanged");
+  RTC_DCHECK_GE(config_->rtp.ssrcs.size(), streams.size());
   RTC_DCHECK_RUN_ON(worker_queue_);
 
   const int kEncoderMinBitrateBps = 30000;
   encoder_min_bitrate_bps_ =
-      std::max(config.streams[0].min_bitrate_bps, kEncoderMinBitrateBps);
+      std::max(streams[0].min_bitrate_bps, kEncoderMinBitrateBps);
   encoder_max_bitrate_bps_ = 0;
-  for (const auto& stream : config.streams)
+  for (const auto& stream : streams)
     encoder_max_bitrate_bps_ += stream.max_bitrate_bps;
-  max_padding_bitrate_ =
-      CalculateMaxPadBitrateBps(config, config_->suspend_below_min_bitrate);
-
-  payload_router_.SetSendStreams(config.streams);
+  max_padding_bitrate_ = CalculateMaxPadBitrateBps(
+      streams, min_transmit_bitrate_bps, config_->suspend_below_min_bitrate);
 
   // Clear stats for disabled layers.
-  for (size_t i = config.streams.size(); i < config_->rtp.ssrcs.size(); ++i) {
+  for (size_t i = streams.size(); i < config_->rtp.ssrcs.size(); ++i) {
     stats_proxy_->OnInactiveSsrc(config_->rtp.ssrcs[i]);
   }
 
   size_t number_of_temporal_layers =
-      config.streams.back().temporal_layer_thresholds_bps.size() + 1;
+      streams.back().temporal_layer_thresholds_bps.size() + 1;
   protection_bitrate_calculator_.SetEncodingData(
-      config.streams[0].width, config.streams[0].height,
-      number_of_temporal_layers, config_->rtp.max_packet_size);
+      streams[0].width, streams[0].height, number_of_temporal_layers,
+      config_->rtp.max_packet_size);
 
   if (payload_router_.active()) {
     // The send stream is started already. Update the allocator with new bitrate

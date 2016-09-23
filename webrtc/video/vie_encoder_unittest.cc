@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <utility>
+
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/test/encoder_settings.h"
@@ -36,7 +38,10 @@ class ViEEncoderTest : public ::testing::Test {
     video_send_config_.encoder_settings.payload_name = "FAKE";
     video_send_config_.encoder_settings.payload_type = 125;
 
-    video_encoder_config_.streams = test::CreateVideoStreams(1);
+    VideoEncoderConfig video_encoder_config;
+    video_encoder_config.streams = test::CreateVideoStreams(1);
+    codec_width_ = static_cast<int>(video_encoder_config.streams[0].width);
+    codec_height_ = static_cast<int>(video_encoder_config.streams[0].height);
 
     vie_encoder_.reset(new ViEEncoder(
         1 /* number_of_cores */, &stats_proxy_,
@@ -45,7 +50,7 @@ class ViEEncoderTest : public ::testing::Test {
     vie_encoder_->SetSink(&sink_);
     vie_encoder_->SetSource(&video_source_);
     vie_encoder_->SetStartBitrate(10000);
-    vie_encoder_->ConfigureEncoder(video_encoder_config_, 1440);
+    vie_encoder_->ConfigureEncoder(std::move(video_encoder_config), 1440);
   }
 
   VideoFrame CreateFrame(int64_t ntp_ts, rtc::Event* destruction_event) const {
@@ -63,12 +68,9 @@ class ViEEncoderTest : public ::testing::Test {
       rtc::Event* const event_;
     };
 
-    VideoFrame frame(
-        new rtc::RefCountedObject<TestBuffer>(
-            destruction_event,
-            static_cast<int>(video_encoder_config_.streams[0].width),
-            static_cast<int>(video_encoder_config_.streams[0].height)),
-        99, 99, kVideoRotation_0);
+    VideoFrame frame(new rtc::RefCountedObject<TestBuffer>(
+                         destruction_event, codec_width_, codec_height_),
+                     99, 99, kVideoRotation_0);
     frame.set_ntp_time_ms(ntp_ts);
     return frame;
   }
@@ -123,20 +125,10 @@ class ViEEncoderTest : public ::testing::Test {
     int64_t ntp_time_ms_ = 0;
   };
 
-  class TestSink : public EncodedImageCallback {
+  class TestSink : public ViEEncoder::EncoderSink {
    public:
     explicit TestSink(TestEncoder* test_encoder)
         : test_encoder_(test_encoder), encoded_frame_event_(false, false) {}
-
-    int32_t Encoded(const EncodedImage& encoded_image,
-                    const CodecSpecificInfo* codec_specific_info,
-                    const RTPFragmentationHeader* fragmentation) override {
-      rtc::CritScope lock(&crit_);
-      EXPECT_TRUE(expect_frames_);
-      timestamp_ = encoded_image._timeStamp;
-      encoded_frame_event_.Set();
-      return 0;
-    }
 
     void WaitForEncodedFrame(int64_t expected_ntp_time) {
       uint32_t timestamp = 0;
@@ -153,16 +145,46 @@ class ViEEncoderTest : public ::testing::Test {
       expect_frames_ = false;
     }
 
+    int number_of_reconfigurations() {
+      rtc::CritScope lock(&crit_);
+      return number_of_reconfigurations_;
+    }
+
+    int last_min_transmit_bitrate() {
+      rtc::CritScope lock(&crit_);
+      return min_transmit_bitrate_bps_;
+    }
+
    private:
+    int32_t Encoded(const EncodedImage& encoded_image,
+                    const CodecSpecificInfo* codec_specific_info,
+                    const RTPFragmentationHeader* fragmentation) override {
+      rtc::CritScope lock(&crit_);
+      EXPECT_TRUE(expect_frames_);
+      timestamp_ = encoded_image._timeStamp;
+      encoded_frame_event_.Set();
+      return 0;
+    }
+
+    void OnEncoderConfigurationChanged(std::vector<VideoStream> streams,
+                                       int min_transmit_bitrate_bps) override {
+      rtc::CriticalSection crit_;
+      ++number_of_reconfigurations_;
+      min_transmit_bitrate_bps_ = min_transmit_bitrate_bps;
+    }
+
     rtc::CriticalSection crit_;
     TestEncoder* test_encoder_;
     rtc::Event encoded_frame_event_;
     uint32_t timestamp_ = 0;
     bool expect_frames_ = true;
+    int number_of_reconfigurations_ = 0;
+    int min_transmit_bitrate_bps_ = 0;
   };
 
   VideoSendStream::Config video_send_config_;
-  VideoEncoderConfig video_encoder_config_;
+  int codec_width_;
+  int codec_height_;
   TestEncoder fake_encoder_;
   SendStatisticsProxy stats_proxy_;
   TestSink sink_;
@@ -251,6 +273,29 @@ TEST_F(ViEEncoderTest, DropsPendingFramesOnSlowEncode) {
   video_source_.IncomingCapturedFrame(CreateFrame(3, nullptr));
   fake_encoder_.ContinueEncode();
   sink_.WaitForEncodedFrame(3);
+
+  vie_encoder_->Stop();
+}
+
+TEST_F(ViEEncoderTest, ConfigureEncoderTriggersOnEncoderConfigurationChanged) {
+  const int kTargetBitrateBps = 100000;
+  vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
+
+  // Capture a frame and wait for it to synchronize with the encoder thread.
+  vie_encoder_->IncomingCapturedFrame(CreateFrame(1, nullptr));
+  sink_.WaitForEncodedFrame(1);
+  EXPECT_EQ(1, sink_.number_of_reconfigurations());
+
+  VideoEncoderConfig video_encoder_config;
+  video_encoder_config.streams = test::CreateVideoStreams(1);
+  video_encoder_config.min_transmit_bitrate_bps = 9999;
+  vie_encoder_->ConfigureEncoder(std::move(video_encoder_config), 1440);
+
+  // Capture a frame and wait for it to synchronize with the encoder thread.
+  vie_encoder_->IncomingCapturedFrame(CreateFrame(2, nullptr));
+  sink_.WaitForEncodedFrame(2);
+  EXPECT_EQ(2, sink_.number_of_reconfigurations());
+  EXPECT_EQ(9999, sink_.last_min_transmit_bitrate());
 
   vie_encoder_->Stop();
 }

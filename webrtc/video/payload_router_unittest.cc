@@ -39,7 +39,6 @@ TEST(PayloadRouterTest, SendOnOneModule) {
   encoded_image._length = 1;
 
   PayloadRouter payload_router(modules, payload_type);
-  payload_router.SetSendStreams(streams);
 
   EXPECT_CALL(rtp, SendOutgoingData(encoded_image._frameType, payload_type,
                                     encoded_image._timeStamp,
@@ -71,15 +70,6 @@ TEST(PayloadRouterTest, SendOnOneModule) {
                                     encoded_image._length, nullptr, _, _))
       .Times(1);
   EXPECT_EQ(0, payload_router.Encoded(encoded_image, nullptr, nullptr));
-
-  streams.clear();
-  payload_router.SetSendStreams(streams);
-  EXPECT_CALL(rtp, SendOutgoingData(encoded_image._frameType, payload_type,
-                                    encoded_image._timeStamp,
-                                    encoded_image.capture_time_ms_, &payload,
-                                    encoded_image._length, nullptr, _, _))
-      .Times(0);
-  EXPECT_EQ(-1, payload_router.Encoded(encoded_image, nullptr, nullptr));
 }
 
 TEST(PayloadRouterTest, SendSimulcast) {
@@ -100,7 +90,6 @@ TEST(PayloadRouterTest, SendSimulcast) {
   encoded_image._length = 1;
 
   PayloadRouter payload_router(modules, payload_type);
-  payload_router.SetSendStreams(streams);
 
   CodecSpecificInfo codec_info_1;
   memset(&codec_info_1, 0, sizeof(CodecSpecificInfo));
@@ -138,17 +127,6 @@ TEST(PayloadRouterTest, SendSimulcast) {
       .Times(0);
   EXPECT_EQ(-1, payload_router.Encoded(encoded_image, &codec_info_1, nullptr));
   EXPECT_EQ(-1, payload_router.Encoded(encoded_image, &codec_info_2, nullptr));
-
-  // Invalid simulcast index.
-  streams.pop_back();  // Remove a stream.
-  payload_router.SetSendStreams(streams);
-  payload_router.set_active(true);
-  EXPECT_CALL(rtp_1, SendOutgoingData(_, _, _, _, _, _, _, _, _))
-      .Times(0);
-  EXPECT_CALL(rtp_2, SendOutgoingData(_, _, _, _, _, _, _, _, _))
-      .Times(0);
-  codec_info_2.codecSpecific.VP8.simulcastIdx = 1;
-  EXPECT_EQ(-1, payload_router.Encoded(encoded_image, &codec_info_2, nullptr));
 }
 
 TEST(PayloadRouterTest, MaxPayloadLength) {
@@ -164,7 +142,6 @@ TEST(PayloadRouterTest, MaxPayloadLength) {
 
   EXPECT_EQ(kDefaultMaxLength, PayloadRouter::DefaultMaxPayloadLength());
   std::vector<VideoStream> streams(2);
-  payload_router.SetSendStreams(streams);
 
   // Modules return a higher length than the default value.
   EXPECT_CALL(rtp_1, MaxDataPayloadLength())

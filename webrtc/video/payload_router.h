@@ -37,7 +37,6 @@ class PayloadRouter : public EncodedImageCallback {
   ~PayloadRouter();
 
   static size_t DefaultMaxPayloadLength();
-  void SetSendStreams(const std::vector<VideoStream>& streams);
 
   // PayloadRouter will only route packets if being active, all packets will be
   // dropped otherwise.
@@ -60,8 +59,6 @@ class PayloadRouter : public EncodedImageCallback {
 
   rtc::CriticalSection crit_;
   bool active_ GUARDED_BY(crit_);
-  std::vector<VideoStream> streams_ GUARDED_BY(crit_);
-  size_t num_sending_modules_ GUARDED_BY(crit_);
 
   // Rtp modules are assumed to be sorted in simulcast index order. Not owned.
   const std::vector<RtpRtcp*> rtp_modules_;
