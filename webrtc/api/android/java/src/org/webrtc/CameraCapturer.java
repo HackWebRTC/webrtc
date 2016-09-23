@@ -158,6 +158,7 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
       synchronized (stateLock) {
         if (session != currentSession) {
           Logging.w(TAG, "onTextureFrameCaptured from another session.");
+          surfaceHelper.returnTextureFrame();
           return;
         }
         if (!firstFrameObserved) {
