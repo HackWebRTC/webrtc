@@ -457,16 +457,15 @@ rtc::Optional<CodecInst> NetEqImpl::GetDecoder(int payload_type) const {
   return rtc::Optional<CodecInst>(ci);
 }
 
-const SdpAudioFormat* NetEqImpl::GetDecoderFormat(int payload_type) const {
+rtc::Optional<SdpAudioFormat> NetEqImpl::GetDecoderFormat(
+    int payload_type) const {
   rtc::CritScope lock(&crit_sect_);
   const DecoderDatabase::DecoderInfo* const di =
       decoder_database_->GetDecoderInfo(payload_type);
   if (!di) {
-    return nullptr;  // Payload type not registered.
+    return rtc::Optional<SdpAudioFormat>();  // Payload type not registered.
   }
-  // This will return null if the payload type was registered without an
-  // SdpAudioFormat.
-  return di->GetFormat();
+  return rtc::Optional<SdpAudioFormat>(di->GetFormat());
 }
 
 int NetEqImpl::SetTargetNumberOfChannels() {
@@ -781,7 +780,8 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
   const DecoderDatabase::DecoderInfo* dec_info =
           decoder_database_->GetDecoderInfo(main_header.payloadType);
   assert(dec_info);  // Already checked that the payload type is known.
-  delay_manager_->LastDecoderType(dec_info->codec_type);
+  delay_manager_->LastDecodedWasCngOrDtmf(dec_info->IsComfortNoise() ||
+                                          dec_info->IsDtmf());
   if (delay_manager_->last_pack_cng_or_dtmf() == 0) {
     // Calculate the total speech length carried in each packet.
     const size_t buffer_length_after_insert =

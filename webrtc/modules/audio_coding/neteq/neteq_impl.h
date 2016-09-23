@@ -173,7 +173,8 @@ class NetEqImpl : public webrtc::NetEq {
 
   rtc::Optional<CodecInst> GetDecoder(int payload_type) const override;
 
-  const SdpAudioFormat* GetDecoderFormat(int payload_type) const override;
+  rtc::Optional<SdpAudioFormat> GetDecoderFormat(
+      int payload_type) const override;
 
   int SetTargetNumberOfChannels() override;
 

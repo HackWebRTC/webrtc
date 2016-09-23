@@ -91,7 +91,9 @@ class DelayManager {
   // includes any extra delay set through the set_extra_delay_ms() method.
   virtual int TargetLevel() const;
 
-  virtual void LastDecoderType(NetEqDecoder decoder_type);
+  // Informs the delay manager whether or not the last decoded packet contained
+  // speech.
+  virtual void LastDecodedWasCngOrDtmf(bool it_was);
 
   // Accessors and mutators.
   // Assuming |delay| is in valid range.

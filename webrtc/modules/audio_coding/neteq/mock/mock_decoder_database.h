@@ -45,8 +45,6 @@ class MockDecoderDatabase : public DecoderDatabase {
   MOCK_METHOD0(RemoveAll, void());
   MOCK_CONST_METHOD1(GetDecoderInfo,
       const DecoderInfo*(uint8_t rtp_payload_type));
-  MOCK_CONST_METHOD1(GetRtpPayloadType,
-      uint8_t(NetEqDecoder codec_type));
   MOCK_METHOD2(SetActiveDecoder,
       int(uint8_t rtp_payload_type, bool* new_decoder));
   MOCK_CONST_METHOD0(GetActiveDecoder,

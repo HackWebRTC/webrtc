@@ -371,12 +371,8 @@ int DelayManager::TargetLevel() const {
   return target_level_;
 }
 
-void DelayManager::LastDecoderType(NetEqDecoder decoder_type) {
-  if (decoder_type == NetEqDecoder::kDecoderAVT ||
-      decoder_type == NetEqDecoder::kDecoderCNGnb ||
-      decoder_type == NetEqDecoder::kDecoderCNGwb ||
-      decoder_type == NetEqDecoder::kDecoderCNGswb32kHz ||
-      decoder_type == NetEqDecoder::kDecoderCNGswb48kHz) {
+void DelayManager::LastDecodedWasCngOrDtmf(bool it_was) {
+  if (it_was) {
     last_pack_cng_or_dtmf_ = 1;
   } else if (last_pack_cng_or_dtmf_ != 0) {
     last_pack_cng_or_dtmf_ = -1;

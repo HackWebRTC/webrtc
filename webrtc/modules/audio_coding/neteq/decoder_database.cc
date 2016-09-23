@@ -26,23 +26,24 @@ DecoderDatabase::DecoderDatabase(
 
 DecoderDatabase::~DecoderDatabase() = default;
 
-DecoderDatabase::DecoderInfo::DecoderInfo(
-    NetEqDecoder ct,
-    const std::string& nm,
-    AudioDecoderFactory* factory)
-    : codec_type(ct),
-      name(nm),
-      audio_format_(acm2::RentACodec::NetEqDecoderToSdpAudioFormat(ct)),
+DecoderDatabase::DecoderInfo::DecoderInfo(const SdpAudioFormat& audio_format,
+                                          AudioDecoderFactory* factory)
+    : audio_format_(audio_format),
       factory_(factory),
       external_decoder_(nullptr),
-      cng_decoder_(CngDecoder::Create(ct)) {}
+      cng_decoder_(CngDecoder::Create(audio_format)) {}
 
 DecoderDatabase::DecoderInfo::DecoderInfo(NetEqDecoder ct,
-                                          const std::string& nm,
+                                          AudioDecoderFactory* factory)
+    : audio_format_(*acm2::RentACodec::NetEqDecoderToSdpAudioFormat(ct)),
+      factory_(factory),
+      external_decoder_(nullptr),
+      cng_decoder_(CngDecoder::Create(audio_format_)) {}
+
+DecoderDatabase::DecoderInfo::DecoderInfo(const SdpAudioFormat& audio_format,
                                           AudioDecoder* ext_dec)
-    : codec_type(ct),
-      name(nm),
-      audio_format_(acm2::RentACodec::NetEqDecoderToSdpAudioFormat(ct)),
+    : audio_format_(audio_format),
+      factory_(nullptr),
       external_decoder_(ext_dec) {
   RTC_CHECK(ext_dec);
 }
@@ -51,55 +52,52 @@ DecoderDatabase::DecoderInfo::DecoderInfo(DecoderInfo&&) = default;
 DecoderDatabase::DecoderInfo::~DecoderInfo() = default;
 
 AudioDecoder* DecoderDatabase::DecoderInfo::GetDecoder() const {
+  if (IsDtmf() || IsRed() || IsComfortNoise()) {
+    // These are handled internally, so they have no AudioDecoder objects.
+    return nullptr;
+  }
   if (external_decoder_) {
     RTC_DCHECK(!decoder_);
     RTC_DCHECK(!cng_decoder_);
     return external_decoder_;
   }
-  if (IsRed() || IsComfortNoise() || IsDtmf())
-    return nullptr;
-  RTC_DCHECK(audio_format_);
   if (!decoder_) {
+    // TODO(ossu): Keep a check here for now, since a number of tests create
+    // DecoderInfos without factories.
     RTC_DCHECK(factory_);
-    decoder_ = factory_->MakeAudioDecoder(*audio_format_);
+    decoder_ = factory_->MakeAudioDecoder(audio_format_);
   }
-  RTC_DCHECK(decoder_) << "Failed to create: " << *audio_format_;
+  RTC_DCHECK(decoder_) << "Failed to create: " << audio_format_;
   return decoder_.get();
 }
 
-
 bool DecoderDatabase::DecoderInfo::IsComfortNoise() const {
-  return codec_type == NetEqDecoder::kDecoderCNGnb
-      || codec_type == NetEqDecoder::kDecoderCNGwb
-      || codec_type == NetEqDecoder::kDecoderCNGswb32kHz
-      || codec_type == NetEqDecoder::kDecoderCNGswb48kHz;
+  RTC_DCHECK_EQ(!!cng_decoder_, IsType("CN"));
+  return !!cng_decoder_;
 }
 
 bool DecoderDatabase::DecoderInfo::IsDtmf() const {
-  return codec_type == NetEqDecoder::kDecoderAVT;
+  return IsType("telephone-event");
 }
 
 bool DecoderDatabase::DecoderInfo::IsRed() const {
-  return codec_type == NetEqDecoder::kDecoderRED;
+  return IsType("red");
+}
+
+bool DecoderDatabase::DecoderInfo::IsType(const char* name) const {
+  return STR_CASE_CMP(audio_format_.name.c_str(), name) == 0;
+}
+
+bool DecoderDatabase::DecoderInfo::IsType(const std::string& name) const {
+  return IsType(name.c_str());
 }
 
 rtc::Optional<DecoderDatabase::DecoderInfo::CngDecoder>
-DecoderDatabase::DecoderInfo::CngDecoder::Create(NetEqDecoder ct) {
-  const auto cng = [](int sample_rate_hz) {
-    return rtc::Optional<DecoderDatabase::DecoderInfo::CngDecoder>(
-        {sample_rate_hz});
-  };
-  switch (ct) {
-    case NetEqDecoder::kDecoderCNGnb:
-      return cng(8000);
-    case NetEqDecoder::kDecoderCNGwb:
-      return cng(16000);
-    case NetEqDecoder::kDecoderCNGswb32kHz:
-      return cng(32000);
-    case NetEqDecoder::kDecoderCNGswb48kHz:
-      return cng(48000);
-    default:
-      return rtc::Optional<DecoderDatabase::DecoderInfo::CngDecoder>();
+DecoderDatabase::DecoderInfo::CngDecoder::Create(const SdpAudioFormat& format) {
+  if (STR_CASE_CMP(format.name.c_str(), "CN") == 0) {
+    return rtc::Optional<CngDecoder>({format.clockrate_hz});
+  } else {
+    return rtc::Optional<CngDecoder>();
   }
 }
 
@@ -119,10 +117,18 @@ int DecoderDatabase::RegisterPayload(uint8_t rtp_payload_type,
   if (rtp_payload_type > 0x7F) {
     return kInvalidRtpPayloadType;
   }
-  if (!CodecSupported(codec_type)) {
+  // kCodecArbitrary is only supported through InsertExternal.
+  if (codec_type == NetEqDecoder::kDecoderArbitrary ||
+      !CodecSupported(codec_type)) {
     return kCodecNotSupported;
   }
-  DecoderInfo info(codec_type, name, decoder_factory_.get());
+  const auto opt_format =
+      acm2::RentACodec::NetEqDecoderToSdpAudioFormat(codec_type);
+  if (!opt_format) {
+    return kCodecNotSupported;
+  }
+  DecoderInfo info(*opt_format, decoder_factory_);
+  info.name = name;
   auto ret =
       decoders_.insert(std::make_pair(rtp_payload_type, std::move(info)));
   if (ret.second == false) {
@@ -139,14 +145,17 @@ int DecoderDatabase::InsertExternal(uint8_t rtp_payload_type,
   if (rtp_payload_type > 0x7F) {
     return kInvalidRtpPayloadType;
   }
-  if (!CodecSupported(codec_type)) {
-    return kCodecNotSupported;
-  }
   if (!decoder) {
     return kInvalidPointer;
   }
+
+  const auto opt_db_format =
+      acm2::RentACodec::NetEqDecoderToSdpAudioFormat(codec_type);
+  const SdpAudioFormat format = opt_db_format.value_or({"arbitrary", 0, 0});
+
   std::pair<DecoderMap::iterator, bool> ret;
-  DecoderInfo info(codec_type, codec_name, decoder);
+  DecoderInfo info(format, decoder);
+  info.name = codec_name;
   ret = decoders_.insert(std::make_pair(rtp_payload_type, std::move(info)));
   if (ret.second == false) {
     // Database already contains a decoder with type |rtp_payload_type|.
@@ -182,20 +191,7 @@ const DecoderDatabase::DecoderInfo* DecoderDatabase::GetDecoderInfo(
     // Decoder not found.
     return NULL;
   }
-  return &(*it).second;
-}
-
-uint8_t DecoderDatabase::GetRtpPayloadType(
-    NetEqDecoder codec_type) const {
-  DecoderMap::const_iterator it;
-  for (it = decoders_.begin(); it != decoders_.end(); ++it) {
-    if ((*it).second.codec_type == codec_type) {
-      // Match found.
-      return (*it).first;
-    }
-  }
-  // No match.
-  return kRtpPayloadTypeError;
+  return &it->second;
 }
 
 int DecoderDatabase::SetActiveDecoder(uint8_t rtp_payload_type,
@@ -264,10 +260,14 @@ AudioDecoder* DecoderDatabase::GetDecoder(uint8_t rtp_payload_type) const {
   return info ? info->GetDecoder() : nullptr;
 }
 
+bool DecoderDatabase::IsType(uint8_t rtp_payload_type, const char* name) const {
+  const DecoderInfo* info = GetDecoderInfo(rtp_payload_type);
+  return info && info->IsType(name);
+}
+
 bool DecoderDatabase::IsType(uint8_t rtp_payload_type,
-                             NetEqDecoder codec_type) const {
-  const DecoderInfo *info = GetDecoderInfo(rtp_payload_type);
-  return info && info->codec_type == codec_type;
+                             const std::string& name) const {
+  return IsType(rtp_payload_type, name.c_str());
 }
 
 bool DecoderDatabase::IsComfortNoise(uint8_t rtp_payload_type) const {
@@ -297,6 +297,5 @@ int DecoderDatabase::CheckPayloadTypes(const PacketList& packet_list) const {
   }
   return kOK;
 }
-
 
 }  // namespace webrtc

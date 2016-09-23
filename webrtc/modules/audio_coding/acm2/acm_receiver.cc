@@ -202,8 +202,7 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
 
   rtc::CritScope lock(&crit_sect_);
 
-  const SdpAudioFormat* const old_format =
-      neteq_->GetDecoderFormat(payload_type);
+  const auto old_format = neteq_->GetDecoderFormat(payload_type);
   if (old_format && new_format && *old_format == *new_format) {
     // Re-registering the same codec. Do nothing and return.
     return 0;

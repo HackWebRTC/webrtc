@@ -275,7 +275,7 @@ TEST_F(NetEqImplTest, InsertPacket) {
 
         *dec = std::move(mock_decoder);
       }));
-  DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderPCMu, "",
+  DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderPCMu,
                                     mock_decoder_factory);
 
   // Expectations for decoder database.
@@ -313,9 +313,6 @@ TEST_F(NetEqImplTest, InsertPacket) {
     // All expectations within this block must be called in this specific order.
     InSequence sequence;  // Dummy variable.
     // Expectations when the first packet is inserted.
-    EXPECT_CALL(*mock_delay_manager_,
-                LastDecoderType(NetEqDecoder::kDecoderPCMu))
-        .Times(1);
     EXPECT_CALL(*mock_delay_manager_, last_pack_cng_or_dtmf())
         .Times(2)
         .WillRepeatedly(Return(-1));
@@ -323,9 +320,6 @@ TEST_F(NetEqImplTest, InsertPacket) {
         .Times(1);
     EXPECT_CALL(*mock_delay_manager_, ResetPacketIatCount()).Times(1);
     // Expectations when the second packet is inserted. Slightly different.
-    EXPECT_CALL(*mock_delay_manager_,
-                LastDecoderType(NetEqDecoder::kDecoderPCMu))
-        .Times(1);
     EXPECT_CALL(*mock_delay_manager_, last_pack_cng_or_dtmf())
         .WillOnce(Return(0));
     EXPECT_CALL(*mock_delay_manager_, SetPacketAudioLength(30))

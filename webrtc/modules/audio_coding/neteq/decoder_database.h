@@ -41,13 +41,11 @@ class DecoderDatabase {
   // Class that stores decoder info in the database.
   class DecoderInfo {
    public:
-    DecoderInfo(
-        NetEqDecoder ct,
-        const std::string& nm,
-        AudioDecoderFactory* factory = nullptr);
-    DecoderInfo(NetEqDecoder ct,
-                const std::string& nm,
-                AudioDecoder* ext_dec);
+    explicit DecoderInfo(const SdpAudioFormat& audio_format,
+                         AudioDecoderFactory* factory = nullptr);
+    explicit DecoderInfo(NetEqDecoder ct,
+                         AudioDecoderFactory* factory = nullptr);
+    DecoderInfo(const SdpAudioFormat& audio_format, AudioDecoder* ext_dec);
     DecoderInfo(DecoderInfo&&);
     ~DecoderInfo();
 
@@ -64,25 +62,30 @@ class DecoderDatabase {
       return decoder ? decoder->SampleRateHz() : cng_decoder_->sample_rate_hz;
     }
 
-    const SdpAudioFormat* GetFormat() const {
-      return audio_format_ ? &*audio_format_ : nullptr;
-    }
+    const SdpAudioFormat& GetFormat() const { return audio_format_; }
 
-    // Returns true if |codec_type| is comfort noise.
+    // Returns true if the decoder's format is comfort noise.
     bool IsComfortNoise() const;
 
-    // Returns true if |codec_type| is DTMF.
+    // Returns true if the decoder's format is DTMF.
     bool IsDtmf() const;
 
-    // Returns true if |codec_type| is RED.
+    // Returns true if the decoder's format is RED.
     bool IsRed() const;
 
-    const NetEqDecoder codec_type;
-    const std::string name;
+    // Returns true if the decoder's format is named |name|.
+    bool IsType(const char* name) const;
+    // Returns true if the decoder's format is named |name|.
+    bool IsType(const std::string& name) const;
+
+    // TODO(ossu): |name| is kept here while we retain the old external decoder
+    //             interface. Remove this once using an AudioDecoderFactory has
+    //             supplanted the old functionality.
+    std::string name;
 
    private:
-    const rtc::Optional<SdpAudioFormat> audio_format_;
-    AudioDecoderFactory* factory_;
+    const SdpAudioFormat audio_format_;
+    AudioDecoderFactory* const factory_;
     mutable std::unique_ptr<AudioDecoder> decoder_;
 
     // Set iff this is an external decoder.
@@ -90,7 +93,7 @@ class DecoderDatabase {
 
     // Set iff this is a comfort noise decoder.
     struct CngDecoder {
-      static rtc::Optional<CngDecoder> Create(NetEqDecoder ct);
+      static rtc::Optional<CngDecoder> Create(const SdpAudioFormat& format);
       int sample_rate_hz;
     };
     const rtc::Optional<CngDecoder> cng_decoder_;
@@ -142,12 +145,6 @@ class DecoderDatabase {
   // no decoder is registered with that |rtp_payload_type|, NULL is returned.
   virtual const DecoderInfo* GetDecoderInfo(uint8_t rtp_payload_type) const;
 
-  // Returns one RTP payload type associated with |codec_type|, or
-  // kDecoderNotFound if no entry exists for that value. Note that one
-  // |codec_type| may be registered with several RTP payload types, and the
-  // method may return any of them.
-  virtual uint8_t GetRtpPayloadType(NetEqDecoder codec_type) const;
-
   // Sets the active decoder to be |rtp_payload_type|. If this call results in a
   // change of active decoder, |new_decoder| is set to true. The previous active
   // decoder's AudioDecoder object is deleted.
@@ -174,8 +171,11 @@ class DecoderDatabase {
   // object does not exist for that decoder, the object is created.
   AudioDecoder* GetDecoder(uint8_t rtp_payload_type) const;
 
-  // Returns true if |rtp_payload_type| is registered as a |codec_type|.
-  bool IsType(uint8_t rtp_payload_type, NetEqDecoder codec_type) const;
+  // Returns if |rtp_payload_type| is registered with a format named |name|.
+  bool IsType(uint8_t rtp_payload_type, const char* name) const;
+
+  // Returns if |rtp_payload_type| is registered with a format named |name|.
+  bool IsType(uint8_t rtp_payload_type, const std::string& name) const;
 
   // Returns true if |rtp_payload_type| is registered as comfort noise.
   bool IsComfortNoise(uint8_t rtp_payload_type) const;

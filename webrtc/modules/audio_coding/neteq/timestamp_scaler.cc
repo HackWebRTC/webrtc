@@ -45,12 +45,12 @@ uint32_t TimestampScaler::ToInternal(uint32_t external_timestamp,
   if (!(info->IsComfortNoise() || info->IsDtmf())) {
     // Do not change the timestamp scaling settings for DTMF or CNG.
     numerator_ = info->SampleRateHz();
-    if (info->codec_type == NetEqDecoder::kDecoderArbitrary) {
-      // We have no format mapping for "arbitrary" external codecs, so we cannot
-      // support timestamp scaling of them.
+    if (info->GetFormat().clockrate_hz == 0) {
+      // If the clockrate is invalid (i.e. with an old-style external codec)
+      // we cannot do any timestamp scaling.
       denominator_ = numerator_;
     } else {
-      denominator_ = info->GetFormat()->clockrate_hz;
+      denominator_ = info->GetFormat().clockrate_hz;
     }
   }
   if (numerator_ != denominator_) {
