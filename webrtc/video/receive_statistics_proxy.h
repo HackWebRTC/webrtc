@@ -45,7 +45,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
 
   void OnDecodedFrame();
   void OnSyncOffsetUpdated(int64_t sync_offset_ms);
-  void OnRenderedFrame(int width, int height);
+  void OnRenderedFrame(const VideoFrame& frame);
   void OnIncomingPayloadType(int payload_type);
   void OnDecoderImplementationName(const char* implementation_name);
   void OnIncomingRate(unsigned int framerate, unsigned int bitrate_bps);
@@ -120,6 +120,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   SampleCounter target_delay_counter_ GUARDED_BY(crit_);
   SampleCounter current_delay_counter_ GUARDED_BY(crit_);
   SampleCounter delay_counter_ GUARDED_BY(crit_);
+  SampleCounter e2e_delay_counter_ GUARDED_BY(crit_);
   ReportBlockStats report_block_stats_ GUARDED_BY(crit_);
   QpCounters qp_counters_;  // Only accessed on the decoding thread.
   std::map<uint32_t, StreamDataCounters> rtx_stats_ GUARDED_BY(crit_);

@@ -350,7 +350,7 @@ void VideoReceiveStream::OnFrame(const VideoFrame& video_frame) {
   config_.renderer->OnFrame(video_frame);
 
   // TODO(tommi): OnRenderFrame grabs a lock too.
-  stats_proxy_.OnRenderedFrame(video_frame.width(), video_frame.height());
+  stats_proxy_.OnRenderedFrame(video_frame);
 }
 
 // TODO(asapersson): Consider moving callback from video_encoder.h or

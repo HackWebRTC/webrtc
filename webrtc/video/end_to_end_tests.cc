@@ -2189,6 +2189,8 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
         (*receive_configs)[0].rtp.rtx[kFakeVideoSendPayloadType].payload_type =
             kSendRtxPayloadType;
       }
+      // RTT needed for RemoteNtpTimeEstimator for the receive stream.
+      (*receive_configs)[0].rtp.rtcp_xr.receiver_reference_time_report = true;
       encoder_config->content_type =
           screenshare_ ? VideoEncoderConfig::ContentType::kScreen
                        : VideoEncoderConfig::ContentType::kRealtimeVideo;
@@ -2287,6 +2289,7 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.CurrentDelayInMs"));
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.OnewayDelayInMs"));
 
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.EndToEndDelayInMs"));
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.RenderSqrtPixelsPerSecond"));
 
   EXPECT_EQ(1, metrics::NumSamples(video_prefix + "EncodeTimeInMs"));
