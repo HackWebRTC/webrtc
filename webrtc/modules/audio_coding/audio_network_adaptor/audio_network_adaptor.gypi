@@ -36,7 +36,7 @@
       ], # sources
       'conditions': [
         ['enable_protobuf==1', {
-          'dependencies': ['debug_dump_proto'],
+          'dependencies': ['ana_debug_dump_proto'],
           'defines': ['WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP'],
         }],
       ], # conditions
@@ -46,7 +46,7 @@
   'conditions': [
     ['enable_protobuf==1', {
       'targets': [
-        { 'target_name': 'debug_dump_proto',
+        { 'target_name': 'ana_debug_dump_proto',
           'type': 'static_library',
           'sources': ['debug_dump.proto',],
           'variables': {
