@@ -35,7 +35,6 @@
         'base/cpuid.h',
         'base/cryptoparams.h',
         'base/device.h',
-        'base/fakescreencapturerfactory.h',
         'base/hybriddataengine.h',
         'base/mediachannel.h',
         'base/mediacommon.h',
