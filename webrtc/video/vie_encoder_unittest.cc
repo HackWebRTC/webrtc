@@ -282,7 +282,7 @@ TEST_F(ViEEncoderTest, ConfigureEncoderTriggersOnEncoderConfigurationChanged) {
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
   // Capture a frame and wait for it to synchronize with the encoder thread.
-  vie_encoder_->IncomingCapturedFrame(CreateFrame(1, nullptr));
+  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
   sink_.WaitForEncodedFrame(1);
   EXPECT_EQ(1, sink_.number_of_reconfigurations());
 
@@ -292,7 +292,7 @@ TEST_F(ViEEncoderTest, ConfigureEncoderTriggersOnEncoderConfigurationChanged) {
   vie_encoder_->ConfigureEncoder(std::move(video_encoder_config), 1440);
 
   // Capture a frame and wait for it to synchronize with the encoder thread.
-  vie_encoder_->IncomingCapturedFrame(CreateFrame(2, nullptr));
+  video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
   sink_.WaitForEncodedFrame(2);
   EXPECT_EQ(2, sink_.number_of_reconfigurations());
   EXPECT_EQ(9999, sink_.last_min_transmit_bitrate());
