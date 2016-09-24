@@ -140,8 +140,6 @@
         }],
         ['OS!="ios" ', {
           'sources': [
-            'differ.cc',
-            'differ.h',
             'differ_block.cc',
             'differ_block.h',
             'screen_capturer_differ_wrapper.cc',

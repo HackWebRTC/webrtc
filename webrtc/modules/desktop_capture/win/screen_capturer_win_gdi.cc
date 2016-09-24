@@ -20,7 +20,6 @@
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_frame_win.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
-#include "webrtc/modules/desktop_capture/differ.h"
 #include "webrtc/modules/desktop_capture/mouse_cursor.h"
 #include "webrtc/modules/desktop_capture/win/cursor.h"
 #include "webrtc/modules/desktop_capture/win/desktop.h"
@@ -86,41 +85,13 @@ void ScreenCapturerWinGdi::Capture(const DesktopRegion& region) {
     return;
   }
 
-  const DesktopFrame* current_frame = queue_.current_frame();
-  const DesktopFrame* last_frame = queue_.previous_frame();
-  if (last_frame && last_frame->size().equals(current_frame->size())) {
-    // Make sure the differencer is set up correctly for these previous and
-    // current screens.
-    if (!differ_.get() ||
-        (differ_->width() != current_frame->size().width()) ||
-        (differ_->height() != current_frame->size().height()) ||
-        (differ_->bytes_per_row() != current_frame->stride())) {
-      differ_.reset(new Differ(current_frame->size().width(),
-                               current_frame->size().height(),
-                               DesktopFrame::kBytesPerPixel,
-                               current_frame->stride()));
-    }
-
-    // Calculate difference between the two last captured frames.
-    DesktopRegion region;
-    differ_->CalcDirtyRegion(last_frame->data(), current_frame->data(),
-                             &region);
-    helper_.InvalidateRegion(region);
-  } else {
-    // No previous frame is available, or the screen is resized. Invalidate the
-    // whole screen.
-    helper_.InvalidateScreen(current_frame->size());
-  }
-
-  helper_.set_size_most_recent(current_frame->size());
-
   // Emit the current frame.
   std::unique_ptr<DesktopFrame> frame = queue_.current_frame()->Share();
   frame->set_dpi(DesktopVector(
       GetDeviceCaps(desktop_dc_, LOGPIXELSX),
       GetDeviceCaps(desktop_dc_, LOGPIXELSY)));
-  frame->mutable_updated_region()->Clear();
-  helper_.TakeInvalidRegion(frame->mutable_updated_region());
+  frame->mutable_updated_region()->SetRect(
+      DesktopRect::MakeSize(frame->size()));
   frame->set_capture_time_ms(
       (rtc::TimeNanos() - capture_start_time_nanos) /
       rtc::kNumNanosecsPerMillisec);
@@ -212,8 +183,6 @@ void ScreenCapturerWinGdi::PrepareCaptureResources() {
 
     // Make sure the frame buffers will be reallocated.
     queue_.Reset();
-
-    helper_.ClearInvalidRegion();
   }
 }
 

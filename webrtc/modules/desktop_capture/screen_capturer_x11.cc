@@ -26,7 +26,6 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
-#include "webrtc/modules/desktop_capture/differ.h"
 #include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
 #include "webrtc/modules/desktop_capture/screen_capturer_differ_wrapper.h"
 #include "webrtc/modules/desktop_capture/screen_capturer_helper.h"
@@ -38,6 +37,12 @@ namespace webrtc {
 namespace {
 
 // A class to perform video frame capturing for Linux.
+//
+// If XDamage is used, this class sets DesktopFrame::updated_region() according
+// to the areas reported by XDamage. Otherwise this class does not detect
+// DesktopFrame::updated_region(), the field is always set to the entire frame
+// rectangle. ScreenCapturerDifferWrapper should be used if that functionality
+// is necessary.
 class ScreenCapturerLinux : public ScreenCapturer,
                             public SharedXDisplay::XEventHandler {
  public:
@@ -115,9 +120,6 @@ class ScreenCapturerLinux : public ScreenCapturer,
   // Invalid region from the previous capture. This is used to synchronize the
   // current with the last buffer used.
   DesktopRegion last_invalid_region_;
-
-  // |Differ| for use when polling for changes.
-  std::unique_ptr<Differ> differ_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCapturerLinux);
 };
@@ -253,16 +255,6 @@ void ScreenCapturerLinux::Capture(const DesktopRegion& region) {
             new BasicDesktopFrame(x_server_pixel_buffer_.window_size()))));
   }
 
-  // Refresh the Differ helper used by CaptureFrame(), if needed.
-  DesktopFrame* frame = queue_.current_frame();
-  if (!use_damage_ &&
-      (!differ_ || (differ_->width() != frame->size().width()) ||
-       (differ_->height() != frame->size().height()) ||
-       (differ_->bytes_per_row() != frame->stride()))) {
-    differ_.reset(new Differ(frame->size().width(), frame->size().height(),
-                             DesktopFrame::kBytesPerPixel, frame->stride()));
-  }
-
   std::unique_ptr<DesktopFrame> result = CaptureScreen();
   last_invalid_region_ = result->updated_region();
   result->set_capture_time_ms((rtc::TimeNanos() - capture_start_time_nanos) /
@@ -349,21 +341,7 @@ std::unique_ptr<DesktopFrame> ScreenCapturerLinux::CaptureScreen() {
     // screen-resolution change.  In either case, need a full-screen capture.
     DesktopRect screen_rect = DesktopRect::MakeSize(frame->size());
     x_server_pixel_buffer_.CaptureRect(screen_rect, frame.get());
-
-    if (queue_.previous_frame()) {
-      // Full-screen polling, so calculate the invalid rects here, based on the
-      // changed pixels between current and previous buffers.
-      RTC_DCHECK(differ_);
-      RTC_DCHECK(queue_.previous_frame()->data());
-      differ_->CalcDirtyRegion(queue_.previous_frame()->data(),
-                               frame->data(), updated_region);
-    } else {
-      // No previous buffer, so always invalidate the whole screen, whether
-      // or not DAMAGE is being used.  DAMAGE doesn't necessarily send a
-      // full-screen notification after a screen-resolution change, so
-      // this is done here.
-      updated_region->SetRect(screen_rect);
-    }
+    updated_region->SetRect(screen_rect);
   }
 
   return std::move(frame);

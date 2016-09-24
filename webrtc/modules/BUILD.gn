@@ -525,7 +525,6 @@ if (rtc_include_tests) {
       sources += [
         "desktop_capture/desktop_region_unittest.cc",
         "desktop_capture/differ_block_unittest.cc",
-        "desktop_capture/differ_unittest.cc",
       ]
     }
 
