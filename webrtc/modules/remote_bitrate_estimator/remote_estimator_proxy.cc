@@ -78,8 +78,6 @@ int64_t RemoteEstimatorProxy::TimeUntilNextProcess() {
 }
 
 void RemoteEstimatorProxy::Process() {
-  if (TimeUntilNextProcess() > 0)
-    return;
   last_process_time_ms_ = clock_->TimeInMilliseconds();
 
   bool more_to_build = true;
