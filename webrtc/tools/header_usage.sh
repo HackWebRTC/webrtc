@@ -18,6 +18,8 @@
 
 git ls-files '*.h' '*.hpp' | while read header ; do
   name="$(basename "${header}")"
-  count="$(git grep -l -F  "${name}" | wc -l)"
+  count="$(git grep -l -F  "${name}" \
+           | grep -v -e '\.gn' -e '\.gyp'  \
+           | wc -l)"
   echo "${count}" "${header}"
 done | sort -n
