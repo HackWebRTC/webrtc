@@ -381,10 +381,6 @@
           'HAVE_OPENSSL_SSL_H',
         ],
       },
-      'include_dirs': [
-        '../../third_party/jsoncpp/overrides/include',
-        '../../third_party/jsoncpp/source/include',
-      ],
       'conditions': [
         ['build_with_chromium==1', {
           'include_dirs': [

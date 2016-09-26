@@ -22,11 +22,6 @@ config("rtc_base_approved_all_dependent_config") {
 }
 
 config("rtc_base_config") {
-  include_dirs = [
-    "//third_party/jsoncpp/overrides/include",
-    "//third_party/jsoncpp/source/include",
-  ]
-
   defines = [
     "FEATURE_ENABLE_SSL",
     "LOGGING=1",
