@@ -1135,7 +1135,7 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
   RunBaseTest(&test);
 }
 
-TEST_F(VideoSendStreamTest, ChangingNetworkRoute) {
+TEST_F(VideoSendStreamTest, DISABLED_ChangingNetworkRoute) {
   class ChangingNetworkRouteTest : public test::EndToEndTest {
    public:
     const int kStartBitrateBps = 300000;
