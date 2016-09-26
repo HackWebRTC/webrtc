@@ -32,11 +32,6 @@ class AudioNetworkAdaptorImpl final : public AudioNetworkAdaptor {
 
   AudioNetworkAdaptorImpl(
       const Config& config,
-      std::unique_ptr<ControllerManager> controller_manager);
-
-  // Dependency injection for testing.
-  AudioNetworkAdaptorImpl(
-      const Config& config,
       std::unique_ptr<ControllerManager> controller_manager,
       std::unique_ptr<DebugDumpWriter> debug_dump_writer = nullptr);
 

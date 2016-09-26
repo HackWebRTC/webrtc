@@ -20,11 +20,6 @@ AudioNetworkAdaptorImpl::Config::~Config() = default;
 
 AudioNetworkAdaptorImpl::AudioNetworkAdaptorImpl(
     const Config& config,
-    std::unique_ptr<ControllerManager> controller_manager)
-    : AudioNetworkAdaptorImpl(config, std::move(controller_manager), nullptr) {}
-
-AudioNetworkAdaptorImpl::AudioNetworkAdaptorImpl(
-    const Config& config,
     std::unique_ptr<ControllerManager> controller_manager,
     std::unique_ptr<DebugDumpWriter> debug_dump_writer)
     : config_(config),
