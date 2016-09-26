@@ -373,10 +373,7 @@
                 # https://code.google.com/p/webrtc/issues/detail?id=4695
                 'WARNING_CFLAGS!': [
                   '-Wpartial-availability',
-                  # Hide the warning for SecRandomCopyBytes(), till we update
-                  # to upstream.
-                  # https://bugs.chromium.org/p/webrtc/issues/detail?id=6396
-                  '-Wno-unused-result'],
+                ],
               },
             }],
           ],
@@ -390,6 +387,10 @@
             'WARNING_CFLAGS': [
               '-Wno-deprecated-declarations',
               '-Wno-nonnull',
+              # Hide the warning for SecRandomCopyBytes(), till we update
+              # to upstream.
+              # https://bugs.chromium.org/p/webrtc/issues/detail?id=6396
+              '-Wno-unused-result',
             ],
           },
           'link_settings': {
