@@ -270,7 +270,6 @@ if (rtc_include_tests) {
       "audio_coding/acm2/audio_coding_module_unittest_oldapi.cc",
       "audio_coding/acm2/call_statistics_unittest.cc",
       "audio_coding/acm2/codec_manager_unittest.cc",
-      "audio_coding/acm2/initial_delay_manager_unittest.cc",
       "audio_coding/acm2/rent_a_codec_unittest.cc",
       "audio_coding/codecs/audio_decoder_factory_unittest.cc",
       "audio_coding/codecs/cng/audio_encoder_cng_unittest.cc",

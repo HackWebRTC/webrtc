@@ -180,8 +180,6 @@
         'acm2/call_statistics.h',
         'acm2/codec_manager.cc',
         'acm2/codec_manager.h',
-        'acm2/initial_delay_manager.cc',
-        'acm2/initial_delay_manager.h',
         'include/audio_coding_module.h',
         'include/audio_coding_module_typedefs.h',
       ],
