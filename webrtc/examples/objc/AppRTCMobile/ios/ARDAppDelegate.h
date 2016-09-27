@@ -10,7 +10,7 @@
 
 #import <UIKit/UIKit.h>
 
-// The main application class of the AppRTCDemo iOS app demonstrating
+// The main application class of the AppRTCMobile iOS app demonstrating
 // interoperability between the Objective C implementation of PeerConnection
 // and the appr.tc demo webapp.
 @interface ARDAppDelegate : NSObject <UIApplicationDelegate>

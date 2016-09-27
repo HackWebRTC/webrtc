@@ -7,9 +7,9 @@
   <key>CFBundleDevelopmentRegion</key>
   <string>en</string>
   <key>CFBundleDisplayName</key>
-  <string>AppRTCDemo</string>
+  <string>AppRTCMobile</string>
   <key>CFBundleExecutable</key>
-  <string>AppRTCDemo</string>
+  <string>AppRTCMobile</string>
   <key>CFBundleIcons</key>
   <dict>
     <key>CFBundlePrimaryIcon</key>
@@ -21,11 +21,11 @@
     </dict>
   </dict>
   <key>CFBundleIdentifier</key>
-  <string>com.google.AppRTCDemo</string>
+  <string>com.google.AppRTCMobile</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
-  <string>AppRTCDemo</string>
+  <string>AppRTCMobile</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>

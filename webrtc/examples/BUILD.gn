@@ -23,7 +23,7 @@ group("examples") {
   public_deps = []
 
   if (is_android) {
-    public_deps += [ ":AppRTCDemo" ]
+    public_deps += [ ":AppRTCMobile" ]
   }
   if (is_linux) {
     public_deps += [
@@ -37,13 +37,13 @@ group("examples") {
 }
 
 if (is_android) {
-  android_apk("AppRTCDemo") {
-    apk_name = "AppRTCDemo"
+  android_apk("AppRTCMobile") {
+    apk_name = "AppRTCMobile"
     android_manifest = "androidapp/AndroidManifest.xml"
 
     deps = [
-      ":AppRTCDemo_javalib",
-      ":AppRTCDemo_resources",
+      ":AppRTCMobile_javalib",
+      ":AppRTCMobile_resources",
       "//base:base_java",
       "//webrtc/base:base_java",
     ]
@@ -51,7 +51,7 @@ if (is_android) {
     shared_libraries = [ "//webrtc/api:libjingle_peerconnection_so" ]
   }
 
-  android_library("AppRTCDemo_javalib") {
+  android_library("AppRTCMobile_javalib") {
     java_files = [
       "androidapp/src/org/appspot/apprtc/AppRTCAudioManager.java",
       "androidapp/src/org/appspot/apprtc/AppRTCClient.java",
@@ -77,28 +77,28 @@ if (is_android) {
     ]
 
     deps = [
-      ":AppRTCDemo_resources",
+      ":AppRTCMobile_resources",
       "//webrtc/api:libjingle_peerconnection_java",
       "//webrtc/base:base_java",
       "//webrtc/examples/androidapp/third_party/autobanh:autobanh_java",
     ]
   }
 
-  android_resources("AppRTCDemo_resources") {
+  android_resources("AppRTCMobile_resources") {
     resource_dirs = [ "androidapp/res" ]
     custom_package = "org.appspot.apprtc"
   }
 
-  instrumentation_test_apk("AppRTCDemoTest") {
-    apk_name = "AppRTCDemoTest"
+  instrumentation_test_apk("AppRTCMobileTest") {
+    apk_name = "AppRTCMobileTest"
     android_manifest = "androidtests/AndroidManifest.xml"
 
     java_files = [ "androidtests/src/org/appspot/apprtc/test/PeerConnectionClientTest.java" ]
 
-    apk_under_test = ":AppRTCDemo"
+    apk_under_test = ":AppRTCMobile"
 
     deps = [
-      ":AppRTCDemo_javalib",
+      ":AppRTCMobile_javalib",
       "//webrtc/api:libjingle_peerconnection_java",
     ]
   }
@@ -118,13 +118,13 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
   }
 
   config("apprtc_common_config") {
-    include_dirs = [ "objc/AppRTCDemo/common" ]
+    include_dirs = [ "objc/AppRTCMobile/common" ]
   }
 
   rtc_static_library("apprtc_common") {
     sources = [
-      "objc/AppRTCDemo/common/ARDUtilities.h",
-      "objc/AppRTCDemo/common/ARDUtilities.m",
+      "objc/AppRTCMobile/common/ARDUtilities.h",
+      "objc/AppRTCMobile/common/ARDUtilities.m",
     ]
     configs += [
       ":warnings_config",
@@ -140,7 +140,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
   }
 
   config("apprtc_signaling_config") {
-    include_dirs = [ "objc/AppRTCDemo" ]
+    include_dirs = [ "objc/AppRTCMobile" ]
 
     # GN orders flags on a target before flags from configs. The default config
     # adds these flags so to cancel them out they need to come from a config and
@@ -156,40 +156,40 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
 
   rtc_static_library("apprtc_signaling") {
     sources = [
-      "objc/AppRTCDemo/ARDAppClient+Internal.h",
-      "objc/AppRTCDemo/ARDAppClient.h",
-      "objc/AppRTCDemo/ARDAppClient.m",
-      "objc/AppRTCDemo/ARDAppEngineClient.h",
-      "objc/AppRTCDemo/ARDAppEngineClient.m",
-      "objc/AppRTCDemo/ARDBitrateTracker.h",
-      "objc/AppRTCDemo/ARDBitrateTracker.m",
-      "objc/AppRTCDemo/ARDCEODTURNClient.h",
-      "objc/AppRTCDemo/ARDCEODTURNClient.m",
-      "objc/AppRTCDemo/ARDJoinResponse+Internal.h",
-      "objc/AppRTCDemo/ARDJoinResponse.h",
-      "objc/AppRTCDemo/ARDJoinResponse.m",
-      "objc/AppRTCDemo/ARDMessageResponse+Internal.h",
-      "objc/AppRTCDemo/ARDMessageResponse.h",
-      "objc/AppRTCDemo/ARDMessageResponse.m",
-      "objc/AppRTCDemo/ARDRoomServerClient.h",
-      "objc/AppRTCDemo/ARDSDPUtils.h",
-      "objc/AppRTCDemo/ARDSDPUtils.m",
-      "objc/AppRTCDemo/ARDSignalingChannel.h",
-      "objc/AppRTCDemo/ARDSignalingMessage.h",
-      "objc/AppRTCDemo/ARDSignalingMessage.m",
-      "objc/AppRTCDemo/ARDStatsBuilder.h",
-      "objc/AppRTCDemo/ARDStatsBuilder.m",
-      "objc/AppRTCDemo/ARDTURNClient.h",
-      "objc/AppRTCDemo/ARDWebSocketChannel.h",
-      "objc/AppRTCDemo/ARDWebSocketChannel.m",
-      "objc/AppRTCDemo/RTCIceCandidate+JSON.h",
-      "objc/AppRTCDemo/RTCIceCandidate+JSON.m",
-      "objc/AppRTCDemo/RTCIceServer+JSON.h",
-      "objc/AppRTCDemo/RTCIceServer+JSON.m",
-      "objc/AppRTCDemo/RTCMediaConstraints+JSON.h",
-      "objc/AppRTCDemo/RTCMediaConstraints+JSON.m",
-      "objc/AppRTCDemo/RTCSessionDescription+JSON.h",
-      "objc/AppRTCDemo/RTCSessionDescription+JSON.m",
+      "objc/AppRTCMobile/ARDAppClient+Internal.h",
+      "objc/AppRTCMobile/ARDAppClient.h",
+      "objc/AppRTCMobile/ARDAppClient.m",
+      "objc/AppRTCMobile/ARDAppEngineClient.h",
+      "objc/AppRTCMobile/ARDAppEngineClient.m",
+      "objc/AppRTCMobile/ARDBitrateTracker.h",
+      "objc/AppRTCMobile/ARDBitrateTracker.m",
+      "objc/AppRTCMobile/ARDCEODTURNClient.h",
+      "objc/AppRTCMobile/ARDCEODTURNClient.m",
+      "objc/AppRTCMobile/ARDJoinResponse+Internal.h",
+      "objc/AppRTCMobile/ARDJoinResponse.h",
+      "objc/AppRTCMobile/ARDJoinResponse.m",
+      "objc/AppRTCMobile/ARDMessageResponse+Internal.h",
+      "objc/AppRTCMobile/ARDMessageResponse.h",
+      "objc/AppRTCMobile/ARDMessageResponse.m",
+      "objc/AppRTCMobile/ARDRoomServerClient.h",
+      "objc/AppRTCMobile/ARDSDPUtils.h",
+      "objc/AppRTCMobile/ARDSDPUtils.m",
+      "objc/AppRTCMobile/ARDSignalingChannel.h",
+      "objc/AppRTCMobile/ARDSignalingMessage.h",
+      "objc/AppRTCMobile/ARDSignalingMessage.m",
+      "objc/AppRTCMobile/ARDStatsBuilder.h",
+      "objc/AppRTCMobile/ARDStatsBuilder.m",
+      "objc/AppRTCMobile/ARDTURNClient.h",
+      "objc/AppRTCMobile/ARDWebSocketChannel.h",
+      "objc/AppRTCMobile/ARDWebSocketChannel.m",
+      "objc/AppRTCMobile/RTCIceCandidate+JSON.h",
+      "objc/AppRTCMobile/RTCIceCandidate+JSON.m",
+      "objc/AppRTCMobile/RTCIceServer+JSON.h",
+      "objc/AppRTCMobile/RTCIceServer+JSON.m",
+      "objc/AppRTCMobile/RTCMediaConstraints+JSON.h",
+      "objc/AppRTCMobile/RTCMediaConstraints+JSON.m",
+      "objc/AppRTCMobile/RTCSessionDescription+JSON.h",
+      "objc/AppRTCMobile/RTCSessionDescription+JSON.m",
     ]
     configs += [
       "//build/config/compiler:enable_arc",
@@ -207,26 +207,26 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
   }
 
   if (is_ios) {
-    ios_app_bundle("AppRTCDemo") {
+    ios_app_bundle("AppRTCMobile") {
       sources = [
-        "objc/AppRTCDemo/ios/ARDAppDelegate.m",
-        "objc/AppRTCDemo/ios/ARDMainView.h",
-        "objc/AppRTCDemo/ios/ARDMainView.m",
-        "objc/AppRTCDemo/ios/ARDMainViewController.h",
-        "objc/AppRTCDemo/ios/ARDMainViewController.m",
-        "objc/AppRTCDemo/ios/ARDStatsView.h",
-        "objc/AppRTCDemo/ios/ARDStatsView.m",
-        "objc/AppRTCDemo/ios/ARDVideoCallView.h",
-        "objc/AppRTCDemo/ios/ARDVideoCallView.m",
-        "objc/AppRTCDemo/ios/ARDVideoCallViewController.h",
-        "objc/AppRTCDemo/ios/ARDVideoCallViewController.m",
-        "objc/AppRTCDemo/ios/AppRTCDemo-Prefix.pch",
-        "objc/AppRTCDemo/ios/UIImage+ARDUtilities.h",
-        "objc/AppRTCDemo/ios/UIImage+ARDUtilities.m",
-        "objc/AppRTCDemo/ios/main.m",
+        "objc/AppRTCMobile/ios/ARDAppDelegate.m",
+        "objc/AppRTCMobile/ios/ARDMainView.h",
+        "objc/AppRTCMobile/ios/ARDMainView.m",
+        "objc/AppRTCMobile/ios/ARDMainViewController.h",
+        "objc/AppRTCMobile/ios/ARDMainViewController.m",
+        "objc/AppRTCMobile/ios/ARDStatsView.h",
+        "objc/AppRTCMobile/ios/ARDStatsView.m",
+        "objc/AppRTCMobile/ios/ARDVideoCallView.h",
+        "objc/AppRTCMobile/ios/ARDVideoCallView.m",
+        "objc/AppRTCMobile/ios/ARDVideoCallViewController.h",
+        "objc/AppRTCMobile/ios/ARDVideoCallViewController.m",
+        "objc/AppRTCMobile/ios/AppRTCMobile-Prefix.pch",
+        "objc/AppRTCMobile/ios/UIImage+ARDUtilities.h",
+        "objc/AppRTCMobile/ios/UIImage+ARDUtilities.m",
+        "objc/AppRTCMobile/ios/main.m",
       ]
 
-      info_plist = "objc/AppRTCDemo/ios/Info.plist"
+      info_plist = "objc/AppRTCMobile/ios/Info.plist"
 
       configs += [
         "..:common_config",
@@ -236,7 +236,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       public_configs = [ "..:common_inherited_config" ]
 
       deps = [
-        ":AppRTCDemo_ios_bundle_data",
+        ":AppRTCMobile_ios_bundle_data",
         ":apprtc_common",
         ":apprtc_signaling",
       ]
@@ -246,21 +246,21 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       }
     }
 
-    bundle_data("AppRTCDemo_ios_bundle_data") {
+    bundle_data("AppRTCMobile_ios_bundle_data") {
       sources = [
-        "objc/AppRTCDemo/ios/resources/Roboto-Regular.ttf",
-        "objc/AppRTCDemo/ios/resources/iPhone5@2x.png",
-        "objc/AppRTCDemo/ios/resources/iPhone6@2x.png",
-        "objc/AppRTCDemo/ios/resources/iPhone6p@3x.png",
-        "objc/AppRTCDemo/ios/resources/ic_call_end_black_24dp.png",
-        "objc/AppRTCDemo/ios/resources/ic_call_end_black_24dp@2x.png",
-        "objc/AppRTCDemo/ios/resources/ic_clear_black_24dp.png",
-        "objc/AppRTCDemo/ios/resources/ic_clear_black_24dp@2x.png",
-        "objc/AppRTCDemo/ios/resources/ic_surround_sound_black_24dp.png",
-        "objc/AppRTCDemo/ios/resources/ic_surround_sound_black_24dp@2x.png",
-        "objc/AppRTCDemo/ios/resources/ic_switch_video_black_24dp.png",
-        "objc/AppRTCDemo/ios/resources/ic_switch_video_black_24dp@2x.png",
-        "objc/AppRTCDemo/ios/resources/mozart.mp3",
+        "objc/AppRTCMobile/ios/resources/Roboto-Regular.ttf",
+        "objc/AppRTCMobile/ios/resources/iPhone5@2x.png",
+        "objc/AppRTCMobile/ios/resources/iPhone6@2x.png",
+        "objc/AppRTCMobile/ios/resources/iPhone6p@3x.png",
+        "objc/AppRTCMobile/ios/resources/ic_call_end_black_24dp.png",
+        "objc/AppRTCMobile/ios/resources/ic_call_end_black_24dp@2x.png",
+        "objc/AppRTCMobile/ios/resources/ic_clear_black_24dp.png",
+        "objc/AppRTCMobile/ios/resources/ic_clear_black_24dp@2x.png",
+        "objc/AppRTCMobile/ios/resources/ic_surround_sound_black_24dp.png",
+        "objc/AppRTCMobile/ios/resources/ic_surround_sound_black_24dp@2x.png",
+        "objc/AppRTCMobile/ios/resources/ic_switch_video_black_24dp.png",
+        "objc/AppRTCMobile/ios/resources/ic_switch_video_black_24dp@2x.png",
+        "objc/AppRTCMobile/ios/resources/mozart.mp3",
         "objc/Icon.png",
       ]
       outputs = [
@@ -270,12 +270,12 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
   }
 
   if (is_mac) {
-    rtc_static_library("AppRTCDemo_app") {
+    rtc_static_library("AppRTCMobile_app") {
       sources = [
-        "objc/AppRTCDemo/mac/APPRTCAppDelegate.h",
-        "objc/AppRTCDemo/mac/APPRTCAppDelegate.m",
-        "objc/AppRTCDemo/mac/APPRTCViewController.h",
-        "objc/AppRTCDemo/mac/APPRTCViewController.m",
+        "objc/AppRTCMobile/mac/APPRTCAppDelegate.h",
+        "objc/AppRTCMobile/mac/APPRTCAppDelegate.m",
+        "objc/AppRTCMobile/mac/APPRTCViewController.h",
+        "objc/AppRTCMobile/mac/APPRTCViewController.m",
       ]
       configs += [
         "..:common_objc",
@@ -287,29 +287,29 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       ]
     }
 
-    mac_app_bundle("AppRTCDemo") {
-      output_name = "AppRTCDemo"
+    mac_app_bundle("AppRTCMobile") {
+      output_name = "AppRTCMobile"
 
       extra_substitutions = [ "MACOSX_DEPLOYMENT_TARGET=10.8" ]
 
       sources = [
-        "objc/AppRTCDemo/mac/main.m",
+        "objc/AppRTCMobile/mac/main.m",
       ]
 
       public_configs = [ "..:common_inherited_config" ]
 
-      info_plist = "objc/AppRTCDemo/mac/Info.plist"
+      info_plist = "objc/AppRTCMobile/mac/Info.plist"
 
       libs = [ "AppKit.framework" ]
 
       deps = [
-        ":AppRTCDemo_app",
+        ":AppRTCMobile_app",
       ]
     }
   }
 
   config("socketrocket_include_config") {
-    include_dirs = [ "objc/AppRTCDemo/third_party/SocketRocket" ]
+    include_dirs = [ "objc/AppRTCMobile/third_party/SocketRocket" ]
   }
 
   config("socketrocket_warning_config") {
@@ -340,8 +340,8 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
 
   rtc_static_library("socketrocket") {
     sources = [
-      "objc/AppRTCDemo/third_party/SocketRocket/SRWebSocket.h",
-      "objc/AppRTCDemo/third_party/SocketRocket/SRWebSocket.m",
+      "objc/AppRTCMobile/third_party/SocketRocket/SRWebSocket.h",
+      "objc/AppRTCMobile/third_party/SocketRocket/SRWebSocket.m",
     ]
     configs += [
       "//build/config/compiler:enable_arc",

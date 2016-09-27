@@ -9,8 +9,8 @@
  */
 
 //
-// Prefix header for all source files of the 'AppRTCDemo' target in the
-// 'AppRTCDemo' project
+// Prefix header for all source files of the 'AppRTCMobile' target in the
+// 'AppRTCMobile' project
 //
 
 #import <Availability.h>

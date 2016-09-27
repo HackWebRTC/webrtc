@@ -844,7 +844,7 @@ if (rtc_include_tests) {
       deps = [
         "//webrtc/api:libjingle_peerconnection_java",
         "//webrtc/api:libjingle_peerconnection_jni",
-        "//webrtc/examples:AppRTCDemo_javalib",
+        "//webrtc/examples:AppRTCMobile_javalib",
       ]
     }
   }
