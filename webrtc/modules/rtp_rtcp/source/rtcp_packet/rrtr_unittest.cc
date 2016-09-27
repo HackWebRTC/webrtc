@@ -30,7 +30,7 @@ static_assert(
 TEST(RtcpPacketRrtrTest, Create) {
   uint8_t buffer[Rrtr::kLength];
   Rrtr rrtr;
-  rrtr.WithNtp(NtpTime(kNtpSec, kNtpFrac));
+  rrtr.SetNtp(NtpTime(kNtpSec, kNtpFrac));
 
   rrtr.Create(buffer);
   EXPECT_EQ(0, memcmp(buffer, kBlock, kBlockSizeBytes));

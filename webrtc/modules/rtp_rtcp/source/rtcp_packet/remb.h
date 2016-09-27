@@ -25,6 +25,7 @@ class CommonHeader;
 class Remb : public Psfb {
  public:
   static constexpr uint8_t kFeedbackMessageType = 15;
+  static constexpr size_t kMaxNumberOfSsrcs = 0xff;
 
   Remb() : bitrate_bps_(0) {}
   ~Remb() override {}
@@ -32,9 +33,8 @@ class Remb : public Psfb {
   // Parse assumes header is already parsed and validated.
   bool Parse(const CommonHeader& packet);
 
-  bool AppliesTo(uint32_t ssrc);
-  bool AppliesToMany(const std::vector<uint32_t>& ssrcs);
-  void WithBitrateBps(uint64_t bitrate_bps) { bitrate_bps_ = bitrate_bps; }
+  bool SetSsrcs(std::vector<uint32_t> ssrcs);
+  void SetBitrateBps(uint64_t bitrate_bps) { bitrate_bps_ = bitrate_bps; }
 
   uint64_t bitrate_bps() const { return bitrate_bps_; }
   const std::vector<uint32_t>& ssrcs() const { return ssrcs_; }
@@ -50,11 +50,10 @@ class Remb : public Psfb {
   }
 
  private:
-  static constexpr size_t kMaxNumberOfSsrcs = 0xff;
   static constexpr uint32_t kUniqueIdentifier = 0x52454D42;  // 'R' 'E' 'M' 'B'.
 
   // Media ssrc is unused, shadow base class setter and getter.
-  void To(uint32_t);
+  void SetMediaSsrc(uint32_t);
   uint32_t media_ssrc() const;
 
   uint64_t bitrate_bps_;

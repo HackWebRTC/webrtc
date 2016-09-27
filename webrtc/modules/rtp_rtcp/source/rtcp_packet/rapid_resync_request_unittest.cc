@@ -39,8 +39,8 @@ TEST(RtcpPacketRapidResyncRequestTest, Parse) {
 
 TEST(RtcpPacketRapidResyncRequestTest, Create) {
   RapidResyncRequest rrr;
-  rrr.From(kSenderSsrc);
-  rrr.To(kRemoteSsrc);
+  rrr.SetSenderSsrc(kSenderSsrc);
+  rrr.SetMediaSsrc(kRemoteSsrc);
 
   rtc::Buffer packet = rrr.Build();
 

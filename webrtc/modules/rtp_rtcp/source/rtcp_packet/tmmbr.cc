@@ -71,7 +71,7 @@ bool Tmmbr::Parse(const CommonHeader& packet) {
   return true;
 }
 
-void Tmmbr::WithTmmbr(const TmmbItem& item) {
+void Tmmbr::AddTmmbr(const TmmbItem& item) {
   items_.push_back(item);
 }
 

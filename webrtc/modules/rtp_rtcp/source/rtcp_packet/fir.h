@@ -36,8 +36,8 @@ class Fir : public Psfb {
   // Parse assumes header is already parsed and validated.
   bool Parse(const CommonHeader& packet);
 
-  void WithRequestTo(uint32_t ssrc, uint8_t seq_num) {
-    items_.push_back(Request(ssrc, seq_num));
+  void AddRequestTo(uint32_t ssrc, uint8_t seq_num) {
+    items_.emplace_back(ssrc, seq_num);
   }
   const std::vector<Request>& requests() const { return items_; }
 
@@ -53,7 +53,7 @@ class Fir : public Psfb {
     return kHeaderLength + kCommonFeedbackLength + kFciLength * items_.size();
   }
   // SSRC of media source is not used in FIR packet. Shadow base functions.
-  void To(uint32_t ssrc);
+  void SetMediaSsrc(uint32_t ssrc);
   uint32_t media_ssrc() const;
 
   std::vector<Request> items_;

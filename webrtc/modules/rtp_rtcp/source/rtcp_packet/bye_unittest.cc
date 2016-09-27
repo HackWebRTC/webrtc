@@ -26,7 +26,7 @@ const uint32_t kCsrc2 = 0x33343536;
 
 TEST(RtcpPacketByeTest, CreateAndParseWithoutReason) {
   Bye bye;
-  bye.From(kSenderSsrc);
+  bye.SetSenderSsrc(kSenderSsrc);
 
   rtc::Buffer raw = bye.Build();
   Bye parsed_bye;
@@ -39,9 +39,8 @@ TEST(RtcpPacketByeTest, CreateAndParseWithoutReason) {
 
 TEST(RtcpPacketByeTest, CreateAndParseWithCsrcs) {
   Bye bye;
-  bye.From(kSenderSsrc);
-  EXPECT_TRUE(bye.WithCsrc(kCsrc1));
-  EXPECT_TRUE(bye.WithCsrc(kCsrc2));
+  bye.SetSenderSsrc(kSenderSsrc);
+  EXPECT_TRUE(bye.SetCsrcs({kCsrc1, kCsrc2}));
   EXPECT_TRUE(bye.reason().empty());
 
   rtc::Buffer raw = bye.Build();
@@ -57,10 +56,9 @@ TEST(RtcpPacketByeTest, CreateAndParseWithCsrcsAndAReason) {
   Bye bye;
   const std::string kReason = "Some Reason";
 
-  bye.From(kSenderSsrc);
-  EXPECT_TRUE(bye.WithCsrc(kCsrc1));
-  EXPECT_TRUE(bye.WithCsrc(kCsrc2));
-  bye.WithReason(kReason);
+  bye.SetSenderSsrc(kSenderSsrc);
+  EXPECT_TRUE(bye.SetCsrcs({kCsrc1, kCsrc2}));
+  bye.SetReason(kReason);
 
   rtc::Buffer raw = bye.Build();
   Bye parsed_bye;
@@ -73,20 +71,18 @@ TEST(RtcpPacketByeTest, CreateAndParseWithCsrcsAndAReason) {
 
 TEST(RtcpPacketByeTest, CreateWithTooManyCsrcs) {
   Bye bye;
-  bye.From(kSenderSsrc);
+  bye.SetSenderSsrc(kSenderSsrc);
   const int kMaxCsrcs = (1 << 5) - 2;  // 5 bit len, first item is sender SSRC.
-  for (int i = 0; i < kMaxCsrcs; ++i) {
-    EXPECT_TRUE(bye.WithCsrc(i));
-  }
-  EXPECT_FALSE(bye.WithCsrc(kMaxCsrcs));
+  EXPECT_TRUE(bye.SetCsrcs(std::vector<uint32_t>(kMaxCsrcs, kCsrc1)));
+  EXPECT_FALSE(bye.SetCsrcs(std::vector<uint32_t>(kMaxCsrcs + 1, kCsrc1)));
 }
 
 TEST(RtcpPacketByeTest, CreateAndParseWithAReason) {
   Bye bye;
   const std::string kReason = "Some Random Reason";
 
-  bye.From(kSenderSsrc);
-  bye.WithReason(kReason);
+  bye.SetSenderSsrc(kSenderSsrc);
+  bye.SetReason(kReason);
 
   rtc::Buffer raw = bye.Build();
   Bye parsed_bye;
@@ -103,8 +99,8 @@ TEST(RtcpPacketByeTest, CreateAndParseWithReasons) {
   for (size_t reminder = 0; reminder < 4; ++reminder) {
     const std::string kReason(4 + reminder, 'a' + reminder);
     Bye bye;
-    bye.From(kSenderSsrc);
-    bye.WithReason(kReason);
+    bye.SetSenderSsrc(kSenderSsrc);
+    bye.SetReason(kReason);
 
     rtc::Buffer raw = bye.Build();
     Bye parsed_bye;
@@ -125,7 +121,7 @@ TEST(RtcpPacketByeTest, ParseEmptyPacket) {
 
 TEST(RtcpPacketByeTest, ParseFailOnInvalidSrcCount) {
   Bye bye;
-  bye.From(kSenderSsrc);
+  bye.SetSenderSsrc(kSenderSsrc);
 
   rtc::Buffer raw = bye.Build();
   raw[0]++;  // Damage the packet: increase ssrc count by one.
@@ -136,8 +132,8 @@ TEST(RtcpPacketByeTest, ParseFailOnInvalidSrcCount) {
 
 TEST(RtcpPacketByeTest, ParseFailOnInvalidReasonLength) {
   Bye bye;
-  bye.From(kSenderSsrc);
-  bye.WithReason("18 characters long");
+  bye.SetSenderSsrc(kSenderSsrc);
+  bye.SetReason("18 characters long");
 
   rtc::Buffer raw = bye.Build();
   // Damage the packet: decrease payload size by 4 bytes

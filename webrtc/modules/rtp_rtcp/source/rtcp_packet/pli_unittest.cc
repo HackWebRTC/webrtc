@@ -40,8 +40,8 @@ TEST(RtcpPacketPliTest, Parse) {
 
 TEST(RtcpPacketPliTest, Create) {
   Pli pli;
-  pli.From(kSenderSsrc);
-  pli.To(kRemoteSsrc);
+  pli.SetSenderSsrc(kSenderSsrc);
+  pli.SetMediaSsrc(kRemoteSsrc);
 
   rtc::Buffer packet = pli.Build();
 

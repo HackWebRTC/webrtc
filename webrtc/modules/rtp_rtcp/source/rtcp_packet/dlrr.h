@@ -50,8 +50,8 @@ class Dlrr {
   void Create(uint8_t* buffer) const;
 
   // Max 100 DLRR Items can be added per DLRR report block.
-  bool WithDlrrItem(const ReceiveTimeInfo& time_info);
-  bool WithDlrrItem(uint32_t ssrc, uint32_t last_rr, uint32_t delay_last_rr);
+  bool AddDlrrItem(const ReceiveTimeInfo& time_info);
+  bool AddDlrrItem(uint32_t ssrc, uint32_t last_rr, uint32_t delay_last_rr);
 
   const std::vector<ReceiveTimeInfo>& sub_blocks() const { return sub_blocks_; }
 

@@ -49,8 +49,8 @@ TEST(RtcpPacketFirTest, Parse) {
 
 TEST(RtcpPacketFirTest, Create) {
   Fir fir;
-  fir.From(kSenderSsrc);
-  fir.WithRequestTo(kRemoteSsrc, kSeqNr);
+  fir.SetSenderSsrc(kSenderSsrc);
+  fir.AddRequestTo(kRemoteSsrc, kSeqNr);
 
   rtc::Buffer packet = fir.Build();
 
@@ -60,9 +60,9 @@ TEST(RtcpPacketFirTest, Create) {
 
 TEST(RtcpPacketFirTest, TwoFciEntries) {
   Fir fir;
-  fir.From(kSenderSsrc);
-  fir.WithRequestTo(kRemoteSsrc, kSeqNr);
-  fir.WithRequestTo(kRemoteSsrc + 1, kSeqNr + 1);
+  fir.SetSenderSsrc(kSenderSsrc);
+  fir.AddRequestTo(kRemoteSsrc, kSeqNr);
+  fir.AddRequestTo(kRemoteSsrc + 1, kSeqNr + 1);
 
   rtc::Buffer packet = fir.Build();
   Fir parsed;

@@ -76,7 +76,7 @@ void ReportBlock::Create(uint8_t* buffer) const {
   ByteWriter<uint32_t>::WriteBigEndian(&buffer[20], delay_since_last_sr());
 }
 
-bool ReportBlock::WithCumulativeLost(uint32_t cumulative_lost) {
+bool ReportBlock::SetCumulativeLost(uint32_t cumulative_lost) {
   if (cumulative_lost >= (1u << 24)) {  // Have only 3 bytes to store it.
     LOG(LS_WARNING) << "Cumulative lost is too big to fit into Report Block";
     return false;

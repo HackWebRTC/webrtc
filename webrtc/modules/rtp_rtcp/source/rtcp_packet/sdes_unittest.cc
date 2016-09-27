@@ -39,7 +39,7 @@ TEST(RtcpPacketSdesTest, CreateAndParseWithOneChunk) {
   const std::string kCname = "alice@host";
 
   Sdes sdes;
-  EXPECT_TRUE(sdes.WithCName(kSenderSsrc, kCname));
+  EXPECT_TRUE(sdes.AddCName(kSenderSsrc, kCname));
 
   rtc::Buffer packet = sdes.Build();
   Sdes sdes_parsed;
@@ -53,12 +53,12 @@ TEST(RtcpPacketSdesTest, CreateAndParseWithOneChunk) {
 
 TEST(RtcpPacketSdesTest, CreateAndParseWithMultipleChunks) {
   Sdes sdes;
-  EXPECT_TRUE(sdes.WithCName(kSenderSsrc + 0, "a"));
-  EXPECT_TRUE(sdes.WithCName(kSenderSsrc + 1, "ab"));
-  EXPECT_TRUE(sdes.WithCName(kSenderSsrc + 2, "abc"));
-  EXPECT_TRUE(sdes.WithCName(kSenderSsrc + 3, "abcd"));
-  EXPECT_TRUE(sdes.WithCName(kSenderSsrc + 4, "abcde"));
-  EXPECT_TRUE(sdes.WithCName(kSenderSsrc + 5, "abcdef"));
+  EXPECT_TRUE(sdes.AddCName(kSenderSsrc + 0, "a"));
+  EXPECT_TRUE(sdes.AddCName(kSenderSsrc + 1, "ab"));
+  EXPECT_TRUE(sdes.AddCName(kSenderSsrc + 2, "abc"));
+  EXPECT_TRUE(sdes.AddCName(kSenderSsrc + 3, "abcd"));
+  EXPECT_TRUE(sdes.AddCName(kSenderSsrc + 4, "abcde"));
+  EXPECT_TRUE(sdes.AddCName(kSenderSsrc + 5, "abcdef"));
 
   rtc::Buffer packet = sdes.Build();
   Sdes parsed;
@@ -76,14 +76,14 @@ TEST(RtcpPacketSdesTest, CreateWithTooManyChunks) {
     uint32_t ssrc = kSenderSsrc + i;
     std::ostringstream oss;
     oss << "cname" << i;
-    EXPECT_TRUE(sdes.WithCName(ssrc, oss.str()));
+    EXPECT_TRUE(sdes.AddCName(ssrc, oss.str()));
   }
-  EXPECT_FALSE(sdes.WithCName(kSenderSsrc + kMaxChunks, "foo"));
+  EXPECT_FALSE(sdes.AddCName(kSenderSsrc + kMaxChunks, "foo"));
 }
 
 TEST(RtcpPacketSdesTest, CreateAndParseCnameItemWithEmptyString) {
   Sdes sdes;
-  EXPECT_TRUE(sdes.WithCName(kSenderSsrc, ""));
+  EXPECT_TRUE(sdes.AddCName(kSenderSsrc, ""));
 
   rtc::Buffer packet = sdes.Build();
   Sdes parsed;
@@ -224,7 +224,7 @@ TEST(RtcpPacketSdesTest, ParsedSdesCanBeReusedForBuilding) {
   Sdes source;
   const std::string kAlice = "alice@host";
   const std::string kBob = "bob@host";
-  source.WithCName(kSenderSsrc, kAlice);
+  source.AddCName(kSenderSsrc, kAlice);
 
   rtc::Buffer packet1 = source.Build();
   Sdes middle;
@@ -232,7 +232,7 @@ TEST(RtcpPacketSdesTest, ParsedSdesCanBeReusedForBuilding) {
 
   EXPECT_EQ(source.BlockLength(), middle.BlockLength());
 
-  middle.WithCName(kSenderSsrc + 1, kBob);
+  middle.AddCName(kSenderSsrc + 1, kBob);
 
   rtc::Buffer packet2 = middle.Build();
   Sdes destination;

@@ -30,8 +30,8 @@ class Rpsi : public Psfb {
   // Parse assumes header is already parsed and validated.
   bool Parse(const CommonHeader& packet);
 
-  void WithPayloadType(uint8_t payload);
-  void WithPictureId(uint64_t picture_id);
+  void SetPayloadType(uint8_t payload);
+  void SetPictureId(uint64_t picture_id);
 
   uint8_t payload_type() const { return payload_type_; }
   uint64_t picture_id() const { return picture_id_; }

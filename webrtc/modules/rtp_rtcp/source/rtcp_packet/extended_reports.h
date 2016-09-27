@@ -34,12 +34,12 @@ class ExtendedReports : public RtcpPacket {
   // Parse assumes header is already parsed and validated.
   bool Parse(const CommonHeader& packet);
 
-  void From(uint32_t ssrc) { sender_ssrc_ = ssrc; }
+  void SetSenderSsrc(uint32_t ssrc) { sender_ssrc_ = ssrc; }
 
   // Max 50 items of each of {Rrtr, Dlrr, VoipMetric} allowed per Xr.
-  bool WithRrtr(const Rrtr& rrtr);
-  bool WithDlrr(const Dlrr& dlrr);
-  bool WithVoipMetric(const VoipMetric& voip_metric);
+  bool AddRrtr(const Rrtr& rrtr);
+  bool AddDlrr(const Dlrr& dlrr);
+  bool AddVoipMetric(const VoipMetric& voip_metric);
 
   uint32_t sender_ssrc() const { return sender_ssrc_; }
   const std::vector<Rrtr>& rrtrs() const { return rrtr_blocks_; }

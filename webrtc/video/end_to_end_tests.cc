@@ -531,10 +531,10 @@ TEST_F(EndToEndTest, ReceivesNackAndRetransmitsAudio) {
       } else {
         // Send a NACK as often as necessary until retransmission is received.
         rtcp::Nack nack;
-        nack.From(local_ssrc_);
-        nack.To(remote_ssrc_);
+        nack.SetSenderSsrc(local_ssrc_);
+        nack.SetMediaSsrc(remote_ssrc_);
         uint16_t nack_list[] = {*sequence_number_to_retransmit_};
-        nack.WithList(nack_list, 1);
+        nack.SetPacketIds(nack_list, 1);
         rtc::Buffer buffer = nack.Build();
 
         EXPECT_TRUE(receive_transport_->SendRtcp(buffer.data(), buffer.size()));
