@@ -66,7 +66,6 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
                selector:@selector(handleRouteChangeNotification:)
                    name:AVAudioSessionRouteChangeNotification
                  object:nil];
-    // TODO(tkchin): Maybe listen to SilenceSecondaryAudioHintNotification.
     [center addObserver:self
                selector:@selector(handleMediaServicesWereLost:)
                    name:AVAudioSessionMediaServicesWereLostNotification
@@ -74,6 +73,13 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
     [center addObserver:self
                selector:@selector(handleMediaServicesWereReset:)
                    name:AVAudioSessionMediaServicesWereResetNotification
+                 object:nil];
+    // Posted on the main thread when the primary audio from other applications
+    // starts and stops. Foreground applications may use this notification as a
+    // hint to enable or disable audio that is secondary.
+    [center addObserver:self
+               selector:@selector(handleSilenceSecondaryAudioHintNotification:)
+                   name:AVAudioSessionSilenceSecondaryAudioHintNotification
                  object:nil];
     // Also track foreground event in order to deal with interruption ended situation.
     [center addObserver:self
@@ -514,6 +520,24 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
   RTCLog(@"Media services were reset.");
   [self updateAudioSessionAfterEvent];
   [self notifyMediaServicesWereReset];
+}
+
+- (void)handleSilenceSecondaryAudioHintNotification:(NSNotification *)notification {
+  // TODO(henrika): just adding logs here for now until we know if we are ever
+  // see this notification and might be affected by it or if further actions
+  // are required.
+  NSNumber *typeNumber =
+      notification.userInfo[AVAudioSessionSilenceSecondaryAudioHintTypeKey];
+  AVAudioSessionSilenceSecondaryAudioHintType type =
+      (AVAudioSessionSilenceSecondaryAudioHintType)typeNumber.unsignedIntegerValue;
+  switch (type) {
+    case AVAudioSessionSilenceSecondaryAudioHintTypeBegin:
+      RTCLog(@"Another application's primary audio has started.");
+      break;
+    case AVAudioSessionSilenceSecondaryAudioHintTypeEnd:
+      RTCLog(@"Another application's primary audio has stopped.");
+      break;
+  }
 }
 
 - (void)handleApplicationDidBecomeActive:(NSNotification *)notification {
