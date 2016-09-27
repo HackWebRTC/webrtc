@@ -7,7 +7,7 @@
     "GYP_DEFINES and gn_args in this file are only used during runhooks; ",
     "webrtc/build/mb_config.pyl decides the generated projects that are compiled."
   ],
-  "xcode version": "7.0",
+  "xcode version": "8.0",
   "GYP_DEFINES": [
     "use_goma=1",
     "gomadir=$(goma_dir)",
