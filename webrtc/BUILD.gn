@@ -240,8 +240,11 @@ config("common_objc") {
 }
 
 if (!is_ios || !build_with_chromium) {
-  rtc_source_set("webrtc") {
+  rtc_static_library("webrtc") {
     sources = [
+      # TODO(kjellander): Remove this whenever possible. GN's static_library
+      # target type requires at least one object to avoid errors linking.
+      "build/no_op_function.cc",
       "call.h",
       "config.h",
       "transport.h",
