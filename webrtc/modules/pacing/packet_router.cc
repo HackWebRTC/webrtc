@@ -99,7 +99,7 @@ uint16_t PacketRouter::AllocateSequenceNumber() {
 bool PacketRouter::SendFeedback(rtcp::TransportFeedback* packet) {
   rtc::CritScope cs(&modules_crit_);
   for (auto* rtp_module : rtp_modules_) {
-    packet->WithPacketSenderSsrc(rtp_module->SSRC());
+    packet->SetSenderSsrc(rtp_module->SSRC());
     if (rtp_module->SendFeedbackPacket(*packet))
       return true;
   }

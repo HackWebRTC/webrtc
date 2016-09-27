@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/bye.h"
 
+#include <utility>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
@@ -109,18 +111,18 @@ bool Bye::Create(uint8_t* packet,
   return true;
 }
 
-bool Bye::WithCsrc(uint32_t csrc) {
-  if (csrcs_.size() >= kMaxNumberOfCsrcs) {
-    LOG(LS_WARNING) << "Max CSRC size reached.";
+bool Bye::SetCsrcs(std::vector<uint32_t> csrcs) {
+  if (csrcs.size() > kMaxNumberOfCsrcs) {
+    LOG(LS_WARNING) << "Too many CSRCs for Bye packet.";
     return false;
   }
-  csrcs_.push_back(csrc);
+  csrcs_ = std::move(csrcs);
   return true;
 }
 
-void Bye::WithReason(const std::string& reason) {
+void Bye::SetReason(std::string reason) {
   RTC_DCHECK_LE(reason.size(), 0xffu);
-  reason_ = reason;
+  reason_ = std::move(reason);
 }
 
 size_t Bye::BlockLength() const {

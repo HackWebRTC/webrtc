@@ -57,9 +57,9 @@ constexpr uint8_t kTooSmallPacket[] = {
 
 TEST(RtcpPacketNackTest, Create) {
   Nack nack;
-  nack.From(kSenderSsrc);
-  nack.To(kRemoteSsrc);
-  nack.WithList(kList, kListLength);
+  nack.SetSenderSsrc(kSenderSsrc);
+  nack.SetMediaSsrc(kRemoteSsrc);
+  nack.SetPacketIds(kList, kListLength);
 
   rtc::Buffer packet = nack.Build();
 
@@ -79,9 +79,9 @@ TEST(RtcpPacketNackTest, Parse) {
 
 TEST(RtcpPacketNackTest, CreateWrap) {
   Nack nack;
-  nack.From(kSenderSsrc);
-  nack.To(kRemoteSsrc);
-  nack.WithList(kWrapList, kWrapListLength);
+  nack.SetSenderSsrc(kSenderSsrc);
+  nack.SetMediaSsrc(kRemoteSsrc);
+  nack.SetPacketIds(kWrapList, kWrapListLength);
 
   rtc::Buffer packet = nack.Build();
 
@@ -104,9 +104,9 @@ TEST(RtcpPacketNackTest, BadOrder) {
   const size_t kUnorderedListLength =
       sizeof(kUnorderedList) / sizeof(kUnorderedList[0]);
   Nack nack;
-  nack.From(kSenderSsrc);
-  nack.To(kRemoteSsrc);
-  nack.WithList(kUnorderedList, kUnorderedListLength);
+  nack.SetSenderSsrc(kSenderSsrc);
+  nack.SetMediaSsrc(kRemoteSsrc);
+  nack.SetPacketIds(kUnorderedList, kUnorderedListLength);
 
   rtc::Buffer packet = nack.Build();
 
@@ -122,9 +122,9 @@ TEST(RtcpPacketNackTest, CreateFragmented) {
   Nack nack;
   const uint16_t kList[] = {1, 100, 200, 300, 400};
   const uint16_t kListLength = sizeof(kList) / sizeof(kList[0]);
-  nack.From(kSenderSsrc);
-  nack.To(kRemoteSsrc);
-  nack.WithList(kList, kListLength);
+  nack.SetSenderSsrc(kSenderSsrc);
+  nack.SetMediaSsrc(kRemoteSsrc);
+  nack.SetPacketIds(kList, kListLength);
 
   class MockPacketReadyCallback : public rtcp::RtcpPacket::PacketReadyCallback {
    public:
@@ -156,9 +156,9 @@ TEST(RtcpPacketNackTest, CreateFailsWithTooSmallBuffer) {
   const uint16_t kList[] = {1};
   const size_t kMinNackBlockSize = 16;
   Nack nack;
-  nack.From(kSenderSsrc);
-  nack.To(kRemoteSsrc);
-  nack.WithList(kList, 1);
+  nack.SetSenderSsrc(kSenderSsrc);
+  nack.SetMediaSsrc(kRemoteSsrc);
+  nack.SetPacketIds(kList, 1);
   class Verifier : public rtcp::RtcpPacket::PacketReadyCallback {
    public:
     void OnPacketReady(uint8_t* data, size_t length) override {

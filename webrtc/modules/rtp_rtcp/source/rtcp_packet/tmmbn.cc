@@ -70,7 +70,7 @@ bool Tmmbn::Parse(const CommonHeader& packet) {
   return true;
 }
 
-void Tmmbn::WithTmmbr(const TmmbItem& item) {
+void Tmmbn::AddTmmbr(const TmmbItem& item) {
   items_.push_back(item);
 }
 

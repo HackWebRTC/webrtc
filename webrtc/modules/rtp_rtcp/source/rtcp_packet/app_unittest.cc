@@ -53,9 +53,9 @@ constexpr uint8_t kPacketWithUnalignedPayload[] = {
 
 TEST(RtcpPacketAppTest, CreateWithoutData) {
   App app;
-  app.From(kSenderSsrc);
-  app.WithSubType(kSubtype);
-  app.WithName(kName);
+  app.SetSsrc(kSenderSsrc);
+  app.SetSubType(kSubtype);
+  app.SetName(kName);
 
   rtc::Buffer raw = app.Build();
 
@@ -75,10 +75,10 @@ TEST(RtcpPacketAppTest, ParseWithoutData) {
 
 TEST(RtcpPacketAppTest, CreateWithData) {
   App app;
-  app.From(kSenderSsrc);
-  app.WithSubType(kSubtype);
-  app.WithName(kName);
-  app.WithData(kData, sizeof(kData));
+  app.SetSsrc(kSenderSsrc);
+  app.SetSubType(kSubtype);
+  app.SetName(kName);
+  app.SetData(kData, sizeof(kData));
 
   rtc::Buffer raw = app.Build();
 

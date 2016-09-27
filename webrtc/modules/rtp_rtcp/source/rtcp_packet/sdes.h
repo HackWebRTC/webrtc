@@ -36,7 +36,7 @@ class Sdes : public RtcpPacket {
   // Parse assumes header is already parsed and validated.
   bool Parse(const CommonHeader& packet);
 
-  bool WithCName(uint32_t ssrc, const std::string& cname);
+  bool AddCName(uint32_t ssrc, std::string cname);
 
   const std::vector<Chunk>& chunks() const { return chunks_; }
 

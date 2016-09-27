@@ -21,16 +21,16 @@ namespace rtcp {
 //
 //  Example:
 //  ReportBlock report_block;
-//  report_block.To(234);
-//  report_block.WithFractionLost(10);
+//  report_block.SetMediaSsrc(234);
+//  report_block.SetFractionLost(10);
 //
 //  ReceiverReport rr;
-//  rr.From(123);
-//  rr.WithReportBlock(report_block);
+//  rr.SetSenderSsrc(123);
+//  rr.AddReportBlock(report_block);
 //
 //  Fir fir;
-//  fir.From(123);
-//  fir.WithRequestTo(234, 56);
+//  fir.SetSenderSsrc(123);
+//  fir.AddRequestTo(234, 56);
 //
 //  size_t length = 0;                     // Builds an intra frame request
 //  uint8_t packet[kPacketSize];           // with sequence number 56.

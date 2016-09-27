@@ -125,12 +125,12 @@ TEST_F(TransportFeedbackAdapterTest, AdaptsFeedbackAndPopulatesSendTimes) {
     OnSentPacket(packet);
 
   rtcp::TransportFeedback feedback;
-  feedback.WithBase(packets[0].sequence_number,
-                    packets[0].arrival_time_ms * 1000);
+  feedback.SetBase(packets[0].sequence_number,
+                   packets[0].arrival_time_ms * 1000);
 
   for (const PacketInfo& packet : packets) {
-    EXPECT_TRUE(feedback.WithReceivedPacket(packet.sequence_number,
-                                            packet.arrival_time_ms * 1000));
+    EXPECT_TRUE(feedback.AddReceivedPacket(packet.sequence_number,
+                                           packet.arrival_time_ms * 1000));
   }
 
   feedback.Build();
@@ -161,13 +161,13 @@ TEST_F(TransportFeedbackAdapterTest, HandlesDroppedPackets) {
   }
 
   rtcp::TransportFeedback feedback;
-  feedback.WithBase(packets[0].sequence_number,
-                    packets[0].arrival_time_ms * 1000);
+  feedback.SetBase(packets[0].sequence_number,
+                   packets[0].arrival_time_ms * 1000);
 
   for (const PacketInfo& packet : packets) {
     if (packet.sequence_number <= kReceiveSideDropAfter) {
-      EXPECT_TRUE(feedback.WithReceivedPacket(packet.sequence_number,
-                                              packet.arrival_time_ms * 1000));
+      EXPECT_TRUE(feedback.AddReceivedPacket(packet.sequence_number,
+                                             packet.arrival_time_ms * 1000));
     }
   }
 
@@ -204,11 +204,11 @@ TEST_F(TransportFeedbackAdapterTest, SendTimeWrapsBothWays) {
   for (size_t i = 0; i < packets.size(); ++i) {
     std::unique_ptr<rtcp::TransportFeedback> feedback(
         new rtcp::TransportFeedback());
-    feedback->WithBase(packets[i].sequence_number,
-                       packets[i].arrival_time_ms * 1000);
+    feedback->SetBase(packets[i].sequence_number,
+                      packets[i].arrival_time_ms * 1000);
 
-    EXPECT_TRUE(feedback->WithReceivedPacket(
-        packets[i].sequence_number, packets[i].arrival_time_ms * 1000));
+    EXPECT_TRUE(feedback->AddReceivedPacket(packets[i].sequence_number,
+                                            packets[i].arrival_time_ms * 1000));
 
     rtc::Buffer raw_packet = feedback->Build();
     feedback = rtcp::TransportFeedback::ParseFrom(raw_packet.data(),
@@ -241,12 +241,12 @@ TEST_F(TransportFeedbackAdapterTest, HandlesReordering) {
     OnSentPacket(packet);
 
   rtcp::TransportFeedback feedback;
-  feedback.WithBase(packets[0].sequence_number,
-                    packets[0].arrival_time_ms * 1000);
+  feedback.SetBase(packets[0].sequence_number,
+                   packets[0].arrival_time_ms * 1000);
 
   for (const PacketInfo& packet : packets) {
-    EXPECT_TRUE(feedback.WithReceivedPacket(packet.sequence_number,
-                                            packet.arrival_time_ms * 1000));
+    EXPECT_TRUE(feedback.AddReceivedPacket(packet.sequence_number,
+                                           packet.arrival_time_ms * 1000));
   }
 
   feedback.Build();
@@ -310,15 +310,15 @@ TEST_F(TransportFeedbackAdapterTest, TimestampDeltas) {
   // Create expected feedback and send into adapter.
   std::unique_ptr<rtcp::TransportFeedback> feedback(
       new rtcp::TransportFeedback());
-  feedback->WithBase(sent_packets[0].sequence_number,
-                     sent_packets[0].arrival_time_ms * 1000);
+  feedback->SetBase(sent_packets[0].sequence_number,
+                    sent_packets[0].arrival_time_ms * 1000);
 
   for (const PacketInfo& packet : sent_packets) {
-    EXPECT_TRUE(feedback->WithReceivedPacket(packet.sequence_number,
-                                             packet.arrival_time_ms * 1000));
+    EXPECT_TRUE(feedback->AddReceivedPacket(packet.sequence_number,
+                                            packet.arrival_time_ms * 1000));
   }
-  EXPECT_FALSE(feedback->WithReceivedPacket(info.sequence_number,
-                                            info.arrival_time_ms * 1000));
+  EXPECT_FALSE(feedback->AddReceivedPacket(info.sequence_number,
+                                           info.arrival_time_ms * 1000));
 
   rtc::Buffer raw_packet = feedback->Build();
   feedback =
@@ -338,9 +338,9 @@ TEST_F(TransportFeedbackAdapterTest, TimestampDeltas) {
 
   // Create a new feedback message and add the trailing item.
   feedback.reset(new rtcp::TransportFeedback());
-  feedback->WithBase(info.sequence_number, info.arrival_time_ms * 1000);
-  EXPECT_TRUE(feedback->WithReceivedPacket(info.sequence_number,
-                                           info.arrival_time_ms * 1000));
+  feedback->SetBase(info.sequence_number, info.arrival_time_ms * 1000);
+  EXPECT_TRUE(feedback->AddReceivedPacket(info.sequence_number,
+                                          info.arrival_time_ms * 1000));
   raw_packet = feedback->Build();
   feedback =
       rtcp::TransportFeedback::ParseFrom(raw_packet.data(), raw_packet.size());

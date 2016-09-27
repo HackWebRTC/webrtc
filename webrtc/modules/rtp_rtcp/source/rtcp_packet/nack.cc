@@ -121,7 +121,7 @@ size_t Nack::BlockLength() const {
          packed_.size() * kNackItemLength;
 }
 
-void Nack::WithList(const uint16_t* nack_list, size_t length) {
+void Nack::SetPacketIds(const uint16_t* nack_list, size_t length) {
   RTC_DCHECK(nack_list);
   RTC_DCHECK(packet_ids_.empty());
   RTC_DCHECK(packed_.empty());

@@ -35,8 +35,8 @@ const uint8_t kPacket[] = {0x83,  205, 0x00, 0x04,
 
 TEST(RtcpPacketTmmbrTest, Create) {
   Tmmbr tmmbr;
-  tmmbr.From(kSenderSsrc);
-  tmmbr.WithTmmbr(TmmbItem(kRemoteSsrc, kBitrateBps, kOverhead));
+  tmmbr.SetSenderSsrc(kSenderSsrc);
+  tmmbr.AddTmmbr(TmmbItem(kRemoteSsrc, kBitrateBps, kOverhead));
 
   rtc::Buffer packet = tmmbr.Build();
 
@@ -58,9 +58,9 @@ TEST(RtcpPacketTmmbrTest, Parse) {
 
 TEST(RtcpPacketTmmbrTest, CreateAndParseWithTwoEntries) {
   Tmmbr tmmbr;
-  tmmbr.From(kSenderSsrc);
-  tmmbr.WithTmmbr(TmmbItem(kRemoteSsrc, kBitrateBps, kOverhead));
-  tmmbr.WithTmmbr(TmmbItem(kRemoteSsrc + 1, 4 * kBitrateBps, kOverhead + 1));
+  tmmbr.SetSenderSsrc(kSenderSsrc);
+  tmmbr.AddTmmbr(TmmbItem(kRemoteSsrc, kBitrateBps, kOverhead));
+  tmmbr.AddTmmbr(TmmbItem(kRemoteSsrc + 1, 4 * kBitrateBps, kOverhead + 1));
 
   rtc::Buffer packet = tmmbr.Build();
 

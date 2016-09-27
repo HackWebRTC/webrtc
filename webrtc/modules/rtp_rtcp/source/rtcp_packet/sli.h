@@ -49,11 +49,13 @@ class Sli : public Psfb {
   // Parse assumes header is already parsed and validated.
   bool Parse(const CommonHeader& packet);
 
-  void WithPictureId(uint8_t picture_id,
-                     uint16_t first_macroblock = 0,
-                     uint16_t number_macroblocks = 0x1fff) {
-    items_.push_back(
-        Macroblocks(picture_id, first_macroblock, number_macroblocks));
+  void AddPictureId(uint8_t picture_id) {
+    items_.emplace_back(picture_id, 0, 0x1fff);
+  }
+  void AddPictureId(uint8_t picture_id,
+                    uint16_t first_macroblock,
+                    uint16_t number_macroblocks) {
+    items_.emplace_back(picture_id, first_macroblock, number_macroblocks);
   }
 
   const std::vector<Macroblocks>& macroblocks() const { return items_; }

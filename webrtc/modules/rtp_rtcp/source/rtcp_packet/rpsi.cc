@@ -130,12 +130,12 @@ bool Rpsi::Create(uint8_t* packet,
   return true;
 }
 
-void Rpsi::WithPayloadType(uint8_t payload) {
+void Rpsi::SetPayloadType(uint8_t payload) {
   RTC_DCHECK_LE(payload, 0x7f);
   payload_type_ = payload;
 }
 
-void Rpsi::WithPictureId(uint64_t picture_id) {
+void Rpsi::SetPictureId(uint64_t picture_id) {
   picture_id_ = picture_id;
   block_length_ = CalculateBlockLength(RequiredBytes(picture_id_));
 }
