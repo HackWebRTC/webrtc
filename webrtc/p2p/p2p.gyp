@@ -46,7 +46,6 @@
         'base/session.h',
         'base/sessiondescription.cc',
         'base/sessiondescription.h',
-        'base/sessionid.h',
         'base/stun.cc',
         'base/stun.h',
         'base/stunport.cc',

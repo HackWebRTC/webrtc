@@ -49,7 +49,6 @@ rtc_static_library("rtc_p2p") {
     "base/session.h",
     "base/sessiondescription.cc",
     "base/sessiondescription.h",
-    "base/sessionid.h",
     "base/stun.cc",
     "base/stun.h",
     "base/stunport.cc",
