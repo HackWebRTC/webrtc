@@ -1726,7 +1726,7 @@ class VideoCodecConfigObserver : public test::SendTest,
           kVideoCodecConfigObserverNumberOfTemporalLayers - 1);
     }
 
-    encoder_config->encoder_specific_settings = &encoder_settings_;
+    encoder_config->encoder_specific_settings = GetEncoderSpecificSettings();
     encoder_config_ = encoder_config->Copy();
   }
 
@@ -1747,6 +1747,8 @@ class VideoCodecConfigObserver : public test::SendTest,
   }
 
   void VerifyCodecSpecifics(const VideoCodec& config) const;
+  rtc::scoped_refptr<VideoEncoderConfig::EncoderSpecificSettings>
+  GetEncoderSpecificSettings() const;
 
   void PerformTest() override {
     EXPECT_TRUE(
@@ -1754,6 +1756,7 @@ class VideoCodecConfigObserver : public test::SendTest,
     ASSERT_EQ(1u, num_initializations_) << "VideoEncoder not initialized.";
 
     encoder_settings_.frameDroppingOn = true;
+    encoder_config_.encoder_specific_settings = GetEncoderSpecificSettings();
     stream_->ReconfigureVideoEncoder(std::move(encoder_config_));
     ASSERT_TRUE(
         init_encode_event_.Wait(VideoSendStreamTest::kDefaultTimeoutMs));
@@ -1784,6 +1787,14 @@ void VideoCodecConfigObserver<VideoCodecH264>::VerifyCodecSpecifics(
   EXPECT_EQ(0, memcmp(&config.codecSpecific.H264, &encoder_settings_,
                       sizeof(encoder_settings_)));
 }
+
+template <>
+rtc::scoped_refptr<VideoEncoderConfig::EncoderSpecificSettings>
+VideoCodecConfigObserver<VideoCodecH264>::GetEncoderSpecificSettings() const {
+  return new rtc::RefCountedObject<
+      VideoEncoderConfig::H264EncoderSpecificSettings>(encoder_settings_);
+}
+
 template <>
 void VideoCodecConfigObserver<VideoCodecVP8>::VerifyCodecSpecifics(
     const VideoCodec& config) const {
@@ -1805,6 +1816,14 @@ void VideoCodecConfigObserver<VideoCodecVP8>::VerifyCodecSpecifics(
   EXPECT_EQ(0, memcmp(&config.codecSpecific.VP8, &encoder_settings,
                       sizeof(encoder_settings_)));
 }
+
+template <>
+rtc::scoped_refptr<VideoEncoderConfig::EncoderSpecificSettings>
+VideoCodecConfigObserver<VideoCodecVP8>::GetEncoderSpecificSettings() const {
+  return new rtc::RefCountedObject<
+      VideoEncoderConfig::Vp8EncoderSpecificSettings>(encoder_settings_);
+}
+
 template <>
 void VideoCodecConfigObserver<VideoCodecVP9>::VerifyCodecSpecifics(
     const VideoCodec& config) const {
@@ -1825,6 +1844,13 @@ void VideoCodecConfigObserver<VideoCodecVP9>::VerifyCodecSpecifics(
       kVideoCodecConfigObserverNumberOfTemporalLayers;
   EXPECT_EQ(0, memcmp(&config.codecSpecific.VP9, &encoder_settings,
                       sizeof(encoder_settings_)));
+}
+
+template <>
+rtc::scoped_refptr<VideoEncoderConfig::EncoderSpecificSettings>
+VideoCodecConfigObserver<VideoCodecVP9>::GetEncoderSpecificSettings() const {
+  return new rtc::RefCountedObject<
+      VideoEncoderConfig::Vp9EncoderSpecificSettings>(encoder_settings_);
 }
 
 TEST_F(VideoSendStreamTest, EncoderSetupPropagatesVp8Config) {
@@ -2190,11 +2216,12 @@ class Vp9HeaderObserver : public test::SendTest {
       VideoSendStream::Config* send_config,
       std::vector<VideoReceiveStream::Config>* receive_configs,
       VideoEncoderConfig* encoder_config) override {
-    encoder_config->encoder_specific_settings = &vp9_settings_;
     send_config->encoder_settings.encoder = vp9_encoder_.get();
     send_config->encoder_settings.payload_name = "VP9";
     send_config->encoder_settings.payload_type = kVp9PayloadType;
     ModifyVideoConfigsHook(send_config, receive_configs, encoder_config);
+    encoder_config->encoder_specific_settings = new rtc::RefCountedObject<
+      VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings_);
     EXPECT_EQ(1u, encoder_config->streams.size());
     encoder_config->streams[0].temporal_layer_thresholds_bps.resize(
         vp9_settings_.numberOfTemporalLayers - 1);

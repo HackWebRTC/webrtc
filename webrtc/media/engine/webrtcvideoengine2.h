@@ -339,12 +339,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
       bool is_texture;
     };
 
-    union VideoEncoderSettings {
-      webrtc::VideoCodecH264 h264;
-      webrtc::VideoCodecVP8 vp8;
-      webrtc::VideoCodecVP9 vp9;
-    };
-
     static std::vector<webrtc::VideoStream> CreateVideoStreams(
         const VideoCodec& codec,
         const VideoOptions& options,
@@ -356,7 +350,8 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
         int max_bitrate_bps,
         size_t num_streams);
 
-    void* ConfigureVideoEncoderSettings(const VideoCodec& codec)
+    rtc::scoped_refptr<webrtc::VideoEncoderConfig::EncoderSpecificSettings>
+    ConfigureVideoEncoderSettings(const VideoCodec& codec)
         EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
     AllocatedEncoder CreateVideoEncoder(const VideoCodec& codec)
@@ -413,7 +408,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     // one stream per MediaChannel.
     webrtc::RtpParameters rtp_parameters_ GUARDED_BY(lock_);
     bool pending_encoder_reconfiguration_ GUARDED_BY(lock_);
-    VideoEncoderSettings encoder_settings_ GUARDED_BY(lock_);
     AllocatedEncoder allocated_encoder_ GUARDED_BY(lock_);
     VideoFrameInfo last_frame_info_ GUARDED_BY(lock_);
 

@@ -112,7 +112,6 @@ class VideoQualityTest : public test::CallTest {
   std::unique_ptr<test::TraceToStderr> trace_to_stderr_;
   std::unique_ptr<test::FrameGenerator> frame_generator_;
   std::unique_ptr<VideoEncoder> encoder_;
-  VideoCodecUnion codec_settings_;
   Clock* const clock_;
 
   Params params_;

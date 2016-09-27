@@ -1032,21 +1032,23 @@ void VideoQualityTest::SetupScreenshare() {
   // Fill out codec settings.
   video_encoder_config_.content_type = VideoEncoderConfig::ContentType::kScreen;
   if (params_.common.codec == "VP8") {
-    codec_settings_.VP8 = VideoEncoder::GetDefaultVp8Settings();
-    codec_settings_.VP8.denoisingOn = false;
-    codec_settings_.VP8.frameDroppingOn = false;
-    codec_settings_.VP8.numberOfTemporalLayers =
+    VideoCodecVP8 vp8_settings = VideoEncoder::GetDefaultVp8Settings();
+    vp8_settings.denoisingOn = false;
+    vp8_settings.frameDroppingOn = false;
+    vp8_settings.numberOfTemporalLayers =
         static_cast<unsigned char>(params_.common.num_temporal_layers);
-    video_encoder_config_.encoder_specific_settings = &codec_settings_.VP8;
+    video_encoder_config_.encoder_specific_settings = new rtc::RefCountedObject<
+        VideoEncoderConfig::Vp8EncoderSpecificSettings>(vp8_settings);
   } else if (params_.common.codec == "VP9") {
-    codec_settings_.VP9 = VideoEncoder::GetDefaultVp9Settings();
-    codec_settings_.VP9.denoisingOn = false;
-    codec_settings_.VP9.frameDroppingOn = false;
-    codec_settings_.VP9.numberOfTemporalLayers =
+    VideoCodecVP9 vp9_settings = VideoEncoder::GetDefaultVp9Settings();
+    vp9_settings.denoisingOn = false;
+    vp9_settings.frameDroppingOn = false;
+    vp9_settings.numberOfTemporalLayers =
         static_cast<unsigned char>(params_.common.num_temporal_layers);
-    video_encoder_config_.encoder_specific_settings = &codec_settings_.VP9;
-    codec_settings_.VP9.numberOfSpatialLayers =
+    vp9_settings.numberOfSpatialLayers =
         static_cast<unsigned char>(params_.ss.num_spatial_layers);
+    video_encoder_config_.encoder_specific_settings = new rtc::RefCountedObject<
+        VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);
   }
 
   // Setup frame generator.

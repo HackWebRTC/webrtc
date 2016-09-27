@@ -12,6 +12,8 @@
 #include <sstream>
 #include <string>
 
+#include "webrtc/base/checks.h"
+
 namespace webrtc {
 std::string NackConfig::ToString() const {
   std::stringstream ss;
@@ -113,7 +115,7 @@ std::string VideoStream::ToString() const {
 
 VideoEncoderConfig::VideoEncoderConfig()
     : content_type(ContentType::kRealtimeVideo),
-      encoder_specific_settings(NULL),
+      encoder_specific_settings(nullptr),
       min_transmit_bitrate_bps(0),
       expect_encode_from_texture(false) {}
 
@@ -144,6 +146,61 @@ std::string VideoEncoderConfig::ToString() const {
   ss << ", min_transmit_bitrate_bps: " << min_transmit_bitrate_bps;
   ss << '}';
   return ss.str();
+}
+
+void VideoEncoderConfig::EncoderSpecificSettings::FillEncoderSpecificSettings(
+    VideoCodec* codec) const {
+  if (codec->codecType == kVideoCodecH264) {
+    FillVideoCodecH264(&codec->codecSpecific.H264);
+  } else if (codec->codecType == kVideoCodecVP8) {
+    FillVideoCodecVp8(&codec->codecSpecific.VP8);
+  } else if (codec->codecType == kVideoCodecVP9) {
+    FillVideoCodecVp9(&codec->codecSpecific.VP9);
+  } else {
+    RTC_NOTREACHED() << "Encoder specifics set/used for unknown codec type.";
+  }
+}
+
+void VideoEncoderConfig::EncoderSpecificSettings::FillVideoCodecH264(
+    VideoCodecH264* h264_settings) const {
+  RTC_NOTREACHED();
+}
+
+void VideoEncoderConfig::EncoderSpecificSettings::FillVideoCodecVp8(
+    VideoCodecVP8* vp8_settings) const {
+  RTC_NOTREACHED();
+}
+
+void VideoEncoderConfig::EncoderSpecificSettings::FillVideoCodecVp9(
+    VideoCodecVP9* vp9_settings) const {
+  RTC_NOTREACHED();
+}
+
+VideoEncoderConfig::H264EncoderSpecificSettings::H264EncoderSpecificSettings(
+    const VideoCodecH264& specifics)
+    : specifics_(specifics) {}
+
+void VideoEncoderConfig::H264EncoderSpecificSettings::FillVideoCodecH264(
+    VideoCodecH264* h264_settings) const {
+  *h264_settings = specifics_;
+}
+
+VideoEncoderConfig::Vp8EncoderSpecificSettings::Vp8EncoderSpecificSettings(
+    const VideoCodecVP8& specifics)
+    : specifics_(specifics) {}
+
+void VideoEncoderConfig::Vp8EncoderSpecificSettings::FillVideoCodecVp8(
+    VideoCodecVP8* vp8_settings) const {
+  *vp8_settings = specifics_;
+}
+
+VideoEncoderConfig::Vp9EncoderSpecificSettings::Vp9EncoderSpecificSettings(
+    const VideoCodecVP9& specifics)
+    : specifics_(specifics) {}
+
+void VideoEncoderConfig::Vp9EncoderSpecificSettings::FillVideoCodecVp9(
+    VideoCodecVP9* vp9_settings) const {
+  *vp9_settings = specifics_;
 }
 
 }  // namespace webrtc

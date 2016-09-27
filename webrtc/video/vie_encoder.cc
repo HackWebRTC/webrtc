@@ -67,32 +67,27 @@ VideoCodec VideoEncoderConfigToVideoCodec(const VideoEncoderConfig& config,
       break;
   }
 
+  if (config.encoder_specific_settings)
+    config.encoder_specific_settings->FillEncoderSpecificSettings(&video_codec);
+
   switch (video_codec.codecType) {
     case kVideoCodecVP8: {
-      if (config.encoder_specific_settings) {
-        video_codec.codecSpecific.VP8 = *reinterpret_cast<const VideoCodecVP8*>(
-            config.encoder_specific_settings);
-      } else {
+      if (!config.encoder_specific_settings)
         video_codec.codecSpecific.VP8 = VideoEncoder::GetDefaultVp8Settings();
-      }
       video_codec.codecSpecific.VP8.numberOfTemporalLayers =
           static_cast<unsigned char>(
               streams.back().temporal_layer_thresholds_bps.size() + 1);
       break;
     }
     case kVideoCodecVP9: {
-      if (config.encoder_specific_settings) {
-        video_codec.codecSpecific.VP9 = *reinterpret_cast<const VideoCodecVP9*>(
-            config.encoder_specific_settings);
-        if (video_codec.mode == kScreensharing) {
-          video_codec.codecSpecific.VP9.flexibleMode = true;
-          // For now VP9 screensharing use 1 temporal and 2 spatial layers.
-          RTC_DCHECK_EQ(video_codec.codecSpecific.VP9.numberOfTemporalLayers,
-                        1);
-          RTC_DCHECK_EQ(video_codec.codecSpecific.VP9.numberOfSpatialLayers, 2);
-        }
-      } else {
+      if (!config.encoder_specific_settings)
         video_codec.codecSpecific.VP9 = VideoEncoder::GetDefaultVp9Settings();
+      if (video_codec.mode == kScreensharing &&
+          config.encoder_specific_settings) {
+        video_codec.codecSpecific.VP9.flexibleMode = true;
+        // For now VP9 screensharing use 1 temporal and 2 spatial layers.
+        RTC_DCHECK_EQ(1, video_codec.codecSpecific.VP9.numberOfTemporalLayers);
+        RTC_DCHECK_EQ(2, video_codec.codecSpecific.VP9.numberOfSpatialLayers);
       }
       video_codec.codecSpecific.VP9.numberOfTemporalLayers =
           static_cast<unsigned char>(
@@ -100,13 +95,8 @@ VideoCodec VideoEncoderConfigToVideoCodec(const VideoEncoderConfig& config,
       break;
     }
     case kVideoCodecH264: {
-      if (config.encoder_specific_settings) {
-        video_codec.codecSpecific.H264 =
-            *reinterpret_cast<const VideoCodecH264*>(
-                config.encoder_specific_settings);
-      } else {
+      if (!config.encoder_specific_settings)
         video_codec.codecSpecific.H264 = VideoEncoder::GetDefaultH264Settings();
-      }
       break;
     }
     default:
@@ -156,10 +146,10 @@ VideoCodec VideoEncoderConfigToVideoCodec(const VideoEncoderConfig& config,
     sim_stream->numberOfTemporalLayers = static_cast<unsigned char>(
         streams[i].temporal_layer_thresholds_bps.size() + 1);
 
-    video_codec.width =
-        std::max(video_codec.width, static_cast<uint16_t>(streams[i].width));
-    video_codec.height =
-        std::max(video_codec.height, static_cast<uint16_t>(streams[i].height));
+    video_codec.width = std::max(video_codec.width,
+                                 static_cast<uint16_t>(streams[i].width));
+    video_codec.height = std::max(
+        video_codec.height, static_cast<uint16_t>(streams[i].height));
     video_codec.minBitrate =
         std::min(static_cast<uint16_t>(video_codec.minBitrate),
                  static_cast<uint16_t>(streams[i].min_bitrate_bps / 1000));

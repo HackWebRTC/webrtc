@@ -450,7 +450,8 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoStreams(
   return streams;
 }
 
-void* WebRtcVideoChannel2::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
+rtc::scoped_refptr<webrtc::VideoEncoderConfig::EncoderSpecificSettings>
+WebRtcVideoChannel2::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
     const VideoCodec& codec) {
   bool is_screencast = parameters_.options.is_screencast.value_or(false);
   // No automatic resizing when using simulcast or screencast.
@@ -468,36 +469,39 @@ void* WebRtcVideoChannel2::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
   }
 
   if (CodecNamesEq(codec.name, kH264CodecName)) {
-    encoder_settings_.h264 = webrtc::VideoEncoder::GetDefaultH264Settings();
-    encoder_settings_.h264.frameDroppingOn = frame_dropping;
-    return &encoder_settings_.h264;
+    webrtc::VideoCodecH264 h264_settings =
+        webrtc::VideoEncoder::GetDefaultH264Settings();
+    h264_settings.frameDroppingOn = frame_dropping;
+    return new rtc::RefCountedObject<
+        webrtc::VideoEncoderConfig::H264EncoderSpecificSettings>(h264_settings);
   }
   if (CodecNamesEq(codec.name, kVp8CodecName)) {
-    encoder_settings_.vp8 = webrtc::VideoEncoder::GetDefaultVp8Settings();
-    encoder_settings_.vp8.automaticResizeOn = automatic_resize;
+    webrtc::VideoCodecVP8 vp8_settings =
+        webrtc::VideoEncoder::GetDefaultVp8Settings();
+    vp8_settings.automaticResizeOn = automatic_resize;
     // VP8 denoising is enabled by default.
-    encoder_settings_.vp8.denoisingOn =
-        codec_default_denoising ? true : denoising;
-    encoder_settings_.vp8.frameDroppingOn = frame_dropping;
-    return &encoder_settings_.vp8;
+    vp8_settings.denoisingOn = codec_default_denoising ? true : denoising;
+    vp8_settings.frameDroppingOn = frame_dropping;
+    return new rtc::RefCountedObject<
+        webrtc::VideoEncoderConfig::Vp8EncoderSpecificSettings>(vp8_settings);
   }
   if (CodecNamesEq(codec.name, kVp9CodecName)) {
-    encoder_settings_.vp9 = webrtc::VideoEncoder::GetDefaultVp9Settings();
+    webrtc::VideoCodecVP9 vp9_settings =
+        webrtc::VideoEncoder::GetDefaultVp9Settings();
     if (is_screencast) {
       // TODO(asapersson): Set to 2 for now since there is a DCHECK in
       // VideoSendStream::ReconfigureVideoEncoder.
-      encoder_settings_.vp9.numberOfSpatialLayers = 2;
+      vp9_settings.numberOfSpatialLayers = 2;
     } else {
-      encoder_settings_.vp9.numberOfSpatialLayers =
-          GetDefaultVp9SpatialLayers();
+      vp9_settings.numberOfSpatialLayers = GetDefaultVp9SpatialLayers();
     }
     // VP9 denoising is disabled by default.
-    encoder_settings_.vp9.denoisingOn =
-        codec_default_denoising ? false : denoising;
-    encoder_settings_.vp9.frameDroppingOn = frame_dropping;
-    return &encoder_settings_.vp9;
+    vp9_settings.denoisingOn = codec_default_denoising ? false : denoising;
+    vp9_settings.frameDroppingOn = frame_dropping;
+    return new rtc::RefCountedObject<
+        webrtc::VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);
   }
-  return NULL;
+  return nullptr;
 }
 
 DefaultUnsignalledSsrcHandler::DefaultUnsignalledSsrcHandler()

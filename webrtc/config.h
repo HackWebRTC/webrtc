@@ -17,6 +17,8 @@
 #include <vector>
 
 #include "webrtc/base/optional.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/typedefs.h"
 
@@ -118,13 +120,60 @@ struct VideoStream {
   // bitrate threshold of 100k and an estimate of 105k does not imply that we
   // get 100k in one temporal layer and 5k in the other, just that the bitrate
   // in the first temporal layer should not exceed 100k.
-  // TODO(pbos): Apart from a special case for two-layer screencast these
+  // TODO(kthelgason): Apart from a special case for two-layer screencast these
   // thresholds are not propagated to the VideoEncoder. To be implemented.
   std::vector<int> temporal_layer_thresholds_bps;
 };
 
 struct VideoEncoderConfig {
  public:
+  // These are reference counted to permit copying VideoEncoderConfig and be
+  // kept alive until all encoder_specific_settings go out of scope.
+  // TODO(kthelgason): Consider removing the need for copying VideoEncoderConfig
+  // and use rtc::Optional for encoder_specific_settings instead.
+  class EncoderSpecificSettings : public rtc::RefCountInterface {
+   public:
+    // TODO(pbos): Remove FillEncoderSpecificSettings as soon as VideoCodec is
+    // not in use and encoder implementations ask for codec-specific structs
+    // directly.
+    void FillEncoderSpecificSettings(VideoCodec* codec_struct) const;
+
+    virtual void FillVideoCodecVp8(VideoCodecVP8* vp8_settings) const;
+    virtual void FillVideoCodecVp9(VideoCodecVP9* vp9_settings) const;
+    virtual void FillVideoCodecH264(VideoCodecH264* h264_settings) const;
+   private:
+    virtual ~EncoderSpecificSettings() {}
+    friend struct VideoEncoderConfig;
+  };
+
+  class H264EncoderSpecificSettings : public EncoderSpecificSettings {
+   public:
+    explicit H264EncoderSpecificSettings(const VideoCodecH264& specifics);
+    virtual void FillVideoCodecH264(
+        VideoCodecH264* h264_settings) const override;
+
+   private:
+    VideoCodecH264 specifics_;
+  };
+
+  class Vp8EncoderSpecificSettings : public EncoderSpecificSettings {
+   public:
+    explicit Vp8EncoderSpecificSettings(const VideoCodecVP8& specifics);
+    virtual void FillVideoCodecVp8(VideoCodecVP8* vp8_settings) const override;
+
+   private:
+    VideoCodecVP8 specifics_;
+  };
+
+  class Vp9EncoderSpecificSettings : public EncoderSpecificSettings {
+   public:
+    explicit Vp9EncoderSpecificSettings(const VideoCodecVP9& specifics);
+    virtual void FillVideoCodecVp9(VideoCodecVP9* vp9_settings) const override;
+
+   private:
+    VideoCodecVP9 specifics_;
+  };
+
   enum class ContentType {
     kRealtimeVideo,
     kScreen,
@@ -144,7 +193,7 @@ struct VideoEncoderConfig {
   std::vector<VideoStream> streams;
   std::vector<SpatialLayer> spatial_layers;
   ContentType content_type;
-  void* encoder_specific_settings;
+  rtc::scoped_refptr<const EncoderSpecificSettings> encoder_specific_settings;
 
   // Padding will be used up to this bitrate regardless of the bitrate produced
   // by the encoder. Padding above what's actually produced by the encoder helps

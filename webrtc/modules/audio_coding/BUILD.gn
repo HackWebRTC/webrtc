@@ -1317,6 +1317,7 @@ if (rtc_include_tests) {
     testonly = true
     deps = [
       "../..:webrtc_common",
+      "../../base:rtc_base_approved",
       "//testing/gtest",
     ]
     sources = [

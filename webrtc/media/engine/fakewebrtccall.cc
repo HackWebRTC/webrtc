@@ -186,15 +186,13 @@ void FakeVideoSendStream::ReconfigureVideoEncoder(
     webrtc::VideoEncoderConfig config) {
   if (config.encoder_specific_settings != NULL) {
     if (config_.encoder_settings.payload_name == "VP8") {
-      vpx_settings_.vp8 = *reinterpret_cast<const webrtc::VideoCodecVP8*>(
-                              config.encoder_specific_settings);
+      config.encoder_specific_settings->FillVideoCodecVp8(&vpx_settings_.vp8);
       if (!config.streams.empty()) {
         vpx_settings_.vp8.numberOfTemporalLayers = static_cast<unsigned char>(
             config.streams.back().temporal_layer_thresholds_bps.size() + 1);
       }
     } else if (config_.encoder_settings.payload_name == "VP9") {
-      vpx_settings_.vp9 = *reinterpret_cast<const webrtc::VideoCodecVP9*>(
-                              config.encoder_specific_settings);
+      config.encoder_specific_settings->FillVideoCodecVp9(&vpx_settings_.vp9);
       if (!config.streams.empty()) {
         vpx_settings_.vp9.numberOfTemporalLayers = static_cast<unsigned char>(
             config.streams.back().temporal_layer_thresholds_bps.size() + 1);
@@ -204,8 +202,8 @@ void FakeVideoSendStream::ReconfigureVideoEncoder(
                     << config_.encoder_settings.payload_name;
     }
   }
-  encoder_config_ = std::move(config);
   codec_settings_set_ = config.encoder_specific_settings != NULL;
+  encoder_config_ = std::move(config);
   ++num_encoder_reconfigurations_;
 }
 
