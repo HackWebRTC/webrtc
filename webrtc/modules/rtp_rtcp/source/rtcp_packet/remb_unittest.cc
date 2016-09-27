@@ -34,10 +34,11 @@ const size_t kPacketLength = sizeof(kPacket);
 
 TEST(RtcpPacketRembTest, Create) {
   Remb remb;
-  remb.SetSenderSsrc(kSenderSsrc);
-  remb.SetSsrcs(
-      std::vector<uint32_t>(std::begin(kRemoteSsrcs), std::end(kRemoteSsrcs)));
-  remb.SetBitrateBps(kBitrateBps);
+  remb.From(kSenderSsrc);
+  remb.AppliesTo(kRemoteSsrcs[0]);
+  remb.AppliesTo(kRemoteSsrcs[1]);
+  remb.AppliesTo(kRemoteSsrcs[2]);
+  remb.WithBitrateBps(kBitrateBps);
 
   rtc::Buffer packet = remb.Build();
 
@@ -57,8 +58,8 @@ TEST(RtcpPacketRembTest, Parse) {
 
 TEST(RtcpPacketRembTest, CreateAndParseWithoutSsrcs) {
   Remb remb;
-  remb.SetSenderSsrc(kSenderSsrc);
-  remb.SetBitrateBps(kBitrateBps);
+  remb.From(kSenderSsrc);
+  remb.WithBitrateBps(kBitrateBps);
   rtc::Buffer packet = remb.Build();
 
   Remb parsed;
@@ -70,7 +71,7 @@ TEST(RtcpPacketRembTest, CreateAndParseWithoutSsrcs) {
 
 TEST(RtcpPacketRembTest, CreateAndParse64bitBitrate) {
   Remb remb;
-  remb.SetBitrateBps(kBitrateBps64bit);
+  remb.WithBitrateBps(kBitrateBps64bit);
   rtc::Buffer packet = remb.Build();
 
   Remb parsed;
@@ -118,11 +119,27 @@ TEST(RtcpPacketRembTest, ParseFailsWhenSsrcCountMismatchLength) {
 }
 
 TEST(RtcpPacketRembTest, TooManySsrcs) {
+  const size_t kMax = 0xff;
   Remb remb;
-  EXPECT_FALSE(remb.SetSsrcs(
-      std::vector<uint32_t>(Remb::kMaxNumberOfSsrcs + 1, kRemoteSsrcs[0])));
-  EXPECT_TRUE(remb.SetSsrcs(
-      std::vector<uint32_t>(Remb::kMaxNumberOfSsrcs, kRemoteSsrcs[0])));
+  for (size_t i = 1; i <= kMax; ++i)
+    EXPECT_TRUE(remb.AppliesTo(kRemoteSsrcs[0] + i));
+  EXPECT_FALSE(remb.AppliesTo(kRemoteSsrcs[0]));
+}
+
+TEST(RtcpPacketRembTest, TooManySsrcsForBatchAssign) {
+  const uint32_t kRemoteSsrc = kRemoteSsrcs[0];
+  const size_t kMax = 0xff;
+  const std::vector<uint32_t> kAllButOneSsrc(kMax - 1, kRemoteSsrc);
+  const std::vector<uint32_t> kTwoSsrcs(2, kRemoteSsrc);
+
+  Remb remb;
+  EXPECT_TRUE(remb.AppliesToMany(kAllButOneSsrc));
+  // Should be no place for 2 more.
+  EXPECT_FALSE(remb.AppliesToMany(kTwoSsrcs));
+  // But enough place for 1 more.
+  EXPECT_TRUE(remb.AppliesTo(kRemoteSsrc));
+  // But not for another one.
+  EXPECT_FALSE(remb.AppliesTo(kRemoteSsrc));
 }
 
 }  // namespace webrtc

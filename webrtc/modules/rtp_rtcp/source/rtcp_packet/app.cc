@@ -51,12 +51,12 @@ bool App::Parse(const CommonHeader& packet) {
   return true;
 }
 
-void App::SetSubType(uint8_t subtype) {
+void App::WithSubType(uint8_t subtype) {
   RTC_DCHECK_LE(subtype, 0x1f);
   sub_type_ = subtype;
 }
 
-void App::SetData(const uint8_t* data, size_t data_length) {
+void App::WithData(const uint8_t* data, size_t data_length) {
   RTC_DCHECK(data);
   RTC_DCHECK_EQ(data_length % 4, 0u) << "Data must be 32 bits aligned.";
   RTC_DCHECK_LE(data_length, kMaxDataSize) << "App data size " << data_length

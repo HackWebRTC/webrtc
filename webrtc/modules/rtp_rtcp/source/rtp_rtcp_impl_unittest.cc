@@ -216,9 +216,9 @@ class RtpRtcpImplTest : public ::testing::Test {
     uint16_t list[1];
     list[0] = sequence_number;
     const uint16_t kListLength = sizeof(list) / sizeof(list[0]);
-    nack.SetSenderSsrc(sender ? kReceiverSsrc : kSenderSsrc);
-    nack.SetMediaSsrc(sender ? kSenderSsrc : kReceiverSsrc);
-    nack.SetPacketIds(list, kListLength);
+    nack.From(sender ? kReceiverSsrc : kSenderSsrc);
+    nack.To(sender ? kSenderSsrc : kReceiverSsrc);
+    nack.WithList(list, kListLength);
     rtc::Buffer packet = nack.Build();
     EXPECT_EQ(0, module->impl_->IncomingRtcpPacket(packet.data(),
                                                    packet.size()));

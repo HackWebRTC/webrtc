@@ -152,15 +152,15 @@ bool RemoteEstimatorProxy::BuildFeedbackPacket(
   // TODO(sprang): Measure receive times in microseconds and remove the
   // conversions below.
   const int64_t first_sequence = it->first;
-  feedback_packet->SetMediaSsrc(media_ssrc_);
+  feedback_packet->WithMediaSourceSsrc(media_ssrc_);
   // Base sequence is the expected next (window_start_seq_). This is known, but
   // we might not have actually received it, so the base time shall be the time
   // of the first received packet in the feedback.
-  feedback_packet->SetBase(static_cast<uint16_t>(window_start_seq_ & 0xFFFF),
-                           it->second * 1000);
-  feedback_packet->SetFeedbackSequenceNumber(feedback_sequence_++);
+  feedback_packet->WithBase(static_cast<uint16_t>(window_start_seq_ & 0xFFFF),
+                            it->second * 1000);
+  feedback_packet->WithFeedbackSequenceNumber(feedback_sequence_++);
   for (; it != packet_arrival_times_.end(); ++it) {
-    if (!feedback_packet->AddReceivedPacket(
+    if (!feedback_packet->WithReceivedPacket(
             static_cast<uint16_t>(it->first & 0xFFFF), it->second * 1000)) {
       // If we can't even add the first seq to the feedback packet, we won't be
       // able to build it at all.

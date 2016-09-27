@@ -105,7 +105,7 @@ bool SenderReport::Create(uint8_t* packet,
   return true;
 }
 
-bool SenderReport::AddReportBlock(const ReportBlock& block) {
+bool SenderReport::WithReportBlock(const ReportBlock& block) {
   if (report_blocks_.size() >= kMaxNumberOfReportBlocks) {
     LOG(LS_WARNING) << "Max report blocks reached.";
     return false;

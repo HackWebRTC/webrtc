@@ -16,7 +16,6 @@
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/deprecation.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rtpfb.h"
 
 namespace webrtc {
@@ -34,11 +33,13 @@ class TransportFeedback : public Rtpfb {
   TransportFeedback();
   ~TransportFeedback() override;
 
-  void SetBase(uint16_t base_sequence,     // Seq# of first packet in this msg.
-               int64_t ref_timestamp_us);  // Reference timestamp for this msg.
-  void SetFeedbackSequenceNumber(uint8_t feedback_sequence);
+  void WithPacketSenderSsrc(uint32_t ssrc) { From(ssrc); }
+  void WithMediaSourceSsrc(uint32_t ssrc) { To(ssrc); }
+  void WithBase(uint16_t base_sequence,     // Seq# of first packet in this msg.
+                int64_t ref_timestamp_us);  // Reference timestamp for this msg.
+  void WithFeedbackSequenceNumber(uint8_t feedback_sequence);
   // NOTE: This method requires increasing sequence numbers (excepting wraps).
-  bool AddReceivedPacket(uint16_t sequence_number, int64_t timestamp_us);
+  bool WithReceivedPacket(uint16_t sequence_number, int64_t timestamp_us);
 
   enum class StatusSymbol {
     kNotReceived,
@@ -56,26 +57,12 @@ class TransportFeedback : public Rtpfb {
   // is relative the base time.
   std::vector<int64_t> GetReceiveDeltasUs() const;
 
+  uint32_t GetPacketSenderSsrc() const { return sender_ssrc(); }
+  uint32_t GetMediaSourceSsrc() const { return media_ssrc(); }
+
   bool Parse(const CommonHeader& packet);
   static std::unique_ptr<TransportFeedback> ParseFrom(const uint8_t* buffer,
                                                       size_t length);
-
-  RTC_DEPRECATED
-  void WithPacketSenderSenderSsrc(uint32_t ssrc) { SetSenderSsrc(ssrc); }
-  RTC_DEPRECATED
-  void WithMediaSourceSsrc(uint32_t ssrc) { SetMediaSsrc(ssrc); }
-  RTC_DEPRECATED
-  void WithBase(uint16_t base_sequence, int64_t ref_timestamp_us) {
-    SetBase(base_sequence, ref_timestamp_us);
-  }
-  RTC_DEPRECATED
-  void WithFeedbackSequenceNumber(uint8_t feedback_sequence) {
-    SetFeedbackSequenceNumber(feedback_sequence);
-  }
-  RTC_DEPRECATED
-  bool WithReceivedPacket(uint16_t sequence_number, int64_t timestamp_us) {
-    return AddReceivedPacket(sequence_number, timestamp_us);
-  }
 
  protected:
   bool Create(uint8_t* packet,

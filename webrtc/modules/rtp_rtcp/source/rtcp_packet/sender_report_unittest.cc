@@ -39,11 +39,11 @@ const uint8_t kPacket[] = {0x80,  200, 0x00, 0x06,
 
 TEST(RtcpPacketSenderReportTest, CreateWithoutReportBlocks) {
   SenderReport sr;
-  sr.SetSenderSsrc(kSenderSsrc);
-  sr.SetNtp(kNtp);
-  sr.SetRtpTimestamp(kRtpTimestamp);
-  sr.SetPacketCount(kPacketCount);
-  sr.SetOctetCount(kOctetCount);
+  sr.From(kSenderSsrc);
+  sr.WithNtp(kNtp);
+  sr.WithRtpTimestamp(kRtpTimestamp);
+  sr.WithPacketCount(kPacketCount);
+  sr.WithOctetCount(kOctetCount);
 
   rtc::Buffer raw = sr.Build();
   EXPECT_THAT(make_tuple(raw.data(), raw.size()), ElementsAreArray(kPacket));
@@ -63,11 +63,11 @@ TEST(RtcpPacketSenderReportTest, ParseWithoutReportBlocks) {
 
 TEST(RtcpPacketSenderReportTest, CreateAndParseWithOneReportBlock) {
   ReportBlock rb;
-  rb.SetMediaSsrc(kRemoteSsrc);
+  rb.To(kRemoteSsrc);
 
   SenderReport sr;
-  sr.SetSenderSsrc(kSenderSsrc);
-  EXPECT_TRUE(sr.AddReportBlock(rb));
+  sr.From(kSenderSsrc);
+  EXPECT_TRUE(sr.WithReportBlock(rb));
 
   rtc::Buffer raw = sr.Build();
   SenderReport parsed;
@@ -80,14 +80,14 @@ TEST(RtcpPacketSenderReportTest, CreateAndParseWithOneReportBlock) {
 
 TEST(RtcpPacketSenderReportTest, CreateAndParseWithTwoReportBlocks) {
   ReportBlock rb1;
-  rb1.SetMediaSsrc(kRemoteSsrc);
+  rb1.To(kRemoteSsrc);
   ReportBlock rb2;
-  rb2.SetMediaSsrc(kRemoteSsrc + 1);
+  rb2.To(kRemoteSsrc + 1);
 
   SenderReport sr;
-  sr.SetSenderSsrc(kSenderSsrc);
-  EXPECT_TRUE(sr.AddReportBlock(rb1));
-  EXPECT_TRUE(sr.AddReportBlock(rb2));
+  sr.From(kSenderSsrc);
+  EXPECT_TRUE(sr.WithReportBlock(rb1));
+  EXPECT_TRUE(sr.WithReportBlock(rb2));
 
   rtc::Buffer raw = sr.Build();
   SenderReport parsed;
@@ -101,15 +101,15 @@ TEST(RtcpPacketSenderReportTest, CreateAndParseWithTwoReportBlocks) {
 
 TEST(RtcpPacketSenderReportTest, CreateWithTooManyReportBlocks) {
   SenderReport sr;
-  sr.SetSenderSsrc(kSenderSsrc);
+  sr.From(kSenderSsrc);
   const size_t kMaxReportBlocks = (1 << 5) - 1;
   ReportBlock rb;
   for (size_t i = 0; i < kMaxReportBlocks; ++i) {
-    rb.SetMediaSsrc(kRemoteSsrc + i);
-    EXPECT_TRUE(sr.AddReportBlock(rb));
+    rb.To(kRemoteSsrc + i);
+    EXPECT_TRUE(sr.WithReportBlock(rb));
   }
-  rb.SetMediaSsrc(kRemoteSsrc + kMaxReportBlocks);
-  EXPECT_FALSE(sr.AddReportBlock(rb));
+  rb.To(kRemoteSsrc + kMaxReportBlocks);
+  EXPECT_FALSE(sr.WithReportBlock(rb));
 }
 
 }  // namespace webrtc

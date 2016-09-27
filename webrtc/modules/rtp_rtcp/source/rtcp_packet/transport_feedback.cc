@@ -304,8 +304,8 @@ int64_t TransportFeedback::Unwrap(uint16_t sequence_number) {
   return last_seq_ + delta;
 }
 
-void TransportFeedback::SetBase(uint16_t base_sequence,
-                                int64_t ref_timestamp_us) {
+void TransportFeedback::WithBase(uint16_t base_sequence,
+                                 int64_t ref_timestamp_us) {
   RTC_DCHECK_EQ(-1, base_seq_);
   RTC_DCHECK_NE(-1, ref_timestamp_us);
   base_seq_ = base_sequence;
@@ -318,12 +318,12 @@ void TransportFeedback::SetBase(uint16_t base_sequence,
   last_timestamp_ = base_time_ * kBaseScaleFactor;
 }
 
-void TransportFeedback::SetFeedbackSequenceNumber(uint8_t feedback_sequence) {
+void TransportFeedback::WithFeedbackSequenceNumber(uint8_t feedback_sequence) {
   feedback_seq_ = feedback_sequence;
 }
 
-bool TransportFeedback::AddReceivedPacket(uint16_t sequence_number,
-                                          int64_t timestamp) {
+bool TransportFeedback::WithReceivedPacket(uint16_t sequence_number,
+                                           int64_t timestamp) {
   RTC_DCHECK_NE(-1, base_seq_);
   int64_t seq = Unwrap(sequence_number);
   if (seq != base_seq_ && seq <= last_seq_)

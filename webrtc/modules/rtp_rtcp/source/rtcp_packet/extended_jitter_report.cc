@@ -10,8 +10,6 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/extended_jitter_report.h"
 
-#include <utility>
-
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
@@ -58,12 +56,12 @@ bool ExtendedJitterReport::Parse(const CommonHeader& packet) {
   return true;
 }
 
-bool ExtendedJitterReport::SetJitterValues(std::vector<uint32_t> values) {
-  if (values.size() > kMaxNumberOfJitterValues) {
-    LOG(LS_WARNING) << "Too many inter-arrival jitter items.";
+bool ExtendedJitterReport::WithJitter(uint32_t jitter) {
+  if (inter_arrival_jitters_.size() >= kMaxNumberOfJitters) {
+    LOG(LS_WARNING) << "Max inter-arrival jitter items reached.";
     return false;
   }
-  inter_arrival_jitters_ = std::move(values);
+  inter_arrival_jitters_.push_back(jitter);
   return true;
 }
 

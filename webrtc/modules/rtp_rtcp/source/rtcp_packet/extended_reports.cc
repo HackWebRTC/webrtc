@@ -91,7 +91,7 @@ bool ExtendedReports::Parse(const CommonHeader& packet) {
   return true;
 }
 
-bool ExtendedReports::AddRrtr(const Rrtr& rrtr) {
+bool ExtendedReports::WithRrtr(const Rrtr& rrtr) {
   if (rrtr_blocks_.size() >= kMaxNumberOfRrtrBlocks) {
     LOG(LS_WARNING) << "Max RRTR blocks reached.";
     return false;
@@ -100,7 +100,7 @@ bool ExtendedReports::AddRrtr(const Rrtr& rrtr) {
   return true;
 }
 
-bool ExtendedReports::AddDlrr(const Dlrr& dlrr) {
+bool ExtendedReports::WithDlrr(const Dlrr& dlrr) {
   if (dlrr_blocks_.size() >= kMaxNumberOfDlrrBlocks) {
     LOG(LS_WARNING) << "Max DLRR blocks reached.";
     return false;
@@ -109,7 +109,7 @@ bool ExtendedReports::AddDlrr(const Dlrr& dlrr) {
   return true;
 }
 
-bool ExtendedReports::AddVoipMetric(const VoipMetric& voip_metric) {
+bool ExtendedReports::WithVoipMetric(const VoipMetric& voip_metric) {
   if (voip_metric_blocks_.size() >= kMaxNumberOfVoipMetricBlocks) {
     LOG(LS_WARNING) << "Max Voip Metric blocks reached.";
     return false;

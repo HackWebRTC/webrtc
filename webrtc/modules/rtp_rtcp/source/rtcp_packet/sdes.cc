@@ -10,8 +10,6 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sdes.h"
 
-#include <utility>
-
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
@@ -139,7 +137,7 @@ bool Sdes::Parse(const CommonHeader& packet) {
   return true;
 }
 
-bool Sdes::AddCName(uint32_t ssrc, std::string cname) {
+bool Sdes::WithCName(uint32_t ssrc, const std::string& cname) {
   RTC_DCHECK_LE(cname.length(), 0xffu);
   if (chunks_.size() >= kMaxNumberOfChunks) {
     LOG(LS_WARNING) << "Max SDES chunks reached.";
@@ -147,7 +145,7 @@ bool Sdes::AddCName(uint32_t ssrc, std::string cname) {
   }
   Chunk chunk;
   chunk.ssrc = ssrc;
-  chunk.cname = std::move(cname);
+  chunk.cname = cname;
   chunks_.push_back(chunk);
   block_length_ += ChunkSize(chunk);
   return true;

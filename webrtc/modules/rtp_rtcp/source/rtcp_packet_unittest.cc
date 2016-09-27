@@ -24,8 +24,8 @@ const uint32_t kSenderSsrc = 0x12345678;
 TEST(RtcpPacketTest, BuildWithTooSmallBuffer) {
   ReportBlock rb;
   ReceiverReport rr;
-  rr.SetSenderSsrc(kSenderSsrc);
-  EXPECT_TRUE(rr.AddReportBlock(rb));
+  rr.From(kSenderSsrc);
+  EXPECT_TRUE(rr.WithReportBlock(rb));
 
   const size_t kRrLength = 8;
   const size_t kReportBlockLength = 24;

@@ -10,8 +10,6 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/remb.h"
 
-#include <utility>
-
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
@@ -83,12 +81,22 @@ bool Remb::Parse(const CommonHeader& packet) {
   return true;
 }
 
-bool Remb::SetSsrcs(std::vector<uint32_t> ssrcs) {
-  if (ssrcs.size() > kMaxNumberOfSsrcs) {
+bool Remb::AppliesTo(uint32_t ssrc) {
+  if (ssrcs_.size() >= kMaxNumberOfSsrcs) {
+    LOG(LS_WARNING) << "Max number of REMB feedback SSRCs reached.";
+    return false;
+  }
+  ssrcs_.push_back(ssrc);
+  return true;
+}
+
+bool Remb::AppliesToMany(const std::vector<uint32_t>& ssrcs) {
+  if (ssrcs_.size() + ssrcs.size() > kMaxNumberOfSsrcs) {
     LOG(LS_WARNING) << "Not enough space for all given SSRCs.";
     return false;
   }
-  ssrcs_ = std::move(ssrcs);
+  // Append.
+  ssrcs_.insert(ssrcs_.end(), ssrcs.begin(), ssrcs.end());
   return true;
 }
 

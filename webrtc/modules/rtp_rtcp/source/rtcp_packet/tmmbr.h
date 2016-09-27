@@ -34,7 +34,7 @@ class Tmmbr : public Rtpfb {
   // Parse assumes header is already parsed and validated.
   bool Parse(const CommonHeader& packet);
 
-  void AddTmmbr(const TmmbItem& item);
+  void WithTmmbr(const TmmbItem& item);
 
   const std::vector<TmmbItem>& requests() const { return items_; }
 
@@ -51,7 +51,7 @@ class Tmmbr : public Rtpfb {
   }
 
   // Media ssrc is unused, shadow base class setter.
-  void SetMediaSsrc(uint32_t ssrc);
+  void To(uint32_t ssrc);
 
   std::vector<TmmbItem> items_;
 

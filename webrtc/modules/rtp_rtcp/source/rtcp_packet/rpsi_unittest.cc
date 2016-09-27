@@ -46,10 +46,10 @@ TEST(RtcpPacketRpsiTest, Parse) {
 
 TEST(RtcpPacketRpsiTest, Create) {
   Rpsi rpsi;
-  rpsi.SetSenderSsrc(kSenderSsrc);
-  rpsi.SetMediaSsrc(kRemoteSsrc);
-  rpsi.SetPayloadType(kPayloadType);
-  rpsi.SetPictureId(kPictureId);
+  rpsi.From(kSenderSsrc);
+  rpsi.To(kRemoteSsrc);
+  rpsi.WithPayloadType(kPayloadType);
+  rpsi.WithPictureId(kPictureId);
 
   rtc::Buffer packet = rpsi.Build();
 
@@ -59,8 +59,8 @@ TEST(RtcpPacketRpsiTest, Create) {
 
 TEST(RtcpPacketRpsiTest, ParseFailsOnTooSmallPacket) {
   Rpsi rpsi;
-  rpsi.SetSenderSsrc(kSenderSsrc);
-  rpsi.SetMediaSsrc(kRemoteSsrc);
+  rpsi.From(kSenderSsrc);
+  rpsi.To(kRemoteSsrc);
 
   rtc::Buffer packet = rpsi.Build();
   packet[3]--;  // Reduce size field by one word (4 bytes).
@@ -71,9 +71,9 @@ TEST(RtcpPacketRpsiTest, ParseFailsOnTooSmallPacket) {
 
 TEST(RtcpPacketRpsiTest, ParseFailsOnFractionalPaddingBytes) {
   Rpsi rpsi;
-  rpsi.SetSenderSsrc(kSenderSsrc);
-  rpsi.SetMediaSsrc(kRemoteSsrc);
-  rpsi.SetPictureId(kPictureId);
+  rpsi.From(kSenderSsrc);
+  rpsi.To(kRemoteSsrc);
+  rpsi.WithPictureId(kPictureId);
   rtc::Buffer packet = rpsi.Build();
   uint8_t* padding_bits = packet.data() + 12;
   uint8_t saved_padding_bits = *padding_bits;
@@ -87,9 +87,9 @@ TEST(RtcpPacketRpsiTest, ParseFailsOnFractionalPaddingBytes) {
 
 TEST(RtcpPacketRpsiTest, ParseFailsOnTooBigPadding) {
   Rpsi rpsi;
-  rpsi.SetSenderSsrc(kSenderSsrc);
-  rpsi.SetMediaSsrc(kRemoteSsrc);
-  rpsi.SetPictureId(1);  // Small picture id that occupy just 1 byte.
+  rpsi.From(kSenderSsrc);
+  rpsi.To(kRemoteSsrc);
+  rpsi.WithPictureId(1);  // Small picture id that occupy just 1 byte.
   rtc::Buffer packet = rpsi.Build();
   uint8_t* padding_bits = packet.data() + 12;
   ASSERT_TRUE(test::ParseSinglePacket(packet, &rpsi));
@@ -112,7 +112,7 @@ TEST(RtcpPacketRpsiTest, WithOneByteNativeString) {
   // 1000001 (7 bits = 1 byte in native string).
   const uint64_t kPictureId = 0x41;
   const uint16_t kNumberOfValidBytes = 1;
-  rpsi.SetPictureId(kPictureId);
+  rpsi.WithPictureId(kPictureId);
 
   rtc::Buffer packet = rpsi.Build();
   EXPECT_EQ(kNumberOfValidBytes, UsedBytes(packet));
@@ -127,7 +127,7 @@ TEST(RtcpPacketRpsiTest, WithTwoByteNativeString) {
   // |1 0000001 (7 bits = 1 byte in native string).
   const uint64_t kPictureId = 0x81;
   const uint16_t kNumberOfValidBytes = 2;
-  rpsi.SetPictureId(kPictureId);
+  rpsi.WithPictureId(kPictureId);
 
   rtc::Buffer packet = rpsi.Build();
   EXPECT_EQ(kNumberOfValidBytes, UsedBytes(packet));
@@ -142,7 +142,7 @@ TEST(RtcpPacketRpsiTest, WithThreeByteNativeString) {
   // 10000|00 100000|0 1000000 (7 bits = 1 byte in native string).
   const uint64_t kPictureId = 0x102040;
   const uint16_t kNumberOfValidBytes = 3;
-  rpsi.SetPictureId(kPictureId);
+  rpsi.WithPictureId(kPictureId);
 
   rtc::Buffer packet = rpsi.Build();
   EXPECT_EQ(kNumberOfValidBytes, UsedBytes(packet));
@@ -157,7 +157,7 @@ TEST(RtcpPacketRpsiTest, WithFourByteNativeString) {
   // 1000|001 00001|01 100001|1 1000010 (7 bits = 1 byte in native string).
   const uint64_t kPictureId = 0x84161C2;
   const uint16_t kNumberOfValidBytes = 4;
-  rpsi.SetPictureId(kPictureId);
+  rpsi.WithPictureId(kPictureId);
 
   rtc::Buffer packet = rpsi.Build();
   EXPECT_EQ(kNumberOfValidBytes, UsedBytes(packet));
@@ -173,7 +173,7 @@ TEST(RtcpPacketRpsiTest, WithMaxPictureId) {
   // 11 111111|1 1111111 (7 bits = 1 byte in native string).
   const uint64_t kPictureId = 0xffffffffffffffff;
   const uint16_t kNumberOfValidBytes = 10;
-  rpsi.SetPictureId(kPictureId);
+  rpsi.WithPictureId(kPictureId);
 
   rtc::Buffer packet = rpsi.Build();
   EXPECT_EQ(kNumberOfValidBytes, UsedBytes(packet));

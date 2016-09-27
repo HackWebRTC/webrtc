@@ -42,9 +42,9 @@ constexpr uint8_t kPacket[] = {0x82,  206, 0x00, 0x03,
 
 TEST(RtcpPacketSliTest, Create) {
   Sli sli;
-  sli.SetSenderSsrc(kSenderSsrc);
-  sli.SetMediaSsrc(kRemoteSsrc);
-  sli.AddPictureId(kPictureId, kFirstMb, kNumberOfMb);
+  sli.From(kSenderSsrc);
+  sli.To(kRemoteSsrc);
+  sli.WithPictureId(kPictureId, kFirstMb, kNumberOfMb);
 
   rtc::Buffer packet = sli.Build();
 
@@ -67,9 +67,9 @@ TEST(RtcpPacketSliTest, Parse) {
 
 TEST(RtcpPacketSliTest, ParseFailsOnTooSmallPacket) {
   Sli sli;
-  sli.SetSenderSsrc(kSenderSsrc);
-  sli.SetMediaSsrc(kRemoteSsrc);
-  sli.AddPictureId(kPictureId, kFirstMb, kNumberOfMb);
+  sli.From(kSenderSsrc);
+  sli.To(kRemoteSsrc);
+  sli.WithPictureId(kPictureId, kFirstMb, kNumberOfMb);
 
   rtc::Buffer packet = sli.Build();
   packet[3]--;  // Decrease size by 1 word (4 bytes).
