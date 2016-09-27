@@ -208,6 +208,20 @@ int16_t WebRtcOpus_SetComplexity(OpusEncInst* inst, int32_t complexity) {
   }
 }
 
+int16_t WebRtcOpus_SetForceChannels(OpusEncInst* inst, int32_t num_channels) {
+  if (!inst)
+    return -1;
+  if (num_channels == 0) {
+    return opus_encoder_ctl(inst->encoder,
+                            OPUS_SET_FORCE_CHANNELS(OPUS_AUTO));
+  } else if (num_channels == 1 || num_channels == 2) {
+    return opus_encoder_ctl(inst->encoder,
+                            OPUS_SET_FORCE_CHANNELS(num_channels));
+  } else {
+    return -1;
+  }
+}
+
 int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, size_t channels) {
   int error;
   OpusDecInst* state;
