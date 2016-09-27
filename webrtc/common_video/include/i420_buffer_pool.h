@@ -23,6 +23,8 @@ namespace webrtc {
 // When the I420Buffer is destructed, the memory is returned to the pool for use
 // by subsequent calls to CreateBuffer. If the resolution passed to CreateBuffer
 // changes, old buffers will be purged from the pool.
+// Note that CreateBuffer will crash if more than kMaxNumberOfFramesBeforeCrash
+// are created. This is to prevent memory leaks where frames are not returned.
 class I420BufferPool {
  public:
   I420BufferPool() : I420BufferPool(false) {}
@@ -36,6 +38,7 @@ class I420BufferPool {
   void Release();
 
  private:
+  static const size_t kMaxNumberOfFramesBeforeCrash;
   // Explicitly use a RefCountedObject to get access to HasOneRef,
   // needed by the pool to check exclusive access.
   using PooledI420Buffer = rtc::RefCountedObject<I420Buffer>;
