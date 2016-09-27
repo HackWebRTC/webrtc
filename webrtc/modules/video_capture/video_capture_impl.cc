@@ -275,14 +275,14 @@ int32_t VideoCaptureImpl::IncomingFrame(
         // Setting absolute height (in case it was negative).
         // In Windows, the image starts bottom left, instead of top left.
         // Setting a negative source height, inverts the image (within LibYuv).
-        _captureFrame.CreateEmptyFrame(target_width,
-                                       abs(target_height),
-                                       stride_y,
-                                       stride_uv, stride_uv);
+
+        // TODO(nisse): Use a pool?
+        rtc::scoped_refptr<I420Buffer> buffer = I420Buffer::Create(
+            target_width, abs(target_height), stride_y, stride_uv, stride_uv);
         const int conversionResult = ConvertToI420(
             commonVideoType, videoFrame, 0, 0,  // No cropping
             width, height, videoFrameLength,
-            apply_rotation ? _rotateFrame : kVideoRotation_0, &_captureFrame);
+            apply_rotation ? _rotateFrame : kVideoRotation_0, buffer.get());
         if (conversionResult < 0)
         {
           LOG(LS_ERROR) << "Failed to convert capture frame from type "
@@ -290,15 +290,12 @@ int32_t VideoCaptureImpl::IncomingFrame(
             return -1;
         }
 
-        if (!apply_rotation) {
-          _captureFrame.set_rotation(_rotateFrame);
-        } else {
-          _captureFrame.set_rotation(kVideoRotation_0);
-        }
-        _captureFrame.set_ntp_time_ms(captureTime);
-        _captureFrame.set_render_time_ms(rtc::TimeMillis());
+        VideoFrame captureFrame(
+            buffer, 0, rtc::TimeMillis(),
+            !apply_rotation ? _rotateFrame : kVideoRotation_0);
+        captureFrame.set_ntp_time_ms(captureTime);
 
-        DeliverCapturedFrame(_captureFrame);
+        DeliverCapturedFrame(captureFrame);
     }
     else // Encoded format
     {

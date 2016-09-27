@@ -69,6 +69,7 @@ size_t CalcBufferSize(VideoType type, int width, int height);
 //                    already open for writing.
 // Return value: 0 if OK, < 0 otherwise.
 int PrintVideoFrame(const VideoFrame& frame, FILE* file);
+int PrintVideoFrame(const VideoFrameBuffer& frame, FILE* file);
 
 // Extract buffer from VideoFrame or VideoFrameBuffer (consecutive
 // planes, no stride)
@@ -92,11 +93,13 @@ int ExtractBuffer(const VideoFrame& input_frame, size_t size, uint8_t* buffer);
 //   - sample_size      : Required only for the parsing of MJPG (set to 0 else).
 //   - rotate           : Rotation mode of output image.
 // Output:
-//   - dst_frame        : Reference to a destination frame.
+//   - dst_buffer       : Reference to a destination frame buffer.
 // Return value: 0 if OK, < 0 otherwise.
 
-// TODO(nisse): Deprecated, see
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=5921.
+// TODO(nisse): Delete this wrapper, and let users call libyuv directly. Most
+// calls pass |src_video_type| == kI420, and should use libyuv::I420Copy. The
+// only exception at the time of this writing is
+// VideoCaptureImpl::IncomingFrame, which still needs libyuv::ConvertToI420.
 int ConvertToI420(VideoType src_video_type,
                   const uint8_t* src_frame,
                   int crop_x,
@@ -105,7 +108,7 @@ int ConvertToI420(VideoType src_video_type,
                   int src_height,
                   size_t sample_size,
                   VideoRotation rotation,
-                  VideoFrame* dst_frame);
+                  I420Buffer* dst_buffer);
 
 // Convert From I420
 // Input:

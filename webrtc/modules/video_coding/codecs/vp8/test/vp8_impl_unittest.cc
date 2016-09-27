@@ -147,13 +147,15 @@ class TestVp8Impl : public ::testing::Test {
     EXPECT_EQ(stride_y, 176);
     EXPECT_EQ(stride_uv, 96);
 
-    input_frame_.CreateEmptyFrame(codec_inst_.width, codec_inst_.height,
-                                  stride_y, stride_uv, stride_uv);
-    input_frame_.set_timestamp(kTestTimestamp);
+    rtc::scoped_refptr<I420Buffer> buffer = I420Buffer::Create(
+        codec_inst_.width, codec_inst_.height, stride_y, stride_uv, stride_uv);
     // Using ConvertToI420 to add stride to the image.
-    EXPECT_EQ(0, ConvertToI420(kI420, source_buffer_.get(), 0, 0,
-                               codec_inst_.width, codec_inst_.height, 0,
-                               kVideoRotation_0, &input_frame_));
+    EXPECT_EQ(
+        0, ConvertToI420(kI420, source_buffer_.get(), 0, 0, codec_inst_.width,
+                         codec_inst_.height, 0, kVideoRotation_0,
+                         buffer.get()));
+    input_frame_.reset(
+        new VideoFrame(buffer, kTestTimestamp, 0, webrtc::kVideoRotation_0));
   }
 
   void SetUpEncodeDecode() {
@@ -195,7 +197,7 @@ class TestVp8Impl : public ::testing::Test {
   std::unique_ptr<Vp8UnitTestDecodeCompleteCallback> decode_complete_callback_;
   std::unique_ptr<uint8_t[]> source_buffer_;
   FILE* source_file_;
-  VideoFrame input_frame_;
+  std::unique_ptr<VideoFrame> input_frame_;
   std::unique_ptr<VideoEncoder> encoder_;
   std::unique_ptr<VideoDecoder> decoder_;
   EncodedImage encoded_frame_;
@@ -237,7 +239,7 @@ TEST_F(TestVp8Impl, EncoderParameterTest) {
 #endif
 TEST_F(TestVp8Impl, MAYBE_AlignedStrideEncodeDecode) {
   SetUpEncodeDecode();
-  encoder_->Encode(input_frame_, NULL, NULL);
+  encoder_->Encode(*input_frame_, NULL, NULL);
   EXPECT_GT(WaitForEncodedFrame(), 0u);
   // First frame should be a key frame.
   encoded_frame_._frameType = kVideoFrameKey;
@@ -246,7 +248,7 @@ TEST_F(TestVp8Impl, MAYBE_AlignedStrideEncodeDecode) {
             decoder_->Decode(encoded_frame_, false, NULL));
   EXPECT_GT(WaitForDecodedFrame(), 0u);
   // Compute PSNR on all planes (faster than SSIM).
-  EXPECT_GT(I420PSNR(&input_frame_, &decoded_frame_), 36);
+  EXPECT_GT(I420PSNR(input_frame_.get(), &decoded_frame_), 36);
   EXPECT_EQ(kTestTimestamp, decoded_frame_.timestamp());
   EXPECT_EQ(kTestNtpTimeMs, decoded_frame_.ntp_time_ms());
 }
@@ -258,7 +260,7 @@ TEST_F(TestVp8Impl, MAYBE_AlignedStrideEncodeDecode) {
 #endif
 TEST_F(TestVp8Impl, MAYBE_DecodeWithACompleteKeyFrame) {
   SetUpEncodeDecode();
-  encoder_->Encode(input_frame_, NULL, NULL);
+  encoder_->Encode(*input_frame_, NULL, NULL);
   EXPECT_GT(WaitForEncodedFrame(), 0u);
   // Setting complete to false -> should return an error.
   encoded_frame_._completeFrame = false;
@@ -273,7 +275,7 @@ TEST_F(TestVp8Impl, MAYBE_DecodeWithACompleteKeyFrame) {
   encoded_frame_._frameType = kVideoFrameKey;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             decoder_->Decode(encoded_frame_, false, NULL));
-  EXPECT_GT(I420PSNR(&input_frame_, &decoded_frame_), 36);
+  EXPECT_GT(I420PSNR(input_frame_.get(), &decoded_frame_), 36);
 }
 
 }  // namespace webrtc
