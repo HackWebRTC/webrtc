@@ -45,6 +45,8 @@ class AudioNetworkAdaptor {
 
   virtual void SetRtt(int rtt_ms) = 0;
 
+  virtual void SetTargetAudioBitrate(int target_audio_bitrate_bps) = 0;
+
   virtual void SetReceiverFrameLengthRange(int min_frame_length_ms,
                                            int max_frame_length_ms) = 0;
 

@@ -106,10 +106,11 @@ TEST(AudioNetworkAdaptorImplTest,
 
   constexpr int kBandwidth = 16000;
   constexpr float kPacketLoss = 0.7f;
+  constexpr int kRtt = 100;
+  constexpr int kTargetAudioBitrate = 15000;
 
   Controller::NetworkMetrics check;
   check.uplink_bandwidth_bps = rtc::Optional<int>(kBandwidth);
-
   for (auto& mock_controller : states.mock_controllers) {
     EXPECT_CALL(*mock_controller, MakeDecision(NetworkMetricsIs(check), _));
   }
@@ -121,6 +122,20 @@ TEST(AudioNetworkAdaptorImplTest,
     EXPECT_CALL(*mock_controller, MakeDecision(NetworkMetricsIs(check), _));
   }
   states.audio_network_adaptor->SetUplinkPacketLossFraction(kPacketLoss);
+  states.audio_network_adaptor->GetEncoderRuntimeConfig();
+
+  check.rtt_ms = rtc::Optional<int>(kRtt);
+  for (auto& mock_controller : states.mock_controllers) {
+    EXPECT_CALL(*mock_controller, MakeDecision(NetworkMetricsIs(check), _));
+  }
+  states.audio_network_adaptor->SetRtt(kRtt);
+  states.audio_network_adaptor->GetEncoderRuntimeConfig();
+
+  check.target_audio_bitrate_bps = rtc::Optional<int>(kTargetAudioBitrate);
+  for (auto& mock_controller : states.mock_controllers) {
+    EXPECT_CALL(*mock_controller, MakeDecision(NetworkMetricsIs(check), _));
+  }
+  states.audio_network_adaptor->SetTargetAudioBitrate(kTargetAudioBitrate);
   states.audio_network_adaptor->GetEncoderRuntimeConfig();
 }
 
@@ -159,6 +174,7 @@ TEST(AudioNetworkAdaptorImplTest,
   constexpr int kBandwidth = 16000;
   constexpr float kPacketLoss = 0.7f;
   constexpr int kRtt = 100;
+  constexpr int kTargetAudioBitrate = 15000;
 
   Controller::NetworkMetrics check;
   check.uplink_bandwidth_bps = rtc::Optional<int>(kBandwidth);
@@ -181,6 +197,13 @@ TEST(AudioNetworkAdaptorImplTest,
   EXPECT_CALL(*states.mock_debug_dump_writer,
               DumpNetworkMetrics(NetworkMetricsIs(check), timestamp_check));
   states.audio_network_adaptor->SetRtt(kRtt);
+
+  states.simulated_clock->AdvanceTimeMilliseconds(150);
+  timestamp_check += 150;
+  check.target_audio_bitrate_bps = rtc::Optional<int>(kTargetAudioBitrate);
+  EXPECT_CALL(*states.mock_debug_dump_writer,
+              DumpNetworkMetrics(NetworkMetricsIs(check), timestamp_check));
+  states.audio_network_adaptor->SetTargetAudioBitrate(kTargetAudioBitrate);
 }
 
 }  // namespace webrtc

@@ -42,9 +42,29 @@ void AudioNetworkAdaptorImpl::SetUplinkPacketLossFraction(
   DumpNetworkMetrics();
 }
 
+void AudioNetworkAdaptorImpl::SetTargetAudioBitrate(
+    int target_audio_bitrate_bps) {
+  last_metrics_.target_audio_bitrate_bps =
+      rtc::Optional<int>(target_audio_bitrate_bps);
+  DumpNetworkMetrics();
+}
+
 void AudioNetworkAdaptorImpl::SetRtt(int rtt_ms) {
   last_metrics_.rtt_ms = rtc::Optional<int>(rtt_ms);
   DumpNetworkMetrics();
+}
+
+void AudioNetworkAdaptorImpl::SetReceiverFrameLengthRange(
+    int min_frame_length_ms,
+    int max_frame_length_ms) {
+  Controller::Constraints constraints;
+  constraints.receiver_frame_length_range =
+      rtc::Optional<Controller::Constraints::FrameLengthRange>(
+          Controller::Constraints::FrameLengthRange(min_frame_length_ms,
+                                                    max_frame_length_ms));
+  auto controllers = controller_manager_->GetControllers();
+  for (auto& controller : controllers)
+    controller->SetConstraints(constraints);
 }
 
 AudioNetworkAdaptor::EncoderRuntimeConfig
@@ -60,19 +80,6 @@ AudioNetworkAdaptorImpl::GetEncoderRuntimeConfig() {
         config, config_.clock->TimeInMilliseconds());
 
   return config;
-}
-
-void AudioNetworkAdaptorImpl::SetReceiverFrameLengthRange(
-    int min_frame_length_ms,
-    int max_frame_length_ms) {
-  Controller::Constraints constraints;
-  constraints.receiver_frame_length_range =
-      rtc::Optional<Controller::Constraints::FrameLengthRange>(
-          Controller::Constraints::FrameLengthRange(min_frame_length_ms,
-                                                    max_frame_length_ms));
-  auto controllers = controller_manager_->GetControllers();
-  for (auto& controller : controllers)
-    controller->SetConstraints(constraints);
 }
 
 void AudioNetworkAdaptorImpl::StartDebugDump(FILE* file_handle) {
