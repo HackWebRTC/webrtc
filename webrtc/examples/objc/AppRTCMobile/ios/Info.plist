@@ -61,6 +61,10 @@
     <string>audio</string>
     <string>voip</string>
   </array>
+  <key>NSCameraUsageDescription</key>
+  <string>Camera access needed for video calling</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Microphone access needed for video calling</string>
   <key>UILaunchImages</key>
   <array>
     <dict>
