@@ -304,7 +304,6 @@ if (rtc_include_tests) {
       "audio_coding/neteq/expand_unittest.cc",
       "audio_coding/neteq/merge_unittest.cc",
       "audio_coding/neteq/mock/mock_audio_decoder.h",
-      "audio_coding/neteq/mock/mock_audio_vector.h",
       "audio_coding/neteq/mock/mock_buffer_level_filter.h",
       "audio_coding/neteq/mock/mock_decoder_database.h",
       "audio_coding/neteq/mock/mock_delay_manager.h",
