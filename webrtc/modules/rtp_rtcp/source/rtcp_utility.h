@@ -49,10 +49,6 @@ class NackStats {
 
 uint32_t MidNtp(uint32_t ntp_sec, uint32_t ntp_frac);
 
-// CNAME
-struct RTCPCnameInformation {
-  char name[RTCP_CNAME_SIZE];
-};
 struct RTCPPacketRR {
   uint32_t SenderSSRC;
   uint8_t NumberOfReportBlocks;

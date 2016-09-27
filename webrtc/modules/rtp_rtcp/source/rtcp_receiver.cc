@@ -49,9 +49,6 @@ using rtcp::CommonHeader;
 using rtcp::ReportBlock;
 using RTCPHelp::RTCPReceiveInformation;
 using RTCPHelp::RTCPReportBlockInformation;
-using RTCPUtility::RTCPCnameInformation;
-using RTCPUtility::RTCPPacketReportBlockItem;
-using RTCPUtility::RTCPPacketTypes;
 
 // The number of RTCP time intervals needed to trigger a timeout.
 const int kRrTimeoutIntervals = 3;
@@ -121,12 +118,6 @@ RTCPReceiver::~RTCPReceiver() {
         _receivedInfoMap.begin();
     delete first->second;
     _receivedInfoMap.erase(first);
-  }
-  while (!_receivedCnameMap.empty()) {
-    std::map<uint32_t, RTCPCnameInformation*>::iterator first =
-        _receivedCnameMap.begin();
-    delete first->second;
-    _receivedCnameMap.erase(first);
   }
 }
 
@@ -611,35 +602,6 @@ RTCPReportBlockInformation* RTCPReceiver::GetReportBlockInformation(
   return it_info->second;
 }
 
-RTCPCnameInformation* RTCPReceiver::CreateCnameInformation(
-    uint32_t remoteSSRC) {
-  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
-
-  std::map<uint32_t, RTCPCnameInformation*>::iterator it =
-      _receivedCnameMap.find(remoteSSRC);
-
-  if (it != _receivedCnameMap.end()) {
-    return it->second;
-  }
-  RTCPCnameInformation* cnameInfo = new RTCPCnameInformation;
-  memset(cnameInfo->name, 0, RTCP_CNAME_SIZE);
-  _receivedCnameMap[remoteSSRC] = cnameInfo;
-  return cnameInfo;
-}
-
-RTCPCnameInformation* RTCPReceiver::GetCnameInformation(
-    uint32_t remoteSSRC) const {
-  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
-
-  std::map<uint32_t, RTCPCnameInformation*>::const_iterator it =
-      _receivedCnameMap.find(remoteSSRC);
-
-  if (it == _receivedCnameMap.end()) {
-    return NULL;
-  }
-  return it->second;
-}
-
 RTCPReceiveInformation* RTCPReceiver::CreateReceiveInformation(
     uint32_t remoteSSRC) {
   rtc::CritScope lock(&_criticalSectionRTCPReceiver);
@@ -765,11 +727,7 @@ void RTCPReceiver::HandleSDES(const CommonHeader& rtcp_block,
   }
 
   for (const rtcp::Sdes::Chunk& chunk : sdes.chunks()) {
-    RTCPCnameInformation* cnameInfo = CreateCnameInformation(chunk.ssrc);
-    RTC_DCHECK(cnameInfo);
-
-    cnameInfo->name[RTCP_CNAME_SIZE - 1] = 0;
-    strncpy(cnameInfo->name, chunk.cname.c_str(), RTCP_CNAME_SIZE - 1);
+    received_cnames_[chunk.ssrc] = chunk.cname;
     {
       rtc::CritScope lock(&_criticalSectionFeedbacks);
       if (stats_callback_)
@@ -827,13 +785,7 @@ void RTCPReceiver::HandleBYE(const CommonHeader& rtcp_block) {
   if (receiveInfoIt != _receivedInfoMap.end())
     receiveInfoIt->second->ready_for_delete = true;
 
-  std::map<uint32_t, RTCPCnameInformation*>::iterator cnameInfoIt =
-      _receivedCnameMap.find(bye.sender_ssrc());
-
-  if (cnameInfoIt != _receivedCnameMap.end()) {
-    delete cnameInfoIt->second;
-    _receivedCnameMap.erase(cnameInfoIt);
-  }
+  received_cnames_.erase(bye.sender_ssrc());
   xr_rr_rtt_ms_ = 0;
 }
 
@@ -1186,15 +1138,15 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
 
 int32_t RTCPReceiver::CNAME(uint32_t remoteSSRC,
                             char cName[RTCP_CNAME_SIZE]) const {
-  assert(cName);
+  RTC_DCHECK(cName);
 
   rtc::CritScope lock(&_criticalSectionRTCPReceiver);
-  RTCPCnameInformation* cnameInfo = GetCnameInformation(remoteSSRC);
-  if (cnameInfo == NULL) {
+  auto received_cname_it = received_cnames_.find(remoteSSRC);
+  if (received_cname_it == received_cnames_.end())
     return -1;
-  }
-  cName[RTCP_CNAME_SIZE - 1] = 0;
-  strncpy(cName, cnameInfo->name, RTCP_CNAME_SIZE - 1);
+
+  size_t length = received_cname_it->second.copy(cName, RTCP_CNAME_SIZE - 1);
+  cName[length] = 0;
   return 0;
 }
 

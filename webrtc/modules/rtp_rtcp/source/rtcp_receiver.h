@@ -13,6 +13,7 @@
 
 #include <map>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "webrtc/base/criticalsection.h"
@@ -126,11 +127,6 @@ class RTCPReceiver {
 
   void TriggerCallbacksFromRTCPPacket(
       const PacketInformation& packet_information);
-
-  RTCPUtility::RTCPCnameInformation* CreateCnameInformation(
-      uint32_t remoteSSRC);
-  RTCPUtility::RTCPCnameInformation* GetCnameInformation(
-      uint32_t remoteSSRC) const;
 
   RTCPHelp::RTCPReceiveInformation* CreateReceiveInformation(
       uint32_t remoteSSRC);
@@ -249,7 +245,8 @@ class RTCPReceiver {
   ReportBlockMap _receivedReportBlockMap
       GUARDED_BY(_criticalSectionRTCPReceiver);
   ReceivedInfoMap _receivedInfoMap;
-  std::map<uint32_t, RTCPUtility::RTCPCnameInformation*> _receivedCnameMap;
+  std::map<uint32_t, std::string> received_cnames_
+      GUARDED_BY(_criticalSectionRTCPReceiver);
 
   // The last time we received an RTCP RR.
   int64_t _lastReceivedRrMs;
