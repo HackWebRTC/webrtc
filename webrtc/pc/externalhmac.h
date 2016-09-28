@@ -27,16 +27,19 @@
 // the auth_type of srtp_policy_t. The application must first register auth
 // functions and the corresponding authentication id using
 // crypto_kernel_replace_auth_type function.
-#if defined(HAVE_SRTP) && defined(ENABLE_EXTERNAL_AUTH)
 
 #include "webrtc/base/basictypes.h"
+#ifdef HAVE_SRTP
 extern "C" {
 #ifdef SRTP_RELATIVE_PATH
 #include "auth.h"  // NOLINT
 #else
-#include "third_party/libsrtp/srtp/crypto/include/auth.h"
+#include "third_party/libsrtp/crypto/include/auth.h"
 #endif  // SRTP_RELATIVE_PATH
 }
+#endif  // HAVE_SRTP
+
+#if defined(HAVE_SRTP) && defined(ENABLE_EXTERNAL_AUTH)
 
 #define EXTERNAL_HMAC_SHA1 HMAC_SHA1 + 1
 #define HMAC_KEY_LENGTH 20

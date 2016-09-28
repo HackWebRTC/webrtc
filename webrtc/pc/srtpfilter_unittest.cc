@@ -20,7 +20,7 @@ extern "C" {
 #ifdef SRTP_RELATIVE_PATH
 #include "crypto/include/err.h"
 #else
-#include "third_party/libsrtp/srtp/crypto/include/err.h"
+#include "third_party/libsrtp/crypto/include/err.h"
 #endif
 }
 
@@ -813,30 +813,30 @@ class SrtpStatTest
 
 TEST_F(SrtpStatTest, TestProtectRtpError) {
   Reset();
-  srtp_stat_.AddProtectRtpResult(1, err_status_ok);
+  srtp_stat_.AddProtectRtpResult(1, srtp_err_status_ok);
   EXPECT_EQ(0U, ssrc_);
   EXPECT_EQ(-1, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_NONE, error_);
   Reset();
-  srtp_stat_.AddProtectRtpResult(1, err_status_auth_fail);
+  srtp_stat_.AddProtectRtpResult(1, srtp_err_status_auth_fail);
   EXPECT_EQ(1U, ssrc_);
   EXPECT_EQ(cricket::SrtpFilter::PROTECT, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_AUTH, error_);
   Reset();
-  srtp_stat_.AddProtectRtpResult(1, err_status_fail);
+  srtp_stat_.AddProtectRtpResult(1, srtp_err_status_fail);
   EXPECT_EQ(1U, ssrc_);
   EXPECT_EQ(cricket::SrtpFilter::PROTECT, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_FAIL, error_);
   // Within 200ms, the error will not be triggered.
   Reset();
-  srtp_stat_.AddProtectRtpResult(1, err_status_fail);
+  srtp_stat_.AddProtectRtpResult(1, srtp_err_status_fail);
   EXPECT_EQ(0U, ssrc_);
   EXPECT_EQ(-1, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_NONE, error_);
   // Now the error will be triggered again.
   Reset();
   rtc::Thread::Current()->SleepMs(210);
-  srtp_stat_.AddProtectRtpResult(1, err_status_fail);
+  srtp_stat_.AddProtectRtpResult(1, srtp_err_status_fail);
   EXPECT_EQ(1U, ssrc_);
   EXPECT_EQ(cricket::SrtpFilter::PROTECT, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_FAIL, error_);
@@ -844,41 +844,41 @@ TEST_F(SrtpStatTest, TestProtectRtpError) {
 
 TEST_F(SrtpStatTest, TestUnprotectRtpError) {
   Reset();
-  srtp_stat_.AddUnprotectRtpResult(1, err_status_ok);
+  srtp_stat_.AddUnprotectRtpResult(1, srtp_err_status_ok);
   EXPECT_EQ(0U, ssrc_);
   EXPECT_EQ(-1, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_NONE, error_);
   Reset();
-  srtp_stat_.AddUnprotectRtpResult(1, err_status_auth_fail);
+  srtp_stat_.AddUnprotectRtpResult(1, srtp_err_status_auth_fail);
   EXPECT_EQ(1U, ssrc_);
   EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_AUTH, error_);
   Reset();
-  srtp_stat_.AddUnprotectRtpResult(1, err_status_replay_fail);
+  srtp_stat_.AddUnprotectRtpResult(1, srtp_err_status_replay_fail);
   EXPECT_EQ(1U, ssrc_);
   EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_REPLAY, error_);
   Reset();
   rtc::Thread::Current()->SleepMs(210);
-  srtp_stat_.AddUnprotectRtpResult(1, err_status_replay_old);
+  srtp_stat_.AddUnprotectRtpResult(1, srtp_err_status_replay_old);
   EXPECT_EQ(1U, ssrc_);
   EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_REPLAY, error_);
   Reset();
-  srtp_stat_.AddUnprotectRtpResult(1, err_status_fail);
+  srtp_stat_.AddUnprotectRtpResult(1, srtp_err_status_fail);
   EXPECT_EQ(1U, ssrc_);
   EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_FAIL, error_);
   // Within 200ms, the error will not be triggered.
   Reset();
-  srtp_stat_.AddUnprotectRtpResult(1, err_status_fail);
+  srtp_stat_.AddUnprotectRtpResult(1, srtp_err_status_fail);
   EXPECT_EQ(0U, ssrc_);
   EXPECT_EQ(-1, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_NONE, error_);
   // Now the error will be triggered again.
   Reset();
   rtc::Thread::Current()->SleepMs(210);
-  srtp_stat_.AddUnprotectRtpResult(1, err_status_fail);
+  srtp_stat_.AddUnprotectRtpResult(1, srtp_err_status_fail);
   EXPECT_EQ(1U, ssrc_);
   EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_FAIL, error_);
@@ -886,61 +886,61 @@ TEST_F(SrtpStatTest, TestUnprotectRtpError) {
 
 TEST_F(SrtpStatTest, TestProtectRtcpError) {
   Reset();
-  srtp_stat_.AddProtectRtcpResult(err_status_ok);
+  srtp_stat_.AddProtectRtcpResult(srtp_err_status_ok);
   EXPECT_EQ(-1, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_NONE, error_);
   Reset();
-  srtp_stat_.AddProtectRtcpResult(err_status_auth_fail);
+  srtp_stat_.AddProtectRtcpResult(srtp_err_status_auth_fail);
   EXPECT_EQ(cricket::SrtpFilter::PROTECT, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_AUTH, error_);
   Reset();
-  srtp_stat_.AddProtectRtcpResult(err_status_fail);
+  srtp_stat_.AddProtectRtcpResult(srtp_err_status_fail);
   EXPECT_EQ(cricket::SrtpFilter::PROTECT, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_FAIL, error_);
   // Within 200ms, the error will not be triggered.
   Reset();
-  srtp_stat_.AddProtectRtcpResult(err_status_fail);
+  srtp_stat_.AddProtectRtcpResult(srtp_err_status_fail);
   EXPECT_EQ(-1, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_NONE, error_);
   // Now the error will be triggered again.
   Reset();
   rtc::Thread::Current()->SleepMs(210);
-  srtp_stat_.AddProtectRtcpResult(err_status_fail);
+  srtp_stat_.AddProtectRtcpResult(srtp_err_status_fail);
   EXPECT_EQ(cricket::SrtpFilter::PROTECT, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_FAIL, error_);
 }
 
 TEST_F(SrtpStatTest, TestUnprotectRtcpError) {
   Reset();
-  srtp_stat_.AddUnprotectRtcpResult(err_status_ok);
+  srtp_stat_.AddUnprotectRtcpResult(srtp_err_status_ok);
   EXPECT_EQ(-1, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_NONE, error_);
   Reset();
-  srtp_stat_.AddUnprotectRtcpResult(err_status_auth_fail);
+  srtp_stat_.AddUnprotectRtcpResult(srtp_err_status_auth_fail);
   EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_AUTH, error_);
   Reset();
-  srtp_stat_.AddUnprotectRtcpResult(err_status_replay_fail);
+  srtp_stat_.AddUnprotectRtcpResult(srtp_err_status_replay_fail);
   EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_REPLAY, error_);
   Reset();
   rtc::Thread::Current()->SleepMs(210);
-  srtp_stat_.AddUnprotectRtcpResult(err_status_replay_fail);
+  srtp_stat_.AddUnprotectRtcpResult(srtp_err_status_replay_fail);
   EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_REPLAY, error_);
   Reset();
-  srtp_stat_.AddUnprotectRtcpResult(err_status_fail);
+  srtp_stat_.AddUnprotectRtcpResult(srtp_err_status_fail);
   EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_FAIL, error_);
   // Within 200ms, the error will not be triggered.
   Reset();
-  srtp_stat_.AddUnprotectRtcpResult(err_status_fail);
+  srtp_stat_.AddUnprotectRtcpResult(srtp_err_status_fail);
   EXPECT_EQ(-1, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_NONE, error_);
   // Now the error will be triggered again.
   Reset();
   rtc::Thread::Current()->SleepMs(210);
-  srtp_stat_.AddUnprotectRtcpResult(err_status_fail);
+  srtp_stat_.AddUnprotectRtcpResult(srtp_err_status_fail);
   EXPECT_EQ(cricket::SrtpFilter::UNPROTECT, mode_);
   EXPECT_EQ(cricket::SrtpFilter::ERROR_FAIL, error_);
 }

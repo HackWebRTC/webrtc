@@ -8,23 +8,25 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#if defined(HAVE_SRTP) && defined(ENABLE_EXTERNAL_AUTH)
-
 #include "webrtc/pc/externalhmac.h"
 
 #include <stdlib.h>  // For malloc/free.
 
+#ifdef HAVE_SRTP
 extern "C" {
 #ifdef SRTP_RELATIVE_PATH
 #include "crypto_kernel.h"  // NOLINT
 #include "srtp.h"  // NOLINT
 #else
-#include "third_party/libsrtp/srtp/crypto/include/crypto_kernel.h"
-#include "third_party/libsrtp/srtp/include/srtp.h"
+#include "third_party/libsrtp/crypto/include/crypto_kernel.h"
+#include "third_party/libsrtp/include/srtp.h"
 #endif  // SRTP_RELATIVE_PATH
 }
+#endif // HAVE_SRTP
 
 #include "webrtc/base/logging.h"
+
+#if defined(HAVE_SRTP) && defined(ENABLE_EXTERNAL_AUTH)
 
 // Begin test case 0 */
 static const uint8_t kExternalHmacTestCase0Key[20] = {

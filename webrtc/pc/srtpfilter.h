@@ -28,8 +28,12 @@
 
 // Forward declaration to avoid pulling in libsrtp headers here
 struct srtp_event_data_t;
-struct srtp_ctx_t;
-struct srtp_policy_t;
+
+// Libsrtp V1/V2 compatibility hack.
+// TODO(mattdr): Remove this #define after libsrtp 2.0 is in.
+#define srtp_ctx_t_ srtp_ctx_t
+
+struct srtp_ctx_t_;
 
 namespace cricket {
 
@@ -222,7 +226,7 @@ class SrtpSession {
   static void HandleEventThunk(srtp_event_data_t* ev);
 
   rtc::ThreadChecker thread_checker_;
-  srtp_ctx_t* session_;
+  srtp_ctx_t_* session_;
   int rtp_auth_tag_len_;
   int rtcp_auth_tag_len_;
   std::unique_ptr<SrtpStat> srtp_stat_;
