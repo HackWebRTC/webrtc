@@ -41,6 +41,10 @@ def print_landmines():
   if platform() == 'android':
     print ('Clobber to remove artifacts on Android causing lint errors after '
            'rolling in https://codereview.webrtc.org/2293863002')
+    print ('Clobber to remove old AppRTCDemo artifacts after renaming to '
+           'AppRTCMobile in https://codereview.webrtc.org/2373443005')
+  if platform() == 'win':
+    print 'Clobber to resolve some issues with corrupt .pdb files on bots.'
 
 
 def main():
