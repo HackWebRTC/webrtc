@@ -49,6 +49,13 @@ void SetExpectedValues3(T value0, T value1, T value2, T* expected_values) {
   expected_values[2] = value2;
 }
 
+enum PlaneType {
+  kYPlane = 0,
+  kUPlane = 1,
+  kVPlane = 2,
+  kNumOfPlanes = 3,
+};
+
 class Vp8TestEncodedImageCallback : public EncodedImageCallback {
  public:
   Vp8TestEncodedImageCallback() : picture_id_(-1) {

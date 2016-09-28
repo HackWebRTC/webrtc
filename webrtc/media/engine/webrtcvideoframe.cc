@@ -16,10 +16,6 @@
 #include "webrtc/media/base/videocommon.h"
 #include "webrtc/video_frame.h"
 
-using webrtc::kYPlane;
-using webrtc::kUPlane;
-using webrtc::kVPlane;
-
 namespace cricket {
 
 WebRtcVideoFrame::WebRtcVideoFrame()

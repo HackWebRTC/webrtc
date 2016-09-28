@@ -347,11 +347,11 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
   VideoFrame* video_frame = static_cast<VideoFrame*>(
       av_buffer_get_opaque(av_frame_->buf[0]));
   RTC_DCHECK(video_frame);
-  RTC_CHECK_EQ(av_frame_->data[kYPlane],
+  RTC_CHECK_EQ(av_frame_->data[kYPlaneIndex],
                video_frame->video_frame_buffer()->DataY());
-  RTC_CHECK_EQ(av_frame_->data[kUPlane],
+  RTC_CHECK_EQ(av_frame_->data[kUPlaneIndex],
                video_frame->video_frame_buffer()->DataU());
-  RTC_CHECK_EQ(av_frame_->data[kVPlane],
+  RTC_CHECK_EQ(av_frame_->data[kVPlaneIndex],
                video_frame->video_frame_buffer()->DataV());
   video_frame->set_timestamp(input_image._timeStamp);
 

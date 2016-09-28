@@ -100,13 +100,6 @@ class VideoFrame {
   // to the constructor.
   void ShallowCopy(const VideoFrame& videoFrame);
 
-  // Get allocated size per plane.
-
-  // TODO(nisse): Deprecated. Should be deleted in the cricket::VideoFrame and
-  // webrtc::VideoFrame merge. When used with memset, consider using
-  // libyuv::I420Rect instead.
-  int allocated_size(PlaneType type) const;
-
   // Get frame width.
   int width() const;
 

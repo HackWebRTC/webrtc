@@ -21,12 +21,6 @@ namespace webrtc {
 
 namespace {
 
-int ExpectedSize(int plane_stride, int image_height, PlaneType type) {
-  if (type == kYPlane)
-    return plane_stride * image_height;
-  return plane_stride * ((image_height + 1) / 2);
-}
-
 rtc::scoped_refptr<I420Buffer> CreateGradient(int width, int height) {
   rtc::scoped_refptr<I420Buffer> buffer(
       I420Buffer::Create(width, height));
@@ -108,22 +102,6 @@ TEST(TestVideoFrame, WidthHeightValues) {
   EXPECT_EQ(456, frame.ntp_time_ms());
   frame.set_render_time_ms(789);
   EXPECT_EQ(789, frame.render_time_ms());
-}
-
-TEST(TestVideoFrame, SizeAllocation) {
-  VideoFrame frame;
-  frame. CreateEmptyFrame(10, 10, 12, 14, 220);
-  int height = frame.height();
-  int stride_y = frame.video_frame_buffer()->StrideY();
-  int stride_u = frame.video_frame_buffer()->StrideU();
-  int stride_v = frame.video_frame_buffer()->StrideV();
-  // Verify that allocated size was computed correctly.
-  EXPECT_EQ(ExpectedSize(stride_y, height, kYPlane),
-            frame.allocated_size(kYPlane));
-  EXPECT_EQ(ExpectedSize(stride_u, height, kUPlane),
-            frame.allocated_size(kUPlane));
-  EXPECT_EQ(ExpectedSize(stride_v, height, kVPlane),
-            frame.allocated_size(kVPlane));
 }
 
 TEST(TestVideoFrame, CopyFrame) {
@@ -254,11 +232,6 @@ TEST(TestVideoFrame, CopyBuffer) {
                                stride_uv, 8, 8));
   EXPECT_TRUE(test::EqualPlane(buffer_v, frame2.video_frame_buffer()->DataV(),
                                stride_uv, 8, 8));
-
-  // Compare size.
-  EXPECT_LE(kSizeY, frame2.allocated_size(kYPlane));
-  EXPECT_LE(kSizeUv, frame2.allocated_size(kUPlane));
-  EXPECT_LE(kSizeUv, frame2.allocated_size(kVPlane));
 }
 
 TEST(TestVideoFrame, FailToReuseAllocation) {

@@ -133,28 +133,6 @@ void VideoFrame::ShallowCopy(const VideoFrame& videoFrame) {
   rotation_ = videoFrame.rotation_;
 }
 
-// TODO(nisse): Delete. Besides test code, only one use, in
-// webrtcvideoengine2.cc:CreateBlackFrame.
-int VideoFrame::allocated_size(PlaneType type) const {
-  const int plane_height = (type == kYPlane) ? height() : (height() + 1) / 2;
-  int stride;
-  switch (type) {
-    case kYPlane:
-      stride = video_frame_buffer_->StrideY();
-      break;
-    case kUPlane:
-      stride = video_frame_buffer_->StrideU();
-      break;
-    case kVPlane:
-      stride = video_frame_buffer_->StrideV();
-      break;
-    default:
-      RTC_NOTREACHED();
-      return 0;
-  }
-  return plane_height * stride;
-}
-
 int VideoFrame::width() const {
   return video_frame_buffer_ ? video_frame_buffer_->width() : 0;
 }

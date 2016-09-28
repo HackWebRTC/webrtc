@@ -23,13 +23,6 @@
 
 namespace webrtc {
 
-enum PlaneType {
-  kYPlane = 0,
-  kUPlane = 1,
-  kVPlane = 2,
-  kNumOfPlanes = 3,
-};
-
 // Interface of a simple frame buffer containing pixel data. This interface does
 // not contain any frame metadata such as rotation, timestamp, pixel_width, etc.
 class VideoFrameBuffer : public rtc::RefCountInterface {
