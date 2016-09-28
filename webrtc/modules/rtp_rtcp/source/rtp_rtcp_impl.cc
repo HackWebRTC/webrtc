@@ -324,7 +324,8 @@ RTCPSender::FeedbackState ModuleRtpRtcpImpl::GetFeedbackState() {
                   &state.last_rr_ntp_frac,
                   &state.remote_sr);
 
-  state.has_last_xr_rr = LastReceivedXrReferenceTimeInfo(&state.last_xr_rr);
+  state.has_last_xr_rr =
+      rtcp_receiver_.LastReceivedXrReferenceTimeInfo(&state.last_xr_rr);
 
   uint32_t tmp;
   BitrateSent(&state.send_bitrate, &tmp, &tmp, &tmp);
@@ -896,11 +897,6 @@ bool ModuleRtpRtcpImpl::LastReceivedNTP(
   *remote_sr =
       ((ntp_secs & 0x0000ffff) << 16) + ((ntp_frac & 0xffff0000) >> 16);
   return true;
-}
-
-bool ModuleRtpRtcpImpl::LastReceivedXrReferenceTimeInfo(
-    RtcpReceiveTimeInfo* info) const {
-  return rtcp_receiver_.LastReceivedXrReferenceTimeInfo(info);
 }
 
 bool ModuleRtpRtcpImpl::UpdateRTCPReceiveInformationTimers() {

@@ -294,8 +294,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
                        uint32_t* NTPfrac,
                        uint32_t* remote_sr) const;
 
-  bool LastReceivedXrReferenceTimeInfo(RtcpReceiveTimeInfo* info) const;
-
   std::vector<rtcp::TmmbItem> BoundingSet(bool* tmmbr_owner);
 
   void BitrateSent(uint32_t* total_rate,

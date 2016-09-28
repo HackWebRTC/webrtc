@@ -19,6 +19,7 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/dlrr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_receiver_help.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/typedefs.h"
@@ -26,7 +27,6 @@
 namespace webrtc {
 namespace rtcp {
 class CommonHeader;
-struct ReceiveTimeInfo;
 class ReportBlock;
 class Rrtr;
 class TmmbItem;
@@ -74,7 +74,7 @@ class RTCPReceiver {
            uint32_t* RTCPArrivalTimeFrac,
            uint32_t* rtcp_timestamp) const;
 
-  bool LastReceivedXrReferenceTimeInfo(RtcpReceiveTimeInfo* info) const;
+  bool LastReceivedXrReferenceTimeInfo(rtcp::ReceiveTimeInfo* info) const;
 
   // get rtt
   int32_t RTT(uint32_t remoteSSRC,
@@ -233,7 +233,7 @@ class RTCPReceiver {
   uint32_t _lastReceivedSRNTPfrac;
 
   // Received XR receive time report.
-  RtcpReceiveTimeInfo _remoteXRReceiveTimeInfo;
+  rtcp::ReceiveTimeInfo remote_time_info_;
   // Time when the report was received.
   uint32_t _lastReceivedXRNTPsecs;
   uint32_t _lastReceivedXRNTPfrac;

@@ -635,21 +635,20 @@ TEST_F(RtcpSenderTest, SendXrWithDlrr) {
   rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);
   RTCPSender::FeedbackState feedback_state = rtp_rtcp_impl_->GetFeedbackState();
   feedback_state.has_last_xr_rr = true;
-  RtcpReceiveTimeInfo last_xr_rr;
-  last_xr_rr.sourceSSRC = 0x11111111;
-  last_xr_rr.lastRR = 0x22222222;
-  last_xr_rr.delaySinceLastRR = 0x33333333;
+  rtcp::ReceiveTimeInfo last_xr_rr;
+  last_xr_rr.ssrc = 0x11111111;
+  last_xr_rr.last_rr = 0x22222222;
+  last_xr_rr.delay_since_last_rr = 0x33333333;
   feedback_state.last_xr_rr = last_xr_rr;
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state, kRtcpReport));
   EXPECT_EQ(1, parser()->xr()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser()->xr()->sender_ssrc());
   EXPECT_EQ(1U, parser()->xr()->dlrrs().size());
   EXPECT_EQ(1U, parser()->xr()->dlrrs()[0].sub_blocks().size());
-  EXPECT_EQ(last_xr_rr.sourceSSRC,
-            parser()->xr()->dlrrs()[0].sub_blocks()[0].ssrc);
-  EXPECT_EQ(last_xr_rr.lastRR,
+  EXPECT_EQ(last_xr_rr.ssrc, parser()->xr()->dlrrs()[0].sub_blocks()[0].ssrc);
+  EXPECT_EQ(last_xr_rr.last_rr,
             parser()->xr()->dlrrs()[0].sub_blocks()[0].last_rr);
-  EXPECT_EQ(last_xr_rr.delaySinceLastRR,
+  EXPECT_EQ(last_xr_rr.delay_since_last_rr,
             parser()->xr()->dlrrs()[0].sub_blocks()[0].delay_since_last_rr);
 }
 

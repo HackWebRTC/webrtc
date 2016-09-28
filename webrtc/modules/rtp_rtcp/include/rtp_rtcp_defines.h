@@ -161,13 +161,6 @@ struct RTCPReportBlock {
   uint32_t delaySinceLastSR;
 };
 
-struct RtcpReceiveTimeInfo {
-  // Fields as described by RFC 3611 4.5.
-  uint32_t sourceSSRC;
-  uint32_t lastRR;
-  uint32_t delaySinceLastRR;
-};
-
 typedef std::list<RTCPReportBlock> ReportBlockList;
 
 struct RtpState {

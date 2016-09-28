@@ -251,15 +251,15 @@ bool RTCPReceiver::NTP(uint32_t* ReceivedNTPsecs,
 }
 
 bool RTCPReceiver::LastReceivedXrReferenceTimeInfo(
-    RtcpReceiveTimeInfo* info) const {
+    rtcp::ReceiveTimeInfo* info) const {
   assert(info);
   rtc::CritScope lock(&_criticalSectionRTCPReceiver);
   if (_lastReceivedXRNTPsecs == 0 && _lastReceivedXRNTPfrac == 0) {
     return false;
   }
 
-  info->sourceSSRC = _remoteXRReceiveTimeInfo.sourceSSRC;
-  info->lastRR = _remoteXRReceiveTimeInfo.lastRR;
+  info->ssrc = remote_time_info_.ssrc;
+  info->last_rr = remote_time_info_.last_rr;
 
   // Get the delay since last received report (RFC 3611).
   uint32_t receive_time =
@@ -270,7 +270,7 @@ bool RTCPReceiver::LastReceivedXrReferenceTimeInfo(
   _clock->CurrentNtp(ntp_sec, ntp_frac);
   uint32_t now = RTCPUtility::MidNtp(ntp_sec, ntp_frac);
 
-  info->delaySinceLastRR = now - receive_time;
+  info->delay_since_last_rr = now - receive_time;
   return true;
 }
 
@@ -809,8 +809,8 @@ void RTCPReceiver::HandleXr(const CommonHeader& rtcp_block,
 void RTCPReceiver::HandleXrReceiveReferenceTime(
     uint32_t sender_ssrc,
     const rtcp::Rrtr& rrtr) {
-  _remoteXRReceiveTimeInfo.sourceSSRC = sender_ssrc;
-  _remoteXRReceiveTimeInfo.lastRR = CompactNtp(rrtr.ntp());
+  remote_time_info_.ssrc = sender_ssrc;
+  remote_time_info_.last_rr = CompactNtp(rrtr.ntp());
   _clock->CurrentNtp(_lastReceivedXRNTPsecs, _lastReceivedXRNTPfrac);
 }
 

@@ -719,19 +719,19 @@ TEST_F(RtcpReceiverTest, InjectExtendedReportsReceiverReferenceTimePacket) {
   xr.SetSenderSsrc(kSenderSsrc);
   xr.AddRrtr(rrtr);
 
-  RtcpReceiveTimeInfo rrtime;
+  rtcp::ReceiveTimeInfo rrtime;
   EXPECT_FALSE(rtcp_receiver_.LastReceivedXrReferenceTimeInfo(&rrtime));
 
   InjectRtcpPacket(xr);
 
   EXPECT_TRUE(rtcp_receiver_.LastReceivedXrReferenceTimeInfo(&rrtime));
-  EXPECT_EQ(rrtime.sourceSSRC, kSenderSsrc);
-  EXPECT_EQ(rrtime.lastRR, CompactNtp(kNtp));
-  EXPECT_EQ(0u, rrtime.delaySinceLastRR);
+  EXPECT_EQ(rrtime.ssrc, kSenderSsrc);
+  EXPECT_EQ(rrtime.last_rr, CompactNtp(kNtp));
+  EXPECT_EQ(0U, rrtime.delay_since_last_rr);
 
   system_clock_.AdvanceTimeMilliseconds(1500);
   EXPECT_TRUE(rtcp_receiver_.LastReceivedXrReferenceTimeInfo(&rrtime));
-  EXPECT_NEAR(1500, CompactNtpRttToMs(rrtime.delaySinceLastRR), 1);
+  EXPECT_NEAR(1500, CompactNtpRttToMs(rrtime.delay_since_last_rr), 1);
 }
 
 TEST_F(RtcpReceiverTest, ExtendedReportsDlrrPacketNotToUsIgnored) {
@@ -809,7 +809,7 @@ TEST_F(RtcpReceiverTest, InjectExtendedReportsPacketWithMultipleReportBlocks) {
 
   InjectRtcpPacket(xr);
 
-  RtcpReceiveTimeInfo rrtime;
+  rtcp::ReceiveTimeInfo rrtime;
   EXPECT_TRUE(rtcp_receiver_.LastReceivedXrReferenceTimeInfo(&rrtime));
   int64_t rtt_ms = 0;
   EXPECT_TRUE(rtcp_receiver_.GetAndResetXrRrRtt(&rtt_ms));
@@ -836,7 +836,7 @@ TEST_F(RtcpReceiverTest, InjectExtendedReportsPacketWithUnknownReportBlock) {
   InjectRtcpPacket(packet);
 
   // Validate Rrtr was received and processed.
-  RtcpReceiveTimeInfo rrtime;
+  rtcp::ReceiveTimeInfo rrtime;
   EXPECT_TRUE(rtcp_receiver_.LastReceivedXrReferenceTimeInfo(&rrtime));
   // Validate Dlrr report wasn't processed.
   int64_t rtt_ms = 0;
@@ -897,7 +897,7 @@ TEST_F(RtcpReceiverTest, XrDlrrCalculatesNegativeRttAsOne) {
 }
 
 TEST_F(RtcpReceiverTest, LastReceivedXrReferenceTimeInfoInitiallyFalse) {
-  RtcpReceiveTimeInfo info;
+  rtcp::ReceiveTimeInfo info;
   EXPECT_FALSE(rtcp_receiver_.LastReceivedXrReferenceTimeInfo(&info));
 }
 
@@ -913,15 +913,15 @@ TEST_F(RtcpReceiverTest, GetLastReceivedExtendedReportsReferenceTimeInfo) {
 
   InjectRtcpPacket(xr);
 
-  RtcpReceiveTimeInfo info;
+  rtcp::ReceiveTimeInfo info;
   EXPECT_TRUE(rtcp_receiver_.LastReceivedXrReferenceTimeInfo(&info));
-  EXPECT_EQ(kSenderSsrc, info.sourceSSRC);
-  EXPECT_EQ(kNtpMid, info.lastRR);
-  EXPECT_EQ(0U, info.delaySinceLastRR);
+  EXPECT_EQ(kSenderSsrc, info.ssrc);
+  EXPECT_EQ(kNtpMid, info.last_rr);
+  EXPECT_EQ(0U, info.delay_since_last_rr);
 
   system_clock_.AdvanceTimeMilliseconds(1000);
   EXPECT_TRUE(rtcp_receiver_.LastReceivedXrReferenceTimeInfo(&info));
-  EXPECT_EQ(65536U, info.delaySinceLastRR);
+  EXPECT_EQ(65536U, info.delay_since_last_rr);
 }
 
 TEST_F(RtcpReceiverTest, ReceiveReportTimeout) {

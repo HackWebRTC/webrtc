@@ -714,8 +714,8 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildDlrr(
   xr->SetSenderSsrc(ssrc_);
 
   rtcp::Dlrr dlrr;
-  const RtcpReceiveTimeInfo& info = ctx.feedback_state_.last_xr_rr;
-  dlrr.AddDlrrItem(info.sourceSSRC, info.lastRR, info.delaySinceLastRR);
+  RTC_DCHECK(ctx.feedback_state_.has_last_xr_rr);
+  dlrr.AddDlrrItem(ctx.feedback_state_.last_xr_rr);
 
   xr->AddDlrr(dlrr);
 
