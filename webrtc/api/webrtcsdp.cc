@@ -2651,6 +2651,11 @@ bool ParseContent(const std::string& message,
         return false;
       }
     } else if (IsDtlsSctp(protocol) && HasAttribute(line, kAttributeSctpPort)) {
+      if (media_type != cricket::MEDIA_TYPE_DATA) {
+        return ParseFailed(
+            line, "sctp-port attribute found in non-data media description.",
+            error);
+      }
       int sctp_port;
       if (!ParseSctpPort(line, &sctp_port, error)) {
         return false;

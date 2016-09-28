@@ -3183,3 +3183,23 @@ TEST_F(WebRtcSdpTest, SerializeUnifiedPlanSessionDescription) {
   MakeUnifiedPlanDescription();
   TestSerialize(jdesc_, true);
 }
+
+// Regression test for heap overflow bug:
+// https://bugs.chromium.org/p/chromium/issues/detail?id=647916
+TEST_F(WebRtcSdpTest, DeserializeSctpPortInVideoDescription) {
+  JsepSessionDescription jdesc_output(kDummyString);
+
+  // The issue occurs when the sctp-port attribute is found in a video
+  // description. The actual heap overflow occurs when parsing the fmtp line.
+  const char kSdpWithSctpPortInVideoDescription[] =
+      "v=0\r\n"
+      "o=- 18446744069414584320 18446462598732840960 IN IP4 127.0.0.1\r\n"
+      "s=-\r\n"
+      "t=0 0\r\n"
+      "m=video 9 UDP/DTLS/SCTP 120\r\n"
+      "a=sctp-port 5000\r\n"
+      "a=fmtp:108 foo=10\r\n";
+
+  ExpectParseFailure(std::string(kSdpWithSctpPortInVideoDescription),
+                     "sctp-port");
+}
