@@ -15,6 +15,7 @@
 
 #include "webrtc/api/call/audio_sink.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/platform_file.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/media/base/rtputils.h"
 
@@ -182,6 +183,13 @@ webrtc::VideoSendStream::Stats FakeVideoSendStream::GetStats() {
   return stats_;
 }
 
+void FakeVideoSendStream::EnableEncodedFrameRecording(
+    const std::vector<rtc::PlatformFile>& files,
+    size_t byte_limit) {
+  for (rtc::PlatformFile file : files)
+    rtc::ClosePlatformFile(file);
+}
+
 void FakeVideoSendStream::ReconfigureVideoEncoder(
     webrtc::VideoEncoderConfig config) {
   if (config.encoder_specific_settings != NULL) {
@@ -256,6 +264,11 @@ void FakeVideoReceiveStream::Stop() {
 void FakeVideoReceiveStream::SetStats(
     const webrtc::VideoReceiveStream::Stats& stats) {
   stats_ = stats;
+}
+
+void FakeVideoReceiveStream::EnableEncodedFrameRecording(rtc::PlatformFile file,
+                                                         size_t byte_limit) {
+  rtc::ClosePlatformFile(file);
 }
 
 FakeCall::FakeCall(const webrtc::Call::Config& config)

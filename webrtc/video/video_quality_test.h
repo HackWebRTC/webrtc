@@ -41,6 +41,7 @@ class VideoQualityTest : public test::CallTest {
       int min_transmit_bps;
       bool send_side_bwe;
       bool fec;
+      std::string encoded_frame_base_path;
 
       Call::Config::BitrateConfig call_bitrate_config;
     } common;
@@ -107,12 +108,18 @@ class VideoQualityTest : public test::CallTest {
   void SetupCommon(Transport* send_transport, Transport* recv_transport);
   void SetupScreenshare();
 
+  void StartEncodedFrameLogs(VideoSendStream* stream);
+  void StartEncodedFrameLogs(VideoReceiveStream* stream);
+
   // We need a more general capturer than the FrameGeneratorCapturer.
   std::unique_ptr<test::VideoCapturer> capturer_;
   std::unique_ptr<test::TraceToStderr> trace_to_stderr_;
   std::unique_ptr<test::FrameGenerator> frame_generator_;
   std::unique_ptr<VideoEncoder> encoder_;
   Clock* const clock_;
+
+  int receive_logs_;
+  int send_logs_;
 
   Params params_;
 };

@@ -21,6 +21,7 @@
 #define WEBRTC_MEDIA_ENGINE_FAKEWEBRTCCALL_H_
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "webrtc/api/call/audio_receive_stream.h"
@@ -123,6 +124,9 @@ class FakeVideoSendStream final
     return num_encoder_reconfigurations_;
   }
 
+  void EnableEncodedFrameRecording(const std::vector<rtc::PlatformFile>& files,
+                                   size_t byte_limit) override;
+
  private:
   // rtc::VideoSinkInterface<VideoFrame> implementation.
   void OnFrame(const webrtc::VideoFrame& frame) override;
@@ -161,6 +165,9 @@ class FakeVideoReceiveStream final : public webrtc::VideoReceiveStream {
   void InjectFrame(const webrtc::VideoFrame& frame);
 
   void SetStats(const webrtc::VideoReceiveStream::Stats& stats);
+
+  void EnableEncodedFrameRecording(rtc::PlatformFile file,
+                                   size_t byte_limit) override;
 
  private:
   // webrtc::VideoReceiveStream implementation.
@@ -257,4 +264,4 @@ class FakeCall final : public webrtc::Call, public webrtc::PacketReceiver {
 };
 
 }  // namespace cricket
-#endif  // TALK_MEDIA_WEBRTC_WEBRTCVIDEOENGINE2_UNITTEST_H_
+#endif  // WEBRTC_MEDIA_ENGINE_FAKEWEBRTCCALL_H_

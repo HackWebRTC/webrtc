@@ -19,6 +19,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/event.h"
+#include "webrtc/base/file.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/base/rate_limiter.h"
 #include "webrtc/call.h"
@@ -3750,4 +3751,105 @@ TEST_F(EndToEndTest, TransportSeqNumOnAudioAndVideo) {
 
   RunBaseTest(&test);
 }
+
+class EndToEndLogTest : public EndToEndTest {
+  void SetUp() { paths_.clear(); }
+  void TearDown() {
+    for (const auto& path : paths_) {
+      rtc::RemoveFile(path);
+    }
+  }
+
+ public:
+  int AddFile() {
+    paths_.push_back(test::TempFilename(test::OutputPath(), "test_file"));
+    return static_cast<int>(paths_.size()) - 1;
+  }
+
+  rtc::PlatformFile OpenFile(int idx) {
+    return rtc::OpenPlatformFile(paths_[idx]);
+  }
+
+  void LogSend(bool open) {
+    if (open) {
+      video_send_stream_->EnableEncodedFrameRecording(
+          std::vector<rtc::PlatformFile>(1, OpenFile(AddFile())), 0);
+    } else {
+      video_send_stream_->DisableEncodedFrameRecording();
+    }
+  }
+  void LogReceive(bool open) {
+    if (open) {
+      video_receive_streams_[0]->EnableEncodedFrameRecording(
+          OpenFile(AddFile()), 0);
+    } else {
+      video_receive_streams_[0]->DisableEncodedFrameRecording();
+    }
+  }
+
+  std::vector<std::string> paths_;
+};
+
+TEST_F(EndToEndLogTest, LogsEncodedFramesWhenRequested) {
+  static const int kNumFramesToRecord = 10;
+  class LogEncodingObserver : public test::EndToEndTest,
+                              public EncodedFrameObserver {
+   public:
+    explicit LogEncodingObserver(EndToEndLogTest* fixture)
+        : EndToEndTest(kDefaultTimeoutMs),
+          fixture_(fixture),
+          recorded_frames_(0) {}
+
+    void PerformTest() override {
+      fixture_->LogSend(true);
+      fixture_->LogReceive(true);
+      ASSERT_TRUE(Wait()) << "Timed out while waiting for frame logging.";
+    }
+
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
+      encoder_.reset(VideoEncoder::Create(VideoEncoder::kVp8));
+      decoder_.reset(VP8Decoder::Create());
+
+      send_config->post_encode_callback = this;
+      send_config->encoder_settings.payload_name = "VP8";
+      send_config->encoder_settings.encoder = encoder_.get();
+
+      (*receive_configs)[0].decoders.resize(1);
+      (*receive_configs)[0].decoders[0].payload_type =
+          send_config->encoder_settings.payload_type;
+      (*receive_configs)[0].decoders[0].payload_name =
+          send_config->encoder_settings.payload_name;
+      (*receive_configs)[0].decoders[0].decoder = decoder_.get();
+    }
+
+    void EncodedFrameCallback(const EncodedFrame& encoded_frame) override {
+      rtc::CritScope lock(&crit_);
+      if (recorded_frames_++ > kNumFramesToRecord) {
+        fixture_->LogSend(false);
+        fixture_->LogReceive(false);
+        rtc::File send_file(fixture_->OpenFile(0));
+        rtc::File receive_file(fixture_->OpenFile(1));
+        uint8_t out[100];
+        // If logging has worked correctly neither file should be empty, i.e.
+        // we should be able to read something from them.
+        EXPECT_LT(0u, send_file.Read(out, 100));
+        EXPECT_LT(0u, receive_file.Read(out, 100));
+        observation_complete_.Set();
+      }
+    }
+
+   private:
+    EndToEndLogTest* const fixture_;
+    std::unique_ptr<VideoEncoder> encoder_;
+    std::unique_ptr<VideoDecoder> decoder_;
+    rtc::CriticalSection crit_;
+    int recorded_frames_ GUARDED_BY(crit_);
+  } test(this);
+
+  RunBaseTest(&test);
+}
+
 }  // namespace webrtc

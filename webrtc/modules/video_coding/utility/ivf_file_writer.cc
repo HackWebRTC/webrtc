@@ -10,48 +10,47 @@
 
 #include "webrtc/modules/video_coding/utility/ivf_file_writer.h"
 
+#include <string>
+#include <utility>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 
+// TODO(palmkvist): make logging more informative in the absence of a file name
+// (or get one)
+
 namespace webrtc {
 
-IvfFileWriter::IvfFileWriter(const std::string& file_name,
-                             std::unique_ptr<FileWrapper> file,
-                             VideoCodecType codec_type)
-    : codec_type_(codec_type),
+const size_t kIvfHeaderSize = 32;
+
+IvfFileWriter::IvfFileWriter(rtc::File file, size_t byte_limit)
+    : codec_type_(kVideoCodecUnknown),
+      bytes_written_(0),
+      byte_limit_(byte_limit),
       num_frames_(0),
       width_(0),
       height_(0),
       last_timestamp_(-1),
       using_capture_timestamps_(false),
-      file_name_(file_name),
-      file_(std::move(file)) {}
+      file_(std::move(file)) {
+  RTC_DCHECK(byte_limit == 0 || kIvfHeaderSize <= byte_limit)
+      << "The byte_limit is too low, not even the header will fit.";
+}
 
 IvfFileWriter::~IvfFileWriter() {
   Close();
 }
 
-const size_t kIvfHeaderSize = 32;
-
-std::unique_ptr<IvfFileWriter> IvfFileWriter::Open(const std::string& file_name,
-                                                   VideoCodecType codec_type) {
-  std::unique_ptr<IvfFileWriter> file_writer;
-  std::unique_ptr<FileWrapper> file(FileWrapper::Create());
-  if (!file->OpenFile(file_name.c_str(), false))
-    return file_writer;
-
-  file_writer.reset(new IvfFileWriter(
-      file_name, std::unique_ptr<FileWrapper>(std::move(file)), codec_type));
-  if (!file_writer->WriteHeader())
-    file_writer.reset();
-
-  return file_writer;
+std::unique_ptr<IvfFileWriter> IvfFileWriter::Wrap(rtc::File file,
+                                                   size_t byte_limit) {
+  return std::unique_ptr<IvfFileWriter>(
+      new IvfFileWriter(std::move(file), byte_limit));
 }
 
 bool IvfFileWriter::WriteHeader() {
-  if (file_->Rewind() != 0) {
-    LOG(LS_WARNING) << "Unable to rewind output file " << file_name_;
+  if (!file_.Seek(0)) {
+    LOG(LS_WARNING) << "Unable to rewind ivf output file.";
     return false;
   }
 
@@ -98,20 +97,27 @@ bool IvfFileWriter::WriteHeader() {
                                           static_cast<uint32_t>(num_frames_));
   ByteWriter<uint32_t>::WriteLittleEndian(&ivf_header[28], 0);  // Reserved.
 
-  if (!file_->Write(ivf_header, kIvfHeaderSize)) {
-    LOG(LS_ERROR) << "Unable to write IVF header for file " << file_name_;
+  if (file_.Write(ivf_header, kIvfHeaderSize) < kIvfHeaderSize) {
+    LOG(LS_ERROR) << "Unable to write IVF header for ivf output file.";
     return false;
+  }
+
+  if (bytes_written_ < kIvfHeaderSize) {
+    bytes_written_ = kIvfHeaderSize;
   }
 
   return true;
 }
 
-bool IvfFileWriter::InitFromFirstFrame(const EncodedImage& encoded_image) {
+bool IvfFileWriter::InitFromFirstFrame(const EncodedImage& encoded_image,
+                                       VideoCodecType codec_type) {
   width_ = encoded_image._encodedWidth;
   height_ = encoded_image._encodedHeight;
   RTC_CHECK_GT(width_, 0);
   RTC_CHECK_GT(height_, 0);
   using_capture_timestamps_ = encoded_image._timeStamp == 0;
+
+  codec_type_ = codec_type;
 
   if (!WriteHeader())
     return false;
@@ -130,19 +136,21 @@ bool IvfFileWriter::InitFromFirstFrame(const EncodedImage& encoded_image) {
     default:
       codec_name = "Unknown";
   }
-  LOG(LS_WARNING) << "Created IVF file " << file_name_
-                  << " for codec data of type " << codec_name
+  LOG(LS_WARNING) << "Created IVF file for codec data of type " << codec_name
                   << " at resolution " << width_ << " x " << height_
                   << ", using " << (using_capture_timestamps_ ? "1" : "90")
                   << "kHz clock resolution.";
   return true;
 }
 
-bool IvfFileWriter::WriteFrame(const EncodedImage& encoded_image) {
-  RTC_DCHECK(file_->is_open());
-
-  if (num_frames_ == 0 && !InitFromFirstFrame(encoded_image))
+bool IvfFileWriter::WriteFrame(const EncodedImage& encoded_image,
+                               VideoCodecType codec_type) {
+  if (!file_.IsOpen())
     return false;
+
+  if (num_frames_ == 0 && !InitFromFirstFrame(encoded_image, codec_type))
+    return false;
+  RTC_DCHECK_EQ(codec_type_, codec_type);
 
   if ((encoded_image._encodedWidth > 0 || encoded_image._encodedHeight > 0) &&
       (encoded_image._encodedHeight != height_ ||
@@ -163,35 +171,41 @@ bool IvfFileWriter::WriteFrame(const EncodedImage& encoded_image) {
   last_timestamp_ = timestamp;
 
   const size_t kFrameHeaderSize = 12;
+  if (byte_limit_ != 0 &&
+      bytes_written_ + kFrameHeaderSize + encoded_image._length > byte_limit_) {
+    LOG(LS_WARNING) << "Closing IVF file due to reaching size limit: "
+                    << byte_limit_ << " bytes.";
+    Close();
+    return false;
+  }
   uint8_t frame_header[kFrameHeaderSize] = {};
   ByteWriter<uint32_t>::WriteLittleEndian(
       &frame_header[0], static_cast<uint32_t>(encoded_image._length));
   ByteWriter<uint64_t>::WriteLittleEndian(&frame_header[4], timestamp);
-  if (!file_->Write(frame_header, kFrameHeaderSize) ||
-      !file_->Write(encoded_image._buffer, encoded_image._length)) {
-    LOG(LS_ERROR) << "Unable to write frame to file " << file_name_;
+  if (file_.Write(frame_header, kFrameHeaderSize) < kFrameHeaderSize ||
+      file_.Write(encoded_image._buffer, encoded_image._length) <
+          encoded_image._length) {
+    LOG(LS_ERROR) << "Unable to write frame to file.";
     return false;
   }
+
+  bytes_written_ += kFrameHeaderSize + encoded_image._length;
 
   ++num_frames_;
   return true;
 }
 
 bool IvfFileWriter::Close() {
-  if (!file_->is_open())
+  if (!file_.IsOpen())
     return false;
 
   if (num_frames_ == 0) {
-    // No frame written to file, close and remove it entirely if possible.
-    file_->CloseFile();
-    if (remove(file_name_.c_str()) != 0)
-      LOG(LS_WARNING) << "Failed to remove empty IVF file " << file_name_;
-
+    file_.Close();
     return true;
   }
 
   bool ret = WriteHeader();
-  file_->CloseFile();
+  file_.Close();
   return ret;
 }
 

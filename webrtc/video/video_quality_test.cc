@@ -22,6 +22,7 @@
 #include "webrtc/base/event.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/base/optional.h"
+#include "webrtc/base/platform_file.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -798,7 +799,8 @@ class VideoAnalyzer : public PacketReceiver,
   rtc::Event done_;
 };
 
-VideoQualityTest::VideoQualityTest() : clock_(Clock::GetRealTimeClock()) {}
+VideoQualityTest::VideoQualityTest()
+    : clock_(Clock::GetRealTimeClock()), receive_logs_(0), send_logs_(0) {}
 
 void VideoQualityTest::TestBody() {}
 
@@ -1188,6 +1190,8 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   rtc::VideoSinkWants wants;
   capturer_->AddOrUpdateSink(analyzer.InputInterface(), wants);
 
+  StartEncodedFrameLogs(video_send_stream_);
+  StartEncodedFrameLogs(video_receive_streams_[0]);
   video_send_stream_->Start();
   for (VideoReceiveStream* receive_stream : video_receive_streams_)
     receive_stream->Start();
@@ -1311,11 +1315,14 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
     if (params_.audio_video_sync)
       audio_config.sync_group = kSyncGroup;
 
-    audio_receive_stream =call->CreateAudioReceiveStream(audio_config);
+    audio_receive_stream = call->CreateAudioReceiveStream(audio_config);
 
     const CodecInst kOpusInst = {120, "OPUS", 48000, 960, 2, 64000};
     EXPECT_EQ(0, voe.codec->SetSendCodec(voe.send_channel_id, kOpusInst));
   }
+
+  StartEncodedFrameLogs(video_receive_stream);
+  StartEncodedFrameLogs(video_send_stream_);
 
   // Start sending and receiving video.
   video_receive_stream->Start();
@@ -1362,6 +1369,31 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
   transport.StopSending();
   if (params_.audio)
     DestroyVoiceEngine(&voe);
+}
+
+void VideoQualityTest::StartEncodedFrameLogs(VideoSendStream* stream) {
+  if (!params_.common.encoded_frame_base_path.empty()) {
+    std::ostringstream str;
+    str << send_logs_++;
+    std::string prefix =
+        params_.common.encoded_frame_base_path + "." + str.str() + ".send.";
+    stream->EnableEncodedFrameRecording(
+        std::vector<rtc::PlatformFile>(
+            {rtc::CreatePlatformFile(prefix + "1.ivf"),
+             rtc::CreatePlatformFile(prefix + "2.ivf"),
+             rtc::CreatePlatformFile(prefix + "3.ivf")}),
+        10000000);
+  }
+}
+void VideoQualityTest::StartEncodedFrameLogs(VideoReceiveStream* stream) {
+  if (!params_.common.encoded_frame_base_path.empty()) {
+    std::ostringstream str;
+    str << receive_logs_++;
+    std::string path =
+        params_.common.encoded_frame_base_path + "." + str.str() + ".recv.ivf";
+    stream->EnableEncodedFrameRecording(rtc::CreatePlatformFile(path),
+                                        10000000);
+  }
 }
 
 }  // namespace webrtc

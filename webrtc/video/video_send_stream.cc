@@ -15,7 +15,9 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/common_types.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/file.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
@@ -267,6 +269,9 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
 
   VideoSendStream::RtpStateMap GetRtpStates() const;
 
+  void EnableEncodedFrameRecording(const std::vector<rtc::PlatformFile>& files,
+                                   size_t byte_limit);
+
  private:
   class CheckEncoderActivityTask;
   class EncoderReconfiguredTask;
@@ -316,9 +321,9 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   BitrateAllocator* const bitrate_allocator_;
   VieRemb* const remb_;
 
-  static const bool kEnableFrameRecording = false;
-  static const int kMaxLayers = 3;
-  std::unique_ptr<IvfFileWriter> file_writers_[kMaxLayers];
+  rtc::CriticalSection ivf_writers_crit_;
+  std::unique_ptr<IvfFileWriter> file_writers_[kMaxSimulcastStreams] GUARDED_BY(
+      ivf_writers_crit_);
 
   int max_padding_bitrate_;
   int encoder_min_bitrate_bps_;
@@ -615,6 +620,12 @@ bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   return send_stream_->DeliverRtcp(packet, length);
 }
 
+void VideoSendStream::EnableEncodedFrameRecording(
+    const std::vector<rtc::PlatformFile>& files,
+    size_t byte_limit) {
+  send_stream_->EnableEncodedFrameRecording(files, byte_limit);
+}
+
 VideoSendStreamImpl::VideoSendStreamImpl(
     SendStatisticsProxy* stats_proxy,
     rtc::TaskQueue* worker_queue,
@@ -891,25 +902,16 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
   EncodedImageCallback::Result result = payload_router_.OnEncodedImage(
       encoded_image, codec_specific_info, fragmentation);
 
-  if (kEnableFrameRecording) {
-    int layer = codec_specific_info->codecType == kVideoCodecVP8
-                    ? codec_specific_info->codecSpecific.VP8.simulcastIdx
-                    : 0;
-    IvfFileWriter* file_writer;
-    {
-      if (file_writers_[layer] == nullptr) {
-        std::ostringstream oss;
-        oss << "send_bitstream_ssrc";
-        for (uint32_t ssrc : config_->rtp.ssrcs)
-          oss << "_" << ssrc;
-        oss << "_layer" << layer << ".ivf";
-        file_writers_[layer] =
-            IvfFileWriter::Open(oss.str(), codec_specific_info->codecType);
-      }
-      file_writer = file_writers_[layer].get();
-    }
-    if (file_writer) {
-      bool ok = file_writer->WriteFrame(encoded_image);
+  RTC_DCHECK(codec_specific_info);
+
+  int layer = codec_specific_info->codecType == kVideoCodecVP8
+                  ? codec_specific_info->codecSpecific.VP8.simulcastIdx
+                  : 0;
+  {
+    rtc::CritScope lock(&ivf_writers_crit_);
+    if (file_writers_[layer].get()) {
+      bool ok = file_writers_[layer]->WriteFrame(
+          encoded_image, codec_specific_info->codecType);
       RTC_DCHECK(ok);
     }
   }
@@ -1062,6 +1064,27 @@ uint32_t VideoSendStreamImpl::OnBitrateUpdated(uint32_t bitrate_bps,
   vie_encoder_->OnBitrateUpdated(encoder_target_rate_bps_, fraction_loss, rtt);
   stats_proxy_->OnSetEncoderTargetRate(encoder_target_rate_bps_);
   return protection_bitrate;
+}
+
+void VideoSendStreamImpl::EnableEncodedFrameRecording(
+    const std::vector<rtc::PlatformFile>& files,
+    size_t byte_limit) {
+  {
+    rtc::CritScope lock(&ivf_writers_crit_);
+    for (unsigned int i = 0; i < kMaxSimulcastStreams; ++i) {
+      if (i < files.size()) {
+        file_writers_[i] = IvfFileWriter::Wrap(rtc::File(files[i]), byte_limit);
+      } else {
+        file_writers_[i].reset();
+      }
+    }
+  }
+
+  if (!files.empty()) {
+    // Make a keyframe appear as early as possible in the logs, to give actually
+    // decodable output.
+    vie_encoder_->SendKeyFrame();
+  }
 }
 
 int VideoSendStreamImpl::ProtectionRequest(

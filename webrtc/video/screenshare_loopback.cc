@@ -172,6 +172,14 @@ std::string SL1() {
   return static_cast<std::string>(FLAGS_sl1);
 }
 
+DEFINE_string(encoded_frame_path,
+              "",
+              "The base path for encoded frame logs. Created files will have "
+              "the form <encoded_frame_path>.<n>.(recv|send.<m>).ivf");
+std::string EncodedFramePath() {
+  return static_cast<std::string>(FLAGS_encoded_frame_path);
+}
+
 DEFINE_bool(logs, false, "print logs to stderr");
 
 DEFINE_bool(send_side_bwe, true, "Use send-side bandwidth estimation");
@@ -224,12 +232,21 @@ void Loopback() {
   call_bitrate_config.max_bitrate_bps = flags::MaxBitrateKbps() * 1000;
 
   VideoQualityTest::Params params;
-  params.common = {flags::Width(), flags::Height(), flags::Fps(),
-      flags::MinBitrateKbps() * 1000, flags::TargetBitrateKbps() * 1000,
-      flags::MaxBitrateKbps() * 1000, false, flags::Codec(),
-      flags::NumTemporalLayers(), flags::SelectedTL(),
-      flags::MinTransmitBitrateKbps() * 1000, flags::FLAGS_send_side_bwe,
-      false, call_bitrate_config};
+  params.common = {flags::Width(),
+                   flags::Height(),
+                   flags::Fps(),
+                   flags::MinBitrateKbps() * 1000,
+                   flags::TargetBitrateKbps() * 1000,
+                   flags::MaxBitrateKbps() * 1000,
+                   false,
+                   flags::Codec(),
+                   flags::NumTemporalLayers(),
+                   flags::SelectedTL(),
+                   flags::MinTransmitBitrateKbps() * 1000,
+                   flags::FLAGS_send_side_bwe,
+                   false,
+                   flags::EncodedFramePath(),
+                   call_bitrate_config};
   params.screenshare = {true, flags::SlideChangeInterval(),
       flags::ScrollDuration()};
   params.analyzer = {"screenshare", 0.0, 0.0, flags::DurationSecs(),

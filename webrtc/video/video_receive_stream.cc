@@ -31,8 +31,6 @@
 
 namespace webrtc {
 
-static const bool kEnableFrameRecording = false;
-
 static bool UseSendSideBwe(const VideoReceiveStream::Config& config) {
   if (!config.rtp.transport_cc)
     return false;
@@ -365,16 +363,12 @@ EncodedImageCallback::Result VideoReceiveStream::OnEncodedImage(
         EncodedFrame(encoded_image._buffer, encoded_image._length,
                      encoded_image._frameType));
   }
-  if (kEnableFrameRecording) {
-    if (!ivf_writer_.get()) {
-      RTC_DCHECK(codec_specific_info);
-      std::ostringstream oss;
-      oss << "receive_bitstream_ssrc_" << config_.rtp.remote_ssrc << ".ivf";
-      ivf_writer_ =
-          IvfFileWriter::Open(oss.str(), codec_specific_info->codecType);
-    }
+  {
+    rtc::CritScope lock(&ivf_writer_lock_);
     if (ivf_writer_.get()) {
-      bool ok = ivf_writer_->WriteFrame(encoded_image);
+      RTC_DCHECK(codec_specific_info);
+      bool ok = ivf_writer_->WriteFrame(encoded_image,
+                                        codec_specific_info->codecType);
       RTC_DCHECK(ok);
     }
   }
@@ -395,6 +389,24 @@ void VideoReceiveStream::Decode() {
 void VideoReceiveStream::SendNack(
     const std::vector<uint16_t>& sequence_numbers) {
   rtp_stream_receiver_.RequestPacketRetransmit(sequence_numbers);
+}
+
+void VideoReceiveStream::EnableEncodedFrameRecording(rtc::PlatformFile file,
+                                                     size_t byte_limit) {
+  {
+    rtc::CritScope lock(&ivf_writer_lock_);
+    if (file == rtc::kInvalidPlatformFileValue) {
+      ivf_writer_.reset();
+    } else {
+      ivf_writer_ = IvfFileWriter::Wrap(rtc::File(file), byte_limit);
+    }
+  }
+
+  if (file != rtc::kInvalidPlatformFileValue) {
+    // Make a keyframe appear as early as possible in the logs, to give actually
+    // decodable output.
+    RequestKeyFrame();
+  }
 }
 
 void VideoReceiveStream::RequestKeyFrame() {

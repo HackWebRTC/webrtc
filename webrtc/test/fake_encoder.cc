@@ -10,6 +10,8 @@
 
 #include "webrtc/test/fake_encoder.h"
 
+#include <algorithm>
+
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/base/checks.h"
@@ -193,7 +195,10 @@ EncodedImageCallback::Result FakeH264Encoder::OnEncodedImage(
       ++fragment_counter;
     }
   }
-  return callback_->OnEncodedImage(encoded_image, NULL, &fragmentation);
+  CodecSpecificInfo specifics;
+  memset(&specifics, 0, sizeof(specifics));
+  specifics.codecType = kVideoCodecH264;
+  return callback_->OnEncodedImage(encoded_image, &specifics, &fragmentation);
 }
 
 DelayedEncoder::DelayedEncoder(Clock* clock, int delay_ms)

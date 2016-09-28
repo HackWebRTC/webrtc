@@ -84,6 +84,14 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   // Implements KeyFrameRequestSender.
   void RequestKeyFrame() override;
 
+  // Takes ownership of the file, is responsible for closing it later.
+  // Calling this method will close and finalize any current log.
+  // Giving rtc::kInvalidPlatformFileValue disables logging.
+  // If a frame to be written would make the log too large the write fails and
+  // the log is closed and finalized. A |byte_limit| of 0 means no limit.
+  void EnableEncodedFrameRecording(rtc::PlatformFile file,
+                                   size_t byte_limit) override;
+
  private:
   static bool DecodeThreadFunction(void* ptr);
   void Decode();
@@ -105,7 +113,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   std::unique_ptr<VideoStreamDecoder> video_stream_decoder_;
   RtpStreamsSynchronizer rtp_stream_sync_;
 
-  std::unique_ptr<IvfFileWriter> ivf_writer_;
+  rtc::CriticalSection ivf_writer_lock_;
+  std::unique_ptr<IvfFileWriter> ivf_writer_ GUARDED_BY(ivf_writer_lock_);
 };
 }  // namespace internal
 }  // namespace webrtc

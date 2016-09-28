@@ -26,23 +26,18 @@ namespace {
 static const int kHeaderSize = 32;
 static const int kFrameHeaderSize = 12;
 static uint8_t dummy_payload[4] = {0, 1, 2, 3};
-static const int kMaxFileRetries = 5;
 }  // namespace
 
 class IvfFileWriterTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    const uint64_t start_id = rtc::CreateRandomId64();
-    uint64_t id = start_id;
-    do {
-      std::ostringstream oss;
-      oss << test::OutputPath() << "ivf_test_file_" << id++ << ".ivf";
-      file_name_ = oss.str();
-    } while ((id - start_id) < 100u && FileExists(false));
-    ASSERT_LT(id - start_id, 100u);
+    file_name_ =
+        webrtc::test::TempFilename(webrtc::test::OutputPath(), "test_file");
   }
+  void TearDown() override { rtc::RemoveFile(file_name_); }
 
-  bool WriteDummyTestFrames(int width,
+  bool WriteDummyTestFrames(VideoCodecType codec_type,
+                            int width,
                             int height,
                             int num_frames,
                             bool use_capture_tims_ms) {
@@ -57,21 +52,21 @@ class IvfFileWriterTest : public ::testing::Test {
       } else {
         frame._timeStamp = i;
       }
-      if (!file_writer_->WriteFrame(frame))
+      if (!file_writer_->WriteFrame(frame, codec_type))
         return false;
     }
     return true;
   }
 
-  void VerifyIvfHeader(FileWrapper* file,
+  void VerifyIvfHeader(rtc::File* file,
                        const uint8_t fourcc[4],
                        int width,
                        int height,
                        uint32_t num_frames,
                        bool use_capture_tims_ms) {
-    ASSERT_TRUE(file->is_open());
+    ASSERT_TRUE(file->IsOpen());
     uint8_t data[kHeaderSize];
-    ASSERT_EQ(kHeaderSize, file->Read(data, kHeaderSize));
+    ASSERT_EQ(static_cast<size_t>(kHeaderSize), file->Read(data, kHeaderSize));
 
     uint8_t dkif[4] = {'D', 'K', 'I', 'F'};
     EXPECT_EQ(0, memcmp(dkif, data, 4));
@@ -87,11 +82,12 @@ class IvfFileWriterTest : public ::testing::Test {
     EXPECT_EQ(0u, ByteReader<uint32_t>::ReadLittleEndian(&data[28]));
   }
 
-  void VerifyDummyTestFrames(FileWrapper* file, uint32_t num_frames) {
+  void VerifyDummyTestFrames(rtc::File* file, uint32_t num_frames) {
     const int kMaxFrameSize = 4;
     for (uint32_t i = 1; i <= num_frames; ++i) {
       uint8_t frame_header[kFrameHeaderSize];
-      ASSERT_EQ(kFrameHeaderSize, file->Read(frame_header, kFrameHeaderSize));
+      ASSERT_EQ(static_cast<unsigned int>(kFrameHeaderSize),
+                file->Read(frame_header, kFrameHeaderSize));
       uint32_t frame_length =
           ByteReader<uint32_t>::ReadLittleEndian(&frame_header[0]);
       EXPECT_EQ(i % 4, frame_length);
@@ -109,66 +105,26 @@ class IvfFileWriterTest : public ::testing::Test {
   void RunBasicFileStructureTest(VideoCodecType codec_type,
                                  const uint8_t fourcc[4],
                                  bool use_capture_tims_ms) {
-    file_writer_ = IvfFileWriter::Open(file_name_, codec_type);
+    file_writer_ = IvfFileWriter::Wrap(rtc::File::Open(file_name_), 0);
     ASSERT_TRUE(file_writer_.get());
     const int kWidth = 320;
     const int kHeight = 240;
     const int kNumFrames = 257;
-    EXPECT_TRUE(
-        WriteDummyTestFrames(kWidth, kHeight, kNumFrames, use_capture_tims_ms));
+    ASSERT_TRUE(WriteDummyTestFrames(codec_type, kWidth, kHeight, kNumFrames,
+                                     use_capture_tims_ms));
     EXPECT_TRUE(file_writer_->Close());
 
-    std::unique_ptr<FileWrapper> out_file(FileWrapper::Create());
-    ASSERT_TRUE(out_file->OpenFile(file_name_.c_str(), true));
-    VerifyIvfHeader(out_file.get(), fourcc, kWidth, kHeight, kNumFrames,
+    rtc::File out_file = rtc::File::Open(file_name_);
+    VerifyIvfHeader(&out_file, fourcc, kWidth, kHeight, kNumFrames,
                     use_capture_tims_ms);
-    VerifyDummyTestFrames(out_file.get(), kNumFrames);
+    VerifyDummyTestFrames(&out_file, kNumFrames);
 
-    out_file->CloseFile();
-
-    bool file_removed = false;
-    for (int i = 0; i < kMaxFileRetries; ++i) {
-      file_removed = remove(file_name_.c_str()) == 0;
-      if (file_removed)
-        break;
-
-      // Couldn't remove file for some reason, wait a sec and try again.
-      rtc::Thread::SleepMs(1000);
-    }
-    EXPECT_TRUE(file_removed);
-  }
-
-  // Check whether file exists or not, and if it does not meet expectation,
-  // wait a bit and check again, up to kMaxFileRetries times. This is an ugly
-  // hack to avoid flakiness on certain operating systems where antivirus
-  // software may unexpectedly lock files and keep them from disappearing or
-  // being reused.
-  bool FileExists(bool expected) {
-    bool file_exists = expected;
-    std::unique_ptr<FileWrapper> file_wrapper;
-    int iterations = 0;
-    do {
-      if (file_wrapper.get() != nullptr)
-        rtc::Thread::SleepMs(1000);
-      file_wrapper.reset(FileWrapper::Create());
-      file_exists = file_wrapper->OpenFile(file_name_.c_str(), true);
-      file_wrapper->CloseFile();
-    } while (file_exists != expected && ++iterations < kMaxFileRetries);
-    return file_exists;
+    out_file.Close();
   }
 
   std::string file_name_;
   std::unique_ptr<IvfFileWriter> file_writer_;
 };
-
-TEST_F(IvfFileWriterTest, RemovesUnusedFile) {
-  file_writer_ = IvfFileWriter::Open(file_name_, kVideoCodecVP8);
-  ASSERT_TRUE(file_writer_.get() != nullptr);
-  EXPECT_TRUE(FileExists(true));
-  EXPECT_TRUE(file_writer_->Close());
-  EXPECT_FALSE(FileExists(false));
-  EXPECT_FALSE(file_writer_->Close());  // Can't close twice.
-}
 
 TEST_F(IvfFileWriterTest, WritesBasicVP8FileNtpTimestamp) {
   const uint8_t fourcc[4] = {'V', 'P', '8', '0'};
@@ -198,6 +154,30 @@ TEST_F(IvfFileWriterTest, WritesBasicH264FileNtpTimestamp) {
 TEST_F(IvfFileWriterTest, WritesBasicH264FileMsTimestamp) {
   const uint8_t fourcc[4] = {'H', '2', '6', '4'};
   RunBasicFileStructureTest(kVideoCodecH264, fourcc, true);
+}
+
+TEST_F(IvfFileWriterTest, ClosesWhenReachesLimit) {
+  const uint8_t fourcc[4] = {'V', 'P', '8', '0'};
+  const int kWidth = 320;
+  const int kHeight = 240;
+  const int kNumFramesToWrite = 2;
+  const int kNumFramesToFit = 1;
+
+  file_writer_ = IvfFileWriter::Wrap(
+      rtc::File::Open(file_name_),
+      kHeaderSize +
+          kNumFramesToFit * (kFrameHeaderSize + sizeof(dummy_payload)));
+  ASSERT_TRUE(file_writer_.get());
+
+  ASSERT_FALSE(WriteDummyTestFrames(kVideoCodecVP8, kWidth, kHeight,
+                                    kNumFramesToWrite, true));
+  ASSERT_FALSE(file_writer_->Close());
+
+  rtc::File out_file = rtc::File::Open(file_name_);
+  VerifyIvfHeader(&out_file, fourcc, kWidth, kHeight, kNumFramesToFit, true);
+  VerifyDummyTestFrames(&out_file, kNumFramesToFit);
+
+  out_file.Close();
 }
 
 }  // namespace webrtc

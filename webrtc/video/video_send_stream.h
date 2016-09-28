@@ -79,6 +79,16 @@ class VideoSendStream : public webrtc::VideoSendStream {
   Stats GetStats() override;
 
   typedef std::map<uint32_t, RtpState> RtpStateMap;
+
+  // Takes ownership of each file, is responsible for closing them later.
+  // Calling this method will close and finalize any current logs.
+  // Giving rtc::kInvalidPlatformFileValue in any position disables logging
+  // for the corresponding stream.
+  // If a frame to be written would make the log too large the write fails and
+  // the log is closed and finalized. A |byte_limit| of 0 means no limit.
+  void EnableEncodedFrameRecording(const std::vector<rtc::PlatformFile>& files,
+                                   size_t byte_limit) override;
+
   RtpStateMap StopPermanentlyAndGetRtpStates();
 
  private:
