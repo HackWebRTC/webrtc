@@ -313,32 +313,6 @@ if (rtc_enable_protobuf) {
   }
 }
 
-rtc_static_library("rtc_event_log") {
-  sources = [
-    "call/rtc_event_log.cc",
-    "call/rtc_event_log.h",
-    "call/rtc_event_log_helper_thread.cc",
-    "call/rtc_event_log_helper_thread.h",
-  ]
-
-  defines = []
-
-  deps = [
-    ":webrtc_common",
-    "modules/rtp_rtcp",
-  ]
-
-  if (rtc_enable_protobuf) {
-    defines += [ "ENABLE_RTC_EVENT_LOG" ]
-    deps += [ ":rtc_event_log_proto" ]
-  }
-  if (is_clang && !is_nacl) {
-    # Suppress warnings from Chrome's Clang plugins.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-}
-
 if (rtc_enable_protobuf) {
   rtc_static_library("rtc_event_log_parser") {
     sources = [

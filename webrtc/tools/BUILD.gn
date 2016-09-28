@@ -164,8 +164,8 @@ if (rtc_enable_protobuf) {
     }
     defines = [ "ENABLE_RTC_EVENT_LOG" ]
     deps = [
-      "../:rtc_event_log",
       "../:rtc_event_log_parser",
+      "../call:rtc_event_log",
       "../modules/congestion_controller:congestion_controller",
       "../modules/rtp_rtcp:rtp_rtcp",
       "../system_wrappers:system_wrappers_default",

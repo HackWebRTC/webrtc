@@ -117,7 +117,7 @@ rtc_static_library("audio_coding") {
            ":audio_network_adaptor",
            ":neteq",
            ":rent_a_codec",
-           "../..:rtc_event_log",
+           "../../call:rtc_event_log",
          ]
   defines = audio_coding_defines
 }
