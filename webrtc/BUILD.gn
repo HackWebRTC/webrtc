@@ -383,6 +383,7 @@ if (rtc_include_tests) {
       "base/file_unittest.cc",
       "base/filerotatingstream_unittest.cc",
       "base/fileutils_unittest.cc",
+      "base/function_view_unittest.cc",
       "base/helpers_unittest.cc",
       "base/httpbase_unittest.cc",
       "base/httpcommon_unittest.cc",

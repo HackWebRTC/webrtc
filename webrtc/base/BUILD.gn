@@ -116,6 +116,7 @@ rtc_static_library("rtc_base_approved") {
     "file.cc",
     "file.h",
     "format_macros.h",
+    "function_view.h",
     "location.cc",
     "location.h",
     "md5.cc",

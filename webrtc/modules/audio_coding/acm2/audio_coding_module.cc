@@ -45,10 +45,11 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   void RegisterExternalSendCodec(
       AudioEncoder* external_speech_encoder) override;
 
-  void ModifyEncoder(
-      FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) override;
+  void ModifyEncoder(rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)>
+                         modifier) override;
 
-  void QueryEncoder(FunctionView<void(const AudioEncoder*)> query) override;
+  void QueryEncoder(
+      rtc::FunctionView<void(const AudioEncoder*)> query) override;
 
   // Get current send codec.
   rtc::Optional<CodecInst> SendCodec() const override;
@@ -123,7 +124,7 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   int RegisterReceiveCodec(const CodecInst& receive_codec) override;
   int RegisterReceiveCodec(
       const CodecInst& receive_codec,
-      FunctionView<std::unique_ptr<AudioDecoder>()> isac_factory) override;
+      rtc::FunctionView<std::unique_ptr<AudioDecoder>()> isac_factory) override;
 
   int RegisterExternalReceiveCodec(int rtp_payload_type,
                                    AudioDecoder* external_decoder,
@@ -223,7 +224,7 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
 
   int RegisterReceiveCodecUnlocked(
       const CodecInst& codec,
-      FunctionView<std::unique_ptr<AudioDecoder>()> isac_factory)
+      rtc::FunctionView<std::unique_ptr<AudioDecoder>()> isac_factory)
       EXCLUSIVE_LOCKS_REQUIRED(acm_crit_sect_);
 
   int Add10MsDataInternal(const AudioFrame& audio_frame, InputData* input_data)
@@ -587,7 +588,7 @@ void AudioCodingModuleImpl::RegisterExternalSendCodec(
 }
 
 void AudioCodingModuleImpl::ModifyEncoder(
-    FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) {
+    rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) {
   rtc::CritScope lock(&acm_crit_sect_);
 
   // Wipe the encoder factory, so that everything that relies on it will fail.
@@ -601,7 +602,7 @@ void AudioCodingModuleImpl::ModifyEncoder(
 }
 
 void AudioCodingModuleImpl::QueryEncoder(
-    FunctionView<void(const AudioEncoder*)> query) {
+    rtc::FunctionView<void(const AudioEncoder*)> query) {
   rtc::CritScope lock(&acm_crit_sect_);
   query(encoder_stack_.get());
 }
@@ -995,14 +996,14 @@ int AudioCodingModuleImpl::RegisterReceiveCodec(const CodecInst& codec) {
 
 int AudioCodingModuleImpl::RegisterReceiveCodec(
     const CodecInst& codec,
-    FunctionView<std::unique_ptr<AudioDecoder>()> isac_factory) {
+    rtc::FunctionView<std::unique_ptr<AudioDecoder>()> isac_factory) {
   rtc::CritScope lock(&acm_crit_sect_);
   return RegisterReceiveCodecUnlocked(codec, isac_factory);
 }
 
 int AudioCodingModuleImpl::RegisterReceiveCodecUnlocked(
     const CodecInst& codec,
-    FunctionView<std::unique_ptr<AudioDecoder>()> isac_factory) {
+    rtc::FunctionView<std::unique_ptr<AudioDecoder>()> isac_factory) {
   RTC_DCHECK(receiver_initialized_);
   if (codec.channels > 2) {
     LOG_F(LS_ERROR) << "Unsupported number of channels: " << codec.channels;

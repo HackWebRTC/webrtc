@@ -58,6 +58,7 @@
         'file.cc',
         'file.h',
         'format_macros.h',
+        'function_view.h',
         'location.h',
         'location.cc',
         'md5.cc',
