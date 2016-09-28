@@ -217,7 +217,7 @@ if (is_android && !build_with_chromium) {
       ]
     } else {
       # Need to add a directory normally exported by libyuv.
-      include_dirs += [ "$rtc_libyuv_dir/include" ]
+      include_dirs = [ "$rtc_libyuv_dir/include" ]
     }
   }
 
