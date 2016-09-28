@@ -8,13 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_IOS_VIDEO_CAPTURE_IOS_OBJC_H_
-#define WEBRTC_MODULES_VIDEO_CAPTURE_IOS_VIDEO_CAPTURE_IOS_OBJC_H_
+#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_OBJC_RTC_VIDEO_CAPTURE_OBJC_H_
+#define WEBRTC_MODULES_VIDEO_CAPTURE_OBJC_RTC_VIDEO_CAPTURE_OBJC_H_
 
 #import <Foundation/Foundation.h>
+#ifdef WEBRTC_IOS
 #import <UIKit/UIKit.h>
+#endif
 
-#include "webrtc/modules/video_capture/ios/video_capture_ios.h"
+#include "webrtc/modules/video_capture/objc/video_capture.h"
 
 // The following class listens to a notification with name:
 // 'StatusBarOrientationDidChange'.
@@ -32,8 +34,8 @@
           captureId:(int)captureId;
 - (BOOL)setCaptureDeviceByUniqueId:(NSString*)uniqueId;
 - (BOOL)startCaptureWithCapability:
-        (const webrtc::VideoCaptureCapability&)capability;
+    (const webrtc::VideoCaptureCapability&)capability;
 - (BOOL)stopCapture;
 
 @end
-#endif  // WEBRTC_MODULES_VIDEO_CAPTURE_IOS_VIDEO_CAPTURE_IOS_OBJC_H_
+#endif  // WEBRTC_MODULES_VIDEO_CAPTURE_OBJC_RTC_VIDEO_CAPTURE_OBJC_H_
