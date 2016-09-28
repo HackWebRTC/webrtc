@@ -395,16 +395,9 @@ int32_t MediaCodecVideoEncoder::InitEncode(
   ALOGD << "Encoder automatic resize " << (scale_ ? "enabled" : "disabled");
 
   if (scale_) {
-    if (codecType_ == kVideoCodecVP8) {
-      quality_scaler_.Init(
-          QualityScaler::kLowVp8QpThreshold, QualityScaler::kBadVp8QpThreshold,
-          codec_settings->startBitrate, codec_settings->width,
-          codec_settings->height, codec_settings->maxFramerate);
-    } else if (codecType_ == kVideoCodecH264) {
-      quality_scaler_.Init(QualityScaler::kLowH264QpThreshold,
-                           QualityScaler::kBadH264QpThreshold,
-                           codec_settings->startBitrate, codec_settings->width,
-                           codec_settings->height,
+    if (codecType_ == kVideoCodecVP8 || codecType_ == kVideoCodecH264) {
+      quality_scaler_.Init(codecType_, codec_settings->startBitrate,
+                           codec_settings->width, codec_settings->height,
                            codec_settings->maxFramerate);
     } else {
       // When adding codec support to additional hardware codecs, also configure

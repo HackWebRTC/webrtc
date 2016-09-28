@@ -33,6 +33,10 @@ namespace internal {
 // kVTCompressionPropertyKey_AverageBitRate. The data rate limit is set higher
 // than the average bit rate to avoid undershooting the target.
 const float kLimitToAverageBitRateFactor = 1.5f;
+// These thresholds deviate from the default h264 QP thresholds, as they
+// have been found to work better on devices that support VideoToolbox
+const int kLowH264QpThreshold = 28;
+const int kHighH264QpThreshold = 39;
 
 // Convenience function for creating a dictionary.
 inline CFDictionaryRef CreateCFDictionary(CFTypeRef* keys,
@@ -232,8 +236,8 @@ int H264VideoToolboxEncoder::InitEncode(const VideoCodec* codec_settings,
   RTC_DCHECK_EQ(codec_settings->codecType, kVideoCodecH264);
   {
     rtc::CritScope lock(&quality_scaler_crit_);
-    quality_scaler_.Init(QualityScaler::kLowH264QpThreshold,
-                         QualityScaler::kBadH264QpThreshold,
+    quality_scaler_.Init(internal::kLowH264QpThreshold,
+                         internal::kHighH264QpThreshold,
                          codec_settings->startBitrate, codec_settings->width,
                          codec_settings->height, codec_settings->maxFramerate);
     QualityScaler::Resolution res = quality_scaler_.GetScaledResolution();

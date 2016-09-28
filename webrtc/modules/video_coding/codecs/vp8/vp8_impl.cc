@@ -562,9 +562,8 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   }
 
   rps_.Init();
-  quality_scaler_.Init(QualityScaler::kLowVp8QpThreshold,
-                       QualityScaler::kBadVp8QpThreshold, codec_.startBitrate,
-                       codec_.width, codec_.height, codec_.maxFramerate);
+  quality_scaler_.Init(codec_.codecType, codec_.startBitrate, codec_.width,
+                       codec_.height, codec_.maxFramerate);
 
   // Only apply scaling to improve for single-layer streams. The scaling metrics
   // use frame drops as a signal and is only applicable when we drop frames.

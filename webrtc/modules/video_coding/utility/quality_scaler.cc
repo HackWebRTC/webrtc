@@ -14,6 +14,8 @@
 
 #include <algorithm>
 
+#include "webrtc/base/checks.h"
+
 // TODO(kthelgason): Some versions of Android have issues with log2.
 // See https://code.google.com/p/android/issues/detail?id=212634 for details
 #if defined(WEBRTC_ANDROID)
@@ -38,22 +40,15 @@ static const int kVgaBitrateThresholdKbps = 500;
 static const int kVgaNumPixels = 700 * 500;  // 640x480
 static const int kQvgaBitrateThresholdKbps = 250;
 static const int kQvgaNumPixels = 400 * 300;  // 320x240
+
+// QP scaling threshold defaults:
+static const int kLowH264QpThreshold = 24;
+static const int kHighH264QpThreshold = 37;
+// QP is obtained from VP8-bitstream for HW, so the QP corresponds to the
+// bitstream range of [0, 127] and not the user-level range of [0,63].
+static const int kLowVp8QpThreshold = 29;
+static const int kHighVp8QpThreshold = 95;
 }  // namespace
-
-// QP thresholds are chosen to be high enough to be hit in practice when quality
-// is good, but also low enough to not cause a flip-flop behavior (e.g. going up
-// in resolution shouldn't give so bad quality that we should go back down).
-
-const int QualityScaler::kLowVp8QpThreshold = 29;
-const int QualityScaler::kBadVp8QpThreshold = 95;
-
-#if defined(WEBRTC_IOS)
-const int QualityScaler::kLowH264QpThreshold = 32;
-const int QualityScaler::kBadH264QpThreshold = 42;
-#else
-const int QualityScaler::kLowH264QpThreshold = 24;
-const int QualityScaler::kBadH264QpThreshold = 37;
-#endif
 
 // Default values. Should immediately get set to something more sensible.
 QualityScaler::QualityScaler()
@@ -61,19 +56,38 @@ QualityScaler::QualityScaler()
       framedrop_percent_(kMeasureSecondsUpscale * 30),
       low_qp_threshold_(-1) {}
 
+void QualityScaler::Init(VideoCodecType codec_type,
+                         int initial_bitrate_kbps,
+                         int width,
+                         int height,
+                         int fps) {
+  int low = -1, high = -1;
+  switch (codec_type) {
+    case kVideoCodecH264:
+      low = kLowH264QpThreshold;
+      high = kHighH264QpThreshold;
+      break;
+    case kVideoCodecVP8:
+      low = kLowVp8QpThreshold;
+      high = kHighVp8QpThreshold;
+      break;
+    default:
+      RTC_NOTREACHED() << "Invalid codec type for QualityScaler.";
+  }
+  Init(low, high, initial_bitrate_kbps, width, height, fps);
+}
+
 void QualityScaler::Init(int low_qp_threshold,
                          int high_qp_threshold,
                          int initial_bitrate_kbps,
                          int width,
                          int height,
                          int fps) {
+  ClearSamples();
   low_qp_threshold_ = low_qp_threshold;
   high_qp_threshold_ = high_qp_threshold;
   downscale_shift_ = 0;
-
   fast_rampup_ = true;
-
-  ClearSamples();
   ReportFramerate(fps);
 
   const int init_width = width;

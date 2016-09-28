@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_UTILITY_QUALITY_SCALER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_UTILITY_QUALITY_SCALER_H_
 
+#include "webrtc/common_types.h"
 #include "webrtc/common_video/include/i420_buffer_pool.h"
 #include "webrtc/modules/video_coding/utility/moving_average.h"
 
@@ -23,6 +24,11 @@ class QualityScaler {
   };
 
   QualityScaler();
+  void Init(VideoCodecType codec_type,
+            int initial_bitrate_kbps,
+            int width,
+            int height,
+            int fps);
   void Init(int low_qp_threshold,
             int high_qp_threshold,
             int initial_bitrate_kbps,
@@ -37,15 +43,6 @@ class QualityScaler {
   rtc::scoped_refptr<VideoFrameBuffer> GetScaledBuffer(
       const rtc::scoped_refptr<VideoFrameBuffer>& frame);
   int downscale_shift() const { return downscale_shift_; }
-
-  // QP is obtained from VP8-bitstream for HW, so the QP corresponds to the
-  // bitstream range of [0, 127] and not the user-level range of [0,63].
-  static const int kLowVp8QpThreshold;
-  static const int kBadVp8QpThreshold;
-
-  // H264 QP is in the range [0, 51].
-  static const int kLowH264QpThreshold;
-  static const int kBadH264QpThreshold;
 
  private:
   void ClearSamples();

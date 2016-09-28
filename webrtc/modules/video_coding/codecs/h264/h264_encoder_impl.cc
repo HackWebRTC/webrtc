@@ -213,10 +213,9 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
   // TODO(pbos): Base init params on these values before submitting.
-  quality_scaler_.Init(QualityScaler::kLowH264QpThreshold,
-                       QualityScaler::kBadH264QpThreshold,
-                       codec_settings_.startBitrate, codec_settings_.width,
-                       codec_settings_.height, codec_settings_.maxFramerate);
+  quality_scaler_.Init(codec_settings_.codecType, codec_settings_.startBitrate,
+                       codec_settings_.width, codec_settings_.height,
+                       codec_settings_.maxFramerate);
   int video_format = EVideoFormatType::videoFormatI420;
   openh264_encoder_->SetOption(ENCODER_OPTION_DATAFORMAT,
                                &video_format);
