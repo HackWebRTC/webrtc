@@ -12,9 +12,11 @@
 # main function from the src/build/gyp_chromium.py file while other parts are
 # reused to minimize code duplication.
 
+import argparse
 import gc
 import glob
 import os
+import shlex
 import sys
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -38,6 +40,56 @@ def GetSupplementalFiles():
   # Can't use the one in gyp_chromium since the directory location of the root
   # is different.
   return glob.glob(os.path.join(checkout_root, '*', 'supplement.gypi'))
+
+
+def GetOutputDirectory():
+  """Returns the output directory that GYP will use."""
+
+  # Handle command line generator flags.
+  parser = argparse.ArgumentParser()
+  parser.add_argument('-G', dest='genflags', default=[], action='append')
+  genflags = parser.parse_known_args()[0].genflags
+
+  # Handle generator flags from the environment.
+  genflags += shlex.split(os.environ.get('GYP_GENERATOR_FLAGS', ''))
+
+  needle = 'output_dir='
+  for item in genflags:
+    if item.startswith(needle):
+      return item[len(needle):]
+
+  return 'out'
+
+
+def additional_include_files(supplemental_files, args=None):
+  """
+  Returns a list of additional (.gypi) files to include, without duplicating
+  ones that are already specified on the command line. The list of supplemental
+  include files is passed in as an argument.
+  """
+  # Determine the include files specified on the command line.
+  # This doesn't cover all the different option formats you can use,
+  # but it's mainly intended to avoid duplicating flags on the automatic
+  # makefile regeneration which only uses this format.
+  specified_includes = set()
+  args = args or []
+  for arg in args:
+    if arg.startswith('-I') and len(arg) > 2:
+      specified_includes.add(os.path.realpath(arg[2:]))
+  result = []
+  def AddInclude(path):
+    if os.path.realpath(path) not in specified_includes:
+      result.append(path)
+  if os.environ.get('GYP_INCLUDE_FIRST') != None:
+    AddInclude(os.path.join(checkout_root, os.environ.get('GYP_INCLUDE_FIRST')))
+  # Always include Chromium's common.gypi, which we now have a copy of.
+  AddInclude(os.path.join(script_dir, 'chromium_common.gypi'))
+  # Optionally add supplemental .gypi files if present.
+  for supplement in supplemental_files:
+    AddInclude(supplement)
+  if os.environ.get('GYP_INCLUDE_LAST') != None:
+    AddInclude(os.path.join(checkout_root, os.environ.get('GYP_INCLUDE_LAST')))
+  return result
 
 
 def main():
@@ -102,9 +154,8 @@ def main():
           'GYP_CROSSCOMPILE' not in os.environ)):
     os.environ['GYP_CROSSCOMPILE'] = '1'
 
-  args.extend(['-I' + i for i in
-               gyp_chromium.additional_include_files(supplemental_includes,
-                                                     args)])
+  args.extend(['-I' + i for i in additional_include_files(supplemental_includes,
+                                                          args)])
 
   # Set the gyp depth variable to the root of the checkout.
   args.append('--depth=' + os.path.relpath(checkout_root))
@@ -119,7 +170,7 @@ def main():
     # pylint: disable=unpacking-non-sequence
     x64_runtime, x86_runtime = vs2013_runtime_dll_dirs
     vs_toolchain.CopyVsRuntimeDlls(
-        os.path.join(checkout_root, gyp_chromium.GetOutputDirectory()),
+        os.path.join(checkout_root, GetOutputDirectory()),
         (x86_runtime, x64_runtime))
 
   sys.exit(gyp_rc)
