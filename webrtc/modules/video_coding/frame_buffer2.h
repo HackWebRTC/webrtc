@@ -14,15 +14,16 @@
 #include <array>
 #include <map>
 #include <memory>
-#include <set>
 #include <utility>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/modules/video_coding/frame_object.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/modules/video_coding/inter_frame_delay.h"
+#include "webrtc/modules/video_coding/sequence_number_util.h"
 
 namespace webrtc {
 
@@ -32,8 +33,6 @@ class VCMTiming;
 
 namespace video_coding {
 
-class FrameObject;
-
 class FrameBuffer {
  public:
   enum ReturnReason { kFrameFound, kTimeout, kStopped };
@@ -42,12 +41,13 @@ class FrameBuffer {
               VCMJitterEstimator* jitter_estimator,
               VCMTiming* timing);
 
-  // Insert a frame into the frame buffer.
-  void InsertFrame(std::unique_ptr<FrameObject> frame);
+  // Insert a frame into the frame buffer. Returns the picture id
+  // of the last continuous frame or -1 if there is no continuous frame.
+  int InsertFrame(std::unique_ptr<FrameObject> frame);
 
   // Get the next frame for decoding. Will return at latest after
   // |max_wait_time_ms|.
-  //  - If a frame is availiable within |max_wait_time_ms| it will return
+  //  - If a frame is available within |max_wait_time_ms| it will return
   //    kFrameFound and set |frame_out| to the resulting frame.
   //  - If no frame is available after |max_wait_time_ms| it will return
   //    kTimeout.
@@ -70,33 +70,85 @@ class FrameBuffer {
   void Stop();
 
  private:
-  // FrameKey is a pair of (picture id, spatial layer).
-  using FrameKey = std::pair<uint16_t, uint8_t>;
+  struct FrameKey {
+    FrameKey() : picture_id(0), spatial_layer(0) {}
+    FrameKey(uint16_t picture_id, uint8_t spatial_layer)
+        : picture_id(picture_id), spatial_layer(spatial_layer) {}
 
-  // Comparator used to sort frames, first on their picture id, and second
-  // on their spatial layer.
-  struct FrameComp {
-    bool operator()(const FrameKey& f1, const FrameKey& f2) const;
+    bool operator<(const FrameKey& rhs) const {
+      if (picture_id == rhs.picture_id)
+        return spatial_layer < rhs.spatial_layer;
+      return AheadOf(rhs.picture_id, picture_id);
+    }
+
+    bool operator<=(const FrameKey& rhs) const { return !(rhs < *this); }
+
+    uint16_t picture_id;
+    uint8_t spatial_layer;
   };
 
-  // Determines whether a frame is continuous.
-  bool IsContinuous(const FrameObject& frame) const
+  struct FrameInfo {
+    // The maximum number of frames that can depend on this frame.
+    static constexpr size_t kMaxNumDependentFrames = 8;
+
+    // Which other frames that have direct unfulfilled dependencies
+    // on this frame.
+    FrameKey dependent_frames[kMaxNumDependentFrames];
+    size_t num_dependent_frames = 0;
+
+    // A frame is continiuous if it has all its referenced/indirectly
+    // referenced frames.
+    //
+    // How many unfulfilled frames this frame have until it becomes continuous.
+    size_t num_missing_continuous = 0;
+
+    // A frame is decodable if all its referenced frames have been decoded.
+    //
+    // How many unfulfilled frames this frame have until it becomes decodable.
+    size_t num_missing_decodable = 0;
+
+    // If this frame is continuous or not.
+    bool continuous = false;
+
+    // The actual FrameObject.
+    std::unique_ptr<FrameObject> frame;
+  };
+
+  using FrameMap = std::map<FrameKey, FrameInfo>;
+
+  // Update all directly dependent and indirectly dependent frames and mark
+  // them as continuous if all their references has been fulfilled.
+  void PropagateContinuity(FrameMap::iterator start)
       EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  // Keep track of decoded frames.
-  std::set<FrameKey, FrameComp> decoded_frames_ GUARDED_BY(crit_);
+  // Marks the frame as decoded and updates all directly dependent frames.
+  void PropagateDecodability(const FrameInfo& info)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  // The actual buffer that holds the FrameObjects.
-  std::map<FrameKey, std::unique_ptr<FrameObject>, FrameComp> frames_
-      GUARDED_BY(crit_);
+  // Advances |last_decoded_frame_it_| to |decoded| and removes old
+  // frame info.
+  void AdvanceLastDecodedFrame(FrameMap::iterator decoded)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+
+  // Update the corresponding FrameInfo of |frame| and all FrameInfos that
+  // |frame| references.
+  // Return false if |frame| will never be decodable, true otherwise.
+  bool UpdateFrameInfoWithIncomingFrame(const FrameObject& frame,
+                                        FrameMap::iterator info)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+
+  FrameMap frames_ GUARDED_BY(crit_);
 
   rtc::CriticalSection crit_;
   Clock* const clock_;
-  rtc::Event frame_inserted_event_;
+  rtc::Event new_countinuous_frame_event_;
   VCMJitterEstimator* const jitter_estimator_ GUARDED_BY(crit_);
   VCMTiming* const timing_ GUARDED_BY(crit_);
   VCMInterFrameDelay inter_frame_delay_ GUARDED_BY(crit_);
-  int newest_picture_id_ GUARDED_BY(crit_);
+  FrameMap::iterator last_decoded_frame_it_ GUARDED_BY(crit_);
+  FrameMap::iterator last_continuous_frame_it_ GUARDED_BY(crit_);
+  int num_frames_history_ GUARDED_BY(crit_);
+  int num_frames_buffered_ GUARDED_BY(crit_);
   bool stopped_ GUARDED_BY(crit_);
   VCMVideoProtection protection_mode_ GUARDED_BY(crit_);
 
