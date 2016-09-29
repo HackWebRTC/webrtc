@@ -58,8 +58,8 @@ public class RoomParametersFetcher {
     void onSignalingParametersError(final String description);
   }
 
-  public RoomParametersFetcher(String roomUrl, String roomMessage,
-      final RoomParametersFetcherEvents events) {
+  public RoomParametersFetcher(
+      String roomUrl, String roomMessage, final RoomParametersFetcherEvents events) {
     this.roomUrl = roomUrl;
     this.roomMessage = roomMessage;
     this.events = events;
@@ -67,9 +67,8 @@ public class RoomParametersFetcher {
 
   public void makeRequest() {
     Log.d(TAG, "Connecting to room: " + roomUrl);
-    httpConnection = new AsyncHttpURLConnection(
-        "POST", roomUrl, roomMessage,
-        new AsyncHttpEvents() {
+    httpConnection =
+        new AsyncHttpURLConnection("POST", roomUrl, roomMessage, new AsyncHttpEvents() {
           @Override
           public void onHttpError(String errorMessage) {
             Log.e(TAG, "Room connection error: " + errorMessage);
@@ -114,13 +113,10 @@ public class RoomParametersFetcher {
           Log.d(TAG, "GAE->C #" + i + " : " + messageString);
           if (messageType.equals("offer")) {
             offerSdp = new SessionDescription(
-                SessionDescription.Type.fromCanonicalForm(messageType),
-                message.getString("sdp"));
+                SessionDescription.Type.fromCanonicalForm(messageType), message.getString("sdp"));
           } else if (messageType.equals("candidate")) {
             IceCandidate candidate = new IceCandidate(
-                message.getString("id"),
-                message.getInt("label"),
-                message.getString("candidate"));
+                message.getString("id"), message.getInt("label"), message.getString("candidate"));
             iceCandidates.add(candidate);
           } else {
             Log.e(TAG, "Unknown message: " + messageString);
@@ -153,13 +149,10 @@ public class RoomParametersFetcher {
       }
 
       SignalingParameters params = new SignalingParameters(
-          iceServers, initiator,
-          clientId, wssUrl, wssPostUrl,
-          offerSdp, iceCandidates);
+          iceServers, initiator, clientId, wssUrl, wssPostUrl, offerSdp, iceCandidates);
       events.onSignalingParametersReady(params);
     } catch (JSONException e) {
-      events.onSignalingParametersError(
-          "Room JSON parsing error: " + e.toString());
+      events.onSignalingParametersError("Room JSON parsing error: " + e.toString());
     } catch (IOException e) {
       events.onSignalingParametersError("Room IO error: " + e.toString());
     }
@@ -169,19 +162,17 @@ public class RoomParametersFetcher {
   // off the main thread!
   private LinkedList<PeerConnection.IceServer> requestTurnServers(String url)
       throws IOException, JSONException {
-    LinkedList<PeerConnection.IceServer> turnServers =
-        new LinkedList<PeerConnection.IceServer>();
+    LinkedList<PeerConnection.IceServer> turnServers = new LinkedList<PeerConnection.IceServer>();
     Log.d(TAG, "Request TURN from: " + url);
-    HttpURLConnection connection =
-        (HttpURLConnection) new URL(url).openConnection();
+    HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
     connection.setDoOutput(true);
     connection.setRequestProperty("REFERER", "https://appr.tc");
     connection.setConnectTimeout(TURN_HTTP_TIMEOUT_MS);
     connection.setReadTimeout(TURN_HTTP_TIMEOUT_MS);
     int responseCode = connection.getResponseCode();
     if (responseCode != 200) {
-      throw new IOException("Non-200 response when requesting TURN server from "
-          + url + " : " + connection.getHeaderField(null));
+      throw new IOException("Non-200 response when requesting TURN server from " + url + " : "
+          + connection.getHeaderField(null));
     }
     InputStream responseStream = connection.getInputStream();
     String response = drainStream(responseStream);
@@ -192,14 +183,11 @@ public class RoomParametersFetcher {
     for (int i = 0; i < iceServers.length(); ++i) {
       JSONObject server = iceServers.getJSONObject(i);
       JSONArray turnUrls = server.getJSONArray("urls");
-      String username =
-          server.has("username") ? server.getString("username") : "";
-      String credential =
-          server.has("credential") ? server.getString("credential") : "";
+      String username = server.has("username") ? server.getString("username") : "";
+      String credential = server.has("credential") ? server.getString("credential") : "";
       for (int j = 0; j < turnUrls.length(); j++) {
         String turnUrl = turnUrls.getString(j);
-        turnServers.add(new PeerConnection.IceServer(turnUrl, username,
-            credential));
+        turnServers.add(new PeerConnection.IceServer(turnUrl, username, credential));
       }
     }
     return turnServers;
@@ -207,17 +195,15 @@ public class RoomParametersFetcher {
 
   // Return the list of ICE servers described by a WebRTCPeerConnection
   // configuration string.
-  private LinkedList<PeerConnection.IceServer> iceServersFromPCConfigJSON(
-      String pcConfig) throws JSONException {
+  private LinkedList<PeerConnection.IceServer> iceServersFromPCConfigJSON(String pcConfig)
+      throws JSONException {
     JSONObject json = new JSONObject(pcConfig);
     JSONArray servers = json.getJSONArray("iceServers");
-    LinkedList<PeerConnection.IceServer> ret =
-        new LinkedList<PeerConnection.IceServer>();
+    LinkedList<PeerConnection.IceServer> ret = new LinkedList<PeerConnection.IceServer>();
     for (int i = 0; i < servers.length(); ++i) {
       JSONObject server = servers.getJSONObject(i);
       String url = server.getString("urls");
-      String credential =
-          server.has("credential") ? server.getString("credential") : "";
+      String credential = server.has("credential") ? server.getString("credential") : "";
       ret.add(new PeerConnection.IceServer(url, "", credential));
     }
     return ret;
@@ -228,5 +214,4 @@ public class RoomParametersFetcher {
     Scanner s = new Scanner(in).useDelimiter("\\A");
     return s.hasNext() ? s.next() : "";
   }
-
 }

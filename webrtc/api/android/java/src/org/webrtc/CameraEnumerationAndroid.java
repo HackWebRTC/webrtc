@@ -123,7 +123,6 @@ public class CameraEnumerationAndroid {
     return new Camera1Enumerator().getDeviceNames();
   }
 
-
   /**
    * @deprecated
    * Please use Camera1Enumerator.getDeviceNames().length instead.
@@ -177,8 +176,8 @@ public class CameraEnumerationAndroid {
   // lower bound, to allow the framerate to fluctuate based on lightning conditions.
   public static CaptureFormat.FramerateRange getClosestSupportedFramerateRange(
       List<CaptureFormat.FramerateRange> supportedFramerates, final int requestedFps) {
-    return Collections.min(supportedFramerates,
-        new ClosestComparator<CaptureFormat.FramerateRange>() {
+    return Collections.min(
+        supportedFramerates, new ClosestComparator<CaptureFormat.FramerateRange>() {
           // Progressive penalty if the upper bound is further away than |MAX_FPS_DIFF_THRESHOLD|
           // from requested.
           private static final int MAX_FPS_DIFF_THRESHOLD = 5000;
@@ -192,32 +191,29 @@ public class CameraEnumerationAndroid {
 
           // Use one weight for small |value| less than |threshold|, and another weight above.
           private int progressivePenalty(int value, int threshold, int lowWeight, int highWeight) {
-            return (value < threshold)
-                ? value * lowWeight
-                : threshold * lowWeight + (value - threshold) * highWeight;
+            return (value < threshold) ? value * lowWeight
+                                       : threshold * lowWeight + (value - threshold) * highWeight;
           }
 
           @Override
           int diff(CaptureFormat.FramerateRange range) {
-            final int minFpsError = progressivePenalty(range.min,
-                MIN_FPS_THRESHOLD, MIN_FPS_LOW_VALUE_WEIGHT, MIN_FPS_HIGH_VALUE_WEIGHT);
+            final int minFpsError = progressivePenalty(
+                range.min, MIN_FPS_THRESHOLD, MIN_FPS_LOW_VALUE_WEIGHT, MIN_FPS_HIGH_VALUE_WEIGHT);
             final int maxFpsError = progressivePenalty(Math.abs(requestedFps * 1000 - range.max),
                 MAX_FPS_DIFF_THRESHOLD, MAX_FPS_LOW_DIFF_WEIGHT, MAX_FPS_HIGH_DIFF_WEIGHT);
             return minFpsError + maxFpsError;
           }
-     });
+        });
   }
 
   public static Size getClosestSupportedSize(
-      List<Size> supportedSizes, final int requestedWidth,
-      final int requestedHeight) {
-    return Collections.min(supportedSizes,
-        new ClosestComparator<Size>() {
-          @Override
-          int diff(Size size) {
-            return abs(requestedWidth - size.width) + abs(requestedHeight - size.height);
-          }
-     });
+      List<Size> supportedSizes, final int requestedWidth, final int requestedHeight) {
+    return Collections.min(supportedSizes, new ClosestComparator<Size>() {
+      @Override
+      int diff(Size size) {
+        return abs(requestedWidth - size.width) + abs(requestedHeight - size.height);
+      }
+    });
   }
 
   private static String getNameOfDevice(int facing) {

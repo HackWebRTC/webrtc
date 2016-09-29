@@ -24,13 +24,10 @@ import java.util.List;
  * Control capture format based on a seekbar listener.
  */
 public class CaptureQualityController implements SeekBar.OnSeekBarChangeListener {
-  private final List<CaptureFormat> formats = Arrays.asList(
-      new CaptureFormat(1280, 720, 0, 30000),
-      new CaptureFormat(960, 540, 0, 30000),
-      new CaptureFormat(640, 480, 0, 30000),
-      new CaptureFormat(480, 360, 0, 30000),
-      new CaptureFormat(320, 240, 0, 30000),
-      new CaptureFormat(256, 144, 0, 30000));
+  private final List<CaptureFormat> formats =
+      Arrays.asList(new CaptureFormat(1280, 720, 0, 30000), new CaptureFormat(960, 540, 0, 30000),
+          new CaptureFormat(640, 480, 0, 30000), new CaptureFormat(480, 360, 0, 30000),
+          new CaptureFormat(320, 240, 0, 30000), new CaptureFormat(256, 144, 0, 30000));
   // Prioritize framerate below this threshold and resolution above the threshold.
   private static final int FRAMERATE_THRESHOLD = 15;
   private TextView captureFormatText;
@@ -52,14 +49,14 @@ public class CaptureQualityController implements SeekBar.OnSeekBarChangeListener
       int firstFps = calculateFramerate(targetBandwidth, first);
       int secondFps = calculateFramerate(targetBandwidth, second);
 
-     if (firstFps >= FRAMERATE_THRESHOLD && secondFps >= FRAMERATE_THRESHOLD
-         || firstFps == secondFps) {
+      if (firstFps >= FRAMERATE_THRESHOLD && secondFps >= FRAMERATE_THRESHOLD
+          || firstFps == secondFps) {
         // Compare resolution.
         return first.width * first.height - second.width * second.height;
-     } else {
+      } else {
         // Compare fps.
         return firstFps - secondFps;
-     }
+      }
     }
   };
 
@@ -76,8 +73,8 @@ public class CaptureQualityController implements SeekBar.OnSeekBarChangeListener
     // Extract max bandwidth (in millipixels / second).
     long maxCaptureBandwidth = java.lang.Long.MIN_VALUE;
     for (CaptureFormat format : formats) {
-      maxCaptureBandwidth = Math.max(maxCaptureBandwidth,
-          (long) format.width * format.height * format.framerate.max);
+      maxCaptureBandwidth =
+          Math.max(maxCaptureBandwidth, (long) format.width * format.height * format.framerate.max);
     }
 
     // Fraction between 0 and 1.
@@ -97,8 +94,7 @@ public class CaptureQualityController implements SeekBar.OnSeekBarChangeListener
   }
 
   @Override
-  public void onStartTrackingTouch(SeekBar seekBar) {
-  }
+  public void onStartTrackingTouch(SeekBar seekBar) {}
 
   @Override
   public void onStopTrackingTouch(SeekBar seekBar) {
@@ -107,8 +103,8 @@ public class CaptureQualityController implements SeekBar.OnSeekBarChangeListener
 
   // Return the highest frame rate possible based on bandwidth and format.
   private int calculateFramerate(double bandwidth, CaptureFormat format) {
-    return (int) Math.round(Math.min(format.framerate.max,
-        (int) Math.round(bandwidth / (format.width * format.height))) / 1000.0);
+    return (int) Math.round(
+        Math.min(format.framerate.max, (int) Math.round(bandwidth / (format.width * format.height)))
+        / 1000.0);
   }
 }
-

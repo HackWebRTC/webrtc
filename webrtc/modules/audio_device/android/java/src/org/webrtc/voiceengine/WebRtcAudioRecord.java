@@ -23,7 +23,7 @@ import java.lang.System;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
-public class  WebRtcAudioRecord {
+public class WebRtcAudioRecord {
   private static final boolean DEBUG = false;
 
   private static final String TAG = "WebRtcAudioRecord";
@@ -77,8 +77,7 @@ public class  WebRtcAudioRecord {
     public void run() {
       Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
       Logging.d(TAG, "AudioRecordThread" + WebRtcAudioUtils.getThreadInfo());
-      assertTrue(audioRecord.getRecordingState()
-          == AudioRecord.RECORDSTATE_RECORDING);
+      assertTrue(audioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING);
 
       long lastTime = System.nanoTime();
       while (keepAlive) {
@@ -90,15 +89,14 @@ public class  WebRtcAudioRecord {
           }
           nativeDataIsRecorded(bytesRead, nativeAudioRecord);
         } else {
-          Logging.e(TAG,"AudioRecord.read failed: " + bytesRead);
+          Logging.e(TAG, "AudioRecord.read failed: " + bytesRead);
           if (bytesRead == AudioRecord.ERROR_INVALID_OPERATION) {
             keepAlive = false;
           }
         }
         if (DEBUG) {
           long nowTime = System.nanoTime();
-          long durationInMs =
-              TimeUnit.NANOSECONDS.toMillis((nowTime - lastTime));
+          long durationInMs = TimeUnit.NANOSECONDS.toMillis((nowTime - lastTime));
           lastTime = nowTime;
           Logging.d(TAG, "bytesRead[" + durationInMs + "] " + bytesRead);
         }
@@ -159,10 +157,8 @@ public class  WebRtcAudioRecord {
   }
 
   private int initRecording(int sampleRate, int channels) {
-    Logging.d(TAG, "initRecording(sampleRate=" + sampleRate + ", channels=" +
-        channels + ")");
-    if (!WebRtcAudioUtils.hasPermission(
-        context, android.Manifest.permission.RECORD_AUDIO)) {
+    Logging.d(TAG, "initRecording(sampleRate=" + sampleRate + ", channels=" + channels + ")");
+    if (!WebRtcAudioUtils.hasPermission(context, android.Manifest.permission.RECORD_AUDIO)) {
       Logging.e(TAG, "RECORD_AUDIO permission is missing");
       return -1;
     }
@@ -184,11 +180,8 @@ public class  WebRtcAudioRecord {
     // an AudioRecord object, in byte units.
     // Note that this size doesn't guarantee a smooth recording under load.
     int minBufferSize = AudioRecord.getMinBufferSize(
-          sampleRate,
-          AudioFormat.CHANNEL_IN_MONO,
-          AudioFormat.ENCODING_PCM_16BIT);
-    if (minBufferSize == AudioRecord.ERROR
-        || minBufferSize == AudioRecord.ERROR_BAD_VALUE) {
+        sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+    if (minBufferSize == AudioRecord.ERROR || minBufferSize == AudioRecord.ERROR_BAD_VALUE) {
       Logging.e(TAG, "AudioRecord.getMinBufferSize failed: " + minBufferSize);
       return -1;
     }
@@ -197,43 +190,38 @@ public class  WebRtcAudioRecord {
     // Use a larger buffer size than the minimum required when creating the
     // AudioRecord instance to ensure smooth recording under load. It has been
     // verified that it does not increase the actual recording latency.
-    int bufferSizeInBytes =
-        Math.max(BUFFER_SIZE_FACTOR * minBufferSize, byteBuffer.capacity());
+    int bufferSizeInBytes = Math.max(BUFFER_SIZE_FACTOR * minBufferSize, byteBuffer.capacity());
     Logging.d(TAG, "bufferSizeInBytes: " + bufferSizeInBytes);
     try {
-      audioRecord = new AudioRecord(AudioSource.VOICE_COMMUNICATION,
-                                    sampleRate,
-                                    AudioFormat.CHANNEL_IN_MONO,
-                                    AudioFormat.ENCODING_PCM_16BIT,
-                                    bufferSizeInBytes);
+      audioRecord = new AudioRecord(AudioSource.VOICE_COMMUNICATION, sampleRate,
+          AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes);
     } catch (IllegalArgumentException e) {
-      Logging.e(TAG,e.getMessage());
+      Logging.e(TAG, e.getMessage());
       return -1;
     }
-    if (audioRecord == null ||
-        audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
+    if (audioRecord == null || audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
       Logging.e(TAG, "Failed to create a new AudioRecord instance");
       return -1;
     }
     Logging.d(TAG, "AudioRecord "
-        + "session ID: " + audioRecord.getAudioSessionId() + ", "
-        + "audio format: " + audioRecord.getAudioFormat() + ", "
-        + "channels: " + audioRecord.getChannelCount() + ", "
-        + "sample rate: " + audioRecord.getSampleRate());
+            + "session ID: " + audioRecord.getAudioSessionId() + ", "
+            + "audio format: " + audioRecord.getAudioFormat() + ", "
+            + "channels: " + audioRecord.getChannelCount() + ", "
+            + "sample rate: " + audioRecord.getSampleRate());
     if (effects != null) {
       effects.enable(audioRecord.getAudioSessionId());
     }
     // TODO(phoglund): put back audioRecord.getBufferSizeInFrames when
     // all known downstream users supports M.
     // if (WebRtcAudioUtils.runningOnMOrHigher()) {
-      // Returns the frame count of the native AudioRecord buffer. This is
-      // greater than or equal to the bufferSizeInBytes converted to frame
-      // units. The native frame count may be enlarged to accommodate the
-      // requirements of the source on creation or if the AudioRecord is
-      // subsequently rerouted.
+    // Returns the frame count of the native AudioRecord buffer. This is
+    // greater than or equal to the bufferSizeInBytes converted to frame
+    // units. The native frame count may be enlarged to accommodate the
+    // requirements of the source on creation or if the AudioRecord is
+    // subsequently rerouted.
 
-      // Logging.d(TAG, "bufferSizeInFrames: "
-      //     + audioRecord.getBufferSizeInFrames());
+    // Logging.d(TAG, "bufferSizeInFrames: "
+    //     + audioRecord.getBufferSizeInFrames());
     //}
     return framesPerBuffer;
   }
@@ -261,8 +249,7 @@ public class  WebRtcAudioRecord {
     Logging.d(TAG, "stopRecording");
     assertTrue(audioThread != null);
     audioThread.stopThread();
-    if (!ThreadUtils.joinUninterruptibly(
-        audioThread, AUDIO_RECORD_THREAD_JOIN_TIMEOUT_MS)) {
+    if (!ThreadUtils.joinUninterruptibly(audioThread, AUDIO_RECORD_THREAD_JOIN_TIMEOUT_MS)) {
       Logging.e(TAG, "Join of AudioRecordJavaThread timed out");
     }
     audioThread = null;
@@ -281,15 +268,14 @@ public class  WebRtcAudioRecord {
     }
   }
 
-  private native void nativeCacheDirectBufferAddress(
-      ByteBuffer byteBuffer, long nativeAudioRecord);
+  private native void nativeCacheDirectBufferAddress(ByteBuffer byteBuffer, long nativeAudioRecord);
 
   private native void nativeDataIsRecorded(int bytes, long nativeAudioRecord);
 
   // Sets all recorded samples to zero if |mute| is true, i.e., ensures that
   // the microphone is muted.
   public static void setMicrophoneMute(boolean mute) {
-     Logging.w(TAG, "setMicrophoneMute(" + mute + ")");
+    Logging.w(TAG, "setMicrophoneMute(" + mute + ")");
     microphoneMute = mute;
   }
 }

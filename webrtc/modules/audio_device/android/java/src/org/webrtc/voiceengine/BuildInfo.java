@@ -46,6 +46,6 @@ public final class BuildInfo {
   }
 
   public static int getSdkVersion() {
-      return Build.VERSION.SDK_INT;
+    return Build.VERSION.SDK_INT;
   }
 }

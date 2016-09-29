@@ -51,8 +51,7 @@ public class MediaStreamTrack {
 
   private static native boolean nativeEnabled(long nativeTrack);
 
-  private static native boolean nativeSetEnabled(
-      long nativeTrack, boolean enabled);
+  private static native boolean nativeSetEnabled(long nativeTrack, boolean enabled);
 
   private static native State nativeState(long nativeTrack);
 

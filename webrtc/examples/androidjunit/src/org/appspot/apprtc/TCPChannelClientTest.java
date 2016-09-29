@@ -52,7 +52,6 @@ public class TCPChannelClientTest {
   private TCPChannelClient server;
   private TCPChannelClient client;
 
-
   @Before
   public void setUp() {
     ShadowLog.stream = System.out;

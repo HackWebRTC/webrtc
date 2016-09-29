@@ -37,8 +37,8 @@ public final class EglBase14 extends EglBase {
   // EGL 1.4 is supported from API 17. But EGLExt that is used for setting presentation
   // time stamp on a surface is supported from 18 so we require 18.
   public static boolean isEGL14Supported() {
-    Logging.d(TAG, "SDK version: " + CURRENT_SDK_VERSION
-        + ". isEGL14Supported: " + (CURRENT_SDK_VERSION >= EGLExt_SDK_VERSION));
+    Logging.d(TAG, "SDK version: " + CURRENT_SDK_VERSION + ". isEGL14Supported: "
+            + (CURRENT_SDK_VERSION >= EGLExt_SDK_VERSION));
     return (CURRENT_SDK_VERSION >= EGLExt_SDK_VERSION);
   }
 
@@ -101,9 +101,8 @@ public final class EglBase14 extends EglBase {
     int[] surfaceAttribs = {EGL14.EGL_WIDTH, width, EGL14.EGL_HEIGHT, height, EGL14.EGL_NONE};
     eglSurface = EGL14.eglCreatePbufferSurface(eglDisplay, eglConfig, surfaceAttribs, 0);
     if (eglSurface == EGL14.EGL_NO_SURFACE) {
-      throw new RuntimeException(
-          "Failed to create pixel buffer surface with size " + width + "x" + height
-          + ": 0x" + Integer.toHexString(EGL14.eglGetError()));
+      throw new RuntimeException("Failed to create pixel buffer surface with size " + width + "x"
+          + height + ": 0x" + Integer.toHexString(EGL14.eglGetError()));
     }
   }
 
@@ -178,7 +177,7 @@ public final class EglBase14 extends EglBase {
   public void detachCurrent() {
     synchronized (EglBase.lock) {
       if (!EGL14.eglMakeCurrent(
-          eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT)) {
+              eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT)) {
         throw new RuntimeException(
             "eglDetachCurrent failed: 0x" + Integer.toHexString(EGL14.eglGetError()));
       }
@@ -202,7 +201,8 @@ public final class EglBase14 extends EglBase {
       throw new RuntimeException("No EGLSurface - can't swap buffers");
     }
     synchronized (EglBase.lock) {
-      // See https://android.googlesource.com/platform/frameworks/native/+/tools_r22.2/opengl/specs/EGL_ANDROID_presentation_time.txt
+      // See
+      // https://android.googlesource.com/platform/frameworks/native/+/tools_r22.2/opengl/specs/EGL_ANDROID_presentation_time.txt
       EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, timeStampNs);
       EGL14.eglSwapBuffers(eglDisplay, eglSurface);
     }
@@ -228,7 +228,7 @@ public final class EglBase14 extends EglBase {
     EGLConfig[] configs = new EGLConfig[1];
     int[] numConfigs = new int[1];
     if (!EGL14.eglChooseConfig(
-        eglDisplay, configAttributes, 0, configs, 0, configs.length, numConfigs, 0)) {
+            eglDisplay, configAttributes, 0, configs, 0, configs.length, numConfigs, 0)) {
       throw new RuntimeException(
           "eglChooseConfig failed: 0x" + Integer.toHexString(EGL14.eglGetError()));
     }

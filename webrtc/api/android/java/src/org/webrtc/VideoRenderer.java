@@ -61,11 +61,13 @@ public class VideoRenderer {
       // top-left corner of the image, but in glTexImage2D() the first element corresponds to the
       // bottom-left corner. This discrepancy is corrected by setting a vertical flip as sampling
       // matrix.
+      // clang-format off
       samplingMatrix = new float[] {
           1,  0, 0, 0,
           0, -1, 0, 0,
           0,  0, 1, 0,
           0,  1, 0, 1};
+      // clang-format on
     }
 
     /**
@@ -97,14 +99,13 @@ public class VideoRenderer {
 
     @Override
     public String toString() {
-      return width + "x" + height + ":" + yuvStrides[0] + ":" + yuvStrides[1] +
-          ":" + yuvStrides[2];
+      return width + "x" + height + ":" + yuvStrides[0] + ":" + yuvStrides[1] + ":" + yuvStrides[2];
     }
   }
 
   // Helper native function to do a video frame plane copying.
-  public static native void nativeCopyPlane(ByteBuffer src, int width,
-      int height, int srcStride, ByteBuffer dst, int dstStride);
+  public static native void nativeCopyPlane(
+      ByteBuffer src, int width, int height, int srcStride, ByteBuffer dst, int dstStride);
 
   /** The real meat of VideoSinkInterface. */
   public static interface Callbacks {
@@ -115,17 +116,17 @@ public class VideoRenderer {
     public void renderFrame(I420Frame frame);
   }
 
-   /**
-    * This must be called after every renderFrame() to release the frame.
-    */
-   public static void renderFrameDone(I420Frame frame) {
-     frame.yuvPlanes = null;
-     frame.textureId = 0;
-     if (frame.nativeFramePointer != 0) {
-       releaseNativeFrame(frame.nativeFramePointer);
-       frame.nativeFramePointer = 0;
-     }
-   }
+  /**
+   * This must be called after every renderFrame() to release the frame.
+   */
+  public static void renderFrameDone(I420Frame frame) {
+    frame.yuvPlanes = null;
+    frame.textureId = 0;
+    if (frame.nativeFramePointer != 0) {
+      releaseNativeFrame(frame.nativeFramePointer);
+      frame.nativeFramePointer = 0;
+    }
+  }
 
   long nativeVideoRenderer;
 

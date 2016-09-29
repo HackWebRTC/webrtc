@@ -25,6 +25,7 @@ import java.util.Map;
  * manually to free the resources held by this object.
  */
 public class GlRectDrawer implements RendererCommon.GlDrawer {
+  // clang-format off
   // Simple vertex shader, used for both YUV and OES.
   private static final String VERTEX_SHADER_STRING =
         "varying vec2 interp_tc;\n"
@@ -76,25 +77,24 @@ public class GlRectDrawer implements RendererCommon.GlDrawer {
       + "void main() {\n"
       + "  gl_FragColor = texture2D(oes_tex, interp_tc);\n"
       + "}\n";
+  // clang-format on
 
   // Vertex coordinates in Normalized Device Coordinates, i.e. (-1, -1) is bottom-left and (1, 1) is
   // top-right.
-  private static final FloatBuffer FULL_RECTANGLE_BUF =
-      GlUtil.createFloatBuffer(new float[] {
-            -1.0f, -1.0f,  // Bottom left.
-             1.0f, -1.0f,  // Bottom right.
-            -1.0f,  1.0f,  // Top left.
-             1.0f,  1.0f,  // Top right.
-          });
+  private static final FloatBuffer FULL_RECTANGLE_BUF = GlUtil.createFloatBuffer(new float[] {
+      -1.0f, -1.0f, // Bottom left.
+      1.0f, -1.0f, // Bottom right.
+      -1.0f, 1.0f, // Top left.
+      1.0f, 1.0f, // Top right.
+  });
 
   // Texture coordinates - (0, 0) is bottom-left and (1, 1) is top-right.
-  private static final FloatBuffer FULL_RECTANGLE_TEX_BUF =
-      GlUtil.createFloatBuffer(new float[] {
-            0.0f, 0.0f,  // Bottom left.
-            1.0f, 0.0f,  // Bottom right.
-            0.0f, 1.0f,  // Top left.
-            1.0f, 1.0f   // Top right.
-          });
+  private static final FloatBuffer FULL_RECTANGLE_TEX_BUF = GlUtil.createFloatBuffer(new float[] {
+      0.0f, 0.0f, // Bottom left.
+      1.0f, 0.0f, // Bottom right.
+      0.0f, 1.0f, // Top left.
+      1.0f, 1.0f // Top right.
+  });
 
   private static class Shader {
     public final GlShader glShader;

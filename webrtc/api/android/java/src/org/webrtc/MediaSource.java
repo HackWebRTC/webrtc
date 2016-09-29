@@ -8,17 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
 package org.webrtc;
 
 /** Java wrapper for a C++ MediaSourceInterface. */
 public class MediaSource {
   /** Tracks MediaSourceInterface.SourceState */
-  public enum State {
-    INITIALIZING, LIVE, ENDED, MUTED
-  }
+  public enum State { INITIALIZING, LIVE, ENDED, MUTED }
 
-  final long nativeSource;  // Package-protected for PeerConnectionFactory.
+  final long nativeSource; // Package-protected for PeerConnectionFactory.
 
   public MediaSource(long nativeSource) {
     this.nativeSource = nativeSource;

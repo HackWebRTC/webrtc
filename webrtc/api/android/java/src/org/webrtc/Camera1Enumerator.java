@@ -70,8 +70,8 @@ public class Camera1Enumerator implements CameraEnumerator {
   }
 
   @Override
-  public CameraVideoCapturer createCapturer(String deviceName,
-      CameraVideoCapturer.CameraEventsHandler eventsHandler) {
+  public CameraVideoCapturer createCapturer(
+      String deviceName, CameraVideoCapturer.CameraEventsHandler eventsHandler) {
     return new VideoCapturerAndroid(deviceName, eventsHandler, captureToTexture);
   }
 
@@ -135,7 +135,7 @@ public class Camera1Enumerator implements CameraEnumerator {
 
     final long endTimeMs = SystemClock.elapsedRealtime();
     Logging.d(TAG, "Get supported formats for camera index " + cameraId + " done."
-        + " Time spent: " + (endTimeMs - startTimeMs) + " ms.");
+            + " Time spent: " + (endTimeMs - startTimeMs) + " ms.");
     return formatList;
   }
 
@@ -181,7 +181,6 @@ public class Camera1Enumerator implements CameraEnumerator {
 
     String facing =
         (info.facing == android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT) ? "front" : "back";
-    return "Camera " + index + ", Facing " + facing
-        + ", Orientation " + info.orientation;
+    return "Camera " + index + ", Facing " + facing + ", Orientation " + info.orientation;
   }
 }

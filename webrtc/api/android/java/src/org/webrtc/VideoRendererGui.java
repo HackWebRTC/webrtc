@@ -78,7 +78,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     // TODO(magjed): Delete GL resources in release(). Must be synchronized with draw(). We are
     // currently leaking resources to avoid a rare crash in release() where the EGLContext has
     // become invalid beforehand.
-    private int[] yuvTextures = { 0, 0, 0 };
+    private int[] yuvTextures = {0, 0, 0};
     private final RendererCommon.YuvUploader yuvUploader = new RendererCommon.YuvUploader();
     private final RendererCommon.GlDrawer drawer;
     // Resources for making a deep copy of incoming OES texture frame.
@@ -90,7 +90,8 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     private I420Frame pendingFrame;
     private final Object pendingFrameLock = new Object();
     // Type of video frame used for recent frame rendering.
-    private static enum RendererType { RENDERER_YUV, RENDERER_TEXTURE };
+    private static enum RendererType { RENDERER_YUV, RENDERER_TEXTURE }
+
     private RendererType rendererType;
     private RendererCommon.ScalingType scalingType;
     private boolean mirror;
@@ -136,9 +137,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     // it rendered up right.
     private int rotationDegree;
 
-    private YuvImageRenderer(
-        GLSurfaceView surface, int id,
-        int x, int y, int width, int height,
+    private YuvImageRenderer(GLSurfaceView surface, int id, int x, int y, int width, int height,
         RendererCommon.ScalingType scalingType, boolean mirror, RendererCommon.GlDrawer drawer) {
       Logging.d(TAG, "YuvImageRenderer.Create id: " + id);
       this.surface = surface;
@@ -167,11 +166,11 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     }
 
     private void createTextures() {
-      Logging.d(TAG, "  YuvImageRenderer.createTextures " + id + " on GL thread:" +
-          Thread.currentThread().getId());
+      Logging.d(TAG, "  YuvImageRenderer.createTextures " + id + " on GL thread:"
+              + Thread.currentThread().getId());
 
       // Generate 3 texture ids for Y/U/V and place them into |yuvTextures|.
-      for (int i = 0; i < 3; i++)  {
+      for (int i = 0; i < 3; i++) {
         yuvTextures[i] = GlUtil.generateTexture(GLES20.GL_TEXTURE_2D);
       }
       // Generate texture and framebuffer for offscreen texture copy.
@@ -179,30 +178,29 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     }
 
     private void updateLayoutMatrix() {
-      synchronized(updateLayoutLock) {
+      synchronized (updateLayoutLock) {
         if (!updateLayoutProperties) {
           return;
         }
         // Initialize to maximum allowed area. Round to integer coordinates inwards the layout
         // bounding box (ceil left/top and floor right/bottom) to not break constraints.
-        displayLayout.set(
-            (screenWidth * layoutInPercentage.left + 99) / 100,
+        displayLayout.set((screenWidth * layoutInPercentage.left + 99) / 100,
             (screenHeight * layoutInPercentage.top + 99) / 100,
             (screenWidth * layoutInPercentage.right) / 100,
             (screenHeight * layoutInPercentage.bottom) / 100);
-        Logging.d(TAG, "ID: "  + id + ". AdjustTextureCoords. Allowed display size: "
-            + displayLayout.width() + " x " + displayLayout.height() + ". Video: " + videoWidth
-            + " x " + videoHeight + ". Rotation: " + rotationDegree + ". Mirror: " + mirror);
+        Logging.d(TAG, "ID: " + id + ". AdjustTextureCoords. Allowed display size: "
+                + displayLayout.width() + " x " + displayLayout.height() + ". Video: " + videoWidth
+                + " x " + videoHeight + ". Rotation: " + rotationDegree + ". Mirror: " + mirror);
         final float videoAspectRatio = (rotationDegree % 180 == 0)
             ? (float) videoWidth / videoHeight
             : (float) videoHeight / videoWidth;
         // Adjust display size based on |scalingType|.
-        final Point displaySize = RendererCommon.getDisplaySize(scalingType,
-            videoAspectRatio, displayLayout.width(), displayLayout.height());
+        final Point displaySize = RendererCommon.getDisplaySize(
+            scalingType, videoAspectRatio, displayLayout.width(), displayLayout.height());
         displayLayout.inset((displayLayout.width() - displaySize.x) / 2,
-                            (displayLayout.height() - displaySize.y) / 2);
-        Logging.d(TAG, "  Adjusted display size: " + displayLayout.width() + " x "
-            + displayLayout.height());
+            (displayLayout.height() - displaySize.y) / 2);
+        Logging.d(TAG,
+            "  Adjusted display size: " + displayLayout.width() + " x " + displayLayout.height());
         layoutMatrix = RendererCommon.getLayoutMatrix(
             mirror, videoAspectRatio, (float) displayLayout.width() / displayLayout.height());
         updateLayoutProperties = false;
@@ -242,14 +240,13 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
             GlUtil.checkNoGLES2Error("glBindFramebuffer");
 
             // Copy the OES texture content. This will also normalize the sampling matrix.
-            drawer.drawOes(pendingFrame.textureId, rotatedSamplingMatrix,
-                textureCopy.getWidth(), textureCopy.getHeight(),
-                 0, 0, textureCopy.getWidth(), textureCopy.getHeight());
-             rotatedSamplingMatrix = RendererCommon.identityMatrix();
+            drawer.drawOes(pendingFrame.textureId, rotatedSamplingMatrix, textureCopy.getWidth(),
+                textureCopy.getHeight(), 0, 0, textureCopy.getWidth(), textureCopy.getHeight());
+            rotatedSamplingMatrix = RendererCommon.identityMatrix();
 
-             // Restore normal framebuffer.
-             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
-             GLES20.glFinish();
+            // Restore normal framebuffer.
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+            GLES20.glFinish();
           }
           copyTimeNs += (System.nanoTime() - now);
           VideoRenderer.renderFrameDone(pendingFrame);
@@ -263,8 +260,8 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       // OpenGL defaults to lower left origin - flip viewport position vertically.
       final int viewportY = screenHeight - displayLayout.bottom;
       if (rendererType == RendererType.RENDERER_YUV) {
-        drawer.drawYuv(yuvTextures, texMatrix, videoWidth, videoHeight,
-            displayLayout.left, viewportY, displayLayout.width(), displayLayout.height());
+        drawer.drawYuv(yuvTextures, texMatrix, videoWidth, videoHeight, displayLayout.left,
+            viewportY, displayLayout.width(), displayLayout.height());
       } else {
         drawer.drawRgb(textureCopy.getTextureId(), texMatrix, videoWidth, videoHeight,
             displayLayout.left, viewportY, displayLayout.width(), displayLayout.height());
@@ -281,25 +278,23 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
 
     private void logStatistics() {
       long timeSinceFirstFrameNs = System.nanoTime() - startTimeNs;
-      Logging.d(TAG, "ID: " + id + ". Type: " + rendererType +
-          ". Frames received: " + framesReceived +
-          ". Dropped: " + framesDropped + ". Rendered: " + framesRendered);
+      Logging.d(TAG, "ID: " + id + ". Type: " + rendererType + ". Frames received: "
+              + framesReceived + ". Dropped: " + framesDropped + ". Rendered: " + framesRendered);
       if (framesReceived > 0 && framesRendered > 0) {
-        Logging.d(TAG, "Duration: " + (int)(timeSinceFirstFrameNs / 1e6) +
-            " ms. FPS: " + framesRendered * 1e9 / timeSinceFirstFrameNs);
-        Logging.d(TAG, "Draw time: " +
-            (int) (drawTimeNs / (1000 * framesRendered)) + " us. Copy time: " +
-            (int) (copyTimeNs / (1000 * framesReceived)) + " us");
+        Logging.d(TAG, "Duration: " + (int) (timeSinceFirstFrameNs / 1e6) + " ms. FPS: "
+                + framesRendered * 1e9 / timeSinceFirstFrameNs);
+        Logging.d(TAG, "Draw time: " + (int) (drawTimeNs / (1000 * framesRendered))
+                + " us. Copy time: " + (int) (copyTimeNs / (1000 * framesReceived)) + " us");
       }
     }
 
     public void setScreenSize(final int screenWidth, final int screenHeight) {
-      synchronized(updateLayoutLock) {
+      synchronized (updateLayoutLock) {
         if (screenWidth == this.screenWidth && screenHeight == this.screenHeight) {
           return;
         }
-        Logging.d(TAG, "ID: " + id + ". YuvImageRenderer.setScreenSize: " +
-            screenWidth + " x " + screenHeight);
+        Logging.d(TAG, "ID: " + id + ". YuvImageRenderer.setScreenSize: " + screenWidth + " x "
+                + screenHeight);
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
         updateLayoutProperties = true;
@@ -310,14 +305,13 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         RendererCommon.ScalingType scalingType, boolean mirror) {
       final Rect layoutInPercentage =
           new Rect(x, y, Math.min(100, x + width), Math.min(100, y + height));
-      synchronized(updateLayoutLock) {
+      synchronized (updateLayoutLock) {
         if (layoutInPercentage.equals(this.layoutInPercentage) && scalingType == this.scalingType
             && mirror == this.mirror) {
           return;
         }
-        Logging.d(TAG, "ID: " + id + ". YuvImageRenderer.setPosition: (" + x + ", " + y +
-            ") " +  width + " x " + height + ". Scaling: " + scalingType +
-            ". Mirror: " + mirror);
+        Logging.d(TAG, "ID: " + id + ". YuvImageRenderer.setPosition: (" + x + ", " + y + ") "
+                + width + " x " + height + ". Scaling: " + scalingType + ". Mirror: " + mirror);
         this.layoutInPercentage.set(layoutInPercentage);
         this.scalingType = scalingType;
         this.mirror = mirror;
@@ -331,14 +325,14 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
         return;
       }
       if (rendererEvents != null) {
-        Logging.d(TAG, "ID: " + id +
-            ". Reporting frame resolution changed to " + videoWidth + " x " + videoHeight);
+        Logging.d(TAG, "ID: " + id + ". Reporting frame resolution changed to " + videoWidth + " x "
+                + videoHeight);
         rendererEvents.onFrameResolutionChanged(videoWidth, videoHeight, rotation);
       }
 
       synchronized (updateLayoutLock) {
-        Logging.d(TAG, "ID: " + id + ". YuvImageRenderer.setSize: " +
-            videoWidth + " x " + videoHeight + " rotation " + rotation);
+        Logging.d(TAG, "ID: " + id + ". YuvImageRenderer.setSize: " + videoWidth + " x "
+                + videoHeight + " rotation " + rotation);
 
         this.videoWidth = videoWidth;
         this.videoHeight = videoHeight;
@@ -366,11 +360,10 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       synchronized (pendingFrameLock) {
         // Check input frame parameters.
         if (frame.yuvFrame) {
-          if (frame.yuvStrides[0] < frame.width ||
-              frame.yuvStrides[1] < frame.width / 2 ||
-              frame.yuvStrides[2] < frame.width / 2) {
-            Logging.e(TAG, "Incorrect strides " + frame.yuvStrides[0] + ", " +
-                frame.yuvStrides[1] + ", " + frame.yuvStrides[2]);
+          if (frame.yuvStrides[0] < frame.width || frame.yuvStrides[1] < frame.width / 2
+              || frame.yuvStrides[2] < frame.width / 2) {
+            Logging.e(TAG, "Incorrect strides " + frame.yuvStrides[0] + ", " + frame.yuvStrides[1]
+                    + ", " + frame.yuvStrides[2]);
             VideoRenderer.renderFrameDone(frame);
             return;
           }
@@ -394,8 +387,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
   }
 
   /** Passes GLSurfaceView to video renderer. */
-  public static synchronized void setView(GLSurfaceView surface,
-      Runnable eglContextReadyCallback) {
+  public static synchronized void setView(GLSurfaceView surface, Runnable eglContextReadyCallback) {
     Logging.d(TAG, "VideoRendererGui.setView");
     instance = new VideoRendererGui(surface);
     eglContextReady = eglContextReadyCallback;
@@ -407,7 +399,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
 
   /** Releases GLSurfaceView video renderer. */
   public static synchronized void dispose() {
-    if (instance == null){
+    if (instance == null) {
       return;
     }
     Logging.d(TAG, "VideoRendererGui.dispose");
@@ -431,14 +423,12 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
    */
   public static VideoRenderer createGui(int x, int y, int width, int height,
       RendererCommon.ScalingType scalingType, boolean mirror) throws Exception {
-    YuvImageRenderer javaGuiRenderer = create(
-        x, y, width, height, scalingType, mirror);
+    YuvImageRenderer javaGuiRenderer = create(x, y, width, height, scalingType, mirror);
     return new VideoRenderer(javaGuiRenderer);
   }
 
   public static VideoRenderer.Callbacks createGuiRenderer(
-      int x, int y, int width, int height,
-      RendererCommon.ScalingType scalingType, boolean mirror) {
+      int x, int y, int width, int height, RendererCommon.ScalingType scalingType, boolean mirror) {
     return create(x, y, width, height, scalingType, mirror);
   }
 
@@ -447,8 +437,8 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
    * resolution (width, height). All parameters are in percentage of
    * screen resolution.
    */
-  public static synchronized YuvImageRenderer create(int x, int y, int width, int height,
-      RendererCommon.ScalingType scalingType, boolean mirror) {
+  public static synchronized YuvImageRenderer create(
+      int x, int y, int width, int height, RendererCommon.ScalingType scalingType, boolean mirror) {
     return create(x, y, width, height, scalingType, mirror, new GlRectDrawer());
   }
 
@@ -460,19 +450,16 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
   public static synchronized YuvImageRenderer create(int x, int y, int width, int height,
       RendererCommon.ScalingType scalingType, boolean mirror, RendererCommon.GlDrawer drawer) {
     // Check display region parameters.
-    if (x < 0 || x > 100 || y < 0 || y > 100 ||
-        width < 0 || width > 100 || height < 0 || height > 100 ||
-        x + width > 100 || y + height > 100) {
+    if (x < 0 || x > 100 || y < 0 || y > 100 || width < 0 || width > 100 || height < 0
+        || height > 100 || x + width > 100 || y + height > 100) {
       throw new RuntimeException("Incorrect window parameters.");
     }
 
     if (instance == null) {
-      throw new RuntimeException(
-          "Attempt to create yuv renderer before setting GLSurfaceView");
+      throw new RuntimeException("Attempt to create yuv renderer before setting GLSurfaceView");
     }
-    final YuvImageRenderer yuvImageRenderer = new YuvImageRenderer(
-        instance.surface, instance.yuvImageRenderers.size(),
-        x, y, width, height, scalingType, mirror, drawer);
+    final YuvImageRenderer yuvImageRenderer = new YuvImageRenderer(instance.surface,
+        instance.yuvImageRenderers.size(), x, y, width, height, scalingType, mirror, drawer);
     synchronized (instance.yuvImageRenderers) {
       if (instance.onSurfaceCreatedCalled) {
         // onSurfaceCreated has already been called for VideoRendererGui -
@@ -483,8 +470,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
           @Override
           public void run() {
             yuvImageRenderer.createTextures();
-            yuvImageRenderer.setScreenSize(
-                instance.screenWidth, instance.screenHeight);
+            yuvImageRenderer.setScreenSize(instance.screenWidth, instance.screenHeight);
             countDownLatch.countDown();
           }
         });
@@ -501,13 +487,11 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
     return yuvImageRenderer;
   }
 
-  public static synchronized void update(
-      VideoRenderer.Callbacks renderer, int x, int y, int width, int height,
-      RendererCommon.ScalingType scalingType, boolean mirror) {
+  public static synchronized void update(VideoRenderer.Callbacks renderer, int x, int y, int width,
+      int height, RendererCommon.ScalingType scalingType, boolean mirror) {
     Logging.d(TAG, "VideoRendererGui.update");
     if (instance == null) {
-      throw new RuntimeException(
-          "Attempt to update yuv renderer before setting GLSurfaceView");
+      throw new RuntimeException("Attempt to update yuv renderer before setting GLSurfaceView");
     }
     synchronized (instance.yuvImageRenderers) {
       for (YuvImageRenderer yuvImageRenderer : instance.yuvImageRenderers) {
@@ -522,8 +506,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       VideoRenderer.Callbacks renderer, RendererCommon.RendererEvents rendererEvents) {
     Logging.d(TAG, "VideoRendererGui.setRendererEvents");
     if (instance == null) {
-      throw new RuntimeException(
-          "Attempt to set renderer events before setting GLSurfaceView");
+      throw new RuntimeException("Attempt to set renderer events before setting GLSurfaceView");
     }
     synchronized (instance.yuvImageRenderers) {
       for (YuvImageRenderer yuvImageRenderer : instance.yuvImageRenderers) {
@@ -537,8 +520,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
   public static synchronized void remove(VideoRenderer.Callbacks renderer) {
     Logging.d(TAG, "VideoRendererGui.remove");
     if (instance == null) {
-      throw new RuntimeException(
-          "Attempt to remove renderer before setting GLSurfaceView");
+      throw new RuntimeException("Attempt to remove renderer before setting GLSurfaceView");
     }
     synchronized (instance.yuvImageRenderers) {
       final int index = instance.yuvImageRenderers.indexOf(renderer);
@@ -553,8 +535,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
   public static synchronized void reset(VideoRenderer.Callbacks renderer) {
     Logging.d(TAG, "VideoRendererGui.reset");
     if (instance == null) {
-      throw new RuntimeException(
-          "Attempt to reset renderer before setting GLSurfaceView");
+      throw new RuntimeException("Attempt to reset renderer before setting GLSurfaceView");
     }
     synchronized (instance.yuvImageRenderers) {
       for (YuvImageRenderer yuvImageRenderer : instance.yuvImageRenderers) {
@@ -621,8 +602,7 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
 
   @Override
   public void onSurfaceChanged(GL10 unused, int width, int height) {
-    Logging.d(TAG, "VideoRendererGui.onSurfaceChanged: " +
-        width + " x " + height + "  ");
+    Logging.d(TAG, "VideoRendererGui.onSurfaceChanged: " + width + " x " + height + "  ");
     screenWidth = width;
     screenHeight = height;
     synchronized (yuvImageRenderers) {
@@ -645,5 +625,4 @@ public class VideoRendererGui implements GLSurfaceView.Renderer {
       }
     }
   }
-
 }

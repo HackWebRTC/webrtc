@@ -45,16 +45,14 @@ public class AppRTCProximitySensor implements SensorEventListener {
   private boolean lastStateReportIsNear = false;
 
   /** Construction */
-  static AppRTCProximitySensor create(Context context,
-      Runnable sensorStateListener) {
+  static AppRTCProximitySensor create(Context context, Runnable sensorStateListener) {
     return new AppRTCProximitySensor(context, sensorStateListener);
   }
 
   private AppRTCProximitySensor(Context context, Runnable sensorStateListener) {
     Log.d(TAG, "AppRTCProximitySensor" + AppRTCUtils.getThreadInfo());
     onSensorStateListener = sensorStateListener;
-    sensorManager = ((SensorManager) context.getSystemService(
-        Context.SENSOR_SERVICE));
+    sensorManager = ((SensorManager) context.getSystemService(Context.SENSOR_SERVICE));
   }
 
   /**
@@ -68,8 +66,7 @@ public class AppRTCProximitySensor implements SensorEventListener {
       // Proximity sensor is not supported on this device.
       return false;
     }
-    sensorManager.registerListener(
-        this, proximitySensor, SensorManager.SENSOR_DELAY_NORMAL);
+    sensorManager.registerListener(this, proximitySensor, SensorManager.SENSOR_DELAY_NORMAL);
     return true;
   }
 
@@ -120,8 +117,8 @@ public class AppRTCProximitySensor implements SensorEventListener {
     }
 
     Log.d(TAG, "onSensorChanged" + AppRTCUtils.getThreadInfo() + ": "
-        + "accuracy=" + event.accuracy
-        + ", timestamp=" + event.timestamp + ", distance=" + event.values[0]);
+            + "accuracy=" + event.accuracy + ", timestamp=" + event.timestamp + ", distance="
+            + event.values[0]);
   }
 
   /**
@@ -168,5 +165,4 @@ public class AppRTCProximitySensor implements SensorEventListener {
     }
     Log.d(TAG, info.toString());
   }
-
 }

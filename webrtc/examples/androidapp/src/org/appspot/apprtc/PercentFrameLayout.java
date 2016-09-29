@@ -54,8 +54,7 @@ public class PercentFrameLayout extends ViewGroup {
   protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
     final int width = getDefaultSize(Integer.MAX_VALUE, widthMeasureSpec);
     final int height = getDefaultSize(Integer.MAX_VALUE, heightMeasureSpec);
-    setMeasuredDimension(
-        MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
+    setMeasuredDimension(MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
         MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
 
     final int childWidthMeasureSpec =

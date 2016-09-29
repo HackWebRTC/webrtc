@@ -19,8 +19,7 @@ import android.test.suitebuilder.annotation.SmallTest;
 public class Camera1CapturerUsingByteBufferTest extends InstrumentationTestCase {
   static final String TAG = "Camera1CapturerUsingByteBufferTest";
 
-  private class TestObjectFactory
-      extends CameraVideoCapturerTestFixtures.TestObjectFactory {
+  private class TestObjectFactory extends CameraVideoCapturerTestFixtures.TestObjectFactory {
     @Override
     public boolean isCapturingToTexture() {
       return false;

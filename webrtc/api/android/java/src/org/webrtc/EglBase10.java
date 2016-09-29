@@ -159,9 +159,8 @@ public final class EglBase10 extends EglBase {
     int[] surfaceAttribs = {EGL10.EGL_WIDTH, width, EGL10.EGL_HEIGHT, height, EGL10.EGL_NONE};
     eglSurface = egl.eglCreatePbufferSurface(eglDisplay, eglConfig, surfaceAttribs);
     if (eglSurface == EGL10.EGL_NO_SURFACE) {
-      throw new RuntimeException(
-          "Failed to create pixel buffer surface with size " + width + "x" + height
-          + ": 0x" + Integer.toHexString(egl.eglGetError()));
+      throw new RuntimeException("Failed to create pixel buffer surface with size " + width + "x"
+          + height + ": 0x" + Integer.toHexString(egl.eglGetError()));
     }
   }
 
@@ -235,7 +234,7 @@ public final class EglBase10 extends EglBase {
   public void detachCurrent() {
     synchronized (EglBase.lock) {
       if (!egl.eglMakeCurrent(
-          eglDisplay, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT)) {
+              eglDisplay, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT)) {
         throw new RuntimeException(
             "eglDetachCurrent failed: 0x" + Integer.toHexString(egl.eglGetError()));
       }
@@ -272,8 +271,7 @@ public final class EglBase10 extends EglBase {
   private EGLConfig getEglConfig(EGLDisplay eglDisplay, int[] configAttributes) {
     EGLConfig[] configs = new EGLConfig[1];
     int[] numConfigs = new int[1];
-    if (!egl.eglChooseConfig(
-        eglDisplay, configAttributes, configs, configs.length, numConfigs)) {
+    if (!egl.eglChooseConfig(eglDisplay, configAttributes, configs, configs.length, numConfigs)) {
       throw new RuntimeException(
           "eglChooseConfig failed: 0x" + Integer.toHexString(egl.eglGetError()));
     }

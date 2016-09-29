@@ -37,8 +37,7 @@ public class NetworkMonitorTest extends ActivityTestCase {
   /**
    * Listens for alerts fired by the NetworkMonitor when network status changes.
    */
-  private static class NetworkMonitorTestObserver
-      implements NetworkMonitor.NetworkObserver {
+  private static class NetworkMonitorTestObserver implements NetworkMonitor.NetworkObserver {
     private boolean receivedNotification = false;
 
     @Override
@@ -118,7 +117,6 @@ public class NetworkMonitorTest extends ActivityTestCase {
   // A dummy NetworkMonitorAutoDetect.Observer.
   private static class TestNetworkMonitorAutoDetectObserver
       implements NetworkMonitorAutoDetect.Observer {
-
     @Override
     public void onConnectionTypeChanged(ConnectionType newConnectionType) {}
 
@@ -138,7 +136,7 @@ public class NetworkMonitorTest extends ActivityTestCase {
 
   private static Handler getUiThreadHandler() {
     synchronized (lock) {
-      if (uiThreadHandler == null ) {
+      if (uiThreadHandler == null) {
         uiThreadHandler = new Handler(Looper.getMainLooper());
       }
       return uiThreadHandler;
@@ -165,8 +163,7 @@ public class NetworkMonitorTest extends ActivityTestCase {
   }
 
   private NetworkMonitorAutoDetect.ConnectionType getCurrentConnectionType() {
-    final NetworkMonitorAutoDetect.NetworkState networkState =
-        receiver.getCurrentNetworkState();
+    final NetworkMonitorAutoDetect.NetworkState networkState = receiver.getCurrentNetworkState();
     return receiver.getConnectionType(networkState);
   }
 

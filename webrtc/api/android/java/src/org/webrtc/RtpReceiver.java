@@ -48,8 +48,8 @@ public class RtpReceiver {
   // Will be released in dispose().
   private static native long nativeGetTrack(long nativeRtpReceiver);
 
-  private static native boolean nativeSetParameters(long nativeRtpReceiver,
-                                                    RtpParameters parameters);
+  private static native boolean nativeSetParameters(
+      long nativeRtpReceiver, RtpParameters parameters);
 
   private static native RtpParameters nativeGetParameters(long nativeRtpReceiver);
 

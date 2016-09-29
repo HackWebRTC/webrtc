@@ -57,12 +57,10 @@ public class Logging {
     TraceLevel(int level) {
       this.level = level;
     }
-  };
+  }
 
   // Keep in sync with webrtc/base/logging.h:LoggingSeverity.
-  public enum Severity {
-    LS_SENSITIVE, LS_VERBOSE, LS_INFO, LS_WARNING, LS_ERROR, LS_NONE
-  };
+  public enum Severity { LS_SENSITIVE, LS_VERBOSE, LS_INFO, LS_WARNING, LS_ERROR, LS_NONE }
 
   public static void enableLogThreads() {
     if (!nativeLibLoaded) {
@@ -74,8 +72,8 @@ public class Logging {
 
   public static void enableLogTimeStamps() {
     if (!nativeLibLoaded) {
-      fallbackLogger.log(Level.WARNING,
-                         "Cannot enable log timestamps because native lib not loaded.");
+      fallbackLogger.log(
+          Level.WARNING, "Cannot enable log timestamps because native lib not loaded.");
       return;
     }
     nativeEnableLogTimeStamps();
@@ -84,8 +82,7 @@ public class Logging {
   // Enable tracing to |path| of messages of |levels|.
   // On Android, use "logcat:" for |path| to send output there.
   // Note: this function controls the output of the WEBRTC_TRACE() macros.
-  public static synchronized void enableTracing(
-      String path, EnumSet<TraceLevel> levels) {
+  public static synchronized void enableTracing(String path, EnumSet<TraceLevel> levels) {
     if (!nativeLibLoaded) {
       fallbackLogger.log(Level.WARNING, "Cannot enable tracing because native lib not loaded.");
       return;
@@ -178,8 +175,7 @@ public class Logging {
     return sw.toString();
   }
 
-  private static native void nativeEnableTracing(
-      String path, int nativeLevels);
+  private static native void nativeEnableTracing(String path, int nativeLevels);
   private static native void nativeEnableLogToDebugOutput(int nativeSeverity);
   private static native void nativeEnableLogThreads();
   private static native void nativeEnableLogTimeStamps();

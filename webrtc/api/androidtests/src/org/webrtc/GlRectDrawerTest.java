@@ -51,9 +51,10 @@ public final class GlRectDrawerTest extends ActivityTestCase {
         final int expectedB = expected.get() & 0xFF;
         if (actualR != expectedR || actualG != expectedG || actualB != expectedB) {
           fail("ByteBuffers of size " + width + "x" + height + " not equal at position "
-              + "(" +  x + ", " + y + "). Expected color (R,G,B): "
+              + "(" + x + ", " + y + "). Expected color (R,G,B): "
               + "(" + expectedR + ", " + expectedG + ", " + expectedB + ")"
-              + " but was: " + "(" + actualR + ", " + actualG + ", " + actualB + ").");
+              + " but was: "
+              + "(" + actualR + ", " + actualG + ", " + actualB + ").");
         }
       }
     }
@@ -92,14 +93,14 @@ public final class GlRectDrawerTest extends ActivityTestCase {
     final int rgbTexture = GlUtil.generateTexture(GLES20.GL_TEXTURE_2D);
     GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
     GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, rgbTexture);
-    GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGB, WIDTH,
-        HEIGHT, 0, GLES20.GL_RGB, GLES20.GL_UNSIGNED_BYTE, rgbPlane);
+    GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGB, WIDTH, HEIGHT, 0, GLES20.GL_RGB,
+        GLES20.GL_UNSIGNED_BYTE, rgbPlane);
     GlUtil.checkNoGLES2Error("glTexImage2D");
 
     // Draw the RGB frame onto the pixel buffer.
     final GlRectDrawer drawer = new GlRectDrawer();
-    drawer.drawRgb(rgbTexture, RendererCommon.identityMatrix(), WIDTH, HEIGHT,
-        0 /* viewportX */, 0 /* viewportY */, WIDTH, HEIGHT);
+    drawer.drawRgb(rgbTexture, RendererCommon.identityMatrix(), WIDTH, HEIGHT, 0 /* viewportX */,
+        0 /* viewportY */, WIDTH, HEIGHT);
 
     // Download the pixels in the pixel buffer as RGBA. Not all platforms support RGB, e.g. Nexus 9.
     final ByteBuffer rgbaData = ByteBuffer.allocateDirect(WIDTH * HEIGHT * 4);
@@ -131,7 +132,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
 
     // Generate 3 texture ids for Y/U/V.
     final int yuvTextures[] = new int[3];
-    for (int i = 0; i < 3; i++)  {
+    for (int i = 0; i < 3; i++) {
       yuvTextures[i] = GlUtil.generateTexture(GLES20.GL_TEXTURE_2D);
     }
 
@@ -139,15 +140,15 @@ public final class GlRectDrawerTest extends ActivityTestCase {
     for (int i = 0; i < 3; ++i) {
       GLES20.glActiveTexture(GLES20.GL_TEXTURE0 + i);
       GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, yuvTextures[i]);
-      GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE, WIDTH,
-          HEIGHT, 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, yuvPlanes[i]);
+      GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE, WIDTH, HEIGHT, 0,
+          GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, yuvPlanes[i]);
       GlUtil.checkNoGLES2Error("glTexImage2D");
     }
 
     // Draw the YUV frame onto the pixel buffer.
     final GlRectDrawer drawer = new GlRectDrawer();
-    drawer.drawYuv(yuvTextures, RendererCommon.identityMatrix(), WIDTH, HEIGHT,
-        0 /* viewportX */, 0 /* viewportY */, WIDTH, HEIGHT);
+    drawer.drawYuv(yuvTextures, RendererCommon.identityMatrix(), WIDTH, HEIGHT, 0 /* viewportX */,
+        0 /* viewportY */, WIDTH, HEIGHT);
 
     // Download the pixels in the pixel buffer as RGBA. Not all platforms support RGB, e.g. Nexus 9.
     final ByteBuffer data = ByteBuffer.allocateDirect(WIDTH * HEIGHT * 4);
@@ -212,8 +213,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
       private final int rgbTexture;
 
       public StubOesTextureProducer(
-          EglBase.Context sharedContext, SurfaceTexture surfaceTexture, int width,
-          int height) {
+          EglBase.Context sharedContext, SurfaceTexture surfaceTexture, int width, int height) {
         eglBase = EglBase.create(sharedContext, EglBase.CONFIG_PLAIN);
         surfaceTexture.setDefaultBufferSize(width, height);
         eglBase.createSurface(surfaceTexture);
@@ -232,8 +232,8 @@ public final class GlRectDrawerTest extends ActivityTestCase {
         // Upload RGB data to texture.
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, rgbTexture);
-        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGB, WIDTH,
-            HEIGHT, 0, GLES20.GL_RGB, GLES20.GL_UNSIGNED_BYTE, rgbPlane);
+        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGB, WIDTH, HEIGHT, 0, GLES20.GL_RGB,
+            GLES20.GL_UNSIGNED_BYTE, rgbPlane);
         // Draw the RGB data onto the SurfaceTexture.
         drawer.drawRgb(rgbTexture, RendererCommon.identityMatrix(), WIDTH, HEIGHT,
             0 /* viewportX */, 0 /* viewportY */, WIDTH, HEIGHT);

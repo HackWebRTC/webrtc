@@ -42,8 +42,8 @@ public class RendererCommon {
      */
     void drawOes(int oesTextureId, float[] texMatrix, int frameWidth, int frameHeight,
         int viewportX, int viewportY, int viewportWidth, int viewportHeight);
-    void drawRgb(int textureId, float[] texMatrix, int frameWidth, int frameHeight,
-        int viewportX, int viewportY, int viewportWidth, int viewportHeight);
+    void drawRgb(int textureId, float[] texMatrix, int frameWidth, int frameHeight, int viewportX,
+        int viewportY, int viewportWidth, int viewportHeight);
     void drawYuv(int[] yuvTextures, float[] texMatrix, int frameWidth, int frameHeight,
         int viewportX, int viewportY, int viewportWidth, int viewportHeight);
 
@@ -116,6 +116,7 @@ public class RendererCommon {
   // The minimum fraction of the frame content that will be shown for |SCALE_ASPECT_BALANCED|.
   // This limits excessive cropping when adjusting display size.
   private static float BALANCED_VISIBLE_FRACTION = 0.5625f;
+  // clang-format off
   public static final float[] identityMatrix() {
     return new float[] {
         1, 0, 0, 0,
@@ -140,6 +141,7 @@ public class RendererCommon {
          0, 0, 1, 0,
          1, 0, 0, 1};
   }
+  // clang-format on
 
   /**
    * Returns texture matrix that will have the effect of rotating the frame |rotationDegree|
@@ -189,8 +191,8 @@ public class RendererCommon {
   /**
    * Calculate display size based on scaling type, video aspect ratio, and maximum display size.
    */
-  public static Point getDisplaySize(ScalingType scalingType, float videoAspectRatio,
-      int maxDisplayWidth, int maxDisplayHeight) {
+  public static Point getDisplaySize(
+      ScalingType scalingType, float videoAspectRatio, int maxDisplayWidth, int maxDisplayHeight) {
     return getDisplaySize(convertScalingTypeToVisibleFraction(scalingType), videoAspectRatio,
         maxDisplayWidth, maxDisplayHeight);
   }
@@ -230,17 +232,17 @@ public class RendererCommon {
    * Calculate display size based on minimum fraction of the video that must remain visible,
    * video aspect ratio, and maximum display size.
    */
-  private static Point getDisplaySize(float minVisibleFraction, float videoAspectRatio,
-      int maxDisplayWidth, int maxDisplayHeight) {
+  private static Point getDisplaySize(
+      float minVisibleFraction, float videoAspectRatio, int maxDisplayWidth, int maxDisplayHeight) {
     // If there is no constraint on the amount of cropping, fill the allowed display area.
     if (minVisibleFraction == 0 || videoAspectRatio == 0) {
       return new Point(maxDisplayWidth, maxDisplayHeight);
     }
     // Each dimension is constrained on max display size and how much we are allowed to crop.
-    final int width = Math.min(maxDisplayWidth,
-        Math.round(maxDisplayHeight / minVisibleFraction * videoAspectRatio));
-    final int height = Math.min(maxDisplayHeight,
-        Math.round(maxDisplayWidth / minVisibleFraction / videoAspectRatio));
+    final int width = Math.min(
+        maxDisplayWidth, Math.round(maxDisplayHeight / minVisibleFraction * videoAspectRatio));
+    final int height = Math.min(
+        maxDisplayHeight, Math.round(maxDisplayWidth / minVisibleFraction / videoAspectRatio));
     return new Point(width, height);
   }
 }

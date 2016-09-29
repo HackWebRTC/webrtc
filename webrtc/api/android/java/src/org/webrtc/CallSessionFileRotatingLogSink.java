@@ -33,8 +33,7 @@ public class CallSessionFileRotatingLogSink {
     }
   }
 
-  private static native long nativeAddSink(
-      String dirPath, int maxFileSize, int severity);
+  private static native long nativeAddSink(String dirPath, int maxFileSize, int severity);
   private static native void nativeDeleteSink(long nativeSink);
   private static native byte[] nativeGetLogData(String dirPath);
 }

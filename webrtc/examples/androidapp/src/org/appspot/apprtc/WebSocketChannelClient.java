@@ -56,9 +56,7 @@ public class WebSocketChannelClient {
   /**
    * Possible WebSocket connection states.
    */
-  public enum WebSocketConnectionState {
-    NEW, CONNECTED, REGISTERED, CLOSED, ERROR
-  };
+  public enum WebSocketConnectionState { NEW, CONNECTED, REGISTERED, CLOSED, ERROR }
 
   /**
    * Callback interface for messages delivered on WebSocket.
@@ -179,8 +177,7 @@ public class WebSocketChannelClient {
       sendWSSMessage("DELETE", "");
     }
     // Close WebSocket in CONNECTED or ERROR states only.
-    if (state == WebSocketConnectionState.CONNECTED
-        || state == WebSocketConnectionState.ERROR) {
+    if (state == WebSocketConnectionState.CONNECTED || state == WebSocketConnectionState.ERROR) {
       ws.disconnect();
       state = WebSocketConnectionState.CLOSED;
 
@@ -219,16 +216,15 @@ public class WebSocketChannelClient {
   private void sendWSSMessage(final String method, final String message) {
     String postUrl = postServerUrl + "/" + roomID + "/" + clientID;
     Log.d(TAG, "WS " + method + " : " + postUrl + " : " + message);
-    AsyncHttpURLConnection httpConnection = new AsyncHttpURLConnection(
-        method, postUrl, message, new AsyncHttpEvents() {
+    AsyncHttpURLConnection httpConnection =
+        new AsyncHttpURLConnection(method, postUrl, message, new AsyncHttpEvents() {
           @Override
           public void onHttpError(String errorMessage) {
             reportError("WS " + method + " error: " + errorMessage);
           }
 
           @Override
-          public void onHttpComplete(String response) {
-          }
+          public void onHttpComplete(String response) {}
         });
     httpConnection.send();
   }
@@ -237,8 +233,7 @@ public class WebSocketChannelClient {
   // called on a looper thread.
   private void checkIfCalledOnValidThread() {
     if (Thread.currentThread() != handler.getLooper().getThread()) {
-      throw new IllegalStateException(
-          "WebSocket method is not called on valid thread");
+      throw new IllegalStateException("WebSocket method is not called on valid thread");
     }
   }
 
@@ -260,8 +255,8 @@ public class WebSocketChannelClient {
 
     @Override
     public void onClose(WebSocketCloseNotification code, String reason) {
-      Log.d(TAG, "WebSocket connection closed. Code: " + code
-          + ". Reason: " + reason + ". State: " + state);
+      Log.d(TAG, "WebSocket connection closed. Code: " + code + ". Reason: " + reason + ". State: "
+              + state);
       synchronized (closeEventLock) {
         closeEvent = true;
         closeEventLock.notify();
@@ -293,12 +288,9 @@ public class WebSocketChannelClient {
     }
 
     @Override
-    public void onRawTextMessage(byte[] payload) {
-    }
+    public void onRawTextMessage(byte[] payload) {}
 
     @Override
-    public void onBinaryMessage(byte[] payload) {
-    }
+    public void onBinaryMessage(byte[] payload) {}
   }
-
 }

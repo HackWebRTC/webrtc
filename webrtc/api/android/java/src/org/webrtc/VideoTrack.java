@@ -14,8 +14,7 @@ import java.util.LinkedList;
 
 /** Java version of VideoTrackInterface. */
 public class VideoTrack extends MediaStreamTrack {
-  private final LinkedList<VideoRenderer> renderers =
-      new LinkedList<VideoRenderer>();
+  private final LinkedList<VideoRenderer> renderers = new LinkedList<VideoRenderer>();
 
   public VideoTrack(long nativeTrack) {
     super(nativeTrack);
@@ -43,9 +42,7 @@ public class VideoTrack extends MediaStreamTrack {
 
   private static native void free(long nativeTrack);
 
-  private static native void nativeAddRenderer(
-      long nativeTrack, long nativeRenderer);
+  private static native void nativeAddRenderer(long nativeTrack, long nativeRenderer);
 
-  private static native void nativeRemoveRenderer(
-      long nativeTrack, long nativeRenderer);
+  private static native void nativeRemoveRenderer(long nativeTrack, long nativeRenderer);
 }

@@ -42,7 +42,7 @@ public class Camera2Session implements CameraSession {
   private static final Histogram camera2StopTimeMsHistogram =
       Histogram.createCounts("WebRTC.Android.Camera2.StopTimeMs", 1, 10000, 50);
 
-  private static enum SessionState { RUNNING, STOPPED };
+  private static enum SessionState { RUNNING, STOPPED }
 
   private final Handler cameraThreadHandler;
   private final CreateSessionCallback callback;
@@ -159,11 +159,11 @@ public class Camera2Session implements CameraSession {
         final CaptureRequest.Builder captureRequestBuilder =
             cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
         // Set auto exposure fps range.
-        captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<Integer>(
-            captureFormat.framerate.min / fpsUnitFactor,
-            captureFormat.framerate.max / fpsUnitFactor));
-        captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
-            CaptureRequest.CONTROL_AE_MODE_ON);
+        captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
+            new Range<Integer>(captureFormat.framerate.min / fpsUnitFactor,
+                                      captureFormat.framerate.max / fpsUnitFactor));
+        captureRequestBuilder.set(
+            CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
         captureRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, false);
         chooseStabilizationMode(captureRequestBuilder);
         chooseFocusMode(captureRequestBuilder);
@@ -205,8 +205,8 @@ public class Camera2Session implements CameraSession {
               }
 
               // Undo camera orientation - we report it as rotation instead.
-              transformMatrix = RendererCommon.rotateTextureMatrix(
-                  transformMatrix, -cameraOrientation);
+              transformMatrix =
+                  RendererCommon.rotateTextureMatrix(transformMatrix, -cameraOrientation);
 
               events.onTextureFrameCaptured(Camera2Session.this, captureFormat.width,
                   captureFormat.height, oesTextureId, transformMatrix, rotation, timestampNs);
@@ -250,12 +250,12 @@ public class Camera2Session implements CameraSession {
     }
 
     private void chooseFocusMode(CaptureRequest.Builder captureRequestBuilder) {
-      final int[] availableFocusModes = cameraCharacteristics.get(
-          CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES);
+      final int[] availableFocusModes =
+          cameraCharacteristics.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES);
       for (int mode : availableFocusModes) {
         if (mode == CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO) {
-          captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
-              CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
+          captureRequestBuilder.set(
+              CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
           Logging.d(TAG, "Using continuous video auto-focus.");
           return;
         }
@@ -272,23 +272,17 @@ public class Camera2Session implements CameraSession {
     }
   }
 
-  public static void create(
-      CreateSessionCallback callback, Events events,
+  public static void create(CreateSessionCallback callback, Events events,
       Context applicationContext, CameraManager cameraManager,
-      SurfaceTextureHelper surfaceTextureHelper,
-      String cameraId, int width, int height, int framerate) {
-    new Camera2Session(
-        callback, events,
-        applicationContext, cameraManager,
-        surfaceTextureHelper,
+      SurfaceTextureHelper surfaceTextureHelper, String cameraId, int width, int height,
+      int framerate) {
+    new Camera2Session(callback, events, applicationContext, cameraManager, surfaceTextureHelper,
         cameraId, width, height, framerate);
   }
 
-  private Camera2Session(
-      CreateSessionCallback callback, Events events,
-      Context applicationContext, CameraManager cameraManager,
-      SurfaceTextureHelper surfaceTextureHelper,
-      String cameraId, int width, int height, int framerate) {
+  private Camera2Session(CreateSessionCallback callback, Events events, Context applicationContext,
+      CameraManager cameraManager, SurfaceTextureHelper surfaceTextureHelper, String cameraId,
+      int width, int height, int framerate) {
     Logging.d(TAG, "Create new camera2 session on camera " + cameraId);
 
     constructionTimeNs = System.nanoTime();
@@ -341,11 +335,9 @@ public class Camera2Session implements CameraSession {
     }
 
     final CaptureFormat.FramerateRange bestFpsRange =
-        CameraEnumerationAndroid.getClosestSupportedFramerateRange(
-            framerateRanges, framerate);
+        CameraEnumerationAndroid.getClosestSupportedFramerateRange(framerateRanges, framerate);
 
-    final Size bestSize = CameraEnumerationAndroid.getClosestSupportedSize(
-        sizes, width, height);
+    final Size bestSize = CameraEnumerationAndroid.getClosestSupportedSize(sizes, width, height);
 
     captureFormat = new CaptureFormat(bestSize.width, bestSize.height, bestFpsRange);
     Logging.d(TAG, "Using capture format: " + captureFormat);
@@ -372,8 +364,7 @@ public class Camera2Session implements CameraSession {
       final long stopStartTime = System.nanoTime();
       state = SessionState.STOPPED;
       stopInternal();
-      final int stopTimeMs =
-          (int) TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - stopStartTime);
+      final int stopTimeMs = (int) TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - stopStartTime);
       camera2StopTimeMsHistogram.addSample(stopTimeMs);
     }
   }
@@ -417,9 +408,8 @@ public class Camera2Session implements CameraSession {
   private int getDeviceOrientation() {
     int orientation = 0;
 
-    WindowManager wm = (WindowManager) applicationContext.getSystemService(
-        Context.WINDOW_SERVICE);
-    switch(wm.getDefaultDisplay().getRotation()) {
+    WindowManager wm = (WindowManager) applicationContext.getSystemService(Context.WINDOW_SERVICE);
+    switch (wm.getDefaultDisplay().getRotation()) {
       case Surface.ROTATION_90:
         orientation = 90;
         break;

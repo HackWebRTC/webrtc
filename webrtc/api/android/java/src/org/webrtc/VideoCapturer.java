@@ -24,14 +24,13 @@ public interface VideoCapturer {
     void onCapturerStopped();
 
     // Delivers a captured frame. Called on a Java thread owned by VideoCapturer.
-    void onByteBufferFrameCaptured(byte[] data, int width, int height, int rotation,
-        long timeStamp);
+    void onByteBufferFrameCaptured(
+        byte[] data, int width, int height, int rotation, long timeStamp);
 
     // Delivers a captured frame in a texture with id |oesTextureId|. Called on a Java thread
     // owned by VideoCapturer.
-    void onTextureFrameCaptured(
-        int width, int height, int oesTextureId, float[] transformMatrix, int rotation,
-        long timestamp);
+    void onTextureFrameCaptured(int width, int height, int oesTextureId, float[] transformMatrix,
+        int rotation, long timestamp);
   }
 
   // An implementation of CapturerObserver that forwards all calls from
@@ -55,25 +54,23 @@ public interface VideoCapturer {
     }
 
     @Override
-    public void onByteBufferFrameCaptured(byte[] data, int width, int height,
-        int rotation, long timeStamp) {
-      nativeOnByteBufferFrameCaptured(nativeSource, data, data.length, width, height, rotation,
-          timeStamp);
+    public void onByteBufferFrameCaptured(
+        byte[] data, int width, int height, int rotation, long timeStamp) {
+      nativeOnByteBufferFrameCaptured(
+          nativeSource, data, data.length, width, height, rotation, timeStamp);
     }
 
     @Override
-    public void onTextureFrameCaptured(
-        int width, int height, int oesTextureId, float[] transformMatrix, int rotation,
-        long timestamp) {
-      nativeOnTextureFrameCaptured(nativeSource, width, height, oesTextureId, transformMatrix,
-          rotation, timestamp);
+    public void onTextureFrameCaptured(int width, int height, int oesTextureId,
+        float[] transformMatrix, int rotation, long timestamp) {
+      nativeOnTextureFrameCaptured(
+          nativeSource, width, height, oesTextureId, transformMatrix, rotation, timestamp);
     }
 
-    private native void nativeCapturerStarted(long nativeSource,
-        boolean success);
+    private native void nativeCapturerStarted(long nativeSource, boolean success);
     private native void nativeCapturerStopped(long nativeSource);
-    private native void nativeOnByteBufferFrameCaptured(long nativeSource,
-        byte[] data, int length, int width, int height, int rotation, long timeStamp);
+    private native void nativeOnByteBufferFrameCaptured(long nativeSource, byte[] data, int length,
+        int width, int height, int rotation, long timeStamp);
     private native void nativeOnTextureFrameCaptured(long nativeSource, int width, int height,
         int oesTextureId, float[] transformMatrix, int rotation, long timestamp);
   }

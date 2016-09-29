@@ -12,7 +12,6 @@ package org.webrtc;
 
 /** Java version of webrtc::StatsReport. */
 public class StatsReport {
-
   /** Java version of webrtc::StatsReport::Value. */
   public static class Value {
     public final String name;
@@ -45,8 +44,13 @@ public class StatsReport {
 
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    builder.append("id: ").append(id).append(", type: ").append(type)
-        .append(", timestamp: ").append(timestamp).append(", values: ");
+    builder.append("id: ")
+        .append(id)
+        .append(", type: ")
+        .append(type)
+        .append(", timestamp: ")
+        .append(timestamp)
+        .append(", values: ");
     for (int i = 0; i < values.length; ++i) {
       builder.append(values[i].toString()).append(", ");
     }

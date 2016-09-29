@@ -118,17 +118,15 @@ public class ConnectActivity extends Activity {
     setContentView(R.layout.activity_connect);
 
     roomEditText = (EditText) findViewById(R.id.room_edittext);
-    roomEditText.setOnEditorActionListener(
-      new TextView.OnEditorActionListener() {
-        @Override
-        public boolean onEditorAction(
-            TextView textView, int i, KeyEvent keyEvent) {
-          if (i == EditorInfo.IME_ACTION_DONE) {
-            addFavoriteButton.performClick();
-            return true;
-          }
-          return false;
+    roomEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+      @Override
+      public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
+        if (i == EditorInfo.IME_ACTION_DONE) {
+          addFavoriteButton.performClick();
+          return true;
         }
+        return false;
+      }
     });
     roomEditText.requestFocus();
 
@@ -143,12 +141,9 @@ public class ConnectActivity extends Activity {
 
     // If an implicit VIEW intent is launching the app, go directly to that URL.
     final Intent intent = getIntent();
-    if ("android.intent.action.VIEW".equals(intent.getAction())
-        && !commandLineRun) {
-      boolean loopback = intent.getBooleanExtra(
-          CallActivity.EXTRA_LOOPBACK, false);
-      int runTimeMs = intent.getIntExtra(
-          CallActivity.EXTRA_RUNTIME, 0);
+    if ("android.intent.action.VIEW".equals(intent.getAction()) && !commandLineRun) {
+      boolean loopback = intent.getBooleanExtra(CallActivity.EXTRA_LOOPBACK, false);
+      int runTimeMs = intent.getIntExtra(CallActivity.EXTRA_RUNTIME, 0);
       String room = sharedPref.getString(keyprefRoom, "");
       connectToRoom(room, true, loopback, runTimeMs);
     }
@@ -230,8 +225,7 @@ public class ConnectActivity extends Activity {
         Log.e(TAG, "Failed to load room list: " + e.toString());
       }
     }
-    adapter = new ArrayAdapter<String>(
-        this, android.R.layout.simple_list_item_1, roomList);
+    adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, roomList);
     roomListView.setAdapter(adapter);
     if (adapter.getCount() > 0) {
       roomListView.requestFocus();
@@ -240,8 +234,7 @@ public class ConnectActivity extends Activity {
   }
 
   @Override
-  protected void onActivityResult(
-      int requestCode, int resultCode, Intent data) {
+  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
     if (requestCode == CONNECTION_REQUEST && commandLineRun) {
       Log.d(TAG, "Return: " + resultCode);
       setResult(resultCode);
@@ -260,71 +253,63 @@ public class ConnectActivity extends Activity {
     }
 
     String roomUrl = sharedPref.getString(
-        keyprefRoomServerUrl,
-        getString(R.string.pref_room_server_url_default));
+        keyprefRoomServerUrl, getString(R.string.pref_room_server_url_default));
 
     // Video call enabled flag.
-    boolean videoCallEnabled = sharedPref.getBoolean(keyprefVideoCallEnabled,
-        Boolean.valueOf(getString(R.string.pref_videocall_default)));
+    boolean videoCallEnabled = sharedPref.getBoolean(
+        keyprefVideoCallEnabled, Boolean.valueOf(getString(R.string.pref_videocall_default)));
 
     // Use Camera2 option.
-    boolean useCamera2 = sharedPref.getBoolean(keyprefCamera2,
-        Boolean.valueOf(getString(R.string.pref_camera2_default)));
+    boolean useCamera2 = sharedPref.getBoolean(
+        keyprefCamera2, Boolean.valueOf(getString(R.string.pref_camera2_default)));
 
     // Get default codecs.
-    String videoCodec = sharedPref.getString(keyprefVideoCodec,
-        getString(R.string.pref_videocodec_default));
-    String audioCodec = sharedPref.getString(keyprefAudioCodec,
-        getString(R.string.pref_audiocodec_default));
+    String videoCodec =
+        sharedPref.getString(keyprefVideoCodec, getString(R.string.pref_videocodec_default));
+    String audioCodec =
+        sharedPref.getString(keyprefAudioCodec, getString(R.string.pref_audiocodec_default));
 
     // Check HW codec flag.
-    boolean hwCodec = sharedPref.getBoolean(keyprefHwCodecAcceleration,
-        Boolean.valueOf(getString(R.string.pref_hwcodec_default)));
+    boolean hwCodec = sharedPref.getBoolean(
+        keyprefHwCodecAcceleration, Boolean.valueOf(getString(R.string.pref_hwcodec_default)));
 
     // Check Capture to texture.
     boolean captureToTexture = sharedPref.getBoolean(keyprefCaptureToTexture,
         Boolean.valueOf(getString(R.string.pref_capturetotexture_default)));
 
     // Check Disable Audio Processing flag.
-    boolean noAudioProcessing = sharedPref.getBoolean(
-        keyprefNoAudioProcessingPipeline,
+    boolean noAudioProcessing = sharedPref.getBoolean(keyprefNoAudioProcessingPipeline,
         Boolean.valueOf(getString(R.string.pref_noaudioprocessing_default)));
 
     // Check Disable Audio Processing flag.
     boolean aecDump = sharedPref.getBoolean(
-        keyprefAecDump,
-        Boolean.valueOf(getString(R.string.pref_aecdump_default)));
+        keyprefAecDump, Boolean.valueOf(getString(R.string.pref_aecdump_default)));
 
     // Check OpenSL ES enabled flag.
     boolean useOpenSLES = sharedPref.getBoolean(
-        keyprefOpenSLES,
-        Boolean.valueOf(getString(R.string.pref_opensles_default)));
+        keyprefOpenSLES, Boolean.valueOf(getString(R.string.pref_opensles_default)));
 
     // Check Disable built-in AEC flag.
-    boolean disableBuiltInAEC = sharedPref.getBoolean(
-        keyprefDisableBuiltInAec,
+    boolean disableBuiltInAEC = sharedPref.getBoolean(keyprefDisableBuiltInAec,
         Boolean.valueOf(getString(R.string.pref_disable_built_in_aec_default)));
 
     // Check Disable built-in AGC flag.
-    boolean disableBuiltInAGC = sharedPref.getBoolean(
-        keyprefDisableBuiltInAgc,
+    boolean disableBuiltInAGC = sharedPref.getBoolean(keyprefDisableBuiltInAgc,
         Boolean.valueOf(getString(R.string.pref_disable_built_in_agc_default)));
 
     // Check Disable built-in NS flag.
-    boolean disableBuiltInNS = sharedPref.getBoolean(
-        keyprefDisableBuiltInNs,
+    boolean disableBuiltInNS = sharedPref.getBoolean(keyprefDisableBuiltInNs,
         Boolean.valueOf(getString(R.string.pref_disable_built_in_ns_default)));
 
     // Check Enable level control.
-    boolean enableLevelControl = sharedPref.getBoolean(
-        keyprefEnableLevelControl,
+    boolean enableLevelControl = sharedPref.getBoolean(keyprefEnableLevelControl,
         Boolean.valueOf(getString(R.string.pref_enable_level_control_key)));
 
     // Get video resolution from settings.
     int videoWidth = 0;
     int videoHeight = 0;
-    String resolution = sharedPref.getString(keyprefResolution,
-        getString(R.string.pref_resolution_default));
+    String resolution =
+        sharedPref.getString(keyprefResolution, getString(R.string.pref_resolution_default));
     String[] dimensions = resolution.split("[ x]+");
     if (dimensions.length == 2) {
       try {
@@ -339,8 +324,7 @@ public class ConnectActivity extends Activity {
 
     // Get camera fps from settings.
     int cameraFps = 0;
-    String fps = sharedPref.getString(keyprefFps,
-        getString(R.string.pref_fps_default));
+    String fps = sharedPref.getString(keyprefFps, getString(R.string.pref_fps_default));
     String[] fpsValues = fps.split("[ x]+");
     if (fpsValues.length == 2) {
       try {
@@ -356,31 +340,28 @@ public class ConnectActivity extends Activity {
 
     // Get video and audio start bitrate.
     int videoStartBitrate = 0;
-    String bitrateTypeDefault = getString(
-        R.string.pref_maxvideobitrate_default);
-    String bitrateType = sharedPref.getString(
-        keyprefVideoBitrateType, bitrateTypeDefault);
+    String bitrateTypeDefault = getString(R.string.pref_maxvideobitrate_default);
+    String bitrateType = sharedPref.getString(keyprefVideoBitrateType, bitrateTypeDefault);
     if (!bitrateType.equals(bitrateTypeDefault)) {
-      String bitrateValue = sharedPref.getString(keyprefVideoBitrateValue,
-          getString(R.string.pref_maxvideobitratevalue_default));
+      String bitrateValue = sharedPref.getString(
+          keyprefVideoBitrateValue, getString(R.string.pref_maxvideobitratevalue_default));
       videoStartBitrate = Integer.parseInt(bitrateValue);
     }
     int audioStartBitrate = 0;
     bitrateTypeDefault = getString(R.string.pref_startaudiobitrate_default);
-    bitrateType = sharedPref.getString(
-        keyprefAudioBitrateType, bitrateTypeDefault);
+    bitrateType = sharedPref.getString(keyprefAudioBitrateType, bitrateTypeDefault);
     if (!bitrateType.equals(bitrateTypeDefault)) {
-      String bitrateValue = sharedPref.getString(keyprefAudioBitrateValue,
-          getString(R.string.pref_startaudiobitratevalue_default));
+      String bitrateValue = sharedPref.getString(
+          keyprefAudioBitrateValue, getString(R.string.pref_startaudiobitratevalue_default));
       audioStartBitrate = Integer.parseInt(bitrateValue);
     }
 
     // Check statistics display option.
-    boolean displayHud = sharedPref.getBoolean(keyprefDisplayHud,
-        Boolean.valueOf(getString(R.string.pref_displayhud_default)));
+    boolean displayHud = sharedPref.getBoolean(
+        keyprefDisplayHud, Boolean.valueOf(getString(R.string.pref_displayhud_default)));
 
     boolean tracing = sharedPref.getBoolean(
-            keyprefTracing, Boolean.valueOf(getString(R.string.pref_tracing_default)));
+        keyprefTracing, Boolean.valueOf(getString(R.string.pref_tracing_default)));
 
     // Start AppRTCMobile activity.
     Log.d(TAG, "Connecting to room " + roomId + " at URL " + roomUrl);
@@ -395,14 +376,12 @@ public class ConnectActivity extends Activity {
       intent.putExtra(CallActivity.EXTRA_VIDEO_WIDTH, videoWidth);
       intent.putExtra(CallActivity.EXTRA_VIDEO_HEIGHT, videoHeight);
       intent.putExtra(CallActivity.EXTRA_VIDEO_FPS, cameraFps);
-      intent.putExtra(CallActivity.EXTRA_VIDEO_CAPTUREQUALITYSLIDER_ENABLED,
-          captureQualitySlider);
+      intent.putExtra(CallActivity.EXTRA_VIDEO_CAPTUREQUALITYSLIDER_ENABLED, captureQualitySlider);
       intent.putExtra(CallActivity.EXTRA_VIDEO_BITRATE, videoStartBitrate);
       intent.putExtra(CallActivity.EXTRA_VIDEOCODEC, videoCodec);
       intent.putExtra(CallActivity.EXTRA_HWCODEC_ENABLED, hwCodec);
       intent.putExtra(CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, captureToTexture);
-      intent.putExtra(CallActivity.EXTRA_NOAUDIOPROCESSING_ENABLED,
-          noAudioProcessing);
+      intent.putExtra(CallActivity.EXTRA_NOAUDIOPROCESSING_ENABLED, noAudioProcessing);
       intent.putExtra(CallActivity.EXTRA_AECDUMP_ENABLED, aecDump);
       intent.putExtra(CallActivity.EXTRA_OPENSLES_ENABLED, useOpenSLES);
       intent.putExtra(CallActivity.EXTRA_DISABLE_BUILT_IN_AEC, disableBuiltInAEC);
@@ -429,22 +408,25 @@ public class ConnectActivity extends Activity {
         .setTitle(getText(R.string.invalid_url_title))
         .setMessage(getString(R.string.invalid_url_text, url))
         .setCancelable(false)
-        .setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-              dialog.cancel();
-            }
-          }).create().show();
+        .setNeutralButton(R.string.ok,
+            new DialogInterface.OnClickListener() {
+              public void onClick(DialogInterface dialog, int id) {
+                dialog.cancel();
+              }
+            })
+        .create()
+        .show();
     return false;
   }
 
-  private final AdapterView.OnItemClickListener
-      roomListClickListener = new AdapterView.OnItemClickListener() {
-    @Override
-    public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-      String roomId = ((TextView) view).getText().toString();
-      connectToRoom(roomId, false, false, 0);
-    }
-  };
+  private final AdapterView.OnItemClickListener roomListClickListener =
+      new AdapterView.OnItemClickListener() {
+        @Override
+        public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+          String roomId = ((TextView) view).getText().toString();
+          connectToRoom(roomId, false, false, 0);
+        }
+      };
 
   private final OnClickListener addFavoriteListener = new OnClickListener() {
     @Override

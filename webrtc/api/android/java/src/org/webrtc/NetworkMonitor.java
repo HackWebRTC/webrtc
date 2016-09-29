@@ -140,25 +140,23 @@ public class NetworkMonitor {
       return;
     }
     if (autoDetector == null) {
-      autoDetector = new NetworkMonitorAutoDetect(
-        new NetworkMonitorAutoDetect.Observer() {
+      autoDetector = new NetworkMonitorAutoDetect(new NetworkMonitorAutoDetect.Observer() {
 
-          @Override
-          public void onConnectionTypeChanged(ConnectionType newConnectionType) {
-            updateCurrentConnectionType(newConnectionType);
-          }
+        @Override
+        public void onConnectionTypeChanged(ConnectionType newConnectionType) {
+          updateCurrentConnectionType(newConnectionType);
+        }
 
-          @Override
-          public void onNetworkConnect(NetworkInformation networkInfo) {
-            notifyObserversOfNetworkConnect(networkInfo);
-          }
+        @Override
+        public void onNetworkConnect(NetworkInformation networkInfo) {
+          notifyObserversOfNetworkConnect(networkInfo);
+        }
 
-          @Override
-          public void onNetworkDisconnect(long networkHandle) {
-            notifyObserversOfNetworkDisconnect(networkHandle);
-          }
-        },
-        applicationContext);
+        @Override
+        public void onNetworkDisconnect(long networkHandle) {
+          notifyObserversOfNetworkDisconnect(networkHandle);
+        }
+      }, applicationContext);
       final NetworkMonitorAutoDetect.NetworkState networkState =
           autoDetector.getCurrentNetworkState();
       updateCurrentConnectionType(NetworkMonitorAutoDetect.getConnectionType(networkState));
@@ -241,8 +239,8 @@ public class NetworkMonitor {
   private native void nativeNotifyConnectionTypeChanged(long nativePtr);
   private native void nativeNotifyOfNetworkConnect(long nativePtr, NetworkInformation networkInfo);
   private native void nativeNotifyOfNetworkDisconnect(long nativePtr, long networkHandle);
-  private native void nativeNotifyOfActiveNetworkList(long nativePtr,
-                                                      NetworkInformation[] networkInfos);
+  private native void nativeNotifyOfActiveNetworkList(
+      long nativePtr, NetworkInformation[] networkInfos);
 
   // For testing only.
   static void resetInstanceForTests(Context context) {

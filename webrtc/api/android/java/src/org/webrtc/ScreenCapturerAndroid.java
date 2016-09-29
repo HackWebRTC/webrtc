@@ -35,11 +35,10 @@ import java.util.List;
  * frames. At any time, at most one frame is being processed.
  */
 @TargetApi(21)
-public class ScreenCapturerAndroid implements
-    VideoCapturer, SurfaceTextureHelper.OnTextureFrameAvailableListener {
-
-  private static final int DISPLAY_FLAGS = DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC
-      | DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION;
+public class ScreenCapturerAndroid
+    implements VideoCapturer, SurfaceTextureHelper.OnTextureFrameAvailableListener {
+  private static final int DISPLAY_FLAGS =
+      DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC | DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION;
   // DPI for VirtualDisplay, does not seem to matter for us.
   private static final int VIRTUAL_DISPLAY_DPI = 400;
 
@@ -65,8 +64,7 @@ public class ScreenCapturerAndroid implements
    * @param mediaProjectionCallback MediaProjection callback to implement application specific
    *     logic in events such as when the user revokes a previously granted capture permission.
   **/
-  public ScreenCapturerAndroid(
-      Intent mediaProjectionPermissionResultData,
+  public ScreenCapturerAndroid(Intent mediaProjectionPermissionResultData,
       MediaProjection.Callback mediaProjectionCallback) {
     this.mediaProjectionPermissionResultData = mediaProjectionPermissionResultData;
     this.mediaProjectionCallback = mediaProjectionCallback;
@@ -79,10 +77,8 @@ public class ScreenCapturerAndroid implements
   }
 
   @Override
-  public synchronized void initialize(
-      final SurfaceTextureHelper surfaceTextureHelper,
-      final Context applicationContext,
-      final VideoCapturer.CapturerObserver capturerObserver) {
+  public synchronized void initialize(final SurfaceTextureHelper surfaceTextureHelper,
+      final Context applicationContext, final VideoCapturer.CapturerObserver capturerObserver) {
     checkNotDisposed();
 
     if (capturerObserver == null) {
@@ -95,13 +91,13 @@ public class ScreenCapturerAndroid implements
     }
     this.surfaceTextureHelper = surfaceTextureHelper;
 
-    mediaProjectionManager = (MediaProjectionManager)
-        applicationContext.getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+    mediaProjectionManager = (MediaProjectionManager) applicationContext.getSystemService(
+        Context.MEDIA_PROJECTION_SERVICE);
   }
 
   @Override
-  public synchronized void startCapture(final int width, final int height,
-       final int ignoredFramerate) {
+  public synchronized void startCapture(
+      final int width, final int height, final int ignoredFramerate) {
     checkNotDisposed();
 
     this.width = width;
@@ -143,7 +139,6 @@ public class ScreenCapturerAndroid implements
     });
   }
 
-
   @Override
   public synchronized void dispose() {
     isDisposed = true;
@@ -184,9 +179,8 @@ public class ScreenCapturerAndroid implements
 
   private void createVirtualDisplay() {
     surfaceTextureHelper.getSurfaceTexture().setDefaultBufferSize(width, height);
-    virtualDisplay = mediaProjection.createVirtualDisplay(
-        "WebRTC_ScreenCapture", width, height, VIRTUAL_DISPLAY_DPI,
-        DISPLAY_FLAGS, new Surface(surfaceTextureHelper.getSurfaceTexture()),
+    virtualDisplay = mediaProjection.createVirtualDisplay("WebRTC_ScreenCapture", width, height,
+        VIRTUAL_DISPLAY_DPI, DISPLAY_FLAGS, new Surface(surfaceTextureHelper.getSurfaceTexture()),
         null /* callback */, null /* callback handler */);
   }
 
@@ -194,8 +188,8 @@ public class ScreenCapturerAndroid implements
   @Override
   public void onTextureFrameAvailable(int oesTextureId, float[] transformMatrix, long timestampNs) {
     numCapturedFrames++;
-    capturerObserver.onTextureFrameCaptured(width, height, oesTextureId, transformMatrix,
-        0 /* rotation */, timestampNs);
+    capturerObserver.onTextureFrameCaptured(
+        width, height, oesTextureId, transformMatrix, 0 /* rotation */, timestampNs);
   }
 
   @Override
@@ -207,4 +201,3 @@ public class ScreenCapturerAndroid implements
     return numCapturedFrames;
   }
 }
-

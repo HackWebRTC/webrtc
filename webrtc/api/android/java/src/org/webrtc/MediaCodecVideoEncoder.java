@@ -42,14 +42,10 @@ public class MediaCodecVideoEncoder {
   private static final String TAG = "MediaCodecVideoEncoder";
 
   // Tracks webrtc::VideoCodecType.
-  public enum VideoCodecType {
-    VIDEO_CODEC_VP8,
-    VIDEO_CODEC_VP9,
-    VIDEO_CODEC_H264
-  }
+  public enum VideoCodecType { VIDEO_CODEC_VP8, VIDEO_CODEC_VP9, VIDEO_CODEC_H264 }
 
   private static final int MEDIA_CODEC_RELEASE_TIMEOUT_MS = 5000; // Timeout for codec releasing.
-  private static final int DEQUEUE_TIMEOUT = 0;  // Non-blocking, no wait.
+  private static final int DEQUEUE_TIMEOUT = 0; // Non-blocking, no wait.
   private static final int BITRATE_ADJUSTMENT_FPS = 30;
   private static final int MAXIMUM_INITIAL_FPS = 30;
   private static final double BITRATE_CORRECTION_SEC = 3.0;
@@ -115,56 +111,45 @@ public class MediaCodecVideoEncoder {
       "OMX.qcom.", Build.VERSION_CODES.KITKAT, BitrateAdjustmentType.NO_ADJUSTMENT);
   private static final MediaCodecProperties exynosVp8HwProperties = new MediaCodecProperties(
       "OMX.Exynos.", Build.VERSION_CODES.M, BitrateAdjustmentType.DYNAMIC_ADJUSTMENT);
-  private static final MediaCodecProperties[] vp8HwList = new MediaCodecProperties[] {
-    qcomVp8HwProperties, exynosVp8HwProperties
-  };
+  private static final MediaCodecProperties[] vp8HwList =
+      new MediaCodecProperties[] {qcomVp8HwProperties, exynosVp8HwProperties};
 
   // List of supported HW VP9 encoders.
   private static final MediaCodecProperties qcomVp9HwProperties = new MediaCodecProperties(
       "OMX.qcom.", Build.VERSION_CODES.M, BitrateAdjustmentType.NO_ADJUSTMENT);
   private static final MediaCodecProperties exynosVp9HwProperties = new MediaCodecProperties(
       "OMX.Exynos.", Build.VERSION_CODES.M, BitrateAdjustmentType.NO_ADJUSTMENT);
-  private static final MediaCodecProperties[] vp9HwList = new MediaCodecProperties[] {
-    qcomVp9HwProperties, exynosVp9HwProperties
-  };
+  private static final MediaCodecProperties[] vp9HwList =
+      new MediaCodecProperties[] {qcomVp9HwProperties, exynosVp9HwProperties};
 
   // List of supported HW H.264 encoders.
   private static final MediaCodecProperties qcomH264HwProperties = new MediaCodecProperties(
       "OMX.qcom.", Build.VERSION_CODES.KITKAT, BitrateAdjustmentType.NO_ADJUSTMENT);
   private static final MediaCodecProperties exynosH264HwProperties = new MediaCodecProperties(
       "OMX.Exynos.", Build.VERSION_CODES.LOLLIPOP, BitrateAdjustmentType.FRAMERATE_ADJUSTMENT);
-  private static final MediaCodecProperties[] h264HwList = new MediaCodecProperties[] {
-    qcomH264HwProperties, exynosH264HwProperties
-  };
+  private static final MediaCodecProperties[] h264HwList =
+      new MediaCodecProperties[] {qcomH264HwProperties, exynosH264HwProperties};
 
   // List of devices with poor H.264 encoder quality.
-  private static final String[] H264_HW_EXCEPTION_MODELS = new String[] {
-    // HW H.264 encoder on below devices has poor bitrate control - actual
-    // bitrates deviates a lot from the target value.
-    "SAMSUNG-SGH-I337",
-    "Nexus 7",
-    "Nexus 4"
-  };
+  // HW H.264 encoder on below devices has poor bitrate control - actual
+  // bitrates deviates a lot from the target value.
+  private static final String[] H264_HW_EXCEPTION_MODELS =
+      new String[] {"SAMSUNG-SGH-I337", "Nexus 7", "Nexus 4"};
 
   // Bitrate modes - should be in sync with OMX_VIDEO_CONTROLRATETYPE defined
   // in OMX_Video.h
   private static final int VIDEO_ControlRateConstant = 2;
   // NV12 color format supported by QCOM codec, but not declared in MediaCodec -
   // see /hardware/qcom/media/mm-core/inc/OMX_QCOMExtns.h
-  private static final int
-    COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m = 0x7FA30C04;
+  private static final int COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m = 0x7FA30C04;
   // Allowable color formats supported by codec - in order of preference.
-  private static final int[] supportedColorList = {
-    CodecCapabilities.COLOR_FormatYUV420Planar,
-    CodecCapabilities.COLOR_FormatYUV420SemiPlanar,
-    CodecCapabilities.COLOR_QCOM_FormatYUV420SemiPlanar,
-    COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m
-  };
-  private static final int[] supportedSurfaceColorList = {
-    CodecCapabilities.COLOR_FormatSurface
-  };
+  private static final int[] supportedColorList = {CodecCapabilities.COLOR_FormatYUV420Planar,
+      CodecCapabilities.COLOR_FormatYUV420SemiPlanar,
+      CodecCapabilities.COLOR_QCOM_FormatYUV420SemiPlanar,
+      COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m};
+  private static final int[] supportedSurfaceColorList = {CodecCapabilities.COLOR_FormatSurface};
   private VideoCodecType type;
-  private int colorFormat;  // Used by native code.
+  private int colorFormat; // Used by native code.
 
   // Variables used for dynamic bitrate adjustment.
   private BitrateAdjustmentType bitrateAdjustmentType = BitrateAdjustmentType.NO_ADJUSTMENT;
@@ -209,33 +194,33 @@ public class MediaCodecVideoEncoder {
 
   // Functions to query if HW encoding is supported.
   public static boolean isVp8HwSupported() {
-    return !hwEncoderDisabledTypes.contains(VP8_MIME_TYPE) &&
-        (findHwEncoder(VP8_MIME_TYPE, vp8HwList, supportedColorList) != null);
+    return !hwEncoderDisabledTypes.contains(VP8_MIME_TYPE)
+        && (findHwEncoder(VP8_MIME_TYPE, vp8HwList, supportedColorList) != null);
   }
 
   public static boolean isVp9HwSupported() {
-    return !hwEncoderDisabledTypes.contains(VP9_MIME_TYPE) &&
-        (findHwEncoder(VP9_MIME_TYPE, vp9HwList, supportedColorList) != null);
+    return !hwEncoderDisabledTypes.contains(VP9_MIME_TYPE)
+        && (findHwEncoder(VP9_MIME_TYPE, vp9HwList, supportedColorList) != null);
   }
 
   public static boolean isH264HwSupported() {
-    return !hwEncoderDisabledTypes.contains(H264_MIME_TYPE) &&
-        (findHwEncoder(H264_MIME_TYPE, h264HwList, supportedColorList) != null);
+    return !hwEncoderDisabledTypes.contains(H264_MIME_TYPE)
+        && (findHwEncoder(H264_MIME_TYPE, h264HwList, supportedColorList) != null);
   }
 
   public static boolean isVp8HwSupportedUsingTextures() {
-    return !hwEncoderDisabledTypes.contains(VP8_MIME_TYPE) &&
-        (findHwEncoder(VP8_MIME_TYPE, vp8HwList, supportedSurfaceColorList) != null);
+    return !hwEncoderDisabledTypes.contains(VP8_MIME_TYPE)
+        && (findHwEncoder(VP8_MIME_TYPE, vp8HwList, supportedSurfaceColorList) != null);
   }
 
   public static boolean isVp9HwSupportedUsingTextures() {
-    return !hwEncoderDisabledTypes.contains(VP9_MIME_TYPE) &&
-        (findHwEncoder(VP9_MIME_TYPE, vp9HwList, supportedSurfaceColorList) != null);
+    return !hwEncoderDisabledTypes.contains(VP9_MIME_TYPE)
+        && (findHwEncoder(VP9_MIME_TYPE, vp9HwList, supportedSurfaceColorList) != null);
   }
 
   public static boolean isH264HwSupportedUsingTextures() {
-    return !hwEncoderDisabledTypes.contains(H264_MIME_TYPE) &&
-        (findHwEncoder(H264_MIME_TYPE, h264HwList, supportedSurfaceColorList) != null);
+    return !hwEncoderDisabledTypes.contains(H264_MIME_TYPE)
+        && (findHwEncoder(H264_MIME_TYPE, h264HwList, supportedSurfaceColorList) != null);
   }
 
   // Helper struct for findHwEncoder() below.
@@ -247,7 +232,7 @@ public class MediaCodecVideoEncoder {
       this.bitrateAdjustmentType = bitrateAdjustmentType;
     }
     public final String codecName; // OpenMax component name for HW codec.
-    public final int colorFormat;  // Color format supported by codec.
+    public final int colorFormat; // Color format supported by codec.
     public final BitrateAdjustmentType bitrateAdjustmentType; // Bitrate adjustment type
   }
 
@@ -273,7 +258,7 @@ public class MediaCodecVideoEncoder {
       try {
         info = MediaCodecList.getCodecInfoAt(i);
       } catch (IllegalArgumentException e) {
-        Logging.e(TAG,  "Cannot retrieve encoder codec info", e);
+        Logging.e(TAG, "Cannot retrieve encoder codec info", e);
       }
       if (info == null || !info.isEncoder()) {
         continue;
@@ -286,7 +271,7 @@ public class MediaCodecVideoEncoder {
         }
       }
       if (name == null) {
-        continue;  // No HW support in this codec; try the next one.
+        continue; // No HW support in this codec; try the next one.
       }
       Logging.v(TAG, "Found candidate encoder " + name);
 
@@ -296,14 +281,14 @@ public class MediaCodecVideoEncoder {
       for (MediaCodecProperties codecProperties : supportedHwCodecProperties) {
         if (name.startsWith(codecProperties.codecPrefix)) {
           if (Build.VERSION.SDK_INT < codecProperties.minSdk) {
-            Logging.w(TAG, "Codec " + name + " is disabled due to SDK version " +
-                Build.VERSION.SDK_INT);
+            Logging.w(
+                TAG, "Codec " + name + " is disabled due to SDK version " + Build.VERSION.SDK_INT);
             continue;
           }
           if (codecProperties.bitrateAdjustmentType != BitrateAdjustmentType.NO_ADJUSTMENT) {
             bitrateAdjustmentType = codecProperties.bitrateAdjustmentType;
-            Logging.w(TAG, "Codec " + name
-                + " requires bitrate adjustment: " + bitrateAdjustmentType);
+            Logging.w(
+                TAG, "Codec " + name + " requires bitrate adjustment: " + bitrateAdjustmentType);
           }
           supportedCodec = true;
           break;
@@ -318,7 +303,7 @@ public class MediaCodecVideoEncoder {
       try {
         capabilities = info.getCapabilitiesForType(mime);
       } catch (IllegalArgumentException e) {
-        Logging.e(TAG,  "Cannot retrieve encoder capabilities", e);
+        Logging.e(TAG, "Cannot retrieve encoder capabilities", e);
         continue;
       }
       for (int colorFormat : capabilities.colorFormats) {
@@ -329,22 +314,21 @@ public class MediaCodecVideoEncoder {
         for (int codecColorFormat : capabilities.colorFormats) {
           if (codecColorFormat == supportedColorFormat) {
             // Found supported HW encoder.
-            Logging.d(TAG, "Found target encoder for mime " + mime + " : " + name
-                + ". Color: 0x" + Integer.toHexString(codecColorFormat)
-                + ". Bitrate adjustment: " + bitrateAdjustmentType);
+            Logging.d(TAG, "Found target encoder for mime " + mime + " : " + name + ". Color: 0x"
+                    + Integer.toHexString(codecColorFormat) + ". Bitrate adjustment: "
+                    + bitrateAdjustmentType);
             return new EncoderProperties(name, codecColorFormat, bitrateAdjustmentType);
           }
         }
       }
     }
-    return null;  // No HW encoder.
+    return null; // No HW encoder.
   }
 
   private void checkOnMediaCodecThread() {
     if (mediaCodecThread.getId() != Thread.currentThread().getId()) {
-      throw new RuntimeException(
-          "MediaCodecVideoEncoder previously operated on " + mediaCodecThread +
-          " but is now called on " + Thread.currentThread());
+      throw new RuntimeException("MediaCodecVideoEncoder previously operated on " + mediaCodecThread
+          + " but is now called on " + Thread.currentThread());
     }
   }
 
@@ -373,8 +357,8 @@ public class MediaCodecVideoEncoder {
   boolean initEncode(VideoCodecType type, int width, int height, int kbps, int fps,
       EglBase14.Context sharedContext) {
     final boolean useSurface = sharedContext != null;
-    Logging.d(TAG, "Java initEncode: " + type + " : " + width + " x " + height +
-        ". @ " + kbps + " kbps. Fps: " + fps + ". Encode from texture : " + useSurface);
+    Logging.d(TAG, "Java initEncode: " + type + " : " + width + " x " + height + ". @ " + kbps
+            + " kbps. Fps: " + fps + ". Encode from texture : " + useSurface);
 
     this.width = width;
     this.height = height;
@@ -408,12 +392,11 @@ public class MediaCodecVideoEncoder {
     bitrateAdjustmentType = properties.bitrateAdjustmentType;
     if (bitrateAdjustmentType == BitrateAdjustmentType.FRAMERATE_ADJUSTMENT) {
       fps = BITRATE_ADJUSTMENT_FPS;
-    } else  {
+    } else {
       fps = Math.min(fps, MAXIMUM_INITIAL_FPS);
     }
-    Logging.d(TAG, "Color format: " + colorFormat +
-        ". Bitrate adjustment: " + bitrateAdjustmentType +
-        ". Initial fps: " + fps);
+    Logging.d(TAG, "Color format: " + colorFormat + ". Bitrate adjustment: " + bitrateAdjustmentType
+            + ". Initial fps: " + fps);
     targetBitrateBps = 1000 * kbps;
     targetFps = fps;
     bitrateAccumulatorMax = targetBitrateBps / 8.0;
@@ -436,8 +419,7 @@ public class MediaCodecVideoEncoder {
         Logging.e(TAG, "Can not create media encoder");
         return false;
       }
-      mediaCodec.configure(
-          format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+      mediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
 
       if (useSurface) {
         eglBase = new EglBase14(sharedContext, EglBase.CONFIG_RECORDABLE);
@@ -457,15 +439,14 @@ public class MediaCodecVideoEncoder {
     return true;
   }
 
-  ByteBuffer[]  getInputBuffers() {
+  ByteBuffer[] getInputBuffers() {
     ByteBuffer[] inputBuffers = mediaCodec.getInputBuffers();
     Logging.d(TAG, "Input buffers: " + inputBuffers.length);
     return inputBuffers;
   }
 
   boolean encodeBuffer(
-      boolean isKeyframe, int inputBuffer, int size,
-      long presentationTimestampUs) {
+      boolean isKeyframe, int inputBuffer, int size, long presentationTimestampUs) {
     checkOnMediaCodecThread();
     try {
       if (isKeyframe) {
@@ -478,11 +459,9 @@ public class MediaCodecVideoEncoder {
         b.putInt(MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME, 0);
         mediaCodec.setParameters(b);
       }
-      mediaCodec.queueInputBuffer(
-          inputBuffer, 0, size, presentationTimestampUs, 0);
+      mediaCodec.queueInputBuffer(inputBuffer, 0, size, presentationTimestampUs, 0);
       return true;
-    }
-    catch (IllegalStateException e) {
+    } catch (IllegalStateException e) {
       Logging.e(TAG, "encodeBuffer failed", e);
       return false;
     }
@@ -505,8 +484,7 @@ public class MediaCodecVideoEncoder {
       drawer.drawOes(oesTextureId, transformationMatrix, width, height, 0, 0, width, height);
       eglBase.swapBuffers(TimeUnit.MICROSECONDS.toNanos(presentationTimestampUs));
       return true;
-    }
-    catch (RuntimeException e) {
+    } catch (RuntimeException e) {
       Logging.e(TAG, "encodeTexture failed", e);
       return false;
     }
@@ -580,13 +558,13 @@ public class MediaCodecVideoEncoder {
     // Adjust actual encoder bitrate based on bitrate adjustment type.
     if (bitrateAdjustmentType == BitrateAdjustmentType.FRAMERATE_ADJUSTMENT && targetFps > 0) {
       codecBitrateBps = BITRATE_ADJUSTMENT_FPS * targetBitrateBps / targetFps;
-      Logging.v(TAG, "setRates: " + kbps + " -> " + (codecBitrateBps / 1000)
-          + " kbps. Fps: " + targetFps);
+      Logging.v(TAG,
+          "setRates: " + kbps + " -> " + (codecBitrateBps / 1000) + " kbps. Fps: " + targetFps);
     } else if (bitrateAdjustmentType == BitrateAdjustmentType.DYNAMIC_ADJUSTMENT) {
-      Logging.v(TAG, "setRates: " + kbps + " kbps. Fps: " + targetFps
-          + ". ExpScale: " + bitrateAdjustmentScaleExp);
+      Logging.v(TAG, "setRates: " + kbps + " kbps. Fps: " + targetFps + ". ExpScale: "
+              + bitrateAdjustmentScaleExp);
       if (bitrateAdjustmentScaleExp != 0) {
-        codecBitrateBps = (int)(codecBitrateBps * getBitrateScale(bitrateAdjustmentScaleExp));
+        codecBitrateBps = (int) (codecBitrateBps * getBitrateScale(bitrateAdjustmentScaleExp));
       }
     } else {
       Logging.v(TAG, "setRates: " + kbps + " kbps. Fps: " + targetFps);
@@ -618,8 +596,7 @@ public class MediaCodecVideoEncoder {
   // Helper struct for dequeueOutputBuffer() below.
   static class OutputBufferInfo {
     public OutputBufferInfo(
-        int index, ByteBuffer buffer,
-        boolean isKeyFrame, long presentationTimestampUs) {
+        int index, ByteBuffer buffer, boolean isKeyFrame, long presentationTimestampUs) {
       this.index = index;
       this.buffer = buffer;
       this.isKeyFrame = isKeyFrame;
@@ -641,11 +618,9 @@ public class MediaCodecVideoEncoder {
       int result = mediaCodec.dequeueOutputBuffer(info, DEQUEUE_TIMEOUT);
       // Check if this is config frame and save configuration data.
       if (result >= 0) {
-        boolean isConfigFrame =
-            (info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0;
+        boolean isConfigFrame = (info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0;
         if (isConfigFrame) {
-          Logging.d(TAG, "Config frame generated. Offset: " + info.offset +
-              ". Size: " + info.size);
+          Logging.d(TAG, "Config frame generated. Offset: " + info.offset + ". Size: " + info.size);
           configData = ByteBuffer.allocateDirect(info.size);
           outputBuffers[result].position(info.offset);
           outputBuffers[result].limit(info.offset + info.size);
@@ -666,27 +641,23 @@ public class MediaCodecVideoEncoder {
         reportEncodedFrame(info.size);
 
         // Check key frame flag.
-        boolean isKeyFrame =
-            (info.flags & MediaCodec.BUFFER_FLAG_SYNC_FRAME) != 0;
+        boolean isKeyFrame = (info.flags & MediaCodec.BUFFER_FLAG_SYNC_FRAME) != 0;
         if (isKeyFrame) {
           Logging.d(TAG, "Sync frame generated");
         }
         if (isKeyFrame && type == VideoCodecType.VIDEO_CODEC_H264) {
-          Logging.d(TAG, "Appending config frame of size " + configData.capacity() +
-              " to output buffer with offset " + info.offset + ", size " +
-              info.size);
+          Logging.d(TAG, "Appending config frame of size " + configData.capacity()
+                  + " to output buffer with offset " + info.offset + ", size " + info.size);
           // For H.264 key frame append SPS and PPS NALs at the start
-          ByteBuffer keyFrameBuffer = ByteBuffer.allocateDirect(
-              configData.capacity() + info.size);
+          ByteBuffer keyFrameBuffer = ByteBuffer.allocateDirect(configData.capacity() + info.size);
           configData.rewind();
           keyFrameBuffer.put(configData);
           keyFrameBuffer.put(outputBuffer);
           keyFrameBuffer.position(0);
-          return new OutputBufferInfo(result, keyFrameBuffer,
-              isKeyFrame, info.presentationTimeUs);
+          return new OutputBufferInfo(result, keyFrameBuffer, isKeyFrame, info.presentationTimeUs);
         } else {
-          return new OutputBufferInfo(result, outputBuffer.slice(),
-              isKeyFrame, info.presentationTimeUs);
+          return new OutputBufferInfo(
+              result, outputBuffer.slice(), isKeyFrame, info.presentationTimeUs);
         }
       } else if (result == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
         outputBuffers = mediaCodec.getOutputBuffers();
@@ -705,7 +676,7 @@ public class MediaCodecVideoEncoder {
 
   private double getBitrateScale(int bitrateAdjustmentScaleExp) {
     return Math.pow(BITRATE_CORRECTION_MAX_SCALE,
-        (double)bitrateAdjustmentScaleExp / BITRATE_CORRECTION_STEPS);
+        (double) bitrateAdjustmentScaleExp / BITRATE_CORRECTION_STEPS);
   }
 
   private void reportEncodedFrame(int size) {
@@ -727,9 +698,8 @@ public class MediaCodecVideoEncoder {
     // Do bitrate adjustment every 3 seconds if actual encoder bitrate deviates too much
     // form the target value.
     if (bitrateObservationTimeMs > 1000 * BITRATE_CORRECTION_SEC) {
-      Logging.d(TAG, "Acc: " + (int)bitrateAccumulator
-          + ". Max: " + (int)bitrateAccumulatorMax
-          + ". ExpScale: " + bitrateAdjustmentScaleExp);
+      Logging.d(TAG, "Acc: " + (int) bitrateAccumulator + ". Max: " + (int) bitrateAccumulatorMax
+              + ". ExpScale: " + bitrateAdjustmentScaleExp);
       boolean bitrateAdjustmentScaleChanged = false;
       if (bitrateAccumulator > bitrateAccumulatorMax) {
         // Encoder generates too high bitrate - need to reduce the scale.
@@ -745,8 +715,8 @@ public class MediaCodecVideoEncoder {
       if (bitrateAdjustmentScaleChanged) {
         bitrateAdjustmentScaleExp = Math.min(bitrateAdjustmentScaleExp, BITRATE_CORRECTION_STEPS);
         bitrateAdjustmentScaleExp = Math.max(bitrateAdjustmentScaleExp, -BITRATE_CORRECTION_STEPS);
-        Logging.d(TAG, "Adjusting bitrate scale to " + bitrateAdjustmentScaleExp
-            + ". Value: " + getBitrateScale(bitrateAdjustmentScaleExp));
+        Logging.d(TAG, "Adjusting bitrate scale to " + bitrateAdjustmentScaleExp + ". Value: "
+                + getBitrateScale(bitrateAdjustmentScaleExp));
         setRates(targetBitrateBps / 1000, targetFps);
       }
       bitrateObservationTimeMs = 0;

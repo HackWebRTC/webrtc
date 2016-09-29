@@ -25,13 +25,11 @@ public class GlShader {
     }
     GLES20.glShaderSource(shader, source);
     GLES20.glCompileShader(shader);
-    int[] compileStatus = new int[] {
-        GLES20.GL_FALSE
-    };
+    int[] compileStatus = new int[] {GLES20.GL_FALSE};
     GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, compileStatus, 0);
     if (compileStatus[0] != GLES20.GL_TRUE) {
-      Logging.e(TAG, "Could not compile shader " + shaderType + ":" +
-          GLES20.glGetShaderInfoLog(shader));
+      Logging.e(
+          TAG, "Could not compile shader " + shaderType + ":" + GLES20.glGetShaderInfoLog(shader));
       throw new RuntimeException(GLES20.glGetShaderInfoLog(shader));
     }
     GlUtil.checkNoGLES2Error("compileShader");
@@ -50,13 +48,10 @@ public class GlShader {
     GLES20.glAttachShader(program, vertexShader);
     GLES20.glAttachShader(program, fragmentShader);
     GLES20.glLinkProgram(program);
-    int[] linkStatus = new int[] {
-      GLES20.GL_FALSE
-    };
+    int[] linkStatus = new int[] {GLES20.GL_FALSE};
     GLES20.glGetProgramiv(program, GLES20.GL_LINK_STATUS, linkStatus, 0);
     if (linkStatus[0] != GLES20.GL_TRUE) {
-      Logging.e(TAG, "Could not link program: " +
-          GLES20.glGetProgramInfoLog(program));
+      Logging.e(TAG, "Could not link program: " + GLES20.glGetProgramInfoLog(program));
       throw new RuntimeException(GLES20.glGetProgramInfoLog(program));
     }
     // According to the documentation of glLinkProgram():

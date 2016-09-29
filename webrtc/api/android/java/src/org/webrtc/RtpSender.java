@@ -30,9 +30,8 @@ public class RtpSender {
   // not appropriate when the track is owned by, for example, another RtpSender
   // or a MediaStream.
   public boolean setTrack(MediaStreamTrack track, boolean takeOwnership) {
-    if (!nativeSetTrack(nativeRtpSender,
-                        (track == null) ? 0 : track.nativeTrack)) {
-        return false;
+    if (!nativeSetTrack(nativeRtpSender, (track == null) ? 0 : track.nativeTrack)) {
+      return false;
     }
     if (cachedTrack != null && ownsTrack) {
       cachedTrack.dispose();
@@ -65,20 +64,17 @@ public class RtpSender {
     free(nativeRtpSender);
   }
 
-  private static native boolean nativeSetTrack(long nativeRtpSender,
-                                               long nativeTrack);
+  private static native boolean nativeSetTrack(long nativeRtpSender, long nativeTrack);
 
   // This should increment the reference count of the track.
   // Will be released in dispose() or setTrack().
   private static native long nativeGetTrack(long nativeRtpSender);
 
-  private static native boolean nativeSetParameters(long nativeRtpSender,
-                                                    RtpParameters parameters);
+  private static native boolean nativeSetParameters(long nativeRtpSender, RtpParameters parameters);
 
   private static native RtpParameters nativeGetParameters(long nativeRtpSender);
 
   private static native String nativeId(long nativeRtpSender);
 
   private static native void free(long nativeRtpSender);
-}
-;
+};

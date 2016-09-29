@@ -20,6 +20,6 @@ public interface CameraEnumerator {
   public boolean isBackFacing(String deviceName);
   public List<CaptureFormat> getSupportedFormats(String deviceName);
 
-  public CameraVideoCapturer createCapturer(String deviceName,
-      CameraVideoCapturer.CameraEventsHandler eventsHandler);
+  public CameraVideoCapturer createCapturer(
+      String deviceName, CameraVideoCapturer.CameraEventsHandler eventsHandler);
 }

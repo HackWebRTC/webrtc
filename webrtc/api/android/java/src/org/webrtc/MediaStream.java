@@ -89,21 +89,16 @@ public class MediaStream {
   }
 
   public String toString() {
-    return "[" + label() + ":A=" + audioTracks.size() +
-        ":V=" + videoTracks.size() + "]";
+    return "[" + label() + ":A=" + audioTracks.size() + ":V=" + videoTracks.size() + "]";
   }
 
-  private static native boolean nativeAddAudioTrack(
-      long nativeStream, long nativeAudioTrack);
+  private static native boolean nativeAddAudioTrack(long nativeStream, long nativeAudioTrack);
 
-  private static native boolean nativeAddVideoTrack(
-      long nativeStream, long nativeVideoTrack);
+  private static native boolean nativeAddVideoTrack(long nativeStream, long nativeVideoTrack);
 
-  private static native boolean nativeRemoveAudioTrack(
-      long nativeStream, long nativeAudioTrack);
+  private static native boolean nativeRemoveAudioTrack(long nativeStream, long nativeAudioTrack);
 
-  private static native boolean nativeRemoveVideoTrack(
-      long nativeStream, long nativeVideoTrack);
+  private static native boolean nativeRemoveVideoTrack(long nativeStream, long nativeVideoTrack);
 
   private static native String nativeLabel(long nativeStream);
 

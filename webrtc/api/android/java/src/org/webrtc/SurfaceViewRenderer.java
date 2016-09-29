@@ -33,8 +33,8 @@ import javax.microedition.khronos.egl.EGLContext;
  * Interaction from the Activity lifecycle in surfaceCreated, surfaceChanged, and surfaceDestroyed.
  * Interaction with the layout framework in onMeasure and onSizeChanged.
  */
-public class SurfaceViewRenderer extends SurfaceView
-    implements SurfaceHolder.Callback, VideoRenderer.Callbacks {
+public class SurfaceViewRenderer
+    extends SurfaceView implements SurfaceHolder.Callback, VideoRenderer.Callbacks {
   private static final String TAG = "SurfaceViewRenderer";
 
   // Dedicated render thread.
@@ -103,13 +103,15 @@ public class SurfaceViewRenderer extends SurfaceView
 
   // Runnable for posting frames to render thread.
   private final Runnable renderFrameRunnable = new Runnable() {
-    @Override public void run() {
+    @Override
+    public void run() {
       renderFrameOnRenderThread();
     }
   };
   // Runnable for clearing Surface to black.
   private final Runnable makeBlackRunnable = new Runnable() {
-    @Override public void run() {
+    @Override
+    public void run() {
       makeBlack();
     }
   };
@@ -134,8 +136,7 @@ public class SurfaceViewRenderer extends SurfaceView
    * Initialize this class, sharing resources with |sharedContext|. It is allowed to call init() to
    * reinitialize the renderer after a previous init()/release() cycle.
    */
-  public void init(
-      EglBase.Context sharedContext, RendererCommon.RendererEvents rendererEvents) {
+  public void init(EglBase.Context sharedContext, RendererCommon.RendererEvents rendererEvents) {
     init(sharedContext, rendererEvents, EglBase.CONFIG_PLAIN, new GlRectDrawer());
   }
 
@@ -145,9 +146,9 @@ public class SurfaceViewRenderer extends SurfaceView
    * |drawer|. It is allowed to call init() to reinitialize the renderer after a previous
    * init()/release() cycle.
    */
-  public void init(
-      final EglBase.Context sharedContext, RendererCommon.RendererEvents rendererEvents,
-      final int[] configAttributes, RendererCommon.GlDrawer drawer) {
+  public void init(final EglBase.Context sharedContext,
+      RendererCommon.RendererEvents rendererEvents, final int[] configAttributes,
+      RendererCommon.GlDrawer drawer) {
     synchronized (handlerLock) {
       if (renderThreadHandler != null) {
         throw new IllegalStateException(getResourceName() + "Already initialized");
@@ -210,7 +211,8 @@ public class SurfaceViewRenderer extends SurfaceView
       // when the EGL context is lost. It might be dangerous to delete them manually in
       // Activity.onDestroy().
       renderThreadHandler.postAtFrontOfQueue(new Runnable() {
-        @Override public void run() {
+        @Override
+        public void run() {
           drawer.release();
           drawer = null;
           if (yuvTextures != null) {
@@ -289,8 +291,7 @@ public class SurfaceViewRenderer extends SurfaceView
     }
     synchronized (handlerLock) {
       if (renderThreadHandler == null) {
-        Logging.d(TAG, getResourceName()
-            + "Dropping frame - Not initialized or already released.");
+        Logging.d(TAG, getResourceName() + "Dropping frame - Not initialized or already released.");
         VideoRenderer.renderFrameDone(frame);
         return;
       }
@@ -335,8 +336,8 @@ public class SurfaceViewRenderer extends SurfaceView
         return;
       }
       desiredLayoutSize = getDesiredLayoutSize(widthSpec, heightSpec);
-      isNewSize = (desiredLayoutSize.x != getMeasuredWidth()
-          || desiredLayoutSize.y != getMeasuredHeight());
+      isNewSize =
+          (desiredLayoutSize.x != getMeasuredWidth() || desiredLayoutSize.y != getMeasuredHeight());
       setMeasuredDimension(desiredLayoutSize.x, desiredLayoutSize.y);
     }
     if (isNewSize) {
@@ -498,17 +499,17 @@ public class SurfaceViewRenderer extends SurfaceView
       // Make sure YUV textures are allocated.
       if (yuvTextures == null) {
         yuvTextures = new int[3];
-        for (int i = 0; i < 3; i++)  {
+        for (int i = 0; i < 3; i++) {
           yuvTextures[i] = GlUtil.generateTexture(GLES20.GL_TEXTURE_2D);
         }
       }
       yuvUploader.uploadYuvData(
           yuvTextures, frame.width, frame.height, frame.yuvStrides, frame.yuvPlanes);
-      drawer.drawYuv(yuvTextures, texMatrix, frame.rotatedWidth(), frame.rotatedHeight(),
-          0, 0, surfaceSize.x, surfaceSize.y);
+      drawer.drawYuv(yuvTextures, texMatrix, frame.rotatedWidth(), frame.rotatedHeight(), 0, 0,
+          surfaceSize.x, surfaceSize.y);
     } else {
-      drawer.drawOes(frame.textureId, texMatrix, frame.rotatedWidth(), frame.rotatedHeight(),
-          0, 0, surfaceSize.x, surfaceSize.y);
+      drawer.drawOes(frame.textureId, texMatrix, frame.rotatedWidth(), frame.rotatedHeight(), 0, 0,
+          surfaceSize.x, surfaceSize.y);
     }
 
     eglBase.swapBuffers();
@@ -547,8 +548,8 @@ public class SurfaceViewRenderer extends SurfaceView
     synchronized (layoutLock) {
       if (frameWidth != frame.width || frameHeight != frame.height
           || frameRotation != frame.rotationDegree) {
-        Logging.d(TAG, getResourceName() + "Reporting frame resolution changed to "
-            + frame.width + "x" + frame.height + " with rotation " + frame.rotationDegree);
+        Logging.d(TAG, getResourceName() + "Reporting frame resolution changed to " + frame.width
+                + "x" + frame.height + " with rotation " + frame.rotationDegree);
         if (rendererEvents != null) {
           rendererEvents.onFrameResolutionChanged(frame.width, frame.height, frame.rotationDegree);
         }
@@ -556,7 +557,8 @@ public class SurfaceViewRenderer extends SurfaceView
         frameHeight = frame.height;
         frameRotation = frame.rotationDegree;
         post(new Runnable() {
-          @Override public void run() {
+          @Override
+          public void run() {
             requestLayout();
           }
         });
@@ -566,14 +568,14 @@ public class SurfaceViewRenderer extends SurfaceView
 
   private void logStatistics() {
     synchronized (statisticsLock) {
-      Logging.d(TAG, getResourceName() + "Frames received: "
-          + framesReceived + ". Dropped: " + framesDropped + ". Rendered: " + framesRendered);
+      Logging.d(TAG, getResourceName() + "Frames received: " + framesReceived + ". Dropped: "
+              + framesDropped + ". Rendered: " + framesRendered);
       if (framesReceived > 0 && framesRendered > 0) {
         final long timeSinceFirstFrameNs = System.nanoTime() - firstFrameTimeNs;
-        Logging.d(TAG, getResourceName() + "Duration: " + (int) (timeSinceFirstFrameNs / 1e6) +
-            " ms. FPS: " + framesRendered * 1e9 / timeSinceFirstFrameNs);
+        Logging.d(TAG, getResourceName() + "Duration: " + (int) (timeSinceFirstFrameNs / 1e6)
+                + " ms. FPS: " + framesRendered * 1e9 / timeSinceFirstFrameNs);
         Logging.d(TAG, getResourceName() + "Average render time: "
-            + (int) (renderTimeNs / (1000 * framesRendered)) + " us.");
+                + (int) (renderTimeNs / (1000 * framesRendered)) + " us.");
       }
     }
   }

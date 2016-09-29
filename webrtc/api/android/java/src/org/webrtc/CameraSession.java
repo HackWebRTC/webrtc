@@ -22,10 +22,10 @@ public interface CameraSession {
     void onCameraOpening();
     void onCameraError(CameraSession session, String error);
     void onCameraClosed(CameraSession session);
-    void onByteBufferFrameCaptured(CameraSession session, byte[] data, int width, int height,
-      int rotation, long timestamp);
+    void onByteBufferFrameCaptured(
+        CameraSession session, byte[] data, int width, int height, int rotation, long timestamp);
     void onTextureFrameCaptured(CameraSession session, int width, int height, int oesTextureId,
-      float[] transformMatrix, int rotation, long timestamp);
+        float[] transformMatrix, int rotation, long timestamp);
   }
 
   /**

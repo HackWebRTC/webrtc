@@ -67,8 +67,7 @@ class WebRtcAudioEffects {
     // Note: we're using isAcousticEchoCancelerEffectAvailable() instead of
     // AcousticEchoCanceler.isAvailable() to avoid the expensive getEffects()
     // OS API call.
-    return WebRtcAudioUtils.runningOnJellyBeanOrHigher()
-        && isAcousticEchoCancelerEffectAvailable();
+    return WebRtcAudioUtils.runningOnJellyBeanOrHigher() && isAcousticEchoCancelerEffectAvailable();
   }
 
   // Checks if the device implements Automatic Gain Control (AGC).
@@ -77,8 +76,7 @@ class WebRtcAudioEffects {
     // Note: we're using isAutomaticGainControlEffectAvailable() instead of
     // AutomaticGainControl.isAvailable() to avoid the expensive getEffects()
     // OS API call.
-    return WebRtcAudioUtils.runningOnJellyBeanOrHigher()
-        && isAutomaticGainControlEffectAvailable();
+    return WebRtcAudioUtils.runningOnJellyBeanOrHigher() && isAutomaticGainControlEffectAvailable();
   }
 
   // Checks if the device implements Noise Suppression (NS).
@@ -87,14 +85,12 @@ class WebRtcAudioEffects {
     // Note: we're using isNoiseSuppressorEffectAvailable() instead of
     // NoiseSuppressor.isAvailable() to avoid the expensive getEffects()
     // OS API call.
-    return WebRtcAudioUtils.runningOnJellyBeanOrHigher()
-        && isNoiseSuppressorEffectAvailable();
+    return WebRtcAudioUtils.runningOnJellyBeanOrHigher() && isNoiseSuppressorEffectAvailable();
   }
 
   // Returns true if the device is blacklisted for HW AEC usage.
   public static boolean isAcousticEchoCancelerBlacklisted() {
-    List<String> blackListedModels =
-        WebRtcAudioUtils.getBlackListedModelsForAecUsage();
+    List<String> blackListedModels = WebRtcAudioUtils.getBlackListedModelsForAecUsage();
     boolean isBlacklisted = blackListedModels.contains(Build.MODEL);
     if (isBlacklisted) {
       Logging.w(TAG, Build.MODEL + " is blacklisted for HW AEC usage!");
@@ -104,8 +100,7 @@ class WebRtcAudioEffects {
 
   // Returns true if the device is blacklisted for HW AGC usage.
   public static boolean isAutomaticGainControlBlacklisted() {
-   List<String> blackListedModels =
-        WebRtcAudioUtils.getBlackListedModelsForAgcUsage();
+    List<String> blackListedModels = WebRtcAudioUtils.getBlackListedModelsForAgcUsage();
     boolean isBlacklisted = blackListedModels.contains(Build.MODEL);
     if (isBlacklisted) {
       Logging.w(TAG, Build.MODEL + " is blacklisted for HW AGC usage!");
@@ -115,8 +110,7 @@ class WebRtcAudioEffects {
 
   // Returns true if the device is blacklisted for HW NS usage.
   public static boolean isNoiseSuppressorBlacklisted() {
-    List<String> blackListedModels =
-        WebRtcAudioUtils.getBlackListedModelsForNsUsage();
+    List<String> blackListedModels = WebRtcAudioUtils.getBlackListedModelsForNsUsage();
     boolean isBlacklisted = blackListedModels.contains(Build.MODEL);
     if (isBlacklisted) {
       Logging.w(TAG, Build.MODEL + " is blacklisted for HW NS usage!");
@@ -129,8 +123,8 @@ class WebRtcAudioEffects {
   @TargetApi(18)
   private static boolean isAcousticEchoCancelerExcludedByUUID() {
     for (Descriptor d : getAvailableEffects()) {
-      if (d.type.equals(AudioEffect.EFFECT_TYPE_AEC) &&
-          d.uuid.equals(AOSP_ACOUSTIC_ECHO_CANCELER)) {
+      if (d.type.equals(AudioEffect.EFFECT_TYPE_AEC)
+          && d.uuid.equals(AOSP_ACOUSTIC_ECHO_CANCELER)) {
         return true;
       }
     }
@@ -142,8 +136,8 @@ class WebRtcAudioEffects {
   @TargetApi(18)
   private static boolean isAutomaticGainControlExcludedByUUID() {
     for (Descriptor d : getAvailableEffects()) {
-      if (d.type.equals(AudioEffect.EFFECT_TYPE_AGC) &&
-          d.uuid.equals(AOSP_AUTOMATIC_GAIN_CONTROL)) {
+      if (d.type.equals(AudioEffect.EFFECT_TYPE_AGC)
+          && d.uuid.equals(AOSP_AUTOMATIC_GAIN_CONTROL)) {
         return true;
       }
     }
@@ -155,8 +149,7 @@ class WebRtcAudioEffects {
   @TargetApi(18)
   private static boolean isNoiseSuppressorExcludedByUUID() {
     for (Descriptor d : getAvailableEffects()) {
-      if (d.type.equals(AudioEffect.EFFECT_TYPE_NS) &&
-          d.uuid.equals(AOSP_NOISE_SUPPRESSOR)) {
+      if (d.type.equals(AudioEffect.EFFECT_TYPE_NS) && d.uuid.equals(AOSP_NOISE_SUPPRESSOR)) {
         return true;
       }
     }
@@ -184,36 +177,28 @@ class WebRtcAudioEffects {
   // Returns true if all conditions for supporting the HW AEC are fulfilled.
   // It will not be possible to enable the HW AEC if this method returns false.
   public static boolean canUseAcousticEchoCanceler() {
-    boolean canUseAcousticEchoCanceler =
-        isAcousticEchoCancelerSupported()
+    boolean canUseAcousticEchoCanceler = isAcousticEchoCancelerSupported()
         && !WebRtcAudioUtils.useWebRtcBasedAcousticEchoCanceler()
-        && !isAcousticEchoCancelerBlacklisted()
-        && !isAcousticEchoCancelerExcludedByUUID();
-    Logging.d(TAG, "canUseAcousticEchoCanceler: "
-        + canUseAcousticEchoCanceler);
+        && !isAcousticEchoCancelerBlacklisted() && !isAcousticEchoCancelerExcludedByUUID();
+    Logging.d(TAG, "canUseAcousticEchoCanceler: " + canUseAcousticEchoCanceler);
     return canUseAcousticEchoCanceler;
   }
 
   // Returns true if all conditions for supporting the HW AGC are fulfilled.
   // It will not be possible to enable the HW AGC if this method returns false.
   public static boolean canUseAutomaticGainControl() {
-    boolean canUseAutomaticGainControl =
-        isAutomaticGainControlSupported()
+    boolean canUseAutomaticGainControl = isAutomaticGainControlSupported()
         && !WebRtcAudioUtils.useWebRtcBasedAutomaticGainControl()
-        && !isAutomaticGainControlBlacklisted()
-        && !isAutomaticGainControlExcludedByUUID();
-    Logging.d(TAG, "canUseAutomaticGainControl: "
-        + canUseAutomaticGainControl);
+        && !isAutomaticGainControlBlacklisted() && !isAutomaticGainControlExcludedByUUID();
+    Logging.d(TAG, "canUseAutomaticGainControl: " + canUseAutomaticGainControl);
     return canUseAutomaticGainControl;
   }
 
   // Returns true if all conditions for supporting the HW NS are fulfilled.
   // It will not be possible to enable the HW NS if this method returns false.
   public static boolean canUseNoiseSuppressor() {
-    boolean canUseNoiseSuppressor =
-        isNoiseSuppressorSupported()
-        && !WebRtcAudioUtils.useWebRtcBasedNoiseSuppressor()
-        && !isNoiseSuppressorBlacklisted()
+    boolean canUseNoiseSuppressor = isNoiseSuppressorSupported()
+        && !WebRtcAudioUtils.useWebRtcBasedNoiseSuppressor() && !isNoiseSuppressorBlacklisted()
         && !isNoiseSuppressorExcludedByUUID();
     Logging.d(TAG, "canUseNoiseSuppressor: " + canUseNoiseSuppressor);
     return canUseNoiseSuppressor;
@@ -300,9 +285,9 @@ class WebRtcAudioEffects {
     for (Descriptor d : AudioEffect.queryEffects()) {
       if (effectTypeIsVoIP(d.type) || DEBUG) {
         Logging.d(TAG, "name: " + d.name + ", "
-            + "mode: " + d.connectMode + ", "
-            + "implementor: " + d.implementor + ", "
-            + "UUID: " + d.uuid);
+                + "mode: " + d.connectMode + ", "
+                + "implementor: " + d.implementor + ", "
+                + "UUID: " + d.uuid);
       }
     }
 
@@ -316,10 +301,9 @@ class WebRtcAudioEffects {
         if (aec.setEnabled(enable) != AudioEffect.SUCCESS) {
           Logging.e(TAG, "Failed to set the AcousticEchoCanceler state");
         }
-        Logging.d(TAG, "AcousticEchoCanceler: was "
-            + (enabled ? "enabled" : "disabled")
-            + ", enable: " + enable + ", is now: "
-            + (aec.getEnabled() ? "enabled" : "disabled"));
+        Logging.d(TAG, "AcousticEchoCanceler: was " + (enabled ? "enabled" : "disabled")
+                + ", enable: " + enable + ", is now: "
+                + (aec.getEnabled() ? "enabled" : "disabled"));
       } else {
         Logging.e(TAG, "Failed to create the AcousticEchoCanceler instance");
       }
@@ -335,10 +319,9 @@ class WebRtcAudioEffects {
         if (agc.setEnabled(enable) != AudioEffect.SUCCESS) {
           Logging.e(TAG, "Failed to set the AutomaticGainControl state");
         }
-        Logging.d(TAG, "AutomaticGainControl: was "
-            + (enabled ? "enabled" : "disabled")
-            + ", enable: " + enable + ", is now: "
-            + (agc.getEnabled() ? "enabled" : "disabled"));
+        Logging.d(TAG, "AutomaticGainControl: was " + (enabled ? "enabled" : "disabled")
+                + ", enable: " + enable + ", is now: "
+                + (agc.getEnabled() ? "enabled" : "disabled"));
       } else {
         Logging.e(TAG, "Failed to create the AutomaticGainControl instance");
       }
@@ -354,10 +337,8 @@ class WebRtcAudioEffects {
         if (ns.setEnabled(enable) != AudioEffect.SUCCESS) {
           Logging.e(TAG, "Failed to set the NoiseSuppressor state");
         }
-        Logging.d(TAG, "NoiseSuppressor: was "
-            + (enabled ? "enabled" : "disabled")
-            + ", enable: " + enable + ", is now: "
-            + (ns.getEnabled() ? "enabled" : "disabled"));
+        Logging.d(TAG, "NoiseSuppressor: was " + (enabled ? "enabled" : "disabled") + ", enable: "
+                + enable + ", is now: " + (ns.getEnabled() ? "enabled" : "disabled"));
       } else {
         Logging.e(TAG, "Failed to create the NoiseSuppressor instance");
       }
@@ -395,12 +376,9 @@ class WebRtcAudioEffects {
     if (!WebRtcAudioUtils.runningOnJellyBeanMR2OrHigher())
       return false;
 
-    return (AudioEffect.EFFECT_TYPE_AEC.equals(type)
-        && isAcousticEchoCancelerSupported())
-        || (AudioEffect.EFFECT_TYPE_AGC.equals(type)
-        && isAutomaticGainControlSupported())
-        || (AudioEffect.EFFECT_TYPE_NS.equals(type)
-        && isNoiseSuppressorSupported());
+    return (AudioEffect.EFFECT_TYPE_AEC.equals(type) && isAcousticEchoCancelerSupported())
+        || (AudioEffect.EFFECT_TYPE_AGC.equals(type) && isAutomaticGainControlSupported())
+        || (AudioEffect.EFFECT_TYPE_NS.equals(type) && isNoiseSuppressorSupported());
   }
 
   // Helper method which throws an exception when an assertion has failed.

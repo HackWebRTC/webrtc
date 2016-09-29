@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
 package org.webrtc;
 
 /**
@@ -19,7 +18,9 @@ package org.webrtc;
 public class SessionDescription {
   /** Java-land enum version of SessionDescriptionInterface's type() string. */
   public static enum Type {
-    OFFER, PRANSWER, ANSWER;
+    OFFER,
+    PRANSWER,
+    ANSWER;
 
     public String canonicalForm() {
       return name().toLowerCase();

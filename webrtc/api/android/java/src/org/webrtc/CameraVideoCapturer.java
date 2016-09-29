@@ -75,7 +75,7 @@ public interface CameraVideoCapturer extends VideoCapturer {
       @Override
       public void run() {
         final int cameraFps = Math.round(frameCount * 1000.0f / CAMERA_OBSERVER_PERIOD_MS);
-        Logging.d(TAG, "Camera fps: " + cameraFps +".");
+        Logging.d(TAG, "Camera fps: " + cameraFps + ".");
         if (frameCount == 0) {
           ++freezePeriodCount;
           if (CAMERA_OBSERVER_PERIOD_MS * freezePeriodCount >= CAMERA_FREEZE_REPORT_TIMOUT_MS

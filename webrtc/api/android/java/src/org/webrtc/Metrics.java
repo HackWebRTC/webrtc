@@ -36,7 +36,7 @@ public class Metrics {
     System.loadLibrary("jingle_peerconnection_so");
   }
   public final Map<String, HistogramInfo> map =
-       new HashMap<String, HistogramInfo>();  // <name, HistogramInfo>
+      new HashMap<String, HistogramInfo>(); // <name, HistogramInfo>
 
   /**
    * Class holding histogram information.
@@ -46,7 +46,7 @@ public class Metrics {
     public final int max;
     public final int bucketCount;
     public final Map<Integer, Integer> samples =
-        new HashMap<Integer, Integer>();  // <value, # of events>
+        new HashMap<Integer, Integer>(); // <value, # of events>
 
     public HistogramInfo(int min, int max, int bucketCount) {
       this.min = min;

@@ -83,69 +83,69 @@ class SurfaceTextureHelper {
 
     // Vertex coordinates in Normalized Device Coordinates, i.e.
     // (-1, -1) is bottom-left and (1, 1) is top-right.
-    private static final FloatBuffer DEVICE_RECTANGLE =
-        GlUtil.createFloatBuffer(new float[] {
-              -1.0f, -1.0f,  // Bottom left.
-               1.0f, -1.0f,  // Bottom right.
-              -1.0f,  1.0f,  // Top left.
-               1.0f,  1.0f,  // Top right.
-            });
+    private static final FloatBuffer DEVICE_RECTANGLE = GlUtil.createFloatBuffer(new float[] {
+        -1.0f, -1.0f, // Bottom left.
+        1.0f, -1.0f, // Bottom right.
+        -1.0f, 1.0f, // Top left.
+        1.0f, 1.0f, // Top right.
+    });
 
     // Texture coordinates - (0, 0) is bottom-left and (1, 1) is top-right.
-    private static final FloatBuffer TEXTURE_RECTANGLE =
-        GlUtil.createFloatBuffer(new float[] {
-              0.0f, 0.0f,  // Bottom left.
-              1.0f, 0.0f,  // Bottom right.
-              0.0f, 1.0f,  // Top left.
-              1.0f, 1.0f   // Top right.
-            });
+    private static final FloatBuffer TEXTURE_RECTANGLE = GlUtil.createFloatBuffer(new float[] {
+        0.0f, 0.0f, // Bottom left.
+        1.0f, 0.0f, // Bottom right.
+        0.0f, 1.0f, // Top left.
+        1.0f, 1.0f // Top right.
+    });
 
+    // clang-format off
     private static final String VERTEX_SHADER =
-        "varying vec2 interp_tc;\n"
-      + "attribute vec4 in_pos;\n"
-      + "attribute vec4 in_tc;\n"
-      + "\n"
-      + "uniform mat4 texMatrix;\n"
-      + "\n"
-      + "void main() {\n"
-      + "    gl_Position = in_pos;\n"
-      + "    interp_tc = (texMatrix * in_tc).xy;\n"
-      + "}\n";
+          "varying vec2 interp_tc;\n"
+        + "attribute vec4 in_pos;\n"
+        + "attribute vec4 in_tc;\n"
+        + "\n"
+        + "uniform mat4 texMatrix;\n"
+        + "\n"
+        + "void main() {\n"
+        + "    gl_Position = in_pos;\n"
+        + "    interp_tc = (texMatrix * in_tc).xy;\n"
+        + "}\n";
 
     private static final String FRAGMENT_SHADER =
-        "#extension GL_OES_EGL_image_external : require\n"
-      + "precision mediump float;\n"
-      + "varying vec2 interp_tc;\n"
-      + "\n"
-      + "uniform samplerExternalOES oesTex;\n"
-      // Difference in texture coordinate corresponding to one
-      // sub-pixel in the x direction.
-      + "uniform vec2 xUnit;\n"
-      // Color conversion coefficients, including constant term
-      + "uniform vec4 coeffs;\n"
-      + "\n"
-      + "void main() {\n"
-      // Since the alpha read from the texture is always 1, this could
-      // be written as a mat4 x vec4 multiply. However, that seems to
-      // give a worse framerate, possibly because the additional
-      // multiplies by 1.0 consume resources. TODO(nisse): Could also
-      // try to do it as a vec3 x mat3x4, followed by an add in of a
-      // constant vector.
-      + "  gl_FragColor.r = coeffs.a + dot(coeffs.rgb,\n"
-      + "      texture2D(oesTex, interp_tc - 1.5 * xUnit).rgb);\n"
-      + "  gl_FragColor.g = coeffs.a + dot(coeffs.rgb,\n"
-      + "      texture2D(oesTex, interp_tc - 0.5 * xUnit).rgb);\n"
-      + "  gl_FragColor.b = coeffs.a + dot(coeffs.rgb,\n"
-      + "      texture2D(oesTex, interp_tc + 0.5 * xUnit).rgb);\n"
-      + "  gl_FragColor.a = coeffs.a + dot(coeffs.rgb,\n"
-      + "      texture2D(oesTex, interp_tc + 1.5 * xUnit).rgb);\n"
-      + "}\n";
+          "#extension GL_OES_EGL_image_external : require\n"
+        + "precision mediump float;\n"
+        + "varying vec2 interp_tc;\n"
+        + "\n"
+        + "uniform samplerExternalOES oesTex;\n"
+        // Difference in texture coordinate corresponding to one
+        // sub-pixel in the x direction.
+        + "uniform vec2 xUnit;\n"
+        // Color conversion coefficients, including constant term
+        + "uniform vec4 coeffs;\n"
+        + "\n"
+        + "void main() {\n"
+        // Since the alpha read from the texture is always 1, this could
+        // be written as a mat4 x vec4 multiply. However, that seems to
+        // give a worse framerate, possibly because the additional
+        // multiplies by 1.0 consume resources. TODO(nisse): Could also
+        // try to do it as a vec3 x mat3x4, followed by an add in of a
+        // constant vector.
+        + "  gl_FragColor.r = coeffs.a + dot(coeffs.rgb,\n"
+        + "      texture2D(oesTex, interp_tc - 1.5 * xUnit).rgb);\n"
+        + "  gl_FragColor.g = coeffs.a + dot(coeffs.rgb,\n"
+        + "      texture2D(oesTex, interp_tc - 0.5 * xUnit).rgb);\n"
+        + "  gl_FragColor.b = coeffs.a + dot(coeffs.rgb,\n"
+        + "      texture2D(oesTex, interp_tc + 0.5 * xUnit).rgb);\n"
+        + "  gl_FragColor.a = coeffs.a + dot(coeffs.rgb,\n"
+        + "      texture2D(oesTex, interp_tc + 1.5 * xUnit).rgb);\n"
+        + "}\n";
+    // clang-format on
 
     private int texMatrixLoc;
     private int xUnitLoc;
-    private int coeffsLoc;;
+    private int coeffsLoc;
 
-    YuvConverter (EglBase.Context sharedContext) {
+    YuvConverter(EglBase.Context sharedContext) {
       eglBase = EglBase.create(sharedContext, EglBase.CONFIG_PIXEL_RGBA_BUFFER);
       eglBase.createDummyPbufferSurface();
       eglBase.makeCurrent();
@@ -165,11 +165,10 @@ class SurfaceTextureHelper {
       eglBase.detachCurrent();
     }
 
-    synchronized void convert(ByteBuffer buf,
-        int width, int height, int stride, int textureId, float [] transformMatrix) {
+    synchronized void convert(
+        ByteBuffer buf, int width, int height, int stride, int textureId, float[] transformMatrix) {
       if (released) {
-        throw new IllegalStateException(
-            "YuvConverter.convert called on released object");
+        throw new IllegalStateException("YuvConverter.convert called on released object");
       }
 
       // We draw into a buffer laid out like
@@ -202,17 +201,15 @@ class SurfaceTextureHelper {
       // has to be a multiple of 8 pixels.
 
       if (stride % 8 != 0) {
-        throw new IllegalArgumentException(
-            "Invalid stride, must be a multiple of 8");
+        throw new IllegalArgumentException("Invalid stride, must be a multiple of 8");
       }
-      if (stride < width){
-        throw new IllegalArgumentException(
-            "Invalid stride, must >= width");
+      if (stride < width) {
+        throw new IllegalArgumentException("Invalid stride, must >= width");
       }
 
-      int y_width = (width+3) / 4;
-      int uv_width = (width+7) / 8;
-      int uv_height = (height+1)/2;
+      int y_width = (width + 3) / 4;
+      int uv_width = (width + 7) / 8;
+      int uv_height = (height + 1) / 2;
       int total_height = height + uv_height;
       int size = stride * total_height;
 
@@ -222,18 +219,16 @@ class SurfaceTextureHelper {
       // Produce a frame buffer starting at top-left corner, not
       // bottom-left.
       transformMatrix =
-          RendererCommon.multiplyMatrices(transformMatrix,
-              RendererCommon.verticalFlipMatrix());
+          RendererCommon.multiplyMatrices(transformMatrix, RendererCommon.verticalFlipMatrix());
 
       // Create new pBuffferSurface with the correct size if needed.
       if (eglBase.hasSurface()) {
-        if (eglBase.surfaceWidth() != stride/4 ||
-            eglBase.surfaceHeight() != total_height){
+        if (eglBase.surfaceWidth() != stride / 4 || eglBase.surfaceHeight() != total_height) {
           eglBase.releaseSurface();
-          eglBase.createPbufferSurface(stride/4, total_height);
+          eglBase.createPbufferSurface(stride / 4, total_height);
         }
       } else {
-        eglBase.createPbufferSurface(stride/4, total_height);
+        eglBase.createPbufferSurface(stride / 4, total_height);
       }
 
       eglBase.makeCurrent();
@@ -245,9 +240,7 @@ class SurfaceTextureHelper {
       // Draw Y
       GLES20.glViewport(0, 0, y_width, height);
       // Matrix * (1;0;0;0) / width. Note that opengl uses column major order.
-      GLES20.glUniform2f(xUnitLoc,
-          transformMatrix[0] / width,
-          transformMatrix[1] / width);
+      GLES20.glUniform2f(xUnitLoc, transformMatrix[0] / width, transformMatrix[1] / width);
       // Y'UV444 to RGB888, see
       // https://en.wikipedia.org/wiki/YUV#Y.27UV444_to_RGB888_conversion.
       // We use the ITU-R coefficients for U and V */
@@ -257,19 +250,18 @@ class SurfaceTextureHelper {
       // Draw U
       GLES20.glViewport(0, height, uv_width, uv_height);
       // Matrix * (1;0;0;0) / (width / 2). Note that opengl uses column major order.
-      GLES20.glUniform2f(xUnitLoc,
-          2.0f * transformMatrix[0] / width,
-          2.0f * transformMatrix[1] / width);
+      GLES20.glUniform2f(
+          xUnitLoc, 2.0f * transformMatrix[0] / width, 2.0f * transformMatrix[1] / width);
       GLES20.glUniform4f(coeffsLoc, -0.169f, -0.331f, 0.499f, 0.5f);
       GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
       // Draw V
-      GLES20.glViewport(stride/8, height, uv_width, uv_height);
+      GLES20.glViewport(stride / 8, height, uv_width, uv_height);
       GLES20.glUniform4f(coeffsLoc, 0.499f, -0.418f, -0.0813f, 0.5f);
       GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
-      GLES20.glReadPixels(0, 0, stride/4, total_height, GLES20.GL_RGBA,
-          GLES20.GL_UNSIGNED_BYTE, buf);
+      GLES20.glReadPixels(
+          0, 0, stride / 4, total_height, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buf);
 
       GlUtil.checkNoGLES2Error("YuvConverter.convert");
 
@@ -351,7 +343,7 @@ class SurfaceTextureHelper {
     if (yuvConverter != null)
       return yuvConverter;
 
-    synchronized(this) {
+    synchronized (this) {
       if (yuvConverter == null)
         yuvConverter = new YuvConverter(eglBase.getEglBaseContext());
       return yuvConverter;
@@ -409,7 +401,8 @@ class SurfaceTextureHelper {
    */
   public void returnTextureFrame() {
     handler.post(new Runnable() {
-      @Override public void run() {
+      @Override
+      public void run() {
         isTextureInUse = false;
         if (isQuitting) {
           release();
@@ -442,8 +435,8 @@ class SurfaceTextureHelper {
     });
   }
 
-  public void textureToYUV(ByteBuffer buf,
-      int width, int height, int stride, int textureId, float [] transformMatrix) {
+  public void textureToYUV(
+      ByteBuffer buf, int width, int height, int stride, int textureId, float[] transformMatrix) {
     if (textureId != oesTextureId)
       throw new IllegalStateException("textureToByteBuffer called with unexpected textureId");
 

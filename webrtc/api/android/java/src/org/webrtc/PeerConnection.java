@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
 package org.webrtc;
 
 import java.util.Collections;
@@ -27,19 +26,28 @@ public class PeerConnection {
   }
 
   /** Tracks PeerConnectionInterface::IceGatheringState */
-  public enum IceGatheringState { NEW, GATHERING, COMPLETE };
-
+  public enum IceGatheringState { NEW, GATHERING, COMPLETE }
 
   /** Tracks PeerConnectionInterface::IceConnectionState */
   public enum IceConnectionState {
-    NEW, CHECKING, CONNECTED, COMPLETED, FAILED, DISCONNECTED, CLOSED
-  };
+    NEW,
+    CHECKING,
+    CONNECTED,
+    COMPLETED,
+    FAILED,
+    DISCONNECTED,
+    CLOSED
+  }
 
   /** Tracks PeerConnectionInterface::SignalingState */
   public enum SignalingState {
-    STABLE, HAVE_LOCAL_OFFER, HAVE_LOCAL_PRANSWER, HAVE_REMOTE_OFFER,
-    HAVE_REMOTE_PRANSWER, CLOSED
-  };
+    STABLE,
+    HAVE_LOCAL_OFFER,
+    HAVE_LOCAL_PRANSWER,
+    HAVE_REMOTE_OFFER,
+    HAVE_REMOTE_PRANSWER,
+    CLOSED
+  }
 
   /** Java version of PeerConnectionObserver. */
   public static interface Observer {
@@ -97,39 +105,25 @@ public class PeerConnection {
   }
 
   /** Java version of PeerConnectionInterface.IceTransportsType */
-  public enum IceTransportsType {
-    NONE, RELAY, NOHOST, ALL
-  };
+  public enum IceTransportsType { NONE, RELAY, NOHOST, ALL }
 
   /** Java version of PeerConnectionInterface.BundlePolicy */
-  public enum BundlePolicy {
-    BALANCED, MAXBUNDLE, MAXCOMPAT
-  };
+  public enum BundlePolicy { BALANCED, MAXBUNDLE, MAXCOMPAT }
 
   /** Java version of PeerConnectionInterface.RtcpMuxPolicy */
-  public enum RtcpMuxPolicy {
-    NEGOTIATE, REQUIRE
-  };
+  public enum RtcpMuxPolicy { NEGOTIATE, REQUIRE }
 
   /** Java version of PeerConnectionInterface.TcpCandidatePolicy */
-  public enum TcpCandidatePolicy {
-    ENABLED, DISABLED
-  };
+  public enum TcpCandidatePolicy { ENABLED, DISABLED }
 
   /** Java version of PeerConnectionInterface.CandidateNetworkPolicy */
-  public enum CandidateNetworkPolicy {
-    ALL, LOW_COST
-  };
+  public enum CandidateNetworkPolicy { ALL, LOW_COST }
 
   /** Java version of rtc::KeyType */
-  public enum KeyType {
-    RSA, ECDSA
-  }
+  public enum KeyType { RSA, ECDSA }
 
   /** Java version of PeerConnectionInterface.ContinualGatheringPolicy */
-  public enum ContinualGatheringPolicy {
-    GATHER_ONCE, GATHER_CONTINUALLY
-  }
+  public enum ContinualGatheringPolicy { GATHER_ONCE, GATHER_CONTINUALLY }
 
   /** Java version of PeerConnectionInterface.RTCConfiguration */
   public static class RTCConfiguration {
@@ -187,26 +181,20 @@ public class PeerConnection {
 
   public native SessionDescription getRemoteDescription();
 
-  public native DataChannel createDataChannel(
-      String label, DataChannel.Init init);
+  public native DataChannel createDataChannel(String label, DataChannel.Init init);
 
-  public native void createOffer(
-      SdpObserver observer, MediaConstraints constraints);
+  public native void createOffer(SdpObserver observer, MediaConstraints constraints);
 
-  public native void createAnswer(
-      SdpObserver observer, MediaConstraints constraints);
+  public native void createAnswer(SdpObserver observer, MediaConstraints constraints);
 
-  public native void setLocalDescription(
-      SdpObserver observer, SessionDescription sdp);
+  public native void setLocalDescription(SdpObserver observer, SessionDescription sdp);
 
-  public native void setRemoteDescription(
-      SdpObserver observer, SessionDescription sdp);
+  public native void setRemoteDescription(SdpObserver observer, SessionDescription sdp);
 
   public native boolean setConfiguration(RTCConfiguration config);
 
   public boolean addIceCandidate(IceCandidate candidate) {
-    return nativeAddIceCandidate(
-        candidate.sdpMid, candidate.sdpMLineIndex, candidate.sdp);
+    return nativeAddIceCandidate(candidate.sdpMid, candidate.sdpMLineIndex, candidate.sdp);
   }
 
   public boolean removeIceCandidates(final IceCandidate[] candidates) {
@@ -314,8 +302,7 @@ public class PeerConnection {
 
   private native void nativeRemoveLocalStream(long nativeStream);
 
-  private native boolean nativeGetStats(
-      StatsObserver observer, long nativeTrack);
+  private native boolean nativeGetStats(StatsObserver observer, long nativeTrack);
 
   private native RtpSender nativeCreateSender(String kind, String stream_id);
 
@@ -323,9 +310,7 @@ public class PeerConnection {
 
   private native List<RtpReceiver> nativeGetReceivers();
 
-  private native boolean nativeStartRtcEventLog(
-      int file_descriptor, int max_size_bytes);
+  private native boolean nativeStartRtcEventLog(int file_descriptor, int max_size_bytes);
 
   private native void nativeStopRtcEventLog();
-
 }

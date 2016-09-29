@@ -143,8 +143,7 @@ public class Camera2CapturerTest extends InstrumentationTestCase {
     }
   }
 
-  private class TestObjectFactory
-      extends CameraVideoCapturerTestFixtures.TestObjectFactory {
+  private class TestObjectFactory extends CameraVideoCapturerTestFixtures.TestObjectFactory {
     @Override
     public CameraEnumerator getCameraEnumerator() {
       return new Camera2Enumerator(getAppContext());

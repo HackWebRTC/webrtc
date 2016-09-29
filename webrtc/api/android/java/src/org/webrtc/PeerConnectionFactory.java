@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
 package org.webrtc;
 
 import java.util.List;
@@ -52,9 +51,8 @@ public class PeerConnectionFactory {
   // |renderEGLContext| can be provided to suport HW video decoding to
   // texture and will be used to create a shared EGL context on video
   // decoding thread.
-  public static native boolean initializeAndroidGlobals(
-      Object context, boolean initializeAudio, boolean initializeVideo,
-      boolean videoHwAcceleration);
+  public static native boolean initializeAndroidGlobals(Object context, boolean initializeAudio,
+      boolean initializeVideo, boolean videoHwAcceleration);
 
   // Field trial initialization. Must be called before PeerConnectionFactory
   // is created.
@@ -81,51 +79,44 @@ public class PeerConnectionFactory {
     }
   }
 
-  public PeerConnection createPeerConnection(
-      PeerConnection.RTCConfiguration rtcConfig,
-      MediaConstraints constraints,
-      PeerConnection.Observer observer) {
+  public PeerConnection createPeerConnection(PeerConnection.RTCConfiguration rtcConfig,
+      MediaConstraints constraints, PeerConnection.Observer observer) {
     long nativeObserver = nativeCreateObserver(observer);
     if (nativeObserver == 0) {
       return null;
     }
-    long nativePeerConnection = nativeCreatePeerConnection(
-        nativeFactory, rtcConfig, constraints, nativeObserver);
+    long nativePeerConnection =
+        nativeCreatePeerConnection(nativeFactory, rtcConfig, constraints, nativeObserver);
     if (nativePeerConnection == 0) {
       return null;
     }
     return new PeerConnection(nativePeerConnection, nativeObserver);
   }
 
-  public PeerConnection createPeerConnection(
-      List<PeerConnection.IceServer> iceServers,
-      MediaConstraints constraints,
-      PeerConnection.Observer observer) {
-    PeerConnection.RTCConfiguration rtcConfig =
-        new PeerConnection.RTCConfiguration(iceServers);
+  public PeerConnection createPeerConnection(List<PeerConnection.IceServer> iceServers,
+      MediaConstraints constraints, PeerConnection.Observer observer) {
+    PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(iceServers);
     return createPeerConnection(rtcConfig, constraints, observer);
   }
 
   public MediaStream createLocalMediaStream(String label) {
-    return new MediaStream(
-        nativeCreateLocalMediaStream(nativeFactory, label));
+    return new MediaStream(nativeCreateLocalMediaStream(nativeFactory, label));
   }
 
   public VideoSource createVideoSource(VideoCapturer capturer) {
     final EglBase.Context eglContext =
         localEglbase == null ? null : localEglbase.getEglBaseContext();
-    long nativeAndroidVideoTrackSource = nativeCreateVideoSource(
-        nativeFactory, eglContext, capturer.isScreencast());
-    VideoCapturer.CapturerObserver capturerObserver
-        = new VideoCapturer.AndroidVideoTrackSourceObserver(nativeAndroidVideoTrackSource);
-    nativeInitializeVideoCapturer(nativeFactory, capturer, nativeAndroidVideoTrackSource,
-         capturerObserver);
+    long nativeAndroidVideoTrackSource =
+        nativeCreateVideoSource(nativeFactory, eglContext, capturer.isScreencast());
+    VideoCapturer.CapturerObserver capturerObserver =
+        new VideoCapturer.AndroidVideoTrackSourceObserver(nativeAndroidVideoTrackSource);
+    nativeInitializeVideoCapturer(
+        nativeFactory, capturer, nativeAndroidVideoTrackSource, capturerObserver);
     return new VideoSource(nativeAndroidVideoTrackSource);
   }
 
   public VideoTrack createVideoTrack(String id, VideoSource source) {
-    return new VideoTrack(nativeCreateVideoTrack(
-        nativeFactory, id, source.nativeSource));
+    return new VideoTrack(nativeCreateVideoTrack(nativeFactory, id, source.nativeSource));
   }
 
   public AudioSource createAudioSource(MediaConstraints constraints) {
@@ -133,8 +124,7 @@ public class PeerConnectionFactory {
   }
 
   public AudioTrack createAudioTrack(String id, AudioSource source) {
-    return new AudioTrack(nativeCreateAudioTrack(
-        nativeFactory, id, source.nativeSource));
+    return new AudioTrack(nativeCreateAudioTrack(nativeFactory, id, source.nativeSource));
   }
 
   // Starts recording an AEC dump. Ownership of the file is transfered to the
@@ -161,8 +151,8 @@ public class PeerConnectionFactory {
    *                          renderer.
    * @param remoteEglContext  Must be the same as used by any remote video renderer.
    */
-  public void setVideoHwAccelerationOptions(EglBase.Context localEglContext,
-      EglBase.Context remoteEglContext) {
+  public void setVideoHwAccelerationOptions(
+      EglBase.Context localEglContext, EglBase.Context remoteEglContext) {
     if (localEglbase != null) {
       Logging.w(TAG, "Egl context already set.");
       localEglbase.release();
@@ -173,8 +163,8 @@ public class PeerConnectionFactory {
     }
     localEglbase = EglBase.create(localEglContext);
     remoteEglbase = EglBase.create(remoteEglContext);
-    nativeSetVideoHwAccelerationOptions(nativeFactory, localEglbase.getEglBaseContext(),
-        remoteEglbase.getEglBaseContext());
+    nativeSetVideoHwAccelerationOptions(
+        nativeFactory, localEglbase.getEglBaseContext(), remoteEglbase.getEglBaseContext());
   }
 
   public void dispose() {
@@ -227,22 +217,19 @@ public class PeerConnectionFactory {
 
   private static native long nativeCreatePeerConnectionFactory(Options options);
 
-  private static native long nativeCreateObserver(
-      PeerConnection.Observer observer);
+  private static native long nativeCreateObserver(PeerConnection.Observer observer);
 
-  private static native long nativeCreatePeerConnection(
-      long nativeFactory, PeerConnection.RTCConfiguration rtcConfig,
-      MediaConstraints constraints, long nativeObserver);
+  private static native long nativeCreatePeerConnection(long nativeFactory,
+      PeerConnection.RTCConfiguration rtcConfig, MediaConstraints constraints, long nativeObserver);
 
-  private static native long nativeCreateLocalMediaStream(
-      long nativeFactory, String label);
+  private static native long nativeCreateLocalMediaStream(long nativeFactory, String label);
 
   private static native long nativeCreateVideoSource(
       long nativeFactory, EglBase.Context eglContext, boolean is_screencast);
 
-  private static native void nativeInitializeVideoCapturer(
-    long native_factory, VideoCapturer j_video_capturer, long native_source,
-    VideoCapturer.CapturerObserver j_frame_observer);
+  private static native void nativeInitializeVideoCapturer(long native_factory,
+      VideoCapturer j_video_capturer, long native_source,
+      VideoCapturer.CapturerObserver j_frame_observer);
 
   private static native long nativeCreateVideoTrack(
       long nativeFactory, String id, long nativeVideoSource);
@@ -258,8 +245,7 @@ public class PeerConnectionFactory {
 
   private static native void nativeStopAecDump(long nativeFactory);
 
-  @Deprecated
-  public native void nativeSetOptions(long nativeFactory, Options options);
+  @Deprecated public native void nativeSetOptions(long nativeFactory, Options options);
 
   private static native void nativeSetVideoHwAccelerationOptions(
       long nativeFactory, Object localEGLContext, Object remoteEGLContext);

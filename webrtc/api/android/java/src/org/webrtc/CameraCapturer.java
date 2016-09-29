@@ -19,8 +19,8 @@ import java.util.Arrays;
 @SuppressWarnings("deprecation")
 public abstract class CameraCapturer implements CameraVideoCapturer {
   enum SwitchState {
-    IDLE,        // No switch requested.
-    PENDING,     // Waiting for previous capture session to open.
+    IDLE, // No switch requested.
+    PENDING, // Waiting for previous capture session to open.
     IN_PROGRESS, // Waiting for new switched capture session to start.
   }
 
@@ -50,8 +50,7 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
 
             if (switchState == SwitchState.IN_PROGRESS) {
               if (switchEventsHandler != null) {
-                switchEventsHandler.onCameraSwitchDone(
-                    cameraEnumerator.isFrontFacing(cameraName));
+                switchEventsHandler.onCameraSwitchDone(cameraEnumerator.isFrontFacing(cameraName));
                 switchEventsHandler = null;
               }
               switchState = SwitchState.IDLE;
@@ -133,8 +132,7 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
 
     @Override
     public void onByteBufferFrameCaptured(
-        CameraSession session, byte[] data, int width, int height, int rotation,
-        long timestamp) {
+        CameraSession session, byte[] data, int width, int height, int rotation, long timestamp) {
       checkIsOnCameraThread();
       synchronized (stateLock) {
         if (session != currentSession) {
@@ -151,9 +149,8 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
     }
 
     @Override
-    public void onTextureFrameCaptured(
-        CameraSession session, int width, int height, int oesTextureId, float[] transformMatrix,
-        int rotation, long timestamp) {
+    public void onTextureFrameCaptured(CameraSession session, int width, int height,
+        int oesTextureId, float[] transformMatrix, int rotation, long timestamp) {
       checkIsOnCameraThread();
       synchronized (stateLock) {
         if (session != currentSession) {
@@ -187,18 +184,18 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
   private SurfaceTextureHelper surfaceHelper;
 
   private final Object stateLock = new Object();
-  private boolean sessionOpening;                  /* guarded by stateLock */
-  private CameraSession currentSession;            /* guarded by stateLock */
-  private String cameraName;                       /* guarded by stateLock */
-  private int width;                               /* guarded by stateLock */
-  private int height;                              /* guarded by stateLock */
-  private int framerate;                           /* guarded by stateLock */
-  private int openAttemptsRemaining;               /* guarded by stateLock */
+  private boolean sessionOpening; /* guarded by stateLock */
+  private CameraSession currentSession; /* guarded by stateLock */
+  private String cameraName; /* guarded by stateLock */
+  private int width; /* guarded by stateLock */
+  private int height; /* guarded by stateLock */
+  private int framerate; /* guarded by stateLock */
+  private int openAttemptsRemaining; /* guarded by stateLock */
   private SwitchState switchState = SwitchState.IDLE; /* guarded by stateLock */
   private CameraSwitchHandler switchEventsHandler; /* guarded by stateLock */
   // Valid from onDone call until stopCapture, otherwise null.
-  private CameraStatistics cameraStatistics;       /* guarded by stateLock */
-  private boolean firstFrameObserved;              /* guarded by stateLock */
+  private CameraStatistics cameraStatistics; /* guarded by stateLock */
+  private boolean firstFrameObserved; /* guarded by stateLock */
 
   public CameraCapturer(
       String cameraName, CameraEventsHandler eventsHandler, CameraEnumerator cameraEnumerator) {
@@ -268,9 +265,8 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
     cameraThreadHandler.postDelayed(new Runnable() {
       @Override
       public void run() {
-        createCameraSession(
-            createSessionCallback, cameraSessionEventsHandler, applicationContext, surfaceHelper,
-            cameraName, width, height, framerate);
+        createCameraSession(createSessionCallback, cameraSessionEventsHandler, applicationContext,
+            surfaceHelper, cameraName, width, height, framerate);
       }
     }, delayMs);
   }
@@ -284,7 +280,6 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
         Logging.d(TAG, "Stop capture: Waiting for session to open");
         ThreadUtils.waitUninterruptibly(stateLock);
       }
-
 
       if (currentSession != null) {
         Logging.d(TAG, "Stop capture: Nulling session");
@@ -428,6 +423,6 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
 
   abstract protected void createCameraSession(
       CameraSession.CreateSessionCallback createSessionCallback, CameraSession.Events events,
-      Context applicationContext, SurfaceTextureHelper surfaceTextureHelper,
-      String cameraName, int width, int height, int framerate);
+      Context applicationContext, SurfaceTextureHelper surfaceTextureHelper, String cameraName,
+      int width, int height, int framerate);
 }

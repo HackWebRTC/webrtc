@@ -48,7 +48,7 @@ public class MediaConstraints {
       if (other == null || getClass() != other.getClass()) {
         return false;
       }
-      KeyValuePair that = (KeyValuePair)other;
+      KeyValuePair that = (KeyValuePair) other;
       return key.equals(that.key) && value.equals(that.value);
     }
 
@@ -78,7 +78,7 @@ public class MediaConstraints {
   }
 
   public String toString() {
-    return "mandatory: " + stringifyKeyValuePairList(mandatory) +
-        ", optional: " + stringifyKeyValuePairList(optional);
+    return "mandatory: " + stringifyKeyValuePairList(mandatory) + ", optional: "
+        + stringifyKeyValuePairList(optional);
   }
 }

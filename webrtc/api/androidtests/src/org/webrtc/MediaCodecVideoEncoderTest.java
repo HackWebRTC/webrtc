@@ -28,8 +28,7 @@ public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
   @SmallTest
   public static void testInitializeUsingByteBuffer() {
     if (!MediaCodecVideoEncoder.isVp8HwSupported()) {
-      Log.i(TAG,
-            "Hardware does not support VP8 encoding, skipping testInitReleaseUsingByteBuffer");
+      Log.i(TAG, "Hardware does not support VP8 encoding, skipping testInitReleaseUsingByteBuffer");
       return;
     }
     MediaCodecVideoEncoder encoder = new MediaCodecVideoEncoder();
@@ -46,9 +45,8 @@ public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
     }
     EglBase14 eglBase = new EglBase14(null, EglBase.CONFIG_PLAIN);
     MediaCodecVideoEncoder encoder = new MediaCodecVideoEncoder();
-    assertTrue(encoder.initEncode(
-        MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, 640, 480, 300, 30,
-        eglBase.getEglBaseContext()));
+    assertTrue(encoder.initEncode(MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, 640, 480,
+        300, 30, eglBase.getEglBaseContext()));
     encoder.release();
     eglBase.release();
   }
@@ -61,13 +59,11 @@ public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
     }
     MediaCodecVideoEncoder encoder = new MediaCodecVideoEncoder();
     assertTrue(encoder.initEncode(
-        MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, 640, 480, 300, 30,
-        null));
+        MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, 640, 480, 300, 30, null));
     encoder.release();
     EglBase14 eglBase = new EglBase14(null, EglBase.CONFIG_PLAIN);
-    assertTrue(encoder.initEncode(
-        MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, 640, 480, 300, 30,
-        eglBase.getEglBaseContext()));
+    assertTrue(encoder.initEncode(MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, 640, 480,
+        300, 30, eglBase.getEglBaseContext()));
     encoder.release();
     eglBase.release();
   }
@@ -137,11 +133,10 @@ public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
 
     MediaCodecVideoEncoder encoder = new MediaCodecVideoEncoder();
 
-    assertTrue(encoder.initEncode(
-        MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, width, height, 300, 30,
-        eglOesBase.getEglBaseContext()));
-    assertTrue(encoder.encodeTexture(true, oesTextureId, RendererCommon.identityMatrix(),
-        presentationTs));
+    assertTrue(encoder.initEncode(MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, width,
+        height, 300, 30, eglOesBase.getEglBaseContext()));
+    assertTrue(
+        encoder.encodeTexture(true, oesTextureId, RendererCommon.identityMatrix(), presentationTs));
     GlUtil.checkNoGLES2Error("encodeTexture");
 
     // It should be Ok to delete the texture after calling encodeTexture.

@@ -62,6 +62,7 @@ public class DirectRTCClientTest {
   @Test
   public void testValidIpPattern() {
     // Strings that should match the pattern.
+    // clang-format off
     final String[] ipAddresses = new String[] {
         "0.0.0.0",
         "127.0.0.1",
@@ -79,6 +80,7 @@ public class DirectRTCClientTest {
         "[::1]:8888",
         "[2001:0db8:85a3:0000:0000:8a2e:0370:7946]:8888"
     };
+    // clang-format on
 
     for (String ip : ipAddresses) {
       assertTrue(ip + " didn't match IP_PATTERN even though it should.",
@@ -89,6 +91,7 @@ public class DirectRTCClientTest {
   @Test
   public void testInvalidIpPattern() {
     // Strings that shouldn't match the pattern.
+    // clang-format off
     final String[] invalidIpAddresses = new String[] {
         "Hello, World!",
         "aaaa",
@@ -96,6 +99,7 @@ public class DirectRTCClientTest {
         "[hello world]",
         "hello:world"
     };
+    // clang-format on
 
     for (String invalidIp : invalidIpAddresses) {
       assertFalse(invalidIp + " matched IP_PATTERN even though it shouldn't.",
@@ -121,8 +125,8 @@ public class DirectRTCClientTest {
     verify(clientEvents, timeout(NETWORK_TIMEOUT))
         .onConnectedToRoom(any(AppRTCClient.SignalingParameters.class));
 
-    SessionDescription answerSdp
-        = new SessionDescription(SessionDescription.Type.ANSWER, DUMMY_SDP);
+    SessionDescription answerSdp =
+        new SessionDescription(SessionDescription.Type.ANSWER, DUMMY_SDP);
     client.sendAnswerSdp(answerSdp);
     verify(serverEvents, timeout(NETWORK_TIMEOUT))
         .onRemoteDescription(isNotNull(SessionDescription.class));

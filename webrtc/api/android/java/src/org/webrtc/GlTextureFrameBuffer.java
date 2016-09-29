@@ -52,8 +52,8 @@ public class GlTextureFrameBuffer {
     GlUtil.checkNoGLES2Error("Generate framebuffer");
 
     // Attach the texture to the framebuffer as color attachment.
-    GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
-        GLES20.GL_TEXTURE_2D, textureId, 0);
+    GLES20.glFramebufferTexture2D(
+        GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, textureId, 0);
     GlUtil.checkNoGLES2Error("Attach texture to framebuffer");
 
     // Restore normal framebuffer.

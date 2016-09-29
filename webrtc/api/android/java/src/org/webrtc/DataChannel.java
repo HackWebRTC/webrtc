@@ -29,9 +29,8 @@ public class DataChannel {
     public Init() {}
 
     // Called only by native code.
-    private Init(
-        boolean ordered, int maxRetransmitTimeMs, int maxRetransmits,
-        String protocol, boolean negotiated, int id) {
+    private Init(boolean ordered, int maxRetransmitTimeMs, int maxRetransmits, String protocol,
+        boolean negotiated, int id) {
       this.ordered = ordered;
       this.maxRetransmitTimeMs = maxRetransmitTimeMs;
       this.maxRetransmits = maxRetransmits;
@@ -73,7 +72,7 @@ public class DataChannel {
   }
 
   /** Keep in sync with DataChannelInterface::DataState. */
-  public enum State { CONNECTING, OPEN, CLOSING, CLOSED };
+  public enum State { CONNECTING, OPEN, CLOSING, CLOSED }
 
   private final long nativeDataChannel;
   private long nativeObserver;

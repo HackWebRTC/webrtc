@@ -15,15 +15,13 @@ import android.view.Surface;
 
 import javax.microedition.khronos.egl.EGL10;
 
-
 /**
  * Holds EGL state and utility methods for handling an egl 1.0 EGLContext, an EGLDisplay,
  * and an EGLSurface.
  */
 public abstract class EglBase {
   // EGL wrapper for an actual EGLContext.
-  public static class Context {
-  }
+  public static class Context {}
 
   // According to the documentation, EGL can be used from multiple threads at the same time if each
   // thread has its own EGLContext, but in practice it deadlocks on some devices when doing this.
@@ -39,6 +37,7 @@ public abstract class EglBase {
   // Android-specific extension.
   private static final int EGL_RECORDABLE_ANDROID = 0x3142;
 
+  // clang-format off
   public static final int[] CONFIG_PLAIN = {
     EGL10.EGL_RED_SIZE, 8,
     EGL10.EGL_GREEN_SIZE, 8,
@@ -79,14 +78,15 @@ public abstract class EglBase {
     EGL_RECORDABLE_ANDROID, 1,
     EGL10.EGL_NONE
   };
+  // clang-format on
 
   // Create a new context with the specified config attributes, sharing data with sharedContext.
   // |sharedContext| can be null.
   public static EglBase create(Context sharedContext, int[] configAttributes) {
     return (EglBase14.isEGL14Supported()
-        && (sharedContext == null || sharedContext instanceof EglBase14.Context))
-            ? new EglBase14((EglBase14.Context) sharedContext, configAttributes)
-            : new EglBase10((EglBase10.Context) sharedContext, configAttributes);
+               && (sharedContext == null || sharedContext instanceof EglBase14.Context))
+        ? new EglBase14((EglBase14.Context) sharedContext, configAttributes)
+        : new EglBase10((EglBase10.Context) sharedContext, configAttributes);
   }
 
   public static EglBase create() {

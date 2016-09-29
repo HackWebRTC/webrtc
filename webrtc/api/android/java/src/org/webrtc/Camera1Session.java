@@ -34,7 +34,7 @@ public class Camera1Session implements CameraSession {
   private static final Histogram camera1StopTimeMsHistogram =
       Histogram.createCounts("WebRTC.Android.Camera1.StopTimeMs", 1, 10000, 50);
 
-  private static enum SessionState { RUNNING, STOPPED };
+  private static enum SessionState { RUNNING, STOPPED }
 
   private final Handler cameraThreadHandler;
   private final Events events;
@@ -54,11 +54,10 @@ public class Camera1Session implements CameraSession {
   private SessionState state;
   private boolean firstFrameReported = false;
 
-  public static void create(
-      final CreateSessionCallback callback, final Events events,
+  public static void create(final CreateSessionCallback callback, final Events events,
       final boolean captureToTexture, final Context applicationContext,
-      final SurfaceTextureHelper surfaceTextureHelper,
-      final int cameraId, final int width, final int height, final int framerate) {
+      final SurfaceTextureHelper surfaceTextureHelper, final int cameraId, final int width,
+      final int height, final int framerate) {
     final long constructionTimeNs = System.nanoTime();
     Logging.d(TAG, "Open camera " + cameraId);
     events.onCameraOpening();
@@ -83,8 +82,8 @@ public class Camera1Session implements CameraSession {
     android.hardware.Camera.getCameraInfo(cameraId, info);
 
     final android.hardware.Camera.Parameters parameters = camera.getParameters();
-    final CaptureFormat captureFormat = findClosestCaptureFormat(
-        parameters, width, height, framerate);
+    final CaptureFormat captureFormat =
+        findClosestCaptureFormat(parameters, width, height, framerate);
     final Size pictureSize = findClosestPictureSize(parameters, width, height);
 
     updateCameraParameters(camera, parameters, captureFormat, pictureSize, captureToTexture);
@@ -101,10 +100,9 @@ public class Camera1Session implements CameraSession {
     // Calculate orientation manually and send it as CVO insted.
     camera.setDisplayOrientation(0 /* degrees */);
 
-    callback.onDone(new Camera1Session(
-        events, captureToTexture, applicationContext, surfaceTextureHelper,
-        cameraId, width, height, framerate,
-        camera, info, captureFormat, constructionTimeNs));
+    callback.onDone(
+        new Camera1Session(events, captureToTexture, applicationContext, surfaceTextureHelper,
+            cameraId, width, height, framerate, camera, info, captureFormat, constructionTimeNs));
   }
 
   private static void updateCameraParameters(android.hardware.Camera camera,
@@ -136,27 +134,22 @@ public class Camera1Session implements CameraSession {
     Logging.d(TAG, "Available fps ranges: " + supportedFramerates);
 
     final CaptureFormat.FramerateRange fpsRange =
-        CameraEnumerationAndroid.getClosestSupportedFramerateRange(
-            supportedFramerates, framerate);
+        CameraEnumerationAndroid.getClosestSupportedFramerateRange(supportedFramerates, framerate);
 
     final Size previewSize = CameraEnumerationAndroid.getClosestSupportedSize(
-        Camera1Enumerator.convertSizes(parameters.getSupportedPreviewSizes()),
-        width, height);
+        Camera1Enumerator.convertSizes(parameters.getSupportedPreviewSizes()), width, height);
 
     return new CaptureFormat(previewSize.width, previewSize.height, fpsRange);
   }
 
-  private static Size findClosestPictureSize(android.hardware.Camera.Parameters parameters,
-    int width, int height) {
+  private static Size findClosestPictureSize(
+      android.hardware.Camera.Parameters parameters, int width, int height) {
     return CameraEnumerationAndroid.getClosestSupportedSize(
-        Camera1Enumerator.convertSizes(parameters.getSupportedPictureSizes()),
-        width, height);
+        Camera1Enumerator.convertSizes(parameters.getSupportedPictureSizes()), width, height);
   }
 
-  private Camera1Session(
-      Events events, boolean captureToTexture,
-      Context applicationContext, SurfaceTextureHelper surfaceTextureHelper,
-      int cameraId, int width, int height, int framerate,
+  private Camera1Session(Events events, boolean captureToTexture, Context applicationContext,
+      SurfaceTextureHelper surfaceTextureHelper, int cameraId, int width, int height, int framerate,
       android.hardware.Camera camera, android.hardware.Camera.CameraInfo info,
       CaptureFormat captureFormat, long constructionTimeNs) {
     Logging.d(TAG, "Create new camera1 session on camera " + cameraId);
@@ -186,8 +179,7 @@ public class Camera1Session implements CameraSession {
       final long stopStartTime = System.nanoTime();
       state = SessionState.STOPPED;
       stopInternal();
-      final int stopTimeMs =
-          (int) TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - stopStartTime);
+      final int stopTimeMs = (int) TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - stopStartTime);
       camera1StopTimeMsHistogram.addSample(stopTimeMs);
     }
   }
@@ -312,9 +304,8 @@ public class Camera1Session implements CameraSession {
   private int getDeviceOrientation() {
     int orientation = 0;
 
-    WindowManager wm = (WindowManager) applicationContext.getSystemService(
-        Context.WINDOW_SERVICE);
-    switch(wm.getDefaultDisplay().getRotation()) {
+    WindowManager wm = (WindowManager) applicationContext.getSystemService(Context.WINDOW_SERVICE);
+    switch (wm.getDefaultDisplay().getRotation()) {
       case Surface.ROTATION_90:
         orientation = 90;
         break;

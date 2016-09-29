@@ -114,8 +114,8 @@ class CameraVideoCapturerTestFixtures {
     }
 
     @Override
-    public void onByteBufferFrameCaptured(byte[] frame, int width, int height, int rotation,
-        long timeStamp) {
+    public void onByteBufferFrameCaptured(
+        byte[] frame, int width, int height, int rotation, long timeStamp) {
       synchronized (frameLock) {
         ++framesCaptured;
         frameSize = frame.length;
@@ -126,9 +126,8 @@ class CameraVideoCapturerTestFixtures {
       }
     }
     @Override
-    public void onTextureFrameCaptured(
-        int width, int height, int oesTextureId, float[] transformMatrix, int rotation,
-        long timeStamp) {
+    public void onTextureFrameCaptured(int width, int height, int oesTextureId,
+        float[] transformMatrix, int rotation, long timeStamp) {
       synchronized (frameLock) {
         ++framesCaptured;
         frameWidth = width;
@@ -182,8 +181,7 @@ class CameraVideoCapturerTestFixtures {
     }
   }
 
-  static class CameraEvents implements
-      CameraVideoCapturer.CameraEventsHandler {
+  static class CameraEvents implements CameraVideoCapturer.CameraEventsHandler {
     public boolean onCameraOpeningCalled;
     public boolean onFirstFrameAvailableCalled;
     public final Object onCameraFreezedLock = new Object();
@@ -275,8 +273,7 @@ class CameraVideoCapturerTestFixtures {
     }
 
     public CameraVideoCapturer createCapturer(
-        String name,
-        CameraVideoCapturer.CameraEventsHandler eventsHandler) {
+        String name, CameraVideoCapturer.CameraEventsHandler eventsHandler) {
       return cameraEnumerator.createCapturer(name, eventsHandler);
     }
 
@@ -374,8 +371,8 @@ class CameraVideoCapturerTestFixtures {
     instance.surfaceTextureHelper.dispose();
   }
 
-  private VideoTrackWithRenderer createVideoTrackWithRenderer(CameraVideoCapturer capturer,
-      VideoRenderer.Callbacks rendererCallbacks) {
+  private VideoTrackWithRenderer createVideoTrackWithRenderer(
+      CameraVideoCapturer capturer, VideoRenderer.Callbacks rendererCallbacks) {
     VideoTrackWithRenderer videoTrackWithRenderer = new VideoTrackWithRenderer();
     videoTrackWithRenderer.source = peerConnectionFactory.createVideoSource(capturer);
     capturer.startCapture(DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_FPS);
@@ -410,9 +407,10 @@ class CameraVideoCapturerTestFixtures {
   private void waitUntilIdle(CapturerInstance capturerInstance) throws InterruptedException {
     final CountDownLatch barrier = new CountDownLatch(1);
     capturerInstance.surfaceTextureHelper.getHandler().post(new Runnable() {
-        @Override public void run() {
-          barrier.countDown();
-        }
+      @Override
+      public void run() {
+        barrier.countDown();
+      }
     });
     barrier.await();
   }
@@ -446,7 +444,7 @@ class CameraVideoCapturerTestFixtures {
     fail("Expected illegal argument exception when creating non-existing camera.");
   }
 
-  public void createCapturerAndRender() throws InterruptedException  {
+  public void createCapturerAndRender() throws InterruptedException {
     String name = testObjectFactory.cameraEnumerator.getDeviceNames()[0];
     createCapturerAndRender(name);
   }
@@ -461,8 +459,8 @@ class CameraVideoCapturerTestFixtures {
 
   public void switchCamera() throws InterruptedException {
     if (!testObjectFactory.haveTwoCameras()) {
-      Logging.w(TAG,
-          "Skipping test switch video capturer because the device doesn't have two cameras.");
+      Logging.w(
+          TAG, "Skipping test switch video capturer because the device doesn't have two cameras.");
       return;
     }
 
@@ -547,23 +545,23 @@ class CameraVideoCapturerTestFixtures {
   public void startStopWithDifferentResolutions() throws InterruptedException {
     final CapturerInstance capturerInstance = createCapturer(true /* initialize */);
 
-    for(int i = 0; i < 3 ; ++i) {
+    for (int i = 0; i < 3; ++i) {
       startCapture(capturerInstance, i);
       assertTrue(capturerInstance.observer.waitForCapturerToStart());
       capturerInstance.observer.waitForNextCapturedFrame();
 
       // Check the frame size. The actual width and height depend on how the capturer is mounted.
-      final boolean identicalResolution = (
-          capturerInstance.observer.frameWidth() == capturerInstance.format.width
-          &&  capturerInstance.observer.frameHeight() == capturerInstance.format.height);
-      final boolean flippedResolution = (
-          capturerInstance.observer.frameWidth() == capturerInstance.format.height
-          && capturerInstance.observer.frameHeight() == capturerInstance.format.width);
+      final boolean identicalResolution =
+          (capturerInstance.observer.frameWidth() == capturerInstance.format.width
+              && capturerInstance.observer.frameHeight() == capturerInstance.format.height);
+      final boolean flippedResolution =
+          (capturerInstance.observer.frameWidth() == capturerInstance.format.height
+              && capturerInstance.observer.frameHeight() == capturerInstance.format.width);
       if (!identicalResolution && !flippedResolution) {
-        fail("Wrong resolution, got: "
-            + capturerInstance.observer.frameWidth() + "x" + capturerInstance.observer.frameHeight()
-            + " expected: "+ capturerInstance.format.width + "x" + capturerInstance.format.height
-            + " or " + capturerInstance.format.height + "x" + capturerInstance.format.width);
+        fail("Wrong resolution, got: " + capturerInstance.observer.frameWidth() + "x"
+            + capturerInstance.observer.frameHeight() + " expected: "
+            + capturerInstance.format.width + "x" + capturerInstance.format.height + " or "
+            + capturerInstance.format.height + "x" + capturerInstance.format.width);
       }
 
       if (testObjectFactory.isCapturingToTexture()) {
@@ -600,8 +598,7 @@ class CameraVideoCapturerTestFixtures {
     disposeCapturer(capturerInstance);
   }
 
-  public void returnBufferLateEndToEnd()
-      throws InterruptedException {
+  public void returnBufferLateEndToEnd() throws InterruptedException {
     final CapturerInstance capturerInstance = createCapturer(false /* initialize */);
     final VideoTrackWithRenderer videoTrackWithRenderer =
         createVideoTrackWithFakeAsyncRenderer(capturerInstance.capturer);
@@ -666,7 +663,7 @@ class CameraVideoCapturerTestFixtures {
       ++numberOfInspectedFrames;
 
       gotExpectedResolution = (videoTrackWithRenderer.rendererCallbacks.frameWidth() == scaledWidth
-          &&  videoTrackWithRenderer.rendererCallbacks.frameHeight() == scaledHeight);
+          && videoTrackWithRenderer.rendererCallbacks.frameHeight() == scaledHeight);
     } while (!gotExpectedResolution && numberOfInspectedFrames < 30);
 
     disposeCapturer(capturerInstance);

@@ -20,7 +20,6 @@ import java.util.List;
  * AppRTCClient is the interface representing an AppRTC client.
  */
 public interface AppRTCClient {
-
   /**
    * Struct holding the connection parameters of an AppRTC room.
    */
@@ -28,8 +27,7 @@ public interface AppRTCClient {
     public final String roomUrl;
     public final String roomId;
     public final boolean loopback;
-    public RoomConnectionParameters(
-        String roomUrl, String roomId, boolean loopback) {
+    public RoomConnectionParameters(String roomUrl, String roomId, boolean loopback) {
       this.roomUrl = roomUrl;
       this.roomId = roomId;
       this.loopback = loopback;
@@ -80,11 +78,9 @@ public interface AppRTCClient {
     public final SessionDescription offerSdp;
     public final List<IceCandidate> iceCandidates;
 
-    public SignalingParameters(
-        List<PeerConnection.IceServer> iceServers,
-        boolean initiator, String clientId,
-        String wssUrl, String wssPostUrl,
-        SessionDescription offerSdp, List<IceCandidate> iceCandidates) {
+    public SignalingParameters(List<PeerConnection.IceServer> iceServers, boolean initiator,
+        String clientId, String wssUrl, String wssPostUrl, SessionDescription offerSdp,
+        List<IceCandidate> iceCandidates) {
       this.iceServers = iceServers;
       this.initiator = initiator;
       this.clientId = clientId;
