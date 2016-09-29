@@ -11,11 +11,7 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_HELP_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_HELP_H_
 
-#include <map>
-#include <vector>
-
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/modules/rtp_rtcp/source/tmmbr_help.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -36,38 +32,6 @@ class RTCPReportBlockInformation {
   int64_t maxRTT;
   int64_t avgRTT;
   uint32_t numAverageCalcs;
-};
-
-class RTCPReceiveInformation {
- public:
-  RTCPReceiveInformation();
-  ~RTCPReceiveInformation();
-
-  void InsertTmmbrItem(uint32_t sender_ssrc,
-                       const rtcp::TmmbItem& tmmbr_item,
-                       int64_t current_time_ms);
-
-  void GetTmmbrSet(int64_t current_time_ms,
-                   std::vector<rtcp::TmmbItem>* candidates);
-
-  void ClearTmmbr();
-
-  int64_t last_time_received_ms = 0;
-
-  int32_t last_fir_sequence_number = -1;
-  int64_t last_fir_request_ms = 0;
-
-  bool ready_for_delete = false;
-
-  std::vector<rtcp::TmmbItem> tmmbn;
-
- private:
-  struct TimedTmmbrItem {
-    rtcp::TmmbItem tmmbr_item;
-    int64_t last_updated_ms;
-  };
-
-  std::map<uint32_t, TimedTmmbrItem> tmmbr_;
 };
 
 }  // end namespace RTCPHelp

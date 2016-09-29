@@ -14,8 +14,10 @@
 #include <string.h>
 
 #include <limits>
+#include <map>
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -47,7 +49,6 @@ namespace {
 
 using rtcp::CommonHeader;
 using rtcp::ReportBlock;
-using RTCPHelp::RTCPReceiveInformation;
 using RTCPHelp::RTCPReportBlockInformation;
 
 // The number of RTCP time intervals needed to trigger a timeout.
@@ -68,6 +69,23 @@ struct RTCPReceiver::PacketInformation {
   uint64_t rpsi_picture_id = 0;
   uint32_t receiver_estimated_max_bitrate_bps = 0;
   std::unique_ptr<rtcp::TransportFeedback> transport_feedback;
+};
+
+struct RTCPReceiver::ReceiveInformation {
+  struct TimedTmmbrItem {
+    rtcp::TmmbItem tmmbr_item;
+    int64_t last_updated_ms;
+  };
+
+  int64_t last_time_received_ms = 0;
+
+  int64_t last_fir_request_ms = 0;
+  int32_t last_fir_sequence_number = -1;
+
+  bool ready_for_delete = false;
+
+  std::vector<rtcp::TmmbItem> tmmbn;
+  std::map<uint32_t, TimedTmmbrItem> tmmbr;
 };
 
 RTCPReceiver::RTCPReceiver(
@@ -93,7 +111,6 @@ RTCPReceiver::RTCPReceiver(
       _lastReceivedXRNTPfrac(0),
       xr_rrtr_status_(false),
       xr_rr_rtt_ms_(0),
-      _receivedInfoMap(),
       _lastReceivedRrMs(0),
       _lastIncreasedSequenceNumberMs(0),
       stats_callback_(NULL),
@@ -113,12 +130,6 @@ RTCPReceiver::~RTCPReceiver() {
       info_map->erase(it_info);
     }
   }
-  while (!_receivedInfoMap.empty()) {
-    std::map<uint32_t, RTCPReceiveInformation*>::iterator first =
-        _receivedInfoMap.begin();
-    delete first->second;
-    _receivedInfoMap.erase(first);
-  }
 }
 
 bool RTCPReceiver::IncomingPacket(const uint8_t* packet, size_t packet_size) {
@@ -137,12 +148,9 @@ bool RTCPReceiver::IncomingPacket(const uint8_t* packet, size_t packet_size) {
 int64_t RTCPReceiver::LastReceivedReceiverReport() const {
   rtc::CritScope lock(&_criticalSectionRTCPReceiver);
   int64_t last_received_rr = -1;
-  for (ReceivedInfoMap::const_iterator it = _receivedInfoMap.begin();
-       it != _receivedInfoMap.end(); ++it) {
-    if (it->second->last_time_received_ms > last_received_rr) {
-      last_received_rr = it->second->last_time_received_ms;
-    }
-  }
+  for (const auto& kv : received_infos_)
+    if (kv.second.last_time_received_ms > last_received_rr)
+      last_received_rr = kv.second.last_time_received_ms;
   return last_received_rr;
 }
 
@@ -420,9 +428,7 @@ void RTCPReceiver::HandleSenderReport(const CommonHeader& rtcp_block,
 
   packet_information->remote_ssrc = remoteSSRC;
 
-  RTCPReceiveInformation* ptrReceiveInfo = CreateReceiveInformation(remoteSSRC);
-  if (!ptrReceiveInfo)
-    return;
+  CreateReceiveInformation(remoteSSRC);
 
   TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "SR",
                        "remote_ssrc", remoteSSRC, "ssrc", main_ssrc_);
@@ -445,8 +451,6 @@ void RTCPReceiver::HandleSenderReport(const CommonHeader& rtcp_block,
     // we will store all the receive blocks.
     packet_information->packet_type_flags |= kRtcpRr;
   }
-  // Update that this remote is alive.
-  ptrReceiveInfo->last_time_received_ms = _clock->TimeInMilliseconds();
 
   for (const rtcp::ReportBlock report_block : sender_report.report_blocks())
     HandleReportBlock(report_block, packet_information, remoteSSRC);
@@ -464,17 +468,12 @@ void RTCPReceiver::HandleReceiverReport(const CommonHeader& rtcp_block,
 
   packet_information->remote_ssrc = remoteSSRC;
 
-  RTCPReceiveInformation* ptrReceiveInfo = CreateReceiveInformation(remoteSSRC);
-  if (!ptrReceiveInfo)
-    return;
+  CreateReceiveInformation(remoteSSRC);
 
   TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "RR",
                        "remote_ssrc", remoteSSRC, "ssrc", main_ssrc_);
 
   packet_information->packet_type_flags |= kRtcpRr;
-
-  // Update that this remote is alive.
-  ptrReceiveInfo->last_time_received_ms = _clock->TimeInMilliseconds();
 
   for (const ReportBlock& report_block : receiver_report.report_blocks())
     HandleReportBlock(report_block, packet_information, remoteSSRC);
@@ -602,31 +601,19 @@ RTCPReportBlockInformation* RTCPReceiver::GetReportBlockInformation(
   return it_info->second;
 }
 
-RTCPReceiveInformation* RTCPReceiver::CreateReceiveInformation(
-    uint32_t remoteSSRC) {
-  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
-
-  std::map<uint32_t, RTCPReceiveInformation*>::iterator it =
-      _receivedInfoMap.find(remoteSSRC);
-
-  if (it != _receivedInfoMap.end()) {
-    return it->second;
-  }
-  RTCPReceiveInformation* receiveInfo = new RTCPReceiveInformation;
-  _receivedInfoMap[remoteSSRC] = receiveInfo;
-  return receiveInfo;
+void RTCPReceiver::CreateReceiveInformation(uint32_t remote_ssrc) {
+  // Create or find receive information.
+  ReceiveInformation* receive_info = &received_infos_[remote_ssrc];
+  // Update that this remote is alive.
+  receive_info->last_time_received_ms = _clock->TimeInMilliseconds();
 }
 
-RTCPReceiveInformation* RTCPReceiver::GetReceiveInformation(
-    uint32_t remoteSSRC) {
-  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
-
-  std::map<uint32_t, RTCPReceiveInformation*>::iterator it =
-      _receivedInfoMap.find(remoteSSRC);
-  if (it == _receivedInfoMap.end()) {
-    return NULL;
-  }
-  return it->second;
+RTCPReceiver::ReceiveInformation* RTCPReceiver::GetReceiveInformation(
+    uint32_t remote_ssrc) {
+  auto it = received_infos_.find(remote_ssrc);
+  if (it == received_infos_.end())
+    return nullptr;
+  return &it->second;
 }
 
 bool RTCPReceiver::RtcpRrTimeout(int64_t rtcp_interval_ms) {
@@ -661,61 +648,43 @@ bool RTCPReceiver::RtcpRrSequenceNumberTimeout(int64_t rtcp_interval_ms) {
 bool RTCPReceiver::UpdateRTCPReceiveInformationTimers() {
   rtc::CritScope lock(&_criticalSectionRTCPReceiver);
 
-  bool updateBoundingSet = false;
-  int64_t timeNow = _clock->TimeInMilliseconds();
+  bool update_bounding_set = false;
+  int64_t now_ms = _clock->TimeInMilliseconds();
+  // Use audio define since we don't know what interval the remote peer use.
+  int64_t timeouted_ms = now_ms - 5 * RTCP_INTERVAL_AUDIO_MS;
 
-  std::map<uint32_t, RTCPReceiveInformation*>::iterator receiveInfoIt =
-      _receivedInfoMap.begin();
-
-  while (receiveInfoIt != _receivedInfoMap.end()) {
-    RTCPReceiveInformation* receiveInfo = receiveInfoIt->second;
-    if (receiveInfo == NULL) {
-      return updateBoundingSet;
-    }
-    // time since last received rtcp packet
-    // when we dont have a lastTimeReceived and the object is marked
-    // readyForDelete it's removed from the map
-    if (receiveInfo->last_time_received_ms > 0) {
-      /// use audio define since we don't know what interval the remote peer is
-      // using
-      if ((timeNow - receiveInfo->last_time_received_ms) >
-          5 * RTCP_INTERVAL_AUDIO_MS) {
-        // no rtcp packet for the last five regular intervals, reset limitations
-        receiveInfo->ClearTmmbr();
-        // prevent that we call this over and over again
-        receiveInfo->last_time_received_ms = 0;
-        // send new TMMBN to all channels using the default codec
-        updateBoundingSet = true;
+  for (auto receive_info_it = received_infos_.begin();
+       receive_info_it != received_infos_.end();) {
+    ReceiveInformation* receive_info = &receive_info_it->second;
+    if (receive_info->last_time_received_ms > 0) {
+      if (receive_info->last_time_received_ms < timeouted_ms) {
+        // No rtcp packet for the last 5 regular intervals, reset limitations.
+        receive_info->tmmbr.clear();
+        // Prevent that we call this over and over again.
+        receive_info->last_time_received_ms = 0;
+        // Send new TMMBN to all channels using the default codec.
+        update_bounding_set = true;
       }
-      receiveInfoIt++;
-    } else if (receiveInfo->ready_for_delete) {
-      // store our current receiveInfoItem
-      std::map<uint32_t, RTCPReceiveInformation*>::iterator
-          receiveInfoItemToBeErased = receiveInfoIt;
-      receiveInfoIt++;
-      delete receiveInfoItemToBeErased->second;
-      _receivedInfoMap.erase(receiveInfoItemToBeErased);
+      ++receive_info_it;
+    } else if (receive_info->ready_for_delete) {
+      // When we dont have a last_time_received_ms and the object is marked
+      // ready_for_delete it's removed from the map.
+      receive_info_it = received_infos_.erase(receive_info_it);
     } else {
-      receiveInfoIt++;
+      ++receive_info_it;
     }
   }
-  return updateBoundingSet;
+  return update_bounding_set;
 }
 
 std::vector<rtcp::TmmbItem> RTCPReceiver::BoundingSet(bool* tmmbr_owner) {
   rtc::CritScope lock(&_criticalSectionRTCPReceiver);
-
-  std::map<uint32_t, RTCPReceiveInformation*>::iterator receiveInfoIt =
-      _receivedInfoMap.find(_remoteSSRC);
-
-  if (receiveInfoIt == _receivedInfoMap.end()) {
+  ReceiveInformation* receive_info = GetReceiveInformation(_remoteSSRC);
+  if (!receive_info)
     return std::vector<rtcp::TmmbItem>();
-  }
-  RTCPReceiveInformation* receiveInfo = receiveInfoIt->second;
-  RTC_DCHECK(receiveInfo);
 
-  *tmmbr_owner = TMMBRHelp::IsOwner(receiveInfo->tmmbn, main_ssrc_);
-  return receiveInfo->tmmbn;
+  *tmmbr_owner = TMMBRHelp::IsOwner(receive_info->tmmbn, main_ssrc_);
+  return receive_info->tmmbn;
 }
 
 void RTCPReceiver::HandleSDES(const CommonHeader& rtcp_block,
@@ -778,12 +747,10 @@ void RTCPReceiver::HandleBYE(const CommonHeader& rtcp_block) {
     }
   }
 
-  //  we can't delete it due to TMMBR
-  std::map<uint32_t, RTCPReceiveInformation*>::iterator receiveInfoIt =
-      _receivedInfoMap.find(bye.sender_ssrc());
-
-  if (receiveInfoIt != _receivedInfoMap.end())
-    receiveInfoIt->second->ready_for_delete = true;
+  // We can't delete it due to TMMBR.
+  ReceiveInformation* receive_info = GetReceiveInformation(bye.sender_ssrc());
+  if (receive_info)
+    receive_info->ready_for_delete = true;
 
   received_cnames_.erase(bye.sender_ssrc());
   xr_rr_rtt_ms_ = 0;
@@ -861,21 +828,25 @@ void RTCPReceiver::HandleTMMBR(const CommonHeader& rtcp_block,
     return;
   }
 
-  uint32_t senderSSRC = tmmbr.sender_ssrc();
-  RTCPReceiveInformation* ptrReceiveInfo = GetReceiveInformation(senderSSRC);
-  if (!ptrReceiveInfo)  // This remote SSRC must be saved before.
+  uint32_t sender_ssrc = tmmbr.sender_ssrc();
+  ReceiveInformation* receive_info = GetReceiveInformation(sender_ssrc);
+  if (!receive_info)  // This remote SSRC must be saved before.
     return;
 
   if (tmmbr.media_ssrc()) {
     // media_ssrc() SHOULD be 0 if same as SenderSSRC.
     // In relay mode this is a valid number.
-    senderSSRC = tmmbr.media_ssrc();
+    sender_ssrc = tmmbr.media_ssrc();
   }
 
   for (const rtcp::TmmbItem& request : tmmbr.requests()) {
     if (main_ssrc_ == request.ssrc() && request.bitrate_bps()) {
-      ptrReceiveInfo->InsertTmmbrItem(senderSSRC, request,
-                                      _clock->TimeInMilliseconds());
+      auto* entry = &receive_info->tmmbr[sender_ssrc];
+      entry->tmmbr_item = rtcp::TmmbItem(sender_ssrc,
+                                         request.bitrate_bps(),
+                                         request.packet_overhead());
+      entry->last_updated_ms = _clock->TimeInMilliseconds();
+
       packet_information->packet_type_flags |= kRtcpTmmbr;
     }
   }
@@ -889,15 +860,14 @@ void RTCPReceiver::HandleTMMBN(const CommonHeader& rtcp_block,
     return;
   }
 
-  RTCPReceiveInformation* ptrReceiveInfo =
-      GetReceiveInformation(tmmbn.sender_ssrc());
-  if (!ptrReceiveInfo)  // This remote SSRC must be saved before.
+  ReceiveInformation* receive_info = GetReceiveInformation(tmmbn.sender_ssrc());
+  if (!receive_info)  // This remote SSRC must be saved before.
     return;
 
   packet_information->packet_type_flags |= kRtcpTmmbn;
 
   for (const auto& item : tmmbn.items())
-    ptrReceiveInfo->tmmbn.push_back(item);
+    receive_info->tmmbn.push_back(item);
 }
 
 void RTCPReceiver::HandleSR_REQ(const CommonHeader& rtcp_block,
@@ -960,8 +930,7 @@ void RTCPReceiver::HandleFIR(const CommonHeader& rtcp_block,
     return;
   }
 
-  RTCPReceiveInformation* ptrReceiveInfo =
-      GetReceiveInformation(fir.sender_ssrc());
+  ReceiveInformation* receive_info = GetReceiveInformation(fir.sender_ssrc());
 
   for (const rtcp::Fir::Request& fir_request : fir.requests()) {
     // Is it our sender that is requested to generate a new keyframe
@@ -970,25 +939,21 @@ void RTCPReceiver::HandleFIR(const CommonHeader& rtcp_block,
 
     ++packet_type_counter_.fir_packets;
 
-    // rtcpPacket.FIR.MediaSSRC SHOULD be 0 but we ignore to check it
-    // we don't know who this originate from
-    if (ptrReceiveInfo) {
-      // check if we have reported this FIRSequenceNumber before
-      if (fir_request.seq_nr != ptrReceiveInfo->last_fir_sequence_number) {
-        int64_t now = _clock->TimeInMilliseconds();
-        // sanity; don't go crazy with the callbacks
-        if ((now - ptrReceiveInfo->last_fir_request_ms) >
-            RTCP_MIN_FRAME_LENGTH_MS) {
-          ptrReceiveInfo->last_fir_request_ms = now;
-          ptrReceiveInfo->last_fir_sequence_number = fir_request.seq_nr;
-          // received signal that we need to send a new key frame
-          packet_information->packet_type_flags |= kRtcpFir;
-        }
-      }
-    } else {
-      // received signal that we need to send a new key frame
-      packet_information->packet_type_flags |= kRtcpFir;
+    if (receive_info) {
+      // Check if we have reported this FIRSequenceNumber before.
+      if (fir_request.seq_nr == receive_info->last_fir_sequence_number)
+        continue;
+
+      int64_t now_ms = _clock->TimeInMilliseconds();
+      // Sanity: don't go crazy with the callbacks.
+      if (now_ms - receive_info->last_fir_request_ms < RTCP_MIN_FRAME_LENGTH_MS)
+        continue;
+
+      receive_info->last_fir_request_ms = now_ms;
+      receive_info->last_fir_sequence_number = fir_request.seq_nr;
     }
+    // Received signal that we need to send a new key frame.
+    packet_information->packet_type_flags |= kRtcpFir;
   }
 }
 
@@ -1150,16 +1115,24 @@ int32_t RTCPReceiver::CNAME(uint32_t remoteSSRC,
   return 0;
 }
 
-std::vector<rtcp::TmmbItem> RTCPReceiver::TmmbrReceived() const {
+std::vector<rtcp::TmmbItem> RTCPReceiver::TmmbrReceived() {
   rtc::CritScope lock(&_criticalSectionRTCPReceiver);
   std::vector<rtcp::TmmbItem> candidates;
 
   int64_t now_ms = _clock->TimeInMilliseconds();
+  // Use audio define since we don't know what interval the remote peer use.
+  int64_t timeouted_ms = now_ms - 5 * RTCP_INTERVAL_AUDIO_MS;
 
-  for (const auto& kv : _receivedInfoMap) {
-    RTCPReceiveInformation* receive_info = kv.second;
-    RTC_DCHECK(receive_info);
-    receive_info->GetTmmbrSet(now_ms, &candidates);
+  for (auto& kv : received_infos_) {
+    for (auto it = kv.second.tmmbr.begin(); it != kv.second.tmmbr.end();) {
+      if (it->second.last_updated_ms < timeouted_ms) {
+        // Erase timeout entries.
+        it = kv.second.tmmbr.erase(it);
+      } else {
+        candidates.push_back(it->second.tmmbr_item);
+        ++it;
+      }
+    }
   }
   return candidates;
 }

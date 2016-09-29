@@ -101,7 +101,7 @@ class RTCPReceiver {
   // returns true once until a new RR is received.
   bool RtcpRrSequenceNumberTimeout(int64_t rtcp_interval_ms);
 
-  std::vector<rtcp::TmmbItem> TmmbrReceived() const;
+  std::vector<rtcp::TmmbItem> TmmbrReceived();
 
   bool UpdateRTCPReceiveInformationTimers();
 
@@ -114,7 +114,9 @@ class RTCPReceiver {
 
  private:
   struct PacketInformation;
-  using ReceivedInfoMap = std::map<uint32_t, RTCPHelp::RTCPReceiveInformation*>;
+  struct ReceiveInformation;
+  // Mapped by remote ssrc.
+  using ReceivedInfoMap = std::map<uint32_t, ReceiveInformation>;
   // RTCP report block information mapped by remote SSRC.
   using ReportBlockInfoMap =
       std::map<uint32_t, RTCPHelp::RTCPReportBlockInformation*>;
@@ -128,9 +130,10 @@ class RTCPReceiver {
   void TriggerCallbacksFromRTCPPacket(
       const PacketInformation& packet_information);
 
-  RTCPHelp::RTCPReceiveInformation* CreateReceiveInformation(
-      uint32_t remoteSSRC);
-  RTCPHelp::RTCPReceiveInformation* GetReceiveInformation(uint32_t remoteSSRC);
+  void CreateReceiveInformation(uint32_t remote_ssrc)
+      EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
+  ReceiveInformation* GetReceiveInformation(uint32_t remote_ssrc)
+      EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
   void HandleSenderReport(const rtcp::CommonHeader& rtcp_block,
                           PacketInformation* packet_information)
@@ -244,7 +247,7 @@ class RTCPReceiver {
   // Received report blocks.
   ReportBlockMap _receivedReportBlockMap
       GUARDED_BY(_criticalSectionRTCPReceiver);
-  ReceivedInfoMap _receivedInfoMap;
+  ReceivedInfoMap received_infos_ GUARDED_BY(_criticalSectionRTCPReceiver);
   std::map<uint32_t, std::string> received_cnames_
       GUARDED_BY(_criticalSectionRTCPReceiver);
 
