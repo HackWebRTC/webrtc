@@ -839,7 +839,12 @@ IPAddress BasicNetworkManager::QueryDefaultLocalAddress(int family) const {
   if (socket->Connect(SocketAddress(
           family == AF_INET ? kPublicIPv4Host : kPublicIPv6Host, kPublicPort)) <
       0) {
-    LOG(LS_INFO) << "Connect failed with " << socket->GetError();
+    if (socket->GetError() != ENETUNREACH
+        && socket->GetError() != EHOSTUNREACH) {
+      // Ignore the expected case of "host/net unreachable" - which happens if
+      // the network is V4- or V6-only.
+      LOG(LS_INFO) << "Connect failed with " << socket->GetError();
+    }
     return IPAddress();
   }
   return socket->GetLocalAddress().ipaddr();
