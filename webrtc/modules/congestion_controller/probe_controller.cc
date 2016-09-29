@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/congestion_controller/probe_controller.h"
 
+#include <algorithm>
 #include <initializer_list>
 
 #include "webrtc/base/logging.h"
@@ -30,6 +31,9 @@ constexpr int64_t kMaxWaitingTimeForProbingResultMs = 1000;
 // Value of |min_bitrate_to_probe_further_bps_| that indicates
 // further probing is disabled.
 constexpr int kExponentialProbingDisabled = 0;
+
+// A limit to prevent probing at excessive bitrates.
+constexpr int kMaxProbingBitrateBps = 10000000;
 
 }  // namespace
 
@@ -97,6 +101,7 @@ void ProbeController::InitiateProbing(
     int min_bitrate_to_probe_further_bps) {
   bool first_cluster = true;
   for (int bitrate : bitrates_to_probe) {
+    bitrate = std::min(bitrate, kMaxProbingBitrateBps);
     if (first_cluster) {
       pacer_->CreateProbeCluster(bitrate, kProbeDeltasPerCluster + 1);
       first_cluster = false;
