@@ -102,7 +102,7 @@ P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
                                          PortAllocator* allocator)
     : TransportChannelImpl(transport_name, component),
       allocator_(allocator),
-      worker_thread_(rtc::Thread::Current()),
+      network_thread_(rtc::Thread::Current()),
       incoming_only_(false),
       error_(0),
       sort_dirty_(false),
@@ -128,14 +128,14 @@ P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
 }
 
 P2PTransportChannel::~P2PTransportChannel() {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
 }
 
 // Add the allocator session to our list so that we know which sessions
 // are still active.
 void P2PTransportChannel::AddAllocatorSession(
     std::unique_ptr<PortAllocatorSession> session) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
 
   session->set_generation(static_cast<uint32_t>(allocator_sessions_.size()));
   session->SignalPortReady.connect(this, &P2PTransportChannel::OnPortReady);
@@ -246,7 +246,7 @@ bool P2PTransportChannel::MaybeSwitchSelectedConnection(
 }
 
 void P2PTransportChannel::SetIceRole(IceRole ice_role) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
   if (ice_role_ != ice_role) {
     ice_role_ = ice_role;
     for (PortInterface* port : ports_) {
@@ -261,7 +261,7 @@ void P2PTransportChannel::SetIceRole(IceRole ice_role) {
 }
 
 void P2PTransportChannel::SetIceTiebreaker(uint64_t tiebreaker) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
   if (!ports_.empty() || !pruned_ports_.empty()) {
     LOG(LS_ERROR)
         << "Attempt to change tiebreaker after Port has been allocated.";
@@ -309,7 +309,7 @@ TransportChannelState P2PTransportChannel::ComputeState() const {
 }
 
 void P2PTransportChannel::SetIceParameters(const IceParameters& ice_params) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
   LOG(LS_INFO) << "Set ICE ufrag: " << ice_params.ufrag
                << " pwd: " << ice_params.pwd << " on transport "
                << transport_name();
@@ -320,7 +320,7 @@ void P2PTransportChannel::SetIceParameters(const IceParameters& ice_params) {
 
 void P2PTransportChannel::SetRemoteIceParameters(
     const IceParameters& ice_params) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
   LOG(LS_INFO) << "Remote supports ICE renomination ? "
                << ice_params.renomination;
   IceParameters* current_ice = remote_ice();
@@ -482,7 +482,7 @@ void P2PTransportChannel::MaybeStartGathering() {
 // A new port is available, attempt to make connections for it
 void P2PTransportChannel::OnPortReady(PortAllocatorSession *session,
                                       PortInterface* port) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
 
   // Set in-effect options on the new port
   for (OptionMap::const_iterator it = options_.begin();
@@ -527,7 +527,7 @@ void P2PTransportChannel::OnPortReady(PortAllocatorSession *session,
 void P2PTransportChannel::OnCandidatesReady(
     PortAllocatorSession* session,
     const std::vector<Candidate>& candidates) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
   for (size_t i = 0; i < candidates.size(); ++i) {
     SignalCandidateGathered(this, candidates[i]);
   }
@@ -535,7 +535,7 @@ void P2PTransportChannel::OnCandidatesReady(
 
 void P2PTransportChannel::OnCandidatesAllocationDone(
     PortAllocatorSession* session) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
   if (config_.gather_continually()) {
     LOG(LS_INFO) << "P2PTransportChannel: " << transport_name()
                  << ", component " << component()
@@ -555,7 +555,7 @@ void P2PTransportChannel::OnUnknownAddress(
     const rtc::SocketAddress& address, ProtocolType proto,
     IceMessage* stun_msg, const std::string &remote_username,
     bool port_muxed) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
 
   // Port has received a valid stun packet from an address that no Connection
   // is currently available for. See if we already have a candidate with the
@@ -694,7 +694,7 @@ const IceParameters* P2PTransportChannel::FindRemoteIceFromUfrag(
 }
 
 void P2PTransportChannel::OnNominated(Connection* conn) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
   ASSERT(ice_role_ == ICEROLE_CONTROLLED);
 
   if (selected_connection_ == conn) {
@@ -714,7 +714,7 @@ void P2PTransportChannel::OnNominated(Connection* conn) {
 }
 
 void P2PTransportChannel::AddRemoteCandidate(const Candidate& candidate) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
 
   uint32_t generation = GetRemoteCandidateGeneration(candidate);
   // If a remote candidate with a previous generation arrives, drop it.
@@ -778,7 +778,7 @@ void P2PTransportChannel::RemoveRemoteCandidate(
 // the origin port.
 bool P2PTransportChannel::CreateConnections(const Candidate& remote_candidate,
                                             PortInterface* origin_port) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
 
   // If we've already seen the new remote candidate (in the current candidate
   // generation), then we shouldn't try creating connections for it.
@@ -927,7 +927,7 @@ void P2PTransportChannel::RememberRemoteCandidate(
 // Set options on ourselves is simply setting options on all of our available
 // port objects.
 int P2PTransportChannel::SetOption(rtc::Socket::Option opt, int value) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
   OptionMap::iterator it = options_.find(opt);
   if (it == options_.end()) {
     options_.insert(std::make_pair(opt, value));
@@ -950,7 +950,7 @@ int P2PTransportChannel::SetOption(rtc::Socket::Option opt, int value) {
 }
 
 bool P2PTransportChannel::GetOption(rtc::Socket::Option opt, int* value) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
 
   const auto& found = options_.find(opt);
   if (found == options_.end()) {
@@ -964,7 +964,7 @@ bool P2PTransportChannel::GetOption(rtc::Socket::Option opt, int* value) {
 int P2PTransportChannel::SendPacket(const char *data, size_t len,
                                     const rtc::PacketOptions& options,
                                     int flags) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
   if (flags != 0) {
     error_ = EINVAL;
     return -1;
@@ -986,7 +986,7 @@ int P2PTransportChannel::SendPacket(const char *data, size_t len,
 }
 
 bool P2PTransportChannel::GetStats(ConnectionInfos *infos) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
   // Gather connection infos.
   infos->clear();
 
@@ -1031,7 +1031,7 @@ void P2PTransportChannel::UpdateConnectionStates() {
 // Prepare for best candidate sorting.
 void P2PTransportChannel::RequestSortAndStateUpdate() {
   if (!sort_dirty_) {
-    worker_thread_->Post(RTC_FROM_HERE, this, MSG_SORT_AND_UPDATE_STATE);
+    network_thread_->Post(RTC_FROM_HERE, this, MSG_SORT_AND_UPDATE_STATE);
     sort_dirty_ = true;
   }
 }
@@ -1210,7 +1210,7 @@ bool P2PTransportChannel::PresumedWritable(const Connection* conn) const {
 // Sort the available connections to find the best one.  We also monitor
 // the number of available connections and the current state.
 void P2PTransportChannel::SortConnectionsAndUpdateState() {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
 
   // Make sure the connection states are up-to-date since this affects how they
   // will be sorted.
@@ -1694,7 +1694,7 @@ bool P2PTransportChannel::GetUseCandidateAttr(Connection* conn,
 // the selected connection again.  It could have become usable, or become
 // unusable.
 void P2PTransportChannel::OnConnectionStateChange(Connection* connection) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
 
   // May stop the allocator session when at least one connection becomes
   // strongly connected after starting to get ports and the local candidate of
@@ -1716,7 +1716,7 @@ void P2PTransportChannel::OnConnectionStateChange(Connection* connection) {
 // When a connection is removed, edit it out, and then update our best
 // connection.
 void P2PTransportChannel::OnConnectionDestroyed(Connection* connection) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
 
   // Note: the previous selected_connection_ may be destroyed by now, so don't
   // use it.
@@ -1753,7 +1753,7 @@ void P2PTransportChannel::OnConnectionDestroyed(Connection* connection) {
 // When a port is destroyed, remove it from our list of ports to use for
 // connection attempts.
 void P2PTransportChannel::OnPortDestroyed(PortInterface* port) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
 
   ports_.erase(std::remove(ports_.begin(), ports_.end(), port), ports_.end());
   pruned_ports_.erase(
@@ -1766,7 +1766,7 @@ void P2PTransportChannel::OnPortDestroyed(PortInterface* port) {
 void P2PTransportChannel::OnPortsPruned(
     PortAllocatorSession* session,
     const std::vector<PortInterface*>& ports) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
   for (PortInterface* port : ports) {
     if (PrunePort(port)) {
       LOG(INFO) << "Removed port: " << port->ToString() << " " << ports_.size()
@@ -1778,7 +1778,7 @@ void P2PTransportChannel::OnPortsPruned(
 void P2PTransportChannel::OnCandidatesRemoved(
     PortAllocatorSession* session,
     const std::vector<Candidate>& candidates) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
   // Do not signal candidate removals if continual gathering is not enabled, or
   // if this is not the last session because an ICE restart would have signaled
   // the remote side to remove all candidates in previous sessions.
@@ -1828,7 +1828,7 @@ void P2PTransportChannel::OnReadPacket(Connection* connection,
                                        const char* data,
                                        size_t len,
                                        const rtc::PacketTime& packet_time) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
 
   // Do not deliver, if packet doesn't belong to the correct transport channel.
   if (!FindConnection(connection))
@@ -1845,7 +1845,7 @@ void P2PTransportChannel::OnReadPacket(Connection* connection,
 }
 
 void P2PTransportChannel::OnSentPacket(const rtc::SentPacket& sent_packet) {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  ASSERT(network_thread_ == rtc::Thread::Current());
 
   SignalSentPacket(this, sent_packet);
 }

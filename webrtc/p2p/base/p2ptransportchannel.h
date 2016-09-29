@@ -196,7 +196,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   }
 
  private:
-  rtc::Thread* thread() const { return worker_thread_; }
+  rtc::Thread* thread() const { return network_thread_; }
   bool IsGettingPorts() { return allocator_session()->IsGettingPorts(); }
 
   // A transport channel is weak if the current best connection is either
@@ -347,7 +347,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   }
 
   PortAllocator* allocator_;
-  rtc::Thread* worker_thread_;
+  rtc::Thread* network_thread_;
   bool incoming_only_;
   int error_;
   std::vector<std::unique_ptr<PortAllocatorSession>> allocator_sessions_;
