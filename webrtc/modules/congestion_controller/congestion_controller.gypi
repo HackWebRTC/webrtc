@@ -14,7 +14,6 @@
       'dependencies': [
         '<(webrtc_root)/modules/modules.gyp:bitrate_controller',
         '<(webrtc_root)/modules/modules.gyp:paced_sender',
-        '<(webrtc_root)/modules/modules.gyp:remote_bitrate_estimator',
       ],
       'sources': [
         'congestion_controller.cc',
@@ -25,6 +24,8 @@
         'probe_bitrate_estimator.h',
         'probe_controller.cc',
         'probe_controller.h',
+        'transport_feedback_adapter.cc',
+        'transport_feedback_adapter.h',
       ],
       # TODO(jschuh): Bug 1348: fix size_t to int truncations.
       'msvs_disabled_warnings': [ 4267, ],

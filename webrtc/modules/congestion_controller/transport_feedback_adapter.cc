@@ -8,14 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/remote_bitrate_estimator/transport_feedback_adapter.h"
+#include "webrtc/modules/congestion_controller/transport_feedback_adapter.h"
 
 #include <algorithm>
 #include <limits>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
+#include "webrtc/modules/congestion_controller/delay_based_bwe.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 
@@ -39,20 +40,19 @@ class PacketInfoComparator {
 };
 
 TransportFeedbackAdapter::TransportFeedbackAdapter(
-    Clock* clock)
+    Clock* clock,
+    BitrateController* bitrate_controller)
     : send_time_history_(clock, kSendTimeHistoryWindowMs),
       clock_(clock),
       current_offset_ms_(kNoTimestamp),
-      last_timestamp_us_(kNoTimestamp) {}
+      last_timestamp_us_(kNoTimestamp),
+      bitrate_controller_(bitrate_controller) {}
 
-TransportFeedbackAdapter::~TransportFeedbackAdapter() {
-}
+TransportFeedbackAdapter::~TransportFeedbackAdapter() {}
 
-void TransportFeedbackAdapter::SetBitrateEstimator(
-    RemoteBitrateEstimator* rbe) {
-  if (bitrate_estimator_.get() != rbe) {
-    bitrate_estimator_.reset(rbe);
-  }
+void TransportFeedbackAdapter::InitBwe() {
+  rtc::CritScope cs(&bwe_lock_);
+  delay_based_bwe_.reset(new DelayBasedBwe(clock_));
 }
 
 void TransportFeedbackAdapter::AddPacket(uint16_t sequence_number,
@@ -66,6 +66,11 @@ void TransportFeedbackAdapter::OnSentPacket(uint16_t sequence_number,
                                             int64_t send_time_ms) {
   rtc::CritScope cs(&lock_);
   send_time_history_.OnSentPacket(sequence_number, send_time_ms);
+}
+
+void TransportFeedbackAdapter::SetMinBitrate(int min_bitrate_bps) {
+  rtc::CritScope cs(&bwe_lock_);
+  delay_based_bwe_->SetMinBitrate(min_bitrate_bps);
 }
 
 std::vector<PacketInfo> TransportFeedbackAdapter::GetPacketFeedbackVector(
@@ -129,9 +134,14 @@ std::vector<PacketInfo> TransportFeedbackAdapter::GetPacketFeedbackVector(
 void TransportFeedbackAdapter::OnTransportFeedback(
     const rtcp::TransportFeedback& feedback) {
   last_packet_feedback_vector_ = GetPacketFeedbackVector(feedback);
-  if (bitrate_estimator_.get())
-    bitrate_estimator_->IncomingPacketFeedbackVector(
+  DelayBasedBwe::Result result;
+  {
+    rtc::CritScope cs(&bwe_lock_);
+    delay_based_bwe_->IncomingPacketFeedbackVector(
         last_packet_feedback_vector_);
+  }
+  if (result.updated)
+    bitrate_controller_->OnDelayBasedBweResult(result);
 }
 
 std::vector<PacketInfo> TransportFeedbackAdapter::GetTransportFeedbackVector()
@@ -141,8 +151,8 @@ std::vector<PacketInfo> TransportFeedbackAdapter::GetTransportFeedbackVector()
 
 void TransportFeedbackAdapter::OnRttUpdate(int64_t avg_rtt_ms,
                                            int64_t max_rtt_ms) {
-  RTC_DCHECK(bitrate_estimator_.get() != nullptr);
-  bitrate_estimator_->OnRttUpdate(avg_rtt_ms, max_rtt_ms);
+  rtc::CritScope cs(&bwe_lock_);
+  delay_based_bwe_->OnRttUpdate(avg_rtt_ms, max_rtt_ms);
 }
 
 }  // namespace webrtc

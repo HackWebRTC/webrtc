@@ -30,8 +30,6 @@ rtc_static_library("remote_bitrate_estimator") {
     "remote_estimator_proxy.h",
     "send_time_history.cc",
     "test/bwe_test_logging.h",
-    "transport_feedback_adapter.cc",
-    "transport_feedback_adapter.h",
   ]
 
   if (!rtc_include_tests) {
