@@ -194,7 +194,7 @@ void FakeNetworkPipe::Process() {
 
 int64_t FakeNetworkPipe::TimeUntilNextProcess() const {
   rtc::CritScope crit(&lock_);
-  const int64_t kDefaultProcessIntervalMs = 30;
+  const int64_t kDefaultProcessIntervalMs = 5;
   if (capacity_link_.empty() || delay_link_.empty())
     return kDefaultProcessIntervalMs;
   return std::max<int64_t>(next_process_time_ - clock_->TimeInMilliseconds(),
