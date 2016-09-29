@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_OBJC_VIDEO_CAPTURE_H_
-#define WEBRTC_MODULES_VIDEO_CAPTURE_OBJC_VIDEO_CAPTURE_H_
+#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_IOS_VIDEO_CAPTURE_IOS_H_
+#define WEBRTC_MODULES_VIDEO_CAPTURE_IOS_VIDEO_CAPTURE_IOS_H_
 
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/video_capture/video_capture_impl.h"
@@ -43,4 +43,4 @@ class VideoCaptureIos : public VideoCaptureImpl {
 }  // namespace videocapturemodule
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CAPTURE_OBJC_VIDEO_CAPTURE_H_
+#endif  // WEBRTC_MODULES_VIDEO_CAPTURE_IOS_VIDEO_CAPTURE_IOS_H_

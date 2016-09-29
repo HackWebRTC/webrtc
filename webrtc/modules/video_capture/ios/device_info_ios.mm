@@ -16,22 +16,26 @@
 
 #include <string>
 
-#include "webrtc/modules/video_capture/objc/device_info.h"
-#include "webrtc/modules/video_capture/objc/device_info_objc.h"
+#include "webrtc/modules/video_capture/ios/device_info_ios.h"
+#include "webrtc/modules/video_capture/ios/device_info_ios_objc.h"
 #include "webrtc/modules/video_capture/video_capture_impl.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
 using namespace webrtc;
 using namespace videocapturemodule;
 
-static NSArray* camera_presets = @[
-  AVCaptureSessionPreset352x288, AVCaptureSessionPreset640x480,
-  AVCaptureSessionPreset1280x720
-];
+static NSArray *camera_presets = @[AVCaptureSessionPreset352x288,
+                                   AVCaptureSessionPreset640x480,
+                                   AVCaptureSessionPreset1280x720,
+                                   AVCaptureSessionPreset1920x1080];
 
-#define IOS_UNSUPPORTED()                                                 \
-  WEBRTC_TRACE(kTraceError, kTraceVideoCapture, _id,                      \
-               "%s is not supported on the iOS platform.", __FUNCTION__); \
+
+#define IOS_UNSUPPORTED()                                  \
+  WEBRTC_TRACE(kTraceError,                                \
+               kTraceVideoCapture,                         \
+               _id,                                        \
+               "%s is not supported on the iOS platform.", \
+               __FUNCTION__);                              \
   return -1;
 
 VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo(
@@ -52,10 +56,10 @@ int32_t DeviceInfoIos::Init() {
   int deviceCount = [DeviceInfoIosObjC captureDeviceCount];
 
   for (int i = 0; i < deviceCount; i++) {
-    AVCaptureDevice* avDevice = [DeviceInfoIosObjC captureDeviceForIndex:i];
+    AVCaptureDevice *avDevice = [DeviceInfoIosObjC captureDeviceForIndex:i];
     VideoCaptureCapabilities capabilityVector;
 
-    for (NSString* preset in camera_presets) {
+    for (NSString *preset in camera_presets) {
       BOOL support = [avDevice supportsAVCaptureSessionPreset:preset];
       if (support) {
         VideoCaptureCapability capability =
@@ -69,8 +73,8 @@ int32_t DeviceInfoIos::Init() {
     this->GetDeviceName(i, deviceNameUTF8, 256, deviceId, 256);
     std::string deviceIdCopy(deviceId);
     std::pair<std::string, VideoCaptureCapabilities> mapPair =
-        std::pair<std::string, VideoCaptureCapabilities>(deviceIdCopy,
-                                                         capabilityVector);
+        std::pair<std::string, VideoCaptureCapabilities>
+            (deviceIdCopy, capabilityVector);
     _capabilitiesMap.insert(mapPair);
   }
 
@@ -96,7 +100,9 @@ int32_t DeviceInfoIos::GetDeviceName(uint32_t deviceNumber,
   strncpy(deviceNameUTF8, [deviceName UTF8String], deviceNameUTF8Length);
   deviceNameUTF8[deviceNameUTF8Length - 1] = '\0';
 
-  strncpy(deviceUniqueIdUTF8, deviceUniqueId.UTF8String, deviceUniqueIdUTF8Length);
+  strncpy(deviceUniqueIdUTF8,
+          [deviceUniqueId UTF8String],
+          deviceUniqueIdUTF8Length);
   deviceUniqueIdUTF8[deviceUniqueIdUTF8Length - 1] = '\0';
 
   if (productUniqueIdUTF8) {
