@@ -189,6 +189,27 @@ CpuOveruseOptions GetCpuOveruseOptions(bool full_overuse_time) {
 
 }  //  namespace
 
+class ViEEncoder::ConfigureEncoderTask : public rtc::QueuedTask {
+ public:
+  ConfigureEncoderTask(ViEEncoder* vie_encoder,
+                       VideoEncoderConfig config,
+                       size_t max_data_payload_length)
+      : vie_encoder_(vie_encoder),
+        config_(std::move(config)),
+        max_data_payload_length_(max_data_payload_length) {}
+
+ private:
+  bool Run() override {
+    vie_encoder_->ConfigureEncoderOnTaskQueue(std::move(config_),
+                                              max_data_payload_length_);
+    return true;
+  }
+
+  ViEEncoder* const vie_encoder_;
+  VideoEncoderConfig config_;
+  size_t max_data_payload_length_;
+};
+
 class ViEEncoder::EncodeTask : public rtc::QueuedTask {
  public:
   EncodeTask(const VideoFrame& frame,
@@ -282,7 +303,9 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
     : shutdown_event_(true /* manual_reset */, false),
       number_of_cores_(number_of_cores),
       source_proxy_(new VideoSourceProxy(this)),
+      sink_(nullptr),
       settings_(settings),
+      codec_type_(PayloadNameToCodecType(settings.payload_name)),
       vp_(VideoProcessing::Create()),
       video_sender_(Clock::GetRealTimeClock(), this, this),
       overuse_detector_(Clock::GetRealTimeClock(),
@@ -296,6 +319,7 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       module_process_thread_(nullptr),
       encoder_config_(),
       encoder_start_bitrate_bps_(0),
+      max_data_payload_length_(0),
       last_observed_bitrate_bps_(0),
       encoder_paused_and_dropped_frame_(false),
       has_received_sli_(false),
@@ -374,41 +398,35 @@ void ViEEncoder::SetStartBitrate(int start_bitrate_bps) {
 
 void ViEEncoder::ConfigureEncoder(VideoEncoderConfig config,
                                   size_t max_data_payload_length) {
-  VideoCodec video_codec = VideoEncoderConfigToVideoCodec(
-      config, settings_.payload_name, settings_.payload_type);
-  LOG(LS_INFO) << "ConfigureEncoder: " << config.ToString();
-  std::vector<VideoStream> stream = std::move(config.streams);
-  int min_transmit_bitrate = config.min_transmit_bitrate_bps;
-  encoder_queue_.PostTask([this, video_codec, max_data_payload_length, stream,
-                           min_transmit_bitrate] {
-    ConfigureEncoderInternal(video_codec, max_data_payload_length, stream,
-                             min_transmit_bitrate);
-  });
-  return;
+  encoder_queue_.PostTask(
+      std::unique_ptr<rtc::QueuedTask>(new ConfigureEncoderTask(
+          this, std::move(config), max_data_payload_length)));
 }
 
-void ViEEncoder::ConfigureEncoderInternal(const VideoCodec& video_codec,
-                                          size_t max_data_payload_length,
-                                          std::vector<VideoStream> stream,
-                                          int min_transmit_bitrate) {
+void ViEEncoder::ConfigureEncoderOnTaskQueue(VideoEncoderConfig config,
+                                             size_t max_data_payload_length) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
-  RTC_DCHECK_GE(encoder_start_bitrate_bps_, 0);
   RTC_DCHECK(sink_);
+  LOG(LS_INFO) << "ConfigureEncoderOnTaskQueue";
+
+  max_data_payload_length_ = max_data_payload_length;
+  encoder_config_ = std::move(config);
+
+  VideoCodec video_codec = VideoEncoderConfigToVideoCodec(
+      encoder_config_, settings_.payload_name, settings_.payload_type);
 
   // Setting target width and height for VPM.
   RTC_CHECK_EQ(VPM_OK,
                vp_->SetTargetResolution(video_codec.width, video_codec.height,
                                         video_codec.maxFramerate));
 
-  encoder_config_ = video_codec;
-  encoder_config_.startBitrate = encoder_start_bitrate_bps_ / 1000;
-  encoder_config_.startBitrate =
-      std::max(encoder_config_.startBitrate, video_codec.minBitrate);
-  encoder_config_.startBitrate =
-      std::min(encoder_config_.startBitrate, video_codec.maxBitrate);
+  video_codec.startBitrate =
+      std::max(encoder_start_bitrate_bps_ / 1000, video_codec.minBitrate);
+  video_codec.startBitrate =
+      std::min(video_codec.startBitrate, video_codec.maxBitrate);
 
   bool success = video_sender_.RegisterSendCodec(
-                     &encoder_config_, number_of_cores_,
+                     &video_codec, number_of_cores_,
                      static_cast<uint32_t>(max_data_payload_length)) == VCM_OK;
 
   if (!success) {
@@ -416,24 +434,14 @@ void ViEEncoder::ConfigureEncoderInternal(const VideoCodec& video_codec,
     RTC_DCHECK(success);
   }
 
+  rate_allocator_.reset(new SimulcastRateAllocator(video_codec));
   if (stats_proxy_) {
-    VideoEncoderConfig::ContentType content_type =
-        VideoEncoderConfig::ContentType::kRealtimeVideo;
-    switch (video_codec.mode) {
-      case kRealtimeVideo:
-        content_type = VideoEncoderConfig::ContentType::kRealtimeVideo;
-        break;
-      case kScreensharing:
-        content_type = VideoEncoderConfig::ContentType::kScreen;
-        break;
-      default:
-        RTC_NOTREACHED();
-        break;
-    }
-    stats_proxy_->SetContentType(content_type);
+    stats_proxy_->OnEncoderReconfigured(encoder_config_,
+                                        rate_allocator_->GetPreferedBitrate());
   }
 
-  sink_->OnEncoderConfigurationChanged(stream, min_transmit_bitrate);
+  sink_->OnEncoderConfigurationChanged(
+      encoder_config_.streams, encoder_config_.min_transmit_bitrate_bps);
 }
 
 void ViEEncoder::OnFrame(const VideoFrame& video_frame) {
@@ -537,7 +545,7 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
 
   overuse_detector_.FrameCaptured(video_frame, time_when_posted_in_ms);
 
-  if (encoder_config_.codecType == webrtc::kVideoCodecVP8) {
+  if (codec_type_ == webrtc::kVideoCodecVP8) {
     webrtc::CodecSpecificInfo codec_specific_info;
     codec_specific_info.codecType = webrtc::kVideoCodecVP8;
 

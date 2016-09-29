@@ -339,14 +339,17 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
   }
 }
 
-void SendStatisticsProxy::SetContentType(
-    VideoEncoderConfig::ContentType content_type) {
+void SendStatisticsProxy::OnEncoderReconfigured(
+    const VideoEncoderConfig& config,
+    uint32_t preferred_bitrate_bps) {
   rtc::CritScope lock(&crit_);
-  if (content_type_ != content_type) {
+  stats_.preferred_media_bitrate_bps = preferred_bitrate_bps;
+
+  if (content_type_ != config.content_type) {
     uma_container_->UpdateHistograms(rtp_config_, stats_);
-    uma_container_.reset(
-        new UmaSamplesContainer(GetUmaPrefix(content_type), stats_, clock_));
-    content_type_ = content_type;
+    uma_container_.reset(new UmaSamplesContainer(
+        GetUmaPrefix(config.content_type), stats_, clock_));
+    content_type_ = config.content_type;
   }
 }
 

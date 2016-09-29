@@ -29,7 +29,7 @@ std::vector<uint32_t> webrtc::SimulcastRateAllocator::GetAllocation(
   if (codec_.maxBitrate)
     left_to_allocate = std::min(left_to_allocate, codec_.maxBitrate);
 
-  if (codec_.numberOfSimulcastStreams == 0) {
+  if (codec_.numberOfSimulcastStreams < 2) {
     // No simulcast, just set the target as this has been capped already.
     return std::vector<uint32_t>(1, left_to_allocate);
   }
@@ -63,6 +63,15 @@ std::vector<uint32_t> webrtc::SimulcastRateAllocator::GetAllocation(
   }
 
   return allocated_bitrates_bps;
+}
+
+uint32_t SimulcastRateAllocator::GetPreferedBitrate() const {
+  std::vector<uint32_t> rates = GetAllocation(codec_.maxBitrate);
+  uint32_t preferred_bitrate = 0;
+  for (const uint32_t& rate : rates) {
+    preferred_bitrate += rate;
+  }
+  return preferred_bitrate;
 }
 
 const VideoCodec& webrtc::SimulcastRateAllocator::GetCodec() const {

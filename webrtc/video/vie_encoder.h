@@ -23,6 +23,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
+#include "webrtc/modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "webrtc/modules/video_coding/video_coding_impl.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
@@ -97,13 +98,12 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
                         int64_t round_trip_time_ms);
 
  private:
+  class ConfigureEncoderTask;
   class EncodeTask;
   class VideoSourceProxy;
 
-  void ConfigureEncoderInternal(const VideoCodec& video_codec,
-                                size_t max_data_payload_length,
-                                std::vector<VideoStream> stream,
-                                int min_transmit_bitrate);
+  void ConfigureEncoderOnTaskQueue(VideoEncoderConfig config,
+                                   size_t max_data_payload_length);
 
   // Implements VideoSinkInterface.
   void OnFrame(const VideoFrame& video_frame) override;
@@ -136,6 +136,7 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   const std::unique_ptr<VideoSourceProxy> source_proxy_;
   EncoderSink* sink_;
   const VideoSendStream::Config::EncoderSettings settings_;
+  const VideoCodecType codec_type_;
 
   const std::unique_ptr<VideoProcessing> vp_;
   vcm::VideoSender video_sender_ ACCESS_ON(&encoder_queue_);
@@ -151,9 +152,15 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   // of ViEEncoder are called on the same thread.
   rtc::ThreadChecker thread_checker_;
 
-  VideoCodec encoder_config_ ACCESS_ON(&encoder_queue_);
+  VideoEncoderConfig encoder_config_ ACCESS_ON(&encoder_queue_);
+  // TODO(sprang): Change |rate_allocator_| to be a codec type
+  // agnostic interface. It is currently VP8 simulcast specific if more than
+  // one layer is specified.
+  std::unique_ptr<SimulcastRateAllocator> rate_allocator_
+      ACCESS_ON(&encoder_queue_);
 
-  int encoder_start_bitrate_bps_ ACCESS_ON(&encoder_queue_);
+  uint32_t encoder_start_bitrate_bps_ ACCESS_ON(&encoder_queue_);
+  size_t max_data_payload_length_ ACCESS_ON(&encoder_queue_);
   uint32_t last_observed_bitrate_bps_ ACCESS_ON(&encoder_queue_);
   bool encoder_paused_and_dropped_frame_ ACCESS_ON(&encoder_queue_);
   bool has_received_sli_ ACCESS_ON(&encoder_queue_);

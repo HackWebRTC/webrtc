@@ -208,4 +208,32 @@ TEST_F(SimulcastRateAllocatorTest, OneToThreeStreams) {
   }
 }
 
+TEST_F(SimulcastRateAllocatorTest, GetPreferredBitrate) {
+  EXPECT_EQ(codec_.maxBitrate, allocator_->GetPreferedBitrate());
+}
+
+TEST_F(SimulcastRateAllocatorTest, GetPreferredBitrateSimulcast) {
+  codec_.numberOfSimulcastStreams = 3;
+  codec_.maxBitrate = 999999;
+  codec_.simulcastStream[0].minBitrate = 10;
+  codec_.simulcastStream[0].targetBitrate = 100;
+
+  codec_.simulcastStream[0].maxBitrate = 500;
+  codec_.simulcastStream[1].minBitrate = 50;
+  codec_.simulcastStream[1].targetBitrate = 500;
+  codec_.simulcastStream[1].maxBitrate = 1000;
+
+  codec_.simulcastStream[2].minBitrate = 2000;
+  codec_.simulcastStream[2].targetBitrate = 3000;
+  codec_.simulcastStream[2].maxBitrate = 4000;
+  CreateAllocator();
+
+  uint32_t preferred_bitrate;
+  preferred_bitrate = codec_.simulcastStream[0].targetBitrate;
+  preferred_bitrate += codec_.simulcastStream[1].targetBitrate;
+  preferred_bitrate += codec_.simulcastStream[2].maxBitrate;
+
+  EXPECT_EQ(preferred_bitrate, allocator_->GetPreferedBitrate());
+}
+
 }  // namespace webrtc

@@ -14,6 +14,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/exp_filter.h"
@@ -57,8 +58,9 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   void OnInactiveSsrc(uint32_t ssrc);
 
   // Used to indicate change in content type, which may require a change in
-  // how stats are collected.
-  void SetContentType(VideoEncoderConfig::ContentType content_type);
+  // how stats are collected and set the configured preferred media bitrate.
+  void OnEncoderReconfigured(const VideoEncoderConfig& encoder_config,
+                             uint32_t preferred_bitrate_bps);
 
   // Used to update the encoder target rate.
   void OnSetEncoderTargetRate(uint32_t bitrate_bps);

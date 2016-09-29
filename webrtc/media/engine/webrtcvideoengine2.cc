@@ -2152,15 +2152,6 @@ VideoSenderInfo WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo(
 
     if (parameters_.codec_settings)
       info.codec_name = parameters_.codec_settings->codec.name;
-    for (size_t i = 0; i < parameters_.encoder_config.streams.size(); ++i) {
-      if (i == parameters_.encoder_config.streams.size() - 1) {
-        info.preferred_bitrate +=
-            parameters_.encoder_config.streams[i].max_bitrate_bps;
-      } else {
-        info.preferred_bitrate +=
-            parameters_.encoder_config.streams[i].target_bitrate_bps;
-      }
-    }
 
     if (stream_ == NULL)
       return info;
@@ -2190,6 +2181,7 @@ VideoSenderInfo WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo(
   info.encode_usage_percent = stats.encode_usage_percent;
 
   info.nominal_bitrate = stats.media_bitrate_bps;
+  info.preferred_bitrate = stats.preferred_media_bitrate_bps;
 
   info.send_frame_width = 0;
   info.send_frame_height = 0;

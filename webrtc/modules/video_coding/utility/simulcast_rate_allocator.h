@@ -24,6 +24,7 @@ class SimulcastRateAllocator {
   explicit SimulcastRateAllocator(const VideoCodec& codec);
 
   std::vector<uint32_t> GetAllocation(uint32_t bitrate_kbps) const;
+  uint32_t GetPreferedBitrate() const;
   const VideoCodec& GetCodec() const;
 
  private:

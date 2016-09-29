@@ -15,6 +15,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <utility>
 
 #include "webrtc/base/platform_file.h"
 #include "webrtc/common_types.h"
@@ -55,8 +56,14 @@ class VideoSendStream {
     int encode_frame_rate = 0;
     int avg_encode_time_ms = 0;
     int encode_usage_percent = 0;
+    // Bitrate the encoder is currently configured to use due to bandwidth
+    // limitations.
     int target_media_bitrate_bps = 0;
+    // Bitrate the encoder is actually producing.
     int media_bitrate_bps = 0;
+    // Media bitrate this VideoSendStream is configured to prefer if there are
+    // no bandwidth limitations.
+    int preferred_media_bitrate_bps = 0;
     bool suspended = false;
     bool bw_limited_resolution = false;
     std::map<uint32_t, StreamStats> substreams;

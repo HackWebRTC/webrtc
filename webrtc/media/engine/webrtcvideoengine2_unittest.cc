@@ -2890,6 +2890,18 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsReportsUpperResolution) {
   EXPECT_EQ(90, info.senders[0].send_frame_height);
 }
 
+TEST_F(WebRtcVideoChannel2Test, GetStatsReportsPreferredBitrate) {
+  FakeVideoSendStream* stream = AddSendStream();
+  webrtc::VideoSendStream::Stats stats;
+  stats.preferred_media_bitrate_bps = 5;
+  stream->SetStats(stats);
+
+  cricket::VideoMediaInfo info;
+  ASSERT_TRUE(channel_->GetStats(&info));
+  ASSERT_EQ(1u, info.senders.size());
+  EXPECT_EQ(5, info.senders[0].preferred_bitrate);
+}
+
 TEST_F(WebRtcVideoChannel2Test, GetStatsTracksAdaptationStats) {
   AddSendStream(cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs3)));
 
@@ -3768,10 +3780,6 @@ class WebRtcVideoChannel2SimulcastTest : public testing::Test {
         total_max_bitrate_bps += video_streams[i].target_bitrate_bps;
       }
     }
-    cricket::VideoMediaInfo info;
-    ASSERT_TRUE(channel_->GetStats(&info));
-    ASSERT_EQ(1u, info.senders.size());
-    EXPECT_EQ(total_max_bitrate_bps, info.senders[0].preferred_bitrate);
 
     EXPECT_TRUE(channel_->SetVideoSend(ssrcs.front(), true, nullptr, nullptr));
   }
