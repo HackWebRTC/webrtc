@@ -169,8 +169,7 @@ TEST_F(BitrateControllerTest, OneBitrateObserverOneRtcpObserver) {
   EXPECT_EQ(300000, bitrate_observer_.last_bitrate_);
 
   // Test that a low delay-based estimate limits the combined estimate.
-  webrtc::DelayBasedBwe::Result result(false, 280000);
-  controller_->OnDelayBasedBweResult(result);
+  controller_->OnReceiveBitrateChanged({0}, 280000);
   EXPECT_EQ(280000, bitrate_observer_.last_bitrate_);
 
   // Test that a low REMB limits the combined estimate.

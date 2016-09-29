@@ -61,7 +61,10 @@ class BitrateControllerImpl : public BitrateController {
                             uint8_t* fraction_loss,
                             int64_t* rtt) override;
 
-  void OnDelayBasedBweResult(const DelayBasedBwe::Result& result) override;
+  // RemoteBitrateObserver overrides.
+  void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
+                               uint32_t bitrate_bps) override;
+  void OnProbeBitrate(uint32_t bitrate_bps) override;
 
   int64_t TimeUntilNextProcess() override;
   void Process() override;

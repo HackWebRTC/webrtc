@@ -12,12 +12,13 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
+#include "testing/gmock/include/gmock/gmock.h"
+#include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/bitrate_controller/include/mock/mock_bitrate_controller.h"
-#include "webrtc/modules/congestion_controller/transport_feedback_adapter.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_estimator.h"
+#include "webrtc/modules/remote_bitrate_estimator/transport_feedback_adapter.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/system_wrappers/include/clock.h"
@@ -31,16 +32,23 @@ namespace test {
 class TransportFeedbackAdapterTest : public ::testing::Test {
  public:
   TransportFeedbackAdapterTest()
-      : clock_(0), bitrate_controller_(this), receiver_estimated_bitrate_(0) {}
+      : clock_(0),
+        bitrate_estimator_(nullptr),
+        bitrate_controller_(this),
+        receiver_estimated_bitrate_(0) {}
 
   virtual ~TransportFeedbackAdapterTest() {}
 
   virtual void SetUp() {
-    adapter_.reset(new TransportFeedbackAdapter(&clock_, &bitrate_controller_));
-    adapter_->InitBwe();
+    adapter_.reset(new TransportFeedbackAdapter(&clock_));
+
+    bitrate_estimator_ = new MockRemoteBitrateEstimator();
+    adapter_->SetBitrateEstimator(bitrate_estimator_);
   }
 
-  virtual void TearDown() { adapter_.reset(); }
+  virtual void TearDown() {
+    adapter_.reset();
+  }
 
  protected:
   // Proxy class used since TransportFeedbackAdapter will own the instance
@@ -52,8 +60,9 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
 
     ~MockBitrateControllerAdapter() override {}
 
-    void OnDelayBasedBweResult(const DelayBasedBwe::Result& result) override {
-      owner_->receiver_estimated_bitrate_ = result.target_bitrate_bps;
+    void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
+                                 uint32_t bitrate_bps) override {
+      owner_->receiver_estimated_bitrate_ = bitrate_bps;
     }
 
     TransportFeedbackAdapterTest* const owner_;
@@ -97,6 +106,7 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
   }
 
   SimulatedClock clock_;
+  MockRemoteBitrateEstimator* bitrate_estimator_;
   MockBitrateControllerAdapter bitrate_controller_;
   std::unique_ptr<TransportFeedbackAdapter> adapter_;
 
@@ -125,8 +135,13 @@ TEST_F(TransportFeedbackAdapterTest, AdaptsFeedbackAndPopulatesSendTimes) {
 
   feedback.Build();
 
+  EXPECT_CALL(*bitrate_estimator_, IncomingPacketFeedbackVector(_))
+      .Times(1)
+      .WillOnce(Invoke(
+          [packets, this](const std::vector<PacketInfo>& feedback_vector) {
+            ComparePacketVectors(packets, feedback_vector);
+          }));
   adapter_->OnTransportFeedback(feedback);
-  ComparePacketVectors(packets, adapter_->GetTransportFeedbackVector());
 }
 
 TEST_F(TransportFeedbackAdapterTest, HandlesDroppedPackets) {
@@ -162,9 +177,13 @@ TEST_F(TransportFeedbackAdapterTest, HandlesDroppedPackets) {
       packets.begin() + kSendSideDropBefore,
       packets.begin() + kReceiveSideDropAfter + 1);
 
+  EXPECT_CALL(*bitrate_estimator_, IncomingPacketFeedbackVector(_))
+      .Times(1)
+      .WillOnce(Invoke([expected_packets,
+                        this](const std::vector<PacketInfo>& feedback_vector) {
+        ComparePacketVectors(expected_packets, feedback_vector);
+      }));
   adapter_->OnTransportFeedback(feedback);
-  ComparePacketVectors(expected_packets,
-                       adapter_->GetTransportFeedbackVector());
 }
 
 TEST_F(TransportFeedbackAdapterTest, SendTimeWrapsBothWays) {
@@ -198,9 +217,13 @@ TEST_F(TransportFeedbackAdapterTest, SendTimeWrapsBothWays) {
     std::vector<PacketInfo> expected_packets;
     expected_packets.push_back(packets[i]);
 
+    EXPECT_CALL(*bitrate_estimator_, IncomingPacketFeedbackVector(_))
+        .Times(1)
+        .WillOnce(Invoke([expected_packets, this](
+            const std::vector<PacketInfo>& feedback_vector) {
+          ComparePacketVectors(expected_packets, feedback_vector);
+        }));
     adapter_->OnTransportFeedback(*feedback.get());
-    ComparePacketVectors(expected_packets,
-                         adapter_->GetTransportFeedbackVector());
   }
 }
 
@@ -228,9 +251,13 @@ TEST_F(TransportFeedbackAdapterTest, HandlesReordering) {
 
   feedback.Build();
 
+  EXPECT_CALL(*bitrate_estimator_, IncomingPacketFeedbackVector(_))
+      .Times(1)
+      .WillOnce(Invoke([expected_packets,
+                        this](const std::vector<PacketInfo>& feedback_vector) {
+        ComparePacketVectors(expected_packets, feedback_vector);
+      }));
   adapter_->OnTransportFeedback(feedback);
-  ComparePacketVectors(expected_packets,
-                       adapter_->GetTransportFeedbackVector());
 }
 
 TEST_F(TransportFeedbackAdapterTest, TimestampDeltas) {
@@ -267,6 +294,14 @@ TEST_F(TransportFeedbackAdapterTest, TimestampDeltas) {
   info.arrival_time_ms += (kLargePositiveDeltaUs + 1000) / 1000;
   ++info.sequence_number;
 
+  // Expected to be ordered on arrival time when the feedback message has been
+  // parsed.
+  std::vector<PacketInfo> expected_packets;
+  expected_packets.push_back(sent_packets[0]);
+  expected_packets.push_back(sent_packets[3]);
+  expected_packets.push_back(sent_packets[1]);
+  expected_packets.push_back(sent_packets[2]);
+
   // Packets will be added to send history.
   for (const PacketInfo& packet : sent_packets)
     OnSentPacket(packet);
@@ -292,18 +327,14 @@ TEST_F(TransportFeedbackAdapterTest, TimestampDeltas) {
   std::vector<PacketInfo> received_feedback;
 
   EXPECT_TRUE(feedback.get() != nullptr);
+  EXPECT_CALL(*bitrate_estimator_, IncomingPacketFeedbackVector(_))
+      .Times(1)
+      .WillOnce(Invoke([expected_packets, &received_feedback](
+          const std::vector<PacketInfo>& feedback_vector) {
+        EXPECT_EQ(expected_packets.size(), feedback_vector.size());
+        received_feedback = feedback_vector;
+      }));
   adapter_->OnTransportFeedback(*feedback.get());
-  {
-    // Expected to be ordered on arrival time when the feedback message has been
-    // parsed.
-    std::vector<PacketInfo> expected_packets;
-    expected_packets.push_back(sent_packets[0]);
-    expected_packets.push_back(sent_packets[3]);
-    expected_packets.push_back(sent_packets[1]);
-    expected_packets.push_back(sent_packets[2]);
-    ComparePacketVectors(expected_packets,
-                         adapter_->GetTransportFeedbackVector());
-  }
 
   // Create a new feedback message and add the trailing item.
   feedback.reset(new rtcp::TransportFeedback());
@@ -315,13 +346,18 @@ TEST_F(TransportFeedbackAdapterTest, TimestampDeltas) {
       rtcp::TransportFeedback::ParseFrom(raw_packet.data(), raw_packet.size());
 
   EXPECT_TRUE(feedback.get() != nullptr);
+  EXPECT_CALL(*bitrate_estimator_, IncomingPacketFeedbackVector(_))
+      .Times(1)
+      .WillOnce(Invoke(
+          [&received_feedback](const std::vector<PacketInfo>& feedback_vector) {
+            EXPECT_EQ(1u, feedback_vector.size());
+            received_feedback.push_back(feedback_vector[0]);
+          }));
   adapter_->OnTransportFeedback(*feedback.get());
-  {
-    std::vector<PacketInfo> expected_packets;
-    expected_packets.push_back(info);
-    ComparePacketVectors(expected_packets,
-                         adapter_->GetTransportFeedbackVector());
-  }
+
+  expected_packets.push_back(info);
+
+  ComparePacketVectors(expected_packets, received_feedback);
 }
 
 }  // namespace test

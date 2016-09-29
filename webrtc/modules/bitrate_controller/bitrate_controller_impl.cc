@@ -186,18 +186,22 @@ void BitrateControllerImpl::OnReceiverEstimatedBitrate(uint32_t bitrate) {
   MaybeTriggerOnNetworkChanged();
 }
 
-void BitrateControllerImpl::OnDelayBasedBweResult(
-    const DelayBasedBwe::Result& result) {
-  if (!result.updated)
-    return;
+void BitrateControllerImpl::OnProbeBitrate(uint32_t bitrate_bps) {
   {
     rtc::CritScope cs(&critsect_);
-    if (result.probe) {
-      bandwidth_estimation_.SetSendBitrate(result.target_bitrate_bps);
-    } else {
-      bandwidth_estimation_.UpdateDelayBasedEstimate(
-          clock_->TimeInMilliseconds(), result.target_bitrate_bps);
-    }
+    bandwidth_estimation_.SetSendBitrate(bitrate_bps);
+  }
+  MaybeTriggerOnNetworkChanged();
+}
+
+// TODO(isheriff): Perhaps need new interface for invocation from DelayBasedBwe.
+void BitrateControllerImpl::OnReceiveBitrateChanged(
+    const std::vector<uint32_t>& ssrcs,
+    uint32_t bitrate_bps) {
+  {
+    rtc::CritScope cs(&critsect_);
+    bandwidth_estimation_.UpdateDelayBasedEstimate(clock_->TimeInMilliseconds(),
+                                                   bitrate_bps);
   }
   MaybeTriggerOnNetworkChanged();
 }

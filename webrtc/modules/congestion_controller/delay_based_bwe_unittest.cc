@@ -32,7 +32,7 @@ TEST_F(DelayBasedBweTest, ProbeDetection) {
     now_ms = clock_.TimeInMilliseconds();
     IncomingFeedback(now_ms, now_ms, seq_num++, 1000, 0);
   }
-  EXPECT_TRUE(bitrate_observer_.updated());
+  EXPECT_TRUE(bitrate_observer_->updated());
 
   // Second burst sent at 8 * 1000 / 5 = 1600 kbps.
   for (int i = 0; i < kNumProbes; ++i) {
@@ -41,8 +41,8 @@ TEST_F(DelayBasedBweTest, ProbeDetection) {
     IncomingFeedback(now_ms, now_ms, seq_num++, 1000, 1);
   }
 
-  EXPECT_TRUE(bitrate_observer_.updated());
-  EXPECT_GT(bitrate_observer_.latest_bitrate(), 1500000u);
+  EXPECT_TRUE(bitrate_observer_->updated());
+  EXPECT_GT(bitrate_observer_->latest_bitrate(), 1500000u);
 }
 
 TEST_F(DelayBasedBweTest, ProbeDetectionNonPacedPackets) {
@@ -61,8 +61,8 @@ TEST_F(DelayBasedBweTest, ProbeDetectionNonPacedPackets) {
                      PacketInfo::kNotAProbe);
   }
 
-  EXPECT_TRUE(bitrate_observer_.updated());
-  EXPECT_GT(bitrate_observer_.latest_bitrate(), 800000u);
+  EXPECT_TRUE(bitrate_observer_->updated());
+  EXPECT_GT(bitrate_observer_->latest_bitrate(), 800000u);
 }
 
 TEST_F(DelayBasedBweTest, ProbeDetectionFasterArrival) {
@@ -78,7 +78,7 @@ TEST_F(DelayBasedBweTest, ProbeDetectionFasterArrival) {
     IncomingFeedback(now_ms, send_time_ms, seq_num++, 1000, 0);
   }
 
-  EXPECT_FALSE(bitrate_observer_.updated());
+  EXPECT_FALSE(bitrate_observer_->updated());
 }
 
 TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrival) {
@@ -94,8 +94,8 @@ TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrival) {
     IncomingFeedback(now_ms, send_time_ms, seq_num++, 1000, 1);
   }
 
-  EXPECT_TRUE(bitrate_observer_.updated());
-  EXPECT_NEAR(bitrate_observer_.latest_bitrate(), 1140000u, 10000u);
+  EXPECT_TRUE(bitrate_observer_->updated());
+  EXPECT_NEAR(bitrate_observer_->latest_bitrate(), 1140000u, 10000u);
 }
 
 TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrivalHighBitrate) {
@@ -111,8 +111,8 @@ TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrivalHighBitrate) {
     IncomingFeedback(now_ms, send_time_ms, seq_num++, 1000, 1);
   }
 
-  EXPECT_TRUE(bitrate_observer_.updated());
-  EXPECT_NEAR(bitrate_observer_.latest_bitrate(), 4000000u, 10000u);
+  EXPECT_TRUE(bitrate_observer_->updated());
+  EXPECT_NEAR(bitrate_observer_->latest_bitrate(), 4000000u, 10000u);
 }
 
 TEST_F(DelayBasedBweTest, InitialBehavior) {

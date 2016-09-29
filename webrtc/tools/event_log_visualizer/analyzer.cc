@@ -24,7 +24,6 @@
 #include "webrtc/base/rate_statistics.h"
 #include "webrtc/call.h"
 #include "webrtc/common_types.h"
-#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -1054,34 +1053,6 @@ void EventLogAnalyzer::CreateBweSimulationGraph(Plot* plot) {
   plot->SetTitle("Simulated BWE behavior");
 }
 
-// TODO(holmer): Remove once TransportFeedbackAdapter no longer needs a
-// BitrateController.
-class NullBitrateController : public BitrateController {
- public:
-  ~NullBitrateController() override {}
-  RtcpBandwidthObserver* CreateRtcpBandwidthObserver() override {
-    return nullptr;
-  }
-  void SetStartBitrate(int start_bitrate_bps) override {}
-  void SetMinMaxBitrate(int min_bitrate_bps, int max_bitrate_bps) override {}
-  void SetBitrates(int start_bitrate_bps,
-                   int min_bitrate_bps,
-                   int max_bitrate_bps) override {}
-  void ResetBitrates(int bitrate_bps,
-                     int min_bitrate_bps,
-                     int max_bitrate_bps) override {}
-  void OnDelayBasedBweResult(const DelayBasedBwe::Result& result) override {}
-  bool AvailableBandwidth(uint32_t* bandwidth) const override { return false; }
-  void SetReservedBitrate(uint32_t reserved_bitrate_bps) override {}
-  bool GetNetworkParameters(uint32_t* bitrate,
-                            uint8_t* fraction_loss,
-                            int64_t* rtt) override {
-    return false;
-  }
-  int64_t TimeUntilNextProcess() override { return 0; }
-  void Process() override {}
-};
-
 void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
   std::map<uint64_t, const LoggedRtpPacket*> outgoing_rtp;
   std::map<uint64_t, const LoggedRtcpPacket*> incoming_rtcp;
@@ -1102,8 +1073,7 @@ void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
   }
 
   SimulatedClock clock(0);
-  NullBitrateController null_controller;
-  TransportFeedbackAdapter feedback_adapter(&clock, &null_controller);
+  TransportFeedbackAdapter feedback_adapter(&clock);
 
   TimeSeries time_series;
   time_series.label = "Network Delay Change";

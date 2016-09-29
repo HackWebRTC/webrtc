@@ -18,8 +18,6 @@ rtc_static_library("congestion_controller") {
     "probe_bitrate_estimator.h",
     "probe_controller.cc",
     "probe_controller.h",
-    "transport_feedback_adapter.cc",
-    "transport_feedback_adapter.h",
   ]
 
   # TODO(jschuh): Bug 1348: fix this warning.
@@ -34,5 +32,6 @@ rtc_static_library("congestion_controller") {
   deps = [
     "../bitrate_controller",
     "../pacing",
+    "../remote_bitrate_estimator",
   ]
 }
