@@ -32,11 +32,6 @@ public interface VideoCapturer {
     void onTextureFrameCaptured(
         int width, int height, int oesTextureId, float[] transformMatrix, int rotation,
         long timestamp);
-
-    // Requests an output format from the video capturer. Captured frames
-    // by the camera will be scaled/or dropped by the video capturer.
-    // Called on a Java thread owned by VideoCapturer.
-    void onOutputFormatRequest(int width, int height, int framerate);
   }
 
   // An implementation of CapturerObserver that forwards all calls from
@@ -74,11 +69,6 @@ public interface VideoCapturer {
           rotation, timestamp);
     }
 
-    @Override
-    public void onOutputFormatRequest(int width, int height, int framerate) {
-      nativeOnOutputFormatRequest(nativeSource, width, height, framerate);
-    }
-
     private native void nativeCapturerStarted(long nativeSource,
         boolean success);
     private native void nativeCapturerStopped(long nativeSource);
@@ -86,8 +76,6 @@ public interface VideoCapturer {
         byte[] data, int length, int width, int height, int rotation, long timeStamp);
     private native void nativeOnTextureFrameCaptured(long nativeSource, int width, int height,
         int oesTextureId, float[] transformMatrix, int rotation, long timestamp);
-    private native void nativeOnOutputFormatRequest(long nativeSource,
-        int width, int height, int framerate);
   }
 
   /**
@@ -111,12 +99,6 @@ public interface VideoCapturer {
    * Stop capturing. This function should block until capture is actually stopped.
    */
   void stopCapture() throws InterruptedException;
-
-  /**
-   * Use VideoSource.adaptOutputFormat() instead.
-   */
-  @Deprecated
-  void onOutputFormatRequest(int width, int height, int framerate);
 
   void changeCaptureFormat(int width, int height, int framerate);
 

@@ -308,17 +308,6 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
   }
 
   @Override
-  public void onOutputFormatRequest(final int width, final int height, final int framerate) {
-    cameraThreadHandler.post(new Runnable() {
-      @Override public void run() {
-        Logging.d(TAG, "onOutputFormatRequestOnCameraThread: " + width + "x" + height +
-        "@" + framerate);
-        capturerObserver.onOutputFormatRequest(width, height, framerate);
-      }
-    });
-  }
-
-  @Override
   public void changeCaptureFormat(int width, int height, int framerate) {
     Logging.d(TAG, "changeCaptureFormat: " + width + "x" + height + "@" + framerate);
     synchronized (stateLock) {

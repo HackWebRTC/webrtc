@@ -139,9 +139,6 @@ class CameraVideoCapturerTestFixtures {
       }
     }
 
-    @Override
-    public void onOutputFormatRequest(int width, int height, int fps) {}
-
     public boolean waitForCapturerToStart() throws InterruptedException {
       Logging.d(TAG, "Waiting for the capturer to start");
       synchronized (capturerStartLock) {
@@ -523,7 +520,6 @@ class CameraVideoCapturerTestFixtures {
 
     // We can't change |capturer| at this point, but we should not crash.
     capturerInstance.capturer.switchCamera(null /* switchEventsHandler */);
-    capturerInstance.capturer.onOutputFormatRequest(DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_FPS);
     capturerInstance.capturer.changeCaptureFormat(DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_FPS);
 
     disposeCapturer(capturerInstance);

@@ -149,18 +149,6 @@ public class ScreenCapturerAndroid implements
     isDisposed = true;
   }
 
-  @Override
-  public synchronized void onOutputFormatRequest(
-      final int width, final int height, final int framerate) {
-    checkNotDisposed();
-    surfaceTextureHelper.getHandler().post(new Runnable() {
-      @Override
-      public void run() {
-        capturerObserver.onOutputFormatRequest(width, height, framerate);
-      }
-    });
-  }
-
   /**
    * Changes output video format. This method can be used to scale the output
    * video, or to change orientation when the captured screen is rotated for example.
