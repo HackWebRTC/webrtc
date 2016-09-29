@@ -457,3 +457,18 @@
    fun:_ZNK3rtc15CriticalSection5EnterEv
    ...
 }
+{
+   bug_6444
+   Memcheck:Unaddressable
+   fun:pitch_search
+   fun:run_prefilter
+   fun:celt_encode_with_ec
+   fun:opus_encode_native
+   fun:opus_encode
+   fun:WebRtcOpus_Encode
+   fun:_ZN6webrtc16AudioEncoderOpus10EncodeImplEjN3rtc9ArrayViewIKsEEPNS1_7BufferTIhEE
+   fun:_ZN6webrtc12AudioEncoder6EncodeEjN3rtc9ArrayViewIKsEEPNS1_7BufferTIhEE
+   fun:_ZN6webrtc16AudioDecoderTest11EncodeFrameEPKsmPN3rtc7BufferTIhEE
+   fun:_ZN6webrtc16AudioDecoderTest16EncodeDecodeTestEmidii
+   fun:_ZN6webrtc44AudioDecoderOpusStereoTest_EncodeDecode_Test8TestBodyEv
+}
