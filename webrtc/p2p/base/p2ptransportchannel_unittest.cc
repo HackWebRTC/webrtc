@@ -76,13 +76,6 @@ static const SocketAddress kCascadedPrivateAddrs[2] =
     { SocketAddress("192.168.10.11", 0), SocketAddress("192.168.20.22", 0) };
 // The address of the public STUN server.
 static const SocketAddress kStunAddr("99.99.99.1", cricket::STUN_SERVER_PORT);
-// The addresses for the public relay server.
-static const SocketAddress kRelayUdpIntAddr("99.99.99.2", 5000);
-static const SocketAddress kRelayUdpExtAddr("99.99.99.3", 5001);
-static const SocketAddress kRelayTcpIntAddr("99.99.99.2", 5002);
-static const SocketAddress kRelayTcpExtAddr("99.99.99.3", 5003);
-static const SocketAddress kRelaySslTcpIntAddr("99.99.99.2", 5004);
-static const SocketAddress kRelaySslTcpExtAddr("99.99.99.3", 5005);
 // The addresses for the public turn server.
 static const SocketAddress kTurnUdpIntAddr("99.99.99.4",
                                            cricket::STUN_SERVER_PORT);
@@ -134,6 +127,28 @@ cricket::Candidate CreateUdpCandidate(const std::string& type,
   return c;
 }
 
+cricket::BasicPortAllocator* CreateBasicPortAllocator(
+    rtc::NetworkManager* network_manager,
+    const cricket::ServerAddresses& stun_servers,
+    const rtc::SocketAddress& turn_server_udp,
+    const rtc::SocketAddress& turn_server_tcp) {
+  cricket::RelayServerConfig turn_server(cricket::RELAY_TURN);
+  turn_server.credentials = kRelayCredentials;
+  if (!turn_server_udp.IsNil()) {
+    turn_server.ports.push_back(
+        cricket::ProtocolAddress(turn_server_udp, cricket::PROTO_UDP, false));
+  }
+  if (!turn_server_tcp.IsNil()) {
+    turn_server.ports.push_back(
+        cricket::ProtocolAddress(turn_server_tcp, cricket::PROTO_TCP, false));
+  }
+  std::vector<cricket::RelayServerConfig> turn_servers(1, turn_server);
+
+  cricket::BasicPortAllocator* allocator =
+      new cricket::BasicPortAllocator(network_manager);
+  allocator->SetConfiguration(stun_servers, turn_servers, 0, false);
+  return allocator;
+}
 }  // namespace
 
 namespace cricket {
@@ -166,13 +181,6 @@ class P2PTransportChannelTestBase : public testing::Test,
         ss_scope_(ss_.get()),
         stun_server_(TestStunServer::Create(main_, kStunAddr)),
         turn_server_(main_, kTurnUdpIntAddr, kTurnUdpExtAddr),
-        relay_server_(main_,
-                      kRelayUdpIntAddr,
-                      kRelayUdpExtAddr,
-                      kRelayTcpIntAddr,
-                      kRelayTcpExtAddr,
-                      kRelaySslTcpIntAddr,
-                      kRelaySslTcpExtAddr),
         socks_server1_(ss_.get(),
                        kSocksProxyAddrs[0],
                        ss_.get(),
@@ -185,14 +193,15 @@ class P2PTransportChannelTestBase : public testing::Test,
     ep1_.role_ = ICEROLE_CONTROLLING;
     ep2_.role_ = ICEROLE_CONTROLLED;
 
+    turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
     ServerAddresses stun_servers;
     stun_servers.insert(kStunAddr);
-    ep1_.allocator_.reset(new BasicPortAllocator(
-        &ep1_.network_manager_, stun_servers, kRelayUdpIntAddr,
-        kRelayTcpIntAddr, kRelaySslTcpIntAddr));
-    ep2_.allocator_.reset(new BasicPortAllocator(
-        &ep2_.network_manager_, stun_servers, kRelayUdpIntAddr,
-        kRelayTcpIntAddr, kRelaySslTcpIntAddr));
+    ep1_.allocator_.reset(
+        CreateBasicPortAllocator(&ep1_.network_manager_, stun_servers,
+                                 kTurnUdpIntAddr, kTurnTcpIntAddr));
+    ep2_.allocator_.reset(
+        CreateBasicPortAllocator(&ep2_.network_manager_, stun_servers,
+                                 kTurnUdpIntAddr, kTurnTcpIntAddr));
   }
 
  protected:
@@ -844,7 +853,6 @@ class P2PTransportChannelTestBase : public testing::Test,
   rtc::SocketServerScope ss_scope_;
   std::unique_ptr<TestStunServer> stun_server_;
   TestTurnServer turn_server_;
-  TestRelayServer relay_server_;
   rtc::SocksProxyServer socks_server1_;
   rtc::SocksProxyServer socks_server2_;
   Endpoint ep1_;
@@ -951,22 +959,6 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
                           Config config2,
                           int allocator_flags1,
                           int allocator_flags2) {
-    ServerAddresses stun_servers;
-    stun_servers.insert(kStunAddr);
-    GetEndpoint(0)->allocator_.reset(new BasicPortAllocator(
-        &(GetEndpoint(0)->network_manager_), stun_servers, rtc::SocketAddress(),
-        rtc::SocketAddress(), rtc::SocketAddress()));
-    GetEndpoint(1)->allocator_.reset(new BasicPortAllocator(
-        &(GetEndpoint(1)->network_manager_), stun_servers, rtc::SocketAddress(),
-        rtc::SocketAddress(), rtc::SocketAddress()));
-
-    RelayServerConfig turn_server(RELAY_TURN);
-    turn_server.credentials = kRelayCredentials;
-    turn_server.ports.push_back(
-        ProtocolAddress(kTurnUdpIntAddr, PROTO_UDP, false));
-    GetEndpoint(0)->allocator_->AddTurnServer(turn_server);
-    GetEndpoint(1)->allocator_->AddTurnServer(turn_server);
-
     int delay = kMinimumStepDelay;
     ConfigureEndpoint(0, config1);
     SetAllocatorFlags(0, allocator_flags1);
@@ -3814,15 +3806,11 @@ class P2PTransportChannelMostLikelyToWorkFirstTest
   P2PTransportChannelMostLikelyToWorkFirstTest()
       : turn_server_(rtc::Thread::Current(), kTurnUdpIntAddr, kTurnUdpExtAddr) {
     network_manager_.AddInterface(kPublicAddrs[0]);
-    allocator_.reset(new BasicPortAllocator(
-        &network_manager_, ServerAddresses(), rtc::SocketAddress(),
-        rtc::SocketAddress(), rtc::SocketAddress()));
+    allocator_.reset(
+        CreateBasicPortAllocator(&network_manager_, ServerAddresses(),
+                                 kTurnUdpIntAddr, rtc::SocketAddress()));
     allocator_->set_flags(allocator_->flags() | PORTALLOCATOR_DISABLE_STUN |
                           PORTALLOCATOR_DISABLE_TCP);
-    RelayServerConfig config(RELAY_TURN);
-    config.credentials = kRelayCredentials;
-    config.ports.push_back(ProtocolAddress(kTurnUdpIntAddr, PROTO_UDP, false));
-    allocator_->AddTurnServer(config);
     allocator_->set_step_delay(kMinimumStepDelay);
   }
 
