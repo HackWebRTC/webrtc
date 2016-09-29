@@ -11,6 +11,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "webrtc/base/thread.h"
 #include "webrtc/p2p/base/pseudotcp.h"
 
 namespace webrtc {
@@ -29,10 +30,15 @@ class FakeIPseudoTcpNotify : public cricket::IPseudoTcpNotify {
 };
 
 struct Environment {
-  cricket::PseudoTcp* ptcp;
-  explicit Environment(cricket::IPseudoTcpNotify* notifier) {
-    ptcp = new cricket::PseudoTcp(notifier, 0);
+  explicit Environment(cricket::IPseudoTcpNotify* notifier):
+      ptcp(new cricket::PseudoTcp(notifier, 0)) {
   }
+
+  cricket::PseudoTcp* const ptcp;
+
+  // We need the thread to avoid some uninteresting crashes, since the
+  // production code expects there to be a thread object available.
+  rtc::AutoThread thread;
 };
 
 Environment* env = new Environment(new FakeIPseudoTcpNotify());
