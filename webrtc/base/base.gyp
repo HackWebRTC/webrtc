@@ -59,6 +59,7 @@
         'file.h',
         'format_macros.h',
         'function_view.h',
+        'ignore_wundef.h',
         'location.h',
         'location.cc',
         'md5.cc',

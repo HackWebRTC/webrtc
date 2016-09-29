@@ -11,7 +11,7 @@
 #include <memory>
 
 #include "webrtc/modules/audio_coding/audio_network_adaptor/channel_controller.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

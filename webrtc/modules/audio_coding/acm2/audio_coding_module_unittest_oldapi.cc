@@ -13,7 +13,7 @@
 #include <memory>
 #include <vector>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/md5digest.h"
 #include "webrtc/base/platform_thread.h"

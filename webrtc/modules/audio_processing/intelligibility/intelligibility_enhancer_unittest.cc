@@ -15,7 +15,7 @@
 #include <memory>
 #include <vector>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"

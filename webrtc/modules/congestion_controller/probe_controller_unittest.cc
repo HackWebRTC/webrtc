@@ -9,8 +9,8 @@
  */
 #include <memory>
 
-#include "testing/gmock/include/gmock/gmock.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/congestion_controller/probe_controller.h"
 #include "webrtc/modules/pacing/mock/mock_paced_sender.h"

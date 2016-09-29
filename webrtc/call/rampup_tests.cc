@@ -10,7 +10,7 @@
 
 #include "webrtc/call/rampup_tests.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/test/testsupport/perf_test.h"

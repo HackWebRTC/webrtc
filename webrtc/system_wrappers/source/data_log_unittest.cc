@@ -13,7 +13,7 @@
 #include <map>
 #include <string>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/system_wrappers/include/data_log_c.h"
 #include "webrtc/system_wrappers/source/data_log_c_helpers_unittest.h"
 

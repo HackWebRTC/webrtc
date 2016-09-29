@@ -10,7 +10,7 @@
 
 #import <Foundation/Foundation.h>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSession+Private.h"

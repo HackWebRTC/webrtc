@@ -33,7 +33,7 @@ const char EXT_DELIM = '.';
 const char* const FOLDER_DELIMS = "/\\";
 
 // DEFAULT_FOLDER_DELIM is the preferred delimiter for this platform
-#if WEBRTC_WIN
+#ifdef WEBRTC_WIN
 const char DEFAULT_FOLDER_DELIM = '\\';
 #else  // !WEBRTC_WIN
 const char DEFAULT_FOLDER_DELIM = '/';

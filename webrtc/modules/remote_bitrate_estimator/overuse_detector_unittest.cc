@@ -15,7 +15,7 @@
 #include <cstdlib>
 #include <memory>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 #include "webrtc/base/random.h"
 #include "webrtc/base/rate_statistics.h"

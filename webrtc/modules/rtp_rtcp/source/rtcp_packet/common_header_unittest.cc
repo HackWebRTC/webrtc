@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 using webrtc::rtcp::CommonHeader;
 

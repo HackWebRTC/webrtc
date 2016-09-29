@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 #include "webrtc/audio/audio_send_stream.h"
 #include "webrtc/audio/audio_state.h"

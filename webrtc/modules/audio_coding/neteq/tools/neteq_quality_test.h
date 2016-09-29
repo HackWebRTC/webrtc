@@ -14,7 +14,7 @@
 #include <fstream>
 #include <memory>
 #include <gflags/gflags.h>
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_sink.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"

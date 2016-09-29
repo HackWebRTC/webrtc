@@ -19,6 +19,7 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/event.h"
+#include "webrtc/base/ignore_wundef.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/swap_queue.h"
 #include "webrtc/call/ringbuffer.h"
@@ -27,11 +28,13 @@
 
 #ifdef ENABLE_RTC_EVENT_LOG
 // Files generated at build-time by the protobuf compiler.
+RTC_PUSH_IGNORING_WUNDEF()
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/call/rtc_event_log.pb.h"
 #else
 #include "webrtc/call/rtc_event_log.pb.h"
 #endif
+RTC_POP_IGNORING_WUNDEF()
 #endif
 
 #ifdef ENABLE_RTC_EVENT_LOG

@@ -15,7 +15,7 @@
 // It also uses the static UdpSocketManager object.
 // The most important property of these tests is that they do not leak memory.
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/voice_engine/test/channel_transport/udp_socket_manager_wrapper.h"
 #include "webrtc/voice_engine/test/channel_transport/udp_socket_wrapper.h"

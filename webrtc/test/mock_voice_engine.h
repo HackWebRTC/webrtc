@@ -13,7 +13,7 @@
 
 #include <memory>
 
-#include "testing/gmock/include/gmock/gmock.h"
+#include "webrtc/test/gmock.h"
 #include "webrtc/test/mock_voe_channel_proxy.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"
 

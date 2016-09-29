@@ -11,7 +11,7 @@
 #include <list>
 #include <memory>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 #include "webrtc/api/call/audio_state.h"
 #include "webrtc/call.h"

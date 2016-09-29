@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "vpx/vpx_encoder.h"
 #include "vpx/vp8cx.h"
 #include "webrtc/modules/video_coding/codecs/vp8/reference_picture_selection.h"

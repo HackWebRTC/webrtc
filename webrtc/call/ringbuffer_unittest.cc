@@ -11,7 +11,7 @@
 
 #include <list>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/random.h"
 #include "webrtc/call/ringbuffer.h"
 

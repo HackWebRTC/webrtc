@@ -17,7 +17,7 @@
 #include <memory>
 
 #include "gflags/gflags.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/modules/audio_processing/agc/agc.h"
 #include "webrtc/modules/audio_processing/agc/loudness_histogram.h"
 #include "webrtc/modules/audio_processing/agc/utility.h"

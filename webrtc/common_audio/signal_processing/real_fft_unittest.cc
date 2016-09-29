@@ -12,7 +12,7 @@
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/typedefs.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace {

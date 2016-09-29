@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/random.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/system_wrappers/include/sleep.h"

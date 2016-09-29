@@ -10,7 +10,7 @@
 
 #include "webrtc/test/fake_decoder.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace test {

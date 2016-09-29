@@ -14,8 +14,8 @@
 #include "webrtc/api/mediastream.h"
 #include "webrtc/api/videotrack.h"
 #include "webrtc/api/test/fakevideotracksource.h"
-#include "testing/gmock/include/gmock/gmock.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/refcount.h"
 

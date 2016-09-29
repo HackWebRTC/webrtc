@@ -14,7 +14,7 @@
 #include <set>
 #include <utility>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/random.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/modules/video_coding/frame_object.h"

@@ -84,7 +84,8 @@ static void LogDeviceInfo() {
     LOG(LS_INFO) << " process ID: " << ios::GetProcessID();
     LOG(LS_INFO) << " OS version: " << ios::GetOSVersionString();
     LOG(LS_INFO) << " processing cores: " << ios::GetProcessorCount();
-#if defined(__IPHONE_9_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_9_0
+#if defined(__IPHONE_9_0) && defined(__IPHONE_OS_VERSION_MAX_ALLOWED) \
+    && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_9_0
     LOG(LS_INFO) << " low power mode: " << ios::GetLowPowerModeEnabled();
 #endif
   }

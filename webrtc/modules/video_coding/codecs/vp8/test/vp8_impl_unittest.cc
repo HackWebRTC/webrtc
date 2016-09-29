@@ -12,7 +12,7 @@
 
 #include <memory>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"

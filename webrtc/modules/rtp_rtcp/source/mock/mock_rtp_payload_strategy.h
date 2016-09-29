@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_MOCK_MOCK_RTP_PAYLOAD_STRATEGY_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_MOCK_MOCK_RTP_PAYLOAD_STRATEGY_H_
 
-#include "testing/gmock/include/gmock/gmock.h"
+#include "webrtc/test/gmock.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_payload_registry.h"
 
 namespace webrtc {

@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/video_coding/utility/h264_bitstream_parser.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

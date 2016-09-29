@@ -10,7 +10,7 @@
 
 #include <SLES/OpenSLES_Android.h>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/modules/audio_device/android/build_info.h"

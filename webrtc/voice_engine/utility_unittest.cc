@@ -10,7 +10,7 @@
 
 #include <math.h>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/modules/include/module_common_types.h"

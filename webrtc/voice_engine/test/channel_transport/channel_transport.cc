@@ -13,7 +13,7 @@
 #include <stdio.h>
 
 #if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS)
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #endif
 #include "webrtc/voice_engine/test/channel_transport/udp_transport.h"
 #include "webrtc/voice_engine/include/voe_network.h"

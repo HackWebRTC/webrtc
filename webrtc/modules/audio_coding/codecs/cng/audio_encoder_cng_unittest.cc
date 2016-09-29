@@ -11,7 +11,7 @@
 #include <memory>
 #include <vector>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/common_audio/vad/mock/mock_vad.h"
 #include "webrtc/modules/audio_coding/codecs/cng/audio_encoder_cng.h"

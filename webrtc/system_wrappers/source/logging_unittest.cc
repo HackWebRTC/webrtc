@@ -10,7 +10,7 @@
 
 #include "webrtc/system_wrappers/include/logging.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/event.h"
 #include "webrtc/system_wrappers/include/trace.h"

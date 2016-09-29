@@ -13,7 +13,7 @@
 #include <limits>
 #include <vector>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/mathutils.h"  // unsigned difference
 #include "webrtc/base/random.h"
 

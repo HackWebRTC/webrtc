@@ -11,7 +11,7 @@
 #include <memory>
 #include <utility>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/frame_length_controller.h"
 
 namespace webrtc {

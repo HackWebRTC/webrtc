@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/voip_metric.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace rtcp {

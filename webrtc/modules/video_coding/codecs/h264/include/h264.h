@@ -15,8 +15,8 @@
 #if defined(WEBRTC_IOS) || defined(WEBRTC_MAC)
 
 #include <Availability.h>
-#if (defined(__IPHONE_8_0) &&                            \
-     __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_8_0) || \
+#if (defined(__IPHONE_8_0) && defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && \
+     __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_8_0) ||                  \
     (defined(__MAC_10_8) && __MAC_OS_X_VERSION_MAX_ALLOWED >= __MAC_10_8)
 #define WEBRTC_VIDEO_TOOLBOX_SUPPORTED 1
 #endif

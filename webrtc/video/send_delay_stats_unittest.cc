@@ -10,7 +10,7 @@
 
 #include "webrtc/video/send_delay_stats.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/metrics_default.h"
 

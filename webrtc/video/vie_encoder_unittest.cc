@@ -10,7 +10,7 @@
 
 #include <utility>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_encoder.h"

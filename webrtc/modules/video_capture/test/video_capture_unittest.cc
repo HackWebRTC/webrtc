@@ -14,7 +14,7 @@
 #include <memory>
 #include <sstream>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -80,7 +80,7 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
     CriticalSectionScoped cs(capture_cs_.get());
     int height = videoFrame.height();
     int width = videoFrame.width();
-#if ANDROID
+#if defined(ANDROID) && ANDROID
     // Android camera frames may be rotated depending on test device
     // orientation.
     EXPECT_TRUE(height == capability_.height || height == capability_.width);
@@ -337,7 +337,7 @@ TEST_F(VideoCaptureTest, MAYBE_Capabilities) {
     EXPECT_EQ(0, module->StopCapture());
   }
 
-#if ANDROID
+#if defined(ANDROID) && ANDROID
   // There's no reason for this to _necessarily_ be true, but in practice all
   // Android devices this test runs on in fact do support multiple capture
   // resolutions and multiple frame-rates per captured resolution, so we assert

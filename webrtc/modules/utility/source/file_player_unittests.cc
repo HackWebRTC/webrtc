@@ -18,7 +18,7 @@
 #include <string>
 
 #include "gflags/gflags.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/md5digest.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/test/testsupport/fileutils.h"

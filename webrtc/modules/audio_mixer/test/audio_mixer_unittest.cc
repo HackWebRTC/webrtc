@@ -13,7 +13,7 @@
 #include <memory>
 #include <utility>
 
-#include "testing/gmock/include/gmock/gmock.h"
+#include "webrtc/test/gmock.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_defines.h"

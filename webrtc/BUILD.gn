@@ -179,6 +179,7 @@ config("common_config") {
         "-Wimplicit-fallthrough",
         "-Wthread-safety",
         "-Winconsistent-missing-override",
+        "-Wundef",
       ]
     }
   }

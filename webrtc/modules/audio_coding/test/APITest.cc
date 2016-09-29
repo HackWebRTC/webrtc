@@ -19,7 +19,7 @@
 #include <ostream>
 #include <string>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common_types.h"

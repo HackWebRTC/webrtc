@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/ignore_wundef.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
@@ -24,11 +25,13 @@
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
 // Files generated at build-time by the protobuf compiler.
+RTC_PUSH_IGNORING_WUNDEF()
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/modules/audio_processing/debug.pb.h"
 #else
 #include "webrtc/modules/audio_processing/debug.pb.h"
 #endif
+RTC_POP_IGNORING_WUNDEF()
 #endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
 
 namespace webrtc {

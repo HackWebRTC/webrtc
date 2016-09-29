@@ -13,7 +13,7 @@
 
 #include <cmath>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/common_audio/channel_buffer.h"
 #include "webrtc/modules/audio_processing/splitting_filter.h"
 

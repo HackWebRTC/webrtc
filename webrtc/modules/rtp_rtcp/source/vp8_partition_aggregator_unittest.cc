@@ -10,7 +10,7 @@
 
 #include <stdlib.h>  // NULL
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/modules/rtp_rtcp/source/vp8_partition_aggregator.h"
 
 namespace webrtc {

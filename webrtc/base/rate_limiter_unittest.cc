@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <memory>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 #include "webrtc/base/event.h"
 #include "webrtc/base/platform_thread.h"

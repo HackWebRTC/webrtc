@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <vector>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/modules/audio_coding/neteq/test/NETEQTEST_RTPpacket.h"
 
 #define FIRSTLINELEN 40

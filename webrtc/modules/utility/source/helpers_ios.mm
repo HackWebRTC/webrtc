@@ -178,7 +178,8 @@ int GetProcessorCount() {
   return [NSProcessInfo processInfo].processorCount;
 }
 
-#if defined(__IPHONE_9_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_9_0
+#if defined(__IPHONE_9_0) && defined(__IPHONE_OS_VERSION_MAX_ALLOWED) \
+    && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_9_0
 bool GetLowPowerModeEnabled() {
   if (isOperatingSystemAtLeastVersion(9.0)) {
     // lowPoweredModeEnabled is only available on iOS9+.

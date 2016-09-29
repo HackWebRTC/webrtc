@@ -13,7 +13,7 @@
 
 #include "webrtc/common_audio/vad/include/vad.h"
 
-#include "testing/gmock/include/gmock/gmock.h"
+#include "webrtc/test/gmock.h"
 
 namespace webrtc {
 

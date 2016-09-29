@@ -10,7 +10,7 @@
 
 #include <queue>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/system_wrappers/include/sleep.h"

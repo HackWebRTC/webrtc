@@ -39,6 +39,8 @@
 
 #if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
 #define CS_DEBUG_CHECKS 1
+#else
+#define CS_DEBUG_CHECKS 0
 #endif
 
 #if CS_DEBUG_CHECKS

@@ -12,7 +12,7 @@
 
 #include <stdlib.h>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/checks.h"

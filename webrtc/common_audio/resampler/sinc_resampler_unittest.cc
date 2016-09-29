@@ -18,8 +18,8 @@
 
 #include <memory>
 
-#include "testing/gmock/include/gmock/gmock.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common_audio/resampler/sinc_resampler.h"
 #include "webrtc/common_audio/resampler/sinusoidal_linear_chirp_source.h"

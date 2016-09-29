@@ -10,7 +10,7 @@
 
 #include <string.h>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/decoding_state.h"
 #include "webrtc/modules/video_coding/frame_buffer.h"

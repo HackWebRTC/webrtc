@@ -13,8 +13,8 @@
 #include <list>
 #include <memory>
 
-#include "testing/gtest/include/gtest/gtest.h"
-#include "testing/gmock/include/gmock/gmock.h"
+#include "webrtc/test/gtest.h"
+#include "webrtc/test/gmock.h"
 #include "webrtc/modules/video_coding/frame_buffer.h"
 #include "webrtc/modules/video_coding/jitter_buffer.h"
 #include "webrtc/modules/video_coding/media_opt_util.h"

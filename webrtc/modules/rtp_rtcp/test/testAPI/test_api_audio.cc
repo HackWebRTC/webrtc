@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <memory>
 #include <vector>
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 #include "webrtc/modules/rtp_rtcp/test/testAPI/test_api.h"
 

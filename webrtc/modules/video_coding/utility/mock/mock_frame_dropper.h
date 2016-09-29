@@ -12,7 +12,7 @@
 
 #include <string>
 
-#include "testing/gmock/include/gmock/gmock.h"
+#include "webrtc/test/gmock.h"
 #include "webrtc/modules/video_coding/utility/frame_dropper.h"
 #include "webrtc/typedefs.h"
 

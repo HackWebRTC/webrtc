@@ -10,8 +10,8 @@
 
 #include <memory>
 
-#include "testing/gmock/include/gmock/gmock.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/modules/video_coding/include/mock/mock_video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/mock/mock_vcm_callbacks.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"

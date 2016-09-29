@@ -13,7 +13,7 @@
 #include <memory>
 #include <string>
 
-#include "testing/gmock/include/gmock/gmock.h"
+#include "webrtc/test/gmock.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/thread.h"

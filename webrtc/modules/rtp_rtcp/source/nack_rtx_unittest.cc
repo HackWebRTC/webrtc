@@ -14,7 +14,7 @@
 #include <memory>
 #include <set>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/rate_limiter.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"

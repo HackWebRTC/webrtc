@@ -31,7 +31,7 @@
 
 #if !defined(RTC_ARCH_CPU_BIG_ENDIAN) && !defined(RTC_ARCH_CPU_LITTLE_ENDIAN)
 // x86, arm or GCC provided __BYTE_ORDER__ macros
-#if CPU_X86 || CPU_ARM ||  \
+#if defined(CPU_X86) || defined(CPU_ARM) ||                             \
   (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 #define RTC_ARCH_CPU_LITTLE_ENDIAN
 #elif defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__

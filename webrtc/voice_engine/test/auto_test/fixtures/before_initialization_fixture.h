@@ -27,8 +27,8 @@
 #include "webrtc/voice_engine/include/voe_volume_control.h"
 #include "webrtc/voice_engine/test/auto_test/voe_test_common.h"
 
-#include "testing/gmock/include/gmock/gmock.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 
 // This convenient fixture sets up all voice engine interfaces automatically for
 // use by testing subclasses. It allocates each interface and releases it once

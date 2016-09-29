@@ -10,7 +10,7 @@
 
 #include <memory>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/smoothing_filter.h"
 
 namespace webrtc {

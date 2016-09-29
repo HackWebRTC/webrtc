@@ -14,7 +14,7 @@
 #include <queue>
 #include <vector>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/video_coding/encoded_frame.h"
 #include "webrtc/modules/video_coding/packet.h"

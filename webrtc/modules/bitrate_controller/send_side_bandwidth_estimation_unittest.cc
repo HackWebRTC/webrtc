@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <vector>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/call/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/bitrate_controller/send_side_bandwidth_estimation.h"
 

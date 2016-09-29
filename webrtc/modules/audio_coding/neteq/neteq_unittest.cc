@@ -21,7 +21,8 @@
 #include <vector>
 
 #include "gflags/gflags.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
+#include "webrtc/base/ignore_wundef.h"
 #include "webrtc/base/sha1digest.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
@@ -33,11 +34,13 @@
 #include "webrtc/typedefs.h"
 
 #ifdef WEBRTC_NETEQ_UNITTEST_BITEXACT
+RTC_PUSH_IGNORING_WUNDEF()
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/modules/audio_coding/neteq/neteq_unittest.pb.h"
 #else
 #include "webrtc/audio_coding/neteq/neteq_unittest.pb.h"
 #endif
+RTC_POP_IGNORING_WUNDEF()
 #endif
 
 DEFINE_bool(gen_ref, false, "Generate reference files.");
@@ -48,9 +51,9 @@ const std::string& PlatformChecksum(const std::string& checksum_general,
                                     const std::string& checksum_android,
                                     const std::string& checksum_win_32,
                                     const std::string& checksum_win_64) {
-#ifdef WEBRTC_ANDROID
+#if defined(WEBRTC_ANDROID)
     return checksum_android;
-#elif WEBRTC_WIN
+#elif defined(WEBRTC_WIN)
   #ifdef WEBRTC_ARCH_64_BITS
     return checksum_win_64;
   #else

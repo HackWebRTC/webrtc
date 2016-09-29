@@ -14,9 +14,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#if _WIN32
+#ifdef _WIN32
 #include <windows.h>
-#elif WEBRTC_LINUX
+#elif defined(WEBRTC_LINUX)
 #include <time.h>
 #else
 #include <sys/time.h>

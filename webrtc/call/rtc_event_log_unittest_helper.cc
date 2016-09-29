@@ -14,7 +14,7 @@
 
 #include <string>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/test/test_suite.h"
 #include "webrtc/test/testsupport/fileutils.h"

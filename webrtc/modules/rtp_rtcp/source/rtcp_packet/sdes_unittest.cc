@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sdes.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/rtcp_packet_parser.h"
 
 using webrtc::rtcp::Sdes;

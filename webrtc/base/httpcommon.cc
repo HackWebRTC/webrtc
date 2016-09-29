@@ -388,7 +388,7 @@ bool HttpDateToSeconds(const std::string& date, time_t* seconds) {
   tm *tm_for_timezone = localtime(&gmt);
   *seconds = gmt + tm_for_timezone->tm_gmtoff;
 #else
-#if _MSC_VER >= 1900
+#if defined(_MSC_VER) && _MSC_VER >= 1900
   long timezone = 0;
   _get_timezone(&timezone);
 #endif

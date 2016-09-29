@@ -10,7 +10,7 @@
 
 #include "webrtc/base/platform_thread.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 
 namespace rtc {

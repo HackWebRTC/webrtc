@@ -12,7 +12,7 @@
 #include <list>
 #include <memory>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/random.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"

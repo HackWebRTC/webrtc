@@ -16,7 +16,7 @@
 
 #include "webrtc/modules/audio_device/test/audio_device_test_defines.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 #include "webrtc/modules/audio_device/audio_device_config.h"

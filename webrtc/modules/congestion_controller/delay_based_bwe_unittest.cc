@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/congestion_controller/delay_based_bwe.h"

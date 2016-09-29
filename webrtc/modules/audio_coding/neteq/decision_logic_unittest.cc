@@ -10,7 +10,7 @@
 
 // Unit tests for DecisionLogic class and derived classes.
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/modules/audio_coding/codecs/mock/mock_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/neteq/buffer_level_filter.h"
 #include "webrtc/modules/audio_coding/neteq/decoder_database.h"

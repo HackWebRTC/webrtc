@@ -12,8 +12,8 @@
 
 #include "webrtc/modules/audio_coding/neteq/tick_timer.h"
 
-#include "testing/gmock/include/gmock/gmock.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

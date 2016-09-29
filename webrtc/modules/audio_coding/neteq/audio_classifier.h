@@ -11,8 +11,12 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_AUDIO_CLASSIFIER_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_AUDIO_CLASSIFIER_H_
 
+#include "webrtc/base/ignore_wundef.h"
+
 extern "C" {
+RTC_PUSH_IGNORING_WUNDEF()
 #include "celt.h"
+RTC_POP_IGNORING_WUNDEF()
 #include "analysis.h"
 #include "opus_private.h"
 }

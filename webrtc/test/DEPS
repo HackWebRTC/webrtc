@@ -12,3 +12,12 @@ include_rules = [
   "+webrtc/system_wrappers",
   "+webrtc/voice_engine",
 ]
+
+specific_include_rules = {
+  "gmock\.h": [
+    "+testing/gmock/include/gmock",
+  ],
+  "gtest\.h": [
+    "+testing/gtest/include/gtest",
+  ],
+}

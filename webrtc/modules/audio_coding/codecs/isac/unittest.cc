@@ -13,7 +13,7 @@
 #include <sstream>
 #include <vector>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/include/audio_encoder_isacfix.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"

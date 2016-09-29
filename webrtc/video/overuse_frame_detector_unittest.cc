@@ -12,8 +12,8 @@
 
 #include "webrtc/video/overuse_frame_detector.h"
 
-#include "testing/gmock/include/gmock/gmock.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 
 #include "webrtc/base/event.h"
 #include "webrtc/system_wrappers/include/clock.h"

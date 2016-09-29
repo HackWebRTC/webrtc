@@ -12,7 +12,7 @@
 
 #include "webrtc/modules/audio_coding/audio_network_adaptor/fec_controller.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/mock/mock_smoothing_filter.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

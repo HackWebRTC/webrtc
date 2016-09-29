@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/audio_coding/neteq/sync_buffer.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

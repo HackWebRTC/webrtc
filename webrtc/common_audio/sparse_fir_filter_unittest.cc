@@ -12,7 +12,7 @@
 
 #include "webrtc/common_audio/sparse_fir_filter.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/common_audio/fir_filter.h"
 

@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/video_coding/utility/frame_dropper.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/logging.h"
 
 namespace webrtc {

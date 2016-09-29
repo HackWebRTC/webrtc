@@ -9,7 +9,7 @@
  */
 #include "webrtc/modules/rtp_rtcp/source/time_util.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

@@ -12,7 +12,7 @@
 
 #include <algorithm>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"

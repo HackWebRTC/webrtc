@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/audio_network_adaptor_impl.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/mock/mock_controller.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/mock/mock_controller_manager.h"

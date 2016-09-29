@@ -10,7 +10,7 @@
 
 #include <memory>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 

@@ -15,8 +15,8 @@
 
 #include "webrtc/api/statscollector.h"
 
-#include "testing/gmock/include/gmock/gmock.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/api/mediastream.h"
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/mediastreamtrack.h"

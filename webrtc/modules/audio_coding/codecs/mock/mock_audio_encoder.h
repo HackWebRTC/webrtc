@@ -16,7 +16,7 @@
 #include "webrtc/base/array_view.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 
-#include "testing/gmock/include/gmock/gmock.h"
+#include "webrtc/test/gmock.h"
 
 namespace webrtc {
 

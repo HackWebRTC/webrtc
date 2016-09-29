@@ -13,7 +13,7 @@
 #include <memory>
 #include <string>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/frame_generator.h"
 #include "webrtc/test/testsupport/fileutils.h"
 

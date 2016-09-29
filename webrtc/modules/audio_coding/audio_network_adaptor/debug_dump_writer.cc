@@ -11,13 +11,16 @@
 #include "webrtc/modules/audio_coding/audio_network_adaptor/debug_dump_writer.h"
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/ignore_wundef.h"
 
 #ifdef WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
+RTC_PUSH_IGNORING_WUNDEF()
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/modules/audio_coding/audio_network_adaptor/debug_dump.pb.h"
 #else
 #include "webrtc/modules/audio_coding/audio_network_adaptor/debug_dump.pb.h"
 #endif
+RTC_POP_IGNORING_WUNDEF()
 #endif
 
 namespace webrtc {

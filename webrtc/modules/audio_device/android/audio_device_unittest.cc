@@ -16,8 +16,8 @@
 #include <string>
 #include <vector>
 
-#include "testing/gmock/include/gmock/gmock.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/format_macros.h"

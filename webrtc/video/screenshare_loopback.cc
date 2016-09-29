@@ -11,7 +11,7 @@
 #include <stdio.h>
 
 #include "gflags/gflags.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 #include "webrtc/test/field_trial.h"
 #include "webrtc/test/run_test.h"

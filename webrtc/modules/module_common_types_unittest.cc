@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/include/module_common_types.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

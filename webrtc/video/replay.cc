@@ -15,7 +15,7 @@
 #include <sstream>
 
 #include "gflags/gflags.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 #include "webrtc/base/checks.h"
 #include "webrtc/call.h"

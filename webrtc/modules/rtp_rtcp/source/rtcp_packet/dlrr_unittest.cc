@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/dlrr.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 

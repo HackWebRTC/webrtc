@@ -14,7 +14,7 @@
 #include <memory>
 #include <vector>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/rate_limiter.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_payload_registry.h"

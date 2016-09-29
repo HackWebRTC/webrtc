@@ -7,7 +7,6 @@ include_rules = [
   "+external/webrtc/webrtc",  # Android platform build.
   "+gflags",
   "+libyuv",
-  "+testing",
   "-webrtc",  # Has to be disabled; otherwise all dirs below will be allowed.
   # Individual headers that will be moved out of here, see webrtc:4243.
   "+webrtc/call.h",

@@ -10,7 +10,7 @@
 
 #include <set>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/modules/video_coding/sequence_number_util.h"
 
 namespace webrtc {

@@ -9,7 +9,7 @@
  */
 #include <stdio.h>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/video/video_quality_test.h"
 
 namespace webrtc {

@@ -38,11 +38,15 @@
 #include "webrtc/base/pathutils.h"
 #include "webrtc/base/stringutils.h"
 
-#if defined(WEBRTC_WIN)
-#define _TRY_WINHTTP 1
 #define _TRY_JSPROXY 0
 #define _TRY_WM_FINDPROXY 0
+
+#if defined(WEBRTC_WIN)
+#define _TRY_WINHTTP 1
 #define _TRY_IE_LAN_SETTINGS 1
+#else
+#define _TRY_WINHTTP 0
+#define _TRY_IE_LAN_SETTINGS 0
 #endif  // WEBRTC_WIN
 
 // For all platforms try Firefox.

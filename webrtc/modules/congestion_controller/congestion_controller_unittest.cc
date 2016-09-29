@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "testing/gmock/include/gmock/gmock.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/call/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/pacing/mock/mock_paced_sender.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"

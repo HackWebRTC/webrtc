@@ -19,6 +19,7 @@
 #include <memory>
 
 #include "webrtc/base/format_macros.h"
+#include "webrtc/base/ignore_wundef.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/include/config.h"
@@ -26,15 +27,17 @@
 #include "webrtc/modules/audio_processing/test/test_utils.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/perf_test.h"
+
+RTC_PUSH_IGNORING_WUNDEF()
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
-#include "gtest/gtest.h"
 #include "external/webrtc/webrtc/modules/audio_processing/debug.pb.h"
 #else
-#include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_processing/debug.pb.h"
 #endif
+RTC_POP_IGNORING_WUNDEF()
 
 namespace webrtc {
 

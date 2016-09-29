@@ -11,7 +11,7 @@
 #include <map>
 #include <memory>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/test/rtp_file_reader.h"
 #include "webrtc/test/testsupport/fileutils.h"

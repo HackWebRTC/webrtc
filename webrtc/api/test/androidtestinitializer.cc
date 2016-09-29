@@ -12,12 +12,16 @@
 
 #include <pthread.h>
 
+#include "webrtc/base/ignore_wundef.h"
+
 // Note: this dependency is dangerous since it reaches into Chromium's base.
 // There's a risk of e.g. macro clashes. This file may only be used in tests.
 // Since we use Chromes build system for creating the gtest binary, this should
 // be fine.
+RTC_PUSH_IGNORING_WUNDEF()
 #include "base/android/context_utils.h"
 #include "base/android/jni_android.h"
+RTC_POP_IGNORING_WUNDEF()
 
 #include "webrtc/api/android/jni/classreferenceholder.h"
 #include "webrtc/api/android/jni/jni_helpers.h"

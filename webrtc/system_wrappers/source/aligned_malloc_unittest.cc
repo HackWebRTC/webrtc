@@ -12,13 +12,13 @@
 
 #include <memory>
 
-#if _WIN32
+#ifdef _WIN32
 #include <windows.h>
 #else
 #include <stdint.h>
 #endif
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

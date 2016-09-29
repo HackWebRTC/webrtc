@@ -117,6 +117,7 @@ rtc_static_library("rtc_base_approved") {
     "file.h",
     "format_macros.h",
     "function_view.h",
+    "ignore_wundef.h",
     "location.cc",
     "location.h",
     "md5.cc",

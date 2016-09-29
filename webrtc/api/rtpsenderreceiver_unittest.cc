@@ -12,8 +12,8 @@
 #include <string>
 #include <utility>
 
-#include "testing/gmock/include/gmock/gmock.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/api/audiotrack.h"
 #include "webrtc/api/fakemediacontroller.h"
 #include "webrtc/api/localaudiosource.h"

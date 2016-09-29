@@ -150,7 +150,7 @@ LogMessage::LogMessage(const char* file,
       case ERRCTX_ERRNO:
         tmp << " " << strerror(err);
         break;
-#if WEBRTC_WIN
+#ifdef WEBRTC_WIN
       case ERRCTX_HRESULT: {
         char msgbuf[256];
         DWORD flags = FORMAT_MESSAGE_FROM_SYSTEM;

@@ -11,7 +11,7 @@
 #include <limits>
 #include <memory>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "vpx/vp8cx.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/video_coding/codecs/vp9/screenshare_layers.h"

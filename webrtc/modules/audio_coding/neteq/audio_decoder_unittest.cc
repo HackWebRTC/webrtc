@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/modules/audio_coding/codecs/g711/audio_decoder_pcm.h"
 #include "webrtc/modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
 #include "webrtc/modules/audio_coding/codecs/g722/audio_decoder_g722.h"

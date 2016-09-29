@@ -20,7 +20,7 @@
 #include <Windows.h>
 #endif
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"

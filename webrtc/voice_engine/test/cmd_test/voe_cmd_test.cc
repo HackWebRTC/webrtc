@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "gflags/gflags.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"

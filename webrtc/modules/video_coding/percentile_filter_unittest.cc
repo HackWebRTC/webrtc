@@ -10,7 +10,7 @@
 
 #include <algorithm>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/video_coding/percentile_filter.h"
 

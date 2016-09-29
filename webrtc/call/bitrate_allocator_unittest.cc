@@ -12,8 +12,8 @@
 #include <memory>
 #include <vector>
 
-#include "testing/gmock/include/gmock/gmock.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/call/bitrate_allocator.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 

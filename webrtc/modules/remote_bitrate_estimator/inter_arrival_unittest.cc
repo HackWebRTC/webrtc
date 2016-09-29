@@ -10,7 +10,7 @@
 
 #include <memory>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 #include "webrtc/common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/inter_arrival.h"

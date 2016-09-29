@@ -12,7 +12,7 @@
 #include <memory>
 #include <string>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 #include "webrtc/api/call/audio_state.h"
 #include "webrtc/base/checks.h"

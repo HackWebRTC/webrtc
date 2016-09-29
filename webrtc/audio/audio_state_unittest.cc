@@ -10,7 +10,7 @@
 
 #include <memory>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 #include "webrtc/audio/audio_state.h"
 #include "webrtc/test/mock_voice_engine.h"

@@ -12,7 +12,7 @@
 #include <memory>
 #include <vector>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/fec_test_helper.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"

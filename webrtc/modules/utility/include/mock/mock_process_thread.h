@@ -15,7 +15,7 @@
 
 #include "webrtc/modules/utility/include/process_thread.h"
 
-#include "testing/gmock/include/gmock/gmock.h"
+#include "webrtc/test/gmock.h"
 
 namespace webrtc {
 

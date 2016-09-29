@@ -11,8 +11,8 @@
 #include "webrtc/test/test_suite.h"
 
 #include "gflags/gflags.h"
-#include "testing/gmock/include/gmock/gmock.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/system_wrappers/include/metrics_default.h"
 #include "webrtc/test/testsupport/fileutils.h"

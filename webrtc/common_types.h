@@ -27,9 +27,9 @@
 #pragma warning(disable : 4351)
 #endif
 
-#ifdef WEBRTC_EXPORT
+#if defined(WEBRTC_EXPORT)
 #define WEBRTC_DLLEXPORT _declspec(dllexport)
-#elif WEBRTC_DLL
+#elif defined(WEBRTC_DLL)
 #define WEBRTC_DLLEXPORT _declspec(dllimport)
 #else
 #define WEBRTC_DLLEXPORT

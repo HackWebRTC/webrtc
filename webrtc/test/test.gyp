@@ -78,10 +78,13 @@
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/testing/gmock.gyp:gmock',
         '<(webrtc_root)/base/base.gyp:gtest_prod',
+        '<(webrtc_root)/base/base.gyp:rtc_base_approved',
         '<(webrtc_root)/common_video/common_video.gyp:common_video',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
+        'gmock.h',
+        'gtest.h',
         'testsupport/fileutils.cc',
         'testsupport/fileutils.h',
         'testsupport/frame_reader.cc',

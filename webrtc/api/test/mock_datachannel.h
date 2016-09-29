@@ -12,7 +12,7 @@
 #define WEBRTC_API_TEST_MOCK_DATACHANNEL_H_
 
 #include "webrtc/api/datachannel.h"
-#include "testing/gmock/include/gmock/gmock.h"
+#include "webrtc/test/gmock.h"
 
 namespace webrtc {
 

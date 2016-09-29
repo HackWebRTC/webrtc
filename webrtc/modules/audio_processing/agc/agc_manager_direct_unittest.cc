@@ -10,8 +10,8 @@
 
 #include "webrtc/modules/audio_processing/agc/agc_manager_direct.h"
 
-#include "testing/gmock/include/gmock/gmock.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_processing/agc/mock_agc.h"
 #include "webrtc/modules/audio_processing/include/mock_audio_processing.h"

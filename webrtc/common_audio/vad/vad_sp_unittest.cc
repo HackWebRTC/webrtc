@@ -10,7 +10,7 @@
 
 #include <stdlib.h>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/common_audio/vad/vad_unittest.h"
 #include "webrtc/typedefs.h"
 

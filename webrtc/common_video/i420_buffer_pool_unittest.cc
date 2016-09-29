@@ -10,7 +10,7 @@
 
 #include <string>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/common_video/include/i420_buffer_pool.h"
 
 namespace webrtc {

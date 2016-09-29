@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/format_macros.h"

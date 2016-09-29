@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <sstream>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 
 static const size_t kVector16Size = 9;

@@ -13,7 +13,7 @@
 
 #include "webrtc/modules/audio_coding/neteq/delay_manager.h"
 
-#include "testing/gmock/include/gmock/gmock.h"
+#include "webrtc/test/gmock.h"
 
 namespace webrtc {
 

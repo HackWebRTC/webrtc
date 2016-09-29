@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/checks.h"  // force defintion of RTC_DCHECK_IS_ON
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 

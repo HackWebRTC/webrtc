@@ -10,7 +10,7 @@
 
 #include "webrtc/common_video/h264/sps_parser.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/bitbuffer.h"

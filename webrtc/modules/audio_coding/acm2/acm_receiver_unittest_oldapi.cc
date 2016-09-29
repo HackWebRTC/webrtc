@@ -13,7 +13,7 @@
 #include <algorithm>  // std::min
 #include <memory>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/safe_conversions.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"

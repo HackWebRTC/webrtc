@@ -17,7 +17,7 @@
 #include <cmath>
 #include <memory>
 
-#include "gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/modules/audio_processing/agc/utility.h"
 

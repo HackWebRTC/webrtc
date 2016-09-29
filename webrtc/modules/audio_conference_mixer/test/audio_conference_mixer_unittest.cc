@@ -10,7 +10,7 @@
 
 #include <memory>
 
-#include "testing/gmock/include/gmock/gmock.h"
+#include "webrtc/test/gmock.h"
 #include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer.h"
 #include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer_defines.h"
 

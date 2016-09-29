@@ -13,8 +13,8 @@
 #include <list>
 #include <memory>
 
-#include "testing/gmock/include/gmock/gmock.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/modules/rtp_rtcp/include/fec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"

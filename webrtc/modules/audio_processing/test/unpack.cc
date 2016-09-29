@@ -19,10 +19,14 @@
 
 #include "gflags/gflags.h"
 #include "webrtc/base/format_macros.h"
-#include "webrtc/modules/audio_processing/debug.pb.h"
+#include "webrtc/base/ignore_wundef.h"
 #include "webrtc/modules/audio_processing/test/protobuf_utils.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
 #include "webrtc/typedefs.h"
+
+RTC_PUSH_IGNORING_WUNDEF()
+#include "webrtc/modules/audio_processing/debug.pb.h"
+RTC_POP_IGNORING_WUNDEF()
 
 // TODO(andrew): unpack more of the data.
 DEFINE_string(input_file, "input", "The name of the input stream file.");

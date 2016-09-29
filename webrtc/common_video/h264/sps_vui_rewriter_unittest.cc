@@ -10,7 +10,7 @@
 
 #include <vector>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 #include "webrtc/base/bitbuffer.h"
 #include "webrtc/base/buffer.h"

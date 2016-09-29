@@ -18,7 +18,7 @@ namespace webrtc {
 namespace {
 
 float BesselJ0(float x) {
-#if WEBRTC_WIN
+#ifdef WEBRTC_WIN
   return _j0(x);
 #else
   return j0(x);

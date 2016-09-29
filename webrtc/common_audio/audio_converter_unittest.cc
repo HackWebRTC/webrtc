@@ -13,7 +13,7 @@
 #include <memory>
 #include <vector>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/common_audio/audio_converter.h"

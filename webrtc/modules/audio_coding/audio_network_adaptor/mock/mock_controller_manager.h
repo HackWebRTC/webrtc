@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "webrtc/modules/audio_coding/audio_network_adaptor/controller_manager.h"
-#include "testing/gmock/include/gmock/gmock.h"
+#include "webrtc/test/gmock.h"
 
 namespace webrtc {
 
