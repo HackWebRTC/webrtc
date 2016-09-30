@@ -31,18 +31,18 @@ class VideoAdapterTest : public testing::Test {
     capture_format_.interval = VideoFormat::FpsToInterval(30);
 
     listener_.reset(new VideoCapturerListener(&adapter_));
-    capturer_->SignalFrameCaptured.connect(
-        listener_.get(), &VideoCapturerListener::OnFrameCaptured);
+    capturer_->AddOrUpdateSink(listener_.get(), rtc::VideoSinkWants());
   }
 
   virtual void TearDown() {
     // Explicitly disconnect the VideoCapturer before to avoid data races
     // (frames delivered to VideoCapturerListener while it's being destructed).
-    capturer_->SignalFrameCaptured.disconnect_all();
+    capturer_->RemoveSink(listener_.get());
   }
 
  protected:
-  class VideoCapturerListener: public sigslot::has_slots<> {
+  class VideoCapturerListener
+      : public rtc::VideoSinkInterface<cricket::VideoFrame> {
    public:
     struct Stats {
       int captured_frames;
@@ -62,19 +62,18 @@ class VideoAdapterTest : public testing::Test {
           last_adapt_was_no_op_(false) {
     }
 
-    void OnFrameCaptured(VideoCapturer* capturer,
-                         const CapturedFrame* captured_frame) {
+    void OnFrame(const cricket::VideoFrame& frame) {
       rtc::CritScope lock(&crit_);
-      const int in_width = captured_frame->width;
-      const int in_height = abs(captured_frame->height);
+      const int in_width = frame.width();
+      const int in_height = frame.height();
       int cropped_width;
       int cropped_height;
       int out_width;
       int out_height;
-      if (video_adapter_->AdaptFrameResolution(in_width, in_height,
-                                               captured_frame->time_stamp,
-                                               &cropped_width, &cropped_height,
-                                               &out_width, &out_height)) {
+      if (video_adapter_->AdaptFrameResolution(
+              in_width, in_height,
+              frame.timestamp_us() * rtc::kNumNanosecsPerMicrosec,
+              &cropped_width, &cropped_height, &out_width, &out_height)) {
         cropped_width_ = cropped_width;
         cropped_height_ = cropped_height;
         out_width_ = out_width;
@@ -183,7 +182,7 @@ TEST_F(VideoAdapterTest, AdaptFramerateToHalf) {
 
   capturer_->CaptureFrame();
   EXPECT_GE(listener_->GetStats().captured_frames, 2);
-  EXPECT_EQ(0, listener_->GetStats().dropped_frames);
+  EXPECT_EQ(1, listener_->GetStats().dropped_frames);
 
   capturer_->CaptureFrame();
   EXPECT_GE(listener_->GetStats().captured_frames, 3);
@@ -191,7 +190,7 @@ TEST_F(VideoAdapterTest, AdaptFramerateToHalf) {
 
   capturer_->CaptureFrame();
   EXPECT_GE(listener_->GetStats().captured_frames, 4);
-  EXPECT_EQ(1, listener_->GetStats().dropped_frames);
+  EXPECT_EQ(2, listener_->GetStats().dropped_frames);
 
   capturer_->CaptureFrame();
   EXPECT_GE(listener_->GetStats().captured_frames, 5);
@@ -199,7 +198,7 @@ TEST_F(VideoAdapterTest, AdaptFramerateToHalf) {
 
   capturer_->CaptureFrame();
   EXPECT_GE(listener_->GetStats().captured_frames, 6);
-  EXPECT_EQ(2, listener_->GetStats().dropped_frames);
+  EXPECT_EQ(3, listener_->GetStats().dropped_frames);
 
   capturer_->CaptureFrame();
   EXPECT_GE(listener_->GetStats().captured_frames, 7);
@@ -207,7 +206,7 @@ TEST_F(VideoAdapterTest, AdaptFramerateToHalf) {
 
   capturer_->CaptureFrame();
   EXPECT_GE(listener_->GetStats().captured_frames, 8);
-  EXPECT_EQ(3, listener_->GetStats().dropped_frames);
+  EXPECT_EQ(4, listener_->GetStats().dropped_frames);
 
   capturer_->CaptureFrame();
   EXPECT_GE(listener_->GetStats().captured_frames, 9);
@@ -215,7 +214,7 @@ TEST_F(VideoAdapterTest, AdaptFramerateToHalf) {
 
   capturer_->CaptureFrame();
   EXPECT_GE(listener_->GetStats().captured_frames, 10);
-  EXPECT_EQ(4, listener_->GetStats().dropped_frames);
+  EXPECT_EQ(5, listener_->GetStats().dropped_frames);
 }
 
 // Adapt the frame rate to be two thirds of the capture rate at the beginning.

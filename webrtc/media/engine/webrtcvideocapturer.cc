@@ -19,7 +19,6 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/media/engine/webrtcvideoframe.h"
-#include "webrtc/media/engine/webrtcvideoframefactory.h"
 
 #include "webrtc/base/win32.h"  // Need this to #include the impl files.
 #include "webrtc/modules/video_capture/video_capture_factory.h"
@@ -113,18 +112,14 @@ WebRtcVideoCapturer::WebRtcVideoCapturer()
       module_(nullptr),
       captured_frames_(0),
       start_thread_(nullptr),
-      async_invoker_(nullptr) {
-  set_frame_factory(new WebRtcVideoFrameFactory());
-}
+      async_invoker_(nullptr) {}
 
 WebRtcVideoCapturer::WebRtcVideoCapturer(WebRtcVcmFactoryInterface* factory)
     : factory_(factory),
       module_(nullptr),
       captured_frames_(0),
       start_thread_(nullptr),
-      async_invoker_(nullptr) {
-  set_frame_factory(new WebRtcVideoFrameFactory());
-}
+      async_invoker_(nullptr) {}
 
 WebRtcVideoCapturer::~WebRtcVideoCapturer() {}
 
