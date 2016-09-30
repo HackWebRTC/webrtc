@@ -111,6 +111,19 @@ bool VCMSessionInfo::NonReference() const {
   return packets_.front().video_header.codecHeader.VP8.nonReference;
 }
 
+std::vector<NaluInfo> VCMSessionInfo::GetNaluInfos() const {
+  if (packets_.empty() || packets_.front().video_header.codec != kRtpVideoH264)
+    return std::vector<NaluInfo>();
+  std::vector<NaluInfo> nalu_infos;
+  for (const VCMPacket& packet : packets_) {
+    for (size_t i = 0; i < packet.video_header.codecHeader.H264.nalus_length;
+         ++i) {
+      nalu_infos.push_back(packet.video_header.codecHeader.H264.nalus[i]);
+    }
+  }
+  return nalu_infos;
+}
+
 void VCMSessionInfo::SetGofInfo(const GofInfoVP9& gof_info, size_t idx) {
   if (packets_.empty() || packets_.front().video_header.codec != kRtpVideoVp9 ||
       packets_.front().video_header.codecHeader.VP9.flexible_mode) {

@@ -771,10 +771,8 @@ TEST_F(RtpDepacketizerH264Test, TestFuA) {
     const RTPVideoHeaderH264& h264 = payload.type.Video.codecHeader.H264;
     EXPECT_EQ(kH264FuA, h264.packetization_type);
     EXPECT_EQ(kIdr, h264.nalu_type);
-    ASSERT_EQ(1u, h264.nalus_length);
-    EXPECT_EQ(static_cast<H264::NaluType>(kIdr), h264.nalus[0].type);
-    EXPECT_EQ(-1, h264.nalus[0].sps_id);
-    EXPECT_EQ(-1, h264.nalus[0].pps_id);
+    // NALU info is only expected for the first FU-A packet.
+    EXPECT_EQ(0u, h264.nalus_length);
   }
 
   payload = RtpDepacketizer::ParsedPayload();
@@ -787,10 +785,8 @@ TEST_F(RtpDepacketizerH264Test, TestFuA) {
     const RTPVideoHeaderH264& h264 = payload.type.Video.codecHeader.H264;
     EXPECT_EQ(kH264FuA, h264.packetization_type);
     EXPECT_EQ(kIdr, h264.nalu_type);
-    ASSERT_EQ(1u, h264.nalus_length);
-    EXPECT_EQ(static_cast<H264::NaluType>(kIdr), h264.nalus[0].type);
-    EXPECT_EQ(-1, h264.nalus[0].sps_id);
-    EXPECT_EQ(-1, h264.nalus[0].pps_id);
+    // NALU info is only expected for the first FU-A packet.
+    ASSERT_EQ(0u, h264.nalus_length);
   }
 }
 

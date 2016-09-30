@@ -66,6 +66,10 @@ bool VCMFrameBuffer::NonReference() const {
   return _sessionInfo.NonReference();
 }
 
+std::vector<NaluInfo> VCMFrameBuffer::GetNaluInfos() const {
+  return _sessionInfo.GetNaluInfos();
+}
+
 void VCMFrameBuffer::SetGofInfo(const GofInfoVP9& gof_info, size_t idx) {
   _sessionInfo.SetGofInfo(gof_info, idx);
   // TODO(asapersson): Consider adding hdr->VP9.ref_picture_id for testing.
