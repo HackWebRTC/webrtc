@@ -180,7 +180,7 @@ void BitrateControllerImpl::OnReceiverEstimatedBitrate(uint32_t bitrate) {
     rtc::CritScope cs(&critsect_);
     bandwidth_estimation_.UpdateReceiverEstimate(clock_->TimeInMilliseconds(),
                                                  bitrate);
-    BWE_TEST_LOGGING_PLOT(1, "REMB[kbps]", clock_->TimeInMilliseconds(),
+    BWE_TEST_LOGGING_PLOT(1, "REMB_kbps", clock_->TimeInMilliseconds(),
                           bitrate / 1000);
   }
   MaybeTriggerOnNetworkChanged();
@@ -269,11 +269,11 @@ bool BitrateControllerImpl::GetNetworkParameters(uint32_t* bitrate,
     new_bitrate = true;
   }
 
-  BWE_TEST_LOGGING_PLOT(1, "fraction_loss_[%%]", clock_->TimeInMilliseconds(),
+  BWE_TEST_LOGGING_PLOT(1, "fraction_loss_%", clock_->TimeInMilliseconds(),
                         (last_fraction_loss_ * 100) / 256);
-  BWE_TEST_LOGGING_PLOT(1, "rtt[ms]", clock_->TimeInMilliseconds(),
+  BWE_TEST_LOGGING_PLOT(1, "rtt_ms", clock_->TimeInMilliseconds(),
                         last_rtt_ms_);
-  BWE_TEST_LOGGING_PLOT(1, "Target_bitrate[kbps]", clock_->TimeInMilliseconds(),
+  BWE_TEST_LOGGING_PLOT(1, "Target_bitrate_kbps", clock_->TimeInMilliseconds(),
                         last_bitrate_bps_ / 1000);
 
   return new_bitrate;

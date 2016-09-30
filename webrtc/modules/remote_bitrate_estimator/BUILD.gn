@@ -32,13 +32,11 @@ rtc_static_library("remote_bitrate_estimator") {
     "test/bwe_test_logging.h",
   ]
 
-  if (!rtc_include_tests) {
-    if (rtc_enable_bwe_test_logging) {
-      defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1" ]
-      sources += [ "test/bwe_test_logging.cc" ]
-    } else {
-      defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0" ]
-    }
+  if (rtc_enable_bwe_test_logging) {
+    defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1" ]
+    sources += [ "test/bwe_test_logging.cc" ]
+  } else {
+    defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0" ]
   }
 
   if (is_clang) {
@@ -88,7 +86,6 @@ if (rtc_include_tests) {
 
     if (rtc_enable_bwe_test_logging) {
       defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1" ]
-      sources += [ "test/bwe_test_logging.cc" ]
     } else {
       defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0" ]
     }

@@ -277,11 +277,11 @@ RtcpStatistics StreamStatisticianImpl::CalculateRtcpStatistics() {
       receive_counters_.retransmitted.packets;
   last_report_old_packets_ = receive_counters_.retransmitted.packets;
   last_report_seq_max_ = received_seq_max_;
-  BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "cumulative_loss[pkts]",
+  BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "cumulative_loss_pkts",
                                   clock_->TimeInMilliseconds(),
                                   cumulative_loss_, ssrc_);
   BWE_TEST_LOGGING_PLOT_WITH_SSRC(
-      1, "received_seq_max[pkts]", clock_->TimeInMilliseconds(),
+      1, "received_seq_max_pkts", clock_->TimeInMilliseconds(),
       (received_seq_max_ - received_seq_first_), ssrc_);
 
   return stats;

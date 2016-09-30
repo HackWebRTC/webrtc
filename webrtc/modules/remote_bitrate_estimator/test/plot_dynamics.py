@@ -49,11 +49,11 @@ class Variable(object):
 
 
   def addSample(self, line):
-    groups = re.search(r'_(((\d)+((,(\d)+)*))_(\D+))#\d@(\S+)', line)
+    groups = re.search(r'_(((\d)+((,(\d)+)*))_(\D+))#\d:(\d)@(\S+)', line)
 
     # Each variable will be plotted in a separated box.
     var_name = groups.group(1)
-    alg_name = groups.group(8)
+    alg_name = groups.group(9)
 
     alg_name = alg_name.replace('_', ' ')
 
@@ -126,8 +126,6 @@ def main():
           ('Throughput_kbps', "Time (s)", "Throughput (kbps)", 1, 4000),
           ('Delay_ms', "Time (s)", "One-way Delay (ms)", 2, 500),
           ('Packet_Loss', "Time (s)", "Packet Loss Ratio", 3, 1.0),
-          # ('Sending_Estimate_kbps', "Time (s)", "Sending Estimate (kbps)",
-          #                                                        4, 4000),
           ]
 
   var = []

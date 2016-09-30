@@ -41,17 +41,13 @@
         'test/bwe_test_logging.h',
       ], # source
       'conditions': [
-        ['include_tests==0', {
-          'conditions': [
-            ['enable_bwe_test_logging==1', {
-              'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1' ],
-              'sources': [
-                'test/bwe_test_logging.cc'
-              ],
-            }, {
-              'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0' ],
-            }],
+        ['enable_bwe_test_logging==1', {
+          'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1' ],
+          'sources': [
+            'test/bwe_test_logging.cc'
           ],
+        }, {
+          'defines': [ 'BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0' ],
         }],
       ],
     },

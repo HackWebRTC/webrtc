@@ -28,7 +28,7 @@ log=$(</dev/stdin)
 # Plot dynamics.
 function gen_gnuplot_input {
   colors=(a7001f 0a60c2 b2582b 21a66c d6604d 4393c3 f4a582 92c5de edcbb7 b1c5d0)
-  plots=$(echo "$log" | grep "^PLOT")
+  plots=$(echo "$log" | grep "^PLOT" | grep "#")
   # Each figure corresponds to a separate plot window.
   figures=($(echo "$plots" | cut -f 2 | sort | uniq))
 

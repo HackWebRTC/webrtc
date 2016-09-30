@@ -94,8 +94,8 @@ BandwidthUsage OveruseDetector::Detect(double offset,
   const double prev_offset = prev_offset_;
   prev_offset_ = offset;
   const double T = std::min(num_of_deltas, kMinNumDeltas) * offset;
-  BWE_TEST_LOGGING_PLOT(1, "offset[ms]", now_ms, offset);
-  BWE_TEST_LOGGING_PLOT(1, "gamma[ms]", now_ms, threshold_ / kMinNumDeltas);
+  BWE_TEST_LOGGING_PLOT(1, "offset_ms#1", now_ms, offset);
+  BWE_TEST_LOGGING_PLOT(1, "gamma_ms#1", now_ms, threshold_ / kMinNumDeltas);
   if (T > threshold_) {
     if (time_over_using_ == -1) {
       // Initialize the timer. Assume that we've been
