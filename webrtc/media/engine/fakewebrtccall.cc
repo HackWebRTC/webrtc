@@ -124,9 +124,8 @@ const webrtc::VideoEncoderConfig& FakeVideoSendStream::GetEncoderConfig()
   return encoder_config_;
 }
 
-const std::vector<webrtc::VideoStream>& FakeVideoSendStream::GetVideoStreams()
-    const {
-  return video_streams_;
+std::vector<webrtc::VideoStream> FakeVideoSendStream::GetVideoStreams() {
+  return encoder_config_.streams;
 }
 
 bool FakeVideoSendStream::IsSending() const {
@@ -172,12 +171,6 @@ int64_t FakeVideoSendStream::GetLastTimestamp() const {
 
 void FakeVideoSendStream::OnFrame(const webrtc::VideoFrame& frame) {
   ++num_swapped_frames_;
-  if (frame.width() != last_frame_.width() ||
-      frame.height() != last_frame_.height() ||
-      frame.rotation() != last_frame_.rotation()) {
-    video_streams_ = encoder_config_.video_stream_factory->CreateEncoderStreams(
-        frame.width(), frame.height(), encoder_config_);
-  }
   last_frame_.ShallowCopy(frame);
 }
 
@@ -199,20 +192,18 @@ void FakeVideoSendStream::EnableEncodedFrameRecording(
 
 void FakeVideoSendStream::ReconfigureVideoEncoder(
     webrtc::VideoEncoderConfig config) {
-  video_streams_ = config.video_stream_factory->CreateEncoderStreams(
-      last_frame_.width(), last_frame_.height(), config);
   if (config.encoder_specific_settings != NULL) {
     if (config_.encoder_settings.payload_name == "VP8") {
       config.encoder_specific_settings->FillVideoCodecVp8(&vpx_settings_.vp8);
-      if (!video_streams_.empty()) {
+      if (!config.streams.empty()) {
         vpx_settings_.vp8.numberOfTemporalLayers = static_cast<unsigned char>(
-            video_streams_.back().temporal_layer_thresholds_bps.size() + 1);
+            config.streams.back().temporal_layer_thresholds_bps.size() + 1);
       }
     } else if (config_.encoder_settings.payload_name == "VP9") {
       config.encoder_specific_settings->FillVideoCodecVp9(&vpx_settings_.vp9);
-      if (!video_streams_.empty()) {
+      if (!config.streams.empty()) {
         vpx_settings_.vp9.numberOfTemporalLayers = static_cast<unsigned char>(
-            video_streams_.back().temporal_layer_thresholds_bps.size() + 1);
+            config.streams.back().temporal_layer_thresholds_bps.size() + 1);
       }
     } else {
       ADD_FAILURE() << "Unsupported encoder payload: "

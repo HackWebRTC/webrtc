@@ -109,7 +109,7 @@ class FakeVideoSendStream final
   ~FakeVideoSendStream() override;
   const webrtc::VideoSendStream::Config& GetConfig() const;
   const webrtc::VideoEncoderConfig& GetEncoderConfig() const;
-  const std::vector<webrtc::VideoStream>& GetVideoStreams() const;
+  std::vector<webrtc::VideoStream> GetVideoStreams();
 
   bool IsSending() const;
   bool GetVp8Settings(webrtc::VideoCodecVP8* settings) const;
@@ -142,7 +142,6 @@ class FakeVideoSendStream final
   bool sending_;
   webrtc::VideoSendStream::Config config_;
   webrtc::VideoEncoderConfig encoder_config_;
-  std::vector<webrtc::VideoStream> video_streams_;
   bool codec_settings_set_;
   union VpxSettings {
     webrtc::VideoCodecVP8 vp8;

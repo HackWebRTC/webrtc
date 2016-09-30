@@ -125,7 +125,7 @@ struct VideoStream {
   std::vector<int> temporal_layer_thresholds_bps;
 };
 
-class VideoEncoderConfig {
+struct VideoEncoderConfig {
  public:
   // These are reference counted to permit copying VideoEncoderConfig and be
   // kept alive until all encoder_specific_settings go out of scope.
@@ -143,13 +143,14 @@ class VideoEncoderConfig {
     virtual void FillVideoCodecH264(VideoCodecH264* h264_settings) const;
    private:
     virtual ~EncoderSpecificSettings() {}
-    friend class VideoEncoderConfig;
+    friend struct VideoEncoderConfig;
   };
 
   class H264EncoderSpecificSettings : public EncoderSpecificSettings {
    public:
     explicit H264EncoderSpecificSettings(const VideoCodecH264& specifics);
-    void FillVideoCodecH264(VideoCodecH264* h264_settings) const override;
+    virtual void FillVideoCodecH264(
+        VideoCodecH264* h264_settings) const override;
 
    private:
     VideoCodecH264 specifics_;
@@ -158,7 +159,7 @@ class VideoEncoderConfig {
   class Vp8EncoderSpecificSettings : public EncoderSpecificSettings {
    public:
     explicit Vp8EncoderSpecificSettings(const VideoCodecVP8& specifics);
-    void FillVideoCodecVp8(VideoCodecVP8* vp8_settings) const override;
+    virtual void FillVideoCodecVp8(VideoCodecVP8* vp8_settings) const override;
 
    private:
     VideoCodecVP8 specifics_;
@@ -167,7 +168,7 @@ class VideoEncoderConfig {
   class Vp9EncoderSpecificSettings : public EncoderSpecificSettings {
    public:
     explicit Vp9EncoderSpecificSettings(const VideoCodecVP9& specifics);
-    void FillVideoCodecVp9(VideoCodecVP9* vp9_settings) const override;
+    virtual void FillVideoCodecVp9(VideoCodecVP9* vp9_settings) const override;
 
    private:
     VideoCodecVP9 specifics_;
@@ -176,21 +177,6 @@ class VideoEncoderConfig {
   enum class ContentType {
     kRealtimeVideo,
     kScreen,
-  };
-
-  class VideoStreamFactoryInterface : public rtc::RefCountInterface {
-   public:
-    // An implementation should return a std::vector<VideoStream> with the
-    // wanted VideoStream settings for the given video resolution.
-    // The size of the vector may not be larger than
-    // |encoder_config.number_of_streams|.
-    virtual std::vector<VideoStream> CreateEncoderStreams(
-        int width,
-        int height,
-        const VideoEncoderConfig& encoder_config) = 0;
-
-   protected:
-    virtual ~VideoStreamFactoryInterface() {}
   };
 
   VideoEncoderConfig& operator=(VideoEncoderConfig&&) = default;
@@ -204,7 +190,7 @@ class VideoEncoderConfig {
   ~VideoEncoderConfig();
   std::string ToString() const;
 
-  rtc::scoped_refptr<VideoStreamFactoryInterface> video_stream_factory;
+  std::vector<VideoStream> streams;
   std::vector<SpatialLayer> spatial_layers;
   ContentType content_type;
   rtc::scoped_refptr<const EncoderSpecificSettings> encoder_specific_settings;
@@ -214,10 +200,7 @@ class VideoEncoderConfig {
   // maintaining a higher bitrate estimate. Padding will however not be sent
   // unless the estimated bandwidth indicates that the link can handle it.
   int min_transmit_bitrate_bps;
-  int max_bitrate_bps;
-
-  // Max number of encoded VideoStreams to produce.
-  size_t number_of_streams;
+  bool expect_encode_from_texture;
 
  private:
   // Access to the copy constructor is private to force use of the Copy()

@@ -41,11 +41,10 @@ VideoCodecType PayloadNameToCodecType(const std::string& payload_name) {
   return kVideoCodecGeneric;
 }
 
-VideoCodec VideoEncoderConfigToVideoCodec(
-    const VideoEncoderConfig& config,
-    const std::vector<VideoStream>& streams,
-    const std::string& payload_name,
-    int payload_type) {
+VideoCodec VideoEncoderConfigToVideoCodec(const VideoEncoderConfig& config,
+                                          const std::string& payload_name,
+                                          int payload_type) {
+  const std::vector<VideoStream>& streams = config.streams;
   static const int kEncoderMinBitrateKbps = 30;
   RTC_DCHECK(!streams.empty());
   RTC_DCHECK_GE(config.min_transmit_bitrate_bps, 0);
@@ -60,10 +59,10 @@ VideoCodec VideoEncoderConfigToVideoCodec(
       break;
     case VideoEncoderConfig::ContentType::kScreen:
       video_codec.mode = kScreensharing;
-      if (streams.size() == 1 &&
-          streams[0].temporal_layer_thresholds_bps.size() == 1) {
+      if (config.streams.size() == 1 &&
+          config.streams[0].temporal_layer_thresholds_bps.size() == 1) {
         video_codec.targetBitrate =
-            streams[0].temporal_layer_thresholds_bps[0] / 1000;
+            config.streams[0].temporal_layer_thresholds_bps[0] / 1000;
       }
       break;
   }
@@ -170,6 +169,8 @@ VideoCodec VideoEncoderConfigToVideoCodec(
 
   RTC_DCHECK_GT(streams[0].max_framerate, 0);
   video_codec.maxFramerate = streams[0].max_framerate;
+  video_codec.expect_encode_from_texture = config.expect_encode_from_texture;
+
   return video_codec;
 }
 
@@ -305,6 +306,7 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       sink_(nullptr),
       settings_(settings),
       codec_type_(PayloadNameToCodecType(settings.payload_name)),
+      vp_(VideoProcessing::Create()),
       video_sender_(Clock::GetRealTimeClock(), this, this),
       overuse_detector_(Clock::GetRealTimeClock(),
                         GetCpuOveruseOptions(settings.full_overuse_time),
@@ -315,7 +317,7 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       stats_proxy_(stats_proxy),
       pre_encode_callback_(pre_encode_callback),
       module_process_thread_(nullptr),
-      pending_encoder_reconfiguration_(false),
+      encoder_config_(),
       encoder_start_bitrate_bps_(0),
       max_data_payload_length_(0),
       last_observed_bitrate_bps_(0),
@@ -332,6 +334,8 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       captured_frame_count_(0),
       dropped_frame_count_(0),
       encoder_queue_("EncoderQueue") {
+  vp_->EnableTemporalDecimation(false);
+
   encoder_queue_.PostTask([this, encoder_timing] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     video_sender_.RegisterExternalEncoder(
@@ -403,62 +407,41 @@ void ViEEncoder::ConfigureEncoderOnTaskQueue(VideoEncoderConfig config,
                                              size_t max_data_payload_length) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   RTC_DCHECK(sink_);
-  LOG(LS_INFO) << "ConfigureEncoder requested.";
+  LOG(LS_INFO) << "ConfigureEncoderOnTaskQueue";
 
   max_data_payload_length_ = max_data_payload_length;
   encoder_config_ = std::move(config);
-  pending_encoder_reconfiguration_ = true;
 
-  // Reconfigure the encoder now if the encoder has an internal source or
-  // if this is the first time the encoder is configured.
-  // Otherwise, the reconfiguration is deferred until the next frame to minimize
-  // the number of reconfigurations. The codec configuration depends on incoming
-  // video frame size.
-  if (!last_frame_info_ || settings_.internal_source) {
-    if (!last_frame_info_) {
-      last_frame_info_ = rtc::Optional<VideoFrameInfo>(
-          VideoFrameInfo(176, 144, kVideoRotation_0, false));
-    }
-    ReconfigureEncoder();
-  }
-}
+  VideoCodec video_codec = VideoEncoderConfigToVideoCodec(
+      encoder_config_, settings_.payload_name, settings_.payload_type);
 
-void ViEEncoder::ReconfigureEncoder() {
-  RTC_DCHECK_RUN_ON(&encoder_queue_);
-  RTC_DCHECK(pending_encoder_reconfiguration_);
-  std::vector<VideoStream> streams =
-      encoder_config_.video_stream_factory->CreateEncoderStreams(
-          last_frame_info_->width, last_frame_info_->height, encoder_config_);
+  // Setting target width and height for VPM.
+  RTC_CHECK_EQ(VPM_OK,
+               vp_->SetTargetResolution(video_codec.width, video_codec.height,
+                                        video_codec.maxFramerate));
 
-  VideoCodec codec = VideoEncoderConfigToVideoCodec(
-      encoder_config_, streams, settings_.payload_name, settings_.payload_type);
-
-  codec.startBitrate =
-      std::max(encoder_start_bitrate_bps_ / 1000, codec.minBitrate);
-  codec.startBitrate = std::min(codec.startBitrate, codec.maxBitrate);
-  codec.expect_encode_from_texture = last_frame_info_->is_texture;
+  video_codec.startBitrate =
+      std::max(encoder_start_bitrate_bps_ / 1000, video_codec.minBitrate);
+  video_codec.startBitrate =
+      std::min(video_codec.startBitrate, video_codec.maxBitrate);
 
   bool success = video_sender_.RegisterSendCodec(
-                     &codec, number_of_cores_,
-                     static_cast<uint32_t>(max_data_payload_length_)) == VCM_OK;
+                     &video_codec, number_of_cores_,
+                     static_cast<uint32_t>(max_data_payload_length)) == VCM_OK;
+
   if (!success) {
     LOG(LS_ERROR) << "Failed to configure encoder.";
     RTC_DCHECK(success);
   }
 
-  rate_allocator_.reset(new SimulcastRateAllocator(codec));
+  rate_allocator_.reset(new SimulcastRateAllocator(video_codec));
   if (stats_proxy_) {
     stats_proxy_->OnEncoderReconfigured(encoder_config_,
                                         rate_allocator_->GetPreferedBitrate());
   }
 
-  pending_encoder_reconfiguration_ = false;
-  if (stats_proxy_) {
-    stats_proxy_->OnEncoderReconfigured(encoder_config_,
-                                        rate_allocator_->GetPreferedBitrate());
-  }
   sink_->OnEncoderConfigurationChanged(
-      std::move(streams), encoder_config_.min_transmit_bitrate_bps);
+      encoder_config_.streams, encoder_config_.min_transmit_bitrate_bps);
 }
 
 void ViEEncoder::OnFrame(const VideoFrame& video_frame) {
@@ -541,24 +524,6 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   if (pre_encode_callback_)
     pre_encode_callback_->OnFrame(video_frame);
 
-  if (video_frame.width() != last_frame_info_->width ||
-      video_frame.height() != last_frame_info_->height ||
-      video_frame.rotation() != last_frame_info_->rotation ||
-      video_frame.is_texture() != last_frame_info_->is_texture) {
-    pending_encoder_reconfiguration_ = true;
-    last_frame_info_ = rtc::Optional<VideoFrameInfo>(
-        VideoFrameInfo(video_frame.width(), video_frame.height(),
-                       video_frame.rotation(), video_frame.is_texture()));
-    LOG(LS_INFO) << "Video frame parameters changed: dimensions="
-                 << last_frame_info_->width << "x" << last_frame_info_->height
-                 << ", rotation=" << last_frame_info_->rotation
-                 << ", texture=" << last_frame_info_->is_texture;
-  }
-
-  if (pending_encoder_reconfiguration_) {
-    ReconfigureEncoder();
-  }
-
   if (EncoderPaused()) {
     TraceFrameDropStart();
     return;
@@ -567,6 +532,16 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
 
   TRACE_EVENT_ASYNC_STEP0("webrtc", "Video", video_frame.render_time_ms(),
                           "Encode");
+  const VideoFrame* frame_to_send = &video_frame;
+  // TODO(wuchengli): support texture frames.
+  if (!video_frame.video_frame_buffer()->native_handle()) {
+    // Pass frame via preprocessor.
+    frame_to_send = vp_->PreprocessFrame(video_frame);
+    if (!frame_to_send) {
+      // Drop this frame, or there was an error processing it.
+      return;
+    }
+  }
 
   overuse_detector_.FrameCaptured(video_frame, time_when_posted_in_ms);
 
@@ -585,10 +560,10 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
       has_received_sli_ = false;
       has_received_rpsi_ = false;
 
-      video_sender_.AddVideoFrame(video_frame, &codec_specific_info);
-      return;
+    video_sender_.AddVideoFrame(*frame_to_send, &codec_specific_info);
+    return;
   }
-  video_sender_.AddVideoFrame(video_frame, nullptr);
+  video_sender_.AddVideoFrame(*frame_to_send, nullptr);
 }
 
 void ViEEncoder::SendKeyFrame() {

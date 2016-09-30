@@ -70,7 +70,6 @@ class RampUpTester : public test::EndToEndTest {
 
  private:
   typedef std::map<uint32_t, uint32_t> SsrcMap;
-  class VideoStreamFactory;
 
   Call::Config GetSenderCallConfig() override;
   void OnVideoStreamsCreated(

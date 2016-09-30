@@ -264,9 +264,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   EXPECT_EQ(1u, video_receive_streams_.size());
   observer.set_receive_stream(video_receive_streams_[0]);
   DriftingClock drifting_clock(clock_, video_ntp_speed);
-  CreateFrameGeneratorCapturerWithDrift(&drifting_clock, video_rtp_speed,
-                                        kDefaultFramerate, kDefaultWidth,
-                                        kDefaultHeight);
+  CreateFrameGeneratorCapturerWithDrift(&drifting_clock, video_rtp_speed);
 
   Start();
 
@@ -620,24 +618,6 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
   static const uint32_t kReconfigureThresholdKbps = 600;
   static const uint32_t kPermittedReconfiguredBitrateDiffKbps = 100;
 
-  class VideoStreamFactory
-      : public VideoEncoderConfig::VideoStreamFactoryInterface {
-   public:
-    VideoStreamFactory() {}
-
-   private:
-    std::vector<VideoStream> CreateEncoderStreams(
-        int width,
-        int height,
-        const VideoEncoderConfig& encoder_config) override {
-      std::vector<VideoStream> streams =
-          test::CreateVideoStreams(width, height, encoder_config);
-      streams[0].min_bitrate_bps = 50000;
-      streams[0].target_bitrate_bps = streams[0].max_bitrate_bps = 2000000;
-      return streams;
-    }
-  };
-
   class BitrateObserver : public test::EndToEndTest, public test::FakeEncoder {
    public:
     BitrateObserver()
@@ -651,18 +631,12 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
     int32_t InitEncode(const VideoCodec* config,
                        int32_t number_of_cores,
                        size_t max_payload_size) override {
-      ++encoder_inits_;
-      if (encoder_inits_ == 1) {
-        // First time initialization. Frame size is not known.
+      if (encoder_inits_ == 0) {
         EXPECT_EQ(kInitialBitrateKbps, config->startBitrate)
             << "Encoder not initialized at expected bitrate.";
-      } else if (encoder_inits_ == 2) {
-        // First time initialization. Frame size is known.
-        EXPECT_EQ(kDefaultWidth, config->width);
-        EXPECT_EQ(kDefaultHeight, config->height);
-      } else if (encoder_inits_ == 3) {
-        EXPECT_EQ(2 * kDefaultWidth, config->width);
-        EXPECT_EQ(2 * kDefaultHeight, config->height);
+      }
+      ++encoder_inits_;
+      if (encoder_inits_ == 2) {
         EXPECT_GE(last_set_bitrate_, kReconfigureThresholdKbps);
         EXPECT_NEAR(config->startBitrate,
                     last_set_bitrate_,
@@ -676,7 +650,7 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
     int32_t SetRates(uint32_t new_target_bitrate_kbps,
                      uint32_t framerate) override {
       last_set_bitrate_ = new_target_bitrate_kbps;
-      if (encoder_inits_ == 2 &&
+      if (encoder_inits_ == 1 &&
           new_target_bitrate_kbps > kReconfigureThresholdKbps) {
         time_to_reconfigure_.Set();
       }
@@ -694,8 +668,9 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       send_config->encoder_settings.encoder = this;
-      encoder_config->video_stream_factory =
-          new rtc::RefCountedObject<VideoStreamFactory>();
+      encoder_config->streams[0].min_bitrate_bps = 50000;
+      encoder_config->streams[0].target_bitrate_bps =
+          encoder_config->streams[0].max_bitrate_bps = 2000000;
 
       encoder_config_ = encoder_config->Copy();
     }
@@ -706,15 +681,11 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
       send_stream_ = send_stream;
     }
 
-    void OnFrameGeneratorCapturerCreated(
-        test::FrameGeneratorCapturer* frame_generator_capturer) override {
-      frame_generator_ = frame_generator_capturer;
-    }
-
     void PerformTest() override {
       ASSERT_TRUE(time_to_reconfigure_.Wait(kDefaultTimeoutMs))
           << "Timed out before receiving an initial high bitrate.";
-      frame_generator_->ChangeResolution(kDefaultWidth * 2, kDefaultHeight * 2);
+      encoder_config_.streams[0].width *= 2;
+      encoder_config_.streams[0].height *= 2;
       send_stream_->ReconfigureVideoEncoder(encoder_config_.Copy());
       EXPECT_TRUE(Wait())
           << "Timed out while waiting for a couple of high bitrate estimates "
@@ -726,7 +697,6 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
     int encoder_inits_;
     uint32_t last_set_bitrate_;
     VideoSendStream* send_stream_;
-    test::FrameGeneratorCapturer* frame_generator_;
     VideoEncoderConfig encoder_config_;
   } test;
 

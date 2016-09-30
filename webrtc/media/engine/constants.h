@@ -18,7 +18,9 @@ extern const int kVideoRtpBufferSize;
 
 extern const char kH264CodecName[];
 
-extern const int kMinVideoBitrateKbps;
+extern const int kMinVideoBitrate;
+extern const int kStartVideoBitrate;
+extern const int kMaxVideoBitrate;
 
 }  // namespace cricket
 

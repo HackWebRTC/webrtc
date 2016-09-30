@@ -124,11 +124,6 @@ void FrameGeneratorCapturer::Stop() {
   sending_ = false;
 }
 
-void FrameGeneratorCapturer::ChangeResolution(size_t width, size_t height) {
-  rtc::CritScope cs(&lock_);
-  frame_generator_->ChangeResolution(width, height);
-}
-
 void FrameGeneratorCapturer::AddOrUpdateSink(
     rtc::VideoSinkInterface<VideoFrame>* sink,
     const rtc::VideoSinkWants& wants) {
