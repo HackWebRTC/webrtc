@@ -412,14 +412,9 @@ static NSString *GetSessionPresetForVideoFormat(
 
 - (BOOL)setupCaptureSession {
   AVCaptureSession *captureSession = [[AVCaptureSession alloc] init];
-#if defined(__IPHONE_7_0) && defined(__IPHONE_OS_VERSION_MAX_ALLOWED) \
-    && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_7_0
-  NSString *version = [[UIDevice currentDevice] systemVersion];
-  if ([version integerValue] >= 7) {
-    captureSession.usesApplicationAudioSession = NO;
-  }
+#if defined(WEBRTC_IOS)
+  captureSession.usesApplicationAudioSession = NO;
 #endif
-
   // Add the output.
   AVCaptureVideoDataOutput *videoDataOutput = [self videoDataOutput];
   if (![captureSession canAddOutput:videoDataOutput]) {
