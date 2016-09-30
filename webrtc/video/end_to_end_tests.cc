@@ -25,6 +25,7 @@
 #include "webrtc/call.h"
 #include "webrtc/call/transport_adapter.h"
 #include "webrtc/common_video/include/frame_callback.h"
+#include "webrtc/media/base/fakevideorenderer.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
@@ -1586,6 +1587,7 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
       receive_config->rtp.extensions.clear();
       receive_config->rtp.extensions.push_back(RtpExtension(
           RtpExtension::kTransportSequenceNumberUri, kExtensionId));
+      receive_config->renderer = &fake_renderer_;
     }
 
     test::DirectTransport* CreateSendTransport(Call* sender_call) override {
@@ -1595,6 +1597,7 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
     }
 
    private:
+    test::FakeVideoRenderer fake_renderer_;
     uint32_t first_media_ssrc_;
     std::map<uint32_t, uint32_t> rtx_to_media_ssrcs_;
     RtpExtensionHeaderObserver* observer_;
@@ -2087,6 +2090,7 @@ TEST_F(EndToEndTest, VerifyNackStats) {
         VideoEncoderConfig* encoder_config) override {
       send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
       (*receive_configs)[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+      (*receive_configs)[0].renderer = &fake_renderer_;
     }
 
     void OnVideoStreamsCreated(
@@ -2100,6 +2104,7 @@ TEST_F(EndToEndTest, VerifyNackStats) {
       EXPECT_TRUE(Wait()) << "Timed out waiting for packet to be NACKed.";
     }
 
+    test::FakeVideoRenderer fake_renderer_;
     rtc::CriticalSection crit_;
     uint64_t sent_rtp_packets_;
     uint16_t dropped_rtp_packet_ GUARDED_BY(&crit_);

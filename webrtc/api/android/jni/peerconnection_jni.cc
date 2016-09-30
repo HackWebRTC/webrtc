@@ -2033,6 +2033,7 @@ JOW(jboolean, MediaStreamTrack_nativeSetEnabled)(
 JOW(void, VideoTrack_nativeAddRenderer)(
     JNIEnv* jni, jclass,
     jlong j_video_track_pointer, jlong j_renderer_pointer) {
+  LOG(LS_INFO) << "VideoTrack::nativeAddRenderer";
   reinterpret_cast<VideoTrackInterface*>(j_video_track_pointer)
       ->AddOrUpdateSink(
           reinterpret_cast<rtc::VideoSinkInterface<cricket::VideoFrame>*>(

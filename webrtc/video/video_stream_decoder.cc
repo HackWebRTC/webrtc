@@ -84,8 +84,7 @@ int32_t VideoStreamDecoder::FrameToRender(VideoFrame& video_frame) {  // NOLINT
     }
   }
 
-  if (incoming_video_stream_)
-    incoming_video_stream_->OnFrame(video_frame);
+  incoming_video_stream_->OnFrame(video_frame);
 
   return 0;
 }

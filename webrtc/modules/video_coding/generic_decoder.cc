@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
@@ -58,6 +59,7 @@ int32_t VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
     frameInfo = _timestampMap.Pop(decodedImage.timestamp());
     callback = _receiveCallback;
   }
+  RTC_DCHECK(callback != nullptr);
 
   if (frameInfo == NULL) {
     LOG(LS_WARNING) << "Too many frames backed up in the decoder, dropping "
@@ -73,11 +75,9 @@ int32_t VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
   _timing->StopDecodeTimer(decodedImage.timestamp(), decode_time_ms, now_ms,
                            frameInfo->renderTimeMs);
 
-  if (callback != NULL) {
-    decodedImage.set_render_time_ms(frameInfo->renderTimeMs);
-    decodedImage.set_rotation(frameInfo->rotation);
-    callback->FrameToRender(decodedImage);
-  }
+  decodedImage.set_render_time_ms(frameInfo->renderTimeMs);
+  decodedImage.set_rotation(frameInfo->rotation);
+  callback->FrameToRender(decodedImage);
   return WEBRTC_VIDEO_CODEC_OK;
 }
 

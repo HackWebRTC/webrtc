@@ -286,6 +286,7 @@ void VideoReceiveStream::Start() {
       renderer = incoming_video_stream_.get();
     }
   }
+  RTC_DCHECK(renderer != nullptr);
 
   video_stream_decoder_.reset(new VideoStreamDecoder(
       &video_receiver_, &rtp_stream_receiver_, &rtp_stream_receiver_,

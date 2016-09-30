@@ -17,6 +17,7 @@
 #include "webrtc/test/fake_audio_device.h"
 #include "webrtc/test/fake_decoder.h"
 #include "webrtc/test/fake_encoder.h"
+#include "webrtc/test/fake_videorenderer.h"
 #include "webrtc/test/frame_generator_capturer.h"
 #include "webrtc/test/rtp_rtcp_observer.h"
 
@@ -103,6 +104,7 @@ class CallTest : public ::testing::Test {
   size_t num_video_streams_;
   size_t num_audio_streams_;
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
+  test::FakeVideoRenderer fake_renderer_;
 
  private:
   // TODO(holmer): Remove once VoiceEngine is fully refactored to the new API.

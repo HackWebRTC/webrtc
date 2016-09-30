@@ -163,8 +163,7 @@ class VideoReceiveStream {
     // Transport for outgoing packets (RTCP).
     Transport* rtcp_send_transport = nullptr;
 
-    // VideoRenderer will be called for each decoded frame. 'nullptr' disables
-    // rendering of this stream.
+    // Must not be 'nullptr' when the stream is started.
     rtc::VideoSinkInterface<VideoFrame>* renderer = nullptr;
 
     // Expected delay needed by the renderer, i.e. the frame will be delivered

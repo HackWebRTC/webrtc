@@ -12,6 +12,7 @@
 
 #include <assert.h>
 
+#include "webrtc/base/logging.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/system_wrappers/include/trace.h"
@@ -22,6 +23,7 @@ namespace {
 const uint32_t kEventMaxWaitTimeMs = 200;
 const uint32_t kMinRenderDelayMs = 10;
 const uint32_t kMaxRenderDelayMs = 500;
+const size_t kMaxIncomingFramesBeforeLogged = 100;
 
 uint32_t EnsureValidRenderDelay(uint32_t render_delay) {
   return (render_delay < kMinRenderDelayMs || render_delay > kMaxRenderDelayMs)
@@ -57,6 +59,8 @@ int32_t VideoRenderFrames::AddFrame(const VideoFrame& new_frame) {
   }
 
   incoming_frames_.push_back(new_frame);
+  if (incoming_frames_.size() > kMaxIncomingFramesBeforeLogged)
+    LOG(LS_WARNING) << "Stored incoming frames: " << incoming_frames_.size();
   return static_cast<int32_t>(incoming_frames_.size());
 }
 

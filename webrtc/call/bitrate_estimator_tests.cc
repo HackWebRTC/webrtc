@@ -208,6 +208,7 @@ class BitrateEstimatorTest : public test::CallTest {
         test_->receive_config_.rtp.remote_ssrc =
             test_->video_send_config_.rtp.ssrcs[0];
         test_->receive_config_.rtp.local_ssrc++;
+        test_->receive_config_.renderer = &test->fake_renderer_;
         video_receive_stream_ = test_->receiver_call_->CreateVideoReceiveStream(
             test_->receive_config_.Copy());
         video_receive_stream_->Start();

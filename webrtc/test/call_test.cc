@@ -210,6 +210,7 @@ void CallTest::CreateMatchingReceiveConfigs(Transport* rtcp_send_transport) {
     video_config.rtp.local_ssrc = kReceiverLocalVideoSsrc;
     for (const RtpExtension& extension : video_send_config_.rtp.extensions)
       video_config.rtp.extensions.push_back(extension);
+    video_config.renderer = &fake_renderer_;
     for (size_t i = 0; i < video_send_config_.rtp.ssrcs.size(); ++i) {
       VideoReceiveStream::Decoder decoder =
           test::CreateMatchingDecoder(video_send_config_.encoder_settings);
