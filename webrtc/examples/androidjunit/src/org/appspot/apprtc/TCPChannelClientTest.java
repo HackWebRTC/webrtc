@@ -15,6 +15,7 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import org.chromium.base.test.util.DisabledTest;
 import org.chromium.testing.local.LocalRobolectricTestRunner;
 import org.junit.After;
 import org.junit.Before;
@@ -96,7 +97,10 @@ public class TCPChannelClientTest {
     verify(clientEvents, timeout(CONNECT_TIMEOUT)).onTCPConnected(false);
   }
 
-  @Test
+  // @Test
+  // Disabled because it fails when IPv6 is not supported on the bot.
+  // TODO(ehmaldonado): Enable when bugs.webrtc.org/6437 is fixed.
+  @DisabledTest
   public void testConnectIPv6() {
     setUpIPv6Server();
     try {
