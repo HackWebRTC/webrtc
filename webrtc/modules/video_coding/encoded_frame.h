@@ -96,8 +96,6 @@ class VCMEncodedFrame : protected EncodedImage {
   */
   const CodecSpecificInfo* CodecSpecific() const { return &_codecSpecificInfo; }
 
-  const RTPFragmentationHeader* FragmentationHeader() const;
-
  protected:
   /**
   * Verifies that current allocated buffer size is larger than or equal to the
@@ -118,7 +116,6 @@ class VCMEncodedFrame : protected EncodedImage {
   bool _missingFrame;
   CodecSpecificInfo _codecSpecificInfo;
   webrtc::VideoCodecType _codec;
-  RTPFragmentationHeader _fragmentation;
 
   // Video rotation is only set along with the last packet for each frame
   // (same as marker bit). This |_rotation_set| is only for debugging purpose

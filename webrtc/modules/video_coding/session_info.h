@@ -53,13 +53,6 @@ class VCMSessionInfo {
   bool complete() const;
   bool decodable() const;
 
-  // Builds fragmentation headers for VP8, each fragment being a decodable
-  // VP8 partition. Returns the total number of bytes which are decodable. Is
-  // used instead of MakeDecodable for VP8.
-  size_t BuildVP8FragmentationHeader(uint8_t* frame_buffer,
-                                     size_t frame_buffer_length,
-                                     RTPFragmentationHeader* fragmentation);
-
   // Makes the frame decodable. I.e., only contain decodable NALUs. All
   // non-decodable NALUs will be deleted and packets will be moved to in
   // memory to remove any empty space.

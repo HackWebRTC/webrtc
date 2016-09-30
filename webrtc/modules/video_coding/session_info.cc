@@ -326,53 +326,6 @@ size_t VCMSessionInfo::DeletePacketData(PacketIterator start,
   return bytes_to_delete;
 }
 
-size_t VCMSessionInfo::BuildVP8FragmentationHeader(
-    uint8_t* frame_buffer,
-    size_t frame_buffer_length,
-    RTPFragmentationHeader* fragmentation) {
-  size_t new_length = 0;
-  // Allocate space for max number of partitions
-  fragmentation->VerifyAndAllocateFragmentationHeader(kMaxVP8Partitions);
-  fragmentation->fragmentationVectorSize = 0;
-  memset(fragmentation->fragmentationLength, 0,
-         kMaxVP8Partitions * sizeof(size_t));
-  if (packets_.empty())
-    return new_length;
-  PacketIterator it = FindNextPartitionBeginning(packets_.begin());
-  while (it != packets_.end()) {
-    const int partition_id = (*it).video_header.codecHeader.VP8.partitionId;
-    PacketIterator partition_end = FindPartitionEnd(it);
-    fragmentation->fragmentationOffset[partition_id] =
-        (*it).dataPtr - frame_buffer;
-    assert(fragmentation->fragmentationOffset[partition_id] <
-           frame_buffer_length);
-    fragmentation->fragmentationLength[partition_id] =
-        (*partition_end).dataPtr + (*partition_end).sizeBytes - (*it).dataPtr;
-    assert(fragmentation->fragmentationLength[partition_id] <=
-           frame_buffer_length);
-    new_length += fragmentation->fragmentationLength[partition_id];
-    ++partition_end;
-    it = FindNextPartitionBeginning(partition_end);
-    if (partition_id + 1 > fragmentation->fragmentationVectorSize)
-      fragmentation->fragmentationVectorSize = partition_id + 1;
-  }
-  // Set all empty fragments to start where the previous fragment ends,
-  // and have zero length.
-  if (fragmentation->fragmentationLength[0] == 0)
-    fragmentation->fragmentationOffset[0] = 0;
-  for (int i = 1; i < fragmentation->fragmentationVectorSize; ++i) {
-    if (fragmentation->fragmentationLength[i] == 0)
-      fragmentation->fragmentationOffset[i] =
-          fragmentation->fragmentationOffset[i - 1] +
-          fragmentation->fragmentationLength[i - 1];
-    assert(i == 0 ||
-           fragmentation->fragmentationOffset[i] >=
-               fragmentation->fragmentationOffset[i - 1]);
-  }
-  assert(new_length <= frame_buffer_length);
-  return new_length;
-}
-
 VCMSessionInfo::PacketIterator VCMSessionInfo::FindNextPartitionBeginning(
     PacketIterator it) const {
   while (it != packets_.end()) {

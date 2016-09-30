@@ -433,13 +433,7 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
       // drop support for libvpx 9.6.0.
       break;
     case kResilientFrames:
-#ifdef INDEPENDENT_PARTITIONS
-      configurations_[0] - g_error_resilient =
-          VPX_ERROR_RESILIENT_DEFAULT | VPX_ERROR_RESILIENT_PARTITIONS;
-      break;
-#else
       return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;  // Not supported
-#endif
   }
 
   // rate control settings
@@ -1090,9 +1084,6 @@ int VP8DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
 #if !defined(WEBRTC_ARCH_ARM) && !defined(WEBRTC_ARCH_ARM64) && \
   !defined(ANDROID)
   flags = VPX_CODEC_USE_POSTPROC;
-#ifdef INDEPENDENT_PARTITIONS
-  flags |= VPX_CODEC_USE_INPUT_PARTITION;
-#endif
 #endif
 
   if (vpx_codec_dec_init(decoder_, vpx_codec_vp8_dx(), &cfg, flags)) {
@@ -1128,12 +1119,6 @@ int VP8DecoderImpl::Decode(const EncodedImage& input_image,
       propagation_cnt_ = 0;
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
-
-#ifdef INDEPENDENT_PARTITIONS
-  if (fragmentation == NULL) {
-    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-  }
-#endif
 
 #if !defined(WEBRTC_ARCH_ARM) && !defined(WEBRTC_ARCH_ARM64) && \
   !defined(ANDROID)
@@ -1194,15 +1179,6 @@ int VP8DecoderImpl::Decode(const EncodedImage& input_image,
     iter = NULL;
   }
 
-#ifdef INDEPENDENT_PARTITIONS
-  if (DecodePartitions(inputImage, fragmentation)) {
-    // Reset to avoid requesting key frames too often.
-    if (propagation_cnt_ > 0) {
-      propagation_cnt_ = 0;
-    }
-    return WEBRTC_VIDEO_CODEC_ERROR;
-  }
-#else
   uint8_t* buffer = input_image._buffer;
   if (input_image._length == 0) {
     buffer = NULL;  // Triggers full frame concealment.
@@ -1215,7 +1191,6 @@ int VP8DecoderImpl::Decode(const EncodedImage& input_image,
     }
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
-#endif
 
   img = vpx_codec_get_frame(decoder_, &iter);
   ret = ReturnFrame(img, input_image._timeStamp, input_image.ntp_time_ms_);
@@ -1273,25 +1248,6 @@ int VP8DecoderImpl::Decode(const EncodedImage& input_image,
     propagation_cnt_ = 0;
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
-  return WEBRTC_VIDEO_CODEC_OK;
-}
-
-int VP8DecoderImpl::DecodePartitions(
-    const EncodedImage& input_image,
-    const RTPFragmentationHeader* fragmentation) {
-  for (int i = 0; i < fragmentation->fragmentationVectorSize; ++i) {
-    const uint8_t* partition =
-        input_image._buffer + fragmentation->fragmentationOffset[i];
-    const uint32_t partition_length = fragmentation->fragmentationLength[i];
-    if (vpx_codec_decode(decoder_, partition, partition_length, 0,
-                         VPX_DL_REALTIME)) {
-      return WEBRTC_VIDEO_CODEC_ERROR;
-    }
-  }
-  // Signal end of frame data. If there was no frame data this will trigger
-  // a full frame concealment.
-  if (vpx_codec_decode(decoder_, NULL, 0, 0, VPX_DL_REALTIME))
-    return WEBRTC_VIDEO_CODEC_ERROR;
   return WEBRTC_VIDEO_CODEC_OK;
 }
 

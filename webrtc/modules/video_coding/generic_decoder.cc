@@ -149,8 +149,9 @@ int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, int64_t nowMs) {
     _callback->Map(frame.TimeStamp(), &_frameInfos[_nextFrameInfoIdx]);
 
     _nextFrameInfoIdx = (_nextFrameInfoIdx + 1) % kDecoderFrameMemoryLength;
+    const RTPFragmentationHeader dummy_header;
     int32_t ret = _decoder->Decode(frame.EncodedImage(), frame.MissingFrame(),
-                                   frame.FragmentationHeader(),
+                                   &dummy_header,
                                    frame.CodecSpecific(), frame.RenderTimeMs());
 
     _callback->OnDecoderImplementationName(_decoder->ImplementationName());
