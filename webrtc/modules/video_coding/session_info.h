@@ -12,7 +12,6 @@
 #define WEBRTC_MODULES_VIDEO_CODING_SESSION_INFO_H_
 
 #include <list>
-#include <vector>
 
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
@@ -81,8 +80,6 @@ class VCMSessionInfo {
   bool LayerSync() const;
   int Tl0PicId() const;
   bool NonReference() const;
-
-  std::vector<NaluInfo> GetNaluInfos() const;
 
   void SetGofInfo(const GofInfoVP9& gof_info, size_t idx);
 
