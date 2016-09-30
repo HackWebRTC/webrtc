@@ -110,6 +110,9 @@ bool RtpToNtpMs(int64_t rtp_timestamp,
                                &rtcp_timestamp_new)) {
     return false;
   }
+  if (rtcp_timestamp_new < rtcp_timestamp_old)
+    return false;
+
   double freq_khz;
   if (!CalculateFrequency(rtcp_ntp_ms_new,
                           rtcp_timestamp_new,
