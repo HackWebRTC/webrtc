@@ -63,9 +63,11 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
 
   // Default argument is for compatibility
   void SetServerRole(SSLRole role = SSL_SERVER) override;
-  bool SetPeerCertificateDigest(const std::string& digest_alg,
-                                const unsigned char* digest_val,
-                                size_t digest_len) override;
+  bool SetPeerCertificateDigest(
+      const std::string& digest_alg,
+      const unsigned char* digest_val,
+      size_t digest_len,
+      SSLPeerCertificateDigestError* error = nullptr) override;
 
   std::unique_ptr<SSLCertificate> GetPeerCertificate() const override;
 
@@ -104,6 +106,8 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   // DTLS-SRTP interface
   bool SetDtlsSrtpCryptoSuites(const std::vector<int>& crypto_suites) override;
   bool GetDtlsSrtpCryptoSuite(int* crypto_suite) override;
+
+  bool IsTlsConnected() override;
 
   // Capabilities interfaces
   static bool HaveDtls();
@@ -147,8 +151,11 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   // raised on the stream with the specified error.
   // A 0 error means a graceful close, otherwise there is not really enough
   // context to interpret the error code.
-  void Error(const char* context, int err, bool signal);
-  void Cleanup();
+  // |alert| indicates an alert description (one of the SSL_AD constants) to
+  // send to the remote endpoint when closing the association. If 0, a normal
+  // shutdown will be performed.
+  void Error(const char* context, int err, uint8_t alert, bool signal);
+  void Cleanup(uint8_t alert);
 
   // Override MessageHandler
   void OnMessage(Message* msg) override;
@@ -158,15 +165,22 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
 
   // SSL library configuration
   SSL_CTX* SetupSSLContext();
-  // SSL verification check
-  bool SSLPostConnectionCheck(SSL* ssl,
-                              const X509* peer_cert,
-                              const std::string& peer_digest);
+  // Verify the peer certificate matches the signaled digest.
+  bool VerifyPeerCertificate();
   // SSL certification verification error handler, called back from
   // the openssl library. Returns an int interpreted as a boolean in
   // the C style: zero means verification failure, non-zero means
   // passed.
   static int SSLVerifyCallback(int ok, X509_STORE_CTX* store);
+
+  bool waiting_to_verify_peer_certificate() const {
+    return client_auth_enabled() && !peer_certificate_verified_;
+  }
+
+  bool has_peer_certificate_digest() const {
+    return !peer_certificate_digest_algorithm_.empty() &&
+           !peer_certificate_digest_value_.empty();
+  }
 
   SSLState state_;
   SSLRole role_;
@@ -184,6 +198,7 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   // The certificate that the peer presented. Initially null, until the
   // connection is established.
   std::unique_ptr<OpenSSLCertificate> peer_certificate_;
+  bool peer_certificate_verified_ = false;
   // The digest of the certificate that the peer must present.
   Buffer peer_certificate_digest_value_;
   std::string peer_certificate_digest_algorithm_;
