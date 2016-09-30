@@ -68,15 +68,6 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
     }
   }
 
-  config("rtc_sdk_peerconnection_objc_warnings_config") {
-    if (is_clang) {
-      # TODO(tkchin): Make rtc_sdk_peerconnection_objc compile with the standard
-      # set of warnings.
-      # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6308
-      cflags = [ "-Wno-thread-safety-analysis" ]
-    }
-  }
-
   rtc_static_library("rtc_sdk_peerconnection_objc") {
     sources = [
       "objc/Framework/Classes/RTCAVFoundationVideoSource+Private.h",
@@ -194,7 +185,6 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
     }
 
     configs += [
-      ":rtc_sdk_peerconnection_objc_warnings_config",
       "..:common_objc",
       "//build/config/compiler:enable_arc",
     ]

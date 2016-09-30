@@ -78,7 +78,7 @@ static NSString *GetSessionPresetForVideoFormat(
 @property(nonatomic, readonly) dispatch_queue_t frameQueue;
 @property(nonatomic, readonly) BOOL canUseBackCamera;
 @property(nonatomic, assign) BOOL useBackCamera;  // Defaults to NO.
-@property(nonatomic, assign) BOOL isRunning;  // Whether the capture session is running.
+@property(atomic, assign) BOOL isRunning;  // Whether the capture session is running.
 @property(atomic, assign) BOOL hasStarted;  // Whether we have an unmatched start.
 
 // We keep a pointer back to AVFoundationVideoCapturer to make callbacks on it
@@ -111,6 +111,8 @@ static NSString *GetSessionPresetForVideoFormat(
 @synthesize captureSession = _captureSession;
 @synthesize frameQueue = _frameQueue;
 @synthesize useBackCamera = _useBackCamera;
+
+@synthesize isRunning = _isRunning;
 @synthesize hasStarted = _hasStarted;
 
 // This is called from the thread that creates the video source, which is likely
@@ -215,16 +217,6 @@ static NSString *GetSessionPresetForVideoFormat(
     _useBackCamera = useBackCamera;
     [self updateSessionInputForUseBackCamera:useBackCamera];
   }
-}
-
-- (BOOL)isRunning {
-  rtc::CritScope cs(&_crit);
-  return _isRunning;
-}
-
-- (void)setIsRunning:(BOOL)isRunning {
-  rtc::CritScope cs(&_crit);
-  _isRunning = isRunning;
 }
 
 // Called from WebRTC thread.
@@ -355,6 +347,7 @@ static NSString *GetSessionPresetForVideoFormat(
 
 - (void)handleCaptureSessionDidStartRunning:(NSNotification *)notification {
   RTCLog(@"Capture session started.");
+
   self.isRunning = YES;
   [RTCDispatcher dispatchAsyncOnType:RTCDispatcherTypeCaptureSession
                                block:^{
