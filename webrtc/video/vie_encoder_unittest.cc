@@ -26,6 +26,8 @@ class ViEEncoderTest : public ::testing::Test {
 
   ViEEncoderTest()
       : video_send_config_(VideoSendStream::Config(nullptr)),
+        codec_width_(320),
+        codec_height_(240),
         fake_encoder_(),
         stats_proxy_(Clock::GetRealTimeClock(),
                      video_send_config_,
@@ -39,10 +41,7 @@ class ViEEncoderTest : public ::testing::Test {
     video_send_config_.encoder_settings.payload_type = 125;
 
     VideoEncoderConfig video_encoder_config;
-    video_encoder_config.streams = test::CreateVideoStreams(1);
-    codec_width_ = static_cast<int>(video_encoder_config.streams[0].width);
-    codec_height_ = static_cast<int>(video_encoder_config.streams[0].height);
-
+    test::FillEncoderConfiguration(1, &video_encoder_config);
     vie_encoder_.reset(new ViEEncoder(
         1 /* number_of_cores */, &stats_proxy_,
         video_send_config_.encoder_settings, nullptr /* pre_encode_callback */,
@@ -81,6 +80,26 @@ class ViEEncoderTest : public ::testing::Test {
         : FakeEncoder(Clock::GetRealTimeClock()),
           continue_encode_event_(false, false) {}
 
+    VideoCodec codec_config() {
+      rtc::CritScope lock(&crit_);
+      return config_;
+    }
+
+    void BlockNextEncode() {
+      rtc::CritScope lock(&crit_);
+      block_next_encode_ = true;
+    }
+
+    void ContinueEncode() { continue_encode_event_.Set(); }
+
+    void CheckLastTimeStampsMatch(int64_t ntp_time_ms,
+                                  uint32_t timestamp) const {
+      rtc::CritScope lock(&crit_);
+      EXPECT_EQ(timestamp_, timestamp);
+      EXPECT_EQ(ntp_time_ms_, ntp_time_ms);
+    }
+
+   private:
     int32_t Encode(const VideoFrame& input_image,
                    const CodecSpecificInfo* codec_specific_info,
                    const std::vector<FrameType>* frame_types) override {
@@ -103,21 +122,8 @@ class ViEEncoderTest : public ::testing::Test {
       return result;
     }
 
-    void BlockNextEncode() {
-      rtc::CritScope lock(&crit_);
-      block_next_encode_ = true;
-    }
 
-    void ContinueEncode() { continue_encode_event_.Set(); }
 
-    void CheckLastTimeStampsMatch(int64_t ntp_time_ms,
-                                  uint32_t timestamp) const {
-      rtc::CritScope lock(&crit_);
-      EXPECT_EQ(timestamp_, timestamp);
-      EXPECT_EQ(ntp_time_ms_, ntp_time_ms);
-    }
-
-   private:
     rtc::CriticalSection crit_;
     bool block_next_encode_ = false;
     rtc::Event continue_encode_event_;
@@ -284,18 +290,46 @@ TEST_F(ViEEncoderTest, ConfigureEncoderTriggersOnEncoderConfigurationChanged) {
   // Capture a frame and wait for it to synchronize with the encoder thread.
   video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
   sink_.WaitForEncodedFrame(1);
-  EXPECT_EQ(1, sink_.number_of_reconfigurations());
+  // The encoder will have been configured twice. First time before the first
+  // frame has been received. Then a second time when the resolution is known.
+  EXPECT_EQ(2, sink_.number_of_reconfigurations());
 
   VideoEncoderConfig video_encoder_config;
-  video_encoder_config.streams = test::CreateVideoStreams(1);
+  test::FillEncoderConfiguration(1, &video_encoder_config);
   video_encoder_config.min_transmit_bitrate_bps = 9999;
   vie_encoder_->ConfigureEncoder(std::move(video_encoder_config), 1440);
 
   // Capture a frame and wait for it to synchronize with the encoder thread.
   video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
   sink_.WaitForEncodedFrame(2);
-  EXPECT_EQ(2, sink_.number_of_reconfigurations());
+  EXPECT_EQ(3, sink_.number_of_reconfigurations());
   EXPECT_EQ(9999, sink_.last_min_transmit_bitrate());
+
+  vie_encoder_->Stop();
+}
+
+TEST_F(ViEEncoderTest, FrameResolutionChangeReconfigureEncoder) {
+  const int kTargetBitrateBps = 100000;
+  vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
+
+  // Capture a frame and wait for it to synchronize with the encoder thread.
+  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
+  sink_.WaitForEncodedFrame(1);
+  // The encoder will have been configured twice. First time before the first
+  // frame has been received. Then a second time when the resolution is known.
+  EXPECT_EQ(2, sink_.number_of_reconfigurations());
+  EXPECT_EQ(codec_width_, fake_encoder_.codec_config().width);
+  EXPECT_EQ(codec_height_, fake_encoder_.codec_config().height);
+
+  codec_width_ *= 2;
+  codec_height_ *= 2;
+  // Capture a frame with a higher resolution and wait for it to synchronize
+  // with the encoder thread.
+  video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
+  sink_.WaitForEncodedFrame(2);
+  EXPECT_EQ(codec_width_, fake_encoder_.codec_config().width);
+  EXPECT_EQ(codec_height_, fake_encoder_.codec_config().height);
+  EXPECT_EQ(3, sink_.number_of_reconfigurations());
 
   vie_encoder_->Stop();
 }

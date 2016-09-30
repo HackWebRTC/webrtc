@@ -29,6 +29,7 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/system_wrappers/include/cpu_info.h"
+#include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/layer_filtering_transport.h"
 #include "webrtc/test/run_loop.h"
 #include "webrtc/test/statistics.h"
@@ -1014,7 +1015,8 @@ void VideoQualityTest::SetupCommon(Transport* send_transport,
 
   video_encoder_config_.min_transmit_bitrate_bps =
       params_.common.min_transmit_bps;
-  video_encoder_config_.streams = params_.ss.streams;
+  test::FillEncoderConfiguration(params_.ss.streams.size(),
+                                 &video_encoder_config_);
   video_encoder_config_.spatial_layers = params_.ss.spatial_layers;
 
   CreateMatchingReceiveConfigs(recv_transport);

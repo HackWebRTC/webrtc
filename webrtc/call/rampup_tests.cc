@@ -13,6 +13,7 @@
 #include "webrtc/test/gtest.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/platform_thread.h"
+#include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/testsupport/perf_test.h"
 
 namespace webrtc {
@@ -96,24 +97,47 @@ size_t RampUpTester::GetNumAudioStreams() const {
   return num_audio_streams_;
 }
 
+class RampUpTester::VideoStreamFactory
+    : public VideoEncoderConfig::VideoStreamFactoryInterface {
+ public:
+  VideoStreamFactory() {}
+
+ private:
+  std::vector<VideoStream> CreateEncoderStreams(
+      int width,
+      int height,
+      const VideoEncoderConfig& encoder_config) override {
+    std::vector<VideoStream> streams =
+        test::CreateVideoStreams(width, height, encoder_config);
+    if (encoder_config.number_of_streams == 1) {
+      streams[0].target_bitrate_bps = streams[0].max_bitrate_bps = 2000000;
+    }
+    return streams;
+  }
+};
+
 void RampUpTester::ModifyVideoConfigs(
     VideoSendStream::Config* send_config,
     std::vector<VideoReceiveStream::Config>* receive_configs,
     VideoEncoderConfig* encoder_config) {
   send_config->suspend_below_min_bitrate = true;
-
+  encoder_config->number_of_streams = num_video_streams_;
+  encoder_config->max_bitrate_bps = 2000000;
+  encoder_config->video_stream_factory =
+      new rtc::RefCountedObject<RampUpTester::VideoStreamFactory>();
   if (num_video_streams_ == 1) {
-    encoder_config->streams[0].target_bitrate_bps =
-        encoder_config->streams[0].max_bitrate_bps = 2000000;
     // For single stream rampup until 1mbps
     expected_bitrate_bps_ = kSingleStreamTargetBps;
   } else {
     // For multi stream rampup until all streams are being sent. That means
-    // enough birate to send all the target streams plus the min bitrate of
+    // enough bitrate to send all the target streams plus the min bitrate of
     // the last one.
-    expected_bitrate_bps_ = encoder_config->streams.back().min_bitrate_bps;
-    for (size_t i = 0; i < encoder_config->streams.size() - 1; ++i) {
-      expected_bitrate_bps_ += encoder_config->streams[i].target_bitrate_bps;
+    std::vector<VideoStream> streams = test::CreateVideoStreams(
+        test::CallTest::kDefaultWidth, test::CallTest::kDefaultHeight,
+        *encoder_config);
+    expected_bitrate_bps_ = streams.back().min_bitrate_bps;
+    for (size_t i = 0; i < streams.size() - 1; ++i) {
+      expected_bitrate_bps_ += streams[i].target_bitrate_bps;
     }
   }
 

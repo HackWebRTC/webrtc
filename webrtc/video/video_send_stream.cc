@@ -521,18 +521,11 @@ VideoSendStream::VideoSendStream(
                      config_.pre_encode_callback, config_.overuse_callback,
                      config_.post_encode_callback));
 
-  // TODO(perkj): Remove vector<VideoStreams> from VideoEncoderConfig and
-  // replace with max_bitrate. The VideoStream should be created by ViEEncoder
-  // when the video resolution is known.
-  int initial_max_encoder_bitrate = 0;
-  for (const auto& stream : encoder_config.streams)
-    initial_max_encoder_bitrate += stream.max_bitrate_bps;
-
   worker_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(new ConstructionTask(
       &send_stream_, &thread_sync_event_, &stats_proxy_, vie_encoder_.get(),
       module_process_thread, call_stats, congestion_controller,
       bitrate_allocator, send_delay_stats, remb, event_log, &config_,
-      initial_max_encoder_bitrate, suspended_ssrcs)));
+      encoder_config.max_bitrate_bps, suspended_ssrcs)));
 
   // Wait for ConstructionTask to complete so that |send_stream_| can be used.
   // |module_process_thread| must be registered and deregistered on the thread
@@ -579,12 +572,9 @@ void VideoSendStream::SetSource(
 }
 
 void VideoSendStream::ReconfigureVideoEncoder(VideoEncoderConfig config) {
-  // ReconfigureVideoEncoder will be called on the thread that deliverers video
-  // frames. We must change the encoder settings immediately so that
-  // the codec settings matches the next frame.
-  // TODO(perkj): Move logic for reconfiguration the encoder due to frame size
-  // change from WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame to
-  // be internally handled by ViEEncoder.
+  // TODO(perkj): Some test cases in VideoSendStreamTest call
+  // ReconfigureVideoEncoder from the network thread.
+  // RTC_DCHECK_RUN_ON(&thread_checker_);
   vie_encoder_->ConfigureEncoder(std::move(config),
                                  config_.rtp.max_packet_size);
 }

@@ -45,6 +45,7 @@ class FrameGeneratorCapturer : public VideoCapturer {
 
   void Start() override;
   void Stop() override;
+  void ChangeResolution(size_t width, size_t height);
 
   void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
                        const rtc::VideoSinkWants& wants) override;

@@ -26,8 +26,14 @@ namespace {
 
 class ChromaGenerator : public FrameGenerator {
  public:
-  ChromaGenerator(size_t width, size_t height)
-      : angle_(0.0), width_(width), height_(height) {
+  ChromaGenerator(size_t width, size_t height) : angle_(0.0) {
+    ChangeResolution(width, height);
+  }
+
+  void ChangeResolution(size_t width, size_t height) override {
+    rtc::CritScope lock(&crit_);
+    width_ = width;
+    height_ = height;
     RTC_CHECK(width_ > 0);
     RTC_CHECK(height_ > 0);
     half_width_ = (width_ + 1) / 2;
@@ -36,6 +42,7 @@ class ChromaGenerator : public FrameGenerator {
   }
 
   VideoFrame* NextFrame() override {
+    rtc::CritScope lock(&crit_);
     angle_ += 30.0;
     uint8_t u = fabs(sin(angle_)) * 0xFF;
     uint8_t v = fabs(cos(angle_)) * 0xFF;
@@ -55,13 +62,14 @@ class ChromaGenerator : public FrameGenerator {
   }
 
  private:
-  double angle_;
-  size_t width_;
-  size_t height_;
-  size_t half_width_;
-  size_t y_size_;
-  size_t uv_size_;
-  std::unique_ptr<VideoFrame> frame_;
+  rtc::CriticalSection crit_;
+  double angle_ GUARDED_BY(&crit_);
+  size_t width_ GUARDED_BY(&crit_);
+  size_t height_ GUARDED_BY(&crit_);
+  size_t half_width_ GUARDED_BY(&crit_);
+  size_t y_size_ GUARDED_BY(&crit_);
+  size_t uv_size_ GUARDED_BY(&crit_);
+  std::unique_ptr<VideoFrame> frame_ GUARDED_BY(&crit_);
 };
 
 class YuvFileGenerator : public FrameGenerator {
