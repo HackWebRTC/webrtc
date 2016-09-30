@@ -38,8 +38,6 @@
         'remote_estimator_proxy.cc',
         'remote_estimator_proxy.h',
         'send_time_history.cc',
-        'transport_feedback_adapter.cc',
-        'transport_feedback_adapter.h',
         'test/bwe_test_logging.h',
       ], # source
       'conditions': [

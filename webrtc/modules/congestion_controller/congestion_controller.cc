@@ -21,7 +21,6 @@
 #include "webrtc/base/socket.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
-#include "webrtc/modules/congestion_controller/delay_based_bwe.h"
 #include "webrtc/modules/congestion_controller/probe_controller.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/send_time_history.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
@@ -171,7 +170,7 @@ CongestionController::CongestionController(
       retransmission_rate_limiter_(
           new RateLimiter(clock, kRetransmitWindowSizeMs)),
       remote_estimator_proxy_(clock_, packet_router_.get()),
-      transport_feedback_adapter_(clock_),
+      transport_feedback_adapter_(clock_, bitrate_controller_.get()),
       min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps),
       max_bitrate_bps_(0),
       last_reported_bitrate_bps_(0),
@@ -202,7 +201,7 @@ CongestionController::CongestionController(
       retransmission_rate_limiter_(
           new RateLimiter(clock, kRetransmitWindowSizeMs)),
       remote_estimator_proxy_(clock_, packet_router_.get()),
-      transport_feedback_adapter_(clock_),
+      transport_feedback_adapter_(clock_, bitrate_controller_.get()),
       min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps),
       max_bitrate_bps_(0),
       last_reported_bitrate_bps_(0),
@@ -215,10 +214,8 @@ CongestionController::CongestionController(
 CongestionController::~CongestionController() {}
 
 void CongestionController::Init() {
-  transport_feedback_adapter_.SetBitrateEstimator(
-      new DelayBasedBwe(bitrate_controller_.get(), clock_));
-  transport_feedback_adapter_.GetBitrateEstimator()->SetMinBitrate(
-      min_bitrate_bps_);
+  transport_feedback_adapter_.InitBwe();
+  transport_feedback_adapter_.SetMinBitrate(min_bitrate_bps_);
 }
 
 void CongestionController::SetBweBitrates(int min_bitrate_bps,
@@ -236,8 +233,7 @@ void CongestionController::SetBweBitrates(int min_bitrate_bps,
   if (remote_bitrate_estimator_)
     remote_bitrate_estimator_->SetMinBitrate(min_bitrate_bps);
   min_bitrate_bps_ = min_bitrate_bps;
-  transport_feedback_adapter_.GetBitrateEstimator()->SetMinBitrate(
-      min_bitrate_bps_);
+  transport_feedback_adapter_.SetMinBitrate(min_bitrate_bps_);
   MaybeTriggerOnNetworkChanged();
 }
 
@@ -256,10 +252,8 @@ void CongestionController::ResetBweAndBitrates(int bitrate_bps,
   if (remote_bitrate_estimator_)
     remote_bitrate_estimator_->SetMinBitrate(min_bitrate_bps);
 
-  RemoteBitrateEstimator* rbe =
-      new DelayBasedBwe(bitrate_controller_.get(), clock_);
-  transport_feedback_adapter_.SetBitrateEstimator(rbe);
-  rbe->SetMinBitrate(min_bitrate_bps);
+  transport_feedback_adapter_.InitBwe();
+  transport_feedback_adapter_.SetMinBitrate(min_bitrate_bps);
   // TODO(holmer): Trigger a new probe once mid-call probing is implemented.
   MaybeTriggerOnNetworkChanged();
 }
