@@ -18,6 +18,7 @@
 #include "webrtc/base/keep_ref_until_done.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/test/frame_utils.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -34,10 +35,8 @@ static void PreprocessFrameAndVerify(const VideoFrame& source,
                                      int target_height,
                                      VideoProcessing* vpm,
                                      const VideoFrame* out_frame);
-rtc::scoped_refptr<VideoFrameBuffer> CropBuffer(
-    const rtc::scoped_refptr<VideoFrameBuffer>& source_buffer,
-    int source_width,
-    int source_height,
+static rtc::scoped_refptr<VideoFrameBuffer> CropBuffer(
+    rtc::scoped_refptr<VideoFrameBuffer> source_buffer,
     int offset_x,
     int offset_y,
     int cropped_width,
@@ -48,7 +47,7 @@ rtc::scoped_refptr<VideoFrameBuffer> CropBuffer(
 // verified under the same conditions.
 static void TestSize(
     const VideoFrame& source_frame,
-    const rtc::scoped_refptr<VideoFrameBuffer>& cropped_source_buffer,
+    const VideoFrameBuffer& cropped_source_buffer,
     int target_width,
     int target_height,
     double expected_psnr,
@@ -133,15 +132,9 @@ TEST_F(VideoProcessingTest, Resampler) {
   vp_->EnableTemporalDecimation(false);
 
   // Reading test frame
-  rtc::scoped_refptr<webrtc::I420Buffer> buffer =
-      I420Buffer::Create(width_, height_, width_, half_width_, half_width_);
-
-  ASSERT_EQ(static_cast<size_t>(size_y_),
-            fread(buffer->MutableDataY(), 1, size_y_, source_file_));
-  ASSERT_EQ(static_cast<size_t>(size_uv_),
-            fread(buffer->MutableDataU(), 1, size_uv_, source_file_));
-  ASSERT_EQ(static_cast<size_t>(size_uv_),
-            fread(buffer->MutableDataV(), 1, size_uv_, source_file_));
+  rtc::scoped_refptr<VideoFrameBuffer> video_buffer(
+      test::ReadI420Buffer(width_, height_, source_file_));
+  ASSERT_TRUE(video_buffer);
 
   for (uint32_t run_idx = 0; run_idx < NumRuns; run_idx++) {
     // Initiate test timer.
@@ -149,36 +142,36 @@ TEST_F(VideoProcessingTest, Resampler) {
 
     // Init the sourceFrame with a timestamp.
     int64_t time_start_ms = time_start / rtc::kNumNanosecsPerMillisec;
-    VideoFrame video_frame(buffer, time_start_ms * 90, time_start_ms,
+    VideoFrame video_frame(video_buffer, time_start_ms * 90, time_start_ms,
                            webrtc::kVideoRotation_0);
 
     // Test scaling to different sizes: source is of |width|/|height| = 352/288.
     // Pure scaling:
-    TestSize(video_frame, buffer, width_ / 4, height_ / 4, 25.2, vp_);
-    TestSize(video_frame, buffer, width_ / 2, height_ / 2, 28.1, vp_);
+    TestSize(video_frame, *video_buffer, width_ / 4, height_ / 4, 25.2, vp_);
+    TestSize(video_frame, *video_buffer, width_ / 2, height_ / 2, 28.1, vp_);
     // No resampling:
-    TestSize(video_frame, buffer, width_, height_, -1, vp_);
-    TestSize(video_frame, buffer, 2 * width_, 2 * height_, 32.2, vp_);
+    TestSize(video_frame, *video_buffer, width_, height_, -1, vp_);
+    TestSize(video_frame, *video_buffer, 2 * width_, 2 * height_, 32.2, vp_);
 
     // Scaling and cropping. The cropped source frame is the largest center
     // aligned region that can be used from the source while preserving aspect
     // ratio.
-    TestSize(video_frame, CropBuffer(buffer, width_, height_, 0, 56, 352, 176),
+    TestSize(video_frame, *CropBuffer(video_buffer, 0, 56, 352, 176),
              100, 50, 24.0, vp_);
-    TestSize(video_frame, CropBuffer(buffer, width_, height_, 0, 30, 352, 225),
+    TestSize(video_frame, *CropBuffer(video_buffer, 0, 30, 352, 225),
              400, 256, 31.3, vp_);
-    TestSize(video_frame, CropBuffer(buffer, width_, height_, 68, 0, 216, 288),
+    TestSize(video_frame, *CropBuffer(video_buffer, 68, 0, 216, 288),
              480, 640, 32.15, vp_);
-    TestSize(video_frame, CropBuffer(buffer, width_, height_, 0, 12, 352, 264),
+    TestSize(video_frame, *CropBuffer(video_buffer, 0, 12, 352, 264),
              960, 720, 32.2, vp_);
-    TestSize(video_frame, CropBuffer(buffer, width_, height_, 0, 44, 352, 198),
+    TestSize(video_frame, *CropBuffer(video_buffer, 0, 44, 352, 198),
              1280, 720, 32.15, vp_);
 
     // Upsampling to odd size.
-    TestSize(video_frame, CropBuffer(buffer, width_, height_, 0, 26, 352, 233),
+    TestSize(video_frame, *CropBuffer(video_buffer, 0, 26, 352, 233),
              501, 333, 32.05, vp_);
     // Downsample to odd size.
-    TestSize(video_frame, CropBuffer(buffer, width_, height_, 0, 34, 352, 219),
+    TestSize(video_frame, *CropBuffer(video_buffer, 0, 34, 352, 219),
              281, 175, 29.3, vp_);
 
     // Stop timer.
@@ -219,20 +212,18 @@ void PreprocessFrameAndVerify(const VideoFrame& source,
 }
 
 rtc::scoped_refptr<VideoFrameBuffer> CropBuffer(
-    const rtc::scoped_refptr<VideoFrameBuffer>& source_buffer,
-    int source_width,
-    int source_height,
+    rtc::scoped_refptr<VideoFrameBuffer> source_buffer,
     int offset_x,
     int offset_y,
     int cropped_width,
     int cropped_height) {
   // Force even.
-  offset_x &= 1;
-  offset_y &= 1;
+  offset_x &= ~1;
+  offset_y &= ~1;
 
   size_t y_start = offset_x + offset_y * source_buffer->StrideY();
   size_t u_start = (offset_x / 2) + (offset_y / 2) * source_buffer->StrideU();
-  size_t v_start = (offset_x / 2) + (offset_y / 2) * source_buffer->StrideU();
+  size_t v_start = (offset_x / 2) + (offset_y / 2) * source_buffer->StrideV();
 
   return rtc::scoped_refptr<VideoFrameBuffer>(
       new rtc::RefCountedObject<WrappedI420Buffer>(
@@ -243,7 +234,7 @@ rtc::scoped_refptr<VideoFrameBuffer> CropBuffer(
 }
 
 void TestSize(const VideoFrame& source_frame,
-              const rtc::scoped_refptr<VideoFrameBuffer>& cropped_source_buffer,
+              const VideoFrameBuffer& cropped_source,
               int target_width,
               int target_height,
               double expected_psnr,
@@ -260,14 +251,14 @@ void TestSize(const VideoFrame& source_frame,
   // Scale |resampled_source_frame| back to the source scale.
   VideoFrame resampled_source_frame;
   resampled_source_frame.CopyFrame(*out_frame);
-  PreprocessFrameAndVerify(resampled_source_frame,
-                           cropped_source_buffer->width(),
-                           cropped_source_buffer->height(), vpm, out_frame);
+  // Compute PSNR against the cropped source frame and check expectation.
+  PreprocessFrameAndVerify(resampled_source_frame, cropped_source.width(),
+                           cropped_source.height(), vpm, out_frame);
   WriteProcessedFrameForVisualInspection(resampled_source_frame, *out_frame);
 
   // Compute PSNR against the cropped source frame and check expectation.
   double psnr =
-      I420PSNR(*cropped_source_buffer, *out_frame->video_frame_buffer());
+      I420PSNR(cropped_source, *out_frame->video_frame_buffer());
   EXPECT_GT(psnr, expected_psnr);
   printf(
       "PSNR: %f. PSNR is between source of size %d %d, and a modified "

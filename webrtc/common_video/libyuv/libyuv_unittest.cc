@@ -15,6 +15,7 @@
 
 #include "webrtc/test/gtest.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/test/frame_utils.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/video_frame.h"
 
@@ -35,8 +36,7 @@ class TestLibYuv : public ::testing::Test {
   virtual void TearDown();
 
   FILE* source_file_;
-  VideoFrame orig_frame_;
-  std::unique_ptr<uint8_t[]> orig_buffer_;
+  std::unique_ptr<VideoFrame> orig_frame_;
   const int width_;
   const int height_;
   const int size_y_;
@@ -51,9 +51,7 @@ TestLibYuv::TestLibYuv()
       height_(288),
       size_y_(width_ * height_),
       size_uv_(((width_ + 1) / 2) * ((height_ + 1) / 2)),
-      frame_length_(CalcBufferSize(kI420, 352, 288)) {
-  orig_buffer_.reset(new uint8_t[frame_length_]);
-}
+      frame_length_(CalcBufferSize(kI420, 352, 288)) {}
 
 void TestLibYuv::SetUp() {
   const std::string input_file_name = webrtc::test::ResourcePath("foreman_cif",
@@ -62,16 +60,10 @@ void TestLibYuv::SetUp() {
   ASSERT_TRUE(source_file_ != NULL) << "Cannot read file: "<<
                                        input_file_name << "\n";
 
-  EXPECT_EQ(frame_length_,
-            fread(orig_buffer_.get(), 1, frame_length_, source_file_));
-  orig_frame_.CreateFrame(orig_buffer_.get(),
-                          orig_buffer_.get() + size_y_,
-                          orig_buffer_.get() +
-                          size_y_ + size_uv_,
-                          width_, height_,
-                          width_, (width_ + 1) / 2,
-                          (width_ + 1) / 2,
-                          kVideoRotation_0);
+  rtc::scoped_refptr<VideoFrameBuffer> buffer(
+      test::ReadI420Buffer(width_, height_, source_file_));
+
+  orig_frame_.reset(new VideoFrame(buffer, kVideoRotation_0, 0));
 }
 
 void TestLibYuv::TearDown() {
@@ -100,7 +92,7 @@ TEST_F(TestLibYuv, ConvertTest) {
 
   printf("\nConvert #%d I420 <-> I420 \n", j);
   std::unique_ptr<uint8_t[]> out_i420_buffer(new uint8_t[frame_length_]);
-  EXPECT_EQ(0, ConvertFromI420(orig_frame_, kI420, 0, out_i420_buffer.get()));
+  EXPECT_EQ(0, ConvertFromI420(*orig_frame_, kI420, 0, out_i420_buffer.get()));
   EXPECT_EQ(0, ConvertToI420(kI420, out_i420_buffer.get(), 0, 0, width_,
                              height_, 0, kVideoRotation_0,
                              res_i420_buffer.get()));
@@ -108,7 +100,7 @@ TEST_F(TestLibYuv, ConvertTest) {
   if (PrintVideoFrame(*res_i420_buffer, output_file) < 0) {
     return;
   }
-  psnr = I420PSNR(*orig_frame_.video_frame_buffer(), *res_i420_buffer);
+  psnr = I420PSNR(*orig_frame_->video_frame_buffer(), *res_i420_buffer);
   EXPECT_EQ(48.0, psnr);
   j++;
 
@@ -120,7 +112,7 @@ TEST_F(TestLibYuv, ConvertTest) {
   Calc16ByteAlignedStride(width_, &stride_y, &stride_uv);
   res_i420_buffer =
       I420Buffer::Create(width_, height_, stride_y, stride_uv, stride_uv);
-  EXPECT_EQ(0, ConvertFromI420(orig_frame_, kRGB24, 0, res_rgb_buffer2.get()));
+  EXPECT_EQ(0, ConvertFromI420(*orig_frame_, kRGB24, 0, res_rgb_buffer2.get()));
 
   EXPECT_EQ(0, ConvertToI420(kRGB24, res_rgb_buffer2.get(), 0, 0, width_,
                              height_, 0, kVideoRotation_0,
@@ -129,7 +121,7 @@ TEST_F(TestLibYuv, ConvertTest) {
   if (PrintVideoFrame(*res_i420_buffer, output_file) < 0) {
     return;
   }
-  psnr = I420PSNR(*orig_frame_.video_frame_buffer(), *res_i420_buffer);
+  psnr = I420PSNR(*orig_frame_->video_frame_buffer(), *res_i420_buffer);
 
   // Optimization Speed- quality trade-off => 45 dB only (platform dependant).
   EXPECT_GT(ceil(psnr), 44);
@@ -137,11 +129,11 @@ TEST_F(TestLibYuv, ConvertTest) {
 
   printf("\nConvert #%d I420 <-> UYVY\n", j);
   std::unique_ptr<uint8_t[]> out_uyvy_buffer(new uint8_t[width_ * height_ * 2]);
-  EXPECT_EQ(0, ConvertFromI420(orig_frame_, kUYVY, 0, out_uyvy_buffer.get()));
+  EXPECT_EQ(0, ConvertFromI420(*orig_frame_, kUYVY, 0, out_uyvy_buffer.get()));
   EXPECT_EQ(0, ConvertToI420(kUYVY, out_uyvy_buffer.get(), 0, 0, width_,
                              height_, 0, kVideoRotation_0,
                              res_i420_buffer.get()));
-  psnr = I420PSNR(*orig_frame_.video_frame_buffer(), *res_i420_buffer);
+  psnr = I420PSNR(*orig_frame_->video_frame_buffer(), *res_i420_buffer);
   EXPECT_EQ(48.0, psnr);
   if (PrintVideoFrame(*res_i420_buffer, output_file) < 0) {
     return;
@@ -150,7 +142,7 @@ TEST_F(TestLibYuv, ConvertTest) {
 
   printf("\nConvert #%d I420 <-> YUY2\n", j);
   std::unique_ptr<uint8_t[]> out_yuy2_buffer(new uint8_t[width_ * height_ * 2]);
-  EXPECT_EQ(0, ConvertFromI420(orig_frame_, kYUY2, 0, out_yuy2_buffer.get()));
+  EXPECT_EQ(0, ConvertFromI420(*orig_frame_, kYUY2, 0, out_yuy2_buffer.get()));
 
   EXPECT_EQ(0, ConvertToI420(kYUY2, out_yuy2_buffer.get(), 0, 0, width_,
                              height_, 0,
@@ -160,14 +152,14 @@ TEST_F(TestLibYuv, ConvertTest) {
     return;
   }
 
-  psnr = I420PSNR(*orig_frame_.video_frame_buffer(), *res_i420_buffer);
+  psnr = I420PSNR(*orig_frame_->video_frame_buffer(), *res_i420_buffer);
   EXPECT_EQ(48.0, psnr);
 
   printf("\nConvert #%d I420 <-> RGB565\n", j);
   std::unique_ptr<uint8_t[]> out_rgb565_buffer(
       new uint8_t[width_ * height_ * 2]);
   EXPECT_EQ(0,
-            ConvertFromI420(orig_frame_, kRGB565, 0, out_rgb565_buffer.get()));
+            ConvertFromI420(*orig_frame_, kRGB565, 0, out_rgb565_buffer.get()));
 
   EXPECT_EQ(0, ConvertToI420(kRGB565, out_rgb565_buffer.get(), 0, 0, width_,
                              height_, 0,
@@ -177,7 +169,7 @@ TEST_F(TestLibYuv, ConvertTest) {
   }
   j++;
 
-  psnr = I420PSNR(*orig_frame_.video_frame_buffer(), *res_i420_buffer);
+  psnr = I420PSNR(*orig_frame_->video_frame_buffer(), *res_i420_buffer);
   // TODO(leozwang) Investigate the right psnr should be set for I420ToRGB565,
   // Another example is I420ToRGB24, the psnr is 44
   // TODO(mikhal): Add psnr for RGB565, 1555, 4444, convert to ARGB.
@@ -187,7 +179,7 @@ TEST_F(TestLibYuv, ConvertTest) {
   std::unique_ptr<uint8_t[]> out_argb8888_buffer(
       new uint8_t[width_ * height_ * 4]);
   EXPECT_EQ(0,
-            ConvertFromI420(orig_frame_, kARGB, 0, out_argb8888_buffer.get()));
+            ConvertFromI420(*orig_frame_, kARGB, 0, out_argb8888_buffer.get()));
 
   EXPECT_EQ(0, ConvertToI420(kARGB, out_argb8888_buffer.get(), 0, 0, width_,
                              height_, 0, kVideoRotation_0,
@@ -197,7 +189,7 @@ TEST_F(TestLibYuv, ConvertTest) {
     return;
   }
 
-  psnr = I420PSNR(*orig_frame_.video_frame_buffer(), *res_i420_buffer);
+  psnr = I420PSNR(*orig_frame_->video_frame_buffer(), *res_i420_buffer);
   // TODO(leozwang) Investigate the right psnr should be set for
   // I420ToARGB8888,
   EXPECT_GT(ceil(psnr), 42);
@@ -221,7 +213,7 @@ TEST_F(TestLibYuv, ConvertAlignedFrame) {
   rtc::scoped_refptr<I420Buffer> res_i420_buffer =
       I420Buffer::Create(width_, height_, stride_y, stride_uv, stride_uv);
   std::unique_ptr<uint8_t[]> out_i420_buffer(new uint8_t[frame_length_]);
-  EXPECT_EQ(0, ConvertFromI420(orig_frame_, kI420, 0,
+  EXPECT_EQ(0, ConvertFromI420(*orig_frame_, kI420, 0,
                                out_i420_buffer.get()));
   EXPECT_EQ(0, ConvertToI420(kI420, out_i420_buffer.get(), 0, 0, width_,
                              height_, 0, kVideoRotation_0,
@@ -230,10 +222,9 @@ TEST_F(TestLibYuv, ConvertAlignedFrame) {
   if (PrintVideoFrame(*res_i420_buffer, output_file) < 0) {
     return;
   }
-  psnr = I420PSNR(*orig_frame_.video_frame_buffer(), *res_i420_buffer);
+  psnr = I420PSNR(*orig_frame_->video_frame_buffer(), *res_i420_buffer);
   EXPECT_EQ(48.0, psnr);
 }
-
 
 TEST_F(TestLibYuv, RotateTest) {
   // Use ConvertToI420 for multiple rotations - see that nothing breaks, all
@@ -242,18 +233,22 @@ TEST_F(TestLibYuv, RotateTest) {
   int rotated_height = width_;
   int stride_y;
   int stride_uv;
+
+  // Assume compact layout, no padding.
+  const uint8_t *orig_buffer = orig_frame_->video_frame_buffer()->DataY();
+
   Calc16ByteAlignedStride(rotated_width, &stride_y, &stride_uv);
   rtc::scoped_refptr<I420Buffer> rotated_res_i420_buffer = I420Buffer::Create(
       rotated_width, rotated_height, stride_y, stride_uv, stride_uv);
-  EXPECT_EQ(0, ConvertToI420(kI420, orig_buffer_.get(), 0, 0, width_, height_,
+  EXPECT_EQ(0, ConvertToI420(kI420, orig_buffer, 0, 0, width_, height_,
                              0, kVideoRotation_90,
                              rotated_res_i420_buffer.get()));
-  EXPECT_EQ(0, ConvertToI420(kI420, orig_buffer_.get(), 0, 0, width_, height_,
+  EXPECT_EQ(0, ConvertToI420(kI420, orig_buffer, 0, 0, width_, height_,
                              0, kVideoRotation_270,
                              rotated_res_i420_buffer.get()));
   rotated_res_i420_buffer = I420Buffer::Create(
       width_, height_, width_, (width_ + 1) / 2, (width_ + 1) / 2);
-  EXPECT_EQ(0, ConvertToI420(kI420, orig_buffer_.get(), 0, 0, width_, height_,
+  EXPECT_EQ(0, ConvertToI420(kI420, orig_buffer, 0, 0, width_, height_,
                              0, kVideoRotation_180,
                              rotated_res_i420_buffer.get()));
 }

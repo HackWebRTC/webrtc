@@ -18,7 +18,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "libyuv/convert.h"
+#include "webrtc/test/frame_utils.h"
 
 namespace webrtc {
 namespace test {
@@ -101,35 +101,21 @@ class YuvFileGenerator : public FrameGenerator {
     return temp_frame_.get();
   }
 
-  // TODO(nisse): Have a frame reader in one place. And read directly
-  // into the planes of an I420Buffer, the extra copying below is silly.
   void ReadNextFrame() {
-    size_t bytes_read =
-        fread(frame_buffer_.get(), 1, frame_size_, files_[file_index_]);
-    if (bytes_read < frame_size_) {
+    last_read_buffer_ =
+        test::ReadI420Buffer(static_cast<int>(width_),
+                             static_cast<int>(height_),
+                             files_[file_index_]);
+    if (!last_read_buffer_) {
       // No more frames to read in this file, rewind and move to next file.
       rewind(files_[file_index_]);
       file_index_ = (file_index_ + 1) % files_.size();
-      bytes_read = fread(frame_buffer_.get(), 1, frame_size_,
-          files_[file_index_]);
-      assert(bytes_read >= frame_size_);
+      last_read_buffer_ =
+          test::ReadI420Buffer(static_cast<int>(width_),
+                               static_cast<int>(height_),
+                               files_[file_index_]);
+      RTC_CHECK(last_read_buffer_);
     }
-
-    size_t half_width = (width_ + 1) / 2;
-    size_t size_y = width_ * height_;
-    size_t size_uv = half_width * ((height_ + 1) / 2);
-    last_read_buffer_ = I420Buffer::Create(
-        static_cast<int>(width_), static_cast<int>(height_),
-        static_cast<int>(width_), static_cast<int>(half_width),
-        static_cast<int>(half_width));
-    libyuv::I420Copy(
-        frame_buffer_.get(), static_cast<int>(width_),
-        frame_buffer_.get() + size_y, static_cast<int>(half_width),
-        frame_buffer_.get() + size_y + size_uv, static_cast<int>(half_width),
-        last_read_buffer_->MutableDataY(), last_read_buffer_->StrideY(),
-        last_read_buffer_->MutableDataU(), last_read_buffer_->StrideU(),
-        last_read_buffer_->MutableDataV(), last_read_buffer_->StrideV(),
-        static_cast<int>(width_), static_cast<int>(height_));
   }
 
  private:

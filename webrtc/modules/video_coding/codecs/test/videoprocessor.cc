@@ -56,7 +56,6 @@ VideoProcessorImpl::VideoProcessorImpl(webrtc::VideoEncoder* encoder,
       stats_(stats),
       encode_callback_(NULL),
       decode_callback_(NULL),
-      source_buffer_(NULL),
       first_key_frame_has_been_excluded_(false),
       last_frame_missing_(false),
       initialized_(false),
@@ -81,7 +80,6 @@ bool VideoProcessorImpl::Init() {
 
   // Initialize data structures used by the encoder/decoder APIs
   size_t frame_length_in_bytes = frame_reader_->FrameLength();
-  source_buffer_ = new uint8_t[frame_length_in_bytes];
   last_successful_frame_buffer_ = new uint8_t[frame_length_in_bytes];
   // Set fixed properties common for all frames.
   // To keep track of spatial resize actions by encoder.
@@ -143,7 +141,6 @@ bool VideoProcessorImpl::Init() {
 }
 
 VideoProcessorImpl::~VideoProcessorImpl() {
-  delete[] source_buffer_;
   delete[] last_successful_frame_buffer_;
   encoder_->RegisterEncodeCompleteCallback(NULL);
   delete encode_callback_;
@@ -190,17 +187,15 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
   if (frame_number == 0) {
     prev_time_stamp_ = -1;
   }
-  if (frame_reader_->ReadFrame(source_buffer_)) {
-    // Copy the source frame to the newly read frame data.
-    source_frame_.CreateFrame(source_buffer_, config_.codec_settings->width,
-                              config_.codec_settings->height, kVideoRotation_0);
+  rtc::scoped_refptr<VideoFrameBuffer> buffer(frame_reader_->ReadFrame());
+  if (buffer) {
+    // Use the frame number as "timestamp" to identify frames
+    VideoFrame source_frame(buffer, frame_number, 0, webrtc::kVideoRotation_0);
 
     // Ensure we have a new statistics data object we can fill:
     FrameStatistic& stat = stats_->NewFrame(frame_number);
 
     encode_start_ns_ = rtc::TimeNanos();
-    // Use the frame number as "timestamp" to identify frames
-    source_frame_.set_timestamp(frame_number);
 
     // Decide if we're going to force a keyframe:
     std::vector<FrameType> frame_types(1, kVideoFrameDelta);
@@ -213,7 +208,7 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
     encoded_frame_size_ = 0;
     encoded_frame_type_ = kVideoFrameDelta;
 
-    int32_t encode_result = encoder_->Encode(source_frame_, NULL, &frame_types);
+    int32_t encode_result = encoder_->Encode(source_frame, NULL, &frame_types);
 
     if (encode_result != WEBRTC_VIDEO_CODEC_OK) {
       fprintf(stderr, "Failed to encode frame %d, return code: %d\n",

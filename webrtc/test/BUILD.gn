@@ -128,6 +128,7 @@ rtc_source_set("test_support") {
   ]
 
   deps = [
+    ":video_test_common",
     "../base:gtest_prod",
     "../base:rtc_base_approved",
     "../common_video",
@@ -320,7 +321,6 @@ rtc_source_set("test_common") {
   deps = [
     ":rtp_test_utils",
     ":test_support",
-    ":video_test_common",
     "..:webrtc_common",
     "../audio",
     "../base:rtc_base_approved",

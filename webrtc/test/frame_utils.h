@@ -14,6 +14,7 @@
 #include "webrtc/base/scoped_ref_ptr.h"
 
 namespace webrtc {
+class I420Buffer;
 class VideoFrame;
 class VideoFrameBuffer;
 namespace test {
@@ -37,6 +38,8 @@ bool FramesEqual(const webrtc::VideoFrame& f1, const webrtc::VideoFrame& f2);
 
 bool FrameBufsEqual(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& f1,
                     const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& f2);
+
+rtc::scoped_refptr<I420Buffer> ReadI420Buffer(int width, int height, FILE *);
 
 }  // namespace test
 }  // namespace webrtc

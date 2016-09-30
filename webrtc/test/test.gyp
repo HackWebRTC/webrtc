@@ -81,6 +81,7 @@
         '<(webrtc_root)/base/base.gyp:rtc_base_approved',
         '<(webrtc_root)/common_video/common_video.gyp:common_video',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
+        'video_test_common',
       ],
       'sources': [
         'gmock.h',
@@ -211,7 +212,6 @@
        '<(webrtc_root)/webrtc.gyp:webrtc',
        'rtp_test_utils',
        'test_support',
-       'video_test_common',
      ],
     },
     {

@@ -75,7 +75,8 @@ TEST_F(VideoProcessorTest, Init) {
 TEST_F(VideoProcessorTest, ProcessFrame) {
   ExpectInit();
   EXPECT_CALL(encoder_mock_, Encode(_, _, _)).Times(1);
-  EXPECT_CALL(frame_reader_mock_, ReadFrame(_)).WillOnce(Return(true));
+  EXPECT_CALL(frame_reader_mock_, ReadFrame())
+      .WillOnce(Return(I420Buffer::Create(50, 50)));
   // Since we don't return any callback from the mock, the decoder will not
   // be more than initialized...
   VideoProcessorImpl video_processor(

@@ -17,6 +17,7 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
+#include "webrtc/test/frame_utils.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -128,14 +129,11 @@ class TestVp8Impl : public ::testing::Test {
     decoder_->RegisterDecodeCompleteCallback(decode_complete_callback_.get());
     // Using a QCIF image (aligned stride (u,v planes) > width).
     // Processing only one frame.
-    length_source_frame_ = CalcBufferSize(kI420, kWidth, kHeight);
-    source_buffer_.reset(new uint8_t[length_source_frame_]);
     source_file_ = fopen(test::ResourcePath("paris_qcif", "yuv").c_str(), "rb");
     ASSERT_TRUE(source_file_ != NULL);
-    // Set input frame.
-    ASSERT_EQ(
-        fread(source_buffer_.get(), 1, length_source_frame_, source_file_),
-        length_source_frame_);
+    rtc::scoped_refptr<VideoFrameBuffer> compact_buffer(
+        test::ReadI420Buffer(kWidth, kHeight, source_file_));
+    ASSERT_TRUE(compact_buffer);
     codec_inst_.width = kWidth;
     codec_inst_.height = kHeight;
     const int kFramerate = 30;
@@ -147,15 +145,15 @@ class TestVp8Impl : public ::testing::Test {
     EXPECT_EQ(stride_y, 176);
     EXPECT_EQ(stride_uv, 96);
 
-    rtc::scoped_refptr<I420Buffer> buffer = I420Buffer::Create(
-        codec_inst_.width, codec_inst_.height, stride_y, stride_uv, stride_uv);
-    // Using ConvertToI420 to add stride to the image.
-    EXPECT_EQ(
-        0, ConvertToI420(kI420, source_buffer_.get(), 0, 0, codec_inst_.width,
-                         codec_inst_.height, 0, kVideoRotation_0,
-                         buffer.get()));
+    rtc::scoped_refptr<I420Buffer> stride_buffer(
+        I420Buffer::Create(kWidth, kHeight, stride_y, stride_uv, stride_uv));
+
+    // No scaling in our case, just a copy, to add stride to the image.
+    stride_buffer->ScaleFrom(compact_buffer);
+
     input_frame_.reset(
-        new VideoFrame(buffer, kTestTimestamp, 0, webrtc::kVideoRotation_0));
+        new VideoFrame(stride_buffer, kVideoRotation_0, 0));
+    input_frame_->set_timestamp(kTestTimestamp);
   }
 
   void SetUpEncodeDecode() {
@@ -202,7 +200,6 @@ class TestVp8Impl : public ::testing::Test {
   std::unique_ptr<VideoDecoder> decoder_;
   EncodedImage encoded_frame_;
   VideoFrame decoded_frame_;
-  size_t length_source_frame_;
   VideoCodec codec_inst_;
 };
 

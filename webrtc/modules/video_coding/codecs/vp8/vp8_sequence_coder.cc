@@ -163,19 +163,16 @@ int SequenceCoder(webrtc::test::CommandLineParser* parser) {
   int64_t starttime = rtc::TimeMillis();
   int frame_cnt = 1;
   int frames_processed = 0;
-  rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
-      webrtc::I420Buffer::Create(width, height, width, half_width, half_width);
-
-  while (!feof(input_file) &&
-         (num_frames == -1 || frames_processed < num_frames)) {
-    if (fread(frame_buffer.get(), 1, length, input_file) != length)
-      continue;
+  while (num_frames == -1 || frames_processed < num_frames) {
+    rtc::scoped_refptr<VideoFrameBuffer> buffer(
+        test::ReadI420Buffer(width, height, input_file));
+    if (!buffer) {
+      // EOF or read error.
+      break;
+    }
     if (frame_cnt >= start_frame) {
-      webrtc::ConvertToI420(webrtc::kI420, frame_buffer.get(), 0, 0, width,
-                            height, 0, webrtc::kVideoRotation_0, &i420_buffer);
-      webrtc::VideoFrame input_frame(i420_buffer, 0, 0,
-                                     webrtc::kVideoRotation_0);
-      encoder->Encode(input_frame, NULL, NULL);
+      encoder->Encode(VideoFrame(buffer, webrtc::kVideoRotation_0, 0),
+                      NULL, NULL);
       decoder->Decode(encoder_callback.encoded_image(), false, NULL);
       ++frames_processed;
     }

@@ -226,7 +226,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
         break;
     }
     frame_reader_ = new webrtc::test::FrameReaderImpl(
-        config_.input_filename, config_.frame_length_in_bytes);
+        config_.input_filename, config_.codec_settings->width,
+        config_.codec_settings->height);
     frame_writer_ = new webrtc::test::FrameWriterImpl(
         config_.output_filename, config_.frame_length_in_bytes);
     ASSERT_TRUE(frame_reader_->Init());
