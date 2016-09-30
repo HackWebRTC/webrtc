@@ -14,8 +14,8 @@
 
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/modules/video_capture/ios/device_info_ios_objc.h"
-#include "webrtc/modules/video_capture/ios/rtc_video_capture_ios_objc.h"
+#include "webrtc/modules/video_capture/objc/device_info_objc.h"
+#include "webrtc/modules/video_capture/objc/rtc_video_capture_objc.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
 using namespace webrtc;
@@ -67,9 +67,10 @@ rtc::scoped_refptr<VideoCaptureModule> VideoCaptureIos::Create(
     return nullptr;
   }
 
-  if (![capture_module->capture_device_ setCaptureDeviceByUniqueId:[
-              [NSString alloc] initWithCString:deviceUniqueIdUTF8
-                                      encoding:NSUTF8StringEncoding]]) {
+  if (![capture_module->capture_device_
+          setCaptureDeviceByUniqueId:
+              [[NSString alloc] initWithCString:deviceUniqueIdUTF8
+                                       encoding:NSUTF8StringEncoding]]) {
     return nullptr;
   }
   return capture_module;
@@ -97,7 +98,9 @@ int32_t VideoCaptureIos::StopCapture() {
   return 0;
 }
 
-bool VideoCaptureIos::CaptureStarted() { return is_capturing_; }
+bool VideoCaptureIos::CaptureStarted() {
+  return is_capturing_;
+}
 
 int32_t VideoCaptureIos::CaptureSettings(VideoCaptureCapability& settings) {
   settings = capability_;

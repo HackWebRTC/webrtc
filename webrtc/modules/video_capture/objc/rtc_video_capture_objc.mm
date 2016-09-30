@@ -12,10 +12,13 @@
 #error "This file requires ARC support."
 #endif
 
+#import <AVFoundation/AVFoundation.h>
+#ifdef WEBRTC_IOS
 #import <UIKit/UIKit.h>
+#endif
 
-#import "webrtc/modules/video_capture/ios/device_info_ios_objc.h"
-#import "webrtc/modules/video_capture/ios/rtc_video_capture_ios_objc.h"
+#import "webrtc/modules/video_capture/objc/device_info_objc.h"
+#import "webrtc/modules/video_capture/objc/rtc_video_capture_objc.h"
 
 #include "webrtc/system_wrappers/include/trace.h"
 
@@ -69,15 +72,12 @@ using namespace webrtc::videocapturemodule;
     if ([_captureSession canAddOutput:captureOutput]) {
       [_captureSession addOutput:captureOutput];
     } else {
-      WEBRTC_TRACE(kTraceError,
-                   kTraceVideoCapture,
-                   _captureId,
+      WEBRTC_TRACE(kTraceError, kTraceVideoCapture, _captureId,
                    "%s:%s:%d Could not add output to AVCaptureSession ",
-                   __FILE__,
-                   __FUNCTION__,
-                   __LINE__);
+                   __FILE__, __FUNCTION__, __LINE__);
     }
 
+#ifdef WEBRTC_IOS
     [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
 
     NSNotificationCenter* notify = [NSNotificationCenter defaultCenter];
@@ -89,6 +89,7 @@ using namespace webrtc::videocapturemodule;
                selector:@selector(deviceOrientationDidChange:)
                    name:UIDeviceOrientationDidChangeNotification
                  object:nil];
+#endif
   }
 
   return self;
@@ -141,12 +142,7 @@ using namespace webrtc::videocapturemodule;
     return NO;
   }
 
-  if ([_captureSession canSetSessionPreset:AVCaptureSessionPreset1920x1080]) {
-    if (capability.width > 1920 || capability.height > 1080) {
-      return NO;
-    }
-  } else if ([_captureSession
-                 canSetSessionPreset:AVCaptureSessionPreset1280x720]) {
+  if ([_captureSession canSetSessionPreset:AVCaptureSessionPreset1280x720]) {
     if (capability.width > 1280 || capability.height > 720) {
       return NO;
     }
@@ -174,9 +170,10 @@ using namespace webrtc::videocapturemodule;
 
   _orientationHasChanged = NO;
   _captureChanging = YES;
-  dispatch_async(
-      dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
-      ^(void) { [self startCaptureInBackgroundWithOutput:currentOutput]; });
+  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
+                 ^{
+                   [self startCaptureInBackgroundWithOutput:currentOutput];
+                 });
   return YES;
 }
 
@@ -185,13 +182,10 @@ using namespace webrtc::videocapturemodule;
 }
 
 - (void)startCaptureInBackgroundWithOutput:
-            (AVCaptureVideoDataOutput*)currentOutput {
+    (AVCaptureVideoDataOutput*)currentOutput {
   NSString* captureQuality =
       [NSString stringWithString:AVCaptureSessionPresetLow];
-  if (_capability.width >= 1920 || _capability.height >= 1080) {
-    captureQuality =
-        [NSString stringWithString:AVCaptureSessionPreset1920x1080];
-  } else if (_capability.width >= 1280 || _capability.height >= 720) {
+  if (_capability.width >= 1280 || _capability.height >= 720) {
     captureQuality = [NSString stringWithString:AVCaptureSessionPreset1280x720];
   } else if (_capability.width >= 640 || _capability.height >= 480) {
     captureQuality = [NSString stringWithString:AVCaptureSessionPreset640x480];
@@ -204,30 +198,6 @@ using namespace webrtc::videocapturemodule;
 
   // picture resolution
   [_captureSession setSessionPreset:captureQuality];
-
-  // take care of capture framerate now
-  NSArray* sessionInputs = _captureSession.inputs;
-  AVCaptureDeviceInput* deviceInput = [sessionInputs count] > 0 ?
-      sessionInputs[0] : nil;
-  AVCaptureDevice* inputDevice = deviceInput.device;
-  if (inputDevice) {
-    AVCaptureDeviceFormat* activeFormat = inputDevice.activeFormat;
-    NSArray* supportedRanges = activeFormat.videoSupportedFrameRateRanges;
-    AVFrameRateRange* targetRange = [supportedRanges count] > 0 ?
-        supportedRanges[0] : nil;
-    // Find the largest supported framerate less than capability maxFPS.
-    for (AVFrameRateRange* range in supportedRanges) {
-      if (range.maxFrameRate <= _capability.maxFPS &&
-          targetRange.maxFrameRate <= range.maxFrameRate) {
-        targetRange = range;
-      }
-    }
-    if (targetRange && [inputDevice lockForConfiguration:NULL]) {
-      inputDevice.activeVideoMinFrameDuration = targetRange.minFrameDuration;
-      inputDevice.activeVideoMaxFrameDuration = targetRange.minFrameDuration;
-      [inputDevice unlockForConfiguration];
-    }
-  }
 
   _connection = [currentOutput connectionWithMediaType:AVMediaTypeVideo];
   [self setRelativeVideoOrientation];
@@ -243,49 +213,47 @@ using namespace webrtc::videocapturemodule;
   if (!_connection.supportsVideoOrientation) {
     return;
   }
-
+#ifndef WEBRTC_IOS
+  _connection.videoOrientation = AVCaptureVideoOrientationLandscapeRight;
+  return;
+#else
   switch ([UIDevice currentDevice].orientation) {
     case UIDeviceOrientationPortrait:
-      _connection.videoOrientation =
-          AVCaptureVideoOrientationPortrait;
+      _connection.videoOrientation = AVCaptureVideoOrientationPortrait;
       break;
     case UIDeviceOrientationPortraitUpsideDown:
       _connection.videoOrientation =
           AVCaptureVideoOrientationPortraitUpsideDown;
       break;
     case UIDeviceOrientationLandscapeLeft:
-      _connection.videoOrientation =
-          AVCaptureVideoOrientationLandscapeRight;
+      _connection.videoOrientation = AVCaptureVideoOrientationLandscapeRight;
       break;
     case UIDeviceOrientationLandscapeRight:
-      _connection.videoOrientation =
-          AVCaptureVideoOrientationLandscapeLeft;
+      _connection.videoOrientation = AVCaptureVideoOrientationLandscapeLeft;
       break;
     case UIDeviceOrientationFaceUp:
     case UIDeviceOrientationFaceDown:
     case UIDeviceOrientationUnknown:
       if (!_orientationHasChanged) {
-        _connection.videoOrientation =
-            AVCaptureVideoOrientationPortrait;
+        _connection.videoOrientation = AVCaptureVideoOrientationPortrait;
       }
       break;
   }
+#endif
 }
 
 - (void)onVideoError:(NSNotification*)notification {
   NSLog(@"onVideoError: %@", notification);
   // TODO(sjlee): make the specific error handling with this notification.
-  WEBRTC_TRACE(kTraceError,
-               kTraceVideoCapture,
-               _captureId,
-               "%s:%s:%d [AVCaptureSession startRunning] error.",
-               __FILE__,
-               __FUNCTION__,
-               __LINE__);
+  WEBRTC_TRACE(kTraceError, kTraceVideoCapture, _captureId,
+               "%s:%s:%d [AVCaptureSession startRunning] error.", __FILE__,
+               __FUNCTION__, __LINE__);
 }
 
 - (BOOL)stopCapture {
+#ifdef WEBRTC_IOS
   [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
+#endif
   _orientationHasChanged = NO;
   [self waitForCaptureChangeToFinish];
   [self directOutputToNil];
@@ -296,7 +264,9 @@ using namespace webrtc::videocapturemodule;
 
   _captureChanging = YES;
   dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
-                 ^(void) { [self stopCaptureInBackground]; });
+                 ^(void) {
+                   [self stopCaptureInBackground];
+                 });
   return YES;
 }
 
@@ -339,14 +309,9 @@ using namespace webrtc::videocapturemodule;
   if (!newCaptureInput) {
     const char* errorMessage = [[deviceError localizedDescription] UTF8String];
 
-    WEBRTC_TRACE(kTraceError,
-                 kTraceVideoCapture,
-                 _captureId,
-                 "%s:%s:%d deviceInputWithDevice error:%s",
-                 __FILE__,
-                 __FUNCTION__,
-                 __LINE__,
-                 errorMessage);
+    WEBRTC_TRACE(kTraceError, kTraceVideoCapture, _captureId,
+                 "%s:%s:%d deviceInputWithDevice error:%s", __FILE__,
+                 __FUNCTION__, __LINE__, errorMessage);
 
     return NO;
   }
