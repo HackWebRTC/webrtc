@@ -1672,6 +1672,9 @@ TEST_F(P2PTransportChannelTest, TestUsingPooledSessionAfterDoneGathering) {
 // Test that when the "presume_writable_when_fully_relayed" flag is set to
 // true and there's a TURN-TURN candidate pair, it's presumed to be writable
 // as soon as it's created.
+// TODO(deadbeef): Move this and other "presumed writable" tests into a test
+// class that operates on a single P2PTransportChannel, once an appropriate one
+// (which supports TURN servers and TURN candidate gathering) is available.
 TEST_F(P2PTransportChannelTest, TurnToTurnPresumedWritable) {
   ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
                      kDefaultPortAllocatorFlags);
@@ -1795,6 +1798,42 @@ TEST_F(P2PTransportChannelTest, PresumedWritablePreferredOverUnreliable) {
   EXPECT_NE(old_selected_connection, ep1_ch1()->selected_connection());
   // Explitly destroy channels, before fake clock is destroyed.
   DestroyChannels();
+}
+
+// Ensure that "SignalReadyToSend" is fired as expected with a "presumed
+// writable" connection. Previously this did not work.
+TEST_F(P2PTransportChannelTest, SignalReadyToSendWithPresumedWritable) {
+  ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
+                     kDefaultPortAllocatorFlags);
+  // Only test one endpoint, so we can ensure the connection doesn't receive a
+  // binding response and advance beyond being "presumed" writable.
+  GetEndpoint(0)->cd1_.ch_.reset(CreateChannel(
+      0, ICE_CANDIDATE_COMPONENT_DEFAULT, kIceParams[0], kIceParams[1]));
+  IceConfig config;
+  config.presume_writable_when_fully_relayed = true;
+  ep1_ch1()->SetIceConfig(config);
+  ep1_ch1()->MaybeStartGathering();
+  EXPECT_EQ_WAIT(IceGatheringState::kIceGatheringComplete,
+                 ep1_ch1()->gathering_state(), kDefaultTimeout);
+  ep1_ch1()->AddRemoteCandidate(
+      CreateUdpCandidate(RELAY_PORT_TYPE, "1.1.1.1", 1, 0));
+  // Sanity checking the type of the connection.
+  EXPECT_TRUE(ep1_ch1()->selected_connection() != nullptr);
+  EXPECT_EQ(RELAY_PORT_TYPE, LocalCandidate(ep1_ch1())->type());
+  EXPECT_EQ(RELAY_PORT_TYPE, RemoteCandidate(ep1_ch1())->type());
+
+  // Tell the socket server to block packets (returning EWOULDBLOCK).
+  virtual_socket_server()->SetSendingBlocked(true);
+  const char* data = "test";
+  int len = static_cast<int>(strlen(data));
+  EXPECT_EQ(-1, SendData(ep1_ch1(), data, len));
+
+  // Reset |ready_to_send_| flag, which is set to true if the event fires as it
+  // should.
+  GetEndpoint(0)->ready_to_send_ = false;
+  virtual_socket_server()->SetSendingBlocked(false);
+  EXPECT_TRUE(GetEndpoint(0)->ready_to_send_);
+  EXPECT_EQ(len, SendData(ep1_ch1(), data, len));
 }
 
 // Test what happens when we have 2 users behind the same NAT. This can lead

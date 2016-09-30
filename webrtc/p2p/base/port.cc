@@ -1106,9 +1106,7 @@ void Connection::HandleBindingRequest(IceMessage* msg) {
 }
 
 void Connection::OnReadyToSend() {
-  if (write_state_ == STATE_WRITABLE) {
-    SignalReadyToSend(this);
-  }
+  SignalReadyToSend(this);
 }
 
 void Connection::Prune() {
