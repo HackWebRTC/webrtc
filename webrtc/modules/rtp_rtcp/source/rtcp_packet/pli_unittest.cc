@@ -12,7 +12,6 @@
 
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
-
 #include "webrtc/test/rtcp_packet_parser.h"
 
 using testing::ElementsAreArray;

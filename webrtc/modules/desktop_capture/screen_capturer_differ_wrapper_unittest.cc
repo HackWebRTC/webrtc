@@ -15,7 +15,6 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/random.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
@@ -24,6 +23,7 @@
 #include "webrtc/modules/desktop_capture/fake_screen_capturer.h"
 #include "webrtc/modules/desktop_capture/screen_capturer_mock_objects.h"
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

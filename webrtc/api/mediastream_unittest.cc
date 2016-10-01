@@ -12,12 +12,12 @@
 
 #include "webrtc/api/audiotrack.h"
 #include "webrtc/api/mediastream.h"
-#include "webrtc/api/videotrack.h"
 #include "webrtc/api/test/fakevideotracksource.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
+#include "webrtc/api/videotrack.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/refcount.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 
 static const char kStreamLabel1[] = "local_stream_1";
 static const char kVideoTrackId[] = "dummy_video_cam_1";

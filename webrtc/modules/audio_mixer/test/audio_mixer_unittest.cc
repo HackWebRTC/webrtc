@@ -13,11 +13,11 @@
 #include <memory>
 #include <utility>
 
-#include "webrtc/test/gmock.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/thread.h"
-#include "webrtc/modules/audio_mixer/audio_mixer_defines.h"
 #include "webrtc/modules/audio_mixer/audio_mixer.h"
+#include "webrtc/modules/audio_mixer/audio_mixer_defines.h"
+#include "webrtc/test/gmock.h"
 
 using testing::_;
 using testing::Exactly;

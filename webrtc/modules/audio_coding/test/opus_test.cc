@@ -14,7 +14,6 @@
 
 #include <string>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
@@ -22,6 +21,7 @@
 #include "webrtc/modules/audio_coding/test/TestStereo.h"
 #include "webrtc/modules/audio_coding/test/utility.h"
 #include "webrtc/system_wrappers/include/trace.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {

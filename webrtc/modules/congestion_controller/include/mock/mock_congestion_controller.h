@@ -11,10 +11,10 @@
 #ifndef WEBRTC_MODULES_CONGESTION_CONTROLLER_INCLUDE_MOCK_MOCK_CONGESTION_CONTROLLER_H_
 #define WEBRTC_MODULES_CONGESTION_CONTROLLER_INCLUDE_MOCK_MOCK_CONGESTION_CONTROLLER_H_
 
-#include "webrtc/test/gmock.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/socket.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
+#include "webrtc/test/gmock.h"
 
 namespace webrtc {
 namespace test {

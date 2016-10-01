@@ -10,10 +10,10 @@
 
 #include "webrtc/system_wrappers/include/logging.h"
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/event.h"
 #include "webrtc/system_wrappers/include/trace.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace {

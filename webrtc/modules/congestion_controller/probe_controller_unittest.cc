@@ -9,12 +9,12 @@
  */
 #include <memory>
 
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/congestion_controller/probe_controller.h"
 #include "webrtc/modules/pacing/mock/mock_paced_sender.h"
 #include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 
 using testing::_;
 using testing::AtLeast;

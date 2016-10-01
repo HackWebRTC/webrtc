@@ -13,9 +13,11 @@
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/voice_engine/test/channel_transport/udp_transport.h"
+
 // We include the implementation header file to get at the dependency-injecting
 // constructor.
 #include "webrtc/voice_engine/test/channel_transport/udp_transport_impl.h"
+
 // We must mock the socket manager, for which we need its definition.
 #include "webrtc/voice_engine/test/channel_transport/udp_socket_manager_wrapper.h"
 

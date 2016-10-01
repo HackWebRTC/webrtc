@@ -11,10 +11,10 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/test/gmock.h"
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/vp8/simulcast_encoder_adapter.h"
 #include "webrtc/modules/video_coding/codecs/vp8/simulcast_unittest.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
+#include "webrtc/test/gmock.h"
 
 namespace webrtc {
 namespace testing {

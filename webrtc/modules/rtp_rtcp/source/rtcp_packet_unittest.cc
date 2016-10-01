@@ -8,11 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
-
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 
 using webrtc::rtcp::ReceiverReport;
 using webrtc::rtcp::ReportBlock;

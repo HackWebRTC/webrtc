@@ -10,8 +10,8 @@
 
 #include <algorithm>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/rate_statistics.h"
+#include "webrtc/test/gtest.h"
 
 namespace {
 

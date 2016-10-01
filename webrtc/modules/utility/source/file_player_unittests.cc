@@ -18,9 +18,9 @@
 #include <string>
 
 #include "gflags/gflags.h"
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/md5digest.h"
 #include "webrtc/base/stringencode.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 DEFINE_bool(file_player_output, false, "Generate reference files.");

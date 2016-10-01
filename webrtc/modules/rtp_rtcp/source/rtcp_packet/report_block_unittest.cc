@@ -12,8 +12,8 @@
 
 #include <limits>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/random.h"
+#include "webrtc/test/gtest.h"
 
 using webrtc::rtcp::ReportBlock;
 

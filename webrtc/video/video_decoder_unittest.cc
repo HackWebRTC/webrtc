@@ -10,9 +10,9 @@
 
 #include "webrtc/video_decoder.h"
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/video_coding/include/video_error_codes.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

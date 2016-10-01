@@ -13,7 +13,6 @@
 #include <memory>
 #include <utility>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/random.h"
@@ -22,6 +21,7 @@
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction_internal.h"
 #include "webrtc/modules/rtp_rtcp/source/ulpfec_header_reader_writer.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

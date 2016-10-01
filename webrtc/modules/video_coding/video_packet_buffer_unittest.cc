@@ -13,11 +13,11 @@
 #include <set>
 #include <utility>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/random.h"
 #include "webrtc/modules/video_coding/frame_object.h"
 #include "webrtc/modules/video_coding/packet_buffer.h"
 #include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace video_coding {

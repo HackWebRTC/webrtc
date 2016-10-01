@@ -10,9 +10,9 @@
 #include <memory>
 #include <string>
 
+#include "webrtc/modules/audio_coding/codecs/cng/webrtc_cng.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/modules/audio_coding/codecs/cng/webrtc_cng.h"
 
 namespace webrtc {
 

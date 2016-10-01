@@ -11,9 +11,9 @@
 
 #include <list>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/random.h"
 #include "webrtc/call/ringbuffer.h"
+#include "webrtc/test/gtest.h"
 
 namespace {
 template <typename T>

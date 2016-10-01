@@ -13,9 +13,9 @@
 #include <limits.h>
 #include <memory>
 
+#include "webrtc/modules/audio_device/mock_audio_device_buffer.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
-#include "webrtc/modules/audio_device/mock_audio_device_buffer.h"
 
 using ::testing::_;
 using ::testing::AtLeast;

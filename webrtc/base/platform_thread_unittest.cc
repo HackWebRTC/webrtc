@@ -10,8 +10,8 @@
 
 #include "webrtc/base/platform_thread.h"
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/system_wrappers/include/sleep.h"
+#include "webrtc/test/gtest.h"
 
 namespace rtc {
 namespace {

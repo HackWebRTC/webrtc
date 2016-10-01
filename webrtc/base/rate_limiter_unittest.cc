@@ -11,13 +11,12 @@
 #include <algorithm>
 #include <memory>
 
-#include "webrtc/test/gtest.h"
-
 #include "webrtc/base/event.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/rate_limiter.h"
 #include "webrtc/base/task_queue.h"
 #include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

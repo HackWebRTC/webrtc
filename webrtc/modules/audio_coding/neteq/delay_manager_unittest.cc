@@ -14,9 +14,9 @@
 
 #include <math.h>
 
+#include "webrtc/modules/audio_coding/neteq/mock/mock_delay_peak_detector.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
-#include "webrtc/modules/audio_coding/neteq/mock/mock_delay_peak_detector.h"
 
 namespace webrtc {
 

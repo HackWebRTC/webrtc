@@ -18,13 +18,13 @@
 
 #include <memory>
 
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common_audio/resampler/sinc_resampler.h"
 #include "webrtc/common_audio/resampler/sinusoidal_linear_chirp_source.h"
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 #include "webrtc/system_wrappers/include/stringize_macros.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/test_suite.h"
 
 using testing::_;

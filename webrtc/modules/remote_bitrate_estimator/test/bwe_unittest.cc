@@ -12,8 +12,8 @@
 
 #include <vector>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/arraysize.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace testing {

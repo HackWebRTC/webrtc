@@ -10,9 +10,8 @@
 
 #include "webrtc/video/stats_counter.h"
 
-#include "webrtc/test/gtest.h"
-
 #include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace {

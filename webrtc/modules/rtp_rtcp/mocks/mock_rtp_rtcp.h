@@ -15,12 +15,11 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/test/gmock.h"
-
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
+#include "webrtc/test/gmock.h"
 
 namespace webrtc {
 

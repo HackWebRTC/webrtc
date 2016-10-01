@@ -12,12 +12,12 @@
 #include <memory>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
 #include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 
 using ::testing::_;
 using ::testing::AnyNumber;

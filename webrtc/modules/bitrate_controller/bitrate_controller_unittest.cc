@@ -11,13 +11,12 @@
 #include <algorithm>
 #include <vector>
 
-#include "webrtc/test/gtest.h"
-
 #include "webrtc/call/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/pacing/mock/mock_paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/test/field_trial.h"
+#include "webrtc/test/gtest.h"
 
 using ::testing::Exactly;
 using ::testing::Return;

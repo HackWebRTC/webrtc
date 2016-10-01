@@ -15,8 +15,6 @@
 #include <limits>
 #include <vector>
 
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/random.h"
 #include "webrtc/modules/video_coding/frame_object.h"
@@ -24,6 +22,8 @@
 #include "webrtc/modules/video_coding/sequence_number_util.h"
 #include "webrtc/modules/video_coding/timing.h"
 #include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace video_coding {

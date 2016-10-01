@@ -15,7 +15,6 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
@@ -24,6 +23,7 @@
 #include "webrtc/modules/audio_processing/noise_suppression_impl.h"
 #include "webrtc/modules/audio_processing/test/audio_buffer_tools.h"
 #include "webrtc/modules/audio_processing/test/bitexactness_tools.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

@@ -10,11 +10,11 @@
 
 #include <utility>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_encoder.h"
 #include "webrtc/test/frame_generator.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video/vie_encoder.h"
 

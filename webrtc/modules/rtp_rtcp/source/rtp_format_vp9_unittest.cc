@@ -11,9 +11,9 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/modules/rtp_rtcp/source/rtp_format_vp9.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_format_vp9.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

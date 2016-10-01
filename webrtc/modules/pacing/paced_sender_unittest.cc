@@ -11,10 +11,10 @@
 #include <list>
 #include <memory>
 
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 
 using testing::_;
 using testing::Return;

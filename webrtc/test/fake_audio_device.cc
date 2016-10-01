@@ -12,12 +12,12 @@
 
 #include <algorithm>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/modules/media_file/media_file_utility.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace test {

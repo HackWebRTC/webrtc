@@ -10,12 +10,11 @@
 
 #include <memory>
 
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
-
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/metrics_default.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/video/call_stats.h"
 
 using ::testing::_;

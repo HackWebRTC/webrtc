@@ -15,8 +15,6 @@
 
 #include "webrtc/api/statscollector.h"
 
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
 #include "webrtc/api/mediastream.h"
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/mediastreamtrack.h"
@@ -35,6 +33,8 @@
 #include "webrtc/media/base/test/mock_mediachannel.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
 #include "webrtc/pc/channelmanager.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 
 using testing::_;
 using testing::DoAll;

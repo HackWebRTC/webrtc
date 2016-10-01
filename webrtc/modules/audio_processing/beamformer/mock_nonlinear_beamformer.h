@@ -13,8 +13,8 @@
 
 #include <vector>
 
-#include "webrtc/test/gmock.h"
 #include "webrtc/modules/audio_processing/beamformer/nonlinear_beamformer.h"
+#include "webrtc/test/gmock.h"
 
 namespace webrtc {
 

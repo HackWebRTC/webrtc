@@ -12,12 +12,12 @@
 
 #include "webrtc/modules/audio_coding/neteq/packet_buffer.h"
 
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
 #include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_decoder_database.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"
 #include "webrtc/modules/audio_coding/neteq/tick_timer.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 
 using ::testing::Return;
 using ::testing::_;

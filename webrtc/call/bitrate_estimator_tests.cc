@@ -12,8 +12,6 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/test/gtest.h"
-
 #include "webrtc/api/call/audio_state.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/event.h"
@@ -27,8 +25,9 @@
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_decoder.h"
 #include "webrtc/test/fake_encoder.h"
-#include "webrtc/test/mock_voice_engine.h"
 #include "webrtc/test/frame_generator_capturer.h"
+#include "webrtc/test/gtest.h"
+#include "webrtc/test/mock_voice_engine.h"
 
 namespace webrtc {
 namespace {

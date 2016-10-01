@@ -14,7 +14,6 @@
 #include <memory>
 #include <set>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/rate_limiter.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
@@ -23,6 +22,7 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/transport.h"
 
 namespace webrtc {

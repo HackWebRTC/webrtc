@@ -15,8 +15,6 @@
 #include <cstdlib>
 #include <memory>
 
-#include "webrtc/test/gtest.h"
-
 #include "webrtc/base/random.h"
 #include "webrtc/base/rate_statistics.h"
 #include "webrtc/common_types.h"
@@ -24,6 +22,7 @@
 #include "webrtc/modules/remote_bitrate_estimator/overuse_detector.h"
 #include "webrtc/modules/remote_bitrate_estimator/overuse_estimator.h"
 #include "webrtc/test/field_trial.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace testing {

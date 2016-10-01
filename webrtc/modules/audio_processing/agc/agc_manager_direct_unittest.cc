@@ -10,12 +10,12 @@
 
 #include "webrtc/modules/audio_processing/agc/agc_manager_direct.h"
 
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_processing/agc/mock_agc.h"
 #include "webrtc/modules/audio_processing/include/mock_audio_processing.h"
 #include "webrtc/system_wrappers/include/trace.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/trace_to_stderr.h"
 
 using ::testing::_;

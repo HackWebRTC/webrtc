@@ -10,9 +10,8 @@
 
 #include <memory>
 
-#include "webrtc/test/gtest.h"
-
 #include "webrtc/test/call_test.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/null_transport.h"
 
 namespace webrtc {

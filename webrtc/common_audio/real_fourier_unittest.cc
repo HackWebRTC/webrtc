@@ -12,9 +12,9 @@
 
 #include <stdlib.h>
 
-#include "webrtc/test/gtest.h"
-#include "webrtc/common_audio/real_fourier_openmax.h"
 #include "webrtc/common_audio/real_fourier_ooura.h"
+#include "webrtc/common_audio/real_fourier_openmax.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

@@ -12,6 +12,7 @@
 #define WEBRTC_TEST_MOCK_VOE_CHANNEL_PROXY_H_
 
 #include <string>
+
 #include "webrtc/test/gmock.h"
 #include "webrtc/voice_engine/channel_proxy.h"
 

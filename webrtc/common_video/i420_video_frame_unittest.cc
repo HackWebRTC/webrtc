@@ -11,10 +11,10 @@
 #include <math.h>
 #include <string.h>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/test/fake_texture_frame.h"
 #include "webrtc/test/frame_utils.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/video_frame.h"
 
 namespace webrtc {

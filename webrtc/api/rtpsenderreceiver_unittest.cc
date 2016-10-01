@@ -12,8 +12,6 @@
 #include <string>
 #include <utility>
 
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
 #include "webrtc/api/audiotrack.h"
 #include "webrtc/api/fakemediacontroller.h"
 #include "webrtc/api/localaudiosource.h"
@@ -23,14 +21,16 @@
 #include "webrtc/api/rtpsender.h"
 #include "webrtc/api/streamcollection.h"
 #include "webrtc/api/test/fakevideotracksource.h"
-#include "webrtc/api/videotracksource.h"
 #include "webrtc/api/videotrack.h"
+#include "webrtc/api/videotracksource.h"
 #include "webrtc/base/gunit.h"
-#include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/fakemediaengine.h"
+#include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/engine/fakewebrtccall.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
 #include "webrtc/pc/channelmanager.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 
 using ::testing::_;
 using ::testing::Exactly;

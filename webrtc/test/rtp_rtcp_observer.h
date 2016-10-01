@@ -14,13 +14,12 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/test/gtest.h"
-
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/event.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/test/constants.h"
 #include "webrtc/test/direct_transport.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_send_stream.h"
 

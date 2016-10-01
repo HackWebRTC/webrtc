@@ -13,10 +13,9 @@
 
 #include <vector>
 
-#include "webrtc/test/gmock.h"
-
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/test/gmock.h"
 
 namespace webrtc {
 

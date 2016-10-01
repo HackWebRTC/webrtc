@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_TEST_UTILITY_H_
 #define WEBRTC_MODULES_AUDIO_CODING_TEST_UTILITY_H_
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

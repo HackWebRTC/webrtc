@@ -12,8 +12,9 @@
 #define WEBRTC_MODULES_AUDIO_DEVICE_INCLUDE_MOCK_AUDIO_DEVICE_H_
 
 #include <string>
-#include "webrtc/test/gmock.h"
+
 #include "webrtc/modules/audio_device/include/audio_device.h"
+#include "webrtc/test/gmock.h"
 
 namespace webrtc {
 namespace test {

@@ -11,13 +11,13 @@
 #include "webrtc/test/test_suite.h"
 
 #include "gflags/gflags.h"
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/system_wrappers/include/metrics_default.h"
+#include "webrtc/test/field_trial.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/trace_to_stderr.h"
-#include "webrtc/test/field_trial.h"
 
 DEFINE_bool(logs, false, "print logs to stderr");
 

@@ -10,9 +10,9 @@
 
 #include "webrtc/system_wrappers/source/event_timer_posix.h"
 
-#include "webrtc/test/gtest.h"
-#include "webrtc/base/event.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/event.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

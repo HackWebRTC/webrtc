@@ -11,11 +11,10 @@
 #include <list>
 #include <memory>
 
-#include "webrtc/test/gtest.h"
-
 #include "webrtc/api/call/audio_state.h"
 #include "webrtc/call.h"
 #include "webrtc/modules/audio_coding/codecs/mock/mock_audio_decoder_factory.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/mock_voice_engine.h"
 
 namespace {

@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/random.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/system_wrappers/include/sleep.h"
-#include "webrtc/voice_engine/test/channel_transport/channel_transport.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/voice_engine/test/auto_test/voe_standard_test.h"
+#include "webrtc/voice_engine/test/channel_transport/channel_transport.h"
 
 namespace {
 

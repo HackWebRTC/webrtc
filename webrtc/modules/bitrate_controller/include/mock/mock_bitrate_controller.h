@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_BITRATE_CONTROLLER_INCLUDE_MOCK_MOCK_BITRATE_CONTROLLER_H_
 #define WEBRTC_MODULES_BITRATE_CONTROLLER_INCLUDE_MOCK_MOCK_BITRATE_CONTROLLER_H_
 
-#include "webrtc/test/gmock.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
+#include "webrtc/test/gmock.h"
 
 namespace webrtc {
 namespace test {

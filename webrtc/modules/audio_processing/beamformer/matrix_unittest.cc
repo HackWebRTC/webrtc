@@ -10,9 +10,9 @@
 
 #include <complex>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/modules/audio_processing/beamformer/matrix.h"
 #include "webrtc/modules/audio_processing/beamformer/matrix_test_helpers.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

@@ -10,9 +10,9 @@
 
 #include "webrtc/video/encoder_state_feedback.h"
 
+#include "webrtc/modules/utility/include/mock/mock_process_thread.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
-#include "webrtc/modules/utility/include/mock/mock_process_thread.h"
 #include "webrtc/video/vie_encoder.h"
 
 using ::testing::NiceMock;

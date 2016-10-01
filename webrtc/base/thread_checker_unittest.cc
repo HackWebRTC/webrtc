@@ -12,12 +12,12 @@
 
 #include <memory>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/task_queue.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/thread_checker.h"
+#include "webrtc/test/gtest.h"
 
 // Duplicated from base/threading/thread_checker.h so that we can be
 // good citizens there and undef the macro.

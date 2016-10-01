@@ -14,10 +14,10 @@
 #include <sstream>
 #include <string>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/modules/audio_processing/transient/daubechies_8_wavelet_coeffs.h"
 #include "webrtc/modules/audio_processing/transient/file_utils.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {

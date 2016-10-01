@@ -13,9 +13,9 @@
 #include <vector>
 #include <utility>
 
+#include "webrtc/modules/remote_bitrate_estimator/aimd_rate_control.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
-#include "webrtc/modules/remote_bitrate_estimator/aimd_rate_control.h"
 
 namespace webrtc {
 

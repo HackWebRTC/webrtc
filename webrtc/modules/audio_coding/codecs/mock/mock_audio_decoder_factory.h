@@ -13,9 +13,9 @@
 
 #include <vector>
 
-#include "webrtc/test/gmock.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder_factory.h"
+#include "webrtc/test/gmock.h"
 
 namespace webrtc {
 

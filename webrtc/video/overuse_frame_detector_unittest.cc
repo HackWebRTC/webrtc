@@ -10,13 +10,11 @@
 
 #include <memory>
 
-#include "webrtc/video/overuse_frame_detector.h"
-
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
-
 #include "webrtc/base/event.h"
 #include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
+#include "webrtc/video/overuse_frame_detector.h"
 #include "webrtc/video_frame.h"
 
 namespace webrtc {

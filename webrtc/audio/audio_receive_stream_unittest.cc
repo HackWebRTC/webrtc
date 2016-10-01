@@ -11,8 +11,6 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/test/gtest.h"
-
 #include "webrtc/audio/audio_receive_stream.h"
 #include "webrtc/audio/conversion.h"
 #include "webrtc/call/mock/mock_rtc_event_log.h"
@@ -23,6 +21,7 @@
 #include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/mock_voe_channel_proxy.h"
 #include "webrtc/test/mock_voice_engine.h"
 

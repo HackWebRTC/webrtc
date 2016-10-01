@@ -11,7 +11,6 @@
 #include <numeric>
 #include <vector>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/random.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
@@ -20,6 +19,7 @@
 #include "webrtc/modules/audio_processing/test/audio_buffer_tools.h"
 #include "webrtc/modules/audio_processing/test/bitexactness_tools.h"
 #include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/perf_test.h"
 
 namespace webrtc {

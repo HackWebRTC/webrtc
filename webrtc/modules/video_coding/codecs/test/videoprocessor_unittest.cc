@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
-#include "webrtc/modules/video_coding/include/mock/mock_video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/test/mock/mock_packet_manipulator.h"
 #include "webrtc/modules/video_coding/codecs/test/videoprocessor.h"
+#include "webrtc/modules/video_coding/include/mock/mock_video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/mock/mock_frame_reader.h"
 #include "webrtc/test/testsupport/mock/mock_frame_writer.h"
 #include "webrtc/test/testsupport/packet_reader.h"

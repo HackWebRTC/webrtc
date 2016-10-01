@@ -12,7 +12,6 @@
 #include <string>
 #include <utility>
 
-#include "webrtc/test/gmock.h"
 #include "webrtc/api/audiotrack.h"
 #include "webrtc/api/jsepsessiondescription.h"
 #include "webrtc/api/mediastream.h"
@@ -22,9 +21,6 @@
 #include "webrtc/api/rtpreceiverinterface.h"
 #include "webrtc/api/rtpsenderinterface.h"
 #include "webrtc/api/streamcollection.h"
-#ifdef WEBRTC_ANDROID
-#include "webrtc/api/test/androidtestinitializer.h"
-#endif
 #include "webrtc/api/test/fakeconstraints.h"
 #include "webrtc/api/test/fakertccertificategenerator.h"
 #include "webrtc/api/test/fakevideotracksource.h"
@@ -42,6 +38,11 @@
 #include "webrtc/p2p/base/fakeportallocator.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
 #include "webrtc/pc/mediasession.h"
+#include "webrtc/test/gmock.h"
+
+#ifdef WEBRTC_ANDROID
+#include "webrtc/api/test/androidtestinitializer.h"
+#endif
 
 static const char kStreamLabel1[] = "local_stream_1";
 static const char kStreamLabel2[] = "local_stream_2";

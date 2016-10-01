@@ -13,8 +13,6 @@
 #include <list>
 #include <memory>
 
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/gmock.h"
 #include "webrtc/modules/video_coding/frame_buffer.h"
 #include "webrtc/modules/video_coding/jitter_buffer.h"
 #include "webrtc/modules/video_coding/media_opt_util.h"
@@ -26,6 +24,8 @@
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/metrics_default.h"
 #include "webrtc/test/field_trial.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

@@ -14,7 +14,6 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/event.h"
@@ -24,6 +23,7 @@
 #include "webrtc/modules/audio_processing/test/test_utils.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/system_wrappers/include/sleep.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

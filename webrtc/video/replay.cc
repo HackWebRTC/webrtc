@@ -15,8 +15,6 @@
 #include <sstream>
 
 #include "gflags/gflags.h"
-#include "webrtc/test/gtest.h"
-
 #include "webrtc/base/checks.h"
 #include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -24,8 +22,9 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/encoder_settings.h"
-#include "webrtc/test/null_transport.h"
 #include "webrtc/test/fake_decoder.h"
+#include "webrtc/test/gtest.h"
+#include "webrtc/test/null_transport.h"
 #include "webrtc/test/rtp_file_reader.h"
 #include "webrtc/test/run_loop.h"
 #include "webrtc/test/run_test.h"

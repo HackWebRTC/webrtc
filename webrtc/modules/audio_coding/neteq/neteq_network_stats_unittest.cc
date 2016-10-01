@@ -10,10 +10,10 @@
 
 #include <memory>
 
-#include "webrtc/test/gmock.h"
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_external_decoder_test.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_generator.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/test/gmock.h"
 
 namespace webrtc {
 namespace test {

@@ -10,9 +10,8 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/dlrr.h"
 
-#include "webrtc/test/gtest.h"
-
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
+#include "webrtc/test/gtest.h"
 
 using webrtc::rtcp::Dlrr;
 using webrtc::rtcp::ReceiveTimeInfo;

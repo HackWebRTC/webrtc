@@ -14,10 +14,10 @@
 
 #include <list>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/modules/video_coding/packet.h"
 #include "webrtc/modules/video_coding/test/test_util.h"
 #include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

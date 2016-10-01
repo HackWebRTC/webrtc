@@ -14,10 +14,10 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/modules/audio_coding/neteq/tools/resample_input_audio_file.h"
 #include "webrtc/modules/audio_processing/test/debug_dump_replayer.h"
 #include "webrtc/modules/audio_processing/test/test_utils.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 

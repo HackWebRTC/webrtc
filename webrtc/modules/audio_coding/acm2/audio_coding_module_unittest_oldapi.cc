@@ -13,7 +13,6 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/md5digest.h"
 #include "webrtc/base/platform_thread.h"
@@ -40,6 +39,7 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/sleep.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 using ::testing::AtLeast;

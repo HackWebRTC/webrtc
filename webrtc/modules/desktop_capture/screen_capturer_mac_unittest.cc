@@ -15,13 +15,13 @@
 #include <memory>
 #include <ostream>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
 #include "webrtc/modules/desktop_capture/mac/desktop_configuration.h"
 #include "webrtc/modules/desktop_capture/screen_capturer_mock_objects.h"
+#include "webrtc/test/gtest.h"
 
 using ::testing::_;
 using ::testing::AnyNumber;

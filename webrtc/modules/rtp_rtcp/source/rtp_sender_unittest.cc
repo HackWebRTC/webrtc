@@ -11,8 +11,6 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/rate_limiter.h"
 #include "webrtc/call/mock/mock_rtc_event_log.h"
@@ -28,6 +26,8 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/system_wrappers/include/stl_util.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/mock_transport.h"
 #include "webrtc/typedefs.h"
 

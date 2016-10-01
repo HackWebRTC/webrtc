@@ -11,8 +11,6 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/test/gtest.h"
-
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/criticalsection.h"
@@ -35,6 +33,7 @@
 #include "webrtc/test/fake_texture_frame.h"
 #include "webrtc/test/frame_generator.h"
 #include "webrtc/test/frame_utils.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/null_transport.h"
 #include "webrtc/test/testsupport/perf_test.h"
 #include "webrtc/video/send_statistics_proxy.h"

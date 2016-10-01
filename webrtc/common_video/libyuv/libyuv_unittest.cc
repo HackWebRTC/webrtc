@@ -13,9 +13,9 @@
 
 #include <memory>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/test/frame_utils.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/video_frame.h"
 

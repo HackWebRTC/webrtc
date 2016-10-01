@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/bitrate_controller.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace audio_network_adaptor {

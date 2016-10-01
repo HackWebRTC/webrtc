@@ -47,9 +47,9 @@
 
 #include <memory>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction_internal.h"
 #include "webrtc/modules/rtp_rtcp/test/testFec/average_residual_loss_xor_codes.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {

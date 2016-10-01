@@ -15,11 +15,11 @@
 
 #include <memory>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_sink.h"
 #include "webrtc/modules/audio_coding/neteq/tools/packet.h"
 #include "webrtc/modules/audio_coding/neteq/tools/packet_source.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace test {

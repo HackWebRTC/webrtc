@@ -15,11 +15,11 @@
 
 #include <math.h>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/array_view.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/test/audio_buffer_tools.h"
 #include "webrtc/modules/audio_processing/test/bitexactness_tools.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace {

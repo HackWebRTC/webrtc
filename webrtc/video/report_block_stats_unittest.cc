@@ -9,7 +9,6 @@
  */
 
 #include "webrtc/test/gtest.h"
-
 #include "webrtc/video/report_block_stats.h"
 
 namespace webrtc {

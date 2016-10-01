@@ -14,16 +14,16 @@
 #include <queue>
 #include <vector>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/video_coding/encoded_frame.h"
 #include "webrtc/modules/video_coding/packet.h"
 #include "webrtc/modules/video_coding/receiver.h"
 #include "webrtc/modules/video_coding/test/stream_generator.h"
-#include "webrtc/modules/video_coding/timing.h"
 #include "webrtc/modules/video_coding/test/test_util.h"
+#include "webrtc/modules/video_coding/timing.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

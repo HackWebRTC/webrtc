@@ -15,7 +15,6 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/atomicops.h"
 #include "webrtc/base/platform_thread.h"
@@ -27,6 +26,7 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/sleep.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/perf_test.h"
 
 // Check to verify that the define for the intelligibility enhancer is properly

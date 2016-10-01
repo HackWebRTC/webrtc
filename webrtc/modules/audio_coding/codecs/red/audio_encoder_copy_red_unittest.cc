@@ -11,10 +11,10 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/audio_coding/codecs/red/audio_encoder_copy_red.h"
 #include "webrtc/modules/audio_coding/codecs/mock/mock_audio_encoder.h"
+#include "webrtc/modules/audio_coding/codecs/red/audio_encoder_copy_red.h"
+#include "webrtc/test/gtest.h"
 
 using ::testing::Return;
 using ::testing::_;

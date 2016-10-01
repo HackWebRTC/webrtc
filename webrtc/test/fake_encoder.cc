@@ -12,11 +12,10 @@
 
 #include <algorithm>
 
-#include "webrtc/test/gtest.h"
-
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/system_wrappers/include/sleep.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace test {
