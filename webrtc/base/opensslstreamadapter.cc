@@ -865,10 +865,12 @@ int OpenSSLStreamAdapter::ContinueSSL() {
         // SE_OPEN. If we need a client certificate fingerprint and don't have
         // it yet, we'll instead signal SE_OPEN in SetPeerCertificateDigest.
         //
-        // Post the event asynchronously to unwind the stack. The
-        // caller of ContinueSSL may be the same object listening
-        // for these events and may not be prepared for reentrancy.
-        PostEvent(SE_OPEN | SE_READ | SE_WRITE, 0);
+        // TODO(deadbeef): Post this event asynchronously to unwind the stack.
+        // The caller of ContinueSSL may be the same object listening for these
+        // events and may not be prepared for reentrancy.
+        // PostEvent(SE_OPEN | SE_READ | SE_WRITE, 0);
+        StreamAdapterInterface::OnEvent(stream(), SE_OPEN | SE_READ | SE_WRITE,
+                                        0);
       }
       break;
 
