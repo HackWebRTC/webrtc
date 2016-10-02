@@ -30,7 +30,7 @@ FecController::Config::Config(bool initial_fec_enabled,
                               const Threshold& fec_enabling_threshold,
                               const Threshold& fec_disabling_threshold,
                               int time_constant_ms,
-                              Clock* clock)
+                              const Clock* clock)
     : initial_fec_enabled(initial_fec_enabled),
       fec_enabling_threshold(fec_enabling_threshold),
       fec_disabling_threshold(fec_disabling_threshold),

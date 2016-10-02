@@ -254,6 +254,10 @@ if (rtc_include_tests) {
       "//testing/gmock",
       "//testing/gtest",
     ]
+    if (rtc_enable_protobuf) {
+      deps += [ "audio_coding:ana_config_proto" ]
+      defines = [ "WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP" ]
+    }
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]

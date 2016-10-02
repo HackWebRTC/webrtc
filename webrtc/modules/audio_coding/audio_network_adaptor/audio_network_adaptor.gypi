@@ -36,7 +36,10 @@
       ], # sources
       'conditions': [
         ['enable_protobuf==1', {
-          'dependencies': ['ana_debug_dump_proto'],
+          'dependencies': [
+            'ana_config_proto',
+            'ana_debug_dump_proto',
+          ],
           'defines': ['WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP'],
         }],
       ], # conditions
@@ -49,6 +52,18 @@
         { 'target_name': 'ana_debug_dump_proto',
           'type': 'static_library',
           'sources': ['debug_dump.proto',],
+          'variables': {
+            'proto_in_dir': '.',
+            # Workaround to protect against gyp's pathname relativization when
+            # this file is included by modules.gyp.
+            'proto_out_protected': 'webrtc/modules/audio_coding/audio_network_adaptor',
+            'proto_out_dir': '<(proto_out_protected)',
+          },
+          'includes': ['../../../build/protoc.gypi',],
+        },
+        { 'target_name': 'ana_config_proto',
+          'type': 'static_library',
+          'sources': ['config.proto',],
           'variables': {
             'proto_in_dir': '.',
             # Workaround to protect against gyp's pathname relativization when

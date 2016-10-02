@@ -34,9 +34,14 @@ class FrameLengthController final : public Controller {
     ~Config();
     std::vector<int> encoder_frame_lengths_ms;
     int initial_frame_length_ms;
+    // Uplink packet loss fraction below which frame length can increase.
     float fl_increasing_packet_loss_fraction;
+    // Uplink packet loss fraction below which frame length should decrease.
     float fl_decreasing_packet_loss_fraction;
+    // Uplink bandwidth below which frame length can switch from 20ms to 60ms.
     int fl_20ms_to_60ms_bandwidth_bps;
+    // Uplink bandwidth above which frame length should switch from 60ms to
+    // 20ms.
     int fl_60ms_to_20ms_bandwidth_bps;
   };
 

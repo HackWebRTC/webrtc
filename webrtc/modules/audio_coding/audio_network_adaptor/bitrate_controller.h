@@ -20,7 +20,7 @@ namespace audio_network_adaptor {
 class BitrateController final : public Controller {
  public:
   struct Config {
-    Config(int initial_bitrate_bps, int frame_length_ms);
+    Config(int initial_bitrate_bps, int initial_frame_length_ms);
     ~Config();
     int initial_bitrate_bps;
     int initial_frame_length_ms;

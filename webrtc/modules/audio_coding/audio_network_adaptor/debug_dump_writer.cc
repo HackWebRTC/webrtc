@@ -63,7 +63,7 @@ class DebugDumpWriterImpl final : public DebugDumpWriter {
 DebugDumpWriterImpl::DebugDumpWriterImpl(FILE* file_handle)
     : dump_file_(FileWrapper::Create()) {
 #ifndef WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
-  RTC_DCHECK(false);
+  RTC_NOTREACHED();
 #endif
   dump_file_->OpenFromFileHandle(file_handle);
   RTC_CHECK(dump_file_->is_open());

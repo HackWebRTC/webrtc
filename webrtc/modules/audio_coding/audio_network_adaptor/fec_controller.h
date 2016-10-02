@@ -56,12 +56,12 @@ class FecController final : public Controller {
            const Threshold& fec_enabling_threshold,
            const Threshold& fec_disabling_threshold,
            int time_constant_ms,
-           Clock* clock);
+           const Clock* clock);
     bool initial_fec_enabled;
     Threshold fec_enabling_threshold;
     Threshold fec_disabling_threshold;
     int time_constant_ms;
-    Clock* clock;
+    const Clock* clock;
   };
 
   explicit FecController(const Config& config);

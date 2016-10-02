@@ -40,10 +40,24 @@ class ControllerManagerImpl final : public ControllerManager {
            float min_reordering_squared_distance,
            const Clock* clock);
     ~Config();
+    // Least time since last reordering for a new reordering to be made.
     int min_reordering_time_ms;
+    // Least squared distance from last scoring point for a new reordering to be
+    // made.
     float min_reordering_squared_distance;
     const Clock* clock;
   };
+
+  static std::unique_ptr<ControllerManager> Create(
+      const std::string& config_string,
+      size_t num_encoder_channels,
+      rtc::ArrayView<const int> encoder_frame_lengths_ms,
+      size_t intial_channels_to_encode,
+      int initial_frame_length_ms,
+      int initial_bitrate_bps,
+      bool initial_fec_enabled,
+      bool initial_dtx_enabled,
+      const Clock* clock);
 
   explicit ControllerManagerImpl(const Config& config);
 
