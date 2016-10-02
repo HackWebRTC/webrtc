@@ -274,6 +274,9 @@ uint8_t* Packet::AllocatePayload(size_t size_bytes) {
     LOG(LS_WARNING) << "Cannot set payload, not enough space in buffer.";
     return nullptr;
   }
+  // Reset payload size to 0. If CopyOnWrite buffer_ was shared, this will cause
+  // reallocation and memcpy. Setting size to just headers reduces memcpy size.
+  buffer_.SetSize(payload_offset_);
   payload_size_ = size_bytes;
   buffer_.SetSize(payload_offset_ + payload_size_);
   return WriteAt(payload_offset_);

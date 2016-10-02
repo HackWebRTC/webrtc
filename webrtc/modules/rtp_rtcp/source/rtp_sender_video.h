@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_VIDEO_H_
 
 #include <list>
+#include <memory>
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/onetimeevent.h"
@@ -28,6 +29,7 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
+class RtpPacketToSend;
 
 class RTPSenderVideo {
  public:
@@ -75,20 +77,10 @@ class RTPSenderVideo {
   void SetSelectiveRetransmissions(uint8_t settings);
 
  private:
-  void SendVideoPacket(uint8_t* data_buffer,
-                       size_t payload_length,
-                       size_t rtp_header_length,
-                       uint16_t seq_num,
-                       uint32_t capture_timestamp,
-                       int64_t capture_time_ms,
+  void SendVideoPacket(std::unique_ptr<RtpPacketToSend> packet,
                        StorageType storage);
 
-  void SendVideoPacketAsRed(uint8_t* data_buffer,
-                            size_t payload_length,
-                            size_t rtp_header_length,
-                            uint16_t video_seq_num,
-                            uint32_t capture_timestamp,
-                            int64_t capture_time_ms,
+  void SendVideoPacketAsRed(std::unique_ptr<RtpPacketToSend> media_packet,
                             StorageType media_packet_storage,
                             bool protect);
 

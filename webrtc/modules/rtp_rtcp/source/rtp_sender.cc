@@ -1093,6 +1093,10 @@ std::unique_ptr<RtpPacketToSend> RTPSender::AllocatePacket() const {
   packet->ReserveExtension<AbsoluteSendTime>();
   packet->ReserveExtension<TransmissionOffset>();
   packet->ReserveExtension<TransportSequenceNumber>();
+  if (playout_delay_oracle_.send_playout_delay()) {
+    packet->SetExtension<PlayoutDelayLimits>(
+        playout_delay_oracle_.playout_delay());
+  }
   return packet;
 }
 
