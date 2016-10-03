@@ -54,6 +54,13 @@ std::string IOSResourcePath(std::string name, std::string extension) {
   }
 }
 
+std::string IOSRootPath() {
+  @autoreleasepool {
+    NSBundle* mainBundle = [NSBundle mainBundle];
+    return StdStringFromNSString(mainBundle.bundlePath) + "/";
+  }
+}
+
 // For iOS, we don't have access to the output directory. Return the path to the
 // temporary directory instead. This is mostly used by tests that need to write
 // output files to disk.

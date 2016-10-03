@@ -293,7 +293,7 @@ void ClearTempFiles() {
     remove(kv.second.c_str());
 }
 
-void OpenFileAndReadMessage(const std::string filename,
+void OpenFileAndReadMessage(std::string filename,
                             ::google::protobuf::MessageLite* msg) {
   FILE* file = fopen(filename.c_str(), "rb");
   ASSERT_TRUE(file != NULL);
@@ -404,7 +404,12 @@ class ApmTest : public ::testing::Test {
 
 ApmTest::ApmTest()
     : output_path_(test::OutputPath()),
+#ifndef WEBRTC_IOS
       ref_path_(test::ProjectRootPath() + "data/audio_processing/"),
+#else
+      // On iOS test data is flat in the project root dir
+      ref_path_(test::ProjectRootPath()),
+#endif
 #if defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
       ref_filename_(ref_path_ + "output_data_fixed.pb"),
 #elif defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)

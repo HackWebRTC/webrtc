@@ -516,8 +516,8 @@ TEST_F(DebugDumpTest, ToggleAecLevel) {
   VerifyDebugDump(generator.dump_file_name());
 }
 
-#if defined(WEBRTC_ANDROID)
-// AGC may not be supported on Android.
+// AGC is not supported on Android or iOS.
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
 #define MAYBE_ToggleAgc DISABLED_ToggleAgc
 #else
 #define MAYBE_ToggleAgc ToggleAgc

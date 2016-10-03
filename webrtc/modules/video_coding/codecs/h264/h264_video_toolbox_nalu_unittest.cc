@@ -26,8 +26,8 @@ TEST(H264VideoToolboxNaluTest, TestHasVideoFormatDescription) {
   const uint8_t sps_buffer[] = {0x00, 0x00, 0x00, 0x01, 0x27};
   EXPECT_TRUE(H264AnnexBBufferHasVideoFormatDescription(sps_buffer,
                                                         arraysize(sps_buffer)));
-  const uint8_t aud_sps_buffer[] = {0x00, 0x00, 0x00, 0x01, 0x29,
-                                    0x00, 0x00, 0x00, 0x01, 0x27};
+  const uint8_t aud_sps_buffer[] = {0x00, 0x00, 0x00, 0x01, 0x29, 0x10,
+                                    0x00, 0x00, 0x00, 0x01, 0x27, 0xFF};
   EXPECT_TRUE(H264AnnexBBufferHasVideoFormatDescription(
       aud_sps_buffer, arraysize(aud_sps_buffer)));
   const uint8_t other_buffer[] = {0x00, 0x00, 0x00, 0x01, 0x28};

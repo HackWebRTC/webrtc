@@ -45,6 +45,7 @@ namespace test {
 #if defined(WEBRTC_IOS)
 // Defined in iosfileutils.mm.  No header file to discourage use elsewhere.
 std::string IOSOutputPath();
+std::string IOSRootPath();
 std::string IOSResourcePath(std::string name, std::string extension);
 #endif
 
@@ -119,6 +120,9 @@ std::string WorkingDir() {
 #else // WEBRTC_ANDROID
 
 std::string ProjectRootPath() {
+#if defined(WEBRTC_IOS)
+  return IOSRootPath();
+#else
   std::string path = WorkingDir();
   if (path == kFallbackPath) {
     return kCannotFindProjectRootDir;
@@ -141,6 +145,7 @@ std::string ProjectRootPath() {
   }
   fprintf(stderr, "Cannot find project root directory!\n");
   return kCannotFindProjectRootDir;
+#endif
 }
 
 std::string OutputPath() {
