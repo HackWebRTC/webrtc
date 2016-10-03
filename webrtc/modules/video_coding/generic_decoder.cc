@@ -59,7 +59,6 @@ int32_t VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
     frameInfo = _timestampMap.Pop(decodedImage.timestamp());
     callback = _receiveCallback;
   }
-  RTC_DCHECK(callback != nullptr);
 
   if (frameInfo == NULL) {
     LOG(LS_WARNING) << "Too many frames backed up in the decoder, dropping "
@@ -77,7 +76,13 @@ int32_t VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
 
   decodedImage.set_render_time_ms(frameInfo->renderTimeMs);
   decodedImage.set_rotation(frameInfo->rotation);
-  callback->FrameToRender(decodedImage);
+  // TODO(sakal): Investigate why callback is NULL sometimes and replace if
+  // statement with a DCHECK.
+  if (callback) {
+    callback->FrameToRender(decodedImage);
+  } else {
+    LOG(LS_WARNING) << "No callback, dropping frame.";
+  }
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
