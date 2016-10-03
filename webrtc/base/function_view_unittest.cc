@@ -19,21 +19,28 @@ namespace rtc {
 namespace {
 
 int CallWith33(rtc::FunctionView<int(int)> fv) {
-  return fv(33);
+  return fv ? fv(33) : -1;
+}
+
+int Add33(int x) {
+  return x + 33;
 }
 
 }  // namespace
 
-// Test the main use case of FunctionView: implicitly converting a lambda
-// function argument.
+// Test the main use case of FunctionView: implicitly converting a callable
+// argument.
 TEST(FunctionViewTest, ImplicitConversion) {
   EXPECT_EQ(38, CallWith33([](int x) { return x + 5; }));
+  EXPECT_EQ(66, CallWith33(Add33));
+  EXPECT_EQ(-1, CallWith33(nullptr));
 }
 
 TEST(FunctionViewTest, IntIntLambdaWithoutState) {
   auto f = [](int x) { return x + 1; };
   EXPECT_EQ(18, f(17));
   rtc::FunctionView<int(int)> fv(f);
+  EXPECT_TRUE(fv);
   EXPECT_EQ(18, fv(17));
 }
 
@@ -41,10 +48,32 @@ TEST(FunctionViewTest, IntVoidLambdaWithState) {
   int x = 13;
   auto f = [x]() mutable { return ++x; };
   rtc::FunctionView<int()> fv(f);
+  EXPECT_TRUE(fv);
   EXPECT_EQ(14, f());
   EXPECT_EQ(15, fv());
   EXPECT_EQ(16, f());
   EXPECT_EQ(17, fv());
+}
+
+TEST(FunctionViewTest, IntIntFunction) {
+  rtc::FunctionView<int(int)> fv(Add33);
+  EXPECT_TRUE(fv);
+  EXPECT_EQ(50, fv(17));
+}
+
+TEST(FunctionViewTest, IntIntFunctionPointer) {
+  rtc::FunctionView<int(int)> fv(&Add33);
+  EXPECT_TRUE(fv);
+  EXPECT_EQ(50, fv(17));
+}
+
+TEST(FunctionViewTest, Null) {
+  // These two call constructors that statically construct null FunctionViews.
+  EXPECT_FALSE(rtc::FunctionView<int()>());
+  EXPECT_FALSE(rtc::FunctionView<int()>(nullptr));
+
+  // This calls the constructor for function pointers.
+  EXPECT_FALSE(rtc::FunctionView<int()>(reinterpret_cast<int(*)()>(0)));
 }
 
 // Ensure that FunctionView handles move-only arguments and return values.
@@ -111,8 +140,8 @@ TEST(FunctionViewTest, Swap) {
 }
 
 // Ensure that when you copy-construct a FunctionView, the new object points to
-// the same function as the old one, as opposed to the new object pointing to
-// the old one.
+// the same function as the old one (as opposed to the new object pointing to
+// the old one).
 TEST(FunctionViewTest, CopyConstructorChaining) {
   auto f17 = [] { return 17; };
   rtc::FunctionView<int()> fv1(f17);
@@ -126,14 +155,14 @@ TEST(FunctionViewTest, CopyConstructorChaining) {
 }
 
 // Ensure that when you assign one FunctionView to another, we actually make a
-// copy as opposed to making the second FunctionView point to the first one.
+// copy (as opposed to making the second FunctionView point to the first one).
 TEST(FunctionViewTest, CopyAssignmentChaining) {
   auto f17 = [] { return 17; };
   rtc::FunctionView<int()> fv1(f17);
-  auto f3 = [] { return 3; };
-  rtc::FunctionView<int()> fv2(f3);
+  rtc::FunctionView<int()> fv2;
+  EXPECT_TRUE(fv1);
   EXPECT_EQ(17, fv1());
-  EXPECT_EQ(3, fv2());
+  EXPECT_FALSE(fv2);
   fv2 = fv1;
   EXPECT_EQ(17, fv1());
   EXPECT_EQ(17, fv2());
