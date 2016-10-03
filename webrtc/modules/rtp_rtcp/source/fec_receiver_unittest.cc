@@ -33,9 +33,9 @@ using ::testing::Args;
 using ::testing::ElementsAreArray;
 using ::testing::Return;
 
-using ::webrtc::test::fec::FrameGenerator;
 using Packet = ::webrtc::ForwardErrorCorrection::Packet;
 using ::webrtc::test::fec::RawRtpPacket;
+using ::webrtc::test::fec::UlpfecPacketGenerator;
 
 class ReceiverFecTest : public ::testing::Test {
  protected:
@@ -99,7 +99,7 @@ class ReceiverFecTest : public ::testing::Test {
   MockRtpData rtp_data_callback_;
   std::unique_ptr<ForwardErrorCorrection> fec_;
   std::unique_ptr<FecReceiver> receiver_fec_;
-  FrameGenerator generator_;
+  UlpfecPacketGenerator generator_;
 };
 
 TEST_F(ReceiverFecTest, TwoMediaOneFec) {

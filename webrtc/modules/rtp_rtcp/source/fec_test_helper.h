@@ -18,44 +18,13 @@
 
 namespace webrtc {
 namespace test {
-
-// Needed to not clash with another webrtc::FrameGenerator.
 namespace fec {
 
 struct RawRtpPacket : public ForwardErrorCorrection::Packet {
   WebRtcRTPHeader header;
 };
 
-class FrameGenerator {
- public:
-  FrameGenerator();
-
-  void NewFrame(int num_packets);
-
-  uint16_t NextSeqNum();
-
-  RawRtpPacket* NextPacket(int offset, size_t length);
-
-  // Creates a new RtpPacket with the RED header added to the packet.
-  RawRtpPacket* BuildMediaRedPacket(const RawRtpPacket* packet);
-
-  // Creates a new RtpPacket with FEC payload and red header. Does this by
-  // creating a new fake media RtpPacket, clears the marker bit and adds a RED
-  // header. Finally replaces the payload with the content of |packet->data|.
-  RawRtpPacket* BuildFecRedPacket(const ForwardErrorCorrection::Packet* packet);
-
-  void SetRedHeader(ForwardErrorCorrection::Packet* red_packet,
-                    uint8_t payload_type,
-                    size_t header_length) const;
-
- private:
-  static void BuildRtpHeader(uint8_t* data, const RTPHeader* header);
-
-  int num_packets_;
-  uint16_t seq_num_;
-  uint32_t timestamp_;
-};
-
+// This class generates media packets corresponding to a single frame.
 class MediaPacketGenerator {
  public:
   MediaPacketGenerator(uint32_t min_packet_size,
@@ -84,6 +53,38 @@ class MediaPacketGenerator {
 
   ForwardErrorCorrection::PacketList media_packets_;
   uint16_t fec_seq_num_;
+};
+
+// This class generates media and ULPFEC packets (both encapsulated in RED)
+// for a single frame.
+class UlpfecPacketGenerator {
+ public:
+  UlpfecPacketGenerator();
+
+  void NewFrame(int num_packets);
+
+  uint16_t NextSeqNum();
+
+  RawRtpPacket* NextPacket(int offset, size_t length);
+
+  // Creates a new RtpPacket with the RED header added to the packet.
+  RawRtpPacket* BuildMediaRedPacket(const RawRtpPacket* packet);
+
+  // Creates a new RtpPacket with FEC payload and red header. Does this by
+  // creating a new fake media RtpPacket, clears the marker bit and adds a RED
+  // header. Finally replaces the payload with the content of |packet->data|.
+  RawRtpPacket* BuildFecRedPacket(const ForwardErrorCorrection::Packet* packet);
+
+  void SetRedHeader(ForwardErrorCorrection::Packet* red_packet,
+                    uint8_t payload_type,
+                    size_t header_length) const;
+
+ private:
+  static void BuildRtpHeader(uint8_t* data, const RTPHeader* header);
+
+  int num_packets_;
+  uint16_t seq_num_;
+  uint32_t timestamp_;
 };
 
 }  // namespace fec

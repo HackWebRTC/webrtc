@@ -25,8 +25,8 @@ constexpr uint8_t kFecPayloadType = 96;
 constexpr uint8_t kRedPayloadType = 97;
 }  // namespace
 
-using ::webrtc::test::fec::FrameGenerator;
 using ::webrtc::test::fec::RawRtpPacket;
+using ::webrtc::test::fec::UlpfecPacketGenerator;
 
 void VerifyHeader(uint16_t seq_num,
                   uint32_t timestamp,
@@ -50,7 +50,7 @@ void VerifyHeader(uint16_t seq_num,
 class ProducerFecTest : public ::testing::Test {
  protected:
   ProducerFec producer_;
-  FrameGenerator generator_;
+  UlpfecPacketGenerator generator_;
 };
 
 // Verifies bug found via fuzzing, where a gap in the packet sequence caused us
