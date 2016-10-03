@@ -38,7 +38,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 // arbitrary Java threads. All public entry points are thread safe, and delegate the work to the
 // camera thread. The internal *OnCameraThread() methods must check |camera| for null to check if
 // the camera has been stopped.
-// TODO(magjed): This class name is now confusing - rename to Camera1VideoCapturer.
+//
+// This class is deprecated and will only be used if you manually create it. Please use
+// Camera1Capturer instead.
+@Deprecated
 @SuppressWarnings("deprecation")
 public class VideoCapturerAndroid
     implements CameraVideoCapturer, android.hardware.Camera.PreviewCallback,

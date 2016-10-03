@@ -72,7 +72,7 @@ public class Camera1Enumerator implements CameraEnumerator {
   @Override
   public CameraVideoCapturer createCapturer(
       String deviceName, CameraVideoCapturer.CameraEventsHandler eventsHandler) {
-    return new VideoCapturerAndroid(deviceName, eventsHandler, captureToTexture);
+    return new Camera1Capturer(deviceName, eventsHandler, captureToTexture);
   }
 
   private static android.hardware.Camera.CameraInfo getCameraInfo(int index) {
