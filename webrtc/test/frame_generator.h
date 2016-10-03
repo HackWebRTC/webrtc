@@ -49,6 +49,11 @@ class FrameGenerator {
   // Returns video frame that remains valid until next call.
   virtual VideoFrame* NextFrame() = 0;
 
+  // Change the capture resolution.
+  virtual void ChangeResolution(size_t width, size_t height) {
+    RTC_NOTREACHED();
+  }
+
   // Creates a test frame generator that creates fully saturated frames with
   // varying U, V values over time.
   static FrameGenerator* CreateChromaGenerator(size_t width, size_t height);

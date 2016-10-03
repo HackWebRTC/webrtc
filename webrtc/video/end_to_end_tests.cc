@@ -259,9 +259,8 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
   Start();
 
   std::unique_ptr<test::FrameGenerator> frame_generator(
-      test::FrameGenerator::CreateChromaGenerator(
-          video_encoder_config_.streams[0].width,
-          video_encoder_config_.streams[0].height));
+      test::FrameGenerator::CreateChromaGenerator(kDefaultWidth,
+                                                  kDefaultHeight));
   test::FrameForwarder frame_forwarder;
   video_send_stream_->SetSource(&frame_forwarder);
   frame_forwarder.IncomingCapturedFrame(*frame_generator->NextFrame());
@@ -305,9 +304,6 @@ class CodecObserver : public test::EndToEndTest,
     send_config->encoder_settings.encoder = encoder_.get();
     send_config->encoder_settings.payload_name = payload_name_;
     send_config->encoder_settings.payload_type = 126;
-    encoder_config->streams[0].min_bitrate_bps = 50000;
-    encoder_config->streams[0].target_bitrate_bps =
-        encoder_config->streams[0].max_bitrate_bps = 2000000;
 
     (*receive_configs)[0].renderer = this;
     (*receive_configs)[0].decoders.resize(1);
@@ -793,9 +789,6 @@ TEST_F(EndToEndTest, ReceivedFecPacketsNotNacked) {
       send_config->encoder_settings.encoder = encoder_.get();
       send_config->encoder_settings.payload_name = "VP8";
       send_config->encoder_settings.payload_type = kFakeVideoSendPayloadType;
-      encoder_config->streams[0].min_bitrate_bps = 50000;
-      encoder_config->streams[0].max_bitrate_bps =
-          encoder_config->streams[0].target_bitrate_bps = 2000000;
 
       (*receive_configs)[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
       (*receive_configs)[0].rtp.fec.red_payload_type = kRedPayloadType;
@@ -1121,7 +1114,8 @@ TEST_F(EndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
   CreateMatchingReceiveConfigs(&receive_transport);
 
   CreateVideoStreams();
-  CreateFrameGeneratorCapturer();
+  CreateFrameGeneratorCapturer(kDefaultFramerate, kDefaultWidth,
+                               kDefaultHeight);
   Start();
 
   receiver_call_->DestroyVideoReceiveStream(video_receive_streams_[0]);
@@ -1278,13 +1272,8 @@ class MultiStreamTest {
       send_config.encoder_settings.payload_name = "VP8";
       send_config.encoder_settings.payload_type = 124;
       VideoEncoderConfig encoder_config;
-      encoder_config.streams = test::CreateVideoStreams(1);
-      VideoStream* stream = &encoder_config.streams[0];
-      stream->width = width;
-      stream->height = height;
-      stream->max_framerate = 5;
-      stream->min_bitrate_bps = stream->target_bitrate_bps =
-          stream->max_bitrate_bps = 100000;
+      test::FillEncoderConfiguration(1, &encoder_config);
+      encoder_config.max_bitrate_bps = 100000;
 
       UpdateSendConfig(i, &send_config, &encoder_config, &frame_generators[i]);
 
@@ -1562,11 +1551,9 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
 
       // Force some padding to be sent.
       const int kPaddingBitrateBps = 50000;
-      int total_target_bitrate = 0;
-      for (const VideoStream& stream : encoder_config->streams)
-        total_target_bitrate += stream.target_bitrate_bps;
+      encoder_config->max_bitrate_bps = 1000000;
       encoder_config->min_transmit_bitrate_bps =
-          total_target_bitrate + kPaddingBitrateBps;
+          encoder_config->max_bitrate_bps + kPaddingBitrateBps;
 
       // Configure RTX for redundant payload padding.
       send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
@@ -1768,9 +1755,8 @@ TEST_F(EndToEndTest, ObserversEncodedFrames) {
   Start();
 
   std::unique_ptr<test::FrameGenerator> frame_generator(
-      test::FrameGenerator::CreateChromaGenerator(
-          video_encoder_config_.streams[0].width,
-          video_encoder_config_.streams[0].height));
+      test::FrameGenerator::CreateChromaGenerator(kDefaultWidth,
+                                                  kDefaultHeight));
   test::FrameForwarder forwarder;
   video_send_stream_->SetSource(&forwarder);
   forwarder.IncomingCapturedFrame(*frame_generator->NextFrame());
@@ -1921,8 +1907,7 @@ TEST_F(EndToEndTest, RembWithSendSideBwe) {
                        test::kTransportSequenceNumberExtensionId));
       sender_ssrc_ = send_config->rtp.ssrcs[0];
 
-      encoder_config->streams[0].max_bitrate_bps =
-          encoder_config->streams[0].target_bitrate_bps = 2000000;
+      encoder_config->max_bitrate_bps = 2000000;
 
       ASSERT_EQ(1u, receive_configs->size());
       (*receive_configs)[0].rtp.remb = false;
@@ -2265,24 +2250,18 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.ReceivedWidthInPixels"));
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.ReceivedHeightInPixels"));
 
-  EXPECT_EQ(1, metrics::NumEvents(
-                   video_prefix + "InputWidthInPixels",
-                   static_cast<int>(video_encoder_config_.streams[0].width)));
-  EXPECT_EQ(1, metrics::NumEvents(
-                   video_prefix + "InputHeightInPixels",
-                   static_cast<int>(video_encoder_config_.streams[0].height)));
-  EXPECT_EQ(1, metrics::NumEvents(
-                   video_prefix + "SentWidthInPixels",
-                   static_cast<int>(video_encoder_config_.streams[0].width)));
-  EXPECT_EQ(1, metrics::NumEvents(
-                   video_prefix + "SentHeightInPixels",
-                   static_cast<int>(video_encoder_config_.streams[0].height)));
-  EXPECT_EQ(1, metrics::NumEvents(
-                   "WebRTC.Video.ReceivedWidthInPixels",
-                   static_cast<int>(video_encoder_config_.streams[0].width)));
-  EXPECT_EQ(1, metrics::NumEvents(
-                   "WebRTC.Video.ReceivedHeightInPixels",
-                   static_cast<int>(video_encoder_config_.streams[0].height)));
+  EXPECT_EQ(1, metrics::NumEvents(video_prefix + "InputWidthInPixels",
+                                  kDefaultWidth));
+  EXPECT_EQ(1, metrics::NumEvents(video_prefix + "InputHeightInPixels",
+                                  kDefaultHeight));
+  EXPECT_EQ(
+      1, metrics::NumEvents(video_prefix + "SentWidthInPixels", kDefaultWidth));
+  EXPECT_EQ(1, metrics::NumEvents(video_prefix + "SentHeightInPixels",
+                                  kDefaultHeight));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.ReceivedWidthInPixels",
+                                  kDefaultWidth));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.ReceivedHeightInPixels",
+                                  kDefaultHeight));
 
   EXPECT_EQ(1, metrics::NumSamples(video_prefix + "InputFramesPerSecond"));
   EXPECT_EQ(1, metrics::NumSamples(video_prefix + "SentFramesPerSecond"));
@@ -2488,22 +2467,41 @@ void EndToEndTest::TestSendsSetSsrcs(size_t num_ssrcs,
 
     size_t GetNumVideoStreams() const override { return num_ssrcs_; }
 
+    // This test use other VideoStream settings than the the default settings
+    // implemented in DefaultVideoStreamFactory. Therefore  this test implement
+    // its own VideoEncoderConfig::VideoStreamFactoryInterface which is created
+    // in ModifyVideoConfigs.
+    class VideoStreamFactory
+        : public VideoEncoderConfig::VideoStreamFactoryInterface {
+     public:
+      VideoStreamFactory() {}
+
+     private:
+      std::vector<VideoStream> CreateEncoderStreams(
+          int width,
+          int height,
+          const VideoEncoderConfig& encoder_config) override {
+        std::vector<VideoStream> streams =
+            test::CreateVideoStreams(width, height, encoder_config);
+        // Set low simulcast bitrates to not have to wait for bandwidth ramp-up.
+        for (size_t i = 0; i < encoder_config.number_of_streams; ++i) {
+          streams[i].min_bitrate_bps = 10000;
+          streams[i].target_bitrate_bps = 15000;
+          streams[i].max_bitrate_bps = 20000;
+        }
+        return streams;
+      }
+    };
+
     void ModifyVideoConfigs(
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
-      if (num_ssrcs_ > 1) {
-        // Set low simulcast bitrates to not have to wait for bandwidth ramp-up.
-        for (size_t i = 0; i < encoder_config->streams.size(); ++i) {
-          encoder_config->streams[i].min_bitrate_bps = 10000;
-          encoder_config->streams[i].target_bitrate_bps = 15000;
-          encoder_config->streams[i].max_bitrate_bps = 20000;
-        }
-      }
-
+      encoder_config->video_stream_factory =
+          new rtc::RefCountedObject<VideoStreamFactory>();
       video_encoder_config_all_streams_ = encoder_config->Copy();
       if (send_single_ssrc_first_)
-        encoder_config->streams.resize(1);
+        encoder_config->number_of_streams = 1;
     }
 
     void OnVideoStreamsCreated(
@@ -2563,7 +2561,7 @@ TEST_F(EndToEndTest, ReportsSetEncoderRates) {
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       send_config->encoder_settings.encoder = this;
-      RTC_DCHECK_EQ(1u, encoder_config->streams.size());
+      RTC_DCHECK_EQ(1u, encoder_config->number_of_streams);
     }
 
     int32_t SetRates(uint32_t new_target_bitrate, uint32_t framerate) override {
@@ -2835,16 +2833,38 @@ TEST_F(EndToEndTest, GetStats) {
       return config;
     }
 
+    // This test use other VideoStream settings than the the default settings
+    // implemented in DefaultVideoStreamFactory. Therefore  this test implement
+    // its own VideoEncoderConfig::VideoStreamFactoryInterface which is created
+    // in ModifyVideoConfigs.
+    class VideoStreamFactory
+        : public VideoEncoderConfig::VideoStreamFactoryInterface {
+     public:
+      VideoStreamFactory() {}
+
+     private:
+      std::vector<VideoStream> CreateEncoderStreams(
+          int width,
+          int height,
+          const VideoEncoderConfig& encoder_config) override {
+        std::vector<VideoStream> streams =
+            test::CreateVideoStreams(width, height, encoder_config);
+        // Set low simulcast bitrates to not have to wait for bandwidth ramp-up.
+        for (size_t i = 0; i < encoder_config.number_of_streams; ++i) {
+          streams[i].min_bitrate_bps = 10000;
+          streams[i].target_bitrate_bps = 15000;
+          streams[i].max_bitrate_bps = 20000;
+        }
+        return streams;
+      }
+    };
+
     void ModifyVideoConfigs(
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
-      // Set low rates to avoid waiting for rampup.
-      for (size_t i = 0; i < encoder_config->streams.size(); ++i) {
-        encoder_config->streams[i].min_bitrate_bps = 10000;
-        encoder_config->streams[i].target_bitrate_bps = 15000;
-        encoder_config->streams[i].max_bitrate_bps = 20000;
-      }
+      encoder_config->video_stream_factory =
+          new rtc::RefCountedObject<VideoStreamFactory>();
       send_config->pre_encode_callback = this;  // Used to inject delay.
       expected_cname_ = send_config->rtp.c_name = "SomeCName";
 
@@ -3037,17 +3057,39 @@ TEST_F(EndToEndTest, DISABLED_RedundantPayloadsTransmittedOnAllSsrcs) {
 
     size_t GetNumVideoStreams() const override { return kNumSsrcs; }
 
+    // This test use other VideoStream settings than the the default settings
+    // implemented in DefaultVideoStreamFactory. Therefore  this test implement
+    // its own VideoEncoderConfig::VideoStreamFactoryInterface which is created
+    // in ModifyVideoConfigs.
+    class VideoStreamFactory
+        : public VideoEncoderConfig::VideoStreamFactoryInterface {
+     public:
+      VideoStreamFactory() {}
+
+     private:
+      std::vector<VideoStream> CreateEncoderStreams(
+          int width,
+          int height,
+          const VideoEncoderConfig& encoder_config) override {
+        std::vector<VideoStream> streams =
+            test::CreateVideoStreams(width, height, encoder_config);
+        // Set low simulcast bitrates to not have to wait for bandwidth ramp-up.
+        for (size_t i = 0; i < encoder_config.number_of_streams; ++i) {
+          streams[i].min_bitrate_bps = 10000;
+          streams[i].target_bitrate_bps = 15000;
+          streams[i].max_bitrate_bps = 20000;
+        }
+        return streams;
+      }
+    };
+
     void ModifyVideoConfigs(
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       // Set low simulcast bitrates to not have to wait for bandwidth ramp-up.
-      for (size_t i = 0; i < encoder_config->streams.size(); ++i) {
-        encoder_config->streams[i].min_bitrate_bps = 10000;
-        encoder_config->streams[i].target_bitrate_bps = 15000;
-        encoder_config->streams[i].max_bitrate_bps = 20000;
-      }
-
+      encoder_config->video_stream_factory =
+          new rtc::RefCountedObject<VideoStreamFactory>();
       send_config->rtp.rtx.payload_type = kSendRtxPayloadType;
 
       for (size_t i = 0; i < kNumSsrcs; ++i)
@@ -3074,6 +3116,43 @@ TEST_F(EndToEndTest, DISABLED_RedundantPayloadsTransmittedOnAllSsrcs) {
 
 void EndToEndTest::TestRtpStatePreservation(bool use_rtx,
                                             bool provoke_rtcpsr_before_rtp) {
+  // This test use other VideoStream settings than the the default settings
+  // implemented in DefaultVideoStreamFactory. Therefore  this test implement
+  // its own VideoEncoderConfig::VideoStreamFactoryInterface which is created
+  // in ModifyVideoConfigs.
+  class VideoStreamFactory
+      : public VideoEncoderConfig::VideoStreamFactoryInterface {
+   public:
+    VideoStreamFactory() {}
+
+   private:
+    std::vector<VideoStream> CreateEncoderStreams(
+        int width,
+        int height,
+        const VideoEncoderConfig& encoder_config) override {
+      std::vector<VideoStream> streams =
+          test::CreateVideoStreams(width, height, encoder_config);
+
+      if (encoder_config.number_of_streams > 1) {
+        // Lower bitrates so that all streams send initially.
+        RTC_DCHECK_EQ(3u, encoder_config.number_of_streams);
+        for (size_t i = 0; i < encoder_config.number_of_streams; ++i) {
+          streams[i].min_bitrate_bps = 10000;
+          streams[i].target_bitrate_bps = 15000;
+          streams[i].max_bitrate_bps = 20000;
+        }
+      } else {
+        // Use the same total bitrates when sending a single stream to avoid
+        // lowering
+        // the bitrate estimate and requiring a subsequent rampup.
+        streams[0].min_bitrate_bps = 3 * 10000;
+        streams[0].target_bitrate_bps = 3 * 15000;
+        streams[0].max_bitrate_bps = 3 * 20000;
+      }
+      return streams;
+    }
+  };
+
   class RtpSequenceObserver : public test::RtpRtcpObserver {
    public:
     explicit RtpSequenceObserver(bool use_rtx)
@@ -3209,30 +3288,17 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx,
     video_send_config_.rtp.rtx.payload_type = kSendRtxPayloadType;
   }
 
-  // Lower bitrates so that all streams send initially.
-  for (size_t i = 0; i < video_encoder_config_.streams.size(); ++i) {
-    video_encoder_config_.streams[i].min_bitrate_bps = 10000;
-    video_encoder_config_.streams[i].target_bitrate_bps = 15000;
-    video_encoder_config_.streams[i].max_bitrate_bps = 20000;
-  }
-
+  video_encoder_config_.video_stream_factory =
+      new rtc::RefCountedObject<VideoStreamFactory>();
   // Use the same total bitrates when sending a single stream to avoid lowering
   // the bitrate estimate and requiring a subsequent rampup.
   VideoEncoderConfig one_stream = video_encoder_config_.Copy();
-  one_stream.streams.resize(1);
-  for (size_t i = 1; i < video_encoder_config_.streams.size(); ++i) {
-    one_stream.streams.front().min_bitrate_bps +=
-        video_encoder_config_.streams[i].min_bitrate_bps;
-    one_stream.streams.front().target_bitrate_bps +=
-        video_encoder_config_.streams[i].target_bitrate_bps;
-    one_stream.streams.front().max_bitrate_bps +=
-        video_encoder_config_.streams[i].max_bitrate_bps;
-  }
-
+  // one_stream.streams.resize(1);
+  one_stream.number_of_streams = 1;
   CreateMatchingReceiveConfigs(&receive_transport);
 
   CreateVideoStreams();
-  CreateFrameGeneratorCapturer();
+  CreateFrameGeneratorCapturer(30, 1280, 720);
 
   Start();
   EXPECT_TRUE(observer.Wait())
@@ -3257,7 +3323,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx,
       static_cast<webrtc::test::DirectTransport&>(receive_transport)
           .SendRtcp(packet.data(), packet.size());
     }
-    CreateFrameGeneratorCapturer();
+    CreateFrameGeneratorCapturer(30, 1280, 720);
     frame_generator_capturer_->Start();
 
     observer.ResetExpectedSsrcs(1);
@@ -3512,7 +3578,8 @@ TEST_F(EndToEndTest, CallReportsRttForSender) {
   CreateMatchingReceiveConfigs(&receiver_transport);
 
   CreateVideoStreams();
-  CreateFrameGeneratorCapturer();
+  CreateFrameGeneratorCapturer(kDefaultFramerate, kDefaultWidth,
+                               kDefaultHeight);
   Start();
 
   int64_t start_time_ms = clock_->TimeInMilliseconds();
@@ -3545,7 +3612,8 @@ void EndToEndTest::VerifyNewVideoSendStreamsRespectNetworkState(
   CreateSendConfig(1, 0, transport);
   video_send_config_.encoder_settings.encoder = encoder;
   CreateVideoStreams();
-  CreateFrameGeneratorCapturer();
+  CreateFrameGeneratorCapturer(kDefaultFramerate, kDefaultWidth,
+                               kDefaultHeight);
 
   Start();
   SleepMs(kSilenceTimeoutMs);
@@ -3566,7 +3634,8 @@ void EndToEndTest::VerifyNewVideoReceiveStreamsRespectNetworkState(
   CreateSendConfig(1, 0, &sender_transport);
   CreateMatchingReceiveConfigs(transport);
   CreateVideoStreams();
-  CreateFrameGeneratorCapturer();
+  CreateFrameGeneratorCapturer(kDefaultFramerate, kDefaultWidth,
+                               kDefaultHeight);
 
   Start();
   SleepMs(kSilenceTimeoutMs);

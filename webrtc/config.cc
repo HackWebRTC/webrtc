@@ -117,21 +117,14 @@ VideoEncoderConfig::VideoEncoderConfig()
     : content_type(ContentType::kRealtimeVideo),
       encoder_specific_settings(nullptr),
       min_transmit_bitrate_bps(0),
-      expect_encode_from_texture(false) {}
+      max_bitrate_bps(0),
+      number_of_streams(0) {}
 
 VideoEncoderConfig::~VideoEncoderConfig() = default;
 
 std::string VideoEncoderConfig::ToString() const {
   std::stringstream ss;
-
-  ss << "{streams: [";
-  for (size_t i = 0; i < streams.size(); ++i) {
-    ss << streams[i].ToString();
-    if (i != streams.size() - 1)
-      ss << ", ";
-  }
-  ss << ']';
-  ss << ", content_type: ";
+  ss << "{content_type: ";
   switch (content_type) {
     case ContentType::kRealtimeVideo:
       ss << "kRealtimeVideo";

@@ -21,6 +21,7 @@
 #include "webrtc/base/task_queue.h"
 #include "webrtc/call.h"
 #include "webrtc/common_types.h"
+#include "webrtc/common_video/rotation.h"
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/modules/video_coding/utility/simulcast_rate_allocator.h"
@@ -102,8 +103,24 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   class EncodeTask;
   class VideoSourceProxy;
 
+  struct VideoFrameInfo {
+    VideoFrameInfo(int width,
+                   int height,
+                   VideoRotation rotation,
+                   bool is_texture)
+        : width(width),
+          height(height),
+          rotation(rotation),
+          is_texture(is_texture) {}
+    int width;
+    int height;
+    webrtc::VideoRotation rotation;
+    bool is_texture;
+  };
+
   void ConfigureEncoderOnTaskQueue(VideoEncoderConfig config,
                                    size_t max_data_payload_length);
+  void ReconfigureEncoder();
 
   // Implements VideoSinkInterface.
   void OnFrame(const VideoFrame& video_frame) override;
@@ -138,7 +155,6 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   const VideoSendStream::Config::EncoderSettings settings_;
   const VideoCodecType codec_type_;
 
-  const std::unique_ptr<VideoProcessing> vp_;
   vcm::VideoSender video_sender_ ACCESS_ON(&encoder_queue_);
 
   OveruseFrameDetector overuse_detector_ ACCESS_ON(&encoder_queue_);
@@ -159,6 +175,10 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   std::unique_ptr<SimulcastRateAllocator> rate_allocator_
       ACCESS_ON(&encoder_queue_);
 
+  // Set when ConfigureEncoder has been called in order to lazy reconfigure the
+  // encoder on the next frame.
+  bool pending_encoder_reconfiguration_ ACCESS_ON(&encoder_queue_);
+  rtc::Optional<VideoFrameInfo> last_frame_info_ ACCESS_ON(&encoder_queue_);
   uint32_t encoder_start_bitrate_bps_ ACCESS_ON(&encoder_queue_);
   size_t max_data_payload_length_ ACCESS_ON(&encoder_queue_);
   uint32_t last_observed_bitrate_bps_ ACCESS_ON(&encoder_queue_);

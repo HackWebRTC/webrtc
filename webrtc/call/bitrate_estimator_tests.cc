@@ -126,7 +126,7 @@ class BitrateEstimatorTest : public test::CallTest {
     video_send_config_.encoder_settings.payload_name = "FAKE";
     video_send_config_.encoder_settings.payload_type =
         kFakeVideoSendPayloadType;
-    video_encoder_config_.streams = test::CreateVideoStreams(1);
+    test::FillEncoderConfiguration(1, &video_encoder_config_);
 
     receive_config_ = VideoReceiveStream::Config(receive_transport_.get());
     // receive_config_.decoders will be set by every stream separately.
@@ -174,10 +174,9 @@ class BitrateEstimatorTest : public test::CallTest {
       send_stream_ = test_->sender_call_->CreateVideoSendStream(
           test_->video_send_config_.Copy(),
           test_->video_encoder_config_.Copy());
-      RTC_DCHECK_EQ(1u, test_->video_encoder_config_.streams.size());
+      RTC_DCHECK_EQ(1u, test_->video_encoder_config_.number_of_streams);
       frame_generator_capturer_.reset(test::FrameGeneratorCapturer::Create(
-          test_->video_encoder_config_.streams[0].width,
-          test_->video_encoder_config_.streams[0].height, 30,
+          kDefaultWidth, kDefaultHeight, kDefaultFramerate,
           Clock::GetRealTimeClock()));
       send_stream_->SetSource(frame_generator_capturer_.get());
       send_stream_->Start();

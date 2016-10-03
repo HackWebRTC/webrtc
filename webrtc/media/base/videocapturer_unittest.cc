@@ -98,7 +98,7 @@ TEST_F(VideoCapturerTest, ScreencastScaledOddWidth) {
   EXPECT_EQ(cricket::CS_RUNNING,
             capturer_->Start(cricket::VideoFormat(
                 kWidth, kHeight, cricket::VideoFormat::FpsToInterval(30),
-                cricket::FOURCC_ANY)));
+                cricket::FOURCC_I420)));
   EXPECT_TRUE(capturer_->IsRunning());
   EXPECT_EQ(0, renderer_.num_rendered_frames());
   EXPECT_TRUE(capturer_->CaptureFrame());

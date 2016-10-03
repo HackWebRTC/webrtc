@@ -172,7 +172,7 @@ class VideoFrame {
       const;
 
   // Return true if the frame is stored in a texture.
-  bool is_texture() {
+  bool is_texture() const {
     return video_frame_buffer() &&
            video_frame_buffer()->native_handle() != nullptr;
   }

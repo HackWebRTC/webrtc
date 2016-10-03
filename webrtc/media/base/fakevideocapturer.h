@@ -26,7 +26,7 @@ namespace cricket {
 // Fake video capturer that allows the test to manually pump in frames.
 class FakeVideoCapturer : public cricket::VideoCapturer {
  public:
-  FakeVideoCapturer(bool is_screencast)
+  explicit FakeVideoCapturer(bool is_screencast)
       : running_(false),
         initial_timestamp_(rtc::TimeNanos()),
         next_timestamp_(rtc::kNumNanosecsPerMillisec),
@@ -109,10 +109,7 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
   sigslot::signal1<FakeVideoCapturer*> SignalDestroyed;
 
   cricket::CaptureState Start(const cricket::VideoFormat& format) override {
-    cricket::VideoFormat supported;
-    if (GetBestCaptureFormat(format, &supported)) {
-      SetCaptureFormat(&supported);
-    }
+    SetCaptureFormat(&format);
     running_ = true;
     SetCaptureState(cricket::CS_RUNNING);
     return cricket::CS_RUNNING;

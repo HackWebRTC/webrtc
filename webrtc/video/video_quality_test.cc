@@ -93,6 +93,23 @@ void DestroyVoiceEngine(VoiceEngineState* voe) {
   voe->voice_engine = nullptr;
 }
 
+class VideoStreamFactory
+    : public webrtc::VideoEncoderConfig::VideoStreamFactoryInterface {
+ public:
+  explicit VideoStreamFactory(const std::vector<webrtc::VideoStream>& streams)
+      : streams_(streams) {}
+
+ private:
+  std::vector<webrtc::VideoStream> CreateEncoderStreams(
+      int width,
+      int height,
+      const webrtc::VideoEncoderConfig& encoder_config) override {
+    return streams_;
+  }
+
+  std::vector<webrtc::VideoStream> streams_;
+};
+
 }  // namespace
 
 namespace webrtc {
@@ -1014,7 +1031,16 @@ void VideoQualityTest::SetupCommon(Transport* send_transport,
 
   video_encoder_config_.min_transmit_bitrate_bps =
       params_.common.min_transmit_bps;
-  video_encoder_config_.streams = params_.ss.streams;
+
+  video_encoder_config_.number_of_streams = params_.ss.streams.size();
+  video_encoder_config_.max_bitrate_bps = 0;
+  for (size_t i = 0; i < params_.ss.streams.size(); ++i) {
+    video_encoder_config_.max_bitrate_bps +=
+        params_.ss.streams[i].max_bitrate_bps;
+  }
+  video_encoder_config_.video_stream_factory =
+      new rtc::RefCountedObject<VideoStreamFactory>(params_.ss.streams);
+
   video_encoder_config_.spatial_layers = params_.ss.spatial_layers;
 
   CreateMatchingReceiveConfigs(recv_transport);
