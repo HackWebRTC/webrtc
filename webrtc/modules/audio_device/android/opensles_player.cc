@@ -141,7 +141,7 @@ int OpenSLESPlayer::StopPlayout() {
   RETURN_ON_ERROR((*player_)->SetPlayState(player_, SL_PLAYSTATE_STOPPED), -1);
   // Clear the buffer queue to flush out any remaining data.
   RETURN_ON_ERROR((*simple_buffer_queue_)->Clear(simple_buffer_queue_), -1);
-#if RTC_DCHECK_IS_ON
+#ifndef NDEBUG
   // Verify that the buffer queue is in fact cleared as it should.
   SLAndroidSimpleBufferQueueState buffer_queue_state;
   (*simple_buffer_queue_)->GetState(simple_buffer_queue_, &buffer_queue_state);

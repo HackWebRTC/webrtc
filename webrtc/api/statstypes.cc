@@ -276,7 +276,7 @@ bool StatsReport::Value::Equals(const Value& other) const {
     case kFloat:
       return value_.float_ == other.value_.float_;
     case kStaticString: {
-#if RTC_DCHECK_IS_ON
+#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
       if (value_.static_string_ != other.value_.static_string_) {
         RTC_DCHECK(strcmp(value_.static_string_, other.value_.static_string_) !=
                    0)
@@ -306,7 +306,7 @@ bool StatsReport::Value::operator==(const char* value) const {
     return value_.string_->compare(value) == 0;
   if (type_ != kStaticString)
     return false;
-#if RTC_DCHECK_IS_ON
+#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
   if (value_.static_string_ != value)
     RTC_DCHECK(strcmp(value_.static_string_, value) != 0)
         << "Duplicate global?";

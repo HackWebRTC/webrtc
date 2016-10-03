@@ -14,10 +14,19 @@
 #define WEBRTC_BASE_THREAD_CHECKER_H_
 
 // Apart from debug builds, we also enable the thread checker in
-// builds with RTC_DCHECK_IS_ON so that trybots and waterfall bots
+// builds with DCHECK_ALWAYS_ON so that trybots and waterfall bots
 // with this define will get the same level of thread checking as
 // debug bots.
-#define ENABLE_THREAD_CHECKER RTC_DCHECK_IS_ON
+//
+// Note that this does not perfectly match situations where RTC_DCHECK is
+// enabled.  For example a non-official release build may have
+// DCHECK_ALWAYS_ON undefined (and therefore ThreadChecker would be
+// disabled) but have RTC_DCHECKs enabled at runtime.
+#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
+#define ENABLE_THREAD_CHECKER 1
+#else
+#define ENABLE_THREAD_CHECKER 0
+#endif
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"

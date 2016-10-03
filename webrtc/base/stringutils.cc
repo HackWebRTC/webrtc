@@ -77,7 +77,7 @@ size_t asccpyn(wchar_t* buffer, size_t buflen,
   } else if (srclen >= buflen) {
     srclen = buflen - 1;
   }
-#if RTC_DCHECK_IS_ON
+#if !defined(NDEBUG)
   // Double check that characters are not UTF-8
   for (size_t pos = 0; pos < srclen; ++pos)
     RTC_DCHECK_LT(static_cast<unsigned char>(source[pos]), 128);

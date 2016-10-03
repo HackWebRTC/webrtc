@@ -21,7 +21,11 @@
 
 // Duplicated from base/threading/thread_checker.h so that we can be
 // good citizens there and undef the macro.
-#define ENABLE_THREAD_CHECKER RTC_DCHECK_IS_ON
+#if !defined(NDEBUG) || defined(DCHECK_ALWAYS_ON)
+#define ENABLE_THREAD_CHECKER 1
+#else
+#define ENABLE_THREAD_CHECKER 0
+#endif
 
 namespace rtc {
 
