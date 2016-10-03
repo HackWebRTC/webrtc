@@ -56,8 +56,8 @@ std::unique_ptr<Packet> WriteHeader(const uint8_t* packet_mask,
   for (size_t i = 0; i < written_packet->length; ++i) {
     written_packet->data[i] = i;  // Actual content doesn't matter.
   }
-  writer.FinalizeFecHeader(kMediaStartSeqNum, packet_mask, packet_mask_size,
-                           written_packet.get());
+  writer.FinalizeFecHeader(kMediaSsrc, kMediaStartSeqNum, packet_mask,
+                           packet_mask_size, written_packet.get());
   return written_packet;
 }
 
@@ -155,7 +155,7 @@ TEST(UlpfecHeaderWriterTest, FinalizesSmallHeader) {
   }
 
   UlpfecHeaderWriter writer;
-  writer.FinalizeFecHeader(kMediaStartSeqNum, packet_mask.get(),
+  writer.FinalizeFecHeader(kMediaSsrc, kMediaStartSeqNum, packet_mask.get(),
                            packet_mask_size, &written_packet);
 
   const uint8_t* packet = written_packet.data;
@@ -179,7 +179,7 @@ TEST(UlpfecHeaderWriterTest, FinalizesLargeHeader) {
   }
 
   UlpfecHeaderWriter writer;
-  writer.FinalizeFecHeader(kMediaStartSeqNum, packet_mask.get(),
+  writer.FinalizeFecHeader(kMediaSsrc, kMediaStartSeqNum, packet_mask.get(),
                            packet_mask_size, &written_packet);
 
   const uint8_t* packet = written_packet.data;

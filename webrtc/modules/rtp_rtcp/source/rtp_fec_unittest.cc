@@ -16,6 +16,7 @@
 #include "webrtc/base/random.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/fec_test_helper.h"
+#include "webrtc/modules/rtp_rtcp/source/flexfec_header_reader_writer.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
 #include "webrtc/modules/rtp_rtcp/source/ulpfec_header_reader_writer.h"
 #include "webrtc/test/gtest.h"
@@ -28,6 +29,7 @@ namespace {
 constexpr size_t kTransportOverhead = 28;
 
 constexpr uint32_t kMediaSsrc = 83542;
+constexpr uint32_t kFlexfecSsrc = 43245;
 
 // Deep copies |src| to |dst|, but only keeps every Nth packet.
 void DeepCopyEveryNthPacket(const ForwardErrorCorrection::PacketList& src,
@@ -151,16 +153,14 @@ bool RtpFecTest<ForwardErrorCorrectionType>::IsRecoveryComplete() {
 
   // All recovered packets must be identical to the corresponding
   // original packets.
-  using PacketPtr = std::unique_ptr<ForwardErrorCorrection::Packet>;
-  using RecoveredPacketPtr =
-    std::unique_ptr<ForwardErrorCorrection::RecoveredPacket>;
-  auto cmp = [](const PacketPtr& media_packet,
-                const RecoveredPacketPtr& recovered_packet) {
+  auto cmp = [](
+      const std::unique_ptr<ForwardErrorCorrection::Packet>& media_packet,
+      const std::unique_ptr<ForwardErrorCorrection::RecoveredPacket>&
+          recovered_packet) {
     if (media_packet->length != recovered_packet->pkt->length) {
       return false;
     }
-    if (memcmp(media_packet->data,
-               recovered_packet->pkt->data,
+    if (memcmp(media_packet->data, recovered_packet->pkt->data,
                media_packet->length) != 0) {
       return false;
     }
@@ -175,6 +175,14 @@ bool RtpFecTest<ForwardErrorCorrectionType>::IsRecoveryComplete() {
 // member variables using |this|, thereby enforcing runtime
 // resolution.
 
+class FlexfecForwardErrorCorrection : public ForwardErrorCorrection {
+ public:
+  FlexfecForwardErrorCorrection()
+      : ForwardErrorCorrection(
+            std::unique_ptr<FecHeaderReader>(new FlexfecHeaderReader()),
+            std::unique_ptr<FecHeaderWriter>(new FlexfecHeaderWriter())) {}
+};
+
 class UlpfecForwardErrorCorrection : public ForwardErrorCorrection {
  public:
   UlpfecForwardErrorCorrection()
@@ -183,7 +191,8 @@ class UlpfecForwardErrorCorrection : public ForwardErrorCorrection {
             std::unique_ptr<FecHeaderWriter>(new UlpfecHeaderWriter())) {}
 };
 
-using FecTypes = Types<UlpfecForwardErrorCorrection>;
+using FecTypes =
+    Types<FlexfecForwardErrorCorrection, UlpfecForwardErrorCorrection>;
 TYPED_TEST_CASE(RtpFecTest, FecTypes);
 
 TYPED_TEST(RtpFecTest, FecRecoveryNoLoss) {
@@ -947,6 +956,44 @@ TYPED_TEST(RtpFecTest, FecRecoveryNonConsecutivePacketsWrap) {
 
   // 5 protected packets lost, one FEC packet, cannot get complete recovery.
   EXPECT_FALSE(this->IsRecoveryComplete());
+}
+
+// 'using' directive needed for compiler to be happy.
+using RtpFecTestWithFlexfec = RtpFecTest<FlexfecForwardErrorCorrection>;
+TEST_F(RtpFecTestWithFlexfec,
+       FecRecoveryWithLossAndDifferentMediaAndFlexfecSsrcs) {
+  constexpr int kNumImportantPackets = 0;
+  constexpr bool kUseUnequalProtection = false;
+  constexpr int kNumMediaPackets = 4;
+  constexpr uint8_t kProtectionFactor = 60;
+
+  media_packets_ =
+      media_packet_generator_.ConstructMediaPackets(kNumMediaPackets);
+
+  EXPECT_EQ(0, fec_.EncodeFec(media_packets_, kProtectionFactor,
+                              kNumImportantPackets, kUseUnequalProtection,
+                              kFecMaskBursty, &generated_fec_packets_));
+
+  // Expect 1 FEC packet.
+  EXPECT_EQ(1u, generated_fec_packets_.size());
+
+  // 1 media packet lost
+  memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
+  memset(fec_loss_mask_, 0, sizeof(fec_loss_mask_));
+  media_loss_mask_[3] = 1;
+  NetworkReceivedPackets(media_loss_mask_, fec_loss_mask_);
+
+  // Simulate FlexFEC packet received on different SSRC.
+  auto it = received_packets_.begin();
+  ++it;
+  ++it;
+  ++it;  // Now at the FEC packet.
+  (*it)->ssrc = kFlexfecSsrc;
+
+  EXPECT_EQ(0, fec_.DecodeFec(&received_packets_, &recovered_packets_));
+
+  // One packet lost, one FEC packet, expect complete recovery.
+  EXPECT_TRUE(IsRecoveryComplete());
 }
 
 }  // namespace webrtc

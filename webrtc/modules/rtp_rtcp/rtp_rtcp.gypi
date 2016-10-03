@@ -132,6 +132,8 @@
         # Video Files
         'source/fec_private_tables_random.h',
         'source/fec_private_tables_bursty.h',
+        'source/flexfec_header_reader_writer.cc',
+        'source/flexfec_header_reader_writer.h',
         'source/forward_error_correction.cc',
         'source/forward_error_correction.h',
         'source/forward_error_correction_internal.cc',

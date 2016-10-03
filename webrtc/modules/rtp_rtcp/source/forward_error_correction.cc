@@ -20,6 +20,8 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
+#include "webrtc/modules/rtp_rtcp/source/flexfec_header_reader_writer.h"
+#include "webrtc/modules/rtp_rtcp/source/forward_error_correction_internal.h"
 #include "webrtc/modules/rtp_rtcp/source/ulpfec_header_reader_writer.h"
 
 namespace webrtc {
@@ -80,6 +82,14 @@ ForwardErrorCorrection::~ForwardErrorCorrection() = default;
 std::unique_ptr<ForwardErrorCorrection> ForwardErrorCorrection::CreateUlpfec() {
   std::unique_ptr<FecHeaderReader> fec_header_reader(new UlpfecHeaderReader());
   std::unique_ptr<FecHeaderWriter> fec_header_writer(new UlpfecHeaderWriter());
+  return std::unique_ptr<ForwardErrorCorrection>(new ForwardErrorCorrection(
+      std::move(fec_header_reader), std::move(fec_header_writer)));
+}
+
+std::unique_ptr<ForwardErrorCorrection>
+ForwardErrorCorrection::CreateFlexfec() {
+  std::unique_ptr<FecHeaderReader> fec_header_reader(new FlexfecHeaderReader());
+  std::unique_ptr<FecHeaderWriter> fec_header_writer(new FlexfecHeaderWriter());
   return std::unique_ptr<ForwardErrorCorrection>(new ForwardErrorCorrection(
       std::move(fec_header_reader), std::move(fec_header_writer)));
 }
@@ -152,9 +162,10 @@ int ForwardErrorCorrection::EncodeFec(const PacketList& media_packets,
   GenerateFecPayloads(media_packets, num_fec_packets);
   // TODO(brandtr): Generalize this when multistream protection support is
   // added.
+  const uint32_t media_ssrc = ParseSsrc(media_packets.front()->data);
   const uint16_t seq_num_base =
-      ParseSequenceNumber(media_packets.front().get()->data);
-  FinalizeFecHeaders(num_fec_packets, seq_num_base);
+      ParseSequenceNumber(media_packets.front()->data);
+  FinalizeFecHeaders(num_fec_packets, media_ssrc, seq_num_base);
 
   return 0;
 }
@@ -305,11 +316,12 @@ int ForwardErrorCorrection::InsertZerosInPacketMasks(
 }
 
 void ForwardErrorCorrection::FinalizeFecHeaders(size_t num_fec_packets,
+                                                uint32_t media_ssrc,
                                                 uint16_t seq_num_base) {
   for (size_t i = 0; i < num_fec_packets; ++i) {
     fec_header_writer_->FinalizeFecHeader(
-        seq_num_base, &packet_masks_[i * packet_mask_size_], packet_mask_size_,
-        &generated_fec_packets_[i]);
+        media_ssrc, seq_num_base, &packet_masks_[i * packet_mask_size_],
+        packet_mask_size_, &generated_fec_packets_[i]);
   }
 }
 
@@ -381,7 +393,6 @@ void ForwardErrorCorrection::InsertFecPacket(
   // Parse ULPFEC/FlexFEC header specific info.
   bool ret = fec_header_reader_->ReadFecHeader(fec_packet.get());
   if (!ret) {
-    LOG(LS_WARNING) << "Malformed FEC header: dropping packet.";
     return;
   }
   // Parse packet mask from header and represent as protected packets.

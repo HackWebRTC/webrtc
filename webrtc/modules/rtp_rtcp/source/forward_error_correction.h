@@ -151,6 +151,7 @@ class ForwardErrorCorrection {
 
   // Creates a ForwardErrorCorrection tailored for a specific FEC scheme.
   static std::unique_ptr<ForwardErrorCorrection> CreateUlpfec();
+  static std::unique_ptr<ForwardErrorCorrection> CreateFlexfec();
 
   // Generates a list of FEC packets from supplied media packets.
   //
@@ -259,7 +260,9 @@ class ForwardErrorCorrection {
 
   // Writes the FEC header fields that are not written by GenerateFecPayloads.
   // This includes writing the packet masks.
-  void FinalizeFecHeaders(size_t num_fec_packets, uint16_t seq_num_base);
+  void FinalizeFecHeaders(size_t num_fec_packets,
+                          uint32_t media_ssrc,
+                          uint16_t seq_num_base);
 
   // Inserts the |received_packets| into the internal received FEC packet list
   // or into |recovered_packets|.
@@ -391,6 +394,7 @@ class FecHeaderWriter {
 
   // Writes FEC header.
   virtual void FinalizeFecHeader(
+      uint32_t media_ssrc,
       uint16_t seq_num_base,
       const uint8_t* packet_mask,
       size_t packet_mask_size,
