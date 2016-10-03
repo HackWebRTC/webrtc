@@ -17,6 +17,26 @@
 
 namespace webrtc {
 
+// https://w3c.github.io/webrtc-stats/#certificatestats-dict*
+class RTCCertificateStats : public RTCStats {
+ public:
+  RTCCertificateStats(const std::string& id, int64_t timestamp_us);
+  RTCCertificateStats(std::string&& id, int64_t timestamp_us);
+
+  WEBRTC_RTCSTATS_IMPL(RTCStats, RTCCertificateStats,
+      &fingerprint,
+      &fingerprint_algorithm,
+      &base64_certificate,
+      &issuer_certificate_id);
+
+  RTCStatsMember<std::string> fingerprint;
+  RTCStatsMember<std::string> fingerprint_algorithm;
+  RTCStatsMember<std::string> base64_certificate;
+  RTCStatsMember<std::string> issuer_certificate_id;
+};
+
+// https://w3c.github.io/webrtc-stats/#pcstats-dict*
+// TODO(hbos): Tracking bug crbug.com/636818
 class RTCPeerConnectionStats : public RTCStats {
  public:
   RTCPeerConnectionStats(const std::string& id, int64_t timestamp_us);

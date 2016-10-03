@@ -21,9 +21,16 @@
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/timeutils.h"
 
+namespace rtc {
+
+class SSLCertificate;
+
+}  // namespace rtc
+
 namespace webrtc {
 
 class PeerConnection;
+struct SessionStats;
 
 class RTCStatsCollectorCallback : public virtual rtc::RefCountInterface {
  public:
@@ -69,8 +76,14 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface {
   void AddPartialResults_s(rtc::scoped_refptr<RTCStatsReport> partial_report);
   void DeliverCachedReport();
 
-  std::unique_ptr<RTCPeerConnectionStats> ProducePeerConnectionStats_s(
-      int64_t timestamp_us) const;
+  void ProduceCertificateStats_s(
+      int64_t timestamp_us, const SessionStats& session_stats,
+      RTCStatsReport* report) const;
+  void ProduceCertificateStatsFromSSLCertificateAndChain_s(
+      int64_t timestamp_us, const rtc::SSLCertificate& certificate,
+      RTCStatsReport* report) const;
+  void ProducePeerConnectionStats_s(
+      int64_t timestamp_us, RTCStatsReport* report) const;
 
   PeerConnection* const pc_;
   rtc::Thread* const signaling_thread_;

@@ -15,7 +15,9 @@
 #include <vector>
 
 #include "webrtc/api/peerconnection.h"
+#include "webrtc/api/webrtcsession.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/sslidentity.h"
 
 namespace webrtc {
 
@@ -88,7 +90,11 @@ void RTCStatsCollector::ProducePartialResultsOnSignalingThread(
   RTC_DCHECK(signaling_thread_->IsCurrent());
   rtc::scoped_refptr<RTCStatsReport> report = RTCStatsReport::Create();
 
-  report->AddStats(ProducePeerConnectionStats_s(timestamp_us));
+  SessionStats session_stats;
+  if (pc_->session()->GetTransportStats(&session_stats)) {
+    ProduceCertificateStats_s(timestamp_us, session_stats, report.get());
+  }
+  ProducePeerConnectionStats_s(timestamp_us, report.get());
 
   AddPartialResults(report);
 }
@@ -153,8 +159,50 @@ void RTCStatsCollector::DeliverCachedReport() {
   callbacks_.clear();
 }
 
-std::unique_ptr<RTCPeerConnectionStats>
-RTCStatsCollector::ProducePeerConnectionStats_s(int64_t timestamp_us) const {
+void RTCStatsCollector::ProduceCertificateStats_s(
+    int64_t timestamp_us, const SessionStats& session_stats,
+    RTCStatsReport* report) const {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  for (const auto& transport : session_stats.transport_stats) {
+    rtc::scoped_refptr<rtc::RTCCertificate> local_certificate;
+    if (pc_->session()->GetLocalCertificate(
+        transport.second.transport_name, &local_certificate)) {
+      ProduceCertificateStatsFromSSLCertificateAndChain_s(
+          timestamp_us, local_certificate->ssl_certificate(), report);
+    }
+    std::unique_ptr<rtc::SSLCertificate> remote_certificate =
+        pc_->session()->GetRemoteSSLCertificate(
+            transport.second.transport_name);
+    if (remote_certificate) {
+      ProduceCertificateStatsFromSSLCertificateAndChain_s(
+          timestamp_us, *remote_certificate.get(), report);
+    }
+  }
+}
+
+void RTCStatsCollector::ProduceCertificateStatsFromSSLCertificateAndChain_s(
+    int64_t timestamp_us, const rtc::SSLCertificate& certificate,
+    RTCStatsReport* report) const {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  std::unique_ptr<rtc::SSLCertificateStats> ssl_stats =
+      certificate.GetStats();
+  RTCCertificateStats* prev_stats = nullptr;
+  for (rtc::SSLCertificateStats* s = ssl_stats.get(); s;
+       s = s->issuer.get()) {
+    RTCCertificateStats* stats = new RTCCertificateStats(
+        "RTCCertificate_" + s->fingerprint, timestamp_us);
+    stats->fingerprint = s->fingerprint;
+    stats->fingerprint_algorithm = s->fingerprint_algorithm;
+    stats->base64_certificate = s->base64_certificate;
+    if (prev_stats)
+      prev_stats->issuer_certificate_id = stats->id();
+    report->AddStats(std::unique_ptr<RTCCertificateStats>(stats));
+    prev_stats = stats;
+  }
+}
+
+void RTCStatsCollector::ProducePeerConnectionStats_s(
+    int64_t timestamp_us, RTCStatsReport* report) const {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   // TODO(hbos): If data channels are removed from the peer connection this will
   // yield incorrect counts. Address before closing crbug.com/636818. See
@@ -173,7 +221,7 @@ RTCStatsCollector::ProducePeerConnectionStats_s(int64_t timestamp_us) const {
   stats->data_channels_opened = data_channels_opened;
   stats->data_channels_closed = static_cast<uint32_t>(data_channels.size()) -
                                 data_channels_opened;
-  return stats;
+  report->AddStats(std::move(stats));
 }
 
 }  // namespace webrtc

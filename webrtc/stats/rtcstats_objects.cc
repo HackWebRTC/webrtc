@@ -12,6 +12,22 @@
 
 namespace webrtc {
 
+const char RTCCertificateStats::kType[] = "certificate";
+
+RTCCertificateStats::RTCCertificateStats(
+    const std::string& id, int64_t timestamp_us)
+    : RTCCertificateStats(std::string(id), timestamp_us) {
+}
+
+RTCCertificateStats::RTCCertificateStats(
+    std::string&& id, int64_t timestamp_us)
+    : RTCStats(std::move(id), timestamp_us),
+      fingerprint("fingerprint"),
+      fingerprint_algorithm("fingerprintAlgorithm"),
+      base64_certificate("base64Certificate"),
+      issuer_certificate_id("issuerCertificateId") {
+}
+
 const char RTCPeerConnectionStats::kType[] = "peer-connection";
 
 RTCPeerConnectionStats::RTCPeerConnectionStats(
