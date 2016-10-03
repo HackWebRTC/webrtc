@@ -69,6 +69,24 @@ webrtc_fuzzer_test("vp8_qp_parser_fuzzer") {
   ]
 }
 
+webrtc_fuzzer_test("flexfec_header_reader_fuzzer") {
+  sources = [
+    "flexfec_header_reader_fuzzer.cc",
+  ]
+  deps = [
+    "../../modules/rtp_rtcp/",
+  ]
+}
+
+webrtc_fuzzer_test("ulpfec_header_reader_fuzzer") {
+  sources = [
+    "ulpfec_header_reader_fuzzer.cc",
+  ]
+  deps = [
+    "../../modules/rtp_rtcp/",
+  ]
+}
+
 webrtc_fuzzer_test("producer_fec_fuzzer") {
   sources = [
     "producer_fec_fuzzer.cc",
