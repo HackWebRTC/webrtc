@@ -61,7 +61,6 @@ class RTCPSender {
     FeedbackState();
 
     uint8_t send_payload_type;
-    uint32_t frequency_hz;
     uint32_t packets_sent;
     size_t media_bytes_sent;
     uint32_t send_bitrate;

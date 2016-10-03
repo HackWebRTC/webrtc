@@ -73,7 +73,6 @@ std::string NACKStringBuilder::GetResult() {
 
 RTCPSender::FeedbackState::FeedbackState()
     : send_payload_type(0),
-      frequency_hz(0),
       packets_sent(0),
       media_bytes_sent(0),
       send_bitrate(0),
@@ -443,10 +442,11 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildSR(const RtcpContext& ctx) {
   // the frame being captured at this moment. We are calculating that
   // timestamp as the last frame's timestamp + the time since the last frame
   // was captured.
+  uint32_t rtp_rate =
+      (audio_ ? kBogusRtpRateForAudioRtcp : kVideoPayloadTypeFrequency) / 1000;
   uint32_t rtp_timestamp =
       timestamp_offset_ + last_rtp_timestamp_ +
-      (clock_->TimeInMilliseconds() - last_frame_capture_time_ms_) *
-          (ctx.feedback_state_.frequency_hz / 1000);
+      (clock_->TimeInMilliseconds() - last_frame_capture_time_ms_) * rtp_rate;
 
   rtcp::SenderReport* report = new rtcp::SenderReport();
   report->SetSenderSsrc(ssrc_);

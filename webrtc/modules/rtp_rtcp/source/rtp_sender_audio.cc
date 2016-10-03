@@ -50,10 +50,6 @@ RTPSenderAudio::RTPSenderAudio(Clock* clock, RTPSender* rtp_sender)
 
 RTPSenderAudio::~RTPSenderAudio() {}
 
-int RTPSenderAudio::AudioFrequency() const {
-  return kDtmfFrequencyHz;
-}
-
 // set audio packet size, used to determine when it's time to send a DTMF packet
 // in silence (CNG)
 int32_t RTPSenderAudio::SetAudioPacketSize(uint16_t packet_size_samples) {

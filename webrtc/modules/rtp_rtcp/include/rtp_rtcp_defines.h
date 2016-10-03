@@ -22,7 +22,6 @@
 #define RTCP_CNAME_SIZE 256    // RFC 3550 page 44, including null termination
 #define IP_PACKET_SIZE 1500    // we assume ethernet
 #define MAX_NUMBER_OF_PARALLEL_TELEPHONE_EVENTS 10
-#define TIMEOUT_SEI_MESSAGES_MS 30000   // in milliseconds
 
 namespace webrtc {
 namespace rtcp {
@@ -30,6 +29,10 @@ class TransportFeedback;
 }
 
 const int kVideoPayloadTypeFrequency = 90000;
+// TODO(solenberg): RTP time stamp rate for RTCP is fixed at 8k, this is legacy
+// and should be fixed.
+// See: https://bugs.chromium.org/p/webrtc/issues/detail?id=6458
+const int kBogusRtpRateForAudioRtcp = 8000;
 
 // Minimum RTP header size in bytes.
 const uint8_t kRtpHeaderSize = 12;

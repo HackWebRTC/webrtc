@@ -80,8 +80,6 @@ class RTPSender {
 
   int8_t SendPayloadType() const;
 
-  int SendPayloadFrequency() const;
-
   void SetSendingStatus(bool enabled);
 
   void SetSendingMediaStatus(bool enabled);

@@ -326,10 +326,6 @@ int8_t RTPSender::SendPayloadType() const {
   return payload_type_;
 }
 
-int RTPSender::SendPayloadFrequency() const {
-  return audio_ != NULL ? audio_->AudioFrequency() : kVideoPayloadTypeFrequency;
-}
-
 void RTPSender::SetMaxPayloadLength(size_t max_payload_length) {
   // Sanity check.
   RTC_DCHECK(max_payload_length >= 100 && max_payload_length <= IP_PACKET_SIZE)

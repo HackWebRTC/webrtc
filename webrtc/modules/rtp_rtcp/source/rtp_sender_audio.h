@@ -54,8 +54,6 @@ class RTPSenderAudio {
   // Send a DTMF tone using RFC 2833 (4733)
   int32_t SendTelephoneEvent(uint8_t key, uint16_t time_ms, uint8_t level);
 
-  int AudioFrequency() const;
-
  protected:
   bool SendTelephoneEventPacket(
       bool ended,

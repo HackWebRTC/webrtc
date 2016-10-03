@@ -89,8 +89,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   RTCPSender::FeedbackState GetFeedbackState();
 
-  int CurrentSendFrequencyHz() const;
-
   void SetRtxSendStatus(int mode) override;
   int RtxSendStatus() const override;
 

@@ -313,7 +313,6 @@ RTCPSender::FeedbackState ModuleRtpRtcpImpl::GetFeedbackState() {
 
   RTCPSender::FeedbackState state;
   state.send_payload_type = SendPayloadType();
-  state.frequency_hz = CurrentSendFrequencyHz();
   state.packets_sent = rtp_stats.transmitted.packets +
                        rtx_stats.transmitted.packets;
   state.media_bytes_sent = rtp_stats.transmitted.payload_bytes +
@@ -330,10 +329,6 @@ RTCPSender::FeedbackState ModuleRtpRtcpImpl::GetFeedbackState() {
   uint32_t tmp;
   BitrateSent(&state.send_bitrate, &tmp, &tmp, &tmp);
   return state;
-}
-
-int ModuleRtpRtcpImpl::CurrentSendFrequencyHz() const {
-  return rtp_sender_.SendPayloadFrequency();
 }
 
 int32_t ModuleRtpRtcpImpl::SetSendingStatus(const bool sending) {
