@@ -14,6 +14,8 @@ namespace rtc {
 
 File::File(PlatformFile file) : file_(file) {}
 
+File::File() : file_(kInvalidPlatformFileValue) {}
+
 File::~File() {
   Close();
 }

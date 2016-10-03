@@ -30,6 +30,8 @@ class File {
   // Wraps the given PlatformFile. This class is then responsible for closing
   // the file, which will be done in the destructor if Close is never called.
   explicit File(PlatformFile);
+  // The default constructor produces a closed file.
+  File();
   ~File();
 
   File(File&& other);
