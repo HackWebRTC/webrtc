@@ -13,7 +13,10 @@
 
 #include "webrtc/typedefs.h"
 
-#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
+// If you for some reson need to know if DCHECKs are on, test the value of
+// RTC_DCHECK_IS_ON. (Test its value, not if it's defined; it'll always be
+// defined, to either a true or a false value.)
+#if !defined(NDEBUG) || defined(DCHECK_ALWAYS_ON)
 #define RTC_DCHECK_IS_ON 1
 #else
 #define RTC_DCHECK_IS_ON 0
@@ -90,9 +93,9 @@ namespace rtc {
       ? static_cast<void>(0)                 \
       : rtc::FatalMessageVoidify() & rtc::FatalMessage("", 0).stream()
 
-// RTC_CHECK dies with a fatal error if condition is not true.  It is *not*
-// controlled by NDEBUG, so the check will be executed regardless of
-// compilation mode.
+// RTC_CHECK dies with a fatal error if condition is not true. It is *not*
+// controlled by NDEBUG or anything else, so the check will be executed
+// regardless of compilation mode.
 //
 // We make sure RTC_CHECK et al. always evaluates their arguments, as
 // doing RTC_CHECK(FunctionWithSideEffect()) is a common idiom.

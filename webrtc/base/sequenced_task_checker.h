@@ -12,18 +12,9 @@
 #define WEBRTC_BASE_SEQUENCED_TASK_CHECKER_H_
 
 // Apart from debug builds, we also enable the sequence checker in
-// builds with DCHECK_ALWAYS_ON so that trybots and waterfall bots
+// builds with RTC_DCHECK_IS_ON so that trybots and waterfall bots
 // with this define will get the same level of checking as debug bots.
-//
-// Note that this does not perfectly match situations where RTC_DCHECK is
-// enabled.  For example a non-official release build may have
-// DCHECK_ALWAYS_ON undefined (and therefore SequencedTaskChecker would be
-// disabled) but have RTC_DCHECKs enabled at runtime.
-#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
-#define ENABLE_SEQUENCED_TASK_CHECKER 1
-#else
-#define ENABLE_SEQUENCED_TASK_CHECKER 0
-#endif
+#define ENABLE_SEQUENCED_TASK_CHECKER RTC_DCHECK_IS_ON
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"

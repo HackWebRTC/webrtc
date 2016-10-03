@@ -133,7 +133,7 @@ void ProcessThreadImpl::RegisterModule(Module* module) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(module);
 
-#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
+#if RTC_DCHECK_IS_ON
   {
     // Catch programmer error.
     rtc::CritScope lock(&lock_);

@@ -198,7 +198,7 @@ TEST(SequencedTaskCheckerTest, DetachFromTaskQueueAndUseOnThread) {
   EXPECT_TRUE(done_event.Wait(1000));
 }
 
-#if !defined(NDEBUG) || DCHECK_ALWAYS_ON
+#if RTC_DCHECK_IS_ON
 TEST(SequencedTaskCheckerTest, MethodNotAllowedOnDifferentThreadInDebug) {
   RunMethodOnDifferentThread(false);
 }
@@ -208,7 +208,7 @@ TEST(SequencedTaskCheckerTest, MethodAllowedOnDifferentThreadInRelease) {
 }
 #endif
 
-#if !defined(NDEBUG) || DCHECK_ALWAYS_ON
+#if RTC_DCHECK_IS_ON
 TEST(SequencedTaskCheckerTest, MethodNotAllowedOnDifferentTaskQueueInDebug) {
   RunMethodOnDifferentTaskQueue(false);
 }
@@ -218,7 +218,7 @@ TEST(SequencedTaskCheckerTest, MethodAllowedOnDifferentTaskQueueInRelease) {
 }
 #endif
 
-#if !defined(NDEBUG) || DCHECK_ALWAYS_ON
+#if RTC_DCHECK_IS_ON
 TEST(SequencedTaskCheckerTest, DetachFromTaskQueueInDebug) {
   DetachThenCallFromDifferentTaskQueue(false);
 }

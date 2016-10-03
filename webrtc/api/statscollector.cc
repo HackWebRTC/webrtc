@@ -398,7 +398,7 @@ void StatsCollector::AddLocalAudioTrack(AudioTrackInterface* audio_track,
                                         uint32_t ssrc) {
   RTC_DCHECK(pc_->session()->signaling_thread()->IsCurrent());
   RTC_DCHECK(audio_track != NULL);
-#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
+#if RTC_DCHECK_IS_ON
   for (const auto& track : local_audio_tracks_)
     RTC_DCHECK(track.first != audio_track || track.second != ssrc);
 #endif
