@@ -439,6 +439,7 @@ if (rtc_include_tests) {
       "base/timeutils_unittest.cc",
       "base/urlencode_unittest.cc",
       "base/versionparsing_unittest.cc",
+      "base/weak_ptr_unittest.cc",
 
       # TODO(ronghuawu): Reenable this test.
       # "windowpicker_unittest.cc",

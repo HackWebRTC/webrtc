@@ -20,6 +20,7 @@
 #include "webrtc/base/file.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
+#include "webrtc/base/weak_ptr.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/pacing/packet_router.h"
@@ -339,6 +340,14 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   // RtpRtcp modules, declared here as they use other members on construction.
   const std::vector<RtpRtcp*> rtp_rtcp_modules_;
   PayloadRouter payload_router_;
+
+  // |weak_ptr_| to our self. This is used since we can not call
+  // |weak_ptr_factory_.GetWeakPtr| from multiple sequences but it is ok to copy
+  // an existing WeakPtr.
+  rtc::WeakPtr<VideoSendStreamImpl> weak_ptr_;
+  // |weak_ptr_factory_| must be declared last to make sure all WeakPtr's are
+  // invalidated before any other members are destroyed.
+  rtc::WeakPtrFactory<VideoSendStreamImpl> weak_ptr_factory_;
 };
 
 // TODO(tommi): See if there's a more elegant way to create a task that creates
@@ -431,12 +440,13 @@ class VideoSendStream::DestructAndGetRtpStateTask : public rtc::QueuedTask {
 class VideoSendStreamImpl::CheckEncoderActivityTask : public rtc::QueuedTask {
  public:
   static const int kEncoderTimeOutMs = 2000;
-  explicit CheckEncoderActivityTask(VideoSendStreamImpl* send_stream)
-      : activity_(0), send_stream_(send_stream), timed_out_(false) {}
+  explicit CheckEncoderActivityTask(
+      const rtc::WeakPtr<VideoSendStreamImpl>& send_stream)
+      : activity_(0), send_stream_(std::move(send_stream)), timed_out_(false) {}
 
   void Stop() {
     RTC_CHECK(task_checker_.CalledSequentially());
-    send_stream_ = nullptr;
+    send_stream_.reset();
   }
 
   void UpdateEncoderActivity() {
@@ -472,27 +482,28 @@ class VideoSendStreamImpl::CheckEncoderActivityTask : public rtc::QueuedTask {
   volatile int activity_;
 
   rtc::SequencedTaskChecker task_checker_;
-  VideoSendStreamImpl* send_stream_;
+  rtc::WeakPtr<VideoSendStreamImpl> send_stream_;
   bool timed_out_;
 };
 
 class VideoSendStreamImpl::EncoderReconfiguredTask : public rtc::QueuedTask {
  public:
-  EncoderReconfiguredTask(VideoSendStreamImpl* send_stream,
+  EncoderReconfiguredTask(const rtc::WeakPtr<VideoSendStreamImpl>& send_stream,
                           std::vector<VideoStream> streams,
                           int min_transmit_bitrate_bps)
-      : send_stream_(send_stream),
+      : send_stream_(std::move(send_stream)),
         streams_(std::move(streams)),
         min_transmit_bitrate_bps_(min_transmit_bitrate_bps) {}
 
  private:
   bool Run() override {
-    send_stream_->OnEncoderConfigurationChanged(std::move(streams_),
-                                                min_transmit_bitrate_bps_);
+    if (send_stream_)
+      send_stream_->OnEncoderConfigurationChanged(std::move(streams_),
+                                                  min_transmit_bitrate_bps_);
     return true;
   }
 
-  VideoSendStreamImpl* send_stream_;
+  rtc::WeakPtr<VideoSendStreamImpl> send_stream_;
   std::vector<VideoStream> streams_;
   int min_transmit_bitrate_bps_;
 };
@@ -665,9 +676,11 @@ VideoSendStreamImpl::VideoSendStreamImpl(
           congestion_controller_->GetRetransmissionRateLimiter(),
           config_->rtp.ssrcs.size())),
       payload_router_(rtp_rtcp_modules_,
-                      config_->encoder_settings.payload_type) {
+                      config_->encoder_settings.payload_type),
+      weak_ptr_factory_(this) {
   RTC_DCHECK_RUN_ON(worker_queue_);
   LOG(LS_INFO) << "VideoSendStreamInternal: " << config_->ToString();
+  weak_ptr_ = weak_ptr_factory_.GetWeakPtr();
   module_process_thread_checker_.DetachFromThread();
 
   RTC_DCHECK(!config_->rtp.ssrcs.empty());
@@ -778,7 +791,7 @@ void VideoSendStreamImpl::Start() {
   {
     rtc::CritScope lock(&encoder_activity_crit_sect_);
     RTC_DCHECK(!check_encoder_activity_task_);
-    check_encoder_activity_task_ = new CheckEncoderActivityTask(this);
+    check_encoder_activity_task_ = new CheckEncoderActivityTask(weak_ptr_);
     worker_queue_->PostDelayedTask(
         std::unique_ptr<rtc::QueuedTask>(check_encoder_activity_task_),
         CheckEncoderActivityTask::kEncoderTimeOutMs);
@@ -827,14 +840,9 @@ void VideoSendStreamImpl::OnEncoderConfigurationChanged(
     std::vector<VideoStream> streams,
     int min_transmit_bitrate_bps) {
   if (!worker_queue_->IsCurrent()) {
-    // TODO(perkj): Using |this| in post is safe for now since destruction of
-    // VideoSendStreamImpl is synchronized in
-    // VideoSendStream::StopPermanentlyAndGetRtpStates. But we should really
-    // use some kind of weak_ptr to guarantee that VideoSendStreamImpl is still
-    // alive when this task runs.
     worker_queue_->PostTask(
         std::unique_ptr<rtc::QueuedTask>(new EncoderReconfiguredTask(
-            this, std::move(streams), min_transmit_bitrate_bps)));
+            weak_ptr_, std::move(streams), min_transmit_bitrate_bps)));
     return;
   }
   RTC_DCHECK_GE(config_->rtp.ssrcs.size(), streams.size());

@@ -167,6 +167,8 @@
         'sequenced_task_checker.h',
         'sequenced_task_checker_impl.cc',
         'sequenced_task_checker_impl.h',
+        'weak_ptr.cc',
+        'weak_ptr.h',
       ],
       'conditions': [
         ['build_with_chromium==1', {
