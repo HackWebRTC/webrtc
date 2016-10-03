@@ -10,6 +10,7 @@
 
 #include <list>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "webrtc/base/basictypes.h"
@@ -22,11 +23,12 @@
 namespace webrtc {
 
 namespace {
-using test::fec::RawRtpPacket;
-using test::fec::UlpfecPacketGenerator;
+using test::fec::AugmentedPacket;
+using test::fec::AugmentedPacketGenerator;
 
 constexpr int kFecPayloadType = 96;
 constexpr int kRedPayloadType = 97;
+constexpr uint32_t kMediaSsrc = 835424;
 }  // namespace
 
 void VerifyHeader(uint16_t seq_num,
@@ -50,8 +52,10 @@ void VerifyHeader(uint16_t seq_num,
 
 class ProducerFecTest : public ::testing::Test {
  protected:
+  ProducerFecTest() : packet_generator_(kMediaSsrc) {}
+
   ProducerFec producer_;
-  UlpfecPacketGenerator generator_;
+  AugmentedPacketGenerator packet_generator_;
 };
 
 // Verifies bug found via fuzzing, where a gap in the packet sequence caused us
@@ -106,30 +110,25 @@ TEST_F(ProducerFecTest, OneFrameFec) {
   // media packets for 1 frame is at least |minimum_media_packets_fec_|.
   constexpr size_t kNumPackets = 4;
   FecProtectionParams params = {15, 3, kFecMaskRandom};
-  std::list<RawRtpPacket*> rtp_packets;
-  generator_.NewFrame(kNumPackets);
+  packet_generator_.NewFrame(kNumPackets);
   producer_.SetFecParameters(&params, 0);  // Expecting one FEC packet.
   uint32_t last_timestamp = 0;
   for (size_t i = 0; i < kNumPackets; ++i) {
-    RawRtpPacket* rtp_packet = generator_.NextPacket(i, 10);
-    rtp_packets.push_back(rtp_packet);
+    std::unique_ptr<AugmentedPacket> packet =
+        packet_generator_.NextPacket(i, 10);
     EXPECT_EQ(0, producer_.AddRtpPacketAndGenerateFec(
-                     rtp_packet->data, rtp_packet->length, kRtpHeaderSize));
-    last_timestamp = rtp_packet->header.header.timestamp;
+                     packet->data, packet->length, kRtpHeaderSize));
+    last_timestamp = packet->header.header.timestamp;
   }
   EXPECT_TRUE(producer_.FecAvailable());
-  uint16_t seq_num = generator_.NextSeqNum();
-  std::vector<std::unique_ptr<RedPacket>> packets =
+  uint16_t seq_num = packet_generator_.NextPacketSeqNum();
+  std::vector<std::unique_ptr<RedPacket>> red_packets =
       producer_.GetFecPacketsAsRed(kRedPayloadType, kFecPayloadType, seq_num,
                                    kRtpHeaderSize);
   EXPECT_FALSE(producer_.FecAvailable());
-  ASSERT_EQ(1u, packets.size());
+  ASSERT_EQ(1u, red_packets.size());
   VerifyHeader(seq_num, last_timestamp, kRedPayloadType, kFecPayloadType,
-               packets.front().get(), false);
-  while (!rtp_packets.empty()) {
-    delete rtp_packets.front();
-    rtp_packets.pop_front();
-  }
+               red_packets.front().get(), false);
 }
 
 TEST_F(ProducerFecTest, TwoFrameFec) {
@@ -144,37 +143,32 @@ TEST_F(ProducerFecTest, TwoFrameFec) {
   constexpr size_t kNumFrames = 2;
 
   FecProtectionParams params = {15, 3, kFecMaskRandom};
-  std::list<RawRtpPacket*> rtp_packets;
   producer_.SetFecParameters(&params, 0);  // Expecting one FEC packet.
   uint32_t last_timestamp = 0;
   for (size_t i = 0; i < kNumFrames; ++i) {
-    generator_.NewFrame(kNumPackets);
+    packet_generator_.NewFrame(kNumPackets);
     for (size_t j = 0; j < kNumPackets; ++j) {
-      RawRtpPacket* rtp_packet = generator_.NextPacket(i * kNumPackets + j, 10);
-      rtp_packets.push_back(rtp_packet);
+      std::unique_ptr<AugmentedPacket> packet =
+          packet_generator_.NextPacket(i * kNumPackets + j, 10);
       EXPECT_EQ(0, producer_.AddRtpPacketAndGenerateFec(
-                       rtp_packet->data, rtp_packet->length, kRtpHeaderSize));
-      last_timestamp = rtp_packet->header.header.timestamp;
+                       packet->data, packet->length, kRtpHeaderSize));
+      last_timestamp = packet->header.header.timestamp;
     }
   }
   EXPECT_TRUE(producer_.FecAvailable());
-  uint16_t seq_num = generator_.NextSeqNum();
-  std::vector<std::unique_ptr<RedPacket>> packets =
+  uint16_t seq_num = packet_generator_.NextPacketSeqNum();
+  std::vector<std::unique_ptr<RedPacket>> red_packets =
       producer_.GetFecPacketsAsRed(kRedPayloadType, kFecPayloadType, seq_num,
                                    kRtpHeaderSize);
   EXPECT_FALSE(producer_.FecAvailable());
-  ASSERT_EQ(1u, packets.size());
+  ASSERT_EQ(1u, red_packets.size());
   VerifyHeader(seq_num, last_timestamp, kRedPayloadType, kFecPayloadType,
-               packets.front().get(), false);
-  while (!rtp_packets.empty()) {
-    delete rtp_packets.front();
-    rtp_packets.pop_front();
-  }
+               red_packets.front().get(), false);
 }
 
 TEST_F(ProducerFecTest, BuildRedPacket) {
-  generator_.NewFrame(1);
-  RawRtpPacket* packet = generator_.NextPacket(0, 10);
+  packet_generator_.NewFrame(1);
+  std::unique_ptr<AugmentedPacket> packet = packet_generator_.NextPacket(0, 10);
   std::unique_ptr<RedPacket> red_packet =
       ProducerFec::BuildRedPacket(packet->data, packet->length - kRtpHeaderSize,
                                   kRtpHeaderSize, kRedPayloadType);
@@ -186,7 +180,6 @@ TEST_F(ProducerFecTest, BuildRedPacket) {
   for (int i = 0; i < 10; ++i) {
     EXPECT_EQ(i, red_packet->data()[kRtpHeaderSize + 1 + i]);
   }
-  delete packet;
 }
 
 TEST_F(ProducerFecTest, BuildRedPacketWithEmptyPayload) {
@@ -194,9 +187,9 @@ TEST_F(ProducerFecTest, BuildRedPacketWithEmptyPayload) {
   constexpr size_t kPayloadLength = 0;
   constexpr size_t kRedForFecHeaderLength = 1;
 
-  generator_.NewFrame(kNumFrames);
-  std::unique_ptr<RawRtpPacket> packet(
-      generator_.NextPacket(0, kPayloadLength));
+  packet_generator_.NewFrame(kNumFrames);
+  std::unique_ptr<AugmentedPacket> packet(
+      packet_generator_.NextPacket(0, kPayloadLength));
   std::unique_ptr<RedPacket> red_packet =
       ProducerFec::BuildRedPacket(packet->data, packet->length - kRtpHeaderSize,
                                   kRtpHeaderSize, kRedPayloadType);

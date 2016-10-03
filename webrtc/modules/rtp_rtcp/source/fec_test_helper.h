@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_FEC_TEST_HELPER_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_FEC_TEST_HELPER_H_
 
+#include <memory>
+
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/random.h"
 #include "webrtc/modules/include/module_common_types.h"
@@ -20,9 +22,13 @@ namespace webrtc {
 namespace test {
 namespace fec {
 
-struct RawRtpPacket : public ForwardErrorCorrection::Packet {
+struct AugmentedPacket : public ForwardErrorCorrection::Packet {
   WebRtcRTPHeader header;
 };
+
+// TODO(brandtr): Consider merging MediaPacketGenerator and
+// AugmentedPacketGenerator into a single class, since their functionality is
+// similar.
 
 // This class generates media packets corresponding to a single frame.
 class MediaPacketGenerator {
@@ -55,36 +61,54 @@ class MediaPacketGenerator {
   uint16_t fec_seq_num_;
 };
 
-// This class generates media and ULPFEC packets (both encapsulated in RED)
-// for a single frame.
-class UlpfecPacketGenerator {
+// This class generates media packets with a certain structure of the payload.
+class AugmentedPacketGenerator {
  public:
-  UlpfecPacketGenerator();
+  explicit AugmentedPacketGenerator(uint32_t ssrc);
 
-  void NewFrame(int num_packets);
+  // Prepare for generating a new set of packets, corresponding to a frame.
+  void NewFrame(size_t num_packets);
 
-  uint16_t NextSeqNum();
+  // Increment and return the newly incremented sequence number.
+  uint16_t NextPacketSeqNum();
 
-  RawRtpPacket* NextPacket(int offset, size_t length);
+  // Return the next packet in the current frame.
+  std::unique_ptr<AugmentedPacket> NextPacket(size_t offset, size_t length);
 
-  // Creates a new RtpPacket with the RED header added to the packet.
-  RawRtpPacket* BuildMediaRedPacket(const RawRtpPacket* packet);
+ protected:
+  // Given |header|, writes the appropriate RTP header fields in |data|.
+  static void WriteRtpHeader(const RTPHeader& header, uint8_t* data);
 
-  // Creates a new RtpPacket with FEC payload and red header. Does this by
-  // creating a new fake media RtpPacket, clears the marker bit and adds a RED
-  // header. Finally replaces the payload with the content of |packet->data|.
-  RawRtpPacket* BuildFecRedPacket(const ForwardErrorCorrection::Packet* packet);
-
-  void SetRedHeader(ForwardErrorCorrection::Packet* red_packet,
-                    uint8_t payload_type,
-                    size_t header_length) const;
+  // Number of packets left to generate, in the current frame.
+  size_t num_packets_;
 
  private:
-  static void BuildRtpHeader(uint8_t* data, const RTPHeader* header);
-
-  int num_packets_;
+  uint32_t ssrc_;
   uint16_t seq_num_;
   uint32_t timestamp_;
+};
+
+// This class generates media and ULPFEC packets (both encapsulated in RED)
+// for a single frame.
+class UlpfecPacketGenerator : public AugmentedPacketGenerator {
+ public:
+  explicit UlpfecPacketGenerator(uint32_t ssrc);
+
+  // Creates a new AugmentedPacket with the RED header added to the packet.
+  static std::unique_ptr<AugmentedPacket> BuildMediaRedPacket(
+      const AugmentedPacket& packet);
+
+  // Creates a new AugmentedPacket with FEC payload and RED header. Does this by
+  // creating a new fake media AugmentedPacket, clears the marker bit and adds a
+  // RED header. Finally replaces the payload with the content of
+  // |packet->data|.
+  std::unique_ptr<AugmentedPacket> BuildUlpfecRedPacket(
+      const ForwardErrorCorrection::Packet& packet);
+
+ private:
+  static void SetRedHeader(uint8_t payload_type,
+                           size_t header_length,
+                           AugmentedPacket* red_packet);
 };
 
 }  // namespace fec
