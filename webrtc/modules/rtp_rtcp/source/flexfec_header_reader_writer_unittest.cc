@@ -28,8 +28,8 @@ namespace webrtc {
 
 namespace {
 
-using Packet = ::webrtc::ForwardErrorCorrection::Packet;
-using ReceivedFecPacket = ::webrtc::ForwardErrorCorrection::ReceivedFecPacket;
+using Packet = ForwardErrorCorrection::Packet;
+using ReceivedFecPacket = ForwardErrorCorrection::ReceivedFecPacket;
 
 // General. Assume single-stream protection.
 constexpr uint32_t kMediaSsrc = 1254983;

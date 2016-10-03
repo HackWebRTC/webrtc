@@ -12,6 +12,7 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/basictypes.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/fec_test_helper.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
@@ -21,12 +22,12 @@
 namespace webrtc {
 
 namespace {
-constexpr uint8_t kFecPayloadType = 96;
-constexpr uint8_t kRedPayloadType = 97;
-}  // namespace
+using test::fec::RawRtpPacket;
+using test::fec::UlpfecPacketGenerator;
 
-using ::webrtc::test::fec::RawRtpPacket;
-using ::webrtc::test::fec::UlpfecPacketGenerator;
+constexpr int kFecPayloadType = 96;
+constexpr int kRedPayloadType = 97;
+}  // namespace
 
 void VerifyHeader(uint16_t seq_num,
                   uint32_t timestamp,
@@ -41,8 +42,8 @@ void VerifyHeader(uint16_t seq_num,
   EXPECT_EQ(marker_bit ? 0x80 : 0, data[1] & 0x80);
   EXPECT_EQ(red_payload_type, data[1] & 0x7F);
   EXPECT_EQ(seq_num, (data[2] << 8) + data[3]);
-  uint32_t parsed_timestamp = (data[4] << 24) + (data[5] << 16) +
-      (data[6] << 8) + data[7];
+  uint32_t parsed_timestamp =
+      (data[4] << 24) + (data[5] << 16) + (data[6] << 8) + data[7];
   EXPECT_EQ(timestamp, parsed_timestamp);
   EXPECT_EQ(static_cast<uint8_t>(fec_payload_type), data[kRtpHeaderSize]);
 }
@@ -86,7 +87,7 @@ TEST_F(ProducerFecTest, NoEmptyFecWithSeqNumGaps) {
     }
     ByteWriter<uint16_t>::WriteBigEndian(&packet[2], p.seq_num);
     producer_.AddRtpPacketAndGenerateFec(packet, p.payload_size, p.header_size);
-    uint16_t num_fec_packets = producer_.NumAvailableFecPackets();
+    size_t num_fec_packets = producer_.NumAvailableFecPackets();
     if (num_fec_packets > 0) {
       std::vector<std::unique_ptr<RedPacket>> fec_packets =
           producer_.GetFecPacketsAsRed(kRedPayloadType, kFecPayloadType, 100,
@@ -103,13 +104,13 @@ TEST_F(ProducerFecTest, OneFrameFec) {
   // (1) protection factor is high enough so that actual overhead over 1 frame
   // of packets is within |kMaxExcessOverhead|, and (2) the total number of
   // media packets for 1 frame is at least |minimum_media_packets_fec_|.
-  const int kNumPackets = 4;
+  constexpr size_t kNumPackets = 4;
   FecProtectionParams params = {15, 3, kFecMaskRandom};
   std::list<RawRtpPacket*> rtp_packets;
   generator_.NewFrame(kNumPackets);
   producer_.SetFecParameters(&params, 0);  // Expecting one FEC packet.
   uint32_t last_timestamp = 0;
-  for (int i = 0; i < kNumPackets; ++i) {
+  for (size_t i = 0; i < kNumPackets; ++i) {
     RawRtpPacket* rtp_packet = generator_.NextPacket(i, 10);
     rtp_packets.push_back(rtp_packet);
     EXPECT_EQ(0, producer_.AddRtpPacketAndGenerateFec(
@@ -139,16 +140,16 @@ TEST_F(ProducerFecTest, TwoFrameFec) {
   // |kNumFrames| is within |kMaxExcessOverhead|, and (2) the total number of
   // media packets for |kNumFrames| frames is at least
   // |minimum_media_packets_fec_|.
-  const int kNumPackets = 2;
-  const int kNumFrames = 2;
+  constexpr size_t kNumPackets = 2;
+  constexpr size_t kNumFrames = 2;
 
   FecProtectionParams params = {15, 3, kFecMaskRandom};
   std::list<RawRtpPacket*> rtp_packets;
   producer_.SetFecParameters(&params, 0);  // Expecting one FEC packet.
   uint32_t last_timestamp = 0;
-  for (int i = 0; i < kNumFrames; ++i) {
+  for (size_t i = 0; i < kNumFrames; ++i) {
     generator_.NewFrame(kNumPackets);
-    for (int j = 0; j < kNumPackets; ++j) {
+    for (size_t j = 0; j < kNumPackets; ++j) {
       RawRtpPacket* rtp_packet = generator_.NextPacket(i * kNumPackets + j, 10);
       rtp_packets.push_back(rtp_packet);
       EXPECT_EQ(0, producer_.AddRtpPacketAndGenerateFec(
@@ -182,8 +183,9 @@ TEST_F(ProducerFecTest, BuildRedPacket) {
                packet->header.header.timestamp, kRedPayloadType,
                packet->header.header.payloadType, red_packet.get(),
                true);  // Marker bit set.
-  for (int i = 0; i < 10; ++i)
+  for (int i = 0; i < 10; ++i) {
     EXPECT_EQ(i, red_packet->data()[kRtpHeaderSize + 1 + i]);
+  }
   delete packet;
 }
 
