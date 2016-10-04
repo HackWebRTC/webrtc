@@ -349,7 +349,7 @@ class BufferT {
   // Called when *this has been moved from. Conceptually it's a no-op, but we
   // can mutate the state slightly to help subsequent sanity checks catch bugs.
   void OnMovedFrom() {
-#ifdef NDEBUG
+#if RTC_DCHECK_IS_ON
     // Make *this consistent and empty. Shouldn't be necessary, but better safe
     // than sorry.
     size_ = 0;

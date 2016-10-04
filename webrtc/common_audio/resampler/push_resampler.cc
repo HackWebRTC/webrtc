@@ -29,7 +29,7 @@ void CheckValidInitParams(int src_sample_rate_hz, int dst_sample_rate_hz,
                           size_t num_channels) {
 // The below checks are temporarily disabled on WEBRTC_WIN due to problems
 // with clang debug builds.
-#if !defined(WEBRTC_WIN) && defined(__clang__) && !defined(NDEBUG)
+#if !defined(WEBRTC_WIN) && defined(__clang__)
   RTC_DCHECK_GT(src_sample_rate_hz, 0);
   RTC_DCHECK_GT(dst_sample_rate_hz, 0);
   RTC_DCHECK_GT(num_channels, 0u);
@@ -46,11 +46,11 @@ void CheckExpectedBufferSizes(size_t src_length,
 // with clang debug builds.
 // TODO(tommi): Re-enable when we've figured out what the problem is.
 // http://crbug.com/615050
-#if !defined(WEBRTC_WIN) && defined(__clang__) && !defined(NDEBUG)
+#if !defined(WEBRTC_WIN) && defined(__clang__)
   const size_t src_size_10ms = src_sample_rate * num_channels / 100;
   const size_t dst_size_10ms = dst_sample_rate * num_channels / 100;
-  RTC_CHECK_EQ(src_length, src_size_10ms);
-  RTC_CHECK_GE(dst_capacity, dst_size_10ms);
+  RTC_DCHECK_EQ(src_length, src_size_10ms);
+  RTC_DCHECK_GE(dst_capacity, dst_size_10ms);
 #endif
 }
 }

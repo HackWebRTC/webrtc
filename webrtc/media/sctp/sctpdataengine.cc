@@ -118,7 +118,7 @@ enum {
 
 // Helper for logging SCTP messages.
 void DebugSctpPrintf(const char* format, ...) {
-#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
+#if RTC_DCHECK_IS_ON
   char s[255];
   va_list ap;
   va_start(ap, format);
