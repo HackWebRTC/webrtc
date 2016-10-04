@@ -49,8 +49,7 @@ class ProducerFec {
                                                    size_t rtp_header_length,
                                                    int red_payload_type);
 
-  void SetFecParameters(const FecProtectionParams* params,
-                        int num_first_partition);
+  void SetFecParameters(const FecProtectionParams* params);
 
   // Adds a media packet to the internal buffer. When enough media packets
   // have been added, the FEC packets are generated and stored internally.
@@ -100,7 +99,6 @@ class ProducerFec {
   ForwardErrorCorrection::PacketList media_packets_;
   std::list<ForwardErrorCorrection::Packet*> generated_fec_packets_;
   int num_protected_frames_;
-  int num_important_packets_;
   int min_num_media_packets_;
   FecProtectionParams params_;
   FecProtectionParams new_params_;

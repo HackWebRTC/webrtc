@@ -81,7 +81,7 @@ TEST_F(ProducerFecTest, NoEmptyFecWithSeqNumGaps) {
   protected_packets.push_back({21, 0, 55, 0});
   protected_packets.push_back({13, 3, 57, 1});
   FecProtectionParams params = {117, 3, kFecMaskBursty};
-  producer_.SetFecParameters(&params, 0);
+  producer_.SetFecParameters(&params);
   uint8_t packet[28] = {0};
   for (Packet p : protected_packets) {
     if (p.marker_bit) {
@@ -111,7 +111,7 @@ TEST_F(ProducerFecTest, OneFrameFec) {
   constexpr size_t kNumPackets = 4;
   FecProtectionParams params = {15, 3, kFecMaskRandom};
   packet_generator_.NewFrame(kNumPackets);
-  producer_.SetFecParameters(&params, 0);  // Expecting one FEC packet.
+  producer_.SetFecParameters(&params);  // Expecting one FEC packet.
   uint32_t last_timestamp = 0;
   for (size_t i = 0; i < kNumPackets; ++i) {
     std::unique_ptr<AugmentedPacket> packet =
@@ -143,7 +143,7 @@ TEST_F(ProducerFecTest, TwoFrameFec) {
   constexpr size_t kNumFrames = 2;
 
   FecProtectionParams params = {15, 3, kFecMaskRandom};
-  producer_.SetFecParameters(&params, 0);  // Expecting one FEC packet.
+  producer_.SetFecParameters(&params);  // Expecting one FEC packet.
   uint32_t last_timestamp = 0;
   for (size_t i = 0; i < kNumFrames; ++i) {
     packet_generator_.NewFrame(kNumPackets);

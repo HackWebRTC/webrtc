@@ -99,7 +99,6 @@ size_t RedPacket::length() const {
 ProducerFec::ProducerFec()
     : fec_(ForwardErrorCorrection::CreateUlpfec()),
       num_protected_frames_(0),
-      num_important_packets_(0),
       min_num_media_packets_(1) {
   memset(&params_, 0, sizeof(params_));
   memset(&new_params_, 0, sizeof(new_params_));
@@ -121,19 +120,12 @@ std::unique_ptr<RedPacket> ProducerFec::BuildRedPacket(
   return red_packet;
 }
 
-void ProducerFec::SetFecParameters(const FecProtectionParams* params,
-                                   int num_important_packets) {
-  // Number of important packets (i.e. number of packets receiving additional
-  // protection in 'unequal protection mode') cannot exceed kMaxMediaPackets.
+void ProducerFec::SetFecParameters(const FecProtectionParams* params) {
   RTC_DCHECK_GE(params->fec_rate, 0);
   RTC_DCHECK_LE(params->fec_rate, 255);
-  if (num_important_packets > static_cast<int>(kUlpfecMaxMediaPackets)) {
-    num_important_packets = kUlpfecMaxMediaPackets;
-  }
   // Store the new params and apply them for the next set of FEC packets being
   // produced.
   new_params_ = *params;
-  num_important_packets_ = num_important_packets;
   if (params->fec_rate > kHighProtectionThreshold) {
     min_num_media_packets_ = kMinMediaPackets;
   } else {
@@ -169,16 +161,11 @@ int ProducerFec::AddRtpPacketAndGenerateFec(const uint8_t* data_buffer,
   if (complete_frame &&
       (num_protected_frames_ == params_.max_fec_frames ||
        (ExcessOverheadBelowMax() && MinimumMediaPacketsReached()))) {
-    RTC_DCHECK_LE(num_important_packets_,
-                  static_cast<int>(kUlpfecMaxMediaPackets));
-    // TODO(pbos): Consider whether unequal protection should be enabled or not,
-    // it is currently always disabled.
-    //
-    // Since unequal protection is disabled, the value of
-    // |num_important_packets_| has no importance when calling GenerateFec().
+    // We are not using Unequal Protection feature of the parity erasure code.
+    constexpr int kNumImportantPackets = 0;
     constexpr bool kUseUnequalProtection = false;
     int ret = fec_->EncodeFec(media_packets_, params_.fec_rate,
-                              num_important_packets_, kUseUnequalProtection,
+                              kNumImportantPackets, kUseUnequalProtection,
                               params_.fec_mask_type, &generated_fec_packets_);
     if (generated_fec_packets_.empty()) {
       ResetState();

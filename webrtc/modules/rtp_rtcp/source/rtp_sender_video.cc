@@ -273,11 +273,7 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
     rtc::CritScope cs(&crit_);
     FecProtectionParams* fec_params =
         frame_type == kVideoFrameKey ? &key_fec_params_ : &delta_fec_params_;
-    // We currently do not use unequal protection in the FEC.
-    // This is signalled both here (by setting the number of important
-    // packets to zero), as well as in ProducerFec::AddRtpPacketAndGenerateFec.
-    constexpr int kNumImportantPackets = 0;
-    producer_fec_.SetFecParameters(fec_params, kNumImportantPackets);
+    producer_fec_.SetFecParameters(fec_params);
     storage = packetizer->GetStorageType(retransmission_settings_);
     red_payload_type = red_payload_type_;
   }
