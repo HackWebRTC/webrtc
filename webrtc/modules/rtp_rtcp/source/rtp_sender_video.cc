@@ -129,7 +129,7 @@ void RTPSenderVideo::SendVideoPacketAsRed(
     if (num_fec_packets > 0) {
       uint16_t first_fec_sequence_number =
           rtp_sender_->AllocateSequenceNumber(num_fec_packets);
-      fec_packets = producer_fec_.GetFecPacketsAsRed(
+      fec_packets = producer_fec_.GetUlpfecPacketsAsRed(
           red_payload_type_, fec_payload_type_, first_fec_sequence_number,
           media_packet->headers_size());
       RTC_DCHECK_EQ(num_fec_packets, fec_packets.size());

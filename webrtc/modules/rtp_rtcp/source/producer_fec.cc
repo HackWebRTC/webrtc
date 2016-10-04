@@ -21,6 +21,8 @@
 
 namespace webrtc {
 
+namespace {
+
 constexpr size_t kRedForFecHeaderLength = 1;
 
 // This controls the maximum amount of excess overhead (actual - target)
@@ -46,6 +48,8 @@ constexpr uint8_t kHighProtectionThreshold = 80;
 // packets per frame (as given by this threshold), at least
 // |kMinMediaPackets| + 1 packets are sent to the FEC code.
 constexpr float kMinMediaPacketsAdaptationThreshold = 2.0f;
+
+}  // namespace
 
 RedPacket::RedPacket(size_t length)
     : data_(new uint8_t[length]),
@@ -101,9 +105,7 @@ ProducerFec::ProducerFec()
   memset(&new_params_, 0, sizeof(new_params_));
 }
 
-ProducerFec::~ProducerFec() {
-  DeleteMediaPackets();
-}
+ProducerFec::~ProducerFec() = default;
 
 std::unique_ptr<RedPacket> ProducerFec::BuildRedPacket(
     const uint8_t* data_buffer,
@@ -179,8 +181,7 @@ int ProducerFec::AddRtpPacketAndGenerateFec(const uint8_t* data_buffer,
                               num_important_packets_, kUseUnequalProtection,
                               params_.fec_mask_type, &generated_fec_packets_);
     if (generated_fec_packets_.empty()) {
-      num_protected_frames_ = 0;
-      DeleteMediaPackets();
+      ResetState();
     }
     return ret;
   }
@@ -216,7 +217,7 @@ size_t ProducerFec::MaxPacketOverhead() const {
   return fec_->MaxPacketOverhead();
 }
 
-std::vector<std::unique_ptr<RedPacket>> ProducerFec::GetFecPacketsAsRed(
+std::vector<std::unique_ptr<RedPacket>> ProducerFec::GetUlpfecPacketsAsRed(
     int red_payload_type,
     int ulpfec_payload_type,
     uint16_t first_seq_num,
@@ -240,18 +241,13 @@ std::vector<std::unique_ptr<RedPacket>> ProducerFec::GetFecPacketsAsRed(
     red_packet->AssignPayload(fec_packet->data, fec_packet->length);
     red_packets.push_back(std::move(red_packet));
   }
-  // Reset state.
-  DeleteMediaPackets();
-  generated_fec_packets_.clear();
-  num_protected_frames_ = 0;
+
+  ResetState();
+
   return red_packets;
 }
 
 int ProducerFec::Overhead() const {
-  // Overhead is defined as relative to the number of media packets, and not
-  // relative to total number of packets. This definition is inherited from the
-  // protection factor produced by video_coding module and how the FEC
-  // generation is implemented.
   RTC_DCHECK(!media_packets_.empty());
   int num_fec_packets =
       fec_->NumFecPackets(media_packets_.size(), params_.fec_rate);
@@ -259,8 +255,10 @@ int ProducerFec::Overhead() const {
   return (num_fec_packets << 8) / media_packets_.size();
 }
 
-void ProducerFec::DeleteMediaPackets() {
+void ProducerFec::ResetState() {
   media_packets_.clear();
+  generated_fec_packets_.clear();
+  num_protected_frames_ = 0;
 }
 
 }  // namespace webrtc

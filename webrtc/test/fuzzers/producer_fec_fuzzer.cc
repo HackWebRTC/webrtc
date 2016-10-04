@@ -53,8 +53,8 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     const size_t num_fec_packets = producer.NumAvailableFecPackets();
     if (num_fec_packets > 0) {
       std::vector<std::unique_ptr<RedPacket>> fec_packets =
-          producer.GetFecPacketsAsRed(kRedPayloadType, kFecPayloadType, 100,
-                                      rtp_header_length);
+          producer.GetUlpfecPacketsAsRed(kRedPayloadType, kFecPayloadType, 100,
+                                         rtp_header_length);
       RTC_CHECK_EQ(num_fec_packets, fec_packets.size());
     }
   }

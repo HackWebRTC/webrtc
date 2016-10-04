@@ -94,8 +94,8 @@ TEST_F(ProducerFecTest, NoEmptyFecWithSeqNumGaps) {
     size_t num_fec_packets = producer_.NumAvailableFecPackets();
     if (num_fec_packets > 0) {
       std::vector<std::unique_ptr<RedPacket>> fec_packets =
-          producer_.GetFecPacketsAsRed(kRedPayloadType, kFecPayloadType, 100,
-                                       p.header_size);
+          producer_.GetUlpfecPacketsAsRed(kRedPayloadType, kFecPayloadType, 100,
+                                          p.header_size);
       EXPECT_EQ(num_fec_packets, fec_packets.size());
     }
   }
@@ -123,8 +123,8 @@ TEST_F(ProducerFecTest, OneFrameFec) {
   EXPECT_TRUE(producer_.FecAvailable());
   uint16_t seq_num = packet_generator_.NextPacketSeqNum();
   std::vector<std::unique_ptr<RedPacket>> red_packets =
-      producer_.GetFecPacketsAsRed(kRedPayloadType, kFecPayloadType, seq_num,
-                                   kRtpHeaderSize);
+      producer_.GetUlpfecPacketsAsRed(kRedPayloadType, kFecPayloadType, seq_num,
+                                      kRtpHeaderSize);
   EXPECT_FALSE(producer_.FecAvailable());
   ASSERT_EQ(1u, red_packets.size());
   VerifyHeader(seq_num, last_timestamp, kRedPayloadType, kFecPayloadType,
@@ -158,8 +158,8 @@ TEST_F(ProducerFecTest, TwoFrameFec) {
   EXPECT_TRUE(producer_.FecAvailable());
   uint16_t seq_num = packet_generator_.NextPacketSeqNum();
   std::vector<std::unique_ptr<RedPacket>> red_packets =
-      producer_.GetFecPacketsAsRed(kRedPayloadType, kFecPayloadType, seq_num,
-                                   kRtpHeaderSize);
+      producer_.GetUlpfecPacketsAsRed(kRedPayloadType, kFecPayloadType, seq_num,
+                                      kRtpHeaderSize);
   EXPECT_FALSE(producer_.FecAvailable());
   ASSERT_EQ(1u, red_packets.size());
   VerifyHeader(seq_num, last_timestamp, kRedPayloadType, kFecPayloadType,

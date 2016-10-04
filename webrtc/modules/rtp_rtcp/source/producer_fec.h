@@ -59,6 +59,28 @@ class ProducerFec {
                                  size_t payload_length,
                                  size_t rtp_header_length);
 
+  // Returns true if there are generated FEC packets available.
+  bool FecAvailable() const;
+
+  size_t NumAvailableFecPackets() const;
+
+  // Returns the overhead, per packet, for FEC (and possibly RED).
+  size_t MaxPacketOverhead() const;
+
+  // Returns generated FEC packets with RED headers added.
+  std::vector<std::unique_ptr<RedPacket>> GetUlpfecPacketsAsRed(
+      int red_payload_type,
+      int ulpfec_payload_type,
+      uint16_t first_seq_num,
+      size_t rtp_header_length);
+
+ private:
+  // Overhead is defined as relative to the number of media packets, and not
+  // relative to total number of packets. This definition is inherited from the
+  // protection factor produced by video_coding module and how the FEC
+  // generation is implemented.
+  int Overhead() const;
+
   // Returns true if the excess overhead (actual - target) for the FEC is below
   // the amount |kMaxExcessOverhead|. This effects the lower protection level
   // cases and low number of media packets/frame. The target overhead is given
@@ -72,23 +94,8 @@ class ProducerFec {
   // (e.g. (2k,2m) vs (k,m)) are generally more effective at recovering losses.
   bool MinimumMediaPacketsReached() const;
 
-  // Returns true if there are generated FEC packets available.
-  bool FecAvailable() const;
+  void ResetState();
 
-  size_t NumAvailableFecPackets() const;
-
-  size_t MaxPacketOverhead() const;
-
-  // Returns generated FEC packets with RED headers added.
-  std::vector<std::unique_ptr<RedPacket>> GetFecPacketsAsRed(
-      int red_payload_type,
-      int ulpfec_payload_type,
-      uint16_t first_seq_num,
-      size_t rtp_header_length);
-
- private:
-  void DeleteMediaPackets();
-  int Overhead() const;
   std::unique_ptr<ForwardErrorCorrection> fec_;
   ForwardErrorCorrection::PacketList media_packets_;
   std::list<ForwardErrorCorrection::Packet*> generated_fec_packets_;
