@@ -1769,7 +1769,7 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
     int32_t InitEncode(const VideoCodec* config,
                        int32_t number_of_cores,
                        size_t max_payload_size) override {
-      if (num_initializations_ == 0) {
+      if (num_initializations_ < 2) {
         // Verify default values.
         EXPECT_EQ(kRealtimeVideo, config->mode);
       } else {
@@ -1777,18 +1777,23 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
         EXPECT_EQ(kScreensharing, config->mode);
       }
       ++num_initializations_;
-      init_encode_event_.Set();
+      if (num_initializations_ > 1) {
+        // Skip the first two InitEncode events: one with QCIF resolution when
+        // the SendStream is created, the other with QVGA when the first frame
+        // is encoded.
+        init_encode_event_.Set();
+      }
       return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
     }
 
     void PerformTest() override {
       EXPECT_TRUE(init_encode_event_.Wait(kDefaultTimeoutMs));
-      EXPECT_EQ(1u, num_initializations_) << "VideoEncoder not initialized.";
+      EXPECT_EQ(2u, num_initializations_) << "VideoEncoder not initialized.";
 
       encoder_config_.content_type = VideoEncoderConfig::ContentType::kScreen;
       stream_->ReconfigureVideoEncoder(std::move(encoder_config_));
       EXPECT_TRUE(init_encode_event_.Wait(kDefaultTimeoutMs));
-      EXPECT_EQ(2u, num_initializations_)
+      EXPECT_EQ(3u, num_initializations_)
           << "ReconfigureVideoEncoder did not reinitialize the encoder with "
              "new encoder settings.";
     }
@@ -1865,7 +1870,12 @@ class VideoCodecConfigObserver : public test::SendTest,
     EXPECT_EQ(video_codec_type_, config->codecType);
     VerifyCodecSpecifics(*config);
     ++num_initializations_;
-    init_encode_event_.Set();
+    if (num_initializations_ > 1) {
+      // Skip the first two InitEncode events: one with QCIF resolution when
+      // the SendStream is created, the other with QVGA when the first frame is
+      // encoded.
+      init_encode_event_.Set();
+    }
     return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
   }
 
@@ -1876,14 +1886,14 @@ class VideoCodecConfigObserver : public test::SendTest,
   void PerformTest() override {
     EXPECT_TRUE(
         init_encode_event_.Wait(VideoSendStreamTest::kDefaultTimeoutMs));
-    ASSERT_EQ(1u, num_initializations_) << "VideoEncoder not initialized.";
+    ASSERT_EQ(2u, num_initializations_) << "VideoEncoder not initialized.";
 
     encoder_settings_.frameDroppingOn = true;
     encoder_config_.encoder_specific_settings = GetEncoderSpecificSettings();
     stream_->ReconfigureVideoEncoder(std::move(encoder_config_));
     ASSERT_TRUE(
         init_encode_event_.Wait(VideoSendStreamTest::kDefaultTimeoutMs));
-    EXPECT_EQ(2u, num_initializations_)
+    EXPECT_EQ(3u, num_initializations_)
         << "ReconfigureVideoEncoder did not reinitialize the encoder with "
            "new encoder settings.";
   }
