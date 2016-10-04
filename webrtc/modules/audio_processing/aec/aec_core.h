@@ -226,7 +226,6 @@ struct AecCore {
   void* delay_estimator;
   // Variables associated with delay correction through signal based delay
   // estimation feedback.
-  int signal_delay_correction;
   int previous_delay;
   int delay_correction_count;
   int shift_offset;

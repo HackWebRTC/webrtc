@@ -1617,7 +1617,6 @@ int WebRtcAec_InitAec(AecCore* aec, int sampFreq) {
   aec->delay_std = -1;
   aec->fraction_poor_delays = -1.0f;
 
-  aec->signal_delay_correction = 0;
   aec->previous_delay = -2;  // (-2): Uninitialized.
   aec->delay_correction_count = 0;
   aec->shift_offset = kInitialShiftOffset;
@@ -1883,7 +1882,6 @@ void WebRtcAec_ProcessFrames(AecCore* aec,
       WebRtc_SoftResetDelayEstimator(aec->delay_estimator, moved_elements);
       WebRtc_SoftResetDelayEstimatorFarend(aec->delay_estimator_farend,
                                            moved_elements);
-      aec->signal_delay_correction += moved_elements;
       // If we rely on reported system delay values only, a buffer underrun here
       // can never occur since we've taken care of that in 1) above.  Here, we
       // apply signal based delay correction and can therefore end up with
