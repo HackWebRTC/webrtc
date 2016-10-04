@@ -36,24 +36,26 @@ class BitrateProber {
   // with.
   void OnIncomingPacket(size_t packet_size);
 
-  // Create a cluster used to probe for |bitrate_bps| with |num_packets| number
-  // of packets.
-  void CreateProbeCluster(int bitrate_bps, int num_packets);
+  // Create a cluster used to probe for |bitrate_bps| with |num_probes| number
+  // of probes.
+  void CreateProbeCluster(int bitrate_bps, int num_probes);
 
-  // Returns the number of milliseconds until the next packet should be sent to
+  // Returns the number of milliseconds until the next probe should be sent to
   // get accurate probing.
   int TimeUntilNextProbe(int64_t now_ms);
 
   // Which cluster that is currently being used for probing.
   int CurrentClusterId() const;
 
-  // Returns the number of bytes that the prober recommends for the next probe
-  // packet.
-  size_t RecommendedPacketSize() const;
+  // Returns the minimum number of bytes that the prober recommends for
+  // the next probe.
+  size_t RecommendedMinProbeSize() const;
 
-  // Called to report to the prober that a packet has been sent, which helps the
-  // prober know when to move to the next packet in a probe.
-  void PacketSent(int64_t now_ms, size_t packet_size);
+  // Called to report to the prober that a probe has been sent. In case of
+  // multiple packets per probe, this call would be made at the end of sending
+  // the last packet in probe. |probe_size| is the total size of all packets
+  // in probe.
+  void ProbeSent(int64_t now_ms, size_t probe_size);
 
  private:
   enum class ProbingState {
@@ -69,9 +71,11 @@ class BitrateProber {
     kSuspended,
   };
 
+  // A probe cluster consists of a set of probes. Each probe in turn can be
+  // divided into a number of packets to accomodate the MTU on the network.
   struct ProbeCluster {
-    int max_probe_packets = 0;
-    int sent_probe_packets = 0;
+    int max_probes = 0;
+    int sent_probes = 0;
     int probe_bitrate_bps = 0;
     int id = -1;
   };
@@ -84,7 +88,8 @@ class BitrateProber {
   // the previous probe packet based on the size and time when that packet was
   // sent.
   std::queue<ProbeCluster> clusters_;
-  size_t packet_size_last_sent_;
+  // A probe can include one or more packets.
+  size_t probe_size_last_sent_;
   // The last time a probe was sent.
   int64_t time_last_probe_sent_ms_;
   int next_cluster_id_;

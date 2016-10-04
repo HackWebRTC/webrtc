@@ -137,7 +137,7 @@ class PacedSender : public Module, public RtpPacketSender {
 
   bool SendPacket(const paced_sender::Packet& packet, int probe_cluster_id)
       EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-  void SendPadding(size_t padding_needed, int probe_cluster_id)
+  size_t SendPadding(size_t padding_needed, int probe_cluster_id)
       EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
   Clock* const clock_;

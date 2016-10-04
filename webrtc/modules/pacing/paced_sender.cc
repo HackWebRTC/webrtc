@@ -402,8 +402,13 @@ void PacedSender::Process() {
   }
 
   bool is_probing = prober_->IsProbing();
-  int probe_cluster_id = is_probing ? prober_->CurrentClusterId()
-                                    : PacketInfo::kNotAProbe;
+  int probe_cluster_id = PacketInfo::kNotAProbe;
+  size_t bytes_sent = 0;
+  size_t recommended_probe_size = 0;
+  if (is_probing) {
+    probe_cluster_id = prober_->CurrentClusterId();
+    recommended_probe_size = prober_->RecommendedMinProbeSize();
+  }
   while (!packets_->Empty()) {
     // Since we need to release the lock in order to send, we first pop the
     // element from the priority queue but keep it in storage, so that we can
@@ -412,30 +417,32 @@ void PacedSender::Process() {
 
     if (SendPacket(packet, probe_cluster_id)) {
       // Send succeeded, remove it from the queue.
+      bytes_sent += packet.bytes;
       packets_->FinalizePop(packet);
-      if (is_probing)
-        return;
+      if (is_probing && bytes_sent > recommended_probe_size)
+        break;
     } else {
       // Send failed, put it back into the queue.
       packets_->CancelPop(packet);
-      return;
+      break;
     }
   }
 
-  RTC_DCHECK(packets_->Empty());
   // TODO(holmer): Remove the paused_ check when issue 5307 has been fixed.
-  if (paused_)
-    return;
+  if (packets_->Empty() && !paused_) {
+    // We can not send padding unless a normal packet has first been sent. If we
+    // do, timestamps get messed up.
+    if (packet_counter_ > 0) {
+      int padding_needed =
+          static_cast<int>(is_probing ? (recommended_probe_size - bytes_sent)
+                                      : padding_budget_->bytes_remaining());
 
-  // We can not send padding unless a normal packet has first been sent. If we
-  // do, timestamps get messed up.
-  if (packet_counter_ > 0) {
-    size_t padding_needed = is_probing ? prober_->RecommendedPacketSize()
-                                       : padding_budget_->bytes_remaining();
-
-    if (padding_needed > 0)
-      SendPadding(padding_needed, probe_cluster_id);
+      if (padding_needed > 0)
+        bytes_sent += SendPadding(padding_needed, probe_cluster_id);
+    }
   }
+  if (is_probing && bytes_sent > 0)
+    prober_->ProbeSent(clock_->TimeInMilliseconds(), bytes_sent);
 }
 
 bool PacedSender::SendPacket(const paced_sender::Packet& packet,
@@ -458,7 +465,6 @@ bool PacedSender::SendPacket(const paced_sender::Packet& packet,
   critsect_->Enter();
 
   if (success) {
-    prober_->PacketSent(clock_->TimeInMilliseconds(), packet.bytes);
     // TODO(holmer): High priority packets should only be accounted for if we
     // are allocating bandwidth for audio.
     if (packet.priority != kHighPriority) {
@@ -471,17 +477,17 @@ bool PacedSender::SendPacket(const paced_sender::Packet& packet,
   return success;
 }
 
-void PacedSender::SendPadding(size_t padding_needed, int probe_cluster_id) {
+size_t PacedSender::SendPadding(size_t padding_needed, int probe_cluster_id) {
   critsect_->Leave();
   size_t bytes_sent =
       packet_sender_->TimeToSendPadding(padding_needed, probe_cluster_id);
   critsect_->Enter();
 
   if (bytes_sent > 0) {
-    prober_->PacketSent(clock_->TimeInMilliseconds(), bytes_sent);
     media_budget_->UseBudget(bytes_sent);
     padding_budget_->UseBudget(bytes_sent);
   }
+  return bytes_sent;
 }
 
 void PacedSender::UpdateBytesPerInterval(int64_t delta_time_ms) {

@@ -1046,6 +1046,83 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
   RunBaseTest(&test);
 }
 
+TEST_F(VideoSendStreamTest, PaddingIsPrimarilyRetransmissions) {
+  const int kCapacityKbps = 10000;  // 10 Mbps
+  class PaddingIsPrimarilyRetransmissions : public test::EndToEndTest {
+   public:
+    PaddingIsPrimarilyRetransmissions()
+        : EndToEndTest(kDefaultTimeoutMs),
+          clock_(Clock::GetRealTimeClock()),
+          padding_length_(0),
+          total_length_(0),
+          call_(nullptr) {}
+
+   private:
+    void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
+      call_ = sender_call;
+    }
+
+    Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      rtc::CritScope lock(&crit_);
+
+      RTPHeader header;
+      parser_->Parse(packet, length, &header);
+      padding_length_ += header.paddingLength;
+      total_length_ += length;
+      return SEND_PACKET;
+    }
+
+    test::PacketTransport* CreateSendTransport(Call* sender_call) override {
+      const int kNetworkDelayMs = 50;
+      FakeNetworkPipe::Config config;
+      config.loss_percent = 10;
+      config.link_capacity_kbps = kCapacityKbps;
+      config.queue_delay_ms = kNetworkDelayMs;
+      return new test::PacketTransport(sender_call, this,
+                                       test::PacketTransport::kSender, config);
+    }
+
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
+      send_config->rtp.extensions.clear();
+      send_config->rtp.extensions.push_back(
+          RtpExtension(RtpExtension::kTransportSequenceNumberUri,
+                       test::kTransportSequenceNumberExtensionId));
+      // Turn on RTX.
+      send_config->rtp.rtx.payload_type = kFakeVideoSendPayloadType;
+      send_config->rtp.rtx.ssrcs.push_back(kVideoSendSsrcs[0]);
+
+      (*receive_configs)[0].rtp.extensions.clear();
+      (*receive_configs)[0].rtp.extensions.push_back(
+          RtpExtension(RtpExtension::kTransportSequenceNumberUri,
+                       test::kTransportSequenceNumberExtensionId));
+      (*receive_configs)[0].rtp.transport_cc = true;
+    }
+
+    void PerformTest() override {
+      // TODO(isheriff): Some platforms do not ramp up as expected to full
+      // capacity due to packet scheduling delays. Fix that before getting
+      // rid of this.
+      SleepMs(5000);
+      {
+        rtc::CritScope lock(&crit_);
+        // Expect padding to be a small percentage of total bytes sent.
+        EXPECT_LT(padding_length_, .1 * total_length_);
+      }
+    }
+
+    rtc::CriticalSection crit_;
+    Clock* const clock_;
+    size_t padding_length_ GUARDED_BY(crit_);
+    size_t total_length_ GUARDED_BY(crit_);
+    Call* call_;
+  } test;
+
+  RunBaseTest(&test);
+}
+
 // This test first observes "high" bitrate use at which point it sends a REMB to
 // indicate that it should be lowered significantly. The test then observes that
 // the bitrate observed is sinking well below the min-transmit-bitrate threshold
