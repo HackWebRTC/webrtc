@@ -429,7 +429,6 @@
             'profiler.h',
             'proxyserver.cc',
             'proxyserver.h',
-            'referencecountedsingletonfactory.h',
             'rollingaccumulator.h',
             'scopedptrcollection.h',
             'sslconfig.h',
