@@ -184,9 +184,8 @@ class NetEqExternalVsInternalDecoderTest : public NetEqExternalDecoderUnitTest,
   }
 
   void SetUp() override {
-    ASSERT_EQ(NetEq::kOK, neteq_internal_->RegisterPayloadType(
-                              NetEqDecoder::kDecoderPCM16Bswb32kHz,
-                              "pcm16-swb32", kPayloadType));
+    ASSERT_EQ(true, neteq_internal_->RegisterPayloadType(
+                        kPayloadType, SdpAudioFormat("L16", 32000, 1)));
   }
 
   void GetAndVerifyOutput() override {

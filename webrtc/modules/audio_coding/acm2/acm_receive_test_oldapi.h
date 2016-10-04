@@ -15,6 +15,8 @@
 #include <string>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/modules/audio_coding/codecs/audio_decoder_factory.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
@@ -37,7 +39,8 @@ class AcmReceiveTestOldApi {
   AcmReceiveTestOldApi(PacketSource* packet_source,
                        AudioSink* audio_sink,
                        int output_freq_hz,
-                       NumOutputChannels exptected_output_channels);
+                       NumOutputChannels exptected_output_channels,
+                       rtc::scoped_refptr<AudioDecoderFactory> decoder_factory);
   virtual ~AcmReceiveTestOldApi();
 
   // Registers the codecs with default parameters from ACM.
@@ -55,6 +58,8 @@ class AcmReceiveTestOldApi {
 
   // Runs the test and returns true if successful.
   void Run();
+
+  AudioCodingModule* get_acm() { return acm_.get(); }
 
  protected:
   // Method is called after each block of output audio is received from ACM.

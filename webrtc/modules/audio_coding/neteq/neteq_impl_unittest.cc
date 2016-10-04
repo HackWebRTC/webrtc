@@ -211,7 +211,7 @@ TEST(NetEq, CreateAndDestroy) {
   delete neteq;
 }
 
-TEST_F(NetEqImplTest, RegisterPayloadType) {
+TEST_F(NetEqImplTest, RegisterPayloadTypeNetEqDecoder) {
   CreateInstance();
   uint8_t rtp_payload_type = 0;
   NetEqDecoder codec_type = NetEqDecoder::kDecoderPCMu;
@@ -219,6 +219,15 @@ TEST_F(NetEqImplTest, RegisterPayloadType) {
   EXPECT_CALL(*mock_decoder_database_,
               RegisterPayload(rtp_payload_type, codec_type, kCodecName));
   neteq_->RegisterPayloadType(codec_type, kCodecName, rtp_payload_type);
+}
+
+TEST_F(NetEqImplTest, RegisterPayloadType) {
+  CreateInstance();
+  constexpr int rtp_payload_type = 0;
+  const SdpAudioFormat format("pcmu", 8000, 1);
+  EXPECT_CALL(*mock_decoder_database_,
+              RegisterPayload(rtp_payload_type, format));
+  neteq_->RegisterPayloadType(rtp_payload_type, format);
 }
 
 TEST_F(NetEqImplTest, RemovePayloadType) {

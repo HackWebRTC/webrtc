@@ -145,6 +145,11 @@ class DecoderDatabase {
                               NetEqDecoder codec_type,
                               const std::string& name);
 
+  // Registers a decoder for the given payload type. Returns kOK on success;
+  // otherwise an error code.
+  virtual int RegisterPayload(int rtp_payload_type,
+                              const SdpAudioFormat& audio_format);
+
   // Registers an externally created AudioDecoder object, and associates it
   // as a decoder of type |codec_type| with |rtp_payload_type|.
   virtual int InsertExternal(uint8_t rtp_payload_type,

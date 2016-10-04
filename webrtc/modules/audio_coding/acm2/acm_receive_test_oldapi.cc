@@ -15,6 +15,7 @@
 
 #include <memory>
 
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_sink.h"
 #include "webrtc/modules/audio_coding/neteq/tools/packet.h"
@@ -97,20 +98,32 @@ bool RemapPltypeAndUseThisCodec(const char* plname,
   }
   return true;
 }
+
+AudioCodingModule::Config MakeAcmConfig(
+    Clock* clock,
+    rtc::scoped_refptr<AudioDecoderFactory> decoder_factory) {
+  AudioCodingModule::Config config;
+  config.id = 0;
+  config.clock = clock;
+  config.decoder_factory = std::move(decoder_factory);
+  return config;
+}
+
 }  // namespace
 
 AcmReceiveTestOldApi::AcmReceiveTestOldApi(
     PacketSource* packet_source,
     AudioSink* audio_sink,
     int output_freq_hz,
-    NumOutputChannels exptected_output_channels)
+    NumOutputChannels exptected_output_channels,
+    rtc::scoped_refptr<AudioDecoderFactory> decoder_factory)
     : clock_(0),
-      acm_(webrtc::AudioCodingModule::Create(0, &clock_)),
+      acm_(webrtc::AudioCodingModule::Create(
+          MakeAcmConfig(&clock_, std::move(decoder_factory)))),
       packet_source_(packet_source),
       audio_sink_(audio_sink),
       output_freq_hz_(output_freq_hz),
-      exptected_output_channels_(exptected_output_channels) {
-}
+      exptected_output_channels_(exptected_output_channels) {}
 
 AcmReceiveTestOldApi::~AcmReceiveTestOldApi() = default;
 
@@ -209,12 +222,12 @@ AcmReceiveTestToggleOutputFreqOldApi::AcmReceiveTestToggleOutputFreqOldApi(
     : AcmReceiveTestOldApi(packet_source,
                            audio_sink,
                            output_freq_hz_1,
-                           exptected_output_channels),
+                           exptected_output_channels,
+                           CreateBuiltinAudioDecoderFactory()),
       output_freq_hz_1_(output_freq_hz_1),
       output_freq_hz_2_(output_freq_hz_2),
       toggle_period_ms_(toggle_period_ms),
-      last_toggle_time_ms_(clock_.TimeInMilliseconds()) {
-}
+      last_toggle_time_ms_(clock_.TimeInMilliseconds()) {}
 
 void AcmReceiveTestToggleOutputFreqOldApi::AfterGetAudio() {
   if (clock_.TimeInMilliseconds() >= last_toggle_time_ms_ + toggle_period_ms_) {

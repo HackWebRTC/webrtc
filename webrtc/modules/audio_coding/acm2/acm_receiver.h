@@ -113,6 +113,10 @@ class AcmReceiver {
                AudioDecoder* audio_decoder,
                const std::string& name);
 
+  // Adds a new decoder to the NetEq codec database. Returns true iff
+  // successful.
+  bool AddCodec(int rtp_payload_type, const SdpAudioFormat& audio_format);
+
   //
   // Sets a minimum delay for packet buffer. The given delay is maintained,
   // unless channel condition dictates a higher delay.

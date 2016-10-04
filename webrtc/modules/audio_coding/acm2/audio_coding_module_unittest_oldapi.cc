@@ -19,6 +19,7 @@
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_coding/acm2/acm_receive_test_oldapi.h"
 #include "webrtc/modules/audio_coding/acm2/acm_send_test_oldapi.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/modules/audio_coding/codecs/g711/audio_decoder_pcm.h"
 #include "webrtc/modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
@@ -182,13 +183,15 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
 
   // Set up L16 codec.
   virtual void SetUpL16Codec() {
+    audio_format_ =
+        rtc::Optional<SdpAudioFormat>(SdpAudioFormat("L16", kSampleRateHz, 1));
     ASSERT_EQ(0, AudioCodingModule::Codec("L16", &codec_, kSampleRateHz, 1));
     codec_.pltype = kPayloadType;
   }
 
   virtual void RegisterCodec() {
-    ASSERT_EQ(0, acm_->RegisterReceiveCodec(codec_));
-    ASSERT_EQ(0, acm_->RegisterSendCodec(codec_));
+    EXPECT_EQ(true, acm_->RegisterReceiveCodec(kPayloadType, *audio_format_));
+    EXPECT_EQ(0, acm_->RegisterSendCodec(codec_));
   }
 
   virtual void InsertPacketAndPullAudio() {
@@ -232,7 +235,12 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
   PacketizationCallbackStubOldApi packet_cb_;
   WebRtcRTPHeader rtp_header_;
   AudioFrame input_frame_;
+
+  // These two have to be kept in sync for now. In the future, we'll be able to
+  // eliminate the CodecInst and keep only the SdpAudioFormat.
+  rtc::Optional<SdpAudioFormat> audio_format_;
   CodecInst codec_;
+
   Clock* clock_;
 };
 
@@ -391,11 +399,14 @@ class AudioCodingModuleTestWithComfortNoiseOldApi
     : public AudioCodingModuleTestOldApi {
  protected:
   void RegisterCngCodec(int rtp_payload_type) {
+    EXPECT_EQ(true,
+              acm_->RegisterReceiveCodec(
+                  rtp_payload_type, SdpAudioFormat("cn", kSampleRateHz, 1)));
+
     CodecInst codec;
-    AudioCodingModule::Codec("CN", &codec, kSampleRateHz, 1);
+    EXPECT_EQ(0, AudioCodingModule::Codec("CN", &codec, kSampleRateHz, 1));
     codec.pltype = rtp_payload_type;
-    ASSERT_EQ(0, acm_->RegisterReceiveCodec(codec));
-    ASSERT_EQ(0, acm_->RegisterSendCodec(codec));
+    EXPECT_EQ(0, acm_->RegisterSendCodec(codec));
   }
 
   void VerifyEncoding() override {
@@ -651,13 +662,15 @@ class AcmIsacMtTestOldApi : public AudioCodingModuleMtTestOldApi {
 
   void RegisterCodec() override {
     static_assert(kSampleRateHz == 16000, "test designed for iSAC 16 kHz");
+    audio_format_ =
+        rtc::Optional<SdpAudioFormat>(SdpAudioFormat("isac", kSampleRateHz, 1));
     AudioCodingModule::Codec("ISAC", &codec_, kSampleRateHz, 1);
     codec_.pltype = kPayloadType;
 
     // Register iSAC codec in ACM, effectively unregistering the PCM16B codec
     // registered in AudioCodingModuleTestOldApi::SetUp();
-    ASSERT_EQ(0, acm_->RegisterReceiveCodec(codec_));
-    ASSERT_EQ(0, acm_->RegisterSendCodec(codec_));
+    EXPECT_EQ(true, acm_->RegisterReceiveCodec(kPayloadType, *audio_format_));
+    EXPECT_EQ(0, acm_->RegisterSendCodec(codec_));
   }
 
   void InsertPacket() override {
@@ -914,9 +927,15 @@ class AcmReceiverBitExactnessOldApi : public ::testing::Test {
     std::string name;
   };
 
+  void Run(int output_freq_hz, const std::string& checksum_ref) {
+    Run(output_freq_hz, checksum_ref, CreateBuiltinAudioDecoderFactory(),
+        [](AudioCodingModule*) {});
+  }
+
   void Run(int output_freq_hz,
            const std::string& checksum_ref,
-           const std::vector<ExternalDecoder>& external_decoders) {
+           rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
+           rtc::FunctionView<void(AudioCodingModule*)> decoder_reg) {
     const std::string input_file_name =
         webrtc::test::ResourcePath("audio_coding/neteq_universal_new", "rtp");
     std::unique_ptr<test::RtpFileSource> packet_source(
@@ -939,16 +958,11 @@ class AcmReceiverBitExactnessOldApi : public ::testing::Test {
     test::AudioSinkFork output(&checksum, &output_file);
 
     test::AcmReceiveTestOldApi test(
-        packet_source.get(),
-        &output,
-        output_freq_hz,
-        test::AcmReceiveTestOldApi::kArbitraryChannels);
+        packet_source.get(), &output, output_freq_hz,
+        test::AcmReceiveTestOldApi::kArbitraryChannels,
+        std::move(decoder_factory));
     ASSERT_NO_FATAL_FAILURE(test.RegisterNetEqTestCodecs());
-    for (const auto& ed : external_decoders) {
-      ASSERT_EQ(0, test.RegisterExternalReceiveCodec(
-                       ed.rtp_payload_type, ed.external_decoder,
-                       ed.sample_rate_hz, ed.num_channels, ed.name));
-    }
+    decoder_reg(test.get_acm());
     test.Run();
 
     std::string checksum_string = checksum.Finish();
@@ -965,95 +979,110 @@ TEST_F(AcmReceiverBitExactnessOldApi, 8kHzOutput) {
   Run(8000, PlatformChecksum("dce4890259e9ded50f472455aa470a6f",
                              "1c4ada78b12612147f3026920f8dcc14",
                              "d804791edf2d00be2bc31c81a47368d4",
-                             "b2611f7323ab1209d5056399d0babbf5"),
-      std::vector<ExternalDecoder>());
+                             "b2611f7323ab1209d5056399d0babbf5"));
 }
 
 TEST_F(AcmReceiverBitExactnessOldApi, 16kHzOutput) {
   Run(16000, PlatformChecksum("27356bddffaa42b5c841b49aa3a070c5",
                               "5667d1872fc351244092ae995e5a5b32",
                               "53f5dc8088148479ca112c4c6d0e91cb",
-                              "4061a876d64d6cec5a38450acf4f245d"),
-      std::vector<ExternalDecoder>());
+                              "4061a876d64d6cec5a38450acf4f245d"));
 }
 
 TEST_F(AcmReceiverBitExactnessOldApi, 32kHzOutput) {
   Run(32000, PlatformChecksum("eb326547e83292305423b0a7ea57fea1",
                               "be7fc3140e6b5188c2e5fae0a394543b",
                               "eab9a0bff17320d6457d04f4c56563c6",
-                              "b60241ef0bac4a75f66eead04e71bb12"),
-      std::vector<ExternalDecoder>());
+                              "b60241ef0bac4a75f66eead04e71bb12"));
 }
 
 TEST_F(AcmReceiverBitExactnessOldApi, 48kHzOutput) {
   Run(48000, PlatformChecksum("7eb79ea39b68472a5b04cf9a56e49cda",
                               "f8cdd6e018688b2fff25c9b865bebdbb",
                               "2d18f0f06e7e2fc63b74d06e3c58067f",
-                              "81c3e4d24ebec23ca48f42fbaec4aba0"),
-      std::vector<ExternalDecoder>());
+                              "81c3e4d24ebec23ca48f42fbaec4aba0"));
 }
 
 TEST_F(AcmReceiverBitExactnessOldApi, 48kHzOutputExternalDecoder) {
-  // Class intended to forward a call from a mock DecodeInternal to Decode on
-  // the real decoder's Decode. DecodeInternal for the real decoder isn't
-  // public.
-  class DecodeForwarder {
+  class ADFactory : public AudioDecoderFactory {
    public:
-    DecodeForwarder(AudioDecoder* decoder) : decoder_(decoder) {}
-    int Decode(const uint8_t* encoded,
-               size_t encoded_len,
-               int sample_rate_hz,
-               int16_t* decoded,
-               AudioDecoder::SpeechType* speech_type) {
-      return decoder_->Decode(encoded, encoded_len, sample_rate_hz,
-                              decoder_->PacketDuration(encoded, encoded_len) *
-                                  decoder_->Channels() * sizeof(int16_t),
-                              decoded, speech_type);
+    ADFactory()
+        : mock_decoder_(new MockAudioDecoder()),
+          pcmu_decoder_(1),
+          decode_forwarder_(&pcmu_decoder_),
+          fact_(CreateBuiltinAudioDecoderFactory()) {
+      // Set expectations on the mock decoder and also delegate the calls to
+      // the real decoder.
+      EXPECT_CALL(*mock_decoder_, IncomingPacket(_, _, _, _, _))
+          .Times(AtLeast(1))
+          .WillRepeatedly(
+              Invoke(&pcmu_decoder_, &AudioDecoderPcmU::IncomingPacket));
+      EXPECT_CALL(*mock_decoder_, SampleRateHz())
+          .Times(AtLeast(1))
+          .WillRepeatedly(
+              Invoke(&pcmu_decoder_, &AudioDecoderPcmU::SampleRateHz));
+      EXPECT_CALL(*mock_decoder_, Channels())
+          .Times(AtLeast(1))
+          .WillRepeatedly(Invoke(&pcmu_decoder_, &AudioDecoderPcmU::Channels));
+      EXPECT_CALL(*mock_decoder_, DecodeInternal(_, _, _, _, _))
+          .Times(AtLeast(1))
+          .WillRepeatedly(Invoke(&decode_forwarder_, &DecodeForwarder::Decode));
+      EXPECT_CALL(*mock_decoder_, HasDecodePlc())
+          .Times(AtLeast(1))
+          .WillRepeatedly(
+              Invoke(&pcmu_decoder_, &AudioDecoderPcmU::HasDecodePlc));
+      EXPECT_CALL(*mock_decoder_, PacketDuration(_, _))
+          .Times(AtLeast(1))
+          .WillRepeatedly(
+              Invoke(&pcmu_decoder_, &AudioDecoderPcmU::PacketDuration));
+      EXPECT_CALL(*mock_decoder_, Die());
+    }
+    std::vector<AudioCodecSpec> GetSupportedDecoders() override {
+      return fact_->GetSupportedDecoders();
+    }
+    std::unique_ptr<AudioDecoder> MakeAudioDecoder(
+        const SdpAudioFormat& format) override {
+      return format.name == "MockPCMu" ? std::move(mock_decoder_)
+                                       : fact_->MakeAudioDecoder(format);
     }
 
    private:
-    AudioDecoder* const decoder_;
+    // Class intended to forward a call from a mock DecodeInternal to Decode on
+    // the real decoder's Decode. DecodeInternal for the real decoder isn't
+    // public.
+    class DecodeForwarder {
+     public:
+      DecodeForwarder(AudioDecoder* decoder) : decoder_(decoder) {}
+      int Decode(const uint8_t* encoded,
+                 size_t encoded_len,
+                 int sample_rate_hz,
+                 int16_t* decoded,
+                 AudioDecoder::SpeechType* speech_type) {
+        return decoder_->Decode(encoded, encoded_len, sample_rate_hz,
+                                decoder_->PacketDuration(encoded, encoded_len) *
+                                    decoder_->Channels() * sizeof(int16_t),
+                                decoded, speech_type);
+      }
+
+     private:
+      AudioDecoder* const decoder_;
+    };
+
+    std::unique_ptr<MockAudioDecoder> mock_decoder_;
+    AudioDecoderPcmU pcmu_decoder_;
+    DecodeForwarder decode_forwarder_;
+    rtc::scoped_refptr<AudioDecoderFactory> fact_;  // Fallback factory.
   };
 
-  AudioDecoderPcmU decoder(1);
-  DecodeForwarder decode_forwarder(&decoder);
-  MockAudioDecoder mock_decoder;
-  // Set expectations on the mock decoder and also delegate the calls to the
-  // real decoder.
-  EXPECT_CALL(mock_decoder, IncomingPacket(_, _, _, _, _))
-      .Times(AtLeast(1))
-      .WillRepeatedly(Invoke(&decoder, &AudioDecoderPcmU::IncomingPacket));
-  EXPECT_CALL(mock_decoder, SampleRateHz())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Invoke(&decoder, &AudioDecoderPcmU::SampleRateHz));
-  EXPECT_CALL(mock_decoder, Channels())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Invoke(&decoder, &AudioDecoderPcmU::Channels));
-  EXPECT_CALL(mock_decoder, DecodeInternal(_, _, _, _, _))
-      .Times(AtLeast(1))
-      .WillRepeatedly(Invoke(&decode_forwarder, &DecodeForwarder::Decode));
-  EXPECT_CALL(mock_decoder, HasDecodePlc())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Invoke(&decoder, &AudioDecoderPcmU::HasDecodePlc));
-  EXPECT_CALL(mock_decoder, PacketDuration(_, _))
-      .Times(AtLeast(1))
-      .WillRepeatedly(Invoke(&decoder, &AudioDecoderPcmU::PacketDuration));
-  ExternalDecoder ed;
-  ed.rtp_payload_type = 0;
-  ed.external_decoder = &mock_decoder;
-  ed.sample_rate_hz = 8000;
-  ed.num_channels = 1;
-  ed.name = "MockPCMU";
-  std::vector<ExternalDecoder> external_decoders;
-  external_decoders.push_back(ed);
-
+  rtc::scoped_refptr<rtc::RefCountedObject<ADFactory>> factory(
+      new rtc::RefCountedObject<ADFactory>);
   Run(48000, PlatformChecksum("7eb79ea39b68472a5b04cf9a56e49cda",
                               "f8cdd6e018688b2fff25c9b865bebdbb",
                               "2d18f0f06e7e2fc63b74d06e3c58067f",
                               "81c3e4d24ebec23ca48f42fbaec4aba0"),
-      external_decoders);
-
-  EXPECT_CALL(mock_decoder, Die());
+      factory, [](AudioCodingModule* acm) {
+        acm->RegisterReceiveCodec(0, {"MockPCMu", 8000, 1});
+      });
 }
 #endif
 
@@ -1141,8 +1170,9 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
     // Have the output audio sent both to file and to the checksum calculator.
     test::AudioSinkFork output(&audio_checksum, &output_file);
     const int kOutputFreqHz = 8000;
-    test::AcmReceiveTestOldApi receive_test(
-        this, &output, kOutputFreqHz, expected_channels);
+    test::AcmReceiveTestOldApi receive_test(this, &output, kOutputFreqHz,
+                                            expected_channels,
+                                            CreateBuiltinAudioDecoderFactory());
     ASSERT_NO_FATAL_FAILURE(receive_test.RegisterDefaultCodecs());
 
     // This is where the actual test is executed.

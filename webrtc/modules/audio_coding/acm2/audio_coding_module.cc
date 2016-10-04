@@ -121,6 +121,9 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   // Get current playout frequency.
   int PlayoutFrequency() const override;
 
+  bool RegisterReceiveCodec(int rtp_payload_type,
+                            const SdpAudioFormat& audio_format) override;
+
   int RegisterReceiveCodec(const CodecInst& receive_codec) override;
   int RegisterReceiveCodec(
       const CodecInst& receive_codec,
@@ -985,6 +988,21 @@ int AudioCodingModuleImpl::PlayoutFrequency() const {
   WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceAudioCoding, id_,
                "PlayoutFrequency()");
   return receiver_.last_output_sample_rate_hz();
+}
+
+bool AudioCodingModuleImpl::RegisterReceiveCodec(
+    int rtp_payload_type,
+    const SdpAudioFormat& audio_format) {
+  rtc::CritScope lock(&acm_crit_sect_);
+  RTC_DCHECK(receiver_initialized_);
+
+  if (!acm2::RentACodec::IsPayloadTypeValid(rtp_payload_type)) {
+    LOG_F(LS_ERROR) << "Invalid payload-type " << rtp_payload_type
+                    << " for decoder.";
+    return false;
+  }
+
+  return receiver_.AddCodec(rtp_payload_type, audio_format);
 }
 
 int AudioCodingModuleImpl::RegisterReceiveCodec(const CodecInst& codec) {

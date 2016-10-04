@@ -178,6 +178,11 @@ class NetEq {
                                       const std::string& codec_name,
                                       uint8_t rtp_payload_type) = 0;
 
+  // Associates |rtp_payload_type| with the given codec, which NetEq will
+  // instantiate when it needs it. Returns true iff successful.
+  virtual bool RegisterPayloadType(int rtp_payload_type,
+                                   const SdpAudioFormat& audio_format) = 0;
+
   // Removes |rtp_payload_type| from the codec database. Returns 0 on success,
   // -1 on failure.
   virtual int RemovePayloadType(uint8_t rtp_payload_type) = 0;

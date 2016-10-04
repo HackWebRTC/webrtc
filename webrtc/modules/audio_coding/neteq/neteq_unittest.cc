@@ -45,6 +45,8 @@ RTC_POP_IGNORING_WUNDEF()
 
 DEFINE_bool(gen_ref, false, "Generate reference files.");
 
+namespace webrtc {
+
 namespace {
 
 const std::string& PlatformChecksum(const std::string& checksum_general,
@@ -110,51 +112,41 @@ void AddMessage(FILE* file, rtc::MessageDigest* digest,
 #endif  // WEBRTC_NETEQ_UNITTEST_BITEXACT
 
 void LoadDecoders(webrtc::NetEq* neteq) {
-  // Load PCMu.
-  ASSERT_EQ(0, neteq->RegisterPayloadType(webrtc::NetEqDecoder::kDecoderPCMu,
-                                          "pcmu", 0));
-  // Load PCMa.
+  ASSERT_EQ(true,
+            neteq->RegisterPayloadType(0, SdpAudioFormat("pcmu", 8000, 1)));
+  // Use non-SdpAudioFormat argument when registering PCMa, so that we get test
+  // coverage for that as well.
   ASSERT_EQ(0, neteq->RegisterPayloadType(webrtc::NetEqDecoder::kDecoderPCMa,
                                           "pcma", 8));
 #ifdef WEBRTC_CODEC_ILBC
-  // Load iLBC.
-  ASSERT_EQ(0, neteq->RegisterPayloadType(webrtc::NetEqDecoder::kDecoderILBC,
-                                          "ilbc", 102));
+  ASSERT_EQ(true,
+            neteq->RegisterPayloadType(102, SdpAudioFormat("ilbc", 8000, 1)));
 #endif
 #if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
-  // Load iSAC.
-  ASSERT_EQ(0, neteq->RegisterPayloadType(webrtc::NetEqDecoder::kDecoderISAC,
-                                          "isac", 103));
+  ASSERT_EQ(true,
+            neteq->RegisterPayloadType(103, SdpAudioFormat("isac", 16000, 1)));
 #endif
 #ifdef WEBRTC_CODEC_ISAC
-  // Load iSAC SWB.
-  ASSERT_EQ(0, neteq->RegisterPayloadType(webrtc::NetEqDecoder::kDecoderISACswb,
-                                          "isac-swb", 104));
+  ASSERT_EQ(true,
+            neteq->RegisterPayloadType(104, SdpAudioFormat("isac", 32000, 1)));
 #endif
 #ifdef WEBRTC_CODEC_OPUS
-  ASSERT_EQ(0, neteq->RegisterPayloadType(webrtc::NetEqDecoder::kDecoderOpus,
-                                          "opus", 111));
+  ASSERT_EQ(true,
+            neteq->RegisterPayloadType(
+                111, SdpAudioFormat("opus", 48000, 2, {{"stereo", "0"}})));
 #endif
-  // Load PCM16B nb.
-  ASSERT_EQ(0, neteq->RegisterPayloadType(webrtc::NetEqDecoder::kDecoderPCM16B,
-                                          "pcm16-nb", 93));
-  // Load PCM16B wb.
-  ASSERT_EQ(0, neteq->RegisterPayloadType(
-                   webrtc::NetEqDecoder::kDecoderPCM16Bwb, "pcm16-wb", 94));
-  // Load PCM16B swb32.
-  ASSERT_EQ(
-      0, neteq->RegisterPayloadType(
-             webrtc::NetEqDecoder::kDecoderPCM16Bswb32kHz, "pcm16-swb32", 95));
-  // Load CNG 8 kHz.
-  ASSERT_EQ(0, neteq->RegisterPayloadType(webrtc::NetEqDecoder::kDecoderCNGnb,
-                                          "cng-nb", 13));
-  // Load CNG 16 kHz.
-  ASSERT_EQ(0, neteq->RegisterPayloadType(webrtc::NetEqDecoder::kDecoderCNGwb,
-                                          "cng-wb", 98));
+  ASSERT_EQ(true,
+            neteq->RegisterPayloadType(93, SdpAudioFormat("L16", 8000, 1)));
+  ASSERT_EQ(true,
+            neteq->RegisterPayloadType(94, SdpAudioFormat("L16", 16000, 1)));
+  ASSERT_EQ(true,
+            neteq->RegisterPayloadType(95, SdpAudioFormat("L16", 32000, 1)));
+  ASSERT_EQ(true,
+            neteq->RegisterPayloadType(13, SdpAudioFormat("cn", 8000, 1)));
+  ASSERT_EQ(true,
+            neteq->RegisterPayloadType(98, SdpAudioFormat("cn", 16000, 1)));
 }
 }  // namespace
-
-namespace webrtc {
 
 class ResultSink {
  public:

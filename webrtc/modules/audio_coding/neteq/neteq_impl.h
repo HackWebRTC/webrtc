@@ -119,6 +119,9 @@ class NetEqImpl : public webrtc::NetEq {
                               const std::string& codec_name,
                               uint8_t rtp_payload_type) override;
 
+  bool RegisterPayloadType(int rtp_payload_type,
+                           const SdpAudioFormat& audio_format) override;
+
   // Removes |rtp_payload_type| from the codec database. Returns 0 on success,
   // -1 on failure.
   int RemovePayloadType(uint8_t rtp_payload_type) override;

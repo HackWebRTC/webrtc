@@ -85,7 +85,12 @@ bool DecoderDatabase::DecoderInfo::IsType(const std::string& name) const {
 rtc::Optional<DecoderDatabase::DecoderInfo::CngDecoder>
 DecoderDatabase::DecoderInfo::CngDecoder::Create(const SdpAudioFormat& format) {
   if (STR_CASE_CMP(format.name.c_str(), "CN") == 0) {
-    return rtc::Optional<CngDecoder>({format.clockrate_hz});
+    // CN has a 1:1 RTP clock rate to sample rate ratio.
+    const int sample_rate_hz = format.clockrate_hz;
+    RTC_DCHECK(sample_rate_hz == 8000 || sample_rate_hz == 16000 ||
+               sample_rate_hz == 32000 || sample_rate_hz == 48000);
+    return rtc::Optional<DecoderDatabase::DecoderInfo::CngDecoder>(
+        {sample_rate_hz});
   } else {
     return rtc::Optional<CngDecoder>();
   }
@@ -134,6 +139,20 @@ int DecoderDatabase::RegisterPayload(uint8_t rtp_payload_type,
   info.name = name;
   auto ret =
       decoders_.insert(std::make_pair(rtp_payload_type, std::move(info)));
+  if (ret.second == false) {
+    // Database already contains a decoder with type |rtp_payload_type|.
+    return kDecoderExists;
+  }
+  return kOK;
+}
+
+int DecoderDatabase::RegisterPayload(int rtp_payload_type,
+                                     const SdpAudioFormat& audio_format) {
+  if (rtp_payload_type < 0 || rtp_payload_type > 0x7f) {
+    return kInvalidRtpPayloadType;
+  }
+  const auto ret = decoders_.insert(std::make_pair(
+      rtp_payload_type, DecoderInfo(audio_format, decoder_factory_.get())));
   if (ret.second == false) {
     // Database already contains a decoder with type |rtp_payload_type|.
     return kDecoderExists;

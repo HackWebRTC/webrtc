@@ -279,6 +279,35 @@ int NetEqImpl::RegisterExternalDecoder(AudioDecoder* decoder,
   return kOK;
 }
 
+bool NetEqImpl::RegisterPayloadType(int rtp_payload_type,
+                                    const SdpAudioFormat& audio_format) {
+  LOG(LS_VERBOSE) << "NetEqImpl::RegisterPayloadType: payload type "
+                  << rtp_payload_type << ", codec " << audio_format;
+  rtc::CritScope lock(&crit_sect_);
+  switch (decoder_database_->RegisterPayload(rtp_payload_type, audio_format)) {
+    case DecoderDatabase::kOK:
+      return true;
+    case DecoderDatabase::kInvalidRtpPayloadType:
+      error_code_ = kInvalidRtpPayloadType;
+      return false;
+    case DecoderDatabase::kCodecNotSupported:
+      error_code_ = kCodecNotSupported;
+      return false;
+    case DecoderDatabase::kDecoderExists:
+      error_code_ = kDecoderExists;
+      return false;
+    case DecoderDatabase::kInvalidSampleRate:
+      error_code_ = kInvalidSampleRate;
+      return false;
+    case DecoderDatabase::kInvalidPointer:
+      error_code_ = kInvalidPointer;
+      return false;
+    default:
+      error_code_ = kOtherError;
+      return false;
+  }
+}
+
 int NetEqImpl::RemovePayloadType(uint8_t rtp_payload_type) {
   rtc::CritScope lock(&crit_sect_);
   int ret = decoder_database_->Remove(rtp_payload_type);

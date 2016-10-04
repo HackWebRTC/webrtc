@@ -230,6 +230,31 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
   return 0;
 }
 
+bool AcmReceiver::AddCodec(int rtp_payload_type,
+                           const SdpAudioFormat& audio_format) {
+  const auto old_format = neteq_->GetDecoderFormat(rtp_payload_type);
+  if (old_format && *old_format == audio_format) {
+    // Re-registering the same codec. Do nothing and return.
+    return true;
+  }
+
+  if (neteq_->RemovePayloadType(rtp_payload_type) != NetEq::kOK &&
+      neteq_->LastError() != NetEq::kDecoderNotFound) {
+    LOG(LERROR) << "AcmReceiver::AddCodec: Could not remove existing decoder"
+                   " for payload type "
+                << rtp_payload_type;
+    return false;
+  }
+
+  const bool success =
+      neteq_->RegisterPayloadType(rtp_payload_type, audio_format);
+  if (!success) {
+    LOG(LERROR) << "AcmReceiver::AddCodec failed for payload type "
+                << rtp_payload_type << ", decoder format " << audio_format;
+  }
+  return success;
+}
+
 void AcmReceiver::FlushBuffers() {
   neteq_->FlushBuffers();
 }
