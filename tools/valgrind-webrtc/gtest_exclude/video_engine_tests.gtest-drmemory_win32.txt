@@ -21,4 +21,7 @@ VideoSendStreamTest.Vp9FlexModeRefCount
 EndToEndTest.AssignsTransportSequenceNumbers
 # Flaky: https://bugs.chromium.org/p/webrtc/issues/detail?id=5225
 BitrateEstimatorTest.SwitchesToASTThenBackToTOFForVideo
+# Flaky: https://bugs.chromium.org/p/webrtc/issues/detail?id=6472
+VideoSendStreamTest.ChangingNetworkRoute
+VideoSendStreamTest.EncoderSetupPropagatesVp8Config
 
