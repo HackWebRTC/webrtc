@@ -21,6 +21,7 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
+class AlrDetector;
 class BitrateProber;
 class Clock;
 class CriticalSectionWrapper;
@@ -132,7 +133,9 @@ class PacedSender : public Module, public RtpPacketSender {
 
  private:
   // Updates the number of bytes that can be sent for the next time interval.
-  void UpdateBytesPerInterval(int64_t delta_time_in_ms)
+  void UpdateBudgetWithElapsedTime(int64_t delta_time_in_ms)
+      EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+  void UpdateBudgetWithBytesSent(size_t bytes)
       EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
   bool SendPacket(const paced_sender::Packet& packet, int probe_cluster_id)
@@ -142,6 +145,7 @@ class PacedSender : public Module, public RtpPacketSender {
 
   Clock* const clock_;
   PacketSender* const packet_sender_;
+  std::unique_ptr<AlrDetector> alr_detector_ GUARDED_BY(critsect_);
 
   std::unique_ptr<CriticalSectionWrapper> critsect_;
   bool paused_ GUARDED_BY(critsect_);

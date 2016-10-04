@@ -10,6 +10,8 @@ import("../../build/webrtc.gni")
 
 rtc_static_library("pacing") {
   sources = [
+    "alr_detector.cc",
+    "alr_detector.h",
     "bitrate_prober.cc",
     "bitrate_prober.h",
     "paced_sender.cc",

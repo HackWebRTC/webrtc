@@ -19,6 +19,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/pacing/alr_detector.h"
 #include "webrtc/modules/pacing/bitrate_prober.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
@@ -248,6 +249,7 @@ const float PacedSender::kDefaultPaceMultiplier = 2.5f;
 PacedSender::PacedSender(Clock* clock, PacketSender* packet_sender)
     : clock_(clock),
       packet_sender_(packet_sender),
+      alr_detector_(new AlrDetector()),
       critsect_(CriticalSectionWrapper::CreateCriticalSection()),
       paused_(false),
       media_budget_(new paced_sender::IntervalBudget(0)),
@@ -260,7 +262,7 @@ PacedSender::PacedSender(Clock* clock, PacketSender* packet_sender)
       time_last_update_us_(clock->TimeInMicroseconds()),
       packets_(new paced_sender::PacketQueue(clock)),
       packet_counter_(0) {
-  UpdateBytesPerInterval(kMinPacketLimitMs);
+  UpdateBudgetWithElapsedTime(kMinPacketLimitMs);
 }
 
 PacedSender::~PacedSender() {}
@@ -298,6 +300,7 @@ void PacedSender::SetEstimatedBitrate(uint32_t bitrate_bps) {
   pacing_bitrate_kbps_ =
       std::max(min_send_bitrate_kbps_, estimated_bitrate_bps_ / 1000) *
       kDefaultPaceMultiplier;
+  alr_detector_->SetEstimatedBitrate(bitrate_bps);
 }
 
 void PacedSender::SetSendBitrateLimits(int min_send_bitrate_bps,
@@ -397,8 +400,8 @@ void PacedSender::Process() {
 
     media_budget_->set_target_rate_kbps(target_bitrate_kbps);
 
-    int64_t delta_time_ms = std::min(kMaxIntervalTimeMs, elapsed_time_ms);
-    UpdateBytesPerInterval(delta_time_ms);
+    elapsed_time_ms = std::min(kMaxIntervalTimeMs, elapsed_time_ms);
+    UpdateBudgetWithElapsedTime(elapsed_time_ms);
   }
 
   bool is_probing = prober_->IsProbing();
@@ -443,6 +446,7 @@ void PacedSender::Process() {
   }
   if (is_probing && bytes_sent > 0)
     prober_->ProbeSent(clock_->TimeInMilliseconds(), bytes_sent);
+  alr_detector_->OnBytesSent(bytes_sent, elapsed_time_ms);
 }
 
 bool PacedSender::SendPacket(const paced_sender::Packet& packet,
@@ -469,8 +473,7 @@ bool PacedSender::SendPacket(const paced_sender::Packet& packet,
     // are allocating bandwidth for audio.
     if (packet.priority != kHighPriority) {
       // Update media bytes sent.
-      media_budget_->UseBudget(packet.bytes);
-      padding_budget_->UseBudget(packet.bytes);
+      UpdateBudgetWithBytesSent(packet.bytes);
     }
   }
 
@@ -484,14 +487,18 @@ size_t PacedSender::SendPadding(size_t padding_needed, int probe_cluster_id) {
   critsect_->Enter();
 
   if (bytes_sent > 0) {
-    media_budget_->UseBudget(bytes_sent);
-    padding_budget_->UseBudget(bytes_sent);
+    UpdateBudgetWithBytesSent(bytes_sent);
   }
   return bytes_sent;
 }
 
-void PacedSender::UpdateBytesPerInterval(int64_t delta_time_ms) {
+void PacedSender::UpdateBudgetWithElapsedTime(int64_t delta_time_ms) {
   media_budget_->IncreaseBudget(delta_time_ms);
   padding_budget_->IncreaseBudget(delta_time_ms);
+}
+
+void PacedSender::UpdateBudgetWithBytesSent(size_t bytes_sent) {
+  media_budget_->UseBudget(bytes_sent);
+  padding_budget_->UseBudget(bytes_sent);
 }
 }  // namespace webrtc
