@@ -34,10 +34,6 @@
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
 
-#if defined(WEBRTC_WIN)
-#include "webrtc/base/sec_buffer.h"
-#endif  // WEBRTC_WIN
-
 namespace rtc {
 
 BufferedReadAdapter::BufferedReadAdapter(AsyncSocket* socket, size_t size)

@@ -432,7 +432,6 @@
             'referencecountedsingletonfactory.h',
             'rollingaccumulator.h',
             'scopedptrcollection.h',
-            'sec_buffer.h',
             'sslconfig.h',
             'sslroots.h',
             'testbase64.h',
