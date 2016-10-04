@@ -1424,6 +1424,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
       LOG(LS_INFO) << "Stopping playout for channel #" << channel();
       stream_->Stop();
     }
+    playout_ = playout;
   }
 
  private:
@@ -1444,6 +1445,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     RTC_DCHECK(!stream_);
     stream_ = call_->CreateAudioReceiveStream(config_);
     RTC_CHECK(stream_);
+    SetPlayout(playout_);
   }
 
   rtc::ThreadChecker worker_thread_checker_;
@@ -1452,6 +1454,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
   // The stream is owned by WebRtcAudioReceiveStream and may be reallocated if
   // configuration changes.
   webrtc::AudioReceiveStream* stream_ = nullptr;
+  bool playout_ = false;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcAudioReceiveStream);
 };

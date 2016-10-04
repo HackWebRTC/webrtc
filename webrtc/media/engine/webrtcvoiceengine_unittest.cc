@@ -3340,6 +3340,21 @@ TEST_F(WebRtcVoiceEngineTestFake, OnReadyToSendSignalsNetworkState) {
             call_.GetNetworkState(webrtc::MediaType::VIDEO));
 }
 
+// Test that playout is still started after changing parameters
+TEST_F(WebRtcVoiceEngineTestFake, PreservePlayoutWhenRecreateRecvStream) {
+  SetupRecvStream();
+  channel_->SetPlayout(true);
+  EXPECT_TRUE(GetRecvStream(kSsrc1).started());
+
+  // Changing RTP header extensions will recreate the AudioReceiveStream.
+  cricket::AudioRecvParameters parameters;
+  parameters.extensions.push_back(
+      webrtc::RtpExtension(webrtc::RtpExtension::kAudioLevelUri, 12));
+  channel_->SetRecvParameters(parameters);
+
+  EXPECT_TRUE(GetRecvStream(kSsrc1).started());
+}
+
 // Tests that the library initializes and shuts down properly.
 TEST(WebRtcVoiceEngineTest, StartupShutdown) {
   // If the VoiceEngine wants to gather available codecs early, that's fine but

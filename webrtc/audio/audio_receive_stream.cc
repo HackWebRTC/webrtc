@@ -144,6 +144,7 @@ AudioReceiveStream::AudioReceiveStream(
 AudioReceiveStream::~AudioReceiveStream() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "~AudioReceiveStream: " << config_.ToString();
+  Stop();
   channel_proxy_->DeRegisterExternalTransport();
   channel_proxy_->ResetCongestionControlObjects();
   channel_proxy_->SetRtcEventLog(nullptr);

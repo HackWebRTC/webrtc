@@ -119,6 +119,7 @@ struct ConfigHelper {
               .After(expect_set);
           return channel_proxy_;
         }));
+    EXPECT_CALL(voice_engine_, StopPlayout(kChannelId)).WillOnce(Return(0));
     stream_config_.voe_channel_id = kChannelId;
     stream_config_.rtp.local_ssrc = kLocalSsrc;
     stream_config_.rtp.remote_ssrc = kRemoteSsrc;
