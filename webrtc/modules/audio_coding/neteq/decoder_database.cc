@@ -31,20 +31,23 @@ DecoderDatabase::DecoderInfo::DecoderInfo(const SdpAudioFormat& audio_format,
     : audio_format_(audio_format),
       factory_(factory),
       external_decoder_(nullptr),
-      cng_decoder_(CngDecoder::Create(audio_format)) {}
+      cng_decoder_(CngDecoder::Create(audio_format)),
+      subtype_(SubtypeFromFormat(audio_format)) {}
 
 DecoderDatabase::DecoderInfo::DecoderInfo(NetEqDecoder ct,
                                           AudioDecoderFactory* factory)
     : audio_format_(*acm2::RentACodec::NetEqDecoderToSdpAudioFormat(ct)),
       factory_(factory),
       external_decoder_(nullptr),
-      cng_decoder_(CngDecoder::Create(audio_format_)) {}
+      cng_decoder_(CngDecoder::Create(audio_format_)),
+      subtype_(SubtypeFromFormat(audio_format_)) {}
 
 DecoderDatabase::DecoderInfo::DecoderInfo(const SdpAudioFormat& audio_format,
                                           AudioDecoder* ext_dec)
     : audio_format_(audio_format),
       factory_(nullptr),
-      external_decoder_(ext_dec) {
+      external_decoder_(ext_dec),
+      subtype_(Subtype::kNormal) {
   RTC_CHECK(ext_dec);
 }
 
@@ -52,7 +55,7 @@ DecoderDatabase::DecoderInfo::DecoderInfo(DecoderInfo&&) = default;
 DecoderDatabase::DecoderInfo::~DecoderInfo() = default;
 
 AudioDecoder* DecoderDatabase::DecoderInfo::GetDecoder() const {
-  if (IsDtmf() || IsRed() || IsComfortNoise()) {
+  if (subtype_ != Subtype::kNormal) {
     // These are handled internally, so they have no AudioDecoder objects.
     return nullptr;
   }
@@ -71,19 +74,6 @@ AudioDecoder* DecoderDatabase::DecoderInfo::GetDecoder() const {
   return decoder_.get();
 }
 
-bool DecoderDatabase::DecoderInfo::IsComfortNoise() const {
-  RTC_DCHECK_EQ(!!cng_decoder_, IsType("CN"));
-  return !!cng_decoder_;
-}
-
-bool DecoderDatabase::DecoderInfo::IsDtmf() const {
-  return IsType("telephone-event");
-}
-
-bool DecoderDatabase::DecoderInfo::IsRed() const {
-  return IsType("red");
-}
-
 bool DecoderDatabase::DecoderInfo::IsType(const char* name) const {
   return STR_CASE_CMP(audio_format_.name.c_str(), name) == 0;
 }
@@ -99,6 +89,19 @@ DecoderDatabase::DecoderInfo::CngDecoder::Create(const SdpAudioFormat& format) {
   } else {
     return rtc::Optional<CngDecoder>();
   }
+}
+
+DecoderDatabase::DecoderInfo::Subtype
+DecoderDatabase::DecoderInfo::SubtypeFromFormat(const SdpAudioFormat& format) {
+  if (STR_CASE_CMP(format.name.c_str(), "CN") == 0) {
+    return Subtype::kComfortNoise;
+  } else if (STR_CASE_CMP(format.name.c_str(), "telephone-event") == 0) {
+    return Subtype::kDtmf;
+  } else if (STR_CASE_CMP(format.name.c_str(), "red") == 0) {
+    return Subtype::kRed;
+  }
+
+  return Subtype::kNormal;
 }
 
 bool DecoderDatabase::Empty() const { return decoders_.empty(); }

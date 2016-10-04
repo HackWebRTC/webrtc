@@ -65,13 +65,20 @@ class DecoderDatabase {
     const SdpAudioFormat& GetFormat() const { return audio_format_; }
 
     // Returns true if the decoder's format is comfort noise.
-    bool IsComfortNoise() const;
+    bool IsComfortNoise() const {
+      RTC_DCHECK_EQ(!!cng_decoder_, subtype_ == Subtype::kComfortNoise);
+      return subtype_ == Subtype::kComfortNoise;
+    }
 
     // Returns true if the decoder's format is DTMF.
-    bool IsDtmf() const;
+    bool IsDtmf() const {
+      return subtype_ == Subtype::kDtmf;
+    }
 
     // Returns true if the decoder's format is RED.
-    bool IsRed() const;
+    bool IsRed() const {
+      return subtype_ == Subtype::kRed;
+    }
 
     // Returns true if the decoder's format is named |name|.
     bool IsType(const char* name) const;
@@ -97,6 +104,17 @@ class DecoderDatabase {
       int sample_rate_hz;
     };
     const rtc::Optional<CngDecoder> cng_decoder_;
+
+    enum class Subtype : int8_t {
+      kNormal,
+      kComfortNoise,
+      kDtmf,
+      kRed
+    };
+
+    static Subtype SubtypeFromFormat(const SdpAudioFormat& format);
+
+    const Subtype subtype_;
   };
 
   // Maximum value for 8 bits, and an invalid RTP payload type (since it is
