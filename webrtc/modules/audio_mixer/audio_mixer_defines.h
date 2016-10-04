@@ -11,12 +11,13 @@
 #ifndef WEBRTC_MODULES_AUDIO_MIXER_AUDIO_MIXER_DEFINES_H_
 #define WEBRTC_MODULES_AUDIO_MIXER_AUDIO_MIXER_DEFINES_H_
 
+#include <memory>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-class NewMixHistory;
 
 // A callback class that all mixer participants must inherit from/implement.
 class MixerAudioSource {
@@ -43,10 +44,20 @@ class MixerAudioSource {
   virtual AudioFrameWithMuted GetAudioFrameWithMuted(int32_t id,
                                                      int sample_rate_hz) = 0;
 
-  // Returns true if the participant was mixed this mix iteration.
+  // Returns true if the audio source was mixed this mix iteration.
   bool IsMixed() const;
 
-  NewMixHistory* mix_history_;
+  // Returns true if the audio source was mixed previous mix
+  // iteration.
+  bool WasMixed() const;
+
+  // Updates the mixed status.
+  int32_t SetIsMixed(bool mixed);
+
+  void ResetMixedStatus();
+
+ private:
+  bool is_mixed_;
 
  protected:
   MixerAudioSource();

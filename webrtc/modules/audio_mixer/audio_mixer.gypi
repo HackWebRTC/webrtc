@@ -22,6 +22,7 @@
         'audio_frame_manipulator.cc',
         'audio_frame_manipulator.h',
         'audio_mixer.h',
+        'audio_mixer_defines.cc',
         'audio_mixer_defines.h',
         'audio_mixer_impl.cc',
         'audio_mixer_impl.h',

@@ -18,7 +18,6 @@
 #include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
-class MixerAudioSource;
 
 class AudioMixer {
  public:

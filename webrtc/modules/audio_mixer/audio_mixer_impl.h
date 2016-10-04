@@ -15,40 +15,20 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_mixer/audio_mixer.h"
+#include "webrtc/modules/audio_mixer/audio_mixer_defines.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/voice_engine/level_indicator.h"
 
 namespace webrtc {
-class AudioProcessing;
-class CriticalSectionWrapper;
 
 typedef std::vector<AudioFrame*> AudioFrameList;
 typedef std::vector<MixerAudioSource*> MixerAudioSourceList;
-
-// Cheshire cat implementation of MixerAudioSource's non virtual functions.
-class NewMixHistory {
- public:
-  NewMixHistory();
-  ~NewMixHistory();
-
-  // Returns true if the audio source is being mixed.
-  bool IsMixed() const;
-
-  // Returns true if the audio source was mixed previous mix
-  // iteration.
-  bool WasMixed() const;
-
-  // Updates the mixed status.
-  int32_t SetIsMixed(bool mixed);
-
-  void ResetMixedStatus();
-
- private:
-  bool is_mixed_;
-};
 
 class AudioMixerImpl : public AudioMixer {
  public:
@@ -98,12 +78,6 @@ class AudioMixerImpl : public AudioMixer {
                             MixerAudioSourceList* audio_source_list) const;
   bool RemoveAudioSourceFromList(MixerAudioSource* remove_audio_source,
                                  MixerAudioSourceList* audio_source_list) const;
-
-  // Mix the AudioFrames stored in audioFrameList into mixed_audio.
-  static int32_t MixFromList(AudioFrame* mixed_audio,
-                             const AudioFrameList& audio_frame_list,
-                             int32_t id,
-                             bool use_limiter);
 
   bool LimitMixedAudio(AudioFrame* mixed_audio) const;
 
