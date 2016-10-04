@@ -421,8 +421,6 @@ rtc_static_library("rtc_base") {
     "thread.h",
     "urlencode.cc",
     "urlencode.h",
-    "worker.cc",
-    "worker.h",
   ]
 
   # TODO(henrike): issue 3307, make rtc_base build with the Chromium default

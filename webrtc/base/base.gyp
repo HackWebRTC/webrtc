@@ -369,8 +369,6 @@
         'thread.h',
         'urlencode.cc',
         'urlencode.h',
-        'worker.cc',
-        'worker.h',
       ],
       # TODO(henrike): issue 3307, make rtc_base build without disabling
       # these flags.
