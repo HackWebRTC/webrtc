@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/call/rtc_event_log.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 
 #include <limits>
 #include <vector>
@@ -19,7 +19,7 @@
 #include "webrtc/base/swap_queue.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/call.h"
-#include "webrtc/call/rtc_event_log_helper_thread.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log_helper_thread.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
@@ -30,9 +30,9 @@
 #ifdef ENABLE_RTC_EVENT_LOG
 // Files generated at build-time by the protobuf compiler.
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
-#include "external/webrtc/webrtc/call/rtc_event_log.pb.h"
+#include "external/webrtc/webrtc/logging/rtc_event_log/rtc_event_log.pb.h"
 #else
-#include "webrtc/call/rtc_event_log.pb.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.pb.h"
 #endif
 #endif
 
@@ -129,9 +129,7 @@ RtcEventLogImpl::RtcEventLogImpl(const Clock* clock)
     : message_queue_(kControlMessagesPerSecond),
       event_queue_(kEventsPerSecond),
       clock_(clock),
-      helper_thread_(&message_queue_,
-                     &event_queue_,
-                     clock),
+      helper_thread_(&message_queue_, &event_queue_, clock),
       thread_checker_() {
   thread_checker_.DetachFromThread();
 }

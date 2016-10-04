@@ -19,7 +19,7 @@
 #include "webrtc/base/trace_event.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/call.h"
-#include "webrtc/call/rtc_event_log.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"

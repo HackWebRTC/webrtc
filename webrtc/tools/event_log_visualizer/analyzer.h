@@ -18,7 +18,7 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/call/rtc_event_log_parser.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log_parser.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/tools/event_log_visualizer/plot_base.h"

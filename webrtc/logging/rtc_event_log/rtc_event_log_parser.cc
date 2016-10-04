@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/call/rtc_event_log_parser.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log_parser.h"
 
 #include <string.h>
 
@@ -19,7 +19,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/call.h"
-#include "webrtc/call/rtc_event_log.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 

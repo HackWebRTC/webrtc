@@ -32,7 +32,7 @@
         '<@(webrtc_audio_dependencies)',
         '<@(webrtc_call_dependencies)',
         '<@(webrtc_video_dependencies)',
-        'rtc_event_log',
+        'rtc_event_log_impl',
       ],
       'conditions': [
         # TODO(andresp): Chromium should link directly with this and no if
@@ -45,19 +45,27 @@
       ],
     },
     {
-      'target_name': 'rtc_event_log',
+      'target_name': 'rtc_event_log_api',
       'type': 'static_library',
       'sources': [
-        'call/rtc_event_log.cc',
-        'call/rtc_event_log.h',
-        'call/rtc_event_log_helper_thread.cc',
-        'call/rtc_event_log_helper_thread.h',
+        'logging/rtc_event_log/rtc_event_log.h',
+      ],
+    },
+    {
+      'target_name': 'rtc_event_log_impl',
+      'type': 'static_library',
+      'sources': [
+        'logging/rtc_event_log/ringbuffer.h',
+        'logging/rtc_event_log/rtc_event_log.cc',
+        'logging/rtc_event_log/rtc_event_log_helper_thread.cc',
+        'logging/rtc_event_log/rtc_event_log_helper_thread.h',
       ],
       'conditions': [
         # If enable_protobuf is defined, we want to compile the protobuf
         # and add rtc_event_log.pb.h and rtc_event_log.pb.cc to the sources.
         ['enable_protobuf==1', {
           'dependencies': [
+            'rtc_event_log_api',
             'rtc_event_log_proto',
           ],
           'defines': [
@@ -79,10 +87,10 @@
           # This target should only be built if enable_protobuf is defined
           'target_name': 'rtc_event_log_proto',
           'type': 'static_library',
-          'sources': ['call/rtc_event_log.proto',],
+          'sources': ['logging/rtc_event_log/rtc_event_log.proto',],
           'variables': {
-            'proto_in_dir': 'call',
-            'proto_out_dir': 'webrtc/call',
+            'proto_in_dir': 'logging/rtc_event_log',
+            'proto_out_dir': 'webrtc/logging/rtc_event_log',
           },
           'includes': ['build/protoc.gypi'],
         },
@@ -90,8 +98,8 @@
           'target_name': 'rtc_event_log_parser',
           'type': 'static_library',
           'sources': [
-            'call/rtc_event_log_parser.cc',
-            'call/rtc_event_log_parser.h',
+            'logging/rtc_event_log/rtc_event_log_parser.cc',
+            'logging/rtc_event_log/rtc_event_log_parser.h',
           ],
           'dependencies': [
             'rtc_event_log_proto',
@@ -107,7 +115,7 @@
         {
           'target_name': 'rtc_event_log2rtp_dump',
           'type': 'executable',
-          'sources': ['call/rtc_event_log2rtp_dump.cc',],
+          'sources': ['logging/rtc_event_log2rtp_dump.cc',],
           'dependencies': [
             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
             'rtc_event_log_parser',

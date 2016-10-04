@@ -23,42 +23,16 @@ rtc_static_library("call") {
   }
 
   deps = [
-    ":rtc_event_log",
     "..:webrtc_common",
     "../api:call_api",
     "../audio",
     "../base:rtc_task_queue",
+    "../logging:rtc_event_log_impl",
     "../modules/congestion_controller",
     "../modules/rtp_rtcp",
     "../system_wrappers",
     "../video",
   ]
-}
-
-rtc_static_library("rtc_event_log") {
-  sources = [
-    "rtc_event_log.cc",
-    "rtc_event_log.h",
-    "rtc_event_log_helper_thread.cc",
-    "rtc_event_log_helper_thread.h",
-  ]
-
-  defines = []
-
-  deps = [
-    "..:webrtc_common",
-    "../modules/rtp_rtcp",
-  ]
-
-  if (rtc_enable_protobuf) {
-    defines += [ "ENABLE_RTC_EVENT_LOG" ]
-    deps += [ "..:rtc_event_log_proto" ]
-  }
-  if (is_clang && !is_nacl) {
-    # Suppress warnings from Chrome's Clang plugins.
-    # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 }
 
 if (rtc_include_tests) {
@@ -69,30 +43,9 @@ if (rtc_include_tests) {
       "bitrate_estimator_tests.cc",
       "call_unittest.cc",
       "packet_injection_tests.cc",
-      "ringbuffer_unittest.cc",
     ]
     deps = [
       ":call",
-      "//testing/gmock",
-      "//testing/gtest",
-    ]
-    if (is_clang) {
-      # Suppress warnings from the Chromium Clang plugin.
-      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-  }
-  rtc_source_set("rtc_event_log_tests") {
-    testonly = true
-    sources = [
-      "rtc_event_log_unittest.cc",
-      "rtc_event_log_unittest_helper.cc",
-    ]
-    deps = [
-      ":rtc_event_log",
-      "..:rtc_event_log_parser",
-      "../modules/rtp_rtcp",
-      "../system_wrappers:metrics_default",
       "//testing/gmock",
       "//testing/gtest",
     ]

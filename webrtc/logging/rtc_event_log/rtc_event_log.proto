@@ -2,14 +2,12 @@ syntax = "proto2";
 option optimize_for = LITE_RUNTIME;
 package webrtc.rtclog;
 
-
 enum MediaType {
   ANY = 0;
   AUDIO = 1;
   VIDEO = 2;
   DATA = 3;
 }
-
 
 // This is the main message to dump to a file, it can contain multiple event
 // messages, but it is possible to append multiple EventStreams (each with a
@@ -18,7 +16,6 @@ enum MediaType {
 message EventStream {
   repeated Event stream = 1;
 }
-
 
 message Event {
   // required - Elapsed wallclock time in us since the start of the log.
@@ -70,7 +67,6 @@ message Event {
   optional AudioSendConfig audio_sender_config = 11;
 }
 
-
 message RtpPacket {
   // required - True if the packet is incoming w.r.t. the user logging the data
   optional bool incoming = 1;
@@ -86,7 +82,6 @@ message RtpPacket {
 
   // Do not add code to log user payload data without a privacy review!
 }
-
 
 message RtcpPacket {
   // required - True if the packet is incoming w.r.t. the user logging the data
@@ -150,7 +145,6 @@ message VideoReceiveConfig {
   repeated DecoderConfig decoders = 7;
 }
 
-
 // Maps decoder names to payload types.
 message DecoderConfig {
   // required
@@ -160,7 +154,6 @@ message DecoderConfig {
   optional int32 payload_type = 2;
 }
 
-
 // Maps RTP header extension names to numerical IDs.
 message RtpHeaderExtension {
   // required
@@ -169,7 +162,6 @@ message RtpHeaderExtension {
   // required
   optional int32 id = 2;
 }
-
 
 // RTX settings for incoming video payloads that may be received.
 // RTX is disabled if there's no config present.
@@ -181,7 +173,6 @@ message RtxConfig {
   optional int32 rtx_payload_type = 2;
 }
 
-
 message RtxMap {
   // required
   optional int32 payload_type = 1;
@@ -189,7 +180,6 @@ message RtxMap {
   // required
   optional RtxConfig config = 2;
 }
-
 
 message VideoSendConfig {
   // Synchronization source (stream identifier) for outgoing stream.
@@ -210,7 +200,6 @@ message VideoSendConfig {
   optional EncoderConfig encoder = 5;
 }
 
-
 // Maps encoder names to payload types.
 message EncoderConfig {
   // required
@@ -219,7 +208,6 @@ message EncoderConfig {
   // required
   optional int32 payload_type = 2;
 }
-
 
 message AudioReceiveConfig {
   // required - Synchronization source (stream identifier) to be received.
@@ -231,7 +219,6 @@ message AudioReceiveConfig {
   // RTP header extensions used for the received audio stream.
   repeated RtpHeaderExtension header_extensions = 3;
 }
-
 
 message AudioSendConfig {
   // required - Synchronization source (stream identifier) for outgoing stream.

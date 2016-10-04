@@ -130,7 +130,7 @@ webrtc_fuzzer_test("congestion_controller_feedback_fuzzer") {
     "congestion_controller_feedback_fuzzer.cc",
   ]
   deps = [
-    "../../call:rtc_event_log",
+    "../../logging:rtc_event_log_impl",
     "../../modules/congestion_controller/",
   ]
 }

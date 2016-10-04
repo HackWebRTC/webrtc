@@ -9,8 +9,8 @@
  *
  */
 
-#ifndef WEBRTC_CALL_RINGBUFFER_H_
-#define WEBRTC_CALL_RINGBUFFER_H_
+#ifndef WEBRTC_LOGGING_RTC_EVENT_LOG_RINGBUFFER_H_
+#define WEBRTC_LOGGING_RTC_EVENT_LOG_RINGBUFFER_H_
 
 #include <memory>
 #include <utility>
@@ -97,4 +97,4 @@ class RingBuffer {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_CALL_RINGBUFFER_H_
+#endif  // WEBRTC_LOGGING_RTC_EVENT_LOG_RINGBUFFER_H_

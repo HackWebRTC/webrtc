@@ -117,7 +117,7 @@ rtc_static_library("audio_coding") {
            ":audio_network_adaptor",
            ":neteq",
            ":rent_a_codec",
-           "../../call:rtc_event_log",
+           "../../logging:rtc_event_log_api",
          ]
   defines = audio_coding_defines
 }
@@ -1021,10 +1021,10 @@ if (rtc_include_tests) {
       }
 
       deps = [
-        "../../:rtc_event_log_parser",
+        "../../logging:rtc_event_log_parser",
       ]
       public_deps = [
-        "../../:rtc_event_log_proto",
+        "../../logging:rtc_event_log_proto",
       ]
     }
 

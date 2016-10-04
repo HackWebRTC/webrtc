@@ -7,23 +7,23 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_CALL_RTC_EVENT_LOG_PARSER_H_
-#define WEBRTC_CALL_RTC_EVENT_LOG_PARSER_H_
+#ifndef WEBRTC_LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_PARSER_H_
+#define WEBRTC_LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_PARSER_H_
 
 #include <string>
 #include <vector>
 
 #include "webrtc/base/ignore_wundef.h"
-#include "webrtc/call/rtc_event_log.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
 
 // Files generated at build-time by the protobuf compiler.
 RTC_PUSH_IGNORING_WUNDEF()
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
-#include "external/webrtc/webrtc/call/rtc_event_log.pb.h"
+#include "external/webrtc/webrtc/logging/rtc_event_log/rtc_event_log.pb.h"
 #else
-#include "webrtc/call/rtc_event_log.pb.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.pb.h"
 #endif
 RTC_POP_IGNORING_WUNDEF()
 
@@ -120,4 +120,4 @@ class ParsedRtcEventLog {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_CALL_RTC_EVENT_LOG_PARSER_H_
+#endif  // WEBRTC_LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_PARSER_H_

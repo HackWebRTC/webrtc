@@ -147,7 +147,7 @@
       'dependencies': [
         '<@(audio_coding_dependencies)',
         '<(webrtc_root)/common.gyp:webrtc_common',
-        '<(webrtc_root)/webrtc.gyp:rtc_event_log',
+        '<(webrtc_root)/webrtc.gyp:rtc_event_log_api',
         'audio_network_adaptor',
         'neteq',
         'rent_a_codec',

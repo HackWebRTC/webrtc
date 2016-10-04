@@ -12,7 +12,7 @@
       '<(webrtc_root)/common.gyp:webrtc_common',
       '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
-      '<(webrtc_root)/webrtc.gyp:rtc_event_log',
+      '<(webrtc_root)/webrtc.gyp:rtc_event_log_api',
     ],
     'webrtc_audio_sources': [
       'audio/audio_receive_stream.cc',

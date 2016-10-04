@@ -12,7 +12,7 @@
 #include <list>
 
 #include "webrtc/base/random.h"
-#include "webrtc/call/ringbuffer.h"
+#include "webrtc/logging/rtc_event_log/ringbuffer.h"
 #include "webrtc/test/gtest.h"
 
 namespace {

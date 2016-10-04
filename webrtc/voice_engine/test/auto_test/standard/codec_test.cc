@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <string>
 
-#include "webrtc/call/rtc_event_log.h"
 #include "webrtc/test/test_suite.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/voice_engine/test/auto_test/fixtures/after_streaming_fixture.h"

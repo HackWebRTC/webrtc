@@ -29,7 +29,7 @@
         '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
         '<(webrtc_root)/modules/modules.gyp:webrtc_utility',
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
-        '<(webrtc_root)/webrtc.gyp:rtc_event_log',
+        '<(webrtc_root)/webrtc.gyp:rtc_event_log_api',
         'level_indicator',
       ],
       'export_dependent_settings': [

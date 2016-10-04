@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_CALL_RTC_EVENT_LOG_H_
-#define WEBRTC_CALL_RTC_EVENT_LOG_H_
+#ifndef WEBRTC_LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_H_
+#define WEBRTC_LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_H_
 
 #include <memory>
 #include <string>
@@ -139,4 +139,4 @@ class RtcEventLogNullImpl final : public RtcEventLog {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_CALL_RTC_EVENT_LOG_H_
+#endif  // WEBRTC_LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_H_

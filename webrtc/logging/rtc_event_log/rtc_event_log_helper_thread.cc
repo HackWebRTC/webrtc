@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/call/rtc_event_log_helper_thread.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log_helper_thread.h"
 
 #include <algorithm>
 
@@ -74,7 +74,7 @@ RtcEventLogHelperThread::~RtcEventLogHelperThread() {
   }
   wake_from_hibernation_.Set();
   wake_periodically_.Set();  // Wake up the output thread.
-  thread_.Stop();   // Wait for the thread to terminate.
+  thread_.Stop();            // Wait for the thread to terminate.
 }
 
 void RtcEventLogHelperThread::WaitForFileFinished() {

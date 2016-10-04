@@ -118,7 +118,7 @@
           'target_name': 'event_log_visualizer_utils',
           'type': 'static_library',
           'dependencies': [
-            '<(webrtc_root)/webrtc.gyp:rtc_event_log',
+            '<(webrtc_root)/webrtc.gyp:rtc_event_log_impl',
             '<(webrtc_root)/webrtc.gyp:rtc_event_log_parser',
             '<(webrtc_root)/modules/modules.gyp:congestion_controller',
             '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',

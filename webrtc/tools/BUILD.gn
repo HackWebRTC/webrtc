@@ -164,8 +164,8 @@ if (rtc_enable_protobuf) {
     }
     defines = [ "ENABLE_RTC_EVENT_LOG" ]
     deps = [
-      "../:rtc_event_log_parser",
-      "../call:rtc_event_log",
+      "../logging:rtc_event_log_impl",
+      "../logging:rtc_event_log_parser",
       "../modules/congestion_controller:congestion_controller",
       "../modules/rtp_rtcp:rtp_rtcp",
       "../system_wrappers:system_wrappers_default",
@@ -173,7 +173,7 @@ if (rtc_enable_protobuf) {
     ]
     public_deps = [
       ":chart_proto",
-      "../:rtc_event_log_parser",
+      "../logging:rtc_event_log_parser",
     ]
   }
 }
@@ -282,7 +282,7 @@ if (rtc_include_tests) {
         "$root_build_dir/{{source_file_part}}",
       ]
       deps = [
-        "..:rtc_event_log_proto",
+        "../logging:rtc_event_log_proto",
       ]
     }
   }

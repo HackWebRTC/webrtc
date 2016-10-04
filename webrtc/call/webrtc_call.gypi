@@ -12,7 +12,7 @@
       '<(webrtc_root)/modules/modules.gyp:congestion_controller',
       '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
       '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
-      '<(webrtc_root)/webrtc.gyp:rtc_event_log',
+      '<(webrtc_root)/webrtc.gyp:rtc_event_log_impl',
     ],
     'webrtc_call_sources': [
       'call/bitrate_allocator.cc',

@@ -283,7 +283,7 @@ if (!is_ios || !build_with_chromium) {
 
     if (rtc_enable_protobuf) {
       defines += [ "ENABLE_RTC_EVENT_LOG" ]
-      deps += [ ":rtc_event_log_proto" ]
+      deps += [ "logging:rtc_event_log_proto" ]
     }
   }
 }
@@ -302,35 +302,6 @@ rtc_static_library("webrtc_common") {
     # Suppress warnings from Chrome's Clang plugins.
     # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-}
-
-if (rtc_enable_protobuf) {
-  proto_library("rtc_event_log_proto") {
-    sources = [
-      "call/rtc_event_log.proto",
-    ]
-    proto_out_dir = "webrtc/call"
-  }
-}
-
-if (rtc_enable_protobuf) {
-  rtc_static_library("rtc_event_log_parser") {
-    sources = [
-      "call/rtc_event_log_parser.cc",
-      "call/rtc_event_log_parser.h",
-    ]
-
-    public_deps = [
-      ":rtc_event_log_proto",
-      ":webrtc_common",
-    ]
-
-    if (is_clang && !is_nacl) {
-      # Suppress warnings from Chrome's Clang plugins.
-      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 }
 
@@ -529,7 +500,7 @@ if (rtc_include_tests) {
     ]
 
     if (rtc_enable_protobuf) {
-      deps += [ "call:rtc_event_log_tests" ]
+      deps += [ "logging:rtc_event_log_tests" ]
     }
 
     if (is_android) {

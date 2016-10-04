@@ -15,9 +15,9 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/system_wrappers/include/metrics.h"
-#include "webrtc/call/rtc_event_log.h"
 
 namespace webrtc {
 namespace {

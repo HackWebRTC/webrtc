@@ -18,9 +18,9 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/random.h"
 #include "webrtc/call.h"
-#include "webrtc/call/rtc_event_log.h"
-#include "webrtc/call/rtc_event_log_parser.h"
-#include "webrtc/call/rtc_event_log_unittest_helper.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log_parser.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log_unittest_helper.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
@@ -33,9 +33,9 @@
 
 // Files generated at build-time by the protobuf compiler.
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
-#include "external/webrtc/webrtc/call/rtc_event_log.pb.h"
+#include "external/webrtc/webrtc/logging/rtc_event_log/rtc_event_log.pb.h"
 #else
-#include "webrtc/call/rtc_event_log.pb.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.pb.h"
 #endif
 
 namespace webrtc {
