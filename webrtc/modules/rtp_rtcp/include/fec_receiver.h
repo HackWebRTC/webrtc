@@ -35,6 +35,9 @@ class FecReceiver {
 
   // Takes a RED packet, strips the RED header, and adds the resulting
   // "virtual" RTP packet(s) into the internal buffer.
+  //
+  // TODO(brandtr): Set |ulpfec_payload_type| during constructor call,
+  // rather than as a parameter here.
   virtual int32_t AddReceivedRedPacket(const RTPHeader& rtp_header,
                                        const uint8_t* incoming_rtp_packet,
                                        size_t packet_length,

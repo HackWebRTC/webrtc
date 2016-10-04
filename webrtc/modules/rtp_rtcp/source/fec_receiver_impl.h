@@ -46,6 +46,7 @@ class FecReceiverImpl : public FecReceiver {
   ForwardErrorCorrection::RecoveredPacketList recovered_packets_;
   FecPacketCounter packet_counter_;
 };
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_FEC_RECEIVER_IMPL_H_
