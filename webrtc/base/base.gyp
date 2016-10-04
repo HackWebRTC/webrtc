@@ -476,8 +476,6 @@
               'sources': [
                 'latebindingsymboltable.cc',
                 'latebindingsymboltable.h',
-                'posix.cc',
-                'posix.h',
               ],
             }],
             ['OS=="mac"', {

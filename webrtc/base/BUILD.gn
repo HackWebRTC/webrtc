@@ -501,8 +501,6 @@ rtc_static_library("rtc_base") {
       sources += [
         "latebindingsymboltable.cc",
         "latebindingsymboltable.h",
-        "posix.cc",
-        "posix.h",
       ]
     }
 
