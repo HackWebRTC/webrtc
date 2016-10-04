@@ -166,6 +166,7 @@ class RTCStatsMemberInterface {
  public:
   // Member value types.
   enum Type {
+    kBool,                  // bool
     kInt32,                 // int32_t
     kUint32,                // uint32_t
     kInt64,                 // int64_t
@@ -173,6 +174,7 @@ class RTCStatsMemberInterface {
     kDouble,                // double
     kString,                // std::string
 
+    kSequenceBool,          // std::vector<bool>
     kSequenceInt32,         // std::vector<int32_t>
     kSequenceUint32,        // std::vector<uint32_t>
     kSequenceInt64,         // std::vector<int64_t>

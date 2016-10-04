@@ -16,12 +16,14 @@ const char RTCTestStats::kType[] = "test-stats";
 
 RTCTestStats::RTCTestStats(const std::string& id, int64_t timestamp_us)
     : RTCStats(id, timestamp_us),
+      m_bool("mBool"),
       m_int32("mInt32"),
       m_uint32("mUint32"),
       m_int64("mInt64"),
       m_uint64("mUint64"),
       m_double("mDouble"),
       m_string("mString"),
+      m_sequence_bool("mSequenceBool"),
       m_sequence_int32("mSequenceInt32"),
       m_sequence_uint32("mSequenceUint32"),
       m_sequence_int64("mSequenceInt64"),

@@ -51,10 +51,11 @@ TEST(RTCStatsTest, RTCStatsAndMembers) {
   EXPECT_EQ(stats.id(), "testId");
   EXPECT_EQ(stats.timestamp_us(), static_cast<int64_t>(42));
   std::vector<const RTCStatsMemberInterface*> members = stats.Members();
-  EXPECT_EQ(members.size(), static_cast<size_t>(12));
+  EXPECT_EQ(members.size(), static_cast<size_t>(14));
   for (const RTCStatsMemberInterface* member : members) {
     EXPECT_FALSE(member->is_defined());
   }
+  stats.m_bool = true;
   stats.m_int32 = 123;
   stats.m_uint32 = 123;
   stats.m_int64 = 123;
@@ -62,6 +63,8 @@ TEST(RTCStatsTest, RTCStatsAndMembers) {
   stats.m_double = 123.0;
   stats.m_string = std::string("123");
 
+  std::vector<bool> sequence_bool;
+  sequence_bool.push_back(true);
   std::vector<int32_t> sequence_int32;
   sequence_int32.push_back(static_cast<int32_t>(1));
   std::vector<uint32_t> sequence_uint32;
@@ -75,6 +78,7 @@ TEST(RTCStatsTest, RTCStatsAndMembers) {
   std::vector<std::string> sequence_string;
   sequence_string.push_back(std::string("six"));
 
+  stats.m_sequence_bool = sequence_bool;
   stats.m_sequence_int32 = sequence_int32;
   stats.m_sequence_uint32 = sequence_uint32;
   EXPECT_FALSE(stats.m_sequence_int64.is_defined());
@@ -85,12 +89,14 @@ TEST(RTCStatsTest, RTCStatsAndMembers) {
   for (const RTCStatsMemberInterface* member : members) {
     EXPECT_TRUE(member->is_defined());
   }
+  EXPECT_EQ(*stats.m_bool, true);
   EXPECT_EQ(*stats.m_int32, static_cast<int32_t>(123));
   EXPECT_EQ(*stats.m_uint32, static_cast<uint32_t>(123));
   EXPECT_EQ(*stats.m_int64, static_cast<int64_t>(123));
   EXPECT_EQ(*stats.m_uint64, static_cast<uint64_t>(123));
   EXPECT_EQ(*stats.m_double, 123.0);
   EXPECT_EQ(*stats.m_string, std::string("123"));
+  EXPECT_EQ(*stats.m_sequence_bool, sequence_bool);
   EXPECT_EQ(*stats.m_sequence_int32, sequence_int32);
   EXPECT_EQ(*stats.m_sequence_uint32, sequence_uint32);
   EXPECT_EQ(*stats.m_sequence_int64, sequence_int64);

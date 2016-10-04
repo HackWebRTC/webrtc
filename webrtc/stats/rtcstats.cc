@@ -93,6 +93,8 @@ RTCStats::MembersOfThisObjectAndAncestors(
     return to_str;                                                             \
   }
 
+WEBRTC_DEFINE_RTCSTATSMEMBER(bool, kBool, false, false,
+                             rtc::ToString(value_));
 WEBRTC_DEFINE_RTCSTATSMEMBER(int32_t, kInt32, false, false,
                              rtc::ToString(value_));
 WEBRTC_DEFINE_RTCSTATSMEMBER(uint32_t, kUint32, false, false,
@@ -105,6 +107,9 @@ WEBRTC_DEFINE_RTCSTATSMEMBER(double, kDouble, false, false,
                              rtc::ToString(value_));
 WEBRTC_DEFINE_RTCSTATSMEMBER(std::string, kString, false, true,
                              value_);
+WEBRTC_DEFINE_RTCSTATSMEMBER(
+    std::vector<bool>, kSequenceBool, true, false,
+    VectorToString(value_));
 WEBRTC_DEFINE_RTCSTATSMEMBER(
     std::vector<int32_t>, kSequenceInt32, true, false,
     VectorToString(value_));

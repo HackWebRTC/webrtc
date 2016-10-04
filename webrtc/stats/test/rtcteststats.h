@@ -23,12 +23,14 @@ class RTCTestStats : public RTCStats {
   RTCTestStats(const std::string& id, int64_t timestamp_us);
 
   WEBRTC_RTCSTATS_IMPL(RTCStats, RTCTestStats,
+      &m_bool,
       &m_int32,
       &m_uint32,
       &m_int64,
       &m_uint64,
       &m_double,
       &m_string,
+      &m_sequence_bool,
       &m_sequence_int32,
       &m_sequence_uint32,
       &m_sequence_int64,
@@ -36,12 +38,14 @@ class RTCTestStats : public RTCStats {
       &m_sequence_double,
       &m_sequence_string);
 
+  RTCStatsMember<bool> m_bool;
   RTCStatsMember<int32_t> m_int32;
   RTCStatsMember<uint32_t> m_uint32;
   RTCStatsMember<int64_t> m_int64;
   RTCStatsMember<uint64_t> m_uint64;
   RTCStatsMember<double> m_double;
   RTCStatsMember<std::string> m_string;
+  RTCStatsMember<std::vector<bool>> m_sequence_bool;
   RTCStatsMember<std::vector<int32_t>> m_sequence_int32;
   RTCStatsMember<std::vector<uint32_t>> m_sequence_uint32;
   RTCStatsMember<std::vector<int64_t>> m_sequence_int64;
