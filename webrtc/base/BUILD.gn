@@ -447,8 +447,6 @@ rtc_static_library("rtc_base") {
   } else {
     configs += [ ":rtc_base_warnings_config" ]
     sources += [
-      "bandwidthsmoother.cc",
-      "bandwidthsmoother.h",
       "callback.h",
       "fileutils_mock.h",
       "httpserver.cc",

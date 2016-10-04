@@ -408,8 +408,6 @@
           },
         }, {
           'sources': [
-            'bandwidthsmoother.cc',
-            'bandwidthsmoother.h',
             'callback.h',
             'fileutils_mock.h',
             'httpserver.cc',

@@ -336,7 +336,6 @@ if (rtc_include_tests) {
       "base/array_view_unittest.cc",
       "base/atomicops_unittest.cc",
       "base/autodetectproxy_unittest.cc",
-      "base/bandwidthsmoother_unittest.cc",
       "base/base64_unittest.cc",
       "base/basictypes_unittest.cc",
       "base/bind_unittest.cc",
