@@ -39,7 +39,6 @@ rtc_static_library("rtc_pc") {
     "mediamonitor.h",
     "mediasession.cc",
     "mediasession.h",
-    "mediasink.h",
     "rtcpmuxfilter.cc",
     "rtcpmuxfilter.h",
     "srtpfilter.cc",

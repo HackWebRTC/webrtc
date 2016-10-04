@@ -20,7 +20,7 @@
       'target_name': 'rtc_pc',
       'type': 'static_library',
       'dependencies': [
-        '<(webrtc_root)/base/base.gyp:rtc_base',
+        '<(webrtc_root)/base/base.gyp:rtc_base_approved',
         '<(webrtc_root)/media/media.gyp:rtc_media',
       ],
       'conditions': [
@@ -65,7 +65,6 @@
         'mediamonitor.h',
         'mediasession.cc',
         'mediasession.h',
-        'mediasink.h',
         'rtcpmuxfilter.cc',
         'rtcpmuxfilter.h',
         'srtpfilter.cc',
