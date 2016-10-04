@@ -13,6 +13,8 @@
 #include <memory>
 #include <utility>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 
@@ -24,6 +26,8 @@ namespace {
 constexpr uint8_t kFecPayloadType = 96;
 constexpr uint8_t kRedPayloadType = 97;
 constexpr uint8_t kVp8PayloadType = 120;
+
+constexpr int kPacketTimestampIncrement = 3000;
 }  // namespace
 
 ForwardErrorCorrection::PacketList MediaPacketGenerator::ConstructMediaPackets(
@@ -93,7 +97,7 @@ AugmentedPacketGenerator::AugmentedPacketGenerator(uint32_t ssrc)
 
 void AugmentedPacketGenerator::NewFrame(size_t num_packets) {
   num_packets_ = num_packets;
-  timestamp_ += 3000;
+  timestamp_ += kPacketTimestampIncrement;
 }
 
 uint16_t AugmentedPacketGenerator::NextPacketSeqNum() {
@@ -133,6 +137,35 @@ void AugmentedPacketGenerator::WriteRtpHeader(const RTPHeader& header,
   ByteWriter<uint32_t>::WriteBigEndian(data + 8, header.ssrc);
 }
 
+FlexfecPacketGenerator::FlexfecPacketGenerator(uint32_t media_ssrc,
+                                               uint32_t flexfec_ssrc)
+    : AugmentedPacketGenerator(media_ssrc),
+      flexfec_ssrc_(flexfec_ssrc),
+      flexfec_seq_num_(0),
+      flexfec_timestamp_(0) {}
+
+std::unique_ptr<AugmentedPacket> FlexfecPacketGenerator::BuildFlexfecPacket(
+    const ForwardErrorCorrection::Packet& packet) {
+  RTC_DCHECK_LE(packet.length,
+                static_cast<size_t>(IP_PACKET_SIZE - kRtpHeaderSize));
+
+  RTPHeader header;
+  header.sequenceNumber = flexfec_seq_num_;
+  ++flexfec_seq_num_;
+  header.timestamp = flexfec_timestamp_;
+  flexfec_timestamp_ += kPacketTimestampIncrement;
+  header.ssrc = flexfec_ssrc_;
+
+  std::unique_ptr<AugmentedPacket> packet_with_rtp_header(
+      new AugmentedPacket());
+  WriteRtpHeader(header, packet_with_rtp_header->data);
+  memcpy(packet_with_rtp_header->data + kRtpHeaderSize, packet.data,
+         packet.length);
+  packet_with_rtp_header->length = kRtpHeaderSize + packet.length;
+
+  return packet_with_rtp_header;
+}
+
 UlpfecPacketGenerator::UlpfecPacketGenerator(uint32_t ssrc)
     : AugmentedPacketGenerator(ssrc) {}
 
@@ -143,7 +176,6 @@ std::unique_ptr<AugmentedPacket> UlpfecPacketGenerator::BuildMediaRedPacket(
   const size_t kHeaderLength = packet.header.header.headerLength;
   red_packet->header = packet.header;
   red_packet->length = packet.length + 1;  // 1 byte RED header.
-  memset(red_packet->data, 0, red_packet->length);
   // Copy RTP header.
   memcpy(red_packet->data, packet.data, kHeaderLength);
   SetRedHeader(red_packet->data[1] & 0x7f, kHeaderLength, red_packet.get());

@@ -88,6 +88,22 @@ class AugmentedPacketGenerator {
   uint32_t timestamp_;
 };
 
+// This class generates media and FlexFEC packets for a single frame.
+class FlexfecPacketGenerator : public AugmentedPacketGenerator {
+ public:
+  FlexfecPacketGenerator(uint32_t media_ssrc, uint32_t flexfec_ssrc);
+
+  // Creates a new AugmentedPacket (with RTP headers) from a
+  // FlexFEC packet (without RTP headers).
+  std::unique_ptr<AugmentedPacket> BuildFlexfecPacket(
+      const ForwardErrorCorrection::Packet& packet);
+
+ private:
+  uint32_t flexfec_ssrc_;
+  uint16_t flexfec_seq_num_;
+  uint32_t flexfec_timestamp_;
+};
+
 // This class generates media and ULPFEC packets (both encapsulated in RED)
 // for a single frame.
 class UlpfecPacketGenerator : public AugmentedPacketGenerator {
