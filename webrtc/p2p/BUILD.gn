@@ -74,8 +74,6 @@ rtc_static_library("rtc_p2p") {
     "base/udpport.h",
     "client/basicportallocator.cc",
     "client/basicportallocator.h",
-    "client/httpportallocator.cc",
-    "client/httpportallocator.h",
     "client/socketmonitor.cc",
     "client/socketmonitor.h",
   ]

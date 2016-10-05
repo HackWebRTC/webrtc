@@ -71,8 +71,6 @@
         'base/udpport.h',
         'client/basicportallocator.cc',
         'client/basicportallocator.h',
-        'client/httpportallocator.cc',
-        'client/httpportallocator.h',
         'client/socketmonitor.cc',
         'client/socketmonitor.h',
       ],

@@ -18,7 +18,6 @@
 #include "webrtc/p2p/base/teststunserver.h"
 #include "webrtc/p2p/base/testturnserver.h"
 #include "webrtc/p2p/client/basicportallocator.h"
-#include "webrtc/p2p/client/httpportallocator.h"
 #include "webrtc/base/fakenetwork.h"
 #include "webrtc/base/firewallsocketserver.h"
 #include "webrtc/base/gunit.h"
