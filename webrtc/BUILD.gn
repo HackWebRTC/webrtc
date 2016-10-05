@@ -372,7 +372,6 @@ if (rtc_include_tests) {
       "base/optionsfile_unittest.cc",
       "base/pathutils_unittest.cc",
       "base/platform_thread_unittest.cc",
-      "base/profiler_unittest.cc",
       "base/proxy_unittest.cc",
       "base/proxydetect_unittest.cc",
       "base/random_unittest.cc",

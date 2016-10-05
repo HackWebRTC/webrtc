@@ -423,8 +423,6 @@
             'nattypes.h',
             'optionsfile.cc',
             'optionsfile.h',
-            'profiler.cc',
-            'profiler.h',
             'proxyserver.cc',
             'proxyserver.h',
             'rollingaccumulator.h',
