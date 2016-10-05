@@ -92,8 +92,6 @@
         'source/rtcp_packet/voip_metric.h',
         'source/rtcp_receiver.cc',
         'source/rtcp_receiver.h',
-        'source/rtcp_receiver_help.cc',
-        'source/rtcp_receiver_help.h',
         'source/rtcp_sender.cc',
         'source/rtcp_sender.h',
         'source/rtcp_utility.cc',

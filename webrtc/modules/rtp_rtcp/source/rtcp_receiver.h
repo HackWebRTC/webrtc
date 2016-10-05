@@ -20,7 +20,6 @@
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/dlrr.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_receiver_help.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/typedefs.h"
 
@@ -76,12 +75,12 @@ class RTCPReceiver {
 
   bool LastReceivedXrReferenceTimeInfo(rtcp::ReceiveTimeInfo* info) const;
 
-  // get rtt
-  int32_t RTT(uint32_t remoteSSRC,
-              int64_t* RTT,
-              int64_t* avgRTT,
-              int64_t* minRTT,
-              int64_t* maxRTT) const;
+  // Get rtt.
+  int32_t RTT(uint32_t remote_ssrc,
+              int64_t* last_rtt_ms,
+              int64_t* avg_rtt_ms,
+              int64_t* min_rtt_ms,
+              int64_t* max_rtt_ms) const;
 
   int32_t SenderInfoReceived(RTCPSenderInfo* senderInfo) const;
 
@@ -115,12 +114,12 @@ class RTCPReceiver {
  private:
   struct PacketInformation;
   struct ReceiveInformation;
+  struct ReportBlockWithRtt;
   // Mapped by remote ssrc.
   using ReceivedInfoMap = std::map<uint32_t, ReceiveInformation>;
-  // RTCP report block information mapped by remote SSRC.
-  using ReportBlockInfoMap =
-      std::map<uint32_t, RTCPHelp::RTCPReportBlockInformation*>;
-  // RTCP report block information map mapped by source SSRC.
+  // RTCP report blocks mapped by remote SSRC.
+  using ReportBlockInfoMap = std::map<uint32_t, ReportBlockWithRtt>;
+  // RTCP report blocks map mapped by source SSRC.
   using ReportBlockMap = std::map<uint32_t, ReportBlockInfoMap>;
 
   bool ParseCompoundPacket(const uint8_t* packet_begin,
@@ -206,15 +205,6 @@ class RTCPReceiver {
                                PacketInformation* packet_information)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
-  RTCPHelp::RTCPReportBlockInformation* CreateOrGetReportBlockInformation(
-      uint32_t remote_ssrc,
-      uint32_t source_ssrc)
-      EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
-  RTCPHelp::RTCPReportBlockInformation* GetReportBlockInformation(
-      uint32_t remote_ssrc,
-      uint32_t source_ssrc) const
-      EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
-
   Clock* const _clock;
   const bool receiver_only_;
   ModuleRtpRtcp& _rtpRtcp;
@@ -245,7 +235,7 @@ class RTCPReceiver {
   int64_t xr_rr_rtt_ms_;
 
   // Received report blocks.
-  ReportBlockMap _receivedReportBlockMap
+  ReportBlockMap received_report_blocks_
       GUARDED_BY(_criticalSectionRTCPReceiver);
   ReceivedInfoMap received_infos_ GUARDED_BY(_criticalSectionRTCPReceiver);
   std::map<uint32_t, std::string> received_cnames_

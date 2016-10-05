@@ -514,12 +514,16 @@ TEST_F(RtcpReceiverTest, InjectRrPacketsFromTwoRemoteSsrcs) {
 }
 
 TEST_F(RtcpReceiverTest, GetRtt) {
+  const uint32_t kSentCompactNtp = 0x1234;
+  const uint32_t kDelayCompactNtp = 0x222;
   // No report block received.
   EXPECT_EQ(
       -1, rtcp_receiver_.RTT(kSenderSsrc, nullptr, nullptr, nullptr, nullptr));
 
   rtcp::ReportBlock rb;
   rb.SetMediaSsrc(kReceiverMainSsrc);
+  rb.SetLastSr(kSentCompactNtp);
+  rb.SetDelayLastSr(kDelayCompactNtp);
 
   rtcp::ReceiverReport rr;
   rr.SetSenderSsrc(kSenderSsrc);
