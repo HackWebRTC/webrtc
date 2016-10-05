@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/rate_limiter.h"
 #include "webrtc/test/null_transport.h"
 
@@ -44,7 +45,7 @@ bool LoopBackTransport::SendRtp(const uint8_t* data,
   }
   RTPHeader header;
   std::unique_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
-  if (!parser->Parse(static_cast<const uint8_t*>(data), len, &header)) {
+  if (!parser->Parse(data, len, &header)) {
     return false;
   }
   PayloadUnion payload_specific;
@@ -52,9 +53,11 @@ bool LoopBackTransport::SendRtp(const uint8_t* data,
                                                   &payload_specific)) {
     return false;
   }
+  const uint8_t* payload = data + header.headerLength;
+  RTC_CHECK_GE(len, header.headerLength);
+  const size_t payload_length = len - header.headerLength;
   receive_statistics_->IncomingPacket(header, len, false);
-  if (!rtp_receiver_->IncomingRtpPacket(header,
-                                        static_cast<const uint8_t*>(data), len,
+  if (!rtp_receiver_->IncomingRtpPacket(header, payload, payload_length,
                                         payload_specific, true)) {
     return false;
   }

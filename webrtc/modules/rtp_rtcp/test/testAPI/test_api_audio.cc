@@ -22,7 +22,30 @@
 
 namespace webrtc {
 namespace {
-#define test_rate 64000u
+
+const uint32_t kTestRate = 64000u;
+const uint8_t kTestPayload[] = { 't', 'e', 's', 't' };
+const uint8_t kPcmuPayloadType = 96;
+const uint8_t kDtmfPayloadType = 97;
+
+struct CngCodecSpec {
+  int payload_type;
+  int clockrate_hz;
+};
+
+const CngCodecSpec kCngCodecs[] = {{13, 8000},
+                                   {103, 16000},
+                                   {104, 32000},
+                                   {105, 48000}};
+
+bool IsComfortNoisePayload(uint8_t payload_type) {
+  for (const auto& c : kCngCodecs) {
+    if (c.payload_type == payload_type)
+      return true;
+  }
+
+  return false;
+}
 
 class VerifyingAudioReceiver : public NullRtpData {
  public:
@@ -30,31 +53,16 @@ class VerifyingAudioReceiver : public NullRtpData {
       const uint8_t* payloadData,
       size_t payloadSize,
       const webrtc::WebRtcRTPHeader* rtpHeader) override {
-    if (rtpHeader->header.payloadType == 98 ||
-        rtpHeader->header.payloadType == 99) {
-      EXPECT_EQ(4u, payloadSize);
-      char str[5];
-      memcpy(str, payloadData, payloadSize);
-      str[4] = 0;
-      // All our test vectors for payload type 96 and 97 even the stereo is on
-      // a per channel base equal to the 4 chars "test".
-      // Note there is no null termination so we add that to use the
-      // test EXPECT_STRCASEEQ.
-      EXPECT_STRCASEEQ("test", str);
-      return 0;
-    }
-    if (rtpHeader->header.payloadType == 100 ||
-        rtpHeader->header.payloadType == 101 ||
-        rtpHeader->header.payloadType == 102) {
-      if (rtpHeader->type.Audio.channel == 1) {
-        if (payloadData[0] == 0xff) {
-          // All our test vectors for payload type 100, 101 and 102 have the
-          // first channel data being equal to 0xff.
-          return 0;
-        }
-      }
-      ADD_FAILURE() << "This code path should never happen.";
-      return -1;
+    const uint8_t payload_type = rtpHeader->header.payloadType;
+    if (payload_type == kPcmuPayloadType || payload_type == kDtmfPayloadType) {
+      EXPECT_EQ(sizeof(kTestPayload), payloadSize);
+      // All our test vectors for PCMU and DTMF are equal to |kTestPayload|.
+      const size_t min_size = std::min(sizeof(kTestPayload), payloadSize);
+      EXPECT_EQ(0, memcmp(payloadData, kTestPayload, min_size));
+    } else if (IsComfortNoisePayload(payload_type)) {
+      // CNG types should be recognized properly.
+      EXPECT_EQ(kAudioFrameCN, rtpHeader->frameType);
+      EXPECT_TRUE(rtpHeader->type.Audio.isCNG);
     }
     return 0;
   }
@@ -67,13 +75,15 @@ class RTPCallback : public NullRtpFeedback {
                               const int frequency,
                               const size_t channels,
                               const uint32_t rate) override {
-    if (payloadType == 96) {
-      EXPECT_EQ(test_rate, rate) <<
+    if (payloadType == kPcmuPayloadType) {
+      EXPECT_EQ(kTestRate, rate) <<
           "The rate should be 64K for this payloadType";
     }
     return 0;
   }
 };
+
+}  // namespace
 
 class RtpRtcpAudioTest : public ::testing::Test {
  protected:
@@ -88,12 +98,6 @@ class RtpRtcpAudioTest : public ::testing::Test {
   ~RtpRtcpAudioTest() {}
 
   void SetUp() override {
-    data_receiver1 = new VerifyingAudioReceiver();
-    data_receiver2 = new VerifyingAudioReceiver();
-    rtp_callback = new RTPCallback();
-    transport1 = new LoopBackTransport();
-    transport2 = new LoopBackTransport();
-
     receive_statistics1_.reset(ReceiveStatistics::Create(&fake_clock));
     receive_statistics2_.reset(ReceiveStatistics::Create(&fake_clock));
 
@@ -106,49 +110,58 @@ class RtpRtcpAudioTest : public ::testing::Test {
     configuration.audio = true;
     configuration.clock = &fake_clock;
     configuration.receive_statistics = receive_statistics1_.get();
-    configuration.outgoing_transport = transport1;
+    configuration.outgoing_transport = &transport1;
     configuration.retransmission_rate_limiter = &retransmission_rate_limiter_;
 
-    module1 = RtpRtcp::CreateRtpRtcp(configuration);
+    module1.reset(RtpRtcp::CreateRtpRtcp(configuration));
     rtp_receiver1_.reset(RtpReceiver::CreateAudioReceiver(
-        &fake_clock, data_receiver1, NULL, rtp_payload_registry1_.get()));
+        &fake_clock, &data_receiver1, &rtp_callback,
+        rtp_payload_registry1_.get()));
 
     configuration.receive_statistics = receive_statistics2_.get();
-    configuration.outgoing_transport = transport2;
+    configuration.outgoing_transport = &transport2;
 
-    module2 = RtpRtcp::CreateRtpRtcp(configuration);
+    module2.reset(RtpRtcp::CreateRtpRtcp(configuration));
     rtp_receiver2_.reset(RtpReceiver::CreateAudioReceiver(
-        &fake_clock, data_receiver2, NULL, rtp_payload_registry2_.get()));
+        &fake_clock, &data_receiver2, &rtp_callback,
+        rtp_payload_registry2_.get()));
 
-    transport1->SetSendModule(module2, rtp_payload_registry2_.get(),
-                              rtp_receiver2_.get(), receive_statistics2_.get());
-    transport2->SetSendModule(module1, rtp_payload_registry1_.get(),
-                              rtp_receiver1_.get(), receive_statistics1_.get());
+    transport1.SetSendModule(module2.get(), rtp_payload_registry2_.get(),
+                             rtp_receiver2_.get(), receive_statistics2_.get());
+    transport2.SetSendModule(module1.get(), rtp_payload_registry1_.get(),
+                             rtp_receiver1_.get(), receive_statistics1_.get());
   }
 
-  void TearDown() override {
-    delete module1;
-    delete module2;
-    delete transport1;
-    delete transport2;
-    delete data_receiver1;
-    delete data_receiver2;
-    delete rtp_callback;
+  void RegisterPayload(const CodecInst& codec) {
+    EXPECT_EQ(0, module1->RegisterSendPayload(codec));
+    EXPECT_EQ(0, rtp_receiver1_->RegisterReceivePayload(
+        codec.plname,
+        codec.pltype,
+        codec.plfreq,
+        codec.channels,
+        codec.rate));
+    EXPECT_EQ(0, module2->RegisterSendPayload(codec));
+    EXPECT_EQ(0, rtp_receiver2_->RegisterReceivePayload(
+        codec.plname,
+        codec.pltype,
+        codec.plfreq,
+        codec.channels,
+        codec.rate));
   }
 
-  RtpRtcp* module1;
-  RtpRtcp* module2;
+  VerifyingAudioReceiver data_receiver1;
+  VerifyingAudioReceiver data_receiver2;
+  RTPCallback rtp_callback;
   std::unique_ptr<ReceiveStatistics> receive_statistics1_;
   std::unique_ptr<ReceiveStatistics> receive_statistics2_;
-  std::unique_ptr<RtpReceiver> rtp_receiver1_;
-  std::unique_ptr<RtpReceiver> rtp_receiver2_;
   std::unique_ptr<RTPPayloadRegistry> rtp_payload_registry1_;
   std::unique_ptr<RTPPayloadRegistry> rtp_payload_registry2_;
-  VerifyingAudioReceiver* data_receiver1;
-  VerifyingAudioReceiver* data_receiver2;
-  LoopBackTransport* transport1;
-  LoopBackTransport* transport2;
-  RTPCallback* rtp_callback;
+  std::unique_ptr<RtpReceiver> rtp_receiver1_;
+  std::unique_ptr<RtpReceiver> rtp_receiver2_;
+  std::unique_ptr<RtpRtcp> module1;
+  std::unique_ptr<RtpRtcp> module2;
+  LoopBackTransport transport1;
+  LoopBackTransport transport2;
   uint32_t test_ssrc;
   uint32_t test_timestamp;
   uint16_t test_sequence_number;
@@ -170,36 +183,20 @@ TEST_F(RtpRtcpAudioTest, Basic) {
 
   // Send an empty RTP packet.
   // Should fail since we have not registered the payload type.
-  EXPECT_FALSE(module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96, 0, -1,
-                                         nullptr, 0, nullptr, nullptr,
-                                         nullptr));
+  EXPECT_FALSE(module1->SendOutgoingData(webrtc::kAudioFrameSpeech,
+                                         kPcmuPayloadType, 0, -1, nullptr, 0,
+                                         nullptr, nullptr, nullptr));
 
-  CodecInst voice_codec;
-  memset(&voice_codec, 0, sizeof(voice_codec));
-  voice_codec.pltype = 96;
+  CodecInst voice_codec = {};
+  voice_codec.pltype = kPcmuPayloadType;
   voice_codec.plfreq = 8000;
+  voice_codec.rate = kTestRate;
   memcpy(voice_codec.plname, "PCMU", 5);
+  RegisterPayload(voice_codec);
 
-  EXPECT_EQ(0, module1->RegisterSendPayload(voice_codec));
-  EXPECT_EQ(0, rtp_receiver1_->RegisterReceivePayload(
-      voice_codec.plname,
-      voice_codec.pltype,
-      voice_codec.plfreq,
-      voice_codec.channels,
-      (voice_codec.rate < 0) ? 0 : voice_codec.rate));
-  EXPECT_EQ(0, module2->RegisterSendPayload(voice_codec));
-  voice_codec.rate = test_rate;
-  EXPECT_EQ(0, rtp_receiver2_->RegisterReceivePayload(
-      voice_codec.plname,
-      voice_codec.pltype,
-      voice_codec.plfreq,
-      voice_codec.channels,
-      (voice_codec.rate < 0) ? 0 : voice_codec.rate));
-
-  const uint8_t test[5] = "test";
-  EXPECT_EQ(true,
-            module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96, 0, -1,
-                                      test, 4, nullptr, nullptr, nullptr));
+  EXPECT_TRUE(module1->SendOutgoingData(webrtc::kAudioFrameSpeech,
+                                        kPcmuPayloadType, 0, -1, kTestPayload,
+                                        4, nullptr, nullptr, nullptr));
 
   EXPECT_EQ(test_ssrc, rtp_receiver2_->SSRC());
   uint32_t timestamp;
@@ -208,34 +205,19 @@ TEST_F(RtpRtcpAudioTest, Basic) {
 }
 
 TEST_F(RtpRtcpAudioTest, DTMF) {
-  CodecInst voice_codec;
-  memset(&voice_codec, 0, sizeof(voice_codec));
-  voice_codec.pltype = 96;
+  CodecInst voice_codec = {};
+  voice_codec.pltype = kPcmuPayloadType;
   voice_codec.plfreq = 8000;
+  voice_codec.rate = kTestRate;
   memcpy(voice_codec.plname, "PCMU", 5);
-
-  EXPECT_EQ(0, module1->RegisterSendPayload(voice_codec));
-  EXPECT_EQ(0, rtp_receiver1_->RegisterReceivePayload(
-      voice_codec.plname,
-      voice_codec.pltype,
-      voice_codec.plfreq,
-      voice_codec.channels,
-      (voice_codec.rate < 0) ? 0 : voice_codec.rate));
-  EXPECT_EQ(0, module2->RegisterSendPayload(voice_codec));
-  voice_codec.rate = test_rate;
-  EXPECT_EQ(0, rtp_receiver2_->RegisterReceivePayload(
-      voice_codec.plname,
-      voice_codec.pltype,
-      voice_codec.plfreq,
-      voice_codec.channels,
-      (voice_codec.rate < 0) ? 0 : voice_codec.rate));
+  RegisterPayload(voice_codec);
 
   module1->SetSSRC(test_ssrc);
   module1->SetStartTimestamp(test_timestamp);
   EXPECT_EQ(0, module1->SetSendingStatus(true));
 
   // Prepare for DTMF.
-  voice_codec.pltype = 97;
+  voice_codec.pltype = kDtmfPayloadType;
   voice_codec.plfreq = 8000;
   memcpy(voice_codec.plname, "telephone-event", 16);
 
@@ -245,7 +227,7 @@ TEST_F(RtpRtcpAudioTest, DTMF) {
         voice_codec.pltype,
         voice_codec.plfreq,
         voice_codec.channels,
-        (voice_codec.rate < 0) ? 0 : voice_codec.rate));
+        voice_codec.rate));
 
   // Start DTMF test.
   int timeStamp = 160;
@@ -256,27 +238,70 @@ TEST_F(RtpRtcpAudioTest, DTMF) {
   }
   timeStamp += 160;  // Prepare for next packet.
 
-  const uint8_t test[9] = "test";
-
   // Send RTP packets for 16 tones a 160 ms  100ms
   // pause between = 2560ms + 1600ms = 4160ms
   for (; timeStamp <= 250 * 160; timeStamp += 160) {
-    EXPECT_TRUE(module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96,
-                                          timeStamp, -1, test, 4, nullptr,
-                                          nullptr, nullptr));
+    EXPECT_TRUE(module1->SendOutgoingData(
+        webrtc::kAudioFrameSpeech, kPcmuPayloadType, timeStamp, -1,
+        kTestPayload, 4, nullptr, nullptr, nullptr));
     fake_clock.AdvanceTimeMilliseconds(20);
     module1->Process();
   }
   EXPECT_EQ(0, module1->SendTelephoneEventOutband(32, 9000, 10));
 
   for (; timeStamp <= 740 * 160; timeStamp += 160) {
-    EXPECT_TRUE(module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96,
-                                          timeStamp, -1, test, 4, nullptr,
-                                          nullptr, nullptr));
+    EXPECT_TRUE(module1->SendOutgoingData(
+        webrtc::kAudioFrameSpeech, kPcmuPayloadType, timeStamp, -1,
+        kTestPayload, 4, nullptr, nullptr, nullptr));
     fake_clock.AdvanceTimeMilliseconds(20);
     module1->Process();
   }
 }
 
-}  // namespace
+TEST_F(RtpRtcpAudioTest, ComfortNoise) {
+  module1->SetSSRC(test_ssrc);
+  module1->SetStartTimestamp(test_timestamp);
+
+  EXPECT_EQ(0, module1->SetSendingStatus(true));
+
+  // Register PCMU and all four comfort noise codecs
+  CodecInst voice_codec = {};
+  voice_codec.pltype = kPcmuPayloadType;
+  voice_codec.plfreq = 8000;
+  voice_codec.rate = kTestRate;
+  memcpy(voice_codec.plname, "PCMU", 5);
+  RegisterPayload(voice_codec);
+
+  for (const auto& c : kCngCodecs) {
+    CodecInst cng_codec = {};
+    cng_codec.pltype = c.payload_type;
+    cng_codec.plfreq = c.clockrate_hz;
+    memcpy(cng_codec.plname, "CN", 3);
+    RegisterPayload(cng_codec);
+  }
+
+  // Transmit comfort noise packets interleaved by PCMU packets.
+  uint32_t in_timestamp = 0;
+  for (const auto& c : kCngCodecs) {
+    uint32_t timestamp;
+    EXPECT_TRUE(module1->SendOutgoingData(
+        webrtc::kAudioFrameSpeech, kPcmuPayloadType, in_timestamp, -1,
+        kTestPayload, 4, nullptr, nullptr, nullptr));
+
+    EXPECT_EQ(test_ssrc, rtp_receiver2_->SSRC());
+    EXPECT_TRUE(rtp_receiver2_->Timestamp(&timestamp));
+    EXPECT_EQ(test_timestamp + in_timestamp, timestamp);
+    in_timestamp += 10;
+
+    EXPECT_TRUE(module1->SendOutgoingData(webrtc::kAudioFrameCN, c.payload_type,
+                                          in_timestamp, -1, kTestPayload, 1,
+                                          nullptr, nullptr, nullptr));
+
+    EXPECT_EQ(test_ssrc, rtp_receiver2_->SSRC());
+    EXPECT_TRUE(rtp_receiver2_->Timestamp(&timestamp));
+    EXPECT_EQ(test_timestamp + in_timestamp, timestamp);
+    in_timestamp += 10;
+  }
+}
+
 }  // namespace webrtc
