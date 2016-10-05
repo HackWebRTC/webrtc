@@ -35,8 +35,6 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
 
   TelephoneEventHandler* GetTelephoneEventHandler() override { return NULL; }
 
-  int GetPayloadTypeFrequency() const override;
-
   RTPAliveType ProcessDeadOrAlive(uint16_t last_payload_length) const override;
 
   bool ShouldReportCsrcChanges(uint8_t payload_type) const override;

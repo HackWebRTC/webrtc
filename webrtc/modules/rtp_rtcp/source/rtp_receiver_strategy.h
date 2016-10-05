@@ -46,9 +46,6 @@ class RTPReceiverStrategy {
 
   virtual TelephoneEventHandler* GetTelephoneEventHandler() = 0;
 
-  // Retrieves the last known applicable frequency.
-  virtual int GetPayloadTypeFrequency() const = 0;
-
   // Computes the current dead-or-alive state.
   virtual RTPAliveType ProcessDeadOrAlive(
       uint16_t last_payload_length) const = 0;
