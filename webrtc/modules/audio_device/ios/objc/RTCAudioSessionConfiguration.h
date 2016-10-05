@@ -11,6 +11,8 @@
 #import <AVFoundation/AVFoundation.h>
 #import <Foundation/Foundation.h>
 
+#import "WebRTC/RTCMacros.h"
+
 NS_ASSUME_NONNULL_BEGIN
 
 extern const int kRTCAudioSessionPreferredNumberOfChannels;
@@ -20,6 +22,7 @@ extern const double kRTCAudioSessionHighPerformanceIOBufferDuration;
 extern const double kRTCAudioSessionLowComplexityIOBufferDuration;
 
 // Struct to hold configuration values.
+RTC_EXPORT
 @interface RTCAudioSessionConfiguration : NSObject
 
 @property(nonatomic, strong) NSString *category;

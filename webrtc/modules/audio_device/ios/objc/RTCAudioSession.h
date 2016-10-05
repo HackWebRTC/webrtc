@@ -11,6 +11,8 @@
 #import <AVFoundation/AVFoundation.h>
 #import <Foundation/Foundation.h>
 
+#import "WebRTC/RTCMacros.h"
+
 NS_ASSUME_NONNULL_BEGIN
 
 extern NSString * const kRTCAudioSessionErrorDomain;
@@ -25,6 +27,7 @@ extern NSInteger const kRTCAudioSessionErrorConfiguration;
 // Surfaces AVAudioSession events. WebRTC will listen directly for notifications
 // from AVAudioSession and handle them before calling these delegate methods,
 // at which point applications can perform additional processing if required.
+RTC_EXPORT
 @protocol RTCAudioSessionDelegate <NSObject>
 
 @optional
@@ -80,6 +83,7 @@ extern NSInteger const kRTCAudioSessionErrorConfiguration;
  *  RTCAudioSession also coordinates activation so that the audio session is
  *  activated only once. See |setActive:error:|.
  */
+RTC_EXPORT
 @interface RTCAudioSession : NSObject
 
 /** Convenience property to access the AVAudioSession singleton. Callers should

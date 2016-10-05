@@ -69,9 +69,9 @@
 - (void)addRenderer:(id<RTCVideoRenderer>)renderer {
   // Make sure we don't have this renderer yet.
   for (RTCVideoRendererAdapter *adapter in _adapters) {
-    // Getting around unused variable error
-    if (adapter.videoRenderer != renderer) {
+    if (adapter.videoRenderer == renderer) {
       NSAssert(NO, @"|renderer| is already attached to this track");
+      return;
     }
   }
   // Create a wrapper that provides a native pointer for us.
