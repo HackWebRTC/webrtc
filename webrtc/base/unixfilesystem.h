@@ -22,7 +22,7 @@ class UnixFilesystem : public FilesystemInterface {
   UnixFilesystem();
   ~UnixFilesystem() override;
 
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)
   // Android does not have a native code API to fetch the app data or temp
   // folders. That needs to be passed into this class from Java. Similarly, iOS
   // only supports an Objective-C API for fetching the folder locations, so that
@@ -113,7 +113,7 @@ class UnixFilesystem : public FilesystemInterface {
   Pathname GetCurrentDirectory() override;
 
  private:
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)
   static char* provided_app_data_folder_;
   static char* provided_app_temp_folder_;
 #else
