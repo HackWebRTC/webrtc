@@ -45,7 +45,7 @@ void WritePps(const PpsParser::PpsState& pps,
   // seq_parameter_set_id: ue(v)
   bit_buffer.WriteExponentialGolomb(pps.sps_id);
   // entropy_coding_mode_flag: u(1)
-  bit_buffer.WriteBits(kIgnored, 1);
+  bit_buffer.WriteBits(pps.entropy_coding_mode_flag, 1);
   // bottom_field_pic_order_in_frame_present_flag: u(1)
   bit_buffer.WriteBits(pps.bottom_field_pic_order_in_frame_present_flag ? 1 : 0,
                        1);
@@ -181,6 +181,8 @@ class PpsParserTest : public ::testing::Test {
               parsed_pps_->bottom_field_pic_order_in_frame_present_flag);
     EXPECT_EQ(pps.weighted_pred_flag, parsed_pps_->weighted_pred_flag);
     EXPECT_EQ(pps.weighted_bipred_idc, parsed_pps_->weighted_bipred_idc);
+    EXPECT_EQ(pps.entropy_coding_mode_flag,
+              parsed_pps_->entropy_coding_mode_flag);
     EXPECT_EQ(pps.redundant_pic_cnt_present_flag,
               parsed_pps_->redundant_pic_cnt_present_flag);
     EXPECT_EQ(pps.pic_init_qp_minus26, parsed_pps_->pic_init_qp_minus26);
@@ -203,6 +205,7 @@ TEST_F(PpsParserTest, MaxPps) {
   generated_pps_.redundant_pic_cnt_present_flag = 1;  // 1 bit value.
   generated_pps_.weighted_bipred_idc = (1 << 2) - 1;  // 2 bit value.
   generated_pps_.weighted_pred_flag = true;
+  generated_pps_.entropy_coding_mode_flag = true;
   generated_pps_.id = 2;
   generated_pps_.sps_id = 1;
   RunTest();

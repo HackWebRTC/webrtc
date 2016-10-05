@@ -240,9 +240,11 @@ bool H264BitstreamParser::ParseNonParameterSetNalu(const uint8_t* source,
       }
     }
   }
-  // cabac not supported: entropy_coding_mode_flag == 0 asserted above.
-  // if (entropy_coding_mode_flag && slice_type != I && slice_type != SI)
-  //   cabac_init_idc
+  if (pps_->entropy_coding_mode_flag &&
+      slice_type != H264::SliceType::kI && slice_type != H264::SliceType::kSi) {
+    // cabac_init_idc: ue(v)
+    RETURN_FALSE_ON_FAIL(slice_reader.ReadExponentialGolomb(&golomb_tmp));
+  }
   int32_t last_slice_qp_delta;
   RETURN_FALSE_ON_FAIL(
       slice_reader.ReadSignedExponentialGolomb(&last_slice_qp_delta));
