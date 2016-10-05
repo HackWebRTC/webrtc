@@ -279,15 +279,21 @@ rtc_static_library("webrtc_vp8") {
 }
 
 rtc_static_library("webrtc_vp9") {
-  sources = [
-    "codecs/vp9/include/vp9.h",
-    "codecs/vp9/screenshare_layers.cc",
-    "codecs/vp9/screenshare_layers.h",
-    "codecs/vp9/vp9_frame_buffer_pool.cc",
-    "codecs/vp9/vp9_frame_buffer_pool.h",
-    "codecs/vp9/vp9_impl.cc",
-    "codecs/vp9/vp9_impl.h",
-  ]
+  if (rtc_libvpx_build_vp9) {
+    sources = [
+      "codecs/vp9/include/vp9.h",
+      "codecs/vp9/screenshare_layers.cc",
+      "codecs/vp9/screenshare_layers.h",
+      "codecs/vp9/vp9_frame_buffer_pool.cc",
+      "codecs/vp9/vp9_frame_buffer_pool.h",
+      "codecs/vp9/vp9_impl.cc",
+      "codecs/vp9/vp9_impl.h",
+    ]
+  } else {
+    sources = [
+      "codecs/vp9/vp9_noop.cc",
+    ]
+  }
 
   if (is_clang) {
     # Suppress warnings from Chrome's Clang plugins.
