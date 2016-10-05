@@ -165,23 +165,22 @@ RtpStreamReceiver::RtpStreamReceiver(
     VideoCodec ulpfec_codec = {};
     ulpfec_codec.codecType = kVideoCodecULPFEC;
     strncpy(ulpfec_codec.plName, "ulpfec", sizeof(ulpfec_codec.plName));
-    ulpfec_codec.plType = config_.rtp.fec.ulpfec_payload_type;
+    ulpfec_codec.plType = config_.rtp.ulpfec.ulpfec_payload_type;
     RTC_CHECK(SetReceiveCodec(ulpfec_codec));
 
     VideoCodec red_codec = {};
     red_codec.codecType = kVideoCodecRED;
     strncpy(red_codec.plName, "red", sizeof(red_codec.plName));
-    red_codec.plType = config_.rtp.fec.red_payload_type;
+    red_codec.plType = config_.rtp.ulpfec.red_payload_type;
     RTC_CHECK(SetReceiveCodec(red_codec));
-    if (config_.rtp.fec.red_rtx_payload_type != -1) {
+    if (config_.rtp.ulpfec.red_rtx_payload_type != -1) {
       rtp_payload_registry_.SetRtxPayloadType(
-          config_.rtp.fec.red_rtx_payload_type,
-          config_.rtp.fec.red_payload_type);
+          config_.rtp.ulpfec.red_rtx_payload_type,
+          config_.rtp.ulpfec.red_payload_type);
     }
 
-    rtp_rtcp_->SetGenericFECStatus(true,
-                                   config_.rtp.fec.red_payload_type,
-                                   config_.rtp.fec.ulpfec_payload_type);
+    rtp_rtcp_->SetGenericFECStatus(true, config_.rtp.ulpfec.red_payload_type,
+                                   config_.rtp.ulpfec.ulpfec_payload_type);
   }
 
   if (config_.rtp.rtcp_xr.receiver_reference_time_report)
@@ -338,8 +337,8 @@ int32_t RtpStreamReceiver::SliceLossIndicationRequest(
 }
 
 bool RtpStreamReceiver::IsFecEnabled() const {
-  return config_.rtp.fec.red_payload_type != -1 &&
-      config_.rtp.fec.ulpfec_payload_type != -1;
+  return config_.rtp.ulpfec.red_payload_type != -1 &&
+         config_.rtp.ulpfec.ulpfec_payload_type != -1;
 }
 
 bool RtpStreamReceiver::IsRetransmissionsEnabled() const {

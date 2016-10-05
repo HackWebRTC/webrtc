@@ -897,13 +897,13 @@ bool WebRtcVideoChannel2::SetSendParameters(const VideoSendParameters& params) {
     if (changed_params.codec) {
       bool red_was_disabled = red_disabled_by_remote_side_;
       red_disabled_by_remote_side_ =
-          changed_params.codec->fec.red_payload_type == -1;
+          changed_params.codec->ulpfec.red_payload_type == -1;
       if (red_was_disabled != red_disabled_by_remote_side_) {
         for (auto& kv : receive_streams_) {
           // In practice VideoChannel::SetRemoteContent appears to most of the
           // time also call UpdateRemoteStreams, which recreates the receive
           // streams. If that's always true this call isn't needed.
-          kv.second->SetFecDisabledRemotely(red_disabled_by_remote_side_);
+          kv.second->SetUlpfecDisabledRemotely(red_disabled_by_remote_side_);
         }
       }
     }
@@ -1475,8 +1475,8 @@ void WebRtcVideoChannel2::OnPacketReceived(
   // for these.
   for (auto& codec : recv_codecs_) {
     if (payload_type == codec.rtx_payload_type ||
-        payload_type == codec.fec.red_rtx_payload_type ||
-        payload_type == codec.fec.ulpfec_payload_type) {
+        payload_type == codec.ulpfec.red_rtx_payload_type ||
+        payload_type == codec.ulpfec.ulpfec_payload_type) {
       return;
     }
   }
@@ -1846,7 +1846,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodec(
     parameters_.config.encoder_settings.internal_source =
         external_encoder_factory_->EncoderTypeHasInternalSource(type);
   }
-  parameters_.config.rtp.fec = codec_settings.fec;
+  parameters_.config.rtp.ulpfec = codec_settings.ulpfec;
 
   // Set RTX payload type if RTX is enabled.
   if (!parameters_.config.rtp.rtx.ssrcs.empty()) {
@@ -2394,7 +2394,7 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::ConfigureCodecs(
   }
 
   // TODO(pbos): Reconfigure RTX based on incoming recv_codecs.
-  config_.rtp.fec = recv_codecs.front().fec;
+  config_.rtp.ulpfec = recv_codecs.front().ulpfec;
   config_.rtp.nack.rtp_history_ms =
       HasNack(recv_codecs.begin()->codec) ? kNackHistoryMs : 0;
 }
@@ -2471,9 +2471,9 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RecreateWebRtcStream() {
   }
   webrtc::VideoReceiveStream::Config config = config_.Copy();
   if (red_disabled_by_remote_side_) {
-    config.rtp.fec.red_payload_type = -1;
-    config.rtp.fec.ulpfec_payload_type = -1;
-    config.rtp.fec.red_rtx_payload_type = -1;
+    config.rtp.ulpfec.red_payload_type = -1;
+    config.rtp.ulpfec.ulpfec_payload_type = -1;
+    config.rtp.ulpfec.red_rtx_payload_type = -1;
   }
   stream_ = call_->CreateVideoReceiveStream(std::move(config));
   stream_->Start();
@@ -2584,7 +2584,7 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo(
   return info;
 }
 
-void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetFecDisabledRemotely(
+void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetUlpfecDisabledRemotely(
     bool disable) {
   red_disabled_by_remote_side_ = disable;
   RecreateWebRtcStream();
@@ -2596,9 +2596,9 @@ WebRtcVideoChannel2::VideoCodecSettings::VideoCodecSettings()
 bool WebRtcVideoChannel2::VideoCodecSettings::operator==(
     const WebRtcVideoChannel2::VideoCodecSettings& other) const {
   return codec == other.codec &&
-         fec.ulpfec_payload_type == other.fec.ulpfec_payload_type &&
-         fec.red_payload_type == other.fec.red_payload_type &&
-         fec.red_rtx_payload_type == other.fec.red_rtx_payload_type &&
+         ulpfec.ulpfec_payload_type == other.ulpfec.ulpfec_payload_type &&
+         ulpfec.red_payload_type == other.ulpfec.red_payload_type &&
+         ulpfec.red_rtx_payload_type == other.ulpfec.red_rtx_payload_type &&
          rtx_payload_type == other.rtx_payload_type;
 }
 
@@ -2617,7 +2617,7 @@ WebRtcVideoChannel2::MapCodecs(const std::vector<VideoCodec>& codecs) {
   // |rtx_mapping| maps video payload type to rtx payload type.
   std::map<int, int> rtx_mapping;
 
-  webrtc::FecConfig fec_settings;
+  webrtc::UlpfecConfig ulpfec_config;
 
   for (size_t i = 0; i < codecs.size(); ++i) {
     const VideoCodec& in_codec = codecs[i];
@@ -2634,15 +2634,15 @@ WebRtcVideoChannel2::MapCodecs(const std::vector<VideoCodec>& codecs) {
     switch (in_codec.GetCodecType()) {
       case VideoCodec::CODEC_RED: {
         // RED payload type, should not have duplicates.
-        RTC_DCHECK(fec_settings.red_payload_type == -1);
-        fec_settings.red_payload_type = in_codec.id;
+        RTC_DCHECK(ulpfec_config.red_payload_type == -1);
+        ulpfec_config.red_payload_type = in_codec.id;
         continue;
       }
 
       case VideoCodec::CODEC_ULPFEC: {
         // ULPFEC payload type, should not have duplicates.
-        RTC_DCHECK(fec_settings.ulpfec_payload_type == -1);
-        fec_settings.ulpfec_payload_type = in_codec.id;
+        RTC_DCHECK(ulpfec_config.ulpfec_payload_type == -1);
+        ulpfec_config.ulpfec_payload_type = in_codec.id;
         continue;
       }
 
@@ -2685,16 +2685,16 @@ WebRtcVideoChannel2::MapCodecs(const std::vector<VideoCodec>& codecs) {
       return std::vector<VideoCodecSettings>();
     }
 
-    if (it->first == fec_settings.red_payload_type) {
-      fec_settings.red_rtx_payload_type = it->second;
+    if (it->first == ulpfec_config.red_payload_type) {
+      ulpfec_config.red_rtx_payload_type = it->second;
     }
   }
 
   for (size_t i = 0; i < video_codecs.size(); ++i) {
-    video_codecs[i].fec = fec_settings;
+    video_codecs[i].ulpfec = ulpfec_config;
     if (rtx_mapping[video_codecs[i].codec.id] != 0 &&
         rtx_mapping[video_codecs[i].codec.id] !=
-            fec_settings.red_payload_type) {
+            ulpfec_config.red_payload_type) {
       video_codecs[i].rtx_payload_type = rtx_mapping[video_codecs[i].codec.id];
     }
   }

@@ -22,7 +22,7 @@ std::string NackConfig::ToString() const {
   return ss.str();
 }
 
-std::string FecConfig::ToString() const {
+std::string UlpfecConfig::ToString() const {
   std::stringstream ss;
   ss << "{ulpfec_payload_type: " << ulpfec_payload_type;
   ss << ", red_payload_type: " << red_payload_type;

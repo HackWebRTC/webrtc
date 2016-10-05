@@ -329,7 +329,7 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
             static_cast<int>(rtx.transmitted.TotalBytes() * 8 / elapsed_sec /
                              1000));
       }
-      if (rtp_config.fec.red_payload_type != -1) {
+      if (rtp_config.ulpfec.red_payload_type != -1) {
         RTC_HISTOGRAMS_COUNTS_10000(kIndex,
                                     uma_prefix_ + "FecBitrateSentInKbps",
                                     static_cast<int>(rtp_rtx.fec.TotalBytes() *

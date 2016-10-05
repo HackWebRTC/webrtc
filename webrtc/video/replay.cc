@@ -217,8 +217,8 @@ void RtpReplay() {
   VideoReceiveStream::Config receive_config(&transport);
   receive_config.rtp.remote_ssrc = flags::Ssrc();
   receive_config.rtp.local_ssrc = kReceiverLocalSsrc;
-  receive_config.rtp.fec.ulpfec_payload_type = flags::FecPayloadType();
-  receive_config.rtp.fec.red_payload_type = flags::RedPayloadType();
+  receive_config.rtp.ulpfec.ulpfec_payload_type = flags::FecPayloadType();
+  receive_config.rtp.ulpfec.red_payload_type = flags::RedPayloadType();
   receive_config.rtp.nack.rtp_history_ms = 1000;
   if (flags::TransmissionOffsetId() != -1) {
     receive_config.rtp.extensions.push_back(RtpExtension(

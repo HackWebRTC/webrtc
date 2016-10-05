@@ -233,10 +233,11 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
 
   video_send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
   if (fec == FecMode::kOn) {
-    video_send_config_.rtp.fec.red_payload_type = kRedPayloadType;
-    video_send_config_.rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
-    video_receive_configs_[0].rtp.fec.red_payload_type = kRedPayloadType;
-    video_receive_configs_[0].rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+    video_send_config_.rtp.ulpfec.red_payload_type = kRedPayloadType;
+    video_send_config_.rtp.ulpfec.ulpfec_payload_type = kUlpfecPayloadType;
+    video_receive_configs_[0].rtp.ulpfec.red_payload_type = kRedPayloadType;
+    video_receive_configs_[0].rtp.ulpfec.ulpfec_payload_type =
+        kUlpfecPayloadType;
   }
   video_receive_configs_[0].rtp.nack.rtp_history_ms = 1000;
   video_receive_configs_[0].renderer = &observer;

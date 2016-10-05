@@ -35,10 +35,10 @@ struct NackConfig {
   int rtp_history_ms;
 };
 
-// Settings for forward error correction, see RFC 5109 for details. Set the
-// payload types to '-1' to disable.
-struct FecConfig {
-  FecConfig()
+// Settings for ULPFEC forward error correction.
+// Set the payload types to '-1' to disable.
+struct UlpfecConfig {
+  UlpfecConfig()
       : ulpfec_payload_type(-1),
         red_payload_type(-1),
         red_rtx_payload_type(-1) {}

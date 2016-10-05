@@ -99,7 +99,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   // Ownership of this object lies with the owner of the ReceiveStatisticsProxy
   // instance.  Lifetime is guaranteed to outlive |this|.
   // TODO(tommi): In practice the config_ reference is only used for accessing
-  // config_.rtp.fec.ulpfec_payload_type.  Instead of holding a pointer back,
+  // config_.rtp.ulpfec.ulpfec_payload_type.  Instead of holding a pointer back,
   // we could just store the value of ulpfec_payload_type and change the
   // ReceiveStatisticsProxy() ctor to accept a const& of Config (since we'll
   // then no longer store a pointer to the object).

@@ -57,7 +57,7 @@ class SendStatisticsProxyTest : public ::testing::Test {
     config.rtp.ssrcs.push_back(kSecondSsrc);
     config.rtp.rtx.ssrcs.push_back(kFirstRtxSsrc);
     config.rtp.rtx.ssrcs.push_back(kSecondRtxSsrc);
-    config.rtp.fec.red_payload_type = 17;
+    config.rtp.ulpfec.red_payload_type = 17;
     return config;
   }
 

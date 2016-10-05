@@ -129,8 +129,8 @@ class VideoSendStream {
       // See NackConfig for description.
       NackConfig nack;
 
-      // See FecConfig for description.
-      FecConfig fec;
+      // See UlpfecConfig for description.
+      UlpfecConfig ulpfec;
 
       // Settings for RTP retransmission payload format, see RFC 4588 for
       // details.

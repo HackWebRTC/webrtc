@@ -94,7 +94,7 @@ std::string VideoReceiveStream::Config::Rtp::ToString() const {
   ss << ", remb: " << (remb ? "on" : "off");
   ss << ", transport_cc: " << (transport_cc ? "on" : "off");
   ss << ", nack: {rtp_history_ms: " << nack.rtp_history_ms << '}';
-  ss << ", fec: " << fec.ToString();
+  ss << ", ulpfec: " << ulpfec.ToString();
   ss << ", rtx: {";
   for (auto& kv : rtx) {
     ss << kv.first << " -> ";

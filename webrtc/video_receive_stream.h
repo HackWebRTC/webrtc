@@ -134,8 +134,8 @@ class VideoReceiveStream {
       // See NackConfig for description.
       NackConfig nack;
 
-      // See FecConfig for description.
-      FecConfig fec;
+      // See UlpfecConfig for description.
+      UlpfecConfig ulpfec;
 
       // RTX settings for incoming video payloads that may be received. RTX is
       // disabled if there's no config present.

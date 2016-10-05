@@ -429,10 +429,10 @@ class FecObserver : public test::EndToEndTest {
     }
     send_config->encoder_settings.encoder = encoder_.get();
     send_config->encoder_settings.payload_name = payload_name_;
-    send_config->rtp.fec.red_payload_type =
-            VideoSendStreamTest::kRedPayloadType;
-    send_config->rtp.fec.ulpfec_payload_type =
-            VideoSendStreamTest::kUlpfecPayloadType;
+    send_config->rtp.ulpfec.red_payload_type =
+        VideoSendStreamTest::kRedPayloadType;
+    send_config->rtp.ulpfec.ulpfec_payload_type =
+        VideoSendStreamTest::kUlpfecPayloadType;
     if (header_extensions_enabled_) {
       send_config->rtp.extensions.push_back(RtpExtension(
           RtpExtension::kAbsSendTimeUri, test::kAbsSendTimeExtensionId));
@@ -440,10 +440,10 @@ class FecObserver : public test::EndToEndTest {
           RtpExtension(RtpExtension::kTransportSequenceNumberUri,
                        test::kTransportSequenceNumberExtensionId));
     }
-    (*receive_configs)[0].rtp.fec.red_payload_type =
-        send_config->rtp.fec.red_payload_type;
-    (*receive_configs)[0].rtp.fec.ulpfec_payload_type =
-        send_config->rtp.fec.ulpfec_payload_type;
+    (*receive_configs)[0].rtp.ulpfec.red_payload_type =
+        send_config->rtp.ulpfec.red_payload_type;
+    (*receive_configs)[0].rtp.ulpfec.ulpfec_payload_type =
+        send_config->rtp.ulpfec.ulpfec_payload_type;
   }
 
   void PerformTest() override {
@@ -749,8 +749,8 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
           new internal::TransportAdapter(send_config->send_transport));
       transport_adapter_->Enable();
       if (use_fec_) {
-        send_config->rtp.fec.red_payload_type = kRedPayloadType;
-        send_config->rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+        send_config->rtp.ulpfec.red_payload_type = kRedPayloadType;
+        send_config->rtp.ulpfec.ulpfec_payload_type = kUlpfecPayloadType;
       }
 
       if (!test_generic_packetization_)

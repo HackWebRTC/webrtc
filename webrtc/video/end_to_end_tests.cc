@@ -642,11 +642,11 @@ TEST_F(EndToEndTest, CanReceiveFec) {
       // int rtp_history_ms = 1000;
       // (*receive_configs)[0].rtp.nack.rtp_history_ms = rtp_history_ms;
       // send_config->rtp.nack.rtp_history_ms = rtp_history_ms;
-      send_config->rtp.fec.red_payload_type = kRedPayloadType;
-      send_config->rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+      send_config->rtp.ulpfec.red_payload_type = kRedPayloadType;
+      send_config->rtp.ulpfec.ulpfec_payload_type = kUlpfecPayloadType;
 
-      (*receive_configs)[0].rtp.fec.red_payload_type = kRedPayloadType;
-      (*receive_configs)[0].rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+      (*receive_configs)[0].rtp.ulpfec.red_payload_type = kRedPayloadType;
+      (*receive_configs)[0].rtp.ulpfec.ulpfec_payload_type = kUlpfecPayloadType;
       (*receive_configs)[0].renderer = this;
     }
 
@@ -783,16 +783,16 @@ TEST_F(EndToEndTest, ReceivedFecPacketsNotNacked) {
         VideoEncoderConfig* encoder_config) override {
       // Configure hybrid NACK/FEC.
       send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
-      send_config->rtp.fec.red_payload_type = kRedPayloadType;
-      send_config->rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+      send_config->rtp.ulpfec.red_payload_type = kRedPayloadType;
+      send_config->rtp.ulpfec.ulpfec_payload_type = kUlpfecPayloadType;
       // Set codec to VP8, otherwise NACK/FEC hybrid will be disabled.
       send_config->encoder_settings.encoder = encoder_.get();
       send_config->encoder_settings.payload_name = "VP8";
       send_config->encoder_settings.payload_type = kFakeVideoSendPayloadType;
 
       (*receive_configs)[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
-      (*receive_configs)[0].rtp.fec.red_payload_type = kRedPayloadType;
-      (*receive_configs)[0].rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+      (*receive_configs)[0].rtp.ulpfec.red_payload_type = kRedPayloadType;
+      (*receive_configs)[0].rtp.ulpfec.ulpfec_payload_type = kUlpfecPayloadType;
 
       (*receive_configs)[0].decoders.resize(1);
       (*receive_configs)[0].decoders[0].payload_type =
@@ -904,16 +904,16 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
       (*receive_configs)[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
 
       if (payload_type_ == kRedPayloadType) {
-        send_config->rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
-        send_config->rtp.fec.red_payload_type = kRedPayloadType;
+        send_config->rtp.ulpfec.ulpfec_payload_type = kUlpfecPayloadType;
+        send_config->rtp.ulpfec.red_payload_type = kRedPayloadType;
         if (retransmission_ssrc_ == kSendRtxSsrcs[0])
-          send_config->rtp.fec.red_rtx_payload_type = kRtxRedPayloadType;
-        (*receive_configs)[0].rtp.fec.ulpfec_payload_type =
-            send_config->rtp.fec.ulpfec_payload_type;
-        (*receive_configs)[0].rtp.fec.red_payload_type =
-            send_config->rtp.fec.red_payload_type;
-        (*receive_configs)[0].rtp.fec.red_rtx_payload_type =
-            send_config->rtp.fec.red_rtx_payload_type;
+          send_config->rtp.ulpfec.red_rtx_payload_type = kRtxRedPayloadType;
+        (*receive_configs)[0].rtp.ulpfec.ulpfec_payload_type =
+            send_config->rtp.ulpfec.ulpfec_payload_type;
+        (*receive_configs)[0].rtp.ulpfec.red_payload_type =
+            send_config->rtp.ulpfec.red_payload_type;
+        (*receive_configs)[0].rtp.ulpfec.red_rtx_payload_type =
+            send_config->rtp.ulpfec.red_rtx_payload_type;
       }
 
       if (retransmission_ssrc_ == kSendRtxSsrcs[0]) {
@@ -2162,13 +2162,14 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
       (*receive_configs)[0].renderer = this;
       // FEC
       if (use_red_) {
-        send_config->rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
-        send_config->rtp.fec.red_payload_type = kRedPayloadType;
+        send_config->rtp.ulpfec.ulpfec_payload_type = kUlpfecPayloadType;
+        send_config->rtp.ulpfec.red_payload_type = kRedPayloadType;
         send_config->encoder_settings.encoder = vp8_encoder_.get();
         send_config->encoder_settings.payload_name = "VP8";
         (*receive_configs)[0].decoders[0].payload_name = "VP8";
-        (*receive_configs)[0].rtp.fec.red_payload_type = kRedPayloadType;
-        (*receive_configs)[0].rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+        (*receive_configs)[0].rtp.ulpfec.red_payload_type = kRedPayloadType;
+        (*receive_configs)[0].rtp.ulpfec.ulpfec_payload_type =
+            kUlpfecPayloadType;
       }
       // RTX
       if (use_rtx_) {
@@ -3715,7 +3716,7 @@ void VerifyEmptyNackConfig(const NackConfig& config) {
       << "Enabling NACK requires rtcp-fb: nack negotiation.";
 }
 
-void VerifyEmptyFecConfig(const FecConfig& config) {
+void VerifyEmptyUlpfecConfig(const UlpfecConfig& config) {
   EXPECT_EQ(-1, config.ulpfec_payload_type)
       << "Enabling FEC requires rtpmap: ulpfec negotiation.";
   EXPECT_EQ(-1, config.red_payload_type)
@@ -3734,7 +3735,7 @@ TEST_F(EndToEndTest, VerifyDefaultSendConfigParameters) {
       << "Enabling RTP extensions require negotiation.";
 
   VerifyEmptyNackConfig(default_send_config.rtp.nack);
-  VerifyEmptyFecConfig(default_send_config.rtp.fec);
+  VerifyEmptyUlpfecConfig(default_send_config.rtp.ulpfec);
 }
 
 TEST_F(EndToEndTest, VerifyDefaultReceiveConfigParameters) {
@@ -3752,7 +3753,7 @@ TEST_F(EndToEndTest, VerifyDefaultReceiveConfigParameters) {
       << "Enabling RTP extensions require negotiation.";
 
   VerifyEmptyNackConfig(default_receive_config.rtp.nack);
-  VerifyEmptyFecConfig(default_receive_config.rtp.fec);
+  VerifyEmptyUlpfecConfig(default_receive_config.rtp.ulpfec);
 }
 
 TEST_F(EndToEndTest, TransportSeqNumOnAudioAndVideo) {

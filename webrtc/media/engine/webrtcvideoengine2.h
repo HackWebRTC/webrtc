@@ -199,7 +199,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     bool operator!=(const VideoCodecSettings& other) const;
 
     VideoCodec codec;
-    webrtc::FecConfig fec;
+    webrtc::UlpfecConfig ulpfec;
     int rtx_payload_type;
   };
 
@@ -438,7 +438,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     // configured to receive RED.
     // TODO(holmer): Remove this after a couple of Chrome versions, M53-54
     // time frame.
-    void SetFecDisabledRemotely(bool disable);
+    void SetUlpfecDisabledRemotely(bool disable);
 
    private:
     struct AllocatedDecoder {

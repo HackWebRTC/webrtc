@@ -132,7 +132,7 @@ std::string VideoSendStream::Config::Rtp::ToString() const {
   ss << ']';
 
   ss << ", nack: {rtp_history_ms: " << nack.rtp_history_ms << '}';
-  ss << ", fec: " << fec.ToString();
+  ss << ", ulpfec: " << ulpfec.ToString();
   ss << ", rtx: " << rtx.ToString();
   ss << ", c_name: " << c_name;
   ss << '}';
@@ -922,7 +922,7 @@ void VideoSendStreamImpl::ConfigureProtection() {
   RTC_DCHECK_RUN_ON(worker_queue_);
   // Enable NACK, FEC or both.
   const bool enable_protection_nack = config_->rtp.nack.rtp_history_ms > 0;
-  bool enable_protection_fec = config_->rtp.fec.ulpfec_payload_type != -1;
+  bool enable_protection_fec = config_->rtp.ulpfec.ulpfec_payload_type != -1;
   // Payload types without picture ID cannot determine that a stream is complete
   // without retransmitting FEC, so using FEC + NACK for H.264 (for instance) is
   // a waste of bandwidth since FEC packets still have to be transmitted. Note
@@ -943,21 +943,22 @@ void VideoSendStreamImpl::ConfigureProtection() {
   // TODO(changbin): Should set RTX for RED mapping in RTP sender in future.
   // Validate payload types. If either RED or FEC payload types are set then
   // both should be. If FEC is enabled then they both have to be set.
-  if (config_->rtp.fec.red_payload_type != -1) {
-    RTC_DCHECK_GE(config_->rtp.fec.red_payload_type, 0);
-    RTC_DCHECK_LE(config_->rtp.fec.red_payload_type, 127);
+  if (config_->rtp.ulpfec.red_payload_type != -1) {
+    RTC_DCHECK_GE(config_->rtp.ulpfec.red_payload_type, 0);
+    RTC_DCHECK_LE(config_->rtp.ulpfec.red_payload_type, 127);
     // TODO(holmer): We should only enable red if ulpfec is also enabled, but
     // but due to an incompatibility issue with previous versions the receiver
     // assumes rtx packets are containing red if it has been configured to
     // receive red. Remove this in a few versions once the incompatibility
     // issue is resolved (M53 timeframe).
-    payload_type_red = static_cast<uint8_t>(config_->rtp.fec.red_payload_type);
+    payload_type_red =
+        static_cast<uint8_t>(config_->rtp.ulpfec.red_payload_type);
   }
-  if (config_->rtp.fec.ulpfec_payload_type != -1) {
-    RTC_DCHECK_GE(config_->rtp.fec.ulpfec_payload_type, 0);
-    RTC_DCHECK_LE(config_->rtp.fec.ulpfec_payload_type, 127);
+  if (config_->rtp.ulpfec.ulpfec_payload_type != -1) {
+    RTC_DCHECK_GE(config_->rtp.ulpfec.ulpfec_payload_type, 0);
+    RTC_DCHECK_LE(config_->rtp.ulpfec.ulpfec_payload_type, 127);
     payload_type_fec =
-        static_cast<uint8_t>(config_->rtp.fec.ulpfec_payload_type);
+        static_cast<uint8_t>(config_->rtp.ulpfec.ulpfec_payload_type);
   }
 
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
@@ -1012,11 +1013,11 @@ void VideoSendStreamImpl::ConfigureSsrcs() {
                                     config_->encoder_settings.payload_type);
     rtp_rtcp->SetRtxSendStatus(kRtxRetransmitted | kRtxRedundantPayloads);
   }
-  if (config_->rtp.fec.red_payload_type != -1 &&
-      config_->rtp.fec.red_rtx_payload_type != -1) {
+  if (config_->rtp.ulpfec.red_payload_type != -1 &&
+      config_->rtp.ulpfec.red_rtx_payload_type != -1) {
     for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
-      rtp_rtcp->SetRtxSendPayloadType(config_->rtp.fec.red_rtx_payload_type,
-                                      config_->rtp.fec.red_payload_type);
+      rtp_rtcp->SetRtxSendPayloadType(config_->rtp.ulpfec.red_rtx_payload_type,
+                                      config_->rtp.ulpfec.red_payload_type);
     }
   }
 }
