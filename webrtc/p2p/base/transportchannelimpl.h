@@ -18,6 +18,10 @@
 
 namespace buzz { class XmlElement; }
 
+namespace webrtc {
+class MetricsObserverInterface;
+}
+
 namespace cricket {
 
 class Candidate;
@@ -73,6 +77,9 @@ class TransportChannelImpl : public TransportChannel {
   // Start gathering candidates if not already started, or if an ICE restart
   // occurred.
   virtual void MaybeStartGathering() = 0;
+
+  virtual void SetMetricsObserver(
+      webrtc::MetricsObserverInterface* observer) = 0;
 
   sigslot::signal1<TransportChannelImpl*> SignalGatheringState;
 

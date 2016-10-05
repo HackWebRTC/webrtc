@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/base/common.h"
 #include "webrtc/p2p/base/port.h"
@@ -150,14 +151,35 @@ void BasicPortAllocator::Construct() {
   allow_tcp_listen_ = true;
 }
 
+void BasicPortAllocator::OnIceRegathering(PortAllocatorSession* session,
+                                          IceRegatheringReason reason) {
+  if (!metrics_observer()) {
+    return;
+  }
+  // If the session has not been taken by an active channel, do not report the
+  // metric.
+  for (auto& allocator_session : pooled_sessions()) {
+    if (allocator_session.get() == session) {
+      return;
+    }
+  }
+
+  metrics_observer()->IncrementEnumCounter(
+      webrtc::kEnumCounterIceRegathering, static_cast<int>(reason),
+      static_cast<int>(IceRegatheringReason::MAX_VALUE));
+}
+
 BasicPortAllocator::~BasicPortAllocator() {
 }
 
 PortAllocatorSession* BasicPortAllocator::CreateSessionInternal(
     const std::string& content_name, int component,
     const std::string& ice_ufrag, const std::string& ice_pwd) {
-  return new BasicPortAllocatorSession(
+  PortAllocatorSession* session = new BasicPortAllocatorSession(
       this, content_name, component, ice_ufrag, ice_pwd);
+  session->SignalIceRegathering.connect(this,
+                                        &BasicPortAllocator::OnIceRegathering);
+  return session;
 }
 
 void BasicPortAllocator::AddTurnServer(const RelayServerConfig& turn_server) {
@@ -247,7 +269,7 @@ void BasicPortAllocatorSession::StartGettingPorts() {
 
   network_thread_->Post(RTC_FROM_HERE, this, MSG_CONFIG_START);
 
-  LOG(LS_INFO) << "Pruning turn ports "
+  LOG(LS_INFO) << "Start getting ports with prune_turn_ports "
                << (prune_turn_ports_ ? "enabled" : "disabled");
 }
 
@@ -302,6 +324,8 @@ void BasicPortAllocatorSession::RegatherOnFailedNetworks() {
     return;
   }
 
+  LOG(LS_INFO) << "Regather candidates on failed networks";
+
   // Mark a sequence as "network failed" if its network is in the list of failed
   // networks, so that it won't be considered as equivalent when the session
   // regathers ports and candidates.
@@ -321,7 +345,9 @@ void BasicPortAllocatorSession::RegatherOnFailedNetworks() {
     PrunePortsAndRemoveCandidates(ports_to_prune);
   }
 
-  if (allocation_started_ && network_manager_started_) {
+  if (allocation_started_ && network_manager_started_ && !IsStopped()) {
+    SignalIceRegathering(this, IceRegatheringReason::NETWORK_FAILURE);
+
     DoAllocate();
   }
 }
@@ -501,7 +527,7 @@ void BasicPortAllocatorSession::AllocatePorts() {
 }
 
 void BasicPortAllocatorSession::OnAllocate() {
-  if (network_manager_started_)
+  if (network_manager_started_ && !IsStopped())
     DoAllocate();
 
   allocation_started_ = true;
@@ -553,10 +579,6 @@ std::vector<rtc::Network*> BasicPortAllocatorSession::GetNetworks() {
 void BasicPortAllocatorSession::DoAllocate() {
   bool done_signal_needed = false;
   std::vector<rtc::Network*> networks = GetNetworks();
-
-  if (IsStopped()) {
-    return;
-  }
   if (networks.empty()) {
     LOG(LS_WARNING) << "Machine has no networks; no ports will be allocated";
     done_signal_needed = true;
@@ -627,12 +649,18 @@ void BasicPortAllocatorSession::OnNetworksChanged() {
     PrunePortsAndRemoveCandidates(ports_to_prune);
   }
 
+  if (allocation_started_ && !IsStopped()) {
+    if (network_manager_started_) {
+      // If the network manager has started, it must be regathering.
+      SignalIceRegathering(this, IceRegatheringReason::NETWORK_CHANGE);
+    }
+    DoAllocate();
+  }
+
   if (!network_manager_started_) {
-    LOG(LS_INFO) << "Network manager is started";
+    LOG(LS_INFO) << "Network manager has started";
     network_manager_started_ = true;
   }
-  if (allocation_started_)
-    DoAllocate();
 }
 
 void BasicPortAllocatorSession::DisableEquivalentPhases(

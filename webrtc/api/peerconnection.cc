@@ -1300,6 +1300,7 @@ void PeerConnection::RegisterUMAObserver(UMAObserver* observer) {
 
   // Send information about IPv4/IPv6 status.
   if (uma_observer_ && port_allocator_) {
+    port_allocator_->SetMetricsObserver(uma_observer_);
     if (port_allocator_->flags() & cricket::PORTALLOCATOR_ENABLE_IPV6) {
       uma_observer_->IncrementEnumCounter(
           kEnumCounterAddressFamily, kPeerConnection_IPv6,

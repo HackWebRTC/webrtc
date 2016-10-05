@@ -25,6 +25,9 @@
 namespace rtc {
 class Thread;
 }
+namespace webrtc {
+class MetricsObserverInterface;
+}
 
 namespace cricket {
 
@@ -128,6 +131,8 @@ class TransportController : public sigslot::has_slots<>,
   const rtc::scoped_refptr<rtc::RTCCertificate>& certificate_for_testing();
 
   sigslot::signal1<rtc::SSLHandshakeError> SignalDtlsHandshakeError;
+
+  void SetMetricsObserver(webrtc::MetricsObserverInterface* metrics_observer);
 
  protected:
   // Protected and virtual so we can override it in unit tests.
@@ -238,6 +243,8 @@ class TransportController : public sigslot::has_slots<>,
   rtc::AsyncInvoker invoker_;
   // True if QUIC is used instead of DTLS.
   bool quic_ = false;
+
+  webrtc::MetricsObserverInterface* metrics_observer_ = nullptr;
 };
 
 }  // namespace cricket

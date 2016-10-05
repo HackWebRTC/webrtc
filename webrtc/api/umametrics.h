@@ -33,6 +33,8 @@ enum PeerConnectionEnumCounterType {
   kEnumCounterDataSrtpCipher,
   kEnumCounterDataSslCipher,
   kEnumCounterDtlsHandshakeError,
+  kEnumCounterIceRegathering,
+  kEnumCounterIceRestart,
   kPeerConnectionEnumCounterMax
 };
 

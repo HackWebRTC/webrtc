@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <memory>
 
+#include "webrtc/api/fakemetricsobserver.h"
 #include "webrtc/p2p/base/fakeportallocator.h"
 #include "webrtc/p2p/base/p2ptransportchannel.h"
 #include "webrtc/p2p/base/testrelayserver.h"
@@ -198,9 +199,15 @@ class P2PTransportChannelTestBase : public testing::Test,
     ep1_.allocator_.reset(
         CreateBasicPortAllocator(&ep1_.network_manager_, stun_servers,
                                  kTurnUdpIntAddr, rtc::SocketAddress()));
+    ep1_.metrics_observer_ =
+        new rtc::RefCountedObject<webrtc::FakeMetricsObserver>();
+    ep1_.allocator_->SetMetricsObserver(ep1_.metrics_observer_);
     ep2_.allocator_.reset(
         CreateBasicPortAllocator(&ep2_.network_manager_, stun_servers,
                                  kTurnUdpIntAddr, rtc::SocketAddress()));
+    ep2_.metrics_observer_ =
+        new rtc::RefCountedObject<webrtc::FakeMetricsObserver>();
+    ep2_.allocator_->SetMetricsObserver(ep2_.metrics_observer_);
   }
 
  protected:
@@ -298,6 +305,9 @@ class P2PTransportChannelTestBase : public testing::Test,
     }
 
     rtc::FakeNetworkManager network_manager_;
+    // |metrics_observer_| should outlive |allocator_| as the former may be
+    // used by the latter.
+    rtc::scoped_refptr<webrtc::FakeMetricsObserver> metrics_observer_;
     std::unique_ptr<BasicPortAllocator> allocator_;
     ChannelData cd1_;
     ChannelData cd2_;
@@ -334,6 +344,8 @@ class P2PTransportChannelTestBase : public testing::Test,
                                       ice_ep1_cd1_ch, ice_ep2_cd1_ch));
     ep2_.cd1_.ch_.reset(CreateChannel(1, ICE_CANDIDATE_COMPONENT_DEFAULT,
                                       ice_ep2_cd1_ch, ice_ep1_cd1_ch));
+    ep1_.cd1_.ch_->SetMetricsObserver(ep1_.metrics_observer_);
+    ep2_.cd1_.ch_->SetMetricsObserver(ep2_.metrics_observer_);
     ep1_.cd1_.ch_->SetIceConfig(ep1_config);
     ep2_.cd1_.ch_->SetIceConfig(ep2_config);
     ep1_.cd1_.ch_->MaybeStartGathering();
@@ -415,6 +427,9 @@ class P2PTransportChannelTestBase : public testing::Test,
   }
   PortAllocator* GetAllocator(int endpoint) {
     return GetEndpoint(endpoint)->allocator_.get();
+  }
+  webrtc::FakeMetricsObserver* GetMetricsObserver(int endpoint) {
+    return GetEndpoint(endpoint)->metrics_observer_;
   }
   void AddAddress(int endpoint, const SocketAddress& addr) {
     GetEndpoint(endpoint)->network_manager_.AddInterface(addr);
@@ -958,13 +973,12 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
                           Config config2,
                           int allocator_flags1,
                           int allocator_flags2) {
-    int delay = kMinimumStepDelay;
     ConfigureEndpoint(0, config1);
     SetAllocatorFlags(0, allocator_flags1);
-    SetAllocationStepDelay(0, delay);
+    SetAllocationStepDelay(0, kMinimumStepDelay);
     ConfigureEndpoint(1, config2);
     SetAllocatorFlags(1, allocator_flags2);
-    SetAllocationStepDelay(1, delay);
+    SetAllocationStepDelay(1, kMinimumStepDelay);
 
     set_remote_ice_parameter_source(FROM_SETICEPARAMETERS);
   }
@@ -1169,6 +1183,169 @@ TEST_F(P2PTransportChannelTest, GetStats) {
   EXPECT_EQ(10 * 36U, best_conn_info->sent_total_bytes);
   EXPECT_EQ(10 * 36U, best_conn_info->recv_total_bytes);
   EXPECT_GT(best_conn_info->rtt, 0U);
+  DestroyChannels();
+}
+
+// Tests that UMAs are recorded when ICE restarts while the channel
+// is disconnected.
+TEST_F(P2PTransportChannelTest, TestUMAIceRestartWhileDisconnected) {
+  rtc::ScopedFakeClock clock;
+  ConfigureEndpoints(OPEN, OPEN, kOnlyLocalPorts, kOnlyLocalPorts);
+
+  CreateChannels();
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                                 ep2_ch1()->receiving() &&
+                                 ep2_ch1()->writable(),
+                             kDefaultTimeout, clock);
+
+  // Drop all packets so that both channels become not writable.
+  fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, kPublicAddrs[0]);
+  const int kWriteTimeoutDelay = 6000;
+  EXPECT_TRUE_SIMULATED_WAIT(!ep1_ch1()->writable() && !ep2_ch1()->writable(),
+                             kWriteTimeoutDelay, clock);
+
+  ep1_ch1()->SetIceParameters(kIceParams[2]);
+  ep1_ch1()->SetRemoteIceParameters(kIceParams[3]);
+  ep1_ch1()->MaybeStartGathering();
+  EXPECT_EQ(1, GetMetricsObserver(0)->GetEnumCounter(
+                   webrtc::kEnumCounterIceRestart,
+                   static_cast<int>(IceRestartState::DISCONNECTED)));
+
+  ep2_ch1()->SetIceParameters(kIceParams[3]);
+  ep2_ch1()->SetRemoteIceParameters(kIceParams[2]);
+  ep2_ch1()->MaybeStartGathering();
+  EXPECT_EQ(1, GetMetricsObserver(1)->GetEnumCounter(
+                   webrtc::kEnumCounterIceRestart,
+                   static_cast<int>(IceRestartState::DISCONNECTED)));
+
+  DestroyChannels();
+}
+
+// Tests that UMAs are recorded when ICE restarts while the channel
+// is connected.
+TEST_F(P2PTransportChannelTest, TestUMAIceRestartWhileConnected) {
+  rtc::ScopedFakeClock clock;
+  ConfigureEndpoints(OPEN, OPEN, kOnlyLocalPorts, kOnlyLocalPorts);
+
+  CreateChannels();
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                                 ep2_ch1()->receiving() &&
+                                 ep2_ch1()->writable(),
+                             kDefaultTimeout, clock);
+
+  ep1_ch1()->SetIceParameters(kIceParams[2]);
+  ep1_ch1()->SetRemoteIceParameters(kIceParams[3]);
+  ep1_ch1()->MaybeStartGathering();
+  EXPECT_EQ(1, GetMetricsObserver(0)->GetEnumCounter(
+                   webrtc::kEnumCounterIceRestart,
+                   static_cast<int>(IceRestartState::CONNECTED)));
+
+  ep2_ch1()->SetIceParameters(kIceParams[3]);
+  ep2_ch1()->SetRemoteIceParameters(kIceParams[2]);
+  ep2_ch1()->MaybeStartGathering();
+  EXPECT_EQ(1, GetMetricsObserver(1)->GetEnumCounter(
+                   webrtc::kEnumCounterIceRestart,
+                   static_cast<int>(IceRestartState::CONNECTED)));
+
+  DestroyChannels();
+}
+
+// Tests that UMAs are recorded when ICE restarts while the channel
+// is connecting.
+TEST_F(P2PTransportChannelTest, TestUMAIceRestartWhileConnecting) {
+  rtc::ScopedFakeClock clock;
+  ConfigureEndpoints(OPEN, OPEN, kOnlyLocalPorts, kOnlyLocalPorts);
+
+  // Create the channels without waiting for them to become connected.
+  CreateChannels();
+
+  ep1_ch1()->SetIceParameters(kIceParams[2]);
+  ep1_ch1()->SetRemoteIceParameters(kIceParams[3]);
+  ep1_ch1()->MaybeStartGathering();
+  EXPECT_EQ(1, GetMetricsObserver(0)->GetEnumCounter(
+                   webrtc::kEnumCounterIceRestart,
+                   static_cast<int>(IceRestartState::CONNECTING)));
+
+  ep2_ch1()->SetIceParameters(kIceParams[3]);
+  ep2_ch1()->SetRemoteIceParameters(kIceParams[2]);
+  ep2_ch1()->MaybeStartGathering();
+  EXPECT_EQ(1, GetMetricsObserver(1)->GetEnumCounter(
+                   webrtc::kEnumCounterIceRestart,
+                   static_cast<int>(IceRestartState::CONNECTING)));
+
+  DestroyChannels();
+}
+
+// Tests that a UMA on ICE regathering is recorded when there is a network
+// change if and only if continual gathering is enabled.
+TEST_F(P2PTransportChannelTest,
+       TestIceRegatheringReasonContinualGatheringByNetworkChange) {
+  rtc::ScopedFakeClock clock;
+  ConfigureEndpoints(OPEN, OPEN, kOnlyLocalPorts, kOnlyLocalPorts);
+
+  // ep1 gathers continually but ep2 does not.
+  IceConfig continual_gathering_config =
+      CreateIceConfig(1000, GATHER_CONTINUALLY);
+  IceConfig default_config;
+  CreateChannels(continual_gathering_config, default_config);
+
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                                 ep2_ch1()->receiving() &&
+                                 ep2_ch1()->writable(),
+                             kDefaultTimeout, clock);
+
+  // Adding address in ep1 will trigger continual gathering.
+  AddAddress(0, kAlternateAddrs[0]);
+  EXPECT_EQ_SIMULATED_WAIT(
+      1, GetMetricsObserver(0)->GetEnumCounter(
+             webrtc::kEnumCounterIceRegathering,
+             static_cast<int>(IceRegatheringReason::NETWORK_CHANGE)),
+      kDefaultTimeout, clock);
+
+  ep2_ch1()->SetIceParameters(kIceParams[3]);
+  ep2_ch1()->SetRemoteIceParameters(kIceParams[2]);
+  ep2_ch1()->MaybeStartGathering();
+
+  AddAddress(1, kAlternateAddrs[1]);
+  SIMULATED_WAIT(false, kDefaultTimeout, clock);
+  // ep2 has not enabled continual gathering.
+  EXPECT_EQ(0, GetMetricsObserver(1)->GetEnumCounter(
+                   webrtc::kEnumCounterIceRegathering,
+                   static_cast<int>(IceRegatheringReason::NETWORK_CHANGE)));
+
+  DestroyChannels();
+}
+
+// Tests that a UMA on ICE regathering is recorded when there is a network
+// failure if and only if continual gathering is enabled.
+TEST_F(P2PTransportChannelTest,
+       TestIceRegatheringReasonContinualGatheringByNetworkFailure) {
+  rtc::ScopedFakeClock clock;
+  ConfigureEndpoints(OPEN, OPEN, kOnlyLocalPorts, kOnlyLocalPorts);
+
+  // ep1 gathers continually but ep2 does not.
+  IceConfig config1 = CreateIceConfig(1000, GATHER_CONTINUALLY);
+  config1.regather_on_failed_networks_interval = rtc::Optional<int>(2000);
+  IceConfig config2;
+  config2.regather_on_failed_networks_interval = rtc::Optional<int>(2000);
+  CreateChannels(config1, config2);
+
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                                 ep2_ch1()->receiving() &&
+                                 ep2_ch1()->writable(),
+                             kDefaultTimeout, clock);
+
+  fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, kPublicAddrs[0]);
+  // Timeout value such that all connections are deleted.
+  const int kNetworkFailureTimeout = 35000;
+  SIMULATED_WAIT(false, kNetworkFailureTimeout, clock);
+  EXPECT_LE(1, GetMetricsObserver(0)->GetEnumCounter(
+                   webrtc::kEnumCounterIceRegathering,
+                   static_cast<int>(IceRegatheringReason::NETWORK_FAILURE)));
+  EXPECT_EQ(0, GetMetricsObserver(1)->GetEnumCounter(
+                   webrtc::kEnumCounterIceRegathering,
+                   static_cast<int>(IceRegatheringReason::NETWORK_FAILURE)));
+
   DestroyChannels();
 }
 

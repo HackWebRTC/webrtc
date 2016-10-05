@@ -199,6 +199,10 @@ class QuicTransportChannel : public TransportChannelImpl,
   void OnProofVerifyDetailsAvailable(
       const net::ProofVerifyDetails& verify_details) override;
 
+  void SetMetricsObserver(webrtc::MetricsObserverInterface* observer) override {
+    channel_->SetMetricsObserver(observer);
+  }
+
   // Returns true if |quic_| has queued data which wasn't written due
   // to |channel_| being write blocked.
   bool HasDataToWrite() const;

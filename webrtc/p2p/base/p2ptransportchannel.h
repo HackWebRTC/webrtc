@@ -38,6 +38,10 @@
 
 namespace cricket {
 
+// Enum for UMA metrics, used to record whether the channel is
+// connected/connecting/disconnected when ICE restart happens.
+enum class IceRestartState { CONNECTING, CONNECTED, DISCONNECTED, MAX_VALUE };
+
 extern const int WEAK_PING_INTERVAL;
 extern const int STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL;
 extern const int STABLE_WRITABLE_CONNECTION_PING_INTERVAL;
@@ -95,6 +99,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   // TODO(deadbeef): Use rtc::Optional instead of negative values.
   void SetIceConfig(const IceConfig& config) override;
   const IceConfig& config() const;
+  void SetMetricsObserver(webrtc::MetricsObserverInterface* observer) override;
 
   // From TransportChannel:
   int SendPacket(const char* data,
@@ -393,6 +398,8 @@ class P2PTransportChannel : public TransportChannelImpl,
   // The value put in the "nomination" attribute for the next nominated
   // connection. A zero-value indicates the connection will not be nominated.
   uint32_t nomination_ = 0;
+
+  webrtc::MetricsObserverInterface* metrics_observer_ = nullptr;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(P2PTransportChannel);
 };

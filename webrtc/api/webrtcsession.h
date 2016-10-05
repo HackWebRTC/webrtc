@@ -293,6 +293,7 @@ class WebRtcSession :
   void set_metrics_observer(
       webrtc::MetricsObserverInterface* metrics_observer) {
     metrics_observer_ = metrics_observer;
+    transport_controller_->SetMetricsObserver(metrics_observer);
   }
 
   // Called when voice_channel_, video_channel_ and data_channel_ are created

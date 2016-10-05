@@ -299,6 +299,9 @@ class FakeTransportChannel : public TransportChannelImpl,
     return ssl_max_version_;
   }
 
+  void SetMetricsObserver(webrtc::MetricsObserverInterface* observer) override {
+  }
+
  private:
   void NegotiateSrtpCiphers() {
     for (std::vector<int>::const_iterator it1 = srtp_ciphers_.begin();

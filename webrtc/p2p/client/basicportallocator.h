@@ -65,6 +65,9 @@ class BasicPortAllocator : public PortAllocator {
  private:
   void Construct();
 
+  void OnIceRegathering(PortAllocatorSession* session,
+                        IceRegatheringReason reason);
+
   rtc::NetworkManager* network_manager_;
   rtc::PacketSocketFactory* socket_factory_;
   bool allow_tcp_listen_;

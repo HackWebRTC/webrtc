@@ -186,6 +186,10 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
     channel_->RemoveRemoteCandidate(candidate);
   }
 
+  void SetMetricsObserver(webrtc::MetricsObserverInterface* observer) override {
+    channel_->SetMetricsObserver(observer);
+  }
+
   void SetIceConfig(const IceConfig& config) override {
     channel_->SetIceConfig(config);
   }

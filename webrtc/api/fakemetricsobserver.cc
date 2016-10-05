@@ -45,7 +45,9 @@ void FakeMetricsObserver::AddHistogramSample(PeerConnectionMetricsName type,
 int FakeMetricsObserver::GetEnumCounter(PeerConnectionEnumCounterType type,
                                         int counter) const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  RTC_CHECK(counters_.size() > static_cast<size_t>(type));
+  if (counters_.size() <= static_cast<size_t>(type)) {
+    return 0;
+  }
   const auto& it = counters_[type].find(counter);
   if (it == counters_[type].end()) {
     return 0;

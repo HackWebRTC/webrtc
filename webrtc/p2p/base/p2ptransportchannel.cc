@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <set>
 
+#include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/crc32.h"
 #include "webrtc/base/logging.h"
@@ -435,6 +436,11 @@ const IceConfig& P2PTransportChannel::config() const {
   return config_;
 }
 
+void P2PTransportChannel::SetMetricsObserver(
+    webrtc::MetricsObserverInterface* observer) {
+  metrics_observer_ = observer;
+}
+
 void P2PTransportChannel::MaybeStartGathering() {
   if (ice_parameters_.ufrag.empty() || ice_parameters_.pwd.empty()) {
     LOG(LS_ERROR) << "Cannot gather candidates because ICE parameters are empty"
@@ -451,6 +457,21 @@ void P2PTransportChannel::MaybeStartGathering() {
       gathering_state_ = kIceGatheringGathering;
       SignalGatheringState(this);
     }
+
+    if (metrics_observer_ && !allocator_sessions_.empty()) {
+      IceRestartState state;
+      if (writable()) {
+        state = IceRestartState::CONNECTED;
+      } else if (IsGettingPorts()) {
+        state = IceRestartState::CONNECTING;
+      } else {
+        state = IceRestartState::DISCONNECTED;
+      }
+      metrics_observer_->IncrementEnumCounter(
+          webrtc::kEnumCounterIceRestart, static_cast<int>(state),
+          static_cast<int>(IceRestartState::MAX_VALUE));
+    }
+
     // Time for a new allocator.
     std::unique_ptr<PortAllocatorSession> pooled_session =
         allocator_->TakePooledSession(transport_name(), component(),
@@ -473,7 +494,6 @@ void P2PTransportChannel::MaybeStartGathering() {
       AddAllocatorSession(allocator_->CreateSession(
           transport_name(), component(), ice_parameters_.ufrag,
           ice_parameters_.pwd));
-      LOG(LS_INFO) << "Start getting ports";
       allocator_sessions_.back()->StartGettingPorts();
     }
   }

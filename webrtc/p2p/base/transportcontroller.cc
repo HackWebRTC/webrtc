@@ -187,6 +187,7 @@ TransportChannel* TransportController::CreateTransportChannel_n(
   // Need to create a new channel.
   Transport* transport = GetOrCreateTransport_n(transport_name);
   TransportChannelImpl* channel = transport->CreateChannel(component);
+  channel->SetMetricsObserver(metrics_observer_);
   channel->SignalWritableState.connect(
       this, &TransportController::OnChannelWritableState_n);
   channel->SignalReceivingState.connect(
@@ -702,6 +703,14 @@ void TransportController::UpdateAggregateStates_n() {
 
 void TransportController::OnDtlsHandshakeError(rtc::SSLHandshakeError error) {
   SignalDtlsHandshakeError(error);
+}
+
+void TransportController::SetMetricsObserver(
+    webrtc::MetricsObserverInterface* metrics_observer) {
+  metrics_observer_ = metrics_observer;
+  for (auto channel : channels_) {
+    channel->SetMetricsObserver(metrics_observer);
+  }
 }
 
 }  // namespace cricket
