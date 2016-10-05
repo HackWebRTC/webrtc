@@ -409,8 +409,6 @@
             'logsinks.cc',
             'logsinks.h',
             'mathutils.h',
-            'multipart.cc',
-            'multipart.h',
             'natserver.cc',
             'natserver.h',
             'natsocketfactory.cc',

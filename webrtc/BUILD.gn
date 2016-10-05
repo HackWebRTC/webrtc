@@ -365,7 +365,6 @@ if (rtc_include_tests) {
       "base/messagedigest_unittest.cc",
       "base/messagequeue_unittest.cc",
       "base/mod_ops_unittest.cc",
-      "base/multipart_unittest.cc",
       "base/nat_unittest.cc",
       "base/network_unittest.cc",
       "base/onetimeevent_unittest.cc",
