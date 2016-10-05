@@ -51,7 +51,7 @@ class SignalThread;
 // What to do:  Define STRICT_HTTP_ERROR=1 in your makefile.  Use HttpError in
 // your code (HttpErrorType should only be used for code that is shared
 // with groups which have not yet migrated).
-#if STRICT_HTTP_ERROR
+#if defined(STRICT_HTTP_ERROR) && STRICT_HTTP_ERROR
 typedef HttpError HttpErrorType;
 #else  // !STRICT_HTTP_ERROR
 typedef int HttpErrorType;
