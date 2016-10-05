@@ -18,9 +18,10 @@
 namespace webrtc {
 
 using Packet = ForwardErrorCorrection::Packet;
+using ReceivedFecPacket = ForwardErrorCorrection::ReceivedFecPacket;
 
 void FuzzOneInput(const uint8_t* data, size_t size) {
-  ForwardErrorCorrection::ReceivedFecPacket packet;
+  ReceivedFecPacket packet;
   packet.pkt = rtc::scoped_refptr<Packet>(new Packet());
   const size_t packet_size =
       std::min(size, static_cast<size_t>(IP_PACKET_SIZE));
