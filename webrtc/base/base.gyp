@@ -438,8 +438,6 @@
             'testclient.h',
             'transformadapter.cc',
             'transformadapter.h',
-            'versionparsing.cc',
-            'versionparsing.h',
             'virtualsocketserver.cc',
             'virtualsocketserver.h',
             'window.h',
