@@ -12,21 +12,12 @@
 
 #include "webrtc/base/common.h"
 #include "webrtc/base/gunit.h"
+#include "webrtc/base/event.h"
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/sharedexclusivelock.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
-
-#if defined(MEMORY_SANITIZER)
-// Flaky under MemorySanitizer, see
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=5824
-#define MAYBE_TestSharedExclusive DISABLED_TestSharedExclusive
-#define MAYBE_TestExclusiveExclusive DISABLED_TestExclusiveExclusive
-#else
-#define MAYBE_TestSharedExclusive TestSharedExclusive
-#define MAYBE_TestExclusiveExclusive TestExclusiveExclusive
-#endif
 
 namespace rtc {
 
@@ -41,28 +32,24 @@ class SharedExclusiveTask : public MessageHandler {
  public:
   SharedExclusiveTask(SharedExclusiveLock* shared_exclusive_lock,
                       int* value,
-                      bool* done)
+                      Event* done)
       : shared_exclusive_lock_(shared_exclusive_lock),
-        waiting_time_in_ms_(0),
         value_(value),
         done_(done) {
     worker_thread_.reset(new Thread());
     worker_thread_->Start();
   }
 
-  int64_t waiting_time_in_ms() const { return waiting_time_in_ms_; }
-
  protected:
   std::unique_ptr<Thread> worker_thread_;
   SharedExclusiveLock* shared_exclusive_lock_;
-  int64_t waiting_time_in_ms_;
   int* value_;
-  bool* done_;
+  Event* done_;
 };
 
 class ReadTask : public SharedExclusiveTask {
  public:
-  ReadTask(SharedExclusiveLock* shared_exclusive_lock, int* value, bool* done)
+  ReadTask(SharedExclusiveLock* shared_exclusive_lock, int* value, Event* done)
       : SharedExclusiveTask(shared_exclusive_lock, value, done) {
   }
 
@@ -80,14 +67,10 @@ class ReadTask : public SharedExclusiveTask {
     TypedMessageData<int*>* message_data =
         static_cast<TypedMessageData<int*>*>(message->pdata);
 
-    int64_t start_time = TimeMillis();
     {
       SharedScope ss(shared_exclusive_lock_);
-      waiting_time_in_ms_ = TimeDiff(TimeMillis(), start_time);
-
-      Thread::SleepMs(kProcessTimeInMs);
       *message_data->data() = *value_;
-      *done_ = true;
+      done_->Set();
     }
     delete message->pdata;
     message->pdata = NULL;
@@ -96,7 +79,7 @@ class ReadTask : public SharedExclusiveTask {
 
 class WriteTask : public SharedExclusiveTask {
  public:
-  WriteTask(SharedExclusiveLock* shared_exclusive_lock, int* value, bool* done)
+  WriteTask(SharedExclusiveLock* shared_exclusive_lock, int* value, Event* done)
       : SharedExclusiveTask(shared_exclusive_lock, value, done) {
   }
 
@@ -114,14 +97,10 @@ class WriteTask : public SharedExclusiveTask {
     TypedMessageData<int>* message_data =
         static_cast<TypedMessageData<int>*>(message->pdata);
 
-    int64_t start_time = TimeMillis();
     {
       ExclusiveScope es(shared_exclusive_lock_);
-      waiting_time_in_ms_ = TimeDiff(TimeMillis(), start_time);
-
-      Thread::SleepMs(kProcessTimeInMs);
       *value_ = message_data->data();
-      *done_ = true;
+      done_->Set();
     }
     delete message->pdata;
     message->pdata = NULL;
@@ -144,10 +123,9 @@ class SharedExclusiveLockTest
   int value_;
 };
 
-// Flaky: https://code.google.com/p/webrtc/issues/detail?id=3318
 TEST_F(SharedExclusiveLockTest, TestSharedShared) {
   int value0, value1;
-  bool done0, done1;
+  Event done0(false, false), done1(false, false);
   ReadTask reader0(shared_exclusive_lock_.get(), &value_, &done0);
   ReadTask reader1(shared_exclusive_lock_.get(), &value_, &done1);
 
@@ -155,77 +133,65 @@ TEST_F(SharedExclusiveLockTest, TestSharedShared) {
   {
     SharedScope ss(shared_exclusive_lock_.get());
     value_ = 1;
-    done0 = false;
-    done1 = false;
     reader0.PostRead(&value0);
     reader1.PostRead(&value1);
-    Thread::SleepMs(kProcessTimeInMs);
-  }
 
-  EXPECT_TRUE_WAIT(done0, kProcessTimeoutInMs);
-  EXPECT_EQ(1, value0);
-  EXPECT_LE(reader0.waiting_time_in_ms(), kNoWaitThresholdInMs);
-  EXPECT_TRUE_WAIT(done1, kProcessTimeoutInMs);
-  EXPECT_EQ(1, value1);
-  EXPECT_LE(reader1.waiting_time_in_ms(), kNoWaitThresholdInMs);
+    EXPECT_TRUE(done0.Wait(kProcessTimeoutInMs));
+    EXPECT_TRUE(done1.Wait(kProcessTimeoutInMs));
+    EXPECT_EQ(1, value0);
+    EXPECT_EQ(1, value1);
+  }
 }
 
-TEST_F(SharedExclusiveLockTest, MAYBE_TestSharedExclusive) {
-  bool done;
+TEST_F(SharedExclusiveLockTest, TestSharedExclusive) {
+  Event done(false, false);
   WriteTask writer(shared_exclusive_lock_.get(), &value_, &done);
 
   // Test exclusive lock needs to wait for shared lock.
   {
     SharedScope ss(shared_exclusive_lock_.get());
     value_ = 1;
-    done = false;
     writer.PostWrite(2);
-    Thread::SleepMs(kProcessTimeInMs);
-    EXPECT_EQ(1, value_);
+    EXPECT_FALSE(done.Wait(kProcessTimeInMs));
   }
-
-  EXPECT_TRUE_WAIT(done, kProcessTimeoutInMs);
+  EXPECT_TRUE(done.Wait(kProcessTimeoutInMs));
   EXPECT_EQ(2, value_);
-  EXPECT_GE(writer.waiting_time_in_ms(), kWaitThresholdInMs);
 }
 
 TEST_F(SharedExclusiveLockTest, TestExclusiveShared) {
   int value;
-  bool done;
+  Event done(false, false);
   ReadTask reader(shared_exclusive_lock_.get(), &value_, &done);
 
   // Test shared lock needs to wait for exclusive lock.
   {
     ExclusiveScope es(shared_exclusive_lock_.get());
     value_ = 1;
-    done = false;
     reader.PostRead(&value);
-    Thread::SleepMs(kProcessTimeInMs);
+    EXPECT_FALSE(done.Wait(kProcessTimeInMs));
     value_ = 2;
   }
 
-  EXPECT_TRUE_WAIT(done, kProcessTimeoutInMs);
+  EXPECT_TRUE(done.Wait(kProcessTimeoutInMs));
   EXPECT_EQ(2, value);
-  EXPECT_GE(reader.waiting_time_in_ms(), kWaitThresholdInMs);
 }
 
-TEST_F(SharedExclusiveLockTest, MAYBE_TestExclusiveExclusive) {
-  bool done;
+TEST_F(SharedExclusiveLockTest, TestExclusiveExclusive) {
+  Event done(false, false);
   WriteTask writer(shared_exclusive_lock_.get(), &value_, &done);
 
   // Test exclusive lock needs to wait for exclusive lock.
   {
     ExclusiveScope es(shared_exclusive_lock_.get());
+    // Start the writer task only after holding the lock, to ensure it need
     value_ = 1;
-    done = false;
     writer.PostWrite(2);
-    Thread::SleepMs(kProcessTimeInMs);
+    EXPECT_FALSE(done.Wait(kProcessTimeInMs));
     EXPECT_EQ(1, value_);
   }
 
-  EXPECT_TRUE_WAIT(done, kProcessTimeoutInMs);
+  EXPECT_TRUE(done.Wait(kProcessTimeoutInMs));
   EXPECT_EQ(2, value_);
-  EXPECT_GE(writer.waiting_time_in_ms(), kWaitThresholdInMs);
 }
 
 }  // namespace rtc
