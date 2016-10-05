@@ -44,22 +44,6 @@ class VideoFrame {
              int64_t render_time_ms,
              VideoRotation rotation);
 
-  // CreateEmptyFrame: Sets frame dimensions and allocates buffers based
-  // on set dimensions - height and plane stride.
-  // If required size is bigger than the allocated one, new buffers of adequate
-  // size will be allocated.
-
-  // TODO(nisse): Deprecated. Should be deleted in the cricket::VideoFrame and
-  // webrtc::VideoFrame merge. If you need to write into the frame, create a
-  // VideoFrameBuffer of the desired size, e.g, using I420Buffer::Create and
-  // write to that. And if you need to wrap it into a VideoFrame, pass it to the
-  // constructor.
-  void CreateEmptyFrame(int width,
-                        int height,
-                        int stride_y,
-                        int stride_u,
-                        int stride_v);
-
   // CreateFrame: Sets the frame's members and buffers. If required size is
   // bigger than allocated one, new buffers of adequate size will be allocated.
 

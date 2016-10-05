@@ -91,23 +91,20 @@ TEST(TestVideoFrame, CopiesInitialFrameWithoutCrashing) {
 }
 
 TEST(TestVideoFrame, WidthHeightValues) {
-  VideoFrame frame;
+  VideoFrame frame(I420Buffer::Create(10, 10, 10, 14, 90),
+                   webrtc::kVideoRotation_0,
+                   789 * rtc::kNumMicrosecsPerMillisec);
   const int valid_value = 10;
-  frame.CreateEmptyFrame(10, 10, 10, 14, 90);
   EXPECT_EQ(valid_value, frame.width());
   EXPECT_EQ(valid_value, frame.height());
   frame.set_timestamp(123u);
   EXPECT_EQ(123u, frame.timestamp());
   frame.set_ntp_time_ms(456);
   EXPECT_EQ(456, frame.ntp_time_ms());
-  frame.set_render_time_ms(789);
   EXPECT_EQ(789, frame.render_time_ms());
 }
 
 TEST(TestVideoFrame, CopyFrame) {
-  uint32_t timestamp = 1;
-  int64_t ntp_time_ms = 2;
-  int64_t render_time_ms = 3;
   int stride_y = 15;
   int stride_u = 10;
   int stride_v = 10;
@@ -115,11 +112,6 @@ TEST(TestVideoFrame, CopyFrame) {
   int height = 15;
   // Copy frame.
   VideoFrame small_frame;
-  small_frame.CreateEmptyFrame(width, height,
-                               stride_y, stride_u, stride_v);
-  small_frame.set_timestamp(timestamp);
-  small_frame.set_ntp_time_ms(ntp_time_ms);
-  small_frame.set_render_time_ms(render_time_ms);
   const int kSizeY = 400;
   const int kSizeU = 100;
   const int kSizeV = 100;
@@ -214,8 +206,7 @@ TEST(TestVideoFrame, CopyBuffer) {
   int stride_uv = 10;
   const int kSizeY = 225;
   const int kSizeUv = 80;
-  frame2.CreateEmptyFrame(width, height,
-                          stride_y, stride_uv, stride_uv);
+
   uint8_t buffer_y[kSizeY];
   uint8_t buffer_u[kSizeUv];
   uint8_t buffer_v[kSizeUv];
@@ -232,20 +223,6 @@ TEST(TestVideoFrame, CopyBuffer) {
                                stride_uv, 8, 8));
   EXPECT_TRUE(test::EqualPlane(buffer_v, frame2.video_frame_buffer()->DataV(),
                                stride_uv, 8, 8));
-}
-
-TEST(TestVideoFrame, FailToReuseAllocation) {
-  VideoFrame frame1;
-  frame1.CreateEmptyFrame(640, 320, 640, 320, 320);
-  const uint8_t* y = frame1.video_frame_buffer()->DataY();
-  const uint8_t* u = frame1.video_frame_buffer()->DataU();
-  const uint8_t* v = frame1.video_frame_buffer()->DataV();
-  // Make a shallow copy of |frame1|.
-  VideoFrame frame2(frame1.video_frame_buffer(), 0, 0, kVideoRotation_0);
-  frame1.CreateEmptyFrame(640, 320, 640, 320, 320);
-  EXPECT_NE(y, frame1.video_frame_buffer()->DataY());
-  EXPECT_NE(u, frame1.video_frame_buffer()->DataU());
-  EXPECT_NE(v, frame1.video_frame_buffer()->DataV());
 }
 
 TEST(TestVideoFrame, TextureInitialValues) {

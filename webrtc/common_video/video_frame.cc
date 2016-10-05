@@ -51,29 +51,6 @@ VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
   RTC_DCHECK(buffer);
 }
 
-void VideoFrame::CreateEmptyFrame(int width,
-                                  int height,
-                                  int stride_y,
-                                  int stride_u,
-                                  int stride_v) {
-  const int half_width = (width + 1) / 2;
-  RTC_DCHECK_GT(width, 0);
-  RTC_DCHECK_GT(height, 0);
-  RTC_DCHECK_GE(stride_y, width);
-  RTC_DCHECK_GE(stride_u, half_width);
-  RTC_DCHECK_GE(stride_v, half_width);
-
-  // Creating empty frame - reset all values.
-  timestamp_rtp_ = 0;
-  ntp_time_ms_ = 0;
-  timestamp_us_ = 0;
-  rotation_ = kVideoRotation_0;
-
-  // Allocate a new buffer.
-  video_frame_buffer_ = I420Buffer::Create(
-      width, height, stride_y, stride_u, stride_v);
-}
-
 void VideoFrame::CreateFrame(const uint8_t* buffer_y,
                              const uint8_t* buffer_u,
                              const uint8_t* buffer_v,

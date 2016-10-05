@@ -154,6 +154,8 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
         scroll_time_(scroll_time_ms),
         pause_time_(pause_time_ms),
         num_frames_(files.size()),
+        target_width_(static_cast<int>(target_width)),
+        target_height_(static_cast<int>(target_height)),
         current_frame_num_(num_frames_ - 1),
         current_source_frame_(nullptr),
         file_generator_(files, source_width, source_height, 1) {
@@ -164,11 +166,6 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
     RTC_DCHECK_GE(scroll_time_ms, 0);
     RTC_DCHECK_GE(pause_time_ms, 0);
     RTC_DCHECK_GT(scroll_time_ms + pause_time_ms, 0);
-    current_frame_.CreateEmptyFrame(static_cast<int>(target_width),
-                                    static_cast<int>(target_height),
-                                    static_cast<int>(target_width),
-                                    static_cast<int>((target_width + 1) / 2),
-                                    static_cast<int>((target_width + 1) / 2));
   }
 
   virtual ~ScrollingImageFrameGenerator() {}
@@ -202,12 +199,10 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
   }
 
   void CropSourceToScrolledImage(double scroll_factor) {
-    const int kTargetWidth = current_frame_.width();
-    const int kTargetHeight = current_frame_.height();
-    int scroll_margin_x = current_source_frame_->width() - kTargetWidth;
+    int scroll_margin_x = current_source_frame_->width() - target_width_;
     int pixels_scrolled_x =
         static_cast<int>(scroll_margin_x * scroll_factor + 0.5);
-    int scroll_margin_y = current_source_frame_->height() - kTargetHeight;
+    int scroll_margin_y = current_source_frame_->height() - target_height_;
     int pixels_scrolled_y =
         static_cast<int>(scroll_margin_y * scroll_factor + 0.5);
 
@@ -225,7 +220,7 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
         &current_source_frame_->video_frame_buffer()->DataY()[offset_y],
         &current_source_frame_->video_frame_buffer()->DataU()[offset_u],
         &current_source_frame_->video_frame_buffer()->DataV()[offset_v],
-        kTargetWidth, kTargetHeight,
+        target_width_, target_height_,
         current_source_frame_->video_frame_buffer()->StrideY(),
         current_source_frame_->video_frame_buffer()->StrideU(),
         current_source_frame_->video_frame_buffer()->StrideV(),
@@ -237,6 +232,9 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
   const int64_t scroll_time_;
   const int64_t pause_time_;
   const size_t num_frames_;
+  const int target_width_;
+  const int target_height_;
+
   size_t current_frame_num_;
   VideoFrame* current_source_frame_;
   VideoFrame current_frame_;

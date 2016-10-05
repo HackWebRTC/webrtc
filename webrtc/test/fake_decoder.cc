@@ -20,13 +20,6 @@ FakeDecoder::FakeDecoder() : callback_(NULL) {}
 int32_t FakeDecoder::InitDecode(const VideoCodec* config,
                                 int32_t number_of_cores) {
   config_ = *config;
-  size_t width = config->width;
-  size_t height = config->height;
-  frame_.CreateEmptyFrame(static_cast<int>(width),
-                          static_cast<int>(height),
-                          static_cast<int>(width),
-                          static_cast<int>((width + 1) / 2),
-                          static_cast<int>((width + 1) / 2));
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -35,11 +28,13 @@ int32_t FakeDecoder::Decode(const EncodedImage& input,
                             const RTPFragmentationHeader* fragmentation,
                             const CodecSpecificInfo* codec_specific_info,
                             int64_t render_time_ms) {
-  frame_.set_timestamp(input._timeStamp);
-  frame_.set_ntp_time_ms(input.ntp_time_ms_);
-  frame_.set_render_time_ms(render_time_ms);
+  VideoFrame frame(I420Buffer::Create(config_.width, config_.height),
+                   webrtc::kVideoRotation_0,
+                   render_time_ms * rtc::kNumMicrosecsPerMillisec);
+  frame.set_timestamp(input._timeStamp);
+  frame.set_ntp_time_ms(input.ntp_time_ms_);
 
-  callback_->Decoded(frame_);
+  callback_->Decoded(frame);
 
   return WEBRTC_VIDEO_CODEC_OK;
 }
