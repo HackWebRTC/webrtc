@@ -77,11 +77,12 @@ public class SurfaceViewRenderer
   // |isSurfaceCreated| keeps track of the current status in surfaceCreated()/surfaceDestroyed().
   private boolean isSurfaceCreated;
   // Last rendered frame dimensions, or 0 if no frame has been rendered yet.
-  private int frameWidth;
-  private int frameHeight;
+  private int rotatedFrameWidth;
+  private int rotatedFrameHeight;
   private int frameRotation;
-  // |scalingType| determines how the video will fill the allowed layout area in onMeasure().
-  private RendererCommon.ScalingType scalingType = RendererCommon.ScalingType.SCALE_ASPECT_BALANCED;
+  private final RendererCommon.VideoLayoutMeasure videoLayoutMeasure =
+      new RendererCommon.VideoLayoutMeasure();
+
   // If true, mirrors the video stream horizontally.
   private boolean mirror;
   // Callback for reporting renderer events.
@@ -243,8 +244,8 @@ public class SurfaceViewRenderer
     renderThread = null;
     // Reset statistics and event reporting.
     synchronized (layoutLock) {
-      frameWidth = 0;
-      frameHeight = 0;
+      rotatedFrameWidth = 0;
+      rotatedFrameHeight = 0;
       frameRotation = 0;
       rendererEvents = null;
     }
@@ -278,9 +279,14 @@ public class SurfaceViewRenderer
    * Set how the video will fill the allowed layout area.
    */
   public void setScalingType(RendererCommon.ScalingType scalingType) {
-    synchronized (layoutLock) {
-      this.scalingType = scalingType;
-    }
+    ThreadUtils.checkIsOnMainThread();
+    videoLayoutMeasure.setScalingType(scalingType);
+  }
+
+  public void setScalingType(RendererCommon.ScalingType scalingTypeMatchOrientation,
+      RendererCommon.ScalingType scalingTypeMismatchOrientation) {
+    ThreadUtils.checkIsOnMainThread();
+    videoLayoutMeasure.setScalingType(scalingTypeMatchOrientation, scalingTypeMismatchOrientation);
   }
 
   // VideoRenderer.Callbacks interface.
@@ -309,33 +315,14 @@ public class SurfaceViewRenderer
     }
   }
 
-  // Returns desired layout size given current measure specification and video aspect ratio.
-  private Point getDesiredLayoutSize(int widthSpec, int heightSpec) {
-    synchronized (layoutLock) {
-      final int maxWidth = getDefaultSize(Integer.MAX_VALUE, widthSpec);
-      final int maxHeight = getDefaultSize(Integer.MAX_VALUE, heightSpec);
-      final Point size =
-          RendererCommon.getDisplaySize(scalingType, frameAspectRatio(), maxWidth, maxHeight);
-      if (MeasureSpec.getMode(widthSpec) == MeasureSpec.EXACTLY) {
-        size.x = maxWidth;
-      }
-      if (MeasureSpec.getMode(heightSpec) == MeasureSpec.EXACTLY) {
-        size.y = maxHeight;
-      }
-      return size;
-    }
-  }
-
   // View layout interface.
   @Override
   protected void onMeasure(int widthSpec, int heightSpec) {
+    ThreadUtils.checkIsOnMainThread();
     final boolean isNewSize;
     synchronized (layoutLock) {
-      if (frameWidth == 0 || frameHeight == 0) {
-        super.onMeasure(widthSpec, heightSpec);
-        return;
-      }
-      desiredLayoutSize = getDesiredLayoutSize(widthSpec, heightSpec);
+      desiredLayoutSize =
+          videoLayoutMeasure.measure(widthSpec, heightSpec, rotatedFrameWidth, rotatedFrameHeight);
       isNewSize =
           (desiredLayoutSize.x != getMeasuredWidth() || desiredLayoutSize.y != getMeasuredHeight());
       setMeasuredDimension(desiredLayoutSize.x, desiredLayoutSize.y);
@@ -487,8 +474,9 @@ public class SurfaceViewRenderer
     synchronized (layoutLock) {
       final float[] rotatedSamplingMatrix =
           RendererCommon.rotateTextureMatrix(frame.samplingMatrix, frame.rotationDegree);
-      final float[] layoutMatrix = RendererCommon.getLayoutMatrix(
-          mirror, frameAspectRatio(), (float) layoutSize.x / layoutSize.y);
+      final float[] layoutMatrix = RendererCommon.getLayoutMatrix(mirror,
+          frame.rotatedWidth() / (float) frame.rotatedHeight(),
+          layoutSize.x / (float) layoutSize.y);
       texMatrix = RendererCommon.multiplyMatrices(rotatedSamplingMatrix, layoutMatrix);
     }
 
@@ -532,29 +520,18 @@ public class SurfaceViewRenderer
     }
   }
 
-  // Return current frame aspect ratio, taking rotation into account.
-  private float frameAspectRatio() {
-    synchronized (layoutLock) {
-      if (frameWidth == 0 || frameHeight == 0) {
-        return 0.0f;
-      }
-      return (frameRotation % 180 == 0) ? (float) frameWidth / frameHeight
-                                        : (float) frameHeight / frameWidth;
-    }
-  }
-
   // Update frame dimensions and report any changes to |rendererEvents|.
   private void updateFrameDimensionsAndReportEvents(VideoRenderer.I420Frame frame) {
     synchronized (layoutLock) {
-      if (frameWidth != frame.width || frameHeight != frame.height
+      if (rotatedFrameWidth != frame.rotatedWidth() || rotatedFrameHeight != frame.rotatedHeight()
           || frameRotation != frame.rotationDegree) {
         Logging.d(TAG, getResourceName() + "Reporting frame resolution changed to " + frame.width
                 + "x" + frame.height + " with rotation " + frame.rotationDegree);
         if (rendererEvents != null) {
           rendererEvents.onFrameResolutionChanged(frame.width, frame.height, frame.rotationDegree);
         }
-        frameWidth = frame.width;
-        frameHeight = frame.height;
+        rotatedFrameWidth = frame.rotatedWidth();
+        rotatedFrameHeight = frame.rotatedHeight();
         frameRotation = frame.rotationDegree;
         post(new Runnable() {
           @Override

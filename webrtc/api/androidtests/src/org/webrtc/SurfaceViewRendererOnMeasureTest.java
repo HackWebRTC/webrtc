@@ -12,9 +12,9 @@ package org.webrtc;
 
 import android.graphics.Point;
 import android.test.ActivityTestCase;
+import android.test.UiThreadTest;
 import android.test.suitebuilder.annotation.MediumTest;
 import android.view.View.MeasureSpec;
-
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
@@ -68,6 +68,7 @@ public final class SurfaceViewRendererOnMeasureTest extends ActivityTestCase {
   /**
    * Test how SurfaceViewRenderer.onMeasure() behaves when no frame has been delivered.
    */
+  @UiThreadTest
   @MediumTest
   public void testNoFrame() {
     final SurfaceViewRenderer surfaceViewRenderer =
@@ -105,6 +106,7 @@ public final class SurfaceViewRendererOnMeasureTest extends ActivityTestCase {
   /**
    * Test how SurfaceViewRenderer.onMeasure() behaves with a 1280x720 frame.
    */
+  @UiThreadTest
   @MediumTest
   public void testFrame1280x720() throws InterruptedException {
     final SurfaceViewRenderer surfaceViewRenderer =

@@ -11,6 +11,7 @@
 package org.webrtc;
 
 import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
 
 import java.util.concurrent.Callable;
@@ -35,6 +36,15 @@ public class ThreadUtils {
 
     public void detachThread() {
       thread = null;
+    }
+  }
+
+  /**
+   * Throws exception if called from other than main thread.
+   */
+  public static void checkIsOnMainThread() {
+    if (Thread.currentThread() != Looper.getMainLooper().getThread()) {
+      throw new IllegalStateException("Not on main thread!");
     }
   }
 
