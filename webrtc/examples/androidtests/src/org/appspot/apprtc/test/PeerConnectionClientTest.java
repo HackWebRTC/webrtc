@@ -16,6 +16,7 @@ import org.appspot.apprtc.PeerConnectionClient.PeerConnectionEvents;
 import org.appspot.apprtc.PeerConnectionClient.PeerConnectionParameters;
 
 import android.os.Build;
+import android.test.FlakyTest;
 import android.test.InstrumentationTestCase;
 import android.test.suitebuilder.annotation.SmallTest;
 import android.util.Log;
@@ -551,7 +552,9 @@ public class PeerConnectionClientTest
 
   // Checks if video source can be restarted - simulate app goes to
   // background and back to foreground.
-  @SmallTest
+  // Disabled because of https://bugs.chromium.org/p/webrtc/issues/detail?id=6478
+  @FlakyTest
+  //@SmallTest
   public void testVideoSourceRestart() throws InterruptedException {
     Log.d(TAG, "testVideoSourceRestart");
     loopback = true;
@@ -598,7 +601,9 @@ public class PeerConnectionClientTest
   }
 
   // Checks if capture format can be changed on fly and decoder can be reset properly.
-  @SmallTest
+  // Disabled because of https://bugs.chromium.org/p/webrtc/issues/detail?id=6478
+  @FlakyTest
+  //@SmallTest
   public void testCaptureFormatChange() throws InterruptedException {
     Log.d(TAG, "testCaptureFormatChange");
     loopback = true;
