@@ -604,8 +604,6 @@
             'win32window.h',
             'win32windowpicker.cc',
             'win32windowpicker.h',
-            'winfirewall.cc',
-            'winfirewall.h',
             'winping.cc',
             'winping.h',
           ],
