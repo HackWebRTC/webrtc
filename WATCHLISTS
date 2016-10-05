@@ -68,6 +68,9 @@
     'neteq': {
       'filepath': 'webrtc/modules/audio_coding/neteq/.*',
     },
+    'audio_mixer': {
+      'filepath': 'webrtc/modules/audio_mixer/.*',
+    },
     'audio_processing': {
       'filepath': 'webrtc/modules/audio_processing/.*',
     },
@@ -148,6 +151,7 @@
     'neteq': ['audio-team@agora.io',
               'henrik.lundin@webrtc.org',
               'minyue@webrtc.org'],
+    'audio_mixer': ['henrik.lundin@webrtc.org'],
     'audio_processing': ['aluebs@webrtc.org',
                          'andrew@webrtc.org',
                          'audio-team@agora.io',
