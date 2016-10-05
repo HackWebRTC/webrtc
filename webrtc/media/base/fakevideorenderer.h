@@ -12,7 +12,6 @@
 #define WEBRTC_MEDIA_BASE_FAKEVIDEORENDERER_H_
 
 #include "webrtc/base/logging.h"
-#include "webrtc/base/sigslot.h"
 #include "webrtc/media/base/videoframe.h"
 #include "webrtc/media/base/videosinkinterface.h"
 
@@ -44,7 +43,6 @@ class FakeVideoRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
     height_ = frame.height();
     rotation_ = frame.rotation();
     timestamp_us_ = frame.timestamp_us();
-    SignalRenderFrame(&frame);
   }
 
   int errors() const { return errors_; }
@@ -73,9 +71,6 @@ class FakeVideoRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
     rtc::CritScope cs(&crit_);
     return black_frame_;
   }
-
-  sigslot::signal3<int, int, int> SignalSetSize;
-  sigslot::signal1<const VideoFrame*> SignalRenderFrame;
 
  private:
   static bool CheckFrameColorYuv(uint8_t y_min,
