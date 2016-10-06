@@ -18,6 +18,19 @@
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
 
+namespace {
+
+// Return the contained value for |key| if available, and |default_value|
+// otherwise.
+std::string GetParamOrDefault(const cricket::Codec& codec,
+                              const std::string& key,
+                              const std::string& default_value) {
+  cricket::CodecParameterMap::const_iterator iter = codec.params.find(key);
+  return (iter == codec.params.end()) ? default_value : iter->second;
+}
+
+}  // anonymous namespace
+
 namespace cricket {
 
 const int kMaxPayloadId = 127;
@@ -243,6 +256,31 @@ VideoCodec& VideoCodec::operator=(const VideoCodec& c) {
 bool VideoCodec::operator==(const VideoCodec& c) const {
   return width == c.width && height == c.height && framerate == c.framerate &&
          Codec::operator==(c);
+}
+
+bool VideoCodec::Matches(const VideoCodec& codec) const {
+  if (!Codec::Matches(codec))
+    return false;
+  // TODO(magjed): It would be better to have this logic in a H264 subclass. See
+  // http://crbug/webrtc/6385 for more info.
+  if (!CodecNamesEq(name, kH264CodecName))
+    return true;
+  // H264 codecs need to have matching profile-level-id.
+  const std::string our_profile_level_id = GetParamOrDefault(
+      *this, kH264FmtpProfileLevelId, kH264FmtpDefaultProfileLevelId);
+  const std::string their_profile_level_id = GetParamOrDefault(
+      codec, kH264FmtpProfileLevelId, kH264FmtpDefaultProfileLevelId);
+  if (our_profile_level_id == their_profile_level_id)
+    return true;
+  // At this point, profile-level-id is not an exact match, but that is still ok
+  // if only level_idc differs and level asymmetry is allowed.
+  const bool level_asymmetry_allowed =
+      GetParamOrDefault(*this, kH264FmtpLevelAsymmetryAllowed, "0") == "1" &&
+      GetParamOrDefault(codec, kH264FmtpLevelAsymmetryAllowed, "0") == "1";
+  // Ignore level_idc and compare only profile_idc and profile_iop.
+  const bool is_profile_match = (our_profile_level_id.substr(0, 4) ==
+                                 their_profile_level_id.substr(0, 4));
+  return level_asymmetry_allowed && is_profile_match;
 }
 
 VideoCodec VideoCodec::CreateRtxCodec(int rtx_payload_type,

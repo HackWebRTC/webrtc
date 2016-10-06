@@ -20,12 +20,7 @@ using cricket::kCodecParamAssociatedPayloadType;
 using cricket::kCodecParamMaxBitrate;
 using cricket::kCodecParamMinBitrate;
 
-class CodecTest : public testing::Test {
- public:
-  CodecTest() {}
-};
-
-TEST_F(CodecTest, TestCodecOperators) {
+TEST(CodecTest, TestCodecOperators) {
   Codec c0(96, "D", 1000);
   c0.SetParam("a", 1);
 
@@ -58,7 +53,7 @@ TEST_F(CodecTest, TestCodecOperators) {
   EXPECT_TRUE(c5 == c6);
 }
 
-TEST_F(CodecTest, TestAudioCodecOperators) {
+TEST(CodecTest, TestAudioCodecOperators) {
   AudioCodec c0(96, "A", 44100, 20000, 2);
   AudioCodec c1(95, "A", 44100, 20000, 2);
   AudioCodec c2(96, "x", 44100, 20000, 2);
@@ -95,7 +90,7 @@ TEST_F(CodecTest, TestAudioCodecOperators) {
   EXPECT_TRUE(c13 == c10);
 }
 
-TEST_F(CodecTest, TestAudioCodecMatches) {
+TEST(CodecTest, TestAudioCodecMatches) {
   // Test a codec with a static payload type.
   AudioCodec c0(95, "A", 44100, 20000, 1);
   EXPECT_TRUE(c0.Matches(AudioCodec(95, "", 44100, 20000, 1)));
@@ -135,7 +130,7 @@ TEST_F(CodecTest, TestAudioCodecMatches) {
   EXPECT_FALSE(c3.Matches(AudioCodec(96, "A", 44100, 20000, 0)));
 }
 
-TEST_F(CodecTest, TestVideoCodecOperators) {
+TEST(CodecTest, TestVideoCodecOperators) {
   VideoCodec c0(96, "V", 320, 200, 30);
   VideoCodec c1(95, "V", 320, 200, 30);
   VideoCodec c2(96, "x", 320, 200, 30);
@@ -172,7 +167,7 @@ TEST_F(CodecTest, TestVideoCodecOperators) {
   EXPECT_TRUE(c13 == c10);
 }
 
-TEST_F(CodecTest, TestVideoCodecMatches) {
+TEST(CodecTest, TestVideoCodecMatches) {
   // Test a codec with a static payload type.
   VideoCodec c0(95, "V", 320, 200, 30);
   EXPECT_TRUE(c0.Matches(VideoCodec(95, "", 640, 400, 15)));
@@ -188,7 +183,72 @@ TEST_F(CodecTest, TestVideoCodecMatches) {
   EXPECT_FALSE(c1.Matches(VideoCodec(95, "V", 640, 400, 15)));
 }
 
-TEST_F(CodecTest, TestDataCodecMatches) {
+TEST(CodecTest, TestVideoCodecMatchesH264Baseline) {
+  const VideoCodec no_params(96, cricket::kH264CodecName, 640, 480, 30);
+
+  VideoCodec baseline(96, cricket::kH264CodecName, 640, 480, 30);
+  baseline.SetParam(cricket::kH264FmtpProfileLevelId,
+                    cricket::kH264FmtpDefaultProfileLevelId);
+
+  EXPECT_TRUE(baseline.Matches(baseline));
+  EXPECT_TRUE(baseline.Matches(no_params));
+  EXPECT_TRUE(no_params.Matches(baseline));
+  EXPECT_TRUE(no_params.Matches(no_params));
+}
+
+TEST(CodecTest, TestVideoCodecMatchesH264Profiles) {
+  VideoCodec baseline(96, cricket::kH264CodecName, 640, 480, 30);
+  baseline.SetParam(cricket::kH264FmtpProfileLevelId,
+                    cricket::kH264FmtpDefaultProfileLevelId);
+  baseline.SetParam(cricket::kH264FmtpLevelAsymmetryAllowed, "1");
+
+  VideoCodec constrained_baseline(96, cricket::kH264CodecName, 640, 480, 30);
+  constrained_baseline.SetParam(cricket::kH264FmtpProfileLevelId,
+                                cricket::kH264ProfileLevelConstrainedBaseline);
+  constrained_baseline.SetParam(cricket::kH264FmtpLevelAsymmetryAllowed, "1");
+
+  EXPECT_TRUE(baseline.Matches(baseline));
+  EXPECT_FALSE(baseline.Matches(constrained_baseline));
+  EXPECT_FALSE(constrained_baseline.Matches(baseline));
+  EXPECT_TRUE(constrained_baseline.Matches(constrained_baseline));
+}
+
+TEST(CodecTest, TestVideoCodecMatchesH264LevelAsymmetry) {
+  // Constrained Baseline Profile Level 1.0.
+  VideoCodec cbp_1_0(96, cricket::kH264CodecName, 640, 480, 30);
+  cbp_1_0.SetParam(cricket::kH264FmtpProfileLevelId,
+                   "42e00a");
+
+  VideoCodec cbp_1_0_asymmetry_allowed = cbp_1_0;
+  cbp_1_0_asymmetry_allowed.SetParam(cricket::kH264FmtpLevelAsymmetryAllowed,
+                                     "1");
+
+  // Constrained Baseline Profile Level 3.1.
+  VideoCodec cbp_3_1(96, cricket::kH264CodecName, 640, 480, 30);
+  cbp_3_1.SetParam(cricket::kH264FmtpProfileLevelId, "42e01f");
+
+  VideoCodec cbp_3_1_asymmetry_allowed = cbp_3_1;
+  cbp_3_1_asymmetry_allowed.SetParam(cricket::kH264FmtpLevelAsymmetryAllowed,
+                                     "1");
+
+  // It's ok to differ in level-asymmetry-allowed param as long as the level is
+  // the same.
+  EXPECT_TRUE(cbp_1_0.Matches(cbp_1_0_asymmetry_allowed));
+  EXPECT_TRUE(cbp_3_1.Matches(cbp_3_1_asymmetry_allowed));
+
+  // Both codecs need to accept level asymmetry if levels differ.
+  EXPECT_FALSE(cbp_1_0.Matches(cbp_3_1_asymmetry_allowed));
+  EXPECT_FALSE(cbp_1_0_asymmetry_allowed.Matches(cbp_3_1));
+  EXPECT_TRUE(cbp_1_0_asymmetry_allowed.Matches(cbp_3_1_asymmetry_allowed));
+
+  // Test explicitly disabling level asymmetry. It should have the same behavior
+  // as missing the param.
+  cbp_1_0.SetParam(cricket::kH264FmtpLevelAsymmetryAllowed, "0");
+  EXPECT_TRUE(cbp_1_0.Matches(cbp_1_0_asymmetry_allowed));
+  EXPECT_FALSE(cbp_1_0.Matches(cbp_3_1_asymmetry_allowed));
+}
+
+TEST(CodecTest, TestDataCodecMatches) {
   // Test a codec with a static payload type.
   DataCodec c0(95, "D");
   EXPECT_TRUE(c0.Matches(DataCodec(95, "")));
@@ -204,7 +264,7 @@ TEST_F(CodecTest, TestDataCodecMatches) {
   EXPECT_FALSE(c1.Matches(DataCodec(95, "D")));
 }
 
-TEST_F(CodecTest, TestSetParamGetParamAndRemoveParam) {
+TEST(CodecTest, TestSetParamGetParamAndRemoveParam) {
   AudioCodec codec;
   codec.SetParam("a", "1");
   codec.SetParam("b", "x");
@@ -225,7 +285,7 @@ TEST_F(CodecTest, TestSetParamGetParamAndRemoveParam) {
   EXPECT_FALSE(codec.RemoveParam("c"));
 }
 
-TEST_F(CodecTest, TestIntersectFeedbackParams) {
+TEST(CodecTest, TestIntersectFeedbackParams) {
   const FeedbackParam a1("a", "1");
   const FeedbackParam b2("b", "2");
   const FeedbackParam b3("b", "3");
@@ -244,7 +304,7 @@ TEST_F(CodecTest, TestIntersectFeedbackParams) {
   EXPECT_FALSE(c1.HasFeedbackParam(c3));
 }
 
-TEST_F(CodecTest, TestGetCodecType) {
+TEST(CodecTest, TestGetCodecType) {
   // Codec type comparison should be case insenstive on names.
   const VideoCodec codec(96, "V", 320, 200, 30);
   const VideoCodec rtx_codec(96, "rTx", 320, 200, 30);
@@ -256,7 +316,7 @@ TEST_F(CodecTest, TestGetCodecType) {
   EXPECT_EQ(VideoCodec::CODEC_RED, red_codec.GetCodecType());
 }
 
-TEST_F(CodecTest, TestCreateRtxCodec) {
+TEST(CodecTest, TestCreateRtxCodec) {
   VideoCodec rtx_codec = VideoCodec::CreateRtxCodec(96, 120);
   EXPECT_EQ(96, rtx_codec.id);
   EXPECT_EQ(VideoCodec::CODEC_RTX, rtx_codec.GetCodecType());
@@ -266,7 +326,7 @@ TEST_F(CodecTest, TestCreateRtxCodec) {
   EXPECT_EQ(120, associated_payload_type);
 }
 
-TEST_F(CodecTest, TestValidateCodecFormat) {
+TEST(CodecTest, TestValidateCodecFormat) {
   const VideoCodec codec(96, "V", 320, 200, 30);
   ASSERT_TRUE(codec.ValidateCodecFormat());
 
@@ -322,7 +382,7 @@ TEST_F(CodecTest, TestValidateCodecFormat) {
   EXPECT_TRUE(different_bitrates.ValidateCodecFormat());
 }
 
-TEST_F(CodecTest, TestToCodecParameters) {
+TEST(CodecTest, TestToCodecParameters) {
   const VideoCodec v(96, "V", 320, 200, 30);
   webrtc::RtpCodecParameters codec_params_1 = v.ToCodecParameters();
   EXPECT_EQ(96, codec_params_1.payload_type);
