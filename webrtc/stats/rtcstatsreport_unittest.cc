@@ -18,45 +18,45 @@ namespace webrtc {
 
 class RTCTestStats1 : public RTCStats {
  public:
+  WEBRTC_RTCSTATS_DECL();
+
   RTCTestStats1(const std::string& id, int64_t timestamp_us)
       : RTCStats(id, timestamp_us),
         integer("integer") {}
 
-  WEBRTC_RTCSTATS_IMPL(RTCStats, RTCTestStats1,
-      &integer);
-
   RTCStatsMember<int32_t> integer;
 };
 
-const char RTCTestStats1::kType[] = "test-stats-1";
+WEBRTC_RTCSTATS_IMPL(RTCTestStats1, RTCStats, "test-stats-1",
+    &integer);
 
 class RTCTestStats2 : public RTCStats {
  public:
+  WEBRTC_RTCSTATS_DECL();
+
   RTCTestStats2(const std::string& id, int64_t timestamp_us)
       : RTCStats(id, timestamp_us),
         number("number") {}
 
-  WEBRTC_RTCSTATS_IMPL(RTCStats, RTCTestStats2,
-      &number);
-
   RTCStatsMember<double> number;
 };
 
-const char RTCTestStats2::kType[] = "test-stats-2";
+WEBRTC_RTCSTATS_IMPL(RTCTestStats2, RTCStats, "test-stats-2",
+    &number);
 
 class RTCTestStats3 : public RTCStats {
  public:
+  WEBRTC_RTCSTATS_DECL();
+
   RTCTestStats3(const std::string& id, int64_t timestamp_us)
       : RTCStats(id, timestamp_us),
         string("string") {}
 
-  WEBRTC_RTCSTATS_IMPL(RTCStats, RTCTestStats3,
-      &string);
-
   RTCStatsMember<std::string> string;
 };
 
-const char RTCTestStats3::kType[] = "test-stats-3";
+WEBRTC_RTCSTATS_IMPL(RTCTestStats3, RTCStats, "test-stats-3",
+    &string);
 
 TEST(RTCStatsReport, AddAndGetStats) {
   rtc::scoped_refptr<RTCStatsReport> report = RTCStatsReport::Create();

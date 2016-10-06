@@ -23,11 +23,6 @@ rtc_static_library("rtc_stats") {
     "rtcstatsreport.cc",
   ]
 
-  if (is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps = [
     "../api:rtc_stats_api",
     "../base:rtc_base_approved",
@@ -40,11 +35,6 @@ rtc_source_set("rtc_stats_test_utils") {
     "test/rtcteststats.cc",
     "test/rtcteststats.h",
   ]
-
-  if (is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 
   deps = [
     ":rtc_stats",

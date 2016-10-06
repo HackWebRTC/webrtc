@@ -20,31 +20,31 @@ namespace webrtc {
 
 class RTCChildStats : public RTCStats {
  public:
+  WEBRTC_RTCSTATS_DECL();
+
   RTCChildStats(const std::string& id, int64_t timestamp_us)
       : RTCStats(id, timestamp_us),
         child_int("childInt") {}
 
-  WEBRTC_RTCSTATS_IMPL(RTCStats, RTCChildStats,
-      &child_int);
-
   RTCStatsMember<int32_t> child_int;
 };
 
-const char RTCChildStats::kType[] = "child-stats";
+WEBRTC_RTCSTATS_IMPL(RTCChildStats, RTCStats, "child-stats",
+    &child_int);
 
 class RTCGrandChildStats : public RTCChildStats {
  public:
+  WEBRTC_RTCSTATS_DECL();
+
   RTCGrandChildStats(const std::string& id, int64_t timestamp_us)
       : RTCChildStats(id, timestamp_us),
         grandchild_int("grandchildInt") {}
 
-  WEBRTC_RTCSTATS_IMPL(RTCChildStats, RTCGrandChildStats,
-      &grandchild_int);
-
   RTCStatsMember<int32_t> grandchild_int;
 };
 
-const char RTCGrandChildStats::kType[] = "grandchild-stats";
+WEBRTC_RTCSTATS_IMPL(RTCGrandChildStats, RTCChildStats, "grandchild-stats",
+      &grandchild_int);
 
 TEST(RTCStatsTest, RTCStatsAndMembers) {
   RTCTestStats stats("testId", 42);

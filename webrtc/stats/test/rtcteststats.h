@@ -20,23 +20,11 @@ namespace webrtc {
 
 class RTCTestStats : public RTCStats {
  public:
-  RTCTestStats(const std::string& id, int64_t timestamp_us);
+  WEBRTC_RTCSTATS_DECL();
 
-  WEBRTC_RTCSTATS_IMPL(RTCStats, RTCTestStats,
-      &m_bool,
-      &m_int32,
-      &m_uint32,
-      &m_int64,
-      &m_uint64,
-      &m_double,
-      &m_string,
-      &m_sequence_bool,
-      &m_sequence_int32,
-      &m_sequence_uint32,
-      &m_sequence_int64,
-      &m_sequence_uint64,
-      &m_sequence_double,
-      &m_sequence_string);
+  RTCTestStats(const std::string& id, int64_t timestamp_us);
+  RTCTestStats(const RTCTestStats& other);
+  ~RTCTestStats() override;
 
   RTCStatsMember<bool> m_bool;
   RTCStatsMember<int32_t> m_int32;

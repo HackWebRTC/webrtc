@@ -20,14 +20,12 @@ namespace webrtc {
 // https://w3c.github.io/webrtc-stats/#certificatestats-dict*
 class RTCCertificateStats : public RTCStats {
  public:
+  WEBRTC_RTCSTATS_DECL();
+
   RTCCertificateStats(const std::string& id, int64_t timestamp_us);
   RTCCertificateStats(std::string&& id, int64_t timestamp_us);
-
-  WEBRTC_RTCSTATS_IMPL(RTCStats, RTCCertificateStats,
-      &fingerprint,
-      &fingerprint_algorithm,
-      &base64_certificate,
-      &issuer_certificate_id);
+  RTCCertificateStats(const RTCCertificateStats& other);
+  ~RTCCertificateStats() override;
 
   RTCStatsMember<std::string> fingerprint;
   RTCStatsMember<std::string> fingerprint_algorithm;
@@ -39,12 +37,12 @@ class RTCCertificateStats : public RTCStats {
 // TODO(hbos): Tracking bug crbug.com/636818
 class RTCPeerConnectionStats : public RTCStats {
  public:
+  WEBRTC_RTCSTATS_DECL();
+
   RTCPeerConnectionStats(const std::string& id, int64_t timestamp_us);
   RTCPeerConnectionStats(std::string&& id, int64_t timestamp_us);
-
-  WEBRTC_RTCSTATS_IMPL(RTCStats, RTCPeerConnectionStats,
-      &data_channels_opened,
-      &data_channels_closed);
+  RTCPeerConnectionStats(const RTCPeerConnectionStats& other);
+  ~RTCPeerConnectionStats() override;
 
   RTCStatsMember<uint32_t> data_channels_opened;
   RTCStatsMember<uint32_t> data_channels_closed;

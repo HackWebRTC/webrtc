@@ -140,17 +140,17 @@ class RTCStatsCollectorTestHelper : public SetSessionDescriptionObserver {
 
 class RTCTestStats : public RTCStats {
  public:
+  WEBRTC_RTCSTATS_DECL();
+
   RTCTestStats(const std::string& id, int64_t timestamp_us)
       : RTCStats(id, timestamp_us),
         dummy_stat("dummyStat") {}
 
-  WEBRTC_RTCSTATS_IMPL(RTCStats, RTCTestStats,
-      &dummy_stat);
-
   RTCStatsMember<int32_t> dummy_stat;
 };
 
-const char RTCTestStats::kType[] = "test-stats";
+WEBRTC_RTCSTATS_IMPL(RTCTestStats, RTCStats, "test-stats",
+    &dummy_stat);
 
 // Overrides the stats collection to verify thread usage and that the resulting
 // partial reports are merged.
