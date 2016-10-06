@@ -119,6 +119,19 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
     }
 
     @Override
+    public void onCameraDisconnected(CameraSession session) {
+      checkIsOnCameraThread();
+      synchronized (stateLock) {
+        if (session != currentSession) {
+          Logging.w(TAG, "onCameraDisconnected from another session.");
+          return;
+        }
+        eventsHandler.onCameraDisconnected();
+        stopCapture();
+      }
+    }
+
+    @Override
     public void onCameraClosed(CameraSession session) {
       checkIsOnCameraThread();
       synchronized (stateLock) {
@@ -203,6 +216,8 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
       eventsHandler = new CameraEventsHandler() {
         @Override
         public void onCameraError(String errorDescription) {}
+        @Override
+        public void onCameraDisconnected() {}
         @Override
         public void onCameraFreezed(String errorDescription) {}
         @Override

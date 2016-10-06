@@ -196,6 +196,9 @@ class CameraVideoCapturerTestFixtures {
     }
 
     @Override
+    public void onCameraDisconnected() {}
+
+    @Override
     public void onCameraFreezed(String errorDescription) {
       synchronized (onCameraFreezedLock) {
         onCameraFreezedDescription = errorDescription;

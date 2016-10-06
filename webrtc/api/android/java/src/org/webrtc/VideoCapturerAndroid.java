@@ -95,7 +95,11 @@ public class VideoCapturerAndroid
           }
           Logging.e(TAG, errorMessage);
           if (eventsHandler != null) {
-            eventsHandler.onCameraError(errorMessage);
+            if (error == android.hardware.Camera.CAMERA_ERROR_EVICTED) {
+              eventsHandler.onCameraDisconnected();
+            } else {
+              eventsHandler.onCameraError(errorMessage);
+            }
           }
         }
       };

@@ -21,6 +21,7 @@ public interface CameraSession {
   public interface Events {
     void onCameraOpening();
     void onCameraError(CameraSession session, String error);
+    void onCameraDisconnected(CameraSession session);
     void onCameraClosed(CameraSession session);
     void onByteBufferFrameCaptured(
         CameraSession session, byte[] data, int width, int height, int rotation, long timestamp);

@@ -98,7 +98,14 @@ public class Camera2Session implements CameraSession {
     @Override
     public void onDisconnected(CameraDevice camera) {
       checkIsOnCameraThread();
-      reportError("Camera disconnected.");
+      final boolean startFailure = (captureSession == null);
+      state = SessionState.STOPPED;
+      stopInternal();
+      if (startFailure) {
+        callback.onFailure("Camera disconnected / evicted.");
+      } else {
+        events.onCameraDisconnected(Camera2Session.this);
+      }
     }
 
     @Override

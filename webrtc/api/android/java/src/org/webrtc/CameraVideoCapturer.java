@@ -25,6 +25,9 @@ public interface CameraVideoCapturer extends VideoCapturer {
     // or any camera exception happens on camera thread.
     void onCameraError(String errorDescription);
 
+    // Called when camera is disconnected.
+    void onCameraDisconnected();
+
     // Invoked when camera stops receiving frames.
     void onCameraFreezed(String errorDescription);
 

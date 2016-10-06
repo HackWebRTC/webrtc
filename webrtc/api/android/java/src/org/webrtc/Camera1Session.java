@@ -202,7 +202,11 @@ public class Camera1Session implements CameraSession {
         Logging.e(TAG, errorMessage);
         state = SessionState.STOPPED;
         stopInternal();
-        events.onCameraError(Camera1Session.this, errorMessage);
+        if (error == android.hardware.Camera.CAMERA_ERROR_EVICTED) {
+          events.onCameraDisconnected(Camera1Session.this);
+        } else {
+          events.onCameraError(Camera1Session.this, errorMessage);
+        }
       }
     });
 
