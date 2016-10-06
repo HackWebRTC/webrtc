@@ -93,6 +93,15 @@ void VideoFrame::CreateFrame(const uint8_t* buffer,
               stride_uv, stride_uv, rotation);
 }
 
+void VideoFrame::CopyFrame(const VideoFrame& videoFrame) {
+  ShallowCopy(videoFrame);
+
+  // If backed by a plain memory buffer, create a new, non-shared, copy.
+  if (video_frame_buffer_ && !video_frame_buffer_->native_handle()) {
+    video_frame_buffer_ = I420Buffer::Copy(video_frame_buffer_);
+  }
+}
+
 void VideoFrame::ShallowCopy(const VideoFrame& videoFrame) {
   video_frame_buffer_ = videoFrame.video_frame_buffer();
   timestamp_rtp_ = videoFrame.timestamp_rtp_;

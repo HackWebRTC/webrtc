@@ -110,7 +110,7 @@ bool Vp8UnitTestDecodeCompleteCallback::DecodeComplete() {
 }
 
 int Vp8UnitTestDecodeCompleteCallback::Decoded(VideoFrame& image) {
-  decoded_frame_->ShallowCopy(image);
+  decoded_frame_->CopyFrame(image);
   decode_complete = true;
   return 0;
 }

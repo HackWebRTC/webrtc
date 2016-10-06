@@ -250,10 +250,9 @@ void TestSize(const VideoFrame& source_frame,
 
   // Scale |resampled_source_frame| back to the source scale.
   VideoFrame resampled_source_frame;
-  resampled_source_frame.ShallowCopy(*out_frame);
+  resampled_source_frame.CopyFrame(*out_frame);
   // Compute PSNR against the cropped source frame and check expectation.
-  PreprocessFrameAndVerify(resampled_source_frame,
-                           cropped_source.width(),
+  PreprocessFrameAndVerify(resampled_source_frame, cropped_source.width(),
                            cropped_source.height(), vpm, out_frame);
   WriteProcessedFrameForVisualInspection(resampled_source_frame, *out_frame);
 
