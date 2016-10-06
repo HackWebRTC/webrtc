@@ -84,12 +84,6 @@ TEST(TestVideoFrame, InitialValues) {
   EXPECT_EQ(kVideoRotation_0, frame.rotation());
 }
 
-TEST(TestVideoFrame, CopiesInitialFrameWithoutCrashing) {
-  VideoFrame frame;
-  VideoFrame frame2;
-  frame2.CopyFrame(frame);
-}
-
 TEST(TestVideoFrame, WidthHeightValues) {
   VideoFrame frame(I420Buffer::Create(10, 10, 10, 14, 90),
                    webrtc::kVideoRotation_0,
@@ -102,44 +96,6 @@ TEST(TestVideoFrame, WidthHeightValues) {
   frame.set_ntp_time_ms(456);
   EXPECT_EQ(456, frame.ntp_time_ms());
   EXPECT_EQ(789, frame.render_time_ms());
-}
-
-TEST(TestVideoFrame, CopyFrame) {
-  int stride_y = 15;
-  int stride_u = 10;
-  int stride_v = 10;
-  int width = 15;
-  int height = 15;
-  // Copy frame.
-  VideoFrame small_frame;
-  const int kSizeY = 400;
-  const int kSizeU = 100;
-  const int kSizeV = 100;
-  const VideoRotation kRotation = kVideoRotation_270;
-  uint8_t buffer_y[kSizeY];
-  uint8_t buffer_u[kSizeU];
-  uint8_t buffer_v[kSizeV];
-  memset(buffer_y, 16, kSizeY);
-  memset(buffer_u, 8, kSizeU);
-  memset(buffer_v, 4, kSizeV);
-  VideoFrame big_frame;
-  big_frame.CreateFrame(buffer_y, buffer_u, buffer_v,
-                        width + 5, height + 5, stride_y + 5,
-                        stride_u, stride_v, kRotation);
-  // Frame of smaller dimensions.
-  small_frame.CopyFrame(big_frame);
-  EXPECT_TRUE(test::FramesEqual(small_frame, big_frame));
-  EXPECT_EQ(kRotation, small_frame.rotation());
-
-  // Frame of larger dimensions.
-  rtc::scoped_refptr<I420Buffer> buffer =
-      I420Buffer::Create(width, height, stride_y, stride_u, stride_v);
-  memset(buffer->MutableDataY(), 1, width * height);
-  memset(buffer->MutableDataU(), 2, ((height + 1) / 2) * stride_u);
-  memset(buffer->MutableDataV(), 3, ((height + 1) / 2) * stride_u);
-  VideoFrame other_frame(buffer, 0, 0, webrtc::kVideoRotation_0);
-  big_frame.CopyFrame(other_frame);
-  EXPECT_TRUE(test::FramesEqual(other_frame, big_frame));
 }
 
 TEST(TestVideoFrame, ShallowCopy) {
