@@ -12,7 +12,9 @@
 
 #include <list>
 #include <memory>
+#include <vector>
 
+#include "webrtc/common_video/h264/h264_common.h"
 #include "webrtc/modules/video_coding/frame_buffer.h"
 #include "webrtc/modules/video_coding/jitter_buffer.h"
 #include "webrtc/modules/video_coding/media_opt_util.h"
@@ -1157,6 +1159,89 @@ TEST_F(TestBasicJitterBuffer, H264InsertStartCode) {
   frame_out = DecodeCompleteFrame();
   CheckOutFrame(frame_out, size_ * 2 + 4 * 2, true);
   EXPECT_EQ(kVideoFrameKey, frame_out->FrameType());
+  jitter_buffer_->ReleaseFrame(frame_out);
+}
+
+TEST_F(TestBasicJitterBuffer, SpsAndPpsHandling) {
+  jitter_buffer_->SetDecodeErrorMode(kNoErrors);
+
+  packet_->timestamp = timestamp_;
+  packet_->frameType = kVideoFrameKey;
+  packet_->isFirstPacket = true;
+  packet_->markerBit = true;
+  packet_->codec = kVideoCodecH264;
+  packet_->video_header.codec = kRtpVideoH264;
+  packet_->video_header.codecHeader.H264.nalu_type = H264::NaluType::kIdr;
+  packet_->video_header.codecHeader.H264.nalus[0].type = H264::NaluType::kIdr;
+  packet_->video_header.codecHeader.H264.nalus[0].sps_id = -1;
+  packet_->video_header.codecHeader.H264.nalus[0].pps_id = 0;
+  packet_->video_header.codecHeader.H264.nalus_length = 1;
+  bool retransmitted = false;
+  EXPECT_EQ(kCompleteSession,
+            jitter_buffer_->InsertPacket(*packet_, &retransmitted));
+  // Not decodable since sps and pps are missing.
+  EXPECT_EQ(nullptr, DecodeCompleteFrame());
+
+  timestamp_ += 3000;
+  packet_->timestamp = timestamp_;
+  ++seq_num_;
+  packet_->seqNum = seq_num_;
+  packet_->frameType = kVideoFrameKey;
+  packet_->isFirstPacket = true;
+  packet_->markerBit = false;
+  packet_->codec = kVideoCodecH264;
+  packet_->video_header.codec = kRtpVideoH264;
+  packet_->video_header.codecHeader.H264.nalu_type = H264::NaluType::kStapA;
+  packet_->video_header.codecHeader.H264.nalus[0].type = H264::NaluType::kSps;
+  packet_->video_header.codecHeader.H264.nalus[0].sps_id = 0;
+  packet_->video_header.codecHeader.H264.nalus[0].pps_id = -1;
+  packet_->video_header.codecHeader.H264.nalus[1].type = H264::NaluType::kPps;
+  packet_->video_header.codecHeader.H264.nalus[1].sps_id = 0;
+  packet_->video_header.codecHeader.H264.nalus[1].pps_id = 0;
+  packet_->video_header.codecHeader.H264.nalus_length = 2;
+  // Not complete since the marker bit hasn't been received.
+  EXPECT_EQ(kIncomplete,
+            jitter_buffer_->InsertPacket(*packet_, &retransmitted));
+
+  ++seq_num_;
+  packet_->seqNum = seq_num_;
+  packet_->frameType = kVideoFrameKey;
+  packet_->isFirstPacket = false;
+  packet_->markerBit = true;
+  packet_->codec = kVideoCodecH264;
+  packet_->video_header.codec = kRtpVideoH264;
+  packet_->video_header.codecHeader.H264.nalu_type = H264::NaluType::kIdr;
+  packet_->video_header.codecHeader.H264.nalus[0].type = H264::NaluType::kIdr;
+  packet_->video_header.codecHeader.H264.nalus[0].sps_id = -1;
+  packet_->video_header.codecHeader.H264.nalus[0].pps_id = 0;
+  packet_->video_header.codecHeader.H264.nalus_length = 1;
+  // Complete and decodable since the pps and sps are received in the first
+  // packet of this frame.
+  EXPECT_EQ(kCompleteSession,
+            jitter_buffer_->InsertPacket(*packet_, &retransmitted));
+  VCMEncodedFrame* frame_out = DecodeCompleteFrame();
+  ASSERT_NE(nullptr, frame_out);
+  jitter_buffer_->ReleaseFrame(frame_out);
+
+  timestamp_ += 3000;
+  packet_->timestamp = timestamp_;
+  ++seq_num_;
+  packet_->seqNum = seq_num_;
+  packet_->frameType = kVideoFrameDelta;
+  packet_->isFirstPacket = true;
+  packet_->markerBit = true;
+  packet_->codec = kVideoCodecH264;
+  packet_->video_header.codec = kRtpVideoH264;
+  packet_->video_header.codecHeader.H264.nalu_type = H264::NaluType::kSlice;
+  packet_->video_header.codecHeader.H264.nalus[0].type = H264::NaluType::kSlice;
+  packet_->video_header.codecHeader.H264.nalus[0].sps_id = -1;
+  packet_->video_header.codecHeader.H264.nalus[0].pps_id = 0;
+  packet_->video_header.codecHeader.H264.nalus_length = 1;
+  // Complete and decodable since sps, pps and key frame has been received.
+  EXPECT_EQ(kCompleteSession,
+            jitter_buffer_->InsertPacket(*packet_, &retransmitted));
+  frame_out = DecodeCompleteFrame();
+  ASSERT_NE(nullptr, frame_out);
   jitter_buffer_->ReleaseFrame(frame_out);
 }
 
@@ -2633,5 +2718,4 @@ TEST_F(TestJitterBufferNack, ResetByFutureKeyFrameDoesntError) {
   nack_list = jitter_buffer_->GetNackList(&extended);
   EXPECT_EQ(0u, nack_list.size());
 }
-
 }  // namespace webrtc

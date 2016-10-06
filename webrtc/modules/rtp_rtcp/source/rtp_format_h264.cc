@@ -484,6 +484,8 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
           parsed_payload->type.Video.width = sps->width;
           parsed_payload->type.Video.height = sps->height;
           nalu.sps_id = sps->id;
+        } else {
+          LOG(LS_WARNING) << "Failed to parse SPS id from SPS slice.";
         }
         parsed_payload->frame_type = kVideoFrameKey;
         break;
@@ -502,18 +504,32 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
         }
         break;
       }
-      case H264::NaluType::kSei:
-        FALLTHROUGH();
       case H264::NaluType::kIdr:
         parsed_payload->frame_type = kVideoFrameKey;
         FALLTHROUGH();
-      default: {
+      case H264::NaluType::kSlice: {
         rtc::Optional<uint32_t> pps_id = PpsParser::ParsePpsIdFromSlice(
             &payload_data[start_offset], end_offset - start_offset);
-        if (pps_id)
+        if (pps_id) {
           nalu.pps_id = *pps_id;
+        } else {
+          LOG(LS_WARNING) << "Failed to parse PPS id from slice of type: "
+                          << static_cast<int>(nalu.type);
+        }
         break;
       }
+      // Slices below don't contain SPS or PPS ids.
+      case H264::NaluType::kAud:
+      case H264::NaluType::kEndOfSequence:
+      case H264::NaluType::kEndOfStream:
+      case H264::NaluType::kFiller:
+        break;
+      case H264::NaluType::kSei:
+        parsed_payload->frame_type = kVideoFrameKey;
+        break;
+      case H264::NaluType::kStapA:
+      case H264::NaluType::kFuA:
+        RTC_NOTREACHED();
     }
     RTPVideoHeaderH264* h264 = &parsed_payload->type.Video.codecHeader.H264;
     if (h264->nalus_length == kMaxNalusPerPacket) {
@@ -547,8 +563,13 @@ bool RtpDepacketizerH264::ParseFuaNalu(
     length_ -= kNalHeaderSize;
     rtc::Optional<uint32_t> pps_id = PpsParser::ParsePpsIdFromSlice(
         payload_data + 2 * kNalHeaderSize, length_ - kNalHeaderSize);
-    if (pps_id)
+    if (pps_id) {
       nalu.pps_id = *pps_id;
+    } else {
+      LOG(LS_WARNING) << "Failed to parse PPS from first fragment of FU-A NAL "
+                         "unit with original type: "
+                      << static_cast<int>(nalu.type);
+    }
     uint8_t original_nal_header = fnri | original_nal_type;
     modified_buffer_.reset(new rtc::Buffer());
     modified_buffer_->AppendData(payload_data + kNalHeaderSize, length_);
@@ -570,8 +591,10 @@ bool RtpDepacketizerH264::ParseFuaNalu(
   RTPVideoHeaderH264* h264 = &parsed_payload->type.Video.codecHeader.H264;
   h264->packetization_type = kH264FuA;
   h264->nalu_type = original_nal_type;
-  h264->nalus[h264->nalus_length] = nalu;
-  h264->nalus_length = 1;
+  if (first_fragment) {
+    h264->nalus[h264->nalus_length] = nalu;
+    h264->nalus_length = 1;
+  }
   return true;
 }
 
