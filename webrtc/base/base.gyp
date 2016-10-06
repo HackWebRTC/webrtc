@@ -432,6 +432,8 @@
             'testbase64.h',
             'testclient.cc',
             'testclient.h',
+            'transformadapter.cc',
+            'transformadapter.h',
             'virtualsocketserver.cc',
             'virtualsocketserver.h',
             'window.h',
