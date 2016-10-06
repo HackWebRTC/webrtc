@@ -12,92 +12,158 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/audio_network_adaptor/mock/mock_audio_network_adaptor.h"
 #include "webrtc/modules/audio_coding/codecs/opus/audio_encoder_opus.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {
+using ::testing::NiceMock;
+using ::testing::Return;
 
 namespace {
-const CodecInst kOpusSettings = {105, "opus", 48000, 960, 1, 32000};
-}  // namespace
 
-class AudioEncoderOpusTest : public ::testing::Test {
- protected:
-  void CreateCodec(int num_channels) {
-    codec_inst_.channels = num_channels;
-    encoder_.reset(new AudioEncoderOpus(codec_inst_));
-    auto expected_app =
-        num_channels == 1 ? AudioEncoderOpus::kVoip : AudioEncoderOpus::kAudio;
-    EXPECT_EQ(expected_app, encoder_->application());
-  }
+const CodecInst kDefaultOpusSettings = {105, "opus", 48000, 960, 1, 32000};
 
-  CodecInst codec_inst_ = kOpusSettings;
-  std::unique_ptr<AudioEncoderOpus> encoder_;
+AudioEncoderOpus::Config CreateConfig(const CodecInst& codec_inst) {
+  AudioEncoderOpus::Config config;
+  config.frame_size_ms = rtc::CheckedDivExact(codec_inst.pacsize, 48);
+  config.num_channels = codec_inst.channels;
+  config.bitrate_bps = rtc::Optional<int>(codec_inst.rate);
+  config.payload_type = codec_inst.pltype;
+  config.application = config.num_channels == 1 ? AudioEncoderOpus::kVoip
+                                                : AudioEncoderOpus::kAudio;
+  return config;
+}
+
+struct AudioEncoderOpusStates {
+  std::shared_ptr<MockAudioNetworkAdaptor*> mock_audio_network_adaptor;
+  std::unique_ptr<AudioEncoderOpus> encoder;
 };
 
-TEST_F(AudioEncoderOpusTest, DefaultApplicationModeMono) {
-  CreateCodec(1);
+AudioEncoderOpusStates CreateCodec(size_t num_channels) {
+  AudioEncoderOpusStates states;
+  states.mock_audio_network_adaptor =
+      std::make_shared<MockAudioNetworkAdaptor*>(nullptr);
+
+  std::weak_ptr<MockAudioNetworkAdaptor*> mock_ptr(
+      states.mock_audio_network_adaptor);
+  AudioEncoderOpus::AudioNetworkAdaptorCreator creator = [mock_ptr](
+      const std::string&, const Clock*) {
+    std::unique_ptr<MockAudioNetworkAdaptor> adaptor(
+        new NiceMock<MockAudioNetworkAdaptor>());
+    EXPECT_CALL(*adaptor, Die());
+    if (auto sp = mock_ptr.lock()) {
+      *sp = adaptor.get();
+    } else {
+      RTC_NOTREACHED();
+    }
+    return adaptor;
+  };
+
+  CodecInst codec_inst = kDefaultOpusSettings;
+  codec_inst.channels = num_channels;
+  auto config = CreateConfig(codec_inst);
+  states.encoder.reset(new AudioEncoderOpus(config, std::move(creator)));
+  return states;
 }
 
-TEST_F(AudioEncoderOpusTest, DefaultApplicationModeStereo) {
-  CreateCodec(2);
+AudioNetworkAdaptor::EncoderRuntimeConfig CreateEncoderRuntimeConfig() {
+  constexpr int kBitrate = 40000;
+  constexpr int kFrameLength = 60;
+  constexpr bool kEnableFec = true;
+  constexpr bool kEnableDtx = false;
+  constexpr size_t kNumChannels = 1;
+  constexpr float kPacketLossFraction = 0.1f;
+  AudioNetworkAdaptor::EncoderRuntimeConfig config;
+  config.bitrate_bps = rtc::Optional<int>(kBitrate);
+  config.frame_length_ms = rtc::Optional<int>(kFrameLength);
+  config.enable_fec = rtc::Optional<bool>(kEnableFec);
+  config.enable_dtx = rtc::Optional<bool>(kEnableDtx);
+  config.num_channels = rtc::Optional<size_t>(kNumChannels);
+  config.uplink_packet_loss_fraction =
+      rtc::Optional<float>(kPacketLossFraction);
+  return config;
 }
 
-TEST_F(AudioEncoderOpusTest, ChangeApplicationMode) {
-  CreateCodec(2);
-  EXPECT_TRUE(encoder_->SetApplication(AudioEncoder::Application::kSpeech));
-  EXPECT_EQ(AudioEncoderOpus::kVoip, encoder_->application());
+void CheckEncoderRuntimeConfig(
+    const AudioEncoderOpus* encoder,
+    const AudioNetworkAdaptor::EncoderRuntimeConfig& config) {
+  EXPECT_EQ(*config.bitrate_bps, encoder->GetTargetBitrate());
+  EXPECT_EQ(*config.frame_length_ms, encoder->next_frame_length_ms());
+  EXPECT_EQ(*config.enable_fec, encoder->fec_enabled());
+  EXPECT_EQ(*config.enable_dtx, encoder->GetDtx());
+  EXPECT_EQ(*config.num_channels, encoder->num_channels_to_encode());
 }
 
-TEST_F(AudioEncoderOpusTest, ResetWontChangeApplicationMode) {
-  CreateCodec(2);
+}  // namespace
+
+TEST(AudioEncoderOpusTest, DefaultApplicationModeMono) {
+  auto states = CreateCodec(1);
+  EXPECT_EQ(AudioEncoderOpus::kVoip, states.encoder->application());
+}
+
+TEST(AudioEncoderOpusTest, DefaultApplicationModeStereo) {
+  auto states = CreateCodec(2);
+  EXPECT_EQ(AudioEncoderOpus::kAudio, states.encoder->application());
+}
+
+TEST(AudioEncoderOpusTest, ChangeApplicationMode) {
+  auto states = CreateCodec(2);
+  EXPECT_TRUE(
+      states.encoder->SetApplication(AudioEncoder::Application::kSpeech));
+  EXPECT_EQ(AudioEncoderOpus::kVoip, states.encoder->application());
+}
+
+TEST(AudioEncoderOpusTest, ResetWontChangeApplicationMode) {
+  auto states = CreateCodec(2);
 
   // Trigger a reset.
-  encoder_->Reset();
+  states.encoder->Reset();
   // Verify that the mode is still kAudio.
-  EXPECT_EQ(AudioEncoderOpus::kAudio, encoder_->application());
+  EXPECT_EQ(AudioEncoderOpus::kAudio, states.encoder->application());
 
   // Now change to kVoip.
-  EXPECT_TRUE(encoder_->SetApplication(AudioEncoder::Application::kSpeech));
-  EXPECT_EQ(AudioEncoderOpus::kVoip, encoder_->application());
+  EXPECT_TRUE(
+      states.encoder->SetApplication(AudioEncoder::Application::kSpeech));
+  EXPECT_EQ(AudioEncoderOpus::kVoip, states.encoder->application());
 
   // Trigger a reset again.
-  encoder_->Reset();
+  states.encoder->Reset();
   // Verify that the mode is still kVoip.
-  EXPECT_EQ(AudioEncoderOpus::kVoip, encoder_->application());
+  EXPECT_EQ(AudioEncoderOpus::kVoip, states.encoder->application());
 }
 
-TEST_F(AudioEncoderOpusTest, ToggleDtx) {
-  CreateCodec(2);
+TEST(AudioEncoderOpusTest, ToggleDtx) {
+  auto states = CreateCodec(2);
   // Enable DTX
-  EXPECT_TRUE(encoder_->SetDtx(true));
+  EXPECT_TRUE(states.encoder->SetDtx(true));
   // Verify that the mode is still kAudio.
-  EXPECT_EQ(AudioEncoderOpus::kAudio, encoder_->application());
+  EXPECT_EQ(AudioEncoderOpus::kAudio, states.encoder->application());
   // Turn off DTX.
-  EXPECT_TRUE(encoder_->SetDtx(false));
+  EXPECT_TRUE(states.encoder->SetDtx(false));
 }
 
-TEST_F(AudioEncoderOpusTest, SetBitrate) {
-  CreateCodec(1);
-  // Constants are replicated from audio_encoder_opus.cc.
+TEST(AudioEncoderOpusTest, SetBitrate) {
+  auto states = CreateCodec(1);
+  // Constants are replicated from audio_states.encoderopus.cc.
   const int kMinBitrateBps = 500;
   const int kMaxBitrateBps = 512000;
   // Set a too low bitrate.
-  encoder_->SetTargetBitrate(kMinBitrateBps - 1);
-  EXPECT_EQ(kMinBitrateBps, encoder_->GetTargetBitrate());
+  states.encoder->SetTargetBitrate(kMinBitrateBps - 1);
+  EXPECT_EQ(kMinBitrateBps, states.encoder->GetTargetBitrate());
   // Set a too high bitrate.
-  encoder_->SetTargetBitrate(kMaxBitrateBps + 1);
-  EXPECT_EQ(kMaxBitrateBps, encoder_->GetTargetBitrate());
+  states.encoder->SetTargetBitrate(kMaxBitrateBps + 1);
+  EXPECT_EQ(kMaxBitrateBps, states.encoder->GetTargetBitrate());
   // Set the minimum rate.
-  encoder_->SetTargetBitrate(kMinBitrateBps);
-  EXPECT_EQ(kMinBitrateBps, encoder_->GetTargetBitrate());
+  states.encoder->SetTargetBitrate(kMinBitrateBps);
+  EXPECT_EQ(kMinBitrateBps, states.encoder->GetTargetBitrate());
   // Set the maximum rate.
-  encoder_->SetTargetBitrate(kMaxBitrateBps);
-  EXPECT_EQ(kMaxBitrateBps, encoder_->GetTargetBitrate());
+  states.encoder->SetTargetBitrate(kMaxBitrateBps);
+  EXPECT_EQ(kMaxBitrateBps, states.encoder->GetTargetBitrate());
   // Set rates from 1000 up to 32000 bps.
   for (int rate = 1000; rate <= 32000; rate += 1000) {
-    encoder_->SetTargetBitrate(rate);
-    EXPECT_EQ(rate, encoder_->GetTargetBitrate());
+    states.encoder->SetTargetBitrate(rate);
+    EXPECT_EQ(rate, states.encoder->GetTargetBitrate());
   }
 }
 
@@ -128,26 +194,113 @@ void TestSetPacketLossRate(AudioEncoderOpus* encoder,
 
 }  // namespace
 
-TEST_F(AudioEncoderOpusTest, PacketLossRateOptimized) {
-  CreateCodec(1);
+TEST(AudioEncoderOpusTest, PacketLossRateOptimized) {
+  auto states = CreateCodec(1);
   auto I = [](double a, double b) { return IntervalSteps(a, b, 10); };
   const double eps = 1e-15;
 
   // Note that the order of the following calls is critical.
 
   // clang-format off
-  TestSetPacketLossRate(encoder_.get(), I(0.00      , 0.01 - eps), 0.00);
-  TestSetPacketLossRate(encoder_.get(), I(0.01 + eps, 0.06 - eps), 0.01);
-  TestSetPacketLossRate(encoder_.get(), I(0.06 + eps, 0.11 - eps), 0.05);
-  TestSetPacketLossRate(encoder_.get(), I(0.11 + eps, 0.22 - eps), 0.10);
-  TestSetPacketLossRate(encoder_.get(), I(0.22 + eps, 1.00      ), 0.20);
+  TestSetPacketLossRate(states.encoder.get(), I(0.00      , 0.01 - eps), 0.00);
+  TestSetPacketLossRate(states.encoder.get(), I(0.01 + eps, 0.06 - eps), 0.01);
+  TestSetPacketLossRate(states.encoder.get(), I(0.06 + eps, 0.11 - eps), 0.05);
+  TestSetPacketLossRate(states.encoder.get(), I(0.11 + eps, 0.22 - eps), 0.10);
+  TestSetPacketLossRate(states.encoder.get(), I(0.22 + eps, 1.00      ), 0.20);
 
-  TestSetPacketLossRate(encoder_.get(), I(1.00      , 0.18 + eps), 0.20);
-  TestSetPacketLossRate(encoder_.get(), I(0.18 - eps, 0.09 + eps), 0.10);
-  TestSetPacketLossRate(encoder_.get(), I(0.09 - eps, 0.04 + eps), 0.05);
-  TestSetPacketLossRate(encoder_.get(), I(0.04 - eps, 0.01 + eps), 0.01);
-  TestSetPacketLossRate(encoder_.get(), I(0.01 - eps, 0.00      ), 0.00);
+  TestSetPacketLossRate(states.encoder.get(), I(1.00      , 0.18 + eps), 0.20);
+  TestSetPacketLossRate(states.encoder.get(), I(0.18 - eps, 0.09 + eps), 0.10);
+  TestSetPacketLossRate(states.encoder.get(), I(0.09 - eps, 0.04 + eps), 0.05);
+  TestSetPacketLossRate(states.encoder.get(), I(0.04 - eps, 0.01 + eps), 0.01);
+  TestSetPacketLossRate(states.encoder.get(), I(0.01 - eps, 0.00      ), 0.00);
   // clang-format on
+}
+
+TEST(AudioEncoderOpusTest, InvokeAudioNetworkAdaptorOnSetUplinkBandwidth) {
+  auto states = CreateCodec(2);
+  printf("passed!\n");
+  states.encoder->EnableAudioNetworkAdaptor("", nullptr);
+
+  auto config = CreateEncoderRuntimeConfig();
+  EXPECT_CALL(**states.mock_audio_network_adaptor, GetEncoderRuntimeConfig())
+      .WillOnce(Return(config));
+
+  // Since using mock audio network adaptor, any bandwidth value is fine.
+  constexpr int kUplinkBandwidth = 50000;
+  EXPECT_CALL(**states.mock_audio_network_adaptor,
+              SetUplinkBandwidth(kUplinkBandwidth));
+  states.encoder->OnReceivedUplinkBandwidth(kUplinkBandwidth);
+
+  CheckEncoderRuntimeConfig(states.encoder.get(), config);
+}
+
+TEST(AudioEncoderOpusTest,
+     InvokeAudioNetworkAdaptorOnSetUplinkPacketLossFraction) {
+  auto states = CreateCodec(2);
+  states.encoder->EnableAudioNetworkAdaptor("", nullptr);
+
+  auto config = CreateEncoderRuntimeConfig();
+  EXPECT_CALL(**states.mock_audio_network_adaptor, GetEncoderRuntimeConfig())
+      .WillOnce(Return(config));
+
+  // Since using mock audio network adaptor, any packet loss fraction is fine.
+  constexpr float kUplinkPacketLoss = 0.1f;
+  EXPECT_CALL(**states.mock_audio_network_adaptor,
+              SetUplinkPacketLossFraction(kUplinkPacketLoss));
+  states.encoder->OnReceivedUplinkPacketLossFraction(kUplinkPacketLoss);
+
+  CheckEncoderRuntimeConfig(states.encoder.get(), config);
+}
+
+TEST(AudioEncoderOpusTest, InvokeAudioNetworkAdaptorOnSetTargetAudioBitrate) {
+  auto states = CreateCodec(2);
+  states.encoder->EnableAudioNetworkAdaptor("", nullptr);
+
+  auto config = CreateEncoderRuntimeConfig();
+  EXPECT_CALL(**states.mock_audio_network_adaptor, GetEncoderRuntimeConfig())
+      .WillOnce(Return(config));
+
+  // Since using mock audio network adaptor, any target audio bitrate is fine.
+  constexpr int kTargetAudioBitrate = 30000;
+  EXPECT_CALL(**states.mock_audio_network_adaptor,
+              SetTargetAudioBitrate(kTargetAudioBitrate));
+  states.encoder->OnReceivedTargetAudioBitrate(kTargetAudioBitrate);
+
+  CheckEncoderRuntimeConfig(states.encoder.get(), config);
+}
+
+TEST(AudioEncoderOpusTest, InvokeAudioNetworkAdaptorOnSetRtt) {
+  auto states = CreateCodec(2);
+  states.encoder->EnableAudioNetworkAdaptor("", nullptr);
+
+  auto config = CreateEncoderRuntimeConfig();
+  EXPECT_CALL(**states.mock_audio_network_adaptor, GetEncoderRuntimeConfig())
+      .WillOnce(Return(config));
+
+  // Since using mock audio network adaptor, any rtt is fine.
+  constexpr int kRtt = 30;
+  EXPECT_CALL(**states.mock_audio_network_adaptor, SetRtt(kRtt));
+  states.encoder->OnReceivedRtt(kRtt);
+
+  CheckEncoderRuntimeConfig(states.encoder.get(), config);
+}
+
+TEST(AudioEncoderOpusTest,
+     InvokeAudioNetworkAdaptorOnSetReceiverFrameLengthRange) {
+  auto states = CreateCodec(2);
+  states.encoder->EnableAudioNetworkAdaptor("", nullptr);
+
+  auto config = CreateEncoderRuntimeConfig();
+  EXPECT_CALL(**states.mock_audio_network_adaptor, GetEncoderRuntimeConfig())
+      .WillOnce(Return(config));
+
+  constexpr int kMinFrameLength = 10;
+  constexpr int kMaxFrameLength = 60;
+  EXPECT_CALL(**states.mock_audio_network_adaptor,
+              SetReceiverFrameLengthRange(kMinFrameLength, kMaxFrameLength));
+  states.encoder->SetReceiverFrameLengthRange(kMinFrameLength, kMaxFrameLength);
+
+  CheckEncoderRuntimeConfig(states.encoder.get(), config);
 }
 
 }  // namespace webrtc

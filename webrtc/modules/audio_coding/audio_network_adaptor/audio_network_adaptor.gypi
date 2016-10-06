@@ -34,6 +34,10 @@
         'smoothing_filter.h',
         'smoothing_filter.cc',
       ], # sources
+      'dependencies': [
+        '<(webrtc_root)/common.gyp:webrtc_common',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
+      ],
       'conditions': [
         ['enable_protobuf==1', {
           'dependencies': [

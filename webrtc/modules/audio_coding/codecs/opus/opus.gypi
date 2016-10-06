@@ -38,6 +38,7 @@
       ],
       'dependencies': [
         'audio_encoder_interface',
+        'audio_network_adaptor',
       ],
       'sources': [
         'audio_decoder_opus.cc',

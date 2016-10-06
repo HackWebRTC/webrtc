@@ -67,4 +67,23 @@ void AudioEncoder::SetTargetBitrate(int target_bps) {}
 rtc::ArrayView<std::unique_ptr<AudioEncoder>>
 AudioEncoder::ReclaimContainedEncoders() { return nullptr; }
 
+bool AudioEncoder::EnableAudioNetworkAdaptor(const std::string& config_string,
+                                             const Clock* clock) {
+  return false;
+}
+
+void AudioEncoder::DisableAudioNetworkAdaptor() {}
+
+void AudioEncoder::OnReceivedUplinkBandwidth(int uplink_bandwidth_bps) {}
+
+void AudioEncoder::OnReceivedUplinkPacketLossFraction(
+    float uplink_packet_loss_fraction) {}
+
+void AudioEncoder::OnReceivedTargetAudioBitrate(int target_audio_bitrate_bps) {}
+
+void AudioEncoder::OnReceivedRtt(int rtt_ms) {}
+
+void AudioEncoder::SetReceiverFrameLengthRange(int min_frame_length_ms,
+                                               int max_frame_length_ms) {}
+
 }  // namespace webrtc

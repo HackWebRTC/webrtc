@@ -11,10 +11,12 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_AUDIO_ENCODER_OPUS_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_AUDIO_ENCODER_OPUS_H_
 
+#include <functional>
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/optional.h"
+#include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
 #include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 
@@ -58,8 +60,15 @@ class AudioEncoderOpus final : public AudioEncoder {
 #endif
   };
 
-  explicit AudioEncoderOpus(const Config& config);
+  using AudioNetworkAdaptorCreator =
+      std::function<std::unique_ptr<AudioNetworkAdaptor>(const std::string&,
+                                                         const Clock*)>;
+  AudioEncoderOpus(
+      const Config& config,
+      AudioNetworkAdaptorCreator&& audio_network_adaptor_creator = nullptr);
+
   explicit AudioEncoderOpus(const CodecInst& codec_inst);
+
   ~AudioEncoderOpus() override;
 
   int SampleRateHz() const override;
@@ -82,9 +91,23 @@ class AudioEncoderOpus final : public AudioEncoder {
   void SetProjectedPacketLossRate(double fraction) override;
   void SetTargetBitrate(int target_bps) override;
 
+  bool EnableAudioNetworkAdaptor(const std::string& config_string,
+                                 const Clock* clock) override;
+  void DisableAudioNetworkAdaptor() override;
+  void OnReceivedUplinkBandwidth(int uplink_bandwidth_bps) override;
+  void OnReceivedUplinkPacketLossFraction(
+      float uplink_packet_loss_fraction) override;
+  void OnReceivedTargetAudioBitrate(int target_audio_bitrate_bps) override;
+  void OnReceivedRtt(int rtt_ms) override;
+  void SetReceiverFrameLengthRange(int min_frame_length_ms,
+                                   int max_frame_length_ms) override;
+
   // Getters for testing.
   double packet_loss_rate() const { return packet_loss_rate_; }
   ApplicationMode application() const { return config_.application; }
+  bool fec_enabled() const { return config_.fec_enabled; }
+  size_t num_channels_to_encode() const { return num_channels_to_encode_; }
+  int next_frame_length_ms() const { return next_frame_length_ms_; }
 
  protected:
   EncodedInfo EncodeImpl(uint32_t rtp_timestamp,
@@ -96,12 +119,23 @@ class AudioEncoderOpus final : public AudioEncoder {
   size_t SamplesPer10msFrame() const;
   size_t SufficientOutputBufferSize() const;
   bool RecreateEncoderInstance(const Config& config);
+  void SetFrameLength(int frame_length_ms);
+  void SetNumChannelsToEncode(size_t num_channels_to_encode);
+  void ApplyAudioNetworkAdaptor();
+  std::unique_ptr<AudioNetworkAdaptor> DefaultAudioNetworkAdaptorCreator(
+      const std::string& config_string,
+      const Clock* clock) const;
 
   Config config_;
   double packet_loss_rate_;
   std::vector<int16_t> input_buffer_;
   OpusEncInst* inst_;
   uint32_t first_timestamp_in_buffer_;
+  size_t num_channels_to_encode_;
+  int next_frame_length_ms_;
+  AudioNetworkAdaptorCreator audio_network_adaptor_creator_;
+  std::unique_ptr<AudioNetworkAdaptor> audio_network_adaptor_;
+
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderOpus);
 };
 

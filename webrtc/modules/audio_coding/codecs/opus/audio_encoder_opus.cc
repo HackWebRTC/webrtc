@@ -15,7 +15,10 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/safe_conversions.h"
 #include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/audio_network_adaptor/audio_network_adaptor_impl.h"
+#include "webrtc/modules/audio_coding/audio_network_adaptor/controller_manager.h"
 #include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
+#include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
 
@@ -24,6 +27,7 @@ namespace {
 const int kSampleRateHz = 48000;
 const int kMinBitrateBps = 500;
 const int kMaxBitrateBps = 512000;
+constexpr int kSupportedFrameLengths[] = {20, 60};
 
 AudioEncoderOpus::Config CreateConfig(const CodecInst& codec_inst) {
   AudioEncoderOpus::Config config;
@@ -104,13 +108,23 @@ int AudioEncoderOpus::Config::GetBitrateBps() const {
     return num_channels == 1 ? 32000 : 64000;  // Default value.
 }
 
-AudioEncoderOpus::AudioEncoderOpus(const Config& config)
-    : packet_loss_rate_(0.0), inst_(nullptr) {
+AudioEncoderOpus::AudioEncoderOpus(
+    const Config& config,
+    AudioNetworkAdaptorCreator&& audio_network_adaptor_creator)
+    : packet_loss_rate_(0.0),
+      inst_(nullptr),
+      audio_network_adaptor_creator_(
+          audio_network_adaptor_creator
+              ? audio_network_adaptor_creator
+              : [this](const std::string& config_string, const Clock* clock) {
+                  return DefaultAudioNetworkAdaptorCreator(config_string,
+                                                           clock);
+                }) {
   RTC_CHECK(RecreateEncoderInstance(config));
 }
 
 AudioEncoderOpus::AudioEncoderOpus(const CodecInst& codec_inst)
-    : AudioEncoderOpus(CreateConfig(codec_inst)) {}
+    : AudioEncoderOpus(CreateConfig(codec_inst), nullptr) {}
 
 AudioEncoderOpus::~AudioEncoderOpus() {
   RTC_CHECK_EQ(0, WebRtcOpus_EncoderFree(inst_));
@@ -141,15 +155,23 @@ void AudioEncoderOpus::Reset() {
 }
 
 bool AudioEncoderOpus::SetFec(bool enable) {
-  auto conf = config_;
-  conf.fec_enabled = enable;
-  return RecreateEncoderInstance(conf);
+  if (enable) {
+    RTC_CHECK_EQ(0, WebRtcOpus_EnableFec(inst_));
+  } else {
+    RTC_CHECK_EQ(0, WebRtcOpus_DisableFec(inst_));
+  }
+  config_.fec_enabled = enable;
+  return true;
 }
 
 bool AudioEncoderOpus::SetDtx(bool enable) {
-  auto conf = config_;
-  conf.dtx_enabled = enable;
-  return RecreateEncoderInstance(conf);
+  if (enable) {
+    RTC_CHECK_EQ(0, WebRtcOpus_EnableDtx(inst_));
+  } else {
+    RTC_CHECK_EQ(0, WebRtcOpus_DisableDtx(inst_));
+  }
+  config_.dtx_enabled = enable;
+  return true;
 }
 
 bool AudioEncoderOpus::GetDtx() const {
@@ -192,6 +214,57 @@ void AudioEncoderOpus::SetTargetBitrate(int bits_per_second) {
   RTC_CHECK_EQ(0, WebRtcOpus_SetBitRate(inst_, config_.GetBitrateBps()));
 }
 
+bool AudioEncoderOpus::EnableAudioNetworkAdaptor(
+    const std::string& config_string,
+    const Clock* clock) {
+  audio_network_adaptor_ = audio_network_adaptor_creator_(config_string, clock);
+  return audio_network_adaptor_.get() != nullptr;
+}
+
+void AudioEncoderOpus::DisableAudioNetworkAdaptor() {
+  audio_network_adaptor_.reset(nullptr);
+}
+
+void AudioEncoderOpus::OnReceivedUplinkBandwidth(int uplink_bandwidth_bps) {
+  if (!audio_network_adaptor_)
+    return;
+  audio_network_adaptor_->SetUplinkBandwidth(uplink_bandwidth_bps);
+  ApplyAudioNetworkAdaptor();
+}
+
+void AudioEncoderOpus::OnReceivedUplinkPacketLossFraction(
+    float uplink_packet_loss_fraction) {
+  if (!audio_network_adaptor_)
+    return;
+  audio_network_adaptor_->SetUplinkPacketLossFraction(
+      uplink_packet_loss_fraction);
+  ApplyAudioNetworkAdaptor();
+}
+
+void AudioEncoderOpus::OnReceivedTargetAudioBitrate(
+    int target_audio_bitrate_bps) {
+  if (!audio_network_adaptor_)
+    return;
+  audio_network_adaptor_->SetTargetAudioBitrate(target_audio_bitrate_bps);
+  ApplyAudioNetworkAdaptor();
+}
+
+void AudioEncoderOpus::OnReceivedRtt(int rtt_ms) {
+  if (!audio_network_adaptor_)
+    return;
+  audio_network_adaptor_->SetRtt(rtt_ms);
+  ApplyAudioNetworkAdaptor();
+}
+
+void AudioEncoderOpus::SetReceiverFrameLengthRange(int min_frame_length_ms,
+                                                   int max_frame_length_ms) {
+  if (!audio_network_adaptor_)
+    return;
+  audio_network_adaptor_->SetReceiverFrameLengthRange(min_frame_length_ms,
+                                                      max_frame_length_ms);
+  ApplyAudioNetworkAdaptor();
+}
+
 AudioEncoder::EncodedInfo AudioEncoderOpus::EncodeImpl(
     uint32_t rtp_timestamp,
     rtc::ArrayView<const int16_t> audio,
@@ -225,6 +298,9 @@ AudioEncoder::EncodedInfo AudioEncoderOpus::EncodeImpl(
             return static_cast<size_t>(status);
           });
   input_buffer_.clear();
+
+  // Will use new packet size for next encoding.
+  config_.frame_size_ms = next_frame_length_ms_;
 
   info.encoded_timestamp = first_timestamp_in_buffer_;
   info.payload_type = config_.payload_type;
@@ -282,7 +358,59 @@ bool AudioEncoderOpus::RecreateEncoderInstance(const Config& config) {
                WebRtcOpus_SetPacketLossRate(
                    inst_, static_cast<int32_t>(packet_loss_rate_ * 100 + .5)));
   config_ = config;
+
+  num_channels_to_encode_ = NumChannels();
+  next_frame_length_ms_ = config_.frame_size_ms;
   return true;
+}
+
+void AudioEncoderOpus::SetFrameLength(int frame_length_ms) {
+  next_frame_length_ms_ = frame_length_ms;
+}
+
+void AudioEncoderOpus::SetNumChannelsToEncode(size_t num_channels_to_encode) {
+  RTC_DCHECK_GT(num_channels_to_encode, 0u);
+  RTC_DCHECK_LE(num_channels_to_encode, config_.num_channels);
+
+  if (num_channels_to_encode_ == num_channels_to_encode)
+    return;
+
+  RTC_CHECK_EQ(0, WebRtcOpus_SetForceChannels(inst_, num_channels_to_encode));
+  num_channels_to_encode_ = num_channels_to_encode;
+}
+
+void AudioEncoderOpus::ApplyAudioNetworkAdaptor() {
+  auto config = audio_network_adaptor_->GetEncoderRuntimeConfig();
+  // |audio_network_adaptor_| is supposed to be configured to output all
+  // following parameters.
+  RTC_DCHECK(config.bitrate_bps);
+  RTC_DCHECK(config.frame_length_ms);
+  RTC_DCHECK(config.uplink_packet_loss_fraction);
+  RTC_DCHECK(config.enable_fec);
+  RTC_DCHECK(config.enable_dtx);
+  RTC_DCHECK(config.num_channels);
+
+  RTC_DCHECK(*config.frame_length_ms == 20 || *config.frame_length_ms == 60);
+
+  SetTargetBitrate(*config.bitrate_bps);
+  SetFrameLength(*config.frame_length_ms);
+  SetFec(*config.enable_fec);
+  SetProjectedPacketLossRate(*config.uplink_packet_loss_fraction);
+  SetDtx(*config.enable_dtx);
+  SetNumChannelsToEncode(*config.num_channels);
+}
+
+std::unique_ptr<AudioNetworkAdaptor>
+AudioEncoderOpus::DefaultAudioNetworkAdaptorCreator(
+    const std::string& config_string,
+    const Clock* clock) const {
+  AudioNetworkAdaptorImpl::Config config;
+  config.clock = clock;
+  return std::unique_ptr<AudioNetworkAdaptor>(new AudioNetworkAdaptorImpl(
+      config, ControllerManagerImpl::Create(
+                  config_string, NumChannels(), kSupportedFrameLengths,
+                  num_channels_to_encode_, next_frame_length_ms_,
+                  GetTargetBitrate(), config_.fec_enabled, GetDtx(), clock)));
 }
 
 }  // namespace webrtc

@@ -11,7 +11,6 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_AUDIO_NETWORK_ADAPTOR_MOCK_MOCK_CONTROLLER_MANAGER_H_
 #define WEBRTC_MODULES_AUDIO_CODING_AUDIO_NETWORK_ADAPTOR_MOCK_MOCK_CONTROLLER_MANAGER_H_
 
-#include <memory>
 #include <vector>
 
 #include "webrtc/modules/audio_coding/audio_network_adaptor/controller_manager.h"

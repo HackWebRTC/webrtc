@@ -208,7 +208,7 @@ int16_t WebRtcOpus_SetComplexity(OpusEncInst* inst, int32_t complexity) {
   }
 }
 
-int16_t WebRtcOpus_SetForceChannels(OpusEncInst* inst, int32_t num_channels) {
+int16_t WebRtcOpus_SetForceChannels(OpusEncInst* inst, size_t num_channels) {
   if (!inst)
     return -1;
   if (num_channels == 0) {

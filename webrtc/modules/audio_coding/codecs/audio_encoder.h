@@ -21,6 +21,8 @@
 
 namespace webrtc {
 
+class Clock;
+
 // This is the interface class for encoders in AudioCoding module. Each codec
 // type must have an implementation of this class.
 class AudioEncoder {
@@ -161,6 +163,31 @@ class AudioEncoder {
   // NOTE: This method is subject to change. Do not call or override it.
   virtual rtc::ArrayView<std::unique_ptr<AudioEncoder>>
   ReclaimContainedEncoders();
+
+  // Enables audio network adaptor. Returns true if successful.
+  virtual bool EnableAudioNetworkAdaptor(const std::string& config_string,
+                                         const Clock* clock);
+
+  // Disables audio network adaptor.
+  virtual void DisableAudioNetworkAdaptor();
+
+  // Provides uplink bandwidth to this encoder to allow it to adapt.
+  virtual void OnReceivedUplinkBandwidth(int uplink_bandwidth_bps);
+
+  // Provides uplink packet loss fraction to this encoder to allow it to adapt.
+  virtual void OnReceivedUplinkPacketLossFraction(
+      float uplink_packet_loss_fraction);
+
+  // Provides target audio bitrate to this encoder to allow it to adapt.
+  virtual void OnReceivedTargetAudioBitrate(int target_audio_bitrate_bps);
+
+  // Provides RTT to this encoder to allow it to adapt.
+  virtual void OnReceivedRtt(int rtt_ms);
+
+  // To allow encoder to adapt its frame length, it must be provided the frame
+  // length range that receives can accept.
+  virtual void SetReceiverFrameLengthRange(int min_frame_length_ms,
+                                           int max_frame_length_ms);
 
  protected:
   // Subclasses implement this to perform the actual encoding. Called by

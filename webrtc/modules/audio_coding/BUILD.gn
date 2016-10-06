@@ -682,6 +682,7 @@ rtc_static_library("webrtc_opus") {
   deps = [
     ":audio_decoder_interface",
     ":audio_encoder_interface",
+    ":audio_network_adaptor",
     "../../base:rtc_base_approved",
   ]
 
@@ -737,8 +738,13 @@ source_set("audio_network_adaptor") {
   configs += [ "../..:common_config" ]
   public_configs = [ "../..:common_inherited_config" ]
 
+  deps = [
+    "../..:webrtc_common",
+    "../../system_wrappers",
+  ]
+
   if (rtc_enable_protobuf) {
-    deps = [
+    deps += [
       ":ana_config_proto",
       ":ana_debug_dump_proto",
     ]
