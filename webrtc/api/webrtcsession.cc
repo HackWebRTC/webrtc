@@ -1274,7 +1274,9 @@ bool WebRtcSession::SendData(const cricket::SendDataParams& params,
 
 bool WebRtcSession::ConnectDataChannel(DataChannel* webrtc_data_channel) {
   if (!data_channel_) {
-    LOG(LS_ERROR) << "ConnectDataChannel called when data_channel_ is NULL.";
+    // Don't log an error here, because DataChannels are expected to call
+    // ConnectDataChannel in this state. It's the only way to initially tell
+    // whether or not the underlying transport is ready.
     return false;
   }
   data_channel_->SignalReadyToSendData.connect(webrtc_data_channel,
