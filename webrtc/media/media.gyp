@@ -31,8 +31,6 @@
         'base/audiosource.h',
         'base/codec.cc',
         'base/codec.h',
-        'base/cpuid.cc',
-        'base/cpuid.h',
         'base/cryptoparams.h',
         'base/device.h',
         'base/hybriddataengine.h',
