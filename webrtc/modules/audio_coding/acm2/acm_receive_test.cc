@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/acm2/acm_receive_test_oldapi.h"
+#include "webrtc/modules/audio_coding/acm2/acm_receive_test.h"
 
 #include <assert.h>
 #include <stdio.h>

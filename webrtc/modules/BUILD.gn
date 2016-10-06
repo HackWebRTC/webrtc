@@ -270,8 +270,8 @@ if (rtc_include_tests) {
     defines = audio_coding_defines
     deps = []
     sources = [
-      "audio_coding/acm2/acm_receiver_unittest_oldapi.cc",
-      "audio_coding/acm2/audio_coding_module_unittest_oldapi.cc",
+      "audio_coding/acm2/acm_receiver_unittest.cc",
+      "audio_coding/acm2/audio_coding_module_unittest.cc",
       "audio_coding/acm2/call_statistics_unittest.cc",
       "audio_coding/acm2/codec_manager_unittest.cc",
       "audio_coding/acm2/rent_a_codec_unittest.cc",
