@@ -30,41 +30,132 @@
 #include "webrtc/common_video/include/corevideo_frame_buffer.h"
 #include "webrtc/common_video/rotation.h"
 
-struct AVCaptureSessionPresetResolution {
-  NSString *sessionPreset;
-  int width;
-  int height;
-};
+// TODO(denicija): add support for higher frame rates.
+// See http://crbug/webrtc/6355 for more info.
+static const int kFramesPerSecond = 30;
 
-#if TARGET_OS_IPHONE
-static const AVCaptureSessionPresetResolution kAvailablePresets[] = {
-  { AVCaptureSessionPreset352x288, 352, 288},
-  { AVCaptureSessionPreset640x480, 640, 480},
-  { AVCaptureSessionPreset1280x720, 1280, 720},
-  { AVCaptureSessionPreset1920x1080, 1920, 1080},
-};
-#else // macOS
-static const AVCaptureSessionPresetResolution kAvailablePresets[] = {
-  { AVCaptureSessionPreset320x240, 320, 240},
-  { AVCaptureSessionPreset352x288, 352, 288},
-  { AVCaptureSessionPreset640x480, 640, 480},
-  { AVCaptureSessionPreset960x540, 960, 540},
-  { AVCaptureSessionPreset1280x720, 1280, 720},
-};
-#endif
+static inline BOOL IsMediaSubTypeSupported(FourCharCode mediaSubType) {
+  return (mediaSubType == kCVPixelFormatType_420YpCbCr8PlanarFullRange ||
+          mediaSubType == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange);
+}
 
-// Mapping from cricket::VideoFormat to AVCaptureSession presets.
-static NSString *GetSessionPresetForVideoFormat(
-  const cricket::VideoFormat& format) {
-  for (const auto preset : kAvailablePresets) {
-    // Check both orientations
-    if ((format.width == preset.width && format.height == preset.height) ||
-        (format.width == preset.height && format.height == preset.width)) {
-      return preset.sessionPreset;
+static inline BOOL IsFrameRateWithinRange(int fps, AVFrameRateRange *range) {
+  return range.minFrameRate <= fps && range.maxFrameRate >= fps;
+}
+
+// Returns filtered array of device formats based on predefined constraints our
+// stack imposes.
+static NSArray<AVCaptureDeviceFormat *> *GetEligibleDeviceFormats(
+    const AVCaptureDevice *device,
+    int supportedFps) {
+  NSMutableArray<AVCaptureDeviceFormat *> *eligibleDeviceFormats =
+      [NSMutableArray array];
+
+  for (AVCaptureDeviceFormat *format in device.formats) {
+    // Filter out subTypes that we currently don't support in the stack
+    FourCharCode mediaSubType =
+        CMFormatDescriptionGetMediaSubType(format.formatDescription);
+    if (!IsMediaSubTypeSupported(mediaSubType)) {
+      continue;
+    }
+
+    // Filter out frame rate ranges that we currently don't support in the stack
+    for (AVFrameRateRange *frameRateRange in format.videoSupportedFrameRateRanges) {
+      if (IsFrameRateWithinRange(supportedFps, frameRateRange)) {
+        [eligibleDeviceFormats addObject:format];
+        break;
+      }
     }
   }
-  // If no matching preset is found, use a default one.
-  return AVCaptureSessionPreset640x480;
+
+  return [eligibleDeviceFormats copy];
+}
+
+// Mapping from cricket::VideoFormat to AVCaptureDeviceFormat.
+static AVCaptureDeviceFormat *GetDeviceFormatForVideoFormat(
+    const AVCaptureDevice *device,
+    const cricket::VideoFormat &videoFormat) {
+  AVCaptureDeviceFormat *desiredDeviceFormat = nil;
+  NSArray<AVCaptureDeviceFormat *> *eligibleFormats =
+      GetEligibleDeviceFormats(device, videoFormat.framerate());
+
+  for (AVCaptureDeviceFormat *deviceFormat in eligibleFormats) {
+    CMVideoDimensions dimension =
+        CMVideoFormatDescriptionGetDimensions(deviceFormat.formatDescription);
+    FourCharCode mediaSubType =
+        CMFormatDescriptionGetMediaSubType(deviceFormat.formatDescription);
+
+    if (videoFormat.width == dimension.width &&
+        videoFormat.height == dimension.height) {
+      if (mediaSubType == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange) {
+        // This is the preferred format so no need to wait for better option.
+        return deviceFormat;
+      } else {
+        // This is good candidate, but let's wait for something better.
+        desiredDeviceFormat = deviceFormat;
+      }
+    }
+  }
+
+  return desiredDeviceFormat;
+}
+
+// Mapping from AVCaptureDeviceFormat to cricket::VideoFormat for given input
+// device.
+static std::set<cricket::VideoFormat> GetSupportedVideoFormatsForDevice(
+    AVCaptureDevice *device) {
+  std::set<cricket::VideoFormat> supportedFormats;
+
+  NSArray<AVCaptureDeviceFormat *> *eligibleFormats =
+      GetEligibleDeviceFormats(device, kFramesPerSecond);
+
+  for (AVCaptureDeviceFormat *deviceFormat in eligibleFormats) {
+    CMVideoDimensions dimension =
+        CMVideoFormatDescriptionGetDimensions(deviceFormat.formatDescription);
+    cricket::VideoFormat format = cricket::VideoFormat(
+        dimension.width, dimension.height,
+        cricket::VideoFormat::FpsToInterval(kFramesPerSecond),
+        cricket::FOURCC_NV12);
+    supportedFormats.insert(format);
+  }
+
+  return supportedFormats;
+}
+
+// Sets device format for the provided capture device. Returns YES/NO depending on success.
+// TODO(denicija): When this file is split this static method should be reconsidered.
+// Perhaps adding a category on AVCaptureDevice would be better.
+static BOOL SetFormatForCaptureDevice(AVCaptureDevice *device,
+                                      AVCaptureSession *session,
+                                      const cricket::VideoFormat &format) {
+  AVCaptureDeviceFormat *deviceFormat =
+      GetDeviceFormatForVideoFormat(device, format);
+  const int fps = cricket::VideoFormat::IntervalToFps(format.interval);
+
+  NSError *error = nil;
+  BOOL success = YES;
+  [session beginConfiguration];
+  if ([device lockForConfiguration:&error]) {
+    @try {
+      device.activeFormat = deviceFormat;
+      device.activeVideoMinFrameDuration = CMTimeMake(1, fps);
+    } @catch (NSException *exception) {
+      RTCLogError(
+          @"Failed to set active format!\n User info:%@",
+          exception.userInfo);
+      success = NO;
+    }
+
+    [device unlockForConfiguration];
+  } else {
+    RTCLogError(
+        @"Failed to lock device %@. Error: %@",
+        device, error.userInfo);
+    success = NO;
+  }
+  [session commitConfiguration];
+
+  return success;
 }
 
 // This class used to capture frames using AVFoundation APIs on iOS. It is meant
@@ -86,6 +177,9 @@ static NSString *GetSessionPresetForVideoFormat(
 // it.
 - (instancetype)initWithCapturer:(webrtc::AVFoundationVideoCapturer *)capturer;
 - (AVCaptureDevice *)getActiveCaptureDevice;
+
+- (nullable AVCaptureDevice *)frontCaptureDevice;
+- (nullable AVCaptureDevice *)backCaptureDevice;
 
 // Starts and stops the capture session asynchronously. We cannot do this
 // synchronously without blocking a WebRTC thread.
@@ -175,6 +269,14 @@ static NSString *GetSessionPresetForVideoFormat(
 
 - (AVCaptureDevice *)getActiveCaptureDevice {
   return self.useBackCamera ? _backCameraInput.device : _frontCameraInput.device;
+}
+
+- (AVCaptureDevice *)frontCaptureDevice {
+  return _frontCameraInput.device;
+}
+
+- (AVCaptureDevice *)backCaptureDevice {
+  return _backCameraInput.device;
 }
 
 - (dispatch_queue_t)frameQueue {
@@ -516,17 +618,6 @@ static NSString *GetSessionPresetForVideoFormat(
   return _backCameraInput;
 }
 
-- (void)setMinFrameDuration:(CMTime)minFrameDuration
-                  forDevice:(AVCaptureDevice *)device {
-  NSError *error = nil;
-  if (![device lockForConfiguration:&error]) {
-    RTCLogError(@"Failed to lock device for configuration. Error: %@", error.localizedDescription);
-    return;
-  }
-  device.activeVideoMinFrameDuration = minFrameDuration;
-  [device unlockForConfiguration];
-}
-
 // Called from capture session queue.
 - (void)updateOrientation {
 #if TARGET_OS_IPHONE
@@ -571,10 +662,10 @@ static NSString *GetSessionPresetForVideoFormat(
       [_captureSession addInput:newInput];
     }
     [self updateOrientation];
+    AVCaptureDevice *newDevice = newInput.device;
+    const cricket::VideoFormat *format = _capturer->GetCaptureFormat();
+    SetFormatForCaptureDevice(newDevice, _captureSession, *format);
     [_captureSession commitConfiguration];
-
-    const auto fps = cricket::VideoFormat::IntervalToFps(_capturer->GetCaptureFormat()->interval);
-    [self setMinFrameDuration:CMTimeMake(1, fps)forDevice:newInput.device];
   }];
 }
 
@@ -587,32 +678,30 @@ enum AVFoundationVideoCapturerMessageType : uint32_t {
 };
 
 AVFoundationVideoCapturer::AVFoundationVideoCapturer() : _capturer(nil) {
-  // Set our supported formats. This matches kAvailablePresets.
   _capturer =
       [[RTCAVFoundationVideoCapturerInternal alloc] initWithCapturer:this];
 
-  std::vector<cricket::VideoFormat> supported_formats;
-  int framerate = 30;
+  std::set<cricket::VideoFormat> front_camera_video_formats =
+      GetSupportedVideoFormatsForDevice([_capturer frontCaptureDevice]);
 
-#if TARGET_OS_IPHONE
-  if ([UIDevice deviceType] == RTCDeviceTypeIPhone4S) {
-    set_enable_video_adapter(false);
-    framerate = 15;
+  std::set<cricket::VideoFormat> back_camera_video_formats =
+      GetSupportedVideoFormatsForDevice([_capturer backCaptureDevice]);
+
+  std::vector<cricket::VideoFormat> intersection_video_formats;
+  if (back_camera_video_formats.empty()) {
+    intersection_video_formats.assign(front_camera_video_formats.begin(),
+                                      front_camera_video_formats.end());
+
+  } else if (front_camera_video_formats.empty()) {
+    intersection_video_formats.assign(back_camera_video_formats.begin(),
+                                      back_camera_video_formats.end());
+  } else {
+    std::set_intersection(
+        front_camera_video_formats.begin(), front_camera_video_formats.end(),
+        back_camera_video_formats.begin(), back_camera_video_formats.end(),
+        std::back_inserter(intersection_video_formats));
   }
-#endif
-
-  for (const auto preset : kAvailablePresets) {
-    if ([_capturer.captureSession canSetSessionPreset:preset.sessionPreset]) {
-      const auto format = cricket::VideoFormat(
-        preset.width,
-        preset.height,
-        cricket::VideoFormat::FpsToInterval(framerate),
-        cricket::FOURCC_NV12);
-      supported_formats.push_back(format);
-    }
-  }
-
-  SetSupportedFormats(supported_formats);
+  SetSupportedFormats(intersection_video_formats);
 }
 
 AVFoundationVideoCapturer::~AVFoundationVideoCapturer() {
@@ -630,17 +719,12 @@ cricket::CaptureState AVFoundationVideoCapturer::Start(
     return cricket::CaptureState::CS_FAILED;
   }
 
-  NSString *desiredPreset = GetSessionPresetForVideoFormat(format);
-  RTC_DCHECK(desiredPreset);
+  AVCaptureDevice* device = [_capturer getActiveCaptureDevice];
+  AVCaptureSession* session = _capturer.captureSession;
 
-  [_capturer.captureSession beginConfiguration];
-  if (![_capturer.captureSession canSetSessionPreset:desiredPreset]) {
-    LOG(LS_ERROR) << "Unsupported video format.";
-    [_capturer.captureSession commitConfiguration];
+  if (!SetFormatForCaptureDevice(device, session, format)) {
     return cricket::CaptureState::CS_FAILED;
   }
-  _capturer.captureSession.sessionPreset = desiredPreset;
-  [_capturer.captureSession commitConfiguration];
 
   SetCaptureFormat(&format);
   // This isn't super accurate because it takes a while for the AVCaptureSession
@@ -648,11 +732,6 @@ cricket::CaptureState AVFoundationVideoCapturer::Start(
   // TODO(tkchin): make this better.
   [_capturer start];
   SetCaptureState(cricket::CaptureState::CS_RUNNING);
-
-  // Adjust the framerate for all capture devices.
-  const auto fps = cricket::VideoFormat::IntervalToFps(format.interval);
-  AVCaptureDevice *activeDevice = [_capturer getActiveCaptureDevice];
-  [_capturer setMinFrameDuration:CMTimeMake(1, fps)forDevice:activeDevice];
 
   return cricket::CaptureState::CS_STARTING;
 }
