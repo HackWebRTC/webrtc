@@ -41,8 +41,8 @@ public class DirectRTCClientTest {
   private static final String DUMMY_SDP_MID = "sdpMid";
   private static final String DUMMY_SDP = "sdp";
 
-  public static final int SERVER_WAIT = 10;
-  public static final int NETWORK_TIMEOUT = 100;
+  public static final int SERVER_WAIT = 100;
+  public static final int NETWORK_TIMEOUT = 1000;
 
   private DirectRTCClient client;
   private DirectRTCClient server;
