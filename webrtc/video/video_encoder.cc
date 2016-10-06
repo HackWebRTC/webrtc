@@ -18,14 +18,13 @@
 
 namespace webrtc {
 VideoEncoder* VideoEncoder::Create(VideoEncoder::EncoderType codec_type) {
+  RTC_DCHECK(IsSupportedSoftware(codec_type));
   switch (codec_type) {
     case kH264:
-      RTC_DCHECK(H264Encoder::IsSupported());
       return H264Encoder::Create();
     case kVp8:
       return VP8Encoder::Create();
     case kVp9:
-      RTC_DCHECK(VP9Encoder::IsSupported());
       return VP9Encoder::Create();
     case kUnsupportedCodec:
       RTC_NOTREACHED();
@@ -35,7 +34,24 @@ VideoEncoder* VideoEncoder::Create(VideoEncoder::EncoderType codec_type) {
   return nullptr;
 }
 
-VideoEncoder::EncoderType CodecToEncoderType(VideoCodecType codec_type) {
+bool VideoEncoder::IsSupportedSoftware(EncoderType codec_type) {
+  switch (codec_type) {
+    case kH264:
+      return H264Encoder::IsSupported();
+    case kVp8:
+      return true;
+    case kVp9:
+      return VP9Encoder::IsSupported();
+    case kUnsupportedCodec:
+      RTC_NOTREACHED();
+      return false;
+  }
+  RTC_NOTREACHED();
+  return false;
+}
+
+VideoEncoder::EncoderType VideoEncoder::CodecToEncoderType(
+    VideoCodecType codec_type) {
   switch (codec_type) {
     case kVideoCodecH264:
       return VideoEncoder::kH264;
@@ -58,8 +74,11 @@ VideoEncoderSoftwareFallbackWrapper::VideoEncoderSoftwareFallbackWrapper(
       callback_(nullptr) {}
 
 bool VideoEncoderSoftwareFallbackWrapper::InitFallbackEncoder() {
-  RTC_CHECK(encoder_type_ != kUnsupportedCodec)
-      << "Encoder requesting fallback to codec not supported in software.";
+  if (!VideoEncoder::IsSupportedSoftware(encoder_type_)) {
+    LOG(LS_WARNING)
+        << "Encoder requesting fallback to codec not supported in software.";
+    return false;
+  }
   fallback_encoder_.reset(VideoEncoder::Create(encoder_type_));
   if (fallback_encoder_->InitEncode(&codec_settings_, number_of_cores_,
                                     max_payload_size_) !=
@@ -145,6 +164,13 @@ int32_t VideoEncoderSoftwareFallbackWrapper::Encode(
   int32_t ret = encoder_->Encode(frame, codec_specific_info, frame_types);
   // If requested, try a software fallback.
   if (ret == WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE && InitFallbackEncoder()) {
+    if (frame.video_frame_buffer()->native_handle() &&
+        !fallback_encoder_->SupportsNativeHandle()) {
+      LOG(LS_WARNING) << "Fallback encoder doesn't support native frames, "
+                      << "dropping one frame.";
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
+
     // Fallback was successful, so start using it with this frame.
     return fallback_encoder_->Encode(frame, codec_specific_info, frame_types);
   }

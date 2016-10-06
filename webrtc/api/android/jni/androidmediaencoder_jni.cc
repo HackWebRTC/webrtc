@@ -129,7 +129,19 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   // ResetCodecOnCodecThread() calls ReleaseOnCodecThread() and
   // InitEncodeOnCodecThread() in an attempt to restore the codec to an
   // operable state.  Necessary after all manner of OMX-layer errors.
+  // Returns true if the codec was reset successfully.
   bool ResetCodecOnCodecThread();
+
+  // Fallback to a software encoder if one is supported else try to reset the
+  // encoder. Called with |reset_if_fallback_unavailable| equal to false from
+  // init/release encoder so that we don't go into infinite recursion.
+  // Returns true if the codec was reset successfully.
+  bool ProcessHWErrorOnCodecThread(bool reset_if_fallback_unavailable);
+
+  // Calls ProcessHWErrorOnCodecThread(true). Returns
+  // WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE if sw_fallback_required_ was set or
+  // WEBRTC_VIDEO_CODEC_ERROR otherwise.
+  int32_t ProcessHWErrorOnEncodeOnCodecThread();
 
   // Implementation of webrtc::VideoEncoder methods above, all running on the
   // codec thread exclusively.
@@ -282,6 +294,8 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   int64_t last_frame_received_ms_;
   int frames_received_since_last_key_;
   webrtc::VideoCodecMode codec_mode_;
+
+  bool sw_fallback_required_;
 };
 
 MediaCodecVideoEncoder::~MediaCodecVideoEncoder() {
@@ -289,25 +303,27 @@ MediaCodecVideoEncoder::~MediaCodecVideoEncoder() {
   Release();
 }
 
-MediaCodecVideoEncoder::MediaCodecVideoEncoder(
-    JNIEnv* jni, VideoCodecType codecType, jobject egl_context) :
-    codecType_(codecType),
-    callback_(NULL),
-    codec_thread_(new Thread()),
-    j_media_codec_video_encoder_class_(
-        jni,
-        FindClass(jni, "org/webrtc/MediaCodecVideoEncoder")),
-    j_media_codec_video_encoder_(
-        jni,
-        jni->NewObject(*j_media_codec_video_encoder_class_,
-                       GetMethodID(jni,
-                                   *j_media_codec_video_encoder_class_,
-                                   "<init>",
-                                   "()V"))),
-    inited_(false),
-    use_surface_(false),
-    picture_id_(0),
-    egl_context_(egl_context) {
+MediaCodecVideoEncoder::MediaCodecVideoEncoder(JNIEnv* jni,
+                                               VideoCodecType codecType,
+                                               jobject egl_context)
+    : codecType_(codecType),
+      callback_(NULL),
+      codec_thread_(new Thread()),
+      j_media_codec_video_encoder_class_(
+          jni,
+          FindClass(jni, "org/webrtc/MediaCodecVideoEncoder")),
+      j_media_codec_video_encoder_(
+          jni,
+          jni->NewObject(*j_media_codec_video_encoder_class_,
+                         GetMethodID(jni,
+                                     *j_media_codec_video_encoder_class_,
+                                     "<init>",
+                                     "()V"))),
+      inited_(false),
+      use_surface_(false),
+      picture_id_(0),
+      egl_context_(egl_context),
+      sw_fallback_required_(false) {
   ScopedLocalRefFrame local_ref_frame(jni);
   // It would be nice to avoid spinning up a new thread per MediaCodec, and
   // instead re-use e.g. the PeerConnectionFactory's |worker_thread_|, but bug
@@ -361,7 +377,10 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(
       GetFieldID(jni, j_output_buffer_info_class, "isKeyFrame", "Z");
   j_info_presentation_timestamp_us_field_ = GetFieldID(
       jni, j_output_buffer_info_class, "presentationTimestampUs", "J");
-  CHECK_EXCEPTION(jni) << "MediaCodecVideoEncoder ctor failed";
+  if (CheckException(jni)) {
+    ALOGW << "MediaCodecVideoEncoder ctor failed.";
+    ProcessHWErrorOnCodecThread(true /* reset_if_fallback_unavailable */);
+  }
   srand(time(NULL));
   AllowBlockingCalls();
 }
@@ -378,7 +397,9 @@ int32_t MediaCodecVideoEncoder::InitEncode(
   RTC_CHECK(codec_settings->codecType == codecType_)
       << "Unsupported codec " << codec_settings->codecType << " for "
       << codecType_;
-
+  if (sw_fallback_required_) {
+    return WEBRTC_VIDEO_CODEC_OK;
+  }
   codec_mode_ = codec_settings->mode;
   int init_width = codec_settings->width;
   int init_height = codec_settings->height;
@@ -487,20 +508,45 @@ void MediaCodecVideoEncoder::OnMessage(rtc::Message* msg) {
 bool MediaCodecVideoEncoder::ResetCodecOnCodecThread() {
   RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
   ALOGE << "ResetOnCodecThread";
-  if (ReleaseOnCodecThread() != WEBRTC_VIDEO_CODEC_OK ||
-      InitEncodeOnCodecThread(width_, height_, 0, 0, false) !=
-          WEBRTC_VIDEO_CODEC_OK) {
-    // TODO(fischman): wouldn't it be nice if there was a way to gracefully
-    // degrade to a SW encoder at this point?  There isn't one AFAICT :(
-    // https://code.google.com/p/webrtc/issues/detail?id=2920
+  if (ReleaseOnCodecThread() != WEBRTC_VIDEO_CODEC_OK) {
+    ALOGE << "Releasing codec failed during reset.";
+    return false;
+  }
+  if (InitEncodeOnCodecThread(width_, height_, 0, 0, false) !=
+      WEBRTC_VIDEO_CODEC_OK) {
+    ALOGE << "Initializing encoder failed during reset.";
     return false;
   }
   return true;
 }
 
+bool MediaCodecVideoEncoder::ProcessHWErrorOnCodecThread(
+    bool reset_if_fallback_unavailable) {
+  ALOGE << "ProcessHWErrorOnCodecThread";
+  if (VideoEncoder::IsSupportedSoftware(
+          VideoEncoder::CodecToEncoderType(codecType_))) {
+    ALOGE << "Fallback to SW encoder.";
+    sw_fallback_required_ = true;
+    return false;
+  } else if (reset_if_fallback_unavailable) {
+    ALOGE << "Reset encoder.";
+    return ResetCodecOnCodecThread();
+  }
+  return false;
+}
+
+int32_t MediaCodecVideoEncoder::ProcessHWErrorOnEncodeOnCodecThread() {
+  ProcessHWErrorOnCodecThread(true /* reset_if_fallback_unavailable */);
+  return sw_fallback_required_ ? WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE
+                               : WEBRTC_VIDEO_CODEC_ERROR;
+}
+
 int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
     int width, int height, int kbps, int fps, bool use_surface) {
   RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
+  if (sw_fallback_required_) {
+    return WEBRTC_VIDEO_CODEC_OK;
+  }
   RTC_CHECK(!use_surface || egl_context_ != nullptr) << "EGL context not set.";
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
@@ -553,16 +599,27 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
       (use_surface ? egl_context_ : nullptr));
   if (!encode_status) {
     ALOGE << "Failed to configure encoder.";
+    ProcessHWErrorOnCodecThread(false /* reset_if_fallback_unavailable */);
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
-  CHECK_EXCEPTION(jni);
+  if (CheckException(jni)) {
+    ALOGE << "Exception in init encode.";
+    ProcessHWErrorOnCodecThread(false /* reset_if_fallback_unavailable */);
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
 
   if (!use_surface) {
     jobjectArray input_buffers = reinterpret_cast<jobjectArray>(
         jni->CallObjectMethod(*j_media_codec_video_encoder_,
             j_get_input_buffers_method_));
-    CHECK_EXCEPTION(jni);
+    if (CheckException(jni)) {
+      ALOGE << "Exception in get input buffers.";
+      ProcessHWErrorOnCodecThread(false /* reset_if_fallback_unavailable */);
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
+
     if (IsNull(jni, input_buffers)) {
+      ProcessHWErrorOnCodecThread(false /* reset_if_fallback_unavailable */);
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
 
@@ -578,6 +635,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
         break;
       default:
         LOG(LS_ERROR) << "Wrong color format.";
+        ProcessHWErrorOnCodecThread(false /* reset_if_fallback_unavailable */);
         return WEBRTC_VIDEO_CODEC_ERROR;
     }
     size_t num_input_buffers = jni->GetArrayLength(input_buffers);
@@ -589,7 +647,11 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
           jni->NewGlobalRef(jni->GetObjectArrayElement(input_buffers, i));
       int64_t yuv_buffer_capacity =
           jni->GetDirectBufferCapacity(input_buffers_[i]);
-      CHECK_EXCEPTION(jni);
+      if (CheckException(jni)) {
+        ALOGE << "Exception in get direct buffer capacity.";
+        ProcessHWErrorOnCodecThread(false /* reset_if_fallback_unavailable */);
+        return WEBRTC_VIDEO_CODEC_ERROR;
+      }
       RTC_CHECK(yuv_buffer_capacity >= yuv_size_) << "Insufficient capacity";
     }
   }
@@ -603,6 +665,8 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     const std::vector<webrtc::FrameType>* frame_types,
     const int64_t frame_input_time_ms) {
   RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
+  if (sw_fallback_required_)
+    return WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
 
@@ -629,8 +693,11 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
 
   frames_received_++;
   if (!DeliverPendingOutputs(jni)) {
-    if (!ResetCodecOnCodecThread())
-      return WEBRTC_VIDEO_CODEC_ERROR;
+    if (!ProcessHWErrorOnCodecThread(
+            true /* reset_if_fallback_unavailable */)) {
+      return sw_fallback_required_ ? WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE
+                                   : WEBRTC_VIDEO_CODEC_ERROR;
+    }
   }
   if (frames_encoded_ < kMaxEncodedLogFrames) {
     ALOGD << "Encoder frame in # " << (frames_received_ - 1)
@@ -662,9 +729,8 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     consecutive_full_queue_frame_drops_++;
     if (consecutive_full_queue_frame_drops_ >=
         ENCODER_STALL_FRAMEDROP_THRESHOLD) {
-      ALOGE << "Encoder got stuck. Reset.";
-      ResetCodecOnCodecThread();
-      return WEBRTC_VIDEO_CODEC_ERROR;
+      ALOGE << "Encoder got stuck.";
+      return ProcessHWErrorOnEncodeOnCodecThread();
     }
     frames_dropped_media_encoder_++;
     OnDroppedFrameOnCodecThread();
@@ -708,7 +774,10 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   if (!input_frame.video_frame_buffer()->native_handle()) {
     int j_input_buffer_index = jni->CallIntMethod(*j_media_codec_video_encoder_,
         j_dequeue_input_buffer_method_);
-    CHECK_EXCEPTION(jni);
+    if (CheckException(jni)) {
+      ALOGE << "Exception in dequeu input buffer.";
+      return ProcessHWErrorOnEncodeOnCodecThread();
+    }
     if (j_input_buffer_index == -1) {
       // Video codec falls behind - no input buffer available.
       ALOGW << "Encoder drop frame - no input buffers available";
@@ -724,8 +793,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
       }
       return WEBRTC_VIDEO_CODEC_OK;  // TODO(fischman): see webrtc bug 2887.
     } else if (j_input_buffer_index == -2) {
-      ResetCodecOnCodecThread();
-      return WEBRTC_VIDEO_CODEC_ERROR;
+      return ProcessHWErrorOnEncodeOnCodecThread();
     }
     encode_status = EncodeByteBufferOnCodecThread(jni, key_frame, input_frame,
         j_input_buffer_index);
@@ -735,8 +803,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
 
   if (!encode_status) {
     ALOGE << "Failed encode frame with timestamp: " << input_frame.timestamp();
-    ResetCodecOnCodecThread();
-    return WEBRTC_VIDEO_CODEC_ERROR;
+    return ProcessHWErrorOnEncodeOnCodecThread();
   }
 
   // Save input image timestamps for later output.
@@ -753,9 +820,7 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
   codec_thread_->PostDelayed(RTC_FROM_HERE, kMediaCodecPollMs, this);
 
   if (!DeliverPendingOutputs(jni)) {
-    ALOGE << "Failed deliver pending outputs.";
-    ResetCodecOnCodecThread();
-    return WEBRTC_VIDEO_CODEC_ERROR;
+    return ProcessHWErrorOnEncodeOnCodecThread();
   }
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -803,7 +868,11 @@ bool MediaCodecVideoEncoder::EncodeByteBufferOnCodecThread(JNIEnv* jni,
   jobject j_input_buffer = input_buffers_[input_buffer_index];
   uint8_t* yuv_buffer =
       reinterpret_cast<uint8_t*>(jni->GetDirectBufferAddress(j_input_buffer));
-  CHECK_EXCEPTION(jni);
+  if (CheckException(jni)) {
+    ALOGE << "Exception in get direct buffer address.";
+    ProcessHWErrorOnCodecThread(true /* reset_if_fallback_unavailable */);
+    return false;
+  }
   RTC_CHECK(yuv_buffer) << "Indirect buffer??";
   RTC_CHECK(!libyuv::ConvertFromI420(
       frame.video_frame_buffer()->DataY(),
@@ -821,7 +890,11 @@ bool MediaCodecVideoEncoder::EncodeByteBufferOnCodecThread(JNIEnv* jni,
                                               input_buffer_index,
                                               yuv_size_,
                                               current_timestamp_us_);
-  CHECK_EXCEPTION(jni);
+  if (CheckException(jni)) {
+    ALOGE << "Exception in encode buffer.";
+    ProcessHWErrorOnCodecThread(true /* reset_if_fallback_unavailable */);
+    return false;
+  }
   return encode_status;
 }
 
@@ -838,7 +911,11 @@ bool MediaCodecVideoEncoder::EncodeTextureOnCodecThread(JNIEnv* jni,
                                               handle->oes_texture_id,
                                               sampling_matrix,
                                               current_timestamp_us_);
-  CHECK_EXCEPTION(jni);
+  if (CheckException(jni)) {
+    ALOGE << "Exception in encode texture.";
+    ProcessHWErrorOnCodecThread(true /* reset_if_fallback_unavailable */);
+    return false;
+  }
   return encode_status;
 }
 
@@ -865,7 +942,11 @@ int32_t MediaCodecVideoEncoder::ReleaseOnCodecThread() {
     jni->DeleteGlobalRef(input_buffers_[i]);
   input_buffers_.clear();
   jni->CallVoidMethod(*j_media_codec_video_encoder_, j_release_method_);
-  CHECK_EXCEPTION(jni);
+  if (CheckException(jni)) {
+    ALOGE << "Exception in release.";
+    ProcessHWErrorOnCodecThread(false /* reset_if_fallback_unavailable */);
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
   rtc::MessageQueueManager::Clear(this);
   inited_ = false;
   use_surface_ = false;
@@ -876,6 +957,8 @@ int32_t MediaCodecVideoEncoder::ReleaseOnCodecThread() {
 int32_t MediaCodecVideoEncoder::SetRatesOnCodecThread(uint32_t new_bit_rate,
                                                       uint32_t frame_rate) {
   RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
+  if (sw_fallback_required_)
+    return WEBRTC_VIDEO_CODEC_OK;
   frame_rate = (frame_rate < MAX_ALLOWED_VIDEO_FPS) ?
       frame_rate : MAX_ALLOWED_VIDEO_FPS;
   if (last_set_bitrate_kbps_ == new_bit_rate &&
@@ -897,10 +980,10 @@ int32_t MediaCodecVideoEncoder::SetRatesOnCodecThread(uint32_t new_bit_rate,
                                        j_set_rates_method_,
                                        last_set_bitrate_kbps_,
                                        last_set_fps_);
-  CHECK_EXCEPTION(jni);
-  if (!ret) {
-    ResetCodecOnCodecThread();
-    return WEBRTC_VIDEO_CODEC_ERROR;
+  if (CheckException(jni) || !ret) {
+    ProcessHWErrorOnCodecThread(true /* reset_if_fallback_unavailable */);
+    return sw_fallback_required_ ? WEBRTC_VIDEO_CODEC_OK
+                                 : WEBRTC_VIDEO_CODEC_ERROR;
   }
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -936,7 +1019,11 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
   while (true) {
     jobject j_output_buffer_info = jni->CallObjectMethod(
         *j_media_codec_video_encoder_, j_dequeue_output_buffer_method_);
-    CHECK_EXCEPTION(jni);
+    if (CheckException(jni)) {
+      ALOGE << "Exception in set dequeue output buffer.";
+      ProcessHWErrorOnCodecThread(true /* reset_if_fallback_unavailable */);
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
     if (IsNull(jni, j_output_buffer_info)) {
       break;
     }
@@ -944,7 +1031,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
     int output_buffer_index =
         GetOutputBufferInfoIndex(jni, j_output_buffer_info);
     if (output_buffer_index == -1) {
-      ResetCodecOnCodecThread();
+      ProcessHWErrorOnCodecThread(true /* reset_if_fallback_unavailable */);
       return false;
     }
 
@@ -972,7 +1059,11 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
     size_t payload_size = jni->GetDirectBufferCapacity(j_output_buffer);
     uint8_t* payload = reinterpret_cast<uint8_t*>(
         jni->GetDirectBufferAddress(j_output_buffer));
-    CHECK_EXCEPTION(jni);
+    if (CheckException(jni)) {
+      ALOGE << "Exception in get direct buffer address.";
+      ProcessHWErrorOnCodecThread(true /* reset_if_fallback_unavailable */);
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
 
     // Callback - return encoded frame.
     int32_t callback_status = 0;
@@ -1072,7 +1163,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
           ALOGE << "Data:" <<  image->_buffer[0] << " " << image->_buffer[1]
               << " " << image->_buffer[2] << " " << image->_buffer[3]
               << " " << image->_buffer[4] << " " << image->_buffer[5];
-          ResetCodecOnCodecThread();
+          ProcessHWErrorOnCodecThread(true /* reset_if_fallback_unavailable */);
           return false;
         }
         scPositions[scPositionsLength] = payload_size;
@@ -1093,9 +1184,8 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
     bool success = jni->CallBooleanMethod(*j_media_codec_video_encoder_,
                                           j_release_output_buffer_method_,
                                           output_buffer_index);
-    CHECK_EXCEPTION(jni);
-    if (!success) {
-      ResetCodecOnCodecThread();
+    if (CheckException(jni) || !success) {
+      ProcessHWErrorOnCodecThread(true /* reset_if_fallback_unavailable */);
       return false;
     }
 
