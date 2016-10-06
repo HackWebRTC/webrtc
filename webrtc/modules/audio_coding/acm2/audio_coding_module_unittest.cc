@@ -1051,7 +1051,7 @@ TEST_F(AcmReceiverBitExactnessOldApi, 48kHzOutputExternalDecoder) {
     // public.
     class DecodeForwarder {
      public:
-      DecodeForwarder(AudioDecoder* decoder) : decoder_(decoder) {}
+      explicit DecodeForwarder(AudioDecoder* decoder) : decoder_(decoder) {}
       int Decode(const uint8_t* encoded,
                  size_t encoded_len,
                  int sample_rate_hz,
@@ -1550,8 +1550,7 @@ TEST_F(AcmSetBitRateOldApi, Opus_48khz_20ms_10kbps) {
   Run(10000, 9288);
 #else
   Run(10000, 9024);
-#endif // WEBRTC_ANDROID
-
+#endif  // WEBRTC_ANDROID
 }
 
 TEST_F(AcmSetBitRateOldApi, Opus_48khz_20ms_50kbps) {
@@ -1560,7 +1559,7 @@ TEST_F(AcmSetBitRateOldApi, Opus_48khz_20ms_50kbps) {
   Run(50000, 47960);
 #else
   Run(50000, 49544);
-#endif // WEBRTC_ANDROID
+#endif  // WEBRTC_ANDROID
 }
 
 // The result on the Android platforms is inconsistent for this test case.
@@ -1642,7 +1641,7 @@ TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_10kbps) {
   Run(10000, 32200, 5176);
 #else
   Run(10000, 32200, 5456);
-#endif // WEBRTC_ANDROID
+#endif  // WEBRTC_ANDROID
 }
 
 TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_50kbps) {
@@ -1651,7 +1650,7 @@ TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_50kbps) {
   Run(50000, 32200, 24768);
 #else
   Run(50000, 32200, 24848);
-#endif // WEBRTC_ANDROID
+#endif  // WEBRTC_ANDROID
 }
 
 TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_100kbps) {
@@ -1661,10 +1660,10 @@ TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_100kbps) {
     Run(100000, 32200, 51152);
   #else
     Run(100000, 32200, 51248);
-  #endif // WEBRTC_ARCH_ARM64
+  #endif  // WEBRTC_ARCH_ARM64
 #else
   Run(100000, 32200, 50584);
-#endif // WEBRTC_ANDROID
+#endif  // WEBRTC_ANDROID
 }
 
 // These next 2 tests ensure that the SetBitRate function has no effect on PCM
