@@ -537,7 +537,7 @@ void AudioDeviceIOS::HandleSampleRateChange(float sample_rate) {
          current_sample_rate, (unsigned long)current_frames_per_buffer);;
 
   // Sample rate and buffer size are the same, no work to do.
-  if (abs(current_sample_rate - session_sample_rate) <= DBL_EPSILON &&
+  if (std::abs(current_sample_rate - session_sample_rate) <= DBL_EPSILON &&
       current_frames_per_buffer == session_frames_per_buffer) {
     return;
   }
