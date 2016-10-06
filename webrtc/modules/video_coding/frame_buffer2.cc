@@ -85,8 +85,10 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
         ++continuous_end_it;
 
       for (; frame_it != continuous_end_it; ++frame_it) {
-        if (frame_it->second.num_missing_decodable > 0)
+        if (!frame_it->second.continuous ||
+            frame_it->second.num_missing_decodable > 0) {
           continue;
+        }
 
         FrameObject* frame = frame_it->second.frame.get();
         next_frame_it = frame_it;
@@ -151,6 +153,8 @@ void FrameBuffer::Stop() {
 
 int FrameBuffer::InsertFrame(std::unique_ptr<FrameObject> frame) {
   rtc::CritScope lock(&crit_);
+  RTC_DCHECK(frame);
+
   FrameKey key(frame->picture_id, frame->spatial_layer);
   int last_continuous_picture_id =
       last_continuous_frame_it_ == frames_.end()
@@ -186,10 +190,15 @@ int FrameBuffer::InsertFrame(std::unique_ptr<FrameObject> frame) {
 
   auto info = frames_.insert(std::make_pair(key, FrameInfo())).first;
 
-  if (!UpdateFrameInfoWithIncomingFrame(*frame, info)) {
-    frames_.erase(info);
+  if (info->second.frame) {
+    LOG(LS_WARNING) << "Frame with (picture_id:spatial_id) (" << key.picture_id
+                    << ":" << static_cast<int>(key.spatial_layer)
+                    << ") already inserted, dropping frame.";
     return last_continuous_picture_id;
   }
+
+  if (!UpdateFrameInfoWithIncomingFrame(*frame, info))
+    return last_continuous_picture_id;
 
   info->second.frame = std::move(frame);
   ++num_frames_buffered_;
@@ -241,6 +250,7 @@ void FrameBuffer::PropagateContinuity(FrameMap::iterator start) {
 void FrameBuffer::PropagateDecodability(const FrameInfo& info) {
   for (size_t d = 0; d < info.num_dependent_frames; ++d) {
     auto ref_info = frames_.find(info.dependent_frames[d]);
+    RTC_DCHECK(ref_info != frames_.end());
     RTC_DCHECK_GT(ref_info->second.num_missing_decodable, 0U);
     --ref_info->second.num_missing_decodable;
   }
@@ -311,6 +321,8 @@ bool FrameBuffer::UpdateFrameInfoWithIncomingFrame(const FrameObject& frame,
           key;
       ++ref_info->second.num_dependent_frames;
     }
+    RTC_DCHECK_LE(ref_info->second.num_missing_continuous,
+                  ref_info->second.num_missing_decodable);
   }
 
   // Check if we have the lower spatial layer frame.
@@ -331,7 +343,12 @@ bool FrameBuffer::UpdateFrameInfoWithIncomingFrame(const FrameObject& frame,
           key;
       ++ref_info->second.num_dependent_frames;
     }
+    RTC_DCHECK_LE(ref_info->second.num_missing_continuous,
+                  ref_info->second.num_missing_decodable);
   }
+
+  RTC_DCHECK_LE(info->second.num_missing_continuous,
+                info->second.num_missing_decodable);
 
   return true;
 }

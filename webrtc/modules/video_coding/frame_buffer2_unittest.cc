@@ -263,6 +263,22 @@ TEST_F(TestFrameBuffer2, ExtractFromEmptyBuffer) {
   CheckNoFrame(0);
 }
 
+TEST_F(TestFrameBuffer2, MissingFrame) {
+  uint16_t pid = Rand();
+  uint32_t ts = Rand();
+
+  InsertFrame(pid, 0, ts, false);
+  InsertFrame(pid + 2, 0, ts, false, pid);
+  InsertFrame(pid + 3, 0, ts, false, pid + 1, pid + 2);
+  ExtractFrame();
+  ExtractFrame();
+  ExtractFrame();
+
+  CheckFrame(0, pid, 0);
+  CheckFrame(1, pid + 2, 0);
+  CheckNoFrame(2);
+}
+
 TEST_F(TestFrameBuffer2, OneLayerStream) {
   uint16_t pid = Rand();
   uint32_t ts = Rand();
