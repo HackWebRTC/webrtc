@@ -8,14 +8,32 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/aec/aec_rdft.h"
+#include "webrtc/modules/audio_processing//utility/ooura_fft.h"
 
 #include <emmintrin.h>
 
-static const ALIGN16_BEG float ALIGN16_END
-    k_swap_sign[4] = {-1.f, 1.f, -1.f, 1.f};
+#include "webrtc/modules/audio_processing/utility/ooura_fft_tables_common.h"
+#include "webrtc/modules/audio_processing/utility/ooura_fft_tables_neon_sse2.h"
 
-static void cft1st_128_SSE2(float* a) {
+namespace webrtc {
+
+#if defined(WEBRTC_ARCH_X86_FAMILY)
+
+namespace {
+// These intrinsics were unavailable before VS 2008.
+// TODO(andrew): move to a common file.
+#if defined(_MSC_VER) && _MSC_VER < 1500
+static __inline __m128 _mm_castsi128_ps(__m128i a) {
+  return *(__m128*)&a;
+}
+static __inline __m128i _mm_castps_si128(__m128 a) {
+  return *(__m128i*)&a;
+}
+#endif
+
+}  // namespace
+
+void cft1st_128_SSE2(float* a) {
   const __m128 mm_swap_sign = _mm_load_ps(k_swap_sign);
   int j, k2;
 
@@ -78,7 +96,7 @@ static void cft1st_128_SSE2(float* a) {
   }
 }
 
-static void cftmdl_128_SSE2(float* a) {
+void cftmdl_128_SSE2(float* a) {
   const int l = 8;
   const __m128 mm_swap_sign = _mm_load_ps(k_swap_sign);
   int j0;
@@ -89,12 +107,12 @@ static void cftmdl_128_SSE2(float* a) {
     const __m128i a_08 = _mm_loadl_epi64((__m128i*)&a[j0 + 8]);
     const __m128i a_32 = _mm_loadl_epi64((__m128i*)&a[j0 + 32]);
     const __m128i a_40 = _mm_loadl_epi64((__m128i*)&a[j0 + 40]);
-    const __m128 a_00_32 = _mm_shuffle_ps(_mm_castsi128_ps(a_00),
-                                          _mm_castsi128_ps(a_32),
-                                          _MM_SHUFFLE(1, 0, 1, 0));
-    const __m128 a_08_40 = _mm_shuffle_ps(_mm_castsi128_ps(a_08),
-                                          _mm_castsi128_ps(a_40),
-                                          _MM_SHUFFLE(1, 0, 1, 0));
+    const __m128 a_00_32 =
+        _mm_shuffle_ps(_mm_castsi128_ps(a_00), _mm_castsi128_ps(a_32),
+                       _MM_SHUFFLE(1, 0, 1, 0));
+    const __m128 a_08_40 =
+        _mm_shuffle_ps(_mm_castsi128_ps(a_08), _mm_castsi128_ps(a_40),
+                       _MM_SHUFFLE(1, 0, 1, 0));
     __m128 x0r0_0i0_0r1_x0i1 = _mm_add_ps(a_00_32, a_08_40);
     const __m128 x1r0_1i0_1r1_x1i1 = _mm_sub_ps(a_00_32, a_08_40);
 
@@ -102,12 +120,12 @@ static void cftmdl_128_SSE2(float* a) {
     const __m128i a_24 = _mm_loadl_epi64((__m128i*)&a[j0 + 24]);
     const __m128i a_48 = _mm_loadl_epi64((__m128i*)&a[j0 + 48]);
     const __m128i a_56 = _mm_loadl_epi64((__m128i*)&a[j0 + 56]);
-    const __m128 a_16_48 = _mm_shuffle_ps(_mm_castsi128_ps(a_16),
-                                          _mm_castsi128_ps(a_48),
-                                          _MM_SHUFFLE(1, 0, 1, 0));
-    const __m128 a_24_56 = _mm_shuffle_ps(_mm_castsi128_ps(a_24),
-                                          _mm_castsi128_ps(a_56),
-                                          _MM_SHUFFLE(1, 0, 1, 0));
+    const __m128 a_16_48 =
+        _mm_shuffle_ps(_mm_castsi128_ps(a_16), _mm_castsi128_ps(a_48),
+                       _MM_SHUFFLE(1, 0, 1, 0));
+    const __m128 a_24_56 =
+        _mm_shuffle_ps(_mm_castsi128_ps(a_24), _mm_castsi128_ps(a_56),
+                       _MM_SHUFFLE(1, 0, 1, 0));
     const __m128 x2r0_2i0_2r1_x2i1 = _mm_add_ps(a_16_48, a_24_56);
     const __m128 x3r0_3i0_3r1_x3i1 = _mm_sub_ps(a_16_48, a_24_56);
 
@@ -163,12 +181,12 @@ static void cftmdl_128_SSE2(float* a) {
       const __m128i a_08 = _mm_loadl_epi64((__m128i*)&a[j0 + 8]);
       const __m128i a_32 = _mm_loadl_epi64((__m128i*)&a[j0 + 32]);
       const __m128i a_40 = _mm_loadl_epi64((__m128i*)&a[j0 + 40]);
-      const __m128 a_00_32 = _mm_shuffle_ps(_mm_castsi128_ps(a_00),
-                                            _mm_castsi128_ps(a_32),
-                                            _MM_SHUFFLE(1, 0, 1, 0));
-      const __m128 a_08_40 = _mm_shuffle_ps(_mm_castsi128_ps(a_08),
-                                            _mm_castsi128_ps(a_40),
-                                            _MM_SHUFFLE(1, 0, 1, 0));
+      const __m128 a_00_32 =
+          _mm_shuffle_ps(_mm_castsi128_ps(a_00), _mm_castsi128_ps(a_32),
+                         _MM_SHUFFLE(1, 0, 1, 0));
+      const __m128 a_08_40 =
+          _mm_shuffle_ps(_mm_castsi128_ps(a_08), _mm_castsi128_ps(a_40),
+                         _MM_SHUFFLE(1, 0, 1, 0));
       __m128 x0r0_0i0_0r1_x0i1 = _mm_add_ps(a_00_32, a_08_40);
       const __m128 x1r0_1i0_1r1_x1i1 = _mm_sub_ps(a_00_32, a_08_40);
 
@@ -176,22 +194,21 @@ static void cftmdl_128_SSE2(float* a) {
       const __m128i a_24 = _mm_loadl_epi64((__m128i*)&a[j0 + 24]);
       const __m128i a_48 = _mm_loadl_epi64((__m128i*)&a[j0 + 48]);
       const __m128i a_56 = _mm_loadl_epi64((__m128i*)&a[j0 + 56]);
-      const __m128 a_16_48 = _mm_shuffle_ps(_mm_castsi128_ps(a_16),
-                                            _mm_castsi128_ps(a_48),
-                                            _MM_SHUFFLE(1, 0, 1, 0));
-      const __m128 a_24_56 = _mm_shuffle_ps(_mm_castsi128_ps(a_24),
-                                            _mm_castsi128_ps(a_56),
-                                            _MM_SHUFFLE(1, 0, 1, 0));
+      const __m128 a_16_48 =
+          _mm_shuffle_ps(_mm_castsi128_ps(a_16), _mm_castsi128_ps(a_48),
+                         _MM_SHUFFLE(1, 0, 1, 0));
+      const __m128 a_24_56 =
+          _mm_shuffle_ps(_mm_castsi128_ps(a_24), _mm_castsi128_ps(a_56),
+                         _MM_SHUFFLE(1, 0, 1, 0));
       const __m128 x2r0_2i0_2r1_x2i1 = _mm_add_ps(a_16_48, a_24_56);
       const __m128 x3r0_3i0_3r1_x3i1 = _mm_sub_ps(a_16_48, a_24_56);
 
       const __m128 xx = _mm_add_ps(x0r0_0i0_0r1_x0i1, x2r0_2i0_2r1_x2i1);
       const __m128 xx1 = _mm_sub_ps(x0r0_0i0_0r1_x0i1, x2r0_2i0_2r1_x2i1);
       const __m128 xx2 = _mm_mul_ps(xx1, wk2rv);
-      const __m128 xx3 =
-          _mm_mul_ps(wk2iv,
-                     _mm_castsi128_ps(_mm_shuffle_epi32(
-                         _mm_castps_si128(xx1), _MM_SHUFFLE(2, 3, 0, 1))));
+      const __m128 xx3 = _mm_mul_ps(
+          wk2iv, _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(xx1),
+                                                    _MM_SHUFFLE(2, 3, 0, 1))));
       const __m128 xx4 = _mm_add_ps(xx2, xx3);
 
       const __m128 x3i0_3r0_3i1_x3r1 = _mm_castsi128_ps(_mm_shuffle_epi32(
@@ -202,16 +219,14 @@ static void cftmdl_128_SSE2(float* a) {
 
       const __m128 xx10 = _mm_mul_ps(x1_x3_add, wk1rv);
       const __m128 xx11 = _mm_mul_ps(
-          wk1iv,
-          _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(x1_x3_add),
-                                             _MM_SHUFFLE(2, 3, 0, 1))));
+          wk1iv, _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(x1_x3_add),
+                                                    _MM_SHUFFLE(2, 3, 0, 1))));
       const __m128 xx12 = _mm_add_ps(xx10, xx11);
 
       const __m128 xx20 = _mm_mul_ps(x1_x3_sub, wk3rv);
       const __m128 xx21 = _mm_mul_ps(
-          wk3iv,
-          _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(x1_x3_sub),
-                                             _MM_SHUFFLE(2, 3, 0, 1))));
+          wk3iv, _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(x1_x3_sub),
+                                                    _MM_SHUFFLE(2, 3, 0, 1))));
       const __m128 xx22 = _mm_add_ps(xx20, xx21);
 
       _mm_storel_epi64((__m128i*)&a[j0 + 0], _mm_castps_si128(xx));
@@ -237,13 +252,13 @@ static void cftmdl_128_SSE2(float* a) {
   }
 }
 
-static void rftfsub_128_SSE2(float* a) {
+void rftfsub_128_SSE2(float* a) {
   const float* c = rdft_w + 32;
   int j1, j2, k1, k2;
   float wkr, wki, xr, xi, yr, yi;
 
-  static const ALIGN16_BEG float ALIGN16_END
-      k_half[4] = {0.5f, 0.5f, 0.5f, 0.5f};
+  static const ALIGN16_BEG float ALIGN16_END k_half[4] = {0.5f, 0.5f, 0.5f,
+                                                          0.5f};
   const __m128 mm_half = _mm_load_ps(k_half);
 
   // Vectorized code (four at once).
@@ -327,13 +342,13 @@ static void rftfsub_128_SSE2(float* a) {
   }
 }
 
-static void rftbsub_128_SSE2(float* a) {
+void rftbsub_128_SSE2(float* a) {
   const float* c = rdft_w + 32;
   int j1, j2, k1, k2;
   float wkr, wki, xr, xi, yr, yi;
 
-  static const ALIGN16_BEG float ALIGN16_END
-      k_half[4] = {0.5f, 0.5f, 0.5f, 0.5f};
+  static const ALIGN16_BEG float ALIGN16_END k_half[4] = {0.5f, 0.5f, 0.5f,
+                                                          0.5f};
   const __m128 mm_half = _mm_load_ps(k_half);
 
   a[1] = -a[1];
@@ -418,10 +433,6 @@ static void rftbsub_128_SSE2(float* a) {
   }
   a[65] = -a[65];
 }
+#endif
 
-void aec_rdft_init_sse2(void) {
-  cft1st_128 = cft1st_128_SSE2;
-  cftmdl_128 = cftmdl_128_SSE2;
-  rftfsub_128 = rftfsub_128_SSE2;
-  rftbsub_128 = rftbsub_128_SSE2;
-}
+}  // namespace webrtc

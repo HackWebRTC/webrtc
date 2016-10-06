@@ -14,15 +14,17 @@
  * Based on the sse2 version.
  */
 
-
-#include "webrtc/modules/audio_processing/aec/aec_rdft.h"
+#include "webrtc/modules/audio_processing/utility/ooura_fft.h"
 
 #include <arm_neon.h>
 
-static const ALIGN16_BEG float ALIGN16_END
-    k_swap_sign[4] = {-1.f, 1.f, -1.f, 1.f};
+#include "webrtc/modules/audio_processing/utility/ooura_fft_tables_common.h"
+#include "webrtc/modules/audio_processing/utility/ooura_fft_tables_neon_sse2.h"
 
-static void cft1st_128_neon(float* a) {
+namespace webrtc {
+
+#if defined(WEBRTC_HAS_NEON)
+void cft1st_128_neon(float* a) {
   const float32x4_t vec_swap_sign = vld1q_f32((float32_t*)k_swap_sign);
   int j, k2;
 
@@ -71,7 +73,7 @@ static void cft1st_128_neon(float* a) {
   }
 }
 
-static void cftmdl_128_neon(float* a) {
+void cftmdl_128_neon(float* a) {
   int j;
   const int l = 8;
   const float32x4_t vec_swap_sign = vld1q_f32((float32_t*)k_swap_sign);
@@ -185,7 +187,7 @@ __inline static float32x4_t reverse_order_f32x4(float32x4_t in) {
   return vrev64q_f32(rev);
 }
 
-static void rftfsub_128_neon(float* a) {
+void rftfsub_128_neon(float* a) {
   const float* c = rdft_w + 32;
   int j1, j2;
   const float32x4_t mm_half = vdupq_n_f32(0.5f);
@@ -264,7 +266,7 @@ static void rftfsub_128_neon(float* a) {
   }
 }
 
-static void rftbsub_128_neon(float* a) {
+void rftbsub_128_neon(float* a) {
   const float* c = rdft_w + 32;
   int j1, j2;
   const float32x4_t mm_half = vdupq_n_f32(0.5f);
@@ -274,11 +276,11 @@ static void rftbsub_128_neon(float* a) {
   //    Note: commented number are indexes for the first iteration of the loop.
   for (j1 = 1, j2 = 2; j2 + 7 < 64; j1 += 4, j2 += 8) {
     // Load 'wk'.
-    const float32x4_t c_j1 = vld1q_f32(&c[j1]);         //  1,  2,  3,  4,
-    const float32x4_t c_k1 = vld1q_f32(&c[29 - j1]);    // 28, 29, 30, 31,
-    const float32x4_t wkrt = vsubq_f32(mm_half, c_k1);  // 28, 29, 30, 31,
-    const float32x4_t wkr_ = reverse_order_f32x4(wkrt); // 31, 30, 29, 28,
-    const float32x4_t wki_ = c_j1;                      //  1,  2,  3,  4,
+    const float32x4_t c_j1 = vld1q_f32(&c[j1]);          //  1,  2,  3,  4,
+    const float32x4_t c_k1 = vld1q_f32(&c[29 - j1]);     // 28, 29, 30, 31,
+    const float32x4_t wkrt = vsubq_f32(mm_half, c_k1);   // 28, 29, 30, 31,
+    const float32x4_t wkr_ = reverse_order_f32x4(wkrt);  // 31, 30, 29, 28,
+    const float32x4_t wki_ = c_j1;                       //  1,  2,  3,  4,
     // Load and shuffle 'a'.
     //   2,   4,   6,   8,   3,   5,   7,   9
     float32x4x2_t a_j2_p = vld2q_f32(&a[0 + j2]);
@@ -345,11 +347,6 @@ static void rftbsub_128_neon(float* a) {
   }
   a[65] = -a[65];
 }
+#endif
 
-void aec_rdft_init_neon(void) {
-  cft1st_128 = cft1st_128_neon;
-  cftmdl_128 = cftmdl_128_neon;
-  rftfsub_128 = rftfsub_128_neon;
-  rftbsub_128 = rftbsub_128_neon;
-}
-
+}  // namespace webrtc

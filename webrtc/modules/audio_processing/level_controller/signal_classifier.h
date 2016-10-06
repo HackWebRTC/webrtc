@@ -18,6 +18,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_processing/level_controller/down_sampler.h"
 #include "webrtc/modules/audio_processing/level_controller/noise_spectrum_estimator.h"
+#include "webrtc/modules/audio_processing/utility/ooura_fft.h"
 
 namespace webrtc {
 
@@ -57,6 +58,7 @@ class SignalClassifier {
   int initialization_frames_left_;
   int consistent_classification_counter_;
   SignalType last_signal_type_;
+  const OouraFft ooura_fft_;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(SignalClassifier);
 };
 

@@ -31,6 +31,7 @@ typedef void (*WebRtcAecScaleErrorSignal)(float mu,
                                           float ef[2][PART_LEN1]);
 extern WebRtcAecScaleErrorSignal WebRtcAec_ScaleErrorSignal;
 typedef void (*WebRtcAecFilterAdaptation)(
+    const OouraFft& ooura_fft,
     int num_partitions,
     int x_fft_buf_block_pos,
     float x_fft_buf[2][kExtendedNumPartitions * PART_LEN1],

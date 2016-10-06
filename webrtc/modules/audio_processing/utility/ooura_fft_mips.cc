@@ -8,10 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/aec/aec_rdft.h"
+#include "webrtc/modules/audio_processing/utility/ooura_fft.h"
+
+#include "webrtc/modules/audio_processing/utility/ooura_fft_tables_common.h"
 #include "webrtc/typedefs.h"
 
-static void bitrv2_128_mips(float* a) {
+namespace webrtc {
+
+#if defined(MIPS_FPU_LE)
+void bitrv2_128_mips(float* a) {
   // n is 128
   float xr, xi, yr, yi;
 
@@ -268,7 +273,7 @@ static void bitrv2_128_mips(float* a) {
   a[119] = xi;
 }
 
-static void cft1st_128_mips(float* a) {
+void cft1st_128_mips(float* a) {
   float f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14;
   int a_ptr, p1_rdft, p2_rdft, count;
   const float* first = rdft_wk3ri_first;
@@ -517,7 +522,7 @@ static void cft1st_128_mips(float* a) {
   );
 }
 
-static void cftmdl_128_mips(float* a) {
+void cftmdl_128_mips(float* a) {
   float f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14;
   int tmp_a, count;
   __asm __volatile (
@@ -803,12 +808,12 @@ static void cftmdl_128_mips(float* a) {
   );
 }
 
-static void cftfsub_128_mips(float* a) {
+void cftfsub_128_mips(float* a) {
   float f0, f1, f2, f3, f4, f5, f6, f7, f8;
   int tmp_a, count;
 
-  cft1st_128(a);
-  cftmdl_128(a);
+  cft1st_128_mips(a);
+  cftmdl_128_mips(a);
 
   __asm __volatile (
     ".set       push                                      \n\t"
@@ -861,12 +866,12 @@ static void cftfsub_128_mips(float* a) {
   );
 }
 
-static void cftbsub_128_mips(float* a) {
+void cftbsub_128_mips(float* a) {
   float f0, f1, f2, f3, f4, f5, f6, f7, f8;
   int tmp_a, count;
 
-  cft1st_128(a);
-  cftmdl_128(a);
+  cft1st_128_mips(a);
+  cftmdl_128_mips(a);
 
   __asm __volatile (
     ".set       push                                        \n\t"
@@ -919,7 +924,7 @@ static void cftbsub_128_mips(float* a) {
   );
 }
 
-static void rftfsub_128_mips(float* a) {
+void rftfsub_128_mips(float* a) {
   const float* c = rdft_w + 32;
   const float f0 = 0.5f;
   float* a1 = &a[2];
@@ -1046,7 +1051,7 @@ static void rftfsub_128_mips(float* a) {
   );
 }
 
-static void rftbsub_128_mips(float* a) {
+void rftbsub_128_mips(float* a) {
   const float *c = rdft_w + 32;
   const float f0 = 0.5f;
   float* a1 = &a[2];
@@ -1175,13 +1180,6 @@ static void rftbsub_128_mips(float* a) {
     : "memory"
   );
 }
+#endif
 
-void aec_rdft_init_mips(void) {
-  cft1st_128 = cft1st_128_mips;
-  cftmdl_128 = cftmdl_128_mips;
-  rftfsub_128 = rftfsub_128_mips;
-  rftbsub_128 = rftbsub_128_mips;
-  cftfsub_128 = cftfsub_128_mips;
-  cftbsub_128 = cftbsub_128_mips;
-  bitrv2_128 = bitrv2_128_mips;
-}
+}  // namespace webrtc

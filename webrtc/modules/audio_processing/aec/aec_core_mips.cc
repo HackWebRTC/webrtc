@@ -20,7 +20,7 @@ extern "C" {
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 }
 #include "webrtc/modules/audio_processing/aec/aec_core_optimized_methods.h"
-#include "webrtc/modules/audio_processing/aec/aec_rdft.h"
+#include "webrtc/modules/audio_processing/utility/ooura_fft.h"
 
 namespace webrtc {
 
@@ -144,6 +144,7 @@ void WebRtcAec_FilterFar_mips(
 }
 
 void WebRtcAec_FilterAdaptation_mips(
+    const OouraFft& ooura_fft,
     int num_partitions,
     int x_fft_buf_block_pos,
     float x_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
@@ -238,7 +239,7 @@ void WebRtcAec_FilterAdaptation_mips(
       : [fft] "r" (fft)
       : "memory");
 
-    aec_rdft_inverse_128(fft);
+    ooura_fft.InverseFft(fft);
     memset(fft + PART_LEN, 0, sizeof(float) * PART_LEN);
 
     // fft scaling
@@ -285,7 +286,7 @@ void WebRtcAec_FilterAdaptation_mips(
         : [scale] "f" (scale), [fft] "r" (fft)
         : "memory");
     }
-    aec_rdft_forward_128(fft);
+    ooura_fft.Fft(fft);
     aRe = h_fft_buf[0] + pos;
     aIm = h_fft_buf[1] + pos;
     __asm __volatile(

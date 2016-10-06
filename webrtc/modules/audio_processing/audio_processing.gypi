@@ -34,8 +34,6 @@
         'aec/aec_core.cc',
         'aec/aec_core.h',
         'aec/aec_core_optimized_methods.h',
-        'aec/aec_rdft.cc',
-        'aec/aec_rdft.h',
         'aec/aec_resampler.cc',
         'aec/aec_resampler.h',
         'aec/echo_cancellation.cc',
@@ -141,6 +139,9 @@
         'utility/delay_estimator_internal.h',
         'utility/delay_estimator_wrapper.cc',
         'utility/delay_estimator_wrapper.h',
+        'utility/ooura_fft.cc',
+        'utility/ooura_fft.h',
+        'utility/ooura_fft_tables_common.h',
         'vad/common.h',
         'vad/gmm.cc',
         'vad/gmm.h',
@@ -236,7 +237,7 @@
             ['mips_float_abi=="hard"', {
               'sources': [
                 'aec/aec_core_mips.cc',
-                'aec/aec_rdft_mips.cc',
+                'utility/ooura_fft_mips.cc',
               ],
             }],
           ],
@@ -275,7 +276,8 @@
           'type': 'static_library',
           'sources': [
             'aec/aec_core_sse2.cc',
-            'aec/aec_rdft_sse2.cc',
+            'utility/ooura_fft_sse2.cc',
+            'utility/ooura_fft_tables_neon_sse2.h',
           ],
           'conditions': [
             ['apm_debug_dump==1', {
@@ -303,9 +305,10 @@
         ],
         'sources': [
           'aec/aec_core_neon.cc',
-          'aec/aec_rdft_neon.cc',
           'aecm/aecm_core_neon.cc',
           'ns/nsx_core_neon.c',
+          'utility/ooura_fft_neon.cc',
+          'utility/ooura_fft_tables_neon_sse2.h',
         ],
         'conditions': [
           ['apm_debug_dump==1', {

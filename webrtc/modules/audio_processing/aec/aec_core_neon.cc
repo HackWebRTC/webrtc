@@ -23,7 +23,7 @@ extern "C" {
 }
 #include "webrtc/modules/audio_processing/aec/aec_common.h"
 #include "webrtc/modules/audio_processing/aec/aec_core_optimized_methods.h"
-#include "webrtc/modules/audio_processing/aec/aec_rdft.h"
+#include "webrtc/modules/audio_processing/utility/ooura_fft.h"
 
 namespace webrtc {
 
@@ -184,6 +184,7 @@ static void ScaleErrorSignalNEON(float mu,
 }
 
 static void FilterAdaptationNEON(
+    const OouraFft& ooura_fft,
     int num_partitions,
     int x_fft_buf_block_pos,
     float x_fft_buf[2][kExtendedNumPartitions * PART_LEN1],
@@ -225,7 +226,7 @@ static void FilterAdaptationNEON(
         MulRe(x_fft_buf[0][xPos + PART_LEN], -x_fft_buf[1][xPos + PART_LEN],
               e_fft[0][PART_LEN], e_fft[1][PART_LEN]);
 
-    aec_rdft_inverse_128(fft);
+    ooura_fft.InverseFft(fft);
     memset(fft + PART_LEN, 0, sizeof(float) * PART_LEN);
 
     // fft scaling
@@ -238,7 +239,7 @@ static void FilterAdaptationNEON(
         vst1q_f32(&fft[j], fft_scale);
       }
     }
-    aec_rdft_forward_128(fft);
+    ooura_fft.Fft(fft);
 
     {
       const float wt1 = h_fft_buf[1][pos];

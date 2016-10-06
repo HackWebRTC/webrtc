@@ -22,8 +22,6 @@ rtc_static_library("audio_processing") {
     "aec/aec_core.cc",
     "aec/aec_core.h",
     "aec/aec_core_optimized_methods.h",
-    "aec/aec_rdft.cc",
-    "aec/aec_rdft.h",
     "aec/aec_resampler.cc",
     "aec/aec_resampler.h",
     "aec/echo_cancellation.cc",
@@ -129,6 +127,9 @@ rtc_static_library("audio_processing") {
     "utility/delay_estimator_internal.h",
     "utility/delay_estimator_wrapper.cc",
     "utility/delay_estimator_wrapper.h",
+    "utility/ooura_fft.cc",
+    "utility/ooura_fft.h",
+    "utility/ooura_fft_tables_common.h",
     "vad/common.h",
     "vad/gmm.cc",
     "vad/gmm.h",
@@ -225,7 +226,7 @@ rtc_static_library("audio_processing") {
     if (mips_float_abi == "hard") {
       sources += [
         "aec/aec_core_mips.cc",
-        "aec/aec_rdft_mips.cc",
+        "utility/ooura_fft_mips.cc",
       ]
     }
   } else {
@@ -256,7 +257,8 @@ if (current_cpu == "x86" || current_cpu == "x64") {
   rtc_static_library("audio_processing_sse2") {
     sources = [
       "aec/aec_core_sse2.cc",
-      "aec/aec_rdft_sse2.cc",
+      "utility/ooura_fft_sse2.cc",
+      "utility/ooura_fft_tables_neon_sse2.h",
     ]
 
     if (is_posix) {
@@ -275,9 +277,10 @@ if (rtc_build_with_neon) {
   rtc_static_library("audio_processing_neon") {
     sources = [
       "aec/aec_core_neon.cc",
-      "aec/aec_rdft_neon.cc",
       "aecm/aecm_core_neon.cc",
       "ns/nsx_core_neon.c",
+      "utility/ooura_fft_neon.cc",
+      "utility/ooura_fft_tables_neon_sse2.h",
     ]
 
     if (current_cpu != "arm64") {
