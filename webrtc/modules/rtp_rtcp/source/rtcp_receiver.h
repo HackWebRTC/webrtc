@@ -21,6 +21,7 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/dlrr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
+#include "webrtc/system_wrappers/include/ntp_time.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -221,15 +222,13 @@ class RTCPReceiver {
 
   // Received send report
   RTCPSenderInfo _remoteSenderInfo;
-  // when did we receive the last send report
-  uint32_t _lastReceivedSRNTPsecs;
-  uint32_t _lastReceivedSRNTPfrac;
+  // When did we receive the last send report.
+  NtpTime last_received_sr_ntp_;
 
   // Received XR receive time report.
   rtcp::ReceiveTimeInfo remote_time_info_;
   // Time when the report was received.
-  uint32_t _lastReceivedXRNTPsecs;
-  uint32_t _lastReceivedXRNTPfrac;
+  NtpTime last_received_xr_ntp_;
   // Estimated rtt, zero when there is no valid estimate.
   bool xr_rrtr_status_ GUARDED_BY(_criticalSectionRTCPReceiver);
   int64_t xr_rr_rtt_ms_;

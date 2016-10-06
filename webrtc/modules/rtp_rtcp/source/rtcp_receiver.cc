@@ -39,7 +39,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbn.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/time_util.h"
 #include "webrtc/modules/rtp_rtcp/source/tmmbr_help.h"
 #include "webrtc/system_wrappers/include/ntp_time.h"
@@ -114,10 +113,6 @@ RTCPReceiver::RTCPReceiver(
       main_ssrc_(0),
       _remoteSSRC(0),
       _remoteSenderInfo(),
-      _lastReceivedSRNTPsecs(0),
-      _lastReceivedSRNTPfrac(0),
-      _lastReceivedXRNTPsecs(0),
-      _lastReceivedXRNTPfrac(0),
       xr_rrtr_status_(false),
       xr_rr_rtt_ms_(0),
       _lastReceivedRrMs(0),
@@ -158,8 +153,7 @@ void RTCPReceiver::SetRemoteSSRC(uint32_t ssrc) {
 
   // new SSRC reset old reports
   memset(&_remoteSenderInfo, 0, sizeof(_remoteSenderInfo));
-  _lastReceivedSRNTPsecs = 0;
-  _lastReceivedSRNTPfrac = 0;
+  last_received_sr_ntp_.Reset();
 
   _remoteSSRC = ssrc;
 }
@@ -227,53 +221,47 @@ bool RTCPReceiver::GetAndResetXrRrRtt(int64_t* rtt_ms) {
   return true;
 }
 
-// TODO(pbos): Make this fail when we haven't received NTP.
 bool RTCPReceiver::NTP(uint32_t* ReceivedNTPsecs,
                        uint32_t* ReceivedNTPfrac,
                        uint32_t* RTCPArrivalTimeSecs,
                        uint32_t* RTCPArrivalTimeFrac,
                        uint32_t* rtcp_timestamp) const {
   rtc::CritScope lock(&_criticalSectionRTCPReceiver);
-  if (ReceivedNTPsecs) {
-    *ReceivedNTPsecs =
-        _remoteSenderInfo.NTPseconds;  // NTP from incoming SendReport
-  }
-  if (ReceivedNTPfrac) {
+  if (!last_received_sr_ntp_.Valid())
+    return false;
+
+  // NTP from incoming SenderReport.
+  if (ReceivedNTPsecs)
+    *ReceivedNTPsecs = _remoteSenderInfo.NTPseconds;
+  if (ReceivedNTPfrac)
     *ReceivedNTPfrac = _remoteSenderInfo.NTPfraction;
-  }
-  if (RTCPArrivalTimeFrac) {
-    *RTCPArrivalTimeFrac = _lastReceivedSRNTPfrac;  // local NTP time when we
-                                                    // received a RTCP packet
-                                                    // with a send block
-  }
-  if (RTCPArrivalTimeSecs) {
-    *RTCPArrivalTimeSecs = _lastReceivedSRNTPsecs;
-  }
-  if (rtcp_timestamp) {
+
+  // Rtp time from incoming SenderReport.
+  if (rtcp_timestamp)
     *rtcp_timestamp = _remoteSenderInfo.RTPtimeStamp;
-  }
+
+  // Local NTP time when we received a RTCP packet with a send block.
+  if (RTCPArrivalTimeSecs)
+    *RTCPArrivalTimeSecs = last_received_sr_ntp_.seconds();
+  if (RTCPArrivalTimeFrac)
+    *RTCPArrivalTimeFrac = last_received_sr_ntp_.fractions();
+
   return true;
 }
 
 bool RTCPReceiver::LastReceivedXrReferenceTimeInfo(
     rtcp::ReceiveTimeInfo* info) const {
-  assert(info);
+  RTC_DCHECK(info);
   rtc::CritScope lock(&_criticalSectionRTCPReceiver);
-  if (_lastReceivedXRNTPsecs == 0 && _lastReceivedXRNTPfrac == 0) {
+  if (!last_received_xr_ntp_.Valid())
     return false;
-  }
 
   info->ssrc = remote_time_info_.ssrc;
   info->last_rr = remote_time_info_.last_rr;
 
   // Get the delay since last received report (RFC 3611).
-  uint32_t receive_time =
-      RTCPUtility::MidNtp(_lastReceivedXRNTPsecs, _lastReceivedXRNTPfrac);
-
-  uint32_t ntp_sec = 0;
-  uint32_t ntp_frac = 0;
-  _clock->CurrentNtp(ntp_sec, ntp_frac);
-  uint32_t now = RTCPUtility::MidNtp(ntp_sec, ntp_frac);
+  uint32_t receive_time = CompactNtp(last_received_xr_ntp_);
+  uint32_t now = CompactNtp(NtpTime(*_clock));
 
   info->delay_since_last_rr = now - receive_time;
   return true;
@@ -282,9 +270,9 @@ bool RTCPReceiver::LastReceivedXrReferenceTimeInfo(
 int32_t RTCPReceiver::SenderInfoReceived(RTCPSenderInfo* senderInfo) const {
   assert(senderInfo);
   rtc::CritScope lock(&_criticalSectionRTCPReceiver);
-  if (_lastReceivedSRNTPsecs == 0) {
+  if (!last_received_sr_ntp_.Valid())
     return -1;
-  }
+
   memcpy(senderInfo, &(_remoteSenderInfo), sizeof(RTCPSenderInfo));
   return 0;
 }
@@ -436,7 +424,7 @@ void RTCPReceiver::HandleSenderReport(const CommonHeader& rtcp_block,
     _remoteSenderInfo.sendPacketCount = sender_report.sender_packet_count();
     _remoteSenderInfo.sendOctetCount = sender_report.sender_octet_count();
 
-    _clock->CurrentNtp(_lastReceivedSRNTPsecs, _lastReceivedSRNTPfrac);
+    last_received_sr_ntp_.SetCurrent(*_clock);
   } else {
     // We will only store the send report from one source, but
     // we will store all the receive blocks.
@@ -712,7 +700,7 @@ void RTCPReceiver::HandleXrReceiveReferenceTime(
     const rtcp::Rrtr& rrtr) {
   remote_time_info_.ssrc = sender_ssrc;
   remote_time_info_.last_rr = CompactNtp(rrtr.ntp());
-  _clock->CurrentNtp(_lastReceivedXRNTPsecs, _lastReceivedXRNTPfrac);
+  last_received_xr_ntp_.SetCurrent(*_clock);
 }
 
 void RTCPReceiver::HandleXrDlrrReportBlock(const rtcp::ReceiveTimeInfo& rti) {
