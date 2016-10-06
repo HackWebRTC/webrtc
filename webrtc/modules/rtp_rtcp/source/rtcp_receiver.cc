@@ -171,18 +171,9 @@ uint32_t RTCPReceiver::RemoteSSRC() const {
 
 void RTCPReceiver::SetSsrcs(uint32_t main_ssrc,
                             const std::set<uint32_t>& registered_ssrcs) {
-  uint32_t old_ssrc = 0;
-  {
-    rtc::CritScope lock(&_criticalSectionRTCPReceiver);
-    old_ssrc = main_ssrc_;
-    main_ssrc_ = main_ssrc;
-    registered_ssrcs_ = registered_ssrcs;
-  }
-  {
-    if (_cbRtcpIntraFrameObserver && old_ssrc != main_ssrc) {
-      _cbRtcpIntraFrameObserver->OnLocalSsrcChanged(old_ssrc, main_ssrc);
-    }
-  }
+  rtc::CritScope lock(&_criticalSectionRTCPReceiver);
+  main_ssrc_ = main_ssrc;
+  registered_ssrcs_ = registered_ssrcs;
 }
 
 int32_t RTCPReceiver::RTT(uint32_t remote_ssrc,

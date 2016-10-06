@@ -26,8 +26,8 @@
     'webrtc_video_sources': [
       'video/call_stats.cc',
       'video/call_stats.h',
-      'video/encoder_state_feedback.cc',
-      'video/encoder_state_feedback.h',
+      'video/encoder_rtcp_feedback.cc',
+      'video/encoder_rtcp_feedback.h',
       'video/overuse_frame_detector.cc',
       'video/overuse_frame_detector.h',
       'video/payload_router.cc',

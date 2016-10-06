@@ -12,8 +12,8 @@ rtc_static_library("video") {
   sources = [
     "call_stats.cc",
     "call_stats.h",
-    "encoder_state_feedback.cc",
-    "encoder_state_feedback.h",
+    "encoder_rtcp_feedback.cc",
+    "encoder_rtcp_feedback.h",
     "overuse_frame_detector.cc",
     "overuse_frame_detector.h",
     "payload_router.cc",
@@ -80,7 +80,7 @@ if (rtc_include_tests) {
     testonly = true
     sources = [
       "call_stats_unittest.cc",
-      "encoder_state_feedback_unittest.cc",
+      "encoder_rtcp_feedback_unittest.cc",
       "end_to_end_tests.cc",
       "overuse_frame_detector_unittest.cc",
       "payload_router_unittest.cc",

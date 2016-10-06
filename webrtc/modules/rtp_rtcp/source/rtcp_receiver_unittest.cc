@@ -64,7 +64,6 @@ class MockRtcpIntraFrameObserver : public RtcpIntraFrameObserver {
   MOCK_METHOD1(OnReceivedIntraFrameRequest, void(uint32_t));
   MOCK_METHOD2(OnReceivedSLI, void(uint32_t, uint8_t));
   MOCK_METHOD2(OnReceivedRPSI, void(uint32_t, uint64_t));
-  MOCK_METHOD2(OnLocalSsrcChanged, void(uint32_t, uint32_t));
 };
 
 class MockRtcpCallbackImpl : public RtcpStatisticsCallback {
@@ -120,8 +119,6 @@ class RtcpReceiverTest : public ::testing::Test {
                        &rtp_rtcp_impl_) {}
   void SetUp() {
     std::set<uint32_t> ssrcs = {kReceiverMainSsrc, kReceiverExtraSsrc};
-    EXPECT_CALL(intra_frame_observer_,
-                OnLocalSsrcChanged(0, kReceiverMainSsrc));
     rtcp_receiver_.SetSsrcs(kReceiverMainSsrc, ssrcs);
 
     rtcp_receiver_.SetRemoteSSRC(kSenderSsrc);

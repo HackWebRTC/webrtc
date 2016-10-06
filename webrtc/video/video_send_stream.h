@@ -22,7 +22,7 @@
 #include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/protection_bitrate_calculator.h"
-#include "webrtc/video/encoder_state_feedback.h"
+#include "webrtc/video/encoder_rtcp_feedback.h"
 #include "webrtc/video/payload_router.h"
 #include "webrtc/video/send_delay_stats.h"
 #include "webrtc/video/send_statistics_proxy.h"

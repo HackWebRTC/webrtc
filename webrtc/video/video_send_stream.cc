@@ -333,7 +333,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   uint32_t encoder_target_rate_bps_;
 
   ViEEncoder* const vie_encoder_;
-  EncoderStateFeedback encoder_feedback_;
+  EncoderRtcpFeedback encoder_feedback_;
   ProtectionBitrateCalculator protection_bitrate_calculator_;
 
   const std::unique_ptr<RtcpBandwidthObserver> bandwidth_observer_;

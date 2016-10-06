@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/video/encoder_state_feedback.h"
+#include "webrtc/video/encoder_rtcp_feedback.h"
 
 #include "webrtc/modules/utility/include/mock/mock_process_thread.h"
 #include "webrtc/test/gmock.h"
@@ -39,7 +39,7 @@ class VieKeyRequestTest : public ::testing::Test {
  public:
   VieKeyRequestTest()
       : simulated_clock_(123456789),
-        encoder_state_feedback_(
+        encoder_rtcp_feedback_(
             &simulated_clock_,
             std::vector<uint32_t>(1, VieKeyRequestTest::kSsrc),
             &encoder_) {}
@@ -48,34 +48,34 @@ class VieKeyRequestTest : public ::testing::Test {
   const uint32_t kSsrc = 1234;
   MockVieEncoder encoder_;
   SimulatedClock simulated_clock_;
-  EncoderStateFeedback encoder_state_feedback_;
+  EncoderRtcpFeedback encoder_rtcp_feedback_;
 };
 
 TEST_F(VieKeyRequestTest, CreateAndTriggerRequests) {
   EXPECT_CALL(encoder_, OnReceivedIntraFrameRequest(0)).Times(1);
-  encoder_state_feedback_.OnReceivedIntraFrameRequest(kSsrc);
+  encoder_rtcp_feedback_.OnReceivedIntraFrameRequest(kSsrc);
 
   const uint8_t sli_picture_id = 3;
   EXPECT_CALL(encoder_, OnReceivedSLI(sli_picture_id)).Times(1);
-  encoder_state_feedback_.OnReceivedSLI(kSsrc, sli_picture_id);
+  encoder_rtcp_feedback_.OnReceivedSLI(kSsrc, sli_picture_id);
 
   const uint64_t rpsi_picture_id = 9;
   EXPECT_CALL(encoder_, OnReceivedRPSI(rpsi_picture_id)).Times(1);
-  encoder_state_feedback_.OnReceivedRPSI(kSsrc, rpsi_picture_id);
+  encoder_rtcp_feedback_.OnReceivedRPSI(kSsrc, rpsi_picture_id);
 }
 
 TEST_F(VieKeyRequestTest, TooManyOnReceivedIntraFrameRequest) {
   EXPECT_CALL(encoder_, OnReceivedIntraFrameRequest(0)).Times(1);
-  encoder_state_feedback_.OnReceivedIntraFrameRequest(kSsrc);
-  encoder_state_feedback_.OnReceivedIntraFrameRequest(kSsrc);
+  encoder_rtcp_feedback_.OnReceivedIntraFrameRequest(kSsrc);
+  encoder_rtcp_feedback_.OnReceivedIntraFrameRequest(kSsrc);
   simulated_clock_.AdvanceTimeMilliseconds(10);
-  encoder_state_feedback_.OnReceivedIntraFrameRequest(kSsrc);
+  encoder_rtcp_feedback_.OnReceivedIntraFrameRequest(kSsrc);
 
   EXPECT_CALL(encoder_, OnReceivedIntraFrameRequest(0)).Times(1);
   simulated_clock_.AdvanceTimeMilliseconds(300);
-  encoder_state_feedback_.OnReceivedIntraFrameRequest(kSsrc);
-  encoder_state_feedback_.OnReceivedIntraFrameRequest(kSsrc);
-  encoder_state_feedback_.OnReceivedIntraFrameRequest(kSsrc);
+  encoder_rtcp_feedback_.OnReceivedIntraFrameRequest(kSsrc);
+  encoder_rtcp_feedback_.OnReceivedIntraFrameRequest(kSsrc);
+  encoder_rtcp_feedback_.OnReceivedIntraFrameRequest(kSsrc);
 }
 
 }  // namespace webrtc
