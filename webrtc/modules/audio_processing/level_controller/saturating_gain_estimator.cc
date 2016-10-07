@@ -13,7 +13,7 @@
 #include <math.h>
 #include <algorithm>
 
-#include "webrtc/modules/audio_processing/level_controller/lc_constants.h"
+#include "webrtc/modules/audio_processing/level_controller/level_controller_constants.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
 
 namespace webrtc {

@@ -252,6 +252,11 @@ class AudioProcessing {
   struct Config {
     struct LevelController {
       bool enabled = false;
+
+      // Sets the initial peak level to use inside the level controller in order
+      // to compute the signal gain. The unit for the peak level is dBFS and
+      // the allowed range is [-100, 0].
+      float initial_peak_level_dbfs = -6.0206f;
     } level_controller;
   };
 

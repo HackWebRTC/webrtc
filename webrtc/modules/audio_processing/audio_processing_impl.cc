@@ -298,6 +298,8 @@ AudioProcessingImpl::AudioProcessingImpl(const webrtc::Config& config,
         new GainControlForExperimentalAgc(
             public_submodules_->gain_control.get(), &crit_capture_));
 
+    // TODO(peah): Move this creation to happen only when the level controller
+    // is enabled.
     private_submodules_->level_controller.reset(new LevelController());
   }
 
@@ -543,30 +545,36 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
 }
 
 void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
-  AudioProcessing::Config config_to_use = config;
+  config_ = config;
 
-  bool config_ok = LevelController::Validate(config_to_use.level_controller);
+  bool config_ok = LevelController::Validate(config_.level_controller);
   if (!config_ok) {
     LOG(LS_ERROR) << "AudioProcessing module config error" << std::endl
                   << "level_controller: "
-                  << LevelController::ToString(config_to_use.level_controller)
+                  << LevelController::ToString(config_.level_controller)
                   << std::endl
                   << "Reverting to default parameter set";
-    config_to_use.level_controller = AudioProcessing::Config::LevelController();
+    config_.level_controller = AudioProcessing::Config::LevelController();
   }
 
   // Run in a single-threaded manner when applying the settings.
   rtc::CritScope cs_render(&crit_render_);
   rtc::CritScope cs_capture(&crit_capture_);
 
-  if (config.level_controller.enabled !=
-      capture_nonlocked_.level_controller_enabled) {
-    InitializeLevelController();
-    LOG(LS_INFO) << "Level controller activated: "
-                 << capture_nonlocked_.level_controller_enabled;
+  // TODO(peah): Replace the use of capture_nonlocked_.level_controller_enabled
+  // with the value in config_ everywhere in the code.
+  if (capture_nonlocked_.level_controller_enabled !=
+      config_.level_controller.enabled) {
     capture_nonlocked_.level_controller_enabled =
-        config.level_controller.enabled;
+        config_.level_controller.enabled;
+    // TODO(peah): Remove the conditional initialization to always initialize
+    // the level controller regardless of whether it is enabled or not.
+    InitializeLevelController();
   }
+  LOG(LS_INFO) << "Level controller activated: "
+               << capture_nonlocked_.level_controller_enabled;
+
+  private_submodules_->level_controller->ApplyConfig(config_.level_controller);
 }
 
 void AudioProcessingImpl::SetExtraOptions(const webrtc::Config& config) {

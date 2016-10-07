@@ -179,7 +179,8 @@ void LevelController::Metrics::Update(float long_term_peak_level,
 LevelController::LevelController()
     : data_dumper_(new ApmDataDumper(instance_count_)),
       gain_applier_(data_dumper_.get()),
-      signal_classifier_(data_dumper_.get()) {
+      signal_classifier_(data_dumper_.get()),
+      peak_level_estimator_(kTargetLcPeakLeveldBFS) {
   Initialize(AudioProcessing::kSampleRate48kHz);
   ++instance_count_;
 }
@@ -196,7 +197,7 @@ void LevelController::Initialize(int sample_rate_hz) {
   gain_applier_.Initialize(sample_rate_hz);
   signal_classifier_.Initialize(sample_rate_hz);
   noise_level_estimator_.Initialize(sample_rate_hz);
-  peak_level_estimator_.Initialize();
+  peak_level_estimator_.Initialize(config_.initial_peak_level_dbfs);
   saturating_gain_estimator_.Initialize();
   metrics_.Initialize(sample_rate_hz);
 
@@ -238,8 +239,12 @@ void LevelController::Process(AudioBuffer* audio) {
   float saturating_gain = saturating_gain_estimator_.GetGain();
 
   // Compute the new gain to apply.
-  last_gain_ = gain_selector_.GetNewGain(long_term_peak_level, noise_energy,
-                                         saturating_gain, signal_type);
+  last_gain_ =
+      gain_selector_.GetNewGain(long_term_peak_level, noise_energy,
+                                saturating_gain, gain_jumpstart_, signal_type);
+
+  // Unflag the jumpstart of the gain as it should only happen once.
+  gain_jumpstart_ = false;
 
   // Apply the gain to the signal.
   int num_saturations = gain_applier_.Process(last_gain_, audio);
@@ -260,17 +265,29 @@ void LevelController::Process(AudioBuffer* audio) {
                         audio->channels_f()[0], *sample_rate_hz_, 1);
 }
 
+void LevelController::ApplyConfig(
+    const AudioProcessing::Config::LevelController& config) {
+  RTC_DCHECK(Validate(config));
+  config_ = config;
+  peak_level_estimator_.Initialize(config_.initial_peak_level_dbfs);
+  gain_jumpstart_ = true;
+}
+
 std::string LevelController::ToString(
     const AudioProcessing::Config::LevelController& config) {
   std::stringstream ss;
   ss << "{"
-     << "enabled: " << (config.enabled ? "true" : "false") << "}";
+     << "enabled: " << (config.enabled ? "true" : "false") << ", "
+     << "initial_peak_level_dbfs: " << config.initial_peak_level_dbfs << "}";
   return ss.str();
 }
 
 bool LevelController::Validate(
     const AudioProcessing::Config::LevelController& config) {
-  return true;
+  return (config.initial_peak_level_dbfs <
+              std::numeric_limits<float>::epsilon() &&
+          config.initial_peak_level_dbfs >
+              -(100.f + std::numeric_limits<float>::epsilon()));
 }
 
 }  // namespace webrtc

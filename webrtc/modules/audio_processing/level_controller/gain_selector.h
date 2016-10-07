@@ -24,6 +24,7 @@ class GainSelector {
   float GetNewGain(float peak_level,
                    float noise_energy,
                    float saturating_gain,
+                   bool gain_jumpstart,
                    SignalClassifier::SignalType signal_type);
 
  private:
