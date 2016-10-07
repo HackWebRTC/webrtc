@@ -137,11 +137,10 @@ public class RendererCommon {
       // and maximum layout size.
       final float frameAspect = frameWidth / (float) frameHeight;
       final float displayAspect = maxWidth / (float) maxHeight;
-      final RendererCommon.ScalingType scalingType = (frameAspect > 1.0f) == (displayAspect > 1.0f)
+      final ScalingType scalingType = (frameAspect > 1.0f) == (displayAspect > 1.0f)
           ? scalingTypeMatchOrientation
           : scalingTypeMismatchOrientation;
-      final Point layoutSize =
-          RendererCommon.getDisplaySize(scalingType, frameAspect, maxWidth, maxHeight);
+      final Point layoutSize = getDisplaySize(scalingType, frameAspect, maxWidth, maxHeight);
 
       // If the measure specification is forcing a specific size - yield.
       if (View.MeasureSpec.getMode(widthSpec) == View.MeasureSpec.EXACTLY) {

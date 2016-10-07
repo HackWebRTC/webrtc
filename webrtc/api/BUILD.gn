@@ -261,6 +261,7 @@ if (is_android && !build_with_chromium) {
       "android/java/src/org/webrtc/EglBase.java",
       "android/java/src/org/webrtc/EglBase10.java",
       "android/java/src/org/webrtc/EglBase14.java",
+      "android/java/src/org/webrtc/EglRenderer.java",
       "android/java/src/org/webrtc/GlRectDrawer.java",
       "android/java/src/org/webrtc/GlShader.java",
       "android/java/src/org/webrtc/GlTextureFrameBuffer.java",
