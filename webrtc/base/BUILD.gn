@@ -582,12 +582,6 @@ rtc_static_library("rtc_base") {
 
     if (is_mac) {
       sources += [
-        "macasyncsocket.cc",
-        "macasyncsocket.h",
-        "maccocoasocketserver.h",
-        "maccocoasocketserver.mm",
-        "macsocketserver.cc",
-        "macsocketserver.h",
         "macwindowpicker.cc",
         "macwindowpicker.h",
       ]

@@ -474,12 +474,6 @@
             }],
             ['OS=="mac"', {
               'sources': [
-                'macasyncsocket.cc',
-                'macasyncsocket.h',
-                'maccocoasocketserver.h',
-                'maccocoasocketserver.mm',
-                'macsocketserver.cc',
-                'macsocketserver.h',
                 'macwindowpicker.cc',
                 'macwindowpicker.h',
               ],

@@ -773,9 +773,6 @@ if (rtc_include_tests) {
       shard_timeout = 900
     }
 
-    if (is_mac) {
-      sources += [ "base/macsocketserver_unittest.cc" ]
-    }
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin.
       # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
