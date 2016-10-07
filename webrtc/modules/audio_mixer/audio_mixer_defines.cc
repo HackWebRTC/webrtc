@@ -8,36 +8,31 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_mixer/audio_source_with_mix_status.h"
+#include "webrtc/modules/audio_mixer/audio_mixer_defines.h"
 
 namespace webrtc {
 
-AudioSourceWithMixStatus::AudioSourceWithMixStatus(
-    MixerAudioSource* audio_source)
-    : audio_source_(audio_source) {}
+MixerAudioSource::MixerAudioSource() {}
 
-AudioSourceWithMixStatus::~AudioSourceWithMixStatus() {}
+MixerAudioSource::~MixerAudioSource() {}
 
-bool AudioSourceWithMixStatus::IsMixed() const {
+bool MixerAudioSource::IsMixed() const {
   return is_mixed_;
 }
 
-bool AudioSourceWithMixStatus::WasMixed() const {
+bool MixerAudioSource::WasMixed() const {
   // Was mixed is the same as is mixed depending on perspective. This function
   // is for the perspective of AudioMixerImpl.
   return IsMixed();
 }
 
-void AudioSourceWithMixStatus::SetIsMixed(const bool mixed) {
+int32_t MixerAudioSource::SetIsMixed(const bool mixed) {
   is_mixed_ = mixed;
+  return 0;
 }
 
-void AudioSourceWithMixStatus::ResetMixedStatus() {
+void MixerAudioSource::ResetMixedStatus() {
   is_mixed_ = false;
-}
-
-MixerAudioSource* AudioSourceWithMixStatus::audio_source() const {
-  return audio_source_;
 }
 
 }  // namespace webrtc

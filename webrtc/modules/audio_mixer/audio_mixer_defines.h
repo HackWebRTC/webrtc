@@ -35,8 +35,6 @@ class MixerAudioSource {
     AudioFrameInfo audio_frame_info;
   };
 
-  virtual ~MixerAudioSource() = default;
-
   // The implementation of GetAudioFrameWithMuted should update
   // audio_frame with new audio every time it's called. Implementing
   // classes are allowed to return the same AudioFrame pointer on
@@ -45,6 +43,25 @@ class MixerAudioSource {
   // mixer.
   virtual AudioFrameWithMuted GetAudioFrameWithMuted(int32_t id,
                                                      int sample_rate_hz) = 0;
+
+  // Returns true if the audio source was mixed this mix iteration.
+  bool IsMixed() const;
+
+  // Returns true if the audio source was mixed previous mix
+  // iteration.
+  bool WasMixed() const;
+
+  // Updates the mixed status.
+  int32_t SetIsMixed(bool mixed);
+
+  void ResetMixedStatus();
+
+ private:
+  bool is_mixed_;
+
+ protected:
+  MixerAudioSource();
+  virtual ~MixerAudioSource();
 };
 }  // namespace webrtc
 

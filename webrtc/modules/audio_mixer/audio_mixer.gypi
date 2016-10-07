@@ -22,11 +22,10 @@
         'audio_frame_manipulator.cc',
         'audio_frame_manipulator.h',
         'audio_mixer.h',
+        'audio_mixer_defines.cc',
         'audio_mixer_defines.h',
         'audio_mixer_impl.cc',
         'audio_mixer_impl.h',
-        'audio_source_with_mix_status.cc',
-        'audio_source_with_mix_status.h',
       ],
     },
   ], # targets

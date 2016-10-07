@@ -17,7 +17,7 @@
 namespace webrtc {
 
 // Updates the audioFrame's energy (based on its samples).
-uint32_t AudioMixerCalculateEnergy(const AudioFrame& audio_frame);
+uint32_t NewMixerCalculateEnergy(const AudioFrame& audio_frame);
 
 // Apply linear step function that ramps in/out the audio samples in audio_frame
 void NewMixerRampIn(AudioFrame* audio_frame);
