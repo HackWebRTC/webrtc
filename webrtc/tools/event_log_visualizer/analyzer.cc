@@ -29,7 +29,7 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
@@ -392,35 +392,27 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         parsed_log_.GetRtcpPacket(i, &direction, &media_type, packet,
                                   &total_length);
 
-        RtpUtility::RtpHeaderParser rtp_parser(packet, total_length);
-        RTPHeader parsed_header;
-        RTC_CHECK(rtp_parser.ParseRtcp(&parsed_header));
-        uint32_t ssrc = parsed_header.ssrc;
-
-        RTCPUtility::RTCPParserV2 rtcp_parser(packet, total_length, true);
-        RTC_CHECK(rtcp_parser.IsValid());
-
-        RTCPUtility::RTCPPacketTypes packet_type = rtcp_parser.Begin();
-        while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
-          switch (packet_type) {
-            case RTCPUtility::RTCPPacketTypes::kTransportFeedback: {
-              // Currently feedback is logged twice, both for audio and video.
-              // Only act on one of them.
-              if (media_type == MediaType::VIDEO) {
-                std::unique_ptr<rtcp::RtcpPacket> rtcp_packet(
-                    rtcp_parser.ReleaseRtcpPacket());
+        // Currently feedback is logged twice, both for audio and video.
+        // Only act on one of them.
+        if (media_type == MediaType::VIDEO) {
+          rtcp::CommonHeader header;
+          const uint8_t* packet_end = packet + total_length;
+          for (const uint8_t* block = packet; block < packet_end;
+               block = header.NextPacket()) {
+            RTC_CHECK(header.Parse(block, packet_end - block));
+            if (header.type() == rtcp::TransportFeedback::kPacketType &&
+                header.fmt() == rtcp::TransportFeedback::kFeedbackMessageType) {
+              std::unique_ptr<rtcp::TransportFeedback> rtcp_packet(
+                  new rtcp::TransportFeedback());
+              if (rtcp_packet->Parse(header)) {
+                uint32_t ssrc = rtcp_packet->sender_ssrc();
                 StreamId stream(ssrc, direction);
                 uint64_t timestamp = parsed_log_.GetTimestamp(i);
                 rtcp_packets_[stream].push_back(LoggedRtcpPacket(
                     timestamp, kRtcpTransportFeedback, std::move(rtcp_packet)));
               }
-              break;
             }
-            default:
-              break;
           }
-          rtcp_parser.Iterate();
-          packet_type = rtcp_parser.PacketType();
         }
         break;
       }
