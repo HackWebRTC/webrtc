@@ -17,8 +17,57 @@
 
 namespace webrtc {
 
+// https://www.w3.org/TR/webrtc/#rtcicecandidatetype-enum
+struct RTCIceCandidateType {
+  static const char* kHost;
+  static const char* kSrflx;
+  static const char* kPrflx;
+  static const char* kRelay;
+};
+
+// https://w3c.github.io/webrtc-stats/#icecandidate-dict*
+class RTCIceCandidateStats : public RTCStats {
+ public:
+  WEBRTC_RTCSTATS_DECL();
+
+  RTCIceCandidateStats(const RTCIceCandidateStats& other);
+  ~RTCIceCandidateStats() override;
+
+  RTCStatsMember<std::string> ip;
+  RTCStatsMember<int32_t> port;
+  RTCStatsMember<std::string> protocol;
+  // TODO(hbos): Support enum types? "RTCStatsMember<RTCIceCandidateType>"?
+  RTCStatsMember<std::string> candidate_type;
+  RTCStatsMember<int32_t> priority;
+  RTCStatsMember<std::string> url;
+
+ protected:
+  RTCIceCandidateStats(const std::string& id, int64_t timestamp_us);
+  RTCIceCandidateStats(std::string&& id, int64_t timestamp_us);
+};
+
+// In the spec both local and remote varieties are of type RTCIceCandidateStats.
+// But here we define them as subclasses of |RTCIceCandidateStats| because the
+// |kType| need to be different ("RTCStatsType type") in the local/remote case.
+// https://w3c.github.io/webrtc-stats/#rtcstatstype-str*
+class RTCLocalIceCandidateStats final : public RTCIceCandidateStats {
+ public:
+  static const char kType[];
+  RTCLocalIceCandidateStats(const std::string& id, int64_t timestamp_us);
+  RTCLocalIceCandidateStats(std::string&& id, int64_t timestamp_us);
+  const char* type() const override;
+};
+
+class RTCRemoteIceCandidateStats final : public RTCIceCandidateStats {
+ public:
+  static const char kType[];
+  RTCRemoteIceCandidateStats(const std::string& id, int64_t timestamp_us);
+  RTCRemoteIceCandidateStats(std::string&& id, int64_t timestamp_us);
+  const char* type() const override;
+};
+
 // https://w3c.github.io/webrtc-stats/#certificatestats-dict*
-class RTCCertificateStats : public RTCStats {
+class RTCCertificateStats final : public RTCStats {
  public:
   WEBRTC_RTCSTATS_DECL();
 
@@ -35,7 +84,7 @@ class RTCCertificateStats : public RTCStats {
 
 // https://w3c.github.io/webrtc-stats/#pcstats-dict*
 // TODO(hbos): Tracking bug crbug.com/636818
-class RTCPeerConnectionStats : public RTCStats {
+class RTCPeerConnectionStats final : public RTCStats {
  public:
   WEBRTC_RTCSTATS_DECL();
 

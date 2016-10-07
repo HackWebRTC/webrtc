@@ -18,8 +18,23 @@
 #include "webrtc/api/webrtcsession.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/sslidentity.h"
+#include "webrtc/p2p/base/candidate.h"
+#include "webrtc/p2p/base/port.h"
 
 namespace webrtc {
+
+const char* CandidateTypeToRTCIceCandidateType(const std::string& type) {
+  if (type == cricket::LOCAL_PORT_TYPE)
+    return RTCIceCandidateType::kHost;
+  if (type == cricket::STUN_PORT_TYPE)
+    return RTCIceCandidateType::kSrflx;
+  if (type == cricket::PRFLX_PORT_TYPE)
+    return RTCIceCandidateType::kPrflx;
+  if (type == cricket::RELAY_PORT_TYPE)
+    return RTCIceCandidateType::kRelay;
+  RTC_NOTREACHED();
+  return nullptr;
+}
 
 rtc::scoped_refptr<RTCStatsCollector> RTCStatsCollector::Create(
     PeerConnection* pc, int64_t cache_lifetime_us) {
@@ -93,6 +108,8 @@ void RTCStatsCollector::ProducePartialResultsOnSignalingThread(
   SessionStats session_stats;
   if (pc_->session()->GetTransportStats(&session_stats)) {
     ProduceCertificateStats_s(timestamp_us, session_stats, report.get());
+    ProduceIceCandidateAndPairStats_s(timestamp_us, session_stats,
+                                      report.get());
   }
   ProducePeerConnectionStats_s(timestamp_us, report.get());
 
@@ -199,6 +216,59 @@ void RTCStatsCollector::ProduceCertificateStatsFromSSLCertificateAndChain_s(
     report->AddStats(std::unique_ptr<RTCCertificateStats>(stats));
     prev_stats = stats;
   }
+}
+
+void RTCStatsCollector::ProduceIceCandidateAndPairStats_s(
+      int64_t timestamp_us, const SessionStats& session_stats,
+      RTCStatsReport* report) const {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  for (const auto& transport : session_stats.transport_stats) {
+    for (const auto& channel : transport.second.channel_stats) {
+      for (const cricket::ConnectionInfo& info : channel.connection_infos) {
+        // TODO(hbos): Produce |RTCIceCandidatePairStats| referencing the
+        // resulting |RTCIceCandidateStats| pair. crbug.com/633550
+        // TODO(hbos): There could be other candidates that are not paired with
+        // anything. We don't have a complete list. Local candidates come from
+        // Port objects, and prflx candidates (both local and remote) are only
+        // stored in candidate pairs. crbug.com/632723
+        ProduceIceCandidateStats_s(
+            timestamp_us, info.local_candidate, true, report);
+        ProduceIceCandidateStats_s(
+            timestamp_us, info.remote_candidate, false, report);
+      }
+    }
+  }
+}
+
+const std::string& RTCStatsCollector::ProduceIceCandidateStats_s(
+    int64_t timestamp_us, const cricket::Candidate& candidate, bool is_local,
+    RTCStatsReport* report) const {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  const std::string& id = "RTCIceCandidate_" + candidate.id();
+  const RTCStats* stats = report->Get(id);
+  if (!stats) {
+    std::unique_ptr<RTCIceCandidateStats> candidate_stats;
+    if (is_local) {
+      candidate_stats.reset(
+          new RTCLocalIceCandidateStats(id, timestamp_us));
+    } else {
+      candidate_stats.reset(
+          new RTCRemoteIceCandidateStats(id, timestamp_us));
+    }
+    candidate_stats->ip = candidate.address().ipaddr().ToString();
+    candidate_stats->port = static_cast<int32_t>(candidate.address().port());
+    candidate_stats->protocol = candidate.protocol();
+    candidate_stats->candidate_type = CandidateTypeToRTCIceCandidateType(
+        candidate.type());
+    candidate_stats->priority = static_cast<int32_t>(candidate.priority());
+    // TODO(hbos): Define candidate_stats->url. crbug.com/632723
+
+    stats = candidate_stats.get();
+    report->AddStats(std::move(candidate_stats));
+  }
+  RTC_DCHECK_EQ(stats->type(), is_local ? RTCLocalIceCandidateStats::kType
+                                        : RTCRemoteIceCandidateStats::kType);
+  return stats->id();
 }
 
 void RTCStatsCollector::ProducePeerConnectionStats_s(

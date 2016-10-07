@@ -25,10 +25,12 @@
 #include "webrtc/base/fakesslidentity.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/socketaddress.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/base/timedelta.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/media/base/fakemediaengine.h"
+#include "webrtc/p2p/base/port.h"
 
 using testing::_;
 using testing::Invoke;
@@ -91,6 +93,20 @@ std::unique_ptr<CertificateInfo> CreateFakeCertificateAndInfoFromDers(
   return info;
 }
 
+std::unique_ptr<cricket::Candidate> CreateFakeCandidate(
+    const std::string& hostname,
+    int port,
+    const std::string& protocol,
+    const std::string& candidate_type,
+    uint32_t priority) {
+  std::unique_ptr<cricket::Candidate> candidate(new cricket::Candidate());
+  candidate->set_address(rtc::SocketAddress(hostname, port));
+  candidate->set_protocol(protocol);
+  candidate->set_type(candidate_type);
+  candidate->set_priority(priority);
+  return candidate;
+}
+
 class RTCStatsCollectorTestHelper : public SetSessionDescriptionObserver {
  public:
   RTCStatsCollectorTestHelper()
@@ -111,6 +127,10 @@ class RTCStatsCollectorTestHelper : public SetSessionDescriptionObserver {
     EXPECT_CALL(pc_, sctp_data_channels()).WillRepeatedly(
         ReturnRef(data_channels_));
     EXPECT_CALL(session_, GetTransportStats(_)).WillRepeatedly(Return(false));
+    EXPECT_CALL(session_, GetLocalCertificate(_, _)).WillRepeatedly(
+        Return(false));
+    EXPECT_CALL(session_, GetRemoteSSLCertificate_ReturnsRawPointer(_))
+        .WillRepeatedly(Return(nullptr));
   }
 
   rtc::ScopedFakeClock& fake_clock() { return fake_clock_; }
@@ -306,6 +326,30 @@ class RTCStatsCollectorTest : public testing::Test {
     collector_->GetStatsReport(callback);
     EXPECT_TRUE_WAIT(callback->report(), kGetStatsReportTimeoutMs);
     return callback->report();
+  }
+
+  void ExpectReportContainsCandidate(
+      const rtc::scoped_refptr<const RTCStatsReport>& report,
+      const cricket::Candidate& candidate,
+      bool is_local) {
+    const RTCStats* stats =
+        report->Get("RTCIceCandidate_" + candidate.id());
+    EXPECT_TRUE(stats);
+    const RTCIceCandidateStats* candidate_stats;
+    if (is_local)
+        candidate_stats = &stats->cast_to<RTCLocalIceCandidateStats>();
+    else
+        candidate_stats = &stats->cast_to<RTCRemoteIceCandidateStats>();
+    EXPECT_EQ(*candidate_stats->ip, candidate.address().ipaddr().ToString());
+    EXPECT_EQ(*candidate_stats->port,
+              static_cast<int32_t>(candidate.address().port()));
+    EXPECT_EQ(*candidate_stats->protocol, candidate.protocol());
+    EXPECT_EQ(*candidate_stats->candidate_type,
+              CandidateTypeToRTCIceCandidateType(candidate.type()));
+    EXPECT_EQ(*candidate_stats->priority,
+              static_cast<int32_t>(candidate.priority()));
+    // TODO(hbos): Define candidate_stats->url. crbug.com/632723
+    EXPECT_FALSE(candidate_stats->url.is_defined());
   }
 
   void ExpectReportContainsCertificateInfo(
@@ -532,6 +576,84 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsChain) {
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
   ExpectReportContainsCertificateInfo(report, *local_certinfo.get());
   ExpectReportContainsCertificateInfo(report, *remote_certinfo.get());
+}
+
+TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
+  // Candidates in the first transport stats.
+  std::unique_ptr<cricket::Candidate> a_local_host = CreateFakeCandidate(
+      "1.2.3.4", 5,
+      "a_local_host's protocol",
+      cricket::LOCAL_PORT_TYPE,
+      0);
+  std::unique_ptr<cricket::Candidate> a_remote_srflx = CreateFakeCandidate(
+      "6.7.8.9", 10,
+      "remote_srflx's protocol",
+      cricket::STUN_PORT_TYPE,
+      1);
+  std::unique_ptr<cricket::Candidate> a_local_prflx = CreateFakeCandidate(
+      "11.12.13.14", 15,
+      "a_local_prflx's protocol",
+      cricket::PRFLX_PORT_TYPE,
+      2);
+  std::unique_ptr<cricket::Candidate> a_remote_relay = CreateFakeCandidate(
+      "16.17.18.19", 20,
+      "a_remote_relay's protocol",
+      cricket::RELAY_PORT_TYPE,
+      3);
+  // Candidates in the second transport stats.
+  std::unique_ptr<cricket::Candidate> b_local = CreateFakeCandidate(
+      "42.42.42.42", 42,
+      "b_local's protocol",
+      cricket::LOCAL_PORT_TYPE,
+      42);
+  std::unique_ptr<cricket::Candidate> b_remote = CreateFakeCandidate(
+      "42.42.42.42", 42,
+      "b_remote's protocol",
+      cricket::LOCAL_PORT_TYPE,
+      42);
+
+  SessionStats session_stats;
+
+  cricket::TransportChannelStats a_transport_channel_stats;
+  a_transport_channel_stats.connection_infos.push_back(
+      cricket::ConnectionInfo());
+  a_transport_channel_stats.connection_infos[0].local_candidate =
+      *a_local_host.get();
+  a_transport_channel_stats.connection_infos[0].remote_candidate =
+      *a_remote_srflx.get();
+  a_transport_channel_stats.connection_infos.push_back(
+      cricket::ConnectionInfo());
+  a_transport_channel_stats.connection_infos[1].local_candidate =
+      *a_local_prflx.get();
+  a_transport_channel_stats.connection_infos[1].remote_candidate =
+      *a_remote_relay.get();
+  session_stats.transport_stats["a"].channel_stats.push_back(
+      a_transport_channel_stats);
+
+  cricket::TransportChannelStats b_transport_channel_stats;
+  b_transport_channel_stats.connection_infos.push_back(
+      cricket::ConnectionInfo());
+  b_transport_channel_stats.connection_infos[0].local_candidate =
+      *b_local.get();
+  b_transport_channel_stats.connection_infos[0].remote_candidate =
+      *b_remote.get();
+  session_stats.transport_stats["b"].channel_stats.push_back(
+      b_transport_channel_stats);
+
+  // Mock the session to return the desired candidates.
+  EXPECT_CALL(test_->session(), GetTransportStats(_)).WillRepeatedly(Invoke(
+      [this, &session_stats](SessionStats* stats) {
+        *stats = session_stats;
+        return true;
+      }));
+
+  rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
+  ExpectReportContainsCandidate(report, *a_local_host.get(), true);
+  ExpectReportContainsCandidate(report, *a_remote_srflx.get(), false);
+  ExpectReportContainsCandidate(report, *a_local_prflx.get(), true);
+  ExpectReportContainsCandidate(report, *a_remote_relay.get(), false);
+  ExpectReportContainsCandidate(report, *b_local.get(), true);
+  ExpectReportContainsCandidate(report, *b_remote.get(), false);
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {

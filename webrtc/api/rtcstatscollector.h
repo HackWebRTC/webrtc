@@ -21,10 +21,12 @@
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/timeutils.h"
 
+namespace cricket {
+class Candidate;
+}  // namespace cricket
+
 namespace rtc {
-
 class SSLCertificate;
-
 }  // namespace rtc
 
 namespace webrtc {
@@ -76,12 +78,22 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface {
   void AddPartialResults_s(rtc::scoped_refptr<RTCStatsReport> partial_report);
   void DeliverCachedReport();
 
+  // Produces |RTCCertificateStats|.
   void ProduceCertificateStats_s(
       int64_t timestamp_us, const SessionStats& session_stats,
       RTCStatsReport* report) const;
   void ProduceCertificateStatsFromSSLCertificateAndChain_s(
       int64_t timestamp_us, const rtc::SSLCertificate& certificate,
       RTCStatsReport* report) const;
+  // Produces |RTCIceCandidateStats|. TODO(hbos): Should also produce
+  // |RTCIceCandidatePairStats|. crbug.com/633550
+  void ProduceIceCandidateAndPairStats_s(
+      int64_t timestamp_us, const SessionStats& session_stats,
+      RTCStatsReport* report) const;
+  const std::string& ProduceIceCandidateStats_s(
+      int64_t timestamp_us, const cricket::Candidate& candidate, bool is_local,
+      RTCStatsReport* report) const;
+  // Produces |RTCPeerConnectionStats|.
   void ProducePeerConnectionStats_s(
       int64_t timestamp_us, RTCStatsReport* report) const;
 
@@ -104,6 +116,9 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface {
   int64_t cache_lifetime_us_;
   rtc::scoped_refptr<const RTCStatsReport> cached_report_;
 };
+
+// Helper function, exposed for unittests.
+const char* CandidateTypeToRTCIceCandidateType(const std::string& type);
 
 }  // namespace webrtc
 
