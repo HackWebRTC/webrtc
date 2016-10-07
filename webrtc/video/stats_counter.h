@@ -99,6 +99,7 @@ class StatsCounter {
 
  protected:
   StatsCounter(Clock* clock,
+               int64_t process_intervals_ms,
                bool include_empty_intervals,
                StatsCounterObserver* observer);
 
@@ -111,6 +112,7 @@ class StatsCounter {
   int64_t last_sum_;
 
   const std::unique_ptr<AggregatedCounter> aggregated_counter_;
+  const int64_t process_intervals_ms_;
 
  private:
   bool TimeToProcess(int* num_elapsed_intervals);
@@ -161,7 +163,9 @@ class AvgCounter : public StatsCounter {
 //
 class MaxCounter : public StatsCounter {
  public:
-  MaxCounter(Clock* clock, StatsCounterObserver* observer);
+  MaxCounter(Clock* clock,
+             StatsCounterObserver* observer,
+             int64_t process_intervals_ms);
   ~MaxCounter() override {}
 
   void Add(int sample);

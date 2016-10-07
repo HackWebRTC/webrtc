@@ -18,8 +18,8 @@
 namespace webrtc {
 
 namespace {
-// Periodic time interval for processing samples.
-const int64_t kProcessIntervalMs = 2000;
+// Default periodic time interval for processing samples.
+const int64_t kDefaultProcessIntervalMs = 2000;
 }  // namespace
 
 // Class holding periodically computed metrics.
@@ -64,6 +64,7 @@ class AggregatedCounter {
 
 // StatsCounter class.
 StatsCounter::StatsCounter(Clock* clock,
+                           int64_t process_intervals_ms,
                            bool include_empty_intervals,
                            StatsCounterObserver* observer)
     : max_(0),
@@ -71,11 +72,14 @@ StatsCounter::StatsCounter(Clock* clock,
       num_samples_(0),
       last_sum_(0),
       aggregated_counter_(new AggregatedCounter()),
+      process_intervals_ms_(process_intervals_ms),
       clock_(clock),
       include_empty_intervals_(include_empty_intervals),
       observer_(observer),
       last_process_time_ms_(-1),
-      paused_(false) {}
+      paused_(false) {
+  RTC_DCHECK_GT(process_intervals_ms_, 0);
+}
 
 StatsCounter::~StatsCounter() {}
 
@@ -105,12 +109,12 @@ bool StatsCounter::TimeToProcess(int* elapsed_intervals) {
     last_process_time_ms_ = now;
 
   int64_t diff_ms = now - last_process_time_ms_;
-  if (diff_ms < kProcessIntervalMs)
+  if (diff_ms < process_intervals_ms_)
     return false;
 
-  // Advance number of complete kProcessIntervalMs that have passed.
-  int64_t num_intervals = diff_ms / kProcessIntervalMs;
-  last_process_time_ms_ += num_intervals * kProcessIntervalMs;
+  // Advance number of complete |process_intervals_ms_| that have passed.
+  int64_t num_intervals = diff_ms / process_intervals_ms_;
+  last_process_time_ms_ += num_intervals * process_intervals_ms_;
 
   *elapsed_intervals = num_intervals;
   return true;
@@ -181,7 +185,10 @@ bool StatsCounter::IncludeEmptyIntervals() const {
 AvgCounter::AvgCounter(Clock* clock,
                        StatsCounterObserver* observer,
                        bool include_empty_intervals)
-    : StatsCounter(clock, include_empty_intervals, observer) {}
+    : StatsCounter(clock,
+                   kDefaultProcessIntervalMs,
+                   include_empty_intervals,
+                   observer) {}
 
 void AvgCounter::Add(int sample) {
   StatsCounter::Add(sample);
@@ -198,8 +205,11 @@ int AvgCounter::GetValueForEmptyInterval() const {
   return aggregated_counter_->last_sample();
 }
 
-MaxCounter::MaxCounter(Clock* clock, StatsCounterObserver* observer)
+MaxCounter::MaxCounter(Clock* clock,
+                       StatsCounterObserver* observer,
+                       int64_t process_intervals_ms)
     : StatsCounter(clock,
+                   process_intervals_ms,
                    false,  // |include_empty_intervals|
                    observer) {}
 
@@ -221,6 +231,7 @@ int MaxCounter::GetValueForEmptyInterval() const {
 
 PercentCounter::PercentCounter(Clock* clock, StatsCounterObserver* observer)
     : StatsCounter(clock,
+                   kDefaultProcessIntervalMs,
                    false,  // |include_empty_intervals|
                    observer) {}
 
@@ -242,6 +253,7 @@ int PercentCounter::GetValueForEmptyInterval() const {
 
 PermilleCounter::PermilleCounter(Clock* clock, StatsCounterObserver* observer)
     : StatsCounter(clock,
+                   kDefaultProcessIntervalMs,
                    false,  // |include_empty_intervals|
                    observer) {}
 
@@ -264,7 +276,10 @@ int PermilleCounter::GetValueForEmptyInterval() const {
 RateCounter::RateCounter(Clock* clock,
                          StatsCounterObserver* observer,
                          bool include_empty_intervals)
-    : StatsCounter(clock, include_empty_intervals, observer) {}
+    : StatsCounter(clock,
+                   kDefaultProcessIntervalMs,
+                   include_empty_intervals,
+                   observer) {}
 
 void RateCounter::Add(int sample) {
   StatsCounter::Add(sample);
@@ -273,7 +288,7 @@ void RateCounter::Add(int sample) {
 bool RateCounter::GetMetric(int* metric) const {
   if (num_samples_ == 0)
     return false;
-  *metric = (sum_ * 1000 + kProcessIntervalMs / 2) / kProcessIntervalMs;
+  *metric = (sum_ * 1000 + process_intervals_ms_ / 2) / process_intervals_ms_;
   return true;
 }
 
@@ -284,7 +299,10 @@ int RateCounter::GetValueForEmptyInterval() const {
 RateAccCounter::RateAccCounter(Clock* clock,
                                StatsCounterObserver* observer,
                                bool include_empty_intervals)
-    : StatsCounter(clock, include_empty_intervals, observer) {}
+    : StatsCounter(clock,
+                   kDefaultProcessIntervalMs,
+                   include_empty_intervals,
+                   observer) {}
 
 void RateAccCounter::Set(int sample) {
   StatsCounter::Set(sample);
@@ -293,8 +311,8 @@ void RateAccCounter::Set(int sample) {
 bool RateAccCounter::GetMetric(int* metric) const {
   if (num_samples_ == 0 || last_sum_ > sum_)
     return false;
-  *metric =
-      ((sum_ - last_sum_) * 1000 + kProcessIntervalMs / 2) / kProcessIntervalMs;
+  *metric = ((sum_ - last_sum_) * 1000 + process_intervals_ms_ / 2) /
+            process_intervals_ms_;
   return true;
 }
 
