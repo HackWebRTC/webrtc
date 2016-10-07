@@ -2510,10 +2510,10 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::OnFrame(
     return;
   }
 
-  WebRtcVideoFrame render_frame(
-      frame.video_frame_buffer(), frame.rotation(),
-      frame.render_time_ms() * rtc::kNumNanosecsPerMicrosec, frame.timestamp());
-  sink_->OnFrame(render_frame);
+  sink_->OnFrame(
+      WebRtcVideoFrame(frame.video_frame_buffer(), frame.rotation(),
+                       frame.render_time_ms() * rtc::kNumNanosecsPerMicrosec,
+                       frame.timestamp()));
 }
 
 bool WebRtcVideoChannel2::WebRtcVideoReceiveStream::IsDefaultStream() const {
