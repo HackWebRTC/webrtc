@@ -30,11 +30,11 @@ const float kRampArray[] = {
 const size_t kRampSize = sizeof(kRampArray) / sizeof(kRampArray[0]);
 }  // namespace
 
-uint32_t NewMixerCalculateEnergy(const AudioFrame& audio_frame) {
+uint32_t AudioMixerCalculateEnergy(const AudioFrame& audio_frame) {
   uint32_t energy = 0;
   for (size_t position = 0; position < audio_frame.samples_per_channel_;
        position++) {
-    // TODO(andrew): this can easily overflow.
+    // TODO(aleloi): This can overflow. Convert to floats.
     energy += audio_frame.data_[position] * audio_frame.data_[position];
   }
   return energy;

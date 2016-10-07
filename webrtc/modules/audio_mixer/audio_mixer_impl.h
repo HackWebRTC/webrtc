@@ -19,6 +19,7 @@
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_mixer/audio_mixer.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_defines.h"
+#include "webrtc/modules/audio_mixer/audio_source_with_mix_status.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
@@ -28,14 +29,14 @@
 namespace webrtc {
 
 typedef std::vector<AudioFrame*> AudioFrameList;
-typedef std::vector<MixerAudioSource*> MixerAudioSourceList;
+typedef std::vector<AudioSourceWithMixStatus> MixerAudioSourceList;
 
 class AudioMixerImpl : public AudioMixer {
  public:
   // AudioProcessing only accepts 10 ms frames.
   static const int kFrameDurationInMs = 10;
 
-  static std::unique_ptr<AudioMixer> Create(int id);
+  static std::unique_ptr<AudioMixerImpl> Create(int id);
 
   ~AudioMixerImpl() override;
 
@@ -51,6 +52,11 @@ class AudioMixerImpl : public AudioMixer {
   bool AnonymousMixabilityStatus(
       const MixerAudioSource& audio_source) const override;
 
+  // Returns true if the source was mixed last round. Returns
+  // false and logs an error if the source was never added to the
+  // mixer.
+  bool GetAudioSourceMixabilityStatusForTest(MixerAudioSource* audio_source);
+
  private:
   AudioMixerImpl(int id, std::unique_ptr<AudioProcessing> limiter);
 
@@ -61,16 +67,11 @@ class AudioMixerImpl : public AudioMixer {
   // Compute what audio sources to mix from audio_source_list_. Ramp
   // in and out. Update mixed status. Mixes up to
   // kMaximumAmountOfMixedAudioSources audio sources.
-  AudioFrameList GetNonAnonymousAudio() const EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  AudioFrameList GetNonAnonymousAudio() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Return the AudioFrames that should be mixed anonymously. Ramp in
   // and out. Update mixed status.
-  AudioFrameList GetAnonymousAudio() const EXCLUSIVE_LOCKS_REQUIRED(crit_);
-
-  // This function returns true if it finds the MixerAudioSource in the
-  // specified list of MixerAudioSources.
-  bool IsAudioSourceInList(const MixerAudioSource& audio_source,
-                           const MixerAudioSourceList& audio_source_list) const;
+  AudioFrameList GetAnonymousAudio() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Add/remove the MixerAudioSource to the specified
   // MixerAudioSource list.
