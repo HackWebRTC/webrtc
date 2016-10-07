@@ -52,10 +52,9 @@ rtc_static_library("remote_bitrate_estimator") {
 }
 
 if (rtc_include_tests) {
-  rtc_static_library("bwe_simulator") {
+  rtc_static_library("bwe_simulator_lib") {
     testonly = true
     sources = [
-      "bwe_simulations.cc",
       "test/bwe.cc",
       "test/bwe.h",
       "test/bwe_test.cc",

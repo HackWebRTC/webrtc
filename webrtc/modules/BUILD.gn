@@ -627,7 +627,6 @@ if (rtc_include_tests) {
       "../test:rtp_test_utils",
       "../test:test_common",
       "../test:test_support_main",
-      "../test:test_support_main",
       "../test:video_test_common",
       "audio_coding",
       "audio_coding:acm_receive_test",
@@ -650,7 +649,7 @@ if (rtc_include_tests) {
       "media_file",
       "pacing",
       "remote_bitrate_estimator",
-      "remote_bitrate_estimator:bwe_simulator",
+      "remote_bitrate_estimator:bwe_simulator_lib",
       "rtp_rtcp",
       "utility",
       "video_capture",
@@ -704,5 +703,38 @@ if (rtc_include_tests) {
 
       ldflags = [ "-ObjC" ]
     }
+  }
+
+  rtc_test("bwe_simulator") {
+    testonly = true
+
+    deps = []
+    sources = [
+      "remote_bitrate_estimator/bwe_simulations.cc",
+    ]
+
+    if (is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    if (is_win) {
+      cflags = [
+        # TODO(kjellander): bugs.webrtc.org/261: Fix this warning.
+        "/wd4373",  # virtual function override.
+      ]
+    }
+
+    deps += [
+      "..:webrtc_common",
+      "../base:rtc_base_approved",
+      "../test:test_common",
+      "../test:test_support_main",
+      "remote_bitrate_estimator:bwe_simulator_lib",
+      "video_capture",
+      "//testing/gmock",
+      "//testing/gtest",
+      "//third_party/gflags",
+    ]
   }
 }

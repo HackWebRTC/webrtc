@@ -22,7 +22,7 @@
 namespace webrtc {
 namespace testing {
 namespace bwe {
-#if BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
+
 // This test fixture is used to instantiate tests running with adaptive video
 // senders.
 class BweSimulation : public BweTest,
@@ -445,7 +445,6 @@ TEST_P(BweSimulation, GccComparisonChoke) {
   gcc_test.RunChoke(kFullSendSideEstimator, capacities_kbps);
 }
 
-#endif  // BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
 }  // namespace bwe
 }  // namespace testing
 }  // namespace webrtc

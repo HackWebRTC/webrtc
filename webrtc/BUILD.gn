@@ -718,7 +718,7 @@ if (rtc_include_tests) {
       "modules/audio_coding:neteq_test_support",
       "modules/audio_processing",
       "modules/audio_processing:audioproc_test_utils",
-      "modules/remote_bitrate_estimator:bwe_simulator",
+      "modules/remote_bitrate_estimator:bwe_simulator_lib",
       "modules/rtp_rtcp",
       "test:test_common",
       "test:test_main",
