@@ -298,8 +298,8 @@ rtc_static_library("webrtc_common") {
     "common_types.h",
     "config.cc",
     "config.h",
-    "engine_configurations.h",
     "typedefs.h",
+    "voice_engine_configurations.h",
   ]
 
   if (is_clang && !is_nacl) {

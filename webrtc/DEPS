@@ -14,7 +14,6 @@ include_rules = [
   "+webrtc/common_types.h",
   "+webrtc/common_video/rotation.h",
   "+webrtc/config.h",
-  "+webrtc/engine_configurations.h",
   "+webrtc/transport.h",
   "+webrtc/typedefs.h",
   "+webrtc/video_decoder.h",
@@ -23,6 +22,7 @@ include_rules = [
   "+webrtc/video_receive_stream.h",
   "+webrtc/video_renderer.h",
   "+webrtc/video_send_stream.h",
+  "+webrtc/voice_engine_configurations.h",
 
   "+WebRTC",
   "+webrtc/api",

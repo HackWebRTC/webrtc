@@ -13,7 +13,6 @@
 
 #include <assert.h>
 
-#include "webrtc/engine_configurations.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 #ifdef WEBRTC_CODEC_G722
@@ -21,6 +20,7 @@
 #endif
 #include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/voice_engine_configurations.h"
 
 namespace webrtc {
 

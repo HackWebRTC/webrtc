@@ -14,7 +14,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "webrtc/engine_configurations.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/voice_engine/include/voe_neteq_stats.h"
 #include "webrtc/voice_engine/test/auto_test/automated_mode.h"
@@ -22,6 +21,7 @@
 #include "webrtc/voice_engine/test/auto_test/voe_stress_test.h"
 #include "webrtc/voice_engine/test/auto_test/voe_test_defines.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
+#include "webrtc/voice_engine_configurations.h"
 
 DEFINE_bool(include_timing_dependent_tests, true,
             "If true, we will include tests / parts of tests that are known "

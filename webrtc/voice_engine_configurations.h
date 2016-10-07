@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_ENGINE_CONFIGURATIONS_H_
-#define WEBRTC_ENGINE_CONFIGURATIONS_H_
+#ifndef WEBRTC_VOICE_ENGINE_CONFIGURATIONS_H_
+#define WEBRTC_VOICE_ENGINE_CONFIGURATIONS_H_
 
 #include "webrtc/typedefs.h"
 
@@ -43,32 +43,4 @@
 #define WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
 #define WEBRTC_VOICE_ENGINE_VOLUME_CONTROL_API
 
-// ============================================================================
-//                       Platform specific configurations
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-//  VideoEngine Windows
-// ----------------------------------------------------------------------------
-
-#if defined(_WIN32)
-#define DIRECT3D9_RENDERING  // Requires DirectX 9.
-#endif
-
-// ----------------------------------------------------------------------------
-//  VideoEngine MAC
-// ----------------------------------------------------------------------------
-
-#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
-#define COCOA_RENDERING
-#endif
-
-// ----------------------------------------------------------------------------
-//  VideoEngine Mobile iPhone
-// ----------------------------------------------------------------------------
-
-#if defined(WEBRTC_IOS)
-#define EAGL_RENDERING
-#endif
-
-#endif  // WEBRTC_ENGINE_CONFIGURATIONS_H_
+#endif  // WEBRTC_VOICE_ENGINE_CONFIGURATIONS_H_

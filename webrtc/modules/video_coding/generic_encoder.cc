@@ -15,7 +15,6 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
-#include "webrtc/engine_configurations.h"
 #include "webrtc/modules/video_coding/encoded_frame.h"
 #include "webrtc/modules/video_coding/media_optimization.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"

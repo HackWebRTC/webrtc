@@ -20,7 +20,6 @@
 
 #include "gflags/gflags.h"
 #include "webrtc/base/format_macros.h"
-#include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -38,6 +37,7 @@
 #include "webrtc/voice_engine/include/voe_video_sync.h"
 #include "webrtc/voice_engine/include/voe_volume_control.h"
 #include "webrtc/voice_engine/test/channel_transport/channel_transport.h"
+#include "webrtc/voice_engine_configurations.h"
 
 DEFINE_bool(use_log_file, false,
     "Output logs to a file; by default they will be printed to stderr.");

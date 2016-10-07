@@ -14,7 +14,6 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/engine_configurations.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/modules/video_coding/codecs/i420/include/i420.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"

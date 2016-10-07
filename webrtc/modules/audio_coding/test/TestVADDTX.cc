@@ -12,10 +12,10 @@
 
 #include <string>
 
-#include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/test/PCMFile.h"
 #include "webrtc/modules/audio_coding/test/utility.h"
 #include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/voice_engine_configurations.h"
 
 namespace webrtc {
 

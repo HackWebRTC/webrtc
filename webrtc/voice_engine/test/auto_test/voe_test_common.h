@@ -26,7 +26,7 @@
 #endif
 
 // Read WEBRTC_VOICE_ENGINE_XXX_API compiler flags
-#include "webrtc/engine_configurations.h"
+#include "webrtc/voice_engine_configurations.h"
 
 // Time in ms to test each packet size for each codec
 #define CODEC_TEST_TIME 400

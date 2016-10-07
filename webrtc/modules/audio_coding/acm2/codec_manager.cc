@@ -12,9 +12,9 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/format_macros.h"
-#include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
 #include "webrtc/system_wrappers/include/trace.h"
+#include "webrtc/voice_engine_configurations.h"
 
 namespace webrtc {
 namespace acm2 {
