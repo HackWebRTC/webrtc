@@ -246,13 +246,6 @@ VideoReceiveStream::~VideoReceiveStream() {
   process_thread_->DeRegisterModule(&rtp_stream_sync_);
   process_thread_->DeRegisterModule(&video_receiver_);
 
-  // Deregister external decoders so they are no longer running during
-  // destruction. This effectively stops the VCM since the decoder thread is
-  // stopped, the VCM is deregistered and no asynchronous decoder threads are
-  // running.
-  for (const Decoder& decoder : config_.decoders)
-    video_receiver_.RegisterExternalDecoder(nullptr, decoder.payload_type);
-
   congestion_controller_->GetRemoteBitrateEstimator(UseSendSideBwe(config_))
       ->RemoveStream(rtp_stream_receiver_.GetRemoteSsrc());
 }
@@ -307,7 +300,15 @@ void VideoReceiveStream::Stop() {
   // stop immediately, instead of waiting for a timeout. Needs to be called
   // before joining the decoder thread thread.
   video_receiver_.TriggerDecoderShutdown();
-  decode_thread_.Stop();
+  if (decode_thread_.IsRunning()) {
+    decode_thread_.Stop();
+    // Deregister external decoders so they are no longer running during
+    // destruction. This effectively stops the VCM since the decoder thread is
+    // stopped, the VCM is deregistered and no asynchronous decoder threads are
+    // running.
+    for (const Decoder& decoder : config_.decoders)
+      video_receiver_.RegisterExternalDecoder(nullptr, decoder.payload_type);
+  }
   call_stats_->DeregisterStatsObserver(video_stream_decoder_.get());
   video_stream_decoder_.reset();
   incoming_video_stream_.reset();
