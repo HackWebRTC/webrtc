@@ -103,16 +103,6 @@ public class Camera2Enumerator implements CameraEnumerator {
   }
 
   /**
-   * Checks if Android version is new enough to support camera2.
-   *
-   * This method will be removed soon. Use isSupported(Context).
-   */
-  @Deprecated
-  public static boolean isSupported() {
-    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
-  }
-
-  /**
    * Checks if API is supported and all cameras have better than legacy support.
    */
   public static boolean isSupported(Context context) {
