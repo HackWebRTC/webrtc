@@ -114,7 +114,6 @@ rtc_static_library("audio_coding") {
   }
 
   deps = audio_coding_deps + [
-           ":audio_network_adaptor",
            ":neteq",
            ":rent_a_codec",
            "../../logging:rtc_event_log_api",
@@ -710,7 +709,7 @@ if (rtc_enable_protobuf) {
   }
 }
 
-source_set("audio_network_adaptor") {
+rtc_static_library("audio_network_adaptor") {
   sources = [
     "audio_network_adaptor/audio_network_adaptor.cc",
     "audio_network_adaptor/audio_network_adaptor_impl.cc",
@@ -735,8 +734,6 @@ source_set("audio_network_adaptor") {
     "audio_network_adaptor/smoothing_filter.cc",
     "audio_network_adaptor/smoothing_filter.h",
   ]
-  configs += [ "../..:common_config" ]
-  public_configs = [ "../..:common_inherited_config" ]
 
   deps = [
     "../..:webrtc_common",
