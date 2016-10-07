@@ -66,7 +66,6 @@ rtc_static_library("video") {
     "../modules/remote_bitrate_estimator",
     "../modules/rtp_rtcp",
     "../modules/utility",
-    "../modules/video_capture:video_capture_module",
     "../modules/video_coding",
     "../modules/video_processing",
     "../system_wrappers",

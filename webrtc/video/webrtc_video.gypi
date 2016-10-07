@@ -15,7 +15,6 @@
       '<(webrtc_root)/modules/modules.gyp:congestion_controller',
       '<(webrtc_root)/modules/modules.gyp:paced_sender',
       '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
-      '<(webrtc_root)/modules/modules.gyp:video_capture_module',
       '<(webrtc_root)/modules/modules.gyp:video_processing',
       '<(webrtc_root)/modules/modules.gyp:webrtc_utility',
       '<(webrtc_root)/modules/modules.gyp:webrtc_video_coding',
