@@ -1,6 +1,7 @@
 include_rules = [
   "+webrtc/api",
   "+webrtc/base",
+  "+webrtc/logging/rtc_event_log",
   "+webrtc/media",
   "+webrtc/p2p",
   "+third_party/libsrtp"

@@ -109,13 +109,6 @@ class Call : public webrtc::Call,
   void OnAllocationLimitsChanged(uint32_t min_send_bitrate_bps,
                                  uint32_t max_padding_bitrate_bps) override;
 
-  bool StartEventLog(rtc::PlatformFile log_file,
-                     int64_t max_size_bytes) override {
-    return event_log_->StartLogging(log_file, max_size_bytes);
-  }
-
-  void StopEventLog() override { event_log_->StopLogging(); }
-
  private:
   DeliveryStatus DeliverRtcp(MediaType media_type, const uint8_t* packet,
                              size_t length);
@@ -171,8 +164,7 @@ class Call : public webrtc::Call,
   std::set<VideoSendStream*> video_send_streams_ GUARDED_BY(send_crit_);
 
   VideoSendStream::RtpStateMap suspended_video_send_ssrcs_;
-
-  std::unique_ptr<webrtc::RtcEventLog> event_log_;
+  webrtc::RtcEventLog* event_log_;
 
   // The following members are only accessed (exclusively) from one thread and
   // from the destructor, and therefore doesn't need any explicit
@@ -237,7 +229,7 @@ Call::Call(const Call::Config& config)
       video_network_state_(kNetworkUp),
       receive_crit_(RWLockWrapper::CreateRWLock()),
       send_crit_(RWLockWrapper::CreateRWLock()),
-      event_log_(RtcEventLog::Create(webrtc::Clock::GetRealTimeClock())),
+      event_log_(config.event_log),
       first_packet_sent_ms_(-1),
       received_bytes_per_second_counter_(clock_, nullptr, true),
       received_audio_bytes_per_second_counter_(clock_, nullptr, true),
@@ -249,11 +241,12 @@ Call::Call(const Call::Config& config)
       pacer_bitrate_kbps_counter_(clock_, nullptr, true),
       remb_(clock_),
       congestion_controller_(
-          new CongestionController(clock_, this, &remb_, event_log_.get())),
+          new CongestionController(clock_, this, &remb_, event_log_)),
       video_send_delay_stats_(new SendDelayStats(clock_)),
       start_ms_(clock_->TimeInMilliseconds()),
       worker_queue_("call_worker_queue") {
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(config.event_log != nullptr);
   RTC_DCHECK_GE(config.bitrate_config.min_bitrate_bps, 0);
   RTC_DCHECK_GE(config.bitrate_config.start_bitrate_bps,
                 config.bitrate_config.min_bitrate_bps);
@@ -261,7 +254,6 @@ Call::Call(const Call::Config& config)
     RTC_DCHECK_GE(config.bitrate_config.max_bitrate_bps,
                   config.bitrate_config.start_bitrate_bps);
   }
-
   Trace::CreateTrace();
   call_stats_->RegisterStatsObserver(congestion_controller_.get());
 
@@ -380,7 +372,7 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   AudioSendStream* send_stream = new AudioSendStream(
       config, config_.audio_state, &worker_queue_, congestion_controller_.get(),
-      bitrate_allocator_.get(), event_log_.get());
+      bitrate_allocator_.get(), event_log_);
   {
     WriteLockScoped write_lock(*send_crit_);
     RTC_DCHECK(audio_send_ssrcs_.find(config.rtp.ssrc) ==
@@ -415,9 +407,8 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
     const webrtc::AudioReceiveStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateAudioReceiveStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
-  AudioReceiveStream* receive_stream =
-      new AudioReceiveStream(congestion_controller_.get(), config,
-                             config_.audio_state, event_log_.get());
+  AudioReceiveStream* receive_stream = new AudioReceiveStream(
+      congestion_controller_.get(), config, config_.audio_state, event_log_);
   {
     WriteLockScoped write_lock(*receive_crit_);
     RTC_DCHECK(audio_receive_ssrcs_.find(config.rtp.remote_ssrc) ==
@@ -470,9 +461,8 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   VideoSendStream* send_stream = new VideoSendStream(
       num_cpu_cores_, module_process_thread_.get(), &worker_queue_,
       call_stats_.get(), congestion_controller_.get(), bitrate_allocator_.get(),
-      video_send_delay_stats_.get(), &remb_, event_log_.get(),
-      std::move(config), std::move(encoder_config),
-      suspended_video_send_ssrcs_);
+      video_send_delay_stats_.get(), &remb_, event_log_, std::move(config),
+      std::move(encoder_config), suspended_video_send_ssrcs_);
 
   {
     WriteLockScoped write_lock(*send_crit_);
@@ -887,7 +877,7 @@ PacketReceiver::DeliveryStatus Call::DeliverRtcp(MediaType media_type,
     }
   }
 
-  if (event_log_ && rtcp_delivered)
+  if (rtcp_delivered)
     event_log_->LogRtcpPacket(kIncomingPacket, media_type, packet, length);
 
   return rtcp_delivered ? DELIVERY_OK : DELIVERY_PACKET_ERROR;

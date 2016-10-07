@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "webrtc/call.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_audio_device.h"
 #include "webrtc/test/fake_decoder.h"
@@ -90,6 +91,7 @@ class CallTest : public ::testing::Test {
 
   Clock* const clock_;
 
+  webrtc::RtcEventLogNullImpl event_log_;
   std::unique_ptr<Call> sender_call_;
   std::unique_ptr<PacketTransport> send_transport_;
   VideoSendStream::Config video_send_config_;
@@ -179,6 +181,8 @@ class BaseTest : public RtpRtcpObserver {
 
   virtual void OnFrameGeneratorCapturerCreated(
       FrameGeneratorCapturer* frame_generator_capturer);
+
+  webrtc::RtcEventLogNullImpl event_log_;
 };
 
 class SendTest : public BaseTest {

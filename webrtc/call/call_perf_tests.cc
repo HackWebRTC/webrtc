@@ -19,6 +19,7 @@
 #include "webrtc/call.h"
 #include "webrtc/call/transport_adapter.h"
 #include "webrtc/config.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
@@ -165,9 +166,9 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
 
   AudioState::Config send_audio_state_config;
   send_audio_state_config.voice_engine = voice_engine;
-  Call::Config sender_config;
+  Call::Config sender_config(&event_log_);
   sender_config.audio_state = AudioState::Create(send_audio_state_config);
-  Call::Config receiver_config;
+  Call::Config receiver_config(&event_log_);
   receiver_config.audio_state = sender_config.audio_state;
   CreateCalls(sender_config, receiver_config);
 
@@ -685,6 +686,7 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
 
     Call::Config GetSenderCallConfig() override {
       Call::Config config = EndToEndTest::GetSenderCallConfig();
+      config.event_log = &event_log_;
       config.bitrate_config.start_bitrate_bps = kInitialBitrateKbps * 1000;
       return config;
     }

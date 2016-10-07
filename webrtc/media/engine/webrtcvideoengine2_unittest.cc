@@ -16,6 +16,7 @@
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/base/testutils.h"
 #include "webrtc/media/base/videoengine_unittest.h"
 #include "webrtc/media/engine/fakewebrtccall.h"
@@ -96,7 +97,7 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
   WebRtcVideoEngine2Test() : WebRtcVideoEngine2Test("") {}
   explicit WebRtcVideoEngine2Test(const char* field_trials)
       : override_field_trials_(field_trials),
-        call_(webrtc::Call::Create(webrtc::Call::Config())),
+        call_(webrtc::Call::Create(webrtc::Call::Config(&event_log_))),
         engine_() {
     std::vector<VideoCodec> engine_codecs = engine_.codecs();
     RTC_DCHECK(!engine_codecs.empty());
@@ -133,6 +134,7 @@ class WebRtcVideoEngine2Test : public ::testing::Test {
   void TestExtendedEncoderOveruse(bool use_external_encoder);
 
   webrtc::test::ScopedFieldTrials override_field_trials_;
+  webrtc::RtcEventLogNullImpl event_log_;
   // Used in WebRtcVideoEngine2VoiceTest, but defined here so it's properly
   // initialized when the constructor is called.
   std::unique_ptr<webrtc::Call> call_;
@@ -412,7 +414,7 @@ void WebRtcVideoEngine2Test::TestExtendedEncoderOveruse(
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(kVp8Codec);
   std::unique_ptr<VideoMediaChannel> channel;
-  FakeCall* fake_call = new FakeCall(webrtc::Call::Config());
+  FakeCall* fake_call = new FakeCall(webrtc::Call::Config(&event_log_));
   call_.reset(fake_call);
   if (use_external_encoder) {
     channel.reset(
@@ -462,8 +464,7 @@ TEST_F(WebRtcVideoEngine2Test, PropagatesInputFrameTimestamp) {
   encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
   std::vector<cricket::VideoCodec> codecs;
   codecs.push_back(kVp8Codec);
-
-  FakeCall* fake_call = new FakeCall(webrtc::Call::Config());
+  FakeCall* fake_call = new FakeCall(webrtc::Call::Config(&event_log_));
   call_.reset(fake_call);
   std::unique_ptr<VideoMediaChannel> channel(
       SetUpForExternalEncoderFactory(&encoder_factory, codecs));
@@ -880,7 +881,7 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
   explicit WebRtcVideoChannel2Test(const char* field_trials)
       : WebRtcVideoEngine2Test(field_trials), last_ssrc_(0) {}
   void SetUp() override {
-    fake_call_.reset(new FakeCall(webrtc::Call::Config()));
+    fake_call_.reset(new FakeCall(webrtc::Call::Config(&event_log_)));
     engine_.Init();
     channel_.reset(
         engine_.CreateChannel(fake_call_.get(), MediaConfig(), VideoOptions()));
@@ -3724,7 +3725,8 @@ TEST_F(WebRtcVideoChannel2Test, ConfiguresLocalSsrcOnExistingReceivers) {
 
 class WebRtcVideoChannel2SimulcastTest : public testing::Test {
  public:
-  WebRtcVideoChannel2SimulcastTest() : fake_call_(webrtc::Call::Config()) {}
+  WebRtcVideoChannel2SimulcastTest()
+      : fake_call_(webrtc::Call::Config(&event_log_)) {}
 
   void SetUp() override {
     engine_.Init();
@@ -3839,6 +3841,7 @@ class WebRtcVideoChannel2SimulcastTest : public testing::Test {
     return streams[streams.size() - 1];
   }
 
+  webrtc::RtcEventLogNullImpl event_log_;
   FakeCall fake_call_;
   WebRtcVideoEngine2 engine_;
   std::unique_ptr<VideoMediaChannel> channel_;

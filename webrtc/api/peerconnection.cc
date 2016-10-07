@@ -37,8 +37,10 @@
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/call.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/sctp/sctpdataengine.h"
 #include "webrtc/pc/channelmanager.h"
+#include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace {
@@ -571,6 +573,7 @@ PeerConnection::PeerConnection(PeerConnectionFactory* factory)
       ice_state_(kIceNew),
       ice_connection_state_(kIceConnectionNew),
       ice_gathering_state_(kIceGatheringNew),
+      event_log_(RtcEventLog::Create(webrtc::Clock::GetRealTimeClock())),
       rtcp_cname_(GenerateRtcpCname()),
       local_streams_(StreamCollection::Create()),
       remote_streams_(StreamCollection::Create()) {}
@@ -619,8 +622,8 @@ bool PeerConnection::Initialize(
     return false;
   }
 
-  media_controller_.reset(
-      factory_->CreateMediaController(configuration.media_config));
+  media_controller_.reset(factory_->CreateMediaController(
+      configuration.media_config, event_log_.get()));
 
   session_.reset(new WebRtcSession(
       media_controller_.get(), factory_->network_thread(),
@@ -2343,10 +2346,10 @@ bool PeerConnection::ReconfigurePortAllocator_n(
 
 bool PeerConnection::StartRtcEventLog_w(rtc::PlatformFile file,
                                         int64_t max_size_bytes) {
-  return media_controller_->call_w()->StartEventLog(file, max_size_bytes);
+  return event_log_->StartLogging(file, max_size_bytes);
 }
 
 void PeerConnection::StopRtcEventLog_w() {
-  media_controller_->call_w()->StopEventLog();
+  event_log_->StopLogging();
 }
 }  // namespace webrtc

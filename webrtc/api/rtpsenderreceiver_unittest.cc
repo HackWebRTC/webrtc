@@ -24,6 +24,7 @@
 #include "webrtc/api/videotrack.h"
 #include "webrtc/api/videotracksource.h"
 #include "webrtc/base/gunit.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/base/fakemediaengine.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/engine/fakewebrtccall.h"
@@ -56,7 +57,7 @@ class RtpSenderReceiverTest : public testing::Test {
         channel_manager_(media_engine_,
                          rtc::Thread::Current(),
                          rtc::Thread::Current()),
-        fake_call_(webrtc::Call::Config()),
+        fake_call_(Call::Config(&event_log_)),
         fake_media_controller_(&channel_manager_, &fake_call_),
         stream_(MediaStream::Create(kStreamLabel1)) {
     // Create channels to be used by the RtpSenders and RtpReceivers.
@@ -218,6 +219,7 @@ class RtpSenderReceiverTest : public testing::Test {
   }
 
  protected:
+  webrtc::RtcEventLogNullImpl event_log_;
   cricket::FakeMediaEngine* media_engine_;
   cricket::FakeTransportController fake_transport_controller_;
   cricket::ChannelManager channel_manager_;

@@ -109,7 +109,7 @@ class BitrateEstimatorTest : public test::CallTest {
   virtual void SetUp() {
     AudioState::Config audio_state_config;
     audio_state_config.voice_engine = &mock_voice_engine_;
-    Call::Config config;
+    Call::Config config(&event_log_);
     config.audio_state = AudioState::Create(audio_state_config);
     receiver_call_.reset(Call::Create(config));
     sender_call_.reset(Call::Create(config));

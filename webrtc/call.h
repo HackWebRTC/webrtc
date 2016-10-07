@@ -26,6 +26,7 @@
 namespace webrtc {
 
 class AudioProcessing;
+class RtcEventLog;
 
 const char* Version();
 
@@ -72,6 +73,10 @@ class LoadObserver {
 class Call {
  public:
   struct Config {
+    explicit Config(RtcEventLog* event_log) : event_log(event_log) {
+      RTC_DCHECK(event_log);
+    }
+
     static const int kDefaultStartBitrateBps;
 
     // Bitrate config used until valid bitrate estimates are calculated. Also
@@ -89,6 +94,10 @@ class Call {
     // Audio Processing Module to be used in this call.
     // TODO(solenberg): Change this to a shared_ptr once we can use C++11.
     AudioProcessing* audio_processing = nullptr;
+
+    // RtcEventLog to use for this call. Required.
+    // Use webrtc::RtcEventLog::CreateNull() for a null implementation.
+    RtcEventLog* event_log = nullptr;
   };
 
   struct Stats {
@@ -150,10 +159,6 @@ class Call {
       const rtc::NetworkRoute& network_route) = 0;
 
   virtual void OnSentPacket(const rtc::SentPacket& sent_packet) = 0;
-
-  virtual bool StartEventLog(rtc::PlatformFile log_file,
-                             int64_t max_size_bytes) = 0;
-  virtual void StopEventLog() = 0;
 
   virtual ~Call() {}
 };

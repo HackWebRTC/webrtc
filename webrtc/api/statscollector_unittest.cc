@@ -29,6 +29,7 @@
 #include "webrtc/base/fakesslidentity.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/network.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/base/fakemediaengine.h"
 #include "webrtc/media/base/test/mock_mediachannel.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
@@ -493,7 +494,8 @@ class StatsCollectorTest : public testing::Test {
         media_controller_(
             webrtc::MediaControllerInterface::Create(cricket::MediaConfig(),
                                                      worker_thread_,
-                                                     channel_manager_.get())),
+                                                     channel_manager_.get(),
+                                                     &event_log_)),
         session_(media_controller_.get()) {
     // By default, we ignore session GetStats calls.
     EXPECT_CALL(session_, GetTransportStats(_)).WillRepeatedly(Return(false));
@@ -751,6 +753,7 @@ class StatsCollectorTest : public testing::Test {
               srtp_crypto_suite);
   }
 
+  webrtc::RtcEventLogNullImpl event_log_;
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;
   cricket::FakeMediaEngine* media_engine_;

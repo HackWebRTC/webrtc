@@ -302,10 +302,11 @@ PeerConnectionFactory::CreateAudioTrack(const std::string& id,
 }
 
 webrtc::MediaControllerInterface* PeerConnectionFactory::CreateMediaController(
-    const cricket::MediaConfig& config) const {
+    const cricket::MediaConfig& config,
+    webrtc::RtcEventLog* event_log) const {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   return MediaControllerInterface::Create(config, worker_thread_,
-                                          channel_manager_.get());
+                                          channel_manager_.get(), event_log);
 }
 
 cricket::TransportController* PeerConnectionFactory::CreateTransportController(

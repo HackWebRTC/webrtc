@@ -21,6 +21,7 @@ struct MediaConfig;
 namespace webrtc {
 class Call;
 class VoiceEngine;
+class RtcEventLog;
 
 // The MediaController currently owns shared state between media channels, but
 // in the future will create and own RtpSenders and RtpReceivers.
@@ -29,7 +30,8 @@ class MediaControllerInterface {
   static MediaControllerInterface* Create(
       const cricket::MediaConfig& config,
       rtc::Thread* worker_thread,
-      cricket::ChannelManager* channel_manager);
+      cricket::ChannelManager* channel_manager,
+      webrtc::RtcEventLog* event_log);
 
   virtual ~MediaControllerInterface() {}
   virtual void Close() = 0;

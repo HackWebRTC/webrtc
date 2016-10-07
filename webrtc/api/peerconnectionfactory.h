@@ -29,6 +29,8 @@ class BasicPacketSocketFactory;
 
 namespace webrtc {
 
+class RtcEventLog;
+
 class PeerConnectionFactory : public PeerConnectionFactoryInterface {
  public:
   void SetOptions(const Options& options) override;
@@ -89,7 +91,8 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   void StopRtcEventLog() override {}
 
   virtual webrtc::MediaControllerInterface* CreateMediaController(
-      const cricket::MediaConfig& config) const;
+      const cricket::MediaConfig& config,
+      RtcEventLog* event_log) const;
   virtual cricket::TransportController* CreateTransportController(
       cricket::PortAllocator* port_allocator,
       bool redetermine_role_on_ice_restart);

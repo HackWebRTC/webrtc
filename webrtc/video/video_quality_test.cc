@@ -25,6 +25,7 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/system_wrappers/include/cpu_info.h"
@@ -1151,7 +1152,8 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
         << "!";
   }
 
-  Call::Config call_config;
+  webrtc::RtcEventLogNullImpl event_log;
+  Call::Config call_config(&event_log_);
   call_config.bitrate_config = params.common.call_bitrate_config;
   CreateCalls(call_config, call_config);
 
@@ -1261,7 +1263,8 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
 
   // TODO(ivica): Remove bitrate_config and use the default Call::Config(), to
   // match the full stack tests.
-  Call::Config call_config;
+  webrtc::RtcEventLogNullImpl event_log;
+  Call::Config call_config(&event_log_);
   call_config.bitrate_config = params_.common.call_bitrate_config;
 
   ::VoiceEngineState voe;

@@ -10,6 +10,7 @@
 
 #include <memory>
 
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/null_transport.h"
@@ -37,8 +38,8 @@ void PacketInjectionTest::InjectIncorrectPacket(CodecType codec_type,
                                                 uint8_t payload_type,
                                                 const uint8_t* packet,
                                                 size_t length) {
-  CreateSenderCall(Call::Config());
-  CreateReceiverCall(Call::Config());
+  CreateSenderCall(Call::Config(&event_log_));
+  CreateReceiverCall(Call::Config(&event_log_));
 
   test::NullTransport null_transport;
   CreateSendConfig(1, 0, &null_transport);

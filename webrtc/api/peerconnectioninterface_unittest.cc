@@ -558,12 +558,13 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
 class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
  public:
   webrtc::MediaControllerInterface* CreateMediaController(
-      const cricket::MediaConfig& config) const override {
+      const cricket::MediaConfig& config,
+      webrtc::RtcEventLog* event_log) const override {
     create_media_controller_called_ = true;
     create_media_controller_config_ = config;
 
     webrtc::MediaControllerInterface* mc =
-        PeerConnectionFactory::CreateMediaController(config);
+        PeerConnectionFactory::CreateMediaController(config, event_log);
     EXPECT_TRUE(mc != nullptr);
     return mc;
   }

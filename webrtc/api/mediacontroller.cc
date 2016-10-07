@@ -30,11 +30,14 @@ class MediaController : public webrtc::MediaControllerInterface,
  public:
   MediaController(const cricket::MediaConfig& media_config,
                   rtc::Thread* worker_thread,
-                  cricket::ChannelManager* channel_manager)
+                  cricket::ChannelManager* channel_manager,
+                  webrtc::RtcEventLog* event_log)
       : worker_thread_(worker_thread),
         media_config_(media_config),
-        channel_manager_(channel_manager) {
+        channel_manager_(channel_manager),
+        call_config_(event_log) {
     RTC_DCHECK(worker_thread);
+    RTC_DCHECK(event_log);
     worker_thread_->Invoke<void>(RTC_FROM_HERE,
                                  rtc::Bind(&MediaController::Construct_w, this,
                                            channel_manager_->media_engine()));
@@ -89,7 +92,8 @@ namespace webrtc {
 MediaControllerInterface* MediaControllerInterface::Create(
     const cricket::MediaConfig& config,
     rtc::Thread* worker_thread,
-    cricket::ChannelManager* channel_manager) {
-  return new MediaController(config, worker_thread, channel_manager);
+    cricket::ChannelManager* channel_manager,
+    webrtc::RtcEventLog* event_log) {
+  return new MediaController(config, worker_thread, channel_manager, event_log);
 }
 }  // namespace webrtc

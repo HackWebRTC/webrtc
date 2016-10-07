@@ -382,11 +382,11 @@ BaseTest::~BaseTest() {
 }
 
 Call::Config BaseTest::GetSenderCallConfig() {
-  return Call::Config();
+  return Call::Config(&event_log_);
 }
 
 Call::Config BaseTest::GetReceiverCallConfig() {
-  return Call::Config();
+  return Call::Config(&event_log_);
 }
 
 void BaseTest::OnCallsCreated(Call* sender_call, Call* receiver_call) {

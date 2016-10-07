@@ -19,6 +19,7 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/call.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/base/fakenetworkinterface.h"
 #include "webrtc/media/base/fakevideocapturer.h"
 #include "webrtc/media/base/fakevideorenderer.h"
@@ -79,7 +80,7 @@ class VideoMediaChannelTest : public testing::Test,
                               public sigslot::has_slots<> {
  protected:
   VideoMediaChannelTest<E, C>()
-      : call_(webrtc::Call::Create(webrtc::Call::Config())) {}
+      : call_(webrtc::Call::Create(webrtc::Call::Config(&event_log_))) {}
 
   virtual cricket::VideoCodec DefaultCodec() = 0;
 
@@ -1076,6 +1077,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ(1, renderer2_.num_rendered_frames());
   }
 
+  webrtc::RtcEventLogNullImpl event_log_;
   const std::unique_ptr<webrtc::Call> call_;
   E engine_;
   std::unique_ptr<cricket::FakeVideoCapturer> video_capturer_;

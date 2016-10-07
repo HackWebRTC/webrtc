@@ -35,6 +35,7 @@
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/virtualsocketserver.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/base/fakemediaengine.h"
 #include "webrtc/media/base/fakevideorenderer.h"
 #include "webrtc/media/base/mediachannel.h"
@@ -331,15 +332,15 @@ class WebRtcSessionTest
   WebRtcSessionTest()
       : media_engine_(new cricket::FakeMediaEngine()),
         data_engine_(new cricket::FakeDataEngine()),
-        channel_manager_(
-            new cricket::ChannelManager(media_engine_,
-                                        data_engine_,
-                                        rtc::Thread::Current())),
-        fake_call_(webrtc::Call::Config()),
+        channel_manager_(new cricket::ChannelManager(media_engine_,
+                                                     data_engine_,
+                                                     rtc::Thread::Current())),
+        fake_call_(webrtc::Call::Config(&event_log_)),
         media_controller_(
             webrtc::MediaControllerInterface::Create(cricket::MediaConfig(),
                                                      rtc::Thread::Current(),
-                                                     channel_manager_.get())),
+                                                     channel_manager_.get(),
+                                                     &event_log_)),
         tdesc_factory_(new cricket::TransportDescriptionFactory()),
         desc_factory_(
             new cricket::MediaSessionDescriptionFactory(channel_manager_.get(),
@@ -1480,6 +1481,7 @@ class WebRtcSessionTest
     allocator_->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP);
   }
 
+  webrtc::RtcEventLogNullImpl event_log_;
   cricket::FakeMediaEngine* media_engine_;
   cricket::FakeDataEngine* data_engine_;
   std::unique_ptr<cricket::ChannelManager> channel_manager_;

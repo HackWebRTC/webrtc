@@ -13,6 +13,7 @@
 
 #include "webrtc/api/call/audio_state.h"
 #include "webrtc/call.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/audio_coding/codecs/mock/mock_audio_decoder_factory.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/mock_voice_engine.h"
@@ -25,7 +26,7 @@ struct CallHelper {
       : voice_engine_(decoder_factory) {
     webrtc::AudioState::Config audio_state_config;
     audio_state_config.voice_engine = &voice_engine_;
-    webrtc::Call::Config config;
+    webrtc::Call::Config config(&event_log_);
     config.audio_state = webrtc::AudioState::Create(audio_state_config);
     call_.reset(webrtc::Call::Create(config));
   }
@@ -34,6 +35,7 @@ struct CallHelper {
 
  private:
   testing::NiceMock<webrtc::test::MockVoiceEngine> voice_engine_;
+  webrtc::RtcEventLogNullImpl event_log_;
   std::unique_ptr<webrtc::Call> call_;
 };
 }  // namespace

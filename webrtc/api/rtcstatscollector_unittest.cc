@@ -29,6 +29,7 @@
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/base/timedelta.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/base/fakemediaengine.h"
 #include "webrtc/p2p/base/port.h"
 
@@ -112,14 +113,15 @@ class RTCStatsCollectorTestHelper : public SetSessionDescriptionObserver {
   RTCStatsCollectorTestHelper()
       : worker_thread_(rtc::Thread::Current()),
         network_thread_(rtc::Thread::Current()),
-        channel_manager_(new cricket::ChannelManager(
-            new cricket::FakeMediaEngine(),
-            worker_thread_,
-            network_thread_)),
+        channel_manager_(
+            new cricket::ChannelManager(new cricket::FakeMediaEngine(),
+                                        worker_thread_,
+                                        network_thread_)),
         media_controller_(
             MediaControllerInterface::Create(cricket::MediaConfig(),
                                              worker_thread_,
-                                             channel_manager_.get())),
+                                             channel_manager_.get(),
+                                             &event_log_)),
         session_(media_controller_.get()),
         pc_() {
     // Default return values for mocks.
@@ -148,6 +150,7 @@ class RTCStatsCollectorTestHelper : public SetSessionDescriptionObserver {
 
  private:
   rtc::ScopedFakeClock fake_clock_;
+  webrtc::RtcEventLogNullImpl event_log_;
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;
   std::unique_ptr<cricket::ChannelManager> channel_manager_;

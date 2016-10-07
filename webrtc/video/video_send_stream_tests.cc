@@ -60,8 +60,7 @@ class VideoSendStreamTest : public test::CallTest {
 };
 
 TEST_F(VideoSendStreamTest, CanStartStartedStream) {
-  Call::Config call_config;
-  CreateSenderCall(call_config);
+  CreateSenderCall(Call::Config(&event_log_));
 
   test::NullTransport transport;
   CreateSendConfig(1, 0, &transport);
@@ -72,8 +71,7 @@ TEST_F(VideoSendStreamTest, CanStartStartedStream) {
 }
 
 TEST_F(VideoSendStreamTest, CanStopStoppedStream) {
-  Call::Config call_config;
-  CreateSenderCall(call_config);
+  CreateSenderCall(Call::Config(&event_log_));
 
   test::NullTransport transport;
   CreateSendConfig(1, 0, &transport);
@@ -735,7 +733,7 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
     }
 
     Call::Config GetSenderCallConfig() override {
-      Call::Config config;
+      Call::Config config(&event_log_);
       const int kMinBitrateBps = 30000;
       config.bitrate_config.min_bitrate_bps = kMinBitrateBps;
       return config;
@@ -1438,7 +1436,7 @@ TEST_F(VideoSendStreamTest,
     int last_initialized_frame_height_ GUARDED_BY(&crit_);
   };
 
-  CreateSenderCall(Call::Config());
+  CreateSenderCall(Call::Config(&event_log_));
   test::NullTransport transport;
   CreateSendConfig(1, 0, &transport);
   EncoderObserver encoder;
@@ -1494,7 +1492,7 @@ TEST_F(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
     int start_bitrate_kbps_ GUARDED_BY(crit_);
   };
 
-  CreateSenderCall(Call::Config());
+  CreateSenderCall(Call::Config(&event_log_));
 
   test::NullTransport transport;
   CreateSendConfig(1, 0, &transport);
@@ -1575,7 +1573,7 @@ TEST_F(VideoSendStreamTest, VideoSendStreamStopSetEncoderRateToZero) {
     int bitrate_kbps_ GUARDED_BY(crit_);
   };
 
-  CreateSenderCall(Call::Config());
+  CreateSenderCall(Call::Config(&event_log_));
 
   test::NullTransport transport;
   CreateSendConfig(1, 0, &transport);
@@ -1630,7 +1628,7 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
   };
 
   // Initialize send stream.
-  CreateSenderCall(Call::Config());
+  CreateSenderCall(Call::Config(&event_log_));
 
   test::NullTransport transport;
   CreateSendConfig(1, 0, &transport);
@@ -2269,7 +2267,7 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
     }
 
     Call::Config GetSenderCallConfig() override {
-      Call::Config config;
+      Call::Config config(&event_log_);
       config.bitrate_config.min_bitrate_bps = kMinBitrateKbps * 1000;
       config.bitrate_config.start_bitrate_bps = kStartBitrateKbps * 1000;
       config.bitrate_config.max_bitrate_bps = kMaxBitrateKbps * 1000;
