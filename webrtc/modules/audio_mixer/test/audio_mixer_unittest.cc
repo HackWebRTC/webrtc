@@ -15,7 +15,7 @@
 
 #include "webrtc/base/bind.h"
 #include "webrtc/base/thread.h"
-#include "webrtc/modules/audio_mixer/audio_mixer.h"
+#include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_defines.h"
 #include "webrtc/test/gmock.h"
 
@@ -89,7 +89,7 @@ void MixAndCompare(
   RTC_DCHECK(frames.size() == frame_info.size());
   RTC_DCHECK(frame_info.size() == expected_status.size());
 
-  const std::unique_ptr<AudioMixer> mixer(AudioMixer::Create(kId));
+  const std::unique_ptr<AudioMixerImpl> mixer(AudioMixerImpl::Create(kId));
   std::vector<MockMixerAudioSource> participants(num_audio_sources);
 
   for (int i = 0; i < num_audio_sources; i++) {
@@ -107,7 +107,8 @@ void MixAndCompare(
   mixer->Mix(kDefaultSampleRateHz, 1, &frame_for_mixing);
 
   for (int i = 0; i < num_audio_sources; i++) {
-    EXPECT_EQ(expected_status[i], participants[i].IsMixed())
+    EXPECT_EQ(expected_status[i],
+              mixer->GetAudioSourceMixabilityStatusForTest(&participants[i]))
         << "Mixed status of AudioSource #" << i << " wrong.";
   }
 }
@@ -167,7 +168,7 @@ TEST(AudioMixer, LargestEnergyVadActiveMixed) {
   constexpr int kAudioSources =
       AudioMixer::kMaximumAmountOfMixedAudioSources + 3;
 
-  const std::unique_ptr<AudioMixer> mixer(AudioMixer::Create(kId));
+  const std::unique_ptr<AudioMixerImpl> mixer(AudioMixerImpl::Create(kId));
 
   MockMixerAudioSource participants[kAudioSources];
 
@@ -194,7 +195,8 @@ TEST(AudioMixer, LargestEnergyVadActiveMixed) {
              &audio_frame);
 
   for (int i = 0; i < kAudioSources; ++i) {
-    bool is_mixed = participants[i].IsMixed();
+    bool is_mixed =
+        mixer->GetAudioSourceMixabilityStatusForTest(&participants[i]);
     if (i == kAudioSources - 1 ||
         i < kAudioSources - 1 - AudioMixer::kMaximumAmountOfMixedAudioSources) {
       EXPECT_FALSE(is_mixed) << "Mixing status of AudioSource #" << i
@@ -351,7 +353,7 @@ TEST(AudioMixer, RampedOutSourcesShouldNotBeMarkedMixed) {
   constexpr int kAudioSources =
       AudioMixer::kMaximumAmountOfMixedAudioSources + 1;
 
-  const std::unique_ptr<AudioMixer> mixer(AudioMixer::Create(kId));
+  const std::unique_ptr<AudioMixerImpl> mixer(AudioMixerImpl::Create(kId));
   MockMixerAudioSource participants[kAudioSources];
 
   for (int i = 0; i < kAudioSources; i++) {
@@ -374,8 +376,8 @@ TEST(AudioMixer, RampedOutSourcesShouldNotBeMarkedMixed) {
 
   // All participants but the loudest should have been mixed.
   for (int i = 0; i < kAudioSources - 1; i++) {
-    EXPECT_TRUE(participants[i].IsMixed()) << "Mixed status of AudioSource #"
-                                           << i << " wrong.";
+    EXPECT_TRUE(mixer->GetAudioSourceMixabilityStatusForTest(&participants[i]))
+        << "Mixed status of AudioSource #" << i << " wrong.";
   }
 
   // Add new participant with higher energy.
@@ -390,12 +392,13 @@ TEST(AudioMixer, RampedOutSourcesShouldNotBeMarkedMixed) {
   mixer->Mix(kDefaultSampleRateHz, 1, &frame_for_mixing);
 
   // The most quiet participant should not have been mixed.
-  EXPECT_FALSE(participants[0].IsMixed())
+  EXPECT_FALSE(mixer->GetAudioSourceMixabilityStatusForTest(&participants[0]))
       << "Mixed status of AudioSource #0 wrong.";
 
   // The loudest participants should have been mixed.
   for (int i = 1; i < kAudioSources; i++) {
-    EXPECT_EQ(true, participants[i].IsMixed())
+    EXPECT_EQ(true,
+              mixer->GetAudioSourceMixabilityStatusForTest(&participants[i]))
         << "Mixed status of AudioSource #" << i << " wrong.";
   }
 }
