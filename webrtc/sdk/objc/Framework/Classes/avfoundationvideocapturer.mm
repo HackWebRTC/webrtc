@@ -630,10 +630,12 @@ static BOOL SetFormatForCaptureDevice(AVCaptureDevice *device,
       _rotation = webrtc::kVideoRotation_270;
       break;
     case UIDeviceOrientationLandscapeLeft:
-      _rotation = webrtc::kVideoRotation_180;
+      _rotation = _capturer->GetUseBackCamera() ? webrtc::kVideoRotation_0
+                                                : webrtc::kVideoRotation_180;
       break;
     case UIDeviceOrientationLandscapeRight:
-      _rotation = webrtc::kVideoRotation_0;
+      _rotation = _capturer->GetUseBackCamera() ? webrtc::kVideoRotation_180
+                                                : webrtc::kVideoRotation_0;
       break;
     case UIDeviceOrientationFaceUp:
     case UIDeviceOrientationFaceDown:
