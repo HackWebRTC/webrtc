@@ -106,13 +106,13 @@ extern const char kCodecParamPort[];
 // We put the data codec names here so callers of
 // DataEngine::CreateChannel don't have to import rtpdataengine.h or
 // sctpdataengine.h to get the codec names they want to pass in.
-extern const int kGoogleRtpDataCodecId;
+extern const int kGoogleRtpDataCodecPlType;
 extern const char kGoogleRtpDataCodecName[];
 
 // TODO(pthatcher): Find an id that won't conflict with anything.  On
 // the other hand, it really shouldn't matter since the id won't be
 // used on the wire.
-extern const int kGoogleSctpDataCodecId;
+extern const int kGoogleSctpDataCodecPlType;
 extern const char kGoogleSctpDataCodecName[];
 
 extern const char kComfortNoiseCodecName[];

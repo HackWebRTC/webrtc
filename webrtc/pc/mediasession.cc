@@ -302,10 +302,11 @@ static void GetCurrentStreamParams(const SessionDescription* sdesc,
 // Filters the data codecs for the data channel type.
 void FilterDataCodecs(std::vector<DataCodec>* codecs, bool sctp) {
   // Filter RTP codec for SCTP and vice versa.
-  int codec_id = sctp ? kGoogleRtpDataCodecId : kGoogleSctpDataCodecId;
+  const char* codec_name =
+      sctp ? kGoogleRtpDataCodecName : kGoogleSctpDataCodecName;
   for (std::vector<DataCodec>::iterator iter = codecs->begin();
        iter != codecs->end();) {
-    if (iter->id == codec_id) {
+    if (CodecNamesEq(iter->name, codec_name)) {
       iter = codecs->erase(iter);
     } else {
       ++iter;

@@ -83,10 +83,10 @@ const char kCodecParamStartBitrate[] = "x-google-start-bitrate";
 const char kCodecParamMaxQuantization[] = "x-google-max-quantization";
 const char kCodecParamPort[] = "x-google-port";
 
-const int kGoogleRtpDataCodecId = 101;
+const int kGoogleRtpDataCodecPlType = 109;
 const char kGoogleRtpDataCodecName[] = "google-data";
 
-const int kGoogleSctpDataCodecId = 108;
+const int kGoogleSctpDataCodecPlType = 108;
 const char kGoogleSctpDataCodecName[] = "google-sctp-data";
 
 const char kComfortNoiseCodecName[] = "CN";

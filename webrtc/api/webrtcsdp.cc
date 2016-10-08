@@ -1260,8 +1260,8 @@ void BuildMediaDescription(const ContentInfo* content_info,
       for (std::vector<cricket::DataCodec>::const_iterator it =
            data_desc->codecs().begin();
            it != data_desc->codecs().end(); ++it) {
-        if (it->id == cricket::kGoogleSctpDataCodecId &&
-            it->GetParam(cricket::kCodecParamPort, &sctp_port)) {
+        if (cricket::CodecNamesEq(it->name, cricket::kGoogleSctpDataCodecName)
+            && it->GetParam(cricket::kCodecParamPort, &sctp_port)) {
           break;
         }
       }
@@ -1651,13 +1651,15 @@ void AddRtcpFbLines(const T& codec, std::string* message) {
 
 bool AddSctpDataCodec(DataContentDescription* media_desc,
                       int sctp_port) {
-  if (media_desc->HasCodec(cricket::kGoogleSctpDataCodecId)) {
-    return ParseFailed("",
-                       "Can't have multiple sctp port attributes.",
-                       NULL);
+  for (const auto& codec : media_desc->codecs()) {
+    if (cricket::CodecNamesEq(codec.name, cricket::kGoogleSctpDataCodecName)) {
+      return ParseFailed("",
+                         "Can't have multiple sctp port attributes.",
+                         NULL);
+    }
   }
   // Add the SCTP Port number as a pseudo-codec "port" parameter
-  cricket::DataCodec codec_port(cricket::kGoogleSctpDataCodecId,
+  cricket::DataCodec codec_port(cricket::kGoogleSctpDataCodecPlType,
                                 cricket::kGoogleSctpDataCodecName);
   codec_port.SetParam(cricket::kCodecParamPort, sctp_port);
   LOG(INFO) << "AddSctpDataCodec: Got SCTP Port Number "
@@ -2185,9 +2187,7 @@ void MaybeCreateStaticPayloadAudioCodecs(
     return;
   }
   RTC_DCHECK(media_desc->codecs().empty());
-  std::vector<int>::const_iterator it = fmts.begin();
-  for (; it != fmts.end(); ++it) {
-    int payload_type = *it;
+  for (int payload_type : fmts) {
     if (!media_desc->HasCodec(payload_type) &&
         payload_type >= 0 &&
         static_cast<uint32_t>(payload_type) <

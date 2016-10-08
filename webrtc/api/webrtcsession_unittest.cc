@@ -3967,7 +3967,7 @@ TEST_P(WebRtcSessionTest, TestSctpDataChannelSendPortParsing) {
   int portnum = -1;
   ASSERT_TRUE(ch != NULL);
   ASSERT_EQ(1UL, ch->send_codecs().size());
-  EXPECT_EQ(cricket::kGoogleSctpDataCodecId, ch->send_codecs()[0].id);
+  EXPECT_EQ(cricket::kGoogleSctpDataCodecPlType, ch->send_codecs()[0].id);
   EXPECT_EQ(0, strcmp(cricket::kGoogleSctpDataCodecName,
                       ch->send_codecs()[0].name.c_str()));
   EXPECT_TRUE(ch->send_codecs()[0].GetParam(cricket::kCodecParamPort,
@@ -3975,7 +3975,7 @@ TEST_P(WebRtcSessionTest, TestSctpDataChannelSendPortParsing) {
   EXPECT_EQ(new_send_port, portnum);
 
   ASSERT_EQ(1UL, ch->recv_codecs().size());
-  EXPECT_EQ(cricket::kGoogleSctpDataCodecId, ch->recv_codecs()[0].id);
+  EXPECT_EQ(cricket::kGoogleSctpDataCodecPlType, ch->recv_codecs()[0].id);
   EXPECT_EQ(0, strcmp(cricket::kGoogleSctpDataCodecName,
                       ch->recv_codecs()[0].name.c_str()));
   EXPECT_TRUE(ch->recv_codecs()[0].GetParam(cricket::kCodecParamPort,
