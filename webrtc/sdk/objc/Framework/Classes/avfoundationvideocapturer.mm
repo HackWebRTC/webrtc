@@ -26,7 +26,6 @@
 
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/common_video/include/corevideo_frame_buffer.h"
 #include "webrtc/common_video/rotation.h"

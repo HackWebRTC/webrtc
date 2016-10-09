@@ -355,7 +355,7 @@ void WebRtcVideoCapturer::OnIncomingCapturedFrame(
 
   OnFrame(cricket::WebRtcVideoFrame(
               sample.video_frame_buffer(), sample.rotation(),
-              sample.render_time_ms() * rtc::kNumMicrosecsPerMillisec),
+              sample.render_time_ms() * rtc::kNumMicrosecsPerMillisec, 0),
           sample.width(), sample.height());
 }
 

@@ -140,7 +140,7 @@ TEST(VideoBroadcasterTest, SinkWantsBlackFrames) {
   buffer->InitializeData();
 
   cricket::WebRtcVideoFrame frame1(buffer, webrtc::kVideoRotation_0,
-                                   10 /* timestamp_us */);
+                                   10 /* timestamp_us */, 0 /* frame_id */);
   broadcaster.OnFrame(frame1);
   EXPECT_TRUE(sink1.black_frame());
   EXPECT_EQ(10, sink1.timestamp_us());
@@ -154,7 +154,7 @@ TEST(VideoBroadcasterTest, SinkWantsBlackFrames) {
   broadcaster.AddOrUpdateSink(&sink2, wants2);
 
   cricket::WebRtcVideoFrame frame2(buffer, webrtc::kVideoRotation_0,
-                                   30 /* timestamp_us */);
+                                   30 /* timestamp_us */, 0 /* frame_id */);
   broadcaster.OnFrame(frame2);
   EXPECT_FALSE(sink1.black_frame());
   EXPECT_EQ(30, sink1.timestamp_us());

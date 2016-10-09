@@ -13,7 +13,6 @@
 #include <limits>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
 
 namespace rtc {
 
@@ -65,7 +64,7 @@ void VideoBroadcaster::OnFrame(const cricket::VideoFrame& frame) {
     if (sink_pair.wants.black_frames) {
       sink_pair.sink->OnFrame(cricket::WebRtcVideoFrame(
           GetBlackFrameBuffer(frame.width(), frame.height()), frame.rotation(),
-          frame.timestamp_us()));
+          frame.timestamp_us(), frame.transport_frame_id()));
     } else {
       sink_pair.sink->OnFrame(frame);
     }
