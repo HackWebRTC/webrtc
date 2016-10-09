@@ -54,22 +54,17 @@
       'Linux64 Release (GYP)': 'gyp_release_bot_x64_exclude_tests',
 
       # Android
-      'Android32 Builder': 'android_gn_release_bot_arm',
-      'Android32 Builder (dbg)': 'android_gn_debug_static_bot_arm',
+      'Android32 (M Nexus5X)': 'android_gn_release_bot_arm',
+      'Android32 (M Nexus5X)(dbg)': 'android_gn_debug_static_bot_arm',
+      'Android64 (M Nexus5X)': 'android_gn_release_bot_arm64',
+      'Android64 (M Nexus5X)(dbg)': 'android_gn_debug_static_bot_arm64',
       'Android32 Builder x86': 'android_gn_release_bot_x86',
       'Android32 Builder x86 (dbg)': 'android_gn_debug_static_bot_x86',
+      'Android64 Builder x64 (dbg)': 'android_gn_debug_static_bot_x64',
       'Android32 Builder MIPS (dbg)': 'android_gn_clang_debug_static_bot_mipsel',
       'Android32 Clang (dbg)': 'android_gn_clang_debug_bot_arm',
-      'Android64 Builder': 'android_gn_release_bot_arm64',
-      'Android64 Builder (dbg)': 'android_gn_debug_static_bot_arm64',
-      'Android64 Builder x64 (dbg)': 'android_gn_debug_static_bot_x64',
       'Android32 GYP': 'android_gyp_release_bot_arm',
       'Android32 GYP (dbg)': 'android_gyp_debug_static_bot_arm',
-      'Android32 Tests (L Nexus5)(dbg)': 'none',
-      'Android32 Tests (L Nexus5)': 'none',
-      'Android32 Tests (L Nexus7.2)(dbg)': 'none',
-      'Android32 Tests (L Nexus7.2)': 'none',
-      'Android64 Tests (L Nexus9)': 'none',
 
       # Windows
       'Win32 Debug': 'gn_debug_bot_x86',
@@ -86,6 +81,33 @@
       'Win32 Release [large tests]': 'gn_release_bot_x86',
       'Win64 Debug (GYP)': 'gyp_debug_bot_x64_exclude_tests',
       'Win64 Release (GYP)': 'gyp_release_bot_x64_exclude_tests',
+    },
+    'client.webrtc.perf': {
+      # Android
+      'Android32 Builder': 'android_gn_release_bot_arm',
+      'Android64 Builder': 'android_gn_release_bot_arm64',
+      'Android32 Tests (L Nexus5)': 'none',
+      'Android32 Tests (L Nexus7.2)': 'none',
+      'Android64 Tests (L Nexus9)': 'none',
+    },
+    'client.webrtc.fyi': {
+      # Mac
+      'Mac64 Release (swarming)': 'swarming_gn_release_bot_x64',
+
+      # Linux
+      'Linux64 GCC': 'gn_gcc_release_bot_x64',
+      'Linux64 Release (swarming)': 'swarming_gn_release_bot_x64',
+
+      # Android
+      'Android32 Release (swarming)': 'swarming_android_gn_release_bot_arm',
+      'Android32 ASan (L Nexus6)': 'android_gn_asan_shared_release_bot_arm',
+      'Android32 Builder': 'android_gn_release_bot_arm',
+      'Android32 Tests (J Nexus4)': 'none',
+      'Android32 Tests (K Nexus5)': 'none',
+      'Android32 Tests (L Nexus6)': 'none',
+
+      # Windows
+      'Win32 Release (swarming)': 'swarming_gn_release_bot_x86',
     },
     'tryserver.webrtc': {
       # iOS
@@ -166,25 +188,6 @@
       'win_swarming': 'swarming_gn_debug_bot_x64',
       'win_x64_gyp_dbg': 'gyp_debug_bot_x64_exclude_tests',
       'win_x64_gyp_rel': 'gyp_release_bot_x64_exclude_tests',
-    },
-    'client.webrtc.fyi': {
-      # Mac
-      'Mac64 Release (swarming)': 'swarming_gn_release_bot_x64',
-
-      # Linux
-      'Linux64 GCC': 'gn_gcc_release_bot_x64',
-      'Linux64 Release (swarming)': 'swarming_gn_release_bot_x64',
-
-      # Android
-      'Android32 Release (swarming)': 'swarming_android_gn_release_bot_arm',
-      'Android32 ASan (L Nexus6)': 'android_gn_asan_shared_release_bot_arm',
-      'Android32 Builder': 'android_gn_release_bot_arm',
-      'Android32 Tests (J Nexus4)': 'none',
-      'Android32 Tests (K Nexus5)': 'none',
-      'Android32 Tests (L Nexus6)': 'none',
-
-      # Windows
-      'Win32 Release (swarming)': 'swarming_gn_release_bot_x86',
     }
   },
 
