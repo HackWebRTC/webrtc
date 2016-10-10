@@ -1104,6 +1104,7 @@ void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
   SimulatedClock clock(0);
   NullBitrateController null_controller;
   TransportFeedbackAdapter feedback_adapter(&clock, &null_controller);
+  feedback_adapter.InitBwe();
 
   TimeSeries time_series;
   time_series.label = "Network Delay Change";
