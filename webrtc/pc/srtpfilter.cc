@@ -25,9 +25,6 @@
 #include "webrtc/media/base/rtputils.h"
 #include "webrtc/pc/externalhmac.h"
 
-// Enable this line to turn on SRTP debugging
-// #define SRTP_DEBUG
-
 #ifdef HAVE_SRTP
 extern "C" {
 #ifdef SRTP_RELATIVE_PATH
@@ -38,16 +35,6 @@ extern "C" {
 #include "third_party/libsrtp/include/srtp_priv.h"
 #endif  // SRTP_RELATIVE_PATH
 }
-
-#if !defined(NDEBUG)
-extern "C" srtp_debug_module_t mod_srtp;
-extern "C" srtp_debug_module_t mod_auth;
-extern "C" srtp_debug_module_t mod_cipher;
-extern "C" srtp_debug_module_t mod_stat;
-extern "C" srtp_debug_module_t mod_alloc;
-extern "C" srtp_debug_module_t mod_aes_icm;
-extern "C" srtp_debug_module_t mod_aes_hmac;
-#endif
 #endif  // HAVE_SRTP
 
 namespace cricket {
@@ -64,21 +51,6 @@ bool SrtpNotAvailable(const char *func) {
 }  // anonymous namespace
 
 #endif  // !HAVE_SRTP
-
-void EnableSrtpDebugging() {
-#ifdef HAVE_SRTP
-#if !defined(NDEBUG)
-  debug_on(mod_srtp);
-  debug_on(mod_auth);
-  debug_on(mod_cipher);
-  debug_on(mod_stat);
-  debug_on(mod_alloc);
-  debug_on(mod_aes_icm);
-  // debug_on(mod_aes_cbc);
-  // debug_on(mod_hmac);
-#endif
-#endif  // HAVE_SRTP
-}
 
 // NOTE: This is called from ChannelManager D'tor.
 void ShutdownSrtp() {

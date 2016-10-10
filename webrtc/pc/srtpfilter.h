@@ -40,7 +40,6 @@ namespace cricket {
 class SrtpSession;
 class SrtpStat;
 
-void EnableSrtpDebugging();
 void ShutdownSrtp();
 
 // Class to transform SRTP to/from RTP.
