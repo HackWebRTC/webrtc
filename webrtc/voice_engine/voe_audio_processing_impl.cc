@@ -116,6 +116,7 @@ int VoEAudioProcessingImpl::SetNsStatus(bool enable, NsModes mode) {
 
   return 0;
 #else
+#error "This is deprecated"
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
                         "SetNsStatus() Ns is not supported");
   return -1;
@@ -149,6 +150,7 @@ int VoEAudioProcessingImpl::GetNsStatus(bool& enabled, NsModes& mode) {
   }
   return 0;
 #else
+#error "This is deprecated"
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
                         "GetNsStatus() Ns is not supported");
   return -1;
@@ -215,6 +217,7 @@ int VoEAudioProcessingImpl::SetAgcStatus(bool enable, AgcModes mode) {
 
   return 0;
 #else
+#error "This is deprecated"
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
                         "SetAgcStatus() Agc is not supported");
   return -1;
@@ -246,6 +249,7 @@ int VoEAudioProcessingImpl::GetAgcStatus(bool& enabled, AgcModes& mode) {
 
   return 0;
 #else
+#error "This is deprecated"
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
                         "GetAgcStatus() Agc is not supported");
   return -1;
@@ -285,6 +289,7 @@ int VoEAudioProcessingImpl::SetAgcConfig(AgcConfig config) {
 
   return 0;
 #else
+#error "This is deprecated"
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
                         "SetAgcConfig() EC is not supported");
   return -1;
@@ -307,6 +312,7 @@ int VoEAudioProcessingImpl::GetAgcConfig(AgcConfig& config) {
 
   return 0;
 #else
+#error "This is deprecated"
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
                         "GetAgcConfig() EC is not supported");
   return -1;
@@ -430,6 +436,7 @@ int VoEAudioProcessingImpl::SetEcStatus(bool enable, EcModes mode) {
 
   return 0;
 #else
+#error "This is deprecated"
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
                         "SetEcStatus() EC is not supported");
   return -1;
@@ -453,6 +460,7 @@ int VoEAudioProcessingImpl::GetEcStatus(bool& enabled, EcModes& mode) {
 
   return 0;
 #else
+#error "This is deprecated"
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
                         "GetEcStatus() EC is not supported");
   return -1;
@@ -515,6 +523,7 @@ int VoEAudioProcessingImpl::SetAecmMode(AecmModes mode, bool enableCNG) {
 
   return 0;
 #else
+#error "This is deprecated"
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
                         "SetAECMMode() EC is not supported");
   return -1;
@@ -556,6 +565,7 @@ int VoEAudioProcessingImpl::GetAecmMode(AecmModes& mode, bool& enabledCNG) {
 
   return 0;
 #else
+#error "This is deprecated"
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
                         "GetAECMMode() EC is not supported");
   return -1;
@@ -619,6 +629,7 @@ int VoEAudioProcessingImpl::SetEcMetricsStatus(bool enable) {
   }
   return 0;
 #else
+#error "This is deprecated"
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
                         "SetEcStatus() EC is not supported");
   return -1;
@@ -649,6 +660,7 @@ int VoEAudioProcessingImpl::GetEcMetricsStatus(bool& enabled) {
 
   return 0;
 #else
+#error "This is deprecated"
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
                         "SetEcStatus() EC is not supported");
   return -1;
@@ -688,6 +700,7 @@ int VoEAudioProcessingImpl::GetEchoMetrics(int& ERL,
 
   return 0;
 #else
+#error "This is deprecated"
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
                         "SetEcStatus() EC is not supported");
   return -1;
@@ -728,6 +741,7 @@ int VoEAudioProcessingImpl::GetEcDelayMetrics(int& delay_median,
 
   return 0;
 #else
+#error "This is deprecated"
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
                         "SetEcStatus() EC is not supported");
   return -1;
