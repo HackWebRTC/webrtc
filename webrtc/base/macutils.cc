@@ -8,11 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <cstring>
 #include <memory>
 #include <sstream>
 
-#include <CoreServices/CoreServices.h>
+#include <sys/utsname.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/macutils.h"
@@ -70,34 +72,26 @@ void DecodeFourChar(UInt32 fc, std::string* out) {
   out->append(ss.str());
 }
 
-static bool GetGestalt(OSType ostype, int* value) {
-  ASSERT(NULL != value);
-  SInt32 native_value;
-  OSStatus result = Gestalt(ostype, &native_value);
-  if (noErr == result) {
-    *value = native_value;
-    return true;
-  }
-  std::string str;
-  DecodeFourChar(ostype, &str);
-  LOG_E(LS_ERROR, OS, result) << "Gestalt(" << str << ")";
-  return false;
-}
-
 static bool GetOSVersion(int* major, int* minor, int* bugfix) {
   ASSERT(major && minor && bugfix);
-  if (!GetGestalt(gestaltSystemVersion, major)) {
+  struct utsname uname_info;
+  if (uname(&uname_info) != 0)
     return false;
-  }
-  if (*major < 0x1040) {
-    *bugfix = *major & 0xF;
-    *minor = (*major >> 4) & 0xF;
-    *major = (*major >> 8);
-    return true;
-  }
-  return GetGestalt(gestaltSystemVersionMajor, major) &&
-         GetGestalt(gestaltSystemVersionMinor, minor) &&
-         GetGestalt(gestaltSystemVersionBugFix, bugfix);
+
+  if (strcmp(uname_info.sysname, "Darwin") != 0)
+    return false;
+  *major = 10;
+
+  // The market version of macOS is always 4 lower than the internal version.
+  int minor_version = atoi(uname_info.release);
+  RTC_CHECK(minor_version >= 6);
+  *minor = minor_version - 4;
+
+  const char* dot = ::strchr(uname_info.release, '.');
+  if (!dot)
+    return false;
+  *bugfix = atoi(dot + 1);
+  return true;
 }
 
 MacOSVersionName GetOSVersionName() {

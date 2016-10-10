@@ -671,9 +671,6 @@ rtc_static_library("rtc_base") {
     libs += [
       # For ProcessInformationCopyDictionary in unixfilesystem.cc.
       "ApplicationServices.framework",
-
-      # For GetGestalt in macutils.cc.
-      "CoreServices.framework",
     ]
   }
 
