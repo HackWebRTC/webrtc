@@ -18,13 +18,22 @@ namespace webrtc {
 
 class RtcEventLogTestHelper {
  public:
-  static void VerifyReceiveStreamConfig(
+  static void VerifyVideoReceiveStreamConfig(
       const ParsedRtcEventLog& parsed_log,
       size_t index,
       const VideoReceiveStream::Config& config);
-  static void VerifySendStreamConfig(const ParsedRtcEventLog& parsed_log,
-                                     size_t index,
-                                     const VideoSendStream::Config& config);
+  static void VerifyVideoSendStreamConfig(
+      const ParsedRtcEventLog& parsed_log,
+      size_t index,
+      const VideoSendStream::Config& config);
+  static void VerifyAudioReceiveStreamConfig(
+      const ParsedRtcEventLog& parsed_log,
+      size_t index,
+      const AudioReceiveStream::Config& config);
+  static void VerifyAudioSendStreamConfig(
+      const ParsedRtcEventLog& parsed_log,
+      size_t index,
+      const AudioSendStream::Config& config);
   static void VerifyRtpEvent(const ParsedRtcEventLog& parsed_log,
                              size_t index,
                              PacketDirection direction,

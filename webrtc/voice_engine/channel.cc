@@ -94,6 +94,22 @@ class RtcEventLogProxy final : public webrtc::RtcEventLog {
     }
   }
 
+  void LogAudioReceiveStreamConfig(
+      const webrtc::AudioReceiveStream::Config& config) override {
+    rtc::CritScope lock(&crit_);
+    if (event_log_) {
+      event_log_->LogAudioReceiveStreamConfig(config);
+    }
+  }
+
+  void LogAudioSendStreamConfig(
+      const webrtc::AudioSendStream::Config& config) override {
+    rtc::CritScope lock(&crit_);
+    if (event_log_) {
+      event_log_->LogAudioSendStreamConfig(config);
+    }
+  }
+
   void LogRtpHeader(webrtc::PacketDirection direction,
                     webrtc::MediaType media_type,
                     const uint8_t* header,

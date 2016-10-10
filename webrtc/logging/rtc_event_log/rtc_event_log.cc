@@ -62,6 +62,9 @@ class RtcEventLogImpl final : public RtcEventLog {
   void LogVideoReceiveStreamConfig(
       const VideoReceiveStream::Config& config) override;
   void LogVideoSendStreamConfig(const VideoSendStream::Config& config) override;
+  void LogAudioReceiveStreamConfig(
+      const AudioReceiveStream::Config& config) override;
+  void LogAudioSendStreamConfig(const AudioSendStream::Config& config) override;
   void LogRtpHeader(PacketDirection direction,
                     MediaType media_type,
                     const uint8_t* header,
@@ -289,6 +292,46 @@ void RtcEventLogImpl::LogVideoSendStreamConfig(
   rtclog::EncoderConfig* encoder = sender_config->mutable_encoder();
   encoder->set_name(config.encoder_settings.payload_name);
   encoder->set_payload_type(config.encoder_settings.payload_type);
+  StoreEvent(&event);
+}
+
+void RtcEventLogImpl::LogAudioReceiveStreamConfig(
+    const AudioReceiveStream::Config& config) {
+  std::unique_ptr<rtclog::Event> event(new rtclog::Event());
+  event->set_timestamp_us(clock_->TimeInMicroseconds());
+  event->set_type(rtclog::Event::AUDIO_RECEIVER_CONFIG_EVENT);
+
+  rtclog::AudioReceiveConfig* receiver_config =
+      event->mutable_audio_receiver_config();
+  receiver_config->set_remote_ssrc(config.rtp.remote_ssrc);
+  receiver_config->set_local_ssrc(config.rtp.local_ssrc);
+
+  for (const auto& e : config.rtp.extensions) {
+    rtclog::RtpHeaderExtension* extension =
+        receiver_config->add_header_extensions();
+    extension->set_name(e.uri);
+    extension->set_id(e.id);
+  }
+  StoreEvent(&event);
+}
+
+void RtcEventLogImpl::LogAudioSendStreamConfig(
+    const AudioSendStream::Config& config) {
+  std::unique_ptr<rtclog::Event> event(new rtclog::Event());
+  event->set_timestamp_us(clock_->TimeInMicroseconds());
+  event->set_type(rtclog::Event::AUDIO_SENDER_CONFIG_EVENT);
+
+  rtclog::AudioSendConfig* sender_config = event->mutable_audio_sender_config();
+
+  sender_config->set_ssrc(config.rtp.ssrc);
+
+  for (const auto& e : config.rtp.extensions) {
+    rtclog::RtpHeaderExtension* extension =
+        sender_config->add_header_extensions();
+    extension->set_name(e.uri);
+    extension->set_id(e.id);
+  }
+
   StoreEvent(&event);
 }
 

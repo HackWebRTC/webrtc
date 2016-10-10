@@ -353,12 +353,20 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
       }
       case ParsedRtcEventLog::AUDIO_RECEIVER_CONFIG_EVENT: {
         AudioReceiveStream::Config config;
-        // TODO(terelius): Parse the audio configs once we have them.
+        parsed_log_.GetAudioReceiveConfig(i, &config);
+        StreamId stream(config.rtp.remote_ssrc, kIncomingPacket);
+        RegisterHeaderExtensions(config.rtp.extensions,
+                                 &extension_maps[stream]);
+        audio_ssrcs_.insert(stream);
         break;
       }
       case ParsedRtcEventLog::AUDIO_SENDER_CONFIG_EVENT: {
         AudioSendStream::Config config(nullptr);
-        // TODO(terelius): Parse the audio configs once we have them.
+        parsed_log_.GetAudioSendConfig(i, &config);
+        StreamId stream(config.rtp.ssrc, kOutgoingPacket);
+        RegisterHeaderExtensions(config.rtp.extensions,
+                                 &extension_maps[stream]);
+        audio_ssrcs_.insert(stream);
         break;
       }
       case ParsedRtcEventLog::RTP_EVENT: {

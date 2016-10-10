@@ -99,6 +99,15 @@ class ParsedRtcEventLog {
   // Only the fields that are stored in the protobuf will be written.
   void GetVideoSendConfig(size_t index, VideoSendStream::Config* config) const;
 
+  // Reads a config event to a (non-NULL) AudioReceiveStream::Config struct.
+  // Only the fields that are stored in the protobuf will be written.
+  void GetAudioReceiveConfig(size_t index,
+                             AudioReceiveStream::Config* config) const;
+
+  // Reads a config event to a (non-NULL) AudioSendStream::Config struct.
+  // Only the fields that are stored in the protobuf will be written.
+  void GetAudioSendConfig(size_t index, AudioSendStream::Config* config) const;
+
   // Reads the SSRC from the audio playout event at |index|. The SSRC is stored
   // in the output parameter ssrc. The output parameter can be set to nullptr
   // and in that case the function only asserts that the event is well formed.

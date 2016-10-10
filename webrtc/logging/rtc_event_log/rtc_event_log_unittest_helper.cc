@@ -102,7 +102,7 @@ MediaType GetRuntimeMediaType(rtclog::MediaType media_type) {
   return ::testing::AssertionSuccess();
 }
 
-void RtcEventLogTestHelper::VerifyReceiveStreamConfig(
+void RtcEventLogTestHelper::VerifyVideoReceiveStreamConfig(
     const ParsedRtcEventLog& parsed_log,
     size_t index,
     const VideoReceiveStream::Config& config) {
@@ -198,7 +198,7 @@ void RtcEventLogTestHelper::VerifyReceiveStreamConfig(
   }
 }
 
-void RtcEventLogTestHelper::VerifySendStreamConfig(
+void RtcEventLogTestHelper::VerifyVideoSendStreamConfig(
     const ParsedRtcEventLog& parsed_log,
     size_t index,
     const VideoSendStream::Config& config) {
@@ -268,6 +268,82 @@ void RtcEventLogTestHelper::VerifySendStreamConfig(
             parsed_config.encoder_settings.payload_name);
   EXPECT_EQ(config.encoder_settings.payload_type,
             parsed_config.encoder_settings.payload_type);
+}
+
+void RtcEventLogTestHelper::VerifyAudioReceiveStreamConfig(
+    const ParsedRtcEventLog& parsed_log,
+    size_t index,
+    const AudioReceiveStream::Config& config) {
+  const rtclog::Event& event = parsed_log.events_[index];
+  ASSERT_TRUE(IsValidBasicEvent(event));
+  ASSERT_EQ(rtclog::Event::AUDIO_RECEIVER_CONFIG_EVENT, event.type());
+  const rtclog::AudioReceiveConfig& receiver_config =
+      event.audio_receiver_config();
+  // Check SSRCs.
+  ASSERT_TRUE(receiver_config.has_remote_ssrc());
+  EXPECT_EQ(config.rtp.remote_ssrc, receiver_config.remote_ssrc());
+  ASSERT_TRUE(receiver_config.has_local_ssrc());
+  EXPECT_EQ(config.rtp.local_ssrc, receiver_config.local_ssrc());
+  // Check header extensions.
+  ASSERT_EQ(static_cast<int>(config.rtp.extensions.size()),
+            receiver_config.header_extensions_size());
+  for (int i = 0; i < receiver_config.header_extensions_size(); i++) {
+    ASSERT_TRUE(receiver_config.header_extensions(i).has_name());
+    ASSERT_TRUE(receiver_config.header_extensions(i).has_id());
+    const std::string& name = receiver_config.header_extensions(i).name();
+    int id = receiver_config.header_extensions(i).id();
+    EXPECT_EQ(config.rtp.extensions[i].id, id);
+    EXPECT_EQ(config.rtp.extensions[i].uri, name);
+  }
+
+  // Check consistency of the parser.
+  AudioReceiveStream::Config parsed_config;
+  parsed_log.GetAudioReceiveConfig(index, &parsed_config);
+  EXPECT_EQ(config.rtp.remote_ssrc, parsed_config.rtp.remote_ssrc);
+  EXPECT_EQ(config.rtp.local_ssrc, parsed_config.rtp.local_ssrc);
+  // Check header extensions.
+  EXPECT_EQ(config.rtp.extensions.size(), parsed_config.rtp.extensions.size());
+  for (size_t i = 0; i < parsed_config.rtp.extensions.size(); i++) {
+    EXPECT_EQ(config.rtp.extensions[i].uri,
+              parsed_config.rtp.extensions[i].uri);
+    EXPECT_EQ(config.rtp.extensions[i].id, parsed_config.rtp.extensions[i].id);
+  }
+}
+
+void RtcEventLogTestHelper::VerifyAudioSendStreamConfig(
+    const ParsedRtcEventLog& parsed_log,
+    size_t index,
+    const AudioSendStream::Config& config) {
+  const rtclog::Event& event = parsed_log.events_[index];
+  ASSERT_TRUE(IsValidBasicEvent(event));
+  ASSERT_EQ(rtclog::Event::AUDIO_SENDER_CONFIG_EVENT, event.type());
+  const rtclog::AudioSendConfig& sender_config = event.audio_sender_config();
+  // Check SSRCs.
+  EXPECT_EQ(config.rtp.ssrc, sender_config.ssrc());
+  // Check header extensions.
+  ASSERT_EQ(static_cast<int>(config.rtp.extensions.size()),
+            sender_config.header_extensions_size());
+  for (int i = 0; i < sender_config.header_extensions_size(); i++) {
+    ASSERT_TRUE(sender_config.header_extensions(i).has_name());
+    ASSERT_TRUE(sender_config.header_extensions(i).has_id());
+    const std::string& name = sender_config.header_extensions(i).name();
+    int id = sender_config.header_extensions(i).id();
+    EXPECT_EQ(config.rtp.extensions[i].id, id);
+    EXPECT_EQ(config.rtp.extensions[i].uri, name);
+  }
+
+  // Check consistency of the parser.
+  AudioSendStream::Config parsed_config(nullptr);
+  parsed_log.GetAudioSendConfig(index, &parsed_config);
+  // Check SSRCs
+  EXPECT_EQ(config.rtp.ssrc, parsed_config.rtp.ssrc);
+  // Check header extensions.
+  EXPECT_EQ(config.rtp.extensions.size(), parsed_config.rtp.extensions.size());
+  for (size_t i = 0; i < parsed_config.rtp.extensions.size(); i++) {
+    EXPECT_EQ(config.rtp.extensions[i].uri,
+              parsed_config.rtp.extensions[i].uri);
+    EXPECT_EQ(config.rtp.extensions[i].id, parsed_config.rtp.extensions[i].id);
+  }
 }
 
 void RtcEventLogTestHelper::VerifyRtpEvent(const ParsedRtcEventLog& parsed_log,

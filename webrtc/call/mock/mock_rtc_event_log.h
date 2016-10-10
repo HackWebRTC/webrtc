@@ -34,6 +34,12 @@ class MockRtcEventLog : public RtcEventLog {
   MOCK_METHOD1(LogVideoSendStreamConfig,
                void(const webrtc::VideoSendStream::Config& config));
 
+  MOCK_METHOD1(LogAudioReceiveStreamConfig,
+               void(const webrtc::AudioReceiveStream::Config& config));
+
+  MOCK_METHOD1(LogAudioSendStreamConfig,
+               void(const webrtc::AudioSendStream::Config& config));
+
   MOCK_METHOD4(LogRtpHeader,
                void(PacketDirection direction,
                     MediaType media_type,

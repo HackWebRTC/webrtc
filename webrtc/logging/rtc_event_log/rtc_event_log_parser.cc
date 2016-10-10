@@ -104,6 +104,20 @@ std::pair<uint64_t, bool> ParseVarInt(std::istream& stream) {
   return std::make_pair(varint, false);
 }
 
+void GetHeaderExtensions(
+    std::vector<RtpExtension>* header_extensions,
+    const google::protobuf::RepeatedPtrField<rtclog::RtpHeaderExtension>&
+        proto_header_extensions) {
+  header_extensions->clear();
+  for (auto& p : proto_header_extensions) {
+    RTC_CHECK(p.has_name());
+    RTC_CHECK(p.has_id());
+    const std::string& name = p.name();
+    int id = p.id();
+    header_extensions->push_back(RtpExtension(name, id));
+  }
+}
+
 }  // namespace
 
 bool ParsedRtcEventLog::ParseFile(const std::string& filename) {
@@ -311,14 +325,8 @@ void ParsedRtcEventLog::GetVideoReceiveConfig(
     config->rtp.rtx.insert(std::make_pair(map.payload_type(), rtx_pair));
   }
   // Get header extensions.
-  config->rtp.extensions.clear();
-  for (int i = 0; i < receiver_config.header_extensions_size(); i++) {
-    RTC_CHECK(receiver_config.header_extensions(i).has_name());
-    RTC_CHECK(receiver_config.header_extensions(i).has_id());
-    const std::string& name = receiver_config.header_extensions(i).name();
-    int id = receiver_config.header_extensions(i).id();
-    config->rtp.extensions.push_back(RtpExtension(name, id));
-  }
+  GetHeaderExtensions(&config->rtp.extensions,
+                      receiver_config.header_extensions());
   // Get decoders.
   config->decoders.clear();
   for (int i = 0; i < receiver_config.decoders_size(); i++) {
@@ -347,14 +355,8 @@ void ParsedRtcEventLog::GetVideoSendConfig(
     config->rtp.ssrcs.push_back(sender_config.ssrcs(i));
   }
   // Get header extensions.
-  config->rtp.extensions.clear();
-  for (int i = 0; i < sender_config.header_extensions_size(); i++) {
-    RTC_CHECK(sender_config.header_extensions(i).has_name());
-    RTC_CHECK(sender_config.header_extensions(i).has_id());
-    const std::string& name = sender_config.header_extensions(i).name();
-    int id = sender_config.header_extensions(i).id();
-    config->rtp.extensions.push_back(RtpExtension(name, id));
-  }
+  GetHeaderExtensions(&config->rtp.extensions,
+                      sender_config.header_extensions());
   // Get RTX settings.
   config->rtp.rtx.ssrcs.clear();
   for (int i = 0; i < sender_config.rtx_ssrcs_size(); i++) {
@@ -374,6 +376,45 @@ void ParsedRtcEventLog::GetVideoSendConfig(
   config->encoder_settings.payload_name = sender_config.encoder().name();
   config->encoder_settings.payload_type =
       sender_config.encoder().payload_type();
+}
+
+void ParsedRtcEventLog::GetAudioReceiveConfig(
+    size_t index,
+    AudioReceiveStream::Config* config) const {
+  RTC_CHECK_LT(index, GetNumberOfEvents());
+  const rtclog::Event& event = events_[index];
+  RTC_CHECK(config != nullptr);
+  RTC_CHECK(event.has_type());
+  RTC_CHECK_EQ(event.type(), rtclog::Event::AUDIO_RECEIVER_CONFIG_EVENT);
+  RTC_CHECK(event.has_audio_receiver_config());
+  const rtclog::AudioReceiveConfig& receiver_config =
+      event.audio_receiver_config();
+  // Get SSRCs.
+  RTC_CHECK(receiver_config.has_remote_ssrc());
+  config->rtp.remote_ssrc = receiver_config.remote_ssrc();
+  RTC_CHECK(receiver_config.has_local_ssrc());
+  config->rtp.local_ssrc = receiver_config.local_ssrc();
+  // Get header extensions.
+  GetHeaderExtensions(&config->rtp.extensions,
+                      receiver_config.header_extensions());
+}
+
+void ParsedRtcEventLog::GetAudioSendConfig(
+    size_t index,
+    AudioSendStream::Config* config) const {
+  RTC_CHECK_LT(index, GetNumberOfEvents());
+  const rtclog::Event& event = events_[index];
+  RTC_CHECK(config != nullptr);
+  RTC_CHECK(event.has_type());
+  RTC_CHECK_EQ(event.type(), rtclog::Event::AUDIO_SENDER_CONFIG_EVENT);
+  RTC_CHECK(event.has_audio_sender_config());
+  const rtclog::AudioSendConfig& sender_config = event.audio_sender_config();
+  // Get SSRCs.
+  RTC_CHECK(sender_config.has_ssrc());
+  config->rtp.ssrc = sender_config.ssrc();
+  // Get header extensions.
+  GetHeaderExtensions(&config->rtp.extensions,
+                      sender_config.header_extensions());
 }
 
 void ParsedRtcEventLog::GetAudioPlayout(size_t index, uint32_t* ssrc) const {

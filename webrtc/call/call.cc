@@ -370,6 +370,7 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
     const webrtc::AudioSendStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateAudioSendStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
+  event_log_->LogAudioSendStreamConfig(config);
   AudioSendStream* send_stream = new AudioSendStream(
       config, config_.audio_state, &worker_queue_, congestion_controller_.get(),
       bitrate_allocator_.get(), event_log_);
@@ -407,6 +408,7 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
     const webrtc::AudioReceiveStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateAudioReceiveStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
+  event_log_->LogAudioReceiveStreamConfig(config);
   AudioReceiveStream* receive_stream = new AudioReceiveStream(
       congestion_controller_.get(), config, config_.audio_state, event_log_);
   {
