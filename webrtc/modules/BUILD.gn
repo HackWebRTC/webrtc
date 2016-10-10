@@ -405,6 +405,7 @@ if (rtc_include_tests) {
       "rtp_rtcp/source/fec_test_helper.cc",
       "rtp_rtcp/source/fec_test_helper.h",
       "rtp_rtcp/source/flexfec_header_reader_writer_unittest.cc",
+      "rtp_rtcp/source/flexfec_receiver_unittest.cc",
       "rtp_rtcp/source/mock/mock_rtp_payload_strategy.h",
       "rtp_rtcp/source/nack_rtx_unittest.cc",
       "rtp_rtcp/source/packet_loss_stats_unittest.cc",

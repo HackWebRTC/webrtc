@@ -19,6 +19,7 @@
       'sources': [
         # Common
         'include/fec_receiver.h',
+        'include/flexfec_receiver.h',
         'include/receive_statistics.h',
         'include/remote_ntp_time_estimator.h',
         'include/rtp_header_parser.h',
@@ -29,6 +30,8 @@
         'source/byte_io.h',
         'source/fec_receiver_impl.cc',
         'source/fec_receiver_impl.h',
+        'source/flexfec_receiver_impl.cc',
+        'source/flexfec_receiver_impl.h',
         'source/packet_loss_stats.cc',
         'source/packet_loss_stats.h',
         'source/playout_delay_oracle.cc',
@@ -164,6 +167,7 @@
         'source/vp8_partition_aggregator.h',
         # Mocks
         'mocks/mock_rtp_rtcp.h',
+        'mocks/mock_recovered_packet_receiver.h',
         'source/mock/mock_rtp_payload_strategy.h',
        ], # source
         'conditions': [

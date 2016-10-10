@@ -11,6 +11,7 @@ import("../../build/webrtc.gni")
 rtc_static_library("rtp_rtcp") {
   sources = [
     "include/fec_receiver.h",
+    "include/flexfec_receiver.h",
     "include/receive_statistics.h",
     "include/remote_ntp_time_estimator.h",
     "include/rtp_header_parser.h",
@@ -28,6 +29,8 @@ rtc_static_library("rtp_rtcp") {
     "source/fec_receiver_impl.h",
     "source/flexfec_header_reader_writer.cc",
     "source/flexfec_header_reader_writer.h",
+    "source/flexfec_receiver_impl.cc",
+    "source/flexfec_receiver_impl.h",
     "source/forward_error_correction.cc",
     "source/forward_error_correction.h",
     "source/forward_error_correction_internal.cc",
