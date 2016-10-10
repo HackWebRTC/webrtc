@@ -18,6 +18,7 @@
 
 #include <ApplicationServices/ApplicationServices.h>
 #include <Cocoa/Cocoa.h>
+#include <CoreGraphics/CoreGraphics.h>
 #include <dlfcn.h>
 #include <OpenGL/CGLMacro.h>
 #include <OpenGL/OpenGL.h>
@@ -42,6 +43,74 @@
 namespace webrtc {
 
 namespace {
+
+// CGDisplayStreamRefs need to be destroyed asynchronously after receiving a
+// kCGDisplayStreamFrameStatusStopped callback from CoreGraphics. This may
+// happen after the ScreenCapturerMac has been destroyed. DisplayStreamManager
+// is responsible for destroying all extant CGDisplayStreamRefs, and will
+// destroy itself once it's done.
+class DisplayStreamManager {
+ public:
+  int GetUniqueId() { return ++unique_id_generator_; }
+  void DestroyStream(int unique_id) {
+    auto it = display_stream_wrappers_.find(unique_id);
+    RTC_CHECK(it != display_stream_wrappers_.end());
+    RTC_CHECK(!it->second.active);
+    CFRelease(it->second.stream);
+    display_stream_wrappers_.erase(it);
+
+    if (ready_for_self_destruction_ && display_stream_wrappers_.empty())
+      delete this;
+  }
+
+  void SaveStream(int unique_id, CGDisplayStreamRef stream) {
+    RTC_CHECK(unique_id <= unique_id_generator_);
+    DisplayStreamWrapper wrapper;
+    wrapper.stream = stream;
+    display_stream_wrappers_[unique_id] = wrapper;
+  }
+
+  void UnregisterActiveStreams() {
+    for (auto& pair : display_stream_wrappers_) {
+      DisplayStreamWrapper& wrapper = pair.second;
+      if (wrapper.active) {
+        wrapper.active = false;
+// CGDisplayStream* functions are only available in 10.8+. Chrome only supports
+// 10.9+, but we can't remove these warning suppressions until the deployment
+// target is updated. https://crbug.com/579255
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability"
+        CGDisplayStreamStop(wrapper.stream);
+#pragma clang diagnostic pop
+      }
+    }
+  }
+
+  void PrepareForSelfDestruction() {
+    ready_for_self_destruction_ = true;
+
+    if (display_stream_wrappers_.empty())
+      delete this;
+  }
+
+  // Once the DisplayStreamManager is ready for destruction, the
+  // ScreenCapturerMac is no longer present. Any updates should be ignored.
+  bool ShouldIgnoreUpdates() { return ready_for_self_destruction_; }
+
+ private:
+  struct DisplayStreamWrapper {
+    // The registered CGDisplayStreamRef.
+    CGDisplayStreamRef stream = nullptr;
+
+    // Set to false when the stream has been stopped. An asynchronous callback
+    // from CoreGraphics will let us destroy the CGDisplayStreamRef.
+    bool active = true;
+  };
+
+  std::map<int, DisplayStreamWrapper> display_stream_wrappers_;
+  int unique_id_generator_ = 0;
+  bool ready_for_self_destruction_ = false;
+};
 
 // Definitions used to dynamic-link to deprecated OS 10.6 functions.
 const char* kApplicationServicesLibraryName =
@@ -218,16 +287,11 @@ class ScreenCapturerMac : public ScreenCapturer {
   void UnregisterRefreshAndMoveHandlers();
 
   void ScreenRefresh(CGRectCount count, const CGRect *rect_array);
-  void ScreenUpdateMove(CGScreenUpdateMoveDelta delta,
+  void ScreenUpdateMove(CGFloat delta_x,
+                        CGFloat delta_y,
                         size_t count,
-                        const CGRect *rect_array);
-  static void ScreenRefreshCallback(CGRectCount count,
-                                    const CGRect *rect_array,
-                                    void *user_parameter);
-  static void ScreenUpdateMoveCallback(CGScreenUpdateMoveDelta delta,
-                                       size_t count,
-                                       const CGRect *rect_array,
-                                       void *user_parameter);
+                        const CGRect* rect_array);
+  void ScreenRefreshCallback(CGRectCount count, const CGRect* rect_array);
   void ReleaseBuffers();
 
   std::unique_ptr<DesktopFrame> CreateFrame();
@@ -273,6 +337,10 @@ class ScreenCapturerMac : public ScreenCapturer {
 
   CGWindowID excluded_window_ = 0;
 
+  // A self-owned object that will destroy itself after ScreenCapturerMac and
+  // all display streams have been destroyed..
+  DisplayStreamManager* display_stream_manager_;
+
   RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCapturerMac);
 };
 
@@ -301,22 +369,25 @@ class InvertedDesktopFrame : public DesktopFrame {
 
 ScreenCapturerMac::ScreenCapturerMac(
     rtc::scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor)
-    : desktop_config_monitor_(desktop_config_monitor) {}
+    : desktop_config_monitor_(desktop_config_monitor) {
+  display_stream_manager_ = new DisplayStreamManager;
+}
 
 ScreenCapturerMac::~ScreenCapturerMac() {
   ReleaseBuffers();
+  display_stream_manager_->PrepareForSelfDestruction();
   UnregisterRefreshAndMoveHandlers();
   dlclose(app_services_library_);
   dlclose(opengl_library_);
 }
 
 bool ScreenCapturerMac::Init() {
-  if (!RegisterRefreshAndMoveHandlers()) {
-    return false;
-  }
   desktop_config_monitor_->Lock();
   desktop_config_ = desktop_config_monitor_->desktop_configuration();
   desktop_config_monitor_->Unlock();
+  if (!RegisterRefreshAndMoveHandlers()) {
+    return false;
+  }
   ScreenConfigurationChanged();
   return true;
 }
@@ -848,28 +919,77 @@ void ScreenCapturerMac::ScreenConfigurationChanged() {
 }
 
 bool ScreenCapturerMac::RegisterRefreshAndMoveHandlers() {
-  CGError err = CGRegisterScreenRefreshCallback(
-      ScreenCapturerMac::ScreenRefreshCallback, this);
-  if (err != kCGErrorSuccess) {
-    LOG(LS_ERROR) << "CGRegisterScreenRefreshCallback " << err;
-    return false;
-  }
+  desktop_config_ = desktop_config_monitor_->desktop_configuration();
+  for (const auto& config : desktop_config_.displays) {
+    size_t pixel_width = config.pixel_bounds.width();
+    size_t pixel_height = config.pixel_bounds.height();
+    if (pixel_width == 0 || pixel_height == 0)
+      continue;
+    int unique_id = display_stream_manager_->GetUniqueId();
+    CGDirectDisplayID display_id = config.id;
+    CGDisplayStreamFrameAvailableHandler handler =
+        ^(CGDisplayStreamFrameStatus status, uint64_t display_time,
+          IOSurfaceRef frame_surface, CGDisplayStreamUpdateRef updateRef) {
+          if (status == kCGDisplayStreamFrameStatusStopped) {
+            display_stream_manager_->DestroyStream(unique_id);
+            return;
+          }
 
-  err = CGScreenRegisterMoveCallback(
-      ScreenCapturerMac::ScreenUpdateMoveCallback, this);
-  if (err != kCGErrorSuccess) {
-    LOG(LS_ERROR) << "CGScreenRegisterMoveCallback " << err;
-    return false;
+          if (display_stream_manager_->ShouldIgnoreUpdates())
+            return;
+
+          // Only pay attention to frame updates.
+          if (status != kCGDisplayStreamFrameStatusFrameComplete)
+            return;
+
+          size_t count = 0;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability"
+// TODO(erikchen): Use kCGDisplayStreamUpdateDirtyRects.
+          const CGRect* rects = CGDisplayStreamUpdateGetRects(
+              updateRef, kCGDisplayStreamUpdateMovedRects, &count);
+#pragma clang diagnostic pop
+          if (count != 0) {
+            CGFloat dx = 0;
+            CGFloat dy = 0;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability"
+            CGDisplayStreamUpdateGetMovedRectsDelta(updateRef, &dx, &dy);
+#pragma clang diagnostic pop
+            ScreenUpdateMove(dx, dy, count, rects);
+          }
+
+          count = 0;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability"
+          rects = CGDisplayStreamUpdateGetRects(
+              updateRef, kCGDisplayStreamUpdateRefreshedRects, &count);
+#pragma clang diagnostic pop
+          if (count != 0) {
+            // According to CGDisplayStream.h, it's safe to call
+            // CGDisplayStreamStop() from within the callback.
+            ScreenRefreshCallback(count, rects);
+          }
+        };
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability"
+    CGDisplayStreamRef display_stream = CGDisplayStreamCreate(
+        display_id, pixel_width, pixel_height, 'BGRA', nullptr, handler);
+#pragma clang diagnostic pop
+    if (display_stream) {
+      display_stream_manager_->SaveStream(unique_id, display_stream);
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability"
+      CGDisplayStreamStart(display_stream);
+#pragma clang diagnostic pop
+    }
   }
 
   return true;
 }
 
 void ScreenCapturerMac::UnregisterRefreshAndMoveHandlers() {
-  CGUnregisterScreenRefreshCallback(
-      ScreenCapturerMac::ScreenRefreshCallback, this);
-  CGScreenUnregisterMoveCallback(
-      ScreenCapturerMac::ScreenUpdateMoveCallback, this);
+  display_stream_manager_->UnregisterActiveStreams();
 }
 
 void ScreenCapturerMac::ScreenRefresh(CGRectCount count,
@@ -891,13 +1011,14 @@ void ScreenCapturerMac::ScreenRefresh(CGRectCount count,
   helper_.InvalidateRegion(region);
 }
 
-void ScreenCapturerMac::ScreenUpdateMove(CGScreenUpdateMoveDelta delta,
+void ScreenCapturerMac::ScreenUpdateMove(CGFloat delta_x,
+                                         CGFloat delta_y,
                                          size_t count,
                                          const CGRect* rect_array) {
   // Translate |rect_array| to identify the move's destination.
   CGRect refresh_rects[count];
   for (CGRectCount i = 0; i < count; ++i) {
-    refresh_rects[i] = CGRectOffset(rect_array[i], delta.dX, delta.dY);
+    refresh_rects[i] = CGRectOffset(rect_array[i], delta_x, delta_y);
   }
 
   // Currently we just treat move events the same as refreshes.
@@ -905,23 +1026,10 @@ void ScreenCapturerMac::ScreenUpdateMove(CGScreenUpdateMoveDelta delta,
 }
 
 void ScreenCapturerMac::ScreenRefreshCallback(CGRectCount count,
-                                              const CGRect* rect_array,
-                                              void* user_parameter) {
-  ScreenCapturerMac* capturer =
-      reinterpret_cast<ScreenCapturerMac*>(user_parameter);
-  if (capturer->screen_pixel_bounds_.is_empty())
-    capturer->ScreenConfigurationChanged();
-  capturer->ScreenRefresh(count, rect_array);
-}
-
-void ScreenCapturerMac::ScreenUpdateMoveCallback(
-    CGScreenUpdateMoveDelta delta,
-    size_t count,
-    const CGRect* rect_array,
-    void* user_parameter) {
-  ScreenCapturerMac* capturer =
-      reinterpret_cast<ScreenCapturerMac*>(user_parameter);
-  capturer->ScreenUpdateMove(delta, count, rect_array);
+                                              const CGRect* rect_array) {
+  if (screen_pixel_bounds_.is_empty())
+    ScreenConfigurationChanged();
+  ScreenRefresh(count, rect_array);
 }
 
 std::unique_ptr<DesktopFrame> ScreenCapturerMac::CreateFrame() {
