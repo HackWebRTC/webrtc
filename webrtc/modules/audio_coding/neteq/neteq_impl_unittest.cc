@@ -381,6 +381,39 @@ TEST_F(NetEqImplTest, InsertPacketsUntilBufferIsFull) {
   EXPECT_EQ(rtp_header.header.sequenceNumber, test_header->sequenceNumber);
 }
 
+TEST_F(NetEqImplTest, TestDtmfPacket) {
+  UseNoMocks();
+  CreateInstance();
+  const size_t kPayloadLength = 4;
+  const uint8_t kPayloadType = 110;
+  const uint32_t kReceiveTime = 17;
+  const int kSampleRateHz = 8000;
+  // Event: 2, E bit, Volume: 63, Length: 4176.
+  uint8_t payload[kPayloadLength] = { 0x02, 0x80 + 0x3F, 0x10, 0xF0 };
+  WebRtcRTPHeader rtp_header;
+  rtp_header.header.payloadType = kPayloadType;
+  rtp_header.header.sequenceNumber = 0x1234;
+  rtp_header.header.timestamp = 0x12345678;
+  rtp_header.header.ssrc = 0x87654321;
+
+  EXPECT_EQ(NetEq::kOK, neteq_->RegisterPayloadType(
+      NetEqDecoder::kDecoderAVT, "telephone-event", kPayloadType));
+
+  // Insert one packet.
+  EXPECT_EQ(NetEq::kOK,
+            neteq_->InsertPacket(rtp_header, payload, kReceiveTime));
+
+  // Pull audio once.
+  const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateHz / 1000);
+  AudioFrame output;
+  bool muted;
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
+  ASSERT_FALSE(muted);
+  ASSERT_EQ(kMaxOutputSize, output.samples_per_channel_);
+  EXPECT_EQ(1u, output.num_channels_);
+  EXPECT_EQ(AudioFrame::kNormalSpeech, output.speech_type_);
+}
+
 // This test verifies that timestamps propagate from the incoming packets
 // through to the sync buffer and to the playout timestamp.
 TEST_F(NetEqImplTest, VerifyTimestampPropagation) {

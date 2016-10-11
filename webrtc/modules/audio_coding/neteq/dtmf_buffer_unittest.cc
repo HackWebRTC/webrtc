@@ -282,7 +282,7 @@ TEST(DtmfBuffer, InvalidEvents) {
   // Invalid volume.
   event.volume = -1;
   EXPECT_EQ(DtmfBuffer::kInvalidEventParameters, buffer.InsertEvent(event));
-  event.volume = 37;
+  event.volume = 64;
   EXPECT_EQ(DtmfBuffer::kInvalidEventParameters, buffer.InsertEvent(event));
   event.volume = 0;  // Valid value;
 
