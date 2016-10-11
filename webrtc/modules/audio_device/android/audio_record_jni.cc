@@ -37,7 +37,6 @@ AudioRecordJni::JavaAudioRecord::JavaAudioRecord(
       start_recording_(native_reg->GetMethodId("startRecording", "()Z")),
       stop_recording_(native_reg->GetMethodId("stopRecording", "()Z")),
       enable_built_in_aec_(native_reg->GetMethodId("enableBuiltInAEC", "(Z)Z")),
-      enable_built_in_agc_(native_reg->GetMethodId("enableBuiltInAGC", "(Z)Z")),
       enable_built_in_ns_(native_reg->GetMethodId("enableBuiltInNS", "(Z)Z")) {}
 
 AudioRecordJni::JavaAudioRecord::~JavaAudioRecord() {}
@@ -59,11 +58,6 @@ bool AudioRecordJni::JavaAudioRecord::StopRecording() {
 
 bool AudioRecordJni::JavaAudioRecord::EnableBuiltInAEC(bool enable) {
   return audio_record_->CallBooleanMethod(enable_built_in_aec_,
-                                          static_cast<jboolean>(enable));
-}
-
-bool AudioRecordJni::JavaAudioRecord::EnableBuiltInAGC(bool enable) {
-  return audio_record_->CallBooleanMethod(enable_built_in_agc_,
                                           static_cast<jboolean>(enable));
 }
 
@@ -201,9 +195,9 @@ int32_t AudioRecordJni::EnableBuiltInAEC(bool enable) {
 }
 
 int32_t AudioRecordJni::EnableBuiltInAGC(bool enable) {
-  ALOGD("EnableBuiltInAGC%s", GetThreadInfo().c_str());
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  return j_audio_record_->EnableBuiltInAGC(enable) ? 0 : -1;
+  // TODO(henrika): possibly remove when no longer used by any client.
+  FATAL() << "Should never be called";
+  return -1;
 }
 
 int32_t AudioRecordJni::EnableBuiltInNS(bool enable) {

@@ -138,15 +138,6 @@ public class WebRtcAudioRecord {
     return effects.setAEC(enable);
   }
 
-  private boolean enableBuiltInAGC(boolean enable) {
-    Logging.d(TAG, "enableBuiltInAGC(" + enable + ')');
-    if (effects == null) {
-      Logging.e(TAG, "Built-in AGC is not supported on this platform");
-      return false;
-    }
-    return effects.setAGC(enable);
-  }
-
   private boolean enableBuiltInNS(boolean enable) {
     Logging.d(TAG, "enableBuiltInNS(" + enable + ')');
     if (effects == null) {

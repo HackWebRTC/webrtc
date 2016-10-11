@@ -39,9 +39,6 @@ public final class WebRtcAudioUtils {
       "ONE A2005", // OnePlus 2
       "MotoG3", // Moto G (3rd Generation)
   };
-  private static final String[] BLACKLISTED_AGC_MODELS = new String[] {
-      "Nexus 10", "Nexus 9",
-  };
   private static final String[] BLACKLISTED_NS_MODELS = new String[] {
       "Nexus 10", "Nexus 9",
       "ONE A2005", // OnePlus 2
@@ -54,9 +51,9 @@ public final class WebRtcAudioUtils {
   // Set to true if setDefaultSampleRateHz() has been called.
   private static boolean isDefaultSampleRateOverridden = false;
 
-  // By default, utilize hardware based audio effects when available.
+  // By default, utilize hardware based audio effects for AEC and NS when
+  // available.
   private static boolean useWebRtcBasedAcousticEchoCanceler = false;
-  private static boolean useWebRtcBasedAutomaticGainControl = false;
   private static boolean useWebRtcBasedNoiseSuppressor = false;
 
   // Call these methods if any hardware based effect shall be replaced by a
@@ -64,11 +61,12 @@ public final class WebRtcAudioUtils {
   public static synchronized void setWebRtcBasedAcousticEchoCanceler(boolean enable) {
     useWebRtcBasedAcousticEchoCanceler = enable;
   }
-  public static synchronized void setWebRtcBasedAutomaticGainControl(boolean enable) {
-    useWebRtcBasedAutomaticGainControl = enable;
-  }
   public static synchronized void setWebRtcBasedNoiseSuppressor(boolean enable) {
     useWebRtcBasedNoiseSuppressor = enable;
+  }
+  public static synchronized void setWebRtcBasedAutomaticGainControl(boolean enable) {
+    // TODO(henrika): deprecated; remove when no longer used by any client.
+    Logging.w(TAG, "setWebRtcBasedAutomaticGainControl() is deprecated");
   }
 
   public static synchronized boolean useWebRtcBasedAcousticEchoCanceler() {
@@ -77,20 +75,19 @@ public final class WebRtcAudioUtils {
     }
     return useWebRtcBasedAcousticEchoCanceler;
   }
-  public static synchronized boolean useWebRtcBasedAutomaticGainControl() {
-    if (useWebRtcBasedAutomaticGainControl) {
-      Logging.w(TAG, "Overriding default behavior; now using WebRTC AGC!");
-    }
-    return useWebRtcBasedAutomaticGainControl;
-  }
   public static synchronized boolean useWebRtcBasedNoiseSuppressor() {
     if (useWebRtcBasedNoiseSuppressor) {
       Logging.w(TAG, "Overriding default behavior; now using WebRTC NS!");
     }
     return useWebRtcBasedNoiseSuppressor;
   }
+  // TODO(henrika): deprecated; remove when no longer used by any client.
+  public static synchronized boolean useWebRtcBasedAutomaticGainControl() {
+    // Always return true here to avoid trying to use any built-in AGC.
+    return true;
+  }
 
-  // Returns true if the device supports an audio effect (AEC, AGC or NS).
+  // Returns true if the device supports an audio effect (AEC or NS).
   // Four conditions must be fulfilled if functions are to return true:
   // 1) the platform must support the built-in (HW) effect,
   // 2) explicit use (override) of a WebRTC based version must not be set,
@@ -99,11 +96,13 @@ public final class WebRtcAudioUtils {
   public static boolean isAcousticEchoCancelerSupported() {
     return WebRtcAudioEffects.canUseAcousticEchoCanceler();
   }
-  public static boolean isAutomaticGainControlSupported() {
-    return WebRtcAudioEffects.canUseAutomaticGainControl();
-  }
   public static boolean isNoiseSuppressorSupported() {
     return WebRtcAudioEffects.canUseNoiseSuppressor();
+  }
+  // TODO(henrika): deprecated; remove when no longer used by any client.
+  public static boolean isAutomaticGainControlSupported() {
+    // Always return false here to avoid trying to use any built-in AGC.
+    return false;
   }
 
   // Call this method if the default handling of querying the native sample
@@ -124,10 +123,6 @@ public final class WebRtcAudioUtils {
 
   public static List<String> getBlackListedModelsForAecUsage() {
     return Arrays.asList(WebRtcAudioUtils.BLACKLISTED_AEC_MODELS);
-  }
-
-  public static List<String> getBlackListedModelsForAgcUsage() {
-    return Arrays.asList(WebRtcAudioUtils.BLACKLISTED_AGC_MODELS);
   }
 
   public static List<String> getBlackListedModelsForNsUsage() {

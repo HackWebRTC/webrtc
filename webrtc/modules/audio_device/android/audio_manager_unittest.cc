@@ -113,8 +113,7 @@ TEST_F(AudioManagerTest, IsAcousticEchoCancelerSupported) {
 }
 
 TEST_F(AudioManagerTest, IsAutomaticGainControlSupported) {
-  PRINT("%sAutomatic Gain Control support: %s\n", kTag,
-        audio_manager()->IsAutomaticGainControlSupported() ? "Yes" : "No");
+  EXPECT_FALSE(audio_manager()->IsAutomaticGainControlSupported());
 }
 
 TEST_F(AudioManagerTest, IsNoiseSuppressorSupported) {

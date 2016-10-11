@@ -192,7 +192,9 @@ public class WebRtcAudioManager {
     channels = CHANNELS;
     sampleRate = getNativeOutputSampleRate();
     hardwareAEC = isAcousticEchoCancelerSupported();
-    hardwareAGC = isAutomaticGainControlSupported();
+    // TODO(henrika): use of hardware AGC is no longer supported. Currently
+    // hardcoded to false. To be removed.
+    hardwareAGC = false;
     hardwareNS = isNoiseSuppressorSupported();
     lowLatencyOutput = isLowLatencyOutputSupported();
     lowLatencyInput = isLowLatencyInputSupported();
@@ -278,7 +280,7 @@ public class WebRtcAudioManager {
     return framesPerBuffer == null ? DEFAULT_FRAME_PER_BUFFER : Integer.parseInt(framesPerBuffer);
   }
 
-  // Returns true if the device supports an audio effect (AEC, AGC or NS).
+  // Returns true if the device supports an audio effect (AEC or NS).
   // Four conditions must be fulfilled if functions are to return true:
   // 1) the platform must support the built-in (HW) effect,
   // 2) explicit use (override) of a WebRTC based version must not be set,
@@ -286,9 +288,6 @@ public class WebRtcAudioManager {
   // 4) the UUID of the effect must be approved (some UUIDs can be excluded).
   private static boolean isAcousticEchoCancelerSupported() {
     return WebRtcAudioEffects.canUseAcousticEchoCanceler();
-  }
-  private static boolean isAutomaticGainControlSupported() {
-    return WebRtcAudioEffects.canUseAutomaticGainControl();
   }
   private static boolean isNoiseSuppressorSupported() {
     return WebRtcAudioEffects.canUseNoiseSuppressor();

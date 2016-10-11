@@ -55,7 +55,6 @@ class AudioRecordJni {
     bool StartRecording();
     bool StopRecording();
     bool EnableBuiltInAEC(bool enable);
-    bool EnableBuiltInAGC(bool enable);
     bool EnableBuiltInNS(bool enable);
 
    private:
@@ -64,7 +63,6 @@ class AudioRecordJni {
     jmethodID start_recording_;
     jmethodID stop_recording_;
     jmethodID enable_built_in_aec_;
-    jmethodID enable_built_in_agc_;
     jmethodID enable_built_in_ns_;
   };
 
