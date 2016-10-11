@@ -373,7 +373,7 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
   event_log_->LogAudioSendStreamConfig(config);
   AudioSendStream* send_stream = new AudioSendStream(
       config, config_.audio_state, &worker_queue_, congestion_controller_.get(),
-      bitrate_allocator_.get(), event_log_);
+      bitrate_allocator_.get(), event_log_, call_stats_->rtcp_rtt_stats());
   {
     WriteLockScoped write_lock(*send_crit_);
     RTC_DCHECK(audio_send_ssrcs_.find(config.rtp.ssrc) ==

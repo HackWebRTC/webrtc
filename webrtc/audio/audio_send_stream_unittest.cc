@@ -20,6 +20,7 @@
 #include "webrtc/modules/congestion_controller/include/mock/mock_congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_estimator.h"
+#include "webrtc/modules/rtp_rtcp/mocks/mock_rtcp_rtt_stats.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/mock_voe_channel_proxy.h"
 #include "webrtc/test/mock_voice_engine.h"
@@ -109,6 +110,8 @@ struct ConfigHelper {
               .Times(1);
           EXPECT_CALL(*channel_proxy_, SetRtcEventLog(testing::IsNull()))
               .Times(1);  // Destructor resets the event log
+          EXPECT_CALL(*channel_proxy_, SetRtcpRttStats(&rtcp_rtt_stats_))
+              .Times(1);
           return channel_proxy_;
         }));
     stream_config_.voe_channel_id = kChannelId;
@@ -132,6 +135,7 @@ struct ConfigHelper {
   BitrateAllocator* bitrate_allocator() { return &bitrate_allocator_; }
   rtc::TaskQueue* worker_queue() { return &worker_queue_; }
   RtcEventLog* event_log() { return &event_log_; }
+  RtcpRttStats* rtcp_rtt_stats() { return &rtcp_rtt_stats_; }
 
   void SetupMockForSendTelephoneEvent() {
     EXPECT_TRUE(channel_proxy_);
@@ -186,6 +190,7 @@ struct ConfigHelper {
   testing::NiceMock<MockRemoteBitrateObserver> remote_bitrate_observer_;
   CongestionController congestion_controller_;
   MockRtcEventLog event_log_;
+  MockRtcpRttStats rtcp_rtt_stats_;
   testing::NiceMock<MockLimitObserver> limit_observer_;
   BitrateAllocator bitrate_allocator_;
   // |worker_queue| is defined last to ensure all pending tasks are cancelled
@@ -215,7 +220,7 @@ TEST(AudioSendStreamTest, ConstructDestruct) {
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
       helper.congestion_controller(), helper.bitrate_allocator(),
-      helper.event_log());
+      helper.event_log(), helper.rtcp_rtt_stats());
 }
 
 TEST(AudioSendStreamTest, SendTelephoneEvent) {
@@ -223,7 +228,7 @@ TEST(AudioSendStreamTest, SendTelephoneEvent) {
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
       helper.congestion_controller(), helper.bitrate_allocator(),
-      helper.event_log());
+      helper.event_log(), helper.rtcp_rtt_stats());
   helper.SetupMockForSendTelephoneEvent();
   EXPECT_TRUE(send_stream.SendTelephoneEvent(kTelephoneEventPayloadType,
       kTelephoneEventCode, kTelephoneEventDuration));
@@ -234,7 +239,7 @@ TEST(AudioSendStreamTest, SetMuted) {
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
       helper.congestion_controller(), helper.bitrate_allocator(),
-      helper.event_log());
+      helper.event_log(), helper.rtcp_rtt_stats());
   EXPECT_CALL(*helper.channel_proxy(), SetInputMute(true));
   send_stream.SetMuted(true);
 }
@@ -244,7 +249,7 @@ TEST(AudioSendStreamTest, GetStats) {
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
       helper.congestion_controller(), helper.bitrate_allocator(),
-      helper.event_log());
+      helper.event_log(), helper.rtcp_rtt_stats());
   helper.SetupMockForGetStats();
   AudioSendStream::Stats stats = send_stream.GetStats();
   EXPECT_EQ(kSsrc, stats.local_ssrc);
@@ -274,7 +279,7 @@ TEST(AudioSendStreamTest, GetStatsTypingNoiseDetected) {
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
       helper.congestion_controller(), helper.bitrate_allocator(),
-      helper.event_log());
+      helper.event_log(), helper.rtcp_rtt_stats());
   helper.SetupMockForGetStats();
   EXPECT_FALSE(send_stream.GetStats().typing_noise_detected);
 

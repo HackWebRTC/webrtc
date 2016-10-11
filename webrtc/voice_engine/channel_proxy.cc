@@ -214,6 +214,11 @@ void ChannelProxy::SetRtcEventLog(RtcEventLog* event_log) {
   channel()->SetRtcEventLog(event_log);
 }
 
+void ChannelProxy::SetRtcpRttStats(RtcpRttStats* rtcp_rtt_stats) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  channel()->SetRtcpRttStats(rtcp_rtt_stats);
+}
+
 Channel* ChannelProxy::channel() const {
   RTC_DCHECK(channel_owner_.channel());
   return channel_owner_.channel();
