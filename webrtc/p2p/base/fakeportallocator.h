@@ -94,8 +94,7 @@ class FakePortAllocatorSession : public PortAllocatorSession {
                            const std::string& content_name,
                            int component,
                            const std::string& ice_ufrag,
-                           const std::string& ice_pwd,
-                           bool ipv6_enabled)
+                           const std::string& ice_pwd)
       : PortAllocatorSession(content_name,
                              component,
                              ice_ufrag,
@@ -111,10 +110,10 @@ class FakePortAllocatorSession : public PortAllocatorSession {
                       "unittest",
                       rtc::IPAddress(in6addr_loopback),
                       64),
+        port_(),
         port_config_count_(0),
         stun_servers_(allocator->stun_servers()),
-        turn_servers_(allocator->turn_servers()),
-        ipv6_enabled_(ipv6_enabled) {
+        turn_servers_(allocator->turn_servers()) {
     ipv4_network_.AddIP(rtc::IPAddress(INADDR_LOOPBACK));
     ipv6_network_.AddIP(rtc::IPAddress(in6addr_loopback));
   }
@@ -123,20 +122,18 @@ class FakePortAllocatorSession : public PortAllocatorSession {
     candidate_filter_ = filter;
   }
 
-  Port* CreatePort(rtc::Network* network) {
-    Port* port = TestUDPPort::Create(network_thread_, factory_, network,
-                                     network->GetBestIP(), 0, 0, username(),
-                                     password(), std::string(), false);
-    AddPort(port);
-    return port;
-  }
-
   void StartGettingPorts() override {
-    if (!ipv4_port_) {
-      ipv4_port_.reset(CreatePort(&ipv4_network_));
-    }
-    if (!ipv6_port_ && ipv6_enabled_ && (flags() & PORTALLOCATOR_ENABLE_IPV6)) {
-      ipv6_port_.reset(CreatePort(&ipv6_network_));
+    if (!port_) {
+      rtc::Network& network =
+          (rtc::HasIPv6Enabled() && (flags() & PORTALLOCATOR_ENABLE_IPV6))
+              ? ipv6_network_
+              : ipv4_network_;
+      port_.reset(TestUDPPort::Create(network_thread_, factory_, &network,
+                                      network.GetBestIP(), 0, 0, username(),
+                                      password(), std::string(), false));
+      port_->SignalDestroyed.connect(
+          this, &FakePortAllocatorSession::OnPortDestroyed);
+      AddPort(port_.get());
     }
     ++port_config_count_;
     running_ = true;
@@ -152,14 +149,7 @@ class FakePortAllocatorSession : public PortAllocatorSession {
   std::vector<Candidate> ReadyCandidates() const override {
     return candidates_;
   }
-  void PruneAllPorts() override {
-    if (ipv4_port_) {
-      ipv4_port_->Prune();
-    }
-    if (ipv6_port_) {
-      ipv6_port_->Prune();
-    }
-  }
+  void PruneAllPorts() override { port_->Prune(); }
   bool CandidatesAllocationDone() const override { return allocation_done_; }
 
   int port_config_count() { return port_config_count_; }
@@ -189,8 +179,6 @@ class FakePortAllocatorSession : public PortAllocatorSession {
     port->set_generation(generation());
     port->SignalPortComplete.connect(this,
                                      &FakePortAllocatorSession::OnPortComplete);
-    port->SignalDestroyed.connect(this,
-                                  &FakePortAllocatorSession::OnPortDestroyed);
     port->PrepareAddress();
     ready_ports_.push_back(port);
     SignalPortReady(this, port);
@@ -206,19 +194,14 @@ class FakePortAllocatorSession : public PortAllocatorSession {
   }
   void OnPortDestroyed(cricket::PortInterface* port) {
     // Don't want to double-delete port if it deletes itself.
-    if (port == ipv4_port_.get()) {
-      ipv4_port_.release();
-    } else if (port == ipv6_port_.get()) {
-      ipv6_port_.release();
-    }
+    port_.release();
   }
 
   rtc::Thread* network_thread_;
   rtc::PacketSocketFactory* factory_;
   rtc::Network ipv4_network_;
   rtc::Network ipv6_network_;
-  std::unique_ptr<cricket::Port> ipv4_port_;
-  std::unique_ptr<cricket::Port> ipv6_port_;
+  std::unique_ptr<cricket::Port> port_;
   int port_config_count_;
   std::vector<Candidate> candidates_;
   std::vector<PortInterface*> ready_ports_;
@@ -227,7 +210,6 @@ class FakePortAllocatorSession : public PortAllocatorSession {
   std::vector<RelayServerConfig> turn_servers_;
   uint32_t candidate_filter_ = CF_ALL;
   int transport_info_update_count_ = 0;
-  bool ipv6_enabled_;
   bool running_ = false;
 };
 
@@ -240,7 +222,6 @@ class FakePortAllocator : public cricket::PortAllocator {
       owned_factory_.reset(new rtc::BasicPacketSocketFactory(network_thread_));
       factory_ = owned_factory_.get();
     }
-    ipv6_enabled_ = rtc::HasIPv6Enabled();
   }
 
   void Initialize() override {
@@ -251,10 +232,6 @@ class FakePortAllocator : public cricket::PortAllocator {
 
   void SetNetworkIgnoreMask(int network_ignore_mask) override {}
 
-  // Sometimes we can ignore the value returned by rtc::HasIpv6Enabled because
-  // we are using the virtual socket server.
-  void set_ipv6_enabled(bool ipv6_enabled) { ipv6_enabled_ = ipv6_enabled; }
-
   cricket::PortAllocatorSession* CreateSessionInternal(
       const std::string& content_name,
       int component,
@@ -262,7 +239,7 @@ class FakePortAllocator : public cricket::PortAllocator {
       const std::string& ice_pwd) override {
     return new FakePortAllocatorSession(this, network_thread_, factory_,
                                         content_name, component, ice_ufrag,
-                                        ice_pwd, ipv6_enabled_);
+                                        ice_pwd);
   }
 
   bool initialized() const { return initialized_; }
@@ -272,7 +249,6 @@ class FakePortAllocator : public cricket::PortAllocator {
   rtc::PacketSocketFactory* factory_;
   std::unique_ptr<rtc::BasicPacketSocketFactory> owned_factory_;
   bool initialized_ = false;
-  bool ipv6_enabled_ = false;
 };
 
 }  // namespace cricket

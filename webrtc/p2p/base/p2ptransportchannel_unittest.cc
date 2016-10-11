@@ -2813,7 +2813,7 @@ class P2PTransportChannelPingTest : public testing::Test,
     return GetConnectionTo(ch, ip, port_num);
   }
 
-  Port* GetFirstPort(P2PTransportChannel* ch) {
+  Port* GetPort(P2PTransportChannel* ch) {
     if (ch->ports().empty()) {
       return nullptr;
     }
@@ -2830,13 +2830,11 @@ class P2PTransportChannelPingTest : public testing::Test,
   Connection* GetConnectionTo(P2PTransportChannel* ch,
                               const std::string& ip,
                               int port_num) {
-    for (PortInterface* port : ch->ports()) {
-      Connection* conn = port->GetConnection(rtc::SocketAddress(ip, port_num));
-      if (conn != nullptr) {
-        return conn;
-      }
+    Port* port = GetPort(ch);
+    if (!port) {
+      return nullptr;
     }
-    return nullptr;
+    return port->GetConnection(rtc::SocketAddress(ip, port_num));
   }
 
   Connection* FindNextPingableConnectionAndPingIt(P2PTransportChannel* ch) {
@@ -3093,7 +3091,7 @@ TEST_F(P2PTransportChannelPingTest, PingingStartedAsSoonAsPossible) {
   uint32_t prflx_priority = ICE_TYPE_PREFERENCE_PRFLX << 24;
   request.AddAttribute(
       new StunUInt32Attribute(STUN_ATTR_PRIORITY, prflx_priority));
-  Port* port = GetFirstPort(&ch);
+  Port* port = GetPort(&ch);
   ASSERT_NE(nullptr, port);
   port->SignalUnknownAddress(port, rtc::SocketAddress("1.1.1.1", 1), PROTO_UDP,
                              &request, kIceUfrag[1], false);
@@ -3262,7 +3260,7 @@ TEST_F(P2PTransportChannelPingTest, ConnectionResurrection) {
       new StunUInt32Attribute(STUN_ATTR_PRIORITY, prflx_priority));
   EXPECT_NE(prflx_priority, remote_priority);
 
-  Port* port = GetFirstPort(&ch);
+  Port* port = GetPort(&ch);
   // conn1 should be resurrected with original priority.
   port->SignalUnknownAddress(port, rtc::SocketAddress("1.1.1.1", 1), PROTO_UDP,
                              &request, kIceUfrag[1], false);
@@ -3401,7 +3399,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
   uint32_t prflx_priority = ICE_TYPE_PREFERENCE_PRFLX << 24;
   request.AddAttribute(
       new StunUInt32Attribute(STUN_ATTR_PRIORITY, prflx_priority));
-  TestUDPPort* port = static_cast<TestUDPPort*>(GetFirstPort(&ch));
+  TestUDPPort* port = static_cast<TestUDPPort*>(GetPort(&ch));
   port->SignalUnknownAddress(port, rtc::SocketAddress("1.1.1.1", 1), PROTO_UDP,
                              &request, kIceUfrag[1], false);
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
@@ -3499,7 +3497,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
   request.AddAttribute(
       new StunUInt32Attribute(STUN_ATTR_PRIORITY, prflx_priority));
   request.AddAttribute(new StunByteStringAttribute(STUN_ATTR_USE_CANDIDATE));
-  Port* port = GetFirstPort(&ch);
+  Port* port = GetPort(&ch);
   port->SignalUnknownAddress(port, rtc::SocketAddress("3.3.3.3", 3), PROTO_UDP,
                              &request, kIceUfrag[1], false);
   Connection* conn3 = WaitForConnectionTo(&ch, "3.3.3.3", 3);
@@ -3874,31 +3872,6 @@ TEST_F(P2PTransportChannelPingTest, TestConnectionPrunedAgain) {
   EXPECT_EQ(TransportChannelState::STATE_COMPLETED, ch.GetState());
 }
 
-TEST_F(P2PTransportChannelPingTest, TestPruneConnectionsByNetworkName) {
-  std::string ipv4_addr("1.1.1.1");
-  std::string ipv6_addr("2400:1:2:3:4:5:6:7");
-  FakePortAllocator pa(rtc::Thread::Current(), nullptr);
-  pa.set_ipv6_enabled(true);
-  pa.set_flags(PORTALLOCATOR_ENABLE_IPV6);
-  P2PTransportChannel ch("test channel", 1, &pa);
-  PrepareChannel(&ch);
-  ch.MaybeStartGathering();
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, ipv4_addr, 1, 100));
-  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, ipv6_addr, 1, 100));
-  Connection* conn1 = WaitForConnectionTo(&ch, ipv4_addr, 1);
-  ASSERT_TRUE(conn1 != nullptr);
-  Connection* conn2 = WaitForConnectionTo(&ch, ipv6_addr, 1);
-  ASSERT_TRUE(conn2 != nullptr);
-  conn1->ReceivedPingResponse(LOW_RTT, "id");
-  EXPECT_EQ_WAIT(conn1, ch.selected_connection(), kDefaultTimeout);
-  conn2->ReceivedPingResponse(LOW_RTT, "id");
-  // IPv6 connection has higher priority.
-  EXPECT_EQ_WAIT(conn2, ch.selected_connection(), kDefaultTimeout);
-  // Since conn1 and conn2 are on networks with the same network name,
-  // conn1 will be pruned when conn2 becomes writable and receiving.
-  EXPECT_FALSE(conn1->writable());
-}
-
 // Test that if all connections in a channel has timed out on writing, they
 // will all be deleted. We use Prune to simulate write_time_out.
 TEST_F(P2PTransportChannelPingTest, TestDeleteConnectionsIfAllWriteTimedout) {
@@ -4033,12 +4006,12 @@ TEST_F(P2PTransportChannelPingTest, TestPortDestroyedAfterTimeoutAndPruned) {
   }
   EXPECT_EQ(nullptr, GetConnectionTo(&ch, "1.1.1.1", 1));
   // Port will not be removed because it is not pruned yet.
-  PortInterface* port = GetFirstPort(&ch);
+  PortInterface* port = GetPort(&ch);
   ASSERT_NE(nullptr, port);
 
   // If the session prunes all ports, the port will be destroyed.
   ch.allocator_session()->PruneAllPorts();
-  EXPECT_EQ_SIMULATED_WAIT(nullptr, GetFirstPort(&ch), 1, fake_clock);
+  EXPECT_EQ_SIMULATED_WAIT(nullptr, GetPort(&ch), 1, fake_clock);
   EXPECT_EQ_SIMULATED_WAIT(nullptr, GetPrunedPort(&ch), 1, fake_clock);
 }
 

@@ -248,6 +248,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   void MaybeStopPortAllocatorSessions();
   TransportChannelState ComputeState() const;
 
+  Connection* GetBestConnectionOnNetwork(rtc::Network* network) const;
   bool CreateConnections(const Candidate& remote_candidate,
                          PortInterface* origin_port);
   bool CreateConnection(PortInterface* port,

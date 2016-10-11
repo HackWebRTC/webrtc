@@ -1306,35 +1306,34 @@ void P2PTransportChannel::SortConnectionsAndUpdateState() {
 }
 
 void P2PTransportChannel::PruneConnections() {
-  // We can prune any connection for which there is a connected, writable,
-  // and receiving connection with the same network name with better or equal
-  // priority. We leave those with better priority just in case they become
-  // writable later (at which point, we would prune out the current selected
-  // connection). We leave connections on other networks because they may not
-  // be using the same resources and they may represent very distinct paths
-  // over which we can switch. If the |premier| connection is not connected,
-  // we may be reconnecting a TCP connection and temporarily do not prune
-  // connections in this network. See the big comment in
-  // CompareConnectionStates.
+  // We can prune any connection for which there is a connected, writable
+  // connection on the same network with better or equal priority.  We leave
+  // those with better priority just in case they become writable later (at
+  // which point, we would prune out the current selected connection).  We leave
+  // connections on other networks because they may not be using the same
+  // resources and they may represent very distinct paths over which we can
+  // switch. If the |premier| connection is not connected, we may be
+  // reconnecting a TCP connection and temporarily do not prune connections in
+  // this network. See the big comment in CompareConnectionStates.
 
-  std::map<std::string, Connection*> premier_connection_by_network_name;
-  if (selected_connection_) {
-    // |selected_connection_| is always a premier connection.
-    const std::string& network_name =
-        selected_connection_->port()->Network()->name();
-    premier_connection_by_network_name[network_name] = selected_connection_;
+  // Get a list of the networks that we are using.
+  std::set<rtc::Network*> networks;
+  for (const Connection* conn : connections_) {
+    networks.insert(conn->port()->Network());
   }
-  for (Connection* conn : connections_) {
-    const std::string& network_name = conn->port()->Network()->name();
-    Connection* premier = premier_connection_by_network_name[network_name];
-    // Since the connections are sorted, the first one with a given network name
-    // is the premier connection for the network name.
-    // |premier| might be equal to |conn| if this is the selected connection.
-    if (premier == nullptr) {
-      premier_connection_by_network_name[network_name] = conn;
-    } else if (premier != conn && !premier->weak() &&
-               CompareConnectionCandidates(premier, conn) >= 0) {
-      conn->Prune();
+  for (rtc::Network* network : networks) {
+    Connection* premier = GetBestConnectionOnNetwork(network);
+    // Do not prune connections if the current selected connection is weak on
+    // this network. Otherwise, it may delete connections prematurely.
+    if (!premier || premier->weak()) {
+      continue;
+    }
+
+    for (Connection* conn : connections_) {
+      if ((conn != premier) && (conn->port()->Network() == network) &&
+          (CompareConnectionCandidates(premier, conn) >= 0)) {
+        conn->Prune();
+      }
     }
   }
 }
@@ -1470,6 +1469,26 @@ bool P2PTransportChannel::ReadyToSend(Connection* connection) const {
          (connection->writable() ||
           connection->write_state() == Connection::STATE_WRITE_UNRELIABLE ||
           PresumedWritable(connection));
+}
+
+// If we have a selected connection, return it, otherwise return top one in the
+// list (later we will mark it best).
+Connection* P2PTransportChannel::GetBestConnectionOnNetwork(
+    rtc::Network* network) const {
+  // If the selected connection is on this network, then it wins.
+  if (selected_connection_ &&
+      (selected_connection_->port()->Network() == network)) {
+    return selected_connection_;
+  }
+
+  // Otherwise, we return the top-most in sorted order.
+  for (size_t i = 0; i < connections_.size(); ++i) {
+    if (connections_[i]->port()->Network() == network) {
+      return connections_[i];
+    }
+  }
+
+  return NULL;
 }
 
 // Handle any queued up requests
