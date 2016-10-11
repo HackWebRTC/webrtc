@@ -18,7 +18,6 @@
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_mixer/audio_mixer.h"
-#include "webrtc/modules/audio_mixer/audio_mixer_defines.h"
 #include "webrtc/modules/audio_mixer/audio_source_with_mix_status.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/include/module_common_types.h"
@@ -41,21 +40,19 @@ class AudioMixerImpl : public AudioMixer {
   ~AudioMixerImpl() override;
 
   // AudioMixer functions
-  int32_t SetMixabilityStatus(MixerAudioSource* audio_source,
-                              bool mixable) override;
-  bool MixabilityStatus(const MixerAudioSource& audio_source) const override;
-  int32_t SetAnonymousMixabilityStatus(MixerAudioSource* audio_source,
+  int32_t SetMixabilityStatus(Source* audio_source, bool mixable) override;
+  bool MixabilityStatus(const Source& audio_source) const override;
+  int32_t SetAnonymousMixabilityStatus(Source* audio_source,
                                        bool mixable) override;
   void Mix(int sample_rate,
            size_t number_of_channels,
            AudioFrame* audio_frame_for_mixing) override;
-  bool AnonymousMixabilityStatus(
-      const MixerAudioSource& audio_source) const override;
+  bool AnonymousMixabilityStatus(const Source& audio_source) const override;
 
   // Returns true if the source was mixed last round. Returns
   // false and logs an error if the source was never added to the
   // mixer.
-  bool GetAudioSourceMixabilityStatusForTest(MixerAudioSource* audio_source);
+  bool GetAudioSourceMixabilityStatusForTest(Source* audio_source);
 
  private:
   AudioMixerImpl(int id, std::unique_ptr<AudioProcessing> limiter);
@@ -75,9 +72,9 @@ class AudioMixerImpl : public AudioMixer {
 
   // Add/remove the MixerAudioSource to the specified
   // MixerAudioSource list.
-  bool AddAudioSourceToList(MixerAudioSource* audio_source,
+  bool AddAudioSourceToList(Source* audio_source,
                             MixerAudioSourceList* audio_source_list) const;
-  bool RemoveAudioSourceFromList(MixerAudioSource* remove_audio_source,
+  bool RemoveAudioSourceFromList(Source* remove_audio_source,
                                  MixerAudioSourceList* audio_source_list) const;
 
   bool LimitMixedAudio(AudioFrame* mixed_audio) const;

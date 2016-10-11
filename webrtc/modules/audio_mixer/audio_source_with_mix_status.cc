@@ -13,7 +13,7 @@
 namespace webrtc {
 
 AudioSourceWithMixStatus::AudioSourceWithMixStatus(
-    MixerAudioSource* audio_source)
+    AudioMixer::Source* audio_source)
     : audio_source_(audio_source) {}
 
 AudioSourceWithMixStatus::~AudioSourceWithMixStatus() {}
@@ -36,7 +36,7 @@ void AudioSourceWithMixStatus::ResetMixedStatus() {
   is_mixed_ = false;
 }
 
-MixerAudioSource* AudioSourceWithMixStatus::audio_source() const {
+AudioMixer::Source* AudioSourceWithMixStatus::audio_source() const {
   return audio_source_;
 }
 

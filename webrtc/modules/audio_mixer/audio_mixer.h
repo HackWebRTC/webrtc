@@ -13,7 +13,6 @@
 
 #include <memory>
 
-#include "webrtc/modules/audio_mixer/audio_mixer_defines.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/include/module_common_types.h"
 
@@ -30,21 +29,52 @@ class AudioMixer {
     kDefaultFrequency = kWbInHz
   };
 
+  // A callback class that all mixer participants must inherit from/implement.
+  class Source {
+   public:
+    enum class AudioFrameInfo {
+      kNormal,  // The samples in audio_frame are valid and should be used.
+      kMuted,   // The samples in audio_frame should not be used, but should be
+      // implicitly interpreted as zero. Other fields in audio_frame
+      // may be read and should contain meaningful values.
+      kError  // audio_frame will not be used.
+    };
+
+    struct AudioFrameWithInfo {
+      AudioFrame* audio_frame;
+      AudioFrameInfo audio_frame_info;
+    };
+
+    // The implementation of GetAudioFrameWithInfo should update
+    // audio_frame with new audio every time it's called. Implementing
+    // classes are allowed to return the same AudioFrame pointer on
+    // different calls. The pointer must stay valid until the next
+    // mixing call or until this audio source is disconnected from the
+    // mixer. The mixer may modify the contents of the passed
+    // AudioFrame pointer at any time until the next call to
+    // GetAudioFrameWithInfo, or until the source is removed from the
+    // mixer.
+    virtual AudioFrameWithInfo GetAudioFrameWithInfo(int32_t id,
+                                                     int sample_rate_hz) = 0;
+
+   protected:
+    virtual ~Source() {}
+  };
+
   // Factory method. Constructor disabled.
   static std::unique_ptr<AudioMixer> Create(int id);
   virtual ~AudioMixer() {}
 
   // Add/remove audio sources as candidates for mixing.
-  virtual int32_t SetMixabilityStatus(MixerAudioSource* audio_source,
-                                      bool mixable) = 0;
+  virtual int32_t SetMixabilityStatus(Source* audio_source, bool mixable) = 0;
   // Returns true if an audio source is a candidate for mixing.
-  virtual bool MixabilityStatus(const MixerAudioSource& audio_source) const = 0;
+  virtual bool MixabilityStatus(const Source& audio_source) const = 0;
 
   // Inform the mixer that the audio source should always be mixed and not
   // count toward the number of mixed audio sources. Note that an audio source
   // must have been added to the mixer (by calling SetMixabilityStatus())
   // before this function can be successfully called.
-  virtual int32_t SetAnonymousMixabilityStatus(MixerAudioSource* audio_source,
+  virtual int32_t SetAnonymousMixabilityStatus(Source* audio_source,
                                                bool mixable) = 0;
 
   // Performs mixing by asking registered audio sources for audio. The
@@ -56,8 +86,7 @@ class AudioMixer {
                    AudioFrame* audio_frame_for_mixing) = 0;
 
   // Returns true if the audio source is mixed anonymously.
-  virtual bool AnonymousMixabilityStatus(
-      const MixerAudioSource& audio_source) const = 0;
+  virtual bool AnonymousMixabilityStatus(const Source& audio_source) const = 0;
 
   // Output level functions for VoEVolumeControl. Return value
   // between 0 and 9 is returned by voe::AudioLevel.

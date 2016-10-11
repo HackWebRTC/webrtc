@@ -23,6 +23,9 @@ uint32_t AudioMixerCalculateEnergy(const AudioFrame& audio_frame);
 void NewMixerRampIn(AudioFrame* audio_frame);
 void NewMixerRampOut(AudioFrame* audio_frame);
 
+// Downmixes or upmixes a frame between stereo and mono.
+void RemixFrame(size_t target_number_of_channels, AudioFrame* frame);
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_MIXER_AUDIO_FRAME_MANIPULATOR_H_

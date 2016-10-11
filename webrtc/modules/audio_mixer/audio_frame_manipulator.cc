@@ -8,8 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_mixer/audio_frame_manipulator.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/utility/include/audio_frame_operations.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -59,4 +61,15 @@ void NewMixerRampOut(AudioFrame* audio_frame) {
          (audio_frame->samples_per_channel_ - kRampSize) *
              sizeof(audio_frame->data_[0]));
 }
+
+void RemixFrame(size_t target_number_of_channels, AudioFrame* frame) {
+  RTC_DCHECK_GE(target_number_of_channels, static_cast<size_t>(1));
+  RTC_DCHECK_LE(target_number_of_channels, static_cast<size_t>(2));
+  if (frame->num_channels_ == 1 && target_number_of_channels == 2) {
+    AudioFrameOperations::MonoToStereo(frame);
+  } else if (frame->num_channels_ == 2 && target_number_of_channels == 1) {
+    AudioFrameOperations::StereoToMono(frame);
+  }
+}
+
 }  // namespace webrtc

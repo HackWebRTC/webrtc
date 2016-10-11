@@ -11,14 +11,14 @@
 #ifndef WEBRTC_MODULES_AUDIO_MIXER_AUDIO_SOURCE_WITH_MIX_STATUS_H_
 #define WEBRTC_MODULES_AUDIO_MIXER_AUDIO_SOURCE_WITH_MIX_STATUS_H_
 
-#include "webrtc/modules/audio_mixer/audio_mixer_defines.h"
+#include "webrtc/modules/audio_mixer/audio_mixer.h"
 
 namespace webrtc {
 
 // A class that holds a mixer participant and its mixing status.
 class AudioSourceWithMixStatus {
  public:
-  explicit AudioSourceWithMixStatus(MixerAudioSource* audio_source);
+  explicit AudioSourceWithMixStatus(AudioMixer::Source* audio_source);
   ~AudioSourceWithMixStatus();
 
   AudioSourceWithMixStatus(const AudioSourceWithMixStatus&) = default;
@@ -33,10 +33,10 @@ class AudioSourceWithMixStatus {
   // Updates the mixed status.
   void SetIsMixed(const bool mixed);
   void ResetMixedStatus();
-  MixerAudioSource* audio_source() const;
+  AudioMixer::Source* audio_source() const;
 
  private:
-  MixerAudioSource* audio_source_ = nullptr;
+  AudioMixer::Source* audio_source_ = nullptr;
   bool is_mixed_ = false;
 };
 
