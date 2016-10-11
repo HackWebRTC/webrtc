@@ -120,7 +120,7 @@ int OpenSLESPlayer::StartPlayout() {
   // EnqueuePlayoutData. Most likely not worth the risk of adding a glitch.
   last_play_time_ = rtc::Time();
   for (int i = 0; i < kNumOfOpenSLESBuffers; ++i) {
-    EnqueuePlayoutData();
+    EnqueuePlayoutData(true);
   }
   // Start streaming data by setting the play state to SL_PLAYSTATE_PLAYING.
   // For a player object, when the object is in the SL_PLAYSTATE_PLAYING
@@ -376,10 +376,10 @@ void OpenSLESPlayer::FillBufferQueue() {
     ALOGW("Buffer callback in non-playing state!");
     return;
   }
-  EnqueuePlayoutData();
+  EnqueuePlayoutData(false);
 }
 
-void OpenSLESPlayer::EnqueuePlayoutData() {
+void OpenSLESPlayer::EnqueuePlayoutData(bool silence) {
   // Check delta time between two successive callbacks and provide a warning
   // if it becomes very large.
   // TODO(henrika): using 150ms as upper limit but this value is rather random.
@@ -389,11 +389,20 @@ void OpenSLESPlayer::EnqueuePlayoutData() {
     ALOGW("Bad OpenSL ES playout timing, dT=%u [ms]", diff);
   }
   last_play_time_ = current_time;
-  // Read audio data from the WebRTC source using the FineAudioBuffer object
-  // to adjust for differences in buffer size between WebRTC (10ms) and native
-  // OpenSL ES.
   SLint8* audio_ptr = audio_buffers_[buffer_index_].get();
-  fine_audio_buffer_->GetPlayoutData(audio_ptr);
+  if (silence) {
+    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    // Avoid aquiring real audio data from WebRTC and fill the buffer with
+    // zeros instead. Used to prime the buffer with silence and to avoid asking
+    // for audio data from two different threads.
+    memset(audio_ptr, 0, audio_parameters_.GetBytesPerBuffer());
+  } else {
+    RTC_DCHECK(thread_checker_opensles_.CalledOnValidThread());
+    // Read audio data from the WebRTC source using the FineAudioBuffer object
+    // to adjust for differences in buffer size between WebRTC (10ms) and native
+    // OpenSL ES.
+    fine_audio_buffer_->GetPlayoutData(audio_ptr);
+  }
   // Enqueue the decoded audio buffer for playback.
   SLresult err = (*simple_buffer_queue_)
                      ->Enqueue(simple_buffer_queue_, audio_ptr,

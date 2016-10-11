@@ -86,7 +86,10 @@ class OpenSLESPlayer {
   // Reads audio data in PCM format using the AudioDeviceBuffer.
   // Can be called both on the main thread (during Start()) and from the
   // internal audio thread while output streaming is active.
-  void EnqueuePlayoutData();
+  // If the |silence| flag is set, the audio is filled with zeros instead of
+  // asking the WebRTC layer for real audio data. This procedure is also known
+  // as audio priming.
+  void EnqueuePlayoutData(bool silence);
 
   // Allocate memory for audio buffers which will be used to render audio
   // via the SLAndroidSimpleBufferQueueItf interface.
