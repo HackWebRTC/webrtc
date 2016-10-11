@@ -307,6 +307,8 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
         public_headers += [ "objc/Framework/Headers/WebRTC/RTCFileLogger.h" ]
       }
 
+      ldflags = [ "-all_load" ]
+
       deps = [
         ":rtc_sdk_peerconnection_objc",
         "//webrtc/system_wrappers:field_trial_default",
@@ -335,5 +337,14 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
         configs -= [ "//build/config/clang:find_bad_constructs" ]
       }
     }
+  }
+
+  rtc_static_library("rtc_sdk_objc") {
+    complete_static_lib = true
+    deps = [
+      ":rtc_sdk_peerconnection_objc",
+      "../system_wrappers:field_trial_default",
+      "../system_wrappers:metrics_default",
+    ]
   }
 }
