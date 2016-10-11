@@ -267,8 +267,8 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
 
       deps = [
         ":rtc_sdk_peerconnection_objc",
-        "//webrtc/system_wrappers:field_trial_default",
-        "//webrtc/system_wrappers:metrics_default",
+        "../system_wrappers:field_trial_default",
+        "../system_wrappers:metrics_default",
       ]
 
       libs = [
@@ -311,8 +311,8 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
 
       deps = [
         ":rtc_sdk_peerconnection_objc",
-        "//webrtc/system_wrappers:field_trial_default",
-        "//webrtc/system_wrappers:metrics_default",
+        "../system_wrappers:field_trial_default",
+        "../system_wrappers:metrics_default",
       ]
 
       libs = [
