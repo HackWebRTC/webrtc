@@ -12,10 +12,110 @@
 
 namespace webrtc {
 
+const char* RTCStatsIceCandidatePairState::kFrozen = "frozen";
+const char* RTCStatsIceCandidatePairState::kWaiting = "waiting";
+const char* RTCStatsIceCandidatePairState::kInProgress = "inprogress";
+const char* RTCStatsIceCandidatePairState::kFailed = "failed";
+const char* RTCStatsIceCandidatePairState::kSucceeded = "succeeded";
+const char* RTCStatsIceCandidatePairState::kCancelled = "cancelled";
+
+// Strings defined in https://tools.ietf.org/html/rfc5245.
 const char* RTCIceCandidateType::kHost = "host";
 const char* RTCIceCandidateType::kSrflx = "srflx";
 const char* RTCIceCandidateType::kPrflx = "prflx";
 const char* RTCIceCandidateType::kRelay = "relay";
+
+WEBRTC_RTCSTATS_IMPL(RTCIceCandidatePairStats, RTCStats, "candidate-pair",
+    &transport_id,
+    &local_candidate_id,
+    &remote_candidate_id,
+    &state,
+    &priority,
+    &nominated,
+    &writable,
+    &readable,
+    &bytes_sent,
+    &bytes_received,
+    &total_rtt,
+    &current_rtt,
+    &available_outgoing_bitrate,
+    &available_incoming_bitrate,
+    &requests_received,
+    &requests_sent,
+    &responses_received,
+    &responses_sent,
+    &retransmissions_received,
+    &retransmissions_sent,
+    &consent_requests_received,
+    &consent_requests_sent,
+    &consent_responses_received,
+    &consent_responses_sent);
+
+RTCIceCandidatePairStats::RTCIceCandidatePairStats(
+    const std::string& id, int64_t timestamp_us)
+    : RTCIceCandidatePairStats(std::string(id), timestamp_us) {
+}
+
+RTCIceCandidatePairStats::RTCIceCandidatePairStats(
+    std::string&& id, int64_t timestamp_us)
+    : RTCStats(std::move(id), timestamp_us),
+      transport_id("transportId"),
+      local_candidate_id("localCandidateId"),
+      remote_candidate_id("remoteCandidateId"),
+      state("state"),
+      priority("priority"),
+      nominated("nominated"),
+      writable("writable"),
+      readable("readable"),
+      bytes_sent("bytesSent"),
+      bytes_received("bytesReceived"),
+      total_rtt("totalRtt"),
+      current_rtt("currentRtt"),
+      available_outgoing_bitrate("availableOutgoingBitrate"),
+      available_incoming_bitrate("availableIncomingBitrate"),
+      requests_received("requestsReceived"),
+      requests_sent("requestsSent"),
+      responses_received("responsesReceived"),
+      responses_sent("responsesSent"),
+      retransmissions_received("retransmissionsReceived"),
+      retransmissions_sent("retransmissionsSent"),
+      consent_requests_received("consentRequestsReceived"),
+      consent_requests_sent("consentRequestsSent"),
+      consent_responses_received("consentResponsesReceived"),
+      consent_responses_sent("consentResponsesSent") {
+}
+
+RTCIceCandidatePairStats::RTCIceCandidatePairStats(
+    const RTCIceCandidatePairStats& other)
+    : RTCStats(other.id(), other.timestamp_us()),
+      transport_id(other.transport_id),
+      local_candidate_id(other.local_candidate_id),
+      remote_candidate_id(other.remote_candidate_id),
+      state(other.state),
+      priority(other.priority),
+      nominated(other.nominated),
+      writable(other.writable),
+      readable(other.readable),
+      bytes_sent(other.bytes_sent),
+      bytes_received(other.bytes_received),
+      total_rtt(other.total_rtt),
+      current_rtt(other.current_rtt),
+      available_outgoing_bitrate(other.available_outgoing_bitrate),
+      available_incoming_bitrate(other.available_incoming_bitrate),
+      requests_received(other.requests_received),
+      requests_sent(other.requests_sent),
+      responses_received(other.responses_received),
+      responses_sent(other.responses_sent),
+      retransmissions_received(other.retransmissions_received),
+      retransmissions_sent(other.retransmissions_sent),
+      consent_requests_received(other.consent_requests_received),
+      consent_requests_sent(other.consent_requests_sent),
+      consent_responses_received(other.consent_responses_received),
+      consent_responses_sent(other.consent_responses_sent) {
+}
+
+RTCIceCandidatePairStats::~RTCIceCandidatePairStats() {
+}
 
 WEBRTC_RTCSTATS_IMPL(RTCIceCandidateStats, RTCStats, "ice-candidate",
     &ip,

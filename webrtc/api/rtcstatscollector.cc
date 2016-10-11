@@ -180,16 +180,16 @@ void RTCStatsCollector::ProduceCertificateStats_s(
     int64_t timestamp_us, const SessionStats& session_stats,
     RTCStatsReport* report) const {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  for (const auto& transport : session_stats.transport_stats) {
+  for (const auto& transport_stats : session_stats.transport_stats) {
     rtc::scoped_refptr<rtc::RTCCertificate> local_certificate;
     if (pc_->session()->GetLocalCertificate(
-        transport.second.transport_name, &local_certificate)) {
+        transport_stats.second.transport_name, &local_certificate)) {
       ProduceCertificateStatsFromSSLCertificateAndChain_s(
           timestamp_us, local_certificate->ssl_certificate(), report);
     }
     std::unique_ptr<rtc::SSLCertificate> remote_certificate =
         pc_->session()->GetRemoteSSLCertificate(
-            transport.second.transport_name);
+            transport_stats.second.transport_name);
     if (remote_certificate) {
       ProduceCertificateStatsFromSSLCertificateAndChain_s(
           timestamp_us, *remote_certificate.get(), report);
@@ -222,19 +222,65 @@ void RTCStatsCollector::ProduceIceCandidateAndPairStats_s(
       int64_t timestamp_us, const SessionStats& session_stats,
       RTCStatsReport* report) const {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  for (const auto& transport : session_stats.transport_stats) {
-    for (const auto& channel : transport.second.channel_stats) {
-      for (const cricket::ConnectionInfo& info : channel.connection_infos) {
-        // TODO(hbos): Produce |RTCIceCandidatePairStats| referencing the
-        // resulting |RTCIceCandidateStats| pair. crbug.com/633550
+  for (const auto& transport_stats : session_stats.transport_stats) {
+    for (const auto& channel_stats : transport_stats.second.channel_stats) {
+      for (const cricket::ConnectionInfo& info :
+           channel_stats.connection_infos) {
+        const std::string& id = "RTCIceCandidatePair_" +
+            info.local_candidate.id() + "_" + info.remote_candidate.id();
+        std::unique_ptr<RTCIceCandidatePairStats> candidate_pair_stats(
+            new RTCIceCandidatePairStats(id, timestamp_us));
+
+        // TODO(hbos): Set all of the |RTCIceCandidatePairStats|'s members,
+        // crbug.com/633550.
+
+        // TODO(hbos): Set candidate_pair_stats->transport_id. Should be ID to
+        // RTCTransportStats which does not exist yet: crbug.com/653873.
+
         // TODO(hbos): There could be other candidates that are not paired with
         // anything. We don't have a complete list. Local candidates come from
         // Port objects, and prflx candidates (both local and remote) are only
         // stored in candidate pairs. crbug.com/632723
-        ProduceIceCandidateStats_s(
+        candidate_pair_stats->local_candidate_id = ProduceIceCandidateStats_s(
             timestamp_us, info.local_candidate, true, report);
-        ProduceIceCandidateStats_s(
+        candidate_pair_stats->remote_candidate_id = ProduceIceCandidateStats_s(
             timestamp_us, info.remote_candidate, false, report);
+
+        // TODO(hbos): Set candidate_pair_stats->state.
+        // TODO(hbos): Set candidate_pair_stats->priority.
+        // TODO(hbos): Set candidate_pair_stats->nominated.
+        // TODO(hbos): This writable is different than the spec. It goes to
+        // false after a certain amount of time without a response passes.
+        // crbug.com/633550
+        candidate_pair_stats->writable = info.writable;
+        // TODO(hbos): Set candidate_pair_stats->readable.
+        candidate_pair_stats->bytes_sent =
+            static_cast<uint64_t>(info.sent_total_bytes);
+        candidate_pair_stats->bytes_received =
+            static_cast<uint64_t>(info.recv_total_bytes);
+        // TODO(hbos): Set candidate_pair_stats->total_rtt.
+        // TODO(hbos): The |info.rtt| measurement is smoothed. It shouldn't be
+        // smoothed according to the spec. crbug.com/633550. See
+        // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats-currentrtt
+        candidate_pair_stats->current_rtt =
+            static_cast<double>(info.rtt) / 1000.0;
+        // TODO(hbos): Set candidate_pair_stats->available_outgoing_bitrate.
+        // TODO(hbos): Set candidate_pair_stats->available_incoming_bitrate.
+        // TODO(hbos): Set candidate_pair_stats->requests_received.
+        candidate_pair_stats->requests_sent =
+            static_cast<uint64_t>(info.sent_ping_requests_total);
+        candidate_pair_stats->responses_received =
+            static_cast<uint64_t>(info.recv_ping_responses);
+        candidate_pair_stats->responses_sent =
+            static_cast<uint64_t>(info.sent_ping_responses);
+        // TODO(hbos): Set candidate_pair_stats->retransmissions_received.
+        // TODO(hbos): Set candidate_pair_stats->retransmissions_sent.
+        // TODO(hbos): Set candidate_pair_stats->consent_requests_received.
+        // TODO(hbos): Set candidate_pair_stats->consent_requests_sent.
+        // TODO(hbos): Set candidate_pair_stats->consent_responses_received.
+        // TODO(hbos): Set candidate_pair_stats->consent_responses_sent.
+
+        report->AddStats(std::move(candidate_pair_stats));
       }
     }
   }
@@ -248,13 +294,10 @@ const std::string& RTCStatsCollector::ProduceIceCandidateStats_s(
   const RTCStats* stats = report->Get(id);
   if (!stats) {
     std::unique_ptr<RTCIceCandidateStats> candidate_stats;
-    if (is_local) {
-      candidate_stats.reset(
-          new RTCLocalIceCandidateStats(id, timestamp_us));
-    } else {
-      candidate_stats.reset(
-          new RTCRemoteIceCandidateStats(id, timestamp_us));
-    }
+    if (is_local)
+      candidate_stats.reset(new RTCLocalIceCandidateStats(id, timestamp_us));
+    else
+      candidate_stats.reset(new RTCRemoteIceCandidateStats(id, timestamp_us));
     candidate_stats->ip = candidate.address().ipaddr().ToString();
     candidate_stats->port = static_cast<int32_t>(candidate.address().port());
     candidate_stats->protocol = candidate.protocol();

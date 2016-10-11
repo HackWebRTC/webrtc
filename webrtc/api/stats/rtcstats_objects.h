@@ -17,12 +17,59 @@
 
 namespace webrtc {
 
+// https://w3c.github.io/webrtc-stats/#dom-rtcstatsicecandidatepairstate
+struct RTCStatsIceCandidatePairState {
+  static const char* kFrozen;
+  static const char* kWaiting;
+  static const char* kInProgress;
+  static const char* kFailed;
+  static const char* kSucceeded;
+  static const char* kCancelled;
+};
+
 // https://www.w3.org/TR/webrtc/#rtcicecandidatetype-enum
 struct RTCIceCandidateType {
   static const char* kHost;
   static const char* kSrflx;
   static const char* kPrflx;
   static const char* kRelay;
+};
+
+class RTCIceCandidatePairStats : public RTCStats {
+ public:
+  WEBRTC_RTCSTATS_DECL();
+
+  RTCIceCandidatePairStats(const std::string& id, int64_t timestamp_us);
+  RTCIceCandidatePairStats(std::string&& id, int64_t timestamp_us);
+  RTCIceCandidatePairStats(const RTCIceCandidatePairStats& other);
+  ~RTCIceCandidatePairStats() override;
+
+  RTCStatsMember<std::string> transport_id;
+  RTCStatsMember<std::string> local_candidate_id;
+  RTCStatsMember<std::string> remote_candidate_id;
+  // TODO(hbos): Support enum types?
+  // "RTCStatsMember<RTCStatsIceCandidatePairState>"?
+  RTCStatsMember<std::string> state;
+  RTCStatsMember<uint64_t> priority;
+  RTCStatsMember<bool> nominated;
+  RTCStatsMember<bool> writable;
+  RTCStatsMember<bool> readable;
+  RTCStatsMember<uint64_t> bytes_sent;
+  RTCStatsMember<uint64_t> bytes_received;
+  RTCStatsMember<double> total_rtt;
+  RTCStatsMember<double> current_rtt;
+  RTCStatsMember<double> available_outgoing_bitrate;
+  RTCStatsMember<double> available_incoming_bitrate;
+  RTCStatsMember<uint64_t> requests_received;
+  RTCStatsMember<uint64_t> requests_sent;
+  RTCStatsMember<uint64_t> responses_received;
+  RTCStatsMember<uint64_t> responses_sent;
+  RTCStatsMember<uint64_t> retransmissions_received;
+  RTCStatsMember<uint64_t> retransmissions_sent;
+  RTCStatsMember<uint64_t> consent_requests_received;
+  RTCStatsMember<uint64_t> consent_requests_sent;
+  RTCStatsMember<uint64_t> consent_responses_received;
+  RTCStatsMember<uint64_t> consent_responses_sent;
 };
 
 // https://w3c.github.io/webrtc-stats/#icecandidate-dict*

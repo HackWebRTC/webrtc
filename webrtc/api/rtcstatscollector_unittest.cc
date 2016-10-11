@@ -331,12 +331,11 @@ class RTCStatsCollectorTest : public testing::Test {
     return callback->report();
   }
 
-  void ExpectReportContainsCandidate(
+  const RTCIceCandidateStats* ExpectReportContainsCandidate(
       const rtc::scoped_refptr<const RTCStatsReport>& report,
       const cricket::Candidate& candidate,
       bool is_local) {
-    const RTCStats* stats =
-        report->Get("RTCIceCandidate_" + candidate.id());
+    const RTCStats* stats = report->Get("RTCIceCandidate_" + candidate.id());
     EXPECT_TRUE(stats);
     const RTCIceCandidateStats* candidate_stats;
     if (is_local)
@@ -353,6 +352,69 @@ class RTCStatsCollectorTest : public testing::Test {
               static_cast<int32_t>(candidate.priority()));
     // TODO(hbos): Define candidate_stats->url. crbug.com/632723
     EXPECT_FALSE(candidate_stats->url.is_defined());
+    return candidate_stats;
+  }
+
+  void ExpectReportContainsCandidatePair(
+      const rtc::scoped_refptr<const RTCStatsReport>& report,
+      const cricket::TransportStats& transport_stats) {
+    for (const auto& channel_stats : transport_stats.channel_stats) {
+      for (const cricket::ConnectionInfo& info :
+           channel_stats.connection_infos) {
+        const std::string& id = "RTCIceCandidatePair_" +
+            info.local_candidate.id() + "_" + info.remote_candidate.id();
+        const RTCStats* stats = report->Get(id);
+        EXPECT_TRUE(stats);
+        const RTCIceCandidatePairStats& candidate_pair_stats =
+            stats->cast_to<RTCIceCandidatePairStats>();
+
+        // TODO(hbos): Define all the undefined |candidate_pair_stats| stats.
+        // The EXPECT_FALSE are for the undefined stats, see also todos listed
+        // in rtcstatscollector.cc. crbug.com/633550
+        EXPECT_FALSE(candidate_pair_stats.transport_id.is_defined());
+        const RTCIceCandidateStats* local_candidate =
+            ExpectReportContainsCandidate(report, info.local_candidate, true);
+        EXPECT_EQ(*candidate_pair_stats.local_candidate_id,
+                  local_candidate->id());
+        const RTCIceCandidateStats* remote_candidate =
+            ExpectReportContainsCandidate(report, info.remote_candidate, false);
+        EXPECT_EQ(*candidate_pair_stats.remote_candidate_id,
+                  remote_candidate->id());
+
+        EXPECT_FALSE(candidate_pair_stats.state.is_defined());
+        EXPECT_FALSE(candidate_pair_stats.priority.is_defined());
+        EXPECT_FALSE(candidate_pair_stats.nominated.is_defined());
+        EXPECT_EQ(*candidate_pair_stats.writable, info.writable);
+        EXPECT_FALSE(candidate_pair_stats.readable.is_defined());
+        EXPECT_EQ(*candidate_pair_stats.bytes_sent,
+                  static_cast<uint64_t>(info.sent_total_bytes));
+        EXPECT_EQ(*candidate_pair_stats.bytes_received,
+                  static_cast<uint64_t>(info.recv_total_bytes));
+        EXPECT_FALSE(candidate_pair_stats.total_rtt.is_defined());
+        EXPECT_EQ(*candidate_pair_stats.current_rtt,
+                  static_cast<double>(info.rtt) / 1000.0);
+        EXPECT_FALSE(
+            candidate_pair_stats.available_outgoing_bitrate.is_defined());
+        EXPECT_FALSE(
+            candidate_pair_stats.available_incoming_bitrate.is_defined());
+        EXPECT_FALSE(candidate_pair_stats.requests_received.is_defined());
+        EXPECT_EQ(*candidate_pair_stats.requests_sent,
+                  static_cast<uint64_t>(info.sent_ping_requests_total));
+        EXPECT_EQ(*candidate_pair_stats.responses_received,
+                  static_cast<uint64_t>(info.recv_ping_responses));
+        EXPECT_EQ(*candidate_pair_stats.responses_sent,
+                  static_cast<uint64_t>(info.sent_ping_responses));
+        EXPECT_FALSE(
+            candidate_pair_stats.retransmissions_received.is_defined());
+        EXPECT_FALSE(candidate_pair_stats.retransmissions_sent.is_defined());
+        EXPECT_FALSE(
+            candidate_pair_stats.consent_requests_received.is_defined());
+        EXPECT_FALSE(candidate_pair_stats.consent_requests_sent.is_defined());
+        EXPECT_FALSE(
+            candidate_pair_stats.consent_responses_received.is_defined());
+        EXPECT_FALSE(candidate_pair_stats.consent_responses_sent.is_defined());
+      }
+    }
   }
 
   void ExpectReportContainsCertificateInfo(
@@ -657,6 +719,43 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
   ExpectReportContainsCandidate(report, *a_remote_relay.get(), false);
   ExpectReportContainsCandidate(report, *b_local.get(), true);
   ExpectReportContainsCandidate(report, *b_remote.get(), false);
+}
+
+TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
+  std::unique_ptr<cricket::Candidate> local_candidate = CreateFakeCandidate(
+      "42.42.42.42", 42, "protocol", cricket::LOCAL_PORT_TYPE, 42);
+  std::unique_ptr<cricket::Candidate> remote_candidate = CreateFakeCandidate(
+      "42.42.42.42", 42, "protocol", cricket::LOCAL_PORT_TYPE, 42);
+
+  SessionStats session_stats;
+
+  cricket::ConnectionInfo connection_info;
+  connection_info.local_candidate = *local_candidate.get();
+  connection_info.remote_candidate = *remote_candidate.get();
+  connection_info.writable = true;
+  connection_info.sent_total_bytes = 42;
+  connection_info.recv_total_bytes = 1234;
+  connection_info.rtt = 1337;
+  connection_info.sent_ping_requests_total = 1010;
+  connection_info.recv_ping_responses = 4321;
+  connection_info.sent_ping_responses = 1000;
+
+  cricket::TransportChannelStats transport_channel_stats;
+  transport_channel_stats.connection_infos.push_back(connection_info);
+  session_stats.transport_stats["transport"].transport_name = "transport";
+  session_stats.transport_stats["transport"].channel_stats.push_back(
+      transport_channel_stats);
+
+  // Mock the session to return the desired candidates.
+  EXPECT_CALL(test_->session(), GetTransportStats(_)).WillRepeatedly(Invoke(
+      [this, &session_stats](SessionStats* stats) {
+        *stats = session_stats;
+        return true;
+      }));
+
+  rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
+  ExpectReportContainsCandidatePair(
+      report, session_stats.transport_stats["transport"]);
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {

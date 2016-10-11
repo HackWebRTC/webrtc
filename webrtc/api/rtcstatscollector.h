@@ -85,8 +85,7 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface {
   void ProduceCertificateStatsFromSSLCertificateAndChain_s(
       int64_t timestamp_us, const rtc::SSLCertificate& certificate,
       RTCStatsReport* report) const;
-  // Produces |RTCIceCandidateStats|. TODO(hbos): Should also produce
-  // |RTCIceCandidatePairStats|. crbug.com/633550
+  // Produces |RTCIceCandidatePairStats| and |RTCIceCandidateStats|.
   void ProduceIceCandidateAndPairStats_s(
       int64_t timestamp_us, const SessionStats& session_stats,
       RTCStatsReport* report) const;
