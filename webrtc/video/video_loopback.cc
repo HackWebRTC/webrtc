@@ -253,6 +253,7 @@ void Loopback() {
                    flags::EncodedFramePath(),
                    call_bitrate_config};
   params.video = {flags::Clip()};
+  params.screenshare.enabled = false;
   params.analyzer = {"video", 0.0, 0.0, flags::DurationSecs(),
       flags::OutputFilename(), flags::GraphTitle()};
   params.pipe = pipe_config;
