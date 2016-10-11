@@ -188,6 +188,7 @@ VideoReceiveStream::VideoReceiveStream(
     VieRemb* remb)
     : transport_adapter_(config.rtcp_send_transport),
       config_(std::move(config)),
+      num_cpu_cores_(num_cpu_cores),
       process_thread_(process_thread),
       clock_(Clock::GetRealTimeClock()),
       decode_thread_(DecodeThreadFunction, this, "DecodingThread"),
@@ -224,13 +225,6 @@ VideoReceiveStream::VideoReceiveStream(
         << "Duplicate payload type (" << decoder.payload_type
         << ") for different decoders.";
     decoder_payload_types.insert(decoder.payload_type);
-    video_receiver_.RegisterExternalDecoder(decoder.decoder,
-                                            decoder.payload_type);
-
-    VideoCodec codec = CreateDecoderVideoCodec(decoder);
-    RTC_CHECK(rtp_stream_receiver_.SetReceiveCodec(codec));
-    RTC_CHECK_EQ(VCM_OK, video_receiver_.RegisterReceiveCodec(
-                             &codec, num_cpu_cores, false));
   }
 
   video_receiver_.SetRenderDelay(config.render_delay_ms);
@@ -280,6 +274,16 @@ void VideoReceiveStream::Start() {
     }
   }
   RTC_DCHECK(renderer != nullptr);
+
+  for (const Decoder& decoder : config_.decoders) {
+    video_receiver_.RegisterExternalDecoder(decoder.decoder,
+                                            decoder.payload_type);
+
+    VideoCodec codec = CreateDecoderVideoCodec(decoder);
+    RTC_CHECK(rtp_stream_receiver_.SetReceiveCodec(codec));
+    RTC_CHECK_EQ(VCM_OK, video_receiver_.RegisterReceiveCodec(
+                             &codec, num_cpu_cores_, false));
+  }
 
   video_stream_decoder_.reset(new VideoStreamDecoder(
       &video_receiver_, &rtp_stream_receiver_, &rtp_stream_receiver_,

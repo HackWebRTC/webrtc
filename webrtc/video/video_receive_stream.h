@@ -98,6 +98,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   TransportAdapter transport_adapter_;
   const VideoReceiveStream::Config config_;
+  const int num_cpu_cores_;
   ProcessThread* const process_thread_;
   Clock* const clock_;
 

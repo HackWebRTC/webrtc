@@ -161,6 +161,22 @@ TEST_F(EndToEndTest, ReceiverCanBeStoppedTwice) {
   DestroyStreams();
 }
 
+TEST_F(EndToEndTest, ReceiverCanBeStoppedAndRestarted) {
+  CreateCalls(Call::Config(&event_log_), Call::Config(&event_log_));
+
+  test::NullTransport transport;
+  CreateSendConfig(1, 0, &transport);
+  CreateMatchingReceiveConfigs(&transport);
+
+  CreateVideoStreams();
+
+  video_receive_streams_[0]->Stop();
+  video_receive_streams_[0]->Start();
+  video_receive_streams_[0]->Stop();
+
+  DestroyStreams();
+}
+
 TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
   static const int kWidth = 320;
   static const int kHeight = 240;
