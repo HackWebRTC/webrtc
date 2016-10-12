@@ -259,6 +259,10 @@ class MockAudioProcessing : public AudioProcessing {
                    int64_t max_log_size_bytes));
   MOCK_METHOD2(StartDebugRecording,
                int(FILE* handle, int64_t max_log_size_bytes));
+  MOCK_METHOD1(StartDebugRecording,
+               int (FILE* handle));
+  MOCK_METHOD1(StartDebugRecording,
+               int(rtc::PlatformFile handle));
   MOCK_METHOD0(StopDebugRecording,
       int());
   MOCK_METHOD0(UpdateHistogramsOnCallEnd, void());

@@ -31,9 +31,5 @@ Beamforming::Beamforming(bool enabled,
 
 Beamforming::~Beamforming() {}
 
-int AudioProcessing::StartDebugRecordingForPlatformFile(
-    rtc::PlatformFile handle) {
-  return -1;
-}
 
 }  // namespace webrtc

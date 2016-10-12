@@ -65,7 +65,7 @@ class AudioProcessingImpl : public AudioProcessing {
   int StartDebugRecording(const char filename[kMaxFilenameSize],
                           int64_t max_log_size_bytes) override;
   int StartDebugRecording(FILE* handle, int64_t max_log_size_bytes) override;
-
+  int StartDebugRecording(FILE* handle) override;
   int StartDebugRecordingForPlatformFile(rtc::PlatformFile handle) override;
   int StopDebugRecording() override;
 

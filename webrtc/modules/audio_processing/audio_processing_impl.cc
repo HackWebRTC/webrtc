@@ -1251,6 +1251,10 @@ int AudioProcessingImpl::StartDebugRecording(FILE* handle,
 #endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
 }
 
+int AudioProcessingImpl::StartDebugRecording(FILE* handle) {
+  return StartDebugRecording(handle, -1);
+}
+
 int AudioProcessingImpl::StartDebugRecordingForPlatformFile(
     rtc::PlatformFile handle) {
   // Run in a single-threaded manner.
