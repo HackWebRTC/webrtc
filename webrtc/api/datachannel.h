@@ -130,6 +130,10 @@ class DataChannel : public DataChannelInterface,
   virtual uint64_t buffered_amount() const;
   virtual void Close();
   virtual DataState state() const { return state_; }
+  virtual uint32_t messages_sent() const { return messages_sent_; }
+  virtual uint64_t bytes_sent() const { return bytes_sent_; }
+  virtual uint32_t messages_received() const { return messages_received_; }
+  virtual uint64_t bytes_received() const { return bytes_received_; }
   virtual bool Send(const DataBuffer& buffer);
 
   // rtc::MessageHandler override.
@@ -245,6 +249,10 @@ class DataChannel : public DataChannelInterface,
   InternalDataChannelInit config_;
   DataChannelObserver* observer_;
   DataState state_;
+  uint32_t messages_sent_;
+  uint64_t bytes_sent_;
+  uint32_t messages_received_;
+  uint64_t bytes_received_;
   cricket::DataChannelType data_channel_type_;
   DataChannelProviderInterface* provider_;
   HandshakeState handshake_state_;
@@ -274,6 +282,10 @@ BEGIN_SIGNALING_PROXY_MAP(DataChannel)
   PROXY_CONSTMETHOD0(bool, negotiated)
   PROXY_CONSTMETHOD0(int, id)
   PROXY_CONSTMETHOD0(DataState, state)
+  PROXY_CONSTMETHOD0(uint32_t, messages_sent)
+  PROXY_CONSTMETHOD0(uint64_t, bytes_sent)
+  PROXY_CONSTMETHOD0(uint32_t, messages_received)
+  PROXY_CONSTMETHOD0(uint64_t, bytes_received)
   PROXY_CONSTMETHOD0(uint64_t, buffered_amount)
   PROXY_METHOD0(void, Close)
   PROXY_METHOD1(bool, Send, const DataBuffer&)

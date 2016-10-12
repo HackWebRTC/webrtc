@@ -125,6 +125,10 @@ class DataChannelInterface : public rtc::RefCountInterface {
 
   virtual int id() const = 0;
   virtual DataState state() const = 0;
+  virtual uint32_t messages_sent() const = 0;
+  virtual uint64_t bytes_sent() const = 0;
+  virtual uint32_t messages_received() const = 0;
+  virtual uint64_t bytes_received() const = 0;
   // The buffered_amount returns the number of bytes of application data
   // (UTF-8 text and binary data) that have been queued using SendBuffer but
   // have not yet been transmitted to the network.

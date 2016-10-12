@@ -126,8 +126,12 @@ DataChannel::DataChannel(
     cricket::DataChannelType dct,
     const std::string& label)
     : label_(label),
-      observer_(NULL),
+      observer_(nullptr),
       state_(kConnecting),
+      messages_sent_(0),
+      bytes_sent_(0),
+      messages_received_(0),
+      bytes_received_(0),
       data_channel_type_(dct),
       provider_(provider),
       handshake_state_(kHandshakeInit),
@@ -367,6 +371,8 @@ void DataChannel::OnDataReceived(cricket::DataChannel* channel,
   bool binary = (params.type == cricket::DMT_BINARY);
   std::unique_ptr<DataBuffer> buffer(new DataBuffer(payload, binary));
   if (state_ == kOpen && observer_) {
+    ++messages_received_;
+    bytes_received_ += buffer->size();
     observer_->OnMessage(*buffer.get());
   } else {
     if (queued_received_data_.byte_count() + payload.size() >
@@ -498,6 +504,8 @@ void DataChannel::DeliverQueuedReceivedData() {
 
   while (!queued_received_data_.Empty()) {
     std::unique_ptr<DataBuffer> buffer(queued_received_data_.Front());
+    ++messages_received_;
+    bytes_received_ += buffer->size();
     observer_->OnMessage(*buffer);
     queued_received_data_.Pop();
   }
@@ -551,6 +559,8 @@ bool DataChannel::SendDataMessage(const DataBuffer& buffer,
   bool success = provider_->SendData(send_params, buffer.data, &send_result);
 
   if (success) {
+    ++messages_sent_;
+    bytes_sent_ += buffer.size();
     return true;
   }
 

@@ -195,6 +195,53 @@ TEST_F(SctpDataChannelTest, BlockedWhenSendQueuedDataNoCrash) {
   EXPECT_EQ(2U, observer_->on_buffered_amount_change_count());
 }
 
+// Tests that DataChannel::messages_sent() and DataChannel::bytes_sent() are
+// correct, sending data both while unblocked and while blocked.
+TEST_F(SctpDataChannelTest, VerifyMessagesAndBytesSent) {
+  AddObserver();
+  SetChannelReady();
+  std::vector<webrtc::DataBuffer> buffers({
+    webrtc::DataBuffer("message 1"),
+    webrtc::DataBuffer("msg 2"),
+    webrtc::DataBuffer("message three"),
+    webrtc::DataBuffer("quadra message"),
+    webrtc::DataBuffer("fifthmsg"),
+    webrtc::DataBuffer("message of the beast"),
+  });
+
+  // Default values.
+  EXPECT_EQ(0U, webrtc_data_channel_->messages_sent());
+  EXPECT_EQ(0U, webrtc_data_channel_->bytes_sent());
+
+  // Send three buffers while not blocked.
+  provider_->set_send_blocked(false);
+  EXPECT_TRUE(webrtc_data_channel_->Send(buffers[0]));
+  EXPECT_TRUE(webrtc_data_channel_->Send(buffers[1]));
+  EXPECT_TRUE(webrtc_data_channel_->Send(buffers[2]));
+  size_t bytes_sent = buffers[0].size() + buffers[1].size() + buffers[2].size();
+  EXPECT_EQ_WAIT(0U, webrtc_data_channel_->buffered_amount(), kDefaultTimeout);
+  EXPECT_EQ(3U, webrtc_data_channel_->messages_sent());
+  EXPECT_EQ(bytes_sent, webrtc_data_channel_->bytes_sent());
+
+  // Send three buffers while blocked, queuing the buffers.
+  provider_->set_send_blocked(true);
+  EXPECT_TRUE(webrtc_data_channel_->Send(buffers[3]));
+  EXPECT_TRUE(webrtc_data_channel_->Send(buffers[4]));
+  EXPECT_TRUE(webrtc_data_channel_->Send(buffers[5]));
+  size_t bytes_queued =
+      buffers[3].size() + buffers[4].size() + buffers[5].size();
+  EXPECT_EQ(bytes_queued, webrtc_data_channel_->buffered_amount());
+  EXPECT_EQ(3U, webrtc_data_channel_->messages_sent());
+  EXPECT_EQ(bytes_sent, webrtc_data_channel_->bytes_sent());
+
+  // Unblock and make sure everything was sent.
+  provider_->set_send_blocked(false);
+  EXPECT_EQ_WAIT(0U, webrtc_data_channel_->buffered_amount(), kDefaultTimeout);
+  bytes_sent += bytes_queued;
+  EXPECT_EQ(6U, webrtc_data_channel_->messages_sent());
+  EXPECT_EQ(bytes_sent, webrtc_data_channel_->bytes_sent());
+}
+
 // Tests that the queued control message is sent when channel is ready.
 TEST_F(SctpDataChannelTest, OpenMessageSent) {
   // Initially the id is unassigned.
@@ -372,6 +419,53 @@ TEST_F(SctpDataChannelTest, NoMsgSentIfNegotiatedAndNotFromOpenMsg) {
 
   EXPECT_EQ_WAIT(webrtc::DataChannelInterface::kOpen, dc->state(), 1000);
   EXPECT_EQ(0U, provider_->last_send_data_params().ssrc);
+}
+
+// Tests that DataChannel::messages_received() and DataChannel::bytes_received()
+// are correct, receiving data both while not open and while open.
+TEST_F(SctpDataChannelTest, VerifyMessagesAndBytesReceived) {
+  AddObserver();
+  std::vector<webrtc::DataBuffer> buffers({
+    webrtc::DataBuffer("message 1"),
+    webrtc::DataBuffer("msg 2"),
+    webrtc::DataBuffer("message three"),
+    webrtc::DataBuffer("quadra message"),
+    webrtc::DataBuffer("fifthmsg"),
+    webrtc::DataBuffer("message of the beast"),
+  });
+
+  webrtc_data_channel_->SetSctpSid(1);
+  cricket::ReceiveDataParams params;
+  params.ssrc = 1;
+
+  // Default values.
+  EXPECT_EQ(0U, webrtc_data_channel_->messages_received());
+  EXPECT_EQ(0U, webrtc_data_channel_->bytes_received());
+
+  // Receive three buffers while data channel isn't open.
+  webrtc_data_channel_->OnDataReceived(nullptr, params, buffers[0].data);
+  webrtc_data_channel_->OnDataReceived(nullptr, params, buffers[1].data);
+  webrtc_data_channel_->OnDataReceived(nullptr, params, buffers[2].data);
+  EXPECT_EQ(0U, observer_->messages_received());
+  EXPECT_EQ(0U, webrtc_data_channel_->messages_received());
+  EXPECT_EQ(0U, webrtc_data_channel_->bytes_received());
+
+  // Open channel and make sure everything was received.
+  SetChannelReady();
+  size_t bytes_received =
+      buffers[0].size() + buffers[1].size() + buffers[2].size();
+  EXPECT_EQ(3U, observer_->messages_received());
+  EXPECT_EQ(3U, webrtc_data_channel_->messages_received());
+  EXPECT_EQ(bytes_received, webrtc_data_channel_->bytes_received());
+
+  // Receive three buffers while open.
+  webrtc_data_channel_->OnDataReceived(nullptr, params, buffers[3].data);
+  webrtc_data_channel_->OnDataReceived(nullptr, params, buffers[4].data);
+  webrtc_data_channel_->OnDataReceived(nullptr, params, buffers[5].data);
+  bytes_received += buffers[3].size() + buffers[4].size() + buffers[5].size();
+  EXPECT_EQ(6U, observer_->messages_received());
+  EXPECT_EQ(6U, webrtc_data_channel_->messages_received());
+  EXPECT_EQ(bytes_received, webrtc_data_channel_->bytes_received());
 }
 
 // Tests that OPEN_ACK message is sent if the datachannel is created from an
