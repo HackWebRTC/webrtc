@@ -1705,12 +1705,6 @@ bool WebRtcVoiceMediaChannel::SetRecvCodecs(
     return true;
   }
 
-  if (playout_) {
-    // Receive codecs can not be changed while playing. So we temporarily
-    // pause playout.
-    ChangePlayout(false);
-  }
-
   bool result = true;
   for (const AudioCodec& codec : new_codecs) {
     webrtc::CodecInst voe_codec = {0};
@@ -1735,9 +1729,6 @@ bool WebRtcVoiceMediaChannel::SetRecvCodecs(
     recv_codecs_ = codecs;
   }
 
-  if (desired_playout_ && !playout_) {
-    ChangePlayout(desired_playout_);
-  }
   return result;
 }
 
@@ -1992,12 +1983,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodec(
 }
 
 void WebRtcVoiceMediaChannel::SetPlayout(bool playout) {
-  desired_playout_ = playout;
-  return ChangePlayout(desired_playout_);
-}
-
-void WebRtcVoiceMediaChannel::ChangePlayout(bool playout) {
-  TRACE_EVENT0("webrtc", "WebRtcVoiceMediaChannel::ChangePlayout");
+  TRACE_EVENT0("webrtc", "WebRtcVoiceMediaChannel::SetPlayout");
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   if (playout_ == playout) {
     return;
