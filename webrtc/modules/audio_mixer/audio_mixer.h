@@ -13,7 +13,6 @@
 
 #include <memory>
 
-#include "webrtc/modules/include/module.h"
 #include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
@@ -21,14 +20,6 @@ namespace webrtc {
 class AudioMixer {
  public:
   static const int kMaximumAmountOfMixedAudioSources = 3;
-  enum Frequency {
-    kNbInHz = 8000,
-    kWbInHz = 16000,
-    kSwbInHz = 32000,
-    kFbInHz = 48000,
-    kDefaultFrequency = kWbInHz
-  };
-
   // A callback class that all mixer participants must inherit from/implement.
   class Source {
    public:
@@ -54,52 +45,26 @@ class AudioMixer {
     // AudioFrame pointer at any time until the next call to
     // GetAudioFrameWithInfo, or until the source is removed from the
     // mixer.
-    virtual AudioFrameWithInfo GetAudioFrameWithInfo(int32_t id,
-                                                     int sample_rate_hz) = 0;
+    virtual AudioFrameWithInfo GetAudioFrameWithInfo(int sample_rate_hz) = 0;
 
    protected:
     virtual ~Source() {}
   };
 
   // Factory method. Constructor disabled.
-  static std::unique_ptr<AudioMixer> Create(int id);
+  static std::unique_ptr<AudioMixer> Create();
   virtual ~AudioMixer() {}
 
   // Add/remove audio sources as candidates for mixing.
   virtual int32_t SetMixabilityStatus(Source* audio_source, bool mixable) = 0;
-  // Returns true if an audio source is a candidate for mixing.
-  virtual bool MixabilityStatus(const Source& audio_source) const = 0;
-
-  // Inform the mixer that the audio source should always be mixed and not
-  // count toward the number of mixed audio sources. Note that an audio source
-  // must have been added to the mixer (by calling SetMixabilityStatus())
-  // before this function can be successfully called.
-  virtual int32_t SetAnonymousMixabilityStatus(Source* audio_source,
-                                               bool mixable) = 0;
 
   // Performs mixing by asking registered audio sources for audio. The
-  // mixed result is placed in the provided AudioFrame. Can only be
+  // mixed result is placed in the provided AudioFrame. Will only be
   // called from a single thread. The rate and channels arguments
   // specify the rate and number of channels of the mix result.
-  virtual void Mix(int sample_rate,
+  virtual void Mix(int sample_rate_hz,
                    size_t number_of_channels,
                    AudioFrame* audio_frame_for_mixing) = 0;
-
-  // Returns true if the audio source is mixed anonymously.
-  virtual bool AnonymousMixabilityStatus(const Source& audio_source) const = 0;
-
-  // Output level functions for VoEVolumeControl. Return value
-  // between 0 and 9 is returned by voe::AudioLevel.
-  virtual int GetOutputAudioLevel() = 0;
-
-  // Return value between 0 and 0x7fff is returned by voe::AudioLevel.
-  virtual int GetOutputAudioLevelFullRange() = 0;
-
- protected:
-  AudioMixer() {}
-
- private:
-  RTC_DISALLOW_COPY_AND_ASSIGN(AudioMixer);
 };
 }  // namespace webrtc
 
