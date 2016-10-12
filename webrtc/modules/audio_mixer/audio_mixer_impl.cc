@@ -137,13 +137,8 @@ AudioMixerImpl::SourceStatusList::iterator FindSourceInList(
 
 }  // namespace
 
-std::unique_ptr<AudioMixer> AudioMixer::Create() {
-  return AudioMixerImpl::Create();
-}
-
 AudioMixerImpl::AudioMixerImpl(std::unique_ptr<AudioProcessing> limiter)
     : audio_source_list_(),
-      num_mixed_audio_sources_(0),
       use_limiter_(true),
       time_stamp_(0),
       limiter_(std::move(limiter)) {
@@ -153,7 +148,7 @@ AudioMixerImpl::AudioMixerImpl(std::unique_ptr<AudioProcessing> limiter)
 
 AudioMixerImpl::~AudioMixerImpl() {}
 
-std::unique_ptr<AudioMixerImpl> AudioMixerImpl::Create() {
+rtc::scoped_refptr<AudioMixerImpl> AudioMixerImpl::Create() {
   Config config;
   config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
   std::unique_ptr<AudioProcessing> limiter(AudioProcessing::Create(config));
@@ -186,8 +181,8 @@ std::unique_ptr<AudioMixerImpl> AudioMixerImpl::Create() {
     return nullptr;
   }
 
-  return std::unique_ptr<AudioMixerImpl>(
-      new AudioMixerImpl(std::move(limiter)));
+  return rtc::scoped_refptr<AudioMixerImpl>(
+      new rtc::RefCountedObject<AudioMixerImpl>(std::move(limiter)));
 }
 
 void AudioMixerImpl::Mix(int sample_rate,
@@ -201,11 +196,9 @@ void AudioMixerImpl::Mix(int sample_rate,
   }
 
   AudioFrameList mix_list;
-  size_t num_mixed_audio_sources;
   {
     rtc::CritScope lock(&crit_);
-    mix_list = GetNonAnonymousAudio();
-    num_mixed_audio_sources = num_mixed_audio_sources_;
+    mix_list = GetAudioFromSources();
   }
 
   for (const auto& frame : mix_list) {
@@ -218,7 +211,7 @@ void AudioMixerImpl::Mix(int sample_rate,
 
   time_stamp_ += static_cast<uint32_t>(sample_size_);
 
-  use_limiter_ = num_mixed_audio_sources > 1;
+  use_limiter_ = mix_list.size() > 1;
 
   // We only use the limiter if we're actually mixing multiple streams.
   MixFromList(audio_frame_for_mixing, mix_list, use_limiter_);
@@ -246,39 +239,26 @@ int AudioMixerImpl::OutputFrequency() const {
   return output_frequency_;
 }
 
-int32_t AudioMixerImpl::SetMixabilityStatus(Source* audio_source,
-                                            bool mixable) {
-  {
-    rtc::CritScope lock(&crit_);
-    const bool is_mixed = FindSourceInList(audio_source, &audio_source_list_) !=
-                          audio_source_list_.end();
-    // API must be called with a new state.
-    if (!(mixable ^ is_mixed)) {
-      return -1;
-    }
-    bool success = false;
-    if (mixable) {
-      success = AddAudioSourceToList(audio_source, &audio_source_list_);
-    } else {
-      success = RemoveAudioSourceFromList(audio_source, &audio_source_list_);
-    }
-    if (!success) {
-      RTC_NOTREACHED();
-      return -1;
-    }
-
-    size_t num_mixed_non_anonymous = audio_source_list_.size();
-    if (num_mixed_non_anonymous > kMaximumAmountOfMixedAudioSources) {
-      num_mixed_non_anonymous = kMaximumAmountOfMixedAudioSources;
-    }
-    num_mixed_audio_sources_ = num_mixed_non_anonymous;
-  }
-  return 0;
+bool AudioMixerImpl::AddSource(Source* audio_source) {
+  RTC_DCHECK(audio_source);
+  rtc::CritScope lock(&crit_);
+  RTC_DCHECK(FindSourceInList(audio_source, &audio_source_list_) ==
+             audio_source_list_.end())
+      << "Source already added to mixer";
+  audio_source_list_.emplace_back(audio_source, false, 0);
+  return true;
 }
 
+bool AudioMixerImpl::RemoveSource(Source* audio_source) {
+  RTC_DCHECK(audio_source);
+  rtc::CritScope lock(&crit_);
+  const auto iter = FindSourceInList(audio_source, &audio_source_list_);
+  RTC_DCHECK(iter != audio_source_list_.end()) << "Source not present in mixer";
+  audio_source_list_.erase(iter);
+  return true;
+}
 
-
-AudioFrameList AudioMixerImpl::GetNonAnonymousAudio() {
+AudioFrameList AudioMixerImpl::GetAudioFromSources() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   AudioFrameList result;
   std::vector<SourceFrame> audio_source_mixing_data_list;
@@ -330,24 +310,6 @@ AudioFrameList AudioMixerImpl::GetNonAnonymousAudio() {
   return result;
 }
 
-bool AudioMixerImpl::AddAudioSourceToList(
-    Source* audio_source,
-    SourceStatusList* audio_source_list) const {
-  audio_source_list->emplace_back(audio_source, false, 0);
-  return true;
-}
-
-bool AudioMixerImpl::RemoveAudioSourceFromList(
-    Source* audio_source,
-    SourceStatusList* audio_source_list) const {
-  const auto iter = FindSourceInList(audio_source, audio_source_list);
-  if (iter != audio_source_list->end()) {
-    audio_source_list->erase(iter);
-    return true;
-  } else {
-    return false;
-  }
-}
 
 bool AudioMixerImpl::LimitMixedAudio(AudioFrame* mixed_audio) const {
   RTC_DCHECK_RUN_ON(&thread_checker_);

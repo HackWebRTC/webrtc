@@ -10,6 +10,7 @@
 
 #include <string.h>
 
+#include <limits>
 #include <memory>
 #include <utility>
 
@@ -59,6 +60,8 @@ class MockMixerAudioSource : public AudioMixer::Source {
 
   MOCK_METHOD1(GetAudioFrameWithInfo, AudioFrameWithInfo(int sample_rate_hz));
 
+  MOCK_METHOD0(ssrc, int());
+
   AudioFrame* fake_frame() { return &fake_frame_; }
   AudioFrameInfo fake_info() { return fake_audio_frame_info_; }
   void set_fake_info(const AudioFrameInfo audio_frame_info) {
@@ -87,7 +90,7 @@ void MixAndCompare(
   RTC_DCHECK(frames.size() == frame_info.size());
   RTC_DCHECK(frame_info.size() == expected_status.size());
 
-  const std::unique_ptr<AudioMixerImpl> mixer(AudioMixerImpl::Create());
+  const auto mixer = AudioMixerImpl::Create();
   std::vector<MockMixerAudioSource> participants(num_audio_sources);
 
   for (int i = 0; i < num_audio_sources; i++) {
@@ -96,7 +99,7 @@ void MixAndCompare(
   }
 
   for (int i = 0; i < num_audio_sources; i++) {
-    EXPECT_EQ(0, mixer->SetMixabilityStatus(&participants[i], true));
+    EXPECT_TRUE(mixer->AddSource(&participants[i]));
     EXPECT_CALL(participants[i], GetAudioFrameWithInfo(kDefaultSampleRateHz))
         .Times(Exactly(1));
   }
@@ -112,9 +115,9 @@ void MixAndCompare(
 
 TEST(AudioMixer, LargestEnergyVadActiveMixed) {
   constexpr int kAudioSources =
-      AudioMixer::kMaximumAmountOfMixedAudioSources + 3;
+      AudioMixerImpl::kMaximumAmountOfMixedAudioSources + 3;
 
-  const std::unique_ptr<AudioMixerImpl> mixer(AudioMixerImpl::Create());
+  const auto mixer = AudioMixerImpl::Create();
 
   MockMixerAudioSource participants[kAudioSources];
 
@@ -125,7 +128,7 @@ TEST(AudioMixer, LargestEnergyVadActiveMixed) {
     // modified by a ramped-in window.
     participants[i].fake_frame()->data_[80] = i;
 
-    EXPECT_EQ(0, mixer->SetMixabilityStatus(&participants[i], true));
+    EXPECT_TRUE(mixer->AddSource(&participants[i]));
     EXPECT_CALL(participants[i], GetAudioFrameWithInfo(_)).Times(Exactly(1));
   }
 
@@ -143,7 +146,8 @@ TEST(AudioMixer, LargestEnergyVadActiveMixed) {
     bool is_mixed =
         mixer->GetAudioSourceMixabilityStatusForTest(&participants[i]);
     if (i == kAudioSources - 1 ||
-        i < kAudioSources - 1 - AudioMixer::kMaximumAmountOfMixedAudioSources) {
+        i < kAudioSources - 1 -
+                AudioMixerImpl::kMaximumAmountOfMixedAudioSources) {
       EXPECT_FALSE(is_mixed) << "Mixing status of AudioSource #" << i
                              << " wrong.";
     } else {
@@ -154,7 +158,7 @@ TEST(AudioMixer, LargestEnergyVadActiveMixed) {
 }
 
 TEST(AudioMixer, FrameNotModifiedForSingleParticipant) {
-  const std::unique_ptr<AudioMixer> mixer(AudioMixer::Create());
+  const auto mixer = AudioMixerImpl::Create();
 
   MockMixerAudioSource participant;
 
@@ -166,7 +170,7 @@ TEST(AudioMixer, FrameNotModifiedForSingleParticipant) {
     participant.fake_frame()->data_[j] = j;
   }
 
-  EXPECT_EQ(0, mixer->SetMixabilityStatus(&participant, true));
+  EXPECT_TRUE(mixer->AddSource(&participant));
   EXPECT_CALL(participant, GetAudioFrameWithInfo(_)).Times(Exactly(2));
 
   AudioFrame audio_frame;
@@ -182,12 +186,12 @@ TEST(AudioMixer, FrameNotModifiedForSingleParticipant) {
 }
 
 TEST(AudioMixer, ParticipantSampleRate) {
-  const std::unique_ptr<AudioMixer> mixer(AudioMixer::Create());
+  const auto mixer = AudioMixerImpl::Create();
 
   MockMixerAudioSource participant;
   ResetFrame(participant.fake_frame());
 
-  EXPECT_EQ(0, mixer->SetMixabilityStatus(&participant, true));
+  EXPECT_TRUE(mixer->AddSource(&participant));
   for (auto frequency : {8000, 16000, 32000, 48000}) {
     EXPECT_CALL(participant, GetAudioFrameWithInfo(frequency))
         .Times(Exactly(1));
@@ -199,12 +203,12 @@ TEST(AudioMixer, ParticipantSampleRate) {
 }
 
 TEST(AudioMixer, ParticipantNumberOfChannels) {
-  const std::unique_ptr<AudioMixer> mixer(AudioMixer::Create());
+  const auto mixer = AudioMixerImpl::Create();
 
   MockMixerAudioSource participant;
   ResetFrame(participant.fake_frame());
 
-  EXPECT_EQ(0, mixer->SetMixabilityStatus(&participant, true));
+  EXPECT_TRUE(mixer->AddSource(&participant));
   for (size_t number_of_channels : {1, 2}) {
     EXPECT_CALL(participant, GetAudioFrameWithInfo(kDefaultSampleRateHz))
         .Times(Exactly(1));
@@ -217,9 +221,9 @@ TEST(AudioMixer, ParticipantNumberOfChannels) {
 // another participant with higher energy is added.
 TEST(AudioMixer, RampedOutSourcesShouldNotBeMarkedMixed) {
   constexpr int kAudioSources =
-      AudioMixer::kMaximumAmountOfMixedAudioSources + 1;
+      AudioMixerImpl::kMaximumAmountOfMixedAudioSources + 1;
 
-  const std::unique_ptr<AudioMixerImpl> mixer(AudioMixerImpl::Create());
+  const auto mixer = AudioMixerImpl::Create();
   MockMixerAudioSource participants[kAudioSources];
 
   for (int i = 0; i < kAudioSources; i++) {
@@ -231,7 +235,7 @@ TEST(AudioMixer, RampedOutSourcesShouldNotBeMarkedMixed) {
 
   // Add all participants but the loudest for mixing.
   for (int i = 0; i < kAudioSources - 1; i++) {
-    EXPECT_EQ(0, mixer->SetMixabilityStatus(&participants[i], true));
+    EXPECT_TRUE(mixer->AddSource(&participants[i]));
     EXPECT_CALL(participants[i], GetAudioFrameWithInfo(kDefaultSampleRateHz))
         .Times(Exactly(1));
   }
@@ -246,8 +250,7 @@ TEST(AudioMixer, RampedOutSourcesShouldNotBeMarkedMixed) {
   }
 
   // Add new participant with higher energy.
-  EXPECT_EQ(0,
-            mixer->SetMixabilityStatus(&participants[kAudioSources - 1], true));
+  EXPECT_TRUE(mixer->AddSource(&participants[kAudioSources - 1]));
   for (int i = 0; i < kAudioSources; i++) {
     EXPECT_CALL(participants[i], GetAudioFrameWithInfo(kDefaultSampleRateHz))
         .Times(Exactly(1));
@@ -273,17 +276,16 @@ TEST(AudioMixer, ConstructFromOtherThread) {
   std::unique_ptr<rtc::Thread> init_thread = rtc::Thread::Create();
   std::unique_ptr<rtc::Thread> participant_thread = rtc::Thread::Create();
   init_thread->Start();
-  std::unique_ptr<AudioMixer> mixer(
-      init_thread->Invoke<std::unique_ptr<AudioMixer>>(
-          RTC_FROM_HERE, &AudioMixer::Create));
+  const auto mixer = init_thread->Invoke<rtc::scoped_refptr<AudioMixer>>(
+      RTC_FROM_HERE, &AudioMixerImpl::Create);
   MockMixerAudioSource participant;
 
   ResetFrame(participant.fake_frame());
 
   participant_thread->Start();
-  EXPECT_EQ(0, participant_thread->Invoke<int>(
-                   RTC_FROM_HERE, rtc::Bind(&AudioMixer::SetMixabilityStatus,
-                                            mixer.get(), &participant, true)));
+  EXPECT_TRUE(participant_thread->Invoke<int>(
+      RTC_FROM_HERE,
+      rtc::Bind(&AudioMixer::AddSource, mixer.get(), &participant)));
 
   EXPECT_CALL(participant, GetAudioFrameWithInfo(kDefaultSampleRateHz))
       .Times(Exactly(1));
@@ -294,7 +296,7 @@ TEST(AudioMixer, ConstructFromOtherThread) {
 
 TEST(AudioMixer, MutedShouldMixAfterUnmuted) {
   constexpr int kAudioSources =
-      AudioMixer::kMaximumAmountOfMixedAudioSources + 1;
+      AudioMixerImpl::kMaximumAmountOfMixedAudioSources + 1;
 
   std::vector<AudioFrame> frames(kAudioSources);
   for (auto& frame : frames) {
@@ -312,7 +314,7 @@ TEST(AudioMixer, MutedShouldMixAfterUnmuted) {
 
 TEST(AudioMixer, PassiveShouldMixAfterNormal) {
   constexpr int kAudioSources =
-      AudioMixer::kMaximumAmountOfMixedAudioSources + 1;
+      AudioMixerImpl::kMaximumAmountOfMixedAudioSources + 1;
 
   std::vector<AudioFrame> frames(kAudioSources);
   for (auto& frame : frames) {
@@ -330,7 +332,7 @@ TEST(AudioMixer, PassiveShouldMixAfterNormal) {
 
 TEST(AudioMixer, ActiveShouldMixBeforeLoud) {
   constexpr int kAudioSources =
-      AudioMixer::kMaximumAmountOfMixedAudioSources + 1;
+      AudioMixerImpl::kMaximumAmountOfMixedAudioSources + 1;
 
   std::vector<AudioFrame> frames(kAudioSources);
   for (auto& frame : frames) {
@@ -350,7 +352,7 @@ TEST(AudioMixer, ActiveShouldMixBeforeLoud) {
 
 TEST(AudioMixer, UnmutedShouldMixBeforeLoud) {
   constexpr int kAudioSources =
-      AudioMixer::kMaximumAmountOfMixedAudioSources + 1;
+      AudioMixerImpl::kMaximumAmountOfMixedAudioSources + 1;
 
   std::vector<AudioFrame> frames(kAudioSources);
   for (auto& frame : frames) {

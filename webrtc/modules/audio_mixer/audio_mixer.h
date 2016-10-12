@@ -13,13 +13,13 @@
 
 #include <memory>
 
+#include "webrtc/base/refcount.h"
 #include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
 
-class AudioMixer {
+class AudioMixer : public rtc::RefCountInterface {
  public:
-  static const int kMaximumAmountOfMixedAudioSources = 3;
   // A callback class that all mixer participants must inherit from/implement.
   class Source {
    public:
@@ -47,16 +47,23 @@ class AudioMixer {
     // mixer.
     virtual AudioFrameWithInfo GetAudioFrameWithInfo(int sample_rate_hz) = 0;
 
+    // A way for a mixer implementation do distinguish participants.
+    virtual int ssrc() = 0;
+
    protected:
     virtual ~Source() {}
   };
 
-  // Factory method. Constructor disabled.
-  static std::unique_ptr<AudioMixer> Create();
-  virtual ~AudioMixer() {}
+  // Since the mixer is reference counted, the destructor may be
+  // called from any thread.
+  ~AudioMixer() override {}
 
-  // Add/remove audio sources as candidates for mixing.
-  virtual int32_t SetMixabilityStatus(Source* audio_source, bool mixable) = 0;
+  // Returns true if adding/removing was successful. A source is never
+  // added twice and removal is never attempted if a source has not
+  // been successfully added to the mixer. Addition and removal can
+  // happen on different threads.
+  virtual bool AddSource(Source* audio_source) = 0;
+  virtual bool RemoveSource(Source* audio_source) = 0;
 
   // Performs mixing by asking registered audio sources for audio. The
   // mixed result is placed in the provided AudioFrame. Will only be

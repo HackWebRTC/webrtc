@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_mixer/audio_mixer.h"
@@ -41,15 +42,18 @@ class AudioMixerImpl : public AudioMixer {
 
   // AudioProcessing only accepts 10 ms frames.
   static const int kFrameDurationInMs = 10;
+  static const int kMaximumAmountOfMixedAudioSources = 3;
   static const int kDefaultFrequency = 48000;
 
-  static std::unique_ptr<AudioMixerImpl> Create();
+  static rtc::scoped_refptr<AudioMixerImpl> Create();
 
   ~AudioMixerImpl() override;
 
   // AudioMixer functions
-  int32_t SetMixabilityStatus(Source* audio_source, bool mixable) override;
-  void Mix(int sample_rate,
+  bool AddSource(Source* audio_source) override;
+  bool RemoveSource(Source* audio_source) override;
+
+  void Mix(int sample_rate_hz,
            size_t number_of_channels,
            AudioFrame* audio_frame_for_mixing) override;
 
@@ -58,9 +62,10 @@ class AudioMixerImpl : public AudioMixer {
   // mixer.
   bool GetAudioSourceMixabilityStatusForTest(Source* audio_source) const;
 
- private:
+ protected:
   explicit AudioMixerImpl(std::unique_ptr<AudioProcessing> limiter);
 
+ private:
   // Set/get mix frequency
   void SetOutputFrequency(int frequency);
   int OutputFrequency() const;
@@ -68,8 +73,7 @@ class AudioMixerImpl : public AudioMixer {
   // Compute what audio sources to mix from audio_source_list_. Ramp
   // in and out. Update mixed status. Mixes up to
   // kMaximumAmountOfMixedAudioSources audio sources.
-  AudioFrameList GetNonAnonymousAudio() EXCLUSIVE_LOCKS_REQUIRED(crit_);
-
+  AudioFrameList GetAudioFromSources() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Add/remove the MixerAudioSource to the specified
   // MixerAudioSource list.
@@ -90,7 +94,6 @@ class AudioMixerImpl : public AudioMixer {
   // List of all audio sources. Note all lists are disjunct
   SourceStatusList audio_source_list_ GUARDED_BY(crit_);  // May be mixed.
 
-  size_t num_mixed_audio_sources_ GUARDED_BY(crit_);
   // Determines if we will use a limiter for clipping protection during
   // mixing.
   bool use_limiter_ ACCESS_ON(&thread_checker_);
