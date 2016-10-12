@@ -56,8 +56,6 @@
         'channel_proxy.h',
         'monitor_module.cc',
         'monitor_module.h',
-        'network_predictor.cc',
-        'network_predictor.h',
         'output_mixer.cc',
         'output_mixer.h',
         'shared_data.cc',

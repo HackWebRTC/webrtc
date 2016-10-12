@@ -252,6 +252,9 @@ class AudioCodingModule {
   ///////////////////////////////////////////////////////////////////////////
   // Sets the bitrate to the specified value in bits/sec. If the value is not
   // supported by the codec, it will choose another appropriate value.
+  //
+  // This is only used in test code that rely on old ACM APIs.
+  // TODO(minyue): Remove it when possible.
   virtual void SetBitRate(int bitrate_bps) = 0;
 
   // int32_t RegisterTransportCallback()
@@ -371,6 +374,8 @@ class AudioCodingModule {
   //   -1 if failed to set packet loss rate,
   //   0 if succeeded.
   //
+  // This is only used in test code that rely on old ACM APIs.
+  // TODO(minyue): Remove it when possible.
   virtual int SetPacketLossRate(int packet_loss_rate) = 0;
 
   ///////////////////////////////////////////////////////////////////////////

@@ -30,8 +30,6 @@ rtc_static_library("voice_engine") {
     "include/voe_volume_control.h",
     "monitor_module.cc",
     "monitor_module.h",
-    "network_predictor.cc",
-    "network_predictor.h",
     "output_mixer.cc",
     "output_mixer.h",
     "shared_data.cc",
@@ -206,7 +204,6 @@ if (rtc_include_tests) {
 
     sources = [
       "channel_unittest.cc",
-      "network_predictor_unittest.cc",
       "test/channel_transport/udp_socket_manager_unittest.cc",
       "test/channel_transport/udp_socket_wrapper_unittest.cc",
       "test/channel_transport/udp_transport_unittest.cc",

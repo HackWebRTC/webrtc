@@ -32,7 +32,6 @@
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_network.h"
 #include "webrtc/voice_engine/level_indicator.h"
-#include "webrtc/voice_engine/network_predictor.h"
 #include "webrtc/voice_engine/shared_data.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
 
@@ -209,6 +208,10 @@ class Channel
   int SetOpusMaxPlaybackRate(int frequency_hz);
   int SetOpusDtx(bool enable_dtx);
   int GetOpusDtx(bool* enabled);
+  bool EnableAudioNetworkAdaptor(const std::string& config_string);
+  void DisableAudioNetworkAdaptor();
+  void SetReceiverFrameLengthRange(int min_frame_length_ms,
+                                   int max_frame_length_ms);
 
   // VoENetwork
   int32_t RegisterExternalTransport(Transport* transport);
@@ -537,7 +540,6 @@ class Channel
   bool restored_packet_in_use_;
   // RtcpBandwidthObserver
   std::unique_ptr<VoERtcpObserver> rtcp_observer_;
-  std::unique_ptr<NetworkPredictor> network_predictor_;
   // An associated send channel.
   rtc::CriticalSection assoc_send_channel_lock_;
   ChannelOwner associate_send_channel_ GUARDED_BY(assoc_send_channel_lock_);

@@ -77,9 +77,13 @@ void AudioEncoder::DisableAudioNetworkAdaptor() {}
 void AudioEncoder::OnReceivedUplinkBandwidth(int uplink_bandwidth_bps) {}
 
 void AudioEncoder::OnReceivedUplinkPacketLossFraction(
-    float uplink_packet_loss_fraction) {}
+    float uplink_packet_loss_fraction) {
+  SetProjectedPacketLossRate(uplink_packet_loss_fraction);
+}
 
-void AudioEncoder::OnReceivedTargetAudioBitrate(int target_audio_bitrate_bps) {}
+void AudioEncoder::OnReceivedTargetAudioBitrate(int target_audio_bitrate_bps) {
+  SetTargetBitrate(target_audio_bitrate_bps);
+}
 
 void AudioEncoder::OnReceivedRtt(int rtt_ms) {}
 

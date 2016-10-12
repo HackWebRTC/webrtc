@@ -15,6 +15,7 @@
 #include "webrtc/modules/audio_coding/audio_network_adaptor/mock/mock_audio_network_adaptor.h"
 #include "webrtc/modules/audio_coding/codecs/opus/audio_encoder_opus.h"
 #include "webrtc/test/gtest.h"
+#include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
 using ::testing::NiceMock;
@@ -23,6 +24,7 @@ using ::testing::Return;
 namespace {
 
 const CodecInst kDefaultOpusSettings = {105, "opus", 48000, 960, 1, 32000};
+constexpr int64_t kInitialTimeUs = 12345678;
 
 AudioEncoderOpus::Config CreateConfig(const CodecInst& codec_inst) {
   AudioEncoderOpus::Config config;
@@ -38,6 +40,7 @@ AudioEncoderOpus::Config CreateConfig(const CodecInst& codec_inst) {
 struct AudioEncoderOpusStates {
   std::shared_ptr<MockAudioNetworkAdaptor*> mock_audio_network_adaptor;
   std::unique_ptr<AudioEncoderOpus> encoder;
+  std::unique_ptr<SimulatedClock> simulated_clock;
 };
 
 AudioEncoderOpusStates CreateCodec(size_t num_channels) {
@@ -63,6 +66,9 @@ AudioEncoderOpusStates CreateCodec(size_t num_channels) {
   CodecInst codec_inst = kDefaultOpusSettings;
   codec_inst.channels = num_channels;
   auto config = CreateConfig(codec_inst);
+  states.simulated_clock.reset(new SimulatedClock(kInitialTimeUs));
+  config.clock = states.simulated_clock.get();
+
   states.encoder.reset(new AudioEncoderOpus(config, std::move(creator)));
   return states;
 }
@@ -301,6 +307,32 @@ TEST(AudioEncoderOpusTest,
   states.encoder->SetReceiverFrameLengthRange(kMinFrameLength, kMaxFrameLength);
 
   CheckEncoderRuntimeConfig(states.encoder.get(), config);
+}
+
+TEST(AudioEncoderOpusTest,
+     PacketLossFractionSmoothedOnSetUplinkPacketLossFraction) {
+  auto states = CreateCodec(2);
+
+  // The values are carefully chosen so that if no smoothing is made, the test
+  // will fail.
+  constexpr float kPacketLossFraction_1 = 0.02f;
+  constexpr float kPacketLossFraction_2 = 0.198f;
+  // |kSecondSampleTimeMs| is chose to ease the calculation since
+  // 0.9999 ^ 6931 = 0.5.
+  constexpr float kSecondSampleTimeMs = 6931;
+
+  // First time, no filtering.
+  states.encoder->OnReceivedUplinkPacketLossFraction(kPacketLossFraction_1);
+  EXPECT_DOUBLE_EQ(0.01, states.encoder->packet_loss_rate());
+
+  states.simulated_clock->AdvanceTimeMilliseconds(kSecondSampleTimeMs);
+  states.encoder->OnReceivedUplinkPacketLossFraction(kPacketLossFraction_2);
+
+  // Now the output of packet loss fraction smoother should be
+  // (0.02 + 0.198) / 2 = 0.109, which reach the threshold for the optimized
+  // packet loss rate to increase to 0.05. If no smoothing has been made, the
+  // optimized packet loss rate should have been increase to 0.1.
+  EXPECT_DOUBLE_EQ(0.05, states.encoder->packet_loss_rate());
 }
 
 }  // namespace webrtc

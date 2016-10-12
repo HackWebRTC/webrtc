@@ -899,7 +899,6 @@ Channel::Channel(int32_t channelId,
       _outputSpeechType(AudioFrame::kNormalSpeech),
       restored_packet_in_use_(false),
       rtcp_observer_(new VoERtcpObserver(this)),
-      network_predictor_(new NetworkPredictor(Clock::GetRealTimeClock())),
       associate_send_channel_(ChannelOwner(nullptr)),
       pacing_enabled_(config.enable_voice_pacing),
       feedback_observer_proxy_(new TransportFeedbackProxy()),
@@ -1331,19 +1330,18 @@ int32_t Channel::SetSendCodec(const CodecInst& codec) {
 void Channel::SetBitRate(int bitrate_bps) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::SetBitRate(bitrate_bps=%d)", bitrate_bps);
-  audio_coding_->SetBitRate(bitrate_bps);
+  audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
+    if (*encoder)
+      (*encoder)->OnReceivedTargetAudioBitrate(bitrate_bps);
+  });
   retransmission_rate_limiter_->SetMaxRate(bitrate_bps);
 }
 
 void Channel::OnIncomingFractionLoss(int fraction_lost) {
-  network_predictor_->UpdatePacketLossRate(fraction_lost);
-  uint8_t average_fraction_loss = network_predictor_->GetLossRate();
-
-  // Normalizes rate to 0 - 100.
-  if (audio_coding_->SetPacketLossRate(100 * average_fraction_loss / 255) !=
-      0) {
-    assert(false);  // This should not happen.
-  }
+  audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
+    if (*encoder)
+      (*encoder)->OnReceivedUplinkPacketLossFraction(fraction_lost / 255.0f);
+  });
 }
 
 int32_t Channel::SetVADStatus(bool enableVAD,
@@ -1540,6 +1538,34 @@ int Channel::GetOpusDtx(bool* enabled) {
   return success;
 }
 
+bool Channel::EnableAudioNetworkAdaptor(const std::string& config_string) {
+  bool success = false;
+  audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
+    if (*encoder) {
+      success = (*encoder)->EnableAudioNetworkAdaptor(
+          config_string, Clock::GetRealTimeClock());
+    }
+  });
+  return success;
+}
+
+void Channel::DisableAudioNetworkAdaptor() {
+  audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
+    if (*encoder)
+      (*encoder)->DisableAudioNetworkAdaptor();
+  });
+}
+
+void Channel::SetReceiverFrameLengthRange(int min_frame_length_ms,
+                                          int max_frame_length_ms) {
+  audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
+    if (*encoder) {
+      (*encoder)->SetReceiverFrameLengthRange(min_frame_length_ms,
+                                              max_frame_length_ms);
+    }
+  });
+}
+
 int32_t Channel::RegisterExternalTransport(Transport* transport) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::RegisterExternalTransport()");
@@ -1699,6 +1725,12 @@ int32_t Channel::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
     nack_window_ms = kMaxRetransmissionWindowMs;
   }
   retransmission_rate_limiter_->SetWindowSize(nack_window_ms);
+
+  // Invoke audio encoders OnReceivedRtt().
+  audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
+    if (*encoder)
+      (*encoder)->OnReceivedRtt(rtt);
+  });
 
   uint32_t ntp_secs = 0;
   uint32_t ntp_frac = 0;

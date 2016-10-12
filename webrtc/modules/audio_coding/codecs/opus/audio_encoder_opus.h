@@ -49,6 +49,7 @@ class AudioEncoderOpus final : public AudioEncoder {
     int max_playback_rate_hz = 48000;
     int complexity = kDefaultComplexity;
     bool dtx_enabled = false;
+    const Clock* clock = nullptr;
 
    private:
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS) || defined(WEBRTC_ARCH_ARM)
@@ -115,6 +116,8 @@ class AudioEncoderOpus final : public AudioEncoder {
                          rtc::Buffer* encoded) override;
 
  private:
+  class PacketLossFractionSmoother;
+
   size_t Num10msFramesPerPacket() const;
   size_t SamplesPer10msFrame() const;
   size_t SufficientOutputBufferSize() const;
@@ -133,6 +136,7 @@ class AudioEncoderOpus final : public AudioEncoder {
   uint32_t first_timestamp_in_buffer_;
   size_t num_channels_to_encode_;
   int next_frame_length_ms_;
+  std::unique_ptr<PacketLossFractionSmoother> packet_loss_fraction_smoother_;
   AudioNetworkAdaptorCreator audio_network_adaptor_creator_;
   std::unique_ptr<AudioNetworkAdaptor> audio_network_adaptor_;
 
