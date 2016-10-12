@@ -529,7 +529,8 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
         break;
       case H264::NaluType::kStapA:
       case H264::NaluType::kFuA:
-        RTC_NOTREACHED();
+        LOG(LS_WARNING) << "Unexpected STAP-A or FU-A received.";
+        return false;
     }
     RTPVideoHeaderH264* h264 = &parsed_payload->type.Video.codecHeader.H264;
     if (h264->nalus_length == kMaxNalusPerPacket) {
