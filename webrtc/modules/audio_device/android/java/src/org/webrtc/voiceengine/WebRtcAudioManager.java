@@ -172,6 +172,16 @@ public class WebRtcAudioManager {
     volumeLogger.stop();
   }
 
+  private void setCommunicationMode(boolean enable) {
+    if (enable) {
+      audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+      Logging.d(TAG, "audio mode is set to AudioManager.MODE_IN_COMMUNICATION");
+    } else {
+      audioManager.setMode(AudioManager.MODE_NORMAL);
+      Logging.d(TAG, "audio mode is set to AudioManager.MODE_NORMAL");
+    }
+  }
+
   private boolean isCommunicationModeEnabled() {
     return (audioManager.getMode() == AudioManager.MODE_IN_COMMUNICATION);
   }

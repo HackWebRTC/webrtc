@@ -35,6 +35,8 @@ AudioManager::JavaAudioManager::JavaAudioManager(
     : audio_manager_(std::move(audio_manager)),
       init_(native_reg->GetMethodId("init", "()Z")),
       dispose_(native_reg->GetMethodId("dispose", "()V")),
+      set_communication_mode_(
+          native_reg->GetMethodId("setCommunicationMode", "(Z)V")),
       is_communication_mode_enabled_(
           native_reg->GetMethodId("isCommunicationModeEnabled", "()Z")),
       is_device_blacklisted_for_open_sles_usage_(
@@ -53,6 +55,11 @@ bool AudioManager::JavaAudioManager::Init() {
 
 void AudioManager::JavaAudioManager::Close() {
   audio_manager_->CallVoidMethod(dispose_);
+}
+
+void AudioManager::JavaAudioManager::SetCommunicationMode(bool enable) {
+  audio_manager_->CallVoidMethod(set_communication_mode_,
+                                 static_cast<jboolean>(enable));
 }
 
 bool AudioManager::JavaAudioManager::IsCommunicationModeEnabled() {
@@ -174,6 +181,12 @@ bool AudioManager::Close() {
   j_audio_manager_->Close();
   initialized_ = false;
   return true;
+}
+
+void AudioManager::SetCommunicationMode(bool enable) {
+  ALOGD("SetCommunicationMode(%d)", enable);
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  j_audio_manager_->SetCommunicationMode(enable);
 }
 
 bool AudioManager::IsCommunicationModeEnabled() const {
