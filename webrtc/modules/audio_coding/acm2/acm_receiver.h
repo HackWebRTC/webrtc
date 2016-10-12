@@ -209,6 +209,8 @@ class AcmReceiver {
   //
   int LastAudioCodec(CodecInst* codec) const;
 
+  rtc::Optional<SdpAudioFormat> LastAudioFormat() const;
+
   //
   // Get a decoder given its registered payload-type.
   //
@@ -273,6 +275,7 @@ class AcmReceiver {
 
   rtc::CriticalSection crit_sect_;
   rtc::Optional<CodecInst> last_audio_decoder_ GUARDED_BY(crit_sect_);
+  rtc::Optional<SdpAudioFormat> last_audio_format_ GUARDED_BY(crit_sect_);
   ACMResampler resampler_ GUARDED_BY(crit_sect_);
   std::unique_ptr<int16_t[]> last_audio_buffer_ GUARDED_BY(crit_sect_);
   CallStatistics call_stats_ GUARDED_BY(crit_sect_);

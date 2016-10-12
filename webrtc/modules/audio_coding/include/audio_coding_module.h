@@ -553,6 +553,17 @@ class AudioCodingModule {
   virtual int32_t ReceiveCodec(CodecInst* curr_receive_codec) const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
+  // rtc::Optional<SdpAudioFormat> ReceiveFormat()
+  // Get the format associated with last received payload.
+  //
+  // Return value:
+  //    An SdpAudioFormat describing the format associated with the last
+  //    received payload.
+  //    An empty Optional if no payload has yet been received.
+  //
+  virtual rtc::Optional<SdpAudioFormat> ReceiveFormat() const = 0;
+
+  ///////////////////////////////////////////////////////////////////////////
   // int32_t IncomingPacket()
   // Call this function to insert a parsed RTP packet into ACM.
   //

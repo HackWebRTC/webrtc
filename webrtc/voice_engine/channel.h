@@ -446,7 +446,7 @@ class Channel
                                 RTPExtensionType type,
                                 unsigned char id);
 
-  int32_t GetPlayoutFrequency() const;
+  int GetRtpTimestampRateHz() const;
   int64_t GetRTT(bool allow_associate_channel) const;
 
   rtc::CriticalSection _fileCritSect;

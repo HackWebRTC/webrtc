@@ -718,7 +718,7 @@ MixerParticipant::AudioFrameInfo Channel::GetAudioFrameWithMuted(
         rtp_ts_wraparound_handler_->Unwrap(audioFrame->timestamp_);
     audioFrame->elapsed_time_ms_ =
         (unwrap_timestamp - capture_start_rtp_time_stamp_) /
-        (GetPlayoutFrequency() / 1000);
+        (GetRtpTimestampRateHz() / 1000);
 
     {
       rtc::CritScope lock(&ts_stats_lock_);
@@ -3162,7 +3162,7 @@ void Channel::UpdatePlayoutTimestamp(bool rtcp) {
   uint32_t playout_timestamp = *jitter_buffer_playout_timestamp_;
 
   // Remove the playout delay.
-  playout_timestamp -= (delay_ms * (GetPlayoutFrequency() / 1000));
+  playout_timestamp -= (delay_ms * (GetRtpTimestampRateHz() / 1000));
 
   WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::UpdatePlayoutTimestamp() => playoutTimestamp = %lu",
@@ -3222,25 +3222,15 @@ int Channel::SetSendRtpHeaderExtension(bool enable,
   return error;
 }
 
-int32_t Channel::GetPlayoutFrequency() const {
-  int32_t playout_frequency = audio_coding_->PlayoutFrequency();
-  CodecInst current_recive_codec;
-  if (audio_coding_->ReceiveCodec(&current_recive_codec) == 0) {
-    if (STR_CASE_CMP("G722", current_recive_codec.plname) == 0) {
-      // Even though the actual sampling rate for G.722 audio is
-      // 16,000 Hz, the RTP clock rate for the G722 payload format is
-      // 8,000 Hz because that value was erroneously assigned in
-      // RFC 1890 and must remain unchanged for backward compatibility.
-      playout_frequency = 8000;
-    } else if (STR_CASE_CMP("opus", current_recive_codec.plname) == 0) {
-      // We are resampling Opus internally to 32,000 Hz until all our
-      // DSP routines can operate at 48,000 Hz, but the RTP clock
-      // rate for the Opus payload format is standardized to 48,000 Hz,
-      // because that is the maximum supported decoding sampling rate.
-      playout_frequency = 48000;
-    }
-  }
-  return playout_frequency;
+int Channel::GetRtpTimestampRateHz() const {
+  const auto format = audio_coding_->ReceiveFormat();
+  // Default to the playout frequency if we've not gotten any packets yet.
+  // TODO(ossu): Zero clockrate can only happen if we've added an external
+  // decoder for a format we don't support internally. Remove once that way of
+  // adding decoders is gone!
+  return (format && format->clockrate_hz != 0)
+             ? format->clockrate_hz
+             : audio_coding_->PlayoutFrequency();
 }
 
 int64_t Channel::GetRTT(bool allow_associate_channel) const {

@@ -138,6 +138,8 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   // Get current received codec.
   int ReceiveCodec(CodecInst* current_codec) const override;
 
+  rtc::Optional<SdpAudioFormat> ReceiveFormat() const override;
+
   // Incoming packet from network parsed and ready for decode.
   int IncomingPacket(const uint8_t* incoming_payload,
                      const size_t payload_length,
@@ -1085,6 +1087,11 @@ int AudioCodingModuleImpl::RegisterExternalReceiveCodec(
 int AudioCodingModuleImpl::ReceiveCodec(CodecInst* current_codec) const {
   rtc::CritScope lock(&acm_crit_sect_);
   return receiver_.LastAudioCodec(current_codec);
+}
+
+rtc::Optional<SdpAudioFormat> AudioCodingModuleImpl::ReceiveFormat() const {
+  rtc::CritScope lock(&acm_crit_sect_);
+  return receiver_.LastAudioFormat();
 }
 
 // Incoming packet from network parsed and ready for decode.
