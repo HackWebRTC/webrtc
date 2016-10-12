@@ -74,7 +74,7 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation(RtcEventLog* event_log)
       event_log_(event_log),
       last_rtc_event_log_ms_(-1),
       in_timeout_experiment_(webrtc::field_trial::FindFullName(
-                                 "WebRTC-SendSideBwe") == "Enabled") {
+                                 "WebRTC-FeedbackTimeout") == "Enabled") {
   RTC_DCHECK(event_log);
 }
 
