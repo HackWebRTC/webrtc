@@ -22,61 +22,59 @@
 namespace webrtc {
 namespace {
 
-class SourceFrame {
- public:
-  SourceFrame(AudioSourceWithMixStatus* audio_source,
+struct SourceFrame {
+  SourceFrame(AudioMixerImpl::SourceStatus* source_status,
               AudioFrame* audio_frame,
               bool muted)
-      : audio_source_(audio_source), audio_frame_(audio_frame), muted_(muted) {
-    if (!muted_) {
-      energy_ = AudioMixerCalculateEnergy(*audio_frame);
+      : source_status(source_status), audio_frame(audio_frame), muted(muted) {
+    RTC_DCHECK(source_status);
+    RTC_DCHECK(audio_frame);
+    if (!muted) {
+      energy = AudioMixerCalculateEnergy(*audio_frame);
     }
   }
 
-  SourceFrame(AudioSourceWithMixStatus* audio_source,
+  SourceFrame(AudioMixerImpl::SourceStatus* source_status,
               AudioFrame* audio_frame,
               bool muted,
               uint32_t energy)
-      : audio_source_(audio_source),
-        audio_frame_(audio_frame),
-        muted_(muted),
-        energy_(energy) {}
-
-  // a.ShouldMixBefore(b) is used to select mixer sources.
-  bool ShouldMixBefore(const SourceFrame& other) const {
-    if (muted_ != other.muted_) {
-      return other.muted_;
-    }
-
-    const auto our_activity = audio_frame_->vad_activity_;
-    const auto other_activity = other.audio_frame_->vad_activity_;
-
-    if (our_activity != other_activity) {
-      return our_activity == AudioFrame::kVadActive;
-    }
-
-    return energy_ > other.energy_;
+      : source_status(source_status),
+        audio_frame(audio_frame),
+        muted(muted),
+        energy(energy) {
+    RTC_DCHECK(source_status);
+    RTC_DCHECK(audio_frame);
   }
 
-  AudioSourceWithMixStatus* audio_source_ = nullptr;
-  AudioFrame* audio_frame_ = nullptr;
-  bool muted_ = true;
-  uint32_t energy_ = 0;
+  AudioMixerImpl::SourceStatus* source_status = nullptr;
+  AudioFrame* audio_frame = nullptr;
+  bool muted = true;
+  uint32_t energy = 0;
 };
 
+// ShouldMixBefore(a, b) is used to select mixer sources.
+bool ShouldMixBefore(const SourceFrame& a, const SourceFrame& b) {
+  if (a.muted != b.muted) {
+    return b.muted;
+  }
 
-void Ramp(const std::vector<SourceFrame>& mixed_sources_and_frames) {
+  const auto a_activity = a.audio_frame->vad_activity_;
+  const auto b_activity = b.audio_frame->vad_activity_;
+
+  if (a_activity != b_activity) {
+    return a_activity == AudioFrame::kVadActive;
+  }
+
+  return a.energy > b.energy;
+}
+
+void RampAndUpdateGain(
+    const std::vector<SourceFrame>& mixed_sources_and_frames) {
   for (const auto& source_frame : mixed_sources_and_frames) {
-    // Ramp in previously unmixed.
-    if (!source_frame.audio_source_->WasMixed()) {
-      NewMixerRampIn(source_frame.audio_frame_);
-    }
-
-    const bool is_mixed = source_frame.audio_source_->IsMixed();
-    // Ramp out currently unmixed.
-    if (source_frame.audio_source_->WasMixed() && !is_mixed) {
-      NewMixerRampOut(source_frame.audio_frame_);
-    }
+    float target_gain = source_frame.source_status->is_mixed ? 1.0f : 0.0f;
+    Ramp(source_frame.source_status->gain, target_gain,
+         source_frame.audio_frame);
+    source_frame.source_status->gain = target_gain;
   }
 }
 
@@ -121,21 +119,21 @@ int32_t MixFromList(AudioFrame* mixed_audio,
   return 0;
 }
 
-MixerAudioSourceList::const_iterator FindSourceInList(
+AudioMixerImpl::SourceStatusList::const_iterator FindSourceInList(
     AudioMixerImpl::Source const* audio_source,
-    MixerAudioSourceList const* audio_source_list) {
+    AudioMixerImpl::SourceStatusList const* audio_source_list) {
   return std::find_if(audio_source_list->begin(), audio_source_list->end(),
-                      [audio_source](const AudioSourceWithMixStatus& p) {
-                        return p.audio_source() == audio_source;
+                      [audio_source](const AudioMixerImpl::SourceStatus& p) {
+                        return p.audio_source == audio_source;
                       });
 }
 
-MixerAudioSourceList::iterator FindSourceInList(
+AudioMixerImpl::SourceStatusList::iterator FindSourceInList(
     AudioMixerImpl::Source const* audio_source,
-    MixerAudioSourceList* audio_source_list) {
+    AudioMixerImpl::SourceStatusList* audio_source_list) {
   return std::find_if(audio_source_list->begin(), audio_source_list->end(),
-                      [audio_source](const AudioSourceWithMixStatus& p) {
-                        return p.audio_source() == audio_source;
+                      [audio_source](const AudioMixerImpl::SourceStatus& p) {
+                        return p.audio_source == audio_source;
                       });
 }
 
@@ -362,7 +360,7 @@ AudioFrameList AudioMixerImpl::GetNonAnonymousAudio() {
   // Get audio source audio and put it in the struct vector.
   for (auto& source_and_status : audio_source_list_) {
     auto audio_frame_with_info =
-        source_and_status.audio_source()->GetAudioFrameWithInfo(
+        source_and_status.audio_source->GetAudioFrameWithInfo(
             id_, static_cast<int>(OutputFrequency()));
 
     const auto audio_frame_info = audio_frame_with_info.audio_frame_info;
@@ -380,16 +378,15 @@ AudioFrameList AudioMixerImpl::GetNonAnonymousAudio() {
 
   // Sort frames by sorting function.
   std::sort(audio_source_mixing_data_list.begin(),
-            audio_source_mixing_data_list.end(),
-            std::mem_fn(&SourceFrame::ShouldMixBefore));
+            audio_source_mixing_data_list.end(), ShouldMixBefore);
 
   int max_audio_frame_counter = kMaximumAmountOfMixedAudioSources;
 
   // Go through list in order and put unmuted frames in result list.
   for (const auto& p : audio_source_mixing_data_list) {
     // Filter muted.
-    if (p.muted_) {
-      p.audio_source_->SetIsMixed(false);
+    if (p.muted) {
+      p.source_status->is_mixed = false;
       continue;
     }
 
@@ -397,13 +394,13 @@ AudioFrameList AudioMixerImpl::GetNonAnonymousAudio() {
     bool is_mixed = false;
     if (max_audio_frame_counter > 0) {
       --max_audio_frame_counter;
-      result.push_back(p.audio_frame_);
-      ramp_list.emplace_back(p.audio_source_, p.audio_frame_, false, -1);
+      result.push_back(p.audio_frame);
+      ramp_list.emplace_back(p.source_status, p.audio_frame, false, -1);
       is_mixed = true;
     }
-    p.audio_source_->SetIsMixed(is_mixed);
+    p.source_status->is_mixed = is_mixed;
   }
-  Ramp(ramp_list);
+  RampAndUpdateGain(ramp_list);
   return result;
 }
 
@@ -415,7 +412,7 @@ AudioFrameList AudioMixerImpl::GetAnonymousAudio() {
   AudioFrameList result;
   for (auto& source_and_status : additional_audio_source_list_) {
     const auto audio_frame_with_info =
-        source_and_status.audio_source()->GetAudioFrameWithInfo(
+        source_and_status.audio_source->GetAudioFrameWithInfo(
             id_, OutputFrequency());
     const auto ret = audio_frame_with_info.audio_frame_info;
     AudioFrame* audio_frame = audio_frame_with_info.audio_frame;
@@ -427,25 +424,25 @@ AudioFrameList AudioMixerImpl::GetAnonymousAudio() {
     if (ret != Source::AudioFrameInfo::kMuted) {
       result.push_back(audio_frame);
       ramp_list.emplace_back(&source_and_status, audio_frame, false, 0);
-      source_and_status.SetIsMixed(true);
+      source_and_status.is_mixed = true;
     }
   }
-  Ramp(ramp_list);
+  RampAndUpdateGain(ramp_list);
   return result;
 }
 
 bool AudioMixerImpl::AddAudioSourceToList(
     Source* audio_source,
-    MixerAudioSourceList* audio_source_list) const {
+    SourceStatusList* audio_source_list) const {
   WEBRTC_TRACE(kTraceStream, kTraceAudioMixerServer, id_,
                "AddAudioSourceToList(audio_source, audio_source_list)");
-  audio_source_list->emplace_back(audio_source);
+  audio_source_list->emplace_back(audio_source, false, 0);
   return true;
 }
 
 bool AudioMixerImpl::RemoveAudioSourceFromList(
     Source* audio_source,
-    MixerAudioSourceList* audio_source_list) const {
+    SourceStatusList* audio_source_list) const {
   WEBRTC_TRACE(kTraceStream, kTraceAudioMixerServer, id_,
                "RemoveAudioSourceFromList(audio_source, audio_source_list)");
   const auto iter = FindSourceInList(audio_source, audio_source_list);
@@ -511,13 +508,13 @@ bool AudioMixerImpl::GetAudioSourceMixabilityStatusForTest(
   const auto non_anonymous_iter =
       FindSourceInList(audio_source, &audio_source_list_);
   if (non_anonymous_iter != audio_source_list_.end()) {
-    return non_anonymous_iter->IsMixed();
+    return non_anonymous_iter->is_mixed;
   }
 
   const auto anonymous_iter =
       FindSourceInList(audio_source, &additional_audio_source_list_);
   if (anonymous_iter != audio_source_list_.end()) {
-    return anonymous_iter->IsMixed();
+    return anonymous_iter->is_mixed;
   }
 
   LOG(LS_ERROR) << "Audio source unknown";

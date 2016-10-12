@@ -18,7 +18,6 @@
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_mixer/audio_mixer.h"
-#include "webrtc/modules/audio_mixer/audio_source_with_mix_status.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
@@ -28,10 +27,19 @@
 namespace webrtc {
 
 typedef std::vector<AudioFrame*> AudioFrameList;
-typedef std::vector<AudioSourceWithMixStatus> MixerAudioSourceList;
 
 class AudioMixerImpl : public AudioMixer {
  public:
+  struct SourceStatus {
+    SourceStatus(Source* audio_source, bool is_mixed, float gain)
+        : audio_source(audio_source), is_mixed(is_mixed), gain(gain) {}
+    Source* audio_source = nullptr;
+    bool is_mixed = false;
+    float gain = 0.0f;
+  };
+
+  typedef std::vector<SourceStatus> SourceStatusList;
+
   // AudioProcessing only accepts 10 ms frames.
   static const int kFrameDurationInMs = 10;
 
@@ -73,9 +81,9 @@ class AudioMixerImpl : public AudioMixer {
   // Add/remove the MixerAudioSource to the specified
   // MixerAudioSource list.
   bool AddAudioSourceToList(Source* audio_source,
-                            MixerAudioSourceList* audio_source_list) const;
+                            SourceStatusList* audio_source_list) const;
   bool RemoveAudioSourceFromList(Source* remove_audio_source,
-                                 MixerAudioSourceList* audio_source_list) const;
+                                 SourceStatusList* audio_source_list) const;
 
   bool LimitMixedAudio(AudioFrame* mixed_audio) const;
 
@@ -93,10 +101,10 @@ class AudioMixerImpl : public AudioMixer {
   size_t sample_size_ ACCESS_ON(&thread_checker_);
 
   // List of all audio sources. Note all lists are disjunct
-  MixerAudioSourceList audio_source_list_ GUARDED_BY(crit_);  // May be mixed.
+  SourceStatusList audio_source_list_ GUARDED_BY(crit_);  // May be mixed.
 
   // Always mixed, anonymously.
-  MixerAudioSourceList additional_audio_source_list_ GUARDED_BY(crit_);
+  SourceStatusList additional_audio_source_list_ GUARDED_BY(crit_);
 
   size_t num_mixed_audio_sources_ GUARDED_BY(crit_);
   // Determines if we will use a limiter for clipping protection during
