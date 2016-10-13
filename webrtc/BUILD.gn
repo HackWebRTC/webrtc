@@ -267,6 +267,7 @@ if (!is_ios || !build_with_chromium) {
       "modules",
       "stats",
       "system_wrappers",
+      "tools",
       "video",
       "voice_engine",
     ]
