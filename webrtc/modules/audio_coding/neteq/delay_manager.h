@@ -72,7 +72,7 @@ class DelayManager {
   // the nominal frame time, the return value is zero. A positive value
   // corresponds to packet spacing being too large, while a negative value means
   // that the packets arrive with less spacing than expected.
-  virtual int AverageIAT() const;
+  virtual double EstimatedClockDriftPpm() const;
 
   // Returns true if peak-mode is active. That is, delay peaks were observed
   // recently. This method simply asks for the same information from the

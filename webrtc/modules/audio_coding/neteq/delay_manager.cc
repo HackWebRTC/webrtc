@@ -319,22 +319,17 @@ void DelayManager::Reset() {
   last_pack_cng_or_dtmf_ = 1;
 }
 
-int DelayManager::AverageIAT() const {
-  int32_t sum_q24 = 0;
-  // Using an int for the upper limit of the following for-loop so the
-  // loop-counter can be int. Otherwise we need a cast where |sum_q24| is
-  // updated.
-  const int iat_vec_size = static_cast<int>(iat_vector_.size());
-  assert(iat_vector_.size() == 65);  // Algorithm is hard-coded for this size.
-  for (int i = 0; i < iat_vec_size; ++i) {
-    // Shift 6 to fit worst case: 2^30 * 64.
-    sum_q24 += (iat_vector_[i] >> 6) * i;
+double DelayManager::EstimatedClockDriftPpm() const {
+  double sum = 0.0;
+  // Calculate the expected value based on the probabilities in |iat_vector_|.
+  for (size_t i = 0; i < iat_vector_.size(); ++i) {
+    sum += static_cast<double>(iat_vector_[i]) * i;
   }
-  // Subtract the nominal inter-arrival time 1 = 2^24 in Q24.
-  sum_q24 -= (1 << 24);
-  // Multiply with 1000000 / 2^24 = 15625 / 2^18 to get in parts-per-million.
-  // Shift 7 to Q17 first, then multiply with 15625 and shift another 11.
-  return ((sum_q24 >> 7) * 15625) >> 11;
+  // The probabilities in |iat_vector_| are in Q30. Divide by 1 << 30 to convert
+  // to Q0; subtract the nominal inter-arrival time (1) to make a zero
+  // clockdrift represent as 0; mulitply by 1000000 to produce parts-per-million
+  // (ppm).
+  return (sum / (1 << 30) - 1) * 1e6;
 }
 
 bool DelayManager::PeakFound() const {

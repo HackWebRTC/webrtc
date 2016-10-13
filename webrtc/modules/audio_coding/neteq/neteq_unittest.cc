@@ -448,10 +448,10 @@ TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
       "52797b781758a1d2303140b80b9c5030c9093d6b");
 
   const std::string network_stats_checksum = PlatformChecksum(
-      "9c5bb9e74a583be89313b158a19ea10d41bf9de6",
-      "e948ec65cf18852ba2a197189a3186635db34c3b",
-      "9c5bb9e74a583be89313b158a19ea10d41bf9de6",
-      "9c5bb9e74a583be89313b158a19ea10d41bf9de6");
+      "f59b3dfdb9b1b8bbb61abedd7c8cf3fc47c21f5f",
+      "c8b2a93842e48d014f7e6efe10ae96cb3892b129",
+      "f59b3dfdb9b1b8bbb61abedd7c8cf3fc47c21f5f",
+      "f59b3dfdb9b1b8bbb61abedd7c8cf3fc47c21f5f");
 
   const std::string rtcp_stats_checksum = PlatformChecksum(
       "b8880bf9fed2487efbddcb8d94b9937a29ae521d",
@@ -484,10 +484,10 @@ TEST_F(NetEqDecodingTest, MAYBE_TestOpusBitExactness) {
       "9d7d52bc94e941d106aa518f324f16a58d231586");
 
   const std::string network_stats_checksum = PlatformChecksum(
-      "191af29ed3b8b6dd4c4cc94dc3f33bdf48f055ef",
-      "191af29ed3b8b6dd4c4cc94dc3f33bdf48f055ef",
-      "191af29ed3b8b6dd4c4cc94dc3f33bdf48f055ef",
-      "191af29ed3b8b6dd4c4cc94dc3f33bdf48f055ef");
+      "d8379381d5a619f0616bb3c0a8a9eea1704a8ab8",
+      "d8379381d5a619f0616bb3c0a8a9eea1704a8ab8",
+      "d8379381d5a619f0616bb3c0a8a9eea1704a8ab8",
+      "d8379381d5a619f0616bb3c0a8a9eea1704a8ab8");
 
   const std::string rtcp_stats_checksum = PlatformChecksum(
       "e37c797e3de6a64dda88c9ade7a013d022a2e1e0",
@@ -577,7 +577,7 @@ TEST_F(NetEqDecodingTest, TestAverageInterArrivalTimeNegative) {
 
   NetEqNetworkStatistics network_stats;
   ASSERT_EQ(0, neteq_->NetworkStatistics(&network_stats));
-  EXPECT_EQ(-103196, network_stats.clockdrift_ppm);
+  EXPECT_EQ(-103192, network_stats.clockdrift_ppm);
 }
 
 TEST_F(NetEqDecodingTest, TestAverageInterArrivalTimePositive) {
@@ -605,7 +605,7 @@ TEST_F(NetEqDecodingTest, TestAverageInterArrivalTimePositive) {
 
   NetEqNetworkStatistics network_stats;
   ASSERT_EQ(0, neteq_->NetworkStatistics(&network_stats));
-  EXPECT_EQ(110946, network_stats.clockdrift_ppm);
+  EXPECT_EQ(110953, network_stats.clockdrift_ppm);
 }
 
 void NetEqDecodingTest::LongCngWithClockDrift(double drift_factor,

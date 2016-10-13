@@ -35,8 +35,6 @@ class MockDelayManager : public DelayManager {
       int(int length_ms));
   MOCK_METHOD0(Reset,
       void());
-  MOCK_CONST_METHOD0(AverageIAT,
-      int());
   MOCK_CONST_METHOD0(PeakFound,
       bool());
   MOCK_METHOD1(UpdateCounters,

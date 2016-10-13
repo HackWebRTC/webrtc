@@ -223,7 +223,8 @@ void StatisticsCalculator::GetNetworkStatistics(
   stats->preferred_buffer_size_ms = (delay_manager.TargetLevel() >> 8) *
       ms_per_packet;
   stats->jitter_peaks_found = delay_manager.PeakFound();
-  stats->clockdrift_ppm = delay_manager.AverageIAT();
+  stats->clockdrift_ppm =
+      rtc::saturated_cast<int32_t>(delay_manager.EstimatedClockDriftPpm());
 
   stats->packet_loss_rate =
       CalculateQ14Ratio(lost_timestamps_, timestamps_since_last_report_);
