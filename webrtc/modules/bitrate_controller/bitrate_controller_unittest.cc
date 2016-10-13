@@ -412,7 +412,7 @@ TEST_F(BitrateControllerTest, SetReservedBitrate) {
 TEST_F(BitrateControllerTest, TimeoutsWithoutFeedback) {
   {
     webrtc::test::ScopedFieldTrials override_field_trials(
-        "WebRTC-SendSideBwe/Enabled/");
+        "WebRTC-FeedbackTimeout/Enabled/");
     SetUp();
     int expected_bitrate_bps = 300000;
     controller_->SetBitrates(300000, kDefaultMinBitrateBps,
