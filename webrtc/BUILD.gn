@@ -414,6 +414,7 @@ if (rtc_include_tests) {
 
       # TODO(ronghuawu): Reenable this test.
       # "windowpicker_unittest.cc",
+      "p2p/base/asyncstuntcpsocket_unittest.cc",
       "p2p/base/dtlstransportchannel_unittest.cc",
       "p2p/base/fakeportallocator.h",
       "p2p/base/faketransportcontroller.h",
