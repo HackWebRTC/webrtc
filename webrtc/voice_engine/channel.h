@@ -66,7 +66,6 @@ namespace voe {
 
 class OutputMixer;
 class RtcEventLogProxy;
-class RtcpRttStatsProxy;
 class RtpPacketSenderProxy;
 class Statistics;
 class StatisticsProxy;
@@ -421,8 +420,6 @@ class Channel
   // Set a RtcEventLog logging object.
   void SetRtcEventLog(RtcEventLog* event_log);
 
-  void SetRtcpRttStats(RtcpRttStats* rtcp_rtt_stats);
-
  protected:
   void OnIncomingFractionLoss(int fraction_lost);
 
@@ -458,7 +455,6 @@ class Channel
   ChannelState channel_state_;
 
   std::unique_ptr<voe::RtcEventLogProxy> event_log_proxy_;
-  std::unique_ptr<voe::RtcpRttStatsProxy> rtcp_rtt_stats_proxy_;
 
   std::unique_ptr<RtpHeaderParser> rtp_header_parser_;
   std::unique_ptr<RTPPayloadRegistry> rtp_payload_registry_;
