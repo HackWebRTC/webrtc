@@ -31,7 +31,7 @@ class WindowCapturerNull : public WindowCapturer {
 
   // DesktopCapturer interface.
   void Start(Callback* callback) override;
-  void Capture(const DesktopRegion& region) override;
+  void CaptureFrame() override;
 
  private:
   Callback* callback_ = nullptr;
@@ -64,7 +64,7 @@ void WindowCapturerNull::Start(Callback* callback) {
   callback_ = callback;
 }
 
-void WindowCapturerNull::Capture(const DesktopRegion& region) {
+void WindowCapturerNull::CaptureFrame() {
   // Not implemented yet.
   callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
 }

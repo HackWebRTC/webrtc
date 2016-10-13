@@ -92,7 +92,7 @@ class WindowCapturerWin : public WindowCapturer {
 
   // DesktopCapturer interface.
   void Start(Callback* callback) override;
-  void Capture(const DesktopRegion& region) override;
+  void CaptureFrame() override;
 
  private:
   Callback* callback_ = nullptr;
@@ -160,7 +160,7 @@ void WindowCapturerWin::Start(Callback* callback) {
   callback_ = callback;
 }
 
-void WindowCapturerWin::Capture(const DesktopRegion& region) {
+void WindowCapturerWin::CaptureFrame() {
   if (!window_) {
     LOG(LS_ERROR) << "Window hasn't been selected: " << GetLastError();
     callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);

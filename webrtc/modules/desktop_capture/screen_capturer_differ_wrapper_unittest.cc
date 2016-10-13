@@ -136,7 +136,7 @@ void ExecuteDifferWrapperCase(BlackWhiteDesktopFramePainter* frame_painter,
   for (const auto& rect : updated_region) {
     frame_painter->updated_region()->AddRect(rect);
   }
-  capturer->Capture(DesktopRegion());
+  capturer->CaptureFrame();
 }
 
 // Executes a ScreenCapturerDifferWrapper::Capture(), if updated_region() is not
@@ -147,7 +147,7 @@ void ExecuteCapturer(ScreenCapturerDifferWrapper* capturer,
   EXPECT_CALL(*callback,
               OnCaptureResultPtr(DesktopCapturer::Result::SUCCESS, testing::_))
       .Times(1);
-  capturer->Capture(DesktopRegion());
+  capturer->CaptureFrame();
 }
 
 void ExecuteDifferWrapperTest(bool with_hints,
@@ -178,7 +178,7 @@ void ExecuteDifferWrapperTest(bool with_hints,
         AssertUpdatedRegionIs(**frame,
                               {DesktopRect::MakeSize((*frame)->size())});
       }));
-  capturer.Capture(DesktopRegion());
+  capturer.CaptureFrame();
 
   ExecuteDifferWrapperCase(&frame_painter, &capturer, &callback,
                            {DesktopRect::MakeLTRB(100, 100, 200, 200),

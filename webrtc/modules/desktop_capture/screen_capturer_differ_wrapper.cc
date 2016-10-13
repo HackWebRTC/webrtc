@@ -161,8 +161,8 @@ void ScreenCapturerDifferWrapper::SetSharedMemoryFactory(
   base_capturer_->SetSharedMemoryFactory(std::move(shared_memory_factory));
 }
 
-void ScreenCapturerDifferWrapper::Capture(const DesktopRegion& region) {
-  base_capturer_->Capture(region);
+void ScreenCapturerDifferWrapper::CaptureFrame() {
+  base_capturer_->CaptureFrame();
 }
 
 bool ScreenCapturerDifferWrapper::GetScreenList(ScreenList* screens) {

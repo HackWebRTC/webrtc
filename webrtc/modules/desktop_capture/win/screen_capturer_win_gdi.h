@@ -39,7 +39,7 @@ class ScreenCapturerWinGdi : public ScreenCapturer {
   void Start(Callback* callback) override;
   void SetSharedMemoryFactory(
       std::unique_ptr<SharedMemoryFactory> shared_memory_factory) override;
-  void Capture(const DesktopRegion& region) override;
+  void CaptureFrame() override;
   bool GetScreenList(ScreenList* screens) override;
   bool SelectScreen(ScreenId id) override;
 

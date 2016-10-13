@@ -54,7 +54,7 @@ class ScreenCapturerLinux : public ScreenCapturer,
 
   // DesktopCapturer interface.
   void Start(Callback* delegate) override;
-  void Capture(const DesktopRegion& region) override;
+  void CaptureFrame() override;
 
   // ScreenCapturer interface.
   bool GetScreenList(ScreenList* screens) override;
@@ -228,7 +228,7 @@ void ScreenCapturerLinux::Start(Callback* callback) {
   callback_ = callback;
 }
 
-void ScreenCapturerLinux::Capture(const DesktopRegion& region) {
+void ScreenCapturerLinux::CaptureFrame() {
   int64_t capture_start_time_nanos = rtc::TimeNanos();
 
   queue_.MoveToNextFrame();

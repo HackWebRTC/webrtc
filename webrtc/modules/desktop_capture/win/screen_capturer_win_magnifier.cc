@@ -72,7 +72,7 @@ void ScreenCapturerWinMagnifier::SetSharedMemoryFactory(
   shared_memory_factory_ = std::move(shared_memory_factory);
 }
 
-void ScreenCapturerWinMagnifier::Capture(const DesktopRegion& region) {
+void ScreenCapturerWinMagnifier::CaptureFrame() {
   if (!magnifier_initialized_ ||
       !magnifier_capture_succeeded_ ||
       GetSystemMetrics(SM_CMONITORS) != 1) {
@@ -82,7 +82,7 @@ void ScreenCapturerWinMagnifier::Capture(const DesktopRegion& region) {
                          "initialization or last capture attempt failed, or "
                          "execute on multi-screen system.";
     StartFallbackCapturer();
-    fallback_capturer_->Capture(region);
+    fallback_capturer_->CaptureFrame();
     return;
   }
 
@@ -111,7 +111,7 @@ void ScreenCapturerWinMagnifier::Capture(const DesktopRegion& region) {
     LOG_F(LS_WARNING) << "Switching to the fallback screen capturer because "
                          "last capture attempt failed.";
     StartFallbackCapturer();
-    fallback_capturer_->Capture(region);
+    fallback_capturer_->CaptureFrame();
     return;
   }
 

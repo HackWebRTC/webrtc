@@ -145,10 +145,10 @@ void DesktopAndCursorComposer::SetSharedMemoryFactory(
   desktop_capturer_->SetSharedMemoryFactory(std::move(shared_memory_factory));
 }
 
-void DesktopAndCursorComposer::Capture(const DesktopRegion& region) {
+void DesktopAndCursorComposer::CaptureFrame() {
   if (mouse_monitor_.get())
     mouse_monitor_->Capture();
-  desktop_capturer_->Capture(region);
+  desktop_capturer_->CaptureFrame();
 }
 
 void DesktopAndCursorComposer::SetExcludedWindow(WindowId window) {

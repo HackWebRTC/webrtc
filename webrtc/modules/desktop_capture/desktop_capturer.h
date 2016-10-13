@@ -66,13 +66,12 @@ class DesktopCapturer {
   virtual void SetSharedMemoryFactory(
       std::unique_ptr<SharedMemoryFactory> shared_memory_factory) {}
 
-  // Captures next frame. |region| specifies region of the capture target that
-  // should be fresh in the resulting frame. The frame may also include fresh
-  // data for areas outside |region|. In that case capturer will include these
-  // areas in updated_region() of the frame. |region| is specified relative to
-  // the top left corner of the capture target. Pending capture operations are
-  // canceled when DesktopCapturer is deleted.
-  virtual void Capture(const DesktopRegion& region) = 0;
+  // This is a legacy interface, consumers should call CaptureFrame() function.
+  virtual void Capture(const DesktopRegion& region) { CaptureFrame(); }
+
+  // Captures next frame, and involve callback provided by Start() function.
+  // Pending capture requests are canceled when DesktopCapturer is deleted.
+  virtual void CaptureFrame() { Capture(DesktopRegion()); }
 
   // Sets the window to be excluded from the captured image in the future
   // Capture calls. Used to exclude the screenshare notification window for

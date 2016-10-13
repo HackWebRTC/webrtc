@@ -285,7 +285,7 @@ class ScreenCapturerMac : public ScreenCapturer {
 
   // Overridden from ScreenCapturer:
   void Start(Callback* callback) override;
-  void Capture(const DesktopRegion& region) override;
+  void CaptureFrame() override;
   void SetExcludedWindow(WindowId window) override;
   bool GetScreenList(ScreenList* screens) override;
   bool SelectScreen(ScreenId id) override;
@@ -426,7 +426,7 @@ void ScreenCapturerMac::Start(Callback* callback) {
   callback_ = callback;
 }
 
-void ScreenCapturerMac::Capture(const DesktopRegion& region_to_capture) {
+void ScreenCapturerMac::CaptureFrame() {
   int64_t capture_start_time_nanos = rtc::TimeNanos();
 
   queue_.MoveToNextFrame();

@@ -77,7 +77,7 @@ class FakeScreenCapturer : public DesktopCapturer {
 
   void Start(Callback* callback) override { callback_ = callback; }
 
-  void Capture(const DesktopRegion& region) override {
+  void CaptureFrame() override {
     callback_->OnCaptureResult(
         next_frame_ ? Result::SUCCESS : Result::ERROR_TEMPORARY,
         std::move(next_frame_));
@@ -193,7 +193,7 @@ TEST_F(DesktopAndCursorComposerTest, Error) {
   fake_cursor_->SetState(MouseCursorMonitor::INSIDE, DesktopVector());
   fake_screen_->SetNextFrame(nullptr);
 
-  blender_.Capture(DesktopRegion());
+  blender_.CaptureFrame();
 
   EXPECT_FALSE(frame_);
 }
@@ -237,7 +237,7 @@ TEST_F(DesktopAndCursorComposerTest, Blend) {
         SharedDesktopFrame::Wrap(CreateTestFrame()));
     fake_screen_->SetNextFrame(frame->Share());
 
-    blender_.Capture(DesktopRegion());
+    blender_.CaptureFrame();
 
     VerifyFrame(*frame_, state, pos);
 

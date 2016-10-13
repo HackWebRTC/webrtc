@@ -36,7 +36,7 @@ void CroppingWindowCapturer::SetSharedMemoryFactory(
   window_capturer_->SetSharedMemoryFactory(std::move(shared_memory_factory));
 }
 
-void CroppingWindowCapturer::Capture(const DesktopRegion& region) {
+void CroppingWindowCapturer::CaptureFrame() {
   if (ShouldUseScreenCapturer()) {
     if (!screen_capturer_.get()) {
       screen_capturer_.reset(ScreenCapturer::Create(options_));
@@ -45,9 +45,9 @@ void CroppingWindowCapturer::Capture(const DesktopRegion& region) {
       }
       screen_capturer_->Start(this);
     }
-    screen_capturer_->Capture(region);
+    screen_capturer_->CaptureFrame();
   } else {
-    window_capturer_->Capture(region);
+    window_capturer_->CaptureFrame();
   }
 }
 

@@ -55,7 +55,7 @@ class WindowCapturerMac : public WindowCapturer {
 
   // DesktopCapturer interface.
   void Start(Callback* callback) override;
-  void Capture(const DesktopRegion& region) override;
+  void CaptureFrame() override;
 
  private:
   Callback* callback_ = nullptr;
@@ -176,7 +176,7 @@ void WindowCapturerMac::Start(Callback* callback) {
   callback_ = callback;
 }
 
-void WindowCapturerMac::Capture(const DesktopRegion& region) {
+void WindowCapturerMac::CaptureFrame() {
   if (!IsWindowValid(window_id_)) {
     callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
     return;

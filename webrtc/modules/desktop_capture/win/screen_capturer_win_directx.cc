@@ -54,7 +54,7 @@ DesktopSize ScreenCapturerWinDirectx::SelectedDesktopSize() const {
       .size();
 }
 
-void ScreenCapturerWinDirectx::Capture(const DesktopRegion& region) {
+void ScreenCapturerWinDirectx::CaptureFrame() {
   RTC_DCHECK(callback_);
 
   int64_t capture_start_time_nanos = rtc::TimeNanos();

@@ -95,7 +95,7 @@ class WindowCapturerLinux : public WindowCapturer,
 
   // DesktopCapturer interface.
   void Start(Callback* callback) override;
-  void Capture(const DesktopRegion& region) override;
+  void CaptureFrame() override;
 
   // SharedXDisplay::XEventHandler interface.
   bool HandleXEvent(const XEvent& event) override;
@@ -271,7 +271,7 @@ void WindowCapturerLinux::Start(Callback* callback) {
   callback_ = callback;
 }
 
-void WindowCapturerLinux::Capture(const DesktopRegion& region) {
+void WindowCapturerLinux::CaptureFrame() {
   if (!x_server_pixel_buffer_.IsWindowValid()) {
     LOG(LS_INFO) << "The window is no longer valid.";
     callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);

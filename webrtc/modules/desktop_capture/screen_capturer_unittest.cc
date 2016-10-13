@@ -204,7 +204,7 @@ class ScreenCapturerTest : public testing::Test {
     EXPECT_CALL(callback_,
                 OnCaptureResultPtr(DesktopCapturer::Result::SUCCESS, _))
         .WillOnce(SaveUniquePtrArg(&frame));
-    capturer->Capture(DesktopRegion());
+    capturer->CaptureFrame();
     EXPECT_TRUE(frame);
     return frame;
   }
@@ -259,7 +259,7 @@ TEST_F(ScreenCapturerTest, Capture) {
       .WillOnce(SaveUniquePtrArg(&frame));
 
   capturer_->Start(&callback_);
-  capturer_->Capture(DesktopRegion());
+  capturer_->CaptureFrame();
 
   ASSERT_TRUE(frame);
   EXPECT_GT(frame->size().width(), 0);
@@ -302,7 +302,7 @@ TEST_F(ScreenCapturerTest, UseSharedBuffers) {
   capturer_->Start(&callback_);
   capturer_->SetSharedMemoryFactory(
       std::unique_ptr<SharedMemoryFactory>(new FakeSharedMemoryFactory()));
-  capturer_->Capture(DesktopRegion());
+  capturer_->CaptureFrame();
 
   ASSERT_TRUE(frame);
   ASSERT_TRUE(frame->shared_memory());
@@ -318,7 +318,7 @@ TEST_F(ScreenCapturerTest, UseMagnifier) {
       .WillOnce(SaveUniquePtrArg(&frame));
 
   capturer_->Start(&callback_);
-  capturer_->Capture(DesktopRegion());
+  capturer_->CaptureFrame();
   ASSERT_TRUE(frame);
 }
 
@@ -333,7 +333,7 @@ TEST_F(ScreenCapturerTest, UseDirectxCapturer) {
       .WillOnce(SaveUniquePtrArg(&frame));
 
   capturer_->Start(&callback_);
-  capturer_->Capture(DesktopRegion());
+  capturer_->CaptureFrame();
   ASSERT_TRUE(frame);
 }
 
@@ -350,7 +350,7 @@ TEST_F(ScreenCapturerTest, UseDirectxCapturerWithSharedBuffers) {
   capturer_->Start(&callback_);
   capturer_->SetSharedMemoryFactory(
       std::unique_ptr<SharedMemoryFactory>(new FakeSharedMemoryFactory()));
-  capturer_->Capture(DesktopRegion());
+  capturer_->CaptureFrame();
   ASSERT_TRUE(frame);
   ASSERT_TRUE(frame->shared_memory());
   EXPECT_EQ(frame->shared_memory()->id(), kTestSharedMemoryId);

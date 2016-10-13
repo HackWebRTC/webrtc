@@ -62,7 +62,7 @@ class FakeDesktopCapturer : public T {
     callback_ = callback;
   }
 
-  void Capture(const DesktopRegion& region) override {
+  void CaptureFrame() override {
     if (generator_) {
       std::unique_ptr<DesktopFrame> frame(
           generator_->GetNextFrame(shared_memory_factory_.get()));

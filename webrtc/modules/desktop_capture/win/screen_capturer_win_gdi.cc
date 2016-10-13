@@ -71,7 +71,7 @@ void ScreenCapturerWinGdi::SetSharedMemoryFactory(
   shared_memory_factory_ = std::move(shared_memory_factory);
 }
 
-void ScreenCapturerWinGdi::Capture(const DesktopRegion& region) {
+void ScreenCapturerWinGdi::CaptureFrame() {
   int64_t capture_start_time_nanos = rtc::TimeNanos();
 
   queue_.MoveToNextFrame();
