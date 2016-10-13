@@ -45,6 +45,7 @@ def print_landmines():
            'AppRTCMobile in https://codereview.webrtc.org/2373443005')
   if platform() == 'win':
     print 'Clobber to resolve some issues with corrupt .pdb files on bots.'
+    print 'Clobber due to corrupt .pdb files (after #14623)'
 
 
 def main():
