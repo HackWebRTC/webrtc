@@ -47,7 +47,6 @@ class AudioManager {
 
     bool Init();
     void Close();
-    void SetCommunicationMode(bool enable);
     bool IsCommunicationModeEnabled();
     bool IsDeviceBlacklistedForOpenSLESUsage();
 
@@ -55,7 +54,6 @@ class AudioManager {
     std::unique_ptr<GlobalRef> audio_manager_;
     jmethodID init_;
     jmethodID dispose_;
-    jmethodID set_communication_mode_;
     jmethodID is_communication_mode_enabled_;
     jmethodID is_device_blacklisted_for_open_sles_usage_;
   };
@@ -84,9 +82,6 @@ class AudioManager {
   // Revert any setting done by Init().
   bool Close();
 
-  // Set audio mode to AudioManager.MODE_IN_COMMUNICATION if |enable| is true
-  // and AudioManager.MODE_NORMAL otherwise.
-  void SetCommunicationMode(bool enable);
   // Returns true if current audio mode is AudioManager.MODE_IN_COMMUNICATION.
   bool IsCommunicationModeEnabled() const;
 

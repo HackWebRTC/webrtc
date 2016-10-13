@@ -188,17 +188,6 @@ public class WebRtcAudioTrack {
       Logging.e(TAG, "AudioTrack.getMinBufferSize returns an invalid value.");
       return false;
     }
-    // The default (preferred) stream type is STREAM_VOICE_CALL since the
-    // WebRTC stack is mainly intended for VoIP calls.
-    int streamType = AudioManager.STREAM_VOICE_CALL;
-    if (audioManager.getMode() != AudioManager.MODE_IN_COMMUNICATION) {
-      // But if the user wants to run in another mode than COMM mode, we
-      // accept it and change the stream type to STREAM_MUSIC instead. It can
-      // e.g. be suitable for applications that do not record audio or if a
-      // call shall be casted to a Chromecast device.
-      streamType = AudioManager.STREAM_MUSIC;
-      Logging.w(TAG, "Using AudioManager.STREAM_MUSIC as stream type.");
-    }
 
     // Ensure that prevision audio session was stopped correctly before trying
     // to create a new AudioTrack.
@@ -210,8 +199,9 @@ public class WebRtcAudioTrack {
       // Create an AudioTrack object and initialize its associated audio buffer.
       // The size of this buffer determines how long an AudioTrack can play
       // before running out of data.
-      audioTrack = new AudioTrack(streamType, sampleRate, AudioFormat.CHANNEL_OUT_MONO,
-          AudioFormat.ENCODING_PCM_16BIT, minBufferSizeInBytes, AudioTrack.MODE_STREAM);
+      audioTrack =
+          new AudioTrack(AudioManager.STREAM_VOICE_CALL, sampleRate, AudioFormat.CHANNEL_OUT_MONO,
+              AudioFormat.ENCODING_PCM_16BIT, minBufferSizeInBytes, AudioTrack.MODE_STREAM);
     } catch (IllegalArgumentException e) {
       Logging.d(TAG, e.getMessage());
       return false;

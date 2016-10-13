@@ -35,11 +35,6 @@ class AudioManagerTest : public ::testing::Test {
     record_parameters_ = audio_manager()->GetRecordAudioParameters();
   }
 
-  virtual ~AudioManagerTest() {
-    // Always ensure that we restore default/normal mode after the test.
-    audio_manager()->SetCommunicationMode(false);
-  }
-
   AudioManager* audio_manager() const { return audio_manager_.get(); }
 
   // A valid audio layer must always be set before calling Init(), hence we
@@ -110,14 +105,6 @@ TEST_F(AudioManagerTest, GetOpenSLEngineShouldSucceedForOpenSLESAudioLayer) {
 TEST_F(AudioManagerTest, InitClose) {
   EXPECT_TRUE(audio_manager()->Init());
   EXPECT_TRUE(audio_manager()->Close());
-}
-
-// Verify communication mode functionality.
-TEST_F(AudioManagerTest, CommunicationMode) {
-  audio_manager()->SetCommunicationMode(true);
-  EXPECT_TRUE(audio_manager()->IsCommunicationModeEnabled());
-  audio_manager()->SetCommunicationMode(false);
-  EXPECT_FALSE(audio_manager()->IsCommunicationModeEnabled());
 }
 
 TEST_F(AudioManagerTest, IsAcousticEchoCancelerSupported) {

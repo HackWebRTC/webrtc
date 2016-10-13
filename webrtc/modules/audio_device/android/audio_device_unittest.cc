@@ -524,16 +524,12 @@ class AudioDeviceTest : public ::testing::Test {
     audio_device_ = CreateAudioDevice(AudioDeviceModule::kPlatformDefaultAudio);
     EXPECT_NE(audio_device_.get(), nullptr);
     EXPECT_EQ(0, audio_device_->Init());
-    // Set audio mode to MODE_IN_COMMUNICATION.
-    audio_manager()->SetCommunicationMode(true);
     playout_parameters_ = audio_manager()->GetPlayoutAudioParameters();
     record_parameters_ = audio_manager()->GetRecordAudioParameters();
     build_info_.reset(new BuildInfo());
   }
   virtual ~AudioDeviceTest() {
     EXPECT_EQ(0, audio_device_->Terminate());
-    // Restore audio mode back to MODE_NORMAL.
-    audio_manager()->SetCommunicationMode(false);
   }
 
   int playout_sample_rate() const {
