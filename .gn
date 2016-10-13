@@ -65,5 +65,4 @@ exec_script_whitelist = [
   "//third_party/openh264/BUILD.gn",
   "//third_party/opus/BUILD.gn",
   "//webrtc/modules/video_render/BUILD.gn",
-  "//webrtc/modules/video_render/BUILD.gn",
 ]
