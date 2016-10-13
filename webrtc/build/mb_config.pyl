@@ -316,13 +316,13 @@
       'android', 'gn', 'debug_static_bot', 'arm'
     ],
     'android_gn_release_bot_arm': [
-      'android', 'gn', 'release_bot', 'arm'
+      'android', 'gn', 'release_bot', 'minimal_symbols', 'arm'
     ],
     'android_gn_debug_static_bot_x86': [
       'android', 'gn', 'debug_static_bot', 'x86'
     ],
     'android_gn_release_bot_x86': [
-      'android', 'gn', 'release_bot', 'x86'
+      'android', 'gn', 'release_bot', 'minimal_symbols', 'x86'
     ],
     'android_gn_clang_debug_bot_arm': [
       'android', 'gn', 'clang', 'debug_bot', 'arm'
@@ -334,16 +334,17 @@
       'android', 'gn', 'debug_static_bot', 'arm64'
     ],
     'android_gn_release_bot_arm64': [
-      'android', 'gn', 'release_bot', 'arm64'
+      'android', 'gn', 'release_bot', 'minimal_symbols', 'arm64'
     ],
     'android_gn_debug_static_bot_x64': [
       'android', 'gn', 'debug_static_bot', 'x64'
     ],
     'android_gn_asan_shared_release_bot_arm': [
-      'android', 'gn', 'asan', 'clang', 'shared', 'release_bot', 'arm'
+      'android', 'gn', 'asan', 'clang', 'shared', 'release_bot',
+      'minimal_symbols', 'arm'
     ],
     'swarming_android_gn_release_bot_arm': [
-      'swarming', 'android', 'gn', 'release_bot', 'arm'
+      'swarming', 'android', 'gn', 'release_bot', 'minimal_symbols', 'arm'
     ],
 
     # This is used for tracking purposes; any bot that uses this config

@@ -114,6 +114,11 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       # when moving from ios_deployment_target 7.0 to 9.0.
       # See webrtc:5549 for more details.
       cflags = [ "-Wno-deprecated-declarations" ]
+      cflags_objc = [
+        # Enabled for cflags_objc in build/config/compiler/BUILD.gn.
+        # See webrtc:6520.
+        "-Wno-objc-missing-property-synthesis",
+      ]
     }
   }
 
