@@ -207,12 +207,7 @@ Operations DecisionLogicNormal::FuturePacketAvailable(
     }
   }
   // Do not merge unless we have done an expand before.
-  // (Convert kAllowMergeWithoutExpand from ms to samples by multiplying with
-  // fs_mult_ * 8 = fs / 1000.)
-  if (prev_mode == kModeExpand ||
-      (decoder_frame_length < output_size_samples_ &&
-       cur_size_samples >
-           static_cast<size_t>(kAllowMergeWithoutExpandMs * fs_mult_ * 8))) {
+  if (prev_mode == kModeExpand) {
     return kMerge;
   } else if (play_dtmf) {
     // Play DTMF instead of expand.

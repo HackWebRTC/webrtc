@@ -40,7 +40,6 @@ class DecisionLogicNormal : public DecisionLogic {
                       tick_timer) {}
 
  protected:
-  static const int kAllowMergeWithoutExpandMs = 20;  // 20 ms.
   static const int kReinitAfterExpands = 100;
   static const int kMaxWaitForPacket = 10;
 

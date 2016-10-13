@@ -609,7 +609,7 @@ TEST_F(NetEqImplTest, FirstPacketUnknown) {
   const int kSampleRateHz = 8000;
   const size_t kPayloadLengthSamples =
       static_cast<size_t>(10 * kSampleRateHz / 1000);  // 10 ms.
-  const size_t kPayloadLengthBytes = kPayloadLengthSamples;
+  const size_t kPayloadLengthBytes = kPayloadLengthSamples * 2;
   uint8_t payload[kPayloadLengthBytes] = {0};
   WebRtcRTPHeader rtp_header;
   rtp_header.header.payloadType = kPayloadType;
