@@ -174,7 +174,8 @@ int EchoControlMobileImpl::ProcessRenderAudio(const AudioBuffer* audio) {
     ReadQueuedRenderData();
 
     // Retry the insert (should always work).
-    RTC_DCHECK_EQ(render_signal_queue_->Insert(&render_queue_buffer_), true);
+    bool result = render_signal_queue_->Insert(&render_queue_buffer_);
+    RTC_DCHECK(result);
   }
 
   return AudioProcessing::kNoError;
