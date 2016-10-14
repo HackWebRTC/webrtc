@@ -35,11 +35,6 @@ char kTSanDefaultSuppressions[] =
 "race:webrtc::Trace::set_level_filter\n"
 "race:webrtc::GetStaticInstance<webrtc::TraceImpl>\n"
 
-// Audio processing
-// https://code.google.com/p/webrtc/issues/detail?id=2521 for details.
-"race:webrtc/modules/audio_processing/aec/aec_core.c\n"
-"race:webrtc/modules/audio_processing/aec/aec_rdft.c\n"
-
 // Race in pulse initialization.
 // https://code.google.com/p/webrtc/issues/detail?id=5152
 "race:webrtc::AudioDeviceLinuxPulse::Init\n"
