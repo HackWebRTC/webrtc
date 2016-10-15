@@ -26,7 +26,6 @@
 #include "webrtc/media/base/videosourceinterface.h"
 #include "webrtc/call.h"
 #include "webrtc/media/base/mediaengine.h"
-#include "webrtc/media/engine/webrtcvideochannelfactory.h"
 #include "webrtc/media/engine/webrtcvideodecoderfactory.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
 #include "webrtc/transport.h"
@@ -55,6 +54,7 @@ class WebRtcDecoderObserver;
 class WebRtcEncoderObserver;
 class WebRtcLocalStreamInfo;
 class WebRtcRenderAdapter;
+class WebRtcVideoChannel2;
 class WebRtcVideoChannelRecvInfo;
 class WebRtcVideoChannelSendInfo;
 class WebRtcVoiceEngine;

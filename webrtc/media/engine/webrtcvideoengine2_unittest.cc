@@ -22,7 +22,6 @@
 #include "webrtc/media/engine/fakewebrtccall.h"
 #include "webrtc/media/engine/fakewebrtcvideoengine.h"
 #include "webrtc/media/engine/simulcast.h"
-#include "webrtc/media/engine/webrtcvideochannelfactory.h"
 #include "webrtc/media/engine/webrtcvideoengine2.h"
 #include "webrtc/media/engine/webrtcvoiceengine.h"
 #include "webrtc/test/field_trial.h"
