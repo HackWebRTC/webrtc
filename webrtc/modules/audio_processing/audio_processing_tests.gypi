@@ -111,21 +111,6 @@
           ],
         },
         {
-          'target_name': 'audioproc',
-          'type': 'executable',
-          'dependencies': [
-            'audio_processing',
-            'audioproc_debug_proto',
-            'audioproc_test_utils',
-            'audioproc_protobuf_utils',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
-            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
-            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers_default',
-            '<(webrtc_root)/test/test.gyp:test_support',
-          ],
-          'sources': [ 'test/process_test.cc', ],
-        },
-        {
           'target_name': 'audioproc_f',
           'type': 'executable',
           'dependencies': [
