@@ -369,6 +369,29 @@ TEST(OptionalTest, TestMoveAssignToFullFromT) {
       *log);
 }
 
+TEST(OptionalTest, TestResetEmpty) {
+  auto log = Logger::Setup();
+  {
+    Optional<Logger> x;
+    x.reset();
+  }
+  EXPECT_EQ(V(), *log);
+}
+
+TEST(OptionalTest, TestResetFull) {
+  auto log = Logger::Setup();
+  {
+    Optional<Logger> x(Logger(17));
+    log->push_back("---");
+    x.reset();
+    log->push_back("---");
+  }
+  EXPECT_EQ(
+      V("0:17. explicit constructor", "1:17. move constructor (from 0:17)",
+        "0:17. destructor", "---", "1:17. destructor", "---"),
+      *log);
+}
+
 TEST(OptionalTest, TestDereference) {
   auto log = Logger::Setup();
   {

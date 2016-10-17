@@ -132,10 +132,8 @@ class Optional final {
         new (&value_) T(m.value_);  // T's copy constructor.
         has_value_ = true;
       }
-    } else if (has_value_) {
-      value_.~T();
-      has_value_ = false;
-      PoisonValue();
+    } else {
+      reset();
     }
     return *this;
   }
@@ -152,10 +150,8 @@ class Optional final {
         new (&value_) T(std::move(m.value_));  // T's move constructor.
         has_value_ = true;
       }
-    } else if (has_value_) {
-      value_.~T();
-      has_value_ = false;
-      PoisonValue();
+    } else {
+      reset();
     }
     return *this;
   }
@@ -186,6 +182,15 @@ class Optional final {
       m2.has_value_ = false;
       m2.PoisonValue();
     }
+  }
+
+  // Destroy any contained value. Has no effect if we have no value.
+  void reset() {
+    if (!has_value_)
+      return;
+    value_.~T();
+    has_value_ = false;
+    PoisonValue();
   }
 
   // Conversion to bool to test if we have a value.
