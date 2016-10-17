@@ -18,7 +18,6 @@
 #include "webrtc/audio/audio_send_stream.h"
 #include "webrtc/audio/audio_state.h"
 #include "webrtc/audio/scoped_voe_interface.h"
-#include "webrtc/base/basictypes.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/logging.h"
@@ -33,7 +32,6 @@
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
-#include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/utility/include/process_thread.h"
@@ -59,7 +57,6 @@ namespace internal {
 
 class Call : public webrtc::Call,
              public PacketReceiver,
-             public RecoveredPacketReceiver,
              public CongestionController::Observer,
              public BitrateAllocator::LimitObserver {
  public:
@@ -93,9 +90,6 @@ class Call : public webrtc::Call,
                                const uint8_t* packet,
                                size_t length,
                                const PacketTime& packet_time) override;
-
-  // Implements RecoveredPacketReceiver.
-  bool OnRecoveredPacket(const uint8_t* packet, size_t length) override;
 
   void SetBitrateConfig(
       const webrtc::Call::Config::BitrateConfig& bitrate_config) override;
@@ -944,17 +938,6 @@ PacketReceiver::DeliveryStatus Call::DeliverPacket(
     return DeliverRtcp(media_type, packet, length);
 
   return DeliverRtp(media_type, packet, length, packet_time);
-}
-
-// TODO(brandtr): Update this member function when we support protecting
-// audio packets with FlexFEC.
-bool Call::OnRecoveredPacket(const uint8_t* packet, size_t length) {
-  uint32_t ssrc = ByteReader<uint32_t>::ReadBigEndian(&packet[8]);
-  ReadLockScoped read_lock(*receive_crit_);
-  auto it = video_receive_ssrcs_.find(ssrc);
-  if (it == video_receive_ssrcs_.end())
-    return false;
-  return it->second->OnRecoveredPacket(packet, length);
 }
 
 }  // namespace internal

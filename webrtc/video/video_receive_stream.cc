@@ -259,11 +259,6 @@ bool VideoReceiveStream::DeliverRtp(const uint8_t* packet,
   return rtp_stream_receiver_.DeliverRtp(packet, length, packet_time);
 }
 
-bool VideoReceiveStream::OnRecoveredPacket(const uint8_t* packet,
-                                           size_t length) {
-  return rtp_stream_receiver_.OnRecoveredPacket(packet, length);
-}
-
 void VideoReceiveStream::Start() {
   if (decode_thread_.IsRunning())
     return;
