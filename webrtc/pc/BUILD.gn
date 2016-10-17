@@ -64,7 +64,7 @@ rtc_static_library("rtc_pc") {
 
   public_configs = [ ":rtc_pc_config" ]
 
-  if (is_clang) {
+  if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
@@ -97,7 +97,7 @@ if (rtc_include_tests) {
 
     configs += [ ":rtc_pc_unittests_config" ]
 
-    if (is_clang) {
+    if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }

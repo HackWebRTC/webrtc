@@ -113,7 +113,7 @@ rtc_static_library("rtc_media") {
 
   configs += [ ":rtc_media_warnings_config" ]
 
-  if (is_clang) {
+  if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
@@ -236,9 +236,8 @@ if (rtc_include_tests) {
       include_dirs += [ "$rtc_libyuv_dir/include" ]
     }
 
-    if (is_clang) {
-      # Suppress warnings from the Chromium Clang plugin.
-      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
@@ -331,10 +330,11 @@ if (rtc_include_tests) {
       ]
     }
 
-    if (is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    if (!build_with_chromium && is_clang) {
       suppressed_configs += [
         "//build/config/clang:extra_warnings",
+
+        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
         "//build/config/clang:find_bad_constructs",
       ]
     }

@@ -194,9 +194,8 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
 
     public_configs = [ ":rtc_sdk_common_objc_config" ]
 
-    if (is_clang) {
-      # Suppress warnings from the Chromium Clang plugins.
-      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
@@ -287,9 +286,8 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
 
       public_configs = [ ":rtc_sdk_common_objc_config" ]
 
-      if (is_clang) {
-        # Suppress warnings from the Chromium Clang plugins.
-        # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      if (!build_with_chromium && is_clang) {
+        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163)
         configs -= [ "//build/config/clang:find_bad_constructs" ]
       }
     }
@@ -331,9 +329,8 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
 
       public_configs = [ ":rtc_sdk_common_objc_config" ]
 
-      if (is_clang) {
-        # Suppress warnings from the Chromium Clang plugins.
-        # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      if (!build_with_chromium && is_clang) {
+        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163)
         configs -= [ "//build/config/clang:find_bad_constructs" ]
       }
     }

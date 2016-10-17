@@ -117,7 +117,7 @@ rtc_static_library("libjingle_peerconnection") {
 
   configs += [ ":libjingle_peerconnection_warnings_config" ]
 
-  if (is_clang) {
+  if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
@@ -186,7 +186,7 @@ if (is_android && !build_with_chromium) {
 
     configs += [ ":libjingle_peerconnection_jni_warnings_config" ]
 
-    if (is_clang) {
+    if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [
         "//build/config/clang:extra_warnings",
@@ -382,7 +382,7 @@ if (rtc_include_tests) {
 
     configs += [ ":peerconnection_unittests_config" ]
 
-    if (is_clang) {
+    if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
