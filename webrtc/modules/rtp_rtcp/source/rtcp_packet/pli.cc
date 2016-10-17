@@ -16,7 +16,7 @@
 
 namespace webrtc {
 namespace rtcp {
-
+constexpr uint8_t Pli::kFeedbackMessageType;
 // RFC 4585: Feedback format.
 //
 // Common packet format:
@@ -37,8 +37,8 @@ namespace rtcp {
 // Picture loss indication (PLI) (RFC 4585).
 // FCI: no feedback control information.
 bool Pli::Parse(const CommonHeader& packet) {
-  RTC_DCHECK(packet.type() == kPacketType);
-  RTC_DCHECK(packet.fmt() == kFeedbackMessageType);
+  RTC_DCHECK_EQ(packet.type(), kPacketType);
+  RTC_DCHECK_EQ(packet.fmt(), kFeedbackMessageType);
 
   if (packet.payload_size_bytes() < kCommonFeedbackLength) {
     LOG(LS_WARNING) << "Packet is too small to be a valid PLI packet";

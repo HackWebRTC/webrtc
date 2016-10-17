@@ -24,7 +24,7 @@ class CommonHeader;
 
 class SenderReport : public RtcpPacket {
  public:
-  static const uint8_t kPacketType = 200;
+  static constexpr uint8_t kPacketType = 200;
 
   SenderReport();
   ~SenderReport() override {}

@@ -24,9 +24,8 @@ class CommonHeader;
 
 class ReceiverReport : public RtcpPacket {
  public:
-  static const uint8_t kPacketType = 201;
+  static constexpr uint8_t kPacketType = 201;
   ReceiverReport() : sender_ssrc_(0) {}
-
   ~ReceiverReport() override {}
 
   // Parse assumes header is already parsed and validated.

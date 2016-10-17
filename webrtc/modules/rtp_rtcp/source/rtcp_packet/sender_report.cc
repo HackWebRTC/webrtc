@@ -17,6 +17,7 @@
 
 namespace webrtc {
 namespace rtcp {
+constexpr uint8_t SenderReport::kPacketType;
 //    Sender report (SR) (RFC 3550).
 //     0                   1                   2                   3
 //     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -43,7 +44,7 @@ SenderReport::SenderReport()
       sender_octet_count_(0) {}
 
 bool SenderReport::Parse(const CommonHeader& packet) {
-  RTC_DCHECK(packet.type() == kPacketType);
+  RTC_DCHECK_EQ(packet.type(), kPacketType);
 
   const uint8_t report_block_count = packet.count();
   if (packet.payload_size_bytes() <

@@ -19,6 +19,7 @@
 
 namespace webrtc {
 namespace rtcp {
+constexpr uint8_t Sdes::kPacketType;
 // Source Description (SDES) (RFC 3550).
 //
 //         0                   1                   2                   3
@@ -62,7 +63,7 @@ Sdes::Sdes() : block_length_(RtcpPacket::kHeaderLength) {}
 Sdes::~Sdes() {}
 
 bool Sdes::Parse(const CommonHeader& packet) {
-  RTC_DCHECK(packet.type() == kPacketType);
+  RTC_DCHECK_EQ(packet.type(), kPacketType);
 
   uint8_t number_of_chunks = packet.count();
   std::vector<Chunk> chunks;  // Read chunk into temporary array, so that in

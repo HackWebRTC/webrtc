@@ -28,7 +28,7 @@ class Sdes : public RtcpPacket {
     uint32_t ssrc;
     std::string cname;
   };
-  static const uint8_t kPacketType = 202;
+  static constexpr uint8_t kPacketType = 202;
 
   Sdes();
   ~Sdes() override;

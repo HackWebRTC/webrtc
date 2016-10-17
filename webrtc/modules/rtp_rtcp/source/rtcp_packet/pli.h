@@ -20,7 +20,7 @@ class CommonHeader;
 // Picture loss indication (PLI) (RFC 4585).
 class Pli : public Psfb {
  public:
-  static const uint8_t kFeedbackMessageType = 1;
+  static constexpr uint8_t kFeedbackMessageType = 1;
 
   Pli() {}
   ~Pli() override {}

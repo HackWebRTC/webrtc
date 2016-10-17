@@ -24,7 +24,7 @@ class CommonHeader;
 
 class Bye : public RtcpPacket {
  public:
-  static const uint8_t kPacketType = 203;
+  static constexpr uint8_t kPacketType = 203;
 
   Bye();
   ~Bye() override {}

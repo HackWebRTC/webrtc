@@ -19,7 +19,7 @@
 
 namespace webrtc {
 namespace rtcp {
-
+constexpr uint8_t Bye::kPacketType;
 // Bye packet (BYE) (RFC 3550).
 //
 //        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -35,7 +35,7 @@ namespace rtcp {
 Bye::Bye() : sender_ssrc_(0) {}
 
 bool Bye::Parse(const CommonHeader& packet) {
-  RTC_DCHECK(packet.type() == kPacketType);
+  RTC_DCHECK_EQ(packet.type(), kPacketType);
 
   const uint8_t src_count = packet.count();
   // Validate packet.
