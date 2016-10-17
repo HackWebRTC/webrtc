@@ -25,6 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.annotation.Config;
+import org.robolectric.shadows.ShadowLog;
 import org.webrtc.IceCandidate;
 import org.webrtc.SessionDescription;
 
@@ -52,6 +53,8 @@ public class DirectRTCClientTest {
 
   @Before
   public void setUp() {
+    ShadowLog.stream = System.out;
+
     clientEvents = mock(AppRTCClient.SignalingEvents.class);
     serverEvents = mock(AppRTCClient.SignalingEvents.class);
 
