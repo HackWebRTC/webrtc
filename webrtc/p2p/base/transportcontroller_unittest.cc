@@ -50,13 +50,13 @@ class TransportControllerTest : public testing::Test,
     ConnectTransportControllerSignals();
   }
 
-  void CreateTransportControllerWithWorkerThread() {
-    if (!worker_thread_) {
-      worker_thread_.reset(new rtc::Thread());
-      worker_thread_->Start();
+  void CreateTransportControllerWithNetworkThread() {
+    if (!network_thread_) {
+      network_thread_ = rtc::Thread::CreateWithSocketServer();
+      network_thread_->Start();
     }
     transport_controller_.reset(
-        new TransportControllerForTest(worker_thread_.get()));
+        new TransportControllerForTest(network_thread_.get()));
     ConnectTransportControllerSignals();
   }
 
@@ -92,8 +92,8 @@ class TransportControllerTest : public testing::Test,
   }
 
   // Used for thread hopping test.
-  void CreateChannelsAndCompleteConnectionOnWorkerThread() {
-    worker_thread_->Invoke<void>(
+  void CreateChannelsAndCompleteConnectionOnNetworkThread() {
+    network_thread_->Invoke<void>(
         RTC_FROM_HERE,
         rtc::Bind(
             &TransportControllerTest::CreateChannelsAndCompleteConnection_w,
@@ -174,7 +174,7 @@ class TransportControllerTest : public testing::Test,
     ++candidates_signal_count_;
   }
 
-  std::unique_ptr<rtc::Thread> worker_thread_;  // Not used for most tests.
+  std::unique_ptr<rtc::Thread> network_thread_;  // Not used for most tests.
   std::unique_ptr<TransportControllerForTest> transport_controller_;
 
   // Information received from signals from transport controller.
@@ -662,8 +662,8 @@ TEST_F(TransportControllerTest, TestSignalCandidatesGathered) {
 }
 
 TEST_F(TransportControllerTest, TestSignalingOccursOnSignalingThread) {
-  CreateTransportControllerWithWorkerThread();
-  CreateChannelsAndCompleteConnectionOnWorkerThread();
+  CreateTransportControllerWithNetworkThread();
+  CreateChannelsAndCompleteConnectionOnNetworkThread();
 
   // connecting --> connected --> completed
   EXPECT_EQ_WAIT(kIceConnectionCompleted, connection_state_, kTimeout);

@@ -27,7 +27,7 @@ class PortAllocator;
 // Base should be a descendant of cricket::Transport and have a constructor
 // that takes a transport name and PortAllocator.
 //
-// Everything in this class should be called on the worker thread.
+// Everything in this class should be called on the network thread.
 template<class Base>
 class DtlsTransport : public Base {
  public:

@@ -29,7 +29,7 @@ class StunServerTest : public testing::Test {
   StunServerTest()
     : pss_(new rtc::PhysicalSocketServer),
       ss_(new rtc::VirtualSocketServer(pss_.get())),
-      worker_(ss_.get()) {
+      network_(ss_.get()) {
   }
   virtual void SetUp() {
     server_.reset(new StunServer(
@@ -37,7 +37,7 @@ class StunServerTest : public testing::Test {
     client_.reset(new rtc::TestClient(
         rtc::AsyncUDPSocket::Create(ss_.get(), client_addr)));
 
-    worker_.Start();
+    network_.Start();
   }
   void Send(const StunMessage& msg) {
     rtc::ByteBufferWriter buf;
@@ -65,7 +65,7 @@ class StunServerTest : public testing::Test {
  private:
   std::unique_ptr<rtc::PhysicalSocketServer> pss_;
   std::unique_ptr<rtc::VirtualSocketServer> ss_;
-  rtc::Thread worker_;
+  rtc::Thread network_;
   std::unique_ptr<StunServer> server_;
   std::unique_ptr<rtc::TestClient> client_;
 };

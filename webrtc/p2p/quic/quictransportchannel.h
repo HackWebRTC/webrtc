@@ -271,7 +271,7 @@ class QuicTransportChannel : public TransportChannelImpl,
   void set_quic_state(QuicTransportState state);
 
   // Everything should occur on this thread.
-  rtc::Thread* worker_thread_;
+  rtc::Thread* network_thread_;
   // Underlying channel which is responsible for connecting with the remote peer
   // and sending/receiving packets across the network.
   std::unique_ptr<TransportChannelImpl> channel_;

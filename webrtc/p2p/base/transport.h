@@ -15,8 +15,8 @@
 // state changes (in order to update the manager's state), and forwards
 // requests to begin connecting or to reset to each of the channels.
 //
-// On Threading:  Transport performs work solely on the worker thread, and so
-// its methods should only be called on the worker thread.
+// On Threading:  Transport performs work solely on the network thread, and so
+// its methods should only be called on the network thread.
 //
 // Note: Subclasses must call DestroyChannels() in their own destructors.
 // It is not possible to do so here because the subclass destructor will

@@ -530,12 +530,12 @@ class FakeTransportController : public TransportController {
     SetIceRole(role);
   }
 
-  explicit FakeTransportController(rtc::Thread* worker_thread)
-      : TransportController(rtc::Thread::Current(), worker_thread, nullptr),
+  explicit FakeTransportController(rtc::Thread* network_thread)
+      : TransportController(rtc::Thread::Current(), network_thread, nullptr),
         fail_create_channel_(false) {}
 
-  FakeTransportController(rtc::Thread* worker_thread, IceRole role)
-      : TransportController(rtc::Thread::Current(), worker_thread, nullptr),
+  FakeTransportController(rtc::Thread* network_thread, IceRole role)
+      : TransportController(rtc::Thread::Current(), network_thread, nullptr),
         fail_create_channel_(false) {
     SetIceRole(role);
   }

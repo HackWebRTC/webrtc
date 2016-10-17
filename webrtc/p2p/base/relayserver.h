@@ -115,7 +115,7 @@ class RelayServer : public rtc::MessageHandler,
   void RemoveConnection(RelayServerConnection* conn);
   void RemoveBinding(RelayServerBinding* binding);
 
-  // Handle messages in our worker thread.
+  // Handle messages in our thread.
   void OnMessage(rtc::Message *pmsg);
 
   // Called when the timer for checking lifetime times out.

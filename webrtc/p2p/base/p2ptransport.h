@@ -18,7 +18,7 @@
 
 namespace cricket {
 
-// Everything in this class should be called on the worker thread.
+// Everything in this class should be called on the network thread.
 class P2PTransport : public Transport {
  public:
   P2PTransport(const std::string& name, PortAllocator* allocator);

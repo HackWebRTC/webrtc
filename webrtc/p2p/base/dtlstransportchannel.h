@@ -228,7 +228,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   void OnChannelStateChanged(TransportChannelImpl* channel);
   void OnDtlsHandshakeError(rtc::SSLHandshakeError error);
 
-  rtc::Thread* worker_thread_;  // Everything should occur on this thread.
+  rtc::Thread* network_thread_;  // Everything should occur on this thread.
   // Underlying channel, not owned by this class.
   TransportChannelImpl* const channel_;
   std::unique_ptr<rtc::SSLStreamAdapter> dtls_;  // The DTLS stream
