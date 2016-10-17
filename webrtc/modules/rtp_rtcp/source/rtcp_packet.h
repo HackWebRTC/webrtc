@@ -8,12 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  *
  */
-
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_H_
 
+#include "webrtc/base/basictypes.h"
 #include "webrtc/base/buffer.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 
 namespace webrtc {
 namespace rtcp {
@@ -46,27 +45,24 @@ namespace rtcp {
 
 class RtcpPacket {
  public:
-  virtual ~RtcpPacket() {}
-
   // Callback used to signal that an RTCP packet is ready. Note that this may
   // not contain all data in this RtcpPacket; if a packet cannot fit in
   // max_length bytes, it will be fragmented and multiple calls to this
   // callback will be made.
   class PacketReadyCallback {
    public:
+    virtual void OnPacketReady(uint8_t* data, size_t length) = 0;
+
+   protected:
     PacketReadyCallback() {}
     virtual ~PacketReadyCallback() {}
-
-    virtual void OnPacketReady(uint8_t* data, size_t length) = 0;
   };
 
-  // Convenience method mostly used for test. Max length of IP_PACKET_SIZE is
-  // used, will cause assertion error if fragmentation occurs.
-  rtc::Buffer Build() const;
+  virtual ~RtcpPacket() {}
 
-  // Returns true if call to Create succeeded. A buffer of size
-  // IP_PACKET_SIZE will be allocated and reused between calls to callback.
-  bool Build(PacketReadyCallback* callback) const;
+  // Convenience method mostly used for test. Creates packet without
+  // fragmentation using BlockLength() to allocate big enough buffer.
+  rtc::Buffer Build() const;
 
   // Returns true if call to Create succeeded. Provided buffer reference
   // will be used for all calls to callback.
@@ -86,21 +82,21 @@ class RtcpPacket {
                       PacketReadyCallback* callback) const = 0;
 
  protected:
+  // Size of the rtcp common header.
+  static constexpr size_t kHeaderLength = 4;
   RtcpPacket() {}
 
   static void CreateHeader(uint8_t count_or_format,
                            uint8_t packet_type,
-                           size_t block_length,  // Size in 32bit words - 1.
+                           size_t block_length,  // Payload size in 32bit words.
                            uint8_t* buffer,
                            size_t* pos);
 
   bool OnBufferFull(uint8_t* packet,
                     size_t* index,
-                    RtcpPacket::PacketReadyCallback* callback) const;
-
+                    PacketReadyCallback* callback) const;
+  // Size of the rtcp packet as written in header.
   size_t HeaderLength() const;
-
-  static const size_t kHeaderLength = 4;
 };
 }  // namespace rtcp
 }  // namespace webrtc
