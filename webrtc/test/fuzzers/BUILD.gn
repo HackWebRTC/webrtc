@@ -95,6 +95,16 @@ webrtc_fuzzer_test("producer_fec_fuzzer") {
   ]
 }
 
+webrtc_fuzzer_test("flexfec_receiver_fuzzer") {
+  sources = [
+    "flexfec_receiver_fuzzer.cc",
+  ]
+  deps = [
+    "../../modules/rtp_rtcp/",
+  ]
+  libfuzzer_options = [ "max_len=2000" ]
+}
+
 webrtc_fuzzer_test("rtcp_receiver_fuzzer") {
   sources = [
     "rtcp_receiver_fuzzer.cc",
