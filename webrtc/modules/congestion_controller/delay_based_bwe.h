@@ -65,11 +65,11 @@ class DelayBasedBwe {
   std::unique_ptr<InterArrival> inter_arrival_;
   std::unique_ptr<OveruseEstimator> estimator_;
   OveruseDetector detector_;
-  RateStatistics incoming_bitrate_;
+  RateStatistics receiver_incoming_bitrate_;
   int64_t last_update_ms_;
   int64_t last_seen_packet_ms_;
   bool uma_recorded_;
-  AimdRateControl remote_rate_;
+  AimdRateControl rate_control_;
   ProbeBitrateEstimator probe_bitrate_estimator_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(DelayBasedBwe);
