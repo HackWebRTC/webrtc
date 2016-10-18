@@ -47,13 +47,13 @@ rtc::scoped_refptr<I420Buffer> CreateGradient(int width, int height) {
 // The offsets and sizes describe the rectangle extracted from the
 // original (gradient) frame, in relative coordinates where the
 // original frame correspond to the unit square, 0.0 <= x, y < 1.0.
-void CheckCrop(webrtc::VideoFrameBuffer* frame,
+void CheckCrop(const webrtc::VideoFrameBuffer& frame,
                double offset_x,
                double offset_y,
                double rel_width,
                double rel_height) {
-  int width = frame->width();
-  int height = frame->height();
+  int width = frame.width();
+  int height = frame.height();
   // Check that pixel values in the corners match the gradient used
   // for initialization.
   for (int i = 0; i < 2; i++) {
@@ -66,13 +66,46 @@ void CheckCrop(webrtc::VideoFrameBuffer* frame,
       double orig_x = offset_x + i * rel_width;
       double orig_y = offset_y + j * rel_height;
 
-      EXPECT_NEAR(frame->DataY()[x + y * frame->StrideY()] / 256.0,
+      EXPECT_NEAR(frame.DataY()[x + y * frame.StrideY()] / 256.0,
                   (orig_x + orig_y) / 2, 0.02);
-      EXPECT_NEAR(frame->DataU()[x / 2 + (y / 2) * frame->StrideU()] / 256.0,
+      EXPECT_NEAR(frame.DataU()[x / 2 + (y / 2) * frame.StrideU()] / 256.0,
                   orig_x, 0.02);
-      EXPECT_NEAR(frame->DataV()[x / 2 + (y / 2) * frame->StrideV()] / 256.0,
+      EXPECT_NEAR(frame.DataV()[x / 2 + (y / 2) * frame.StrideV()] / 256.0,
                   orig_y, 0.02);
     }
+  }
+}
+
+void CheckRotate(int width, int height, webrtc::VideoRotation rotation,
+                 const webrtc::VideoFrameBuffer& rotated) {
+  int rotated_width = width;
+  int rotated_height = height;
+
+  if (rotation == kVideoRotation_90 || rotation == kVideoRotation_270) {
+    std::swap(rotated_width, rotated_height);
+  }
+  EXPECT_EQ(rotated_width, rotated.width());
+  EXPECT_EQ(rotated_height, rotated.height());
+
+  // Clock-wise order (with 0,0 at top-left)
+  const struct { int x; int y; } corners[] = {
+    { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 }
+  };
+  // Corresponding corner colors of the frame produced by CreateGradient.
+  const struct { int y; int u; int v; } colors[] = {
+    {0, 0, 0}, { 127, 255, 0}, { 255, 255, 255 }, {127, 0, 255}
+  };
+  int corner_offset = static_cast<int>(rotation) / 90;
+
+  for (int i = 0; i < 4; i++) {
+    int j = (i + corner_offset) % 4;
+    int x = corners[j].x * (rotated_width - 1);
+    int y = corners[j].y * (rotated_height - 1);
+    EXPECT_EQ(colors[i].y, rotated.DataY()[x + y * rotated.StrideY()]);
+    EXPECT_EQ(colors[i].u,
+              rotated.DataU()[(x / 2) + (y / 2) * rotated.StrideU()]);
+    EXPECT_EQ(colors[i].v,
+              rotated.DataV()[(x / 2) + (y / 2) * rotated.StrideV()]);
   }
 }
 
@@ -260,7 +293,7 @@ TEST(TestI420FrameBuffer, Scale) {
       I420Buffer::Create(150, 75));
 
   scaled_buffer->ScaleFrom(buf);
-  CheckCrop(scaled_buffer, 0.0, 0.0, 1.0, 1.0);
+  CheckCrop(*scaled_buffer, 0.0, 0.0, 1.0, 1.0);
 }
 
 TEST(TestI420FrameBuffer, CropXCenter) {
@@ -271,7 +304,7 @@ TEST(TestI420FrameBuffer, CropXCenter) {
       I420Buffer::Create(100, 100));
 
   scaled_buffer->CropAndScaleFrom(buf, 50, 0, 100, 100);
-  CheckCrop(scaled_buffer, 0.25, 0.0, 0.5, 1.0);
+  CheckCrop(*scaled_buffer, 0.25, 0.0, 0.5, 1.0);
 }
 
 TEST(TestI420FrameBuffer, CropXNotCenter) {
@@ -282,7 +315,7 @@ TEST(TestI420FrameBuffer, CropXNotCenter) {
       I420Buffer::Create(100, 100));
 
   scaled_buffer->CropAndScaleFrom(buf, 25, 0, 100, 100);
-  CheckCrop(scaled_buffer, 0.125, 0.0, 0.5, 1.0);
+  CheckCrop(*scaled_buffer, 0.125, 0.0, 0.5, 1.0);
 }
 
 TEST(TestI420FrameBuffer, CropYCenter) {
@@ -293,7 +326,7 @@ TEST(TestI420FrameBuffer, CropYCenter) {
       I420Buffer::Create(100, 100));
 
   scaled_buffer->CropAndScaleFrom(buf, 0, 50, 100, 100);
-  CheckCrop(scaled_buffer, 0.0, 0.25, 1.0, 0.5);
+  CheckCrop(*scaled_buffer, 0.0, 0.25, 1.0, 0.5);
 }
 
 TEST(TestI420FrameBuffer, CropYNotCenter) {
@@ -304,7 +337,7 @@ TEST(TestI420FrameBuffer, CropYNotCenter) {
       I420Buffer::Create(100, 100));
 
   scaled_buffer->CropAndScaleFrom(buf, 0, 25, 100, 100);
-  CheckCrop(scaled_buffer, 0.0, 0.125, 1.0, 0.5);
+  CheckCrop(*scaled_buffer, 0.0, 0.125, 1.0, 0.5);
 }
 
 TEST(TestI420FrameBuffer, CropAndScale16x9) {
@@ -315,7 +348,23 @@ TEST(TestI420FrameBuffer, CropAndScale16x9) {
       I420Buffer::Create(320, 180));
 
   scaled_buffer->CropAndScaleFrom(buf);
-  CheckCrop(scaled_buffer, 0.0, 0.125, 1.0, 0.75);
+  CheckCrop(*scaled_buffer, 0.0, 0.125, 1.0, 0.75);
 }
+
+class TestI420BufferRotate
+    : public ::testing::TestWithParam<webrtc::VideoRotation> {};
+
+TEST_P(TestI420BufferRotate, Rotates) {
+  rtc::scoped_refptr<VideoFrameBuffer> buffer = CreateGradient(640, 480);
+  rtc::scoped_refptr<VideoFrameBuffer> rotated_buffer =
+      I420Buffer::Rotate(buffer, GetParam());
+  CheckRotate(640, 480, GetParam(), *rotated_buffer);
+}
+
+INSTANTIATE_TEST_CASE_P(Rotate, TestI420BufferRotate,
+                        ::testing::Values(kVideoRotation_0,
+                                          kVideoRotation_90,
+                                          kVideoRotation_180,
+                                          kVideoRotation_270));
 
 }  // namespace webrtc
