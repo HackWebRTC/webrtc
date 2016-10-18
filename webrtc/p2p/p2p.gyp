@@ -32,6 +32,7 @@
         'base/p2ptransport.h',
         'base/p2ptransportchannel.cc',
         'base/p2ptransportchannel.h',
+        'base/packettransportinterface.h',
         'base/packetsocketfactory.h',
         'base/port.cc',
         'base/port.h',
