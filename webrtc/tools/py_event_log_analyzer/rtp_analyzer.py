@@ -259,7 +259,7 @@ class RTPStatistics(object):
                             self.data_points)
 
     plt.figure(1)
-    plt.plot(time_axis, delay)
+    plt.plot(time_axis, delay[:len(time_axis)])
     plt.xlabel("Send time [s]")
     plt.ylabel("Relative transport delay [ms]")
 
