@@ -581,48 +581,43 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
   }
 
   PacketList packet_list;
-  RTPHeader main_header;
   {
     // Convert to Packet.
     // Create |packet| within this separate scope, since it should not be used
     // directly once it's been inserted in the packet list. This way, |packet|
     // is not defined outside of this block.
     Packet* packet = new Packet;
-    packet->header.markerBit = false;
-    packet->header.payloadType = rtp_header.header.payloadType;
-    packet->header.sequenceNumber = rtp_header.header.sequenceNumber;
-    packet->header.timestamp = rtp_header.header.timestamp;
-    packet->header.ssrc = rtp_header.header.ssrc;
-    packet->header.numCSRCs = 0;
+    packet->payload_type = rtp_header.header.payloadType;
+    packet->sequence_number = rtp_header.header.sequenceNumber;
+    packet->timestamp = rtp_header.header.timestamp;
     packet->payload.SetData(payload.data(), payload.size());
     // Waiting time will be set upon inserting the packet in the buffer.
     RTC_DCHECK(!packet->waiting_time);
     // Insert packet in a packet list.
     packet_list.push_back(packet);
-    // Save main payloads header for later.
-    memcpy(&main_header, &packet->header, sizeof(main_header));
   }
 
   bool update_sample_rate_and_channels = false;
   // Reinitialize NetEq if it's needed (changed SSRC or first call).
-  if ((main_header.ssrc != ssrc_) || first_packet_) {
+  if ((rtp_header.header.ssrc != ssrc_) || first_packet_) {
     // Note: |first_packet_| will be cleared further down in this method, once
     // the packet has been successfully inserted into the packet buffer.
 
-    rtcp_.Init(main_header.sequenceNumber);
+    rtcp_.Init(rtp_header.header.sequenceNumber);
 
     // Flush the packet buffer and DTMF buffer.
     packet_buffer_->Flush();
     dtmf_buffer_->Flush();
 
     // Store new SSRC.
-    ssrc_ = main_header.ssrc;
+    ssrc_ = rtp_header.header.ssrc;
 
     // Update audio buffer timestamp.
-    sync_buffer_->IncreaseEndTimestamp(main_header.timestamp - timestamp_);
+    sync_buffer_->IncreaseEndTimestamp(rtp_header.header.timestamp -
+                                       timestamp_);
 
     // Update codecs.
-    timestamp_ = main_header.timestamp;
+    timestamp_ = rtp_header.header.timestamp;
 
     // Reset timestamp scaling.
     timestamp_scaler_->Reset();
@@ -632,10 +627,19 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
   }
 
   // Update RTCP statistics, only for regular packets.
-  rtcp_.Update(main_header, receive_timestamp);
+  rtcp_.Update(rtp_header.header, receive_timestamp);
+
+  if (nack_enabled_) {
+    RTC_DCHECK(nack_);
+    if (update_sample_rate_and_channels) {
+      nack_->Reset();
+    }
+    nack_->UpdateLastReceivedPacket(rtp_header.header.sequenceNumber,
+                                    rtp_header.header.timestamp);
+  }
 
   // Check for RED payload type, and separate payloads into several packets.
-  if (decoder_database_->IsRed(main_header.payloadType)) {
+  if (decoder_database_->IsRed(rtp_header.header.payloadType)) {
     if (!red_payload_splitter_->SplitRed(&packet_list)) {
       PacketBuffer::DeleteAllPackets(&packet_list);
       return kRedundancySplitError;
@@ -643,9 +647,6 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     // Only accept a few RED payloads of the same type as the main data,
     // DTMF events and CNG.
     red_payload_splitter_->CheckRedPayloads(&packet_list, *decoder_database_);
-    // Update the stored main payload header since the main payload has now
-    // changed.
-    memcpy(&main_header, &packet_list.front()->header, sizeof(main_header));
   }
 
   // Check payload types.
@@ -654,6 +655,13 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     PacketBuffer::DeleteAllPackets(&packet_list);
     return kUnknownRtpPayloadType;
   }
+
+  RTC_DCHECK(!packet_list.empty());
+  // Store these for later use, since the first packet may very well disappear
+  // before we need these values.
+  const uint32_t main_timestamp = packet_list.front()->timestamp;
+  const uint8_t main_payload_type = packet_list.front()->payload_type;
+  const uint16_t main_sequence_number = packet_list.front()->sequence_number;
 
   // Scale timestamp to internal domain (only for some codecs).
   timestamp_scaler_->ToInternal(&packet_list);
@@ -665,9 +673,9 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     Packet* current_packet = (*it);
     assert(current_packet);
     assert(!current_packet->payload.empty());
-    if (decoder_database_->IsDtmf(current_packet->header.payloadType)) {
+    if (decoder_database_->IsDtmf(current_packet->payload_type)) {
       DtmfEvent event;
-      int ret = DtmfBuffer::ParseEvent(current_packet->header.timestamp,
+      int ret = DtmfBuffer::ParseEvent(current_packet->timestamp,
                                        current_packet->payload.data(),
                                        current_packet->payload.size(), &event);
       if (ret != DtmfBuffer::kOK) {
@@ -687,16 +695,15 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
 
   // Update bandwidth estimate, if the packet is not comfort noise.
   if (!packet_list.empty() &&
-      !decoder_database_->IsComfortNoise(main_header.payloadType)) {
+      !decoder_database_->IsComfortNoise(main_payload_type)) {
     // The list can be empty here if we got nothing but DTMF payloads.
-    AudioDecoder* decoder =
-        decoder_database_->GetDecoder(main_header.payloadType);
-    assert(decoder);  // Should always get a valid object, since we have
-    // already checked that the payload types are known.
+    AudioDecoder* decoder = decoder_database_->GetDecoder(main_payload_type);
+    RTC_DCHECK(decoder);  // Should always get a valid object, since we have
+                          // already checked that the payload types are known.
     decoder->IncomingPacket(packet_list.front()->payload.data(),
                             packet_list.front()->payload.size(),
-                            packet_list.front()->header.sequenceNumber,
-                            packet_list.front()->header.timestamp,
+                            packet_list.front()->sequence_number,
+                            packet_list.front()->timestamp,
                             receive_timestamp);
   }
 
@@ -705,7 +712,7 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     std::unique_ptr<Packet> packet(packet_list.front());
     packet_list.pop_front();
     const DecoderDatabase::DecoderInfo* info =
-        decoder_database_->GetDecoderInfo(packet->header.payloadType);
+        decoder_database_->GetDecoderInfo(packet->payload_type);
     if (!info) {
       LOG(LS_WARNING) << "SplitAudio unknown payload type";
       return kUnknownRtpPayloadType;
@@ -717,17 +724,19 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     } else {
       std::vector<AudioDecoder::ParseResult> results =
           info->GetDecoder()->ParsePayload(std::move(packet->payload),
-                                           packet->header.timestamp);
-      const RTPHeader& original_header = packet->header;
+                                           packet->timestamp);
+      const auto sequence_number = packet->sequence_number;
+      const auto payload_type = packet->payload_type;
       const Packet::Priority original_priority = packet->priority;
       for (auto& result : results) {
         RTC_DCHECK(result.frame);
         // Reuse the packet if possible.
         if (!packet) {
           packet.reset(new Packet);
-          packet->header = original_header;
+          packet->sequence_number = sequence_number;
+          packet->payload_type = payload_type;
         }
-        packet->header.timestamp = result.timestamp;
+        packet->timestamp = result.timestamp;
         RTC_DCHECK_GE(result.priority, 0);
         packet->priority.codec_level = result.priority;
         packet->priority.red_level = original_priority.red_level;
@@ -735,16 +744,6 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
         parsed_packet_list.push_back(packet.release());
       }
     }
-  }
-
-  if (nack_enabled_) {
-    RTC_DCHECK(nack_);
-    if (update_sample_rate_and_channels) {
-      nack_->Reset();
-    }
-    nack_->UpdateLastReceivedPacket(
-        parsed_packet_list.front()->header.sequenceNumber,
-        parsed_packet_list.front()->header.timestamp);
   }
 
   // Insert packets in buffer.
@@ -781,9 +780,9 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     // CNG packet with a sample rate different than the current CNG then it
     // flushes its buffer, assuming send codec must have been changed. However,
     // payload type of the hypothetically new send codec is not known.
-    const RTPHeader* rtp_header = packet_buffer_->NextRtpHeader();
-    assert(rtp_header);
-    int payload_type = rtp_header->payloadType;
+    const Packet* next_packet = packet_buffer_->PeekNextPacket();
+    RTC_DCHECK(next_packet);
+    const int payload_type = next_packet->payload_type;
     size_t channels = 1;
     if (!decoder_database_->IsComfortNoise(payload_type)) {
       AudioDecoder* decoder = decoder_database_->GetDecoder(payload_type);
@@ -807,7 +806,7 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
 
   // TODO(hlundin): Move this code to DelayManager class.
   const DecoderDatabase::DecoderInfo* dec_info =
-          decoder_database_->GetDecoderInfo(main_header.payloadType);
+      decoder_database_->GetDecoderInfo(main_payload_type);
   assert(dec_info);  // Already checked that the payload type is known.
   delay_manager_->LastDecodedWasCngOrDtmf(dec_info->IsComfortNoise() ||
                                           dec_info->IsDtmf());
@@ -828,12 +827,10 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     }
 
     // Update statistics.
-    if ((int32_t) (main_header.timestamp - timestamp_) >= 0 &&
-        !new_codec_) {
+    if ((int32_t)(main_timestamp - timestamp_) >= 0 && !new_codec_) {
       // Only update statistics if incoming packet is not older than last played
       // out packet, and if new codec flag is not set.
-      delay_manager_->Update(main_header.sequenceNumber, main_header.timestamp,
-                             fs_hz_);
+      delay_manager_->Update(main_sequence_number, main_timestamp, fs_hz_);
     }
   } else if (delay_manager_->last_pack_cng_or_dtmf() == -1) {
     // This is first "normal" packet after CNG or DTMF.
@@ -1091,7 +1088,7 @@ int NetEqImpl::GetDecision(Operations* operation,
     const uint32_t five_seconds_samples = 5 * fs_hz_;
     packet_buffer_->DiscardOldPackets(end_timestamp, five_seconds_samples);
   }
-  const RTPHeader* header = packet_buffer_->NextRtpHeader();
+  const Packet* packet = packet_buffer_->PeekNextPacket();
 
   RTC_DCHECK(!generated_noise_stopwatch_ ||
              generated_noise_stopwatch_->ElapsedTicks() >= 1);
@@ -1106,9 +1103,9 @@ int NetEqImpl::GetDecision(Operations* operation,
     // Because of timestamp peculiarities, we have to "manually" disallow using
     // a CNG packet with the same timestamp as the one that was last played.
     // This can happen when using redundancy and will cause the timing to shift.
-    while (header && decoder_database_->IsComfortNoise(header->payloadType) &&
-           (end_timestamp >= header->timestamp ||
-            end_timestamp + generated_noise_samples > header->timestamp)) {
+    while (packet && decoder_database_->IsComfortNoise(packet->payload_type) &&
+           (end_timestamp >= packet->timestamp ||
+            end_timestamp + generated_noise_samples > packet->timestamp)) {
       // Don't use this packet, discard it.
       if (packet_buffer_->DiscardNextPacket() != PacketBuffer::kOK) {
         assert(false);  // Must be ok by design.
@@ -1117,7 +1114,7 @@ int NetEqImpl::GetDecision(Operations* operation,
       if (!new_codec_) {
         packet_buffer_->DiscardOldPackets(end_timestamp, 5 * fs_hz_);
       }
-      header = packet_buffer_->NextRtpHeader();
+      packet = packet_buffer_->PeekNextPacket();
     }
   }
 
@@ -1150,7 +1147,7 @@ int NetEqImpl::GetDecision(Operations* operation,
                 decision_logic_->noise_fast_forward()
           : 0;
   *operation = decision_logic_->GetDecision(
-      *sync_buffer_, *expand_, decoder_frame_length_, header, last_mode_,
+      *sync_buffer_, *expand_, decoder_frame_length_, packet, last_mode_,
       *play_dtmf, generated_noise_samples, &reset_decoder_);
 
   // Check if we already have enough samples in the |sync_buffer_|. If so,
@@ -1171,16 +1168,16 @@ int NetEqImpl::GetDecision(Operations* operation,
   if (new_codec_ || *operation == kUndefined) {
     // The only valid reason to get kUndefined is that new_codec_ is set.
     assert(new_codec_);
-    if (*play_dtmf && !header) {
+    if (*play_dtmf && !packet) {
       timestamp_ = dtmf_event->timestamp;
     } else {
-      if (!header) {
+      if (!packet) {
         LOG(LS_ERROR) << "Packet missing where it shouldn't.";
         return -1;
       }
-      timestamp_ = header->timestamp;
+      timestamp_ = packet->timestamp;
       if (*operation == kRfc3389CngNoPacket &&
-          decoder_database_->IsComfortNoise(header->payloadType)) {
+          decoder_database_->IsComfortNoise(packet->payload_type)) {
         // Change decision to CNG packet, since we do have a CNG packet, but it
         // was considered too early to use. Now, use it anyway.
         *operation = kRfc3389Cng;
@@ -1294,18 +1291,17 @@ int NetEqImpl::GetDecision(Operations* operation,
 
   // Get packets from buffer.
   int extracted_samples = 0;
-  if (header &&
-      *operation != kAlternativePlc &&
+  if (packet && *operation != kAlternativePlc &&
       *operation != kAlternativePlcIncreaseTimestamp &&
       *operation != kAudioRepetition &&
       *operation != kAudioRepetitionIncreaseTimestamp) {
-    sync_buffer_->IncreaseEndTimestamp(header->timestamp - end_timestamp);
+    sync_buffer_->IncreaseEndTimestamp(packet->timestamp - end_timestamp);
     if (decision_logic_->CngOff()) {
       // Adjustment of timestamp only corresponds to an actual packet loss
       // if comfort noise is not played. If comfort noise was just played,
       // this adjustment of timestamp is only done to get back in sync with the
       // stream timestamp; no loss to report.
-      stats_.LostSamples(header->timestamp - end_timestamp);
+      stats_.LostSamples(packet->timestamp - end_timestamp);
     }
 
     if (*operation != kRfc3389Cng) {
@@ -1349,7 +1345,7 @@ int NetEqImpl::Decode(PacketList* packet_list, Operations* operation,
 
   if (!packet_list->empty()) {
     const Packet* packet = packet_list->front();
-    uint8_t payload_type = packet->header.payloadType;
+    uint8_t payload_type = packet->payload_type;
     if (!decoder_database_->IsComfortNoise(payload_type)) {
       decoder = decoder_database_->GetDecoder(payload_type);
       assert(decoder);
@@ -1485,8 +1481,7 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, const Operations& operation,
   }
 
   // Do decoding.
-  while (packet &&
-      !decoder_database_->IsComfortNoise(packet->header.payloadType)) {
+  while (packet && !decoder_database_->IsComfortNoise(packet->payload_type)) {
     assert(decoder);  // At this point, we must have a decoder object.
     // The number of channels in the |sync_buffer_| should be the same as the
     // number decoder channels.
@@ -1535,7 +1530,7 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, const Operations& operation,
   // the while-loop, or list must hold exactly one CNG packet.
   assert(packet_list->empty() || *decoded_length < 0 ||
          (packet_list->size() == 1 && packet &&
-             decoder_database_->IsComfortNoise(packet->header.payloadType)));
+          decoder_database_->IsComfortNoise(packet->payload_type)));
   return 0;
 }
 
@@ -1777,7 +1772,7 @@ int NetEqImpl::DoRfc3389Cng(PacketList* packet_list, bool play_dtmf) {
     assert(packet_list->size() == 1);
     Packet* packet = packet_list->front();
     packet_list->pop_front();
-    if (!decoder_database_->IsComfortNoise(packet->header.payloadType)) {
+    if (!decoder_database_->IsComfortNoise(packet->payload_type)) {
       LOG(LS_ERROR) << "Trying to decode non-CNG payload as CNG.";
       return kOtherError;
     }
@@ -1953,22 +1948,22 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
   uint16_t prev_sequence_number = 0;
   bool next_packet_available = false;
 
-  const RTPHeader* header = packet_buffer_->NextRtpHeader();
-  assert(header);
-  if (!header) {
+  const Packet* next_packet = packet_buffer_->PeekNextPacket();
+  RTC_DCHECK(next_packet);
+  if (!next_packet) {
     LOG(LS_ERROR) << "Packet buffer unexpectedly empty.";
     return -1;
   }
-  uint32_t first_timestamp = header->timestamp;
+  uint32_t first_timestamp = next_packet->timestamp;
   size_t extracted_samples = 0;
 
   // Packet extraction loop.
   do {
-    timestamp_ = header->timestamp;
+    timestamp_ = next_packet->timestamp;
     size_t discard_count = 0;
     Packet* packet = packet_buffer_->GetNextPacket(&discard_count);
-    // |header| may be invalid after the |packet_buffer_| operation.
-    header = NULL;
+    // |next_packet| may be invalid after the |packet_buffer_| operation.
+    next_packet = NULL;
     if (!packet) {
       LOG(LS_ERROR) << "Should always be able to extract a packet here";
       assert(false);  // Should always be able to extract a packet here.
@@ -1984,12 +1979,12 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
       if (nack_enabled_) {
         RTC_DCHECK(nack_);
         // TODO(henrik.lundin): Should we update this for all decoded packets?
-        nack_->UpdateLastDecodedPacket(packet->header.sequenceNumber,
-                                       packet->header.timestamp);
+        nack_->UpdateLastDecodedPacket(packet->sequence_number,
+                                       packet->timestamp);
       }
-      prev_sequence_number = packet->header.sequenceNumber;
-      prev_timestamp = packet->header.timestamp;
-      prev_payload_type = packet->header.payloadType;
+      prev_sequence_number = packet->sequence_number;
+      prev_timestamp = packet->timestamp;
+      prev_payload_type = packet->payload_type;
     }
 
     // Store number of extracted samples.
@@ -2000,9 +1995,9 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
       if (packet->priority.codec_level > 0) {
         stats_.SecondaryDecodedSamples(rtc::checked_cast<int>(packet_duration));
       }
-    } else if (!decoder_database_->IsComfortNoise(packet->header.payloadType)) {
+    } else if (!decoder_database_->IsComfortNoise(packet->payload_type)) {
       LOG(LS_WARNING) << "Unknown payload type "
-                      << static_cast<int>(packet->header.payloadType);
+                      << static_cast<int>(packet->payload_type);
       RTC_NOTREACHED();
     }
 
@@ -2011,22 +2006,21 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
       // contains the same number of samples as the previous one.
       packet_duration = decoder_frame_length_;
     }
-    extracted_samples = packet->header.timestamp - first_timestamp +
-        packet_duration;
+    extracted_samples = packet->timestamp - first_timestamp + packet_duration;
 
     // Check what packet is available next.
-    header = packet_buffer_->NextRtpHeader();
+    next_packet = packet_buffer_->PeekNextPacket();
     next_packet_available = false;
-    if (header && prev_payload_type == header->payloadType) {
-      int16_t seq_no_diff = header->sequenceNumber - prev_sequence_number;
-      size_t ts_diff = header->timestamp - prev_timestamp;
+    if (next_packet && prev_payload_type == next_packet->payload_type) {
+      int16_t seq_no_diff = next_packet->sequence_number - prev_sequence_number;
+      size_t ts_diff = next_packet->timestamp - prev_timestamp;
       if (seq_no_diff == 1 ||
           (seq_no_diff == 0 && ts_diff == decoder_frame_length_)) {
         // The next sequence number is available, or the next part of a packet
         // that was split into pieces upon insertion.
         next_packet_available = true;
       }
-      prev_sequence_number = header->sequenceNumber;
+      prev_sequence_number = next_packet->sequence_number;
     }
   } while (extracted_samples < required_samples && next_packet_available);
 

@@ -259,6 +259,10 @@ TEST_F(NetEqImplTest, InsertPacket) {
   rtp_header.header.sequenceNumber = kFirstSequenceNumber;
   rtp_header.header.timestamp = kFirstTimestamp;
   rtp_header.header.ssrc = kSsrc;
+  Packet fake_packet;
+  fake_packet.payload_type = kPayloadType;
+  fake_packet.sequence_number = kFirstSequenceNumber;
+  fake_packet.timestamp = kFirstTimestamp;
 
   rtc::scoped_refptr<MockAudioDecoderFactory> mock_decoder_factory(
       new rtc::RefCountedObject<MockAudioDecoderFactory>);
@@ -309,9 +313,9 @@ TEST_F(NetEqImplTest, InsertPacket) {
   // index) is a pointer, and the variable pointed to is set to kPayloadType.
   // Also invoke the function DeletePacketsAndReturnOk to properly delete all
   // packets in the list (to avoid memory leaks in the test).
-  EXPECT_CALL(*mock_packet_buffer_, NextRtpHeader())
+  EXPECT_CALL(*mock_packet_buffer_, PeekNextPacket())
       .Times(1)
-      .WillOnce(Return(&rtp_header.header));
+      .WillOnce(Return(&fake_packet));
 
   // Expectations for DTMF buffer.
   EXPECT_CALL(*mock_dtmf_buffer_, Flush())
@@ -376,9 +380,9 @@ TEST_F(NetEqImplTest, InsertPacketsUntilBufferIsFull) {
   EXPECT_EQ(NetEq::kOK,
             neteq_->InsertPacket(rtp_header, payload, kReceiveTime));
   EXPECT_EQ(1u, packet_buffer_->NumPacketsInBuffer());
-  const RTPHeader* test_header = packet_buffer_->NextRtpHeader();
-  EXPECT_EQ(rtp_header.header.timestamp, test_header->timestamp);
-  EXPECT_EQ(rtp_header.header.sequenceNumber, test_header->sequenceNumber);
+  const Packet* test_packet = packet_buffer_->PeekNextPacket();
+  EXPECT_EQ(rtp_header.header.timestamp, test_packet->timestamp);
+  EXPECT_EQ(rtp_header.header.sequenceNumber, test_packet->sequence_number);
 }
 
 TEST_F(NetEqImplTest, TestDtmfPacket) {

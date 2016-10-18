@@ -53,13 +53,9 @@ void PacketGenerator::Reset(uint16_t seq_no, uint32_t ts, uint8_t pt,
 
 Packet* PacketGenerator::NextPacket(int payload_size_bytes) {
   Packet* packet = new Packet;
-  packet->header.sequenceNumber = seq_no_;
-  packet->header.timestamp = ts_;
-  packet->header.payloadType = pt_;
-  packet->header.markerBit = false;
-  packet->header.ssrc = 0x12345678;
-  packet->header.numCSRCs = 0;
-  packet->header.paddingLength = 0;
+  packet->sequence_number = seq_no_;
+  packet->timestamp = ts_;
+  packet->payload_type = pt_;
   packet->payload.SetSize(payload_size_bytes);
   ++seq_no_;
   ts_ += frame_size_;
@@ -100,8 +96,8 @@ TEST(PacketBuffer, InsertPacket) {
   EXPECT_EQ(4711u, next_ts);
   EXPECT_FALSE(buffer.Empty());
   EXPECT_EQ(1u, buffer.NumPacketsInBuffer());
-  const RTPHeader* hdr = buffer.NextRtpHeader();
-  EXPECT_EQ(&(packet->header), hdr);  // Compare pointer addresses.
+  const Packet* next_packet = buffer.PeekNextPacket();
+  EXPECT_EQ(packet, next_packet);  // Compare pointer addresses.
 
   // Do not explicitly flush buffer or delete packet to test that it is deleted
   // with the buffer. (Tested with Valgrind or similar tool.)
@@ -152,7 +148,7 @@ TEST(PacketBuffer, OverfillBuffer) {
   EXPECT_EQ(1u, buffer.NumPacketsInBuffer());
   EXPECT_EQ(PacketBuffer::kOK, buffer.NextTimestamp(&next_ts));
   // Expect last inserted packet to be first in line.
-  EXPECT_EQ(packet->header.timestamp, next_ts);
+  EXPECT_EQ(packet->timestamp, next_ts);
 
   // Flush buffer to delete all packets.
   buffer.Flush();
@@ -211,7 +207,7 @@ TEST(PacketBuffer, InsertPacketListChangePayloadType) {
   }
   // Insert 11th packet of another payload type (not CNG).
   Packet* packet = gen.NextPacket(payload_len);
-  packet->header.payloadType = 1;
+  packet->payload_type = 1;
   list.push_back(packet);
 
 
@@ -370,7 +366,7 @@ TEST(PacketBuffer, Reordering) {
   for (int i = 0; i < 10; ++i) {
     Packet* packet = buffer.GetNextPacket(NULL);
     ASSERT_FALSE(packet == NULL);
-    EXPECT_EQ(current_ts, packet->header.timestamp);
+    EXPECT_EQ(current_ts, packet->timestamp);
     current_ts += ts_increment;
     delete packet;
   }
@@ -412,15 +408,15 @@ TEST(PacketBuffer, CngFirstThenSpeechWithNewSampleRate) {
                                     &current_cng_pt));
   EXPECT_TRUE(list.empty());
   EXPECT_EQ(1u, buffer.NumPacketsInBuffer());
-  ASSERT_TRUE(buffer.NextRtpHeader());
-  EXPECT_EQ(kCngPt, buffer.NextRtpHeader()->payloadType);
+  ASSERT_TRUE(buffer.PeekNextPacket());
+  EXPECT_EQ(kCngPt, buffer.PeekNextPacket()->payload_type);
   EXPECT_FALSE(current_pt);  // Current payload type not set.
   EXPECT_EQ(rtc::Optional<uint8_t>(kCngPt),
             current_cng_pt);  // CNG payload type set.
 
   // Insert second packet, which is wide-band speech.
   Packet* packet = gen.NextPacket(kPayloadLen);
-  packet->header.payloadType = kSpeechPt;
+  packet->payload_type = kSpeechPt;
   list.push_back(packet);
   // Expect the buffer to flush out the CNG packet, since it does not match the
   // new speech sample rate.
@@ -429,8 +425,8 @@ TEST(PacketBuffer, CngFirstThenSpeechWithNewSampleRate) {
                                     &current_cng_pt));
   EXPECT_TRUE(list.empty());
   EXPECT_EQ(1u, buffer.NumPacketsInBuffer());
-  ASSERT_TRUE(buffer.NextRtpHeader());
-  EXPECT_EQ(kSpeechPt, buffer.NextRtpHeader()->payloadType);
+  ASSERT_TRUE(buffer.PeekNextPacket());
+  EXPECT_EQ(kSpeechPt, buffer.PeekNextPacket()->payload_type);
 
   EXPECT_EQ(rtc::Optional<uint8_t>(kSpeechPt),
             current_pt);         // Current payload type set.
@@ -461,7 +457,7 @@ TEST(PacketBuffer, Failures) {
   EXPECT_EQ(PacketBuffer::kBufferEmpty, buffer->NextTimestamp(&temp_ts));
   EXPECT_EQ(PacketBuffer::kBufferEmpty,
             buffer->NextHigherTimestamp(0, &temp_ts));
-  EXPECT_EQ(NULL, buffer->NextRtpHeader());
+  EXPECT_EQ(NULL, buffer->PeekNextPacket());
   EXPECT_EQ(NULL, buffer->GetNextPacket(NULL));
   EXPECT_EQ(PacketBuffer::kBufferEmpty, buffer->DiscardNextPacket());
   EXPECT_EQ(0, buffer->DiscardAllOldPackets(0));  // 0 packets discarded.
@@ -516,7 +512,7 @@ TEST(PacketBuffer, ComparePackets) {
   EXPECT_FALSE(*a >= *b);
 
   // Testing wrap-around case; 'a' is earlier but has a larger timestamp value.
-  a->header.timestamp = 0xFFFFFFFF - 10;
+  a->timestamp = 0xFFFFFFFF - 10;
   EXPECT_FALSE(*a == *b);
   EXPECT_TRUE(*a != *b);
   EXPECT_TRUE(*a < *b);
@@ -533,7 +529,7 @@ TEST(PacketBuffer, ComparePackets) {
   EXPECT_TRUE(*a >= *a);
 
   // Test equal timestamps but different sequence numbers (0 and 1).
-  a->header.timestamp = b->header.timestamp;
+  a->timestamp = b->timestamp;
   EXPECT_FALSE(*a == *b);
   EXPECT_TRUE(*a != *b);
   EXPECT_TRUE(*a < *b);
@@ -542,7 +538,7 @@ TEST(PacketBuffer, ComparePackets) {
   EXPECT_FALSE(*a >= *b);
 
   // Test equal timestamps but different sequence numbers (32767 and 1).
-  a->header.sequenceNumber = 0xFFFF;
+  a->sequence_number = 0xFFFF;
   EXPECT_FALSE(*a == *b);
   EXPECT_TRUE(*a != *b);
   EXPECT_TRUE(*a < *b);
@@ -551,7 +547,7 @@ TEST(PacketBuffer, ComparePackets) {
   EXPECT_FALSE(*a >= *b);
 
   // Test equal timestamps and sequence numbers, but differing priorities.
-  a->header.sequenceNumber = b->header.sequenceNumber;
+  a->sequence_number = b->sequence_number;
   a->priority = {1, 0};
   b->priority = {0, 0};
   // a after b
@@ -564,10 +560,10 @@ TEST(PacketBuffer, ComparePackets) {
 
   std::unique_ptr<Packet> c(gen.NextPacket(0));  // SN = 2, TS = 20.
   std::unique_ptr<Packet> d(gen.NextPacket(0));  // SN = 3, TS = 20.
-  c->header.timestamp = b->header.timestamp;
-  d->header.timestamp = b->header.timestamp;
-  c->header.sequenceNumber = b->header.sequenceNumber;
-  d->header.sequenceNumber = b->header.sequenceNumber;
+  c->timestamp = b->timestamp;
+  d->timestamp = b->timestamp;
+  c->sequence_number = b->sequence_number;
+  d->sequence_number = b->sequence_number;
   c->priority = {1, 1};
   d->priority = {0, 1};
   // c after d

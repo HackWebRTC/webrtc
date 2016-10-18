@@ -100,8 +100,7 @@ int PacketBuffer::InsertPacket(Packet* packet) {
   // The new packet is to be inserted to the right of |rit|. If it has the same
   // timestamp as |rit|, which has a higher priority, do not insert the new
   // packet to list.
-  if (rit != buffer_.rend() &&
-      packet->header.timestamp == (*rit)->header.timestamp) {
+  if (rit != buffer_.rend() && packet->timestamp == (*rit)->timestamp) {
     delete packet;
     return return_val;
   }
@@ -110,8 +109,7 @@ int PacketBuffer::InsertPacket(Packet* packet) {
   // timestamp as |it|, which has a lower priority, replace |it| with the new
   // packet.
   PacketList::iterator it = rit.base();
-  if (it != buffer_.end() &&
-      packet->header.timestamp == (*it)->header.timestamp) {
+  if (it != buffer_.end() && packet->timestamp == (*it)->timestamp) {
     delete *it;
     it = buffer_.erase(it);
   }
@@ -128,30 +126,29 @@ int PacketBuffer::InsertPacketList(
   bool flushed = false;
   while (!packet_list->empty()) {
     Packet* packet = packet_list->front();
-    if (decoder_database.IsComfortNoise(packet->header.payloadType)) {
+    if (decoder_database.IsComfortNoise(packet->payload_type)) {
       if (*current_cng_rtp_payload_type &&
-          **current_cng_rtp_payload_type != packet->header.payloadType) {
+          **current_cng_rtp_payload_type != packet->payload_type) {
         // New CNG payload type implies new codec type.
         *current_rtp_payload_type = rtc::Optional<uint8_t>();
         Flush();
         flushed = true;
       }
       *current_cng_rtp_payload_type =
-          rtc::Optional<uint8_t>(packet->header.payloadType);
-    } else if (!decoder_database.IsDtmf(packet->header.payloadType)) {
+          rtc::Optional<uint8_t>(packet->payload_type);
+    } else if (!decoder_database.IsDtmf(packet->payload_type)) {
       // This must be speech.
       if ((*current_rtp_payload_type &&
-           **current_rtp_payload_type != packet->header.payloadType) ||
+           **current_rtp_payload_type != packet->payload_type) ||
           (*current_cng_rtp_payload_type &&
-           !EqualSampleRates(packet->header.payloadType,
+           !EqualSampleRates(packet->payload_type,
                              **current_cng_rtp_payload_type,
                              decoder_database))) {
         *current_cng_rtp_payload_type = rtc::Optional<uint8_t>();
         Flush();
         flushed = true;
       }
-      *current_rtp_payload_type =
-          rtc::Optional<uint8_t>(packet->header.payloadType);
+      *current_rtp_payload_type = rtc::Optional<uint8_t>(packet->payload_type);
     }
     int return_val = InsertPacket(packet);
     packet_list->pop_front();
@@ -174,7 +171,7 @@ int PacketBuffer::NextTimestamp(uint32_t* next_timestamp) const {
   if (!next_timestamp) {
     return kInvalidPointer;
   }
-  *next_timestamp = buffer_.front()->header.timestamp;
+  *next_timestamp = buffer_.front()->timestamp;
   return kOK;
 }
 
@@ -188,20 +185,17 @@ int PacketBuffer::NextHigherTimestamp(uint32_t timestamp,
   }
   PacketList::const_iterator it;
   for (it = buffer_.begin(); it != buffer_.end(); ++it) {
-    if ((*it)->header.timestamp >= timestamp) {
+    if ((*it)->timestamp >= timestamp) {
       // Found a packet matching the search.
-      *next_timestamp = (*it)->header.timestamp;
+      *next_timestamp = (*it)->timestamp;
       return kOK;
     }
   }
   return kNotFound;
 }
 
-const RTPHeader* PacketBuffer::NextRtpHeader() const {
-  if (Empty()) {
-    return NULL;
-  }
-  return const_cast<const RTPHeader*>(&(buffer_.front()->header));
+const Packet* PacketBuffer::PeekNextPacket() const {
+  return buffer_.empty() ? nullptr : buffer_.front();
 }
 
 Packet* PacketBuffer::GetNextPacket(size_t* discard_count) {
@@ -219,8 +213,7 @@ Packet* PacketBuffer::GetNextPacket(size_t* discard_count) {
   // redundant payloads that should not be used.
   size_t discards = 0;
 
-  while (!Empty() &&
-      buffer_.front()->header.timestamp == packet->header.timestamp) {
+  while (!Empty() && buffer_.front()->timestamp == packet->timestamp) {
     if (DiscardNextPacket() != kOK) {
       assert(false);  // Must be ok by design.
     }
@@ -248,9 +241,8 @@ int PacketBuffer::DiscardNextPacket() {
 
 int PacketBuffer::DiscardOldPackets(uint32_t timestamp_limit,
                                     uint32_t horizon_samples) {
-  while (!Empty() && timestamp_limit != buffer_.front()->header.timestamp &&
-         IsObsoleteTimestamp(buffer_.front()->header.timestamp,
-                             timestamp_limit,
+  while (!Empty() && timestamp_limit != buffer_.front()->timestamp &&
+         IsObsoleteTimestamp(buffer_.front()->timestamp, timestamp_limit,
                              horizon_samples)) {
     if (DiscardNextPacket() != kOK) {
       assert(false);  // Must be ok by design.
@@ -266,7 +258,7 @@ int PacketBuffer::DiscardAllOldPackets(uint32_t timestamp_limit) {
 void PacketBuffer::DiscardPacketsWithPayloadType(uint8_t payload_type) {
   for (auto it = buffer_.begin(); it != buffer_.end(); /* */) {
     Packet* packet = *it;
-    if (packet->header.payloadType == payload_type) {
+    if (packet->payload_type == payload_type) {
       delete packet;
       it = buffer_.erase(it);
     } else {

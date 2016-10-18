@@ -310,10 +310,10 @@ bool DecoderDatabase::IsRed(uint8_t rtp_payload_type) const {
 int DecoderDatabase::CheckPayloadTypes(const PacketList& packet_list) const {
   PacketList::const_iterator it;
   for (it = packet_list.begin(); it != packet_list.end(); ++it) {
-    if (!GetDecoderInfo((*it)->header.payloadType)) {
+    if (!GetDecoderInfo((*it)->payload_type)) {
       // Payload type is not found.
       LOG(LS_WARNING) << "CheckPayloadTypes: unknown RTP payload type "
-                      << static_cast<int>((*it)->header.payloadType);
+                      << static_cast<int>((*it)->payload_type);
       return kDecoderNotFound;
     }
   }

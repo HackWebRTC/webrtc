@@ -27,8 +27,7 @@ void ComfortNoise::Reset() {
 int ComfortNoise::UpdateParameters(Packet* packet) {
   assert(packet);  // Existence is verified by caller.
   // Get comfort noise decoder.
-  if (decoder_database_->SetActiveCngDecoder(packet->header.payloadType)
-      != kOK) {
+  if (decoder_database_->SetActiveCngDecoder(packet->payload_type) != kOK) {
     delete packet;
     return kUnknownPayloadType;
   }

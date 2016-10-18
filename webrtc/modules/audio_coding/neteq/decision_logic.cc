@@ -103,7 +103,7 @@ void DecisionLogic::SetSampleRate(int fs_hz, size_t output_size_samples) {
 Operations DecisionLogic::GetDecision(const SyncBuffer& sync_buffer,
                                       const Expand& expand,
                                       size_t decoder_frame_length,
-                                      const RTPHeader* packet_header,
+                                      const Packet* next_packet,
                                       Modes prev_mode,
                                       bool play_dtmf,
                                       size_t generated_noise_samples,
@@ -131,7 +131,7 @@ Operations DecisionLogic::GetDecision(const SyncBuffer& sync_buffer,
   FilterBufferLevel(cur_size_samples, prev_mode);
 
   return GetDecisionSpecialized(sync_buffer, expand, decoder_frame_length,
-                                packet_header, prev_mode, play_dtmf,
+                                next_packet, prev_mode, play_dtmf,
                                 reset_decoder, generated_noise_samples);
 }
 

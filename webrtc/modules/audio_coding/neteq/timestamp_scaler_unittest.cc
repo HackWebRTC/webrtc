@@ -181,12 +181,12 @@ TEST(TimestampScaler, TestG722Packet) {
   uint32_t external_timestamp = 0xFFFFFFFF - 5;
   uint32_t internal_timestamp = external_timestamp;
   Packet packet;
-  packet.header.payloadType = kRtpPayloadType;
+  packet.payload_type = kRtpPayloadType;
   for (; external_timestamp != 5; ++external_timestamp) {
-    packet.header.timestamp = external_timestamp;
+    packet.timestamp = external_timestamp;
     // Scale to internal timestamp.
     scaler.ToInternal(&packet);
-    EXPECT_EQ(internal_timestamp, packet.header.timestamp);
+    EXPECT_EQ(internal_timestamp, packet.timestamp);
     internal_timestamp += 2;
   }
 
@@ -210,18 +210,18 @@ TEST(TimestampScaler, TestG722PacketList) {
   uint32_t external_timestamp = 0xFFFFFFFF - 5;
   uint32_t internal_timestamp = external_timestamp;
   Packet packet1;
-  packet1.header.payloadType = kRtpPayloadType;
-  packet1.header.timestamp = external_timestamp;
+  packet1.payload_type = kRtpPayloadType;
+  packet1.timestamp = external_timestamp;
   Packet packet2;
-  packet2.header.payloadType = kRtpPayloadType;
-  packet2.header.timestamp = external_timestamp + 10;
+  packet2.payload_type = kRtpPayloadType;
+  packet2.timestamp = external_timestamp + 10;
   PacketList packet_list;
   packet_list.push_back(&packet1);
   packet_list.push_back(&packet2);
 
   scaler.ToInternal(&packet_list);
-  EXPECT_EQ(internal_timestamp, packet1.header.timestamp);
-  EXPECT_EQ(internal_timestamp + 20, packet2.header.timestamp);
+  EXPECT_EQ(internal_timestamp, packet1.timestamp);
+  EXPECT_EQ(internal_timestamp + 20, packet2.timestamp);
 
   EXPECT_CALL(db, Die());  // Called when database object is deleted.
 }

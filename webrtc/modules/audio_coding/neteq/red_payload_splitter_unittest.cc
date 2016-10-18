@@ -80,9 +80,9 @@ Packet* CreateRedPayload(size_t num_payloads,
                          int timestamp_offset,
                          bool embed_opus_fec = false) {
   Packet* packet = new Packet;
-  packet->header.payloadType = kRedPayloadType;
-  packet->header.timestamp = kBaseTimestamp;
-  packet->header.sequenceNumber = kSequenceNumber;
+  packet->payload_type = kRedPayloadType;
+  packet->timestamp = kBaseTimestamp;
+  packet->sequence_number = kSequenceNumber;
   packet->payload.SetSize((kPayloadLength + 1) +
                           (num_payloads - 1) *
                               (kPayloadLength + kRedHeaderLength));
@@ -127,9 +127,9 @@ Packet* CreatePacket(uint8_t payload_type,
                      uint8_t payload_value,
                      bool opus_fec = false) {
   Packet* packet = new Packet;
-  packet->header.payloadType = payload_type;
-  packet->header.timestamp = kBaseTimestamp;
-  packet->header.sequenceNumber = kSequenceNumber;
+  packet->payload_type = payload_type;
+  packet->timestamp = kBaseTimestamp;
+  packet->sequence_number = kSequenceNumber;
   packet->payload.SetSize(payload_length);
   if (opus_fec) {
     CreateOpusFecPayload(packet->payload.data(), packet->payload.size(),
@@ -149,9 +149,9 @@ void VerifyPacket(const Packet* packet,
                   uint8_t payload_value,
                   Packet::Priority priority) {
   EXPECT_EQ(payload_length, packet->payload.size());
-  EXPECT_EQ(payload_type, packet->header.payloadType);
-  EXPECT_EQ(sequence_number, packet->header.sequenceNumber);
-  EXPECT_EQ(timestamp, packet->header.timestamp);
+  EXPECT_EQ(payload_type, packet->payload_type);
+  EXPECT_EQ(sequence_number, packet->sequence_number);
+  EXPECT_EQ(timestamp, packet->timestamp);
   EXPECT_EQ(priority, packet->priority);
   ASSERT_FALSE(packet->payload.empty());
   for (size_t i = 0; i < packet->payload.size(); ++i) {
@@ -213,8 +213,8 @@ TEST(RedPayloadSplitter, TwoPacketsOnePayload) {
   // Create second packet, with a single RED payload.
   packet = CreateRedPayload(1, payload_types, kTimestampOffset);
   // Manually change timestamp and sequence number of second packet.
-  packet->header.timestamp += kTimestampOffset;
-  packet->header.sequenceNumber++;
+  packet->timestamp += kTimestampOffset;
+  packet->sequence_number++;
   packet_list.push_back(packet);
   RedPayloadSplitter splitter;
   EXPECT_TRUE(splitter.SplitRed(&packet_list));
@@ -251,8 +251,8 @@ TEST(RedPayloadSplitter, TwoPacketsThreePayloads) {
   // Create first packet, with 3 RED payloads.
   packet = CreateRedPayload(3, payload_types, kTimestampOffset);
   // Manually change timestamp and sequence number of second packet.
-  packet->header.timestamp += kTimestampOffset;
-  packet->header.sequenceNumber++;
+  packet->timestamp += kTimestampOffset;
+  packet->sequence_number++;
   packet_list.push_back(packet);
   RedPayloadSplitter splitter;
   EXPECT_TRUE(splitter.SplitRed(&packet_list));

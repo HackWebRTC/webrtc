@@ -69,14 +69,14 @@ bool RedPayloadSplitter::SplitRed(PacketList* packet_list) {
       if (last_block) {
         // No more header data to read.
         ++sum_length;  // Account for RED header size of 1 byte.
-        new_header.timestamp = red_packet->header.timestamp;
+        new_header.timestamp = red_packet->timestamp;
         new_header.payload_length = red_packet->payload.size() - sum_length;
         payload_ptr += 1;  // Advance to first payload byte.
       } else {
         // Bits 8 through 21 are timestamp offset.
         int timestamp_offset =
             (payload_ptr[1] << 6) + ((payload_ptr[2] & 0xFC) >> 2);
-        new_header.timestamp = red_packet->header.timestamp - timestamp_offset;
+        new_header.timestamp = red_packet->timestamp - timestamp_offset;
         // Bits 22 through 31 are payload length.
         new_header.payload_length =
             ((payload_ptr[2] & 0x03) << 8) + payload_ptr[3];
@@ -106,9 +106,9 @@ bool RedPayloadSplitter::SplitRed(PacketList* packet_list) {
         }
 
         Packet* new_packet = new Packet;
-        new_packet->header = red_packet->header;
-        new_packet->header.timestamp = new_header.timestamp;
-        new_packet->header.payloadType = new_header.payload_type;
+        new_packet->timestamp = new_header.timestamp;
+        new_packet->payload_type = new_header.payload_type;
+        new_packet->sequence_number = red_packet->sequence_number;
         new_packet->priority.red_level =
             rtc::checked_cast<int>((new_headers.size() - 1) - i);
         new_packet->payload.SetData(payload_ptr, payload_length);
@@ -140,7 +140,7 @@ int RedPayloadSplitter::CheckRedPayloads(
   int main_payload_type = -1;
   int num_deleted_packets = 0;
   while (it != packet_list->end()) {
-    uint8_t this_payload_type = (*it)->header.payloadType;
+    uint8_t this_payload_type = (*it)->payload_type;
     if (!decoder_database.IsDtmf(this_payload_type) &&
         !decoder_database.IsComfortNoise(this_payload_type)) {
       if (main_payload_type == -1) {

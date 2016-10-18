@@ -176,7 +176,7 @@ TEST(DecoderDatabase, CheckPayloadTypes) {
     // Create packet with payload type |i|. The last packet will have a payload
     // type that is not registered in the decoder database.
     Packet* packet = new Packet;
-    packet->header.payloadType = i;
+    packet->payload_type = i;
     packet_list.push_back(packet);
   }
 

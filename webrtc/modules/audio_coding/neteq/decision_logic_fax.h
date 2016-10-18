@@ -40,19 +40,10 @@ class DecisionLogicFax : public DecisionLogic {
                       tick_timer) {}
 
  protected:
-  // Returns the operation that should be done next. |sync_buffer| and |expand|
-  // are provided for reference. |decoder_frame_length| is the number of samples
-  // obtained from the last decoded frame. If there is a packet available, the
-  // packet header should be supplied in |packet_header|; otherwise it should
-  // be NULL. The mode resulting form the last call to NetEqImpl::GetAudio is
-  // supplied in |prev_mode|. If there is a DTMF event to play, |play_dtmf|
-  // should be set to true. The output variable |reset_decoder| will be set to
-  // true if a reset is required; otherwise it is left unchanged (i.e., it can
-  // remain true if it was true before the call).
   Operations GetDecisionSpecialized(const SyncBuffer& sync_buffer,
                                     const Expand& expand,
                                     size_t decoder_frame_length,
-                                    const RTPHeader* packet_header,
+                                    const Packet* next_packet,
                                     Modes prev_mode,
                                     bool play_dtmf,
                                     bool* reset_decoder,

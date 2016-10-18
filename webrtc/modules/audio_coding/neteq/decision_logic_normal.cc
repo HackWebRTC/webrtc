@@ -28,7 +28,7 @@ Operations DecisionLogicNormal::GetDecisionSpecialized(
     const SyncBuffer& sync_buffer,
     const Expand& expand,
     size_t decoder_frame_length,
-    const RTPHeader* packet_header,
+    const Packet* next_packet,
     Modes prev_mode,
     bool play_dtmf,
     bool* reset_decoder,
@@ -36,7 +36,7 @@ Operations DecisionLogicNormal::GetDecisionSpecialized(
   assert(playout_mode_ == kPlayoutOn || playout_mode_ == kPlayoutStreaming);
   // Guard for errors, to avoid getting stuck in error mode.
   if (prev_mode == kModeError) {
-    if (!packet_header) {
+    if (!next_packet) {
       return kExpand;
     } else {
       return kUndefined;  // Use kUndefined to flag for a reset.
@@ -46,10 +46,10 @@ Operations DecisionLogicNormal::GetDecisionSpecialized(
   uint32_t target_timestamp = sync_buffer.end_timestamp();
   uint32_t available_timestamp = 0;
   bool is_cng_packet = false;
-  if (packet_header) {
-    available_timestamp = packet_header->timestamp;
+  if (next_packet) {
+    available_timestamp = next_packet->timestamp;
     is_cng_packet =
-        decoder_database_->IsComfortNoise(packet_header->payloadType);
+        decoder_database_->IsComfortNoise(next_packet->payload_type);
   }
 
   if (is_cng_packet) {
@@ -58,7 +58,7 @@ Operations DecisionLogicNormal::GetDecisionSpecialized(
   }
 
   // Handle the case with no packet at all available (except maybe DTMF).
-  if (!packet_header) {
+  if (!next_packet) {
     return NoPacket(play_dtmf);
   }
 

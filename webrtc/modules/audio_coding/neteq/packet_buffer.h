@@ -14,6 +14,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -80,9 +81,9 @@ class PacketBuffer {
   virtual int NextHigherTimestamp(uint32_t timestamp,
                                   uint32_t* next_timestamp) const;
 
-  // Returns a (constant) pointer the RTP header of the first packet in the
-  // buffer. Returns NULL if the buffer is empty.
-  virtual const RTPHeader* NextRtpHeader() const;
+  // Returns a (constant) pointer to the first packet in the buffer. Returns
+  // NULL if the buffer is empty.
+  virtual const Packet* PeekNextPacket() const;
 
   // Extracts the first packet in the buffer and returns a pointer to it.
   // Returns NULL if the buffer is empty. The caller is responsible for deleting

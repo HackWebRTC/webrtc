@@ -38,8 +38,8 @@ class MockPacketBuffer : public PacketBuffer {
       int(uint32_t* next_timestamp));
   MOCK_CONST_METHOD2(NextHigherTimestamp,
       int(uint32_t timestamp, uint32_t* next_timestamp));
-  MOCK_CONST_METHOD0(NextRtpHeader,
-      const RTPHeader*());
+  MOCK_CONST_METHOD0(PeekNextPacket,
+      const Packet*());
   MOCK_METHOD1(GetNextPacket,
       Packet*(size_t* discard_count));
   MOCK_METHOD0(DiscardNextPacket,
