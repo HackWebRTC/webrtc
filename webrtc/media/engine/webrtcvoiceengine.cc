@@ -1171,38 +1171,16 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
 
   void RecreateAudioSendStream(const SendCodecSpec& send_codec_spec) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-    if (stream_) {
-      call_->DestroyAudioSendStream(stream_);
-      stream_ = nullptr;
-    }
     config_.rtp.nack.rtp_history_ms =
         send_codec_spec.nack_enabled ? kNackRtpHistoryMs : 0;
-    RTC_DCHECK(!stream_);
-    stream_ = call_->CreateAudioSendStream(config_);
-    RTC_CHECK(stream_);
-    UpdateSendState();
+    RecreateAudioSendStream();
   }
 
   void RecreateAudioSendStream(
       const std::vector<webrtc::RtpExtension>& extensions) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-    if (stream_) {
-      call_->DestroyAudioSendStream(stream_);
-      stream_ = nullptr;
-    }
     config_.rtp.extensions = extensions;
-    if (webrtc::field_trial::FindFullName("WebRTC-AdaptAudioBitrate") ==
-        "Enabled") {
-      // TODO(mflodman): Keep testing this and set proper values.
-      // Note: This is an early experiment currently only supported by Opus.
-      config_.min_bitrate_kbps = kOpusMinBitrate;
-      config_.max_bitrate_kbps = kOpusBitrateFb;
-    }
-
-    RTC_DCHECK(!stream_);
-    stream_ = call_->CreateAudioSendStream(config_);
-    RTC_CHECK(stream_);
-    UpdateSendState();
+    RecreateAudioSendStream();
   }
 
   bool SendTelephoneEvent(int payload_type, int event, int duration_ms) {
@@ -1314,6 +1292,25 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     } else {  // !send || source_ = nullptr
       stream_->Stop();
     }
+  }
+
+  void RecreateAudioSendStream() {
+    RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+    if (stream_) {
+      call_->DestroyAudioSendStream(stream_);
+      stream_ = nullptr;
+    }
+    RTC_DCHECK(!stream_);
+    if (webrtc::field_trial::FindFullName("WebRTC-AdaptAudioBitrate") ==
+        "Enabled") {
+      // TODO(mflodman): Keep testing this and set proper values.
+      // Note: This is an early experiment currently only supported by Opus.
+      config_.min_bitrate_kbps = kOpusMinBitrate;
+      config_.max_bitrate_kbps = kOpusBitrateFb;
+    }
+    stream_ = call_->CreateAudioSendStream(config_);
+    RTC_CHECK(stream_);
+    UpdateSendState();
   }
 
   rtc::ThreadChecker worker_thread_checker_;
