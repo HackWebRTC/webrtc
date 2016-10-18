@@ -29,26 +29,14 @@ import android.view.Window;
 import android.view.WindowManager.LayoutParams;
 import android.widget.Toast;
 
-import java.io.IOException;
-import java.lang.RuntimeException;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
-import org.webrtc.CameraEnumerator;
 import org.webrtc.EglBase;
-import org.webrtc.FileVideoCapturer;
-import org.webrtc.VideoFileRenderer;
 import org.webrtc.IceCandidate;
-import org.webrtc.Logging;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.RendererCommon.ScalingType;
 import org.webrtc.SessionDescription;
 import org.webrtc.StatsReport;
 import org.webrtc.SurfaceViewRenderer;
-import org.webrtc.VideoCapturer;
-import org.webrtc.VideoRenderer;
 
 /**
  * Activity for peer connection call setup, call waiting
@@ -84,15 +72,6 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   public static final String EXTRA_TRACING = "org.appspot.apprtc.TRACING";
   public static final String EXTRA_CMDLINE = "org.appspot.apprtc.CMDLINE";
   public static final String EXTRA_RUNTIME = "org.appspot.apprtc.RUNTIME";
-  public static final String EXTRA_VIDEO_FILE_AS_CAMERA = "org.appspot.apprtc.VIDEO_FILE_AS_CAMERA";
-  public static final String EXTRA_SAVE_REMOTE_VIDEO_TO_FILE =
-      "org.appspot.apprtc.SAVE_REMOTE_VIDEO_TO_FILE";
-  public static final String EXTRA_SAVE_REMOTE_VIDEO_TO_FILE_WIDTH =
-      "org.appspot.apprtc.SAVE_REMOTE_VIDEO_TO_FILE_WIDTH";
-  public static final String EXTRA_SAVE_REMOTE_VIDEO_TO_FILE_HEIGHT =
-      "org.appspot.apprtc.SAVE_REMOTE_VIDEO_TO_FILE_HEIGHT";
-  public static final String EXTRA_USE_VALUES_FROM_INTENT =
-      "org.appspot.apprtc.USE_VALUES_FROM_INTENT";
   private static final String TAG = "CallRTCClient";
 
   // List of mandatory application permissions.
@@ -122,10 +101,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   private AppRTCAudioManager audioManager = null;
   private EglBase rootEglBase;
   private SurfaceViewRenderer localRender;
-  private SurfaceViewRenderer remoteRenderScreen;
-  private VideoFileRenderer videoFileRenderer;
-  private final List<VideoRenderer.Callbacks> remoteRenderers =
-      new ArrayList<VideoRenderer.Callbacks>();
+  private SurfaceViewRenderer remoteRender;
   private PercentFrameLayout localRenderLayout;
   private PercentFrameLayout remoteRenderLayout;
   private ScalingType scalingType;
@@ -167,7 +143,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
 
     // Create UI controls.
     localRender = (SurfaceViewRenderer) findViewById(R.id.local_video_view);
-    remoteRenderScreen = (SurfaceViewRenderer) findViewById(R.id.remote_video_view);
+    remoteRender = (SurfaceViewRenderer) findViewById(R.id.remote_video_view);
     localRenderLayout = (PercentFrameLayout) findViewById(R.id.local_video_layout);
     remoteRenderLayout = (PercentFrameLayout) findViewById(R.id.remote_video_layout);
     callFragment = new CallFragment();
@@ -182,31 +158,12 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     };
 
     localRender.setOnClickListener(listener);
-    remoteRenderScreen.setOnClickListener(listener);
-    remoteRenderers.add(remoteRenderScreen);
-
-    final Intent intent = getIntent();
+    remoteRender.setOnClickListener(listener);
 
     // Create video renderers.
     rootEglBase = EglBase.create();
     localRender.init(rootEglBase.getEglBaseContext(), null);
-    String saveRemoteVideoToFile = intent.getStringExtra(EXTRA_SAVE_REMOTE_VIDEO_TO_FILE);
-
-    // When saveRemoteVideoToFile is set we save the video from the remote to a file.
-    if (saveRemoteVideoToFile != null) {
-      int videoOutWidth = intent.getIntExtra(EXTRA_SAVE_REMOTE_VIDEO_TO_FILE_WIDTH, 0);
-      int videoOutHeight = intent.getIntExtra(EXTRA_SAVE_REMOTE_VIDEO_TO_FILE_HEIGHT, 0);
-      try {
-        videoFileRenderer = new VideoFileRenderer(
-            saveRemoteVideoToFile, videoOutWidth, videoOutHeight, rootEglBase.getEglBaseContext());
-        remoteRenderers.add(videoFileRenderer);
-      } catch (IOException e) {
-        throw new RuntimeException(
-            "Failed to open video file for output: " + saveRemoteVideoToFile, e);
-      }
-    }
-    remoteRenderScreen.init(rootEglBase.getEglBaseContext(), null);
-
+    remoteRender.init(rootEglBase.getEglBaseContext(), null);
     localRender.setZOrderMediaOverlay(true);
     updateVideoView();
 
@@ -220,6 +177,8 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       }
     }
 
+    // Get Intent parameters.
+    final Intent intent = getIntent();
     Uri roomUri = intent.getData();
     if (roomUri == null) {
       logAndToast(getString(R.string.missing_url));
@@ -228,10 +187,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       finish();
       return;
     }
-
-    // Get Intent parameters.
     String roomId = intent.getStringExtra(EXTRA_ROOMID);
-    Log.d(TAG, "Room ID: " + roomId);
     if (roomId == null || roomId.length() == 0) {
       logAndToast(getString(R.string.missing_url));
       Log.e(TAG, "Incorrect room ID in intent!");
@@ -243,12 +199,16 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     boolean loopback = intent.getBooleanExtra(EXTRA_LOOPBACK, false);
     boolean tracing = intent.getBooleanExtra(EXTRA_TRACING, false);
 
+    boolean useCamera2 =
+        Camera2Enumerator.isSupported(this) && intent.getBooleanExtra(EXTRA_CAMERA2, true);
+
     peerConnectionParameters =
         new PeerConnectionParameters(intent.getBooleanExtra(EXTRA_VIDEO_CALL, true), loopback,
-            tracing, intent.getIntExtra(EXTRA_VIDEO_WIDTH, 0),
+            tracing, useCamera2, intent.getIntExtra(EXTRA_VIDEO_WIDTH, 0),
             intent.getIntExtra(EXTRA_VIDEO_HEIGHT, 0), intent.getIntExtra(EXTRA_VIDEO_FPS, 0),
             intent.getIntExtra(EXTRA_VIDEO_BITRATE, 0), intent.getStringExtra(EXTRA_VIDEOCODEC),
             intent.getBooleanExtra(EXTRA_HWCODEC_ENABLED, true),
+            intent.getBooleanExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, false),
             intent.getIntExtra(EXTRA_AUDIO_BITRATE, 0), intent.getStringExtra(EXTRA_AUDIOCODEC),
             intent.getBooleanExtra(EXTRA_NOAUDIOPROCESSING_ENABLED, false),
             intent.getBooleanExtra(EXTRA_AECDUMP_ENABLED, false),
@@ -259,8 +219,6 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
             intent.getBooleanExtra(EXTRA_ENABLE_LEVEL_CONTROL, false));
     commandLineRun = intent.getBooleanExtra(EXTRA_CMDLINE, false);
     runTimeMs = intent.getIntExtra(EXTRA_RUNTIME, 0);
-
-    Log.d(TAG, "VIDEO_FILE: '" + intent.getStringExtra(EXTRA_VIDEO_FILE_AS_CAMERA) + "'");
 
     // Create connection client. Use DirectRTCClient if room name is an IP otherwise use the
     // standard WebSocketRTCClient.
@@ -305,46 +263,6 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     }
     peerConnectionClient.createPeerConnectionFactory(
         CallActivity.this, peerConnectionParameters, CallActivity.this);
-  }
-
-  private boolean useCamera2() {
-    return Camera2Enumerator.isSupported(this) && getIntent().getBooleanExtra(EXTRA_CAMERA2, true);
-  }
-
-  private boolean captureToTexture() {
-    return getIntent().getBooleanExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, false);
-  }
-
-  private VideoCapturer createCameraCapturer(CameraEnumerator enumerator) {
-    final String[] deviceNames = enumerator.getDeviceNames();
-
-    // First, try to find front facing camera
-    Logging.d(TAG, "Looking for front facing cameras.");
-    for (String deviceName : deviceNames) {
-      if (enumerator.isFrontFacing(deviceName)) {
-        Logging.d(TAG, "Creating front facing camera capturer.");
-        VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null);
-
-        if (videoCapturer != null) {
-          return videoCapturer;
-        }
-      }
-    }
-
-    // Front facing camera not found, try something else
-    Logging.d(TAG, "Looking for other cameras.");
-    for (String deviceName : deviceNames) {
-      if (!enumerator.isFrontFacing(deviceName)) {
-        Logging.d(TAG, "Creating other camera capturer.");
-        VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null);
-
-        if (videoCapturer != null) {
-          return videoCapturer;
-        }
-      }
-    }
-
-    return null;
   }
 
   // Activity interfaces
@@ -435,8 +353,8 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
 
   private void updateVideoView() {
     remoteRenderLayout.setPosition(REMOTE_X, REMOTE_Y, REMOTE_WIDTH, REMOTE_HEIGHT);
-    remoteRenderScreen.setScalingType(scalingType);
-    remoteRenderScreen.setMirror(false);
+    remoteRender.setScalingType(scalingType);
+    remoteRender.setMirror(false);
 
     if (iceConnected) {
       localRenderLayout.setPosition(
@@ -450,7 +368,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     localRender.setMirror(true);
 
     localRender.requestLayout();
-    remoteRenderScreen.requestLayout();
+    remoteRender.requestLayout();
   }
 
   private void startCall() {
@@ -514,13 +432,9 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       localRender.release();
       localRender = null;
     }
-    if (videoFileRenderer != null) {
-      videoFileRenderer.release();
-      videoFileRenderer = null;
-    }
-    if (remoteRenderScreen != null) {
-      remoteRenderScreen.release();
-      remoteRenderScreen = null;
+    if (remoteRender != null) {
+      remoteRender.release();
+      remoteRender = null;
     }
     if (audioManager != null) {
       audioManager.close();
@@ -578,35 +492,6 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     });
   }
 
-  private VideoCapturer createVideoCapturer() {
-    VideoCapturer videoCapturer = null;
-    String videoFileAsCamera = getIntent().getStringExtra(EXTRA_VIDEO_FILE_AS_CAMERA);
-    if (videoFileAsCamera != null) {
-      try {
-        videoCapturer = new FileVideoCapturer(videoFileAsCamera);
-      } catch (IOException e) {
-        reportError("Failed to open video file for emulated camera");
-        return null;
-      }
-    } else if (useCamera2()) {
-      if (!captureToTexture()) {
-        reportError(getString(R.string.camera2_texture_only_error));
-        return null;
-      }
-
-      Logging.d(TAG, "Creating capturer using camera2 API.");
-      videoCapturer = createCameraCapturer(new Camera2Enumerator(this));
-    } else {
-      Logging.d(TAG, "Creating capturer using camera1 API.");
-      videoCapturer = createCameraCapturer(new Camera1Enumerator(captureToTexture()));
-    }
-    if (videoCapturer == null) {
-      reportError("Failed to open camera");
-      return null;
-    }
-    return videoCapturer;
-  }
-
   // -----Implementation of AppRTCClient.AppRTCSignalingEvents ---------------
   // All callbacks are invoked from websocket signaling looper thread and
   // are routed to UI thread.
@@ -615,12 +500,8 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
 
     signalingParameters = params;
     logAndToast("Creating peer connection, delay=" + delta + "ms");
-    VideoCapturer videoCapturer = null;
-    if (peerConnectionParameters.videoCallEnabled) {
-      videoCapturer = createVideoCapturer();
-    }
-    peerConnectionClient.createPeerConnection(rootEglBase.getEglBaseContext(), localRender,
-        remoteRenderers, videoCapturer, signalingParameters);
+    peerConnectionClient.createPeerConnection(
+        rootEglBase.getEglBaseContext(), localRender, remoteRender, signalingParameters);
 
     if (signalingParameters.initiator) {
       logAndToast("Creating OFFER...");

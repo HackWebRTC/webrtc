@@ -21,9 +21,7 @@ import android.test.InstrumentationTestCase;
 import android.test.suitebuilder.annotation.SmallTest;
 import android.util.Log;
 
-import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
-import org.webrtc.CameraEnumerator;
 import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaCodecVideoEncoder;
@@ -31,7 +29,6 @@ import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SessionDescription;
 import org.webrtc.StatsReport;
-import org.webrtc.VideoCapturer;
 import org.webrtc.VideoRenderer;
 
 import java.util.LinkedList;
@@ -238,7 +235,7 @@ public class PeerConnectionClientTest
 
   PeerConnectionClient createPeerConnectionClient(MockRenderer localRenderer,
       MockRenderer remoteRenderer, PeerConnectionParameters peerConnectionParameters,
-      VideoCapturer videoCapturer, EglBase.Context eglContext) {
+      EglBase.Context eglContext) {
     List<PeerConnection.IceServer> iceServers = new LinkedList<PeerConnection.IceServer>();
     SignalingParameters signalingParameters =
         new SignalingParameters(iceServers, true, // iceServers, initiator.
@@ -252,8 +249,7 @@ public class PeerConnectionClientTest
     client.setPeerConnectionFactoryOptions(options);
     client.createPeerConnectionFactory(
         getInstrumentation().getTargetContext(), peerConnectionParameters, this);
-    client.createPeerConnection(
-        eglContext, localRenderer, remoteRenderer, videoCapturer, signalingParameters);
+    client.createPeerConnection(eglContext, localRenderer, remoteRenderer, signalingParameters);
     client.createOffer();
     return client;
   }
@@ -264,12 +260,14 @@ public class PeerConnectionClientTest
             true, /* loopback */
             false, /* tracing */
             // Video codec parameters.
+            true, /* useCamera2 */
             0, /* videoWidth */
             0, /* videoHeight */
             0, /* videoFps */
             0, /* videoStartBitrate */
             "", /* videoCodec */
             true, /* videoCodecHwAcceleration */
+            false, /* captureToToTexture */
             // Audio codec parameters.
             0, /* audioStartBitrate */
             "OPUS", /* audioCodec */
@@ -277,36 +275,27 @@ public class PeerConnectionClientTest
             false, /* aecDump */
             false /* useOpenSLES */, false /* disableBuiltInAEC */, false /* disableBuiltInAGC */,
             false /* disableBuiltInNS */, false /* enableLevelControl */);
-
     return peerConnectionParameters;
   }
 
-  private VideoCapturer createCameraCapturer(boolean captureToTexture) {
+  private PeerConnectionParameters createParametersForVideoCall(
+      String videoCodec, boolean captureToTexture) {
     final boolean useCamera2 =
         captureToTexture && Camera2Enumerator.isSupported(getInstrumentation().getTargetContext());
 
-    CameraEnumerator enumerator;
-    if (useCamera2) {
-      enumerator = new Camera2Enumerator(getInstrumentation().getTargetContext());
-    } else {
-      enumerator = new Camera1Enumerator(captureToTexture);
-    }
-    String deviceName = enumerator.getDeviceNames()[0];
-    return enumerator.createCapturer(deviceName, null);
-  }
-
-  private PeerConnectionParameters createParametersForVideoCall(String videoCodec) {
     PeerConnectionParameters peerConnectionParameters =
         new PeerConnectionParameters(true, /* videoCallEnabled */
             true, /* loopback */
             false, /* tracing */
             // Video codec parameters.
+            useCamera2, /* useCamera2 */
             0, /* videoWidth */
             0, /* videoHeight */
             0, /* videoFps */
             0, /* videoStartBitrate */
             videoCodec, /* videoCodec */
             true, /* videoCodecHwAcceleration */
+            captureToTexture, /* captureToToTexture */
             // Audio codec parameters.
             0, /* audioStartBitrate */
             "OPUS", /* audioCodec */
@@ -314,7 +303,6 @@ public class PeerConnectionClientTest
             false, /* aecDump */
             false /* useOpenSLES */, false /* disableBuiltInAEC */, false /* disableBuiltInAGC */,
             false /* disableBuiltInNS */, false /* enableLevelControl */);
-
     return peerConnectionParameters;
   }
 
@@ -339,8 +327,7 @@ public class PeerConnectionClientTest
     Log.d(TAG, "testSetLocalOfferMakesVideoFlowLocally");
     MockRenderer localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, LOCAL_RENDERER_NAME);
     pcClient = createPeerConnectionClient(localRenderer, new MockRenderer(0, null),
-        createParametersForVideoCall(VIDEO_CODEC_VP8),
-        createCameraCapturer(false /* captureToTexture */), null);
+        createParametersForVideoCall(VIDEO_CODEC_VP8, false), null);
 
     // Wait for local SDP and ice candidates set events.
     assertTrue("Local SDP was not set.", waitForLocalSDP(WAIT_TIMEOUT));
@@ -356,8 +343,8 @@ public class PeerConnectionClientTest
     Log.d(TAG, "testSetLocalOfferMakesVideoFlowLocally Done.");
   }
 
-  private void doLoopbackTest(PeerConnectionParameters parameters, VideoCapturer videoCapturer,
-      boolean decodeToTexture) throws InterruptedException {
+  private void doLoopbackTest(PeerConnectionParameters parameters, boolean decodeToTexure)
+      throws InterruptedException {
     loopback = true;
     MockRenderer localRenderer = null;
     MockRenderer remoteRenderer = null;
@@ -368,8 +355,8 @@ public class PeerConnectionClientTest
     } else {
       Log.d(TAG, "testLoopback for audio.");
     }
-    pcClient = createPeerConnectionClient(localRenderer, remoteRenderer, parameters, videoCapturer,
-        decodeToTexture ? eglBase.getEglBaseContext() : null);
+    pcClient = createPeerConnectionClient(localRenderer, remoteRenderer, parameters,
+        decodeToTexure ? eglBase.getEglBaseContext() : null);
 
     // Wait for local SDP, rename it to answer and set as remote SDP.
     assertTrue("Local SDP was not set.", waitForLocalSDP(WAIT_TIMEOUT));
@@ -399,25 +386,22 @@ public class PeerConnectionClientTest
 
   @SmallTest
   public void testLoopbackAudio() throws InterruptedException {
-    doLoopbackTest(createParametersForAudioCall(), null, false /* decodeToTexture */);
+    doLoopbackTest(createParametersForAudioCall(), false);
   }
 
   @SmallTest
   public void testLoopbackVp8() throws InterruptedException {
-    doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP8),
-        createCameraCapturer(false /* captureToTexture */), false /* decodeToTexture */);
+    doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP8, false), false);
   }
 
   @SmallTest
   public void testLoopbackVp9() throws InterruptedException {
-    doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP9),
-        createCameraCapturer(false /* captureToTexture */), false /* decodeToTexture */);
+    doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP9, false), false);
   }
 
   @SmallTest
   public void testLoopbackH264() throws InterruptedException {
-    doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_H264),
-        createCameraCapturer(false /* captureToTexture */), false /* decodeToTexture */);
+    doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_H264, false), false);
   }
 
   @SmallTest
@@ -426,8 +410,7 @@ public class PeerConnectionClientTest
       Log.i(TAG, "Decode to textures is not supported, requires SDK version 19.");
       return;
     }
-    doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP8),
-        createCameraCapturer(false /* captureToTexture */), true /* decodeToTexture */);
+    doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP8, false), true);
   }
 
   @SmallTest
@@ -436,8 +419,7 @@ public class PeerConnectionClientTest
       Log.i(TAG, "Decode to textures is not supported, requires SDK version 19.");
       return;
     }
-    doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP9),
-        createCameraCapturer(false /* captureToTexture */), true /* decodeToTexture */);
+    doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP9, false), true);
   }
 
   @SmallTest
@@ -446,8 +428,7 @@ public class PeerConnectionClientTest
       Log.i(TAG, "Decode to textures is not supported, requires SDK version 19.");
       return;
     }
-    doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_H264),
-        createCameraCapturer(false /* captureToTexture */), true /* decodeToTexture */);
+    doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_H264, false), true);
   }
 
   @SmallTest
@@ -462,8 +443,7 @@ public class PeerConnectionClientTest
       Log.i(TAG, "VP8 encode to textures is not supported.");
       return;
     }
-    doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP8),
-        createCameraCapturer(true /* captureToTexture */), true /* decodeToTexture */);
+    doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP8, true), true);
   }
 
   // Test that a call can be setup even if the EGL context used during initialization is
@@ -477,11 +457,11 @@ public class PeerConnectionClientTest
     }
 
     loopback = true;
-    PeerConnectionParameters parameters = createParametersForVideoCall(VIDEO_CODEC_VP8);
+    PeerConnectionParameters parameters = createParametersForVideoCall(VIDEO_CODEC_VP8, true);
     MockRenderer localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, LOCAL_RENDERER_NAME);
     MockRenderer remoteRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, REMOTE_RENDERER_NAME);
-    pcClient = createPeerConnectionClient(localRenderer, remoteRenderer, parameters,
-        createCameraCapturer(true /* captureToTexture */), eglBase.getEglBaseContext());
+    pcClient = createPeerConnectionClient(
+        localRenderer, remoteRenderer, parameters, eglBase.getEglBaseContext());
 
     // Wait for local SDP, rename it to answer and set as remote SDP.
     assertTrue("Local SDP was not set.", waitForLocalSDP(WAIT_TIMEOUT));
@@ -521,8 +501,7 @@ public class PeerConnectionClientTest
       Log.i(TAG, "H264 encode to textures is not supported.");
       return;
     }
-    doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_H264),
-        createCameraCapturer(true /* captureToTexture */), true /* decodeToTexture */);
+    doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_H264, true), true);
   }
 
   // Checks if default front camera can be switched to back camera and then
@@ -535,9 +514,8 @@ public class PeerConnectionClientTest
     MockRenderer localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, LOCAL_RENDERER_NAME);
     MockRenderer remoteRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, REMOTE_RENDERER_NAME);
 
-    pcClient = createPeerConnectionClient(localRenderer, remoteRenderer,
-        createParametersForVideoCall(VIDEO_CODEC_VP8),
-        createCameraCapturer(false /* captureToTexture */), null);
+    pcClient = createPeerConnectionClient(
+        localRenderer, remoteRenderer, createParametersForVideoCall(VIDEO_CODEC_VP8, false), null);
 
     // Wait for local SDP, rename it to answer and set as remote SDP.
     assertTrue("Local SDP was not set.", waitForLocalSDP(WAIT_TIMEOUT));
@@ -584,9 +562,8 @@ public class PeerConnectionClientTest
     MockRenderer localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, LOCAL_RENDERER_NAME);
     MockRenderer remoteRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, REMOTE_RENDERER_NAME);
 
-    pcClient = createPeerConnectionClient(localRenderer, remoteRenderer,
-        createParametersForVideoCall(VIDEO_CODEC_VP8),
-        createCameraCapturer(false /* captureToTexture */), null);
+    pcClient = createPeerConnectionClient(
+        localRenderer, remoteRenderer, createParametersForVideoCall(VIDEO_CODEC_VP8, false), null);
 
     // Wait for local SDP, rename it to answer and set as remote SDP.
     assertTrue("Local SDP was not set.", waitForLocalSDP(WAIT_TIMEOUT));
@@ -634,9 +611,8 @@ public class PeerConnectionClientTest
     MockRenderer localRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, LOCAL_RENDERER_NAME);
     MockRenderer remoteRenderer = new MockRenderer(EXPECTED_VIDEO_FRAMES, REMOTE_RENDERER_NAME);
 
-    pcClient = createPeerConnectionClient(localRenderer, remoteRenderer,
-        createParametersForVideoCall(VIDEO_CODEC_VP8),
-        createCameraCapturer(false /* captureToTexture */), null);
+    pcClient = createPeerConnectionClient(
+        localRenderer, remoteRenderer, createParametersForVideoCall(VIDEO_CODEC_VP8, false), null);
 
     // Wait for local SDP, rename it to answer and set as remote SDP.
     assertTrue("Local SDP was not set.", waitForLocalSDP(WAIT_TIMEOUT));
