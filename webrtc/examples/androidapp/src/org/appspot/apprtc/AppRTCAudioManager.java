@@ -75,6 +75,9 @@ public class AppRTCAudioManager {
   // Broadcast receiver for wired headset intent broadcasts.
   private BroadcastReceiver wiredHeadsetReceiver;
 
+  // Callback method for changes in audio focus.
+  private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener;
+
   // This method is called when the proximity sensor reports a state change,
   // e.g. from "NEAR to FAR" or from "FAR to NEAR".
   private void onProximitySensorChangedState() {
@@ -143,9 +146,55 @@ public class AppRTCAudioManager {
     savedIsSpeakerPhoneOn = audioManager.isSpeakerphoneOn();
     savedIsMicrophoneMute = audioManager.isMicrophoneMute();
 
-    // Request audio focus before making any device switch.
-    audioManager.requestAudioFocus(
-        null, AudioManager.STREAM_VOICE_CALL, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+    // Create an AudioManager.OnAudioFocusChangeListener instance.
+    audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+      // Called on the listener to notify if the audio focus for this listener has been changed.
+      // The |focusChange| value indicates whether the focus was gained, whether the focus was lost,
+      // and whether that loss is transient, or whether the new focus holder will hold it for an
+      // unknown amount of time.
+      // TODO(henrika): possibly extend support of handling audio-focus changes. Only contains
+      // logging for now.
+      @Override
+      public void onAudioFocusChange(int focusChange) {
+        String typeOfChange = "AUDIOFOCUS_NOT_DEFINED";
+        switch (focusChange) {
+          case AudioManager.AUDIOFOCUS_GAIN:
+            typeOfChange = "AUDIOFOCUS_GAIN";
+            break;
+          case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT:
+            typeOfChange = "AUDIOFOCUS_GAIN_TRANSIENT";
+            break;
+          case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE:
+            typeOfChange = "AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE";
+            break;
+          case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK:
+            typeOfChange = "AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK";
+            break;
+          case AudioManager.AUDIOFOCUS_LOSS:
+            typeOfChange = "AUDIOFOCUS_LOSS";
+            break;
+          case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+            typeOfChange = "AUDIOFOCUS_LOSS_TRANSIENT";
+            break;
+          case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+            typeOfChange = "AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK";
+            break;
+          default:
+            typeOfChange = "AUDIOFOCUS_INVALID";
+            break;
+        }
+        Log.d(TAG, "onAudioFocusChange: " + typeOfChange);
+      }
+    };
+
+    // Request audio playout focus (without ducking) and install listener for changes in focus.
+    int result = audioManager.requestAudioFocus(audioFocusChangeListener,
+        AudioManager.STREAM_VOICE_CALL, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+    if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+      Log.d(TAG, "Audio focus request granted for VOICE_CALL streams");
+    } else {
+      Log.e(TAG, "Audio focus request failed");
+    }
 
     // Start by setting MODE_IN_COMMUNICATION as default audio mode. It is
     // required to be in this mode when playout and/or recording starts for
@@ -180,7 +229,11 @@ public class AppRTCAudioManager {
     setSpeakerphoneOn(savedIsSpeakerPhoneOn);
     setMicrophoneMute(savedIsMicrophoneMute);
     audioManager.setMode(savedAudioMode);
-    audioManager.abandonAudioFocus(null);
+
+    // Abandon audio focus. Gives the previous focus owner, if any, focus.
+    audioManager.abandonAudioFocus(audioFocusChangeListener);
+    audioFocusChangeListener = null;
+    Log.d(TAG, "Abandoned audio focus for VOICE_CALL streams");
 
     if (proximitySensor != null) {
       proximitySensor.stop();
