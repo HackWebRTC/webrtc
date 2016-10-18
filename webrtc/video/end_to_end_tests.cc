@@ -2144,13 +2144,24 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
                       : nullptr),
           sender_call_(nullptr),
           receiver_call_(nullptr),
-          start_runtime_ms_(-1) {}
+          start_runtime_ms_(-1),
+          num_frames_received_(0) {}
 
    private:
-    void OnFrame(const VideoFrame& video_frame) override {}
+    void OnFrame(const VideoFrame& video_frame) override {
+      // The RTT is needed to estimate |ntp_time_ms| which is used by
+      // end-to-end delay stats. Therefore, start counting received frames once
+      // |ntp_time_ms| is valid.
+      if (video_frame.ntp_time_ms() > 0 &&
+          Clock::GetRealTimeClock()->CurrentNtpInMilliseconds() >=
+              video_frame.ntp_time_ms()) {
+        rtc::CritScope lock(&crit_);
+        ++num_frames_received_;
+      }
+    }
 
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
-      if (MinMetricRunTimePassed())
+      if (MinMetricRunTimePassed() && MinNumberOfFramesReceived())
         observation_complete_.Set();
 
       return SEND_PACKET;
@@ -2164,6 +2175,12 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
       }
       int64_t elapsed_sec = (now - start_runtime_ms_) / 1000;
       return elapsed_sec > metrics::kMinRunTimeInSeconds * 2;
+    }
+
+    bool MinNumberOfFramesReceived() const {
+      const int kMinRequiredHistogramSamples = 200;
+      rtc::CritScope lock(&crit_);
+      return num_frames_received_ > kMinRequiredHistogramSamples;
     }
 
     void ModifyVideoConfigs(
@@ -2215,6 +2232,7 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
       EXPECT_TRUE(Wait()) << "Timed out waiting for packet to be NACKed.";
     }
 
+    rtc::CriticalSection crit_;
     const bool use_rtx_;
     const bool use_red_;
     const bool screenshare_;
@@ -2222,6 +2240,7 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
     Call* sender_call_;
     Call* receiver_call_;
     int64_t start_runtime_ms_;
+    int num_frames_received_ GUARDED_BY(&crit_);
   } test(use_rtx, use_red, screenshare);
 
   metrics::Reset();
