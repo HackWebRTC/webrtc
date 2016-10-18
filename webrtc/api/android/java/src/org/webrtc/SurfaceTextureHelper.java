@@ -76,7 +76,7 @@ class SurfaceTextureHelper {
   }
 
   // State for YUV conversion, instantiated on demand.
-  static private class YuvConverter {
+  static class YuvConverter {
     private final EglBase eglBase;
     private final GlShader shader;
     private boolean released = false;
