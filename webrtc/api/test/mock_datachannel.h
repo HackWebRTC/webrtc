@@ -18,12 +18,35 @@ namespace webrtc {
 
 class MockDataChannel : public rtc::RefCountedObject<DataChannel> {
  public:
-  explicit MockDataChannel(DataState state)
+  MockDataChannel(int id, DataState state)
+      : MockDataChannel(id, state, 0, 0, 0, 0) {
+  }
+  MockDataChannel(
+      int id,
+      DataState state,
+      uint32_t messages_sent,
+      uint64_t bytes_sent,
+      uint32_t messages_received,
+      uint64_t bytes_received)
       : rtc::RefCountedObject<DataChannel>(
             nullptr, cricket::DCT_NONE, "MockDataChannel") {
+    EXPECT_CALL(*this, id()).WillRepeatedly(testing::Return(id));
     EXPECT_CALL(*this, state()).WillRepeatedly(testing::Return(state));
+    EXPECT_CALL(*this, messages_sent()).WillRepeatedly(
+        testing::Return(messages_sent));
+    EXPECT_CALL(*this, bytes_sent()).WillRepeatedly(
+        testing::Return(bytes_sent));
+    EXPECT_CALL(*this, messages_received()).WillRepeatedly(
+        testing::Return(messages_received));
+    EXPECT_CALL(*this, bytes_received()).WillRepeatedly(
+        testing::Return(bytes_received));
   }
+  MOCK_CONST_METHOD0(id, int());
   MOCK_CONST_METHOD0(state, DataState());
+  MOCK_CONST_METHOD0(messages_sent, uint32_t());
+  MOCK_CONST_METHOD0(bytes_sent, uint64_t());
+  MOCK_CONST_METHOD0(messages_received, uint32_t());
+  MOCK_CONST_METHOD0(bytes_received, uint64_t());
 };
 
 }  // namespace webrtc

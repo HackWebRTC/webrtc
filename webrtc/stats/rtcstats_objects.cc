@@ -12,6 +12,11 @@
 
 namespace webrtc {
 
+const char* RTCDataChannelState::kConnecting = "connecting";
+const char* RTCDataChannelState::kOpen = "open";
+const char* RTCDataChannelState::kClosing = "closing";
+const char* RTCDataChannelState::kClosed = "closed";
+
 const char* RTCStatsIceCandidatePairState::kFrozen = "frozen";
 const char* RTCStatsIceCandidatePairState::kWaiting = "waiting";
 const char* RTCStatsIceCandidatePairState::kInProgress = "inprogress";
@@ -216,6 +221,50 @@ RTCCertificateStats::RTCCertificateStats(
 }
 
 RTCCertificateStats::~RTCCertificateStats() {
+}
+
+WEBRTC_RTCSTATS_IMPL(RTCDataChannelStats, RTCStats, "data-channel",
+    &label,
+    &protocol,
+    &datachannelid,
+    &state,
+    &messages_sent,
+    &bytes_sent,
+    &messages_received,
+    &bytes_received);
+
+RTCDataChannelStats::RTCDataChannelStats(
+    const std::string& id, int64_t timestamp_us)
+    : RTCDataChannelStats(std::string(id), timestamp_us) {
+}
+
+RTCDataChannelStats::RTCDataChannelStats(
+    std::string&& id, int64_t timestamp_us)
+    : RTCStats(std::move(id), timestamp_us),
+      label("label"),
+      protocol("protocol"),
+      datachannelid("datachannelid"),
+      state("state"),
+      messages_sent("messagesSent"),
+      bytes_sent("bytesSent"),
+      messages_received("messagesReceived"),
+      bytes_received("bytesReceived") {
+}
+
+RTCDataChannelStats::RTCDataChannelStats(
+    const RTCDataChannelStats& other)
+    : RTCStats(other.id(), other.timestamp_us()),
+      label(other.label),
+      protocol(other.protocol),
+      datachannelid(other.datachannelid),
+      state(other.state),
+      messages_sent(other.messages_sent),
+      bytes_sent(other.bytes_sent),
+      messages_received(other.messages_received),
+      bytes_received(other.bytes_received) {
+}
+
+RTCDataChannelStats::~RTCDataChannelStats() {
 }
 
 WEBRTC_RTCSTATS_IMPL(RTCPeerConnectionStats, RTCStats, "peer-connection",

@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/api/datachannelinterface.h"
 #include "webrtc/api/stats/rtcstats_objects.h"
 #include "webrtc/api/stats/rtcstatsreport.h"
 #include "webrtc/base/asyncinvoker.h"
@@ -85,6 +86,9 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface {
   void ProduceCertificateStatsFromSSLCertificateAndChain_s(
       int64_t timestamp_us, const rtc::SSLCertificate& certificate,
       RTCStatsReport* report) const;
+  // Produces |RTCDataChannelStats|.
+  void ProduceDataChannelStats_s(
+      int64_t timestamp_us, RTCStatsReport* report) const;
   // Produces |RTCIceCandidatePairStats| and |RTCIceCandidateStats|.
   void ProduceIceCandidateAndPairStats_s(
       int64_t timestamp_us, const SessionStats& session_stats,
@@ -116,8 +120,10 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface {
   rtc::scoped_refptr<const RTCStatsReport> cached_report_;
 };
 
-// Helper function, exposed for unittests.
-const char* CandidateTypeToRTCIceCandidateType(const std::string& type);
+const char* CandidateTypeToRTCIceCandidateTypeForTesting(
+    const std::string& type);
+const char* DataStateToRTCDataChannelStateForTesting(
+    DataChannelInterface::DataState state);
 
 }  // namespace webrtc
 

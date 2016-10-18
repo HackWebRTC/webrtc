@@ -17,6 +17,14 @@
 
 namespace webrtc {
 
+// https://w3c.github.io/webrtc-pc/#idl-def-rtcdatachannelstate
+struct RTCDataChannelState {
+  static const char* kConnecting;
+  static const char* kOpen;
+  static const char* kClosing;
+  static const char* kClosed;
+};
+
 // https://w3c.github.io/webrtc-stats/#dom-rtcstatsicecandidatepairstate
 struct RTCStatsIceCandidatePairState {
   static const char* kFrozen;
@@ -27,7 +35,7 @@ struct RTCStatsIceCandidatePairState {
   static const char* kCancelled;
 };
 
-// https://www.w3.org/TR/webrtc/#rtcicecandidatetype-enum
+// https://w3c.github.io/webrtc-pc/#rtcicecandidatetype-enum
 struct RTCIceCandidateType {
   static const char* kHost;
   static const char* kSrflx;
@@ -127,6 +135,27 @@ class RTCCertificateStats final : public RTCStats {
   RTCStatsMember<std::string> fingerprint_algorithm;
   RTCStatsMember<std::string> base64_certificate;
   RTCStatsMember<std::string> issuer_certificate_id;
+};
+
+// https://w3c.github.io/webrtc-stats/#dcstats-dict*
+class RTCDataChannelStats final : public RTCStats {
+ public:
+  WEBRTC_RTCSTATS_DECL();
+
+  RTCDataChannelStats(const std::string& id, int64_t timestamp_us);
+  RTCDataChannelStats(std::string&& id, int64_t timestamp_us);
+  RTCDataChannelStats(const RTCDataChannelStats& other);
+  ~RTCDataChannelStats() override;
+
+  RTCStatsMember<std::string> label;
+  RTCStatsMember<std::string> protocol;
+  RTCStatsMember<int32_t> datachannelid;
+  // TODO(hbos): Support enum types? "RTCStatsMember<RTCDataChannelState>"?
+  RTCStatsMember<std::string> state;
+  RTCStatsMember<uint32_t> messages_sent;
+  RTCStatsMember<uint64_t> bytes_sent;
+  RTCStatsMember<uint32_t> messages_received;
+  RTCStatsMember<uint64_t> bytes_received;
 };
 
 // https://w3c.github.io/webrtc-stats/#pcstats-dict*

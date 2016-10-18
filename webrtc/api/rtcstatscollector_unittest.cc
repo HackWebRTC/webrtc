@@ -328,6 +328,10 @@ class RTCStatsCollectorTest : public testing::Test {
     rtc::scoped_refptr<StatsCallback> callback = StatsCallback::Create();
     collector_->GetStatsReport(callback);
     EXPECT_TRUE_WAIT(callback->report(), kGetStatsReportTimeoutMs);
+    int64_t after = rtc::TimeUTCMicros();
+    for (const RTCStats& stats : *callback->report()) {
+      EXPECT_LE(stats.timestamp_us(), after);
+    }
     return callback->report();
   }
 
@@ -347,7 +351,7 @@ class RTCStatsCollectorTest : public testing::Test {
               static_cast<int32_t>(candidate.address().port()));
     EXPECT_EQ(*candidate_stats->protocol, candidate.protocol());
     EXPECT_EQ(*candidate_stats->candidate_type,
-              CandidateTypeToRTCIceCandidateType(candidate.type()));
+              CandidateTypeToRTCIceCandidateTypeForTesting(candidate.type()));
     EXPECT_EQ(*candidate_stats->priority,
               static_cast<int32_t>(candidate.priority()));
     // TODO(hbos): Define candidate_stats->url. crbug.com/632723
@@ -436,6 +440,27 @@ class RTCStatsCollectorTest : public testing::Test {
         EXPECT_FALSE(cert_stats.issuer_certificate_id.is_defined());
       }
     }
+  }
+
+  void ExpectReportContainsDataChannel(
+      const rtc::scoped_refptr<const RTCStatsReport>& report,
+      const DataChannel& data_channel) {
+    const RTCStats* stats = report->Get("RTCDataChannel_" +
+                                        rtc::ToString<>(data_channel.id()));
+    EXPECT_TRUE(stats);
+    const RTCDataChannelStats& data_channel_stats =
+        stats->cast_to<const RTCDataChannelStats>();
+    EXPECT_EQ(*data_channel_stats.label, data_channel.label());
+    EXPECT_EQ(*data_channel_stats.protocol, data_channel.protocol());
+    EXPECT_EQ(*data_channel_stats.datachannelid, data_channel.id());
+    EXPECT_EQ(*data_channel_stats.state,
+        DataStateToRTCDataChannelStateForTesting(data_channel.state()));
+    EXPECT_EQ(*data_channel_stats.messages_sent, data_channel.messages_sent());
+    EXPECT_EQ(*data_channel_stats.bytes_sent, data_channel.bytes_sent());
+    EXPECT_EQ(*data_channel_stats.messages_received,
+              data_channel.messages_received());
+    EXPECT_EQ(*data_channel_stats.bytes_received,
+              data_channel.bytes_received());
   }
 
  protected:
@@ -643,6 +668,44 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsChain) {
   ExpectReportContainsCertificateInfo(report, *remote_certinfo.get());
 }
 
+TEST_F(RTCStatsCollectorTest, CollectRTCDataChannelStats) {
+  test_->data_channels().push_back(
+      new MockDataChannel(0, DataChannelInterface::kConnecting));
+  test_->data_channels().push_back(
+      new MockDataChannel(1, DataChannelInterface::kOpen));
+  test_->data_channels().push_back(
+      new MockDataChannel(2, DataChannelInterface::kClosing));
+  test_->data_channels().push_back(
+      new MockDataChannel(3, DataChannelInterface::kClosed));
+
+  rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
+  ExpectReportContainsDataChannel(report, *test_->data_channels()[0]);
+  ExpectReportContainsDataChannel(report, *test_->data_channels()[1]);
+  ExpectReportContainsDataChannel(report, *test_->data_channels()[2]);
+  ExpectReportContainsDataChannel(report, *test_->data_channels()[3]);
+
+  test_->data_channels().clear();
+  test_->data_channels().push_back(
+      new MockDataChannel(0, DataChannelInterface::kConnecting,
+                          1, 2, 3, 4));
+  test_->data_channels().push_back(
+      new MockDataChannel(1, DataChannelInterface::kOpen,
+                          5, 6, 7, 8));
+  test_->data_channels().push_back(
+      new MockDataChannel(2, DataChannelInterface::kClosing,
+                          9, 10, 11, 12));
+  test_->data_channels().push_back(
+      new MockDataChannel(3, DataChannelInterface::kClosed,
+                          13, 14, 15, 16));
+
+  collector_->ClearCachedStatsReport();
+  report = GetStatsReport();
+  ExpectReportContainsDataChannel(report, *test_->data_channels()[0]);
+  ExpectReportContainsDataChannel(report, *test_->data_channels()[1]);
+  ExpectReportContainsDataChannel(report, *test_->data_channels()[2]);
+  ExpectReportContainsDataChannel(report, *test_->data_channels()[3]);
+}
+
 TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
   // Candidates in the first transport stats.
   std::unique_ptr<cricket::Candidate> a_local_host = CreateFakeCandidate(
@@ -759,15 +822,11 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
-  int64_t before = rtc::TimeUTCMicros();
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
-  int64_t after = rtc::TimeUTCMicros();
   EXPECT_EQ(report->GetStatsOfType<RTCPeerConnectionStats>().size(),
             static_cast<size_t>(1)) << "Expecting 1 RTCPeerConnectionStats.";
   const RTCStats* stats = report->Get("RTCPeerConnection");
   EXPECT_TRUE(stats);
-  EXPECT_LE(before, stats->timestamp_us());
-  EXPECT_LE(stats->timestamp_us(), after);
   {
     // Expected stats with no data channels
     const RTCPeerConnectionStats& pcstats =
@@ -777,13 +836,13 @@ TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
   }
 
   test_->data_channels().push_back(
-      new MockDataChannel(DataChannelInterface::kConnecting));
+      new MockDataChannel(0, DataChannelInterface::kConnecting));
   test_->data_channels().push_back(
-      new MockDataChannel(DataChannelInterface::kOpen));
+      new MockDataChannel(1, DataChannelInterface::kOpen));
   test_->data_channels().push_back(
-      new MockDataChannel(DataChannelInterface::kClosing));
+      new MockDataChannel(2, DataChannelInterface::kClosing));
   test_->data_channels().push_back(
-      new MockDataChannel(DataChannelInterface::kClosed));
+      new MockDataChannel(3, DataChannelInterface::kClosed));
 
   collector_->ClearCachedStatsReport();
   report = GetStatsReport();

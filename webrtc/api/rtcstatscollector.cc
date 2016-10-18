@@ -23,6 +23,8 @@
 
 namespace webrtc {
 
+namespace {
+
 const char* CandidateTypeToRTCIceCandidateType(const std::string& type) {
   if (type == cricket::LOCAL_PORT_TYPE)
     return RTCIceCandidateType::kHost;
@@ -35,6 +37,25 @@ const char* CandidateTypeToRTCIceCandidateType(const std::string& type) {
   RTC_NOTREACHED();
   return nullptr;
 }
+
+const char* DataStateToRTCDataChannelState(
+    DataChannelInterface::DataState state) {
+  switch (state) {
+    case DataChannelInterface::kConnecting:
+      return RTCDataChannelState::kConnecting;
+    case DataChannelInterface::kOpen:
+      return RTCDataChannelState::kOpen;
+    case DataChannelInterface::kClosing:
+      return RTCDataChannelState::kClosing;
+    case DataChannelInterface::kClosed:
+      return RTCDataChannelState::kClosed;
+    default:
+      RTC_NOTREACHED();
+      return nullptr;
+  }
+}
+
+}  // namespace
 
 rtc::scoped_refptr<RTCStatsCollector> RTCStatsCollector::Create(
     PeerConnection* pc, int64_t cache_lifetime_us) {
@@ -111,6 +132,7 @@ void RTCStatsCollector::ProducePartialResultsOnSignalingThread(
     ProduceIceCandidateAndPairStats_s(timestamp_us, session_stats,
                                       report.get());
   }
+  ProduceDataChannelStats_s(timestamp_us, report.get());
   ProducePeerConnectionStats_s(timestamp_us, report.get());
 
   AddPartialResults(report);
@@ -215,6 +237,28 @@ void RTCStatsCollector::ProduceCertificateStatsFromSSLCertificateAndChain_s(
       prev_stats->issuer_certificate_id = stats->id();
     report->AddStats(std::unique_ptr<RTCCertificateStats>(stats));
     prev_stats = stats;
+  }
+}
+
+void RTCStatsCollector::ProduceDataChannelStats_s(
+    int64_t timestamp_us, RTCStatsReport* report) const {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  for (const rtc::scoped_refptr<DataChannel>& data_channel :
+       pc_->sctp_data_channels()) {
+    std::unique_ptr<RTCDataChannelStats> data_channel_stats(
+        new RTCDataChannelStats(
+            "RTCDataChannel_" + rtc::ToString<>(data_channel->id()),
+            timestamp_us));
+    data_channel_stats->label = data_channel->label();
+    data_channel_stats->protocol = data_channel->protocol();
+    data_channel_stats->datachannelid = data_channel->id();
+    data_channel_stats->state =
+        DataStateToRTCDataChannelState(data_channel->state());
+    data_channel_stats->messages_sent = data_channel->messages_sent();
+    data_channel_stats->bytes_sent = data_channel->bytes_sent();
+    data_channel_stats->messages_received = data_channel->messages_received();
+    data_channel_stats->bytes_received = data_channel->bytes_received();
+    report->AddStats(std::move(data_channel_stats));
   }
 }
 
@@ -335,6 +379,16 @@ void RTCStatsCollector::ProducePeerConnectionStats_s(
   stats->data_channels_closed = static_cast<uint32_t>(data_channels.size()) -
                                 data_channels_opened;
   report->AddStats(std::move(stats));
+}
+
+const char* CandidateTypeToRTCIceCandidateTypeForTesting(
+    const std::string& type) {
+  return CandidateTypeToRTCIceCandidateType(type);
+}
+
+const char* DataStateToRTCDataChannelStateForTesting(
+    DataChannelInterface::DataState state) {
+  return DataStateToRTCDataChannelState(state);
 }
 
 }  // namespace webrtc
