@@ -193,6 +193,16 @@ class Optional final {
     PoisonValue();
   }
 
+  template <class... Args>
+  void emplace(Args&&... args) {
+    if (has_value_)
+      value_.~T();
+    else
+      UnpoisonValue();
+    new (&value_) T(std::forward<Args>(args)...);
+    has_value_ = true;
+  }
+
   // Conversion to bool to test if we have a value.
   explicit operator bool() const { return has_value_; }
 
