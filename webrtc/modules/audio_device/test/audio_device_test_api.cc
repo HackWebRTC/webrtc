@@ -1494,39 +1494,6 @@ TEST_F(AudioDeviceAPITest, StereoRecordingTests) {
   }
 }
 
-TEST_F(AudioDeviceAPITest, RecordingChannelTests) {
-  // the user in Win Core Audio
-  AudioDeviceModule::ChannelType channelType(AudioDeviceModule::kChannelBoth);
-  CheckInitialRecordingStates();
-  EXPECT_FALSE(audio_device_->Playing());
-
-  // fail tests
-  EXPECT_EQ(0, audio_device_->SetStereoRecording(false));
-  EXPECT_EQ(-1, audio_device_->SetRecordingChannel(
-      AudioDeviceModule::kChannelBoth));
-
-  // initialize kDefaultCommunicationDevice and modify/retrieve stereo support
-  EXPECT_EQ(0, audio_device_->SetRecordingDevice(
-      MACRO_DEFAULT_COMMUNICATION_DEVICE));
-  bool available;
-  EXPECT_EQ(0, audio_device_->StereoRecordingIsAvailable(&available));
-  if (available) {
-    EXPECT_EQ(0, audio_device_->SetStereoRecording(true));
-    EXPECT_EQ(0, audio_device_->SetRecordingChannel(
-        AudioDeviceModule::kChannelBoth));
-    EXPECT_EQ(0, audio_device_->RecordingChannel(&channelType));
-    EXPECT_EQ(AudioDeviceModule::kChannelBoth, channelType);
-    EXPECT_EQ(0, audio_device_->SetRecordingChannel(
-        AudioDeviceModule::kChannelLeft));
-    EXPECT_EQ(0, audio_device_->RecordingChannel(&channelType));
-    EXPECT_EQ(AudioDeviceModule::kChannelLeft, channelType);
-    EXPECT_EQ(0, audio_device_->SetRecordingChannel(
-        AudioDeviceModule::kChannelRight));
-    EXPECT_EQ(0, audio_device_->RecordingChannel(&channelType));
-    EXPECT_EQ(AudioDeviceModule::kChannelRight, channelType);
-  }
-}
-
 TEST_F(AudioDeviceAPITest, PlayoutBufferTests) {
   AudioDeviceModule::BufferType bufferType;
   uint16_t sizeMS(0);

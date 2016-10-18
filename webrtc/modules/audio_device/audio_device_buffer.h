@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H_
 #define WEBRTC_MODULES_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H_
 
+#include "webrtc/base/buffer.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/task_queue.h"
 #include "webrtc/base/thread_checker.h"
@@ -19,8 +20,6 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-class CriticalSectionWrapper;
-
 // Delta times between two successive playout callbacks are limited to this
 // value before added to an internal array.
 const size_t kMaxDeltaTimeInMs = 500;
@@ -73,12 +72,6 @@ class AudioDeviceBuffer {
   int32_t SetTypingStatus(bool typing_status);
 
  private:
-  // Playout and recording parameters can change on the fly. e.g. at device
-  // switch. These methods ensures that the callback methods always use the
-  // latest parameters.
-  void UpdatePlayoutParameters();
-  void UpdateRecordingParameters();
-
   // Posts the first delayed task in the task queue and starts the periodic
   // timer.
   void StartTimer();
@@ -106,8 +99,8 @@ class AudioDeviceBuffer {
 
   // TODO(henrika): given usage of thread checker, it should be possible to
   // remove all locks in this class.
-  rtc::CriticalSection _critSect;
-  rtc::CriticalSection _critSectCb;
+  rtc::CriticalSection lock_;
+  rtc::CriticalSection lock_cb_;
 
   // Task queue used to invoke LogStats() periodically. Tasks are executed on a
   // worker thread but it does not necessarily have to be the same thread for
@@ -125,28 +118,17 @@ class AudioDeviceBuffer {
   size_t rec_channels_;
   size_t play_channels_;
 
-  // selected recording channel (left/right/both)
-  AudioDeviceModule::ChannelType rec_channel_;
-
   // Number of bytes per audio sample (2 or 4).
   size_t rec_bytes_per_sample_;
   size_t play_bytes_per_sample_;
 
-  // Number of audio samples/bytes per 10ms.
-  size_t rec_samples_per_10ms_;
-  size_t rec_bytes_per_10ms_;
-  size_t play_samples_per_10ms_;
-  size_t play_bytes_per_10ms_;
+  // Byte buffer used for recorded audio samples. Size can be changed
+  // dynamically.
+  rtc::Buffer rec_buffer_;
 
-  // Buffer used for recorded audio samples. Size is currently fixed
-  // but it should be changed to be dynamic and correspond to
-  // |play_bytes_per_10ms_|. TODO(henrika): avoid using fixed (max) size.
-  std::unique_ptr<int8_t[]> rec_buffer_;
-
-  // Buffer used for audio samples to be played out. Size is currently fixed
-  // but it should be changed to be dynamic and correspond to
-  // |play_bytes_per_10ms_|. TODO(henrika): avoid using fixed (max) size.
-  std::unique_ptr<int8_t[]> play_buffer_;
+  // Buffer used for audio samples to be played out. Size can be changed
+  // dynamically.
+  rtc::Buffer play_buffer_;
 
   // AGC parameters.
   uint32_t current_mic_level_;
