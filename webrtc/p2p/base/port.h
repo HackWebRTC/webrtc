@@ -528,7 +528,7 @@ class Connection : public CandidatePairInterface,
     remote_ice_mode_ = mode;
   }
 
-  void set_receiving_timeout(int64_t receiving_timeout_ms) {
+  void set_receiving_timeout(int receiving_timeout_ms) {
     receiving_timeout_ = receiving_timeout_ms;
   }
 
