@@ -2518,20 +2518,6 @@ TEST_F(WebRtcVideoChannel2Test, SetSendCodecsWithMaxQuantization) {
   EXPECT_EQ(kMaxQuantization, codec.params[kCodecParamMaxQuantization]);
 }
 
-TEST_F(WebRtcVideoChannel2Test, SetSendCodecsRejectBadDimensions) {
-  cricket::VideoSendParameters parameters;
-  parameters.codecs.push_back(kVp8Codec);
-
-  parameters.codecs[0].width = 0;
-  EXPECT_FALSE(channel_->SetSendParameters(parameters))
-      << "Codec set though codec width is zero.";
-
-  parameters.codecs[0].width = kVp8Codec.width;
-  parameters.codecs[0].height = 0;
-  EXPECT_FALSE(channel_->SetSendParameters(parameters))
-      << "Codec set though codec height is zero.";
-}
-
 TEST_F(WebRtcVideoChannel2Test, SetSendCodecsRejectBadPayloadTypes) {
   // TODO(pbos): Should we only allow the dynamic range?
   static const int kIncorrectPayloads[] = {-2, -1, 128, 129};

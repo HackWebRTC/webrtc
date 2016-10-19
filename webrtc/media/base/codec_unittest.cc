@@ -348,16 +348,6 @@ TEST(CodecTest, TestValidateCodecFormat) {
   too_high_payload_type.id = 128;
   EXPECT_FALSE(too_high_payload_type.ValidateCodecFormat());
 
-  // Reject zero-width codecs.
-  VideoCodec zero_width = codec;
-  zero_width.width = 0;
-  EXPECT_FALSE(zero_width.ValidateCodecFormat());
-
-  // Reject zero-height codecs.
-  VideoCodec zero_height = codec;
-  zero_height.height = 0;
-  EXPECT_FALSE(zero_height.ValidateCodecFormat());
-
   // Accept non-video codecs with zero dimensions.
   VideoCodec zero_width_rtx_codec = VideoCodec::CreateRtxCodec(96, 120);
   zero_width_rtx_codec.width = 0;
