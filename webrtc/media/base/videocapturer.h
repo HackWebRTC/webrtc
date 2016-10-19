@@ -42,8 +42,6 @@ enum CaptureState {
   CS_FAILED,     // The capturer failed to start.
 };
 
-class VideoFrame;
-
 // VideoCapturer is an abstract class that defines the interfaces for video
 // capturing. The subclasses implement the video capturer for various types of
 // capturers and various platforms.

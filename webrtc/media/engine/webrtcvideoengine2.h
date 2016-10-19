@@ -26,10 +26,10 @@
 #include "webrtc/media/base/videosourceinterface.h"
 #include "webrtc/call.h"
 #include "webrtc/media/base/mediaengine.h"
+#include "webrtc/media/base/videoframe.h"
 #include "webrtc/media/engine/webrtcvideodecoderfactory.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
 #include "webrtc/transport.h"
-#include "webrtc/video_frame.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
 
@@ -46,7 +46,6 @@ class Thread;
 namespace cricket {
 
 class VideoCapturer;
-class VideoFrame;
 class VideoProcessor;
 class VideoRenderer;
 class VoiceMediaChannel;

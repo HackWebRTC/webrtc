@@ -26,6 +26,7 @@
 
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/common_video/include/corevideo_frame_buffer.h"
 #include "webrtc/common_video/rotation.h"
@@ -828,8 +829,7 @@ void AVFoundationVideoCapturer::CaptureSampleBuffer(
     }
   }
 
-  OnFrame(cricket::WebRtcVideoFrame(buffer, rotation,
-                                    translated_camera_time_us, 0),
+  OnFrame(webrtc::VideoFrame(buffer, rotation, translated_camera_time_us),
           captured_width, captured_height);
 }
 

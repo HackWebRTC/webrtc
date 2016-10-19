@@ -43,7 +43,6 @@ template <class T> inline std::vector<T> MakeVector(const T a[], size_t s) {
 
 struct RtpDumpPacket;
 class RtpDumpWriter;
-class VideoFrame;
 
 struct RawRtpPacket {
   void WriteToByteBuffer(uint32_t in_ssrc, rtc::ByteBufferWriter* buf) const;

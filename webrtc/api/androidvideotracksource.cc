@@ -97,7 +97,7 @@ void AndroidVideoTrackSource::OnByteBufferFrameCaptured(const void* frame_data,
 
   OnFrame(cricket::WebRtcVideoFrame(
               buffer, static_cast<webrtc::VideoRotation>(rotation),
-              translated_camera_time_us, 0));
+              translated_camera_time_us));
 }
 
 void AndroidVideoTrackSource::OnTextureFrameCaptured(
@@ -153,7 +153,7 @@ void AndroidVideoTrackSource::OnTextureFrameCaptured(
                   webrtc_jni::NativeHandleImpl(handle.oes_texture_id, matrix)),
               do_rotate ? webrtc::kVideoRotation_0
                         : static_cast<webrtc::VideoRotation>(rotation),
-              translated_camera_time_us, 0));
+              translated_camera_time_us));
 }
 
 void AndroidVideoTrackSource::OnOutputFormatRequest(int width,

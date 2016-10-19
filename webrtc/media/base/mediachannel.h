@@ -31,6 +31,9 @@
 #include "webrtc/media/base/codec.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/streamparams.h"
+// TODO(nisse): Temporarily; to be replaced with a forward declaration
+// of webrtc::VideoFrame when dependency on cricket::VideoFrame is deleted.
+#include "webrtc/media/base/videoframe.h"
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/media/base/videosourceinterface.h"
 // TODO(juberti): re-evaluate this include
@@ -50,7 +53,6 @@ namespace cricket {
 class AudioSource;
 class ScreencastId;
 class VideoCapturer;
-class VideoFrame;
 struct RtpHeader;
 struct VideoFormat;
 

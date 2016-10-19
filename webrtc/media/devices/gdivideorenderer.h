@@ -18,11 +18,12 @@
 
 #include <memory>
 
+// TODO(nisse): Temporarily; to be replaced with a forward declaration
+// of webrtc::VideoFrame when dependency on cricket::VideoFrame is deleted.
+#include "webrtc/media/base/videoframe.h"
 #include "webrtc/media/base/videosinkinterface.h"
 
 namespace cricket {
-
-class VideoFrame;
 
 class GdiVideoRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
  public:

@@ -17,13 +17,14 @@
 #include <memory>
 
 #include "webrtc/base/basictypes.h"
+// TODO(nisse): Temporarily; to be replaced with a forward declaration
+// of webrtc::VideoFrame when dependency on cricket::VideoFrame is deleted.
+#include "webrtc/media/base/videoframe.h"
 #include "webrtc/media/base/videosinkinterface.h"
 
 typedef struct _GtkWidget GtkWidget;  // forward declaration, defined in gtk.h
 
 namespace cricket {
-
-class VideoFrame;
 
 class GtkVideoRenderer : public rtc::VideoSinkInterface<VideoFrame> {
  public:
