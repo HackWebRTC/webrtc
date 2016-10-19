@@ -118,7 +118,6 @@
              'stefan@webrtc.org'],
     'media': ['solenberg@webrtc.org'],
     'video': ['mflodman@webrtc.org',
-              'perkj@webrtc.org',
               'stefan@webrtc.org',
               'video-team@agora.io',
               'yujie.mao@webrtc.org',
