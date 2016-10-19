@@ -343,6 +343,11 @@ int64_t PacedSender::ExpectedQueueTimeMs() const {
                               pacing_bitrate_kbps_);
 }
 
+bool PacedSender::InApplicationLimitedRegion() const {
+  CriticalSectionScoped cs(critsect_.get());
+  return alr_detector_->InApplicationLimitedRegion();
+}
+
 size_t PacedSender::QueueSizePackets() const {
   CriticalSectionScoped cs(critsect_.get());
   return packets_->SizeInPackets();

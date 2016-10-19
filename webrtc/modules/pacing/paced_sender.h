@@ -120,6 +120,13 @@ class PacedSender : public Module, public RtpPacketSender {
   // packets in the queue, given the current size and bitrate, ignoring prio.
   virtual int64_t ExpectedQueueTimeMs() const;
 
+  // Application Limited Region refers to operating in a state where the
+  // traffic on network is limited due to application not having enough
+  // traffic to meet the current channel capacity.
+  //
+  // Returns true if network is currently application-limited.
+  bool InApplicationLimitedRegion() const;
+
   // Returns the average time since being enqueued, in milliseconds, for all
   // packets currently in the pacer queue, or 0 if queue is empty.
   virtual int64_t AverageQueueTimeMs();

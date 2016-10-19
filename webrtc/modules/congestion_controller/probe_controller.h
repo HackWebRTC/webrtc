@@ -53,6 +53,7 @@ class ProbeController {
   int64_t time_last_probing_initiated_ms_ GUARDED_BY(critsect_);
   int estimated_bitrate_bps_ GUARDED_BY(critsect_);
   int max_bitrate_bps_ GUARDED_BY(critsect_);
+  int64_t last_alr_probing_time_ GUARDED_BY(critsect_);
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(ProbeController);
 };
