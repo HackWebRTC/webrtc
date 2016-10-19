@@ -490,6 +490,7 @@ if (rtc_include_tests) {
       "video_coding/test/stream_generator.h",
       "video_coding/timing_unittest.cc",
       "video_coding/utility/frame_dropper_unittest.cc",
+      "video_coding/utility/h264_bitstream_parser_unittest.cc",
       "video_coding/utility/ivf_file_writer_unittest.cc",
       "video_coding/utility/moving_average_unittest.cc",
       "video_coding/utility/quality_scaler_unittest.cc",

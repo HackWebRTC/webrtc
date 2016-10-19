@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/common_video/h264/h264_bitstream_parser.h"
+#include "webrtc/modules/video_coding/utility/h264_bitstream_parser.h"
 
 #include <memory>
 #include <vector>
@@ -240,11 +240,9 @@ bool H264BitstreamParser::ParseNonParameterSetNalu(const uint8_t* source,
       }
     }
   }
-  if (pps_->entropy_coding_mode_flag &&
-      slice_type != H264::SliceType::kI && slice_type != H264::SliceType::kSi) {
-    // cabac_init_idc: ue(v)
-    RETURN_FALSE_ON_FAIL(slice_reader.ReadExponentialGolomb(&golomb_tmp));
-  }
+  // cabac not supported: entropy_coding_mode_flag == 0 asserted above.
+  // if (entropy_coding_mode_flag && slice_type != I && slice_type != SI)
+  //   cabac_init_idc
   int32_t last_slice_qp_delta;
   RETURN_FALSE_ON_FAIL(
       slice_reader.ReadSignedExponentialGolomb(&last_slice_qp_delta));
