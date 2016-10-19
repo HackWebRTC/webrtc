@@ -13,10 +13,10 @@
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_H264_H264_VIDEO_TOOLBOX_ENCODER_H_
 
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/common_video/h264/h264_bitstream_parser.h"
 #include "webrtc/common_video/include/bitrate_adjuster.h"
 #include "webrtc/common_video/rotation.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
-#include "webrtc/modules/video_coding/utility/h264_bitstream_parser.h"
 #include "webrtc/modules/video_coding/utility/quality_scaler.h"
 
 #if defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED)

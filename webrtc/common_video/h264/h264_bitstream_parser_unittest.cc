@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/utility/h264_bitstream_parser.h"
+#include "webrtc/common_video/h264/h264_bitstream_parser.h"
 
 #include "webrtc/test/gtest.h"
 

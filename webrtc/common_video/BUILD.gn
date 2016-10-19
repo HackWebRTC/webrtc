@@ -18,6 +18,8 @@ config("common_video_config") {
 rtc_static_library("common_video") {
   sources = [
     "bitrate_adjuster.cc",
+    "h264/h264_bitstream_parser.cc",
+    "h264/h264_bitstream_parser.h",
     "h264/h264_common.cc",
     "h264/h264_common.h",
     "h264/pps_parser.cc",
@@ -93,6 +95,7 @@ if (rtc_include_tests) {
 
     sources = [
       "bitrate_adjuster_unittest.cc",
+      "h264/h264_bitstream_parser_unittest.cc",
       "h264/pps_parser_unittest.cc",
       "h264/sps_parser_unittest.cc",
       "h264/sps_vui_rewriter_unittest.cc",

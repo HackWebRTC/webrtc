@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_UTILITY_H264_BITSTREAM_PARSER_H_
-#define WEBRTC_MODULES_VIDEO_CODING_UTILITY_H264_BITSTREAM_PARSER_H_
+#ifndef WEBRTC_COMMON_VIDEO_H264_H264_BITSTREAM_PARSER_H_
+#define WEBRTC_COMMON_VIDEO_H264_H264_BITSTREAM_PARSER_H_
 #include <stddef.h>
 #include <stdint.h>
 
@@ -56,4 +56,4 @@ class H264BitstreamParser {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_UTILITY_H264_BITSTREAM_PARSER_H_
+#endif  // WEBRTC_COMMON_VIDEO_H264_H264_BITSTREAM_PARSER_H_
