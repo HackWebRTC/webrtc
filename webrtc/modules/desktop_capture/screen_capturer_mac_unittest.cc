@@ -93,10 +93,10 @@ TEST_F(ScreenCapturerMacTest, Capture) {
   capturer_->Start(&callback_);
 
   // Check that we get an initial full-screen updated.
-  capturer_->Capture(DesktopRegion());
+  capturer_->CaptureFrame();
 
   // Check that subsequent dirty rects are propagated correctly.
-  capturer_->Capture(DesktopRegion());
+  capturer_->CaptureFrame();
 }
 
 }  // namespace webrtc

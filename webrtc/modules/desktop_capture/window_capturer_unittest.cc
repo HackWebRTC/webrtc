@@ -70,7 +70,7 @@ TEST_F(WindowCapturerTest, Capture) {
        it != windows.end(); ++it) {
     frame_.reset();
     if (capturer_->SelectWindow(it->id)) {
-      capturer_->Capture(DesktopRegion());
+      capturer_->CaptureFrame();
     }
 
     // If we failed to capture a window make sure it no longer exists.

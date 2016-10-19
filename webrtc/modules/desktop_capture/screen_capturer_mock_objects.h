@@ -19,15 +19,10 @@ namespace webrtc {
 
 class MockScreenCapturer : public ScreenCapturer {
  public:
-  MockScreenCapturer() {
-    ON_CALL(*this, Capture(testing::_))
-        .WillByDefault(testing::WithoutArgs(testing::Invoke(
-            this, &MockScreenCapturer::CaptureFrame)));
-  }
+  MockScreenCapturer() {}
   virtual ~MockScreenCapturer() {}
 
   MOCK_METHOD1(Start, void(Callback* callback));
-  MOCK_METHOD1(Capture, void(const DesktopRegion& region));
   MOCK_METHOD0(CaptureFrame, void(void));
   MOCK_METHOD1(GetScreenList, bool(ScreenList* screens));
   MOCK_METHOD1(SelectScreen, bool(ScreenId id));

@@ -79,7 +79,7 @@ void CroppingWindowCapturer::OnCaptureResult(
     std::unique_ptr<DesktopFrame> screen_frame) {
   if (!ShouldUseScreenCapturer()) {
     LOG(LS_INFO) << "Window no longer on top when ScreenCapturer finishes";
-    window_capturer_->Capture(DesktopRegion());
+    window_capturer_->CaptureFrame();
     return;
   }
 
