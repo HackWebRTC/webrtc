@@ -297,6 +297,7 @@ if (is_android && !build_with_chromium) {
       "android/java/src/org/webrtc/VideoRendererGui.java",
       "android/java/src/org/webrtc/VideoSource.java",
       "android/java/src/org/webrtc/VideoTrack.java",
+      "android/java/src/org/webrtc/YuvConverter.java",
     ]
 
     deps = [

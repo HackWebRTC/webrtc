@@ -23,7 +23,7 @@ import java.util.concurrent.CountDownLatch;
 public class VideoFileRenderer implements VideoRenderer.Callbacks {
   private static final String TAG = "VideoFileRenderer";
 
-  private final SurfaceTextureHelper.YuvConverter yuvConverter;
+  private final YuvConverter yuvConverter;
   private final HandlerThread renderThread;
   private final Object handlerLock = new Object();
   private final Handler renderThreadHandler;
@@ -38,7 +38,7 @@ public class VideoFileRenderer implements VideoRenderer.Callbacks {
     if ((outputFileWidth % 2) == 1 || (outputFileHeight % 2) == 1) {
       throw new IllegalArgumentException("Does not support uneven width or height");
     }
-    yuvConverter = new SurfaceTextureHelper.YuvConverter(sharedContext);
+    yuvConverter = new YuvConverter(sharedContext);
 
     this.outputFileWidth = outputFileWidth;
     this.outputFileHeight = outputFileHeight;

@@ -144,7 +144,7 @@ AndroidTextureBuffer::NativeToI420Buffer() {
   // class, and I420Buffer, to support our memory layout.
   std::unique_ptr<uint8_t, webrtc::AlignedFreeDeleter> yuv_data(
       static_cast<uint8_t*>(webrtc::AlignedMalloc(size, kBufferAlignment)));
-  // See SurfaceTextureHelper.java for the required layout.
+  // See YuvConverter.java for the required layout.
   uint8_t* y_data = yuv_data.get();
   uint8_t* u_data = y_data + height() * stride;
   uint8_t* v_data = u_data + stride/2;
