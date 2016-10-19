@@ -18,6 +18,7 @@
 #include "webrtc/call/transport_adapter.h"
 #include "webrtc/common_video/include/incoming_video_stream.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
 #include "webrtc/modules/video_coding/video_coding_impl.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video/receive_statistics_proxy.h"
@@ -58,6 +59,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   bool DeliverRtp(const uint8_t* packet,
                   size_t length,
                   const PacketTime& packet_time);
+
+  bool OnRecoveredPacket(const uint8_t* packet, size_t length);
 
   // webrtc::VideoReceiveStream implementation.
   void Start() override;

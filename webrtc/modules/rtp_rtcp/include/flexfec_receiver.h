@@ -18,7 +18,8 @@
 
 namespace webrtc {
 
-// Callback interface for packets recovered by FlexFEC.
+// Callback interface for packets recovered by FlexFEC. The implementation
+// should be able to demultiplex the recovered RTP packets based on SSRC.
 class RecoveredPacketReceiver {
  public:
   virtual bool OnRecoveredPacket(const uint8_t* packet, size_t length) = 0;
