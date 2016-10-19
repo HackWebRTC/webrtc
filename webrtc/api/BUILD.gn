@@ -283,6 +283,7 @@ if (is_android && !build_with_chromium) {
       "android/java/src/org/webrtc/RtpParameters.java",
       "android/java/src/org/webrtc/RtpReceiver.java",
       "android/java/src/org/webrtc/RtpSender.java",
+      "android/java/src/org/webrtc/ScreenCapturerAndroid.java",
       "android/java/src/org/webrtc/SdpObserver.java",
       "android/java/src/org/webrtc/SessionDescription.java",
       "android/java/src/org/webrtc/StatsObserver.java",
