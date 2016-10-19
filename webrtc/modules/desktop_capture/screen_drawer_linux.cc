@@ -8,6 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <semaphore.h>
+#include <string.h>
+
 #include <memory>
 
 #include "webrtc/base/checks.h"
@@ -18,6 +23,30 @@
 namespace webrtc {
 
 namespace {
+
+static constexpr char kSemaphoreName[] =
+    "/global-screen-drawer-linux-54fe5552-8047-11e6-a725-3f429a5b4fb4";
+
+class ScreenDrawerLockLinux : public ScreenDrawerLock {
+ public:
+  ScreenDrawerLockLinux();
+  ~ScreenDrawerLockLinux();
+
+ private:
+  sem_t* semaphore_;
+};
+
+ScreenDrawerLockLinux::ScreenDrawerLockLinux() {
+  semaphore_ =
+      sem_open(kSemaphoreName, O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO, 1);
+  sem_wait(semaphore_);
+}
+
+ScreenDrawerLockLinux::~ScreenDrawerLockLinux() {
+  sem_post(semaphore_);
+  sem_close(semaphore_);
+  // sem_unlink(kSemaphoreName);
+}
 
 // A ScreenDrawer implementation for X11.
 class ScreenDrawerLinux : public ScreenDrawer {
@@ -30,8 +59,13 @@ class ScreenDrawerLinux : public ScreenDrawer {
   void DrawRectangle(DesktopRect rect, RgbaColor color) override;
   void Clear() override;
   void WaitForPendingDraws() override;
+  bool MayDrawIncompleteShapes() override;
 
  private:
+  // Bring the window to the front, this can help to avoid the impact from other
+  // windows or shadow effect.
+  void BringToFront();
+
   rtc::scoped_refptr<SharedXDisplay> display_;
   int screen_num_;
   DesktopRect rect_;
@@ -80,6 +114,7 @@ ScreenDrawerLinux::ScreenDrawerLinux() {
                                 root_attributes.height);
   context_ = DefaultGC(display_->display(), screen_num_);
   colormap_ = DefaultColormap(display_->display(), screen_num_);
+  BringToFront();
   // Wait for window animations.
   SleepMs(200);
 }
@@ -121,7 +156,38 @@ void ScreenDrawerLinux::WaitForPendingDraws() {
   SleepMs(50);
 }
 
+bool ScreenDrawerLinux::MayDrawIncompleteShapes() {
+  return true;
+}
+
+void ScreenDrawerLinux::BringToFront() {
+  Atom state_above = XInternAtom(display_->display(), "_NET_WM_STATE_ABOVE", 1);
+  Atom window_state = XInternAtom(display_->display(), "_NET_WM_STATE", 1);
+  if (state_above == None || window_state == None) {
+    // Fallback to use XRaiseWindow, it's not reliable if two windows are both
+    // raise itself to the top.
+    XRaiseWindow(display_->display(), window_);
+    return;
+  }
+
+  XEvent event;
+  memset(&event, 0, sizeof(event));
+  event.type = ClientMessage;
+  event.xclient.window = window_;
+  event.xclient.message_type = window_state;
+  event.xclient.format = 32;
+  event.xclient.data.l[0] = 1;  // _NET_WM_STATE_ADD
+  event.xclient.data.l[1] = state_above;
+  XSendEvent(display_->display(), RootWindow(display_->display(), screen_num_),
+             False, SubstructureRedirectMask | SubstructureNotifyMask, &event);
+}
+
 }  // namespace
+
+// static
+std::unique_ptr<ScreenDrawerLock> ScreenDrawerLock::Create() {
+  return std::unique_ptr<ScreenDrawerLock>(new ScreenDrawerLockLinux());
+}
 
 // static
 std::unique_ptr<ScreenDrawer> ScreenDrawer::Create() {

@@ -8,20 +8,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// TODO(zijiehe): Implement ScreenDrawerMac
-
 #include "webrtc/modules/desktop_capture/screen_drawer.h"
 
 namespace webrtc {
 
-// static
-std::unique_ptr<ScreenDrawerLock> ScreenDrawerLock::Create() {
-  return nullptr;
+namespace {
+std::unique_ptr<ScreenDrawerLock> g_screen_drawer_lock;
+}  // namespace
+
+ScreenDrawerLock::ScreenDrawerLock() = default;
+ScreenDrawerLock::~ScreenDrawerLock() = default;
+
+ScreenDrawer::ScreenDrawer() {
+  g_screen_drawer_lock = ScreenDrawerLock::Create();
 }
 
-// static
-std::unique_ptr<ScreenDrawer> ScreenDrawer::Create() {
-  return nullptr;
+ScreenDrawer::~ScreenDrawer() {
+  g_screen_drawer_lock.reset();
 }
 
 }  // namespace webrtc

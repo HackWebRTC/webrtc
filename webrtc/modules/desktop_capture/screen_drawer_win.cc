@@ -19,6 +19,36 @@ namespace webrtc {
 
 namespace {
 
+static constexpr TCHAR kMutexName[] =
+    TEXT("Local\\ScreenDrawerWin-da834f82-8044-11e6-ac81-73dcdd1c1869");
+
+class ScreenDrawerLockWin : public ScreenDrawerLock {
+ public:
+  ScreenDrawerLockWin();
+  ~ScreenDrawerLockWin();
+
+ private:
+  HANDLE mutex_;
+};
+
+ScreenDrawerLockWin::ScreenDrawerLockWin() {
+  while (true) {
+    mutex_ = CreateMutex(NULL, FALSE, kMutexName);
+    if (GetLastError() != ERROR_ALREADY_EXISTS && mutex_ != NULL) {
+      break;
+    } else {
+      if (mutex_) {
+        CloseHandle(mutex_);
+      }
+      SleepMs(1000);
+    }
+  }
+}
+
+ScreenDrawerLockWin::~ScreenDrawerLockWin() {
+  CloseHandle(mutex_);
+}
+
 DesktopRect GetScreenRect() {
   HDC hdc = GetDC(NULL);
   DesktopRect rect = DesktopRect::MakeWH(GetDeviceCaps(hdc, HORZRES),
@@ -51,8 +81,13 @@ class ScreenDrawerWin : public ScreenDrawer {
   void DrawRectangle(DesktopRect rect, RgbaColor color) override;
   void Clear() override;
   void WaitForPendingDraws() override;
+  bool MayDrawIncompleteShapes() override;
 
  private:
+  // Bring the window to the front, this can help to avoid the impact from other
+  // windows or shadow effects.
+  void BringToFront();
+
   // Draw a line with |color|.
   void DrawLine(DesktopVector start, DesktopVector end, RgbaColor color);
 
@@ -76,6 +111,7 @@ ScreenDrawerWin::ScreenDrawerWin()
   // Always use stock pen (DC_PEN) and brush (DC_BRUSH).
   SelectObject(hdc_, GetStockObject(DC_PEN));
   SelectObject(hdc_, GetStockObject(DC_BRUSH));
+  BringToFront();
 }
 
 ScreenDrawerWin::~ScreenDrawerWin() {
@@ -117,6 +153,10 @@ void ScreenDrawerWin::WaitForPendingDraws() {
   SleepMs(50);
 }
 
+bool ScreenDrawerWin::MayDrawIncompleteShapes() {
+  return true;
+}
+
 void ScreenDrawerWin::DrawLine(DesktopVector start,
                                DesktopVector end,
                                RgbaColor color) {
@@ -133,7 +173,27 @@ void ScreenDrawerWin::DrawDot(DesktopVector vect, RgbaColor color) {
   SetPixel(hdc_, vect.x(), vect.y(), ColorToRef(color));
 }
 
+void ScreenDrawerWin::BringToFront() {
+  if (SUCCEEDED(SetWindowPos(
+      window_, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE))) {
+    return;
+  }
+
+  long ex_style = GetWindowLong(window_, GWL_EXSTYLE);
+  ex_style |= WS_EX_TOPMOST;
+  if (SetWindowLong(window_, GWL_EXSTYLE, ex_style) != 0) {
+    return;
+  }
+
+  BringWindowToTop(window_);
+}
+
 }  // namespace
+
+// static
+std::unique_ptr<ScreenDrawerLock> ScreenDrawerLock::Create() {
+  return std::unique_ptr<ScreenDrawerLock>(new ScreenDrawerLockWin());
+}
 
 // static
 std::unique_ptr<ScreenDrawer> ScreenDrawer::Create() {

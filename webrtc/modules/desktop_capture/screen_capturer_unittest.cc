@@ -51,12 +51,15 @@ ACTION_P(SaveUniquePtrArg, dest) {
 // Returns true if color in |rect| of |frame| is |color|.
 bool ArePixelsColoredBy(const DesktopFrame& frame,
                         DesktopRect rect,
-                        RgbaColor color) {
-  // updated_region() should cover the painted area.
-  DesktopRegion updated_region(frame.updated_region());
-  updated_region.IntersectWith(rect);
-  if (!updated_region.Equals(DesktopRegion(rect))) {
-    return false;
+                        RgbaColor color,
+                        bool may_partially_draw) {
+  if (!may_partially_draw) {
+    // updated_region() should cover the painted area.
+    DesktopRegion updated_region(frame.updated_region());
+    updated_region.IntersectWith(rect);
+    if (!updated_region.Equals(DesktopRegion(rect))) {
+      return false;
+    }
   }
 
   // Color in the |rect| should be |color|.
@@ -107,18 +110,28 @@ class ScreenCapturerTest : public testing::Test {
       capturer->Start(&callback_);
     }
 
-    // Draw a set of |kRectSize| by |kRectSize| rectangles at (|i|, |i|). One of
-    // (controlled by |c|) its primary colors is |i|, and the other two are
-    // 0xff. So we won't draw a white rectangle.
+    // Draw a set of |kRectSize| by |kRectSize| rectangles at (|i|, |i|), or
+    // |i| by |i| rectangles at (|kRectSize|, |kRectSize|). One of (controlled
+    // by |c|) its primary colors is |i|, and the other two are 0x7f. So we
+    // won't draw a black or white rectangle.
     for (int c = 0; c < 3; c++) {
+      // A fixed size rectangle.
       for (int i = 0; i < kTestArea - kRectSize; i += 16) {
         DesktopRect rect = DesktopRect::MakeXYWH(i, i, kRectSize, kRectSize);
         rect.Translate(drawer->DrawableRegion().top_left());
         RgbaColor color((c == 0 ? (i & 0xff) : 0x7f),
                         (c == 1 ? (i & 0xff) : 0x7f),
                         (c == 2 ? (i & 0xff) : 0x7f));
-        drawer->Clear();
-        drawer->DrawRectangle(rect, color);
+        TestCaptureOneFrame(capturers, drawer.get(), rect, color);
+      }
+
+      // A variable-size rectangle.
+      for (int i = 0; i < kTestArea - kRectSize; i += 16) {
+        DesktopRect rect = DesktopRect::MakeXYWH(kRectSize, kRectSize, i, i);
+        rect.Translate(drawer->DrawableRegion().top_left());
+        RgbaColor color((c == 0 ? (i & 0xff) : 0x7f),
+                        (c == 1 ? (i & 0xff) : 0x7f),
+                        (c == 2 ? (i & 0xff) : 0x7f));
         TestCaptureOneFrame(capturers, drawer.get(), rect, color);
       }
     }
@@ -166,9 +179,11 @@ class ScreenCapturerTest : public testing::Test {
                            ScreenDrawer* drawer,
                            DesktopRect rect,
                            RgbaColor color) {
-    size_t succeeded_capturers = 0;
     const int wait_capture_round = 600;
+    drawer->Clear();
+    size_t succeeded_capturers = 0;
     for (int i = 0; i < wait_capture_round; i++) {
+      drawer->DrawRectangle(rect, color);
       drawer->WaitForPendingDraws();
       for (size_t j = 0; j < capturers.size(); j++) {
         if (capturers[j] == nullptr) {
@@ -184,7 +199,8 @@ class ScreenCapturerTest : public testing::Test {
           return;
         }
 
-        if (ArePixelsColoredBy(*frame, rect, color)) {
+        if (ArePixelsColoredBy(
+            *frame, rect, color, drawer->MayDrawIncompleteShapes())) {
           capturers[j] = nullptr;
           succeeded_capturers++;
         }

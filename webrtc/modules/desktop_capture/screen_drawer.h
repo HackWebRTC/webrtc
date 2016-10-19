@@ -20,16 +20,31 @@
 
 namespace webrtc {
 
+// A cross-process lock to ensure only one ScreenDrawer can be used at a certain
+// time.
+class ScreenDrawerLock {
+ public:
+  virtual ~ScreenDrawerLock();
+
+  static std::unique_ptr<ScreenDrawerLock> Create();
+
+ protected:
+  ScreenDrawerLock();
+};
+
 // A set of basic platform dependent functions to draw various shapes on the
 // screen.
 class ScreenDrawer {
  public:
   // Creates a ScreenDrawer for the current platform, returns nullptr if no
   // ScreenDrawer implementation available.
+  // If the implementation cannot guarantee two ScreenDrawer instances won't
+  // impact each other, this function may block current thread until another
+  // ScreenDrawer has been destroyed.
   static std::unique_ptr<ScreenDrawer> Create();
 
-  ScreenDrawer() {}
-  virtual ~ScreenDrawer() {}
+  ScreenDrawer();
+  virtual ~ScreenDrawer();
 
   // Returns the region inside which DrawRectangle() function are expected to
   // work, in capturer coordinates (assuming ScreenCapturer::SelectScreen has
@@ -49,6 +64,12 @@ class ScreenDrawer {
   // ScreenCapturer should be able to capture the changes after this function
   // finish.
   virtual void WaitForPendingDraws() = 0;
+
+  // Returns true if incomplete shapes previous actions required may be drawn on
+  // the screen after a WaitForPendingDraws() call. i.e. Though the complete
+  // shapes will eventually be drawn on the screen, due to some OS limitations,
+  // these shapes may be partially appeared sometimes.
+  virtual bool MayDrawIncompleteShapes() = 0;
 };
 
 }  // namespace webrtc
