@@ -19,10 +19,6 @@ import android.util.Log;
 
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
-import org.webrtc.Camera1Enumerator;
-import org.webrtc.Camera2Enumerator;
-import org.webrtc.CameraEnumerationAndroid;
-import org.webrtc.CameraEnumerator;
 import org.webrtc.CameraVideoCapturer;
 import org.webrtc.DataChannel;
 import org.webrtc.EglBase;
@@ -41,9 +37,6 @@ import org.webrtc.StatsObserver;
 import org.webrtc.StatsReport;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoRenderer;
-import org.webrtc.VideoCapturerAndroid;
-import org.webrtc.CameraVideoCapturer;
-import org.webrtc.FileVideoCapturer;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 import org.webrtc.voiceengine.WebRtcAudioManager;
@@ -130,7 +123,6 @@ public class PeerConnectionClient {
   private boolean isInitiator;
   private SessionDescription localSdp; // either offer or answer SDP
   private MediaStream mediaStream;
-  private int numberOfCameras;
   private VideoCapturer videoCapturer;
   // enableVideo is set to true if video should be rendered and sent.
   private boolean renderVideo;
@@ -416,8 +408,7 @@ public class PeerConnectionClient {
     }
 
     // Check if there is a camera on device and disable video call if not.
-    numberOfCameras = CameraEnumerationAndroid.getDeviceCount();
-    if (numberOfCameras == 0) {
+    if (videoCapturer == null) {
       Log.w(TAG, "No camera on device. Switch to audio only call.");
       videoCallEnabled = false;
     }
@@ -964,9 +955,8 @@ public class PeerConnectionClient {
 
   private void switchCameraInternal() {
     if (videoCapturer instanceof CameraVideoCapturer) {
-      if (!videoCallEnabled || numberOfCameras < 2 || isError || videoCapturer == null) {
-        Log.e(TAG, "Failed to switch camera. Video: " + videoCallEnabled + ". Error : " + isError
-                + ". Number of cameras: " + numberOfCameras);
+      if (!videoCallEnabled || isError || videoCapturer == null) {
+        Log.e(TAG, "Failed to switch camera. Video: " + videoCallEnabled + ". Error : " + isError);
         return; // No video is sent or only one camera is available or error happened.
       }
       Log.d(TAG, "Switch camera");
