@@ -379,8 +379,9 @@ class Channel
   int32_t NeededFrequency(int32_t id) const override;
 
   // From AudioMixer::Source.
-  AudioMixer::Source::AudioFrameWithInfo GetAudioFrameWithInfo(
-      int sample_rate_hz);
+  AudioMixer::Source::AudioFrameInfo GetAudioFrameWithInfo(
+      int sample_rate_hz,
+      AudioFrame* audio_frame);
 
   // From FileCallback
   void PlayNotification(int32_t id, uint32_t durationMs) override;
@@ -475,7 +476,6 @@ class Channel
   AudioLevel _outputAudioLevel;
   bool _externalTransport;
   AudioFrame _audioFrame;
-  AudioFrame mix_audio_frame_;
   // Downsamples to the codec rate if necessary.
   PushResampler<int16_t> input_resampler_;
   std::unique_ptr<FilePlayer> input_file_player_;

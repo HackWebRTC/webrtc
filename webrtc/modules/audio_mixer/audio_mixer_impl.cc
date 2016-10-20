@@ -119,20 +119,22 @@ int32_t MixFromList(AudioFrame* mixed_audio,
 AudioMixerImpl::SourceStatusList::const_iterator FindSourceInList(
     AudioMixerImpl::Source const* audio_source,
     AudioMixerImpl::SourceStatusList const* audio_source_list) {
-  return std::find_if(audio_source_list->begin(), audio_source_list->end(),
-                      [audio_source](const AudioMixerImpl::SourceStatus& p) {
-                        return p.audio_source == audio_source;
-                      });
+  return std::find_if(
+      audio_source_list->begin(), audio_source_list->end(),
+      [audio_source](const std::unique_ptr<AudioMixerImpl::SourceStatus>& p) {
+        return p->audio_source == audio_source;
+      });
 }
 
 // TODO(aleloi): remove non-const version when WEBRTC only supports modern STL.
 AudioMixerImpl::SourceStatusList::iterator FindSourceInList(
     AudioMixerImpl::Source const* audio_source,
     AudioMixerImpl::SourceStatusList* audio_source_list) {
-  return std::find_if(audio_source_list->begin(), audio_source_list->end(),
-                      [audio_source](const AudioMixerImpl::SourceStatus& p) {
-                        return p.audio_source == audio_source;
-                      });
+  return std::find_if(
+      audio_source_list->begin(), audio_source_list->end(),
+      [audio_source](const std::unique_ptr<AudioMixerImpl::SourceStatus>& p) {
+        return p->audio_source == audio_source;
+      });
 }
 
 }  // namespace
@@ -244,7 +246,7 @@ bool AudioMixerImpl::AddSource(Source* audio_source) {
   RTC_DCHECK(FindSourceInList(audio_source, &audio_source_list_) ==
              audio_source_list_.end())
       << "Source already added to mixer";
-  audio_source_list_.emplace_back(audio_source, false, 0);
+  audio_source_list_.emplace_back(new SourceStatus(audio_source, false, 0));
   return true;
 }
 
@@ -263,21 +265,18 @@ AudioFrameList AudioMixerImpl::GetAudioFromSources() {
   std::vector<SourceFrame> audio_source_mixing_data_list;
   std::vector<SourceFrame> ramp_list;
 
-  // Get audio source audio and put it in the struct vector.
+  // Get audio from the audio sources and put it in the SourceFrame vector.
   for (auto& source_and_status : audio_source_list_) {
-    auto audio_frame_with_info =
-        source_and_status.audio_source->GetAudioFrameWithInfo(
-            static_cast<int>(OutputFrequency()));
-
-    const auto audio_frame_info = audio_frame_with_info.audio_frame_info;
-    AudioFrame* audio_source_audio_frame = audio_frame_with_info.audio_frame;
+    const auto audio_frame_info =
+        source_and_status->audio_source->GetAudioFrameWithInfo(
+            OutputFrequency(), &source_and_status->audio_frame);
 
     if (audio_frame_info == Source::AudioFrameInfo::kError) {
       LOG_F(LS_WARNING) << "failed to GetAudioFrameWithInfo() from source";
       continue;
     }
     audio_source_mixing_data_list.emplace_back(
-        &source_and_status, audio_source_audio_frame,
+        source_and_status.get(), &source_and_status->audio_frame,
         audio_frame_info == Source::AudioFrameInfo::kMuted);
   }
 
@@ -344,10 +343,9 @@ bool AudioMixerImpl::GetAudioSourceMixabilityStatusForTest(
   RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
   rtc::CritScope lock(&crit_);
 
-  const auto non_anonymous_iter =
-      FindSourceInList(audio_source, &audio_source_list_);
-  if (non_anonymous_iter != audio_source_list_.end()) {
-    return non_anonymous_iter->is_mixed;
+  const auto iter = FindSourceInList(audio_source, &audio_source_list_);
+  if (iter != audio_source_list_.end()) {
+    return (*iter)->is_mixed;
   }
 
   LOG(LS_ERROR) << "Audio source unknown";

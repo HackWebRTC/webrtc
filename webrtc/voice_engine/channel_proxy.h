@@ -93,8 +93,9 @@ class ChannelProxy {
 
   virtual void SetRtcEventLog(RtcEventLog* event_log);
 
-  virtual AudioMixer::Source::AudioFrameWithInfo GetAudioFrameWithInfo(
-      int sample_rate_hz);
+  virtual AudioMixer::Source::AudioFrameInfo GetAudioFrameWithInfo(
+      int sample_rate_hz,
+      AudioFrame* audio_frame);
 
  private:
   Channel* channel() const;

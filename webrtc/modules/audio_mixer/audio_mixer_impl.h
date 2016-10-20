@@ -35,9 +35,12 @@ class AudioMixerImpl : public AudioMixer {
     Source* audio_source = nullptr;
     bool is_mixed = false;
     float gain = 0.0f;
+
+    // A frame that will be passed to audio_source->GetAudioFrameWithInfo.
+    AudioFrame audio_frame;
   };
 
-  typedef std::vector<SourceStatus> SourceStatusList;
+  using SourceStatusList = std::vector<std::unique_ptr<SourceStatus>>;
 
   // AudioProcessing only accepts 10 ms frames.
   static const int kFrameDurationInMs = 10;

@@ -35,32 +35,17 @@ class AudioMixer : public rtc::RefCountInterface {
       kError,   // The audio_frame will not be used.
     };
 
-    struct AudioFrameWithInfo {
-      AudioFrame* audio_frame;
-      AudioFrameInfo audio_frame_info;
-    };
-
-    // The implementation of GetAudioFrameWithInfo should update
-    // audio_frame with new audio every time it's called. Implementing
-    // classes are allowed to return the same AudioFrame pointer on
-    // different calls. The pointer must stay valid until the next
-    // mixing call or until this audio source is disconnected from the
-    // mixer. The mixer may modify the contents of the passed
-    // AudioFrame pointer at any time until the next call to
-    // GetAudioFrameWithInfo, or until the source is removed from the
-    // mixer.
-    virtual AudioFrameWithInfo GetAudioFrameWithInfo(int sample_rate_hz) = 0;
+    // Overwrites |audio_frame|. The data_ field is overwritten with
+    // 10 ms of new audio (either 1 or 2 interleaved channels) at
+    // |sample_rate_hz|. All fields in |audio_frame| must be updated.
+    virtual AudioFrameInfo GetAudioFrameWithInfo(int sample_rate_hz,
+                                                 AudioFrame* audio_frame) = 0;
 
     // A way for a mixer implementation to distinguish participants.
     virtual int Ssrc() = 0;
 
-   protected:
     virtual ~Source() {}
   };
-
-  // Since the mixer is reference counted, the destructor may be
-  // called from any thread.
-  ~AudioMixer() override {}
 
   // Returns true if adding/removing was successful. A source is never
   // added twice and removal is never attempted if a source has not
@@ -70,12 +55,18 @@ class AudioMixer : public rtc::RefCountInterface {
   virtual bool RemoveSource(Source* audio_source) = 0;
 
   // Performs mixing by asking registered audio sources for audio. The
-  // mixed result is placed in the provided AudioFrame. Will only be
-  // called from a single thread. The rate and channels arguments
-  // specify the rate and number of channels of the mix result.
+  // mixed result is placed in the provided AudioFrame. This method
+  // will only be called from a single thread. The rate and channels
+  // arguments specify the rate and number of channels of the mix
+  // result. All fields in |audio_frame_for_mixing| must be updated.
   virtual void Mix(int sample_rate_hz,
                    size_t number_of_channels,
                    AudioFrame* audio_frame_for_mixing) = 0;
+
+ protected:
+  // Since the mixer is reference counted, the destructor may be
+  // called from any thread.
+  ~AudioMixer() override {}
 };
 }  // namespace webrtc
 

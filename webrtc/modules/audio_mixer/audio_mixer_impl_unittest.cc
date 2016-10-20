@@ -53,12 +53,13 @@ class MockMixerAudioSource : public AudioMixer::Source {
  public:
   MockMixerAudioSource()
       : fake_audio_frame_info_(AudioMixer::Source::AudioFrameInfo::kNormal) {
-    ON_CALL(*this, GetAudioFrameWithInfo(_))
+    ON_CALL(*this, GetAudioFrameWithInfo(_, _))
         .WillByDefault(
             Invoke(this, &MockMixerAudioSource::FakeAudioFrameWithInfo));
   }
 
-  MOCK_METHOD1(GetAudioFrameWithInfo, AudioFrameWithInfo(int sample_rate_hz));
+  MOCK_METHOD2(GetAudioFrameWithInfo,
+               AudioFrameInfo(int sample_rate_hz, AudioFrame* audio_frame));
 
   MOCK_METHOD0(Ssrc, int());
 
@@ -69,14 +70,12 @@ class MockMixerAudioSource : public AudioMixer::Source {
   }
 
  private:
-  AudioFrame fake_frame_, fake_output_frame_;
+  AudioFrame fake_frame_;
   AudioFrameInfo fake_audio_frame_info_;
-  AudioFrameWithInfo FakeAudioFrameWithInfo(int sample_rate_hz) {
-    fake_output_frame_.CopyFrom(fake_frame_);
-    return {
-        &fake_output_frame_,  // audio_frame_pointer
-        fake_info(),          // audio_frame_info
-    };
+  AudioFrameInfo FakeAudioFrameWithInfo(int sample_rate_hz,
+                                        AudioFrame* audio_frame) {
+    audio_frame->CopyFrom(fake_frame_);
+    return fake_info();
   }
 };
 
@@ -100,7 +99,7 @@ void MixAndCompare(
 
   for (int i = 0; i < num_audio_sources; i++) {
     EXPECT_TRUE(mixer->AddSource(&participants[i]));
-    EXPECT_CALL(participants[i], GetAudioFrameWithInfo(kDefaultSampleRateHz))
+    EXPECT_CALL(participants[i], GetAudioFrameWithInfo(kDefaultSampleRateHz, _))
         .Times(Exactly(1));
   }
 
@@ -129,7 +128,7 @@ TEST(AudioMixer, LargestEnergyVadActiveMixed) {
     participants[i].fake_frame()->data_[80] = i;
 
     EXPECT_TRUE(mixer->AddSource(&participants[i]));
-    EXPECT_CALL(participants[i], GetAudioFrameWithInfo(_)).Times(Exactly(1));
+    EXPECT_CALL(participants[i], GetAudioFrameWithInfo(_, _)).Times(Exactly(1));
   }
 
   // Last participant gives audio frame with passive VAD, although it has the
@@ -171,7 +170,7 @@ TEST(AudioMixer, FrameNotModifiedForSingleParticipant) {
   }
 
   EXPECT_TRUE(mixer->AddSource(&participant));
-  EXPECT_CALL(participant, GetAudioFrameWithInfo(_)).Times(Exactly(2));
+  EXPECT_CALL(participant, GetAudioFrameWithInfo(_, _)).Times(Exactly(2));
 
   AudioFrame audio_frame;
   // Two mix iteration to compare after the ramp-up step.
@@ -193,7 +192,7 @@ TEST(AudioMixer, ParticipantSampleRate) {
 
   EXPECT_TRUE(mixer->AddSource(&participant));
   for (auto frequency : {8000, 16000, 32000, 48000}) {
-    EXPECT_CALL(participant, GetAudioFrameWithInfo(frequency))
+    EXPECT_CALL(participant, GetAudioFrameWithInfo(frequency, _))
         .Times(Exactly(1));
     participant.fake_frame()->sample_rate_hz_ = frequency;
     participant.fake_frame()->samples_per_channel_ = frequency / 100;
@@ -210,7 +209,7 @@ TEST(AudioMixer, ParticipantNumberOfChannels) {
 
   EXPECT_TRUE(mixer->AddSource(&participant));
   for (size_t number_of_channels : {1, 2}) {
-    EXPECT_CALL(participant, GetAudioFrameWithInfo(kDefaultSampleRateHz))
+    EXPECT_CALL(participant, GetAudioFrameWithInfo(kDefaultSampleRateHz, _))
         .Times(Exactly(1));
     mixer->Mix(kDefaultSampleRateHz, number_of_channels, &frame_for_mixing);
     EXPECT_EQ(number_of_channels, frame_for_mixing.num_channels_);
@@ -236,7 +235,7 @@ TEST(AudioMixer, RampedOutSourcesShouldNotBeMarkedMixed) {
   // Add all participants but the loudest for mixing.
   for (int i = 0; i < kAudioSources - 1; i++) {
     EXPECT_TRUE(mixer->AddSource(&participants[i]));
-    EXPECT_CALL(participants[i], GetAudioFrameWithInfo(kDefaultSampleRateHz))
+    EXPECT_CALL(participants[i], GetAudioFrameWithInfo(kDefaultSampleRateHz, _))
         .Times(Exactly(1));
   }
 
@@ -252,7 +251,7 @@ TEST(AudioMixer, RampedOutSourcesShouldNotBeMarkedMixed) {
   // Add new participant with higher energy.
   EXPECT_TRUE(mixer->AddSource(&participants[kAudioSources - 1]));
   for (int i = 0; i < kAudioSources; i++) {
-    EXPECT_CALL(participants[i], GetAudioFrameWithInfo(kDefaultSampleRateHz))
+    EXPECT_CALL(participants[i], GetAudioFrameWithInfo(kDefaultSampleRateHz, _))
         .Times(Exactly(1));
   }
 
@@ -287,7 +286,7 @@ TEST(AudioMixer, ConstructFromOtherThread) {
       RTC_FROM_HERE,
       rtc::Bind(&AudioMixer::AddSource, mixer.get(), &participant)));
 
-  EXPECT_CALL(participant, GetAudioFrameWithInfo(kDefaultSampleRateHz))
+  EXPECT_CALL(participant, GetAudioFrameWithInfo(kDefaultSampleRateHz, _))
       .Times(Exactly(1));
 
   // Do one mixer iteration

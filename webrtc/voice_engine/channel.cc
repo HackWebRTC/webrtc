@@ -712,11 +712,12 @@ MixerParticipant::AudioFrameInfo Channel::GetAudioFrameWithMuted(
                : MixerParticipant::AudioFrameInfo::kNormal;
 }
 
-AudioMixer::Source::AudioFrameWithInfo Channel::GetAudioFrameWithInfo(
-    int sample_rate_hz) {
-  mix_audio_frame_.sample_rate_hz_ = sample_rate_hz;
+AudioMixer::Source::AudioFrameInfo Channel::GetAudioFrameWithInfo(
+    int sample_rate_hz,
+    AudioFrame* audio_frame) {
+  audio_frame->sample_rate_hz_ = sample_rate_hz;
 
-  const auto frame_info = GetAudioFrameWithMuted(-1, &mix_audio_frame_);
+  const auto frame_info = GetAudioFrameWithMuted(-1, audio_frame);
 
   using FrameInfo = AudioMixer::Source::AudioFrameInfo;
   FrameInfo new_audio_frame_info = FrameInfo::kError;
@@ -731,7 +732,7 @@ AudioMixer::Source::AudioFrameWithInfo Channel::GetAudioFrameWithInfo(
       new_audio_frame_info = FrameInfo::kError;
       break;
   }
-  return {&mix_audio_frame_, new_audio_frame_info};
+  return new_audio_frame_info;
 }
 
 int32_t Channel::NeededFrequency(int32_t id) const {

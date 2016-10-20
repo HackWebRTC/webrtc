@@ -272,9 +272,10 @@ bool AudioReceiveStream::DeliverRtp(const uint8_t* packet,
   return channel_proxy_->ReceivedRTPPacket(packet, length, packet_time);
 }
 
-AudioMixer::Source::AudioFrameWithInfo
-AudioReceiveStream::GetAudioFrameWithInfo(int sample_rate_hz) {
-  return channel_proxy_->GetAudioFrameWithInfo(sample_rate_hz);
+AudioMixer::Source::AudioFrameInfo AudioReceiveStream::GetAudioFrameWithInfo(
+    int sample_rate_hz,
+    AudioFrame* audio_frame) {
+  return channel_proxy_->GetAudioFrameWithInfo(sample_rate_hz, audio_frame);
 }
 
 int AudioReceiveStream::Ssrc() {
