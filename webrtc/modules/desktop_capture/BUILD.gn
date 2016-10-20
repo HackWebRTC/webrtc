@@ -21,6 +21,12 @@ rtc_static_library("primitives") {
     "desktop_geometry.h",
     "desktop_region.cc",
     "desktop_region.h",
+    "shared_desktop_frame.cc",
+    "shared_desktop_frame.h",
+  ]
+
+  deps = [
+    "../../base:rtc_base",  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.
   ]
 }
 
@@ -59,8 +65,6 @@ rtc_static_library("desktop_capture") {
     "screen_capturer_helper.h",
     "screen_capturer_mac.mm",
     "screen_capturer_win.cc",
-    "shared_desktop_frame.cc",
-    "shared_desktop_frame.h",
     "shared_memory.cc",
     "shared_memory.h",
     "win/cursor.cc",

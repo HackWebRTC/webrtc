@@ -22,7 +22,7 @@ namespace webrtc {
 // sharing the same buffer.
 class SharedDesktopFrame : public DesktopFrame {
  public:
-  virtual ~SharedDesktopFrame();
+  ~SharedDesktopFrame() override;
 
   static std::unique_ptr<SharedDesktopFrame> Wrap(
       std::unique_ptr<DesktopFrame> desktop_frame);
