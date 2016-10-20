@@ -16,13 +16,10 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
 /**
- * Class for converting OES textures to a YUV ByteBuffer.
+ * Class for converting OES textures to a YUV ByteBuffer. It should be constructed on a thread with
+ * an active EGL context, and only be used from that thread.
  */
 class YuvConverter {
-  private final EglBase eglBase;
-  private final GlShader shader;
-  private boolean released = false;
-
   // Vertex coordinates in Normalized Device Coordinates, i.e.
   // (-1, -1) is bottom-left and (1, 1) is top-right.
   private static final FloatBuffer DEVICE_RECTANGLE = GlUtil.createFloatBuffer(new float[] {
@@ -83,14 +80,40 @@ class YuvConverter {
       + "}\n";
   // clang-format on
 
-  private int texMatrixLoc;
-  private int xUnitLoc;
-  private int coeffsLoc;
+  private final int frameBufferId;
+  private final int frameTextureId;
+  private final GlShader shader;
+  private final int texMatrixLoc;
+  private final int xUnitLoc;
+  private final int coeffsLoc;
+  private final ThreadUtils.ThreadChecker threadChecker = new ThreadUtils.ThreadChecker();
+  private int frameBufferWidth;
+  private int frameBufferHeight;
+  private boolean released = false;
 
-  public YuvConverter(EglBase.Context sharedContext) {
-    eglBase = EglBase.create(sharedContext, EglBase.CONFIG_PIXEL_RGBA_BUFFER);
-    eglBase.createDummyPbufferSurface();
-    eglBase.makeCurrent();
+  /**
+   * This class should be constructed on a thread that has an active EGL context.
+   */
+  public YuvConverter() {
+    threadChecker.checkIsOnValidThread();
+    frameTextureId = GlUtil.generateTexture(GLES20.GL_TEXTURE_2D);
+    this.frameBufferWidth = 0;
+    this.frameBufferHeight = 0;
+
+    // Create framebuffer object and bind it.
+    final int frameBuffers[] = new int[1];
+    GLES20.glGenFramebuffers(1, frameBuffers, 0);
+    frameBufferId = frameBuffers[0];
+    GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, frameBufferId);
+    GlUtil.checkNoGLES2Error("Generate framebuffer");
+
+    // Attach the texture to the framebuffer as color attachment.
+    GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
+        GLES20.GL_TEXTURE_2D, frameTextureId, 0);
+    GlUtil.checkNoGLES2Error("Attach texture to framebuffer");
+
+    // Restore normal framebuffer.
+    GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
 
     shader = new GlShader(VERTEX_SHADER, FRAGMENT_SHADER);
     shader.useProgram();
@@ -104,11 +127,11 @@ class YuvConverter {
     // If the width is not a multiple of 4 pixels, the texture
     // will be scaled up slightly and clipped at the right border.
     shader.setVertexAttribArray("in_tc", 2, TEXTURE_RECTANGLE);
-    eglBase.detachCurrent();
   }
 
-  synchronized public void convert(
-      ByteBuffer buf, int width, int height, int stride, int textureId, float[] transformMatrix) {
+  public void convert(ByteBuffer buf, int width, int height, int stride, int srcTextureId,
+      float[] transformMatrix) {
+    threadChecker.checkIsOnValidThread();
     if (released) {
       throw new IllegalStateException("YuvConverter.convert called on released object");
     }
@@ -163,20 +186,28 @@ class YuvConverter {
     transformMatrix =
         RendererCommon.multiplyMatrices(transformMatrix, RendererCommon.verticalFlipMatrix());
 
-    // Create new pBuffferSurface with the correct size if needed.
-    if (eglBase.hasSurface()) {
-      if (eglBase.surfaceWidth() != stride / 4 || eglBase.surfaceHeight() != total_height) {
-        eglBase.releaseSurface();
-        eglBase.createPbufferSurface(stride / 4, total_height);
+    // Bind our framebuffer.
+    GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, frameBufferId);
+    GlUtil.checkNoGLES2Error("glBindFramebuffer");
+
+    if (frameBufferWidth != stride / 4 || frameBufferHeight != total_height) {
+      frameBufferWidth = stride / 4;
+      frameBufferHeight = total_height;
+      // (Re)-Allocate texture.
+      GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+      GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, frameTextureId);
+      GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, frameBufferWidth,
+          frameBufferHeight, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
+
+      // Check that the framebuffer is in a good state.
+      final int status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
+      if (status != GLES20.GL_FRAMEBUFFER_COMPLETE) {
+        throw new IllegalStateException("Framebuffer not complete, status: " + status);
       }
-    } else {
-      eglBase.createPbufferSurface(stride / 4, total_height);
     }
 
-    eglBase.makeCurrent();
-
     GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-    GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId);
+    GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, srcTextureId);
     GLES20.glUniformMatrix4fv(texMatrixLoc, 1, false, transformMatrix, 0);
 
     // Draw Y
@@ -203,20 +234,26 @@ class YuvConverter {
     GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
     GLES20.glReadPixels(
-        0, 0, stride / 4, total_height, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buf);
+        0, 0, frameBufferWidth, frameBufferHeight, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buf);
 
     GlUtil.checkNoGLES2Error("YuvConverter.convert");
+
+    // Restore normal framebuffer.
+    GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+    GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
 
     // Unbind texture. Reportedly needed on some devices to get
     // the texture updated from the camera.
     GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
-    eglBase.detachCurrent();
   }
 
-  synchronized public void release() {
+  public void release() {
+    threadChecker.checkIsOnValidThread();
     released = true;
-    eglBase.makeCurrent();
     shader.release();
-    eglBase.release();
+    GLES20.glDeleteTextures(1, new int[] {frameTextureId}, 0);
+    GLES20.glDeleteFramebuffers(1, new int[] {frameBufferId}, 0);
+    frameBufferWidth = 0;
+    frameBufferHeight = 0;
   }
 }

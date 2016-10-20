@@ -134,18 +134,6 @@ class SurfaceTextureHelper {
     });
   }
 
-  private YuvConverter getYuvConverter() {
-    // yuvConverter is assigned once
-    if (yuvConverter != null)
-      return yuvConverter;
-
-    synchronized (this) {
-      if (yuvConverter == null)
-        yuvConverter = new YuvConverter(eglBase.getEglBaseContext());
-      return yuvConverter;
-    }
-  }
-
   /**
    * Start to stream textures to the given |listener|. If you need to change listener, you need to
    * call stopListening() first.
@@ -231,12 +219,21 @@ class SurfaceTextureHelper {
     });
   }
 
-  public void textureToYUV(
-      ByteBuffer buf, int width, int height, int stride, int textureId, float[] transformMatrix) {
-    if (textureId != oesTextureId)
+  public void textureToYUV(final ByteBuffer buf, final int width, final int height,
+      final int stride, final int textureId, final float[] transformMatrix) {
+    if (textureId != oesTextureId) {
       throw new IllegalStateException("textureToByteBuffer called with unexpected textureId");
+    }
 
-    getYuvConverter().convert(buf, width, height, stride, textureId, transformMatrix);
+    ThreadUtils.invokeAtFrontUninterruptibly(handler, new Runnable() {
+      @Override
+      public void run() {
+        if (yuvConverter == null) {
+          yuvConverter = new YuvConverter();
+        }
+        yuvConverter.convert(buf, width, height, stride, textureId, transformMatrix);
+      }
+    });
   }
 
   private void updateTexImage() {
@@ -275,9 +272,8 @@ class SurfaceTextureHelper {
     if (isTextureInUse || !isQuitting) {
       throw new IllegalStateException("Unexpected release.");
     }
-    synchronized (this) {
-      if (yuvConverter != null)
-        yuvConverter.release();
+    if (yuvConverter != null) {
+      yuvConverter.release();
     }
     GLES20.glDeleteTextures(1, new int[] {oesTextureId}, 0);
     surfaceTexture.release();

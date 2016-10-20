@@ -15,7 +15,6 @@ import android.os.HandlerThread;
 import java.nio.ByteBuffer;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * Can be used to save the video frames to file.
@@ -23,7 +22,6 @@ import java.util.concurrent.CountDownLatch;
 public class VideoFileRenderer implements VideoRenderer.Callbacks {
   private static final String TAG = "VideoFileRenderer";
 
-  private final YuvConverter yuvConverter;
   private final HandlerThread renderThread;
   private final Object handlerLock = new Object();
   private final Handler renderThreadHandler;
@@ -32,13 +30,14 @@ public class VideoFileRenderer implements VideoRenderer.Callbacks {
   private final int outputFileHeight;
   private final int outputFrameSize;
   private final ByteBuffer outputFrameBuffer;
+  private EglBase eglBase;
+  private YuvConverter yuvConverter;
 
   public VideoFileRenderer(String outputFile, int outputFileWidth, int outputFileHeight,
-      EglBase.Context sharedContext) throws IOException {
+      final EglBase.Context sharedContext) throws IOException {
     if ((outputFileWidth % 2) == 1 || (outputFileHeight % 2) == 1) {
       throw new IllegalArgumentException("Does not support uneven width or height");
     }
-    yuvConverter = new YuvConverter(sharedContext);
 
     this.outputFileWidth = outputFileWidth;
     this.outputFileHeight = outputFileHeight;
@@ -54,6 +53,16 @@ public class VideoFileRenderer implements VideoRenderer.Callbacks {
     renderThread = new HandlerThread(TAG);
     renderThread.start();
     renderThreadHandler = new Handler(renderThread.getLooper());
+
+    ThreadUtils.invokeAtFrontUninterruptibly(renderThreadHandler, new Runnable() {
+      @Override
+      public void run() {
+        eglBase = EglBase.create(sharedContext, EglBase.CONFIG_PIXEL_BUFFER);
+        eglBase.createDummyPbufferSurface();
+        eglBase.makeCurrent();
+        yuvConverter = new YuvConverter();
+      }
+    });
   }
 
   @Override
@@ -113,8 +122,7 @@ public class VideoFileRenderer implements VideoRenderer.Callbacks {
   }
 
   public void release() {
-    final CountDownLatch cleanupBarrier = new CountDownLatch(1);
-    renderThreadHandler.post(new Runnable() {
+    ThreadUtils.invokeAtFrontUninterruptibly(renderThreadHandler, new Runnable() {
       @Override
       public void run() {
         try {
@@ -122,11 +130,11 @@ public class VideoFileRenderer implements VideoRenderer.Callbacks {
         } catch (IOException e) {
           Logging.d(TAG, "Error closing output video file");
         }
-        cleanupBarrier.countDown();
+        yuvConverter.release();
+        eglBase.release();
+        renderThread.quit();
       }
     });
-    ThreadUtils.awaitUninterruptibly(cleanupBarrier);
-    renderThread.quit();
   }
 
   public static native void nativeI420Scale(ByteBuffer srcY, int strideY, ByteBuffer srcU,
