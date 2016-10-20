@@ -17,17 +17,17 @@
 
 #import "ARDAppClient.h"
 
-static NSUInteger const kContentWidth = 1280;
-static NSUInteger const kContentHeight = 720;
-static NSUInteger const kRoomFieldWidth = 80;
-static NSUInteger const kLogViewHeight = 280;
-static NSUInteger const kPreviewWidth = 490;
+static NSUInteger const kContentWidth = 900;
+static NSUInteger const kRoomFieldWidth = 200;
+static NSUInteger const kActionItemHeight = 30;
+static NSUInteger const kBottomViewHeight = 200;
 
 @class APPRTCMainView;
 @protocol APPRTCMainViewDelegate
 
 - (void)appRTCMainView:(APPRTCMainView*)mainView
-        didEnterRoomId:(NSString*)roomId;
+        didEnterRoomId:(NSString*)roomId
+              loopback:(BOOL)isLoopback;
 
 @end
 
@@ -45,7 +45,9 @@ static NSUInteger const kPreviewWidth = 490;
 @end
 @implementation APPRTCMainView  {
   NSScrollView* _scrollView;
-  NSTextField* _roomLabel;
+  NSView* _actionItemsView;
+  NSButton* _connectButton;
+  NSButton* _loopbackButton;
   NSTextField* _roomField;
   NSTextView* _logView;
   CGSize _localVideoSize;
@@ -56,9 +58,15 @@ static NSUInteger const kPreviewWidth = 490;
 @synthesize localVideoView = _localVideoView;
 @synthesize remoteVideoView = _remoteVideoView;
 
-+ (BOOL)requiresConstraintBasedLayout {
-  return YES;
+
+- (void)displayLogMessage:(NSString *)message {
+  _logView.string =
+      [NSString stringWithFormat:@"%@%@\n", _logView.string, message];
+  NSRange range = NSMakeRange(_logView.string.length, 0);
+  [_logView scrollRangeToVisible:range];
 }
+
+#pragma mark - Private
 
 - (instancetype)initWithFrame:(NSRect)frame {
   if (self = [super initWithFrame:frame]) {
@@ -67,71 +75,103 @@ static NSUInteger const kPreviewWidth = 490;
   return self;
 }
 
++ (BOOL)requiresConstraintBasedLayout {
+  return YES;
+}
+
 - (void)updateConstraints {
   NSParameterAssert(
-      _roomField != nil && _scrollView != nil && _remoteVideoView != nil);
+      _roomField != nil &&
+      _scrollView != nil &&
+      _remoteVideoView != nil &&
+      _localVideoView != nil &&
+      _actionItemsView!= nil &&
+      _connectButton != nil &&
+      _loopbackButton != nil);
+
   [self removeConstraints:[self constraints]];
   NSDictionary* viewsDictionary =
-      NSDictionaryOfVariableBindings(_roomLabel,
-                                     _roomField,
+      NSDictionaryOfVariableBindings(_roomField,
                                      _scrollView,
                                      _remoteVideoView,
-                                     _localVideoView);
+                                     _localVideoView,
+                                     _actionItemsView,
+                                     _connectButton,
+                                     _loopbackButton);
 
   NSSize remoteViewSize = [self remoteVideoViewSize];
   NSDictionary* metrics = @{
-    @"kLogViewHeight" : @(kLogViewHeight),
-    @"kPreviewWidth" : @(kPreviewWidth),
-    @"kRoomFieldWidth" : @(kRoomFieldWidth),
     @"remoteViewWidth" : @(remoteViewSize.width),
     @"remoteViewHeight" : @(remoteViewSize.height),
-    @"localViewHeight" : @(remoteViewSize.height),
-    @"scrollViewWidth" : @(kContentWidth - kPreviewWidth),
+    @"kBottomViewHeight" : @(kBottomViewHeight),
+    @"localViewHeight" : @(remoteViewSize.height / 3),
+    @"localViewWidth" : @(remoteViewSize.width / 3),
+    @"kRoomFieldWidth" : @(kRoomFieldWidth),
+    @"kActionItemHeight" : @(kActionItemHeight)
   };
   // Declare this separately to avoid compiler warning about splitting string
   // within an NSArray expression.
-  NSString* verticalConstraint =
-      @"V:|-[_roomLabel]-[_roomField]-[_scrollView(kLogViewHeight)]"
-       "-[_remoteVideoView(remoteViewHeight)]-|";
+  NSString* verticalConstraintLeft =
+      @"V:|-[_remoteVideoView(remoteViewHeight)]-[_scrollView(kBottomViewHeight)]-|";
+  NSString* verticalConstraintRight =
+      @"V:|-[_remoteVideoView(remoteViewHeight)]-[_actionItemsView(kBottomViewHeight)]-|";
   NSArray* constraintFormats = @[
-      verticalConstraint,
-      @"V:[_localVideoView]-[_remoteVideoView]",
-      @"V:[_localVideoView(kLogViewHeight)]",
-      @"|-[_roomLabel]",
-      @"|-[_roomField(kRoomFieldWidth)]",
-      @"|-[_scrollView(scrollViewWidth)]",
-      @"[_scrollView]-[_localVideoView]",
-      @"|-[_remoteVideoView(remoteViewWidth)]-|",
-      @"[_localVideoView(kPreviewWidth)]-|",
+      verticalConstraintLeft,
+      verticalConstraintRight,
+      @"H:|-[_remoteVideoView(remoteViewWidth)]-|",
+      @"V:|-[_localVideoView(localViewHeight)]",
+      @"H:|-[_localVideoView(localViewWidth)]",
+      @"H:|-[_scrollView(==_actionItemsView)]-[_actionItemsView]-|"
   ];
-  for (NSString* constraintFormat in constraintFormats) {
-    NSArray* constraints =
-        [NSLayoutConstraint constraintsWithVisualFormat:constraintFormat
-                                                options:0
-                                                metrics:metrics
-                                                  views:viewsDictionary];
-    for (NSLayoutConstraint* constraint in constraints) {
-      [self addConstraint:constraint];
-    }
-  }
+
+  NSArray* actionItemsConstraints = @[
+      @"H:|-[_roomField(kRoomFieldWidth)]-[_loopbackButton(kRoomFieldWidth)]",
+      @"H:|-[_connectButton(kRoomFieldWidth)]",
+      @"V:|-[_roomField(kActionItemHeight)]-[_connectButton(kActionItemHeight)]",
+      @"V:|-[_loopbackButton(kActionItemHeight)]",
+      ];
+
+  [APPRTCMainView addConstraints:constraintFormats
+                          toView:self
+                 viewsDictionary:viewsDictionary
+                         metrics:metrics];
+  [APPRTCMainView addConstraints:actionItemsConstraints
+                          toView:_actionItemsView
+                 viewsDictionary:viewsDictionary
+                         metrics:metrics];
   [super updateConstraints];
 }
 
-- (void)displayLogMessage:(NSString*)message {
-  _logView.string =
-      [NSString stringWithFormat:@"%@%@\n", _logView.string, message];
-  NSRange range = NSMakeRange([_logView.string length], 0);
-  [_logView scrollRangeToVisible:range];
+#pragma mark - Constraints helper
+
++ (void)addConstraints:(NSArray*)constraints toView:(NSView*)view
+       viewsDictionary:(NSDictionary*)viewsDictionary
+               metrics:(NSDictionary*)metrics {
+  for (NSString* constraintFormat in constraints) {
+    NSArray* constraints =
+    [NSLayoutConstraint constraintsWithVisualFormat:constraintFormat
+                                            options:0
+                                            metrics:metrics
+                                              views:viewsDictionary];
+    for (NSLayoutConstraint* constraint in constraints) {
+      [view addConstraint:constraint];
+    }
+  }
 }
 
-#pragma mark - NSControl delegate
+#pragma mark - Control actions
 
-- (void)controlTextDidEndEditing:(NSNotification*)notification {
-  NSDictionary* userInfo = [notification userInfo];
-  NSInteger textMovement = [userInfo[@"NSTextMovement"] intValue];
-  if (textMovement == NSReturnTextMovement) {
-    [self.delegate appRTCMainView:self didEnterRoomId:_roomField.stringValue];
+- (void)startCall:(id)sender {
+  NSString* roomString = _roomField.stringValue;
+  // Generate room id for loopback options.
+  if (_loopbackButton.intValue && [roomString isEqualToString:@""]) {
+    roomString = [NSUUID UUID].UUIDString;
+    roomString = [roomString stringByReplacingOccurrencesOfString:@"-" withString:@""];
   }
+
+  [self.delegate appRTCMainView:self
+                 didEnterRoomId:roomString
+                       loopback:_loopbackButton.intValue];
 }
 
 #pragma mark - RTCNSGLVideoViewDelegate
@@ -145,6 +185,7 @@ static NSUInteger const kPreviewWidth = 490;
   } else {
     return;
   }
+
   [self setNeedsUpdateConstraints:YES];
 }
 
@@ -153,22 +194,8 @@ static NSUInteger const kPreviewWidth = 490;
 - (void)setupViews {
   NSParameterAssert([[self subviews] count] == 0);
 
-  _roomLabel = [[NSTextField alloc] initWithFrame:NSZeroRect];
-  [_roomLabel setTranslatesAutoresizingMaskIntoConstraints:NO];
-  [_roomLabel setBezeled:NO];
-  [_roomLabel setDrawsBackground:NO];
-  [_roomLabel setEditable:NO];
-  [_roomLabel setStringValue:@"Enter AppRTC room id:"];
-  [self addSubview:_roomLabel];
-
-  _roomField = [[NSTextField alloc] initWithFrame:NSZeroRect];
-  [_roomField setTranslatesAutoresizingMaskIntoConstraints:NO];
-  [self addSubview:_roomField];
-  [_roomField setEditable:YES];
-  [_roomField setDelegate:self];
-
   _logView = [[NSTextView alloc] initWithFrame:NSZeroRect];
-  [_logView setMinSize:NSMakeSize(0, kLogViewHeight)];
+  [_logView setMinSize:NSMakeSize(0, kBottomViewHeight)];
   [_logView setMaxSize:NSMakeSize(FLT_MAX, FLT_MAX)];
   [_logView setVerticallyResizable:YES];
   [_logView setAutoresizingMask:NSViewWidthSizable];
@@ -177,6 +204,8 @@ static NSUInteger const kPreviewWidth = 490;
   [textContainer setContainerSize:containerSize];
   [textContainer setWidthTracksTextView:YES];
   [_logView setEditable:NO];
+
+  [self setupActionItemsView];
 
   _scrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
   [_scrollView setTranslatesAutoresizingMaskIntoConstraints:NO];
@@ -206,8 +235,37 @@ static NSUInteger const kPreviewWidth = 490;
   [self addSubview:_localVideoView];
 }
 
+- (void)setupActionItemsView {
+  _actionItemsView = [[NSView alloc] initWithFrame:NSZeroRect];
+  [_actionItemsView setTranslatesAutoresizingMaskIntoConstraints:NO];
+  [self addSubview:_actionItemsView];
+
+  _roomField = [[NSTextField alloc] initWithFrame:NSZeroRect];
+  [_roomField setTranslatesAutoresizingMaskIntoConstraints:NO];
+  _roomField.placeholderString = @"Enter AppRTC room id";
+  [_actionItemsView addSubview:_roomField];
+  [_roomField setEditable:YES];
+
+  _connectButton = [[NSButton alloc] initWithFrame:NSZeroRect];
+  [_connectButton setTranslatesAutoresizingMaskIntoConstraints:NO];
+  _connectButton.title = @"Start call";
+  _connectButton.bezelStyle = NSRoundedBezelStyle;
+  _connectButton.target = self;
+  _connectButton.action = @selector(startCall:);
+  [_actionItemsView addSubview:_connectButton];
+
+  _loopbackButton = [[NSButton alloc] initWithFrame:NSZeroRect];
+  [_loopbackButton setTranslatesAutoresizingMaskIntoConstraints:NO];
+  _loopbackButton.title = @"Loopback";
+  [_loopbackButton setButtonType:NSSwitchButton];
+  [_actionItemsView addSubview:_loopbackButton];
+}
+
 - (NSSize)remoteVideoViewSize {
-  NSInteger width = MAX(_remoteVideoSize.width, kContentWidth);
+  if (!_remoteVideoView.bounds.size.width) {
+    return NSMakeSize(kContentWidth, 0);
+  }
+  NSInteger width = MAX(_remoteVideoView.bounds.size.width, kContentWidth);
   NSInteger height = (width/16) * 9;
   return NSMakeSize(width, height);
 }
@@ -229,6 +287,11 @@ static NSUInteger const kPreviewWidth = 490;
   [self disconnect];
 }
 
+- (void)viewDidAppear {
+  [super viewDidAppear];
+  [self displayUsageInstructions];
+}
+
 - (void)loadView {
   APPRTCMainView* view = [[APPRTCMainView alloc] initWithFrame:NSZeroRect];
   [view setTranslatesAutoresizingMaskIntoConstraints:NO];
@@ -240,19 +303,28 @@ static NSUInteger const kPreviewWidth = 490;
   [self disconnect];
 }
 
+#pragma mark - Usage
+
+- (void)displayUsageInstructions {
+  [self.mainView displayLogMessage:
+   @"To start call:\n"
+   @"• Enter AppRTC room id (not neccessary for loopback)\n"
+   @"• Start call"];
+}
+
 #pragma mark - ARDAppClientDelegate
 
 - (void)appClient:(ARDAppClient *)client
     didChangeState:(ARDAppClientState)state {
   switch (state) {
     case kARDAppClientStateConnected:
-      NSLog(@"Client connected.");
+      [self.mainView displayLogMessage:@"Client connected."];
       break;
     case kARDAppClientStateConnecting:
-      NSLog(@"Client connecting.");
+      [self.mainView displayLogMessage:@"Client connecting."];
       break;
     case kARDAppClientStateDisconnected:
-      NSLog(@"Client disconnected.");
+      [self.mainView displayLogMessage:@"Client disconnected."];
       [self resetUI];
       _client = nil;
       break;
@@ -288,11 +360,18 @@ static NSUInteger const kPreviewWidth = 490;
 #pragma mark - APPRTCMainViewDelegate
 
 - (void)appRTCMainView:(APPRTCMainView*)mainView
-        didEnterRoomId:(NSString*)roomId {
+        didEnterRoomId:(NSString*)roomId
+              loopback:(BOOL)isLoopback {
+
+  if ([roomId isEqualToString:@""]) {
+    [self.mainView displayLogMessage:@"Missing room id"];
+    return;
+  }
+
   [_client disconnect];
   ARDAppClient *client = [[ARDAppClient alloc] initWithDelegate:self];
   [client connectToRoomWithId:roomId
-                   isLoopback:NO
+                   isLoopback:isLoopback
                   isAudioOnly:NO
             shouldMakeAecDump:NO
         shouldUseLevelControl:NO];
