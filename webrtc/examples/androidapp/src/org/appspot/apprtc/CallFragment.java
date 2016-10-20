@@ -129,6 +129,8 @@ public class CallFragment extends Fragment {
     }
   }
 
+  // TODO(sakal): Replace with onAttach(Context) once we only support API level 23+.
+  @SuppressWarnings("deprecation")
   @Override
   public void onAttach(Activity activity) {
     super.onAttach(activity);
