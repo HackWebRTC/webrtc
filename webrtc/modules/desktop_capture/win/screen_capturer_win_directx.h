@@ -52,7 +52,7 @@ class ScreenCapturerWinDirectx : public ScreenCapturer {
 
   DxgiDuplicatorController::Context context_;
 
-  ScreenId current_screen_id = kFullDesktopScreenId;
+  ScreenId current_screen_id_ = kFullDesktopScreenId;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCapturerWinDirectx);
 };

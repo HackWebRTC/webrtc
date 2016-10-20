@@ -46,11 +46,11 @@ void ScreenCapturerWinDirectx::SetSharedMemoryFactory(
 }
 
 DesktopSize ScreenCapturerWinDirectx::SelectedDesktopSize() const {
-  if (current_screen_id == kFullDesktopScreenId) {
+  if (current_screen_id_ == kFullDesktopScreenId) {
     return DxgiDuplicatorController::Instance()->desktop_size();
   }
   return DxgiDuplicatorController::Instance()
-      ->ScreenRect(current_screen_id)
+      ->ScreenRect(current_screen_id_)
       .size();
 }
 
@@ -78,7 +78,7 @@ void ScreenCapturerWinDirectx::CaptureFrame() {
     frames_.ReplaceCurrentFrame(SharedDesktopFrame::Wrap(std::move(new_frame)));
   }
 
-  if (current_screen_id == kFullDesktopScreenId) {
+  if (current_screen_id_ == kFullDesktopScreenId) {
     if (!DxgiDuplicatorController::Instance()->Duplicate(
             &context_, frames_.current_frame())) {
       // Screen size may be changed, so we need to reset the frames.
@@ -88,10 +88,10 @@ void ScreenCapturerWinDirectx::CaptureFrame() {
     }
   } else {
     if (!DxgiDuplicatorController::Instance()->DuplicateMonitor(
-            &context_, current_screen_id, frames_.current_frame())) {
+            &context_, current_screen_id_, frames_.current_frame())) {
       // Screen size may be changed, so we need to reset the frames.
       frames_.Reset();
-      if (current_screen_id >=
+      if (current_screen_id_ >=
           DxgiDuplicatorController::Instance()->ScreenCount()) {
         // Current monitor has been removed from the system.
         callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
@@ -118,20 +118,20 @@ bool ScreenCapturerWinDirectx::GetScreenList(ScreenList* screens) {
 }
 
 bool ScreenCapturerWinDirectx::SelectScreen(ScreenId id) {
-  if (id == current_screen_id) {
+  if (id == current_screen_id_) {
     return true;
   }
 
   // Changing target screen may or may not impact frame size. So resetting
   // frames only when a Duplicate() function call returns false.
   if (id == kFullDesktopScreenId) {
-    current_screen_id = id;
+    current_screen_id_ = id;
     return true;
   }
 
   int screen_count = DxgiDuplicatorController::Instance()->ScreenCount();
   if (id >= 0 && id < screen_count) {
-    current_screen_id = id;
+    current_screen_id_ = id;
     return true;
   }
   return false;
