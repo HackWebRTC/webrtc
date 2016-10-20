@@ -234,15 +234,27 @@ class Optional final {
   }
 
   // Equality tests. Two Optionals are equal if they contain equivalent values,
-  // or
-  // if they're both empty.
+  // or if they're both empty.
   friend bool operator==(const Optional& m1, const Optional& m2) {
     return m1.has_value_ && m2.has_value_ ? m1.value_ == m2.value_
                                           : m1.has_value_ == m2.has_value_;
   }
+  friend bool operator==(const Optional& opt, const T& value) {
+    return opt.has_value_ && opt.value_ == value;
+  }
+  friend bool operator==(const T& value, const Optional& opt) {
+    return opt.has_value_ && value == opt.value_;
+  }
+
   friend bool operator!=(const Optional& m1, const Optional& m2) {
     return m1.has_value_ && m2.has_value_ ? m1.value_ != m2.value_
                                           : m1.has_value_ != m2.has_value_;
+  }
+  friend bool operator!=(const Optional& opt, const T& value) {
+    return !opt.has_value_ || opt.value_ != value;
+  }
+  friend bool operator!=(const T& value, const Optional& opt) {
+    return !opt.has_value_ || value != opt.value_;
   }
 
  private:

@@ -656,6 +656,54 @@ TEST(OptionalTest, TestEquality) {
       *log);
 }
 
+TEST(OptionalTest, TestEqualityWithObject) {
+  auto log = Logger::Setup();
+  {
+    Logger a(17), b(42);
+    Optional<Logger> ma(a), me;
+    // Using operator== and operator!= explicetly instead of EXPECT_EQ/EXPECT_NE
+    // macros because those operators are under test.
+    log->push_back("---");
+
+    EXPECT_TRUE(ma == a);
+    EXPECT_TRUE(a == ma);
+    EXPECT_FALSE(ma == b);
+    EXPECT_FALSE(b == ma);
+    EXPECT_FALSE(me == a);
+    EXPECT_FALSE(a == me);
+
+    EXPECT_FALSE(ma != a);
+    EXPECT_FALSE(a != ma);
+    EXPECT_TRUE(ma != b);
+    EXPECT_TRUE(b != ma);
+    EXPECT_TRUE(me != a);
+    EXPECT_TRUE(a != me);
+
+    log->push_back("---");
+  }
+  // clang-format off
+  EXPECT_EQ(V("0:17. explicit constructor",
+              "1:42. explicit constructor",
+              "2:17. copy constructor (from 0:17)",
+              "---",
+              "operator== 2:17, 0:17",
+              "operator== 0:17, 2:17",
+              "operator== 2:17, 1:42",
+              "operator== 1:42, 2:17",
+              // No operator should be called when comparing to empty.
+              "operator!= 2:17, 0:17",
+              "operator!= 0:17, 2:17",
+              "operator!= 2:17, 1:42",
+              "operator!= 1:42, 2:17",
+              // No operator should be called when comparing to empty.
+              "---",
+              "2:17. destructor",
+              "1:42. destructor",
+              "0:17. destructor"),
+            *log);
+  // clang-format on
+}
+
 TEST(OptionalTest, TestSwap) {
   auto log = Logger::Setup();
   {
