@@ -10,6 +10,7 @@
 
 #include <memory>
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/random.h"
 #include "webrtc/common_types.h"
@@ -1207,41 +1208,51 @@ TEST_F(RtcpReceiverTest, HandlesInvalidTransportFeedback) {
 
 TEST_F(RtcpReceiverTest, Nack) {
   const uint16_t kNackList1[] = {1, 2, 3, 5};
-  const size_t kNackListLength1 = std::end(kNackList1) - std::begin(kNackList1);
-  const uint16_t kNackList2[] = {5, 7, 30, 40};
-  const size_t kNackListLength2 = std::end(kNackList2) - std::begin(kNackList2);
+  const uint16_t kNackList23[] = {5, 7, 30, 40, 41, 58, 59, 61, 63};
+  const size_t kNackListLength2 = 4;
+  const size_t kNackListLength3 = arraysize(kNackList23) - kNackListLength2;
   std::set<uint16_t> nack_set;
   nack_set.insert(std::begin(kNackList1), std::end(kNackList1));
-  nack_set.insert(std::begin(kNackList2), std::end(kNackList2));
+  nack_set.insert(std::begin(kNackList23), std::end(kNackList23));
 
-  rtcp::Nack nack;
-  nack.SetSenderSsrc(kSenderSsrc);
-  nack.SetMediaSsrc(kReceiverMainSsrc);
-  nack.SetPacketIds(kNackList1, kNackListLength1);
+  rtcp::Nack nack1;
+  nack1.SetSenderSsrc(kSenderSsrc);
+  nack1.SetMediaSsrc(kReceiverMainSsrc);
+  nack1.SetPacketIds(kNackList1, arraysize(kNackList1));
 
   EXPECT_CALL(rtp_rtcp_impl_, OnReceivedNack(ElementsAreArray(kNackList1)));
-  EXPECT_CALL(
-      packet_type_counter_observer_,
-      RtcpPacketTypesCounterUpdated(
-          kReceiverMainSsrc,
-          AllOf(Field(&RtcpPacketTypeCounter::nack_requests, kNackListLength1),
-                Field(&RtcpPacketTypeCounter::unique_nack_requests,
-                      kNackListLength1))));
-  InjectRtcpPacket(nack);
-
-  rtcp::Nack nack2;
-  nack2.SetSenderSsrc(kSenderSsrc);
-  nack2.SetMediaSsrc(kReceiverMainSsrc);
-  nack2.SetPacketIds(kNackList2, kNackListLength2);
-  EXPECT_CALL(rtp_rtcp_impl_, OnReceivedNack(ElementsAreArray(kNackList2)));
   EXPECT_CALL(packet_type_counter_observer_,
               RtcpPacketTypesCounterUpdated(
                   kReceiverMainSsrc,
                   AllOf(Field(&RtcpPacketTypeCounter::nack_requests,
-                              kNackListLength1 + kNackListLength2),
+                              arraysize(kNackList1)),
+                        Field(&RtcpPacketTypeCounter::unique_nack_requests,
+                              arraysize(kNackList1)))));
+  InjectRtcpPacket(nack1);
+
+  rtcp::Nack nack2;
+  nack2.SetSenderSsrc(kSenderSsrc);
+  nack2.SetMediaSsrc(kReceiverMainSsrc);
+  nack2.SetPacketIds(kNackList23, kNackListLength2);
+
+  rtcp::Nack nack3;
+  nack3.SetSenderSsrc(kSenderSsrc);
+  nack3.SetMediaSsrc(kReceiverMainSsrc);
+  nack3.SetPacketIds(kNackList23 + kNackListLength2, kNackListLength3);
+
+  rtcp::CompoundPacket two_nacks;
+  two_nacks.Append(&nack2);
+  two_nacks.Append(&nack3);
+
+  EXPECT_CALL(rtp_rtcp_impl_, OnReceivedNack(ElementsAreArray(kNackList23)));
+  EXPECT_CALL(packet_type_counter_observer_,
+              RtcpPacketTypesCounterUpdated(
+                  kReceiverMainSsrc,
+                  AllOf(Field(&RtcpPacketTypeCounter::nack_requests,
+                              arraysize(kNackList1) + arraysize(kNackList23)),
                         Field(&RtcpPacketTypeCounter::unique_nack_requests,
                               nack_set.size()))));
-  InjectRtcpPacket(nack2);
+  InjectRtcpPacket(two_nacks);
 }
 
 TEST_F(RtcpReceiverTest, NackNotForUsIgnored) {
