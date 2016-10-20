@@ -7,10 +7,11 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include "webrtc/common_video/include/video_frame_buffer.h"
+
+#include <string.h>
 
 #include <algorithm>
-
-#include "webrtc/common_video/include/video_frame_buffer.h"
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/keep_ref_until_done.h"

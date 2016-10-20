@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/desktop_capture/screen_capturer_differ_wrapper.h"
 
+#include <string.h>
+
 #include <algorithm>
 #include <utility>
 
