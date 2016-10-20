@@ -38,7 +38,6 @@ DIRECTORIES = [
   'third_party/boringssl',
   'third_party/closure_compiler',
   'third_party/colorama',
-  'third_party/drmemory',
   'third_party/expat',
   'third_party/ffmpeg',
   'third_party/instrumented_libraries',

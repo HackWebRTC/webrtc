@@ -76,8 +76,6 @@
       'Win64 Debug (Clang)': 'win_gn_clang_debug_bot_x64',
       'Win64 Release (Clang)': 'win_gn_clang_release_bot_x64',
       'Win SyzyASan': 'win_gn_syzyasan_release_bot_x86',
-      'Win DrMemory Full': 'win_gn_drmemory_debug_bot_x86',
-      'Win DrMemory Light': 'win_gn_drmemory_debug_bot_x86',
       'Win32 Release [large tests]': 'gn_release_bot_x86',
       'Win64 Debug (GYP)': 'gyp_debug_bot_x64_exclude_tests',
       'Win64 Release (GYP)': 'gyp_release_bot_x64_exclude_tests',
@@ -182,8 +180,6 @@
       'win_x64_clang_dbg': 'win_gn_clang_debug_bot_x64',
       'win_x64_clang_rel': 'win_gn_clang_release_bot_x64',
       'win_asan': 'win_gn_syzyasan_release_bot_x86',
-      'win_drmemory_light': 'win_gn_drmemory_debug_bot_x86',
-      'win_drmemory_full': 'win_gn_drmemory_debug_bot_x86',
       'win_baremetal': 'gn_release_bot_x86',
       'win_swarming': 'swarming_gn_debug_bot_x64',
       'win_x64_gyp_dbg': 'gyp_debug_bot_x64_exclude_tests',
@@ -293,11 +289,6 @@
     ],
     'win_gn_syzyasan_release_bot_x86': [
       'gn', 'syzyasan', 'minimal_symbols', 'openh264_release_bot', 'x86',
-    ],
-    # TODO(kjellander): Flip DrMemory bots over to Release after GN migration
-    # (http://crbug.com/636414).
-    'win_gn_drmemory_debug_bot_x86': [
-      'gn', 'drmemory', 'minimal_symbols', 'openh264_debug_bot', 'x86',
     ],
 
     # Mac
@@ -410,11 +401,6 @@
     'device': {
       'gn_args': 'ios_enable_code_signing=false',
       'gyp_defines': 'chromium_ios_signing=0',
-    },
-
-    'drmemory': {
-      'gn_args': 'is_component_build=true enable_iterator_debugging=false',
-      'gyp_defines': 'component=shared_library build_for_tool=drmemory',
     },
 
     # This mixin is used to force configs that use it to fail. It

@@ -15,7 +15,7 @@
 # - The locate_valgrind.sh of Chromium's Valgrind scripts dir is used to locate
 #   the Valgrind framework install.
 # - webrtc_tests.py is invoked instead of chrome_tests.py.
-# - Chromium's Valgrind scripts directory is added to the PYTHONPATH to make it 
+# - Chromium's Valgrind scripts directory is added to the PYTHONPATH to make it
 #   possible to execute the Python scripts properly.
 
 export THISDIR=`dirname $0`
@@ -40,18 +40,14 @@ do
 done
 
 NEEDS_VALGRIND=0
-NEEDS_DRMEMORY=0
 
 case "$tool" in
   "memcheck")
     NEEDS_VALGRIND=1
     ;;
-  "drmemory" | "drmemory_light" | "drmemory_full" | "drmemory_pattern")
-    NEEDS_DRMEMORY=1
-    ;;
 esac
 
-# For WebRTC, we'll use the locate_valgrind.sh script in Chromium's Valgrind 
+# For WebRTC, we'll use the locate_valgrind.sh script in Chromium's Valgrind
 # scripts dir to locate the Valgrind framework install
 CHROME_VALGRIND_SCRIPTS=$THISDIR/../valgrind
 
@@ -82,27 +78,7 @@ then
       \) -mtime +1 -print0 | xargs -0 rm -rf
 fi
 
-if [ "$NEEDS_DRMEMORY" == "1" ]
-then
-  if [ -z "$DRMEMORY_COMMAND" ]
-  then
-    DRMEMORY_PATH="$THISDIR/../../third_party/drmemory"
-    DRMEMORY_SFX="$DRMEMORY_PATH/drmemory-windows-sfx.exe"
-    if [ ! -f "$DRMEMORY_SFX" ]
-    then
-      echo "Can't find Dr. Memory executables."
-      echo "See http://www.chromium.org/developers/how-tos/using-valgrind/dr-memory"
-      echo "for the instructions on how to get them."
-      exit 1
-    fi
-
-    chmod +x "$DRMEMORY_SFX"  # Cygwin won't run it without +x.
-    "$DRMEMORY_SFX" -o"$DRMEMORY_PATH/unpacked" -y
-    export DRMEMORY_COMMAND="$DRMEMORY_PATH/unpacked/bin/drmemory.exe"
-  fi
-fi
-
-# Add Chrome's Valgrind scripts dir to the PYTHON_PATH since it contains 
+# Add Chrome's Valgrind scripts dir to the PYTHON_PATH since it contains
 # the scripts that are needed for this script to run
 PYTHONPATH=$THISDIR/../python/google:$CHROME_VALGRIND_SCRIPTS python \
            "$THISDIR/webrtc_tests.py" $ARGV_COPY
