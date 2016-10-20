@@ -168,6 +168,8 @@ struct AudioOptions {
     SetFrom(&recording_sample_rate, change.recording_sample_rate);
     SetFrom(&playout_sample_rate, change.playout_sample_rate);
     SetFrom(&combined_audio_video_bwe, change.combined_audio_video_bwe);
+    SetFrom(&level_control_initial_peak_level_dbfs,
+            change.level_control_initial_peak_level_dbfs);
   }
 
   bool operator==(const AudioOptions& o) const {
@@ -195,7 +197,9 @@ struct AudioOptions {
            tx_agc_limiter == o.tx_agc_limiter &&
            recording_sample_rate == o.recording_sample_rate &&
            playout_sample_rate == o.playout_sample_rate &&
-           combined_audio_video_bwe == o.combined_audio_video_bwe;
+           combined_audio_video_bwe == o.combined_audio_video_bwe &&
+           level_control_initial_peak_level_dbfs ==
+               o.level_control_initial_peak_level_dbfs;
   }
   bool operator!=(const AudioOptions& o) const { return !(*this == o); }
 
@@ -220,6 +224,8 @@ struct AudioOptions {
     ost << ToStringIfSet("experimental_ns", experimental_ns);
     ost << ToStringIfSet("intelligibility_enhancer", intelligibility_enhancer);
     ost << ToStringIfSet("level_control", level_control);
+    ost << ToStringIfSet("level_control_initial_peak_level_dbfs",
+                         level_control_initial_peak_level_dbfs);
     ost << ToStringIfSet("tx_agc_target_dbov", tx_agc_target_dbov);
     ost << ToStringIfSet("tx_agc_digital_compression_gain",
         tx_agc_digital_compression_gain);
@@ -256,6 +262,8 @@ struct AudioOptions {
   rtc::Optional<bool> experimental_ns;
   rtc::Optional<bool> intelligibility_enhancer;
   rtc::Optional<bool> level_control;
+  // Specifies an optional initialization value for the level controller.
+  rtc::Optional<float> level_control_initial_peak_level_dbfs;
   // Note that tx_agc_* only applies to non-experimental AGC.
   rtc::Optional<uint16_t> tx_agc_target_dbov;
   rtc::Optional<uint16_t> tx_agc_digital_compression_gain;

@@ -49,6 +49,8 @@ const char MediaConstraintsInterface::kExperimentalNoiseSuppression[] =
 const char MediaConstraintsInterface::kIntelligibilityEnhancer[] =
     "intelligibilityEnhancer";
 const char MediaConstraintsInterface::kLevelControl[] = "levelControl";
+const char MediaConstraintsInterface::kLevelControlInitialPeakLevelDBFS[] =
+    "levelControlInitialPeakLevelDBFS";
 const char MediaConstraintsInterface::kHighpassFilter[] =
     "googHighpassFilter";
 const char MediaConstraintsInterface::kTypingNoiseDetection[] =

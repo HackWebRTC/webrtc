@@ -872,6 +872,10 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   webrtc::AudioProcessing::Config apm_config;
   if (level_control_) {
     apm_config.level_controller.enabled = *level_control_;
+    if (options.level_control_initial_peak_level_dbfs) {
+      apm_config.level_controller.initial_peak_level_dbfs =
+          *options.level_control_initial_peak_level_dbfs;
+    }
   }
 
   // We check audioproc for the benefit of tests, since FakeWebRtcVoiceEngine

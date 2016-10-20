@@ -66,6 +66,18 @@ void FromConstraints(const MediaConstraintsInterface::Constraints& constraints,
         entry.value = rtc::Optional<bool>(value);
     }
   }
+
+  // Set non-boolean constraints.
+  std::string value;
+  if (constraints.FindFirst(
+          MediaConstraintsInterface::kLevelControlInitialPeakLevelDBFS,
+          &value)) {
+    float level_control_initial_peak_level_dbfs;
+    if (rtc::FromString(value, &level_control_initial_peak_level_dbfs)) {
+      options->level_control_initial_peak_level_dbfs =
+          rtc::Optional<float>(level_control_initial_peak_level_dbfs);
+    }
+  }
 }
 
 }  // namespace
