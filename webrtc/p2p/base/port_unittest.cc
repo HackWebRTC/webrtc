@@ -48,7 +48,8 @@ using rtc::Socket;
 using rtc::SocketAddress;
 using namespace cricket;
 
-static const int kTimeout = 1000;
+static const int kDefaultTimeout = 3000;
+static const int kShortTimeout = 1000;
 static const SocketAddress kLocalAddr1("192.168.1.2", 0);
 static const SocketAddress kLocalAddr2("192.168.1.3", 0);
 static const SocketAddress kNatAddr1("77.77.77.77", rtc::NAT_SERVER_UDP_PORT);
@@ -586,15 +587,16 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   // TCP reconnecting mechanism before entering this function.
   void ConnectStartedChannels(TestChannel* ch1, TestChannel* ch2) {
     ASSERT_TRUE(ch1->conn());
-    EXPECT_TRUE_WAIT(ch1->conn()->connected(), kTimeout);  // for TCP connect
+    EXPECT_TRUE_WAIT(ch1->conn()->connected(),
+                     kDefaultTimeout);  // for TCP connect
     ch1->Ping();
-    WAIT(!ch2->remote_address().IsNil(), kTimeout);
+    WAIT(!ch2->remote_address().IsNil(), kShortTimeout);
 
     // Send a ping from dst to src.
     ch2->AcceptConnection(GetCandidate(ch1->port()));
     ch2->Ping();
     EXPECT_EQ_WAIT(Connection::STATE_WRITABLE, ch2->conn()->write_state(),
-                   kTimeout);
+                   kDefaultTimeout);
   }
 
   // This connects and disconnects the provided channels in the same sequence as
@@ -623,8 +625,8 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
                                  tcp_conn2->socket()->GetLocalAddress()));
 
     // Wait for both OnClose are delivered.
-    EXPECT_TRUE_WAIT(!ch1->conn()->connected(), kTimeout);
-    EXPECT_TRUE_WAIT(!ch2->conn()->connected(), kTimeout);
+    EXPECT_TRUE_WAIT(!ch1->conn()->connected(), kDefaultTimeout);
+    EXPECT_TRUE_WAIT(!ch2->conn()->connected(), kDefaultTimeout);
 
     // Ensure redundant SignalClose events on TcpConnection won't break tcp
     // reconnection. Chromium will fire SignalClose for all outstanding IPC
@@ -635,7 +637,7 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
     // Speed up destroying ch2's connection such that the test is ready to
     // accept a new connection from ch1 before ch1's connection destroys itself.
     ch2->conn()->Destroy();
-    EXPECT_TRUE_WAIT(ch2->conn() == NULL, kTimeout);
+    EXPECT_TRUE_WAIT(ch2->conn() == NULL, kDefaultTimeout);
   }
 
   void TestTcpReconnect(bool ping_after_disconnected,
@@ -656,15 +658,15 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
 
     ch1.Start();
     ch2.Start();
-    ASSERT_EQ_WAIT(1, ch1.complete_count(), kTimeout);
-    ASSERT_EQ_WAIT(1, ch2.complete_count(), kTimeout);
+    ASSERT_EQ_WAIT(1, ch1.complete_count(), kDefaultTimeout);
+    ASSERT_EQ_WAIT(1, ch2.complete_count(), kDefaultTimeout);
 
     // Initial connecting the channel, create connection on channel1.
     ch1.CreateConnection(GetCandidate(port2));
     ConnectStartedChannels(&ch1, &ch2);
 
     // Shorten the timeout period.
-    const int kTcpReconnectTimeout = kTimeout;
+    const int kTcpReconnectTimeout = kDefaultTimeout;
     static_cast<TCPConnection*>(ch1.conn())
         ->set_reconnection_timeout(kTcpReconnectTimeout);
     static_cast<TCPConnection*>(ch2.conn())
@@ -689,7 +691,7 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
       }
 
       // Wait for channel's outgoing TCPConnection connected.
-      EXPECT_TRUE_WAIT(ch1.conn()->connected(), kTimeout);
+      EXPECT_TRUE_WAIT(ch1.conn()->connected(), kDefaultTimeout);
 
       // Verify that we could still connect channels.
       ConnectStartedChannels(&ch1, &ch2);
@@ -703,15 +705,15 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
       EXPECT_EQ(ch1.conn()->write_state(), Connection::STATE_WRITABLE);
       // Since the reconnection never happens, the connections should have been
       // destroyed after the timeout.
-      EXPECT_TRUE_WAIT(!ch1.conn(), kTcpReconnectTimeout + kTimeout);
+      EXPECT_TRUE_WAIT(!ch1.conn(), kTcpReconnectTimeout + kDefaultTimeout);
       EXPECT_TRUE(!ch2.conn());
     }
 
     // Tear down and ensure that goes smoothly.
     ch1.Stop();
     ch2.Stop();
-    EXPECT_TRUE_WAIT(ch1.conn() == NULL, kTimeout);
-    EXPECT_TRUE_WAIT(ch2.conn() == NULL, kTimeout);
+    EXPECT_TRUE_WAIT(ch1.conn() == NULL, kDefaultTimeout);
+    EXPECT_TRUE_WAIT(ch2.conn() == NULL, kDefaultTimeout);
   }
 
   IceMessage* CreateStunMessage(int type) {
@@ -790,6 +792,7 @@ void PortTest::TestConnectivity(const char* name1, Port* port1,
                                 const char* name2, Port* port2,
                                 bool accept, bool same_addr1,
                                 bool same_addr2, bool possible) {
+  rtc::ScopedFakeClock clock;
   LOG(LS_INFO) << "Test: " << name1 << " to " << name2 << ": ";
   port1->set_component(cricket::ICE_CANDIDATE_COMPONENT_DEFAULT);
   port2->set_component(cricket::ICE_CANDIDATE_COMPONENT_DEFAULT);
@@ -803,15 +806,16 @@ void PortTest::TestConnectivity(const char* name1, Port* port1,
   // Acquire addresses.
   ch1.Start();
   ch2.Start();
-  ASSERT_EQ_WAIT(1, ch1.complete_count(), kTimeout);
-  ASSERT_EQ_WAIT(1, ch2.complete_count(), kTimeout);
+  ASSERT_EQ_SIMULATED_WAIT(1, ch1.complete_count(), kDefaultTimeout, clock);
+  ASSERT_EQ_SIMULATED_WAIT(1, ch2.complete_count(), kDefaultTimeout, clock);
 
   // Send a ping from src to dst. This may or may not make it.
   ch1.CreateConnection(GetCandidate(port2));
   ASSERT_TRUE(ch1.conn() != NULL);
-  EXPECT_TRUE_WAIT(ch1.conn()->connected(), kTimeout);  // for TCP connect
+  EXPECT_TRUE_SIMULATED_WAIT(ch1.conn()->connected(), kDefaultTimeout,
+                             clock);  // for TCP connect
   ch1.Ping();
-  WAIT(!ch2.remote_address().IsNil(), kTimeout);
+  SIMULATED_WAIT(!ch2.remote_address().IsNil(), kShortTimeout, clock);
 
   if (accept) {
     // We are able to send a ping from src to dst. This is the case when
@@ -828,8 +832,8 @@ void PortTest::TestConnectivity(const char* name1, Port* port1,
     ch2.AcceptConnection(GetCandidate(port1));
     ASSERT_TRUE(ch2.conn() != NULL);
     ch2.Ping();
-    EXPECT_EQ_WAIT(Connection::STATE_WRITABLE, ch2.conn()->write_state(),
-                   kTimeout);
+    EXPECT_EQ_SIMULATED_WAIT(Connection::STATE_WRITABLE,
+                             ch2.conn()->write_state(), kDefaultTimeout, clock);
   } else {
     // We can't send a ping from src to dst, so flip it around. This will happen
     // when the destination NAT is addr/port restricted or symmetric.
@@ -840,7 +844,8 @@ void PortTest::TestConnectivity(const char* name1, Port* port1,
     ch2.CreateConnection(GetCandidate(port1));
     ASSERT_TRUE(ch2.conn() != NULL);
     ch2.Ping();
-    WAIT(ch2.conn()->write_state() == Connection::STATE_WRITABLE, kTimeout);
+    SIMULATED_WAIT(ch2.conn()->write_state() == Connection::STATE_WRITABLE,
+                   kShortTimeout, clock);
 
     if (same_addr1 && same_addr2) {
       // The new ping got back to the source.
@@ -851,8 +856,9 @@ void PortTest::TestConnectivity(const char* name1, Port* port1,
       // through.  So we will have to do another.
       if (ch1.conn()->write_state() == Connection::STATE_WRITE_INIT) {
         ch1.Ping();
-        EXPECT_EQ_WAIT(Connection::STATE_WRITABLE, ch1.conn()->write_state(),
-                       kTimeout);
+        EXPECT_EQ_SIMULATED_WAIT(Connection::STATE_WRITABLE,
+                                 ch1.conn()->write_state(), kDefaultTimeout,
+                                 clock);
       }
     } else if (!same_addr1 && possible) {
       // The new ping went to the candidate address, but that address was bad.
@@ -863,7 +869,8 @@ void PortTest::TestConnectivity(const char* name1, Port* port1,
       // However, since we have now sent a ping to the source IP, we should be
       // able to get a ping from it. This gives us the real source address.
       ch1.Ping();
-      EXPECT_TRUE_WAIT(!ch2.remote_address().IsNil(), kTimeout);
+      EXPECT_TRUE_SIMULATED_WAIT(!ch2.remote_address().IsNil(), kDefaultTimeout,
+                                 clock);
       EXPECT_FALSE(ch2.conn()->receiving());
       EXPECT_TRUE(ch1.remote_address().IsNil());
 
@@ -871,8 +878,9 @@ void PortTest::TestConnectivity(const char* name1, Port* port1,
       ch2.AcceptConnection(GetCandidate(port1));
       ASSERT_TRUE(ch2.conn() != NULL);
       ch2.Ping();
-      EXPECT_EQ_WAIT(Connection::STATE_WRITABLE, ch2.conn()->write_state(),
-                     kTimeout);
+      EXPECT_EQ_SIMULATED_WAIT(Connection::STATE_WRITABLE,
+                               ch2.conn()->write_state(), kDefaultTimeout,
+                               clock);
     } else if (!same_addr2 && possible) {
       // The new ping came in, but from an unexpected address. This will happen
       // when the destination NAT is symmetric.
@@ -882,14 +890,15 @@ void PortTest::TestConnectivity(const char* name1, Port* port1,
       // Update our address and complete the connection.
       ch1.AcceptConnection(GetCandidate(port2));
       ch1.Ping();
-      EXPECT_EQ_WAIT(Connection::STATE_WRITABLE, ch1.conn()->write_state(),
-                     kTimeout);
+      EXPECT_EQ_SIMULATED_WAIT(Connection::STATE_WRITABLE,
+                               ch1.conn()->write_state(), kDefaultTimeout,
+                               clock);
     } else {  // (!possible)
       // There should be s no way for the pings to reach each other. Check it.
       EXPECT_TRUE(ch1.remote_address().IsNil());
       EXPECT_TRUE(ch2.remote_address().IsNil());
       ch1.Ping();
-      WAIT(!ch2.remote_address().IsNil(), kTimeout);
+      SIMULATED_WAIT(!ch2.remote_address().IsNil(), kShortTimeout, clock);
       EXPECT_TRUE(ch1.remote_address().IsNil());
       EXPECT_TRUE(ch2.remote_address().IsNil());
     }
@@ -913,8 +922,8 @@ void PortTest::TestConnectivity(const char* name1, Port* port1,
   // Tear down and ensure that goes smoothly.
   ch1.Stop();
   ch2.Stop();
-  EXPECT_TRUE_WAIT(ch1.conn() == NULL, kTimeout);
-  EXPECT_TRUE_WAIT(ch2.conn() == NULL, kTimeout);
+  EXPECT_TRUE_SIMULATED_WAIT(ch1.conn() == NULL, kDefaultTimeout, clock);
+  EXPECT_TRUE_SIMULATED_WAIT(ch2.conn() == NULL, kDefaultTimeout, clock);
 }
 
 class FakePacketSocketFactory : public rtc::PacketSocketFactory {
@@ -1217,7 +1226,7 @@ TEST_F(PortTest, TestTcpNeverConnect) {
   EXPECT_EQ(0, ch1.complete_count());
 
   ch1.Start();
-  ASSERT_EQ_WAIT(1, ch1.complete_count(), kTimeout);
+  ASSERT_EQ_WAIT(1, ch1.complete_count(), kDefaultTimeout);
 
   std::unique_ptr<rtc::AsyncSocket> server(
       vss()->CreateAsyncSocket(kLocalAddr2.family(), SOCK_STREAM));
@@ -1229,7 +1238,7 @@ TEST_F(PortTest, TestTcpNeverConnect) {
 
   ch1.CreateConnection(c);
   EXPECT_TRUE(ch1.conn());
-  EXPECT_TRUE_WAIT(!ch1.conn(), kTimeout);  // for TCP connect
+  EXPECT_TRUE_WAIT(!ch1.conn(), kDefaultTimeout);  // for TCP connect
 }
 
 /* TODO: Enable these once testrelayserver can accept external TCP.
@@ -1266,8 +1275,8 @@ TEST_F(PortTest, TestConnectionDead) {
   // Acquire address.
   ch1.Start();
   ch2.Start();
-  ASSERT_EQ_WAIT(1, ch1.complete_count(), kTimeout);
-  ASSERT_EQ_WAIT(1, ch2.complete_count(), kTimeout);
+  ASSERT_EQ_WAIT(1, ch1.complete_count(), kDefaultTimeout);
+  ASSERT_EQ_WAIT(1, ch2.complete_count(), kDefaultTimeout);
 
   // Test case that the connection has never received anything.
   int64_t before_created = rtc::TimeMillis();
@@ -1286,7 +1295,7 @@ TEST_F(PortTest, TestConnectionDead) {
   EXPECT_TRUE(ch1.conn() != nullptr);
   // It will be dead after MIN_CONNECTION_LIFETIME and pruned.
   conn->UpdateState(after_created + MIN_CONNECTION_LIFETIME + 1);
-  EXPECT_TRUE_WAIT(ch1.conn() == nullptr, kTimeout);
+  EXPECT_TRUE_WAIT(ch1.conn() == nullptr, kDefaultTimeout);
 
   // Test case that the connection has received something.
   // Create a connection again and receive a ping.
@@ -1302,7 +1311,7 @@ TEST_F(PortTest, TestConnectionDead) {
   rtc::Thread::Current()->ProcessMessages(100);
   EXPECT_TRUE(ch1.conn() != nullptr);
   conn->UpdateState(after_last_receiving + DEAD_CONNECTION_RECEIVE_TIMEOUT + 1);
-  EXPECT_TRUE_WAIT(ch1.conn() == nullptr, kTimeout);
+  EXPECT_TRUE_WAIT(ch1.conn() == nullptr, kDefaultTimeout);
 }
 
 // This test case verifies standard ICE features in STUN messages. Currently it
@@ -1323,7 +1332,7 @@ TEST_F(PortTest, TestLocalToLocalStandard) {
 // loopback test when protocol is RFC5245. For success IceTiebreaker, username
 // should remain equal to the request generated by the port and role of port
 // must be in controlling.
-TEST_F(PortTest, TestLoopbackCal) {
+TEST_F(PortTest, TestLoopbackCall) {
   std::unique_ptr<TestPort> lport(
       CreateTestPort(kLocalAddr1, "lfrag", "lpass"));
   lport->SetIceRole(cricket::ICEROLE_CONTROLLING);
@@ -1334,13 +1343,13 @@ TEST_F(PortTest, TestLoopbackCal) {
                                              Port::ORIGIN_MESSAGE);
   conn->Ping(0);
 
-  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
+  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, kDefaultTimeout);
   IceMessage* msg = lport->last_stun_msg();
   EXPECT_EQ(STUN_BINDING_REQUEST, msg->type());
   conn->OnReadPacket(lport->last_stun_buf()->data<char>(),
                      lport->last_stun_buf()->size(),
                      rtc::PacketTime());
-  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
+  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, kDefaultTimeout);
   msg = lport->last_stun_msg();
   EXPECT_EQ(STUN_BINDING_RESPONSE, msg->type());
 
@@ -1353,7 +1362,7 @@ TEST_F(PortTest, TestLoopbackCal) {
                                               Port::ORIGIN_MESSAGE);
   conn1->Ping(0);
 
-  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
+  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, kDefaultTimeout);
   msg = lport->last_stun_msg();
   EXPECT_EQ(STUN_BINDING_REQUEST, msg->type());
   std::unique_ptr<IceMessage> modified_req(
@@ -1373,7 +1382,7 @@ TEST_F(PortTest, TestLoopbackCal) {
   std::unique_ptr<ByteBufferWriter> buf(new ByteBufferWriter());
   WriteStunMessage(modified_req.get(), buf.get());
   conn1->OnReadPacket(buf->Data(), buf->Length(), rtc::PacketTime());
-  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
+  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, kDefaultTimeout);
   msg = lport->last_stun_msg();
   EXPECT_EQ(STUN_BINDING_ERROR_RESPONSE, msg->type());
 }
@@ -1403,7 +1412,7 @@ TEST_F(PortTest, TestIceRoleConflict) {
                                               Port::ORIGIN_MESSAGE);
   rconn->Ping(0);
 
-  ASSERT_TRUE_WAIT(rport->last_stun_msg() != NULL, 1000);
+  ASSERT_TRUE_WAIT(rport->last_stun_msg() != NULL, kDefaultTimeout);
   IceMessage* msg = rport->last_stun_msg();
   EXPECT_EQ(STUN_BINDING_REQUEST, msg->type());
   // Send rport binding request to lport.
@@ -1411,7 +1420,7 @@ TEST_F(PortTest, TestIceRoleConflict) {
                       rport->last_stun_buf()->size(),
                       rtc::PacketTime());
 
-  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
+  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, kDefaultTimeout);
   EXPECT_EQ(STUN_BINDING_RESPONSE, lport->last_stun_msg()->type());
   EXPECT_TRUE(role_conflict());
 }
@@ -1618,7 +1627,7 @@ TEST_F(PortTest, TestSendStunMessage) {
   lconn->Ping(0);
 
   // Check that it's a proper BINDING-REQUEST.
-  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
+  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, kDefaultTimeout);
   IceMessage* msg = lport->last_stun_msg();
   EXPECT_EQ(STUN_BINDING_REQUEST, msg->type());
   EXPECT_FALSE(msg->IsLegacy());
@@ -1720,7 +1729,7 @@ TEST_F(PortTest, TestSendStunMessage) {
   rconn->Ping(0);
   rconn->Ping(0);
   rconn->Ping(0);
-  ASSERT_TRUE_WAIT(rport->last_stun_msg() != NULL, 1000);
+  ASSERT_TRUE_WAIT(rport->last_stun_msg() != NULL, kDefaultTimeout);
   msg = rport->last_stun_msg();
   EXPECT_EQ(STUN_BINDING_REQUEST, msg->type());
   const StunUInt64Attribute* ice_controlled_attr =
@@ -1779,7 +1788,7 @@ TEST_F(PortTest, TestUseCandidateAttribute) {
   Connection* lconn = lport->CreateConnection(
       rport->Candidates()[0], Port::ORIGIN_MESSAGE);
   lconn->Ping(0);
-  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
+  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, kDefaultTimeout);
   IceMessage* msg = lport->last_stun_msg();
   const StunUInt64Attribute* ice_controlling_attr =
       msg->GetUInt64(STUN_ATTR_ICE_CONTROLLING);
@@ -1838,14 +1847,14 @@ TEST_F(PortTest, TestNetworkCostChange) {
   // message is handled in rconn, The rconn's remote candidate will have cost
   // rtc::kNetworkCostHigh;
   EXPECT_EQ(rtc::kNetworkCostLow, rconn->remote_candidate().network_cost());
-  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
+  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, kDefaultTimeout);
   IceMessage* msg = lport->last_stun_msg();
   EXPECT_EQ(STUN_BINDING_REQUEST, msg->type());
   // Pass the binding request to rport.
   rconn->OnReadPacket(lport->last_stun_buf()->data<char>(),
                       lport->last_stun_buf()->size(), rtc::PacketTime());
   // Wait until rport sends the response and then check the remote network cost.
-  ASSERT_TRUE_WAIT(rport->last_stun_msg() != NULL, 1000);
+  ASSERT_TRUE_WAIT(rport->last_stun_msg() != NULL, kDefaultTimeout);
   EXPECT_EQ(rtc::kNetworkCostHigh, rconn->remote_candidate().network_cost());
 }
 
@@ -1867,7 +1876,7 @@ TEST_F(PortTest, TestNetworkInfoAttribute) {
   Connection* lconn =
       lport->CreateConnection(rport->Candidates()[0], Port::ORIGIN_MESSAGE);
   lconn->Ping(0);
-  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
+  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, kDefaultTimeout);
   IceMessage* msg = lport->last_stun_msg();
   const StunUInt32Attribute* network_info_attr =
       msg->GetUInt32(STUN_ATTR_NETWORK_INFO);
@@ -1885,7 +1894,7 @@ TEST_F(PortTest, TestNetworkInfoAttribute) {
   Connection* rconn =
       rport->CreateConnection(lport->Candidates()[0], Port::ORIGIN_MESSAGE);
   rconn->Ping(0);
-  ASSERT_TRUE_WAIT(rport->last_stun_msg() != NULL, 1000);
+  ASSERT_TRUE_WAIT(rport->last_stun_msg() != NULL, kDefaultTimeout);
   msg = rport->last_stun_msg();
   network_info_attr = msg->GetUInt32(STUN_ATTR_NETWORK_INFO);
   ASSERT_TRUE(network_info_attr != NULL);
@@ -2157,14 +2166,14 @@ TEST_F(PortTest, TestHandleStunBindingIndication) {
                                               Port::ORIGIN_MESSAGE);
   rconn->Ping(0);
 
-  ASSERT_TRUE_WAIT(rport->last_stun_msg() != NULL, 1000);
+  ASSERT_TRUE_WAIT(rport->last_stun_msg() != NULL, kDefaultTimeout);
   IceMessage* msg = rport->last_stun_msg();
   EXPECT_EQ(STUN_BINDING_REQUEST, msg->type());
   // Send rport binding request to lport.
   lconn->OnReadPacket(rport->last_stun_buf()->data<char>(),
                       rport->last_stun_buf()->size(),
                       rtc::PacketTime());
-  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
+  ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, kDefaultTimeout);
   EXPECT_EQ(STUN_BINDING_RESPONSE, lport->last_stun_msg()->type());
   int64_t last_ping_received1 = lconn->last_ping_received();
 
@@ -2245,7 +2254,7 @@ TEST_F(PortTest, TestCandidateFoundation) {
   std::unique_ptr<Port> stunport(
       CreateStunPort(kLocalAddr1, nat_socket_factory1()));
   stunport->PrepareAddress();
-  ASSERT_EQ_WAIT(1U, stunport->Candidates().size(), kTimeout);
+  ASSERT_EQ_WAIT(1U, stunport->Candidates().size(), kDefaultTimeout);
   EXPECT_NE(tcpport1->Candidates()[0].foundation(),
             stunport->Candidates()[0].foundation());
   EXPECT_NE(tcpport2->Candidates()[0].foundation(),
@@ -2259,7 +2268,7 @@ TEST_F(PortTest, TestCandidateFoundation) {
   relayport->AddServerAddress(
       cricket::ProtocolAddress(kRelayUdpIntAddr, cricket::PROTO_UDP));
   relayport->PrepareAddress();
-  ASSERT_EQ_WAIT(1U, relayport->Candidates().size(), kTimeout);
+  ASSERT_EQ_WAIT(1U, relayport->Candidates().size(), kDefaultTimeout);
   EXPECT_NE(udpport1->Candidates()[0].foundation(),
             relayport->Candidates()[0].foundation());
   EXPECT_NE(udpport2->Candidates()[0].foundation(),
@@ -2268,7 +2277,7 @@ TEST_F(PortTest, TestCandidateFoundation) {
   std::unique_ptr<Port> turnport1(
       CreateTurnPort(kLocalAddr1, nat_socket_factory1(), PROTO_UDP, PROTO_UDP));
   turnport1->PrepareAddress();
-  ASSERT_EQ_WAIT(1U, turnport1->Candidates().size(), kTimeout);
+  ASSERT_EQ_WAIT(1U, turnport1->Candidates().size(), kDefaultTimeout);
   EXPECT_NE(udpport1->Candidates()[0].foundation(),
             turnport1->Candidates()[0].foundation());
   EXPECT_NE(udpport2->Candidates()[0].foundation(),
@@ -2278,7 +2287,7 @@ TEST_F(PortTest, TestCandidateFoundation) {
   std::unique_ptr<Port> turnport2(
       CreateTurnPort(kLocalAddr1, nat_socket_factory1(), PROTO_UDP, PROTO_UDP));
   turnport2->PrepareAddress();
-  ASSERT_EQ_WAIT(1U, turnport2->Candidates().size(), kTimeout);
+  ASSERT_EQ_WAIT(1U, turnport2->Candidates().size(), kDefaultTimeout);
   EXPECT_EQ(turnport1->Candidates()[0].foundation(),
             turnport2->Candidates()[0].foundation());
 
@@ -2291,7 +2300,7 @@ TEST_F(PortTest, TestCandidateFoundation) {
       CreateTurnPort(kLocalAddr1, nat_socket_factory1(), PROTO_UDP, PROTO_UDP,
                      kTurnUdpIntAddr2));
   turnport3->PrepareAddress();
-  ASSERT_EQ_WAIT(1U, turnport3->Candidates().size(), kTimeout);
+  ASSERT_EQ_WAIT(1U, turnport3->Candidates().size(), kDefaultTimeout);
   EXPECT_NE(turnport3->Candidates()[0].foundation(),
             turnport2->Candidates()[0].foundation());
 
@@ -2302,7 +2311,7 @@ TEST_F(PortTest, TestCandidateFoundation) {
   std::unique_ptr<Port> turnport4(
       CreateTurnPort(kLocalAddr1, nat_socket_factory1(), PROTO_TCP, PROTO_UDP));
   turnport4->PrepareAddress();
-  ASSERT_EQ_WAIT(1U, turnport4->Candidates().size(), kTimeout);
+  ASSERT_EQ_WAIT(1U, turnport4->Candidates().size(), kDefaultTimeout);
   EXPECT_NE(turnport2->Candidates()[0].foundation(),
             turnport4->Candidates()[0].foundation());
 }
@@ -2322,7 +2331,7 @@ TEST_F(PortTest, TestCandidateRelatedAddress) {
   std::unique_ptr<StunPort> stunport(
       CreateStunPort(kLocalAddr1, nat_socket_factory1()));
   stunport->PrepareAddress();
-  ASSERT_EQ_WAIT(1U, stunport->Candidates().size(), kTimeout);
+  ASSERT_EQ_WAIT(1U, stunport->Candidates().size(), kDefaultTimeout);
   // Check STUN candidate address.
   EXPECT_EQ(stunport->Candidates()[0].address().ipaddr(),
             kNatAddr1.ipaddr());
@@ -2336,7 +2345,7 @@ TEST_F(PortTest, TestCandidateRelatedAddress) {
   relayport->AddServerAddress(
       cricket::ProtocolAddress(kRelayUdpIntAddr, cricket::PROTO_UDP));
   relayport->PrepareAddress();
-  ASSERT_EQ_WAIT(1U, relayport->Candidates().size(), kTimeout);
+  ASSERT_EQ_WAIT(1U, relayport->Candidates().size(), kDefaultTimeout);
   // For Gturn related address is set to "0.0.0.0:0"
   EXPECT_EQ(rtc::SocketAddress(),
             relayport->Candidates()[0].related_address());
@@ -2345,7 +2354,7 @@ TEST_F(PortTest, TestCandidateRelatedAddress) {
   std::unique_ptr<Port> turnport(
       CreateTurnPort(kLocalAddr1, nat_socket_factory1(), PROTO_UDP, PROTO_UDP));
   turnport->PrepareAddress();
-  ASSERT_EQ_WAIT(1U, turnport->Candidates().size(), kTimeout);
+  ASSERT_EQ_WAIT(1U, turnport->Candidates().size(), kDefaultTimeout);
   EXPECT_EQ(kTurnUdpExtAddr.ipaddr(),
             turnport->Candidates()[0].address().ipaddr());
   EXPECT_EQ(kNatAddr1.ipaddr(),
@@ -2401,6 +2410,7 @@ TEST_F(PortTest, TestConnectionPriority) {
 }
 
 TEST_F(PortTest, TestWritableState) {
+  rtc::ScopedFakeClock clock;
   UDPPort* port1 = CreateUdpPort(kLocalAddr1);
   port1->SetIceRole(cricket::ICEROLE_CONTROLLING);
   UDPPort* port2 = CreateUdpPort(kLocalAddr2);
@@ -2413,16 +2423,17 @@ TEST_F(PortTest, TestWritableState) {
   // Acquire addresses.
   ch1.Start();
   ch2.Start();
-  ASSERT_EQ_WAIT(1, ch1.complete_count(), kTimeout);
-  ASSERT_EQ_WAIT(1, ch2.complete_count(), kTimeout);
+  ASSERT_EQ_SIMULATED_WAIT(1, ch1.complete_count(), kDefaultTimeout, clock);
+  ASSERT_EQ_SIMULATED_WAIT(1, ch2.complete_count(), kDefaultTimeout, clock);
 
   // Send a ping from src to dst.
   ch1.CreateConnection(GetCandidate(port2));
   ASSERT_TRUE(ch1.conn() != NULL);
   EXPECT_EQ(Connection::STATE_WRITE_INIT, ch1.conn()->write_state());
-  EXPECT_TRUE_WAIT(ch1.conn()->connected(), kTimeout);  // for TCP connect
+  // for TCP connect
+  EXPECT_TRUE_SIMULATED_WAIT(ch1.conn()->connected(), kDefaultTimeout, clock);
   ch1.Ping();
-  WAIT(!ch2.remote_address().IsNil(), kTimeout);
+  SIMULATED_WAIT(!ch2.remote_address().IsNil(), kShortTimeout, clock);
 
   // Data should be sendable before the connection is accepted.
   char data[] = "abcd";
@@ -2433,8 +2444,8 @@ TEST_F(PortTest, TestWritableState) {
   // Accept the connection to return the binding response, transition to
   // writable, and allow data to be sent.
   ch2.AcceptConnection(GetCandidate(port1));
-  EXPECT_EQ_WAIT(Connection::STATE_WRITABLE, ch1.conn()->write_state(),
-                 kTimeout);
+  EXPECT_EQ_SIMULATED_WAIT(Connection::STATE_WRITABLE,
+                           ch1.conn()->write_state(), kDefaultTimeout, clock);
   EXPECT_EQ(data_size, ch1.conn()->Send(data, data_size, options));
 
   // Ask the connection to update state as if enough time has passed to lose
@@ -2452,8 +2463,8 @@ TEST_F(PortTest, TestWritableState) {
 
   // And now allow the other side to process the pings and send binding
   // responses.
-  EXPECT_EQ_WAIT(Connection::STATE_WRITABLE, ch1.conn()->write_state(),
-                 kTimeout);
+  EXPECT_EQ_SIMULATED_WAIT(Connection::STATE_WRITABLE,
+                           ch1.conn()->write_state(), kDefaultTimeout, clock);
 
   // Wait long enough for a full timeout (past however long we've already
   // waited).
@@ -2518,7 +2529,7 @@ TEST_F(PortTest, TestIceLiteConnectivity) {
   ch1.Start();
   ice_lite_port->PrepareAddress();
 
-  ASSERT_EQ_WAIT(1, ch1.complete_count(), kTimeout);
+  ASSERT_EQ_WAIT(1, ch1.complete_count(), kDefaultTimeout);
   ASSERT_FALSE(ice_lite_port->Candidates().empty());
 
   ch1.CreateConnection(GetCandidate(ice_lite_port.get()));
@@ -2531,7 +2542,7 @@ TEST_F(PortTest, TestIceLiteConnectivity) {
 
   // Verify stun ping is without USE_CANDIDATE_ATTR. Getting message directly
   // from port.
-  ASSERT_TRUE_WAIT(ice_full_port->last_stun_msg() != NULL, 1000);
+  ASSERT_TRUE_WAIT(ice_full_port->last_stun_msg() != NULL, kDefaultTimeout);
   IceMessage* msg = ice_full_port->last_stun_msg();
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_USE_CANDIDATE) == NULL);
 
@@ -2551,15 +2562,15 @@ TEST_F(PortTest, TestIceLiteConnectivity) {
                            rtc::PacketTime());
   // Verifying full mode connection becomes writable from the response.
   EXPECT_EQ_WAIT(Connection::STATE_WRITABLE, ch1.conn()->write_state(),
-                 kTimeout);
-  EXPECT_TRUE_WAIT(ch1.nominated(), kTimeout);
+                 kDefaultTimeout);
+  EXPECT_TRUE_WAIT(ch1.nominated(), kDefaultTimeout);
 
   // Clear existing stun messsages. Otherwise we will process old stun
   // message right after we send ping.
   ice_full_port->Reset();
   // Send ping. This must have USE_CANDIDATE_ATTR.
   ch1.Ping();
-  ASSERT_TRUE_WAIT(ice_full_port->last_stun_msg() != NULL, 1000);
+  ASSERT_TRUE_WAIT(ice_full_port->last_stun_msg() != NULL, kDefaultTimeout);
   msg = ice_full_port->last_stun_msg();
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_USE_CANDIDATE) != NULL);
   ch1.Stop();
