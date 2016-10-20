@@ -232,5 +232,16 @@
         'stats/rtcstatsreport.h',
       ],
     },  # target rtc_stats_api
+    {
+      # GN version: webrtc/api:audio_mixer_api
+      'target_name': 'audio_mixer_api',
+      'type': 'static_library',
+      'dependencies': [
+        '<(webrtc_root)/base/base.gyp:rtc_base_approved',
+      ],
+      'sources': [
+        'audio/audio_mixer.h',
+      ],
+    },  # target rtc_stats_api
   ],  # targets
 }

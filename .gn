@@ -20,6 +20,7 @@ secondary_source = "//build/secondary/"
 # "gn check" or "gn gen --check".
 # TODO(kjellander): Keep adding paths to this list as work in webrtc:5589 is done.
 check_targets = [
+  "//webrtc/api:audio_mixer_api",
   "//webrtc/api:rtc_stats_api",
   "//webrtc/modules/audio_coding:g711_test",
   "//webrtc/modules/audio_coding:g722_test",

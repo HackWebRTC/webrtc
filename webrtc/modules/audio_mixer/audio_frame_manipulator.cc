@@ -12,7 +12,6 @@
 #include "webrtc/modules/audio_mixer/audio_frame_manipulator.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/utility/include/audio_frame_operations.h"
-#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

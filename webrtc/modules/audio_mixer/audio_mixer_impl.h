@@ -14,14 +14,13 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/api/audio/audio_mixer.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
-#include "webrtc/modules/audio_mixer/audio_mixer.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/voice_engine/level_indicator.h"
 #include "webrtc/voice_engine_configurations.h"
 
 namespace webrtc {

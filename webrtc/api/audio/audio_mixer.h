@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_MIXER_AUDIO_MIXER_H_
-#define WEBRTC_MODULES_AUDIO_MIXER_AUDIO_MIXER_H_
+#ifndef WEBRTC_API_AUDIO_AUDIO_MIXER_H_
+#define WEBRTC_API_AUDIO_AUDIO_MIXER_H_
 
 #include <memory>
 
@@ -18,6 +18,9 @@
 
 namespace webrtc {
 
+// WORK IN PROGRESS
+// This class is under development and is not yet intended for for use outside
+// of WebRtc/Libjingle.
 class AudioMixer : public rtc::RefCountInterface {
  public:
   // A callback class that all mixer participants must inherit from/implement.
@@ -25,10 +28,11 @@ class AudioMixer : public rtc::RefCountInterface {
    public:
     enum class AudioFrameInfo {
       kNormal,  // The samples in audio_frame are valid and should be used.
-      kMuted,   // The samples in audio_frame should not be used, but should be
-      // implicitly interpreted as zero. Other fields in audio_frame
-      // may be read and should contain meaningful values.
-      kError  // audio_frame will not be used.
+      kMuted,   // The samples in audio_frame should not be used, but
+                // should be implicitly interpreted as zero. Other
+                // fields in audio_frame may be read and should
+                // contain meaningful values.
+      kError,   // The audio_frame will not be used.
     };
 
     struct AudioFrameWithInfo {
@@ -47,8 +51,8 @@ class AudioMixer : public rtc::RefCountInterface {
     // mixer.
     virtual AudioFrameWithInfo GetAudioFrameWithInfo(int sample_rate_hz) = 0;
 
-    // A way for a mixer implementation do distinguish participants.
-    virtual int ssrc() = 0;
+    // A way for a mixer implementation to distinguish participants.
+    virtual int Ssrc() = 0;
 
    protected:
     virtual ~Source() {}
@@ -75,4 +79,4 @@ class AudioMixer : public rtc::RefCountInterface {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_MIXER_AUDIO_MIXER_H_
+#endif  // WEBRTC_API_AUDIO_AUDIO_MIXER_H_

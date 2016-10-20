@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_MIXER_AUDIO_SOURCE_WITH_MIX_STATUS_H_
 #define WEBRTC_MODULES_AUDIO_MIXER_AUDIO_SOURCE_WITH_MIX_STATUS_H_
 
-#include "webrtc/modules/audio_mixer/audio_mixer.h"
+#include "webrtc/api/audio/audio_mixer.h"
 
 namespace webrtc {
 

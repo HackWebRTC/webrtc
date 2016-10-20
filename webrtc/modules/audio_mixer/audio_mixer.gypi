@@ -9,23 +9,33 @@
 {
   'targets': [
     {
-      'target_name': 'audio_mixer',
+      'target_name': 'audio_mixer_impl',
       'type': 'static_library',
       'dependencies': [
+        'audio_frame_manipulator',
         'audio_processing',
         'webrtc_utility',
-        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/api/api.gyp:audio_mixer_api',
         '<(webrtc_root)/base/base.gyp:rtc_base_approved',
-        '<(webrtc_root)/voice_engine/voice_engine.gyp:level_indicator',
+        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
-        'audio_frame_manipulator.cc',
-        'audio_frame_manipulator.h',
-        'audio_mixer.h',
         'audio_mixer_impl.cc',
         'audio_mixer_impl.h',
         'audio_source_with_mix_status.cc',
         'audio_source_with_mix_status.h',
+      ],
+    },
+    {
+      'target_name': 'audio_frame_manipulator',
+      'type': 'static_library',
+      'dependencies': [
+          'webrtc_utility',
+          '<(webrtc_root)/base/base.gyp:rtc_base_approved',
+      ],
+      'sources': [
+        'audio_frame_manipulator.cc',
+        'audio_frame_manipulator.h',
       ],
     },
   ], # targets

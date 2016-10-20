@@ -14,10 +14,10 @@
 #include <memory>
 #include <utility>
 
+#include "webrtc/api/audio/audio_mixer.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
-#include "webrtc/modules/audio_mixer/audio_mixer.h"
 #include "webrtc/test/gmock.h"
 
 using testing::_;
@@ -60,7 +60,7 @@ class MockMixerAudioSource : public AudioMixer::Source {
 
   MOCK_METHOD1(GetAudioFrameWithInfo, AudioFrameWithInfo(int sample_rate_hz));
 
-  MOCK_METHOD0(ssrc, int());
+  MOCK_METHOD0(Ssrc, int());
 
   AudioFrame* fake_frame() { return &fake_frame_; }
   AudioFrameInfo fake_info() { return fake_audio_frame_info_; }

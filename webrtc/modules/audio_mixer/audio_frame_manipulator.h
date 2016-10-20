@@ -12,7 +12,6 @@
 #define WEBRTC_MODULES_AUDIO_MIXER_AUDIO_FRAME_MANIPULATOR_H_
 
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
