@@ -10,6 +10,7 @@
 
 package org.webrtc;
 
+import android.graphics.SurfaceTexture;
 import android.opengl.GLES20;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -25,19 +26,26 @@ import java.util.concurrent.TimeUnit;
  */
 public class EglRenderer implements VideoRenderer.Callbacks {
   private static final String TAG = "EglRenderer";
+  private static final long LOG_INTERVAL_SEC = 4;
   private static final int MAX_SURFACE_CLEAR_COUNT = 3;
 
   private class EglSurfaceCreation implements Runnable {
-    private Surface surface;
+    private Object surface;
 
-    public synchronized void setSurface(Surface surface) {
+    public synchronized void setSurface(Object surface) {
       this.surface = surface;
     }
 
     @Override
     public synchronized void run() {
       if (surface != null && eglBase != null && !eglBase.hasSurface()) {
-        eglBase.createSurface((Surface) surface);
+        if (surface instanceof Surface) {
+          eglBase.createSurface((Surface) surface);
+        } else if (surface instanceof SurfaceTexture) {
+          eglBase.createSurface((SurfaceTexture) surface);
+        } else {
+          throw new IllegalStateException("Invalid surface: " + surface);
+        }
         eglBase.makeCurrent();
         // Necessary for YUV frames with odd width.
         GLES20.glPixelStorei(GLES20.GL_UNPACK_ALIGNMENT, 1);
@@ -51,6 +59,14 @@ public class EglRenderer implements VideoRenderer.Callbacks {
   // on |handlerLock|.
   private final Object handlerLock = new Object();
   private Handler renderThreadHandler;
+
+  // Variables for fps reduction.
+  private final Object fpsReductionLock = new Object();
+  // Time for when next frame should be rendered.
+  private long nextFrameTimeNs;
+  // Minimum duration between frames when fps reduction is active, or -1 if video is completely
+  // paused.
+  private long minRenderPeriodNs;
 
   // EGL and GL resources for drawing YUV/OES textures. After initilization, these are only accessed
   // from the render thread.
@@ -81,16 +97,32 @@ public class EglRenderer implements VideoRenderer.Callbacks {
   private int framesDropped;
   // Number of rendered video frames.
   private int framesRendered;
-  // Time in ns when the first video frame was rendered.
-  private long firstFrameTimeNs;
+  // Start time for counting these statistics, or 0 if we haven't started measuring yet.
+  private long statisticsStartTimeNs;
   // Time in ns spent in renderFrameOnRenderThread() function.
   private long renderTimeNs;
+  // Time in ns spent by the render thread in the swapBuffers() function.
+  private long renderSwapBufferTimeNs;
 
   // Runnable for posting frames to render thread.
   private final Runnable renderFrameRunnable = new Runnable() {
     @Override
     public void run() {
       renderFrameOnRenderThread();
+    }
+  };
+
+  private final Runnable logStatisticsRunnable = new Runnable() {
+    @Override
+    public void run() {
+      logStatistics();
+      synchronized (handlerLock) {
+        if (renderThreadHandler != null) {
+          renderThreadHandler.removeCallbacks(logStatisticsRunnable);
+          renderThreadHandler.postDelayed(
+              logStatisticsRunnable, TimeUnit.SECONDS.toMillis(LOG_INTERVAL_SEC));
+        }
+      }
     }
   };
 
@@ -128,15 +160,37 @@ public class EglRenderer implements VideoRenderer.Callbacks {
       ThreadUtils.invokeAtFrontUninterruptibly(renderThreadHandler, new Runnable() {
         @Override
         public void run() {
-          eglBase = EglBase.create(sharedContext, configAttributes);
+          // If sharedContext is null, then texture frames are disabled. This is typically for old
+          // devices that might not be fully spec compliant, so force EGL 1.0 since EGL 1.4 has
+          // caused trouble on some weird devices.
+          if (sharedContext == null) {
+            logD("EglBase10.create context");
+            eglBase = new EglBase10(null /* sharedContext */, configAttributes);
+          } else {
+            logD("EglBase.create shared context");
+            eglBase = EglBase.create(sharedContext, configAttributes);
+          }
         }
       });
+      renderThreadHandler.post(eglSurfaceCreationRunnable);
+      final long currentTimeNs = System.nanoTime();
+      resetStatistics(currentTimeNs);
+      renderThreadHandler.postDelayed(
+          logStatisticsRunnable, TimeUnit.SECONDS.toMillis(LOG_INTERVAL_SEC));
     }
   }
 
   public void createEglSurface(Surface surface) {
+    createEglSurfaceInternal(surface);
+  }
+
+  public void createEglSurface(SurfaceTexture surfaceTexture) {
+    createEglSurfaceInternal(surfaceTexture);
+  }
+
+  private void createEglSurfaceInternal(Object surface) {
     eglSurfaceCreationRunnable.setSurface(surface);
-    runOnRenderThread(eglSurfaceCreationRunnable);
+    postToRenderThread(eglSurfaceCreationRunnable);
   }
 
   /**
@@ -146,12 +200,14 @@ public class EglRenderer implements VideoRenderer.Callbacks {
    * don't call this function, the GL resources might leak.
    */
   public void release() {
+    logD("Releasing.");
     final CountDownLatch eglCleanupBarrier = new CountDownLatch(1);
     synchronized (handlerLock) {
       if (renderThreadHandler == null) {
         logD("Already released");
         return;
       }
+      renderThreadHandler.removeCallbacks(logStatisticsRunnable);
       // Release EGL and GL resources on render thread.
       renderThreadHandler.postAtFrontOfQueue(new Runnable() {
         @Override
@@ -193,21 +249,36 @@ public class EglRenderer implements VideoRenderer.Callbacks {
         pendingFrame = null;
       }
     }
-    resetStatistics();
     logD("Releasing done.");
   }
 
   /**
-   * Reset statistics. This will reset the logged statistics in logStatistics(), and
-   * RendererEvents.onFirstFrameRendered() will be called for the next frame.
+   * Reset the statistics logged in logStatistics().
    */
-  public void resetStatistics() {
+  private void resetStatistics(long currentTimeNs) {
     synchronized (statisticsLock) {
+      statisticsStartTimeNs = currentTimeNs;
       framesReceived = 0;
       framesDropped = 0;
       framesRendered = 0;
-      firstFrameTimeNs = 0;
       renderTimeNs = 0;
+      renderSwapBufferTimeNs = 0;
+    }
+  }
+
+  public void printStackTrace() {
+    synchronized (handlerLock) {
+      final Thread renderThread =
+          (renderThreadHandler == null) ? null : renderThreadHandler.getLooper().getThread();
+      if (renderThread != null) {
+        final StackTraceElement[] renderStackTrace = renderThread.getStackTrace();
+        if (renderStackTrace.length > 0) {
+          logD("EglRenderer stack trace:");
+          for (StackTraceElement traceElem : renderStackTrace) {
+            logD(traceElem.toString());
+          }
+        }
+      }
     }
   }
 
@@ -232,28 +303,75 @@ public class EglRenderer implements VideoRenderer.Callbacks {
     }
   }
 
+  /**
+   * Limit render framerate.
+   *
+   * @param fps Limit render framerate to this value, or use Float.POSITIVE_INFINITY to disable fps
+   *            reduction.
+   */
+  public void setFpsReduction(float fps) {
+    logD("setFpsReduction: " + fps);
+    synchronized (fpsReductionLock) {
+      final long previousRenderPeriodNs = minRenderPeriodNs;
+      if (fps <= 0) {
+        minRenderPeriodNs = Long.MAX_VALUE;
+      } else {
+        minRenderPeriodNs = (long) (TimeUnit.SECONDS.toNanos(1) / fps);
+      }
+      if (minRenderPeriodNs != previousRenderPeriodNs) {
+        // Fps reduction changed - reset frame time.
+        nextFrameTimeNs = System.nanoTime();
+      }
+    }
+  }
+
+  public void disableFpsReduction() {
+    setFpsReduction(Float.POSITIVE_INFINITY /* fps */);
+  }
+
+  public void pauseVideo() {
+    setFpsReduction(0 /* fps */);
+  }
+
   // VideoRenderer.Callbacks interface.
   @Override
   public void renderFrame(VideoRenderer.I420Frame frame) {
     synchronized (statisticsLock) {
       ++framesReceived;
     }
+    final boolean dropOldFrame;
     synchronized (handlerLock) {
       if (renderThreadHandler == null) {
         logD("Dropping frame - Not initialized or already released.");
         VideoRenderer.renderFrameDone(frame);
         return;
       }
-      synchronized (frameLock) {
-        if (pendingFrame != null) {
-          // Drop old frame.
-          synchronized (statisticsLock) {
-            ++framesDropped;
+      // Check if fps reduction is active.
+      synchronized (fpsReductionLock) {
+        if (minRenderPeriodNs > 0) {
+          final long currentTimeNs = System.nanoTime();
+          if (currentTimeNs < nextFrameTimeNs) {
+            logD("Dropping frame - fps reduction is active.");
+            VideoRenderer.renderFrameDone(frame);
+            return;
           }
+          nextFrameTimeNs += minRenderPeriodNs;
+          // The time for the next frame should always be in the future.
+          nextFrameTimeNs = Math.max(nextFrameTimeNs, currentTimeNs);
+        }
+      }
+      synchronized (frameLock) {
+        dropOldFrame = (pendingFrame != null);
+        if (dropOldFrame) {
           VideoRenderer.renderFrameDone(pendingFrame);
         }
         pendingFrame = frame;
         renderThreadHandler.post(renderFrameRunnable);
+      }
+    }
+    if (dropOldFrame) {
+      synchronized (statisticsLock) {
+        ++framesDropped;
       }
     }
   }
@@ -295,7 +413,7 @@ public class EglRenderer implements VideoRenderer.Callbacks {
   /**
    * Private helper function to post tasks safely.
    */
-  private void runOnRenderThread(Runnable runnable) {
+  private void postToRenderThread(Runnable runnable) {
     synchronized (handlerLock) {
       if (renderThreadHandler != null) {
         renderThreadHandler.post(runnable);
@@ -303,12 +421,29 @@ public class EglRenderer implements VideoRenderer.Callbacks {
     }
   }
 
-  private void makeBlack() {
+  private void clearSurfaceOnRenderThread() {
     if (eglBase != null && eglBase.hasSurface()) {
       logD("clearSurface");
       GLES20.glClearColor(0 /* red */, 0 /* green */, 0 /* blue */, 0 /* alpha */);
       GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
       eglBase.swapBuffers();
+    }
+  }
+
+  /**
+   * Post a task to clear the TextureView to a transparent uniform color.
+   */
+  public void clearImage() {
+    synchronized (handlerLock) {
+      if (renderThreadHandler == null) {
+        return;
+      }
+      renderThreadHandler.postAtFrontOfQueue(new Runnable() {
+        @Override
+        public void run() {
+          clearSurfaceOnRenderThread();
+        }
+      });
     }
   }
 
@@ -348,7 +483,7 @@ public class EglRenderer implements VideoRenderer.Callbacks {
           return;
         }
         logD("Surface size mismatch - clearing surface.");
-        makeBlack();
+        clearSurfaceOnRenderThread();
       }
       final float[] layoutMatrix;
       if (layoutAspectRatio > 0) {
@@ -380,30 +515,39 @@ public class EglRenderer implements VideoRenderer.Callbacks {
           surfaceWidth, surfaceHeight);
     }
 
+    final long swapBuffersStartTimeNs = System.nanoTime();
     eglBase.swapBuffers();
     VideoRenderer.renderFrameDone(frame);
+
+    final long currentTimeNs = System.nanoTime();
     synchronized (statisticsLock) {
-      if (framesRendered == 0) {
-        firstFrameTimeNs = startTimeNs;
-      }
       ++framesRendered;
-      renderTimeNs += (System.nanoTime() - startTimeNs);
-      if (framesRendered % 300 == 0) {
-        logStatistics();
-      }
+      renderTimeNs += (currentTimeNs - startTimeNs);
+      renderSwapBufferTimeNs += (currentTimeNs - swapBuffersStartTimeNs);
     }
   }
 
+  private String averageTimeAsString(long sumTimeNs, int count) {
+    return (count <= 0) ? "NA" : TimeUnit.NANOSECONDS.toMicros(sumTimeNs / count) + " μs";
+  }
+
   private void logStatistics() {
+    final long currentTimeNs = System.nanoTime();
     synchronized (statisticsLock) {
-      logD("Frames received: " + framesReceived + ". Dropped: " + framesDropped + ". Rendered: "
-          + framesRendered);
-      if (framesReceived > 0 && framesRendered > 0) {
-        final long timeSinceFirstFrameNs = System.nanoTime() - firstFrameTimeNs;
-        logD("Duration: " + (int) (timeSinceFirstFrameNs / 1e6) + " ms. FPS: "
-            + framesRendered * 1e9 / timeSinceFirstFrameNs);
-        logD("Average render time: " + (int) (renderTimeNs / (1000 * framesRendered)) + " us.");
+      final long elapsedTimeNs = currentTimeNs - statisticsStartTimeNs;
+      if (elapsedTimeNs <= 0) {
+        return;
       }
+      final float renderFps = framesRendered * TimeUnit.SECONDS.toNanos(1) / (float) elapsedTimeNs;
+      logD("Duration: " + TimeUnit.NANOSECONDS.toMillis(elapsedTimeNs) + " ms."
+          + " Frames received: " + framesReceived + "."
+          + " Dropped: " + framesDropped + "."
+          + " Rendered: " + framesRendered + "."
+          + " Render fps: " + String.format("%.1f", renderFps) + "."
+          + " Average render time: " + averageTimeAsString(renderTimeNs, framesRendered) + "."
+          + " Average swapBuffer time: "
+          + averageTimeAsString(renderSwapBufferTimeNs, framesRendered) + ".");
+      resetStatistics(currentTimeNs);
     }
   }
 
