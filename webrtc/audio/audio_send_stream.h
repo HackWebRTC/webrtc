@@ -61,6 +61,8 @@ class AudioSendStream final : public webrtc::AudioSendStream,
  private:
   VoiceEngine* voice_engine() const;
 
+  bool SetupSendCodec();
+
   rtc::ThreadChecker thread_checker_;
   rtc::TaskQueue* worker_queue_;
   const webrtc::AudioSendStream::Config config_;

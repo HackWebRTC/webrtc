@@ -30,6 +30,34 @@
 #include "webrtc/voice_engine/voice_engine_impl.h"
 
 namespace webrtc {
+
+namespace {
+
+constexpr char kOpusCodecName[] = "opus";
+
+// TODO(minyue): Remove |LOG_RTCERR2|.
+#define LOG_RTCERR2(func, a1, a2, err)                      \
+  LOG(LS_WARNING) << "" << #func << "(" << a1 << ", " << a2 \
+                  << ") failed, err=" << err
+
+// TODO(minyue): Remove |LOG_RTCERR3|.
+#define LOG_RTCERR3(func, a1, a2, a3, err)                                \
+  LOG(LS_WARNING) << "" << #func << "(" << a1 << ", " << a2 << ", " << a3 \
+                  << ") failed, err=" << err
+
+std::string ToString(const webrtc::CodecInst& codec) {
+  std::stringstream ss;
+  ss << codec.plname << "/" << codec.plfreq << "/" << codec.channels << " ("
+     << codec.pltype << ")";
+  return ss.str();
+}
+
+bool IsCodec(const webrtc::CodecInst& codec, const char* ref_name) {
+  return (_stricmp(codec.plname, ref_name) == 0);
+}
+
+}  // namespace
+
 std::string AudioSendStream::Config::Rtp::ToString() const {
   std::stringstream ss;
   ss << "{ssrc: " << ssrc;
@@ -52,7 +80,7 @@ std::string AudioSendStream::Config::ToString() const {
   ss << "{rtp: " << rtp.ToString();
   ss << ", voe_channel_id: " << voe_channel_id;
   // TODO(solenberg): Encoder config.
-  ss << ", cng_payload_type: " << cng_payload_type;
+  ss << ", cng_payload_type: " << send_codec_spec.cng_payload_type;
   ss << '}';
   return ss.str();
 }
@@ -101,6 +129,9 @@ AudioSendStream::AudioSendStream(
     } else {
       RTC_NOTREACHED() << "Registering unsupported RTP extension.";
     }
+  }
+  if (!SetupSendCodec()) {
+    LOG(LS_ERROR) << "Failed to set up send codec state.";
   }
 }
 
@@ -285,5 +316,127 @@ VoiceEngine* AudioSendStream::voice_engine() const {
   RTC_DCHECK(voice_engine);
   return voice_engine;
 }
+
+// Apply current codec settings to a single voe::Channel used for sending.
+bool AudioSendStream::SetupSendCodec() {
+  ScopedVoEInterface<VoEBase> base(voice_engine());
+  ScopedVoEInterface<VoECodec> codec(voice_engine());
+
+  const int channel = config_.voe_channel_id;
+
+  // Disable VAD and FEC unless we know the other side wants them.
+  codec->SetVADStatus(channel, false);
+  codec->SetFECStatus(channel, false);
+
+  const auto& send_codec_spec = config_.send_codec_spec;
+
+  // Set the codec immediately, since SetVADStatus() depends on whether
+  // the current codec is mono or stereo.
+  LOG(LS_INFO) << "Send channel " << channel << " selected voice codec "
+               << ToString(send_codec_spec.codec_inst)
+               << ", bitrate=" << send_codec_spec.codec_inst.rate;
+
+  // If codec is already configured, we do not it again.
+  // TODO(minyue): check if this check is really needed, or can we move it into
+  // |codec->SetSendCodec|.
+  webrtc::CodecInst current_codec = {0};
+  if (codec->GetSendCodec(channel, current_codec) != 0 ||
+      (send_codec_spec.codec_inst != current_codec)) {
+    if (codec->SetSendCodec(channel, send_codec_spec.codec_inst) == -1) {
+      LOG_RTCERR2(SetSendCodec, channel, ToString(send_codec_spec.codec_inst),
+                  base->LastError());
+      return false;
+    }
+  }
+
+  // FEC should be enabled after SetSendCodec.
+  if (send_codec_spec.enable_codec_fec) {
+    LOG(LS_INFO) << "Attempt to enable codec internal FEC on channel "
+                 << channel;
+    if (codec->SetFECStatus(channel, true) == -1) {
+      // Enable codec internal FEC. Treat any failure as fatal internal error.
+      LOG_RTCERR2(SetFECStatus, channel, true, base->LastError());
+      return false;
+    }
+  }
+
+  if (IsCodec(send_codec_spec.codec_inst, kOpusCodecName)) {
+    // DTX and maxplaybackrate should be set after SetSendCodec. Because current
+    // send codec has to be Opus.
+
+    // Set Opus internal DTX.
+    LOG(LS_INFO) << "Attempt to "
+                 << (send_codec_spec.enable_opus_dtx ? "enable" : "disable")
+                 << " Opus DTX on channel " << channel;
+    if (codec->SetOpusDtx(channel, send_codec_spec.enable_opus_dtx)) {
+      LOG_RTCERR2(SetOpusDtx, channel, send_codec_spec.enable_opus_dtx,
+                  base->LastError());
+      return false;
+    }
+
+    // If opus_max_playback_rate <= 0, the default maximum playback rate
+    // (48 kHz) will be used.
+    if (send_codec_spec.opus_max_playback_rate > 0) {
+      LOG(LS_INFO) << "Attempt to set maximum playback rate to "
+                   << send_codec_spec.opus_max_playback_rate
+                   << " Hz on channel " << channel;
+      if (codec->SetOpusMaxPlaybackRate(
+              channel, send_codec_spec.opus_max_playback_rate) == -1) {
+        LOG_RTCERR2(SetOpusMaxPlaybackRate, channel,
+                    send_codec_spec.opus_max_playback_rate, base->LastError());
+        return false;
+      }
+    }
+  }
+
+  // Set the CN payloadtype and the VAD status.
+  if (send_codec_spec.cng_payload_type != -1) {
+    // The CN payload type for 8000 Hz clockrate is fixed at 13.
+    if (send_codec_spec.cng_plfreq != 8000) {
+      webrtc::PayloadFrequencies cn_freq;
+      switch (send_codec_spec.cng_plfreq) {
+        case 16000:
+          cn_freq = webrtc::kFreq16000Hz;
+          break;
+        case 32000:
+          cn_freq = webrtc::kFreq32000Hz;
+          break;
+        default:
+          RTC_NOTREACHED();
+          return false;
+      }
+      if (codec->SetSendCNPayloadType(channel, send_codec_spec.cng_payload_type,
+                                      cn_freq) == -1) {
+        LOG_RTCERR3(SetSendCNPayloadType, channel,
+                    send_codec_spec.cng_payload_type, cn_freq,
+                    base->LastError());
+
+        // TODO(ajm): This failure condition will be removed from VoE.
+        // Restore the return here when we update to a new enough webrtc.
+        //
+        // Not returning false because the SetSendCNPayloadType will fail if
+        // the channel is already sending.
+        // This can happen if the remote description is applied twice, for
+        // example in the case of ROAP on top of JSEP, where both side will
+        // send the offer.
+      }
+    }
+
+    // Only turn on VAD if we have a CN payload type that matches the
+    // clockrate for the codec we are going to use.
+    if (send_codec_spec.cng_plfreq == send_codec_spec.codec_inst.plfreq &&
+        send_codec_spec.codec_inst.channels == 1) {
+      // TODO(minyue): If CN frequency == 48000 Hz is allowed, consider the
+      // interaction between VAD and Opus FEC.
+      LOG(LS_INFO) << "Enabling VAD";
+      if (codec->SetVADStatus(channel, true) == -1) {
+        LOG_RTCERR2(SetVADStatus, channel, true, base->LastError());
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 }  // namespace internal
 }  // namespace webrtc

@@ -44,11 +44,11 @@ const int kEchoReturnLossEnhancement = 101;
 const unsigned int kSpeechInputLevel = 96;
 const CallStatistics kCallStats = {
     1345,  1678,  1901, 1234,  112, 13456, 17890, 1567, -1890, -1123};
-const CodecInst kCodecInst = {-121, "codec_name_send", 48000, -231, 0, -671};
 const ReportBlock kReportBlock = {456, 780, 123, 567, 890, 132, 143, 13354};
 const int kTelephoneEventPayloadType = 123;
 const int kTelephoneEventCode = 45;
 const int kTelephoneEventDuration = 6789;
+const CodecInst kIsacCodec = {103, "isac", 16000, 320, 1, 32000};
 
 class MockLimitObserver : public BitrateAllocator::LimitObserver {
  public:
@@ -111,6 +111,7 @@ struct ConfigHelper {
               .Times(1);  // Destructor resets the event log
           return channel_proxy_;
         }));
+    SetupMockForSetupSendCodec();
     stream_config_.voe_channel_id = kChannelId;
     stream_config_.rtp.ssrc = kSsrc;
     stream_config_.rtp.nack.rtp_history_ms = 200;
@@ -121,6 +122,9 @@ struct ConfigHelper {
         RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeId));
     stream_config_.rtp.extensions.push_back(RtpExtension(
         RtpExtension::kTransportSequenceNumberUri, kTransportSequenceNumberId));
+    // Use ISAC as default codec so as to prevent unnecessary |voice_engine_|
+    // calls from the default ctor behavior.
+    stream_config_.send_codec_spec.codec_inst = kIsacCodec;
   }
 
   AudioSendStream::Config& config() { return stream_config_; }
@@ -132,6 +136,19 @@ struct ConfigHelper {
   BitrateAllocator* bitrate_allocator() { return &bitrate_allocator_; }
   rtc::TaskQueue* worker_queue() { return &worker_queue_; }
   RtcEventLog* event_log() { return &event_log_; }
+  MockVoiceEngine* voice_engine() { return &voice_engine_; }
+
+  void SetupMockForSetupSendCodec() {
+    EXPECT_CALL(voice_engine_, SetVADStatus(kChannelId, false, _, _))
+        .WillOnce(Return(0));
+    EXPECT_CALL(voice_engine_, SetFECStatus(kChannelId, false))
+        .WillOnce(Return(0));
+    // Let |GetSendCodec| return -1 for the first time to indicate that no send
+    // codec has been set.
+    EXPECT_CALL(voice_engine_, GetSendCodec(kChannelId, _))
+        .WillOnce(Return(-1));
+    EXPECT_CALL(voice_engine_, SetSendCodec(kChannelId, _)).WillOnce(Return(0));
+  }
 
   void SetupMockForSendTelephoneEvent() {
     EXPECT_TRUE(channel_proxy_);
@@ -162,7 +179,7 @@ struct ConfigHelper {
         .WillRepeatedly(Return(report_blocks));
 
     EXPECT_CALL(voice_engine_, GetSendCodec(kChannelId, _))
-        .WillRepeatedly(DoAll(SetArgReferee<1>(kCodecInst), Return(0)));
+        .WillRepeatedly(DoAll(SetArgReferee<1>(kIsacCodec), Return(0)));
     EXPECT_CALL(voice_engine_, GetSpeechInputLevelFullRange(_))
         .WillRepeatedly(DoAll(SetArgReferee<0>(kSpeechInputLevel), Return(0)));
     EXPECT_CALL(voice_engine_, GetEcMetricsStatus(_))
@@ -201,7 +218,7 @@ TEST(AudioSendStreamTest, ConfigToString) {
       RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeId));
   config.rtp.c_name = kCName;
   config.voe_channel_id = kChannelId;
-  config.cng_payload_type = 42;
+  config.send_codec_spec.cng_payload_type = 42;
   EXPECT_EQ(
       "{rtp: {ssrc: 1234, extensions: [{uri: "
       "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time, id: 3}], "
@@ -253,11 +270,11 @@ TEST(AudioSendStreamTest, GetStats) {
   EXPECT_EQ(static_cast<int32_t>(kReportBlock.cumulative_num_packets_lost),
             stats.packets_lost);
   EXPECT_EQ(Q8ToFloat(kReportBlock.fraction_lost), stats.fraction_lost);
-  EXPECT_EQ(std::string(kCodecInst.plname), stats.codec_name);
+  EXPECT_EQ(std::string(kIsacCodec.plname), stats.codec_name);
   EXPECT_EQ(static_cast<int32_t>(kReportBlock.extended_highest_sequence_number),
             stats.ext_seqnum);
   EXPECT_EQ(static_cast<int32_t>(kReportBlock.interarrival_jitter /
-                                 (kCodecInst.plfreq / 1000)),
+                                 (kIsacCodec.plfreq / 1000)),
             stats.jitter_ms);
   EXPECT_EQ(kCallStats.rttMs, stats.rtt_ms);
   EXPECT_EQ(static_cast<int32_t>(kSpeechInputLevel), stats.audio_level);
@@ -287,5 +304,55 @@ TEST(AudioSendStreamTest, GetStatsTypingNoiseDetected) {
   voe_observer->CallbackOnError(-1, VE_TYPING_NOISE_OFF_WARNING);
   EXPECT_FALSE(send_stream.GetStats().typing_noise_detected);
 }
+
+TEST(AudioSendStreamTest, SendCodecAppliesConfigParams) {
+  ConfigHelper helper;
+  auto stream_config = helper.config();
+  const CodecInst kOpusCodec = {111, "opus", 48000, 960, 2, 64000};
+  stream_config.send_codec_spec.codec_inst = kOpusCodec;
+  stream_config.send_codec_spec.enable_codec_fec = true;
+  stream_config.send_codec_spec.enable_opus_dtx = true;
+  stream_config.send_codec_spec.opus_max_playback_rate = 12345;
+  stream_config.send_codec_spec.cng_plfreq = 16000;
+  stream_config.send_codec_spec.cng_payload_type = 105;
+  EXPECT_CALL(*helper.voice_engine(), SetFECStatus(kChannelId, true))
+      .WillOnce(Return(0));
+  EXPECT_CALL(
+      *helper.voice_engine(),
+      SetOpusDtx(kChannelId, stream_config.send_codec_spec.enable_opus_dtx))
+      .WillOnce(Return(0));
+  EXPECT_CALL(
+      *helper.voice_engine(),
+      SetOpusMaxPlaybackRate(
+          kChannelId, stream_config.send_codec_spec.opus_max_playback_rate))
+      .WillOnce(Return(0));
+  EXPECT_CALL(*helper.voice_engine(),
+              SetSendCNPayloadType(
+                  kChannelId, stream_config.send_codec_spec.cng_payload_type,
+                  webrtc::kFreq16000Hz))
+      .WillOnce(Return(0));
+  internal::AudioSendStream send_stream(
+      stream_config, helper.audio_state(), helper.worker_queue(),
+      helper.congestion_controller(), helper.bitrate_allocator(),
+      helper.event_log());
+}
+
+// VAD is applied when codec is mono and the CNG frequency matches the codec
+// sample rate.
+TEST(AudioSendStreamTest, SendCodecCanApplyVad) {
+  ConfigHelper helper;
+  auto stream_config = helper.config();
+  const CodecInst kG722Codec = {9, "g722", 8000, 160, 1, 16000};
+  stream_config.send_codec_spec.codec_inst = kG722Codec;
+  stream_config.send_codec_spec.cng_plfreq = 8000;
+  stream_config.send_codec_spec.cng_payload_type = 105;
+  EXPECT_CALL(*helper.voice_engine(), SetVADStatus(kChannelId, true, _, _))
+      .WillOnce(Return(0));
+  internal::AudioSendStream send_stream(
+      stream_config, helper.audio_state(), helper.worker_queue(),
+      helper.congestion_controller(), helper.bitrate_allocator(),
+      helper.event_log());
+}
+
 }  // namespace test
 }  // namespace webrtc

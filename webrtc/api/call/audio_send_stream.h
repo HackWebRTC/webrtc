@@ -83,17 +83,60 @@ class AudioSendStream {
     // of Call.
     int voe_channel_id = -1;
 
-    // Ownership of the encoder object is transferred to Call when the config is
-    // passed to Call::CreateAudioSendStream().
-    // TODO(solenberg): Implement, once we configure codecs through the new API.
-    // std::unique_ptr<AudioEncoder> encoder;
-    int cng_payload_type = -1;  // pt, or -1 to disable Comfort Noise Generator.
-
     // Bitrate limits used for variable audio bitrate streams. Set both to -1 to
     // disable audio bitrate adaptation.
     // Note: This is still an experimental feature and not ready for real usage.
     int min_bitrate_kbps = -1;
     int max_bitrate_kbps = -1;
+
+    struct SendCodecSpec {
+      SendCodecSpec() {
+        webrtc::CodecInst empty_inst = {0};
+        codec_inst = empty_inst;
+        codec_inst.pltype = -1;
+      }
+      bool operator==(const SendCodecSpec& rhs) const {
+        {
+          if (nack_enabled != rhs.nack_enabled) {
+            return false;
+          }
+          if (transport_cc_enabled != rhs.transport_cc_enabled) {
+            return false;
+          }
+          if (enable_codec_fec != rhs.enable_codec_fec) {
+            return false;
+          }
+          if (enable_opus_dtx != rhs.enable_opus_dtx) {
+            return false;
+          }
+          if (opus_max_playback_rate != rhs.opus_max_playback_rate) {
+            return false;
+          }
+          if (cng_payload_type != rhs.cng_payload_type) {
+            return false;
+          }
+          if (cng_plfreq != rhs.cng_plfreq) {
+            return false;
+          }
+          if (codec_inst != rhs.codec_inst) {
+            return false;
+          }
+          return true;
+        }
+      }
+      bool operator!=(const SendCodecSpec& rhs) const {
+        return !(*this == rhs);
+      }
+
+      bool nack_enabled = false;
+      bool transport_cc_enabled = false;
+      bool enable_codec_fec = false;
+      bool enable_opus_dtx = false;
+      int opus_max_playback_rate = 0;
+      int cng_payload_type = -1;
+      int cng_plfreq = -1;
+      webrtc::CodecInst codec_inst;
+    } send_codec_spec;
   };
 
   // Starts stream activity.
