@@ -143,7 +143,6 @@ AudioMixerImpl::AudioMixerImpl(std::unique_ptr<AudioProcessing> limiter)
       time_stamp_(0),
       limiter_(std::move(limiter)) {
   SetOutputFrequency(kDefaultFrequency);
-  thread_checker_.DetachFromThread();
 }
 
 AudioMixerImpl::~AudioMixerImpl() {}
@@ -189,7 +188,7 @@ void AudioMixerImpl::Mix(int sample_rate,
                          size_t number_of_channels,
                          AudioFrame* audio_frame_for_mixing) {
   RTC_DCHECK(number_of_channels == 1 || number_of_channels == 2);
-  RTC_DCHECK_RUN_ON(&thread_checker_);
+  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
 
   if (OutputFrequency() != sample_rate) {
     SetOutputFrequency(sample_rate);
@@ -229,13 +228,13 @@ void AudioMixerImpl::Mix(int sample_rate,
 }
 
 void AudioMixerImpl::SetOutputFrequency(int frequency) {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
+  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
   output_frequency_ = frequency;
   sample_size_ = (output_frequency_ * kFrameDurationInMs) / 1000;
 }
 
 int AudioMixerImpl::OutputFrequency() const {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
+  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
   return output_frequency_;
 }
 
@@ -259,7 +258,7 @@ bool AudioMixerImpl::RemoveSource(Source* audio_source) {
 }
 
 AudioFrameList AudioMixerImpl::GetAudioFromSources() {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
+  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
   AudioFrameList result;
   std::vector<SourceFrame> audio_source_mixing_data_list;
   std::vector<SourceFrame> ramp_list;
@@ -312,7 +311,7 @@ AudioFrameList AudioMixerImpl::GetAudioFromSources() {
 
 
 bool AudioMixerImpl::LimitMixedAudio(AudioFrame* mixed_audio) const {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
+  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
   if (!use_limiter_) {
     return true;
   }
@@ -342,7 +341,7 @@ bool AudioMixerImpl::LimitMixedAudio(AudioFrame* mixed_audio) const {
 
 bool AudioMixerImpl::GetAudioSourceMixabilityStatusForTest(
     AudioMixerImpl::Source* audio_source) const {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
+  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
   rtc::CritScope lock(&crit_);
 
   const auto non_anonymous_iter =

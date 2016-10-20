@@ -17,7 +17,7 @@
 #include "webrtc/api/audio/audio_mixer.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/thread_annotations.h"
-#include "webrtc/base/thread_checker.h"
+#include "webrtc/base/race_checker.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
@@ -83,27 +83,27 @@ class AudioMixerImpl : public AudioMixer {
 
   bool LimitMixedAudio(AudioFrame* mixed_audio) const;
 
-
+  // The critical section lock guards audio source insertion and
+  // removal, which can be done from any thread. The race checker
+  // checks that mixing is done sequentially.
   rtc::CriticalSection crit_;
+  rtc::RaceChecker race_checker_;
 
   // The current sample frequency and sample size when mixing.
-  int output_frequency_ ACCESS_ON(&thread_checker_);
-  size_t sample_size_ ACCESS_ON(&thread_checker_);
+  int output_frequency_ GUARDED_BY(race_checker_);
+  size_t sample_size_ GUARDED_BY(race_checker_);
 
   // List of all audio sources. Note all lists are disjunct
   SourceStatusList audio_source_list_ GUARDED_BY(crit_);  // May be mixed.
 
   // Determines if we will use a limiter for clipping protection during
   // mixing.
-  bool use_limiter_ ACCESS_ON(&thread_checker_);
+  bool use_limiter_ GUARDED_BY(race_checker_);
 
-  uint32_t time_stamp_ ACCESS_ON(&thread_checker_);
-
-  // Ensures that Mix is called from the same thread.
-  rtc::ThreadChecker thread_checker_;
+  uint32_t time_stamp_ GUARDED_BY(race_checker_);
 
   // Used for inhibiting saturation in mixing.
-  std::unique_ptr<AudioProcessing> limiter_ ACCESS_ON(&thread_checker_);
+  std::unique_ptr<AudioProcessing> limiter_ GUARDED_BY(race_checker_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioMixerImpl);
 };
