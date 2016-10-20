@@ -17,6 +17,8 @@
     'webrtc_call_sources': [
       'call/bitrate_allocator.cc',
       'call/call.cc',
+      'call/flexfec_receive_stream.cc',
+      'call/flexfec_receive_stream.h',
       'call/transport_adapter.cc',
       'call/transport_adapter.h',
     ],

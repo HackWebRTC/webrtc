@@ -31,6 +31,20 @@ std::string UlpfecConfig::ToString() const {
   return ss.str();
 }
 
+std::string FlexfecConfig::ToString() const {
+  std::stringstream ss;
+  ss << "{flexfec_payload_type: " << flexfec_payload_type;
+  ss << ", flexfec_ssrc: " << flexfec_ssrc;
+  ss << ", protected_media_ssrcs: [";
+  size_t i = 0;
+  for (; i + 1 < protected_media_ssrcs.size(); ++i)
+    ss << protected_media_ssrcs[i] << ", ";
+  if (!protected_media_ssrcs.empty())
+    ss << protected_media_ssrcs[i];
+  ss << "]}";
+  return ss.str();
+}
+
 std::string RtpExtension::ToString() const {
   std::stringstream ss;
   ss << "{uri: " << uri;

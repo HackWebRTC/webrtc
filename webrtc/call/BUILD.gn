@@ -12,6 +12,8 @@ rtc_static_library("call") {
   sources = [
     "bitrate_allocator.cc",
     "call.cc",
+    "flexfec_receive_stream.cc",
+    "flexfec_receive_stream.h",
     "transport_adapter.cc",
     "transport_adapter.h",
   ]
@@ -41,6 +43,7 @@ if (rtc_include_tests) {
       "bitrate_allocator_unittest.cc",
       "bitrate_estimator_tests.cc",
       "call_unittest.cc",
+      "flexfec_receive_stream_unittest.cc",
       "packet_injection_tests.cc",
     ]
     deps = [

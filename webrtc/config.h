@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/basictypes.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
@@ -51,6 +52,26 @@ struct UlpfecConfig {
 
   // RTX payload type for RED payload.
   int red_rtx_payload_type;
+};
+
+// Settings for FlexFEC forward error correction.
+// Set the payload type to '-1' to disable.
+struct FlexfecConfig {
+  FlexfecConfig()
+      : flexfec_payload_type(-1), flexfec_ssrc(0), protected_media_ssrcs() {}
+  std::string ToString() const;
+
+  // Payload type of FlexFEC.
+  int flexfec_payload_type;
+
+  // SSRC of FlexFEC stream.
+  uint32_t flexfec_ssrc;
+
+  // Vector containing a single element, corresponding to the SSRC of the media
+  // stream being protected by this FlexFEC stream. The vector MUST have size 1.
+  //
+  // TODO(brandtr): Update comment above when we support multistream protection.
+  std::vector<uint32_t> protected_media_ssrcs;
 };
 
 // RTP header extension, see RFC 5285.

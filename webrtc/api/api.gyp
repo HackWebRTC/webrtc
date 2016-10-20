@@ -108,6 +108,7 @@
         'call/audio_send_stream.h',
         'call/audio_sink.h',
         'call/audio_state.h',
+        'call/flexfec_receive_stream.h'
       ],
     },
     {
