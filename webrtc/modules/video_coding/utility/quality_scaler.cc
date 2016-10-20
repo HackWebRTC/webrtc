@@ -88,7 +88,6 @@ void QualityScaler::Init(int low_qp_threshold,
   high_qp_threshold_ = high_qp_threshold;
   downscale_shift_ = 0;
   fast_rampup_ = true;
-  ReportFramerate(fps);
 
   const int init_width = width;
   const int init_height = height;
@@ -116,11 +115,6 @@ void QualityScaler::ReportFramerate(int framerate) {
   num_samples_upscale_ = framerate * (fast_rampup_ ? kMeasureSecondsFastUpscale
                                                    : kMeasureSecondsUpscale);
   num_samples_downscale_ = framerate * kMeasureSecondsDownscale;
-
-  average_qp_ =
-      MovingAverage(std::max(num_samples_upscale_, num_samples_downscale_));
-  framedrop_percent_ =
-      MovingAverage(std::max(num_samples_upscale_, num_samples_downscale_));
 }
 
 void QualityScaler::ReportQP(int qp) {
