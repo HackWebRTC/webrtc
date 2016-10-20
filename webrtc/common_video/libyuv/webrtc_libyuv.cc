@@ -340,6 +340,64 @@ double I420SSIM(const VideoFrame* ref_frame, const VideoFrame* test_frame) {
                   *test_frame->video_frame_buffer());
 }
 
+void NV12Scale(std::vector<uint8_t>* tmp_buffer,
+               const uint8_t* src_y, int src_stride_y,
+               const uint8_t* src_uv, int src_stride_uv,
+               int src_width, int src_height,
+               uint8_t* dst_y, int dst_stride_y,
+               uint8_t* dst_uv, int dst_stride_uv,
+               int dst_width, int dst_height) {
+  const int src_chroma_width = (src_width + 1) / 2;
+  const int src_chroma_height = (src_height + 1) / 2;
+
+  if (src_width == dst_width && src_height == dst_height) {
+    // No scaling.
+    tmp_buffer->clear();
+    tmp_buffer->shrink_to_fit();
+    libyuv::CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, src_width,
+                      src_height);
+    libyuv::CopyPlane(src_uv, src_stride_uv, dst_uv, dst_stride_uv,
+                      src_chroma_width * 2, src_chroma_height);
+    return;
+  }
+
+  // Scaling.
+  // Allocate temporary memory for spitting UV planes and scaling them.
+  const int dst_chroma_width = (dst_width + 1) / 2;
+  const int dst_chroma_height = (dst_height + 1) / 2;
+  tmp_buffer->resize(src_chroma_width * src_chroma_height * 2 +
+                     dst_chroma_width * dst_chroma_height * 2);
+  tmp_buffer->shrink_to_fit();
+
+  uint8_t* const src_u = tmp_buffer->data();
+  uint8_t* const src_v = src_u + src_chroma_width * src_chroma_height;
+  uint8_t* const dst_u = src_v + src_chroma_width * src_chroma_height;
+  uint8_t* const dst_v = dst_u + dst_chroma_width * dst_chroma_height;
+
+  // Split source UV plane into separate U and V plane using the temporary data.
+  libyuv::SplitUVPlane(src_uv, src_stride_uv,
+                       src_u, src_chroma_width,
+                       src_v, src_chroma_width,
+                       src_chroma_width, src_chroma_height);
+
+  // Scale the planes.
+  libyuv::I420Scale(src_y, src_stride_y,
+                    src_u, src_chroma_width,
+                    src_v, src_chroma_width,
+                    src_width, src_height,
+                    dst_y, dst_stride_y,
+                    dst_u, dst_chroma_width,
+                    dst_v, dst_chroma_width,
+                    dst_width, dst_height,
+                    libyuv::kFilterBox);
+
+  // Merge the UV planes into the destination.
+  libyuv::MergeUVPlane(dst_u, dst_chroma_width,
+                       dst_v, dst_chroma_width,
+                       dst_uv, dst_stride_uv,
+                       dst_chroma_width, dst_chroma_height);
+}
+
 void NV12ToI420Scaler::NV12ToI420Scale(
     const uint8_t* src_y, int src_stride_y,
     const uint8_t* src_uv, int src_stride_uv,

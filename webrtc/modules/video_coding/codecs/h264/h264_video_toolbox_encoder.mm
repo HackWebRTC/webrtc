@@ -24,6 +24,7 @@
 #include "libyuv/convert_from.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/common_video/include/corevideo_frame_buffer.h"
 #include "webrtc/modules/video_coding/codecs/h264/h264_video_toolbox_nalu.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
@@ -192,6 +193,23 @@ bool CopyVideoFrameToPixelBuffer(
   return true;
 }
 
+CVPixelBufferRef CreatePixelBuffer(CVPixelBufferPoolRef pixel_buffer_pool) {
+  if (!pixel_buffer_pool) {
+    LOG(LS_ERROR) << "Failed to get pixel buffer pool.";
+    return nullptr;
+  }
+  CVPixelBufferRef pixel_buffer;
+  CVReturn ret = CVPixelBufferPoolCreatePixelBuffer(nullptr, pixel_buffer_pool,
+                                                    &pixel_buffer);
+  if (ret != kCVReturnSuccess) {
+    LOG(LS_ERROR) << "Failed to create pixel buffer: " << ret;
+    // We probably want to drop frames here, since failure probably means
+    // that the pool is empty.
+    return nullptr;
+  }
+  return pixel_buffer;
+}
+
 // This is the callback function that VideoToolbox calls when encode is
 // complete. From inspection this happens on its own queue.
 void VTCompressionOutputCallback(void* encoder,
@@ -306,26 +324,31 @@ int H264VideoToolboxEncoder::Encode(
   CVPixelBufferRef pixel_buffer = static_cast<CVPixelBufferRef>(
       frame.video_frame_buffer()->native_handle());
   if (pixel_buffer) {
-    // This pixel buffer might have a higher resolution than what the
-    // compression session is configured to. The compression session can handle
-    // that and will output encoded frames in the configured resolution
-    // regardless of the input pixel buffer resolution.
-    CVBufferRetain(pixel_buffer);
-    pixel_buffer_pool = nullptr;
+    // Native frame.
+    rtc::scoped_refptr<CoreVideoFrameBuffer> core_video_frame_buffer(
+        static_cast<CoreVideoFrameBuffer*>(frame.video_frame_buffer().get()));
+    if (!core_video_frame_buffer->RequiresCropping()) {
+      // This pixel buffer might have a higher resolution than what the
+      // compression session is configured to. The compression session can
+      // handle that and will output encoded frames in the configured
+      // resolution regardless of the input pixel buffer resolution.
+      CVBufferRetain(pixel_buffer);
+    } else {
+      // Cropping required, we need to crop and scale to a new pixel buffer.
+      pixel_buffer = internal::CreatePixelBuffer(pixel_buffer_pool);
+      if (!pixel_buffer) {
+        return WEBRTC_VIDEO_CODEC_ERROR;
+      }
+      if (!core_video_frame_buffer->CropAndScaleTo(&nv12_scale_buffer_,
+                                                   pixel_buffer)) {
+        return WEBRTC_VIDEO_CODEC_ERROR;
+      }
+    }
   } else {
-    if (!pixel_buffer_pool) {
-      LOG(LS_ERROR) << "Failed to get pixel buffer pool.";
+    pixel_buffer = internal::CreatePixelBuffer(pixel_buffer_pool);
+    if (!pixel_buffer) {
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
-    CVReturn ret = CVPixelBufferPoolCreatePixelBuffer(
-        nullptr, pixel_buffer_pool, &pixel_buffer);
-    if (ret != kCVReturnSuccess) {
-      LOG(LS_ERROR) << "Failed to create pixel buffer: " << ret;
-      // We probably want to drop frames here, since failure probably means
-      // that the pool is empty.
-      return WEBRTC_VIDEO_CODEC_ERROR;
-    }
-    RTC_DCHECK(pixel_buffer);
     // TODO(magjed): Optimize by merging scaling and NV12 pixel buffer
     // conversion once libyuv::MergeUVPlanes is available.
     rtc::scoped_refptr<VideoFrameBuffer> scaled_i420_buffer =

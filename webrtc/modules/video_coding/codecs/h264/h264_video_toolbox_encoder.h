@@ -89,6 +89,7 @@ class H264VideoToolboxEncoder : public H264Encoder {
   QualityScaler quality_scaler_ GUARDED_BY(quality_scaler_crit_);
   H264BitstreamParser h264_bitstream_parser_;
   bool enable_scaling_;
+  std::vector<uint8_t> nv12_scale_buffer_;
 };  // H264VideoToolboxEncoder
 
 }  // namespace webrtc

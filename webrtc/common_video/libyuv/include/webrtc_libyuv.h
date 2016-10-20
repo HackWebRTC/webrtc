@@ -134,6 +134,15 @@ double I420SSIM(const VideoFrame* ref_frame, const VideoFrame* test_frame);
 double I420SSIM(const VideoFrameBuffer& ref_buffer,
                 const VideoFrameBuffer& test_buffer);
 
+// Helper function for scaling NV12 to NV12.
+void NV12Scale(std::vector<uint8_t>* tmp_buffer,
+               const uint8_t* src_y, int src_stride_y,
+               const uint8_t* src_uv, int src_stride_uv,
+               int src_width, int src_height,
+               uint8_t* dst_y, int dst_stride_y,
+               uint8_t* dst_uv, int dst_stride_uv,
+               int dst_width, int dst_height);
+
 // Helper class for directly converting and scaling NV12 to I420. The Y-plane
 // will be scaled directly to the I420 destination, which makes this faster
 // than separate NV12->I420 + I420->I420 scaling.
