@@ -272,6 +272,15 @@ bool AudioReceiveStream::DeliverRtp(const uint8_t* packet,
   return channel_proxy_->ReceivedRTPPacket(packet, length, packet_time);
 }
 
+AudioMixer::Source::AudioFrameWithInfo
+AudioReceiveStream::GetAudioFrameWithInfo(int sample_rate_hz) {
+  return channel_proxy_->GetAudioFrameWithInfo(sample_rate_hz);
+}
+
+int AudioReceiveStream::Ssrc() {
+  return config_.rtp.local_ssrc;
+}
+
 VoiceEngine* AudioReceiveStream::voice_engine() const {
   internal::AudioState* audio_state =
       static_cast<internal::AudioState*>(audio_state_.get());

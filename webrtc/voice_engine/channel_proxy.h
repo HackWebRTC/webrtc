@@ -11,7 +11,9 @@
 #ifndef WEBRTC_VOICE_ENGINE_CHANNEL_PROXY_H_
 #define WEBRTC_VOICE_ENGINE_CHANNEL_PROXY_H_
 
+#include "webrtc/api/audio/audio_mixer.h"
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/race_checker.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/voice_engine/channel_manager.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
@@ -91,10 +93,14 @@ class ChannelProxy {
 
   virtual void SetRtcEventLog(RtcEventLog* event_log);
 
+  virtual AudioMixer::Source::AudioFrameWithInfo GetAudioFrameWithInfo(
+      int sample_rate_hz);
+
  private:
   Channel* channel() const;
 
   rtc::ThreadChecker thread_checker_;
+  rtc::RaceChecker race_checker_;
   ChannelOwner channel_owner_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ChannelProxy);

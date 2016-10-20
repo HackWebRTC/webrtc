@@ -13,6 +13,7 @@
 
 #include <memory>
 
+#include "webrtc/api/audio/audio_mixer.h"
 #include "webrtc/api/call/audio_receive_stream.h"
 #include "webrtc/api/call/audio_state.h"
 #include "webrtc/base/constructormagic.h"
@@ -30,7 +31,8 @@ class ChannelProxy;
 
 namespace internal {
 
-class AudioReceiveStream final : public webrtc::AudioReceiveStream {
+class AudioReceiveStream final : public webrtc::AudioReceiveStream,
+                                 public AudioMixer::Source {
  public:
   AudioReceiveStream(CongestionController* congestion_controller,
                      const webrtc::AudioReceiveStream::Config& config,
@@ -51,6 +53,10 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream {
                   size_t length,
                   const PacketTime& packet_time);
   const webrtc::AudioReceiveStream::Config& config() const;
+
+  // AudioMixer::Source
+  AudioFrameWithInfo GetAudioFrameWithInfo(int sample_rate_hz) override;
+  int Ssrc() override;
 
  private:
   VoiceEngine* voice_engine() const;

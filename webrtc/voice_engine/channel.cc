@@ -712,6 +712,28 @@ MixerParticipant::AudioFrameInfo Channel::GetAudioFrameWithMuted(
                : MixerParticipant::AudioFrameInfo::kNormal;
 }
 
+AudioMixer::Source::AudioFrameWithInfo Channel::GetAudioFrameWithInfo(
+    int sample_rate_hz) {
+  mix_audio_frame_.sample_rate_hz_ = sample_rate_hz;
+
+  const auto frame_info = GetAudioFrameWithMuted(-1, &mix_audio_frame_);
+
+  using FrameInfo = AudioMixer::Source::AudioFrameInfo;
+  FrameInfo new_audio_frame_info = FrameInfo::kError;
+  switch (frame_info) {
+    case MixerParticipant::AudioFrameInfo::kNormal:
+      new_audio_frame_info = FrameInfo::kNormal;
+      break;
+    case MixerParticipant::AudioFrameInfo::kMuted:
+      new_audio_frame_info = FrameInfo::kMuted;
+      break;
+    case MixerParticipant::AudioFrameInfo::kError:
+      new_audio_frame_info = FrameInfo::kError;
+      break;
+  }
+  return {&mix_audio_frame_, new_audio_frame_info};
+}
+
 int32_t Channel::NeededFrequency(int32_t id) const {
   WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::NeededFrequency(id=%d)", id);

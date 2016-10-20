@@ -87,6 +87,7 @@ rtc_static_library("voice_engine") {
   deps = [
     ":level_indicator",
     "..:webrtc_common",
+    "../api:audio_mixer_api",
     "../api:call_api",
     "../base:rtc_base_approved",
     "../common_audio",

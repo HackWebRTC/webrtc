@@ -13,6 +13,7 @@
 
 #include <memory>
 
+#include "webrtc/api/audio/audio_mixer.h"
 #include "webrtc/api/call/audio_sink.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/optional.h"
@@ -377,6 +378,10 @@ class Channel
       AudioFrame* audioFrame) override;
   int32_t NeededFrequency(int32_t id) const override;
 
+  // From AudioMixer::Source.
+  AudioMixer::Source::AudioFrameWithInfo GetAudioFrameWithInfo(
+      int sample_rate_hz);
+
   // From FileCallback
   void PlayNotification(int32_t id, uint32_t durationMs) override;
   void RecordNotification(int32_t id, uint32_t durationMs) override;
@@ -470,6 +475,7 @@ class Channel
   AudioLevel _outputAudioLevel;
   bool _externalTransport;
   AudioFrame _audioFrame;
+  AudioFrame mix_audio_frame_;
   // Downsamples to the codec rate if necessary.
   PushResampler<int16_t> input_resampler_;
   std::unique_ptr<FilePlayer> input_file_player_;

@@ -214,6 +214,12 @@ void ChannelProxy::SetRtcEventLog(RtcEventLog* event_log) {
   channel()->SetRtcEventLog(event_log);
 }
 
+AudioMixer::Source::AudioFrameWithInfo ChannelProxy::GetAudioFrameWithInfo(
+    int sample_rate_hz) {
+  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
+  return channel()->GetAudioFrameWithInfo(sample_rate_hz);
+}
+
 Channel* ChannelProxy::channel() const {
   RTC_DCHECK(channel_owner_.channel());
   return channel_owner_.channel();
