@@ -13,8 +13,8 @@ package org.appspot.apprtc;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.isNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
@@ -110,6 +110,8 @@ public class DirectRTCClientTest {
     }
   }
 
+  // TODO(sakal): Replace isNotNull(class) with isNotNull() once Java 8 is used.
+  @SuppressWarnings("deprecation")
   @Test
   public void testDirectRTCClient() {
     server.connectToRoom(new AppRTCClient.RoomConnectionParameters(ROOM_URL, "0.0.0.0", LOOPBACK));
