@@ -150,7 +150,8 @@ bool WindowCapturerWin::BringSelectedWindowToFront() {
   if (!IsWindow(window_) || !IsWindowVisible(window_) || IsIconic(window_))
     return false;
 
-  return SetForegroundWindow(window_) != 0;
+  return BringWindowToTop(window_) != FALSE &&
+         SetForegroundWindow(window_) != FALSE;
 }
 
 void WindowCapturerWin::Start(Callback* callback) {
