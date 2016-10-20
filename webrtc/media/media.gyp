@@ -35,7 +35,6 @@
         'base/device.h',
         'base/hybriddataengine.h',
         'base/mediachannel.h',
-        'base/mediacommon.h',
         'base/mediaconstants.cc',
         'base/mediaconstants.h',
         'base/mediaengine.cc',
