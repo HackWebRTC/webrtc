@@ -137,4 +137,10 @@ TEST_F(RTCCertificateTest, CloneWithPEMSerialization) {
   EXPECT_EQ(orig->Expires(), clone->Expires());
 }
 
+TEST_F(RTCCertificateTest, FromPEMWithInvalidPEM) {
+  RTCCertificatePEM pem("not a valid PEM", "not a valid PEM");
+  scoped_refptr<RTCCertificate> certificate = RTCCertificate::FromPEM(pem);
+  EXPECT_FALSE(certificate);
+}
+
 }  // namespace rtc

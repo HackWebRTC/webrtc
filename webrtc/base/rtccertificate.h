@@ -66,6 +66,7 @@ class RTCCertificate : public RefCountInterface {
 
   // To/from PEM, a text representation of the RTCCertificate.
   RTCCertificatePEM ToPEM() const;
+  // Can return nullptr if the certificate is invalid.
   static scoped_refptr<RTCCertificate> FromPEM(const RTCCertificatePEM& pem);
   bool operator==(const RTCCertificate& certificate) const;
   bool operator!=(const RTCCertificate& certificate) const;
