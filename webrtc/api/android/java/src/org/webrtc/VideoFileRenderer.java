@@ -11,10 +11,10 @@ package org.webrtc;
 
 import android.os.Handler;
 import android.os.HandlerThread;
-
-import java.nio.ByteBuffer;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Can be used to save the video frames to file.
@@ -121,8 +121,12 @@ public class VideoFileRenderer implements VideoRenderer.Callbacks {
     }
   }
 
+  /**
+   * Release all resources. All already posted frames will be rendered first.
+   */
   public void release() {
-    ThreadUtils.invokeAtFrontUninterruptibly(renderThreadHandler, new Runnable() {
+    final CountDownLatch cleanupBarrier = new CountDownLatch(1);
+    renderThreadHandler.post(new Runnable() {
       @Override
       public void run() {
         try {
@@ -133,8 +137,10 @@ public class VideoFileRenderer implements VideoRenderer.Callbacks {
         yuvConverter.release();
         eglBase.release();
         renderThread.quit();
+        cleanupBarrier.countDown();
       }
     });
+    ThreadUtils.awaitUninterruptibly(cleanupBarrier);
   }
 
   public static native void nativeI420Scale(ByteBuffer srcY, int strideY, ByteBuffer srcU,
