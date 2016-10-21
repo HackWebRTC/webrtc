@@ -24,9 +24,6 @@
         'include/cpu_features_wrapper.h',
         'include/cpu_info.h',
         'include/critical_section_wrapper.h',
-        'include/data_log.h',
-        'include/data_log_c.h',
-        'include/data_log_impl.h',
         'include/event_wrapper.h',
         'include/field_trial.h',
         'include/file_wrapper.h',
@@ -51,7 +48,6 @@
         'source/condition_variable_event_win.h',
         'source/cpu_features.cc',
         'source/cpu_info.cc',
-        'source/data_log_c.cc',
         'source/event.cc',
         'source/event_timer_posix.cc',
         'source/event_timer_posix.h',
@@ -78,11 +74,6 @@
         'source/trace_win.h',
       ],
       'conditions': [
-        ['enable_data_logging==1', {
-          'sources': [ 'source/data_log.cc', ],
-        }, {
-          'sources': [ 'source/data_log_no_op.cc', ],
-        },],
         ['OS=="android"', {
           'defines': [
             'WEBRTC_THREAD_RR',

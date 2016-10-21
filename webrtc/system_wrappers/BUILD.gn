@@ -21,9 +21,6 @@ rtc_static_library("system_wrappers") {
     "include/cpu_features_wrapper.h",
     "include/cpu_info.h",
     "include/critical_section_wrapper.h",
-    "include/data_log.h",
-    "include/data_log_c.h",
-    "include/data_log_impl.h",
     "include/event_wrapper.h",
     "include/field_trial.h",
     "include/file_wrapper.h",
@@ -48,7 +45,6 @@ rtc_static_library("system_wrappers") {
     "source/condition_variable_event_win.h",
     "source/cpu_features.cc",
     "source/cpu_info.cc",
-    "source/data_log_c.cc",
     "source/event.cc",
     "source/event_timer_posix.cc",
     "source/event_timer_posix.h",
@@ -74,12 +70,6 @@ rtc_static_library("system_wrappers") {
     "source/trace_win.cc",
     "source/trace_win.h",
   ]
-
-  if (rtc_enable_data_logging) {
-    sources += [ "source/data_log.cc" ]
-  } else {
-    sources += [ "source/data_log_no_op.cc" ]
-  }
 
   defines = []
   libs = []
@@ -187,9 +177,6 @@ if (rtc_include_tests) {
       "source/clock_unittest.cc",
       "source/condition_variable_unittest.cc",
       "source/critical_section_unittest.cc",
-      "source/data_log_c_helpers_unittest.c",
-      "source/data_log_c_helpers_unittest.h",
-      "source/data_log_helpers_unittest.cc",
       "source/event_timer_posix_unittest.cc",
       "source/logging_unittest.cc",
       "source/metrics_default_unittest.cc",
@@ -199,13 +186,6 @@ if (rtc_include_tests) {
       "source/stl_util_unittest.cc",
       "source/stringize_macros_unittest.cc",
     ]
-    if (rtc_enable_data_logging) {
-      sources += [
-        "source/data_log_unittest.cc",
-        "source/data_log_unittest_disabled.cc",
-      ]
-    }
-
     configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 
     if (!build_with_chromium && is_clang) {

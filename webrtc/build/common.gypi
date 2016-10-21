@@ -107,10 +107,6 @@
     # Selects fixed-point code where possible.
     'prefer_fixed_point%': 0,
 
-    # Enable data logging. Produces text files with data logged within engines
-    # which can be easily parsed for offline processing.
-    'enable_data_logging%': 0,
-
     # Enables the use of protocol buffers for debug recordings.
     'enable_protobuf%': 1,
 

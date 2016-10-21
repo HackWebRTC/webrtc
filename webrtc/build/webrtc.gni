@@ -31,10 +31,6 @@ declare_args() {
   # Selects fixed-point code where possible.
   rtc_prefer_fixed_point = false
 
-  # Enable data logging. Produces text files with data logged within engines
-  # which can be easily parsed for offline processing.
-  rtc_enable_data_logging = false
-
   # Enables the use of protocol buffers for debug recordings.
   rtc_enable_protobuf = true
 
