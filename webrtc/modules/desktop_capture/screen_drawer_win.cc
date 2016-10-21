@@ -174,8 +174,8 @@ void ScreenDrawerWin::DrawDot(DesktopVector vect, RgbaColor color) {
 }
 
 void ScreenDrawerWin::BringToFront() {
-  if (SUCCEEDED(SetWindowPos(
-      window_, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE))) {
+  if (SetWindowPos(window_, HWND_TOPMOST, 0, 0, 0, 0,
+                   SWP_NOMOVE | SWP_NOSIZE) != FALSE) {
     return;
   }
 
