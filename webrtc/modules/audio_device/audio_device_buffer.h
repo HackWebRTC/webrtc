@@ -86,8 +86,8 @@ class AudioDeviceBuffer {
   // Updates counters in each play/record callback but does it on the task
   // queue to ensure that they can be read by LogStats() without any locks since
   // each task is serialized by the task queue.
-  void UpdateRecStats(const void* audio_buffer, size_t num_samples);
-  void UpdatePlayStats(const void* audio_buffer, size_t num_samples);
+  void UpdateRecStats(int16_t max_abs, size_t num_samples);
+  void UpdatePlayStats(int16_t max_abs, size_t num_samples);
 
   // Ensures that methods are called on the same thread as the thread that
   // creates this object.
@@ -202,6 +202,12 @@ class AudioDeviceBuffer {
   // (two per second) in a row equals zero. The member is only incremented on
   // the task queue and max once every 10th second.
   size_t num_rec_level_is_zero_;
+
+  // Counts number of audio callbacks modulo 50 to create a signal when
+  // a new storage of audio stats shall be done.
+  // Only updated on the OS-specific audio thread that drives audio.
+  int16_t rec_stat_count_;
+  int16_t play_stat_count_;
 };
 
 }  // namespace webrtc

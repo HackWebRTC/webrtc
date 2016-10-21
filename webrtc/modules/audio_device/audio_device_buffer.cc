@@ -59,7 +59,9 @@ AudioDeviceBuffer::AudioDeviceBuffer()
       last_log_stat_time_(0),
       max_rec_level_(0),
       max_play_level_(0),
-      num_rec_level_is_zero_(0) {
+      num_rec_level_is_zero_(0),
+      rec_stat_count_(0),
+      play_stat_count_(0) {
   LOG(INFO) << "AudioDeviceBuffer::ctor";
 }
 
@@ -234,12 +236,12 @@ int32_t AudioDeviceBuffer::StopOutputFileRecording() {
 
 int32_t AudioDeviceBuffer::SetRecordedBuffer(const void* audio_buffer,
                                              size_t num_samples) {
-  const size_t rec_bytes_per_sample = [&] {
+  const size_t rec_channels = [&] {
     rtc::CritScope lock(&lock_);
-    return rec_bytes_per_sample_;
+    return rec_channels_;
   }();
   // Copy the complete input buffer to the local buffer.
-  const size_t size_in_bytes = num_samples * rec_bytes_per_sample;
+  const size_t size_in_bytes = num_samples * rec_channels * sizeof(int16_t);
   const size_t old_size = rec_buffer_.size();
   rec_buffer_.SetData(static_cast<const uint8_t*>(audio_buffer), size_in_bytes);
   // Keep track of the size of the recording buffer. Only updated when the
@@ -247,10 +249,22 @@ int32_t AudioDeviceBuffer::SetRecordedBuffer(const void* audio_buffer,
   if (old_size != rec_buffer_.size()) {
     LOG(LS_INFO) << "Size of recording buffer: " << rec_buffer_.size();
   }
+  // Derive a new level value twice per second.
+  int16_t max_abs = 0;
+  RTC_DCHECK_LT(rec_stat_count_, 50);
+  if (++rec_stat_count_ >= 50) {
+    const size_t size = num_samples * rec_channels;
+    // Returns the largest absolute value in a signed 16-bit vector.
+    max_abs = WebRtcSpl_MaxAbsValueW16(
+        reinterpret_cast<const int16_t*>(rec_buffer_.data()), size);
+    rec_stat_count_ = 0;
+  }
   // Update some stats but do it on the task queue to ensure that the members
-  // are modified and read on the same thread.
+  // are modified and read on the same thread. Note that |max_abs| will be
+  // zero in most calls and then have no effect of the stats. It is only updated
+  // approximately two times per second and can then change the stats.
   task_queue_.PostTask(rtc::Bind(&AudioDeviceBuffer::UpdateRecStats, this,
-                                 audio_buffer, num_samples));
+                                 max_abs, num_samples));
   return 0;
 }
 
@@ -291,14 +305,15 @@ int32_t AudioDeviceBuffer::RequestPlayoutData(size_t num_samples) {
   last_playout_time_ = now_time;
   playout_diff_times_[diff_time]++;
 
-  const size_t play_bytes_per_sample = [&] {
+  const size_t play_channels = [&] {
     rtc::CritScope lock(&lock_);
-    return play_bytes_per_sample_;
+    return play_channels_;
   }();
 
   // The consumer can change the request size on the fly and we therefore
   // resize the buffer accordingly. Also takes place at the first call to this
   // method.
+  const size_t play_bytes_per_sample = play_channels * sizeof(int16_t);
   const size_t size_in_bytes = num_samples * play_bytes_per_sample;
   if (play_buffer_.size() != size_in_bytes) {
     play_buffer_.SetSize(size_in_bytes);
@@ -314,20 +329,33 @@ int32_t AudioDeviceBuffer::RequestPlayoutData(size_t num_samples) {
     return 0;
   }
 
+  // Retrieve new 16-bit PCM audio data using the audio transport instance.
   int64_t elapsed_time_ms = -1;
   int64_t ntp_time_ms = -1;
   size_t num_samples_out(0);
   uint32_t res = audio_transport_cb_->NeedMorePlayData(
-      num_samples, play_bytes_per_sample_, play_channels_, play_sample_rate_,
+      num_samples, play_bytes_per_sample_, play_channels, play_sample_rate_,
       play_buffer_.data(), num_samples_out, &elapsed_time_ms, &ntp_time_ms);
   if (res != 0) {
     LOG(LS_ERROR) << "NeedMorePlayData() failed";
   }
 
-  // Update some stats but do it on the task queue to ensure that access of
-  // members is serialized hence avoiding usage of locks.
+  // Derive a new level value twice per second.
+  int16_t max_abs = 0;
+  RTC_DCHECK_LT(play_stat_count_, 50);
+  if (++play_stat_count_ >= 50) {
+    const size_t size = num_samples * play_channels;
+    // Returns the largest absolute value in a signed 16-bit vector.
+    max_abs = WebRtcSpl_MaxAbsValueW16(
+        reinterpret_cast<const int16_t*>(play_buffer_.data()), size);
+    play_stat_count_ = 0;
+  }
+  // Update some stats but do it on the task queue to ensure that the members
+  // are modified and read on the same thread. Note that |max_abs| will be
+  // zero in most calls and then have no effect of the stats. It is only updated
+  // approximately two times per second and can then change the stats.
   task_queue_.PostTask(rtc::Bind(&AudioDeviceBuffer::UpdatePlayStats, this,
-                                 play_buffer_.data(), num_samples_out));
+                                 max_abs, num_samples_out));
   return static_cast<int32_t>(num_samples_out);
 }
 
@@ -421,39 +449,21 @@ void AudioDeviceBuffer::ResetPlayStats() {
   max_play_level_ = 0;
 }
 
-void AudioDeviceBuffer::UpdateRecStats(const void* audio_buffer,
-                                       size_t num_samples) {
+void AudioDeviceBuffer::UpdateRecStats(int16_t max_abs, size_t num_samples) {
   RTC_DCHECK(task_queue_.IsCurrent());
   ++rec_callbacks_;
   rec_samples_ += num_samples;
-
-  // Find the max absolute value in an audio packet twice per second and update
-  // |max_rec_level_| to track the largest value.
-  if (rec_callbacks_ % 50 == 0) {
-    int16_t max_abs = WebRtcSpl_MaxAbsValueW16(
-        static_cast<int16_t*>(const_cast<void*>(audio_buffer)),
-        num_samples * rec_channels_);
-    if (max_abs > max_rec_level_) {
-      max_rec_level_ = max_abs;
-    }
+  if (max_abs > max_rec_level_) {
+    max_rec_level_ = max_abs;
   }
 }
 
-void AudioDeviceBuffer::UpdatePlayStats(const void* audio_buffer,
-                                        size_t num_samples) {
+void AudioDeviceBuffer::UpdatePlayStats(int16_t max_abs, size_t num_samples) {
   RTC_DCHECK(task_queue_.IsCurrent());
   ++play_callbacks_;
   play_samples_ += num_samples;
-
-  // Find the max absolute value in an audio packet twice per second and update
-  // |max_play_level_| to track the largest value.
-  if (play_callbacks_ % 50 == 0) {
-    int16_t max_abs = WebRtcSpl_MaxAbsValueW16(
-        static_cast<int16_t*>(const_cast<void*>(audio_buffer)),
-        num_samples * play_channels_);
-    if (max_abs > max_play_level_) {
-      max_play_level_ = max_abs;
-    }
+  if (max_abs > max_play_level_) {
+    max_play_level_ = max_abs;
   }
 }
 
