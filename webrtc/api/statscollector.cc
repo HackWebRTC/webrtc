@@ -103,7 +103,8 @@ void SetAudioProcessingStats(StatsReport* report,
                              int echo_return_loss_enhancement,
                              int echo_delay_median_ms,
                              float aec_quality_min,
-                             int echo_delay_std_ms) {
+                             int echo_delay_std_ms,
+                             float residual_echo_likelihood) {
   report->AddBoolean(StatsReport::kStatsValueNameTypingNoiseState,
                      typing_noise_detected);
   if (aec_quality_min >= 0.0f) {
@@ -123,6 +124,10 @@ void SetAudioProcessingStats(StatsReport* report,
   report->AddInt(StatsReport::kStatsValueNameEchoReturnLoss, echo_return_loss);
   report->AddInt(StatsReport::kStatsValueNameEchoReturnLossEnhancement,
                  echo_return_loss_enhancement);
+  if (residual_echo_likelihood >= 0.0f) {
+    report->AddFloat(StatsReport::kStatsValueNameResidualEchoLikelihood,
+                     residual_echo_likelihood);
+  }
 }
 
 void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
@@ -181,7 +186,8 @@ void ExtractStats(const cricket::VoiceSenderInfo& info, StatsReport* report) {
   SetAudioProcessingStats(
       report, info.typing_noise_detected, info.echo_return_loss,
       info.echo_return_loss_enhancement, info.echo_delay_median_ms,
-      info.aec_quality_min, info.echo_delay_std_ms);
+      info.aec_quality_min, info.echo_delay_std_ms,
+      info.residual_echo_likelihood);
 
   RTC_DCHECK_GE(info.audio_level, 0);
   const IntForAdd ints[] = {
@@ -926,7 +932,8 @@ void StatsCollector::UpdateReportFromAudioTrack(AudioTrackInterface* track,
     SetAudioProcessingStats(
         report, stats.typing_noise_detected, stats.echo_return_loss,
         stats.echo_return_loss_enhancement, stats.echo_delay_median_ms,
-        stats.aec_quality_min, stats.echo_delay_std_ms);
+        stats.aec_quality_min, stats.echo_delay_std_ms,
+        stats.residual_echo_likelihood);
 
     report->AddFloat(StatsReport::kStatsValueNameAecDivergentFilterFraction,
                      stats.aec_divergent_filter_fraction);

@@ -198,6 +198,7 @@ class StatsReport {
     kStatsValueNameRemoteCandidateType,
     kStatsValueNameRemoteCertificateId,
     kStatsValueNameRenderDelayMs,
+    kStatsValueNameResidualEchoLikelihood,
     kStatsValueNameRetransmitBitrate,
     kStatsValueNameRtt,
     kStatsValueNameSecondaryDecodedRate,

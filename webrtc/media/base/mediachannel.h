@@ -597,6 +597,7 @@ struct VoiceSenderInfo : public MediaSenderInfo {
         echo_delay_std_ms(0),
         echo_return_loss(0),
         echo_return_loss_enhancement(0),
+        residual_echo_likelihood(0.0f),
         typing_noise_detected(false) {
   }
 
@@ -608,6 +609,7 @@ struct VoiceSenderInfo : public MediaSenderInfo {
   int echo_delay_std_ms;
   int echo_return_loss;
   int echo_return_loss_enhancement;
+  float residual_echo_likelihood;
   bool typing_noise_detected;
 };
 

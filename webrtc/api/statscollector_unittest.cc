@@ -402,8 +402,13 @@ void VerifyVoiceSenderInfoReport(const StatsReport* report,
       &value_in_report));
   EXPECT_EQ(rtc::ToString<int>(sinfo.echo_return_loss_enhancement),
             value_in_report);
-  EXPECT_TRUE(GetValue(
-      report, StatsReport::kStatsValueNameAudioInputLevel, &value_in_report));
+  EXPECT_TRUE(GetValue(report,
+                       StatsReport::kStatsValueNameResidualEchoLikelihood,
+                       &value_in_report));
+  EXPECT_EQ(rtc::ToString<float>(sinfo.residual_echo_likelihood),
+            value_in_report);
+  EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameAudioInputLevel,
+                       &value_in_report));
   EXPECT_EQ(rtc::ToString<int>(sinfo.audio_level), value_in_report);
   EXPECT_TRUE(GetValue(
       report, StatsReport::kStatsValueNameTypingNoiseState, &value_in_report));

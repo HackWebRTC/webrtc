@@ -41,6 +41,7 @@ const int kEchoDelayMedian = 254;
 const int kEchoDelayStdDev = -3;
 const int kEchoReturnLoss = -65;
 const int kEchoReturnLossEnhancement = 101;
+const float kResidualEchoLikelihood = 0.0f;
 const unsigned int kSpeechInputLevel = 96;
 const CallStatistics kCallStats = {
     1345,  1678,  1901, 1234,  112, 13456, 17890, 1567, -1890, -1123};
@@ -283,6 +284,7 @@ TEST(AudioSendStreamTest, GetStats) {
   EXPECT_EQ(kEchoDelayStdDev, stats.echo_delay_std_ms);
   EXPECT_EQ(kEchoReturnLoss, stats.echo_return_loss);
   EXPECT_EQ(kEchoReturnLossEnhancement, stats.echo_return_loss_enhancement);
+  EXPECT_EQ(kResidualEchoLikelihood, stats.residual_echo_likelihood);
   EXPECT_FALSE(stats.typing_noise_detected);
 }
 

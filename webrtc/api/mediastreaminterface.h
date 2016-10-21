@@ -195,8 +195,9 @@ class AudioProcessorInterface : public rtc::RefCountInterface {
                             echo_return_loss(0),
                             echo_return_loss_enhancement(0),
                             echo_delay_median_ms(0),
-                            aec_quality_min(0.0),
                             echo_delay_std_ms(0),
+                            aec_quality_min(0.0),
+                            residual_echo_likelihood(0.0f),
                             aec_divergent_filter_fraction(0.0) {}
     ~AudioProcessorStats() {}
 
@@ -204,8 +205,9 @@ class AudioProcessorInterface : public rtc::RefCountInterface {
     int echo_return_loss;
     int echo_return_loss_enhancement;
     int echo_delay_median_ms;
-    float aec_quality_min;
     int echo_delay_std_ms;
+    float aec_quality_min;
+    float residual_echo_likelihood;
     float aec_divergent_filter_fraction;
   };
 

@@ -267,6 +267,9 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
     stats.echo_return_loss_enhancement = erle;
   }
 
+  // TODO(ivoc): Hook this up to the residual echo detector.
+  stats.residual_echo_likelihood = 0.0f;
+
   internal::AudioState* audio_state =
       static_cast<internal::AudioState*>(audio_state_.get());
   stats.typing_noise_detected = audio_state->typing_noise_detected();

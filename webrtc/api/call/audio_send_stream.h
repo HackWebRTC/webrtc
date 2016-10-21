@@ -46,6 +46,7 @@ class AudioSendStream {
     int32_t echo_delay_std_ms = -1;
     int32_t echo_return_loss = -100;
     int32_t echo_return_loss_enhancement = -100;
+    float residual_echo_likelihood = -1.0f;
     bool typing_noise_detected = false;
   };
 
