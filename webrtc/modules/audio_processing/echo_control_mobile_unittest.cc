@@ -46,6 +46,7 @@ void ProcessOneFrame(int sample_rate_hz,
   }
 
   echo_control_mobile->ProcessRenderAudio(render_audio_buffer);
+  echo_control_mobile->ReadQueuedRenderData();
   echo_control_mobile->ProcessCaptureAudio(capture_audio_buffer,
                                            stream_delay_ms);
 
@@ -174,7 +175,7 @@ TEST(EchoControlMobileBitExactnessTest,
 
 TEST(EchoControlMobileBitExactnessTest,
      Mono16kHz_LoudSpeakerPhone_CngOn_StreamDelay10) {
-  const float kOutputReference[] = {-0.002411f, -0.002716f, -0.002747f};
+  const float kOutputReference[] = {-0.002380f, -0.002533f, -0.002563f};
 
   RunBitexactnessTest(16000, 1, 10,
                       EchoControlMobile::RoutingMode::kLoudSpeakerphone, true,
