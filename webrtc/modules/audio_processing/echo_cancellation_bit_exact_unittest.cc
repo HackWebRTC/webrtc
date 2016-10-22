@@ -50,6 +50,7 @@ void ProcessOneFrame(int sample_rate_hz,
   }
 
   echo_canceller->ProcessRenderAudio(render_audio_buffer);
+  echo_canceller->ReadQueuedRenderData();
 
   if (drift_compensation_enabled) {
     static_cast<EchoCancellation*>(echo_canceller)
@@ -128,7 +129,7 @@ void RunBitexactnessTest(int sample_rate_hz,
       output_reference, capture_output, kElementErrorBound));
 }
 
-const bool kStreamHasEchoReference = false;
+const bool kStreamHasEchoReference = true;
 
 }  // namespace
 
@@ -144,7 +145,7 @@ TEST(EchoCancellationBitExactnessTest,
 TEST(EchoCancellationBitExactnessTest,
      DISABLED_Mono8kHz_HighLevel_NoDrift_StreamDelay0) {
 #endif
-  const float kOutputReference[] = {-0.006622f, -0.002747f, 0.001587f};
+  const float kOutputReference[] = {-0.000646f, -0.001525f, 0.002688f};
   RunBitexactnessTest(8000, 1, 0, false, 0,
                       EchoCancellation::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
@@ -158,7 +159,7 @@ TEST(EchoCancellationBitExactnessTest,
 TEST(EchoCancellationBitExactnessTest,
      DISABLED_Mono16kHz_HighLevel_NoDrift_StreamDelay0) {
 #endif
-  const float kOutputReference[] = {-0.006561f, -0.004608f, -0.002899f};
+  const float kOutputReference[] = {0.000055f, 0.000421f, 0.001149f};
   RunBitexactnessTest(16000, 1, 0, false, 0,
                       EchoCancellation::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
@@ -172,7 +173,7 @@ TEST(EchoCancellationBitExactnessTest,
 TEST(EchoCancellationBitExactnessTest,
      DISABLED_Mono32kHz_HighLevel_NoDrift_StreamDelay0) {
 #endif
-  const float kOutputReference[] = {-0.010162f, -0.009155f, -0.008301f};
+  const float kOutputReference[] = {-0.000671f, 0.000061f, -0.000031f};
   RunBitexactnessTest(32000, 1, 0, false, 0,
                       EchoCancellation::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
@@ -186,7 +187,7 @@ TEST(EchoCancellationBitExactnessTest,
 TEST(EchoCancellationBitExactnessTest,
      DISABLED_Mono48kHz_HighLevel_NoDrift_StreamDelay0) {
 #endif
-  const float kOutputReference[] = {-0.009554f, -0.009857f, -0.009868f};
+  const float kOutputReference[] = {-0.001403f, -0.001411f, -0.000755f};
   RunBitexactnessTest(48000, 1, 0, false, 0,
                       EchoCancellation::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
@@ -200,7 +201,11 @@ TEST(EchoCancellationBitExactnessTest,
 TEST(EchoCancellationBitExactnessTest,
      DISABLED_Mono16kHz_LowLevel_NoDrift_StreamDelay0) {
 #endif
-  const float kOutputReference[] = {-0.006561f, -0.004608f, -0.002899f};
+#if defined(WEBRTC_MAC)
+  const float kOutputReference[] = {-0.000145f, 0.000179f, 0.000917f};
+#else
+  const float kOutputReference[] = {-0.000009f, 0.000363f, 0.001094f};
+#endif
   RunBitexactnessTest(16000, 1, 0, false, 0,
                       EchoCancellation::SuppressionLevel::kLowSuppression,
                       kStreamHasEchoReference, kOutputReference);
@@ -214,7 +219,7 @@ TEST(EchoCancellationBitExactnessTest,
 TEST(EchoCancellationBitExactnessTest,
      DISABLED_Mono16kHz_ModerateLevel_NoDrift_StreamDelay0) {
 #endif
-  const float kOutputReference[] = {-0.006561f, -0.004608f, -0.002899f};
+  const float kOutputReference[] = {0.000055f, 0.000421f, 0.001149f};
   RunBitexactnessTest(16000, 1, 0, false, 0,
                       EchoCancellation::SuppressionLevel::kModerateSuppression,
                       kStreamHasEchoReference, kOutputReference);
@@ -228,7 +233,7 @@ TEST(EchoCancellationBitExactnessTest,
 TEST(EchoCancellationBitExactnessTest,
      DISABLED_Mono16kHz_HighLevel_NoDrift_StreamDelay10) {
 #endif
-  const float kOutputReference[] = {-0.006561f, -0.004608f, -0.002899f};
+  const float kOutputReference[] = {0.000055f, 0.000421f, 0.001149f};
   RunBitexactnessTest(16000, 1, 10, false, 0,
                       EchoCancellation::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
@@ -242,7 +247,7 @@ TEST(EchoCancellationBitExactnessTest,
 TEST(EchoCancellationBitExactnessTest,
      DISABLED_Mono16kHz_HighLevel_NoDrift_StreamDelay20) {
 #endif
-  const float kOutputReference[] = {-0.006561f, -0.004608f, -0.002899f};
+  const float kOutputReference[] = {0.000055f, 0.000421f, 0.001149f};
   RunBitexactnessTest(16000, 1, 20, false, 0,
                       EchoCancellation::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
@@ -256,7 +261,7 @@ TEST(EchoCancellationBitExactnessTest,
 TEST(EchoCancellationBitExactnessTest,
      DISABLED_Mono16kHz_HighLevel_Drift0_StreamDelay0) {
 #endif
-  const float kOutputReference[] = {-0.006561f, -0.004608f, -0.002899f};
+  const float kOutputReference[] = {0.000055f, 0.000421f, 0.001149f};
   RunBitexactnessTest(16000, 1, 0, true, 0,
                       EchoCancellation::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
@@ -270,7 +275,7 @@ TEST(EchoCancellationBitExactnessTest,
 TEST(EchoCancellationBitExactnessTest,
      DISABLED_Mono16kHz_HighLevel_Drift5_StreamDelay0) {
 #endif
-  const float kOutputReference[] = {-0.006561f, -0.004608f, -0.002899f};
+  const float kOutputReference[] = {0.000055f, 0.000421f, 0.001149f};
   RunBitexactnessTest(16000, 1, 0, true, 5,
                       EchoCancellation::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
@@ -284,8 +289,13 @@ TEST(EchoCancellationBitExactnessTest,
 TEST(EchoCancellationBitExactnessTest,
      DISABLED_Stereo8kHz_HighLevel_NoDrift_StreamDelay0) {
 #endif
-  const float kOutputReference[] = {-0.027359f, -0.015823f, -0.028488f,
-                                    -0.027359f, -0.015823f, -0.028488f};
+#if defined(WEBRTC_MAC)
+  const float kOutputReference[] = {-0.000392f, -0.001449f, 0.003004f,
+                                    -0.000392f, -0.001449f, 0.003004f};
+#else
+  const float kOutputReference[] = {-0.000464f, -0.001525f, 0.002933f,
+                                    -0.000464f, -0.001525f, 0.002933f};
+#endif
   RunBitexactnessTest(8000, 2, 0, false, 0,
                       EchoCancellation::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
@@ -299,8 +309,8 @@ TEST(EchoCancellationBitExactnessTest,
 TEST(EchoCancellationBitExactnessTest,
      DISABLED_Stereo16kHz_HighLevel_NoDrift_StreamDelay0) {
 #endif
-  const float kOutputReference[] = {-0.027298f, -0.015900f, -0.028107f,
-                                    -0.027298f, -0.015900f, -0.028107f};
+  const float kOutputReference[] = {0.000166f, 0.000735f, 0.000841f,
+                                    0.000166f, 0.000735f, 0.000841f};
   RunBitexactnessTest(16000, 2, 0, false, 0,
                       EchoCancellation::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
@@ -314,8 +324,13 @@ TEST(EchoCancellationBitExactnessTest,
 TEST(EchoCancellationBitExactnessTest,
      DISABLED_Stereo32kHz_HighLevel_NoDrift_StreamDelay0) {
 #endif
-  const float kOutputReference[] = {0.004547f, -0.004456f, -0.000946f,
-                                    0.004547f, -0.004456f, -0.000946f};
+#if defined(WEBRTC_MAC)
+  const float kOutputReference[] = {-0.000458f, 0.000244f, 0.000153f,
+                                    -0.000458f, 0.000244f, 0.000153f};
+#else
+  const float kOutputReference[] = {-0.000427f, 0.000183f, 0.000183f,
+                                    -0.000427f, 0.000183f, 0.000183f};
+#endif
   RunBitexactnessTest(32000, 2, 0, false, 0,
                       EchoCancellation::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
@@ -329,8 +344,8 @@ TEST(EchoCancellationBitExactnessTest,
 TEST(EchoCancellationBitExactnessTest,
      DISABLED_Stereo48kHz_HighLevel_NoDrift_StreamDelay0) {
 #endif
-  const float kOutputReference[] = {-0.003500f, -0.001894f, -0.003176f,
-                                    -0.003500f, -0.001894f, -0.003176f};
+  const float kOutputReference[] = {-0.001101f, -0.001101f, -0.000449f,
+                                    -0.001101f, -0.001101f, -0.000449f};
   RunBitexactnessTest(48000, 2, 0, false, 0,
                       EchoCancellation::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
