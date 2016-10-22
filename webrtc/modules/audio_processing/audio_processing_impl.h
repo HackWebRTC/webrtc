@@ -19,9 +19,11 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/gtest_prod_util.h"
 #include "webrtc/base/ignore_wundef.h"
+#include "webrtc/base/swap_queue.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/modules/audio_processing/render_queue_item_verifier.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
@@ -233,6 +235,12 @@ class AudioProcessingImpl : public AudioProcessing {
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
   void InitializeLevelController() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
+  void EmptyQueuedRenderAudio();
+  void AllocateRenderQueue()
+      EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
+  void QueueRenderAudio(const AudioBuffer* audio)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
+
   // Capture-side exclusive methods possibly running APM in a multi-threaded
   // manner that are called with the render lock already acquired.
   int ProcessCaptureStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
@@ -362,6 +370,15 @@ class AudioProcessingImpl : public AudioProcessing {
     std::unique_ptr<AudioConverter> render_converter;
     std::unique_ptr<AudioBuffer> render_audio;
   } render_ GUARDED_BY(crit_render_);
+
+  size_t render_queue_element_max_size_ GUARDED_BY(crit_render_)
+      GUARDED_BY(crit_capture_) = 0;
+  std::vector<float> render_queue_buffer_ GUARDED_BY(crit_render_);
+  std::vector<float> capture_queue_buffer_ GUARDED_BY(crit_capture_);
+
+  // Lock protection not needed.
+  std::unique_ptr<SwapQueue<std::vector<float>, RenderQueueItemVerifier<float>>>
+      render_signal_queue_;
 };
 
 }  // namespace webrtc

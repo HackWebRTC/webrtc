@@ -49,8 +49,11 @@ void ProcessOneFrame(int sample_rate_hz,
     capture_audio_buffer->SplitIntoFrequencyBands();
   }
 
-  echo_canceller->ProcessRenderAudio(render_audio_buffer);
-  echo_canceller->ReadQueuedRenderData();
+  std::vector<float> render_audio;
+  EchoCancellationImpl::PackRenderAudioBuffer(
+      render_audio_buffer, 1, render_audio_buffer->num_channels(),
+      &render_audio);
+  echo_canceller->ProcessRenderAudio(render_audio);
 
   if (drift_compensation_enabled) {
     static_cast<EchoCancellation*>(echo_canceller)

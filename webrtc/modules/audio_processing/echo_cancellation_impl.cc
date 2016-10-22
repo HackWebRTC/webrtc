@@ -49,12 +49,6 @@ AudioProcessing::Error MapError(int err) {
   }
 }
 
-// Maximum length that a frame of samples can have.
-static const size_t kMaxAllowedValuesOfSamplesPerFrame = 160;
-// Maximum number of frames to buffer in the render queue.
-// TODO(peah): Decrease this once we properly handle hugely unbalanced
-// reverse and forward call numbers.
-static const size_t kMaxNumFramesToBuffer = 100;
 }  // namespace
 
 struct EchoCancellationImpl::StreamProperties {
@@ -113,93 +107,37 @@ EchoCancellationImpl::EchoCancellationImpl(rtc::CriticalSection* crit_render,
       delay_logging_enabled_(false),
       extended_filter_enabled_(false),
       delay_agnostic_enabled_(false),
-      aec3_enabled_(false),
-      render_queue_element_max_size_(0) {
+      aec3_enabled_(false) {
   RTC_DCHECK(crit_render);
   RTC_DCHECK(crit_capture);
 }
 
-EchoCancellationImpl::~EchoCancellationImpl() {}
+EchoCancellationImpl::~EchoCancellationImpl() = default;
 
-int EchoCancellationImpl::ProcessRenderAudio(const AudioBuffer* audio) {
-  rtc::CritScope cs_render(crit_render_);
-  if (!enabled_) {
-    return AudioProcessing::kNoError;
-  }
-
-  RTC_DCHECK(stream_properties_);
-  RTC_DCHECK_GE(160u, audio->num_frames_per_band());
-  RTC_DCHECK_EQ(audio->num_channels(),
-                stream_properties_->num_reverse_channels);
-  RTC_DCHECK_GE(cancellers_.size(), stream_properties_->num_output_channels *
-                                        audio->num_channels());
-
-  int err = AudioProcessing::kNoError;
-
-  // The ordering convention must be followed to pass to the correct AEC.
-  size_t handle_index = 0;
-  render_queue_buffer_.clear();
-  for (size_t i = 0; i < stream_properties_->num_output_channels; i++) {
-    for (size_t j = 0; j < audio->num_channels(); j++) {
-      // Retrieve any error code produced by the buffering of the farend
-      // signal.
-      err = WebRtcAec_GetBufferFarendError(
-          cancellers_[handle_index++]->state(),
-          audio->split_bands_const_f(j)[kBand0To8kHz],
-          audio->num_frames_per_band());
-
-      if (err != AudioProcessing::kNoError) {
-        return MapError(err);  // TODO(ajm): warning possible?
-      }
-
-      // Buffer the samples in the render queue.
-      render_queue_buffer_.insert(render_queue_buffer_.end(),
-                                  audio->split_bands_const_f(j)[kBand0To8kHz],
-                                  (audio->split_bands_const_f(j)[kBand0To8kHz] +
-                                   audio->num_frames_per_band()));
-    }
-  }
-
-  // Insert the samples into the queue.
-  if (!render_signal_queue_->Insert(&render_queue_buffer_)) {
-    // The data queue is full and needs to be emptied.
-    ReadQueuedRenderData();
-
-    // Retry the insert (should always work).
-    bool result = render_signal_queue_->Insert(&render_queue_buffer_);
-    RTC_DCHECK(result);
-  }
-
-  return AudioProcessing::kNoError;
-}
-
-// Read chunks of data that were received and queued on the render side from
-// a queue. All the data chunks are buffered into the farend signal of the AEC.
-void EchoCancellationImpl::ReadQueuedRenderData() {
+void EchoCancellationImpl::ProcessRenderAudio(
+    rtc::ArrayView<const float> packed_render_audio) {
   rtc::CritScope cs_capture(crit_capture_);
   if (!enabled_) {
     return;
   }
 
   RTC_DCHECK(stream_properties_);
-  while (render_signal_queue_->Remove(&capture_queue_buffer_)) {
-    size_t handle_index = 0;
-    size_t buffer_index = 0;
-    const size_t num_frames_per_band =
-        capture_queue_buffer_.size() /
-        (stream_properties_->num_output_channels *
-         stream_properties_->num_reverse_channels);
-    for (size_t i = 0; i < stream_properties_->num_output_channels; i++) {
-      for (size_t j = 0; j < stream_properties_->num_reverse_channels; j++) {
-        WebRtcAec_BufferFarend(cancellers_[handle_index++]->state(),
-                               &capture_queue_buffer_[buffer_index],
-                               num_frames_per_band);
+  size_t handle_index = 0;
+  size_t buffer_index = 0;
+  const size_t num_frames_per_band =
+      packed_render_audio.size() / (stream_properties_->num_output_channels *
+                                    stream_properties_->num_reverse_channels);
+  for (size_t i = 0; i < stream_properties_->num_output_channels; i++) {
+    for (size_t j = 0; j < stream_properties_->num_reverse_channels; j++) {
+      WebRtcAec_BufferFarend(cancellers_[handle_index++]->state(),
+                             &packed_render_audio[buffer_index],
+                             num_frames_per_band);
 
-        buffer_index += num_frames_per_band;
-      }
+      buffer_index += num_frames_per_band;
     }
   }
 }
+
 
 int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio,
                                               int stream_delay_ms) {
@@ -480,9 +418,12 @@ void EchoCancellationImpl::Initialize(int sample_rate_hz,
     return;
   }
 
-  if (NumCancellersRequired() > cancellers_.size()) {
+  const size_t num_cancellers_required =
+      NumCancellersRequired(stream_properties_->num_output_channels,
+                            stream_properties_->num_reverse_channels);
+  if (num_cancellers_required > cancellers_.size()) {
     const size_t cancellers_old_size = cancellers_.size();
-    cancellers_.resize(NumCancellersRequired());
+    cancellers_.resize(num_cancellers_required);
 
     for (size_t i = cancellers_old_size; i < cancellers_.size(); ++i) {
       cancellers_[i].reset(new Canceller());
@@ -494,8 +435,6 @@ void EchoCancellationImpl::Initialize(int sample_rate_hz,
   }
 
   Configure();
-
-  AllocateRenderQueue();
 }
 
 int EchoCancellationImpl::GetSystemDelayInSamples() const {
@@ -506,30 +445,24 @@ int EchoCancellationImpl::GetSystemDelayInSamples() const {
       WebRtcAec_aec_core(cancellers_[0]->state()));
 }
 
-void EchoCancellationImpl::AllocateRenderQueue() {
-  const size_t new_render_queue_element_max_size = std::max<size_t>(
-      static_cast<size_t>(1),
-      kMaxAllowedValuesOfSamplesPerFrame * NumCancellersRequired());
+void EchoCancellationImpl::PackRenderAudioBuffer(
+    const AudioBuffer* audio,
+    size_t num_output_channels,
+    size_t num_channels,
+    std::vector<float>* packed_buffer) {
+  RTC_DCHECK_GE(160u, audio->num_frames_per_band());
+  RTC_DCHECK_EQ(num_channels, audio->num_channels());
 
-  rtc::CritScope cs_render(crit_render_);
-  rtc::CritScope cs_capture(crit_capture_);
-
-  // Reallocate the queue if the queue item size is too small to fit the
-  // data to put in the queue.
-  if (render_queue_element_max_size_ < new_render_queue_element_max_size) {
-    render_queue_element_max_size_ = new_render_queue_element_max_size;
-
-    std::vector<float> template_queue_element(render_queue_element_max_size_);
-
-    render_signal_queue_.reset(
-        new SwapQueue<std::vector<float>, RenderQueueItemVerifier<float>>(
-            kMaxNumFramesToBuffer, template_queue_element,
-            RenderQueueItemVerifier<float>(render_queue_element_max_size_)));
-
-    render_queue_buffer_.resize(render_queue_element_max_size_);
-    capture_queue_buffer_.resize(render_queue_element_max_size_);
-  } else {
-    render_signal_queue_->Clear();
+  packed_buffer->clear();
+  // The ordering convention must be followed to pass the correct data.
+  for (size_t i = 0; i < num_output_channels; i++) {
+    for (size_t j = 0; j < audio->num_channels(); j++) {
+      // Buffer the samples in the render queue.
+      packed_buffer->insert(packed_buffer->end(),
+                            audio->split_bands_const_f(j)[kBand0To8kHz],
+                            (audio->split_bands_const_f(j)[kBand0To8kHz] +
+                             audio->num_frames_per_band()));
+    }
   }
 }
 
@@ -573,10 +506,10 @@ int EchoCancellationImpl::Configure() {
   return error;
 }
 
-size_t EchoCancellationImpl::NumCancellersRequired() const {
-  RTC_DCHECK(stream_properties_);
-  return stream_properties_->num_output_channels *
-         stream_properties_->num_reverse_channels;
+size_t EchoCancellationImpl::NumCancellersRequired(
+    size_t num_output_channels,
+    size_t num_reverse_channels) {
+  return num_output_channels * num_reverse_channels;
 }
 
 }  // namespace webrtc

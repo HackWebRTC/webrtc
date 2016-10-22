@@ -119,6 +119,13 @@ int FindNativeProcessRateToUse(int minimum_rate, bool band_splitting_required) {
   return uppermost_native_rate;
 }
 
+// Maximum length that a frame of samples can have.
+static const size_t kMaxAllowedValuesOfSamplesPerFrame = 160;
+// Maximum number of frames to buffer in the render queue.
+// TODO(peah): Decrease this once we properly handle hugely unbalanced
+// reverse and forward call numbers.
+static const size_t kMaxNumFramesToBuffer = 100;
+
 }  // namespace
 
 // Throughout webrtc, it's assumed that success is represented by zero.
@@ -430,9 +437,12 @@ int AudioProcessingImpl::InitializeLocked() {
 
   public_submodules_->gain_control->Initialize(num_proc_channels(),
                                                proc_sample_rate_hz());
+
   public_submodules_->echo_cancellation->Initialize(
       proc_sample_rate_hz(), num_reverse_channels(), num_output_channels(),
       num_proc_channels());
+  AllocateRenderQueue();
+
   public_submodules_->echo_control_mobile->Initialize(
       proc_split_sample_rate_hz(), num_reverse_channels(),
       num_output_channels());
@@ -697,7 +707,7 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
     // that retrieves the render side data. This function accesses apm
     // getters that need the capture lock held when being called.
     rtc::CritScope cs_capture(&crit_capture_);
-    public_submodules_->echo_cancellation->ReadQueuedRenderData();
+    EmptyQueuedRenderAudio();
     public_submodules_->echo_control_mobile->ReadQueuedRenderData();
     public_submodules_->gain_control->ReadQueuedRenderData();
 
@@ -757,6 +767,58 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
   return kNoError;
 }
 
+void AudioProcessingImpl::QueueRenderAudio(const AudioBuffer* audio) {
+  EchoCancellationImpl::PackRenderAudioBuffer(audio, num_output_channels(),
+                                              num_reverse_channels(),
+                                              &render_queue_buffer_);
+
+  RTC_DCHECK_GE(160u, audio->num_frames_per_band());
+
+  // Insert the samples into the queue.
+  if (!render_signal_queue_->Insert(&render_queue_buffer_)) {
+    // The data queue is full and needs to be emptied.
+    EmptyQueuedRenderAudio();
+
+    // Retry the insert (should always work).
+    bool result = render_signal_queue_->Insert(&render_queue_buffer_);
+    RTC_DCHECK(result);
+  }
+}
+
+void AudioProcessingImpl::AllocateRenderQueue() {
+  const size_t new_render_queue_element_max_size =
+      std::max(static_cast<size_t>(1),
+               kMaxAllowedValuesOfSamplesPerFrame *
+                   EchoCancellationImpl::NumCancellersRequired(
+                       num_output_channels(), num_reverse_channels()));
+
+  // Reallocate the queue if the queue item size is too small to fit the
+  // data to put in the queue.
+  if (render_queue_element_max_size_ < new_render_queue_element_max_size) {
+    render_queue_element_max_size_ = new_render_queue_element_max_size;
+
+    std::vector<float> template_queue_element(render_queue_element_max_size_);
+
+    render_signal_queue_.reset(
+        new SwapQueue<std::vector<float>, RenderQueueItemVerifier<float>>(
+            kMaxNumFramesToBuffer, template_queue_element,
+            RenderQueueItemVerifier<float>(render_queue_element_max_size_)));
+
+    render_queue_buffer_.resize(render_queue_element_max_size_);
+    capture_queue_buffer_.resize(render_queue_element_max_size_);
+  } else {
+    render_signal_queue_->Clear();
+  }
+}
+
+void AudioProcessingImpl::EmptyQueuedRenderAudio() {
+  rtc::CritScope cs_capture(&crit_capture_);
+  while (render_signal_queue_->Remove(&capture_queue_buffer_)) {
+    public_submodules_->echo_cancellation->ProcessRenderAudio(
+        capture_queue_buffer_);
+  }
+}
+
 int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
   TRACE_EVENT0("webrtc", "AudioProcessing::ProcessStream_AudioFrame");
   {
@@ -767,7 +829,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
     // public_submodules_->echo_control_mobile->is_enabled() aquires this lock
     // as well.
     rtc::CritScope cs_capture(&crit_capture_);
-    public_submodules_->echo_cancellation->ReadQueuedRenderData();
+    EmptyQueuedRenderAudio();
     public_submodules_->echo_control_mobile->ReadQueuedRenderData();
     public_submodules_->gain_control->ReadQueuedRenderData();
   }
@@ -1130,8 +1192,7 @@ int AudioProcessingImpl::ProcessRenderStreamLocked() {
   }
 #endif
 
-  RETURN_ON_ERR(
-      public_submodules_->echo_cancellation->ProcessRenderAudio(render_buffer));
+  QueueRenderAudio(render_buffer);
   RETURN_ON_ERR(public_submodules_->echo_control_mobile->ProcessRenderAudio(
       render_buffer));
   if (!constants_.use_experimental_agc) {
