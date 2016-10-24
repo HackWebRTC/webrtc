@@ -22,32 +22,19 @@ constexpr float kFlIncreasingPacketLossFraction = 0.04f;
 constexpr float kFlDecreasingPacketLossFraction = 0.05f;
 constexpr int kFl20msTo60msBandwidthBps = 22000;
 constexpr int kFl60msTo20msBandwidthBps = 88000;
-constexpr int kMinReceiverFrameLengthMs = 10;
-constexpr int kMaxReceiverFrameLengthMs = 120;
 constexpr int kMediumBandwidthBps =
     (kFl60msTo20msBandwidthBps + kFl20msTo60msBandwidthBps) / 2;
 constexpr float kMediumPacketLossFraction =
     (kFlDecreasingPacketLossFraction + kFlIncreasingPacketLossFraction) / 2;
 
-void SetReceiverFrameLengthRange(FrameLengthController* controller,
-                                 int min_frame_length_ms,
-                                 int max_frame_length_ms) {
-  Controller::Constraints constraints;
-  using FrameLengthRange = Controller::Constraints::FrameLengthRange;
-  constraints.receiver_frame_length_range = rtc::Optional<FrameLengthRange>(
-      FrameLengthRange(min_frame_length_ms, max_frame_length_ms));
-  controller->SetConstraints(constraints);
-}
-
 std::unique_ptr<FrameLengthController> CreateController(
+    const std::vector<int>& encoder_frame_lengths_ms,
     int initial_frame_length_ms) {
   std::unique_ptr<FrameLengthController> controller(
       new FrameLengthController(FrameLengthController::Config(
-          {20, 60}, initial_frame_length_ms, kFlIncreasingPacketLossFraction,
-          kFlDecreasingPacketLossFraction, kFl20msTo60msBandwidthBps,
-          kFl60msTo20msBandwidthBps)));
-  SetReceiverFrameLengthRange(controller.get(), kMinReceiverFrameLengthMs,
-                              kMaxReceiverFrameLengthMs);
+          encoder_frame_lengths_ms, initial_frame_length_ms,
+          kFlIncreasingPacketLossFraction, kFlDecreasingPacketLossFraction,
+          kFl20msTo60msBandwidthBps, kFl60msTo20msBandwidthBps)));
   return controller;
 }
 
@@ -68,44 +55,28 @@ void CheckDecision(FrameLengthController* controller,
 
 }  // namespace
 
-TEST(FrameLengthControllerTest,
-     OutputInitValueWhenReceiverFrameLengthRangeUnset) {
-  constexpr int kInitialFrameLenghtMs = 60;
-  std::unique_ptr<FrameLengthController> controller(
-      new FrameLengthController(FrameLengthController::Config(
-          {20, 60}, kInitialFrameLenghtMs, kFlIncreasingPacketLossFraction,
-          kFlDecreasingPacketLossFraction, kFl20msTo60msBandwidthBps,
-          kFl60msTo20msBandwidthBps)));
-  // Use a high uplink bandwidth that would cause frame length to decrease if
-  // receiver frame length is set.
-  CheckDecision(controller.get(), rtc::Optional<int>(kFl60msTo20msBandwidthBps),
-                rtc::Optional<float>(), rtc::Optional<bool>(),
-                kInitialFrameLenghtMs);
-}
-
 TEST(FrameLengthControllerTest, DecreaseTo20MsOnHighUplinkBandwidth) {
-  auto controller = CreateController(60);
+  auto controller = CreateController({20, 60}, 60);
   CheckDecision(controller.get(), rtc::Optional<int>(kFl60msTo20msBandwidthBps),
                 rtc::Optional<float>(), rtc::Optional<bool>(), 20);
 }
 
 TEST(FrameLengthControllerTest, DecreaseTo20MsOnHighUplinkPacketLossFraction) {
-  auto controller = CreateController(60);
+  auto controller = CreateController({20, 60}, 60);
   CheckDecision(controller.get(), rtc::Optional<int>(),
                 rtc::Optional<float>(kFlDecreasingPacketLossFraction),
                 rtc::Optional<bool>(), 20);
 }
 
 TEST(FrameLengthControllerTest, DecreaseTo20MsWhenFecIsOn) {
-  auto controller = CreateController(60);
+  auto controller = CreateController({20, 60}, 60);
   CheckDecision(controller.get(), rtc::Optional<int>(), rtc::Optional<float>(),
                 rtc::Optional<bool>(true), 20);
 }
 
 TEST(FrameLengthControllerTest,
      Maintain60MsIf20MsNotInReceiverFrameLengthRange) {
-  auto controller = CreateController(60);
-  SetReceiverFrameLengthRange(controller.get(), 21, 60);
+  auto controller = CreateController({60}, 60);
   // Set FEC on that would cause frame length to decrease if receiver frame
   // length range included 20ms.
   CheckDecision(controller.get(), rtc::Optional<int>(), rtc::Optional<float>(),
@@ -117,7 +88,7 @@ TEST(FrameLengthControllerTest, Maintain60MsOnMultipleConditions) {
   // 1. |uplink_bandwidth_bps| is at medium level,
   // 2. |uplink_packet_loss_fraction| is at medium,
   // 3. FEC is not decided ON.
-  auto controller = CreateController(60);
+  auto controller = CreateController({20, 60}, 60);
   CheckDecision(controller.get(), rtc::Optional<int>(kMediumBandwidthBps),
                 rtc::Optional<float>(kMediumPacketLossFraction),
                 rtc::Optional<bool>(), 60);
@@ -129,7 +100,7 @@ TEST(FrameLengthControllerTest, IncreaseTo60MsOnMultipleConditions) {
   // 2. |uplink_packet_loss_fraction| is known to be smaller than a threshold
   //    AND
   // 3. FEC is not decided or OFF.
-  auto controller = CreateController(20);
+  auto controller = CreateController({20, 60}, 20);
   CheckDecision(controller.get(), rtc::Optional<int>(kFl20msTo60msBandwidthBps),
                 rtc::Optional<float>(kFlIncreasingPacketLossFraction),
                 rtc::Optional<bool>(), 60);
@@ -137,8 +108,7 @@ TEST(FrameLengthControllerTest, IncreaseTo60MsOnMultipleConditions) {
 
 TEST(FrameLengthControllerTest,
      Maintain20MsIf60MsNotInReceiverFrameLengthRange) {
-  auto controller = CreateController(20);
-  SetReceiverFrameLengthRange(controller.get(), 10, 59);
+  auto controller = CreateController({20}, 20);
   // Use a low uplink bandwidth and a low uplink packet loss fraction that would
   // cause frame length to increase if receiver frame length included 60ms.
   CheckDecision(controller.get(), rtc::Optional<int>(kFl20msTo60msBandwidthBps),
@@ -147,14 +117,14 @@ TEST(FrameLengthControllerTest,
 }
 
 TEST(FrameLengthControllerTest, Maintain20MsOnMediumUplinkBandwidth) {
-  auto controller = CreateController(20);
+  auto controller = CreateController({20, 60}, 20);
   CheckDecision(controller.get(), rtc::Optional<int>(kMediumBandwidthBps),
                 rtc::Optional<float>(kFlIncreasingPacketLossFraction),
                 rtc::Optional<bool>(), 20);
 }
 
 TEST(FrameLengthControllerTest, Maintain20MsOnMediumUplinkPacketLossFraction) {
-  auto controller = CreateController(20);
+  auto controller = CreateController({20, 60}, 20);
   // Use a low uplink bandwidth that would cause frame length to increase if
   // uplink packet loss fraction was low.
   CheckDecision(controller.get(), rtc::Optional<int>(kFl20msTo60msBandwidthBps),
@@ -163,22 +133,12 @@ TEST(FrameLengthControllerTest, Maintain20MsOnMediumUplinkPacketLossFraction) {
 }
 
 TEST(FrameLengthControllerTest, Maintain20MsWhenFecIsOn) {
-  auto controller = CreateController(20);
+  auto controller = CreateController({20, 60}, 20);
   // Use a low uplink bandwidth and a low uplink packet loss fraction that would
   // cause frame length to increase if FEC was not ON.
   CheckDecision(controller.get(), rtc::Optional<int>(kFl20msTo60msBandwidthBps),
                 rtc::Optional<float>(kFlIncreasingPacketLossFraction),
                 rtc::Optional<bool>(true), 20);
-}
-
-TEST(FrameLengthControllerTest,
-     MaintainFrameLengthOnSetReceiverFrameLengthRange) {
-  auto controller = CreateController(60);
-  CheckDecision(controller.get(), rtc::Optional<int>(), rtc::Optional<float>(),
-                rtc::Optional<bool>(true), 20);
-  SetReceiverFrameLengthRange(controller.get(), 10, 60);
-  CheckDecision(controller.get(), rtc::Optional<int>(), rtc::Optional<float>(),
-                rtc::Optional<bool>(), 20);
 }
 
 namespace {
@@ -191,9 +151,10 @@ class FrameLengthControllerForTest {
   // This class is to test multiple frame lengths. FrameLengthController is
   // implemented to support this, but is not enabled for the default constructor
   // for the time being. We use this class to test it.
-  explicit FrameLengthControllerForTest(int initial_frame_length_ms)
+  FrameLengthControllerForTest(const std::vector<int>& encoder_frame_lengths_ms,
+                               int initial_frame_length_ms)
       : frame_length_controller_(
-            FrameLengthController::Config({20, 60, 120},
+            FrameLengthController::Config(encoder_frame_lengths_ms,
                                           initial_frame_length_ms,
                                           kFlIncreasingPacketLossFraction,
                                           kFlDecreasingPacketLossFraction,
@@ -205,7 +166,6 @@ class FrameLengthControllerForTest {
     frame_length_controller_.frame_length_change_criteria_.insert(
         std::make_pair(FrameLengthController::FrameLengthChange(120, 60),
                        kFl120msTo60msBandwidthBps));
-    frame_length_controller_.SetReceiverFrameLengthRange(20, 120);
   }
   FrameLengthController* get() { return &frame_length_controller_; }
 
@@ -214,7 +174,7 @@ class FrameLengthControllerForTest {
 };
 
 TEST(FrameLengthControllerTest, From120MsTo20MsOnHighUplinkBandwidth) {
-  FrameLengthControllerForTest controller(120);
+  FrameLengthControllerForTest controller({20, 60, 120}, 120);
   // It takes two steps for frame length to go from 120ms to 20ms.
   CheckDecision(controller.get(), rtc::Optional<int>(kFl60msTo20msBandwidthBps),
                 rtc::Optional<float>(), rtc::Optional<bool>(), 60);
@@ -223,7 +183,7 @@ TEST(FrameLengthControllerTest, From120MsTo20MsOnHighUplinkBandwidth) {
 }
 
 TEST(FrameLengthControllerTest, From120MsTo20MsOnHighUplinkPacketLossFraction) {
-  FrameLengthControllerForTest controller(120);
+  FrameLengthControllerForTest controller({20, 60, 120}, 120);
   // It takes two steps for frame length to go from 120ms to 20ms.
   CheckDecision(controller.get(), rtc::Optional<int>(),
                 rtc::Optional<float>(kFlDecreasingPacketLossFraction),
@@ -234,7 +194,7 @@ TEST(FrameLengthControllerTest, From120MsTo20MsOnHighUplinkPacketLossFraction) {
 }
 
 TEST(FrameLengthControllerTest, From120MsTo20MsWhenFecIsOn) {
-  FrameLengthControllerForTest controller(120);
+  FrameLengthControllerForTest controller({20, 60, 120}, 120);
   // It takes two steps for frame length to go from 120ms to 20ms.
   CheckDecision(controller.get(), rtc::Optional<int>(), rtc::Optional<float>(),
                 rtc::Optional<bool>(true), 60);
@@ -248,7 +208,7 @@ TEST(FrameLengthControllerTest, From20MsTo120MsOnMultipleConditions) {
   // 2. |uplink_packet_loss_fraction| is known to be smaller than a threshold
   //    AND
   // 3. FEC is not decided or OFF.
-  FrameLengthControllerForTest controller(20);
+  FrameLengthControllerForTest controller({20, 60, 120}, 20);
   // It takes two steps for frame length to go from 20ms to 120ms.
   CheckDecision(controller.get(),
                 rtc::Optional<int>(kFl60msTo120msBandwidthBps),
@@ -261,8 +221,7 @@ TEST(FrameLengthControllerTest, From20MsTo120MsOnMultipleConditions) {
 }
 
 TEST(FrameLengthControllerTest, Stall60MsIf120MsNotInReceiverFrameLengthRange) {
-  FrameLengthControllerForTest controller(20);
-  SetReceiverFrameLengthRange(controller.get(), 20, 119);
+  FrameLengthControllerForTest controller({20, 60}, 20);
   CheckDecision(controller.get(),
                 rtc::Optional<int>(kFl60msTo120msBandwidthBps),
                 rtc::Optional<float>(kFlIncreasingPacketLossFraction),
@@ -274,7 +233,7 @@ TEST(FrameLengthControllerTest, Stall60MsIf120MsNotInReceiverFrameLengthRange) {
 }
 
 TEST(FrameLengthControllerTest, CheckBehaviorOnChangingNetworkMetrics) {
-  FrameLengthControllerForTest controller(20);
+  FrameLengthControllerForTest controller({20, 60, 120}, 20);
   CheckDecision(controller.get(), rtc::Optional<int>(kMediumBandwidthBps),
                 rtc::Optional<float>(kFlIncreasingPacketLossFraction),
                 rtc::Optional<bool>(), 20);

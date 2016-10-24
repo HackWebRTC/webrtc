@@ -139,17 +139,6 @@ TEST(AudioNetworkAdaptorImplTest,
   states.audio_network_adaptor->GetEncoderRuntimeConfig();
 }
 
-TEST(AudioNetworkAdaptorImplTest, SetConstraintsIsCalledOnSetFrameLengthRange) {
-  auto states = CreateAudioNetworkAdaptor();
-
-  for (auto& mock_controller : states.mock_controllers) {
-    EXPECT_CALL(*mock_controller,
-                SetConstraints(ConstraintsReceiverFrameLengthRangeIs(
-                    Controller::Constraints::FrameLengthRange(20, 120))));
-  }
-  states.audio_network_adaptor->SetReceiverFrameLengthRange(20, 120);
-}
-
 TEST(AudioNetworkAdaptorImplTest,
      DumpEncoderRuntimeConfigIsCalledOnGetEncoderRuntimeConfig) {
   auto states = CreateAudioNetworkAdaptor();

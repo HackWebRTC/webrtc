@@ -27,25 +27,11 @@ class Controller {
     rtc::Optional<int> rtt_ms;
   };
 
-  struct Constraints {
-    Constraints();
-    ~Constraints();
-    struct FrameLengthRange {
-      FrameLengthRange(int min_frame_length_ms, int max_frame_length_ms);
-      ~FrameLengthRange();
-      int min_frame_length_ms;
-      int max_frame_length_ms;
-    };
-    rtc::Optional<FrameLengthRange> receiver_frame_length_range;
-  };
-
   virtual ~Controller() = default;
 
   virtual void MakeDecision(
       const NetworkMetrics& metrics,
       AudioNetworkAdaptor::EncoderRuntimeConfig* config) = 0;
-
-  virtual void SetConstraints(const Constraints& constraints);
 };
 
 }  // namespace webrtc

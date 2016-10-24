@@ -73,6 +73,9 @@ namespace rtc {
 template <typename T>
 class ArrayView final {
  public:
+  using value_type = T;
+  using const_iterator = const T*;
+
   // Construct an empty ArrayView.
   ArrayView() : ArrayView(static_cast<T*>(nullptr), 0) {}
   ArrayView(std::nullptr_t) : ArrayView() {}

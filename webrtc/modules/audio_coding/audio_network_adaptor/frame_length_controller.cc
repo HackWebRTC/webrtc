@@ -10,7 +10,6 @@
 
 #include "webrtc/modules/audio_coding/audio_network_adaptor/frame_length_controller.h"
 
-#include <iterator>
 #include <utility>
 
 #include "webrtc/base/checks.h"
@@ -38,16 +37,11 @@ FrameLengthController::Config::~Config() = default;
 
 FrameLengthController::FrameLengthController(const Config& config)
     : config_(config) {
+  frame_length_ms_ = std::find(config_.encoder_frame_lengths_ms.begin(),
+                               config_.encoder_frame_lengths_ms.end(),
+                               config_.initial_frame_length_ms);
   // |encoder_frame_lengths_ms| must contain |initial_frame_length_ms|.
-  RTC_DCHECK(config_.encoder_frame_lengths_ms.end() !=
-             std::find(config_.encoder_frame_lengths_ms.begin(),
-                       config_.encoder_frame_lengths_ms.end(),
-                       config_.initial_frame_length_ms));
-
-  // We start with assuming that the receiver only accepts
-  // |config_.initial_frame_length_ms|.
-  run_time_frame_lengths_ms_.push_back(config_.initial_frame_length_ms);
-  frame_length_ms_ = run_time_frame_lengths_ms_.begin();
+  RTC_DCHECK(frame_length_ms_ != config_.encoder_frame_lengths_ms.end());
 
   frame_length_change_criteria_.insert(std::make_pair(
       FrameLengthChange(20, 60), config_.fl_20ms_to_60ms_bandwidth_bps));
@@ -71,14 +65,6 @@ void FrameLengthController::MakeDecision(
   config->frame_length_ms = rtc::Optional<int>(*frame_length_ms_);
 }
 
-void FrameLengthController::SetConstraints(const Constraints& constraints) {
-  if (constraints.receiver_frame_length_range) {
-    SetReceiverFrameLengthRange(
-        constraints.receiver_frame_length_range->min_frame_length_ms,
-        constraints.receiver_frame_length_range->max_frame_length_ms);
-  }
-}
-
 FrameLengthController::FrameLengthChange::FrameLengthChange(
     int from_frame_length_ms,
     int to_frame_length_ms)
@@ -94,35 +80,6 @@ bool FrameLengthController::FrameLengthChange::operator<(
           to_frame_length_ms < rhs.to_frame_length_ms);
 }
 
-void FrameLengthController::SetReceiverFrameLengthRange(
-    int min_frame_length_ms,
-    int max_frame_length_ms) {
-  int frame_length_ms = *frame_length_ms_;
-  // Reset |run_time_frame_lengths_ms_| by filtering |config_.frame_lengths_ms|
-  // with the receiver frame length range.
-  run_time_frame_lengths_ms_.clear();
-  std::copy_if(config_.encoder_frame_lengths_ms.begin(),
-               config_.encoder_frame_lengths_ms.end(),
-               std::back_inserter(run_time_frame_lengths_ms_),
-               [&](int frame_length_ms) {
-                 return frame_length_ms >= min_frame_length_ms &&
-                        frame_length_ms <= max_frame_length_ms;
-               });
-  RTC_DCHECK(std::is_sorted(run_time_frame_lengths_ms_.begin(),
-                            run_time_frame_lengths_ms_.end()));
-
-  // Keep the current frame length. If it has gone out of the new range, use
-  // the smallest available frame length.
-  frame_length_ms_ =
-      std::find(run_time_frame_lengths_ms_.begin(),
-                run_time_frame_lengths_ms_.end(), frame_length_ms);
-  if (frame_length_ms_ == run_time_frame_lengths_ms_.end()) {
-    LOG(LS_WARNING)
-        << "Actual frame length not in frame length range of the receiver";
-    frame_length_ms_ = run_time_frame_lengths_ms_.begin();
-  }
-}
-
 bool FrameLengthController::FrameLengthIncreasingDecision(
     const NetworkMetrics& metrics,
     const AudioNetworkAdaptor::EncoderRuntimeConfig& config) const {
@@ -133,7 +90,7 @@ bool FrameLengthController::FrameLengthIncreasingDecision(
   //    AND
   // 4. FEC is not decided or is OFF.
   auto longer_frame_length_ms = std::next(frame_length_ms_);
-  if (longer_frame_length_ms == run_time_frame_lengths_ms_.end())
+  if (longer_frame_length_ms == config_.encoder_frame_lengths_ms.end())
     return false;
 
   auto increase_threshold = frame_length_change_criteria_.find(
@@ -158,7 +115,7 @@ bool FrameLengthController::FrameLengthDecreasingDecision(
   // 2. |uplink_bandwidth_bps| is known to be larger than a threshold,
   // 3. |uplink_packet_loss_fraction| is known to be larger than a threshold,
   // 4. FEC is decided ON.
-  if (frame_length_ms_ == run_time_frame_lengths_ms_.begin())
+  if (frame_length_ms_ == config_.encoder_frame_lengths_ms.begin())
     return false;
 
   auto shorter_frame_length_ms = std::prev(frame_length_ms_);

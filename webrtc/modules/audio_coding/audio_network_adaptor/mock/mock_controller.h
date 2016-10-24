@@ -23,7 +23,6 @@ class MockController : public Controller {
   MOCK_METHOD2(MakeDecision,
                void(const NetworkMetrics& metrics,
                     AudioNetworkAdaptor::EncoderRuntimeConfig* config));
-  MOCK_METHOD1(SetConstraints, void(const Constraints& constraints));
 };
 
 }  // namespace webrtc

@@ -11,6 +11,7 @@
 #include "webrtc/modules/audio_coding/codecs/opus/audio_encoder_opus.h"
 
 #include <algorithm>
+#include <iterator>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/exp_filter.h"
@@ -42,6 +43,7 @@ AudioEncoderOpus::Config CreateConfig(const CodecInst& codec_inst) {
   config.payload_type = codec_inst.pltype;
   config.application = config.num_channels == 1 ? AudioEncoderOpus::kVoip
                                                 : AudioEncoderOpus::kAudio;
+  config.supported_frame_lengths_ms.push_back(config.frame_size_ms);
   return config;
 }
 
@@ -297,11 +299,21 @@ void AudioEncoderOpus::OnReceivedRtt(int rtt_ms) {
 
 void AudioEncoderOpus::SetReceiverFrameLengthRange(int min_frame_length_ms,
                                                    int max_frame_length_ms) {
-  if (!audio_network_adaptor_)
-    return;
-  audio_network_adaptor_->SetReceiverFrameLengthRange(min_frame_length_ms,
-                                                      max_frame_length_ms);
-  ApplyAudioNetworkAdaptor();
+  // Ensure that |SetReceiverFrameLengthRange| is called before
+  // |EnableAudioNetworkAdaptor|, otherwise we need to recreate
+  // |audio_network_adaptor_|, which is not a needed use case.
+  RTC_DCHECK(!audio_network_adaptor_);
+
+  config_.supported_frame_lengths_ms.clear();
+  std::copy_if(std::begin(kSupportedFrameLengths),
+               std::end(kSupportedFrameLengths),
+               std::back_inserter(config_.supported_frame_lengths_ms),
+               [&](int frame_length_ms) {
+                 return frame_length_ms >= min_frame_length_ms &&
+                        frame_length_ms <= max_frame_length_ms;
+               });
+  RTC_DCHECK(std::is_sorted(config_.supported_frame_lengths_ms.begin(),
+                            config_.supported_frame_lengths_ms.end()));
 }
 
 AudioEncoder::EncodedInfo AudioEncoderOpus::EncodeImpl(
@@ -447,7 +459,7 @@ AudioEncoderOpus::DefaultAudioNetworkAdaptorCreator(
   config.clock = clock;
   return std::unique_ptr<AudioNetworkAdaptor>(new AudioNetworkAdaptorImpl(
       config, ControllerManagerImpl::Create(
-                  config_string, NumChannels(), kSupportedFrameLengths,
+                  config_string, NumChannels(), supported_frame_lengths_ms(),
                   num_channels_to_encode_, next_frame_length_ms_,
                   GetTargetBitrate(), config_.fec_enabled, GetDtx(), clock)));
 }

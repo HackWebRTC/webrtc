@@ -16,18 +16,4 @@ Controller::NetworkMetrics::NetworkMetrics() = default;
 
 Controller::NetworkMetrics::~NetworkMetrics() = default;
 
-Controller::Constraints::Constraints() = default;
-
-Controller::Constraints::~Constraints() = default;
-
-Controller::Constraints::FrameLengthRange::FrameLengthRange(
-    int min_frame_length_ms,
-    int max_frame_length_ms)
-    : min_frame_length_ms(min_frame_length_ms),
-      max_frame_length_ms(max_frame_length_ms) {}
-
-Controller::Constraints::FrameLengthRange::~FrameLengthRange() = default;
-
-void Controller::SetConstraints(const Constraints& constraints) {}
-
 }  // namespace webrtc

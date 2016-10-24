@@ -49,6 +49,7 @@ class AudioEncoderOpus final : public AudioEncoder {
     int max_playback_rate_hz = 48000;
     int complexity = kDefaultComplexity;
     bool dtx_enabled = false;
+    std::vector<int> supported_frame_lengths_ms;
     const Clock* clock = nullptr;
 
    private:
@@ -102,6 +103,9 @@ class AudioEncoderOpus final : public AudioEncoder {
   void OnReceivedRtt(int rtt_ms) override;
   void SetReceiverFrameLengthRange(int min_frame_length_ms,
                                    int max_frame_length_ms) override;
+  rtc::ArrayView<const int> supported_frame_lengths_ms() const {
+    return config_.supported_frame_lengths_ms;
+  }
 
   // Getters for testing.
   double packet_loss_rate() const { return packet_loss_rate_; }

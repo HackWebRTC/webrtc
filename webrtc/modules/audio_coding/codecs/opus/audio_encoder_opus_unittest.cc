@@ -14,6 +14,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/mock/mock_audio_network_adaptor.h"
 #include "webrtc/modules/audio_coding/codecs/opus/audio_encoder_opus.h"
+#include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
@@ -34,6 +35,7 @@ AudioEncoderOpus::Config CreateConfig(const CodecInst& codec_inst) {
   config.payload_type = codec_inst.pltype;
   config.application = config.num_channels == 1 ? AudioEncoderOpus::kVoip
                                                 : AudioEncoderOpus::kAudio;
+  config.supported_frame_lengths_ms.push_back(config.frame_size_ms);
   return config;
 }
 
@@ -222,9 +224,25 @@ TEST(AudioEncoderOpusTest, PacketLossRateOptimized) {
   // clang-format on
 }
 
+TEST(AudioEncoderOpusTest, SetReceiverFrameLengthRange) {
+  auto states = CreateCodec(2);
+  // Before calling to |SetReceiverFrameLengthRange|,
+  // |supported_frame_lengths_ms| should contain only the frame length being
+  // used.
+  using ::testing::ElementsAre;
+  EXPECT_THAT(states.encoder->supported_frame_lengths_ms(),
+              ElementsAre(states.encoder->next_frame_length_ms()));
+  states.encoder->SetReceiverFrameLengthRange(0, 12345);
+  EXPECT_THAT(states.encoder->supported_frame_lengths_ms(),
+              ElementsAre(20, 60));
+  states.encoder->SetReceiverFrameLengthRange(21, 60);
+  EXPECT_THAT(states.encoder->supported_frame_lengths_ms(), ElementsAre(60));
+  states.encoder->SetReceiverFrameLengthRange(20, 59);
+  EXPECT_THAT(states.encoder->supported_frame_lengths_ms(), ElementsAre(20));
+}
+
 TEST(AudioEncoderOpusTest, InvokeAudioNetworkAdaptorOnSetUplinkBandwidth) {
   auto states = CreateCodec(2);
-  printf("passed!\n");
   states.encoder->EnableAudioNetworkAdaptor("", nullptr);
 
   auto config = CreateEncoderRuntimeConfig();
@@ -287,24 +305,6 @@ TEST(AudioEncoderOpusTest, InvokeAudioNetworkAdaptorOnSetRtt) {
   constexpr int kRtt = 30;
   EXPECT_CALL(**states.mock_audio_network_adaptor, SetRtt(kRtt));
   states.encoder->OnReceivedRtt(kRtt);
-
-  CheckEncoderRuntimeConfig(states.encoder.get(), config);
-}
-
-TEST(AudioEncoderOpusTest,
-     InvokeAudioNetworkAdaptorOnSetReceiverFrameLengthRange) {
-  auto states = CreateCodec(2);
-  states.encoder->EnableAudioNetworkAdaptor("", nullptr);
-
-  auto config = CreateEncoderRuntimeConfig();
-  EXPECT_CALL(**states.mock_audio_network_adaptor, GetEncoderRuntimeConfig())
-      .WillOnce(Return(config));
-
-  constexpr int kMinFrameLength = 10;
-  constexpr int kMaxFrameLength = 60;
-  EXPECT_CALL(**states.mock_audio_network_adaptor,
-              SetReceiverFrameLengthRange(kMinFrameLength, kMaxFrameLength));
-  states.encoder->SetReceiverFrameLengthRange(kMinFrameLength, kMaxFrameLength);
 
   CheckEncoderRuntimeConfig(states.encoder.get(), config);
 }
