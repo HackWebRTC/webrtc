@@ -14,7 +14,6 @@
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_defines_nullimpl.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"

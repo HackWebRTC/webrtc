@@ -111,8 +111,6 @@
         'source/rtp_receiver_impl.cc',
         'source/rtp_receiver_impl.h',
         'source/rtp_rtcp_config.h',
-        'source/rtp_rtcp_defines_nullimpl.cc',
-        'source/rtp_rtcp_defines_nullimpl.h',
         'source/rtp_rtcp_impl.cc',
         'source/rtp_rtcp_impl.h',
         'source/rtp_sender.cc',
