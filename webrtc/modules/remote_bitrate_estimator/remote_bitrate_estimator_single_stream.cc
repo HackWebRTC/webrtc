@@ -69,11 +69,6 @@ RemoteBitrateEstimatorSingleStream::~RemoteBitrateEstimatorSingleStream() {
   }
 }
 
-void RemoteBitrateEstimatorSingleStream::IncomingPacketFeedbackVector(
-    const std::vector<PacketInfo>& packet_feedback_vector) {
-  assert(false);
-}
-
 void RemoteBitrateEstimatorSingleStream::IncomingPacket(
     int64_t arrival_time_ms,
     size_t payload_size,

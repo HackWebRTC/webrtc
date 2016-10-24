@@ -29,8 +29,6 @@ class RemoteBitrateEstimatorSingleStream : public RemoteBitrateEstimator {
                                      Clock* clock);
   virtual ~RemoteBitrateEstimatorSingleStream();
 
-  void IncomingPacketFeedbackVector(
-      const std::vector<PacketInfo>& packet_feedback_vector) override;
   void IncomingPacket(int64_t arrival_time_ms,
                       size_t payload_size,
                       const RTPHeader& header) override;
