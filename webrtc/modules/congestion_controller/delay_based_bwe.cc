@@ -129,8 +129,6 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketInfo(
     result.updated = UpdateEstimate(info.arrival_time_ms, now_ms,
                                     &result.target_bitrate_bps);
   }
-  rtc::Optional<uint32_t> incoming_rate =
-      receiver_incoming_bitrate_.Rate(info.arrival_time_ms);
   if (!result.updated &&
       (last_update_ms_ == -1 ||
        now_ms - last_update_ms_ > rate_control_.GetFeedbackInterval())) {
