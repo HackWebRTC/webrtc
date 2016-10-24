@@ -29,7 +29,7 @@ void TimestampScaler::ToInternal(Packet* packet) {
 void TimestampScaler::ToInternal(PacketList* packet_list) {
   PacketList::iterator it;
   for (it = packet_list->begin(); it != packet_list->end(); ++it) {
-    ToInternal(*it);
+    ToInternal(&(*it));
   }
 }
 

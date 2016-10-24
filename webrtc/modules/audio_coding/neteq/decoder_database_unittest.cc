@@ -175,16 +175,15 @@ TEST(DecoderDatabase, CheckPayloadTypes) {
   for (int i = 0; i < kNumPayloads + 1; ++i) {
     // Create packet with payload type |i|. The last packet will have a payload
     // type that is not registered in the decoder database.
-    Packet* packet = new Packet;
-    packet->payload_type = i;
-    packet_list.push_back(packet);
+    Packet packet;
+    packet.payload_type = i;
+    packet_list.push_back(std::move(packet));
   }
 
   // Expect to return false, since the last packet is of an unknown type.
   EXPECT_EQ(DecoderDatabase::kDecoderNotFound,
             db.CheckPayloadTypes(packet_list));
 
-  delete packet_list.back();
   packet_list.pop_back();  // Remove the unknown one.
 
   EXPECT_EQ(DecoderDatabase::kOK, db.CheckPayloadTypes(packet_list));
@@ -192,7 +191,6 @@ TEST(DecoderDatabase, CheckPayloadTypes) {
   // Delete all packets.
   PacketList::iterator it = packet_list.begin();
   while (it != packet_list.end()) {
-    delete packet_list.front();
     it = packet_list.erase(it);
   }
 }

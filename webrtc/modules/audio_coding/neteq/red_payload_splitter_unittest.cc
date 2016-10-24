@@ -75,18 +75,18 @@ void CreateOpusFecPayload(uint8_t* payload,
 // by the values in array |payload_types| (which must be of length
 // |num_payloads|). Each redundant payload is |timestamp_offset| samples
 // "behind" the the previous payload.
-Packet* CreateRedPayload(size_t num_payloads,
-                         uint8_t* payload_types,
-                         int timestamp_offset,
-                         bool embed_opus_fec = false) {
-  Packet* packet = new Packet;
-  packet->payload_type = kRedPayloadType;
-  packet->timestamp = kBaseTimestamp;
-  packet->sequence_number = kSequenceNumber;
-  packet->payload.SetSize((kPayloadLength + 1) +
-                          (num_payloads - 1) *
-                              (kPayloadLength + kRedHeaderLength));
-  uint8_t* payload_ptr = packet->payload.data();
+Packet CreateRedPayload(size_t num_payloads,
+                        uint8_t* payload_types,
+                        int timestamp_offset,
+                        bool embed_opus_fec = false) {
+  Packet packet;
+  packet.payload_type = kRedPayloadType;
+  packet.timestamp = kBaseTimestamp;
+  packet.sequence_number = kSequenceNumber;
+  packet.payload.SetSize((kPayloadLength + 1) +
+                         (num_payloads - 1) *
+                             (kPayloadLength + kRedHeaderLength));
+  uint8_t* payload_ptr = packet.payload.data();
   for (size_t i = 0; i < num_payloads; ++i) {
     // Write the RED headers.
     if (i == num_payloads - 1) {
@@ -122,44 +122,44 @@ Packet* CreateRedPayload(size_t num_payloads,
 }
 
 // Create a packet with all payload bytes set to |payload_value|.
-Packet* CreatePacket(uint8_t payload_type,
-                     size_t payload_length,
-                     uint8_t payload_value,
-                     bool opus_fec = false) {
-  Packet* packet = new Packet;
-  packet->payload_type = payload_type;
-  packet->timestamp = kBaseTimestamp;
-  packet->sequence_number = kSequenceNumber;
-  packet->payload.SetSize(payload_length);
+Packet CreatePacket(uint8_t payload_type,
+                    size_t payload_length,
+                    uint8_t payload_value,
+                    bool opus_fec = false) {
+  Packet packet;
+  packet.payload_type = payload_type;
+  packet.timestamp = kBaseTimestamp;
+  packet.sequence_number = kSequenceNumber;
+  packet.payload.SetSize(payload_length);
   if (opus_fec) {
-    CreateOpusFecPayload(packet->payload.data(), packet->payload.size(),
+    CreateOpusFecPayload(packet.payload.data(), packet.payload.size(),
                          payload_value);
   } else {
-    memset(packet->payload.data(), payload_value, packet->payload.size());
+    memset(packet.payload.data(), payload_value, packet.payload.size());
   }
   return packet;
 }
 
 // Checks that |packet| has the attributes given in the remaining parameters.
-void VerifyPacket(const Packet* packet,
+void VerifyPacket(const Packet& packet,
                   size_t payload_length,
                   uint8_t payload_type,
                   uint16_t sequence_number,
                   uint32_t timestamp,
                   uint8_t payload_value,
                   Packet::Priority priority) {
-  EXPECT_EQ(payload_length, packet->payload.size());
-  EXPECT_EQ(payload_type, packet->payload_type);
-  EXPECT_EQ(sequence_number, packet->sequence_number);
-  EXPECT_EQ(timestamp, packet->timestamp);
-  EXPECT_EQ(priority, packet->priority);
-  ASSERT_FALSE(packet->payload.empty());
-  for (size_t i = 0; i < packet->payload.size(); ++i) {
-    ASSERT_EQ(payload_value, packet->payload.data()[i]);
+  EXPECT_EQ(payload_length, packet.payload.size());
+  EXPECT_EQ(payload_type, packet.payload_type);
+  EXPECT_EQ(sequence_number, packet.sequence_number);
+  EXPECT_EQ(timestamp, packet.timestamp);
+  EXPECT_EQ(priority, packet.priority);
+  ASSERT_FALSE(packet.payload.empty());
+  for (size_t i = 0; i < packet.payload.size(); ++i) {
+    ASSERT_EQ(payload_value, packet.payload.data()[i]);
   }
 }
 
-void VerifyPacket(const Packet* packet,
+void VerifyPacket(const Packet& packet,
                   size_t payload_length,
                   uint8_t payload_type,
                   uint16_t sequence_number,
@@ -182,23 +182,18 @@ TEST(RedPayloadSplitter, CreateAndDestroy) {
 TEST(RedPayloadSplitter, OnePacketTwoPayloads) {
   uint8_t payload_types[] = {0, 0};
   const int kTimestampOffset = 160;
-  Packet* packet = CreateRedPayload(2, payload_types, kTimestampOffset);
   PacketList packet_list;
-  packet_list.push_back(packet);
+  packet_list.push_back(CreateRedPayload(2, payload_types, kTimestampOffset));
   RedPayloadSplitter splitter;
   EXPECT_TRUE(splitter.SplitRed(&packet_list));
   ASSERT_EQ(2u, packet_list.size());
   // Check first packet. The first in list should always be the primary payload.
-  packet = packet_list.front();
-  VerifyPacket(packet, kPayloadLength, payload_types[1], kSequenceNumber,
-               kBaseTimestamp, 1, true);
-  delete packet;
+  VerifyPacket(packet_list.front(), kPayloadLength, payload_types[1],
+               kSequenceNumber, kBaseTimestamp, 1, true);
   packet_list.pop_front();
   // Check second packet.
-  packet = packet_list.front();
-  VerifyPacket(packet, kPayloadLength, payload_types[0], kSequenceNumber,
-               kBaseTimestamp - kTimestampOffset, 0, false);
-  delete packet;
+  VerifyPacket(packet_list.front(), kPayloadLength, payload_types[0],
+               kSequenceNumber, kBaseTimestamp - kTimestampOffset, 0, false);
 }
 
 // Packets A and B are not split at all. Only the RED header in each packet is
@@ -207,29 +202,26 @@ TEST(RedPayloadSplitter, TwoPacketsOnePayload) {
   uint8_t payload_types[] = {0};
   const int kTimestampOffset = 160;
   // Create first packet, with a single RED payload.
-  Packet* packet = CreateRedPayload(1, payload_types, kTimestampOffset);
   PacketList packet_list;
-  packet_list.push_back(packet);
+  packet_list.push_back(CreateRedPayload(1, payload_types, kTimestampOffset));
   // Create second packet, with a single RED payload.
-  packet = CreateRedPayload(1, payload_types, kTimestampOffset);
-  // Manually change timestamp and sequence number of second packet.
-  packet->timestamp += kTimestampOffset;
-  packet->sequence_number++;
-  packet_list.push_back(packet);
+  {
+    Packet packet = CreateRedPayload(1, payload_types, kTimestampOffset);
+    // Manually change timestamp and sequence number of second packet.
+    packet.timestamp += kTimestampOffset;
+    packet.sequence_number++;
+    packet_list.push_back(std::move(packet));
+  }
   RedPayloadSplitter splitter;
   EXPECT_TRUE(splitter.SplitRed(&packet_list));
   ASSERT_EQ(2u, packet_list.size());
   // Check first packet.
-  packet = packet_list.front();
-  VerifyPacket(packet, kPayloadLength, payload_types[0], kSequenceNumber,
-               kBaseTimestamp, 0, true);
-  delete packet;
+  VerifyPacket(packet_list.front(), kPayloadLength, payload_types[0],
+               kSequenceNumber, kBaseTimestamp, 0, true);
   packet_list.pop_front();
   // Check second packet.
-  packet = packet_list.front();
-  VerifyPacket(packet, kPayloadLength, payload_types[0], kSequenceNumber + 1,
-               kBaseTimestamp + kTimestampOffset, 0, true);
-  delete packet;
+  VerifyPacket(packet_list.front(), kPayloadLength, payload_types[0],
+               kSequenceNumber + 1, kBaseTimestamp + kTimestampOffset, 0, true);
 }
 
 // Packets A and B are split into packets A1, A2, A3, B1, B2, B3, with
@@ -245,53 +237,45 @@ TEST(RedPayloadSplitter, TwoPacketsThreePayloads) {
   uint8_t payload_types[] = {2, 1, 0};  // Primary is the last one.
   const int kTimestampOffset = 160;
   // Create first packet, with 3 RED payloads.
-  Packet* packet = CreateRedPayload(3, payload_types, kTimestampOffset);
   PacketList packet_list;
-  packet_list.push_back(packet);
+  packet_list.push_back(CreateRedPayload(3, payload_types, kTimestampOffset));
   // Create first packet, with 3 RED payloads.
-  packet = CreateRedPayload(3, payload_types, kTimestampOffset);
-  // Manually change timestamp and sequence number of second packet.
-  packet->timestamp += kTimestampOffset;
-  packet->sequence_number++;
-  packet_list.push_back(packet);
+  {
+    Packet packet = CreateRedPayload(3, payload_types, kTimestampOffset);
+    // Manually change timestamp and sequence number of second packet.
+    packet.timestamp += kTimestampOffset;
+    packet.sequence_number++;
+    packet_list.push_back(std::move(packet));
+  }
   RedPayloadSplitter splitter;
   EXPECT_TRUE(splitter.SplitRed(&packet_list));
   ASSERT_EQ(6u, packet_list.size());
   // Check first packet, A1.
-  packet = packet_list.front();
-  VerifyPacket(packet, kPayloadLength, payload_types[2], kSequenceNumber,
-               kBaseTimestamp, 2, {0, 0});
-  delete packet;
+  VerifyPacket(packet_list.front(), kPayloadLength, payload_types[2],
+               kSequenceNumber, kBaseTimestamp, 2, {0, 0});
   packet_list.pop_front();
   // Check second packet, A2.
-  packet = packet_list.front();
-  VerifyPacket(packet, kPayloadLength, payload_types[1], kSequenceNumber,
-               kBaseTimestamp - kTimestampOffset, 1, {0, 1});
-  delete packet;
+  VerifyPacket(packet_list.front(), kPayloadLength, payload_types[1],
+               kSequenceNumber, kBaseTimestamp - kTimestampOffset, 1, {0, 1});
   packet_list.pop_front();
   // Check third packet, A3.
-  packet = packet_list.front();
-  VerifyPacket(packet, kPayloadLength, payload_types[0], kSequenceNumber,
-               kBaseTimestamp - 2 * kTimestampOffset, 0, {0, 2});
-  delete packet;
+  VerifyPacket(packet_list.front(), kPayloadLength, payload_types[0],
+               kSequenceNumber, kBaseTimestamp - 2 * kTimestampOffset, 0,
+               {0, 2});
   packet_list.pop_front();
   // Check fourth packet, B1.
-  packet = packet_list.front();
-  VerifyPacket(packet, kPayloadLength, payload_types[2], kSequenceNumber + 1,
-               kBaseTimestamp + kTimestampOffset, 2, {0, 0});
-  delete packet;
+  VerifyPacket(packet_list.front(), kPayloadLength, payload_types[2],
+               kSequenceNumber + 1, kBaseTimestamp + kTimestampOffset, 2,
+               {0, 0});
   packet_list.pop_front();
   // Check fifth packet, B2.
-  packet = packet_list.front();
-  VerifyPacket(packet, kPayloadLength, payload_types[1], kSequenceNumber + 1,
-               kBaseTimestamp, 1, {0, 1});
-  delete packet;
+  VerifyPacket(packet_list.front(), kPayloadLength, payload_types[1],
+               kSequenceNumber + 1, kBaseTimestamp, 1, {0, 1});
   packet_list.pop_front();
   // Check sixth packet, B3.
-  packet = packet_list.front();
-  VerifyPacket(packet, kPayloadLength, payload_types[0], kSequenceNumber + 1,
-               kBaseTimestamp - kTimestampOffset, 0, {0, 2});
-  delete packet;
+  VerifyPacket(packet_list.front(), kPayloadLength, payload_types[0],
+               kSequenceNumber + 1, kBaseTimestamp - kTimestampOffset, 0,
+               {0, 2});
 }
 
 // Creates a list with 4 packets with these payload types:
@@ -306,8 +290,7 @@ TEST(RedPayloadSplitter, CheckRedPayloads) {
   PacketList packet_list;
   for (uint8_t i = 0; i <= 3; ++i) {
     // Create packet with payload type |i|, payload length 10 bytes, all 0.
-    Packet* packet = CreatePacket(i, 10, 0);
-    packet_list.push_back(packet);
+    packet_list.push_back(CreatePacket(i, 10, 0));
   }
 
   // Use a real DecoderDatabase object here instead of a mock, since it is
@@ -327,9 +310,8 @@ TEST(RedPayloadSplitter, CheckRedPayloads) {
   // Verify packets. The loop verifies that payload types 0, 1, and 2 are in the
   // list.
   for (int i = 0; i <= 2; ++i) {
-    Packet* packet = packet_list.front();
-    VerifyPacket(packet, 10, i, kSequenceNumber, kBaseTimestamp, 0, true);
-    delete packet;
+    VerifyPacket(packet_list.front(), 10, i, kSequenceNumber, kBaseTimestamp, 0,
+                 true);
     packet_list.pop_front();
   }
   EXPECT_TRUE(packet_list.empty());
@@ -340,21 +322,22 @@ TEST(RedPayloadSplitter, CheckRedPayloads) {
 TEST(RedPayloadSplitter, WrongPayloadLength) {
   uint8_t payload_types[] = {0, 0, 0};
   const int kTimestampOffset = 160;
-  Packet* packet = CreateRedPayload(3, payload_types, kTimestampOffset);
-  // Manually tamper with the payload length of the packet.
-  // This is one byte too short for the second payload (out of three).
-  // We expect only the first payload to be returned.
-  packet->payload.SetSize(packet->payload.size() - (kPayloadLength + 1));
   PacketList packet_list;
-  packet_list.push_back(packet);
+  {
+    Packet packet = CreateRedPayload(3, payload_types, kTimestampOffset);
+    // Manually tamper with the payload length of the packet.
+    // This is one byte too short for the second payload (out of three).
+    // We expect only the first payload to be returned.
+    packet.payload.SetSize(packet.payload.size() - (kPayloadLength + 1));
+    packet_list.push_back(std::move(packet));
+  }
   RedPayloadSplitter splitter;
   EXPECT_FALSE(splitter.SplitRed(&packet_list));
   ASSERT_EQ(1u, packet_list.size());
   // Check first packet.
-  packet = packet_list.front();
-  VerifyPacket(packet, kPayloadLength, payload_types[0], kSequenceNumber,
-               kBaseTimestamp - 2 * kTimestampOffset, 0, {0, 2});
-  delete packet;
+  VerifyPacket(packet_list.front(), kPayloadLength, payload_types[0],
+               kSequenceNumber, kBaseTimestamp - 2 * kTimestampOffset, 0,
+               {0, 2});
   packet_list.pop_front();
 }
 

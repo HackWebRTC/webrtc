@@ -13,7 +13,23 @@
 namespace webrtc {
 
 Packet::Packet() = default;
+Packet::Packet(Packet&& b) = default;
 
 Packet::~Packet() = default;
+
+Packet& Packet::operator=(Packet&& b) = default;
+
+Packet Packet::Clone() const {
+  RTC_CHECK(!frame);
+
+  Packet clone;
+  clone.timestamp = timestamp;
+  clone.sequence_number = sequence_number;
+  clone.payload_type = payload_type;
+  clone.payload.SetData(payload.data(), payload.size());
+  clone.priority = priority;
+
+  return clone;
+}
 
 }  // namespace webrtc

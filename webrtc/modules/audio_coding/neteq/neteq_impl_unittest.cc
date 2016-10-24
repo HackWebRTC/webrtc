@@ -52,7 +52,7 @@ namespace webrtc {
 // buffer. The purpose is to delete all inserted packets properly, to avoid
 // memory leaks in the test.
 int DeletePacketsAndReturnOk(PacketList* packet_list) {
-  PacketBuffer::DeleteAllPackets(packet_list);
+  packet_list->clear();
   return PacketBuffer::kOK;
 }
 

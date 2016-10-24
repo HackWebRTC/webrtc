@@ -34,9 +34,9 @@ bool RedPayloadSplitter::SplitRed(PacketList* packet_list) {
   bool ret = true;
   PacketList::iterator it = packet_list->begin();
   while (it != packet_list->end()) {
-    const Packet* red_packet = (*it);
-    assert(!red_packet->payload.empty());
-    const uint8_t* payload_ptr = red_packet->payload.data();
+    const Packet& red_packet = *it;
+    assert(!red_packet.payload.empty());
+    const uint8_t* payload_ptr = red_packet.payload.data();
 
     // Read RED headers (according to RFC 2198):
     //
@@ -69,14 +69,14 @@ bool RedPayloadSplitter::SplitRed(PacketList* packet_list) {
       if (last_block) {
         // No more header data to read.
         ++sum_length;  // Account for RED header size of 1 byte.
-        new_header.timestamp = red_packet->timestamp;
-        new_header.payload_length = red_packet->payload.size() - sum_length;
+        new_header.timestamp = red_packet.timestamp;
+        new_header.payload_length = red_packet.payload.size() - sum_length;
         payload_ptr += 1;  // Advance to first payload byte.
       } else {
         // Bits 8 through 21 are timestamp offset.
         int timestamp_offset =
             (payload_ptr[1] << 6) + ((payload_ptr[2] & 0xFC) >> 2);
-        new_header.timestamp = red_packet->timestamp - timestamp_offset;
+        new_header.timestamp = red_packet.timestamp - timestamp_offset;
         // Bits 22 through 31 are payload length.
         new_header.payload_length =
             ((payload_ptr[2] & 0x03) << 8) + payload_ptr[3];
@@ -96,7 +96,7 @@ bool RedPayloadSplitter::SplitRed(PacketList* packet_list) {
         const auto& new_header = new_headers[i];
         size_t payload_length = new_header.payload_length;
         if (payload_ptr + payload_length >
-            red_packet->payload.data() + red_packet->payload.size()) {
+            red_packet.payload.data() + red_packet.payload.size()) {
           // The block lengths in the RED headers do not match the overall
           // packet length. Something is corrupt. Discard this and the remaining
           // payloads from this packet.
@@ -105,26 +105,23 @@ bool RedPayloadSplitter::SplitRed(PacketList* packet_list) {
           break;
         }
 
-        Packet* new_packet = new Packet;
-        new_packet->timestamp = new_header.timestamp;
-        new_packet->payload_type = new_header.payload_type;
-        new_packet->sequence_number = red_packet->sequence_number;
-        new_packet->priority.red_level =
+        Packet new_packet;
+        new_packet.timestamp = new_header.timestamp;
+        new_packet.payload_type = new_header.payload_type;
+        new_packet.sequence_number = red_packet.sequence_number;
+        new_packet.priority.red_level =
             rtc::checked_cast<int>((new_headers.size() - 1) - i);
-        new_packet->payload.SetData(payload_ptr, payload_length);
-        new_packets.push_front(new_packet);
+        new_packet.payload.SetData(payload_ptr, payload_length);
+        new_packets.push_front(std::move(new_packet));
         payload_ptr += payload_length;
       }
       // Insert new packets into original list, before the element pointed to by
       // iterator |it|.
-      packet_list->splice(it, new_packets, new_packets.begin(),
-                          new_packets.end());
+      packet_list->splice(it, std::move(new_packets));
     } else {
       LOG(LS_WARNING) << "SplitRed too many blocks: " << new_headers.size();
       ret = false;
     }
-    // Delete old packet payload.
-    delete (*it);
     // Remove |it| from the packet list. This operation effectively moves the
     // iterator |it| to the next packet in the list. Thus, we do not have to
     // increment it manually.
@@ -136,11 +133,10 @@ bool RedPayloadSplitter::SplitRed(PacketList* packet_list) {
 int RedPayloadSplitter::CheckRedPayloads(
     PacketList* packet_list,
     const DecoderDatabase& decoder_database) {
-  PacketList::iterator it = packet_list->begin();
   int main_payload_type = -1;
   int num_deleted_packets = 0;
-  while (it != packet_list->end()) {
-    uint8_t this_payload_type = (*it)->payload_type;
+  for (auto it = packet_list->begin(); it != packet_list->end(); /* */) {
+    uint8_t this_payload_type = it->payload_type;
     if (!decoder_database.IsDtmf(this_payload_type) &&
         !decoder_database.IsComfortNoise(this_payload_type)) {
       if (main_payload_type == -1) {
@@ -149,8 +145,6 @@ int RedPayloadSplitter::CheckRedPayloads(
       } else {
         if (this_payload_type != main_payload_type) {
           // We do not allow redundant payloads of a different type.
-          // Discard this payload.
-          delete (*it);
           // Remove |it| from the packet list. This operation effectively
           // moves the iterator |it| to the next packet in the list. Thus, we
           // do not have to increment it manually.

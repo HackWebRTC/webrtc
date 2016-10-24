@@ -209,19 +209,22 @@ TEST(TimestampScaler, TestG722PacketList) {
   // Test both sides of the timestamp wrap-around.
   uint32_t external_timestamp = 0xFFFFFFFF - 5;
   uint32_t internal_timestamp = external_timestamp;
-  Packet packet1;
-  packet1.payload_type = kRtpPayloadType;
-  packet1.timestamp = external_timestamp;
-  Packet packet2;
-  packet2.payload_type = kRtpPayloadType;
-  packet2.timestamp = external_timestamp + 10;
   PacketList packet_list;
-  packet_list.push_back(&packet1);
-  packet_list.push_back(&packet2);
+  {
+    Packet packet1;
+    packet1.payload_type = kRtpPayloadType;
+    packet1.timestamp = external_timestamp;
+    Packet packet2;
+    packet2.payload_type = kRtpPayloadType;
+    packet2.timestamp = external_timestamp + 10;
+    packet_list.push_back(std::move(packet1));
+    packet_list.push_back(std::move(packet2));
+  }
 
   scaler.ToInternal(&packet_list);
-  EXPECT_EQ(internal_timestamp, packet1.timestamp);
-  EXPECT_EQ(internal_timestamp + 20, packet2.timestamp);
+  EXPECT_EQ(internal_timestamp, packet_list.front().timestamp);
+  packet_list.pop_front();
+  EXPECT_EQ(internal_timestamp + 20, packet_list.front().timestamp);
 
   EXPECT_CALL(db, Die());  // Called when database object is deleted.
 }

@@ -51,7 +51,7 @@ class PacketBuffer {
   // the packet object.
   // Returns PacketBuffer::kOK on success, PacketBuffer::kFlushed if the buffer
   // was flushed due to overfilling.
-  virtual int InsertPacket(Packet* packet);
+  virtual int InsertPacket(Packet&& packet);
 
   // Inserts a list of packets into the buffer. The buffer will take over
   // ownership of the packet objects.
@@ -85,13 +85,9 @@ class PacketBuffer {
   // NULL if the buffer is empty.
   virtual const Packet* PeekNextPacket() const;
 
-  // Extracts the first packet in the buffer and returns a pointer to it.
-  // Returns NULL if the buffer is empty. The caller is responsible for deleting
-  // the packet.
-  // Subsequent packets with the same timestamp as the one extracted will be
-  // discarded and properly deleted. The number of discarded packets will be
-  // written to the output variable |discard_count|.
-  virtual Packet* GetNextPacket(size_t* discard_count);
+  // Extracts the first packet in the buffer and returns it.
+  // Returns an empty optional if the buffer is empty.
+  virtual rtc::Optional<Packet> GetNextPacket();
 
   // Discards the first packet in the buffer. The packet is deleted.
   // Returns PacketBuffer::kBufferEmpty if the buffer is empty,
@@ -122,15 +118,6 @@ class PacketBuffer {
   virtual size_t NumSamplesInBuffer(size_t last_decoded_length) const;
 
   virtual void BufferStat(int* num_packets, int* max_num_packets) const;
-
-  // Static method that properly deletes the first packet, and its payload
-  // array, in |packet_list|. Returns false if |packet_list| already was empty,
-  // otherwise true.
-  static bool DeleteFirstPacket(PacketList* packet_list);
-
-  // Static method that properly deletes all packets, and their payload arrays,
-  // in |packet_list|.
-  static void DeleteAllPackets(PacketList* packet_list);
 
   // Static method returning true if |timestamp| is older than |timestamp_limit|
   // but less than |horizon_samples| behind |timestamp_limit|. For instance,

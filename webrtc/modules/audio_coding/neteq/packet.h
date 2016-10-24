@@ -75,7 +75,16 @@ struct Packet {
   std::unique_ptr<AudioDecoder::EncodedAudioFrame> frame;
 
   Packet();
+  Packet(Packet&& b);
   ~Packet();
+
+  // Packets should generally be moved around but sometimes it's useful to make
+  // a copy, for example for testing purposes. NOTE: Will only work for
+  // un-parsed packets, i.e. |frame| must be unset. The payload will, however,
+  // be copied. |waiting_time| will also not be copied.
+  Packet Clone() const;
+
+  Packet& operator=(Packet&& b);
 
   // Comparison operators. Establish a packet ordering based on (1) timestamp,
   // (2) sequence number and (3) redundancy.
@@ -109,7 +118,7 @@ struct Packet {
 };
 
 // A list of packets.
-typedef std::list<Packet*> PacketList;
+typedef std::list<Packet> PacketList;
 
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ_PACKET_H_

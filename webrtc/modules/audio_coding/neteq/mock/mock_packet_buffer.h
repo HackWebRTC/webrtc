@@ -27,7 +27,13 @@ class MockPacketBuffer : public PacketBuffer {
       void());
   MOCK_CONST_METHOD0(Empty,
       bool());
-  MOCK_METHOD1(InsertPacket,
+  int InsertPacket(Packet&& packet) {
+    return InsertPacketWrapped(&packet);
+  }
+  // Since gtest does not properly support move-only types, InsertPacket is
+  // implemented as a wrapper. You'll have to implement InsertPacketWrapped
+  // instead and move from |*packet|.
+  MOCK_METHOD1(InsertPacketWrapped,
       int(Packet* packet));
   MOCK_METHOD4(InsertPacketList,
       int(PacketList* packet_list,
@@ -40,8 +46,8 @@ class MockPacketBuffer : public PacketBuffer {
       int(uint32_t timestamp, uint32_t* next_timestamp));
   MOCK_CONST_METHOD0(PeekNextPacket,
       const Packet*());
-  MOCK_METHOD1(GetNextPacket,
-      Packet*(size_t* discard_count));
+  MOCK_METHOD0(GetNextPacket,
+      rtc::Optional<Packet>());
   MOCK_METHOD0(DiscardNextPacket,
       int());
   MOCK_METHOD2(DiscardOldPackets,

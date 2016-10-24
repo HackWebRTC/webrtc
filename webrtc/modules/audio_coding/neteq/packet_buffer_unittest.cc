@@ -30,7 +30,7 @@ class PacketGenerator {
   PacketGenerator(uint16_t seq_no, uint32_t ts, uint8_t pt, int frame_size);
   virtual ~PacketGenerator() {}
   void Reset(uint16_t seq_no, uint32_t ts, uint8_t pt, int frame_size);
-  Packet* NextPacket(int payload_size_bytes);
+  Packet NextPacket(int payload_size_bytes);
 
   uint16_t seq_no_;
   uint32_t ts_;
@@ -51,12 +51,12 @@ void PacketGenerator::Reset(uint16_t seq_no, uint32_t ts, uint8_t pt,
   frame_size_ = frame_size;
 }
 
-Packet* PacketGenerator::NextPacket(int payload_size_bytes) {
-  Packet* packet = new Packet;
-  packet->sequence_number = seq_no_;
-  packet->timestamp = ts_;
-  packet->payload_type = pt_;
-  packet->payload.SetSize(payload_size_bytes);
+Packet PacketGenerator::NextPacket(int payload_size_bytes) {
+  Packet packet;
+  packet.sequence_number = seq_no_;
+  packet.timestamp = ts_;
+  packet.payload_type = pt_;
+  packet.payload.SetSize(payload_size_bytes);
   ++seq_no_;
   ts_ += frame_size_;
   return packet;
@@ -88,16 +88,15 @@ TEST(PacketBuffer, InsertPacket) {
   PacketGenerator gen(17u, 4711u, 0, 10);
 
   const int payload_len = 100;
-  Packet* packet = gen.NextPacket(payload_len);
-
-  EXPECT_EQ(0, buffer.InsertPacket(packet));
+  const Packet packet = gen.NextPacket(payload_len);
+  EXPECT_EQ(0, buffer.InsertPacket(packet.Clone()));
   uint32_t next_ts;
   EXPECT_EQ(PacketBuffer::kOK, buffer.NextTimestamp(&next_ts));
   EXPECT_EQ(4711u, next_ts);
   EXPECT_FALSE(buffer.Empty());
   EXPECT_EQ(1u, buffer.NumPacketsInBuffer());
   const Packet* next_packet = buffer.PeekNextPacket();
-  EXPECT_EQ(packet, next_packet);  // Compare pointer addresses.
+  EXPECT_EQ(packet, *next_packet);  // Compare contents.
 
   // Do not explicitly flush buffer or delete packet to test that it is deleted
   // with the buffer. (Tested with Valgrind or similar tool.)
@@ -112,8 +111,8 @@ TEST(PacketBuffer, FlushBuffer) {
 
   // Insert 10 small packets; should be ok.
   for (int i = 0; i < 10; ++i) {
-    Packet* packet = gen.NextPacket(payload_len);
-    EXPECT_EQ(PacketBuffer::kOK, buffer.InsertPacket(packet));
+    EXPECT_EQ(PacketBuffer::kOK,
+              buffer.InsertPacket(gen.NextPacket(payload_len)));
   }
   EXPECT_EQ(10u, buffer.NumPacketsInBuffer());
   EXPECT_FALSE(buffer.Empty());
@@ -134,21 +133,21 @@ TEST(PacketBuffer, OverfillBuffer) {
   const int payload_len = 10;
   int i;
   for (i = 0; i < 10; ++i) {
-    Packet* packet = gen.NextPacket(payload_len);
-    EXPECT_EQ(PacketBuffer::kOK, buffer.InsertPacket(packet));
+    EXPECT_EQ(PacketBuffer::kOK,
+              buffer.InsertPacket(gen.NextPacket(payload_len)));
   }
   EXPECT_EQ(10u, buffer.NumPacketsInBuffer());
   uint32_t next_ts;
   EXPECT_EQ(PacketBuffer::kOK, buffer.NextTimestamp(&next_ts));
   EXPECT_EQ(0u, next_ts);  // Expect first inserted packet to be first in line.
 
+  const Packet packet = gen.NextPacket(payload_len);
   // Insert 11th packet; should flush the buffer and insert it after flushing.
-  Packet* packet = gen.NextPacket(payload_len);
-  EXPECT_EQ(PacketBuffer::kFlushed, buffer.InsertPacket(packet));
+  EXPECT_EQ(PacketBuffer::kFlushed, buffer.InsertPacket(packet.Clone()));
   EXPECT_EQ(1u, buffer.NumPacketsInBuffer());
   EXPECT_EQ(PacketBuffer::kOK, buffer.NextTimestamp(&next_ts));
   // Expect last inserted packet to be first in line.
-  EXPECT_EQ(packet->timestamp, next_ts);
+  EXPECT_EQ(packet.timestamp, next_ts);
 
   // Flush buffer to delete all packets.
   buffer.Flush();
@@ -164,8 +163,7 @@ TEST(PacketBuffer, InsertPacketList) {
 
   // Insert 10 small packets.
   for (int i = 0; i < 10; ++i) {
-    Packet* packet = gen.NextPacket(payload_len);
-    list.push_back(packet);
+    list.push_back(gen.NextPacket(payload_len));
   }
 
   MockDecoderDatabase decoder_database;
@@ -202,14 +200,14 @@ TEST(PacketBuffer, InsertPacketListChangePayloadType) {
 
   // Insert 10 small packets.
   for (int i = 0; i < 10; ++i) {
-    Packet* packet = gen.NextPacket(payload_len);
-    list.push_back(packet);
+    list.push_back(gen.NextPacket(payload_len));
   }
   // Insert 11th packet of another payload type (not CNG).
-  Packet* packet = gen.NextPacket(payload_len);
-  packet->payload_type = 1;
-  list.push_back(packet);
-
+  {
+    Packet packet = gen.NextPacket(payload_len);
+    packet.payload_type = 1;
+    list.push_back(std::move(packet));
+  }
 
   MockDecoderDatabase decoder_database;
   auto factory = CreateBuiltinAudioDecoderFactory();
@@ -266,7 +264,7 @@ TEST(PacketBuffer, ExtractOrderRedundancy) {
 
   const size_t kExpectPacketsInBuffer = 9;
 
-  std::vector<Packet*> expect_order(kExpectPacketsInBuffer);
+  std::vector<Packet> expect_order(kExpectPacketsInBuffer);
 
   PacketGenerator gen(0, 0, 0, kFrameSize);
 
@@ -275,22 +273,19 @@ TEST(PacketBuffer, ExtractOrderRedundancy) {
               packet_facts[i].timestamp,
               packet_facts[i].payload_type,
               kFrameSize);
-    Packet* packet = gen.NextPacket(kPayloadLength);
-    packet->priority.red_level = packet_facts[i].primary ? 0 : 1;
-    EXPECT_EQ(PacketBuffer::kOK, buffer.InsertPacket(packet));
+    Packet packet = gen.NextPacket(kPayloadLength);
+    packet.priority.red_level = packet_facts[i].primary ? 0 : 1;
+    EXPECT_EQ(PacketBuffer::kOK, buffer.InsertPacket(packet.Clone()));
     if (packet_facts[i].extract_order >= 0) {
-      expect_order[packet_facts[i].extract_order] = packet;
+      expect_order[packet_facts[i].extract_order] = std::move(packet);
     }
   }
 
   EXPECT_EQ(kExpectPacketsInBuffer, buffer.NumPacketsInBuffer());
 
-  size_t drop_count;
   for (size_t i = 0; i < kExpectPacketsInBuffer; ++i) {
-    Packet* packet = buffer.GetNextPacket(&drop_count);
-    EXPECT_EQ(0u, drop_count);
-    EXPECT_EQ(packet, expect_order[i]);  // Compare pointer addresses.
-    delete packet;
+    const rtc::Optional<Packet> packet = buffer.GetNextPacket();
+    EXPECT_EQ(packet, expect_order[i]);  // Compare contents.
   }
   EXPECT_TRUE(buffer.Empty());
 }
@@ -307,8 +302,7 @@ TEST(PacketBuffer, DiscardPackets) {
 
   // Insert 10 small packets.
   for (int i = 0; i < 10; ++i) {
-    Packet* packet = gen.NextPacket(payload_len);
-    buffer.InsertPacket(packet);
+    buffer.InsertPacket(gen.NextPacket(payload_len));
   }
   EXPECT_EQ(10u, buffer.NumPacketsInBuffer());
 
@@ -339,11 +333,11 @@ TEST(PacketBuffer, Reordering) {
   // a (rather strange) reordering.
   PacketList list;
   for (int i = 0; i < 10; ++i) {
-    Packet* packet = gen.NextPacket(payload_len);
+    Packet packet = gen.NextPacket(payload_len);
     if (i % 2) {
-      list.push_front(packet);
+      list.push_front(std::move(packet));
     } else {
-      list.push_back(packet);
+      list.push_back(std::move(packet));
     }
   }
 
@@ -364,11 +358,10 @@ TEST(PacketBuffer, Reordering) {
   // Extract them and make sure that come out in the right order.
   uint32_t current_ts = start_ts;
   for (int i = 0; i < 10; ++i) {
-    Packet* packet = buffer.GetNextPacket(NULL);
-    ASSERT_FALSE(packet == NULL);
+    const rtc::Optional<Packet> packet = buffer.GetNextPacket();
+    ASSERT_TRUE(packet);
     EXPECT_EQ(current_ts, packet->timestamp);
     current_ts += ts_increment;
-    delete packet;
   }
   EXPECT_TRUE(buffer.Empty());
 
@@ -415,9 +408,11 @@ TEST(PacketBuffer, CngFirstThenSpeechWithNewSampleRate) {
             current_cng_pt);  // CNG payload type set.
 
   // Insert second packet, which is wide-band speech.
-  Packet* packet = gen.NextPacket(kPayloadLen);
-  packet->payload_type = kSpeechPt;
-  list.push_back(packet);
+  {
+    Packet packet = gen.NextPacket(kPayloadLen);
+    packet.payload_type = kSpeechPt;
+    list.push_back(std::move(packet));
+  }
   // Expect the buffer to flush out the CNG packet, since it does not match the
   // new speech sample rate.
   EXPECT_EQ(PacketBuffer::kFlushed,
@@ -445,26 +440,25 @@ TEST(PacketBuffer, Failures) {
   TickTimer tick_timer;
 
   PacketBuffer* buffer = new PacketBuffer(100, &tick_timer);  // 100 packets.
-  Packet* packet = NULL;
-  EXPECT_EQ(PacketBuffer::kInvalidPacket, buffer->InsertPacket(packet));
-  packet = gen.NextPacket(payload_len);
-  packet->payload.Clear();
-  EXPECT_EQ(PacketBuffer::kInvalidPacket, buffer->InsertPacket(packet));
-  // Packet is deleted by the PacketBuffer.
-
+  {
+    Packet packet = gen.NextPacket(payload_len);
+    packet.payload.Clear();
+    EXPECT_EQ(PacketBuffer::kInvalidPacket,
+              buffer->InsertPacket(std::move(packet)));
+  }
   // Buffer should still be empty. Test all empty-checks.
   uint32_t temp_ts;
   EXPECT_EQ(PacketBuffer::kBufferEmpty, buffer->NextTimestamp(&temp_ts));
   EXPECT_EQ(PacketBuffer::kBufferEmpty,
             buffer->NextHigherTimestamp(0, &temp_ts));
   EXPECT_EQ(NULL, buffer->PeekNextPacket());
-  EXPECT_EQ(NULL, buffer->GetNextPacket(NULL));
+  EXPECT_FALSE(buffer->GetNextPacket());
   EXPECT_EQ(PacketBuffer::kBufferEmpty, buffer->DiscardNextPacket());
   EXPECT_EQ(0, buffer->DiscardAllOldPackets(0));  // 0 packets discarded.
 
   // Insert one packet to make the buffer non-empty.
-  packet = gen.NextPacket(payload_len);
-  EXPECT_EQ(PacketBuffer::kOK, buffer->InsertPacket(packet));
+  EXPECT_EQ(PacketBuffer::kOK,
+            buffer->InsertPacket(gen.NextPacket(payload_len)));
   EXPECT_EQ(PacketBuffer::kInvalidPointer, buffer->NextTimestamp(NULL));
   EXPECT_EQ(PacketBuffer::kInvalidPointer,
             buffer->NextHigherTimestamp(0, NULL));
@@ -476,9 +470,11 @@ TEST(PacketBuffer, Failures) {
   buffer = new PacketBuffer(100, &tick_timer);  // 100 packets.
   PacketList list;
   list.push_back(gen.NextPacket(payload_len));  // Valid packet.
-  packet = gen.NextPacket(payload_len);
-  packet->payload.Clear();  // Invalid.
-  list.push_back(packet);
+  {
+    Packet packet = gen.NextPacket(payload_len);
+    packet.payload.Clear();  // Invalid.
+    list.push_back(std::move(packet));
+  }
   list.push_back(gen.NextPacket(payload_len));  // Valid packet.
   MockDecoderDatabase decoder_database;
   auto factory = CreateBuiltinAudioDecoderFactory();
@@ -502,127 +498,109 @@ TEST(PacketBuffer, Failures) {
 // The function should return true if the first packet "goes before" the second.
 TEST(PacketBuffer, ComparePackets) {
   PacketGenerator gen(0, 0, 0, 10);
-  std::unique_ptr<Packet> a(gen.NextPacket(10));  // SN = 0, TS = 0.
-  std::unique_ptr<Packet> b(gen.NextPacket(10));  // SN = 1, TS = 10.
-  EXPECT_FALSE(*a == *b);
-  EXPECT_TRUE(*a != *b);
-  EXPECT_TRUE(*a < *b);
-  EXPECT_FALSE(*a > *b);
-  EXPECT_TRUE(*a <= *b);
-  EXPECT_FALSE(*a >= *b);
+  Packet a(gen.NextPacket(10));  // SN = 0, TS = 0.
+  Packet b(gen.NextPacket(10));  // SN = 1, TS = 10.
+  EXPECT_FALSE(a == b);
+  EXPECT_TRUE(a != b);
+  EXPECT_TRUE(a < b);
+  EXPECT_FALSE(a > b);
+  EXPECT_TRUE(a <= b);
+  EXPECT_FALSE(a >= b);
 
   // Testing wrap-around case; 'a' is earlier but has a larger timestamp value.
-  a->timestamp = 0xFFFFFFFF - 10;
-  EXPECT_FALSE(*a == *b);
-  EXPECT_TRUE(*a != *b);
-  EXPECT_TRUE(*a < *b);
-  EXPECT_FALSE(*a > *b);
-  EXPECT_TRUE(*a <= *b);
-  EXPECT_FALSE(*a >= *b);
+  a.timestamp = 0xFFFFFFFF - 10;
+  EXPECT_FALSE(a == b);
+  EXPECT_TRUE(a != b);
+  EXPECT_TRUE(a < b);
+  EXPECT_FALSE(a > b);
+  EXPECT_TRUE(a <= b);
+  EXPECT_FALSE(a >= b);
 
   // Test equal packets.
-  EXPECT_TRUE(*a == *a);
-  EXPECT_FALSE(*a != *a);
-  EXPECT_FALSE(*a < *a);
-  EXPECT_FALSE(*a > *a);
-  EXPECT_TRUE(*a <= *a);
-  EXPECT_TRUE(*a >= *a);
+  EXPECT_TRUE(a == a);
+  EXPECT_FALSE(a != a);
+  EXPECT_FALSE(a < a);
+  EXPECT_FALSE(a > a);
+  EXPECT_TRUE(a <= a);
+  EXPECT_TRUE(a >= a);
 
   // Test equal timestamps but different sequence numbers (0 and 1).
-  a->timestamp = b->timestamp;
-  EXPECT_FALSE(*a == *b);
-  EXPECT_TRUE(*a != *b);
-  EXPECT_TRUE(*a < *b);
-  EXPECT_FALSE(*a > *b);
-  EXPECT_TRUE(*a <= *b);
-  EXPECT_FALSE(*a >= *b);
+  a.timestamp = b.timestamp;
+  EXPECT_FALSE(a == b);
+  EXPECT_TRUE(a != b);
+  EXPECT_TRUE(a < b);
+  EXPECT_FALSE(a > b);
+  EXPECT_TRUE(a <= b);
+  EXPECT_FALSE(a >= b);
 
   // Test equal timestamps but different sequence numbers (32767 and 1).
-  a->sequence_number = 0xFFFF;
-  EXPECT_FALSE(*a == *b);
-  EXPECT_TRUE(*a != *b);
-  EXPECT_TRUE(*a < *b);
-  EXPECT_FALSE(*a > *b);
-  EXPECT_TRUE(*a <= *b);
-  EXPECT_FALSE(*a >= *b);
+  a.sequence_number = 0xFFFF;
+  EXPECT_FALSE(a == b);
+  EXPECT_TRUE(a != b);
+  EXPECT_TRUE(a < b);
+  EXPECT_FALSE(a > b);
+  EXPECT_TRUE(a <= b);
+  EXPECT_FALSE(a >= b);
 
   // Test equal timestamps and sequence numbers, but differing priorities.
-  a->sequence_number = b->sequence_number;
-  a->priority = {1, 0};
-  b->priority = {0, 0};
+  a.sequence_number = b.sequence_number;
+  a.priority = {1, 0};
+  b.priority = {0, 0};
   // a after b
-  EXPECT_FALSE(*a == *b);
-  EXPECT_TRUE(*a != *b);
-  EXPECT_FALSE(*a < *b);
-  EXPECT_TRUE(*a > *b);
-  EXPECT_FALSE(*a <= *b);
-  EXPECT_TRUE(*a >= *b);
+  EXPECT_FALSE(a == b);
+  EXPECT_TRUE(a != b);
+  EXPECT_FALSE(a < b);
+  EXPECT_TRUE(a > b);
+  EXPECT_FALSE(a <= b);
+  EXPECT_TRUE(a >= b);
 
-  std::unique_ptr<Packet> c(gen.NextPacket(0));  // SN = 2, TS = 20.
-  std::unique_ptr<Packet> d(gen.NextPacket(0));  // SN = 3, TS = 20.
-  c->timestamp = b->timestamp;
-  d->timestamp = b->timestamp;
-  c->sequence_number = b->sequence_number;
-  d->sequence_number = b->sequence_number;
-  c->priority = {1, 1};
-  d->priority = {0, 1};
+  Packet c(gen.NextPacket(0));  // SN = 2, TS = 20.
+  Packet d(gen.NextPacket(0));  // SN = 3, TS = 20.
+  c.timestamp = b.timestamp;
+  d.timestamp = b.timestamp;
+  c.sequence_number = b.sequence_number;
+  d.sequence_number = b.sequence_number;
+  c.priority = {1, 1};
+  d.priority = {0, 1};
   // c after d
-  EXPECT_FALSE(*c == *d);
-  EXPECT_TRUE(*c != *d);
-  EXPECT_FALSE(*c < *d);
-  EXPECT_TRUE(*c > *d);
-  EXPECT_FALSE(*c <= *d);
-  EXPECT_TRUE(*c >= *d);
+  EXPECT_FALSE(c == d);
+  EXPECT_TRUE(c != d);
+  EXPECT_FALSE(c < d);
+  EXPECT_TRUE(c > d);
+  EXPECT_FALSE(c <= d);
+  EXPECT_TRUE(c >= d);
 
   // c after a
-  EXPECT_FALSE(*c == *a);
-  EXPECT_TRUE(*c != *a);
-  EXPECT_FALSE(*c < *a);
-  EXPECT_TRUE(*c > *a);
-  EXPECT_FALSE(*c <= *a);
-  EXPECT_TRUE(*c >= *a);
+  EXPECT_FALSE(c == a);
+  EXPECT_TRUE(c != a);
+  EXPECT_FALSE(c < a);
+  EXPECT_TRUE(c > a);
+  EXPECT_FALSE(c <= a);
+  EXPECT_TRUE(c >= a);
 
   // c after b
-  EXPECT_FALSE(*c == *b);
-  EXPECT_TRUE(*c != *b);
-  EXPECT_FALSE(*c < *b);
-  EXPECT_TRUE(*c > *b);
-  EXPECT_FALSE(*c <= *b);
-  EXPECT_TRUE(*c >= *b);
+  EXPECT_FALSE(c == b);
+  EXPECT_TRUE(c != b);
+  EXPECT_FALSE(c < b);
+  EXPECT_TRUE(c > b);
+  EXPECT_FALSE(c <= b);
+  EXPECT_TRUE(c >= b);
 
   // a after d
-  EXPECT_FALSE(*a == *d);
-  EXPECT_TRUE(*a != *d);
-  EXPECT_FALSE(*a < *d);
-  EXPECT_TRUE(*a > *d);
-  EXPECT_FALSE(*a <= *d);
-  EXPECT_TRUE(*a >= *d);
+  EXPECT_FALSE(a == d);
+  EXPECT_TRUE(a != d);
+  EXPECT_FALSE(a < d);
+  EXPECT_TRUE(a > d);
+  EXPECT_FALSE(a <= d);
+  EXPECT_TRUE(a >= d);
 
   // d after b
-  EXPECT_FALSE(*d == *b);
-  EXPECT_TRUE(*d != *b);
-  EXPECT_FALSE(*d < *b);
-  EXPECT_TRUE(*d > *b);
-  EXPECT_FALSE(*d <= *b);
-  EXPECT_TRUE(*d >= *b);
-}
-
-// Test the DeleteFirstPacket DeleteAllPackets methods.
-TEST(PacketBuffer, DeleteAllPackets) {
-  PacketGenerator gen(0, 0, 0, 10);
-  PacketList list;
-  const int payload_len = 10;
-
-  // Insert 10 small packets.
-  for (int i = 0; i < 10; ++i) {
-    Packet* packet = gen.NextPacket(payload_len);
-    list.push_back(packet);
-  }
-  EXPECT_TRUE(PacketBuffer::DeleteFirstPacket(&list));
-  EXPECT_EQ(9u, list.size());
-  PacketBuffer::DeleteAllPackets(&list);
-  EXPECT_TRUE(list.empty());
-  EXPECT_FALSE(PacketBuffer::DeleteFirstPacket(&list));
+  EXPECT_FALSE(d == b);
+  EXPECT_TRUE(d != b);
+  EXPECT_FALSE(d < b);
+  EXPECT_TRUE(d > b);
+  EXPECT_FALSE(d <= b);
+  EXPECT_TRUE(d >= b);
 }
 
 namespace {
