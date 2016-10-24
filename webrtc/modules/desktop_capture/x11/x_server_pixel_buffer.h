@@ -55,7 +55,7 @@ class XServerPixelBuffer {
   // where the full-screen data is captured by Synchronize(), this simply
   // returns the pointer without doing any more work. The caller must ensure
   // that |rect| is not larger than window_size().
-  void CaptureRect(const DesktopRect& rect, DesktopFrame* frame);
+  bool CaptureRect(const DesktopRect& rect, DesktopFrame* frame);
 
  private:
   void InitShm(const XWindowAttributes& attributes);

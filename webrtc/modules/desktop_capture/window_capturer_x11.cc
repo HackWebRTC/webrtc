@@ -293,8 +293,11 @@ void WindowCapturerLinux::CaptureFrame() {
       new BasicDesktopFrame(x_server_pixel_buffer_.window_size()));
 
   x_server_pixel_buffer_.Synchronize();
-  x_server_pixel_buffer_.CaptureRect(DesktopRect::MakeSize(frame->size()),
-                                     frame.get());
+  if (!x_server_pixel_buffer_.CaptureRect(DesktopRect::MakeSize(frame->size()),
+                                          frame.get())) {
+    callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
+    return;
+  }
 
   frame->mutable_updated_region()->SetRect(
       DesktopRect::MakeSize(frame->size()));

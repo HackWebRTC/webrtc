@@ -231,7 +231,7 @@ void XServerPixelBuffer::Synchronize() {
   }
 }
 
-void XServerPixelBuffer::CaptureRect(const DesktopRect& rect,
+bool XServerPixelBuffer::CaptureRect(const DesktopRect& rect,
                                      DesktopFrame* frame) {
   assert(rect.right() <= window_size_.width());
   assert(rect.bottom() <= window_size_.height());
@@ -253,6 +253,9 @@ void XServerPixelBuffer::CaptureRect(const DesktopRect& rect,
       XDestroyImage(x_image_);
     x_image_ = XGetImage(display_, window_, rect.left(), rect.top(),
                          rect.width(), rect.height(), AllPlanes, ZPixmap);
+    if (!x_image_)
+      return false;
+
     data = reinterpret_cast<uint8_t*>(x_image_->data);
   }
 
@@ -261,6 +264,8 @@ void XServerPixelBuffer::CaptureRect(const DesktopRect& rect,
   } else {
     SlowBlit(data, rect, frame);
   }
+
+  return true;
 }
 
 void XServerPixelBuffer::FastBlit(uint8_t* image,

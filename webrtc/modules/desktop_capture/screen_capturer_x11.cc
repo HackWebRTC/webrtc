@@ -256,6 +256,11 @@ void ScreenCapturerLinux::CaptureFrame() {
   }
 
   std::unique_ptr<DesktopFrame> result = CaptureScreen();
+  if (!result) {
+    callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
+    return;
+  }
+
   last_invalid_region_ = result->updated_region();
   result->set_capture_time_ms((rtc::TimeNanos() - capture_start_time_nanos) /
                               rtc::kNumNanosecsPerMillisec);
@@ -334,7 +339,8 @@ std::unique_ptr<DesktopFrame> ScreenCapturerLinux::CaptureScreen() {
 
     for (DesktopRegion::Iterator it(*updated_region);
          !it.IsAtEnd(); it.Advance()) {
-      x_server_pixel_buffer_.CaptureRect(it.rect(), frame.get());
+      if (!x_server_pixel_buffer_.CaptureRect(it.rect(), frame.get()))
+        return nullptr;
     }
   } else {
     // Doing full-screen polling, or this is the first capture after a
