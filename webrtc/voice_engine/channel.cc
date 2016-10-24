@@ -22,6 +22,7 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/config.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
+#include "webrtc/modules/audio_coding/codecs/audio_format_conversion.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/include/module_common_types.h"
@@ -47,14 +48,6 @@ namespace {
 
 constexpr int64_t kMaxRetransmissionWindowMs = 1000;
 constexpr int64_t kMinRetransmissionWindowMs = 30;
-
-bool RegisterReceiveCodec(std::unique_ptr<AudioCodingModule>* acm,
-                          acm2::RentACodec* rac,
-                          const CodecInst& ci) {
-  const int result = (*acm)->RegisterReceiveCodec(
-      ci, [&] { return rac->RentIsacDecoder(ci.plfreq); });
-  return result == 0;
-}
 
 }  // namespace
 
@@ -498,7 +491,8 @@ int32_t Channel::OnInitializeDecoder(
   receiveCodec.pacsize = dummyCodec.pacsize;
 
   // Register the new codec to the ACM
-  if (!RegisterReceiveCodec(&audio_coding_, &rent_a_codec_, receiveCodec)) {
+  if (!audio_coding_->RegisterReceiveCodec(receiveCodec.pltype,
+                                           CodecInstToSdp(receiveCodec))) {
     WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
                  "Channel::OnInitializeDecoder() invalid codec ("
                  "pt=%d, name=%s) received - 1",
@@ -1066,7 +1060,8 @@ int32_t Channel::Init() {
     // Register default PT for outband 'telephone-event'
     if (!STR_CASE_CMP(codec.plname, "telephone-event")) {
       if (_rtpRtcpModule->RegisterSendPayload(codec) == -1 ||
-          !RegisterReceiveCodec(&audio_coding_, &rent_a_codec_, codec)) {
+          !audio_coding_->RegisterReceiveCodec(codec.pltype,
+                                               CodecInstToSdp(codec))) {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
                      "Channel::Init() failed to register outband "
                      "'telephone-event' (%d/%d) correctly",
@@ -1077,7 +1072,8 @@ int32_t Channel::Init() {
     if (!STR_CASE_CMP(codec.plname, "CN")) {
       if (!codec_manager_.RegisterEncoder(codec) ||
           !codec_manager_.MakeEncoder(&rent_a_codec_, audio_coding_.get()) ||
-          !RegisterReceiveCodec(&audio_coding_, &rent_a_codec_, codec) ||
+          !audio_coding_->RegisterReceiveCodec(codec.pltype,
+                                               CodecInstToSdp(codec)) ||
           _rtpRtcpModule->RegisterSendPayload(codec) == -1) {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
                      "Channel::Init() failed to register CN (%d/%d) "
@@ -1425,9 +1421,11 @@ int32_t Channel::SetRecPayloadType(const CodecInst& codec) {
       return -1;
     }
   }
-  if (!RegisterReceiveCodec(&audio_coding_, &rent_a_codec_, codec)) {
+  if (!audio_coding_->RegisterReceiveCodec(codec.pltype,
+                                           CodecInstToSdp(codec))) {
     audio_coding_->UnregisterReceiveCodec(codec.pltype);
-    if (!RegisterReceiveCodec(&audio_coding_, &rent_a_codec_, codec)) {
+    if (!audio_coding_->RegisterReceiveCodec(codec.pltype,
+                                             CodecInstToSdp(codec))) {
       _engineStatisticsPtr->SetLastError(
           VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
           "SetRecPayloadType() ACM registration failed - 1");

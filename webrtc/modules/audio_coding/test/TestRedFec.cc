@@ -13,6 +13,7 @@
 #include <assert.h>
 
 #include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/codecs/audio_format_conversion.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "webrtc/modules/audio_coding/test/utility.h"
 #include "webrtc/system_wrappers/include/trace.h"
@@ -77,7 +78,8 @@ void TestRedFec::Perform() {
     if (!strcmp(myCodecParam.plname, "opus")) {
       myCodecParam.channels = 1;
     }
-    EXPECT_EQ(0, _acmB->RegisterReceiveCodec(myCodecParam));
+    EXPECT_EQ(true, _acmB->RegisterReceiveCodec(myCodecParam.pltype,
+                                                CodecInstToSdp(myCodecParam)));
   }
 
   // Create and connect the channel

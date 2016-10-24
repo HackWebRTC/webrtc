@@ -15,6 +15,7 @@
 #include <string>
 
 #include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/codecs/audio_format_conversion.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "webrtc/modules/audio_coding/test/utility.h"
@@ -141,7 +142,8 @@ void TestAllCodecs::Perform() {
     if (!strcmp(my_codec_param.plname, "opus")) {
       my_codec_param.channels = 1;
     }
-    acm_b_->RegisterReceiveCodec(my_codec_param);
+    acm_b_->RegisterReceiveCodec(my_codec_param.pltype,
+                                 CodecInstToSdp(my_codec_param));
   }
 
   // Create and connect the channel

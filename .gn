@@ -22,6 +22,9 @@ secondary_source = "//build/secondary/"
 check_targets = [
   "//webrtc/api:audio_mixer_api",
   "//webrtc/api:rtc_stats_api",
+  "//webrtc/modules/audio_coding:audio_decoder_factory_interface",
+  "//webrtc/modules/audio_coding:audio_format",
+  "//webrtc/modules/audio_coding:audio_format_conversion",
   "//webrtc/modules/audio_coding:g711_test",
   "//webrtc/modules/audio_coding:g722_test",
   "//webrtc/modules/audio_coding:ilbc_test",

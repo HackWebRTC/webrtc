@@ -87,6 +87,8 @@
         'codecs/audio_decoder_factory.h',
         'codecs/audio_format.cc',
         'codecs/audio_format.h',
+        'codecs/audio_format_conversion.cc',
+        'codecs/audio_format_conversion.h',
       ],
     },
     {

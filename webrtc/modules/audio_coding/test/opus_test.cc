@@ -15,6 +15,7 @@
 #include <string>
 
 #include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/codecs/audio_format_conversion.h"
 #include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "webrtc/modules/audio_coding/test/TestStereo.h"
@@ -94,7 +95,9 @@ void OpusTest::Perform() {
   int codec_id = acm_receiver_->Codec("opus", 48000, 2);
   EXPECT_EQ(0, acm_receiver_->Codec(codec_id, &opus_codec_param));
   payload_type_ = opus_codec_param.pltype;
-  EXPECT_EQ(0, acm_receiver_->RegisterReceiveCodec(opus_codec_param));
+  EXPECT_EQ(true,
+            acm_receiver_->RegisterReceiveCodec(
+                opus_codec_param.pltype, CodecInstToSdp(opus_codec_param)));
 
   // Create and connect the channel.
   channel_a2b_ = new TestPackStereo;
@@ -159,7 +162,9 @@ void OpusTest::Perform() {
 
   // Register Opus mono as receiving codec.
   opus_codec_param.channels = 1;
-  EXPECT_EQ(0, acm_receiver_->RegisterReceiveCodec(opus_codec_param));
+  EXPECT_EQ(true,
+            acm_receiver_->RegisterReceiveCodec(
+                opus_codec_param.pltype, CodecInstToSdp(opus_codec_param)));
 
   // Run Opus with 2.5 ms frame size.
   Run(channel_a2b_, audio_channels, 32000, 120);

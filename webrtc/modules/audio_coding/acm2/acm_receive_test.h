@@ -50,12 +50,6 @@ class AcmReceiveTestOldApi {
   // files.
   void RegisterNetEqTestCodecs();
 
-  int RegisterExternalReceiveCodec(int rtp_payload_type,
-                                   AudioDecoder* external_decoder,
-                                   int sample_rate_hz,
-                                   int num_channels,
-                                   const std::string& name);
-
   // Runs the test and returns true if successful.
   void Run();
 

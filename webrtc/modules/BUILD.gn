@@ -63,6 +63,7 @@ if (rtc_include_tests) {
       "..:webrtc_common",
       "../common_video",
       "../modules/audio_coding",
+      "../modules/audio_coding:audio_format_conversion",
       "../modules/rtp_rtcp",
       "../modules/utility",
       "../modules/video_coding",

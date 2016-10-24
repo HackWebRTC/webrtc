@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/codecs/audio_format_conversion.h"
 #include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/utility/source/coder.h"
@@ -45,9 +46,8 @@ int32_t AudioCoder::SetEncodeCodec(const CodecInst& codec_inst) {
 }
 
 int32_t AudioCoder::SetDecodeCodec(const CodecInst& codec_inst) {
-  if (acm_->RegisterReceiveCodec(codec_inst, [&] {
-        return rent_a_codec_.RentIsacDecoder(codec_inst.plfreq);
-      }) == -1) {
+  if (!acm_->RegisterReceiveCodec(codec_inst.pltype,
+                                  CodecInstToSdp(codec_inst))) {
     return -1;
   }
   memcpy(&receive_codec_, &codec_inst, sizeof(CodecInst));

@@ -30,12 +30,12 @@ class TargetDelayTest : public ::testing::Test {
   void SetUp() {
     EXPECT_TRUE(acm_.get() != NULL);
 
-    CodecInst codec;
-    ASSERT_EQ(0, AudioCodingModule::Codec("L16", &codec, kSampleRateHz, 1));
     ASSERT_EQ(0, acm_->InitializeReceiver());
-    ASSERT_EQ(0, acm_->RegisterReceiveCodec(codec));
+    constexpr int pltype = 108;
+    ASSERT_EQ(true,
+              acm_->RegisterReceiveCodec(pltype, {"L16", kSampleRateHz, 1}));
 
-    rtp_info_.header.payloadType = codec.pltype;
+    rtp_info_.header.payloadType = pltype;
     rtp_info_.header.timestamp = 0;
     rtp_info_.header.ssrc = 0x12345678;
     rtp_info_.header.markerBit = false;

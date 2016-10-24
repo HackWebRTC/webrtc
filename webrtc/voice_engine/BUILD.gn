@@ -93,6 +93,7 @@ rtc_static_library("voice_engine") {
     "../common_audio",
     "../logging:rtc_event_log_api",
     "../modules/audio_coding:audio_decoder_factory_interface",
+    "../modules/audio_coding:audio_format_conversion",
     "../modules/audio_coding:builtin_audio_decoder_factory",
     "../modules/audio_coding:rent_a_codec",
     "../modules/audio_conference_mixer",

@@ -39,14 +39,36 @@ audio_coding_deps = audio_codec_deps + [
                       "../../system_wrappers",
                     ]
 
-rtc_static_library("audio_decoder_factory_interface") {
+rtc_static_library("audio_format") {
   sources = [
-    "codecs/audio_decoder_factory.h",
     "codecs/audio_format.cc",
     "codecs/audio_format.h",
   ]
   deps = [
-    "../..:webrtc_common",
+    "//webrtc:webrtc_common",
+  ]
+}
+
+rtc_static_library("audio_format_conversion") {
+  sources = [
+    "codecs/audio_format_conversion.cc",
+    "codecs/audio_format_conversion.h",
+  ]
+  deps = [
+    ":audio_format",
+    "//webrtc:webrtc_common",
+    "//webrtc/base:rtc_base_approved",
+  ]
+}
+
+rtc_source_set("audio_decoder_factory_interface") {
+  sources = [
+    "codecs/audio_decoder_factory.h",
+  ]
+  deps = [
+    ":audio_decoder_interface",
+    ":audio_format",
+    "//webrtc/base:rtc_base_approved",
   ]
 }
 
@@ -934,6 +956,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":audio_coding",
+      ":audio_format_conversion",
       "../../:webrtc_common",
       "../../system_wrappers",
       "../../system_wrappers:system_wrappers_default",
@@ -959,6 +982,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":audio_coding",
+      ":audio_format_conversion",
       "../../:webrtc_common",
       "../../system_wrappers",
       "../../system_wrappers:system_wrappers_default",

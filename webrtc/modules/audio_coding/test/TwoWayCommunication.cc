@@ -21,6 +21,7 @@
 #endif
 
 #include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/codecs/audio_format_conversion.h"
 #include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/test/PCMFile.h"
 #include "webrtc/modules/audio_coding/test/utility.h"
@@ -97,18 +98,22 @@ void TwoWayCommunication::SetUp() {
 
   //--- Set A codecs
   EXPECT_EQ(0, _acmA->RegisterSendCodec(codecInst_A));
-  EXPECT_EQ(0, _acmA->RegisterReceiveCodec(codecInst_B));
+  EXPECT_EQ(true, _acmA->RegisterReceiveCodec(codecInst_B.pltype,
+                                              CodecInstToSdp(codecInst_B)));
   //--- Set ref-A codecs
   EXPECT_EQ(0, _acmRefA->RegisterSendCodec(codecInst_A));
-  EXPECT_EQ(0, _acmRefA->RegisterReceiveCodec(codecInst_B));
+  EXPECT_EQ(true, _acmRefA->RegisterReceiveCodec(codecInst_B.pltype,
+                                                 CodecInstToSdp(codecInst_B)));
 
   //--- Set B codecs
   EXPECT_EQ(0, _acmB->RegisterSendCodec(codecInst_B));
-  EXPECT_EQ(0, _acmB->RegisterReceiveCodec(codecInst_A));
+  EXPECT_EQ(true, _acmB->RegisterReceiveCodec(codecInst_A.pltype,
+                                              CodecInstToSdp(codecInst_A)));
 
   //--- Set ref-B codecs
   EXPECT_EQ(0, _acmRefB->RegisterSendCodec(codecInst_B));
-  EXPECT_EQ(0, _acmRefB->RegisterReceiveCodec(codecInst_A));
+  EXPECT_EQ(true, _acmRefB->RegisterReceiveCodec(codecInst_A.pltype,
+                                                 CodecInstToSdp(codecInst_A)));
 
   uint16_t frequencyHz;
 
@@ -174,19 +179,23 @@ void TwoWayCommunication::SetUpAutotest() {
 
   //--- Set A codecs
   EXPECT_EQ(0, _acmA->RegisterSendCodec(codecInst_A));
-  EXPECT_EQ(0, _acmA->RegisterReceiveCodec(codecInst_B));
+  EXPECT_EQ(true, _acmA->RegisterReceiveCodec(codecInst_B.pltype,
+                                              CodecInstToSdp(codecInst_B)));
 
   //--- Set ref-A codecs
   EXPECT_GT(_acmRefA->RegisterSendCodec(codecInst_A), -1);
-  EXPECT_GT(_acmRefA->RegisterReceiveCodec(codecInst_B), -1);
+  EXPECT_EQ(true, _acmRefA->RegisterReceiveCodec(codecInst_B.pltype,
+                                                 CodecInstToSdp(codecInst_B)));
 
   //--- Set B codecs
   EXPECT_GT(_acmB->RegisterSendCodec(codecInst_B), -1);
-  EXPECT_GT(_acmB->RegisterReceiveCodec(codecInst_A), -1);
+  EXPECT_EQ(true, _acmB->RegisterReceiveCodec(codecInst_A.pltype,
+                                              CodecInstToSdp(codecInst_A)));
 
   //--- Set ref-B codecs
   EXPECT_EQ(0, _acmRefB->RegisterSendCodec(codecInst_B));
-  EXPECT_EQ(0, _acmRefB->RegisterReceiveCodec(codecInst_A));
+  EXPECT_EQ(true, _acmRefB->RegisterReceiveCodec(codecInst_A.pltype,
+                                                 CodecInstToSdp(codecInst_A)));
 
   uint16_t frequencyHz;
 
@@ -292,7 +301,8 @@ void TwoWayCommunication::Perform() {
       EXPECT_EQ(0, _acmA->InitializeReceiver());
     // Re-register codec on side A.
     if (((secPassed % 7) == 6) && (msecPassed >= 990)) {
-      EXPECT_EQ(0, _acmA->RegisterReceiveCodec(*codecInst_B));
+      EXPECT_EQ(true, _acmA->RegisterReceiveCodec(
+                          codecInst_B->pltype, CodecInstToSdp(*codecInst_B)));
     }
   }
 }

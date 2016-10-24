@@ -12,6 +12,7 @@
 
 #include <string>
 
+#include "webrtc/modules/audio_coding/codecs/audio_format_conversion.h"
 #include "webrtc/modules/audio_coding/test/PCMFile.h"
 #include "webrtc/modules/audio_coding/test/utility.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -73,7 +74,8 @@ TestVadDtx::TestVadDtx()
 void TestVadDtx::RegisterCodec(CodecInst codec_param) {
   // Set the codec for sending and receiving.
   EXPECT_EQ(0, acm_send_->RegisterSendCodec(codec_param));
-  EXPECT_EQ(0, acm_receive_->RegisterReceiveCodec(codec_param));
+  EXPECT_EQ(true, acm_receive_->RegisterReceiveCodec(
+                      codec_param.pltype, CodecInstToSdp(codec_param)));
   channel_->SetIsStereo(codec_param.channels > 1);
 }
 

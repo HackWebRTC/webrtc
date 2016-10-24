@@ -15,6 +15,7 @@
 
 #include <memory>
 
+#include "webrtc/modules/audio_coding/codecs/audio_format_conversion.h"
 #include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_sink.h"
@@ -132,7 +133,9 @@ void AcmReceiveTestOldApi::RegisterDefaultCodecs() {
   for (int n = 0; n < acm_->NumberOfCodecs(); n++) {
     ASSERT_EQ(0, acm_->Codec(n, &my_codec_param)) << "Failed to get codec.";
     if (ModifyAndUseThisCodec(&my_codec_param)) {
-      ASSERT_EQ(0, acm_->RegisterReceiveCodec(my_codec_param))
+      ASSERT_EQ(true,
+                acm_->RegisterReceiveCodec(my_codec_param.pltype,
+                                           CodecInstToSdp(my_codec_param)))
           << "Couldn't register receive codec.\n";
     }
   }
@@ -151,20 +154,12 @@ void AcmReceiveTestOldApi::RegisterNetEqTestCodecs() {
                                    my_codec_param.plfreq,
                                    my_codec_param.channels,
                                    &my_codec_param.pltype)) {
-      ASSERT_EQ(0, acm_->RegisterReceiveCodec(my_codec_param))
+      ASSERT_EQ(true,
+                acm_->RegisterReceiveCodec(my_codec_param.pltype,
+                                           CodecInstToSdp(my_codec_param)))
           << "Couldn't register receive codec.\n";
     }
   }
-}
-
-int AcmReceiveTestOldApi::RegisterExternalReceiveCodec(
-    int rtp_payload_type,
-    AudioDecoder* external_decoder,
-    int sample_rate_hz,
-    int num_channels,
-    const std::string& name) {
-  return acm_->RegisterExternalReceiveCodec(rtp_payload_type, external_decoder,
-                                            sample_rate_hz, num_channels, name);
 }
 
 void AcmReceiveTestOldApi::Run() {

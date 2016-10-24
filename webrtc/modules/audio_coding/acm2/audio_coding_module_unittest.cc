@@ -21,6 +21,7 @@
 #include "webrtc/modules/audio_coding/acm2/acm_send_test.h"
 #include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
+#include "webrtc/modules/audio_coding/codecs/audio_format_conversion.h"
 #include "webrtc/modules/audio_coding/codecs/g711/audio_decoder_pcm.h"
 #include "webrtc/modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"
@@ -777,7 +778,8 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
     // Register iSAC codec in ACM, effectively unregistering the PCM16B codec
     // registered in AudioCodingModuleTestOldApi::SetUp();
     // Only register the decoder for now. The encoder is registered later.
-    ASSERT_EQ(0, acm_->RegisterReceiveCodec(codec_));
+    ASSERT_EQ(true, acm_->RegisterReceiveCodec(codec_.pltype,
+                                               CodecInstToSdp(codec_)));
   }
 
   void StartThreads() {

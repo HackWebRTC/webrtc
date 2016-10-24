@@ -14,6 +14,7 @@
 
 #include "gflags/gflags.h"
 #include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/codecs/audio_format_conversion.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/test/Channel.h"
 #include "webrtc/modules/audio_coding/test/PCMFile.h"
@@ -94,7 +95,8 @@ class InsertPacketWithTiming {
                              FLAGS_codec_channels));
     ASSERT_EQ(0, receive_acm_->InitializeReceiver());
     ASSERT_EQ(0, send_acm_->RegisterSendCodec(codec));
-    ASSERT_EQ(0, receive_acm_->RegisterReceiveCodec(codec));
+    ASSERT_EQ(true, receive_acm_->RegisterReceiveCodec(codec.pltype,
+                                                       CodecInstToSdp(codec)));
 
     // Set codec-dependent parameters.
     samples_in_1ms_ = codec.plfreq / 1000;

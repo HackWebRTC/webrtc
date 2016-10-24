@@ -17,6 +17,7 @@
 
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/acm2/acm_common_defs.h"
+#include "webrtc/modules/audio_coding/codecs/audio_format_conversion.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/test/utility.h"
 #include "webrtc/system_wrappers/include/trace.h"
@@ -132,11 +133,13 @@ void Receiver::Setup(AudioCodingModule *acm, RTPStream *rtpStream,
   for (int i = 0; i < noOfCodecs; i++) {
     EXPECT_EQ(0, acm->Codec(i, &recvCodec));
     if (recvCodec.channels == channels)
-      EXPECT_EQ(0, acm->RegisterReceiveCodec(recvCodec));
+      EXPECT_EQ(true, acm->RegisterReceiveCodec(recvCodec.pltype,
+                                                CodecInstToSdp(recvCodec)));
     // Forces mono/stereo for Opus.
     if (!strcmp(recvCodec.plname, "opus")) {
       recvCodec.channels = channels;
-      EXPECT_EQ(0, acm->RegisterReceiveCodec(recvCodec));
+      EXPECT_EQ(true, acm->RegisterReceiveCodec(recvCodec.pltype,
+                                                CodecInstToSdp(recvCodec)));
     }
   }
 
