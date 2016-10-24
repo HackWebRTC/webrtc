@@ -639,6 +639,14 @@ bool TurnPort::SetAlternateServer(const rtc::SocketAddress& address) {
     return false;
   }
 
+  // Block redirects to a loopback address.
+  // See: https://bugs.chromium.org/p/chromium/issues/detail?id=649118
+  if (address.IsLoopbackIP()) {
+    LOG_J(LS_WARNING, this)
+        << "Blocking attempted redirect to loopback address.";
+    return false;
+  }
+
   LOG_J(LS_INFO, this) << "Redirecting from TURN server ["
                        << server_address_.address.ToSensitiveString()
                        << "] to TURN server ["
