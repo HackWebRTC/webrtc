@@ -195,7 +195,8 @@ int DtmfToneGenerator::Generate(size_t num_samples,
     sample_history2_[1] = temp_val_high;
 
     // Attenuate the low frequency tone 3 dB.
-    int32_t temp_val = kAmpMultiplier * temp_val_low + (temp_val_high << 15);
+    int32_t temp_val =
+        kAmpMultiplier * temp_val_low + temp_val_high * (1 << 15);
     // Normalize the signal to Q14 with proper rounding.
     temp_val = (temp_val + 16384) >> 15;
     // Scale the signal to correct volume.
