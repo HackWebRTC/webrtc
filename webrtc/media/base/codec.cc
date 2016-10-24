@@ -218,28 +218,14 @@ std::string AudioCodec::ToString() const {
 
 std::string VideoCodec::ToString() const {
   std::ostringstream os;
-  os << "VideoCodec[" << id << ":" << name << ":" << width << ":" << height
-     << ":" << framerate << "]";
+  os << "VideoCodec[" << id << ":" << name << "]";
   return os.str();
 }
 
-VideoCodec::VideoCodec(int id,
-                       const std::string& name,
-                       int width,
-                       int height,
-                       int framerate)
-    : Codec(id, name, kVideoCodecClockrate),
-      width(width),
-      height(height),
-      framerate(framerate) {}
-
 VideoCodec::VideoCodec(int id, const std::string& name)
-    : Codec(id, name, kVideoCodecClockrate),
-      width(0),
-      height(0),
-      framerate(0) {}
+    : Codec(id, name, kVideoCodecClockrate) {}
 
-VideoCodec::VideoCodec() : Codec(), width(0), height(0), framerate(0) {
+VideoCodec::VideoCodec() : Codec() {
   clockrate = kVideoCodecClockrate;
 }
 
@@ -247,15 +233,11 @@ VideoCodec::VideoCodec(const VideoCodec& c) = default;
 
 VideoCodec& VideoCodec::operator=(const VideoCodec& c) {
   Codec::operator=(c);
-  width = c.width;
-  height = c.height;
-  framerate = c.framerate;
   return *this;
 }
 
 bool VideoCodec::operator==(const VideoCodec& c) const {
-  return width == c.width && height == c.height && framerate == c.framerate &&
-         Codec::operator==(c);
+  return Codec::operator==(c);
 }
 
 bool VideoCodec::Matches(const VideoCodec& codec) const {
@@ -285,7 +267,7 @@ bool VideoCodec::Matches(const VideoCodec& codec) const {
 
 VideoCodec VideoCodec::CreateRtxCodec(int rtx_payload_type,
                                       int associated_payload_type) {
-  VideoCodec rtx_codec(rtx_payload_type, kRtxCodecName, 0, 0, 0);
+  VideoCodec rtx_codec(rtx_payload_type, kRtxCodecName);
   rtx_codec.SetParam(kCodecParamAssociatedPayloadType, associated_payload_type);
   return rtx_codec;
 }

@@ -42,8 +42,8 @@ namespace {
 const cricket::AudioCodec kPcmuCodec(0, "PCMU", 64000, 8000, 1);
 const cricket::AudioCodec kPcmaCodec(8, "PCMA", 64000, 8000, 1);
 const cricket::AudioCodec kIsacCodec(103, "ISAC", 40000, 16000, 1);
-const cricket::VideoCodec kH264Codec(97, "H264", 640, 400, 30);
-const cricket::VideoCodec kH264SvcCodec(99, "H264-SVC", 320, 200, 15);
+const cricket::VideoCodec kH264Codec(97, "H264");
+const cricket::VideoCodec kH264SvcCodec(99, "H264-SVC");
 const cricket::DataCodec kGoogleDataCodec(101, "google-data");
 const uint32_t kSsrc1 = 0x1111;
 const uint32_t kSsrc2 = 0x2222;
@@ -2113,8 +2113,7 @@ void ChannelTest<VideoTraits>::CopyContent(
 template<>
 bool ChannelTest<VideoTraits>::CodecMatches(const cricket::VideoCodec& c1,
                                             const cricket::VideoCodec& c2) {
-  return c1.name == c2.name && c1.width == c2.width && c1.height == c2.height &&
-      c1.framerate == c2.framerate;
+  return c1.name == c2.name;
 }
 
 template <>

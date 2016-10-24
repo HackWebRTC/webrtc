@@ -51,7 +51,7 @@ static cricket::SessionDescription* CreateCricketSessionDescription() {
   desc->AddContent(cricket::CN_AUDIO, cricket::NS_JINGLE_RTP,
                    audio.release());
 
-  video->AddCodec(cricket::VideoCodec(120, "VP8", 640, 480, 30));
+  video->AddCodec(cricket::VideoCodec(120, "VP8"));
   desc->AddContent(cricket::CN_VIDEO, cricket::NS_JINGLE_RTP,
                    video.release());
 

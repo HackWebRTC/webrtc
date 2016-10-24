@@ -96,16 +96,13 @@ static const AudioCodec kAudioCodecsAnswer[] = {
     AudioCodec(0, "PCMU", 8000, 64000, 1),
 };
 
-static const VideoCodec kVideoCodecs1[] = {
-    VideoCodec(96, "H264-SVC", 320, 200, 30),
-    VideoCodec(97, "H264", 320, 200, 30)};
+static const VideoCodec kVideoCodecs1[] = {VideoCodec(96, "H264-SVC"),
+                                           VideoCodec(97, "H264")};
 
-static const VideoCodec kVideoCodecs2[] = {
-    VideoCodec(126, "H264", 320, 200, 30),
-    VideoCodec(127, "H263", 320, 200, 30)};
+static const VideoCodec kVideoCodecs2[] = {VideoCodec(126, "H264"),
+                                           VideoCodec(127, "H263")};
 
-static const VideoCodec kVideoCodecsAnswer[] = {
-    VideoCodec(97, "H264", 320, 200, 30)};
+static const VideoCodec kVideoCodecsAnswer[] = {VideoCodec(97, "H264")};
 
 static const DataCodec kDataCodecs1[] = {DataCodec(98, "binary-data"),
                                          DataCodec(99, "utf8-text")};
@@ -1842,7 +1839,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, RtxWithoutApt) {
   opts.recv_audio = false;
   std::vector<VideoCodec> f1_codecs = MAKE_VECTOR(kVideoCodecs1);
   // This creates RTX without associated payload type parameter.
-  AddRtxCodec(VideoCodec(126, cricket::kRtxCodecName, 0, 0, 0), &f1_codecs);
+  AddRtxCodec(VideoCodec(126, cricket::kRtxCodecName), &f1_codecs);
   f1_.set_video_codecs(f1_codecs);
 
   std::vector<VideoCodec> f2_codecs = MAKE_VECTOR(kVideoCodecs2);
@@ -1990,7 +1987,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, SimSsrcsGenerateMultipleRtxSsrcs) {
 
   // Use a single real codec, and then add RTX for it.
   std::vector<VideoCodec> f1_codecs;
-  f1_codecs.push_back(VideoCodec(97, "H264", 320, 200, 30));
+  f1_codecs.push_back(VideoCodec(97, "H264"));
   AddRtxCodec(VideoCodec::CreateRtxCodec(125, 97), &f1_codecs);
   f1_.set_video_codecs(f1_codecs);
 

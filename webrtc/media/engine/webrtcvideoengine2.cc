@@ -182,8 +182,7 @@ void AddDefaultFeedbackParams(VideoCodec* codec) {
 
 static VideoCodec MakeVideoCodecWithDefaultFeedbackParams(int payload_type,
                                                           const char* name) {
-  VideoCodec codec(payload_type, name, kDefaultVideoMaxWidth,
-                   kDefaultVideoMaxHeight, kDefaultVideoMaxFramerate);
+  VideoCodec codec(payload_type, name);
   AddDefaultFeedbackParams(&codec);
   return codec;
 }
@@ -674,9 +673,7 @@ std::vector<VideoCodec> WebRtcVideoEngine2::GetSupportedCodecs() const {
     const int kExternalVideoPayloadTypeBase = 120;
     size_t payload_type = kExternalVideoPayloadTypeBase + i;
     RTC_DCHECK(payload_type < 128);
-    VideoCodec codec(static_cast<int>(payload_type), codecs[i].name,
-                     codecs[i].max_width, codecs[i].max_height,
-                     codecs[i].max_fps);
+    VideoCodec codec(static_cast<int>(payload_type), codecs[i].name);
 
     AddDefaultFeedbackParams(&codec);
     AddCodecAndMaybeRtxCodec(codec, &supported_codecs);
@@ -2005,12 +2002,9 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
 
   int max_qp = kDefaultQpMax;
   codec.GetParam(kCodecParamMaxQuantization, &max_qp);
-  int max_framerate =
-      codec.framerate != 0 ? codec.framerate : kDefaultVideoMaxFramerate;
-
   encoder_config.video_stream_factory =
       new rtc::RefCountedObject<EncoderStreamFactory>(
-          codec.name, max_qp, max_framerate, is_screencast,
+          codec.name, max_qp, kDefaultVideoMaxFramerate, is_screencast,
           parameters_.conference_mode);
   return encoder_config;
 }

@@ -27,8 +27,7 @@ static const AudioCodec kAudioCodecs[] = {
 };
 
 static const VideoCodec kVideoCodecs[] = {
-    VideoCodec(99, "H264", 100, 200, 300),
-    VideoCodec(100, "VP8", 100, 200, 300), VideoCodec(96, "rtx", 100, 200, 300),
+    VideoCodec(99, "H264"), VideoCodec(100, "VP8"), VideoCodec(96, "rtx"),
 };
 
 class ChannelManagerTest : public testing::Test {
@@ -171,7 +170,7 @@ TEST_F(ChannelManagerTest, NoTransportChannelTest) {
 
 TEST_F(ChannelManagerTest, SetVideoRtxEnabled) {
   std::vector<VideoCodec> codecs;
-  const VideoCodec rtx_codec(96, "rtx", 0, 0, 0);
+  const VideoCodec rtx_codec(96, "rtx");
 
   // By default RTX is disabled.
   cm_->GetSupportedVideoCodecs(&codecs);

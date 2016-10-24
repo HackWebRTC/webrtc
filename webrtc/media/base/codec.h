@@ -139,16 +139,7 @@ struct AudioCodec : public Codec {
 };
 
 struct VideoCodec : public Codec {
-  int width;
-  int height;
-  int framerate;
-
   // Creates a codec with the given parameters.
-  VideoCodec(int id,
-             const std::string& name,
-             int width,
-             int height,
-             int framerate);
   VideoCodec(int id, const std::string& name);
   // Creates an empty codec.
   VideoCodec();

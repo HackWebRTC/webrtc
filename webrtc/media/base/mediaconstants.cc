@@ -114,7 +114,5 @@ const int kDefaultRtxVp9PlType = 97;
 const int kDefaultRtxRedPlType = 98;
 const int kDefaultRtxH264PlType = 99;
 
-const int kDefaultVideoMaxWidth = 640;
-const int kDefaultVideoMaxHeight = 400;
-const int kDefaultVideoMaxFramerate = 30;
+const int kDefaultVideoMaxFramerate = 60;
 }  // namespace cricket

@@ -2965,18 +2965,12 @@ void UpdateCodec(int payload_type,
 // |name|, |width|, |height|, and |framerate|.
 void UpdateCodec(int payload_type,
                  const std::string& name,
-                 int width,
-                 int height,
-                 int framerate,
                  VideoContentDescription* video_desc) {
   // Codec may already be populated with (only) optional parameters
   // (from an fmtp).
   cricket::VideoCodec codec =
       GetCodecWithPayloadType(video_desc->codecs(), payload_type);
   codec.name = name;
-  codec.width = width;
-  codec.height = height;
-  codec.framerate = framerate;
   AddOrReplaceCodec<VideoContentDescription, cricket::VideoCodec>(video_desc,
                                                                   codec);
 }
@@ -3030,12 +3024,7 @@ bool ParseRtpmapAttribute(const std::string& line,
   if (media_type == cricket::MEDIA_TYPE_VIDEO) {
     VideoContentDescription* video_desc =
         static_cast<VideoContentDescription*>(media_desc);
-    // TODO: We will send resolution in SDP. For now use
-    // JsepSessionDescription::kMaxVideoCodecWidth and kMaxVideoCodecHeight.
     UpdateCodec(payload_type, encoding_name,
-                JsepSessionDescription::kMaxVideoCodecWidth,
-                JsepSessionDescription::kMaxVideoCodecHeight,
-                JsepSessionDescription::kDefaultVideoCodecFramerate,
                 video_desc);
   } else if (media_type == cricket::MEDIA_TYPE_AUDIO) {
     // RFC 4566

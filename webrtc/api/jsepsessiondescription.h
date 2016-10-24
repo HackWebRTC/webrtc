@@ -66,13 +66,8 @@ class JsepSessionDescription : public SessionDescriptionInterface {
       size_t mediasection_index) const;
   virtual bool ToString(std::string* out) const;
 
-  // Default video encoder settings. The resolution is the max resolution.
-  // TODO(perkj): Implement proper negotiation of video resolution.
   static const int kDefaultVideoCodecId;
-  static const int kDefaultVideoCodecFramerate;
   static const char kDefaultVideoCodecName[];
-  static const int kMaxVideoCodecWidth;
-  static const int kMaxVideoCodecHeight;
 
  private:
   std::unique_ptr<cricket::SessionDescription> description_;

@@ -1046,10 +1046,7 @@ class WebRtcSdpTest : public testing::Test {
         "inline:d0RmdmcmVCspeEc3QGZiNWpVLFJhQX1cfHAwJSoj|2^20|1:32", ""));
     video->set_protocol(cricket::kMediaProtocolSavpf);
     video->AddCodec(
-        VideoCodec(120, JsepSessionDescription::kDefaultVideoCodecName,
-                   JsepSessionDescription::kMaxVideoCodecWidth,
-                   JsepSessionDescription::kMaxVideoCodecHeight,
-                   JsepSessionDescription::kDefaultVideoCodecFramerate));
+        VideoCodec(120, JsepSessionDescription::kDefaultVideoCodecName));
     return video;
   }
 

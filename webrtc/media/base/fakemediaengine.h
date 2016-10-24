@@ -806,7 +806,7 @@ class FakeVideoEngine : public FakeBaseEngine {
   FakeVideoEngine() : capture_(false) {
     // Add a fake video codec. Note that the name must not be "" as there are
     // sanity checks against that.
-    codecs_.push_back(VideoCodec(0, "fake_video_codec", 0, 0, 0));
+    codecs_.push_back(VideoCodec(0, "fake_video_codec"));
   }
   void Init() {}
   bool SetOptions(const VideoOptions& options) {
