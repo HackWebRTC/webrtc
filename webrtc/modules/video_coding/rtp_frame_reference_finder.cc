@@ -298,6 +298,14 @@ void RtpFrameReferenceFinder::ManageFrameVp8(
       return;
     }
 
+    // If the last frame on this layer is ahead of this frame it means that
+    // a layer sync frame has been received after this frame for the same
+    // base layer frame, drop this frame.
+    if (AheadOf<uint16_t, kPicIdLength>(layer_info_it->second[layer],
+                                        frame->picture_id)) {
+      return;
+    }
+
     // If we have not yet received a frame between this frame and the referenced
     // frame then we have to wait for that frame to be completed first.
     auto not_received_frame_it =
@@ -309,6 +317,8 @@ void RtpFrameReferenceFinder::ManageFrameVp8(
       return;
     }
 
+    RTC_DCHECK((AheadOf<uint16_t, kPicIdLength>(frame->picture_id,
+                                               layer_info_it->second[layer])));
     ++frame->num_references;
     frame->references[layer] = layer_info_it->second[layer];
   }

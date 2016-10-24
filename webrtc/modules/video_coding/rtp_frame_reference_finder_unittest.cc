@@ -597,6 +597,18 @@ TEST_F(TestRtpFrameReferenceFinder, Vp8LayerSync) {
   CheckReferencesVp8(pid + 7, pid + 6, pid + 5);
 }
 
+TEST_F(TestRtpFrameReferenceFinder, Vp8Tl1SyncFrameAfterTl1Frame) {
+  InsertVp8(1000, 1000, true, 1, 0, 247, true);
+  InsertVp8(1001, 1001, false, 3, 0, 248, false);
+  InsertVp8(1002, 1002, false, 4, 1, 248, false);  // Will be dropped
+  InsertVp8(1003, 1003, false, 5, 1, 248, true);   // due to this frame.
+
+  ASSERT_EQ(3UL, frames_from_callback_.size());
+  CheckReferencesVp8(1);
+  CheckReferencesVp8(3, 1);
+  CheckReferencesVp8(5, 3);
+}
+
 TEST_F(TestRtpFrameReferenceFinder, Vp9GofInsertOneFrame) {
   uint16_t pid = Rand();
   uint16_t sn = Rand();
