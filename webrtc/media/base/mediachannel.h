@@ -677,8 +677,8 @@ struct VideoSenderInfo : public MediaSenderInfo {
         adapt_reason(0),
         adapt_changes(0),
         avg_encode_ms(0),
-        encode_usage_percent(0) {
-  }
+        encode_usage_percent(0),
+        frames_encoded(0) {}
 
   std::vector<SsrcGroup> ssrc_groups;
   std::string encoder_implementation_name;
@@ -696,6 +696,7 @@ struct VideoSenderInfo : public MediaSenderInfo {
   int adapt_changes;
   int avg_encode_ms;
   int encode_usage_percent;
+  uint32_t frames_encoded;
 };
 
 struct VideoReceiverInfo : public MediaReceiverInfo {

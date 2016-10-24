@@ -443,6 +443,7 @@ void SendStatisticsProxy::OnSendEncodedImage(
   size_t simulcast_idx = 0;
 
   rtc::CritScope lock(&crit_);
+  ++stats_.frames_encoded;
   if (codec_info) {
     if (codec_info->codecType == kVideoCodecVP8) {
       simulcast_idx = codec_info->codecSpecific.VP8.simulcastIdx;

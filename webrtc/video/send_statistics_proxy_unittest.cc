@@ -301,6 +301,16 @@ TEST_F(SendStatisticsProxyTest, OnEncoderReconfiguredChangePreferredBitrate) {
   EXPECT_EQ(kPreferredMediaBitrateBps, stats.preferred_media_bitrate_bps);
 }
 
+TEST_F(SendStatisticsProxyTest, OnSendEncodedImageIncreasesFramesEncoded) {
+  EncodedImage encoded_image;
+  CodecSpecificInfo codec_info;
+  EXPECT_EQ(0u, statistics_proxy_->GetStats().frames_encoded);
+  for (uint32_t i = 1; i <= 3; ++i) {
+    statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
+    EXPECT_EQ(i, statistics_proxy_->GetStats().frames_encoded);
+  }
+}
+
 TEST_F(SendStatisticsProxyTest, SwitchContentTypeUpdatesHistograms) {
   const int kWidth = 640;
   const int kHeight = 480;
