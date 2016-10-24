@@ -433,6 +433,17 @@ void FakeCall::DestroyVideoReceiveStream(
   }
 }
 
+webrtc::FlexfecReceiveStream* FakeCall::CreateFlexfecReceiveStream(
+    webrtc::FlexfecReceiveStream::Config config) {
+  // TODO(brandtr): Implement when adding integration with WebRtcVideoEngine2.
+  return nullptr;
+}
+
+void FakeCall::DestroyFlexfecReceiveStream(
+    webrtc::FlexfecReceiveStream* receive_stream) {
+  // TODO(brandtr): Implement when adding integration with WebRtcVideoEngine2.
+}
+
 webrtc::PacketReceiver* FakeCall::Receiver() {
   return this;
 }

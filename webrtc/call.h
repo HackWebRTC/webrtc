@@ -16,6 +16,7 @@
 #include "webrtc/api/call/audio_receive_stream.h"
 #include "webrtc/api/call/audio_send_stream.h"
 #include "webrtc/api/call/audio_state.h"
+#include "webrtc/api/call/flexfec_receive_stream.h"
 #include "webrtc/base/networkroute.h"
 #include "webrtc/base/platform_file.h"
 #include "webrtc/base/socket.h"
@@ -130,6 +131,11 @@ class Call {
       VideoReceiveStream::Config configuration) = 0;
   virtual void DestroyVideoReceiveStream(
       VideoReceiveStream* receive_stream) = 0;
+
+  virtual FlexfecReceiveStream* CreateFlexfecReceiveStream(
+      FlexfecReceiveStream::Config configuration) = 0;
+  virtual void DestroyFlexfecReceiveStream(
+      FlexfecReceiveStream* receive_stream) = 0;
 
   // All received RTP and RTCP packets for the call should be inserted to this
   // PacketReceiver. The PacketReceiver pointer is valid as long as the

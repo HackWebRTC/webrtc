@@ -117,4 +117,75 @@ TEST(CallTest, CreateDestroy_AudioReceiveStreams) {
     streams.clear();
   }
 }
+
+TEST(CallTest, CreateDestroy_FlexfecReceiveStream) {
+  CallHelper call;
+  FlexfecReceiveStream::Config config;
+  config.flexfec_payload_type = 118;
+  config.flexfec_ssrc = 38837212;
+  config.protected_media_ssrcs = {27273};
+
+  FlexfecReceiveStream* stream = call->CreateFlexfecReceiveStream(config);
+  EXPECT_NE(stream, nullptr);
+  call->DestroyFlexfecReceiveStream(stream);
+}
+
+TEST(CallTest, CreateDestroy_FlexfecReceiveStreams) {
+  CallHelper call;
+  FlexfecReceiveStream::Config config;
+  config.flexfec_payload_type = 118;
+  std::list<FlexfecReceiveStream*> streams;
+
+  for (int i = 0; i < 2; ++i) {
+    for (uint32_t ssrc = 0; ssrc < 1234567; ssrc += 34567) {
+      config.flexfec_ssrc = ssrc;
+      config.protected_media_ssrcs = {ssrc + 1};
+      FlexfecReceiveStream* stream = call->CreateFlexfecReceiveStream(config);
+      EXPECT_NE(stream, nullptr);
+      if (ssrc & 1) {
+        streams.push_back(stream);
+      } else {
+        streams.push_front(stream);
+      }
+    }
+    for (auto s : streams) {
+      call->DestroyFlexfecReceiveStream(s);
+    }
+    streams.clear();
+  }
+}
+
+TEST(CallTest, MultipleFlexfecReceiveStreamsProtectingSingleVideoStream) {
+  CallHelper call;
+  FlexfecReceiveStream::Config config;
+  config.flexfec_payload_type = 118;
+  config.protected_media_ssrcs = {1324234};
+  FlexfecReceiveStream* stream;
+  std::list<FlexfecReceiveStream*> streams;
+
+  config.flexfec_ssrc = 838383;
+  stream = call->CreateFlexfecReceiveStream(config);
+  EXPECT_NE(stream, nullptr);
+  streams.push_back(stream);
+
+  config.flexfec_ssrc = 424993;
+  stream = call->CreateFlexfecReceiveStream(config);
+  EXPECT_NE(stream, nullptr);
+  streams.push_back(stream);
+
+  config.flexfec_ssrc = 99383;
+  stream = call->CreateFlexfecReceiveStream(config);
+  EXPECT_NE(stream, nullptr);
+  streams.push_back(stream);
+
+  config.flexfec_ssrc = 5548;
+  stream = call->CreateFlexfecReceiveStream(config);
+  EXPECT_NE(stream, nullptr);
+  streams.push_back(stream);
+
+  for (auto s : streams) {
+    call->DestroyFlexfecReceiveStream(s);
+  }
+}
+
 }  // namespace webrtc
