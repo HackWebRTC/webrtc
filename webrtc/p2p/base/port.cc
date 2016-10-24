@@ -925,7 +925,8 @@ void Connection::set_write_state(WriteState value) {
 }
 
 void Connection::UpdateReceiving(int64_t now) {
-  bool receiving = now <= last_received() + receiving_timeout_;
+  bool receiving =
+      last_received() > 0 && now <= last_received() + receiving_timeout_;
   if (receiving_ == receiving) {
     return;
   }
