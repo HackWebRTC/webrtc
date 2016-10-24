@@ -22,8 +22,6 @@
       'sources': [
         'audio_mixer_impl.cc',
         'audio_mixer_impl.h',
-        'audio_source_with_mix_status.cc',
-        'audio_source_with_mix_status.h',
       ],
     },
     {
