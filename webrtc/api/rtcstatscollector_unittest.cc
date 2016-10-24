@@ -31,6 +31,7 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/base/fakemediaengine.h"
+#include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/port.h"
 
 using testing::_;
@@ -368,7 +369,7 @@ class RTCStatsCollectorTest : public testing::Test {
         const std::string& id = "RTCIceCandidatePair_" +
             info.local_candidate.id() + "_" + info.remote_candidate.id();
         const RTCStats* stats = report->Get(id);
-        EXPECT_TRUE(stats);
+        ASSERT_TRUE(stats);
         const RTCIceCandidatePairStats& candidate_pair_stats =
             stats->cast_to<RTCIceCandidatePairStats>();
 
@@ -427,7 +428,7 @@ class RTCStatsCollectorTest : public testing::Test {
     for (size_t i = 0; i < cert_info.fingerprints.size(); ++i) {
       const RTCStats* stats = report->Get(
           "RTCCertificate_" + cert_info.fingerprints[i]);
-      EXPECT_TRUE(stats);
+      ASSERT_TRUE(stats);
       const RTCCertificateStats& cert_stats =
           stats->cast_to<const RTCCertificateStats>();
       EXPECT_EQ(*cert_stats.fingerprint, cert_info.fingerprints[i]);
@@ -438,6 +439,72 @@ class RTCStatsCollectorTest : public testing::Test {
                   "RTCCertificate_" + cert_info.fingerprints[i + 1]);
       } else {
         EXPECT_FALSE(cert_stats.issuer_certificate_id.is_defined());
+      }
+    }
+  }
+
+  void ExpectReportContainsTransportStats(
+      const rtc::scoped_refptr<const RTCStatsReport>& report,
+      const cricket::TransportStats& transport,
+      const CertificateInfo* local_certinfo,
+      const CertificateInfo* remote_certinfo) {
+    std::string rtcp_transport_stats_id;
+    for (const auto& channel_stats : transport.channel_stats) {
+      if (channel_stats.component == cricket::ICE_CANDIDATE_COMPONENT_RTCP) {
+        rtcp_transport_stats_id = "RTCTransport_" + transport.transport_name +
+            "_" + rtc::ToString<>(cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+      }
+    }
+    for (const auto& channel_stats : transport.channel_stats) {
+      const cricket::ConnectionInfo* best_connection_info = nullptr;
+      const RTCStats* stats = report->Get(
+          "RTCTransport_" + transport.transport_name + "_" +
+          rtc::ToString<>(channel_stats.component));
+      ASSERT_TRUE(stats);
+      const RTCTransportStats& transport_stats =
+          stats->cast_to<const RTCTransportStats>();
+      uint64_t bytes_sent = 0;
+      uint64_t bytes_received = 0;
+      for (const cricket::ConnectionInfo& info :
+           channel_stats.connection_infos) {
+        bytes_sent += info.sent_total_bytes;
+        bytes_received += info.recv_total_bytes;
+        if (info.best_connection)
+          best_connection_info = &info;
+      }
+      EXPECT_EQ(*transport_stats.bytes_sent, bytes_sent);
+      EXPECT_EQ(*transport_stats.bytes_received, bytes_received);
+      if (best_connection_info) {
+        EXPECT_EQ(*transport_stats.active_connection, true);
+        // TODO(hbos): Instead of testing how the ID looks, test that the
+        // corresponding pair's IP addresses are equal to the IP addresses of
+        // the |best_connection_info| data. crbug.com/653873
+        EXPECT_EQ(*transport_stats.selected_candidate_pair_id,
+                  "RTCIceCandidatePair_" +
+                  best_connection_info->local_candidate.id() + "_" +
+                  best_connection_info->remote_candidate.id());
+        EXPECT_TRUE(report->Get(*transport_stats.selected_candidate_pair_id));
+      } else {
+        EXPECT_EQ(*transport_stats.active_connection, false);
+        EXPECT_FALSE(transport_stats.selected_candidate_pair_id.is_defined());
+      }
+      if (channel_stats.component != cricket::ICE_CANDIDATE_COMPONENT_RTCP &&
+          !rtcp_transport_stats_id.empty()) {
+        EXPECT_EQ(*transport_stats.rtcp_transport_stats_id,
+                  rtcp_transport_stats_id);
+      } else {
+        EXPECT_FALSE(transport_stats.rtcp_transport_stats_id.is_defined());
+      }
+      if (local_certinfo && remote_certinfo) {
+        EXPECT_EQ(*transport_stats.local_certificate_id,
+                  "RTCCertificate_" + local_certinfo->fingerprints[0]);
+        EXPECT_EQ(*transport_stats.remote_certificate_id,
+                  "RTCCertificate_" + remote_certinfo->fingerprints[0]);
+        EXPECT_TRUE(report->Get(*transport_stats.local_certificate_id));
+        EXPECT_TRUE(report->Get(*transport_stats.remote_certificate_id));
+      } else {
+        EXPECT_FALSE(transport_stats.local_certificate_id.is_defined());
+        EXPECT_FALSE(transport_stats.remote_certificate_id.is_defined());
       }
     }
   }
@@ -849,7 +916,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
   EXPECT_EQ(report->GetStatsOfType<RTCPeerConnectionStats>().size(),
             static_cast<size_t>(1)) << "Expecting 1 RTCPeerConnectionStats.";
   stats = report->Get("RTCPeerConnection");
-  EXPECT_TRUE(stats);
+  ASSERT_TRUE(stats);
   {
     // Expected stats with the above four data channels
     // TODO(hbos): When the |RTCPeerConnectionStats| is the number of data
@@ -861,6 +928,105 @@ TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
     EXPECT_EQ(*pcstats.data_channels_opened, static_cast<uint32_t>(1));
     EXPECT_EQ(*pcstats.data_channels_closed, static_cast<uint32_t>(3));
   }
+}
+
+TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {
+  std::unique_ptr<cricket::Candidate> rtp_local_candidate = CreateFakeCandidate(
+      "42.42.42.42", 42, "protocol", cricket::LOCAL_PORT_TYPE, 42);
+  std::unique_ptr<cricket::Candidate> rtp_remote_candidate =
+      CreateFakeCandidate("42.42.42.42", 42, "protocol",
+                          cricket::LOCAL_PORT_TYPE, 42);
+  std::unique_ptr<cricket::Candidate> rtcp_local_candidate =
+      CreateFakeCandidate("42.42.42.42", 42, "protocol",
+                          cricket::LOCAL_PORT_TYPE, 42);
+  std::unique_ptr<cricket::Candidate> rtcp_remote_candidate =
+      CreateFakeCandidate("42.42.42.42", 42, "protocol",
+                          cricket::LOCAL_PORT_TYPE, 42);
+
+  SessionStats session_stats;
+  session_stats.transport_stats["transport"].transport_name = "transport";
+
+  cricket::ConnectionInfo rtp_connection_info;
+  rtp_connection_info.best_connection = false;
+  rtp_connection_info.local_candidate = *rtp_local_candidate.get();
+  rtp_connection_info.remote_candidate = *rtp_remote_candidate.get();
+  rtp_connection_info.sent_total_bytes = 42;
+  rtp_connection_info.recv_total_bytes = 1337;
+  cricket::TransportChannelStats rtp_transport_channel_stats;
+  rtp_transport_channel_stats.component = cricket::ICE_CANDIDATE_COMPONENT_RTP;
+  rtp_transport_channel_stats.connection_infos.push_back(rtp_connection_info);
+  session_stats.transport_stats["transport"].channel_stats.push_back(
+      rtp_transport_channel_stats);
+
+
+  // Mock the session to return the desired candidates.
+  EXPECT_CALL(test_->session(), GetTransportStats(_)).WillRepeatedly(Invoke(
+      [this, &session_stats](SessionStats* stats) {
+        *stats = session_stats;
+        return true;
+      }));
+
+  // Get stats without RTCP, an active connection or certificates.
+  rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
+  ExpectReportContainsTransportStats(
+      report, session_stats.transport_stats["transport"], nullptr, nullptr);
+
+  cricket::ConnectionInfo rtcp_connection_info;
+  rtcp_connection_info.best_connection = false;
+  rtcp_connection_info.local_candidate = *rtcp_local_candidate.get();
+  rtcp_connection_info.remote_candidate = *rtcp_remote_candidate.get();
+  rtcp_connection_info.sent_total_bytes = 1337;
+  rtcp_connection_info.recv_total_bytes = 42;
+  cricket::TransportChannelStats rtcp_transport_channel_stats;
+  rtcp_transport_channel_stats.component =
+      cricket::ICE_CANDIDATE_COMPONENT_RTCP;
+  rtcp_transport_channel_stats.connection_infos.push_back(rtcp_connection_info);
+  session_stats.transport_stats["transport"].channel_stats.push_back(
+      rtcp_transport_channel_stats);
+
+  collector_->ClearCachedStatsReport();
+  // Get stats with RTCP and without an active connection or certificates.
+  report = GetStatsReport();
+  ExpectReportContainsTransportStats(
+      report, session_stats.transport_stats["transport"], nullptr, nullptr);
+
+  // Get stats with an active connection.
+  rtcp_connection_info.best_connection = true;
+
+  collector_->ClearCachedStatsReport();
+  report = GetStatsReport();
+  ExpectReportContainsTransportStats(
+      report, session_stats.transport_stats["transport"], nullptr, nullptr);
+
+  // Get stats with certificates.
+  std::unique_ptr<CertificateInfo> local_certinfo =
+      CreateFakeCertificateAndInfoFromDers(
+          std::vector<std::string>({ "(local) local", "(local) chain" }));
+  std::unique_ptr<CertificateInfo> remote_certinfo =
+      CreateFakeCertificateAndInfoFromDers(
+          std::vector<std::string>({ "(remote) local", "(remote) chain" }));
+  EXPECT_CALL(test_->session(), GetLocalCertificate(_, _)).WillRepeatedly(
+    Invoke([this, &local_certinfo](const std::string& transport_name,
+           rtc::scoped_refptr<rtc::RTCCertificate>* certificate) {
+      if (transport_name == "transport") {
+        *certificate = local_certinfo->certificate;
+        return true;
+      }
+      return false;
+    }));
+  EXPECT_CALL(test_->session(),
+      GetRemoteSSLCertificate_ReturnsRawPointer(_)).WillRepeatedly(Invoke(
+      [this, &remote_certinfo](const std::string& transport_name) {
+        if (transport_name == "transport")
+          return remote_certinfo->certificate->ssl_certificate().GetReference();
+        return static_cast<rtc::SSLCertificate*>(nullptr);
+      }));
+
+  collector_->ClearCachedStatsReport();
+  report = GetStatsReport();
+  ExpectReportContainsTransportStats(
+      report, session_stats.transport_stats["transport"],
+      local_certinfo.get(), remote_certinfo.get());
 }
 
 class RTCStatsCollectorTestWithFakeCollector : public testing::Test {

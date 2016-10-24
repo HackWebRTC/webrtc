@@ -30,6 +30,82 @@ const char* RTCIceCandidateType::kSrflx = "srflx";
 const char* RTCIceCandidateType::kPrflx = "prflx";
 const char* RTCIceCandidateType::kRelay = "relay";
 
+WEBRTC_RTCSTATS_IMPL(RTCCertificateStats, RTCStats, "certificate",
+    &fingerprint,
+    &fingerprint_algorithm,
+    &base64_certificate,
+    &issuer_certificate_id);
+
+RTCCertificateStats::RTCCertificateStats(
+    const std::string& id, int64_t timestamp_us)
+    : RTCCertificateStats(std::string(id), timestamp_us) {
+}
+
+RTCCertificateStats::RTCCertificateStats(
+    std::string&& id, int64_t timestamp_us)
+    : RTCStats(std::move(id), timestamp_us),
+      fingerprint("fingerprint"),
+      fingerprint_algorithm("fingerprintAlgorithm"),
+      base64_certificate("base64Certificate"),
+      issuer_certificate_id("issuerCertificateId") {
+}
+
+RTCCertificateStats::RTCCertificateStats(
+    const RTCCertificateStats& other)
+    : RTCStats(other.id(), other.timestamp_us()),
+      fingerprint(other.fingerprint),
+      fingerprint_algorithm(other.fingerprint_algorithm),
+      base64_certificate(other.base64_certificate),
+      issuer_certificate_id(other.issuer_certificate_id) {
+}
+
+RTCCertificateStats::~RTCCertificateStats() {
+}
+
+WEBRTC_RTCSTATS_IMPL(RTCDataChannelStats, RTCStats, "data-channel",
+    &label,
+    &protocol,
+    &datachannelid,
+    &state,
+    &messages_sent,
+    &bytes_sent,
+    &messages_received,
+    &bytes_received);
+
+RTCDataChannelStats::RTCDataChannelStats(
+    const std::string& id, int64_t timestamp_us)
+    : RTCDataChannelStats(std::string(id), timestamp_us) {
+}
+
+RTCDataChannelStats::RTCDataChannelStats(
+    std::string&& id, int64_t timestamp_us)
+    : RTCStats(std::move(id), timestamp_us),
+      label("label"),
+      protocol("protocol"),
+      datachannelid("datachannelid"),
+      state("state"),
+      messages_sent("messagesSent"),
+      bytes_sent("bytesSent"),
+      messages_received("messagesReceived"),
+      bytes_received("bytesReceived") {
+}
+
+RTCDataChannelStats::RTCDataChannelStats(
+    const RTCDataChannelStats& other)
+    : RTCStats(other.id(), other.timestamp_us()),
+      label(other.label),
+      protocol(other.protocol),
+      datachannelid(other.datachannelid),
+      state(other.state),
+      messages_sent(other.messages_sent),
+      bytes_sent(other.bytes_sent),
+      messages_received(other.messages_received),
+      bytes_received(other.bytes_received) {
+}
+
+RTCDataChannelStats::~RTCDataChannelStats() {
+}
+
 WEBRTC_RTCSTATS_IMPL(RTCIceCandidatePairStats, RTCStats, "candidate-pair",
     &transport_id,
     &local_candidate_id,
@@ -191,82 +267,6 @@ const char* RTCRemoteIceCandidateStats::type() const {
   return kType;
 }
 
-WEBRTC_RTCSTATS_IMPL(RTCCertificateStats, RTCStats, "certificate",
-    &fingerprint,
-    &fingerprint_algorithm,
-    &base64_certificate,
-    &issuer_certificate_id);
-
-RTCCertificateStats::RTCCertificateStats(
-    const std::string& id, int64_t timestamp_us)
-    : RTCCertificateStats(std::string(id), timestamp_us) {
-}
-
-RTCCertificateStats::RTCCertificateStats(
-    std::string&& id, int64_t timestamp_us)
-    : RTCStats(std::move(id), timestamp_us),
-      fingerprint("fingerprint"),
-      fingerprint_algorithm("fingerprintAlgorithm"),
-      base64_certificate("base64Certificate"),
-      issuer_certificate_id("issuerCertificateId") {
-}
-
-RTCCertificateStats::RTCCertificateStats(
-    const RTCCertificateStats& other)
-    : RTCStats(other.id(), other.timestamp_us()),
-      fingerprint(other.fingerprint),
-      fingerprint_algorithm(other.fingerprint_algorithm),
-      base64_certificate(other.base64_certificate),
-      issuer_certificate_id(other.issuer_certificate_id) {
-}
-
-RTCCertificateStats::~RTCCertificateStats() {
-}
-
-WEBRTC_RTCSTATS_IMPL(RTCDataChannelStats, RTCStats, "data-channel",
-    &label,
-    &protocol,
-    &datachannelid,
-    &state,
-    &messages_sent,
-    &bytes_sent,
-    &messages_received,
-    &bytes_received);
-
-RTCDataChannelStats::RTCDataChannelStats(
-    const std::string& id, int64_t timestamp_us)
-    : RTCDataChannelStats(std::string(id), timestamp_us) {
-}
-
-RTCDataChannelStats::RTCDataChannelStats(
-    std::string&& id, int64_t timestamp_us)
-    : RTCStats(std::move(id), timestamp_us),
-      label("label"),
-      protocol("protocol"),
-      datachannelid("datachannelid"),
-      state("state"),
-      messages_sent("messagesSent"),
-      bytes_sent("bytesSent"),
-      messages_received("messagesReceived"),
-      bytes_received("bytesReceived") {
-}
-
-RTCDataChannelStats::RTCDataChannelStats(
-    const RTCDataChannelStats& other)
-    : RTCStats(other.id(), other.timestamp_us()),
-      label(other.label),
-      protocol(other.protocol),
-      datachannelid(other.datachannelid),
-      state(other.state),
-      messages_sent(other.messages_sent),
-      bytes_sent(other.bytes_sent),
-      messages_received(other.messages_received),
-      bytes_received(other.bytes_received) {
-}
-
-RTCDataChannelStats::~RTCDataChannelStats() {
-}
-
 WEBRTC_RTCSTATS_IMPL(RTCPeerConnectionStats, RTCStats, "peer-connection",
     &data_channels_opened,
     &data_channels_closed);
@@ -291,6 +291,47 @@ RTCPeerConnectionStats::RTCPeerConnectionStats(
 }
 
 RTCPeerConnectionStats::~RTCPeerConnectionStats() {
+}
+
+WEBRTC_RTCSTATS_IMPL(RTCTransportStats, RTCStats, "transport",
+    &bytes_sent,
+    &bytes_received,
+    &rtcp_transport_stats_id,
+    &active_connection,
+    &selected_candidate_pair_id,
+    &local_certificate_id,
+    &remote_certificate_id);
+
+RTCTransportStats::RTCTransportStats(
+    const std::string& id, int64_t timestamp_us)
+    : RTCTransportStats(std::string(id), timestamp_us) {
+}
+
+RTCTransportStats::RTCTransportStats(
+    std::string&& id, int64_t timestamp_us)
+    : RTCStats(std::move(id), timestamp_us),
+      bytes_sent("bytesSent"),
+      bytes_received("bytesReceived"),
+      rtcp_transport_stats_id("rtcpTransportStatsId"),
+      active_connection("activeConnection"),
+      selected_candidate_pair_id("selectedCandidatePairId"),
+      local_certificate_id("localCertificateId"),
+      remote_certificate_id("remoteCertificateId") {
+}
+
+RTCTransportStats::RTCTransportStats(
+    const RTCTransportStats& other)
+    : RTCStats(other.id(), other.timestamp_us()),
+      bytes_sent(other.bytes_sent),
+      bytes_received(other.bytes_received),
+      rtcp_transport_stats_id(other.rtcp_transport_stats_id),
+      active_connection(other.active_connection),
+      selected_candidate_pair_id(other.selected_candidate_pair_id),
+      local_certificate_id(other.local_certificate_id),
+      remote_certificate_id(other.remote_certificate_id) {
+}
+
+RTCTransportStats::~RTCTransportStats() {
 }
 
 }  // namespace webrtc

@@ -43,6 +43,45 @@ struct RTCIceCandidateType {
   static const char* kRelay;
 };
 
+// https://w3c.github.io/webrtc-stats/#certificatestats-dict*
+class RTCCertificateStats final : public RTCStats {
+ public:
+  WEBRTC_RTCSTATS_DECL();
+
+  RTCCertificateStats(const std::string& id, int64_t timestamp_us);
+  RTCCertificateStats(std::string&& id, int64_t timestamp_us);
+  RTCCertificateStats(const RTCCertificateStats& other);
+  ~RTCCertificateStats() override;
+
+  RTCStatsMember<std::string> fingerprint;
+  RTCStatsMember<std::string> fingerprint_algorithm;
+  RTCStatsMember<std::string> base64_certificate;
+  RTCStatsMember<std::string> issuer_certificate_id;
+};
+
+// https://w3c.github.io/webrtc-stats/#dcstats-dict*
+class RTCDataChannelStats final : public RTCStats {
+ public:
+  WEBRTC_RTCSTATS_DECL();
+
+  RTCDataChannelStats(const std::string& id, int64_t timestamp_us);
+  RTCDataChannelStats(std::string&& id, int64_t timestamp_us);
+  RTCDataChannelStats(const RTCDataChannelStats& other);
+  ~RTCDataChannelStats() override;
+
+  RTCStatsMember<std::string> label;
+  RTCStatsMember<std::string> protocol;
+  RTCStatsMember<int32_t> datachannelid;
+  // TODO(hbos): Support enum types? "RTCStatsMember<RTCDataChannelState>"?
+  RTCStatsMember<std::string> state;
+  RTCStatsMember<uint32_t> messages_sent;
+  RTCStatsMember<uint64_t> bytes_sent;
+  RTCStatsMember<uint32_t> messages_received;
+  RTCStatsMember<uint64_t> bytes_received;
+};
+
+// https://w3c.github.io/webrtc-stats/#candidatepair-dict*
+// TODO(hbos): Finish implementation. Tracking bug crbug.com/633550
 class RTCIceCandidatePairStats : public RTCStats {
  public:
   WEBRTC_RTCSTATS_DECL();
@@ -81,6 +120,7 @@ class RTCIceCandidatePairStats : public RTCStats {
 };
 
 // https://w3c.github.io/webrtc-stats/#icecandidate-dict*
+// TODO(hbos): Finish implementation. Tracking bug crbug.com/632723
 class RTCIceCandidateStats : public RTCStats {
  public:
   WEBRTC_RTCSTATS_DECL();
@@ -121,45 +161,8 @@ class RTCRemoteIceCandidateStats final : public RTCIceCandidateStats {
   const char* type() const override;
 };
 
-// https://w3c.github.io/webrtc-stats/#certificatestats-dict*
-class RTCCertificateStats final : public RTCStats {
- public:
-  WEBRTC_RTCSTATS_DECL();
-
-  RTCCertificateStats(const std::string& id, int64_t timestamp_us);
-  RTCCertificateStats(std::string&& id, int64_t timestamp_us);
-  RTCCertificateStats(const RTCCertificateStats& other);
-  ~RTCCertificateStats() override;
-
-  RTCStatsMember<std::string> fingerprint;
-  RTCStatsMember<std::string> fingerprint_algorithm;
-  RTCStatsMember<std::string> base64_certificate;
-  RTCStatsMember<std::string> issuer_certificate_id;
-};
-
-// https://w3c.github.io/webrtc-stats/#dcstats-dict*
-class RTCDataChannelStats final : public RTCStats {
- public:
-  WEBRTC_RTCSTATS_DECL();
-
-  RTCDataChannelStats(const std::string& id, int64_t timestamp_us);
-  RTCDataChannelStats(std::string&& id, int64_t timestamp_us);
-  RTCDataChannelStats(const RTCDataChannelStats& other);
-  ~RTCDataChannelStats() override;
-
-  RTCStatsMember<std::string> label;
-  RTCStatsMember<std::string> protocol;
-  RTCStatsMember<int32_t> datachannelid;
-  // TODO(hbos): Support enum types? "RTCStatsMember<RTCDataChannelState>"?
-  RTCStatsMember<std::string> state;
-  RTCStatsMember<uint32_t> messages_sent;
-  RTCStatsMember<uint64_t> bytes_sent;
-  RTCStatsMember<uint32_t> messages_received;
-  RTCStatsMember<uint64_t> bytes_received;
-};
-
 // https://w3c.github.io/webrtc-stats/#pcstats-dict*
-// TODO(hbos): Tracking bug crbug.com/636818
+// TODO(hbos): Finish implementation. Tracking bug crbug.com/636818
 class RTCPeerConnectionStats final : public RTCStats {
  public:
   WEBRTC_RTCSTATS_DECL();
@@ -171,6 +174,25 @@ class RTCPeerConnectionStats final : public RTCStats {
 
   RTCStatsMember<uint32_t> data_channels_opened;
   RTCStatsMember<uint32_t> data_channels_closed;
+};
+
+// https://w3c.github.io/webrtc-stats/#transportstats-dict*
+class RTCTransportStats final : public RTCStats {
+ public:
+  WEBRTC_RTCSTATS_DECL();
+
+  RTCTransportStats(const std::string& id, int64_t timestamp_us);
+  RTCTransportStats(std::string&& id, int64_t timestamp_us);
+  RTCTransportStats(const RTCTransportStats& other);
+  ~RTCTransportStats() override;
+
+  RTCStatsMember<uint64_t> bytes_sent;
+  RTCStatsMember<uint64_t> bytes_received;
+  RTCStatsMember<std::string> rtcp_transport_stats_id;
+  RTCStatsMember<bool> active_connection;
+  RTCStatsMember<std::string> selected_candidate_pair_id;
+  RTCStatsMember<std::string> local_certificate_id;
+  RTCStatsMember<std::string> remote_certificate_id;
 };
 
 }  // namespace webrtc

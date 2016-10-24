@@ -17,13 +17,29 @@
 #include "webrtc/api/peerconnection.h"
 #include "webrtc/api/webrtcsession.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/sslidentity.h"
 #include "webrtc/p2p/base/candidate.h"
+#include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/port.h"
 
 namespace webrtc {
 
 namespace {
+
+std::string RTCCertificateIDFromFingerprint(const std::string& fingerprint) {
+  return "RTCCertificate_" + fingerprint;
+}
+
+std::string RTCIceCandidatePairStatsIDFromConnectionInfo(
+    const cricket::ConnectionInfo& info) {
+  return "RTCIceCandidatePair_" + info.local_candidate.id() + "_" +
+      info.remote_candidate.id();
+}
+
+std::string RTCTransportStatsIDFromTransportChannel(
+    const std::string& transport_name, int channel_component) {
+  return "RTCTransport_" + transport_name + "_" +
+      rtc::ToString<>(channel_component);
+}
 
 const char* CandidateTypeToRTCIceCandidateType(const std::string& type) {
   if (type == cricket::LOCAL_PORT_TYPE)
@@ -128,9 +144,15 @@ void RTCStatsCollector::ProducePartialResultsOnSignalingThread(
 
   SessionStats session_stats;
   if (pc_->session()->GetTransportStats(&session_stats)) {
-    ProduceCertificateStats_s(timestamp_us, session_stats, report.get());
-    ProduceIceCandidateAndPairStats_s(timestamp_us, session_stats,
-                                      report.get());
+    std::map<std::string, CertificateStatsPair> transport_cert_stats =
+        PrepareTransportCertificateStats_s(session_stats);
+
+    ProduceCertificateStats_s(
+        timestamp_us, transport_cert_stats, report.get());
+    ProduceIceCandidateAndPairStats_s(
+        timestamp_us, session_stats, report.get());
+    ProduceTransportStats_s(
+        timestamp_us, session_stats, transport_cert_stats, report.get());
   }
   ProduceDataChannelStats_s(timestamp_us, report.get());
   ProducePeerConnectionStats_s(timestamp_us, report.get());
@@ -199,44 +221,38 @@ void RTCStatsCollector::DeliverCachedReport() {
 }
 
 void RTCStatsCollector::ProduceCertificateStats_s(
-    int64_t timestamp_us, const SessionStats& session_stats,
+    int64_t timestamp_us,
+    const std::map<std::string, CertificateStatsPair>& transport_cert_stats,
     RTCStatsReport* report) const {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  for (const auto& transport_stats : session_stats.transport_stats) {
-    rtc::scoped_refptr<rtc::RTCCertificate> local_certificate;
-    if (pc_->session()->GetLocalCertificate(
-        transport_stats.second.transport_name, &local_certificate)) {
-      ProduceCertificateStatsFromSSLCertificateAndChain_s(
-          timestamp_us, local_certificate->ssl_certificate(), report);
+  for (const auto& kvp : transport_cert_stats) {
+    if (kvp.second.local) {
+      ProduceCertificateStatsFromSSLCertificateStats_s(
+          timestamp_us, *kvp.second.local.get(), report);
     }
-    std::unique_ptr<rtc::SSLCertificate> remote_certificate =
-        pc_->session()->GetRemoteSSLCertificate(
-            transport_stats.second.transport_name);
-    if (remote_certificate) {
-      ProduceCertificateStatsFromSSLCertificateAndChain_s(
-          timestamp_us, *remote_certificate.get(), report);
+    if (kvp.second.remote) {
+      ProduceCertificateStatsFromSSLCertificateStats_s(
+          timestamp_us, *kvp.second.remote.get(), report);
     }
   }
 }
 
-void RTCStatsCollector::ProduceCertificateStatsFromSSLCertificateAndChain_s(
-    int64_t timestamp_us, const rtc::SSLCertificate& certificate,
+void RTCStatsCollector::ProduceCertificateStatsFromSSLCertificateStats_s(
+    int64_t timestamp_us, const rtc::SSLCertificateStats& certificate_stats,
     RTCStatsReport* report) const {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  std::unique_ptr<rtc::SSLCertificateStats> ssl_stats =
-      certificate.GetStats();
-  RTCCertificateStats* prev_stats = nullptr;
-  for (rtc::SSLCertificateStats* s = ssl_stats.get(); s;
+  RTCCertificateStats* prev_certificate_stats = nullptr;
+  for (const rtc::SSLCertificateStats* s = &certificate_stats; s;
        s = s->issuer.get()) {
-    RTCCertificateStats* stats = new RTCCertificateStats(
-        "RTCCertificate_" + s->fingerprint, timestamp_us);
-    stats->fingerprint = s->fingerprint;
-    stats->fingerprint_algorithm = s->fingerprint_algorithm;
-    stats->base64_certificate = s->base64_certificate;
-    if (prev_stats)
-      prev_stats->issuer_certificate_id = stats->id();
-    report->AddStats(std::unique_ptr<RTCCertificateStats>(stats));
-    prev_stats = stats;
+    RTCCertificateStats* certificate_stats = new RTCCertificateStats(
+        RTCCertificateIDFromFingerprint(s->fingerprint), timestamp_us);
+    certificate_stats->fingerprint = s->fingerprint;
+    certificate_stats->fingerprint_algorithm = s->fingerprint_algorithm;
+    certificate_stats->base64_certificate = s->base64_certificate;
+    if (prev_certificate_stats)
+      prev_certificate_stats->issuer_certificate_id = certificate_stats->id();
+    report->AddStats(std::unique_ptr<RTCCertificateStats>(certificate_stats));
+    prev_certificate_stats = certificate_stats;
   }
 }
 
@@ -270,10 +286,10 @@ void RTCStatsCollector::ProduceIceCandidateAndPairStats_s(
     for (const auto& channel_stats : transport_stats.second.channel_stats) {
       for (const cricket::ConnectionInfo& info :
            channel_stats.connection_infos) {
-        const std::string& id = "RTCIceCandidatePair_" +
-            info.local_candidate.id() + "_" + info.remote_candidate.id();
         std::unique_ptr<RTCIceCandidatePairStats> candidate_pair_stats(
-            new RTCIceCandidatePairStats(id, timestamp_us));
+            new RTCIceCandidatePairStats(
+                RTCIceCandidatePairStatsIDFromConnectionInfo(info),
+                timestamp_us));
 
         // TODO(hbos): Set all of the |RTCIceCandidatePairStats|'s members,
         // crbug.com/633550.
@@ -379,6 +395,98 @@ void RTCStatsCollector::ProducePeerConnectionStats_s(
   stats->data_channels_closed = static_cast<uint32_t>(data_channels.size()) -
                                 data_channels_opened;
   report->AddStats(std::move(stats));
+}
+
+void RTCStatsCollector::ProduceTransportStats_s(
+    int64_t timestamp_us, const SessionStats& session_stats,
+    const std::map<std::string, CertificateStatsPair>& transport_cert_stats,
+    RTCStatsReport* report) const {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  for (const auto& transport : session_stats.transport_stats) {
+    // Get reference to RTCP channel, if it exists.
+    std::string rtcp_transport_stats_id;
+    for (const auto& channel_stats : transport.second.channel_stats) {
+      if (channel_stats.component ==
+          cricket::ICE_CANDIDATE_COMPONENT_RTCP) {
+        rtcp_transport_stats_id = RTCTransportStatsIDFromTransportChannel(
+            transport.second.transport_name, channel_stats.component);
+        break;
+      }
+    }
+
+    // Get reference to local and remote certificates of this transport, if they
+    // exist.
+    const auto& certificate_stats_it = transport_cert_stats.find(
+        transport.second.transport_name);
+    RTC_DCHECK(certificate_stats_it != transport_cert_stats.cend());
+    std::string local_certificate_id;
+    if (certificate_stats_it->second.local) {
+      local_certificate_id = RTCCertificateIDFromFingerprint(
+          certificate_stats_it->second.local->fingerprint);
+    }
+    std::string remote_certificate_id;
+    if (certificate_stats_it->second.remote) {
+      remote_certificate_id = RTCCertificateIDFromFingerprint(
+          certificate_stats_it->second.remote->fingerprint);
+    }
+
+    // There is one transport stats for each channel.
+    for (const auto& channel_stats : transport.second.channel_stats) {
+      std::unique_ptr<RTCTransportStats> transport_stats(
+          new RTCTransportStats(
+              RTCTransportStatsIDFromTransportChannel(
+                  transport.second.transport_name, channel_stats.component),
+              timestamp_us));
+      transport_stats->bytes_sent = 0;
+      transport_stats->bytes_received = 0;
+      transport_stats->active_connection = false;
+      for (const cricket::ConnectionInfo& info :
+           channel_stats.connection_infos) {
+        *transport_stats->bytes_sent += info.sent_total_bytes;
+        *transport_stats->bytes_received += info.recv_total_bytes;
+        if (info.best_connection) {
+          transport_stats->active_connection = true;
+          transport_stats->selected_candidate_pair_id =
+              RTCIceCandidatePairStatsIDFromConnectionInfo(info);
+        }
+      }
+      if (channel_stats.component != cricket::ICE_CANDIDATE_COMPONENT_RTCP &&
+          !rtcp_transport_stats_id.empty()) {
+        transport_stats->rtcp_transport_stats_id = rtcp_transport_stats_id;
+      }
+      if (!local_certificate_id.empty())
+        transport_stats->local_certificate_id = local_certificate_id;
+      if (!remote_certificate_id.empty())
+        transport_stats->remote_certificate_id = remote_certificate_id;
+      report->AddStats(std::move(transport_stats));
+    }
+  }
+}
+
+std::map<std::string, RTCStatsCollector::CertificateStatsPair>
+RTCStatsCollector::PrepareTransportCertificateStats_s(
+    const SessionStats& session_stats) const {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  std::map<std::string, CertificateStatsPair> transport_cert_stats;
+  for (const auto& transport_stats : session_stats.transport_stats) {
+    CertificateStatsPair certificate_stats_pair;
+    rtc::scoped_refptr<rtc::RTCCertificate> local_certificate;
+    if (pc_->session()->GetLocalCertificate(
+        transport_stats.second.transport_name, &local_certificate)) {
+      certificate_stats_pair.local =
+          local_certificate->ssl_certificate().GetStats();
+    }
+    std::unique_ptr<rtc::SSLCertificate> remote_certificate =
+        pc_->session()->GetRemoteSSLCertificate(
+            transport_stats.second.transport_name);
+    if (remote_certificate) {
+      certificate_stats_pair.remote = remote_certificate->GetStats();
+    }
+    transport_cert_stats.insert(
+        std::make_pair(transport_stats.second.transport_name,
+                       std::move(certificate_stats_pair)));
+  }
+  return transport_cert_stats;
 }
 
 const char* CandidateTypeToRTCIceCandidateTypeForTesting(
