@@ -612,26 +612,6 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_source_set("video_quality_test") {
-    testonly = true
-    sources = [
-      "video/video_quality_test.cc",
-      "video/video_quality_test.h",
-    ]
-    deps = [
-      ":webrtc",
-      "system_wrappers",
-      "//testing/gtest",
-    ]
-    if (!is_android) {
-      deps += [ "modules/video_capture:video_capture_internal_impl" ]
-    }
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-  }
-
   webrtc_perf_tests_resources = [
     "//resources/audio_coding/speech_mono_16kHz.pcm",
     "//resources/audio_coding/testfile32kHz.pcm",
@@ -666,63 +646,6 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_executable("video_loopback") {
-    testonly = true
-    sources = [
-      "test/run_test.h",
-      "video/video_loopback.cc",
-    ]
-
-    if (is_mac) {
-      sources += [ "test/mac/run_test.mm" ]
-    } else {
-      sources += [ "test/run_test.cc" ]
-    }
-    deps = [
-      ":video_quality_test",
-      "system_wrappers:metrics_default",
-      "test:field_trial",
-      "test:test_common",
-      "test:test_renderer",
-      "//testing/gmock",
-      "//testing/gtest",
-      "//third_party/gflags",
-    ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-  }
-
-  rtc_executable("screenshare_loopback") {
-    testonly = true
-    sources = [
-      "test/run_test.h",
-      "video/screenshare_loopback.cc",
-    ]
-
-    if (is_mac) {
-      sources += [ "test/mac/run_test.mm" ]
-    } else {
-      sources += [ "test/run_test.cc" ]
-    }
-    deps = [
-      ":video_quality_test",
-      "system_wrappers:metrics_default",
-      "test:field_trial",
-      "test:test_common",
-      "test:test_renderer",
-      "//testing/gmock",
-      "//testing/gtest",
-      "//third_party/gflags",
-    ]
-    if (is_clang && !is_nacl) {
-      # Suppress warnings from Chrome's Clang plugins.
-      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-  }
-
   rtc_test("webrtc_perf_tests") {
     testonly = true
     configs += [ ":rtc_unittests_config" ]
@@ -738,8 +661,6 @@ if (rtc_include_tests) {
       "video/full_stack.cc",
     ]
     deps = [
-      ":video_quality_test",
-      ":webrtc",
       "modules/audio_coding:neteq_test_support",
       "modules/audio_processing",
       "modules/audio_processing:audioproc_test_utils",
@@ -748,6 +669,7 @@ if (rtc_include_tests) {
       "test:test_common",
       "test:test_main",
       "test:test_renderer",
+      "video:video_quality_test",
       "voice_engine",
       "//testing/gmock",
       "//testing/gtest",

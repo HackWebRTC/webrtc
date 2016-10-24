@@ -193,6 +193,18 @@ rtc_source_set("test_support_main_threaded_mac") {
   ]
 }
 
+rtc_source_set("run_test") {
+  testonly = true
+  sources = [
+    "run_test.h",
+  ]
+  if (is_mac) {
+    sources += [ "mac/run_test.mm" ]
+  } else {
+    sources += [ "run_test.cc" ]
+  }
+}
+
 test_support_unittests_resources = [
   "//resources/foreman_cif_short.yuv",
   "//resources/video_coding/frame-ethernet-ii.pcap",
@@ -322,6 +334,7 @@ rtc_source_set("test_common") {
     "../base:rtc_base_approved",
     "../call",
     "../modules/media_file",
+    "../modules/video_capture:video_capture_module",
     "../video",
     "//testing/gmock",
     "//testing/gtest",
