@@ -91,36 +91,57 @@ class RTCIceCandidatePairStats : public RTCStats {
   RTCIceCandidatePairStats(const RTCIceCandidatePairStats& other);
   ~RTCIceCandidatePairStats() override;
 
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550, 653873
   RTCStatsMember<std::string> transport_id;
   RTCStatsMember<std::string> local_candidate_id;
   RTCStatsMember<std::string> remote_candidate_id;
   // TODO(hbos): Support enum types?
   // "RTCStatsMember<RTCStatsIceCandidatePairState>"?
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<std::string> state;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<uint64_t> priority;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<bool> nominated;
+  // TODO(hbos): Collected by |RTCStatsCollector| but different than the spec.
+  // crbug.com/633550
   RTCStatsMember<bool> writable;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<bool> readable;
   RTCStatsMember<uint64_t> bytes_sent;
   RTCStatsMember<uint64_t> bytes_received;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<double> total_rtt;
+  // TODO(hbos): Collected by |RTCStatsCollector| but different than the spec.
+  // crbug.com/633550
   RTCStatsMember<double> current_rtt;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<double> available_outgoing_bitrate;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<double> available_incoming_bitrate;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<uint64_t> requests_received;
   RTCStatsMember<uint64_t> requests_sent;
   RTCStatsMember<uint64_t> responses_received;
   RTCStatsMember<uint64_t> responses_sent;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<uint64_t> retransmissions_received;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<uint64_t> retransmissions_sent;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<uint64_t> consent_requests_received;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<uint64_t> consent_requests_sent;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<uint64_t> consent_responses_received;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<uint64_t> consent_responses_sent;
 };
 
 // https://w3c.github.io/webrtc-stats/#icecandidate-dict*
-// TODO(hbos): Finish implementation. Tracking bug crbug.com/632723
+// TODO(hbos): |RTCStatsCollector| only collects candidates that are part of
+// ice candidate pairs, but there could be candidates not paired with anything.
+// crbug.com/632723
 class RTCIceCandidateStats : public RTCStats {
  public:
   WEBRTC_RTCSTATS_DECL();
@@ -134,6 +155,7 @@ class RTCIceCandidateStats : public RTCStats {
   // TODO(hbos): Support enum types? "RTCStatsMember<RTCIceCandidateType>"?
   RTCStatsMember<std::string> candidate_type;
   RTCStatsMember<int32_t> priority;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/632723
   RTCStatsMember<std::string> url;
 
  protected:
@@ -172,7 +194,11 @@ class RTCPeerConnectionStats final : public RTCStats {
   RTCPeerConnectionStats(const RTCPeerConnectionStats& other);
   ~RTCPeerConnectionStats() override;
 
+  // TODO(hbos): Collected by |RTCStatsCollector| but different than the spec.
+  // crbug.com/636818
   RTCStatsMember<uint32_t> data_channels_opened;
+  // TODO(hbos): Collected by |RTCStatsCollector| but different than the spec.
+  // crbug.com/636818
   RTCStatsMember<uint32_t> data_channels_closed;
 };
 

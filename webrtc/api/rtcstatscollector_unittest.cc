@@ -375,7 +375,7 @@ class RTCStatsCollectorTest : public testing::Test {
 
         // TODO(hbos): Define all the undefined |candidate_pair_stats| stats.
         // The EXPECT_FALSE are for the undefined stats, see also todos listed
-        // in rtcstatscollector.cc. crbug.com/633550
+        // in rtcstats_objects.h. crbug.com/633550
         EXPECT_FALSE(candidate_pair_stats.transport_id.is_defined());
         const RTCIceCandidateStats* local_candidate =
             ExpectReportContainsCandidate(report, info.local_candidate, true);

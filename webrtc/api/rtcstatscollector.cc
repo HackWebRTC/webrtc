@@ -291,12 +291,6 @@ void RTCStatsCollector::ProduceIceCandidateAndPairStats_s(
                 RTCIceCandidatePairStatsIDFromConnectionInfo(info),
                 timestamp_us));
 
-        // TODO(hbos): Set all of the |RTCIceCandidatePairStats|'s members,
-        // crbug.com/633550.
-
-        // TODO(hbos): Set candidate_pair_stats->transport_id. Should be ID to
-        // RTCTransportStats which does not exist yet: crbug.com/653873.
-
         // TODO(hbos): There could be other candidates that are not paired with
         // anything. We don't have a complete list. Local candidates come from
         // Port objects, and prflx candidates (both local and remote) are only
@@ -306,39 +300,25 @@ void RTCStatsCollector::ProduceIceCandidateAndPairStats_s(
         candidate_pair_stats->remote_candidate_id = ProduceIceCandidateStats_s(
             timestamp_us, info.remote_candidate, false, report);
 
-        // TODO(hbos): Set candidate_pair_stats->state.
-        // TODO(hbos): Set candidate_pair_stats->priority.
-        // TODO(hbos): Set candidate_pair_stats->nominated.
         // TODO(hbos): This writable is different than the spec. It goes to
         // false after a certain amount of time without a response passes.
         // crbug.com/633550
         candidate_pair_stats->writable = info.writable;
-        // TODO(hbos): Set candidate_pair_stats->readable.
         candidate_pair_stats->bytes_sent =
             static_cast<uint64_t>(info.sent_total_bytes);
         candidate_pair_stats->bytes_received =
             static_cast<uint64_t>(info.recv_total_bytes);
-        // TODO(hbos): Set candidate_pair_stats->total_rtt.
         // TODO(hbos): The |info.rtt| measurement is smoothed. It shouldn't be
         // smoothed according to the spec. crbug.com/633550. See
         // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats-currentrtt
         candidate_pair_stats->current_rtt =
             static_cast<double>(info.rtt) / 1000.0;
-        // TODO(hbos): Set candidate_pair_stats->available_outgoing_bitrate.
-        // TODO(hbos): Set candidate_pair_stats->available_incoming_bitrate.
-        // TODO(hbos): Set candidate_pair_stats->requests_received.
         candidate_pair_stats->requests_sent =
             static_cast<uint64_t>(info.sent_ping_requests_total);
         candidate_pair_stats->responses_received =
             static_cast<uint64_t>(info.recv_ping_responses);
         candidate_pair_stats->responses_sent =
             static_cast<uint64_t>(info.sent_ping_responses);
-        // TODO(hbos): Set candidate_pair_stats->retransmissions_received.
-        // TODO(hbos): Set candidate_pair_stats->retransmissions_sent.
-        // TODO(hbos): Set candidate_pair_stats->consent_requests_received.
-        // TODO(hbos): Set candidate_pair_stats->consent_requests_sent.
-        // TODO(hbos): Set candidate_pair_stats->consent_responses_received.
-        // TODO(hbos): Set candidate_pair_stats->consent_responses_sent.
 
         report->AddStats(std::move(candidate_pair_stats));
       }
@@ -364,7 +344,6 @@ const std::string& RTCStatsCollector::ProduceIceCandidateStats_s(
     candidate_stats->candidate_type = CandidateTypeToRTCIceCandidateType(
         candidate.type());
     candidate_stats->priority = static_cast<int32_t>(candidate.priority());
-    // TODO(hbos): Define candidate_stats->url. crbug.com/632723
 
     stats = candidate_stats.get();
     report->AddStats(std::move(candidate_stats));
