@@ -45,12 +45,10 @@ struct ReceiveBandwidthEstimatorStats {};
 class RemoteBitrateEstimator : public CallStatsObserver, public Module {
  public:
   static const int kDefaultMinBitrateBps = 30000;
-  virtual ~RemoteBitrateEstimator() {}
+  ~RemoteBitrateEstimator() override {}
 
   virtual void IncomingPacketFeedbackVector(
-      const std::vector<PacketInfo>& packet_feedback_vector) {
-    assert(false);
-  }
+      const std::vector<PacketInfo>& packet_feedback_vector) = 0;
 
   // Called for each incoming packet. Updates the incoming payload bitrate
   // estimate and the over-use detector. If an over-use is detected the
