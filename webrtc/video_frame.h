@@ -70,13 +70,6 @@ class VideoFrame {
                   int height,
                   VideoRotation rotation);
 
-  // Deep copy frame: If required size is bigger than allocated one, new
-  // buffers of adequate size will be allocated.
-  // TODO(nisse): Should be deleted in the cricket::VideoFrame and
-  // webrtc::VideoFrame merge. Instead, use I420Buffer::Copy to make a copy of
-  // the pixel data, and use the constructor to wrap it into a VideoFrame.
-  void CopyFrame(const VideoFrame& videoFrame);
-
   // Creates a shallow copy of |videoFrame|, i.e, the this object will retain a
   // reference to the video buffer also retained by |videoFrame|.
   // TODO(nisse): Deprecated. Should be deleted in the cricket::VideoFrame and
