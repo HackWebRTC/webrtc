@@ -31,7 +31,7 @@
 // indicates a shared variable should be guarded (by any lock). GUARDED_VAR
 // is primarily used when the client cannot express the name of the lock.
 #define GUARDED_BY(x) THREAD_ANNOTATION_ATTRIBUTE__(guarded_by(x))
-#define GUARDED_VAR THREAD_ANNOTATION_ATTRIBUTE__(guarded)
+#define GUARDED_VAR THREAD_ANNOTATION_ATTRIBUTE__(guarded_var)
 
 // Document if the memory location pointed to by a pointer should be guarded
 // by a lock when dereferencing the pointer. Similar to GUARDED_VAR,
@@ -41,8 +41,8 @@
 // q, which is guarded by mu1, points to a shared memory location that is
 // guarded by mu2, q should be annotated as follows:
 //     int *q GUARDED_BY(mu1) PT_GUARDED_BY(mu2);
-#define PT_GUARDED_BY(x) THREAD_ANNOTATION_ATTRIBUTE__(point_to_guarded_by(x))
-#define PT_GUARDED_VAR THREAD_ANNOTATION_ATTRIBUTE__(point_to_guarded)
+#define PT_GUARDED_BY(x) THREAD_ANNOTATION_ATTRIBUTE__(pt_guarded_by(x))
+#define PT_GUARDED_VAR THREAD_ANNOTATION_ATTRIBUTE__(pt_guarded_var)
 
 // Document the acquisition order between locks that can be held
 // simultaneously by a thread. For any two locks that need to be annotated
@@ -65,7 +65,8 @@
 // Document the locks acquired in the body of the function. These locks
 // cannot be held when calling this function (as google3's Mutex locks are
 // non-reentrant).
-#define LOCKS_EXCLUDED(x) THREAD_ANNOTATION_ATTRIBUTE__(locks_excluded(x))
+#define LOCKS_EXCLUDED(...) \
+  THREAD_ANNOTATION_ATTRIBUTE__(locks_excluded(__VA_ARGS__))
 
 // Document the lock the annotated function returns without acquiring it.
 #define LOCK_RETURNED(x) THREAD_ANNOTATION_ATTRIBUTE__(lock_returned(x))
