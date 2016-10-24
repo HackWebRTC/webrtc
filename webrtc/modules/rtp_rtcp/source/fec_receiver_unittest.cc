@@ -19,6 +19,7 @@
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/fec_test_helper.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_defines_nullimpl.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 

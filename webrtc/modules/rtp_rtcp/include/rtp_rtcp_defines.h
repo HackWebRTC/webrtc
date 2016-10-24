@@ -321,39 +321,6 @@ class RtcpRttStats {
   virtual ~RtcpRttStats() {}
 };
 
-// Null object version of RtpFeedback.
-class NullRtpFeedback : public RtpFeedback {
- public:
-  virtual ~NullRtpFeedback() {}
-
-  int32_t OnInitializeDecoder(int8_t payload_type,
-                              const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-                              int frequency,
-                              size_t channels,
-                              uint32_t rate) override {
-    return 0;
-  }
-
-  void OnIncomingSSRCChanged(uint32_t ssrc) override {}
-  void OnIncomingCSRCChanged(uint32_t csrc, bool added) override {}
-};
-
-// Null object version of RtpData.
-class NullRtpData : public RtpData {
- public:
-  virtual ~NullRtpData() {}
-
-  int32_t OnReceivedPayloadData(const uint8_t* payload_data,
-                                size_t payload_size,
-                                const WebRtcRTPHeader* rtp_header) override {
-    return 0;
-  }
-
-  bool OnRecoveredPacket(const uint8_t* packet, size_t packet_length) override {
-    return true;
-  }
-};
-
 // Statistics about packet loss for a single directional connection. All values
 // are totals since the connection initiated.
 struct RtpPacketLossStats {

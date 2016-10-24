@@ -22,6 +22,7 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_defines_nullimpl.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/transport.h"
 
