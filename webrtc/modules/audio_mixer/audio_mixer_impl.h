@@ -57,7 +57,7 @@ class AudioMixerImpl : public AudioMixer {
 
   void Mix(int sample_rate_hz,
            size_t number_of_channels,
-           AudioFrame* audio_frame_for_mixing) override;
+           AudioFrame* audio_frame_for_mixing) override LOCKS_EXCLUDED(crit_);
 
   // Returns true if the source was mixed last round. Returns
   // false and logs an error if the source was never added to the

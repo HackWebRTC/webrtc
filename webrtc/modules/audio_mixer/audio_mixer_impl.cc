@@ -200,22 +200,22 @@ void AudioMixerImpl::Mix(int sample_rate,
   {
     rtc::CritScope lock(&crit_);
     mix_list = GetAudioFromSources();
+
+    for (const auto& frame : mix_list) {
+      RemixFrame(number_of_channels, frame);
+    }
+
+    audio_frame_for_mixing->UpdateFrame(
+        -1, time_stamp_, NULL, 0, OutputFrequency(), AudioFrame::kNormalSpeech,
+        AudioFrame::kVadPassive, number_of_channels);
+
+    time_stamp_ += static_cast<uint32_t>(sample_size_);
+
+    use_limiter_ = mix_list.size() > 1;
+
+    // We only use the limiter if we're actually mixing multiple streams.
+    MixFromList(audio_frame_for_mixing, mix_list, use_limiter_);
   }
-
-  for (const auto& frame : mix_list) {
-    RemixFrame(number_of_channels, frame);
-  }
-
-  audio_frame_for_mixing->UpdateFrame(
-      -1, time_stamp_, NULL, 0, OutputFrequency(), AudioFrame::kNormalSpeech,
-      AudioFrame::kVadPassive, number_of_channels);
-
-  time_stamp_ += static_cast<uint32_t>(sample_size_);
-
-  use_limiter_ = mix_list.size() > 1;
-
-  // We only use the limiter if we're actually mixing multiple streams.
-  MixFromList(audio_frame_for_mixing, mix_list, use_limiter_);
 
   if (audio_frame_for_mixing->samples_per_channel_ == 0) {
     // Nothing was mixed, set the audio samples to silence.
