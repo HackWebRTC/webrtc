@@ -235,7 +235,10 @@ if (is_android && !build_with_chromium) {
     ]
     output_extension = "so"
   }
+}
 
+# Classes that don't require jni can be used in Chromium.
+if (is_android) {
   android_library("libjingle_peerconnection_java") {
     java_files = [
       "../modules/audio_device/android/java/src/org/webrtc/voiceengine/BuildInfo.java",
@@ -302,7 +305,7 @@ if (is_android && !build_with_chromium) {
     ]
 
     deps = [
-      "//webrtc/base:base_java",
+      "../base:base_java",
     ]
   }
 }
@@ -475,8 +478,8 @@ if (rtc_include_tests) {
       deps = [
         ":libjingle_peerconnection_android_unittest_resources",
         ":libjingle_peerconnection_java",
+        "../base:base_java",
         "//base:base_java",
-        "//webrtc/base:base_java",
       ]
 
       shared_libraries = [ ":libjingle_peerconnection_so" ]
