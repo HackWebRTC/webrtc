@@ -33,13 +33,6 @@ int16_t MapSetting(GainControl::Mode mode) {
   return -1;
 }
 
-// Maximum length that a frame of samples can have.
-static const size_t kMaxAllowedValuesOfSamplesPerFrame = 160;
-// Maximum number of frames to buffer in the render queue.
-// TODO(peah): Decrease this once we properly handle hugely unbalanced
-// reverse and forward call numbers.
-static const size_t kMaxNumFramesToBuffer = 100;
-
 }  // namespace
 
 class GainControlImpl::GainController {
@@ -103,72 +96,35 @@ GainControlImpl::GainControlImpl(rtc::CriticalSection* crit_render,
       compression_gain_db_(9),
       analog_capture_level_(0),
       was_analog_level_set_(false),
-      stream_is_saturated_(false),
-      render_queue_element_max_size_(0) {
+      stream_is_saturated_(false) {
   RTC_DCHECK(crit_render);
   RTC_DCHECK(crit_capture);
 }
 
 GainControlImpl::~GainControlImpl() {}
 
-int GainControlImpl::ProcessRenderAudio(AudioBuffer* audio) {
-  rtc::CritScope cs(crit_render_);
-  if (!enabled_) {
-    return AudioProcessing::kNoError;
-  }
-
-  RTC_DCHECK_GE(160u, audio->num_frames_per_band());
-
-  render_queue_buffer_.resize(0);
-  for (auto& gain_controller : gain_controllers_) {
-    int err = WebRtcAgc_GetAddFarendError(gain_controller->state(),
-                                          audio->num_frames_per_band());
-
-    if (err != AudioProcessing::kNoError) {
-      return AudioProcessing::kUnspecifiedError;
-    }
-
-    // Buffer the samples in the render queue.
-    render_queue_buffer_.insert(
-        render_queue_buffer_.end(), audio->mixed_low_pass_data(),
-        (audio->mixed_low_pass_data() + audio->num_frames_per_band()));
-  }
-
-  // Insert the samples into the queue.
-  if (!render_signal_queue_->Insert(&render_queue_buffer_)) {
-    // The data queue is full and needs to be emptied.
-    ReadQueuedRenderData();
-
-    // Retry the insert (should always work).
-    RTC_DCHECK_EQ(render_signal_queue_->Insert(&render_queue_buffer_), true);
-  }
-
-  return AudioProcessing::kNoError;
-}
-
-// Read chunks of data that were received and queued on the render side from
-// a queue. All the data chunks are buffered into the farend signal of the AGC.
-void GainControlImpl::ReadQueuedRenderData() {
-  rtc::CritScope cs(crit_capture_);
-
+void GainControlImpl::ProcessRenderAudio(
+    rtc::ArrayView<const int16_t> packed_render_audio) {
+  rtc::CritScope cs_capture(crit_capture_);
   if (!enabled_) {
     return;
   }
 
-  while (render_signal_queue_->Remove(&capture_queue_buffer_)) {
-    size_t buffer_index = 0;
-    RTC_DCHECK(num_proc_channels_);
-    RTC_DCHECK_LT(0ul, *num_proc_channels_);
-    const size_t num_frames_per_band =
-        capture_queue_buffer_.size() / (*num_proc_channels_);
-    for (auto& gain_controller : gain_controllers_) {
-      WebRtcAgc_AddFarend(gain_controller->state(),
-                          &capture_queue_buffer_[buffer_index],
-                          num_frames_per_band);
-
-      buffer_index += num_frames_per_band;
-    }
+  for (auto& gain_controller : gain_controllers_) {
+    WebRtcAgc_AddFarend(gain_controller->state(), packed_render_audio.data(),
+                        packed_render_audio.size());
   }
+}
+
+void GainControlImpl::PackRenderAudioBuffer(
+    AudioBuffer* audio,
+    std::vector<int16_t>* packed_buffer) {
+  RTC_DCHECK_GE(160u, audio->num_frames_per_band());
+
+  packed_buffer->clear();
+  packed_buffer->insert(
+      packed_buffer->end(), audio->mixed_low_pass_data(),
+      (audio->mixed_low_pass_data() + audio->num_frames_per_band()));
 }
 
 int GainControlImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
@@ -447,33 +403,6 @@ void GainControlImpl::Initialize(size_t num_proc_channels, int sample_rate_hz) {
   }
 
   Configure();
-
-  AllocateRenderQueue();
-}
-
-void GainControlImpl::AllocateRenderQueue() {
-  rtc::CritScope cs_render(crit_render_);
-  rtc::CritScope cs_capture(crit_capture_);
-
-  RTC_DCHECK(num_proc_channels_);
-  const size_t new_render_queue_element_max_size = std::max<size_t>(
-      static_cast<size_t>(1),
-      kMaxAllowedValuesOfSamplesPerFrame * (*num_proc_channels_));
-
-  if (render_queue_element_max_size_ < new_render_queue_element_max_size) {
-    render_queue_element_max_size_ = new_render_queue_element_max_size;
-    std::vector<int16_t> template_queue_element(render_queue_element_max_size_);
-
-    render_signal_queue_.reset(
-        new SwapQueue<std::vector<int16_t>, RenderQueueItemVerifier<int16_t>>(
-            kMaxNumFramesToBuffer, template_queue_element,
-            RenderQueueItemVerifier<int16_t>(render_queue_element_max_size_)));
-
-    render_queue_buffer_.resize(render_queue_element_max_size_);
-    capture_queue_buffer_.resize(render_queue_element_max_size_);
-  } else {
-    render_signal_queue_->Clear();
-  }
 }
 
 int GainControlImpl::Configure() {

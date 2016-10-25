@@ -238,7 +238,7 @@ class AudioProcessingImpl : public AudioProcessing {
   void EmptyQueuedRenderAudio();
   void AllocateRenderQueue()
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
-  void QueueRenderAudio(const AudioBuffer* audio)
+  void QueueRenderAudio(AudioBuffer* audio)
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
 
   // Capture-side exclusive methods possibly running APM in a multi-threaded
@@ -371,22 +371,30 @@ class AudioProcessingImpl : public AudioProcessing {
     std::unique_ptr<AudioBuffer> render_audio;
   } render_ GUARDED_BY(crit_render_);
 
-  size_t float_render_queue_element_max_size_ GUARDED_BY(crit_render_)
+  size_t aec_render_queue_element_max_size_ GUARDED_BY(crit_render_)
       GUARDED_BY(crit_capture_) = 0;
-  std::vector<float> float_render_queue_buffer_ GUARDED_BY(crit_render_);
-  std::vector<float> float_capture_queue_buffer_ GUARDED_BY(crit_capture_);
+  std::vector<float> aec_render_queue_buffer_ GUARDED_BY(crit_render_);
+  std::vector<float> aec_capture_queue_buffer_ GUARDED_BY(crit_capture_);
 
-  size_t int16_render_queue_element_max_size_ GUARDED_BY(crit_render_)
+  size_t aecm_render_queue_element_max_size_ GUARDED_BY(crit_render_)
       GUARDED_BY(crit_capture_) = 0;
-  std::vector<int16_t> int16_render_queue_buffer_ GUARDED_BY(crit_render_);
-  std::vector<int16_t> int16_capture_queue_buffer_ GUARDED_BY(crit_capture_);
+  std::vector<int16_t> aecm_render_queue_buffer_ GUARDED_BY(crit_render_);
+  std::vector<int16_t> aecm_capture_queue_buffer_ GUARDED_BY(crit_capture_);
+
+  size_t agc_render_queue_element_max_size_ GUARDED_BY(crit_render_)
+      GUARDED_BY(crit_capture_) = 0;
+  std::vector<int16_t> agc_render_queue_buffer_ GUARDED_BY(crit_render_);
+  std::vector<int16_t> agc_capture_queue_buffer_ GUARDED_BY(crit_capture_);
 
   // Lock protection not needed.
   std::unique_ptr<SwapQueue<std::vector<float>, RenderQueueItemVerifier<float>>>
-      float_render_signal_queue_;
+      aec_render_signal_queue_;
   std::unique_ptr<
       SwapQueue<std::vector<int16_t>, RenderQueueItemVerifier<int16_t>>>
-      int16_render_signal_queue_;
+      aecm_render_signal_queue_;
+  std::unique_ptr<
+      SwapQueue<std::vector<int16_t>, RenderQueueItemVerifier<int16_t>>>
+      agc_render_signal_queue_;
 };
 
 }  // namespace webrtc

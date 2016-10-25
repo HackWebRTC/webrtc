@@ -708,7 +708,6 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
     // getters that need the capture lock held when being called.
     rtc::CritScope cs_capture(&crit_capture_);
     EmptyQueuedRenderAudio();
-    public_submodules_->gain_control->ReadQueuedRenderData();
 
     if (!src || !dest) {
       return kNullPointerError;
@@ -766,106 +765,143 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
   return kNoError;
 }
 
-void AudioProcessingImpl::QueueRenderAudio(const AudioBuffer* audio) {
+void AudioProcessingImpl::QueueRenderAudio(AudioBuffer* audio) {
   EchoCancellationImpl::PackRenderAudioBuffer(audio, num_output_channels(),
                                               num_reverse_channels(),
-                                              &float_render_queue_buffer_);
+                                              &aec_render_queue_buffer_);
 
   RTC_DCHECK_GE(160u, audio->num_frames_per_band());
 
   // Insert the samples into the queue.
-  if (!float_render_signal_queue_->Insert(&float_render_queue_buffer_)) {
+  if (!aec_render_signal_queue_->Insert(&aec_render_queue_buffer_)) {
     // The data queue is full and needs to be emptied.
     EmptyQueuedRenderAudio();
 
     // Retry the insert (should always work).
-    bool result =
-        float_render_signal_queue_->Insert(&float_render_queue_buffer_);
+    bool result = aec_render_signal_queue_->Insert(&aec_render_queue_buffer_);
     RTC_DCHECK(result);
   }
 
   EchoControlMobileImpl::PackRenderAudioBuffer(audio, num_output_channels(),
                                                num_reverse_channels(),
-                                               &int16_render_queue_buffer_);
+                                               &aecm_render_queue_buffer_);
 
   // Insert the samples into the queue.
-  if (!int16_render_signal_queue_->Insert(&int16_render_queue_buffer_)) {
+  if (!aecm_render_signal_queue_->Insert(&aecm_render_queue_buffer_)) {
     // The data queue is full and needs to be emptied.
     EmptyQueuedRenderAudio();
 
     // Retry the insert (should always work).
-    bool result =
-        int16_render_signal_queue_->Insert(&int16_render_queue_buffer_);
+    bool result = aecm_render_signal_queue_->Insert(&aecm_render_queue_buffer_);
     RTC_DCHECK(result);
+  }
+
+  if (!constants_.use_experimental_agc) {
+    GainControlImpl::PackRenderAudioBuffer(audio, &agc_render_queue_buffer_);
+    // Insert the samples into the queue.
+    if (!agc_render_signal_queue_->Insert(&agc_render_queue_buffer_)) {
+      // The data queue is full and needs to be emptied.
+      EmptyQueuedRenderAudio();
+
+      // Retry the insert (should always work).
+      bool result = agc_render_signal_queue_->Insert(&agc_render_queue_buffer_);
+      RTC_DCHECK(result);
+    }
   }
 }
 
 void AudioProcessingImpl::AllocateRenderQueue() {
-  const size_t new_float_render_queue_element_max_size =
+  const size_t new_aec_render_queue_element_max_size =
       std::max(static_cast<size_t>(1),
                kMaxAllowedValuesOfSamplesPerFrame *
                    EchoCancellationImpl::NumCancellersRequired(
                        num_output_channels(), num_reverse_channels()));
 
-  const size_t new_int16_render_queue_element_max_size =
+  const size_t new_aecm_render_queue_element_max_size =
       std::max(static_cast<size_t>(1),
                kMaxAllowedValuesOfSamplesPerFrame *
                    EchoControlMobileImpl::NumCancellersRequired(
                        num_output_channels(), num_reverse_channels()));
 
+  const size_t new_agc_render_queue_element_max_size =
+      std::max(static_cast<size_t>(1), kMaxAllowedValuesOfSamplesPerFrame);
+
   // Reallocate the queues if the queue item sizes are too small to fit the
   // data to put in the queues.
-  if (float_render_queue_element_max_size_ <
-      new_float_render_queue_element_max_size) {
-    float_render_queue_element_max_size_ =
-        new_float_render_queue_element_max_size;
+  if (aec_render_queue_element_max_size_ <
+      new_aec_render_queue_element_max_size) {
+    aec_render_queue_element_max_size_ = new_aec_render_queue_element_max_size;
 
     std::vector<float> template_queue_element(
-        float_render_queue_element_max_size_);
+        aec_render_queue_element_max_size_);
 
-    float_render_signal_queue_.reset(
+    aec_render_signal_queue_.reset(
         new SwapQueue<std::vector<float>, RenderQueueItemVerifier<float>>(
             kMaxNumFramesToBuffer, template_queue_element,
             RenderQueueItemVerifier<float>(
-                float_render_queue_element_max_size_)));
+                aec_render_queue_element_max_size_)));
 
-    float_render_queue_buffer_.resize(float_render_queue_element_max_size_);
-    float_capture_queue_buffer_.resize(float_render_queue_element_max_size_);
+    aec_render_queue_buffer_.resize(aec_render_queue_element_max_size_);
+    aec_capture_queue_buffer_.resize(aec_render_queue_element_max_size_);
   } else {
-    float_render_signal_queue_->Clear();
+    aec_render_signal_queue_->Clear();
   }
 
-  if (int16_render_queue_element_max_size_ <
-      new_int16_render_queue_element_max_size) {
-    int16_render_queue_element_max_size_ =
-        new_int16_render_queue_element_max_size;
+  if (aecm_render_queue_element_max_size_ <
+      new_aecm_render_queue_element_max_size) {
+    aecm_render_queue_element_max_size_ =
+        new_aecm_render_queue_element_max_size;
 
     std::vector<int16_t> template_queue_element(
-        int16_render_queue_element_max_size_);
+        aecm_render_queue_element_max_size_);
 
-    int16_render_signal_queue_.reset(
+    aecm_render_signal_queue_.reset(
         new SwapQueue<std::vector<int16_t>, RenderQueueItemVerifier<int16_t>>(
             kMaxNumFramesToBuffer, template_queue_element,
             RenderQueueItemVerifier<int16_t>(
-                int16_render_queue_element_max_size_)));
+                aecm_render_queue_element_max_size_)));
 
-    int16_render_queue_buffer_.resize(int16_render_queue_element_max_size_);
-    int16_capture_queue_buffer_.resize(int16_render_queue_element_max_size_);
+    aecm_render_queue_buffer_.resize(aecm_render_queue_element_max_size_);
+    aecm_capture_queue_buffer_.resize(aecm_render_queue_element_max_size_);
   } else {
-    int16_render_signal_queue_->Clear();
+    aecm_render_signal_queue_->Clear();
+  }
+
+  if (agc_render_queue_element_max_size_ <
+      new_agc_render_queue_element_max_size) {
+    agc_render_queue_element_max_size_ = new_agc_render_queue_element_max_size;
+
+    std::vector<int16_t> template_queue_element(
+        agc_render_queue_element_max_size_);
+
+    agc_render_signal_queue_.reset(
+        new SwapQueue<std::vector<int16_t>, RenderQueueItemVerifier<int16_t>>(
+            kMaxNumFramesToBuffer, template_queue_element,
+            RenderQueueItemVerifier<int16_t>(
+                agc_render_queue_element_max_size_)));
+
+    agc_render_queue_buffer_.resize(agc_render_queue_element_max_size_);
+    agc_capture_queue_buffer_.resize(agc_render_queue_element_max_size_);
+  } else {
+    agc_render_signal_queue_->Clear();
   }
 }
 
 void AudioProcessingImpl::EmptyQueuedRenderAudio() {
   rtc::CritScope cs_capture(&crit_capture_);
-  while (float_render_signal_queue_->Remove(&float_capture_queue_buffer_)) {
+  while (aec_render_signal_queue_->Remove(&aec_capture_queue_buffer_)) {
     public_submodules_->echo_cancellation->ProcessRenderAudio(
-        float_capture_queue_buffer_);
+        aec_capture_queue_buffer_);
   }
 
-  while (int16_render_signal_queue_->Remove(&int16_capture_queue_buffer_)) {
+  while (aecm_render_signal_queue_->Remove(&aecm_capture_queue_buffer_)) {
     public_submodules_->echo_control_mobile->ProcessRenderAudio(
-        int16_capture_queue_buffer_);
+        aecm_capture_queue_buffer_);
+  }
+
+  while (agc_render_signal_queue_->Remove(&agc_capture_queue_buffer_)) {
+    public_submodules_->gain_control->ProcessRenderAudio(
+        agc_capture_queue_buffer_);
   }
 }
 
@@ -880,7 +916,6 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
     // as well.
     rtc::CritScope cs_capture(&crit_capture_);
     EmptyQueuedRenderAudio();
-    public_submodules_->gain_control->ReadQueuedRenderData();
   }
 
   if (!frame) {
@@ -1242,10 +1277,6 @@ int AudioProcessingImpl::ProcessRenderStreamLocked() {
 #endif
 
   QueueRenderAudio(render_buffer);
-  if (!constants_.use_experimental_agc) {
-    RETURN_ON_ERR(
-        public_submodules_->gain_control->ProcessRenderAudio(render_buffer));
-  }
 
   if (submodule_states_.RenderMultiBandProcessingActive() &&
       SampleRateSupportsMultiBand(

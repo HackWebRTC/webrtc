@@ -30,8 +30,9 @@ void ProcessOneFrame(int sample_rate_hz,
     capture_audio_buffer->SplitIntoFrequencyBands();
   }
 
-  gain_controller->ProcessRenderAudio(render_audio_buffer);
-  gain_controller->ReadQueuedRenderData();
+  std::vector<int16_t> render_audio;
+  GainControlImpl::PackRenderAudioBuffer(render_audio_buffer, &render_audio);
+  gain_controller->ProcessRenderAudio(render_audio);
   gain_controller->AnalyzeCaptureAudio(capture_audio_buffer);
   gain_controller->ProcessCaptureAudio(capture_audio_buffer, false);
 
