@@ -13,6 +13,7 @@
 
 #include "webrtc/api/fakemetricsobserver.h"
 #include "webrtc/p2p/base/fakeportallocator.h"
+#include "webrtc/p2p/base/packettransportinterface.h"
 #include "webrtc/p2p/base/p2ptransportchannel.h"
 #include "webrtc/p2p/base/testrelayserver.h"
 #include "webrtc/p2p/base/teststunserver.h"
@@ -282,12 +283,13 @@ class P2PTransportChannelTestBase : public testing::Test,
           tiebreaker_(0),
           role_conflict_(false),
           save_candidates_(false) {}
-    bool HasChannel(TransportChannel* ch) {
-      return (ch == cd1_.ch_.get() || ch == cd2_.ch_.get());
+    bool HasTransport(const rtc::PacketTransportInterface* transport) {
+      return (transport == cd1_.ch_.get() || transport == cd2_.ch_.get());
     }
-    ChannelData* GetChannelData(TransportChannel* ch) {
-      if (!HasChannel(ch)) return NULL;
-      if (cd1_.ch_.get() == ch)
+    ChannelData* GetChannelData(rtc::PacketTransportInterface* transport) {
+      if (!HasTransport(transport))
+        return NULL;
+      if (cd1_.ch_.get() == transport)
         return &cd1_;
       else
         return &cd2_;
@@ -321,11 +323,11 @@ class P2PTransportChannelTestBase : public testing::Test,
     bool ready_to_send_ = false;
   };
 
-  ChannelData* GetChannelData(TransportChannel* channel) {
-    if (ep1_.HasChannel(channel))
-      return ep1_.GetChannelData(channel);
+  ChannelData* GetChannelData(rtc::PacketTransportInterface* transport) {
+    if (ep1_.HasTransport(transport))
+      return ep1_.GetChannelData(transport);
     else
-      return ep2_.GetChannelData(channel);
+      return ep2_.GetChannelData(transport);
   }
 
   IceParameters IceParamsWithRenomination(const IceParameters& ice,
@@ -676,8 +678,8 @@ class P2PTransportChannelTestBase : public testing::Test,
     TestSendRecv(clock);
   }
 
-  void OnReadyToSend(TransportChannel* ch) {
-    GetEndpoint(ch)->ready_to_send_ = true;
+  void OnReadyToSend(rtc::PacketTransportInterface* transport) {
+    GetEndpoint(transport)->ready_to_send_ = true;
   }
 
   // We pass the candidates directly to the other side.
@@ -783,14 +785,16 @@ class P2PTransportChannelTestBase : public testing::Test,
       }
     }
   }
-  void OnReadPacket(TransportChannel* channel,
+
+  void OnReadPacket(rtc::PacketTransportInterface* transport,
                     const char* data,
                     size_t len,
                     const rtc::PacketTime& packet_time,
                     int flags) {
-    std::list<std::string>& packets = GetPacketList(channel);
+    std::list<std::string>& packets = GetPacketList(transport);
     packets.push_front(std::string(data, len));
   }
+
   void OnRoleConflict(TransportChannelImpl* channel) {
     GetEndpoint(channel)->OnRoleConflict(true);
     IceRole new_role = GetEndpoint(channel)->ice_role() == ICEROLE_CONTROLLING
@@ -818,10 +822,10 @@ class P2PTransportChannelTestBase : public testing::Test,
                ? &ch->selected_connection()->remote_candidate()
                : NULL;
   }
-  Endpoint* GetEndpoint(TransportChannel* ch) {
-    if (ep1_.HasChannel(ch)) {
+  Endpoint* GetEndpoint(rtc::PacketTransportInterface* transport) {
+    if (ep1_.HasTransport(transport)) {
       return &ep1_;
-    } else if (ep2_.HasChannel(ch)) {
+    } else if (ep2_.HasTransport(transport)) {
       return &ep2_;
     } else {
       return NULL;
@@ -839,8 +843,9 @@ class P2PTransportChannelTestBase : public testing::Test,
     else
       return NULL;
   }
-  std::list<std::string>& GetPacketList(TransportChannel* ch) {
-    return GetChannelData(ch)->ch_packets_;
+  std::list<std::string>& GetPacketList(
+      rtc::PacketTransportInterface* transport) {
+    return GetChannelData(transport)->ch_packets_;
   }
 
   enum RemoteIceParameterSource { FROM_CANDIDATE, FROM_SETICEPARAMETERS };
@@ -2944,7 +2949,7 @@ class P2PTransportChannelPingTest : public testing::Test,
     conn->OnReadPacket(buf.Data(), buf.Length(), rtc::CreatePacketTime(0));
   }
 
-  void OnReadyToSend(TransportChannel* channel) {
+  void OnReadyToSend(rtc::PacketTransportInterface* transport) {
     channel_ready_to_send_ = true;
   }
   void OnChannelStateChanged(TransportChannelImpl* channel) {

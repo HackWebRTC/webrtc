@@ -22,6 +22,10 @@
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/stream.h"
 
+namespace rtc {
+class PacketTransportInterface;
+}
+
 namespace cricket {
 
 // A bridge between a packet-oriented/channel-type interface on
@@ -203,12 +207,15 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   bool IsDtlsConnected();
 
  private:
-  void OnWritableState(TransportChannel* channel);
-  void OnReadPacket(TransportChannel* channel, const char* data, size_t size,
-                    const rtc::PacketTime& packet_time, int flags);
-  void OnSentPacket(TransportChannel* channel,
+  void OnWritableState(rtc::PacketTransportInterface* transport);
+  void OnReadPacket(rtc::PacketTransportInterface* transport,
+                    const char* data,
+                    size_t size,
+                    const rtc::PacketTime& packet_time,
+                    int flags);
+  void OnSentPacket(rtc::PacketTransportInterface* transport,
                     const rtc::SentPacket& sent_packet);
-  void OnReadyToSend(TransportChannel* channel);
+  void OnReadyToSend(rtc::PacketTransportInterface* transport);
   void OnReceivingState(TransportChannel* channel);
   void OnDtlsEvent(rtc::StreamInterface* stream_, int sig, int err);
   bool SetupDtls();

@@ -39,6 +39,10 @@
 #include "webrtc/pc/rtcpmuxfilter.h"
 #include "webrtc/pc/srtpfilter.h"
 
+namespace rtc {
+class PacketTransportInterface;
+}
+
 namespace webrtc {
 class AudioSinkInterface;
 }  // namespace webrtc
@@ -233,13 +237,13 @@ class BaseChannel
                 const rtc::PacketOptions& options) override;
 
   // From TransportChannel
-  void OnWritableState(TransportChannel* channel);
-  virtual void OnChannelRead(TransportChannel* channel,
-                             const char* data,
-                             size_t len,
-                             const rtc::PacketTime& packet_time,
-                             int flags);
-  void OnReadyToSend(TransportChannel* channel);
+  void OnWritableState(rtc::PacketTransportInterface* transport);
+  virtual void OnPacketRead(rtc::PacketTransportInterface* transport,
+                            const char* data,
+                            size_t len,
+                            const rtc::PacketTime& packet_time,
+                            int flags);
+  void OnReadyToSend(rtc::PacketTransportInterface* transport);
 
   void OnDtlsState(TransportChannel* channel, DtlsTransportState state);
 
@@ -249,7 +253,8 @@ class BaseChannel
       int last_sent_packet_id,
       bool ready_to_send);
 
-  bool PacketIsRtcp(const TransportChannel* channel, const char* data,
+  bool PacketIsRtcp(const rtc::PacketTransportInterface* transport,
+                    const char* data,
                     size_t len);
   bool SendPacket(bool rtcp,
                   rtc::CopyOnWriteBuffer* packet,
@@ -356,7 +361,7 @@ class BaseChannel
   bool InitNetwork_n(const std::string* bundle_transport_name);
   void DisconnectTransportChannels_n();
   void DestroyTransportChannels_n();
-  void SignalSentPacket_n(TransportChannel* channel,
+  void SignalSentPacket_n(rtc::PacketTransportInterface* transport,
                           const rtc::SentPacket& sent_packet);
   void SignalSentPacket_w(const rtc::SentPacket& sent_packet);
   bool IsReadyToSendMedia_n() const;
@@ -376,6 +381,7 @@ class BaseChannel
   // Expected to be true (as of typing this) for everything except data
   // channels.
   const bool rtcp_enabled_;
+  // TODO(johan): Replace TransportChannel* with rtc::PacketTransportInterface*.
   TransportChannel* transport_channel_ = nullptr;
   std::vector<std::pair<rtc::Socket::Option, int> > socket_options_;
   TransportChannel* rtcp_transport_channel_ = nullptr;
@@ -484,11 +490,11 @@ class VoiceChannel : public BaseChannel {
 
  private:
   // overrides from BaseChannel
-  void OnChannelRead(TransportChannel* channel,
-                     const char* data,
-                     size_t len,
-                     const rtc::PacketTime& packet_time,
-                     int flags) override;
+  void OnPacketRead(rtc::PacketTransportInterface* transport,
+                    const char* data,
+                    size_t len,
+                    const rtc::PacketTime& packet_time,
+                    int flags) override;
   void UpdateMediaSendRecvState_w() override;
   const ContentInfo* GetFirstContent(const SessionDescription* sdesc) override;
   bool SetLocalContent_w(const MediaContentDescription* content,

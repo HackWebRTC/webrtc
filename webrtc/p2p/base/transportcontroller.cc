@@ -565,11 +565,11 @@ bool TransportController::GetStats_n(const std::string& transport_name,
   return transport->GetStats(stats);
 }
 
-void TransportController::OnChannelWritableState_n(TransportChannel* channel) {
+void TransportController::OnChannelWritableState_n(
+    rtc::PacketTransportInterface* transport) {
   RTC_DCHECK(network_thread_->IsCurrent());
-  LOG(LS_INFO) << channel->transport_name() << " TransportChannel "
-               << channel->component() << " writability changed to "
-               << channel->writable() << ".";
+  LOG(LS_INFO) << " TransportChannel " << transport->debug_name()
+               << " writability changed to " << transport->writable() << ".";
   UpdateAggregateStates_n();
 }
 

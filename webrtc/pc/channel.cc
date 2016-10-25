@@ -24,6 +24,7 @@
 #include "webrtc/base/trace_event.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/rtputils.h"
+#include "webrtc/p2p/base/packettransportinterface.h"
 #include "webrtc/p2p/base/transportchannel.h"
 #include "webrtc/pc/channelmanager.h"
 
@@ -377,7 +378,7 @@ void BaseChannel::ConnectToTransportChannel(TransportChannel* tc) {
   RTC_DCHECK(network_thread_->IsCurrent());
 
   tc->SignalWritableState.connect(this, &BaseChannel::OnWritableState);
-  tc->SignalReadPacket.connect(this, &BaseChannel::OnChannelRead);
+  tc->SignalReadPacket.connect(this, &BaseChannel::OnPacketRead);
   tc->SignalReadyToSend.connect(this, &BaseChannel::OnReadyToSend);
   tc->SignalDtlsState.connect(this, &BaseChannel::OnDtlsState);
   tc->SignalSelectedCandidatePairChanged.connect(
@@ -527,32 +528,33 @@ bool BaseChannel::SetCryptoOptions(const rtc::CryptoOptions& crypto_options) {
   return true;
 }
 
-void BaseChannel::OnWritableState(TransportChannel* channel) {
-  RTC_DCHECK(channel == transport_channel_ ||
-             channel == rtcp_transport_channel_);
+void BaseChannel::OnWritableState(rtc::PacketTransportInterface* transport) {
+  RTC_DCHECK(transport == transport_channel_ ||
+             transport == rtcp_transport_channel_);
   RTC_DCHECK(network_thread_->IsCurrent());
   UpdateWritableState_n();
 }
 
-void BaseChannel::OnChannelRead(TransportChannel* channel,
-                                const char* data, size_t len,
-                                const rtc::PacketTime& packet_time,
-                                int flags) {
-  TRACE_EVENT0("webrtc", "BaseChannel::OnChannelRead");
-  // OnChannelRead gets called from P2PSocket; now pass data to MediaEngine
+void BaseChannel::OnPacketRead(rtc::PacketTransportInterface* transport,
+                               const char* data,
+                               size_t len,
+                               const rtc::PacketTime& packet_time,
+                               int flags) {
+  TRACE_EVENT0("webrtc", "BaseChannel::OnPacketRead");
+  // OnPacketRead gets called from P2PSocket; now pass data to MediaEngine
   RTC_DCHECK(network_thread_->IsCurrent());
 
   // When using RTCP multiplexing we might get RTCP packets on the RTP
   // transport. We feed RTP traffic into the demuxer to determine if it is RTCP.
-  bool rtcp = PacketIsRtcp(channel, data, len);
+  bool rtcp = PacketIsRtcp(transport, data, len);
   rtc::CopyOnWriteBuffer packet(data, len);
   HandlePacket(rtcp, &packet, packet_time);
 }
 
-void BaseChannel::OnReadyToSend(TransportChannel* channel) {
-  RTC_DCHECK(channel == transport_channel_ ||
-             channel == rtcp_transport_channel_);
-  SetTransportChannelReadyToSend(channel == rtcp_transport_channel_, true);
+void BaseChannel::OnReadyToSend(rtc::PacketTransportInterface* transport) {
+  RTC_DCHECK(transport == transport_channel_ ||
+             transport == rtcp_transport_channel_);
+  SetTransportChannelReadyToSend(transport == rtcp_transport_channel_, true);
 }
 
 void BaseChannel::OnDtlsState(TransportChannel* channel,
@@ -611,9 +613,10 @@ void BaseChannel::SetTransportChannelReadyToSend(bool rtcp, bool ready) {
       Bind(&MediaChannel::OnReadyToSend, media_channel_, ready_to_send));
 }
 
-bool BaseChannel::PacketIsRtcp(const TransportChannel* channel,
-                               const char* data, size_t len) {
-  return (channel == rtcp_transport_channel_ ||
+bool BaseChannel::PacketIsRtcp(const rtc::PacketTransportInterface* transport,
+                               const char* data,
+                               size_t len) {
+  return (transport == rtcp_transport_channel_ ||
           rtcp_mux_filter_.DemuxRtcp(data, static_cast<int>(len)));
 }
 
@@ -1445,8 +1448,9 @@ void BaseChannel::FlushRtcpMessages_n() {
   }
 }
 
-void BaseChannel::SignalSentPacket_n(TransportChannel* /* channel */,
-                                     const rtc::SentPacket& sent_packet) {
+void BaseChannel::SignalSentPacket_n(
+    rtc::PacketTransportInterface* /* transport */,
+    const rtc::SentPacket& sent_packet) {
   RTC_DCHECK(network_thread_->IsCurrent());
   invoker_.AsyncInvoke<void>(
       RTC_FROM_HERE, worker_thread_,
@@ -1641,15 +1645,15 @@ void VoiceChannel::GetActiveStreams_w(AudioInfo::StreamList* actives) {
   media_channel()->GetActiveStreams(actives);
 }
 
-void VoiceChannel::OnChannelRead(TransportChannel* channel,
-                                 const char* data, size_t len,
-                                 const rtc::PacketTime& packet_time,
+void VoiceChannel::OnPacketRead(rtc::PacketTransportInterface* transport,
+                                const char* data,
+                                size_t len,
+                                const rtc::PacketTime& packet_time,
                                 int flags) {
-  BaseChannel::OnChannelRead(channel, data, len, packet_time, flags);
-
+  BaseChannel::OnPacketRead(transport, data, len, packet_time, flags);
   // Set a flag when we've received an RTP packet. If we're waiting for early
   // media, this will disable the timeout.
-  if (!received_media_ && !PacketIsRtcp(channel, data, len)) {
+  if (!received_media_ && !PacketIsRtcp(transport, data, len)) {
     received_media_ = true;
   }
 }

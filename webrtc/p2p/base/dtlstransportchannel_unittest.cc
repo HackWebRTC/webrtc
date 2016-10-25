@@ -13,6 +13,7 @@
 
 #include "webrtc/p2p/base/dtlstransport.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
+#include "webrtc/p2p/base/packettransportinterface.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/gunit.h"
@@ -364,13 +365,15 @@ class DtlsTestClient : public sigslot::has_slots<> {
   }
 
   // Transport channel callbacks
-  void OnTransportChannelWritableState(cricket::TransportChannel* channel) {
-    LOG(LS_INFO) << name_ << ": Channel '" << channel->component()
+  void OnTransportChannelWritableState(
+      rtc::PacketTransportInterface* transport) {
+    LOG(LS_INFO) << name_ << ": Channel '" << transport->debug_name()
                  << "' is writable";
   }
 
-  void OnTransportChannelReadPacket(cricket::TransportChannel* channel,
-                                    const char* data, size_t size,
+  void OnTransportChannelReadPacket(rtc::PacketTransportInterface* transport,
+                                    const char* data,
+                                    size_t size,
                                     const rtc::PacketTime& packet_time,
                                     int flags) {
     uint32_t packet_num = 0;
@@ -382,7 +385,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
     ASSERT_EQ(expected_flags, flags);
   }
 
-  void OnTransportChannelSentPacket(cricket::TransportChannel* channel,
+  void OnTransportChannelSentPacket(rtc::PacketTransportInterface* transport,
                                     const rtc::SentPacket& sent_packet) {
     sent_packet_ = sent_packet;
   }
@@ -390,10 +393,12 @@ class DtlsTestClient : public sigslot::has_slots<> {
   rtc::SentPacket sent_packet() const { return sent_packet_; }
 
   // Hook into the raw packet stream to make sure DTLS packets are encrypted.
-  void OnFakeTransportChannelReadPacket(cricket::TransportChannel* channel,
-                                        const char* data, size_t size,
-                                        const rtc::PacketTime& time,
-                                        int flags) {
+  void OnFakeTransportChannelReadPacket(
+      rtc::PacketTransportInterface* transport,
+      const char* data,
+      size_t size,
+      const rtc::PacketTime& time,
+      int flags) {
     // Flags shouldn't be set on the underlying TransportChannel packets.
     ASSERT_EQ(0, flags);
 
