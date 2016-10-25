@@ -219,26 +219,12 @@ TEST(AudioSendStreamTest, ConfigToString) {
       RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeId));
   config.rtp.c_name = kCName;
   config.voe_channel_id = kChannelId;
-  config.min_bitrate_kbps = 12;
-  config.max_bitrate_kbps = 34;
-  config.send_codec_spec.nack_enabled = true;
-  config.send_codec_spec.transport_cc_enabled = false;
-  config.send_codec_spec.enable_codec_fec = true;
-  config.send_codec_spec.enable_opus_dtx = false;
-  config.send_codec_spec.opus_max_playback_rate = 32000;
   config.send_codec_spec.cng_payload_type = 42;
-  config.send_codec_spec.cng_plfreq = 56;
-  config.send_codec_spec.codec_inst = kIsacCodec;
   EXPECT_EQ(
       "{rtp: {ssrc: 1234, extensions: [{uri: "
       "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time, id: 3}], "
-      "nack: {rtp_history_ms: 0}, c_name: foo_name}, send_transport: nullptr, "
-      "voe_channel_id: 1, min_bitrate_kbps: 12, max_bitrate_kbps: 34, "
-      "send_codec_spec: {nack_enabled: true, transport_cc_enabled: false, "
-      "enable_codec_fec: true, enable_opus_dtx: false, opus_max_playback_rate: "
-      "32000, cng_payload_type: 42, cng_plfreq: 56, codec_inst: {pltype: "
-      "103, plname: \"isac\", plfreq: 16000, pacsize: 320, channels: 1, rate: "
-      "32000}}}",
+      "nack: {rtp_history_ms: 0}, c_name: foo_name}, voe_channel_id: 1, "
+      "cng_payload_type: 42}",
       config.ToString());
 }
 

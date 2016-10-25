@@ -32,7 +32,6 @@ rtc_static_library("rtc_event_log_impl") {
   deps = [
     ":rtc_event_log_api",
     "..:webrtc_common",
-    "../api:call_api",
     "../modules/rtp_rtcp",
   ]
 

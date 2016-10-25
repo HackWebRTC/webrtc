@@ -57,8 +57,8 @@ struct UlpfecConfig {
 // Settings for FlexFEC forward error correction.
 // Set the payload type to '-1' to disable.
 struct FlexfecConfig {
-  FlexfecConfig();
-  ~FlexfecConfig();
+  FlexfecConfig()
+      : flexfec_payload_type(-1), flexfec_ssrc(0), protected_media_ssrcs() {}
   std::string ToString() const;
 
   // Payload type of FlexFEC.
@@ -163,7 +163,7 @@ class VideoEncoderConfig {
     virtual void FillVideoCodecVp9(VideoCodecVP9* vp9_settings) const;
     virtual void FillVideoCodecH264(VideoCodecH264* h264_settings) const;
    private:
-    ~EncoderSpecificSettings() override {}
+    virtual ~EncoderSpecificSettings() {}
     friend class VideoEncoderConfig;
   };
 
@@ -211,7 +211,7 @@ class VideoEncoderConfig {
         const VideoEncoderConfig& encoder_config) = 0;
 
    protected:
-    ~VideoStreamFactoryInterface() override {}
+    virtual ~VideoStreamFactoryInterface() {}
   };
 
   VideoEncoderConfig& operator=(VideoEncoderConfig&&) = default;
@@ -221,7 +221,7 @@ class VideoEncoderConfig {
   VideoEncoderConfig Copy() const { return VideoEncoderConfig(*this); }
 
   VideoEncoderConfig();
-  VideoEncoderConfig(VideoEncoderConfig&&);
+  VideoEncoderConfig(VideoEncoderConfig&&) = default;
   ~VideoEncoderConfig();
   std::string ToString() const;
 
@@ -243,7 +243,7 @@ class VideoEncoderConfig {
  private:
   // Access to the copy constructor is private to force use of the Copy()
   // method for those exceptional cases where we do use it.
-  VideoEncoderConfig(const VideoEncoderConfig&);
+  VideoEncoderConfig(const VideoEncoderConfig&) = default;
 };
 
 struct VideoDecoderH264Settings {
@@ -252,8 +252,7 @@ struct VideoDecoderH264Settings {
 
 class DecoderSpecificSettings {
  public:
-  DecoderSpecificSettings();
-  virtual ~DecoderSpecificSettings();
+  virtual ~DecoderSpecificSettings() {}
   rtc::Optional<VideoDecoderH264Settings> h264_extra_settings;
 };
 

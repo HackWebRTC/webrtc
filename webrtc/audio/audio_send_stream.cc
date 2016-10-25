@@ -35,10 +35,55 @@ namespace {
 
 constexpr char kOpusCodecName[] = "opus";
 
+// TODO(minyue): Remove |LOG_RTCERR2|.
+#define LOG_RTCERR2(func, a1, a2, err)                      \
+  LOG(LS_WARNING) << "" << #func << "(" << a1 << ", " << a2 \
+                  << ") failed, err=" << err
+
+// TODO(minyue): Remove |LOG_RTCERR3|.
+#define LOG_RTCERR3(func, a1, a2, a3, err)                                \
+  LOG(LS_WARNING) << "" << #func << "(" << a1 << ", " << a2 << ", " << a3 \
+                  << ") failed, err=" << err
+
+std::string ToString(const webrtc::CodecInst& codec) {
+  std::stringstream ss;
+  ss << codec.plname << "/" << codec.plfreq << "/" << codec.channels << " ("
+     << codec.pltype << ")";
+  return ss.str();
+}
+
 bool IsCodec(const webrtc::CodecInst& codec, const char* ref_name) {
   return (_stricmp(codec.plname, ref_name) == 0);
 }
+
 }  // namespace
+
+std::string AudioSendStream::Config::Rtp::ToString() const {
+  std::stringstream ss;
+  ss << "{ssrc: " << ssrc;
+  ss << ", extensions: [";
+  for (size_t i = 0; i < extensions.size(); ++i) {
+    ss << extensions[i].ToString();
+    if (i != extensions.size() - 1) {
+      ss << ", ";
+    }
+  }
+  ss << ']';
+  ss << ", nack: " << nack.ToString();
+  ss << ", c_name: " << c_name;
+  ss << '}';
+  return ss.str();
+}
+
+std::string AudioSendStream::Config::ToString() const {
+  std::stringstream ss;
+  ss << "{rtp: " << rtp.ToString();
+  ss << ", voe_channel_id: " << voe_channel_id;
+  // TODO(solenberg): Encoder config.
+  ss << ", cng_payload_type: " << send_codec_spec.cng_payload_type;
+  ss << '}';
+  return ss.str();
+}
 
 namespace internal {
 AudioSendStream::AudioSendStream(
@@ -288,8 +333,11 @@ bool AudioSendStream::SetupSendCodec() {
 
   const auto& send_codec_spec = config_.send_codec_spec;
 
-  // We set the codec first, since the below extra configuration is only applied
-  // to the "current" codec.
+  // Set the codec immediately, since SetVADStatus() depends on whether
+  // the current codec is mono or stereo.
+  LOG(LS_INFO) << "Send channel " << channel << " selected voice codec "
+               << ToString(send_codec_spec.codec_inst)
+               << ", bitrate=" << send_codec_spec.codec_inst.rate;
 
   // If codec is already configured, we do not it again.
   // TODO(minyue): check if this check is really needed, or can we move it into
@@ -298,33 +346,47 @@ bool AudioSendStream::SetupSendCodec() {
   if (codec->GetSendCodec(channel, current_codec) != 0 ||
       (send_codec_spec.codec_inst != current_codec)) {
     if (codec->SetSendCodec(channel, send_codec_spec.codec_inst) == -1) {
-      LOG(LS_WARNING) << "SetSendCodec() failed: " << base->LastError();
+      LOG_RTCERR2(SetSendCodec, channel, ToString(send_codec_spec.codec_inst),
+                  base->LastError());
       return false;
     }
   }
 
-  // Codec internal FEC. Treat any failure as fatal internal error.
+  // FEC should be enabled after SetSendCodec.
   if (send_codec_spec.enable_codec_fec) {
-    if (codec->SetFECStatus(channel, true) != 0) {
-      LOG(LS_WARNING) << "SetFECStatus() failed: " << base->LastError();
+    LOG(LS_INFO) << "Attempt to enable codec internal FEC on channel "
+                 << channel;
+    if (codec->SetFECStatus(channel, true) == -1) {
+      // Enable codec internal FEC. Treat any failure as fatal internal error.
+      LOG_RTCERR2(SetFECStatus, channel, true, base->LastError());
       return false;
     }
   }
 
-  // DTX and maxplaybackrate are only set if current codec is Opus.
   if (IsCodec(send_codec_spec.codec_inst, kOpusCodecName)) {
-    if (codec->SetOpusDtx(channel, send_codec_spec.enable_opus_dtx) != 0) {
-      LOG(LS_WARNING) << "SetOpusDtx() failed: " << base->LastError();
+    // DTX and maxplaybackrate should be set after SetSendCodec. Because current
+    // send codec has to be Opus.
+
+    // Set Opus internal DTX.
+    LOG(LS_INFO) << "Attempt to "
+                 << (send_codec_spec.enable_opus_dtx ? "enable" : "disable")
+                 << " Opus DTX on channel " << channel;
+    if (codec->SetOpusDtx(channel, send_codec_spec.enable_opus_dtx)) {
+      LOG_RTCERR2(SetOpusDtx, channel, send_codec_spec.enable_opus_dtx,
+                  base->LastError());
       return false;
     }
 
     // If opus_max_playback_rate <= 0, the default maximum playback rate
     // (48 kHz) will be used.
     if (send_codec_spec.opus_max_playback_rate > 0) {
+      LOG(LS_INFO) << "Attempt to set maximum playback rate to "
+                   << send_codec_spec.opus_max_playback_rate
+                   << " Hz on channel " << channel;
       if (codec->SetOpusMaxPlaybackRate(
-              channel, send_codec_spec.opus_max_playback_rate) != 0) {
-        LOG(LS_WARNING) << "SetOpusMaxPlaybackRate() failed: "
-                        << base->LastError();
+              channel, send_codec_spec.opus_max_playback_rate) == -1) {
+        LOG_RTCERR2(SetOpusMaxPlaybackRate, channel,
+                    send_codec_spec.opus_max_playback_rate, base->LastError());
         return false;
       }
     }
@@ -347,9 +409,11 @@ bool AudioSendStream::SetupSendCodec() {
           return false;
       }
       if (codec->SetSendCNPayloadType(channel, send_codec_spec.cng_payload_type,
-                                      cn_freq) != 0) {
-        LOG(LS_WARNING) << "SetSendCNPayloadType() failed: "
-                        << base->LastError();
+                                      cn_freq) == -1) {
+        LOG_RTCERR3(SetSendCNPayloadType, channel,
+                    send_codec_spec.cng_payload_type, cn_freq,
+                    base->LastError());
+
         // TODO(ajm): This failure condition will be removed from VoE.
         // Restore the return here when we update to a new enough webrtc.
         //
@@ -367,8 +431,9 @@ bool AudioSendStream::SetupSendCodec() {
         send_codec_spec.codec_inst.channels == 1) {
       // TODO(minyue): If CN frequency == 48000 Hz is allowed, consider the
       // interaction between VAD and Opus FEC.
-      if (codec->SetVADStatus(channel, true) != 0) {
-        LOG(LS_WARNING) << "SetVADStatus() failed: " << base->LastError();
+      LOG(LS_INFO) << "Enabling VAD";
+      if (codec->SetVADStatus(channel, true) == -1) {
+        LOG_RTCERR2(SetVADStatus, channel, true, base->LastError());
         return false;
       }
     }
