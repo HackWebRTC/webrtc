@@ -45,7 +45,6 @@
         'base/rtpdump.h',
         'base/rtputils.cc',
         'base/rtputils.h',
-        'base/screencastid.h',
         'base/streamparams.cc',
         'base/streamparams.h',
         'base/turnutils.cc',

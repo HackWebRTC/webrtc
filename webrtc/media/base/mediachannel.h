@@ -51,7 +51,6 @@ class AudioSinkInterface;
 namespace cricket {
 
 class AudioSource;
-class ScreencastId;
 class VideoCapturer;
 struct RtpHeader;
 struct VideoFormat;

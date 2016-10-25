@@ -12,7 +12,6 @@
 #define WEBRTC_MEDIA_BASE_VIDEOCAPTURERFACTORY_H_
 
 #include "webrtc/media/base/device.h"
-#include "webrtc/media/base/screencastid.h"
 
 namespace cricket {
 
@@ -24,14 +23,6 @@ class VideoDeviceCapturerFactory {
   virtual ~VideoDeviceCapturerFactory() {}
 
   virtual VideoCapturer* Create(const Device& device) = 0;
-};
-
-class ScreenCapturerFactory {
- public:
-  ScreenCapturerFactory() {}
-  virtual ~ScreenCapturerFactory() {}
-
-  virtual VideoCapturer* Create(const ScreencastId& screenid) = 0;
 };
 
 }  // namespace cricket

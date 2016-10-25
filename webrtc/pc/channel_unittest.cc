@@ -34,7 +34,6 @@ using cricket::CA_PRANSWER;
 using cricket::CA_ANSWER;
 using cricket::CA_UPDATE;
 using cricket::FakeVoiceMediaChannel;
-using cricket::ScreencastId;
 using cricket::StreamParams;
 using cricket::TransportChannel;
 
