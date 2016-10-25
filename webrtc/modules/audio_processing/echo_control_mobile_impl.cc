@@ -53,12 +53,6 @@ AudioProcessing::Error MapError(int err) {
       return AudioProcessing::kUnspecifiedError;
   }
 }
-// Maximum length that a frame of samples can have.
-static const size_t kMaxAllowedValuesOfSamplesPerFrame = 160;
-// Maximum number of frames to buffer in the render queue.
-// TODO(peah): Decrease this once we properly handle hugely unbalanced
-// reverse and forward call numbers.
-static const size_t kMaxNumFramesToBuffer = 100;
 }  // namespace
 
 size_t EchoControlMobile::echo_path_size_bytes() {
@@ -120,8 +114,7 @@ EchoControlMobileImpl::EchoControlMobileImpl(rtc::CriticalSection* crit_render,
       crit_capture_(crit_capture),
       routing_mode_(kSpeakerphone),
       comfort_noise_enabled_(true),
-      external_echo_path_(NULL),
-      render_queue_element_max_size_(0) {
+      external_echo_path_(NULL) {
   RTC_DCHECK(crit_render);
   RTC_DCHECK(crit_capture);
 }
@@ -133,78 +126,57 @@ EchoControlMobileImpl::~EchoControlMobileImpl() {
     }
 }
 
-int EchoControlMobileImpl::ProcessRenderAudio(const AudioBuffer* audio) {
-  rtc::CritScope cs_render(crit_render_);
-  if (!enabled_) {
-    return AudioProcessing::kNoError;
-  }
-
-  RTC_DCHECK(stream_properties_);
-  RTC_DCHECK_GE(160u, audio->num_frames_per_band());
-  RTC_DCHECK_EQ(audio->num_channels(),
-                stream_properties_->num_reverse_channels);
-  RTC_DCHECK_GE(cancellers_.size(), stream_properties_->num_output_channels *
-                                        audio->num_channels());
-
-  int err = AudioProcessing::kNoError;
-  // The ordering convention must be followed to pass to the correct AECM.
-  render_queue_buffer_.clear();
-  int render_channel = 0;
-  for (auto& canceller : cancellers_) {
-    err = WebRtcAecm_GetBufferFarendError(
-        canceller->state(),
-        audio->split_bands_const(render_channel)[kBand0To8kHz],
-        audio->num_frames_per_band());
-
-    if (err != AudioProcessing::kNoError)
-      return MapError(err);  // TODO(ajm): warning possible?);
-
-    // Buffer the samples in the render queue.
-    render_queue_buffer_.insert(
-        render_queue_buffer_.end(),
-        audio->split_bands_const(render_channel)[kBand0To8kHz],
-        (audio->split_bands_const(render_channel)[kBand0To8kHz] +
-         audio->num_frames_per_band()));
-    render_channel = (render_channel + 1) % audio->num_channels();
-  }
-
-  // Insert the samples into the queue.
-  if (!render_signal_queue_->Insert(&render_queue_buffer_)) {
-    // The data queue is full and needs to be emptied.
-    ReadQueuedRenderData();
-
-    // Retry the insert (should always work).
-    bool result = render_signal_queue_->Insert(&render_queue_buffer_);
-    RTC_DCHECK(result);
-  }
-
-  return AudioProcessing::kNoError;
-}
-
-// Read chunks of data that were received and queued on the render side from
-// a queue. All the data chunks are buffered into the farend signal of the AEC.
-void EchoControlMobileImpl::ReadQueuedRenderData() {
+void EchoControlMobileImpl::ProcessRenderAudio(
+    rtc::ArrayView<const int16_t> packed_render_audio) {
   rtc::CritScope cs_capture(crit_capture_);
-  RTC_DCHECK(stream_properties_);
-
   if (!enabled_) {
     return;
   }
 
-  while (render_signal_queue_->Remove(&capture_queue_buffer_)) {
-    size_t buffer_index = 0;
-    size_t num_frames_per_band = capture_queue_buffer_.size() /
-                                 (stream_properties_->num_output_channels *
-                                  stream_properties_->num_reverse_channels);
+  RTC_DCHECK(stream_properties_);
 
-    for (auto& canceller : cancellers_) {
-      WebRtcAecm_BufferFarend(canceller->state(),
-                              &capture_queue_buffer_[buffer_index],
-                              num_frames_per_band);
+  size_t buffer_index = 0;
+  size_t num_frames_per_band =
+      packed_render_audio.size() / (stream_properties_->num_output_channels *
+                                    stream_properties_->num_reverse_channels);
 
-      buffer_index += num_frames_per_band;
+  for (auto& canceller : cancellers_) {
+    WebRtcAecm_BufferFarend(canceller->state(),
+                            &packed_render_audio[buffer_index],
+                            num_frames_per_band);
+
+    buffer_index += num_frames_per_band;
+  }
+}
+
+void EchoControlMobileImpl::PackRenderAudioBuffer(
+    const AudioBuffer* audio,
+    size_t num_output_channels,
+    size_t num_channels,
+    std::vector<int16_t>* packed_buffer) {
+  RTC_DCHECK_GE(160u, audio->num_frames_per_band());
+  RTC_DCHECK_EQ(num_channels, audio->num_channels());
+
+  // The ordering convention must be followed to pass to the correct AECM.
+  packed_buffer->clear();
+  int render_channel = 0;
+  for (size_t i = 0; i < num_output_channels; i++) {
+    for (size_t j = 0; j < audio->num_channels(); j++) {
+      // Buffer the samples in the render queue.
+      packed_buffer->insert(
+          packed_buffer->end(),
+          audio->split_bands_const(render_channel)[kBand0To8kHz],
+          (audio->split_bands_const(render_channel)[kBand0To8kHz] +
+           audio->num_frames_per_band()));
+      render_channel = (render_channel + 1) % audio->num_channels();
     }
   }
+}
+
+size_t EchoControlMobileImpl::NumCancellersRequired(
+    size_t num_output_channels,
+    size_t num_reverse_channels) {
+  return num_output_channels * num_reverse_channels;
 }
 
 int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio,
@@ -385,7 +357,10 @@ void EchoControlMobileImpl::Initialize(int sample_rate_hz,
     LOG(LS_ERROR) << "AECM only supports 16 kHz or lower sample rates";
   }
 
-  cancellers_.resize(num_handles_required());
+  cancellers_.resize(
+      NumCancellersRequired(stream_properties_->num_output_channels,
+                            stream_properties_->num_reverse_channels));
+
   for (auto& canceller : cancellers_) {
     if (!canceller) {
       canceller.reset(new Canceller());
@@ -395,35 +370,6 @@ void EchoControlMobileImpl::Initialize(int sample_rate_hz,
   }
 
   Configure();
-
-  AllocateRenderQueue();
-}
-
-void EchoControlMobileImpl::AllocateRenderQueue() {
-  const size_t new_render_queue_element_max_size = std::max<size_t>(
-      static_cast<size_t>(1),
-      kMaxAllowedValuesOfSamplesPerFrame * num_handles_required());
-
-  rtc::CritScope cs_render(crit_render_);
-  rtc::CritScope cs_capture(crit_capture_);
-
-  // Reallocate the queue if the queue item size is too small to fit the
-  // data to put in the queue.
-  if (render_queue_element_max_size_ < new_render_queue_element_max_size) {
-    render_queue_element_max_size_ = new_render_queue_element_max_size;
-
-    std::vector<int16_t> template_queue_element(render_queue_element_max_size_);
-
-    render_signal_queue_.reset(
-        new SwapQueue<std::vector<int16_t>, RenderQueueItemVerifier<int16_t>>(
-            kMaxNumFramesToBuffer, template_queue_element,
-            RenderQueueItemVerifier<int16_t>(render_queue_element_max_size_)));
-
-    render_queue_buffer_.resize(render_queue_element_max_size_);
-    capture_queue_buffer_.resize(render_queue_element_max_size_);
-  } else {
-    render_signal_queue_->Clear();
-  }
 }
 
 int EchoControlMobileImpl::Configure() {
@@ -442,9 +388,4 @@ int EchoControlMobileImpl::Configure() {
   return error;
 }
 
-size_t EchoControlMobileImpl::num_handles_required() const {
-  RTC_DCHECK(stream_properties_);
-  return stream_properties_->num_output_channels *
-         stream_properties_->num_reverse_channels;
-}
 }  // namespace webrtc

@@ -371,14 +371,22 @@ class AudioProcessingImpl : public AudioProcessing {
     std::unique_ptr<AudioBuffer> render_audio;
   } render_ GUARDED_BY(crit_render_);
 
-  size_t render_queue_element_max_size_ GUARDED_BY(crit_render_)
+  size_t float_render_queue_element_max_size_ GUARDED_BY(crit_render_)
       GUARDED_BY(crit_capture_) = 0;
-  std::vector<float> render_queue_buffer_ GUARDED_BY(crit_render_);
-  std::vector<float> capture_queue_buffer_ GUARDED_BY(crit_capture_);
+  std::vector<float> float_render_queue_buffer_ GUARDED_BY(crit_render_);
+  std::vector<float> float_capture_queue_buffer_ GUARDED_BY(crit_capture_);
+
+  size_t int16_render_queue_element_max_size_ GUARDED_BY(crit_render_)
+      GUARDED_BY(crit_capture_) = 0;
+  std::vector<int16_t> int16_render_queue_buffer_ GUARDED_BY(crit_render_);
+  std::vector<int16_t> int16_capture_queue_buffer_ GUARDED_BY(crit_capture_);
 
   // Lock protection not needed.
   std::unique_ptr<SwapQueue<std::vector<float>, RenderQueueItemVerifier<float>>>
-      render_signal_queue_;
+      float_render_signal_queue_;
+  std::unique_ptr<
+      SwapQueue<std::vector<int16_t>, RenderQueueItemVerifier<int16_t>>>
+      int16_render_signal_queue_;
 };
 
 }  // namespace webrtc

@@ -45,8 +45,12 @@ void ProcessOneFrame(int sample_rate_hz,
     capture_audio_buffer->SplitIntoFrequencyBands();
   }
 
-  echo_control_mobile->ProcessRenderAudio(render_audio_buffer);
-  echo_control_mobile->ReadQueuedRenderData();
+  std::vector<int16_t> render_audio;
+  EchoControlMobileImpl::PackRenderAudioBuffer(
+      render_audio_buffer, 1, render_audio_buffer->num_channels(),
+      &render_audio);
+  echo_control_mobile->ProcessRenderAudio(render_audio);
+
   echo_control_mobile->ProcessCaptureAudio(capture_audio_buffer,
                                            stream_delay_ms);
 

@@ -31,7 +31,7 @@ class EchoControlMobileImpl : public EchoControlMobile {
 
   ~EchoControlMobileImpl() override;
 
-  int ProcessRenderAudio(const AudioBuffer* audio);
+  void ProcessRenderAudio(rtc::ArrayView<const int16_t> packed_render_audio);
   int ProcessCaptureAudio(AudioBuffer* audio, int stream_delay_ms);
 
   // EchoControlMobile implementation.
@@ -43,8 +43,13 @@ class EchoControlMobileImpl : public EchoControlMobile {
                   size_t num_reverse_channels,
                   size_t num_output_channels);
 
-  // Reads render side data that has been queued on the render call.
-  void ReadQueuedRenderData();
+  static void PackRenderAudioBuffer(const AudioBuffer* audio,
+                                    size_t num_output_channels,
+                                    size_t num_channels,
+                                    std::vector<int16_t>* packed_buffer);
+
+  static size_t NumCancellersRequired(size_t num_output_channels,
+                                      size_t num_reverse_channels);
 
  private:
   class Canceller;
@@ -57,9 +62,6 @@ class EchoControlMobileImpl : public EchoControlMobile {
   int SetEchoPath(const void* echo_path, size_t size_bytes) override;
   int GetEchoPath(void* echo_path, size_t size_bytes) const override;
 
-  size_t num_handles_required() const;
-
-  void AllocateRenderQueue();
   int Configure();
 
   rtc::CriticalSection* const crit_render_ ACQUIRED_BEFORE(crit_capture_);
@@ -71,17 +73,6 @@ class EchoControlMobileImpl : public EchoControlMobile {
   bool comfort_noise_enabled_ GUARDED_BY(crit_capture_);
   unsigned char* external_echo_path_ GUARDED_BY(crit_render_)
       GUARDED_BY(crit_capture_);
-
-  size_t render_queue_element_max_size_ GUARDED_BY(crit_render_)
-      GUARDED_BY(crit_capture_);
-
-  std::vector<int16_t> render_queue_buffer_ GUARDED_BY(crit_render_);
-  std::vector<int16_t> capture_queue_buffer_ GUARDED_BY(crit_capture_);
-
-  // Lock protection not needed.
-  std::unique_ptr<
-      SwapQueue<std::vector<int16_t>, RenderQueueItemVerifier<int16_t>>>
-      render_signal_queue_;
 
   std::vector<std::unique_ptr<Canceller>> cancellers_;
   std::unique_ptr<StreamProperties> stream_properties_;
