@@ -1274,7 +1274,7 @@ TEST_F(VideoSendStreamTest, ChangingNetworkRoute) {
       // that we correctly ignore any packet loss reported prior to that id.
       ++new_route.local_network_id;
       call_->OnNetworkRouteChanged("transport", new_route);
-      EXPECT_GT(call_->GetStats().send_bandwidth_bps, kStartBitrateBps);
+      EXPECT_EQ(kStartBitrateBps, call_->GetStats().send_bandwidth_bps);
     }
 
    private:
