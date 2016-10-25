@@ -48,6 +48,29 @@ std::string VectorOfStringsToString(const std::vector<T>& strings) {
 
 }  // namespace
 
+bool RTCStats::operator==(const RTCStats& other) const {
+  if (type() != other.type() || id() != other.id() ||
+      timestamp_us() != other.timestamp_us()) {
+    return false;
+  }
+  std::vector<const RTCStatsMemberInterface*> members = Members();
+  std::vector<const RTCStatsMemberInterface*> other_members = other.Members();
+  RTC_DCHECK_EQ(members.size(), other_members.size());
+  for (size_t i = 0; i < members.size(); ++i) {
+    const RTCStatsMemberInterface* member = members[i];
+    const RTCStatsMemberInterface* other_member = other_members[i];
+    RTC_DCHECK_EQ(member->type(), other_member->type());
+    RTC_DCHECK_EQ(member->name(), other_member->name());
+    if (*member != *other_member)
+      return false;
+  }
+  return true;
+}
+
+bool RTCStats::operator!=(const RTCStats& other) const {
+  return !(*this == other);
+}
+
 std::string RTCStats::ToString() const {
   std::ostringstream oss;
   oss << type() << " {\n  id: \"" << id_ << "\"\n  timestamp: "

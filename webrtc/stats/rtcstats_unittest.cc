@@ -113,6 +113,67 @@ TEST(RTCStatsTest, RTCStatsAndMembers) {
   EXPECT_EQ(*stats.m_sequence_int32, numbers_sequence);
 }
 
+TEST(RTCStatsTest, EqualityOperator) {
+  RTCTestStats empty_stats("testId", 123);
+  EXPECT_EQ(empty_stats, empty_stats);
+
+  RTCTestStats stats_with_all_values = empty_stats;
+  stats_with_all_values.m_bool = true;
+  stats_with_all_values.m_int32 = 123;
+  stats_with_all_values.m_uint32 = 123;
+  stats_with_all_values.m_int64 = 123;
+  stats_with_all_values.m_uint64 = 123;
+  stats_with_all_values.m_double = 123.0;
+  stats_with_all_values.m_string = "123";
+  stats_with_all_values.m_sequence_bool = std::vector<bool>();
+  stats_with_all_values.m_sequence_int32 = std::vector<int32_t>();
+  stats_with_all_values.m_sequence_uint32 = std::vector<uint32_t>();
+  stats_with_all_values.m_sequence_int64 = std::vector<int64_t>();
+  stats_with_all_values.m_sequence_uint64 = std::vector<uint64_t>();
+  stats_with_all_values.m_sequence_double = std::vector<double>();
+  stats_with_all_values.m_sequence_string = std::vector<std::string>();
+  EXPECT_NE(stats_with_all_values, empty_stats);
+  EXPECT_EQ(stats_with_all_values, stats_with_all_values);
+  EXPECT_NE(stats_with_all_values.m_int32, stats_with_all_values.m_uint32);
+
+  RTCTestStats one_member_different[] = {
+    stats_with_all_values, stats_with_all_values, stats_with_all_values,
+    stats_with_all_values, stats_with_all_values, stats_with_all_values,
+    stats_with_all_values, stats_with_all_values, stats_with_all_values,
+    stats_with_all_values, stats_with_all_values, stats_with_all_values,
+    stats_with_all_values, stats_with_all_values,
+  };
+  for (size_t i = 0; i < 14; ++i) {
+    EXPECT_EQ(stats_with_all_values, one_member_different[i]);
+  }
+  one_member_different[0].m_bool = false;
+  one_member_different[1].m_int32 = 321;
+  one_member_different[2].m_uint32 = 321;
+  one_member_different[3].m_int64 = 321;
+  one_member_different[4].m_uint64 = 321;
+  one_member_different[5].m_double = 321.0;
+  one_member_different[6].m_string = "321";
+  one_member_different[7].m_sequence_bool->push_back(false);
+  one_member_different[8].m_sequence_int32->push_back(321);
+  one_member_different[9].m_sequence_uint32->push_back(321);
+  one_member_different[10].m_sequence_int64->push_back(321);
+  one_member_different[11].m_sequence_uint64->push_back(321);
+  one_member_different[12].m_sequence_double->push_back(321.0);
+  one_member_different[13].m_sequence_string->push_back("321");
+  for (size_t i = 0; i < 14; ++i) {
+    EXPECT_NE(stats_with_all_values, one_member_different[i]);
+  }
+
+  RTCTestStats empty_stats_different_id("testId2", 123);
+  EXPECT_NE(empty_stats, empty_stats_different_id);
+  RTCTestStats empty_stats_different_timestamp("testId", 321);
+  EXPECT_NE(empty_stats, empty_stats_different_timestamp);
+
+  RTCChildStats child("childId", 42);
+  RTCGrandChildStats grandchild("grandchildId", 42);
+  EXPECT_NE(child, grandchild);
+}
+
 TEST(RTCStatsTest, RTCStatsGrandChild) {
   RTCGrandChildStats stats("grandchild", 0.0);
   stats.child_int = 1;

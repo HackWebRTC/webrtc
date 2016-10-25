@@ -62,9 +62,14 @@ class RTCStats {
   int64_t timestamp_us() const { return timestamp_us_; }
   // Returns the static member variable |kType| of the implementing class.
   virtual const char* type() const = 0;
-  // Returns a vector of pointers to all the RTCStatsMemberInterface members of
-  // this class. This allows for iteration of members.
+  // Returns a vector of pointers to all the |RTCStatsMemberInterface| members
+  // of this class. This allows for iteration of members. For a given class,
+  // |Members| always returns the same members in the same order.
   std::vector<const RTCStatsMemberInterface*> Members() const;
+  // Checks if the two stats objects are of the same type and have the same
+  // member values. These operators are exposed for testing.
+  bool operator==(const RTCStats& other) const;
+  bool operator!=(const RTCStats& other) const;
 
   // Creates a human readable string representation of the report, listing all
   // of its members (names and values).
@@ -209,6 +214,12 @@ class RTCStatsMemberInterface {
   virtual bool is_sequence() const = 0;
   virtual bool is_string() const = 0;
   bool is_defined() const { return is_defined_; }
+  // Type and value comparator. The names are not compared. These operators are
+  // exposed for testing.
+  virtual bool operator==(const RTCStatsMemberInterface& other) const = 0;
+  bool operator!=(const RTCStatsMemberInterface& other) const {
+    return !(*this == other);
+  }
   virtual std::string ValueToString() const = 0;
 
   template<typename T>
@@ -253,6 +264,15 @@ class RTCStatsMember : public RTCStatsMemberInterface {
   Type type() const override { return kType; }
   bool is_sequence() const override;
   bool is_string() const override;
+  bool operator==(const RTCStatsMemberInterface& other) const override {
+    if (type() != other.type())
+      return false;
+    const RTCStatsMember<T>& other_t =
+        static_cast<const RTCStatsMember<T>&>(other);
+    if (!is_defined_)
+      return !other_t.is_defined();
+    return value_ == other_t.value_;
+  }
   std::string ValueToString() const override;
 
   // Assignment operators.
