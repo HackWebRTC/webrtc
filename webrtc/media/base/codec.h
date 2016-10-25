@@ -146,9 +146,6 @@ struct VideoCodec : public Codec {
   VideoCodec(const VideoCodec& c);
   virtual ~VideoCodec() = default;
 
-  // Indicates if this codec is compatible with the specified codec.
-  bool Matches(const VideoCodec& codec) const;
-
   std::string ToString() const;
 
   VideoCodec& operator=(const VideoCodec& c);
