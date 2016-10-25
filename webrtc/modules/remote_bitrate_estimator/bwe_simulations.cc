@@ -47,7 +47,7 @@ class BweSimulation : public BweTest,
 INSTANTIATE_TEST_CASE_P(VideoSendersTest,
                         BweSimulation,
                         ::testing::Values(kRembEstimator,
-                                          kFullSendSideEstimator,
+                                          kSendSideEstimator,
                                           kNadaEstimator));
 
 TEST_P(BweSimulation, SprintUplinkTest) {
@@ -332,7 +332,7 @@ TEST_P(BweSimulation, TcpFairness1000msTest) {
   RunFairnessTest(GetParam(), 1, 1, 1000, 2000, 1000, 50, 0, offset_ms);
 }
 
-// The following test cases begin with "Evaluation" as a referrence to the
+// The following test cases begin with "Evaluation" as a reference to the
 // Internet draft https://tools.ietf.org/html/draft-ietf-rmcat-eval-test-01.
 
 TEST_P(BweSimulation, Evaluation1) {
@@ -380,20 +380,20 @@ TEST_P(BweSimulation, Evaluation8) {
 TEST_P(BweSimulation, GccComparison1) {
   RunVariableCapacity1SingleFlow(GetParam());
   BweTest gcc_test(false);
-  gcc_test.RunVariableCapacity1SingleFlow(kFullSendSideEstimator);
+  gcc_test.RunVariableCapacity1SingleFlow(kSendSideEstimator);
 }
 
 TEST_P(BweSimulation, GccComparison2) {
   const size_t kNumFlows = 2;
   RunVariableCapacity2MultipleFlows(GetParam(), kNumFlows);
   BweTest gcc_test(false);
-  gcc_test.RunVariableCapacity2MultipleFlows(kFullSendSideEstimator, kNumFlows);
+  gcc_test.RunVariableCapacity2MultipleFlows(kSendSideEstimator, kNumFlows);
 }
 
 TEST_P(BweSimulation, GccComparison3) {
   RunBidirectionalFlow(GetParam());
   BweTest gcc_test(false);
-  gcc_test.RunBidirectionalFlow(kFullSendSideEstimator);
+  gcc_test.RunBidirectionalFlow(kSendSideEstimator);
 }
 
 TEST_P(BweSimulation, GccComparison4) {
@@ -405,13 +405,13 @@ TEST_P(BweSimulation, GccComparison4) {
 TEST_P(BweSimulation, GccComparison5) {
   RunRoundTripTimeFairness(GetParam());
   BweTest gcc_test(false);
-  gcc_test.RunRoundTripTimeFairness(kFullSendSideEstimator);
+  gcc_test.RunRoundTripTimeFairness(kSendSideEstimator);
 }
 
 TEST_P(BweSimulation, GccComparison6) {
   RunLongTcpFairness(GetParam());
   BweTest gcc_test(false);
-  gcc_test.RunLongTcpFairness(kFullSendSideEstimator);
+  gcc_test.RunLongTcpFairness(kSendSideEstimator);
 }
 
 TEST_P(BweSimulation, GccComparison7) {
@@ -426,14 +426,14 @@ TEST_P(BweSimulation, GccComparison7) {
                               tcp_starting_times_ms);
 
   BweTest gcc_test(false);
-  gcc_test.RunMultipleShortTcpFairness(
-      kFullSendSideEstimator, tcp_file_sizes_bytes, tcp_starting_times_ms);
+  gcc_test.RunMultipleShortTcpFairness(kSendSideEstimator, tcp_file_sizes_bytes,
+                                       tcp_starting_times_ms);
 }
 
 TEST_P(BweSimulation, GccComparison8) {
   RunPauseResumeFlows(GetParam());
   BweTest gcc_test(false);
-  gcc_test.RunPauseResumeFlows(kFullSendSideEstimator);
+  gcc_test.RunPauseResumeFlows(kSendSideEstimator);
 }
 
 TEST_P(BweSimulation, GccComparisonChoke) {
@@ -442,7 +442,7 @@ TEST_P(BweSimulation, GccComparisonChoke) {
   RunChoke(GetParam(), capacities_kbps);
 
   BweTest gcc_test(false);
-  gcc_test.RunChoke(kFullSendSideEstimator, capacities_kbps);
+  gcc_test.RunChoke(kSendSideEstimator, capacities_kbps);
 }
 
 }  // namespace bwe

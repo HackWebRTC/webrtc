@@ -176,7 +176,7 @@ enum BandwidthEstimatorType {
   kNullEstimator,
   kNadaEstimator,
   kRembEstimator,
-  kFullSendSideEstimator,
+  kSendSideEstimator,
   kTcpEstimator
 };
 

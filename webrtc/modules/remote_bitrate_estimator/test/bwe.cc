@@ -90,8 +90,8 @@ BweSender* CreateBweSender(BandwidthEstimatorType estimator,
   switch (estimator) {
     case kRembEstimator:
       return new RembBweSender(kbps, observer, clock);
-    case kFullSendSideEstimator:
-      return new FullBweSender(kbps, observer, clock);
+    case kSendSideEstimator:
+      return new SendSideBweSender(kbps, observer, clock);
     case kNadaEstimator:
       return new NadaBweSender(kbps, observer, clock);
     case kTcpEstimator:
@@ -109,7 +109,7 @@ BweReceiver* CreateBweReceiver(BandwidthEstimatorType type,
   switch (type) {
     case kRembEstimator:
       return new RembReceiver(flow_id, plot);
-    case kFullSendSideEstimator:
+    case kSendSideEstimator:
       return new SendSideBweReceiver(flow_id);
     case kNadaEstimator:
       return new NadaBweReceiver(flow_id);

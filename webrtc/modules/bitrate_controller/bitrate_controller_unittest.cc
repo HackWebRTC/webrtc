@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <vector>
 
-#include "webrtc/call/mock/mock_rtc_event_log.h"
+#include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/pacing/mock/mock_paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"

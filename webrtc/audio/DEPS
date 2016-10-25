@@ -3,6 +3,7 @@ include_rules = [
   "+webrtc/voice_engine",
   "+webrtc/modules/audio_coding/codecs/mock",
   "+webrtc/call",
+  "+webrtc/logging/rtc_event_log",
   "+webrtc/modules/bitrate_controller",
   "+webrtc/modules/congestion_controller",
   "+webrtc/modules/pacing",
@@ -11,12 +12,3 @@ include_rules = [
   "+webrtc/system_wrappers",
   "+webrtc/voice_engine",
 ]
-
-specific_include_rules = {
-  "audio_receive_stream_unittest\.cc": [
-    "+webrtc/call/mock",
-  ],
-  "audio_send_stream_unittest\.cc": [
-    "+webrtc/call/mock",
-  ],
-}

@@ -13,7 +13,7 @@
 
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/rate_limiter.h"
-#include "webrtc/call/mock/mock_rtc_event_log.h"
+#include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
