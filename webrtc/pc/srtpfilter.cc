@@ -14,6 +14,8 @@
 
 #include <algorithm>
 
+#include "third_party/libsrtp/include/srtp.h"
+#include "third_party/libsrtp/include/srtp_priv.h"
 #include "webrtc/base/base64.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/byteorder.h"
@@ -24,18 +26,6 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/media/base/rtputils.h"
 #include "webrtc/pc/externalhmac.h"
-
-#ifdef HAVE_SRTP
-extern "C" {
-#ifdef SRTP_RELATIVE_PATH
-#include "srtp.h"  // NOLINT
-#include "srtp_priv.h"  // NOLINT
-#else
-#include "third_party/libsrtp/include/srtp.h"
-#include "third_party/libsrtp/include/srtp_priv.h"
-#endif  // SRTP_RELATIVE_PATH
-}
-#endif  // HAVE_SRTP
 
 namespace cricket {
 

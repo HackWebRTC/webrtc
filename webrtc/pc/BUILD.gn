@@ -16,7 +16,6 @@ group("pc") {
 
 config("rtc_pc_config") {
   defines = [
-    "SRTP_RELATIVE_PATH",
     "HAVE_SCTP",
     "HAVE_SRTP",
   ]

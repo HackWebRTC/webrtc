@@ -28,11 +28,6 @@
 
 // Forward declaration to avoid pulling in libsrtp headers here
 struct srtp_event_data_t;
-
-// Libsrtp V1/V2 compatibility hack.
-// TODO(mattdr): Remove this #define after libsrtp 2.0 is in.
-#define srtp_ctx_t_ srtp_ctx_t
-
 struct srtp_ctx_t_;
 
 namespace cricket {

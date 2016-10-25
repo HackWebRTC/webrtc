@@ -12,31 +12,12 @@
 
 #include <stdlib.h>  // For malloc/free.
 
-#ifdef HAVE_SRTP
-extern "C" {
-#ifdef SRTP_RELATIVE_PATH
-#include "crypto_kernel.h"  // NOLINT
-#include "srtp.h"  // NOLINT
-#else
-#include "third_party/libsrtp/crypto/include/crypto_kernel.h"
-#include "third_party/libsrtp/include/srtp.h"
-#endif  // SRTP_RELATIVE_PATH
-}
-#endif // HAVE_SRTP
-
 #include "webrtc/base/logging.h"
 
-#ifdef COMPILING_AGAINST_LIBSRTP1
-#define srtp_auth_type_t auth_type_t
-
-#define srtp_auth_init_func auth_init_func
-#define srtp_auth_compute_func auth_compute_func
-#define srtp_auth_update_func auth_update_func
-#define srtp_auth_start_func auth_start_func
-#define srtp_auth_test_case_t auth_test_case_t
-
-#define srtp_replace_auth_type crypto_kernel_replace_auth_type
-#endif  // COMPILING_AGAINST_LIBSRTP1
+#ifdef HAVE_SRTP
+#include "third_party/libsrtp/crypto/include/crypto_kernel.h"
+#include "third_party/libsrtp/include/srtp.h"
+#endif // HAVE_SRTP
 
 #if defined(HAVE_SRTP) && defined(ENABLE_EXTERNAL_AUTH)
 
@@ -71,21 +52,6 @@ static const char kExternalHmacDescription[] =
 
 // srtp_auth_type_t external_hmac is the hmac metaobject
 
-#ifdef COMPILING_AGAINST_LIBSRTP1
-static const srtp_auth_type_t external_hmac  = {
-  external_hmac_alloc,
-  external_hmac_dealloc,
-  (srtp_auth_init_func)    external_hmac_init,
-  (srtp_auth_compute_func) external_hmac_compute,
-  (srtp_auth_update_func)  external_hmac_update,
-  (srtp_auth_start_func)   external_hmac_start,
-  const_cast<char*>(kExternalHmacDescription),
-  0,     // Instance count.
-  const_cast<srtp_auth_test_case_t*>(&kExternalHmacTestCase0),
-  NULL,  // No debugging module.
-  EXTERNAL_HMAC_SHA1
-};
-#else
 static const srtp_auth_type_t external_hmac  = {
   external_hmac_alloc,
   external_hmac_dealloc,
@@ -97,7 +63,6 @@ static const srtp_auth_type_t external_hmac  = {
   const_cast<srtp_auth_test_case_t*>(&kExternalHmacTestCase0),
   EXTERNAL_HMAC_SHA1
 };
-#endif  // COMPILING_AGAINST_LIBSRTP1
 
 srtp_err_status_t external_hmac_alloc(srtp_auth_t** a,
                                       int key_len,

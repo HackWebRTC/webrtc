@@ -8,6 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/pc/srtpfilter.h"
+
+#include "third_party/libsrtp/include/srtp.h"
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/gunit.h"
@@ -15,14 +18,6 @@
 #include "webrtc/media/base/cryptoparams.h"
 #include "webrtc/media/base/fakertp.h"
 #include "webrtc/p2p/base/sessiondescription.h"
-#include "webrtc/pc/srtpfilter.h"
-extern "C" {
-#ifdef SRTP_RELATIVE_PATH
-#include "crypto/include/err.h"
-#else
-#include "third_party/libsrtp/crypto/include/err.h"
-#endif
-}
 
 using rtc::CS_AES_CM_128_HMAC_SHA1_80;
 using rtc::CS_AES_CM_128_HMAC_SHA1_32;

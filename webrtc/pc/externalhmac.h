@@ -30,25 +30,8 @@
 
 #include "webrtc/base/basictypes.h"
 #ifdef HAVE_SRTP
-extern "C" {
-#ifdef SRTP_RELATIVE_PATH
-#include "auth.h"  // NOLINT
-#else
 #include "third_party/libsrtp/crypto/include/auth.h"
-#endif  // SRTP_RELATIVE_PATH
-}
 #endif  // HAVE_SRTP
-
-#if defined(HAVE_SRTP) && !defined(SRTP_HMAC_SHA1)
-// Include compatibility shims to compile against libsrtp 1.x.
-// TODO(mattdr): Remove once Chromium uses libsrtp 2.
-
-// Remember that the definition of SRTP_HMAC_SHA1 is synthetic.
-#define COMPILING_AGAINST_LIBSRTP1 1
-
-#define SRTP_HMAC_SHA1 HMAC_SHA1
-#define srtp_auth_t auth_t
-#endif
 
 #if defined(HAVE_SRTP) && defined(ENABLE_EXTERNAL_AUTH)
 

@@ -147,7 +147,6 @@ config("common_config") {
       "HAVE_WEBRTC_VIDEO",
       "HAVE_WEBRTC_VOICE",
       "LOGGING_INSIDE_WEBRTC",
-      "SRTP_RELATIVE_PATH",
       "SSL_USE_OPENSSL",
       "USE_WEBRTC_DEV_BRANCH",
     ]

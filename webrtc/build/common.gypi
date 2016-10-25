@@ -294,7 +294,6 @@
           'LOGGING_INSIDE_WEBRTC',
           'NO_MAIN_THREAD_WRAPPING',
           'NO_SOUND_SYSTEM',
-          'SRTP_RELATIVE_PATH',
           'SSL_USE_OPENSSL',
           'USE_WEBRTC_DEV_BRANCH',
           'WEBRTC_CHROMIUM_BUILD',
