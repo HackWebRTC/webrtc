@@ -105,6 +105,7 @@
       ],
       'sources': [
         'call/audio_receive_stream.h',
+        'call/audio_send_stream.cc',
         'call/audio_send_stream.h',
         'call/audio_sink.h',
         'call/audio_state.h',

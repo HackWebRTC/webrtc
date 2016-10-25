@@ -67,6 +67,7 @@
           'dependencies': [
             'rtc_event_log_api',
             'rtc_event_log_proto',
+            '<(webrtc_root)/api/api.gyp:call_api',
           ],
           'defines': [
             'ENABLE_RTC_EVENT_LOG',
