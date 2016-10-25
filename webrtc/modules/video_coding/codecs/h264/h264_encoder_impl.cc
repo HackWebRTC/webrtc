@@ -16,6 +16,7 @@
 #include "third_party/openh264/src/codec/api/svc/codec_api.h"
 #include "third_party/openh264/src/codec/api/svc/codec_app_def.h"
 #include "third_party/openh264/src/codec/api/svc/codec_def.h"
+#include "third_party/openh264/src/codec/api/svc/codec_ver.h"
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -149,10 +150,10 @@ static void RtpFragmentize(EncodedImage* encoded_image,
 
 H264EncoderImpl::H264EncoderImpl()
     : openh264_encoder_(nullptr),
+      number_of_cores_(0),
       encoded_image_callback_(nullptr),
       has_reported_init_(false),
-      has_reported_error_(false) {
-}
+      has_reported_error_(false) {}
 
 H264EncoderImpl::~H264EncoderImpl() {
   Release();
@@ -438,8 +439,16 @@ SEncParamExt H264EncoderImpl::CreateEncoderParams() const {
       encoder_params.iTargetBitrate;
   encoder_params.sSpatialLayers[0].iMaxSpatialBitrate =
       encoder_params.iMaxBitrate;
+#if (OPENH264_MAJOR == 1) && (OPENH264_MINOR <= 5)
   // Slice num according to number of threads.
   encoder_params.sSpatialLayers[0].sSliceCfg.uiSliceMode = SM_AUTO_SLICE;
+#else
+  // When uiSliceMode = SM_FIXEDSLCNUM_SLICE, uiSliceNum = 0 means auto design
+  // it with cpu core number.
+  encoder_params.sSpatialLayers[0].sSliceArgument.uiSliceNum = 0;
+  encoder_params.sSpatialLayers[0].sSliceArgument.uiSliceMode =
+      SM_FIXEDSLCNUM_SLICE;
+#endif
 
   return encoder_params;
 }
