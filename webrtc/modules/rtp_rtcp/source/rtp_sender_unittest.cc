@@ -332,7 +332,6 @@ TEST_F(RtpSenderTestWithoutPacer, RegisterRtpHeaderExtensions) {
             rtp_sender_->RtpHeaderExtensionLength());
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionVideoRotation, kVideoRotationExtensionId));
-  EXPECT_TRUE(rtp_sender_->ActivateCVORtpHeaderExtension());
   EXPECT_EQ(RtpUtility::Word32Align(kRtpOneByteHeaderLength +
                                     kTransmissionTimeOffsetLength +
                                     kAbsoluteSendTimeLength +
@@ -365,9 +364,7 @@ TEST_F(RtpSenderTestWithoutPacer, RegisterRtpVideoRotationHeaderExtension) {
   EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionLength());
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionVideoRotation, kVideoRotationExtensionId));
-  EXPECT_EQ(0u, rtp_sender_->RtpHeaderExtensionLength());
 
-  EXPECT_TRUE(rtp_sender_->ActivateCVORtpHeaderExtension());
   EXPECT_EQ(
       RtpUtility::Word32Align(kRtpOneByteHeaderLength + kVideoRotationLength),
       rtp_sender_->RtpHeaderExtensionLength());
@@ -1435,8 +1432,6 @@ TEST_F(RtpSenderVideoTest, SendVideoWithCVO) {
 
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionVideoRotation, kVideoRotationExtensionId));
-  EXPECT_TRUE(rtp_sender_->ActivateCVORtpHeaderExtension());
-
   EXPECT_EQ(
       RtpUtility::Word32Align(kRtpOneByteHeaderLength + kVideoRotationLength),
       rtp_sender_->RtpHeaderExtensionLength());

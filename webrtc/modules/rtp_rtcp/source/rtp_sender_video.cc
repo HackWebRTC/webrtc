@@ -247,13 +247,8 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
   // (e.g. a P-Frame) only if the current value is different from the previous
   // value sent.
   // Here we are adding it to every packet of every frame at this point.
-  if (video_header && video_header->rotation != kVideoRotation_0) {
-    // TODO(danilchap): Remove next call together with concept
-    // of inactive extension. Now it helps to calulate total maximum size
-    // or rtp header extensions that is used in FECPacketOverhead() function.
-    rtp_sender_->ActivateCVORtpHeaderExtension();
+  if (video_header && video_header->rotation != kVideoRotation_0)
     rtp_header->SetExtension<VideoOrientation>(video_header->rotation);
-  }
 
   size_t packet_capacity = rtp_sender_->MaxPayloadLength() -
                            FecPacketOverhead() -

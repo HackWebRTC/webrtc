@@ -92,8 +92,6 @@ RTPSender::RTPSender(
       payload_type_(-1),
       payload_type_map_(),
       rtp_header_extension_map_(),
-      video_rotation_active_(false),
-      playout_delay_active_(false),
       packet_history_(clock),
       // Statistics
       rtp_stats_callback_(nullptr),
@@ -185,11 +183,7 @@ int32_t RTPSender::RegisterRtpHeaderExtension(RTPExtensionType type,
   rtc::CritScope lock(&send_critsect_);
   switch (type) {
     case kRtpExtensionVideoRotation:
-      video_rotation_active_ = false;
-      return rtp_header_extension_map_.RegisterInactive(type, id);
     case kRtpExtensionPlayoutDelay:
-      playout_delay_active_ = false;
-      return rtp_header_extension_map_.RegisterInactive(type, id);
     case kRtpExtensionTransmissionTimeOffset:
     case kRtpExtensionAbsoluteSendTime:
     case kRtpExtensionAudioLevel:
@@ -378,16 +372,6 @@ int32_t RTPSender::CheckPayloadType(int8_t payload_type,
   return 0;
 }
 
-bool RTPSender::ActivateCVORtpHeaderExtension() {
-  if (!video_rotation_active_) {
-    rtc::CritScope lock(&send_critsect_);
-    if (rtp_header_extension_map_.SetActive(kRtpExtensionVideoRotation, true)) {
-      video_rotation_active_ = true;
-    }
-  }
-  return video_rotation_active_;
-}
-
 bool RTPSender::SendOutgoingData(FrameType frame_type,
                                  int8_t payload_type,
                                  uint32_t capture_timestamp,
@@ -438,18 +422,6 @@ bool RTPSender::SendOutgoingData(FrameType frame_type,
     if (rtp_header) {
       playout_delay_oracle_.UpdateRequest(ssrc, rtp_header->playout_delay,
                                           sequence_number);
-    }
-
-    // Update the active/inactive status of playout delay extension based
-    // on what the oracle indicates.
-    {
-      rtc::CritScope lock(&send_critsect_);
-      bool send_playout_delay = playout_delay_oracle_.send_playout_delay();
-      if (playout_delay_active_ != send_playout_delay) {
-        playout_delay_active_ = send_playout_delay;
-        rtp_header_extension_map_.SetActive(kRtpExtensionPlayoutDelay,
-                                            playout_delay_active_);
-      }
     }
 
     result = video_->SendVideo(video_type, frame_type, payload_type,
@@ -1024,44 +996,6 @@ bool RTPSender::AssignSequenceNumber(RtpPacketToSend* packet) {
   last_rtp_timestamp_ = packet->Timestamp();
   last_timestamp_time_ms_ = clock_->TimeInMilliseconds();
   capture_time_ms_ = packet->capture_time_ms();
-  return true;
-}
-
-bool RTPSender::FindHeaderExtensionPosition(RTPExtensionType type,
-                                            const uint8_t* rtp_packet,
-                                            size_t rtp_packet_length,
-                                            const RTPHeader& rtp_header,
-                                            size_t* position) const {
-  // Get length until start of header extension block.
-  int extension_block_pos =
-      rtp_header_extension_map_.GetLengthUntilBlockStartInBytes(type);
-  if (extension_block_pos < 0) {
-    LOG(LS_WARNING) << "Failed to find extension position for " << type
-                    << " as it is not registered.";
-    return false;
-  }
-
-  HeaderExtension header_extension(type);
-
-  size_t extension_pos =
-      kRtpHeaderLength + rtp_header.numCSRCs * sizeof(uint32_t);
-  size_t block_pos = extension_pos + extension_block_pos;
-  if (rtp_packet_length < block_pos + header_extension.length ||
-      rtp_header.headerLength < block_pos + header_extension.length) {
-    LOG(LS_WARNING) << "Failed to find extension position for " << type
-                    << " as the length is invalid.";
-    return false;
-  }
-
-  // Verify that header contains extension.
-  if (!(rtp_packet[extension_pos] == 0xBE &&
-        rtp_packet[extension_pos + 1] == 0xDE)) {
-    LOG(LS_WARNING) << "Failed to find extension position for " << type
-                    << "as hdr extension not found.";
-    return false;
-  }
-
-  *position = block_pos;
   return true;
 }
 

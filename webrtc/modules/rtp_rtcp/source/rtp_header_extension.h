@@ -37,12 +37,7 @@ const int kPlayoutDelayMaxMs = 40950;
 
 struct HeaderExtension {
   explicit HeaderExtension(RTPExtensionType extension_type)
-      : type(extension_type), length(0), active(true) {
-    Init();
-  }
-
-  HeaderExtension(RTPExtensionType extension_type, bool active)
-      : type(extension_type), length(0), active(active) {
+      : type(extension_type), length(0) {
     Init();
   }
 
@@ -76,7 +71,6 @@ struct HeaderExtension {
 
   const RTPExtensionType type;
   uint8_t length;
-  bool active;
 };
 
 class RtpHeaderExtensionMap {
@@ -88,44 +82,26 @@ class RtpHeaderExtensionMap {
 
   void Erase();
 
-  int32_t Register(const RTPExtensionType type, const uint8_t id);
+  int32_t Register(RTPExtensionType type, uint8_t id);
 
-  // Active on an extension indicates whether it is currently being added on
-  // on the RTP packets. The active/inactive status on an extension can change
-  // dynamically depending on the need to convey new information.
-  int32_t RegisterInactive(const RTPExtensionType type, const uint8_t id);
-  bool SetActive(const RTPExtensionType type, bool active);
-
-  int32_t Deregister(const RTPExtensionType type);
+  int32_t Deregister(RTPExtensionType type);
 
   bool IsRegistered(RTPExtensionType type) const;
 
-  int32_t GetType(const uint8_t id, RTPExtensionType* type) const;
+  int32_t GetType(uint8_t id, RTPExtensionType* type) const;
   // Return kInvalidType if not found.
   RTPExtensionType GetType(uint8_t id) const;
 
   int32_t GetId(const RTPExtensionType type, uint8_t* id) const;
   // Return kInvalidId if not found.
   uint8_t GetId(RTPExtensionType type) const;
-
-  //
-  // Methods below ignore any inactive rtp header extensions.
-  //
-
   size_t GetTotalLengthInBytes() const;
-
-  int32_t GetLengthUntilBlockStartInBytes(const RTPExtensionType type) const;
 
   void GetCopy(RtpHeaderExtensionMap* map) const;
 
   int32_t Size() const;
 
-  RTPExtensionType First() const;
-
-  RTPExtensionType Next(RTPExtensionType type) const;
-
  private:
-  int32_t Register(const RTPExtensionType type, const uint8_t id, bool active);
   std::map<uint8_t, HeaderExtension*> extensionMap_;
 };
 }  // namespace webrtc

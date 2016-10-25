@@ -211,7 +211,6 @@ class RTPSender {
   RtpState GetRtpState() const;
   void SetRtxRtpState(const RtpState& rtp_state);
   RtpState GetRtxRtpState() const;
-  bool ActivateCVORtpHeaderExtension();
 
  protected:
   int32_t CheckPayloadType(int8_t payload_type, RtpVideoCodecTypes* video_type);
@@ -250,23 +249,8 @@ class RTPSender {
                           int64_t capture_time_ms,
                           uint32_t ssrc);
 
-  // Find the byte position of the RTP extension as indicated by |type| in
-  // |rtp_packet|. Return false if such extension doesn't exist.
-  bool FindHeaderExtensionPosition(RTPExtensionType type,
-                                   const uint8_t* rtp_packet,
-                                   size_t rtp_packet_length,
-                                   const RTPHeader& rtp_header,
-                                   size_t* position) const
-      EXCLUSIVE_LOCKS_REQUIRED(send_critsect_);
-
   bool UpdateTransportSequenceNumber(RtpPacketToSend* packet,
                                      int* packet_id) const;
-
-  void UpdatePlayoutDelayLimits(uint8_t* rtp_packet,
-                                size_t rtp_packet_length,
-                                const RTPHeader& rtp_header,
-                                uint16_t min_playout_delay,
-                                uint16_t max_playout_delay) const;
 
   void UpdateRtpStats(const RtpPacketToSend& packet,
                       bool is_rtx,
@@ -296,13 +280,11 @@ class RTPSender {
   std::map<int8_t, RtpUtility::Payload*> payload_type_map_;
 
   RtpHeaderExtensionMap rtp_header_extension_map_ GUARDED_BY(send_critsect_);
-  bool video_rotation_active_;
 
   // Tracks the current request for playout delay limits from application
   // and decides whether the current RTP frame should include the playout
   // delay extension on header.
   PlayoutDelayOracle playout_delay_oracle_;
-  bool playout_delay_active_ GUARDED_BY(send_critsect_);
 
   RtpPacketHistory packet_history_;
 
