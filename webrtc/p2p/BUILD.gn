@@ -83,7 +83,6 @@ rtc_static_library("rtc_p2p") {
 
   deps = [
     "../base:rtc_base",
-    "../libjingle/xmllite",
   ]
 
   if (rtc_build_expat) {
