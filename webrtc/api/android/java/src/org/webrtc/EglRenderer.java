@@ -380,23 +380,28 @@ public class EglRenderer implements VideoRenderer.Callbacks {
    * Release EGL surface. This function will block until the EGL surface is released.
    */
   public void releaseEglSurface() {
+    final CountDownLatch completionLatch = new CountDownLatch(1);
     // Ensure that the render thread is no longer touching the Surface before returning from this
     // function.
     eglSurfaceCreationRunnable.setSurface(null /* surface */);
     synchronized (handlerLock) {
       if (renderThreadHandler != null) {
         renderThreadHandler.removeCallbacks(eglSurfaceCreationRunnable);
-        ThreadUtils.invokeAtFrontUninterruptibly(renderThreadHandler, new Runnable() {
+        renderThreadHandler.postAtFrontOfQueue(new Runnable() {
           @Override
           public void run() {
             if (eglBase != null) {
               eglBase.detachCurrent();
               eglBase.releaseSurface();
             }
+            completionLatch.countDown();
           }
         });
+      } else {
+        completionLatch.countDown();
       }
     }
+    ThreadUtils.awaitUninterruptibly(completionLatch);
   }
 
   /**
