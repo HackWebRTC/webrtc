@@ -11,6 +11,7 @@
 #include "webrtc/api/rtcstatscollector.h"
 
 #include <memory>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -40,6 +41,35 @@ using testing::Return;
 using testing::ReturnRef;
 
 namespace webrtc {
+
+// These are used by gtest code, such as if |EXPECT_EQ| fails.
+void PrintTo(const RTCCertificateStats& stats, ::std::ostream* os) {
+  *os << stats.ToString();
+}
+
+void PrintTo(const RTCDataChannelStats& stats, ::std::ostream* os) {
+  *os << stats.ToString();
+}
+
+void PrintTo(const RTCIceCandidatePairStats& stats, ::std::ostream* os) {
+  *os << stats.ToString();
+}
+
+void PrintTo(const RTCLocalIceCandidateStats& stats, ::std::ostream* os) {
+  *os << stats.ToString();
+}
+
+void PrintTo(const RTCRemoteIceCandidateStats& stats, ::std::ostream* os) {
+  *os << stats.ToString();
+}
+
+void PrintTo(const RTCPeerConnectionStats& stats, ::std::ostream* os) {
+  *os << stats.ToString();
+}
+
+void PrintTo(const RTCTransportStats& stats, ::std::ostream* os) {
+  *os << stats.ToString();
+}
 
 namespace {
 
