@@ -183,7 +183,7 @@ TEST_F(CodecTest, TestVideoCodecMatches) {
   EXPECT_FALSE(c1.Matches(VideoCodec(95, "V")));
 }
 
-TEST(CodecTest, TestDataCodecMatches) {
+TEST_F(CodecTest, TestDataCodecMatches) {
   // Test a codec with a static payload type.
   DataCodec c0(95, "D");
   EXPECT_TRUE(c0.Matches(DataCodec(95, "")));
