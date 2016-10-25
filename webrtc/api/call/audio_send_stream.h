@@ -30,6 +30,8 @@ namespace webrtc {
 class AudioSendStream {
  public:
   struct Stats {
+    Stats();
+
     // TODO(solenberg): Harmonize naming and defaults with receive stream stats.
     uint32_t local_ssrc = 0;
     int64_t bytes_sent = 0;
@@ -52,13 +54,13 @@ class AudioSendStream {
 
   struct Config {
     Config() = delete;
-    explicit Config(Transport* send_transport)
-        : send_transport(send_transport) {}
-
+    explicit Config(Transport* send_transport);
     std::string ToString() const;
 
     // Send-stream specific RTP settings.
     struct Rtp {
+      Rtp();
+      ~Rtp();
       std::string ToString() const;
 
       // Sender SSRC.
@@ -91,40 +93,10 @@ class AudioSendStream {
     int max_bitrate_kbps = -1;
 
     struct SendCodecSpec {
-      SendCodecSpec() {
-        webrtc::CodecInst empty_inst = {0};
-        codec_inst = empty_inst;
-        codec_inst.pltype = -1;
-      }
-      bool operator==(const SendCodecSpec& rhs) const {
-        {
-          if (nack_enabled != rhs.nack_enabled) {
-            return false;
-          }
-          if (transport_cc_enabled != rhs.transport_cc_enabled) {
-            return false;
-          }
-          if (enable_codec_fec != rhs.enable_codec_fec) {
-            return false;
-          }
-          if (enable_opus_dtx != rhs.enable_opus_dtx) {
-            return false;
-          }
-          if (opus_max_playback_rate != rhs.opus_max_playback_rate) {
-            return false;
-          }
-          if (cng_payload_type != rhs.cng_payload_type) {
-            return false;
-          }
-          if (cng_plfreq != rhs.cng_plfreq) {
-            return false;
-          }
-          if (codec_inst != rhs.codec_inst) {
-            return false;
-          }
-          return true;
-        }
-      }
+      SendCodecSpec();
+      std::string ToString() const;
+
+      bool operator==(const SendCodecSpec& rhs) const;
       bool operator!=(const SendCodecSpec& rhs) const {
         return !(*this == rhs);
       }
