@@ -247,7 +247,7 @@ int VP8EncoderImpl::SetRates(uint32_t new_bitrate_kbit,
     // the target we still allow it to overshoot up to the max before dropping
     // frames. This hack should be improved.
     if (codec_.targetBitrate > 0 &&
-        (codec_.codecSpecific.VP8.numberOfTemporalLayers == 2 ||
+        (codec_.VP8()->numberOfTemporalLayers == 2 ||
          codec_.simulcastStream[0].numberOfTemporalLayers == 2)) {
       int tl0_bitrate = std::min(codec_.targetBitrate, target_bitrate);
       max_bitrate = std::min(codec_.maxBitrate, target_bitrate);
@@ -286,7 +286,7 @@ void VP8EncoderImpl::SetupTemporalLayers(int num_streams,
                                          int num_temporal_layers,
                                          const VideoCodec& codec) {
   TemporalLayersFactory default_factory;
-  const TemporalLayersFactory* tl_factory = codec.codecSpecific.VP8.tl_factory;
+  const TemporalLayersFactory* tl_factory = codec.VP8().tl_factory;
   if (!tl_factory)
     tl_factory = &default_factory;
   if (num_streams == 1) {
@@ -328,12 +328,10 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   if (number_of_cores < 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
-  if (inst->codecSpecific.VP8.feedbackModeOn &&
-      inst->numberOfSimulcastStreams > 1) {
+  if (inst->VP8().feedbackModeOn && inst->numberOfSimulcastStreams > 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
-  if (inst->codecSpecific.VP8.automaticResizeOn &&
-      inst->numberOfSimulcastStreams > 1) {
+  if (inst->VP8().automaticResizeOn && inst->numberOfSimulcastStreams > 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   int retVal = Release();
@@ -350,14 +348,14 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
 
   int num_temporal_layers =
       doing_simulcast ? inst->simulcastStream[0].numberOfTemporalLayers
-                      : inst->codecSpecific.VP8.numberOfTemporalLayers;
+                      : inst->VP8().numberOfTemporalLayers;
 
   // TODO(andresp): crash if num temporal layers is bananas.
   if (num_temporal_layers < 1)
     num_temporal_layers = 1;
   SetupTemporalLayers(number_of_streams, num_temporal_layers, *inst);
 
-  feedback_mode_ = inst->codecSpecific.VP8.feedbackModeOn;
+  feedback_mode_ = inst->VP8().feedbackModeOn;
 
   timestamp_ = 0;
   codec_ = *inst;
@@ -419,7 +417,7 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   configurations_[0].g_lag_in_frames = 0;  // 0- no frame lagging
 
   // Set the error resilience mode according to user settings.
-  switch (inst->codecSpecific.VP8.resilience) {
+  switch (inst->VP8().resilience) {
     case kResilienceOff:
       // TODO(marpan): We should set keep error resilience off for this mode,
       // independent of temporal layer settings, and make sure we set
@@ -437,8 +435,7 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   }
 
   // rate control settings
-  configurations_[0].rc_dropframe_thresh =
-      inst->codecSpecific.VP8.frameDroppingOn ? 30 : 0;
+  configurations_[0].rc_dropframe_thresh = inst->VP8().frameDroppingOn ? 30 : 0;
   configurations_[0].rc_end_usage = VPX_CBR;
   configurations_[0].g_pass = VPX_RC_ONE_PASS;
   // TODO(hellner): investigate why the following two lines produce
@@ -449,7 +446,7 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   //    inst->codecSpecific.VP8.automaticResizeOn ? 1 : 0;
   configurations_[0].rc_resize_allowed = 0;
   // Handle resizing outside of libvpx when doing single-stream.
-  if (inst->codecSpecific.VP8.automaticResizeOn && number_of_streams > 1) {
+  if (inst->VP8().automaticResizeOn && number_of_streams > 1) {
     configurations_[0].rc_resize_allowed = 1;
   }
   configurations_[0].rc_min_quantizer = 2;
@@ -470,15 +467,15 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
     // Disable periodic key frames if we get feedback from the decoder
     // through SLI and RPSI.
     configurations_[0].kf_mode = VPX_KF_DISABLED;
-  } else if (inst->codecSpecific.VP8.keyFrameInterval > 0) {
+  } else if (inst->VP8().keyFrameInterval > 0) {
     configurations_[0].kf_mode = VPX_KF_AUTO;
-    configurations_[0].kf_max_dist = inst->codecSpecific.VP8.keyFrameInterval;
+    configurations_[0].kf_max_dist = inst->VP8().keyFrameInterval;
   } else {
     configurations_[0].kf_mode = VPX_KF_DISABLED;
   }
 
   // Allow the user to set the complexity for the base stream.
-  switch (inst->codecSpecific.VP8.complexity) {
+  switch (inst->VP8().complexity) {
     case kComplexityHigh:
       cpu_speed_[0] = -5;
       break;
@@ -563,7 +560,7 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   // use frame drops as a signal and is only applicable when we drop frames.
   quality_scaler_enabled_ = encoders_.size() == 1 &&
                             configurations_[0].rc_dropframe_thresh > 0 &&
-                            codec_.codecSpecific.VP8.automaticResizeOn;
+                            codec_.VP8()->automaticResizeOn;
 
   return InitAndSetControlSettings();
 }
@@ -576,7 +573,7 @@ int VP8EncoderImpl::SetCpuSpeed(int width, int height) {
 #else
   // For non-ARM, increase encoding complexity (i.e., use lower speed setting)
   // if resolution is below CIF. Otherwise, keep the default/user setting
-  // (|cpu_speed_default_|) set on InitEncode via codecSpecific.VP8.complexity.
+  // (|cpu_speed_default_|) set on InitEncode via VP8().complexity.
   if (width * height < 352 * 288)
     return (cpu_speed_default_ < -4) ? -4 : cpu_speed_default_;
   else
@@ -644,13 +641,12 @@ int VP8EncoderImpl::InitAndSetControlSettings() {
 #else
   denoiser_state = kDenoiserOnAdaptive;
 #endif
-  vpx_codec_control(
-      &encoders_[0], VP8E_SET_NOISE_SENSITIVITY,
-      codec_.codecSpecific.VP8.denoisingOn ? denoiser_state : kDenoiserOff);
+  vpx_codec_control(&encoders_[0], VP8E_SET_NOISE_SENSITIVITY,
+                    codec_.VP8()->denoisingOn ? denoiser_state : kDenoiserOff);
   if (encoders_.size() > 2) {
     vpx_codec_control(
         &encoders_[1], VP8E_SET_NOISE_SENSITIVITY,
-        codec_.codecSpecific.VP8.denoisingOn ? denoiser_state : kDenoiserOff);
+        codec_.VP8()->denoisingOn ? denoiser_state : kDenoiserOff);
   }
   for (size_t i = 0; i < encoders_.size(); ++i) {
     // Allow more screen content to be detected as static.
@@ -780,7 +776,7 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
     // Adapt the size of the key frame when in screenshare with 1 temporal
     // layer.
     if (encoders_.size() == 1 && codec_.mode == kScreensharing &&
-        codec_.codecSpecific.VP8.numberOfTemporalLayers <= 1) {
+        codec_.VP8()->numberOfTemporalLayers <= 1) {
       const uint32_t forceKeyFrameIntraTh = 100;
       vpx_codec_control(&(encoders_[0]), VP8E_SET_MAX_INTRA_BITRATE_PCT,
                         forceKeyFrameIntraTh);
@@ -1073,7 +1069,7 @@ int VP8DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
     decoder_ = new vpx_codec_ctx_t;
   }
   if (inst && inst->codecType == kVideoCodecVP8) {
-    feedback_mode_ = inst->codecSpecific.VP8.feedbackModeOn;
+    feedback_mode_ = inst->VP8().feedbackModeOn;
   }
   vpx_codec_dec_cfg_t cfg;
   // Setting number of threads to a constant value (1)

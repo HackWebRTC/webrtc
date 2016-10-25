@@ -74,12 +74,10 @@ int VerifyCodec(const webrtc::VideoCodec* inst) {
   if (inst->width <= 1 || inst->height <= 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
-  if (inst->codecSpecific.VP8.feedbackModeOn &&
-      inst->numberOfSimulcastStreams > 1) {
+  if (inst->VP8().feedbackModeOn && inst->numberOfSimulcastStreams > 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
-  if (inst->codecSpecific.VP8.automaticResizeOn &&
-      inst->numberOfSimulcastStreams > 1) {
+  if (inst->VP8().automaticResizeOn && inst->numberOfSimulcastStreams > 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   return WEBRTC_VIDEO_CODEC_OK;
@@ -182,7 +180,7 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
   // Special mode when screensharing on a single stream.
   if (number_of_streams == 1 && inst->mode == kScreensharing) {
     screensharing_tl_factory_.reset(new ScreenshareTemporalLayersFactory());
-    codec_.codecSpecific.VP8.tl_factory = screensharing_tl_factory_.get();
+    codec_.VP8()->tl_factory = screensharing_tl_factory_.get();
   }
 
   std::string implementation_name;
@@ -386,7 +384,7 @@ int SimulcastEncoderAdapter::SetRates(uint32_t new_bitrate_kbit,
     // the target we still allow it to overshoot up to the max before dropping
     // frames. This hack should be improved.
     if (codec_.targetBitrate > 0 &&
-        (codec_.codecSpecific.VP8.numberOfTemporalLayers == 2 ||
+        (codec_.VP8()->numberOfTemporalLayers == 2 ||
          codec_.simulcastStream[0].numberOfTemporalLayers == 2)) {
       stream_bitrate_kbps = std::min(codec_.maxBitrate, stream_bitrate_kbps);
       // TODO(ronghuawu): Can't change max bitrate via the VideoEncoder
@@ -425,7 +423,7 @@ void SimulcastEncoderAdapter::PopulateStreamCodec(
   *stream_codec = *inst;
 
   // Stream specific settings.
-  stream_codec->codecSpecific.VP8.numberOfTemporalLayers =
+  stream_codec->VP8()->numberOfTemporalLayers =
       inst->simulcastStream[stream_index].numberOfTemporalLayers;
   stream_codec->numberOfSimulcastStreams = 0;
   stream_codec->width = inst->simulcastStream[stream_index].width;
@@ -443,10 +441,10 @@ void SimulcastEncoderAdapter::PopulateStreamCodec(
     // kComplexityHigher, which maps to cpu_used = -4.
     int pixels_per_frame = stream_codec->width * stream_codec->height;
     if (pixels_per_frame < 352 * 288) {
-      stream_codec->codecSpecific.VP8.complexity = webrtc::kComplexityHigher;
+      stream_codec->VP8()->complexity = webrtc::kComplexityHigher;
     }
     // Turn off denoising for all streams but the highest resolution.
-    stream_codec->codecSpecific.VP8.denoisingOn = false;
+    stream_codec->VP8()->denoisingOn = false;
   }
   // TODO(ronghuawu): what to do with targetBitrate.
 

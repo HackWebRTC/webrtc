@@ -160,11 +160,11 @@ VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
   }
 
   if (codec.codecType == kVideoCodecVP8) {
-    codec.codecSpecific.VP8 = VideoEncoder::GetDefaultVp8Settings();
+    *(codec.VP8()) = VideoEncoder::GetDefaultVp8Settings();
   } else if (codec.codecType == kVideoCodecVP9) {
-    codec.codecSpecific.VP9 = VideoEncoder::GetDefaultVp9Settings();
+    *(codec.VP9()) = VideoEncoder::GetDefaultVp9Settings();
   } else if (codec.codecType == kVideoCodecH264) {
-    codec.codecSpecific.H264 = VideoEncoder::GetDefaultH264Settings();
+    *(codec.H264()) = VideoEncoder::GetDefaultH264Settings();
   }
 
   codec.width = 320;

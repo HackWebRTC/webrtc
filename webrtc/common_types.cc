@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_types.h"
 
 #include <string.h>
@@ -41,5 +42,53 @@ RTPHeader::RTPHeader()
       headerLength(0),
       payload_type_frequency(0),
       extension() {}
+
+VideoCodec::VideoCodec()
+    : codecType(kVideoCodecUnknown),
+      plName(),
+      plType(0),
+      width(0),
+      height(0),
+      startBitrate(0),
+      maxBitrate(0),
+      minBitrate(0),
+      targetBitrate(0),
+      maxFramerate(0),
+      qpMax(0),
+      numberOfSimulcastStreams(0),
+      simulcastStream(),
+      spatialLayers(),
+      mode(kRealtimeVideo),
+      codecSpecific() {}
+
+VideoCodecVP8* VideoCodec::VP8() {
+  RTC_DCHECK_EQ(codecType, kVideoCodecVP8);
+  return &codecSpecific.VP8;
+}
+
+const VideoCodecVP8& VideoCodec::VP8() const {
+  RTC_DCHECK_EQ(codecType, kVideoCodecVP8);
+  return codecSpecific.VP8;
+}
+
+VideoCodecVP9* VideoCodec::VP9() {
+  RTC_DCHECK_EQ(codecType, kVideoCodecVP9);
+  return &codecSpecific.VP9;
+}
+
+const VideoCodecVP9& VideoCodec::VP9() const {
+  RTC_DCHECK_EQ(codecType, kVideoCodecVP9);
+  return codecSpecific.VP9;
+}
+
+VideoCodecH264* VideoCodec::H264() {
+  RTC_DCHECK_EQ(codecType, kVideoCodecH264);
+  return &codecSpecific.H264;
+}
+
+const VideoCodecH264& VideoCodec::H264() const {
+  RTC_DCHECK_EQ(codecType, kVideoCodecH264);
+  return codecSpecific.H264;
+}
 
 }  // namespace webrtc

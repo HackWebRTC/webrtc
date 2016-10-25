@@ -412,7 +412,7 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
     VideoCodingModule::Codec(kVideoCodecVP8, &codec);
     codec.width = width;
     codec.height = height;
-    codec.codecSpecific.VP8.numberOfTemporalLayers = temporal_layers;
+    codec.VP8()->numberOfTemporalLayers = temporal_layers;
     return codec;
   }
 
@@ -477,7 +477,7 @@ TEST_F(TestVideoSenderWithVp8, MAYBE_FixedTemporalLayersStrategy) {
 TEST_F(TestVideoSenderWithVp8, MAYBE_RealTimeTemporalLayersStrategy) {
   VideoCodec codec = MakeVp8VideoCodec(352, 288, 3);
   RealTimeTemporalLayersFactory realtime_tl_factory;
-  codec.codecSpecific.VP8.tl_factory = &realtime_tl_factory;
+  codec.VP8()->tl_factory = &realtime_tl_factory;
   codec.minBitrate = 10;
   codec.startBitrate = codec_bitrate_kbps_;
   codec.maxBitrate = codec_bitrate_kbps_;

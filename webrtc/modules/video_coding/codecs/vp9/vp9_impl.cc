@@ -242,11 +242,11 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   if (number_of_cores < 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
-  if (inst->codecSpecific.VP9.numberOfTemporalLayers > 3) {
+  if (inst->VP9().numberOfTemporalLayers > 3) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   // libvpx currently supports only one or two spatial layers.
-  if (inst->codecSpecific.VP9.numberOfSpatialLayers > 2) {
+  if (inst->VP9().numberOfSpatialLayers > 2) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
 
@@ -265,8 +265,8 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
     codec_ = *inst;
   }
 
-  num_spatial_layers_ = inst->codecSpecific.VP9.numberOfSpatialLayers;
-  num_temporal_layers_ = inst->codecSpecific.VP9.numberOfTemporalLayers;
+  num_spatial_layers_ = inst->VP9().numberOfSpatialLayers;
+  num_temporal_layers_ = inst->VP9().numberOfTemporalLayers;
   if (num_temporal_layers_ == 0)
     num_temporal_layers_ = 1;
 
@@ -298,8 +298,7 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   config_->g_lag_in_frames = 0;  // 0- no frame lagging
   config_->g_threads = 1;
   // Rate control settings.
-  config_->rc_dropframe_thresh =
-      inst->codecSpecific.VP9.frameDroppingOn ? 30 : 0;
+  config_->rc_dropframe_thresh = inst->VP9().frameDroppingOn ? 30 : 0;
   config_->rc_end_usage = VPX_CBR;
   config_->g_pass = VPX_RC_ONE_PASS;
   config_->rc_min_quantizer = 2;
@@ -311,17 +310,16 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   config_->rc_buf_sz = 1000;
   // Set the maximum target size of any key-frame.
   rc_max_intra_target_ = MaxIntraTarget(config_->rc_buf_optimal_sz);
-  if (inst->codecSpecific.VP9.keyFrameInterval > 0) {
+  if (inst->VP9().keyFrameInterval > 0) {
     config_->kf_mode = VPX_KF_AUTO;
-    config_->kf_max_dist = inst->codecSpecific.VP9.keyFrameInterval;
+    config_->kf_max_dist = inst->VP9().keyFrameInterval;
     // Needs to be set (in svc mode) to get correct periodic key frame interval
     // (will have no effect in non-svc).
     config_->kf_min_dist = config_->kf_max_dist;
   } else {
     config_->kf_mode = VPX_KF_DISABLED;
   }
-  config_->rc_resize_allowed =
-      inst->codecSpecific.VP9.automaticResizeOn ? 1 : 0;
+  config_->rc_resize_allowed = inst->VP9().automaticResizeOn ? 1 : 0;
   // Determine number of threads based on the image size and #cores.
   config_->g_threads =
       NumberOfThreads(config_->g_w, config_->g_h, number_of_cores);
@@ -330,7 +328,7 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
 
   // TODO(asapersson): Check configuration of temporal switch up and increase
   // pattern length.
-  is_flexible_mode_ = inst->codecSpecific.VP9.flexibleMode;
+  is_flexible_mode_ = inst->VP9().flexibleMode;
   if (is_flexible_mode_) {
     config_->temporal_layering_mode = VP9E_TEMPORAL_LAYERING_MODE_BYPASS;
     config_->ts_number_layers = num_temporal_layers_;
@@ -424,7 +422,7 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
   vpx_codec_control(encoder_, VP8E_SET_MAX_INTRA_BITRATE_PCT,
                     rc_max_intra_target_);
   vpx_codec_control(encoder_, VP9E_SET_AQ_MODE,
-                    inst->codecSpecific.VP9.adaptiveQpMode ? 3 : 0);
+                    inst->VP9().adaptiveQpMode ? 3 : 0);
 
   vpx_codec_control(
       encoder_, VP9E_SET_SVC,
@@ -448,9 +446,9 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
 #if !defined(WEBRTC_ARCH_ARM) && !defined(WEBRTC_ARCH_ARM64) && \
   !defined(ANDROID)
   // Note denoiser is still off by default until further testing/optimization,
-  // i.e., codecSpecific.VP9.denoisingOn == 0.
+  // i.e., VP9().denoisingOn == 0.
   vpx_codec_control(encoder_, VP9E_SET_NOISE_SENSITIVITY,
-                    inst->codecSpecific.VP9.denoisingOn ? 1 : 0);
+                    inst->VP9().denoisingOn ? 1 : 0);
 #endif
   if (codec_.mode == kScreensharing) {
     // Adjust internal parameters to screen content.
@@ -565,11 +563,11 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   // TODO(asapersson): Set correct value.
   vp9_info->inter_pic_predicted =
       (pkt.data.frame.flags & VPX_FRAME_IS_KEY) ? false : true;
-  vp9_info->flexible_mode = codec_.codecSpecific.VP9.flexibleMode;
-  vp9_info->ss_data_available = ((pkt.data.frame.flags & VPX_FRAME_IS_KEY) &&
-                                 !codec_.codecSpecific.VP9.flexibleMode)
-                                    ? true
-                                    : false;
+  vp9_info->flexible_mode = codec_.VP9()->flexibleMode;
+  vp9_info->ss_data_available =
+      ((pkt.data.frame.flags & VPX_FRAME_IS_KEY) && !codec_.VP9()->flexibleMode)
+          ? true
+          : false;
 
   vpx_svc_layer_id_t layer_id = {0};
   vpx_codec_control(encoder_, VP9E_GET_SVC_LAYER_ID, &layer_id);

@@ -103,9 +103,9 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
 
   int numLayers;
   if (sendCodec->codecType == kVideoCodecVP8) {
-    numLayers = sendCodec->codecSpecific.VP8.numberOfTemporalLayers;
+    numLayers = sendCodec->VP8().numberOfTemporalLayers;
   } else if (sendCodec->codecType == kVideoCodecVP9) {
-    numLayers = sendCodec->codecSpecific.VP9.numberOfTemporalLayers;
+    numLayers = sendCodec->VP9().numberOfTemporalLayers;
   } else {
     numLayers = 1;
   }

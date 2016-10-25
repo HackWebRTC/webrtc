@@ -153,7 +153,7 @@ class SkipEncodingUnusedStreamsTest {
                                     VideoCodec* settings,
                                     uint32_t target_bitrate) {
     SpyingTemporalLayersFactory spy_factory;
-    settings->codecSpecific.VP8.tl_factory = &spy_factory;
+    settings->VP8()->tl_factory = &spy_factory;
     EXPECT_EQ(0, encoder->InitEncode(settings, 1, 1200));
 
     encoder->SetRates(target_bitrate, 30);
@@ -288,13 +288,13 @@ class TestVp8Simulcast : public ::testing::Test {
     ConfigureStream(kDefaultWidth, kDefaultHeight, kMaxBitrates[2],
                     kMinBitrates[2], kTargetBitrates[2],
                     &settings->simulcastStream[2], temporal_layer_profile[2]);
-    settings->codecSpecific.VP8.resilience = kResilientStream;
-    settings->codecSpecific.VP8.denoisingOn = true;
-    settings->codecSpecific.VP8.errorConcealmentOn = false;
-    settings->codecSpecific.VP8.automaticResizeOn = false;
-    settings->codecSpecific.VP8.feedbackModeOn = false;
-    settings->codecSpecific.VP8.frameDroppingOn = true;
-    settings->codecSpecific.VP8.keyFrameInterval = 3000;
+    settings->VP8()->resilience = kResilientStream;
+    settings->VP8()->denoisingOn = true;
+    settings->VP8()->errorConcealmentOn = false;
+    settings->VP8()->automaticResizeOn = false;
+    settings->VP8()->feedbackModeOn = false;
+    settings->VP8()->frameDroppingOn = true;
+    settings->VP8()->keyFrameInterval = 3000;
   }
 
   static void ConfigureStream(int width,
@@ -563,7 +563,7 @@ class TestVp8Simulcast : public ::testing::Test {
   void SwitchingToOneStream(int width, int height) {
     // Disable all streams except the last and set the bitrate of the last to
     // 100 kbps. This verifies the way GTP switches to screenshare mode.
-    settings_.codecSpecific.VP8.numberOfTemporalLayers = 1;
+    settings_.VP8()->numberOfTemporalLayers = 1;
     settings_.maxBitrate = 100;
     settings_.startBitrate = 100;
     settings_.width = width;

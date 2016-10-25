@@ -215,8 +215,7 @@ int HandleCommandLineFlags(webrtc::test::TestConfig* config) {
             FLAGS_temporal_layers);
     return 13;
   }
-  config->codec_settings->codecSpecific.VP8.numberOfTemporalLayers =
-      FLAGS_temporal_layers;
+  config->codec_settings->VP8()->numberOfTemporalLayers = FLAGS_temporal_layers;
 
   // Check the bit rate.
   if (FLAGS_bitrate <= 0) {

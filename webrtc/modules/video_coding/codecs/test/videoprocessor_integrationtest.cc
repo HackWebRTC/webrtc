@@ -191,34 +191,27 @@ class VideoProcessorIntegrationTest : public testing::Test {
     // These features may be set depending on the test.
     switch (config_.codec_settings->codecType) {
       case kVideoCodecH264:
-        config_.codec_settings->codecSpecific.H264.frameDroppingOn =
-            frame_dropper_on_;
-        config_.codec_settings->codecSpecific.H264.keyFrameInterval =
+        config_.codec_settings->H264()->frameDroppingOn = frame_dropper_on_;
+        config_.codec_settings->H264()->keyFrameInterval =
             kBaseKeyFrameInterval;
         break;
       case kVideoCodecVP8:
-        config_.codec_settings->codecSpecific.VP8.errorConcealmentOn =
+        config_.codec_settings->VP8()->errorConcealmentOn =
             error_concealment_on_;
-        config_.codec_settings->codecSpecific.VP8.denoisingOn = denoising_on_;
-        config_.codec_settings->codecSpecific.VP8.numberOfTemporalLayers =
+        config_.codec_settings->VP8()->denoisingOn = denoising_on_;
+        config_.codec_settings->VP8()->numberOfTemporalLayers =
             num_temporal_layers_;
-        config_.codec_settings->codecSpecific.VP8.frameDroppingOn =
-            frame_dropper_on_;
-        config_.codec_settings->codecSpecific.VP8.automaticResizeOn =
-            spatial_resize_on_;
-        config_.codec_settings->codecSpecific.VP8.keyFrameInterval =
-            kBaseKeyFrameInterval;
+        config_.codec_settings->VP8()->frameDroppingOn = frame_dropper_on_;
+        config_.codec_settings->VP8()->automaticResizeOn = spatial_resize_on_;
+        config_.codec_settings->VP8()->keyFrameInterval = kBaseKeyFrameInterval;
         break;
       case kVideoCodecVP9:
-        config_.codec_settings->codecSpecific.VP9.denoisingOn = denoising_on_;
-        config_.codec_settings->codecSpecific.VP9.numberOfTemporalLayers =
+        config_.codec_settings->VP9()->denoisingOn = denoising_on_;
+        config_.codec_settings->VP9()->numberOfTemporalLayers =
             num_temporal_layers_;
-        config_.codec_settings->codecSpecific.VP9.frameDroppingOn =
-            frame_dropper_on_;
-        config_.codec_settings->codecSpecific.VP9.automaticResizeOn =
-            spatial_resize_on_;
-        config_.codec_settings->codecSpecific.VP9.keyFrameInterval =
-            kBaseKeyFrameInterval;
+        config_.codec_settings->VP9()->frameDroppingOn = frame_dropper_on_;
+        config_.codec_settings->VP9()->automaticResizeOn = spatial_resize_on_;
+        config_.codec_settings->VP9()->keyFrameInterval = kBaseKeyFrameInterval;
         break;
       default:
         assert(false);

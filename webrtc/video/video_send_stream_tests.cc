@@ -1992,8 +1992,8 @@ class VideoCodecConfigObserver : public test::SendTest,
 template <>
 void VideoCodecConfigObserver<VideoCodecH264>::VerifyCodecSpecifics(
     const VideoCodec& config) const {
-  EXPECT_EQ(0, memcmp(&config.codecSpecific.H264, &encoder_settings_,
-                      sizeof(encoder_settings_)));
+  EXPECT_EQ(
+      0, memcmp(&config.H264(), &encoder_settings_, sizeof(encoder_settings_)));
 }
 
 template <>
@@ -2009,7 +2009,7 @@ void VideoCodecConfigObserver<VideoCodecVP8>::VerifyCodecSpecifics(
   // Check that the number of temporal layers has propagated properly to
   // VideoCodec.
   EXPECT_EQ(kVideoCodecConfigObserverNumberOfTemporalLayers,
-            config.codecSpecific.VP8.numberOfTemporalLayers);
+            config.VP8().numberOfTemporalLayers);
 
   for (unsigned char i = 0; i < config.numberOfSimulcastStreams; ++i) {
     EXPECT_EQ(kVideoCodecConfigObserverNumberOfTemporalLayers,
@@ -2021,8 +2021,8 @@ void VideoCodecConfigObserver<VideoCodecVP8>::VerifyCodecSpecifics(
   VideoCodecVP8 encoder_settings = encoder_settings_;
   encoder_settings.numberOfTemporalLayers =
       kVideoCodecConfigObserverNumberOfTemporalLayers;
-  EXPECT_EQ(0, memcmp(&config.codecSpecific.VP8, &encoder_settings,
-                      sizeof(encoder_settings_)));
+  EXPECT_EQ(
+      0, memcmp(&config.VP8(), &encoder_settings, sizeof(encoder_settings_)));
 }
 
 template <>
@@ -2038,7 +2038,7 @@ void VideoCodecConfigObserver<VideoCodecVP9>::VerifyCodecSpecifics(
   // Check that the number of temporal layers has propagated properly to
   // VideoCodec.
   EXPECT_EQ(kVideoCodecConfigObserverNumberOfTemporalLayers,
-            config.codecSpecific.VP9.numberOfTemporalLayers);
+            config.VP9().numberOfTemporalLayers);
 
   for (unsigned char i = 0; i < config.numberOfSimulcastStreams; ++i) {
     EXPECT_EQ(kVideoCodecConfigObserverNumberOfTemporalLayers,
@@ -2050,8 +2050,8 @@ void VideoCodecConfigObserver<VideoCodecVP9>::VerifyCodecSpecifics(
   VideoCodecVP9 encoder_settings = encoder_settings_;
   encoder_settings.numberOfTemporalLayers =
       kVideoCodecConfigObserverNumberOfTemporalLayers;
-  EXPECT_EQ(0, memcmp(&config.codecSpecific.VP9, &encoder_settings,
-                      sizeof(encoder_settings_)));
+  EXPECT_EQ(
+      0, memcmp(&(config.VP9()), &encoder_settings, sizeof(encoder_settings_)));
 }
 
 template <>

@@ -129,7 +129,7 @@ void VCMCodecDataBase::Codec(VideoCodecType codec_type, VideoCodec* settings) {
       settings->height = VCM_DEFAULT_CODEC_HEIGHT;
       settings->numberOfSimulcastStreams = 0;
       settings->qpMax = 56;
-      settings->codecSpecific.VP8 = VideoEncoder::GetDefaultVp8Settings();
+      *(settings->VP8()) = VideoEncoder::GetDefaultVp8Settings();
       return;
     case kVideoCodecVP9:
       strncpy(settings->plName, "VP9", 4);
@@ -144,7 +144,7 @@ void VCMCodecDataBase::Codec(VideoCodecType codec_type, VideoCodec* settings) {
       settings->height = VCM_DEFAULT_CODEC_HEIGHT;
       settings->numberOfSimulcastStreams = 0;
       settings->qpMax = 56;
-      settings->codecSpecific.VP9 = VideoEncoder::GetDefaultVp9Settings();
+      *(settings->VP9()) = VideoEncoder::GetDefaultVp9Settings();
       return;
     case kVideoCodecH264:
       strncpy(settings->plName, "H264", 5);
@@ -159,7 +159,7 @@ void VCMCodecDataBase::Codec(VideoCodecType codec_type, VideoCodec* settings) {
       settings->height = VCM_DEFAULT_CODEC_HEIGHT;
       settings->numberOfSimulcastStreams = 0;
       settings->qpMax = 56;
-      settings->codecSpecific.H264 = VideoEncoder::GetDefaultH264Settings();
+      *(settings->H264()) = VideoEncoder::GetDefaultH264Settings();
       return;
     case kVideoCodecI420:
       strncpy(settings->plName, "I420", 5);
@@ -328,23 +328,20 @@ bool VCMCodecDataBase::RequiresEncoderReset(const VideoCodec& new_send_codec) {
 
   switch (new_send_codec.codecType) {
     case kVideoCodecVP8:
-      if (memcmp(&new_send_codec.codecSpecific.VP8,
-                 &send_codec_.codecSpecific.VP8,
-                 sizeof(new_send_codec.codecSpecific.VP8)) != 0) {
+      if (memcmp(&new_send_codec.VP8(), send_codec_.VP8(),
+                 sizeof(new_send_codec.VP8())) != 0) {
         return true;
       }
       break;
     case kVideoCodecVP9:
-      if (memcmp(&new_send_codec.codecSpecific.VP9,
-                 &send_codec_.codecSpecific.VP9,
-                 sizeof(new_send_codec.codecSpecific.VP9)) != 0) {
+      if (memcmp(&new_send_codec.VP9(), send_codec_.VP9(),
+                 sizeof(new_send_codec.VP9())) != 0) {
         return true;
       }
       break;
     case kVideoCodecH264:
-      if (memcmp(&new_send_codec.codecSpecific.H264,
-                 &send_codec_.codecSpecific.H264,
-                 sizeof(new_send_codec.codecSpecific.H264)) != 0) {
+      if (memcmp(&new_send_codec.H264(), send_codec_.H264(),
+                 sizeof(new_send_codec.H264())) != 0) {
         return true;
       }
       break;

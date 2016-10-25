@@ -289,28 +289,19 @@ class TestSimulcastEncoderAdapterFake : public ::testing::Test,
     EXPECT_EQ(ref.maxBitrate, target.maxBitrate);
     EXPECT_EQ(ref.minBitrate, target.minBitrate);
     EXPECT_EQ(ref.maxFramerate, target.maxFramerate);
-    EXPECT_EQ(ref.codecSpecific.VP8.pictureLossIndicationOn,
-              target.codecSpecific.VP8.pictureLossIndicationOn);
-    EXPECT_EQ(ref.codecSpecific.VP8.feedbackModeOn,
-              target.codecSpecific.VP8.feedbackModeOn);
-    EXPECT_EQ(ref.codecSpecific.VP8.complexity,
-              target.codecSpecific.VP8.complexity);
-    EXPECT_EQ(ref.codecSpecific.VP8.resilience,
-              target.codecSpecific.VP8.resilience);
-    EXPECT_EQ(ref.codecSpecific.VP8.numberOfTemporalLayers,
-              target.codecSpecific.VP8.numberOfTemporalLayers);
-    EXPECT_EQ(ref.codecSpecific.VP8.denoisingOn,
-              target.codecSpecific.VP8.denoisingOn);
-    EXPECT_EQ(ref.codecSpecific.VP8.errorConcealmentOn,
-              target.codecSpecific.VP8.errorConcealmentOn);
-    EXPECT_EQ(ref.codecSpecific.VP8.automaticResizeOn,
-              target.codecSpecific.VP8.automaticResizeOn);
-    EXPECT_EQ(ref.codecSpecific.VP8.frameDroppingOn,
-              target.codecSpecific.VP8.frameDroppingOn);
-    EXPECT_EQ(ref.codecSpecific.VP8.keyFrameInterval,
-              target.codecSpecific.VP8.keyFrameInterval);
-    EXPECT_EQ(ref.codecSpecific.VP8.tl_factory,
-              target.codecSpecific.VP8.tl_factory);
+    EXPECT_EQ(ref.VP8().pictureLossIndicationOn,
+              target.VP8().pictureLossIndicationOn);
+    EXPECT_EQ(ref.VP8().feedbackModeOn, target.VP8().feedbackModeOn);
+    EXPECT_EQ(ref.VP8().complexity, target.VP8().complexity);
+    EXPECT_EQ(ref.VP8().resilience, target.VP8().resilience);
+    EXPECT_EQ(ref.VP8().numberOfTemporalLayers,
+              target.VP8().numberOfTemporalLayers);
+    EXPECT_EQ(ref.VP8().denoisingOn, target.VP8().denoisingOn);
+    EXPECT_EQ(ref.VP8().errorConcealmentOn, target.VP8().errorConcealmentOn);
+    EXPECT_EQ(ref.VP8().automaticResizeOn, target.VP8().automaticResizeOn);
+    EXPECT_EQ(ref.VP8().frameDroppingOn, target.VP8().frameDroppingOn);
+    EXPECT_EQ(ref.VP8().keyFrameInterval, target.VP8().keyFrameInterval);
+    EXPECT_EQ(ref.VP8().tl_factory, target.VP8().tl_factory);
     EXPECT_EQ(ref.qpMax, target.qpMax);
     EXPECT_EQ(0, target.numberOfSimulcastStreams);
     EXPECT_EQ(ref.mode, target.mode);
@@ -321,7 +312,7 @@ class TestSimulcastEncoderAdapterFake : public ::testing::Test,
 
   void InitRefCodec(int stream_index, VideoCodec* ref_codec) {
     *ref_codec = codec_;
-    ref_codec->codecSpecific.VP8.numberOfTemporalLayers =
+    ref_codec->VP8()->numberOfTemporalLayers =
         kTestTemporalLayerProfile[stream_index];
     ref_codec->width = codec_.simulcastStream[stream_index].width;
     ref_codec->height = codec_.simulcastStream[stream_index].height;
@@ -337,14 +328,14 @@ class TestSimulcastEncoderAdapterFake : public ::testing::Test,
     // stream 0, the lowest resolution stream.
     InitRefCodec(0, &ref_codec);
     ref_codec.qpMax = 45;
-    ref_codec.codecSpecific.VP8.complexity = webrtc::kComplexityHigher;
-    ref_codec.codecSpecific.VP8.denoisingOn = false;
+    ref_codec.VP8()->complexity = webrtc::kComplexityHigher;
+    ref_codec.VP8()->denoisingOn = false;
     ref_codec.startBitrate = 100;  // Should equal to the target bitrate.
     VerifyCodec(ref_codec, 0);
 
     // stream 1
     InitRefCodec(1, &ref_codec);
-    ref_codec.codecSpecific.VP8.denoisingOn = false;
+    ref_codec.VP8()->denoisingOn = false;
     // The start bitrate (300kbit) minus what we have for the lower layers
     // (100kbit).
     ref_codec.startBitrate = 200;
