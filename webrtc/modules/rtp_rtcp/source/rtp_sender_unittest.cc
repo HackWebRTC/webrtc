@@ -242,21 +242,6 @@ class RtpSenderVideoTest : public RtpSenderTest {
         new RTPSenderVideo(&fake_clock_, rtp_sender_.get()));
   }
   std::unique_ptr<RTPSenderVideo> rtp_sender_video_;
-
-  void VerifyCVOPacket(const RtpPacketReceived& rtp_packet,
-                       bool expect_cvo,
-                       uint16_t seq_num,
-                       VideoRotation expected_rotation) {
-    EXPECT_EQ(payload_, rtp_packet.PayloadType());
-    EXPECT_EQ(seq_num, rtp_packet.SequenceNumber());
-    EXPECT_EQ(kTimestamp, rtp_packet.Timestamp());
-    EXPECT_EQ(rtp_sender_->SSRC(), rtp_packet.Ssrc());
-    EXPECT_EQ(0U, rtp_packet.Csrcs().size());
-    EXPECT_EQ(0U, rtp_packet.padding_size());
-    VideoRotation actual_rotation;
-    EXPECT_TRUE(rtp_packet.GetExtension<VideoOrientation>(&actual_rotation));
-    EXPECT_EQ(expected_rotation, actual_rotation);
-  }
 };
 
 TEST_F(RtpSenderTestWithoutPacer,
@@ -1324,27 +1309,64 @@ TEST_F(RtpSenderTestWithoutPacer, RespectsNackBitrateLimit) {
   EXPECT_EQ(kNumPackets * 2, transport_.packets_sent());
 }
 
-// Verify that all packets of a frame have CVO byte set.
-TEST_F(RtpSenderVideoTest, SendVideoWithCVO) {
+TEST_F(RtpSenderVideoTest, KeyFrameHasCVO) {
   uint8_t kFrame[kMaxPacketLength];
-  RTPVideoHeader hdr = {0};
-  hdr.rotation = kVideoRotation_90;
-
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionVideoRotation, kVideoRotationExtensionId));
-  EXPECT_EQ(
-      RtpUtility::Word32Align(kRtpOneByteHeaderLength + kVideoRotationLength),
-      rtp_sender_->RtpHeaderExtensionLength());
 
+  RTPVideoHeader hdr = {0};
+  hdr.rotation = kVideoRotation_0;
   rtp_sender_video_->SendVideo(kRtpVideoGeneric, kVideoFrameKey, kPayload,
                                kTimestamp, 0, kFrame, sizeof(kFrame), nullptr,
                                &hdr);
 
-  // Verify that this packet does have CVO byte.
-  VerifyCVOPacket(transport_.sent_packets_[0], true, kSeqNum, hdr.rotation);
+  VideoRotation rotation;
+  EXPECT_TRUE(
+      transport_.last_sent_packet().GetExtension<VideoOrientation>(&rotation));
+  EXPECT_EQ(kVideoRotation_0, rotation);
+}
 
-  // Verify that this packet does have CVO byte.
-  VerifyCVOPacket(transport_.sent_packets_[1], true, kSeqNum + 1, hdr.rotation);
+TEST_F(RtpSenderVideoTest, DeltaFrameHasCVOWhenChanged) {
+  uint8_t kFrame[kMaxPacketLength];
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+                   kRtpExtensionVideoRotation, kVideoRotationExtensionId));
+
+  RTPVideoHeader hdr = {0};
+  hdr.rotation = kVideoRotation_90;
+  EXPECT_TRUE(rtp_sender_video_->SendVideo(kRtpVideoGeneric, kVideoFrameKey,
+                                           kPayload, kTimestamp, 0, kFrame,
+                                           sizeof(kFrame), nullptr, &hdr));
+
+  hdr.rotation = kVideoRotation_0;
+  EXPECT_TRUE(rtp_sender_video_->SendVideo(kRtpVideoGeneric, kVideoFrameDelta,
+                                           kPayload, kTimestamp + 1, 0, kFrame,
+                                           sizeof(kFrame), nullptr, &hdr));
+
+  VideoRotation rotation;
+  EXPECT_TRUE(
+      transport_.last_sent_packet().GetExtension<VideoOrientation>(&rotation));
+  EXPECT_EQ(kVideoRotation_0, rotation);
+}
+
+TEST_F(RtpSenderVideoTest, DeltaFrameHasCVOWhenNonZero) {
+  uint8_t kFrame[kMaxPacketLength];
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+                   kRtpExtensionVideoRotation, kVideoRotationExtensionId));
+
+  RTPVideoHeader hdr = {0};
+  hdr.rotation = kVideoRotation_90;
+  EXPECT_TRUE(rtp_sender_video_->SendVideo(kRtpVideoGeneric, kVideoFrameKey,
+                                           kPayload, kTimestamp, 0, kFrame,
+                                           sizeof(kFrame), nullptr, &hdr));
+
+  EXPECT_TRUE(rtp_sender_video_->SendVideo(kRtpVideoGeneric, kVideoFrameDelta,
+                                           kPayload, kTimestamp + 1, 0, kFrame,
+                                           sizeof(kFrame), nullptr, &hdr));
+
+  VideoRotation rotation;
+  EXPECT_TRUE(
+      transport_.last_sent_packet().GetExtension<VideoOrientation>(&rotation));
+  EXPECT_EQ(kVideoRotation_90, rotation);
 }
 
 // Make sure rotation is parsed correctly when the Camera (C) and Flip (F) bits

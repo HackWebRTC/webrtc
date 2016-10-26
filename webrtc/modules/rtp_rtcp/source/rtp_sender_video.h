@@ -17,6 +17,7 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/onetimeevent.h"
 #include "webrtc/base/rate_statistics.h"
+#include "webrtc/base/sequenced_task_checker.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -89,9 +90,11 @@ class RTPSenderVideo {
 
   // Should never be held when calling out of this class.
   rtc::CriticalSection crit_;
+  rtc::SequencedTaskChecker encoder_checker_;
 
   RtpVideoCodecTypes video_type_ = kRtpVideoGeneric;
   int32_t retransmission_settings_ GUARDED_BY(crit_) = kRetransmitBaseLayer;
+  VideoRotation last_rotation_ GUARDED_BY(encoder_checker_) = kVideoRotation_0;
 
   // FEC
   bool fec_enabled_ GUARDED_BY(crit_) = false;

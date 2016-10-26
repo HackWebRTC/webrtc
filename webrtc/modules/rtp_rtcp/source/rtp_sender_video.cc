@@ -49,7 +49,9 @@ RTPSenderVideo::RTPSenderVideo(Clock* clock, RTPSender* rtp_sender)
     : rtp_sender_(rtp_sender),
       clock_(clock),
       fec_bitrate_(1000, RateStatistics::kBpsScale),
-      video_bitrate_(1000, RateStatistics::kBpsScale) {}
+      video_bitrate_(1000, RateStatistics::kBpsScale) {
+  encoder_checker_.Detach();
+}
 
 RTPSenderVideo::~RTPSenderVideo() {}
 
@@ -228,6 +230,7 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
                                size_t payload_size,
                                const RTPFragmentationHeader* fragmentation,
                                const RTPVideoHeader* video_header) {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_checker_);
   if (payload_size == 0)
     return false;
 
@@ -246,9 +249,15 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
   // packet in each group of packets which make up another type of frame
   // (e.g. a P-Frame) only if the current value is different from the previous
   // value sent.
-  // Here we are adding it to every packet of every frame at this point.
-  if (video_header && video_header->rotation != kVideoRotation_0)
-    rtp_header->SetExtension<VideoOrientation>(video_header->rotation);
+  if (video_header) {
+    // Set rotation when key frame or when changed (to follow standard).
+    // Or when different from 0 (to follow current receiver implementation).
+    VideoRotation current_rotation = video_header->rotation;
+    if (frame_type == kVideoFrameKey || current_rotation != last_rotation_ ||
+        current_rotation != kVideoRotation_0)
+      rtp_header->SetExtension<VideoOrientation>(current_rotation);
+    last_rotation_ = current_rotation;
+  }
 
   size_t packet_capacity = rtp_sender_->MaxPayloadLength() -
                            FecPacketOverhead() -
