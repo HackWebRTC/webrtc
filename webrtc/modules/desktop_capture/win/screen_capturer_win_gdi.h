@@ -33,7 +33,7 @@ namespace webrtc {
 class ScreenCapturerWinGdi : public ScreenCapturer {
  public:
   explicit ScreenCapturerWinGdi(const DesktopCaptureOptions& options);
-  virtual ~ScreenCapturerWinGdi();
+  ~ScreenCapturerWinGdi() override;
 
   // Overridden from ScreenCapturer:
   void Start(Callback* callback) override;

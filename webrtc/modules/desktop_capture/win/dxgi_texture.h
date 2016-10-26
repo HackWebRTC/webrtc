@@ -29,7 +29,7 @@ class DxgiTexture {
   // entire screen -- usually a monitor on the system.
   explicit DxgiTexture(const DesktopRect& desktop_rect);
 
-  virtual ~DxgiTexture() = default;
+  virtual ~DxgiTexture();
 
   // Copies selected regions of a frame represented by frame_info and resource.
   // Returns false if anything wrong.

@@ -39,7 +39,7 @@ class MouseCursorMonitorWin : public MouseCursorMonitor {
  public:
   explicit MouseCursorMonitorWin(HWND window);
   explicit MouseCursorMonitorWin(ScreenId screen);
-  virtual ~MouseCursorMonitorWin();
+  ~MouseCursorMonitorWin() override;
 
   void Init(Callback* callback, Mode mode) override;
   void Capture() override;

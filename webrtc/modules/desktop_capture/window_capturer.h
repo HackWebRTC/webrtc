@@ -38,7 +38,7 @@ class WindowCapturer : public DesktopCapturer {
 
   static WindowCapturer* Create(const DesktopCaptureOptions& options);
 
-  virtual ~WindowCapturer() {}
+  ~WindowCapturer() override {}
 
   // Get list of windows. Returns false in case of a failure.
   virtual bool GetWindowList(WindowList* windows) = 0;

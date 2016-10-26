@@ -33,7 +33,7 @@ class ScreenCapturerWinDirectx : public ScreenCapturer {
 
   explicit ScreenCapturerWinDirectx(const DesktopCaptureOptions& options);
 
-  virtual ~ScreenCapturerWinDirectx();
+  ~ScreenCapturerWinDirectx() override;
 
   void Start(Callback* callback) override;
   void SetSharedMemoryFactory(

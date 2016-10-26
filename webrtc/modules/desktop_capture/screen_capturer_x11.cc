@@ -47,7 +47,7 @@ class ScreenCapturerLinux : public ScreenCapturer,
                             public SharedXDisplay::XEventHandler {
  public:
   ScreenCapturerLinux();
-  virtual ~ScreenCapturerLinux();
+  ~ScreenCapturerLinux() override;
 
   // TODO(ajwong): Do we really want this to be synchronous?
   bool Init(const DesktopCaptureOptions& options);

@@ -24,13 +24,15 @@ class DxgiDesktopFrame : public DesktopFrame {
                      texture.bits(),
                      nullptr) {}
 
-  virtual ~DxgiDesktopFrame() = default;
+  ~DxgiDesktopFrame() override = default;
 };
 
 }  // namespace
 
 DxgiTexture::DxgiTexture(const DesktopRect& desktop_rect)
     : desktop_rect_(desktop_rect) {}
+
+DxgiTexture::~DxgiTexture() {}
 
 const DesktopFrame& DxgiTexture::AsDesktopFrame() {
   if (!frame_) {

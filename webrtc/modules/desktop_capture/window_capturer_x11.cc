@@ -86,7 +86,7 @@ class WindowCapturerLinux : public WindowCapturer,
                             public SharedXDisplay::XEventHandler {
  public:
   WindowCapturerLinux(const DesktopCaptureOptions& options);
-  virtual ~WindowCapturerLinux();
+  ~WindowCapturerLinux() override;
 
   // WindowCapturer interface.
   bool GetWindowList(WindowList* windows) override;

@@ -12,6 +12,18 @@
 
 namespace webrtc {
 
+DesktopCaptureOptions::DesktopCaptureOptions() {}
+DesktopCaptureOptions::DesktopCaptureOptions(
+    const DesktopCaptureOptions& options) = default;
+DesktopCaptureOptions::DesktopCaptureOptions(DesktopCaptureOptions&& options) =
+    default;
+DesktopCaptureOptions::~DesktopCaptureOptions() {}
+
+DesktopCaptureOptions& DesktopCaptureOptions::operator=(
+    const DesktopCaptureOptions& options) = default;
+DesktopCaptureOptions& DesktopCaptureOptions::operator=(
+    DesktopCaptureOptions&& options) = default;
+
 // static
 DesktopCaptureOptions DesktopCaptureOptions::CreateDefault() {
   DesktopCaptureOptions result;

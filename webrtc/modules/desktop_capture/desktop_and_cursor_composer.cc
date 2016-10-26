@@ -60,7 +60,7 @@ class DesktopFrameWithCursor : public DesktopFrame {
   DesktopFrameWithCursor(std::unique_ptr<DesktopFrame> frame,
                          const MouseCursor& cursor,
                          const DesktopVector& position);
-  virtual ~DesktopFrameWithCursor();
+  ~DesktopFrameWithCursor() override;
 
  private:
   std::unique_ptr<DesktopFrame> original_frame_;

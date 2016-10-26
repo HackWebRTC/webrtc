@@ -28,6 +28,10 @@ namespace webrtc {
 class DxgiAdapterDuplicator {
  public:
   struct Context {
+    Context();
+    Context(const Context& other);
+    ~Context();
+
     // Child DxgiOutputDuplicator::Context belongs to this
     // DxgiAdapterDuplicator::Context.
     std::vector<DxgiOutputDuplicator::Context> contexts;
@@ -40,6 +44,8 @@ class DxgiAdapterDuplicator {
   // Move constructor, to make it possible to store instances of
   // DxgiAdapterDuplicator in std::vector<>.
   DxgiAdapterDuplicator(DxgiAdapterDuplicator&& other);
+
+  ~DxgiAdapterDuplicator();
 
   // Initializes the DxgiAdapterDuplicator from a D3dDevice.
   bool Initialize();

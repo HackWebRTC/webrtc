@@ -83,7 +83,7 @@ BOOL CALLBACK WindowsEnumerationHandler(HWND hwnd, LPARAM param) {
 class WindowCapturerWin : public WindowCapturer {
  public:
   WindowCapturerWin();
-  virtual ~WindowCapturerWin();
+  ~WindowCapturerWin() override;
 
   // WindowCapturer interface.
   bool GetWindowList(WindowList* windows) override;

@@ -48,7 +48,7 @@ class ScreenCapturer : public DesktopCapturer {
   };
   typedef std::vector<Screen> ScreenList;
 
-  virtual ~ScreenCapturer() {}
+  ~ScreenCapturer() override {}
 
   // Creates a platform-specific capturer.
   static ScreenCapturer* Create(const DesktopCaptureOptions& options);

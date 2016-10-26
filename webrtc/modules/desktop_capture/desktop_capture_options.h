@@ -33,6 +33,14 @@ class DesktopCaptureOptions {
   // X11 connection failed (e.g. DISPLAY isn't set).
   static DesktopCaptureOptions CreateDefault();
 
+  DesktopCaptureOptions();
+  DesktopCaptureOptions(const DesktopCaptureOptions& options);
+  DesktopCaptureOptions(DesktopCaptureOptions&& options);
+  ~DesktopCaptureOptions();
+
+  DesktopCaptureOptions& operator=(const DesktopCaptureOptions& options);
+  DesktopCaptureOptions& operator=(DesktopCaptureOptions&& options);
+
 #if defined(USE_X11)
   SharedXDisplay* x_display() const { return x_display_; }
   void set_x_display(rtc::scoped_refptr<SharedXDisplay> x_display) {

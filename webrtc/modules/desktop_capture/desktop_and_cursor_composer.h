@@ -31,7 +31,7 @@ class DesktopAndCursorComposer : public DesktopCapturer,
   // of both arguments.
   DesktopAndCursorComposer(DesktopCapturer* desktop_capturer,
                       MouseCursorMonitor* mouse_monitor);
-  virtual ~DesktopAndCursorComposer();
+  ~DesktopAndCursorComposer() override;
 
   // DesktopCapturer interface.
   void Start(DesktopCapturer::Callback* callback) override;

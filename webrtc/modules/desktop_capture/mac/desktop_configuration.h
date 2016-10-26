@@ -22,9 +22,15 @@ namespace webrtc {
 // Describes the configuration of a specific display.
 struct MacDisplayConfiguration {
   MacDisplayConfiguration();
+  MacDisplayConfiguration(const MacDisplayConfiguration& other);
+  MacDisplayConfiguration(MacDisplayConfiguration&& other);
+  ~MacDisplayConfiguration();
+
+  MacDisplayConfiguration& operator=(const MacDisplayConfiguration& other);
+  MacDisplayConfiguration& operator=(MacDisplayConfiguration&& other);
 
   // Cocoa identifier for this display.
-  CGDirectDisplayID id;
+  CGDirectDisplayID id = 0;
 
   // Bounds of this display in Density-Independent Pixels (DIPs).
   DesktopRect bounds;
@@ -33,7 +39,7 @@ struct MacDisplayConfiguration {
   DesktopRect pixel_bounds;
 
   // Scale factor from DIPs to physical pixels.
-  float dip_to_pixel_scale;
+  float dip_to_pixel_scale = 1.0f;
 };
 
 typedef std::vector<MacDisplayConfiguration> MacDisplayConfigurations;
@@ -44,7 +50,12 @@ struct MacDesktopConfiguration {
   enum Origin { BottomLeftOrigin, TopLeftOrigin };
 
   MacDesktopConfiguration();
+  MacDesktopConfiguration(const MacDesktopConfiguration& other);
+  MacDesktopConfiguration(MacDesktopConfiguration&& other);
   ~MacDesktopConfiguration();
+
+  MacDesktopConfiguration& operator=(const MacDesktopConfiguration& other);
+  MacDesktopConfiguration& operator=(MacDesktopConfiguration&& other);
 
   // Returns the desktop & display configurations in Cocoa-style "bottom-up"
   // (the origin is the bottom-left of the primary monitor, and coordinates
@@ -66,7 +77,7 @@ struct MacDesktopConfiguration {
   DesktopRect pixel_bounds;
 
   // Scale factor from DIPs to physical pixels.
-  float dip_to_pixel_scale;
+  float dip_to_pixel_scale = 1.0f;
 
   // Configurations of the displays making up the desktop area.
   MacDisplayConfigurations displays;

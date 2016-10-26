@@ -18,6 +18,8 @@
 
 namespace webrtc {
 
+DxgiDuplicatorController::Context::Context() {}
+
 DxgiDuplicatorController::Context::~Context() {
   DxgiDuplicatorController::Instance()->Unregister(this);
 }

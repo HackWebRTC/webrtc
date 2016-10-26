@@ -46,7 +46,7 @@ class WindowCapturerMac : public WindowCapturer {
  public:
   explicit WindowCapturerMac(rtc::scoped_refptr<FullScreenChromeWindowDetector>
                                  full_screen_chrome_window_detector);
-  virtual ~WindowCapturerMac();
+  ~WindowCapturerMac() override;
 
   // WindowCapturer interface.
   bool GetWindowList(WindowList* windows) override;

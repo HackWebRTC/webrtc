@@ -24,6 +24,8 @@ namespace webrtc {
 // This class represents one video card in the system.
 class D3dDevice {
  public:
+  D3dDevice(const D3dDevice& other);
+  D3dDevice(D3dDevice&& other);
   ~D3dDevice();
 
   ID3D11Device* d3d_device() const { return d3d_device_.Get(); }

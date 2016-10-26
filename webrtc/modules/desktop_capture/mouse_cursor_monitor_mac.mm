@@ -54,7 +54,7 @@ class MouseCursorMonitorMac : public MouseCursorMonitor {
   MouseCursorMonitorMac(const DesktopCaptureOptions& options,
                         CGWindowID window_id,
                         ScreenId screen_id);
-  virtual ~MouseCursorMonitorMac();
+  ~MouseCursorMonitorMac() override;
 
   void Init(Callback* callback, Mode mode) override;
   void Capture() override;

@@ -45,7 +45,7 @@ class ScreenCapturerWinMagnifier : public ScreenCapturer {
   // the magnifier capturer fails (e.g. in Windows8 Metro mode).
   explicit ScreenCapturerWinMagnifier(
       std::unique_ptr<ScreenCapturer> fallback_capturer);
-  virtual ~ScreenCapturerWinMagnifier();
+  ~ScreenCapturerWinMagnifier() override;
 
   // Overridden from ScreenCapturer:
   void Start(Callback* callback) override;

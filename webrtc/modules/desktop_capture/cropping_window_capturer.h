@@ -26,7 +26,7 @@ class CroppingWindowCapturer : public WindowCapturer,
                                public DesktopCapturer::Callback {
  public:
   static WindowCapturer* Create(const DesktopCaptureOptions& options);
-  virtual ~CroppingWindowCapturer();
+  ~CroppingWindowCapturer() override;
 
   // DesktopCapturer implementation.
   void Start(DesktopCapturer::Callback* callback) override;

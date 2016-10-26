@@ -62,7 +62,7 @@ class MouseCursorMonitorX11 : public MouseCursorMonitor,
                               public SharedXDisplay::XEventHandler {
  public:
   MouseCursorMonitorX11(const DesktopCaptureOptions& options, Window window);
-  virtual ~MouseCursorMonitorX11();
+  ~MouseCursorMonitorX11() override;
 
   void Init(Callback* callback, Mode mode) override;
   void Capture() override;

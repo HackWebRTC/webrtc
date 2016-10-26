@@ -40,6 +40,7 @@ class DxgiDuplicatorController {
   // DxgiDuplicatorController.
   class Context {
    public:
+    Context();
     // Unregister this Context instance from all Dxgi duplicators during
     // destructing.
     ~Context();

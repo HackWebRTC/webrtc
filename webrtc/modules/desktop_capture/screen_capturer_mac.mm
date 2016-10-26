@@ -279,7 +279,7 @@ class ScreenCapturerMac : public ScreenCapturer {
  public:
   explicit ScreenCapturerMac(
       rtc::scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor);
-  virtual ~ScreenCapturerMac();
+  ~ScreenCapturerMac() override;
 
   bool Init();
 
@@ -374,7 +374,7 @@ class InvertedDesktopFrame : public DesktopFrame {
     set_capture_time_ms(original_frame_->capture_time_ms());
     mutable_updated_region()->Swap(original_frame_->mutable_updated_region());
   }
-  virtual ~InvertedDesktopFrame() {}
+  ~InvertedDesktopFrame() override {}
 
  private:
   std::unique_ptr<DesktopFrame> original_frame_;

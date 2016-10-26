@@ -19,6 +19,8 @@ namespace webrtc {
 using Microsoft::WRL::ComPtr;
 
 D3dDevice::D3dDevice() = default;
+D3dDevice::D3dDevice(const D3dDevice& other) = default;
+D3dDevice::D3dDevice(D3dDevice&& other) = default;
 D3dDevice::~D3dDevice() = default;
 
 bool D3dDevice::Initialize(const ComPtr<IDXGIAdapter>& adapter) {

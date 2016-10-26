@@ -25,7 +25,7 @@ namespace webrtc {
 // Frame data is stored in a GDI bitmap.
 class DesktopFrameWin : public DesktopFrame {
  public:
-  virtual ~DesktopFrameWin();
+  ~DesktopFrameWin() override;
 
   static std::unique_ptr<DesktopFrameWin>
   Create(DesktopSize size, SharedMemoryFactory* shared_memory_factory, HDC hdc);

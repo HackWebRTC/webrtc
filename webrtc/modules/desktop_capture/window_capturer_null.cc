@@ -22,7 +22,7 @@ namespace {
 class WindowCapturerNull : public WindowCapturer {
  public:
   WindowCapturerNull();
-  virtual ~WindowCapturerNull();
+  ~WindowCapturerNull() override;
 
   // WindowCapturer interface.
   bool GetWindowList(WindowList* windows) override;

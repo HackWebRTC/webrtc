@@ -34,7 +34,7 @@ class MockScreenCapturer : public ScreenCapturer {
 class MockScreenCapturerCallback : public ScreenCapturer::Callback {
  public:
   MockScreenCapturerCallback() {}
-  virtual ~MockScreenCapturerCallback() {}
+  ~MockScreenCapturerCallback() override {}
 
   MOCK_METHOD2(OnCaptureResultPtr,
                void(DesktopCapturer::Result result,
