@@ -62,6 +62,8 @@
         'h264/pps_parser.h',
         'h264/sps_parser.cc',
         'h264/sps_parser.h',
+        'h264/h264_bitstream_parser.cc',
+        'h264/h264_bitstream_parser.h',
         'i420_buffer_pool.cc',
         'video_frame.cc',
         'incoming_video_stream.cc',
