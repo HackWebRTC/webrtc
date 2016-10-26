@@ -463,8 +463,9 @@ void ViEEncoder::ReconfigureEncoder() {
 
 void ViEEncoder::OnFrame(const VideoFrame& video_frame) {
   RTC_DCHECK_RUNS_SERIALIZED(&incoming_frame_race_checker_);
-  stats_proxy_->OnIncomingFrame(video_frame.width(), video_frame.height());
-
+  if (stats_proxy_) {
+    stats_proxy_->OnIncomingFrame(video_frame.width(), video_frame.height());
+  }
   VideoFrame incoming_frame = video_frame;
 
   // Local time in webrtc time base.
