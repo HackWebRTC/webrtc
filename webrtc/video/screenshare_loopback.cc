@@ -231,29 +231,29 @@ void Loopback() {
   call_bitrate_config.max_bitrate_bps = flags::MaxBitrateKbps() * 1000;
 
   VideoQualityTest::Params params;
-  params.common = {flags::Width(),
-                   flags::Height(),
-                   flags::Fps(),
-                   flags::MinBitrateKbps() * 1000,
-                   flags::TargetBitrateKbps() * 1000,
-                   flags::MaxBitrateKbps() * 1000,
-                   false,
-                   flags::Codec(),
-                   flags::NumTemporalLayers(),
-                   flags::SelectedTL(),
-                   flags::MinTransmitBitrateKbps() * 1000,
-                   flags::FLAGS_send_side_bwe,
-                   false,
-                   flags::EncodedFramePath(),
-                   call_bitrate_config};
+  params.call = {flags::FLAGS_send_side_bwe, call_bitrate_config};
+  params.video = {true,
+                  flags::Width(),
+                  flags::Height(),
+                  flags::Fps(),
+                  flags::MinBitrateKbps() * 1000,
+                  flags::TargetBitrateKbps() * 1000,
+                  flags::MaxBitrateKbps() * 1000,
+                  false,
+                  flags::Codec(),
+                  flags::NumTemporalLayers(),
+                  flags::SelectedTL(),
+                  flags::MinTransmitBitrateKbps() * 1000,
+                  false,
+                  flags::EncodedFramePath(),
+                  ""};
+  params.audio = {false, false};
   params.screenshare = {true, flags::SlideChangeInterval(),
       flags::ScrollDuration()};
   params.analyzer = {"screenshare", 0.0, 0.0, flags::DurationSecs(),
       flags::OutputFilename(), flags::GraphTitle()};
   params.pipe = pipe_config;
   params.logs = flags::FLAGS_logs;
-  params.audio = false;
-  params.audio_video_sync = false;
 
   std::vector<std::string> stream_descriptors;
   stream_descriptors.push_back(flags::Stream0());
