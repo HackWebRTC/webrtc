@@ -84,8 +84,8 @@ namespace webrtc_jni {
 
 namespace {
 // Maximum time limit between incoming frames before requesting a key frame.
-const size_t kFrameDiffThresholdMs = 1100;
-const int kMinKeyFrameInterval = 2;
+const size_t kFrameDiffThresholdMs = 350;
+const int kMinKeyFrameInterval = 6;
 }  // namespace
 
 // MediaCodecVideoEncoder is a webrtc::VideoEncoder implementation that uses
