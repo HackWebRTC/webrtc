@@ -101,6 +101,7 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   void StartAecDump(const std::string& filename);
   int CreateVoEChannel();
   webrtc::AudioDeviceModule* adm();
+  webrtc::AudioProcessing* apm();
 
   AudioCodecs CollectRecvCodecs() const;
 
@@ -110,6 +111,8 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   // The audio device manager.
   rtc::scoped_refptr<webrtc::AudioDeviceModule> adm_;
   rtc::scoped_refptr<webrtc::AudioDecoderFactory> decoder_factory_;
+  // Reference to the APM, owned by VoE.
+  webrtc::AudioProcessing* apm_ = nullptr;
   // The primary instance of WebRtc VoiceEngine.
   std::unique_ptr<VoEWrapper> voe_wrapper_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;

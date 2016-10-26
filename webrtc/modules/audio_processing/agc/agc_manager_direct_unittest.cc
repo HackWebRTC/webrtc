@@ -92,7 +92,7 @@ class AgcManagerDirectTest : public ::testing::Test {
   }
 
   MockAgc* agc_;
-  MockGainControl gctrl_;
+  test::MockGainControl gctrl_;
   TestVolumeCallbacks volume_;
   AgcManagerDirect manager_;
   test::TraceToStderr trace_to_stderr;

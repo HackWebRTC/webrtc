@@ -553,6 +553,9 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(
   }
   RTC_DCHECK(adm_);
 
+  apm_ = voe_wrapper_->base()->audio_processing();
+  RTC_DCHECK(apm_);
+
   // Save the default AGC configuration settings. This must happen before
   // calling ApplyOptions or the default will be overwritten.
   int error = voe_wrapper_->processing()->GetAgcConfig(default_agc_config_);
@@ -877,13 +880,8 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     }
   }
 
-  // We check audioproc for the benefit of tests, since FakeWebRtcVoiceEngine
-  // returns NULL on audio_processing().
-  webrtc::AudioProcessing* audioproc = voe_wrapper_->base()->audio_processing();
-  if (audioproc) {
-    audioproc->SetExtraOptions(config);
-    audioproc->ApplyConfig(apm_config);
-  }
+  apm()->SetExtraOptions(config);
+  apm()->ApplyConfig(apm_config);
 
   if (options.recording_sample_rate) {
     LOG(LS_INFO) << "Recording sample rate is "
@@ -916,10 +914,8 @@ void WebRtcVoiceEngine::SetDefaultDevices() {
     LOG_RTCERR1(SetRecordingDevice, in_id);
     ret = false;
   }
-  webrtc::AudioProcessing* ap = voe()->base()->audio_processing();
-  if (ap) {
-    ap->Initialize();
-  }
+
+  apm()->Initialize();
 
   if (voe_wrapper_->hw()->SetPlayoutDevice(out_id) == -1) {
     LOG_RTCERR1(SetPlayoutDevice, out_id);
@@ -1040,8 +1036,7 @@ bool WebRtcVoiceEngine::StartAecDump(rtc::PlatformFile file,
     return false;
   }
   StopAecDump();
-  if (voe_wrapper_->base()->audio_processing()->StartDebugRecording(
-          aec_dump_file_stream, max_size_bytes) !=
+  if (apm()->StartDebugRecording(aec_dump_file_stream, max_size_bytes) !=
       webrtc::AudioProcessing::kNoError) {
     LOG_RTCERR0(StartDebugRecording);
     fclose(aec_dump_file_stream);
@@ -1055,8 +1050,8 @@ void WebRtcVoiceEngine::StartAecDump(const std::string& filename) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   if (!is_dumping_aec_) {
     // Start dumping AEC when we are not dumping.
-    if (voe_wrapper_->base()->audio_processing()->StartDebugRecording(
-            filename.c_str(), -1) != webrtc::AudioProcessing::kNoError) {
+    if (apm()->StartDebugRecording(filename.c_str(), -1) !=
+        webrtc::AudioProcessing::kNoError) {
       LOG_RTCERR1(StartDebugRecording, filename.c_str());
     } else {
       is_dumping_aec_ = true;
@@ -1068,8 +1063,7 @@ void WebRtcVoiceEngine::StopAecDump() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   if (is_dumping_aec_) {
     // Stop dumping AEC when we are dumping.
-    if (voe_wrapper_->base()->audio_processing()->StopDebugRecording() !=
-        webrtc::AudioProcessing::kNoError) {
+    if (apm()->StopDebugRecording() != webrtc::AudioProcessing::kNoError) {
       LOG_RTCERR0(StopDebugRecording);
     }
     is_dumping_aec_ = false;
@@ -1085,6 +1079,12 @@ webrtc::AudioDeviceModule* WebRtcVoiceEngine::adm() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   RTC_DCHECK(adm_);
   return adm_;
+}
+
+webrtc::AudioProcessing* WebRtcVoiceEngine::apm() {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(apm_);
+  return apm_;
 }
 
 AudioCodecs WebRtcVoiceEngine::CollectRecvCodecs() const {
@@ -2378,11 +2378,8 @@ bool WebRtcVoiceMediaChannel::MuteStream(uint32_t ssrc, bool muted) {
   for (const auto& kv : send_streams_) {
     all_muted = all_muted && kv.second->muted();
   }
+  engine()->apm()->set_output_will_be_muted(all_muted);
 
-  webrtc::AudioProcessing* ap = engine()->voe()->base()->audio_processing();
-  if (ap) {
-    ap->set_output_will_be_muted(all_muted);
-  }
   return true;
 }
 

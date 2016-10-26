@@ -45,98 +45,10 @@ static const int kOpusBandwidthFb = 20000;
 #define WEBRTC_BOOL_STUB(method, args) \
   bool method args override { return true; }
 
-#define WEBRTC_BOOL_STUB_CONST(method, args) \
-  bool method args const override { return true; }
-
 #define WEBRTC_VOID_STUB(method, args) \
   void method args override {}
 
 #define WEBRTC_FUNC(method, args) int method args override
-
-#define WEBRTC_VOID_FUNC(method, args) void method args override
-
-class FakeAudioProcessing : public webrtc::AudioProcessing {
- public:
-  FakeAudioProcessing() : experimental_ns_enabled_(false) {}
-
-  WEBRTC_STUB(Initialize, ())
-  WEBRTC_STUB(Initialize, (
-      int input_sample_rate_hz,
-      int output_sample_rate_hz,
-      int reverse_sample_rate_hz,
-      webrtc::AudioProcessing::ChannelLayout input_layout,
-      webrtc::AudioProcessing::ChannelLayout output_layout,
-      webrtc::AudioProcessing::ChannelLayout reverse_layout));
-  WEBRTC_STUB(Initialize, (
-      const webrtc::ProcessingConfig& processing_config));
-
-  WEBRTC_VOID_STUB(ApplyConfig, (const AudioProcessing::Config& config));
-  WEBRTC_VOID_FUNC(SetExtraOptions, (const webrtc::Config& config)) {
-    experimental_ns_enabled_ = config.Get<webrtc::ExperimentalNs>().enabled;
-  }
-
-  WEBRTC_STUB_CONST(proc_sample_rate_hz, ());
-  WEBRTC_STUB_CONST(proc_split_sample_rate_hz, ());
-  size_t num_input_channels() const override { return 0; }
-  size_t num_proc_channels() const override { return 0; }
-  size_t num_output_channels() const override { return 0; }
-  size_t num_reverse_channels() const override { return 0; }
-  WEBRTC_VOID_STUB(set_output_will_be_muted, (bool muted));
-  WEBRTC_STUB(ProcessStream, (webrtc::AudioFrame* frame));
-  WEBRTC_STUB(ProcessStream, (
-      const float* const* src,
-      size_t samples_per_channel,
-      int input_sample_rate_hz,
-      webrtc::AudioProcessing::ChannelLayout input_layout,
-      int output_sample_rate_hz,
-      webrtc::AudioProcessing::ChannelLayout output_layout,
-      float* const* dest));
-  WEBRTC_STUB(ProcessStream,
-              (const float* const* src,
-               const webrtc::StreamConfig& input_config,
-               const webrtc::StreamConfig& output_config,
-               float* const* dest));
-  WEBRTC_STUB(ProcessReverseStream, (webrtc::AudioFrame * frame));
-  WEBRTC_STUB(AnalyzeReverseStream, (
-      const float* const* data,
-      size_t samples_per_channel,
-      int sample_rate_hz,
-      webrtc::AudioProcessing::ChannelLayout layout));
-  WEBRTC_STUB(ProcessReverseStream,
-              (const float* const* src,
-               const webrtc::StreamConfig& reverse_input_config,
-               const webrtc::StreamConfig& reverse_output_config,
-               float* const* dest));
-  WEBRTC_STUB(set_stream_delay_ms, (int delay));
-  WEBRTC_STUB_CONST(stream_delay_ms, ());
-  WEBRTC_BOOL_STUB_CONST(was_stream_delay_set, ());
-  WEBRTC_VOID_STUB(set_stream_key_pressed, (bool key_pressed));
-  WEBRTC_VOID_STUB(set_delay_offset_ms, (int offset));
-  WEBRTC_STUB_CONST(delay_offset_ms, ());
-  WEBRTC_STUB(StartDebugRecording,
-              (const char filename[kMaxFilenameSize], int64_t max_size_bytes));
-  WEBRTC_STUB(StartDebugRecording, (FILE * handle, int64_t max_size_bytes));
-  WEBRTC_STUB(StartDebugRecording, (FILE * handle));
-  WEBRTC_STUB(StartDebugRecordingForPlatformFile, (rtc::PlatformFile handle));
-  WEBRTC_STUB(StopDebugRecording, ());
-  WEBRTC_VOID_STUB(UpdateHistogramsOnCallEnd, ());
-  webrtc::EchoCancellation* echo_cancellation() const override { return NULL; }
-  webrtc::EchoControlMobile* echo_control_mobile() const override {
-    return NULL;
-  }
-  webrtc::GainControl* gain_control() const override { return NULL; }
-  webrtc::HighPassFilter* high_pass_filter() const override { return NULL; }
-  webrtc::LevelEstimator* level_estimator() const override { return NULL; }
-  webrtc::NoiseSuppression* noise_suppression() const override { return NULL; }
-  webrtc::VoiceDetection* voice_detection() const override { return NULL; }
-
-  bool experimental_ns_enabled() {
-    return experimental_ns_enabled_;
-  }
-
- private:
-  bool experimental_ns_enabled_;
-};
 
 class FakeWebRtcVoiceEngine
     : public webrtc::VoEAudioProcessing,
@@ -151,7 +63,7 @@ class FakeWebRtcVoiceEngine
     bool neteq_fast_accelerate = false;
   };
 
-  FakeWebRtcVoiceEngine() {
+  explicit FakeWebRtcVoiceEngine(webrtc::AudioProcessing* apm) : apm_(apm) {
     memset(&agc_config_, 0, sizeof(agc_config_));
   }
   ~FakeWebRtcVoiceEngine() override {
@@ -190,7 +102,7 @@ class FakeWebRtcVoiceEngine
     return 0;
   }
   webrtc::AudioProcessing* audio_processing() override {
-    return &audio_processing_;
+    return apm_;
   }
   webrtc::AudioDeviceModule* audio_device_module() override {
     return nullptr;
@@ -344,7 +256,6 @@ class FakeWebRtcVoiceEngine
     mode = ns_mode_;
     return 0;
   }
-
   WEBRTC_FUNC(SetAgcStatus, (bool enable, webrtc::AgcModes mode)) {
     agc_enabled_ = enable;
     agc_mode_ = mode;
@@ -355,7 +266,6 @@ class FakeWebRtcVoiceEngine
     mode = agc_mode_;
     return 0;
   }
-
   WEBRTC_FUNC(SetAgcConfig, (webrtc::AgcConfig config)) {
     agc_config_ = config;
     return 0;
@@ -397,11 +307,9 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(GetEchoMetrics, (int& ERL, int& ERLE, int& RERL, int& A_NLP));
   WEBRTC_STUB(GetEcDelayMetrics, (int& delay_median, int& delay_std,
       float& fraction_poor_delays));
-
   WEBRTC_STUB(StartDebugRecording, (const char* fileNameUTF8));
   WEBRTC_STUB(StartDebugRecording, (FILE* handle));
   WEBRTC_STUB(StopDebugRecording, ());
-
   WEBRTC_FUNC(SetTypingDetectionStatus, (bool enable)) {
     typing_detection_enabled_ = enable;
     return 0;
@@ -410,7 +318,6 @@ class FakeWebRtcVoiceEngine
     enabled = typing_detection_enabled_;
     return 0;
   }
-
   WEBRTC_STUB(TimeSinceLastTyping, (int& seconds));
   WEBRTC_STUB(SetTypingDetectionParameters, (int timeWindow,
                                              int costPerTyping,
@@ -459,7 +366,9 @@ class FakeWebRtcVoiceEngine
   webrtc::NsModes ns_mode_ = webrtc::kNsDefault;
   webrtc::AgcModes agc_mode_ = webrtc::kAgcDefault;
   webrtc::AgcConfig agc_config_;
-  FakeAudioProcessing audio_processing_;
+  webrtc::AudioProcessing* apm_ = nullptr;
+
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(FakeWebRtcVoiceEngine);
 };
 
 }  // namespace cricket
