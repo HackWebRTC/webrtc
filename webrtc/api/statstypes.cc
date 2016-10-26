@@ -393,6 +393,8 @@ const char* StatsReport::Value::display_name() const {
       return "state";
     case kStatsValueNameDataChannelId:
       return "datachannelid";
+    case kStatsValueNameFramesDecoded:
+      return "framesDecoded";
     case kStatsValueNameFramesEncoded:
       return "framesEncoded";
     case kStatsValueNameCodecImplementationName:

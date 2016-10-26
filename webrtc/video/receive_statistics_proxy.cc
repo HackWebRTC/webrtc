@@ -247,6 +247,7 @@ void ReceiveStatisticsProxy::OnDecodedFrame() {
   uint64_t now = clock_->TimeInMilliseconds();
 
   rtc::CritScope lock(&crit_);
+  ++stats_.frames_decoded;
   decode_fps_estimator_.Update(1, now);
   stats_.decode_frame_rate = decode_fps_estimator_.Rate(now).value_or(0);
 }

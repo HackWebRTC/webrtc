@@ -106,6 +106,7 @@ class StatsReport {
     kStatsValueNameBytesSent,
     kStatsValueNameCodecImplementationName,
     kStatsValueNameDataChannelId,
+    kStatsValueNameFramesDecoded,
     kStatsValueNameFramesEncoded,
     kStatsValueNameMediaType,
     kStatsValueNamePacketsLost,

@@ -711,6 +711,7 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
         framerate_output(0),
         framerate_render_input(0),
         framerate_render_output(0),
+        frames_decoded(0),
         decode_ms(0),
         max_decode_ms(0),
         jitter_buffer_ms(0),
@@ -736,6 +737,7 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
   int framerate_render_input;
   // Framerate that the renderer reports.
   int framerate_render_output;
+  uint32_t frames_decoded;
 
   // All stats below are gathered per-VideoReceiver, but some will be correlated
   // across MediaStreamTracks.  NOTE(hta): when sinking stats into per-SSRC

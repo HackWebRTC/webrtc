@@ -234,6 +234,7 @@ void ExtractStats(const cricket::VideoReceiverInfo& info, StatsReport* report) {
     { StatsReport::kStatsValueNamePlisSent, info.plis_sent },
     { StatsReport::kStatsValueNameRenderDelayMs, info.render_delay_ms },
     { StatsReport::kStatsValueNameTargetDelayMs, info.target_delay_ms },
+    { StatsReport::kStatsValueNameFramesDecoded, info.frames_decoded },
   };
 
   for (const auto& i : ints)
