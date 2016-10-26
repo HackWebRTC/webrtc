@@ -91,7 +91,7 @@ TEST(TaskQueueTest, PostFromQueue) {
   EXPECT_TRUE(event.Wait(1000));
 }
 
-TEST(TaskQueueTest, PostDelayed) {
+TEST(TaskQueueTest, DISABLED_PostDelayed) {
   static const char kQueueName[] = "PostDelayed";
   TaskQueue queue(kQueueName);
 
