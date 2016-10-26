@@ -90,11 +90,16 @@
     },
     'client.webrtc.fyi': {
       # Mac
-      'Mac64 Release (swarming)': 'swarming_gn_release_bot_x64',
+      'Mac64 Release (swarming)': 'mac_gn_asan_clang_release_bot_x64',
 
       # Linux
       'Linux64 GCC': 'gn_gcc_release_bot_x64',
-      'Linux64 Release (swarming)': 'swarming_gn_release_bot_x64',
+      'Linux Asan (swarming)': 'gn_asan_lsan_clang_release_bot_x64',
+      'Linux Memcheck (swarming)': 'gn_memcheck_release_bot_x64',
+      'Linux MSan (swarming)': 'gn_msan_clang_release_bot_x64',
+      'Linux Tsan v2 (swarming)': 'gn_tsan_clang_release_bot_x64',
+      'Linux UBSan (swarming)': 'gn_ubsan_clang_release_bot_x64',
+      'Linux UBSan vptr (swarming)': 'gn_ubsan_vptr_clang_release_bot_x64',
 
       # Android
       'Android32 Release (swarming)': 'swarming_android_gn_release_bot_arm',
@@ -269,9 +274,6 @@
     ],
     'swarming_gn_debug_bot_x64': [
       'swarming', 'gn', 'openh264_debug_bot', 'x64'
-    ],
-    'swarming_gn_release_bot_x64': [
-      'swarming', 'gn', 'openh264_release_bot', 'x64'
     ],
 
     # Windows
