@@ -90,6 +90,7 @@ if 'android' in target_os:
     'base',
     'third_party/accessibility_test_framework',
     'third_party/android_platform',
+    'third_party/android_support_test_runner',
     'third_party/android_tools',
     'third_party/apache_velocity',
     'third_party/appurify-python',

@@ -30,3 +30,8 @@ tsan_suppressions_file = "//webrtc/build/sanitizers/tsan_suppressions_webrtc.cc"
 
 # Android lint suppressions file
 lint_suppressions_file = "//webrtc/build/android/suppressions.xml"
+
+# For Chromium, Android 32-bit non-component, non-clang builds hit a 4GiB size
+# limit, making them requiring symbol_level=2. WebRTC doesn't hit that problem
+# so we just ignore that assert. See https://crbug.com/648948 for more info.
+ignore_elf32_limitations = true
