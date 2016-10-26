@@ -390,8 +390,8 @@ ScreenCapturerMac::ScreenCapturerMac(
 
 ScreenCapturerMac::~ScreenCapturerMac() {
   ReleaseBuffers();
-  display_stream_manager_->PrepareForSelfDestruction();
   UnregisterRefreshAndMoveHandlers();
+  display_stream_manager_->PrepareForSelfDestruction();
   dlclose(app_services_library_);
   dlclose(opengl_library_);
 }
