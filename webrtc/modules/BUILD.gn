@@ -71,6 +71,7 @@ if (rtc_include_tests) {
       "../system_wrappers",
       "../test:test_support",
       "../test:test_support_main",
+      "//testing/gmock",
       "//testing/gtest",
     ]
 
@@ -95,6 +96,11 @@ if (rtc_include_tests) {
       "video_coding/codecs/test/videoprocessor_integrationtest.cc",
       "video_coding/codecs/vp8/test/vp8_impl_unittest.cc",
     ]
+
+    if (rtc_desktop_capture_supported) {
+      deps += [ "desktop_capture:desktop_capture_test_tools" ]
+      sources += [ "desktop_capture/screen_capturer_integration_test.cc" ]
+    }
 
     data = modules_tests_resources
 
@@ -534,7 +540,7 @@ if (rtc_include_tests) {
     }
 
     if (rtc_desktop_capture_supported) {
-      deps += [ "desktop_capture" ]
+      deps += [ "desktop_capture:desktop_capture_test_tools" ]
       sources += [
         "desktop_capture/desktop_and_cursor_composer_unittest.cc",
         "desktop_capture/desktop_frame_generator.cc",
@@ -543,20 +549,13 @@ if (rtc_include_tests) {
         "desktop_capture/fake_screen_capturer.cc",
         "desktop_capture/fake_screen_capturer.h",
         "desktop_capture/mouse_cursor_monitor_unittest.cc",
-        "desktop_capture/rgba_color.cc",
-        "desktop_capture/rgba_color.h",
         "desktop_capture/rgba_color_unittest.cc",
         "desktop_capture/screen_capturer_differ_wrapper_unittest.cc",
         "desktop_capture/screen_capturer_helper_unittest.cc",
         "desktop_capture/screen_capturer_mac_unittest.cc",
         "desktop_capture/screen_capturer_mock_objects.h",
         "desktop_capture/screen_capturer_unittest.cc",
-        "desktop_capture/screen_drawer.cc",
-        "desktop_capture/screen_drawer.h",
-        "desktop_capture/screen_drawer_linux.cc",
-        "desktop_capture/screen_drawer_mac.cc",
         "desktop_capture/screen_drawer_unittest.cc",
-        "desktop_capture/screen_drawer_win.cc",
         "desktop_capture/win/cursor_unittest.cc",
         "desktop_capture/win/cursor_unittest_resources.h",
         "desktop_capture/win/cursor_unittest_resources.rc",

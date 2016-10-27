@@ -25,7 +25,7 @@ static constexpr TCHAR kMutexName[] =
 class ScreenDrawerLockWin : public ScreenDrawerLock {
  public:
   ScreenDrawerLockWin();
-  ~ScreenDrawerLockWin();
+  ~ScreenDrawerLockWin() override;
 
  private:
   HANDLE mutex_;

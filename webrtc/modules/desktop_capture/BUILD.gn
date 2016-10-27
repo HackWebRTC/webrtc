@@ -30,6 +30,26 @@ rtc_static_library("primitives") {
   ]
 }
 
+if (rtc_include_tests) {
+  source_set("desktop_capture_test_tools") {
+    testonly = true
+
+    public_deps = [
+      ":desktop_capture",
+    ]
+
+    sources = [
+      "rgba_color.cc",
+      "rgba_color.h",
+      "screen_drawer.cc",
+      "screen_drawer.h",
+      "screen_drawer_linux.cc",
+      "screen_drawer_mac.cc",
+      "screen_drawer_win.cc",
+    ]
+  }
+}
+
 rtc_static_library("desktop_capture") {
   sources = [
     "cropped_desktop_frame.cc",

@@ -30,7 +30,7 @@ static constexpr char kSemaphoreName[] =
 class ScreenDrawerLockLinux : public ScreenDrawerLock {
  public:
   ScreenDrawerLockLinux();
-  ~ScreenDrawerLockLinux();
+  ~ScreenDrawerLockLinux() override;
 
  private:
   sem_t* semaphore_;
