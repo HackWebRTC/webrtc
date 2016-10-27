@@ -40,9 +40,6 @@
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/perf_test.h"
 #include "webrtc/voice_engine/include/voe_base.h"
-#include "webrtc/voice_engine/include/voe_codec.h"
-#include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
-#include "webrtc/voice_engine/include/voe_video_sync.h"
 
 using webrtc::test::DriftingClock;
 using webrtc::test::FakeAudioDevice;
@@ -152,7 +149,6 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   metrics::Reset();
   VoiceEngine* voice_engine = VoiceEngine::Create();
   VoEBase* voe_base = VoEBase::GetInterface(voice_engine);
-  VoECodec* voe_codec = VoECodec::GetInterface(voice_engine);
   const std::string audio_filename =
       test::ResourcePath("voice_engine/audio_long16", "pcm");
   ASSERT_STRNE("", audio_filename.c_str());
@@ -226,11 +222,10 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   AudioSendStream::Config audio_send_config(&audio_send_transport);
   audio_send_config.voe_channel_id = send_channel_id;
   audio_send_config.rtp.ssrc = kAudioSendSsrc;
+  audio_send_config.send_codec_spec.codec_inst =
+      CodecInst{103, "ISAC", 16000, 480, 1, 32000};
   AudioSendStream* audio_send_stream =
       sender_call_->CreateAudioSendStream(audio_send_config);
-
-  CodecInst isac = {103, "ISAC", 16000, 480, 1, 32000};
-  EXPECT_EQ(0, voe_codec->SetSendCodec(send_channel_id, isac));
 
   video_send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
   if (fec == FecMode::kOn) {
@@ -297,7 +292,6 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   voe_base->DeleteChannel(send_channel_id);
   voe_base->DeleteChannel(recv_channel_id);
   voe_base->Release();
-  voe_codec->Release();
 
   DestroyCalls();
 

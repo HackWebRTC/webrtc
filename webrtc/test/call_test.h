@@ -26,7 +26,6 @@
 namespace webrtc {
 
 class VoEBase;
-class VoECodec;
 
 namespace test {
 
@@ -123,12 +122,10 @@ class CallTest : public ::testing::Test {
     VoiceEngineState()
         : voice_engine(nullptr),
           base(nullptr),
-          codec(nullptr),
           channel_id(-1) {}
 
     VoiceEngine* voice_engine;
     VoEBase* base;
-    VoECodec* codec;
     int channel_id;
   };
 

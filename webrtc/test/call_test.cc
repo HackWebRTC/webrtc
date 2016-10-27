@@ -13,7 +13,6 @@
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/voice_engine/include/voe_base.h"
-#include "webrtc/voice_engine/include/voe_codec.h"
 
 namespace webrtc {
 namespace test {
@@ -201,6 +200,8 @@ void CallTest::CreateSendConfig(size_t num_video_streams,
     audio_send_config_ = AudioSendStream::Config(send_transport);
     audio_send_config_.voe_channel_id = voe_send_.channel_id;
     audio_send_config_.rtp.ssrc = kAudioSendSsrc;
+    audio_send_config_.send_codec_spec.codec_inst =
+        CodecInst{kAudioSendPayloadType, "ISAC", 16000, 480, 1, 32000};
   }
 }
 
@@ -227,9 +228,9 @@ void CallTest::CreateMatchingReceiveConfigs(Transport* rtcp_send_transport) {
     }
   }
 
-  RTC_DCHECK(num_audio_streams_ <= 1);
+  RTC_DCHECK_GE(1u, num_audio_streams_);
   if (num_audio_streams_ == 1) {
-    RTC_DCHECK(voe_send_.channel_id >= 0);
+    RTC_DCHECK_LE(0, voe_send_.channel_id);
     AudioReceiveStream::Config audio_config;
     audio_config.rtp.local_ssrc = kReceiverLocalAudioSsrc;
     audio_config.rtcp_send_transport = rtcp_send_transport;
@@ -291,8 +292,6 @@ void CallTest::CreateAudioStreams() {
     audio_receive_streams_.push_back(
         receiver_call_->CreateAudioReceiveStream(audio_receive_configs_[i]));
   }
-  CodecInst isac = {kAudioSendPayloadType, "ISAC", 16000, 480, 1, 32000};
-  EXPECT_EQ(0, voe_send_.codec->SetSendCodec(voe_send_.channel_id, isac));
 }
 
 void CallTest::DestroyStreams() {
@@ -316,7 +315,6 @@ void CallTest::CreateVoiceEngines() {
   CreateFakeAudioDevices();
   voe_send_.voice_engine = VoiceEngine::Create();
   voe_send_.base = VoEBase::GetInterface(voe_send_.voice_engine);
-  voe_send_.codec = VoECodec::GetInterface(voe_send_.voice_engine);
   EXPECT_EQ(0, voe_send_.base->Init(fake_send_audio_device_.get(), nullptr,
                                     decoder_factory_));
   VoEBase::ChannelConfig config;
@@ -326,7 +324,6 @@ void CallTest::CreateVoiceEngines() {
 
   voe_recv_.voice_engine = VoiceEngine::Create();
   voe_recv_.base = VoEBase::GetInterface(voe_recv_.voice_engine);
-  voe_recv_.codec = VoECodec::GetInterface(voe_recv_.voice_engine);
   EXPECT_EQ(0, voe_recv_.base->Init(fake_recv_audio_device_.get(), nullptr,
                                     decoder_factory_));
   voe_recv_.channel_id = voe_recv_.base->CreateChannel();
@@ -338,15 +335,11 @@ void CallTest::DestroyVoiceEngines() {
   voe_recv_.channel_id = -1;
   voe_recv_.base->Release();
   voe_recv_.base = nullptr;
-  voe_recv_.codec->Release();
-  voe_recv_.codec = nullptr;
 
   voe_send_.base->DeleteChannel(voe_send_.channel_id);
   voe_send_.channel_id = -1;
   voe_send_.base->Release();
   voe_send_.base = nullptr;
-  voe_send_.codec->Release();
-  voe_send_.codec = nullptr;
 
   VoiceEngine::Delete(voe_send_.voice_engine);
   voe_send_.voice_engine = nullptr;

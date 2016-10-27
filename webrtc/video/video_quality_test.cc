@@ -37,7 +37,6 @@
 #include "webrtc/test/vcm_capturer.h"
 #include "webrtc/test/video_renderer.h"
 #include "webrtc/voice_engine/include/voe_base.h"
-#include "webrtc/voice_engine/include/voe_codec.h"
 
 namespace {
 
@@ -54,13 +53,11 @@ struct VoiceEngineState {
   VoiceEngineState()
       : voice_engine(nullptr),
         base(nullptr),
-        codec(nullptr),
         send_channel_id(-1),
         receive_channel_id(-1) {}
 
   webrtc::VoiceEngine* voice_engine;
   webrtc::VoEBase* base;
-  webrtc::VoECodec* codec;
   int send_channel_id;
   int receive_channel_id;
 };
@@ -70,7 +67,6 @@ void CreateVoiceEngine(VoiceEngineState* voe,
                            decoder_factory) {
   voe->voice_engine = webrtc::VoiceEngine::Create();
   voe->base = webrtc::VoEBase::GetInterface(voe->voice_engine);
-  voe->codec = webrtc::VoECodec::GetInterface(voe->voice_engine);
   EXPECT_EQ(0, voe->base->Init(nullptr, nullptr, decoder_factory));
   webrtc::VoEBase::ChannelConfig config;
   config.enable_voice_pacing = true;
@@ -87,8 +83,6 @@ void DestroyVoiceEngine(VoiceEngineState* voe) {
   voe->receive_channel_id = -1;
   voe->base->Release();
   voe->base = nullptr;
-  voe->codec->Release();
-  voe->codec = nullptr;
 
   webrtc::VoiceEngine::Delete(voe->voice_engine);
   voe->voice_engine = nullptr;
@@ -1341,6 +1335,8 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
       audio_send_config_.min_bitrate_kbps = kOpusMinBitrate / 1000;
       audio_send_config_.max_bitrate_kbps = kOpusBitrateFb / 1000;
     }
+    audio_send_config_.send_codec_spec.codec_inst =
+        CodecInst{120, "OPUS", 48000, 960, 2, 64000};
 
     audio_send_stream_ = call->CreateAudioSendStream(audio_send_config_);
 
@@ -1356,9 +1352,6 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
       audio_config.sync_group = kSyncGroup;
 
     audio_receive_stream = call->CreateAudioReceiveStream(audio_config);
-
-    const CodecInst kOpusInst = {120, "OPUS", 48000, 960, 2, 64000};
-    EXPECT_EQ(0, voe.codec->SetSendCodec(voe.send_channel_id, kOpusInst));
   }
 
   StartEncodedFrameLogs(video_receive_stream);
