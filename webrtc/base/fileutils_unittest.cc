@@ -70,28 +70,6 @@ TEST(MAYBE_FilesystemTest, TestOpenBadFile) {
   EXPECT_FALSE(fs != NULL);
 }
 
-// Test that CreatePrivateFile fails for existing files and succeeds for
-// non-existent ones.
-TEST(MAYBE_FilesystemTest, TestCreatePrivateFile) {
-  Pathname path;
-  EXPECT_TRUE(Filesystem::GetTemporaryFolder(path, true, NULL));
-  path.SetFilename("private_file_test");
-
-  // First call should succeed because the file doesn't exist yet.
-  EXPECT_TRUE(Filesystem::CreatePrivateFile(path));
-  // Next call should fail, because now it exists.
-  EXPECT_FALSE(Filesystem::CreatePrivateFile(path));
-
-  // Verify that we have permission to open the file for reading and writing.
-  std::unique_ptr<FileStream> fs(Filesystem::OpenFile(path, "wb"));
-  EXPECT_TRUE(fs.get() != NULL);
-  // Have to close the file on Windows before it will let us delete it.
-  fs.reset();
-
-  // Verify that we have permission to delete the file.
-  EXPECT_TRUE(Filesystem::DeleteFile(path));
-}
-
 // Test checking for free disk space.
 TEST(MAYBE_FilesystemTest, TestGetDiskFreeSpace) {
   // Note that we should avoid picking any file/folder which could be located
@@ -123,18 +101,6 @@ TEST(MAYBE_FilesystemTest, TestGetDiskFreeSpace) {
   // EXPECT_LT(static_cast<int64_t>(free1 * .9), free3);
   // EXPECT_LT(free3, static_cast<int64_t>(free1 * 1.1));
   EXPECT_GT(free3, 0);
-}
-
-// Tests that GetCurrentDirectory() returns something.
-TEST(MAYBE_FilesystemTest, TestGetCurrentDirectory) {
-  EXPECT_FALSE(Filesystem::GetCurrentDirectory().empty());
-}
-
-// Tests that GetAppPathname returns something.
-TEST(MAYBE_FilesystemTest, TestGetAppPathname) {
-  Pathname path;
-  EXPECT_TRUE(Filesystem::GetAppPathname(&path));
-  EXPECT_FALSE(path.empty());
 }
 
 }  // namespace rtc
