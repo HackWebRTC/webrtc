@@ -91,7 +91,13 @@ TEST(TaskQueueTest, PostFromQueue) {
   EXPECT_TRUE(event.Wait(1000));
 }
 
-TEST(TaskQueueTest, DISABLED_PostDelayed) {
+// Currently flaky on Windows. See issue 6610.
+#if defined(WEBRTC_WIN)
+#define MAYBE_PostDelayed DISABLED_PostDelayed
+#else
+#define MAYBE_PostDelayed PostDelayed
+#endif
+TEST(TaskQueueTest, MAYBE_PostDelayed) {
   static const char kQueueName[] = "PostDelayed";
   TaskQueue queue(kQueueName);
 
