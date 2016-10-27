@@ -2014,10 +2014,12 @@ JOW(void, FileVideoCapturer_nativeI420ToNV21)(
   int dst_stride = width;
   RTC_CHECK_GE(src_size, src_stride * height * 3 / 2);
   RTC_CHECK_GE(dst_size, dst_stride * height * 3 / 2);
-  uint8_t* src =
-      reinterpret_cast<uint8_t*>(jni->GetByteArrayElements(j_src_buffer, 0));
-  uint8_t* dst =
-      reinterpret_cast<uint8_t*>(jni->GetByteArrayElements(j_dst_buffer, 0));
+
+  jbyte* src_bytes = jni->GetByteArrayElements(j_src_buffer, 0);
+  uint8_t* src = reinterpret_cast<uint8_t*>(src_bytes);
+  jbyte* dst_bytes = jni->GetByteArrayElements(j_dst_buffer, 0);
+  uint8_t* dst = reinterpret_cast<uint8_t*>(dst_bytes);
+
   uint8_t* src_y = src;
   size_t src_stride_y = src_stride;
   uint8_t* src_u = src + src_stride * height;
@@ -2030,9 +2032,14 @@ JOW(void, FileVideoCapturer_nativeI420ToNV21)(
   size_t dst_stride_uv = dst_stride;
   uint8_t* dst_uv = dst + dst_stride * height;
 
-  libyuv::I420ToNV21(src_y, src_stride_y, src_u, src_stride_u, src_v,
-                     src_stride_v, dst_y, dst_stride_y, dst_uv, dst_stride_uv,
-                     width, height);
+  int ret = libyuv::I420ToNV21(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                               src_stride_v, dst_y, dst_stride_y, dst_uv,
+                               dst_stride_uv, width, height);
+  jni->ReleaseByteArrayElements(j_src_buffer, src_bytes, 0);
+  jni->ReleaseByteArrayElements(j_dst_buffer, dst_bytes, 0);
+  if (ret) {
+    LOG(LS_ERROR) << "Error converting I420 frame to NV21: " << ret;
+  }
 }
 
 JOW(void, VideoFileRenderer_nativeI420Scale)(
