@@ -83,15 +83,23 @@ namespace rtc {
 #define RTC_LAZY_STREAM(stream, condition)                                    \
   !(condition) ? static_cast<void>(0) : rtc::FatalMessageVoidify() & (stream)
 
-// The actual stream used isn't important. We reference condition in the code
+// The actual stream used isn't important. We reference |ignored| in the code
 // but don't evaluate it; this is to avoid "unused variable" warnings (we do so
 // in a particularly convoluted way with an extra ?: because that appears to be
 // the simplest construct that keeps Visual Studio from complaining about
 // condition being unused).
-#define RTC_EAT_STREAM_PARAMETERS(condition) \
-  (true ? true : !(condition))               \
-      ? static_cast<void>(0)                 \
+#define RTC_EAT_STREAM_PARAMETERS(ignored) \
+  (true ? true : ((void)(ignored), true))  \
+      ? static_cast<void>(0)               \
       : rtc::FatalMessageVoidify() & rtc::FatalMessage("", 0).stream()
+
+// Call RTC_EAT_STREAM_PARAMETERS with an argument that fails to compile if
+// values of the same types as |a| and |b| can't be compared with the given
+// operation, and that would evaluate |a| and |b| if evaluated.
+#define RTC_EAT_STREAM_PARAMETERS_OP(op, a, b)                                 \
+  RTC_EAT_STREAM_PARAMETERS(((void)sizeof(std::declval<decltype(a)>()          \
+                                              op std::declval<decltype(b)>()), \
+                             (void)(a), (void)(b)))
 
 // RTC_CHECK dies with a fatal error if condition is not true. It is *not*
 // controlled by NDEBUG or anything else, so the check will be executed
@@ -193,12 +201,12 @@ DEFINE_RTC_CHECK_OP_IMPL(GT, > )
 #define RTC_DCHECK_GT(v1, v2) RTC_CHECK_GT(v1, v2)
 #else
 #define RTC_DCHECK(condition) RTC_EAT_STREAM_PARAMETERS(condition)
-#define RTC_DCHECK_EQ(v1, v2) RTC_EAT_STREAM_PARAMETERS((v1) == (v2))
-#define RTC_DCHECK_NE(v1, v2) RTC_EAT_STREAM_PARAMETERS((v1) != (v2))
-#define RTC_DCHECK_LE(v1, v2) RTC_EAT_STREAM_PARAMETERS((v1) <= (v2))
-#define RTC_DCHECK_LT(v1, v2) RTC_EAT_STREAM_PARAMETERS((v1) < (v2))
-#define RTC_DCHECK_GE(v1, v2) RTC_EAT_STREAM_PARAMETERS((v1) >= (v2))
-#define RTC_DCHECK_GT(v1, v2) RTC_EAT_STREAM_PARAMETERS((v1) > (v2))
+#define RTC_DCHECK_EQ(v1, v2) RTC_EAT_STREAM_PARAMETERS_OP(==, v1, v2)
+#define RTC_DCHECK_NE(v1, v2) RTC_EAT_STREAM_PARAMETERS_OP(!=, v1, v2)
+#define RTC_DCHECK_LE(v1, v2) RTC_EAT_STREAM_PARAMETERS_OP(<=, v1, v2)
+#define RTC_DCHECK_LT(v1, v2) RTC_EAT_STREAM_PARAMETERS_OP(<, v1, v2)
+#define RTC_DCHECK_GE(v1, v2) RTC_EAT_STREAM_PARAMETERS_OP(>=, v1, v2)
+#define RTC_DCHECK_GT(v1, v2) RTC_EAT_STREAM_PARAMETERS_OP(>, v1, v2)
 #endif
 
 // This is identical to LogMessageVoidify but in name.
