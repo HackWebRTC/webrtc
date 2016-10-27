@@ -26,10 +26,7 @@ config("rtc_base_approved_all_dependent_config") {
 }
 
 config("rtc_base_config") {
-  defines = [
-    "FEATURE_ENABLE_SSL",
-    "LOGGING=1",
-  ]
+  defines = [ "FEATURE_ENABLE_SSL" ]
 }
 
 config("rtc_base_chromium_config") {
@@ -350,6 +347,7 @@ rtc_static_library("rtc_base") {
   cflags = []
   cflags_cc = []
   libs = []
+  defines = []
   deps = [
     "..:webrtc_common",
   ]
@@ -368,7 +366,6 @@ rtc_static_library("rtc_base") {
   ]
 
   all_dependent_configs = [ ":rtc_base_all_dependent_config" ]
-  defines = [ "LOGGING=1" ]
 
   sources = [
     "applefilesystem.mm",

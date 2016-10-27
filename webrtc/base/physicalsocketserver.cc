@@ -1580,8 +1580,6 @@ bool PhysicalSocketServer::Wait(int cmsWait, bool process_io) {
           WSANETWORKEVENTS wsaEvents;
           int err = WSAEnumNetworkEvents(s, events[0], &wsaEvents);
           if (err == 0) {
-
-#if LOGGING
             {
               if ((wsaEvents.lNetworkEvents & FD_READ) &&
                   wsaEvents.iErrorCode[FD_READ_BIT] != 0) {
@@ -1609,7 +1607,6 @@ bool PhysicalSocketServer::Wait(int cmsWait, bool process_io) {
                              << wsaEvents.iErrorCode[FD_CLOSE_BIT];
               }
             }
-#endif
             uint32_t ff = 0;
             int errcode = 0;
             if (wsaEvents.lNetworkEvents & FD_READ)

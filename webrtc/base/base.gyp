@@ -232,7 +232,6 @@
         'FEATURE_ENABLE_SSL',
         'SSL_USE_OPENSSL',
         'HAVE_OPENSSL_SSL_H',
-        'LOGGING=1',
       ],
       'sources': [
         'applefilesystem.mm',
