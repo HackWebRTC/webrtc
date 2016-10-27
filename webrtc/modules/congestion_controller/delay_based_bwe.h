@@ -11,9 +11,8 @@
 #ifndef WEBRTC_MODULES_CONGESTION_CONTROLLER_DELAY_BASED_BWE_H_
 #define WEBRTC_MODULES_CONGESTION_CONTROLLER_DELAY_BASED_BWE_H_
 
-#include <list>
-#include <map>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "webrtc/base/checks.h"
@@ -53,11 +52,34 @@ class DelayBasedBwe {
   void SetMinBitrate(int min_bitrate_bps);
 
  private:
+  // Computes a bayesian estimate of the throughput given acks containing
+  // the arrival time and payload size. Samples which are far from the current
+  // estimate or are based on few packets are given a smaller weight, as they
+  // are considered to be more likely to have been caused by, e.g., delay spikes
+  // unrelated to congestion.
+  class BitrateEstimator {
+   public:
+    BitrateEstimator();
+    void Update(int64_t now_ms, int bytes);
+    rtc::Optional<uint32_t> bitrate_bps() const;
+
+   private:
+    float UpdateWindow(int64_t now_ms, int bytes, int rate_window_ms);
+    int sum_;
+    int64_t current_win_ms_;
+    int64_t prev_time_ms_;
+    float bitrate_estimate_;
+    float bitrate_estimate_var_;
+    RateStatistics old_estimator_;
+    const bool in_experiment_;
+  };
+
   Result IncomingPacketInfo(const PacketInfo& info);
   // Updates the current remote rate estimate and returns true if a valid
   // estimate exists.
   bool UpdateEstimate(int64_t packet_arrival_time_ms,
                       int64_t now_ms,
+                      rtc::Optional<uint32_t> acked_bitrate_bps,
                       uint32_t* target_bitrate_bps);
 
   rtc::ThreadChecker network_thread_;
@@ -65,7 +87,7 @@ class DelayBasedBwe {
   std::unique_ptr<InterArrival> inter_arrival_;
   std::unique_ptr<OveruseEstimator> estimator_;
   OveruseDetector detector_;
-  RateStatistics receiver_incoming_bitrate_;
+  BitrateEstimator receiver_incoming_bitrate_;
   int64_t last_update_ms_;
   int64_t last_seen_packet_ms_;
   bool uma_recorded_;

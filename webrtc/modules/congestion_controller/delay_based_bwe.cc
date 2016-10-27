@@ -10,9 +10,8 @@
 
 #include "webrtc/modules/congestion_controller/delay_based_bwe.h"
 
-#include <math.h>
-
 #include <algorithm>
+#include <cmath>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
@@ -21,6 +20,7 @@
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/typedefs.h"
 
@@ -35,16 +35,106 @@ constexpr double kTimestampToMs =
 // This ssrc is used to fulfill the current API but will be removed
 // after the API has been changed.
 constexpr uint32_t kFixedSsrc = 0;
+constexpr int kInitialRateWindowMs = 500;
+constexpr int kRateWindowMs = 150;
+
+const char kBitrateEstimateExperiment[] = "WebRTC-ImprovedBitrateEstimate";
+
+bool BitrateEstimateExperimentIsEnabled() {
+  return webrtc::field_trial::FindFullName(kBitrateEstimateExperiment) ==
+         "Enabled";
+}
 }  // namespace
 
 namespace webrtc {
+DelayBasedBwe::BitrateEstimator::BitrateEstimator()
+    : sum_(0),
+      current_win_ms_(0),
+      prev_time_ms_(-1),
+      bitrate_estimate_(-1.0f),
+      bitrate_estimate_var_(50.0f),
+      old_estimator_(kBitrateWindowMs, 8000),
+      in_experiment_(BitrateEstimateExperimentIsEnabled()) {}
+
+void DelayBasedBwe::BitrateEstimator::Update(int64_t now_ms, int bytes) {
+  if (!in_experiment_) {
+    old_estimator_.Update(bytes, now_ms);
+    rtc::Optional<uint32_t> rate = old_estimator_.Rate(now_ms);
+    bitrate_estimate_ = -1.0f;
+    if (rate)
+      bitrate_estimate_ = *rate / 1000.0f;
+    return;
+  }
+  int rate_window_ms = kRateWindowMs;
+  // We use a larger window at the beginning to get a more stable sample that
+  // we can use to initialize the estimate.
+  if (bitrate_estimate_ < 0.f)
+    rate_window_ms = kInitialRateWindowMs;
+  float bitrate_sample = UpdateWindow(now_ms, bytes, rate_window_ms);
+  if (bitrate_sample < 0.0f)
+    return;
+  if (bitrate_estimate_ < 0.0f) {
+    // This is the very first sample we get. Use it to initialize the estimate.
+    bitrate_estimate_ = bitrate_sample;
+    return;
+  }
+  // Define the sample uncertainty as a function of how far away it is from the
+  // current estimate.
+  float sample_uncertainty =
+      10.0f * std::abs(bitrate_estimate_ - bitrate_sample) / bitrate_estimate_;
+  float sample_var = sample_uncertainty * sample_uncertainty;
+  // Update a bayesian estimate of the rate, weighting it lower if the sample
+  // uncertainty is large.
+  // The bitrate estimate uncertainty is increased with each update to model
+  // that the bitrate changes over time.
+  float pred_bitrate_estimate_var = bitrate_estimate_var_ + 5.f;
+  bitrate_estimate_ = (sample_var * bitrate_estimate_ +
+                       pred_bitrate_estimate_var * bitrate_sample) /
+                      (sample_var + pred_bitrate_estimate_var);
+  bitrate_estimate_var_ = sample_var * pred_bitrate_estimate_var /
+                          (sample_var + pred_bitrate_estimate_var);
+}
+
+float DelayBasedBwe::BitrateEstimator::UpdateWindow(int64_t now_ms,
+                                                    int bytes,
+                                                    int rate_window_ms) {
+  // Reset if time moves backwards.
+  if (now_ms < prev_time_ms_) {
+    prev_time_ms_ = -1;
+    sum_ = 0;
+    current_win_ms_ = 0;
+  }
+  if (prev_time_ms_ >= 0) {
+    current_win_ms_ += now_ms - prev_time_ms_;
+    // Reset if nothing has been received for more than a full window.
+    if (now_ms - prev_time_ms_ > rate_window_ms) {
+      sum_ = 0;
+      current_win_ms_ %= rate_window_ms;
+    }
+  }
+  prev_time_ms_ = now_ms;
+  float bitrate_sample = -1.0f;
+  if (current_win_ms_ >= rate_window_ms) {
+    bitrate_sample = 8.0f * sum_ / static_cast<float>(rate_window_ms);
+    current_win_ms_ -= rate_window_ms;
+    sum_ = 0;
+  }
+  sum_ += bytes;
+  return bitrate_sample;
+}
+
+rtc::Optional<uint32_t> DelayBasedBwe::BitrateEstimator::bitrate_bps() const {
+  if (bitrate_estimate_ < 0.f)
+    return rtc::Optional<uint32_t>();
+  return rtc::Optional<uint32_t>(bitrate_estimate_ * 1000);
+}
 
 DelayBasedBwe::DelayBasedBwe(Clock* clock)
     : clock_(clock),
       inter_arrival_(),
       estimator_(),
       detector_(OverUseDetectorOptions()),
-      receiver_incoming_bitrate_(kBitrateWindowMs, 8000),
+      receiver_incoming_bitrate_(),
       last_update_ms_(-1),
       last_seen_packet_ms_(-1),
       uma_recorded_(false) {
@@ -73,7 +163,7 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketInfo(
     const PacketInfo& info) {
   int64_t now_ms = clock_->TimeInMilliseconds();
 
-  receiver_incoming_bitrate_.Update(info.payload_size, info.arrival_time_ms);
+  receiver_incoming_bitrate_.Update(info.arrival_time_ms, info.payload_size);
   Result result;
   // Reset if the stream has timed out.
   if (last_seen_packet_ms_ == -1 ||
@@ -112,28 +202,30 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketInfo(
   if (info.probe_cluster_id != PacketInfo::kNotAProbe) {
     probing_bps = probe_bitrate_estimator_.HandleProbeAndEstimateBitrate(info);
   }
-
+  rtc::Optional<uint32_t> acked_bitrate_bps =
+      receiver_incoming_bitrate_.bitrate_bps();
   // Currently overusing the bandwidth.
   if (detector_.State() == kBwOverusing) {
-    rtc::Optional<uint32_t> incoming_rate =
-        receiver_incoming_bitrate_.Rate(info.arrival_time_ms);
-    if (incoming_rate &&
-        rate_control_.TimeToReduceFurther(now_ms, *incoming_rate)) {
-      result.updated = UpdateEstimate(info.arrival_time_ms, now_ms,
-                                      &result.target_bitrate_bps);
+    if (acked_bitrate_bps &&
+        rate_control_.TimeToReduceFurther(now_ms, *acked_bitrate_bps)) {
+      result.updated =
+          UpdateEstimate(info.arrival_time_ms, now_ms, acked_bitrate_bps,
+                         &result.target_bitrate_bps);
     }
   } else if (probing_bps > 0) {
     // No overuse, but probing measured a bitrate.
     rate_control_.SetEstimate(probing_bps, info.arrival_time_ms);
     result.probe = true;
-    result.updated = UpdateEstimate(info.arrival_time_ms, now_ms,
-                                    &result.target_bitrate_bps);
+    result.updated =
+        UpdateEstimate(info.arrival_time_ms, now_ms, acked_bitrate_bps,
+                       &result.target_bitrate_bps);
   }
   if (!result.updated &&
       (last_update_ms_ == -1 ||
        now_ms - last_update_ms_ > rate_control_.GetFeedbackInterval())) {
-    result.updated = UpdateEstimate(info.arrival_time_ms, now_ms,
-                                    &result.target_bitrate_bps);
+    result.updated =
+        UpdateEstimate(info.arrival_time_ms, now_ms, acked_bitrate_bps,
+                       &result.target_bitrate_bps);
   }
   if (result.updated)
     last_update_ms_ = now_ms;
@@ -143,12 +235,9 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketInfo(
 
 bool DelayBasedBwe::UpdateEstimate(int64_t arrival_time_ms,
                                    int64_t now_ms,
+                                   rtc::Optional<uint32_t> acked_bitrate_bps,
                                    uint32_t* target_bitrate_bps) {
-  // The first overuse should immediately trigger a new estimate.
-  // We also have to update the estimate immediately if we are overusing
-  // and the target bitrate is too high compared to what we are receiving.
-  const RateControlInput input(detector_.State(),
-                               receiver_incoming_bitrate_.Rate(arrival_time_ms),
+  const RateControlInput input(detector_.State(), acked_bitrate_bps,
                                estimator_->var_noise());
   rate_control_.Update(&input, now_ms);
   *target_bitrate_bps = rate_control_.UpdateBandwidthEstimate(now_ms);

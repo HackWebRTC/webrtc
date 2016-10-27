@@ -14,6 +14,7 @@
 #include "webrtc/modules/congestion_controller/delay_based_bwe.h"
 #include "webrtc/modules/congestion_controller/delay_based_bwe_unittest_helper.h"
 #include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/test/field_trial.h"
 
 namespace webrtc {
 
@@ -143,26 +144,6 @@ TEST_F(DelayBasedBweTest, CapacityDropOneStreamWrap) {
   CapacityDropTestHelper(1, true, 633, 0);
 }
 
-TEST_F(DelayBasedBweTest, CapacityDropTwoStreamsWrap) {
-  CapacityDropTestHelper(2, true, 767, 0);
-}
-
-TEST_F(DelayBasedBweTest, CapacityDropThreeStreamsWrap) {
-  CapacityDropTestHelper(3, true, 633, 0);
-}
-
-TEST_F(DelayBasedBweTest, CapacityDropThirteenStreamsWrap) {
-  CapacityDropTestHelper(13, true, 733, 0);
-}
-
-TEST_F(DelayBasedBweTest, CapacityDropNineteenStreamsWrap) {
-  CapacityDropTestHelper(19, true, 667, 0);
-}
-
-TEST_F(DelayBasedBweTest, CapacityDropThirtyStreamsWrap) {
-  CapacityDropTestHelper(30, true, 667, 0);
-}
-
 TEST_F(DelayBasedBweTest, TestTimestampGrouping) {
   TestTimestampGroupingTestHelper();
 }
@@ -180,5 +161,38 @@ TEST_F(DelayBasedBweTest, TestLongTimeoutAndWrap) {
   // to the wrap, but a big difference in arrival time, if streams aren't
   // properly timed out.
   TestWrappingHelper(10 * 64);
+}
+
+class DelayBasedBweExperimentTest : public DelayBasedBweTest {
+ public:
+  DelayBasedBweExperimentTest()
+      : override_field_trials_("WebRTC-ImprovedBitrateEstimate/Enabled/") {}
+
+ protected:
+  void SetUp() override {
+    bitrate_estimator_.reset(new DelayBasedBwe(&clock_));
+  }
+
+  test::ScopedFieldTrials override_field_trials_;
+};
+
+TEST_F(DelayBasedBweExperimentTest, RateIncreaseRtpTimestamps) {
+  RateIncreaseRtpTimestampsTestHelper(1288);
+}
+
+TEST_F(DelayBasedBweExperimentTest, CapacityDropOneStream) {
+  CapacityDropTestHelper(1, false, 333, 0);
+}
+
+TEST_F(DelayBasedBweExperimentTest, CapacityDropPosOffsetChange) {
+  CapacityDropTestHelper(1, false, 300, 30000);
+}
+
+TEST_F(DelayBasedBweExperimentTest, CapacityDropNegOffsetChange) {
+  CapacityDropTestHelper(1, false, 300, -30000);
+}
+
+TEST_F(DelayBasedBweExperimentTest, CapacityDropOneStreamWrap) {
+  CapacityDropTestHelper(1, true, 333, 0);
 }
 }  // namespace webrtc

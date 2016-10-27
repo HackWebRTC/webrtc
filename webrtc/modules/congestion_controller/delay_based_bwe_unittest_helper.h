@@ -162,9 +162,10 @@ class DelayBasedBweTest : public ::testing::Test {
 
   SimulatedClock clock_;  // Time at the receiver.
   test::TestBitrateObserver bitrate_observer_;
-  DelayBasedBwe bitrate_estimator_;
+  std::unique_ptr<DelayBasedBwe> bitrate_estimator_;
   std::unique_ptr<test::StreamGenerator> stream_generator_;
   int64_t arrival_time_offset_ms_;
+  bool first_update_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(DelayBasedBweTest);
 };

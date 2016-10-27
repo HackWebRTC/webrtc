@@ -990,9 +990,10 @@ void EventLogAnalyzer::CreateBweSimulationGraph(Plot* plot) {
     return std::numeric_limits<int64_t>::max();
   };
 
-  RateStatistics acked_bitrate(1000, 8000);
+  RateStatistics acked_bitrate(250, 8000);
 
   int64_t time_us = std::min(NextRtpTime(), NextRtcpTime());
+  int64_t last_update_us = 0;
   while (time_us != std::numeric_limits<int64_t>::max()) {
     clock.AdvanceTimeMicroseconds(time_us - clock.TimeInMicroseconds());
     if (clock.TimeInMicroseconds() >= NextRtcpTime()) {
@@ -1037,11 +1038,13 @@ void EventLogAnalyzer::CreateBweSimulationGraph(Plot* plot) {
       RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextProcessTime());
       cc.Process();
     }
-    if (observer.GetAndResetBitrateUpdated()) {
+    if (observer.GetAndResetBitrateUpdated() ||
+        time_us - last_update_us >= 1e6) {
       uint32_t y = observer.last_bitrate_bps() / 1000;
       float x = static_cast<float>(clock.TimeInMicroseconds() - begin_time_) /
                 1000000;
       time_series.points.emplace_back(x, y);
+      last_update_us = time_us;
     }
     time_us = std::min({NextRtpTime(), NextRtcpTime(), NextProcessTime()});
   }
