@@ -159,6 +159,11 @@ public final class WebRtcAudioUtils {
     return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M;
   }
 
+  public static boolean runningOnNougatOrHigher() {
+    // API Level 24.
+    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.N;
+  }
+
   // Helper method for building a string of thread information.
   public static String getThreadInfo() {
     return "@[name=" + Thread.currentThread().getName() + ", id=" + Thread.currentThread().getId()

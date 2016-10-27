@@ -194,26 +194,16 @@ public class WebRtcAudioRecord {
       Logging.e(TAG, "Failed to create a new AudioRecord instance");
       return -1;
     }
-    Logging.d(TAG, "AudioRecord "
-            + "session ID: " + audioRecord.getAudioSessionId() + ", "
-            + "audio format: " + audioRecord.getAudioFormat() + ", "
-            + "channels: " + audioRecord.getChannelCount() + ", "
-            + "sample rate: " + audioRecord.getSampleRate());
     if (effects != null) {
       effects.enable(audioRecord.getAudioSessionId());
     }
-    // TODO(phoglund): put back audioRecord.getBufferSizeInFrames when
-    // all known downstream users supports M.
-    // if (WebRtcAudioUtils.runningOnMOrHigher()) {
-    // Returns the frame count of the native AudioRecord buffer. This is
-    // greater than or equal to the bufferSizeInBytes converted to frame
-    // units. The native frame count may be enlarged to accommodate the
-    // requirements of the source on creation or if the AudioRecord is
-    // subsequently rerouted.
-
-    // Logging.d(TAG, "bufferSizeInFrames: "
-    //     + audioRecord.getBufferSizeInFrames());
-    //}
+    // Verify that all audio parameters are valid and correct.
+    if (!areParametersValid(sampleRate, channels)) {
+      Logging.e(TAG, "At least one audio record parameter is invalid.");
+      return -1;
+    }
+    logMainParameters();
+    logMainParametersExtended();
     return framesPerBuffer;
   }
 
@@ -250,6 +240,30 @@ public class WebRtcAudioRecord {
     audioRecord.release();
     audioRecord = null;
     return true;
+  }
+
+  // Verifies that the audio record is using correct parameters, i.e., that the
+  // created instance uses the parameters that we asked for.
+  private boolean areParametersValid(int sampleRate, int channels) {
+    return (audioRecord.getAudioFormat() == AudioFormat.ENCODING_PCM_16BIT
+        && audioRecord.getChannelConfiguration() == AudioFormat.CHANNEL_IN_MONO
+        && audioRecord.getAudioSource() == AudioSource.VOICE_COMMUNICATION
+        && audioRecord.getSampleRate() == sampleRate && audioRecord.getChannelCount() == channels);
+  }
+
+  private void logMainParameters() {
+    Logging.d(TAG, "AudioRecord: "
+            + "session ID: " + audioRecord.getAudioSessionId() + ", "
+            + "channels: " + audioRecord.getChannelCount() + ", "
+            + "sample rate: " + audioRecord.getSampleRate());
+  }
+
+  private void logMainParametersExtended() {
+    if (WebRtcAudioUtils.runningOnMarshmallowOrHigher()) {
+      Logging.d(TAG, "AudioRecord: "
+              // The frame count of the native AudioRecord buffer.
+              + "buffer size in frames: " + audioRecord.getBufferSizeInFrames());
+    }
   }
 
   // Helper method which throws an exception  when an assertion has failed.
