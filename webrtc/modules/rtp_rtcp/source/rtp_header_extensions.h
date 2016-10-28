@@ -11,7 +11,6 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_HEADER_EXTENSIONS_H_
 
 #include "webrtc/base/basictypes.h"
-#include "webrtc/call.h"
 #include "webrtc/common_video/rotation.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
@@ -21,8 +20,8 @@ class AbsoluteSendTime {
  public:
   static constexpr RTPExtensionType kId = kRtpExtensionAbsoluteSendTime;
   static constexpr uint8_t kValueSizeBytes = 3;
-  static const char* kName;
-  static bool IsSupportedFor(MediaType type);
+  static const char* const kUri;
+
   static bool Parse(const uint8_t* data, uint32_t* time_24bits);
   static bool Write(uint8_t* data, int64_t time_ms);
 
@@ -35,8 +34,8 @@ class AudioLevel {
  public:
   static constexpr RTPExtensionType kId = kRtpExtensionAudioLevel;
   static constexpr uint8_t kValueSizeBytes = 1;
-  static const char* kName;
-  static bool IsSupportedFor(MediaType type);
+  static const char* const kUri;
+
   static bool Parse(const uint8_t* data,
                     bool* voice_activity,
                     uint8_t* audio_level);
@@ -47,8 +46,8 @@ class TransmissionOffset {
  public:
   static constexpr RTPExtensionType kId = kRtpExtensionTransmissionTimeOffset;
   static constexpr uint8_t kValueSizeBytes = 3;
-  static const char* kName;
-  static bool IsSupportedFor(MediaType type);
+  static const char* const kUri;
+
   static bool Parse(const uint8_t* data, int32_t* rtp_time);
   static bool Write(uint8_t* data, int32_t rtp_time);
 };
@@ -57,8 +56,8 @@ class TransportSequenceNumber {
  public:
   static constexpr RTPExtensionType kId = kRtpExtensionTransportSequenceNumber;
   static constexpr uint8_t kValueSizeBytes = 2;
-  static const char* kName;
-  static bool IsSupportedFor(MediaType type);
+  static const char* const kUri;
+
   static bool Parse(const uint8_t* data, uint16_t* value);
   static bool Write(uint8_t* data, uint16_t value);
 };
@@ -67,8 +66,8 @@ class VideoOrientation {
  public:
   static constexpr RTPExtensionType kId = kRtpExtensionVideoRotation;
   static constexpr uint8_t kValueSizeBytes = 1;
-  static const char* kName;
-  static bool IsSupportedFor(MediaType type);
+  static const char* const kUri;
+
   static bool Parse(const uint8_t* data, VideoRotation* value);
   static bool Write(uint8_t* data, VideoRotation value);
   static bool Parse(const uint8_t* data, uint8_t* value);
@@ -79,8 +78,8 @@ class PlayoutDelayLimits {
  public:
   static constexpr RTPExtensionType kId = kRtpExtensionPlayoutDelay;
   static constexpr uint8_t kValueSizeBytes = 3;
-  static const char* kName;
-  static bool IsSupportedFor(MediaType type);
+  static const char* const kUri;
+
   // Playout delay in milliseconds. A playout delay limit (min or max)
   // has 12 bits allocated. This allows a range of 0-4095 values which
   // translates to a range of 0-40950 in milliseconds.
