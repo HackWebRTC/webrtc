@@ -21,6 +21,8 @@
 #import "ARDMainView.h"
 #import "ARDVideoCallViewController.h"
 
+static NSString *barButtonImageString = @"ic_settings_black_24dp.png";
+
 @interface ARDMainViewController () <
     ARDMainViewDelegate,
     ARDVideoCallViewControllerDelegate,
@@ -34,9 +36,11 @@
 }
 
 - (void)loadView {
+  self.title = @"AppRTC Mobile";
   _mainView = [[ARDMainView alloc] initWithFrame:CGRectZero];
   _mainView.delegate = self;
   self.view = _mainView;
+  [self addSettingsBarButton];
 
   RTCAudioSessionConfiguration *webRTCConfig =
       [RTCAudioSessionConfiguration webRTCConfiguration];
@@ -49,6 +53,15 @@
 
   [self configureAudioSession];
   [self setupAudioPlayer];
+}
+
+- (void)addSettingsBarButton {
+  UIBarButtonItem *settingsButton =
+      [[UIBarButtonItem alloc] initWithImage:[UIImage imageNamed:barButtonImageString]
+                                       style:UIBarButtonItemStylePlain
+                                      target:self
+                                      action:@selector(showSettings:)];
+  self.navigationItem.rightBarButtonItem = settingsButton;
 }
 
 #pragma mark - ARDMainViewDelegate
@@ -155,6 +168,8 @@
 }
 
 #pragma mark - Private
+- (void)showSettings:(id)sender {
+}
 
 - (void)configureAudioSession {
   RTCAudioSessionConfiguration *configuration =

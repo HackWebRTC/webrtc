@@ -269,6 +269,8 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "objc/AppRTCMobile/ios/resources/ic_call_end_black_24dp@2x.png",
         "objc/AppRTCMobile/ios/resources/ic_clear_black_24dp.png",
         "objc/AppRTCMobile/ios/resources/ic_clear_black_24dp@2x.png",
+        "objc/AppRTCMobile/ios/resources/ic_settings_black_24dp.png",
+        "objc/AppRTCMobile/ios/resources/ic_settings_black_24dp@2x.png",
         "objc/AppRTCMobile/ios/resources/ic_surround_sound_black_24dp.png",
         "objc/AppRTCMobile/ios/resources/ic_surround_sound_black_24dp@2x.png",
         "objc/AppRTCMobile/ios/resources/ic_switch_video_black_24dp.png",

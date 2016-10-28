@@ -114,7 +114,6 @@ static CGFloat const kCallControlMargin = 8;
 @end
 
 @implementation ARDMainView {
-  UILabel *_appLabel;
   ARDRoomTextField *_roomText;
   UILabel *_callOptionsLabel;
   UISwitch *_audioOnlySwitch;
@@ -136,13 +135,6 @@ static CGFloat const kCallControlMargin = 8;
 
 - (instancetype)initWithFrame:(CGRect)frame {
   if (self = [super initWithFrame:frame]) {
-    _appLabel = [[UILabel alloc] initWithFrame:CGRectZero];
-    _appLabel.text = @"AppRTCMobile";
-    _appLabel.font = [UIFont fontWithName:@"Roboto" size:34];
-    _appLabel.textColor = [UIColor colorWithWhite:0 alpha:.2];
-    [_appLabel sizeToFit];
-    [self addSubview:_appLabel];
-
     _roomText = [[ARDRoomTextField alloc] initWithFrame:CGRectZero];
     [self addSubview:_roomText];
 
@@ -263,11 +255,8 @@ static CGFloat const kCallControlMargin = 8;
   CGRect bounds = self.bounds;
   CGFloat roomTextWidth = bounds.size.width - 2 * kRoomTextFieldMargin;
   CGFloat roomTextHeight = [_roomText sizeThatFits:bounds.size].height;
-  _roomText.frame = CGRectMake(kRoomTextFieldMargin,
-                               kStatusBarHeight + kRoomTextFieldMargin,
-                               roomTextWidth,
-                               roomTextHeight);
-  _appLabel.center = CGPointMake(CGRectGetMidX(bounds), CGRectGetMidY(bounds));
+  _roomText.frame =
+      CGRectMake(kRoomTextFieldMargin, kRoomTextFieldMargin, roomTextWidth, roomTextHeight);
 
   CGFloat callOptionsLabelTop =
       CGRectGetMaxY(_roomText.frame) + kCallControlMargin * 4;
