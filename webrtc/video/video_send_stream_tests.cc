@@ -1785,9 +1785,12 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
 
     void PerformTest() override {
       EXPECT_TRUE(Wait()) << "Timed out while waiting for Encode.";
-      EXPECT_EQ(0u, num_releases());
+      // Expect  |num_releases| == 1 since the encoder has been reconfigured
+      // once when the first frame is encoded. Not until at that point is the
+      // frame size known and the encoder can be properly initialized.
+      EXPECT_EQ(1u, num_releases());
       stream_->ReconfigureVideoEncoder(std::move(encoder_config_));
-      EXPECT_EQ(0u, num_releases());
+      EXPECT_EQ(1u, num_releases());
       stream_->Stop();
       // Encoder should not be released before destroying the VideoSendStream.
       EXPECT_FALSE(IsReleased());
@@ -1809,7 +1812,7 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
   RunBaseTest(&test_encoder);
 
   EXPECT_TRUE(test_encoder.IsReleased());
-  EXPECT_EQ(1u, test_encoder.num_releases());
+  EXPECT_EQ(2u, test_encoder.num_releases());
 }
 
 TEST_F(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
@@ -1841,7 +1844,7 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
     int32_t InitEncode(const VideoCodec* config,
                        int32_t number_of_cores,
                        size_t max_payload_size) override {
-      if (num_initializations_ == 0) {
+      if (num_initializations_ < 2) {
         // Verify default values.
         EXPECT_EQ(kRealtimeVideo, config->mode);
       } else {
@@ -1849,18 +1852,23 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
         EXPECT_EQ(kScreensharing, config->mode);
       }
       ++num_initializations_;
-      init_encode_event_.Set();
+      if (num_initializations_ > 1) {
+        // Skip the first two InitEncode events: one with QCIF resolution when
+        // the SendStream is created, the other with QVGA when the first frame
+        // is encoded.
+        init_encode_event_.Set();
+      }
       return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
     }
 
     void PerformTest() override {
       EXPECT_TRUE(init_encode_event_.Wait(kDefaultTimeoutMs));
-      EXPECT_EQ(1u, num_initializations_) << "VideoEncoder not initialized.";
+      EXPECT_EQ(2u, num_initializations_) << "VideoEncoder not initialized.";
 
       encoder_config_.content_type = VideoEncoderConfig::ContentType::kScreen;
       stream_->ReconfigureVideoEncoder(std::move(encoder_config_));
       EXPECT_TRUE(init_encode_event_.Wait(kDefaultTimeoutMs));
-      EXPECT_EQ(2u, num_initializations_)
+      EXPECT_EQ(3u, num_initializations_)
           << "ReconfigureVideoEncoder did not reinitialize the encoder with "
              "new encoder settings.";
     }
@@ -1937,7 +1945,12 @@ class VideoCodecConfigObserver : public test::SendTest,
     EXPECT_EQ(video_codec_type_, config->codecType);
     VerifyCodecSpecifics(*config);
     ++num_initializations_;
-    init_encode_event_.Set();
+    if (num_initializations_ > 1) {
+      // Skip the first two InitEncode events: one with QCIF resolution when
+      // the SendStream is created, the other with QVGA when the first frame is
+      // encoded.
+      init_encode_event_.Set();
+    }
     return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
   }
 
@@ -1948,14 +1961,14 @@ class VideoCodecConfigObserver : public test::SendTest,
   void PerformTest() override {
     EXPECT_TRUE(
         init_encode_event_.Wait(VideoSendStreamTest::kDefaultTimeoutMs));
-    ASSERT_EQ(1u, num_initializations_) << "VideoEncoder not initialized.";
+    ASSERT_EQ(2u, num_initializations_) << "VideoEncoder not initialized.";
 
     encoder_settings_.frameDroppingOn = true;
     encoder_config_.encoder_specific_settings = GetEncoderSpecificSettings();
     stream_->ReconfigureVideoEncoder(std::move(encoder_config_));
     ASSERT_TRUE(
         init_encode_event_.Wait(VideoSendStreamTest::kDefaultTimeoutMs));
-    EXPECT_EQ(2u, num_initializations_)
+    EXPECT_EQ(3u, num_initializations_)
         << "ReconfigureVideoEncoder did not reinitialize the encoder with "
            "new encoder settings.";
   }
@@ -2202,7 +2215,8 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
                        size_t maxPayloadSize) override {
       EXPECT_GE(codecSettings->startBitrate, codecSettings->minBitrate);
       EXPECT_LE(codecSettings->startBitrate, codecSettings->maxBitrate);
-      if (num_initializations_ == 0) {
+      // First reinitialization happens due to that the frame size is updated.
+      if (num_initializations_ == 0 || num_initializations_ == 1) {
         EXPECT_EQ(static_cast<unsigned int>(kMinBitrateKbps),
                   codecSettings->minBitrate);
         EXPECT_EQ(static_cast<unsigned int>(kStartBitrateKbps),
@@ -2210,14 +2224,14 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
         EXPECT_EQ(static_cast<unsigned int>(kMaxBitrateKbps),
                   codecSettings->maxBitrate);
         observation_complete_.Set();
-      } else if (num_initializations_ == 1) {
+      } else if (num_initializations_ == 2) {
         EXPECT_EQ(static_cast<unsigned int>(kLowerMaxBitrateKbps),
                   codecSettings->maxBitrate);
         // The start bitrate should be kept (-1) and capped to the max bitrate.
         // Since this is not an end-to-end call no receiver should have been
         // returning a REMB that could lower this estimate.
         EXPECT_EQ(codecSettings->startBitrate, codecSettings->maxBitrate);
-      } else if (num_initializations_ == 2) {
+      } else if (num_initializations_ == 3) {
         EXPECT_EQ(static_cast<unsigned int>(kIncreasedMaxBitrateKbps),
                   codecSettings->maxBitrate);
         // The start bitrate will be whatever the rate BitRateController
@@ -2225,8 +2239,9 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
         // bitrate.
       }
       ++num_initializations_;
-      init_encode_event_.Set();
-
+      if (num_initializations_ > 1) {
+        init_encode_event_.Set();
+      }
       return FakeEncoder::InitEncode(codecSettings, numberOfCores,
                                      maxPayloadSize);
     }
@@ -2319,7 +2334,7 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
       send_stream_->ReconfigureVideoEncoder(encoder_config_.Copy());
       ASSERT_TRUE(
           init_encode_event_.Wait(VideoSendStreamTest::kDefaultTimeoutMs));
-      EXPECT_EQ(2, num_initializations_)
+      EXPECT_EQ(3, num_initializations_)
           << "Encoder should have been reconfigured with the new value.";
       WaitForSetRates(kLowerMaxBitrateKbps);
 
@@ -2327,7 +2342,7 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
       send_stream_->ReconfigureVideoEncoder(encoder_config_.Copy());
       ASSERT_TRUE(
           init_encode_event_.Wait(VideoSendStreamTest::kDefaultTimeoutMs));
-      EXPECT_EQ(3, num_initializations_)
+      EXPECT_EQ(4, num_initializations_)
           << "Encoder should have been reconfigured with the new value.";
       // Expected target bitrate is the start bitrate set in the call to
       // call_->SetBitrateConfig.

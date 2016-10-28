@@ -286,14 +286,13 @@ TEST_F(ViEEncoderTest, DropsPendingFramesOnSlowEncode) {
 TEST_F(ViEEncoderTest, ConfigureEncoderTriggersOnEncoderConfigurationChanged) {
   const int kTargetBitrateBps = 100000;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
-  EXPECT_EQ(0, sink_.number_of_reconfigurations());
 
   // Capture a frame and wait for it to synchronize with the encoder thread.
   video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
   sink_.WaitForEncodedFrame(1);
-  // The encoder will have been configured once when the first frame is
-  // received.
-  EXPECT_EQ(1, sink_.number_of_reconfigurations());
+  // The encoder will have been configured twice. First time before the first
+  // frame has been received. Then a second time when the resolution is known.
+  EXPECT_EQ(2, sink_.number_of_reconfigurations());
 
   VideoEncoderConfig video_encoder_config;
   test::FillEncoderConfiguration(1, &video_encoder_config);
@@ -303,7 +302,7 @@ TEST_F(ViEEncoderTest, ConfigureEncoderTriggersOnEncoderConfigurationChanged) {
   // Capture a frame and wait for it to synchronize with the encoder thread.
   video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
   sink_.WaitForEncodedFrame(2);
-  EXPECT_EQ(2, sink_.number_of_reconfigurations());
+  EXPECT_EQ(3, sink_.number_of_reconfigurations());
   EXPECT_EQ(9999, sink_.last_min_transmit_bitrate());
 
   vie_encoder_->Stop();
@@ -316,8 +315,9 @@ TEST_F(ViEEncoderTest, FrameResolutionChangeReconfigureEncoder) {
   // Capture a frame and wait for it to synchronize with the encoder thread.
   video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
   sink_.WaitForEncodedFrame(1);
-  // The encoder will have been configured once.
-  EXPECT_EQ(1, sink_.number_of_reconfigurations());
+  // The encoder will have been configured twice. First time before the first
+  // frame has been received. Then a second time when the resolution is known.
+  EXPECT_EQ(2, sink_.number_of_reconfigurations());
   EXPECT_EQ(codec_width_, fake_encoder_.codec_config().width);
   EXPECT_EQ(codec_height_, fake_encoder_.codec_config().height);
 
@@ -329,7 +329,7 @@ TEST_F(ViEEncoderTest, FrameResolutionChangeReconfigureEncoder) {
   sink_.WaitForEncodedFrame(2);
   EXPECT_EQ(codec_width_, fake_encoder_.codec_config().width);
   EXPECT_EQ(codec_height_, fake_encoder_.codec_config().height);
-  EXPECT_EQ(2, sink_.number_of_reconfigurations());
+  EXPECT_EQ(3, sink_.number_of_reconfigurations());
 
   vie_encoder_->Stop();
 }
