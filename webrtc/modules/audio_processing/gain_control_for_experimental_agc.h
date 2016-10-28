@@ -19,6 +19,8 @@
 
 namespace webrtc {
 
+class ApmDataDumper;
+
 // This class has two main purposes:
 //
 // 1) It is returned instead of the real GainControl after the new AGC has been
@@ -33,8 +35,9 @@ namespace webrtc {
 class GainControlForExperimentalAgc : public GainControl,
                                       public VolumeCallbacks {
  public:
-  explicit GainControlForExperimentalAgc(GainControl* gain_control,
-                                         rtc::CriticalSection* crit_capture);
+  GainControlForExperimentalAgc(GainControl* gain_control,
+                                rtc::CriticalSection* crit_capture);
+  ~GainControlForExperimentalAgc() override;
 
   // GainControl implementation.
   int Enable(bool enable) override;
@@ -58,11 +61,15 @@ class GainControlForExperimentalAgc : public GainControl,
   void SetMicVolume(int volume) override;
   int GetMicVolume() override;
 
+  void Initialize();
+
  private:
+  std::unique_ptr<ApmDataDumper> data_dumper_;
   GainControl* real_gain_control_;
   int volume_;
   rtc::CriticalSection* crit_capture_;
-  RTC_DISALLOW_COPY_AND_ASSIGN(GainControlForExperimentalAgc);
+  static int instance_counter_;
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(GainControlForExperimentalAgc);
 };
 
 }  // namespace webrtc

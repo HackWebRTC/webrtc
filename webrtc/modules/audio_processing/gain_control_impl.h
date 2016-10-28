@@ -23,6 +23,7 @@
 
 namespace webrtc {
 
+class ApmDataDumper;
 class AudioBuffer;
 
 class GainControlImpl : public GainControl {
@@ -69,6 +70,8 @@ class GainControlImpl : public GainControl {
   rtc::CriticalSection* const crit_render_ ACQUIRED_BEFORE(crit_capture_);
   rtc::CriticalSection* const crit_capture_;
 
+  std::unique_ptr<ApmDataDumper> data_dumper_;
+
   bool enabled_ = false;
 
   Mode mode_ GUARDED_BY(crit_capture_);
@@ -86,6 +89,7 @@ class GainControlImpl : public GainControl {
   rtc::Optional<size_t> num_proc_channels_ GUARDED_BY(crit_capture_);
   rtc::Optional<int> sample_rate_hz_ GUARDED_BY(crit_capture_);
 
+  static int instance_counter_;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(GainControlImpl);
 };
 }  // namespace webrtc

@@ -435,9 +435,6 @@ int AudioProcessingImpl::InitializeLocked() {
                       capture_audiobuffer_num_channels,
                       formats_.api_format.output_stream().num_frames()));
 
-  public_submodules_->gain_control->Initialize(num_proc_channels(),
-                                               proc_sample_rate_hz());
-
   public_submodules_->echo_cancellation->Initialize(
       proc_sample_rate_hz(), num_reverse_channels(), num_output_channels(),
       num_proc_channels());
@@ -450,6 +447,9 @@ int AudioProcessingImpl::InitializeLocked() {
   public_submodules_->echo_control_mobile->Initialize(
       proc_split_sample_rate_hz(), num_reverse_channels(),
       num_output_channels());
+
+  public_submodules_->gain_control->Initialize(num_proc_channels(),
+                                               proc_sample_rate_hz());
   if (constants_.use_experimental_agc) {
     if (!private_submodules_->agc_manager.get()) {
       private_submodules_->agc_manager.reset(new AgcManagerDirect(
@@ -460,6 +460,7 @@ int AudioProcessingImpl::InitializeLocked() {
     private_submodules_->agc_manager->Initialize();
     private_submodules_->agc_manager->SetCaptureMuted(
         capture_.output_will_be_muted);
+    public_submodules_->gain_control_for_experimental_agc->Initialize();
   }
   InitializeTransient();
   InitializeBeamformer();

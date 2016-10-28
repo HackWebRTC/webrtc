@@ -14,6 +14,7 @@
 #include "webrtc/base/optional.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/agc/legacy/gain_control.h"
+#include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
 
 namespace webrtc {
 
@@ -84,10 +85,13 @@ class GainControlImpl::GainController {
   RTC_DISALLOW_COPY_AND_ASSIGN(GainController);
 };
 
+int GainControlImpl::instance_counter_ = 0;
+
 GainControlImpl::GainControlImpl(rtc::CriticalSection* crit_render,
                                  rtc::CriticalSection* crit_capture)
     : crit_render_(crit_render),
       crit_capture_(crit_capture),
+      data_dumper_(new ApmDataDumper(instance_counter_)),
       mode_(kAdaptiveAnalog),
       minimum_capture_level_(0),
       maximum_capture_level_(255),
@@ -239,6 +243,7 @@ int GainControlImpl::compression_gain_db() const {
 // TODO(ajm): ensure this is called under kAdaptiveAnalog.
 int GainControlImpl::set_stream_analog_level(int level) {
   rtc::CritScope cs(crit_capture_);
+  data_dumper_->DumpRaw("gain_control_set_stream_analog_level", 1, &level);
 
   was_analog_level_set_ = true;
   if (level < minimum_capture_level_ || level > maximum_capture_level_) {
@@ -251,6 +256,8 @@ int GainControlImpl::set_stream_analog_level(int level) {
 
 int GainControlImpl::stream_analog_level() {
   rtc::CritScope cs(crit_capture_);
+  data_dumper_->DumpRaw("gain_control_stream_analog_level", 1,
+                        &analog_capture_level_);
   // TODO(ajm): enable this assertion?
   //RTC_DCHECK_EQ(kAdaptiveAnalog, mode_);
 
@@ -385,6 +392,7 @@ bool GainControlImpl::is_limiter_enabled() const {
 void GainControlImpl::Initialize(size_t num_proc_channels, int sample_rate_hz) {
   rtc::CritScope cs_render(crit_render_);
   rtc::CritScope cs_capture(crit_capture_);
+  data_dumper_->InitiateNewSetOfRecordings();
 
   num_proc_channels_ = rtc::Optional<size_t>(num_proc_channels);
   sample_rate_hz_ = rtc::Optional<int>(sample_rate_hz);
