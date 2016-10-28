@@ -63,7 +63,8 @@ bool VerifyFloatBitExactness(const webrtc::audioproc::Stream& msg,
 }  // namespace
 
 void AecDumpBasedSimulator::PrepareProcessStreamCall(
-    const webrtc::audioproc::Stream& msg) {
+    const webrtc::audioproc::Stream& msg,
+    bool* set_stream_analog_level_called) {
   if (msg.has_input_data()) {
     // Fixed interface processing.
     // Verify interface invariance.
@@ -127,6 +128,9 @@ void AecDumpBasedSimulator::PrepareProcessStreamCall(
   if (msg.has_level()) {
     RTC_CHECK_EQ(AudioProcessing::kNoError,
                  ap_->gain_control()->set_stream_analog_level(msg.level()));
+    *set_stream_analog_level_called = true;
+  } else {
+    *set_stream_analog_level_called = false;
   }
 }
 
@@ -507,8 +511,14 @@ void AecDumpBasedSimulator::HandleMessage(const webrtc::audioproc::Init& msg) {
 
 void AecDumpBasedSimulator::HandleMessage(
     const webrtc::audioproc::Stream& msg) {
-  PrepareProcessStreamCall(msg);
+  bool set_stream_analog_level_called = false;
+  PrepareProcessStreamCall(msg, &set_stream_analog_level_called);
   ProcessStream(interface_used_ == InterfaceType::kFixedInterface);
+  if (set_stream_analog_level_called) {
+    // Call stream analog level to ensure that any side-effects are triggered.
+    (void)ap_->gain_control()->stream_analog_level();
+  }
+
   VerifyProcessStreamBitExactness(msg);
 }
 

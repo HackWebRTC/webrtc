@@ -42,7 +42,8 @@ class AecDumpBasedSimulator final : public AudioProcessingSimulator {
   void HandleMessage(const webrtc::audioproc::Stream& msg);
   void HandleMessage(const webrtc::audioproc::ReverseStream& msg);
   void HandleMessage(const webrtc::audioproc::Config& msg);
-  void PrepareProcessStreamCall(const webrtc::audioproc::Stream& msg);
+  void PrepareProcessStreamCall(const webrtc::audioproc::Stream& msg,
+                                bool* set_stream_analog_level_called);
   void PrepareReverseProcessStreamCall(
       const webrtc::audioproc::ReverseStream& msg);
   void VerifyProcessStreamBitExactness(const webrtc::audioproc::Stream& msg);

@@ -100,6 +100,8 @@ bool WavBasedSimulator::HandleProcessStreamCall() {
   if (samples_left_to_process) {
     PrepareProcessStreamCall();
     ProcessStream(settings_.fixed_interface);
+    // Call stream analog level to ensure that any side-effects are triggered.
+    (void)ap_->gain_control()->stream_analog_level();
     last_specified_microphone_level_ =
         ap_->gain_control()->stream_analog_level();
   }
