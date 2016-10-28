@@ -36,6 +36,7 @@ class FrameObject : public webrtc::VCMEncodedFrame {
   // When this frame should be rendered.
   virtual int64_t RenderTime() const = 0;
 
+  size_t size() { return _length; }
 
   // The tuple (|picture_id|, |spatial_layer|) uniquely identifies a frame
   // object. For codec types that don't necessarily have picture ids they
@@ -47,8 +48,6 @@ class FrameObject : public webrtc::VCMEncodedFrame {
   size_t num_references;
   uint16_t references[kMaxFrameReferences];
   bool inter_layer_predicted;
-
-  size_t size;
 };
 
 class PacketBuffer;

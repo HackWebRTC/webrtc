@@ -33,7 +33,6 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
       last_seq_num_(last_seq_num),
       received_time_(received_time),
       times_nacked_(times_nacked) {
-  size = frame_size;
   VCMPacket* packet = packet_buffer_->GetPacket(first_seq_num);
   if (packet) {
     // TODO(philipel): Remove when encoded image is replaced by FrameObject.

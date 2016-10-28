@@ -119,7 +119,7 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
     int64_t frame_delay;
     if (inter_frame_delay_.CalculateDelay(timestamp, &frame_delay,
                                           received_time)) {
-      jitter_estimator_->UpdateEstimate(frame_delay, frame->size);
+      jitter_estimator_->UpdateEstimate(frame_delay, frame->size());
     }
     float rtt_mult = protection_mode_ == kProtectionNackFEC ? 0.0 : 1.0;
     timing_->SetJitterDelay(jitter_estimator_->GetJitterEstimate(rtt_mult));

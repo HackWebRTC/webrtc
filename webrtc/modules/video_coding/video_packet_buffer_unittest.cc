@@ -145,7 +145,7 @@ TEST_F(TestPacketBuffer, FrameSize) {
   InsertPacket(seq_num + 3, kKeyFrame, kNotFirst, kLast, 5, data);
 
   ASSERT_EQ(1UL, frames_from_callback_.size());
-  EXPECT_EQ(20UL, frames_from_callback_.begin()->second->size);
+  EXPECT_EQ(20UL, frames_from_callback_.begin()->second->size());
 }
 
 TEST_F(TestPacketBuffer, ExpandBuffer) {
