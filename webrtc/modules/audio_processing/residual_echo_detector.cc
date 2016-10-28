@@ -10,26 +10,113 @@
 
 #include "webrtc/modules/audio_processing/residual_echo_detector.h"
 
+#include <algorithm>
+#include <numeric>
+
 #include "webrtc/modules/audio_processing/audio_buffer.h"
+
+namespace {
+
+float Power(rtc::ArrayView<const float> input) {
+  return std::inner_product(input.begin(), input.end(), input.begin(), 0.f);
+}
+
+constexpr size_t kLookbackFrames = 650;
+// TODO(ivoc): Verify the size of this buffer.
+constexpr size_t kRenderBufferSize = 30;
+
+}  // namespace
 
 namespace webrtc {
 
-ResidualEchoDetector::ResidualEchoDetector() = default;
+ResidualEchoDetector::ResidualEchoDetector()
+    : render_buffer_(kRenderBufferSize),
+      render_power_(kLookbackFrames),
+      render_power_mean_(kLookbackFrames),
+      render_power_std_dev_(kLookbackFrames),
+      covariances_(kLookbackFrames){};
 
 ResidualEchoDetector::~ResidualEchoDetector() = default;
 
 void ResidualEchoDetector::AnalyzeRenderAudio(
-    rtc::ArrayView<const float> render_audio) const {
-  // TODO(ivoc): Add implementation.
+    rtc::ArrayView<const float> render_audio) {
+  if (render_buffer_.Size() == 0) {
+    frames_since_zero_buffer_size_ = 0;
+  } else if (frames_since_zero_buffer_size_ >= kRenderBufferSize) {
+    // This can happen in a few cases: at the start of a call, due to a glitch
+    // or due to clock drift. The excess capture value will be ignored.
+    // TODO(ivoc): Include how often this happens in APM stats.
+    render_buffer_.Pop();
+    frames_since_zero_buffer_size_ = 0;
+  }
+  ++frames_since_zero_buffer_size_;
+  float power = Power(render_audio);
+  render_buffer_.Push(power);
 }
 
 void ResidualEchoDetector::AnalyzeCaptureAudio(
-    rtc::ArrayView<const float> render_audio) {
-  // TODO(ivoc): Add implementation.
+    rtc::ArrayView<const float> capture_audio) {
+  if (first_process_call_) {
+    // On the first process call (so the start of a call), we must flush the
+    // render buffer, otherwise the render data will be delayed.
+    render_buffer_.Clear();
+    first_process_call_ = false;
+  }
+
+  // Get the next render value.
+  const rtc::Optional<float> buffered_render_power = render_buffer_.Pop();
+  if (!buffered_render_power) {
+    // This can happen in a few cases: at the start of a call, due to a glitch
+    // or due to clock drift. The excess capture value will be ignored.
+    // TODO(ivoc): Include how often this happens in APM stats.
+    return;
+  }
+  // Update the render statistics, and store the statistics in circular buffers.
+  render_statistics_.Update(*buffered_render_power);
+  RTC_DCHECK_LT(next_insertion_index_, kLookbackFrames);
+  render_power_[next_insertion_index_] = *buffered_render_power;
+  render_power_mean_[next_insertion_index_] = render_statistics_.mean();
+  render_power_std_dev_[next_insertion_index_] =
+      render_statistics_.std_deviation();
+
+  // Get the next capture value, update capture statistics and add the relevant
+  // values to the buffers.
+  const float capture_power = Power(capture_audio);
+  capture_statistics_.Update(capture_power);
+  const float capture_mean = capture_statistics_.mean();
+  const float capture_std_deviation = capture_statistics_.std_deviation();
+
+  // Update the covariance values and determine the new echo likelihood.
+  echo_likelihood_ = 0.f;
+  for (size_t delay = 0; delay < covariances_.size(); ++delay) {
+    const size_t read_index =
+        (kLookbackFrames + next_insertion_index_ - delay) % kLookbackFrames;
+    RTC_DCHECK_LT(read_index, render_power_.size());
+    covariances_[delay].Update(capture_power, capture_mean,
+                               capture_std_deviation, render_power_[read_index],
+                               render_power_mean_[read_index],
+                               render_power_std_dev_[read_index]);
+    echo_likelihood_ = std::max(
+        echo_likelihood_, covariances_[delay].normalized_cross_correlation());
+  }
+
+  // Update the next insertion index.
+  ++next_insertion_index_;
+  next_insertion_index_ %= kLookbackFrames;
 }
 
 void ResidualEchoDetector::Initialize() {
-  // TODO(ivoc): Add implementation.
+  render_buffer_.Clear();
+  std::fill(render_power_.begin(), render_power_.end(), 0.f);
+  std::fill(render_power_mean_.begin(), render_power_mean_.end(), 0.f);
+  std::fill(render_power_std_dev_.begin(), render_power_std_dev_.end(), 0.f);
+  render_statistics_.Clear();
+  capture_statistics_.Clear();
+  for (auto& cov : covariances_) {
+    cov.Clear();
+  }
+  echo_likelihood_ = 0.f;
+  next_insertion_index_ = 0;
 }
 
 void ResidualEchoDetector::PackRenderAudioBuffer(
@@ -42,11 +129,6 @@ void ResidualEchoDetector::PackRenderAudioBuffer(
                         audio->split_bands_const_f(0)[kBand0To8kHz],
                         (audio->split_bands_const_f(0)[kBand0To8kHz] +
                          audio->num_frames_per_band()));
-}
-
-float ResidualEchoDetector::get_echo_likelihood() const {
-  // TODO(ivoc): Add implementation.
-  return 0.0f;
 }
 
 }  // namespace webrtc
