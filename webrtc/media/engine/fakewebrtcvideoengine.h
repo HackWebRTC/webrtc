@@ -193,11 +193,10 @@ class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
         encoders_have_internal_sources_(false) {}
 
   webrtc::VideoEncoder* CreateVideoEncoder(
-      webrtc::VideoCodecType type) override {
+      const cricket::VideoCodec& codec) override {
     rtc::CritScope lock(&crit_);
-    if (supported_codec_types_.count(type) == 0) {
-      return NULL;
-    }
+    if (!IsCodecSupported(codecs_, codec))
+      return nullptr;
     FakeWebRtcVideoEncoder* encoder = new FakeWebRtcVideoEncoder();
     encoders_.push_back(encoder);
     num_created_encoders_++;
@@ -221,8 +220,7 @@ class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
     delete encoder;
   }
 
-  const std::vector<WebRtcVideoEncoderFactory::VideoCodec>& codecs()
-      const override {
+  const std::vector<cricket::VideoCodec>& supported_codecs() const override {
     return codecs_;
   }
 
@@ -235,11 +233,8 @@ class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
     encoders_have_internal_sources_ = internal_source;
   }
 
-  void AddSupportedVideoCodecType(webrtc::VideoCodecType type,
-                                  const std::string& name) {
-    supported_codec_types_.insert(type);
-    codecs_.push_back(
-        WebRtcVideoEncoderFactory::VideoCodec(type, name, 1280, 720, 30));
+  void AddSupportedVideoCodecType(const std::string& name) {
+    codecs_.push_back(cricket::VideoCodec(name));
   }
 
   int GetNumCreatedEncoders() {
@@ -255,8 +250,7 @@ class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
  private:
   rtc::CriticalSection crit_;
   rtc::Event created_video_encoder_event_;
-  std::set<webrtc::VideoCodecType> supported_codec_types_;
-  std::vector<WebRtcVideoEncoderFactory::VideoCodec> codecs_;
+  std::vector<cricket::VideoCodec> codecs_;
   std::vector<FakeWebRtcVideoEncoder*> encoders_ GUARDED_BY(crit_);
   int num_created_encoders_ GUARDED_BY(crit_);
   bool encoders_have_internal_sources_;

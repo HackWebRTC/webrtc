@@ -57,9 +57,6 @@ namespace webrtc_jni {
 #define H264_SC_LENGTH 4
 // Maximum allowed NALUs in one output frame.
 #define MAX_NALUS_PERFRAME 32
-// Maximum supported HW video encoder resolution.
-#define MAX_VIDEO_WIDTH 1280
-#define MAX_VIDEO_HEIGHT 1280
 // Maximum supported HW video encoder fps.
 #define MAX_VIDEO_FPS 30
 // Maximum allowed fps value in SetRates() call.
@@ -1310,8 +1307,7 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
   CHECK_EXCEPTION(jni);
   if (is_vp8_hw_supported) {
     ALOGD << "VP8 HW Encoder supported.";
-    supported_codecs_.push_back(VideoCodec(kVideoCodecVP8, "VP8",
-        MAX_VIDEO_WIDTH, MAX_VIDEO_HEIGHT, MAX_VIDEO_FPS));
+    supported_codecs_.push_back(cricket::VideoCodec("VP8"));
   }
 
   bool is_vp9_hw_supported = jni->CallStaticBooleanMethod(
@@ -1320,8 +1316,7 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
   CHECK_EXCEPTION(jni);
   if (is_vp9_hw_supported) {
     ALOGD << "VP9 HW Encoder supported.";
-    supported_codecs_.push_back(VideoCodec(kVideoCodecVP9, "VP9",
-        MAX_VIDEO_WIDTH, MAX_VIDEO_HEIGHT, MAX_VIDEO_FPS));
+    supported_codecs_.push_back(cricket::VideoCodec("VP9"));
   }
 
   bool is_h264_hw_supported = jni->CallStaticBooleanMethod(
@@ -1330,8 +1325,7 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
   CHECK_EXCEPTION(jni);
   if (is_h264_hw_supported) {
     ALOGD << "H.264 HW Encoder supported.";
-    supported_codecs_.push_back(VideoCodec(kVideoCodecH264, "H264",
-        MAX_VIDEO_WIDTH, MAX_VIDEO_HEIGHT, MAX_VIDEO_FPS));
+    supported_codecs_.push_back(cricket::VideoCodec("H264"));
   }
 }
 
@@ -1357,26 +1351,23 @@ void MediaCodecVideoEncoderFactory::SetEGLContext(
 }
 
 webrtc::VideoEncoder* MediaCodecVideoEncoderFactory::CreateVideoEncoder(
-    VideoCodecType type) {
+    const cricket::VideoCodec& codec) {
   if (supported_codecs_.empty()) {
-    ALOGW << "No HW video encoder for type " << (int)type;
+    ALOGW << "No HW video encoder for codec " << codec.name;
     return nullptr;
   }
-  for (std::vector<VideoCodec>::const_iterator it = supported_codecs_.begin();
-         it != supported_codecs_.end(); ++it) {
-    if (it->type == type) {
-      ALOGD << "Create HW video encoder for type " << (int)type <<
-          " (" << it->name << ").";
-      return new MediaCodecVideoEncoder(AttachCurrentThreadIfNeeded(), type,
-                                        egl_context_);
-    }
+  if (IsCodecSupported(supported_codecs_, codec)) {
+    ALOGD << "Create HW video encoder for " << codec.name;
+    const VideoCodecType type = cricket::CodecTypeFromName(codec.name);
+    return new MediaCodecVideoEncoder(AttachCurrentThreadIfNeeded(), type,
+                                      egl_context_);
   }
-  ALOGW << "Can not find HW video encoder for type " << (int)type;
+  ALOGW << "Can not find HW video encoder for type " << codec.name;
   return nullptr;
 }
 
-const std::vector<MediaCodecVideoEncoderFactory::VideoCodec>&
-MediaCodecVideoEncoderFactory::codecs() const {
+const std::vector<cricket::VideoCodec>&
+MediaCodecVideoEncoderFactory::supported_codecs() const {
   return supported_codecs_;
 }
 

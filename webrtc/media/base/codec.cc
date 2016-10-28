@@ -212,6 +212,9 @@ std::string VideoCodec::ToString() const {
 VideoCodec::VideoCodec(int id, const std::string& name)
     : Codec(id, name, kVideoCodecClockrate) {}
 
+VideoCodec::VideoCodec(const std::string& name)
+    : VideoCodec(0 /* id */, name) {}
+
 VideoCodec::VideoCodec() : Codec() {
   clockrate = kVideoCodecClockrate;
 }
@@ -304,7 +307,30 @@ bool HasTransportCc(const Codec& codec) {
 }
 
 bool CodecNamesEq(const std::string& name1, const std::string& name2) {
-  return _stricmp(name1.c_str(), name2.c_str()) == 0;
+  return CodecNamesEq(name1.c_str(), name2.c_str());
+}
+
+bool CodecNamesEq(const char* name1, const char* name2) {
+  return _stricmp(name1, name2) == 0;
+}
+
+webrtc::VideoCodecType CodecTypeFromName(const std::string& name) {
+  if (CodecNamesEq(name.c_str(), kVp8CodecName)) {
+    return webrtc::kVideoCodecVP8;
+  } else if (CodecNamesEq(name.c_str(), kVp9CodecName)) {
+    return webrtc::kVideoCodecVP9;
+  } else if (CodecNamesEq(name.c_str(), kH264CodecName)) {
+    return webrtc::kVideoCodecH264;
+  }
+  return webrtc::kVideoCodecUnknown;
+}
+
+bool IsCodecSupported(const std::vector<VideoCodec>& supported_codecs,
+                      const VideoCodec& codec) {
+  return std::any_of(supported_codecs.begin(), supported_codecs.end(),
+                     [&codec](const VideoCodec& supported_codec) -> bool {
+                       return CodecNamesEq(codec.name, supported_codec.name);
+                     });
 }
 
 }  // namespace cricket

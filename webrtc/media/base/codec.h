@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "webrtc/api/rtpparameters.h"
+#include "webrtc/common_types.h"
 #include "webrtc/media/base/mediaconstants.h"
 
 namespace cricket {
@@ -141,6 +142,8 @@ struct AudioCodec : public Codec {
 struct VideoCodec : public Codec {
   // Creates a codec with the given parameters.
   VideoCodec(int id, const std::string& name);
+  // Creates a codec with the given name and empty id.
+  explicit VideoCodec(const std::string& name);
   // Creates an empty codec.
   VideoCodec();
   VideoCodec(const VideoCodec& c);
@@ -200,9 +203,13 @@ bool FindCodecById(const std::vector<Codec>& codecs,
 }
 
 bool CodecNamesEq(const std::string& name1, const std::string& name2);
+bool CodecNamesEq(const char* name1, const char* name2);
+webrtc::VideoCodecType CodecTypeFromName(const std::string& name);
 bool HasNack(const Codec& codec);
 bool HasRemb(const Codec& codec);
 bool HasTransportCc(const Codec& codec);
+bool IsCodecSupported(const std::vector<VideoCodec>& supported_codecs,
+                      const VideoCodec& codec);
 
 }  // namespace cricket
 

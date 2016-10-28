@@ -28,16 +28,20 @@ class MediaCodecVideoEncoderFactory
   void SetEGLContext(JNIEnv* jni, jobject egl_context);
 
   // WebRtcVideoEncoderFactory implementation.
-  webrtc::VideoEncoder* CreateVideoEncoder(webrtc::VideoCodecType type)
-      override;
-  const std::vector<VideoCodec>& codecs() const override;
+  webrtc::VideoEncoder* CreateVideoEncoder(
+      const cricket::VideoCodec& codec) override;
+  const std::vector<cricket::VideoCodec>& supported_codecs() const override;
   void DestroyVideoEncoder(webrtc::VideoEncoder* encoder) override;
 
  private:
+  // Disable overloaded virtual function warning. TODO(magjed): Remove once
+  // http://crbug/webrtc/6402 is fixed.
+  using cricket::WebRtcVideoEncoderFactory::CreateVideoEncoder;
+
   jobject egl_context_;
 
   // Empty if platform support is lacking, const after ctor returns.
-  std::vector<VideoCodec> supported_codecs_;
+  std::vector<cricket::VideoCodec> supported_codecs_;
 };
 
 }  // namespace webrtc_jni

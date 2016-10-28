@@ -222,7 +222,7 @@ TEST_F(WebRtcVideoEngine2Test, CVOSetHeaderExtensionBeforeCapturer) {
   cricket::FakeVideoCapturer capturer;
 
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
-  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+  encoder_factory.AddSupportedVideoCodecType("VP8");
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(kVp8Codec);
 
@@ -254,7 +254,7 @@ TEST_F(WebRtcVideoEngine2Test, CVOSetHeaderExtensionBeforeAddSendStream) {
   cricket::FakeVideoCapturer capturer;
 
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
-  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+  encoder_factory.AddSupportedVideoCodecType("VP8");
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(kVp8Codec);
 
@@ -278,8 +278,8 @@ TEST_F(WebRtcVideoEngine2Test, CVOSetHeaderExtensionAfterCapturer) {
   cricket::FakeVideoCapturer capturer;
 
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
-  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
-  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP9, "VP9");
+  encoder_factory.AddSupportedVideoCodecType("VP8");
+  encoder_factory.AddSupportedVideoCodecType("VP9");
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(kVp8Codec);
   parameters.codecs.push_back(kVp9Codec);
@@ -335,7 +335,7 @@ TEST_F(WebRtcVideoEngine2Test, GetStatsWithoutSendCodecsSetDoesNotCrash) {
 
 TEST_F(WebRtcVideoEngine2Test, UseExternalFactoryForVp8WhenSupported) {
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
-  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+  encoder_factory.AddSupportedVideoCodecType("VP8");
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(kVp8Codec);
 
@@ -376,7 +376,7 @@ TEST_F(WebRtcVideoEngine2Test, UseExternalFactoryForVp8WhenSupported) {
 // if/when we start adding RTX codecs for unrecognized codec names.
 TEST_F(WebRtcVideoEngine2Test, RtxCodecAddedForExternalCodec) {
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
-  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecH264, "H264");
+  encoder_factory.AddSupportedVideoCodecType("H264");
   engine_.SetExternalEncoderFactory(&encoder_factory);
   engine_.Init();
 
@@ -400,7 +400,7 @@ TEST_F(WebRtcVideoEngine2Test, RtxCodecAddedForExternalCodec) {
 void WebRtcVideoEngine2Test::TestExtendedEncoderOveruse(
     bool use_external_encoder) {
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
-  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+  encoder_factory.AddSupportedVideoCodecType("VP8");
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(kVp8Codec);
   std::unique_ptr<VideoMediaChannel> channel;
@@ -437,7 +437,7 @@ TEST_F(WebRtcVideoEngine2Test, DisablesFullEncoderTimeForNonExternalEncoders) {
 #if !defined(RTC_DISABLE_VP9)
 TEST_F(WebRtcVideoEngine2Test, CanConstructDecoderForVp9EncoderFactory) {
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
-  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP9, "VP9");
+  encoder_factory.AddSupportedVideoCodecType("VP9");
   std::vector<cricket::VideoCodec> codecs;
   codecs.push_back(kVp9Codec);
 
@@ -451,7 +451,7 @@ TEST_F(WebRtcVideoEngine2Test, CanConstructDecoderForVp9EncoderFactory) {
 
 TEST_F(WebRtcVideoEngine2Test, PropagatesInputFrameTimestamp) {
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
-  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+  encoder_factory.AddSupportedVideoCodecType("VP8");
   std::vector<cricket::VideoCodec> codecs;
   codecs.push_back(kVp8Codec);
   FakeCall* fake_call = new FakeCall(webrtc::Call::Config(&event_log_));
@@ -539,7 +539,7 @@ VideoMediaChannel* WebRtcVideoEngine2Test::SetUpForExternalDecoderFactory(
 
 TEST_F(WebRtcVideoEngine2Test, UsesSimulcastAdapterForVp8Factories) {
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
-  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
+  encoder_factory.AddSupportedVideoCodecType("VP8");
   std::vector<cricket::VideoCodec> codecs;
   codecs.push_back(kVp8Codec);
 
@@ -580,7 +580,7 @@ TEST_F(WebRtcVideoEngine2Test, UsesSimulcastAdapterForVp8Factories) {
 
 TEST_F(WebRtcVideoEngine2Test, ChannelWithExternalH264CanChangeToInternalVp8) {
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
-  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecH264, "H264");
+  encoder_factory.AddSupportedVideoCodecType("H264");
   std::vector<cricket::VideoCodec> codecs;
   codecs.push_back(kH264Codec);
 
@@ -600,7 +600,7 @@ TEST_F(WebRtcVideoEngine2Test, ChannelWithExternalH264CanChangeToInternalVp8) {
 TEST_F(WebRtcVideoEngine2Test,
        DontUseExternalEncoderFactoryForUnsupportedCodecs) {
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
-  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecH264, "H264");
+  encoder_factory.AddSupportedVideoCodecType("H264");
   std::vector<cricket::VideoCodec> codecs;
   codecs.push_back(kVp8Codec);
 
@@ -616,8 +616,8 @@ TEST_F(WebRtcVideoEngine2Test,
 TEST_F(WebRtcVideoEngine2Test,
        UsesSimulcastAdapterForVp8WithCombinedVP8AndH264Factory) {
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
-  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
-  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecH264, "H264");
+  encoder_factory.AddSupportedVideoCodecType("VP8");
+  encoder_factory.AddSupportedVideoCodecType("H264");
 
   std::vector<cricket::VideoCodec> codecs;
   codecs.push_back(kVp8Codec);
@@ -653,8 +653,8 @@ TEST_F(WebRtcVideoEngine2Test,
 TEST_F(WebRtcVideoEngine2Test,
        DestroysNonSimulcastEncoderFromCombinedVP8AndH264Factory) {
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
-  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecVP8, "VP8");
-  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecH264, "H264");
+  encoder_factory.AddSupportedVideoCodecType("VP8");
+  encoder_factory.AddSupportedVideoCodecType("H264");
 
   std::vector<cricket::VideoCodec> codecs;
   codecs.push_back(kH264Codec);
@@ -684,7 +684,7 @@ TEST_F(WebRtcVideoEngine2Test,
 
 TEST_F(WebRtcVideoEngine2Test, SimulcastDisabledForH264) {
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
-  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecH264, "H264");
+  encoder_factory.AddSupportedVideoCodecType("H264");
   std::vector<cricket::VideoCodec> codecs;
   codecs.push_back(kH264Codec);
 
@@ -714,8 +714,7 @@ TEST_F(WebRtcVideoEngine2Test, SimulcastDisabledForH264) {
 // Test that external codecs are added to the end of the supported codec list.
 TEST_F(WebRtcVideoEngine2Test, ReportSupportedExternalCodecs) {
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
-  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecUnknown,
-                                             "FakeExternalCodec");
+  encoder_factory.AddSupportedVideoCodecType("FakeExternalCodec");
   engine_.SetExternalEncoderFactory(&encoder_factory);
   engine_.Init();
 
@@ -758,7 +757,7 @@ TEST_F(WebRtcVideoEngine2Test, RegisterExternalH264DecoderIfSupported) {
   // For now we add a FakeWebRtcVideoEncoderFactory to add H264 to supported
   // codecs.
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
-  encoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecH264, "H264");
+  encoder_factory.AddSupportedVideoCodecType("H264");
   engine_.SetExternalEncoderFactory(&encoder_factory);
   cricket::FakeWebRtcVideoDecoderFactory decoder_factory;
   decoder_factory.AddSupportedVideoCodecType(webrtc::kVideoCodecH264);
@@ -1817,7 +1816,7 @@ class Vp9SettingsTest : public WebRtcVideoChannel2Test {
   Vp9SettingsTest() : Vp9SettingsTest("") {}
   explicit Vp9SettingsTest(const char* field_trials)
       : WebRtcVideoChannel2Test(field_trials) {
-    encoder_factory_.AddSupportedVideoCodecType(webrtc::kVideoCodecVP9, "VP9");
+    encoder_factory_.AddSupportedVideoCodecType("VP9");
   }
   virtual ~Vp9SettingsTest() {}
 

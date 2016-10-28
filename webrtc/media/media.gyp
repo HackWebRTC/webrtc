@@ -76,6 +76,7 @@
         'engine/webrtcvideocapturerfactory.h',
         'engine/webrtcvideocapturerfactory.cc',
         'engine/webrtcvideodecoderfactory.h',
+        'engine/webrtcvideoencoderfactory.cc',
         'engine/webrtcvideoencoderfactory.h',
         'engine/webrtcvideoengine2.cc',
         'engine/webrtcvideoengine2.h',

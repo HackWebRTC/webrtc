@@ -119,8 +119,6 @@ class WebRtcVideoEngine2 {
       WebRtcVideoEncoderFactory* encoder_factory);
 
  private:
-  std::vector<VideoCodec> GetSupportedCodecs() const;
-
   std::vector<VideoCodec> video_codecs_;
 
   bool initialized_;
@@ -226,7 +224,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
 
   void ConfigureReceiverRtp(webrtc::VideoReceiveStream::Config* config,
                             const StreamParams& sp) const;
-  bool CodecIsExternallySupported(const std::string& name) const;
   bool ValidateSendSsrcAvailability(const StreamParams& sp) const
       EXCLUSIVE_LOCKS_REQUIRED(stream_crit_);
   bool ValidateReceiveSsrcAvailability(const StreamParams& sp) const
