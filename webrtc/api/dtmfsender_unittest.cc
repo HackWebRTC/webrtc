@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "webrtc/api/audiotrack.h"
+#include "webrtc/base/fakeclock.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/timeutils.h"
@@ -27,6 +28,9 @@ using webrtc::DtmfSender;
 using webrtc::DtmfSenderObserverInterface;
 
 static const char kTestAudioLabel[] = "test_audio_track";
+// TODO(deadbeef): Even though this test now uses a fake clock, it has a
+// generous 3-second timeout for every test case. The timeout could be tuned
+// to each test based on the tones sent, instead.
 static const int kMaxWaitMs = 3000;
 
 class FakeDtmfObserver : public DtmfSenderObserverInterface {
@@ -191,9 +195,9 @@ class DtmfSenderTest : public testing::Test {
     while (it_ref != dtmf_queue_ref.end() && it != dtmf_queue.end()) {
       EXPECT_EQ(it_ref->code, it->code);
       EXPECT_EQ(it_ref->duration, it->duration);
-      // Allow ~100ms error.
-      EXPECT_GE(it_ref->gap, it->gap - 100);
-      EXPECT_LE(it_ref->gap, it->gap + 100);
+      // Allow ~10ms error (can be small since we're using a fake clock).
+      EXPECT_GE(it_ref->gap, it->gap - 10);
+      EXPECT_LE(it_ref->gap, it->gap + 10);
       ++it_ref;
       ++it;
     }
@@ -218,6 +222,7 @@ class DtmfSenderTest : public testing::Test {
   std::unique_ptr<FakeDtmfObserver> observer_;
   std::unique_ptr<FakeDtmfProvider> provider_;
   rtc::scoped_refptr<DtmfSender> dtmf_;
+  rtc::ScopedFakeClock fake_clock_;
 };
 
 TEST_F(DtmfSenderTest, CanInsertDtmf) {
@@ -231,7 +236,7 @@ TEST_F(DtmfSenderTest, InsertDtmf) {
   int duration = 100;
   int inter_tone_gap = 50;
   EXPECT_TRUE(dtmf_->InsertDtmf(tones, duration, inter_tone_gap));
-  EXPECT_TRUE_WAIT(observer_->completed(), kMaxWaitMs);
+  EXPECT_TRUE_SIMULATED_WAIT(observer_->completed(), kMaxWaitMs, fake_clock_);
 
   // The unrecognized characters should be ignored.
   std::string known_tones = "1a*";
@@ -247,13 +252,14 @@ TEST_F(DtmfSenderTest, InsertDtmfTwice) {
   EXPECT_TRUE(dtmf_->InsertDtmf(tones1, duration, inter_tone_gap));
   VerifyExpectedState(track_, tones1, duration, inter_tone_gap);
   // Wait until the first tone got sent.
-  EXPECT_TRUE_WAIT(observer_->tones().size() == 1, kMaxWaitMs);
+  EXPECT_TRUE_SIMULATED_WAIT(observer_->tones().size() == 1, kMaxWaitMs,
+                             fake_clock_);
   VerifyExpectedState(track_, "2", duration, inter_tone_gap);
   // Insert with another tone buffer.
   EXPECT_TRUE(dtmf_->InsertDtmf(tones2, duration, inter_tone_gap));
   VerifyExpectedState(track_, tones2, duration, inter_tone_gap);
   // Wait until it's completed.
-  EXPECT_TRUE_WAIT(observer_->completed(), kMaxWaitMs);
+  EXPECT_TRUE_SIMULATED_WAIT(observer_->completed(), kMaxWaitMs, fake_clock_);
 
   std::vector<FakeDtmfProvider::DtmfInfo> dtmf_queue_ref;
   GetDtmfInfoFromString("1", duration, inter_tone_gap, &dtmf_queue_ref);
@@ -268,11 +274,12 @@ TEST_F(DtmfSenderTest, InsertDtmfWhileProviderIsDeleted) {
   int inter_tone_gap = 50;
   EXPECT_TRUE(dtmf_->InsertDtmf(tones, duration, inter_tone_gap));
   // Wait until the first tone got sent.
-  EXPECT_TRUE_WAIT(observer_->tones().size() == 1, kMaxWaitMs);
+  EXPECT_TRUE_SIMULATED_WAIT(observer_->tones().size() == 1, kMaxWaitMs,
+                             fake_clock_);
   // Delete provider.
   provider_.reset();
   // The queue should be discontinued so no more tone callbacks.
-  WAIT(false, 200);
+  SIMULATED_WAIT(false, 200, fake_clock_);
   EXPECT_EQ(1U, observer_->tones().size());
 }
 
@@ -282,11 +289,12 @@ TEST_F(DtmfSenderTest, InsertDtmfWhileSenderIsDeleted) {
   int inter_tone_gap = 50;
   EXPECT_TRUE(dtmf_->InsertDtmf(tones, duration, inter_tone_gap));
   // Wait until the first tone got sent.
-  EXPECT_TRUE_WAIT(observer_->tones().size() == 1, kMaxWaitMs);
+  EXPECT_TRUE_SIMULATED_WAIT(observer_->tones().size() == 1, kMaxWaitMs,
+                             fake_clock_);
   // Delete the sender.
   dtmf_ = NULL;
   // The queue should be discontinued so no more tone callbacks.
-  WAIT(false, 200);
+  SIMULATED_WAIT(false, 200, fake_clock_);
   EXPECT_EQ(1U, observer_->tones().size());
 }
 
@@ -297,11 +305,12 @@ TEST_F(DtmfSenderTest, InsertEmptyTonesToCancelPreviousTask) {
   int inter_tone_gap = 50;
   EXPECT_TRUE(dtmf_->InsertDtmf(tones1, duration, inter_tone_gap));
   // Wait until the first tone got sent.
-  EXPECT_TRUE_WAIT(observer_->tones().size() == 1, kMaxWaitMs);
+  EXPECT_TRUE_SIMULATED_WAIT(observer_->tones().size() == 1, kMaxWaitMs,
+                             fake_clock_);
   // Insert with another tone buffer.
   EXPECT_TRUE(dtmf_->InsertDtmf(tones2, duration, inter_tone_gap));
   // Wait until it's completed.
-  EXPECT_TRUE_WAIT(observer_->completed(), kMaxWaitMs);
+  EXPECT_TRUE_SIMULATED_WAIT(observer_->completed(), kMaxWaitMs, fake_clock_);
 
   std::vector<FakeDtmfProvider::DtmfInfo> dtmf_queue_ref;
   GetDtmfInfoFromString("1", duration, inter_tone_gap, &dtmf_queue_ref);
@@ -309,14 +318,12 @@ TEST_F(DtmfSenderTest, InsertEmptyTonesToCancelPreviousTask) {
   VerifyOnObserver("1");
 }
 
-// Flaky when run in parallel.
-// See https://code.google.com/p/webrtc/issues/detail?id=4219.
-TEST_F(DtmfSenderTest, DISABLED_InsertDtmfWithCommaAsDelay) {
+TEST_F(DtmfSenderTest, InsertDtmfWithCommaAsDelay) {
   std::string tones = "3,4";
   int duration = 100;
   int inter_tone_gap = 50;
   EXPECT_TRUE(dtmf_->InsertDtmf(tones, duration, inter_tone_gap));
-  EXPECT_TRUE_WAIT(observer_->completed(), kMaxWaitMs);
+  EXPECT_TRUE_SIMULATED_WAIT(observer_->completed(), kMaxWaitMs, fake_clock_);
 
   VerifyOnProvider(tones, duration, inter_tone_gap);
   VerifyOnObserver(tones);
