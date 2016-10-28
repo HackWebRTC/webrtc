@@ -469,74 +469,6 @@ class AudioProcessing {
   // specific member variables are reset.
   virtual void UpdateHistogramsOnCallEnd() = 0;
 
-  // TODO(ivoc): Remove when the calling code no longer uses the old Statistics
-  //             API.
-  struct Statistic {
-    int instant = 0;  // Instantaneous value.
-    int average = 0;  // Long-term average.
-    int maximum = 0;  // Long-term maximum.
-    int minimum = 0;  // Long-term minimum.
-  };
-
-  struct Stat {
-    void Set(const Statistic& other) {
-      Set(other.instant, other.average, other.maximum, other.minimum);
-    }
-    void Set(float instant, float average, float maximum, float minimum) {
-      RTC_DCHECK_LE(instant, maximum);
-      RTC_DCHECK_GE(instant, minimum);
-      RTC_DCHECK_LE(average, maximum);
-      RTC_DCHECK_GE(average, minimum);
-      instant_ = instant;
-      average_ = average;
-      maximum_ = maximum;
-      minimum_ = minimum;
-    }
-    float instant() const { return instant_; }
-    float average() const { return average_; }
-    float maximum() const { return maximum_; }
-    float minimum() const { return minimum_; }
-
-   private:
-    float instant_ = 0.0f;  // Instantaneous value.
-    float average_ = 0.0f;  // Long-term average.
-    float maximum_ = 0.0f;  // Long-term maximum.
-    float minimum_ = 0.0f;  // Long-term minimum.
-  };
-
-  struct AudioProcessingStatistics {
-    // AEC Statistics.
-    // RERL = ERL + ERLE
-    Stat residual_echo_return_loss;
-    // ERL = 10log_10(P_far / P_echo)
-    Stat echo_return_loss;
-    // ERLE = 10log_10(P_echo / P_out)
-    Stat echo_return_loss_enhancement;
-    // (Pre non-linear processing suppression) A_NLP = 10log_10(P_echo / P_a)
-    Stat a_nlp;
-    // Fraction of time that the AEC linear filter is divergent, in a 1-second
-    // non-overlapped aggregation window.
-    float divergent_filter_fraction = 0.0f;
-
-    // The delay metrics consists of the delay median and standard deviation. It
-    // also consists of the fraction of delay estimates that can make the echo
-    // cancellation perform poorly. The values are aggregated until the first
-    // call to |GetStatistics()| and afterwards aggregated and updated every
-    // second. Note that if there are several clients pulling metrics from
-    // |GetStatistics()| during a session the first call from any of them will
-    // change to one second aggregation window for all.
-    int delay_median = 0;
-    int delay_standard_deviation = 0;
-    float fraction_poor_delays = 0.0f;
-
-    // Residual echo detector likelihood. This value is not yet calculated and
-    // is currently always set to zero.
-    // TODO(ivoc): Implement this stat.
-    float residual_echo_likelihood = 0.0f;
-  };
-
-  virtual AudioProcessingStatistics GetStatistics() const = 0;
-
   // These provide access to the component interfaces and should never return
   // NULL. The pointers will be valid for the lifetime of the APM instance.
   // The memory for these objects is entirely managed internally.
@@ -547,6 +479,13 @@ class AudioProcessing {
   virtual LevelEstimator* level_estimator() const = 0;
   virtual NoiseSuppression* noise_suppression() const = 0;
   virtual VoiceDetection* voice_detection() const = 0;
+
+  struct Statistic {
+    int instant;  // Instantaneous value.
+    int average;  // Long-term average.
+    int maximum;  // Long-term maximum.
+    int minimum;  // Long-term minimum.
+  };
 
   enum Error {
     // Fatal errors.
@@ -769,7 +708,6 @@ class EchoCancellation {
     float divergent_filter_fraction;
   };
 
-  // Deprecated. Use GetStatistics on the AudioProcessing interface instead.
   // TODO(ajm): discuss the metrics update period.
   virtual int GetMetrics(Metrics* metrics) = 0;
 
@@ -786,9 +724,8 @@ class EchoCancellation {
   // Note that if there are several clients pulling metrics from
   // |GetDelayMetrics()| during a session the first call from any of them will
   // change to one second aggregation window for all.
-  // Deprecated. Use GetStatistics on the AudioProcessing interface instead.
+  // TODO(bjornv): Deprecated, remove.
   virtual int GetDelayMetrics(int* median, int* std) = 0;
-  // Deprecated. Use GetStatistics on the AudioProcessing interface instead.
   virtual int GetDelayMetrics(int* median, int* std,
                               float* fraction_poor_delays) = 0;
 

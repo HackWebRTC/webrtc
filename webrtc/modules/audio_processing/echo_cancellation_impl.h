@@ -58,20 +58,6 @@ class EchoCancellationImpl : public EchoCancellation {
   static size_t NumCancellersRequired(size_t num_output_channels,
                                       size_t num_reverse_channels);
 
-  // Enable logging of various AEC statistics.
-  int enable_metrics(bool enable) override;
-
-  // Provides various statistics about the AEC.
-  int GetMetrics(Metrics* metrics) override;
-
-  // Enable logging of delay metrics.
-  int enable_delay_logging(bool enable) override;
-
-  // Provides delay metrics.
-  int GetDelayMetrics(int* median,
-                      int* std,
-                      float* fraction_poor_delays) override;
-
  private:
   class Canceller;
   struct StreamProperties;
@@ -81,10 +67,16 @@ class EchoCancellationImpl : public EchoCancellation {
   int enable_drift_compensation(bool enable) override;
   void set_stream_drift_samples(int drift) override;
   int set_suppression_level(SuppressionLevel level) override;
+  int enable_metrics(bool enable) override;
   bool are_metrics_enabled() const override;
   bool stream_has_echo() const override;
+  int GetMetrics(Metrics* metrics) override;
+  int enable_delay_logging(bool enable) override;
   bool is_delay_logging_enabled() const override;
   int GetDelayMetrics(int* median, int* std) override;
+  int GetDelayMetrics(int* median,
+                      int* std,
+                      float* fraction_poor_delays) override;
 
   struct AecCore* aec_core() const override;
 

@@ -13,19 +13,13 @@
 class EcMetricsTest : public AfterStreamingFixture {
 };
 
-TEST_F(EcMetricsTest, EcMetricsAreOnByDefault) {
-  // AEC must be enabled fist.
-  EXPECT_EQ(0, voe_apm_->SetEcStatus(true, webrtc::kEcAec));
-
-  bool enabled = false;
+TEST_F(EcMetricsTest, EcMetricsAreOffByDefault) {
+  bool enabled = true;
   EXPECT_EQ(0, voe_apm_->GetEcMetricsStatus(enabled));
-  EXPECT_TRUE(enabled);
+  EXPECT_FALSE(enabled);
 }
 
 TEST_F(EcMetricsTest, CanEnableAndDisableEcMetrics) {
-  // AEC must be enabled fist.
-  EXPECT_EQ(0, voe_apm_->SetEcStatus(true, webrtc::kEcAec));
-
   EXPECT_EQ(0, voe_apm_->SetEcMetricsStatus(true));
   bool ec_on = false;
   EXPECT_EQ(0, voe_apm_->GetEcMetricsStatus(ec_on));

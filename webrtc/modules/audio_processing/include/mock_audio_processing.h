@@ -183,7 +183,6 @@ class MockAudioProcessing : public AudioProcessing {
                int(rtc::PlatformFile handle));
   MOCK_METHOD0(StopDebugRecording, int());
   MOCK_METHOD0(UpdateHistogramsOnCallEnd, void());
-  MOCK_CONST_METHOD0(GetStatistics, AudioProcessingStatistics());
   virtual MockEchoCancellation* echo_cancellation() const {
     return echo_cancellation_.get();
   }

@@ -270,7 +270,7 @@ int EchoCancellationImpl::enable_metrics(bool enable) {
 
 bool EchoCancellationImpl::are_metrics_enabled() const {
   rtc::CritScope cs(crit_capture_);
-  return enabled_ && metrics_enabled_;
+  return metrics_enabled_;
 }
 
 // TODO(ajm): we currently just use the metrics from the first AEC. Think more
@@ -333,7 +333,7 @@ int EchoCancellationImpl::enable_delay_logging(bool enable) {
 
 bool EchoCancellationImpl::is_delay_logging_enabled() const {
   rtc::CritScope cs(crit_capture_);
-  return enabled_ && delay_logging_enabled_;
+  return delay_logging_enabled_;
 }
 
 bool EchoCancellationImpl::is_delay_agnostic_enabled() const {
