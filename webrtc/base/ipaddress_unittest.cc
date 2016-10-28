@@ -575,6 +575,9 @@ TEST(IPAddressTest, TestIsLoopback) {
   EXPECT_FALSE(IPIsLoopback(IPAddress(kIPv4MappedPublicAddr)));
 
   EXPECT_TRUE(IPIsLoopback(IPAddress(INADDR_LOOPBACK)));
+  // Try an address in the loopback range (127.0.0.0/8) other than the typical
+  // 127.0.0.1.
+  EXPECT_TRUE(IPIsLoopback(IPAddress(0x7f010203)));
   EXPECT_TRUE(IPIsLoopback(IPAddress(in6addr_loopback)));
 }
 

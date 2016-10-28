@@ -452,7 +452,9 @@ class TurnPortTest : public testing::Test,
         ipv6 ? kTurnIPv6IntAddr : kTurnIntAddr;
 
     std::vector<rtc::SocketAddress> redirect_addresses;
-    SocketAddress loopback_address(ipv6 ? "::1" : "127.0.0.1",
+    // Pick an unusual address in the 127.0.0.0/8 range to make sure more than
+    // 127.0.0.1 is covered.
+    SocketAddress loopback_address(ipv6 ? "::1" : "127.1.2.3",
                                    TURN_SERVER_PORT);
     redirect_addresses.push_back(loopback_address);
 
