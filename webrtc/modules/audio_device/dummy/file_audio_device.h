@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_DEVICE_FILE_AUDIO_DEVICE_H
-#define WEBRTC_AUDIO_DEVICE_FILE_AUDIO_DEVICE_H
+#ifndef WEBRTC_MODULES_AUDIO_DEVICE_DUMMY_FILE_AUDIO_DEVICE_H_
+#define WEBRTC_MODULES_AUDIO_DEVICE_DUMMY_FILE_AUDIO_DEVICE_H_
 
 #include <stdio.h>
 
 #include <memory>
 #include <string>
 
+#include "webrtc/base/file.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/include/file_wrapper.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace rtc {
@@ -41,7 +41,6 @@ class FileAudioDevice : public AudioDeviceGeneric {
   FileAudioDevice(const int32_t id,
                   const char* inputFilename,
                   const char* outputFilename);
-  virtual ~FileAudioDevice();
 
   // Retrieve the currently utilized audio layer
   int32_t ActiveAudioLayer(
@@ -191,8 +190,8 @@ class FileAudioDevice : public AudioDeviceGeneric {
   uint64_t _lastCallPlayoutMillis;
   uint64_t _lastCallRecordMillis;
 
-  FileWrapper& _outputFile;
-  FileWrapper& _inputFile;
+  rtc::File _outputFile;
+  rtc::File _inputFile;
   std::string _outputFilename;
   std::string _inputFilename;
 
@@ -201,4 +200,4 @@ class FileAudioDevice : public AudioDeviceGeneric {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_AUDIO_DEVICE_FILE_AUDIO_DEVICE_H
+#endif  // WEBRTC_MODULES_AUDIO_DEVICE_DUMMY_FILE_AUDIO_DEVICE_H_

@@ -16,7 +16,6 @@
 #include "webrtc/base/task_queue.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
-#include "webrtc/system_wrappers/include/file_wrapper.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -33,7 +32,7 @@ class AudioDeviceBuffer {
   AudioDeviceBuffer();
   virtual ~AudioDeviceBuffer();
 
-  void SetId(uint32_t id) {};
+  void SetId(uint32_t id) {}
   int32_t RegisterAudioCallback(AudioTransport* audio_callback);
 
   int32_t InitPlayout();
