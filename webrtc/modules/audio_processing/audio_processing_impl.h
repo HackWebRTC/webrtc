@@ -116,6 +116,8 @@ class AudioProcessingImpl : public AudioProcessing {
   bool was_stream_delay_set() const override
       EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
+  AudioProcessingStatistics GetStatistics() const override;
+
   // Methods returning pointers to APM submodules.
   // No locks are aquired in those, as those locks
   // would offer no protection (the submodules are

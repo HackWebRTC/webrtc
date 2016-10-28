@@ -443,6 +443,10 @@ int AudioProcessingImpl::InitializeLocked() {
       num_proc_channels());
   AllocateRenderQueue();
 
+  int success = public_submodules_->echo_cancellation->enable_metrics(true);
+  RTC_DCHECK_EQ(0, success);
+  success = public_submodules_->echo_cancellation->enable_delay_logging(true);
+  RTC_DCHECK_EQ(0, success);
   public_submodules_->echo_control_mobile->Initialize(
       proc_split_sample_rate_hz(), num_reverse_channels(),
       num_output_channels());
@@ -1415,6 +1419,22 @@ int AudioProcessingImpl::StopDebugRecording() {
 #else
   return kUnsupportedFunctionError;
 #endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
+}
+
+AudioProcessing::AudioProcessingStatistics AudioProcessingImpl::GetStatistics()
+    const {
+  AudioProcessingStatistics stats;
+  EchoCancellation::Metrics metrics;
+  public_submodules_->echo_cancellation->GetMetrics(&metrics);
+  stats.a_nlp.Set(metrics.a_nlp);
+  stats.divergent_filter_fraction = metrics.divergent_filter_fraction;
+  stats.echo_return_loss.Set(metrics.echo_return_loss);
+  stats.echo_return_loss_enhancement.Set(metrics.echo_return_loss_enhancement);
+  stats.residual_echo_return_loss.Set(metrics.residual_echo_return_loss);
+  public_submodules_->echo_cancellation->GetDelayMetrics(
+      &stats.delay_median, &stats.delay_standard_deviation,
+      &stats.fraction_poor_delays);
+  return stats;
 }
 
 EchoCancellation* AudioProcessingImpl::echo_cancellation() const {
