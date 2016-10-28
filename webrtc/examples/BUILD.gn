@@ -20,12 +20,22 @@ if (is_linux) {
 }
 
 group("examples") {
+  # This target shall build all targets in examples.
+  testonly = true
   public_deps = []
 
   if (is_android) {
+    public_deps += [
+      ":AppRTCMobile",
+      ":AppRTCMobileTest",
+    ]
+  }
+
+  if (is_ios || (is_mac && target_cpu != "x86")) {
     public_deps += [ ":AppRTCMobile" ]
   }
-  if (is_linux) {
+
+  if (is_linux || is_win) {
     public_deps += [
       ":peerconnection_client",
       ":peerconnection_server",

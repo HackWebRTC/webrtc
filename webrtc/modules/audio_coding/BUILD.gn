@@ -913,6 +913,42 @@ rtc_source_set("neteq_test_minimal") {
 }
 
 if (rtc_include_tests) {
+  group("audio_coding_tests") {
+    testonly = true
+    public_deps = [
+      ":RTPchange",
+      ":RTPencode",
+      ":RTPjitter",
+      ":RTPtimeshift",
+      ":acm_receive_test",
+      ":acm_send_test",
+      ":audio_classifier_test",
+      ":audio_codec_speed_tests",
+      ":audio_decoder_unittests",
+      ":audio_decoder_unittests",
+      ":delay_test",
+      ":g711_test",
+      ":g722_test",
+      ":ilbc_test",
+      ":insert_packet_with_timing",
+      ":isac_api_test",
+      ":isac_fix_test",
+      ":isac_switch_samprate_test",
+      ":isac_test",
+      ":neteq_ilbc_quality_test",
+      ":neteq_isac_quality_test",
+      ":neteq_opus_quality_test",
+      ":neteq_pcmu_quality_test",
+      ":neteq_speed_test",
+      ":rtp_analyze",
+      ":rtpcat",
+      ":webrtc_opus_fec_test",
+    ]
+    if (rtc_enable_protobuf) {
+      public_deps += [ ":neteq_rtpplay" ]
+    }
+  }
+
   rtc_source_set("acm_receive_test") {
     testonly = true
     sources = [
@@ -1028,7 +1064,7 @@ if (rtc_include_tests) {
       ":isac_fix",
       ":neteq",
       ":neteq_unittest_tools",
-      "../../common_audio/",
+      "../../common_audio",
       "../../test:test_support_main",
       "//testing/gtest",
     ]
@@ -1128,7 +1164,7 @@ if (rtc_include_tests) {
       ":webrtc_opus",
       "../../system_wrappers:system_wrappers_default",
       "../../test:test_support_main",
-      "../audio_processing/",
+      "../audio_processing",
       "//testing/gtest",
     ]
   }

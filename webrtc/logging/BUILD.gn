@@ -13,6 +13,15 @@ if (is_android) {
   import("//build/config/android/rules.gni")
 }
 
+group("logging") {
+  public_deps = [
+    ":rtc_event_log_impl",
+  ]
+  if (rtc_enable_protobuf) {
+    public_deps += [ ":rtc_event_log_parser" ]
+  }
+}
+
 rtc_source_set("rtc_event_log_api") {
   sources = [
     "rtc_event_log/rtc_event_log.h",

@@ -10,8 +10,13 @@ import("../build/webrtc.gni")
 
 group("p2p") {
   public_deps = [
+    ":libstunprober",
     ":rtc_p2p",
   ]
+  if (!build_with_chromium) {
+    # TODO(kjellander): Move this to examples or tools.
+    public_deps += [ ":stun_prober" ]
+  }
 }
 
 config("rtc_p2p_inherited_config") {

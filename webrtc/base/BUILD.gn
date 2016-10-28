@@ -19,6 +19,17 @@ if (is_win) {
   import("//build/config/clang/clang.gni")
 }
 
+group("base") {
+  public_deps = [
+    ":rtc_base",
+    ":rtc_base_approved",
+    ":rtc_task_queue",
+  ]
+  if (is_android) {
+    public_deps += [ ":base_java" ]
+  }
+}
+
 config("rtc_base_approved_all_dependent_config") {
   if (is_mac && !build_with_chromium) {
     libs = [ "Foundation.framework" ]  # needed for logging_mac.mm

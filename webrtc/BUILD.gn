@@ -243,8 +243,12 @@ config("common_objc") {
   precompiled_source = "sdk/objc/WebRTC-Prefix.pch"
 }
 
-if (!is_ios || !build_with_chromium) {
+if (!build_with_chromium) {
+  # Target to build all the WebRTC production code.
   rtc_static_library("webrtc") {
+    # Only the root target should depend on this.
+    visibility = [ "//:default" ]
+
     sources = [
       # TODO(kjellander): Remove this whenever possible. GN's static_library
       # target type requires at least one object to avoid errors linking.
@@ -258,35 +262,82 @@ if (!is_ios || !build_with_chromium) {
 
     deps = [
       ":webrtc_common",
+      "api",
       "audio",
-      "base:rtc_base",
+      "base",
       "call",
       "common_audio",
       "common_video",
+      "libjingle/xmllite",
+      "libjingle/xmpp",
+      "logging",
+      "media",
       "modules",
+      "modules/video_capture:video_capture_internal_impl",
+      "p2p",
+      "pc",
+      "sdk",
       "stats",
       "system_wrappers",
-      "tools",
       "video",
       "voice_engine",
     ]
 
-    if (build_with_chromium) {
-      deps += [ "modules/video_capture" ]
-    } else {
-      # TODO(kjellander): Enable for Chromium as well when bugs.webrtc.org/4256
-      # is fixed. Right now it's not possible due to circular dependencies.
-      deps += [
-        "api",
-        "media",
-        "p2p",
-        "pc",
-      ]
-    }
-
     if (rtc_enable_protobuf) {
       defines += [ "ENABLE_RTC_EVENT_LOG" ]
       deps += [ "logging:rtc_event_log_proto" ]
+    }
+  }
+
+  if (rtc_include_tests) {
+    # Target to build all the WebRTC tests (but not examples or tools).
+    # Executable in order to get a target that links all WebRTC code.
+    rtc_executable("webrtc_tests") {
+      testonly = true
+
+      # Only the root target should depend on this.
+      visibility = [ "//:default" ]
+
+      deps = [
+        ":rtc_unittests",
+        ":video_engine_tests",
+        ":webrtc_nonparallel_tests",
+        ":webrtc_perf_tests",
+        ":xmllite_xmpp_unittests",
+        "api:peerconnection_unittests",
+        "common_audio:common_audio_unittests",
+        "common_video:common_video_unittests",
+        "media:rtc_media_unittests",
+        "modules:modules_tests",
+        "modules:modules_unittests",
+        "modules/audio_coding:audio_coding_tests",
+        "modules/audio_processing:audio_processing_tests",
+        "modules/rtp_rtcp:test_packet_masks_metrics",
+        "modules/video_capture:video_capture_internal_impl",
+        "pc:rtc_pc_unittests",
+        "stats:rtc_stats_unittests",
+        "system_wrappers:system_wrappers_unittests",
+        "test",
+        "video:screenshare_loopback",
+        "video:video_loopback",
+        "video:video_tests",
+        "voice_engine:voe_cmd_test",
+        "voice_engine:voice_engine_unittests",
+      ]
+      if (is_android) {
+        deps += [
+          ":android_junit_tests",
+          "api:libjingle_peerconnection_android_unittest",
+        ]
+      } else {
+        deps += [ "modules/video_capture:video_capture_tests" ]
+      }
+      if (!is_ios) {
+        deps += [
+          "modules/audio_device:audio_device_tests",
+          "voice_engine:voe_auto_test",
+        ]
+      }
     }
   }
 }
@@ -635,15 +686,6 @@ if (rtc_include_tests) {
         "{{bundle_resources_dir}}/{{source_file_part}}",
       ]
     }
-  }
-
-  rtc_executable("webrtc_tests") {
-    testonly = true
-    deps = [
-      ":webrtc",
-      "modules/video_capture:video_capture_internal_impl",
-      "test",
-    ]
   }
 
   rtc_test("webrtc_perf_tests") {

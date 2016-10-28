@@ -6,10 +6,12 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-# This file is copied and modified from Chromium (src/BUILD.gn).
-group("root") {
+group("default") {
+  testonly = true
   deps = [
     "//webrtc",
+    "//webrtc:webrtc_tests",
     "//webrtc/examples",
+    "//webrtc/tools",
   ]
 }

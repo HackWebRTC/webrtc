@@ -16,6 +16,12 @@ group("api") {
   public_deps = [
     ":libjingle_peerconnection",
   ]
+  if (is_android && !build_with_chromium) {
+    public_deps += [
+      ":libjingle_peerconnection_java",
+      ":libjingle_peerconnection_so",
+    ]
+  }
 }
 
 rtc_source_set("call_api") {

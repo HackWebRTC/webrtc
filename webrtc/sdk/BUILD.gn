@@ -15,6 +15,14 @@ if (is_ios) {
   import("//build/config/ios/rules.gni")
 }
 
+group("sdk") {
+  if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
+    public_deps = [
+      ":rtc_sdk_framework_objc",
+    ]
+  }
+}
+
 if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
   config("rtc_sdk_common_objc_config") {
     include_dirs = [

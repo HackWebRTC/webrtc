@@ -8,6 +8,13 @@
 
 import("../../build/webrtc.gni")
 
+group("audio_mixer") {
+  public_deps = [
+    ":audio_frame_manipulator",
+    ":audio_mixer_impl",
+  ]
+}
+
 rtc_static_library("audio_mixer_impl") {
   visibility = [
     "../../audio:audio",

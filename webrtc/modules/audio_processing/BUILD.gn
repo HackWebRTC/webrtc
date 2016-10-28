@@ -315,6 +315,26 @@ if (rtc_build_with_neon) {
 }
 
 if (rtc_include_tests) {
+  group("audio_processing_tests") {
+    testonly = true
+    public_deps = [
+      ":audioproc_f",
+      ":audioproc_test_utils",
+      ":click_annotate",
+      ":nonlinear_beamformer_test",
+      ":transient_suppression_test",
+      ":unpack_aecdump",
+    ]
+
+    if (rtc_enable_intelligibility_enhancer) {
+      public_deps += [ ":intelligibility_proc" ]
+    }
+
+    if (rtc_enable_protobuf) {
+      public_deps += [ ":audioproc_unittest_proto" ]
+    }
+  }
+
   rtc_executable("unpack_aecdump") {
     testonly = true
     sources = [

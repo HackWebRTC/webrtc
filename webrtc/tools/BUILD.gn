@@ -10,16 +10,32 @@ import("//third_party/protobuf/proto_library.gni")
 import("../build/webrtc.gni")
 
 group("tools") {
-  deps = [
-    ":command_line_parser",
-  ]
+  # This target shall build all targets in tools/.
+  testonly = true
 
-  if (!build_with_chromium) {
-    # TODO(kjellander): Enable these when webrtc:5970 is fixed.
-    deps += [
-      ":frame_analyzer",
-      ":rgba_to_i420_converter",
+  public_deps = [
+    ":command_line_parser",
+    ":frame_analyzer",
+    ":frame_editor",
+    ":psnr_ssim_analyzer",
+    ":rgba_to_i420_converter",
+  ]
+  if (rtc_include_internal_audio_device) {
+    public_deps += [ ":force_mic_volume_max" ]
+  }
+  if (rtc_enable_protobuf) {
+    public_deps += [ ":chart_proto" ]
+  }
+
+  if (rtc_include_tests) {
+    public_deps += [
+      ":activity_metric",
+      ":rtp_analyzer",
+      ":tools_unittests",
     ]
+    if (rtc_enable_protobuf) {
+      public_deps += [ ":event_log_visualizer" ]
+    }
   }
 }
 
@@ -129,7 +145,7 @@ if (rtc_include_internal_audio_device) {
     }
 
     deps = [
-      "../modules/audio_device:audio_device",
+      "../modules/audio_device",
       "../system_wrappers:system_wrappers_default",
       "//build/win:default_exe_manifest",
     ]
@@ -163,8 +179,8 @@ if (rtc_enable_protobuf) {
     deps = [
       "../logging:rtc_event_log_impl",
       "../logging:rtc_event_log_parser",
-      "../modules/congestion_controller:congestion_controller",
-      "../modules/rtp_rtcp:rtp_rtcp",
+      "../modules/congestion_controller",
+      "../modules/rtp_rtcp",
       "../system_wrappers:system_wrappers_default",
       "//build/config/sanitizers:deps",
     ]
