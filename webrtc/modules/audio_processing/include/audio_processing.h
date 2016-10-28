@@ -258,6 +258,9 @@ class AudioProcessing {
       // the allowed range is [-100, 0].
       float initial_peak_level_dbfs = -6.0206f;
     } level_controller;
+    struct ResidualEchoDetector {
+      bool enabled = false;
+    } residual_echo_detector;
   };
 
   // TODO(mgraczyk): Remove once all methods that use ChannelLayout are gone.

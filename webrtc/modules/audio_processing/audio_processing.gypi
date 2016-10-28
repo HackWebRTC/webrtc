@@ -111,6 +111,8 @@
         'noise_suppression_impl.cc',
         'noise_suppression_impl.h',
         'render_queue_item_verifier.h',
+        'residual_echo_detector.cc',
+        'residual_echo_detector.h',
         'rms_level.cc',
         'rms_level.h',
         'splitting_filter.cc',

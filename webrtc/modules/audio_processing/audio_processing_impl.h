@@ -150,6 +150,7 @@ class AudioProcessingImpl : public AudioProcessing {
     bool Update(bool high_pass_filter_enabled,
                 bool echo_canceller_enabled,
                 bool mobile_echo_controller_enabled,
+                bool residual_echo_detector_enabled,
                 bool noise_suppressor_enabled,
                 bool intelligibility_enhancer_enabled,
                 bool beamformer_enabled,
@@ -167,6 +168,7 @@ class AudioProcessingImpl : public AudioProcessing {
     bool high_pass_filter_enabled_ = false;
     bool echo_canceller_enabled_ = false;
     bool mobile_echo_controller_enabled_ = false;
+    bool residual_echo_detector_enabled_ = false;
     bool noise_suppressor_enabled_ = false;
     bool intelligibility_enhancer_enabled_ = false;
     bool beamformer_enabled_ = false;
@@ -234,6 +236,8 @@ class AudioProcessingImpl : public AudioProcessing {
   int InitializeLocked(const ProcessingConfig& config)
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
   void InitializeLevelController() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  void InitializeResidualEchoDetector()
+      EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
 
   void EmptyQueuedRenderAudio();
   void AllocateRenderQueue()
@@ -291,8 +295,7 @@ class AudioProcessingImpl : public AudioProcessing {
 
   // Structs containing the pointers to the submodules.
   std::unique_ptr<ApmPublicSubmodules> public_submodules_;
-  std::unique_ptr<ApmPrivateSubmodules> private_submodules_
-      GUARDED_BY(crit_capture_);
+  std::unique_ptr<ApmPrivateSubmodules> private_submodules_;
 
   // State that is written to while holding both the render and capture locks
   // but can be read without any lock being held.
@@ -386,6 +389,11 @@ class AudioProcessingImpl : public AudioProcessing {
   std::vector<int16_t> agc_render_queue_buffer_ GUARDED_BY(crit_render_);
   std::vector<int16_t> agc_capture_queue_buffer_ GUARDED_BY(crit_capture_);
 
+  size_t red_render_queue_element_max_size_ GUARDED_BY(crit_render_)
+      GUARDED_BY(crit_capture_) = 0;
+  std::vector<float> red_render_queue_buffer_ GUARDED_BY(crit_render_);
+  std::vector<float> red_capture_queue_buffer_ GUARDED_BY(crit_capture_);
+
   // Lock protection not needed.
   std::unique_ptr<SwapQueue<std::vector<float>, RenderQueueItemVerifier<float>>>
       aec_render_signal_queue_;
@@ -395,6 +403,8 @@ class AudioProcessingImpl : public AudioProcessing {
   std::unique_ptr<
       SwapQueue<std::vector<int16_t>, RenderQueueItemVerifier<int16_t>>>
       agc_render_signal_queue_;
+  std::unique_ptr<SwapQueue<std::vector<float>, RenderQueueItemVerifier<float>>>
+      red_render_signal_queue_;
 };
 
 }  // namespace webrtc
