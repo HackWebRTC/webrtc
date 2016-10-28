@@ -114,7 +114,7 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
           is_texture(is_texture) {}
     int width;
     int height;
-    webrtc::VideoRotation rotation;
+    VideoRotation rotation;
     bool is_texture;
   };
 
