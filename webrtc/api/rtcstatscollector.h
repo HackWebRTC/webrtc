@@ -91,18 +91,12 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface {
       int64_t timestamp_us,
       const std::map<std::string, CertificateStatsPair>& transport_cert_stats,
       RTCStatsReport* report) const;
-  void ProduceCertificateStatsFromSSLCertificateStats_s(
-      int64_t timestamp_us, const rtc::SSLCertificateStats& certificate_stats,
-      RTCStatsReport* report) const;
   // Produces |RTCDataChannelStats|.
   void ProduceDataChannelStats_s(
       int64_t timestamp_us, RTCStatsReport* report) const;
   // Produces |RTCIceCandidatePairStats| and |RTCIceCandidateStats|.
   void ProduceIceCandidateAndPairStats_s(
       int64_t timestamp_us, const SessionStats& session_stats,
-      RTCStatsReport* report) const;
-  const std::string& ProduceIceCandidateStats_s(
-      int64_t timestamp_us, const cricket::Candidate& candidate, bool is_local,
       RTCStatsReport* report) const;
   // Produces |RTCPeerConnectionStats|.
   void ProducePeerConnectionStats_s(

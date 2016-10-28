@@ -71,6 +71,50 @@ const char* DataStateToRTCDataChannelState(
   }
 }
 
+void ProduceCertificateStatsFromSSLCertificateStats(
+    int64_t timestamp_us, const rtc::SSLCertificateStats& certificate_stats,
+    RTCStatsReport* report) {
+  RTCCertificateStats* prev_certificate_stats = nullptr;
+  for (const rtc::SSLCertificateStats* s = &certificate_stats; s;
+       s = s->issuer.get()) {
+    RTCCertificateStats* certificate_stats = new RTCCertificateStats(
+        RTCCertificateIDFromFingerprint(s->fingerprint), timestamp_us);
+    certificate_stats->fingerprint = s->fingerprint;
+    certificate_stats->fingerprint_algorithm = s->fingerprint_algorithm;
+    certificate_stats->base64_certificate = s->base64_certificate;
+    if (prev_certificate_stats)
+      prev_certificate_stats->issuer_certificate_id = certificate_stats->id();
+    report->AddStats(std::unique_ptr<RTCCertificateStats>(certificate_stats));
+    prev_certificate_stats = certificate_stats;
+  }
+}
+
+const std::string& ProduceIceCandidateStats(
+    int64_t timestamp_us, const cricket::Candidate& candidate, bool is_local,
+    RTCStatsReport* report) {
+  const std::string& id = "RTCIceCandidate_" + candidate.id();
+  const RTCStats* stats = report->Get(id);
+  if (!stats) {
+    std::unique_ptr<RTCIceCandidateStats> candidate_stats;
+    if (is_local)
+      candidate_stats.reset(new RTCLocalIceCandidateStats(id, timestamp_us));
+    else
+      candidate_stats.reset(new RTCRemoteIceCandidateStats(id, timestamp_us));
+    candidate_stats->ip = candidate.address().ipaddr().ToString();
+    candidate_stats->port = static_cast<int32_t>(candidate.address().port());
+    candidate_stats->protocol = candidate.protocol();
+    candidate_stats->candidate_type = CandidateTypeToRTCIceCandidateType(
+        candidate.type());
+    candidate_stats->priority = static_cast<int32_t>(candidate.priority());
+
+    stats = candidate_stats.get();
+    report->AddStats(std::move(candidate_stats));
+  }
+  RTC_DCHECK_EQ(stats->type(), is_local ? RTCLocalIceCandidateStats::kType
+                                        : RTCRemoteIceCandidateStats::kType);
+  return stats->id();
+}
+
 }  // namespace
 
 rtc::scoped_refptr<RTCStatsCollector> RTCStatsCollector::Create(
@@ -225,34 +269,15 @@ void RTCStatsCollector::ProduceCertificateStats_s(
     const std::map<std::string, CertificateStatsPair>& transport_cert_stats,
     RTCStatsReport* report) const {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  for (const auto& kvp : transport_cert_stats) {
-    if (kvp.second.local) {
-      ProduceCertificateStatsFromSSLCertificateStats_s(
-          timestamp_us, *kvp.second.local.get(), report);
+  for (const auto& transport_cert_stats_pair : transport_cert_stats) {
+    if (transport_cert_stats_pair.second.local) {
+      ProduceCertificateStatsFromSSLCertificateStats(
+          timestamp_us, *transport_cert_stats_pair.second.local.get(), report);
     }
-    if (kvp.second.remote) {
-      ProduceCertificateStatsFromSSLCertificateStats_s(
-          timestamp_us, *kvp.second.remote.get(), report);
+    if (transport_cert_stats_pair.second.remote) {
+      ProduceCertificateStatsFromSSLCertificateStats(
+          timestamp_us, *transport_cert_stats_pair.second.remote.get(), report);
     }
-  }
-}
-
-void RTCStatsCollector::ProduceCertificateStatsFromSSLCertificateStats_s(
-    int64_t timestamp_us, const rtc::SSLCertificateStats& certificate_stats,
-    RTCStatsReport* report) const {
-  RTC_DCHECK(signaling_thread_->IsCurrent());
-  RTCCertificateStats* prev_certificate_stats = nullptr;
-  for (const rtc::SSLCertificateStats* s = &certificate_stats; s;
-       s = s->issuer.get()) {
-    RTCCertificateStats* certificate_stats = new RTCCertificateStats(
-        RTCCertificateIDFromFingerprint(s->fingerprint), timestamp_us);
-    certificate_stats->fingerprint = s->fingerprint;
-    certificate_stats->fingerprint_algorithm = s->fingerprint_algorithm;
-    certificate_stats->base64_certificate = s->base64_certificate;
-    if (prev_certificate_stats)
-      prev_certificate_stats->issuer_certificate_id = certificate_stats->id();
-    report->AddStats(std::unique_ptr<RTCCertificateStats>(certificate_stats));
-    prev_certificate_stats = certificate_stats;
   }
 }
 
@@ -295,9 +320,9 @@ void RTCStatsCollector::ProduceIceCandidateAndPairStats_s(
         // anything. We don't have a complete list. Local candidates come from
         // Port objects, and prflx candidates (both local and remote) are only
         // stored in candidate pairs. crbug.com/632723
-        candidate_pair_stats->local_candidate_id = ProduceIceCandidateStats_s(
+        candidate_pair_stats->local_candidate_id = ProduceIceCandidateStats(
             timestamp_us, info.local_candidate, true, report);
-        candidate_pair_stats->remote_candidate_id = ProduceIceCandidateStats_s(
+        candidate_pair_stats->remote_candidate_id = ProduceIceCandidateStats(
             timestamp_us, info.remote_candidate, false, report);
 
         // TODO(hbos): This writable is different than the spec. It goes to
@@ -324,33 +349,6 @@ void RTCStatsCollector::ProduceIceCandidateAndPairStats_s(
       }
     }
   }
-}
-
-const std::string& RTCStatsCollector::ProduceIceCandidateStats_s(
-    int64_t timestamp_us, const cricket::Candidate& candidate, bool is_local,
-    RTCStatsReport* report) const {
-  RTC_DCHECK(signaling_thread_->IsCurrent());
-  const std::string& id = "RTCIceCandidate_" + candidate.id();
-  const RTCStats* stats = report->Get(id);
-  if (!stats) {
-    std::unique_ptr<RTCIceCandidateStats> candidate_stats;
-    if (is_local)
-      candidate_stats.reset(new RTCLocalIceCandidateStats(id, timestamp_us));
-    else
-      candidate_stats.reset(new RTCRemoteIceCandidateStats(id, timestamp_us));
-    candidate_stats->ip = candidate.address().ipaddr().ToString();
-    candidate_stats->port = static_cast<int32_t>(candidate.address().port());
-    candidate_stats->protocol = candidate.protocol();
-    candidate_stats->candidate_type = CandidateTypeToRTCIceCandidateType(
-        candidate.type());
-    candidate_stats->priority = static_cast<int32_t>(candidate.priority());
-
-    stats = candidate_stats.get();
-    report->AddStats(std::move(candidate_stats));
-  }
-  RTC_DCHECK_EQ(stats->type(), is_local ? RTCLocalIceCandidateStats::kType
-                                        : RTCRemoteIceCandidateStats::kType);
-  return stats->id();
 }
 
 void RTCStatsCollector::ProducePeerConnectionStats_s(
