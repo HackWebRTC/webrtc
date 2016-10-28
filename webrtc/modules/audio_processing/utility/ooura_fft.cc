@@ -348,12 +348,14 @@ void OouraFft::cft1st_128(float* a) const {
   cft1st_128_mips(a);
 #elif defined(WEBRTC_HAS_NEON)
   cft1st_128_neon(a);
-#else
+#elif defined(WEBRTC_ARCH_X86_FAMILY)
   if (use_sse2_) {
     cft1st_128_SSE2(a);
   } else {
     cft1st_128_C(a);
   }
+#else
+  cft1st_128_C(a);
 #endif
 }
 void OouraFft::cftmdl_128(float* a) const {
@@ -361,12 +363,14 @@ void OouraFft::cftmdl_128(float* a) const {
   cftmdl_128_mips(a);
 #elif defined(WEBRTC_HAS_NEON)
   cftmdl_128_neon(a);
-#else
+#elif defined(WEBRTC_ARCH_X86_FAMILY)
   if (use_sse2_) {
     cftmdl_128_SSE2(a);
   } else {
     cftmdl_128_C(a);
   }
+#else
+  cftmdl_128_C(a);
 #endif
 }
 void OouraFft::rftfsub_128(float* a) const {
@@ -374,12 +378,14 @@ void OouraFft::rftfsub_128(float* a) const {
   rftfsub_128_mips(a);
 #elif defined(WEBRTC_HAS_NEON)
   rftfsub_128_neon(a);
-#else
+#elif defined(WEBRTC_ARCH_X86_FAMILY)
   if (use_sse2_) {
     rftfsub_128_SSE2(a);
   } else {
     rftfsub_128_C(a);
   }
+#else
+  rftfsub_128_C(a);
 #endif
 }
 
@@ -388,12 +394,14 @@ void OouraFft::rftbsub_128(float* a) const {
   rftbsub_128_mips(a);
 #elif defined(WEBRTC_HAS_NEON)
   rftbsub_128_neon(a);
-#else
+#elif defined(WEBRTC_ARCH_X86_FAMILY)
   if (use_sse2_) {
     rftbsub_128_SSE2(a);
   } else {
     rftbsub_128_C(a);
   }
+#else
+  rftbsub_128_C(a);
 #endif
 }
 
