@@ -344,24 +344,20 @@ TEST_F(WebRtcVideoEngine2Test, UseExternalFactoryForVp8WhenSupported) {
 
   EXPECT_TRUE(
       channel->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc)));
-  ASSERT_TRUE(encoder_factory.WaitForCreatedVideoEncoders(1));
-  ASSERT_EQ(1u, encoder_factory.encoders().size());
+  EXPECT_EQ(0, encoder_factory.GetNumCreatedEncoders());
   EXPECT_TRUE(channel->SetSend(true));
-
   cricket::FakeVideoCapturer capturer;
   EXPECT_TRUE(channel->SetVideoSend(kSsrc, true, nullptr, &capturer));
   EXPECT_EQ(cricket::CS_RUNNING,
             capturer.Start(capturer.GetSupportedFormats()->front()));
   EXPECT_TRUE(capturer.CaptureFrame());
-  // Sending one frame will have reallocated the encoder since input size
-  // changes from a small default to the actual frame width/height. Wait for
-  // that to happen then for the frame to be sent.
-  ASSERT_TRUE(encoder_factory.WaitForCreatedVideoEncoders(2));
+  // Sending one frame will have allocate the encoder.
+  ASSERT_TRUE(encoder_factory.WaitForCreatedVideoEncoders(1));
   EXPECT_TRUE_WAIT(encoder_factory.encoders()[0]->GetNumEncodedFrames() > 0,
                    kTimeout);
 
   int num_created_encoders = encoder_factory.GetNumCreatedEncoders();
-  EXPECT_EQ(num_created_encoders, 2);
+  EXPECT_EQ(num_created_encoders, 1);
 
   // Setting codecs of the same type should not reallocate any encoders
   // (expecting a no-op).
@@ -669,6 +665,14 @@ TEST_F(WebRtcVideoEngine2Test,
   EXPECT_TRUE(
       channel->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc)));
   ASSERT_EQ(1u, encoder_factory.encoders().size());
+
+  // Send a frame of 720p. This should trigger a "real" encoder initialization.
+  cricket::VideoFormat format(
+      1280, 720, cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420);
+  cricket::FakeVideoCapturer capturer;
+  EXPECT_TRUE(channel->SetVideoSend(kSsrc, true, nullptr, &capturer));
+  EXPECT_EQ(cricket::CS_RUNNING, capturer.Start(format));
+  EXPECT_TRUE(capturer.CaptureFrame());
   ASSERT_TRUE(encoder_factory.encoders()[0]->WaitForInitEncode());
   EXPECT_EQ(webrtc::kVideoCodecH264,
             encoder_factory.encoders()[0]->GetCodecSettings().codecType);

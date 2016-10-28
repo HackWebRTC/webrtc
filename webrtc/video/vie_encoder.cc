@@ -410,15 +410,14 @@ void ViEEncoder::ConfigureEncoderOnTaskQueue(VideoEncoderConfig config,
   pending_encoder_reconfiguration_ = true;
 
   // Reconfigure the encoder now if the encoder has an internal source or
-  // if this is the first time the encoder is configured.
-  // Otherwise, the reconfiguration is deferred until the next frame to minimize
-  // the number of reconfigurations. The codec configuration depends on incoming
-  // video frame size.
-  if (!last_frame_info_ || settings_.internal_source) {
-    if (!last_frame_info_) {
-      last_frame_info_ = rtc::Optional<VideoFrameInfo>(
-          VideoFrameInfo(176, 144, kVideoRotation_0, false));
-    }
+  // if the frame resolution is known. Otherwise, the reconfiguration is
+  // deferred until the next frame to minimize the number of reconfigurations.
+  // The codec configuration depends on incoming video frame size.
+  if (last_frame_info_) {
+    ReconfigureEncoder();
+  } else if (settings_.internal_source) {
+    last_frame_info_ = rtc::Optional<VideoFrameInfo>(
+        VideoFrameInfo(1, 1, kVideoRotation_0, true));
     ReconfigureEncoder();
   }
 }
@@ -542,7 +541,7 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   if (pre_encode_callback_)
     pre_encode_callback_->OnFrame(video_frame);
 
-  if (video_frame.width() != last_frame_info_->width ||
+  if (!last_frame_info_ || video_frame.width() != last_frame_info_->width ||
       video_frame.height() != last_frame_info_->height ||
       video_frame.rotation() != last_frame_info_->rotation ||
       video_frame.is_texture() != last_frame_info_->is_texture) {
