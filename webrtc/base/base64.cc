@@ -18,7 +18,7 @@
 
 #include <string.h>
 
-#include "webrtc/base/common.h"
+#include "webrtc/base/checks.h"
 
 using std::vector;
 
@@ -97,7 +97,7 @@ bool Base64::IsBase64Encoded(const std::string& str) {
 
 void Base64::EncodeFromArray(const void* data, size_t len,
                              std::string* result) {
-  ASSERT(NULL != result);
+  RTC_DCHECK(NULL != result);
   result->clear();
   result->resize(((len + 2) / 3) * 4);
   const unsigned char* byte_data = static_cast<const unsigned char*>(data);
@@ -206,15 +206,15 @@ bool Base64::DecodeFromArrayTemplate(const char* data, size_t len,
                                      DecodeFlags flags, T* result,
                                      size_t* data_used)
 {
-  ASSERT(NULL != result);
-  ASSERT(flags <= (DO_PARSE_MASK | DO_PAD_MASK | DO_TERM_MASK));
+  RTC_DCHECK(NULL != result);
+  RTC_DCHECK(flags <= (DO_PARSE_MASK | DO_PAD_MASK | DO_TERM_MASK));
 
   const DecodeFlags parse_flags = flags & DO_PARSE_MASK;
   const DecodeFlags pad_flags   = flags & DO_PAD_MASK;
   const DecodeFlags term_flags  = flags & DO_TERM_MASK;
-  ASSERT(0 != parse_flags);
-  ASSERT(0 != pad_flags);
-  ASSERT(0 != term_flags);
+  RTC_DCHECK(0 != parse_flags);
+  RTC_DCHECK(0 != pad_flags);
+  RTC_DCHECK(0 != term_flags);
 
   result->clear();
   result->reserve(len);
