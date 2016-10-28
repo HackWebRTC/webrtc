@@ -929,6 +929,9 @@ TEST_F(ApmTest, EchoCancellation) {
   EXPECT_EQ(apm_->kNotEnabledError,
             apm_->echo_cancellation()->GetMetrics(&metrics));
 
+  EXPECT_EQ(apm_->kNoError, apm_->echo_cancellation()->Enable(true));
+  EXPECT_TRUE(apm_->echo_cancellation()->is_enabled());
+
   EXPECT_EQ(apm_->kNoError,
             apm_->echo_cancellation()->enable_metrics(true));
   EXPECT_TRUE(apm_->echo_cancellation()->are_metrics_enabled());
@@ -936,19 +939,21 @@ TEST_F(ApmTest, EchoCancellation) {
             apm_->echo_cancellation()->enable_metrics(false));
   EXPECT_FALSE(apm_->echo_cancellation()->are_metrics_enabled());
 
-  int median = 0;
-  int std = 0;
-  float poor_fraction = 0;
-  EXPECT_EQ(apm_->kNotEnabledError,
-            apm_->echo_cancellation()->GetDelayMetrics(&median, &std,
-                                                       &poor_fraction));
-
   EXPECT_EQ(apm_->kNoError,
             apm_->echo_cancellation()->enable_delay_logging(true));
   EXPECT_TRUE(apm_->echo_cancellation()->is_delay_logging_enabled());
   EXPECT_EQ(apm_->kNoError,
             apm_->echo_cancellation()->enable_delay_logging(false));
   EXPECT_FALSE(apm_->echo_cancellation()->is_delay_logging_enabled());
+
+  EXPECT_EQ(apm_->kNoError, apm_->echo_cancellation()->Enable(false));
+  EXPECT_FALSE(apm_->echo_cancellation()->is_enabled());
+
+  int median = 0;
+  int std = 0;
+  float poor_fraction = 0;
+  EXPECT_EQ(apm_->kNotEnabledError, apm_->echo_cancellation()->GetDelayMetrics(
+                                        &median, &std, &poor_fraction));
 
   EXPECT_EQ(apm_->kNoError, apm_->echo_cancellation()->Enable(true));
   EXPECT_TRUE(apm_->echo_cancellation()->is_enabled());
