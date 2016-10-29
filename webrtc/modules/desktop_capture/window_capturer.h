@@ -23,10 +23,9 @@ namespace webrtc {
 
 class DesktopCaptureOptions;
 
+// TODO(zijiehe): Remove this class.
 class WindowCapturer : public DesktopCapturer {
  public:
-  typedef webrtc::WindowId WindowId;
-
   struct Window {
     WindowId id;
 
@@ -36,20 +35,29 @@ class WindowCapturer : public DesktopCapturer {
 
   typedef std::vector<Window> WindowList;
 
+  // Consumers should use DesktopCapturer::CreateWindowCapturer.
   static WindowCapturer* Create(const DesktopCaptureOptions& options);
 
-  ~WindowCapturer() override {}
+  ~WindowCapturer() override;
 
+  // Deprecated, use GetSourceList().
   // Get list of windows. Returns false in case of a failure.
-  virtual bool GetWindowList(WindowList* windows) = 0;
+  virtual bool GetWindowList(WindowList* windows);
 
+  // Deprecated, use SelectSource().
   // Select window to be captured. Returns false in case of a failure (e.g. if
   // there is no window with the specified id).
-  virtual bool SelectWindow(WindowId id) = 0;
+  virtual bool SelectWindow(WindowId id);
 
+  // Deprecated, use FocusOnSelectedSource().
   // Bring the selected window to the front. Returns false in case of a
   // failure or no window selected.
-  virtual bool BringSelectedWindowToFront() = 0;
+  virtual bool BringSelectedWindowToFront();
+
+  // DesktopCapturer interfaces.
+  bool GetSourceList(SourceList* sources) override;
+  bool SelectSource(SourceId id) override;
+  bool FocusOnSelectedSource() override;
 };
 
 }  // namespace webrtc
