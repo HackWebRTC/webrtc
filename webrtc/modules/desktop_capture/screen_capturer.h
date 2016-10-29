@@ -21,6 +21,7 @@ namespace webrtc {
 
 class DesktopCaptureOptions;
 
+// TODO(zijiehe): Remove this class.
 // Class used to capture video frames asynchronously.
 //
 // The full capture sequence is as follows:
@@ -48,19 +49,25 @@ class ScreenCapturer : public DesktopCapturer {
   };
   typedef std::vector<Screen> ScreenList;
 
-  ~ScreenCapturer() override {}
+  ~ScreenCapturer() override;
 
   // Creates a platform-specific capturer.
   static ScreenCapturer* Create(const DesktopCaptureOptions& options);
 
+  // Deprecated, use GetSourceList().
   // Get the list of screens (not containing kFullDesktopScreenId). Returns
   // false in case of a failure.
-  virtual bool GetScreenList(ScreenList* screens) = 0;
+  virtual bool GetScreenList(ScreenList* screens);
 
+  // Deprecated, use SelectSource().
   // Select the screen to be captured. Returns false in case of a failure (e.g.
   // if there is no screen with the specified id). If this is never called, the
   // full desktop is captured.
-  virtual bool SelectScreen(ScreenId id) = 0;
+  virtual bool SelectScreen(ScreenId id);
+
+  // DesktopCapturer interfaces.
+  bool GetSourceList(SourceList* sources) override;
+  bool SelectSource(SourceId id) override;
 };
 
 }  // namespace webrtc

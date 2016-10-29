@@ -39,6 +39,7 @@
         'desktop_and_cursor_composer.h',
         'desktop_capture_options.h',
         'desktop_capture_options.cc',
+        'desktop_capturer.cc',
         'desktop_capturer.h',
         'desktop_frame_win.cc',
         'desktop_frame_win.h',
