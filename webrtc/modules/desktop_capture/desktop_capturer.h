@@ -12,11 +12,8 @@
 #define WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURER_H_
 
 #include <stddef.h>
-#include <stdint.h>
 
 #include <memory>
-#include <string>
-#include <vector>
 
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_types.h"
@@ -24,7 +21,6 @@
 
 namespace webrtc {
 
-class DesktopCaptureOptions;
 class DesktopFrame;
 
 // Abstract interface for screen and window capturers.
@@ -57,20 +53,7 @@ class DesktopCapturer {
     virtual ~Callback() {}
   };
 
-  typedef intptr_t SourceId;
-
-  struct Source {
-    // The unique id to represent a Source of current DesktopCapturer.
-    SourceId id;
-
-    // Title of the window or screen in UTF-8 encoding, maybe empty. This field
-    // should not be used to identify a source.
-    std::string title;
-  };
-
-  typedef std::vector<Source> SourceList;
-
-  virtual ~DesktopCapturer();
+  virtual ~DesktopCapturer() {}
 
   // Called at the beginning of a capturing session. |callback| must remain
   // valid until capturer is destroyed.
@@ -82,7 +65,7 @@ class DesktopCapturer {
   // Shared memory is currently supported only by some DesktopCapturer
   // implementations.
   virtual void SetSharedMemoryFactory(
-      std::unique_ptr<SharedMemoryFactory> shared_memory_factory);
+      std::unique_ptr<SharedMemoryFactory> shared_memory_factory) {}
 
   // Captures next frame, and involve callback provided by Start() function.
   // Pending capture requests are canceled when DesktopCapturer is deleted.
@@ -91,25 +74,7 @@ class DesktopCapturer {
   // Sets the window to be excluded from the captured image in the future
   // Capture calls. Used to exclude the screenshare notification window for
   // screen capturing.
-  virtual void SetExcludedWindow(WindowId window);
-
-  // TODO(zijiehe): Following functions should be pure virtual. The default
-  // implementations are for backward compatibility only. Remove default
-  // implementations once all DesktopCapturer implementations in Chromium have
-  // implemented these functions.
-
-  // Gets a list of sources current capturer supports. Returns false in case of
-  // a failure.
-  virtual bool GetSourceList(SourceList* sources);
-
-  // Selects a source to be captured. Returns false in case of a failure (e.g.
-  // if there is no source with the specified type and id.)
-  virtual bool SelectSource(SourceId id);
-
-  // Brings the selected source to the front and sets the input focus on it.
-  // Returns false in case of a failure or no source has been selected or the
-  // implementation does not support this functionality.
-  virtual bool FocusOnSelectedSource();
+  virtual void SetExcludedWindow(WindowId window) {}
 };
 
 }  // namespace webrtc
