@@ -648,14 +648,16 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
                        size_t max_payload_size) override {
       ++encoder_inits_;
       if (encoder_inits_ == 1) {
-        // First time initialization. Frame size is not known.
-        EXPECT_EQ(kInitialBitrateKbps, config->startBitrate)
-            << "Encoder not initialized at expected bitrate.";
-      } else if (encoder_inits_ == 2) {
         // First time initialization. Frame size is known.
+        // |expected_bitrate| is affected by bandwidth estimation before the
+        // first frame arrives to the encoder.
+        uint32_t expected_bitrate =
+            last_set_bitrate_ > 0 ? last_set_bitrate_ : kInitialBitrateKbps;
+        EXPECT_EQ(expected_bitrate, config->startBitrate)
+            << "Encoder not initialized at expected bitrate.";
         EXPECT_EQ(kDefaultWidth, config->width);
         EXPECT_EQ(kDefaultHeight, config->height);
-      } else if (encoder_inits_ == 3) {
+      } else if (encoder_inits_ == 2) {
         EXPECT_EQ(2 * kDefaultWidth, config->width);
         EXPECT_EQ(2 * kDefaultHeight, config->height);
         EXPECT_GE(last_set_bitrate_, kReconfigureThresholdKbps);
@@ -671,7 +673,7 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
     int32_t SetRates(uint32_t new_target_bitrate_kbps,
                      uint32_t framerate) override {
       last_set_bitrate_ = new_target_bitrate_kbps;
-      if (encoder_inits_ == 2 &&
+      if (encoder_inits_ == 1 &&
           new_target_bitrate_kbps > kReconfigureThresholdKbps) {
         time_to_reconfigure_.Set();
       }
@@ -690,6 +692,7 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       send_config->encoder_settings.encoder = this;
+      encoder_config->max_bitrate_bps = 2 * kReconfigureThresholdKbps * 1000;
       encoder_config->video_stream_factory =
           new rtc::RefCountedObject<VideoStreamFactory>();
 
