@@ -22,10 +22,10 @@
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
-#include "webrtc/modules/rtp_rtcp/source/producer_fec.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
+#include "webrtc/modules/rtp_rtcp/source/ulpfec_generator.h"
 #include "webrtc/modules/rtp_rtcp/source/video_codec_information.h"
 #include "webrtc/typedefs.h"
 
@@ -104,7 +104,7 @@ class RTPSenderVideo {
       0, 1, kFecMaskRandom};
   FecProtectionParams key_fec_params_ GUARDED_BY(crit_) = FecProtectionParams{
       0, 1, kFecMaskRandom};
-  ProducerFec producer_fec_ GUARDED_BY(crit_);
+  UlpfecGenerator ulpfec_generator_ GUARDED_BY(crit_);
 
   rtc::CriticalSection stats_crit_;
   // Bitrate used for FEC payload, RED headers, RTP headers for FEC packets

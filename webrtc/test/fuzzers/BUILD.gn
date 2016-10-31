@@ -86,9 +86,9 @@ webrtc_fuzzer_test("ulpfec_header_reader_fuzzer") {
   ]
 }
 
-webrtc_fuzzer_test("producer_fec_fuzzer") {
+webrtc_fuzzer_test("ulpfec_generator_fuzzer") {
   sources = [
-    "producer_fec_fuzzer.cc",
+    "ulpfec_generator_fuzzer.cc",
   ]
   deps = [
     "../../modules/rtp_rtcp/",

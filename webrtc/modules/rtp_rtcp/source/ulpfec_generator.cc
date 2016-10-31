@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/rtp_rtcp/source/producer_fec.h"
+#include "webrtc/modules/rtp_rtcp/source/ulpfec_generator.h"
 
 #include <memory>
 #include <utility>
@@ -52,10 +52,7 @@ constexpr float kMinMediaPacketsAdaptationThreshold = 2.0f;
 }  // namespace
 
 RedPacket::RedPacket(size_t length)
-    : data_(new uint8_t[length]),
-      length_(length),
-      header_length_(0) {
-}
+    : data_(new uint8_t[length]), length_(length), header_length_(0) {}
 
 void RedPacket::CreateHeader(const uint8_t* rtp_header,
                              size_t header_length,
@@ -96,7 +93,7 @@ size_t RedPacket::length() const {
   return length_;
 }
 
-ProducerFec::ProducerFec()
+UlpfecGenerator::UlpfecGenerator()
     : fec_(ForwardErrorCorrection::CreateUlpfec()),
       num_protected_frames_(0),
       min_num_media_packets_(1) {
@@ -104,9 +101,9 @@ ProducerFec::ProducerFec()
   memset(&new_params_, 0, sizeof(new_params_));
 }
 
-ProducerFec::~ProducerFec() = default;
+UlpfecGenerator::~UlpfecGenerator() = default;
 
-std::unique_ptr<RedPacket> ProducerFec::BuildRedPacket(
+std::unique_ptr<RedPacket> UlpfecGenerator::BuildRedPacket(
     const uint8_t* data_buffer,
     size_t payload_length,
     size_t rtp_header_length,
@@ -120,7 +117,7 @@ std::unique_ptr<RedPacket> ProducerFec::BuildRedPacket(
   return red_packet;
 }
 
-void ProducerFec::SetFecParameters(const FecProtectionParams* params) {
+void UlpfecGenerator::SetFecParameters(const FecProtectionParams* params) {
   RTC_DCHECK_GE(params->fec_rate, 0);
   RTC_DCHECK_LE(params->fec_rate, 255);
   // Store the new params and apply them for the next set of FEC packets being
@@ -133,9 +130,9 @@ void ProducerFec::SetFecParameters(const FecProtectionParams* params) {
   }
 }
 
-int ProducerFec::AddRtpPacketAndGenerateFec(const uint8_t* data_buffer,
-                                            size_t payload_length,
-                                            size_t rtp_header_length) {
+int UlpfecGenerator::AddRtpPacketAndGenerateFec(const uint8_t* data_buffer,
+                                                size_t payload_length,
+                                                size_t rtp_header_length) {
   RTC_DCHECK(generated_fec_packets_.empty());
   if (media_packets_.empty()) {
     params_ = new_params_;
@@ -175,11 +172,11 @@ int ProducerFec::AddRtpPacketAndGenerateFec(const uint8_t* data_buffer,
   return 0;
 }
 
-bool ProducerFec::ExcessOverheadBelowMax() const {
+bool UlpfecGenerator::ExcessOverheadBelowMax() const {
   return ((Overhead() - params_.fec_rate) < kMaxExcessOverhead);
 }
 
-bool ProducerFec::MinimumMediaPacketsReached() const {
+bool UlpfecGenerator::MinimumMediaPacketsReached() const {
   float average_num_packets_per_frame =
       static_cast<float>(media_packets_.size()) / num_protected_frames_;
   int num_media_packets = static_cast<int>(media_packets_.size());
@@ -192,19 +189,19 @@ bool ProducerFec::MinimumMediaPacketsReached() const {
   }
 }
 
-bool ProducerFec::FecAvailable() const {
+bool UlpfecGenerator::FecAvailable() const {
   return !generated_fec_packets_.empty();
 }
 
-size_t ProducerFec::NumAvailableFecPackets() const {
+size_t UlpfecGenerator::NumAvailableFecPackets() const {
   return generated_fec_packets_.size();
 }
 
-size_t ProducerFec::MaxPacketOverhead() const {
+size_t UlpfecGenerator::MaxPacketOverhead() const {
   return fec_->MaxPacketOverhead();
 }
 
-std::vector<std::unique_ptr<RedPacket>> ProducerFec::GetUlpfecPacketsAsRed(
+std::vector<std::unique_ptr<RedPacket>> UlpfecGenerator::GetUlpfecPacketsAsRed(
     int red_payload_type,
     int ulpfec_payload_type,
     uint16_t first_seq_num,
@@ -234,7 +231,7 @@ std::vector<std::unique_ptr<RedPacket>> ProducerFec::GetUlpfecPacketsAsRed(
   return red_packets;
 }
 
-int ProducerFec::Overhead() const {
+int UlpfecGenerator::Overhead() const {
   RTC_DCHECK(!media_packets_.empty());
   int num_fec_packets =
       fec_->NumFecPackets(media_packets_.size(), params_.fec_rate);
@@ -242,7 +239,7 @@ int ProducerFec::Overhead() const {
   return (num_fec_packets << 8) / media_packets_.size();
 }
 
-void ProducerFec::ResetState() {
+void UlpfecGenerator::ResetState() {
   media_packets_.clear();
   generated_fec_packets_.clear();
   num_protected_frames_ = 0;

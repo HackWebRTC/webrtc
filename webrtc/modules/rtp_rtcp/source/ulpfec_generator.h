@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_PRODUCER_FEC_H_
-#define WEBRTC_MODULES_RTP_RTCP_SOURCE_PRODUCER_FEC_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_ULPFEC_GENERATOR_H_
+#define WEBRTC_MODULES_RTP_RTCP_SOURCE_ULPFEC_GENERATOR_H_
 
 #include <list>
 #include <memory>
@@ -39,10 +39,10 @@ class RedPacket {
   size_t header_length_;
 };
 
-class ProducerFec {
+class UlpfecGenerator {
  public:
-  ProducerFec();
-  ~ProducerFec();
+  UlpfecGenerator();
+  ~UlpfecGenerator();
 
   static std::unique_ptr<RedPacket> BuildRedPacket(const uint8_t* data_buffer,
                                                    size_t payload_length,
@@ -106,4 +106,4 @@ class ProducerFec {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_PRODUCER_FEC_H_
+#endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_ULPFEC_GENERATOR_H_

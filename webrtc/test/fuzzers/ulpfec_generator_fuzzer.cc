@@ -13,7 +13,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/fec_test_helper.h"
-#include "webrtc/modules/rtp_rtcp/source/producer_fec.h"
+#include "webrtc/modules/rtp_rtcp/source/ulpfec_generator.h"
 
 namespace webrtc {
 
@@ -23,13 +23,13 @@ constexpr uint8_t kRedPayloadType = 97;
 }  // namespace
 
 void FuzzOneInput(const uint8_t* data, size_t size) {
-  ProducerFec producer;
+  UlpfecGenerator generator;
   size_t i = 0;
   if (size < 4)
     return;
   FecProtectionParams params = {
       data[i++] % 128, static_cast<int>(data[i++] % 10), kFecMaskBursty};
-  producer.SetFecParameters(&params);
+  generator.SetFecParameters(&params);
   uint16_t seq_num = data[i++];
 
   while (i + 3 < size) {
@@ -43,18 +43,18 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     ByteWriter<uint16_t>::WriteBigEndian(&packet[2], seq_num++);
     i += payload_size + rtp_header_length;
     // Make sure sequence numbers are increasing.
-    std::unique_ptr<RedPacket> red_packet = ProducerFec::BuildRedPacket(
+    std::unique_ptr<RedPacket> red_packet = UlpfecGenerator::BuildRedPacket(
         packet.get(), payload_size, rtp_header_length, kRedPayloadType);
     const bool protect = data[i++] % 2 == 1;
     if (protect) {
-      producer.AddRtpPacketAndGenerateFec(packet.get(), payload_size,
-                                          rtp_header_length);
+      generator.AddRtpPacketAndGenerateFec(packet.get(), payload_size,
+                                           rtp_header_length);
     }
-    const size_t num_fec_packets = producer.NumAvailableFecPackets();
+    const size_t num_fec_packets = generator.NumAvailableFecPackets();
     if (num_fec_packets > 0) {
       std::vector<std::unique_ptr<RedPacket>> fec_packets =
-          producer.GetUlpfecPacketsAsRed(kRedPayloadType, kFecPayloadType, 100,
-                                         rtp_header_length);
+          generator.GetUlpfecPacketsAsRed(kRedPayloadType, kFecPayloadType, 100,
+                                          rtp_header_length);
       RTC_CHECK_EQ(num_fec_packets, fec_packets.size());
     }
   }
