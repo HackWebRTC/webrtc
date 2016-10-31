@@ -20,12 +20,7 @@ using cricket::kCodecParamAssociatedPayloadType;
 using cricket::kCodecParamMaxBitrate;
 using cricket::kCodecParamMinBitrate;
 
-class CodecTest : public testing::Test {
- public:
-  CodecTest() {}
-};
-
-TEST_F(CodecTest, TestCodecOperators) {
+TEST(CodecTest, TestCodecOperators) {
   Codec c0(96, "D", 1000);
   c0.SetParam("a", 1);
 
@@ -58,7 +53,7 @@ TEST_F(CodecTest, TestCodecOperators) {
   EXPECT_TRUE(c5 == c6);
 }
 
-TEST_F(CodecTest, TestAudioCodecOperators) {
+TEST(CodecTest, TestAudioCodecOperators) {
   AudioCodec c0(96, "A", 44100, 20000, 2);
   AudioCodec c1(95, "A", 44100, 20000, 2);
   AudioCodec c2(96, "x", 44100, 20000, 2);
@@ -95,7 +90,7 @@ TEST_F(CodecTest, TestAudioCodecOperators) {
   EXPECT_TRUE(c13 == c10);
 }
 
-TEST_F(CodecTest, TestAudioCodecMatches) {
+TEST(CodecTest, TestAudioCodecMatches) {
   // Test a codec with a static payload type.
   AudioCodec c0(95, "A", 44100, 20000, 1);
   EXPECT_TRUE(c0.Matches(AudioCodec(95, "", 44100, 20000, 1)));
@@ -135,7 +130,7 @@ TEST_F(CodecTest, TestAudioCodecMatches) {
   EXPECT_FALSE(c3.Matches(AudioCodec(96, "A", 44100, 20000, 0)));
 }
 
-TEST_F(CodecTest, TestVideoCodecOperators) {
+TEST(CodecTest, TestVideoCodecOperators) {
   VideoCodec c0(96, "V");
   VideoCodec c1(95, "V");
   VideoCodec c2(96, "x");
@@ -167,7 +162,7 @@ TEST_F(CodecTest, TestVideoCodecOperators) {
   EXPECT_TRUE(c13 == c10);
 }
 
-TEST_F(CodecTest, TestVideoCodecMatches) {
+TEST(CodecTest, TestVideoCodecMatches) {
   // Test a codec with a static payload type.
   VideoCodec c0(95, "V");
   EXPECT_TRUE(c0.Matches(VideoCodec(95, "")));
@@ -183,7 +178,7 @@ TEST_F(CodecTest, TestVideoCodecMatches) {
   EXPECT_FALSE(c1.Matches(VideoCodec(95, "V")));
 }
 
-TEST_F(CodecTest, TestDataCodecMatches) {
+TEST(CodecTest, TestDataCodecMatches) {
   // Test a codec with a static payload type.
   DataCodec c0(95, "D");
   EXPECT_TRUE(c0.Matches(DataCodec(95, "")));
@@ -199,7 +194,7 @@ TEST_F(CodecTest, TestDataCodecMatches) {
   EXPECT_FALSE(c1.Matches(DataCodec(95, "D")));
 }
 
-TEST_F(CodecTest, TestSetParamGetParamAndRemoveParam) {
+TEST(CodecTest, TestSetParamGetParamAndRemoveParam) {
   AudioCodec codec;
   codec.SetParam("a", "1");
   codec.SetParam("b", "x");
@@ -220,7 +215,7 @@ TEST_F(CodecTest, TestSetParamGetParamAndRemoveParam) {
   EXPECT_FALSE(codec.RemoveParam("c"));
 }
 
-TEST_F(CodecTest, TestIntersectFeedbackParams) {
+TEST(CodecTest, TestIntersectFeedbackParams) {
   const FeedbackParam a1("a", "1");
   const FeedbackParam b2("b", "2");
   const FeedbackParam b3("b", "3");
@@ -239,7 +234,7 @@ TEST_F(CodecTest, TestIntersectFeedbackParams) {
   EXPECT_FALSE(c1.HasFeedbackParam(c3));
 }
 
-TEST_F(CodecTest, TestGetCodecType) {
+TEST(CodecTest, TestGetCodecType) {
   // Codec type comparison should be case insenstive on names.
   const VideoCodec codec(96, "V");
   const VideoCodec rtx_codec(96, "rTx");
@@ -251,7 +246,7 @@ TEST_F(CodecTest, TestGetCodecType) {
   EXPECT_EQ(VideoCodec::CODEC_RED, red_codec.GetCodecType());
 }
 
-TEST_F(CodecTest, TestCreateRtxCodec) {
+TEST(CodecTest, TestCreateRtxCodec) {
   VideoCodec rtx_codec = VideoCodec::CreateRtxCodec(96, 120);
   EXPECT_EQ(96, rtx_codec.id);
   EXPECT_EQ(VideoCodec::CODEC_RTX, rtx_codec.GetCodecType());
@@ -261,7 +256,7 @@ TEST_F(CodecTest, TestCreateRtxCodec) {
   EXPECT_EQ(120, associated_payload_type);
 }
 
-TEST_F(CodecTest, TestValidateCodecFormat) {
+TEST(CodecTest, TestValidateCodecFormat) {
   const VideoCodec codec(96, "V");
   ASSERT_TRUE(codec.ValidateCodecFormat());
 
@@ -302,7 +297,7 @@ TEST_F(CodecTest, TestValidateCodecFormat) {
   EXPECT_TRUE(different_bitrates.ValidateCodecFormat());
 }
 
-TEST_F(CodecTest, TestToCodecParameters) {
+TEST(CodecTest, TestToCodecParameters) {
   const VideoCodec v(96, "V");
   webrtc::RtpCodecParameters codec_params_1 = v.ToCodecParameters();
   EXPECT_EQ(96, codec_params_1.payload_type);
