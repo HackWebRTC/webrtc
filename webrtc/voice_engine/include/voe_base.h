@@ -165,7 +165,7 @@ class WEBRTC_DLLEXPORT VoEBase {
   virtual int StartReceive(int channel) = 0;
 
   // Stops receiving incoming RTP/RTCP packets on the specified |channel|.
-  virtual int StopReceive(int channel) = 0;
+  virtual int StopReceive(int channel)  { return 0; }
 
   // Starts forwarding the packets to the mixer/soundcard for a
   // specified |channel|.

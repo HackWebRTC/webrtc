@@ -268,14 +268,12 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
 
   fake_audio_device.Start();
   EXPECT_EQ(0, voe_base->StartPlayout(recv_channel_id));
-  EXPECT_EQ(0, voe_base->StartReceive(recv_channel_id));
   EXPECT_EQ(0, voe_base->StartSend(send_channel_id));
 
   EXPECT_TRUE(observer.Wait())
       << "Timed out while waiting for audio and video to be synchronized.";
 
   EXPECT_EQ(0, voe_base->StopSend(send_channel_id));
-  EXPECT_EQ(0, voe_base->StopReceive(recv_channel_id));
   EXPECT_EQ(0, voe_base->StopPlayout(recv_channel_id));
   fake_audio_device.Stop();
 

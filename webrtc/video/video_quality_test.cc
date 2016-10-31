@@ -1366,7 +1366,6 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
     // Start receiving audio.
     audio_receive_stream->Start();
     EXPECT_EQ(0, voe.base->StartPlayout(voe.receive_channel_id));
-    EXPECT_EQ(0, voe.base->StartReceive(voe.receive_channel_id));
 
     // Start sending audio.
     audio_send_stream_->Start();
@@ -1381,7 +1380,6 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
     audio_send_stream_->Stop();
 
     // Stop receiving audio.
-    EXPECT_EQ(0, voe.base->StopReceive(voe.receive_channel_id));
     EXPECT_EQ(0, voe.base->StopPlayout(voe.receive_channel_id));
     audio_receive_stream->Stop();
   }

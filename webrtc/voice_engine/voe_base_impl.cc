@@ -436,23 +436,8 @@ int VoEBaseImpl::StartReceive(int channel) {
                           "StartReceive() failed to locate channel");
     return -1;
   }
-  return channelPtr->StartReceiving();
-}
-
-int VoEBaseImpl::StopReceive(int channel) {
-  rtc::CritScope cs(shared_->crit_sec());
-  if (!shared_->statistics().Initialized()) {
-    shared_->SetLastError(VE_NOT_INITED, kTraceError);
-    return -1;
-  }
-  voe::ChannelOwner ch = shared_->channel_manager().GetChannel(channel);
-  voe::Channel* channelPtr = ch.channel();
-  if (channelPtr == nullptr) {
-    shared_->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                          "SetLocalReceiver() failed to locate channel");
-    return -1;
-  }
-  return channelPtr->StopReceiving();
+  channelPtr->ResetDiscardedPacketCount();
+  return 0;
 }
 
 int VoEBaseImpl::StartPlayout(int channel) {

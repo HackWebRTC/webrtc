@@ -88,7 +88,6 @@ class ChannelState {
     bool input_file_playing = false;
     bool playing = false;
     bool sending = false;
-    bool receiving = false;
   };
 
   ChannelState() {}
@@ -127,11 +126,6 @@ class ChannelState {
   void SetSending(bool enable) {
     rtc::CritScope lock(&lock_);
     state_.sending = enable;
-  }
-
-  void SetReceiving(bool enable) {
-    rtc::CritScope lock(&lock_);
-    state_.receiving = enable;
   }
 
  private:
@@ -189,9 +183,7 @@ class Channel
   int32_t StopPlayout();
   int32_t StartSend();
   int32_t StopSend();
-  int32_t StartReceiving();
-  int32_t StopReceiving();
-
+  void ResetDiscardedPacketCount();
   int32_t RegisterVoiceEngineObserver(VoiceEngineObserver& observer);
   int32_t DeRegisterVoiceEngineObserver();
 
@@ -393,7 +385,6 @@ class Channel
   int32_t ChannelId() const { return _channelId; }
   bool Playing() const { return channel_state_.Get().playing; }
   bool Sending() const { return channel_state_.Get().sending; }
-  bool Receiving() const { return channel_state_.Get().receiving; }
   bool ExternalTransport() const {
     rtc::CritScope cs(&_callbackCritSect);
     return _externalTransport;

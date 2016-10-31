@@ -47,11 +47,9 @@ void BeforeStreamingFixture::RestartFakeMicrophone() {
 void BeforeStreamingFixture::PausePlaying() {
   EXPECT_EQ(0, voe_base_->StopSend(channel_));
   EXPECT_EQ(0, voe_base_->StopPlayout(channel_));
-  EXPECT_EQ(0, voe_base_->StopReceive(channel_));
 }
 
 void BeforeStreamingFixture::ResumePlaying() {
-  EXPECT_EQ(0, voe_base_->StartReceive(channel_));
   EXPECT_EQ(0, voe_base_->StartPlayout(channel_));
   EXPECT_EQ(0, voe_base_->StartSend(channel_));
 }

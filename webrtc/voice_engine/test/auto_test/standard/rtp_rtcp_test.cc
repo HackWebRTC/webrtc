@@ -67,7 +67,6 @@ class RtpRtcpTest : public AfterStreamingFixture {
     EXPECT_EQ(0, voe_network_->RegisterExternalTransport(second_channel_,
                                                          *transport_));
 
-    EXPECT_EQ(0, voe_base_->StartReceive(second_channel_));
     EXPECT_EQ(0, voe_base_->StartPlayout(second_channel_));
     EXPECT_EQ(0, voe_rtp_rtcp_->SetLocalSSRC(second_channel_, 5678));
     EXPECT_EQ(0, voe_base_->StartSend(second_channel_));

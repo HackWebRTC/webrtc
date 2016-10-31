@@ -1222,26 +1222,10 @@ int32_t Channel::StopSend() {
   return 0;
 }
 
-int32_t Channel::StartReceiving() {
+void Channel::ResetDiscardedPacketCount() {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::StartReceiving()");
-  if (channel_state_.Get().receiving) {
-    return 0;
-  }
-  channel_state_.SetReceiving(true);
+               "Channel::ResetDiscardedPacketCount()");
   _numberOfDiscardedPackets = 0;
-  return 0;
-}
-
-int32_t Channel::StopReceiving() {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::StopReceiving()");
-  if (!channel_state_.Get().receiving) {
-    return 0;
-  }
-
-  channel_state_.SetReceiving(false);
-  return 0;
 }
 
 int32_t Channel::RegisterVoiceEngineObserver(VoiceEngineObserver& observer) {
@@ -1368,12 +1352,6 @@ int32_t Channel::SetRecPayloadType(const CodecInst& codec) {
     _engineStatisticsPtr->SetLastError(
         VE_ALREADY_PLAYING, kTraceError,
         "SetRecPayloadType() unable to set PT while playing");
-    return -1;
-  }
-  if (channel_state_.Get().receiving) {
-    _engineStatisticsPtr->SetLastError(
-        VE_ALREADY_LISTENING, kTraceError,
-        "SetRecPayloadType() unable to set PT while listening");
     return -1;
   }
 

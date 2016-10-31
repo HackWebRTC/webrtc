@@ -47,7 +47,6 @@ class VoEBaseImpl : public VoEBase,
   int StartReceive(int channel) override;
   int StartPlayout(int channel) override;
   int StartSend(int channel) override;
-  int StopReceive(int channel) override;
   int StopPlayout(int channel) override;
   int StopSend(int channel) override;
 

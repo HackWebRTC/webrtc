@@ -128,7 +128,6 @@ void CallTest::Start() {
   if (!audio_receive_streams_.empty()) {
     fake_recv_audio_device_->Start();
     EXPECT_EQ(0, voe_recv_.base->StartPlayout(voe_recv_.channel_id));
-    EXPECT_EQ(0, voe_recv_.base->StartReceive(voe_recv_.channel_id));
   }
   if (frame_generator_capturer_.get() != NULL)
     frame_generator_capturer_->Start();
@@ -139,7 +138,6 @@ void CallTest::Stop() {
     frame_generator_capturer_->Stop();
   if (!audio_receive_streams_.empty()) {
     fake_recv_audio_device_->Stop();
-    EXPECT_EQ(0, voe_recv_.base->StopReceive(voe_recv_.channel_id));
     EXPECT_EQ(0, voe_recv_.base->StopPlayout(voe_recv_.channel_id));
   }
   for (AudioReceiveStream* audio_recv_stream : audio_receive_streams_)

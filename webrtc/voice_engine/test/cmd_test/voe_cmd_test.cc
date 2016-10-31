@@ -378,12 +378,6 @@ void RunTest(std::string out_path) {
     const bool receive = !(call_selection == 2);
 
     if (receive) {
-#ifndef EXTERNAL_TRANSPORT
-      printf("Start Listen \n");
-      res = base1->StartReceive(chan);
-      VALIDATE;
-#endif
-
       printf("Start Playout \n");
       res = base1->StartPlayout(chan);
       VALIDATE;
@@ -700,8 +694,6 @@ void RunTest(std::string out_path) {
         VALIDATE;
       } else if (option_selection == option_index++) {
         if (channel_index < kMaxNumChannels) {
-          res = base1->StartReceive(channels[channel_index]);
-          VALIDATE;
           res = base1->StartPlayout(channels[channel_index]);
           VALIDATE;
           res = base1->StartSend(channels[channel_index]);
@@ -724,8 +716,6 @@ void RunTest(std::string out_path) {
           res = base1->StopSend(channels[channel_index]);
           VALIDATE;
           res = base1->StopPlayout(channels[channel_index]);
-          VALIDATE;
-          res = base1->StopReceive(channels[channel_index]);
           VALIDATE;
           printf("Using %d additional channels\n", channel_index);
         } else {
@@ -787,12 +777,6 @@ void RunTest(std::string out_path) {
       printf("Stop Playout \n");
       res = base1->StopPlayout(chan);
       VALIDATE;
-
-#ifndef EXTERNAL_TRANSPORT
-      printf("Stop Listen \n");
-      res = base1->StopReceive(chan);
-      VALIDATE;
-#endif
     }
 
     while (channel_index > 0) {
@@ -802,8 +786,6 @@ void RunTest(std::string out_path) {
       res = base1->StopSend(channels[channel_index]);
       VALIDATE;
       res = base1->StopPlayout(channels[channel_index]);
-      VALIDATE;
-      res = base1->StopReceive(channels[channel_index]);
       VALIDATE;
     }
 

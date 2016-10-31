@@ -185,7 +185,6 @@ class MixingTest : public AfterInitializationFixture {
     EXPECT_EQ(0, voe_rtp_rtcp_->SetLocalSSRC(
                      stream, static_cast<unsigned int>(stream)));
     transport_->AddChannel(stream, stream);
-    EXPECT_EQ(0, voe_base_->StartReceive(stream));
     EXPECT_EQ(0, voe_base_->StartPlayout(stream));
     EXPECT_EQ(0, voe_codec_->SetSendCodec(stream, codec_inst));
     EXPECT_EQ(0, voe_base_->StartSend(stream));
@@ -197,7 +196,6 @@ class MixingTest : public AfterInitializationFixture {
     for (size_t i = 0; i < streams.size(); ++i) {
       EXPECT_EQ(0, voe_base_->StopSend(streams[i]));
       EXPECT_EQ(0, voe_base_->StopPlayout(streams[i]));
-      EXPECT_EQ(0, voe_base_->StopReceive(streams[i]));
       EXPECT_EQ(0, voe_network_->DeRegisterExternalTransport(streams[i]));
       EXPECT_EQ(0, voe_base_->DeleteChannel(streams[i]));
     }
