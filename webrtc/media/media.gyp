@@ -61,7 +61,6 @@
         'base/videoframe.h',
         'base/videosourcebase.cc',
         'base/videosourcebase.h',
-        'devices/videorendererfactory.h',
         'engine/nullwebrtcvideoengine.h',
         'engine/payload_type_mapper.cc',
         'engine/payload_type_mapper.h',
@@ -149,21 +148,6 @@
           'cflags': [
             '<!@(pkg-config --cflags gobject-2.0 gthread-2.0 gtk+-2.0)',
           ],
-        }],
-        ['OS=="win"', {
-          'sources': [
-            'devices/gdivideorenderer.cc',
-            'devices/gdivideorenderer.h',
-          ],
-          'msvs_settings': {
-            'VCLibrarianTool': {
-              'AdditionalDependencies': [
-                'd3d9.lib',
-                'gdi32.lib',
-                'strmiids.lib',
-              ],
-            },
-          },
         }],
       ],
     },  # target rtc_media

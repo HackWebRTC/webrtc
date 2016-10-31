@@ -82,7 +82,6 @@ rtc_static_library("rtc_media") {
     "base/videoframe.h",
     "base/videosourcebase.cc",
     "base/videosourcebase.h",
-    "devices/videorendererfactory.h",
     "engine/nullwebrtcvideoengine.h",
     "engine/payload_type_mapper.cc",
     "engine/payload_type_mapper.h",
@@ -162,17 +161,6 @@ rtc_static_library("rtc_media") {
       "devices/gtkvideorenderer.h",
     ]
     public_configs += [ ":gtk-lib" ]
-  }
-  if (is_win) {
-    sources += [
-      "devices/gdivideorenderer.cc",
-      "devices/gdivideorenderer.h",
-    ]
-    libs += [
-      "d3d9.lib",
-      "gdi32.lib",
-      "strmiids.lib",
-    ]
   }
   deps += [
     "..:webrtc_common",
