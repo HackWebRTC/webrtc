@@ -30,14 +30,22 @@ class AudioDeviceObserver;
 
 class AudioDeviceBuffer {
  public:
+  enum LogState {
+    LOG_START = 0,
+    LOG_STOP,
+    LOG_ACTIVE,
+  };
+
   AudioDeviceBuffer();
   virtual ~AudioDeviceBuffer();
 
   void SetId(uint32_t id) {};
   int32_t RegisterAudioCallback(AudioTransport* audio_callback);
 
-  int32_t InitPlayout();
-  int32_t InitRecording();
+  void StartPlayout();
+  void StartRecording();
+  void StopPlayout();
+  void StopRecording();
 
   int32_t SetRecordingSampleRate(uint32_t fsHz);
   int32_t SetPlayoutSampleRate(uint32_t fsHz);
@@ -72,22 +80,28 @@ class AudioDeviceBuffer {
   int32_t SetTypingStatus(bool typing_status);
 
  private:
-  // Posts the first delayed task in the task queue and starts the periodic
-  // timer.
-  void StartTimer();
+  // Starts/stops periodic logging of audio stats.
+  void StartPeriodicLogging();
+  void StopPeriodicLogging();
 
   // Called periodically on the internal thread created by the TaskQueue.
-  void LogStats();
-
-  // Clears all members tracking stats for recording and playout.
-  void ResetRecStats();
-  void ResetPlayStats();
+  // Updates some stats but dooes it on the task queue to ensure that access of
+  // members is serialized hence avoiding usage of locks.
+  // state = LOG_START => members are initialized and the timer starts.
+  // state = LOG_STOP => no logs are printed and the timer stops.
+  // state = LOG_ACTIVE => logs are printed and the timer is kept alive.
+  void LogStats(LogState state);
 
   // Updates counters in each play/record callback but does it on the task
   // queue to ensure that they can be read by LogStats() without any locks since
   // each task is serialized by the task queue.
   void UpdateRecStats(int16_t max_abs, size_t num_samples);
   void UpdatePlayStats(int16_t max_abs, size_t num_samples);
+
+  // Clears all members tracking stats for recording and playout.
+  // These methods both run on the task queue.
+  void ResetRecStats();
+  void ResetPlayStats();
 
   // Ensures that methods are called on the same thread as the thread that
   // creates this object.
@@ -107,8 +121,11 @@ class AudioDeviceBuffer {
   // each task.
   rtc::TaskQueue task_queue_;
 
-  // Ensures that the timer is only started once.
-  bool timer_has_started_;
+  // Keeps track of if playout/recording are active or not. A combination
+  // of these states are used to determine when to start and stop the timer.
+  // Only used on the creating thread and not used to control any media flow.
+  bool playing_;
+  bool recording_;
 
   // Sample rate in Hertz.
   uint32_t rec_sample_rate_;
@@ -173,8 +190,8 @@ class AudioDeviceBuffer {
   // Total number of played samples stored at the previous timer task.
   uint64_t last_play_samples_;
 
-  // Time stamp of last stat report.
-  uint64_t last_log_stat_time_;
+  // Time stamp of last timer task (drives logging).
+  uint64_t last_timer_task_time_;
 
   // Time stamp of last playout callback.
   uint64_t last_playout_time_;
@@ -196,18 +213,19 @@ class AudioDeviceBuffer {
   // where a new measurement is done twice per second.
   int16_t max_play_level_;
 
-  // Counts number of times we detect "no audio" corresponding to a case where
-  // all level measurements since the last log has been exactly zero.
-  // In other words: this counter is incremented only if 20 measurements
-  // (two per second) in a row equals zero. The member is only incremented on
-  // the task queue and max once every 10th second.
-  size_t num_rec_level_is_zero_;
-
   // Counts number of audio callbacks modulo 50 to create a signal when
   // a new storage of audio stats shall be done.
   // Only updated on the OS-specific audio thread that drives audio.
   int16_t rec_stat_count_;
   int16_t play_stat_count_;
+
+  // Time stamps of when playout and recording starts.
+  uint64_t play_start_time_;
+  uint64_t rec_start_time_;
+
+  // Set to true at construction and modified to false as soon as one audio-
+  // level estimate larger than zero is detected.
+  bool only_silence_recorded_;
 };
 
 }  // namespace webrtc

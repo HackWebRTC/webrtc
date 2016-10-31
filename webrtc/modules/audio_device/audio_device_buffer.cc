@@ -30,11 +30,18 @@ static const char kTimerQueueName[] = "AudioDeviceBufferTimer";
 static const size_t kTimerIntervalInSeconds = 10;
 static const size_t kTimerIntervalInMilliseconds =
     kTimerIntervalInSeconds * rtc::kNumMillisecsPerSec;
+// Min time required to qualify an audio session as a "call". If playout or
+// recording has been active for less than this time we will not store any
+// logs or UMA stats but instead consider the call as too short.
+static const size_t kMinValidCallTimeTimeInSeconds = 10;
+static const size_t kMinValidCallTimeTimeInMilliseconds =
+    kMinValidCallTimeTimeInSeconds * rtc::kNumMillisecsPerSec;
 
 AudioDeviceBuffer::AudioDeviceBuffer()
     : audio_transport_cb_(nullptr),
       task_queue_(kTimerQueueName),
-      timer_has_started_(false),
+      playing_(false),
+      recording_(false),
       rec_sample_rate_(0),
       play_sample_rate_(0),
       rec_channels_(0),
@@ -56,46 +63,22 @@ AudioDeviceBuffer::AudioDeviceBuffer()
       last_rec_samples_(0),
       play_samples_(0),
       last_play_samples_(0),
-      last_log_stat_time_(0),
+      last_timer_task_time_(0),
       max_rec_level_(0),
       max_play_level_(0),
-      num_rec_level_is_zero_(0),
       rec_stat_count_(0),
-      play_stat_count_(0) {
+      play_stat_count_(0),
+      play_start_time_(0),
+      rec_start_time_(0),
+      only_silence_recorded_(true) {
   LOG(INFO) << "AudioDeviceBuffer::ctor";
 }
 
 AudioDeviceBuffer::~AudioDeviceBuffer() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(!playing_);
+  RTC_DCHECK(!recording_);
   LOG(INFO) << "AudioDeviceBuffer::~dtor";
-
-  size_t total_diff_time = 0;
-  int num_measurements = 0;
-  LOG(INFO) << "[playout diff time => #measurements]";
-  for (size_t diff = 0; diff < arraysize(playout_diff_times_); ++diff) {
-    uint32_t num_elements = playout_diff_times_[diff];
-    if (num_elements > 0) {
-      total_diff_time += num_elements * diff;
-      num_measurements += num_elements;
-      LOG(INFO) << "[" << diff << " => " << num_elements << "]";
-    }
-  }
-  if (num_measurements > 0) {
-    LOG(INFO) << "total_diff_time: " << total_diff_time;
-    LOG(INFO) << "num_measurements: " << num_measurements;
-    LOG(INFO) << "average: "
-             << static_cast<float>(total_diff_time) / num_measurements;
-  }
-
-  // Add UMA histogram to keep track of the case when only zeros have been
-  // recorded. Ensure that recording callbacks have started and that at least
-  // one timer event has been able to update |num_rec_level_is_zero_|.
-  // I am avoiding use of the task queue here since we are under destruction
-  // and reading these members on the creating thread feels safe.
-  if (rec_callbacks_ > 0 && num_stat_reports_ > 0) {
-    RTC_HISTOGRAM_BOOLEAN("WebRTC.Audio.RecordedOnlyZeros",
-    static_cast<int>(num_stat_reports_ == num_rec_level_is_zero_));
-  }
 }
 
 int32_t AudioDeviceBuffer::RegisterAudioCallback(
@@ -106,26 +89,116 @@ int32_t AudioDeviceBuffer::RegisterAudioCallback(
   return 0;
 }
 
-int32_t AudioDeviceBuffer::InitPlayout() {
-  LOG(INFO) << __FUNCTION__;
+void AudioDeviceBuffer::StartPlayout() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  ResetPlayStats();
-  if (!timer_has_started_) {
-    StartTimer();
-    timer_has_started_ = true;
+  // TODO(henrika): allow for usage of DCHECK(!playing_) here instead. Today the
+  // ADM allows calling Start(), Start() by ignoring the second call but it
+  // makes more sense to only allow one call.
+  if (playing_) {
+    return;
   }
-  return 0;
+  LOG(INFO) << __FUNCTION__;
+  // Clear members tracking playout stats and do it on the task queue.
+  task_queue_.PostTask([this] { ResetPlayStats(); });
+  // Start a periodic timer based on task queue if not already done by the
+  // recording side.
+  if (!recording_) {
+    StartPeriodicLogging();
+  }
+  const uint64_t now_time = rtc::TimeMillis();
+  // Clear members that are only touched on the main (creating) thread.
+  play_start_time_ = now_time;
+  last_playout_time_ = now_time;
+  playing_ = true;
 }
 
-int32_t AudioDeviceBuffer::InitRecording() {
-  LOG(INFO) << __FUNCTION__;
+void AudioDeviceBuffer::StartRecording() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  ResetRecStats();
-  if (!timer_has_started_) {
-    StartTimer();
-    timer_has_started_ = true;
+  if (recording_) {
+    return;
   }
-  return 0;
+  LOG(INFO) << __FUNCTION__;
+  // Clear members tracking recording stats and do it on the task queue.
+  task_queue_.PostTask([this] { ResetRecStats(); });
+  // Start a periodic timer based on task queue if not already done by the
+  // playout side.
+  if (!playing_) {
+    StartPeriodicLogging();
+  }
+  // Clear members that will be touched on the main (creating) thread.
+  rec_start_time_ = rtc::TimeMillis();
+  recording_ = true;
+  // And finally a member which can be modified on the native audio thread.
+  // It is safe to do so since we know by design that the owning ADM has not
+  // yet started the native audio recording.
+  only_silence_recorded_ = true;
+}
+
+void AudioDeviceBuffer::StopPlayout() {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  if (!playing_) {
+    return;
+  }
+  LOG(INFO) << __FUNCTION__;
+  playing_ = false;
+  // Stop periodic logging if no more media is active.
+  if (!recording_) {
+    StopPeriodicLogging();
+  }
+  // Add diagnostic logging of delta times for playout callbacks. We are doing
+  // this wihout a lock since playout should be stopped by now and it a minor
+  // conflict during stop will not have a great impact on the total statistics.
+  const size_t time_since_start = rtc::TimeSince(play_start_time_);
+  if (time_since_start > kMinValidCallTimeTimeInMilliseconds) {
+    size_t total_diff_time = 0;
+    int num_measurements = 0;
+    LOG(INFO) << "[playout diff time => #measurements]";
+    for (size_t diff = 0; diff < arraysize(playout_diff_times_); ++diff) {
+      uint32_t num_elements = playout_diff_times_[diff];
+      if (num_elements > 0) {
+        total_diff_time += num_elements * diff;
+        num_measurements += num_elements;
+        LOG(INFO) << "[" << diff << " => " << num_elements << "]";
+      }
+    }
+    if (num_measurements > 0) {
+      LOG(INFO) << "total_diff_time: " << total_diff_time << ", "
+                << "num_measurements: " << num_measurements << ", "
+                << "average: "
+                << static_cast<float>(total_diff_time) / num_measurements;
+    }
+  }
+  LOG(INFO) << "total playout time: " << time_since_start;
+}
+
+void AudioDeviceBuffer::StopRecording() {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  if (!recording_) {
+    return;
+  }
+  LOG(INFO) << __FUNCTION__;
+  recording_ = false;
+  // Stop periodic logging if no more media is active.
+  if (!playing_) {
+    StopPeriodicLogging();
+  }
+  // Add UMA histogram to keep track of the case when only zeros have been
+  // recorded. Measurements (max of absolute level) are taken twice per second,
+  // which means that if e.g 10 seconds of audio has been recorded, a total of
+  // 20 level estimates must all be identical to zero to trigger the histogram.
+  // |only_silence_recorded_| can only be cleared on the native audio thread
+  // that drives audio capture but we know by design that the audio has stopped
+  // when this method is called, hence there should not be aby conflicts. Also,
+  // the fact that |only_silence_recorded_| can be affected during the complete
+  // call makes chances of conflicts with potentially one last callback very
+  // small.
+  const size_t time_since_start = rtc::TimeSince(rec_start_time_);
+  if (time_since_start > kMinValidCallTimeTimeInMilliseconds) {
+    const int only_zeros = static_cast<int>(only_silence_recorded_);
+    RTC_HISTOGRAM_BOOLEAN("WebRTC.Audio.RecordedOnlyZeros", only_zeros);
+    LOG(INFO) << "HISTOGRAM(WebRTC.Audio.RecordedOnlyZeros): " << only_zeros;
+  }
+  LOG(INFO) << "total recording time: " << time_since_start;
 }
 
 int32_t AudioDeviceBuffer::SetRecordingSampleRate(uint32_t fsHz) {
@@ -249,7 +322,7 @@ int32_t AudioDeviceBuffer::SetRecordedBuffer(const void* audio_buffer,
   if (old_size != rec_buffer_.size()) {
     LOG(LS_INFO) << "Size of recording buffer: " << rec_buffer_.size();
   }
-  // Derive a new level value twice per second.
+  // Derive a new level value twice per second and check if it is non-zero.
   int16_t max_abs = 0;
   RTC_DCHECK_LT(rec_stat_count_, 50);
   if (++rec_stat_count_ >= 50) {
@@ -258,13 +331,19 @@ int32_t AudioDeviceBuffer::SetRecordedBuffer(const void* audio_buffer,
     max_abs = WebRtcSpl_MaxAbsValueW16(
         reinterpret_cast<const int16_t*>(rec_buffer_.data()), size);
     rec_stat_count_ = 0;
+    // Set |only_silence_recorded_| to false as soon as at least one detection
+    // of a non-zero audio packet is found. It can only be restored to true
+    // again by restarting the call.
+    if (max_abs > 0) {
+      only_silence_recorded_ = false;
+    }
   }
   // Update some stats but do it on the task queue to ensure that the members
   // are modified and read on the same thread. Note that |max_abs| will be
   // zero in most calls and then have no effect of the stats. It is only updated
   // approximately two times per second and can then change the stats.
-  task_queue_.PostTask(rtc::Bind(&AudioDeviceBuffer::UpdateRecStats, this,
-                                 max_abs, num_samples));
+  task_queue_.PostTask(
+      [this, max_abs, num_samples] { UpdateRecStats(max_abs, num_samples); });
   return 0;
 }
 
@@ -320,24 +399,26 @@ int32_t AudioDeviceBuffer::RequestPlayoutData(size_t num_samples) {
     LOG(LS_INFO) << "Size of playout buffer: " << play_buffer_.size();
   }
 
-  rtc::CritScope lock(&lock_cb_);
-
-  // It is currently supported to start playout without a valid audio
-  // transport object. Leads to warning and silence.
-  if (!audio_transport_cb_) {
-    LOG(LS_WARNING) << "Invalid audio transport";
-    return 0;
-  }
-
-  // Retrieve new 16-bit PCM audio data using the audio transport instance.
-  int64_t elapsed_time_ms = -1;
-  int64_t ntp_time_ms = -1;
   size_t num_samples_out(0);
-  uint32_t res = audio_transport_cb_->NeedMorePlayData(
-      num_samples, play_bytes_per_sample_, play_channels, play_sample_rate_,
-      play_buffer_.data(), num_samples_out, &elapsed_time_ms, &ntp_time_ms);
-  if (res != 0) {
-    LOG(LS_ERROR) << "NeedMorePlayData() failed";
+  {
+    rtc::CritScope lock(&lock_cb_);
+
+    // It is currently supported to start playout without a valid audio
+    // transport object. Leads to warning and silence.
+    if (!audio_transport_cb_) {
+      LOG(LS_WARNING) << "Invalid audio transport";
+      return 0;
+    }
+
+    // Retrieve new 16-bit PCM audio data using the audio transport instance.
+    int64_t elapsed_time_ms = -1;
+    int64_t ntp_time_ms = -1;
+    uint32_t res = audio_transport_cb_->NeedMorePlayData(
+        num_samples, play_bytes_per_sample_, play_channels, play_sample_rate_,
+        play_buffer_.data(), num_samples_out, &elapsed_time_ms, &ntp_time_ms);
+    if (res != 0) {
+      LOG(LS_ERROR) << "NeedMorePlayData() failed";
+    }
   }
 
   // Derive a new level value twice per second.
@@ -354,8 +435,9 @@ int32_t AudioDeviceBuffer::RequestPlayoutData(size_t num_samples) {
   // are modified and read on the same thread. Note that |max_abs| will be
   // zero in most calls and then have no effect of the stats. It is only updated
   // approximately two times per second and can then change the stats.
-  task_queue_.PostTask(rtc::Bind(&AudioDeviceBuffer::UpdatePlayStats, this,
-                                 max_abs, num_samples_out));
+  task_queue_.PostTask([this, max_abs, num_samples_out] {
+    UpdatePlayStats(max_abs, num_samples_out);
+  });
   return static_cast<int32_t>(num_samples_out);
 }
 
@@ -369,24 +451,37 @@ int32_t AudioDeviceBuffer::GetPlayoutData(void* audio_buffer) {
   return static_cast<int32_t>(play_buffer_.size() / play_bytes_per_sample);
 }
 
-void AudioDeviceBuffer::StartTimer() {
-  num_stat_reports_ = 0;
-  last_log_stat_time_ = rtc::TimeMillis();
-  task_queue_.PostDelayedTask(rtc::Bind(&AudioDeviceBuffer::LogStats, this),
-                              kTimerIntervalInMilliseconds);
+void AudioDeviceBuffer::StartPeriodicLogging() {
+  task_queue_.PostTask(rtc::Bind(&AudioDeviceBuffer::LogStats, this,
+                                 AudioDeviceBuffer::LOG_START));
 }
 
-void AudioDeviceBuffer::LogStats() {
+void AudioDeviceBuffer::StopPeriodicLogging() {
+  task_queue_.PostTask(rtc::Bind(&AudioDeviceBuffer::LogStats, this,
+                                 AudioDeviceBuffer::LOG_STOP));
+}
+
+void AudioDeviceBuffer::LogStats(LogState state) {
   RTC_DCHECK(task_queue_.IsCurrent());
-
   int64_t now_time = rtc::TimeMillis();
-  int64_t next_callback_time = now_time + kTimerIntervalInMilliseconds;
-  int64_t time_since_last = rtc::TimeDiff(now_time, last_log_stat_time_);
-  last_log_stat_time_ = now_time;
+  if (state == AudioDeviceBuffer::LOG_START) {
+    // Reset counters at start. We will not add any logging in this state but
+    // the timer will started by posting a new (delayed) task.
+    num_stat_reports_ = 0;
+    last_timer_task_time_ = now_time;
+  } else if (state == AudioDeviceBuffer::LOG_STOP) {
+    // Stop logging and posting new tasks.
+    return;
+  } else if (state == AudioDeviceBuffer::LOG_ACTIVE) {
+    // Default state. Just keep on logging.
+  }
 
-  // Log the latest statistics but skip the first 10 seconds since we are not
-  // sure of the exact starting point. I.e., the first log printout will be
-  // after ~20 seconds.
+  int64_t next_callback_time = now_time + kTimerIntervalInMilliseconds;
+  int64_t time_since_last = rtc::TimeDiff(now_time, last_timer_task_time_);
+  last_timer_task_time_ = now_time;
+
+  // Log the latest statistics but skip the first round just after state was
+  // set to LOG_START. Hence, first printed log will be after ~10 seconds.
   if (++num_stat_reports_ > 1 && time_since_last > 0) {
     uint32_t diff_samples = rec_samples_ - last_rec_samples_;
     float rate = diff_samples / (static_cast<float>(time_since_last) / 1000.0);
@@ -409,12 +504,6 @@ void AudioDeviceBuffer::LogStats() {
               << "level: " << max_play_level_;
   }
 
-  // Count number of times we detect "no audio" corresponding to a case where
-  // all level measurements have been zero.
-  if (max_rec_level_ == 0) {
-    ++num_rec_level_is_zero_;
-  }
-
   last_rec_callbacks_ = rec_callbacks_;
   last_play_callbacks_ = play_callbacks_;
   last_rec_samples_ = rec_samples_;
@@ -425,23 +514,23 @@ void AudioDeviceBuffer::LogStats() {
   int64_t time_to_wait_ms = next_callback_time - rtc::TimeMillis();
   RTC_DCHECK_GT(time_to_wait_ms, 0) << "Invalid timer interval";
 
-  // Update some stats but do it on the task queue to ensure that access of
-  // members is serialized hence avoiding usage of locks.
-  task_queue_.PostDelayedTask(rtc::Bind(&AudioDeviceBuffer::LogStats, this),
+  // Keep posting new (delayed) tasks until state is changed to kLogStop.
+  task_queue_.PostDelayedTask(rtc::Bind(&AudioDeviceBuffer::LogStats, this,
+                                        AudioDeviceBuffer::LOG_ACTIVE),
                               time_to_wait_ms);
 }
 
 void AudioDeviceBuffer::ResetRecStats() {
+  RTC_DCHECK(task_queue_.IsCurrent());
   rec_callbacks_ = 0;
   last_rec_callbacks_ = 0;
   rec_samples_ = 0;
   last_rec_samples_ = 0;
   max_rec_level_ = 0;
-  num_rec_level_is_zero_ = 0;
 }
 
 void AudioDeviceBuffer::ResetPlayStats() {
-  last_playout_time_ = rtc::TimeMillis();
+  RTC_DCHECK(task_queue_.IsCurrent());
   play_callbacks_ = 0;
   last_play_callbacks_ = 0;
   play_samples_ = 0;
