@@ -8,23 +8,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_FEC_RECEIVER_IMPL_H_
-#define WEBRTC_MODULES_RTP_RTCP_SOURCE_FEC_RECEIVER_IMPL_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_ULPFEC_RECEIVER_IMPL_H_
+#define WEBRTC_MODULES_RTP_RTCP_SOURCE_ULPFEC_RECEIVER_IMPL_H_
 
 #include <memory>
 
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/modules/rtp_rtcp/include/fec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/include/ulpfec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
-class FecReceiverImpl : public FecReceiver {
+class UlpfecReceiverImpl : public UlpfecReceiver {
  public:
-  explicit FecReceiverImpl(RtpData* callback);
-  virtual ~FecReceiverImpl();
+  explicit UlpfecReceiverImpl(RtpData* callback);
+  virtual ~UlpfecReceiverImpl();
 
   int32_t AddReceivedRedPacket(const RTPHeader& rtp_header,
                                const uint8_t* incoming_rtp_packet,
@@ -49,4 +49,4 @@ class FecReceiverImpl : public FecReceiver {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_FEC_RECEIVER_IMPL_H_
+#endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_ULPFEC_RECEIVER_IMPL_H_

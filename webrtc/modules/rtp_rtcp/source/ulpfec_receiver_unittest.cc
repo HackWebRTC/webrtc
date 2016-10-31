@@ -13,8 +13,8 @@
 #include <list>
 #include <memory>
 
-#include "webrtc/modules/rtp_rtcp/include/fec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
+#include "webrtc/modules/rtp_rtcp/include/ulpfec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/fec_test_helper.h"
@@ -38,11 +38,11 @@ constexpr int kFecPayloadType = 96;
 constexpr uint32_t kMediaSsrc = 835424;
 }  // namespace
 
-class ReceiverFecTest : public ::testing::Test {
+class UlpfecReceiverTest : public ::testing::Test {
  protected:
-  ReceiverFecTest()
+  UlpfecReceiverTest()
       : fec_(ForwardErrorCorrection::CreateUlpfec()),
-        receiver_fec_(FecReceiver::Create(&rtp_data_callback_)),
+        receiver_fec_(UlpfecReceiver::Create(&rtp_data_callback_)),
         packet_generator_(kMediaSsrc) {}
 
   // Generates |num_fec_packets| FEC packets, given |media_packets|.
@@ -77,11 +77,11 @@ class ReceiverFecTest : public ::testing::Test {
 
   MockRtpData rtp_data_callback_;
   std::unique_ptr<ForwardErrorCorrection> fec_;
-  std::unique_ptr<FecReceiver> receiver_fec_;
+  std::unique_ptr<UlpfecReceiver> receiver_fec_;
   UlpfecPacketGenerator packet_generator_;
 };
 
-void ReceiverFecTest::EncodeFec(
+void UlpfecReceiverTest::EncodeFec(
     const ForwardErrorCorrection::PacketList& media_packets,
     size_t num_fec_packets,
     std::list<ForwardErrorCorrection::Packet*>* fec_packets) {
@@ -98,7 +98,7 @@ void ReceiverFecTest::EncodeFec(
   ASSERT_EQ(num_fec_packets, fec_packets->size());
 }
 
-void ReceiverFecTest::PacketizeFrame(
+void UlpfecReceiverTest::PacketizeFrame(
     size_t num_media_packets,
     size_t frame_offset,
     std::list<AugmentedPacket*>* augmented_packets,
@@ -112,7 +112,7 @@ void ReceiverFecTest::PacketizeFrame(
   }
 }
 
-void ReceiverFecTest::BuildAndAddRedMediaPacket(AugmentedPacket* packet) {
+void UlpfecReceiverTest::BuildAndAddRedMediaPacket(AugmentedPacket* packet) {
   std::unique_ptr<AugmentedPacket> red_packet(
       packet_generator_.BuildMediaRedPacket(*packet));
   EXPECT_EQ(0, receiver_fec_->AddReceivedRedPacket(
@@ -120,7 +120,7 @@ void ReceiverFecTest::BuildAndAddRedMediaPacket(AugmentedPacket* packet) {
                    red_packet->length, kFecPayloadType));
 }
 
-void ReceiverFecTest::BuildAndAddRedFecPacket(Packet* packet) {
+void UlpfecReceiverTest::BuildAndAddRedFecPacket(Packet* packet) {
   std::unique_ptr<AugmentedPacket> red_packet(
       packet_generator_.BuildUlpfecRedPacket(*packet));
   EXPECT_EQ(0, receiver_fec_->AddReceivedRedPacket(
@@ -128,7 +128,7 @@ void ReceiverFecTest::BuildAndAddRedFecPacket(Packet* packet) {
                    red_packet->length, kFecPayloadType));
 }
 
-void ReceiverFecTest::VerifyReconstructedMediaPacket(
+void UlpfecReceiverTest::VerifyReconstructedMediaPacket(
     const AugmentedPacket& packet,
     size_t times) {
   // Verify that the content of the reconstructed packet is equal to the
@@ -140,7 +140,7 @@ void ReceiverFecTest::VerifyReconstructedMediaPacket(
       .WillRepeatedly(Return(true));
 }
 
-void ReceiverFecTest::InjectGarbagePacketLength(size_t fec_garbage_offset) {
+void UlpfecReceiverTest::InjectGarbagePacketLength(size_t fec_garbage_offset) {
   EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
       .WillRepeatedly(Return(true));
 
@@ -165,22 +165,21 @@ void ReceiverFecTest::InjectGarbagePacketLength(size_t fec_garbage_offset) {
   EXPECT_EQ(0U, counter.num_recovered_packets);
 }
 
-void ReceiverFecTest::SurvivesMaliciousPacket(const uint8_t* data,
-                                              size_t length,
-                                              uint8_t ulpfec_payload_type) {
-  webrtc::RTPHeader header;
-  std::unique_ptr<webrtc::RtpHeaderParser> parser(
-      webrtc::RtpHeaderParser::Create());
+void UlpfecReceiverTest::SurvivesMaliciousPacket(const uint8_t* data,
+                                                 size_t length,
+                                                 uint8_t ulpfec_payload_type) {
+  RTPHeader header;
+  std::unique_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
   ASSERT_TRUE(parser->Parse(data, length, &header));
 
-  webrtc::NullRtpData null_callback;
-  std::unique_ptr<webrtc::FecReceiver> receiver_fec(
-      webrtc::FecReceiver::Create(&null_callback));
+  NullRtpData null_callback;
+  std::unique_ptr<UlpfecReceiver> receiver_fec(
+      UlpfecReceiver::Create(&null_callback));
 
   receiver_fec->AddReceivedRedPacket(header, data, length, ulpfec_payload_type);
 }
 
-TEST_F(ReceiverFecTest, TwoMediaOneFec) {
+TEST_F(UlpfecReceiverTest, TwoMediaOneFec) {
   constexpr size_t kNumFecPackets = 1u;
   std::list<AugmentedPacket*> augmented_media_packets;
   ForwardErrorCorrection::PacketList media_packets;
@@ -206,18 +205,18 @@ TEST_F(ReceiverFecTest, TwoMediaOneFec) {
   EXPECT_EQ(1u, counter.num_recovered_packets);
 }
 
-TEST_F(ReceiverFecTest, InjectGarbageFecHeaderLengthRecovery) {
+TEST_F(UlpfecReceiverTest, InjectGarbageFecHeaderLengthRecovery) {
   // Byte offset 8 is the 'length recovery' field of the FEC header.
   InjectGarbagePacketLength(8);
 }
 
-TEST_F(ReceiverFecTest, InjectGarbageFecLevelHeaderProtectionLength) {
+TEST_F(UlpfecReceiverTest, InjectGarbageFecLevelHeaderProtectionLength) {
   // Byte offset 10 is the 'protection length' field in the first FEC level
   // header.
   InjectGarbagePacketLength(10);
 }
 
-TEST_F(ReceiverFecTest, TwoMediaTwoFec) {
+TEST_F(UlpfecReceiverTest, TwoMediaTwoFec) {
   const size_t kNumFecPackets = 2;
   std::list<AugmentedPacket*> augmented_media_packets;
   ForwardErrorCorrection::PacketList media_packets;
@@ -239,7 +238,7 @@ TEST_F(ReceiverFecTest, TwoMediaTwoFec) {
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
 }
 
-TEST_F(ReceiverFecTest, TwoFramesOneFec) {
+TEST_F(UlpfecReceiverTest, TwoFramesOneFec) {
   const size_t kNumFecPackets = 1;
   std::list<AugmentedPacket*> augmented_media_packets;
   ForwardErrorCorrection::PacketList media_packets;
@@ -260,7 +259,7 @@ TEST_F(ReceiverFecTest, TwoFramesOneFec) {
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
 }
 
-TEST_F(ReceiverFecTest, OneCompleteOneUnrecoverableFrame) {
+TEST_F(UlpfecReceiverTest, OneCompleteOneUnrecoverableFrame) {
   const size_t kNumFecPackets = 1;
   std::list<AugmentedPacket*> augmented_media_packets;
   ForwardErrorCorrection::PacketList media_packets;
@@ -281,7 +280,7 @@ TEST_F(ReceiverFecTest, OneCompleteOneUnrecoverableFrame) {
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
 }
 
-TEST_F(ReceiverFecTest, MaxFramesOneFec) {
+TEST_F(UlpfecReceiverTest, MaxFramesOneFec) {
   const size_t kNumFecPackets = 1;
   const size_t kNumMediaPackets = 48;
   std::list<AugmentedPacket*> augmented_media_packets;
@@ -306,7 +305,7 @@ TEST_F(ReceiverFecTest, MaxFramesOneFec) {
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
 }
 
-TEST_F(ReceiverFecTest, TooManyFrames) {
+TEST_F(UlpfecReceiverTest, TooManyFrames) {
   const size_t kNumFecPackets = 1;
   const size_t kNumMediaPackets = 49;
   std::list<AugmentedPacket*> augmented_media_packets;
@@ -320,7 +319,7 @@ TEST_F(ReceiverFecTest, TooManyFrames) {
                                 false, kFecMaskBursty, &fec_packets));
 }
 
-TEST_F(ReceiverFecTest, PacketNotDroppedTooEarly) {
+TEST_F(UlpfecReceiverTest, PacketNotDroppedTooEarly) {
   // 1 frame with 2 media packets and one FEC packet. One media packet missing.
   // Delay the FEC packet.
   Packet* delayed_fec = nullptr;
@@ -335,7 +334,8 @@ TEST_F(ReceiverFecTest, PacketNotDroppedTooEarly) {
 
   BuildAndAddRedMediaPacket(augmented_media_packets_batch1.front());
   EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
-      .Times(1).WillRepeatedly(Return(true));
+      .Times(1)
+      .WillRepeatedly(Return(true));
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
   delayed_fec = fec_packets.front();
 
@@ -351,18 +351,20 @@ TEST_F(ReceiverFecTest, PacketNotDroppedTooEarly) {
        it != augmented_media_packets_batch2.end(); ++it) {
     BuildAndAddRedMediaPacket(*it);
     EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
-        .Times(1).WillRepeatedly(Return(true));
+        .Times(1)
+        .WillRepeatedly(Return(true));
     EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
   }
 
   // Add the delayed FEC packet. One packet should be reconstructed.
   BuildAndAddRedFecPacket(delayed_fec);
   EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
-      .Times(1).WillRepeatedly(Return(true));
+      .Times(1)
+      .WillRepeatedly(Return(true));
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
 }
 
-TEST_F(ReceiverFecTest, PacketDroppedWhenTooOld) {
+TEST_F(UlpfecReceiverTest, PacketDroppedWhenTooOld) {
   // 1 frame with 2 media packets and one FEC packet. One media packet missing.
   // Delay the FEC packet.
   Packet* delayed_fec = nullptr;
@@ -377,7 +379,8 @@ TEST_F(ReceiverFecTest, PacketDroppedWhenTooOld) {
 
   BuildAndAddRedMediaPacket(augmented_media_packets_batch1.front());
   EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
-      .Times(1).WillRepeatedly(Return(true));
+      .Times(1)
+      .WillRepeatedly(Return(true));
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
   delayed_fec = fec_packets.front();
 
@@ -393,19 +396,19 @@ TEST_F(ReceiverFecTest, PacketDroppedWhenTooOld) {
        it != augmented_media_packets_batch2.end(); ++it) {
     BuildAndAddRedMediaPacket(*it);
     EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
-        .Times(1).WillRepeatedly(Return(true));
+        .Times(1)
+        .WillRepeatedly(Return(true));
     EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
   }
 
   // Add the delayed FEC packet. No packet should be reconstructed since the
   // first media packet of that frame has been dropped due to being too old.
   BuildAndAddRedFecPacket(delayed_fec);
-  EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
-      .Times(0);
+  EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _)).Times(0);
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
 }
 
-TEST_F(ReceiverFecTest, OldFecPacketDropped) {
+TEST_F(UlpfecReceiverTest, OldFecPacketDropped) {
   // 49 frames with 2 media packets and one FEC packet. All media packets
   // missing.
   const size_t kNumMediaPackets = 49 * 2;
@@ -420,8 +423,7 @@ TEST_F(ReceiverFecTest, OldFecPacketDropped) {
     for (auto it = fec_packets.begin(); it != fec_packets.end(); ++it) {
       // Only FEC packets inserted. No packets recoverable at this time.
       BuildAndAddRedFecPacket(*it);
-      EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
-          .Times(0);
+      EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _)).Times(0);
       EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
     }
     // Move unique_ptr's to media_packets for lifetime management.
@@ -437,120 +439,34 @@ TEST_F(ReceiverFecTest, OldFecPacketDropped) {
   // returned.
   BuildAndAddRedMediaPacket(augmented_media_packets.front());
   EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
-      .Times(1).WillRepeatedly(Return(true));
+      .Times(1)
+      .WillRepeatedly(Return(true));
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
 }
 
-TEST_F(ReceiverFecTest, TruncatedPacketWithFBitSet) {
-  const uint8_t kTruncatedPacket[] = {0x80,
-                                      0x2a,
-                                      0x68,
-                                      0x71,
-                                      0x29,
-                                      0xa1,
-                                      0x27,
-                                      0x3a,
-                                      0x29,
-                                      0x12,
-                                      0x2a,
-                                      0x98,
-                                      0xe0,
-                                      0x29};
+TEST_F(UlpfecReceiverTest, TruncatedPacketWithFBitSet) {
+  const uint8_t kTruncatedPacket[] = {0x80, 0x2a, 0x68, 0x71, 0x29, 0xa1, 0x27,
+                                      0x3a, 0x29, 0x12, 0x2a, 0x98, 0xe0, 0x29};
 
   SurvivesMaliciousPacket(kTruncatedPacket, sizeof(kTruncatedPacket), 100);
 }
 
-TEST_F(ReceiverFecTest, TruncatedPacketWithFBitSetEndingAfterFirstRedHeader) {
-  const uint8_t kPacket[] = {0x89,
-                             0x27,
-                             0x3a,
-                             0x83,
-                             0x27,
-                             0x3a,
-                             0x3a,
-                             0xf3,
-                             0x67,
-                             0xbe,
-                             0x2a,
-                             0xa9,
-                             0x27,
-                             0x54,
-                             0x3a,
-                             0x3a,
-                             0x2a,
-                             0x67,
-                             0x3a,
-                             0xf3,
-                             0x67,
-                             0xbe,
-                             0x2a,
-                             0x27,
-                             0xe6,
-                             0xf6,
-                             0x03,
-                             0x3e,
-                             0x29,
-                             0x27,
-                             0x21,
-                             0x27,
-                             0x2a,
-                             0x29,
-                             0x21,
-                             0x4b,
-                             0x29,
-                             0x3a,
-                             0x28,
-                             0x29,
-                             0xbf,
-                             0x29,
-                             0x2a,
-                             0x26,
-                             0x29,
-                             0xae,
-                             0x27,
-                             0xa6,
-                             0xf6,
-                             0x00,
-                             0x03,
-                             0x3e};
+TEST_F(UlpfecReceiverTest,
+       TruncatedPacketWithFBitSetEndingAfterFirstRedHeader) {
+  const uint8_t kPacket[] = {
+      0x89, 0x27, 0x3a, 0x83, 0x27, 0x3a, 0x3a, 0xf3, 0x67, 0xbe, 0x2a,
+      0xa9, 0x27, 0x54, 0x3a, 0x3a, 0x2a, 0x67, 0x3a, 0xf3, 0x67, 0xbe,
+      0x2a, 0x27, 0xe6, 0xf6, 0x03, 0x3e, 0x29, 0x27, 0x21, 0x27, 0x2a,
+      0x29, 0x21, 0x4b, 0x29, 0x3a, 0x28, 0x29, 0xbf, 0x29, 0x2a, 0x26,
+      0x29, 0xae, 0x27, 0xa6, 0xf6, 0x00, 0x03, 0x3e};
   SurvivesMaliciousPacket(kPacket, sizeof(kPacket), 100);
 }
 
-TEST_F(ReceiverFecTest, TruncatedPacketWithoutDataPastFirstBlock) {
-  const uint8_t kPacket[] = {0x82,
-                             0x38,
-                             0x92,
-                             0x38,
-                             0x92,
-                             0x38,
-                             0xde,
-                             0x2a,
-                             0x11,
-                             0xc8,
-                             0xa3,
-                             0xc4,
-                             0x82,
-                             0x38,
-                             0x2a,
-                             0x21,
-                             0x2a,
-                             0x28,
-                             0x92,
-                             0x38,
-                             0x92,
-                             0x00,
-                             0x00,
-                             0x0a,
-                             0x3a,
-                             0xc8,
-                             0xa3,
-                             0x3a,
-                             0x27,
-                             0xc4,
-                             0x2a,
-                             0x21,
-                             0x2a,
-                             0x28};
+TEST_F(UlpfecReceiverTest, TruncatedPacketWithoutDataPastFirstBlock) {
+  const uint8_t kPacket[] = {
+      0x82, 0x38, 0x92, 0x38, 0x92, 0x38, 0xde, 0x2a, 0x11, 0xc8, 0xa3, 0xc4,
+      0x82, 0x38, 0x2a, 0x21, 0x2a, 0x28, 0x92, 0x38, 0x92, 0x00, 0x00, 0x0a,
+      0x3a, 0xc8, 0xa3, 0x3a, 0x27, 0xc4, 0x2a, 0x21, 0x2a, 0x28};
   SurvivesMaliciousPacket(kPacket, sizeof(kPacket), 100);
 }
 

@@ -18,12 +18,12 @@
 #include "webrtc/config.h"
 #include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "webrtc/modules/rtp_rtcp/include/fec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "webrtc/modules/rtp_rtcp/include/ulpfec_receiver.h"
 #include "webrtc/modules/video_coding/video_coding_impl.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/timestamp_extrapolator.h"
@@ -99,7 +99,7 @@ RtpStreamReceiver::RtpStreamReceiver(
                                                      this,
                                                      &rtp_payload_registry_)),
       rtp_receive_statistics_(ReceiveStatistics::Create(clock_)),
-      fec_receiver_(FecReceiver::Create(this)),
+      ulpfec_receiver_(UlpfecReceiver::Create(this)),
       receiving_(false),
       restored_packet_in_use_(false),
       last_packet_log_ms_(-1),
@@ -384,11 +384,11 @@ bool RtpStreamReceiver::ParseAndHandleEncapsulatingHeader(
       // packets.
       NotifyReceiverOfFecPacket(header);
     }
-    if (fec_receiver_->AddReceivedRedPacket(
-            header, packet, packet_length, ulpfec_pt) != 0) {
+    if (ulpfec_receiver_->AddReceivedRedPacket(header, packet, packet_length,
+                                               ulpfec_pt) != 0) {
       return false;
     }
-    return fec_receiver_->ProcessReceivedFec() == 0;
+    return ulpfec_receiver_->ProcessReceivedFec() == 0;
   } else if (rtp_payload_registry_.IsRtx(header)) {
     if (header.headerLength + header.paddingLength == packet_length) {
       // This is an empty packet and should be silently dropped before trying to
@@ -519,7 +519,7 @@ bool RtpStreamReceiver::IsPacketRetransmitted(const RTPHeader& header,
 }
 
 void RtpStreamReceiver::UpdateHistograms() {
-  FecPacketCounter counter = fec_receiver_->GetPacketCounter();
+  FecPacketCounter counter = ulpfec_receiver_->GetPacketCounter();
   if (counter.num_packets > 0) {
     RTC_HISTOGRAM_PERCENTAGE(
         "WebRTC.Video.ReceivedFecPacketsInPercent",

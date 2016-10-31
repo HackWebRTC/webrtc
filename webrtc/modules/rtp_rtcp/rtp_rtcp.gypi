@@ -18,7 +18,6 @@
       ],
       'sources': [
         # Common
-        'include/fec_receiver.h',
         'include/flexfec_receiver.h',
         'include/receive_statistics.h',
         'include/remote_ntp_time_estimator.h',
@@ -27,9 +26,8 @@
         'include/rtp_receiver.h',
         'include/rtp_rtcp.h',
         'include/rtp_rtcp_defines.h',
+        'include/ulpfec_receiver.h',
         'source/byte_io.h',
-        'source/fec_receiver_impl.cc',
-        'source/fec_receiver_impl.h',
         'source/flexfec_receiver_impl.cc',
         'source/flexfec_receiver_impl.h',
         'source/packet_loss_stats.cc',
@@ -163,6 +161,8 @@
         'source/rtp_format_video_generic.h',
         'source/ulpfec_header_reader_writer.cc',
         'source/ulpfec_header_reader_writer.h',
+        'source/ulpfec_receiver_impl.cc',
+        'source/ulpfec_receiver_impl.h',
         'source/vp8_partition_aggregator.cc',
         'source/vp8_partition_aggregator.h',
         # Mocks

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_FEC_RECEIVER_H_
-#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_FEC_RECEIVER_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_ULPFEC_RECEIVER_H_
+#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_ULPFEC_RECEIVER_H_
 
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/typedefs.h"
@@ -18,20 +18,18 @@ namespace webrtc {
 
 struct FecPacketCounter {
   FecPacketCounter()
-      : num_packets(0),
-        num_fec_packets(0),
-        num_recovered_packets(0) {}
+      : num_packets(0), num_fec_packets(0), num_recovered_packets(0) {}
 
   size_t num_packets;            // Number of received packets.
   size_t num_fec_packets;        // Number of received FEC packets.
   size_t num_recovered_packets;  // Number of recovered media packets using FEC.
 };
 
-class FecReceiver {
+class UlpfecReceiver {
  public:
-  static FecReceiver* Create(RtpData* callback);
+  static UlpfecReceiver* Create(RtpData* callback);
 
-  virtual ~FecReceiver() {}
+  virtual ~UlpfecReceiver() {}
 
   // Takes a RED packet, strips the RED header, and adds the resulting
   // "virtual" RTP packet(s) into the internal buffer.
@@ -51,4 +49,4 @@ class FecReceiver {
   virtual FecPacketCounter GetPacketCounter() const = 0;
 };
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_RTP_RTCP_INCLUDE_FEC_RECEIVER_H_
+#endif  // WEBRTC_MODULES_RTP_RTCP_INCLUDE_ULPFEC_RECEIVER_H_

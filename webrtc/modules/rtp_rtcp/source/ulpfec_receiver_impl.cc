@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/rtp_rtcp/source/fec_receiver_impl.h"
+#include "webrtc/modules/rtp_rtcp/source/ulpfec_receiver_impl.h"
 
 #include <memory>
 #include <utility>
@@ -20,20 +20,20 @@
 
 namespace webrtc {
 
-FecReceiver* FecReceiver::Create(RtpData* callback) {
-  return new FecReceiverImpl(callback);
+UlpfecReceiver* UlpfecReceiver::Create(RtpData* callback) {
+  return new UlpfecReceiverImpl(callback);
 }
 
-FecReceiverImpl::FecReceiverImpl(RtpData* callback)
+UlpfecReceiverImpl::UlpfecReceiverImpl(RtpData* callback)
     : recovered_packet_callback_(callback),
       fec_(ForwardErrorCorrection::CreateUlpfec()) {}
 
-FecReceiverImpl::~FecReceiverImpl() {
+UlpfecReceiverImpl::~UlpfecReceiverImpl() {
   received_packets_.clear();
   fec_->ResetState(&recovered_packets_);
 }
 
-FecPacketCounter FecReceiverImpl::GetPacketCounter() const {
+FecPacketCounter UlpfecReceiverImpl::GetPacketCounter() const {
   rtc::CritScope cs(&crit_sect_);
   return packet_counter_;
 }
@@ -66,9 +66,11 @@ FecPacketCounter FecReceiverImpl::GetPacketCounter() const {
 //    block length:  10 bits Length in bytes of the corresponding data
 //        block excluding header.
 
-int32_t FecReceiverImpl::AddReceivedRedPacket(
-    const RTPHeader& header, const uint8_t* incoming_rtp_packet,
-    size_t packet_length, uint8_t ulpfec_payload_type) {
+int32_t UlpfecReceiverImpl::AddReceivedRedPacket(
+    const RTPHeader& header,
+    const uint8_t* incoming_rtp_packet,
+    size_t packet_length,
+    uint8_t ulpfec_payload_type) {
   rtc::CritScope cs(&crit_sect_);
 
   uint8_t red_header_length = 1;
@@ -100,8 +102,7 @@ int32_t FecReceiverImpl::AddReceivedRedPacket(
 
     uint16_t timestamp_offset = incoming_rtp_packet[header.headerLength + 1]
                                 << 8;
-    timestamp_offset +=
-        incoming_rtp_packet[header.headerLength + 2];
+    timestamp_offset += incoming_rtp_packet[header.headerLength + 2];
     timestamp_offset = timestamp_offset >> 2;
     if (timestamp_offset != 0) {
       LOG(LS_WARNING) << "Corrupt payload found.";
@@ -199,7 +200,7 @@ int32_t FecReceiverImpl::AddReceivedRedPacket(
   return 0;
 }
 
-int32_t FecReceiverImpl::ProcessReceivedFec() {
+int32_t UlpfecReceiverImpl::ProcessReceivedFec() {
   crit_sect_.Enter();
   if (!received_packets_.empty()) {
     // Send received media packet to VCM.

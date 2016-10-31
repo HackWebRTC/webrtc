@@ -10,7 +10,6 @@ import("../../build/webrtc.gni")
 
 rtc_static_library("rtp_rtcp") {
   sources = [
-    "include/fec_receiver.h",
     "include/flexfec_receiver.h",
     "include/receive_statistics.h",
     "include/remote_ntp_time_estimator.h",
@@ -19,14 +18,13 @@ rtc_static_library("rtp_rtcp") {
     "include/rtp_receiver.h",
     "include/rtp_rtcp.h",
     "include/rtp_rtcp_defines.h",
+    "include/ulpfec_receiver.h",
     "mocks/mock_rtp_rtcp.h",
     "source/byte_io.h",
     "source/dtmf_queue.cc",
     "source/dtmf_queue.h",
     "source/fec_private_tables_bursty.h",
     "source/fec_private_tables_random.h",
-    "source/fec_receiver_impl.cc",
-    "source/fec_receiver_impl.h",
     "source/flexfec_header_reader_writer.cc",
     "source/flexfec_header_reader_writer.h",
     "source/flexfec_receiver_impl.cc",
@@ -154,6 +152,8 @@ rtc_static_library("rtp_rtcp") {
     "source/tmmbr_help.h",
     "source/ulpfec_header_reader_writer.cc",
     "source/ulpfec_header_reader_writer.h",
+    "source/ulpfec_receiver_impl.cc",
+    "source/ulpfec_receiver_impl.h",
     "source/video_codec_information.h",
     "source/vp8_partition_aggregator.cc",
     "source/vp8_partition_aggregator.h",

@@ -29,7 +29,6 @@
 
 namespace webrtc {
 
-class FecReceiver;
 class PacedSender;
 class PacketRouter;
 class ProcessThread;
@@ -42,6 +41,7 @@ class RtpHeaderParser;
 class RTPPayloadRegistry;
 class RtpReceiver;
 class Transport;
+class UlpfecReceiver;
 class VieRemb;
 
 namespace vcm {
@@ -142,7 +142,7 @@ class RtpStreamReceiver : public RtpData, public RtpFeedback,
   const std::unique_ptr<RtpHeaderParser> rtp_header_parser_;
   const std::unique_ptr<RtpReceiver> rtp_receiver_;
   const std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;
-  std::unique_ptr<FecReceiver> fec_receiver_;
+  std::unique_ptr<UlpfecReceiver> ulpfec_receiver_;
 
   rtc::CriticalSection receive_cs_;
   bool receiving_ GUARDED_BY(receive_cs_);

@@ -131,9 +131,9 @@ bool FlexfecReceiverImpl::AddReceivedPacket(const uint8_t* packet,
 }
 
 // Note that the implementation of this member function and the implementation
-// in FecReceiver::ProcessReceivedFec() are slightly different.
+// in UlpfecReceiver::ProcessReceivedFec() are slightly different.
 // This implementation only returns _recovered_ media packets through the
-// callback, whereas the implementation in FecReceiver returns _all inserted_
+// callback, whereas the implementation in UlpfecReceiver returns _all inserted_
 // media packets through the callback. The latter behaviour makes sense
 // for ULPFEC, since the ULPFEC receiver is owned by the RtpStreamReceiver.
 // Here, however, the received media pipeline is more decoupled from the

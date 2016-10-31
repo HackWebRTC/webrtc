@@ -14,7 +14,7 @@
 #include <memory>
 
 #include "webrtc/base/basictypes.h"
-#include "webrtc/modules/rtp_rtcp/include/fec_receiver.h"
+#include "webrtc/modules/rtp_rtcp/include/ulpfec_receiver.h"
 
 namespace webrtc {
 
