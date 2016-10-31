@@ -688,13 +688,11 @@ void RTCPReceiver::HandleXr(const CommonHeader& rtcp_block,
     return;
   }
 
-  for (const rtcp::Rrtr& rrtr : xr.rrtrs())
-    HandleXrReceiveReferenceTime(xr.sender_ssrc(), rrtr);
+  if (xr.rrtr())
+    HandleXrReceiveReferenceTime(xr.sender_ssrc(), *xr.rrtr());
 
-  for (const rtcp::Dlrr& dlrr : xr.dlrrs()) {
-    for (const rtcp::ReceiveTimeInfo& time_info : dlrr.sub_blocks())
-      HandleXrDlrrReportBlock(time_info);
-  }
+  for (const rtcp::ReceiveTimeInfo& time_info : xr.dlrr().sub_blocks())
+    HandleXrDlrrReportBlock(time_info);
 }
 
 void RTCPReceiver::HandleXrReceiveReferenceTime(

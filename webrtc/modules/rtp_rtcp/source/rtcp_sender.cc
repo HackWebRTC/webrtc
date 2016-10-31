@@ -701,7 +701,7 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildReceiverReferenceTime(
   rtcp::Rrtr rrtr;
   rrtr.SetNtp(NtpTime(ctx.ntp_sec_, ctx.ntp_frac_));
 
-  xr->AddRrtr(rrtr);
+  xr->SetRrtr(rrtr);
 
   // TODO(sprang): Merge XR report sending to contain all of RRTR, DLRR, VOIP?
 
@@ -712,17 +712,12 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildDlrr(
     const RtcpContext& ctx) {
   rtcp::ExtendedReports* xr = new rtcp::ExtendedReports();
   xr->SetSenderSsrc(ssrc_);
-
-  rtcp::Dlrr dlrr;
   RTC_DCHECK(ctx.feedback_state_.has_last_xr_rr);
-  dlrr.AddDlrrItem(ctx.feedback_state_.last_xr_rr);
-
-  xr->AddDlrr(dlrr);
+  xr->AddDlrrItem(ctx.feedback_state_.last_xr_rr);
 
   return std::unique_ptr<rtcp::RtcpPacket>(xr);
 }
 
-// TODO(sprang): Add a unit test for this, or remove if the code isn't used.
 std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildVoIPMetric(
     const RtcpContext& context) {
   rtcp::ExtendedReports* xr = new rtcp::ExtendedReports();
@@ -732,7 +727,7 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildVoIPMetric(
   voip.SetMediaSsrc(remote_ssrc_);
   voip.SetVoipMetric(xr_voip_metric_);
 
-  xr->AddVoipMetric(voip);
+  xr->SetVoipMetric(voip);
 
   return std::unique_ptr<rtcp::RtcpPacket>(xr);
 }

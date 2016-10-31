@@ -53,6 +53,7 @@ using ::testing::SizeIs;
 using ::testing::StrEq;
 using ::testing::StrictMock;
 using ::testing::UnorderedElementsAre;
+using rtcp::ReceiveTimeInfo;
 
 class MockRtcpPacketTypeCounterObserver : public RtcpPacketTypeCounterObserver {
  public:
@@ -698,7 +699,7 @@ TEST_F(RtcpReceiverTest, InjectExtendedReportsVoipPacket) {
   voip_metric.SetVoipMetric(metric);
   rtcp::ExtendedReports xr;
   xr.SetSenderSsrc(kSenderSsrc);
-  xr.AddVoipMetric(voip_metric);
+  xr.SetVoipMetric(voip_metric);
 
   InjectRtcpPacket(xr);
 }
@@ -708,7 +709,7 @@ TEST_F(RtcpReceiverTest, ExtendedReportsVoipPacketNotToUsIgnored) {
   voip_metric.SetMediaSsrc(kNotToUsSsrc);
   rtcp::ExtendedReports xr;
   xr.SetSenderSsrc(kSenderSsrc);
-  xr.AddVoipMetric(voip_metric);
+  xr.SetVoipMetric(voip_metric);
 
   InjectRtcpPacket(xr);
 }
@@ -719,9 +720,9 @@ TEST_F(RtcpReceiverTest, InjectExtendedReportsReceiverReferenceTimePacket) {
   rrtr.SetNtp(kNtp);
   rtcp::ExtendedReports xr;
   xr.SetSenderSsrc(kSenderSsrc);
-  xr.AddRrtr(rrtr);
+  xr.SetRrtr(rrtr);
 
-  rtcp::ReceiveTimeInfo rrtime;
+  ReceiveTimeInfo rrtime;
   EXPECT_FALSE(rtcp_receiver_.LastReceivedXrReferenceTimeInfo(&rrtime));
 
   InjectRtcpPacket(xr);
@@ -740,11 +741,9 @@ TEST_F(RtcpReceiverTest, ExtendedReportsDlrrPacketNotToUsIgnored) {
   // Allow calculate rtt using dlrr/rrtr, simulating media receiver side.
   rtcp_receiver_.SetRtcpXrRrtrStatus(true);
 
-  rtcp::Dlrr dlrr;
-  dlrr.AddDlrrItem(kNotToUsSsrc, 0x12345, 0x67890);
   rtcp::ExtendedReports xr;
   xr.SetSenderSsrc(kSenderSsrc);
-  xr.AddDlrr(dlrr);
+  xr.AddDlrrItem(ReceiveTimeInfo(kNotToUsSsrc, 0x12345, 0x67890));
 
   InjectRtcpPacket(xr);
 
@@ -759,11 +758,9 @@ TEST_F(RtcpReceiverTest, InjectExtendedReportsDlrrPacketWithSubBlock) {
   int64_t rtt_ms = 0;
   EXPECT_FALSE(rtcp_receiver_.GetAndResetXrRrRtt(&rtt_ms));
 
-  rtcp::Dlrr dlrr;
-  dlrr.AddDlrrItem(kReceiverMainSsrc, kLastRR, kDelay);
   rtcp::ExtendedReports xr;
   xr.SetSenderSsrc(kSenderSsrc);
-  xr.AddDlrr(dlrr);
+  xr.AddDlrrItem(ReceiveTimeInfo(kReceiverMainSsrc, kLastRR, kDelay));
 
   InjectRtcpPacket(xr);
 
@@ -780,11 +777,9 @@ TEST_F(RtcpReceiverTest, InjectExtendedReportsDlrrPacketWithMultipleSubBlocks) {
 
   rtcp::ExtendedReports xr;
   xr.SetSenderSsrc(kSenderSsrc);
-  rtcp::Dlrr dlrr;
-  dlrr.AddDlrrItem(kReceiverMainSsrc, kLastRR, kDelay);
-  dlrr.AddDlrrItem(kReceiverMainSsrc + 1, 0x12345, 0x67890);
-  dlrr.AddDlrrItem(kReceiverMainSsrc + 2, 0x12345, 0x67890);
-  xr.AddDlrr(dlrr);
+  xr.AddDlrrItem(ReceiveTimeInfo(kReceiverMainSsrc, kLastRR, kDelay));
+  xr.AddDlrrItem(ReceiveTimeInfo(kReceiverMainSsrc + 1, 0x12345, 0x67890));
+  xr.AddDlrrItem(ReceiveTimeInfo(kReceiverMainSsrc + 2, 0x12345, 0x67890));
 
   InjectRtcpPacket(xr);
 
@@ -799,19 +794,17 @@ TEST_F(RtcpReceiverTest, InjectExtendedReportsPacketWithMultipleReportBlocks) {
   rtcp_receiver_.SetRtcpXrRrtrStatus(true);
 
   rtcp::Rrtr rrtr;
-  rtcp::Dlrr dlrr;
-  dlrr.AddDlrrItem(kReceiverMainSsrc, 0x12345, 0x67890);
   rtcp::VoipMetric metric;
   metric.SetMediaSsrc(kReceiverMainSsrc);
   rtcp::ExtendedReports xr;
   xr.SetSenderSsrc(kSenderSsrc);
-  xr.AddRrtr(rrtr);
-  xr.AddDlrr(dlrr);
-  xr.AddVoipMetric(metric);
+  xr.SetRrtr(rrtr);
+  xr.AddDlrrItem(ReceiveTimeInfo(kReceiverMainSsrc, 0x12345, 0x67890));
+  xr.SetVoipMetric(metric);
 
   InjectRtcpPacket(xr);
 
-  rtcp::ReceiveTimeInfo rrtime;
+  ReceiveTimeInfo rrtime;
   EXPECT_TRUE(rtcp_receiver_.LastReceivedXrReferenceTimeInfo(&rrtime));
   int64_t rtt_ms = 0;
   EXPECT_TRUE(rtcp_receiver_.GetAndResetXrRrRtt(&rtt_ms));
@@ -821,15 +814,13 @@ TEST_F(RtcpReceiverTest, InjectExtendedReportsPacketWithUnknownReportBlock) {
   rtcp_receiver_.SetRtcpXrRrtrStatus(true);
 
   rtcp::Rrtr rrtr;
-  rtcp::Dlrr dlrr;
-  dlrr.AddDlrrItem(kReceiverMainSsrc, 0x12345, 0x67890);
   rtcp::VoipMetric metric;
   metric.SetMediaSsrc(kReceiverMainSsrc);
   rtcp::ExtendedReports xr;
   xr.SetSenderSsrc(kSenderSsrc);
-  xr.AddRrtr(rrtr);
-  xr.AddDlrr(dlrr);
-  xr.AddVoipMetric(metric);
+  xr.SetRrtr(rrtr);
+  xr.AddDlrrItem(ReceiveTimeInfo(kReceiverMainSsrc, 0x12345, 0x67890));
+  xr.SetVoipMetric(metric);
 
   rtc::Buffer packet = xr.Build();
   // Modify the DLRR block to have an unsupported block type, from 5 to 6.
@@ -838,7 +829,7 @@ TEST_F(RtcpReceiverTest, InjectExtendedReportsPacketWithUnknownReportBlock) {
   InjectRtcpPacket(packet);
 
   // Validate Rrtr was received and processed.
-  rtcp::ReceiveTimeInfo rrtime;
+  ReceiveTimeInfo rrtime;
   EXPECT_TRUE(rtcp_receiver_.LastReceivedXrReferenceTimeInfo(&rrtime));
   // Validate Dlrr report wasn't processed.
   int64_t rtt_ms = 0;
@@ -862,11 +853,9 @@ TEST_F(RtcpReceiverTest, RttCalculatedAfterExtendedReportsDlrr) {
   uint32_t sent_ntp = CompactNtp(now);
   system_clock_.AdvanceTimeMilliseconds(kRttMs + kDelayMs);
 
-  rtcp::Dlrr dlrr;
-  dlrr.AddDlrrItem(kReceiverMainSsrc, sent_ntp, kDelayNtp);
   rtcp::ExtendedReports xr;
   xr.SetSenderSsrc(kSenderSsrc);
-  xr.AddDlrr(dlrr);
+  xr.AddDlrrItem(ReceiveTimeInfo(kReceiverMainSsrc, sent_ntp, kDelayNtp));
 
   InjectRtcpPacket(xr);
 
@@ -885,11 +874,9 @@ TEST_F(RtcpReceiverTest, XrDlrrCalculatesNegativeRttAsOne) {
   system_clock_.AdvanceTimeMilliseconds(kRttMs + kDelayMs);
   rtcp_receiver_.SetRtcpXrRrtrStatus(true);
 
-  rtcp::Dlrr dlrr;
-  dlrr.AddDlrrItem(kReceiverMainSsrc, sent_ntp, kDelayNtp);
   rtcp::ExtendedReports xr;
   xr.SetSenderSsrc(kSenderSsrc);
-  xr.AddDlrr(dlrr);
+  xr.AddDlrrItem(ReceiveTimeInfo(kReceiverMainSsrc, sent_ntp, kDelayNtp));
 
   InjectRtcpPacket(xr);
 
@@ -899,7 +886,7 @@ TEST_F(RtcpReceiverTest, XrDlrrCalculatesNegativeRttAsOne) {
 }
 
 TEST_F(RtcpReceiverTest, LastReceivedXrReferenceTimeInfoInitiallyFalse) {
-  rtcp::ReceiveTimeInfo info;
+  ReceiveTimeInfo info;
   EXPECT_FALSE(rtcp_receiver_.LastReceivedXrReferenceTimeInfo(&info));
 }
 
@@ -911,11 +898,11 @@ TEST_F(RtcpReceiverTest, GetLastReceivedExtendedReportsReferenceTimeInfo) {
   rrtr.SetNtp(kNtp);
   rtcp::ExtendedReports xr;
   xr.SetSenderSsrc(kSenderSsrc);
-  xr.AddRrtr(rrtr);
+  xr.SetRrtr(rrtr);
 
   InjectRtcpPacket(xr);
 
-  rtcp::ReceiveTimeInfo info;
+  ReceiveTimeInfo info;
   EXPECT_TRUE(rtcp_receiver_.LastReceivedXrReferenceTimeInfo(&info));
   EXPECT_EQ(kSenderSsrc, info.ssrc);
   EXPECT_EQ(kNtpMid, info.last_rr);

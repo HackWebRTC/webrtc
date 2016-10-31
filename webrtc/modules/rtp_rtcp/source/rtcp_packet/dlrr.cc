@@ -81,23 +81,5 @@ void Dlrr::Create(uint8_t* buffer) const {
   RTC_DCHECK_EQ(buffer + BlockLength(), write_at);
 }
 
-bool Dlrr::AddDlrrItem(const ReceiveTimeInfo& block) {
-  if (sub_blocks_.size() >= kMaxNumberOfDlrrItems) {
-    LOG(LS_WARNING) << "Max DLRR items reached.";
-    return false;
-  }
-  sub_blocks_.push_back(block);
-  return true;
-}
-
-bool Dlrr::AddDlrrItem(uint32_t ssrc,
-                       uint32_t last_rr,
-                       uint32_t delay_last_rr) {
-  ReceiveTimeInfo block;
-  block.ssrc = ssrc;
-  block.last_rr = last_rr;
-  block.delay_since_last_rr = delay_last_rr;
-  return AddDlrrItem(block);
-}
 }  // namespace rtcp
 }  // namespace webrtc

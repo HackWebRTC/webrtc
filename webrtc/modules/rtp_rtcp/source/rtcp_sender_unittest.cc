@@ -606,28 +606,29 @@ TEST_F(RtcpSenderTest, SendXrWithVoipMetric) {
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpXrVoipMetric));
   EXPECT_EQ(1, parser()->xr()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser()->xr()->sender_ssrc());
-  EXPECT_EQ(1U, parser()->xr()->voip_metrics().size());
-  EXPECT_EQ(kRemoteSsrc, parser()->xr()->voip_metrics()[0].ssrc());
-  EXPECT_EQ(metric.lossRate, parser()->voip_metric()->lossRate);
-  EXPECT_EQ(metric.discardRate, parser()->voip_metric()->discardRate);
-  EXPECT_EQ(metric.burstDensity, parser()->voip_metric()->burstDensity);
-  EXPECT_EQ(metric.gapDensity, parser()->voip_metric()->gapDensity);
-  EXPECT_EQ(metric.burstDuration, parser()->voip_metric()->burstDuration);
-  EXPECT_EQ(metric.gapDuration, parser()->voip_metric()->gapDuration);
-  EXPECT_EQ(metric.roundTripDelay, parser()->voip_metric()->roundTripDelay);
-  EXPECT_EQ(metric.endSystemDelay, parser()->voip_metric()->endSystemDelay);
-  EXPECT_EQ(metric.signalLevel, parser()->voip_metric()->signalLevel);
-  EXPECT_EQ(metric.noiseLevel, parser()->voip_metric()->noiseLevel);
-  EXPECT_EQ(metric.RERL, parser()->voip_metric()->RERL);
-  EXPECT_EQ(metric.Gmin, parser()->voip_metric()->Gmin);
-  EXPECT_EQ(metric.Rfactor, parser()->voip_metric()->Rfactor);
-  EXPECT_EQ(metric.extRfactor, parser()->voip_metric()->extRfactor);
-  EXPECT_EQ(metric.MOSLQ, parser()->voip_metric()->MOSLQ);
-  EXPECT_EQ(metric.MOSCQ, parser()->voip_metric()->MOSCQ);
-  EXPECT_EQ(metric.RXconfig, parser()->voip_metric()->RXconfig);
-  EXPECT_EQ(metric.JBnominal, parser()->voip_metric()->JBnominal);
-  EXPECT_EQ(metric.JBmax, parser()->voip_metric()->JBmax);
-  EXPECT_EQ(metric.JBabsMax, parser()->voip_metric()->JBabsMax);
+  ASSERT_TRUE(parser()->xr()->voip_metric());
+  EXPECT_EQ(kRemoteSsrc, parser()->xr()->voip_metric()->ssrc());
+  const auto& parsed_metric = parser()->xr()->voip_metric()->voip_metric();
+  EXPECT_EQ(metric.lossRate, parsed_metric.lossRate);
+  EXPECT_EQ(metric.discardRate, parsed_metric.discardRate);
+  EXPECT_EQ(metric.burstDensity, parsed_metric.burstDensity);
+  EXPECT_EQ(metric.gapDensity, parsed_metric.gapDensity);
+  EXPECT_EQ(metric.burstDuration, parsed_metric.burstDuration);
+  EXPECT_EQ(metric.gapDuration, parsed_metric.gapDuration);
+  EXPECT_EQ(metric.roundTripDelay, parsed_metric.roundTripDelay);
+  EXPECT_EQ(metric.endSystemDelay, parsed_metric.endSystemDelay);
+  EXPECT_EQ(metric.signalLevel, parsed_metric.signalLevel);
+  EXPECT_EQ(metric.noiseLevel, parsed_metric.noiseLevel);
+  EXPECT_EQ(metric.RERL, parsed_metric.RERL);
+  EXPECT_EQ(metric.Gmin, parsed_metric.Gmin);
+  EXPECT_EQ(metric.Rfactor, parsed_metric.Rfactor);
+  EXPECT_EQ(metric.extRfactor, parsed_metric.extRfactor);
+  EXPECT_EQ(metric.MOSLQ, parsed_metric.MOSLQ);
+  EXPECT_EQ(metric.MOSCQ, parsed_metric.MOSCQ);
+  EXPECT_EQ(metric.RXconfig, parsed_metric.RXconfig);
+  EXPECT_EQ(metric.JBnominal, parsed_metric.JBnominal);
+  EXPECT_EQ(metric.JBmax, parsed_metric.JBmax);
+  EXPECT_EQ(metric.JBabsMax, parsed_metric.JBabsMax);
 }
 
 TEST_F(RtcpSenderTest, SendXrWithDlrr) {
@@ -642,13 +643,11 @@ TEST_F(RtcpSenderTest, SendXrWithDlrr) {
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state, kRtcpReport));
   EXPECT_EQ(1, parser()->xr()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser()->xr()->sender_ssrc());
-  EXPECT_EQ(1U, parser()->xr()->dlrrs().size());
-  EXPECT_EQ(1U, parser()->xr()->dlrrs()[0].sub_blocks().size());
-  EXPECT_EQ(last_xr_rr.ssrc, parser()->xr()->dlrrs()[0].sub_blocks()[0].ssrc);
-  EXPECT_EQ(last_xr_rr.last_rr,
-            parser()->xr()->dlrrs()[0].sub_blocks()[0].last_rr);
+  EXPECT_EQ(1U, parser()->xr()->dlrr().sub_blocks().size());
+  EXPECT_EQ(last_xr_rr.ssrc, parser()->xr()->dlrr().sub_blocks()[0].ssrc);
+  EXPECT_EQ(last_xr_rr.last_rr, parser()->xr()->dlrr().sub_blocks()[0].last_rr);
   EXPECT_EQ(last_xr_rr.delay_since_last_rr,
-            parser()->xr()->dlrrs()[0].sub_blocks()[0].delay_since_last_rr);
+            parser()->xr()->dlrr().sub_blocks()[0].delay_since_last_rr);
 }
 
 TEST_F(RtcpSenderTest, SendXrWithRrtr) {
@@ -661,10 +660,11 @@ TEST_F(RtcpSenderTest, SendXrWithRrtr) {
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpReport));
   EXPECT_EQ(1, parser()->xr()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser()->xr()->sender_ssrc());
-  EXPECT_EQ(0U, parser()->xr()->dlrrs().size());
-  EXPECT_EQ(1U, parser()->xr()->rrtrs().size());
-  EXPECT_EQ(ntp_secs, parser()->xr()->rrtrs()[0].ntp().seconds());
-  EXPECT_EQ(ntp_frac, parser()->xr()->rrtrs()[0].ntp().fractions());
+  EXPECT_FALSE(parser()->xr()->dlrr());
+  EXPECT_FALSE(parser()->xr()->voip_metric());
+  ASSERT_TRUE(parser()->xr()->rrtr());
+  EXPECT_EQ(ntp_secs, parser()->xr()->rrtr()->ntp().seconds());
+  EXPECT_EQ(ntp_frac, parser()->xr()->rrtr()->ntp().fractions());
 }
 
 TEST_F(RtcpSenderTest, TestNoXrRrtrSentIfSending) {

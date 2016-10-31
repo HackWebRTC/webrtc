@@ -32,13 +32,15 @@ struct ReceiveTimeInfo {
 class Dlrr {
  public:
   static const uint8_t kBlockType = 5;
-  static const size_t kMaxNumberOfDlrrItems = 100;
 
   Dlrr() {}
   Dlrr(const Dlrr& other) = default;
   ~Dlrr() {}
 
   Dlrr& operator=(const Dlrr& other) = default;
+
+  // Dlrr without items treated same as no dlrr block.
+  explicit operator bool() const { return !sub_blocks_.empty(); }
 
   // Second parameter is value read from block header,
   // i.e. size of block in 32bits excluding block header itself.
@@ -49,9 +51,10 @@ class Dlrr {
   // Consumes BlockLength() bytes.
   void Create(uint8_t* buffer) const;
 
-  // Max 100 DLRR Items can be added per DLRR report block.
-  bool AddDlrrItem(const ReceiveTimeInfo& time_info);
-  bool AddDlrrItem(uint32_t ssrc, uint32_t last_rr, uint32_t delay_last_rr);
+  void ClearItems() { sub_blocks_.clear(); }
+  void AddDlrrItem(const ReceiveTimeInfo& time_info) {
+    sub_blocks_.push_back(time_info);
+  }
 
   const std::vector<ReceiveTimeInfo>& sub_blocks() const { return sub_blocks_; }
 

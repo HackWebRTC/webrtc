@@ -92,9 +92,6 @@ class RtcpPacketParser {
   PacketCounter<rtcp::TransportFeedback>* transport_feedback() {
     return &transport_feedback_;
   }
-  const RTCPVoIPMetric* voip_metric() {
-    return &xr_.voip_metrics()[0].voip_metric();
-  }
 
  private:
   PacketCounter<rtcp::App> app_;
