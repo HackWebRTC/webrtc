@@ -48,6 +48,8 @@ int NumberOfThreads(int width, int height, int number_of_cores) {
 //  } else {
 //    return 1;  // 1 thread for VGA or less.
 //  }
+// TODO(sprang): Also check sSliceArgument.uiSliceNum om GetEncoderPrams(),
+//               before enabling multithreading here.
   return 1;
 }
 
@@ -445,7 +447,9 @@ SEncParamExt H264EncoderImpl::CreateEncoderParams() const {
 #else
   // When uiSliceMode = SM_FIXEDSLCNUM_SLICE, uiSliceNum = 0 means auto design
   // it with cpu core number.
-  encoder_params.sSpatialLayers[0].sSliceArgument.uiSliceNum = 0;
+  // TODO(sprang): Set to 0 when we understand why the rate controller borks
+  //               when uiSliceNum > 1.
+  encoder_params.sSpatialLayers[0].sSliceArgument.uiSliceNum = 1;
   encoder_params.sSpatialLayers[0].sSliceArgument.uiSliceMode =
       SM_FIXEDSLCNUM_SLICE;
 #endif
