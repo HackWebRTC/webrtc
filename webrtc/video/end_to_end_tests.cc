@@ -581,11 +581,11 @@ TEST_F(EndToEndTest, ReceivesNackAndRetransmitsAudio) {
   RunBaseTest(&test);
 }
 
-TEST_F(EndToEndTest, CanReceiveFec) {
-  class FecRenderObserver : public test::EndToEndTest,
-                            public rtc::VideoSinkInterface<VideoFrame> {
+TEST_F(EndToEndTest, CanReceiveUlpfec) {
+  class UlpfecRenderObserver : public test::EndToEndTest,
+                               public rtc::VideoSinkInterface<VideoFrame> {
    public:
-    FecRenderObserver()
+    UlpfecRenderObserver()
         : EndToEndTest(kDefaultTimeoutMs), state_(kFirstPacket) {}
 
    private:
@@ -614,9 +614,9 @@ TEST_F(EndToEndTest, CanReceiveFec) {
 
       switch (state_) {
         case kFirstPacket:
-          state_ = kDropEveryOtherPacketUntilFec;
+          state_ = kDropEveryOtherPacketUntilUlpfec;
           break;
-        case kDropEveryOtherPacketUntilFec:
+        case kDropEveryOtherPacketUntilUlpfec:
           if (encapsulated_payload_type == kUlpfecPayloadType) {
             state_ = kDropNextMediaPacket;
             return SEND_PACKET;
@@ -628,7 +628,7 @@ TEST_F(EndToEndTest, CanReceiveFec) {
           if (encapsulated_payload_type == kFakeVideoSendPayloadType) {
             protected_sequence_numbers_.insert(header.sequenceNumber);
             protected_timestamps_.insert(header.timestamp);
-            state_ = kDropEveryOtherPacketUntilFec;
+            state_ = kDropEveryOtherPacketUntilUlpfec;
             return DROP_PACKET;
           }
           break;
@@ -647,7 +647,7 @@ TEST_F(EndToEndTest, CanReceiveFec) {
 
     enum {
       kFirstPacket,
-      kDropEveryOtherPacketUntilFec,
+      kDropEveryOtherPacketUntilUlpfec,
       kDropNextMediaPacket,
     } state_;
 
@@ -655,7 +655,7 @@ TEST_F(EndToEndTest, CanReceiveFec) {
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
-      // TODO(pbos): Run this test with combined NACK/FEC enabled as well.
+      // TODO(pbos): Run this test with combined NACK/ULPFEC enabled as well.
       // int rtp_history_ms = 1000;
       // (*receive_configs)[0].rtp.nack.rtp_history_ms = rtp_history_ms;
       // send_config->rtp.nack.rtp_history_ms = rtp_history_ms;
@@ -680,13 +680,13 @@ TEST_F(EndToEndTest, CanReceiveFec) {
   RunBaseTest(&test);
 }
 
-TEST_F(EndToEndTest, ReceivedFecPacketsNotNacked) {
-  class FecNackObserver : public test::EndToEndTest {
+TEST_F(EndToEndTest, ReceivedUlpfecPacketsNotNacked) {
+  class UlpfecNackObserver : public test::EndToEndTest {
    public:
-    FecNackObserver()
+    UlpfecNackObserver()
         : EndToEndTest(kDefaultTimeoutMs),
           state_(kFirstPacket),
-          fec_sequence_number_(0),
+          ulpfec_sequence_number_(0),
           has_last_sequence_number_(false),
           last_sequence_number_(0),
           encoder_(VideoEncoder::Create(VideoEncoder::EncoderType::kVp8)),
@@ -717,41 +717,41 @@ TEST_F(EndToEndTest, ReceivedFecPacketsNotNacked) {
       last_sequence_number_ = header.sequenceNumber;
       has_last_sequence_number_ = true;
 
-      bool fec_packet = encapsulated_payload_type == kUlpfecPayloadType;
+      bool ulpfec_packet = encapsulated_payload_type == kUlpfecPayloadType;
       switch (state_) {
         case kFirstPacket:
-          state_ = kDropEveryOtherPacketUntilFec;
+          state_ = kDropEveryOtherPacketUntilUlpfec;
           break;
-        case kDropEveryOtherPacketUntilFec:
-          if (fec_packet) {
-            state_ = kDropAllMediaPacketsUntilFec;
+        case kDropEveryOtherPacketUntilUlpfec:
+          if (ulpfec_packet) {
+            state_ = kDropAllMediaPacketsUntilUlpfec;
           } else if (header.sequenceNumber % 2 == 0) {
             return DROP_PACKET;
           }
           break;
-        case kDropAllMediaPacketsUntilFec:
-          if (!fec_packet)
+        case kDropAllMediaPacketsUntilUlpfec:
+          if (!ulpfec_packet)
             return DROP_PACKET;
-          fec_sequence_number_ = header.sequenceNumber;
+          ulpfec_sequence_number_ = header.sequenceNumber;
           state_ = kDropOneMediaPacket;
           break;
         case kDropOneMediaPacket:
-          if (fec_packet)
+          if (ulpfec_packet)
             return DROP_PACKET;
           state_ = kPassOneMediaPacket;
           return DROP_PACKET;
           break;
         case kPassOneMediaPacket:
-          if (fec_packet)
+          if (ulpfec_packet)
             return DROP_PACKET;
           // Pass one media packet after dropped packet after last FEC,
           // otherwise receiver might never see a seq_no after
-          // |fec_sequence_number_|
-          state_ = kVerifyFecPacketNotInNackList;
+          // |ulpfec_sequence_number_|
+          state_ = kVerifyUlpfecPacketNotInNackList;
           break;
-        case kVerifyFecPacketNotInNackList:
+        case kVerifyUlpfecPacketNotInNackList:
           // Continue to drop packets. Make sure no frame can be decoded.
-          if (fec_packet || header.sequenceNumber % 2 == 0)
+          if (ulpfec_packet || header.sequenceNumber % 2 == 0)
             return DROP_PACKET;
           break;
       }
@@ -760,15 +760,15 @@ TEST_F(EndToEndTest, ReceivedFecPacketsNotNacked) {
 
     Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
       rtc::CritScope lock_(&crit_);
-      if (state_ == kVerifyFecPacketNotInNackList) {
+      if (state_ == kVerifyUlpfecPacketNotInNackList) {
         test::RtcpPacketParser rtcp_parser;
         rtcp_parser.Parse(packet, length);
         const std::vector<uint16_t>& nacks = rtcp_parser.nack()->packet_ids();
         EXPECT_TRUE(std::find(nacks.begin(), nacks.end(),
-                              fec_sequence_number_) == nacks.end())
-            << "Got nack for FEC packet";
+                              ulpfec_sequence_number_) == nacks.end())
+            << "Got nack for ULPFEC packet";
         if (!nacks.empty() &&
-            IsNewerSequenceNumber(nacks.back(), fec_sequence_number_)) {
+            IsNewerSequenceNumber(nacks.back(), ulpfec_sequence_number_)) {
           observation_complete_.Set();
         }
       }
@@ -826,15 +826,15 @@ TEST_F(EndToEndTest, ReceivedFecPacketsNotNacked) {
 
     enum {
       kFirstPacket,
-      kDropEveryOtherPacketUntilFec,
-      kDropAllMediaPacketsUntilFec,
+      kDropEveryOtherPacketUntilUlpfec,
+      kDropAllMediaPacketsUntilUlpfec,
       kDropOneMediaPacket,
       kPassOneMediaPacket,
-      kVerifyFecPacketNotInNackList,
+      kVerifyUlpfecPacketNotInNackList,
     } state_;
 
     rtc::CriticalSection crit_;
-    uint16_t fec_sequence_number_ GUARDED_BY(&crit_);
+    uint16_t ulpfec_sequence_number_ GUARDED_BY(&crit_);
     bool has_last_sequence_number_;
     uint16_t last_sequence_number_;
     std::unique_ptr<webrtc::VideoEncoder> encoder_;
@@ -3757,11 +3757,11 @@ void VerifyEmptyNackConfig(const NackConfig& config) {
 
 void VerifyEmptyUlpfecConfig(const UlpfecConfig& config) {
   EXPECT_EQ(-1, config.ulpfec_payload_type)
-      << "Enabling FEC requires rtpmap: ulpfec negotiation.";
+      << "Enabling ULPFEC requires rtpmap: ulpfec negotiation.";
   EXPECT_EQ(-1, config.red_payload_type)
-      << "Enabling FEC requires rtpmap: red negotiation.";
+      << "Enabling ULPFEC requires rtpmap: red negotiation.";
   EXPECT_EQ(-1, config.red_rtx_payload_type)
-      << "Enabling RTX in FEC requires rtpmap: rtx negotiation.";
+      << "Enabling RTX in ULPFEC requires rtpmap: rtx negotiation.";
 }
 
 TEST_F(EndToEndTest, VerifyDefaultSendConfigParameters) {
