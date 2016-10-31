@@ -239,6 +239,48 @@ class RTCRTPStreamStats : public RTCStats {
   RTCRTPStreamStats(std::string&& id, int64_t timestamp_us);
 };
 
+// https://w3c.github.io/webrtc-stats/#inboundrtpstats-dict*
+// TODO(hbos): Finish implementation and support the remote case
+// |is_remote = true|. Tracking bug crbug.com/657855
+class RTCInboundRTPStreamStats final : public RTCRTPStreamStats {
+ public:
+  WEBRTC_RTCSTATS_DECL();
+
+  RTCInboundRTPStreamStats(const std::string& id, int64_t timestamp_us);
+  RTCInboundRTPStreamStats(std::string&& id, int64_t timestamp_us);
+  RTCInboundRTPStreamStats(const RTCInboundRTPStreamStats& other);
+  ~RTCInboundRTPStreamStats() override;
+
+  RTCStatsMember<uint32_t> packets_received;
+  RTCStatsMember<uint64_t> bytes_received;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
+  RTCStatsMember<uint32_t> packets_lost;
+  // TODO(hbos): Not collected in the "video" case by |RTCStatsCollector|.
+  // crbug.com/657855
+  RTCStatsMember<double> jitter;
+  RTCStatsMember<double> fraction_lost;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
+  RTCStatsMember<uint32_t> packets_discarded;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
+  RTCStatsMember<uint32_t> packets_repaired;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
+  RTCStatsMember<uint32_t> burst_packets_lost;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
+  RTCStatsMember<uint32_t> burst_packets_discarded;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
+  RTCStatsMember<uint32_t> burst_loss_count;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
+  RTCStatsMember<uint32_t> burst_discard_count;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
+  RTCStatsMember<double> burst_loss_rate;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
+  RTCStatsMember<double> burst_discard_rate;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
+  RTCStatsMember<double> gap_loss_rate;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
+  RTCStatsMember<double> gap_discard_rate;
+};
+
 // https://w3c.github.io/webrtc-stats/#outboundrtpstats-dict*
 // TODO(hbos): Finish implementation and support the remote case
 // |is_remote = true|. Tracking bug crbug.com/657856
