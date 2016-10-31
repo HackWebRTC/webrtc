@@ -218,7 +218,7 @@ class ViEEncoder::EncodeTask : public rtc::QueuedTask {
       : vie_encoder_(vie_encoder),
         time_when_posted_ms_(time_when_posted_in_ms),
         log_stats_(log_stats) {
-    frame_.ShallowCopy(frame);
+    frame_ = frame;
     ++vie_encoder_->posted_frames_waiting_for_encode_;
   }
 

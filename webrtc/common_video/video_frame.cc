@@ -51,14 +51,6 @@ VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
   RTC_DCHECK(buffer);
 }
 
-void VideoFrame::ShallowCopy(const VideoFrame& videoFrame) {
-  video_frame_buffer_ = videoFrame.video_frame_buffer();
-  timestamp_rtp_ = videoFrame.timestamp_rtp_;
-  ntp_time_ms_ = videoFrame.ntp_time_ms_;
-  timestamp_us_ = videoFrame.timestamp_us_;
-  rotation_ = videoFrame.rotation_;
-}
-
 int VideoFrame::width() const {
   return video_frame_buffer_ ? video_frame_buffer_->width() : 0;
 }

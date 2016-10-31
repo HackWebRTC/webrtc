@@ -178,7 +178,7 @@ void FakeVideoSendStream::OnFrame(const webrtc::VideoFrame& frame) {
     video_streams_ = encoder_config_.video_stream_factory->CreateEncoderStreams(
         frame.width(), frame.height(), encoder_config_);
   }
-  last_frame_.ShallowCopy(frame);
+  last_frame_ = frame;
 }
 
 void FakeVideoSendStream::SetStats(

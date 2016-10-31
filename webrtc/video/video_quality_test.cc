@@ -477,8 +477,8 @@ class VideoAnalyzer : public PacketReceiver,
 
     rtc::CritScope crit(&comparison_lock_);
     if (comparisons_.size() < kMaxComparisons) {
-      reference_copy.ShallowCopy(reference);
-      render_copy.ShallowCopy(render);
+      reference_copy = reference;
+      render_copy = render;
     } else {
       // Copy the time to ensure that delay calculations can still be made.
       reference_copy.set_ntp_time_ms(reference.ntp_time_ms());

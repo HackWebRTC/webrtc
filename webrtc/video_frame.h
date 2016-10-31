@@ -44,12 +44,11 @@ class VideoFrame {
              int64_t render_time_ms,
              VideoRotation rotation);
 
-  // Creates a shallow copy of |videoFrame|, i.e, the this object will retain a
-  // reference to the video buffer also retained by |videoFrame|.
-  // TODO(nisse): Deprecated. Should be deleted in the cricket::VideoFrame and
-  // webrtc::VideoFrame merge. Instead, pass video_frame_buffer() and timestamps
-  // to the constructor.
-  void ShallowCopy(const VideoFrame& videoFrame);
+  // Support move and copy.
+  VideoFrame(const VideoFrame&) = default;
+  VideoFrame(VideoFrame&&) = default;
+  VideoFrame& operator=(const VideoFrame&) = default;
+  VideoFrame& operator=(VideoFrame&&) = default;
 
   // Get frame width.
   int width() const;
