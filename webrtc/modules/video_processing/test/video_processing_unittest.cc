@@ -34,7 +34,7 @@ static void PreprocessFrameAndVerify(const VideoFrame& source,
                                      int target_width,
                                      int target_height,
                                      VideoProcessing* vpm,
-                                     const VideoFrame* out_frame);
+                                     const VideoFrame** out_frame);
 static rtc::scoped_refptr<VideoFrameBuffer> CropBuffer(
     rtc::scoped_refptr<VideoFrameBuffer> source_buffer,
     int offset_x,
@@ -98,7 +98,7 @@ TEST_F(VideoProcessingTest, PreprocessorLogic) {
   // Disable spatial sampling.
   vp_->SetInputFrameResampleMode(kNoRescaling);
   EXPECT_EQ(VPM_OK, vp_->SetTargetResolution(resolution, resolution, 30));
-  VideoFrame* out_frame = NULL;
+  const VideoFrame* out_frame = NULL;
   // Set rescaling => output frame != NULL.
   vp_->SetInputFrameResampleMode(kFastRescaling);
 
@@ -109,7 +109,8 @@ TEST_F(VideoProcessingTest, PreprocessorLogic) {
   buffer->InitializeData();
   VideoFrame video_frame(buffer, 0, 0, webrtc::kVideoRotation_0);
 
-  PreprocessFrameAndVerify(video_frame, resolution, resolution, vp_, out_frame);
+  PreprocessFrameAndVerify(video_frame, resolution, resolution, vp_,
+                           &out_frame);
   // No rescaling=> output frame = NULL.
   vp_->SetInputFrameResampleMode(kNoRescaling);
   EXPECT_TRUE(vp_->PreprocessFrame(video_frame) != nullptr);
@@ -192,23 +193,22 @@ void PreprocessFrameAndVerify(const VideoFrame& source,
                               int target_width,
                               int target_height,
                               VideoProcessing* vpm,
-                              const VideoFrame* out_frame) {
+                              const VideoFrame** out_frame) {
   ASSERT_EQ(VPM_OK, vpm->SetTargetResolution(target_width, target_height, 30));
-  out_frame = vpm->PreprocessFrame(source);
-  EXPECT_TRUE(out_frame != nullptr);
+  *out_frame = vpm->PreprocessFrame(source);
+  EXPECT_TRUE(*out_frame != nullptr);
 
   // If no resizing is needed, expect the original frame.
   if (target_width == source.width() && target_height == source.height()) {
-    EXPECT_EQ(&source, out_frame);
+    EXPECT_EQ(&source, *out_frame);
     return;
   }
 
   // Verify the resampled frame.
-  EXPECT_TRUE(out_frame != NULL);
-  EXPECT_EQ(source.render_time_ms(), (out_frame)->render_time_ms());
-  EXPECT_EQ(source.timestamp(), (out_frame)->timestamp());
-  EXPECT_EQ(target_width, (out_frame)->width());
-  EXPECT_EQ(target_height, (out_frame)->height());
+  EXPECT_EQ(source.render_time_ms(), (*out_frame)->render_time_ms());
+  EXPECT_EQ(source.timestamp(), (*out_frame)->timestamp());
+  EXPECT_EQ(target_width, (*out_frame)->width());
+  EXPECT_EQ(target_height, (*out_frame)->height());
 }
 
 rtc::scoped_refptr<VideoFrameBuffer> CropBuffer(
@@ -240,10 +240,10 @@ void TestSize(const VideoFrame& source_frame,
               double expected_psnr,
               VideoProcessing* vpm) {
   // Resample source_frame to out_frame.
-  VideoFrame* out_frame = NULL;
+  const VideoFrame* out_frame = NULL;
   vpm->SetInputFrameResampleMode(kBox);
   PreprocessFrameAndVerify(source_frame, target_width, target_height, vpm,
-                           out_frame);
+                           &out_frame);
   if (out_frame == NULL)
     return;
   WriteProcessedFrameForVisualInspection(source_frame, *out_frame);
@@ -254,7 +254,7 @@ void TestSize(const VideoFrame& source_frame,
   // Compute PSNR against the cropped source frame and check expectation.
   PreprocessFrameAndVerify(resampled_source_frame,
                            cropped_source.width(),
-                           cropped_source.height(), vpm, out_frame);
+                           cropped_source.height(), vpm, &out_frame);
   WriteProcessedFrameForVisualInspection(resampled_source_frame, *out_frame);
 
   // Compute PSNR against the cropped source frame and check expectation.
