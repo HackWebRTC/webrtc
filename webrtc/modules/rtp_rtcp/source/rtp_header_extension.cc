@@ -10,11 +10,14 @@
 
 #include <assert.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 
 namespace webrtc {
+
+constexpr uint8_t RtpHeaderExtensionMap::kInvalidId;
 
 RtpHeaderExtensionMap::RtpHeaderExtensionMap() {
 }
@@ -48,6 +51,7 @@ int32_t RtpHeaderExtensionMap::Register(RTPExtensionType type, uint8_t id) {
     // so return success.
     return 0;
   }
+  RTC_DCHECK_EQ(kInvalidId, GetId(type));
   extensionMap_[id] = new HeaderExtension(type);
   return 0;
 }
