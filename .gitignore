@@ -164,6 +164,12 @@
 /tools/telemetry
 /tools/tsan_suppressions
 /tools/valgrind
+/tools/video_quality_toolchain/linux/ffmpeg
+/tools/video_quality_toolchain/linux/zxing
+/tools/video_quality_toolchain/mac/ffmpeg
+/tools/video_quality_toolchain/mac/zxing
+/tools/video_quality_toolchain/win/*.dll
+/tools/video_quality_toolchain/win/*.exe
 /tools/vim
 /tools/win
 /tools/xdisplaycheck
