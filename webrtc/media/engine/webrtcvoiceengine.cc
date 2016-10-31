@@ -186,6 +186,29 @@ bool IsCodecFeatureEnabled(const AudioCodec& codec, const char* feature) {
   return codec.GetParam(feature, &value) && value == 1;
 }
 
+rtc::Optional<std::string> GetAudioNetworkAdaptorConfig(
+    const AudioOptions& options) {
+  if (options.audio_network_adaptor && *options.audio_network_adaptor &&
+      options.audio_network_adaptor_config) {
+    // Turn on audio network adaptor only when |options_.audio_network_adaptor|
+    // equals true and |options_.audio_network_adaptor_config| has a value.
+    return options.audio_network_adaptor_config;
+  }
+  return rtc::Optional<std::string>();
+}
+
+// Returns integer parameter params[feature] if it is defined. Returns
+// |default_value| otherwise.
+int GetCodecFeatureInt(const AudioCodec& codec,
+                       const char* feature,
+                       int default_value) {
+  int value = 0;
+  if (codec.GetParam(feature, &value)) {
+    return value;
+  }
+  return default_value;
+}
+
 // Use params[kCodecParamMaxAverageBitrate] if it is defined, use codec.bitrate
 // otherwise. If the value (either from params or codec.bitrate) <=0, use the
 // default configuration. If the value is beyond feasible bit rate of Opus,
@@ -221,29 +244,33 @@ int GetOpusBitrate(const AudioCodec& codec, int max_playback_rate) {
   return bitrate;
 }
 
-// Returns kOpusDefaultPlaybackRate if params[kCodecParamMaxPlaybackRate] is not
-// defined. Returns the value of params[kCodecParamMaxPlaybackRate] otherwise.
-int GetOpusMaxPlaybackRate(const AudioCodec& codec) {
-  int value;
-  if (codec.GetParam(kCodecParamMaxPlaybackRate, &value)) {
-    return value;
-  }
-  return kOpusDefaultMaxPlaybackRate;
-}
-
-void GetOpusConfig(const AudioCodec& codec, webrtc::CodecInst* voe_codec,
-                          bool* enable_codec_fec, int* max_playback_rate,
-                          bool* enable_codec_dtx) {
+void GetOpusConfig(const AudioCodec& codec,
+                   webrtc::CodecInst* voe_codec,
+                   bool* enable_codec_fec,
+                   int* max_playback_rate,
+                   bool* enable_codec_dtx,
+                   int* min_ptime_ms,
+                   int* max_ptime_ms) {
   *enable_codec_fec = IsCodecFeatureEnabled(codec, kCodecParamUseInbandFec);
   *enable_codec_dtx = IsCodecFeatureEnabled(codec, kCodecParamUseDtx);
-  *max_playback_rate = GetOpusMaxPlaybackRate(codec);
+  *max_playback_rate = GetCodecFeatureInt(codec, kCodecParamMaxPlaybackRate,
+                                          kOpusDefaultMaxPlaybackRate);
+  *max_ptime_ms =
+      GetCodecFeatureInt(codec, kCodecParamMaxPTime, kOpusDefaultMaxPTime);
+  *min_ptime_ms =
+      GetCodecFeatureInt(codec, kCodecParamMinPTime, kOpusDefaultMinPTime);
+  if (*max_ptime_ms < *min_ptime_ms) {
+    // If min ptime or max ptime defined by codec parameter is wrong, we use
+    // the default values.
+    *max_ptime_ms = kOpusDefaultMaxPTime;
+    *min_ptime_ms = kOpusDefaultMinPTime;
+  }
 
   // If OPUS, change what we send according to the "stereo" codec
   // parameter, and not the "channels" parameter.  We set
   // voe_codec.channels to 2 if "stereo=1" and 1 otherwise.  If
   // the bitrate is not specified, i.e. is <= zero, we set it to the
   // appropriate default value for mono or stereo Opus.
-
   voe_codec->channels = IsCodecFeatureEnabled(codec, kCodecParamStereo) ? 2 : 1;
   voe_codec->rate = GetOpusBitrate(codec, *max_playback_rate);
 }
@@ -897,7 +924,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
       LOG_RTCERR1(SetPlayoutSampleRate, *options.playout_sample_rate);
     }
   }
-
   return true;
 }
 
@@ -1151,6 +1177,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
       const webrtc::AudioSendStream::Config::SendCodecSpec& send_codec_spec,
       const std::vector<webrtc::RtpExtension>& extensions,
       int max_send_bitrate_bps,
+      const rtc::Optional<std::string>& audio_network_adaptor_config,
       webrtc::Call* call,
       webrtc::Transport* send_transport)
       : voe_audio_transport_(voe_audio_transport),
@@ -1166,6 +1193,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     config_.rtp.c_name = c_name;
     config_.voe_channel_id = ch;
     config_.rtp.extensions = extensions;
+    config_.audio_network_adaptor_config = audio_network_adaptor_config;
     RecreateAudioSendStream(send_codec_spec);
   }
 
@@ -1182,7 +1210,6 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     config_.rtp.nack.rtp_history_ms =
         send_codec_spec_.nack_enabled ? kNackRtpHistoryMs : 0;
     config_.send_codec_spec = send_codec_spec_;
-
     auto send_rate = ComputeSendBitrate(
         max_send_bitrate_bps_, rtp_parameters_.encodings[0].max_bitrate_bps,
         send_codec_spec.codec_inst);
@@ -1198,6 +1225,16 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
       const std::vector<webrtc::RtpExtension>& extensions) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     config_.rtp.extensions = extensions;
+    RecreateAudioSendStream();
+  }
+
+  void RecreateAudioSendStream(
+      const rtc::Optional<std::string>& audio_network_adaptor_config) {
+    RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+    if (config_.audio_network_adaptor_config == audio_network_adaptor_config) {
+      return;
+    }
+    config_.audio_network_adaptor_config = audio_network_adaptor_config;
     RecreateAudioSendStream();
   }
 
@@ -1722,6 +1759,13 @@ bool WebRtcVoiceMediaChannel::SetOptions(const AudioOptions& options) {
         "Failed to apply engine options during channel SetOptions.";
     return false;
   }
+
+  rtc::Optional<std::string> audio_network_adatptor_config =
+      GetAudioNetworkAdaptorConfig(options_);
+  for (auto& it : send_streams_) {
+    it.second->RecreateAudioSendStream(audio_network_adatptor_config);
+  }
+
   LOG(LS_INFO) << "Set voice channel options.  Current options: "
                << options_.ToString();
   return true;
@@ -1835,7 +1879,9 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
       GetOpusConfig(*codec, &send_codec_spec.codec_inst,
                     &send_codec_spec.enable_codec_fec,
                     &send_codec_spec.opus_max_playback_rate,
-                    &send_codec_spec.enable_opus_dtx);
+                    &send_codec_spec.enable_opus_dtx,
+                    &send_codec_spec.min_ptime_ms,
+                    &send_codec_spec.max_ptime_ms);
     }
 
     // Set packet size if the AudioCodec param kCodecParamPTime is set.
@@ -2011,9 +2057,12 @@ bool WebRtcVoiceMediaChannel::AddSendStream(const StreamParams& sp) {
   webrtc::AudioTransport* audio_transport =
       engine()->voe()->base()->audio_transport();
 
+  rtc::Optional<std::string> audio_network_adaptor_config =
+      GetAudioNetworkAdaptorConfig(options_);
   WebRtcAudioSendStream* stream = new WebRtcAudioSendStream(
       channel, audio_transport, ssrc, sp.cname, send_codec_spec_,
-      send_rtp_extensions_, max_send_bitrate_bps_, call_, this);
+      send_rtp_extensions_, max_send_bitrate_bps_, audio_network_adaptor_config,
+      call_, this);
   send_streams_.insert(std::make_pair(ssrc, stream));
 
   // At this point the stream's local SSRC has been updated. If it is the first

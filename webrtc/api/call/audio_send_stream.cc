@@ -34,6 +34,8 @@ AudioSendStream::Stats::Stats() = default;
 AudioSendStream::Config::Config(Transport* send_transport)
     : send_transport(send_transport) {}
 
+AudioSendStream::Config::~Config() = default;
+
 std::string AudioSendStream::Config::ToString() const {
   std::stringstream ss;
   ss << "{rtp: " << rtp.ToString();
@@ -82,6 +84,8 @@ std::string AudioSendStream::Config::SendCodecSpec::ToString() const {
   ss << ", opus_max_playback_rate: " << opus_max_playback_rate;
   ss << ", cng_payload_type: " << cng_payload_type;
   ss << ", cng_plfreq: " << cng_plfreq;
+  ss << ", min_ptime: " << min_ptime_ms;
+  ss << ", max_ptime: " << max_ptime_ms;
   ss << ", codec_inst: " << ::ToString(codec_inst);
   ss << '}';
   return ss.str();
@@ -89,30 +93,16 @@ std::string AudioSendStream::Config::SendCodecSpec::ToString() const {
 
 bool AudioSendStream::Config::SendCodecSpec::operator==(
     const AudioSendStream::Config::SendCodecSpec& rhs) const {
-  if (nack_enabled != rhs.nack_enabled) {
-    return false;
+  if (nack_enabled == rhs.nack_enabled &&
+      transport_cc_enabled == rhs.transport_cc_enabled &&
+      enable_codec_fec == rhs.enable_codec_fec &&
+      enable_opus_dtx == rhs.enable_opus_dtx &&
+      opus_max_playback_rate == rhs.opus_max_playback_rate &&
+      cng_payload_type == rhs.cng_payload_type &&
+      cng_plfreq == rhs.cng_plfreq && max_ptime_ms == rhs.max_ptime_ms &&
+      min_ptime_ms == rhs.min_ptime_ms && codec_inst == rhs.codec_inst) {
+    return true;
   }
-  if (transport_cc_enabled != rhs.transport_cc_enabled) {
-    return false;
-  }
-  if (enable_codec_fec != rhs.enable_codec_fec) {
-    return false;
-  }
-  if (enable_opus_dtx != rhs.enable_opus_dtx) {
-    return false;
-  }
-  if (opus_max_playback_rate != rhs.opus_max_playback_rate) {
-    return false;
-  }
-  if (cng_payload_type != rhs.cng_payload_type) {
-    return false;
-  }
-  if (cng_plfreq != rhs.cng_plfreq) {
-    return false;
-  }
-  if (codec_inst != rhs.codec_inst) {
-    return false;
-  }
-  return true;
+  return false;
 }
 }  // namespace webrtc

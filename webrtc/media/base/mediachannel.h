@@ -167,6 +167,8 @@ struct AudioOptions {
     SetFrom(&recording_sample_rate, change.recording_sample_rate);
     SetFrom(&playout_sample_rate, change.playout_sample_rate);
     SetFrom(&combined_audio_video_bwe, change.combined_audio_video_bwe);
+    SetFrom(&audio_network_adaptor, change.audio_network_adaptor);
+    SetFrom(&audio_network_adaptor_config, change.audio_network_adaptor_config);
     SetFrom(&level_control_initial_peak_level_dbfs,
             change.level_control_initial_peak_level_dbfs);
   }
@@ -197,6 +199,8 @@ struct AudioOptions {
            recording_sample_rate == o.recording_sample_rate &&
            playout_sample_rate == o.playout_sample_rate &&
            combined_audio_video_bwe == o.combined_audio_video_bwe &&
+           audio_network_adaptor == o.audio_network_adaptor &&
+           audio_network_adaptor_config == o.audio_network_adaptor_config &&
            level_control_initial_peak_level_dbfs ==
                o.level_control_initial_peak_level_dbfs;
   }
@@ -232,6 +236,11 @@ struct AudioOptions {
     ost << ToStringIfSet("recording_sample_rate", recording_sample_rate);
     ost << ToStringIfSet("playout_sample_rate", playout_sample_rate);
     ost << ToStringIfSet("combined_audio_video_bwe", combined_audio_video_bwe);
+    ost << ToStringIfSet("audio_network_adaptor", audio_network_adaptor);
+    // The adaptor config is a serialized proto buffer and therefore not human
+    // readable. So we comment out the following line.
+    // ost << ToStringIfSet("audio_network_adaptor_config",
+    //     audio_network_adaptor_config);
     ost << "}";
     return ost.str();
   }
@@ -274,6 +283,10 @@ struct AudioOptions {
   // "googCombinedAudioVideoBwe", but not used anywhere. So delete it,
   // and check if any other AudioOptions members are unused.
   rtc::Optional<bool> combined_audio_video_bwe;
+  // Enable audio network adaptor.
+  rtc::Optional<bool> audio_network_adaptor;
+  // Config string for audio network adaptor.
+  rtc::Optional<std::string> audio_network_adaptor_config;
 
  private:
   template <typename T>

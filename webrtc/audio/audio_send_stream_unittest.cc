@@ -69,7 +69,6 @@ struct ConfigHelper {
         bitrate_allocator_(&limit_observer_),
         worker_queue_("ConfigHelper_worker_queue") {
     using testing::Invoke;
-    using testing::StrEq;
 
     EXPECT_CALL(voice_engine_,
         RegisterVoiceEngineObserver(_)).WillOnce(Return(0));
@@ -79,40 +78,15 @@ struct ConfigHelper {
     config.voice_engine = &voice_engine_;
     audio_state_ = AudioState::Create(config);
 
+    SetupDefaultChannelProxy();
+
     EXPECT_CALL(voice_engine_, ChannelProxyFactory(kChannelId))
         .WillOnce(Invoke([this](int channel_id) {
-          EXPECT_FALSE(channel_proxy_);
-          channel_proxy_ = new testing::StrictMock<MockVoEChannelProxy>();
-          EXPECT_CALL(*channel_proxy_, SetRTCPStatus(true)).Times(1);
-          EXPECT_CALL(*channel_proxy_, SetLocalSSRC(kSsrc)).Times(1);
-          EXPECT_CALL(*channel_proxy_, SetRTCP_CNAME(StrEq(kCName))).Times(1);
-          EXPECT_CALL(*channel_proxy_, SetNACKStatus(true, 10)).Times(1);
-          EXPECT_CALL(*channel_proxy_,
-              SetSendAbsoluteSenderTimeStatus(true, kAbsSendTimeId)).Times(1);
-          EXPECT_CALL(*channel_proxy_,
-              SetSendAudioLevelIndicationStatus(true, kAudioLevelId)).Times(1);
-          EXPECT_CALL(*channel_proxy_, EnableSendTransportSequenceNumber(
-                                           kTransportSequenceNumberId))
-              .Times(1);
-          EXPECT_CALL(*channel_proxy_,
-                      RegisterSenderCongestionControlObjects(
-                          congestion_controller_.pacer(),
-                          congestion_controller_.GetTransportFeedbackObserver(),
-                          congestion_controller_.packet_router()))
-              .Times(1);
-          EXPECT_CALL(*channel_proxy_, ResetCongestionControlObjects())
-              .Times(1);
-          EXPECT_CALL(*channel_proxy_, RegisterExternalTransport(nullptr))
-              .Times(1);
-          EXPECT_CALL(*channel_proxy_, DeRegisterExternalTransport())
-              .Times(1);
-          EXPECT_CALL(*channel_proxy_, SetRtcEventLog(testing::NotNull()))
-              .Times(1);
-          EXPECT_CALL(*channel_proxy_, SetRtcEventLog(testing::IsNull()))
-              .Times(1);  // Destructor resets the event log
           return channel_proxy_;
         }));
+
     SetupMockForSetupSendCodec();
+
     stream_config_.voe_channel_id = kChannelId;
     stream_config_.rtp.ssrc = kSsrc;
     stream_config_.rtp.nack.rtp_history_ms = 200;
@@ -138,6 +112,36 @@ struct ConfigHelper {
   rtc::TaskQueue* worker_queue() { return &worker_queue_; }
   RtcEventLog* event_log() { return &event_log_; }
   MockVoiceEngine* voice_engine() { return &voice_engine_; }
+
+  void SetupDefaultChannelProxy() {
+    using testing::StrEq;
+    channel_proxy_ = new testing::StrictMock<MockVoEChannelProxy>();
+    EXPECT_CALL(*channel_proxy_, SetRTCPStatus(true)).Times(1);
+    EXPECT_CALL(*channel_proxy_, SetLocalSSRC(kSsrc)).Times(1);
+    EXPECT_CALL(*channel_proxy_, SetRTCP_CNAME(StrEq(kCName))).Times(1);
+    EXPECT_CALL(*channel_proxy_, SetNACKStatus(true, 10)).Times(1);
+    EXPECT_CALL(*channel_proxy_,
+                SetSendAbsoluteSenderTimeStatus(true, kAbsSendTimeId))
+        .Times(1);
+    EXPECT_CALL(*channel_proxy_,
+                SetSendAudioLevelIndicationStatus(true, kAudioLevelId))
+        .Times(1);
+    EXPECT_CALL(*channel_proxy_,
+                EnableSendTransportSequenceNumber(kTransportSequenceNumberId))
+        .Times(1);
+    EXPECT_CALL(*channel_proxy_,
+                RegisterSenderCongestionControlObjects(
+                    congestion_controller_.pacer(),
+                    congestion_controller_.GetTransportFeedbackObserver(),
+                    congestion_controller_.packet_router()))
+        .Times(1);
+    EXPECT_CALL(*channel_proxy_, ResetCongestionControlObjects()).Times(1);
+    EXPECT_CALL(*channel_proxy_, RegisterExternalTransport(nullptr)).Times(1);
+    EXPECT_CALL(*channel_proxy_, DeRegisterExternalTransport()).Times(1);
+    EXPECT_CALL(*channel_proxy_, SetRtcEventLog(testing::NotNull())).Times(1);
+    EXPECT_CALL(*channel_proxy_, SetRtcEventLog(testing::IsNull()))
+        .Times(1);  // Destructor resets the event log
+  }
 
   void SetupMockForSetupSendCodec() {
     EXPECT_CALL(voice_engine_, SetVADStatus(kChannelId, false, _, _))
@@ -228,6 +232,8 @@ TEST(AudioSendStreamTest, ConfigToString) {
   config.send_codec_spec.opus_max_playback_rate = 32000;
   config.send_codec_spec.cng_payload_type = 42;
   config.send_codec_spec.cng_plfreq = 56;
+  config.send_codec_spec.min_ptime_ms = 20;
+  config.send_codec_spec.max_ptime_ms = 60;
   config.send_codec_spec.codec_inst = kIsacCodec;
   EXPECT_EQ(
       "{rtp: {ssrc: 1234, extensions: [{uri: "
@@ -236,9 +242,9 @@ TEST(AudioSendStreamTest, ConfigToString) {
       "voe_channel_id: 1, min_bitrate_kbps: 12, max_bitrate_kbps: 34, "
       "send_codec_spec: {nack_enabled: true, transport_cc_enabled: false, "
       "enable_codec_fec: true, enable_opus_dtx: false, opus_max_playback_rate: "
-      "32000, cng_payload_type: 42, cng_plfreq: 56, codec_inst: {pltype: "
-      "103, plname: \"isac\", plfreq: 16000, pacsize: 320, channels: 1, rate: "
-      "32000}}}",
+      "32000, cng_payload_type: 42, cng_plfreq: 56, min_ptime: 20, max_ptime: "
+      "60, codec_inst: {pltype: 103, plname: \"isac\", plfreq: 16000, pacsize: "
+      "320, channels: 1, rate: 32000}}}",
       config.ToString());
 }
 
@@ -331,6 +337,10 @@ TEST(AudioSendStreamTest, SendCodecAppliesConfigParams) {
   stream_config.send_codec_spec.opus_max_playback_rate = 12345;
   stream_config.send_codec_spec.cng_plfreq = 16000;
   stream_config.send_codec_spec.cng_payload_type = 105;
+  stream_config.send_codec_spec.min_ptime_ms = 10;
+  stream_config.send_codec_spec.max_ptime_ms = 60;
+  stream_config.audio_network_adaptor_config =
+      rtc::Optional<std::string>("abced");
   EXPECT_CALL(*helper.voice_engine(), SetFECStatus(kChannelId, true))
       .WillOnce(Return(0));
   EXPECT_CALL(
@@ -347,6 +357,13 @@ TEST(AudioSendStreamTest, SendCodecAppliesConfigParams) {
                   kChannelId, stream_config.send_codec_spec.cng_payload_type,
                   webrtc::kFreq16000Hz))
       .WillOnce(Return(0));
+  EXPECT_CALL(
+      *helper.channel_proxy(),
+      SetReceiverFrameLengthRange(stream_config.send_codec_spec.min_ptime_ms,
+                                  stream_config.send_codec_spec.max_ptime_ms));
+  EXPECT_CALL(
+      *helper.channel_proxy(),
+      EnableAudioNetworkAdaptor(*stream_config.audio_network_adaptor_config));
   internal::AudioSendStream send_stream(
       stream_config, helper.audio_state(), helper.worker_queue(),
       helper.congestion_controller(), helper.bitrate_allocator(),

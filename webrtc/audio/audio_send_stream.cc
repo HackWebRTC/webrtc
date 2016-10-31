@@ -328,6 +328,20 @@ bool AudioSendStream::SetupSendCodec() {
         return false;
       }
     }
+
+    if (config_.audio_network_adaptor_config) {
+      // Audio network adaptor is only allowed for Opus currently.
+      // |SetReceiverFrameLengthRange| needs to be called before
+      // |EnableAudioNetworkAdaptor|.
+      channel_proxy_->SetReceiverFrameLengthRange(send_codec_spec.min_ptime_ms,
+                                                  send_codec_spec.max_ptime_ms);
+      channel_proxy_->EnableAudioNetworkAdaptor(
+          *config_.audio_network_adaptor_config);
+      LOG(LS_INFO) << "Audio network adaptor enabled on SSRC "
+                   << config_.rtp.ssrc;
+    } else {
+      channel_proxy_->DisableAudioNetworkAdaptor();
+    }
   }
 
   // Set the CN payloadtype and the VAD status.

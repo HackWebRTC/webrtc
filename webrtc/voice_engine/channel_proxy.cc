@@ -214,6 +214,24 @@ void ChannelProxy::SetRtcEventLog(RtcEventLog* event_log) {
   channel()->SetRtcEventLog(event_log);
 }
 
+void ChannelProxy::EnableAudioNetworkAdaptor(const std::string& config_string) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  bool ret = channel()->EnableAudioNetworkAdaptor(config_string);
+  RTC_DCHECK(ret);
+;}
+
+void ChannelProxy::DisableAudioNetworkAdaptor() {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  channel()->DisableAudioNetworkAdaptor();
+}
+
+void ChannelProxy::SetReceiverFrameLengthRange(int min_frame_length_ms,
+                                               int max_frame_length_ms) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  channel()->SetReceiverFrameLengthRange(min_frame_length_ms,
+                                         max_frame_length_ms);
+}
+
 AudioMixer::Source::AudioFrameInfo ChannelProxy::GetAudioFrameWithInfo(
     int sample_rate_hz,
     AudioFrame* audio_frame) {

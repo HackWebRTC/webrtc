@@ -185,7 +185,7 @@ class AudioEncoder {
   virtual void OnReceivedRtt(int rtt_ms);
 
   // To allow encoder to adapt its frame length, it must be provided the frame
-  // length range that receives can accept.
+  // length range that receivers can accept.
   virtual void SetReceiverFrameLengthRange(int min_frame_length_ms,
                                            int max_frame_length_ms);
 

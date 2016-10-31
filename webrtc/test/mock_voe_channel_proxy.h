@@ -60,6 +60,11 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_METHOD1(SetChannelOutputVolumeScaling, void(float scaling));
   MOCK_METHOD1(SetRtcEventLog, void(RtcEventLog* event_log));
   MOCK_METHOD1(SetBitrate, void(int bitrate_bps));
+  MOCK_METHOD1(EnableAudioNetworkAdaptor,
+               void(const std::string& config_string));
+  MOCK_METHOD0(DisableAudioNetworkAdaptor, void());
+  MOCK_METHOD2(SetReceiverFrameLengthRange,
+               void(int min_frame_length_ms, int max_frame_length_ms));
 };
 }  // namespace test
 }  // namespace webrtc

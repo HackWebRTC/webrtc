@@ -55,6 +55,7 @@ class AudioSendStream {
   struct Config {
     Config() = delete;
     explicit Config(Transport* send_transport);
+    ~Config();
     std::string ToString() const;
 
     // Send-stream specific RTP settings.
@@ -92,6 +93,10 @@ class AudioSendStream {
     int min_bitrate_kbps = -1;
     int max_bitrate_kbps = -1;
 
+    // Defines whether to turn on audio network adaptor, and defines its config
+    // string.
+    rtc::Optional<std::string> audio_network_adaptor_config;
+
     struct SendCodecSpec {
       SendCodecSpec();
       std::string ToString() const;
@@ -108,6 +113,8 @@ class AudioSendStream {
       int opus_max_playback_rate = 0;
       int cng_payload_type = -1;
       int cng_plfreq = -1;
+      int max_ptime_ms = -1;
+      int min_ptime_ms = -1;
       webrtc::CodecInst codec_inst;
     } send_codec_spec;
   };

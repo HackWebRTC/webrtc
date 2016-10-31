@@ -209,10 +209,15 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_TRUE(channel_->SetSendParameters(params));
   }
 
-  void SetAudioSend(uint32_t ssrc, bool enable, cricket::AudioSource* source) {
+  void SetAudioSend(uint32_t ssrc, bool enable, cricket::AudioSource* source,
+                    const cricket::AudioOptions* options = nullptr) {
     EXPECT_CALL(apm_, set_output_will_be_muted(!enable));
     ASSERT_TRUE(channel_);
-    EXPECT_TRUE(channel_->SetAudioSend(ssrc, enable, nullptr, source));
+    if (enable && options) {
+      EXPECT_CALL(apm_, ApplyConfig(testing::_));
+      EXPECT_CALL(apm_, SetExtraOptions(testing::_));
+    }
+    EXPECT_TRUE(channel_->SetAudioSend(ssrc, enable, options, source));
   }
 
   void TestInsertDtmf(uint32_t ssrc, bool caller) {
@@ -318,6 +323,10 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
 
   int GetCodecPacSize(int32_t ssrc) {
     return GetSendStreamConfig(ssrc).send_codec_spec.codec_inst.pacsize;
+  }
+
+  const rtc::Optional<std::string>& GetAudioNetworkAdaptorConfig(int32_t ssrc) {
+    return GetSendStreamConfig(ssrc).audio_network_adaptor_config;
   }
 
   void SetAndExpectMaxBitrate(const cricket::AudioCodec& codec,
@@ -2365,6 +2374,53 @@ TEST_F(WebRtcVoiceEngineTestFake, SampleRatesViaOptions) {
       rtc::Optional<uint32_t>(48000);
   send_parameters_.options.playout_sample_rate = rtc::Optional<uint32_t>(44100);
   SetSendParameters(send_parameters_);
+}
+
+TEST_F(WebRtcVoiceEngineTestFake, SetAudioNetworkAdaptorViaOptions) {
+  EXPECT_TRUE(SetupSendStream());
+  send_parameters_.options.audio_network_adaptor = rtc::Optional<bool>(true);
+  send_parameters_.options.audio_network_adaptor_config =
+      rtc::Optional<std::string>("1234");
+  SetSendParameters(send_parameters_);
+  EXPECT_EQ(send_parameters_.options.audio_network_adaptor_config,
+            GetAudioNetworkAdaptorConfig(kSsrc1));
+}
+
+TEST_F(WebRtcVoiceEngineTestFake, AudioSendResetAudioNetworkAdaptor) {
+  EXPECT_TRUE(SetupSendStream());
+  send_parameters_.options.audio_network_adaptor = rtc::Optional<bool>(true);
+  send_parameters_.options.audio_network_adaptor_config =
+      rtc::Optional<std::string>("1234");
+  SetSendParameters(send_parameters_);
+  EXPECT_EQ(send_parameters_.options.audio_network_adaptor_config,
+            GetAudioNetworkAdaptorConfig(kSsrc1));
+  const int initial_num = call_.GetNumCreatedSendStreams();
+  cricket::AudioOptions options;
+  options.audio_network_adaptor = rtc::Optional<bool>(false);
+  SetAudioSend(kSsrc1, true, nullptr, &options);
+  // AudioSendStream expected to be recreated.
+  EXPECT_EQ(initial_num + 1, call_.GetNumCreatedSendStreams());
+  EXPECT_EQ(rtc::Optional<std::string>(), GetAudioNetworkAdaptorConfig(kSsrc1));
+}
+
+TEST_F(WebRtcVoiceEngineTestFake, AudioNetworkAdaptorNotGetOverridden) {
+  EXPECT_TRUE(SetupSendStream());
+  send_parameters_.options.audio_network_adaptor = rtc::Optional<bool>(true);
+  send_parameters_.options.audio_network_adaptor_config =
+      rtc::Optional<std::string>("1234");
+  SetSendParameters(send_parameters_);
+  EXPECT_EQ(send_parameters_.options.audio_network_adaptor_config,
+            GetAudioNetworkAdaptorConfig(kSsrc1));
+  const int initial_num = call_.GetNumCreatedSendStreams();
+  cricket::AudioOptions options;
+  options.audio_network_adaptor = rtc::Optional<bool>();
+  // Unvalued |options.audio_network_adaptor|.should not reset audio network
+  // adaptor.
+  SetAudioSend(kSsrc1, true, nullptr, &options);
+  // AudioSendStream not expected to be recreated.
+  EXPECT_EQ(initial_num, call_.GetNumCreatedSendStreams());
+  EXPECT_EQ(send_parameters_.options.audio_network_adaptor_config,
+            GetAudioNetworkAdaptorConfig(kSsrc1));
 }
 
 // Test that we can set the outgoing SSRC properly.
