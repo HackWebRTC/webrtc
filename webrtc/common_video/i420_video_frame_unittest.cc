@@ -151,25 +151,26 @@ TEST(TestVideoFrame, ShallowCopy) {
   memset(buffer_y, 16, kSizeY);
   memset(buffer_u, 8, kSizeU);
   memset(buffer_v, 4, kSizeV);
-  VideoFrame frame1;
-  frame1.CreateFrame(buffer_y, buffer_u, buffer_v, width, height,
-                     stride_y, stride_u, stride_v, kRotation);
+  VideoFrame frame1(
+      I420Buffer::Copy(new rtc::RefCountedObject<webrtc::WrappedI420Buffer>(
+          width, height,
+          buffer_y, stride_y,
+          buffer_u, stride_u,
+          buffer_v, stride_v,
+          rtc::Callback0<void>([](){}))),
+      kRotation, 0);
   frame1.set_timestamp(timestamp);
   frame1.set_ntp_time_ms(ntp_time_ms);
   frame1.set_render_time_ms(render_time_ms);
-  VideoFrame frame2;
-  frame2.ShallowCopy(frame1);
+  VideoFrame frame2(frame1);
 
-  // To be able to access the buffers, we need const pointers to the frames.
-  const VideoFrame* const_frame1_ptr = &frame1;
-  const VideoFrame* const_frame2_ptr = &frame2;
-
-  EXPECT_TRUE(const_frame1_ptr->video_frame_buffer()->DataY() ==
-              const_frame2_ptr->video_frame_buffer()->DataY());
-  EXPECT_TRUE(const_frame1_ptr->video_frame_buffer()->DataU() ==
-              const_frame2_ptr->video_frame_buffer()->DataU());
-  EXPECT_TRUE(const_frame1_ptr->video_frame_buffer()->DataV() ==
-              const_frame2_ptr->video_frame_buffer()->DataV());
+  EXPECT_EQ(frame1.video_frame_buffer(), frame2.video_frame_buffer());
+  EXPECT_EQ(frame1.video_frame_buffer()->DataY(),
+            frame2.video_frame_buffer()->DataY());
+  EXPECT_EQ(frame1.video_frame_buffer()->DataU(),
+            frame2.video_frame_buffer()->DataU());
+  EXPECT_EQ(frame1.video_frame_buffer()->DataV(),
+            frame2.video_frame_buffer()->DataV());
 
   EXPECT_EQ(frame2.timestamp(), frame1.timestamp());
   EXPECT_EQ(frame2.ntp_time_ms(), frame1.ntp_time_ms());
@@ -185,33 +186,6 @@ TEST(TestVideoFrame, ShallowCopy) {
   EXPECT_NE(frame2.ntp_time_ms(), frame1.ntp_time_ms());
   EXPECT_NE(frame2.render_time_ms(), frame1.render_time_ms());
   EXPECT_NE(frame2.rotation(), frame1.rotation());
-}
-
-TEST(TestVideoFrame, CopyBuffer) {
-  VideoFrame frame1, frame2;
-  int width = 15;
-  int height = 15;
-  int stride_y = 15;
-  int stride_uv = 10;
-  const int kSizeY = 225;
-  const int kSizeUv = 80;
-
-  uint8_t buffer_y[kSizeY];
-  uint8_t buffer_u[kSizeUv];
-  uint8_t buffer_v[kSizeUv];
-  memset(buffer_y, 16, kSizeY);
-  memset(buffer_u, 8, kSizeUv);
-  memset(buffer_v, 4, kSizeUv);
-  frame2.CreateFrame(buffer_y, buffer_u, buffer_v,
-                     width, height, stride_y, stride_uv, stride_uv,
-                     kVideoRotation_0);
-  // Expect exactly the same pixel data.
-  EXPECT_TRUE(test::EqualPlane(buffer_y, frame2.video_frame_buffer()->DataY(),
-                               stride_y, 15, 15));
-  EXPECT_TRUE(test::EqualPlane(buffer_u, frame2.video_frame_buffer()->DataU(),
-                               stride_uv, 8, 8));
-  EXPECT_TRUE(test::EqualPlane(buffer_v, frame2.video_frame_buffer()->DataV(),
-                               stride_uv, 8, 8));
 }
 
 TEST(TestVideoFrame, TextureInitialValues) {

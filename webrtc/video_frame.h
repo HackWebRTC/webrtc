@@ -44,32 +44,6 @@ class VideoFrame {
              int64_t render_time_ms,
              VideoRotation rotation);
 
-  // CreateFrame: Sets the frame's members and buffers. If required size is
-  // bigger than allocated one, new buffers of adequate size will be allocated.
-
-  // TODO(nisse): Deprecated. Should be deleted in the cricket::VideoFrame and
-  // webrtc::VideoFrame merge. Instead, create a VideoFrameBuffer and pass to
-  // the constructor. E.g, use I420Buffer::Copy(WrappedI420Buffer(...)).
-  void CreateFrame(const uint8_t* buffer_y,
-                   const uint8_t* buffer_u,
-                   const uint8_t* buffer_v,
-                   int width,
-                   int height,
-                   int stride_y,
-                   int stride_u,
-                   int stride_v,
-                   VideoRotation rotation);
-
-  // CreateFrame: Sets the frame's members and buffers. If required size is
-  // bigger than allocated one, new buffers of adequate size will be allocated.
-  // |buffer| must be a packed I420 buffer.
-
-  // TODO(nisse): Deprecated, see above method for advice.
-  void CreateFrame(const uint8_t* buffer,
-                  int width,
-                  int height,
-                  VideoRotation rotation);
-
   // Creates a shallow copy of |videoFrame|, i.e, the this object will retain a
   // reference to the video buffer also retained by |videoFrame|.
   // TODO(nisse): Deprecated. Should be deleted in the cricket::VideoFrame and

@@ -16,6 +16,7 @@
 #include <memory>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/keep_ref_until_done.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/frame_utils.h"
@@ -216,15 +217,16 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
                     (pixels_scrolled_y / 2)) +
                    (pixels_scrolled_x / 2);
 
-    current_frame_.CreateFrame(
-        &current_source_frame_->video_frame_buffer()->DataY()[offset_y],
-        &current_source_frame_->video_frame_buffer()->DataU()[offset_u],
-        &current_source_frame_->video_frame_buffer()->DataV()[offset_v],
-        target_width_, target_height_,
-        current_source_frame_->video_frame_buffer()->StrideY(),
-        current_source_frame_->video_frame_buffer()->StrideU(),
-        current_source_frame_->video_frame_buffer()->StrideV(),
-        kVideoRotation_0);
+    rtc::scoped_refptr<VideoFrameBuffer> frame_buffer(
+        current_source_frame_->video_frame_buffer());
+    current_frame_ = webrtc::VideoFrame(
+        new rtc::RefCountedObject<webrtc::WrappedI420Buffer>(
+            target_width_, target_height_,
+            &frame_buffer->DataY()[offset_y], frame_buffer->StrideY(),
+            &frame_buffer->DataU()[offset_u], frame_buffer->StrideU(),
+            &frame_buffer->DataV()[offset_v], frame_buffer->StrideV(),
+            KeepRefUntilDone(frame_buffer)),
+        kVideoRotation_0, 0);
   }
 
   Clock* const clock_;

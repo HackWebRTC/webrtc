@@ -51,48 +51,6 @@ VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
   RTC_DCHECK(buffer);
 }
 
-void VideoFrame::CreateFrame(const uint8_t* buffer_y,
-                             const uint8_t* buffer_u,
-                             const uint8_t* buffer_v,
-                             int width,
-                             int height,
-                             int stride_y,
-                             int stride_u,
-                             int stride_v,
-                             VideoRotation rotation) {
-  const int half_height = (height + 1) / 2;
-  const int expected_size_y = height * stride_y;
-  const int expected_size_u = half_height * stride_u;
-  const int expected_size_v = half_height * stride_v;
-  // Allocate a new buffer.
-  rtc::scoped_refptr<I420Buffer> buffer_ =
-      I420Buffer::Create(width, height, stride_y, stride_u, stride_v);
-
-  memcpy(buffer_->MutableDataY(), buffer_y, expected_size_y);
-  memcpy(buffer_->MutableDataU(), buffer_u, expected_size_u);
-  memcpy(buffer_->MutableDataV(), buffer_v, expected_size_v);
-
-  video_frame_buffer_ = buffer_;
-  timestamp_rtp_ = 0;
-  ntp_time_ms_ = 0;
-  timestamp_us_ = 0;
-  rotation_ = rotation;
-}
-
-void VideoFrame::CreateFrame(const uint8_t* buffer,
-                             int width,
-                             int height,
-                             VideoRotation rotation) {
-  const int stride_y = width;
-  const int stride_uv = (width + 1) / 2;
-
-  const uint8_t* buffer_y = buffer;
-  const uint8_t* buffer_u = buffer_y + stride_y * height;
-  const uint8_t* buffer_v = buffer_u + stride_uv * ((height + 1) / 2);
-  CreateFrame(buffer_y, buffer_u, buffer_v, width, height, stride_y,
-              stride_uv, stride_uv, rotation);
-}
-
 void VideoFrame::ShallowCopy(const VideoFrame& videoFrame) {
   video_frame_buffer_ = videoFrame.video_frame_buffer();
   timestamp_rtp_ = videoFrame.timestamp_rtp_;

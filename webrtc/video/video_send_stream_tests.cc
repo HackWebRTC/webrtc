@@ -1686,9 +1686,9 @@ VideoFrame CreateVideoFrame(int width, int height, uint8_t data) {
   const int kSizeY = width * height * 2;
   std::unique_ptr<uint8_t[]> buffer(new uint8_t[kSizeY]);
   memset(buffer.get(), data, kSizeY);
-  VideoFrame frame;
-  frame.CreateFrame(buffer.get(), buffer.get(), buffer.get(), width, height,
-                    width, width / 2, width / 2, kVideoRotation_0);
+  VideoFrame frame(
+      I420Buffer::Create(width, height, width, width / 2, width / 2),
+      kVideoRotation_0, data);
   frame.set_timestamp(data);
   frame.set_render_time_ms(data);
   return frame;
