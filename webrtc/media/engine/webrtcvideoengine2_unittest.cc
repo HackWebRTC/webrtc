@@ -2875,6 +2875,17 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsReportsFramesEncoded) {
   EXPECT_EQ(stats.frames_encoded, info.senders[0].frames_encoded);
 }
 
+TEST_F(WebRtcVideoChannel2Test, GetStatsReportsQpSum) {
+  FakeVideoSendStream* stream = AddSendStream();
+  webrtc::VideoSendStream::Stats stats;
+  stats.qp_sum = rtc::Optional<uint64_t>(13);
+  stream->SetStats(stats);
+
+  cricket::VideoMediaInfo info;
+  ASSERT_TRUE(channel_->GetStats(&info));
+  EXPECT_EQ(stats.qp_sum, info.senders[0].qp_sum);
+}
+
 TEST_F(WebRtcVideoChannel2Test, GetStatsReportsUpperResolution) {
   FakeVideoSendStream* stream = AddSendStream();
   webrtc::VideoSendStream::Stats stats;

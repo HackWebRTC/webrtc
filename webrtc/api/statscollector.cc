@@ -253,6 +253,8 @@ void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {
                      (info.adapt_reason & 0x1) > 0);
   report->AddBoolean(StatsReport::kStatsValueNameViewLimitedResolution,
                      (info.adapt_reason & 0x4) > 0);
+  if (info.qp_sum)
+    report->AddInt(StatsReport::kStatsValueNameQpSum, *info.qp_sum);
 
   const IntForAdd ints[] = {
     { StatsReport::kStatsValueNameAdaptationChanges, info.adapt_changes },

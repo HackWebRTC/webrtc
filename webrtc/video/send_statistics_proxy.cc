@@ -495,17 +495,24 @@ void SendStatisticsProxy::OnSendEncodedImage(
     }
   }
 
-  if (encoded_image.qp_ != -1 && codec_info) {
-    if (codec_info->codecType == kVideoCodecVP8) {
-      int spatial_idx = (rtp_config_.ssrcs.size() == 1)
-                            ? -1
-                            : static_cast<int>(simulcast_idx);
-      uma_container_->qp_counters_[spatial_idx].vp8.Add(encoded_image.qp_);
-    } else if (codec_info->codecType == kVideoCodecVP9) {
-      int spatial_idx = (codec_info->codecSpecific.VP9.num_spatial_layers == 1)
-                            ? -1
-                            : codec_info->codecSpecific.VP9.spatial_idx;
-      uma_container_->qp_counters_[spatial_idx].vp9.Add(encoded_image.qp_);
+  if (encoded_image.qp_ != -1) {
+    if (!stats_.qp_sum)
+      stats_.qp_sum = rtc::Optional<uint64_t>(0);
+    *stats_.qp_sum += encoded_image.qp_;
+
+    if (codec_info) {
+      if (codec_info->codecType == kVideoCodecVP8) {
+        int spatial_idx = (rtp_config_.ssrcs.size() == 1)
+                              ? -1
+                              : static_cast<int>(simulcast_idx);
+        uma_container_->qp_counters_[spatial_idx].vp8.Add(encoded_image.qp_);
+      } else if (codec_info->codecType == kVideoCodecVP9) {
+        int spatial_idx =
+            (codec_info->codecSpecific.VP9.num_spatial_layers == 1)
+                ? -1
+                : codec_info->codecSpecific.VP9.spatial_idx;
+        uma_container_->qp_counters_[spatial_idx].vp9.Add(encoded_image.qp_);
+      }
     }
   }
 

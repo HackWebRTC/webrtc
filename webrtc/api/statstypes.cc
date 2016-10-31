@@ -401,6 +401,8 @@ const char* StatsReport::Value::display_name() const {
       return "codecImplementationName";
     case kStatsValueNameMediaType:
       return "mediaType";
+    case kStatsValueNameQpSum:
+      return "qpSum";
     // 'goog' prefixed constants.
     case kStatsValueNameAccelerateRate:
       return "googAccelerateRate";

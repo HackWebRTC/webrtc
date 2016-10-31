@@ -709,6 +709,7 @@ struct VideoSenderInfo : public MediaSenderInfo {
   int avg_encode_ms;
   int encode_usage_percent;
   uint32_t frames_encoded;
+  rtc::Optional<uint64_t> qp_sum;
 };
 
 struct VideoReceiverInfo : public MediaReceiverInfo {

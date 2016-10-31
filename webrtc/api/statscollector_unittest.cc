@@ -1926,6 +1926,7 @@ TEST_F(StatsCollectorTest, VerifyVideoSendSsrcStats) {
   // Construct a stats value to read.
   video_sender_info.add_ssrc(1234);
   video_sender_info.frames_encoded = 10;
+  video_sender_info.qp_sum = rtc::Optional<uint64_t>(11);
   stats_read.senders.push_back(video_sender_info);
 
   EXPECT_CALL(session_, video_channel()).WillRepeatedly(Return(&video_channel));
@@ -1937,6 +1938,8 @@ TEST_F(StatsCollectorTest, VerifyVideoSendSsrcStats) {
   EXPECT_EQ(rtc::ToString(video_sender_info.frames_encoded),
             ExtractSsrcStatsValue(reports,
                                   StatsReport::kStatsValueNameFramesEncoded));
+  EXPECT_EQ(rtc::ToString(*video_sender_info.qp_sum),
+            ExtractSsrcStatsValue(reports, StatsReport::kStatsValueNameQpSum));
 }
 
 // This test verifies that stats are correctly set in video receive ssrc stats.

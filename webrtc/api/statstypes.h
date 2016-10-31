@@ -113,6 +113,7 @@ class StatsReport {
     kStatsValueNamePacketsReceived,
     kStatsValueNamePacketsSent,
     kStatsValueNameProtocol,
+    kStatsValueNameQpSum,
     kStatsValueNameReceiving,
     kStatsValueNameSelectedCandidatePairId,
     kStatsValueNameSsrc,
