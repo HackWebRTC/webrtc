@@ -221,6 +221,10 @@ AudioMixer::Source::AudioFrameInfo ChannelProxy::GetAudioFrameWithInfo(
   return channel()->GetAudioFrameWithInfo(sample_rate_hz, audio_frame);
 }
 
+int ChannelProxy::NeededFrequency() const {
+  return static_cast<int>(channel()->NeededFrequency(-1));
+}
+
 Channel* ChannelProxy::channel() const {
   RTC_DCHECK(channel_owner_.channel());
   return channel_owner_.channel();

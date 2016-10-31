@@ -57,7 +57,8 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
   // AudioMixer::Source
   AudioFrameInfo GetAudioFrameWithInfo(int sample_rate_hz,
                                        AudioFrame* audio_frame) override;
-  int Ssrc() override;
+  int PreferredSampleRate() const override;
+  int Ssrc() const override;
 
  private:
   VoiceEngine* voice_engine() const;

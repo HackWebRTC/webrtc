@@ -97,6 +97,8 @@ class ChannelProxy {
       int sample_rate_hz,
       AudioFrame* audio_frame);
 
+  virtual int NeededFrequency() const;
+
  private:
   Channel* channel() const;
 

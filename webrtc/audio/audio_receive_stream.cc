@@ -278,7 +278,11 @@ AudioMixer::Source::AudioFrameInfo AudioReceiveStream::GetAudioFrameWithInfo(
   return channel_proxy_->GetAudioFrameWithInfo(sample_rate_hz, audio_frame);
 }
 
-int AudioReceiveStream::Ssrc() {
+int AudioReceiveStream::PreferredSampleRate() const {
+  return channel_proxy_->NeededFrequency();
+}
+
+int AudioReceiveStream::Ssrc() const {
   return config_.rtp.local_ssrc;
 }
 

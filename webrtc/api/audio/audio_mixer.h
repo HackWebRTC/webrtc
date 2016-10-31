@@ -42,7 +42,11 @@ class AudioMixer : public rtc::RefCountInterface {
                                                  AudioFrame* audio_frame) = 0;
 
     // A way for a mixer implementation to distinguish participants.
-    virtual int Ssrc() = 0;
+    virtual int Ssrc() const = 0;
+
+    // A way for this source to say that GetAudioFrameWithInfo called
+    // with this sample rate or higher will not cause quality loss.
+    virtual int PreferredSampleRate() const = 0;
 
     virtual ~Source() {}
   };

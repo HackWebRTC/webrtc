@@ -61,7 +61,8 @@ class MockMixerAudioSource : public AudioMixer::Source {
   MOCK_METHOD2(GetAudioFrameWithInfo,
                AudioFrameInfo(int sample_rate_hz, AudioFrame* audio_frame));
 
-  MOCK_METHOD0(Ssrc, int());
+  MOCK_CONST_METHOD0(PreferredSampleRate, int());
+  MOCK_CONST_METHOD0(Ssrc, int());
 
   AudioFrame* fake_frame() { return &fake_frame_; }
   AudioFrameInfo fake_info() { return fake_audio_frame_info_; }
