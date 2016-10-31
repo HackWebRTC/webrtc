@@ -293,6 +293,92 @@ RTCPeerConnectionStats::RTCPeerConnectionStats(
 RTCPeerConnectionStats::~RTCPeerConnectionStats() {
 }
 
+WEBRTC_RTCSTATS_IMPL(RTCRTPStreamStats, RTCStats, "rtp",
+    &ssrc,
+    &associate_stats_id,
+    &is_remote,
+    &media_type,
+    &media_track_id,
+    &transport_id,
+    &codec_id,
+    &fir_count,
+    &pli_count,
+    &nack_count,
+    &sli_count);
+
+RTCRTPStreamStats::RTCRTPStreamStats(
+    const std::string& id, int64_t timestamp_us)
+    : RTCRTPStreamStats(std::string(id), timestamp_us) {
+}
+
+RTCRTPStreamStats::RTCRTPStreamStats(
+    std::string&& id, int64_t timestamp_us)
+    : RTCStats(std::move(id), timestamp_us),
+      ssrc("ssrc"),
+      associate_stats_id("associateStatsId"),
+      is_remote("isRemote", false),
+      media_type("mediaType"),
+      media_track_id("mediaTrackId"),
+      transport_id("transportId"),
+      codec_id("codecId"),
+      fir_count("firCount"),
+      pli_count("pliCount"),
+      nack_count("nackCount"),
+      sli_count("sliCount") {
+}
+
+RTCRTPStreamStats::RTCRTPStreamStats(
+    const RTCRTPStreamStats& other)
+    : RTCStats(other.id(), other.timestamp_us()),
+      ssrc(other.ssrc),
+      associate_stats_id(other.associate_stats_id),
+      is_remote(other.is_remote),
+      media_type(other.media_type),
+      media_track_id(other.media_track_id),
+      transport_id(other.transport_id),
+      codec_id(other.codec_id),
+      fir_count(other.fir_count),
+      pli_count(other.pli_count),
+      nack_count(other.nack_count),
+      sli_count(other.sli_count) {
+}
+
+RTCRTPStreamStats::~RTCRTPStreamStats() {
+}
+
+WEBRTC_RTCSTATS_IMPL(
+    RTCOutboundRTPStreamStats, RTCRTPStreamStats, "outbound-rtp",
+    &packets_sent,
+    &bytes_sent,
+    &target_bitrate,
+    &round_trip_time);
+
+RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(
+    const std::string& id, int64_t timestamp_us)
+    : RTCOutboundRTPStreamStats(std::string(id), timestamp_us) {
+}
+
+RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(
+    std::string&& id, int64_t timestamp_us)
+    : RTCRTPStreamStats(std::move(id), timestamp_us),
+      packets_sent("packetsSent"),
+      bytes_sent("bytesSent"),
+      target_bitrate("targetBitrate"),
+      round_trip_time("roundTripTime") {
+}
+
+RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(
+    const RTCOutboundRTPStreamStats& other)
+    : RTCRTPStreamStats(other),
+      packets_sent(other.packets_sent),
+      bytes_sent(other.bytes_sent),
+      target_bitrate(other.target_bitrate),
+      round_trip_time(other.round_trip_time) {
+}
+
+RTCOutboundRTPStreamStats::~RTCOutboundRTPStreamStats() {
+}
+
 WEBRTC_RTCSTATS_IMPL(RTCTransportStats, RTCStats, "transport",
     &bytes_sent,
     &bytes_received,
