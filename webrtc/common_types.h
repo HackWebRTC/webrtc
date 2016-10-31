@@ -498,8 +498,6 @@ enum VideoCodecComplexity {
   kComplexityMax = 3
 };
 
-enum VideoCodecProfile { kProfileBase = 0x00, kProfileMain = 0x01 };
-
 enum VP8ResilienceMode {
   kResilienceOff,    // The stream produced by the encoder requires a
                      // recovery frame (typically a key frame) to be
@@ -543,7 +541,6 @@ struct VideoCodecVP9 {
 
 // H264 specific.
 struct VideoCodecH264 {
-  VideoCodecProfile profile;
   bool frameDroppingOn;
   int keyFrameInterval;
   // These are NULL/0 if not externally negotiated.

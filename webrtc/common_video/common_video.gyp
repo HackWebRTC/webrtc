@@ -60,6 +60,8 @@
         'h264/h264_common.h',
         'h264/pps_parser.cc',
         'h264/pps_parser.h',
+        'h264/profile_level_id.cc',
+        'h264/profile_level_id.h',
         'h264/sps_parser.cc',
         'h264/sps_parser.h',
         'h264/h264_bitstream_parser.cc',
