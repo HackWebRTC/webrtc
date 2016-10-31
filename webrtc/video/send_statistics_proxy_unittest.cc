@@ -427,6 +427,148 @@ TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp9OneSpatialLayer) {
   EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.Encoded.Qp.Vp9", kQpIdx0));
 }
 
+TEST_F(SendStatisticsProxyTest,
+       BandwidthLimitedHistogramsNotUpdatedWhenDisabled) {
+  EncodedImage encoded_image;
+  // encoded_image.adapt_reason_.bw_resolutions_disabled by default: -1
+  for (int i = 0; i < kMinRequiredSamples; ++i)
+    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
+
+  // Histograms are updated when the statistics_proxy_ is deleted.
+  statistics_proxy_.reset();
+  EXPECT_EQ(0, metrics::NumSamples(
+                   "WebRTC.Video.BandwidthLimitedResolutionInPercent"));
+  EXPECT_EQ(0, metrics::NumSamples(
+                   "WebRTC.Video.BandwidthLimitedResolutionsDisabled"));
+}
+
+TEST_F(SendStatisticsProxyTest,
+       BandwidthLimitedHistogramsUpdatedWhenEnabled_NoResolutionDisabled) {
+  const int kResolutionsDisabled = 0;
+  EncodedImage encoded_image;
+  encoded_image.adapt_reason_.bw_resolutions_disabled = kResolutionsDisabled;
+  for (int i = 0; i < kMinRequiredSamples; ++i)
+    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
+
+  // Histograms are updated when the statistics_proxy_ is deleted.
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, metrics::NumSamples(
+                   "WebRTC.Video.BandwidthLimitedResolutionInPercent"));
+  EXPECT_EQ(1, metrics::NumEvents(
+                   "WebRTC.Video.BandwidthLimitedResolutionInPercent", 0));
+  // No resolution disabled.
+  EXPECT_EQ(0, metrics::NumSamples(
+                   "WebRTC.Video.BandwidthLimitedResolutionsDisabled"));
+}
+
+TEST_F(SendStatisticsProxyTest,
+       BandwidthLimitedHistogramsUpdatedWhenEnabled_OneResolutionDisabled) {
+  const int kResolutionsDisabled = 1;
+  EncodedImage encoded_image;
+  encoded_image.adapt_reason_.bw_resolutions_disabled = kResolutionsDisabled;
+  for (int i = 0; i < kMinRequiredSamples; ++i)
+    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
+
+  // Histograms are updated when the statistics_proxy_ is deleted.
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, metrics::NumSamples(
+                   "WebRTC.Video.BandwidthLimitedResolutionInPercent"));
+  EXPECT_EQ(1, metrics::NumEvents(
+                   "WebRTC.Video.BandwidthLimitedResolutionInPercent", 100));
+  // Resolutions disabled.
+  EXPECT_EQ(1, metrics::NumSamples(
+                   "WebRTC.Video.BandwidthLimitedResolutionsDisabled"));
+  EXPECT_EQ(
+      1, metrics::NumEvents("WebRTC.Video.BandwidthLimitedResolutionsDisabled",
+                            kResolutionsDisabled));
+}
+
+TEST_F(SendStatisticsProxyTest,
+       QualityLimitedHistogramsNotUpdatedWhenDisabled) {
+  EncodedImage encoded_image;
+  // encoded_image.adapt_reason_.quality_resolution_downscales disabled by
+  // default: -1
+  for (int i = 0; i < kMinRequiredSamples; ++i)
+    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
+
+  // Histograms are updated when the statistics_proxy_ is deleted.
+  statistics_proxy_.reset();
+  EXPECT_EQ(
+      0, metrics::NumSamples("WebRTC.Video.QualityLimitedResolutionInPercent"));
+  EXPECT_EQ(0, metrics::NumSamples(
+                   "WebRTC.Video.QualityLimitedResolutionDownscales"));
+}
+
+TEST_F(SendStatisticsProxyTest,
+       QualityLimitedHistogramsUpdatedWhenEnabled_NoResolutionDownscale) {
+  const int kDownscales = 0;
+  EncodedImage encoded_image;
+  encoded_image.adapt_reason_.quality_resolution_downscales = kDownscales;
+  for (int i = 0; i < kMinRequiredSamples; ++i)
+    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
+
+  // Histograms are updated when the statistics_proxy_ is deleted.
+  statistics_proxy_.reset();
+  EXPECT_EQ(
+      1, metrics::NumSamples("WebRTC.Video.QualityLimitedResolutionInPercent"));
+  EXPECT_EQ(1, metrics::NumEvents(
+                   "WebRTC.Video.QualityLimitedResolutionInPercent", 0));
+  // No resolution downscale.
+  EXPECT_EQ(0, metrics::NumSamples(
+                   "WebRTC.Video.QualityLimitedResolutionDownscales"));
+}
+
+TEST_F(SendStatisticsProxyTest,
+       QualityLimitedHistogramsUpdatedWhenEnabled_TwoResolutionDownscales) {
+  const int kDownscales = 2;
+  EncodedImage encoded_image;
+  encoded_image.adapt_reason_.quality_resolution_downscales = kDownscales;
+  for (int i = 0; i < kMinRequiredSamples; ++i)
+    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
+
+  // Histograms are updated when the statistics_proxy_ is deleted.
+  statistics_proxy_.reset();
+  EXPECT_EQ(
+      1, metrics::NumSamples("WebRTC.Video.QualityLimitedResolutionInPercent"));
+  EXPECT_EQ(1, metrics::NumEvents(
+                   "WebRTC.Video.QualityLimitedResolutionInPercent", 100));
+  // Resolution downscales.
+  EXPECT_EQ(1, metrics::NumSamples(
+                   "WebRTC.Video.QualityLimitedResolutionDownscales"));
+  EXPECT_EQ(
+      1, metrics::NumEvents("WebRTC.Video.QualityLimitedResolutionDownscales",
+                            kDownscales));
+}
+
+TEST_F(SendStatisticsProxyTest, GetStatsReportsBandwidthLimitedResolution) {
+  // Initially false.
+  EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
+  // No resolution scale by default.
+  EncodedImage encoded_image;
+  statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
+  EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
+  // Resolution not scaled.
+  encoded_image.adapt_reason_.bw_resolutions_disabled = 0;
+  encoded_image.adapt_reason_.quality_resolution_downscales = 0;
+  statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
+  EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
+  // Resolution scaled due to bandwidth.
+  encoded_image.adapt_reason_.bw_resolutions_disabled = 1;
+  encoded_image.adapt_reason_.quality_resolution_downscales = 0;
+  statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
+  EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
+  // Resolution not scaled.
+  encoded_image.adapt_reason_.bw_resolutions_disabled = 0;
+  encoded_image.adapt_reason_.quality_resolution_downscales = 0;
+  statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
+  EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
+  // Resolution scaled due to quality.
+  encoded_image.adapt_reason_.bw_resolutions_disabled = 0;
+  encoded_image.adapt_reason_.quality_resolution_downscales = 1;
+  statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
+  EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
+}
+
 TEST_F(SendStatisticsProxyTest, NoSubstreams) {
   uint32_t excluded_ssrc =
       std::max(
