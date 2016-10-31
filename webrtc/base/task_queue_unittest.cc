@@ -91,13 +91,7 @@ TEST(TaskQueueTest, PostFromQueue) {
   EXPECT_TRUE(event.Wait(1000));
 }
 
-// Currently flaky on Windows. See issue 6610.
-#if defined(WEBRTC_WIN)
-#define MAYBE_PostDelayed DISABLED_PostDelayed
-#else
-#define MAYBE_PostDelayed PostDelayed
-#endif
-TEST(TaskQueueTest, MAYBE_PostDelayed) {
+TEST(TaskQueueTest, PostDelayed) {
   static const char kQueueName[] = "PostDelayed";
   TaskQueue queue(kQueueName);
 
@@ -106,8 +100,11 @@ TEST(TaskQueueTest, MAYBE_PostDelayed) {
   queue.PostDelayedTask(Bind(&CheckCurrent, kQueueName, &event, &queue), 100);
   EXPECT_TRUE(event.Wait(1000));
   uint32_t end = Time();
-  EXPECT_GE(end - start, 100u);
-  EXPECT_NEAR(end - start, 200u, 100u);  // Accept 100-300.
+  // These tests are a little relaxed due to how "powerful" our test bots can
+  // be.  Most recently we've seen windows bots fire the callback after 99ms,
+  // which is why we have a little bit of leeway backwards as well.
+  EXPECT_GE(end - start, 95u);
+  EXPECT_NEAR(end - start, 195u, 100u);  // Accept 95-295.
 }
 
 TEST(TaskQueueTest, PostMultipleDelayed) {
