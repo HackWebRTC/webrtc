@@ -48,7 +48,8 @@ class PacketBuffer {
 
   virtual ~PacketBuffer();
 
-  // Made virtual for testing.
+  // Returns true if |packet| is inserted into the packet buffer,
+  // false otherwise. Made virtual for testing.
   virtual bool InsertPacket(const VCMPacket& packet);
   void ClearTo(uint16_t seq_num);
   void Clear();
@@ -94,7 +95,8 @@ class PacketBuffer {
   bool ExpandBufferSize() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Test if all previous packets has arrived for the given sequence number.
-  bool IsContinuous(uint16_t seq_num) const EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  bool PotentialNewFrame(uint16_t seq_num) const
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Test if all packets of a frame has arrived, and if so, creates a frame.
   // May create multiple frames per invocation.
@@ -126,6 +128,9 @@ class PacketBuffer {
 
   // If the packet buffer has received its first packet.
   bool first_packet_received_ GUARDED_BY(crit_);
+
+  // If the buffer is cleared to |first_seq_num_|.
+  bool is_cleared_to_first_seq_num_ GUARDED_BY(crit_);
 
   // Buffer that holds the inserted packets.
   std::vector<VCMPacket> data_buffer_ GUARDED_BY(crit_);

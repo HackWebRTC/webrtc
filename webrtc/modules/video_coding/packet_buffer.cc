@@ -42,6 +42,7 @@ PacketBuffer::PacketBuffer(Clock* clock,
       first_seq_num_(0),
       last_seq_num_(0),
       first_packet_received_(false),
+      is_cleared_to_first_seq_num_(false),
       data_buffer_(start_buffer_size),
       sequence_buffer_(start_buffer_size),
       received_frame_callback_(received_frame_callback) {
@@ -51,7 +52,9 @@ PacketBuffer::PacketBuffer(Clock* clock,
   RTC_DCHECK((max_buffer_size & (max_buffer_size - 1)) == 0);
 }
 
-PacketBuffer::~PacketBuffer() {}
+PacketBuffer::~PacketBuffer() {
+  Clear();
+}
 
 bool PacketBuffer::InsertPacket(const VCMPacket& packet) {
   rtc::CritScope lock(&crit_);
@@ -59,9 +62,16 @@ bool PacketBuffer::InsertPacket(const VCMPacket& packet) {
   size_t index = seq_num % size_;
 
   if (!first_packet_received_) {
-    first_seq_num_ = seq_num - 1;
+    first_seq_num_ = seq_num;
     last_seq_num_ = seq_num;
     first_packet_received_ = true;
+  } else if (AheadOf(first_seq_num_, seq_num)) {
+    // If we have explicitly cleared past this packet then it's old,
+    // don't insert it.
+    if (is_cleared_to_first_seq_num_)
+      return false;
+
+    first_seq_num_ = seq_num;
   }
 
   if (sequence_buffer_[index].used) {
@@ -106,19 +116,39 @@ bool PacketBuffer::InsertPacket(const VCMPacket& packet) {
 
 void PacketBuffer::ClearTo(uint16_t seq_num) {
   rtc::CritScope lock(&crit_);
-  size_t index = first_seq_num_ % size_;
-  while (AheadOf<uint16_t>(seq_num, first_seq_num_ + 1)) {
-    index = (index + 1) % size_;
-    ++first_seq_num_;
+
+  // If the packet buffer was cleared between a frame was created and returned.
+  if (!first_packet_received_)
+    return;
+
+  is_cleared_to_first_seq_num_ = true;
+  while (AheadOrAt<uint16_t>(seq_num, first_seq_num_)) {
+    size_t index = first_seq_num_ % size_;
     delete[] data_buffer_[index].dataPtr;
     data_buffer_[index].dataPtr = nullptr;
     sequence_buffer_[index].used = false;
+    ++first_seq_num_;
   }
 }
 
+void PacketBuffer::Clear() {
+  rtc::CritScope lock(&crit_);
+  for (size_t i = 0; i < size_; ++i) {
+    delete[] data_buffer_[i].dataPtr;
+    data_buffer_[i].dataPtr = nullptr;
+    sequence_buffer_[i].used = false;
+  }
+
+  first_packet_received_ = false;
+  is_cleared_to_first_seq_num_ = false;
+}
+
 bool PacketBuffer::ExpandBufferSize() {
-  if (size_ == max_size_)
+  if (size_ == max_size_) {
+    LOG(LS_WARNING) << "PacketBuffer is already at max size (" << max_size_
+                    << "), failed to increase size.";
     return false;
+  }
 
   size_t new_size = std::min(max_size_, 2 * size_);
   std::vector<VCMPacket> new_data_buffer(new_size);
@@ -133,10 +163,11 @@ bool PacketBuffer::ExpandBufferSize() {
   size_ = new_size;
   sequence_buffer_ = std::move(new_sequence_buffer);
   data_buffer_ = std::move(new_data_buffer);
+  LOG(LS_INFO) << "PacketBuffer size expanded to " << new_size;
   return true;
 }
 
-bool PacketBuffer::IsContinuous(uint16_t seq_num) const {
+bool PacketBuffer::PotentialNewFrame(uint16_t seq_num) const {
   size_t index = seq_num % size_;
   int prev_index = index > 0 ? index - 1 : size_ - 1;
 
@@ -144,13 +175,22 @@ bool PacketBuffer::IsContinuous(uint16_t seq_num) const {
     return false;
   if (sequence_buffer_[index].frame_created)
     return false;
-  if (sequence_buffer_[index].frame_begin)
+  if (sequence_buffer_[index].frame_begin &&
+      (!sequence_buffer_[prev_index].used ||
+       AheadOf(seq_num, sequence_buffer_[prev_index].seq_num))) {
+    // The reason we only return true if this packet is the first packet of the
+    // frame and the sequence number is newer than the packet with the previous
+    // index is because we want to avoid an inifite loop in the case where
+    // a single frame containing more packets than the current size of the
+    // packet buffer is inserted.
     return true;
+  }
   if (!sequence_buffer_[prev_index].used)
     return false;
   if (sequence_buffer_[prev_index].seq_num !=
-      static_cast<uint16_t>(seq_num - 1))
+      sequence_buffer_[index].seq_num - 1) {
     return false;
+  }
   if (sequence_buffer_[prev_index].continuous)
     return true;
 
@@ -158,8 +198,8 @@ bool PacketBuffer::IsContinuous(uint16_t seq_num) const {
 }
 
 void PacketBuffer::FindFrames(uint16_t seq_num) {
-  size_t index = seq_num % size_;
-  while (IsContinuous(seq_num)) {
+  while (PotentialNewFrame(seq_num)) {
+    size_t index = seq_num % size_;
     sequence_buffer_[index].continuous = true;
 
     // If all packets of the frame is continuous, find the first packet of the
@@ -192,7 +232,6 @@ void PacketBuffer::FindFrames(uint16_t seq_num) {
       received_frame_callback_->OnReceivedFrame(std::move(frame));
     }
 
-    index = (index + 1) % size_;
     ++seq_num;
   }
 }
@@ -211,13 +250,6 @@ void PacketBuffer::ReturnFrame(RtpFrameObject* frame) {
 
     index = (index + 1) % size_;
     ++seq_num;
-  }
-
-  index = first_seq_num_ % size_;
-  while (AheadOf<uint16_t>(last_seq_num_, first_seq_num_) &&
-         !sequence_buffer_[index].used) {
-    ++first_seq_num_;
-    index = (index + 1) % size_;
   }
 }
 
@@ -252,14 +284,6 @@ VCMPacket* PacketBuffer::GetPacket(uint16_t seq_num) {
     return nullptr;
   }
   return &data_buffer_[index];
-}
-
-void PacketBuffer::Clear() {
-  rtc::CritScope lock(&crit_);
-  for (size_t i = 0; i < size_; ++i)
-    sequence_buffer_[i].used = false;
-
-  first_packet_received_ = false;
 }
 
 int PacketBuffer::AddRef() const {
