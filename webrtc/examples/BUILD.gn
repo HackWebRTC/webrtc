@@ -31,6 +31,10 @@ group("examples") {
     ]
   }
 
+  if (!build_with_chromium) {
+    public_deps += [ ":stun_prober" ]
+  }
+
   if (is_ios || (is_mac && target_cpu != "x86")) {
     public_deps += [ ":AppRTCMobile" ]
   }
@@ -537,5 +541,26 @@ if (is_linux || is_win) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
+  }
+}
+
+if (!build_with_chromium) {
+  # Doesn't build within Chrome on Win.
+  rtc_executable("stun_prober") {
+    sources = [
+      "stunprober/main.cc",
+    ]
+
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from Chrome's Clang plugins.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    deps = [
+      "../p2p:libstunprober",
+      "../p2p:rtc_p2p",
+      "../system_wrappers:field_trial_default",
+    ]
   }
 }

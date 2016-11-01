@@ -13,10 +13,6 @@ group("p2p") {
     ":libstunprober",
     ":rtc_p2p",
   ]
-  if (!build_with_chromium) {
-    # TODO(kjellander): Move this to examples or tools.
-    public_deps += [ ":stun_prober" ]
-  }
 }
 
 config("rtc_p2p_inherited_config") {
@@ -158,25 +154,4 @@ rtc_static_library("libstunprober") {
     "..:webrtc_common",
     "../base:rtc_base",
   ]
-}
-
-if (!build_with_chromium) {
-  # Doesn't build within Chrome on Win.
-  rtc_executable("stun_prober") {
-    sources = [
-      "stunprober/main.cc",
-    ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from Chrome's Clang plugins.
-      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-
-    deps = [
-      ":libstunprober",
-      ":rtc_p2p",
-      "../system_wrappers:field_trial_default",
-    ]
-  }
 }

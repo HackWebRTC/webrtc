@@ -465,6 +465,17 @@
             '../build/android/test_runner.gypi',
           ],
         },
+        {
+          'target_name': 'stun_prober',
+          'type': 'executable',
+          'dependencies': [
+            'p2p:libstunprober',
+            'p2p:rtc_p2p'
+          ],
+          'sources': [
+            'examples/stunprober/main.cc',
+          ],
+        },
       ],  # targets
     }],  # OS=="android"
   ],
