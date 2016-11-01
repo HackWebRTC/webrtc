@@ -82,7 +82,7 @@ class RTCDataChannelStats final : public RTCStats {
 
 // https://w3c.github.io/webrtc-stats/#candidatepair-dict*
 // TODO(hbos): Finish implementation. Tracking bug crbug.com/633550
-class RTCIceCandidatePairStats : public RTCStats {
+class RTCIceCandidatePairStats final : public RTCStats {
  public:
   WEBRTC_RTCSTATS_DECL();
 
@@ -200,6 +200,62 @@ class RTCPeerConnectionStats final : public RTCStats {
   // TODO(hbos): Collected by |RTCStatsCollector| but different than the spec.
   // crbug.com/636818
   RTCStatsMember<uint32_t> data_channels_closed;
+};
+
+// https://w3c.github.io/webrtc-stats/#streamstats-dict*
+// TODO(hbos): Finish implementation. Tracking bug crbug.com/657854
+class RTCRTPStreamStats : public RTCStats {
+ public:
+  WEBRTC_RTCSTATS_DECL();
+
+  RTCRTPStreamStats(const RTCRTPStreamStats& other);
+  ~RTCRTPStreamStats() override;
+
+  RTCStatsMember<std::string> ssrc;
+  // TODO(hbos): When the remote case is supported |RTCStatsCollector| needs to
+  // set this. crbug.com/657855, 657856
+  RTCStatsMember<std::string> associate_stats_id;
+  // TODO(hbos): Remote case not supported by |RTCStatsCollector|.
+  // crbug.com/657855, 657856
+  RTCStatsMember<bool> is_remote;  // = false
+  RTCStatsMember<std::string> media_type;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657854, 659137
+  RTCStatsMember<std::string> media_track_id;
+  RTCStatsMember<std::string> transport_id;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657854, 659117
+  RTCStatsMember<std::string> codec_id;
+  // FIR and PLI counts are only defined for |media_type == "video"|.
+  RTCStatsMember<uint32_t> fir_count;
+  RTCStatsMember<uint32_t> pli_count;
+  // TODO(hbos): NACK count should be collected by |RTCStatsCollector| for both
+  // audio and video but is only defined in the "video" case. crbug.com/657856
+  RTCStatsMember<uint32_t> nack_count;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657854
+  // SLI count is only defined for |media_type == "video"|.
+  RTCStatsMember<uint32_t> sli_count;
+
+ protected:
+  RTCRTPStreamStats(const std::string& id, int64_t timestamp_us);
+  RTCRTPStreamStats(std::string&& id, int64_t timestamp_us);
+};
+
+// https://w3c.github.io/webrtc-stats/#outboundrtpstats-dict*
+// TODO(hbos): Finish implementation and support the remote case
+// |is_remote = true|. Tracking bug crbug.com/657856
+class RTCOutboundRTPStreamStats final : public RTCRTPStreamStats {
+ public:
+  WEBRTC_RTCSTATS_DECL();
+
+  RTCOutboundRTPStreamStats(const std::string& id, int64_t timestamp_us);
+  RTCOutboundRTPStreamStats(std::string&& id, int64_t timestamp_us);
+  RTCOutboundRTPStreamStats(const RTCOutboundRTPStreamStats& other);
+  ~RTCOutboundRTPStreamStats() override;
+
+  RTCStatsMember<uint32_t> packets_sent;
+  RTCStatsMember<uint64_t> bytes_sent;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657856
+  RTCStatsMember<double> target_bitrate;
+  RTCStatsMember<double> round_trip_time;
 };
 
 // https://w3c.github.io/webrtc-stats/#transportstats-dict*

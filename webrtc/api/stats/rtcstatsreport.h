@@ -36,6 +36,7 @@ class RTCStatsReport : public rtc::RefCountInterface {
     ConstIterator& operator++();
     ConstIterator& operator++(int);
     const RTCStats& operator*() const;
+    const RTCStats* operator->() const;
     bool operator==(const ConstIterator& other) const;
     bool operator!=(const ConstIterator& other) const;
 
@@ -49,11 +50,14 @@ class RTCStatsReport : public rtc::RefCountInterface {
     StatsMap::const_iterator it_;
   };
 
-  static rtc::scoped_refptr<RTCStatsReport> Create();
+  // TODO(hbos): Remove "= 0" once Chromium unittest has been updated to call
+  // with a parameter. crbug.com/627816
+  static rtc::scoped_refptr<RTCStatsReport> Create(uint64_t timestamp_us = 0);
 
-  RTCStatsReport();
+  explicit RTCStatsReport(uint64_t timestamp_us);
   RTCStatsReport(const RTCStatsReport& other) = delete;
 
+  uint64_t timestamp_us() const { return timestamp_us_; }
   bool AddStats(std::unique_ptr<const RTCStats> stats);
   const RTCStats* Get(const std::string& id) const;
   size_t size() const { return stats_.size(); }
@@ -77,11 +81,16 @@ class RTCStatsReport : public rtc::RefCountInterface {
     return stats_of_type;
   }
 
+  // Creates a human readable string representation of the report, listing all
+  // of its stats objects.
+  std::string ToString() const;
+
   friend class rtc::RefCountedObject<RTCStatsReport>;
 
  private:
   ~RTCStatsReport() override;
 
+  uint64_t timestamp_us_;
   StatsMap stats_;
 };
 

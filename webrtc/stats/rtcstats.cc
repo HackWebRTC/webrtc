@@ -10,6 +10,8 @@
 
 #include "webrtc/api/stats/rtcstats.h"
 
+#include <sstream>
+
 #include "webrtc/base/stringencode.h"
 
 namespace webrtc {

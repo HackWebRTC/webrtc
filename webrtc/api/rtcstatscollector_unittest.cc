@@ -32,13 +32,16 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/base/fakemediaengine.h"
+#include "webrtc/media/base/test/mock_mediachannel.h"
 #include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/port.h"
 
 using testing::_;
 using testing::Invoke;
 using testing::Return;
+using testing::ReturnNull;
 using testing::ReturnRef;
+using testing::SetArgPointee;
 
 namespace webrtc {
 
@@ -64,6 +67,10 @@ void PrintTo(const RTCRemoteIceCandidateStats& stats, ::std::ostream* os) {
 }
 
 void PrintTo(const RTCPeerConnectionStats& stats, ::std::ostream* os) {
+  *os << stats.ToString();
+}
+
+void PrintTo(const RTCOutboundRTPStreamStats& stats, ::std::ostream* os) {
   *os << stats.ToString();
 }
 
@@ -144,8 +151,9 @@ class RTCStatsCollectorTestHelper : public SetSessionDescriptionObserver {
   RTCStatsCollectorTestHelper()
       : worker_thread_(rtc::Thread::Current()),
         network_thread_(rtc::Thread::Current()),
+        media_engine_(new cricket::FakeMediaEngine()),
         channel_manager_(
-            new cricket::ChannelManager(new cricket::FakeMediaEngine(),
+            new cricket::ChannelManager(media_engine_,
                                         worker_thread_,
                                         network_thread_)),
         media_controller_(
@@ -159,6 +167,8 @@ class RTCStatsCollectorTestHelper : public SetSessionDescriptionObserver {
     EXPECT_CALL(pc_, session()).WillRepeatedly(Return(&session_));
     EXPECT_CALL(pc_, sctp_data_channels()).WillRepeatedly(
         ReturnRef(data_channels_));
+    EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
+    EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
     EXPECT_CALL(session_, GetTransportStats(_)).WillRepeatedly(Return(false));
     EXPECT_CALL(session_, GetLocalCertificate(_, _)).WillRepeatedly(
         Return(false));
@@ -167,6 +177,9 @@ class RTCStatsCollectorTestHelper : public SetSessionDescriptionObserver {
   }
 
   rtc::ScopedFakeClock& fake_clock() { return fake_clock_; }
+  rtc::Thread* worker_thread() { return worker_thread_; }
+  rtc::Thread* network_thread() { return network_thread_; }
+  cricket::FakeMediaEngine* media_engine() { return media_engine_; }
   MockWebRtcSession& session() { return session_; }
   MockPeerConnection& pc() { return pc_; }
   std::vector<rtc::scoped_refptr<DataChannel>>& data_channels() {
@@ -184,6 +197,7 @@ class RTCStatsCollectorTestHelper : public SetSessionDescriptionObserver {
   webrtc::RtcEventLogNullImpl event_log_;
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;
+  cricket::FakeMediaEngine* media_engine_;
   std::unique_ptr<cricket::ChannelManager> channel_manager_;
   std::unique_ptr<webrtc::MediaControllerInterface> media_controller_;
   MockWebRtcSession session_;
@@ -271,7 +285,7 @@ class FakeRTCStatsCollector : public RTCStatsCollector,
     }
 
     rtc::scoped_refptr<RTCStatsReport> signaling_report =
-        RTCStatsReport::Create();
+        RTCStatsReport::Create(0);
     signaling_report->AddStats(std::unique_ptr<const RTCStats>(
         new RTCTestStats("SignalingThreadStats", timestamp_us)));
     AddPartialResults(signaling_report);
@@ -284,7 +298,8 @@ class FakeRTCStatsCollector : public RTCStatsCollector,
       ++produced_on_worker_thread_;
     }
 
-    rtc::scoped_refptr<RTCStatsReport> worker_report = RTCStatsReport::Create();
+    rtc::scoped_refptr<RTCStatsReport> worker_report =
+        RTCStatsReport::Create(0);
     worker_report->AddStats(std::unique_ptr<const RTCStats>(
         new RTCTestStats("WorkerThreadStats", timestamp_us)));
     AddPartialResults(worker_report);
@@ -298,7 +313,7 @@ class FakeRTCStatsCollector : public RTCStatsCollector,
     }
 
     rtc::scoped_refptr<RTCStatsReport> network_report =
-        RTCStatsReport::Create();
+        RTCStatsReport::Create(0);
     network_report->AddStats(std::unique_ptr<const RTCStats>(
         new RTCTestStats("NetworkThreadStats", timestamp_us)));
     AddPartialResults(network_report);
@@ -958,6 +973,130 @@ TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
     EXPECT_EQ(*pcstats.data_channels_opened, static_cast<uint32_t>(1));
     EXPECT_EQ(*pcstats.data_channels_closed, static_cast<uint32_t>(3));
   }
+}
+
+TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
+  MockVoiceMediaChannel* voice_media_channel = new MockVoiceMediaChannel();
+  cricket::VoiceChannel voice_channel(
+      test_->worker_thread(), test_->network_thread(), test_->media_engine(),
+      voice_media_channel, nullptr, "VoiceContentName", false);
+
+  cricket::VoiceMediaInfo voice_media_info;
+  voice_media_info.senders.push_back(cricket::VoiceSenderInfo());
+  voice_media_info.senders[0].local_stats.push_back(cricket::SsrcSenderInfo());
+  voice_media_info.senders[0].local_stats[0].ssrc = 1;
+  voice_media_info.senders[0].packets_sent = 2;
+  voice_media_info.senders[0].bytes_sent = 3;
+  voice_media_info.senders[0].rtt_ms = 4500.0;
+  EXPECT_CALL(*voice_media_channel, GetStats(_))
+      .WillOnce(DoAll(SetArgPointee<0>(voice_media_info), Return(true)));
+
+  SessionStats session_stats;
+  session_stats.proxy_to_transport["VoiceContentName"] = "TransportName";
+  session_stats.transport_stats["TransportName"].transport_name =
+      "TransportName";
+
+  // Make sure the associated |RTCTransportStats| is created.
+  cricket::TransportChannelStats channel_stats;
+  channel_stats.component = cricket::ICE_CANDIDATE_COMPONENT_RTP;
+  cricket::ConnectionInfo connection_info;
+  connection_info.local_candidate = *CreateFakeCandidate(
+      "42.42.42.42", 42, "protocol", cricket::LOCAL_PORT_TYPE, 42).get();
+  connection_info.remote_candidate = *CreateFakeCandidate(
+      "42.42.42.42", 42, "protocol", cricket::LOCAL_PORT_TYPE, 42).get();
+  channel_stats.connection_infos.push_back(connection_info);
+  session_stats.transport_stats["TransportName"].channel_stats.push_back(
+      channel_stats);
+
+  EXPECT_CALL(test_->session(), GetTransportStats(_))
+      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats), Return(true)));
+  EXPECT_CALL(test_->session(), voice_channel())
+      .WillRepeatedly(Return(&voice_channel));
+
+  rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
+
+  RTCOutboundRTPStreamStats expected_audio(
+      "RTCOutboundRTPAudioStream_1", report->timestamp_us());
+  expected_audio.ssrc = "1";
+  expected_audio.is_remote = false;
+  expected_audio.media_type = "audio";
+  expected_audio.transport_id = "RTCTransport_TransportName_" +
+      rtc::ToString<>(cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  expected_audio.packets_sent = 2;
+  expected_audio.bytes_sent = 3;
+  expected_audio.round_trip_time = 4.5;
+
+  ASSERT(report->Get(expected_audio.id()));
+  const RTCOutboundRTPStreamStats& audio = report->Get(
+      expected_audio.id())->cast_to<RTCOutboundRTPStreamStats>();
+  EXPECT_EQ(audio, expected_audio);
+
+  EXPECT_TRUE(report->Get(*expected_audio.transport_id));
+}
+
+TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
+  MockVideoMediaChannel* video_media_channel = new MockVideoMediaChannel();
+  cricket::VideoChannel video_channel(
+      test_->worker_thread(), test_->network_thread(), video_media_channel,
+      nullptr, "VideoContentName", false);
+
+  cricket::VideoMediaInfo video_media_info;
+  video_media_info.senders.push_back(cricket::VideoSenderInfo());
+  video_media_info.senders[0].local_stats.push_back(cricket::SsrcSenderInfo());
+  video_media_info.senders[0].local_stats[0].ssrc = 1;
+  video_media_info.senders[0].firs_rcvd = 2;
+  video_media_info.senders[0].plis_rcvd = 3;
+  video_media_info.senders[0].nacks_rcvd = 4;
+  video_media_info.senders[0].packets_sent = 5;
+  video_media_info.senders[0].bytes_sent = 6;
+  video_media_info.senders[0].rtt_ms = 7500.0;
+  EXPECT_CALL(*video_media_channel, GetStats(_))
+      .WillOnce(DoAll(SetArgPointee<0>(video_media_info), Return(true)));
+
+  SessionStats session_stats;
+  session_stats.proxy_to_transport["VideoContentName"] = "TransportName";
+  session_stats.transport_stats["TransportName"].transport_name =
+      "TransportName";
+
+  // Make sure the associated |RTCTransportStats| is created.
+  cricket::TransportChannelStats channel_stats;
+  channel_stats.component = cricket::ICE_CANDIDATE_COMPONENT_RTP;
+  cricket::ConnectionInfo connection_info;
+  connection_info.local_candidate = *CreateFakeCandidate(
+      "42.42.42.42", 42, "protocol", cricket::LOCAL_PORT_TYPE, 42).get();
+  connection_info.remote_candidate = *CreateFakeCandidate(
+      "42.42.42.42", 42, "protocol", cricket::LOCAL_PORT_TYPE, 42).get();
+  channel_stats.connection_infos.push_back(connection_info);
+  session_stats.transport_stats["TransportName"].channel_stats.push_back(
+      channel_stats);
+
+  EXPECT_CALL(test_->session(), GetTransportStats(_))
+      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats), Return(true)));
+  EXPECT_CALL(test_->session(), video_channel())
+      .WillRepeatedly(Return(&video_channel));
+
+  rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
+
+  RTCOutboundRTPStreamStats expected_video(
+      "RTCOutboundRTPVideoStream_1", report->timestamp_us());
+  expected_video.ssrc = "1";
+  expected_video.is_remote = false;
+  expected_video.media_type = "video";
+  expected_video.transport_id = "RTCTransport_TransportName_" +
+      rtc::ToString<>(cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  expected_video.fir_count = 2;
+  expected_video.pli_count = 3;
+  expected_video.nack_count = 4;
+  expected_video.packets_sent = 5;
+  expected_video.bytes_sent = 6;
+  expected_video.round_trip_time = 7.5;
+
+  ASSERT(report->Get(expected_video.id()));
+  const RTCOutboundRTPStreamStats& video = report->Get(
+      expected_video.id())->cast_to<RTCOutboundRTPStreamStats>();
+  EXPECT_EQ(video, expected_video);
+
+  EXPECT_TRUE(report->Get(*expected_video.transport_id));
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {
