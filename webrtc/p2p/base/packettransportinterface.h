@@ -36,6 +36,10 @@ class PacketTransportInterface : public sigslot::has_slots<> {
   // The transport has been established.
   virtual bool writable() const = 0;
 
+  // The transport has received a packet in the last X milliseconds, here X is
+  // configured by each implementation.
+  virtual bool receiving() const = 0;
+
   // Attempts to send the given packet.
   // The return value is < 0 on failure. The return value in failure case is not
   // descriptive. Depending on failure cause and implementation details
@@ -69,6 +73,9 @@ class PacketTransportInterface : public sigslot::has_slots<> {
   //  underlying transport's socket buffer may be full, as indicated by
   //  SendPacket's return code and/or GetError.
   sigslot::signal1<PacketTransportInterface*> SignalReadyToSend;
+
+  // Emitted when receiving state changes to true.
+  sigslot::signal1<PacketTransportInterface*> SignalReceivingState;
 
   // Signalled each time a packet is received on this channel.
   sigslot::signal5<PacketTransportInterface*,

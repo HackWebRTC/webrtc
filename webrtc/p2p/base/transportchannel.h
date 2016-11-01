@@ -76,9 +76,8 @@ class TransportChannel : public rtc::PacketTransportInterface {
   // Returns the states of this channel.  Each time one of these states changes,
   // a signal is raised.  These states are aggregated by the TransportManager.
   bool writable() const override { return writable_; }
-  bool receiving() const { return receiving_; }
+  bool receiving() const override { return receiving_; }
   DtlsTransportState dtls_state() const { return dtls_state_; }
-  sigslot::signal1<TransportChannel*> SignalReceivingState;
   // Emitted whenever DTLS-SRTP is setup which will require setting up a new
   // SRTP context.
   sigslot::signal2<TransportChannel*, DtlsTransportState> SignalDtlsState;

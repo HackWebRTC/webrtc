@@ -471,9 +471,10 @@ void DtlsTransportChannelWrapper::OnWritableState(
   }
 }
 
-void DtlsTransportChannelWrapper::OnReceivingState(TransportChannel* channel) {
+void DtlsTransportChannelWrapper::OnReceivingState(
+    rtc::PacketTransportInterface* transport) {
   ASSERT(rtc::Thread::Current() == network_thread_);
-  RTC_DCHECK(channel == channel_);
+  RTC_DCHECK(transport == channel_);
   LOG_J(LS_VERBOSE, this)
       << "DTLSTransportChannelWrapper: channel receiving state changed to "
       << channel_->receiving();

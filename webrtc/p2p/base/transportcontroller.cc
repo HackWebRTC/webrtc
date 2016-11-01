@@ -573,7 +573,8 @@ void TransportController::OnChannelWritableState_n(
   UpdateAggregateStates_n();
 }
 
-void TransportController::OnChannelReceivingState_n(TransportChannel* channel) {
+void TransportController::OnChannelReceivingState_n(
+    rtc::PacketTransportInterface* transport) {
   RTC_DCHECK(network_thread_->IsCurrent());
   UpdateAggregateStates_n();
 }

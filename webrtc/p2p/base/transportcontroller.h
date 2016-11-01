@@ -206,7 +206,7 @@ class TransportController : public sigslot::has_slots<>,
 
   // Handlers for signals from Transport.
   void OnChannelWritableState_n(rtc::PacketTransportInterface* transport);
-  void OnChannelReceivingState_n(TransportChannel* channel);
+  void OnChannelReceivingState_n(rtc::PacketTransportInterface* transport);
   void OnChannelGatheringState_n(TransportChannelImpl* channel);
   void OnChannelCandidateGathered_n(TransportChannelImpl* channel,
                                     const Candidate& candidate);
