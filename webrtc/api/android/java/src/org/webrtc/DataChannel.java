@@ -98,6 +98,8 @@ public class DataChannel {
 
   public native String label();
 
+  public native int id();
+
   public native State state();
 
   /**

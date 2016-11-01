@@ -856,6 +856,13 @@ JOW(jstring, DataChannel_label)(JNIEnv* jni, jobject j_dc) {
   return JavaStringFromStdString(jni, ExtractNativeDC(jni, j_dc)->label());
 }
 
+JOW(jint, DataChannel_id)(JNIEnv* jni, jobject j_dc) {
+  int id = ExtractNativeDC(jni, j_dc)->id();
+  RTC_CHECK_LE(id, std::numeric_limits<int32_t>::max())
+      << "id overflowed jint!";
+  return static_cast<jint>(id);
+}
+
 JOW(jobject, DataChannel_state)(JNIEnv* jni, jobject j_dc) {
   return JavaEnumFromIndex(
       jni, "DataChannel$State", ExtractNativeDC(jni, j_dc)->state());
