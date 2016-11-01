@@ -8,10 +8,11 @@
 
 import("../build/webrtc.gni")
 import("audio_coding/audio_coding.gni")
+import("desktop_capture/desktop_capture.gni")
 
 declare_args() {
   # Desktop capturer is supported only on Windows, OSX and Linux.
-  rtc_desktop_capture_supported = is_win || is_mac || is_linux
+  rtc_desktop_capture_supported = rtc_desktop_capture_supported
 }
 
 group("modules") {
@@ -102,8 +103,11 @@ if (rtc_include_tests) {
     ]
 
     if (rtc_desktop_capture_supported) {
-      deps += [ "desktop_capture:desktop_capture_test_tools" ]
-      sources += [ "desktop_capture/screen_capturer_integration_test.cc" ]
+      deps += [ "desktop_capture:screen_drawer" ]
+      sources += [
+        "desktop_capture/screen_capturer_integration_test.cc",
+        "desktop_capture/screen_drawer_unittest.cc",
+      ]
     }
 
     data = modules_tests_resources
@@ -545,14 +549,10 @@ if (rtc_include_tests) {
     }
 
     if (rtc_desktop_capture_supported) {
-      deps += [ "desktop_capture:desktop_capture_test_tools" ]
+      deps += [ "desktop_capture:desktop_capture_mock" ]
       sources += [
         "desktop_capture/desktop_and_cursor_composer_unittest.cc",
-        "desktop_capture/desktop_frame_generator.cc",
-        "desktop_capture/desktop_frame_generator.h",
-        "desktop_capture/fake_desktop_capturer.h",
-        "desktop_capture/fake_screen_capturer.cc",
-        "desktop_capture/fake_screen_capturer.h",
+        "desktop_capture/desktop_capturer_differ_wrapper_unittest.cc",
         "desktop_capture/mouse_cursor_monitor_unittest.cc",
         "desktop_capture/rgba_color_unittest.cc",
         "desktop_capture/screen_capturer_differ_wrapper_unittest.cc",
@@ -560,7 +560,6 @@ if (rtc_include_tests) {
         "desktop_capture/screen_capturer_mac_unittest.cc",
         "desktop_capture/screen_capturer_mock_objects.h",
         "desktop_capture/screen_capturer_unittest.cc",
-        "desktop_capture/screen_drawer_unittest.cc",
         "desktop_capture/win/cursor_unittest.cc",
         "desktop_capture/win/cursor_unittest_resources.h",
         "desktop_capture/win/cursor_unittest_resources.rc",

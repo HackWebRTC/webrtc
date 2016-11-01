@@ -8,52 +8,54 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_SCREEN_CAPTURER_DIFFER_WRAPPER_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_SCREEN_CAPTURER_DIFFER_WRAPPER_H_
+#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURER_DIFFER_WRAPPER_H_
+#define WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURER_DIFFER_WRAPPER_H_
 
 #include <memory>
 
-#include "webrtc/modules/desktop_capture/screen_capturer.h"
+#include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 
 namespace webrtc {
 
-// TODO(zijiehe): Remove, use DesktopCapturerDifferWrapper.
-// ScreenCapturer wrapper that calculates updated_region() by comparing frames
-// content. This class always expects the underlying ScreenCapturer
+// DesktopCapturer wrapper that calculates updated_region() by comparing frames
+// content. This class always expects the underlying DesktopCapturer
 // implementation returns a superset of updated regions in DestkopFrame. If a
-// ScreenCapturer implementation does not know the updated region, it should
+// DesktopCapturer implementation does not know the updated region, it should
 // set updated_region() to full frame.
 //
 // This class marks entire frame as updated if the frame size or frame stride
 // has been changed.
-class ScreenCapturerDifferWrapper : public ScreenCapturer,
-                                    public DesktopCapturer::Callback {
+class DesktopCapturerDifferWrapper : public DesktopCapturer,
+                                     public DesktopCapturer::Callback {
  public:
-  // Creates a ScreenCapturerDifferWrapper with a ScreenCapturer implementation,
-  // and takes its ownership.
-  explicit ScreenCapturerDifferWrapper(
-      std::unique_ptr<ScreenCapturer> base_capturer);
-  ~ScreenCapturerDifferWrapper() override;
+  // Creates a DesktopCapturerDifferWrapper with a DesktopCapturer
+  // implementation, and takes its ownership.
+  explicit DesktopCapturerDifferWrapper(
+      std::unique_ptr<DesktopCapturer> base_capturer);
 
-  // ScreenCapturer interface.
+  ~DesktopCapturerDifferWrapper() override;
+
+  // DesktopCapturer interface.
   void Start(DesktopCapturer::Callback* callback) override;
   void SetSharedMemoryFactory(
       std::unique_ptr<SharedMemoryFactory> shared_memory_factory) override;
   void CaptureFrame() override;
-  bool GetScreenList(ScreenList* screens) override;
-  bool SelectScreen(ScreenId id) override;
+  void SetExcludedWindow(WindowId window) override;
+  bool GetSourceList(SourceList* screens) override;
+  bool SelectSource(SourceId id) override;
+  bool FocusOnSelectedSource() override;
 
  private:
   // DesktopCapturer::Callback interface.
   void OnCaptureResult(Result result,
                        std::unique_ptr<DesktopFrame> frame) override;
 
-  const std::unique_ptr<ScreenCapturer> base_capturer_;
+  const std::unique_ptr<DesktopCapturer> base_capturer_;
   DesktopCapturer::Callback* callback_;
   std::unique_ptr<SharedDesktopFrame> last_frame_;
 };
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_DESKTOP_CAPTURE_SCREEN_CAPTURER_DIFFER_WRAPPER_H_
+#endif  // WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURER_DIFFER_WRAPPER_H_

@@ -17,20 +17,8 @@
 
 namespace webrtc {
 
-class MockScreenCapturer : public ScreenCapturer {
- public:
-  MockScreenCapturer() {}
-  virtual ~MockScreenCapturer() {}
-
-  MOCK_METHOD1(Start, void(Callback* callback));
-  MOCK_METHOD0(CaptureFrame, void(void));
-  MOCK_METHOD1(GetScreenList, bool(ScreenList* screens));
-  MOCK_METHOD1(SelectScreen, bool(ScreenId id));
-
- private:
-  RTC_DISALLOW_COPY_AND_ASSIGN(MockScreenCapturer);
-};
-
+// Deprecated.
+// Use webrtc/modules/desktop_capture/mock_desktop_capturer_callback.h.
 class MockScreenCapturerCallback : public ScreenCapturer::Callback {
  public:
   MockScreenCapturerCallback() {}
