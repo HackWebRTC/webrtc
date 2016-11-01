@@ -437,6 +437,7 @@ if (rtc_include_tests) {
       "base/rollingaccumulator_unittest.cc",
       "base/rtccertificate_unittest.cc",
       "base/rtccertificategenerator_unittest.cc",
+      "base/safe_compare_unittest.cc",
       "base/scopedptrcollection_unittest.cc",
       "base/sequenced_task_checker_unittest.cc",
       "base/sha1digest_unittest.cc",

@@ -159,6 +159,7 @@ rtc_static_library("rtc_base_approved") {
     "ratetracker.h",
     "refcount.h",
     "refcountedobject.h",
+    "safe_compare.h",
     "safe_conversions.h",
     "safe_conversions_impl.h",
     "sanitizer.h",

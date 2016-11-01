@@ -134,7 +134,7 @@ int DtmfToneGenerator::Init(int fs, int event, int attenuation) {
   }
 
   // Look up oscillator coefficient for low and high frequencies.
-  RTC_DCHECK_LE(0u, fs_index);
+  RTC_DCHECK_LE(0, fs_index);
   RTC_DCHECK_GT(arraysize(kCoeff1), fs_index);
   RTC_DCHECK_GT(arraysize(kCoeff2), fs_index);
   RTC_DCHECK_LE(0, event);
@@ -149,7 +149,7 @@ int DtmfToneGenerator::Init(int fs, int event, int attenuation) {
   amplitude_ = kAmplitude[attenuation];
 
   // Initialize sample history.
-  RTC_DCHECK_LE(0u, fs_index);
+  RTC_DCHECK_LE(0, fs_index);
   RTC_DCHECK_GT(arraysize(kInitValue1), fs_index);
   RTC_DCHECK_GT(arraysize(kInitValue2), fs_index);
   RTC_DCHECK_LE(0, event);
