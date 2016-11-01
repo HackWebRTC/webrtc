@@ -101,9 +101,7 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface {
   // Produces |RTCPeerConnectionStats|.
   void ProducePeerConnectionStats_s(
       int64_t timestamp_us, RTCStatsReport* report) const;
-  // Produces |RTCOutboundRTPStreamStats|. TODO(hbos): Produce both types of
-  // |RTCRTPStreamStats|, the other one being |RTCInboundRTPStreamStats|.
-  // crbug.com/657855
+  // Produces |RTCInboundRTPStreamStats| and |RTCOutboundRTPStreamStats|.
   void ProduceRTPStreamStats_s(
       int64_t timestamp_us, const SessionStats& session_stats,
       RTCStatsReport* report) const;
