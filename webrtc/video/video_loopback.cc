@@ -203,6 +203,8 @@ DEFINE_bool(audio, false, "Add audio stream");
 DEFINE_bool(audio_video_sync, false, "Sync audio and video stream (no effect if"
     " audio is false)");
 
+DEFINE_bool(video, true, "Add video stream");
+
 DEFINE_string(
     force_fieldtrials,
     "",
@@ -238,7 +240,7 @@ void Loopback() {
 
   VideoQualityTest::Params params;
   params.call = {flags::FLAGS_send_side_bwe, call_bitrate_config};
-  params.video = {true,
+  params.video = {flags::FLAGS_video,
                   flags::Width(),
                   flags::Height(),
                   flags::Fps(),

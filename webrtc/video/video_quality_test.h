@@ -109,17 +109,22 @@ class VideoQualityTest : public test::CallTest {
 
   // Helper methods for setting up the call.
   void CreateCapturer();
-  void SetupCommon(Transport* send_transport, Transport* recv_transport);
+  void SetupVideo(Transport* send_transport, Transport* recv_transport);
   void SetupScreenshare();
+  void SetupAudio(int send_channel_id,
+                  int receive_channel_id,
+                  Call* call,
+                  Transport* transport,
+                  AudioReceiveStream** audio_receive_stream);
 
   void StartEncodedFrameLogs(VideoSendStream* stream);
   void StartEncodedFrameLogs(VideoReceiveStream* stream);
 
   // We need a more general capturer than the FrameGeneratorCapturer.
-  std::unique_ptr<test::VideoCapturer> capturer_;
+  std::unique_ptr<test::VideoCapturer> video_capturer_;
   std::unique_ptr<test::TraceToStderr> trace_to_stderr_;
   std::unique_ptr<test::FrameGenerator> frame_generator_;
-  std::unique_ptr<VideoEncoder> encoder_;
+  std::unique_ptr<VideoEncoder> video_encoder_;
   Clock* const clock_;
 
   int receive_logs_;
