@@ -100,6 +100,7 @@ class VP8EncoderImpl : public VP8Encoder {
   bool feedback_mode_;
   int qp_max_;
   int cpu_speed_default_;
+  int number_of_cores_;
   uint32_t rc_max_intra_target_;
   int token_partitions_;
   ReferencePictureSelection rps_;

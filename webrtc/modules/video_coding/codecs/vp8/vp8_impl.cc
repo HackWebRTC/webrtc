@@ -118,6 +118,7 @@ VP8EncoderImpl::VP8EncoderImpl()
       feedback_mode_(false),
       qp_max_(56),  // Setting for max quantizer.
       cpu_speed_default_(-6),
+      number_of_cores_(0),
       rc_max_intra_target_(0),
       token_partitions_(VP8_ONE_TOKENPARTITION),
       down_scale_requested_(false),
@@ -357,6 +358,7 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
 
   feedback_mode_ = inst->VP8().feedbackModeOn;
 
+  number_of_cores_ = number_of_cores;
   timestamp_ = 0;
   codec_ = *inst;
   rate_allocator_.reset(new SimulcastRateAllocator(codec_));
@@ -567,9 +569,18 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
 
 int VP8EncoderImpl::SetCpuSpeed(int width, int height) {
 #if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64) || defined(ANDROID)
-  // On mobile platform, always set to -12 to leverage between cpu usage
-  // and video quality.
-  return -12;
+  // On mobile platform, use a lower speed setting for lower resolutions for
+  // CPUs with 4 or more cores.
+  RTC_DCHECK_GT(number_of_cores_, 0);
+  if (number_of_cores_ <= 3)
+    return -12;
+
+  if (width * height <= 352 * 288)
+    return -8;
+  else if (width * height <= 640 * 480)
+    return -10;
+  else
+    return -12;
 #else
   // For non-ARM, increase encoding complexity (i.e., use lower speed setting)
   // if resolution is below CIF. Otherwise, keep the default/user setting
