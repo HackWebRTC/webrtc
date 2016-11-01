@@ -104,6 +104,7 @@ FakeVideoSendStream::FakeVideoSendStream(
     : sending_(false),
       config_(std::move(config)),
       codec_settings_set_(false),
+      resolution_scaling_enabled_(false),
       source_(nullptr),
       num_swapped_frames_(0) {
   RTC_DCHECK(config.encoder_settings.encoder != NULL);
@@ -233,13 +234,26 @@ void FakeVideoSendStream::Stop() {
 }
 
 void FakeVideoSendStream::SetSource(
-    rtc::VideoSourceInterface<webrtc::VideoFrame>* source) {
+    rtc::VideoSourceInterface<webrtc::VideoFrame>* source,
+    const webrtc::VideoSendStream::DegradationPreference&
+        degradation_preference) {
   RTC_DCHECK(source != source_);
   if (source_)
     source_->RemoveSink(this);
   source_ = source;
+  resolution_scaling_enabled_ =
+      degradation_preference !=
+      webrtc::VideoSendStream::DegradationPreference::kMaintainResolution;
   if (source)
-    source->AddOrUpdateSink(this, rtc::VideoSinkWants());
+    source->AddOrUpdateSink(this, resolution_scaling_enabled_
+                                      ? sink_wants_
+                                      : rtc::VideoSinkWants());
+}
+
+void FakeVideoSendStream::InjectVideoSinkWants(
+    const rtc::VideoSinkWants& wants) {
+  sink_wants_ = wants;
+  source_->AddOrUpdateSink(this, wants);
 }
 
 FakeVideoReceiveStream::FakeVideoReceiveStream(

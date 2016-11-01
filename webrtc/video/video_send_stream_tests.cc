@@ -57,6 +57,8 @@ class VideoSendStreamTest : public test::CallTest {
 
   void TestVp9NonFlexMode(uint8_t num_temporal_layers,
                           uint8_t num_spatial_layers);
+
+  void TestRequestSourceRotateVideo(bool support_orientation_ext);
 };
 
 TEST_F(VideoSendStreamTest, CanStartStartedStream) {
@@ -250,6 +252,45 @@ TEST_F(VideoSendStreamTest, SupportsTransportWideSequenceNumbers) {
     }
 
     test::FakeEncoder encoder_;
+  } test;
+
+  RunBaseTest(&test);
+}
+
+TEST_F(VideoSendStreamTest, SupportsVideoRotation) {
+  class VideoRotationObserver : public test::SendTest {
+   public:
+    VideoRotationObserver() : SendTest(kDefaultTimeoutMs) {
+      EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(
+          kRtpExtensionVideoRotation, test::kVideoRotationExtensionId));
+    }
+
+    Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      RTPHeader header;
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
+      EXPECT_TRUE(header.extension.hasVideoRotation);
+      EXPECT_EQ(kVideoRotation_90, header.extension.videoRotation);
+      observation_complete_.Set();
+      return SEND_PACKET;
+    }
+
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
+      send_config->rtp.extensions.clear();
+      send_config->rtp.extensions.push_back(RtpExtension(
+          RtpExtension::kVideoRotationUri, test::kVideoRotationExtensionId));
+    }
+
+    void OnFrameGeneratorCapturerCreated(
+        test::FrameGeneratorCapturer* frame_generator_capturer) override {
+      frame_generator_capturer->SetFakeRotation(kVideoRotation_90);
+    }
+
+    void PerformTest() override {
+      EXPECT_TRUE(Wait()) << "Timed out while waiting for single RTP packet.";
+    }
   } test;
 
   RunBaseTest(&test);
@@ -1656,7 +1697,8 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
 
   video_send_stream_->Start();
   test::FrameForwarder forwarder;
-  video_send_stream_->SetSource(&forwarder);
+  video_send_stream_->SetSource(
+      &forwarder, VideoSendStream::DegradationPreference::kBalanced);
   for (size_t i = 0; i < input_frames.size(); i++) {
     forwarder.IncomingCapturedFrame(input_frames[i]);
     // Wait until the output frame is received before sending the next input
@@ -1664,7 +1706,8 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
     observer.WaitOutputFrame();
   }
   video_send_stream_->Stop();
-  video_send_stream_->SetSource(nullptr);
+  video_send_stream_->SetSource(
+      nullptr, VideoSendStream::DegradationPreference::kBalanced);
 
   // Test if the input and output frames are the same. render_time_ms and
   // timestamp are not compared because capturer sets those values.
@@ -2878,5 +2921,38 @@ TEST_F(VideoSendStreamTest, Vp9FlexModeRefCount) {
   RunBaseTest(&test);
 }
 #endif  // !defined(RTC_DISABLE_VP9)
+
+void VideoSendStreamTest::TestRequestSourceRotateVideo(
+    bool support_orientation_ext) {
+  CreateSenderCall(Call::Config(&event_log_));
+
+  test::NullTransport transport;
+  CreateSendConfig(1, 0, &transport);
+  video_send_config_.rtp.extensions.clear();
+  if (support_orientation_ext) {
+    video_send_config_.rtp.extensions.push_back(
+        RtpExtension(RtpExtension::kVideoRotationUri, 1));
+  }
+
+  CreateVideoStreams();
+  test::FrameForwarder forwarder;
+  video_send_stream_->SetSource(
+      &forwarder, VideoSendStream::DegradationPreference::kBalanced);
+
+  EXPECT_TRUE(forwarder.sink_wants().rotation_applied !=
+              support_orientation_ext);
+
+  DestroyStreams();
+}
+
+TEST_F(VideoSendStreamTest,
+       RequestSourceRotateIfVideoOrientationExtensionNotSupported) {
+  TestRequestSourceRotateVideo(false);
+}
+
+TEST_F(VideoSendStreamTest,
+       DoNotRequestsRotationIfVideoOrientationExtensionSupported) {
+  TestRequestSourceRotateVideo(true);
+}
 
 }  // namespace webrtc

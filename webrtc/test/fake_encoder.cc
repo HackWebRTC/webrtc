@@ -109,6 +109,7 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     encoded._frameType = (*frame_types)[i];
     encoded._encodedWidth = config_.simulcastStream[i].width;
     encoded._encodedHeight = config_.simulcastStream[i].height;
+    encoded.rotation_ = input_image.rotation();
     RTC_DCHECK(callback_ != NULL);
     specifics.codec_name = ImplementationName();
     if (callback_->Encoded(encoded, &specifics, NULL) != 0)
@@ -204,10 +205,20 @@ DelayedEncoder::DelayedEncoder(Clock* clock, int delay_ms)
     : test::FakeEncoder(clock),
       delay_ms_(delay_ms) {}
 
+void DelayedEncoder::SetDelay(int delay_ms) {
+  rtc::CritScope lock(&lock_);
+  delay_ms_ = delay_ms;
+}
+
 int32_t DelayedEncoder::Encode(const VideoFrame& input_image,
                                const CodecSpecificInfo* codec_specific_info,
                                const std::vector<FrameType>* frame_types) {
-  SleepMs(delay_ms_);
+  int delay_ms = 0;
+  {
+    rtc::CritScope lock(&lock_);
+    delay_ms = delay_ms_;
+  }
+  SleepMs(delay_ms);
   return FakeEncoder::Encode(input_image, codec_specific_info, frame_types);
 }
 }  // namespace test

@@ -31,7 +31,6 @@
 #include "webrtc/modules/video_coding/codecs/vp8/simulcast_encoder_adapter.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
-#include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/video_decoder.h"
 #include "webrtc/video_encoder.h"
 
@@ -237,17 +236,6 @@ static bool ValidateStreamParams(const StreamParams& sp) {
   return true;
 }
 
-inline bool ContainsHeaderExtension(
-    const std::vector<webrtc::RtpExtension>& extensions,
-    const std::string& uri) {
-  for (const auto& kv : extensions) {
-    if (kv.uri == uri) {
-      return true;
-    }
-  }
-  return false;
-}
-
 // Returns true if the given codec is disallowed from doing simulcast.
 bool IsCodecBlacklistedForSimulcast(const std::string& codec_name) {
   return CodecNamesEq(codec_name, kH264CodecName) ||
@@ -394,9 +382,6 @@ static const int kNackHistoryMs = 1000;
 static const int kDefaultQpMax = 56;
 
 static const int kDefaultRtcpReceiverReportSsrc = 1;
-
-// Down grade resolution at most 2 times for CPU reasons.
-static const int kMaxCpuDowngrades = 2;
 
 // Minimum time interval for logging stats.
 static const int64_t kStatsLogIntervalMs = 10000;
@@ -1567,10 +1552,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
       ssrcs_(sp.ssrcs),
       ssrc_groups_(sp.ssrc_groups),
       call_(call),
-      cpu_restricted_counter_(0),
-      number_of_cpu_adapt_changes_(0),
-      frame_count_(0),
-      cpu_restricted_frame_count_(0),
+      enable_cpu_overuse_detection_(enable_cpu_overuse_detection),
       source_(nullptr),
       external_encoder_factory_(external_encoder_factory),
       stream_(nullptr),
@@ -1593,38 +1575,16 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
   parameters_.config.rtp.rtcp_mode = send_params.rtcp.reduced_size
                                          ? webrtc::RtcpMode::kReducedSize
                                          : webrtc::RtcpMode::kCompound;
-  parameters_.config.overuse_callback =
-      enable_cpu_overuse_detection ? this : nullptr;
-
-  // Only request rotation at the source when we positively know that the remote
-  // side doesn't support the rotation extension. This allows us to prepare the
-  // encoder in the expectation that rotation is supported - which is the common
-  // case.
-  sink_wants_.rotation_applied =
-      rtp_extensions &&
-      !ContainsHeaderExtension(*rtp_extensions,
-                               webrtc::RtpExtension::kVideoRotationUri);
-
   if (codec_settings) {
     SetCodec(*codec_settings);
   }
 }
 
 WebRtcVideoChannel2::WebRtcVideoSendStream::~WebRtcVideoSendStream() {
-  DisconnectSource();
   if (stream_ != NULL) {
     call_->DestroyVideoSendStream(stream_);
   }
   DestroyVideoEncoder(&allocated_encoder_);
-  UpdateHistograms();
-}
-
-void WebRtcVideoChannel2::WebRtcVideoSendStream::UpdateHistograms() const {
-  const int kMinRequiredFrames = 200;
-  if (frame_count_ > kMinRequiredFrames) {
-    RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.CpuLimitedResolutionInPercent",
-                             cpu_restricted_frame_count_ * 100 / frame_count_);
-  }
 }
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
@@ -1658,10 +1618,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
 
   last_frame_timestamp_us_ = video_frame.timestamp_us();
 
-  ++frame_count_;
-  if (cpu_restricted_counter_ > 0)
-    ++cpu_restricted_frame_count_;
-
   // Forward frame to the encoder regardless if we are sending or not. This is
   // to ensure that the encoder can be reconfigured with the correct frame size
   // as quickly as possible.
@@ -1678,9 +1634,6 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoSend(
   // Ignore |options| pointer if |enable| is false.
   bool options_present = enable && options;
   bool source_changing = source_ != source;
-  if (source_changing) {
-    DisconnectSource();
-  }
 
   if (options_present) {
     VideoOptions old_options = parameters_.options;
@@ -1692,8 +1645,7 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoSend(
 
   if (source_changing) {
     rtc::CritScope cs(&lock_);
-    if (source == nullptr && encoder_sink_ != nullptr &&
-        last_frame_info_.width > 0) {
+    if (source == nullptr && last_frame_info_.width > 0 && encoder_sink_) {
       LOG(LS_VERBOSE) << "Disabling capturer, sending black frame.";
       // Force this black frame not to be dropped due to timestamp order
       // check. As IncomingCapturedFrame will drop the frame if this frame's
@@ -1709,32 +1661,28 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoSend(
       encoder_sink_->OnFrame(webrtc::VideoFrame(
           black_buffer, last_frame_info_.rotation, last_frame_timestamp_us_));
     }
-    source_ = source;
   }
 
-  if (source_changing && source_) {
-    // |source_->AddOrUpdateSink| may not be called while holding |lock_| since
-    // that might cause a lock order inversion.
-    source_->AddOrUpdateSink(this, sink_wants_);
+  // TODO(perkj, nisse): Remove |source_| and directly call
+  // |stream_|->SetSource(source) once the video frame types have been
+  // merged.
+  if (source_ && stream_) {
+    stream_->SetSource(
+        nullptr, webrtc::VideoSendStream::DegradationPreference::kBalanced);
+  }
+  // Switch to the new source.
+  source_ = source;
+  if (source && stream_) {
+    // Do not adapt resolution for screen content as this will likely
+    // result in blurry and unreadable text.
+    stream_->SetSource(
+        this, enable_cpu_overuse_detection_ &&
+                      !parameters_.options.is_screencast.value_or(false)
+                  ? webrtc::VideoSendStream::DegradationPreference::kBalanced
+                  : webrtc::VideoSendStream::DegradationPreference::
+                        kMaintainResolution);
   }
   return true;
-}
-
-void WebRtcVideoChannel2::WebRtcVideoSendStream::DisconnectSource() {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
-  if (source_ == nullptr) {
-    return;
-  }
-
-  // |source_->RemoveSink| may not be called while holding |lock_| since
-  // that might cause a lock order inversion.
-  source_->RemoveSink(this);
-  source_ = nullptr;
-  // Reset |cpu_restricted_counter_| if the source is changed. It is not
-  // possible to know if the video resolution is restricted by CPU usage after
-  // the source is changed since the next source might be screen capture
-  // with another resolution and frame rate.
-  cpu_restricted_counter_ = 0;
 }
 
 const std::vector<uint32_t>&
@@ -1864,16 +1812,6 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSendParameters(
     LOG(LS_INFO) << "RecreateWebRtcStream (send) because of SetSendParameters";
     RecreateWebRtcStream();
   }
-
-  // |source_->AddOrUpdateSink| may not be called while holding |lock_| since
-  // that might cause a lock order inversion.
-  if (params.rtp_header_extensions) {
-    sink_wants_.rotation_applied = !ContainsHeaderExtension(
-        *params.rtp_header_extensions, webrtc::RtpExtension::kVideoRotationUri);
-    if (source_) {
-      source_->AddOrUpdateSink(this, sink_wants_);
-    }
-  }
 }
 
 bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetRtpParameters(
@@ -2002,90 +1940,47 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSend(bool send) {
   UpdateSendState();
 }
 
+void WebRtcVideoChannel2::WebRtcVideoSendStream::RemoveSink(
+    VideoSinkInterface<webrtc::VideoFrame>* sink) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+  {
+    rtc::CritScope cs(&lock_);
+    RTC_DCHECK(encoder_sink_ == sink);
+    encoder_sink_ = nullptr;
+  }
+  source_->RemoveSink(this);
+}
+
 void WebRtcVideoChannel2::WebRtcVideoSendStream::AddOrUpdateSink(
     VideoSinkInterface<webrtc::VideoFrame>* sink,
     const rtc::VideoSinkWants& wants) {
-  // TODO(perkj): Actually consider the encoder |wants| and remove
-  // WebRtcVideoSendStream::OnLoadUpdate(Load load).
-  rtc::CritScope cs(&lock_);
-  RTC_DCHECK(!encoder_sink_ || encoder_sink_ == sink);
-  encoder_sink_ = sink;
-}
-
-void WebRtcVideoChannel2::WebRtcVideoSendStream::RemoveSink(
-    VideoSinkInterface<webrtc::VideoFrame>* sink) {
-  rtc::CritScope cs(&lock_);
-  RTC_DCHECK_EQ(encoder_sink_, sink);
-  encoder_sink_ = nullptr;
-}
-
-void WebRtcVideoChannel2::WebRtcVideoSendStream::OnLoadUpdate(Load load) {
-  if (worker_thread_ != rtc::Thread::Current()) {
-    invoker_.AsyncInvoke<void>(
-        RTC_FROM_HERE, worker_thread_,
-        rtc::Bind(&WebRtcVideoChannel2::WebRtcVideoSendStream::OnLoadUpdate,
-                  this, load));
-    return;
-  }
-  RTC_DCHECK_RUN_ON(&thread_checker_);
-  if (!source_) {
-    return;
-  }
-
-  LOG(LS_INFO) << "OnLoadUpdate " << load << ", is_screencast: "
-               << (parameters_.options.is_screencast
-                       ? (*parameters_.options.is_screencast ? "true" : "false")
-                       : "unset");
-  // Do not adapt resolution for screen content as this will likely result in
-  // blurry and unreadable text.
-  if (parameters_.options.is_screencast.value_or(false))
-    return;
-
-  rtc::Optional<int> max_pixel_count;
-  rtc::Optional<int> max_pixel_count_step_up;
-  if (load == kOveruse) {
-    rtc::CritScope cs(&lock_);
-    if (cpu_restricted_counter_ >= kMaxCpuDowngrades) {
-      return;
+  if (worker_thread_ == rtc::Thread::Current()) {
+    // AddOrUpdateSink is called on |worker_thread_| if this is the first
+    // registration of |sink|.
+    RTC_DCHECK_RUN_ON(&thread_checker_);
+    {
+      rtc::CritScope cs(&lock_);
+      encoder_sink_ = sink;
     }
-    // The input video frame size will have a resolution with less than or
-    // equal to |max_pixel_count| depending on how the source can scale the
-    // input frame size.
-    max_pixel_count = rtc::Optional<int>(
-        (last_frame_info_.height * last_frame_info_.width * 3) / 5);
-    // Increase |number_of_cpu_adapt_changes_| if
-    // sink_wants_.max_pixel_count will be changed since
-    // last time |source_->AddOrUpdateSink| was called. That is, this will
-    // result in a new request for the source to change resolution.
-    if (!sink_wants_.max_pixel_count ||
-        *sink_wants_.max_pixel_count > *max_pixel_count) {
-      ++number_of_cpu_adapt_changes_;
-      ++cpu_restricted_counter_;
-    }
+    source_->AddOrUpdateSink(this, wants);
   } else {
-    RTC_DCHECK(load == kUnderuse);
-    rtc::CritScope cs(&lock_);
-    // The input video frame size will have a resolution with "one step up"
-    // pixels than |max_pixel_count_step_up| where "one step up" depends on
-    // how the source can scale the input frame size.
-    max_pixel_count_step_up =
-        rtc::Optional<int>(last_frame_info_.height * last_frame_info_.width);
-    // Increase |number_of_cpu_adapt_changes_| if
-    // sink_wants_.max_pixel_count_step_up will be changed since
-    // last time |source_->AddOrUpdateSink| was called. That is, this will
-    // result in a new request for the source to change resolution.
-    if (sink_wants_.max_pixel_count ||
-        (sink_wants_.max_pixel_count_step_up &&
-         *sink_wants_.max_pixel_count_step_up < *max_pixel_count_step_up)) {
-      ++number_of_cpu_adapt_changes_;
-      --cpu_restricted_counter_;
-    }
+    // Subsequent calls to AddOrUpdateSink will happen on the encoder task
+    // queue.
+    invoker_.AsyncInvoke<void>(RTC_FROM_HERE, worker_thread_, [this, wants] {
+      RTC_DCHECK_RUN_ON(&thread_checker_);
+      bool encoder_sink_valid = true;
+      {
+        rtc::CritScope cs(&lock_);
+        encoder_sink_valid = encoder_sink_ != nullptr;
+      }
+      // Since |source_| is still valid after a call to RemoveSink, check if
+      // |encoder_sink_| is still valid to check if this call should be
+      // cancelled.
+      if (source_ && encoder_sink_valid) {
+        source_->AddOrUpdateSink(this, wants);
+      }
+    });
   }
-  sink_wants_.max_pixel_count = max_pixel_count;
-  sink_wants_.max_pixel_count_step_up = max_pixel_count_step_up;
-  // |source_->AddOrUpdateSink| may not be called while holding |lock_| since
-  // that might cause a lock order inversion.
-  source_->AddOrUpdateSink(this, sink_wants_);
 }
 
 VideoSenderInfo WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo(
@@ -2106,9 +2001,9 @@ VideoSenderInfo WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo(
   if (log_stats)
     LOG(LS_INFO) << stats.ToString(rtc::TimeMillis());
 
-  info.adapt_changes = number_of_cpu_adapt_changes_;
+  info.adapt_changes = stats.number_of_cpu_adapt_changes;
   info.adapt_reason =
-      cpu_restricted_counter_ <= 0 ? ADAPTREASON_NONE : ADAPTREASON_CPU;
+      stats.cpu_limited_resolution ? ADAPTREASON_CPU : ADAPTREASON_NONE;
 
   // Get bandwidth limitation info from stream_->GetStats().
   // Input resolution (output from video_adapter) can be further scaled down or
@@ -2201,9 +2096,23 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::RecreateWebRtcStream() {
   }
   stream_ = call_->CreateVideoSendStream(std::move(config),
                                          parameters_.encoder_config.Copy());
-  stream_->SetSource(this);
 
   parameters_.encoder_config.encoder_specific_settings = NULL;
+
+  if (source_) {
+    // TODO(perkj, nisse): Remove |source_| and directly call
+    // |stream_|->SetSource(source) once the video frame types have been
+    // merged and |stream_| internally reconfigure the encoder on frame
+    // resolution change.
+    // Do not adapt resolution for screen content as this will likely result in
+    // blurry and unreadable text.
+    stream_->SetSource(
+        this, enable_cpu_overuse_detection_ &&
+                      !parameters_.options.is_screencast.value_or(false)
+                  ? webrtc::VideoSendStream::DegradationPreference::kBalanced
+                  : webrtc::VideoSendStream::DegradationPreference::
+                        kMaintainResolution);
+  }
 
   // Call stream_->Start() if necessary conditions are met.
   UpdateSendState();

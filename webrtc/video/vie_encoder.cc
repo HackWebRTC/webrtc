@@ -226,6 +226,8 @@ class ViEEncoder::EncodeTask : public rtc::QueuedTask {
   bool Run() override {
     RTC_DCHECK_RUN_ON(&vie_encoder_->encoder_queue_);
     RTC_DCHECK_GT(vie_encoder_->posted_frames_waiting_for_encode_.Value(), 0);
+    vie_encoder_->stats_proxy_->OnIncomingFrame(frame_.width(),
+                                                frame_.height());
     ++vie_encoder_->captured_frame_count_;
     if (--vie_encoder_->posted_frames_waiting_for_encode_ == 0) {
       vie_encoder_->EncodeVideoFrame(frame_, time_when_posted_ms_);
@@ -253,21 +255,30 @@ class ViEEncoder::EncodeTask : public rtc::QueuedTask {
 };
 
 // VideoSourceProxy is responsible ensuring thread safety between calls to
-// ViEEncoder::SetSource that will happen on libjingles worker thread when a
+// ViEEncoder::SetSource that will happen on libjingle's worker thread when a
 // video capturer is connected to the encoder and the encoder task queue
 // (encoder_queue_) where the encoder reports its VideoSinkWants.
 class ViEEncoder::VideoSourceProxy {
  public:
   explicit VideoSourceProxy(ViEEncoder* vie_encoder)
-      : vie_encoder_(vie_encoder), source_(nullptr) {}
+      : vie_encoder_(vie_encoder),
+        degradation_preference_(
+            VideoSendStream::DegradationPreference::kMaintainResolution),
+        source_(nullptr) {}
 
-  void SetSource(rtc::VideoSourceInterface<VideoFrame>* source) {
+  void SetSource(
+      rtc::VideoSourceInterface<VideoFrame>* source,
+      const VideoSendStream::DegradationPreference& degradation_preference) {
+    // Called on libjingle's worker thread.
     RTC_DCHECK_CALLED_SEQUENTIALLY(&main_checker_);
     rtc::VideoSourceInterface<VideoFrame>* old_source = nullptr;
+    rtc::VideoSinkWants wants;
     {
       rtc::CritScope lock(&crit_);
       old_source = source_;
       source_ = source;
+      degradation_preference_ = degradation_preference;
+      wants = current_wants();
     }
 
     if (old_source != source && old_source != nullptr) {
@@ -278,16 +289,74 @@ class ViEEncoder::VideoSourceProxy {
       return;
     }
 
-    // TODO(perkj): Let VideoSourceProxy implement LoadObserver and truly send
-    // CPU load as sink wants.
-    rtc::VideoSinkWants wants;
     source->AddOrUpdateSink(vie_encoder_, wants);
   }
 
+  void SetWantsRotationApplied(bool rotation_applied) {
+    rtc::CritScope lock(&crit_);
+    sink_wants_.rotation_applied = rotation_applied;
+    disabled_scaling_sink_wants_.rotation_applied = rotation_applied;
+    if (source_) {
+      source_->AddOrUpdateSink(vie_encoder_, current_wants());
+    }
+  }
+
+  void RequestResolutionLowerThan(int pixel_count) {
+    // Called on the encoder task queue.
+    rtc::CritScope lock(&crit_);
+    if (!IsResolutionScalingEnabledLocked()) {
+      // This can happen since |degradation_preference_| is set on
+      // libjingle's worker thread but the adaptation is done on the encoder
+      // task queue.
+      return;
+    }
+    // The input video frame size will have a resolution with less than or
+    // equal to |max_pixel_count| depending on how the source can scale the
+    // input frame size.
+    sink_wants_.max_pixel_count = rtc::Optional<int>((pixel_count * 3) / 5);
+    sink_wants_.max_pixel_count_step_up = rtc::Optional<int>();
+    if (source_)
+      source_->AddOrUpdateSink(vie_encoder_, sink_wants_);
+  }
+
+  void RequestHigherResolutionThan(int pixel_count) {
+    rtc::CritScope lock(&crit_);
+    if (!IsResolutionScalingEnabledLocked()) {
+      // This can happen since |degradation_preference_| is set on
+      // libjingle's worker thread but the adaptation is done on the encoder
+      // task
+      // queue.
+      return;
+    }
+    // The input video frame size will have a resolution with "one step up"
+    // pixels than |max_pixel_count_step_up| where "one step up" depends on
+    // how the source can scale the input frame size.
+    sink_wants_.max_pixel_count = rtc::Optional<int>();
+    sink_wants_.max_pixel_count_step_up = rtc::Optional<int>(pixel_count);
+    if (source_)
+      source_->AddOrUpdateSink(vie_encoder_, sink_wants_);
+  }
+
  private:
+  bool IsResolutionScalingEnabledLocked() const
+      EXCLUSIVE_LOCKS_REQUIRED(&crit_) {
+    return degradation_preference_ !=
+           VideoSendStream::DegradationPreference::kMaintainResolution;
+  }
+
+  const rtc::VideoSinkWants& current_wants() const
+      EXCLUSIVE_LOCKS_REQUIRED(&crit_) {
+    return IsResolutionScalingEnabledLocked() ? sink_wants_
+                                              : disabled_scaling_sink_wants_;
+  }
+
   rtc::CriticalSection crit_;
   rtc::SequencedTaskChecker main_checker_;
-  ViEEncoder* vie_encoder_;
+  ViEEncoder* const vie_encoder_;
+  rtc::VideoSinkWants sink_wants_ GUARDED_BY(&crit_);
+  rtc::VideoSinkWants disabled_scaling_sink_wants_ GUARDED_BY(&crit_);
+  VideoSendStream::DegradationPreference degradation_preference_
+      GUARDED_BY(&crit_);
   rtc::VideoSourceInterface<VideoFrame>* source_ GUARDED_BY(&crit_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(VideoSourceProxy);
@@ -297,7 +366,6 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
                        SendStatisticsProxy* stats_proxy,
                        const VideoSendStream::Config::EncoderSettings& settings,
                        rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback,
-                       LoadObserver* overuse_callback,
                        EncodedFrameObserver* encoder_timing)
     : shutdown_event_(true /* manual_reset */, false),
       number_of_cores_(number_of_cores),
@@ -311,7 +379,6 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
                         this,
                         encoder_timing,
                         stats_proxy),
-      load_observer_(overuse_callback),
       stats_proxy_(stats_proxy),
       pre_encode_callback_(pre_encode_callback),
       module_process_thread_(nullptr),
@@ -325,6 +392,11 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       has_received_rpsi_(false),
       picture_id_rpsi_(0),
       clock_(Clock::GetRealTimeClock()),
+      degradation_preference_(
+          VideoSendStream::DegradationPreference::kBalanced),
+      cpu_restricted_counter_(0),
+      last_frame_width_(0),
+      last_frame_height_(0),
       last_captured_timestamp_(0),
       delta_ntp_internal_ms_(clock_->CurrentNtpInMilliseconds() -
                              clock_->TimeInMilliseconds()),
@@ -332,11 +404,11 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       captured_frame_count_(0),
       dropped_frame_count_(0),
       encoder_queue_("EncoderQueue") {
-  encoder_queue_.PostTask([this, encoder_timing] {
+  encoder_queue_.PostTask([this] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
+    overuse_detector_.StartCheckForOveruse();
     video_sender_.RegisterExternalEncoder(
         settings_.encoder, settings_.payload_type, settings_.internal_source);
-    overuse_detector_.StartCheckForOveruse();
   });
 }
 
@@ -348,12 +420,12 @@ ViEEncoder::~ViEEncoder() {
 
 void ViEEncoder::Stop() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  source_proxy_->SetSource(nullptr);
+  source_proxy_->SetSource(nullptr, VideoSendStream::DegradationPreference());
   encoder_queue_.PostTask([this] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
+    overuse_detector_.StopCheckForOveruse();
     video_sender_.RegisterExternalEncoder(nullptr, settings_.payload_type,
                                           false);
-    overuse_detector_.StopCheckForOveruse();
     shutdown_event_.Set();
   });
 
@@ -373,12 +445,29 @@ void ViEEncoder::DeRegisterProcessThread() {
   module_process_thread_->DeRegisterModule(&video_sender_);
 }
 
-void ViEEncoder::SetSource(rtc::VideoSourceInterface<VideoFrame>* source) {
+void ViEEncoder::SetSource(
+    rtc::VideoSourceInterface<VideoFrame>* source,
+    const VideoSendStream::DegradationPreference& degradation_preference) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  source_proxy_->SetSource(source);
+  source_proxy_->SetSource(source, degradation_preference);
+  encoder_queue_.PostTask([this, degradation_preference] {
+    RTC_DCHECK_RUN_ON(&encoder_queue_);
+    degradation_preference_ = degradation_preference;
+    // Set the stats for if we are currently CPU restricted. We are CPU
+    // restricted depending on degradation preference and
+    // if the overusedetector has currently detected overuse which is counted in
+    // |cpu_restricted_counter_|
+    // We do this on the encoder task queue to avoid a race with the stats set
+    // in ViEEncoder::NormalUsage and ViEEncoder::OveruseDetected.
+    stats_proxy_->SetCpuRestrictedResolution(
+        degradation_preference_ !=
+            VideoSendStream::DegradationPreference::kMaintainResolution &&
+        cpu_restricted_counter_ != 0);
+  });
 }
 
-void ViEEncoder::SetSink(EncoderSink* sink) {
+void ViEEncoder::SetSink(EncoderSink* sink, bool rotation_applied) {
+  source_proxy_->SetWantsRotationApplied(rotation_applied);
   encoder_queue_.PostTask([this, sink] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     sink_ = sink;
@@ -462,9 +551,6 @@ void ViEEncoder::ReconfigureEncoder() {
 
 void ViEEncoder::OnFrame(const VideoFrame& video_frame) {
   RTC_DCHECK_RUNS_SERIALIZED(&incoming_frame_race_checker_);
-  if (stats_proxy_) {
-    stats_proxy_->OnIncomingFrame(video_frame.width(), video_frame.height());
-  }
   VideoFrame incoming_frame = video_frame;
 
   // Local time in webrtc time base.
@@ -565,6 +651,9 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   }
   TraceFrameDropEnd();
 
+  last_frame_height_ = video_frame.height();
+  last_frame_width_ = video_frame.width();
+
   TRACE_EVENT_ASYNC_STEP0("webrtc", "Video", video_frame.render_time_ms(),
                           "Encode");
 
@@ -616,10 +705,12 @@ EncodedImageCallback::Result ViEEncoder::OnEncodedImage(
 
   int64_t time_sent = clock_->TimeInMilliseconds();
   uint32_t timestamp = encoded_image._timeStamp;
+
   encoder_queue_.PostTask([this, timestamp, time_sent] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     overuse_detector_.FrameSent(timestamp, time_sent);
   });
+
   return result;
 }
 
@@ -697,17 +788,46 @@ void ViEEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
 
 void ViEEncoder::OveruseDetected() {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
-  // TODO(perkj): When ViEEncoder inherit rtc::VideoSink instead of
-  // VideoCaptureInput |load_observer_| should be removed and overuse be
-  // expressed as rtc::VideoSinkWants instead.
-  if (load_observer_)
-    load_observer_->OnLoadUpdate(LoadObserver::kOveruse);
+  if (degradation_preference_ ==
+          VideoSendStream::DegradationPreference::kMaintainResolution ||
+      cpu_restricted_counter_ >= kMaxCpuDowngrades) {
+    return;
+  }
+  LOG(LS_INFO) << "CPU overuse detected. Requesting lower resolution.";
+  // Request lower resolution if the current resolution is lower than last time
+  // we asked for the resolution to be lowered.
+  // Update stats accordingly.
+  int current_pixel_count = last_frame_height_ * last_frame_width_;
+  if (!max_pixel_count_ || current_pixel_count < *max_pixel_count_) {
+    max_pixel_count_ = rtc::Optional<int>(current_pixel_count);
+    max_pixel_count_step_up_ = rtc::Optional<int>();
+    stats_proxy_->OnCpuRestrictedResolutionChanged(true);
+    ++cpu_restricted_counter_;
+    source_proxy_->RequestResolutionLowerThan(current_pixel_count);
+  }
 }
 
 void ViEEncoder::NormalUsage() {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
-  if (load_observer_)
-    load_observer_->OnLoadUpdate(LoadObserver::kUnderuse);
+  if (degradation_preference_ ==
+          VideoSendStream::DegradationPreference::kMaintainResolution ||
+      cpu_restricted_counter_ == 0) {
+    return;
+  }
+
+  LOG(LS_INFO) << "CPU underuse detected. Requesting higher resolution.";
+  int current_pixel_count = last_frame_height_ * last_frame_width_;
+  // Request higher resolution if we are CPU restricted and the the current
+  // resolution is higher than last time we requested higher resolution.
+  // Update stats accordingly.
+  if (!max_pixel_count_step_up_ ||
+      current_pixel_count > *max_pixel_count_step_up_) {
+    max_pixel_count_ = rtc::Optional<int>();
+    max_pixel_count_step_up_ = rtc::Optional<int>(current_pixel_count);
+    --cpu_restricted_counter_;
+    stats_proxy_->OnCpuRestrictedResolutionChanged(cpu_restricted_counter_ > 0);
+    source_proxy_->RequestHigherResolutionThan(current_pixel_count);
+  }
 }
 
 }  // namespace webrtc

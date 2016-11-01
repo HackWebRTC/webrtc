@@ -31,6 +31,8 @@ class FrameForwarder : public rtc::VideoSourceInterface<VideoFrame> {
   FrameForwarder();
   // Forwards |video_frame| to the registered |sink_|.
   void IncomingCapturedFrame(const VideoFrame& video_frame);
+  rtc::VideoSinkWants sink_wants() const;
+  bool has_sinks() const;
 
  private:
   void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
@@ -39,6 +41,7 @@ class FrameForwarder : public rtc::VideoSourceInterface<VideoFrame> {
 
   rtc::CriticalSection crit_;
   rtc::VideoSinkInterface<VideoFrame>* sink_ GUARDED_BY(crit_);
+  rtc::VideoSinkWants sink_wants_ GUARDED_BY(crit_);
 };
 
 class FrameGenerator {

@@ -60,8 +60,6 @@ class CallPerfTest : public test::CallTest {
                           float video_rtp_speed,
                           float audio_rtp_speed);
 
-  void TestCpuOveruse(LoadObserver::Load tested_load, int encode_delay_ms);
-
   void TestMinTransmitBitrate(bool pad_to_min_bitrate);
 
   void TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
@@ -473,25 +471,40 @@ TEST_F(CallPerfTest, CaptureNtpTimeWithNetworkJitter) {
   TestCaptureNtpTime(net_config, kThresholdMs, kStartTimeMs, kRunTimeMs);
 }
 
-void CallPerfTest::TestCpuOveruse(LoadObserver::Load tested_load,
-                                  int encode_delay_ms) {
-  class LoadObserver : public test::SendTest, public webrtc::LoadObserver {
+TEST_F(CallPerfTest, ReceivesCpuOveruseAndUnderuse) {
+  class LoadObserver : public test::SendTest,
+                       public test::FrameGeneratorCapturer::SinkWantsObserver {
    public:
-    LoadObserver(LoadObserver::Load tested_load, int encode_delay_ms)
+    LoadObserver()
         : SendTest(kLongTimeoutMs),
-          tested_load_(tested_load),
-          encoder_(Clock::GetRealTimeClock(), encode_delay_ms) {}
+          expect_lower_resolution_wants_(true),
+          encoder_(Clock::GetRealTimeClock(), 35 /* delay_ms */) {}
 
-    void OnLoadUpdate(Load load) override {
-      if (load == tested_load_)
+    void OnFrameGeneratorCapturerCreated(
+        test::FrameGeneratorCapturer* frame_generator_capturer) override {
+      frame_generator_capturer->SetSinkWantsObserver(this);
+    }
+
+    // OnSinkWantsChanged is called when FrameGeneratorCapturer::AddOrUpdateSink
+    // is called.
+    void OnSinkWantsChanged(rtc::VideoSinkInterface<VideoFrame>* sink,
+                            const rtc::VideoSinkWants& wants) override {
+      // First expect CPU overuse. Then expect CPU underuse when the encoder
+      // delay has been decreased.
+      if (wants.max_pixel_count) {
+        EXPECT_TRUE(expect_lower_resolution_wants_);
+        expect_lower_resolution_wants_ = false;
+        encoder_.SetDelay(2);
+      } else if (wants.max_pixel_count_step_up) {
+        EXPECT_FALSE(expect_lower_resolution_wants_);
         observation_complete_.Set();
+      }
     }
 
     void ModifyVideoConfigs(
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
-      send_config->overuse_callback = this;
       send_config->encoder_settings.encoder = &encoder_;
     }
 
@@ -499,21 +512,11 @@ void CallPerfTest::TestCpuOveruse(LoadObserver::Load tested_load,
       EXPECT_TRUE(Wait()) << "Timed out before receiving an overuse callback.";
     }
 
-    LoadObserver::Load tested_load_;
+    bool expect_lower_resolution_wants_;
     test::DelayedEncoder encoder_;
-  } test(tested_load, encode_delay_ms);
+  } test;
 
   RunBaseTest(&test);
-}
-
-TEST_F(CallPerfTest, ReceivesCpuUnderuse) {
-  const int kEncodeDelayMs = 2;
-  TestCpuOveruse(LoadObserver::kUnderuse, kEncodeDelayMs);
-}
-
-TEST_F(CallPerfTest, ReceivesCpuOveruse) {
-  const int kEncodeDelayMs = 35;
-  TestCpuOveruse(LoadObserver::kOveruse, kEncodeDelayMs);
 }
 
 void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {

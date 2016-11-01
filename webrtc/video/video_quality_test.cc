@@ -1217,7 +1217,9 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
 
   CreateVideoStreams();
   analyzer.SetSendStream(video_send_stream_);
-  video_send_stream_->SetSource(analyzer.OutputInterface());
+  video_send_stream_->SetSource(
+      analyzer.OutputInterface(),
+      VideoSendStream::DegradationPreference::kBalanced);
 
   CreateCapturer();
   rtc::VideoSinkWants wants;
@@ -1365,7 +1367,9 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
     video_receive_stream = call->CreateVideoReceiveStream(
         video_receive_configs_[stream_id].Copy());
     CreateCapturer();
-    video_send_stream_->SetSource(video_capturer_.get());
+    video_send_stream_->SetSource(
+        video_capturer_.get(),
+        VideoSendStream::DegradationPreference::kBalanced);
   }
 
   AudioReceiveStream* audio_receive_stream = nullptr;

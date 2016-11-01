@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/common_types.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video_encoder.h"
@@ -75,12 +76,14 @@ class DelayedEncoder : public test::FakeEncoder {
   DelayedEncoder(Clock* clock, int delay_ms);
   virtual ~DelayedEncoder() {}
 
+  void SetDelay(int delay_ms);
   int32_t Encode(const VideoFrame& input_image,
                  const CodecSpecificInfo* codec_specific_info,
                  const std::vector<FrameType>* frame_types) override;
 
  private:
-  const int delay_ms_;
+  rtc::CriticalSection lock_;
+  int delay_ms_ GUARDED_BY(&lock_);
 };
 }  // namespace test
 }  // namespace webrtc

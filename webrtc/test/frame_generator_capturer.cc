@@ -59,6 +59,7 @@ FrameGeneratorCapturer::FrameGeneratorCapturer(Clock* clock,
     : clock_(clock),
       sending_(false),
       sink_(nullptr),
+      sink_wants_observer_(nullptr),
       tick_(EventTimerWrapper::Create()),
       thread_(FrameGeneratorCapturer::Run, this, "FrameGeneratorCapturer"),
       frame_generator_(frame_generator),
@@ -129,12 +130,20 @@ void FrameGeneratorCapturer::ChangeResolution(size_t width, size_t height) {
   frame_generator_->ChangeResolution(width, height);
 }
 
+void FrameGeneratorCapturer::SetSinkWantsObserver(SinkWantsObserver* observer) {
+  rtc::CritScope cs(&lock_);
+  RTC_DCHECK(!sink_wants_observer_);
+  sink_wants_observer_ = observer;
+}
+
 void FrameGeneratorCapturer::AddOrUpdateSink(
     rtc::VideoSinkInterface<VideoFrame>* sink,
     const rtc::VideoSinkWants& wants) {
   rtc::CritScope cs(&lock_);
-  RTC_CHECK(!sink_);
+  RTC_CHECK(!sink_ || sink_ == sink);
   sink_ = sink;
+  if (sink_wants_observer_)
+    sink_wants_observer_->OnSinkWantsChanged(sink, wants);
 }
 
 void FrameGeneratorCapturer::RemoveSink(

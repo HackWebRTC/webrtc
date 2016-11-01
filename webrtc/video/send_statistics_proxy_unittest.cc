@@ -26,7 +26,6 @@ const uint32_t kSecondSsrc = 42;
 const uint32_t kFirstRtxSsrc = 18;
 const uint32_t kSecondRtxSsrc = 43;
 
-const int kMinRequiredSamples = 200;
 const int kQpIdx0 = 21;
 const int kQpIdx1 = 39;
 }  // namespace
@@ -337,7 +336,7 @@ TEST_F(SendStatisticsProxyTest, SwitchContentTypeUpdatesHistograms) {
   const int kWidth = 640;
   const int kHeight = 480;
 
-  for (int i = 0; i < kMinRequiredSamples; ++i)
+  for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
     statistics_proxy_->OnIncomingFrame(kWidth, kHeight);
 
   // No switch, stats should not be updated.
@@ -350,6 +349,25 @@ TEST_F(SendStatisticsProxyTest, SwitchContentTypeUpdatesHistograms) {
   config.content_type = VideoEncoderConfig::ContentType::kScreen;
   statistics_proxy_->OnEncoderReconfigured(config, 50);
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.InputWidthInPixels"));
+}
+
+TEST_F(SendStatisticsProxyTest, CpuLimitedResolutionUpdated) {
+  const int kWidth = 640;
+  const int kHeight = 480;
+
+  for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
+    statistics_proxy_->OnIncomingFrame(kWidth, kHeight);
+
+  statistics_proxy_->OnCpuRestrictedResolutionChanged(true);
+
+  for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
+    statistics_proxy_->OnIncomingFrame(kWidth, kHeight);
+
+  statistics_proxy_.reset();
+  EXPECT_EQ(1,
+            metrics::NumSamples("WebRTC.Video.CpuLimitedResolutionInPercent"));
+  EXPECT_EQ(
+      1, metrics::NumEvents("WebRTC.Video.CpuLimitedResolutionInPercent", 50));
 }
 
 TEST_F(SendStatisticsProxyTest, LifetimeHistogramIsUpdated) {
@@ -372,7 +390,7 @@ TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp8) {
   CodecSpecificInfo codec_info;
   codec_info.codecType = kVideoCodecVP8;
 
-  for (int i = 0; i < kMinRequiredSamples; ++i) {
+  for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i) {
     codec_info.codecSpecific.VP8.simulcastIdx = 0;
     encoded_image.qp_ = kQpIdx0;
     statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
@@ -397,7 +415,7 @@ TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp8OneSsrc) {
   CodecSpecificInfo codec_info;
   codec_info.codecType = kVideoCodecVP8;
 
-  for (int i = 0; i < kMinRequiredSamples; ++i) {
+  for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i) {
     codec_info.codecSpecific.VP8.simulcastIdx = 0;
     encoded_image.qp_ = kQpIdx0;
     statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
@@ -413,7 +431,7 @@ TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp9) {
   codec_info.codecType = kVideoCodecVP9;
   codec_info.codecSpecific.VP9.num_spatial_layers = 2;
 
-  for (int i = 0; i < kMinRequiredSamples; ++i) {
+  for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i) {
     encoded_image.qp_ = kQpIdx0;
     codec_info.codecSpecific.VP9.spatial_idx = 0;
     statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
@@ -439,7 +457,7 @@ TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp9OneSpatialLayer) {
   codec_info.codecType = kVideoCodecVP9;
   codec_info.codecSpecific.VP9.num_spatial_layers = 1;
 
-  for (int i = 0; i < kMinRequiredSamples; ++i) {
+  for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i) {
     encoded_image.qp_ = kQpIdx0;
     codec_info.codecSpecific.VP9.spatial_idx = 0;
     statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
@@ -453,7 +471,7 @@ TEST_F(SendStatisticsProxyTest,
        BandwidthLimitedHistogramsNotUpdatedWhenDisabled) {
   EncodedImage encoded_image;
   // encoded_image.adapt_reason_.bw_resolutions_disabled by default: -1
-  for (int i = 0; i < kMinRequiredSamples; ++i)
+  for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
     statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
 
   // Histograms are updated when the statistics_proxy_ is deleted.
@@ -469,7 +487,7 @@ TEST_F(SendStatisticsProxyTest,
   const int kResolutionsDisabled = 0;
   EncodedImage encoded_image;
   encoded_image.adapt_reason_.bw_resolutions_disabled = kResolutionsDisabled;
-  for (int i = 0; i < kMinRequiredSamples; ++i)
+  for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
     statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
 
   // Histograms are updated when the statistics_proxy_ is deleted.
@@ -488,7 +506,7 @@ TEST_F(SendStatisticsProxyTest,
   const int kResolutionsDisabled = 1;
   EncodedImage encoded_image;
   encoded_image.adapt_reason_.bw_resolutions_disabled = kResolutionsDisabled;
-  for (int i = 0; i < kMinRequiredSamples; ++i)
+  for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
     statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
 
   // Histograms are updated when the statistics_proxy_ is deleted.
@@ -510,7 +528,7 @@ TEST_F(SendStatisticsProxyTest,
   EncodedImage encoded_image;
   // encoded_image.adapt_reason_.quality_resolution_downscales disabled by
   // default: -1
-  for (int i = 0; i < kMinRequiredSamples; ++i)
+  for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
     statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
 
   // Histograms are updated when the statistics_proxy_ is deleted.
@@ -526,7 +544,7 @@ TEST_F(SendStatisticsProxyTest,
   const int kDownscales = 0;
   EncodedImage encoded_image;
   encoded_image.adapt_reason_.quality_resolution_downscales = kDownscales;
-  for (int i = 0; i < kMinRequiredSamples; ++i)
+  for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
     statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
 
   // Histograms are updated when the statistics_proxy_ is deleted.
@@ -545,7 +563,7 @@ TEST_F(SendStatisticsProxyTest,
   const int kDownscales = 2;
   EncodedImage encoded_image;
   encoded_image.adapt_reason_.quality_resolution_downscales = kDownscales;
-  for (int i = 0; i < kMinRequiredSamples; ++i)
+  for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
     statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
 
   // Histograms are updated when the statistics_proxy_ is deleted.

@@ -55,19 +55,6 @@ class PacketReceiver {
   virtual ~PacketReceiver() {}
 };
 
-// Callback interface for reporting when a system overuse is detected.
-class LoadObserver {
- public:
-  enum Load { kOveruse, kUnderuse };
-
-  // Triggered when overuse is detected or when we believe the system can take
-  // more load.
-  virtual void OnLoadUpdate(Load load) = 0;
-
- protected:
-  virtual ~LoadObserver() {}
-};
-
 // A Call instance can contain several send and/or receive streams. All streams
 // are assumed to have the same remote endpoint and will share bitrate estimates
 // etc.

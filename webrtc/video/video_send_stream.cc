@@ -527,10 +527,9 @@ VideoSendStream::VideoSendStream(
                    config,
                    encoder_config.content_type),
       config_(std::move(config)) {
-  vie_encoder_.reset(
-      new ViEEncoder(num_cpu_cores, &stats_proxy_, config_.encoder_settings,
-                     config_.pre_encode_callback, config_.overuse_callback,
-                     config_.post_encode_callback));
+  vie_encoder_.reset(new ViEEncoder(
+      num_cpu_cores, &stats_proxy_, config_.encoder_settings,
+      config_.pre_encode_callback, config_.post_encode_callback));
 
   worker_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(new ConstructionTask(
       &send_stream_, &thread_sync_event_, &stats_proxy_, vie_encoder_.get(),
@@ -577,9 +576,10 @@ void VideoSendStream::Stop() {
 }
 
 void VideoSendStream::SetSource(
-    rtc::VideoSourceInterface<webrtc::VideoFrame>* source) {
+    rtc::VideoSourceInterface<webrtc::VideoFrame>* source,
+    const DegradationPreference& degradation_preference) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  vie_encoder_->SetSource(source);
+  vie_encoder_->SetSource(source, degradation_preference);
 }
 
 void VideoSendStream::ReconfigureVideoEncoder(VideoEncoderConfig config) {
@@ -733,7 +733,19 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   RTC_DCHECK_LE(config_->encoder_settings.payload_type, 127);
 
   vie_encoder_->SetStartBitrate(bitrate_allocator_->GetStartBitrate(this));
-  vie_encoder_->SetSink(this);
+
+  // Only request rotation at the source when we positively know that the remote
+  // side doesn't support the rotation extension. This allows us to prepare the
+  // encoder in the expectation that rotation is supported - which is the common
+  // case.
+  bool rotation_applied =
+      std::find_if(config_->rtp.extensions.begin(),
+                   config_->rtp.extensions.end(),
+                   [](const RtpExtension& extension) {
+                     return extension.uri == RtpExtension::kVideoRotationUri;
+                   }) == config_->rtp.extensions.end();
+
+  vie_encoder_->SetSink(this, rotation_applied);
 }
 
 void VideoSendStreamImpl::RegisterProcessThread(

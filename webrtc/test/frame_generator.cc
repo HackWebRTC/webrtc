@@ -258,12 +258,23 @@ void FrameForwarder::AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
   rtc::CritScope lock(&crit_);
   RTC_DCHECK(!sink_ || sink_ == sink);
   sink_ = sink;
+  sink_wants_ = wants;
 }
 
 void FrameForwarder::RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) {
   rtc::CritScope lock(&crit_);
   RTC_DCHECK_EQ(sink, sink_);
   sink_ = nullptr;
+}
+
+rtc::VideoSinkWants FrameForwarder::sink_wants() const {
+  rtc::CritScope lock(&crit_);
+  return sink_wants_;
+}
+
+bool FrameForwarder::has_sinks() const {
+  rtc::CritScope lock(&crit_);
+  return sink_ != nullptr;
 }
 
 FrameGenerator* FrameGenerator::CreateChromaGenerator(size_t width,

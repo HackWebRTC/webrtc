@@ -40,6 +40,9 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
                             public SendSideDelayObserver {
  public:
   static const int kStatsTimeoutMs;
+  // Number of required samples to be collected before a metric is added
+  // to a rtc histogram.
+  static const int kMinRequiredMetricsSamples = 200;
 
   SendStatisticsProxy(Clock* clock,
                       const VideoSendStream::Config& config,
@@ -52,6 +55,13 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
                                   const CodecSpecificInfo* codec_info);
   // Used to update incoming frame rate.
   void OnIncomingFrame(int width, int height);
+
+  // Used to indicate that the current input frame resolution is restricted due
+  // to cpu usage.
+  void SetCpuRestrictedResolution(bool cpu_restricted);
+  // Used to update the number of times the input frame resolution has changed
+  // due to cpu adaptation.
+  void OnCpuRestrictedResolutionChanged(bool cpu_restricted_resolution);
 
   void OnEncoderStatsUpdate(uint32_t framerate, uint32_t bitrate);
   void OnSuspendChange(bool is_suspended);
@@ -170,6 +180,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     BoolSampleCounter key_frame_counter_;
     BoolSampleCounter quality_limited_frame_counter_;
     SampleCounter quality_downscales_counter_;
+    BoolSampleCounter cpu_limited_frame_counter_;
     BoolSampleCounter bw_limited_frame_counter_;
     SampleCounter bw_resolutions_disabled_counter_;
     SampleCounter delay_counter_;

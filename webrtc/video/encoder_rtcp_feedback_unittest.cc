@@ -26,7 +26,6 @@ class MockVieEncoder : public ViEEncoder {
                    nullptr,
                    VideoSendStream::Config::EncoderSettings("fake", 0, nullptr),
                    nullptr,
-                   nullptr,
                    nullptr) {}
   ~MockVieEncoder() { Stop(); }
 

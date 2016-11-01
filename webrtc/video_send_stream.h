@@ -27,7 +27,6 @@
 
 namespace webrtc {
 
-class LoadObserver;
 class VideoEncoder;
 
 class VideoSendStream {
@@ -68,6 +67,10 @@ class VideoSendStream {
     int preferred_media_bitrate_bps = 0;
     bool suspended = false;
     bool bw_limited_resolution = false;
+    bool cpu_limited_resolution = false;
+    // Total number of times resolution as been requested to be changed due to
+    // CPU adaptation.
+    int number_of_cpu_adapt_changes = 0;
     std::map<uint32_t, StreamStats> substreams;
   };
 
@@ -152,10 +155,6 @@ class VideoSendStream {
     // Transport for outgoing packets.
     Transport* send_transport = nullptr;
 
-    // Callback for overuse and normal usage based on the jitter of incoming
-    // captured frames. 'nullptr' disables the callback.
-    LoadObserver* overuse_callback = nullptr;
-
     // Called for each I420 frame before encoding the frame. Can be used for
     // effects, snapshots etc. 'nullptr' disables the callback.
     rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback = nullptr;
@@ -193,8 +192,17 @@ class VideoSendStream {
   // When a stream is stopped, it can't receive, process or deliver packets.
   virtual void Stop() = 0;
 
+  // Based on the spec in
+  // https://w3c.github.io/webrtc-pc/#idl-def-rtcdegradationpreference.
+  enum class DegradationPreference {
+    kMaintainResolution,
+    // TODO(perkj): Implement kMaintainFrameRate. kBalanced will drop frames
+    // if the encoder overshoots or the encoder can not encode fast enough.
+    kBalanced,
+  };
   virtual void SetSource(
-      rtc::VideoSourceInterface<webrtc::VideoFrame>* source) = 0;
+      rtc::VideoSourceInterface<webrtc::VideoFrame>* source,
+      const DegradationPreference& degradation_preference) = 0;
 
   // Set which streams to send. Must have at least as many SSRCs as configured
   // in the config. Encoder settings are passed on to the encoder instance along

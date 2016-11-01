@@ -132,9 +132,8 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
     const VideoSendStream::Stats& current_stats) {
   RTC_DCHECK(uma_prefix_ == kRealtimePrefix || uma_prefix_ == kScreenPrefix);
   const int kIndex = uma_prefix_ == kScreenPrefix ? 1 : 0;
-  const int kMinRequiredSamples = 200;
-  int in_width = input_width_counter_.Avg(kMinRequiredSamples);
-  int in_height = input_height_counter_.Avg(kMinRequiredSamples);
+  int in_width = input_width_counter_.Avg(kMinRequiredMetricsSamples);
+  int in_height = input_height_counter_.Avg(kMinRequiredMetricsSamples);
   int in_fps = round(input_frame_rate_tracker_.ComputeTotalRate());
   if (in_width != -1) {
     RTC_HISTOGRAMS_COUNTS_10000(kIndex, uma_prefix_ + "InputWidthInPixels",
@@ -144,8 +143,8 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
     RTC_HISTOGRAMS_COUNTS_100(kIndex, uma_prefix_ + "InputFramesPerSecond",
                               in_fps);
   }
-  int sent_width = sent_width_counter_.Avg(kMinRequiredSamples);
-  int sent_height = sent_height_counter_.Avg(kMinRequiredSamples);
+  int sent_width = sent_width_counter_.Avg(kMinRequiredMetricsSamples);
+  int sent_height = sent_height_counter_.Avg(kMinRequiredMetricsSamples);
   int sent_fps = round(sent_frame_rate_tracker_.ComputeTotalRate());
   if (sent_width != -1) {
     RTC_HISTOGRAMS_COUNTS_10000(kIndex, uma_prefix_ + "SentWidthInPixels",
@@ -155,54 +154,63 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
     RTC_HISTOGRAMS_COUNTS_100(kIndex, uma_prefix_ + "SentFramesPerSecond",
                               sent_fps);
   }
-  int encode_ms = encode_time_counter_.Avg(kMinRequiredSamples);
+  int encode_ms = encode_time_counter_.Avg(kMinRequiredMetricsSamples);
   if (encode_ms != -1) {
     RTC_HISTOGRAMS_COUNTS_1000(kIndex, uma_prefix_ + "EncodeTimeInMs",
                                encode_ms);
   }
-  int key_frames_permille = key_frame_counter_.Permille(kMinRequiredSamples);
+  int key_frames_permille =
+      key_frame_counter_.Permille(kMinRequiredMetricsSamples);
   if (key_frames_permille != -1) {
     RTC_HISTOGRAMS_COUNTS_1000(kIndex, uma_prefix_ + "KeyFramesSentInPermille",
                                key_frames_permille);
   }
   int quality_limited =
-      quality_limited_frame_counter_.Percent(kMinRequiredSamples);
+      quality_limited_frame_counter_.Percent(kMinRequiredMetricsSamples);
   if (quality_limited != -1) {
     RTC_HISTOGRAMS_PERCENTAGE(kIndex,
                               uma_prefix_ + "QualityLimitedResolutionInPercent",
                               quality_limited);
   }
-  int downscales = quality_downscales_counter_.Avg(kMinRequiredSamples);
+  int downscales = quality_downscales_counter_.Avg(kMinRequiredMetricsSamples);
   if (downscales != -1) {
     RTC_HISTOGRAMS_ENUMERATION(
         kIndex, uma_prefix_ + "QualityLimitedResolutionDownscales", downscales,
         20);
   }
-  int bw_limited = bw_limited_frame_counter_.Percent(kMinRequiredSamples);
+  int cpu_limited =
+      cpu_limited_frame_counter_.Percent(kMinRequiredMetricsSamples);
+  if (cpu_limited != -1) {
+    RTC_HISTOGRAMS_PERCENTAGE(
+        kIndex, uma_prefix_ + "CpuLimitedResolutionInPercent", cpu_limited);
+  }
+  int bw_limited =
+      bw_limited_frame_counter_.Percent(kMinRequiredMetricsSamples);
   if (bw_limited != -1) {
     RTC_HISTOGRAMS_PERCENTAGE(
         kIndex, uma_prefix_ + "BandwidthLimitedResolutionInPercent",
         bw_limited);
   }
-  int num_disabled = bw_resolutions_disabled_counter_.Avg(kMinRequiredSamples);
+  int num_disabled =
+      bw_resolutions_disabled_counter_.Avg(kMinRequiredMetricsSamples);
   if (num_disabled != -1) {
     RTC_HISTOGRAMS_ENUMERATION(
         kIndex, uma_prefix_ + "BandwidthLimitedResolutionsDisabled",
         num_disabled, 10);
   }
-  int delay_ms = delay_counter_.Avg(kMinRequiredSamples);
+  int delay_ms = delay_counter_.Avg(kMinRequiredMetricsSamples);
   if (delay_ms != -1)
     RTC_HISTOGRAMS_COUNTS_100000(kIndex, uma_prefix_ + "SendSideDelayInMs",
                                  delay_ms);
 
-  int max_delay_ms = max_delay_counter_.Avg(kMinRequiredSamples);
+  int max_delay_ms = max_delay_counter_.Avg(kMinRequiredMetricsSamples);
   if (max_delay_ms != -1) {
     RTC_HISTOGRAMS_COUNTS_100000(kIndex, uma_prefix_ + "SendSideDelayMaxInMs",
                                  max_delay_ms);
   }
 
   for (const auto& it : qp_counters_) {
-    int qp_vp8 = it.second.vp8.Avg(kMinRequiredSamples);
+    int qp_vp8 = it.second.vp8.Avg(kMinRequiredMetricsSamples);
     if (qp_vp8 != -1) {
       int spatial_idx = it.first;
       if (spatial_idx == -1) {
@@ -222,7 +230,7 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
                         << spatial_idx;
       }
     }
-    int qp_vp9 = it.second.vp9.Avg(kMinRequiredSamples);
+    int qp_vp9 = it.second.vp9.Avg(kMinRequiredMetricsSamples);
     if (qp_vp9 != -1) {
       int spatial_idx = it.first;
       if (spatial_idx == -1) {
@@ -548,6 +556,20 @@ void SendStatisticsProxy::OnIncomingFrame(int width, int height) {
   uma_container_->input_frame_rate_tracker_.AddSamples(1);
   uma_container_->input_width_counter_.Add(width);
   uma_container_->input_height_counter_.Add(height);
+  uma_container_->cpu_limited_frame_counter_.Add(stats_.cpu_limited_resolution);
+}
+
+void SendStatisticsProxy::SetCpuRestrictedResolution(
+    bool cpu_restricted_resolution) {
+  rtc::CritScope lock(&crit_);
+  stats_.cpu_limited_resolution = cpu_restricted_resolution;
+}
+
+void SendStatisticsProxy::OnCpuRestrictedResolutionChanged(
+    bool cpu_restricted_resolution) {
+  rtc::CritScope lock(&crit_);
+  stats_.cpu_limited_resolution = cpu_restricted_resolution;
+  ++stats_.number_of_cpu_adapt_changes;
 }
 
 void SendStatisticsProxy::RtcpPacketTypesCounterUpdated(

@@ -238,8 +238,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   // frames are then converted from cricket frames to webrtc frames.
   class WebRtcVideoSendStream
       : public rtc::VideoSinkInterface<cricket::VideoFrame>,
-        public rtc::VideoSourceInterface<webrtc::VideoFrame>,
-        public webrtc::LoadObserver {
+        public rtc::VideoSourceInterface<webrtc::VideoFrame> {
    public:
     WebRtcVideoSendStream(
         webrtc::Call* call,
@@ -272,12 +271,8 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     bool SetVideoSend(bool mute,
                       const VideoOptions* options,
                       rtc::VideoSourceInterface<cricket::VideoFrame>* source);
-    void DisconnectSource();
 
     void SetSend(bool send);
-
-    // Implements webrtc::LoadObserver.
-    void OnLoadUpdate(Load load) override;
 
     const std::vector<uint32_t>& GetSsrcs() const;
     VideoSenderInfo GetVideoSenderInfo(bool log_stats);
@@ -315,9 +310,9 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
       bool external;
     };
 
-    // TODO(perkj): VideoFrameInfo is currently used for CPU adaptation since
-    // we currently do not express CPU overuse using SinkWants in lower
-    // layers. This will be fixed in an upcoming cl.
+    // TODO(perkj): VideoFrameInfo is currently used for sending a black frame
+    // when the video source is removed. Consider moving that logic to
+    // VieEncoder or remove it.
     struct VideoFrameInfo {
       VideoFrameInfo()
           : width(0),
@@ -345,25 +340,13 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     // and whether or not the encoding in |rtp_parameters_| is active.
     void UpdateSendState();
 
-    void UpdateHistograms() const EXCLUSIVE_LOCKS_REQUIRED(lock_);
-
     rtc::ThreadChecker thread_checker_;
     rtc::AsyncInvoker invoker_;
     rtc::Thread* worker_thread_;
     const std::vector<uint32_t> ssrcs_ ACCESS_ON(&thread_checker_);
     const std::vector<SsrcGroup> ssrc_groups_ ACCESS_ON(&thread_checker_);
     webrtc::Call* const call_;
-    rtc::VideoSinkWants sink_wants_ ACCESS_ON(&thread_checker_);
-    // Counter used for deciding if the video resolution is currently
-    // restricted by CPU usage. It is reset if |source_| is changed.
-    int cpu_restricted_counter_;
-    // Total number of times resolution as been requested to be changed due to
-    // CPU adaptation.
-    int number_of_cpu_adapt_changes_ ACCESS_ON(&thread_checker_);
-    // Total number of frames sent to |stream_|.
-    int frame_count_ GUARDED_BY(lock_);
-    // Total number of cpu restricted frames sent to |stream_|.
-    int cpu_restricted_frame_count_ GUARDED_BY(lock_);
+    const bool enable_cpu_overuse_detection_;
     rtc::VideoSourceInterface<cricket::VideoFrame>* source_
         ACCESS_ON(&thread_checker_);
     WebRtcVideoEncoderFactory* const external_encoder_factory_

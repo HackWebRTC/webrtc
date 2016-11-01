@@ -127,6 +127,15 @@ class FakeVideoSendStream final
   void EnableEncodedFrameRecording(const std::vector<rtc::PlatformFile>& files,
                                    size_t byte_limit) override;
 
+  bool resolution_scaling_enabled() const {
+    return resolution_scaling_enabled_;
+  }
+  void InjectVideoSinkWants(const rtc::VideoSinkWants& wants);
+
+  rtc::VideoSourceInterface<webrtc::VideoFrame>* source() const {
+    return source_;
+  }
+
  private:
   // rtc::VideoSinkInterface<VideoFrame> implementation.
   void OnFrame(const webrtc::VideoFrame& frame) override;
@@ -134,8 +143,9 @@ class FakeVideoSendStream final
   // webrtc::VideoSendStream implementation.
   void Start() override;
   void Stop() override;
-  void SetSource(
-      rtc::VideoSourceInterface<webrtc::VideoFrame>* source) override;
+  void SetSource(rtc::VideoSourceInterface<webrtc::VideoFrame>* source,
+                 const webrtc::VideoSendStream::DegradationPreference&
+                     degradation_preference) override;
   webrtc::VideoSendStream::Stats GetStats() override;
   void ReconfigureVideoEncoder(webrtc::VideoEncoderConfig config) override;
 
@@ -143,11 +153,14 @@ class FakeVideoSendStream final
   webrtc::VideoSendStream::Config config_;
   webrtc::VideoEncoderConfig encoder_config_;
   std::vector<webrtc::VideoStream> video_streams_;
+  rtc::VideoSinkWants sink_wants_;
+
   bool codec_settings_set_;
   union VpxSettings {
     webrtc::VideoCodecVP8 vp8;
     webrtc::VideoCodecVP9 vp9;
   } vpx_settings_;
+  bool resolution_scaling_enabled_;
   rtc::VideoSourceInterface<webrtc::VideoFrame>* source_;
   int num_swapped_frames_;
   webrtc::VideoFrame last_frame_;

@@ -246,7 +246,9 @@ void CallTest::CreateFrameGeneratorCapturerWithDrift(Clock* clock,
                                                      int height) {
   frame_generator_capturer_.reset(test::FrameGeneratorCapturer::Create(
       width, height, framerate * speed, clock));
-  video_send_stream_->SetSource(frame_generator_capturer_.get());
+  video_send_stream_->SetSource(
+      frame_generator_capturer_.get(),
+      VideoSendStream::DegradationPreference::kBalanced);
 }
 
 void CallTest::CreateFrameGeneratorCapturer(int framerate,
@@ -254,7 +256,9 @@ void CallTest::CreateFrameGeneratorCapturer(int framerate,
                                             int height) {
   frame_generator_capturer_.reset(
       test::FrameGeneratorCapturer::Create(width, height, framerate, clock_));
-  video_send_stream_->SetSource(frame_generator_capturer_.get());
+  video_send_stream_->SetSource(
+      frame_generator_capturer_.get(),
+      VideoSendStream::DegradationPreference::kBalanced);
 }
 
 void CallTest::CreateFakeAudioDevices() {

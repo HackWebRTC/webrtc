@@ -1988,9 +1988,6 @@ TEST_F(WebRtcVideoChannel2Test, AdaptsOnOveruseAndChangeResolution) {
 
   ASSERT_EQ(1u, fake_call_->GetVideoSendStreams().size());
   FakeVideoSendStream* send_stream = fake_call_->GetVideoSendStreams().front();
-  webrtc::LoadObserver* overuse_callback =
-      send_stream->GetConfig().overuse_callback;
-  ASSERT_TRUE(overuse_callback != NULL);
 
   EXPECT_TRUE(capturer.CaptureCustomFrame(1280, 720, cricket::FOURCC_I420));
   EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
@@ -1998,44 +1995,47 @@ TEST_F(WebRtcVideoChannel2Test, AdaptsOnOveruseAndChangeResolution) {
   EXPECT_EQ(720, send_stream->GetLastHeight());
 
   // Trigger overuse.
-  overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kOveruse);
+  rtc::VideoSinkWants wants;
+  wants.max_pixel_count = rtc::Optional<int>(
+      send_stream->GetLastWidth() * send_stream->GetLastHeight() - 1);
+  send_stream->InjectVideoSinkWants(wants);
   EXPECT_TRUE(capturer.CaptureCustomFrame(1280, 720, cricket::FOURCC_I420));
   EXPECT_EQ(2, send_stream->GetNumberOfSwappedFrames());
   EXPECT_EQ(1280 * 3 / 4, send_stream->GetLastWidth());
   EXPECT_EQ(720 * 3 / 4, send_stream->GetLastHeight());
 
   // Trigger overuse again.
-  overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kOveruse);
+  wants.max_pixel_count = rtc::Optional<int>(
+      send_stream->GetLastWidth() * send_stream->GetLastHeight() - 1);
+  send_stream->InjectVideoSinkWants(wants);
   EXPECT_TRUE(capturer.CaptureCustomFrame(1280, 720, cricket::FOURCC_I420));
   EXPECT_EQ(3, send_stream->GetNumberOfSwappedFrames());
   EXPECT_EQ(1280 * 2 / 4, send_stream->GetLastWidth());
   EXPECT_EQ(720 * 2 / 4, send_stream->GetLastHeight());
 
-  // Trigger overuse again. This should not decrease the resolution since we
-  // should only adapt the resolution down max two steps.
-  overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kOveruse);
-  EXPECT_TRUE(capturer.CaptureCustomFrame(1280, 720, cricket::FOURCC_I420));
-  EXPECT_EQ(4, send_stream->GetNumberOfSwappedFrames());
-  EXPECT_EQ(1280 * 2 / 4, send_stream->GetLastWidth());
-  EXPECT_EQ(720 * 2 / 4, send_stream->GetLastHeight());
-
   // Change input resolution.
   EXPECT_TRUE(capturer.CaptureCustomFrame(1284, 724, cricket::FOURCC_I420));
-  EXPECT_EQ(5, send_stream->GetNumberOfSwappedFrames());
+  EXPECT_EQ(4, send_stream->GetNumberOfSwappedFrames());
   EXPECT_EQ(1284 / 2, send_stream->GetLastWidth());
   EXPECT_EQ(724 / 2, send_stream->GetLastHeight());
 
   // Trigger underuse which should go back up in resolution.
-  overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kUnderuse);
+  wants.max_pixel_count = rtc::Optional<int>();
+  wants.max_pixel_count_step_up = rtc::Optional<int>(
+      send_stream->GetLastWidth() * send_stream->GetLastHeight());
+  send_stream->InjectVideoSinkWants(wants);
   EXPECT_TRUE(capturer.CaptureCustomFrame(1284, 724, cricket::FOURCC_I420));
-  EXPECT_EQ(6, send_stream->GetNumberOfSwappedFrames());
+  EXPECT_EQ(5, send_stream->GetNumberOfSwappedFrames());
   EXPECT_EQ(1284 * 3 / 4, send_stream->GetLastWidth());
   EXPECT_EQ(724 * 3 / 4, send_stream->GetLastHeight());
 
   // Trigger underuse which should go back up in resolution.
-  overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kUnderuse);
+  wants.max_pixel_count = rtc::Optional<int>();
+  wants.max_pixel_count_step_up = rtc::Optional<int>(
+      send_stream->GetLastWidth() * send_stream->GetLastHeight());
+  send_stream->InjectVideoSinkWants(wants);
   EXPECT_TRUE(capturer.CaptureCustomFrame(1284, 724, cricket::FOURCC_I420));
-  EXPECT_EQ(7, send_stream->GetNumberOfSwappedFrames());
+  EXPECT_EQ(6, send_stream->GetNumberOfSwappedFrames());
   EXPECT_EQ(1284, send_stream->GetLastWidth());
   EXPECT_EQ(724, send_stream->GetLastHeight());
 
@@ -2059,14 +2059,12 @@ TEST_F(WebRtcVideoChannel2Test, PreviousAdaptationDoesNotApplyToScreenshare) {
             capturer.Start(capturer.GetSupportedFormats()->front()));
   ASSERT_TRUE(channel_->SetSend(true));
   cricket::VideoOptions camera_options;
+  camera_options.is_screencast = rtc::Optional<bool>(false);
   channel_->SetVideoSend(last_ssrc_, true /* enable */, &camera_options,
                          &capturer);
 
   ASSERT_EQ(1u, fake_call_->GetVideoSendStreams().size());
   FakeVideoSendStream* send_stream = fake_call_->GetVideoSendStreams().front();
-  webrtc::LoadObserver* overuse_callback =
-      send_stream->GetConfig().overuse_callback;
-  ASSERT_TRUE(overuse_callback != NULL);
 
   EXPECT_TRUE(capturer.CaptureCustomFrame(1280, 720, cricket::FOURCC_I420));
   EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
@@ -2074,7 +2072,10 @@ TEST_F(WebRtcVideoChannel2Test, PreviousAdaptationDoesNotApplyToScreenshare) {
   EXPECT_EQ(720, send_stream->GetLastHeight());
 
   // Trigger overuse.
-  overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kOveruse);
+  rtc::VideoSinkWants wants;
+  wants.max_pixel_count = rtc::Optional<int>(
+      send_stream->GetLastWidth() * send_stream->GetLastHeight() - 1);
+  send_stream->InjectVideoSinkWants(wants);
   EXPECT_TRUE(capturer.CaptureCustomFrame(1280, 720, cricket::FOURCC_I420));
   EXPECT_EQ(2, send_stream->GetNumberOfSwappedFrames());
   EXPECT_EQ(1280 * 3 / 4, send_stream->GetLastWidth());
@@ -2130,14 +2131,10 @@ void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse,
 
   EXPECT_TRUE(channel_->SetSend(true));
 
-  // Trigger overuse.
-  ASSERT_EQ(1u, fake_call_->GetVideoSendStreams().size());
   FakeVideoSendStream* send_stream = fake_call_->GetVideoSendStreams().front();
-  webrtc::LoadObserver* overuse_callback =
-      send_stream->GetConfig().overuse_callback;
 
-  if (!enable_overuse) {
-    ASSERT_TRUE(overuse_callback == NULL);
+  if (!enable_overuse || is_screenshare) {
+    EXPECT_FALSE(send_stream->resolution_scaling_enabled());
 
     EXPECT_TRUE(capturer.CaptureFrame());
     EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
@@ -2149,25 +2146,30 @@ void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse,
     return;
   }
 
-  ASSERT_TRUE(overuse_callback != NULL);
+  EXPECT_TRUE(send_stream->resolution_scaling_enabled());
+  // Trigger overuse.
+  ASSERT_EQ(1u, fake_call_->GetVideoSendStreams().size());
+
+  rtc::VideoSinkWants wants;
+  wants.max_pixel_count =
+      rtc::Optional<int>(capture_format.width * capture_format.height - 1);
+  send_stream->InjectVideoSinkWants(wants);
+
   EXPECT_TRUE(capturer.CaptureFrame());
   EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
-  overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kOveruse);
 
   EXPECT_TRUE(capturer.CaptureFrame());
   EXPECT_EQ(2, send_stream->GetNumberOfSwappedFrames());
 
-  if (is_screenshare) {
-    // Do not adapt screen share.
-    EXPECT_EQ(capture_format.width, send_stream->GetLastWidth());
-    EXPECT_EQ(capture_format.height, send_stream->GetLastHeight());
-  } else {
-    EXPECT_LT(send_stream->GetLastWidth(), capture_format.width);
-    EXPECT_LT(send_stream->GetLastHeight(), capture_format.height);
-  }
+  EXPECT_LT(send_stream->GetLastWidth(), capture_format.width);
+  EXPECT_LT(send_stream->GetLastHeight(), capture_format.height);
 
   // Trigger underuse which should go back to normal resolution.
-  overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kUnderuse);
+  wants.max_pixel_count = rtc::Optional<int>();
+  wants.max_pixel_count_step_up = rtc::Optional<int>(
+      send_stream->GetLastWidth() * send_stream->GetLastHeight());
+  send_stream->InjectVideoSinkWants(wants);
+
   EXPECT_TRUE(capturer.CaptureFrame());
   EXPECT_EQ(3, send_stream->GetNumberOfSwappedFrames());
 
@@ -2916,144 +2918,35 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsReportsPreferredBitrate) {
   EXPECT_EQ(5, info.senders[0].preferred_bitrate);
 }
 
-TEST_F(WebRtcVideoChannel2Test, GetStatsTracksAdaptationStats) {
-  AddSendStream(cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs3)));
+TEST_F(WebRtcVideoChannel2Test, GetStatsReportsCpuAdaptationStats) {
+  FakeVideoSendStream* stream = AddSendStream();
+  webrtc::VideoSendStream::Stats stats;
+  stats.number_of_cpu_adapt_changes = 2;
+  stats.cpu_limited_resolution = true;
+  stream->SetStats(stats);
 
-  // Capture format VGA.
-  cricket::FakeVideoCapturer video_capturer_vga;
-  const std::vector<cricket::VideoFormat>* formats =
-      video_capturer_vga.GetSupportedFormats();
-  cricket::VideoFormat capture_format_vga = (*formats)[1];
-  EXPECT_EQ(cricket::CS_RUNNING, video_capturer_vga.Start(capture_format_vga));
-  EXPECT_TRUE(
-      channel_->SetVideoSend(kSsrcs3[0], true, nullptr, &video_capturer_vga));
-  EXPECT_TRUE(video_capturer_vga.CaptureFrame());
-
-  cricket::VideoCodec send_codec(100, "VP8");
-  cricket::VideoSendParameters parameters;
-  parameters.codecs.push_back(send_codec);
-  EXPECT_TRUE(channel_->SetSendParameters(parameters));
-  EXPECT_TRUE(channel_->SetSend(true));
-
-  // Verify that the CpuOveruseObserver is registered and trigger downgrade.
-
-  // Trigger overuse.
-  ASSERT_EQ(1u, fake_call_->GetVideoSendStreams().size());
-  webrtc::LoadObserver* overuse_callback =
-      fake_call_->GetVideoSendStreams().front()->GetConfig().overuse_callback;
-  ASSERT_TRUE(overuse_callback != NULL);
-  overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kOveruse);
-
-  // Capture format VGA -> adapt (OnCpuResolutionRequest downgrade) -> VGA/2.
-  EXPECT_TRUE(video_capturer_vga.CaptureFrame());
   cricket::VideoMediaInfo info;
   EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.senders.size());
-  EXPECT_EQ(1, info.senders[0].adapt_changes);
   EXPECT_EQ(WebRtcVideoChannel2::ADAPTREASON_CPU, info.senders[0].adapt_reason);
-
-  // Trigger upgrade and verify that we adapt back up to VGA.
-  overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kUnderuse);
-  EXPECT_TRUE(video_capturer_vga.CaptureFrame());
-  info.Clear();
-  EXPECT_TRUE(channel_->GetStats(&info));
-  ASSERT_EQ(1U, info.senders.size());
-  EXPECT_EQ(2, info.senders[0].adapt_changes);
-  EXPECT_EQ(WebRtcVideoChannel2::ADAPTREASON_NONE,
-            info.senders[0].adapt_reason);
-
-  // No capturer (no adapter). Adapt changes from old adapter should be kept.
-  EXPECT_TRUE(channel_->SetVideoSend(kSsrcs3[0], true, nullptr, nullptr));
-  info.Clear();
-  EXPECT_TRUE(channel_->GetStats(&info));
-  ASSERT_EQ(1U, info.senders.size());
-  EXPECT_EQ(2, info.senders[0].adapt_changes);
-  EXPECT_EQ(WebRtcVideoChannel2::ADAPTREASON_NONE,
-            info.senders[0].adapt_reason);
-
-  // Set new capturer, capture format HD.
-  cricket::FakeVideoCapturer video_capturer_hd;
-  cricket::VideoFormat capture_format_hd = (*formats)[0];
-  EXPECT_EQ(cricket::CS_RUNNING, video_capturer_hd.Start(capture_format_hd));
-  EXPECT_TRUE(
-      channel_->SetVideoSend(kSsrcs3[0], true, nullptr, &video_capturer_hd));
-  EXPECT_TRUE(video_capturer_hd.CaptureFrame());
-
-  // Trigger overuse, HD -> adapt (OnCpuResolutionRequest downgrade) -> HD/2.
-  overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kOveruse);
-  EXPECT_TRUE(video_capturer_hd.CaptureFrame());
-  info.Clear();
-  EXPECT_TRUE(channel_->GetStats(&info));
-  ASSERT_EQ(1U, info.senders.size());
-  EXPECT_EQ(3, info.senders[0].adapt_changes);
-  EXPECT_EQ(WebRtcVideoChannel2::ADAPTREASON_CPU, info.senders[0].adapt_reason);
-
-  EXPECT_TRUE(channel_->SetVideoSend(kSsrcs3[0], true, nullptr, nullptr));
+  EXPECT_EQ(stats.number_of_cpu_adapt_changes, info.senders[0].adapt_changes);
 }
 
-TEST_F(WebRtcVideoChannel2Test, GetStatsTracksAdaptationAndBandwidthStats) {
-  AddSendStream(cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs3)));
-
-  // Capture format VGA.
-  cricket::FakeVideoCapturer video_capturer_vga;
-  const std::vector<cricket::VideoFormat>* formats =
-      video_capturer_vga.GetSupportedFormats();
-  cricket::VideoFormat capture_format_vga = (*formats)[1];
-  EXPECT_EQ(cricket::CS_RUNNING, video_capturer_vga.Start(capture_format_vga));
-  EXPECT_TRUE(
-      channel_->SetVideoSend(kSsrcs3[0], true, nullptr, &video_capturer_vga));
-  EXPECT_TRUE(video_capturer_vga.CaptureFrame());
-
-  cricket::VideoCodec send_codec(100, "VP8");
-  cricket::VideoSendParameters parameters;
-  parameters.codecs.push_back(send_codec);
-  EXPECT_TRUE(channel_->SetSendParameters(parameters));
-  EXPECT_TRUE(channel_->SetSend(true));
-
-  // Verify that the CpuOveruseObserver is registered and trigger downgrade.
-
-  // Trigger overuse -> adapt CPU.
-  ASSERT_EQ(1u, fake_call_->GetVideoSendStreams().size());
-  webrtc::LoadObserver* overuse_callback =
-      fake_call_->GetVideoSendStreams().front()->GetConfig().overuse_callback;
-  ASSERT_TRUE(overuse_callback != NULL);
-  overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kOveruse);
-  EXPECT_TRUE(video_capturer_vga.CaptureFrame());
-  cricket::VideoMediaInfo info;
-  EXPECT_TRUE(channel_->GetStats(&info));
-  ASSERT_EQ(1U, info.senders.size());
-  EXPECT_EQ(WebRtcVideoChannel2::ADAPTREASON_CPU, info.senders[0].adapt_reason);
-
-  // Set bandwidth limitation stats for the stream -> adapt CPU + BW.
+TEST_F(WebRtcVideoChannel2Test, GetStatsReportsAdaptationAndBandwidthStats) {
+  FakeVideoSendStream* stream = AddSendStream();
   webrtc::VideoSendStream::Stats stats;
+  stats.number_of_cpu_adapt_changes = 2;
+  stats.cpu_limited_resolution = true;
   stats.bw_limited_resolution = true;
-  fake_call_->GetVideoSendStreams().front()->SetStats(stats);
-  info.Clear();
+  stream->SetStats(stats);
+
+  cricket::VideoMediaInfo info;
   EXPECT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(1U, info.senders.size());
   EXPECT_EQ(WebRtcVideoChannel2::ADAPTREASON_CPU |
                 WebRtcVideoChannel2::ADAPTREASON_BANDWIDTH,
             info.senders[0].adapt_reason);
-
-  // Trigger upgrade -> adapt BW.
-  overuse_callback->OnLoadUpdate(webrtc::LoadObserver::kUnderuse);
-  EXPECT_TRUE(video_capturer_vga.CaptureFrame());
-  info.Clear();
-  EXPECT_TRUE(channel_->GetStats(&info));
-  ASSERT_EQ(1U, info.senders.size());
-  EXPECT_EQ(WebRtcVideoChannel2::ADAPTREASON_BANDWIDTH,
-            info.senders[0].adapt_reason);
-
-  // Reset bandwidth limitation state -> adapt NONE.
-  stats.bw_limited_resolution = false;
-  fake_call_->GetVideoSendStreams().front()->SetStats(stats);
-  info.Clear();
-  EXPECT_TRUE(channel_->GetStats(&info));
-  ASSERT_EQ(1U, info.senders.size());
-  EXPECT_EQ(WebRtcVideoChannel2::ADAPTREASON_NONE,
-            info.senders[0].adapt_reason);
-
-  EXPECT_TRUE(channel_->SetVideoSend(kSsrcs3[0], true, nullptr, nullptr));
+  EXPECT_EQ(stats.number_of_cpu_adapt_changes, info.senders[0].adapt_changes);
 }
 
 TEST_F(WebRtcVideoChannel2Test,

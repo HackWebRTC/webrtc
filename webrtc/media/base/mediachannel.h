@@ -105,9 +105,7 @@ struct MediaConfig {
   // Video-specific config.
   struct Video {
     // Enable WebRTC CPU Overuse Detection. This flag comes from the
-    // PeerConnection constraint 'googCpuOveruseDetection' and is
-    // checked in WebRtcVideoChannel2::OnLoadUpdate, where it's passed
-    // to VideoCapturer::video_adapter()->OnCpuResolutionRequest.
+    // PeerConnection constraint 'googCpuOveruseDetection'.
     bool enable_cpu_overuse_detection = true;
 
     // Enable WebRTC suspension of video. No video frames will be sent

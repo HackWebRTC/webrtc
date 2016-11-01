@@ -60,11 +60,13 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
         int min_transmit_bitrate_bps) = 0;
   };
 
+  // Down grade resolution at most 2 times for CPU reasons.
+  static const int kMaxCpuDowngrades = 2;
+
   ViEEncoder(uint32_t number_of_cores,
              SendStatisticsProxy* stats_proxy,
-             const webrtc::VideoSendStream::Config::EncoderSettings& settings,
+             const VideoSendStream::Config::EncoderSettings& settings,
              rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback,
-             LoadObserver* overuse_callback,
              EncodedFrameObserver* encoder_timing);
   ~ViEEncoder();
   // RegisterProcessThread register |module_process_thread| with those objects
@@ -74,8 +76,17 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   void RegisterProcessThread(ProcessThread* module_process_thread);
   void DeRegisterProcessThread();
 
-  void SetSource(rtc::VideoSourceInterface<VideoFrame>* source);
-  void SetSink(EncoderSink* sink);
+  // Sets the source that will provide I420 video frames.
+  // |degradation_preference| control whether or not resolution or frame rate
+  // may be reduced.
+  void SetSource(
+      rtc::VideoSourceInterface<VideoFrame>* source,
+      const VideoSendStream::DegradationPreference& degradation_preference);
+
+  // Sets the |sink| that gets the encoded frames. |rotation_applied| means
+  // that the source must support rotation. Only set |rotation_applied| if the
+  // remote side does not support the rotation extension.
+  void SetSink(EncoderSink* sink, bool rotation_applied);
 
   // TODO(perkj): Can we remove VideoCodec.startBitrate ?
   void SetStartBitrate(int start_bitrate_bps);
@@ -97,6 +108,16 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   void OnBitrateUpdated(uint32_t bitrate_bps,
                         uint8_t fraction_lost,
                         int64_t round_trip_time_ms);
+
+ protected:
+  // Used for testing. For example the |CpuOveruseObserver| methods must be
+  // called on |encoder_queue_|.
+  rtc::TaskQueue* encoder_queue() { return &encoder_queue_; }
+
+  // webrtc::CpuOveruseObserver implementation.
+  // These methods are protected for easier testing.
+  void OveruseDetected() override;
+  void NormalUsage() override;
 
  private:
   class ConfigureEncoderTask;
@@ -138,10 +159,6 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
       const CodecSpecificInfo* codec_specific_info,
       const RTPFragmentationHeader* fragmentation) override;
 
-  // webrtc::CpuOveruseObserver implementation.
-  void OveruseDetected() override;
-  void NormalUsage() override;
-
   bool EncoderPaused() const;
   void TraceFrameDropStart();
   void TraceFrameDropEnd();
@@ -156,9 +173,7 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   const VideoCodecType codec_type_;
 
   vcm::VideoSender video_sender_ ACCESS_ON(&encoder_queue_);
-
   OveruseFrameDetector overuse_detector_ ACCESS_ON(&encoder_queue_);
-  LoadObserver* const load_observer_ ACCESS_ON(&encoder_queue_);
 
   SendStatisticsProxy* const stats_proxy_;
   rtc::VideoSinkInterface<VideoFrame>* const pre_encode_callback_;
@@ -189,12 +204,26 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   uint64_t picture_id_rpsi_ ACCESS_ON(&encoder_queue_);
   Clock* const clock_;
 
-  rtc::RaceChecker incoming_frame_race_checker_;
+  VideoSendStream::DegradationPreference degradation_preference_
+      ACCESS_ON(&encoder_queue_);
+  // Counter used for deciding if the video resolution is currently
+  // restricted by CPU usage.
+  int cpu_restricted_counter_ ACCESS_ON(&encoder_queue_);
+
+  int last_frame_width_ ACCESS_ON(&encoder_queue_);
+  int last_frame_height_ ACCESS_ON(&encoder_queue_);
+  // Pixel count last time the resolution was requested to be changed down.
+  rtc::Optional<int> max_pixel_count_ ACCESS_ON(&encoder_queue_);
+  // Pixel count last time the resolution was requested to be changed up.
+  rtc::Optional<int> max_pixel_count_step_up_ ACCESS_ON(&encoder_queue_);
+
+  rtc::RaceChecker incoming_frame_race_checker_
+      GUARDED_BY(incoming_frame_race_checker_);
   Atomic32 posted_frames_waiting_for_encode_;
   // Used to make sure incoming time stamp is increasing for every frame.
   int64_t last_captured_timestamp_ GUARDED_BY(incoming_frame_race_checker_);
   // Delta used for translating between NTP and internal timestamps.
-  const int64_t delta_ntp_internal_ms_;
+  const int64_t delta_ntp_internal_ms_ GUARDED_BY(incoming_frame_race_checker_);
 
   int64_t last_frame_log_ms_ GUARDED_BY(incoming_frame_race_checker_);
   int captured_frame_count_ ACCESS_ON(&encoder_queue_);
