@@ -55,6 +55,7 @@ bool ExtendedReports::Parse(const CommonHeader& packet) {
   rrtr_block_.reset();
   dlrr_block_.ClearItems();
   voip_metric_block_.reset();
+  target_bitrate_ = rtc::Optional<TargetBitrate>();
 
   const uint8_t* current_block = packet.payload() + kXrBaseLength;
   const uint8_t* const packet_end =
@@ -79,6 +80,9 @@ bool ExtendedReports::Parse(const CommonHeader& packet) {
         break;
       case VoipMetric::kBlockType:
         ParseVoipMetricBlock(current_block, block_length);
+        break;
+      case TargetBitrate::kBlockType:
+        ParseTargetBitrateBlock(current_block, block_length);
         break;
       default:
         // Unknown block, ignore.
@@ -107,6 +111,13 @@ void ExtendedReports::SetVoipMetric(const VoipMetric& voip_metric) {
   voip_metric_block_.emplace(voip_metric);
 }
 
+void ExtendedReports::SetTargetBitrate(const TargetBitrate& bitrate) {
+  if (target_bitrate_)
+    LOG(LS_WARNING) << "TargetBitrate already set, overwriting.";
+
+  target_bitrate_ = rtc::Optional<TargetBitrate>(bitrate);
+}
+
 bool ExtendedReports::Create(uint8_t* packet,
                              size_t* index,
                              size_t max_length,
@@ -132,8 +143,18 @@ bool ExtendedReports::Create(uint8_t* packet,
     voip_metric_block_->Create(packet + *index);
     *index += VoipMetric::kLength;
   }
+  if (target_bitrate_) {
+    target_bitrate_->Create(packet + *index);
+    *index += target_bitrate_->BlockLength();
+  }
   RTC_CHECK_EQ(*index, index_end);
   return true;
+}
+
+size_t ExtendedReports::TargetBitrateLength() const {
+  if (target_bitrate_)
+    return target_bitrate_->BlockLength();
+  return 0;
 }
 
 void ExtendedReports::ParseRrtrBlock(const uint8_t* block,
@@ -174,6 +195,13 @@ void ExtendedReports::ParseVoipMetricBlock(const uint8_t* block,
   }
   voip_metric_block_.emplace();
   voip_metric_block_->Parse(block);
+}
+
+void ExtendedReports::ParseTargetBitrateBlock(const uint8_t* block,
+                                              uint16_t block_length) {
+  target_bitrate_ = rtc::Optional<TargetBitrate>(TargetBitrate());
+  if (!target_bitrate_->Parse(block, block_length))
+    target_bitrate_ = rtc::Optional<TargetBitrate>();
 }
 }  // namespace rtcp
 }  // namespace webrtc

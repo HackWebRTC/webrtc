@@ -442,6 +442,7 @@ if (rtc_include_tests) {
       "rtp_rtcp/source/rtcp_packet/sdes_unittest.cc",
       "rtp_rtcp/source/rtcp_packet/sender_report_unittest.cc",
       "rtp_rtcp/source/rtcp_packet/sli_unittest.cc",
+      "rtp_rtcp/source/rtcp_packet/target_bitrate_unittest.cc",
       "rtp_rtcp/source/rtcp_packet/tmmbn_unittest.cc",
       "rtp_rtcp/source/rtcp_packet/tmmbr_unittest.cc",
       "rtp_rtcp/source/rtcp_packet/transport_feedback_unittest.cc",

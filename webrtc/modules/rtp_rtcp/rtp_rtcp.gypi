@@ -81,6 +81,8 @@
         'source/rtcp_packet/sender_report.h',
         'source/rtcp_packet/sli.cc',
         'source/rtcp_packet/sli.h',
+        'source/rtcp_packet/target_bitrate.cc',
+        'source/rtcp_packet/target_bitrate.h',
         'source/rtcp_packet/tmmb_item.cc',
         'source/rtcp_packet/tmmb_item.h',
         'source/rtcp_packet/tmmbn.cc',
