@@ -10,8 +10,6 @@
 
 #include "webrtc/api/stats/rtcstatsreport.h"
 
-#include <sstream>
-
 namespace webrtc {
 
 RTCStatsReport::ConstIterator::ConstIterator(
@@ -42,10 +40,6 @@ const RTCStats& RTCStatsReport::ConstIterator::operator*() const {
   return *it_->second.get();
 }
 
-const RTCStats* RTCStatsReport::ConstIterator::operator->() const {
-  return it_->second.get();
-}
-
 bool RTCStatsReport::ConstIterator::operator==(
     const RTCStatsReport::ConstIterator& other) const {
   return it_ == other.it_;
@@ -56,14 +50,12 @@ bool RTCStatsReport::ConstIterator::operator!=(
   return !(*this == other);
 }
 
-rtc::scoped_refptr<RTCStatsReport> RTCStatsReport::Create(
-    uint64_t timestamp_us) {
+rtc::scoped_refptr<RTCStatsReport> RTCStatsReport::Create() {
   return rtc::scoped_refptr<RTCStatsReport>(
-      new rtc::RefCountedObject<RTCStatsReport>(timestamp_us));
+      new rtc::RefCountedObject<RTCStatsReport>());
 }
 
-RTCStatsReport::RTCStatsReport(uint64_t timestamp_us)
-    : timestamp_us_(timestamp_us) {
+RTCStatsReport::RTCStatsReport() {
 }
 
 RTCStatsReport::~RTCStatsReport() {
@@ -98,18 +90,6 @@ RTCStatsReport::ConstIterator RTCStatsReport::begin() const {
 RTCStatsReport::ConstIterator RTCStatsReport::end() const {
   return ConstIterator(rtc::scoped_refptr<const RTCStatsReport>(this),
                        stats_.cend());
-}
-
-std::string RTCStatsReport::ToString() const {
-  std::ostringstream oss;
-  ConstIterator it = begin();
-  if (it != end()) {
-    oss << it->ToString();
-    for (++it; it != end(); ++it) {
-      oss << '\n' << it->ToString();
-    }
-  }
-  return oss.str();
 }
 
 }  // namespace webrtc
