@@ -75,9 +75,7 @@ AudioSendStream::AudioSendStream(
   channel_proxy_->RegisterExternalTransport(config.send_transport);
 
   for (const auto& extension : config.rtp.extensions) {
-    if (extension.uri == RtpExtension::kAbsSendTimeUri) {
-      channel_proxy_->SetSendAbsoluteSenderTimeStatus(true, extension.id);
-    } else if (extension.uri == RtpExtension::kAudioLevelUri) {
+    if (extension.uri == RtpExtension::kAudioLevelUri) {
       channel_proxy_->SetSendAudioLevelIndicationStatus(true, extension.id);
     } else if (extension.uri == RtpExtension::kTransportSequenceNumberUri) {
       channel_proxy_->EnableSendTransportSequenceNumber(extension.id);

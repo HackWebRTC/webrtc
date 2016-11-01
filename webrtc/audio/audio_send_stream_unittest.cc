@@ -35,7 +35,6 @@ const int kChannelId = 1;
 const uint32_t kSsrc = 1234;
 const char* kCName = "foo_name";
 const int kAudioLevelId = 2;
-const int kAbsSendTimeId = 3;
 const int kTransportSequenceNumberId = 4;
 const int kEchoDelayMedian = 254;
 const int kEchoDelayStdDev = -3;
@@ -93,8 +92,6 @@ struct ConfigHelper {
     stream_config_.rtp.c_name = kCName;
     stream_config_.rtp.extensions.push_back(
         RtpExtension(RtpExtension::kAudioLevelUri, kAudioLevelId));
-    stream_config_.rtp.extensions.push_back(
-        RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeId));
     stream_config_.rtp.extensions.push_back(RtpExtension(
         RtpExtension::kTransportSequenceNumberUri, kTransportSequenceNumberId));
     // Use ISAC as default codec so as to prevent unnecessary |voice_engine_|
@@ -120,9 +117,6 @@ struct ConfigHelper {
     EXPECT_CALL(*channel_proxy_, SetLocalSSRC(kSsrc)).Times(1);
     EXPECT_CALL(*channel_proxy_, SetRTCP_CNAME(StrEq(kCName))).Times(1);
     EXPECT_CALL(*channel_proxy_, SetNACKStatus(true, 10)).Times(1);
-    EXPECT_CALL(*channel_proxy_,
-                SetSendAbsoluteSenderTimeStatus(true, kAbsSendTimeId))
-        .Times(1);
     EXPECT_CALL(*channel_proxy_,
                 SetSendAudioLevelIndicationStatus(true, kAudioLevelId))
         .Times(1);
@@ -219,8 +213,6 @@ struct ConfigHelper {
 TEST(AudioSendStreamTest, ConfigToString) {
   AudioSendStream::Config config(nullptr);
   config.rtp.ssrc = kSsrc;
-  config.rtp.extensions.push_back(
-      RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeId));
   config.rtp.c_name = kCName;
   config.voe_channel_id = kChannelId;
   config.min_bitrate_kbps = 12;
@@ -235,10 +227,12 @@ TEST(AudioSendStreamTest, ConfigToString) {
   config.send_codec_spec.min_ptime_ms = 20;
   config.send_codec_spec.max_ptime_ms = 60;
   config.send_codec_spec.codec_inst = kIsacCodec;
+  config.rtp.extensions.push_back(
+      RtpExtension(RtpExtension::kAudioLevelUri, kAudioLevelId));
   EXPECT_EQ(
       "{rtp: {ssrc: 1234, extensions: [{uri: "
-      "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time, id: 3}], "
-      "nack: {rtp_history_ms: 0}, c_name: foo_name}, send_transport: nullptr, "
+      "urn:ietf:params:rtp-hdrext:ssrc-audio-level, id: 2}], nack: "
+      "{rtp_history_ms: 0}, c_name: foo_name}, send_transport: nullptr, "
       "voe_channel_id: 1, min_bitrate_kbps: 12, max_bitrate_kbps: 34, "
       "send_codec_spec: {nack_enabled: true, transport_cc_enabled: false, "
       "enable_codec_fec: true, enable_opus_dtx: false, opus_max_playback_rate: "

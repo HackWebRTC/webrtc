@@ -51,14 +51,6 @@ class VoERTP_RTCPImpl : public VoERTP_RTCP {
                                            bool enable,
                                            unsigned char id) override;
 
-  // RTP Header Extension for Absolute Sender Time
-  int SetSendAbsoluteSenderTimeStatus(int channel,
-                                      bool enable,
-                                      unsigned char id) override;
-  int SetReceiveAbsoluteSenderTimeStatus(int channel,
-                                         bool enable,
-                                         unsigned char id) override;
-
   // Statistics
   int GetRTPStatistics(int channel,
                        unsigned int& averageJitterMs,

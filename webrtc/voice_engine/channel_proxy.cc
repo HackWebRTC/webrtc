@@ -50,21 +50,9 @@ void ChannelProxy::SetNACKStatus(bool enable, int max_packets) {
   channel()->SetNACKStatus(enable, max_packets);
 }
 
-void ChannelProxy::SetSendAbsoluteSenderTimeStatus(bool enable, int id) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  int error = channel()->SetSendAbsoluteSenderTimeStatus(enable, id);
-  RTC_DCHECK_EQ(0, error);
-}
-
 void ChannelProxy::SetSendAudioLevelIndicationStatus(bool enable, int id) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   int error = channel()->SetSendAudioLevelIndicationStatus(enable, id);
-  RTC_DCHECK_EQ(0, error);
-}
-
-void ChannelProxy::SetReceiveAbsoluteSenderTimeStatus(bool enable, int id) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  int error = channel()->SetReceiveAbsoluteSenderTimeStatus(enable, id);
   RTC_DCHECK_EQ(0, error);
 }
 

@@ -133,16 +133,6 @@ class WEBRTC_DLLEXPORT VoERTP_RTCP {
     return 0;
   }
 
-  // Sets the status of sending absolute sender time on a specific |channel|.
-  virtual int SetSendAbsoluteSenderTimeStatus(int channel,
-                                              bool enable,
-                                              unsigned char id) = 0;
-
-  // Sets status of receiving absolute sender time on a specific |channel|.
-  virtual int SetReceiveAbsoluteSenderTimeStatus(int channel,
-                                                 bool enable,
-                                                 unsigned char id) = 0;
-
   // Sets the RTCP status on a specific |channel|.
   virtual int SetRTCPStatus(int channel, bool enable) = 0;
 

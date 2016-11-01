@@ -118,11 +118,6 @@ AudioReceiveStream::AudioReceiveStream(
       bool registered = rtp_header_parser_->RegisterRtpHeaderExtension(
           kRtpExtensionAudioLevel, extension.id);
       RTC_DCHECK(registered);
-    } else if (extension.uri == RtpExtension::kAbsSendTimeUri) {
-      channel_proxy_->SetReceiveAbsoluteSenderTimeStatus(true, extension.id);
-      bool registered = rtp_header_parser_->RegisterRtpHeaderExtension(
-          kRtpExtensionAbsoluteSendTime, extension.id);
-      RTC_DCHECK(registered);
     } else if (extension.uri == RtpExtension::kTransportSequenceNumberUri) {
       channel_proxy_->EnableReceiveTransportSequenceNumber(extension.id);
       bool registered = rtp_header_parser_->RegisterRtpHeaderExtension(

@@ -978,9 +978,6 @@ RtpCapabilities WebRtcVoiceEngine::GetCapabilities() const {
   capabilities.header_extensions.push_back(
       webrtc::RtpExtension(webrtc::RtpExtension::kAudioLevelUri,
                            webrtc::RtpExtension::kAudioLevelDefaultId));
-  capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kAbsSendTimeUri,
-                           webrtc::RtpExtension::kAbsSendTimeDefaultId));
   if (webrtc::field_trial::FindFullName("WebRTC-Audio-SendSideBwe") ==
       "Enabled") {
     capabilities.header_extensions.push_back(webrtc::RtpExtension(

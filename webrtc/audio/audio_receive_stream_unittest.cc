@@ -51,7 +51,6 @@ const uint32_t kRemoteSsrc = 1234;
 const uint32_t kLocalSsrc = 5678;
 const size_t kOneByteExtensionHeaderLength = 4;
 const size_t kOneByteExtensionLength = 4;
-const int kAbsSendTimeId = 2;
 const int kAudioLevelId = 3;
 const int kTransportSequenceNumberId = 4;
 const int kJitterBufferDelay = -7;
@@ -90,9 +89,6 @@ struct ConfigHelper {
           EXPECT_CALL(*channel_proxy_, SetLocalSSRC(kLocalSsrc)).Times(1);
           EXPECT_CALL(*channel_proxy_, SetNACKStatus(true, 15)).Times(1);
           EXPECT_CALL(*channel_proxy_,
-              SetReceiveAbsoluteSenderTimeStatus(true, kAbsSendTimeId))
-                  .Times(1);
-          EXPECT_CALL(*channel_proxy_,
               SetReceiveAudioLevelIndicationStatus(true, kAudioLevelId))
                   .Times(1);
           EXPECT_CALL(*channel_proxy_,
@@ -124,8 +120,6 @@ struct ConfigHelper {
     stream_config_.rtp.local_ssrc = kLocalSsrc;
     stream_config_.rtp.remote_ssrc = kRemoteSsrc;
     stream_config_.rtp.nack.rtp_history_ms = 300;
-    stream_config_.rtp.extensions.push_back(
-        RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeId));
     stream_config_.rtp.extensions.push_back(
         RtpExtension(RtpExtension::kAudioLevelUri, kAudioLevelId));
     stream_config_.rtp.extensions.push_back(RtpExtension(
@@ -244,15 +238,14 @@ TEST(AudioReceiveStreamTest, ConfigToString) {
   AudioReceiveStream::Config config;
   config.rtp.remote_ssrc = kRemoteSsrc;
   config.rtp.local_ssrc = kLocalSsrc;
-  config.rtp.extensions.push_back(
-      RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeId));
   config.voe_channel_id = kChannelId;
+  config.rtp.extensions.push_back(
+      RtpExtension(RtpExtension::kAudioLevelUri, kAudioLevelId));
   EXPECT_EQ(
-      "{rtp: {remote_ssrc: 1234, local_ssrc: 5678, transport_cc: off, "
-      "nack: {rtp_history_ms: 0}, extensions: [{uri: "
-      "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time, id: 2}]}, "
-      "rtcp_send_transport: nullptr, "
-      "voe_channel_id: 2}",
+      "{rtp: {remote_ssrc: 1234, local_ssrc: 5678, transport_cc: off, nack: "
+      "{rtp_history_ms: 0}, extensions: [{uri: "
+      "urn:ietf:params:rtp-hdrext:ssrc-audio-level, id: 3}]}, "
+      "rtcp_send_transport: nullptr, voe_channel_id: 2}",
       config.ToString());
 }
 
@@ -264,11 +257,7 @@ TEST(AudioReceiveStreamTest, ConstructDestruct) {
 }
 
 MATCHER_P(VerifyHeaderExtension, expected_extension, "") {
-  return arg.extension.hasAbsoluteSendTime ==
-             expected_extension.hasAbsoluteSendTime &&
-         arg.extension.absoluteSendTime ==
-             expected_extension.absoluteSendTime &&
-         arg.extension.hasTransportSequenceNumber ==
+  return arg.extension.hasTransportSequenceNumber ==
              expected_extension.hasTransportSequenceNumber &&
          arg.extension.transportSequenceNumber ==
              expected_extension.transportSequenceNumber;

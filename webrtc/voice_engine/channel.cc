@@ -2361,21 +2361,6 @@ int Channel::SetReceiveAudioLevelIndicationStatus(bool enable,
   return 0;
 }
 
-int Channel::SetSendAbsoluteSenderTimeStatus(bool enable, unsigned char id) {
-  return SetSendRtpHeaderExtension(enable, kRtpExtensionAbsoluteSendTime, id);
-}
-
-int Channel::SetReceiveAbsoluteSenderTimeStatus(bool enable, unsigned char id) {
-  rtp_header_parser_->DeregisterRtpHeaderExtension(
-      kRtpExtensionAbsoluteSendTime);
-  if (enable &&
-      !rtp_header_parser_->RegisterRtpHeaderExtension(
-          kRtpExtensionAbsoluteSendTime, id)) {
-    return -1;
-  }
-  return 0;
-}
-
 void Channel::EnableSendTransportSequenceNumber(int id) {
   int ret =
       SetSendRtpHeaderExtension(true, kRtpExtensionTransportSequenceNumber, id);
