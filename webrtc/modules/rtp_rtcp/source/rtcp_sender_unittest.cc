@@ -12,8 +12,9 @@
 
 #include "webrtc/base/rate_limiter.h"
 #include "webrtc/common_types.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/bye.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
@@ -23,7 +24,6 @@
 using ::testing::_;
 using ::testing::ElementsAre;
 using ::testing::Invoke;
-using webrtc::RTCPUtility::RtcpCommonHeader;
 
 namespace webrtc {
 
@@ -790,17 +790,17 @@ TEST_F(RtcpSenderTest, ByeMustBeLast) {
   EXPECT_CALL(mock_transport, SendRtcp(_, _))
     .WillOnce(Invoke([](const uint8_t* data, size_t len) {
     const uint8_t* next_packet = data;
-    while (next_packet < data + len) {
-      RtcpCommonHeader header;
-      RtcpParseCommonHeader(next_packet, len - (next_packet - data), &header);
-      next_packet = next_packet +
-        header.payload_size_bytes +
-        RtcpCommonHeader::kHeaderSizeBytes;
-      if (header.packet_type == RTCPUtility::PT_BYE) {
-        bool is_last_packet = (data + len == next_packet);
-        EXPECT_TRUE(is_last_packet) <<
-          "Bye packet should be last in a compound RTCP packet.";
-      }
+    const uint8_t* const packet_end = data + len;
+    rtcp::CommonHeader packet;
+    while (next_packet < packet_end) {
+      EXPECT_TRUE(packet.Parse(next_packet, packet_end - next_packet));
+      next_packet = packet.NextPacket();
+      if (packet.type() == rtcp::Bye::kPacketType)  // Main test expectation.
+        EXPECT_EQ(0, packet_end - next_packet)
+            << "Bye packet should be last in a compound RTCP packet.";
+      if (next_packet == packet_end)  // Validate test was set correctly.
+        EXPECT_EQ(packet.type(), rtcp::Bye::kPacketType)
+            << "Last packet in this test expected to be Bye.";
     }
 
     return true;
