@@ -11,6 +11,8 @@
 #include "webrtc/video/stats_counter.h"
 
 #include <algorithm>
+#include <limits>
+#include <map>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/system_wrappers/include/clock.h"
@@ -20,6 +22,7 @@ namespace webrtc {
 namespace {
 // Default periodic time interval for processing samples.
 const int64_t kDefaultProcessIntervalMs = 2000;
+const uint32_t kStreamId0 = 0;
 }  // namespace
 
 // Class holding periodically computed metrics.
@@ -62,19 +65,98 @@ class AggregatedCounter {
   AggregatedStats stats_;
 };
 
+// Class holding gathered samples within a process interval.
+class Samples {
+ public:
+  Samples() : total_count_(0) {}
+  ~Samples() {}
+
+  void Add(int sample, uint32_t stream_id) {
+    samples_[stream_id].Add(sample);
+    ++total_count_;
+  }
+  void Set(int sample, uint32_t stream_id) {
+    samples_[stream_id].Set(sample);
+    ++total_count_;
+  }
+
+  int64_t Count() const { return total_count_; }
+  bool Empty() const { return total_count_ == 0; }
+
+  int64_t Sum() const {
+    int64_t sum = 0;
+    for (const auto& it : samples_)
+      sum += it.second.sum_;
+    return sum;
+  }
+
+  int Max() const {
+    int max = std::numeric_limits<int>::min();
+    for (const auto& it : samples_)
+      max = std::max(it.second.max_, max);
+    return max;
+  }
+
+  void Reset() {
+    for (auto& it : samples_)
+      it.second.Reset();
+    total_count_ = 0;
+  }
+
+  int64_t Diff() const {
+    int64_t sum_diff = 0;
+    int count = 0;
+    for (const auto& it : samples_) {
+      if (it.second.count_ > 0) {
+        int64_t diff = it.second.sum_ - it.second.last_sum_;
+        if (diff >= 0) {
+          sum_diff += diff;
+          ++count;
+        }
+      }
+    }
+    return (count > 0) ? sum_diff : -1;
+  }
+
+ private:
+  struct Stats {
+    void Add(int sample) {
+      sum_ += sample;
+      ++count_;
+      max_ = std::max(sample, max_);
+    }
+    void Set(int sample) {
+      sum_ = sample;
+      ++count_;
+    }
+    void Reset() {
+      if (count_ > 0)
+        last_sum_ = sum_;
+      sum_ = 0;
+      count_ = 0;
+      max_ = std::numeric_limits<int>::min();
+    }
+
+    int max_ = std::numeric_limits<int>::min();
+    int64_t count_ = 0;
+    int64_t sum_ = 0;
+    int64_t last_sum_ = 0;
+  };
+
+  int64_t total_count_;
+  std::map<uint32_t, Stats> samples_;  // Gathered samples mapped by stream id.
+};
+
 // StatsCounter class.
 StatsCounter::StatsCounter(Clock* clock,
                            int64_t process_intervals_ms,
                            bool include_empty_intervals,
                            StatsCounterObserver* observer)
-    : max_(0),
-      sum_(0),
-      num_samples_(0),
-      last_sum_(0),
-      aggregated_counter_(new AggregatedCounter()),
+    : include_empty_intervals_(include_empty_intervals),
       process_intervals_ms_(process_intervals_ms),
+      aggregated_counter_(new AggregatedCounter()),
+      samples_(new Samples()),
       clock_(clock),
-      include_empty_intervals_(include_empty_intervals),
       observer_(observer),
       last_process_time_ms_(-1),
       paused_(false) {
@@ -120,21 +202,15 @@ bool StatsCounter::TimeToProcess(int* elapsed_intervals) {
   return true;
 }
 
-void StatsCounter::Set(int sample) {
+void StatsCounter::Set(int sample, uint32_t stream_id) {
   TryProcess();
-  ++num_samples_;
-  sum_ = sample;
+  samples_->Set(sample, stream_id);
   paused_ = false;
 }
 
 void StatsCounter::Add(int sample) {
   TryProcess();
-  ++num_samples_;
-  sum_ += sample;
-
-  if (num_samples_ == 1)
-    max_ = sample;
-  max_ = std::max(sample, max_);
+  samples_->Add(sample, kStreamId0);
   paused_ = false;
 }
 
@@ -164,17 +240,13 @@ void StatsCounter::TryProcess() {
     // If there are no samples, all elapsed intervals are empty (otherwise one
     // interval contains sample(s), discard this interval).
     int empty_intervals =
-        (num_samples_ == 0) ? elapsed_intervals : (elapsed_intervals - 1);
+        samples_->Empty() ? elapsed_intervals : (elapsed_intervals - 1);
     ReportMetricToAggregatedCounter(GetValueForEmptyInterval(),
                                     empty_intervals);
   }
 
   // Reset samples for elapsed interval.
-  if (num_samples_ > 0)
-    last_sum_ = sum_;
-  sum_ = 0;
-  max_ = 0;
-  num_samples_ = 0;
+  samples_->Reset();
 }
 
 bool StatsCounter::IncludeEmptyIntervals() const {
@@ -195,9 +267,11 @@ void AvgCounter::Add(int sample) {
 }
 
 bool AvgCounter::GetMetric(int* metric) const {
-  if (num_samples_ == 0)
+  int64_t count = samples_->Count();
+  if (count == 0)
     return false;
-  *metric = (sum_ + num_samples_ / 2) / num_samples_;
+
+  *metric = (samples_->Sum() + count / 2) / count;
   return true;
 }
 
@@ -218,9 +292,10 @@ void MaxCounter::Add(int sample) {
 }
 
 bool MaxCounter::GetMetric(int* metric) const {
-  if (num_samples_ == 0)
+  if (samples_->Empty())
     return false;
-  *metric = max_;
+
+  *metric = samples_->Max();
   return true;
 }
 
@@ -240,9 +315,11 @@ void PercentCounter::Add(bool sample) {
 }
 
 bool PercentCounter::GetMetric(int* metric) const {
-  if (num_samples_ == 0)
+  int64_t count = samples_->Count();
+  if (count == 0)
     return false;
-  *metric = (sum_ * 100 + num_samples_ / 2) / num_samples_;
+
+  *metric = (samples_->Sum() * 100 + count / 2) / count;
   return true;
 }
 
@@ -262,9 +339,11 @@ void PermilleCounter::Add(bool sample) {
 }
 
 bool PermilleCounter::GetMetric(int* metric) const {
-  if (num_samples_ == 0)
+  int64_t count = samples_->Count();
+  if (count == 0)
     return false;
-  *metric = (sum_ * 1000 + num_samples_ / 2) / num_samples_;
+
+  *metric = (samples_->Sum() * 1000 + count / 2) / count;
   return true;
 }
 
@@ -286,9 +365,11 @@ void RateCounter::Add(int sample) {
 }
 
 bool RateCounter::GetMetric(int* metric) const {
-  if (num_samples_ == 0)
+  if (samples_->Empty())
     return false;
-  *metric = (sum_ * 1000 + process_intervals_ms_ / 2) / process_intervals_ms_;
+
+  *metric = (samples_->Sum() * 1000 + process_intervals_ms_ / 2) /
+            process_intervals_ms_;
   return true;
 }
 
@@ -304,15 +385,16 @@ RateAccCounter::RateAccCounter(Clock* clock,
                    include_empty_intervals,
                    observer) {}
 
-void RateAccCounter::Set(int sample) {
-  StatsCounter::Set(sample);
+void RateAccCounter::Set(int sample, uint32_t stream_id) {
+  StatsCounter::Set(sample, stream_id);
 }
 
 bool RateAccCounter::GetMetric(int* metric) const {
-  if (num_samples_ == 0 || last_sum_ > sum_)
+  int64_t diff = samples_->Diff();
+  if (diff < 0 || (!include_empty_intervals_ && diff == 0))
     return false;
-  *metric = ((sum_ - last_sum_) * 1000 + process_intervals_ms_ / 2) /
-            process_intervals_ms_;
+
+  *metric = (diff * 1000 + process_intervals_ms_ / 2) / process_intervals_ms_;
   return true;
 }
 

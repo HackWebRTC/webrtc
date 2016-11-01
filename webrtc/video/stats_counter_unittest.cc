@@ -16,6 +16,7 @@
 namespace webrtc {
 namespace {
 const int kDefaultProcessIntervalMs = 2000;
+const uint32_t kStreamId = 123456;
 
 class StatsCounterObserverImpl : public StatsCounterObserver {
  public:
@@ -42,7 +43,7 @@ class StatsCounterTest : public ::testing::Test {
   void SetSampleAndAdvance(int sample,
                            int interval_ms,
                            RateAccCounter* counter) {
-    counter->Set(sample);
+    counter->Set(sample, kStreamId);
     clock_.AdvanceTimeMilliseconds(interval_ms);
   }
 
@@ -197,11 +198,11 @@ TEST_F(StatsCounterTest, TestMetric_RateCounter) {
 TEST_F(StatsCounterTest, TestMetric_RateAccCounter) {
   StatsCounterObserverImpl* observer = new StatsCounterObserverImpl();
   RateAccCounter counter(&clock_, observer, true);
-  counter.Set(175);
-  counter.Set(188);
+  counter.Set(175, kStreamId);
+  counter.Set(188, kStreamId);
   clock_.AdvanceTimeMilliseconds(kDefaultProcessIntervalMs);
   // Trigger process (sample included in next interval).
-  counter.Set(192);
+  counter.Set(192, kStreamId);
   // Rate per interval: (188 - 0) / 2 sec = 94 samples/sec
   EXPECT_EQ(1, observer->num_calls_);
   EXPECT_EQ(94, observer->last_sample_);
@@ -210,6 +211,37 @@ TEST_F(StatsCounterTest, TestMetric_RateAccCounter) {
   EXPECT_EQ(1, stats.num_samples);
   EXPECT_EQ(94, stats.min);
   EXPECT_EQ(94, stats.max);
+}
+
+TEST_F(StatsCounterTest, TestMetric_RateAccCounterWithMultipleStreamIds) {
+  StatsCounterObserverImpl* observer = new StatsCounterObserverImpl();
+  RateAccCounter counter(&clock_, observer, true);
+  counter.Set(175, kStreamId);
+  counter.Set(188, kStreamId);
+  counter.Set(100, kStreamId + 1);
+  clock_.AdvanceTimeMilliseconds(kDefaultProcessIntervalMs);
+  // Trigger process (sample included in next interval).
+  counter.Set(150, kStreamId + 1);
+  // Rate per interval: ((188 - 0) + (100 - 0)) / 2 sec = 144 samples/sec
+  EXPECT_EQ(1, observer->num_calls_);
+  EXPECT_EQ(144, observer->last_sample_);
+  clock_.AdvanceTimeMilliseconds(kDefaultProcessIntervalMs);
+  // Trigger process (sample included in next interval).
+  counter.Set(198, kStreamId);
+  // Rate per interval: (0 + (150 - 100)) / 2 sec = 25 samples/sec
+  EXPECT_EQ(2, observer->num_calls_);
+  EXPECT_EQ(25, observer->last_sample_);
+  clock_.AdvanceTimeMilliseconds(kDefaultProcessIntervalMs);
+  // Trigger process (sample included in next interval).
+  counter.Set(200, kStreamId);
+  // Rate per interval: ((198 - 188) + (0)) / 2 sec = 5 samples/sec
+  EXPECT_EQ(3, observer->num_calls_);
+  EXPECT_EQ(5, observer->last_sample_);
+  // Aggregated stats.
+  AggregatedStats stats = counter.GetStats();
+  EXPECT_EQ(3, stats.num_samples);
+  EXPECT_EQ(5, stats.min);
+  EXPECT_EQ(144, stats.max);
 }
 
 TEST_F(StatsCounterTest, TestGetStats_MultipleIntervals) {
@@ -266,7 +298,7 @@ TEST_F(StatsCounterTest, TestRateAccCounter_NegativeRateIgnored) {
   EXPECT_EQ(1, observer->num_calls_);
   EXPECT_EQ(100, observer->last_sample_);
   // Trigger process (sample included in next interval).
-  counter.Set(2000);
+  counter.Set(2000, kStreamId);
   EXPECT_EQ(2, observer->num_calls_);
   EXPECT_EQ(300, observer->last_sample_);
   // Aggregated stats.
@@ -386,7 +418,7 @@ TEST_F(StatsCounterTest, TestRateAccCounter_IntervalsWithoutSamplesIncluded) {
   clock_.AdvanceTimeMilliseconds(kDefaultProcessIntervalMs);
   VerifyStatsIsNotSet(counter.ProcessAndGetStats());
   // Add sample and advance 3 intervals (2 w/o samples -> zero reported).
-  counter.Set(12);
+  counter.Set(12, kStreamId);
   clock_.AdvanceTimeMilliseconds(kDefaultProcessIntervalMs * 4 - 1);
   // Trigger process and verify stats: [0:2][6:1]
   counter.ProcessAndGetStats();
@@ -399,7 +431,7 @@ TEST_F(StatsCounterTest, TestRateAccCounter_IntervalsWithoutSamplesIncluded) {
   EXPECT_EQ(0, observer->last_sample_);
   // Insert sample and advance non-complete interval, no change, [0:3][6:1]
   clock_.AdvanceTimeMilliseconds(kDefaultProcessIntervalMs - 1);
-  counter.Set(60);
+  counter.Set(60, kStreamId);
   EXPECT_EQ(4, observer->num_calls_);
   // Make next interval pass, [0:3][6:1][24:1]
   clock_.AdvanceTimeMilliseconds(1);
@@ -415,7 +447,7 @@ TEST_F(StatsCounterTest, TestRateAccCounter_IntervalsWithoutSamplesIgnored) {
   StatsCounterObserverImpl* observer = new StatsCounterObserverImpl();
   RateAccCounter counter(&clock_, observer, false);
   // Add sample and advance 3 intervals (2 w/o samples -> ignored).
-  counter.Set(12);
+  counter.Set(12, kStreamId);
   clock_.AdvanceTimeMilliseconds(kDefaultProcessIntervalMs * 4 - 1);
   // Trigger process and verify stats: [6:1]
   counter.ProcessAndGetStats();
@@ -427,7 +459,7 @@ TEST_F(StatsCounterTest, TestRateAccCounter_IntervalsWithoutSamplesIgnored) {
   EXPECT_EQ(1, observer->num_calls_);
   // Insert sample and advance non-complete interval, no change, [6:1]
   clock_.AdvanceTimeMilliseconds(kDefaultProcessIntervalMs - 1);
-  counter.Set(60);
+  counter.Set(60, kStreamId);
   counter.ProcessAndGetStats();
   EXPECT_EQ(1, observer->num_calls_);
   // Make next interval pass, [6:1][24:1]
